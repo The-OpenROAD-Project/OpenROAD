@@ -7,7 +7,7 @@
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |         4
-    final |   +100.0% |       1 |       1 |             1 |         0
+    final |    +66.7% |       1 |       1 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0039] Resized 1 instances.
@@ -16,13 +16,13 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-u2/Z                                    0.15    0.02    0.12 (MET)
+wire1/Z                                 0.15    0.04    0.11 (MET)
 
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-u1/Z                                   60.65    1.46   59.20 (MET)
+wire1/Z                               121.10   95.49   25.62 (MET)
 
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
@@ -37,13 +37,13 @@ Corner: slow
             0.000    0.000    0.000 ^ u1/A (BUF_X1)
    1.413    0.021    0.048    0.048 ^ u1/Z (BUF_X1)
             0.021    0.000    0.048 ^ u2/A (CLKBUF_X3)
-  58.971    0.148    0.206    0.253 ^ u2/Z (CLKBUF_X3)
-            0.172    0.077    0.330 ^ wire1/A (BUF_X4)
-  95.464    0.153    0.232    0.562 ^ wire1/Z (BUF_X4)
-            0.272    0.187    0.749 ^ u3/A (BUF_X1)
-   0.000    0.021    0.110    0.858 ^ u3/Z (BUF_X1)
-            0.021    0.000    0.858 ^ out1 (out)
-                              0.858   data arrival time
+  57.425    0.145    0.204    0.251 ^ u2/Z (CLKBUF_X3)
+            0.167    0.073    0.324 ^ wire1/A (BUF_X2)
+  95.486    0.342    0.420    0.745 ^ wire1/Z (BUF_X2)
+            0.415    0.200    0.944 ^ u3/A (BUF_X1)
+   0.000    0.027    0.121    1.065 ^ u3/Z (BUF_X1)
+            0.027    0.000    1.065 ^ out1 (out)
+                              1.065   data arrival time
 ---------------------------------------------------------------------------
 (Path is unconstrained)
 

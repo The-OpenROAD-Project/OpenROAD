@@ -1,0 +1,49 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+Violations before repair_design:
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+cap_drv/Z                               0.20    0.44   -0.24 (VIOLATED)
+slew_drv/Z                              0.20    0.22   -0.03 (VIOLATED)
+
+max capacitance
+
+Pin                                    Limit     Cap   Slack
+------------------------------------------------------------
+cap_drv/Z                              60.65  201.52 -140.87 (VIOLATED)
+
+slew_drv/Z                             60.65  101.52  -40.87 (VIOLATED)
+
+wire_drv/Z                             60.65   76.12  -15.46 (VIOLATED)
+
+[INFO RSZ-0100] Cells with area > 1.5X current cell will not be considered for sizing
+[INFO RSZ-0101] Cells with leakage > 2.5X current cell will not be considered for sizing
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |         7
+    final |   +233.3% |       0 |       4 |             3 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0034] Found 3 slew violations.
+[INFO RSZ-0036] Found 3 capacitance violations.
+[INFO RSZ-0038] Inserted 4 buffers in 3 nets.
+
+Checks after repair_design:
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+wire4/Z                                 0.20    0.06    0.14 (MET)
+
+max capacitance
+
+Pin                                    Limit     Cap   Slack
+------------------------------------------------------------
+wire_drv/Z                             60.65   17.72   42.94 (MET)
+
+Remaining violators after repair_design:
+
+Inserted repeaters by net:
+slew_net repeaters: BUF_X4
+cap_net repeaters: BUF_X8
+wire_net repeaters: BUF_X2 BUF_X2

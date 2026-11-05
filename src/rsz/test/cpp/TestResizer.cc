@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -8,8 +10,10 @@
 #include <unordered_set>
 #include <vector>
 
+#include "BufferedNet.hh"
 #include "MoveCommitter.hh"
 #include "OptimizerTypes.hh"
+#include "RepairDesign.hh"
 #include "RepairSetupContext.hh"
 #include "RepairTargetCollector.hh"
 #include "est/EstimateParasitics.h"
@@ -102,6 +106,22 @@ class TestSizeUpGenerator : public SizeUpGenerator
   using SizeUpGenerator::SizeUpGenerator;
   using SizeUpGenerator::upsizeCell;
 };
+
+namespace {
+
+class TestRepairDesign : public RepairDesign
+{
+ public:
+  explicit TestRepairDesign(Resizer* resizer) : RepairDesign(resizer) {}
+
+  using RepairDesign::findBufferUnderSlew;
+  using RepairDesign::init;
+  using RepairDesign::isBufferDrcClean;
+  using RepairDesign::repairNet;
+};
+
+}  // namespace
+
 class TestResizer : public tst::IntegratedFixture
 {
  public:
@@ -234,6 +254,44 @@ class TestResizer : public tst::IntegratedFixture
     resizer_.initBlock();
     ep_.estimateWireParasitics();
     sta_->updateTiming(true);
+  }
+
+  void setupRepairNetTest(TestRepairDesign& repair_design)
+  {
+    setupTimeBorrowTiming("inferred_clock_gator_time_borrow.def",
+                          /*input_delay=*/0.98);
+    const sta::Scene* corner = sta_->cmdScene();
+    ep_.setHWireSignalRC(
+        /*tech=*/nullptr, corner, /*res=*/1.0e3, /*cap=*/1.0e-10);
+    ep_.setVWireSignalRC(
+        /*tech=*/nullptr, corner, /*res=*/1.0e3, /*cap=*/1.0e-10);
+    ep_.setHWireClkRC(
+        /*tech=*/nullptr, corner, /*res=*/1.0e3, /*cap=*/1.0e-10);
+    ep_.setVWireClkRC(
+        /*tech=*/nullptr, corner, /*res=*/1.0e3, /*cap=*/1.0e-10);
+    block_->setDieArea(odb::Rect(0, 0, 2000000, 240000));
+    block_->setCoreArea(odb::Rect(0, 0, 2000000, 240000));
+
+    odb::dbInst* gated_ff0 = block_->findInst("gated_ff0");
+    odb::dbInst* gated_ff2 = block_->findInst("gated_ff2");
+    odb::dbInst* gated_ff3 = block_->findInst("gated_ff3");
+    odb::dbInst* sibling_branch = block_->findInst("sibling_branch");
+    ASSERT_NE(gated_ff0, nullptr);
+    ASSERT_NE(gated_ff2, nullptr);
+    ASSERT_NE(gated_ff3, nullptr);
+    ASSERT_NE(sibling_branch, nullptr);
+
+    gated_ff0->setLocation(1720000, 150000);
+    gated_ff2->setLocation(920000, 158985);
+    gated_ff3->setLocation(920000, 167045);
+    sibling_branch->setLocation(1800000, 89470);
+    block_->findNet("clk")->setSigType(odb::dbSigType::CLOCK);
+
+    resizer_.initBlock();
+    ep_.estimateWireParasitics();
+    sta_->updateTiming(true);
+    resizer_.resizePreamble();
+    repair_design.init();
   }
 
   sta::Vertex* loadVertex(const char* pin_name) const
@@ -1465,6 +1523,400 @@ TEST_F(TestResizer, DisabledConditionalArcIgnoredInDriveResistance)
   sta_->setCaseAnalysis(b_pin, sta::LogicValue::zero, sta_->cmdMode());
   sta_->updateTiming(false);
   EXPECT_GT(resizer_.driveResistance(zn_pin), 0.99f * port_res);
+}
+
+TEST_F(TestResizer, FindBufferUnderSlewSelectsSmallestBufferForEasyLoad)
+{
+  setupTimeBorrowTiming("inferred_clock_gator_time_borrow.def",
+                        /*input_delay=*/0.98);
+  resizer_.resizePreamble();
+  TestRepairDesign repair_design(&resizer_);
+  repair_design.init();
+
+  sta::LibertyCell* buf_x1 = sta_->network()->findLibertyCell("BUF_X1");
+  ASSERT_NE(buf_x1, nullptr);
+
+  EXPECT_EQ(repair_design.findBufferUnderSlew(/*max_slew=*/1e-9f,
+                                              /*load_cap=*/1e-15f),
+            buf_x1);
+}
+
+TEST_F(TestResizer, FindBufferUnderSlewStaysWithinSizingLimitsWhenDrcClean)
+{
+  setupTimeBorrowTiming("inferred_clock_gator_time_borrow.def",
+                        /*input_delay=*/0.98);
+  resizer_.resizePreamble();
+  TestRepairDesign repair_design(&resizer_);
+  repair_design.init();
+
+  sta::LibertyCell* buf_x1 = sta_->network()->findLibertyCell("BUF_X1");
+  sta::LibertyCell* buf_x2 = sta_->network()->findLibertyCell("BUF_X2");
+  ASSERT_NE(buf_x1, nullptr);
+  ASSERT_NE(buf_x2, nullptr);
+
+  const sta::Scene* corner = sta_->cmdScene();
+
+  // In Nangate45, Resizer's default sizing limits (4.0x area/leakage) around
+  // BUF_X1 (area 0.798, leakage 21.44) include BUF_X2 (1.33x area, 2.01x
+  // leakage) and exclude BUF_X4 (2.33x area, 4.02x leakage). At 80% of
+  // BUF_X1's max_cap (~24 fF), both BUF_X1 and BUF_X2 are DRC-clean yet both
+  // exceed targetSlew; findBufferUnderSlew selects the lowest-slew DRC-clean
+  // buffer within the sizing limits (BUF_X2) without expanding past them.
+  const float target_slew
+      = std::max(resizer_.targetSlew(sta::RiseFall::rise()),
+                 resizer_.targetSlew(sta::RiseFall::fall()));
+  const float max_cap_x1 = resizer_.maxLoad(db_network_->cell(buf_x1), corner);
+  EXPECT_FLOAT_EQ(max_cap_x1, resizer_.maxLoad(db_network_->cell(buf_x1)));
+  const float mod_load = 0.8f * max_cap_x1;
+  const auto eval_x1 = repair_design.isBufferDrcClean(
+      buf_x1, /*load_cap=*/mod_load, /*max_slew=*/1e-9f, corner);
+  const auto eval_x2 = repair_design.isBufferDrcClean(
+      buf_x2, /*load_cap=*/mod_load, /*max_slew=*/1e-9f, corner);
+  ASSERT_TRUE(eval_x1.drc_clean);
+  ASSERT_TRUE(eval_x2.drc_clean);
+  ASSERT_GT(eval_x2.slew, target_slew);
+  EXPECT_EQ(repair_design.findBufferUnderSlew(/*max_slew=*/eval_x1.slew * 1.1f,
+                                              /*load_cap=*/mod_load),
+            buf_x2);
+}
+
+TEST_F(TestResizer, FindBufferUnderSlewExpandsBeyondSizingLimitsForDrc)
+{
+  setupTimeBorrowTiming("inferred_clock_gator_time_borrow.def",
+                        /*input_delay=*/0.98);
+  resizer_.resizePreamble();
+  TestRepairDesign repair_design(&resizer_);
+  repair_design.init();
+
+  sta::LibertyCell* buf_x1 = sta_->network()->findLibertyCell("BUF_X1");
+  sta::LibertyCell* buf_x4 = sta_->network()->findLibertyCell("BUF_X4");
+  sta::LibertyCell* buf_x8 = sta_->network()->findLibertyCell("BUF_X8");
+  ASSERT_NE(buf_x1, nullptr);
+  ASSERT_NE(buf_x4, nullptr);
+  ASSERT_NE(buf_x8, nullptr);
+
+  const sta::Scene* corner = sta_->cmdScene();
+  const sta::MinMax* max_mm = sta::MinMax::max();
+
+  // When DRC max_slew is tighter than any buffer within the resizer sizing
+  // limits can meet, expand past the sizing limits to close DRC.
+  const float slew_x4
+      = resizer_.bufferSlew(buf_x4, /*load_cap=*/50e-15f, corner, max_mm);
+  const float slew_x8
+      = resizer_.bufferSlew(buf_x8, /*load_cap=*/50e-15f, corner, max_mm);
+  const float tight_slew = 0.5f * (slew_x8 + slew_x4);
+  sta::LibertyCell* drc_expanded = repair_design.findBufferUnderSlew(
+      /*max_slew=*/tight_slew, /*load_cap=*/50e-15f);
+  ASSERT_NE(drc_expanded, nullptr);
+  EXPECT_GT(db_network_->staToDb(drc_expanded)->getArea(),
+            db_network_->staToDb(buf_x1)->getArea() * 4);
+  EXPECT_LE(
+      resizer_.bufferSlew(drc_expanded, /*load_cap=*/50e-15f, corner, max_mm),
+      tight_slew);
+}
+
+TEST_F(TestResizer,
+       FindBufferUnderSlewPrefersSmallestCapCleanBufferWhenSlewUnachievable)
+{
+  setupTimeBorrowTiming("inferred_clock_gator_time_borrow.def",
+                        /*input_delay=*/0.98);
+  // Lift sizing limits completely so BUF_X1..BUF_X32 are all in softCandidates,
+  // matching unconstrained repair_design runs on unachievable slew targets.
+  odb::dbDoubleProperty::create(block_, "limit_sizing_area", 1000.0);
+  odb::dbDoubleProperty::create(block_, "limit_sizing_leakage", 1000.0);
+  resizer_.initBlock();
+  resizer_.resizePreamble();
+  TestRepairDesign repair_design(&resizer_);
+  repair_design.init();
+
+  sta::LibertyCell* buf_x1 = sta_->network()->findLibertyCell("BUF_X1");
+  sta::LibertyCell* buf_x2 = sta_->network()->findLibertyCell("BUF_X2");
+  sta::LibertyCell* buf_x4 = sta_->network()->findLibertyCell("BUF_X4");
+  ASSERT_NE(buf_x1, nullptr);
+  ASSERT_NE(buf_x2, nullptr);
+  ASSERT_NE(buf_x4, nullptr);
+
+  const sta::Scene* corner = sta_->cmdScene();
+  const sta::MinMax* max_mm = sta::MinMax::max();
+
+  // When max_slew is physically unachievable (0.0f), pick the smallest-area
+  // cap-clean buffer (BUF_X1 at 10 fF; BUF_X2 at 80 fF > BUF_X1 max_cap) rather
+  // than escalating to BUF_X32 and compounding upstream input capacitance.
+  EXPECT_EQ(repair_design.findBufferUnderSlew(/*max_slew=*/0.0f,
+                                              /*load_cap=*/10e-15f),
+            buf_x1);
+  EXPECT_EQ(repair_design.findBufferUnderSlew(/*max_slew=*/0.0f,
+                                              /*load_cap=*/80e-15f),
+            buf_x2);
+
+  // Restore default 4.0x limits and verify expansion to BUF_X4 only when
+  // max_capacitance also fails inside the sizing limits.
+  odb::dbDoubleProperty::find(block_, "limit_sizing_area")->setValue(4.0);
+  odb::dbDoubleProperty::find(block_, "limit_sizing_leakage")->setValue(4.0);
+  resizer_.initBlock();
+  resizer_.resizePreamble();
+  repair_design.init();
+  sta::Sdc* sdc = corner->sdc();
+  for (sta::LibertyCell* soft_buf : {buf_x1, buf_x2}) {
+    sta_->setCapacitanceLimit(
+        db_network_->cell(soft_buf), max_mm, /*cap=*/0.5e-15f, sdc);
+  }
+  EXPECT_FLOAT_EQ(resizer_.maxLoad(db_network_->cell(buf_x1), corner),
+                  0.5e-15f);
+  EXPECT_EQ(repair_design.findBufferUnderSlew(/*max_slew=*/0.0f,
+                                              /*load_cap=*/50e-15f),
+            buf_x4);
+}
+
+TEST_F(TestResizer, FindBufferUnderSlewRespectsDontUse)
+{
+  setupTimeBorrowTiming("inferred_clock_gator_time_borrow.def",
+                        /*input_delay=*/0.98);
+  resizer_.resizePreamble();
+  TestRepairDesign repair_design(&resizer_);
+  repair_design.init();
+
+  sta::LibertyCell* buf_x1 = sta_->network()->findLibertyCell("BUF_X1");
+  sta::LibertyCell* buf_x2 = sta_->network()->findLibertyCell("BUF_X2");
+  sta::LibertyCell* buf_x4 = sta_->network()->findLibertyCell("BUF_X4");
+  sta::LibertyCell* buf_x8 = sta_->network()->findLibertyCell("BUF_X8");
+  ASSERT_NE(buf_x1, nullptr);
+  ASSERT_NE(buf_x2, nullptr);
+  ASSERT_NE(buf_x4, nullptr);
+  ASSERT_NE(buf_x8, nullptr);
+
+  const sta::Scene* corner = sta_->cmdScene();
+  const sta::MinMax* max_mm = sta::MinMax::max();
+  sta::Sdc* sdc = corner->sdc();
+  for (sta::LibertyCell* soft_buf : {buf_x1, buf_x2}) {
+    sta_->setCapacitanceLimit(
+        db_network_->cell(soft_buf), max_mm, /*cap=*/0.5e-15f, sdc);
+  }
+
+  // Marking BUF_X4 dont_use and re-initializing RepairDesign must invalidate
+  // cached candidates and advance to BUF_X8; clearing dont_use restores BUF_X4.
+  resizer_.setDontUse(buf_x4, /*dont_use=*/true);
+  resizer_.resizePreamble();
+  repair_design.init();
+  EXPECT_EQ(repair_design.findBufferUnderSlew(/*max_slew=*/0.0f,
+                                              /*load_cap=*/50e-15f),
+            buf_x8);
+  resizer_.setDontUse(buf_x4, /*dont_use=*/false);
+  resizer_.resizePreamble();
+  repair_design.init();
+  EXPECT_EQ(repair_design.findBufferUnderSlew(/*max_slew=*/0.0f,
+                                              /*load_cap=*/50e-15f),
+            buf_x4);
+}
+
+TEST_F(TestResizer, RepairNetSizesWireRepeatersToSegmentLoad)
+{
+  TestRepairDesign repair_design(&resizer_);
+  setupRepairNetTest(repair_design);
+
+  const sta::Scene* corner = sta_->cmdScene();
+  odb::dbInst* enable_latch = block_->findInst("enable_latch");
+  odb::dbInst* gated_ff0 = block_->findInst("gated_ff0");
+  odb::dbMaster* buf_x4_master = db_->findMaster("BUF_X4");
+  ASSERT_NE(enable_latch, nullptr);
+  ASSERT_NE(gated_ff0, nullptr);
+  ASSERT_NE(buf_x4_master, nullptr);
+
+  // An 800 um wire (~81 fF > 35 fF max_cap) inserts multiple wire repeaters
+  // (~33 fF downstream load each), and each repeater stays within the resizer
+  // sizing limits (< BUF_X4) instead of double-sizing to BUF_X4.
+  sta::Pin* drvr_pin = db_network_->dbToSta(enable_latch->findITerm("Q"));
+  sta::Pin* ff0_d = db_network_->dbToSta(gated_ff0->findITerm("D"));
+  auto load0 = std::make_shared<BufferedNet>(BufferedNetType::load,
+                                             db_network_->location(ff0_d),
+                                             ff0_d,
+                                             corner,
+                                             &resizer_);
+  auto long_wire = std::make_shared<BufferedNet>(BufferedNetType::wire,
+                                                 odb::Point(120000, 150000),
+                                                 BufferedNet::null_layer,
+                                                 load0,
+                                                 corner,
+                                                 &resizer_,
+                                                 &ep_);
+  std::unordered_set<odb::dbInst*> before;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    before.insert(inst);
+  }
+  {
+    est::IncrementalParasiticsGuard guard(&ep_);
+    repair_design.repairNet(
+        long_wire, drvr_pin, /*max_cap=*/35e-15f, /*max_length=*/0, corner);
+  }
+  size_t wire_reps = 0;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (!before.contains(inst)) {
+      ++wire_reps;
+      EXPECT_LT(inst->getMaster()->getArea(), buf_x4_master->getArea());
+    }
+  }
+  EXPECT_GE(wire_reps, 2u);
+}
+
+TEST_F(TestResizer, RepairNetSizesJunctionRepeaterToBranchLoad)
+{
+  TestRepairDesign repair_design(&resizer_);
+  setupRepairNetTest(repair_design);
+
+  const sta::Scene* corner = sta_->cmdScene();
+  odb::dbInst* enable_latch = block_->findInst("enable_latch");
+  odb::dbInst* gated_ff2 = block_->findInst("gated_ff2");
+  odb::dbInst* gated_ff3 = block_->findInst("gated_ff3");
+  odb::dbMaster* buf_x4_master = db_->findMaster("BUF_X4");
+  ASSERT_NE(enable_latch, nullptr);
+  ASSERT_NE(gated_ff2, nullptr);
+  ASSERT_NE(gated_ff3, nullptr);
+  ASSERT_NE(buf_x4_master, nullptr);
+
+  // Two 400 um branches (~41 fF each, ~82 fF combined > 55 fF max_cap) size
+  // the isolated branch repeater to its single-branch load.
+  sta::Pin* drvr_pin = db_network_->dbToSta(enable_latch->findITerm("Q"));
+  sta::Pin* ff2_d = db_network_->dbToSta(gated_ff2->findITerm("D"));
+  sta::Pin* ff3_d = db_network_->dbToSta(gated_ff3->findITerm("D"));
+  auto load2 = std::make_shared<BufferedNet>(BufferedNetType::load,
+                                             db_network_->location(ff2_d),
+                                             ff2_d,
+                                             corner,
+                                             &resizer_);
+  auto load3 = std::make_shared<BufferedNet>(BufferedNetType::load,
+                                             db_network_->location(ff3_d),
+                                             ff3_d,
+                                             corner,
+                                             &resizer_);
+  auto wire_l = std::make_shared<BufferedNet>(BufferedNetType::wire,
+                                              odb::Point(120000, 158985),
+                                              BufferedNet::null_layer,
+                                              load2,
+                                              corner,
+                                              &resizer_,
+                                              &ep_);
+  auto wire_r = std::make_shared<BufferedNet>(BufferedNetType::wire,
+                                              odb::Point(120000, 167045),
+                                              BufferedNet::null_layer,
+                                              load3,
+                                              corner,
+                                              &resizer_,
+                                              &ep_);
+  auto cap_junc = std::make_shared<BufferedNet>(BufferedNetType::junction,
+                                                odb::Point(120000, 162000),
+                                                wire_l,
+                                                wire_r,
+                                                &resizer_);
+  std::unordered_set<odb::dbInst*> before;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    before.insert(inst);
+  }
+  {
+    est::IncrementalParasiticsGuard guard(&ep_);
+    repair_design.repairNet(
+        cap_junc, drvr_pin, /*max_cap=*/55e-15f, /*max_length=*/0, corner);
+  }
+  size_t junc_reps = 0;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (!before.contains(inst)) {
+      ++junc_reps;
+      EXPECT_LT(inst->getMaster()->getArea(), buf_x4_master->getArea());
+    }
+  }
+  EXPECT_EQ(junc_reps, 1u);
+}
+
+TEST_F(TestResizer, RepairClkNetsUsesClockBuffersAndRestoresSizingLimits)
+{
+  TestRepairDesign repair_design(&resizer_);
+  setupRepairNetTest(repair_design);
+
+  // Run data-net repair first, then clock-net repair, then data-net selection
+  // in the same session to exercise candidate-cache isolation across both.
+  std::unordered_set<odb::dbInst*> before_data;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    before_data.insert(inst);
+  }
+  resizer_.repairDesign(/*max_wire_length=*/250e-6,
+                        /*slew_margin=*/0.0,
+                        /*cap_margin=*/0.0,
+                        /*buffer_gain=*/0.0,
+                        /*match_cell_footprint=*/false,
+                        /*reroute=*/false,
+                        /*verbose=*/false);
+  size_t data_reps = 0;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (!before_data.contains(inst)) {
+      ++data_reps;
+      sta::LibertyCell* cell = db_network_->libertyCell(inst);
+      ASSERT_NE(cell, nullptr);
+      EXPECT_NE(resizer_.getBufferUse(cell), BufferUse::CLOCK);
+    }
+  }
+  EXPECT_GT(data_reps, 0u);
+
+  const sta::LibertyCellSeq swappable_before
+      = resizer_.getSwappableCells(resizer_.lowestDriveBufferCell());
+  std::unordered_set<odb::dbInst*> before_clk;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    before_clk.insert(inst);
+  }
+  // On 150 um clock wire segments, Nangate45 CLKBUF_X* meets target_slew and
+  // DRC so repairClkNets must insert dedicated clock buffers.
+  repair_design.repairClkNets(/*max_wire_length=*/150e-6);
+  size_t clk_reps = 0;
+  size_t clk_use_count = 0;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (!before_clk.contains(inst)) {
+      ++clk_reps;
+      sta::LibertyCell* cell = db_network_->libertyCell(inst);
+      ASSERT_NE(cell, nullptr);
+      if (resizer_.getBufferUse(cell) == BufferUse::CLOCK) {
+        ++clk_use_count;
+      }
+    }
+  }
+  EXPECT_GT(clk_reps, 0u);
+  EXPECT_GT(clk_use_count, 0u);
+
+  EXPECT_EQ(resizer_.getSwappableCells(resizer_.lowestDriveBufferCell()),
+            swappable_before);
+  repair_design.init();
+  sta::LibertyCell* post_clk = repair_design.findBufferUnderSlew(
+      /*max_slew=*/1e-9f, /*load_cap=*/15e-15f);
+  ASSERT_NE(post_clk, nullptr);
+  EXPECT_NE(resizer_.getBufferUse(post_clk), BufferUse::CLOCK);
+
+  sta::LibertyCell* buf_x1 = sta_->network()->findLibertyCell("BUF_X1");
+  sta::LibertyCell* buf_x2 = sta_->network()->findLibertyCell("BUF_X2");
+  sta::LibertyCell* buf_x4 = sta_->network()->findLibertyCell("BUF_X4");
+  ASSERT_NE(buf_x1, nullptr);
+  ASSERT_NE(buf_x2, nullptr);
+  ASSERT_NE(buf_x4, nullptr);
+  auto* area_prop = odb::dbDoubleProperty::find(block_, "limit_sizing_area");
+  auto* leak_prop = odb::dbDoubleProperty::find(block_, "limit_sizing_leakage");
+  ASSERT_NE(area_prop, nullptr);
+  ASSERT_NE(leak_prop, nullptr);
+
+  // Verify sizing_area_limit_ restoration on uncached BUF_X2 -> BUF_X4
+  // (1.75x area > 1.5, 2.00x leakage <= 100.0).
+  area_prop->setValue(1.5);
+  leak_prop->setValue(100.0);
+  resizer_.initBlock();
+  resizer_.resizePreamble();
+  repair_design.repairClkNets(/*max_wire_length=*/0);
+  const sta::LibertyCellSeq area_limited = resizer_.getSwappableCells(buf_x2);
+  EXPECT_EQ(std::ranges::find(area_limited, buf_x4), area_limited.end());
+
+  // Verify sizing_leakage_limit_ restoration on uncached BUF_X1 -> BUF_X4
+  // (2.33x area <= 100.0, 4.02x leakage > 3.0).
+  area_prop->setValue(100.0);
+  leak_prop->setValue(3.0);
+  resizer_.initBlock();
+  resizer_.resizePreamble();
+  repair_design.repairClkNets(/*max_wire_length=*/0);
+  const sta::LibertyCellSeq leak_limited = resizer_.getSwappableCells(buf_x1);
+  EXPECT_EQ(std::ranges::find(leak_limited, buf_x4), leak_limited.end());
 }
 
 }  // namespace rsz

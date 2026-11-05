@@ -702,7 +702,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool isCombinational(sta::LibertyCell* cell) const;
   std::vector<sta::LibertyPort*> libraryOutputPins(
       sta::LibertyCell* cell) const;
-  float maxLoad(sta::Cell* cell);
+  float maxLoad(sta::Cell* cell, const sta::Scene* corner = nullptr);
   //==============================
   float findTargetLoad(sta::LibertyCell* cell);
   float findTargetLoad(sta::LibertyCell* cell,
