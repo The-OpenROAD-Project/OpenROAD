@@ -410,11 +410,7 @@ void SACoreSoftMacro::calBoundaryPenalty()
   // normalization
   term.value = term.value / number_of_movable_macros;
   if (graphics_) {
-    graphics_->setBoundaryPenalty(
-        {.name = "Boundary",
-         .weight = boundary_weight_,
-         .value = term.value,
-         .normalization_factor = term.normalization_factor});
+    graphics_->setPenalty(term);
   }
 }
 
@@ -465,11 +461,7 @@ void SACoreSoftMacro::calSoftBlockagePenalty()
   // normalization
   term.value = term.value / tot_num_macros;
   if (graphics_) {
-    graphics_->setSoftBlockagePenalty(
-        {.name = "Soft Blockage",
-         .weight = soft_blockage_weight_,
-         .value = term.value,
-         .normalization_factor = term.normalization_factor});
+    graphics_->setPenalty(term);
   }
 }
 
@@ -504,11 +496,7 @@ void SACoreSoftMacro::calFixedMacrosPenalty()
   }
 
   if (graphics_) {
-    graphics_->setFixedMacrosPenalty(
-        {.name = "Fixed Macros",
-         .weight = fixed_macros_weight_,
-         .value = term.value,
-         .normalization_factor = term.normalization_factor});
+    graphics_->setPenalty(term);
   }
 }
 
@@ -723,11 +711,7 @@ void SACoreSoftMacro::calNotchPenalty()
     term.value = calSingleNotchPenalty(width, height);
 
     if (graphics_) {
-      graphics_->setNotchPenalty(
-          {.name = "Notch",
-           .weight = notch_weight_,
-           .value = term.value,
-           .normalization_factor = term.normalization_factor});
+      graphics_->setPenalty(term);
     }
     return;
   }
@@ -848,11 +832,7 @@ void SACoreSoftMacro::calNotchPenalty()
   }
 
   if (graphics_) {
-    graphics_->setNotchPenalty(
-        {.name = "Notch",
-         .weight = notch_weight_,
-         .value = term.value,
-         .normalization_factor = term.normalization_factor});
+    graphics_->setPenalty(term);
   }
 }
 
