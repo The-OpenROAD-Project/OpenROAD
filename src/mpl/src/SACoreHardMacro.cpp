@@ -163,14 +163,11 @@ void SACoreHardMacro::restoreState()
 
 void SACoreHardMacro::setWeights(const SACoreWeights& weights)
 {
-  core_weights_ = weights;
-
-  // calNormCost() sums penalties_[i].weight, so keep it in sync.
-  penalties_[kArea].weight = core_weights_.area;
-  penalties_[kOutline].weight = core_weights_.outline;
-  penalties_[kWirelength].weight = core_weights_.wirelength;
-  penalties_[kGuidance].weight = core_weights_.guidance;
-  penalties_[kFence].weight = core_weights_.fence;
+  penalties_[kArea].weight = weights.area;
+  penalties_[kOutline].weight = weights.outline;
+  penalties_[kWirelength].weight = weights.wirelength;
+  penalties_[kGuidance].weight = weights.guidance;
+  penalties_[kFence].weight = weights.fence;
 }
 
 void SACoreHardMacro::printResults() const

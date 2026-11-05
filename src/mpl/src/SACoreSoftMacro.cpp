@@ -65,16 +65,11 @@ SACoreSoftMacro::SACoreSoftMacro(PhysicalHierarchy* tree,
                                         block),
       root_(tree->root.get())
 {
-  boundary_weight_ = soft_weights.boundary;
-  soft_blockage_weight_ = soft_weights.soft_blockage;
-  notch_weight_ = soft_weights.notch;
-
-  penalties_.push_back({.name = "Boundary", .weight = boundary_weight_});
+  penalties_.push_back({.name = "Boundary", .weight = soft_weights.boundary});
   penalties_.push_back(
-      {.name = "Soft Blockage", .weight = soft_blockage_weight_});
-  penalties_.push_back(
-      {.name = "Fixed Macros", .weight = fixed_macros_weight_});
-  penalties_.push_back({.name = "Notch", .weight = notch_weight_});
+      {.name = "Soft Blockage", .weight = soft_weights.soft_blockage});
+  penalties_.push_back({.name = "Fixed Macros", .weight = 100.0f});
+  penalties_.push_back({.name = "Notch", .weight = soft_weights.notch});
 
   resize_prob_ = resize_prob;
   notch_h_th_ = notch_h_threshold;
@@ -233,7 +228,7 @@ void SACoreSoftMacro::calBoundaryPenalty()
   Penalty& penalty = penalties_[kBoundary];
   penalty.value = 0.0;
 
-  if (boundary_weight_ <= 0.0) {
+  if (penalties_[kBoundary].weight <= 0.0) {
     return;
   }
 
@@ -293,7 +288,7 @@ void SACoreSoftMacro::calSoftBlockagePenalty()
 {
   Penalty& penalty = penalties_[kSoftBlockage];
   penalty.value = 0.0;
-  if (soft_blockages_.empty() || soft_blockage_weight_ <= 0.0) {
+  if (soft_blockages_.empty() || penalties_[kSoftBlockage].weight <= 0.0) {
     return;
   }
 
@@ -560,7 +555,7 @@ void SACoreSoftMacro::calNotchPenalty()
     graphics_->clearNotches();
   }
 
-  if (notch_weight_ <= 0.0) {
+  if (penalties_[kNotch].weight <= 0.0) {
     return;
   }
 

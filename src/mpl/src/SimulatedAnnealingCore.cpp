@@ -47,14 +47,12 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
                                                   odb::dbBlock* block)
     : outline_(outline), graphics_(graphics), block_(block)
 {
-  core_weights_ = weights;
-
   penalties_ = {
-      {.name = "Area", .weight = core_weights_.area},
-      {.name = "Outline", .weight = core_weights_.outline},
-      {.name = "Wire Length", .weight = core_weights_.wirelength},
-      {.name = "Guidance", .weight = core_weights_.guidance},
-      {.name = "Fence", .weight = core_weights_.fence},
+      {.name = "Area", .weight = weights.area},
+      {.name = "Outline", .weight = weights.outline},
+      {.name = "Wire Length", .weight = weights.wirelength},
+      {.name = "Guidance", .weight = weights.guidance},
+      {.name = "Fence", .weight = weights.fence},
   };
 
   pos_swap_prob_ = pos_swap_prob;
@@ -232,7 +230,7 @@ void SimulatedAnnealingCore<T>::calOutlinePenalty()
 template <class T>
 void SimulatedAnnealingCore<T>::calWirelength()
 {
-  if (core_weights_.wirelength <= 0.0) {
+  if (penalties_[kWirelength].weight <= 0.0) {
     return;
   }
 
@@ -330,7 +328,7 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
   // Initialization
   Penalty& penalty = penalties_[kFence];
   penalty.value = 0.0;
-  if (core_weights_.fence <= 0.0 || fences_.empty()) {
+  if (penalties_[kFence].weight <= 0.0 || fences_.empty()) {
     return;
   }
 
@@ -374,7 +372,7 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
   // Initialization
   Penalty& penalty = penalties_[kGuidance];
   penalty.value = 0.0;
-  if (core_weights_.guidance <= 0.0 || guides_.empty()) {
+  if (penalties_[kGuidance].weight <= 0.0 || guides_.empty()) {
     return;
   }
 
