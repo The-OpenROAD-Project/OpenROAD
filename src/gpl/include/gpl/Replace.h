@@ -52,8 +52,9 @@ class NesterovPlace;
 using Cluster = std::vector<odb::dbInst*>;
 using Clusters = std::vector<Cluster>;
 
-// One Nesterov iteration: the values of a row in the iteration table that
-// the log prints every 10 iterations.
+// One Nesterov iteration.  With a single region these are the values of a
+// row in the iteration table the log prints every 10 iterations; with
+// regions the log prints a row per region.
 struct PlaceIteration
 {
   int iteration = 0;
@@ -66,11 +67,15 @@ struct PlaceIteration
   float density_penalty = 0;
 };
 
-// The outcome of a global placement run.
+// The outcome of a global placement run.  A run that places nothing (no
+// placeable instances, or incremental placement with every instance already
+// placed) returns a default-constructed result.
 struct PlaceResult
 {
   // The iteration counter when the run stopped.  A run that converges at
-  // iteration N stops at N; one that runs out stops at the iteration limit.
+  // iteration N stops at N, the last iteration in the trace.  A run that
+  // runs out stops at the iteration limit, one past the trace, and one that
+  // diverges in the gradient step stops before recording that iteration.
   int final_iteration = 0;
   // Unscaled overflow of the final placement, averaged over the regions.
   float overflow = 0;

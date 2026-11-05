@@ -5,6 +5,7 @@
 // final values match the placement written back to odb, and the trace
 // holds every Nesterov iteration without graphics or debug enabled.
 
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -40,8 +41,8 @@ class PlaceResultTest : public tst::Fixture
                                 const int first,
                                 const int last)
   {
-    ASSERT_EQ(trace.size(), last - first + 1);
-    for (int i = 0; i < trace.size(); ++i) {
+    ASSERT_EQ(std::ssize(trace), last - first + 1);
+    for (int i = 0; i < std::ssize(trace); ++i) {
       EXPECT_EQ(trace[i].iteration, first + i);
     }
   }
@@ -71,7 +72,7 @@ TEST_F(PlaceResultTest, TraceHoldsEveryIteration)
 
   expectConsecutive(result.trace, 0, result.final_iteration);
   EXPECT_EQ(result.trace.back().overflow, result.overflow);
-  for (int i = 0; i + 1 < result.trace.size(); ++i) {
+  for (int i = 0; i + 1 < std::ssize(result.trace); ++i) {
     EXPECT_GT(result.trace[i].overflow, options.overflow)
         << "iteration " << result.trace[i].iteration;
   }

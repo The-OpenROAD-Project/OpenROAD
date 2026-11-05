@@ -759,6 +759,7 @@ bool NesterovPlace::tryRoutabilityDivergeRecovery(float& curA)
     nb->revertToSnapshot();
     nb->resetMinSumOverflow();
   }
+  reverted_since_overflow_update_ = true;
 
   // Momentum reset due to divergence.
   curA = 1.0;
@@ -814,6 +815,7 @@ NesterovPlace::DivergeAction NesterovPlace::isDiverged(float& curA)
     for (auto& nb : nbVec_) {
       nb->saveSnapshot();
     }
+    snapshot_overflow_ = average_overflow_unscaled_;
     is_diverge_snapshot_saved_ = true;
   }
 
@@ -888,6 +890,7 @@ void NesterovPlace::routabilitySnapshot(
     for (auto& nb : nbVec_) {
       nb->saveSnapshot();
     }
+    snapshot_overflow_ = average_overflow_unscaled_;
 
     log_->info(GPL, 38, "Routability snapshot saved at iter = {}", iter + 1);
     odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
@@ -1058,6 +1061,7 @@ void NesterovPlace::runRoutability(int iter,
         nb->revertToSnapshot();
         nb->resetMinSumOverflow();
       }
+      reverted_since_overflow_update_ = true;
     }
 
     if (is_routability_need_ && isRevertInitNeeded) {
@@ -1557,7 +1561,7 @@ PlaceResult NesterovPlace::doNesterovPlace(int start_iter)
   PlaceResult result;
   result.final_iteration = nesterov_iter;
   result.overflow = reverted_since_overflow_update_
-                        ? diverge_snapshot_average_overflow_unscaled_
+                        ? snapshot_overflow_
                         : average_overflow_unscaled_;
   result.diverged = num_region_diverged_ > 0;
   result.trace = std::move(trace_);

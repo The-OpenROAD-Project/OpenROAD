@@ -234,7 +234,7 @@ PlaceResult Replace::doIncrementalPlace(const int threads,
   // Phase 1 is allowed to diverge and hand off to phase 2 instead of
   // aborting the whole incremental run, so doNesterovPlace() must not throw
   // (and log an ERROR) on a divergence it is expected to recover from; it
-  // reports one via divergedLastRun() instead. Any other error (a resizer or
+  // reports one in PlaceResult::diverged instead. Any other error (a resizer or
   // timing-driven failure, say) still throws and propagates normally -
   // nothing here is set up to recover from those.
   np_->setAllowDivergenceRecovery(true);
