@@ -118,7 +118,9 @@ class SimulatedAnnealingCore
   void useBestResult();
 
   virtual float calNormCost() const;
-  virtual void calPenalty() = 0;
+  virtual void calPenalty();
+  virtual void calExtraPenalties() {}
+  
   void calAreaPenalty();
   void calOutlinePenalty();
   void calWirelength();

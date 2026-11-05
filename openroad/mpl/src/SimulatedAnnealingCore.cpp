@@ -200,6 +200,20 @@ std::vector<T> SimulatedAnnealingCore<T>::getMacros() const
   return macros_;
 }
 
+template <class T>
+void SimulatedAnnealingCore<T>::calPenalty()
+{
+  calAreaPenalty();
+  calOutlinePenalty();
+  calWirelength();
+  calGuidancePenalty();
+  calFencePenalty();
+  calExtraPenalties();
+  if (graphics_) {
+    graphics_->penaltyCalculated(calNormCost());
+  }
+}
+
 // Private functions
 template <class T>
 void SimulatedAnnealingCore<T>::calAreaPenalty()

@@ -47,8 +47,6 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
   void fillDeadSpace() override {}
 
  private:
-  void calPenalty() override;
-
   void perturb() override;
 };
 

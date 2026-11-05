@@ -69,18 +69,6 @@ void SACoreHardMacro::run()
   }
 }
 
-void SACoreHardMacro::calPenalty()
-{
-  calAreaPenalty();
-  calOutlinePenalty();
-  calWirelength();
-  calGuidancePenalty();
-  calFencePenalty();
-  if (graphics_) {
-    graphics_->penaltyCalculated(calNormCost());
-  }
-}
-
 void SACoreHardMacro::perturb()
 {
   if (macros_.empty()) {

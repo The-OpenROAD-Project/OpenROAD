@@ -84,7 +84,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
     kNotch
   };
 
-  void calPenalty() override;
+  void calExtraPenalties() override;
 
   void perturb() override;
   // actions used

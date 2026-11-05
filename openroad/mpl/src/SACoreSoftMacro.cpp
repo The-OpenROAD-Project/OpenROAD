@@ -119,20 +119,12 @@ bool SACoreSoftMacro::isValid() const
 }
 
 // Operations
-void SACoreSoftMacro::calPenalty()
+void SACoreSoftMacro::calExtraPenalties()
 {
-  calAreaPenalty();
-  calOutlinePenalty();
-  calWirelength();
-  calGuidancePenalty();
-  calFencePenalty();
   calBoundaryPenalty();
   calSoftBlockagePenalty();
   calNotchPenalty();
   calFixedMacrosPenalty();
-  if (graphics_) {
-    graphics_->penaltyCalculated(calNormCost());
-  }
 }
 
 void SACoreSoftMacro::perturb()
