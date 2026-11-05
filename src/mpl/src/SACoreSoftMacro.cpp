@@ -220,8 +220,8 @@ void SACoreSoftMacro::restoreState()
 // have their lower left corner based on the parent's outline.
 void SACoreSoftMacro::calBoundaryPenalty()
 {
-  Penalty& penalty = penalties_[kBoundary];
-  penalty.value = 0.0;
+  Penalty& boundary_penalty = penalties_[kBoundary];
+  boundary_penalty.value = 0.0;
 
   if (penalties_[kBoundary].weight <= 0.0) {
     return;
@@ -262,14 +262,15 @@ void SACoreSoftMacro::calBoundaryPenalty()
       y_dist_from_root
           = std::min(global_ly, std::abs(root_->getHeight() - global_uy));
 
-      penalty.value += block_->dbuToMicrons(x_dist_from_root + y_dist_from_root)
-                       * soft_macro.getNumMacro();
+      boundary_penalty.value
+          += block_->dbuToMicrons(x_dist_from_root + y_dist_from_root)
+             * soft_macro.getNumMacro();
     }
   }
   // normalization
-  penalty.value = penalty.value / number_of_movable_macros;
+  boundary_penalty.value = boundary_penalty.value / number_of_movable_macros;
   if (graphics_) {
-    graphics_->setPenalty(penalty);
+    graphics_->setPenalty(boundary_penalty);
   }
 }
 
@@ -281,8 +282,8 @@ void SACoreSoftMacro::calBoundaryPenalty()
 //    mixed clusters with large std cell area have less penalty.
 void SACoreSoftMacro::calSoftBlockagePenalty()
 {
-  Penalty& penalty = penalties_[kSoftBlockage];
-  penalty.value = 0.0;
+  Penalty& soft_blockage_penalty = penalties_[kSoftBlockage];
+  soft_blockage_penalty.value = 0.0;
   if (soft_blockages_.empty() || penalties_[kSoftBlockage].weight <= 0.0) {
     return;
   }
@@ -312,15 +313,15 @@ void SACoreSoftMacro::calSoftBlockagePenalty()
         const float macro_dominance
             = cluster->getMacroArea() / static_cast<float>(cluster->getArea());
 
-        penalty.value
+        soft_blockage_penalty.value
             += overlap.area() * soft_macro.getNumMacro() * macro_dominance;
       }
     }
   }
   // normalization
-  penalty.value = penalty.value / tot_num_macros;
+  soft_blockage_penalty.value = soft_blockage_penalty.value / tot_num_macros;
   if (graphics_) {
-    graphics_->setPenalty(penalty);
+    graphics_->setPenalty(soft_blockage_penalty);
   }
 }
 
@@ -330,8 +331,8 @@ void SACoreSoftMacro::calFixedMacrosPenalty()
     return;
   }
 
-  Penalty& penalty = penalties_[kFixedMacros];
-  penalty.value = 0.0f;
+  Penalty& fixed_macros_penalty = penalties_[kFixedMacros];
+  fixed_macros_penalty.value = 0.0f;
 
   for (const odb::Rect& fixed_macro : fixed_macros_) {
     for (const int macro_id : pos_seq_) {
@@ -350,12 +351,12 @@ void SACoreSoftMacro::calFixedMacrosPenalty()
         continue;
       }
 
-      penalty.value += block_->dbuAreaToMicrons(overlap.area());
+      fixed_macros_penalty.value += block_->dbuAreaToMicrons(overlap.area());
     }
   }
 
   if (graphics_) {
-    graphics_->setPenalty(penalty);
+    graphics_->setPenalty(fixed_macros_penalty);
   }
 }
 
@@ -555,8 +556,8 @@ void SACoreSoftMacro::calNotchPenalty()
   }
 
   // Initialization
-  Penalty& penalty = penalties_[kNotch];
-  penalty.value = 0.0;
+  Penalty& notch_penalty = penalties_[kNotch];
+  notch_penalty.value = 0.0;
   notch_h_th_ = outline_.dy() / 10;
   notch_v_th_ = outline_.dx() / 10;
   int width = 0;
@@ -567,10 +568,10 @@ void SACoreSoftMacro::calNotchPenalty()
   if (!isValid()) {
     width = std::max(width_, outline_.dx());
     height = std::max(height_, outline_.dy());
-    penalty.value = calSingleNotchPenalty(width, height);
+    notch_penalty.value = calSingleNotchPenalty(width, height);
 
     if (graphics_) {
-      graphics_->setPenalty(penalty);
+      graphics_->setPenalty(notch_penalty);
     }
     return;
   }
@@ -679,7 +680,7 @@ void SACoreSoftMacro::calNotchPenalty()
       }
 
       if (is_notch) {
-        penalty.value += calSingleNotchPenalty(width, height);
+        notch_penalty.value += calSingleNotchPenalty(width, height);
         if (graphics_) {
           graphics_->addNotch(odb::Rect(x_coords[start_col],
                                         y_coords[start_row],
@@ -691,7 +692,7 @@ void SACoreSoftMacro::calNotchPenalty()
   }
 
   if (graphics_) {
-    graphics_->setPenalty(penalty);
+    graphics_->setPenalty(notch_penalty);
   }
 }
 
