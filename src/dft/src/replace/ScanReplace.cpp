@@ -79,20 +79,15 @@ bool FuncEquiv(const sta::FuncExpr* non_scan_expr,
   }
 }
 
-// State variable names (e.g. IQ and IQ_N in ff(IQ, IQ_N)) are local to each
-// cell, so they are bound by position: the first variable of the i-th ff or
-// latch group to the first variable of the i-th group of the other cell, and
-// likewise for the second (inverted) variable. Bound groups must also share
-// their clock (clocked_on / enable), clear and preset functions and the
-// clear-and-preset output values; only next_state may differ, as the scan mux
-// is part of it. Returns false when no such binding exists.
-bool BindStatePorts(const sta::LibertyCell* non_scan_cell,
-                    const sta::LibertyCell* scan_cell,
-                    StatePortMap& state_ports)
+// Binds the state variables of from_seqs to those of to_seqs by position: the
+// first variable of the i-th ff or latch group to the first variable of the
+// i-th group, and likewise for the second (inverted) variable. Returns false
+// when the groups do not line up.
+bool BindSequentialOutputs(const sta::SequentialSeq& from_seqs,
+                           const sta::SequentialSeq& to_seqs,
+                           StatePortMap& state_ports)
 {
-  const sta::SequentialSeq& non_scan_seqs = non_scan_cell->sequentials();
-  const sta::SequentialSeq& scan_seqs = scan_cell->sequentials();
-  if (non_scan_seqs.size() != scan_seqs.size()) {
+  if (from_seqs.size() != to_seqs.size()) {
     return false;
   }
   const auto bind = [&state_ports](const sta::LibertyPort* from,
@@ -105,14 +100,37 @@ bool BindStatePorts(const sta::LibertyCell* non_scan_cell,
     }
     return true;
   };
-  for (size_t i = 0; i < non_scan_seqs.size(); ++i) {
-    const sta::Sequential& non_scan_seq = non_scan_seqs[i];
-    const sta::Sequential& scan_seq = scan_seqs[i];
-    if (non_scan_seq.isRegister() != scan_seq.isRegister()
-        || !bind(non_scan_seq.output(), scan_seq.output())
-        || !bind(non_scan_seq.outputInv(), scan_seq.outputInv())) {
+  for (size_t i = 0; i < from_seqs.size(); ++i) {
+    const sta::Sequential& from_seq = from_seqs[i];
+    const sta::Sequential& to_seq = to_seqs[i];
+    if (from_seq.isRegister() != to_seq.isRegister()
+        || !bind(from_seq.output(), to_seq.output())
+        || !bind(from_seq.outputInv(), to_seq.outputInv())) {
       return false;
     }
+  }
+  return true;
+}
+
+// State variable names (e.g. IQ and IQ_N in ff(IQ, IQ_N)) are local to each
+// cell, so the non-scan cell's state variables are bound to the scan cell's
+// by position (see BindSequentialOutputs). The binding only holds if each
+// pair of groups behaves the same:
+// - clock (clocked_on / enable), clear and preset functions and the
+//   clear-and-preset output values match the scan cell's;
+// - next_state matches the scan cell's test_cell, which describes the cell
+//   with scan disabled. The scan cell's own next_state includes the scan mux.
+//   Comparing it catches a scan cell that stores the inverted data, e.g.
+//   next_state "!D" in the test_cell against "D".
+// Returns false when no such binding exists.
+bool BindStatePorts(const sta::LibertyCell* non_scan_cell,
+                    const sta::LibertyCell* scan_cell,
+                    StatePortMap& state_ports)
+{
+  const sta::SequentialSeq& non_scan_seqs = non_scan_cell->sequentials();
+  const sta::SequentialSeq& scan_seqs = scan_cell->sequentials();
+  if (!BindSequentialOutputs(non_scan_seqs, scan_seqs, state_ports)) {
+    return false;
   }
   for (size_t i = 0; i < non_scan_seqs.size(); ++i) {
     const sta::Sequential& non_scan_seq = non_scan_seqs[i];
@@ -123,6 +141,22 @@ bool BindStatePorts(const sta::LibertyCell* non_scan_cell,
         || non_scan_seq.clearPresetOutput() != scan_seq.clearPresetOutput()
         || non_scan_seq.clearPresetOutputInv()
                != scan_seq.clearPresetOutputInv()) {
+      return false;
+    }
+  }
+
+  const sta::TestCell* test_cell = scan_cell->testCell();
+  if (!test_cell) {
+    return false;
+  }
+  const sta::SequentialSeq& test_seqs = test_cell->sequentials();
+  StatePortMap test_state_ports;
+  if (!BindSequentialOutputs(non_scan_seqs, test_seqs, test_state_ports)) {
+    return false;
+  }
+  for (size_t i = 0; i < non_scan_seqs.size(); ++i) {
+    if (!FuncEquiv(
+            non_scan_seqs[i].data(), test_seqs[i].data(), test_state_ports)) {
       return false;
     }
   }
