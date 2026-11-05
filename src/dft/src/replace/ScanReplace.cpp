@@ -74,11 +74,13 @@ bool BindStatePorts(const sta::LibertyCell* non_scan_cell,
   return true;
 }
 
-bool IsBoundStatePort(const sta::LibertyPort* port,
-                      const StatePortMap& state_ports)
+// Returns true if scan_port is a scan cell state variable bound in
+// state_ports.
+bool IsBoundScanStatePort(const sta::LibertyPort* scan_port,
+                          const StatePortMap& state_ports)
 {
-  return std::ranges::any_of(state_ports, [port](const auto& binding) {
-    return binding.first == port || binding.second == port;
+  return std::ranges::any_of(state_ports, [scan_port](const auto& binding) {
+    return binding.second == scan_port;
   });
 }
 
@@ -101,7 +103,7 @@ bool FuncEquiv(const sta::FuncExpr* non_scan_expr,
       if (auto it = state_ports.find(non_scan_port); it != state_ports.end()) {
         return it->second == scan_port;
       }
-      return !IsBoundStatePort(scan_port, state_ports)
+      return !IsBoundScanStatePort(scan_port, state_ports)
              && sta::LibertyPort::equiv(non_scan_port, scan_port);
     }
     case sta::FuncExpr::Op::not_:
@@ -126,7 +128,7 @@ sta::LibertyPort* FindEquivalentPortInScanCell(
   while (scan_cell_ports_iter.hasNext()) {
     sta::LibertyPort* scan_cell_port = scan_cell_ports_iter.next();
     if (scan_cell_port->isPwrGnd()
-        || IsBoundStatePort(scan_cell_port, state_ports)) {
+        || IsBoundScanStatePort(scan_cell_port, state_ports)) {
       continue;
     }
     bool port_equiv
