@@ -36,6 +36,7 @@
 #include "db/tech/frViaDef.h"
 #include "dr/FlexDR.h"
 #include "dr/FlexMazeTypes.h"
+#include "dr/MarkerGrowth.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frProfileTask.h"
@@ -1892,11 +1893,41 @@ void FlexDRWorker::identifyCongestionLevel()
   }
 }
 
+// Counts the worker's markers with a full check (see dr/MarkerGrowth.h); no
+// routing decision reads the markers it leaves in gcWorker_.
+bool FlexDRWorker::route_queue_markersGrew(const int num_routed)
+{
+  gcWorker_->resetTargetNet();
+  gcWorker_->setEnableSurgicalFix(false);
+  gcWorker_->main();
+  const auto num_markers = std::ranges::count_if(
+      gcWorker_->getMarkers(),
+      [this](const auto& m) { return getDrcBox().intersects(m->getBBox()); });
+  const int limit = markerGrowthLimit(getInitNumMarkers());
+  debugPrint(logger_,
+             DRT,
+             "autotuner",
+             1,
+             "Worker ({} {}) ({} {}) drc cost {} marker cost {}: {} markers "
+             "after {} routed nets (limit {})",
+             getRouteBox().xMin(),
+             getRouteBox().yMin(),
+             getRouteBox().xMax(),
+             getRouteBox().yMax(),
+             workerDRCCost_,
+             workerMarkerCost_,
+             num_markers,
+             num_routed,
+             limit);
+  return num_markers > limit;
+}
+
 void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
 {
   int gc_version = 1;
   std::map<frBlockObject*, std::pair<int, int>> obj_gc_version;
   auto& workerRegionQuery = getWorkerRegionQuery();
+  int num_routed = 0;
   while (!rerouteQueue.empty()) {
     auto& entry = rerouteQueue.front();
     frBlockObject* obj = entry.block;
@@ -2094,6 +2125,10 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
         auto net = static_cast<drNet*>(obj);
         graphics_->endNet(net);
       }
+    }
+    if (didRoute && stopOnMarkerGrowth_ && isMarkerGrowthCheck(++num_routed)
+        && route_queue_markersGrew(num_routed)) {
+      break;
     }
   }
 }
