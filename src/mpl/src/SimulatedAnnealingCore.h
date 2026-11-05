@@ -79,7 +79,7 @@ class SimulatedAnnealingCore
   int64_t getArea() const;
   std::vector<T> getMacros() const;
 
-  virtual void initialize() = 0;
+  virtual void initialize();
   virtual void run() = 0;
   virtual void fillDeadSpace() = 0;
 
@@ -111,6 +111,7 @@ class SimulatedAnnealingCore
   void setAvailableRegionsForUnconstrainedPins(
       const BoundaryRegionList& regions);
   void initSequencePair();
+  virtual void findFixedMacros() {}
   void setDieArea(const odb::Rect& die_area);
   void updateBestResult(float cost);
   void useBestResult();

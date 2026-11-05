@@ -52,8 +52,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 
   void printResults() const;  // just for test
 
-  // Initialize the SA worker
-  void initialize() override;
   // adjust the size of MixedCluster to fill the empty space
   void fillDeadSpace() override;
   void attemptMacroClusterAlignment();
@@ -126,7 +124,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void attemptCentralization(float pre_cost);
   void moveFloorplan(const odb::Point& offset);
 
-  void findFixedMacros();
+  void findFixedMacros() override;
 
   std::vector<odb::Rect> soft_blockages_;
   std::vector<odb::Rect> fixed_macros_;

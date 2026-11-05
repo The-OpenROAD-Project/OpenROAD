@@ -682,6 +682,69 @@ void SimulatedAnnealingCore<T>::reportLocations() const
 }
 
 template <class T>
+void SimulatedAnnealingCore<T>::initialize()
+{
+  initSequencePair();
+  findFixedMacros();
+
+  std::vector<int> width_list;
+  std::vector<int> height_list;
+  std::vector<std::vector<float>> value_lists(penalties_.size());
+
+  // We don't want to stop in the normalization factor setup
+  MplObserver* save_graphics = graphics_;
+  graphics_ = nullptr;
+
+  for (int i = 0; i < num_perturb_per_step_; i++) {
+    saveState();
+    perturb();
+    if (!invalid_states_allowed_ && !isValid()) {
+      restoreState();
+      continue;
+    }
+
+    // store current penalties
+    width_list.push_back(width_);
+    height_list.push_back(height_);
+    for (int j = 0; j < penalties_.size(); j++) {
+      value_lists[j].push_back(penalties_[j].value);
+    }
+  }
+  graphics_ = save_graphics;
+
+  // Floor near-zero normalization factors to 1.0.
+  for (int j = 0; j < penalties_.size(); j++) {
+    penalties_[j].normalization_factor = calAverage(value_lists[j]);
+    if (penalties_[j].normalization_factor <= 1e-4) {
+      penalties_[j].normalization_factor = 1.0;
+    }
+  }
+
+  // Calculate initial temperature
+  std::vector<float> cost_list;
+  for (int i = 0; i < width_list.size(); i++) {
+    width_ = width_list[i];
+    height_ = height_list[i];
+    for (int j = 0; j < penalties_.size(); j++) {
+      penalties_[j].value = value_lists[j][i];
+    }
+    cost_list.push_back(calNormCost());
+  }
+
+  float delta_cost = 0.0;
+  for (int i = 1; i < cost_list.size(); i++) {
+    delta_cost += std::abs(cost_list[i] - cost_list[i - 1]);
+  }
+
+  if (cost_list.size() > 1 && delta_cost > 0.0) {
+    init_temperature_
+        = (-1.0) * (delta_cost / (cost_list.size() - 1)) / std::log(init_prob_);
+  } else {
+    init_temperature_ = 1.0;
+  }
+}
+
+template <class T>
 void SimulatedAnnealingCore<T>::fastSA()
 {
   float cost = calNormCost();
