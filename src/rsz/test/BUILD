@@ -72,6 +72,7 @@ TESTS = [
     "repair_design4",
     "repair_design5",
     "repair_design6",
+    "repair_design_case_slew",
     "repair_design_outside_core",
     "repair_fanout1",
     "repair_fanout1_hier",

@@ -743,7 +743,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   void findLongWires(sta::VertexSeq& drvrs);
   int findMaxSteinerDist(sta::Vertex* drvr, const sta::Scene* corner);
-  float driveResistance(const sta::Pin* drvr_pin) const;
+  // Max Liberty drive resistance over the fanin arcs of drvr_pin. With
+  // enabled_arcs_only, arcs disabled for timing search are skipped.
+  float driveResistance(const sta::Pin* drvr_pin,
+                        bool enabled_arcs_only = true) const;
   float bufferDriveResistance(const sta::LibertyCell* buffer) const;
   int vtCategoryCount() const;
   float cellDriveResistance(const sta::LibertyCell* cell) const;

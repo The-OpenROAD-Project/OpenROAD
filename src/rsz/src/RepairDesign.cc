@@ -1511,7 +1511,8 @@ void RepairDesign::repairNetWire(
   double load_cap = length1 * wire_cap + ref_cap;
 
   // Calculate estimated slew based on Elmore
-  float r_drvr = resizer_->driveResistance(drvr_pin_);
+  // All Liberty arcs: STA merges the slew of `when`-disabled arcs too.
+  float r_drvr = resizer_->driveResistance(drvr_pin_, false);
 
   // For top ports without a specified input drive, r_drvr is zero
   // which can make us miss the buffer insertion point. Clip r_drvr
@@ -1835,7 +1836,8 @@ void RepairDesign::repairNetJunc(
   bool repeater_right = false;
 
   // Calculate estimated slew based on RC
-  float r_drvr = resizer_->driveResistance(drvr_pin_);
+  // All Liberty arcs: STA merges the slew of `when`-disabled arcs too.
+  float r_drvr = resizer_->driveResistance(drvr_pin_, false);
   float load_slew = r_drvr * load_cap * resizer_->slew_shape_factor_;
   bool load_slew_violation = load_slew > max_load_slew_margined;
 

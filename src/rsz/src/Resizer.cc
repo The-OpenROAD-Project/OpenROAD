@@ -1539,7 +1539,8 @@ void Resizer::bufferOutput(const sta::Pin* top_pin,
 
 ////////////////////////////////////////////////////////////////
 
-float Resizer::driveResistance(const sta::Pin* drvr_pin) const
+float Resizer::driveResistance(const sta::Pin* drvr_pin,
+                               bool enabled_arcs_only) const
 {
   if (network_->isTopLevelPort(drvr_pin)) {
     sta::InputDrive* drive
@@ -1568,7 +1569,8 @@ float Resizer::driveResistance(const sta::Pin* drvr_pin) const
       return max_res;
     }
   } else {
-    if (sta::Graph* graph = sta_->graph()) {
+    sta::Graph* graph = sta_->graph();
+    if (enabled_arcs_only && graph != nullptr) {
       if (sta::Vertex* drvr_vertex = graph->pinDrvrVertex(drvr_pin)) {
         float max_res = -std::numeric_limits<float>::infinity();
         graph->visitFaninEdges(
