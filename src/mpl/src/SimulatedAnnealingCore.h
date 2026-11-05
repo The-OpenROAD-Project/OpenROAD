@@ -116,7 +116,7 @@ class SimulatedAnnealingCore
   void updateBestResult(float cost);
   void useBestResult();
 
-  virtual float calNormCost() const = 0;
+  virtual float calNormCost() const;
   virtual void calPenalty() = 0;
   void calAreaPenalty();
   void calOutlinePenalty();
@@ -129,7 +129,6 @@ class SimulatedAnnealingCore
   void calGuidancePenalty();
   void calFencePenalty();
 
-  float sumNormalizedPenalties() const;
   void savePenalties();
   void restorePenalties();
 

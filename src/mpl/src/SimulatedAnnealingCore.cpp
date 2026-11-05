@@ -401,13 +401,11 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
 }
 
 template <class T>
-float SimulatedAnnealingCore<T>::sumNormalizedPenalties() const
+float SimulatedAnnealingCore<T>::calNormCost() const
 {
   float cost = 0.0f;
   for (const Penalty& penalty : penalties_) {
-    if (penalty.normalization_factor > 0.0f) {
-      cost += penalty.weight * penalty.value / penalty.normalization_factor;
-    }
+    cost += penalty.weight * penalty.value / penalty.normalization_factor;
   }
   return cost;
 }

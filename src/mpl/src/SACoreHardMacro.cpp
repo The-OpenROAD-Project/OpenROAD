@@ -69,11 +69,6 @@ void SACoreHardMacro::run()
   }
 }
 
-float SACoreHardMacro::calNormCost() const
-{
-  return sumNormalizedPenalties();
-}
-
 void SACoreHardMacro::calPenalty()
 {
   calAreaPenalty();
