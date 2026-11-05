@@ -92,7 +92,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO GPL-0111] Timing-driven: restarting Nesterov momentum.
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-       10 |   0.3412 |  4.016597e+02 |   +1.58% |  7.85e-12 |      
+       10 |   0.3412 |  4.016597e+02 |   +0.00% |  7.85e-12 |      
        20 |   0.3820 |  4.006103e+02 |   -0.26% |  1.16e-11 |      
        30 |   0.3790 |  4.006497e+02 |   +0.01% |  1.70e-11 |      
        40 |   0.3743 |  4.004980e+02 |   -0.04% |  2.51e-11 |      
@@ -151,7 +151,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO GPL-0111] Timing-driven: restarting Nesterov momentum.
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      290 |   0.1738 |  3.998955e+02 |   -0.08% |  4.04e-07 |      
+      290 |   0.1738 |  3.998955e+02 |   +0.00% |  4.04e-07 |      
       300 |   0.1494 |  4.003690e+02 |   +0.12% |  5.95e-07 |      
       310 |   0.1265 |  4.003288e+02 |   -0.01% |  8.76e-07 |      
       320 |   0.1044 |  4.004420e+02 |   +0.03% |  1.29e-06 |      

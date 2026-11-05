@@ -1281,6 +1281,7 @@ class NesterovBase
   void nesterovAdjustPhi();
 
   void resetMinSumOverflow();
+  void setPrevHpwl(int64_t prev_hpwl) { prev_hpwl_ = prev_hpwl; }
 
   bool isDiverged() const { return isDiverged_; }
   // Resets isDiverged_ when no snapshot exists to revert to instead (the only
