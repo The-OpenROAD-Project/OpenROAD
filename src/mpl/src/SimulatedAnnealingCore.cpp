@@ -381,16 +381,16 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
     macros_[id].getBBox().intersection(guide, overlap);
 
     // maximum overlap area
-    int64_t overlap_penalty
+    int64_t penalty
         = std::min(macros_[id].getWidth(), guide.dx())
           * static_cast<int64_t>(std::min(macros_[id].getHeight(), guide.dy()));
 
     // subtract overlap
     if (overlap.dx() > 0 && overlap.dy() > 0) {
-      overlap_penalty -= (overlap.area());
+      penalty -= (overlap.area());
     }
 
-    guidance_penalty.value += block_->dbuAreaToMicrons(overlap_penalty);
+    guidance_penalty.value += block_->dbuAreaToMicrons(penalty);
   }
 
   guidance_penalty.value = guidance_penalty.value / guides_.size();
