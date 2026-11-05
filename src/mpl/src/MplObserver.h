@@ -65,7 +65,7 @@ class MplObserver
   {
   }
 
-  virtual void setPenalty(const PenaltyTerm& penalty) {}
+  virtual void setPenalty(const Penalty& penalty) {}
   virtual void penaltyCalculated(float norm_cost) {}
 
   virtual void eraseDrawing() {}

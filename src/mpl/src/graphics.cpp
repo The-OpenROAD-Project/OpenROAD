@@ -127,22 +127,22 @@ void Graphics::saStep(const std::vector<HardMacro>& macros)
   soft_macros_.clear();
 }
 
-void Graphics::report(const PenaltyTerm& term)
+void Graphics::report(const Penalty& penalty)
 {
-  const float normalized_penalty = term.value / term.normalization_factor;
+  const float normalized_penalty = penalty.value / penalty.normalization_factor;
 
   logger_->report(
       "{:25}(Norm penalty {:>8.4f}) * (weight {:>8.4f}) = cost {:>8.4f}",
-      term.name,
+      penalty.name,
       normalized_penalty,
-      term.weight,
-      normalized_penalty * term.weight);
+      penalty.weight,
+      normalized_penalty * penalty.weight);
 }
 
 void Graphics::report(const float norm_cost)
 {
-  for (const auto& [name, term] : penalty_terms_) {
-    report(term);
+  for (const auto& [name, penalty] : penalties_) {
+    report(penalty);
   }
   report({.name = "Total",
           .weight = 1.0f,
@@ -245,26 +245,27 @@ void Graphics::penaltyCalculated(float norm_cost)
 
 void Graphics::addChartPoint()
 {
-  const auto area_it = penalty_terms_.find("Area");
-  const auto outline_it = penalty_terms_.find("Outline");
-  const auto wirelength_it = penalty_terms_.find("Wire Length");
-  const float area
-      = area_it != penalty_terms_.end() ? area_it->second.value : 0;
+  const auto area_it = penalties_.find("Area");
+  const auto outline_it = penalties_.find("Outline");
+  const auto wirelength_it = penalties_.find("Wire Length");
+
+  const float area = area_it != penalties_.end() ? area_it->second.value : 0;
   const float outline
-      = outline_it != penalty_terms_.end() ? outline_it->second.value : 0;
+      = outline_it != penalties_.end() ? outline_it->second.value : 0;
   const float wirelength
-      = wirelength_it != penalty_terms_.end() ? wirelength_it->second.value : 0;
+      = wirelength_it != penalties_.end() ? wirelength_it->second.value : 0;
+      
   chart_->addPoint(iter_, {area, outline, wirelength});
 }
 
 void Graphics::resetPenalties()
 {
-  penalty_terms_.clear();
+  penalties_.clear();
 }
 
-void Graphics::setPenalty(const PenaltyTerm& penalty)
+void Graphics::setPenalty(const Penalty& penalty)
 {
-  penalty_terms_[penalty.name] = penalty;
+  penalties_[penalty.name] = penalty;
 }
 
 void Graphics::setMaxLevel(const int max_level)

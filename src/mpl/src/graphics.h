@@ -40,7 +40,7 @@ class Graphics : public web::Renderer, public MplObserver
   void finishedClustering(PhysicalHierarchy* tree) override;
 
   void setMaxLevel(int max_level) override;
-  void setPenalty(const PenaltyTerm& penalty) override;
+  void setPenalty(const Penalty& penalty) override;
   void penaltyCalculated(float norm_cost) override;
 
   void drawObjects(web::Painter& painter) override;
@@ -101,7 +101,7 @@ class Graphics : public web::Renderer, public MplObserver
   template <typename T>
   bool isSkippable(const T& macro);
 
-  void report(const PenaltyTerm& term);
+  void report(const Penalty& penalty);
   void report(float norm_cost);
   void addChartPoint();
 
@@ -138,9 +138,8 @@ class Graphics : public web::Renderer, public MplObserver
   utl::Logger* logger_;
 
   std::optional<int> max_level_;
-  // Indexed by SimulatedAnnealingCore<T>::PenaltyTermIndex /
-  // SACoreSoftMacro::PenaltyTermIndex values; sized for Soft's full set.
-  std::map<std::string, PenaltyTerm> penalty_terms_;
+  // Keyed by Penalty::name.
+  std::map<std::string, Penalty> penalties_;
 
   float best_norm_cost_ = 0;
   int skipped_ = 0;
