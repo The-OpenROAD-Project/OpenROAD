@@ -2126,9 +2126,12 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
         graphics_->endNet(net);
       }
     }
-    if (didRoute && stopOnMarkerGrowth_ && isMarkerGrowthCheck(++num_routed)
-        && route_queue_markersGrew(num_routed)) {
-      break;
+    if (didRoute) {
+      ++num_routed;
+      if (stopOnMarkerGrowth_ && isMarkerGrowthCheck(num_routed)
+          && route_queue_markersGrew(num_routed)) {
+        break;
+      }
     }
   }
 }
