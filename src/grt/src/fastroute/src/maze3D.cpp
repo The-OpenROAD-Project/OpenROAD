@@ -710,6 +710,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       }
     }
 
+    // Precompute per-layer step costs for this net. (0,0)-(1,0) represents a
+    // unit-length wire step (|Δx|+|Δy| = 1); via costs ignore coordinates.
     for (int l = 0; l < num_layers_; l++) {
       wire_step_cost[l] = getMazeRouteCost3D(netID, l, l, 0, 0, 1, 0, false);
       if (l > 0) {
@@ -794,6 +796,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         int n1a = treeedge->n1a;
         int n2a = treeedge->n2a;
 
+        // Reinitialize d1_3D_ distance grid within search region to BIG_INT.
+        // path_len_3D_, directions_3D_, and pr_3D_ are write-before-read during
+        // exploration and do not require clearing.
         const int region_width = regionX2 - regionX1 + 1;
         for (int k = 0; k < num_layers_; k++) {
           int* d1_layer = d1_base + k * layer_stride;

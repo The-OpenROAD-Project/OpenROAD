@@ -83,16 +83,20 @@ class MinHeap3D
  public:
   void resize(size_t max_nodes)
   {
-    entries_.resize(max_nodes);
-    pos_.resize(max_nodes, -1);
+    entries_.reserve(max_nodes);
+    pos_.assign(max_nodes, -1);
   }
 
+  // Clears active heap entries; pos_ entries are left as-is because pos_[idx]
+  // is only valid for nodes currently in the heap.
   void clear() { entries_.clear(); }
 
   bool empty() const { return entries_.empty(); }
 
   int topIdx() const { return entries_[0].idx; }
 
+  // Seeds share the global minimum distance (0) and are pushed before any
+  // calls to insert(), preserving heap property without sifting.
   void pushSeed(int idx)
   {
     pos_[idx] = entries_.size();
@@ -113,6 +117,9 @@ class MinHeap3D
     siftUp(i);
   }
 
+  // Copies the last entry into root, sifts down over the full size (the
+  // trailing duplicate is ignored by strict '<' comparison), then drops the
+  // duplicate.
   void removeMin()
   {
     entries_[0] = entries_.back();

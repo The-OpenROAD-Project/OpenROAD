@@ -1204,8 +1204,6 @@ void FastRouteCore::initAuxVar()
 {
   tree_order_cong_.clear();
 
-  grid_hv_ = x_grid_ * y_grid_;
-
   parent_x1_.resize(boost::extents[y_grid_][x_grid_]);
   parent_y1_.resize(boost::extents[y_grid_][x_grid_]);
   parent_x3_.resize(boost::extents[y_grid_][x_grid_]);
