@@ -86,7 +86,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
     kNotch
   };
 
-  float calNormCost() const override;
   void calPenalty() override;
 
   void perturb() override;

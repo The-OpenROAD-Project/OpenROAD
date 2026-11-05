@@ -119,11 +119,6 @@ bool SACoreSoftMacro::isValid() const
 }
 
 // Operations
-float SACoreSoftMacro::calNormCost() const
-{
-  return sumNormalizedPenalties();
-}
-
 void SACoreSoftMacro::calPenalty()
 {
   calAreaPenalty();
