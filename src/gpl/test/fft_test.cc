@@ -1,149 +1,222 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2026, The OpenROAD Authors
+
+// Checks the density Poisson solve (gpl::FFT) against the math rather than
+// against recorded output.
+//
+// The solve expands the bin density in the DCT basis
+//   cos(ax * (x + 1/2)) * cos(ay * (y + 1/2)),  ax = pi*i/Nx, ay = pi*j/Ny
+// (x, y are bin indices), drops the DC term, and divides each coefficient by
+// kx^2 + ky^2 to get the potential.  The field is -grad(phi), so a single
+// basis function has a closed-form answer for phi, Ex and Ey.  Every other
+// density is a sum of basis functions, which the linearity test covers.
+
 #include "src/gpl/src/fft.h"
 
-#include <iostream>
-#include <memory>
-#include <sstream>
+#include <cmath>
+#include <cstddef>
+#include <numbers>
+#include <ostream>
+#include <random>
+#include <vector>
 
 #include "gtest/gtest.h"
-#include "spdlog/fmt/fmt.h"
 
+namespace gpl {
 namespace {
 
-const int X_MAX = 4;
-const int Y_MAX = 4;
-
-float input_data[X_MAX * Y_MAX] = {
-    0.0,     // 0, 0
-    1.0,     // 1, 0
-    2.0,     // 2, 0
-    3.0,     // 3, 0
-    512.0,   // 0, 1
-    513.0,   // 1, 1
-    514.0,   // 2, 1
-    515.0,   // 3, 1
-    1024.0,  // 0, 2
-    1025.0,  // 1, 2
-    1026.0,  // 2, 2
-    1027.0,  // 3, 2
-    1536.0,  // 0, 3
-    1537.0,  // 1, 3
-    1538.0,  // 2, 3
-    1539.0,  // 3, 3
-};
-
-// clang-format off
-float output_data_eField_first[X_MAX * Y_MAX] = {
-       -0.81241744756698608398, // 0, 0
-       -1.83704113960266113281, // 1, 0
-       -1.83704113960266113281, // 2, 0
-       -0.81241744756698608398, // 3, 0
-       -0.81241744756698608398, // 0, 1
-       -1.83704113960266113281, // 1, 1
-       -1.83704113960266113281, // 2, 1
-       -0.81241744756698608398, // 3, 1
-       -0.81241744756698608398, // 0, 2
-       -1.83704113960266113281, // 1, 2
-       -1.83704113960266113281, // 2, 2
-       -0.81241744756698608398, // 3, 2
-       -0.81241744756698608398, // 0, 3
-       -1.83704113960266113281, // 1, 3
-       -1.83704113960266113281, // 2, 3
-       -0.81241744756698608398, // 3, 3
-};
-
-float output_data_eField_second[X_MAX * Y_MAX] = {
-     -415.95773315429687500000, // 0, 0
-     -415.95773315429687500000, // 1, 0
-     -415.95773315429687500000, // 2, 0
-     -415.95773315429687500000, // 3, 0
-     -940.56506347656250000000, // 0, 1
-     -940.56506347656250000000, // 1, 1
-     -940.56506347656250000000, // 2, 1
-     -940.56506347656250000000, // 3, 1
-     -940.56506347656250000000, // 0, 2
-     -940.56506347656250000000, // 1, 2
-     -940.56506347656250000000, // 2, 2
-     -940.56506347656250000000, // 3, 2
-     -415.95773315429687500000, // 0, 3
-     -415.95773315429687500000, // 1, 3
-     -415.95773315429687500000, // 2, 3
-     -415.95773315429687500000, // 3, 3
-};
-
-float output_data_electroPhi[X_MAX * Y_MAX] = {
-    -1215.75781250000000000000, // 0, 0
-    -1214.34777832031250000000, // 1, 0
-    -1212.42810058593750000000, // 2, 0
-    -1211.01806640625000000000, // 3, 0
-     -493.78292846679687500000, // 0, 1
-     -492.37280273437500000000, // 1, 1
-     -490.45324707031250000000, // 2, 1
-     -489.04312133789062500000, // 3, 1
-      489.04312133789062500000, // 0, 2
-      490.45324707031250000000, // 1, 2
-      492.37280273437500000000, // 2, 2
-      493.78292846679687500000, // 3, 2
-     1211.01806640625000000000, // 0, 3
-     1212.42810058593750000000, // 1, 3
-     1214.34777832031250000000, // 2, 3
-     1215.75781250000000000000, // 3, 3
-};
-// clang-format on
-
-void print_tables(std::unique_ptr<gpl::FFT>& fft)
+struct Grid
 {
-  std::stringstream out_ef_1st;
-  std::stringstream out_ef_2nd;
-  std::stringstream out_el_phi;
+  int nx;
+  int ny;
+  float bin_size_x;
+  float bin_size_y;
+};
 
-  out_ef_1st << "float output_data_eField_first[X_MAX * Y_MAX] = {\n";
-  out_ef_2nd << "float output_data_eField_second[X_MAX * Y_MAX] = {\n";
-  out_el_phi << "float output_data_electroPhi[X_MAX * Y_MAX] = {\n";
-  for (int y = 0; y < Y_MAX; y++) {
-    for (int x = 0; x < X_MAX; x++) {
-      auto eField = fft->getElectroField(x, y);
-      auto electroPhi = fft->getElectroPhi(x, y);
-      out_ef_1st << fmt::format(
-          "    {: 26.20f}, // {:d}, {:d}\n", eField.first, x, y);
-      out_ef_2nd << fmt::format(
-          "    {: 26.20f}, // {:d}, {:d}\n", eField.second, x, y);
-      out_el_phi << fmt::format(
-          "    {: 26.20f}, // {:d}, {:d}\n", electroPhi, x, y);
+struct Solution
+{
+  std::vector<float> phi;
+  std::vector<float> ex;
+  std::vector<float> ey;
+};
+
+// Runs the solve on density[x * ny + y].
+Solution solve(const Grid& grid, const std::vector<float>& density)
+{
+  FFT fft(grid.nx, grid.ny, grid.bin_size_x, grid.bin_size_y);
+  for (int x = 0; x < grid.nx; x++) {
+    for (int y = 0; y < grid.ny; y++) {
+      fft.updateDensity(x, y, density[x * grid.ny + y]);
     }
   }
-  out_ef_1st << "};\n\n";
-  out_ef_2nd << "};\n\n";
-  out_el_phi << "};\n\n";
+  fft.doFFT();
 
-  std::cout << out_ef_1st.str();
-  std::cout << out_ef_2nd.str();
-  std::cout << out_el_phi.str();
+  Solution s;
+  for (int x = 0; x < grid.nx; x++) {
+    for (int y = 0; y < grid.ny; y++) {
+      const auto [ex, ey] = fft.getElectroField(x, y);
+      s.phi.push_back(fft.getElectroPhi(x, y));
+      s.ex.push_back(ex);
+      s.ey.push_back(ey);
+    }
+  }
+  return s;
 }
 
-TEST(FloatFFTTest, Basic)
+TEST(FftTest, UniformDensityHasNoField)
 {
-  std::unique_ptr<gpl::FFT> fft(new gpl::FFT(X_MAX, Y_MAX, X_MAX, Y_MAX));
+  const Grid grid{16, 16, 1.0f, 1.0f};
+  const Solution s = solve(
+      grid,
+      std::vector<float>(static_cast<std::size_t>(grid.nx) * grid.ny, 0.7f));
 
-  for (int y = 0; y < Y_MAX; y++) {
-    for (int x = 0; x < X_MAX; x++) {
-      fft->updateDensity(x, y, input_data[x + y * Y_MAX]);
+  for (std::size_t k = 0; k < s.phi.size(); k++) {
+    EXPECT_NEAR(s.phi[k], 0.0f, 1e-5f);
+    EXPECT_NEAR(s.ex[k], 0.0f, 1e-5f);
+    EXPECT_NEAR(s.ey[k], 0.0f, 1e-5f);
+  }
+}
+
+struct ModeCase
+{
+  Grid grid;
+  int i;
+  int j;
+};
+
+std::ostream& operator<<(std::ostream& os, const ModeCase& c)
+{
+  return os << c.grid.nx << "x" << c.grid.ny << " bins of " << c.grid.bin_size_x
+            << "x" << c.grid.bin_size_y << ", mode (" << c.i << ", " << c.j
+            << ")";
+}
+
+class CosineModeTest : public ::testing::TestWithParam<ModeCase>
+{
+};
+
+TEST_P(CosineModeTest, MatchesAnalyticSolution)
+{
+  const ModeCase& c = GetParam();
+  const Grid& grid = c.grid;
+  const double pi = std::numbers::pi;
+  const double ax = pi * c.i / grid.nx;
+  const double ay = pi * c.j / grid.ny;
+
+  // Wavenumbers in units of x-bins.  A mode over Ny bins of height
+  // bin_size_y has physical wavenumber ay / bin_size_y, which is
+  // ay * bin_size_x / bin_size_y in x-bin units.
+  const double kx = ax;
+  const double ky = ay * grid.bin_size_x / grid.bin_size_y;
+  const double amplitude = 1.0 / (kx * kx + ky * ky);
+
+  std::vector<float> density;
+  for (int x = 0; x < grid.nx; x++) {
+    for (int y = 0; y < grid.ny; y++) {
+      density.push_back(std::cos(ax * (x + 0.5)) * std::cos(ay * (y + 0.5)));
     }
   }
+  const Solution s = solve(grid, density);
 
-  fft->doFFT();
-
-  print_tables(fft);
-
-  for (int y = 0; y < Y_MAX; y++) {
-    for (int x = 0; x < X_MAX; x++) {
-      auto eField = fft->getElectroField(x, y);
-      auto electroPhi = fft->getElectroPhi(x, y);
-
-      EXPECT_EQ(eField.first, output_data_eField_first[x + y * Y_MAX]);
-      EXPECT_EQ(eField.second, output_data_eField_second[x + y * Y_MAX]);
-      EXPECT_EQ(electroPhi, output_data_electroPhi[x + y * Y_MAX]);
+  const double tol = 1e-4 * amplitude;
+  for (int x = 0; x < grid.nx; x++) {
+    for (int y = 0; y < grid.ny; y++) {
+      const double cx = std::cos(ax * (x + 0.5));
+      const double sx = std::sin(ax * (x + 0.5));
+      const double cy = std::cos(ay * (y + 0.5));
+      const double sy = std::sin(ay * (y + 0.5));
+      const int k = x * grid.ny + y;
+      EXPECT_NEAR(s.phi[k], amplitude * cx * cy, tol)
+          << "bin " << x << "," << y;
+      EXPECT_NEAR(s.ex[k], amplitude * kx * sx * cy, tol)
+          << "bin " << x << "," << y;
+      EXPECT_NEAR(s.ey[k], amplitude * ky * cx * sy, tol)
+          << "bin " << x << "," << y;
     }
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    Modes,
+    CosineModeTest,
+    ::testing::Values(ModeCase{{16, 16, 1.0f, 1.0f}, 1, 0},
+                      ModeCase{{16, 16, 1.0f, 1.0f}, 0, 7},
+                      ModeCase{{16, 16, 1.0f, 1.0f}, 3, 5},
+                      ModeCase{{16, 16, 1.0f, 1.0f}, 15, 15},
+                      ModeCase{{16, 8, 1.0f, 1.0f}, 2, 3},
+                      ModeCase{{16, 16, 1.0f, 2.0f}, 2, 3},
+                      ModeCase{{16, 16, 2.0f, 1.0f}, 2, 3},
+                      ModeCase{{8, 8, 3.0f, 1.0f}, 1, 1},
+                      ModeCase{{8, 8, 1.0f, 3.0f}, 1, 1},
+                      ModeCase{{32, 8, 1.0f, 2.0f}, 4, 1}));
+
+// A charge in the middle of the grid pushes outward, symmetrically.
+TEST(FftTest, FieldPointsAwayFromCharge)
+{
+  const Grid grid{16, 16, 1.0f, 1.0f};
+  const int n = grid.nx;
+  std::vector<float> density(static_cast<std::size_t>(n) * n, 0.0f);
+  for (int x = 7; x <= 8; x++) {
+    for (int y = 7; y <= 8; y++) {
+      density[x * n + y] = 1.0f;
+    }
+  }
+  const Solution s = solve(grid, density);
+
+  auto at
+      = [n](const std::vector<float>& v, int x, int y) { return v[x * n + y]; };
+  for (int x = 0; x < n; x++) {
+    for (int y = 0; y < n; y++) {
+      const int mx = n - 1 - x;
+      const int my = n - 1 - y;
+      EXPECT_NEAR(at(s.phi, mx, y), at(s.phi, x, y), 1e-5f);
+      EXPECT_NEAR(at(s.ex, mx, y), -at(s.ex, x, y), 1e-5f);
+      EXPECT_NEAR(at(s.ey, x, my), -at(s.ey, x, y), 1e-5f);
+    }
+  }
+  for (int k = 0; k < n; k++) {
+    if (k < 7) {
+      EXPECT_LT(at(s.ex, k, 7), 0.0f) << "left of the charge, x=" << k;
+      EXPECT_LT(at(s.ey, 7, k), 0.0f) << "below the charge, y=" << k;
+    } else if (k > 8) {
+      EXPECT_GT(at(s.ex, k, 7), 0.0f) << "right of the charge, x=" << k;
+      EXPECT_GT(at(s.ey, 7, k), 0.0f) << "above the charge, y=" << k;
+    }
+  }
+  // The potential peaks at the charge.
+  for (int x = 0; x < n; x++) {
+    for (int y = 0; y < n; y++) {
+      EXPECT_LE(at(s.phi, x, y), at(s.phi, 7, 7) + 1e-5f);
+    }
+  }
+}
+
+TEST(FftTest, SolveIsLinear)
+{
+  const Grid grid{16, 8, 1.0f, 1.5f};
+  const std::size_t size = static_cast<std::size_t>(grid.nx) * grid.ny;
+  std::mt19937 rng(1);
+  std::uniform_real_distribution<float> dist(0.0f, 1.0f);
+  std::vector<float> rho1(size);
+  std::vector<float> rho2(size);
+  std::vector<float> combined(size);
+  constexpr float a = 2.0f;
+  constexpr float b = -0.5f;
+  for (std::size_t k = 0; k < size; k++) {
+    rho1[k] = dist(rng);
+    rho2[k] = dist(rng);
+    combined[k] = a * rho1[k] + b * rho2[k];
+  }
+
+  const Solution s1 = solve(grid, rho1);
+  const Solution s2 = solve(grid, rho2);
+  const Solution sc = solve(grid, combined);
+  for (std::size_t k = 0; k < size; k++) {
+    EXPECT_NEAR(sc.phi[k], a * s1.phi[k] + b * s2.phi[k], 1e-4f);
+    EXPECT_NEAR(sc.ex[k], a * s1.ex[k] + b * s2.ex[k], 1e-4f);
+    EXPECT_NEAR(sc.ey[k], a * s1.ey[k] + b * s2.ey[k], 1e-4f);
   }
 }
 
 }  // namespace
+}  // namespace gpl

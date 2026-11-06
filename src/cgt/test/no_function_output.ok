@@ -1,0 +1,34 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0227] LEF file: no_function_output.lef, created 1 library cells
+[WARNING CUT-0021] Leakage power doesn't exist for cell LOGIC0_X1
+[WARNING CUT-0021] Leakage power doesn't exist for cell LOGIC1_X1
+Derived GENLIB library "NangateOpenCellLibrary" with 92 gates.
+[INFO CGT-0003] Clock gating instance 0/2
+module enable_reg (clk,
+    en,
+    d,
+    q);
+ input clk;
+ input en;
+ input [1:0] d;
+ output [1:0] q;
+
+ wire n0;
+ wire n1;
+
+ MUX2_X1 mux0 (.A(q[0]),
+    .B(d[0]),
+    .S(en),
+    .Z(n0));
+ MUX2_X1 mux1 (.A(q[1]),
+    .B(d[1]),
+    .S(en),
+    .Z(n1));
+ DFF_X1 r0 (.D(n0),
+    .CK(clk),
+    .Q(q[0]));
+ DFF_X1 r1 (.D(n1),
+    .CK(clk),
+    .Q(q[1]));
+endmodule

@@ -8,9 +8,8 @@ cc_library(
     srcs = ["linenoise.c"],
     hdrs = ["linenoise.h"],
     # Exposes `linenoise.h` to dependents without the
-    # `third-party/linenoise/` path prefix, so the same `#include "linenoise.h"`
-    # works under both Bazel and CMake (CMake adds the equivalent include
-    # path via target_include_directories(PUBLIC) in this dir's CMakeLists.txt).
+    # `third-party/linenoise/` path prefix, so they write
+    # `#include "linenoise.h"`.
     includes = ["."],
     visibility = ["//visibility:public"],
 )

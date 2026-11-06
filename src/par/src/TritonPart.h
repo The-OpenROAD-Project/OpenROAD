@@ -33,7 +33,8 @@ class TritonPart
   TritonPart(sta::dbNetwork* network,
              odb::dbDatabase* db,
              sta::dbSta* sta,
-             utl::Logger* logger);
+             utl::Logger* logger,
+             int num_threads);
 
   // Top level interface
   // The function for partitioning a hypergraph
@@ -399,6 +400,9 @@ class TritonPart
 
   // logger
   utl::Logger* logger_ = nullptr;
+
+  // maximum number of threads
+  int num_threads_ = 1;
 };
 
 }  // namespace par

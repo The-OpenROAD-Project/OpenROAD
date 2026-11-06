@@ -1,9 +1,8 @@
 # Building and testing with Bazel
 
 ```{note}
-Bazel is the supported build system for OpenROAD.
+Bazel is the only supported build system for OpenROAD.
 For installation steps, see [Installing OpenROAD](Build.md).
-The deprecated CMake build will be removed on Nov. 1, 2026.
 ```
 
 First [install Bazelisk](https://bazel.build/install/bazelisk) or run `sudo ./etc/DependencyInstaller.sh -bazel`, then you're ready for the main use-case of Bazel, which is to make modifications to OpenROAD and run fast local tests before creating a PR:
@@ -187,6 +186,29 @@ on downstream projects via MVS:
 - `llvm` (hermetic-llvm) toolchain registration
 
 The downstream test at `test/downstream/` verifies these invariants.
+
+## Python API (the openroad wheel)
+
+OpenROAD's Python API ships as a wheel rather than an `openroad -python`
+mode. Build it and install it into a virtualenv (CPython 3.10 or later,
+Linux x86_64):
+
+```shell
+bazelisk build //python/openroad:openroad_wheel
+pip install bazel-bin/python/openroad/openroad-*.whl
+```
+
+Then import it from any Python interpreter:
+
+```python
+from openroad import Tech, Design
+import odb
+
+tech = Tech()
+```
+
+`import openroad` also loads the per-tool modules (`odb`, `grt`, `rsz`, ...).
+Keep each `Tech` alive while its `Design` is in use.
 
 ## Build without testing
 

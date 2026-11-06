@@ -58,6 +58,11 @@ void Grid::clear()
   row_index_to_y_dbu_.clear();
 }
 
+void Grid::releasePixels()
+{
+  Pixels().swap(pixels_);
+}
+
 void Grid::visitDbRows(odb::dbBlock* block,
                        const std::function<void(dbRow*)>& func) const
 {
