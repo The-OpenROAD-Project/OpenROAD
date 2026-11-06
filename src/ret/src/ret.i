@@ -12,12 +12,6 @@
 
 namespace ret {
 
-bool
-unmap_sequential_cells_cmd()
-{
-  return ord::OpenRoad::openRoad()->getRetimer()->unmapSequentialCells();
-}
-
 void
 retime_cmd(int max_moves)
 {

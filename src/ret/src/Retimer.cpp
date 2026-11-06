@@ -85,20 +85,6 @@ odb::dbBlock* Retimer::getBlock()
   return block;
 }
 
-bool Retimer::unmapSequentialCells()
-{
-  getBlock();
-  if (!unmapper_->prepare()) {
-    logger_->error(
-        utl::RET,
-        32,
-        "The loaded libraries lack a usable base register, inverter, 2-input "
-        "AND or 2-input OR cell (see the warnings above).");
-  }
-  unmapper_->run();
-  return true;
-}
-
 // The net feeding a register's data input, from the class the graph cached.
 static odb::dbNet* registerDataNet(const RetimingGraph& graph,
                                    sta::dbSta* sta,

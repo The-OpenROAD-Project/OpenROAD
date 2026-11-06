@@ -48,9 +48,6 @@ class Retimer
   Retimer(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
   ~Retimer();
 
-  // unmap_sequential_cells
-  bool unmapSequentialCells();
-
   // retime: max_moves <= 0 is unlimited.  Errors out on designs it cannot
   // retime yet: missing base cells, several clocks, negative-edge registers.
   void retime(int max_moves);

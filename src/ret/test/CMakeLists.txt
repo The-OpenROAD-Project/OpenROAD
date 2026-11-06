@@ -25,7 +25,6 @@ or_integration_tests(
     retime_no_moves
     retime_two_clocks
     retime_unmap
-    unmap_basic
 )
 
 add_executable(TestSequentialUnmapper
