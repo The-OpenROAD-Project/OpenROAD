@@ -42,11 +42,13 @@ VtSwapMtGenerator::VtSwapOptions VtSwapMtGenerator::buildVtSwapOptions(
     sta::LibertyCell* current_cell) const
 {
   VtSwapOptions options;
+  // The current cell's costs, shared by every swap below.
+  const CellCosts current_costs = cellCosts(current_cell);
   for (sta::LibertyCell* candidate_cell : selectCandidateCells(current_cell)) {
     // As for SizeUpMt, a cell without a cost on a metric both cells have is
     // not a candidate.
     const std::optional<float> cost_ratio
-        = cellCostRatio(current_cell, candidate_cell);
+        = cellCostRatio(current_costs, candidate_cell);
     if (!cost_ratio) {
       continue;
     }

@@ -139,6 +139,8 @@ SizeUpMtGenerator::SizeUpOptions SizeUpMtGenerator::buildSizeUpOptions(
   const bool limit_ratio = max_ratio > 0.0f && drive_r > 0.0f;
   const float min_drive_r = limit_ratio ? drive_r / max_ratio : 0.0f;
   odb::dbMaster* current_master = resizer_.dbNetwork()->staToDb(cell);
+  // The current cell's costs, shared by every swap below.
+  const CellCosts cell_costs = cellCosts(cell);
   for (sta::LibertyCell* swappable : swappable_cells) {
     if (swappable == cell) {
       continue;
@@ -176,7 +178,8 @@ SizeUpMtGenerator::SizeUpOptions SizeUpMtGenerator::buildSizeUpOptions(
       // As in SizeUpGenerator::upsizeCell, a cell without a cost on a metric
       // both cells have is not a candidate.  cellLeakage() fills a cache, so
       // the costs are found here on the main thread.
-      const std::optional<float> cost_ratio = cellCostRatio(cell, swappable);
+      const std::optional<float> cost_ratio
+          = cellCostRatio(cell_costs, swappable);
       if (!cost_ratio) {
         continue;
       }

@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <memory>
 #include <optional>
@@ -149,12 +150,17 @@ class MoveGenerator
                        const sta::RiseFall* drvr_rf,
                        const sta::MinMax* min_max) const;
 
-  // === Shared cell-cost helper =============================================
-  // New/old cost of a swap from `from` to `to`: leakage, else LEF area, else
-  // Liberty area, the order SizeUpGenerator::upsizeCell uses, so units never
-  // mix.  nullopt when the two cells share no metric.  Main thread only:
-  // cellLeakage() fills a cache.
-  std::optional<float> cellCostRatio(sta::LibertyCell* from,
+  // === Shared cell-cost helpers ============================================
+  // Cell costs in the order SizeUpGenerator::upsizeCell tries them: leakage,
+  // then LEF area, then Liberty area.  An unavailable metric is nullopt.
+  // Main thread only: cellLeakage() fills a cache.
+  using CellCosts = std::array<std::optional<float>, 3>;
+  CellCosts cellCosts(sta::LibertyCell* cell) const;
+  // New/old cost of a swap from a cell with `from_costs` to `to`, on the
+  // first metric both cells have, so units never mix.  nullopt when the two
+  // cells share no metric.  A caller finds from_costs once for all the swaps
+  // of one cell.
+  std::optional<float> cellCostRatio(const CellCosts& from_costs,
                                      sta::LibertyCell* to) const;
 
   // === Shared fanin max-cap helper =========================================

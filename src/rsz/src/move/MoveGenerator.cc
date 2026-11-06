@@ -3,7 +3,6 @@
 
 #include "MoveGenerator.hh"
 
-#include <array>
 #include <optional>
 #include <string>
 #include <tuple>
@@ -18,20 +17,14 @@
 
 namespace rsz {
 
-namespace {
-
-// Cell costs in the order SizeUpGenerator::upsizeCell tries them: leakage,
-// then LEF area, then Liberty area.  An unavailable metric is nullopt.
-using CellCosts = std::array<std::optional<float>, 3>;
-
-CellCosts cellCosts(Resizer& resizer, sta::LibertyCell* cell)
+MoveGenerator::CellCosts MoveGenerator::cellCosts(sta::LibertyCell* cell) const
 {
   CellCosts costs;
-  const std::optional<float> leakage = resizer.cellLeakage(cell);
+  const std::optional<float> leakage = resizer_.cellLeakage(cell);
   if (leakage && *leakage > 0.0f) {
     costs[0] = leakage;
   }
-  const odb::dbMaster* master = resizer.dbNetwork()->staToDb(cell);
+  const odb::dbMaster* master = resizer_.dbNetwork()->staToDb(cell);
   if (master != nullptr && master->getArea() > 0) {
     costs[1] = static_cast<float>(master->getArea());
   }
@@ -41,13 +34,10 @@ CellCosts cellCosts(Resizer& resizer, sta::LibertyCell* cell)
   return costs;
 }
 
-}  // namespace
-
-std::optional<float> MoveGenerator::cellCostRatio(sta::LibertyCell* from,
+std::optional<float> MoveGenerator::cellCostRatio(const CellCosts& from_costs,
                                                   sta::LibertyCell* to) const
 {
-  const CellCosts from_costs = cellCosts(resizer_, from);
-  const CellCosts to_costs = cellCosts(resizer_, to);
+  const CellCosts to_costs = cellCosts(to);
   for (size_t metric = 0; metric < from_costs.size(); ++metric) {
     if (from_costs[metric] && to_costs[metric]) {
       return *to_costs[metric] / *from_costs[metric];
