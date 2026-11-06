@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2019-2025, The OpenROAD Authors
 
-sta::define_cmd_args "estimate_parasitics" { -placement|-global_routing \
+sta::define_cmd_args "estimate_parasitics" { [-placement|-global_routing] \
                                             [-spef_file filename]}
 
 proc estimate_parasitics { args } {
@@ -21,11 +21,14 @@ proc estimate_parasitics { args } {
     if { [grt::have_routes] } {
       # should check for layer rc
       est::estimate_parasitics_cmd "global_routing" $filename
+    } elseif { [grt::have_congested_routes] } {
+      utl::error EST 8 "The global routes are congested.\
+        Use global_route -allow_congestion to estimate parasitics from them."
     } else {
       utl::error EST 5 "Run global_route before estimating parasitics for global routing."
     }
   } else {
-    utl::error EST 3 "missing -placement or -global_routing flag."
+    est::ensure_parasitics_cmd $filename
   }
 }
 
@@ -384,6 +387,14 @@ proc set_wire_rc { args } {
 }
 
 namespace eval est {
+# estimate_parasitics without a flag leaves parasitics read from a SPEF.
+proc spef_read_trace { cmd code result op } {
+  if { $code == 0 && $result } {
+    est::spef_read
+  }
+}
+trace add execution sta::read_spef leave est::spef_read_trace
+
 proc get_db_tech_checked { } {
   set tech [ord::get_db_tech]
   if { $tech == "NULL" } {

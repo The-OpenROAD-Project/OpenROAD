@@ -33,6 +33,22 @@ using utl::GRT;
 
 namespace {
 
+// Append segment to route unless net_segs already has it. Vias match in
+// either layer order. Wires already match in either direction, because the
+// GSegment constructor orders their x and y.
+void addSegment(const GSegment& segment,
+                std::unordered_set<GSegment, GSegmentHash>& net_segs,
+                GRoute& route)
+{
+  GSegment key = segment;
+  if (key.isVia() && key.init_layer > key.final_layer) {
+    std::swap(key.init_layer, key.final_layer);
+  }
+  if (net_segs.insert(key).second) {
+    route.push_back(segment);
+  }
+}
+
 // Record `new_layer` as the latest pseudo-layer seen at (x, y). If a
 // previously recorded layer there differs by exactly one cut layer, emit a
 // bridging via segment (deduplicating against net_segs). Used by both
@@ -59,10 +75,7 @@ void recordLayerAndBridge(
     if (is_3d_route) {
       bridge_via.setIs3DRoute(true);
     }
-    if (!net_segs.contains(bridge_via)) {
-      net_segs.insert(bridge_via);
-      route.push_back(bridge_via);
-    }
+    addSegment(bridge_via, net_segs, route);
   }
   point_pseudo_layer[pt] = new_layer;
 }
@@ -620,6 +633,7 @@ void FastRouteCore::updateEdge3DUsage(int x,
   auto& edge = horizontal ? h_edges_3D_[layer][y][x] : v_edges_3D_[layer][y][x];
   const auto old_usage = edge.usage;
   edge.usage += delta;
+  markCongestionTile(x, y);
   if (overflow_3d_valid_ && old_usage != edge.usage
       && graph2d_.isUsedGrid(x, y, direction)) {
     auto& totals = horizontal ? h_overflow_3d_ : v_overflow_3d_;
@@ -1219,6 +1233,34 @@ std::vector<int> FastRouteCore::getMazeRouteNetOrder(const bool ordering,
   return net_ids_;
 }
 
+double FastRouteCore::getUsageNDRAware(FrNet* net,
+                                       const int x,
+                                       const int y,
+                                       const EdgeDirection direction,
+                                       const double usage) const
+{
+  const int deficit = graph2d_.getNDRDeficitIfRouted(net, x, y, direction);
+  if (deficit == 0) {
+    return usage;
+  }
+  // Price the edge as one the net would overflow by kNdrDeficitCost tracks
+  // per missing track. The cost functions take the usage before the net is
+  // added, hence the track less.
+  const int capacity = direction == EdgeDirection::Horizontal
+                           ? graph2d_.getCapH(x, y)
+                           : graph2d_.getCapV(x, y);
+  return std::max(usage, capacity - 1.0 + kNdrDeficitCost * deficit);
+}
+
+// The 3D maze routing runs on a 2D routing without usage overflow. The NDR
+// deficit in `overflow_2d` does not count: it comes from first-fit layer
+// reservations in 2D, which layer assignment can improve on, and the NDR nets
+// it leaves overflowing in 3D are demoted (see disableNDRForCongestedNets).
+bool FastRouteCore::canRunMaze3D(const int overflow_2d) const
+{
+  return overflow_2d == graph2d_.getTotalNDRDeficit();
+}
+
 bool FastRouteCore::hasNonSoftNdrNets() const
 {
   for (const int net_id : net_ids_) {
@@ -1454,29 +1496,14 @@ NetRouteMap FastRouteCore::getRoutes()
         for (int i = 1; i <= routeLen; i++) {
           const int xreal = tile_size_ * (grids[i].x + 0.5) + x_corner_;
           const int yreal = tile_size_ * (grids[i].y + 0.5) + y_corner_;
-
-          GSegment segment = GSegment(
-              lastX, lastY, lastL + 1, xreal, yreal, grids[i].layer + 1);
-
+          addSegment(
+              GSegment(
+                  lastX, lastY, lastL + 1, xreal, yreal, grids[i].layer + 1),
+              net_segs,
+              route);
           lastX = xreal;
           lastY = yreal;
           lastL = grids[i].layer;
-          if (net_segs.find(segment) == net_segs.end()) {
-            if (segment.init_layer != segment.final_layer) {
-              GSegment invet_via = GSegment(segment.final_x,
-                                            segment.final_y,
-                                            segment.final_layer,
-                                            segment.init_x,
-                                            segment.init_y,
-                                            segment.init_layer);
-              if (net_segs.find(invet_via) != net_segs.end()) {
-                continue;
-              }
-            }
-
-            net_segs.insert(segment);
-            route.push_back(segment);
-          }
         }
       }
     }
@@ -1639,34 +1666,27 @@ void FastRouteCore::getPlanarRoute(odb::dbNet* db_net, GRoute& route)
         if (lastX == xreal) {
           // if change direction add a via to change the layer
           if (lastL == layer_h) {
-            segment
-                = GSegment(lastX, lastY, lastL + 1, lastX, lastY, layer_v + 1);
-            if (net_segs.find(segment) == net_segs.end()) {
-              net_segs.insert(segment);
-              route.push_back(segment);
-            }
+            addSegment(
+                GSegment(lastX, lastY, lastL + 1, lastX, lastY, layer_v + 1),
+                net_segs,
+                route);
           }
           lastL = layer_v;
           segment = GSegment(lastX, lastY, lastL + 1, xreal, yreal, lastL + 1);
         } else {
           // if change direction add a via to change the layer
           if (lastL == layer_v) {
-            segment
-                = GSegment(lastX, lastY, lastL + 1, lastX, lastY, layer_h + 1);
-            if (net_segs.find(segment) == net_segs.end()) {
-              net_segs.insert(segment);
-              route.push_back(segment);
-            }
+            addSegment(
+                GSegment(lastX, lastY, lastL + 1, lastX, lastY, layer_h + 1),
+                net_segs,
+                route);
           }
           lastL = layer_h;
           segment = GSegment(lastX, lastY, lastL + 1, xreal, yreal, lastL + 1);
         }
         lastX = xreal;
         lastY = yreal;
-        if (net_segs.find(segment) == net_segs.end()) {
-          net_segs.insert(segment);
-          route.push_back(segment);
-        }
+        addSegment(segment, net_segs, route);
         // Per-hop commit: catches the case where *this* edge ends or passes
         // through an XY that a previously processed edge entered on a
         // different layer (edge-entry bridging alone misses this).
@@ -1704,11 +1724,7 @@ void FastRouteCore::convertGridsToSegments(
     GSegment segment
         = GSegment(lastX, lastY, lastL + 1, xreal, yreal, currentL + 1);
     segment.setIs3DRoute(true);
-
-    if (net_segs.find(segment) == net_segs.end()) {
-      net_segs.insert(segment);
-      route.push_back(segment);
-    }
+    addSegment(segment, net_segs, route);
 
     lastX = xreal;
     lastY = yreal;
@@ -1903,6 +1919,37 @@ void FastRouteCore::getBlockage(odb::dbTechLayer* layer,
   }
 }
 
+// Every 3D edge usage change funnels through updateEdge3DUsage(), so marking
+// the tile there catches rerouting, rip-up, wire-resource release and net
+// removal alike -- anything that moves an edge, whether or not it leaves a
+// route behind to infer it from.
+void FastRouteCore::markCongestionTile(const int x, const int y)
+{
+  if (x < 0 || y < 0 || x >= x_grid_ || y >= y_grid_) {
+    return;
+  }
+  if (congestion_tile_marked_.size()
+      != static_cast<size_t>(x_grid_) * y_grid_) {
+    congestion_tile_marked_.assign(static_cast<size_t>(x_grid_) * y_grid_,
+                                   false);
+    congestion_dirty_tiles_.clear();
+  }
+  const size_t index = static_cast<size_t>(x) * y_grid_ + y;
+  if (!congestion_tile_marked_[index]) {
+    congestion_tile_marked_[index] = true;
+    congestion_dirty_tiles_.emplace_back(x, y);
+  }
+}
+
+void FastRouteCore::clearCongestionDirtyTiles()
+{
+  for (const odb::Point& tile : congestion_dirty_tiles_) {
+    congestion_tile_marked_[static_cast<size_t>(tile.x()) * y_grid_ + tile.y()]
+        = false;
+  }
+  congestion_dirty_tiles_.clear();
+}
+
 void FastRouteCore::updateDbCongestion(int min_routing_layer,
                                        int max_routing_layer)
 {
@@ -1956,21 +2003,147 @@ void FastRouteCore::updateDbCongestion(int min_routing_layer,
 
     for (int y = 0; y < y_grid_; y++) {
       for (int x = 0; x < x_grid_; x++) {
-        if (x == x_grid_ - 1 && y == y_grid_ - 1 && x_grid_ > 1
-            && y_grid_ > 1) {
-          uint8_t blockageH = h_edges_3D_[k][y][x - 1].red;
-          uint8_t blockageV = v_edges_3D_[k][y - 1][x].red;
-          uint8_t usageH = h_edges_3D_[k][y - 1][x - 1].usage + blockageH;
-          uint8_t usageV = v_edges_3D_[k][y - 1][x - 1].usage + blockageV;
-          db_gcell->setUsage(layer, x, y, usageH + usageV);
-        } else {
-          uint8_t blockageH = h_edges_3D_[k][y][x].red;
-          uint8_t blockageV = v_edges_3D_[k][y][x].red;
-          uint8_t usageH = h_edges_3D_[k][y][x].usage + blockageH;
-          uint8_t usageV = v_edges_3D_[k][y][x].usage + blockageV;
-          db_gcell->setUsage(layer, x, y, usageH + usageV);
-        }
+        db_gcell->setUsage(layer, x, y, gcellUsage(k, x, y));
       }
+    }
+  }
+  clearCongestionDirtyTiles();
+}
+
+// The inverse of updateDbCongestion(): for each edge, the map holds the
+// capacity plus the blockage (the tracks) and the usage plus the blockage.
+// With the same routes in this engine's usage, the blockage the edge had when
+// the map was written, and so its capacity, follow.
+int FastRouteCore::restoreCapacitiesFromDb(const int min_routing_layer,
+                                           const int max_routing_layer)
+{
+  if (h_edges_3D_.num_elements() == 0) {
+    return 0;
+  }
+  odb::dbGCellGrid* db_gcell = db_->getChip()->getBlock()->getGCellGrid();
+  if (db_gcell == nullptr || db_gcell->getNumGridPatternsX() != 1
+      || db_gcell->getNumGridPatternsY() != 1) {
+    return 0;
+  }
+  int origin_x, count_x, step_x, origin_y, count_y, step_y;
+  db_gcell->getGridPatternX(0, origin_x, count_x, step_x);
+  db_gcell->getGridPatternY(0, origin_y, count_y, step_y);
+  if (origin_x != x_corner_ || count_x != x_grid_ || step_x != tile_size_
+      || origin_y != y_corner_ || count_y != y_grid_ || step_y != tile_size_) {
+    debugPrint(logger_,
+               GRT,
+               "incr",
+               1,
+               "The odb congestion map is on another grid; capacities kept.");
+    return 0;
+  }
+
+  auto db_tech = db_->getTech();
+  int changed = 0;
+  int kept = 0;
+  for (int k = min_routing_layer - 1; k <= max_routing_layer - 1; k++) {
+    odb::dbTechLayer* layer = db_tech->findRoutingLayer(k + 1);
+    if (layer == nullptr) {
+      continue;
+    }
+    const bool horizontal
+        = layer_directions_[k] == odb::dbTechLayerDir::HORIZONTAL;
+    const EdgeDirection direction
+        = horizontal ? EdgeDirection::Horizontal : EdgeDirection::Vertical;
+    for (int y = 0; y < y_grid_; y++) {
+      for (int x = 0; x < x_grid_; x++) {
+        // The last column (row) only mirrors its neighbor.
+        if ((horizontal && x == x_grid_ - 1)
+            || (!horizontal && y == y_grid_ - 1)) {
+          continue;
+        }
+        const Edge3D& edge
+            = horizontal ? h_edges_3D_[k][y][x] : v_edges_3D_[k][y][x];
+        const Edge3D& other
+            = horizontal ? v_edges_3D_[k][y][x] : h_edges_3D_[k][y][x];
+        const int tracks = std::lround(db_gcell->getCapacity(layer, x, y));
+        const int blockage = std::lround(db_gcell->getUsage(layer, x, y))
+                             - edge.usage - other.usage - other.red;
+        // Other tracks, or other routes, than the map was written with.
+        if (tracks != edge.cap + edge.red || blockage < 0
+            || blockage > tracks) {
+          kept++;
+          continue;
+        }
+        const int cap = tracks - blockage;
+        if (cap == edge.cap) {
+          continue;
+        }
+        const int delta = cap - edge.cap;
+        addAdjustment(x,
+                      y,
+                      horizontal ? x + 1 : x,
+                      horizontal ? y : y + 1,
+                      k + 1,
+                      cap,
+                      delta < 0);
+        graph2d_.addCap3D(x, y, k, direction, delta);
+        changed++;
+      }
+    }
+  }
+  debugPrint(logger_,
+             GRT,
+             "incr",
+             1,
+             "Capacities from the odb congestion map: {} edges changed, {} "
+             "kept (map inconsistent with the routes).",
+             changed,
+             kept);
+  return changed;
+}
+
+// The usage odb reports for one GCell on layer index `k`.  Shared by the full
+// rebuild and the incremental refresh so the two cannot drift apart.
+int FastRouteCore::gcellUsage(const int k, const int x, const int y) const
+{
+  // The top-right cell has no edge of its own and mirrors its diagonal
+  // neighbour.
+  if (x == x_grid_ - 1 && y == y_grid_ - 1 && x_grid_ > 1 && y_grid_ > 1) {
+    const uint8_t blockageH = h_edges_3D_[k][y][x - 1].red;
+    const uint8_t blockageV = v_edges_3D_[k][y - 1][x].red;
+    const uint8_t usageH = h_edges_3D_[k][y - 1][x - 1].usage + blockageH;
+    const uint8_t usageV = v_edges_3D_[k][y - 1][x - 1].usage + blockageV;
+    return usageH + usageV;
+  }
+  const uint8_t blockageH = h_edges_3D_[k][y][x].red;
+  const uint8_t blockageV = v_edges_3D_[k][y][x].red;
+  const uint8_t usageH = h_edges_3D_[k][y][x].usage + blockageH;
+  const uint8_t usageV = v_edges_3D_[k][y][x].usage + blockageV;
+  return usageH + usageV;
+}
+
+void FastRouteCore::updateDbCongestionTiles(
+    const int min_routing_layer,
+    const int max_routing_layer,
+    const std::vector<odb::Point>& tiles)
+{
+  if (h_edges_3D_.num_elements() == 0 || tiles.empty()) {
+    return;
+  }
+  odb::dbGCellGrid* db_gcell = db_->getChip()->getBlock()->getGCellGrid();
+  if (db_gcell == nullptr) {
+    // Nothing to refresh into; the caller still owes a full rebuild.
+    return;
+  }
+  auto db_tech = db_->getTech();
+  for (int k = min_routing_layer - 1; k <= max_routing_layer - 1; k++) {
+    auto layer = db_tech->findRoutingLayer(k + 1);
+    if (layer == nullptr) {
+      continue;
+    }
+    for (const odb::Point& tile : tiles) {
+      const int x = tile.x();
+      const int y = tile.y();
+      if (x < 0 || y < 0 || x >= x_grid_ || y >= y_grid_) {
+        continue;
+      }
+      db_gcell->setUsage(layer, x, y, gcellUsage(k, x, y));
     }
   }
 }
@@ -2589,8 +2762,11 @@ NetRouteMap FastRouteCore::run()
                       total_overflow_);
     }
 
-    // Mismatch between 2D and 3D congestion related to NDR nets
-    if (past_cong != total_overflow_) {
+    // Mismatch between 2D and 3D congestion related to NDR nets. An NDR
+    // deficit left in 2D may or may not become 3D overflow, as layer
+    // assignment can fit nets the first-fit 2D reservations could not, so it
+    // is checked even when the totals happen to match.
+    if (past_cong != total_overflow_ || graph2d_.getTotalNDRDeficit() > 0) {
       disableNDRForCongestedNets(net_ids_);
       long_edge_len = BIG_INT;
       past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
@@ -2600,7 +2776,7 @@ NetRouteMap FastRouteCore::run()
     costheight_ = 3;
     via_cost_ = 1;
 
-    if (past_cong == 0) {
+    if (canRunMaze3D(past_cong)) {
       // Increase ripup threshold if res-aware is enabled
       if (enable_resistance_aware_) {
         long_edge_len = BIG_INT;
@@ -2703,13 +2879,20 @@ void FastRouteCore::computeCongestedNDRnets()
         for (int i = 0; i < routeLen; i++) {
           if (grids[i].x == grids[i + 1].x) {  // vertical
             const int min_y = std::min(grids[i].y, grids[i + 1].y);
-            // Increment congested edges if have overflow
-            if (graph2d_.getOverflowV(grids[i].x, min_y) > 0) {
+            // Increment congested edges if have overflow, or if the net
+            // fits no single layer there
+            if (graph2d_.getOverflowV(grids[i].x, min_y) > 0
+                || graph2d_.getNDRDeficit(
+                       net, grids[i].x, min_y, EdgeDirection::Vertical)
+                       > 0) {
               num_congested_edges++;
             }
           } else {  // horizontal
             const int min_x = std::min(grids[i].x, grids[i + 1].x);
-            if (graph2d_.getOverflowH(min_x, grids[i].y) > 0) {
+            if (graph2d_.getOverflowH(min_x, grids[i].y) > 0
+                || graph2d_.getNDRDeficit(
+                       net, min_x, grids[i].y, EdgeDirection::Horizontal)
+                       > 0) {
               num_congested_edges++;
             }
           }
@@ -2919,6 +3102,11 @@ void FastRouteCore::setVerbose(bool v)
   verbose_ = v;
 }
 
+void FastRouteCore::setAllowCongestion(bool allow_congestion)
+{
+  allow_congestion_ = allow_congestion;
+}
+
 void FastRouteCore::setCriticalNetsPercentage(float u)
 {
   critical_nets_percentage_ = u;
@@ -2943,6 +3131,9 @@ void FastRouteCore::setCongestionReportIterStep(int congestion_report_iter_step)
 void FastRouteCore::setResistanceAware(bool resistance_aware)
 {
   enable_resistance_aware_ = resistance_aware;
+  if (!resistance_aware) {
+    resistance_aware_ = false;
+  }
   en_estimate_parasitics_ = true;
 }
 

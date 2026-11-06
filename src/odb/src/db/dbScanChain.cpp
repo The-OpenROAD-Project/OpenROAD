@@ -150,13 +150,13 @@ std::variant<dbBTerm*, dbITerm*> _dbScanChain::getPin(
   return ((dbScanPin*) dft->scan_pins_->getPtr(scan_pin_id))->getPin();
 }
 
-void _dbScanChain::setPin(dbId<_dbScanPin> _dbScanChain::*field, dbBTerm* pin)
+void _dbScanChain::setPin(dbId<_dbScanPin> _dbScanChain::* field, dbBTerm* pin)
 {
   dbDft* dft = (dbDft*) getOwner();
   this->*field = dbScanPin::create(dft, pin)->getImpl()->getOID();
 }
 
-void _dbScanChain::setPin(dbId<_dbScanPin> _dbScanChain::*field, dbITerm* pin)
+void _dbScanChain::setPin(dbId<_dbScanPin> _dbScanChain::* field, dbITerm* pin)
 {
   dbDft* dft = (dbDft*) getOwner();
   this->*field = dbScanPin::create(dft, pin)->getImpl()->getOID();

@@ -115,10 +115,10 @@ For information regarding the Man page test framework, refer to this
 You should also be aware of the [README](../../docs/contrib/ReadmeFormat.md) and [Tcl](../../docs/contrib/TclFormat.md) format enforced to ensure
 accurate parsing of man pages. 
 
-Simply run the following script:
+Simply run the following command:
 
 ```shell
-./test/regression
+bazelisk test //src/utl/...
 ```
 
 ## Limitations

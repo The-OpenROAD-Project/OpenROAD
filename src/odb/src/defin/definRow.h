@@ -5,6 +5,7 @@
 
 #include <cstring>
 #include <map>
+#include <optional>
 #include <vector>
 
 #include "definBase.h"
@@ -41,7 +42,7 @@ class definRow : public definBase
                      dbOrientType orient,
                      defRow direction,
                      int num_sites,
-                     int spacing);
+                     std::optional<int> spacing);
   virtual void property(const char* name, const char* value);
   virtual void property(const char* name, int value);
   virtual void property(const char* name, double value);

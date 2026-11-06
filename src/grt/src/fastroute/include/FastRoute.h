@@ -179,6 +179,21 @@ class FastRouteCore
                    uint8_t& blockage_h,
                    uint8_t& blockage_v);
   void updateDbCongestion(int min_routing_layer, int max_routing_layer);
+  // Sets the capacities back to those the odb congestion map was written
+  // with, once the routes it was written with are in the usage. Returns the
+  // number of edges whose capacity changed.
+  int restoreCapacitiesFromDb(int min_routing_layer, int max_routing_layer);
+  // Rewrite the usage of just `tiles` (GCell indices).
+  void updateDbCongestionTiles(int min_routing_layer,
+                               int max_routing_layer,
+                               const std::vector<odb::Point>& tiles);
+  // GCells whose reported usage changed since the last refresh, recorded at
+  // the point the edges were written.
+  const std::vector<odb::Point>& getCongestionDirtyTiles() const
+  {
+    return congestion_dirty_tiles_;
+  }
+  void clearCongestionDirtyTiles();
   void getCapacityReductionData(CapacityReductionData& cap_red_data);
   void findCongestedEdgesNets(NetsPerCongestedArea& nets_in_congested_edges,
                               bool vertical);
@@ -241,6 +256,7 @@ class FastRouteCore
                              int layer,
                              odb::dbNet* db_net);
   void setVerbose(bool v);
+  void setAllowCongestion(bool allow_congestion);
   void setCriticalNetsPercentage(float u);
   float getCriticalNetsPercentage() { return critical_nets_percentage_; };
   void setResAwareNetsPercentage(float percentage);
@@ -323,12 +339,16 @@ class FastRouteCore
  private:
   friend class Maze3DTestPeer;
   friend class OverflowTestPeer;
+  friend class ResistanceModeTestPeer;
 
   void convertGridsToSegments(
       const std::vector<GPoint3D>& grids,
       int grid_count,
       std::unordered_set<GSegment, GSegmentHash>& net_segs,
       GRoute& route);
+  // Usage odb should report for one GCell on layer index `k`.
+  int gcellUsage(int k, int x, int y) const;
+  void markCongestionTile(int x, int y);
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
   void clearNetRoute(int netID);
   void clearNets();
@@ -338,6 +358,25 @@ class FastRouteCore
   void updateSlacks();
   void preProcessTechLayers();
   odb::dbTechLayer* getTechLayer(int layer, bool is_via);
+
+  // Usage of an edge as `net` sees it when choosing its route: an NDR net
+  // also pays for the NDR deficit of the edge (see
+  // Graph2D::getNDRDeficitIfRouted), the other nets see `usage` unchanged.
+  double getUsageNDRAware(FrNet* net,
+                          int x,
+                          int y,
+                          EdgeDirection direction,
+                          double usage) const;
+  double getEstUsageRedH(FrNet* net, int x, int y) const
+  {
+    return getUsageNDRAware(
+        net, x, y, EdgeDirection::Horizontal, graph2d_.getEstUsageRedH(x, y));
+  }
+  double getEstUsageRedV(FrNet* net, int x, int y) const
+  {
+    return getUsageNDRAware(
+        net, x, y, EdgeDirection::Vertical, graph2d_.getEstUsageRedV(x, y));
+  }
 
   // maze functions
   // Maze-routing in different orders
@@ -455,6 +494,7 @@ class FastRouteCore
                            int to_y,
                            bool is_via);
   void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub);
+  bool canRunMaze3D(int overflow_2d) const;
   void addNeighborPoints(int netID,
                          int n1,
                          int n2,
@@ -729,6 +769,9 @@ class FastRouteCore
 
   static const int BIG_INT = 1e9;  // big integer used as infinity
   static const int HCOST = 5000;
+  // Overflow an NDR net is charged, in its routing cost, per track it would
+  // miss on an edge where it fits no single layer.
+  static constexpr int kNdrDeficitCost = 100;
 
   // Snapshot-batched routing constants.
   // Nets are partitioned into batches and routed in parallel waves against
@@ -786,6 +829,10 @@ class FastRouteCore
   int h_capacity_;
   int x_grid_;
   int y_grid_;
+  // GCells whose reported usage changed since the last odb refresh, with a
+  // per-tile flag alongside so the list dedupes without a hash lookup.
+  std::vector<odb::Point> congestion_dirty_tiles_;
+  std::vector<bool> congestion_tile_marked_;
   int x_grid_max_;
   int y_grid_max_;
   int x_corner_;
@@ -799,6 +846,7 @@ class FastRouteCore
   bool has_2D_overflow_;
   int grid_hv_;
   bool verbose_;
+  bool allow_congestion_ = false;
   float critical_nets_percentage_;
   float res_aware_nets_percentage_ = 15;
   bool is_fixed_nets_percentage_ = false;

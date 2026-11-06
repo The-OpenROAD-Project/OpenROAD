@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// NetlistsVG is used to render a Yosys-compatible JSON netlist into an SVG.
-// It is loaded via <script> tags in index.html and exposed as window.netlistsvg.
+// NetlistsVG renders a Yosys-compatible JSON netlist into an SVG.
 
-import { beginSelection, isCurrentSelection } from './ui-utils.js';
+import { beginSelection, isCurrentSelection, isStaticMode } from './ui-utils.js';
 import {
     downloadBlob,
     svgToString,
@@ -12,6 +11,8 @@ import {
     downloadUrl,
     copyPngToClipboard,
 } from './image-export.js';
+
+const kIdleStatus = 'Select an instance in the layout to view its schematic.';
 
 export class SchematicWidget {
     constructor(container, appState) {
@@ -41,7 +42,7 @@ export class SchematicWidget {
             '<button class="or-btn or-btn-sm" id="schematic-save-svg" title="Save schematic as SVG (vector)">SVG</button>' +
             '<button class="or-btn or-btn-sm" id="schematic-save-png" title="Save schematic as PNG (2x)">PNG</button>' +
             '<button class="or-btn or-btn-sm" id="schematic-copy" title="Copy schematic image to clipboard">Copy</button>' +
-            '<span id="schematic-status" style="color:var(--fg-muted); flex:1;">Select an instance in the layout to view its schematic.</span>';
+            '<span id="schematic-status" style="color:var(--fg-muted); flex:1;"></span>';
         this.element.appendChild(this.controls);
 
         // ── SVG viewport (overflow hidden; pan/zoom via CSS transform) ──────
@@ -84,7 +85,6 @@ export class SchematicWidget {
         this._svgIdToInstName = new Map();
 
         this._setupPanZoom();
-        this._netlistsvgReady = false;
         this.initNetlistSVG();
     }
 
@@ -291,29 +291,26 @@ export class SchematicWidget {
 
     // ── NetlistSVG init ──────────────────────────────────────────────────────
 
-    async initNetlistSVG() {
-        try {
-            if (!window.netlistsvg) {
-                return;  // Not available (e.g. static report).
-            }
-            this.netlistsvg = window.netlistsvg;
-
-            // Load OpenROAD's custom skin (served as a local asset).  It defines
-            // proper gate symbols with correctly-placed ports and instance-name
-            // labels; renderNetlist() rewrites cell types to match it (see
-            // canonicalizeForSkin).  render() passes the skin to onml.p(), which
-            // expects a raw XML string, so fetch it as text.
-            const resp = await fetch('openroad_skin.svg');
-            if (!resp.ok) {
-                throw new Error(`Skin fetch failed: ${resp.status} ${resp.statusText}`);
-            }
-            this.skin = await resp.text();
-            this._netlistsvgReady = true;
+    initNetlistSVG() {
+        // Both come from vendor-globals.js, which a saved report goes without.
+        this.netlistsvg = globalThis.netlistsvg;
+        // OpenROAD's skin, as the raw XML render() hands to onml.p(); see
+        // canonicalizeForSkin for how cell types are mapped onto it.
+        this.skin = globalThis.openroadSkin;
+        this._netlistsvgReady = Boolean(this.netlistsvg && this.skin);
+        if (this._netlistsvgReady) {
             console.log('NetlistSVG ready.');
-        } catch (err) {
-            console.error('NetlistSVG init failed:', err);
-            this.setStatus(`Init error: ${err.message}`);
         }
+        this.setStatus(this._unreadyStatus() ?? kIdleStatus);
+    }
+
+    _unreadyStatus() {
+        if (this._netlistsvgReady) {
+            return null;
+        }
+        return isStaticMode(this.appState)
+            ? 'The schematic is not available in saved reports.'
+            : 'Init error: netlistsvg or its skin is missing from the page.';
     }
 
     // Web-only: mirror the layout timing cone here when the timing widget asks
@@ -351,14 +348,14 @@ export class SchematicWidget {
     // ── Refresh ──────────────────────────────────────────────────────────────
 
     refresh() {
-        const instName = this.appState.selectedInstanceName;
-        if (!instName) {
-            this.setStatus('Select an instance in the layout to view its schematic.');
+        if (!this._netlistsvgReady) {
+            this.setStatus(this._unreadyStatus());
             return;
         }
 
-        if (!this._netlistsvgReady) {
-            this.setStatus('NetlistSVG not ready yet — try again in a moment.');
+        const instName = this.appState.selectedInstanceName;
+        if (!instName) {
+            this.setStatus(kIdleStatus);
             return;
         }
 

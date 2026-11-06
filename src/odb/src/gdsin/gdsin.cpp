@@ -22,7 +22,7 @@
 #include "odb/geom.h"
 #include "utl/Logger.h"
 
-namespace odb ::gds {
+namespace odb::gds {
 
 using utl::ODB;
 

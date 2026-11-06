@@ -22,6 +22,10 @@ add_pdn_stripe -layer metal4 -width 1.0 -pitch 5.0 -offset 2.5 -extend_to_core_r
 
 add_pdn_connect -layers {metal1 metal4} -min_width_layers {metal2 metal3}
 
+# The connect report has to name the min-width layers, the same way it names
+# the ongrid layers.
+pdngen -report_only
+
 pdngen
 
 # Report the widest enclosure on each pass-through layer (in its non-preferred,

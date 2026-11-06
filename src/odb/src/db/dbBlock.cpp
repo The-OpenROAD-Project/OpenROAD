@@ -882,8 +882,8 @@ template <typename T, typename T_impl>
 static void rebuildModuleHash(
     _dbBlock& block,
     dbTable<T_impl>* table,
-    dbId<_dbModule> T_impl::*module_field,
-    std::unordered_map<std::string, dbId<T_impl>> _dbModule::*hash_field)
+    dbId<_dbModule> T_impl::* module_field,
+    std::unordered_map<std::string, dbId<T_impl>> _dbModule::* hash_field)
 {
   dbSet<T> items((dbBlock*) &block, table);
   for (T* obj : items) {
@@ -2566,8 +2566,31 @@ int dbBlock::getGCellTileSize()
   const int upper_layer_for_gcell_size = 4;
   const int pitches_in_tile = 15;
 
-  if (block->max_routing_layer_ < upper_layer_for_gcell_size) {
-    return getAverageTrackSpacing(block->max_routing_layer_) * pitches_in_tile;
+  // layer_idx below is frontside-only (see isBackside() above), so count
+  // how many frontside layers are enabled up to max_routing_layer_ here
+  // instead of using that raw, backside-inclusive level directly. A
+  // non-positive max_routing_layer_ matches no raw level, leaving the
+  // count at 0.
+  dbTech* tech = getTech();
+  int enabled_frontside_layers = 0;
+  int raw_level = 0;
+  if (block->max_routing_layer_ > 0) {
+    for (auto* layer : tech->getLayers()) {
+      if (layer->getType() != dbTechLayerType::ROUTING) {
+        continue;
+      }
+      ++raw_level;
+      if (!layer->isBackside()) {
+        ++enabled_frontside_layers;
+      }
+      if (raw_level == block->max_routing_layer_) {
+        break;
+      }
+    }
+  }
+
+  if (enabled_frontside_layers < upper_layer_for_gcell_size) {
+    return getAverageTrackSpacing(enabled_frontside_layers) * pitches_in_tile;
   }
 
   // Use the middle track spacing between M2, M3 and M4

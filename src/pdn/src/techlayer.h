@@ -67,8 +67,8 @@ class TechLayer
   struct MinCutRule
   {
     odb::dbTechLayerCutClassRule* cut_class;
-    bool above;
-    bool below;
+    bool above;  // only when this layer is above the via (FROMBELOW)
+    bool below;  // only when this layer is below the via (FROMABOVE)
     int width;
     int cuts;
   };

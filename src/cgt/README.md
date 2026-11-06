@@ -50,6 +50,7 @@ clock_gating
     [-min_instances min_instances]
     [-max_cover max_cover]
     [-dump_dir dump_dir]
+    [-scene scene]
 ```
 
 #### Options
@@ -59,6 +60,7 @@ clock_gating
 | `-min_instances` | Minimum number of instances that should be gated by a single clock gate. |
 | `-max_cover` | Maximum number of initial gate condition candidate nets per instance. |
 | `-dump_dir` | Directory for debug dumps. |
+| `-scene` | Scene whose Liberty libraries are used for logic analysis. Defaults to the current command scene. |
 
 ## Example scripts
 
@@ -72,10 +74,10 @@ Example script on running `cgt` for a sample design of `aes` can be found here:
 
 There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
-Simply run the following script:
+Simply run the following command:
 
 ```shell
-./test/regression
+bazelisk test //src/cgt/...
 ```
 
 ## Limitations

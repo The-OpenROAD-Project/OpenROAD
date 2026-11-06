@@ -16,6 +16,7 @@
 
 %include "../../Exception.i"
 
+
 %inline %{
   void create_power_domain_cmd(const char* name)
   {

@@ -151,9 +151,11 @@ void FastRouteCore::netpinOrderInc()
       ndr_priority = 0;  // Higher priority for NDR nets
     }
 
+    const bool resistance_aware
+        = enable_resistance_aware_ && nets_[netID]->isResAware();
     // Prioritize nets with worst slack first
     const float res_aware_score
-        = nets_[netID]->isResAware() ? -getResAwareScore(nets_[netID]) : 0;
+        = resistance_aware ? -getResAwareScore(nets_[netID]) : 0;
 
     // Prioritize clock nets when using resistance-aware strategy to
     // better balance clock skew
@@ -163,7 +165,7 @@ void FastRouteCore::netpinOrderInc()
     tree_order_pv_.push_back(
         {netID, xmin, length_per_pin, ndr_priority, res_aware_score, is_clock});
 
-    if (nets_[netID]->isResAware()) {
+    if (resistance_aware) {
       res_aware_nets++;
     }
   }
@@ -868,9 +870,7 @@ void FastRouteCore::assignEdge(const int netID,
   layer_grid.resize(boost::extents[num_layers_][routelen + 1]);
 
   // Enable resistance aware layer assignment only if the net needs it
-  if (enable_resistance_aware_) {
-    resistance_aware_ = net->isResAware();
-  }
+  resistance_aware_ = enable_resistance_aware_ && net->isResAware();
 
   for (k = 0; k < routelen; k++) {
     int best_cost = std::numeric_limits<int>::min();
@@ -1611,10 +1611,13 @@ void FastRouteCore::StNetOrder()
 
   for (size_t j = 0; j < net_ids_.size(); j++) {
     const int netID = net_ids_[j];
+    FrNet* net = nets_[netID];
 
     const StTree& stree = sttrees_[netID];
-    tree_order_cong_[j].xmin = 0;
     tree_order_cong_[j].treeIndex = netID;
+    // The tracks an NDR net misses on its route are overflow for it too.
+    // Accumulate as int, OrderTree::xmin is too narrow to hold every sum.
+    int overflow = 0;
 
     for (int ind = 0; ind < stree.num_edges(); ind++) {
       const TreeEdge& treeedge = stree.edges[ind];
@@ -1626,16 +1629,26 @@ void FastRouteCore::StNetOrder()
           const int cap = getEdgeCapacity(
               nets_[netID], grids[i].x, min_y, EdgeDirection::Vertical);
           const auto usageV = graph2d_.getUsageV(grids[i].x, min_y);
-          tree_order_cong_[j].xmin += std::max(0, usageV - cap);
+          overflow
+              += std::max(0, usageV - cap)
+                 + kNdrDeficitCost
+                       * graph2d_.getNDRDeficit(
+                           net, grids[i].x, min_y, EdgeDirection::Vertical);
         } else {  // a horizontal edge
           const int min_x = std::min(grids[i].x, grids[i + 1].x);
           const int cap = getEdgeCapacity(
               nets_[netID], min_x, grids[i].y, EdgeDirection::Horizontal);
           const auto usageH = graph2d_.getUsageH(min_x, grids[i].y);
-          tree_order_cong_[j].xmin += std::max(0, usageH - cap);
+          overflow
+              += std::max(0, usageH - cap)
+                 + kNdrDeficitCost
+                       * graph2d_.getNDRDeficit(
+                           net, min_x, grids[i].y, EdgeDirection::Horizontal);
         }
       }
     }
+    tree_order_cong_[j].xmin
+        = std::min<int>(overflow, std::numeric_limits<int16_t>::max());
   }
 
   std::ranges::stable_sort(tree_order_cong_, compareTEL);
@@ -2020,31 +2033,58 @@ void FastRouteCore::check2DEdgesUsage()
     return;
   }
 
+  // Stops global route early, unless the route accepts congestion
+  // (-allow_congestion), as the end of routing does (GRT-0115/0116).
+  // Separate warn/error ids: find_messages.py allows one call site per id.
   // check horizontal edges
   for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
-    if (graph2d_.getUsageH(x, y) > max_h_edge_usage) {
-      logger_->error(GRT,
-                     228,
-                     "Horizontal edge usage exceeds the maximum allowed. "
-                     "({}, {}) usage={} limit={}",
-                     x,
-                     y,
-                     graph2d_.getUsageH(x, y),
-                     max_h_edge_usage);
+    const int usage = graph2d_.getUsageH(x, y);
+    if (usage > max_h_edge_usage) {
+      if (allow_congestion_) {
+        logger_->warn(GRT,
+                      251,
+                      "Horizontal edge usage exceeds the maximum allowed. "
+                      "({}, {}) usage={} limit={}",
+                      x,
+                      y,
+                      usage,
+                      max_h_edge_usage);
+      } else {
+        logger_->error(GRT,
+                       228,
+                       "Horizontal edge usage exceeds the maximum allowed. "
+                       "({}, {}) usage={} limit={}",
+                       x,
+                       y,
+                       usage,
+                       max_h_edge_usage);
+      }
     }
   }
 
   // check vertical edges
   for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
-    if (graph2d_.getUsageV(x, y) > max_v_edge_usage) {
-      logger_->error(GRT,
-                     229,
-                     "Vertical edge usage exceeds the maximum allowed. "
-                     "({}, {}) usage={} limit={}",
-                     x,
-                     y,
-                     graph2d_.getUsageV(x, y),
-                     max_v_edge_usage);
+    const int usage = graph2d_.getUsageV(x, y);
+    if (usage > max_v_edge_usage) {
+      if (allow_congestion_) {
+        logger_->warn(GRT,
+                      299,
+                      "Vertical edge usage exceeds the maximum allowed. "
+                      "({}, {}) usage={} limit={}",
+                      x,
+                      y,
+                      usage,
+                      max_v_edge_usage);
+      } else {
+        logger_->error(GRT,
+                       229,
+                       "Vertical edge usage exceeds the maximum allowed. "
+                       "({}, {}) usage={} limit={}",
+                       x,
+                       y,
+                       usage,
+                       max_v_edge_usage);
+      }
     }
   }
 }

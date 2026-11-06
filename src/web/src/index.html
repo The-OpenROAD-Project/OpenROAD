@@ -4,28 +4,66 @@
     <title>OpenROAD Web Viewer</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- The bundled libraries' licences; a pointer, not something the page
+         loads. -->
+    <link rel="license" href="THIRD_PARTY_LICENSES.txt">
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-          crossorigin=""/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-            crossorigin=""></script>
-
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/goldenlayout-base.css"/>
-    <link rel="stylesheet" id="gl-theme-dark" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-dark-theme.css"/>
-    <link rel="stylesheet" id="gl-theme-light" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-light-theme.css" disabled/>
-
-    <script src="https://nturley.github.io/netlistsvg/elk.bundled.js"></script>
-    <script src="https://nturley.github.io/netlistsvg/built/netlistsvg.bundle.js"></script>
-
-    <link rel="stylesheet" href="style.css"/>
+    <!-- Filled in at build time from esbuild's bundles; theme.js switches the
+         two golden-layout themes through their `disabled` property, by id. -->
+    <!-- saved-report:begin -->
+    <style>/*! vendor.min.css */</style>
+    <style id="gl-theme-dark">/*! gl-dark.min.css */</style>
+    <style id="gl-theme-light">/*! gl-light.min.css */</style>
+    <!-- Last on purpose: style.css ends with a block that overrides the active
+         golden-layout theme, and only wins while it comes after it. -->
+    <style>/*! app.min.css */</style>
+    <!-- `disabled` is a property of <style>, not an attribute; this keeps the
+         two themes from applying at once until theme.js sets both. -->
+    <script>document.getElementById('gl-theme-light').disabled = true;</script>
+    <!-- saved-report:end -->
 </head>
 <body>
 
     <div id="menu-bar"></div>
     <div id="toolbar"></div>
-    <div id="gl-container"></div>
+    <div id="gl-container" class="ide-layout">
+        <!-- Gutter expand buttons (visible when a panel is collapsed) -->
+        <button id="gutter-expand-left" class="ide-gutter-expand ide-gutter-left" title="Restore Display Controls">
+            <span>▶ Display Controls</span>
+        </button>
+        <button id="gutter-expand-right" class="ide-gutter-expand ide-gutter-right" title="Restore Right Panel">
+            <span>◀ Tools &amp; Inspector</span>
+        </button>
+
+        <!-- Left Pane: Display Controls -->
+        <ide-pane id="pane-left" name="left"></ide-pane>
+
+        <!-- Left Splitter -->
+        <ide-splitter id="splitter-left" for="left" orientation="vertical" title="Drag to resize panel"></ide-splitter>
+
+        <!-- Center Area -->
+        <main id="pane-center" class="ide-center">
+            <!-- Center Top Pane: Main Viewer (Layout, Schematic, 3D) -->
+            <ide-pane id="pane-main" name="main" maximizable></ide-pane>
+
+            <!-- Bottom Splitter -->
+            <ide-splitter id="splitter-bottom" for="bottom" orientation="horizontal" title="Drag to resize console"></ide-splitter>
+
+            <!-- Gutter expand button for console -->
+            <button id="gutter-expand-bottom" class="ide-gutter-expand ide-gutter-bottom" title="Restore Tcl Console">
+                <span>▲ Tcl Console</span>
+            </button>
+
+            <!-- Center Bottom Pane: Console -->
+            <ide-pane id="pane-bottom" name="bottom" maximizable collapsible></ide-pane>
+        </main>
+
+        <!-- Right Splitter -->
+        <ide-splitter id="splitter-right" for="right" orientation="vertical" title="Drag to resize panel"></ide-splitter>
+
+        <!-- Right Pane: Inspector, Hierarchy, Timing, DRC, etc. -->
+        <ide-pane id="pane-right" name="right" maximizable collapsible></ide-pane>
+    </div>
     <div id="websocket-status"></div>
     <div id="loading-overlay">
         <div class="loading-overlay-content">
@@ -33,7 +71,7 @@
             <span>Loading shapes…</span>
         </div>
     </div>
-    <script type="module" src="main.js"></script>
+    <script type="module" src="app.min.js"></script>
 
 </body>
 </html>

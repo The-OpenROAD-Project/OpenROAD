@@ -1293,7 +1293,7 @@ int definReader::rowCallback(DefParser::defrCallbackType_e /* unused: type */,
 
   defRow dir = DEF_HORIZONTAL;
   int num_sites = 1;
-  int spacing = 0;
+  std::optional<int> spacing;
 
   if (row->hasDo()) {
     if (row->yNum() == 1) {

@@ -24,6 +24,7 @@ namespace ant {
 struct PARinfo;
 struct ARinfo;
 struct AntennaModel;
+struct PinAntenna;
 class WireBuilder;
 
 ///////////////////////////////////////
@@ -70,6 +71,7 @@ using LayerToNodeInfo = odb::PtrMap<odb::dbTechLayer, NodeInfo>;
 using GraphNodes = std::vector<std::unique_ptr<GraphNode>>;
 using LayerToGraphNodes = odb::PtrMap<odb::dbTechLayer, GraphNodes>;
 using GateToLayerToNodeInfo = odb::PtrMap<odb::dbITerm, LayerToNodeInfo>;
+using PinAntennas = odb::PtrMap<odb::dbMTerm, PinAntenna>;
 using GateToViolationLayers
     = odb::PtrMap<odb::dbITerm, odb::PtrSet<odb::dbTechLayer>>;
 
@@ -94,14 +96,11 @@ class AntennaChecker::Impl
   bool haveRoutedNets();
   bool designIsPlaced();
   bool haveGuides();
-  double diffArea(odb::dbMTerm* mterm);
-  double gateArea(odb::dbMTerm* mterm);
   std::vector<std::pair<double, std::vector<odb::dbITerm*>>> parMaxWireLength(
       odb::dbNet* net,
       int layer);
   std::vector<std::pair<double, std::vector<odb::dbITerm*>>>
   getViolatedWireLength(odb::dbNet* net, int routing_level);
-  bool isValidGate(odb::dbMTerm* mterm);
   void buildLayerMaps(odb::dbNet* net, LayerToGraphNodes& node_by_layer_map);
   int analyzeNet(odb::dbNet* net,
                  odb::dbMTerm* diode_mterm,
@@ -112,9 +111,10 @@ class AntennaChecker::Impl
                  LayerToGraphNodes& node_by_layer_map,
                  int node_count);
   void calculateAreas(const LayerToGraphNodes& node_by_layer_map,
+                      PinAntennas& pins,
                       GateToLayerToNodeInfo& gate_info);
   void calculatePAR(GateToLayerToNodeInfo& gate_info);
-  void calculateCAR(GateToLayerToNodeInfo& gate_info);
+  void calculateCAR(const PinAntennas& pins, GateToLayerToNodeInfo& gate_info);
   LayerCheck checkRatioViolations(odb::dbTechLayer* layer,
                                   NodeInfo& node_info,
                                   float ratio_margin);
@@ -134,8 +134,12 @@ class AntennaChecker::Impl
   RatioCheck checkPSR(odb::dbTechLayer* tech_layer,
                       NodeInfo& info,
                       float ratio_margin);
-  RatioCheck checkCAR(odb::dbTechLayer* tech_layer, const NodeInfo& info);
-  RatioCheck checkCSR(odb::dbTechLayer* tech_layer, const NodeInfo& info);
+  RatioCheck checkCAR(odb::dbTechLayer* tech_layer,
+                      const NodeInfo& info,
+                      float ratio_margin);
+  RatioCheck checkCSR(odb::dbTechLayer* tech_layer,
+                      const NodeInfo& info,
+                      float ratio_margin);
 
   odb::dbDatabase* db_{nullptr};
   odb::dbBlock* block_{nullptr};
