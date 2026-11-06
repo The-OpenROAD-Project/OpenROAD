@@ -3,7 +3,8 @@
 
 // Timing report widget — path summary + detail tables.
 
-import { isStaticMode, makeResizableHeaders } from './ui-utils.js';
+import { isStaticMode, makeResizableHeaders, savedColumnWidths }
+    from './ui-utils.js';
 
 export class TimingWidget {
     constructor(app, redrawAllLayers, refreshOverlay) {
@@ -482,9 +483,8 @@ export class TimingWidget {
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
         this._pathCountLabel.textContent = paths.length + ' paths';
 
-        // Preserve column widths across re-renders.
-        const oldHeaders = this._pathTable.querySelectorAll('thead th');
-        const savedWidths = Array.from(oldHeaders, th => th.style.width);
+        // Preserve dragged column widths across re-renders.
+        const savedWidths = savedColumnWidths(this._pathTable);
 
         this._pathTable.innerHTML = '';
 
@@ -555,8 +555,7 @@ export class TimingWidget {
 
         this._pathTable.appendChild(tbody);
 
-        // Install resize grips, reusing any previously saved widths to
-        // avoid a measuring reflow.
+        // Install resize grips with the widths of any dragged columns.
         makeResizableHeaders(this._pathTable, savedWidths);
     }
 
@@ -586,9 +585,8 @@ export class TimingWidget {
     }
 
     _renderDetailTable() {
-        // Preserve column widths across re-renders.
-        const oldHeaders = this._detailTable.querySelectorAll('thead th');
-        const savedWidths = Array.from(oldHeaders, th => th.style.width);
+        // Preserve dragged column widths across re-renders.
+        const savedWidths = savedColumnWidths(this._detailTable);
 
         this._detailTable.innerHTML = '';
         this._selectedDetailIndex = -1;
@@ -636,16 +634,8 @@ export class TimingWidget {
         });
         this._detailTable.appendChild(tbody);
 
-        // Install resize grips, reusing any previously saved widths to
-        // avoid a measuring reflow.
+        // Install resize grips with the widths of any dragged columns.
         makeResizableHeaders(this._detailTable, savedWidths);
-        if (!savedWidths[0]) {
-            // Pin column: set initial width to 30 characters
-            const pinTh = this._detailTable.querySelector('thead th');
-            if (pinTh) {
-                pinTh.style.width = '30ch';
-            }
-        }
     }
 
 }

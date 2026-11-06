@@ -8,7 +8,8 @@
 // rows without mapToSource and mis-target under sorting).
 
 import { dbuRectToBounds } from './coordinates.js';
-import { isStaticMode, makeResizableHeaders } from './ui-utils.js';
+import { isStaticMode, makeResizableHeaders, savedColumnWidths }
+    from './ui-utils.js';
 
 export class SelectionBrowser {
     constructor(container, app, refreshOverlay) {
@@ -267,6 +268,9 @@ export class SelectionBrowser {
     }
 
     _renderTable() {
+        // the table is replaced; dragged widths move on to the new one
+        const savedWidths = savedColumnWidths(
+            this._tableWrap.querySelector('table'));
         this._tableWrap.innerHTML = '';
         const entries = this._entries();
         if (!entries.length) {
@@ -388,6 +392,6 @@ export class SelectionBrowser {
         }
         table.appendChild(tbody);
         this._tableWrap.appendChild(table);
-        makeResizableHeaders(table);
+        makeResizableHeaders(table, savedWidths);
     }
 }

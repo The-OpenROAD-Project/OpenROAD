@@ -597,24 +597,92 @@ export function runTclScript(app, script, echo) {
 }
 
 // Make table column headers resizable by dragging.
-// widths is an optional array of CSS width strings (e.g. saved from a
-// previous render); when given, it is applied directly instead of
-// measuring natural widths, avoiding a forced reflow.
+// widths is an optional array of CSS width strings, one per column, that
+// savedColumnWidths() took from the previous render; when given, the
+// columns were dragged and keep those widths.  Otherwise each column is
+// measured from its text.
+// Widening a column widens the table, as Qt's header view does, rather than
+// taking the width from the other columns: a fixed-layout table held at 100 %
+// of its panel shares the panel among its columns, so dragging one long
+// path-name column wider squeezed every other one.  The last column has no
+// width of its own and takes whatever the panel has left over, at least the
+// width it started with or was dragged to (kept on the table, so a re-render
+// that rebuilds the header keeps it); the container scrolls sideways past
+// that.
+//
+// Widths the table measured itself are not kept as a choice: a table first
+// drawn empty ("Click Update") measured its header text alone, and reusing
+// that for the rows that follow left every column cramped.  Until a column
+// is dragged, each render measures the rows it has, a column at most
+// kMaxAutoColumnPx wide (a long path name is elided, not given the panel).
+// Once one is dragged, savedColumnWidths() hands every width on to the
+// next render, including to a table that replaces this one.
+export const kMaxAutoColumnPx = 480;
+
+// A column's width from its text, not from the layout: a table filled while
+// its panel is hidden (a histogram click fills the timing table, then shows
+// it) has no layout, every offsetWidth is 0, and the last column took the
+// whole panel.  The longest of the header and the first `kMeasureRows` rows,
+// at the table's font size (monospace digits and names are about 0.6 em a
+// character), plus the cell padding and the grip.
+const kMeasureRows = 200;
+export function textColumnWidths(table) {
+    const headers = table.querySelectorAll('thead th');
+    let fontPx = 12;
+    try {
+        fontPx = parseFloat(getComputedStyle(table).fontSize) || 12;
+    } catch (e) { /* no getComputedStyle: 12 px */ }
+    const longest = Array.from(headers, (th) => th.textContent.length);
+    const rows = table.querySelectorAll('tbody tr');
+    for (let r = 0; r < rows.length && r < kMeasureRows; r++) {
+        const cells = rows[r].children;
+        if (cells.length !== headers.length) continue;  // a colspan message
+        for (let i = 0; i < cells.length; i++) {
+            longest[i] = Math.max(longest[i], cells[i].textContent.length);
+        }
+    }
+    return longest.map((n) => Math.min(
+        Math.ceil(n * 0.6 * fontPx) + 24, kMaxAutoColumnPx));
+}
+
+// The widths to pass to makeResizableHeaders when `table` is rendered
+// again or replaced: undefined until one of its columns was dragged.  They
+// are kept on the table, not read from its header, so a table emptied in
+// between (the detail table with no path selected) still has them.
+export function savedColumnWidths(table) {
+    const saved = table?.dataset.columnWidths;
+    return saved ? JSON.parse(saved) : undefined;
+}
+
 export function makeResizableHeaders(table, widths) {
     const headers = table.querySelectorAll('thead th');
-    if (!widths || !widths[0]) {
-        // Reset to auto layout so browser computes natural column widths;
-        // reading offsetWidth forces a reflow.
-        table.style.tableLayout = 'auto';
-        headers.forEach((th) => th.style.width = '');
-        widths = Array.from(headers, (th) => th.offsetWidth + 'px');
+    let dragged = !!widths && widths.length === headers.length;
+    if (!dragged) {
+        // no widths, or saved for other columns (another tab's table)
+        delete table.dataset.columnWidths;
+        widths = textColumnWidths(table).map((w) => w + 'px');
     }
+    const last = headers.length - 1;
+    let lastMin = parseFloat(widths[last]) || 0;
     // Lock in widths and switch to fixed layout
-    headers.forEach((th, i) => th.style.width = widths[i] || '');
+    headers.forEach((th, i) => th.style.width = i === last ? '' : (widths[i] || ''));
     table.style.tableLayout = 'fixed';
+    const fit = () => {
+        let total = lastMin;
+        headers.forEach((th, i) => {
+            if (i !== last) total += parseFloat(th.style.width) || 0;
+        });
+        table.style.width = total + 'px';
+        table.style.minWidth = '100%';
+        if (dragged) {
+            // the last column's width is kept here, not on its header
+            table.dataset.columnWidths = JSON.stringify(Array.from(headers,
+                (th, i) => (i === last ? lastMin + 'px' : th.style.width)));
+        }
+    };
+    fit();
 
     headers.forEach((th, idx) => {
-        if (idx === headers.length - 1) return; // skip last column
         const grip = document.createElement('div');
         grip.className = 'col-resize-grip';
         th.style.position = 'relative';
@@ -622,7 +690,13 @@ export function makeResizableHeaders(table, widths) {
 
         let startX, startW;
         const onMouseMove = (e) => {
-            th.style.width = Math.max(30, startW + e.clientX - startX) + 'px';
+            const w = Math.max(30, startW + e.clientX - startX);
+            if (idx === last) {
+                lastMin = w;  // the last column keeps no width of its own
+            } else {
+                th.style.width = w + 'px';
+            }
+            fit();
         };
         const onMouseUp = () => {
             document.removeEventListener('mousemove', onMouseMove);
@@ -642,6 +716,7 @@ export function makeResizableHeaders(table, widths) {
         };
         grip.addEventListener('mousedown', (e) => {
             e.preventDefault();
+            dragged = true;
             startX = e.clientX;
             startW = th.offsetWidth;
             document.addEventListener('mousemove', onMouseMove);
