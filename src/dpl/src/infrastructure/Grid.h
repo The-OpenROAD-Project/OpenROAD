@@ -164,6 +164,12 @@ class Grid
   void resize(GridY size) { pixels_.resize(size.v); }
   void resize(GridY y, GridX size) { pixels_[y.v].resize(size.v); }
   void clear();
+  // Frees the pixels and keeps the rows, which gridX() and the other
+  // coordinate conversions read; allocateGrid() makes them again.
+  void releasePixels();
+  bool hasPixels() const { return !pixels_.empty(); }
+  // The rows are there and the pixels were released.
+  bool pixelsReleased() const { return row_count_ > 0 && pixels_.empty(); }
 
   bool hasHybridRows() const { return has_hybrid_rows_; }
 
