@@ -67,6 +67,21 @@ void RetimingGraph::markBoundary(odb::dbInst* inst, int id)
   }
 }
 
+// True when a path entering register `reg` at `pin` continues through the
+// register.  For a plain or enable register only the data pin does: an enable
+// pin is a class attribute that travels with the register, not a data edge,
+// so the enable logic never becomes combinational in the model.  Any other
+// register continues through every pin in its next_state support, as it is
+// unmapped to a plain register before it moves.
+bool RetimingGraph::continuesThrough(odb::dbInst* reg, odb::dbITerm* pin) const
+{
+  auto it = reg_class_.find(reg);
+  if (it != reg_class_.end() && it->second.kind != RegisterKind::other) {
+    return pin->getMTerm() == it->second.data;
+  }
+  return isRegisterDataPin(sta_, pin);
+}
+
 // Walk forward from `current`, through register chains while counting the
 // weight, and add an edge at every combinational sink reached.  The visited
 // set guards register rings.
@@ -90,9 +105,9 @@ void RetimingGraph::walkFanout(int source,
       }
       odb::dbInst* load = sink->getInst();
       if (load->getMaster()->isSequential()) {
-        // Only the data pin continues the path; a control pin (async
+        // Only a data pin continues the path; a control pin (enable, async
         // set/reset, scan, clock) is not a retimeable data edge.
-        if (!isRegisterDataPin(sta_, sink)) {
+        if (!continuesThrough(load, sink)) {
           continue;
         }
         if (visited.count(load)) {
@@ -122,8 +137,10 @@ void RetimingGraph::build()
 
   nodes_.clear();
   index_.clear();
+  reg_class_.clear();
   for (odb::dbInst* inst : block->getInsts()) {
     if (inst->getMaster()->isSequential()) {
+      reg_class_[inst] = registerClass(sta_, inst);
       continue;
     }
     index_[inst] = static_cast<int>(nodes_.size());
@@ -133,6 +150,17 @@ void RetimingGraph::build()
   adj_.assign(n, {});
   phys_.assign(n, {});
   pinned_.assign(n, false);
+  self_dual_.assign(n, false);
+  std::unordered_map<odb::dbMaster*, bool> self_dual_master;
+  for (int i = 0; i < n; i++) {
+    odb::dbMaster* master = nodes_[i]->getMaster();
+    auto it = self_dual_master.find(master);
+    if (it == self_dual_master.end()) {
+      it = self_dual_master.emplace(master, isSelfDualGate(sta_, nodes_[i]))
+               .first;
+    }
+    self_dual_[i] = it->second;
+  }
 
   for (int i = 0; i < n; i++) {
     markBoundary(nodes_[i], i);
@@ -161,6 +189,28 @@ void RetimingGraph::fenceDontTouch()
         if (isDontTouchRegister(sta_, flop)) {
           pinned_[target] = true;
           break;
+        }
+      }
+    }
+  }
+  // A register pushed across a gate lands on that gate's fanout edges, so a
+  // gate also sees the clock nets of every gate that feeds it through an edge
+  // without registers.
+  bool grew = true;
+  while (grew) {
+    grew = false;
+    for (int u = 0; u < static_cast<int>(nodes_.size()); u++) {
+      if (fanin_clocks[u].empty()) {
+        continue;
+      }
+      for (const Edge& e : adj_[u]) {
+        if (e.weight > 0) {
+          continue;
+        }
+        for (odb::dbNet* clock : fanin_clocks[u]) {
+          if (fanin_clocks[e.target].insert(clock).second) {
+            grew = true;
+          }
         }
       }
     }

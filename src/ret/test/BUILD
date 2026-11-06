@@ -7,6 +7,14 @@ package(features = ["layering_check"])
 
 TESTS = [
     "retime_basic",
+    "retime_dsec_deep",
+    "retime_dsec_enable",
+    "retime_dsec_enable_chain",
+    "retime_dsec_existing_names",
+    "retime_dsec_inverting",
+    "retime_dsec_inverting_asap7",
+    "retime_dsec_loop",
+    "retime_dsec_plain",
     "retime_gated_clock",
     "retime_input_limit",
     "retime_input_path",

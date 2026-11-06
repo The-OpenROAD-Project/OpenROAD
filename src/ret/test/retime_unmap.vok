@@ -26,16 +26,11 @@ module top (a,
  wire n9;
  wire ret_net_0;
  wire q2;
- wire ret_net_1;
- wire unmap_net_3;
- wire unmap_net_5;
- wire unmap_net_7;
- wire unmap_net_9;
 
  sky130_fd_sc_hd__and2_1 g0 (.A(a),
     .B(b),
     .X(n0));
- sky130_fd_sc_hd__inv_1 g1 (.A(unmap_net_9),
+ sky130_fd_sc_hd__inv_1 g1 (.A(n0),
     .Y(n1));
  sky130_fd_sc_hd__inv_1 g10 (.A(n9),
     .Y(n10));
@@ -68,21 +63,8 @@ module top (a,
  sky130_fd_sc_hd__dfxtp_1 r2 (.D(n14),
     .Q(q2),
     .CLK(clk));
- sky130_fd_sc_hd__dfxtp_1 ret_ff_0 (.D(n13),
+ sky130_fd_sc_hd__edfxtp_1 ret_ff_0 (.D(n13),
+    .DE(en),
     .Q(ret_net_0),
     .CLK(clk));
- sky130_fd_sc_hd__dfxtp_1 ret_ff_1 (.D(unmap_net_9),
-    .Q(ret_net_1),
-    .CLK(clk));
- sky130_fd_sc_hd__and2_0 unmap_and_2 (.A(n0),
-    .B(en),
-    .X(unmap_net_3));
- sky130_fd_sc_hd__and2_0 unmap_and_6 (.A(ret_net_1),
-    .B(unmap_net_5),
-    .X(unmap_net_7));
- sky130_fd_sc_hd__clkinv_1 unmap_inv_4 (.A(en),
-    .Y(unmap_net_5));
- sky130_fd_sc_hd__or2_0 unmap_or_8 (.A(unmap_net_3),
-    .B(unmap_net_7),
-    .X(unmap_net_9));
 endmodule

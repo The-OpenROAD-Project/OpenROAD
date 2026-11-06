@@ -1,15 +1,17 @@
 // A clock gate feeds part of the design.  The gated chain r1 -> h1..h4 -> r2 is
 // retimed and the new register stays on the gated net; g_mix is fed by one
 // register on clk and one on gclk, so it is pinned and its chain is left alone.
-module top (a, b, en, clk, y, z);
+module top (a, b, en, clk, y, z, w);
   input a;
   input b;
   input en;
   input clk;
   output y;
   output z;
+  output w;
   wire gclk, n0, q1, m1, m2, m3, m4, q2;
   wire pa, pb, qa, qb, mx, k1n, k2n, k3n, qc;
+  wire sa, sb, qs1, qs2, s1n, mx2, t1n, t2n, t3n, t4n, qs3;
 
   CLKGATE_X1 icg (.CK(clk), .E(en), .GCK(gclk));
 
@@ -32,4 +34,19 @@ module top (a, b, en, clk, y, z);
   INV_X1 k3 (.A(k2n), .ZN(k3n));
   DFF_X1 rc (.D(k3n), .CK(clk), .Q(qc));
   BUF_X1 o2 (.A(qc), .Z(z));
+
+  // rs1 (clk) can cross s1, and would then meet rs2 (gclk) at g_mix2: that
+  // gate is pinned too, although only one register feeds it directly.
+  INV_X1 s0 (.A(a), .ZN(sa));
+  DFF_X1 rs1 (.D(sa), .CK(clk), .Q(qs1));
+  INV_X1 s1 (.A(qs1), .ZN(s1n));
+  INV_X1 s2 (.A(b), .ZN(sb));
+  DFF_X1 rs2 (.D(sb), .CK(gclk), .Q(qs2));
+  AND2_X1 g_mix2 (.A1(s1n), .A2(qs2), .ZN(mx2));
+  INV_X1 t1 (.A(mx2), .ZN(t1n));
+  INV_X1 t2 (.A(t1n), .ZN(t2n));
+  INV_X1 t3 (.A(t2n), .ZN(t3n));
+  INV_X1 t4 (.A(t3n), .ZN(t4n));
+  DFF_X1 rs3 (.D(t4n), .CK(clk), .Q(qs3));
+  BUF_X1 o3 (.A(qs3), .Z(w));
 endmodule

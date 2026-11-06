@@ -7,6 +7,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "RegisterUtils.h"
 #include "odb/db.h"
 
 namespace sta {
@@ -47,9 +48,13 @@ class RetimingGraph
   std::vector<std::vector<EdgePhys>> phys_;  // parallel to adj_
   std::vector<bool> pinned_;  // gate may not move: I/O boundary or fed
                               // through a don't-touch register
+  // Class of every register in the design (see RegisterUtils.h).
+  std::unordered_map<odb::dbInst*, RegisterClass> reg_class_;
+  std::vector<bool> self_dual_;  // gate function is self-dual
   float clock_period_ = 0.0f;
 
  private:
+  bool continuesThrough(odb::dbInst* reg, odb::dbITerm* pin) const;
   void walkFanout(int source,
                   odb::dbInst* current,
                   int weight,

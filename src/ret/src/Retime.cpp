@@ -34,6 +34,11 @@ namespace {
 // such a path, so it must never be the worst arrival the search tries to
 // lower; it stays hugely negative through every max().
 constexpr double kExcluded = -1e30;
+
+// Rule above and below the rows of the slide table.
+constexpr const char* kSlideTableRule
+    = "----------------------------------------"
+      "----------------------------------------";
 }  // namespace
 
 Retime::Retime(RetimingGraph* graph,
@@ -644,20 +649,20 @@ void Retime::run(int max_moves)
         if (moves == 1) {
           logger_->report("");
           logger_->report(
-              " Slide |  Worst arr | Flops | Sinks | Max wr | gate -> fanout "
-              "net");
-          logger_->report(
-              "-------+------------+-------+-------+--------+------------------"
-              "---");
+              " Slide |  Worst arr | Flops | Sinks | Max wr | {:<20} | fanout "
+              "net",
+              "gate");
+          logger_->report(kSlideTableRule);
         }
-        logger_->report("{:>6} | {:>10.4g} | {:>5} | {:>5} | {:>6} | {} -> {}",
-                        moves,
-                        cur,
-                        moved_flops.size(),
-                        graph_->adj_[v].size(),
-                        max_wr,
-                        graph_->nodes_[v]->getName(),
-                        net_name);
+        logger_->report(
+            "{:>6} | {:>10.4g} | {:>5} | {:>5} | {:>6} | {:<20} | {}",
+            moves,
+            cur,
+            moved_flops.size(),
+            graph_->adj_[v].size(),
+            max_wr,
+            graph_->nodes_[v]->getName(),
+            net_name);
         accepted = true;
         break;  // first improvement: restart the scan on the new cone
       }
@@ -682,8 +687,7 @@ void Retime::run(int max_moves)
     }
     return;
   }
-  logger_->report(
-      "-------+------------+-------+-------+--------+---------------------");
+  logger_->report(kSlideTableRule);
   logger_->info(
       utl::RET,
       23,

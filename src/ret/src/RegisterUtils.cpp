@@ -3,13 +3,17 @@
 
 #include "RegisterUtils.h"
 
+#include <algorithm>
 #include <cstring>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
+#include "sta/PortDirection.hh"
 #include "sta/Sequential.hh"
 
 namespace ret {
@@ -111,6 +115,7 @@ int evalConstExpr(sta::dbSta* sta, odb::dbInst* inst, const sta::FuncExpr* e)
   return -1;
 }
 
+// Distinct ports of an expression, in first-appearance order.
 void collectPorts(const sta::FuncExpr* e,
                   std::vector<const sta::LibertyPort*>& ports)
 {
@@ -118,11 +123,257 @@ void collectPorts(const sta::FuncExpr* e,
     return;
   }
   if (e->op() == sta::FuncExpr::Op::port) {
-    ports.push_back(e->port());
+    if (std::find(ports.begin(), ports.end(), e->port()) == ports.end()) {
+      ports.push_back(e->port());
+    }
     return;
   }
   collectPorts(e->left(), ports);
   collectPorts(e->right(), ports);
+}
+
+// Boolean evaluation of next_state under one assignment of its support.
+// The inverted state port reads as the complement of the state.
+using Assignment = std::unordered_map<const sta::LibertyPort*, bool>;
+
+bool evalExpr(const sta::FuncExpr* e,
+              const Assignment& values,
+              const sta::LibertyPort* state,
+              const sta::LibertyPort* state_inv)
+{
+  switch (e->op()) {
+    case sta::FuncExpr::Op::port:
+      if (state_inv != nullptr && e->port() == state_inv) {
+        return !values.at(state);
+      }
+      return values.at(e->port());
+    case sta::FuncExpr::Op::not_:
+      return !evalExpr(e->left(), values, state, state_inv);
+    case sta::FuncExpr::Op::and_:
+      return evalExpr(e->left(), values, state, state_inv)
+             && evalExpr(e->right(), values, state, state_inv);
+    case sta::FuncExpr::Op::or_:
+      return evalExpr(e->left(), values, state, state_inv)
+             || evalExpr(e->right(), values, state, state_inv);
+    case sta::FuncExpr::Op::xor_:
+      return evalExpr(e->left(), values, state, state_inv)
+             != evalExpr(e->right(), values, state, state_inv);
+    case sta::FuncExpr::Op::one:
+      return true;
+    case sta::FuncExpr::Op::zero:
+      return false;
+  }
+  return false;
+}
+
+// What the liberty next_state function says about a cell, independent of any
+// instance: the data port and the enable ports (each with the value at which
+// it holds the state), or `other` when the function has no such shape.
+struct NextStateShape
+{
+  RegisterKind kind = RegisterKind::other;
+  const sta::LibertyPort* data = nullptr;
+  bool data_inverted = false;  // next_state is the inverse of `data`
+  std::vector<std::pair<const sta::LibertyPort*, bool>> enables;  // inactive
+};
+
+// Truth-table check over the support of next_state.  A port is an enable at
+// value v when next_state equals the state for every assignment with that
+// port at v.  With every enable active, next_state must equal exactly one
+// remaining input port, the data port, and no other input may remain.
+NextStateShape nextStateShape(const sta::Sequential* seq)
+{
+  NextStateShape shape;
+  const sta::FuncExpr* next = seq->data();
+  if (next == nullptr) {
+    return shape;
+  }
+  if (next->op() == sta::FuncExpr::Op::port) {
+    shape.kind = RegisterKind::plain;
+    shape.data = next->port();
+    return shape;
+  }
+  if (next->op() == sta::FuncExpr::Op::not_ && next->left() != nullptr
+      && next->left()->op() == sta::FuncExpr::Op::port) {
+    shape.kind = RegisterKind::plain;
+    shape.data = next->left()->port();
+    shape.data_inverted = true;
+    return shape;
+  }
+  const sta::LibertyPort* state = seq->output();
+  const sta::LibertyPort* state_inv = seq->outputInv();
+  if (state == nullptr) {
+    return shape;
+  }
+
+  std::vector<const sta::LibertyPort*> support;
+  collectPorts(next, support);
+  std::vector<const sta::LibertyPort*> inputs;
+  for (const sta::LibertyPort* port : support) {
+    if (port == state || port == state_inv) {
+      continue;
+    }
+    if (!port->direction()->isInput()) {
+      return shape;  // next_state reads something that is not an input
+    }
+    inputs.push_back(port);
+  }
+  constexpr size_t kMaxInputs = 6;  // at most 2^(6+1) truth-table rows
+  if (inputs.empty() || inputs.size() > kMaxInputs) {
+    return shape;
+  }
+
+  // Variables: the inputs, then the state; bit i of `row` is variable i.
+  std::vector<const sta::LibertyPort*> vars = inputs;
+  vars.push_back(state);
+  const unsigned rows = 1u << vars.size();
+  auto assignment = [&](unsigned row) {
+    Assignment values;
+    for (size_t i = 0; i < vars.size(); i++) {
+      values[vars[i]] = ((row >> i) & 1u) != 0;
+    }
+    return values;
+  };
+  auto bit = [](unsigned row, size_t i) { return ((row >> i) & 1u) != 0; };
+
+  // next_state == state for every row with input i at value v.
+  auto holds = [&](size_t i, bool v) {
+    for (unsigned row = 0; row < rows; row++) {
+      if (bit(row, i) != v) {
+        continue;
+      }
+      const Assignment values = assignment(row);
+      if (evalExpr(next, values, state, state_inv) != values.at(state)) {
+        return false;
+      }
+    }
+    return true;
+  };
+  std::vector<bool> is_enable(inputs.size(), false);
+  for (size_t i = 0; i < inputs.size(); i++) {
+    for (bool v : {false, true}) {
+      if (holds(i, v)) {
+        is_enable[i] = true;
+        shape.enables.emplace_back(inputs[i], v);
+        break;
+      }
+    }
+  }
+  if (shape.enables.empty()) {
+    return shape;
+  }
+
+  // With every enable active, next_state == input `d` on every row.
+  auto passes = [&](size_t d) {
+    for (unsigned row = 0; row < rows; row++) {
+      bool active = true;
+      for (size_t i = 0; i < inputs.size() && active; i++) {
+        for (const auto& [port, inactive] : shape.enables) {
+          if (port == inputs[i] && bit(row, i) == inactive) {
+            active = false;
+          }
+        }
+      }
+      if (!active) {
+        continue;
+      }
+      const Assignment values = assignment(row);
+      if (evalExpr(next, values, state, state_inv) != bit(row, d)) {
+        return false;
+      }
+    }
+    return true;
+  };
+  for (size_t i = 0; i < inputs.size(); i++) {
+    if (is_enable[i]) {
+      continue;
+    }
+    if (shape.data != nullptr || !passes(i)) {
+      return NextStateShape();  // a second data candidate, or no pass-through
+    }
+    shape.data = inputs[i];
+  }
+  if (shape.data == nullptr) {
+    return NextStateShape();
+  }
+  shape.kind = RegisterKind::enable;
+  return shape;
+}
+
+odb::dbITerm* findITerm(odb::dbInst* inst, const sta::LibertyPort* port)
+{
+  return port ? inst->findITerm(port->name().c_str()) : nullptr;
+}
+
+// 0 when an output pin function reads the register state, 1 when it reads
+// its complement, -1 for anything else.
+int outputPolarity(const sta::FuncExpr* func, const sta::Sequential* seq)
+{
+  if (func == nullptr) {
+    return -1;
+  }
+  bool inverted = false;
+  if (func->op() == sta::FuncExpr::Op::not_) {
+    inverted = true;
+    func = func->left();
+  }
+  if (func == nullptr || func->op() != sta::FuncExpr::Op::port) {
+    return -1;
+  }
+  if (func->port() == seq->output()) {
+    return inverted ? 1 : 0;
+  }
+  if (seq->outputInv() != nullptr && func->port() == seq->outputInv()) {
+    return inverted ? 0 : 1;
+  }
+  return -1;
+}
+
+// The one output pin the register's loads read, and whether it presents the
+// complement of the state.  With no load at all the pin that reads the state
+// is returned.  False when two output pins carry loads or the loaded pin has
+// no recognizable function: such a register cannot be rebuilt pin for pin.
+bool loadedOutput(sta::dbSta* sta,
+                  odb::dbInst* inst,
+                  const sta::Sequential* seq,
+                  odb::dbITerm*& pin,
+                  bool& inverted)
+{
+  sta::dbNetwork* network = sta->getDbNetwork();
+  pin = nullptr;
+  inverted = false;
+  odb::dbITerm* state_pin = nullptr;
+  int loaded = 0;
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    if (iterm->getIoType() != odb::dbIoType::OUTPUT) {
+      continue;
+    }
+    sta::Pin* sta_pin = network->dbToSta(iterm);
+    sta::LibertyPort* port = sta_pin ? network->libertyPort(sta_pin) : nullptr;
+    const int polarity = port ? outputPolarity(port->function(), seq) : -1;
+    if (polarity == 0 && state_pin == nullptr) {
+      state_pin = iterm;
+    }
+    odb::dbNet* net = iterm->getNet();
+    if (net == nullptr
+        || (net->getITerms().size() <= 1 && net->getBTerms().empty())) {
+      continue;
+    }
+    loaded++;
+    if (polarity < 0) {
+      return false;
+    }
+    pin = iterm;
+    inverted = polarity == 1;
+  }
+  if (loaded > 1) {
+    return false;
+  }
+  if (loaded == 0) {
+    pin = state_pin;
+    inverted = false;
+  }
+  return true;
 }
 
 }  // namespace
@@ -176,6 +427,11 @@ bool isRegisterDataPin(sta::dbSta* sta, odb::dbITerm* pin)
 
 odb::dbITerm* registerDataPin(sta::dbSta* sta, odb::dbInst* inst)
 {
+  const RegisterClass cls = registerClass(sta, inst);
+  if (cls.data != nullptr) {
+    return inst->getITerm(cls.data);
+  }
+  // No recognized shape: the first input in the next_state support.
   for (odb::dbITerm* iterm : inst->getITerms()) {
     if (iterm->getIoType() != odb::dbIoType::INPUT) {
       continue;
@@ -211,6 +467,148 @@ odb::dbNet* registerClockNet(odb::dbInst* inst)
     }
   }
   return nullptr;
+}
+
+RegisterClass registerClass(sta::dbSta* sta, odb::dbInst* inst)
+{
+  RegisterClass cls;
+  cls.clock = registerClockNet(inst);
+  sta::LibertyCell* cell = sta->getDbNetwork()->libertyCell(inst);
+  const sta::Sequential* seq = cell ? singleSequential(cell) : nullptr;
+  if (seq == nullptr || !seq->isRegister()) {
+    return cls;
+  }
+  const NextStateShape shape = nextStateShape(seq);
+  odb::dbITerm* data = findITerm(inst, shape.data);
+  if (shape.kind == RegisterKind::other || data == nullptr) {
+    return cls;
+  }
+  cls.data = data->getMTerm();
+
+  // The loads decide which output pin a rebuilt register drives.  Loads on
+  // two output pins cannot be reproduced by a bypass or by a chain register.
+  odb::dbITerm* out_pin = nullptr;
+  bool out_inverted = false;
+  if (!loadedOutput(sta, inst, seq, out_pin, out_inverted)) {
+    return cls;
+  }
+  cls.output = out_pin ? out_pin->getMTerm() : nullptr;
+  if (shape.kind == RegisterKind::plain) {
+    // One cycle later the loads see the data pin, or its complement when
+    // exactly one of the stored value and the output pin is inverted.
+    if (shape.data_inverted == out_inverted) {
+      cls.kind = RegisterKind::plain;
+    } else if (cls.output != nullptr && cls.clock != nullptr) {
+      cls.kind = RegisterKind::inverting;
+      cls.master = inst->getMaster();
+    }
+    return cls;
+  }
+  if (out_inverted) {
+    return cls;  // an enable register read through its inverted output
+  }
+
+  // Enable register: every signal input must be the data pin, an enable pin
+  // or the clock.
+  for (const auto& [port, inactive] : shape.enables) {
+    odb::dbITerm* iterm = findITerm(inst, port);
+    if (iterm == nullptr) {
+      return cls;
+    }
+    cls.controls.emplace_back(iterm->getMTerm(), iterm->getNet());
+  }
+  std::sort(cls.controls.begin(),
+            cls.controls.end(),
+            [](const auto& a, const auto& b) {
+              return strcmp(a.first->getConstName(), b.first->getConstName())
+                     < 0;
+            });
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    const odb::dbSigType sig = iterm->getSigType();
+    if (sig == odb::dbSigType::CLOCK || sig == odb::dbSigType::POWER
+        || sig == odb::dbSigType::GROUND) {
+      continue;
+    }
+    if (iterm->getIoType() == odb::dbIoType::INPUT) {
+      if (iterm->getMTerm() == cls.data) {
+        continue;
+      }
+      bool is_control = false;
+      for (const auto& [mterm, net] : cls.controls) {
+        is_control = is_control || mterm == iterm->getMTerm();
+      }
+      if (!is_control) {
+        return cls;  // an input the next_state shape does not account for
+      }
+    }
+  }
+  if (cls.output == nullptr || cls.clock == nullptr) {
+    return cls;
+  }
+  cls.kind = RegisterKind::enable;
+  cls.master = inst->getMaster();
+  return cls;
+}
+
+bool sameRegisterClass(const RegisterClass& a, const RegisterClass& b)
+{
+  if (a.kind != b.kind) {
+    return false;
+  }
+  switch (a.kind) {
+    case RegisterKind::plain:
+      return a.clock == b.clock;
+    case RegisterKind::enable:
+      return a.master == b.master && a.clock == b.clock && a.output == b.output
+             && a.controls == b.controls;
+    case RegisterKind::inverting:
+      return a.master == b.master && a.clock == b.clock && a.output == b.output;
+    case RegisterKind::other:
+      return false;
+  }
+  return false;
+}
+
+bool isSelfDualGate(sta::dbSta* sta, odb::dbInst* inst)
+{
+  sta::LibertyCell* cell = sta->getDbNetwork()->libertyCell(inst);
+  if (cell == nullptr || cell->isSequential()) {
+    return false;
+  }
+  constexpr size_t kMaxInputs = 6;  // at most 2^6 truth-table rows
+  int outputs = 0;
+  sta::LibertyCellPortIterator port_iter(cell);
+  while (port_iter.hasNext()) {
+    sta::LibertyPort* port = port_iter.next();
+    if (!port->direction()->isOutput()) {
+      continue;
+    }
+    const sta::FuncExpr* func = port->function();
+    if (func == nullptr) {
+      return false;
+    }
+    std::vector<const sta::LibertyPort*> inputs;
+    collectPorts(func, inputs);
+    if (inputs.empty() || inputs.size() > kMaxInputs) {
+      return false;
+    }
+    const unsigned rows = 1u << inputs.size();
+    for (unsigned row = 0; row < rows; row++) {
+      Assignment values;
+      Assignment complemented;
+      for (size_t i = 0; i < inputs.size(); i++) {
+        const bool bit = ((row >> i) & 1u) != 0;
+        values[inputs[i]] = bit;
+        complemented[inputs[i]] = !bit;
+      }
+      if (evalExpr(func, values, nullptr, nullptr)
+          == evalExpr(func, complemented, nullptr, nullptr)) {
+        return false;
+      }
+    }
+    outputs++;
+  }
+  return outputs > 0;
 }
 
 }  // namespace ret

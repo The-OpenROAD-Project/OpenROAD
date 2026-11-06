@@ -1,0 +1,43 @@
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13178, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13211, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13244, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13277, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13310, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13343, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13376, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14772, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14805, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14838, timing group from output port.
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+worst slack max 395.13
+[INFO RET-0014] Retiming graph: 29 gates, 26 edges (9 registered, max weight 1), clock period 5e-10
+[INFO RET-0015] 9 register slots, 9 distinct registers, 12 pinned gates (I/O boundary or fed through a don't-touch register)
+[INFO RET-0018] Load-aware arc on 26/26 edges (fell back to the annotated arc: 0 no cell, 0 no port, 0 no operating conditions, 0 no table model); register D-pin load 6.21e-16
+[INFO RET-0020] Start worst register-to-register arrival 5.765e-11 (model slack 4.423e-10 vs period 5e-10)
+
+ Slide |  Worst arr | Flops | Sinks | Max wr | gate                 | fanout net
+--------------------------------------------------------------------------------
+     1 |  5.074e-11 |     3 |     1 |      1 | g23                  | j1
+     2 |  4.938e-11 |     1 |     1 |      1 | g1                   | n1
+     3 |  4.335e-11 |     2 |     1 |      1 | g12                  | m1
+     4 |  3.848e-11 |     0 |     1 |      1 | g2                   | n2
+     5 |  3.788e-11 |     0 |     1 |      1 | g13                  | m2
+     6 |  3.193e-11 |     0 |     1 |      1 | g3                   | n3
+     7 |  3.148e-11 |     0 |     1 |      1 | g24                  | j2
+     8 |   2.57e-11 |     0 |     1 |      1 | g14                  | m3
+     9 |  2.567e-11 |     0 |     1 |      1 | g25                  | j3
+    10 |  2.542e-11 |     0 |     1 |      1 | g15                  | m4
+    11 |  2.019e-11 |     0 |     1 |      1 | g4                   | n4
+    12 |  2.017e-11 |     0 |     1 |      1 | g26                  | j4
+    13 |  2.007e-11 |     0 |     1 |      1 | g16                  | m5
+    14 |  1.871e-11 |     0 |     1 |      1 | g5                   | n5
+--------------------------------------------------------------------------------
+[INFO RET-0023] Final worst arrival 1.871e-11 (model slack 4.813e-10) after 14 slides; 0 candidates rejected for pushing an input path past the clock period
+[INFO RET-0008] Unmapped 2 registers (0 skipped: next_state not expressible with the available cells).
+[INFO RET-0009]        2 x DFFHQNx1_ASAP7_75t_R
+[INFO RET-0024] Removed 6 registers (9 of 28 register groups changed).
+[INFO RET-0025] Inserted 3 registers (2 kept their register class).
+worst slack max 424.39
+Retime output passed/skipped sequential equivalence test
+No differences found.

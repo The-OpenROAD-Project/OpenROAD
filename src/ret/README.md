@@ -39,13 +39,30 @@ flip-flop that `unmap_sequential_cells` would choose. They are placed at
 the centroid of the registers they replace (not legalized); run
 `detailed_placement` afterwards and re-estimate parasitics.
 
-A register that moves and is not the base cell (for example an enable flop)
-is first unmapped with the same logic as `unmap_sequential_cells`; only the
+Registers move by class. A plain register (next_state is its D pin) is
+rebuilt as the base cell. An enable register (next_state holds the state
+while the enable is inactive and passes D otherwise, as read from the
+liberty `next_state` function) keeps its class: when every register that a
+move merges across a gate is the same cell on the same enable net, the
+rebuilt register is that cell on that enable net, and the enable logic never
+becomes data logic. When a move would merge registers of different classes
+(two enable nets, or an enable register with a plain one), the enable
+registers involved are first unmapped with the same logic as
+`unmap_sequential_cells`, which makes them plain; so is a plain register of
+another cell than the base cell, and any register of a shape the retimer
+cannot rebuild (synchronous set or reset, loads on two output pins). An
+inverting register (its loads see the complement of D one cycle later,
+because next_state is the inverse of D or because they read the inverted
+output pin) also keeps its cell, but only across a self-dual gate: a gate
+whose outputs are complemented when all its inputs are, such as a buffer, an
+inverter, a majority gate or a full adder. There the inversion commutes with
+the gate. Before any other gate an inverting register is unmapped. Only the
 registers that move are unmapped. Registers with asynchronous set or reset,
 latches and scan cells never move, and a gate fed through such a register
 or connected to a primary input or output is never crossed, and neither is a
-gate fed by registers on different clock nets (a gated and an ungated
-register are never merged). Rebuilt registers keep the clock net of the
+gate that registers on different clock nets can reach, directly or after
+crossing the gates in front of it (a gated and an ungated register are never
+merged). Rebuilt registers keep the clock net of the
 registers they replace. The design must have a single clock (gated copies
 of it are fine) defined with `create_clock`.
 
@@ -123,6 +140,15 @@ Simply run the following script:
 - Single clock domain; multi-clock designs are not supported.
 - Asynchronous set/reset registers are never moved and not unmapped.
 - Latches are never moved and not unmapped.
+- Only enable pins form a register class; synchronous set/reset registers
+  are unmapped when they move. The path into an enable pin is not part of
+  the delay model: a class-preserving move leaves that path's logic depth
+  unchanged, but its wire length changes with the new register location.
+- Two enable registers of different cell sizes on the same enable net are
+  different classes; a move that merges them unmaps both. The same holds for
+  inverting registers of different cells.
+- An inverting register crossing a gate that is not self-dual is unmapped to
+  a plain register plus an inverter; the gate is never replaced.
 - A register unmapped on demand stays unmapped even when the search on the
   new netlist then finds no improving move (the mux cone added in front of
   it can itself become the critical path).

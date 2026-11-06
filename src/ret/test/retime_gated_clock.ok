@@ -3,18 +3,19 @@
 [WARNING RET-0005] No tie-high cell found.
 [WARNING RET-0006] No tie-low cell found.
 [WARNING RET-0012] No negative-edge register cell found; negative-edge registers will be left untouched.
-[INFO RET-0014] Retiming graph: 14 gates, 11 edges (5 registered, max weight 1), clock period 1e-09
-[INFO RET-0015] 5 register slots, 5 distinct registers, 7 pinned gates (I/O boundary or fed through a don't-touch register)
-[INFO RET-0018] Load-aware arc on 11/11 edges (fell back to the annotated arc: 0 no cell, 0 no port, 0 no operating conditions, 0 no table model); register D-pin load 1.14e-15
-[INFO RET-0020] Start worst register-to-register arrival 4.392e-11 (model slack 9.561e-10 vs period 1e-09)
+[INFO RET-0014] Retiming graph: 23 gates, 19 edges (8 registered, max weight 1), clock period 1e-09
+[INFO RET-0015] 8 register slots, 8 distinct registers, 18 pinned gates (I/O boundary or fed through a don't-touch register)
+[INFO RET-0018] Load-aware arc on 19/19 edges (fell back to the annotated arc: 0 no cell, 0 no port, 0 no operating conditions, 0 no table model); register D-pin load 1.14e-15
+[INFO RET-0020] Start worst register-to-register arrival 8.28e-11 (model slack 9.172e-10 vs period 1e-09)
 
- Slide |  Worst arr | Flops | Sinks | Max wr | gate -> fanout net
--------+------------+-------+-------+--------+---------------------
-     1 |  3.132e-11 |     1 |     1 |      1 | h1 -> m1
-     2 |  1.982e-11 |     0 |     1 |      1 | h2 -> m2
-     3 |  8.533e-12 |     0 |     1 |      1 | h3 -> m3
--------+------------+-------+-------+--------+---------------------
-[INFO RET-0023] Final worst arrival 8.533e-12 (model slack 9.915e-10) after 3 slides; 0 candidates rejected for pushing an input path past the clock period
-[INFO RET-0024] Removed 1 registers (2 of 11 register groups changed).
-[INFO RET-0025] Inserted 1 registers.
+ Slide |  Worst arr | Flops | Sinks | Max wr | gate                 | fanout net
+--------------------------------------------------------------------------------
+     1 |  4.392e-11 |     1 |     1 |      1 | s1                   | s1n
+     2 |  3.132e-11 |     1 |     1 |      1 | h1                   | m1
+     3 |  1.982e-11 |     0 |     1 |      1 | h2                   | m2
+     4 |  8.533e-12 |     0 |     1 |      1 | h3                   | m3
+--------------------------------------------------------------------------------
+[INFO RET-0023] Final worst arrival 8.533e-12 (model slack 9.915e-10) after 4 slides; 0 candidates rejected for pushing an input path past the clock period
+[INFO RET-0024] Removed 2 registers (4 of 19 register groups changed).
+[INFO RET-0025] Inserted 2 registers (0 kept their register class).
 No differences found.

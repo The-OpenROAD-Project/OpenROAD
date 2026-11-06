@@ -22,7 +22,6 @@ module top (a,
  wire m3;
  wire m4;
  wire n0;
- wire q1;
  wire q2;
  wire q3;
  wire ret_net_0;
@@ -30,7 +29,7 @@ module top (a,
  AND2_X1 g0 (.A1(a),
     .A2(b),
     .ZN(n0));
- INV_X1 h1 (.A(q1),
+ INV_X1 h1 (.A(n0),
     .ZN(m1));
  INV_X1 h2 (.A(m1),
     .ZN(m2));
@@ -54,9 +53,6 @@ module top (a,
     .ZN(c5));
  INV_X1 p6 (.A(c5),
     .ZN(c6));
- DFF_X1 r1 (.D(n0),
-    .CK(clk),
-    .Q(q1));
  DFF_X1 r2 (.D(m4),
     .CK(clk),
     .Q(q2));

@@ -696,17 +696,22 @@ SequentialUnmapper::RegPins SequentialUnmapper::getRegPins(
 
 odb::dbNet* SequentialUnmapper::newNet(const char* prefix)
 {
-  return odb::dbNet::create(
-      block_, (std::string(prefix) + std::to_string(uniquify_++)).c_str());
+  // The design may already hold names from an earlier run.
+  std::string name;
+  do {
+    name = std::string(prefix) + std::to_string(uniquify_++);
+  } while (block_->findNet(name.c_str()) != nullptr);
+  return odb::dbNet::create(block_, name.c_str());
 }
 
 odb::dbInst* SequentialUnmapper::newInst(const char* prefix,
                                          odb::dbMaster* master)
 {
-  odb::dbInst* inst = odb::dbInst::create(
-      block_,
-      master,
-      (std::string(prefix) + std::to_string(uniquify_++)).c_str());
+  std::string name;
+  do {
+    name = std::string(prefix) + std::to_string(uniquify_++);
+  } while (block_->findInst(name.c_str()) != nullptr);
+  odb::dbInst* inst = odb::dbInst::create(block_, master, name.c_str());
   created_.push_back(inst);
   return inst;
 }

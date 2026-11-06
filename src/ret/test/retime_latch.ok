@@ -8,13 +8,13 @@
 [INFO RET-0018] Load-aware arc on 5/5 edges (fell back to the annotated arc: 0 no cell, 0 no port, 0 no operating conditions, 0 no table model); register D-pin load 1.14e-15
 [INFO RET-0020] Start worst register-to-register arrival 4.392e-11 (model slack 9.561e-10 vs period 1e-09)
 
- Slide |  Worst arr | Flops | Sinks | Max wr | gate -> fanout net
--------+------------+-------+-------+--------+---------------------
-     1 |  3.132e-11 |     1 |     1 |      1 | g1 -> n1
-     2 |  1.982e-11 |     0 |     1 |      1 | g2 -> n2
-     3 |  8.533e-12 |     0 |     1 |      1 | g3 -> n3
--------+------------+-------+-------+--------+---------------------
+ Slide |  Worst arr | Flops | Sinks | Max wr | gate                 | fanout net
+--------------------------------------------------------------------------------
+     1 |  3.132e-11 |     1 |     1 |      1 | g1                   | n1
+     2 |  1.982e-11 |     0 |     1 |      1 | g2                   | n2
+     3 |  8.533e-12 |     0 |     1 |      1 | g3                   | n3
+--------------------------------------------------------------------------------
 [INFO RET-0023] Final worst arrival 8.533e-12 (model slack 9.915e-10) after 3 slides; 0 candidates rejected for pushing an input path past the clock period
 [INFO RET-0024] Removed 1 registers (2 of 5 register groups changed).
-[INFO RET-0025] Inserted 1 registers.
+[INFO RET-0025] Inserted 1 registers (0 kept their register class).
 No differences found.
