@@ -83,6 +83,9 @@ bool LogicExtractorFactory::IsSupportedByAbc(AbcLibrary& abc_library,
 {
   sta::dbNetwork* network = open_sta_->getDbNetwork();
   sta::Instance* instance = network->instance(vertex->pin());
+  if (instance == nullptr) {
+    return false;
+  }
   sta::LibertyCell* cell = network->libertyCell(instance);
   return cell && abc_library.IsSupportedCell(cell->name());
 }
