@@ -132,6 +132,7 @@ COMPULSORY_TESTS = [
     "place_pin_error3",
     "place_pin_polygon_blocked",
     "place_pin_polygon_l",
+    "place_pin_polygon_overlap",
     "place_pin_polygon_t",
     "place_pin_polygon_u",
     "random_deprecated1",

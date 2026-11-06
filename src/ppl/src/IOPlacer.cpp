@@ -3201,6 +3201,25 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
     } else {
       edge = die_edge.pt0().y() == lb.y() ? Edge::bottom : Edge::top;
     }
+    // polygon die edges miss the intervals of earlier place_pin calls, so
+    // block the pins already on this edge, padded like getIntervalFromPin
+    const odb::Rect die_edge_rect(die_edge.pt0(), die_edge.pt1());
+    for (odb::dbBTerm* placed_bterm : getBlock()->getBTerms()) {
+      for (odb::dbBPin* bpin : placed_bterm->getBPins()) {
+        for (odb::dbBox* box : bpin->getBoxes()) {
+          if (edge == Edge::polygonEdge && placed_bterm != bterm
+              && box->getTechLayer() == layer
+              && bpin->getPlacementStatus().isPlaced()
+              && die_edge_rect.intersects(box->getBox())) {
+            const int pad = layer->getWidth();
+            excludeInterval(Interval(edge,
+                                     box->getBox().low(along) - pad,
+                                     box->getBox().high(along) + pad,
+                                     layer_level));
+          }
+        }
+      }
+    }
     // keep the search inside the die edge, so the pin is never pushed out of it
     const int max_offset = horizontal ? edge_max - height / 2 - pos.y()
                                       : edge_max - width / 2 - pos.x();
