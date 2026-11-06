@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <limits>
 #include <set>
 #include <string>
 #include <utility>
@@ -15,6 +16,7 @@
 
 #include "DataType.h"
 #include "FastRoute.h"
+#include "odb/db.h"
 
 namespace grt {
 
@@ -54,7 +56,7 @@ void Graph2D::init(const int x_grid,
       h_edges_[x][y].red = 0;
       h_edges_[x][y].last_usage = 0;
       h_edges_[x][y].congCNT = 0;
-      h_edges_[x][y].ndr_overflow = 0;
+      h_edges_[x][y].ndr_deficit = 0;
       h_edges_[x][y].used_grid_dirty = false;
       h_edges_[x][y].est_usage_dirty = false;
       h_edges_[x][y].history_dirty = false;
@@ -69,7 +71,7 @@ void Graph2D::init(const int x_grid,
       v_edges_[x][y].red = 0;
       v_edges_[x][y].last_usage = 0;
       v_edges_[x][y].congCNT = 0;
-      v_edges_[x][y].ndr_overflow = 0;
+      v_edges_[x][y].ndr_deficit = 0;
       v_edges_[x][y].used_grid_dirty = false;
       v_edges_[x][y].est_usage_dirty = false;
       v_edges_[x][y].history_dirty = false;
@@ -218,15 +220,15 @@ void Graph2D::copyRoutingStateFrom(const Graph2D& other,
     v_ndr_nets_ = other.v_ndr_nets_;
     congested_ndrs_ = other.congested_ndrs_;
     congestion_nets_ = other.congestion_nets_;
+    ndr_deficit_total_ = other.ndr_deficit_total_;
   } else {
     // The per net records, the NDR capacity taken from each layer and the
-    // per edge overflow counters are a single piece of bookkeeping: dropping
-    // the records alone would leave reservations that can never be released
-    // and overflow counters that can never return to zero, keeping the edges
-    // congested for NDR nets for the rest of the run.
+    // per edge NDR deficits are a single piece of bookkeeping: dropping the
+    // records alone would leave reservations that can never be released and
+    // deficits that can never return to zero, keeping the edges congested
+    // for NDR nets for the rest of the run.
     clearNDRnets();
     resetNDRCap();
-    foreachEdge([](Edge& edge) { edge.ndr_overflow = 0; });
     clearCongestedNDRnets();
     congestion_nets_.clear();
   }
@@ -504,7 +506,8 @@ bool Graph2D::usedGridsMatchUsage() const
   return matches(h_edges_, h_used_ggrid_) && matches(v_edges_, v_used_ggrid_);
 }
 
-// Clears the NDR lists
+// Clears the NDR lists. The per edge NDR deficits are the sum of the deficits
+// recorded in these lists, so they are cleared with them and with their total.
 void Graph2D::clearNDRnets()
 {
   for (auto row : v_ndr_nets_) {
@@ -517,6 +520,8 @@ void Graph2D::clearNDRnets()
       ndr_nets.clear();
     }
   }
+  foreachEdge([](Edge& edge) { edge.ndr_deficit = 0; });
+  ndr_deficit_total_ = 0;
 }
 
 // Checks if the graph has any horizontal or vertical edges.
@@ -969,8 +974,12 @@ bool Graph2D::computeSuggestedAdjustment(const int x,
 // Initializes the NDR nets for each grid cell.
 void Graph2D::initNDRnets()
 {
+  // resize() keeps the records of a same-sized grid, but the nets of a
+  // previous run are deleted by then: a new net allocated at the same
+  // address would be taken for one already using the edge.
   v_ndr_nets_.resize(boost::extents[x_grid_][y_grid_]);
   h_ndr_nets_.resize(boost::extents[x_grid_][y_grid_]);
+  clearNDRnets();
 }
 
 void Graph2D::addCongestedNDRnet(const int net_id, const uint16_t num_edges)
@@ -1056,35 +1065,82 @@ void Graph2D::printEdgeCapPerLayer()
   }
 }
 
-// Checks if there is enough NDR capacity for a given net.
-bool Graph2D::hasNDRCapacity(FrNet* net, int x, int y, EdgeDirection direction)
+// Tracks the net would miss on its best layer if it used the edge now: zero
+// when one layer has enough NDR capacity left. A layer already
+// oversubscribed by other NDR nets is short of the net's whole width.
+int Graph2D::computeNDRDeficit(FrNet* net,
+                               const int x,
+                               const int y,
+                               const EdgeDirection direction) const
 {
-  const int8_t edgeCost = net->getEdgeCost();
-
-  if (edgeCost == 1) {
-    return true;
+  const auto& cap_3D
+      = (direction == EdgeDirection::Horizontal) ? h_cap_3D_ : v_cap_3D_;
+  int deficit = std::numeric_limits<int>::max();
+  for (int l = net->getMinLayer(); l <= net->getMaxLayer() && deficit > 0;
+       l++) {
+    const int layer_edge_cost = net->getLayerEdgeCost(l);
+    const double free_tracks = std::max(0.0, cap_3D[l][x][y].cap_ndr);
+    deficit = std::min(deficit,
+                       static_cast<int>(std::ceil(
+                           std::max(0.0, layer_edge_cost - free_tracks))));
   }
-
-  // For nets with high cost, we need at least one layer with sufficient
-  // capacity
-  for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
-    double layer_cap = 0;
-    int8_t layer_edge_cost = net->getLayerEdgeCost(l);
-
-    layer_cap = (direction == EdgeDirection::Horizontal)
-                    ? h_cap_3D_[l][x][y].cap_ndr
-                    : v_cap_3D_[l][x][y].cap_ndr;
-
-    if (layer_cap >= layer_edge_cost) {
-      return true;
-    }
-  }
-
-  // No single layer can accommodate this NDR net
-  return false;
+  // No layer in range: nothing can host the net.
+  return deficit == std::numeric_limits<int>::max() ? net->getEdgeCost()
+                                                    : deficit;
 }
 
-// Calculates the cost of an edge, considering NDRs.
+int Graph2D::getNDRDeficit(FrNet* net,
+                           const int x,
+                           const int y,
+                           const EdgeDirection direction) const
+{
+  if (net->getEdgeCost() == 1) {
+    return 0;
+  }
+  const auto& ndr_nets = (direction == EdgeDirection::Horizontal)
+                             ? h_ndr_nets_[x][y]
+                             : v_ndr_nets_[x][y];
+  const auto it = ndr_nets.find(net);
+  return it != ndr_nets.end() ? it->second.deficit : 0;
+}
+
+int Graph2D::getNDRDeficitIfRouted(FrNet* net,
+                                   const int x,
+                                   const int y,
+                                   const EdgeDirection direction) const
+{
+  if (net->getEdgeCost() == 1) {
+    return 0;
+  }
+  const bool horizontal = direction == EdgeDirection::Horizontal;
+  const Edge& edge = horizontal ? h_edges_[x][y] : v_edges_[x][y];
+  const auto& ndr_nets = horizontal ? h_ndr_nets_[x][y] : v_ndr_nets_[x][y];
+  if (ndr_nets.contains(net)) {
+    return edge.ndr_deficit;
+  }
+  return edge.ndr_deficit + computeNDRDeficit(net, x, y, direction);
+}
+
+bool Graph2D::hasNDRDeficit(const int x,
+                            const int y,
+                            const EdgeDirection direction) const
+{
+  return getEdgeNDRDeficit(x, y, direction) > 0;
+}
+
+int Graph2D::getEdgeNDRDeficit(const int x,
+                               const int y,
+                               const EdgeDirection direction) const
+{
+  const Edge& edge = (direction == EdgeDirection::Horizontal) ? h_edges_[x][y]
+                                                              : v_edges_[x][y];
+  return edge.ndr_deficit;
+}
+
+// Calculates the cost of an edge, considering NDRs. The usage gets the
+// tracks the NDR net takes even when no layer of the edge can host it: the
+// tracks it misses are recorded as its NDR deficit instead, which only the
+// NDR nets pay for (see getNDRDeficitIfRouted).
 double Graph2D::getCostNDRAware(FrNet* net,
                                 int x,
                                 int y,
@@ -1098,15 +1154,12 @@ double Graph2D::getCostNDRAware(FrNet* net,
     return edge_cost;
   }
 
-  constexpr double OVERFLOW_COST_MULTIPLIER = 100.0;
-
   // Get references to the appropriate edge data based on direction
   auto& edge = (direction == EdgeDirection::Horizontal) ? h_edges_[x][y]
                                                         : v_edges_[x][y];
   auto& ndr_nets = (direction == EdgeDirection::Horizontal) ? h_ndr_nets_[x][y]
                                                             : v_ndr_nets_[x][y];
 
-  const std::string& net_name = net->getName();
   auto net_it = ndr_nets.find(net);
   const bool is_net_present = net_it != ndr_nets.end();
   double final_edge_cost = 0;
@@ -1124,13 +1177,13 @@ double Graph2D::getCostNDRAware(FrNet* net,
       // capacity drift.
       const NDRUsage ndr_usage = net_it->second;
       ndr_nets.erase(net_it);
-      if (ndr_usage.charged_overflow) {
-        edge.ndr_overflow--;
-        final_edge_cost = -OVERFLOW_COST_MULTIPLIER * edgeCost;
-      } else {
-        final_edge_cost = -edgeCost;
-      }
+      edge.ndr_deficit -= ndr_usage.deficit;
+      ndr_deficit_total_ -= ndr_usage.deficit;
       releaseNDRCapLayer(x, y, direction, ndr_usage);
+      if (edge.ndr_deficit > 0) {
+        refitNDRDeficitNets(x, y, direction);
+      }
+      final_edge_cost = -edgeCost;
     }
   } else {  // Routing: add resource
     // If the net is not in the list, add it and compute the edge cost.
@@ -1138,20 +1191,11 @@ double Graph2D::getCostNDRAware(FrNet* net,
     // initial routing steps adding two times half the edge cost. But we
     // only need to count once to avoid problems when managing 3D capacity
     if (!is_net_present) {
-      // If the edge already has an overflow caused by NDR net or it will have
-      // an overflow due to lack of capacity in a single layer, we need to add
-      // the big edge cost value
-      const bool charge_overflow
-          = edge.ndr_overflow > 0 || !hasNDRCapacity(net, x, y, direction);
-      if (charge_overflow) {
-        edge.ndr_overflow++;
-        final_edge_cost = OVERFLOW_COST_MULTIPLIER * edgeCost;
-      } else {
-        final_edge_cost = edgeCost;
-      }
-      NDRUsage ndr_usage = reserveNDRCapLayer(x, y, net, direction);
-      ndr_usage.charged_overflow = charge_overflow;
+      const NDRUsage ndr_usage = reserveNDRCapLayer(x, y, net, direction);
+      edge.ndr_deficit += ndr_usage.deficit;
+      ndr_deficit_total_ += ndr_usage.deficit;
       ndr_nets.emplace(net, ndr_usage);
+      final_edge_cost = edgeCost;
     }
   }
 
@@ -1174,7 +1218,7 @@ void Graph2D::printNDRCap(const int x, const int y)
 
 // Reserves the NDR capacity of a layer for a given net, returning the layer
 // that was debited and by how much, so that the rip-up can release exactly
-// the same resources.
+// the same resources, and the tracks the net misses when no layer fits it.
 Graph2D::NDRUsage Graph2D::reserveNDRCapLayer(const int x,
                                               const int y,
                                               FrNet* net,
@@ -1198,8 +1242,11 @@ Graph2D::NDRUsage Graph2D::reserveNDRCapLayer(const int x,
   // of this net restores it.
   const int min_layer = net->getMinLayer();
   const int8_t layer_edge_cost = net->getLayerEdgeCost(min_layer);
+  const auto deficit = static_cast<int8_t>(computeNDRDeficit(net, x, y, dir));
   cap_3D[min_layer][x][y].cap_ndr -= layer_edge_cost;
-  return {.layer = static_cast<int16_t>(min_layer), .amount = layer_edge_cost};
+  return {.layer = static_cast<int16_t>(min_layer),
+          .amount = layer_edge_cost,
+          .deficit = deficit};
 }
 
 // Releases the NDR capacity that a net reserved on an edge.
@@ -1214,6 +1261,39 @@ void Graph2D::releaseNDRCapLayer(const int x,
 
   auto& cap_3D = (dir == EdgeDirection::Horizontal) ? h_cap_3D_ : v_cap_3D_;
   cap_3D[ndr_usage.layer][x][y].cap_ndr += ndr_usage.amount;
+}
+
+// The tracks a net releases on an edge can host the NDR nets that miss
+// tracks there, so their deficit must not outlive the net that caused it.
+// Their layers are reserved again in net id order: the map is ordered by
+// address, which changes from run to run.
+void Graph2D::refitNDRDeficitNets(const int x,
+                                  const int y,
+                                  const EdgeDirection dir)
+{
+  auto& edge
+      = (dir == EdgeDirection::Horizontal) ? h_edges_[x][y] : v_edges_[x][y];
+  auto& ndr_nets = (dir == EdgeDirection::Horizontal) ? h_ndr_nets_[x][y]
+                                                      : v_ndr_nets_[x][y];
+
+  std::vector<FrNet*> deficit_nets;
+  for (const auto& [net, ndr_usage] : ndr_nets) {
+    if (ndr_usage.deficit > 0) {
+      deficit_nets.push_back(net);
+    }
+  }
+  std::ranges::sort(deficit_nets, {}, [](const FrNet* net) {
+    return net->getDbNet()->getId();
+  });
+
+  for (FrNet* net : deficit_nets) {
+    NDRUsage& ndr_usage = ndr_nets.at(net);
+    releaseNDRCapLayer(x, y, dir, ndr_usage);
+    const NDRUsage refit = reserveNDRCapLayer(x, y, net, dir);
+    edge.ndr_deficit += refit.deficit - ndr_usage.deficit;
+    ndr_deficit_total_ += refit.deficit - ndr_usage.deficit;
+    ndr_usage = refit;
+  }
 }
 
 // Resets the NDR capacity of every layer to the full edge capacity. Used when

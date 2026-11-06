@@ -1233,6 +1233,34 @@ std::vector<int> FastRouteCore::getMazeRouteNetOrder(const bool ordering,
   return net_ids_;
 }
 
+double FastRouteCore::getUsageNDRAware(FrNet* net,
+                                       const int x,
+                                       const int y,
+                                       const EdgeDirection direction,
+                                       const double usage) const
+{
+  const int deficit = graph2d_.getNDRDeficitIfRouted(net, x, y, direction);
+  if (deficit == 0) {
+    return usage;
+  }
+  // Price the edge as one the net would overflow by kNdrDeficitCost tracks
+  // per missing track. The cost functions take the usage before the net is
+  // added, hence the track less.
+  const int capacity = direction == EdgeDirection::Horizontal
+                           ? graph2d_.getCapH(x, y)
+                           : graph2d_.getCapV(x, y);
+  return std::max(usage, capacity - 1.0 + kNdrDeficitCost * deficit);
+}
+
+// The 3D maze routing runs on a 2D routing without usage overflow. The NDR
+// deficit in `overflow_2d` does not count: it comes from first-fit layer
+// reservations in 2D, which layer assignment can improve on, and the NDR nets
+// it leaves overflowing in 3D are demoted (see disableNDRForCongestedNets).
+bool FastRouteCore::canRunMaze3D(const int overflow_2d) const
+{
+  return overflow_2d == graph2d_.getTotalNDRDeficit();
+}
+
 bool FastRouteCore::hasNonSoftNdrNets() const
 {
   for (const int net_id : net_ids_) {
@@ -2734,8 +2762,11 @@ NetRouteMap FastRouteCore::run()
                       total_overflow_);
     }
 
-    // Mismatch between 2D and 3D congestion related to NDR nets
-    if (past_cong != total_overflow_) {
+    // Mismatch between 2D and 3D congestion related to NDR nets. An NDR
+    // deficit left in 2D may or may not become 3D overflow, as layer
+    // assignment can fit nets the first-fit 2D reservations could not, so it
+    // is checked even when the totals happen to match.
+    if (past_cong != total_overflow_ || graph2d_.getTotalNDRDeficit() > 0) {
       disableNDRForCongestedNets(net_ids_);
       long_edge_len = BIG_INT;
       past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
@@ -2745,7 +2776,7 @@ NetRouteMap FastRouteCore::run()
     costheight_ = 3;
     via_cost_ = 1;
 
-    if (past_cong == 0) {
+    if (canRunMaze3D(past_cong)) {
       // Increase ripup threshold if res-aware is enabled
       if (enable_resistance_aware_) {
         long_edge_len = BIG_INT;
@@ -2848,13 +2879,20 @@ void FastRouteCore::computeCongestedNDRnets()
         for (int i = 0; i < routeLen; i++) {
           if (grids[i].x == grids[i + 1].x) {  // vertical
             const int min_y = std::min(grids[i].y, grids[i + 1].y);
-            // Increment congested edges if have overflow
-            if (graph2d_.getOverflowV(grids[i].x, min_y) > 0) {
+            // Increment congested edges if have overflow, or if the net
+            // fits no single layer there
+            if (graph2d_.getOverflowV(grids[i].x, min_y) > 0
+                || graph2d_.getNDRDeficit(
+                       net, grids[i].x, min_y, EdgeDirection::Vertical)
+                       > 0) {
               num_congested_edges++;
             }
           } else {  // horizontal
             const int min_x = std::min(grids[i].x, grids[i + 1].x);
-            if (graph2d_.getOverflowH(min_x, grids[i].y) > 0) {
+            if (graph2d_.getOverflowH(min_x, grids[i].y) > 0
+                || graph2d_.getNDRDeficit(
+                       net, min_x, grids[i].y, EdgeDirection::Horizontal)
+                       > 0) {
               num_congested_edges++;
             }
           }
