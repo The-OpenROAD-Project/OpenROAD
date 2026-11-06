@@ -667,7 +667,6 @@ export function makeResizableHeaders(table, widths) {
         table.style.width = total + 'px';
         table.style.minWidth = '100%';
     };
-    table.fitColumns = fit;
     fit();
 
     headers.forEach((th, idx) => {
