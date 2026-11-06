@@ -4,13 +4,13 @@
 #include "tst/logger_checks.h"
 
 #include <atomic>
-#include <cerrno>
-#include <cstdio>
+#include <filesystem>
 #include <fstream>
 #include <iterator>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <system_error>
 
 #include "gtest/gtest.h"
 #include "utl/Logger.h"
@@ -28,8 +28,11 @@ MetricsCapture::MetricsCapture(utl::Logger& logger) : logger_(logger)
 MetricsCapture::~MetricsCapture()
 {
   logger_.removeMetricsSink(path_.c_str());
-  if (std::remove(path_.c_str()) != 0 && errno != ENOENT) {
-    ADD_FAILURE() << "failed to remove metrics file " << path_;
+  std::error_code error;
+  std::filesystem::remove(path_, error);
+  if (error) {
+    ADD_FAILURE() << "failed to remove metrics file " << path_ << ": "
+                  << error.message();
   }
 }
 
