@@ -4,6 +4,7 @@
 [INFO ODB-0128] Design: io_constraints1
 [INFO ODB-0130]     Created 3 pins.
 [INFO ODB-0131]     Created 401 components and 2402 component-terminals.
+[WARNING MPL-0009] The virtual utilization 0.92 is above 0.9. The annealer will probably struggle to find a valid result and may increase the std cell density to converge.
 Die Area: (0.00, 0.00) (150.00, 125.00),  Floorplan Area: (0.00, 0.00) (149.91, 124.60)
 	Number of std cell instances: 400
 	Area of std cell instances: 1808.80

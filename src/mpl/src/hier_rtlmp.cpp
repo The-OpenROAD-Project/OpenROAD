@@ -167,10 +167,6 @@ void HierRTLMP::setGuidanceRegions(
 void HierRTLMP::run()
 {
   runMultilevelAutoclustering();
-  if (skip_macro_placement_) {
-    logger_->info(MPL, 13, "Skipping macro placement.");
-    return;
-  }
 
   if (keep_clustering_data_) {
     commitClusteringDataToDb();
@@ -257,7 +253,6 @@ void HierRTLMP::init()
 {
   block_ = db_->getChip()->getBlock();
   tree_ = std::make_unique<PhysicalHierarchy>();
-  skip_macro_placement_ = false;
   placement_blockages_.clear();
   io_blockages_.clear();
   clustering_engine_ = std::make_unique<ClusteringEngine>(
@@ -275,11 +270,6 @@ void HierRTLMP::init()
 void HierRTLMP::runMultilevelAutoclustering()
 {
   clustering_engine_->run();
-
-  if (!tree_->has_unfixed_macros) {
-    skip_macro_placement_ = true;
-    return;
-  }
 
   if (graphics_) {
     graphics_->finishedClustering(tree_.get());
@@ -1365,11 +1355,12 @@ void HierRTLMP::placeChildren(Cluster* parent)
     for (int i = 0; i < number_of_attempts; i++) {
       const int utilization_index = run_id++;
       const float utilization = utilization_list[utilization_index];
+      // The feasibility checker guards the root with the macros' halo areas,
+      // so a run can still fail here when the tilings of the macro clusters
+      // leave dead space, or, below the root, when the parent's annealer left
+      // this cluster's outline over a blockage.
       if (!validUtilization(utilization, outline, macros)) {
-        if (parent == tree_->root.get()) {
-          skipped_utilization_indices.insert(utilization_index);
-        }
-
+        skipped_utilization_indices.insert(utilization_index);
         continue;
       }
 
@@ -1435,11 +1426,20 @@ void HierRTLMP::placeChildren(Cluster* parent)
       if (sa->isValid()) {
         const int utilization_index = sa_batch_utilization_indices[sa_index];
         if (utilization_index != 0) {
-          logger_->warn(MPL,
-                        55,
-                        "Couldn't find a solution for the specified "
-                        "utilization. The utilization was adjusted to {}.",
-                        utilization_list[utilization_index]);
+          if (skipped_utilization_indices.contains(0)) {
+            logger_->warn(MPL,
+                          38,
+                          "The specified utilization {} does not fit the "
+                          "outline. The utilization was adjusted to {}.",
+                          utilization_list[0],
+                          utilization_list[utilization_index]);
+          } else {
+            logger_->warn(MPL,
+                          55,
+                          "Couldn't find a solution for the specified "
+                          "utilization. The utilization was adjusted to {}.",
+                          utilization_list[utilization_index]);
+          }
         }
 
         best_sa = std::move(sa);

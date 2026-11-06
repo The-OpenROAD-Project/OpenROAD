@@ -1,0 +1,6 @@
+[INFO ODB-0227] LEF file: ./Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: ./testcases/macro_only.lef, created 9 library cells
+[INFO ODB-0128] Design: io_constraints1
+[INFO ODB-0130]     Created 3 pins.
+[INFO ODB-0131]     Created 401 components and 2402 component-terminals.
+[ERROR MPL-0007] The virtual utilization is 1.02: the std cells at the target utilization 0.20 (9044.00um^2) plus the macros with halos, the fixed macros and the blockages (10028.02um^2) exceed the floorplan area (18678.79um^2).

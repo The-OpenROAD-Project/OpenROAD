@@ -304,7 +304,6 @@ class HierRTLMP
   float exchange_swap_prob_ = 0.2;
   float resize_prob_ = 0.4;
 
-  bool skip_macro_placement_{false};
   bool keep_clustering_data_{false};
   bool pin_aware_channels_{false};
 
