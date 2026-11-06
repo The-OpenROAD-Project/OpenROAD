@@ -8,6 +8,8 @@
 
 #include "dpl/Opendp.h"
 #include "gtest/gtest.h"
+#include "infrastructure/Coordinates.h"
+#include "infrastructure/Grid.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -544,6 +546,71 @@ TEST_F(CheckPlacementTest, LegalCellPosAfterDetailedPlacementLeavesMacro)
   dp_.legalCellPos(buf);
 
   EXPECT_FALSE(buf->getBBox()->getBox().overlaps(macro_box));
+}
+
+TEST_F(CheckPlacementTest, LegalCellPosAfterFixedOnlyCheckLeavesMacro)
+{
+  // A fixed-only check_placement clears the whole grid on return, rows and
+  // pixels, along with the network it made without the movable cells. The
+  // resizer can still call legalCellPos for a cell it moved, and the cell
+  // must be moved off a macro, which legalCellPos finds in the pixels.
+  odb::dbInst* macro = makeCell("BLOCK1",
+                                "macro",
+                                {kCoreX + 10 * kSiteWidth, kCoreY},
+                                odb::dbPlacementStatus::FIRM);
+  odb::dbInst* buf = makeCell("BUF_X1",
+                              "buf",
+                              {kCoreX + 24 * kSiteWidth, kCoreY},
+                              odb::dbPlacementStatus::PLACED);
+  ASSERT_NE(macro, nullptr);
+  ASSERT_NE(buf, nullptr);
+
+  ASSERT_EQ(runCheck(/*check_fixed=*/true, /*check_placeable=*/false), "");
+
+  const odb::Rect macro_box = macro->getBBox()->getBox();
+  buf->setLocation(kCoreX + 11 * kSiteWidth, kCoreY + kRowHeight);
+  ASSERT_TRUE(buf->getBBox()->getBox().overlaps(macro_box));
+
+  dp_.legalCellPos(buf);
+
+  EXPECT_FALSE(buf->getBBox()->getBox().overlaps(macro_box));
+}
+
+TEST_F(CheckPlacementTest, LegalCellPosRebuildsReleasedGridOnce)
+{
+  // detailed_placement frees the pixels on return. The first legalCellPos
+  // after it makes them again; the ones after that use them as they are.
+  odb::dbInst* macro = makeCell("BLOCK1",
+                                "macro",
+                                {kCoreX + 10 * kSiteWidth, kCoreY},
+                                odb::dbPlacementStatus::FIRM);
+  odb::dbInst* buf = makeCell("BUF_X1",
+                              "buf",
+                              {kCoreX + 24 * kSiteWidth, kCoreY},
+                              odb::dbPlacementStatus::PLACED);
+  ASSERT_NE(macro, nullptr);
+  ASSERT_NE(buf, nullptr);
+
+  dp_.detailedPlacement(/*max_displacement_x=*/0, /*max_displacement_y=*/0);
+  ASSERT_TRUE(dp_.grid_->pixelsReleased());
+
+  const odb::Rect macro_box = macro->getBBox()->getBox();
+  buf->setLocation(kCoreX + 11 * kSiteWidth, kCoreY + kRowHeight);
+  dp_.legalCellPos(buf);
+  EXPECT_FALSE(buf->getBBox()->getBox().overlaps(macro_box));
+  ASSERT_TRUE(dp_.grid_->hasPixels());
+  EXPECT_FALSE(dp_.grid_->pixelsReleased());
+
+  // Making the grid again resets every pixel, so a mark left in one
+  // survives the second call only if that call kept the grid.
+  Pixel* pixel = dp_.grid_->gridPixel(GridX{0}, GridY{0});
+  ASSERT_NE(pixel, nullptr);
+  pixel->util = 42.0;
+
+  buf->setLocation(kCoreX + 12 * kSiteWidth, kCoreY + kRowHeight);
+  dp_.legalCellPos(buf);
+  EXPECT_FALSE(buf->getBBox()->getBox().overlaps(macro_box));
+  EXPECT_EQ(dp_.grid_->gridPixel(GridX{0}, GridY{0})->util, 42.0);
 }
 
 // Higher routing layers isolate supply-via checks from legacy pin blockages.
