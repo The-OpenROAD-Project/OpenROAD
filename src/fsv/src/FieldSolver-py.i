@@ -53,7 +53,6 @@ PyObject* toDict(const fsv::NetCapacitance& result)
   put(dict, "seconds", PyFloat_FromDouble(result.seconds));
   put(dict, "cross_section", PyBool_FromLong(result.cross_section));
   put(dict, "window_leakage", PyFloat_FromDouble(row.window_leakage));
-  put(dict, "rejected", PyLong_FromLongLong(row.rejected));
   return dict;
 }
 
@@ -159,7 +158,6 @@ class FieldSolver
   PyObject* _solve(const std::vector<std::string>& nets,
                    double tol_total,
                    double tol_coupling,
-                   double coupling_threshold,
                    long long min_walks,
                    long long max_walks,
                    long long seed,
@@ -172,9 +170,6 @@ class FieldSolver
     }
     if (tol_coupling >= 0) {
       options.tol_coupling = tol_coupling;
-    }
-    if (coupling_threshold >= 0) {
-      options.coupling_threshold = coupling_threshold;
     }
     if (min_walks >= 0) {
       options.min_walks = min_walks;
@@ -229,7 +224,6 @@ class FieldSolver
         nets=(),
         tol_total=None,
         tol_coupling=None,
-        coupling_threshold=None,
         min_walks=None,
         max_walks=None,
         seed=None,
@@ -242,12 +236,6 @@ class FieldSolver
         _check_number("tol_total", tol_total, "greater than 0", lambda v: v > 0)
         _check_number(
             "tol_coupling", tol_coupling, "greater than 0", lambda v: v > 0
-        )
-        _check_number(
-            "coupling_threshold",
-            coupling_threshold,
-            "from 0 to 1",
-            lambda v: 0 <= v <= 1,
         )
         _check_integer("min_walks", min_walks, "at least 0", lambda v: v >= 0)
         _check_integer("max_walks", max_walks, "at least 1", lambda v: v >= 1)
@@ -263,7 +251,6 @@ class FieldSolver
             for v in (
                 tol_total,
                 tol_coupling,
-                coupling_threshold,
                 min_walks,
                 max_walks,
                 seed,

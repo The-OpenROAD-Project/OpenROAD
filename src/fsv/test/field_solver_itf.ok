@@ -1,32 +1,32 @@
 [INFO FSV-0002] Read ITF skywater130_nominal: 10 dielectrics, 8 conductors, 7 conformal dielectrics, 7 vias.
-[INFO FSV-0011] Net m1a: total 2.0124 fF +- 0.015 after 245760 walks (91.4 hops per walk).
-  ground                    0.47525 +- 0.0085 fF
-  m1b                         1.425 +- 0.014 fF
-  m2                        0.11215 +- 0.0042 fF
-[INFO FSV-0011] Net v: total 0.062366 fF +- 0.001 after 49152 walks (214.3 hops per walk).
-  ground                   0.062366 +- 0.001 fF
-[INFO FSV-0011] Net v: total 0.062529 fF +- 0.001 after 49152 walks (215.4 hops per walk).
-  ground                   0.062529 +- 0.001 fF
-[INFO FSV-0011] Net h4: total 0.99414 fF +- 0.016 after 32768 walks (68.0 hops per walk).
-  ground                   0.064743 +- 0.0061 fF
-  h0                      0.0043847 +- 0.0014 fF
-  v0                       0.016395 +- 0.0036 fF
-  h1                       0.007769 +- 0.0017 fF
-  v1                       0.016165 +- 0.0027 fF
-  h2                       0.012097 +- 0.0031 fF
-  v2                       0.015994 +- 0.0029 fF
-  h3                        0.34859 +- 0.012 fF
-  v3                       0.015568 +- 0.0031 fF
-  v4                       0.021913 +- 0.003 fF
-  h5                        0.36819 +- 0.012 fF
-  v5                       0.014866 +- 0.0028 fF
-  h6                       0.019477 +- 0.0031 fF
-  v6                       0.017405 +- 0.0028 fF
-  h7                      0.0057219 +- 0.0018 fF
-  v7                       0.013781 +- 0.0029 fF
-  h8                     0.00044249 +- 0.0012 fF
-  v8                       0.010745 +- 0.003 fF
-  h9                      0.0016179 +- 0.00084 fF
-  v9                       0.018279 +- 0.0038 fF
+[INFO FSV-0011] Net m1a: total 1.9361 fF +- 0.036 after 82944 walks (30.8 hops per walk).
+  ground                    0.46632 +- 0.019 fF
+  m1b                        1.3661 +- 0.031 fF
+  m2                        0.10369 +- 0.0094 fF
+[INFO FSV-0011] Net v: total 0.062807 fF +- 0.0012 after 32768 walks (216.4 hops per walk).
+  ground                   0.062807 +- 0.0012 fF
+[INFO FSV-0011] Net v: total 0.062974 fF +- 0.0012 after 32768 walks (217.6 hops per walk).
+  ground                   0.062974 +- 0.0012 fF
+[INFO FSV-0011] Net h4: total 0.98936 fF +- 0.016 after 32768 walks (68.5 hops per walk).
+  ground                   0.068151 +- 0.0059 fF
+  h0                      0.0034616 +- 0.0014 fF
+  v0                       0.014587 +- 0.0036 fF
+  h1                      0.0082662 +- 0.0018 fF
+  v1                       0.015864 +- 0.0029 fF
+  h2                       0.012492 +- 0.0031 fF
+  v2                       0.015695 +- 0.003 fF
+  h3                        0.34915 +- 0.012 fF
+  v3                       0.018525 +- 0.0032 fF
+  v4                       0.020156 +- 0.0031 fF
+  h5                        0.35353 +- 0.012 fF
+  v5                         0.0164 +- 0.003 fF
+  h6                       0.018179 +- 0.0031 fF
+  v6                       0.017754 +- 0.0029 fF
+  h7                       0.004909 +- 0.0018 fF
+  v7                       0.016065 +- 0.0029 fF
+  h8                      0.0020671 +- 0.0013 fF
+  v8                       0.013098 +- 0.0031 fF
+  h9                      0.0021349 +- 0.00092 fF
+  v9                       0.018876 +- 0.0038 fF
 Summary 5 / 5 (100% pass)
 pass

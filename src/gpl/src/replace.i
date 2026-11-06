@@ -27,6 +27,7 @@ static gpl::PlaceOptions getOptions(
   gpl::PlaceOptions options;
   checkFlag(flags, "-timing_driven", options.timingDrivenMode);
   checkFlag(flags, "-timing_driven_repair_timing", options.timingDrivenRepairTiming);
+  checkFlag(flags, "-power_driven", options.powerDrivenMode);
   checkFlag(flags, "-routability_driven", options.routabilityDrivenMode);
   checkFlag(flags, "-virtual_cts", options.virtualCtsMode);
   checkFlag(flags, "-routability_use_grt", options.routabilityUseRudy, false);
@@ -81,6 +82,7 @@ static gpl::PlaceOptions getOptions(
            options.timingNetWeightOverflows);
   checkKey(keys, "-overflow", options.overflow);
   checkKey(keys, "-timing_driven_net_weight_max", options.timingNetWeightMax);
+  checkKey(keys, "-power_driven_net_weight", options.powerDrivenNetWeight);
   checkKey(
       keys, "-keep_resize_below_overflow", options.keepResizeBelowOverflow);
   checkKey(keys,

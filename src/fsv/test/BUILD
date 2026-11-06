@@ -55,6 +55,18 @@ cc_test(
 )
 
 cc_test(
+    name = "TestGaussianSurface",
+    srcs = ["cpp/TestGaussianSurface.cpp"],
+    deps = [
+        "//src/fsv:core",
+        "//src/fsv:geometry",
+        "//src/fsv:stack",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestSpatialIndex",
     srcs = ["cpp/TestSpatialIndex.cpp"],
     deps = [
@@ -97,7 +109,10 @@ cc_test(
 cc_test(
     name = "TestItf",
     srcs = ["cpp/TestItf.cpp"],
-    data = ["sky130.itf"],
+    data = [
+        "GT2.itf",
+        "sky130.itf",
+    ],
     deps = [
         "//src/fsv:stack",
         "@googletest//:gtest",
@@ -109,7 +124,9 @@ cc_test(
     name = "TestSolver",
     size = "medium",
     srcs = ["cpp/TestSolver.cpp"],
+    data = glob(["golden/*.txt"]),
     deps = [
+        ":structures",
         "//src/fsv",
         "//src/fsv:core",
         "//src/fsv:geometry",
@@ -213,6 +230,12 @@ filegroup(
         "sky130hd/sky130hd.tlef",
     ],
 )
+
+exports_files([
+    "GT2.itf",
+    "field_solver_gcd.def",
+    "sky130.itf",
+])
 
 [regression_test(
     name = test_name,

@@ -179,6 +179,10 @@ class FastRouteCore
                    uint8_t& blockage_h,
                    uint8_t& blockage_v);
   void updateDbCongestion(int min_routing_layer, int max_routing_layer);
+  // Sets the capacities back to those the odb congestion map was written
+  // with, once the routes it was written with are in the usage. Returns the
+  // number of edges whose capacity changed.
+  int restoreCapacitiesFromDb(int min_routing_layer, int max_routing_layer);
   // Rewrite the usage of just `tiles` (GCell indices).
   void updateDbCongestionTiles(int min_routing_layer,
                                int max_routing_layer,
@@ -303,6 +307,8 @@ class FastRouteCore
   void updateNet3DUsage(int net_id, int cost);
   void setSoftNDR(int net_id);
   void applySoftNDR(const std::vector<int>& net_ids);
+  std::vector<StTree> saveInitialRoutes() const;
+  void restoreInitialRoutes(std::vector<StTree> initial_sttrees);
   void disableNDRForCongestedNets(const std::vector<int>& net_ids);
   // Variant that works from pre-converted grid segments (x0,y0,x1,y1,layer)
   // instead of sttrees, for use when sttrees are not yet populated.
@@ -335,6 +341,7 @@ class FastRouteCore
  private:
   friend class Maze3DTestPeer;
   friend class OverflowTestPeer;
+  friend class ResistanceModeTestPeer;
 
   void convertGridsToSegments(
       const std::vector<GPoint3D>& grids,
@@ -353,6 +360,25 @@ class FastRouteCore
   void updateSlacks();
   void preProcessTechLayers();
   odb::dbTechLayer* getTechLayer(int layer, bool is_via);
+
+  // Usage of an edge as `net` sees it when choosing its route: an NDR net
+  // also pays for the NDR deficit of the edge (see
+  // Graph2D::getNDRDeficitIfRouted), the other nets see `usage` unchanged.
+  double getUsageNDRAware(FrNet* net,
+                          int x,
+                          int y,
+                          EdgeDirection direction,
+                          double usage) const;
+  double getEstUsageRedH(FrNet* net, int x, int y) const
+  {
+    return getUsageNDRAware(
+        net, x, y, EdgeDirection::Horizontal, graph2d_.getEstUsageRedH(x, y));
+  }
+  double getEstUsageRedV(FrNet* net, int x, int y) const
+  {
+    return getUsageNDRAware(
+        net, x, y, EdgeDirection::Vertical, graph2d_.getEstUsageRedV(x, y));
+  }
 
   // maze functions
   // Maze-routing in different orders
@@ -470,6 +496,7 @@ class FastRouteCore
                            int to_y,
                            bool is_via);
   void mazeRouteMSMDOrder3D(int expand, int ripupTHlb, int ripupTHub);
+  bool canRunMaze3D(int overflow_2d) const;
   void addNeighborPoints(int netID,
                          int n1,
                          int n2,
@@ -744,6 +771,9 @@ class FastRouteCore
 
   static const int BIG_INT = 1e9;  // big integer used as infinity
   static const int HCOST = 5000;
+  // Overflow an NDR net is charged, in its routing cost, per track it would
+  // miss on an edge where it fits no single layer.
+  static constexpr int kNdrDeficitCost = 100;
 
   // Snapshot-batched routing constants.
   // Nets are partitioned into batches and routed in parallel waves against

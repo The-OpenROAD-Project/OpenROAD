@@ -7,6 +7,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <vector>
 
 #include "fsv/Scene.h"
@@ -29,9 +30,9 @@ struct SolverOptions
   // multiple of 16, so that every tabulated interface position lies on a
   // panel boundary.
   int panels = 32;
-  // Walks per batch, and batches in the first and in later rounds; rounds
-  // double from the first size up to round_batches. The stopping test runs
-  // after each round.
+  // Walks per batch, the batches of the first round, and the most in any
+  // round. The stopping test runs after each round; later rounds are sized
+  // to the walks it still needs, at least first_round_batches.
   int batch_size = 1024;
   int first_round_batches = 16;
   int round_batches = 256;
@@ -42,12 +43,11 @@ struct SolverOptions
 // Accuracy settings for one solve.
 struct SolveOptions
 {
-  // Stop when sigma/C_total falls below this.
+  // Stop when the total's standard error is below tol_total times the
+  // total, and every coupling's (the ground's included) below tol_coupling
+  // times the total; unset, tol_coupling is tol_total.
   double tol_total = 0.01;
-  // ... and sigma/|C_ij| falls below this for every coupling at least
-  // coupling_threshold * C_total.
-  double tol_coupling = 0.05;
-  double coupling_threshold = 0.01;
+  std::optional<double> tol_coupling = std::nullopt;
   int64_t min_walks = 16384;
   int64_t max_walks = 100000000;
   // Gaussian-surface offset as a fraction of the master's smallest dimension,
@@ -80,10 +80,12 @@ struct CapRow
   // stands in for the conductors outside and is not covered.
   double window_leakage = 0;
   int64_t walks = 0;
-  // Walks whose start point was not on the Gaussian surface (inside the
-  // union of the target's grown boxes); they count as walks of weight 0.
-  int64_t rejected = 0;
   int64_t hops = 0;
+  // Around conformal shells a trial may choose a Gaussian surface inside
+  // the target's own shells: whether it did, and the walks the trial took
+  // (0 when none ran). Trial walks are not in `walks` or `hops`.
+  bool inside_surface = false;
+  int64_t trial_walks = 0;
 
   double total() const { return cap[master]; }
   double coupling(int net) const { return -cap[net]; }

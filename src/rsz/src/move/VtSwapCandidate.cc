@@ -46,7 +46,8 @@ std::string VtSwapCandidate::logName() const
 
 MoveResult VtSwapCandidate::applyReplacement()
 {
-  if (!resizer_.replacementPreservesMaxCap(inst_, best_cell_)) {
+  if (!resizer_.replacementPreservesMaxCap(
+          inst_, best_cell_, target().mode(resizer_))) {
     debugPrint(resizer_.logger(),
                RSZ,
                "vt_swap_move",

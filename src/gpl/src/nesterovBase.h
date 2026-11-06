@@ -264,8 +264,12 @@ class GNet
 
   void setTimingWeight(float timingWeight);
   void setCustomWeight(float customWeight);
+  void setPowerWeight(float powerWeight);
 
-  float getTotalWeight() const { return timingWeight_ * customWeight_; }
+  float getTotalWeight() const
+  {
+    return (timingWeight_ + powerWeight_) * customWeight_;
+  }
   float getTimingWeight() const { return timingWeight_; }
   float getCustomWeight() const { return customWeight_; }
 
@@ -320,6 +324,7 @@ class GNet
 
   float timingWeight_ = 1;
   float customWeight_ = 1;
+  float powerWeight_ = 0;
 
   //
   // weighted average WL model stor for better indexing
@@ -1276,6 +1281,7 @@ class NesterovBase
   void nesterovAdjustPhi();
 
   void resetMinSumOverflow();
+  void setPrevHpwl(int64_t prev_hpwl) { prev_hpwl_ = prev_hpwl; }
 
   bool isDiverged() const { return isDiverged_; }
   // Resets isDiverged_ when no snapshot exists to revert to instead (the only

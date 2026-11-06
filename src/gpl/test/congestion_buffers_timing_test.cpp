@@ -145,6 +145,7 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
         rb_,
         tb_,
         nullptr,
+        nullptr,
         std::make_unique<GraphicsNone>(),
         &logger_);
   }
@@ -300,6 +301,16 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
                          delta_area_,
                          routability_iteration,
                          virtual_cts);
+  }
+
+  // Simulates divergence baselines recorded before a repair grew the netlist.
+  // The values are far below anything the current placement reports, so
+  // checkDivergence() fires against them until they are reset.
+  void setPreRepairDivergenceBaselines(NesterovBase& nb)
+  {
+    nb.prev_reported_overflow_unscaled_ = nb.minSumOverflow_ = 1e-3f;
+    nb.prev_reported_hpwl_ = 1;
+    nb.hpwlWithMinSumOverflow_ = 1;
   }
 
   void checkRetainedInsertions(bool expect_inflation)
@@ -863,6 +874,23 @@ TEST_F(TimingRepairIntegrationTest,
   ASSERT_EQ(timing_iterations_, 1);
   checkRetainedInsertions(false);
   EXPECT_EQ(rb_->getTotalTilesCount(), 0);
+}
+
+// Divergence is declared when overflow and HPWL rise together, which on a
+// fixed netlist means the descent has become unstable. A kept repair_design
+// changes the netlist: inserted buffers add cell area and wirelength, so both
+// jump on the next iteration even though the placement is healthy. Measured
+// against baselines from before the repair, that jump looks like divergence.
+TEST_F(TimingRepairIntegrationTest, NonVirtualRepairResetsDivergenceBaselines)
+{
+  makePlacer(false);
+  NesterovBase& nb = *np_->getTopLevelNB();
+  setPreRepairDivergenceBaselines(nb);
+  ASSERT_TRUE(nb.checkDivergence());
+  nb.clearDivergence();
+  runTiming(0.2f);  // Below keepResizeBelowOverflow, so the repair is kept.
+  ASSERT_EQ(timing_iterations_, 1);
+  EXPECT_FALSE(nb.checkDivergence());
 }
 
 TEST_F(TimingRepairIntegrationTest, TimingDisabledSkipsRepairAndInflation)
