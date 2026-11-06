@@ -26,11 +26,8 @@ using utl::RSZ;
 SplitLoadMtCandidate::SplitLoadMtCandidate(
     Resizer& resizer,
     const Target& target,
-    std::shared_ptr<const SplitLoadMtInput> input,
-    const float score_scale)
-    : MoveCandidate(resizer, target),
-      input_(std::move(input)),
-      score_scale_(score_scale)
+    std::shared_ptr<const SplitLoadMtInput> input)
+    : MoveCandidate(resizer, target), input_(std::move(input))
 {
 }
 
@@ -45,7 +42,7 @@ Estimate SplitLoadMtCandidate::estimate()
       = DelayEstimator::estimateLoadChange(context, input.target_load_delta);
   if (!delay_est.legal) {
     return {.legal = false,
-            .score = delay_est.arrival_impr * score_scale_,
+            .score = delay_est.arrival_impr,
             .raw_gain = delay_est.reason == FailReason::kEstimateNonImproving
                             ? std::optional<float>(delay_est.arrival_impr)
                             : std::nullopt,
@@ -81,7 +78,7 @@ Estimate SplitLoadMtCandidate::estimate()
                     .raw_gain = delay_est.arrival_impr,
                     .reason = failReasonName(delay_est.reason),
                     .side_loss = delay_est.side_loss};
-  estimate.score = gain * score_scale_;
+  estimate.score = gain;
   if (delay_est.legal && gain <= 0.0f) {
     estimate.reason = "side_loss_non_improving";
     estimate.tail_admissible = delay_est.arrival_impr > 0.0f;

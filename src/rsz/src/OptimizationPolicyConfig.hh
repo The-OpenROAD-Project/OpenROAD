@@ -197,6 +197,10 @@ struct OptimizationPolicyConfig
 {
   static OptimizationPolicyConfig forParallelEval(RepairEffort effort);
 
+  // Weight of a move's score in the PARALLEL_EVAL shared pool; 1 for a move
+  // without one.
+  float scoreScale(MoveType type) const;
+
   // --- Delay estimator ------------------------------------------------------
 
   // Stages scored before and after the target stage; zero scores only the
@@ -228,11 +232,13 @@ struct OptimizationPolicyConfig
   // PARALLEL_EVAL turns the guard off.
   bool dual_rf_drive_guard{true};
 
-  // Weight of the SizeUpMt score in the shared pool; VtSwapMt keeps 1.
-  // Empirically tuned.  A size-up costs more than a VT swap of similar gain
-  // (area, input pin cap, legalizer displacement, side paths), so it ranks
-  // lower.
-  float size_up_mt_score_scale{0.75f};
+  // Weights of the VtSwapMt and SizeUpMt scores in the shared pool.
+  // Empirically tuned together with the relative cell cost of the two moves
+  // (relativeCellCosts()).  A size-up costs more than a VT swap of similar
+  // gain (area, input pin cap, legalizer displacement, side paths), so it
+  // ranks lower.
+  float vt_swap_mt_score_scale{1.25f};
+  float size_up_mt_score_scale{0.60f};
 
   // Largest drive-resistance ratio (current / replacement) of a size-up;
   // zero means no bound.  PARALLEL_EVAL sets one.
