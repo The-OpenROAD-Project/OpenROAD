@@ -363,4 +363,20 @@ describe('TimingWidget detail table columns', () => {
         widget._selectPathRow(1);
         assert.equal(pinWidth(widget), '216px');
     });
+
+    it('keeps a dragged pin column from one path to the next', () => {
+        const widget = new TimingWidget(createMockApp(), () => {});
+        widget.showPaths('setup', [
+            makePath(0.0, 'a', { data_nodes: [node('core/u_alu/add_reg/D')] }),
+            makePath(0.1, 'b', { data_nodes: [node('x/D')] }),
+        ]);
+        widget._selectPathRow(0);
+        const grip = widget._detailTable.querySelector('thead th .col-resize-grip');
+        grip.dispatchEvent(new window.MouseEvent('mousedown', { clientX: 0, bubbles: true }));
+        document.dispatchEvent(new window.MouseEvent('mousemove', { clientX: 300 }));
+        document.dispatchEvent(new window.MouseEvent('mouseup', {}));
+        assert.equal(pinWidth(widget), '300px');
+        widget._selectPathRow(1);
+        assert.equal(pinWidth(widget), '300px');
+    });
 });

@@ -7,8 +7,8 @@
 import './setup-dom.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeResizableHeaders, textColumnWidths, kMaxAutoColumnPx }
-    from '../../src/ui-utils.js';
+import { makeResizableHeaders, savedColumnWidths, textColumnWidths,
+         kMaxAutoColumnPx } from '../../src/ui-utils.js';
 
 describe('makeResizableHeaders', () => {
     function table3(widths) {
@@ -43,7 +43,7 @@ describe('makeResizableHeaders', () => {
 
     it('widens the last column too, and keeps it when the header is rebuilt', () => {
         const table = table3(['100px', '200px', '50px']);
-        let ths = table.querySelectorAll('thead th');
+        const ths = table.querySelectorAll('thead th');
         Object.defineProperty(ths[2], 'offsetWidth', { value: 50 });
         const grip = ths[2].querySelector('.col-resize-grip');
         assert.ok(grip, 'the last column has a grip');
@@ -52,10 +52,11 @@ describe('makeResizableHeaders', () => {
         document.dispatchEvent(new window.MouseEvent('mouseup', {}));
         assert.equal(ths[2].style.width, '');
         assert.equal(table.style.width, '600px');
-        // a re-render rebuilds the header and passes the saved widths back
-        ths = table.querySelectorAll('thead th');
-        const saved = Array.from(ths, (th) => th.style.width);
-        table.querySelector('thead').remove();
+        // a re-render empties the table and passes the saved widths back
+        const saved = savedColumnWidths(table);
+        assert.deepEqual(saved, ['100px', '200px', '300px']);
+        table.innerHTML = '';
+        assert.deepEqual(savedColumnWidths(table), saved);
         const thead = document.createElement('thead');
         const tr = document.createElement('tr');
         for (const name of ['Start', 'End', 'Slack']) {
@@ -67,6 +68,18 @@ describe('makeResizableHeaders', () => {
         table.appendChild(thead);
         makeResizableHeaders(table, saved);
         assert.equal(table.style.width, '600px');
+    });
+
+    it('passes no widths on until a column is dragged', () => {
+        const table = table3();
+        assert.equal(savedColumnWidths(table), undefined);
+        assert.equal(savedColumnWidths(null), undefined);
+    });
+
+    it('measures again when the saved widths are for other columns', () => {
+        const table = table3(['100px', '200px']);
+        assert.equal(savedColumnWidths(table), undefined);
+        assert.notEqual(table.querySelector('thead th').style.width, '100px');
     });
 });
 
