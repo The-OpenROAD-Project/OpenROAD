@@ -133,6 +133,7 @@ openroad -web -web_no_browser
 Save the layout to a PNG file. By default, the command uses the GUI (Qt)
 renderer. Pass `-web` to use the web tile renderer instead, which runs
 entirely server-side without a display and is suitable for headless CI.
+OpenROAD built without Qt always uses the web tile renderer.
 
 ```tcl
 save_image
@@ -148,7 +149,7 @@ save_image
 
 | Switch Name | Description |
 | -------------- | ---------------------------------------------- |
-| `-web` | Use the web tile renderer instead of the GUI renderer. Does not require a display or a running web server. |
+| `-web` | Use the web tile renderer instead of the GUI renderer. Does not require a display or a running web server. Implied when OpenROAD is built without Qt. |
 | `-area` | Bounding box in microns `{x0 y0 x1 y1}`. Default: the whole design -- the die area unioned with the block bounding box -- plus a 5% margin. |
 | `-width` | Output image width in pixels. Cannot be used with `-resolution`. |
 | `-resolution` | Resolution in microns per pixel. Minimum: 1 DBU per pixel. Cannot be used with `-width`. |

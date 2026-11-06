@@ -65,6 +65,8 @@ class NesterovPlace
   float getWireLengthCoefY() const { return wireLengthCoefY_; }
   NesterovPlaceVars& getNpVars() { return npVars_; }
   float getAverageOverflow() const { return average_overflow_unscaled_; }
+  // The top-level (unfenced/full-die) region is always nbVec_[0].
+  NesterovBase* getTopLevelNB() const;
 
   void setTargetOverflow(float overflow) { npVars_.targetOverflow = overflow; }
   void setMaxIters(int limit) { npVars_.maxNesterovIter = limit; }
@@ -165,8 +167,6 @@ class NesterovPlace
   void guardIncrementalDensityPenalty(float& current_factor,
                                       float& best_overflow,
                                       int& retries);
-  // The top-level (unfenced/full-die) region is always nbVec_[0].
-  NesterovBase* getTopLevelNB() const;
   std::string getReportsDir() const;
   void cleanReportsDirs(const std::string& timing_driven_dir,
                         const std::string& routability_driven_dir) const;
