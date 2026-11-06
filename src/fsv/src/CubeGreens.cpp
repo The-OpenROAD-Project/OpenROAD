@@ -14,32 +14,13 @@
 
 #include "AliasTable.h"
 #include "BoxFace.h"
+#include "CubePanels.h"
 #include "Philox.h"
 #include "fsv/Geometry.h"
 
 namespace fsv {
 
 namespace {
-
-// Highest Fourier mode kept. Terms decay like exp(-pi * m / 2), so modes past
-// ~80 are below double precision.
-constexpr int kMaxMode = 81;
-
-// Integral of sin(m * pi * (x + 1) / 2) over each of n equal panels of
-// [-1, 1]; index [m][i].
-std::vector<std::vector<double>> panelIntegrals(const int n)
-{
-  std::vector<std::vector<double>> ints(kMaxMode + 1, std::vector<double>(n));
-  for (int m = 1; m <= kMaxMode; m++) {
-    const double w = m * std::numbers::pi / 2;
-    for (int i = 0; i < n; i++) {
-      const double x0 = -1.0 + 2.0 * i / n;
-      const double x1 = -1.0 + 2.0 * (i + 1) / n;
-      ints[m][i] = (std::cos(w * (x0 + 1)) - std::cos(w * (x1 + 1))) / w;
-    }
-  }
-  return ints;
-}
 
 // Tabulates the three kernels for the face z = -1 (and x = -1 for the
 // parallel-face gradient). With boundary data g on that face, the potential is
@@ -49,7 +30,7 @@ std::vector<std::vector<double>> panelIntegrals(const int n)
 // center gives the kernels.
 CubeGreens::Tables tabulate(const int n)
 {
-  const auto ints = panelIntegrals(n);
+  const auto ints = panelSineIntegrals(n);
   CubeGreens::Tables t;
   t.prob.assign(n * n, 0.0);
   t.normal_face.assign(n * n, 0.0);
@@ -151,20 +132,6 @@ CubeGreens::CubeGreens(const int panels, Tables tables)
   }
 }
 
-Vec3 CubeGreens::facePoint(const BoxFace face,
-                           const int i,
-                           const int j,
-                           const double u,
-                           const double v) const
-{
-  const auto [t0, t1] = tangentAxes(face.axis);
-  Vec3 p;
-  p[index(face.axis)] = face.normalSign();
-  p[index(t0)] = -1.0 + 2.0 * (i + u) / n_;
-  p[index(t1)] = -1.0 + 2.0 * (j + v) / n_;
-  return p;
-}
-
 Vec3 CubeGreens::sampleTransition(Philox& rng) const
 {
   // All six faces carry probability 1/6.
@@ -173,11 +140,11 @@ Vec3 CubeGreens::sampleTransition(Philox& rng) const
   const int panel = prob_alias_.sample(rng.uniform());
   const double u = rng.uniform();
   const double v = rng.uniform();
-  return facePoint(BoxFace::fromIndex(f), panel / n_, panel % n_, u, v);
+  return cubeFacePoint(BoxFace::fromIndex(f), n_, panel / n_, panel % n_, u, v);
 }
 
-CubeGreens::FirstHop CubeGreens::sampleFirstHop(const Axis derivative_axis,
-                                                Philox& rng) const
+FirstHop CubeGreens::sampleFirstHop(const Axis derivative_axis,
+                                    Philox& rng) const
 {
   const int d = index(derivative_axis);
   const int idx = hop_alias_[d].sample(rng.uniform());
@@ -185,7 +152,8 @@ CubeGreens::FirstHop CubeGreens::sampleFirstHop(const Axis derivative_axis,
   const int panel = idx % (n_ * n_);
   const double u = rng.uniform();
   const double v = rng.uniform();
-  return {facePoint(face, panel / n_, panel % n_, u, v), hop_sign_[d][idx]};
+  return {cubeFacePoint(face, n_, panel / n_, panel % n_, u, v),
+          hop_sign_[d][idx]};
 }
 
 }  // namespace fsv

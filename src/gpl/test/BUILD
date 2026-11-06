@@ -19,6 +19,7 @@ TESTS = [
     "diverge01",
     "error01",
     "incremental01",
+    "mbff_activity",
     "mbff_hier",
     "mbff_orig_name",
     "mbff_clock_power_off",
@@ -34,6 +35,8 @@ TESTS = [
     "simple01-td-net-percentage",
     "simple01-td-tune",
     "simple01-td-repair",
+    "simple01-td-restart",
+    "simple01-td-scan-net",
     "simple01-uniform",
     "simple01-vcts",
     "simple01-vcts-clamp",
@@ -55,13 +58,14 @@ TESTS = [
 ]
 
 PASSFAIL_TESTS = [
+    "congestion_inflation_default",
     "incremental02",
     "incremental03",
     "place_ios_rd",
     "place_ios_td",
 ]
 
-# Longer-running regression tests (see regression_tests_large.tcl). These are
+# Longer-running regression tests. These are
 # tagged "manual" so they are excluded from the default `bazel test //...`
 # wildcard and must be requested explicitly, e.g. via the :large_tests suite.
 LARGE_TESTS = [
@@ -78,8 +82,7 @@ LARGE_TESTS = [
     "large02",
 ]
 
-# GPU-only PASSFAIL regressions, pinned to the GPU code path (mirrors
-# the ENABLE_GPU=1 tests in src/gpl/test/CMakeLists.txt).
+# GPU-only PASSFAIL regressions, pinned to the GPU code path (ENABLE_GPU=1).
 GPU_TESTS = [
     "region01_gpu",
     "region01_gpu_asym",
@@ -211,7 +214,6 @@ cc_test(
         "//src/gpl:gpl_impl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        "@spdlog",
     ],
 )
 
@@ -233,8 +235,7 @@ cc_test(
 )
 
 # GPU wirelength-kernel correctness test. Includes Kokkos-laden headers
-# directly, so the TU itself is compiled as CUDA (mirrors the
-# set_source_files_properties block in test/CMakeLists.txt).
+# directly, so the TU itself is compiled as CUDA.
 cc_test(
     name = "wl_gpu_test",
     srcs = ["wl_gpu_test.cc"],
@@ -308,6 +309,35 @@ cc_test(
 )
 
 cc_test(
+    name = "power_base_test",
+    srcs = ["power_base_test.cpp"],
+    data = [
+        "library/nangate45/NangateOpenCellLibrary_typical.lib",
+        "nangate45.lef",
+        "simple01-td.def",
+    ],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/dpl",
+        "//src/est",
+        "//src/gpl:gpl_impl",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/stt",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "placer_base_test",
     srcs = ["placer_base_test.cpp"],
     env = GPU_ENV_OFF,
@@ -315,6 +345,27 @@ cc_test(
         "//src/gpl:gpl_impl",
         "//src/odb/src/db",
         "//src/tst:db_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "route_base_test",
+    srcs = ["route_base_test.cpp"],
+    data = ["ar02.def"],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/gpl:gpl_impl",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -347,6 +398,59 @@ cc_test(
 cc_test(
     name = "nesterov_divergence_test",
     srcs = ["nesterov_divergence_test.cpp"],
+    deps = [
+        "//src/gpl:gpl_impl",
+        "//src/odb/src/db",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "congestion_buffers_test",
+    srcs = [
+        "congestion_buffers_test.cpp",
+        "congestion_buffers_timing_test.cpp",
+    ],
+    data = [
+        "simple01.def",
+        "simple01-td-repair.def",
+    ],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/gpl:gpl_impl",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "overflow_test",
+    srcs = ["overflow_test.cpp"],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/gpl:gpl_impl",
+        "//src/odb/src/db",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "wirelength_gradient_test",
+    srcs = ["wirelength_gradient_test.cpp"],
+    env = GPU_ENV_OFF,
     deps = [
         "//src/gpl:gpl_impl",
         "//src/odb/src/db",

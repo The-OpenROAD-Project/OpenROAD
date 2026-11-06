@@ -419,8 +419,8 @@ void Design::computeViaDemandLengths()
 
   // A wrong-way wire crosses a layer's tracks like a via pad: its width
   // runs along the tracks and it spans one gcell across them. Demand per
-  // gcell boundary crossed (commitWire's edge convention), consumed by
-  // GridGraph::commitWrongWayWire.
+  // gcell boundary crossed (commitTree's edge convention), consumed by
+  // GridGraph::forEachWrongWayFlankEdgeImpl.
   wrong_way_demand_length_.assign(num_layers, 0.0);
   for (int i = 0; i < num_layers; i++) {
     const MetalLayer& layer = layers_[i];

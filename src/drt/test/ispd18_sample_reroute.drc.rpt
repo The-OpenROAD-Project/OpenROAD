@@ -1,0 +1,9 @@
+violation type: Short
+	srcs: net:net1231 net:net1232
+	bbox = (42.6650, 39.5500) - (42.7350, 39.6800) on Layer Metal2
+violation type: Short
+	srcs: net:net1231 net:net1232
+	bbox = (42.6350, 39.5800) - (45.5650, 39.6500) on Layer Metal3
+violation type: Cut Short
+	srcs: net:net1231 net:net1232
+	bbox = (42.6650, 39.5800) - (42.7350, 39.6500) on Layer Via2

@@ -294,8 +294,12 @@ DelayEstimatorReporter::EcoJournalScope::~EcoJournalScope()
     odb::dbDatabase::undoEco(reporter_.block_);
     reporter_.resizer_.updateParasiticsAndTiming();
   } catch (...) {
-    // Destructors must not throw during diagnostic ECO cleanup.
-    return;
+    // Destructors must not throw during diagnostic ECO cleanup, but the trial
+    // edits may still be in the design.
+    reporter_.logger_->warn(RSZ,
+                            3212,
+                            "The accuracy report could not undo its trial "
+                            "edits; the design may keep them.");
   }
 }
 
@@ -418,6 +422,17 @@ void DelayEstimatorReporter::reportAccuracyForRebufferTree(
     sta::Pin* driver_pin,
     const int delay_levels)
 {
+  // -driver_pin names an output pin of -inst.
+  if (driver_pin != nullptr
+      && (network_->instance(driver_pin) != inst
+          || !network_->isDriver(driver_pin))) {
+    logger_->error(RSZ,
+                   3211,
+                   "-driver_pin {} is not an output pin of instance {}.",
+                   network_->pathName(driver_pin),
+                   network_->pathName(inst));
+  }
+
   resizer_.init();
   resizer_.resizePreamble();
   block_ = resizer_.block_;
@@ -1687,7 +1702,7 @@ DelayEstimatorReporter::captureSidePathFixedStages(
     if (!found_path || slack < best_slack) {
       found_path = true;
       best_slack = slack;
-      best_fixed_stages = fixed_stages;
+      best_fixed_stages = std::move(fixed_stages);
     }
   }
 
@@ -1773,7 +1788,7 @@ DelayEstimatorReporter::collectSidePathStages(const sta::PathExpanded& expanded,
       fixed_stage.input_pin_name = network_->pathName(input_pin);
     }
 
-    fixed_stages.push_back(fixed_stage);
+    fixed_stages.push_back(std::move(fixed_stage));
   }
 
   return fixed_stages;
@@ -1942,7 +1957,7 @@ DelayEstimatorReporter::captureSidePathConnectivityFixedStages(
     buffer_stage.driver_pin_name = network_->pathName(buffer_output_pin);
     buffer_stage.next_pin_name
         = network_->pathName(reverse_input_chain[chain_index]);
-    fixed_stages.push_back(buffer_stage);
+    fixed_stages.push_back(std::move(buffer_stage));
   }
 
   for (const FixedStage& path_stage : path_fixed_stages) {
@@ -2401,7 +2416,7 @@ DelayEstimatorReporter::captureFixedStages(const Target& target,
       fixed_stage.input_pin_name = network_->pathName(input_pin);
     }
 
-    fixed_stages.push_back(fixed_stage);
+    fixed_stages.push_back(std::move(fixed_stage));
   }
 
   assignNextPins(fixed_stages, expanded, nullptr, -1);

@@ -913,6 +913,14 @@ void RepairTargetCollector::collectViolatingEndpoints()
   violating_endpoints_.clear();
   crit_path_load_pins_.clear();
 
+  // Workers read required times without a refresh: the endpoint scan below
+  // and the RebufferMt planners, under -path_group too.  This is a no-op when
+  // timing is up to date.
+  {
+    const ProfileScope sta_profile("incremental_sta");
+    sta_->findRequireds();
+  }
+
   if (restrictedToPathGroup()) {
     // One query for the whole group, already carrying each endpoint's slack
     // in it. Testing endpoints one at a time would repeat the same search
@@ -920,13 +928,6 @@ void RepairTargetCollector::collectViolatingEndpoints()
     refreshGroupSlacks();
     violating_endpoints_.assign(group_slacks_.begin(), group_slacks_.end());
   } else {
-    // Required times must be current before workers read path slacks.  This
-    // is a no-op when timing is up to date.
-    {
-      const ProfileScope sta_profile("incremental_sta");
-      sta_->findRequireds();
-    }
-
     const sta::VertexSet& endpoint_set = sta_->endpoints();
     std::vector<sta::Vertex*> endpoints(endpoint_set.begin(),
                                         endpoint_set.end());

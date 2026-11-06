@@ -1149,9 +1149,11 @@ TEST_F(TestResizer, SizeUpSelectsActiveTransitionSkewedCell)
   sta::LibertyCell* d1_rvt = skew_lib->findLibertyCell("SKEW_BUF_D1_RVT");
   sta::LibertyCell* skrd2_rvt = skew_lib->findLibertyCell("SKEW_BUF_SKRD2_RVT");
   sta::LibertyCell* d2_rvt = skew_lib->findLibertyCell("SKEW_BUF_D2_RVT");
+  sta::LibertyCell* d3_rvt = skew_lib->findLibertyCell("SKEW_BUF_D3_RVT");
   ASSERT_NE(d1_rvt, nullptr);
   ASSERT_NE(skrd2_rvt, nullptr);
   ASSERT_NE(d2_rvt, nullptr);
+  ASSERT_NE(d3_rvt, nullptr);
 
   sta::LibertyPort* in_port = d1_rvt->findLibertyPort("A");
   sta::LibertyPort* drvr_port = d1_rvt->findLibertyPort("Z");
@@ -1173,8 +1175,10 @@ TEST_F(TestResizer, SizeUpSelectsActiveTransitionSkewedCell)
 
   // SKEW_BUF_SKRD2_RVT has a faster rise delay than SKEW_BUF_D1_RVT, but its
   // fall delay exceeds SKEW_BUF_D1_RVT's worst-case delay. On a rising edge,
-  // transition-aware sizing should pick SKEW_BUF_SKRD2_RVT; on a falling edge,
-  // it should skip SKEW_BUF_SKRD2_RVT and pick SKEW_BUF_D2_RVT.
+  // transition-aware sizing picks SKEW_BUF_SKRD2_RVT. On a falling edge it must
+  // skip SKEW_BUF_SKRD2_RVT (which weakens the fall edge); among the remaining
+  // eligible cells the power-aware score picks SKEW_BUF_D3_RVT, whose larger
+  // delay gain per unit cost beats the smaller SKEW_BUF_D2_RVT.
   sta::LibertyCell* rise_replacement
       = generator.upsizeCell(in_port,
                              sta::RiseFall::rise(),
@@ -1197,7 +1201,7 @@ TEST_F(TestResizer, SizeUpSelectsActiveTransitionSkewedCell)
                              scene,
                              max);
   ASSERT_NE(fall_replacement, nullptr);
-  EXPECT_EQ(fall_replacement, d2_rvt);
+  EXPECT_EQ(fall_replacement, d3_rvt);
 
   odb::dbInst* db_inst = block_->findInst("enable_buf0");
   ASSERT_NE(db_inst, nullptr);
@@ -1427,6 +1431,40 @@ TEST_F(TestResizer, GetVtEquivCellsDeduplicatesNonAdjacentSameVtCells)
             resizer_.cellVTType(second_master));
   EXPECT_LE(resizer_.cellLeakage(vt_equiv[0]).value_or(0.0f),
             resizer_.cellLeakage(vt_equiv[1]).value_or(0.0f));
+}
+
+TEST_F(TestResizer, DisabledConditionalArcIgnoredInDriveResistance)
+{
+  readDefForTiming("remove_buffers3.def");
+  resizer_.initBlock();
+
+  odb::dbInst* gate
+      = odb::dbInst::create(block_, db_->findMaster("XNOR2_X1"), "g1");
+  sta::Instance* sta_gate = db_network_->dbToSta(gate);
+  sta_->connectPin(sta_gate,
+                   findLibertyPort(sta_gate, "A"),
+                   db_network_->dbToSta(block_->findNet("in1")));
+  sta_->connectPin(sta_gate,
+                   findLibertyPort(sta_gate, "B"),
+                   db_network_->dbToSta(block_->findNet("n1")));
+
+  sta::Pin* b_pin = db_network_->dbToSta(gate->findITerm("B"));
+  sta::Pin* zn_pin = db_network_->dbToSta(gate->findITerm("ZN"));
+  const float port_res = db_network_->libertyPort(zn_pin)->driveResistance();
+
+  sta_->updateTiming(false);
+  EXPECT_FLOAT_EQ(resizer_.driveResistance(zn_pin), port_res);
+
+  // B=1 disables B->ZN and the slower `when : "!B"` arc, leaving `when : "B"`.
+  sta_->setCaseAnalysis(b_pin, sta::LogicValue::one, sta_->cmdMode());
+  sta_->updateTiming(false);
+  EXPECT_GT(resizer_.driveResistance(zn_pin), 0.0f);
+  EXPECT_LT(resizer_.driveResistance(zn_pin), 0.6f * port_res);
+
+  // B=0 re-enables the slower `when : "!B"` A->ZN arc.
+  sta_->setCaseAnalysis(b_pin, sta::LogicValue::zero, sta_->cmdMode());
+  sta_->updateTiming(false);
+  EXPECT_GT(resizer_.driveResistance(zn_pin), 0.99f * port_res);
 }
 
 }  // namespace rsz

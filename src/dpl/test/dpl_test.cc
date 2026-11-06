@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
+#include <cstdlib>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -35,6 +36,182 @@ class OpendpTest : public tst::Fixture
   odb::dbChip* chip_;
   odb::dbBlock* block_;
 };
+
+namespace {
+
+class FixedMacroFootprintTest
+    : public tst::Nangate45Fixture,
+      public ::testing::WithParamInterface<odb::dbOrientType>
+{
+ protected:
+  void SetUp() override
+  {
+    site_ = lib_->findSite("FreePDK45_38x28_10R_NP_162NW_34O");
+    ASSERT_NE(site_, nullptr);
+    site_width_ = site_->getWidth();
+    row_height_ = site_->getHeight();
+    core_x_ = 10 * site_width_;
+    core_y_ = row_height_;
+    block_->setDieArea(odb::Rect(0, 0, 120 * site_width_, 12 * row_height_));
+    for (int row = 0; row < 10; ++row) {
+      const std::string name = "ROW_" + std::to_string(row);
+      odb::dbRow::create(
+          block_,
+          name.c_str(),
+          site_,
+          core_x_,
+          core_y_ + row * row_height_,
+          row % 2 == 0 ? odb::dbOrientType::R0 : odb::dbOrientType::MX,
+          odb::dbRowDir::HORIZONTAL,
+          100,
+          site_width_);
+    }
+    block_->setCoreArea(block_->computeCoreArea());
+
+    auto* master = odb::dbMaster::create(lib_, "macro");
+    master->setType(odb::dbMasterType::BLOCK);
+    master->setWidth(20 * site_width_);
+    master->setHeight(2 * row_height_);
+    master->setFrozen();
+    macro_ = odb::dbInst::create(block_, master, "macro");
+    macro_->setOrient(GetParam());
+    macro_->setLocation(core_x_ + 10 * site_width_, core_y_ + 2 * row_height_);
+    macro_->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+  }
+
+  odb::dbInst* makeCell(const odb::Point& location)
+  {
+    auto* cell = makeInst(
+        block_,
+        lib_->findMaster("INV_X1"),
+        "cell",
+        {.location = location, .status = odb::dbPlacementStatus::PLACED});
+    cell->setOrient(odb::dbOrientType::R0);
+    return cell;
+  }
+
+  void legalize()
+  {
+    const odb::Point macro_location = macro_->getLocation();
+    ASSERT_NO_THROW(dp_.detailedPlacement(0, 0));
+    ASSERT_NO_THROW(dp_.checkPlacement(false));
+    EXPECT_EQ(macro_->getLocation(), macro_location);
+    EXPECT_EQ(macro_->getOrient(), GetParam());
+  }
+
+  odb::dbSite* site_ = nullptr;
+  odb::dbInst* macro_ = nullptr;
+  int site_width_ = 0;
+  int row_height_ = 0;
+  int core_x_ = 0;
+  int core_y_ = 0;
+  Opendp dp_{db_.get(), &logger_};
+};
+
+TEST_P(FixedMacroFootprintTest, LegalCellBesideMacroStaysInPlace)
+{
+  const odb::Rect bbox = macro_->getBBox()->getBox();
+  const int first_site
+      = (bbox.xMax() - core_x_ + site_width_ - 1) / site_width_;
+  auto* cell = makeCell(
+      {core_x_ + first_site * site_width_, core_y_ + 2 * row_height_});
+  const odb::Point initial_location = cell->getLocation();
+  ASSERT_FALSE(bbox.overlaps(cell->getBBox()->getBox()));
+
+  legalize();
+
+  EXPECT_EQ(cell->getLocation(), initial_location);
+  EXPECT_FALSE(bbox.overlaps(cell->getBBox()->getBox()));
+}
+
+TEST_P(FixedMacroFootprintTest, CellAboveUnrotatedFootprintIsLegalized)
+{
+  const odb::Rect bbox = macro_->getBBox()->getBox();
+  auto* cell = makeCell({bbox.xMin() + site_width_, core_y_ + 4 * row_height_});
+
+  legalize();
+
+  EXPECT_FALSE(bbox.overlaps(cell->getBBox()->getBox()));
+}
+
+TEST_P(FixedMacroFootprintTest, CellAtRightEdgeDoesNotOverlapMacro)
+{
+  const odb::Rect bbox = macro_->getBBox()->getBox();
+  const int last_site = (bbox.xMax() - core_x_ - 1) / site_width_;
+  auto* cell = makeCell(
+      {core_x_ + last_site * site_width_, core_y_ + 2 * row_height_});
+  ASSERT_TRUE(bbox.overlaps(cell->getBBox()->getBox()));
+
+  legalize();
+
+  EXPECT_FALSE(bbox.overlaps(cell->getBBox()->getBox()));
+}
+
+TEST_P(FixedMacroFootprintTest, MacroCrossingCoreEdgeKeepsItsBlockageInPlace)
+{
+  block_->setDieArea(odb::Rect(0, 0, 140 * site_width_, 12 * row_height_));
+  macro_->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  macro_->setLocation(core_x_ + 95 * site_width_, core_y_ + 2 * row_height_);
+  macro_->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+  auto* cell
+      = makeCell({core_x_ + 90 * site_width_, core_y_ + 2 * row_height_});
+  const odb::Point initial_location = cell->getLocation();
+  ASSERT_FALSE(macro_->getBBox()->getBox().overlaps(cell->getBBox()->getBox()));
+
+  legalize();
+
+  EXPECT_EQ(cell->getLocation(), initial_location);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    Orientations,
+    FixedMacroFootprintTest,
+    ::testing::Values(odb::dbOrientType::R0,
+                      odb::dbOrientType::R90,
+                      odb::dbOrientType::R180,
+                      odb::dbOrientType::R270,
+                      odb::dbOrientType::MX,
+                      odb::dbOrientType::MY,
+                      odb::dbOrientType::MXR90,
+                      odb::dbOrientType::MYR90),
+    [](const ::testing::TestParamInfo<odb::dbOrientType>& info) {
+      return info.param.getString();
+    });
+
+class GcdPlacementTest : public tst::Fixture
+{
+};
+
+TEST_F(GcdPlacementTest, RotatedMacroKeepsPlacementLegal)
+{
+  auto* lib
+      = loadTechAndLib("ng45", "ng45", "_main/test/Nangate45/Nangate45.lef");
+  auto* block = readDef("_main/src/dpl/test/gcd_replace.def", {lib});
+  block->setCoreArea(block->computeCoreArea());
+  const odb::Rect core = block->getCoreArea();
+  auto* site = lib->findSite("FreePDK45_38x28_10R_NP_162NW_34O");
+  ASSERT_NE(site, nullptr);
+
+  auto* master = odb::dbMaster::create(lib, "macro");
+  master->setType(odb::dbMasterType::BLOCK);
+  master->setWidth(20 * site->getWidth());
+  master->setHeight(2 * site->getHeight());
+  master->setFrozen();
+  auto* macro = odb::dbInst::create(block, master, "macro");
+  macro->setOrient(odb::dbOrientType::R90);
+  const odb::Point location(core.xMin() + 200 * site->getWidth(),
+                            core.yMin() + 20 * site->getHeight());
+  macro->setLocation(location.x(), location.y());
+  macro->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+
+  Opendp dp(db_.get(), &logger_);
+  ASSERT_NO_THROW(dp.detailedPlacement(0, 0));
+  EXPECT_NO_THROW(dp.checkPlacement(false));
+  EXPECT_EQ(macro->getLocation(), location);
+  EXPECT_EQ(macro->getOrient(), odb::dbOrientType::R90);
+}
+
+}  // namespace
 
 // Four Nangate45 rows of 32 sites starting at (kCoreX, kCoreY), plus the
 // BLOCK1 macro from extra.lef.  Row 2 is fragmented around a hole spanning
@@ -310,6 +487,380 @@ TEST_F(CheckPlacementTest, PlaceableReportsOverlapWithMisalignedFixedCell)
             "DPL-0033");
   EXPECT_EQ(failureCount("Overlap_failures"), 1);
   EXPECT_EQ(failureCount("Site_alignment_failures"), 0);
+}
+
+TEST_F(CheckPlacementTest, DetailedPlacementAvoidsMisalignedFixedMacroOverlap)
+{
+  // BLOCK1 is 4000x4000 DBU (10.53 sites x 1.43 rows). Placed off-grid at
+  // (+350, +2000) from core origin, it physically spans columns [0, 12) and
+  // rows [0, 3) even though gridRoundX/Y snaps to (1, 1) and gridHeight is 2.
+  makeCell("BLOCK1",
+           "macro",
+           {kCoreX + 350, kCoreY + 2000},
+           odb::dbPlacementStatus::FIRM);
+  makeCell(
+      "BUF_X1", "buf_bl", {kCoreX, kCoreY}, odb::dbPlacementStatus::PLACED);
+  makeCell("BUF_X1",
+           "buf_top",
+           {kCoreX, kCoreY + 2 * kRowHeight},
+           odb::dbPlacementStatus::PLACED);
+  makeCell("BUF_X1",
+           "buf_right",
+           {kCoreX + 11 * kSiteWidth, kCoreY + kRowHeight},
+           odb::dbPlacementStatus::PLACED);
+
+  dp_.detailedPlacement(/*max_displacement_x=*/0, /*max_displacement_y=*/0);
+
+  EXPECT_EQ(runCheck(/*check_fixed=*/false, /*check_placeable=*/true), "");
+  EXPECT_EQ(failureCount("Overlap_failures"), 0);
+}
+
+// Higher routing layers isolate supply-via checks from legacy pin blockages.
+class FixedSupplyViaTest : public tst::Nangate45Fixture
+{
+ protected:
+  static constexpr int kSiteWidth = 380;
+  static constexpr int kRowHeight = 2800;
+  static constexpr int kCellX = 10 * kSiteWidth;
+
+  void SetUp() override
+  {
+    odb::dbTech* tech = db_->getTech();
+    routing_ = odb::dbTechLayer::create(
+        tech, "zero_metal", odb::dbTechLayerType::ROUTING);
+    cut_
+        = odb::dbTechLayer::create(tech, "zero_cut", odb::dbTechLayerType::CUT);
+    odb::dbTechLayer* top = odb::dbTechLayer::create(
+        tech, "zero_top", odb::dbTechLayerType::ROUTING);
+    routing_->setSpacing(0);
+    cut_->setSpacing(0);
+    top->setSpacing(0);
+    via_ = odb::dbTechVia::create(tech, "zero_via");
+    odb::dbBox::create(via_, routing_, -50, -50, 50, 50);
+    odb::dbBox::create(via_, cut_, -50, -50, 50, 50);
+    odb::dbBox::create(via_, top, -50, -50, 50, 50);
+
+    site_ = lib_->findSite("FreePDK45_38x28_10R_NP_162NW_34O");
+    ASSERT_NE(site_, nullptr);
+    makeRowAndSupply();
+  }
+
+  void makeRowAndSupply()
+  {
+    block_->setDefUnits(lib_->getTech()->getLefUnits());
+    block_->setDieArea(odb::Rect(0, 0, 32 * kSiteWidth, kRowHeight));
+    makeRow();
+    supply_ = odb::dbNet::create(block_, "VDD");
+    supply_->setSigType(odb::dbSigType::POWER);
+    supply_->setSpecial();
+  }
+
+  void makeRow(const odb::dbOrientType orient = odb::dbOrientType::R0)
+  {
+    odb::dbRow::create(block_,
+                       "ROW_0",
+                       site_,
+                       0,
+                       0,
+                       orient,
+                       odb::dbRowDir::HORIZONTAL,
+                       32,
+                       kSiteWidth);
+    block_->setCoreArea(block_->computeCoreArea());
+  }
+
+  void makeCell(odb::dbTechLayer* layer,
+                const bool terminal = false,
+                const odb::dbSigType sig_type = odb::dbSigType::POWER,
+                const odb::dbOrientType orient = odb::dbOrientType::R0)
+  {
+    odb::dbMaster* master = odb::dbMaster::create(lib_, "VIA_CELL");
+    master->setType(odb::dbMasterType::CORE);
+    master->setWidth(kSiteWidth);
+    master->setHeight(kRowHeight);
+    master->setSite(site_);
+    if (orient == odb::dbOrientType::MX) {
+      master->setSymmetryX();
+      site_->setSymmetryX();
+      odb::dbRow::destroy(*block_->getRows().begin());
+      makeRow(orient);
+    }
+    if (terminal) {
+      odb::dbMTerm* term
+          = odb::dbMTerm::create(master, "P", odb::dbIoType::INOUT, sig_type);
+      odb::dbMPin* pin = odb::dbMPin::create(term);
+      odb::dbBox::create(pin, layer, 50, 100, 150, 200);
+    } else {
+      odb::dbBox::create(master, layer, 50, 100, 150, 200);
+    }
+    master->setFrozen();
+    inst_ = makeInst(block_,
+                     master,
+                     "cell",
+                     {.location = {kCellX, 0},
+                      .status = odb::dbPlacementStatus::PLACED,
+                      .iterms = {}});
+    inst_->setLocationOrient(orient);
+  }
+
+  void addVia(const int offset_x = 100, const int offset_y = 150)
+  {
+    odb::dbSWire* wire = odb::dbSWire::create(supply_, odb::dbWireType::ROUTED);
+    ASSERT_NE(odb::dbSBox::create(wire,
+                                  via_,
+                                  kCellX + offset_x,
+                                  offset_y,
+                                  odb::dbWireShapeType::STRIPE),
+              nullptr);
+  }
+
+  void legalizePdn()
+  {
+    dp_.detailedPlacement(0,
+                          0,
+                          "",
+                          /*incremental=*/false,
+                          /*use_diamond_legalizer=*/true,
+                          -1,
+                          -1,
+                          -1.0,
+                          /*disable_window_extension=*/false,
+                          /*quiet=*/false,
+                          /*pdn_aware=*/true);
+    EXPECT_NO_THROW(dp_.checkPlacement(false));
+  }
+
+  void expectOneSiteMove(const odb::dbInst* inst, const int initial_x)
+  {
+    const odb::Point location = inst->getLocation();
+    EXPECT_EQ(std::abs(location.x() - initial_x), kSiteWidth);
+    EXPECT_EQ(location.y(), 0);
+  }
+
+  odb::dbSite* site_ = nullptr;
+  odb::dbTechLayer* routing_ = nullptr;
+  odb::dbTechLayer* cut_ = nullptr;
+  odb::dbTechVia* via_ = nullptr;
+  odb::dbNet* supply_ = nullptr;
+  odb::dbInst* inst_ = nullptr;
+  Opendp dp_{db_.get(), &logger_};
+};
+
+TEST_F(FixedSupplyViaTest, ZeroSpacingCutOverlap)
+{
+  makeCell(cut_);
+  addVia();
+  legalizePdn();
+  expectOneSiteMove(inst_, kCellX);
+}
+
+TEST_F(FixedSupplyViaTest, ZeroSpacingRoutingOverlap)
+{
+  makeCell(routing_);
+  addVia();
+  legalizePdn();
+  expectOneSiteMove(inst_, kCellX);
+}
+
+TEST_F(FixedSupplyViaTest, ZeroSpacingDifferentNetPinOverlap)
+{
+  makeCell(routing_, /*terminal=*/true);
+  odb::dbNet* other = odb::dbNet::create(block_, "OTHER");
+  other->setSigType(odb::dbSigType::POWER);
+  inst_->findITerm("P")->connect(other);
+  addVia();
+  logger_.redirectStringBegin();
+  legalizePdn();
+  const std::string log = logger_.redirectStringEnd();
+  EXPECT_EQ(log.find("DPL-0502"), std::string::npos);
+  expectOneSiteMove(inst_, kCellX);
+}
+
+TEST_F(FixedSupplyViaTest, ZeroSpacingSameNetPinOverlap)
+{
+  makeCell(routing_, /*terminal=*/true);
+  inst_->findITerm("P")->connect(supply_);
+  addVia();
+  logger_.redirectStringBegin();
+  legalizePdn();
+  const std::string log = logger_.redirectStringEnd();
+  EXPECT_EQ(log.find("DPL-0502"), std::string::npos);
+  EXPECT_EQ(inst_->getLocation(), odb::Point(kCellX, 0));
+}
+
+TEST_F(FixedSupplyViaTest, UnconnectedSupplyPinWarnsOnce)
+{
+  makeCell(routing_, /*terminal=*/true);
+  const int second_x = kCellX + 3 * kSiteWidth;
+  odb::dbInst* second = makeInst(block_,
+                                 inst_->getMaster(),
+                                 "second_cell",
+                                 {.location = {second_x, 0},
+                                  .status = odb::dbPlacementStatus::PLACED,
+                                  .iterms = {}});
+  addVia();
+  addVia(/*offset_x=*/3 * kSiteWidth + 100);
+  logger_.redirectStringBegin();
+  legalizePdn();
+  const std::string log = logger_.redirectStringEnd();
+  const size_t warning = log.find("DPL-0502");
+  ASSERT_NE(warning, std::string::npos);
+  EXPECT_EQ(log.find("DPL-0502", warning + 1), std::string::npos);
+  EXPECT_NE(log.find("Unconnected supply pin"), std::string::npos);
+  EXPECT_NE(log.find("/P prevents same-net PDN exemptions"), std::string::npos);
+  expectOneSiteMove(inst_, kCellX);
+  expectOneSiteMove(second, second_x);
+  EXPECT_EQ(inst_->findITerm("P")->getNet(), nullptr);
+  EXPECT_EQ(second->findITerm("P")->getNet(), nullptr);
+}
+
+TEST_F(FixedSupplyViaTest, UnconnectedSignalPinDoesNotWarn)
+{
+  makeCell(routing_, /*terminal=*/true, odb::dbSigType::SIGNAL);
+  addVia();
+  logger_.redirectStringBegin();
+  legalizePdn();
+  const std::string log = logger_.redirectStringEnd();
+  EXPECT_EQ(log.find("DPL-0502"), std::string::npos);
+  expectOneSiteMove(inst_, kCellX);
+}
+
+TEST_F(FixedSupplyViaTest, ZeroSpacingCutHorizontalBoundaryTouch)
+{
+  makeCell(cut_);
+  addVia(/*offset_x=*/200);
+  legalizePdn();
+  EXPECT_EQ(inst_->getLocation(), odb::Point(kCellX, 0));
+}
+
+TEST_F(FixedSupplyViaTest, ZeroSpacingCutVerticalBoundaryTouch)
+{
+  makeCell(cut_);
+  addVia(/*offset_x=*/100, /*offset_y=*/250);
+  legalizePdn();
+  EXPECT_EQ(inst_->getLocation(), odb::Point(kCellX, 0));
+}
+
+TEST_F(FixedSupplyViaTest, ZeroSpacingCutOneDbuOverlap)
+{
+  makeCell(cut_);
+  addVia(/*offset_x=*/199);
+  legalizePdn();
+  expectOneSiteMove(inst_, kCellX);
+}
+
+TEST_F(FixedSupplyViaTest, ZeroSpacingRoutingHorizontalBoundaryTouch)
+{
+  makeCell(routing_);
+  addVia(/*offset_x=*/200);
+  legalizePdn();
+  EXPECT_EQ(inst_->getLocation(), odb::Point(kCellX, 0));
+}
+
+TEST_F(FixedSupplyViaTest, ZeroSpacingRoutingVerticalBoundaryTouch)
+{
+  makeCell(routing_);
+  addVia(/*offset_x=*/100, /*offset_y=*/250);
+  legalizePdn();
+  EXPECT_EQ(inst_->getLocation(), odb::Point(kCellX, 0));
+}
+
+TEST_F(FixedSupplyViaTest, RoutingVerticalGapBelowSpacing)
+{
+  routing_->setSpacing(130);
+  makeCell(routing_);
+  // Via yMin 329 leaves a 129 DBU gap above the OBS yMax 200.
+  addVia(/*offset_x=*/100, /*offset_y=*/379);
+  legalizePdn();
+  expectOneSiteMove(inst_, kCellX);
+}
+
+TEST_F(FixedSupplyViaTest, RoutingVerticalGapAtSpacing)
+{
+  routing_->setSpacing(130);
+  makeCell(routing_);
+  // A 130 DBU gap is legal and permits the vertically safe shortcut.
+  addVia(/*offset_x=*/100, /*offset_y=*/380);
+  legalizePdn();
+  EXPECT_EQ(inst_->getLocation(), odb::Point(kCellX, 0));
+}
+
+TEST_F(FixedSupplyViaTest, MxAsymmetricRoutingOverlap)
+{
+  makeCell(routing_,
+           /*terminal=*/false,
+           odb::dbSigType::POWER,
+           odb::dbOrientType::MX);
+  // MX maps the OBS y=100..200 to y=2600..2700.
+  addVia(/*offset_x=*/100, /*offset_y=*/2650);
+  legalizePdn();
+  expectOneSiteMove(inst_, kCellX);
+  EXPECT_EQ(inst_->getOrient(), odb::dbOrientType::MX);
+}
+
+TEST_F(FixedSupplyViaTest, MxAsymmetricRoutingUntransformedViaClear)
+{
+  makeCell(routing_,
+           /*terminal=*/false,
+           odb::dbSigType::POWER,
+           odb::dbOrientType::MX);
+  addVia(/*offset_x=*/100, /*offset_y=*/150);
+  legalizePdn();
+  EXPECT_EQ(inst_->getLocation(), odb::Point(kCellX, 0));
+  EXPECT_EQ(inst_->getOrient(), odb::dbOrientType::MX);
+}
+
+TEST_F(FixedSupplyViaTest, RecreatedBlockStartsWithPdnDisabled)
+{
+  cut_->setSpacing(20);
+  makeCell(cut_);
+  addVia();
+  legalizePdn();
+  ASSERT_NE(inst_->getLocation(), odb::Point(kCellX, 0));
+
+  odb::dbMaster* master = inst_->getMaster();
+  odb::dbBlock* old_block = block_;
+  odb::dbBlock::destroy(block_);
+  block_ = odb::dbBlock::create(chip_, "replacement");
+  // Exercise ODB slot reuse without an intervening placement command.
+  ASSERT_EQ(block_, old_block);
+  makeRowAndSupply();
+  inst_ = makeInst(block_,
+                   master,
+                   "cell",
+                   {.location = {kCellX, 0},
+                    .status = odb::dbPlacementStatus::PLACED,
+                    .iterms = {}});
+  addVia();
+  EXPECT_NO_THROW(dp_.checkPlacement(false));
+}
+
+TEST_F(FixedSupplyViaTest, PlacementWithoutPdnResetsMode)
+{
+  cut_->setSpacing(20);
+  makeCell(cut_);
+  addVia();
+  legalizePdn();
+  ASSERT_NE(inst_->getLocation(), odb::Point(kCellX, 0));
+
+  inst_->setLocation(kCellX, 0);
+  dp_.detailedPlacementQuiet();
+  EXPECT_EQ(inst_->getLocation(), odb::Point(kCellX, 0));
+  EXPECT_NO_THROW(dp_.checkPlacement(false));
+}
+
+TEST_F(FixedSupplyViaTest, QuietWrapperKeepsPdnDisabled)
+{
+  cut_->setSpacing(20);
+  makeCell(cut_);
+  addVia();
+  logger_.redirectStringBegin();
+  dp_.detailedPlacementQuiet();
+  const std::string log = logger_.redirectStringEnd();
+  EXPECT_NE(log.find("DPL-0501"), std::string::npos);
+  EXPECT_EQ(log.find("Core area:"), std::string::npos);
+  EXPECT_EQ(inst_->getLocation(), odb::Point(kCellX, 0));
+  EXPECT_NO_THROW(dp_.checkPlacement(false));
 }
 
 }  // namespace dpl

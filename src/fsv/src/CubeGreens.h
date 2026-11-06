@@ -9,6 +9,7 @@
 
 #include "AliasTable.h"
 #include "BoxFace.h"
+#include "CubePanels.h"
 #include "Philox.h"
 #include "fsv/Geometry.h"
 
@@ -56,11 +57,6 @@ class CubeGreens
   // Draws a landing point on the surface of [-1, 1]^3.
   Vec3 sampleTransition(Philox& rng) const;
 
-  struct FirstHop
-  {
-    Vec3 offset;  // landing point on the surface of [-1, 1]^3
-    double sign;  // sign of dP/d(derivative_axis) at that point
-  };
   // Draws a landing point with density |dP/d(derivative_axis)| /
   // gradientNorm().
   FirstHop sampleFirstHop(Axis derivative_axis, Philox& rng) const;
@@ -76,10 +72,6 @@ class CubeGreens
 
  private:
   CubeGreens(int panels, Tables tables);
-
-  // Point on a face of [-1, 1]^3 at panel (i, j), offset (u, v) within it;
-  // i runs along the face's first tangent axis and j along the second.
-  Vec3 facePoint(BoxFace face, int i, int j, double u, double v) const;
 
   int n_;
   std::vector<double> prob_;

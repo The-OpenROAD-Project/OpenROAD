@@ -237,15 +237,20 @@ void SetupCritVtSwapPolicy::traverseFaninCone(
   }
 
   visited.insert(endpoint);
-  std::queue<sta::Vertex*> queue;
-  queue.push(endpoint);
+  using SlackVertex = std::pair<sta::Slack, sta::Vertex*>;
+  auto cmp = [](const SlackVertex& a, const SlackVertex& b) {
+    return a.first > b.first;
+  };
+  std::priority_queue<SlackVertex, std::vector<SlackVertex>, decltype(cmp)>
+      queue(cmp);
+  queue.emplace(sta_->slack(endpoint, max_), endpoint);
   int endpoint_insts = 0;
   sta::LibertyCell* best_lib_cell;
 
-  // Walk backward only through violating fanin logic and cap the number of
-  // instances contributed by each endpoint.
+  // Walk backward through violating fanin logic ordered by worst slack first,
+  // capping the number of instances contributed by each endpoint.
   while (!queue.empty() && endpoint_insts < kMaxCritInstancesPerEndpoint) {
-    sta::Vertex* current = queue.front();
+    sta::Vertex* current = queue.top().second;
     queue.pop();
 
     sta::Pin* pin = current->pin();
@@ -289,7 +294,7 @@ void SetupCritVtSwapPolicy::traverseFaninCone(
       if (!visited.contains(fanin_vertex)) {
         const sta::Slack fanin_slack = sta_->slack(fanin_vertex, max_);
         if (sta::fuzzyLess(fanin_slack, config_.setup_slack_margin)) {
-          queue.push(fanin_vertex);
+          queue.emplace(fanin_slack, fanin_vertex);
           visited.insert(fanin_vertex);
         }
       }

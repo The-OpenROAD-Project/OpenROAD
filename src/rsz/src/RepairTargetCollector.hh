@@ -299,6 +299,9 @@ class RepairTargetCollector
   std::vector<const sta::Pin*> getCriticalPinsNeverConsidered();
 
  private:
+  // The unit tests (TestResizerMt) reach the internals through this peer.
+  friend class ResizerTestPeer;
+
   // === Startpoint cache ====================================================
   // A startpoint is a top-level input or a register output, clock pins
   // excluded. The set is fixed for the life of a collector, so it is
@@ -386,7 +389,7 @@ class RepairTargetCollector
   Resizer* resizer_;
   utl::Logger* logger_;
   sta::Sta* sta_;
-  sta::Graph* graph_;
+  sta::Graph* graph_{nullptr};
   // Workers for large read-only endpoint scans, owned by the policy.
   utl::ThreadPool* scan_thread_pool_{nullptr};
   size_t min_parallel_scan_endpoints_{kMinParallelScanEndpoints};
@@ -396,15 +399,15 @@ class RepairTargetCollector
   bool startpoints_collected_ = false;
   sta::Network* network_;
   const sta::MinMax* max_;
-  sta::Search* search_;
-  sta::Sdc* sdc_;
-  sta::Report* report_;
-  sta::Scene* scene_;
+  sta::Search* search_{nullptr};
+  sta::Sdc* sdc_{nullptr};
+  sta::Report* report_{nullptr};
+  sta::Scene* scene_{nullptr};
   int dcalc_ap_;
   int lib_ap_;
 
   // === Collected pin and endpoint data =====================================
-  float slack_margin_;
+  float slack_margin_{0.0f};
   vector<const sta::Pin*> violating_pins_;
   std::map<const sta::Pin*, pinData> pin_data_;
   vector<std::pair<const sta::Pin*, sta::Slack>> violating_endpoints_;
@@ -422,18 +425,18 @@ class RepairTargetCollector
   // === Endpoint iteration state ============================================
   // Endpoint pass tracking
   int max_passes_per_endpoint_;
-  int current_pass_count_;
+  int current_pass_count_{0};
   std::map<const sta::Pin*, int> endpoint_times_considered_;
 
   // Current endpoint iteration state
-  bool iteration_began_;
-  sta::Vertex* current_endpoint_;
-  int current_endpoint_index_;
+  bool iteration_began_{false};
+  sta::Vertex* current_endpoint_{nullptr};
+  int current_endpoint_index_{0};
 
   // === Startpoint iteration state ==========================================
   // Current startpoint iteration state
-  sta::Vertex* current_startpoint_;
-  int current_startpoint_index_;
+  sta::Vertex* current_startpoint_{nullptr};
+  int current_startpoint_index_{0};
 
   // === Optimization visit tracking =========================================
   // Track endpoints visited during WNS phase (for skipping in TNS phase)

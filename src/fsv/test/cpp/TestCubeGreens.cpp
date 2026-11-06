@@ -187,7 +187,7 @@ TEST(CubeGreens, SamplingMatchesTables)
   sum = 0;
   sum2 = 0;
   for (int s = 0; s < samples; s++) {
-    const CubeGreens::FirstHop hop = g.sampleFirstHop(Axis::kZ, rng);
+    const FirstHop hop = g.sampleFirstHop(Axis::kZ, rng);
     const double f = hop.sign * g.gradientNorm() * inverseDistance(hop.offset);
     sum += f;
     sum2 += f * f;

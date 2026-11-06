@@ -22,13 +22,12 @@ class Vertex;
 
 namespace rsz {
 
-// Ranks shared violating-cone bottlenecks during stalled batches.
-// analyze() walks the fanin of the worst violating endpoints through
-// negative-slack vertices, stopping at registers and latches.  For each
-// vertex, fanout_need sums the need (margin - slack) of the distinct
-// endpoints behind it, and fanin_need that of the distinct cone sources in
-// front of it, so vertices near the sources are not favored.  Each endpoint
-// or source costs one bit per cone vertex, so both counts are capped.
+// Ranks shared violating-cone bottlenecks when saved batches stop improving
+// WNS.  A vertex's slack deficit is slack_margin - slack.  The analysis sums
+// distinct endpoint deficits downstream and startpoint deficits upstream,
+// then balances the two so vertices near either end are not favored.  The
+// traversal stops at register and latch boundaries; endpoint and startpoint
+// counts are capped to bound the per-vertex bitsets.
 class BottleneckAnalysis
 {
  public:
@@ -36,44 +35,47 @@ class BottleneckAnalysis
 
   BottleneckAnalysis(sta::dbSta* sta, const sta::MinMax* min_max);
 
-  // Rebuild the weights from the current timing.
+  // Rebuild bottleneck severities from the current timing.
   void analyze(std::span<const EndpointSlack> violating_endpoints,
                float slack_margin,
                int max_endpoints,
-               int max_sources);
-  // The rank of a target driven from vertex: local_score * (1 + alpha *
-  // w^gamma), where w is the vertex's cone need relative to the largest one
-  // (0 outside the cone).
-  float weightedScore(float local_score,
-                      sta::Vertex* vertex,
-                      const BatchPriorityConfig& priority) const;
+               int max_startpoints);
+  // The rank of a target driven from vertex: local_score * (1 +
+  // bottleneck_scale * severity_ratio^bottleneck_exponent).
+  // The severity ratio is zero outside the violating cone.
+  float bottleneckPriorityScore(float local_score,
+                                sta::Vertex* vertex,
+                                const BatchPriorityConfig& priority) const;
   size_t coneSize() const { return nodes_.size(); }
 
  private:
-  // Need accumulated at one graph vertex from its fanin and fanout cones.
+  // The unit tests (TestResizerMt) reach the internals through this peer.
+  friend class ResizerTestPeer;
+
+  // Slack deficit and accumulated deficits at one violating-cone vertex.
   struct Node
   {
     sta::Vertex* vertex{nullptr};
     sta::VertexId id{0};
-    float need{0.0f};
+    float slack_deficit{0.0f};
     bool has_cone_fanin{false};
-    float fanin_need{0.0f};
-    float fanout_need{0.0f};
+    float startpoint_deficit_sum{0.0f};
+    float endpoint_deficit_sum{0.0f};
   };
 
   // Inserts or updates a vertex in the analyzed cone.
-  size_t admit(sta::Vertex* vertex, float need);
+  size_t admit(sta::Vertex* vertex, float slack_deficit);
   // The node of a live vertex, or -1 outside the cone.
   int32_t nodeOf(const sta::Vertex* vertex) const;
   // The cone behind the endpoints; returns the node of each endpoint.
   std::vector<size_t> collectCone(std::span<const EndpointSlack> endpoints,
                                   float slack_margin);
-  // Accumulates distinct downstream endpoint need at every cone vertex.
-  void sumFanoutNeeds(const std::vector<size_t>& endpoint_nodes);
-  // Accumulates distinct upstream source need to normalize source proximity.
-  void sumFaninNeeds(int max_sources);
-  // Returns the balanced fanin/fanout need used for ranking.
-  float coneNeed(const Node& node) const;
+  // Accumulates distinct downstream endpoint deficits at every cone vertex.
+  void sumEndpointDeficits(const std::vector<size_t>& endpoint_nodes);
+  // Accumulates distinct upstream startpoint deficits at every cone vertex.
+  void sumStartpointDeficits(int max_startpoints);
+  // Returns the balanced deficit severity used for ranking.
+  float bottleneckSeverity(const Node& node) const;
 
   sta::dbSta* sta_;
   const sta::MinMax* min_max_;
@@ -83,7 +85,7 @@ class BottleneckAnalysis
   // Node index per graph vertex id, -1 outside the cone.  Only the entries of
   // nodes_ are set, and they are cleared before the next analysis.
   std::vector<int32_t> node_of_;
-  float max_cone_need_{0.0f};
+  float max_bottleneck_severity_{0.0f};
 };
 
 }  // namespace rsz

@@ -43,6 +43,7 @@ JS_FILES = ["//src/web:js_files"]
 DOM_TEST_DATA = [
     "js/setup-dom.js",
     ":node_modules/jsdom",
+    "//src/web:node_modules/lit",
 ] + JS_FILES
 
 py_test(
@@ -73,6 +74,7 @@ test_suite(
         ":heat_map_test",
         ":request_handler_test",
         ":save_display_controls_test",
+        ":session_lifetime_test",
         ":tile_generator_test",
         ":web_assets_test",
     ],
@@ -455,6 +457,19 @@ cc_test(
         "@boost.asio",
         "@boost.beast",
         "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "session_lifetime_test",
+    srcs = ["cpp/TestSessionLifetime.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/utl",
+        "//src/web",
+        "@boost.asio",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

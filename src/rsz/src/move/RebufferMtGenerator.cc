@@ -70,6 +70,23 @@ std::vector<BufferTreeSidePathContext> makeSideContexts(
   return contexts;
 }
 
+// True when the tree puts a dont-touch load behind a buffer.  The tree export
+// leaves such a load on the driver net, so it would build another tree.
+bool hasDontTouchLoadBehindBuffer(const Resizer& resizer,
+                                  const RebufferTreePlan& plan)
+{
+  for (const BufferTreeLoadPath& load_path : plan.load_paths) {
+    const bool behind_buffer = std::ranges::any_of(
+        load_path.stages, [](const BufferTreePathStage& stage) {
+          return stage.type == BufferTreeStageType::kBuffer;
+        });
+    if (behind_buffer && resizer.dontTouch(load_path.load_pin)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 }  // namespace
 
 RebufferMtGenerator::RebufferMtGenerator(const GeneratorContext& context)
@@ -209,10 +226,11 @@ std::vector<RebufferTreePlan> RebufferMtGenerator::makeTreePlans(
       target.load_pin,
       std::max(policy_config_.rebuffer_mt_max_candidates, 1));
 
-  // The plan gates: one-buffer trees only when the policy asks for them, and
-  // no tree past the score cap.
+  // The plan gates: no tree with a dont-touch load behind a buffer, one-buffer
+  // trees only when the policy asks for them, and no tree past the score cap.
   std::erase_if(plans, [&](const RebufferTreePlan& plan) {
-    if (plan.buffer_count == 0) {
+    if (plan.buffer_count == 0
+        || hasDontTouchLoadBehindBuffer(resizer_, plan)) {
       return true;
     }
     if (plan.buffer_count == 1 && !plan.anchor_tree
