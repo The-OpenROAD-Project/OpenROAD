@@ -1,0 +1,20 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 571 components and 2554 component-terminals.
+[INFO ODB-0132]     Created 5 special nets and 1142 connections.
+[INFO ODB-0133]     Created 528 nets and 1412 connections.
+[WARNING RSZ-2024] Experimental repair setup policy 'SetupParallelEvalPolicy' selected. Do not use this for production.
+[DEBUG RSZ-repair_setup] PARALLEL_EVAL reference clock period 4.500e-10
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.212 |       -7.0 |     45 | _869_/D
+[DEBUG RSZ-repair_setup] PARALLEL_EVAL WNS tail after no_committed_moves at batch 16 (WNS -1.222e-10)
+    final |      58 |     104 |       26 |      0 |     2 |    +5.6% |   -0.110 |       -3.6 |     42 | resp_msg[15]
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0059] Removed 58 buffers.
+[INFO RSZ-0040] Inserted 26 buffers.
+[INFO RSZ-0051] Resized 104 instances: 101 up, 0 up match, 3 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 2 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.

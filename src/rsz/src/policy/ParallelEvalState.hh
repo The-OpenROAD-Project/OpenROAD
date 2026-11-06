@@ -67,7 +67,8 @@ class WorkMeter
 };
 
 // Stall detection of the batch stage.  A saved checkpoint is progress when
-// it moves WNS or TNS by a visible part of its initial value.
+// it moves WNS by a visible part of the reference clock period or TNS by a
+// visible part of its initial value.
 class StallMonitor
 {
  public:
@@ -83,8 +84,9 @@ class StallMonitor
   {
   }
 
-  // Set the initial QoR against which progress thresholds are measured.
-  void reset(sta::Slack initial_wns, sta::Slack initial_tns);
+  // Set the initial TNS and the reference clock period against which
+  // progress thresholds are measured.
+  void reset(sta::Slack initial_tns, float reference_period);
   // A new batch: its cap and the failing endpoint count it started with.
   void beginBatch(int batch_cap, size_t failing_endpoints)
   {
@@ -130,8 +132,9 @@ class StallMonitor
   void updateWindow(sta::Slack wns, bool tns_progressed, double work);
 
   const ParallelEvalPolicyConfig& config_;
-  sta::Slack initial_wns_{0.0f};
   sta::Slack initial_tns_{0.0f};
+  // Scales the WNS thresholds; see OptimizationPolicyConfig.hh.
+  float reference_period_{0.0f};
   // Batches without progress and the moves they spent.
   int stalled_batches_{0};
   int stalled_moves_{0};
@@ -163,8 +166,9 @@ class WnsTail
 
   // Clear all tail and speculative state for a new policy run.
   void reset();
-  // Starts the tail once; false when it is off or already ran.
-  bool start(double work);
+  // Starts the tail once; false when it is off or already ran.  WNS gains
+  // count against the reference clock period.
+  bool start(double work, float reference_period);
   void stop() { active_ = false; }
   bool active() const { return active_; }
   int endpoints() const { return endpoints_; }
@@ -223,6 +227,8 @@ class WnsTail
   // Work when the tail started and the work it may spend.
   double work_start_{0.0};
   double budget_work_{0.0};
+  // Smallest best-WNS gain that counts as tail progress.
+  float min_gain_{0.0f};
   // Missed tail batches retained until a later checkpoint or rollback.
   int speculative_batches_{0};
   std::vector<InstanceRecord> speculative_instances_;

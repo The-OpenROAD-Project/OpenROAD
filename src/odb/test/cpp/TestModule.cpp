@@ -6,11 +6,11 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "helper.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"
 #include "odb/util.h"
+#include "src/odb/test/cpp/helper/helper.h"
 
 namespace odb {
 namespace {

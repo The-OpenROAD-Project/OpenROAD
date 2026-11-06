@@ -58,6 +58,7 @@ bool IsSequentialCell(sta::dbNetwork* db_network, odb::dbInst* instance)
 }
 
 odb::dbInst* ReplaceCell(
+    sta::dbSta* sta,
     odb::dbBlock* top_block,
     odb::dbInst* old_instance,
     odb::dbMaster* new_master,
@@ -120,6 +121,17 @@ odb::dbInst* ReplaceCell(
     }
   }
 
+  // Keep the activity annotations of the old pins on the new pins
+  for (odb::dbITerm* old_iterm : old_instance->getITerms()) {
+    auto mapped = port_mapping.find(old_iterm->getMTerm()->getName());
+    if (mapped != port_mapping.end()) {
+      odb::dbITerm* new_iterm = new_instance->findITerm(mapped->second.c_str());
+      if (new_iterm) {
+        sta->copyUserActivity(old_iterm, new_iterm);
+      }
+    }
+  }
+
   // Delete the old cell
   odb::dbInst::destroy(old_instance);
 
@@ -169,10 +181,22 @@ bool IsScanCell(const sta::dbNetwork* db_network,
   return false;
 }
 
+odb::Point GetITermLocation(odb::dbITerm* iterm, odb::dbInst* inst)
+{
+  if (iterm != nullptr) {
+    int x, y;
+    if (iterm->getAvgXY(&x, &y)) {
+      return odb::Point(x, y);
+    }
+  }
+  return inst->getOrigin();
+}
+
 odb::dbBTerm* CreateNewPort(odb::dbBlock* block,
                             const std::string& port_name,
                             utl::Logger* logger,
-                            odb::dbNet* net)
+                            odb::dbNet* net,
+                            odb::dbSigType sig_type)
 {
   if (!net) {
     net = odb::dbNet::create(block, port_name.c_str());
@@ -183,7 +207,7 @@ odb::dbBTerm* CreateNewPort(odb::dbBlock* block,
                     "unrelated net with the same name already exists",
                     port_name);
     }
-    net->setSigType(odb::dbSigType::SCAN);
+    net->setSigType(sig_type);
   }
   auto port = odb::dbBTerm::create(net, port_name.c_str());
   if (port == nullptr) {
@@ -192,7 +216,7 @@ odb::dbBTerm* CreateNewPort(odb::dbBlock* block,
                   "Failed to create port: a port named '{}' already exists",
                   port_name);
   }
-  port->setSigType(odb::dbSigType::SCAN);
+  port->setSigType(sig_type);
 
   return port;
 }
