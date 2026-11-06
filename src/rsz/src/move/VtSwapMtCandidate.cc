@@ -45,13 +45,11 @@ VtSwapMtCandidate::VtSwapMtCandidate(Resizer& resizer,
                                      const Target& target,
                                      sta::Instance* inst,
                                      sta::LibertyCell* candidate_cell,
-                                     const float score_scale,
                                      const float cost_divisor)
     : MoveCandidate(resizer, target),
       inst_(inst),
       current_cell_(resizer.network()->libertyCell(inst)),
       candidate_cell_(candidate_cell),
-      score_scale_(score_scale),
       cost_divisor_(cost_divisor)
 {
 }
@@ -68,7 +66,7 @@ Estimate VtSwapMtCandidate::estimate()
     if (delay_est.reason == FailReason::kEstimateNonImproving) {
       Estimate rejected = makeRejectedEstimate(failReasonName(delay_est.reason),
                                                delay_est.arrival_impr);
-      rejected.score = costScaled(rejected.score * score_scale_);
+      rejected.score = costScaled(rejected.score);
       return rejected;
     }
     return makeRejectedEstimate(failReasonName(delay_est.reason));
@@ -77,10 +75,10 @@ Estimate VtSwapMtCandidate::estimate()
   Estimate estimate{.legal = true,
                     .raw_gain = delay_est.arrival_impr,
                     .reason = failReasonName(FailReason::kEstimateLegal)};
-  estimate.score = delay_est.arrival_impr * score_scale_;
+  estimate.score = delay_est.arrival_impr;
 
   // The side costs come off the raw gain before the weight.
-  chargeCellSwapSideCosts(delay_est, candidate_cell_, score_scale_, estimate);
+  chargeCellSwapSideCosts(delay_est, candidate_cell_, estimate);
   // Rank the gain per unit of cost, as SizeUpMt does, so a jump over more VTs
   // must buy its extra leakage with extra slack.
   estimate.score = costScaled(estimate.score);

@@ -34,7 +34,6 @@ class VtSwapMtCandidate : public MoveCandidate
                     const Target& target,
                     sta::Instance* inst,
                     sta::LibertyCell* candidate_cell,
-                    float score_scale,
                     float cost_divisor);
 
   // === MoveCandidate API ====================================================
@@ -55,8 +54,6 @@ class VtSwapMtCandidate : public MoveCandidate
   sta::Instance* inst_{nullptr};
   sta::LibertyCell* current_cell_{nullptr};
   sta::LibertyCell* candidate_cell_{nullptr};
-  // Weight of the score in the shared pool.
-  const float score_scale_;
   // Relative cell cost of the candidate among the target's VTs, at least 1
   // (relativeCellCosts()).
   const float cost_divisor_;

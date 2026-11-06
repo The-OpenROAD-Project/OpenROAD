@@ -60,6 +60,68 @@ TEST_F(TestResizerMt,
   }
 }
 
+TEST_F(TestResizerMt, OptimizationPolicyConfigScoreScaleMapsMoveWeights)
+{
+  OptimizationPolicyConfig config;
+  config.vt_swap_mt_score_scale = 1.5f;
+  config.size_up_mt_score_scale = 0.25f;
+  config.rebuffer_mt_score_scale = 0.125f;
+  config.split_load_mt_score_scale = 0.5f;
+  config.size_down_fanout_mt_score_scale = 0.75f;
+  EXPECT_FLOAT_EQ(config.scoreScale(MoveType::kVtSwap), 1.5f);
+  EXPECT_FLOAT_EQ(config.scoreScale(MoveType::kSizeUp), 0.25f);
+  EXPECT_FLOAT_EQ(config.scoreScale(MoveType::kBuffer), 0.125f);
+  EXPECT_FLOAT_EQ(config.scoreScale(MoveType::kSplitLoad), 0.5f);
+  EXPECT_FLOAT_EQ(config.scoreScale(MoveType::kSizeDownFanout), 0.75f);
+  // SwapPinsMt and UnbufferMt keep their scores.
+  EXPECT_FLOAT_EQ(config.scoreScale(MoveType::kSwapPins), 1.0f);
+  EXPECT_FLOAT_EQ(config.scoreScale(MoveType::kUnbuffer), 1.0f);
+}
+
+TEST_F(TestResizerMt, SetupParallelEvalPolicyWeightsCandidateScores)
+{
+  ep_.setHWireSignalRC(nullptr, sta_->cmdScene(), 1.0e3, 1.0e-10);
+  ep_.setVWireSignalRC(nullptr, sta_->cmdScene(), 1.0e3, 1.0e-10);
+  ep_.estimateWireParasitics();
+  resizer_.runRepairSetupPreamble();
+  MoveCommitter committer(resizer_);
+  RepairSetupContext setup_context(resizer_);
+  OptimizerRunConfig config;
+  config.setup_slack_margin = 1.0;
+  SetupParallelEvalPolicy policy(resizer_, committer, setup_context, config);
+  ASSERT_TRUE(policy.start());
+  std::vector<Target> targets{makeTarget("out0", "target", "Z"),
+                              makeTarget("path_out", "path_target", "ZN")};
+  ResizerTestPeer::prewarmTargets(policy, targets);
+  ResizerTestPeer::prepareTargets(policy, targets);
+  std::vector<Target*> scored;
+  for (Target& target : targets) {
+    scored.push_back(&target);
+  }
+
+  // The candidates score their own gain and cost; the policy weights each
+  // score by its move.
+  std::vector<TargetEvaluation> evaluations
+      = ResizerTestPeer::generateCandidates(policy, scored);
+  ResizerTestPeer::estimateTargets(policy, evaluations);
+  const OptimizationPolicyConfig& policy_config
+      = ResizerTestPeer::policyConfig(policy);
+  int weighted = 0;
+  for (TargetEvaluation& evaluation : evaluations) {
+    ASSERT_EQ(evaluation.estimates.size(), evaluation.candidates.size());
+    for (size_t index = 0; index < evaluation.candidates.size(); ++index) {
+      MoveCandidate& candidate = *evaluation.candidates[index];
+      const float scale = policy_config.scoreScale(candidate.type());
+      EXPECT_FLOAT_EQ(evaluation.estimates[index].score,
+                      candidate.estimate().score * scale);
+      if (scale != 1.0f) {
+        ++weighted;
+      }
+    }
+  }
+  EXPECT_GT(weighted, 0);
+}
+
 TEST_F(TestResizerMt, SetupParallelEvalPolicyCountsWorkerPlannerWarnings)
 {
   // Placed loads give RebufferMt a Steiner tree to plan on.
@@ -366,7 +428,6 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyAreaStopCountsARemoval)
                             upsize,
                             upsize.inst(resizer_),
                             larger,
-                            1.0f,
                             /*cost_divisor=*/1.0f);
   ASSERT_TRUE(committer.commit(unbuffer).accepted);
   ASSERT_TRUE(committer.commit(size_up).accepted);
@@ -537,7 +598,6 @@ TEST_F(TestResizerMtSequential,
     for (const bool size_up : {true, false}) {
       SCOPED_TRACE(size_up ? "size_up" : "vt_swap");
       sta::LibertyCell* replacement = size_up ? larger : low_vt;
-      const float scale = size_up ? 0.5f : 1.0f;
       const DelayEstimate raw
           = DelayEstimator::estimate(*target.estimator_context, replacement);
       ASSERT_TRUE(raw.legal) << failReasonName(raw.reason);
@@ -545,13 +605,11 @@ TEST_F(TestResizerMtSequential,
                              target,
                              target.inst(resizer_),
                              replacement,
-                             scale,
                              /*cost_divisor=*/1.0f);
       VtSwapMtCandidate vt(resizer_,
                            target,
                            target.inst(resizer_),
                            replacement,
-                           /*score_scale=*/1.0f,
                            /*cost_divisor=*/1.0f);
       const Estimate estimate = size_up ? size.estimate() : vt.estimate();
       ASSERT_TRUE(estimate.legal) << estimate.reason;
@@ -560,7 +618,7 @@ TEST_F(TestResizerMtSequential,
       if (!enabled) {
         EXPECT_FALSE(estimate.sequential_penalty.has_value());
         EXPECT_FALSE(estimate.sequential_side_loss.has_value());
-        EXPECT_FLOAT_EQ(estimate.score, raw.arrival_impr * scale);
+        EXPECT_FLOAT_EQ(estimate.score, raw.arrival_impr);
         continue;
       }
 
@@ -575,7 +633,7 @@ TEST_F(TestResizerMtSequential,
       EXPECT_FLOAT_EQ(*estimate.sequential_side_loss, side.max_side_slack_loss);
       const float adjusted_gain
           = raw.arrival_impr - side.weighted_side_slack_loss;
-      EXPECT_FLOAT_EQ(estimate.score, adjusted_gain * scale);
+      EXPECT_FLOAT_EQ(estimate.score, adjusted_gain);
     }
   }
 

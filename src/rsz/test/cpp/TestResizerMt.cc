@@ -360,7 +360,6 @@ TEST_F(TestResizerMt, MtCandidateEstimateUsesSelectedArcAndCachedState)
                               target,
                               target_inst,
                               candidate_cell,
-                              /*score_scale=*/1.0f,
                               /*cost_divisor=*/1.0f);
 
   const Estimate estimate = candidate.estimate();

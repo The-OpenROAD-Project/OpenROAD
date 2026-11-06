@@ -108,12 +108,7 @@ std::vector<std::unique_ptr<MoveCandidate>> VtSwapMtGenerator::generate(
   candidates.reserve(fitting.size());
   for (size_t i = 0; i < fitting.size(); ++i) {
     candidates.push_back(std::make_unique<VtSwapMtCandidate>(
-        resizer_,
-        target,
-        target.inst(resizer_),
-        fitting[i],
-        policy_config_.vt_swap_mt_score_scale,
-        cost_divisors[i]));
+        resizer_, target, target.inst(resizer_), fitting[i], cost_divisors[i]));
   }
   return candidates;
 }

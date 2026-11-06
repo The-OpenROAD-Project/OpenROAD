@@ -54,7 +54,6 @@ std::vector<std::unique_ptr<MoveCandidate>> SizeUpMtGenerator::generate(
   sta::Instance* target_inst = target.inst(resizer_);
   const EstimatorContext& estimator_context = target.estimator_context.value();
   const SelectedArc& target_arc = estimator_context.target().arc;
-  const float score_scale = policy_config_.size_up_mt_score_scale;
   const SizeUpOptions& options = size_up_options_.at(
       {target_arc.outputPort(), target_arc.scene, target_arc.min_max});
   if (options.dual_rf_rejects > 0) {
@@ -85,12 +84,8 @@ std::vector<std::unique_ptr<MoveCandidate>> SizeUpMtGenerator::generate(
   const std::vector<float> cost_divisors = relativeCellCosts(cost_ratios);
   candidates.reserve(fitting.size());
   for (size_t i = 0; i < fitting.size(); ++i) {
-    candidates.push_back(std::make_unique<SizeUpMtCandidate>(resizer_,
-                                                             target,
-                                                             target_inst,
-                                                             fitting[i],
-                                                             score_scale,
-                                                             cost_divisors[i]));
+    candidates.push_back(std::make_unique<SizeUpMtCandidate>(
+        resizer_, target, target_inst, fitting[i], cost_divisors[i]));
   }
   return candidates;
 }

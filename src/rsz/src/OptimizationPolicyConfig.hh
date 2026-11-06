@@ -197,6 +197,10 @@ struct OptimizationPolicyConfig
 {
   static OptimizationPolicyConfig forParallelEval(RepairEffort effort);
 
+  // Weight of a move's score in the PARALLEL_EVAL shared pool; 1 for a move
+  // without one.
+  float scoreScale(MoveType type) const;
+
   // --- Delay estimator ------------------------------------------------------
 
   // Stages scored before and after the target stage; zero scores only the
