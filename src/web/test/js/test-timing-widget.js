@@ -340,3 +340,27 @@ describe('TimingWidget path table sorting', () => {
         assert.equal(tip.style.display, 'none');
     });
 });
+
+describe('TimingWidget detail table columns', () => {
+    const node = (pin) => ({
+        pin, fanout: 1, rise: true, time: 0, delay: 0, slew: 0, load: 0,
+    });
+    const pinWidth = (widget) =>
+        widget._detailTable.querySelector('thead th').style.width;
+
+    it('keeps the pin column width from one path to the next', () => {
+        const widget = new TimingWidget(createMockApp(), () => {});
+        // two paths whose longest pin names are both 20 characters
+        widget.showPaths('setup', [
+            makePath(0.0, 'a', { data_nodes: [node('core/u_alu/add_reg/D')] }),
+            makePath(0.1, 'b', { data_nodes: [node('core/u_alu/sub_reg/Q')] }),
+        ]);
+
+        // 20 characters at 0.6 em of jsdom's 16 px default font, plus 24 px
+        // of padding and grip
+        widget._selectPathRow(0);
+        assert.equal(pinWidth(widget), '216px');
+        widget._selectPathRow(1);
+        assert.equal(pinWidth(widget), '216px');
+    });
+});

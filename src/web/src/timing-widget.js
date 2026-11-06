@@ -639,14 +639,6 @@ export class TimingWidget {
         // Install resize grips, reusing any previously saved widths to
         // avoid a measuring reflow.
         makeResizableHeaders(this._detailTable, savedWidths);
-        if (!savedWidths[0]) {
-            // Pin column: set initial width to 30 characters
-            const pinTh = this._detailTable.querySelector('thead th');
-            if (pinTh) {
-                pinTh.style.width = '30ch';
-                this._detailTable.fitColumns?.();
-            }
-        }
     }
 
 }

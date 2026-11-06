@@ -41,15 +41,6 @@ describe('makeResizableHeaders', () => {
         assert.equal(table.style.width, '750px');
     });
 
-    it('reads a width in other units from the layout, not as pixels', () => {
-        const table = table3(['100px', '200px', '50px']);
-        const ths = table.querySelectorAll('thead th');
-        ths[0].style.width = '30ch';
-        Object.defineProperty(ths[0], 'offsetWidth', { value: 240 });
-        table.fitColumns();
-        assert.equal(table.style.width, '490px');
-    });
-
     it('widens the last column too, and keeps it when the header is rebuilt', () => {
         const table = table3(['100px', '200px', '50px']);
         let ths = table.querySelectorAll('thead th');

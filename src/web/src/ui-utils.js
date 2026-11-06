@@ -662,11 +662,7 @@ export function makeResizableHeaders(table, widths) {
         table.dataset.lastMinWidth = String(lastMin);
         let total = lastMin;
         headers.forEach((th, i) => {
-            if (i === last) return;
-            // a width set in other units (the detail table's 30ch pin
-            // column) is read from the layout, not as that many pixels
-            const w = th.style.width;
-            total += (w.endsWith('px') ? parseFloat(w) : 0) || th.offsetWidth;
+            if (i !== last) total += parseFloat(th.style.width) || 0;
         });
         table.style.width = total + 'px';
         table.style.minWidth = '100%';
