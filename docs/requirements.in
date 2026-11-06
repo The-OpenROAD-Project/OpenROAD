@@ -7,4 +7,4 @@ sphinx-book-theme
 sphinx-copybutton
 sphinx-tabs
 sphinx-llm
-certifi>=2026.10.19
+certifi>=2026.10.23
