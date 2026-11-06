@@ -100,18 +100,18 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO GPL-0111] Timing-driven: restarting Nesterov momentum.
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      220 |   0.6229 |  2.337456e+03 |   +8.39% |  2.48e-09 |      
-      230 |   0.5762 |  2.402495e+03 |   +2.78% |  4.03e-09 |      
-      240 |   0.5310 |  2.463785e+03 |   +2.55% |  6.57e-09 |      
-      250 |   0.4784 |  2.511140e+03 |   +1.92% |  1.07e-08 |      
-      260 |   0.4270 |  2.545713e+03 |   +1.38% |  1.74e-08 |      
-      270 |   0.3688 |  2.583785e+03 |   +1.50% |  2.84e-08 |      
-      280 |   0.3152 |  2.609354e+03 |   +0.99% |  4.40e-08 |      
-      290 |   0.2725 |  2.641928e+03 |   +1.25% |  6.48e-08 |      
-      300 |   0.2415 |  2.671983e+03 |   +1.14% |  9.54e-08 |      
-      310 |   0.2158 |  2.704006e+03 |   +1.20% |  1.41e-07 |      
+      220 |   0.6229 |  2.337443e+03 |   +0.00% |  2.48e-09 |      
+      230 |   0.5762 |  2.402490e+03 |   +2.78% |  4.03e-09 |      
+      240 |   0.5310 |  2.463790e+03 |   +2.55% |  6.57e-09 |      
+      250 |   0.4784 |  2.511145e+03 |   +1.92% |  1.07e-08 |      
+      260 |   0.4269 |  2.545715e+03 |   +1.38% |  1.74e-08 |      
+      270 |   0.3688 |  2.583780e+03 |   +1.50% |  2.84e-08 |      
+      280 |   0.3152 |  2.609358e+03 |   +0.99% |  4.40e-08 |      
+      290 |   0.2725 |  2.641930e+03 |   +1.25% |  6.48e-08 |      
+      300 |   0.2414 |  2.671992e+03 |   +1.14% |  9.54e-08 |      
+      310 |   0.2158 |  2.704015e+03 |   +1.20% |  1.41e-07 |      
 [INFO GPL-0100] Timing-driven iteration 2/2, virtual: false.
-[INFO GPL-0101]    Iter: 319, overflow: 0.192, keep resizer changes at: 1, HPWL: 5440506
+[INFO GPL-0101]    Iter: 319, overflow: 0.192, keep resizer changes at: 1, HPWL: 5440516
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       414
@@ -146,7 +146,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0051] Resized 1 instances: 1 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
-[INFO GPL-0106] Timing-driven: worst slack -1.9658719e-11
+[INFO GPL-0106] Timing-driven: worst slack -1.9658442e-11
 [INFO GPL-0107] Timing-driven: repair_design delta area: -2.218 um^2 (-0.33%)
 [INFO GPL-0108] Timing-driven: repair_design, gpl delta gcells: -4 (-1.16%)
 [INFO GPL-0109] Timing-driven: repair_design, gcells created: 53, deleted: 57
@@ -154,12 +154,12 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO GPL-0111] Timing-driven: restarting Nesterov momentum.
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      320 |   0.1947 |  2.689994e+03 |   -0.52% |  2.07e-07 |      
-      330 |   0.1794 |  2.682607e+03 |   -0.27% |  3.05e-07 |      
-      340 |   0.1486 |  2.686923e+03 |   +0.16% |  4.49e-07 |      
-      350 |   0.1252 |  2.696622e+03 |   +0.36% |  6.62e-07 |      
-      360 |   0.1059 |  2.703827e+03 |   +0.27% |  9.75e-07 |      
-      363 |   0.1000 |  2.705539e+03 |          |  1.14e-06 |      
+      320 |   0.1947 |  2.690010e+03 |   +0.00% |  2.07e-07 |      
+      330 |   0.1794 |  2.682597e+03 |   -0.28% |  3.05e-07 |      
+      340 |   0.1486 |  2.686912e+03 |   +0.16% |  4.49e-07 |      
+      350 |   0.1252 |  2.696614e+03 |   +0.36% |  6.62e-07 |      
+      360 |   0.1059 |  2.703821e+03 |   +0.27% |  9.75e-07 |      
+      363 |   0.1000 |  2.705534e+03 |          |  1.14e-06 |      
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 363
 [INFO GPL-1002] Placed Cell Area              666.6040
