@@ -631,7 +631,7 @@ export function textColumnWidths(table) {
     let fontPx = 12;
     try {
         fontPx = parseFloat(getComputedStyle(table).fontSize) || 12;
-    } catch (e) { /* no styles (tests): 12 px */ }
+    } catch (e) { /* no getComputedStyle: 12 px */ }
     const longest = Array.from(headers, (th) => th.textContent.length);
     const rows = table.querySelectorAll('tbody tr');
     for (let r = 0; r < rows.length && r < kMeasureRows; r++) {

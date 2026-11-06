@@ -90,10 +90,11 @@ describe('textColumnWidths', () => {
             + '<tbody><tr><td>clock</td><td>-0.1234</td><td>'
             + 'core/backend/inner_ctrlBlock/'.repeat(20) + 'x_reg/D</td></tr>'
             + '<tr><td colspan="3">a message row</td></tr></tbody>';
+        table.style.fontSize = '10px';
         // not attached to a document: every offsetWidth is 0
         const w = textColumnWidths(table);
-        assert.equal(w.length, 3);
-        assert.ok(w[0] > 24 && w[1] > w[0], `widths ${w}`);
-        assert.equal(w[2], kMaxAutoColumnPx);
+        // 0.6 em a character plus 24 px of padding and grip: 'Clock' and
+        // 'clock' are 5 characters, '-0.1234' 7; the message row is skipped
+        assert.deepEqual(w, [5 * 6 + 24, 7 * 6 + 24, kMaxAutoColumnPx]);
     });
 });
