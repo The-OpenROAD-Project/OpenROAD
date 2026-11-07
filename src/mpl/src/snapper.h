@@ -4,6 +4,7 @@
 #pragma once
 
 #include <map>
+#include <optional>
 #include <vector>
 
 #include "odb/PtrSetMap.h"
@@ -45,7 +46,25 @@ class Snapper
   using TrackGridToPinListMap
       = odb::PtrMap<odb::dbTrackGrid, std::vector<odb::dbITerm*>>;
 
+  // Origins allowed by the core rows' site grid along one direction:
+  // origin = residue (mod pitch).
+  struct SiteGrid
+  {
+    int pitch;
+    int residue;
+  };
+
   void snap(const odb::dbTechLayerDir& target_direction);
+  std::optional<SiteGrid> computeSiteGrid(
+      const odb::dbTechLayerDir& target_direction);
+  bool snapOnSiteGrid(const SiteGrid& site_grid,
+                      const LayerDataList& layers_data_list,
+                      const odb::dbTechLayerDir& target_direction);
+  bool siteGridCanAlignPins(int pitch,
+                            int nearest_shift,
+                            const LayerDataList& layers_data_list,
+                            const odb::dbTechLayerDir& target_direction);
+  int getOrigin(const odb::dbTechLayerDir& target_direction);
   void alignWithManufacturingGrid(int& origin);
   void setOrigin(int origin, const odb::dbTechLayerDir& target_direction);
   int totalAlignedPins(const LayerDataList& layers_data_list,
