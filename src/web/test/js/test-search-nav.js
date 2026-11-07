@@ -5,16 +5,17 @@ import './setup-dom.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { showFindDialog, showGotoDialog } from '../../src/search-nav.js';
-import { dbuToLatLng, dbuRectToBounds } from '../../src/coordinates.js';
-import { formatDbu, parseDbu, unitLabel } from '../../src/ui-utils.js';
+import { dbuRectToWorldRect, dbuToWorld } from '../../src/coordinates.js';
+import { beginSelection, formatDbu, onSelectionReset, parseDbu, unitLabel }
+    from '../../src/ui-utils.js';
 
 const wait = () => new Promise((r) => setTimeout(r, 0));
 
-// scale=1, maxDXDY=0, origins=0, 1000 dbu/µm keeps the math easy to assert.
+// scale=1, origins=0, 1000 dbu/µm keeps the math easy to assert.
 function makeApp(overrides = {}) {
     const calls = [];
     const app = {
-        designScale: 1, designMaxDXDY: 0, designOriginX: 0, designOriginY: 0,
+        designScale: 1, designOriginX: 0, designOriginY: 0,
         showDbu: false,
         getDbuPerMicron: () => 1000,
         // Delegated to the real formatters (see test-ruler.js).
@@ -27,12 +28,11 @@ function makeApp(overrides = {}) {
         },
         parseDbu(s) { return parseDbu(s, this.unitOpts()); },
         unitLabel() { return unitLabel(this.unitOpts()); },
-        map: {
-            _zoom: 3,
-            getZoom() { return this._zoom; },
-            getCenter() { return { lat: 0, lng: 0 }; },
-            setView(latlng, z) { calls.push(['setView', latlng, z]); },
-            fitBounds(b) { calls.push(['fitBounds', b]); },
+        view: {
+            getZoom() { return 3; },
+            getCenter() { return [0, 0]; },
+            setView(center, z) { calls.push(['setView', center, z]); },
+            fitWorldRect(r) { calls.push(['fitWorldRect', r]); },
         },
         ...overrides,
     };
@@ -59,12 +59,12 @@ describe('Go to Position dialog', () => {
        () => {
         document.body.innerHTML = '';
         const { app } = makeApp({
-            map: {
+            view: {
                 getZoom() { return 3; },
-                // scale=1, maxDXDY=0, origins=0, so lat/lng are the dbu
+                // scale=1 and origins=0, so world coordinates are the dbu
                 // themselves: 12000 x 34000 dbu = 12 x 34 µm.
-                getCenter() { return { lat: 34000, lng: 12000 }; },
-                setView() {}, fitBounds() {},
+                getCenter() { return [12000, 34000]; },
+                setView() {}, fitWorldRect() {},
             },
         });
         showGotoDialog(app);
@@ -84,11 +84,11 @@ describe('Go to Position dialog', () => {
         document.body.innerHTML = '';
         const { app, calls } = makeApp({
             showDbu: true,
-            map: {
+            view: {
                 getZoom() { return 3; },
-                getCenter() { return { lat: 34000, lng: 12000 }; },
-                setView(latlng, z) { calls.push(['setView', latlng, z]); },
-                fitBounds(b) { calls.push(['fitBounds', b]); },
+                getCenter() { return [12000, 34000]; },
+                setView(center, z) { calls.push(['setView', center, z]); },
+                fitWorldRect(r) { calls.push(['fitWorldRect', r]); },
             },
         });
         showGotoDialog(app);
@@ -102,7 +102,7 @@ describe('Go to Position dialog', () => {
         setInput('.sn-x', '5000');
         setInput('.sn-y', '7000');
         clickOk();
-        assert.deepEqual(calls, [['setView', dbuToLatLng(5000, 7000, 1, 0, 0, 0), 3]]);
+        assert.deepEqual(calls, [['setView', dbuToWorld(5000, 7000, 1, 0, 0), 3]]);
     });
 
     it('follows showDbu for the Size window too', () => {
@@ -113,8 +113,8 @@ describe('Go to Position dialog', () => {
         setInput('.sn-y', '0');
         setInput('.sn-size', '2000');   // 2000 dbu, not 2000 µm
         clickOk();
-        const expected = dbuRectToBounds(-1000, -1000, 1000, 1000, 1, 0, 0, 0);
-        assert.deepEqual(calls, [['fitBounds', expected]]);
+        const expected = dbuRectToWorldRect(-1000, -1000, 1000, 1000, 1, 0, 0);
+        assert.deepEqual(calls, [['fitWorldRect', expected]]);
     });
 
     it('names the active unit when rejecting a non-number', () => {
@@ -126,14 +126,14 @@ describe('Go to Position dialog', () => {
         assert.match(errorText(), /\(DBU\)/);
     });
 
-    it('centers the map on the x,y converted from microns', () => {
+    it('centers the view on the x,y converted from microns', () => {
         document.body.innerHTML = '';
         const { app, calls } = makeApp();
         showGotoDialog(app);
         setInput('.sn-x', '5');   // 5 µm -> 5000 dbu
         setInput('.sn-y', '7');   // 7 µm -> 7000 dbu
         clickOk();
-        const expected = dbuToLatLng(5000, 7000, 1, 0, 0, 0);
+        const expected = dbuToWorld(5000, 7000, 1, 0, 0);
         assert.deepEqual(calls, [['setView', expected, 3]]);
     });
 
@@ -145,9 +145,9 @@ describe('Go to Position dialog', () => {
         setInput('.sn-y', '10');
         setInput('.sn-size', '4');  // 4 µm window => half = 2000 dbu
         clickOk();
-        const expected = dbuRectToBounds(10000 - 2000, 10000 - 2000,
-            10000 + 2000, 10000 + 2000, 1, 0, 0, 0);
-        assert.deepEqual(calls, [['fitBounds', expected]]);
+        const expected = dbuRectToWorldRect(10000 - 2000, 10000 - 2000,
+            10000 + 2000, 10000 + 2000, 1, 0, 0);
+        assert.deepEqual(calls, [['fitWorldRect', expected]]);
     });
 
     it('rejects non-numeric coordinates', () => {
@@ -183,9 +183,63 @@ describe('Find dialog', () => {
         await wait();
         assert.deepEqual(sent, [{ type: 'find', obj_type: 'inst',
             pattern: '_4*', match_case: false }]);
-        const expected = dbuRectToBounds(0, 0, 3000, 4000, 1, 0, 0, 0);
-        assert.deepEqual(calls, [['fitBounds', expected]]);
+        const expected = dbuRectToWorldRect(0, 0, 3000, 4000, 1, 0, 0);
+        assert.deepEqual(calls, [['fitWorldRect', expected]]);
+        assert.deepEqual(app.lastSelectionBounds, [0, 0, 3000, 4000]);
         assert.match(errorText(), /2 found/);
+    });
+
+    it('takes the selection from other panels', async () => {
+        document.body.innerHTML = '';
+        const { app } = findApp({ count: 1, selection_count: 1 });
+        let resets = 0;
+        onSelectionReset(app, () => resets++);
+        showFindDialog(app);
+        setInput('.sn-pattern', 'u1');
+        clickOk();
+        await wait();
+        assert.equal(resets, 1);
+        assert.match(errorText(), /1 found/);
+    });
+
+    it('drops a reply a later selection overtook', async () => {
+        document.body.innerHTML = '';
+        const { app, calls } = findApp(
+            { count: 2, selection_count: 2, bbox: [0, 0, 3000, 4000] });
+        showFindDialog(app);
+        setInput('.sn-pattern', '_4*');
+        clickOk();
+        beginSelection(app);   // a click on the layout before the reply
+        await wait();
+        assert.deepEqual(calls, []);
+        assert.equal(app.lastSelectionBounds, undefined);
+        assert.match(errorText(), /2 found/);
+    });
+
+    it('leaves the selection alone when nothing is found', async () => {
+        document.body.innerHTML = '';
+        const { app } = findApp({ count: 0, selection_count: 0 });
+        let resets = 0;
+        onSelectionReset(app, () => resets++);
+        const token = app.selectionToken;
+        showFindDialog(app);
+        setInput('.sn-pattern', 'zzz');
+        clickOk();
+        await wait();
+        assert.equal(resets, 0);
+        assert.equal(app.selectionToken, token);
+    });
+
+    it('brings the Select Highlight panel up to date', async () => {
+        document.body.innerHTML = '';
+        const { app } = findApp({ count: 1, selection_count: 1 });
+        let refreshes = 0;
+        app.selectionBrowser = { scheduleRefresh: () => refreshes++ };
+        showFindDialog(app);
+        setInput('.sn-pattern', 'u1');
+        clickOk();
+        await wait();
+        assert.equal(refreshes, 1);
     });
 
     it('reports when nothing is found and does not zoom', async () => {

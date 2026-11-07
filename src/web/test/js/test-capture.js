@@ -5,10 +5,7 @@ import './setup-dom.js';
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { captureLayout } from '../../src/capture.js';
-
-// capture.js reads `layer instanceof L.GridLayer` / `L.ImageOverlay`; provide a
-// stub L whose classes nothing matches (the mock map has no real layers).
-globalThis.L = { GridLayer: class {}, ImageOverlay: class {} };
+import { makeFakeView } from './fake-view.js';
 
 // Stub <canvas> so renderToBlob runs headless (jsdom has no 2d context).
 // `ops`, when given, records the drawing calls so a test can assert what the
@@ -23,7 +20,7 @@ function withCanvasStub(fn, ops = []) {
                 getContext: () => ({
                     fillRect(...a) { ops.push(['fillRect', ...a]); },
                     fillText(...a) { ops.push(['fillText', ...a]); },
-                    drawImage() {},
+                    drawImage(...a) { ops.push(['drawImage', ...a]); },
                     beginPath() {}, roundRect() {}, fill() {},
                     save() {}, restore() {},
                     set fillStyle(v) { ops.push(['fillStyle', v]); },
@@ -49,21 +46,9 @@ function stubRect(el, x, y, width, height) {
 }
 
 function makeApp() {
-    const container = document.createElement('div');
-    document.body.appendChild(container);
-    const calls = [];
-    return {
-        calls,
-        map: {
-            getCenter: () => ({ lat: 1, lng: 2 }),
-            getZoom: () => 5,
-            getContainer: () => container,
-            eachLayer() {},  // no layers → tilesPending stays 0
-            fitBounds(b, opts) { calls.push(['fitBounds', b, opts]); },
-            setView(c, z, opts) { calls.push(['setView', c, z, opts]); },
-        },
-        fitBounds: [[0, 0], [10, 10]],
-    };
+    const view = makeFakeView({ zoom: 5, target: [1, 2] });
+    document.body.appendChild(view.getContainer());
+    return { view, calls: view.calls, fitRect: [0, 0, 10, 10] };
 }
 
 describe('captureLayout entire → fit whole design then restore', () => {
@@ -74,37 +59,51 @@ describe('captureLayout entire → fit whole design then restore', () => {
         const app = makeApp();
         await withCanvasStub(() => captureLayout(app, { entire: true }));
 
-        const fit = app.calls.find((c) => c[0] === 'fitBounds');
-        assert.ok(fit, 'fitBounds was called');
-        assert.equal(fit[1], app.fitBounds, 'fits the whole-design bounds');
+        const names = app.calls.map((c) => c[0]);
+        assert.deepEqual(names, ['fitWorldRect', 'whenTilesSettled', 'setView'],
+                         'fit, wait for the tiles, capture, restore');
+        const fit = app.calls[0];
+        assert.deepEqual(fit[1], app.fitRect, 'fits the whole-design rect');
         assert.equal(fit[2].animate, false, 'no animation (avoids mid-fit capture)');
 
-        const restore = app.calls.find((c) => c[0] === 'setView');
-        assert.ok(restore, 'view is restored after capture');
-        assert.deepEqual(restore[1], { lat: 1, lng: 2 });
+        const restore = app.calls[2];
+        assert.deepEqual(restore[1], [1, 2]);
         assert.equal(restore[2], 5);
+        assert.equal(restore[3].animate, false);
     });
 
     it('visible scope neither fits nor moves the view', async () => {
         const app = makeApp();
         await withCanvasStub(() => captureLayout(app, { entire: false }));
-        assert.equal(app.calls.length, 0, 'no fitBounds/setView for the visible capture');
+        assert.equal(app.calls.length, 0, 'no fit/setView for the visible capture');
+    });
+
+    it('copies the view canvas at its on-screen position, in CSS px', async () => {
+        const app = makeApp();
+        stubRect(app.view.getContainer(), 10, 20, 400, 300);
+        app.view.canvas = stubRect(document.createElement('div'), 10, 20, 399, 299);
+        const ops = [];
+        await withCanvasStub(() => captureLayout(app, { entire: false }), ops);
+        const draws = ops.filter((o) => o[0] === 'drawImage');
+        assert.equal(draws.length, 1);
+        assert.equal(draws[0][1], app.view.canvas);
+        assert.deepEqual(draws[0].slice(2), [0, 0, 399, 299]);
     });
 });
 
-// Ruler distance labels are L.divIcon <div>s in a marker pane, not SVG, so the
-// SVG-pane pass cannot see them.  Before this was handled the capture kept a
-// ruler's line and ticks but dropped the measurement it exists to show.
+// Ruler distance labels are DOM markers over the canvas, not part of it.
+// Without this pass the capture keeps a ruler's line and ticks but drops the
+// measurement it exists to show.
 describe('captureLayout includes the HTML ruler labels', () => {
     beforeEach(() => { document.body.innerHTML = ''; });
     afterEach(() => { document.body.innerHTML = ''; });
 
     function appWithLabel(text) {
         const app = makeApp();
-        const container = app.map.getContainer();
+        const container = app.view.getContainer();
         stubRect(container, 0, 0, 400, 300);
         const pane = document.createElement('div');
-        pane.className = 'leaflet-pane';
+        pane.className = 'or-view-markers';
         container.appendChild(pane);
         const label = document.createElement('div');
         label.className = 'ruler-label';

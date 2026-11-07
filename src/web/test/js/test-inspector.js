@@ -10,9 +10,9 @@ const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
 globalThis.document = dom.window.document;
 globalThis.window = dom.window;
 globalThis.Event = dom.window.Event;
-globalThis.L = undefined;  // Leaflet not needed for these tests
 
 const { createInspectorPanel } = await import('../../src/inspector.js');
+const { makeFakeView } = await import('./fake-view.js');
 
 // Helper to build a minimal app object with mocked websocket.
 function makeApp() {
@@ -22,10 +22,8 @@ function makeApp() {
         routeGuideNets: new Set(),
         inspectorEl: document.createElement('div'),
         hoverRects: [],
-        highlightRect: null,
-        map: null,
+        view: null,
         designScale: null,
-        designMaxDXDY: null,
         websocketManager: {
             _nextId: 1,
             request(msg) {
@@ -234,7 +232,6 @@ describe('Inspector focus nets', () => {
 
         it('next button refreshes schematic selection for cycled Inst', async () => {
             let schematicRefreshes = 0;
-            app.map = { closePopup() {} };
             app.schematicWidget = {
                 refresh() { schematicRefreshes++; },
             };
@@ -853,48 +850,15 @@ describe('Inspector focus nets', () => {
 
 // ─── Selection animation (Qt selectionAnimation parity) ────────────────────
 
-function makeLeafletMock() {
-    const layers = [];
-    globalThis.L = {
-        rectangle(bounds, opts) {
-            const layer = {
-                bounds,
-                opts: { ...opts },
-                styleHistory: [],
-                addTo(map) { map._layers.add(this); return this; },
-                setStyle(st) {
-                    this.styleHistory.push({ ...st });
-                    Object.assign(this.opts, st);
-                },
-            };
-            layers.push(layer);
-            return layer;
-        },
-    };
-    return layers;
-}
-
-function makeMapMock() {
-    return {
-        _layers: new Set(),
-        hasLayer(l) { return this._layers.has(l); },
-        removeLayer(l) { this._layers.delete(l); },
-        closePopup() {},
-    };
-}
-
 describe('animateSelection', () => {
-    let app, panel, layers, timers, realSetInterval, realClearInterval;
+    let app, panel, timers, realSetInterval, realClearInterval;
 
     beforeEach(() => {
         app = makeApp();
-        app.map = makeMapMock();
+        app.view = makeFakeView();
         app.designScale = 1;
-        app.designMaxDXDY = 100000;
         app.designOriginX = 0;
         app.designOriginY = 0;
-        app.hoverHighlightPane = 'hoverPane';
-        layers = makeLeafletMock();
         panel = createInspectorPanel(app, () => {}, () => {});
 
         // Deterministic timers: capture the interval callback and tick
@@ -912,35 +876,34 @@ describe('animateSelection', () => {
         globalThis.clearInterval = realClearInterval;
     }
 
-    it('creates the layer and cycles weight 1→2→3 with brush flash on 1', () => {
+    const anim = () => app.view.shapes('anim')[0];
+
+    it('draws the outline and cycles weight 1→2→3 with brush flash on 1', () => {
         try {
             panel.animateSelection([0, 0, 100, 100]);
-            assert.equal(layers.length, 1);
-            const layer = layers[0];
-            assert.ok(app.map.hasLayer(layer));
-            assert.equal(layer.opts.weight, 1);
-            assert.ok(Math.abs(layer.opts.fillOpacity - 0.39) < 1e-9);
+            assert.deepEqual(anim().rect, [0, 0, 100, 100]);
+            assert.equal(anim().width, 1);
+            assert.equal(anim().fill[3], Math.round(255 * 0.39));
 
             timers.cb();  // state 1 → weight 2, no fill
-            assert.equal(layer.opts.weight, 2);
-            assert.equal(layer.opts.fillOpacity, 0);
+            assert.equal(anim().width, 2);
+            assert.equal(anim().fill[3], 0);
             timers.cb();  // state 2 → weight 3
-            assert.equal(layer.opts.weight, 3);
+            assert.equal(anim().width, 3);
             timers.cb();  // state 3 → weight 1 + flash again
-            assert.equal(layer.opts.weight, 1);
-            assert.ok(Math.abs(layer.opts.fillOpacity - 0.39) < 1e-9);
+            assert.equal(anim().width, 1);
+            assert.equal(anim().fill[3], Math.round(255 * 0.39));
         } finally {
             restoreTimers();
         }
     });
 
-    it('finite repeats stop and remove the layer', () => {
+    it('finite repeats stop and remove the outline', () => {
         try {
             panel.animateSelection([0, 0, 100, 100], { repeats: 2 });
-            const layer = layers[0];
             // maxState = repeats*3 = 6: the 6th tick tears down.
             for (let i = 0; i < 6; i++) timers.cb();
-            assert.equal(app.map.hasLayer(layer), false);
+            assert.equal(app.view.overlays.has('anim'), false);
             assert.ok(timers.cleared >= 1);
         } finally {
             restoreTimers();
@@ -950,11 +913,10 @@ describe('animateSelection', () => {
     it('repeats=0 runs until stopSelectionAnimation', () => {
         try {
             panel.animateSelection([0, 0, 100, 100], { repeats: 0 });
-            const layer = layers[0];
             for (let i = 0; i < 50; i++) timers.cb();
-            assert.ok(app.map.hasLayer(layer), 'still animating after 50 ticks');
+            assert.ok(app.view.overlays.has('anim'), 'still animating after 50 ticks');
             panel.stopSelectionAnimation();
-            assert.equal(app.map.hasLayer(layer), false);
+            assert.equal(app.view.overlays.has('anim'), false);
             assert.ok(timers.cleared >= 1);
         } finally {
             restoreTimers();
@@ -965,24 +927,126 @@ describe('animateSelection', () => {
         try {
             panel.animateSelection([0, 0, 100, 100], { repeats: 0 });
             panel.animateSelection([10, 10, 20, 20], { repeats: 0 });
-            assert.equal(layers.length, 2);
-            assert.equal(app.map.hasLayer(layers[0]), false);
-            assert.ok(app.map.hasLayer(layers[1]));
+            assert.equal(app.view.shapes('anim').length, 1);
+            assert.deepEqual(anim().rect, [10, 10, 20, 20]);
+            assert.ok(timers.cleared >= 1);
         } finally {
             restoreTimers();
         }
     });
 
-    it('prefers-reduced-motion falls back to the one-shot pulse', () => {
+    it('prefers-reduced-motion skips the interval and the animation', () => {
         try {
             globalThis.matchMedia = () => ({ matches: true });
             panel.animateSelection([0, 0, 100, 100]);
-            assert.equal(layers.length, 1);
-            assert.equal(layers[0].opts.className, 'selection-pulse');
             assert.equal(timers.cb, null, 'no interval when reduced motion');
+            assert.equal(app.view.overlays.has('anim'), false);
         } finally {
             delete globalThis.matchMedia;
             restoreTimers();
         }
+    });
+});
+
+describe('selection outline and hover on the view', () => {
+    let app, panel;
+
+    beforeEach(() => {
+        app = makeApp();
+        app.view = makeFakeView({ zoom: 0, target: [500, 400] });
+        app.designScale = 1;
+        app.designOriginX = 0;
+        app.designOriginY = 0;
+        app.visibility = { highlight_selected: true };
+        panel = createInspectorPanel(app, () => {}, () => {});
+    });
+
+    it('draws a dashed yellow outline and clears it', () => {
+        panel.highlightBBox(100, 200, 300, 400, 'Inst');
+        const [o] = app.view.shapes('selection');
+        assert.deepEqual(o.rect, [100, 200, 300, 400]);
+        assert.deepEqual(o.dash, [6, 4]);
+        assert.deepEqual(o.stroke.slice(0, 3), [255, 255, 0]);
+        app.clearSelectionOutline();
+        assert.equal(app.view.overlays.has('selection'), false);
+    });
+
+    it('skips the outline for a net', () => {
+        panel.highlightBBox(100, 200, 300, 400, 'Net');
+        assert.equal(app.view.overlays.has('selection'), false);
+    });
+
+    it('follows the Highlight selected toggle', () => {
+        panel.highlightBBox(100, 200, 300, 400, 'Inst');
+        app.visibility.highlight_selected = false;
+        app.renderSelectionOutline();
+        assert.equal(app.view.overlays.has('selection'), false);
+        app.visibility.highlight_selected = true;
+        app.renderSelectionOutline();
+        assert.ok(app.view.overlays.has('selection'));
+    });
+
+    // 10 px minimum on screen: 2.5 world units at zoom 2, 1.25 at zoom 3.
+    it('pads a tiny hover box to the minimum on-screen size', async () => {
+        app.view.setZoomForTest(2);
+        app.websocketManager.request = (msg) => {
+            const p = Promise.resolve(msg.type === 'hover'
+                ? { rects: [[100, 200, 101, 260]] } : {});
+            p.requestId = 1;
+            return p;
+        };
+        panel.updateInspector({
+            type: 'Inst', name: 'i1', bbox: [0, 0, 10, 10],
+            properties: [{ name: 'Master', value: 'BUF_X1',
+                           value_select_id: 3 }],
+        });
+        app.inspectorEl.querySelector('.inspector-link')
+            .dispatchEvent(new dom.window.Event('mouseenter'));
+        await new Promise((r) => setTimeout(r, 0));
+        const near = (a, b) => a.every((v, i) => Math.abs(v - b[i]) < 1e-9);
+        const rect = () => app.view.shapes('hover')[0].rect;
+        assert.ok(near(rect(), [99.25, 200, 101.75, 260]), String(rect()));
+        app.view.setZoomForTest(3);
+        assert.ok(near(rect(), [99.875, 200, 101.125, 260]), String(rect()));
+    });
+});
+
+// Rulers and labels are client-side as far as the Inspector goes: refreshing
+// one (a Show DBU toggle, a refresh push) shows it again instead of asking the
+// server, and must not take the selection from whatever came later.
+describe('refreshInspector', () => {
+    it('shows an inspected label again without taking the selection', () => {
+        const app = makeApp();
+        const panel = createInspectorPanel(app, () => {}, () => {});
+        const shown = [];
+        app.labelManager = {
+            refreshInspector: (name) => shown.push(name),
+            _select: () => assert.fail('took the selection'),
+        };
+        panel.updateInspector({
+            type: 'Label', name: 'L0', bbox: [0, 0, 0, 0],
+            properties: [{ name: 'Name', value: 'L0' }],
+        });
+        const token = app.selectionToken;
+        panel.refreshInspector();
+        assert.deepEqual(shown, ['L0']);
+        assert.equal(app.selectionToken, token);
+        assert.equal(app._requests.filter((r) => r.type === 'inspect').length, 0);
+    });
+
+    it('shows an inspected ruler again without taking the selection', () => {
+        const app = makeApp();
+        const panel = createInspectorPanel(app, () => {}, () => {});
+        let shown = 0;
+        app.rulerManager = {
+            refreshInspector: () => shown++,
+            _selectRuler: () => assert.fail('took the selection'),
+        };
+        panel.updateInspector({
+            type: 'Ruler', name: 'R0', bbox: [0, 0, 1, 1],
+            properties: [{ name: 'Name', value: 'R0' }],
+        });
+        panel.refreshInspector();
+        assert.equal(shown, 1);
     });
 });

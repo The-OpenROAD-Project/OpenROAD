@@ -3,66 +3,24 @@
 
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { formatDbu, formatDistance, parseDbu } from '../../src/ui-utils.js';
+import { beginSelection, formatDbu, formatDistance, onSelectionReset, parseDbu }
+    from '../../src/ui-utils.js';
 
-// ─── Minimal Leaflet mock ────────────────────────────────────────────────────
-// RulerManager uses L.layerGroup, L.polyline, L.circleMarker, L.marker,
-// L.divIcon, and L.DomEvent.stopPropagation.  We provide just enough to let
-// the constructor and state-machine logic run without a real browser.
-
-const layers = [];
-
-function makeFakeLayer() {
-    return {
-        addTo() { return this; },
-        addLayer(l) { layers.push(l); },
-        removeLayer() {},
-        clearLayers() { layers.length = 0; },
-        on() {},
-        off() {},
-    };
-}
-
-globalThis.L = {
-    layerGroup() { return makeFakeLayer(); },
-    polyline() { return makeFakeLayer(); },
-    circleMarker() { return makeFakeLayer(); },
-    marker() { return makeFakeLayer(); },
-    divIcon() { return {}; },
-    DomEvent: { stopPropagation() {} },
-};
+import './setup-dom.js';
+import { makeFakeView } from './fake-view.js';
 
 // Node.js doesn't have requestAnimationFrame.
 globalThis.requestAnimationFrame = (cb) => setTimeout(cb, 0);
-globalThis.document = { createElement() { return { className: '', innerHTML: '', addEventListener() {} }; } };
 
 const { RulerManager } = await import('../../src/ruler.js');
 
 // ─── Test helpers ────────────────────────────────────────────────────────────
 
 function makeApp() {
-    const classList = new Set();
-    const container = {
-        classList: {
-            add(c) { classList.add(c); },
-            remove(c) { classList.delete(c); },
-            has(c) { return classList.has(c); },
-        },
-        addEventListener() {},
-        removeEventListener() {},
-        getBoundingClientRect() { return { left: 0, top: 0 }; },
-    };
     const requests = [];
     const app = {
-        map: {
-            createPane() { return { style: {} }; },
-            getContainer() { return container; },
-            getZoom() { return 1; },
-            on() {},
-            off() {},
-        },
+        view: makeFakeView(),
         designScale: 1e-6,
-        designMaxDXDY: 1000000,
         techData: { dbu_per_micron: 1000 },
         showDbu: false,
         visibleLayers: new Set(['metal1']),
@@ -91,8 +49,6 @@ function makeApp() {
         formatDistance(dbuLength) {
             return formatDistance(dbuLength, this.unitOpts());
         },
-        _container: container,
-        _classList: classList,
         _requests: requests,
     };
     return app;
@@ -139,7 +95,8 @@ describe('RulerManager state machine', () => {
         const { mgr, app } = makeManager();
         mgr.toggleRulerMode();
         assert.equal(mgr.isActive(), true);
-        assert.ok(app._classList.has('ruler-mode-cursor'));
+        assert.ok(app.view.cursorModes.has('ruler'));
+        assert.ok(app.view.getContainer().classList.contains('ruler-mode-cursor'));
     });
 
     it('toggleRulerMode again cancels back to IDLE', () => {
@@ -147,7 +104,7 @@ describe('RulerManager state machine', () => {
         mgr.toggleRulerMode();
         mgr.toggleRulerMode();
         assert.equal(mgr.isActive(), false);
-        assert.ok(!app._classList.has('ruler-mode-cursor'));
+        assert.ok(!app.view.cursorModes.has('ruler'));
     });
 
     it('cancelRulerBuild returns to IDLE', () => {
@@ -485,6 +442,53 @@ describe('Ruler inspector data', () => {
         mgr._selectRuler(1);
         assert.equal(mgr._selectedRulerId, 1);
     });
+
+    it('unmarks the ruler when another object takes the selection', () => {
+        const { mgr, app } = makeManager();
+        mgr._createRuler({ x: 0, y: 0 }, { x: 100, y: 100 });
+        mgr._selectRuler(0);
+        let renders = 0;
+        const render = mgr._renderAll.bind(mgr);
+        mgr._renderAll = () => { renders++; render(); };
+        beginSelection(app);
+        assert.equal(mgr._selectedRulerId, null);
+        assert.equal(renders, 1, 'repainted without the highlight');
+    });
+
+    it('keeps its own selection, and takes it from other panels', () => {
+        const { mgr, app } = makeManager();
+        mgr._createRuler({ x: 0, y: 0 }, { x: 100, y: 100 });
+        let resets = 0;
+        onSelectionReset(app, () => resets++);
+        mgr._selectRuler(0);
+        assert.equal(resets, 1);
+        assert.equal(mgr._selectedRulerId, 0);
+    });
+
+    it('draws once when selected again', () => {
+        const { mgr } = makeManager();
+        mgr._createRuler({ x: 0, y: 0 }, { x: 100, y: 100 });
+        mgr._selectRuler(0);
+        let renders = 0;
+        const render = mgr._renderAll.bind(mgr);
+        mgr._renderAll = () => { renders++; render(); };
+        mgr._selectRuler(0);
+        assert.equal(renders, 1);
+    });
+
+    it('shows the selected ruler again without the selection or the focus',
+       () => {
+        const { mgr, app, inspectorData, focusCalls } = makeManager();
+        mgr._createRuler({ x: 0, y: 0 }, { x: 100, y: 100 });
+        mgr._selectRuler(0);
+        const token = app.selectionToken;
+        const shown = inspectorData.length;
+        const focused = focusCalls.length;
+        mgr.refreshInspector();
+        assert.equal(inspectorData.length, shown + 1);
+        assert.equal(focusCalls.length, focused);
+        assert.equal(app.selectionToken, token);
+    });
 });
 
 // ─── Ruler naming ────────────────────────────────────────────────────────────
@@ -502,5 +506,185 @@ describe('Ruler naming', () => {
         const { mgr } = makeManager();
         mgr._createRuler({ x: 0, y: 0 }, { x: 10, y: 10 });
         assert.equal(mgr._rulers[0].euclidian, true);
+    });
+});
+
+// ─── Drawing on the view ─────────────────────────────────────────────────────
+
+// 256 world units over 1e6 DBU, so at zoom 0 the 1000x800 fake view shows the
+// whole square and 1 DBU is 1/3906 px.
+function makeDrawingManager(overrides = {}) {
+    return makeManager({ designScale: 256 / 1e6, designOriginX: 0,
+                         designOriginY: 0, ...overrides });
+}
+
+describe('Ruler drawing', () => {
+    it('draws each ruler as a line plus two end ticks', () => {
+        const { mgr, app } = makeDrawingManager();
+        mgr._createRuler({ x: 0, y: 0 }, { x: 500000, y: 0 });
+        const shapes = app.view.shapes('rulers');
+        assert.equal(shapes.length, 3);
+        assert.deepEqual(shapes[0].points, [[0, 0], [128, 0]]);
+        assert.equal(shapes[0].width, 2);
+    });
+
+    it('colours the selected ruler yellow and the others cyan', () => {
+        const { mgr, app } = makeDrawingManager();
+        mgr._createRuler({ x: 0, y: 0 }, { x: 100000, y: 0 });
+        mgr._createRuler({ x: 0, y: 200000 }, { x: 100000, y: 200000 });
+        const lines = app.view.shapes('rulers').filter((s) => s.points.length >= 2
+                                                       && s.points[0][1] === s.points[1][1]
+                                                       && s.points[1][0] > 20);
+        assert.deepEqual(lines[0].stroke.slice(0, 3), [0, 255, 255]);
+        assert.deepEqual(lines[1].stroke.slice(0, 3), [255, 255, 0]);
+    });
+
+    it('draws a Manhattan ruler as an L through the join point', () => {
+        const { mgr, app } = makeDrawingManager({ rulerStyle: 'manhattan' });
+        mgr._createRuler({ x: 0, y: 0 }, { x: 500000, y: 250000 });
+        const line = app.view.shapes('rulers')[0];
+        assert.deepEqual(line.points, [[0, 0], [128, 0], [128, 64]]);
+    });
+
+    it('pins a distance label at the midpoint', () => {
+        const { mgr, app } = makeDrawingManager();
+        mgr._createRuler({ x: 0, y: 0 }, { x: 500000, y: 0 });
+        const labels = app.view.markersIn('ruler-labels');
+        assert.equal(labels.length, 1);
+        assert.deepEqual(labels[0].world, [64, 0]);
+        assert.ok(labels[0].el.classList.contains('ruler-label'));
+        assert.equal(labels[0].el.textContent, app.formatDistance(500000));
+    });
+
+    it('keeps the end ticks 8 px long across a zoom', () => {
+        const { mgr, app } = makeDrawingManager();
+        mgr._createRuler({ x: 0, y: 0 }, { x: 500000, y: 0 });
+        const tickPx = () => {
+            const t = app.view.shapes('rulers')[1].points;
+            const a = app.view.project(t[0]);
+            const b = app.view.project(t[1]);
+            return Math.hypot(a[0] - b[0], a[1] - b[1]);
+        };
+        assert.ok(Math.abs(tickPx() - 16) < 1e-6);
+        app.view.setZoomForTest(3);
+        assert.ok(Math.abs(tickPx() - 16) < 1e-6);
+    });
+
+    // The labels are world-anchored markers: a zoom frame redraws the ticks
+    // only.
+    it('leaves the label markers alone on a zoom', () => {
+        const { mgr, app } = makeDrawingManager();
+        mgr._createRuler({ x: 0, y: 0 }, { x: 500000, y: 0 });
+        const label = app.view.markersIn('ruler-labels')[0].el;
+        let markerCalls = 0;
+        for (const fn of ['addMarker', 'clearMarkers']) {
+            const orig = app.view[fn];
+            app.view[fn] = (...args) => {
+                markerCalls++;
+                return orig(...args);
+            };
+        }
+        app.view.setZoomForTest(3);
+        assert.equal(markerCalls, 0);
+        assert.equal(app.view.markersIn('ruler-labels')[0].el, label);
+    });
+
+    it('removes the shapes and labels of a deleted ruler', () => {
+        const { mgr, app } = makeDrawingManager();
+        mgr._createRuler({ x: 0, y: 0 }, { x: 500000, y: 0 });
+        mgr.deleteRuler(0);
+        assert.equal(app.view.overlays.has('rulers'), false);
+        assert.equal(app.view.markersIn('ruler-labels').length, 0);
+    });
+
+    it('hides everything when the Rulers visibility is off', () => {
+        const { mgr, app } = makeDrawingManager();
+        mgr._createRuler({ x: 0, y: 0 }, { x: 500000, y: 0 });
+        mgr._visibility.rulers = false;
+        mgr.updateVisibility();
+        assert.equal(app.view.overlays.has('rulers'), false);
+        assert.equal(app.view.markersIn('ruler-labels').length, 0);
+        mgr._visibility.rulers = true;
+        mgr.updateVisibility();
+        assert.equal(app.view.shapes('rulers').length, 3);
+    });
+});
+
+describe('Ruler placement from view clicks', () => {
+    it('two clicks in ruler mode create a ruler and stay in ruler mode', () => {
+        const { mgr, app } = makeDrawingManager();
+        mgr.toggleRulerMode();
+        mgr._ctrlHeld = true;
+        const e = { ctrlKey: true, metaKey: false, shiftKey: false };
+        mgr.handleMapClick([0, 0], e);
+        mgr.handleMapClick([128, 0], e);
+        assert.equal(mgr._rulers.length, 1);
+        assert.deepEqual(mgr._rulers[0].pt1, { x: 500000, y: 0 });
+        assert.equal(mgr.isActive(), true);
+        assert.equal(app.view.overlays.has('ruler-preview'), false);
+    });
+
+    it('a click outside ruler mode is ignored', () => {
+        const { mgr } = makeDrawingManager();
+        mgr.handleMapClick([0, 0], { ctrlKey: false, shiftKey: false });
+        assert.equal(mgr._pt0, null);
+    });
+
+    it('draws a dashed preview with a live distance label while measuring', () => {
+        const { mgr, app } = makeDrawingManager();
+        mgr.toggleRulerMode();
+        const e = { ctrlKey: true, metaKey: false, shiftKey: false };
+        mgr.handleMapClick([0, 0], e);
+        mgr._updatePreview(250000, 0);
+        const preview = app.view.shapes('ruler-preview');
+        assert.equal(preview.length, 1);
+        assert.deepEqual(preview[0].dash, [6, 4]);
+        const label = app.view.markersIn('ruler-preview')[0];
+        assert.equal(label.el.textContent, app.formatDistance(250000));
+        mgr.cancelRulerBuild();
+        assert.equal(app.view.overlays.has('ruler-preview'), false);
+        assert.equal(app.view.markersIn('ruler-preview').length, 0);
+    });
+
+    it('draws the snap indicator as a circle for a point snap', () => {
+        const { mgr, app } = makeDrawingManager();
+        mgr._updateSnapIndicator({ found: true, is_point: true,
+                                   edge: [[500000, 0], [500000, 0]] });
+        const snap = app.view.shapes('ruler-snap');
+        assert.equal(snap[0].kind, 'circle');
+        assert.deepEqual(snap[0].center, [128, 0]);
+        mgr._clearSnap();
+        assert.equal(app.view.overlays.has('ruler-snap'), false);
+    });
+});
+
+describe('Ruler hit test', () => {
+    it('selects a ruler clicked within a few pixels of its line', () => {
+        const { mgr, app, inspectorData } = makeDrawingManager();
+        mgr._createRuler({ x: 0, y: 0 }, { x: 500000, y: 0 });
+        mgr._createRuler({ x: 0, y: 500000 }, { x: 500000, y: 500000 });
+        assert.equal(mgr._selectedRulerId, 1);
+        const before = inspectorData.length;
+        // 3 px above the first ruler's line.
+        const p = app.view.project([64, 0]);
+        const world = app.view.unproject([p[0], p[1] - 3]);
+        assert.equal(mgr.handleRulerClick(world), true);
+        assert.equal(mgr._selectedRulerId, 0);
+        assert.equal(inspectorData.length, before + 1);
+    });
+
+    it('misses a click further away', () => {
+        const { mgr, app } = makeDrawingManager();
+        mgr._createRuler({ x: 0, y: 0 }, { x: 500000, y: 0 });
+        const p = app.view.project([64, 0]);
+        assert.equal(mgr.handleRulerClick(app.view.unproject([p[0], p[1] - 8])),
+                     false);
+    });
+
+    it('does not pick hidden rulers', () => {
+        const { mgr, app } = makeDrawingManager();
+        mgr._createRuler({ x: 0, y: 0 }, { x: 500000, y: 0 });
+        mgr._visibility.rulers = false;
+        assert.equal(mgr.handleRulerClick([64, 0]), false);
     });
 });

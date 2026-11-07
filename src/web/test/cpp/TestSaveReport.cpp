@@ -168,8 +168,6 @@ TEST_F(SaveReportTest, ContainsRequiredHTMLElements)
   // The golden-layout themes theme.js switches between, by id.
   EXPECT_TRUE(contains(html, "id=\"gl-theme-dark\""));
   EXPECT_TRUE(contains(html, "id=\"gl-theme-light\""));
-  // leaflet's stylesheet, bundled into the report's own <style> block.
-  EXPECT_TRUE(contains(html, ".leaflet-pane"));
 }
 
 // The report copies the served page's stylesheets, so the two cascades cannot
@@ -185,7 +183,7 @@ TEST_F(SaveReportTest, UsesTheServedPagesStylesheets)
   const std::string head = reportHead(assetText(*page));
   ASSERT_TRUE(contains(head, "<style id=\"gl-theme-dark\">"));
   EXPECT_TRUE(contains(html, head));
-  // golden-layout's base sheet, which the viewer needs as much as leaflet's.
+  // golden-layout's base sheet, which the panels need.
   EXPECT_TRUE(contains(html, ".lm_root"));
 }
 
@@ -207,9 +205,13 @@ TEST_F(SaveReportTest, ContainsInlinedJS)
   const std::string script = moduleScript(readFile(path));
 
   // Minifying renames identifiers but keeps strings and property names: the
-  // cone-sync channel, the static cache lookup and two widgets' names.
-  for (const char* marker :
-       {"openroad-cone-sync", "fromCache", "TimingWidget", "ChartsWidget"}) {
+  // cone-sync channel, the static cache lookup, two widgets' names and the
+  // layout view's class.
+  for (const char* marker : {"openroad-cone-sync",
+                             "fromCache",
+                             "TimingWidget",
+                             "ChartsWidget",
+                             "or-view"}) {
     EXPECT_TRUE(contains(script, marker)) << marker;
   }
 }
@@ -229,8 +231,12 @@ TEST_F(SaveReportTest, CarriesTheThirdPartyLicenses)
   ASSERT_NE(begin, std::string::npos);
   EXPECT_LT(charset, begin);
   const std::string comment = html.substr(begin, end - begin);
-  for (const char* package :
-       {"elkjs", "golden-layout", "leaflet", "netlistsvg", "three"}) {
+  for (const char* package : {"@deck.gl/core",
+                              "@luma.gl/webgl",
+                              "elkjs",
+                              "golden-layout",
+                              "netlistsvg",
+                              "three"}) {
     EXPECT_TRUE(contains(comment, package)) << package;
   }
   EXPECT_TRUE(contains(comment, "Eclipse Public License"));

@@ -6,8 +6,9 @@
 //  - Go to position: jump the view to x,y in microns (mirrors Qt GotoDialog).
 // Both reuse the .modal-overlay/.modal-dialog pattern from menu-bar.js.
 
-import { dbuToLatLng, dbuRectToBounds, latLngToDbu } from './coordinates.js';
-import { applySelectionFlags, buildModal } from './ui-utils.js';
+import { dbuRectToWorldRect, dbuToWorld, worldToDbu } from './coordinates.js';
+import { applySelectionFlags, beginSelection, buildModal, isCurrentSelection }
+    from './ui-utils.js';
 
 // The .search-nav-dialog rules size these two dialogs' rows; every caller here
 // passes it so buildModal itself stays dialog-agnostic.
@@ -57,6 +58,9 @@ export function showFindDialog(app) {
             return;
         }
         showError('Searching…', true);
+        // Find takes the selection only once it has matches, and not from a
+        // selection that started while it was searching.
+        const issued = app.selectionToken;
         app.websocketManager
             .request({
                 type: 'find',
@@ -65,20 +69,24 @@ export function showFindDialog(app) {
                 match_case: caseChk.checked,
             })
             .then((resp) => {
-                applySelectionFlags(app, resp);
                 const count = resp && resp.count ? resp.count : 0;
                 if (!count) {
                     showError('No objects found.');
                     return;
                 }
+                if (!isCurrentSelection(app, issued)) {
+                    showError(`${count} found.`, true);
+                    return;
+                }
+                beginSelection(app);
+                applySelectionFlags(app, resp);
                 // Auto-zoom to the matched objects — an improvement over the Qt
                 // Find dialog, which only selects without centering.
                 if (Array.isArray(resp.bbox)) {
-                    app.lastSelectionBounds = dbuRectToBounds(
-                        resp.bbox[0], resp.bbox[1], resp.bbox[2], resp.bbox[3],
-                        app.designScale, app.designMaxDXDY,
-                        app.designOriginX, app.designOriginY);
-                    app.map.fitBounds(app.lastSelectionBounds);
+                    app.lastSelectionBounds = resp.bbox.slice(0, 4);
+                    app.view.fitWorldRect(dbuRectToWorldRect(
+                        ...app.lastSelectionBounds, app.designScale,
+                        app.designOriginX, app.designOriginY));
                 }
                 if (typeof app.updateInspector === 'function') {
                     app.updateInspector(resp);
@@ -86,6 +94,7 @@ export function showFindDialog(app) {
                 if (typeof app.redrawAllLayers === 'function') {
                     app.redrawAllLayers();
                 }
+                app.selectionBrowser?.scheduleRefresh();
                 const shown = resp.selection_count || count;
                 showError(resp.truncated
                     ? `${count} found (showing first ${shown}).`
@@ -104,7 +113,7 @@ export function showFindDialog(app) {
 // ── Go to position ──────────────────────────────────────────────────────────
 
 export function showGotoDialog(app) {
-    if (!app.designScale || !app.map) {
+    if (!app.designScale || !app.view) {
         return;
     }
     // Every field is read and written in whichever unit the "Show DBU"
@@ -116,9 +125,9 @@ export function showGotoDialog(app) {
 
     // Prefill X/Y with the current view center, so "Go to" with no edits is
     // a no-op.
-    const c = app.map.getCenter();
-    const centerDbu = latLngToDbu(c.lat, c.lng, app.designScale,
-        app.designMaxDXDY, app.designOriginX, app.designOriginY);
+    const c = app.view.getCenter();
+    const centerDbu = worldToDbu(c[0], c[1], app.designScale,
+        app.designOriginX, app.designOriginY);
 
     const { overlay, close, okBtn, showError } = buildModal('Go to Position', `
         <div class="sn-row"><label>X (${unit})</label>
@@ -142,20 +151,19 @@ export function showGotoDialog(app) {
             showError(`X and Y must be numbers (${unit}).`);
             return;
         }
-        const latlng = dbuToLatLng(dbuX, dbuY, app.designScale,
-            app.designMaxDXDY, app.designOriginX, app.designOriginY);
 
         // A size of 0 or less is not a window; fall through to the recentre.
         const sizeVal = sizeIn.value.trim();
         const sizeDbu = sizeVal ? parse(sizeVal) : null;
         if (sizeDbu !== null && sizeDbu > 0) {
             const half = sizeDbu / 2;
-            app.map.fitBounds(dbuRectToBounds(
+            app.view.fitWorldRect(dbuRectToWorldRect(
                 dbuX - half, dbuY - half, dbuX + half, dbuY + half,
-                app.designScale, app.designMaxDXDY,
-                app.designOriginX, app.designOriginY));
+                app.designScale, app.designOriginX, app.designOriginY));
         } else {
-            app.map.setView(latlng, app.map.getZoom());
+            app.view.setView(dbuToWorld(dbuX, dbuY, app.designScale,
+                                        app.designOriginX, app.designOriginY),
+                             app.view.getZoom());
         }
         close();
     }

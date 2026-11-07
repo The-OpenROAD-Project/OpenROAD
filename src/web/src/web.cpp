@@ -993,6 +993,9 @@ void WebSocketSession::run(http::request<http::string_body>&& req)
       websocket::stream_base::decorator([](websocket::response_type& res) {
         res.set(http::field::server, "OpenROAD WebSocket Server");
       }));
+  // One frame per reply: auto-fragmenting would split a tile into
+  // write-buffer-sized frames, each its own write.
+  websocket_.auto_fragment(false);
 
   websocket_.async_accept(req,
                           [self = shared_from_this()](beast::error_code ec) {
@@ -1103,14 +1106,10 @@ void WebSocketSession::on_accept(beast::error_code ec)
       if (!gate.entered()) {
         return;
       }
-      self->generator_->eagerInit();
+      self->generator_->ensureInit();
     }
-    // Only send refresh if there's actually a design to render.
-    // Without this guard, eagerInit returns instantly when no block is
-    // loaded and the push races with async_accept (Beast soft_mutex crash).
-    // We gate on the dbChip (not dbBlock) so 3DBlox multi-tech designs
-    // — whose top chip is HIER and has no dbBlock — still register the
-    // chip observer and send the refresh notification.
+    // Refresh only when there is a design to draw.  The gate is the dbChip,
+    // not the dbBlock: a 3DBlox top chip is HIER and has no block.
     if (!self->generator_->getChip()) {
       return;
     }
@@ -1253,10 +1252,11 @@ void WebSocketSession::queue_response(const WebSocketResponse& resp,
   // (malformed payloads, missing fields, wrong field types) are visible to
   // the operator/developer and not silently swallowed by the client.
   // A busy reply (see ScriptGate) is not one, and goes out per tile while a
-  // script runs, so it is not logged.
+  // script runs, so it is not logged; nor is a cancelled one.
   const std::string_view err(reinterpret_cast<const char*>(resp.payload.data()),
                              resp.payload.size());
-  if (resp.type == WebSocketResponse::kError && err != kScriptBusyMsg) {
+  if (resp.type == WebSocketResponse::kError && err != kScriptBusyMsg
+      && err != kCancelledMsg) {
     const std::string type_label
         = resp.request_type.empty() ? "unknown" : resp.request_type;
     logger_->warn(utl::WEB,
@@ -1841,7 +1841,7 @@ void WebServer::saveReport(const std::string& filename,
                            const int max_hold)
 {
   // Create/init the tile generator.
-  ensureGenerator().eagerInit();
+  ensureGenerator().ensureInit();
 
   odb::dbBlock* block = generator_->getBlock();
   const std::vector<odb::dbBlock*> design_blocks = generator_->blocks();
@@ -1940,7 +1940,7 @@ void WebServer::saveReport(const std::string& filename,
   // ── Render tiles at a fixed zoom level ──
 
   // Pick z so the design fits in a typical panel (~500px).
-  // In Leaflet CRS.Simple, the design spans 256 units = 256*2^z pixels.
+  // At zoom z the design spans 256*2^z pixels (256 px tiles).
   // z=1 → 512px, a good fit for most panel sizes.
   constexpr int kZ = 1;
   const int num_tiles = 1 << kZ;
@@ -1966,7 +1966,8 @@ void WebServer::saveReport(const std::string& filename,
   std::vector<std::pair<std::string, std::string>> tile_entries;
   TileVisibility scoped_vis = vis;
   const auto extents = generator_->layerExtents();
-  // World rect of each tile, indexed [ty][tx] with ty as Leaflet counts it.
+  // World rect of each tile, indexed [ty][tx] with ty counted top-down, as the
+  // client does.
   const odb::Rect bounds = generator_->getBounds();
   std::vector<std::vector<odb::Rect>> tile_rects(num_tiles);
   for (int ty = 0; ty < num_tiles; ++ty) {
@@ -2010,7 +2011,8 @@ void WebServer::saveReport(const std::string& filename,
 
   // ── Render per-path overlay images ──
 
-  const std::vector<ChipletNode>& chiplets = generator_->chiplets();
+  const auto chiplet_list = generator_->chiplets();
+  const std::vector<ChipletNode>& chiplets = *chiplet_list;
   auto render_path_overlays = [&](const std::vector<TimingPathSummary>& paths) {
     std::vector<std::string> overlays;
     for (const auto& path : paths) {
@@ -2284,7 +2286,7 @@ void WebServer::saveImage(const std::string& filename,
                           const std::string& vis_json)
 {
   // Create generator on demand (server may not be running).
-  ensureGenerator().eagerInit();
+  ensureGenerator().ensureInit();
 
   const odb::Rect region(x0, y0, x1, y1);
   const TileVisibility vis = parseVis(vis_json, logger_);
@@ -2487,7 +2489,8 @@ std::string WebServer::loadChipletHeatMap(const std::string& file_path)
   // guaranteed unique when a master is placed more than once.
   const ChipletNode* node = nullptr;
   std::string known;
-  for (const ChipletNode& candidate : gen.chiplets()) {
+  const auto nodes = gen.chiplets();
+  for (const ChipletNode& candidate : *nodes) {
     if (!known.empty()) {
       known += ", ";
     }
@@ -2703,12 +2706,11 @@ void WebServer::gifAddFrame(std::optional<int> key,
     return;
   }
 
-  // Create generator on demand (server may not be running).  eagerInit()
-  // rebuilds the spatial index, so run it only once per stream (first frame);
-  // the design is static across a GIF's frames.
+  // Create generator on demand (server may not be running), and init it on the
+  // first frame only: ensureInit() empties the tile cache the browsers share.
   ensureGenerator();
   if (gif->frame_count == 0) {
-    generator_->eagerInit();
+    generator_->ensureInit();
   }
 
   const TileVisibility vis = parseVis(vis_json, logger_);
