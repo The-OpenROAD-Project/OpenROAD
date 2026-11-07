@@ -1,0 +1,33 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO RSZ-0173] Rebuffering will size drivers together with buffer trees
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
+-------------------------------------------------------
+        0 |     +0.0% |       0 |        0 |        12
+        1 |     +5.8% |       0 |        1 |        11
+        2 |     +6.7% |       0 |        1 |        10
+        3 |    +17.5% |       0 |        2 |         9
+        4 |    +23.3% |       0 |        3 |         8
+        5 |    +25.0% |       0 |        3 |         7
+        6 |    +30.8% |       0 |        4 |         6
+        7 |    +41.7% |       0 |        5 |         5
+        8 |    +47.5% |       0 |        6 |         4
+        9 |    +47.5% |       0 |        6 |         3
+       10 |    +58.3% |       0 |        7 |         2
+       11 |    +59.2% |       0 |        7 |         1
+    final |    +59.2% |       0 |        7 |         0
+-------------------------------------------------------
+[INFO RSZ-2023] Resized 3 drivers while rebuffering.
+drv_base INV_X2
+drv_side_ok INV_X2
+drv_nand_far NAND2_X2
+drv_aoi AOI221_X2
+drv_side_crit INV_X1
+drv_mixed INV_X1
+drv_cap INV_X1
+drv_nand_near NAND2_X1
+drv_tied NAND2_X1
+drv_multi INV_X1
+drv_dff DFF_X1
+drv_capdn INV_X2
+[INFO RSZ-0175] Driver sizing during rebuffering has been disabled.

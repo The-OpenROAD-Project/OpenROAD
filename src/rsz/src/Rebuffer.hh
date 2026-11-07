@@ -11,6 +11,7 @@
 #include <optional>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include "BufferedNet.hh"
@@ -156,15 +157,46 @@ class Rebuffer : public sta::dbStaState
   std::tuple<sta::Delay, sta::Delay, sta::Slew> drvrPinTiming(
       const BufferedNetPtr& bnet);
   FixedDelay slackAtDriverPin(const BufferedNetPtr& bnet);
+  // Largest or smallest (`bound`) drive resistance of a previous-stage driver
+  // pin for output transition `rf` (both when null) over the scenes,
+  // including a top-level input's set_drive or set_driving_cell; 0 when
+  // unknown.
+  float prevStageDriveResistance(const sta::Pin* prev_drvr_pin,
+                                 const sta::RiseFall* rf,
+                                 const sta::MinMax* bound);
+  // Drive resistance of a Liberty port for output transition `rf` (both when
+  // null), the largest or smallest (`bound`) over its arcs.
+  float portDriveResistance(const sta::LibertyPort* port,
+                            const sta::RiseFall* rf,
+                            const sta::MinMax* bound);
+  // Growth of the input capacitance `prev_drvr_pin` drives if the driver were
+  // resized to `cell`.
+  float inputCapGrowth(const sta::Pin* prev_drvr_pin, sta::LibertyCell* cell);
+  // Extra delay of the previous stage for transition `rf` at the driver's
+  // `input` if the driver were resized to `cell`, for the slowest driver of
+  // the input's net; negative when the input capacitance shrinks.
+  sta::Delay upstreamDelay(const sta::Pin* input,
+                           const sta::RiseFall* rf,
+                           sta::LibertyCell* cell);
+  // Margined max slew of a driver output port in `scene`; INF without a
+  // limit.
+  float drvrMaxSlew(const sta::LibertyPort* out_port, const sta::Scene* scene);
   // Slack at the driver pin if the driver were resized to `cell`, including
   // the extra delay a larger input capacitance adds to the previous stage.
-  // Empty when `cell` has no equivalent arc or violates slew limits.
+  // Empty when `cell` has no equivalent arc, violates its slew limits, or
+  // (for a resize) its max capacitance.
   std::optional<FixedDelay> slackWithDriverCell(const BufferedNetPtr& bnet,
                                                 sta::LibertyCell* cell);
-  // False when resizing the driver to `cell` would slow the previous stage
-  // enough to push one of its other loads below both its current slack and
-  // `slack_limit`.
-  bool upstreamSideLoadsOk(sta::LibertyCell* cell, FixedDelay slack_limit);
+  // False when an arc into the driver output other than the timing path's
+  // would miss `slack_limit` or the slew limit with the driver resized to
+  // `cell`.
+  bool otherArcsMeet(const BufferedNetPtr& bnet,
+                     sta::LibertyCell* cell,
+                     FixedDelay slack_limit);
+  // False when resizing the driver to `cell` would exceed the max capacitance
+  // of a previous-stage driver, or slow it enough to push one of its other
+  // loads below `slack_limit`.
+  bool upstreamStagesOk(sta::LibertyCell* cell, FixedDelay slack_limit);
   // Pick the smallest (tree + driver) area among the candidate trees and the
   // driver's swappable cells whose slack meets `slack_target`, the target the
   // tree search used with the current driver.  Returns the chosen tree and
@@ -453,6 +485,16 @@ class Rebuffer : public sta::dbStaState
       std::array<sta::ArcDelay, sta::RiseFall::index_count>,
       BufferDelayKeyHash>;
   BufferDelayCache buffer_delay_cache_;
+  // Cache for portDriveResistance(); Liberty data does not change.
+  using DriveResCache
+      = absl::flat_hash_map<std::tuple<const sta::LibertyPort*, int, int>,
+                            float>;
+  DriveResCache drive_res_cache_;
+  // Cache for inputCapGrowth() while one driver is planned.
+  using InputCapGrowthCache
+      = absl::flat_hash_map<std::pair<const sta::Pin*, const sta::LibertyCell*>,
+                            float>;
+  InputCapGrowthCache input_cap_growth_cache_;
   std::array<sta::ArcDelay, sta::RiseFall::index_count> uncached_gate_delays_;
 
   sta::Pin* pin_ = nullptr;
