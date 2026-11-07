@@ -38,6 +38,7 @@ static gpl::PlaceOptions getOptions(
   checkFlag(
       flags, "-enable_routing_congestion", options.enable_routing_congestion);
   checkFlag(flags, "-force_center_initial_place", options.forceCenterInitialPlace);
+  checkFlag(flags, "-unplaced_macros_as_fixed", options.unplacedMacrosAsFixed);
   checkFlag(flags, "-skip_initial_place", [&](bool) {
     options.initialPlaceMaxIter = 0;
   });

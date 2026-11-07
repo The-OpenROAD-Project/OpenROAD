@@ -435,6 +435,12 @@ proc clear_place_prop { block type name } {
   }
 }
 
+sta::define_cmd_args "get_global_placement_uniform_density" {\
+    [-pad_left pad_left]\
+    [-pad_right pad_right]\
+    [-unplaced_macros_as_fixed]
+}
+
 proc get_global_placement_uniform_density { args } {
   if { [ord::get_db_block] == "NULL" } {
     utl::error GPL 114 "No design block found."
@@ -442,7 +448,7 @@ proc get_global_placement_uniform_density { args } {
 
   sta::parse_key_args "get_global_placement_uniform_density" args \
     keys { -pad_left -pad_right } \
-    flags {} ;# checker off
+    flags { -unplaced_macros_as_fixed }
 
   set uniform_density 0
   if { [ord::db_has_core_rows] } {
