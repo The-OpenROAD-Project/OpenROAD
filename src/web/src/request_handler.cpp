@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <any>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -58,6 +59,7 @@
 #include "timing_report.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
+#include "utl/random_bytes.h"
 #include "web/core.h"
 #include "web/descriptor_registry.h"
 #include "web/heatMap.h"
@@ -333,6 +335,23 @@ std::string assetPathFromTarget(const std::string_view target)
   return path;
 }
 
+namespace {
+
+// Constant time in the length of `expected`: stopping at the first mismatch
+// would tell a guesser how much of it was right.
+bool constantTimeEquals(const std::string_view got,
+                        const std::string_view expected)
+{
+  unsigned char diff = got.size() == expected.size() ? 0 : 1;
+  for (std::size_t i = 0; i < expected.size(); ++i) {
+    const unsigned char a = i < got.size() ? got[i] : 0;
+    diff |= a ^ static_cast<unsigned char>(expected[i]);
+  }
+  return diff == 0;
+}
+
+}  // namespace
+
 bool acceptsGzip(const std::string_view accept_encoding)
 {
   namespace beast = boost::beast;
@@ -407,11 +426,10 @@ bool webSocketOriginAllowed(const std::string_view origin,
   // This gates the BROWSER cross-site vector only: a page's JavaScript cannot
   // forge its Origin, so a foreign page is rejected below.  A non-browser
   // client controls every header (it can omit Origin or spoof any value), so
-  // this check cannot authenticate one — that requires binding to loopback
-  // (issue #11167, F-02), on which this guard depends.
+  // this check cannot authenticate one — the access token does.
   //
   // Absent Origin: browsers always send it on a WS handshake, so its absence
-  // is a non-browser client; allow it (F-02 is what keeps such a client local).
+  // is a non-browser client; allow it here and let the token decide.
   if (origin.empty()) {
     return true;
   }
@@ -477,6 +495,66 @@ std::string browserHostForBind(const boost::asio::ip::address& address)
   }
   const std::string literal = address.to_string();
   return address.is_v6() ? "[" + literal + "]" : literal;
+}
+
+std::string urlDecode(const std::string_view s)
+{
+  std::string out;
+  out.reserve(s.size());
+  for (std::size_t i = 0; i < s.size(); ++i) {
+    if (s[i] == '%' && i + 2 < s.size()) {
+      unsigned value = 0;
+      if (parseIntExact(s.substr(i + 1, 2), value, 16)) {
+        out.push_back(static_cast<char>(value));
+        i += 2;
+        continue;
+      }
+      // Not valid hex: keep the literal '%'.
+    }
+    out.push_back(s[i] == '+' ? ' ' : s[i]);
+  }
+  return out;
+}
+
+namespace {
+
+// The query of a request target, without the '?'.  Empty when there is none.
+std::string_view queryOf(const std::string_view target)
+{
+  const auto pos = target.find('?');
+  return pos == std::string_view::npos ? std::string_view()
+                                       : target.substr(pos + 1);
+}
+
+// Call `fn` with each "k=v" of a query.  One definition so the parsing side
+// and the redirect side cannot disagree on what separates a pair.
+template <typename Fn>
+void forEachQueryPair(const std::string_view query, Fn fn)
+{
+  std::size_t start = 0;
+  while (start < query.size()) {
+    std::size_t amp = query.find('&', start);
+    if (amp == std::string_view::npos) {
+      amp = query.size();
+    }
+    fn(query.substr(start, amp - start));
+    start = amp + 1;
+  }
+}
+
+}  // namespace
+
+std::map<std::string, std::string> parseQuery(const std::string_view target)
+{
+  std::map<std::string, std::string> params;
+  forEachQueryPair(queryOf(target), [&params](const std::string_view kv) {
+    const std::size_t eq = kv.find('=');
+    if (eq != std::string_view::npos) {
+      params.emplace(std::string(kv.substr(0, eq)),
+                     urlDecode(kv.substr(eq + 1)));
+    }
+  });
+  return params;
 }
 
 void joinUnlessSelf(std::thread& t)
@@ -653,9 +731,12 @@ BrowserLaunch browserLaunchFromString(const std::string_view mode)
 std::string reachabilityHint(const BindAddressKind kind,
                              const boost::asio::ip::address& address,
                              const std::string_view host,
-                             const uint16_t port)
+                             const uint16_t port,
+                             const std::string_view target)
 {
   const std::string port_str = std::to_string(port);
+  const std::string other_url
+      = otherMachineUrl(kind, address, host, port, target);
   if (kind == BindAddressKind::kLoopback) {
     // The far end of the tunnel is the address the listener is actually on:
     // 127.0.0.0/8 is all loopback, and "localhost" is only one of it.
@@ -663,20 +744,122 @@ std::string reachabilityHint(const BindAddressKind kind,
     std::string hint
         = "To reach it from another machine, forward the port: ssh -L "
           + port_str + ":" + far_end + ":" + port_str + " " + std::string(host);
-    // ssh listens on localhost there, not on the address in the url above.
-    if (far_end != "localhost") {
-      hint += ", then open http://localhost:" + port_str;
+    if (!other_url.empty()) {
+      hint += ", then open " + other_url;
     }
     return hint;
+  }
+  if (!other_url.empty()) {
+    return "From another machine, reach it at " + other_url;
+  }
+  // The URL already carries the address it is listening on.
+  return "That url is reachable from other machines.";
+}
+
+std::string otherMachineUrl(const BindAddressKind kind,
+                            const boost::asio::ip::address& address,
+                            const std::string_view host,
+                            const uint16_t port,
+                            const std::string_view target)
+{
+  const std::string port_str = std::to_string(port);
+  if (kind == BindAddressKind::kLoopback) {
+    // ssh listens on localhost there, not on the address in the url above.
+    if (browserHostForBind(address) == "localhost") {
+      return {};
+    }
+    return "http://localhost:" + port_str + std::string(target);
   }
   if (address.is_unspecified()) {
     // Bound to every interface, but browserHostForBind() had no address to
     // name and said "localhost", which is this machine only.
-    return "From another machine, reach it at http://" + std::string(host) + ":"
-           + port_str;
+    return "http://" + std::string(host) + ":" + port_str + std::string(target);
   }
-  // The URL already carries the address it is listening on.
-  return "That url is reachable from other machines.";
+  return {};
+}
+
+std::string generateAuthToken()
+{
+  std::vector<std::uint8_t> bytes;
+  if (!utl::randomBytes(16, bytes)) {  // 128 bits
+    return {};
+  }
+  return utl::toHex(bytes.data(), bytes.size());
+}
+
+bool tokenAllowed(const std::map<std::string, std::string>& params,
+                  const std::string_view expected)
+{
+  if (expected.empty()) {
+    return false;
+  }
+  const auto it = params.find("token");
+  return it != params.end() && constantTimeEquals(it->second, expected);
+}
+
+bool requestTokenAllowed(const std::string_view target,
+                         const std::string_view expected)
+{
+  return tokenAllowed(parseQuery(target), expected);
+}
+
+std::string authRedirectTarget(const std::string_view target,
+                               const std::string_view token)
+{
+  const auto query_pos = target.find('?');
+  const std::string_view path = query_pos == std::string_view::npos
+                                    ? target
+                                    : target.substr(0, query_pos);
+
+  // Everything but the ticket is copied byte for byte, still percent-encoded.
+  std::string kept;
+  forEachQueryPair(queryOf(target), [&kept](const std::string_view pair) {
+    if (pair.empty() || pair == "ticket" || pair.starts_with("ticket=")) {
+      return;
+    }
+    if (!kept.empty()) {
+      kept += '&';
+    }
+    kept.append(pair);
+  });
+
+  std::string redirect(path.empty() ? std::string_view("/") : path);
+  redirect += "?token=";
+  redirect.append(token);
+  if (!kept.empty()) {
+    redirect += '&';
+    redirect += kept;
+  }
+  return redirect;
+}
+
+SessionAuth::SessionAuth(std::string token,
+                         std::string ticket,
+                         const std::chrono::seconds ticket_ttl)
+    : token_(std::move(token)),
+      ticket_(std::move(ticket)),
+      expiry_(std::chrono::steady_clock::now() + ticket_ttl)
+{
+}
+
+TicketUse SessionAuth::redeemTicket(const std::string_view candidate)
+{
+  if (candidate.empty() || !constantTimeEquals(candidate, ticket_)) {
+    return TicketUse::kRefused;
+  }
+  auto live = TicketState::kLive;
+  if (std::chrono::steady_clock::now() < expiry_
+      && ticket_state_.compare_exchange_strong(live, TicketState::kRedeemed)) {
+    return TicketUse::kRedeemed;
+  }
+  return ticket_state_ == TicketState::kRedeemed ? TicketUse::kReused
+                                                 : TicketUse::kRefused;
+}
+
+void SessionAuth::revokeTicket()
+{
+  auto live = TicketState::kLive;
+  ticket_state_.compare_exchange_strong(live, TicketState::kRevoked);
 }
 
 WebSocketResponse errorResponse(const uint32_t id,

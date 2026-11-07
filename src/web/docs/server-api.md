@@ -17,13 +17,34 @@ WebSocket carries a small binary framing with JSON or PNG payloads.
 - HTTP `GET` serves the three assets embedded in the binary: `/` (or
   `/index.html`), `/app.min.js`, and `/THIRD_PARTY_LICENSES.txt`. A query
   string or fragment is ignored. `GET /download/image` renders a PNG of
-  the layout from its query parameters. Anything else is 404, and no
-  method other than GET is supported.
+  the layout from its query parameters. No method other than GET is
+  supported. A path with no embedded asset needs the token (see below) and
+  answers 401 without one, 404 with it — the gate is deny-by-default, so a
+  route added later cannot be left open by accident.
 - The assets are stored gzipped. When `Accept-Encoding` allows
   gzip (`gzip`, `x-gzip` or `*`, not at `q=0`; an explicit `gzip` entry
   wins over `*`), the stored bytes go out with `Content-Encoding: gzip`;
   otherwise the server inflates them first. Every asset response carries
   `Vary: Accept-Encoding` and `Cache-Control: no-store`.
+- Each session mints an access token and prints the url carrying it
+  (`http://<host>:<port>/?token=<hex>`) to stdout; the logger gets it
+  redacted. `web_server -token <hex>` supplies the token instead, and then it
+  is not printed at all. Pass it as the `token` query
+  parameter on the WebSocket upgrade, on `GET /` and on
+  `GET /download/image`; without it those are answered with 401. Every
+  401 carries `WWW-Authenticate: OpenROAD-Token`, by which the viewer tells
+  the server's refusal from a proxy's. The other assets are not gated. A new
+  `web_server` mints a new token.
+- The session also mints a single-use `ticket`, used only to launch the
+  browser without the token on a command line. `GET /?ticket=<hex>` answers
+  `302` with `Location: /?token=<hex>` (other query parameters are carried
+  over) and the ticket is spent; a second use, one after five minutes, or one
+  after the launch it was minted for failed or was skipped, gets 401. A
+  second use also logs `WEB-0129` and says so in the 401's body. A
+  ticket is not accepted on the WebSocket or on the image download. An
+  alternate client has no reason to use one — it has the token. Because it
+  is handed over on the browser's command line, a ticket is readable by
+  other users of that machine until it is redeemed.
 - `GET /download/image` answers 404 when no design is loaded, 400 for a
   malformed `bbox`, and 500 when the render fails.
 - The WebSocket upgrade is also at the root path. Once upgraded, all

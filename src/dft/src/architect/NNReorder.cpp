@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "Opt.hh"
+#include "NNReorder.hh"
 
 #include <cstddef>
 #include <cstdint>
@@ -28,7 +28,7 @@ namespace {
 constexpr int kMaxCellsToSearch = 10;
 }  // namespace
 
-void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
+void NearestNeighborReorder(std::vector<std::unique_ptr<ScanCell>>& cells,
                             utl::Logger* logger)
 {
   // Nothing to order
@@ -52,8 +52,8 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
   for (size_t i = 0; i < cells.size(); i++) {
     // Find the lower leftmost cell by looking for the cell with the lowest
     // manhattan distance to the origin
-    auto origin = cells[i]->getOrigin();
-    const int64_t dist = origin.x() + origin.y();
+    const auto origin = cells[i]->getOrigin();
+    const int64_t dist = static_cast<int64_t>(origin.x()) + origin.y();
     if (dist < lowest_dist) {
       start_index = i;
       lowest_dist = dist;
@@ -65,7 +65,7 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
   bgi::rtree<std::pair<Point, size_t>, bgi::rstar<4>> rtree(transformed);
   auto cursor = transformed[start_index];
 
-  // Search nearest neighbours
+  // Search nearest neighbors
   std::vector<std::unique_ptr<ScanCell>> result;
   result.emplace_back(std::move(cells[cursor.second]));
   while (result.size() < cells.size()) {

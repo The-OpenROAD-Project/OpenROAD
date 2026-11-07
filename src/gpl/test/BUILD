@@ -214,7 +214,6 @@ cc_test(
         "//src/gpl:gpl_impl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        "@spdlog",
     ],
 )
 
@@ -429,6 +428,32 @@ cc_test(
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "overflow_test",
+    srcs = ["overflow_test.cpp"],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/gpl:gpl_impl",
+        "//src/odb/src/db",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "wirelength_gradient_test",
+    srcs = ["wirelength_gradient_test.cpp"],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/gpl:gpl_impl",
+        "//src/odb/src/db",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

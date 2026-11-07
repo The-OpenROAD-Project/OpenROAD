@@ -292,6 +292,14 @@ html[data-theme="light"] {
 .or-view.label-mode-cursor {
     cursor: crosshair;
 }
+
+/* While a request the user waits on runs (withBusyCursor in ui-utils.js):
+   the progress cursor everywhere, the layout view included, whose cursor the
+   view sets inline. */
+body.op-busy,
+body.op-busy * {
+    cursor: progress !important;
+}
 .ruler-label {
     background: var(--bg-hud);
     color: var(--fg-hud);
@@ -2454,6 +2462,14 @@ body.is-resizing-h * {
     padding: 6px 8px;
     border-bottom: 1px solid var(--border-subtle);
     flex-shrink: 0;
+}
+
+.timing-expand-clock {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: var(--fs-12);
+    user-select: none;
 }
 
 .timing-path-count {

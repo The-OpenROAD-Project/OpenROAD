@@ -311,6 +311,10 @@ void Opendp::detailedPlacement(const int max_displacement_x,
     findDisplacementStats();
     updateDbInstLocations();
   }
+  // A pixel per site of the core: every command that reads them makes them
+  // again (initGrid), and on a large die they are tens of GB that the
+  // steps after placement would otherwise start on.
+  grid_->releasePixels();
   const double runtime = timer.elapsed();
   if (quiet_) {
     reportLegalizationSummary(runtime);
