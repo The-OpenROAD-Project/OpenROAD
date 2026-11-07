@@ -16,6 +16,7 @@ TESTS = [
     "retime_dsec_loop",
     "retime_dsec_plain",
     "retime_gated_clock",
+    "retime_hierarchical",
     "retime_input_limit",
     "retime_input_path",
     "retime_latch",

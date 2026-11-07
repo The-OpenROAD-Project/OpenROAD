@@ -701,24 +701,29 @@ SequentialUnmapper::RegPins SequentialUnmapper::getRegPins(
   return pins;
 }
 
-// The design may already hold names from an earlier run.
+// New cells and nets go through dbNetwork, which keeps their names unique
+// in the block (an earlier run may have left unmap_* names behind) and
+// creates them under the top instance; retime rejects hierarchical
+// netlists before it gets here.
 odb::dbNet* SequentialUnmapper::newNet(const char* base_name)
 {
-  std::string name;
-  do {
-    name = std::string(base_name) + "_" + std::to_string(uniquify_++);
-  } while (block_->findNet(name.c_str()) != nullptr);
-  return odb::dbNet::create(block_, name.c_str());
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  return network->staToDb(
+      network->makeNet(base_name,
+                       network->topInstance(),
+                       odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE));
 }
 
 odb::dbInst* SequentialUnmapper::newInst(const char* base_name,
                                          odb::dbMaster* master)
 {
-  std::string name;
-  do {
-    name = std::string(base_name) + "_" + std::to_string(uniquify_++);
-  } while (block_->findInst(name.c_str()) != nullptr);
-  odb::dbInst* inst = odb::dbInst::create(block_, master, name.c_str());
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  const std::string name = block_->makeNewInstName(
+      nullptr, base_name, odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
+  sta::LibertyCell* cell = network->libertyCell(network->dbToSta(master));
+  odb::dbInst* inst = network->staToDb(
+      network->makeInstance(cell, name, network->topInstance()));
+  inst->setSourceType(odb::dbSourceType::TIMING);
   created_.push_back(inst);
   return inst;
 }

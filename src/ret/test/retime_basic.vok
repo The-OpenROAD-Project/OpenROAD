@@ -12,7 +12,7 @@ module top (a,
  wire n2;
  wire n3;
  wire n4;
- wire ret_net_0;
+ wire ret_net_1;
  wire q2;
 
  AND2_X1 g0 (.A1(a),
@@ -24,14 +24,14 @@ module top (a,
     .ZN(n2));
  INV_X1 g3 (.A(n2),
     .ZN(n3));
- INV_X1 g4 (.A(ret_net_0),
+ INV_X1 g4 (.A(ret_net_1),
     .ZN(n4));
  BUF_X1 g5 (.A(q2),
     .Z(y));
  DFF_X1 r2 (.D(n4),
     .CK(clk),
     .Q(q2));
- DFF_X1 ret_ff_0 (.D(n3),
+ DFF_X1 ret_ff_1 (.D(n3),
     .CK(clk),
-    .Q(ret_net_0));
+    .Q(ret_net_1));
 endmodule

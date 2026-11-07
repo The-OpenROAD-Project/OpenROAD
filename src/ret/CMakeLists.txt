@@ -24,6 +24,8 @@ target_link_libraries(ret_lib
     odb
   PRIVATE
     dbSta
+    dpl_lib
+    est_lib
     OpenSTA
     utl_lib
 )

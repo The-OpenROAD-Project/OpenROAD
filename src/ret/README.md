@@ -24,8 +24,9 @@ move that pushes one past the clock period is rejected.
 
 Only the register groups whose edge weights changed are rebuilt; every
 other cell keeps its placement. New registers are placed at the centroid of
-the registers they replace, not legalized: run `detailed_placement` and
-re-estimate parasitics afterwards.
+the registers they replace and legalized only when parasitics come from a
+routing, as the resizer does; otherwise run `detailed_placement` afterwards.
+Estimated parasitics of the nets that changed are refreshed.
 
 Registers move by class, read from the liberty `next_state` function:
 
@@ -59,7 +60,8 @@ retime
 New instances are named `ret_ff_N` and new nets `ret_net_N`. The log shows
 one line per accepted move. `retime` stops with an error on designs it
 cannot handle: libraries without a usable base register, inverter, AND2 or
-OR2 cell; more than one clock; negative-edge registers; no clock defined.
+OR2 cell; more than one clock; negative-edge registers; no clock defined; a
+hierarchical netlist (`link_design -hier`).
 
 ## Example scripts
 
@@ -82,6 +84,7 @@ Simply run the following script:
 
 - Forward moves only; a register never moves backward across a gate.
 - One clock domain.
+- Flat netlists only.
 - The path into an enable pin is not in the delay model.
 - Registers of different cells on the same enable net are different
   classes and are unmapped when merged; so is an inverting register

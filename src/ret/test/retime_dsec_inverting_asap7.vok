@@ -48,13 +48,13 @@ module top (a,
  wire q3n;
  wire q6;
  wire q6n;
- wire ret_net_2;
- wire ret_net_1;
- wire ret_net_0;
+ wire ret_net_7;
+ wire ret_net_6;
+ wire ret_net_5;
  wire qm;
  wire qmn;
- wire unmap_net_3;
- wire unmap_net_7;
+ wire unmap_net_2;
+ wire unmap_net_4;
 
  AND2x2_ASAP7_75t_R g0 (.A(a),
     .B(rst_n),
@@ -67,8 +67,8 @@ module top (a,
  AND2x2_ASAP7_75t_R g11 (.A(c),
     .B(rst_n),
     .Y(d5));
- NAND2xp5_ASAP7_75t_R g12 (.A(unmap_net_3),
-    .B(unmap_net_7),
+ NAND2xp5_ASAP7_75t_R g12 (.A(unmap_net_2),
+    .B(unmap_net_4),
     .Y(m1));
  INVx1_ASAP7_75t_R g13 (.A(m1),
     .Y(m2));
@@ -78,7 +78,7 @@ module top (a,
     .Y(m4));
  INVx1_ASAP7_75t_R g16 (.A(m4),
     .Y(m5));
- AND2x2_ASAP7_75t_R g17 (.A(ret_net_1),
+ AND2x2_ASAP7_75t_R g17 (.A(ret_net_6),
     .B(rst_n),
     .Y(d6));
  INVx1_ASAP7_75t_R g18 (.A(q6n),
@@ -106,7 +106,7 @@ module top (a,
     .Y(j3));
  INVx1_ASAP7_75t_R g26 (.A(j3),
     .Y(j4));
- AND2x2_ASAP7_75t_R g27 (.A(ret_net_0),
+ AND2x2_ASAP7_75t_R g27 (.A(ret_net_5),
     .B(rst_n),
     .Y(dm));
  INVx1_ASAP7_75t_R g28 (.A(qmn),
@@ -119,7 +119,7 @@ module top (a,
     .Y(n4));
  INVx1_ASAP7_75t_R g5 (.A(n4),
     .Y(n5));
- AND2x2_ASAP7_75t_R g6 (.A(ret_net_2),
+ AND2x2_ASAP7_75t_R g6 (.A(ret_net_7),
     .B(rst_n),
     .Y(d3));
  INVx1_ASAP7_75t_R g7 (.A(q3n),
@@ -135,17 +135,17 @@ module top (a,
  DFFHQNx1_ASAP7_75t_R r6 (.CLK(clk),
     .D(d6),
     .QN(q6n));
- DFFHQNx1_ASAP7_75t_R ret_ff_0 (.CLK(clk),
+ DFFHQNx1_ASAP7_75t_R ret_ff_5 (.CLK(clk),
     .D(j4),
-    .QN(ret_net_0));
- DFFHQx4_ASAP7_75t_R ret_ff_1 (.CLK(clk),
+    .QN(ret_net_5));
+ DFFHQx4_ASAP7_75t_R ret_ff_6 (.CLK(clk),
     .D(m5),
-    .Q(ret_net_1));
- DFFHQNx1_ASAP7_75t_R ret_ff_2 (.CLK(clk),
+    .Q(ret_net_6));
+ DFFHQNx1_ASAP7_75t_R ret_ff_7 (.CLK(clk),
     .D(n5),
-    .QN(ret_net_2));
+    .QN(ret_net_7));
  INVx1_ASAP7_75t_R unmap_inv_2 (.A(d4),
-    .Y(unmap_net_3));
- INVx1_ASAP7_75t_R unmap_inv_6 (.A(d5),
-    .Y(unmap_net_7));
+    .Y(unmap_net_2));
+ INVx1_ASAP7_75t_R unmap_inv_4 (.A(d5),
+    .Y(unmap_net_4));
 endmodule

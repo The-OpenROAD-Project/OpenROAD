@@ -14,6 +14,13 @@
 namespace sta {
 class dbSta;
 }
+namespace dpl {
+class Opendp;
+}
+namespace est {
+class EstimateParasitics;
+class IncrementalParasiticsGuard;
+}  // namespace est
 namespace utl {
 class Logger;
 }
@@ -45,11 +52,16 @@ struct RegisterClass;
 class Retimer
 {
  public:
-  Retimer(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
+  Retimer(odb::dbDatabase* db,
+          sta::dbSta* sta,
+          dpl::Opendp* opendp,
+          est::EstimateParasitics* estimate_parasitics,
+          utl::Logger* logger);
   ~Retimer();
 
   // retime: max_moves <= 0 is unlimited.  Errors out on designs it cannot
-  // retime yet: missing base cells, several clocks, negative-edge registers.
+  // retime yet: missing base cells, several clocks, negative-edge registers,
+  // a hierarchical netlist.
   void retime(int max_moves);
 
  private:
@@ -138,7 +150,8 @@ class Retimer
   void applyAfterUnmapping(const RetimingGraph& graph,
                            const std::vector<int>& r,
                            const std::unordered_set<odb::dbInst*>& movers,
-                           int max_moves);
+                           int max_moves,
+                           est::IncrementalParasiticsGuard& guard);
   void applyRetiming(const RetimingGraph& graph, const std::vector<int>& r);
   // Class of every position of the chain that replaces `group`, counted
   // from the driver: nullptr for the base cell.  Errors out when the
@@ -167,13 +180,14 @@ class Retimer
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
+  dpl::Opendp* opendp_ = nullptr;
+  est::EstimateParasitics* estimate_parasitics_ = nullptr;
   utl::Logger* logger_ = nullptr;
   std::unique_ptr<SequentialUnmapper> unmapper_;
 
   odb::dbMaster* dff_master_ = nullptr;
   odb::dbMTerm* dff_q_mterm_ = nullptr;
   odb::dbNet* clock_net_ = nullptr;  // first register's clock net
-  int uniquify_ = 0;
 };
 
 }  // namespace ret

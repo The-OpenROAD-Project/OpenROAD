@@ -17,10 +17,14 @@
 #include "RegisterUtils.h"
 #include "Retime.h"
 #include "RetimingGraph.h"
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "dpl/Opendp.h"
+#include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "ret/SequentialUnmapper.h"
+#include "sta/Liberty.hh"
 #include "utl/Logger.h"
 
 namespace ret {
@@ -121,9 +125,15 @@ bool chainLocation(const std::unordered_set<odb::dbInst*>& flops,
 
 }  // namespace
 
-Retimer::Retimer(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
+Retimer::Retimer(odb::dbDatabase* db,
+                 sta::dbSta* sta,
+                 dpl::Opendp* opendp,
+                 est::EstimateParasitics* estimate_parasitics,
+                 utl::Logger* logger)
     : db_(db),
       sta_(sta),
+      opendp_(opendp),
+      estimate_parasitics_(estimate_parasitics),
       logger_(logger),
       unmapper_(std::make_unique<SequentialUnmapper>(db, sta, logger))
 {
@@ -144,6 +154,12 @@ odb::dbBlock* Retimer::getBlock()
 void Retimer::retime(int max_moves)
 {
   odb::dbBlock* block = getBlock();
+  if (sta_->getDbNetwork()->hasHierarchy()) {
+    logger_->error(utl::RET,
+                   42,
+                   "Hierarchical netlists are not supported yet; link the "
+                   "design without -hier.");
+  }
   if (!unmapper_->prepare()) {
     logger_->error(
         utl::RET,
@@ -164,6 +180,11 @@ void Retimer::retime(int max_moves)
   }
   clock_net_ = findClockNet(block);
 
+  // Every netlist edit below marks the nets it touches, and their estimated
+  // parasitics are refreshed before the next search and when the guard
+  // goes out of scope.
+  est::IncrementalParasiticsGuard guard(estimate_parasitics_);
+
   Retime search(&graph, sta_, logger_, dff_master_);
   search.run(max_moves);
   const std::vector<int> r = search.getRetiming();
@@ -172,7 +193,7 @@ void Retimer::retime(int max_moves)
   if (movers.empty()) {
     applyRetiming(graph, r);
   } else {
-    applyAfterUnmapping(graph, r, movers, max_moves);
+    applyAfterUnmapping(graph, r, movers, max_moves, guard);
   }
 }
 
@@ -183,7 +204,8 @@ void Retimer::applyAfterUnmapping(
     const RetimingGraph& graph,
     const std::vector<int>& r,
     const std::unordered_set<odb::dbInst*>& movers,
-    int max_moves)
+    int max_moves,
+    est::IncrementalParasiticsGuard& guard)
 {
   std::map<unsigned, odb::dbInst*> ordered_movers;
   for (odb::dbInst* mover : movers) {
@@ -206,6 +228,7 @@ void Retimer::applyAfterUnmapping(
     lag[graph.nodes_[i]] = r[i];
   }
   unmapper_->run(&movers);
+  guard.update();
 
   RetimingGraph graph2(db_, sta_, logger_);
   graph2.build();
@@ -233,6 +256,7 @@ void Retimer::applyAfterUnmapping(
       return;
     }
     unmapper_->run(&more);
+    guard.update();
   }
   logger_->error(utl::RET,
                  37,
@@ -547,36 +571,53 @@ void Retimer::removeRegister(odb::dbInst* inst)
 // A chain of registers fed by driver_net; nets[k] is the net after the k-th
 // register.  Position k is the base cell, or the cell of classes[k-1] with
 // its data pin on the chain, its enable pins on the class nets and its
-// output pin feeding on.  New registers start at `location` (the spot of the
+// output pin feeding on.  New cells are created next to the gate driving
+// driver_net (its parent instance, the top level in a flat netlist) with
+// names the block makes unique, and start at `location` (the spot of the
 // registers they replace) so detailed placement can legalize them; detailed
-// placement skips unplaced instances.
+// placement skips unplaced instances.  With routed parasitics the cells are
+// legalized here, as the resizer does.
 std::vector<odb::dbNet*> Retimer::buildChain(
     odb::dbNet* driver_net,
     odb::dbNet* clock_net,
     const std::vector<const RegisterClass*>& classes,
     const odb::Point* location)
 {
-  odb::dbBlock* block = getBlock();
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  odb::dbITerm* source = driver_net->getFirstOutput();
+  sta::Instance* parent
+      = source != nullptr
+            ? network->getOwningInstanceParent(network->dbToSta(source))
+            : network->topInstance();
+  odb::dbModInst* parent_mod_inst = network->getModInst(parent);
+  const est::ParasiticsSrc parasitics_src
+      = estimate_parasitics_->getParasiticsSrc();
+  const bool legalize
+      = parasitics_src == est::ParasiticsSrc::kGlobalRouting
+        || parasitics_src == est::ParasiticsSrc::kDetailedRouting;
+
   const int depth = static_cast<int>(classes.size());
   std::vector<odb::dbNet*> nets(depth + 1);
   nets[0] = driver_net;
   for (int k = 1; k <= depth; k++) {
     const RegisterClass* cls = classes[k - 1];
     odb::dbMaster* master = cls != nullptr ? cls->master : dff_master_;
-    // The design may already hold names from an earlier retime run.
-    std::string ff_name;
-    std::string net_name;
-    do {
-      ff_name = "ret_ff_" + std::to_string(uniquify_);
-      net_name = "ret_net_" + std::to_string(uniquify_);
-      uniquify_++;
-    } while (block->findInst(ff_name.c_str()) != nullptr
-             || block->findNet(net_name.c_str()) != nullptr);
-    odb::dbInst* ff = odb::dbInst::create(block, master, ff_name.c_str());
-    odb::dbNet* out = odb::dbNet::create(block, net_name.c_str());
+    sta::LibertyCell* cell = network->libertyCell(network->dbToSta(master));
+    const std::string name = getBlock()->makeNewInstName(
+        parent_mod_inst,
+        "ret_ff",
+        odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
+    odb::dbInst* ff
+        = network->staToDb(network->makeInstance(cell, name, parent));
+    ff->setSourceType(odb::dbSourceType::TIMING);
+    odb::dbNet* out = network->staToDb(network->makeNet(
+        "ret_net", parent, odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE));
     if (location != nullptr) {
       ff->setLocation(location->x(), location->y());
       ff->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+      if (legalize) {
+        opendp_->legalCellPos(ff);
+      }
     }
     for (odb::dbITerm* iterm : ff->getITerms()) {
       if (iterm->getSigType() == odb::dbSigType::CLOCK) {

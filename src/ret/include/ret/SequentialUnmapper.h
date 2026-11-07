@@ -105,7 +105,6 @@ class SequentialUnmapper
   const sta::LibertyPort* out_inv_port_ = nullptr;
   odb::dbNet* state_net_ = nullptr;
   std::vector<odb::dbInst*> created_;  // cells made for this register
-  int uniquify_ = 0;
 
   int unmapped_ = 0;
   int skipped_ = 0;

@@ -37,8 +37,8 @@ worst slack max 0.7256
  Slide |  Worst arr | Flops | Sinks | Max wr | gate                 | fanout net
 --------------------------------------------------------------------------------
      1 |  9.797e-11 |     3 |     2 |      1 | g23                  | fc
-     2 |  9.551e-11 |     1 |     1 |      1 | unmap_inv_6          | unmap_net_7
-     3 |  8.539e-11 |     1 |     1 |      1 | unmap_inv_2          | unmap_net_3
+     2 |  9.551e-11 |     1 |     1 |      1 | unmap_inv_4          | unmap_net_4
+     3 |  8.539e-11 |     1 |     1 |      1 | unmap_inv_2          | unmap_net_2
      4 |  8.424e-11 |     0 |     1 |      1 | g12                  | m1
      5 |  6.991e-11 |     1 |     1 |      1 | g1                   | n1
      6 |  6.881e-11 |     0 |     1 |      1 | g13                  | m2
