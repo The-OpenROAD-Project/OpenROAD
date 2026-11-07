@@ -30,12 +30,13 @@ class TechLayer;
 class GridComponent
 {
  public:
-  enum Type
+  enum Type : int
   {
     kRing,
     kStrap,
     kFollowpin,
     kPadConnect,
+    kMacroEdgeConnect,
     kRepairChannel
   };
 

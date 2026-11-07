@@ -1752,7 +1752,6 @@ class extMain
 
   bool makeRCNetwork_v2();
   bool couplingExtEnd_v2();
-  void update_wireAltered_v2(std::vector<odb::dbNet*>& inets);
   void initSomeValues_v2();
   bool SetCornersAndReadModels_v2(const char* extRules);
   double getDbFactor_v2();

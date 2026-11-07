@@ -66,12 +66,14 @@ Path Type: max
 ------------------------------------------------------------------------------------------------------------------------------
 [DEBUG RSZ-repair_setup] STARTPOINT_FANOUT+ Phase: Processing 1 violating startpoints
 [DEBUG RSZ-repair_setup] STARTPOINT_FANOUT+ Phase: Processing startpoint r1/Q (index 0), slack = -0.196
+[DEBUG RSZ-repair_setup] Considering UnbufferMove for u4/Z
+[DEBUG RSZ-repair_setup] STARTPOINT_FANOUT+ Phase: Threshold 1/3: startpoint slack -0.196 -> -0.126 (imp: 0.071), WNS -0.196 -> -0.126, TNS -0.2 -> -0.1, StTNS -0.2 -> -0.1 [ACCEPT]
 [DEBUG RSZ-repair_setup] STARTPOINT_FANOUT+ Phase: Startpoint r1/Q reached pass limit 1, moving to next startpoint
-       2+ |       1 |       1 |        0 |      0 |     0 |    -0.5% |   -0.196 |       -0.2 |       -0.2 |      4 | r1/Q
-[DEBUG RSZ-repair_setup] STARTPOINT_FANOUT+ Phase complete. Startpoints processed: 1, WNS: -0.196, TNS: -0.2
-    final |       1 |       1 |        0 |      0 |     0 |    -0.5% |   -0.196 |       -0.2 |       -0.2 |      1 | r2/D
+       2+ |       2 |       1 |        0 |      0 |     0 |    -1.8% |   -0.126 |       -0.1 |       -0.1 |      4 | r1/Q
+[DEBUG RSZ-repair_setup] STARTPOINT_FANOUT+ Phase complete. Startpoints processed: 1, WNS: -0.126, TNS: -0.1
+    final |       2 |       1 |        0 |      0 |     0 |    -1.8% |   -0.126 |       -0.1 |       -0.1 |      1 | r2/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 1 buffers.
+[INFO RSZ-0059] Removed 2 buffers.
 [INFO RSZ-0051] Resized 1 instances: 1 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
@@ -91,22 +93,20 @@ Path Type: max
    0.002    0.224 ^ u2/A (BUF_X1)
    0.042    0.266 ^ u2/Z (BUF_X1)
    0.002    0.268 ^ u3/A (BUF_X1)
-   0.042    0.310 ^ u3/Z (BUF_X1)
-   0.002    0.312 ^ u4/A (BUF_X1)
-   0.103    0.415 ^ u4/Z (BUF_X1)
-   0.035    0.450 ^ r2/D (DFF_X1)
-            0.450   data arrival time
+   0.090    0.358 ^ u3/Z (BUF_X1)
+   0.023    0.382 ^ r2/D (DFF_X1)
+            0.382   data arrival time
 
    0.300    0.300   clock clk (rise edge)
    0.000    0.300   clock network delay (ideal)
    0.000    0.300   clock reconvergence pessimism
             0.300 ^ r2/CK (DFF_X1)
-  -0.046    0.254   library setup time
-            0.254   data required time
+  -0.044    0.256   library setup time
+            0.256   data required time
 -----------------------------------------------------------
-            0.254   data required time
-           -0.450   data arrival time
+            0.256   data required time
+           -0.382   data arrival time
 -----------------------------------------------------------
-           -0.196   slack (VIOLATED)
+           -0.126   slack (VIOLATED)
 
 

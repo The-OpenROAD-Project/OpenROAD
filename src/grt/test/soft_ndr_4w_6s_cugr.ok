@@ -48,19 +48,19 @@ Routing statistics
 Wire length:           2977
 Total via count:       139
 Total congestion:      0.00
-Min resource:          0.90
+Min resource:          0.95
 Bottleneck:            (3, 15, 21)
 [INFO GRT-0130] CUGR congestion report:
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
 --------------------------------------------------------------------------
 li1       V         0.00         0.00         0.00         0.00       0.00
-met1      H     13777.40       178.24        25.39       203.64       1.48
-met2      V     10785.50       112.69        11.26       123.94       1.15
-met3      H      4206.90        23.00         1.18        24.18       0.57
+met1      H     13777.40       178.24        18.84       197.08       1.43
+met2      V     10785.50       112.69        10.72       123.41       1.14
+met3      H      4206.90        23.00         0.82        23.82       0.57
 met4      V      3241.20        12.00         0.27        12.28       0.38
 met5      H      1413.40         0.00         0.00         0.00       0.00
 --------------------------------------------------------------------------
-Total           33424.40       325.93        38.11       364.04       1.09
+Total           33424.40       325.93        30.66       356.59       1.07
 [INFO GRT-0018] Total wirelength: 1663 um
 [INFO GRT-0014] Routed nets: 15
 No differences found.

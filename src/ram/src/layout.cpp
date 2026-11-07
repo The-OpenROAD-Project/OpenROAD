@@ -148,6 +148,11 @@ int Layout::getWidth() const
   return cell_width_;
 }
 
+void Layout::setMinWidth(const int width)
+{
+  cell_width_ = std::max(cell_width_, width);
+}
+
 //////////////////////////////////////////////////////////////
 
 Grid::Grid(odb::Orientation2D orientation) : orientation_(orientation)

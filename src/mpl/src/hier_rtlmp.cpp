@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -55,64 +56,59 @@ HierRTLMP::~HierRTLMP() = default;
 HierRTLMP::HierRTLMP(odb::dbDatabase* db,
                      utl::Logger* logger,
                      par::PartitionMgr* tritonpart)
-    : db_(db),
-      logger_(logger),
-      tritonpart_(tritonpart),
-      tree_(std::make_unique<PhysicalHierarchy>())
+    : db_(db), logger_(logger), tritonpart_(tritonpart)
 {
 }
 
 ///////////////////////////////////////////////////////////////////////////
 // Interfaces for setting up options
-// Options related to macro placement
 
-void HierRTLMP::setAreaWeight(float weight)
+// Applies every option accepted by the rtl_macro_placer command. Must run
+// after init() since it reads/writes tree_ and block_.
+void HierRTLMP::configure(int threads, const MacroPlacerOptions& options)
 {
-  placement_core_weights_.area = weight;
-}
+  num_threads_ = threads;
 
-void HierRTLMP::setOutlineWeight(float weight)
-{
-  placement_core_weights_.outline = weight;
-}
+  // Options related to macro placement
+  placement_core_weights_.area = options.area_weight;
+  placement_core_weights_.outline = options.outline_weight;
+  placement_core_weights_.wirelength = options.wirelength_weight;
+  placement_core_weights_.guidance = options.guidance_weight;
+  placement_core_weights_.fence = options.fence_weight;
 
-void HierRTLMP::setWirelengthWeight(float weight)
-{
-  placement_core_weights_.wirelength = weight;
-}
+  cluster_placement_weights_.boundary = options.boundary_weight;
+  cluster_placement_weights_.notch = options.notch_weight;
+  cluster_placement_weights_.soft_blockage = options.soft_blockage_weight;
 
-void HierRTLMP::setGuidanceWeight(float weight)
-{
-  placement_core_weights_.guidance = weight;
-}
-
-void HierRTLMP::setFenceWeight(float weight)
-{
-  placement_core_weights_.fence = weight;
-}
-
-void HierRTLMP::setBoundaryWeight(float weight)
-{
-  cluster_placement_weights_.boundary = weight;
-}
-
-void HierRTLMP::setNotchWeight(float weight)
-{
-  cluster_placement_weights_.notch = weight;
-}
-
-void HierRTLMP::setSoftBlockageWeight(float weight)
-{
-  cluster_placement_weights_.soft_blockage = weight;
-}
-
-void HierRTLMP::setGlobalFence(odb::Rect global_fence)
-{
-  if (global_fence.area() > 0) {
-    tree_->global_fence = global_fence;
+  if (options.global_fence.area() > 0) {
+    tree_->global_fence = options.global_fence;
   } else {
     tree_->global_fence = block_->getCoreArea();
   }
+
+  // Options related to clustering
+  tree_->base_max_macro = options.max_num_macro;
+  tree_->base_min_macro = options.min_num_macro;
+  tree_->base_max_std_cell = options.max_num_inst;
+  tree_->base_min_std_cell = options.min_num_inst;
+  tree_->cluster_size_tolerance = options.tolerance;
+  tree_->max_level = options.max_num_level;
+  tree_->cluster_size_ratio = options.coarsening_ratio;
+  tree_->large_net_threshold = options.large_net_threshold;
+
+  target_utilization_ = options.target_util;
+  min_ar_ = options.min_ar;
+
+  // Empty means reporting is off: skip creating a directory for it, and the
+  // writeNetFile/writeFloorplanFile/writeCostFile call sites skip writing.
+  report_directory_ = options.report_directory;
+  if (!report_directory_.empty()) {
+    std::filesystem::create_directories(report_directory_);
+  }
+
+  macro_placement_file_ = options.macro_placement_file;
+  keep_clustering_data_ = options.keep_clustering_data;
+  pin_aware_channels_ = options.pin_aware_channels;
 }
 
 void HierRTLMP::setMinChannelSize(int width, int height)
@@ -124,64 +120,6 @@ void HierRTLMP::setGuidanceRegions(
     const odb::PtrMap<odb::dbInst, odb::Rect>& guidance_regions)
 {
   guides_ = guidance_regions;
-}
-
-// Options related to clustering
-
-void HierRTLMP::setClusterSize(int max_num_macro,
-                               int min_num_macro,
-                               int max_num_inst,
-                               int min_num_inst)
-{
-  tree_->base_max_macro = max_num_macro;
-  tree_->base_min_macro = min_num_macro;
-  tree_->base_max_std_cell = max_num_inst;
-  tree_->base_min_std_cell = min_num_inst;
-}
-
-void HierRTLMP::setClusterSizeTolerance(float tolerance)
-{
-  tree_->cluster_size_tolerance = tolerance;
-}
-
-void HierRTLMP::setMaxNumLevel(int max_num_level)
-{
-  tree_->max_level = max_num_level;
-}
-
-void HierRTLMP::setClusterSizeRatioPerLevel(float coarsening_ratio)
-{
-  tree_->cluster_size_ratio = coarsening_ratio;
-}
-
-void HierRTLMP::setLargeNetThreshold(int large_net_threshold)
-{
-  tree_->large_net_threshold = large_net_threshold;
-}
-
-void HierRTLMP::setTargetUtil(float target_util)
-{
-  target_utilization_ = target_util;
-}
-
-void HierRTLMP::setMinAR(float min_ar)
-{
-  min_ar_ = min_ar;
-}
-
-void HierRTLMP::setReportDirectory(const char* report_directory)
-{
-  report_directory_ = report_directory;
-}
-
-void HierRTLMP::setKeepClusteringData(bool keep_clustering_data)
-{
-  keep_clustering_data_ = keep_clustering_data;
-}
-
-void HierRTLMP::setPinAwareChannels(bool pin_aware_channels)
-{
-  pin_aware_channels_ = pin_aware_channels;
 }
 
 // Top Level Function
@@ -237,7 +175,7 @@ void HierRTLMP::run()
 
   updateMacrosOnDb();
 
-  generateTemporaryStdCellsPlacement(tree_->root.get());
+  generateTemporaryStdCellsPlacement();
   correctAllMacrosOrientation();
 
   commitMacroPlacementToDb();
@@ -294,6 +232,10 @@ void HierRTLMP::blockMacroChannels()
 void HierRTLMP::init()
 {
   block_ = db_->getChip()->getBlock();
+  tree_ = std::make_unique<PhysicalHierarchy>();
+  skip_macro_placement_ = false;
+  placement_blockages_.clear();
+  io_blockages_.clear();
   clustering_engine_ = std::make_unique<ClusteringEngine>(
       block_, logger_, tritonpart_, graphics_.get());
 
@@ -308,11 +250,6 @@ void HierRTLMP::init()
 // Transform the logical hierarchy into a physical hierarchy.
 void HierRTLMP::runMultilevelAutoclustering()
 {
-  clustering_engine_ = std::make_unique<ClusteringEngine>(
-      block_, logger_, tritonpart_, graphics_.get());
-
-  // Set target structure
-  clustering_engine_->setTree(tree_.get());
   clustering_engine_->setChannel(min_channel_, pin_aware_channels_);
   clustering_engine_->run();
 
@@ -1370,7 +1307,8 @@ void HierRTLMP::placeChildren(Cluster* parent)
       = report_directory_ + "/"
         + std::regex_replace(
             parent->getName(), std::regex("[\":<>\\|\\*\\?/]"), "--");
-  if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 1)) {
+  if (!report_directory_.empty()
+      && logger_->debugCheck(MPL, "hierarchical_macro_placement", 1)) {
     writeNetFile(file_name_prefix, macros, nets);
   }
 
@@ -1520,8 +1458,10 @@ void HierRTLMP::placeChildren(Cluster* parent)
     logger_->report("Cluster Placement Summary");
     printPlacementResult(parent, outline, best_sa.get());
 
-    writeFloorplanFile(file_name_prefix, placed_macros);
-    writeCostFile(file_name_prefix, best_sa.get());
+    if (!report_directory_.empty()) {
+      writeFloorplanFile(file_name_prefix, placed_macros);
+      writeCostFile(file_name_prefix, best_sa.get());
+    }
   }
 
   updateChildrenShapesAndLocations(parent, placed_macros, soft_macro_id_map);
@@ -2246,59 +2186,59 @@ void HierRTLMP::updateChildrenRealLocation(Cluster* parent,
   }
 }
 
-void HierRTLMP::setTemporaryStdCellLocation(Cluster* cluster,
-                                            odb::dbInst* std_cell)
-{
-  const SoftMacro* soft_macro = cluster->getSoftMacro();
-
-  if (!soft_macro) {
-    return;
-  }
-
-  const int soft_macro_center_x_dbu = soft_macro->getPinX();
-  const int soft_macro_center_y_dbu = soft_macro->getPinY();
-
-  // Std cells are placed in the center of the cluster they belong to
-  std_cell->setLocation(
-      (soft_macro_center_x_dbu - std_cell->getBBox()->getDX() / 2),
-      (soft_macro_center_y_dbu - std_cell->getBBox()->getDY() / 2));
-
-  std_cell->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-}
-
-void HierRTLMP::setModuleStdCellsLocation(Cluster* cluster,
-                                          odb::dbModule* module)
-{
-  for (odb::dbInst* inst : module->getInsts()) {
-    if (!inst->isCore()) {
-      continue;
-    }
-    setTemporaryStdCellLocation(cluster, inst);
-  }
-
-  for (odb::dbModInst* mod_insts : module->getChildren()) {
-    setModuleStdCellsLocation(cluster, mod_insts->getMaster());
-  }
-}
-
 // Update the locations of std cells in odb using the locations that
 // HierRTLMP estimates for the leaf standard clusters. This is needed
 // for the orientation improvement step.
-void HierRTLMP::generateTemporaryStdCellsPlacement(Cluster* cluster)
+void HierRTLMP::generateTemporaryStdCellsPlacement()
 {
-  if (cluster->isLeaf() && cluster->getNumStdCell() != 0) {
-    for (odb::dbModule* module : cluster->getDbModules()) {
-      setModuleStdCellsLocation(cluster, module);
-    }
+  ClusterList leaf_std_cell_clusters;
+  fetchLeafStdCellClusters(leaf_std_cell_clusters, tree_->root.get());
 
-    for (odb::dbInst* leaf_std_cell : cluster->getLeafStdCells()) {
-      setTemporaryStdCellLocation(cluster, leaf_std_cell);
-    }
+  for (Cluster* cluster : leaf_std_cell_clusters) {
+    setClusterStdCellsLocation(cluster);
+  }
+}
+
+void HierRTLMP::fetchLeafStdCellClusters(ClusterList& leaf_std_cell_clusters,
+                                         Cluster* candidate) const
+{
+  // IO clusters are excluded, because the check the number of std cells.
+  if (candidate->isLeaf() && candidate->getNumStdCell() != 0) {
+    leaf_std_cell_clusters.push_back(candidate);
   } else {
-    for (const auto& child : cluster->getChildren()) {
-      generateTemporaryStdCellsPlacement(child.get());
+    for (const auto& child : candidate->getChildren()) {
+      fetchLeafStdCellClusters(leaf_std_cell_clusters, child.get());
     }
   }
+}
+
+void HierRTLMP::setClusterStdCellsLocation(Cluster* cluster)
+{
+  const SoftMacro* soft_macro = cluster->getSoftMacro();
+  const odb::Point cluster_center(soft_macro->getPinX(), soft_macro->getPinY());
+
+  for (odb::dbModule* module : cluster->getDbModules()) {
+    for (odb::dbInst* inst : module->getLeafInsts()) {
+      if (inst->isCore()) {
+        setTemporaryStdCellLocation(inst, cluster_center);
+      }
+    }
+  }
+
+  for (odb::dbInst* std_cell : cluster->getLeafStdCells()) {
+    setTemporaryStdCellLocation(std_cell, cluster_center);
+  }
+}
+
+void HierRTLMP::setTemporaryStdCellLocation(odb::dbInst* std_cell,
+                                            const odb::Point& cluster_center)
+{
+  odb::dbBox* bbox = std_cell->getBBox();
+
+  // Std cells are placed in the center of the cluster they belong to
+  std_cell->setLocation(cluster_center.x() - bbox->getDX() / 2,
+                        cluster_center.y() - bbox->getDY() / 2);
+  std_cell->setPlacementStatus(odb::dbPlacementStatus::PLACED);
 }
 
 float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
@@ -2612,11 +2552,6 @@ void HierRTLMP::createGroupForCluster(Cluster* cluster,
   }
 }
 
-void HierRTLMP::setMacroPlacementFile(const std::string& file_name)
-{
-  macro_placement_file_ = file_name;
-}
-
 void HierRTLMP::writeMacroPlacement(const std::string& file_name)
 {
   if (file_name.empty()) {
@@ -2653,35 +2588,16 @@ void HierRTLMP::computeWireLength() const
                   block_->dbuToMicrons(wirelength_evaluator.hpwl()));
 }
 
-void HierRTLMP::setDebug(std::unique_ptr<MplObserver>& graphics)
+void HierRTLMP::configureDebug(MacroPlacerDebugOptions options)
 {
-  graphics_ = std::move(graphics);
-}
-
-void HierRTLMP::setDebugShowBundledNets(bool show_bundled_nets)
-{
-  graphics_->setShowBundledNets(show_bundled_nets);
-}
-
-void HierRTLMP::setDebugShowClustersIds(bool show_clusters_ids)
-{
-  graphics_->setShowClustersIds(show_clusters_ids);
-}
-
-void HierRTLMP::setDebugSkipSteps(bool skip_steps)
-{
-  graphics_->setSkipSteps(skip_steps);
-}
-
-void HierRTLMP::setDebugOnlyFinalResult(bool only_final_result)
-{
-  graphics_->setOnlyFinalResult(only_final_result);
-  is_debug_only_final_result_ = only_final_result;
-}
-
-void HierRTLMP::setDebugTargetClusterId(const int target_cluster_id)
-{
-  graphics_->setTargetClusterId(target_cluster_id);
+  // graphics_ must be populated before any of the rest are applied to it.
+  graphics_ = std::move(options.graphics);
+  graphics_->setShowBundledNets(options.show_bundled_nets);
+  graphics_->setShowClustersIds(options.show_clusters_ids);
+  graphics_->setSkipSteps(options.skip_steps);
+  graphics_->setOnlyFinalResult(options.only_final_result);
+  is_debug_only_final_result_ = options.only_final_result;
+  graphics_->setTargetClusterId(options.target_cluster_id);
 }
 
 // Example for a vertical region:

@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -26,6 +27,7 @@ namespace gpl {
 
 class NesterovBaseCommon;
 class NesterovBase;
+class GCell;
 class GNet;
 class Die;
 struct PlaceOptions;
@@ -171,10 +173,21 @@ class RouteBase
   // TODO: understand why this function is breaking RUDY.
   // Allow for grt heatmap during gpl execution.
   void loadGrt();
-  float getGrtRC() const;
+  // Not const: fills the same overflow/tile counters updateRudyAverage() sets,
+  // so the routability pass header reads the same on either congestion
+  // backend.
+  float getGrtRC();
 
   void calculateRudyTiles();
   void updateRudyAverage(bool verbose = true);
+
+  // Refresh RUDY after retained timing repair and inflate only its surviving
+  // new standard cells. Does not restart or revert the routability search.
+  // Consumes whole filler cells to fund inflation without raising density.
+  // Only call after ordinary routability has completed: live accounting here
+  // must not alter its historical budget or min-RC restoration policy.
+  // The caller must subsequently update region areas and density sizes.
+  int64_t inflateNewCells();
 
   float getRudyAverage() const { return final_average_rc_; }
   int getOverflowedTilesCount() const { return overflowed_tiles_count_; }
@@ -192,9 +205,16 @@ class RouteBase
   int64_t getTotalInflation() const;
   int getRevertCount() const;
 
+  // Roll cell sizes, target density, fillers, accumulated inflation and net
+  // weights back to the pass that saw the least congestion. Does nothing before
+  // the first pass.
+  void revertToMinCongestion();
+
   void printGCellInflation() const;
 
  private:
+  friend class TimingRepairIntegrationTest;
+
   RouteBaseVars rbVars_;
   odb::dbDatabase* db_ = nullptr;
   grt::GlobalRouter* grouter_ = nullptr;
@@ -242,10 +262,13 @@ class RouteBase
 
   void init();
   void resetRoutabilityResources();
-  void revertToMinCongestion();
 
   // The tile holding the given point, or nullptr if it falls outside the grid.
   Tile* getTile(int x, int y) const;
+
+  static int64_t inflateCell(GCell* cell,
+                             float ratio,
+                             std::optional<int64_t> area_limit = std::nullopt);
 
   // Flag the tiles that hold movable standard-cell area, and clear the flag on
   // every other tile. Call after the grid is built and before the congestion

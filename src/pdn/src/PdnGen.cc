@@ -34,7 +34,6 @@
 #include "utl/Logger.h"
 #include "via.h"
 #include "via_repair.h"
-#include "web/core.h"
 
 namespace pdn {
 
@@ -658,10 +657,12 @@ void PdnGen::makeRing(Grid* grid,
 void PdnGen::makeFollowpin(Grid* grid,
                            odb::dbTechLayer* layer,
                            int width,
-                           ExtensionMode extend)
+                           ExtensionMode extend,
+                           int extend_distance)
 {
   auto strap = std::make_unique<FollowPins>(grid, layer, width);
   strap->setExtend(extend);
+  strap->setExtendDistance(extend_distance);
 
   grid->addStrap(std::move(strap));
 }
@@ -677,17 +678,20 @@ void PdnGen::makeStrap(Grid* grid,
                        StartsWith starts_with,
                        ExtensionMode extend,
                        const std::vector<odb::dbNet*>& nets,
-                       bool allow_out_of_core)
+                       bool allow_out_of_core,
+                       StrapOffsetType offset_type,
+                       int extend_distance)
 {
   auto strap = std::make_unique<Straps>(
       grid, layer, width, pitch, spacing, number_of_straps);
   strap->setExtend(extend);
-  strap->setOffset(offset);
+  strap->setExtendDistance(extend_distance);
   strap->setSnapToGrid(snap);
   if (starts_with != kGrid) {
     strap->setStartWithPower(starts_with == kPower);
   }
   strap->setNets(nets);
+  strap->setOffset(offset, offset_type);
   strap->setAllowOutsideCoreArea(allow_out_of_core);
   grid->addStrap(std::move(strap));
 }
@@ -739,25 +743,33 @@ void PdnGen::makeConnect(
 
 void PdnGen::setDebugRenderer(bool on)
 {
-  if (on && web::Gui::enabled()) {
+  if (on) {
     if (debug_renderer_ == nullptr) {
       debug_renderer_ = std::make_unique<PDNRenderer>(this, logger_);
       rendererRedraw();
     }
-  } else {
+  } else if (debug_renderer_ != nullptr) {
     debug_renderer_ = nullptr;
+    // The shapes were only kept for the renderer (see run_pdngen)
+    resetShapes();
   }
 }
 
 void PdnGen::rendererRedraw()
 {
-  if (debug_renderer_ != nullptr) {
-    try {
-      buildGrids(false);
-    } catch (const std::runtime_error& /* e */) {
-      // do nothing, dont want grid error to prevent debug renderer
-      debug_renderer_->update();
-    }
+  if (debug_renderer_ == nullptr) {
+    return;
+  }
+  // The renderer can be enabled before a design is loaded
+  odb::dbChip* chip = db_->getChip();
+  if (chip == nullptr || chip->getBlock() == nullptr) {
+    return;
+  }
+  try {
+    buildGrids(false);
+  } catch (const std::runtime_error& /* e */) {
+    // do nothing, dont want grid error to prevent debug renderer
+    debug_renderer_->update();
   }
 }
 

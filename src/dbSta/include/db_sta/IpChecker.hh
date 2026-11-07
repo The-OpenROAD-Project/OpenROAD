@@ -32,6 +32,7 @@ namespace sta {
 // LEF-CHK-010b: Pin minimum area
 // LEF/LIB-CHK-011: Pin direction matches Liberty
 // LEF/LIB-CHK-012: LEF macros and signal pins exist in Liberty
+// LEF/LIB-CHK-013: LEF and Liberty cell areas match
 
 class IpChecker
 {
@@ -90,7 +91,7 @@ class IpChecker
   // LEF-CHK-010b: Pin minimum area
   void checkPinMinArea(odb::dbMaster* master);
 
-  // LEF/LIB-CHK-011-012: Check Liberty pin presence and direction
+  // LEF/LIB-CHK-011-013: Check Liberty pin presence, direction, and area
   void checkLibertyPins(odb::dbMaster* master);
 
   // Helper: Check if a pin shape has at least one accessible edge

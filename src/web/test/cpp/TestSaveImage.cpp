@@ -6,7 +6,9 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstring>
+#include <exception>
 #include <filesystem>
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
@@ -146,6 +148,21 @@ class SaveImageTest : public tst::Nangate45Fixture
     return count;
   }
 
+  // Only _instances and the tech layers stacked: the pins and every overlay
+  // off, including `regions` and the instance names, which default ON.
+  static TileVisibility noOverlaysVis()
+  {
+    TileVisibility vis;
+    vis.pins = false;
+    vis.regions = false;
+    vis.mfg_grid = false;
+    vis.access_points = false;
+    vis.gcell_grid = false;
+    vis.rudy = false;
+    vis.inst_names = false;
+    return vis;
+  }
+
   std::unique_ptr<TileGenerator> tile_gen_;
   std::vector<std::string> output_files_;
 };
@@ -164,6 +181,20 @@ TEST_F(SaveImageTest, DefaultProducesValidPng)
   EXPECT_GT(h, 0u);
   // Should contain visible content (placed instance).
   EXPECT_TRUE(hasNonTransparentPixel(pixels));
+}
+
+// A file that cannot be written is an error, not a "Saved" message.
+TEST_F(SaveImageTest, UnwritableFileIsAnError)
+{
+  const std::filesystem::path missing
+      = std::filesystem::temp_directory_path()
+        / ("web_test_missing_" + std::to_string(::getpid()));
+  const std::string path = (missing / "image.png").string();
+  ASSERT_FALSE(std::filesystem::exists(missing));
+
+  EXPECT_THROW(tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), 0, 0, {}),
+               std::exception);
+  EXPECT_FALSE(std::filesystem::exists(path));
 }
 
 // Tiles are rasterized on transparency, so the pixels no layer covers come out
@@ -491,6 +522,45 @@ TEST_F(SaveImageTest, DieOutlineSurvivesEveryWidth)
   }
 }
 
+TEST_F(SaveImageTest, NothingToFrameRaisesAnError)
+{
+  // Neither a die area nor a shape to fall back on.
+  odb::dbChip::destroy(chip_);
+  chip_ = odb::dbChip::create(getDb(), getDb()->getTech());
+  block_ = odb::dbBlock::create(chip_, "bare");
+  makeTileGen();
+
+  EXPECT_ANY_THROW(
+      tile_gen_->renderImagePng(odb::Rect(0, 0, 0, 0), 256, 0, {}));
+}
+
+TEST_F(SaveImageTest, InfiniteResolutionRaisesAnError)
+{
+  // save_image -resolution Inf: the scale underflows to zero.
+  EXPECT_ANY_THROW(tile_gen_->renderImageBuffer(
+      odb::Rect(0, 0, 0, 0), 0, std::numeric_limits<double>::infinity(), {}));
+}
+
+TEST_F(SaveImageTest, ThinRegionAtHighScaleIsClamped)
+{
+  // 1 DBU wide at the default 1024 px: the height alone would overflow an int.
+  int w = 0;
+  int h = 0;
+  const std::vector<unsigned char> rgba = tile_gen_->renderImageBuffer(
+      odb::Rect(0, 0, 1, 3000000), 0, 0, {}, {}, &w, &h);
+  EXPECT_GE(w, 1);
+  EXPECT_LE(h, 16384);
+  EXPECT_EQ(rgba.size(), static_cast<std::size_t>(w) * h * 4);
+}
+
+TEST_F(SaveImageTest, UnwritablePathRaisesAnError)
+{
+  const std::string path = tempPng("no_dir") + "/out.png";
+  EXPECT_ANY_THROW(
+      tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), 256, 0, {}));
+  EXPECT_FALSE(std::filesystem::exists(path));
+}
+
 TEST_F(SaveImageTest, LargeWidthClamped)
 {
   const std::string path = tempPng("clamped");
@@ -603,6 +673,26 @@ TEST_F(SaveImageTest, MultipleLayersComposited)
 
 // ─── Composition order ───────────────────────────────────────────────────────
 
+// One die's rows, as paintOrderLayers() hands them to saveImageLayerOrder().
+std::vector<PaintLayer> rowsOf(const std::vector<std::string>& names,
+                               const std::string& chiplet = "top")
+{
+  std::vector<PaintLayer> rows;
+  for (const std::string& name : names) {
+    rows.push_back({.layer = name, .chiplet = chiplet});
+  }
+  return rows;
+}
+
+std::vector<std::string> namesOf(const std::vector<PaintLayer>& order)
+{
+  std::vector<std::string> names;
+  for (const PaintLayer& entry : order) {
+    names.push_back(entry.layer);
+  }
+  return names;
+}
+
 // saveImage must composite in the same z order Leaflet stacks the layers in on
 // screen (display-controls.js addPseudoLayer), otherwise the saved PNG is not
 // the view the user was looking at.  Before the fix every pseudo layer was
@@ -614,7 +704,7 @@ TEST_F(SaveImageTest, MultipleLayersComposited)
 // pixel test can tell the two orders apart reliably.
 TEST_F(SaveImageTest, LayerCompositionOrderMatchesClientZIndex)
 {
-  const std::vector<std::string> tech_layers = {"metal1", "metal2"};
+  const std::vector<PaintLayer> tech_layers = rowsOf({"metal1", "metal2"});
   TileVisibility vis;
   vis.pins = true;
   vis.mfg_grid = true;
@@ -624,33 +714,56 @@ TEST_F(SaveImageTest, LayerCompositionOrderMatchesClientZIndex)
   vis.rudy = true;
 
   // zIndex on screen: _instances 0, _pins 1, _mfg_grid 2, tech layers 3.., then
-  // _access_points 1000, _regions 1001, _gcell_grid 1002, _rudy 1003.
+  // _inst_labels 999, _access_points 1000, _regions 1001, _gcell_grid 1002,
+  // _rudy 1003.
   const std::vector<std::string> expected = {"_instances",
                                              "_pins",
                                              "_mfg_grid",
                                              "metal1",
                                              "metal2",
+                                             "_inst_labels",
                                              "_access_points",
                                              "_regions",
                                              "_gcell_grid",
                                              "_rudy"};
-  EXPECT_EQ(TileGenerator::saveImageLayerOrder(vis, tech_layers), expected);
+  EXPECT_EQ(namesOf(TileGenerator::saveImageLayerOrder(vis, tech_layers)),
+            expected);
+}
+
+// _inst_labels is composited, above the tech layers, whenever either kind of
+// label is on; pin names only count while the pins are shown.
+TEST_F(SaveImageTest, InstLabelsLayerFollowsNamesAndPinNames)
+{
+  const std::vector<PaintLayer> tech_layers = rowsOf({"metal1"});
+  const auto has_labels
+      = [&](const bool names, const bool pins, const bool pin_names) {
+          TileVisibility vis;
+          vis.inst_names = names;
+          vis.inst_pins = pins;
+          vis.inst_pin_names = pin_names;
+          const auto order
+              = namesOf(TileGenerator::saveImageLayerOrder(vis, tech_layers));
+          const auto it = std::ranges::find(order, "_inst_labels");
+          if (it == order.end()) {
+            return false;
+          }
+          EXPECT_GT(it - std::ranges::find(order, "metal1"), 0)
+              << "labels must go over the tech layers";
+          return true;
+        };
+
+  EXPECT_TRUE(has_labels(true, false, false));
+  EXPECT_TRUE(has_labels(false, true, true));
+  EXPECT_FALSE(has_labels(false, false, true));
+  EXPECT_FALSE(has_labels(false, true, false));
 }
 
 TEST_F(SaveImageTest, LayerCompositionOrderHonorsVisibility)
 {
-  const std::vector<std::string> tech_layers = {"metal1"};
-  TileVisibility vis;
-  vis.pins = false;
-  // `regions` is the one overlay that defaults ON (Qt parity), so turn the
-  // whole set off explicitly rather than relying on the defaults.
-  vis.regions = false;
-  vis.mfg_grid = false;
-  vis.access_points = false;
-  vis.gcell_grid = false;
-  vis.rudy = false;
+  const std::vector<PaintLayer> tech_layers = rowsOf({"metal1"});
+  const TileVisibility vis = noOverlaysVis();
 
-  EXPECT_EQ(TileGenerator::saveImageLayerOrder(vis, tech_layers),
+  EXPECT_EQ(namesOf(TileGenerator::saveImageLayerOrder(vis, tech_layers)),
             (std::vector<std::string>{"_instances", "metal1"}))
       << "hidden overlays must not be composited at all";
 }
@@ -734,20 +847,55 @@ TEST_F(SaveImageTest, RudyHeatmapRendersInSavedImage)
 
 TEST_F(SaveImageTest, LayerCompositionOrderHonorsTechLayerVisibility)
 {
-  const std::vector<std::string> tech_layers = {"metal1", "metal2", "metal3"};
-  TileVisibility vis;
+  const std::vector<PaintLayer> tech_layers
+      = rowsOf({"metal1", "metal2", "metal3"});
+  TileVisibility vis = noOverlaysVis();
   vis.has_visible_layers = true;
   vis.visible_layers = {"metal2"};
-  vis.pins = false;
-  vis.regions = false;
-  vis.mfg_grid = false;
-  vis.access_points = false;
-  vis.gcell_grid = false;
-  vis.rudy = false;
 
-  EXPECT_EQ(TileGenerator::saveImageLayerOrder(vis, tech_layers),
+  EXPECT_EQ(namesOf(TileGenerator::saveImageLayerOrder(vis, tech_layers)),
             (std::vector<std::string>{"_instances", "metal2"}))
       << "tech layers hidden via visible_layers must not be composited";
+}
+
+// Two dies sharing a name: hiding it on one keeps the other's row, because
+// visible_layers is the union and the per-die exception names the die.
+TEST_F(SaveImageTest, LayerCompositionOrderHonorsPerDieHiddenLayers)
+{
+  std::vector<PaintLayer> tech_layers = rowsOf({"metal1"}, "top/die0");
+  tech_layers.push_back({.layer = "metal1", .chiplet = "top/die1"});
+  TileVisibility vis = noOverlaysVis();
+  vis.has_visible_layers = true;
+  vis.visible_layers = {"metal1"};
+  ASSERT_EQ(namesOf(TileGenerator::saveImageLayerOrder(vis, tech_layers)),
+            (std::vector<std::string>{"_instances", "metal1", "metal1"}))
+      << "with nothing hidden both dies' rows composite";
+
+  vis.chiplet_hidden_layers = {{"top/die0", {"metal1"}}};
+  const std::vector<PaintLayer> order
+      = TileGenerator::saveImageLayerOrder(vis, tech_layers);
+  ASSERT_EQ(namesOf(order), (std::vector<std::string>{"_instances", "metal1"}))
+      << "a layer hidden on one die must still composite on the other";
+  EXPECT_EQ(order[1].chiplet, "top/die1");
+}
+
+// However many rows the dies bring, they all stay under the overlays, as the
+// merged panes keep them on screen.
+TEST_F(SaveImageTest, LayerCompositionOrderKeepsOverlaysAboveManyRows)
+{
+  std::vector<std::string> names;
+  for (int i = 0; i < 1200; ++i) {
+    names.push_back("m" + std::to_string(i));
+  }
+  const TileVisibility vis;  // instance names on, so _inst_labels composites
+  const std::vector<std::string> order
+      = namesOf(TileGenerator::saveImageLayerOrder(vis, rowsOf(names)));
+  const auto labels = std::ranges::find(order, "_inst_labels");
+  const auto last_row = std::ranges::find(order, "m1199");
+  ASSERT_NE(labels, order.end());
+  ASSERT_NE(last_row, order.end());
+  EXPECT_LT(last_row - order.begin(), labels - order.begin())
+      << "the last rows were composited over the instance names";
 }
 
 TEST_F(SaveImageTest, HiddenTechLayerIsNotDrawn)

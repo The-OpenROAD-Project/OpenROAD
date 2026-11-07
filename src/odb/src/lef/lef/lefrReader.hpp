@@ -466,11 +466,11 @@ using LEFI_WARNING_LOG_FUNCTION = void (*)(const char*);
 extern void lefrSetWarningLogFunction(LEFI_WARNING_LOG_FUNCTION);
 
 // Routine to set the user defined malloc routine
-using LEFI_MALLOC_FUNCTION = void* (*) (int);
+using LEFI_MALLOC_FUNCTION = void* (*)(int);
 extern void lefrSetMallocFunction(LEFI_MALLOC_FUNCTION);
 
 // Routine to set the user defined realloc routine
-using LEFI_REALLOC_FUNCTION = void* (*) (void*, int);
+using LEFI_REALLOC_FUNCTION = void* (*)(void*, int);
 extern void lefrSetReallocFunction(LEFI_REALLOC_FUNCTION);
 
 // Routine to set the user defined free routine

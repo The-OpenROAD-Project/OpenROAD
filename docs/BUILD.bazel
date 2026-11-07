@@ -27,6 +27,7 @@ man_pages(
         "//src/est:messages_txt",
         "//src/exa:messages_txt",
         "//src/fin:messages_txt",
+        "//src/fsv:messages_txt",
         "//src/gpl:messages_txt",
         "//src/grt:messages_txt",
         "//src/gui:messages_txt",
@@ -60,6 +61,7 @@ man_pages(
         "//src/est:README.md",
         "//src/exa:README.md",
         "//src/fin:README.md",
+        "//src/fsv:README.md",
         "//src/gpl:README.md",
         "//src/grt:README.md",
         "//src/gui:README.md",
@@ -92,6 +94,12 @@ man_pages(
         "//conditions:default": False,
     }),
     visibility = ["//visibility:public"],
+)
+
+# The Bazel user docs, which //docs/src/test checks for coverage.
+exports_files(
+    glob(["user/Bazel*.md"]),
+    visibility = ["//docs/src/test:__pkg__"],
 )
 
 build_test(
@@ -131,6 +139,8 @@ py_test(
             "src/test/results/**",
         ],
     ) + [
+        # docs/src/test is its own package, so the glob above skips it.
+        "//docs/src/test:docs",
         # Staged at the runfiles workspace root so conf.py's setup(app)
         # can resolve ../README.md and main/README.md through the
         # `main -> ..` symlink it creates.

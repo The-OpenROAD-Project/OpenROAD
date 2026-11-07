@@ -1,0 +1,109 @@
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via1 :"
+  	EOLENCLOSURE 0.34 0.06 ;"
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via2 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via3 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0388] unsupported LEF58_EOLENCLOSURE property for layer Via4 :" EOLENCLOSURE 0.34 0.06 ; "
+[INFO ODB-0227] LEF file: gf180/gf180mcu_5LM_1TM_9K_9t_tech.lef, created 13 layers, 60 vias
+[INFO ODB-0227] LEF file: gf180/gf180mcu_5LM_1TM_9K_9t_sc.lef, created 229 library cells
+[INFO ODB-0128] Design: ibex_core
+[INFO ODB-0130]     Created 249 pins.
+[INFO ODB-0131]     Created 430 components and 2159 component-terminals.
+[INFO ODB-0133]     Created 615 nets and 1299 connections.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 48 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 48 out of 48 (100.00%) violating endpoints...
+[INFO RSZ-0221] Using custom phase sequence: LEGACY
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -9.020 |     -341.5 |     48 | capture_66/D
+     180* |      40 |      59 |        9 |      3 |     9 |    +4.0% |   -6.234 |     -225.5 |     48 | capture_66/D
+    final |      40 |      59 |        9 |      3 |     9 |    +4.0% |   -6.234 |     -225.5 |     45 | capture_66/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0059] Removed 40 buffers.
+[INFO RSZ-0040] Inserted 9 buffers.
+[INFO RSZ-0051] Resized 59 instances: 59 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 9 instances.
+[INFO RSZ-0049] Cloned 3 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+Startpoint: launch_170 (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: inst27 (recovery check against rising-edge clock core_clock)
+Path Group: asynchronous
+Path Type: max
+
+    Delay      Time   Description
+-------------------------------------------------------------
+   0.0000    0.0000   clock core_clock (rise edge)
+   0.0000    0.0000   clock network delay (ideal)
+   0.0000    0.0000 ^ launch_170/CLK (gf180mcu_fd_sc_mcu9t5v0__dffq_2)
+   1.0621    1.0621 ^ launch_170/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_2)
+   0.0000    1.0621 ^ inst27/RN (gf180mcu_fd_sc_mcu9t5v0__dffrnq_2)
+             1.0621   data arrival time
+
+   6.5000    6.5000   clock core_clock (rise edge)
+   0.0000    6.5000   clock network delay (ideal)
+   0.0000    6.5000   clock reconvergence pessimism
+             6.5000 ^ inst27/CLK (gf180mcu_fd_sc_mcu9t5v0__dffrnq_2)
+  -0.1250    6.3750   library recovery time
+             6.3750   data required time
+-------------------------------------------------------------
+             6.3750   data required time
+            -1.0621   data arrival time
+-------------------------------------------------------------
+             5.3129   slack (MET)
+
+
+Startpoint: launch_50 (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: capture_66 (rising edge-triggered flip-flop clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+
+    Delay      Time   Description
+-------------------------------------------------------------
+   0.0000    0.0000   clock core_clock (rise edge)
+   0.0000    0.0000   clock network delay (ideal)
+   0.0000    0.0000 ^ launch_50/CLK (gf180mcu_fd_sc_mcu9t5v0__dffq_4)
+   0.7193    0.7193 v launch_50/Q (gf180mcu_fd_sc_mcu9t5v0__dffq_4)
+   0.1882    0.9075 ^ inst2/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
+   0.2291    1.1366 ^ inst3/Z (gf180mcu_fd_sc_mcu9t5v0__buf_8)
+   0.1186    1.2552 v inst4/ZN (gf180mcu_fd_sc_mcu9t5v0__oai22_4)
+   0.3339    1.5891 v inst5/Z (gf180mcu_fd_sc_mcu9t5v0__or2_4)
+   0.4226    2.0118 ^ inst6/ZN (gf180mcu_fd_sc_mcu9t5v0__aoi221_4)
+   0.2719    2.2837 ^ rebuffer3/Z (gf180mcu_fd_sc_mcu9t5v0__buf_8)
+   0.1276    2.4113 v inst7/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
+   0.2052    2.6165 ^ inst8/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
+   0.2269    2.8433 ^ inst9/Z (gf180mcu_fd_sc_mcu9t5v0__and2_4)
+   0.6927    3.5360 v inst10/S (gf180mcu_fd_sc_mcu9t5v0__addf_1)
+   0.8504    4.3864 ^ inst11/S (gf180mcu_fd_sc_mcu9t5v0__addf_1)
+   0.7329    5.1194 v inst12/S (gf180mcu_fd_sc_mcu9t5v0__addf_2)
+   0.8702    5.9895 ^ inst13/S (gf180mcu_fd_sc_mcu9t5v0__addf_2)
+   0.7046    6.6941 v inst14/S (gf180mcu_fd_sc_mcu9t5v0__addf_2)
+   0.8755    7.5696 ^ inst15/S (gf180mcu_fd_sc_mcu9t5v0__addf_1)
+   0.5964    8.1660 v inst16/S (gf180mcu_fd_sc_mcu9t5v0__addh_2)
+   0.2106    8.3766 ^ inst17/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
+   0.1870    8.5637 v inst18/ZN (gf180mcu_fd_sc_mcu9t5v0__nor2_4)
+   0.1745    8.7382 ^ inst19/ZN (gf180mcu_fd_sc_mcu9t5v0__nand2_4)
+   0.1755    8.9137 v inst20/ZN (gf180mcu_fd_sc_mcu9t5v0__oai21_4)
+   0.4459    9.3596 ^ inst21/ZN (gf180mcu_fd_sc_mcu9t5v0__aoi221_4)
+   0.6520   10.0116 v inst22/ZN (gf180mcu_fd_sc_mcu9t5v0__xnor2_2)
+   0.5416   10.5532 ^ inst23/ZN (gf180mcu_fd_sc_mcu9t5v0__aoi222_4)
+   0.4732   11.0264 ^ inst24/Z (gf180mcu_fd_sc_mcu9t5v0__and4_4)
+   0.3437   11.3701 v inst25/ZN (gf180mcu_fd_sc_mcu9t5v0__aoi211_4)
+   0.4283   11.7984 v rebuffer2/Z (gf180mcu_fd_sc_mcu9t5v0__buf_12)
+   0.6955   12.4939 v inst25_neighbor27/Z (gf180mcu_fd_sc_mcu9t5v0__mux2_4)
+   0.0000   12.4939 v capture_66/D (gf180mcu_fd_sc_mcu9t5v0__dffq_2)
+            12.4939   data arrival time
+
+   6.5000    6.5000   clock core_clock (rise edge)
+   0.0000    6.5000   clock network delay (ideal)
+   0.0000    6.5000   clock reconvergence pessimism
+             6.5000 ^ capture_66/CLK (gf180mcu_fd_sc_mcu9t5v0__dffq_2)
+  -0.2396    6.2604   library setup time
+             6.2604   data required time
+-------------------------------------------------------------
+             6.2604   data required time
+           -12.4939   data arrival time
+-------------------------------------------------------------
+            -6.2336   slack (VIOLATED)
+
+

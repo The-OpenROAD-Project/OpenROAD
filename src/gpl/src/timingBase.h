@@ -73,4 +73,22 @@ class TimingBase
   void initTimingOverflowChk();
 };
 
+// Bottom of the timing weight ramp, as a percentage of all timing-constrained
+// nets, to keep one outlier from rescaling every other net. Relative to the
+// nets considered during timing-driven mode this is 2% at the default
+// -timing_driven_nets_percentage of 10%, and 0.2% at 100%. Designs with too
+// few constrained nets for 0.2% to reach one net anchor on the worst net.
+inline constexpr double kSlackMinPercent = 0.2;
+
+// Index into the worst-slack net list, which holds the worst nets_percentage %
+// of the constrained nets sorted by increasing slack. net_count must be > 0.
+size_t slackRampAnchorIndex(size_t net_count, float nets_percentage);
+
+// net_weight_max at or below slack_min, 1.0 at or above slack_max, linear in
+// between.
+float computeTimingNetWeight(float net_slack,
+                             float slack_min,
+                             float slack_max,
+                             float net_weight_max);
+
 }  // namespace gpl

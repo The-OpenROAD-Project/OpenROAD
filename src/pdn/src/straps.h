@@ -15,12 +15,14 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/isotropy.h"
 #include "pdn/PdnGen.hh"
 #include "polygon.h"
 #include "shape.h"
 
 namespace pdn {
 class Grid;
+class InstanceGrid;
 
 class Straps : public GridComponent
 {
@@ -32,11 +34,17 @@ class Straps : public GridComponent
          int spacing = 0,
          int number_of_straps = 0);
 
-  void setOffset(int offset);
+  // the nets have to be set first, since every type but kFirst depends on how
+  // wide the group is
+  void setOffset(int offset, StrapOffsetType type = StrapOffsetType::kFirst);
   int getOffset() const { return offset_; }
   void setSnapToGrid(bool snap);
 
   void setExtend(ExtensionMode mode);
+  // how far past the extension target the straps run, never past the grid
+  // boundary
+  void setExtendDistance(int distance) { extend_distance_ = distance; }
+  int getExtendDistance() const { return extend_distance_; }
   void setStrapStartEnd(int start, int end);
   int getStrapStart() const { return strap_start_; }
   int getStrapEnd() const { return strap_end_; }
@@ -95,11 +103,14 @@ class Straps : public GridComponent
   int width_;
   int spacing_;
   int pitch_;
+  // where the center of the first strap sits, whatever point of the group the
+  // offset was given for
   int offset_ = 0;
   int number_of_straps_;
   odb::dbTechLayerDir direction_;
   bool snap_ = false;
   ExtensionMode extend_mode_ = ExtensionMode::kCore;
+  int extend_distance_ = 0;
   int strap_start_ = 0;
   int strap_end_ = 0;
   bool allow_out_of_core_ = false;
@@ -275,6 +286,72 @@ class PadDirectConnectionStraps : public Straps
                    const Shape::ShapeTreeMap& all_shapes,
                    const Shape::ObstructionTreeMap& all_obstructions);
   bool isTargetShape(const Shape* shape) const;
+};
+
+// Connects a macro supply pin to the grid beside it rather than above it.
+//
+// Every connection PDN makes is a via, and a via needs two shapes on
+// different layers to overlap, so a macro pin that nothing crosses cannot be
+// reached however close a strap runs past the macro.  This grows the pin
+// along its own layer and out of the macro until it reaches a shape it has a
+// connect rule to, which is what PadDirectConnectionStraps does for a pad
+// cell -- with the outline of the macro in place of the core area, so that a
+// pin in the notch of an L, T or U shaped macro grows out of the notch.
+//
+// It is built after the vias, on the pins none of them reached, so a pin the
+// ordinary top-down flow already connected is left exactly as it was.
+class MacroEdgeConnectionStraps : public Straps
+{
+ public:
+  MacroEdgeConnectionStraps(
+      InstanceGrid* grid,
+      odb::dbITerm* iterm,
+      odb::dbTechLayer* layer,
+      const odb::Rect& pin,
+      odb::Direction2D direction,
+      const ShapePtr& target,
+      std::shared_ptr<const Shape::ObstructionTreeMap> macro_obstructions);
+
+  void makeShapes(const Shape::ShapeTreeMap& other_shapes) override;
+  void cutShapes(const Shape::ObstructionTreeMap& obstructions) override;
+
+  void report() const override;
+  Type type() const override { return GridComponent::kMacroEdgeConnect; }
+
+  // the layer, width and direction all come from the pin
+  void checkLayerSpecifications() const override {}
+
+  std::vector<odb::dbNet*> getNets() const override;
+
+  bool isAutoInserted() const override { return true; }
+  // this is a connection to a pin, not a strap in need of one
+  bool checkForRepairChannels() const override { return false; }
+  bool allowDbPins() const override { return false; }
+
+  // True once the strap survived cutting and still joins the pin to the shape
+  // it was built to reach.
+  bool isConnected() const;
+  // True once a via has been built on it.  Without one it reaches the shape it
+  // was grown to and connects to nothing.
+  bool hasVias() const;
+
+  // Grow every supply pin of the macro that no via reached out to the nearest
+  // shape it has a connect rule to, and rebuild the vias if anything was
+  // added.
+  static void connectUnreachedPins(InstanceGrid* grid,
+                                   const Shape::ShapeTreeMap& global_shapes,
+                                   Shape::ObstructionTreeMap& obstructions);
+
+ private:
+  odb::dbITerm* iterm_;
+  odb::Rect pin_;
+  // the end of the pin the strap leaves by: one of NORTH, SOUTH, EAST or WEST
+  odb::Direction2D direction_;
+  ShapePtr target_;
+  // the macro's own metal, shared by every strap grown out of it
+  std::shared_ptr<const Shape::ObstructionTreeMap> macro_obstructions_;
+
+  std::string getName() const;
 };
 
 class RepairChannelStraps : public Straps

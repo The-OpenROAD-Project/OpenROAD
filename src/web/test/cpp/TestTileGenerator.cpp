@@ -12,10 +12,12 @@
 #include <map>
 #include <memory>
 #include <numbers>
+#include <optional>
 #include <set>
 #include <string>
 #include <string_view>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "boost/json/object.hpp"
@@ -407,12 +409,148 @@ class TileGeneratorTest : public tst::Nangate45Fixture
     return count;
   }
 
-  // Render the _instances tile twice, with and without the blockage hatch,
-  // and report how many of the label's solid pixels the hatch washed out.
+  // Dark, mostly opaque pixels: the black outline Qt strokes around block and
+  // pad names.  The label's own yellow never comes near it.
+  static int countOutlinePixels(const std::vector<unsigned char>& rgba)
+  {
+    int count = 0;
+    for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
+      if (rgba[i] < 64 && rgba[i + 1] < 64 && rgba[i + 2] < 64
+          && rgba[i + 3] > 128) {
+        ++count;
+      }
+    }
+    return count;
+  }
+
+  // What save_image composites for `vis` over getBounds(), at the z=0 tile's
+  // resolution.
+  std::vector<unsigned char> renderStack(const TileVisibility& vis,
+                                         unsigned& w,
+                                         unsigned& h)
+  {
+    const odb::Rect bounds = tile_gen_->getBounds();
+    int iw = 0, ih = 0;
+    auto px = tile_gen_->renderImageBuffer(
+        bounds, 0, bounds.maxDXDY() / 256.0, vis, {}, &iw, &ih);
+    w = iw;
+    h = ih;
+    return px;
+  }
+
+  // A pin of a test master: boxes and/or one polygon on `layer`.
+  struct TestPin
+  {
+    const char* name;
+    const char* layer;
+    std::vector<odb::Rect> boxes;
+    std::vector<odb::Point> polygon;
+  };
+
+  // A master of `type` with an obstruction over its whole footprint on each of
+  // `obs_layers`.  The fixture's LEF only carries standard cells.
+  odb::dbMaster* makeBlockMaster(const char* name,
+                                 const int w,
+                                 const int h,
+                                 const std::vector<const char*>& obs_layers,
+                                 const odb::dbMasterType type
+                                 = odb::dbMasterType::BLOCK,
+                                 const std::vector<TestPin>& pins = {})
+  {
+    odb::dbMaster* master = odb::dbMaster::create(lib_, name);
+    master->setType(type);
+    master->setWidth(w);
+    master->setHeight(h);
+    for (const char* layer_name : obs_layers) {
+      odb::dbTechLayer* layer = lib_->getTech()->findLayer(layer_name);
+      EXPECT_NE(layer, nullptr) << layer_name;
+      odb::dbBox::create(master, layer, 0, 0, w, h);
+    }
+    for (const TestPin& pin : pins) {
+      odb::dbTechLayer* layer = lib_->getTech()->findLayer(pin.layer);
+      EXPECT_NE(layer, nullptr) << pin.layer;
+      odb::dbMPin* mpin = odb::dbMPin::create(odb::dbMTerm::create(
+          master, pin.name, odb::dbIoType::INPUT, odb::dbSigType::SIGNAL));
+      for (const odb::Rect& r : pin.boxes) {
+        odb::dbBox::create(mpin, layer, r.xMin(), r.yMin(), r.xMax(), r.yMax());
+      }
+      if (!pin.polygon.empty()) {
+        odb::dbPolygon::create(mpin, layer, pin.polygon);
+      }
+      // Creation prepends; lefin restores the declared order the same way.
+      odb::dbSet<odb::dbBox> geoms = mpin->getGeometry();
+      if (geoms.reversible() && geoms.orderReversed()) {
+        geoms.reverse();
+      }
+    }
+    master->setFrozen();
+    return master;
+  }
+
+  // A 40000 DBU square macro of `type` placed alone at the origin, with the die
+  // fitted to it and the generator built and indexed.
+  odb::dbInst* placeMacro(const char* inst_name,
+                          const std::vector<const char*>& obs_layers,
+                          const std::vector<TestPin>& pins = {},
+                          const odb::dbMasterType type
+                          = odb::dbMasterType::BLOCK)
+  {
+    const std::string master = "MACRO_" + std::to_string(++macro_count_);
+    makeBlockMaster(master.c_str(), 40000, 40000, obs_layers, type, pins);
+    odb::dbInst* inst = placeInst(master.c_str(), inst_name, 0, 0);
+    fitDieToContent();
+    makeTileGen();
+    tile_gen_->eagerInit();
+    return inst;
+  }
+
+  // One metal1 pin "A" over most of the macro: big enough at z=0 for Qt's
+  // two-font-heights rule.
+  void makeBigPinMacro()
+  {
+    placeMacro("macro",
+               {},
+               {{.name = "A",
+                 .layer = "metal1",
+                 .boxes = {odb::Rect(2000, 2000, 38000, 20000)},
+                 .polygon = {}}});
+  }
+
+  // Lit pixels of `rgba` outside `rect` (DBU) grown by one pixel.
+  static int pixelsOutside(const std::vector<unsigned char>& rgba,
+                           const odb::Rect& bounds,
+                           const unsigned w,
+                           const unsigned h,
+                           const odb::Rect& rect)
+  {
+    constexpr unsigned kSize = static_cast<unsigned>(kTileSize);
+    // A tile must have its fixed dimensions before indexing its RGBA pixels.
+    if (w != kSize || h != kSize || rgba.size() != 4UL * kSize * kSize) {
+      ADD_FAILURE() << "invalid decoded tile dimensions";
+      return 0;
+    }
+    const int left = colOf(bounds, kSize, rect.xMin()) - 1;
+    const int right = colOf(bounds, kSize, rect.xMax()) + 1;
+    const int top = rowOf(bounds, kSize, kSize, rect.yMax()) - 1;
+    const int bottom = rowOf(bounds, kSize, kSize, rect.yMin()) + 1;
+    int outside = 0;
+    for (int y = 0; y < kTileSize; ++y) {
+      for (int x = 0; x < kTileSize; ++x) {
+        const bool inside = x >= left && x <= right && y >= top && y <= bottom;
+        if (!inside && rgba[4UL * (y * kSize + x) + 3] > 0) {
+          ++outside;
+        }
+      }
+    }
+    return outside;
+  }
+
+  // Render the layer stack twice, with and without the shapes `cover` turns
+  // on, and report how many of the label's solid pixels they washed out.
   //
-  // The hatch shows up in the blue channel: the label over a hatch line stays
-  // strongly yellow (min(R,G) - B ~ 210), while a hatch line over the label
-  // flattens it (~0 once the hatch is opaque grey).  Alpha is only tested for
+  // The cover shows up in the blue channel: the label over a hatch line or an
+  // obstruction stays strongly yellow (min(R,G) - B ~ 210), while a hatch line
+  // or an obstruction over the label flattens it.  Alpha is only tested for
   // "mostly covered" because a glyph's anti-aliased pixels come back below the
   // 220 the label colour carries.
   struct LabelWash
@@ -425,19 +563,140 @@ class TileGeneratorTest : public tst::Nangate45Fixture
     unsigned h = 0;
   };
 
-  LabelWash measureLabelWash()
+  // No pin or obstruction shapes on the tech layers, so only the cover under
+  // test can reach the label.
+  static TileVisibility labelOnlyVis()
+  {
+    TileVisibility vis;
+    vis.blockages = false;
+    vis.inst_pins = false;
+    return vis;
+  }
+
+  // Pin names alone: the instance names share _inst_labels.
+  static TileVisibility pinNamesOnlyVis()
+  {
+    TileVisibility vis;
+    vis.inst_names = false;
+    vis.inst_pin_names = true;
+    return vis;
+  }
+
+  // The z=0 _inst_labels tile.
+  std::vector<unsigned char> labelsTile(const TileVisibility& vis)
+  {
+    return tile_gen_->generateTile("_inst_labels", 0, 0, 0, vis);
+  }
+
+  // A label crossing a tile seam lands alike in both tiles: the stitched pair
+  // matches the same label drawn whole in one tile at the same sub-pixel
+  // phase.  The instance's name, or with `pin_name` its one pin's.
+  void expectLabelLandsTheSameAcrossASeam(const bool pin_name)
+  {
+    block_->setDieArea(odb::Rect(0, 0, 200000, 200000));
+    makeTileGen();
+    const odb::Rect bounds = tile_gen_->getBounds();
+    // At z=2 a tile spans a quarter of the bounds in 256 px, so half a tile is
+    // a whole 128 px shift as long as it is a whole number of DBU.
+    ASSERT_EQ(bounds.maxDXDY() % 8, 0);
+    const int tile_dbu = bounds.maxDXDY() / 4;
+    const int half_tile = tile_dbu / 2;
+    // Tile column 1, row 1 from the bottom (Leaflet row 2); the macro starts a
+    // fraction of a pixel past 5/8 of the column, so its name crosses into
+    // column 2.
+    const int x0 = bounds.xMin() + tile_dbu + tile_dbu * 5 / 8 + 37;
+    const int y0 = bounds.yMin() + tile_dbu + tile_dbu / 4;
+
+    // Tiles 1 and 2 of Leaflet row 2, side by side.
+    const auto stitch = [&](unsigned& w, unsigned& h) {
+      makeTileGen();
+      tile_gen_->eagerInit();
+      EXPECT_EQ(tile_gen_->getBounds(), bounds);
+      const TileVisibility vis
+          = pin_name ? pinNamesOnlyVis() : TileVisibility{};
+      unsigned left_w = 0, left_h = 0, right_w = 0, right_h = 0;
+      const auto left
+          = decodePng(tile_gen_->generateTile("_inst_labels", 2, 1, 2, vis),
+                      left_w,
+                      left_h);
+      const auto right
+          = decodePng(tile_gen_->generateTile("_inst_labels", 2, 2, 2, vis),
+                      right_w,
+                      right_h);
+      constexpr unsigned kSize = static_cast<unsigned>(kTileSize);
+      // Both decoded tiles must fit the fixed-size stitched image.
+      if (left_w != kSize || left_h != kSize || right_w != kSize
+          || right_h != kSize || left.size() != 4UL * kSize * kSize
+          || right.size() != 4UL * kSize * kSize) {
+        ADD_FAILURE() << "invalid decoded tile dimensions";
+        return std::vector<unsigned char>{};
+      }
+      w = h = kSize;
+      std::vector<unsigned char> out(8UL * w * h);
+      for (unsigned y = 0; y < h; ++y) {
+        std::memcpy(&out[8UL * y * w], &left[4UL * y * w], 4UL * w);
+        std::memcpy(&out[8UL * y * w + 4UL * w], &right[4UL * y * w], 4UL * w);
+      }
+      return out;
+    };
+
+    // Widths a fraction of a pixel apart, so the rounded box takes both
+    // parities.
+    for (int i = 0; i < 6; ++i) {
+      const std::string master = "SEAM_MACRO_" + std::to_string(i);
+      const int width = 40000 + 61 * i;
+      std::vector<TestPin> pins;
+      if (pin_name) {
+        pins.push_back({.name = "a_long_pin_name_to_label",
+                        .layer = "metal1",
+                        .boxes = {odb::Rect(0, 5000, width, 15000)},
+                        .polygon = {}});
+      }
+      makeBlockMaster(
+          master.c_str(), width, 20000, {}, odb::dbMasterType::BLOCK, pins);
+      odb::dbInst* inst
+          = placeInst(master.c_str(), "a_long_instance_name_to_label", x0, y0);
+      SCOPED_TRACE(master);
+      unsigned w = 0, h = 0;
+      const auto across = stitch(w, h);
+      inst->setLocation(x0 + half_tile, y0);
+      const auto inside = stitch(w, h);
+      odb::dbInst::destroy(inst);
+      if (across.size() != 8UL * kTileSize * kTileSize
+          || inside.size() != 8UL * kTileSize * kTileSize) {
+        ADD_FAILURE() << "invalid stitched tile size";
+        return;
+      }
+      ASSERT_EQ(w, 256u);
+
+      int lit = 0;
+      int mismatched = 0;
+      for (unsigned y = 0; y < h; ++y) {
+        for (unsigned x = 128; x < 2 * w; ++x) {
+          const size_t a = 4UL * (y * 2 * w + x - 128);
+          const size_t b = 4UL * (y * 2 * w + x);
+          lit += across[a + 3] > 0;
+          mismatched += std::memcmp(&across[a], &inside[b], 4) != 0;
+        }
+      }
+      ASSERT_GT(lit, 100) << "precondition: the label is drawn";
+      EXPECT_EQ(mismatched, 0);
+    }
+  }
+
+  LabelWash measureLabelWash(bool TileVisibility::* cover
+                             = &TileVisibility::placement_blockages,
+                             const TileVisibility& base_vis = labelOnlyVis())
   {
     LabelWash out;
-    TileVisibility vis;
+    TileVisibility vis = base_vis;
     vis.inst_names = true;
 
     unsigned pw = 0, ph = 0;
-    vis.placement_blockages = false;
-    const auto plain = decodePng(
-        tile_gen_->generateTile("_instances", 0, 0, 0, vis), pw, ph);
-    vis.placement_blockages = true;
-    out.hatched = decodePng(
-        tile_gen_->generateTile("_instances", 0, 0, 0, vis), out.w, out.h);
+    vis.*cover = false;
+    const auto plain = renderStack(vis, pw, ph);
+    vis.*cover = true;
+    out.hatched = renderStack(vis, out.w, out.h);
     EXPECT_EQ(pw, out.w);
     EXPECT_EQ(ph, out.h);
 
@@ -459,15 +718,16 @@ class TileGeneratorTest : public tst::Nangate45Fixture
     return out;
   }
 
-  static void expectLabelSurvived(const LabelWash& wash)
+  static void expectLabelSurvived(const LabelWash& wash,
+                                  const int min_label_px = 150)
   {
-    ASSERT_GT(wash.label_px, 150)
+    ASSERT_GT(wash.label_px, min_label_px)
         << "precondition: the label must be large enough to meet several "
-           "hatch lines; only "
+           "covering shapes; only "
         << wash.label_px << " solid pixels";
     EXPECT_EQ(wash.washed_out, 0)
         << wash.washed_out << " of " << wash.label_px
-        << " label pixels were painted over by the blockage hatch (weakest "
+        << " label pixels were painted over by the covering shapes (weakest "
            "yellowness "
         << wash.min_yellowness << ")";
   }
@@ -658,6 +918,7 @@ class TileGeneratorTest : public tst::Nangate45Fixture
   }
 
   std::unique_ptr<TileGenerator> tile_gen_;
+  int macro_count_ = 0;
   std::unique_ptr<BoundaryHeatMap> heatmap_;
 };
 
@@ -1079,6 +1340,73 @@ TEST_F(TileGeneratorTest, StandaloneBlockageDoesNotCrossInstanceNames)
          "nothing";
 }
 
+// A macro's name stays readable over its own obstructions: Qt paints names
+// after every layer.
+TEST_F(TileGeneratorTest, InstanceNameStaysAboveMasterObstructions)
+{
+  placeMacro("a_long_instance_name_to_label", {"metal1", "metal2", "metal3"});
+
+  TileVisibility vis = labelOnlyVis();
+  vis.placement_blockages = false;
+  // The obstructions cover the whole macro, so every label pixel meets them;
+  // a block's outlined name just has fewer pure-yellow pixels than a plain one.
+  expectLabelSurvived(measureLabelWash(&TileVisibility::blockages, vis), 100);
+}
+
+// Instance names live on _inst_labels, not on the _instances tile.
+TEST_F(TileGeneratorTest, InstanceNamesLeaveTheInstancesTile)
+{
+  placeInst("BUF_X16", "a_long_instance_name_to_label", 0, 0);
+  fitDieToContent();
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  TileVisibility on;
+  on.inst_names = true;
+  TileVisibility off;
+  off.inst_names = false;
+
+  EXPECT_EQ(tile_gen_->generateTile("_instances", 0, 0, 0, on),
+            tile_gen_->generateTile("_instances", 0, 0, 0, off))
+      << "instance names must not be drawn on the _instances tile";
+  EXPECT_FALSE(TileGenerator::isBlankTilePng(labelsTile(on)))
+      << "_inst_labels should carry the instance name";
+  EXPECT_TRUE(TileGenerator::isBlankTilePng(labelsTile(off)));
+}
+
+// Qt outlines block and pad names (drawTextInBBox strokes the text path black
+// before filling it), which keeps them readable over the macro's own shapes.
+TEST_F(TileGeneratorTest, BlockAndPadNamesGetQtOutline)
+{
+  for (const odb::dbMasterType::Value type :
+       {odb::dbMasterType::BLOCK, odb::dbMasterType::PAD}) {
+    const char* type_name = odb::dbMasterType(type).getString();
+    SCOPED_TRACE(type_name);
+    odb::dbInst* inst
+        = placeMacro("a_long_instance_name_to_label", {}, {}, type);
+
+    unsigned w = 0, h = 0;
+    const auto px = decodePng(labelsTile(TileVisibility{}), w, h);
+    EXPECT_GT(countOutlinePixels(px), 0) << "no black outline around the name";
+    odb::dbInst::destroy(inst);
+  }
+}
+
+// ... and leaves standard-cell names plain.
+TEST_F(TileGeneratorTest, StdCellNamesStayPlain)
+{
+  placeInst("BUF_X16", "a_long_instance_name_to_label", 0, 0);
+  fitDieToContent();
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  unsigned w = 0, h = 0;
+  const auto px = decodePng(labelsTile(TileVisibility{}), w, h);
+  EXPECT_TRUE(hasNonTransparentPixel(px)) << "the name should be drawn";
+  EXPECT_EQ(countOutlinePixels(px), 0)
+      << "standard-cell names are not outlined";
+}
+
 TEST_F(TileGeneratorTest, GetLayers)
 {
   makeTileGen();
@@ -1090,6 +1418,217 @@ TEST_F(TileGeneratorTest, GetLayers)
   EXPECT_EQ(layers.size(), 22);
   EXPECT_EQ(layers.front(), "poly");
   EXPECT_EQ(layers.back(), "OVERLAP");
+}
+
+// The client's stack: the Implant folder (IMP), then Other (Nangate45's poly,
+// active, OVERLAP), then the routing layers, each in tech order.
+TEST_F(TileGeneratorTest, PaintOrderPutsCategoriesFirst)
+{
+  ASSERT_NE(odb::dbTechLayer::create(
+                lib_->getTech(), "IMP", odb::dbTechLayerType::IMPLANT),
+            nullptr);
+  makeTileGen();
+  const std::vector<PaintLayer> layers = tile_gen_->paintOrderLayers();
+  ASSERT_EQ(layers.size(), 23);
+  EXPECT_EQ(layers[0].layer, "IMP");
+  EXPECT_EQ(layers[1].layer, "poly");
+  EXPECT_EQ(layers[2].layer, "active");
+  EXPECT_EQ(layers[3].layer, "OVERLAP");
+  EXPECT_EQ(layers[4].layer, "metal1");
+  EXPECT_EQ(layers[5].layer, "via1");
+  EXPECT_EQ(layers.back().layer, "metal10");
+  // A single die owns every row.
+  for (const PaintLayer& entry : layers) {
+    EXPECT_EQ(entry.chiplet, tile_gen_->chiplets().front().path);
+  }
+}
+
+// save_image -web composites in that order: an OVERLAP obstruction over the
+// whole macro stays under metal1's.
+TEST_F(TileGeneratorTest, SaveImageStacksCategoriesUnderMetals)
+{
+  placeMacro("macro", {"OVERLAP", "metal1"});
+
+  TileVisibility vis;
+  vis.inst_names = false;
+  vis.placement_blockages = false;
+  int w = 0, h = 0;
+  const auto px = tile_gen_->renderImageBuffer(
+      tile_gen_->getBounds(), 64, 0, vis, {}, &w, &h);
+  ASSERT_GT(w, 0);
+  const size_t centre = 4UL * ((h / 2) * w + w / 2);
+  // metal1's obstruction is blue (126,126,255); on top it keeps red near 155,
+  // where OVERLAP's near-white one on top would push it past 220.
+  EXPECT_LT(px[centre], 190) << "OVERLAP is composited over metal1";
+  EXPECT_GT(px[centre + 2], 240);
+}
+
+// Master obstructions take the layer colour's QColor::lighter(), as in
+// RenderThread::drawInstanceShapes: metal4 (190,244,81) gives (235,255,196).
+TEST_F(TileGeneratorTest, ObstructionsUseQtLighterColour)
+{
+  placeMacro("macro", {"metal4"});
+
+  unsigned w = 0, h = 0;
+  const auto px = decodePng(
+      tile_gen_->generateTile("metal4", 0, 0, 0, TileVisibility{}), w, h);
+  constexpr unsigned kSize = static_cast<unsigned>(kTileSize);
+  // The fixed tile dimensions must match the decoded RGBA buffer.
+  if (w != kSize || h != kSize || px.size() != 4UL * kSize * kSize) {
+    ADD_FAILURE() << "invalid decoded tile dimensions";
+    return;
+  }
+  const size_t centre = 4UL * ((kTileSize / 2) * kTileSize + kTileSize / 2);
+  EXPECT_EQ(px[centre], 235);
+  EXPECT_EQ(px[centre + 1], 255);
+  EXPECT_EQ(px[centre + 2], 196);
+  EXPECT_EQ(px[centre + 3], 180);
+}
+
+// Expected values from QColor itself.  Columns: input, lighter(), lighter(50),
+// lighter(300).
+TEST(ColorTest, LighterAndDarkerMatchQColor)
+{
+  struct Case
+  {
+    Color in, lighter, lighter50, lighter300;
+  };
+  // NOLINTBEGIN(modernize-use-designated-initializers)
+  const Case cases[] = {
+      {{0, 0, 254, 180},
+       {126, 126, 255, 180},
+       {0, 0, 127, 180},
+       {255, 255, 255, 180}},
+      {{254, 0, 0, 180},
+       {255, 126, 126, 180},
+       {127, 0, 0, 180},
+       {255, 255, 255, 180}},
+      {{9, 221, 0, 180},
+       {84, 255, 76, 180},
+       {4, 110, 0, 180},
+       {255, 255, 255, 180}},
+      {{190, 244, 81, 180},
+       {235, 255, 196, 180},
+       {95, 122, 40, 180},
+       {255, 255, 255, 180}},
+      {{222, 33, 96, 180},
+       {255, 116, 162, 180},
+       {111, 17, 48, 180},
+       {255, 255, 255, 180}},
+      {{32, 216, 253, 180},
+       {157, 239, 255, 180},
+       {16, 108, 126, 180},
+       {255, 255, 255, 180}},
+      {{253, 108, 160, 180},
+       {255, 233, 241, 180},
+       {126, 54, 80, 180},
+       {255, 255, 255, 180}},
+      {{117, 63, 194, 180},
+       {175, 119, 255, 180},
+       {58, 32, 97, 180},
+       {255, 255, 255, 180}},
+      {{128, 155, 49, 180},
+       {192, 232, 74, 180},
+       {64, 77, 24, 180},
+       {255, 255, 255, 180}},
+      {{234, 63, 252, 180},
+       {249, 187, 255, 180},
+       {117, 32, 126, 180},
+       {255, 255, 255, 180}},
+      {{9, 96, 19, 180},
+       {14, 144, 29, 180},
+       {5, 48, 10, 180},
+       {57, 255, 80, 180}},
+      {{214, 120, 239, 180},
+       {250, 232, 255, 180},
+       {107, 60, 119, 180},
+       {255, 255, 255, 180}},
+      {{192, 222, 164, 180},
+       {255, 255, 255, 180},
+       {96, 111, 82, 180},
+       {255, 255, 255, 180}},
+      {{110, 68, 107, 180},
+       {165, 102, 160, 180},
+       {55, 34, 53, 180},
+       {255, 233, 253, 180}},
+      {{126, 126, 255, 180},
+       {253, 253, 255, 180},
+       {63, 63, 127, 180},
+       {255, 255, 255, 180}},
+      {{255, 126, 126, 180},
+       {255, 253, 253, 180},
+       {127, 63, 63, 180},
+       {255, 255, 255, 180}},
+      {{4, 110, 0, 180}, {6, 165, 0, 180}, {2, 55, 0, 180}, {82, 255, 75, 180}},
+      {{95, 122, 40, 180},
+       {142, 183, 60, 180},
+       {47, 61, 20, 180},
+       {235, 255, 195, 180}},
+      {{111, 17, 48, 180},
+       {166, 25, 72, 180},
+       {55, 8, 24, 180},
+       {255, 117, 163, 180}},
+      {{16, 108, 126, 180},
+       {24, 162, 189, 180},
+       {8, 54, 63, 180},
+       {155, 239, 255, 180}},
+      {{126, 54, 80, 180},
+       {189, 81, 120, 180},
+       {63, 27, 40, 180},
+       {255, 232, 240, 180}},
+      {{58, 32, 97, 180},
+       {87, 48, 145, 180},
+       {29, 16, 48, 180},
+       {174, 120, 255, 180}},
+      {{225, 255, 136, 180},
+       {255, 255, 255, 180},
+       {112, 127, 68, 180},
+       {255, 255, 255, 180}},
+      {{117, 32, 126, 180},
+       {176, 48, 189, 180},
+       {59, 16, 63, 180},
+       {249, 188, 255, 180}},
+      {{18, 192, 38, 180},
+       {57, 255, 80, 180},
+       {9, 96, 19, 180},
+       {255, 255, 255, 180}},
+      {{107, 60, 119, 180},
+       {161, 90, 178, 180},
+       {53, 30, 59, 180},
+       {250, 231, 255, 180}},
+      {{96, 111, 82, 180},
+       {144, 166, 123, 180},
+       {48, 55, 41, 180},
+       {255, 255, 255, 180}},
+      {{220, 136, 214, 180},
+       {255, 233, 253, 180},
+       {110, 68, 107, 180},
+       {255, 255, 255, 180}},
+      {{0, 0, 0, 255}, {0, 0, 0, 255}, {0, 0, 0, 255}, {0, 0, 0, 255}},
+      {{255, 255, 255, 255},
+       {255, 255, 255, 255},
+       {127, 127, 127, 255},
+       {255, 255, 255, 255}},
+      {{128, 128, 128, 100},
+       {192, 192, 192, 100},
+       {64, 64, 64, 100},
+       {255, 255, 255, 100}},
+      {{209, 191, 141, 180},
+       {255, 249, 231, 180},
+       {104, 95, 70, 180},
+       {255, 255, 255, 180}},
+  };
+  // NOLINTEND(modernize-use-designated-initializers)
+  for (const Case& c : cases) {
+    SCOPED_TRACE(::testing::Message()
+                 << int(c.in.r) << "," << int(c.in.g) << "," << int(c.in.b));
+    EXPECT_EQ(c.in.lighter(), c.lighter);
+    EXPECT_EQ(c.in.lighter(50), c.lighter50);
+    EXPECT_EQ(c.in.darker(200), c.lighter50)
+        << "lighter(50) is darker(200), as in Qt";
+    EXPECT_EQ(c.in.lighter(300), c.lighter300);
+    EXPECT_EQ(c.in.lighter(0), c.in) << "factor <= 0 is a no-op";
+  }
 }
 
 // The per-layer "pattern" request field maps to TileVisibility::fill_pattern,
@@ -1678,6 +2217,70 @@ TEST_F(TileGeneratorTest, RenderOverlayPngFramesChipletsWithNoTopBlock)
       << "overlay rendered but drew nothing over the chiplets";
 }
 
+// Overlays leave the die frame to the layer passes: on a multi-die design a
+// _inst_labels tile with no name to draw stays blank.
+TEST_F(TileGeneratorTest, OverlaysLeaveTheDieOutlineToLayers)
+{
+  makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/2);
+  makeTileGen();
+  tile_gen_->eagerInit();
+  EXPECT_TRUE(TileGenerator::isBlankTilePng(labelsTile(TileVisibility{})));
+}
+
+// A block's outlined name reads the same in a mirrored chiplet as in an
+// upright one: _inst_labels holds it back and draws it after compositing.
+TEST_F(TileGeneratorTest, InstLabelsStayUprightInAMirroredChiplet)
+{
+  placeMacro("a_long_instance_name_to_label", {});
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
+  odb::dbChipInst* die0 = *root->getChipInsts().begin();
+
+  // The lit pixels of the z=0 tile cropped to their bounding box, with its
+  // width.
+  const auto label = [&] {
+    makeTileGen();
+    tile_gen_->eagerInit();
+    unsigned w = 0, h = 0;
+    const auto px = decodePng(labelsTile(TileVisibility{}), w, h);
+    constexpr unsigned kSize = static_cast<unsigned>(kTileSize);
+    // The crop loops index a fixed-size tile decoded from the PNG.
+    if (w != kSize || h != kSize || px.size() != 4UL * kSize * kSize) {
+      ADD_FAILURE() << "invalid decoded tile dimensions";
+      return std::pair{0U, std::vector<unsigned char>{}};
+    }
+    w = h = kSize;
+    unsigned x0 = w, y0 = h, x1 = 0, y1 = 0;
+    for (unsigned y = 0; y < h; ++y) {
+      for (unsigned x = 0; x < w; ++x) {
+        if (px[4UL * (y * w + x) + 3] > 0) {
+          x0 = std::min(x0, x);
+          y0 = std::min(y0, y);
+          x1 = std::max(x1, x);
+          y1 = std::max(y1, y);
+        }
+      }
+    }
+    std::vector<unsigned char> out;
+    if (x0 > x1) {
+      return std::pair{0U, out};
+    }
+    for (unsigned y = y0; y <= y1; ++y) {
+      out.insert(out.end(),
+                 px.begin() + 4L * (y * w + x0),
+                 px.begin() + 4L * (y * w + x1 + 1));
+    }
+    return std::pair{x1 - x0 + 1, out};
+  };
+
+  const auto upright = label();
+  ASSERT_GT(countOutlinePixels(upright.second), 0)
+      << "the block's name is not drawn outlined";
+  die0->setOrient(
+      odb::dbOrientType3D(odb::dbOrientType::MY, /*mirror_z=*/false));
+  EXPECT_EQ(label(), upright)
+      << "the name reads mirrored, or lost its outline, in an MY chiplet";
+}
+
 // The viewer stretches this image over exactly getBounds() (app.fitBounds in
 // main.js), so framing on anything wider lands the highlight off the tiles.
 TEST_F(TileGeneratorTest, RenderOverlayPngCropsToBoundsWithNoMargin)
@@ -1896,6 +2499,679 @@ TEST_F(TileGeneratorTest, CollectTimingPathShapesSkipsIntraCellHop)
   EXPECT_TRUE(lines.empty())
       << "flight line drawn across a cell's own input-to-output arc";
   EXPECT_TRUE(rects.empty());
+}
+
+// ─── Chiplet orientation (issue #11329) ──────────────────────────────────
+
+// Find a chiplet by path, or null.
+const ChipletNode* findChiplet(const std::vector<ChipletNode>& chiplets,
+                               std::string_view path)
+{
+  const auto at = std::ranges::find(chiplets, path, &ChipletNode::path);
+  return at == chiplets.end() ? nullptr : &*at;
+}
+
+// The web builds its chiplet list from ODB's unfolded model, but keeps the
+// recursive walk for designs whose model was never built.  The two have to
+// agree on paths: a path is the key of the per-chiplet visibility filter and
+// of the or_hidden_chiplets cookie, so a mismatch would silently drop a user's
+// saved state on designs that take the other route.
+TEST_F(TileGeneratorTest, CollectChipletsAgreesWithTheUnfoldedModel)
+{
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/2);
+
+  // Nothing has built the unfolded model yet, so this takes the fallback.
+  const std::vector<ChipletNode> walked = collectChiplets(root);
+  getDb()->constructUnfoldedModel();
+  const std::vector<ChipletNode> unfolded = collectChiplets(root);
+
+  auto paths = [](const std::vector<ChipletNode>& nodes) {
+    std::set<std::string> out;
+    for (const ChipletNode& node : nodes) {
+      out.insert(node.path);
+    }
+    return out;
+  };
+  EXPECT_EQ(paths(walked), paths(unfolded))
+      << "the unfolded and fallback traversals disagree on chiplet paths, "
+         "which are persisted in user cookies";
+  EXPECT_EQ(paths(unfolded),
+            (std::set<std::string>{"root", "root/die0", "root/die1"}));
+}
+
+// A face-down chiplet is MZ: {orient_2d=R0, mirror_z=true}.  Reading only the
+// 2D half reports it as R0 and the viewer draws it face-up, which is the bug.
+TEST_F(TileGeneratorTest, ChipletReportsMirrorZAsFlipped)
+{
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/2);
+  auto insts = root->getChipInsts().begin();
+  odb::dbChipInst* die0 = *insts;
+  odb::dbChipInst* die1 = *++insts;
+  die1->setOrient(odb::dbOrientType3D("MZ"));
+  getDb()->constructUnfoldedModel();
+
+  const std::vector<ChipletNode> chiplets = collectChiplets(root);
+  const ChipletNode* up = findChiplet(chiplets, "root/" + die0->getName());
+  const ChipletNode* down = findChiplet(chiplets, "root/" + die1->getName());
+  ASSERT_NE(up, nullptr);
+  ASSERT_NE(down, nullptr);
+  EXPECT_FALSE(up->isFlipped());
+  EXPECT_TRUE(down->isFlipped())
+      << "an MZ chiplet is not reported as face-down, "
+         "so the viewer cannot reverse its stack";
+  // MZ leaves XY alone, which is what lets the R0 fast path still render it.
+  EXPECT_EQ(down->world_xfm.getOrient(), odb::dbOrientType::R0);
+}
+
+// mirror_z accumulates by XOR down the hierarchy: a flipped chiplet inside a
+// flipped one is face-up again.  The transform already carries that, so the
+// node must not re-derive the flag from its own dbChipInst.
+TEST_F(TileGeneratorTest, ChipletFlipCancelsWhenNested)
+{
+  odb::dbChip* mid = odb::dbChip::create(
+      getDb(), nullptr, "mid", odb::dbChip::ChipType::HIER);
+  odb::dbChipInst* inner = odb::dbChipInst::create(mid, chip_, "inner");
+  inner->setOrient(odb::dbOrientType3D("MZ"));
+
+  odb::dbChip* root = odb::dbChip::create(
+      getDb(), nullptr, "root", odb::dbChip::ChipType::HIER);
+  getDb()->setTopChip(root);
+  odb::dbChipInst* outer = odb::dbChipInst::create(root, mid, "outer");
+  outer->setOrient(odb::dbOrientType3D("MZ"));
+  getDb()->constructUnfoldedModel();
+
+  const std::vector<ChipletNode> chiplets = collectChiplets(root);
+  const ChipletNode* leaf = findChiplet(chiplets, "root/outer/inner");
+  ASSERT_NE(leaf, nullptr) << "the HIER ancestor's leaf is missing: the "
+                              "unfolded model skips HIER chips, so its "
+                              "descendants have to be rebuilt from the path";
+  EXPECT_FALSE(leaf->isFlipped())
+      << "MZ inside MZ is face-up again, but the chiplet reports face-down";
+
+  // The HIER node itself owns no block but still groups the UI trees.
+  const ChipletNode* group = findChiplet(chiplets, "root/outer");
+  ASSERT_NE(group, nullptr) << "HIER grouping node dropped from the tree";
+  EXPECT_TRUE(group->isFlipped());
+}
+
+// The cache fingerprint used to be (root, chip-inst count), which a reorient
+// does not change: flipping a chiplet from Tcl left the viewer showing the old
+// stack until the design was reloaded.
+TEST_F(TileGeneratorTest, ChipletCacheNoticesAReorient)
+{
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
+  odb::dbChipInst* die0 = *root->getChipInsts().begin();
+  makeTileGen();
+
+  const ChipletNode* before
+      = findChiplet(tile_gen_->chiplets(), "root/" + die0->getName());
+  ASSERT_NE(before, nullptr);
+  ASSERT_FALSE(before->isFlipped());
+
+  die0->setOrient(odb::dbOrientType3D("MZ"));
+
+  const ChipletNode* after
+      = findChiplet(tile_gen_->chiplets(), "root/" + die0->getName());
+  ASSERT_NE(after, nullptr);
+  EXPECT_TRUE(after->isFlipped())
+      << "the chiplet cache did not notice setOrient, so the viewer keeps "
+         "drawing the die face-up";
+
+  // The unfolded model is a load-time snapshot and this read path must not
+  // rebuild it (that would free objects a concurrent reader is walking), so
+  // the edit has to stay visible on later calls too — not just the one that
+  // detected it.
+  const ChipletNode* later
+      = findChiplet(tile_gen_->chiplets(), "root/" + die0->getName());
+  ASSERT_NE(later, nullptr);
+  EXPECT_TRUE(later->isFlipped())
+      << "the reorient was reported once and then lost, which means a stale "
+         "unfolded model was read back";
+}
+
+// Compare the two routes node by node.  `path` orders them, so a disagreement
+// is reported against the node it belongs to rather than an index.
+void expectSameChiplets(const std::vector<ChipletNode>& from_model,
+                        const std::vector<ChipletNode>& walked)
+{
+  ASSERT_EQ(from_model.size(), walked.size());
+  for (size_t i = 0; i < walked.size(); ++i) {
+    EXPECT_EQ(from_model[i].path, walked[i].path);
+    EXPECT_EQ(from_model[i].isFlipped(), walked[i].isFlipped())
+        << "flip disagrees at " << walked[i].path;
+    // The sort key: if the two routes disagree here they stack the dies
+    // differently, which is the whole feature.
+    EXPECT_EQ(from_model[i].global_z, walked[i].global_z)
+        << "z disagrees at " << walked[i].path;
+    EXPECT_EQ(from_model[i].world_xfm, walked[i].world_xfm)
+        << "transform disagrees at " << walked[i].path;
+  }
+}
+
+// A HIER wrapper holding two dies, all of them at a non-zero z.  A HIER chip
+// declares no dimensions, so its own cuboid is degenerate — the wrapper's z can
+// only come from what it contains, and the offsets are what make the two ways
+// of deciding that tell apart.
+odb::dbChip* makeNestedChipletRoot(odb::dbDatabase* db,
+                                   odb::dbChip* master,
+                                   const int wrapper_z,
+                                   const int lower_z,
+                                   const int upper_z)
+{
+  odb::dbChip* wrapper = odb::dbChip::create(
+      db, nullptr, "wrapper", odb::dbChip::ChipType::HIER);
+  odb::dbChipInst* lower = odb::dbChipInst::create(wrapper, master, "lower");
+  lower->setLoc(odb::Point3D(0, 0, lower_z));
+  odb::dbChipInst* upper = odb::dbChipInst::create(wrapper, master, "upper");
+  upper->setLoc(odb::Point3D(0, 0, upper_z));
+
+  odb::dbChip* root
+      = odb::dbChip::create(db, nullptr, "root", odb::dbChip::ChipType::HIER);
+  db->setTopChip(root);
+  odb::dbChipInst* wrap_inst = odb::dbChipInst::create(root, wrapper, "wrap");
+  wrap_inst->setLoc(odb::Point3D(0, 0, wrapper_z));
+  return root;
+}
+
+// Regression for the PR #11429 review: a HIER wrapper's z was decided one way
+// when read off the unfolded model (lowest leaf it contains) and another way
+// when walked (the wrapper's own degenerate cuboid).  The two agree only when
+// the lowest child sits at local z 0; with real offsets they diverge, and since
+// global_z is the sort key, sibling wrappers can swap order the moment an edit
+// switches the cache to the walked route.
+TEST_F(TileGeneratorTest, NestedHierGroupsGetTheSameZFromBothRoutes)
+{
+  odb::dbChip* root = makeNestedChipletRoot(getDb(),
+                                            chip_,
+                                            /*wrapper_z=*/7000,
+                                            /*lower_z=*/1000,
+                                            /*upper_z=*/5000);
+  getDb()->constructUnfoldedModel();
+
+  expectSameChiplets(collectChiplets(root, /*use_unfolded_model=*/true),
+                     collectChiplets(root, /*use_unfolded_model=*/false));
+}
+
+// Reading the model is opt-out precisely so an edited hierarchy can be walked
+// instead of rebuilt.  Both routes have to agree, or that fallback silently
+// changes what the viewer shows.
+TEST_F(TileGeneratorTest, WalkingMatchesTheUnfoldedModelAfterAReorient)
+{
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/2);
+  auto insts = root->getChipInsts().begin();
+  odb::dbChipInst* die0 = *insts;
+  die0->setOrient(odb::dbOrientType3D("MZ_MX"));
+  getDb()->constructUnfoldedModel();
+
+  const std::vector<ChipletNode> from_model
+      = collectChiplets(root, /*use_unfolded_model=*/true);
+  const std::vector<ChipletNode> walked
+      = collectChiplets(root, /*use_unfolded_model=*/false);
+
+  expectSameChiplets(from_model, walked);
+}
+
+// save_image composites in paintOrderLayers() order, so an exported PNG has to
+// follow the same reversal the screen does — otherwise the two disagree for the
+// exact designs this feature is about (PR #11429 review).
+TEST_F(TileGeneratorTest, SaveImageOrderReversesAFlippedChiplet)
+{
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
+  odb::dbChipInst* die0 = *root->getChipInsts().begin();
+  getDb()->constructUnfoldedModel();
+  makeTileGen();
+
+  const std::vector<PaintLayer> upright = tile_gen_->paintOrderLayers();
+  ASSERT_GT(upright.size(), 1u) << "the fixture tech has to contribute layers";
+
+  die0->setOrient(odb::dbOrientType3D("MZ"));
+  const std::vector<PaintLayer> flipped = tile_gen_->paintOrderLayers();
+
+  // With a single die, turning it over reverses its whole stack: the routing
+  // layers come first and the category folders trail them, which is the exact
+  // reverse of the upright walk.
+  std::vector<PaintLayer> upright_reversed = upright;
+  std::ranges::reverse(upright_reversed);
+  EXPECT_EQ(flipped, upright_reversed)
+      << "a face-down die exports in the same order as it is drawn on screen";
+}
+
+// Two dies on one tech list their rows apart, a face-down die's in reverse, so
+// the export can order them as the screen does (#11886).
+TEST_F(TileGeneratorTest, PaintOrderSeparatesDiesSharingATech)
+{
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/2);
+  root->findChipInst("die1")->setOrient(odb::dbOrientType3D("MZ"));
+  getDb()->constructUnfoldedModel();
+  makeTileGen();
+
+  const std::vector<PaintLayer> order = tile_gen_->paintOrderLayers();
+  auto rows_of = [&order](const std::string& path) {
+    std::vector<std::string> names;
+    for (const PaintLayer& entry : order) {
+      if (entry.chiplet == path) {
+        names.push_back(entry.layer);
+      }
+    }
+    return names;
+  };
+  const std::vector<std::string> die0 = rows_of("root/die0");
+  std::vector<std::string> die1 = rows_of("root/die1");
+  ASSERT_GT(die0.size(), 1u) << "the fixture tech has to contribute layers";
+  EXPECT_EQ(die0.size() + die1.size(), order.size())
+      << "a row belongs to neither die";
+  std::ranges::reverse(die1);
+  EXPECT_EQ(die1, die0)
+      << "the face-down die must list the same layers, in reverse";
+}
+
+// Two instances of the fixture's chip side by side with a gap between them, so
+// a z=0 tile splits into a die0 part and a die1 part at splitPx().
+class SideBySideDiesTest : public TileGeneratorTest
+{
+ protected:
+  static constexpr int kDie1X = 200000;  // die0 spans x 0..100000
+  static constexpr int kGapMidX = 150000;
+
+  void makeDies()
+  {
+    odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, 2);
+    root->findChipInst("die1")->setLoc(odb::Point3D(kDie1X, 0, 0));
+    makeTileGen();
+    tile_gen_->eagerInit();
+  }
+
+  // The z=0 tile of `layer` under the visibility in `json`, decoded.
+  std::vector<unsigned char> tile(const std::string& layer,
+                                  std::string_view json,
+                                  unsigned& width)
+  {
+    TileVisibility vis;
+    vis.parseFromJson(parseObj(json));
+    unsigned height = 0;
+    return decodePng(
+        tile_gen_->generateTile(layer, 0, 0, 0, vis), width, height);
+  }
+
+  // A metal1 power stripe in the block both dies instantiate.
+  void addM1Stripe(const int x0, const int y0, const int x1, const int y1)
+  {
+    odb::dbTechLayer* m1 = getDb()->getTech()->findLayer("metal1");
+    ASSERT_NE(m1, nullptr);
+    odb::dbNet* vdd = odb::dbNet::create(block_, "VDD");
+    vdd->setSigType(odb::dbSigType::POWER);
+    odb::dbSWire* swire = odb::dbSWire::create(vdd, odb::dbWireType::ROUTED);
+    odb::dbSBox::create(
+        swire, m1, x0, y0, x1, y1, odb::dbWireShapeType::STRIPE);
+  }
+
+  // The tile column in the gap between the dies.
+  int splitPx(const unsigned width) const
+  {
+    return colOf(tile_gen_->getBounds(), width, kGapMidX);
+  }
+
+  // Columns [x0, x1) of a decoded tile, row by row.
+  static std::vector<unsigned char> columns(
+      const std::vector<unsigned char>& rgba,
+      const unsigned width,
+      const int x0,
+      const int x1)
+  {
+    std::vector<unsigned char> out;
+    const size_t row_bytes = 4UL * width;
+    for (size_t row = 0; row + row_bytes <= rgba.size(); row += row_bytes) {
+      out.insert(out.end(),
+                 rgba.begin() + static_cast<std::ptrdiff_t>(row + 4UL * x0),
+                 rgba.begin() + static_cast<std::ptrdiff_t>(row + 4UL * x1));
+    }
+    return out;
+  }
+};
+
+// Each Display Controls row asks for its own die.  A metal1 tile drawing both
+// dies is why hiding one die's row changed nothing, and why the topmost metal1
+// pane painted both dies in its own die's order (#11886).
+TEST_F(SideBySideDiesTest, ScopedTileDrawsOnlyItsOwnDie)
+{
+  addM1Stripe(10000, 40000, 90000, 60000);
+  makeDies();
+
+  unsigned w = 0;
+  const auto both = tile("metal1", "{}", w);
+  const auto die0 = tile("metal1", R"({"chiplet":"root/die0"})", w);
+  const auto die1 = tile("metal1", R"({"chiplet":"root/die1"})", w);
+  const int split = splitPx(w);
+  const int end = static_cast<int>(w);
+
+  ASSERT_TRUE(hasNonTransparentPixel(columns(both, w, 0, split)));
+  ASSERT_TRUE(hasNonTransparentPixel(columns(both, w, split, end)));
+  EXPECT_FALSE(hasNonTransparentPixel(columns(die0, w, split, end)))
+      << "a metal1 row of die0 drew die1's metal1";
+  EXPECT_FALSE(hasNonTransparentPixel(columns(die1, w, 0, split)))
+      << "a metal1 row of die1 drew die0's metal1";
+  EXPECT_TRUE(columns(die0, w, 0, split) == columns(both, w, 0, split))
+      << "die0's own metal1 changed when drawn alone";
+  EXPECT_TRUE(columns(die1, w, split, end) == columns(both, w, split, end))
+      << "die1's own metal1 changed when drawn alone";
+}
+
+TEST_F(TileGeneratorTest, TileVisibilityParsesChipletScopeAndExceptions)
+{
+  TileVisibility vis;
+  vis.parseFromJson(parseObj(R"({"chiplet":"top/die0",
+      "visible_layers":["metal1","metal2"],
+      "chiplet_hidden_layers":{"top/die0":["metal1"]},
+      "chiplet_nonselectable_layers":{"top/die1":["metal2"]}})"));
+  EXPECT_EQ(vis.chiplet, "top/die0");
+  EXPECT_TRUE(vis.isLayerHiddenOn("top/die0", "metal1"));
+  EXPECT_FALSE(vis.isLayerHiddenOn("top/die1", "metal1"));
+  EXPECT_FALSE(vis.isLayerSelectableOn("top/die1", "metal2"));
+  EXPECT_TRUE(vis.isLayerSelectableOn("top/die0", "metal2"));
+
+  // The die being drawn hides its own names on top of visible_layers, and
+  // still does when no visible_layers list was sent.
+  EXPECT_TRUE(vis.isLayerShown("metal1"));
+  vis.hidden_here = &vis.chiplet_hidden_layers.at("top/die0");
+  EXPECT_FALSE(vis.isLayerShown("metal1"));
+  EXPECT_TRUE(vis.isLayerShown("metal2"));
+  EXPECT_FALSE(vis.isLayerShown("metal3")) << "not in visible_layers";
+  vis.has_visible_layers = false;
+  EXPECT_FALSE(vis.isLayerShown("metal1"));
+  EXPECT_TRUE(vis.isLayerShown("metal3"));
+  vis.hidden_here = nullptr;
+
+  // The entry cap counts paths too, not only the names under them.
+  std::string many = R"({"chiplet_hidden_layers":{)";
+  for (int i = 0; i < 20000; ++i) {
+    many += (i ? ",\"p" : "\"p") + std::to_string(i) + "\":[]";
+  }
+  many += "}}";
+  TileVisibility capped;
+  capped.parseFromJson(parseObj(many));
+  EXPECT_LE(capped.chiplet_hidden_layers.size(), 10000u);
+
+  // A request without the fields leaves nothing behind from the last one.
+  vis.parseFromJson(parseObj("{}"));
+  EXPECT_TRUE(vis.chiplet.empty());
+  EXPECT_FALSE(vis.isLayerHiddenOn("top/die0", "metal1"));
+  EXPECT_TRUE(vis.isLayerSelectableOn("top/die1", "metal2"));
+}
+
+// visible_layers is the union over the dies, so hiding metal1 on die0 alone has
+// to reach the _pins pass through the per-die exception.
+TEST_F(SideBySideDiesTest, PinMarkersHideOnOneDieOnly)
+{
+  makeBTermAtEdge("pin_m1", "metal1", 0, 40000, 200, 200);
+  makeDies();
+
+  unsigned w = 0;
+  const auto shown
+      = tile("_pins", R"({"pins":true,"visible_layers":["metal1"]})", w);
+  const auto hidden = tile("_pins", R"({"pins":true,"visible_layers":[]})", w);
+  const auto mixed = tile("_pins",
+                          R"({"pins":true,"visible_layers":["metal1"],
+      "chiplet_hidden_layers":{"root/die0":["metal1"]}})",
+                          w);
+  const int split = splitPx(w);
+  const int end = static_cast<int>(w);
+
+  ASSERT_FALSE(columns(shown, w, 0, split) == columns(hidden, w, 0, split))
+      << "the fixture's pin marker does not show on die0";
+  EXPECT_TRUE(columns(mixed, w, 0, split) == columns(hidden, w, 0, split))
+      << "die0 still draws the pin of a layer it hides";
+  EXPECT_TRUE(columns(mixed, w, split, end) == columns(shown, w, split, end))
+      << "die1 lost the pin of a layer only die0 hides";
+
+  // With no visible_layers list (save_image -web), the exception still holds.
+  const auto unlisted = tile("_pins",
+                             R"({"pins":true,
+      "chiplet_hidden_layers":{"root/die0":["metal1"]}})",
+                             w);
+  EXPECT_TRUE(columns(unlisted, w, 0, split) == columns(hidden, w, 0, split))
+      << "die0 draws a hidden layer's pin when no visible_layers was sent";
+  EXPECT_TRUE(columns(unlisted, w, split, end)
+              == columns(shown, w, split, end));
+}
+
+TEST_F(SideBySideDiesTest, SelectAtHonoursPerDieHiddenAndUnselectableLayers)
+{
+  makeBTermAtEdge("pin_m1", "metal1", 1000, 40000, 2000, 2000);
+  makeDies();
+
+  // Inside the pin box on die0, and the same spot on die1.
+  constexpr int kX0 = 2000;
+  constexpr int kX1 = kX0 + kDie1X;
+  constexpr int kY = 41000;
+  auto picks = [&](const int x, std::string_view json) {
+    TileVisibility vis;
+    vis.parseFromJson(parseObj(json));
+    return tile_gen_->selectAt(x, kY, /*zoom=*/0, vis).size();
+  };
+  ASSERT_EQ(picks(kX0, "{}"), 1u);
+  ASSERT_EQ(picks(kX1, "{}"), 1u);
+
+  constexpr std::string_view kHidden
+      = R"({"chiplet_hidden_layers":{"root/die0":["metal1"]}})";
+  EXPECT_EQ(picks(kX0, kHidden), 0u) << "picked a layer die0 hides";
+  EXPECT_EQ(picks(kX1, kHidden), 1u);
+
+  constexpr std::string_view kUnselectable
+      = R"({"chiplet_nonselectable_layers":{"root/die0":["metal1"]}})";
+  EXPECT_EQ(picks(kX0, kUnselectable), 0u)
+      << "picked a layer die0 made unselectable";
+  EXPECT_EQ(picks(kX1, kUnselectable), 1u);
+}
+
+// Several dies get extents of their own, in world DBU, so a row's tiles can be
+// skipped outside its die.
+TEST_F(SideBySideDiesTest, LayerExtentsCoverEachDie)
+{
+  addM1Stripe(10000, 40000, 90000, 60000);
+  makeDies();
+
+  const auto extents = tile_gen_->layerExtents();
+  ASSERT_TRUE(extents->supported);
+  EXPECT_TRUE(extents->layers.empty())
+      << "the single-die extents must not stand in for several dies";
+  ASSERT_TRUE(extents->chiplets.contains("root/die0"));
+  ASSERT_TRUE(extents->chiplets.contains("root/die1"));
+  const auto& die0 = extents->chiplets.at("root/die0");
+  const auto& die1 = extents->chiplets.at("root/die1");
+
+  const std::optional<odb::Rect>& m1_die0 = die0.layers.at("metal1").shapes;
+  const std::optional<odb::Rect>& m1_die1 = die1.layers.at("metal1").shapes;
+  ASSERT_TRUE(m1_die0.has_value());
+  ASSERT_TRUE(m1_die1.has_value());
+  EXPECT_EQ(m1_die1->xMin(), m1_die0->xMin() + kDie1X)
+      << "die1's extent was left in its own frame";
+  EXPECT_EQ(m1_die1->yMin(), m1_die0->yMin());
+
+  // The outline edges, together, span the die where it sits in the world; a
+  // rectangle has four, with no point left over from the closed ring.
+  ASSERT_EQ(die1.outline.size(), 4u);
+  odb::Rect outline = die1.outline.front();
+  for (const odb::Rect& edge : die1.outline) {
+    outline.merge(edge);
+  }
+  EXPECT_EQ(outline, odb::Rect(kDie1X, 0, kDie1X + 100000, 100000));
+
+  // What the client reads: the same entries, per die.
+  const boost::json::object resp = serializeLayerExtentsResponse(*tile_gen_);
+  ASSERT_TRUE(resp.at("supported").as_bool());
+  EXPECT_TRUE(resp.at("layers").as_object().empty());
+  ASSERT_TRUE(resp.contains("chiplets"));
+  const auto& json_die1
+      = resp.at("chiplets").as_object().at("root/die1").as_object();
+  EXPECT_FALSE(json_die1.at("outline").as_array().empty());
+  EXPECT_TRUE(json_die1.at("layers").as_object().contains("metal1"));
+  EXPECT_TRUE(json_die1.at("gated").as_object().contains("inst_pins"));
+}
+
+// save_image and save_report skip a row's tile by the same test the client
+// makes before requesting it.
+TEST_F(SideBySideDiesTest, RowMayDrawFollowsTheDieExtents)
+{
+  addM1Stripe(40000, 40000, 60000, 60000);
+  makeDies();
+
+  const auto extents = tile_gen_->layerExtents();
+  const PaintLayer die0_m1{.layer = "metal1", .chiplet = "root/die0"};
+  const odb::Rect on_die0(45000, 45000, 55000, 55000);
+  const odb::Rect on_die1(45000 + kDie1X, 45000, 55000 + kDie1X, 55000);
+  const odb::Rect inside_die0_empty(20000, 20000, 30000, 30000);
+  TileVisibility vis;
+  EXPECT_TRUE(TileGenerator::rowMayDraw(*extents, die0_m1, on_die0, vis));
+  EXPECT_FALSE(TileGenerator::rowMayDraw(*extents, die0_m1, on_die1, vis))
+      << "die0's row would render over die1";
+  EXPECT_FALSE(
+      TileGenerator::rowMayDraw(*extents, die0_m1, inside_die0_empty, vis))
+      << "nothing of metal1 there, and the outline is far";
+
+  const PaintLayer pseudo{.layer = "_instances", .chiplet = ""};
+  EXPECT_TRUE(TileGenerator::rowMayDraw(*extents, pseudo, on_die1, vis));
+  vis.tracks_pref = true;
+  EXPECT_TRUE(TileGenerator::rowMayDraw(*extents, die0_m1, on_die1, vis))
+      << "tracks draw without being in the extents";
+}
+
+// A Tcl setLoc moves a die without any callback; the tcl_eval handler has to
+// turn it into the edit clients refresh on.
+TEST_F(SideBySideDiesTest, ChipletEditsCountAsDesignEdits)
+{
+  makeDies();
+  int refreshes = 0;
+  tile_gen_->setDesignChangedCallback([&refreshes] { ++refreshes; });
+  tile_gen_->tileCachePut("key", {1, 2, 3});
+
+  // eagerInit() took the loaded design as the baseline.
+  tile_gen_->noticeChipletEdits();
+  EXPECT_EQ(refreshes, 0);
+  EXPECT_EQ(tile_gen_->tileCacheSize(), 1u);
+
+  getDb()->getChip()->findChipInst("die1")->setLoc(
+      odb::Point3D(kDie1X + 50000, 0, 0));
+  tile_gen_->noticeChipletEdits();
+  EXPECT_EQ(refreshes, 1) << "a moved die did not reach the clients";
+  EXPECT_EQ(tile_gen_->tileCacheSize(), 0u)
+      << "tiles of the die's old position stayed cached";
+
+  tile_gen_->noticeChipletEdits();
+  EXPECT_EQ(refreshes, 1) << "an edit already announced was announced again";
+  tile_gen_->setDesignChangedCallback(nullptr);
+}
+
+// Records the tech layer of each Renderer::drawLayer pass while it lives.
+struct LayerPassRecorder
+{
+  std::vector<odb::dbTechLayer*> layers;
+
+  LayerPassRecorder()
+  {
+    TileGenerator::setRendererHooks({.draw = [this](std::vector<unsigned char>&,
+                                                    const TileFrame&,
+                                                    bool,
+                                                    odb::dbTechLayer* layer) {
+      if (layer != nullptr) {
+        layers.push_back(layer);
+      }
+    }});
+  }
+  LayerPassRecorder(const LayerPassRecorder&) = delete;
+  LayerPassRecorder& operator=(const LayerPassRecorder&) = delete;
+  ~LayerPassRecorder() { TileGenerator::setRendererHooks({}); }
+};
+
+// Renderers draw in world space and know nothing of dies: their per-layer pass
+// goes on the row the client names host, not once per die sharing the layer.
+TEST_F(SideBySideDiesTest, RendererLayerPassRunsOnTheHostRow)
+{
+  makeDies();
+  LayerPassRecorder recorder;
+  unsigned w = 0;
+  tile("metal1",
+       R"({"chiplet":"root/die0","debug_renderers":true,"debug_live":true})",
+       w);
+  EXPECT_TRUE(recorder.layers.empty())
+      << "a row that is not the host drew the pass";
+  tile("metal1",
+       R"({"chiplet":"root/die1","renderer_host":true,
+           "debug_renderers":true,"debug_live":true})",
+       w);
+  EXPECT_EQ(recorder.layers.size(), 1u)
+      << "the host row skipped the renderer's pass";
+}
+
+// Two techs can both have a "metal1"; a die's row hands the renderer its own.
+TEST_F(TileGeneratorTest, RendererLayerComesFromTheScopedDiesTech)
+{
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
+  odb::dbTech* tech2 = odb::dbTech::create(getDb(), "tech2");
+  odb::dbTechLayer* tech2_m1 = odb::dbTechLayer::create(
+      tech2, "metal1", odb::dbTechLayerType::ROUTING);
+  ASSERT_NE(tech2_m1, nullptr);
+  odb::dbChip* chip2 = odb::dbChip::create(getDb(), tech2, "chip2");
+  odb::dbBlock* block2 = odb::dbBlock::create(chip2, "block2");
+  block2->setDieArea(odb::Rect(0, 0, 100000, 100000));
+  odb::dbChipInst::create(root, chip2, "die_b")
+      ->setLoc(odb::Point3D(200000, 0, 0));
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  LayerPassRecorder recorder;
+  TileVisibility vis;
+  vis.parseFromJson(parseObj(R"({"chiplet":"root/die_b","renderer_host":true,
+      "debug_renderers":true,"debug_live":true})"));
+  tile_gen_->generateTile("metal1", 0, 0, 0, vis);
+
+  ASSERT_EQ(recorder.layers.size(), 1u);
+  EXPECT_EQ(recorder.layers[0], tech2_m1)
+      << "die_b's row was handed the metal1 of another tech";
+}
+
+// What the frontend reads to reverse a flipped chiplet's draw order.
+TEST_F(TileGeneratorTest, TechResponseReportsTheFullOrientation)
+{
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
+  odb::dbChipInst* die0 = *root->getChipInsts().begin();
+  die0->setOrient(odb::dbOrientType3D("MZ"));
+  makeTileGen();
+
+  const auto resp = serializeTechResponse(*tile_gen_);
+
+  ASSERT_TRUE(resp.contains("chiplets"));
+  const boost::json::object* die_entry = nullptr;
+  for (const auto& entry : resp.at("chiplets").as_array()) {
+    if (entry.as_object().at("name").as_string() == die0->getName()) {
+      die_entry = &entry.as_object();
+      break;
+    }
+  }
+  if (die_entry == nullptr) {
+    ADD_FAILURE() << "tech response has no chiplet " << die0->getName();
+    return;
+  }
+  EXPECT_EQ(die_entry->at("orient").as_string(), "MZ")
+      << "the 3D orientation collapsed to its 2D half, losing the flip";
+  EXPECT_TRUE(die_entry->at("mirror_z").as_bool());
+
+  // layer_hierarchy carries it too: that is the tree the frontend walks when
+  // it assigns z-indices.
+  const auto& hier = resp.at("layer_hierarchy").as_object();
+  ASSERT_TRUE(hier.contains("flipped"));
+  EXPECT_FALSE(hier.at("flipped").as_bool()) << "the top chip is not flipped";
+  const auto& instances = hier.at("instances").as_array();
+  ASSERT_FALSE(instances.empty());
+  bool saw_flipped_die = false;
+  for (const auto& inst : instances) {
+    const auto& obj = inst.as_object();
+    if (obj.at("name").as_string() == die0->getName()) {
+      saw_flipped_die = obj.at("flipped").as_bool();
+    }
+  }
+  EXPECT_TRUE(saw_flipped_die)
+      << "layer_hierarchy does not mark the die as flipped, so the frontend "
+         "cannot reverse its layer stack";
 }
 
 // The 3DBlox case collectTimingPathShapes exists for: a top chip with no block
@@ -2966,50 +4242,223 @@ TEST_F(TileGeneratorTest, InstPinsGatesItermShapes)
 
 TEST_F(TileGeneratorTest, InstPinNamesRendered)
 {
-  // Use a small die so cell pin geometry fills enough pixels for labels.
-  block_->setDieArea(odb::Rect(0, 0, 2000, 2000));
-  placeInst("BUF_X16", "buf1", 0, 0);
+  makeBigPinMacro();
+
+  const TileVisibility vis_on = pinNamesOnlyVis();
+  TileVisibility vis_off = vis_on;
+  vis_off.inst_pin_names = false;
+
+  EXPECT_FALSE(TileGenerator::isBlankTilePng(labelsTile(vis_on)))
+      << "inst_pin_names should draw ITerm labels on _inst_labels";
+  EXPECT_TRUE(TileGenerator::isBlankTilePng(labelsTile(vis_off)));
+
+  // Pin names are not drawn on the pin's own tech layer.
+  EXPECT_EQ(tile_gen_->generateTile("metal1", 0, 0, 0, vis_on),
+            tile_gen_->generateTile("metal1", 0, 0, 0, vis_off))
+      << "ITerm labels must not be drawn on the tech-layer tiles";
+
+  // With inst_pins=false, labels should not appear even if inst_pin_names=true.
+  TileVisibility vis_no_pins = vis_on;
+  vis_no_pins.inst_pins = false;
+  EXPECT_TRUE(TileGenerator::isBlankTilePng(labelsTile(vis_no_pins)))
+      << "ITerm labels should not render when inst_pins is false";
+}
+
+// Qt's drawITermLabels only labels a pin on a layer that is shown.
+TEST_F(TileGeneratorTest, InstPinNamesFollowLayerVisibility)
+{
+  makeBigPinMacro();
+
+  TileVisibility vis = pinNamesOnlyVis();
+  vis.has_visible_layers = true;
+
+  vis.visible_layers = {"metal1"};
+  EXPECT_FALSE(TileGenerator::isBlankTilePng(labelsTile(vis)));
+
+  vis.visible_layers = {"metal2"};
+  EXPECT_TRUE(TileGenerator::isBlankTilePng(labelsTile(vis)))
+      << "a pin on a hidden layer must not be labelled";
+}
+
+// Pin names are elided to their pin, as by Qt's drawTextInBBox, so none spills
+// past a tile seam the instance does not reach.
+TEST_F(TileGeneratorTest, PinNamesStayInsideTheirPin)
+{
+  // About 77 x 38 px at z=0: tall enough for the name, too narrow for all of
+  // it.
+  const odb::Rect pin(14000, 17000, 26000, 23000);
+  placeMacro("macro",
+             {},
+             {{.name = "a_pin_name_much_too_long_for_its_box_to_hold",
+               .layer = "metal1",
+               .boxes = {pin},
+               .polygon = {}}});
+
+  unsigned w = 0, h = 0;
+  const auto px = decodePng(labelsTile(pinNamesOnlyVis()), w, h);
+  ASSERT_TRUE(hasNonTransparentPixel(px)) << "the pin name should be drawn";
+  EXPECT_EQ(pixelsOutside(px, tile_gen_->getBounds(), w, h, pin), 0);
+}
+
+// A box too small for the name hands it on to the pin's next box, as Qt's
+// drawITermLabels does when drawTextInBBox declines.
+TEST_F(TileGeneratorTest, PinNamesSkipBoxesTooSmallForThem)
+{
+  const odb::Rect small(1000, 1000, 3000, 3000);
+  const odb::Rect big(2000, 10000, 38000, 30000);
+  placeMacro(
+      "macro",
+      {},
+      {{.name = "B", .layer = "metal1", .boxes = {small, big}, .polygon = {}}});
+
+  unsigned w = 0, h = 0;
+  const auto px = decodePng(labelsTile(pinNamesOnlyVis()), w, h);
+  ASSERT_TRUE(hasNonTransparentPixel(px)) << "the pin name should be drawn";
+  EXPECT_EQ(pixelsOutside(px, tile_gen_->getBounds(), w, h, big), 0);
+}
+
+// A pin drawn only as a polygon is labelled too: Qt's getGeometry() includes
+// the boxes a polygon decomposes into.
+TEST_F(TileGeneratorTest, PinNamesIncludePolygonPins)
+{
+  placeMacro(
+      "macro",
+      {},
+      {{.name = "P",
+        .layer = "metal1",
+        .boxes = {},
+        .polygon
+        = {{2000, 2000}, {38000, 2000}, {38000, 20000}, {2000, 20000}}}});
+
+  EXPECT_FALSE(TileGenerator::isBlankTilePng(labelsTile(pinNamesOnlyVis())));
+}
+
+// A name too wide for its box is elided however short it is, so no label
+// leaves the box it lands on.
+TEST_F(TileGeneratorTest, LabelsNeverLeaveTheirBox)
+{
+  // About 28 px square at z=0: room for the pin font twice over, not for
+  // "WWWW".
+  const odb::Rect pin(18000, 18000, 22400, 22400);
+  placeMacro(
+      "macro",
+      {},
+      {{.name = "WWWW", .layer = "metal1", .boxes = {pin}, .polygon = {}}});
+
+  unsigned w = 0, h = 0;
+  const auto px = decodePng(labelsTile(pinNamesOnlyVis()), w, h);
+  ASSERT_TRUE(hasNonTransparentPixel(px)) << "the elided name should show";
+  EXPECT_EQ(pixelsOutside(px, tile_gen_->getBounds(), w, h, pin), 0);
+}
+
+// The tech response lists the overlays the client builds its panes from, each
+// with its pane order and when it shows, in keys the tile request knows.
+TEST_F(TileGeneratorTest, TechResponsePublishesOverlays)
+{
+  makeTileGen();
+  const auto find = [](const boost::json::object& resp,
+                       std::string_view name) -> const boost::json::object* {
+    for (const auto& overlay : resp.at("overlays").as_array()) {
+      if (overlay.as_object().at("name").as_string() == name) {
+        return &overlay.as_object();
+      }
+    }
+    return nullptr;
+  };
+
+  boost::json::object resp = serializeTechResponse(*tile_gen_);
+  const TileVisibility vis;
+  for (const auto& overlay : resp.at("overlays").as_array()) {
+    for (const char* field : {"shown_by", "layers_by"}) {
+      for (const auto& group : overlay.as_object().at(field).as_array()) {
+        for (const auto& key : group.as_array()) {
+          EXPECT_TRUE(vis.flag(key.as_string()).has_value()) << key;
+        }
+      }
+    }
+  }
+
+  const boost::json::object* labels = find(resp, kInstLabelsLayer);
+  ASSERT_NE(labels, nullptr);
+  EXPECT_EQ(labels->at("z_index").as_int64(), 999);
+  EXPECT_EQ(boost::json::serialize(labels->at("shown_by")),
+            R"([["inst_names"],["inst_pins","inst_pin_names"]])");
+  EXPECT_EQ(boost::json::serialize(labels->at("layers_by")),
+            R"([["inst_pins","inst_pin_names"]])");
+
+  EXPECT_EQ(find(resp, "_regions"), nullptr)
+      << "a design without regions has no region overlay";
+  odb::dbRegion::create(block_, "dom");
+  resp = serializeTechResponse(*tile_gen_);
+  EXPECT_NE(find(resp, "_regions"), nullptr);
+}
+
+// The label layer's extents: instances by size class, each class covering
+// every larger instance, then an empty class past the largest.
+TEST_F(TileGeneratorTest, LayerExtentsGroupLabelsBySize)
+{
+  // BUF_X16 is 9500 DBU at its longest side (class 13), the macro 40000
+  // (class 15).
+  odb::dbInst* buf = placeInst("BUF_X16", "buf", 1000, 1000);
+  makeBlockMaster("BIG", 40000, 40000, {});
+  odb::dbInst* big = placeInst("BIG", "big", 50000, 50000);
+  makeTileGen();
+
+  const auto extents = tile_gen_->layerExtents();
+  ASSERT_TRUE(extents->supported);
+  ASSERT_TRUE(extents->inst_labels.has_value());
+  EXPECT_EQ(extents->inst_labels->min_css_px, 14);
+  const auto& by_size = extents->inst_labels->by_size;
+  ASSERT_EQ(by_size.size(), 4u);
+  odb::Rect both = buf->getBBox()->getBox();
+  both.merge(big->getBBox()->getBox());
+  EXPECT_EQ(by_size[0], std::make_pair(13, std::optional<odb::Rect>(both)));
+  EXPECT_EQ(by_size[1],
+            std::make_pair(14, std::optional(big->getBBox()->getBox())));
+  EXPECT_EQ(by_size[2],
+            std::make_pair(15, std::optional(big->getBBox()->getBox())));
+  EXPECT_EQ(by_size[3], std::make_pair(16, std::optional<odb::Rect>()));
+  EXPECT_TRUE(serializeLayerExtentsResponse(*tile_gen_)
+                  .at("sized")
+                  .as_object()
+                  .contains(kInstLabelsLayer));
+}
+
+TEST_F(TileGeneratorTest, InstanceNameLandsTheSameAcrossASeam)
+{
+  expectLabelLandsTheSameAcrossASeam(/*pin_name=*/false);
+}
+
+TEST_F(TileGeneratorTest, PinNameLandsTheSameAcrossASeam)
+{
+  expectLabelLandsTheSameAcrossASeam(/*pin_name=*/true);
+}
+
+// Whether a name shows does not depend on the Pin Names toggle: the R-tree
+// pre-cull for names alone keeps every box the per-name gate would.
+TEST_F(TileGeneratorTest, NameCullDoesNotDependOnPinNames)
+{
+  // z=0 frames the fixture's 100000 DBU die at 256 px.  Heights step a quarter
+  // pixel through twice the name font's height, on half-pixel offsets.
+  constexpr double kDbuPerPx = 100000.0 / 256;
+  for (int i = 0; i < 33; ++i) {
+    const std::string master = "CULL_" + std::to_string(i);
+    makeBlockMaster(master.c_str(),
+                    static_cast<int>(36 * kDbuPerPx),
+                    static_cast<int>((25 + 0.25 * i) * kDbuPerPx),
+                    {});
+    placeInst(master.c_str(),
+              ("i" + std::to_string(i)).c_str(),
+              static_cast<int>(((i % 7) * 36 + 0.5) * kDbuPerPx),
+              static_cast<int>(((i / 7) * 36 + 0.5) * kDbuPerPx));
+  }
   makeTileGen();
   tile_gen_->eagerInit();
 
-  TileVisibility vis_on;
-  vis_on.routing = false;
-  vis_on.special_nets = false;
-  vis_on.pins = false;
-
-  vis_on.blockages = false;
-  vis_on.inst_pins = true;
-  vis_on.inst_pin_names = true;
-  auto png_on = tile_gen_->generateTile("metal1", 0, 0, 0, vis_on);
-
-  TileVisibility vis_off;
-  vis_off.routing = false;
-  vis_off.special_nets = false;
-  vis_off.pins = false;
-
-  vis_off.blockages = false;
-  vis_off.inst_pins = true;
-  vis_off.inst_pin_names = false;
-  auto png_off = tile_gen_->generateTile("metal1", 0, 0, 0, vis_off);
-
-  // Labels should make the two outputs differ.
-  EXPECT_NE(png_on, png_off)
-      << "inst_pin_names should add ITerm labels to tile output";
-
-  // With inst_pins=false, labels should not appear even if inst_pin_names=true.
-  TileVisibility vis_no_pins;
-  vis_no_pins.routing = false;
-  vis_no_pins.special_nets = false;
-  vis_no_pins.pins = false;
-
-  vis_no_pins.blockages = false;
-  vis_no_pins.inst_pins = false;
-  vis_no_pins.inst_pin_names = true;
-  auto png_no_pins = tile_gen_->generateTile("metal1", 0, 0, 0, vis_no_pins);
-  unsigned w = 0, h = 0;
-  auto pixels_no_pins = decodePng(png_no_pins, w, h);
-  EXPECT_FALSE(hasNonTransparentPixel(pixels_no_pins))
-      << "ITerm labels should not render when inst_pins is false";
+  TileVisibility names_only;
+  TileVisibility with_pin_names;
+  with_pin_names.inst_pin_names = true;
+  EXPECT_EQ(labelsTile(names_only), labelsTile(with_pin_names));
 }
 
 //------------------------------------------------------------------------------
@@ -3023,7 +4472,7 @@ TEST_F(TileGeneratorTest, OverlayFlagsParsedFromJson)
   struct FlagCase
   {
     const char* key;
-    bool TileVisibility::*field;
+    bool TileVisibility::* field;
     bool default_val;
   };
   const FlagCase cases[] = {
@@ -3976,6 +5425,40 @@ TEST_F(TileGeneratorTest, InvalidLayerProducesValidPng)
   auto pixels = decodePng(png, w, h);
   EXPECT_EQ(w, 256u);
   EXPECT_EQ(h, 256u);
+  // The tech has no such layer, so nothing of the design is on it: not even
+  // the master shapes of the layers it does have.
+  EXPECT_FALSE(hasNonTransparentPixel(pixels));
+}
+
+// "_modules" without module colors is still no tech layer: before any colors
+// arrive it must stay empty instead of falling into the tech-layer passes.
+TEST_F(TileGeneratorTest, ModulesTileWithoutColorsDrawsNothing)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  unsigned w = 0, h = 0;
+  EXPECT_FALSE(hasNonTransparentPixel(
+      decodePng(tile_gen_->generateTile("_modules", 0, 0, 0), w, h)));
+}
+
+// One answer to "does this tile read layer names", shared by the cache key
+// and the per-die view of the visibility.
+TEST_F(TileGeneratorTest, ReadsLayerVisibilityFollowsLayersBy)
+{
+  TileVisibility vis;
+  vis.inst_pins = true;
+  vis.inst_pin_names = false;
+  EXPECT_TRUE(TileGenerator::readsLayerVisibility("_pins", vis));
+  EXPECT_TRUE(TileGenerator::readsLayerVisibility("_access_points", vis));
+  EXPECT_FALSE(TileGenerator::readsLayerVisibility("_inst_labels", vis));
+  EXPECT_FALSE(TileGenerator::readsLayerVisibility("metal1", vis));
+  EXPECT_FALSE(TileGenerator::readsLayerVisibility("_instances", vis));
+  EXPECT_FALSE(TileGenerator::readsLayerVisibility("_regions", vis));
+
+  vis.inst_pin_names = true;
+  EXPECT_TRUE(TileGenerator::readsLayerVisibility("_inst_labels", vis))
+      << "pin names follow the layers their pins are on";
 }
 
 TEST_F(TileGeneratorTest, OutOfBoundsTileIsTransparent)
@@ -4652,8 +6135,10 @@ TEST_F(TileGeneratorTest, LayerHierarchyBacksideCategory)
       break;
     }
   }
-  ASSERT_NE(backside_node, nullptr)
-      << "layer_hierarchy missing Backside category node";
+  if (backside_node == nullptr) {
+    ADD_FAILURE() << "layer_hierarchy missing Backside category node";
+    return;
+  }
   EXPECT_EQ(backside_node->at("type").as_string(), "category");
 
   // The backside node should contain exactly metal1 and via1.

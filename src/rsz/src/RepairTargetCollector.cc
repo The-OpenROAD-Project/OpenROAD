@@ -10,6 +10,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <numeric>
 #include <optional>
 #include <queue>
 #include <set>
@@ -19,7 +20,9 @@
 #include <vector>
 
 #include "OptimizerTypes.hh"
+#include "PathGroupFilter.hh"
 #include "Rebuffer.hh"
+#include "RepairSetupProfiler.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/ExceptionPath.hh"
@@ -43,8 +46,15 @@
 #include "sta/TimingArc.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
+#include "utl/ThreadPool.h"
 
 namespace rsz {
+
+namespace {
+// Target size of an adaptive fanin cone collection.
+constexpr int kConeMinTargetPins = 50;
+constexpr int kConeMaxTargetPins = 1000;
+}  // namespace
 
 using std::map;
 using std::set;
@@ -55,6 +65,9 @@ namespace {
 
 using PinSlack = std::pair<const sta::Pin*, sta::Slack>;
 using VertexSlack = std::pair<sta::Vertex*, sta::Slack>;
+
+// Endpoint scan blocks per worker; more blocks smooth uneven path counts.
+constexpr size_t kScanBlocksPerWorker = 8;
 
 bool slackLess(const PinSlack& lhs, const PinSlack& rhs)
 {
@@ -108,6 +121,9 @@ void RepairTargetCollector::printViolators(int numPrint = 0) const
       break;
     }
     sta::LibertyPort* port = network_->libertyPort(pin);
+    if (port == nullptr) {
+      continue;
+    }
     sta::LibertyCell* cell = port->libertyCell();
     float slack = pin_data_.at(pin).slack;
     float tns = pin_data_.at(pin).tns;
@@ -209,6 +225,7 @@ void RepairTargetCollector::printHistogram(int numBins) const
 void RepairTargetCollector::init(float slack_margin,
                                  const bool collect_startpoints)
 {
+  const ProfileScope profile("target_collection");
   graph_ = sta_->graph();
   search_ = sta_->search();
   sdc_ = sta_->cmdMode()->sdc();
@@ -371,6 +388,10 @@ void RepairTargetCollector::updatePinData(const sta::Pin* pin, pinData& pd)
 
 int RepairTargetCollector::repairsPerPass(int max_repairs_per_pass)
 {
+  if (max_repairs_per_pass <= 0) {
+    return 0;
+  }
+
   sta::Slack min_viol_ = -sta::INF;
   sta::Slack max_viol_ = 0;
   if (!violating_endpoints_.empty()) {
@@ -384,6 +405,7 @@ int RepairTargetCollector::repairsPerPass(int max_repairs_per_pass)
     repairs_per_pass
         += std::round((max_repairs_per_pass - 1) * (-path_slack - min_viol_)
                       / (max_viol_ - min_viol_));
+    repairs_per_pass = std::clamp(repairs_per_pass, 1, max_repairs_per_pass);
   }
 
   return repairs_per_pass;
@@ -816,20 +838,165 @@ void RepairTargetCollector::sortByHeuristic(float load_delay_threshold)
   }
 }
 
+RepairTargetCollector::RepairTargetCollector(Resizer* resizer)
+    : resizer_(resizer)
+{
+  logger_ = resizer_->logger_;
+  sta_ = resizer_->sta_;
+  network_ = resizer_->network_;
+  max_ = resizer_->max_;
+  dcalc_ap_ = -1;
+  lib_ap_ = -1;
+  max_passes_per_endpoint_ = 1000;  // Default value
+  cached_cone_threshold_ = 0.0;
+  needs_threshold_recompute_ = true;  // Force compute on first call
+}
+
+RepairTargetCollector::~RepairTargetCollector() = default;
+
+void RepairTargetCollector::setScanThreadPool(utl::ThreadPool* pool,
+                                              const size_t min_endpoints)
+{
+  scan_thread_pool_
+      = pool != nullptr && pool->threadCount() > 0 ? pool : nullptr;
+  min_parallel_scan_endpoints_ = min_endpoints;
+}
+
+sta::Slack RepairTargetCollector::endpointPathSlack(sta::Vertex* endpoint) const
+{
+  // Same reduction as Sta::slack(vertex, max_) over every scene, but without
+  // the per-call required-time search entry, so workers only read the graph.
+  sta::Slack slack = sta::MinMax::min()->initValue();
+  sta::VertexPathIterator path_iter(endpoint, sta_);
+  while (path_iter.hasNext()) {
+    const sta::Path* path = path_iter.next();
+    if (path->minMax(sta_) != max_) {
+      continue;
+    }
+
+    const sta::Slack path_slack = path->slack(sta_);
+    if (sta::delayLess(path_slack, slack, sta_)) {
+      slack = path_slack;
+    }
+  }
+
+  return slack;
+}
+
+void RepairTargetCollector::refreshGroupSlacks()
+{
+  group_slacks_.clear();
+  if (!restrictedToPathGroup()) {
+    return;
+  }
+  const PathGroupFilter path_group_filter(resizer_);
+  // findPathEnds' slack_max is inclusive; repair counts an endpoint only
+  // when it is strictly below the margin, so drop the ones sitting on it.
+  for (const auto& [pin, slack] :
+       path_group_filter.groupEndpointSlacks(max_, slack_margin_)) {
+    if (sta::fuzzyLess(slack, slack_margin_)) {
+      group_slacks_.emplace_back(pin, slack);
+    }
+  }
+  debugPrint(logger_,
+             RSZ,
+             "path_group",
+             1,
+             "Path group '{}' has {} violating endpoints.",
+             resizer_->pathGroup(),
+             group_slacks_.size());
+}
+
 void RepairTargetCollector::collectViolatingEndpoints()
 {
+  const ProfileScope profile("endpoint_scan");
   violating_endpoints_.clear();
+  crit_path_load_pins_.clear();
 
-  const sta::VertexSet& endpoints = sta_->endpoints();
-  for (sta::Vertex* endpoint : endpoints) {
-    const sta::Slack slack = sta_->slack(endpoint, max_);
-    if (sta::fuzzyLess(slack, slack_margin_)) {
-      violating_endpoints_.emplace_back(endpoint->pin(), slack);
+  // Workers read required times without a refresh: the endpoint scan below
+  // and the RebufferMt planners, under -path_group too.  This is a no-op when
+  // timing is up to date.
+  {
+    const ProfileScope sta_profile("incremental_sta");
+    sta_->findRequireds();
+  }
+
+  if (restrictedToPathGroup()) {
+    // One query for the whole group, already carrying each endpoint's slack
+    // in it. Testing endpoints one at a time would repeat the same search
+    // setup per endpoint for the same answer.
+    refreshGroupSlacks();
+    violating_endpoints_.assign(group_slacks_.begin(), group_slacks_.end());
+  } else {
+    const sta::VertexSet& endpoint_set = sta_->endpoints();
+    std::vector<sta::Vertex*> endpoints(endpoint_set.begin(),
+                                        endpoint_set.end());
+    std::vector<sta::Slack> slacks(endpoints.size(),
+                                   sta::MinMax::min()->initValue());
+
+    utl::ThreadPool* pool = endpoints.size() < min_parallel_scan_endpoints_
+                                ? nullptr
+                                : scan_thread_pool_;
+    if (pool == nullptr) {
+      for (size_t index = 0; index < endpoints.size(); ++index) {
+        slacks[index] = endpointPathSlack(endpoints[index]);
+      }
+    } else {
+      // Contiguous blocks keep task count small while balancing path counts.
+      const size_t block_count = std::min(
+          endpoints.size(), pool->threadCount() * kScanBlocksPerWorker);
+      const size_t block_size
+          = (endpoints.size() + block_count - 1) / block_count;
+      std::vector<size_t> blocks(block_count);
+      std::iota(blocks.begin(), blocks.end(), size_t{0});
+      pool->parallelFor(blocks, [&](const size_t& block) {
+        const size_t begin = block * block_size;
+        const size_t end = std::min(begin + block_size, endpoints.size());
+        for (size_t index = begin; index < end; ++index) {
+          slacks[index] = endpointPathSlack(endpoints[index]);
+        }
+      });
+    }
+
+    for (size_t index = 0; index < endpoints.size(); ++index) {
+      if (sta::fuzzyLess(slacks[index], slack_margin_)) {
+        violating_endpoints_.emplace_back(endpoints[index]->pin(),
+                                          slacks[index]);
+      }
     }
   }
 
   // Preserve equal-slack STA endpoint order for legacy QoR parity.
   std::ranges::stable_sort(violating_endpoints_, slackLess);
+
+  if (record_crit_path_load_pins_) {
+    // Side loss weights a load fully only on a violating endpoint's worst path.
+    // Record those pins for every violating endpoint, beyond the current chunk.
+    const ProfileScope crit_profile("scan_crit_paths");
+    for (const PinSlack& endpoint_data : violating_endpoints_) {
+      sta::Vertex* endpoint = graph_->pinLoadVertex(endpoint_data.first);
+      sta::Path* path
+          = endpoint != nullptr ? findWorstSlackPath(endpoint) : nullptr;
+      if (path == nullptr) {
+        continue;
+      }
+
+      sta::PathExpanded expanded(path, sta_);
+      const int path_count = static_cast<int>(expanded.size());
+      for (int index = static_cast<int>(expanded.startIndex());
+           index < path_count;
+           ++index) {
+        const sta::Path* point = expanded.path(index);
+        sta::Vertex* vertex = point->vertex(sta_);
+        if (vertex != nullptr && !vertex->isDriver(network_)) {
+          crit_path_load_pins_.insert(point->pin(sta_));
+        }
+      }
+    }
+
+    RepairSetupProfiler::event("scan_crit_path_load_pins",
+                               crit_path_load_pins_.size());
+  }
 
   debugPrint(logger_,
              RSZ,
@@ -846,6 +1013,7 @@ void RepairTargetCollector::walkStartpoints(
     std::vector<CachedStartpoint>& startpoints) const
 {
   startpoints.clear();
+  const PathGroupFilter path_group_filter(resizer_);
   sta::VertexIterator vertex_iter(graph_);
   while (vertex_iter.hasNext()) {
     sta::Vertex* vertex = vertex_iter.next();
@@ -857,6 +1025,9 @@ void RepairTargetCollector::walkStartpoints(
     sta::PortDirection* direction = network_->direction(pin);
     if ((network_->isTopLevelPort(pin) && direction->isAnyInput())
         || (resizer_->isRegister(vertex) && direction->isAnyOutput())) {
+      if (!path_group_filter.startpointInGroup(vertex)) {
+        continue;
+      }
       startpoints.push_back({pin, vertex == graph_->pinDrvrVertex(pin)});
     }
   }
@@ -898,6 +1069,7 @@ void RepairTargetCollector::checkStartpointCache() const
 
 void RepairTargetCollector::collectViolatingStartpoints()
 {
+  const ProfileScope profile("target_collection");
   violating_startpoints_.clear();
 
   // The set of startpoints is fixed for the life of this collector; only
@@ -949,13 +1121,54 @@ void RepairTargetCollector::collectViolatingStartpoints()
 sta::Path* RepairTargetCollector::findWorstSlackPath(
     sta::Vertex* endpoint) const
 {
-  return sta_->vertexWorstSlackPath(endpoint, max_);
+  return PathGroupFilter(resizer_).findWorstSlackPath(endpoint, max_);
+}
+
+sta::Slack RepairTargetCollector::endpointSlack(sta::Vertex* endpoint) const
+{
+  if (!restrictedToPathGroup()) {
+    return sta_->slack(endpoint, max_);
+  }
+  // An endpoint with no path in the group has nothing left to repair.
+  return PathGroupFilter(resizer_)
+      .groupSlack(endpoint, max_)
+      .value_or(sta::INF);
+}
+
+void RepairTargetCollector::worstSlack(sta::Slack& worst_slack,
+                                       sta::Vertex*& worst_vertex) const
+{
+  if (!restrictedToPathGroup()) {
+    sta_->worstSlack(max_, worst_slack, worst_vertex);
+    return;
+  }
+  const std::optional<PathGroupFilter::GroupWorst> worst
+      = PathGroupFilter(resizer_).groupWorst(max_);
+  worst_slack = worst.has_value() ? worst->slack : sta::Slack(sta::INF);
+  worst_vertex
+      = worst.has_value() ? graph_->pinLoadVertex(worst->endpoint) : nullptr;
+}
+
+sta::Slack RepairTargetCollector::totalNegativeSlack() const
+{
+  if (!restrictedToPathGroup()) {
+    return sta_->totalNegativeSlack(max_);
+  }
+  // Independent of group_slacks_ and the slack margin, so it is valid before
+  // init() and never reads a stale cache.
+  sta::Slack tns = 0.0;
+  for (const auto& [endpoint_pin, slack] :
+       PathGroupFilter(resizer_).groupEndpointSlacks(max_, 0.0)) {
+    tns = sta::delayAsFloat(tns) + sta::delayAsFloat(slack);
+  }
+  return tns;
 }
 
 void RepairTargetCollector::collectExpandedPathDriverTargets(
     const sta::Path* endpoint_path,
     const sta::PathExpanded& expanded,
     const sta::Slack path_slack,
+    const sta::Pin* violated_endpoint_pin,
     std::vector<Target>& targets) const
 {
   const int start_index = static_cast<int>(expanded.startIndex());
@@ -964,13 +1177,26 @@ void RepairTargetCollector::collectExpandedPathDriverTargets(
     const sta::Path* driver_path = expanded.path(index);
     sta::Vertex* vertex = driver_path->vertex(sta_);
     sta::Pin* pin = driver_path->pin(sta_);
-    if (vertex == nullptr || pin == nullptr || !vertex->isDriver(network_)
-        || network_->isTopLevelPort(pin)) {
+    if (vertex == nullptr || pin == nullptr) {
       continue;
     }
 
-    targets.push_back(makePathDriverTarget(
-        endpoint_path, expanded, index, path_slack, *resizer_));
+    if (!vertex->isDriver(network_)) {
+      // Load pins on this worst path carry the endpoint slack one-for-one.
+      crit_path_load_pins_.insert(pin);
+      continue;
+    }
+
+    if (network_->isTopLevelPort(pin)) {
+      continue;
+    }
+
+    targets.push_back(makePathDriverTarget(endpoint_path,
+                                           expanded,
+                                           index,
+                                           path_slack,
+                                           *resizer_,
+                                           violated_endpoint_pin));
   }
 }
 
@@ -1009,9 +1235,12 @@ std::vector<Target> RepairTargetCollector::collectPathDriverTargets(
     return targets;
   }
 
+  // Latch D-side segments keep the endpoint of the whole path.
+  const sta::Pin* violated_endpoint_pin = path->pin(sta_);
   sta::PathExpanded expanded(path, sta_);
   targets.reserve(expanded.size());
-  collectExpandedPathDriverTargets(path, expanded, path_slack, targets);
+  collectExpandedPathDriverTargets(
+      path, expanded, path_slack, violated_endpoint_pin, targets);
 
   // A latch-through path starts at latch Q in OpenSTA, with each latch D path
   // stored as side context.  Expand those D paths separately so repair_timing
@@ -1021,7 +1250,7 @@ std::vector<Target> RepairTargetCollector::collectPathDriverTargets(
       sta_,
       [&](const sta::Path* d_path, sta::PathExpanded& d_expanded) {
         collectExpandedPathDriverTargets(
-            d_path, d_expanded, path_slack, targets);
+            d_path, d_expanded, path_slack, violated_endpoint_pin, targets);
         return false;
       });
 
@@ -1029,8 +1258,12 @@ std::vector<Target> RepairTargetCollector::collectPathDriverTargets(
 }
 
 std::vector<Target> RepairTargetCollector::collectCritPathDriverPinTargets(
-    const std::function<bool(sta::Pin*)>& is_valid_target) const
+    const std::function<bool(sta::Pin*)>& is_valid_target,
+    const size_t begin_endpoint,
+    const size_t end_endpoint,
+    std::unordered_set<sta::Pin*>& visited_pins) const
 {
+  const ProfileScope profile("target_collection");
   std::vector<VertexSlack> violated_endpoints;
   violated_endpoints.reserve(violating_endpoints_.size());
   for (const PinSlack& endpoint_data : violating_endpoints_) {
@@ -1046,8 +1279,9 @@ std::vector<Target> RepairTargetCollector::collectCritPathDriverPinTargets(
   std::ranges::stable_sort(violated_endpoints, pathEndpointLess);
 
   std::vector<Target> targets;
-  std::unordered_set<sta::Pin*> visited_pins;
-  for (const VertexSlack& endpoint_data : violated_endpoints) {
+  const size_t end = std::min(end_endpoint, violated_endpoints.size());
+  for (size_t index = begin_endpoint; index < end; ++index) {
+    const VertexSlack& endpoint_data = violated_endpoints[index];
     sta::Vertex* endpoint = endpoint_data.first;
     const sta::Slack endpoint_slack = endpoint_data.second;
     sta::Path* path = findWorstSlackPath(endpoint);
@@ -1125,6 +1359,12 @@ sta::Slack RepairTargetCollector::getEndpointWns(
   // Return worst negative slack for this endpoint
   sta::Vertex* vertex = graph_->pinLoadVertex(endpoint_pin);
   if (vertex) {
+    if (restrictedToPathGroup()) {
+      // Report the group's slack so WNS/TNS describe the paths being
+      // repaired, not the endpoint's worst path in some other group.
+      const PathGroupFilter path_group_filter(resizer_);
+      return path_group_filter.groupSlack(vertex, max_).value_or(0.0);
+    }
     return sta_->slack(vertex, max_);
   }
   return 0.0;
@@ -1490,9 +1730,11 @@ vector<const sta::Pin*> RepairTargetCollector::collectViolatorsByFaninTraversal(
   const sta::VertexSet& all_endpoints = sta_->endpoints();
   std::vector<sta::Vertex*> critical_endpoints;
 
+  const PathGroupFilter path_group_filter(resizer_);
   for (sta::Vertex* endpoint : all_endpoints) {
     sta::Slack endpoint_slack = sta_->slack(endpoint, max_);
-    if (endpoint_slack < slack_threshold) {
+    if (endpoint_slack < slack_threshold
+        && path_group_filter.endpointInGroup(endpoint, max_)) {
       critical_endpoints.push_back(endpoint);
     }
   }
@@ -1647,9 +1889,11 @@ RepairTargetCollector::collectViolatorsByFanoutTraversal(
   std::set<const sta::Pin*> collected_pins_set;  // Use set to avoid duplicates
   std::queue<sta::Vertex*> to_visit;
 
-  // Include the startpoint pin itself (e.g., flip-flop output)
+  // Include the startpoint pin itself (e.g., flip-flop output). A top-level
+  // input port startpoint has no liberty driver to repair, so only its
+  // fanout is collected.
   const sta::Pin* startpoint_pin = startpoint->pin();
-  if (startpoint_pin) {
+  if (startpoint_pin && !network_->isTopLevelPort(startpoint_pin)) {
     sta::Slack pin_slack = sta_->slack(startpoint_pin,
                                        sta::RiseFall::rise()->asRiseFallBoth(),
                                        sta_->scenes(),
@@ -2067,83 +2311,94 @@ void RepairTargetCollector::traverseFaninCone(
   }
 }
 
-// Helper function: Compute adaptive threshold using endpoint-relative margins
+// Helper function: Compute adaptive threshold using endpoint-relative margins.
+// pins_with_slack must be sorted worst slack first.
 sta::Slack RepairTargetCollector::computeAdaptiveThreshold(
     const std::vector<std::pair<const sta::Pin*, sta::Slack>>& pins_with_slack,
     sta::Slack endpoint_slack,
     int& pin_count)
 {
   const float margin_percentages[] = {0.10, 0.20, 0.30, 0.50};
-  const int min_target_pins = 50;
-  const int max_target_pins = 1000;
-  int cone_size = pins_with_slack.size();
+  const int cone_size = pins_with_slack.size();
 
-  sta::Slack chosen_threshold = endpoint_slack;
   pin_count = 0;
-
-  if (cone_size > 0) {
-    for (float margin_pct : margin_percentages) {
-      sta::Slack margin = std::abs(endpoint_slack) * margin_pct;
-      sta::Slack threshold = endpoint_slack + margin;
-
-      int count = 0;
-      for (const auto& pin_slack_pair : pins_with_slack) {
-        if (pin_slack_pair.second < threshold) {
-          count++;
-        }
-      }
-
-      debugPrint(logger_,
-                 RSZ,
-                 "violator_collector",
-                 1,
-                 "  Trying margin {:.1f}%: endpoint={}, margin={}, "
-                 "threshold={}, pin_count={}",
-                 margin_pct * 100.0,
-                 delayAsString(endpoint_slack, 3, sta_),
-                 delayAsString(margin, 3, sta_),
-                 delayAsString(threshold, 3, sta_),
-                 count);
-
-      if (count >= min_target_pins && count <= max_target_pins) {
-        chosen_threshold = threshold;
-        pin_count = count;
-        logger_->info(
-            RSZ,
-            218,
-            "Adaptive cone threshold: margin={:.0f}% of endpoint slack, "
-            "threshold={}, collecting {} of {} pins ({:.1f}%)",
-            margin_pct * 100.0,
-            delayAsString(chosen_threshold, 3, sta_),
-            pin_count,
-            cone_size,
-            100.0 * pin_count / cone_size);
-        return chosen_threshold;
-      }
-    }
-
-    for (const auto& pin_slack_pair : pins_with_slack) {
-      if (pin_slack_pair.second < chosen_threshold) {
-        pin_count++;
-      }
-    }
-    logger_->info(RSZ,
-                  219,
-                  "Adaptive cone threshold: no margin yielded target "
-                  "range, using endpoint slack as threshold={}, collecting "
-                  "{} of {} pins ({:.1f}%)",
-                  delayAsString(chosen_threshold, 3, sta_),
-                  pin_count,
-                  cone_size,
-                  100.0 * pin_count / cone_size);
-  } else {
-    chosen_threshold = -1e30;
-    logger_->info(RSZ,
-                  220,
-                  "Adaptive cone threshold: no pins in cone, using very "
-                  "negative threshold");
+  if (cone_size == 0) {
+    debugPrint(logger_,
+               RSZ,
+               "violator_collector",
+               1,
+               "Adaptive cone threshold: no pins in cone, using very "
+               "negative threshold");
+    return -1e30;
   }
 
+  const auto count_below = [&](const sta::Slack threshold) {
+    int count = 0;
+    for (const auto& pin_slack_pair : pins_with_slack) {
+      if (pin_slack_pair.second < threshold) {
+        count++;
+      }
+    }
+    return count;
+  };
+
+  sta::Slack chosen_threshold = endpoint_slack;
+  float chosen_margin_pct = 0.0;
+  bool in_range = false;
+  for (float margin_pct : margin_percentages) {
+    const sta::Slack margin = std::abs(endpoint_slack) * margin_pct;
+    const sta::Slack threshold = endpoint_slack + margin;
+    const int count = count_below(threshold);
+
+    debugPrint(logger_,
+               RSZ,
+               "violator_collector",
+               1,
+               "  Trying margin {:.1f}%: endpoint={}, margin={}, "
+               "threshold={}, pin_count={}",
+               margin_pct * 100.0,
+               delayAsString(endpoint_slack, 3, sta_),
+               delayAsString(margin, 3, sta_),
+               delayAsString(threshold, 3, sta_),
+               count);
+
+    if (count > kConeMaxTargetPins) {
+      // Wider margins only collect more.
+      break;
+    }
+    chosen_threshold = threshold;
+    chosen_margin_pct = margin_pct;
+    pin_count = count;
+    if (count >= kConeMinTargetPins) {
+      in_range = true;
+      break;
+    }
+  }
+
+  if (!in_range) {
+    // No margin lands in the target range: the tightest one already holds
+    // too many pins, or the widest still holds too few. The endpoint slack
+    // itself is not a usable threshold, since no pin is strictly worse than
+    // it. Take the worst pins up to the target range instead.
+    const int keep = std::min(cone_size, kConeMaxTargetPins);
+    chosen_threshold
+        = keep < cone_size ? pins_with_slack[keep].second : sta::Slack(0.0);
+    pin_count = count_below(chosen_threshold);
+  }
+
+  debugPrint(logger_,
+             RSZ,
+             "violator_collector",
+             1,
+             "Adaptive cone threshold: endpoint slack={}, margin={:.0f}%{}, "
+             "threshold={}, collecting {} of {} pins ({:.1f}%)",
+             delayAsString(endpoint_slack, 3, sta_),
+             chosen_margin_pct * 100.0,
+             in_range ? "" : " (outside target range)",
+             delayAsString(chosen_threshold, 3, sta_),
+             pin_count,
+             cone_size,
+             100.0 * pin_count / cone_size);
   return chosen_threshold;
 }
 
@@ -2198,88 +2453,65 @@ vector<const sta::Pin*> RepairTargetCollector::collectViolatorsByConeTraversal(
                "Explicit threshold collected {} pins for endpoint {}",
                violating_pins_.size(),
                network_->pathName(endpoint_pin));
-  }
-  // PHASE 1: Determine if we need full traversal or can use cached threshold
-  else if (needs_threshold_recompute_) {
-    // FULL TRAVERSAL MODE: Collect all pins to compute threshold
-
-    debugPrint(
-        logger_,
-        RSZ,
-        "violator_collector",
-        2,
-        "Computing adaptive cone threshold for endpoint {}: endpoint_slack={}",
-        network_->pathName(endpoint_pin),
-        delayAsString(endpoint_slack, 3, sta_));
-
-    // Step 1: Traverse fanin cone to collect all pins with negative slack
-    // Start with 0.0 threshold to get all critical pins in the cone
-    sta::Slack initial_threshold = 0.0;
-
-    std::vector<std::pair<const sta::Pin*, sta::Slack>> cone_pins_with_slack;
-    traverseFaninCone(endpoint, cone_pins_with_slack, initial_threshold);
-
-    // Sort by slack (worst first)
-    std::ranges::sort(cone_pins_with_slack, [](const auto& a, const auto& b) {
-      return a.second < b.second;
-    });
-
-    // Step 2: Compute adaptive threshold targeting 50-1000 pins
-    int chosen_pin_count = 0;
-    cached_cone_threshold_ = computeAdaptiveThreshold(
-        cone_pins_with_slack, endpoint_slack, chosen_pin_count);
-
-    // Step 3: Collect pins using computed threshold
-    collectPinsWithThreshold(cone_pins_with_slack, cached_cone_threshold_);
-
-    needs_threshold_recompute_ = false;
-
   } else {
-    // FAST MODE: Use cached threshold
+    // The cached threshold is an absolute slack chosen for one endpoint at
+    // one moment. It goes stale when the phase switches endpoint and as
+    // repair moves the cone's slacks, after which it collects nothing (or
+    // everything). Reuse it only while it still serves this endpoint.
+    bool recompute
+        = needs_threshold_recompute_ || cone_threshold_endpoint_ != endpoint;
+    if (!recompute) {
+      debugPrint(logger_,
+                 RSZ,
+                 "violator_collector",
+                 3,
+                 "Using cached cone threshold: {} for endpoint {}",
+                 delayAsString(cached_cone_threshold_, 3, sta_),
+                 network_->pathName(endpoint_pin));
 
-    debugPrint(logger_,
-               RSZ,
-               "violator_collector",
-               3,
-               "Using cached cone threshold: {} for endpoint {}",
-               delayAsString(cached_cone_threshold_, 3, sta_),
-               network_->pathName(endpoint_pin));
+      // Traverse fanin cone stopping at pins >= cached threshold
+      std::vector<std::pair<const sta::Pin*, sta::Slack>> cone_pins_with_slack;
+      traverseFaninCone(endpoint, cone_pins_with_slack, cached_cone_threshold_);
+      collectPinsWithThreshold(cone_pins_with_slack, cached_cone_threshold_);
 
-    // Traverse fanin cone stopping at pins >= cached threshold
-    std::vector<std::pair<const sta::Pin*, sta::Slack>> cone_pins_with_slack;
-    traverseFaninCone(endpoint, cone_pins_with_slack, cached_cone_threshold_);
-    collectPinsWithThreshold(cone_pins_with_slack, cached_cone_threshold_);
+      const int collected_count = violating_pins_.size();
+      debugPrint(logger_,
+                 RSZ,
+                 "violator_collector",
+                 2,
+                 "Cached threshold collected {} pins for endpoint {}",
+                 collected_count,
+                 network_->pathName(endpoint_pin));
+      recompute = collected_count < kConeMinTargetPins
+                  || collected_count > kConeMaxTargetPins;
+    }
 
-    debugPrint(logger_,
-               RSZ,
-               "violator_collector",
-               2,
-               "Cached threshold collected {} pins for endpoint {}",
-               violating_pins_.size(),
-               network_->pathName(endpoint_pin));
+    if (recompute) {
+      debugPrint(logger_,
+                 RSZ,
+                 "violator_collector",
+                 2,
+                 "Computing adaptive cone threshold for endpoint {}: "
+                 "endpoint_slack={}",
+                 network_->pathName(endpoint_pin),
+                 delayAsString(endpoint_slack, 3, sta_));
+
+      // Collect every violating pin in the cone, worst slack first.
+      std::vector<std::pair<const sta::Pin*, sta::Slack>> cone_pins_with_slack;
+      traverseFaninCone(endpoint, cone_pins_with_slack, 0.0);
+      std::ranges::sort(cone_pins_with_slack, [](const auto& a, const auto& b) {
+        return a.second < b.second;
+      });
+
+      int chosen_pin_count = 0;
+      cached_cone_threshold_ = computeAdaptiveThreshold(
+          cone_pins_with_slack, endpoint_slack, chosen_pin_count);
+      collectPinsWithThreshold(cone_pins_with_slack, cached_cone_threshold_);
+
+      cone_threshold_endpoint_ = endpoint;
+      needs_threshold_recompute_ = false;
+    }
   }
-
-  // Check if we should recompute threshold
-  // With relative threshold approach, we target 50-1000 pins
-  // TEMPORARILY DISABLED FOR TESTING
-  /*
-  int collected_count = violating_pins_.size();
-  const int min_target_pins = 50;
-  const int max_target_pins = 1000;
-
-  if (collected_count < min_target_pins || collected_count > max_target_pins) {
-    needs_threshold_recompute_ = true;
-    debugPrint(logger_,
-               RSZ,
-               "violator_collector",
-               2,
-               "Pin count {} outside target range [{}, {}], will recompute "
-               "threshold next time",
-               collected_count,
-               min_target_pins,
-               max_target_pins);
-  }
-  */
 
   int pins_before_filter = violating_pins_.size();
 
@@ -2530,6 +2762,20 @@ sta::Slack RepairTargetCollector::getOverallEndpointWns() const
 {
   sta::Slack worst_slack = std::numeric_limits<float>::max();
 
+  if (restrictedToPathGroup()) {
+    for (const auto& [endpoint_pin, slack] : group_slacks_) {
+      worst_slack = std::min(slack, worst_slack);
+    }
+    if (worst_slack != std::numeric_limits<float>::max()) {
+      return worst_slack;
+    }
+    // Nothing violating: the group's best path is still its WNS.
+    const PathGroupFilter path_group_filter(resizer_);
+    const std::optional<PathGroupFilter::GroupWorst> worst
+        = path_group_filter.groupWorst(max_);
+    return worst.has_value() ? worst->slack : sta::Slack(0.0);
+  }
+
   for (const auto& [endpoint_pin, slack] : violating_endpoints_) {
     sta::Slack sp_wns = getEndpointWns(endpoint_pin);
     worst_slack = std::min(sp_wns, worst_slack);
@@ -2541,8 +2787,19 @@ sta::Slack RepairTargetCollector::getOverallEndpointWns() const
 
 sta::Slack RepairTargetCollector::getOverallEndpointTns(bool use_cone) const
 {
-  if (!use_cone) {
+  if (!use_cone && !restrictedToPathGroup()) {
     return sta_->totalNegativeSlack(max_);
+  }
+  if (!use_cone) {
+    // Design wide TNS counts endpoints outside the group being repaired.
+    sta::Slack total_tns = 0.0;
+    for (const auto& [endpoint_pin, endpoint_wns] : group_slacks_) {
+      if (endpoint_wns < 0.0) {
+        total_tns
+            = sta::delayAsFloat(total_tns) + sta::delayAsFloat(endpoint_wns);
+      }
+    }
+    return total_tns;
   }
 
   sta::Slack total_tns = 0.0;
@@ -2560,6 +2817,10 @@ sta::Slack RepairTargetCollector::getOverallEndpointTns(bool use_cone) const
 // Proxy method: return WNS (same for both startpoints and endpoints)
 sta::Slack RepairTargetCollector::getWns() const
 {
+  if (restrictedToPathGroup()) {
+    // The design's worst path may well be outside the group being repaired.
+    return getOverallEndpointWns();
+  }
   // WNS is the same regardless of whether we look at startpoints or endpoints
   // because the critical path is always from a startpoint to an endpoint
   sta::Slack wns;
@@ -2598,6 +2859,25 @@ const sta::Pin* RepairTargetCollector::getWorstPin(bool use_startpoints) const
     }
 
     return worst_pin;
+  }
+  if (restrictedToPathGroup()) {
+    // Report the group's worst endpoint, not the design's.
+    const sta::Pin* worst_pin = nullptr;
+    sta::Slack worst_slack = std::numeric_limits<float>::max();
+    for (const auto& [endpoint_pin, slack] : group_slacks_) {
+      if (slack < worst_slack) {
+        worst_slack = slack;
+        worst_pin = endpoint_pin;
+      }
+    }
+    if (worst_pin != nullptr) {
+      return worst_pin;
+    }
+    // Nothing violating; name the group's best path, as getWns() reports it.
+    const PathGroupFilter path_group_filter(resizer_);
+    const std::optional<PathGroupFilter::GroupWorst> worst
+        = path_group_filter.groupWorst(max_);
+    return worst.has_value() ? worst->endpoint : nullptr;
   }
   // For endpoints, use STA's worstSlack to get the worst vertex
   sta::Slack wns;

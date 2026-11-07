@@ -2,7 +2,7 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #ifdef BAZEL
-%module(package="src.odb") odb
+%module(package="src.odb") odb_py
 #endif
 
 %{
@@ -21,7 +21,6 @@
 #include "odb/dbTypes.h"
 #include "odb/isotropy.h"
 #include "odb/geom.h"
-#include "odb/wOrder.h"
 #include "odb/util.h"
 
 using namespace odb;
@@ -95,7 +94,6 @@ using namespace odb;
 %include "odb/dbTransform.h"
 %include "odb/dbWireGraph.h"
 %include "odb/dbSet.h"
-%include "odb/wOrder.h"
 
 std::string generateMacroPlacementString(odb::dbBlock* block);
 void set_bterm_top_layer_grid(odb::dbBlock* block,

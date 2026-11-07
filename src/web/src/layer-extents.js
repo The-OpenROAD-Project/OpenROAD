@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+import { tileSizeCss } from './tile-request.js';
+
 // Which layer tiles are worth requesting.
 //
 // Most of a technology's layers hold nothing in any given view: implant and
@@ -23,6 +25,9 @@
 //     the server's default, and those are all on but fills.
 //   - Tracks and the debug overlays draw on layer tiles without being design
 //     geometry, so skipping stops while any of them is on.
+//   - A layer in `sized` (the instance and pin names) only draws on features
+//     at least min_css_px long on screen, so a tile is requested only where
+//     the features that large at its zoom are.
 
 // Visibility flags under which a layer tile can carry content that is not in
 // the extents.
@@ -57,11 +62,71 @@ function tileOverlaps(extent, coords) {
     return ex0 <= x1 && ex1 >= x0 && ey0 <= y1 && ey1 >= y0;
 }
 
+// Whether tile `coords` can show anything of `sized` ({ min_css_px, by_size }),
+// whose `by_size` lists [size, extent] in ascending size, sizes as fractions of
+// the zoom-0 tile: the extent of every feature at least that large.  A feature
+// needs min_css_px on screen, which at zoom z on `tileSize` CSS px tiles is
+// `need` of the zoom-0 tile; the last class no larger than that holds every
+// feature that big.
+function sizedOverlaps(sized, coords, tileSize) {
+    const classes = sized && Array.isArray(sized.by_size) ? sized.by_size : [];
+    if (classes.length === 0 || !coords || !(tileSize > 0)) {
+        return true;
+    }
+    const need = sized.min_css_px / (tileSize * Math.pow(2, coords.z));
+    let pick = classes[0];
+    for (const entry of classes) {
+        if (entry[0] <= need) {
+            pick = entry;
+        }
+    }
+    return tileOverlaps(pick[1], coords);
+}
+
+// flag -> Map(layer -> extent), from a response's `gated` object.
+function parseGated(gated) {
+    const out = new Map();
+    if (gated && typeof gated === 'object') {
+        for (const [flag, layers] of Object.entries(gated)) {
+            if (layers && typeof layers === 'object') {
+                out.set(flag, new Map(Object.entries(layers)));
+            }
+        }
+    }
+    return out;
+}
+
+// Whether `layer` can draw at `coords` by one set of extents: its own
+// (`layers`) and the sources each visibility flag gates (`gated`).  A layer the
+// set does not list is always requested.
+function layerMayDraw(layers, gated, layer, coords, visibility) {
+    if (!layers.has(layer)) {
+        return true;
+    }
+    if (tileOverlaps(layers.get(layer), coords)) {
+        return true;
+    }
+    for (const [flag, byLayer] of gated) {
+        if (visibility && visibility[flag] === false) {
+            continue;
+        }
+        if (byLayer.has(layer) && tileOverlaps(byLayer.get(layer), coords)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 export class LayerExtents {
     constructor() {
         this._layers = null;
         // flag -> Map(layer -> extent), for the sources that flag gates.
         this._gated = new Map();
+        // layer -> { min_css_px, by_size }, for the layers drawn by size.
+        this._sized = new Map();
+        // Multi-die: chiplet path -> { outline, layers, gated } for that die's
+        // rows, whose tiles draw only that die.
+        this._chiplets = new Map();
         this._generation = 0;
     }
 
@@ -71,6 +136,8 @@ export class LayerExtents {
         this._generation++;
         this._layers = null;
         this._gated = new Map();
+        this._sized = new Map();
+        this._chiplets = new Map();
         return this._generation;
     }
 
@@ -85,16 +152,25 @@ export class LayerExtents {
             this._layers = null;
             return false;
         }
-        const gated = new Map();
-        if (resp.gated && typeof resp.gated === 'object') {
-            for (const [flag, layers] of Object.entries(resp.gated)) {
-                if (layers && typeof layers === 'object') {
-                    gated.set(flag, new Map(Object.entries(layers)));
+        this._layers = new Map(Object.entries(resp.layers));
+        this._gated = parseGated(resp.gated);
+        this._sized = new Map(
+            resp.sized && typeof resp.sized === 'object'
+                ? Object.entries(resp.sized) : []);
+        const chiplets = new Map();
+        if (resp.chiplets && typeof resp.chiplets === 'object') {
+            for (const [path, die] of Object.entries(resp.chiplets)) {
+                if (!die || typeof die !== 'object') {
+                    continue;
                 }
+                chiplets.set(path, {
+                    outline: Array.isArray(die.outline) ? die.outline : [],
+                    layers: new Map(Object.entries(die.layers || {})),
+                    gated: parseGated(die.gated),
+                });
             }
         }
-        this._layers = new Map(Object.entries(resp.layers));
-        this._gated = gated;
+        this._chiplets = chiplets;
         return true;
     }
 
@@ -109,37 +185,42 @@ export class LayerExtents {
     }
 
     // False only when tile `coords` ({x, y, z}) of `layer` provably has
-    // nothing to draw under `visibility`.
-    mayHaveContent(layer, coords, visibility) {
-        if (!this._layers || !this._layers.has(layer)) {
+    // nothing to draw under `visibility`, on tiles `tileSize` CSS px wide.
+    // `chiplet` is the die a scoped row draws; its tiles also carry that die's
+    // outline.
+    mayHaveContent(layer, coords, visibility, tileSize = 256, chiplet) {
+        if (!this._layers) {
             return true;
         }
         if (visibility
             && NON_GEOMETRY_FLAGS.some((flag) => visibility[flag])) {
             return true;
         }
-        if (tileOverlaps(this._layers.get(layer), coords)) {
-            return true;
+        if (this._sized.has(layer)) {
+            return sizedOverlaps(this._sized.get(layer), coords, tileSize);
         }
-        for (const [flag, layers] of this._gated) {
-            if (visibility && visibility[flag] === false) {
-                continue;
-            }
-            if (layers.has(layer) && tileOverlaps(layers.get(layer), coords)) {
+        const die = this._chiplets.get(chiplet);
+        if (die) {
+            if (die.outline.some((edge) => tileOverlaps(edge, coords))) {
                 return true;
             }
+            return layerMayDraw(die.layers, die.gated, layer, coords,
+                                visibility);
         }
-        return false;
+        return layerMayDraw(this._layers, this._gated, layer, coords,
+                            visibility);
     }
 }
 
 // Whether a tile layer should request `layer` at `coords`.  `ctx` is a tile
 // layer's context ({ visibility, app }); app.layerExtents is absent until
-// main.js installs it, and in that case everything is requested.
-export function tileMayHaveContent(ctx, layer, coords) {
+// main.js installs it, and in that case everything is requested.  `chiplet`
+// is the die a scoped row draws.
+export function tileMayHaveContent(ctx, layer, coords, chiplet) {
     const extents = ctx && ctx.app && ctx.app.layerExtents;
     if (!extents) {
         return true;
     }
-    return extents.mayHaveContent(layer, coords, ctx.visibility);
+    return extents.mayHaveContent(layer, coords, ctx.visibility,
+                                  tileSizeCss(), chiplet);
 }

@@ -32,6 +32,7 @@ class NesterovPlace;
 class PlacerBaseCommon;
 class PlacerBase;
 class GCell;
+class IoPinBase;
 class GCellHandle;
 
 // This class draws debugging graphics on the layout
@@ -59,7 +60,8 @@ class GraphicsImpl : public gpl::AbstractGraphics,
                              std::vector<std::shared_ptr<PlacerBase>>& pbVec,
                              std::vector<std::shared_ptr<NesterovBase>>& nbVec,
                              bool draw_bins,
-                             odb::dbInst* inst) override;
+                             odb::dbInst* inst,
+                             odb::dbBTerm* pin) override;
 
   void addIter(int iter, double overflow) override;
   void addTimingDrivenIter(int iter) override;
@@ -81,6 +83,7 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   int gifStart(std::string_view path) override;
   void deleteLabel(std::string_view label_name) override;
   void gifEnd(int key) override;
+  void instDestroyed(odb::dbInst* db_inst) override;
 
  protected:
   void cellPlotImpl(bool pause) override;
@@ -159,6 +162,10 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   void drawSingleGCell(const GCell* gCell,
                        web::Painter& painter,
                        size_t nb_index = 0);
+  void drawIoPins(web::Painter& painter);
+  void drawSelectedIoPin(web::Painter& painter);
+  const IoPinBase* ioPins() const;
+  std::optional<size_t> findSelectedPin() const;
 
   std::shared_ptr<PlacerBaseCommon> pbc_;
   std::shared_ptr<NesterovBaseCommon> nbc_;
@@ -169,8 +176,13 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   static constexpr size_t kInvalidIndex = std::numeric_limits<size_t>::max();
   static constexpr const char* kDrawInstances = "Draw GPL Cells";
   static constexpr const char* kDrawTimingNets = "Draw Timing Nets";
+  static constexpr const char* kDrawIoPins = "Draw IO Pins";
   size_t selected_ = kInvalidIndex;
   size_t nb_selected_index_ = kInvalidIndex;
+  odb::dbBTerm* selected_pin_ = nullptr;
+  // Selected instance by identity; selected_ indexes GCell storage, which
+  // timing-driven repairs reorder.
+  odb::dbInst* selected_inst_ = nullptr;
   bool draw_bins_ = false;
   utl::Logger* logger_ = nullptr;
   HeatMapType heatmap_type_ = Density;
@@ -191,6 +203,7 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   void drawInitial(web::Painter& painter);
   void drawMBFF(web::Painter& painter);
   void drawBounds(web::Painter& painter);
+  void resyncSelection();
   void reportSelected();
 };
 

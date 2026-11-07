@@ -3,7 +3,7 @@
 ################################################################################
 
 # https://github.com/moby/moby/issues/38379#issuecomment-448445652
-ARG fromImage=ubuntu:24.04
+ARG fromImage=ubuntu:26.04
 ARG devImage=dev
 
 FROM $fromImage AS dev
@@ -19,18 +19,10 @@ COPY etc/DependencyInstaller.sh /tmp/.
 RUN <<EOF
 set -e
 /tmp/DependencyInstaller.sh -ci -base
-# The dev image serves both build systems, so it carries the Bazel dependency
-# set too: bazelisk plus the libxml2 and X11/xcb runtime libraries the Bazel
+# Installs bazelisk plus the libxml2 and X11/xcb runtime libraries the Bazel
 # build needs, which on Ubuntu 26.04 include the libxml2.so.2 compatibility
 # symlink without which the prebuilt LLVM lld cannot load.
-/tmp/DependencyInstaller.sh -bazel
-/tmp/DependencyInstaller.sh -ci -common -save-deps-prefixes=/etc/openroad_deps_prefixes.txt $INSTALLER_ARGS
-if echo "$fromImage" | grep -q "ubuntu"; then
-    echo "fromImage contains 'ubuntu' — stripping section from libQt5Core.so"
-    strip --remove-section=.note.ABI-tag /usr/lib/x86_64-linux-gnu/libQt5Core.so || true
-else
-    echo "Skipping strip command as fromImage does not contain 'ubuntu'"
-fi
+/tmp/DependencyInstaller.sh -bazel $INSTALLER_ARGS
 if command -v apt-get >/dev/null 2>&1; then
     rm -rf /var/lib/apt/lists/*
 fi
@@ -64,9 +56,6 @@ set -e
 OPENROAD_VERSION="${orVersion}" \
     bash ./etc/Build.sh -prefix=/OpenROAD/install -threads=${numThreads}
 test -x /OpenROAD/install/bin/openroad
-# Preserve the path used by builder-image consumers.
-mkdir -p build/bin
-ln -s ../../install/bin/openroad build/bin/openroad
 rm -f bazel-OpenROAD bazel-bin bazel-out bazel-testlogs
 EOF
 

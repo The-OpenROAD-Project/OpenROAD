@@ -4,19 +4,30 @@
 #include <algorithm>
 #include <any>
 #include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <exception>
 #include <functional>
+#include <future>
 #include <iterator>
 #include <memory>
 #include <mutex>
 #include <set>
+#include <shared_mutex>
+#include <stdexcept>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <utility>
 #include <vector>
 
+#include "boost/asio/io_context.hpp"
 #include "boost/asio/ip/address.hpp"
+#include "boost/asio/post.hpp"
+#include "boost/beast/http/field.hpp"
+#include "boost/beast/http/message.hpp"
+#include "boost/beast/http/status.hpp"
+#include "boost/beast/http/string_body.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/parse.hpp"
 #include "boost/json/serialize.hpp"
@@ -30,6 +41,7 @@
 #include "web/descriptor_registry.h"
 #include "web/heatMap.h"
 #include "web/web.h"
+#include "web_assets.h"
 #include "web_viewer_hook.h"
 
 namespace web {
@@ -330,6 +342,83 @@ TEST(JsonOrTest, WrongTypePresentValueThrows)
 }
 
 //------------------------------------------------------------------------------
+// TclEvaluator: when the debug renderers may draw
+//------------------------------------------------------------------------------
+
+// A command paused in the debugger stops where its state is stable, so the
+// renderers draw while it waits; it counts as running again once it resumes.
+TEST(TclEvaluatorTest, PausedCommandIsNotRunning)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.setRunning(true);
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+  tcl.setRunning(false);
+  EXPECT_FALSE(tcl.running);
+}
+
+// A startup script pauses with no command running.  One typed in the browser
+// during that pause can change the renderers, so it counts as running.
+TEST(TclEvaluatorTest, CommandDuringScriptPauseIsRunning)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.setRunning(true);
+  EXPECT_TRUE(tcl.running);
+  tcl.setRunning(false);
+  tcl.pauseEnd();
+  EXPECT_FALSE(tcl.running);
+}
+
+// That command can pause in turn; the script's pause ending after it does not
+// leave it counted as running.
+TEST(TclEvaluatorTest, CommandPausedDuringScriptPause)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.pauseBegin();
+  tcl.setRunning(true);
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+  tcl.setRunning(false);
+  tcl.pauseEnd();
+  EXPECT_FALSE(tcl.running);
+}
+
+// Two threads of one command paused at once: the command counts as running
+// again from the first resume.  That holds the draws back early, but never
+// lets one run under the command.
+TEST(TclEvaluatorTest, OverlappingPausesNeverDropTheCommand)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.setRunning(true);
+  tcl.pauseBegin();
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+}
+
+// A draw skipped while a command ran is reported once, when it is done.
+TEST(TclEvaluatorTest, SkippedDrawIsReportedOnce)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.setRunning(true);
+  {
+    const std::shared_lock<std::shared_mutex> draw(tcl.renderer_mutex);
+    tcl.draw_skipped = true;
+  }
+  EXPECT_TRUE(tcl.setRunning(false));
+  EXPECT_FALSE(tcl.setRunning(false));
+}
+
+//------------------------------------------------------------------------------
 // TileHandler tests
 //------------------------------------------------------------------------------
 
@@ -374,6 +463,17 @@ class TileHandlerTest : public tst::Nangate45Fixture
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
     state_.current_inspected = sel;
     state_.highlight_source = SessionState::HighlightSource::kInspected;
+  }
+
+  // Serves the tile request `json`; returns how many tiles are cached after.
+  size_t cachedAfterTile(const std::string& json)
+  {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(json);
+    handler_->handleTile(req, state_);
+    return gen_->tileCacheSize();
   }
 
   // An overlay-tile request with the "Flywires only" toggle in a given
@@ -513,6 +613,122 @@ TEST(AssetPathFromTarget, LeavesAnOrdinaryPathAlone)
   EXPECT_EQ(assetPathFromTarget("/tile-merge.js"), "/tile-merge.js");
 }
 
+// The embedded assets are stored gzipped, so this decides between handing the
+// stored bytes over as they are and inflating them first.
+TEST(AcceptsGzip, TakesThePlainAndTheListedForms)
+{
+  EXPECT_TRUE(acceptsGzip("gzip"));
+  EXPECT_TRUE(acceptsGzip("gzip, deflate, br"));
+  EXPECT_TRUE(acceptsGzip("deflate, gzip"));
+  EXPECT_TRUE(acceptsGzip("  gzip  "));
+  EXPECT_TRUE(acceptsGzip("x-gzip"));
+}
+
+TEST(AcceptsGzip, RefusesWhenGzipIsAbsent)
+{
+  // Silence is not permission: a client that sends no Accept-Encoding gets
+  // the inflated bytes.
+  EXPECT_FALSE(acceptsGzip(""));
+  EXPECT_FALSE(acceptsGzip("deflate"));
+  EXPECT_FALSE(acceptsGzip("identity"));
+  // "gzipped" is a different coding; a prefix match would accept it.
+  EXPECT_FALSE(acceptsGzip("gzipped"));
+}
+
+TEST(AcceptsGzip, HonoursQValues)
+{
+  EXPECT_TRUE(acceptsGzip("gzip;q=1"));
+  EXPECT_TRUE(acceptsGzip("gzip;q=0.5"));
+  EXPECT_TRUE(acceptsGzip("deflate;q=0, gzip;q=0.001"));
+  // q=0 means "not acceptable", in every spelling.
+  EXPECT_FALSE(acceptsGzip("gzip;q=0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0.0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0.000, deflate"));
+}
+
+TEST(AcceptsGzip, HandlesTheWildcard)
+{
+  EXPECT_TRUE(acceptsGzip("*"));
+  EXPECT_TRUE(acceptsGzip("deflate, *"));
+  EXPECT_FALSE(acceptsGzip("*;q=0"));
+  // An explicit gzip wins over the wildcard, whichever way it points.
+  EXPECT_FALSE(acceptsGzip("*, gzip;q=0"));
+  EXPECT_TRUE(acceptsGzip("*;q=0, gzip"));
+}
+
+// Codings and parameter names are case-insensitive.
+TEST(AcceptsGzip, IgnoresCase)
+{
+  EXPECT_TRUE(acceptsGzip("GZIP"));
+  EXPECT_TRUE(acceptsGzip("X-Gzip"));
+  EXPECT_FALSE(acceptsGzip("gzip;Q=0"));
+  EXPECT_FALSE(acceptsGzip("*;Q=0"));
+}
+
+// Only q counts, and only its own value: level=1 is not a nonzero q.
+TEST(AcceptsGzip, ReadsOnlyTheQParameter)
+{
+  EXPECT_FALSE(acceptsGzip("gzip;q=0;level=1"));
+  EXPECT_FALSE(acceptsGzip("gzip;level=1;q=0"));
+  EXPECT_TRUE(acceptsGzip("gzip;level=0"));
+  // Each coding keeps its own parameters, the last one included.
+  EXPECT_TRUE(acceptsGzip("br;q=0, gzip"));
+}
+
+TEST(AcceptsGzip, AllowsSpacesAndQuotedValues)
+{
+  EXPECT_FALSE(acceptsGzip("gzip ; q = 0"));
+  EXPECT_TRUE(acceptsGzip("deflate , gzip ; q=0.5"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=\"0\""));
+  EXPECT_TRUE(acceptsGzip("gzip;q=\"0.5\""));
+  EXPECT_FALSE(acceptsGzip("gzip;foo=\"a,b\";q=0"));
+}
+
+// x-gzip is an alias of gzip, so entries naming either are weighed together,
+// and an explicit refusal wins in either order.
+TEST(AcceptsGzip, ConflictingEntriesDoNotDependOnOrder)
+{
+  EXPECT_FALSE(acceptsGzip("x-gzip;q=1, gzip;q=0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0, x-gzip;q=1"));
+  EXPECT_FALSE(acceptsGzip("gzip, gzip;q=0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0, gzip"));
+  EXPECT_FALSE(acceptsGzip("*, *;q=0"));
+  EXPECT_FALSE(acceptsGzip("*;q=0, *"));
+  EXPECT_TRUE(acceptsGzip("gzip, x-gzip;q=0.5"));
+}
+
+using StringResponse
+    = boost::beast::http::response<boost::beast::http::string_body>;
+
+// The response a browser actually receives for an embedded asset.
+TEST(ServeEmbeddedAsset, SendsTheStoredBytesWhenGzipIsAccepted)
+{
+  const EmbeddedAsset* asset = findEmbeddedAsset("/index.html");
+  ASSERT_NE(asset, nullptr);
+  ASSERT_TRUE(asset->gzipped);
+  StringResponse res{boost::beast::http::status::ok, 11};
+  serveEmbeddedAsset(*asset, "gzip, deflate, br", res);
+  EXPECT_EQ(res.result(), boost::beast::http::status::ok);
+  EXPECT_EQ(res[boost::beast::http::field::content_encoding], "gzip");
+  EXPECT_EQ(res[boost::beast::http::field::vary], "Accept-Encoding");
+  EXPECT_EQ(res.body(), asset->content());
+}
+
+TEST(ServeEmbeddedAsset, InflatesWhenGzipIsRefused)
+{
+  const EmbeddedAsset* asset = findEmbeddedAsset("/index.html");
+  ASSERT_NE(asset, nullptr);
+  for (const char* accept : {"", "identity", "x-gzip;q=1, gzip;q=0"}) {
+    SCOPED_TRACE(accept);
+    StringResponse res{boost::beast::http::status::ok, 11};
+    serveEmbeddedAsset(*asset, accept, res);
+    EXPECT_EQ(res.result(), boost::beast::http::status::ok);
+    EXPECT_EQ(res.count(boost::beast::http::field::content_encoding), 0u);
+    EXPECT_EQ(res[boost::beast::http::field::vary], "Accept-Encoding");
+    EXPECT_EQ(res.body(), assetText(*asset));
+  }
+}
+
 // The cache stores blank tiles as an empty entry, so a hit has to come back as
 // kEmpty too rather than as a zero-byte image the client would fail to decode.
 TEST_F(TileHandlerTest, BlankTileStaysEmptyThroughTheCache)
@@ -612,6 +828,37 @@ TEST(WebSocketOriginAllowed, OpaqueOriginIsRejected)
   EXPECT_FALSE(webSocketOriginAllowed("null", "localhost:8080"));
 }
 
+// Browsers before CSP Level 3 do not let 'self' match ws: or wss:.
+TEST(ContentSecurityPolicy, NamesTheSameHostWebSocket)
+{
+  for (const char* host : {"localhost:8080", "127.0.0.1:8080", "viewer-host"}) {
+    const std::string policy = contentSecurityPolicy(host);
+    EXPECT_NE(policy.find(std::string("connect-src 'self' ws://") + host
+                          + " wss://" + host + " data:;"),
+              std::string::npos)
+        << policy;
+  }
+}
+
+// A Host a host-source cannot spell must not reach the header: ';' or a
+// space would end the directive and let the client add its own sources.
+TEST(ContentSecurityPolicy, UnspellableHostGetsSelfOnly)
+{
+  for (const char* host : {"",
+                           "[::1]:8080",
+                           "a; script-src *",
+                           "a b",
+                           "localhost:",
+                           "localhost:80a",
+                           ":8080"}) {
+    const std::string policy = contentSecurityPolicy(host);
+    EXPECT_NE(policy.find("connect-src 'self' data:;"), std::string::npos)
+        << host << ": " << policy;
+    EXPECT_EQ(policy.find("ws:"), std::string::npos) << host << ": " << policy;
+    EXPECT_NE(policy.find("script-src 'self';"), std::string::npos) << policy;
+  }
+}
+
 // Bind-address classification for web_server -bind (issue #11167).
 TEST(ClassifyBindAddress, LoopbackIsRecognised)
 {
@@ -674,6 +921,567 @@ TEST(BrowserHostForBind, RoutableAddressesKeepTheirLiteral)
 {
   EXPECT_EQ(browserHost("192.168.1.5"), "192.168.1.5");
   EXPECT_EQ(browserHost("fd00::1"), "[fd00::1]");  // URLs bracket v6
+}
+
+TEST(JoinUnlessSelf, JoinsFromAnotherThread)
+{
+  std::thread t([] {});
+  joinUnlessSelf(t);
+  EXPECT_FALSE(t.joinable());
+}
+
+TEST(JoinUnlessSelf, IsANoOpOnANonJoinableThread)
+{
+  std::thread t;
+  joinUnlessSelf(t);
+  EXPECT_FALSE(t.joinable());
+}
+
+TEST(JoinUnlessSelf, DetachesWhenCalledFromTheThreadItself)
+{
+  // A session's init thread can drop the last reference, and so run the
+  // destructor, and this call, on itself.
+  std::thread t;
+  std::promise<void> assigned;
+  // Shared: the thread may still be inside set_value() when the test returns.
+  auto detached = std::make_shared<std::promise<void>>();
+  auto assigned_done = assigned.get_future();
+  auto detached_done = detached->get_future();
+
+  t = std::thread([&t, &assigned_done, detached] {
+    // Touching `t` before the assignment completes would race the constructor.
+    assigned_done.wait();
+    joinUnlessSelf(t);
+    detached->set_value();
+  });
+  assigned.set_value();
+
+  detached_done.wait();
+  EXPECT_FALSE(t.joinable());
+}
+
+TEST(RunIoContext, LogsAThrowingHandlerAndKeepsRunning)
+{
+  boost::asio::io_context ioc;
+  utl::Logger logger;
+  bool ran_after = false;
+  boost::asio::post(ioc, [] { throw std::runtime_error("handler failed"); });
+  boost::asio::post(ioc, [&ran_after] { ran_after = true; });
+  runIoContext(ioc, &logger);
+  EXPECT_TRUE(ran_after);
+}
+
+// A local session: nothing says the browser lives elsewhere.
+static BrowserEnv localEnv()
+{
+  BrowserEnv env;
+  env.display = ":0";
+  env.host_name = "workstation";
+  return env;
+}
+
+TEST(DisplayIsRemote, LocalSpellingsStayLocal)
+{
+  EXPECT_FALSE(displayIsRemote(":0", "workstation"));
+  EXPECT_FALSE(displayIsRemote(":10.0", "workstation"));
+  EXPECT_FALSE(displayIsRemote("unix:0", "workstation"));
+  EXPECT_FALSE(displayIsRemote("localhost:0", "workstation"));
+  EXPECT_FALSE(displayIsRemote("", "workstation"));
+}
+
+TEST(DisplayIsRemote, SshForwardedDisplayIsRemote)
+{
+  // sshd numbers forwarded displays from 10, over TCP to this machine.
+  EXPECT_TRUE(displayIsRemote("localhost:10.0", "workstation"));
+  EXPECT_TRUE(displayIsRemote("127.0.0.1:10.0", "workstation"));
+  EXPECT_TRUE(displayIsRemote("[::1]:10", "workstation"));
+  // X11UseLocalhost no: this host's own name.
+  EXPECT_TRUE(displayIsRemote("farm-42:10.0", "farm-42"));
+}
+
+TEST(DisplayIsRemote, ThisMachineByEitherName)
+{
+  // $DISPLAY and gethostname() need not agree on short vs fully qualified.
+  EXPECT_FALSE(displayIsRemote("workstation:0", "workstation"));
+  EXPECT_FALSE(displayIsRemote("workstation:0", "workstation.example.com"));
+  EXPECT_FALSE(displayIsRemote("workstation.example.com:0", "workstation"));
+}
+
+TEST(DisplayIsRemote, AnotherMachineIsRemote)
+{
+  // The farm case (issue #11389): a scheduler copied the submitting shell's
+  // $DISPLAY onto a compute host.
+  EXPECT_TRUE(displayIsRemote("workstation:0", "farm-42"));
+  EXPECT_TRUE(displayIsRemote("workstation.example.com:0", "farm-42"));
+}
+
+TEST(DisplayIsRemote, HostNamesIgnoreCase)
+{
+  EXPECT_FALSE(displayIsRemote("LOCALHOST:0", "farm-42"));
+  EXPECT_FALSE(displayIsRemote("Workstation:0", "workstation.example.com"));
+}
+
+TEST(DisplayIsRemote, IpLiteralIsJudgedByAddress)
+{
+  const std::vector<boost::asio::ip::address> mine
+      = {boost::asio::ip::make_address("10.0.0.5")};
+  EXPECT_FALSE(displayIsRemote("10.0.0.5:0", "farm-42", mine));
+  EXPECT_TRUE(displayIsRemote("10.0.0.5:0", "farm-42"));
+  EXPECT_FALSE(displayIsRemote("127.0.0.2:0", "farm-42"));
+  // Never cut at the first dot as a name would be.
+  EXPECT_TRUE(displayIsRemote("10.0.0.5:0", "10"));
+}
+
+TEST(DisplayIsRemote, BracketedIpv6)
+{
+  EXPECT_FALSE(displayIsRemote("[::1]:0", "farm-42"));
+  EXPECT_TRUE(displayIsRemote("[fd00::5]:0", "farm-42"));
+}
+
+TEST(LocalDisplaySocket, ParsesBareDisplaysOnly)
+{
+  EXPECT_EQ(localDisplaySocket(":1"), "/tmp/.X11-unix/X1");
+  EXPECT_EQ(localDisplaySocket(":1.0"), "/tmp/.X11-unix/X1");
+  EXPECT_EQ(localDisplaySocket("unix:12"), "/tmp/.X11-unix/X12");
+  EXPECT_EQ(localDisplaySocket("localhost:10.0"), "");
+  EXPECT_EQ(localDisplaySocket("workstation:0"), "");
+  EXPECT_EQ(localDisplaySocket(":-1"), "");
+  EXPECT_EQ(localDisplaySocket(":"), "");
+  EXPECT_EQ(localDisplaySocket(""), "");
+}
+
+// A plain ssh session: no display forwarded.
+static BrowserEnv sshEnv()
+{
+  BrowserEnv env;
+  env.ssh_session = true;
+  env.host_name = "farm-42";
+  env.has_display = false;
+  return env;
+}
+
+// A VS Code terminal over ssh: the editor's IPC socket and $BROWSER helper.
+static BrowserEnv vsCodeEnv()
+{
+  BrowserEnv env = sshEnv();
+  env.vscode_ipc_hook = "/run/user/1000/vscode-ipc-1.sock";
+  env.browser = "/home/u/.vscode-server/bin/abc/bin/helpers/browser.sh";
+  return env;
+}
+
+static LaunchSkip autoSkip(const BrowserEnv& env)
+{
+  return browserLaunchSkipReason(BrowserLaunch::kAuto, env);
+}
+
+TEST(BrowserLaunchSkipReason, VsCodeTerminalOverSshLaunches)
+{
+  const BrowserEnv env = vsCodeEnv();
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kNone);
+  EXPECT_TRUE(launchesThroughBrowserEnv(env));
+}
+
+TEST(BrowserLaunchSkipReason, VsCodeNeedsBothVariables)
+{
+  BrowserEnv hook_only = vsCodeEnv();
+  hook_only.browser.clear();
+  EXPECT_EQ(autoSkip(hook_only), LaunchSkip::kSshSession);
+
+  // A $BROWSER from a shell profile is a browser on this host, not the
+  // editor's helper; with a shared home it is the one #11389 is about.
+  BrowserEnv browser_only = sshEnv();
+  browser_only.browser = "firefox";
+  EXPECT_EQ(autoSkip(browser_only), LaunchSkip::kSshSession);
+  EXPECT_FALSE(launchesThroughBrowserEnv(browser_only));
+
+  // Even in a VS Code terminal, a profile's $BROWSER is not the helper.
+  BrowserEnv profile_browser = vsCodeEnv();
+  profile_browser.browser = "firefox";
+  EXPECT_EQ(autoSkip(profile_browser), LaunchSkip::kSshSession);
+  EXPECT_FALSE(launchesThroughBrowserEnv(profile_browser));
+}
+
+TEST(BrowserLaunchSkipReason, WslDisplayIsTheUsersOwn)
+{
+  // VcXsrv or X410 on the Windows side of WSL: another IP, the same user.
+  BrowserEnv env = localEnv();
+  env.display = "172.20.0.1:0.0";
+  env.wsl = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kNone);
+}
+
+TEST(BrowserLaunchSkipReason, WslLaunchesWithoutAnXServer)
+{
+  // The Windows browser needs no display on the Linux side.
+  BrowserEnv env = localEnv();
+  env.display = "";
+  env.has_display = false;
+  env.wsl = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kNone);
+}
+
+TEST(BrowserLaunchSkipReason, BatchJobBeatsEveryException)
+{
+  BrowserEnv env = vsCodeEnv();
+  env.batch_job = true;
+  env.display = ":1";
+  env.own_local_display = true;
+  env.has_display = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kBatchJob);
+}
+
+TEST(BrowserLaunchSkipReason, OwnDesktopOverSshLaunches)
+{
+  // A VNC or x2go desktop started from an ssh shell: its X server is ours.
+  BrowserEnv env = sshEnv();
+  env.display = ":1";
+  env.has_display = true;
+  env.own_local_display = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kNone);
+}
+
+TEST(BrowserLaunchSkipReason, ForeignOrForwardedDisplayOverSshSkips)
+{
+  // Another user's X server would get our browser and the live ticket.
+  BrowserEnv foreign = sshEnv();
+  foreign.display = ":0";
+  foreign.has_display = true;
+  EXPECT_EQ(autoSkip(foreign), LaunchSkip::kSshSession);
+
+  BrowserEnv forwarded = sshEnv();
+  forwarded.display = "localhost:10.0";
+  forwarded.has_display = true;
+  EXPECT_EQ(autoSkip(forwarded), LaunchSkip::kSshSession);
+}
+
+TEST(BrowserLaunchSkipReason, ForwardedDisplayWithoutSshVariablesSkips)
+{
+  // docker_shell and sudo pass $DISPLAY on, but not SSH_CONNECTION.
+  BrowserEnv env = localEnv();
+  env.display = "localhost:10.0";
+  env.has_display = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kRemoteDisplay);
+}
+
+TEST(BrowserLaunchSkipReason, LocalSessionLaunches)
+{
+  EXPECT_EQ(autoSkip(localEnv()), LaunchSkip::kNone);
+}
+
+TEST(BrowserLaunchSkipReason, NamesTheClauseThatDecided)
+{
+  BrowserEnv ssh = localEnv();
+  ssh.ssh_session = true;
+  EXPECT_EQ(autoSkip(ssh), LaunchSkip::kSshSession);
+
+  // A batch job runs wherever the scheduler put it, and inherits the
+  // submitting shell's $DISPLAY.
+  BrowserEnv batch = localEnv();
+  batch.batch_job = true;
+  EXPECT_EQ(autoSkip(batch), LaunchSkip::kBatchJob);
+
+  BrowserEnv remote_display = localEnv();
+  remote_display.display = "workstation:0";
+  remote_display.host_name = "farm-42";
+  EXPECT_EQ(autoSkip(remote_display), LaunchSkip::kRemoteDisplay);
+
+  BrowserEnv headless = localEnv();
+  headless.has_display = false;
+  headless.display = "";
+  EXPECT_EQ(autoSkip(headless), LaunchSkip::kNoDisplay);
+
+  BrowserEnv opted_out = localEnv();
+  opted_out.no_browser = true;
+  EXPECT_EQ(autoSkip(opted_out), LaunchSkip::kOptOut);
+
+  EXPECT_EQ(browserLaunchSkipReason(BrowserLaunch::kNever, localEnv()),
+            LaunchSkip::kFlag);
+}
+
+TEST(BrowserLaunchSkipReason, AlwaysBeatsEveryClause)
+{
+  BrowserEnv hostile = localEnv();
+  hostile.ssh_session = true;
+  hostile.batch_job = true;
+  hostile.display = "workstation:0";
+  hostile.host_name = "farm-42";
+  hostile.no_browser = true;
+  hostile.has_display = false;
+  EXPECT_EQ(browserLaunchSkipReason(BrowserLaunch::kAlways, hostile),
+            LaunchSkip::kNone);
+}
+
+TEST(BrowserSkipReasonText, EveryReasonReadsInsideTheMessage)
+{
+  EXPECT_TRUE(browserSkipReasonText(LaunchSkip::kNone).empty());
+  for (const LaunchSkip reason : {LaunchSkip::kFlag,
+                                  LaunchSkip::kOptOut,
+                                  LaunchSkip::kSshSession,
+                                  LaunchSkip::kBatchJob,
+                                  LaunchSkip::kRemoteDisplay,
+                                  LaunchSkip::kNoDisplay}) {
+    EXPECT_FALSE(browserSkipReasonText(reason).empty());
+  }
+}
+
+TEST(BrowserLaunchFromString, KnownModesAndFallback)
+{
+  EXPECT_EQ(browserLaunchFromString("never"), BrowserLaunch::kNever);
+  EXPECT_EQ(browserLaunchFromString("always"), BrowserLaunch::kAlways);
+  EXPECT_EQ(browserLaunchFromString("auto"), BrowserLaunch::kAuto);
+  // Never a reason to fail starting the server.
+  EXPECT_EQ(browserLaunchFromString(""), BrowserLaunch::kAuto);
+  EXPECT_EQ(browserLaunchFromString("maybe"), BrowserLaunch::kAuto);
+}
+
+TEST(ReachabilityHint, LoopbackNamesTheHostAndBothEndsOfThePort)
+{
+  EXPECT_EQ(reachabilityHint(BindAddressKind::kLoopback,
+                             boost::asio::ip::make_address("127.0.0.1"),
+                             "farm-42",
+                             8080,
+                             "/?token=abc"),
+            "To reach it from another machine, forward the port: ssh -L "
+            "8080:localhost:8080 farm-42");
+}
+
+TEST(ReachabilityHint, LoopbackTunnelNamesTheAddressItListensOn)
+{
+  // 127.0.0.0/8 is all loopback: a tunnel to "localhost" would land on
+  // 127.0.0.1, where nothing is bound.  Its near end is localhost, though,
+  // so the url to open there is not the 127.0.0.2 one reported.
+  EXPECT_EQ(reachabilityHint(BindAddressKind::kLoopback,
+                             boost::asio::ip::make_address("127.0.0.2"),
+                             "farm-42",
+                             8080,
+                             "/?token=abc"),
+            "To reach it from another machine, forward the port: ssh -L "
+            "8080:127.0.0.2:8080 farm-42, then open "
+            "http://localhost:8080/?token=abc");
+}
+
+TEST(ReachabilityHint, WildcardNamesThisHostInsteadOfATunnel)
+{
+  // With -bind 0.0.0.0 the port is open to the network, but the reported url
+  // says "localhost", and a tunnel to it would be pointless.
+  const std::string hint
+      = reachabilityHint(BindAddressKind::kExposed,
+                         boost::asio::ip::make_address("0.0.0.0"),
+                         "farm-42",
+                         8080,
+                         "/?token=abc");
+  // The url the user is told to open elsewhere has to carry the token, or it
+  // is refused on arrival.
+  EXPECT_NE(hint.find("http://farm-42:8080/?token=abc"), std::string::npos);
+  EXPECT_EQ(hint.find("ssh -L"), std::string::npos);
+}
+
+TEST(ReachabilityHint, ConcreteAddressNeedsNeitherTunnelNorHostName)
+{
+  // -bind 10.0.0.5: the address is already in the url the user was given.
+  const std::string hint
+      = reachabilityHint(BindAddressKind::kExposed,
+                         boost::asio::ip::make_address("10.0.0.5"),
+                         "farm-42",
+                         8080,
+                         "/?token=abc");
+  EXPECT_EQ(hint.find("ssh -L"), std::string::npos);
+  EXPECT_EQ(hint.find("farm-42"), std::string::npos);
+}
+
+TEST(OtherMachineUrl, IsTheUrlTheHintNames)
+{
+  // serve() prints these with the token, and the hint only with it redacted.
+  EXPECT_EQ(otherMachineUrl(BindAddressKind::kLoopback,
+                            boost::asio::ip::make_address("127.0.0.2"),
+                            "farm-42",
+                            8080,
+                            "/?token=abc"),
+            "http://localhost:8080/?token=abc");
+  EXPECT_EQ(otherMachineUrl(BindAddressKind::kExposed,
+                            boost::asio::ip::make_address("0.0.0.0"),
+                            "farm-42",
+                            8080,
+                            "/?token=abc"),
+            "http://farm-42:8080/?token=abc");
+}
+
+TEST(OtherMachineUrl, IsEmptyWhenTheReportedUrlServes)
+{
+  // Through a tunnel to localhost, or at an address already in the url.
+  EXPECT_EQ(otherMachineUrl(BindAddressKind::kLoopback,
+                            boost::asio::ip::make_address("127.0.0.1"),
+                            "farm-42",
+                            8080,
+                            "/?token=abc"),
+            "");
+  EXPECT_EQ(otherMachineUrl(BindAddressKind::kExposed,
+                            boost::asio::ip::make_address("10.0.0.5"),
+                            "farm-42",
+                            8080,
+                            "/?token=abc"),
+            "");
+}
+
+TEST(GenerateAuthToken, IsHexAndUnpredictable)
+{
+  const std::string token = generateAuthToken();
+  EXPECT_EQ(token.size(), 32u);  // 128 bits
+  EXPECT_TRUE(std::all_of(token.begin(), token.end(), [](const char c) {
+    return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+  }));
+  // Not proof of entropy, but a token minted from a clock-free source must
+  // not repeat between two calls in the same process.
+  EXPECT_NE(token, generateAuthToken());
+}
+
+TEST(RequestTokenAllowed, AcceptsTheExactToken)
+{
+  EXPECT_TRUE(requestTokenAllowed("/ws?token=abc123", "abc123"));
+  EXPECT_TRUE(requestTokenAllowed("/?token=abc123", "abc123"));
+  // Other parameters may sit on either side of it.
+  EXPECT_TRUE(requestTokenAllowed("/?mergetiles=0&token=abc123&x=1", "abc123"));
+}
+
+TEST(RequestTokenAllowed, RejectsAnythingElse)
+{
+  EXPECT_FALSE(requestTokenAllowed("/ws", "abc123"));
+  EXPECT_FALSE(requestTokenAllowed("/ws?token=", "abc123"));
+  EXPECT_FALSE(requestTokenAllowed("/ws?token=wrong", "abc123"));
+  // A prefix and an extension of the real token are both wrong: a length
+  // check is part of the comparison, not an optimization skipped for it.
+  EXPECT_FALSE(requestTokenAllowed("/ws?token=abc12", "abc123"));
+  EXPECT_FALSE(requestTokenAllowed("/ws?token=abc1234", "abc123"));
+  // The parameter name is exact; "tokens" is not "token".
+  EXPECT_FALSE(requestTokenAllowed("/ws?tokens=abc123", "abc123"));
+}
+
+TEST(RequestTokenAllowed, DecodesThePercentEncodedValue)
+{
+  EXPECT_TRUE(requestTokenAllowed("/ws?token=a%2Bb", "a+b"));
+}
+
+TEST(RequestTokenAllowed, AnEmptyExpectedTokenMatchesNothing)
+{
+  // Fail closed: with no token minted there is nothing to present.
+  EXPECT_FALSE(requestTokenAllowed("/ws", ""));
+  EXPECT_FALSE(requestTokenAllowed("/ws?token=", ""));
+}
+
+TEST(AuthRedirectTarget, SwapsTheTicketForTheToken)
+{
+  EXPECT_EQ(authRedirectTarget("/?ticket=abc", "tok"), "/?token=tok");
+  EXPECT_EQ(authRedirectTarget("/index.html?ticket=abc", "tok"),
+            "/index.html?token=tok");
+}
+
+TEST(AuthRedirectTarget, KeepsTheViewerOptionsAroundIt)
+{
+  // ?mergetiles=0 and friends are how the viewer is A/B tested; losing them
+  // in the redirect would silently ignore what the user asked for.
+  EXPECT_EQ(authRedirectTarget("/?ticket=abc&mergetiles=0", "tok"),
+            "/?token=tok&mergetiles=0");
+  EXPECT_EQ(
+      authRedirectTarget("/?mergetiles=0&ticket=abc&tilebudget=500", "tok"),
+      "/?token=tok&mergetiles=0&tilebudget=500");
+}
+
+TEST(AuthRedirectTarget, PassesEncodedValuesThroughUntouched)
+{
+  // The query is copied byte for byte; decoding and re-encoding here would
+  // be a chance to mangle a value for no gain.
+  EXPECT_EQ(authRedirectTarget("/?ticket=abc&vis=%7B%22a%22%3A1%7D", "tok"),
+            "/?token=tok&vis=%7B%22a%22%3A1%7D");
+}
+
+TEST(AuthRedirectTarget, HandlesATargetWithNoQueryAtAll)
+{
+  EXPECT_EQ(authRedirectTarget("/", "tok"), "/?token=tok");
+}
+
+TEST(SessionAuth, RedeemsTheTicketExactlyOnce)
+{
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  EXPECT_EQ(auth.token(), "tok");
+  EXPECT_EQ(auth.ticket(), "tik");
+
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRedeemed);
+  // The whole point: what `ps` saw on the browser's command line stops
+  // working as soon as the browser has used it, and says it was used.
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kReused);
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kReused);
+  EXPECT_EQ(auth.token(), "tok");
+}
+
+TEST(SessionAuth, RejectsAWrongOrEmptyTicket)
+{
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  EXPECT_EQ(auth.redeemTicket("nope"), TicketUse::kRefused);
+  EXPECT_EQ(auth.redeemTicket(""), TicketUse::kRefused);
+  EXPECT_EQ(auth.redeemTicket("ti"), TicketUse::kRefused);
+  EXPECT_EQ(auth.redeemTicket("tikk"), TicketUse::kRefused);
+  // None of those consumed it.
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRedeemed);
+  // Nor does a wrong one pass for a reuse afterwards.
+  EXPECT_EQ(auth.redeemTicket("nope"), TicketUse::kRefused);
+}
+
+TEST(SessionAuth, RejectsAnExpiredTicket)
+{
+  SessionAuth auth("tok", "tik", std::chrono::seconds(0));
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRefused);
+}
+
+TEST(SessionAuth, RevokedTicketIsRefused)
+{
+  // Not kReused: a launch reported as failed may still have opened a browser,
+  // and that one is not someone else.
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  auth.revokeTicket();
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRefused);
+}
+
+TEST(SessionAuth, RevokingARedeemedTicketKeepsItRedeemed)
+{
+  // The browser can redeem it before launchBrowser() reports a failure.
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRedeemed);
+  auth.revokeTicket();
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kReused);
+}
+
+TEST(SessionAuth, ReportsOnlyTheFirstReuse)
+{
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  EXPECT_TRUE(auth.firstReuse());
+  EXPECT_FALSE(auth.firstReuse());
+  // Independent of the WebSocket rejections.
+  EXPECT_TRUE(auth.firstRejection());
+}
+
+TEST(SessionAuth, ReportsOnlyTheFirstRejection)
+{
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  EXPECT_TRUE(auth.firstRejection());
+  EXPECT_FALSE(auth.firstRejection());
+  EXPECT_FALSE(auth.firstRejection());
+}
+
+TEST(ParseQuery, DecodesValuesAndIgnoresValuelessKeys)
+{
+  const auto params = parseQuery("/download/image?type=entire&filename=a%20b");
+  EXPECT_EQ(params.at("type"), "entire");
+  EXPECT_EQ(params.at("filename"), "a b");
+
+  EXPECT_TRUE(parseQuery("/index.html").empty());
+  EXPECT_TRUE(parseQuery("/ws?flag").empty());
+}
+
+TEST(UrlDecode, ASignIsNotAHexDigit)
+{
+  // Read as signed hex these would turn into a NUL byte and 0xff.
+  EXPECT_EQ(urlDecode("%-0"), "%-0");
+  EXPECT_EQ(urlDecode("%-1x"), "%-1x");
 }
 
 TEST_F(TileHandlerTest, HonoursTheClientReportedDpr)
@@ -826,6 +1634,47 @@ TEST_F(TileHandlerTest, PixelCountIsPartOfTheTileCacheKey)
   // ...and back, which must come from the cache at its own size, not the last
   // one rendered.
   EXPECT_EQ(render("400"), 400u);
+}
+
+// A tech-layer tile does not read visible_layers, so a toggle of another layer
+// must not cost it its cache entry; the tiles that do read it keep it keyed.
+TEST_F(TileHandlerTest, LayerTileCacheIgnoresVisibleLayers)
+{
+  const auto cached_after
+      = [&](const std::string& layer, const std::string& visible) {
+          return cachedAfterTile(R"({"layer":")" + layer
+                                 + R"(","z":0,"x":0,"y":0,"visible_layers":)"
+                                 + visible + "}");
+        };
+  const size_t after_metal1 = cached_after("metal1", R"(["metal1"])");
+  EXPECT_EQ(cached_after("metal1", R"(["metal1","metal2"])"), after_metal1)
+      << "a metal1 tile missed the cache because another layer was toggled";
+
+  const size_t after_pins = cached_after("_pins", R"(["metal1"])");
+  EXPECT_EQ(cached_after("_pins", R"(["metal1","metal2"])"), after_pins + 1)
+      << "_pins filters by visible_layers, so it must stay in its key";
+}
+
+// Two dies' rows of one layer name differ only in `chiplet`, so it keys the
+// cache; hiding another die must not cost a row its entry, hiding its own must.
+TEST_F(TileHandlerTest, ScopedTileCacheIgnoresOtherChiplets)
+{
+  // Only the key is under test, so the dies need not exist (the fixture's
+  // single chip has an empty path, which scopes nothing).
+  const auto cached_after = [&](const std::string& die,
+                                const std::string& visible_chiplets) {
+    return cachedAfterTile(R"({"layer":"metal1","chiplet":")" + die
+                           + R"(","z":0,"x":0,"y":0,"visible_layers":[],)"
+                           + R"("visible_chiplets":)" + visible_chiplets + "}");
+  };
+  const std::string both = R"(["top/die0","top/die1"])";
+  const size_t first = cached_after("top/die0", both);
+  EXPECT_EQ(cached_after("top/die1", both), first + 1)
+      << "one die's row was served the other die's tile";
+  EXPECT_EQ(cached_after("top/die0", R"(["top/die0"])"), first + 1)
+      << "another die's visibility moved this die's cache key";
+  EXPECT_EQ(cached_after("top/die0", R"(["top/die1"])"), first + 2)
+      << "the die's own visibility must stay in its key";
 }
 
 TEST_F(TileHandlerTest, TileReturnsPng)
@@ -1709,9 +2558,17 @@ TEST_F(TileHandlerTest, HoverNotGatedByHighlightSelected)
       << "hover highlight is independent of the Highlight selected toggle";
 }
 
+// The heat map registry keeps the first registration for the whole process,
+// so the logger its factories capture has to live as long.
+utl::Logger* processLogger()
+{
+  static utl::Logger logger;
+  return &logger;
+}
+
 TEST_F(TileHandlerTest, HeatMapsReturnsMetadata)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest req;
@@ -1728,7 +2585,7 @@ TEST_F(TileHandlerTest, HeatMapsReturnsMetadata)
 
 TEST_F(TileHandlerTest, HeatMapSettingsAreSessionLocal)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   SessionState state1;
   SessionState state2;
   handler_->initializeHeatMaps(state1);
@@ -1764,7 +2621,7 @@ TEST_F(TileHandlerTest, HeatMapSettingsAreSessionLocal)
 
 TEST_F(TileHandlerTest, HeatMapShowNumbersCanBeUpdated)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest set_req;
@@ -1782,12 +2639,59 @@ TEST_F(TileHandlerTest, HeatMapShowNumbersCanBeUpdated)
   }
 }
 
+// The placement density grid defaults to the bin size global placement
+// publishes, but stays adjustable: a grid the user picked is kept.
+TEST_F(TileHandlerTest, PlacementHeatMapGridDefaultsToGplBinSize)
+{
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  handler_->initializeHeatMaps(state_);
+  const int dbu = block_->getDbUnitsPerMicron();
+  odb::dbIntProperty::create(block_, "gpl_bin_size_x", 4 * dbu);
+  odb::dbIntProperty::create(block_, "gpl_bin_size_y", 5 * dbu);
+
+  std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+  auto& source = *state_.heatmaps.at("Placement");
+  EXPECT_TRUE(source.canAdjustGrid());
+  // A grid saved by an earlier session does not override the default.
+  source.restoreSettings({{"GridX", 31.0}, {"GridY", 25.0}});
+  source.ensureMap();
+  EXPECT_DOUBLE_EQ(source.getGridXSize(), 4.0);
+  EXPECT_DOUBLE_EQ(source.getGridYSize(), 5.0);
+
+  source.setGridSizes(20.0, 20.0);
+  source.ensureMap();
+  EXPECT_DOUBLE_EQ(source.getGridXSize(), 20.0);
+  EXPECT_DOUBLE_EQ(source.getGridYSize(), 20.0);
+}
+
+// Bins too fine for the core are coarsened by powers of two until the default
+// grid has at most 1024 bins per side.
+TEST_F(TileHandlerTest, PlacementHeatMapDefaultGridIsBounded)
+{
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  handler_->initializeHeatMaps(state_);
+  // 1000000 DBU core: 600 DBU bins would be 1667 per side, 1200 DBU gives 834.
+  block_->setDieArea(odb::Rect(0, 0, 1000000, 1000000));
+  block_->setCoreArea(odb::Rect(0, 0, 1000000, 1000000));
+  odb::dbIntProperty::create(block_, "gpl_bin_size_x", 600);
+  odb::dbIntProperty::create(block_, "gpl_bin_size_y", 600);
+
+  std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+  auto& source = *state_.heatmaps.at("Placement");
+  source.ensureMap();
+  const double expected = block_->dbuToMicrons(1200);
+  EXPECT_DOUBLE_EQ(source.getGridXSize(), expected);
+  EXPECT_DOUBLE_EQ(source.getGridYSize(), expected);
+  EXPECT_LE(source.getMap().shape()[0], 1024);
+  EXPECT_LE(source.getMap().shape()[1], 1024);
+}
+
 // Qt's HeatMapSetup ends with a "use selected only" checkbox for the sources
 // that name one.  It is not one of getSettings()' entries, so the handler has
 // to special-case it the way Qt's dialog wires the setter directly.
 TEST_F(TileHandlerTest, HeatMapUseSelectedOnlyIsExposedAndSettable)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest meta_req;
@@ -1823,7 +2727,7 @@ TEST_F(TileHandlerTest, HeatMapUseSelectedOnlyIsExposedAndSettable)
 // Regression test for the click-to-select breakage's heatmap-side cousin.
 TEST_F(TileHandlerTest, HeatMapIntSettingAcceptsFractional)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest set_req;
@@ -1846,7 +2750,7 @@ TEST_F(TileHandlerTest, HeatMapIntSettingAcceptsFractional)
 // types 90.  The handler must accept it rather than failing as_double().
 TEST_F(TileHandlerTest, HeatMapDoubleSettingAcceptsInteger)
 {
-  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest set_req;
@@ -1869,8 +2773,8 @@ TEST_F(TileHandlerTest, HeatMapsMetadataIsLazyForInactiveSources)
   populate_calls = 0;
 
   web::registerHeatMapSource(
-      "Lazy Metadata Heat Map", "LazyMeta", "LazyMeta", [this]() {
-        return std::make_shared<LazyMetadataHeatMap>(getLogger(),
+      "Lazy Metadata Heat Map", "LazyMeta", "LazyMeta", []() {
+        return std::make_shared<LazyMetadataHeatMap>(processLogger(),
                                                      &populate_calls);
       });
 
@@ -4950,6 +5854,33 @@ TEST_F(CustomUiTest, ToggleButtonFieldsSerialized)
   EXPECT_EQ(std::string(b.at("tooltip").as_string()), "tip");
   EXPECT_TRUE(b.at("toggle").as_bool());
   EXPECT_EQ(std::string(b.at("script_off").as_string()), "off");
+}
+
+// The viewer's CSP blocks remote images and the server serves no image files.
+TEST_F(CustomUiTest, UnloadableIconErrors)
+{
+  WebViewerHook hook;
+  for (const char* icon : {"https://example.com/a.png",
+                           "http://example.com/a.png",
+                           "/a.png",
+                           "./a.png"}) {
+    EXPECT_THROW(hook.addToolbarButton(
+                     getLogger(), "", "A", "s", icon, "", false, "", false),
+                 std::runtime_error)
+        << icon;
+  }
+  EXPECT_EQ(registry(hook).at("toolbar").as_array().size(), 0u);
+
+  hook.addToolbarButton(getLogger(),
+                        "",
+                        "A",
+                        "s",
+                        "data:image/png;base64,AAAA",
+                        "",
+                        false,
+                        "",
+                        false);
+  EXPECT_EQ(registry(hook).at("toolbar").as_array().size(), 1u);
 }
 
 TEST_F(CustomUiTest, DuplicateNameErrors)

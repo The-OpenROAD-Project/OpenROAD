@@ -48,6 +48,17 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "TestSteinerTreeBuilder",
+    srcs = ["cpp/TestSteinerTreeBuilder.cpp"],
+    deps = [
+        "//src/stt",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 py_test(
     name = "stt_man_tcl_check",
     srcs = ["stt_man_tcl_check.py"],

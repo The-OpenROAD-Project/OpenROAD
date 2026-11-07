@@ -6,24 +6,68 @@ to be stable enough that an alternate client (custom browser app,
 headless test driver, third-party visualization) can be implemented
 against it without reading the JavaScript reference frontend.
 
-The server exposes one HTTP route for static assets and one WebSocket
-endpoint for all dynamic operations. The WebSocket carries a small
-binary framing with JSON or PNG payloads.
+The server exposes HTTP routes for its embedded assets and a layout
+image, and one WebSocket endpoint for all dynamic operations. The
+WebSocket carries a small binary framing with JSON or PNG payloads.
 
 ## Connecting
 
 - HTTP and WebSocket share one TCP port (default `8080`, configured via
   `web_server -port`). A single Boost.Beast listener serves both.
-- HTTP `GET /` returns `index.html`; `GET /<path>` returns the embedded
-  asset at that path (`*.js`, `*.css`, etc.). 404 otherwise. No method
-  other than GET is supported.
+- HTTP `GET` serves the three assets embedded in the binary: `/` (or
+  `/index.html`), `/app.min.js`, and `/THIRD_PARTY_LICENSES.txt`. A query
+  string or fragment is ignored. `GET /download/image` renders a PNG of
+  the layout from its query parameters. No method other than GET is
+  supported. A path with no embedded asset needs the token (see below) and
+  answers 401 without one, 404 with it — the gate is deny-by-default, so a
+  route added later cannot be left open by accident.
+- The assets are stored gzipped. When `Accept-Encoding` allows
+  gzip (`gzip`, `x-gzip` or `*`, not at `q=0`; an explicit `gzip` entry
+  wins over `*`), the stored bytes go out with `Content-Encoding: gzip`;
+  otherwise the server inflates them first. Every asset response carries
+  `Vary: Accept-Encoding` and `Cache-Control: no-store`.
+- Each session mints an access token and prints the url carrying it
+  (`http://<host>:<port>/?token=<hex>`) to stdout; the logger gets it
+  redacted. `web_server -token <hex>` supplies the token instead, and then it
+  is not printed at all. Pass it as the `token` query
+  parameter on the WebSocket upgrade, on `GET /` and on
+  `GET /download/image`; without it those are answered with 401. Every
+  401 carries `WWW-Authenticate: OpenROAD-Token`, by which the viewer tells
+  the server's refusal from a proxy's. The other assets are not gated. A new
+  `web_server` mints a new token.
+- The session also mints a single-use `ticket`, used only to launch the
+  browser without the token on a command line. `GET /?ticket=<hex>` answers
+  `302` with `Location: /?token=<hex>` (other query parameters are carried
+  over) and the ticket is spent; a second use, one after five minutes, or one
+  after the launch it was minted for failed or was skipped, gets 401. A
+  second use also logs `WEB-0129` and says so in the 401's body. A
+  ticket is not accepted on the WebSocket or on the image download. An
+  alternate client has no reason to use one — it has the token. Because it
+  is handed over on the browser's command line, a ticket is readable by
+  other users of that machine until it is redeemed.
+- `GET /download/image` answers 404 when no design is loaded, 400 for a
+  malformed `bbox`, and 500 when the render fails.
+- Every HTTP response, refusals included, carries `X-Frame-Options: DENY`,
+  `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer` and this
+  `Content-Security-Policy`:
+  `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';
+  img-src 'self' data: blob:; connect-src 'self' ws://HOST wss://HOST data:;
+  font-src 'self' data:; object-src 'none'; base-uri 'none';
+  form-action 'none'; frame-ancestors 'none'`, where `HOST` is the request's
+  `Host` header. The page runs no inline script and no `eval`, and loads
+  images only from itself, `data:` and `blob:`; another site cannot frame it.
+  `ws://HOST wss://HOST` are there because browsers older than CSP Level 3
+  (Safari before 15.4, say) do not let `'self'` match a WebSocket; a `Host`
+  a CSP source cannot spell, such as an IPv6 literal, leaves them out.
 - The WebSocket upgrade is also at the root path. Once upgraded, all
   request/response traffic uses the binary framing below.
 
 ## Wire frame format
 
-Every WebSocket message — both client→server and server→client — is a
-binary frame with the following layout:
+The two directions are not symmetric. A **request** is a plain UTF-8 JSON
+document sent as-is (the reference frontend uses `JSON.stringify`); it carries
+no header. A **response**, and every server push, is a binary frame with the
+following layout:
 
 | Bytes | Field    | Type                | Description                           |
 | ----- | -------- | ------------------- | ------------------------------------- |
@@ -137,7 +181,9 @@ Render a single 256×256 PNG tile of the layout.
 | `z`              | `int`    |    ✓     | Leaflet tile zoom level (0 = whole design). |
 | `x`              | `int`    |    ✓     | Tile column at zoom `z`. |
 | `y`              | `int`    |    ✓     | Tile row at zoom `z`. |
-| `visible_layers` | `string[]` | ✓ | Tech layers currently visible on the *pins* synthetic layer; empty array means hide all pin markers. |
+| `visible_layers` | `string[]` | ✓ | Tech layers currently visible, the union over the dies; an empty array hides them all. Read only by `_pins` and by the overlays whose `layers_by` group is on (see `tech`); every other tile ignores it, and it is left out of their cache key. |
+| `chiplet`        | `string` |    —     | Chiplet path (as in the `tech` response's `chiplets[].path`) of the die a tech-layer tile draws. Two dies can share a layer name; omitted draws every visible chiplet. |
+| `chiplet_hidden_layers` | `object` | — | `{ "<chiplet path>": ["<layer>", …] }`: layers hidden on that die only, while `visible_layers` still lists them. Read by the same tiles as `visible_layers`; a tech-layer tile names its die with `chiplet` instead. |
 | *visibility flags* | `bool` |  per-flag default | See *TileVisibility flags* below. Any flag may be omitted to take the default. |
 | `site_<name>`    | `bool`   |    —     | Per-row-site visibility. Only consulted when `rows == true`. |
 
@@ -220,11 +266,47 @@ extent of what that flag alone draws on each layer it reaches — master pins,
 master obstructions, routing obstructions and fills; a layer that source
 does not reach is absent. A tile can be skipped when it misses the layer's
 `layers` rect and every `gated` rect whose flag is not off. A layer missing
-from `layers` (the `_`-prefixed pseudo layers) must always be requested.
+from `layers` (the `_`-prefixed pseudo layers) must always be requested,
+unless it is in `sized` below.
 Only design geometry is covered: tracks and the debug overlays also draw on
 layer tiles, so tiles are requested regardless while those are on.
-`supported` is false for multi-chiplet designs, and the client then
+`supported` is false when no chiplet has geometry, and the client then
 requests every tile.
+
+A multi-chiplet design leaves `layers` and `gated` empty and describes each
+die under `chiplets`, keyed by chiplet path, for the tiles a `chiplet` scopes
+to that die:
+```json
+"chiplets": {
+  "top/die0": {
+    "outline": [[x0, y0, x1, y1], …],
+    "layers": {"metal1": [x0, y0, x1, y1]},
+    "gated": {"inst_pins": {"metal1": [x0, y0, x1, y1]}, …}
+  }
+}
+```
+`outline` holds one box per edge of the die outline, which every layer tile of
+a die draws; such a tile can be skipped when it misses every edge as well as
+the die's `layers` and `gated` rects. A die or a layer it does not list must
+always be requested.
+
+A layer in `sized` draws only on features long enough on screen — the
+instance and pin names of `_inst_labels` need an instance at least
+`min_css_px` CSS pixels at its longest side:
+```json
+"sized": {
+  "_inst_labels": {
+    "min_css_px": 14,
+    "by_size": [[0.0001, [x0, y0, x1, y1]], [0.0002, [x0, y0, x1, y1]],
+                [0.0004, null]]
+  }
+}
+```
+Each `by_size` entry is a size, as a fraction of the zoom-0 tile, and the
+extent of every feature at least that large, in ascending size; the last is
+past the largest feature and `null`. At zoom `z` on tiles `T` CSS pixels wide
+a feature needs `min_css_px / (T · 2^z)`; the tile can be skipped when it
+misses the extent of the last entry no larger than that (or of the first).
 
 The extents describe the design when the request was served; after a
 `refresh` push they must be discarded and fetched again.
@@ -242,6 +324,11 @@ No request fields.
   "layer_colors": [[r, g, b], ...],
   "sites": ["FreePDK45_38x28_10R_NP_162NW_34O", "..."],
   "has_liberty": true,
+  "overlays": [
+    {"name": "_inst_labels", "z_index": 999,
+     "shown_by": [["inst_names"], ["inst_pins", "inst_pin_names"]],
+     "layers_by": [["inst_pins", "inst_pin_names"]]}
+  ],
   "dbu_per_micron": 1000,
   "block_name": "top"
 }
@@ -249,6 +336,15 @@ No request fields.
 
 `layer_colors` is parallel to `layers`; each entry is RGB in `0..255`.
 `block_name` is the empty string when no block is loaded.
+
+`overlays` lists the self-painting pseudo layers this design can draw (an
+overlay with nothing to draw, such as `_regions` in a design without regions,
+is left out), each a `tile` layer of its own: `z_index` is its pane order
+against the tech layers (`3` upwards), `_instances` (`0`) and `_pins` (`1`).
+`shown_by` and `layers_by` are groups of `tile` visibility keys, on when every
+key of any one group is on: the overlay draws anything when `shown_by` is on,
+and what it draws depends on `visible_layers` when `layers_by` is on (an
+empty group always is), so its tiles must be fetched again when those change.
 
 ---
 
@@ -265,6 +361,8 @@ overlapping objects on repeated calls at the same point.
 | `dbu_y`          | `int`    |    ✓     | Y coordinate in DBU. |
 | `zoom`           | `int` or `double` | ✓ | Current Leaflet zoom level. Server truncates fractional values. |
 | `visible_layers` | `string[]`|    ✓    | Same semantics as `tile`. |
+| `chiplet_hidden_layers` | `object` | — | Same as `tile`: a layer hidden on one die is not picked there. |
+| `chiplet_nonselectable_layers` | `object` | — | `{ "<chiplet path>": ["<layer>", …] }`: layers made unselectable on that die only, while `selectable_layers` still lists them. |
 | *visibility flags* | `bool` |  per-flag default | Same as `tile`. |
 | `site_<name>`    | `bool`   |    —     | Same as `tile`. |
 

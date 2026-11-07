@@ -10,6 +10,6 @@
 [INFO DPL-0022] HPWL after                2.1 u
 [INFO DPL-0023] HPWL delta               -4.0 %
 [INFO DPL-0040] Skipped 1 instances that would short pins to power via metal when mirrored
-mid_cell 3240 1080 R0
-left_cell 3132 540 R0
-m1_cell 5184 540 MY
+mid_cell 12960 4320 R0
+left_cell 12528 2160 R0
+m1_cell 20736 2160 MY

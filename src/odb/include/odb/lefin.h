@@ -54,10 +54,10 @@ class lefinReader
 {
  public:
   // convert distance value to db-units
-  int dbdist(double value) { return lround(value * dist_factor_); }
+  int dbdist(double value);
 
   // convert area value to squared db-units
-  int64_t dbarea(const double value) { return llround(value * area_factor_); }
+  int64_t dbarea(double value);
 
   enum AntennaType
   {
@@ -175,6 +175,7 @@ class lefinReader
  private:
   void init();
   void setDBUPerMicron(int dbu);
+  void recordRounding(double value, int64_t rounded, bool is_area);
 
   bool readLefInner(const char* lef_file);
   bool readLef(const char* lef_file);
@@ -211,6 +212,14 @@ class lefinReader
   const char* lib_name_;
   double dist_factor_;
   double area_factor_;
+  // Largest offset from the database grid, in DBU and DBU^2, that is treated
+  // as floating-point noise rather than a rounded LEF value. Areas get a
+  // looser bound because their magnitudes in DBU^2 are much larger.
+  static constexpr double kWarnDistError = 1e-6;
+  static constexpr double kWarnAreaError = 1e-3;
+  int rounded_cnt_;
+  std::string rounding_example_;
+  std::vector<int> rounding_dbu_candidates_;
   int dbu_per_micron_;
   bool override_lef_dbu_;
   bool master_modified_;

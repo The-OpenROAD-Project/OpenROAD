@@ -26,7 +26,7 @@ set rt1 [odb::dbRow_create $block ROW_test $site 0 380 "R0" "HORIZONTAL" 420 380
 check "row direction" {$rt1 getDirection} "HORIZONTAL"
 check "row orientation" {$rt1 getOrient} "R0"
 
-set rt2 [odb::dbRow_create $block ROW_test $site 0 380 "R0" "VERTICAL" 420 380]
+set rt2 [odb::dbRow_create $block ROW_test $site 0 380 "R0" "VERTICAL" 420 2800]
 
 check "row direction" {$rt2 getDirection} "VERTICAL"
 check "row orientation" {$rt2 getOrient} "R0"

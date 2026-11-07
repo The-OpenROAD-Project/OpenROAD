@@ -302,6 +302,11 @@ fin::Finale* Design::getFinale()
   return getOpenRoad()->getFinale();
 }
 
+fsv::FieldSolver* Design::getFieldSolver()
+{
+  return getOpenRoad()->getFieldSolver();
+}
+
 par::PartitionMgr* Design::getPartitionMgr()
 {
   return getOpenRoad()->getPartitionMgr();

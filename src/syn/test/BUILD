@@ -30,6 +30,16 @@ regression_test(
     ],
 )
 
+regression_test(
+    name = "def_units",
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "comb_loop.v",
+        "def_units.ok",
+    ],
+)
+
 # No gtest_main on ir/graph/opt tests: ABC (via //src/syn/src/ir →
 # TritModel) ships its own main() that wins over gtest_main; each TU
 # defines its own.
@@ -53,7 +63,10 @@ cc_test(
 
 cc_test(
     name = "opt_test",
-    srcs = ["opt_test.cc"],
+    srcs = [
+        "equivalence_check.h",
+        "opt_test.cc",
+    ],
     deps = [
         "//src/syn",
         "//src/syn/src/ir",

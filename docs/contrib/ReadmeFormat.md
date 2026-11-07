@@ -99,12 +99,12 @@ Examples scripts demonstrating ...
 
 ## Regression tests
 
-There are a set of regression tests in `./test`. Refer to this [section](../../README.md#regression-tests) for more information.
+There are a set of regression tests in `./test`, registered in the tool's Bazel `test/BUILD` file.
 
-Simply run the following script: 
+Simply run the following command:
 
 ```shell
-./test/regression
+bazelisk test //src/<tool>/...
 ```
 
 ## Limitations

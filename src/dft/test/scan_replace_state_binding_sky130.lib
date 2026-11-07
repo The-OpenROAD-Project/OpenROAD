@@ -1,0 +1,112 @@
+/* Minimal sky130hd subset for scan_replace_state_binding_sky130.
+   The scan cell names its ff state variables in the opposite order to the
+   non-scan cell, ff("IQ_N","IQ"), with every reference renamed to match. Q is
+   still the first (non-inverted) state and Q_N the second. */
+library ("scan_replace_state_binding") {
+    delay_model : "table_lookup";
+    time_unit : "1ns";
+    voltage_unit : "1V";
+    current_unit : "1mA";
+    pulling_resistance_unit : "1kohm";
+    leakage_power_unit : "1nW";
+    capacitive_load_unit (1, "pf");
+    nom_process : 1.0;
+    nom_temperature : 25.0;
+    nom_voltage : 1.8;
+    cell ("sky130_fd_sc_hd__dfrtp_1") {
+        area : 25.0;
+        ff ("IQ","IQ_N") {
+            clear : "!RESET_B";
+            clocked_on : "CLK";
+            next_state : "D";
+        }
+        pin ("CLK") {
+            direction : "input";
+            clock : "true";
+            capacitance : 0.002;
+        }
+        pin ("D") {
+            direction : "input";
+            capacitance : 0.002;
+        }
+        pin ("RESET_B") {
+            direction : "input";
+            capacitance : 0.002;
+        }
+        pin ("Q") {
+            direction : "output";
+            function : "IQ";
+        }
+    }
+    cell ("sky130_fd_sc_hd__sdfrbp_1") {
+        area : 32.5;
+        ff ("IQ_N","IQ") {
+            clear : "!RESET_B";
+            clocked_on : "CLK";
+            next_state : "(D&!SCE) | (SCD&SCE)";
+        }
+        pin ("CLK") {
+            direction : "input";
+            clock : "true";
+            capacitance : 0.002;
+        }
+        pin ("D") {
+            direction : "input";
+            capacitance : 0.002;
+        }
+        pin ("RESET_B") {
+            direction : "input";
+            capacitance : 0.002;
+        }
+        pin ("SCD") {
+            direction : "input";
+            capacitance : 0.002;
+        }
+        pin ("SCE") {
+            direction : "input";
+            capacitance : 0.002;
+        }
+        pin ("Q") {
+            direction : "output";
+            function : "IQ_N";
+        }
+        pin ("Q_N") {
+            direction : "output";
+            function : "IQ";
+        }
+        test_cell () {
+            ff ("IQ_N","IQ") {
+                clear : "!RESET_B";
+                clocked_on : "CLK";
+                next_state : "D";
+            }
+            pin ("CLK") {
+                direction : "input";
+            }
+            pin ("D") {
+                direction : "input";
+            }
+            pin ("RESET_B") {
+                direction : "input";
+            }
+            pin ("Q") {
+                direction : "output";
+                function : "IQ_N";
+                signal_type : "test_scan_out";
+            }
+            pin ("Q_N") {
+                direction : "output";
+                function : "IQ";
+                signal_type : "test_scan_out_inverted";
+            }
+            pin ("SCD") {
+                direction : "input";
+                signal_type : "test_scan_in";
+            }
+            pin ("SCE") {
+                direction : "input";
+                signal_type : "test_scan_enable";
+            }
+        }
+    }
+}

@@ -1291,11 +1291,6 @@ class dbBlock : public dbObject
   void clear();
 
   ///
-  /// get wire_updated nets
-  ///
-  void getWireUpdatedNets(std::vector<dbNet*>& nets);
-
-  ///
   /// Make a unique net name.
   /// If parent is nullptr, the net name will be unique in top module.
   /// If base_name is nullptr, the default net name will be used.
@@ -1938,39 +1933,6 @@ class dbNet : public dbObject
   /// Set the select flag to the specified value.
   ///
   void setSelect(bool value);
-
-  ///
-  /// Returns the wire-ordered flag value. This flag specified that the
-  /// wires of this net have been ordered into a single dbWire.
-  ///
-  bool isWireOrdered();
-
-  ///
-  /// Set the wire-ordered flag to the specified value.
-  /// Note: This flag is set to false any time a dbWire
-  /// is created on this net.
-  ///
-  void setWireOrdered(bool value);
-
-  ///
-  /// Returns the disconnected flag value. This flag specified that the
-  /// wire are connected to all the iterms of this net.
-  ///
-  bool isDisconnected();
-
-  ///
-  /// Set the disconnected flag to the specified value.
-  /// Note: This flag is set to false any time a dbWire
-  /// is created on this net.
-  ///
-  void setDisconnected(bool value);
-
-  ///
-  /// wire_update flag to be used at when the wire is replaced with a new wire
-  /// NOTE: rcgraph, extracted, ordered, reduced all have to be reset
-  ///
-  void setWireAltered(bool value);
-  bool isWireAltered();
 
   ///
   /// rc_graph flag set when Rseg and CapNodes were created
@@ -3748,6 +3710,16 @@ class dbWire : public dbObject
   /// Returns true if this wire is a global-wire
   ///
   bool isGlobalWire();
+
+  ///
+  /// Returns true if this wire had its connectivity normalized.
+  ///
+  bool hasNormalizedConnectivity();
+
+  ///
+  /// Set the normalized connectivity flag.
+  ///
+  void setNormalizedConnectivity(bool normalized_connectivity);
 
   ///
   /// Get the bounding box of this wire
@@ -7394,6 +7366,8 @@ class dbChip : public dbObject
 
   dbChipInst* findChipInst(const std::string& name) const;
 
+  dbChipNet* findChipNet(const std::string& name) const;
+
   dbChipRegion* findChipRegion(const std::string& name) const;
 
   dbTech* getTech() const;
@@ -7925,6 +7899,12 @@ class dbDft : public dbObject
   bool isScanInserted() const;
 
   dbSet<dbScanChain> getScanChains() const;
+
+  // User Code Begin dbDft
+  // Destroys all scan chains, scan pins and the scan insts the chains list,
+  // and clears the scan-inserted flag.
+  void reset();
+  // User Code End dbDft
 };
 
 class dbGCellGrid : public dbObject
@@ -9282,6 +9262,10 @@ class dbScanList : public dbObject
   // User Code Begin dbScanList
   dbSet<dbScanInst> getScanInsts() const;
   dbScanInst* add(dbInst* inst);
+  // Detaches all dbScanInsts from this list without destroying them.
+  // After clear(), each detached dbScanInst may be re-attached to any list
+  // via insertAtFront().  Used by scan_opt cross-chain reassignment.
+  void clear();
   static dbScanList* create(dbScanPartition* scan_partition);
   // User Code End dbScanList
 };

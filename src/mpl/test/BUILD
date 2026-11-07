@@ -1,16 +1,12 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
-# Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
-# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
-
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
-# From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "boundary_push1",
     "centralization1",
@@ -46,12 +42,20 @@ COMPULSORY_TESTS = [
     "orientation_improve1",
     "orientation_improve2",
     "orientation_improve3",
+    "place_macro_already_placed_overlap",
     "place_macro_right_angle_rotation",
     "placement_blockages1",
+    "rerun1",
     "unfixed_cells_dont_fit_in_core",
+    "write_macro_placement",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS
+
+# Self-checking: the script reports pass/fail, no golden log.
+PASSFAIL_TESTS = [
+    "rerun1",
+]
 
 filegroup(
     name = "regression_resources",
@@ -235,6 +239,10 @@ filegroup(
                     "testcases/orientation_improve1.def",
                     "testcases/orientation_improve1.lef",
                 ],
+                "place_macro_already_placed_overlap": [
+                    "testcases/place_macro_already_placed_overlap.def",
+                    "testcases/macro_only.lef",
+                ],
                 "place_macro_right_angle_rotation": [
                     "testcases/place_macro_right_angle_rotation.def",
                     "testcases/place_macro_right_angle_rotation.lef",
@@ -243,9 +251,17 @@ filegroup(
                     "testcases/macro_only.lef",
                     "testcases/placement_blockages1.def",
                 ],
+                "rerun1": [
+                    "testcases/fixed_macros1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
                 "unfixed_cells_dont_fit_in_core": [
                     "testcases/macro_only.lef",
                     "testcases/unfixed_cells_dont_fit_in_core.def",
+                ],
+                "write_macro_placement": [
+                    "testcases/io_constraints1.def",
+                    "testcases/orientation_improve1.lef",
                 ],
             }.get(test_name, []),
         ),
@@ -256,6 +272,8 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        check_log = test_name not in PASSFAIL_TESTS,
+        check_passfail = test_name in PASSFAIL_TESTS,
         data = [":" + test_name + "_resources"],
         tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
         visibility = ["//visibility:public"],

@@ -211,3 +211,134 @@ describe('tileMayHaveContent', () => {
                      true);
     });
 });
+
+// _inst_labels draws only on instances at least 14 CSS px long: those 1/1000
+// of the zoom-0 tile and up are everywhere, those 1/100 and up in the top-left
+// quarter, and none reaches 2/100.
+const SIZED = {
+    ...RESPONSE,
+    sized: {
+        _inst_labels: {
+            min_css_px: 14,
+            by_size: [[0.001, [0, 0, 1, 1]], [0.01, [0, 0, 0.25, 0.25]],
+                      [0.02, null]],
+        },
+    },
+};
+
+describe('LayerExtents.mayHaveContent for a sized layer', () => {
+    const at = (extents, coords, tileSize = 256, visibility = {}) =>
+        extents.mayHaveContent('_inst_labels', coords, visibility, tileSize);
+
+    it('skips every tile while no instance is large enough', () => {
+        // z=0 on 256 px tiles needs 14/256 of the tile, past every class.
+        assert.equal(at(adopted(SIZED), { x: 0, y: 0, z: 0 }), false);
+    });
+
+    it('requests only where the large enough instances are', () => {
+        // z=2 needs 14/1024 of the tile: the 1/100 class.
+        const extents = adopted(SIZED);
+        assert.equal(at(extents, { x: 0, y: 0, z: 2 }), true);
+        assert.equal(at(extents, { x: 3, y: 3, z: 2 }), false);
+    });
+
+    it('uses the smallest class once every instance is large enough', () => {
+        const extents = adopted(SIZED);
+        assert.equal(at(extents, { x: 3, y: 3, z: 5 }), true);
+        assert.equal(at(extents, { x: 200, y: 100, z: 8 }), true);
+    });
+
+    it('measures on the tile size the client uses', () => {
+        // 512 px tiles at z=1 are the 256 px ones at z=2.
+        const extents = adopted(SIZED);
+        assert.equal(at(extents, { x: 0, y: 0, z: 1 }, 512), true);
+        assert.equal(at(extents, { x: 1, y: 1, z: 1 }, 512), false);
+    });
+
+    it('requests everything while a debug overlay is on', () => {
+        assert.equal(at(adopted(SIZED), { x: 0, y: 0, z: 0 }, 256,
+                        { debug: true }), true);
+    });
+
+    it('requests everything without supported extents', () => {
+        const extents = new LayerExtents();
+        assert.equal(at(extents, { x: 0, y: 0, z: 0 }), true);
+        assert.equal(extents.apply(extents.invalidate(),
+                                   { ...SIZED, supported: false }), false);
+        assert.equal(at(extents, { x: 0, y: 0, z: 0 }), true);
+    });
+});
+
+// Two dies side by side, as a multi-die response gives them: die0 on the left
+// half of the grid, die1 on the right.  Each die's metal1 sits in its lower
+// half; die1's outline runs along the right half's edges.
+const MULTI_DIE = {
+    supported: true,
+    layers: {},
+    gated: {},
+    chiplets: {
+        'top/die0': {
+            outline: [[0, 0, 0.5, 0], [0.5, 0, 0.5, 1], [0, 1, 0.5, 1],
+                      [0, 0, 0, 1]],
+            layers: { metal1: [0.1, 0.6, 0.4, 0.9], metal9: null },
+            gated: { inst_pins: { metal9: [0.1, 0.1, 0.2, 0.2] } },
+        },
+        'top/die1': {
+            outline: [[0.5, 0, 1, 0], [1, 0, 1, 1], [0.5, 1, 1, 1],
+                      [0.5, 0, 0.5, 1]],
+            layers: { metal1: [0.6, 0.6, 0.9, 0.9] },
+            gated: {},
+        },
+    },
+};
+
+describe('LayerExtents.mayHaveContent for a die\'s rows', () => {
+    // z=3: eight columns and rows; column/row 2 is well inside die0's left
+    // half and clear of every outline edge.
+    const inside = (x, y) => ({ x, y, z: 3 });
+
+    it('skips a die\'s row everywhere outside that die', () => {
+        const extents = adopted(MULTI_DIE);
+        assert.equal(extents.mayHaveContent(
+            'metal1', inside(6, 6), {}, 256, 'top/die0'), false);
+        assert.equal(extents.mayHaveContent(
+            'metal1', inside(6, 6), {}, 256, 'top/die1'), true);
+    });
+
+    it('requests a tile on the die outline, which every layer draws', () => {
+        const extents = adopted(MULTI_DIE);
+        // Column 0 runs along die0's left edge; metal9 has nothing there.
+        assert.equal(extents.mayHaveContent(
+            'metal9', inside(0, 2), {}, 256, 'top/die0'), true);
+        // Inside the die, off the edges and off metal9, nothing draws...
+        assert.equal(extents.mayHaveContent(
+            'metal9', inside(2, 4), {}, 256, 'top/die0'), false);
+        // ...unless a gated source of that die reaches it.
+        assert.equal(extents.mayHaveContent(
+            'metal9', inside(1, 1), {}, 256, 'top/die0'), true);
+        assert.equal(extents.mayHaveContent(
+            'metal9', inside(1, 1), { inst_pins: false }, 256, 'top/die0'),
+                     false);
+    });
+
+    it('requests what it cannot place: an unknown die or layer', () => {
+        const extents = adopted(MULTI_DIE);
+        assert.equal(extents.mayHaveContent(
+            'metal1', inside(6, 6), {}, 256, 'top/nope'), true);
+        assert.equal(extents.mayHaveContent(
+            'metal5', inside(2, 4), {}, 256, 'top/die0'), true);
+    });
+
+    it('keeps the single-die extents for a row with no per-die entry', () => {
+        const extents = adopted();
+        assert.equal(extents.mayHaveContent(
+            'metal9', { x: 0, y: 0, z: 0 }, {}, 256, 'top'), false);
+    });
+
+    it('invalidate() drops the per-die extents', () => {
+        const extents = adopted(MULTI_DIE);
+        extents.invalidate();
+        assert.equal(extents.mayHaveContent(
+            'metal1', inside(6, 6), {}, 256, 'top/die0'), true);
+    });
+});

@@ -7,7 +7,6 @@ load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
-# From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "array",
     "array_ins_delay",
@@ -45,6 +44,7 @@ COMPULSORY_TESTS = [
     "lvt_lib",
     "max_cap",
     "max_wl_two_sinks",
+    "multi_mode",
     "no_clocks",
     "no_sinks",
     "post_cts_opt",
@@ -56,15 +56,16 @@ COMPULSORY_TESTS = [
     "sink_clustering_single_sink",
     "skip_nets",
     "twice",
+    "useful_skew",
     "virtual_clock_latency",
 ]
 
-# From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
     "dangling_clock_inverter",
     "dont_touch_sink",
     "dont_touch_skipped_net",
     "dont_touch_timing_buffer",
+    "hier_dummy_load",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -203,6 +204,10 @@ filegroup(
                 "cts-helpers.tcl",
                 "gated_clock2.def",
             ],
+            "hier_dummy_load": [
+                "simple_test_hier.def",
+                "simple_test_hier.v",
+            ],
             "hier_insertion_delay": [
                 "array_tile_ins_delay.lef",
                 "array_tile_ins_delay.lib",
@@ -251,6 +256,10 @@ filegroup(
             ],
             "twice": [
                 "16sinks.def",
+            ],
+            "useful_skew": [
+                "array_tile_ins_delay.lef",
+                "array_tile_ins_delay.lib",
             ],
             "virtual_clock_latency": [
                 "16sinks.def",

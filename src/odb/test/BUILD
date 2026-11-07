@@ -1,10 +1,8 @@
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
-
-# Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
-# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
 
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
@@ -152,7 +150,6 @@ py_test(
     ],
 )
 
-# From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "abstract_origin",
     "abstract_polygon",
@@ -195,6 +192,7 @@ COMPULSORY_TESTS = [
     "read_3dbx",
     "read_db",
     "read_def",
+    "read_def_units_not_divisor",
     "read_def_virtual",
     "read_def58",
     "read_lef",
@@ -210,7 +208,9 @@ COMPULSORY_TESTS = [
     "replace_hier_mod6",
     "replace_hier_mod_report_checks",
     "rounding",
+    "row_no_step",
     "row_settings",
+    "row_site_overlap",
     "set_halo",
     "sky130hd_multi_patterned",
     "smash_vias",
@@ -324,6 +324,7 @@ filegroup(
         "data/parser_test.def",
         "data/path_assertions.3dbx",
         "data/rounding.def",
+        "data/row_no_step.def",
         "data/sky130_fd_sc_hd__inv_1.gds",
         "data/sky130hd_multi_patterned.def",
         "data/virtual_route.def",
@@ -472,14 +473,40 @@ test_suite(
         "//src/odb/test/cpp:TestGuide",
         "//src/odb/test/cpp:TestJournal",
         "//src/odb/test/cpp:TestLef58Properties",
+        "//src/odb/test/cpp:TestLefIn",
         "//src/odb/test/cpp:TestMaster",
         "//src/odb/test/cpp:TestModule",
         "//src/odb/test/cpp:TestNetTrack",
         "//src/odb/test/cpp:TestObjectType",
         "//src/odb/test/cpp:TestPolygonalFloorplan",
+        "//src/odb/test/cpp:TestShapeDestroy",
         "//src/odb/test/cpp:TestSwapMaster",
         "//src/odb/test/cpp:TestSwapMasterLeaf",
         "//src/odb/test/cpp:TestSwapMasterUnusedPort",
         "//src/odb/test/cpp:TestWriteReadDbHier",
+    ],
+)
+
+# Standalone odbtcl shell (//src/odb/src/swig:odbtcl). Runs the scripts from
+# the old test/regression-tcl.sh that still pass; the others use an old
+# read_def signature or data that is no longer in the tree.
+ODBTCL_SCRIPTS = [
+    "tcl/01-import_package_test.tcl",
+    "tcl/02-read_lef_test.tcl",
+    "tcl/03-dump_via_rules_test.tcl",
+    "tcl/04-dump_vias_test.tcl",
+    "tcl/19-polygon_test.tcl",
+]
+
+sh_test(
+    name = "odbtcl_test",
+    size = "small",
+    srcs = ["odbtcl_test.sh"],
+    args = ["$(rootpath //src/odb/src/swig:odbtcl)"] +
+           ["$(rootpath %s)" % script for script in ODBTCL_SCRIPTS],
+    data = ODBTCL_SCRIPTS + [
+        "data/gscl45nm.lef",
+        "tcl/test_helpers.tcl",
+        "//src/odb/src/swig:odbtcl",
     ],
 )

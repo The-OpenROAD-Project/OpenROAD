@@ -8,7 +8,7 @@ on:
 
 jobs:
   greet:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted-ubuntu-26.04' || 'ubuntu-26.04' }}
     permissions:
       issues: write
       pull-requests: write
@@ -20,7 +20,7 @@ jobs:
           issue-message: |
             Welcome to OpenROAD! Thanks for opening your first issue.
             To get started:
-            - Build Instructions: https://openroad.readthedocs.io/en/latest/contrib/BuildWithCMake.html
+            - Build Instructions: https://openroad.readthedocs.io/en/latest/user/Build.html
             - Contribution Guide: https://openroad.readthedocs.io/en/latest/contrib/GettingInvolved.html
 
             Please search existing issues before submitting to avoid duplicates.
@@ -29,7 +29,7 @@ jobs:
             Welcome to OpenROAD! Thanks for opening your first PR.
             Before we review:
             - Contribution Guide: https://openroad.readthedocs.io/en/latest/contrib/GettingInvolved.html
-            - Build Instructions: https://openroad.readthedocs.io/en/latest/contrib/BuildWithCMake.html
+            - Build Instructions: https://openroad.readthedocs.io/en/latest/user/Build.html
 
             Please ensure:
             - CI passes
