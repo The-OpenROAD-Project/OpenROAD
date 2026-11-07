@@ -537,28 +537,18 @@ std::optional<FixedDelay> Rebuffer::slackWithDriverCell(const BnetPtr& bnet,
   return bnet->slack() + FixedDelay(correction, resizer_);
 }
 
-bool Rebuffer::otherArcsMeet(const BnetPtr& bnet,
-                             sta::LibertyCell* cell,
-                             const FixedDelay slack_limit)
+bool Rebuffer::otherArcSlewsMeet(const BnetPtr& bnet, sta::LibertyCell* cell)
 {
-  // The candidate slack follows the timing path's arc only.  A resize also
-  // changes the other arcs into the driver output and the input capacitance
-  // they start from.  Bound each with its input's latest stored arrival, the
-  // upstream R*dC, the candidate's arc into the same tree, and the tightest
-  // required time at the driver pin, as paths of other launch clocks or
-  // exceptions can have other required times.  Like the tree itself, this is
-  // limited to the output transitions the loads recorded, each in the scene
-  // of its timing path.
+  // Check the other arcs into the driver output against the candidate cell's
+  // slew limit in the scene of each stored timing path.
   sta::LibertyPort* out_port = cell->findLibertyPort(drvr_port_->name());
   sta::Vertex* drvr_vertex = graph_->pinDrvrVertex(pin_);
-  // One input vertex and arc role, with the first of its edges and whether
-  // the arrival search passes through any of them.
+  // One input vertex and arc role, with the first of its edges.
   struct InputRole
   {
     sta::Vertex* from_vertex;
     sta::Edge* edge;
     const sta::TimingRole* role;
-    bool search_thru;
   };
   for (const sta::RiseFall* rf : bnet->slackTransition()->range()) {
     const sta::Path* arrival_path = arrival_paths_[rf->index()];
@@ -567,22 +557,10 @@ bool Rebuffer::otherArcsMeet(const BnetPtr& bnet,
     const sta::Scene* scene = arrival_path->scene(sta_);
     const sta::MinMax* min_max = arrival_path->minMax(sta_);
     const float drvr_max_slew = drvrMaxSlew(out_port, scene);
-    // The new tree moves the driver pin's required time by its slack minus
-    // the timing path's stored slack.
-    const sta::Delay tree_shift
-        = bnet->slack().toSeconds() - arrival_path->slack(sta_);
-    sta::Required required = sta::INF;
-    sta::VertexPathIterator drvr_path_iter(
-        drvr_vertex, scene, min_max, rf, sta_);
-    while (drvr_path_iter.hasNext()) {
-      required = std::min(required, drvr_path_iter.next()->required());
-    }
     // An input has one graph edge per arc set of the current cell, while the
-    // candidate's arc sets are looked up by port and role: time each input
-    // vertex and role once.  Delay calculation skips constant inputs and
+    // candidate's arc sets are looked up by port and role: check each input
+    // vertex and role once. Delay calculation skips constant inputs and
     // disabled pins and arcs, so their slews never reach the driver pin.
-    // Arrivals also skip arcs that constants disable, such as a mux input
-    // that a constant select deselects, but their slews still count.
     const sta::Mode* mode = scene->mode();
     std::vector<InputRole> input_roles;
     sta::VertexInEdgeIterator edge_iter(drvr_vertex, graph_);
@@ -595,16 +573,13 @@ bool Rebuffer::otherArcsMeet(const BnetPtr& bnet,
           || mode->sdc()->isDisabledConstraint(edge)) {
         continue;
       }
-      const bool search_thru = search_->evalPred()->searchThru(edge, mode);
       std::vector<InputRole>::iterator input_role
           = std::ranges::find_if(input_roles, [&](const InputRole& known) {
               return known.from_vertex == from_vertex
                      && known.role == edge->role();
             });
-      if (input_role != input_roles.end()) {
-        input_role->search_thru = input_role->search_thru || search_thru;
-      } else {
-        input_roles.push_back({from_vertex, edge, edge->role(), search_thru});
+      if (input_role == input_roles.end()) {
+        input_roles.push_back({from_vertex, edge, edge->role()});
       }
     }
     for (const InputRole& input_role : input_roles) {
@@ -622,8 +597,8 @@ bool Rebuffer::otherArcsMeet(const BnetPtr& bnet,
           continue;
         }
         for (sta::TimingArc* arc : arc_set->arcs()) {
-          // slackWithDriverCell covers the path arc's pins and edges; the
-          // other sense of a non-unate input is timed here.
+          // slackWithDriverCell covers the path arc's pins and edges; check
+          // the other sense of a non-unate input here.
           if (arc->toEdge()->asRiseFall() != rf
               || (driver_arc != nullptr && input == driver_path->pin(sta_)
                   && arc->fromEdge() == driver_arc->fromEdge())) {
@@ -643,32 +618,7 @@ bool Rebuffer::otherArcsMeet(const BnetPtr& bnet,
                                        load_pin_index_map,
                                        scene,
                                        min_max);
-          // The slew limit holds whether or not the input has an arrival.
           if (dcalc_result.drvrSlew() > drvr_max_slew) {
-            return false;
-          }
-          if (!input_role.search_thru) {
-            continue;
-          }
-          // Latest arrival at this input in the scene of the timing path.
-          sta::Arrival arrival = -sta::INF;
-          sta::VertexPathIterator path_iter(
-              from_vertex, scene, min_max, from_rf, sta_);
-          while (path_iter.hasNext()) {
-            const sta::Path* path = path_iter.next();
-            arrival
-                = std::max(arrival,
-                           path->isClock(sta_) ? search_->clkPathArrival(path)
-                                               : path->arrival());
-          }
-          if (arrival <= -sta::INF) {
-            continue;
-          }
-          const sta::Delay upstream = upstreamDelay(input, from_rf, cell);
-          const sta::Slack slack
-              = required + tree_shift
-                - (arrival + upstream + dcalc_result.gateDelay());
-          if (FixedDelay(slack, resizer_) < slack_limit) {
             return false;
           }
         }
@@ -714,8 +664,8 @@ bool Rebuffer::upstreamStagesOk(sta::LibertyCell* cell,
       return false;
     }
     // The slower previous stage delays its other loads.  The driver's own
-    // inputs are skipped: the candidate slack and otherArcsMeet() time the
-    // paths through the resized cell.
+    // inputs are skipped: the candidate slack includes upstream delay on the
+    // selected path; other arcs are checked only for slew.
     const float delta
         = prevStageDriveResistance(prev_drvr_pin, nullptr, sta::MinMax::max())
           * cap_delta;
@@ -860,7 +810,7 @@ BnetPtr Rebuffer::chooseTreeAndDriver(const std::vector<BnetPtr>& trees,
         if (!*upstream_ok) {
           return;
         }
-        if (cell != current_cell && !otherArcsMeet(tree, cell, slack_target)) {
+        if (cell != current_cell && !otherArcSlewsMeet(tree, cell)) {
           continue;
         }
         best_area = area;

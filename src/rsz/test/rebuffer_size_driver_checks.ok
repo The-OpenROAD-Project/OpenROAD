@@ -7,17 +7,17 @@
         1 |     +5.8% |       0 |        1 |        11
         2 |     +6.7% |       0 |        1 |        10
         3 |    +17.5% |       0 |        2 |         9
-        4 |    +23.3% |       0 |        3 |         8
-        5 |    +25.0% |       0 |        3 |         7
-        6 |    +30.8% |       0 |        4 |         6
-        7 |    +41.7% |       0 |        5 |         5
-        8 |    +47.5% |       0 |        6 |         4
-        9 |    +47.5% |       0 |        6 |         3
-       10 |    +58.3% |       0 |        7 |         2
-       11 |    +59.2% |       0 |        7 |         1
-    final |    +59.2% |       0 |        7 |         0
+        4 |    +19.2% |       0 |        2 |         8
+        5 |    +20.8% |       0 |        2 |         7
+        6 |    +26.7% |       0 |        3 |         6
+        7 |    +37.5% |       0 |        4 |         5
+        8 |    +43.3% |       0 |        5 |         4
+        9 |    +43.3% |       0 |        5 |         3
+       10 |    +54.2% |       0 |        6 |         2
+       11 |    +55.0% |       0 |        6 |         1
+    final |    +55.0% |       0 |        6 |         0
 -------------------------------------------------------
-[INFO RSZ-2023] Resized 3 drivers while rebuffering.
+[INFO RSZ-2023] Resized 4 drivers while rebuffering.
 drv_base INV_X2
 drv_side_ok INV_X2
 drv_nand_far NAND2_X2
@@ -25,7 +25,7 @@ drv_aoi AOI221_X2
 drv_side_crit INV_X1
 drv_mixed INV_X1
 drv_cap INV_X1
-drv_nand_near NAND2_X1
+drv_nand_near NAND2_X2
 drv_tied NAND2_X1
 drv_multi INV_X1
 drv_dff DFF_X1

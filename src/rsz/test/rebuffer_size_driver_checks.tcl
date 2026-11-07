@@ -4,7 +4,7 @@
 #   aoi:       a candidate is timed with its slowest conditional arc.
 #   side_crit: a weak top-level input slows its critical sibling load.
 #   cap:       the larger input exceeds the input port's max capacitance.
-#   nand_near: the other input, weakly driven, becomes critical.
+#   nand_near: the other input's slack does not constrain the resize.
 #   tied:      both inputs share one weak net, so both add to its delay.
 #   multi:     the input net's second, weak driver sets the extra delay.
 #   mixed:     like side_crit, with set_drive 0 under set_driving_cell.

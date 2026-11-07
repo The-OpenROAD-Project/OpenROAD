@@ -187,12 +187,9 @@ class Rebuffer : public sta::dbStaState
   // (for a resize) its max capacitance.
   std::optional<FixedDelay> slackWithDriverCell(const BufferedNetPtr& bnet,
                                                 sta::LibertyCell* cell);
-  // False when an arc into the driver output other than the timing path's
-  // would miss `slack_limit` or the slew limit with the driver resized to
-  // `cell`.
-  bool otherArcsMeet(const BufferedNetPtr& bnet,
-                     sta::LibertyCell* cell,
-                     FixedDelay slack_limit);
+  // False when another arc into the driver output would exceed the slew
+  // limit with the driver resized to `cell`.
+  bool otherArcSlewsMeet(const BufferedNetPtr& bnet, sta::LibertyCell* cell);
   // False when resizing the driver to `cell` would exceed the max capacitance
   // of a previous-stage driver, or slow it enough to push one of its other
   // loads below `slack_limit`.
