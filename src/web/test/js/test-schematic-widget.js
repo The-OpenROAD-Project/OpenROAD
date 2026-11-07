@@ -279,7 +279,7 @@ describe('SchematicWidget.syncCone', () => {
         const stub = {
             controls,
             refreshed: 0,
-            refresh() { this.refreshed++; },
+            refresh(inst) { this.refreshed++; this.refreshedFor = inst; },
             appState: {},
         };
         return stub;
@@ -317,6 +317,51 @@ describe('SchematicWidget.syncCone', () => {
             fanin_depth: 2, fanout_depth: 50,
         });
         assert.deepEqual(depths(s), ['2', '10']);
+    });
+
+    // The timing panel's Apply asks to see the schematic, which a maximized
+    // right pane would otherwise hide.
+    it('reveals the schematic it synced', () => {
+        const s = makeStub();
+        const focused = [];
+        s.appState.focusComponent = (...args) => focused.push(args);
+        SchematicWidget.prototype.syncCone.call(s, { inst_name: 'b0', fanin: true });
+        assert.deepEqual(focused, [['SchematicWidget', { reveal: true }]]);
+        // The cone's instance, which a timing path pin can pick unselected.
+        assert.equal(s.refreshedFor, 'b0');
+    });
+});
+
+// The real refresh() on a stand-in, recording the instances it asks for.
+describe('SchematicWidget.refresh', () => {
+    function makeStub() {
+        const requested = [];
+        const stub = Object.create(SchematicWidget.prototype);
+        stub._netlistsvgReady = true;
+        stub.controls = document.createElement('div');
+        stub.controls.innerHTML =
+            '<input id="schematic-fanin-depth" value="1">' +
+            '<input id="schematic-fanout-depth" value="1">';
+        stub.setStatus = () => {};
+        stub.appState = {
+            selectedInstanceName: '',
+            websocketManager: {
+                readyPromise: Promise.resolve(),
+                request(msg) {
+                    requested.push(msg.inst_name);
+                    return Promise.resolve({});
+                },
+            },
+        };
+        return { stub, requested };
+    }
+
+    it('redraws the instance a timing cone picked when Refresh is pressed', async () => {
+        const { stub, requested } = makeStub();
+        stub.refresh('b0');  // syncCone, for a path pin nothing selected
+        stub._onRefresh();
+        await new Promise(resolve => setTimeout(resolve, 0));
+        assert.deepEqual(requested, ['b0', 'b0']);
     });
 });
 

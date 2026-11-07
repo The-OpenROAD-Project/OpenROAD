@@ -4,6 +4,9 @@
 import { LitElement, html, css, svg, nothing } from 'lit';
 import { when } from 'lit/directives/when.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
+import { classMap } from 'lit/directives/class-map.js';
+import { createRef, ref } from 'lit/directives/ref.js';
+import { wheelDeltaPx } from './ui-utils.js';
 
 // ─── Native CSS Grid IDE Layout Manager & Custom Elements ────────────────────
 
@@ -51,6 +54,24 @@ export function emitEvent(host, type, detail = {}) {
     }));
 }
 
+// A tab icon's box, shared by the tab strip and the overflow menu.
+const tabIconStyles = css`
+    .ide-tab-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        width: 13px;
+        height: 13px;
+    }
+
+    .ide-tab-icon svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+`;
+
 /**
  * <ide-pane> - Encapsulated IDE window pane custom element using Lit.
  * Manages its header (tab bar and action controls) and content viewport.
@@ -62,9 +83,12 @@ export class IdePaneElement extends LitElement {
         collapsible: { type: Boolean, reflect: true },
         maximized: { type: Boolean, reflect: true },
         collapsed: { type: Boolean, reflect: true },
+        _menuOpen: { state: true },
+        // Index, among the listed tabs, of the menu item with keyboard focus.
+        _focusIndex: { state: true },
     };
 
-    static styles = css`
+    static styles = [tabIconStyles, css`
         :host {
             display: flex;
             flex-direction: column;
@@ -95,12 +119,18 @@ export class IdePaneElement extends LitElement {
             flex-shrink: 0;
         }
 
+        /* Fills up to the controls, so the fixed right-edge fade lies over
+           empty space when the tabs fit; a tab scrolled into view clears it. */
         .ide-tabs {
             display: flex;
+            flex: 1;
             height: 100%;
             min-width: 0;
             overflow-x: auto;
             scrollbar-width: none;
+            scroll-padding-inline-end: 24px;
+            -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+            mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
         }
 
         .ide-tabs::-webkit-scrollbar {
@@ -130,9 +160,22 @@ export class IdePaneElement extends LitElement {
             transition: background-color 120ms ease, color 120ms ease;
         }
 
-        .ide-btn:hover {
+        .ide-btn:hover,
+        .ide-btn-tab-menu[aria-expanded="true"] {
             background: var(--bg-hover);
             color: var(--fg-primary);
+        }
+
+        .ide-btn.ide-btn-restore {
+            width: auto;
+            padding: 0 6px;
+            border: 1px solid var(--border-strong);
+            color: var(--fg-primary);
+        }
+
+        .ide-btn.ide-btn-restore:hover {
+            color: var(--accent);
+            border-color: var(--accent);
         }
 
         .ide-content {
@@ -140,17 +183,221 @@ export class IdePaneElement extends LitElement {
             position: relative;
             overflow: hidden;
         }
-    `;
+
+        /* Above Leaflet's controls (z-index 1000), below .context-menu. */
+        .ide-tab-menu {
+            position: absolute;
+            top: 28px;
+            right: 4px;
+            z-index: 1100;
+            display: flex;
+            flex-direction: column;
+            min-width: min(160px, 100% - 8px);
+            max-width: calc(100% - 8px);
+            max-height: calc(100% - 32px);
+            overflow-y: auto;
+            padding: 4px 0;
+            background: var(--bg-context);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-sm);
+            box-shadow: 0 2px 8px var(--shadow);
+            box-sizing: border-box;
+        }
+
+        .ide-tab-menu-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm, 6px);
+            padding: 5px 12px 5px 6px;
+            background: transparent;
+            border: none;
+            color: var(--fg-primary);
+            font-family: var(--font-sans);
+            font-size: var(--fs-12);
+            text-align: left;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .ide-tab-menu-item:hover,
+        .ide-tab-menu-item:focus-visible {
+            background: var(--bg-hover);
+            color: var(--fg-bright);
+            outline: none;
+        }
+
+        .ide-tab-menu-item[aria-checked="true"] {
+            color: var(--accent-tab);
+        }
+
+        .ide-tab-menu-check {
+            flex: none;
+            width: 12px;
+            text-align: center;
+        }
+
+        .ide-tab-menu-title {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    `];
 
     constructor() {
         super();
-        this._onMaximizeClick = this._onMaximizeClick.bind(this);
-        this._onCollapseClick = this._onCollapseClick.bind(this);
+        this._menuOpen = false;
+        this._focusIndex = 0;
+        this._slotRef = createRef();
+        this._menuRef = createRef();
+        this._btnRef = createRef();
+        this._menuAbort = null;
     }
 
     connectedCallback() {
         super.connectedCallback();
         this.classList.add('ide-pane', `ide-pane-${this.paneName}`);
+    }
+
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        this._closeMenu();
+    }
+
+    willUpdate(changedProperties) {
+        if (!this._menuOpen) return;
+        if (this.collapsed || changedProperties.has('maximized')) {
+            this._closeMenu(this._menuRef.value?.contains(this.renderRoot.activeElement));
+            return;
+        }
+        // A listed tab may have been closed while the menu is open.
+        this._focusIndex = Math.min(this._focusIndex, Math.max(0, this._menuTabs.length - 1));
+    }
+
+    updated() {
+        if (this._menuOpen) this._menuRef.value?.children[this._focusIndex]?.focus();
+    }
+
+    get _tabs() {
+        return this._slotRef.value?.assignedElements() ?? [];
+    }
+
+    get _menuTabs() {
+        return this._tabs.filter(tab => !tab.hidden);
+    }
+
+    _onTabsWheel(e) {
+        const strip = e.currentTarget;
+        // Ctrl+wheel and trackpad pinch zoom the page.
+        if (e.ctrlKey || strip.scrollWidth <= strip.clientWidth
+            || Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return;
+        e.preventDefault();
+        // The vertical delta scrolls sideways, so a page is the strip's width.
+        strip.scrollLeft += wheelDeltaPx(e, () => strip.clientWidth)[1];
+    }
+
+    _onMenuButtonClick() {
+        if (this._menuOpen) {
+            this._closeMenu(true);
+        } else {
+            this._openMenu();
+        }
+    }
+
+    _openMenu() {
+        this._menuOpen = true;
+        this._focusIndex = Math.max(0, this._menuTabs.findIndex(tab => tab.active));
+        this._menuAbort = new AbortController();
+        const { signal } = this._menuAbort;
+
+        document.addEventListener('pointerdown', (e) => {
+            const path = e.composedPath();
+            if (!path.includes(this._menuRef.value) && !path.includes(this._btnRef.value)) {
+                this._closeMenu();
+            }
+        }, { signal });
+
+        // Window capture: main.js reads Escape and single letters as shortcuts
+        // in document capture, which runs before any listener on the menu.
+        window.addEventListener('keydown', (e) => this._onMenuKey(e), { capture: true, signal });
+    }
+
+    _closeMenu(restoreFocus = false) {
+        this._menuAbort?.abort();
+        this._menuAbort = null;
+        this._menuOpen = false;
+        if (restoreFocus) this._btnRef.value?.focus();
+    }
+
+    // Closes when focus goes elsewhere.  No relatedTarget (window blur, Safari's
+    // unfocused clicks, Chrome blurring an item a render removes) is not leaving.
+    _onMenuFocusout(e) {
+        const to = e.relatedTarget;
+        if (to && !this._menuRef.value?.contains(to) && to !== this._btnRef.value) {
+            this._closeMenu();
+        }
+    }
+
+    _onMenuKey(e) {
+        const menu = this._menuRef.value;
+        if (!menu || !e.composedPath().includes(menu)) return;
+        const tabs = this._menuTabs;
+        const n = tabs.length;
+        const i = this._focusIndex;
+        let next = i;
+        if (e.key === 'ArrowDown') {
+            next = (i + 1) % n;
+        } else if (e.key === 'ArrowUp') {
+            next = (i - 1 + n) % n;
+        } else if (e.key === 'Home') {
+            next = 0;
+        } else if (e.key === 'End') {
+            next = n - 1;
+        } else if (e.key.length === 1 && e.key !== ' ' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            // Type-ahead: the next tab whose title starts with the letter.
+            const letter = e.key.toLowerCase();
+            for (let k = 1; k <= n; k++) {
+                if ((tabs[(i + k) % n].title || '').toLowerCase().startsWith(letter)) {
+                    next = (i + k) % n;
+                    break;
+                }
+            }
+        } else if (e.key !== 'Escape') {
+            return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.key === 'Escape') {
+            this._closeMenu(true);
+        } else {
+            this._focusIndex = next;
+        }
+    }
+
+    _selectFromMenu(tab) {
+        this._closeMenu(true);
+        tab.select();
+    }
+
+    _renderTabMenu() {
+        return html`
+            <div class="ide-tab-menu" role="menu" ${ref(this._menuRef)}
+                 @focusout=${this._onMenuFocusout}>
+                ${this._menuTabs.map(tab => html`
+                    <button
+                        class="ide-tab-menu-item"
+                        role="menuitemradio"
+                        tabindex="-1"
+                        aria-checked=${tab.active ? 'true' : 'false'}
+                        @click=${() => this._selectFromMenu(tab)}
+                    >
+                        <span class="ide-tab-menu-check">${tab.active ? '✓' : ''}</span>
+                        ${tab.icon ? html`<span class="ide-tab-icon">${tab.icon}</span>` : nothing}
+                        <span class="ide-tab-menu-title">${tab.title || ''}</span>
+                    </button>
+                `)}
+            </div>
+        `;
     }
 
     get paneName() {
@@ -200,17 +447,32 @@ export class IdePaneElement extends LitElement {
 
         return html`
             <div class="ide-header" id="${prefix}-header">
-                <div class="ide-tabs" id="${prefix}-tabs">
-                    <slot name="tabs"></slot>
+                <div class="ide-tabs" id="${prefix}-tabs" role="tablist"
+                     @wheel=${this._onTabsWheel}>
+                    <slot name="tabs" ${ref(this._slotRef)}
+                          @slotchange=${() => this.requestUpdate()}></slot>
                 </div>
                 <div class="ide-controls" id="${prefix}-controls">
+                    <button
+                        class="ide-btn ide-btn-tab-menu"
+                        id="btn-tab-menu-${name}"
+                        title="List all tabs"
+                        aria-haspopup="menu"
+                        aria-expanded=${this._menuOpen ? 'true' : 'false'}
+                        ${ref(this._btnRef)}
+                        @click=${this._onMenuButtonClick}
+                    >▼</button>
                     ${when(hasMax, () => html`
                         <button
-                            class="ide-btn ide-btn-maximize"
+                            class=${classMap({
+                                'ide-btn': true,
+                                'ide-btn-maximize': true,
+                                'ide-btn-restore': !!this.maximized,
+                            })}
                             id="btn-maximize-${name}"
                             title=${ifDefined(this.maximized ? 'Restore' : 'Maximize')}
                             @click=${this._onMaximizeClick}
-                        >${this.maximized ? '⧉' : '⤢'}</button>
+                        >${this.maximized ? '⧉ Restore layout' : '⤢'}</button>
                     `)}
                     ${when(hasCol, () => html`
                         <button
@@ -222,6 +484,7 @@ export class IdePaneElement extends LitElement {
                     `)}
                 </div>
             </div>
+            ${this._menuOpen ? this._renderTabMenu() : nothing}
             <div class="ide-content" id="${prefix}-content">
                 <slot></slot>
             </div>
@@ -389,7 +652,7 @@ export class IdeTabElement extends LitElement {
         icon: { attribute: false },
     };
 
-    static styles = css`
+    static styles = [tabIconStyles, css`
         :host {
             display: inline-flex;
             align-items: center;
@@ -425,31 +688,13 @@ export class IdeTabElement extends LitElement {
             border-bottom: 2px solid var(--accent-tab);
         }
 
-        .ide-tab-icon,
-        ::slotted([slot="icon"]),
-        .or-tab-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            flex: none;
-            width: 13px;
-            height: 13px;
+        .ide-tab-icon {
             opacity: 0.7;
         }
 
-        :host([active]) .ide-tab-icon,
-        :host([active]) ::slotted([slot="icon"]),
-        :host([active]) .or-tab-icon {
+        :host([active]) .ide-tab-icon {
             color: var(--accent-tab);
             opacity: 1;
-        }
-
-        .ide-tab-icon svg,
-        ::slotted([slot="icon"]) svg,
-        .or-tab-icon svg {
-            width: 100%;
-            height: 100%;
-            display: block;
         }
 
         .ide-tab-title {
@@ -477,7 +722,7 @@ export class IdeTabElement extends LitElement {
             background: var(--bg-hover);
             color: var(--sem-error);
         }
-    `;
+    `];
 
     constructor() {
         super();
@@ -508,6 +753,11 @@ export class IdeTabElement extends LitElement {
     _onClick(e) {
         const path = e.composedPath ? e.composedPath() : [e.target];
         if (path.some(el => el.classList?.contains('ide-tab-close'))) return;
+        this.select();
+    }
+
+    // Asks the layout to activate this tab.
+    select() {
         emitEvent(this, 'tab-select', { componentType: this.targetComponent });
     }
 
@@ -533,7 +783,7 @@ export class IdeTabElement extends LitElement {
 
     render() {
         return html`
-            ${this.icon ? html`<span class="ide-tab-icon or-tab-icon">${this.icon}</span>` : nothing}
+            ${this.icon ? html`<span class="ide-tab-icon">${this.icon}</span>` : nothing}
             <span class="ide-tab-title">${this.title || ''}</span>
             ${this.closable ? html`<span class="ide-tab-close" title="Close" @click=${this._onCloseClick}>✕</span>` : nothing}
         `;
@@ -1017,6 +1267,8 @@ export class GridLayoutManager extends EventEmitter {
         comp.contentDiv.hidden = false;
         this._setComponentActive(comp, true);
         this.closedComponents.delete(componentType);
+        // The pane's tab menu shows which tab is open.
+        pane.requestUpdate();
 
         comp.container.fire('show');
         comp.container.fire('open');
@@ -1039,6 +1291,8 @@ export class GridLayoutManager extends EventEmitter {
         this._setComponentActive(comp, false);
         comp.container.fire('hide');
         this.closedComponents.add(componentType);
+        // The pane's tab menu lists only the open tabs.
+        this.panes[comp.paneName]?.requestUpdate();
 
         if (autoSelectNext && this.activeTabs[comp.paneName] === componentType) {
             let nextComp = null;
@@ -1062,15 +1316,20 @@ export class GridLayoutManager extends EventEmitter {
         this.emit('stateChanged');
     }
 
-    focusComponent(componentType) {
-        const comp = this.components.get(componentType);
-        if (!comp) {
+    /**
+     * Activates a component's tab, mounting it first if needed.  With reveal,
+     * also restores a maximized pane that hides the component's pane.
+     */
+    focusComponent(componentType, options) {
+        if (!this.components.has(componentType)) {
             const factory = this.factories.get(componentType);
-            if (factory) {
-                this._mountComponent(componentType, factory);
-            } else {
-                return;
-            }
+            if (!factory) return;
+            this._mountComponent(componentType, factory);
+        }
+        const comp = this.components.get(componentType);
+        if (options?.reveal && comp && this.isPaneMaximized()
+            && !this.isPaneMaximized(comp.paneName)) {
+            this.restoreMaximized();
         }
         this.activateTab(componentType);
     }

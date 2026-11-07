@@ -21,6 +21,13 @@ export function detailRows(nodes, expandClock) {
     return [all[0], { node: clkEnd, summary: true }, ...all.slice(clkEnd + 1)];
 }
 
+// A path node is an instance pin ("inst/PIN"; master pins have no '/') or a
+// top-level port, which has no instance.
+function instanceOfPin(pin) {
+    const slash = pin.lastIndexOf('/');
+    return slash > 0 ? pin.slice(0, slash) : '';
+}
+
 export class TimingWidget {
     constructor(app, redrawAllLayers, refreshOverlay) {
         this._app = app;
@@ -33,6 +40,8 @@ export class TimingWidget {
         this._selectedPathIndex = -1;
         this._detailTab = 'data';
         this._selectedDetailIndex = -1;
+        // app.selectionToken when a path row was last picked (_coneTarget).
+        this._rowSelectionToken = null;
         // Default to sorting by slack, matching the Qt GUI.
         this._sortCol = 'slack';
         this._sortAscending = true;
@@ -277,7 +286,7 @@ export class TimingWidget {
         this._coneApplyBtn = document.createElement('button');
         this._coneApplyBtn.className = 'or-btn';
         this._coneApplyBtn.textContent = 'Cone';
-        this._coneApplyBtn.title = 'Show the timing cone for the selected instance';
+        this._coneApplyBtn.title = 'Show the timing cone for the selected path pin or instance';
         this._coneClearBtn = document.createElement('button');
         this._coneClearBtn.className = 'or-btn';
         this._coneClearBtn.textContent = 'Clear';
@@ -293,11 +302,17 @@ export class TimingWidget {
         return panel;
     }
 
-    // The cone target: the currently selected instance.  (The backend also
-    // accepts pin_name for a future per-pin cone, but the web UI has no pin
-    // selection yet, so we always target the instance.)
+    // The cone target: the pin of the path row picked last, unless any selection
+    // (layout, Inspector, Charts…) came after it; else the selected instance.
+    // The backend prefers pin_name and falls back to inst_name.
     _coneTarget() {
-        return this._app.selectedInstanceName || '';
+        const row = this._detailRows?.[this._selectedDetailIndex];
+        const node = row && this._detailNodes[row.node];
+        const inst = this._app.selectedInstanceName || '';
+        if (node?.pin && this._app.selectionToken === this._rowSelectionToken) {
+            return { pin: node.pin, inst: instanceOfPin(node.pin) };
+        }
+        return { pin: '', inst };
     }
 
     async _applyCone() {
@@ -307,9 +322,9 @@ export class TimingWidget {
             this._coneStatus.textContent = 'select fanin and/or fanout';
             return;
         }
-        const inst = this._coneTarget();
-        if (!inst) {
-            this._coneStatus.textContent = 'select an instance first';
+        const { pin, inst } = this._coneTarget();
+        if (!pin && !inst) {
+            this._coneStatus.textContent = 'select an instance or a path pin first';
             return;
         }
         const req = {
@@ -321,6 +336,7 @@ export class TimingWidget {
             color_mode: this._coneColorMode.value,
             inst_name: inst,
         };
+        if (pin) req.pin_name = pin;
         this._coneApplyBtn.disabled = true;
         this._coneStatus.textContent = 'computing…';
         try {
@@ -601,11 +617,11 @@ export class TimingWidget {
         rows[idx].classList.add('timing-selected-row');
         rows[idx].scrollIntoView({ block: 'nearest' });
         this._detailTableContainer.focus();
+        this._rowSelectionToken = this._app.selectionToken;
 
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
         const path = paths[this._selectedPathIndex];
-        const nodes = this._detailTab === 'data' ? path.data_nodes : path.capture_nodes;
-        const node = nodes[this._detailRows[idx].node];
+        const node = this._detailNodes[this._detailRows[idx].node];
         // Use _originalIndex when paths were filtered (e.g. by histogram
         // column click in static mode) so the overlay lookup matches.
         const highlightIdx = path._originalIndex ?? this._selectedPathIndex;
@@ -615,6 +631,14 @@ export class TimingWidget {
             is_setup: this._currentTab === 'setup',
             pin_name: node.pin,
         }).then(() => this._refreshOverlay());
+    }
+
+    // The nodes the detail table shows: the selected path's data or capture side.
+    get _detailNodes() {
+        const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
+        const path = paths[this._selectedPathIndex];
+        if (!path) return [];
+        return (this._detailTab === 'data' ? path.data_nodes : path.capture_nodes) || [];
     }
 
     _renderDetailTable() {
@@ -627,8 +651,7 @@ export class TimingWidget {
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
         if (this._selectedPathIndex < 0 || this._selectedPathIndex >= paths.length) return;
 
-        const path = paths[this._selectedPathIndex];
-        const nodes = this._detailTab === 'data' ? path.data_nodes : path.capture_nodes;
+        const nodes = this._detailNodes;
 
         const thead = document.createElement('thead');
         const hr = document.createElement('tr');

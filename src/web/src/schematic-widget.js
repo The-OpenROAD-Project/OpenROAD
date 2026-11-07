@@ -54,7 +54,7 @@ export class SchematicWidget {
         this.container.element.appendChild(this.element);
 
         // Button listeners
-        this.controls.querySelector('#schematic-refresh').addEventListener('click', () => this.refresh());
+        this.controls.querySelector('#schematic-refresh').addEventListener('click', () => this._onRefresh());
         this.controls.querySelector('#schematic-fit').addEventListener('click', () => this.fitView());
         this.controls.querySelector('#schematic-zoom-in').addEventListener('click', () => this._zoomStep(1.5));
         this.controls.querySelector('#schematic-zoom-out').addEventListener('click', () => this._zoomStep(1 / 1.5));
@@ -339,21 +339,29 @@ export class SchematicWidget {
         };
         apply(faninEl, detail.fanin, detail.fanin_depth);
         apply(fanoutEl, detail.fanout, detail.fanout_depth);
-        this.refresh();
+        // The cone's instance, which a path pin picks without selecting it.
+        this.refresh(detail.inst_name);
+        // Applying with "sync schematic" asks to see it, past a maximized pane.
         if (this.appState.focusComponent) {
-            this.appState.focusComponent('SchematicWidget');
+            this.appState.focusComponent('SchematicWidget', { reveal: true });
         }
     }
 
     // ── Refresh ──────────────────────────────────────────────────────────────
 
-    refresh() {
+    // Redraws the instance last asked for, including one a timing cone picked
+    // without selecting it.
+    _onRefresh() {
+        this.refresh(this._instName);
+    }
+
+    refresh(instName = this.appState.selectedInstanceName) {
+        this._instName = instName;
         if (!this._netlistsvgReady) {
             this.setStatus(this._unreadyStatus());
             return;
         }
 
-        const instName = this.appState.selectedInstanceName;
         if (!instName) {
             this.setStatus(kIdleStatus);
             return;
