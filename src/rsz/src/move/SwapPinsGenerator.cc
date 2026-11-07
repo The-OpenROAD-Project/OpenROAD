@@ -266,7 +266,7 @@ void SwapPinsGenerator::equivCellPins(const sta::LibertyCell* cell,
       sta::LibertyPort* output_candidate_port = output_port_iter.next();
       sta::FuncExpr* output_expr = output_candidate_port->function();
       if (!output_candidate_port->direction()->isOutput()
-          || output_expr == nullptr || input_port == candidate_port) {
+          || input_port == candidate_port) {
         continue;
       }
 

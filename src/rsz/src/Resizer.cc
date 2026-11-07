@@ -270,7 +270,7 @@ void equivCellPinsForSwapReport(utl::Logger* logger,
     while (output_iter.hasNext()) {
       sta::LibertyPort* output_port = output_iter.next();
       sta::FuncExpr* output_expr = output_port->function();
-      if (!output_port->direction()->isOutput() || output_expr == nullptr
+      if (!output_port->direction()->isOutput()
           || input_port == candidate_port) {
         continue;
       }
