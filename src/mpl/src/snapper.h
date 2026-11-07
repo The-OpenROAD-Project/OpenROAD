@@ -47,6 +47,8 @@ class Snapper
 
   void snap(const odb::dbTechLayerDir& target_direction);
   void alignWithManufacturingGrid(int& origin);
+  bool isOriginInsideCore(int origin,
+                          const odb::dbTechLayerDir& target_direction) const;
   void setOrigin(int origin, const odb::dbTechLayerDir& target_direction);
   int totalAlignedPins(const LayerDataList& layers_data_list,
                        const odb::dbTechLayerDir& direction,
@@ -61,6 +63,7 @@ class Snapper
                            int& step,
                            const odb::dbTechLayerDir& target_direction);
   int getPinOffset(odb::dbITerm* pin, const odb::dbTechLayerDir& direction);
+  int getSnappedOrigin(int position, int pin_offset);
   void snapPinToPosition(odb::dbITerm* pin,
                          int position,
                          const odb::dbTechLayerDir& direction);
