@@ -19,6 +19,7 @@
 #include "odb/geom.h"
 
 namespace odb {
+class dbBlock;
 class dbDatabase;
 class dbInst;
 class dbBTerm;
@@ -90,7 +91,15 @@ class TritonRoute : public PinAccessService
               stt::SteinerTreeBuilder* stt_builder);
   ~TritonRoute() override;
 
+  bool hasPinAccess() const override;
+  void invalidatePinAccess();
+  bool isPinAccessRequired(odb::dbITerm* term) const override;
   void updateDirtyPinAccess() override;
+  void beginPinAccessRecovery(int min_access_points = 1) override;
+  std::vector<odb::dbITerm*> getMissingPinAccess() const override;
+  void updatePinAccessRecovery() override;
+  void finishPinAccessRecovery() override;
+  void cancelPinAccessRecovery() override;
 
   void initGraphics(std::unique_ptr<AbstractGraphicsFactory> graphics_factory);
 
@@ -156,7 +165,7 @@ class TritonRoute : public PinAccessService
   void debugSingleWorker(const std::string& dumpDir, const std::string& drcRpt);
   void updateGlobals(const char* file_name);
   void resetDb(const char* file_name);
-  void clearDesign();
+  void clearDesign(bool detach_callback = true);
   void updateDesign(const std::vector<std::string>& updates, int num_threads);
   void updateDesign(const std::string& path, int num_threads);
   void addWorkerResults(
@@ -211,6 +220,9 @@ class TritonRoute : public PinAccessService
   unsigned int cloud_sz_{0};
   std::optional<boost::asio::thread_pool> dist_pool_;
   std::unique_ptr<FlexPA> pa_{nullptr};
+  bool pa_rebuild_required_{false};
+  bool pa_recovery_active_{false};
+  odb::dbBlock* pa_block_{nullptr};
   std::unique_ptr<AbstractGraphicsFactory> graphics_factory_{nullptr};
 
   void initDesign();
