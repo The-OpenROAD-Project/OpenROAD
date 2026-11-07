@@ -106,6 +106,7 @@ class PDNSim : public odb::dbBlockCallBackObj
   void setDebugGui(bool enable);
 
   void clearSolvers();
+  void clearSolutions(sta::Scene* corner);
 
   void setGeneratedSourceSettings(const GeneratedSourceSettings& settings);
 

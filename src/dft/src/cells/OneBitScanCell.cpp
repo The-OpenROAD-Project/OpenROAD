@@ -11,6 +11,7 @@
 #include "ClockDomain.hh"
 #include "ScanCell.hh"
 #include "ScanPin.hh"
+#include "Utils.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -88,6 +89,18 @@ odb::Point OneBitScanCell::getOrigin() const
 bool OneBitScanCell::isPlaced() const
 {
   return inst_->isPlaced();
+}
+
+odb::Point OneBitScanCell::getScanInLocation() const
+{
+  return utils::GetITermLocation(
+      findITerm(db_network_->getLibertyScanIn(test_cell_)), inst_);
+}
+
+odb::Point OneBitScanCell::getScanOutLocation() const
+{
+  return utils::GetITermLocation(
+      findITerm(db_network_->getLibertyScanOut(test_cell_)), inst_);
 }
 
 }  // namespace dft

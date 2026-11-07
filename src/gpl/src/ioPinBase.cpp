@@ -58,8 +58,8 @@ IoPinBase::IoPinBase(const std::vector<ppl::SlotPosition>& slots,
                already_placed);
   }
 
-  const size_t n = bterms_.size();
-  pin_size_.reserve(n);
+  const size_t bterms_size = bterms_.size();
+  pin_size_.reserve(bterms_size);
   for (odb::dbBTerm* bterm : bterms_) {
     const odb::Rect bbox = bterm->getBBox();
     pin_size_.emplace_back(
@@ -68,18 +68,20 @@ IoPinBase::IoPinBase(const std::vector<ppl::SlotPosition>& slots,
   }
   refreshGPins();
 
-  master_to_follower_.assign(n, kNoMirrorPartner);
-  follower_to_master_.assign(n, kNoMirrorPartner);
-  last_written_pos_.assign(n, odb::Point(INT_MIN, INT_MIN));
-  last_written_layer_.assign(n, nullptr);
+  master_to_follower_.assign(bterms_size, kNoMirrorPartner);
+  follower_to_master_.assign(bterms_size, kNoMirrorPartner);
+  last_written_pos_.assign(bterms_size, odb::Point(INT_MIN, INT_MIN));
+  last_written_layer_.assign(bterms_size, nullptr);
 
-  box_constraints_.assign(n, std::nullopt);
+  box_constraints_.assign(bterms_size, std::nullopt);
   int box_constrained = 0;
-  for (size_t i = 0; i < n; ++i) {
-    const std::optional<odb::Rect> cr = bterms_[i]->getConstraintRegion();
-    if (cr.has_value() && cr->xMin() != cr->xMax()
-        && cr->yMin() != cr->yMax()) {
-      box_constraints_[i] = cr;
+  for (size_t i = 0; i < bterms_size; ++i) {
+    const std::optional<odb::Rect> constraint_region
+        = bterms_[i]->getConstraintRegion();
+    if (constraint_region.has_value() && !bterms_[i]->isMirrored()
+        && constraint_region->xMin() != constraint_region->xMax()
+        && constraint_region->yMin() != constraint_region->yMax()) {
+      box_constraints_[i] = constraint_region;
       ++box_constrained;
     }
   }
@@ -93,8 +95,8 @@ IoPinBase::IoPinBase(const std::vector<ppl::SlotPosition>& slots,
   initConstraints();
 
   // The seeds are truncated to the DBU grid, as the GPins hold them.
-  cur_.resize(n);
-  for (size_t i = 0; i < n; ++i) {
+  cur_.resize(bterms_size);
+  for (size_t i = 0; i < bterms_size; ++i) {
     if (!isMirrorFollower(i)) {
       const FloatPoint p = seed(i);
       cur_[i] = FloatPoint(static_cast<int>(p.x), static_cast<int>(p.y));
@@ -114,7 +116,7 @@ IoPinBase::IoPinBase(const std::vector<ppl::SlotPosition>& slots,
              171,
              "Concurrent IO placement: {} movable IO pins seeded "
              "({} mirror pairs).",
-             n,
+             bterms_size,
              mirror_pairs_.size());
 }
 
@@ -442,12 +444,13 @@ void IoPinBase::initConstraints()
     if (isBoxConstrained(i)) {
       continue;
     }
-    const std::optional<odb::Rect> cr = bterms_[i]->getConstraintRegion();
-    if (!cr.has_value()) {
+    const std::optional<odb::Rect> constraint_region
+        = bterms_[i]->getConstraintRegion();
+    if (!constraint_region.has_value() || bterms_[i]->isMirrored()) {
       continue;
     }
     PerimSegment seg;
-    if (rectToPerimSegment(cr.value(), seg)) {
+    if (rectToPerimSegment(constraint_region.value(), seg)) {
       constraint_segments_[i] = intersectSegments({seg}, free_segments_);
       if (constraint_segments_[i].empty()) {
         log_->error(GPL,

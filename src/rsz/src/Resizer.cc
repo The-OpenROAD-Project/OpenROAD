@@ -1539,7 +1539,7 @@ void Resizer::bufferOutput(const sta::Pin* top_pin,
 
 ////////////////////////////////////////////////////////////////
 
-float Resizer::driveResistance(const sta::Pin* drvr_pin)
+float Resizer::driveResistance(const sta::Pin* drvr_pin) const
 {
   if (network_->isTopLevelPort(drvr_pin)) {
     sta::InputDrive* drive
@@ -1568,8 +1568,25 @@ float Resizer::driveResistance(const sta::Pin* drvr_pin)
       return max_res;
     }
   } else {
-    sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
-    if (drvr_port) {
+    if (sta::Graph* graph = sta_->graph()) {
+      if (sta::Vertex* drvr_vertex = graph->pinDrvrVertex(drvr_pin)) {
+        float max_res = -std::numeric_limits<float>::infinity();
+        graph->visitFaninEdges(
+            drvr_vertex,
+            sta_->search()->evalPred(),
+            [&](sta::Edge* edge, sta::Vertex*) {
+              if (!edge->role()->isWire()) {
+                for (sta::TimingArc* arc : edge->timingArcSet()->arcs()) {
+                  max_res = std::max(max_res, arc->driveResistance());
+                }
+              }
+            });
+        if (std::isfinite(max_res)) {
+          return max_res;
+        }
+      }
+    }
+    if (sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin)) {
       return drvr_port->driveResistance();
     }
   }
@@ -7163,17 +7180,19 @@ sta::Instance* Resizer::makeInstance(sta::LibertyCell* cell,
 
 void Resizer::insertBufferPostProcess(dbInst* buffer_inst)
 {
-  // ODB's insertBuffer* already placed the instance; re-run through
-  // setLocation so clampLocToCore can pull it back inside the core if
-  // the insertion point landed in the die-core gap.
-  setLocation(buffer_inst, buffer_inst->getLocation());
+  if (buffer_inst->isPlaced()) {
+    // ODB's insertBuffer* already placed the instance; re-run through
+    // setLocation so clampLocToCore can pull it back inside the core if
+    // the insertion point landed in the die-core gap.
+    setLocation(buffer_inst, buffer_inst->getLocation());
 
-  // Legalize the cell position for accurate parasitic estimation
-  if (estimate_parasitics_->getParasiticsSrc()
-          == est::ParasiticsSrc::kGlobalRouting
-      || estimate_parasitics_->getParasiticsSrc()
-             == est::ParasiticsSrc::kDetailedRouting) {
-    opendp_->legalCellPos(buffer_inst);
+    // Legalize the cell position for accurate parasitic estimation
+    if (estimate_parasitics_->getParasiticsSrc()
+            == est::ParasiticsSrc::kGlobalRouting
+        || estimate_parasitics_->getParasiticsSrc()
+               == est::ParasiticsSrc::kDetailedRouting) {
+      opendp_->legalCellPos(buffer_inst);
+    }
   }
 
   // Increment the design area

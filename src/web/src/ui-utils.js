@@ -25,11 +25,14 @@ const CLIENT_ONLY_PREFIX = 'ui_';
 export const HIERARCHY_OFF_HINT
     = 'Hierarchy view is off — enable it in Display Controls';
 
-// The WebSocket for the page at `loc`: wss when the page came over https.
+// The WebSocket for the page at `loc`, carrying the page's access token: the
+// server refuses the upgrade without it.
 export function websocketUrlFrom(loc) {
     const scheme = loc?.protocol === 'https:' ? 'wss' : 'ws';
     const host = loc?.host || 'localhost:8080';
-    return `${scheme}://${host}/ws`;
+    const token = new URLSearchParams(loc?.search || '').get('token');
+    const query = token ? `?token=${encodeURIComponent(token)}` : '';
+    return `${scheme}://${host}/ws${query}`;
 }
 
 // Serialize the layer/selectability visibility flags the way the server
@@ -227,6 +230,27 @@ export function zoomToBBox(app, bbox, padding = 20) {
         dbuRectToBounds(x1, y1, x2, y2, app.designScale, app.designMaxDXDY,
                         app.designOriginX, app.designOriginY),
         { padding: [padding, padding] });
+}
+
+// A busy cursor over the whole page while `fn` runs, as the Qt GUI sets a
+// wait cursor while it builds a timing report: a click whose answer takes
+// seconds on a large design otherwise looks ignored.  Counted, so overlapping
+// requests keep it until the last one ends; cleared when `fn` throws.
+// `root` is the element that carries the class (document.body in the page).
+const busyCounts = new WeakMap();
+
+export async function withBusyCursor(fn, root = document.body) {
+    busyCounts.set(root, (busyCounts.get(root) || 0) + 1);
+    root.classList.add('op-busy');
+    try {
+        return await fn();
+    } finally {
+        const count = busyCounts.get(root) - 1;
+        busyCounts.set(root, count);
+        if (count === 0) {
+            root.classList.remove('op-busy');
+        }
+    }
 }
 
 // Leaflet map options for the 2D layout viewer.
