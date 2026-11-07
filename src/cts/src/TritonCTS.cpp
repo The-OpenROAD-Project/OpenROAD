@@ -1545,7 +1545,7 @@ bool TritonCTS::separateMacroRegSinks(
 
     if (iterm->isInputSignal() && inst->isPlaced()) {
       // Cells with insertion delay, macros, clock gaters and inverters that
-      // drive macros are put in the macro sinks.
+      // do not drive a single register are put in the macro sinks.
       odb::dbMTerm* mterm = iterm->getMTerm();
 
       bool nonSinkMacro = !isSink(iterm);
@@ -1555,16 +1555,37 @@ bool TritonCTS::separateMacroRegSinks(
         odb::dbITerm* invertedOutput = inst->getFirstOutput();
         odb::dbNet* invertedNet
             = invertedOutput ? invertedOutput->getNet() : nullptr;
-        odb::dbITerm* invertedTerm
-            = invertedNet ? invertedNet->get1stSignalInput(false) : nullptr;
-        if (invertedTerm) {
-          nonSinkMacro &= invertedTerm->getInst()->isBlock();
-        } else {
-          logger_->warn(CTS,
-                        136,
-                        "Inverter {} output net has no signal input; "
-                        "treating as a dangling clock inverter.",
-                        inst->getName());
+        odb::dbITerm* invertedTerm = nullptr;
+        int invertedLoads = 0;
+        if (invertedNet) {
+          for (odb::dbITerm* loadTerm : invertedNet->getITerms()) {
+            if (loadTerm->isInputSignal()) {
+              ++invertedLoads;
+              if (invertedTerm == nullptr) {
+                invertedTerm = loadTerm;
+              } else {
+                // A second load already settles the classification below.
+                break;
+              }
+            }
+          }
+        }
+        if (invertedLoads == 1) {
+          // Register sink only when the lone load is a register; a macro or a
+          // clock gater keeps the inverter on the macro side.
+          nonSinkMacro
+              &= invertedTerm->getInst()->isBlock() || !isSink(invertedTerm);
+        } else if (invertedLoads == 0) {
+          if (invertedNet && !invertedNet->getBTerms().empty()) {
+            // Port-only fanout: leaf, no tree below.
+            nonSinkMacro = false;
+          } else {
+            logger_->warn(CTS,
+                          136,
+                          "Inverter {} output net has no signal input; "
+                          "treating as a dangling clock inverter.",
+                          inst->getName());
+          }
         }
       }
 
