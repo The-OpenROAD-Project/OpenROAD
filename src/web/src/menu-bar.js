@@ -142,7 +142,7 @@ export function createMenuBar(app) {
             { label: 'Selection Browser',
               action: () => app.focusComponent('SelectHighlight') },
             { label: 'Tcl Console', action: () => app.focusComponent('TclConsole') },
-            { label: 'Hierarchy Browser', action: () => app.focusComponent('Browser') },
+            { label: 'Hierarchy', action: () => app.focusComponent('Browser') },
             { label: 'Timing', action: () => app.focusComponent('TimingWidget') },
             { label: 'DRC Viewer', action: () => app.focusComponent('DRCWidget') },
             { label: 'Clock Tree', action: () => app.focusComponent('ClockWidget') },

@@ -201,10 +201,16 @@ export class VisTree {
     _buildSelCheckbox(node) {
         const selNode = this.selModel.get(node.id);
         if (!selNode || !selNode.hasCheckbox) return null;
+        const spec = node.data;
         const cb = document.createElement('input');
         cb.type = 'checkbox';
         cb.className = 'vis-sel-cb';
         cb.title = 'Selectable';
+        // The row's name is a sibling <span>, not a <label> (a label would make
+        // a click anywhere in the row toggle the box — see _dom), so name the
+        // control for assistive tech and DevTools explicitly.
+        cb.name = 'sel:' + node.id;
+        cb.setAttribute('aria-label', 'Selectable: ' + (spec.label || node.id));
         cb.addEventListener('change', () => {
             this.selModel.check(selNode.id, cb.checked);
         });
@@ -219,6 +225,8 @@ export class VisTree {
         cb.type = 'checkbox';
         cb.className = 'vis-cb';
         cb.title = 'Visible';
+        cb.name = 'vis:' + node.id;
+        cb.setAttribute('aria-label', 'Visible: ' + (spec.label || node.id));
         node.cb = cb;
         cb.addEventListener('change', () => this.model.check(node.id, cb.checked));
 

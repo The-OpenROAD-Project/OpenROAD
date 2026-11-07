@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "CallBack.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
@@ -203,6 +205,147 @@ TEST_F(CallbackFixture, test_region)
   dbRegion::destroy(parent_region);
   EXPECT_EQ(cb_.events.size(), 1);
   EXPECT_EQ(cb_.events[0], "Destroy region parent");
+}
+
+TEST_F(CallbackFixture, test_group)
+{
+  create2LevetDbWithBTerms();
+  dbBlock* block = db_->getChip()->getBlock();
+  dbInst* inst = block->findInst("i1");
+  ASSERT_NE(inst, nullptr);
+  cb_.addOwner(block);
+
+  dbGroup* parent = dbGroup::create(block, "parent");
+  EXPECT_EQ(cb_.events.size(), 1);
+  EXPECT_EQ(cb_.events[0], "Create group parent");
+  cb_.clearEvents();
+
+  parent->addInst(inst);
+  EXPECT_EQ(cb_.events.size(), 1);
+  EXPECT_EQ(cb_.events[0], "Add inst i1 to group parent");
+  cb_.clearEvents();
+
+  // Creating under a parent is a create plus the parenting it performs.
+  dbGroup* child = dbGroup::create(parent, "child");
+  EXPECT_EQ(cb_.events.size(), 2);
+  EXPECT_EQ(cb_.events[0], "Create group child");
+  EXPECT_EQ(cb_.events[1], "Add group child to group parent");
+  cb_.clearEvents();
+
+  parent->removeGroup(child);
+  EXPECT_EQ(cb_.events.size(), 1);
+  EXPECT_EQ(cb_.events[0], "Remove group child from group parent");
+  cb_.clearEvents();
+
+  parent->removeInst(inst);
+  EXPECT_EQ(cb_.events.size(), 1);
+  EXPECT_EQ(cb_.events[0], "Remove inst i1 from group parent");
+  cb_.clearEvents();
+
+  // destroy detaches the members first, so a receiver never hears about a
+  // group it was told is gone; the group is still readable when Destroy fires.
+  parent->addInst(inst);
+  cb_.clearEvents();
+  dbGroup::destroy(parent);
+  EXPECT_EQ(cb_.events.size(), 2);
+  EXPECT_EQ(cb_.events[0], "Remove inst i1 from group parent");
+  EXPECT_EQ(cb_.events[1], "Destroy group parent");
+}
+
+TEST_F(CallbackFixture, test_group_modinst)
+{
+  create2LevetDbWithBTerms();
+  dbBlock* block = db_->getChip()->getBlock();
+  dbModule* parent_mod = dbModule::create(block, "parent_mod");
+  dbModule* master_mod = dbModule::create(block, "master_mod");
+  dbModInst* modinst = dbModInst::create(parent_mod, master_mod, "mi");
+  ASSERT_NE(modinst, nullptr);
+  dbGroup* group = dbGroup::create(block, "g");
+  cb_.addOwner(block);
+
+  group->addModInst(modinst);
+  EXPECT_EQ(cb_.events.size(), 1);
+  EXPECT_EQ(cb_.events[0], "Add modinst mi to group g");
+  cb_.clearEvents();
+
+  group->removeModInst(modinst);
+  EXPECT_EQ(cb_.events.size(), 1);
+  EXPECT_EQ(cb_.events[0], "Remove modinst mi from group g");
+}
+
+TEST_F(CallbackFixture, test_group_in_region)
+{
+  create2LevetDbWithBTerms();
+  dbBlock* block = db_->getChip()->getBlock();
+  dbRegion* region = dbRegion::create(block, "r");
+  cb_.addOwner(block);
+
+  // Joining the region has no callback of its own.
+  dbGroup* group = dbGroup::create(region, "g");
+  EXPECT_EQ(cb_.events.size(), 1);
+  EXPECT_EQ(cb_.events[0], "Create group g");
+  EXPECT_EQ(group->getRegion(), region);
+}
+
+TEST_F(CallbackFixture, test_group_move_inst)
+{
+  create2LevetDbWithBTerms();
+  dbBlock* block = db_->getChip()->getBlock();
+  dbInst* inst = block->findInst("i1");
+  ASSERT_NE(inst, nullptr);
+  dbGroup* from = dbGroup::create(block, "a");
+  dbGroup* to = dbGroup::create(block, "b");
+  from->addInst(inst);
+  cb_.addOwner(block);
+
+  to->addInst(inst);
+  EXPECT_EQ(cb_.events.size(), 2);
+  EXPECT_EQ(cb_.events[0], "Remove inst i1 from group a");
+  EXPECT_EQ(cb_.events[1], "Add inst i1 to group b");
+  EXPECT_EQ(inst->getGroup(), to);
+}
+
+TEST_F(CallbackFixture, test_group_destroy_tree)
+{
+  create2LevetDbWithBTerms();
+  dbBlock* block = db_->getChip()->getBlock();
+  dbInst* inst = block->findInst("i1");
+  ASSERT_NE(inst, nullptr);
+  dbGroup* parent = dbGroup::create(block, "parent");
+  dbGroup* mid = dbGroup::create(parent, "mid");
+  dbGroup* leaf = dbGroup::create(mid, "leaf");
+  mid->addInst(inst);
+  cb_.addOwner(block);
+
+  dbGroup::destroy(mid);
+  EXPECT_EQ(cb_.events.size(), 4);
+  EXPECT_EQ(cb_.events[0], "Remove inst i1 from group mid");
+  EXPECT_EQ(cb_.events[1], "Remove group leaf from group mid");
+  EXPECT_EQ(cb_.events[2], "Remove group mid from group parent");
+  EXPECT_EQ(cb_.events[3], "Destroy group mid");
+  EXPECT_EQ(leaf->getParentGroup(), nullptr);
+  EXPECT_TRUE(parent->getGroups().empty());
+}
+
+TEST_F(CallbackFixture, test_group_destroy_grouped_inst)
+{
+  create2LevetDbWithBTerms();
+  dbBlock* block = db_->getChip()->getBlock();
+  dbInst* inst = block->findInst("i1");
+  ASSERT_NE(inst, nullptr);
+  dbGroup* group = dbGroup::create(block, "g");
+  group->addInst(inst);
+  cb_.addOwner(block);
+
+  // The inst's iterms report themselves too, so check the order only.
+  dbInst::destroy(inst);
+  const auto removed
+      = std::ranges::find(cb_.events, "Remove inst i1 from group g");
+  const auto destroyed = std::ranges::find(cb_.events, "Destroy inst i1");
+  ASSERT_NE(removed, cb_.events.end());
+  ASSERT_NE(destroyed, cb_.events.end());
+  EXPECT_LT(removed, destroyed);
+  EXPECT_TRUE(group->getInsts().empty());
 }
 
 TEST_F(CallbackFixture, test_row)
