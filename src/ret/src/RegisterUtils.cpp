@@ -7,10 +7,12 @@
 #include <cstring>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/db.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
@@ -19,6 +21,11 @@
 namespace ret {
 
 namespace {
+
+// Truth tables are enumerated over at most this many input ports (plus
+// the state of a register), so a cell function is checked in at most
+// 2^(kMaxTruthTableInputs + 1) rows.
+constexpr size_t kMaxTruthTableInputs = 6;
 
 const sta::Sequential* singleSequential(const sta::LibertyCell* cell)
 {
@@ -49,8 +56,9 @@ int constNetValue(sta::dbSta* sta, odb::dbNet* net)
       continue;
     }
     sta::Pin* pin = network->dbToSta(iterm);
-    sta::LibertyPort* port = pin ? network->libertyPort(pin) : nullptr;
-    const sta::FuncExpr* func = port ? port->function() : nullptr;
+    sta::LibertyPort* port
+        = pin != nullptr ? network->libertyPort(pin) : nullptr;
+    const sta::FuncExpr* func = port != nullptr ? port->function() : nullptr;
     if (func == nullptr) {
       return -1;
     }
@@ -105,7 +113,10 @@ int evalConstExpr(sta::dbSta* sta, odb::dbInst* inst, const sta::FuncExpr* e)
     case sta::FuncExpr::Op::xor_: {
       const int a = evalConstExpr(sta, inst, e->left());
       const int b = evalConstExpr(sta, inst, e->right());
-      return (a < 0 || b < 0) ? -1 : (a ^ b);
+      if (a < 0 || b < 0) {
+        return -1;
+      }
+      return a != b ? 1 : 0;
     }
     case sta::FuncExpr::Op::one:
       return 1;
@@ -123,7 +134,7 @@ void collectPorts(const sta::FuncExpr* e,
     return;
   }
   if (e->op() == sta::FuncExpr::Op::port) {
-    if (std::find(ports.begin(), ports.end(), e->port()) == ports.end()) {
+    if (std::ranges::find(ports, e->port()) == ports.end()) {
       ports.push_back(e->port());
     }
     return;
@@ -177,6 +188,105 @@ struct NextStateShape
   std::vector<std::pair<const sta::LibertyPort*, bool>> enables;  // inactive
 };
 
+// Truth table of a register's next_state over its input ports and its
+// state.  Bit i of a row is input i; the top bit is the state.
+class NextStateTable
+{
+ public:
+  NextStateTable(const sta::FuncExpr* next,
+                 const sta::LibertyPort* state,
+                 const sta::LibertyPort* state_inv,
+                 std::vector<const sta::LibertyPort*> inputs)
+      : next_(next),
+        state_(state),
+        state_inv_(state_inv),
+        inputs_(std::move(inputs)),
+        rows_(1u << (inputs_.size() + 1))
+  {
+  }
+
+  // next_state == state on every row with input i at value v: input i is
+  // an enable, inactive at v.
+  bool holds(size_t i, bool v) const
+  {
+    for (unsigned row = 0; row < rows_; row++) {
+      if (bit(row, i) == v && value(row) != stateBit(row)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // next_state == input d on every row where every enable is active.
+  bool passes(size_t d,
+              const std::vector<std::pair<const sta::LibertyPort*, bool>>&
+                  enables) const
+  {
+    for (unsigned row = 0; row < rows_; row++) {
+      if (enablesActive(row, enables) && value(row) != bit(row, d)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+ private:
+  static bool bit(unsigned row, size_t i) { return ((row >> i) & 1u) != 0; }
+  bool stateBit(unsigned row) const { return bit(row, inputs_.size()); }
+
+  bool enablesActive(
+      unsigned row,
+      const std::vector<std::pair<const sta::LibertyPort*, bool>>& enables)
+      const
+  {
+    for (size_t i = 0; i < inputs_.size(); i++) {
+      for (const auto& [port, inactive] : enables) {
+        if (port == inputs_[i] && bit(row, i) == inactive) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  // next_state evaluated on a row.
+  bool value(unsigned row) const
+  {
+    Assignment values;
+    for (size_t i = 0; i < inputs_.size(); i++) {
+      values[inputs_[i]] = bit(row, i);
+    }
+    values[state_] = stateBit(row);
+    return evalExpr(next_, values, state_, state_inv_);
+  }
+
+  const sta::FuncExpr* next_;
+  const sta::LibertyPort* state_;
+  const sta::LibertyPort* state_inv_;
+  std::vector<const sta::LibertyPort*> inputs_;
+  unsigned rows_;
+};
+
+// The input ports next_state reads, excluding the state; false when it
+// reads something that is not an input, or too many inputs to enumerate.
+bool nextStateInputs(const sta::FuncExpr* next,
+                     const sta::LibertyPort* state,
+                     const sta::LibertyPort* state_inv,
+                     std::vector<const sta::LibertyPort*>& inputs)
+{
+  std::vector<const sta::LibertyPort*> support;
+  collectPorts(next, support);
+  for (const sta::LibertyPort* port : support) {
+    if (port != state && port != state_inv) {
+      if (!port->direction()->isInput()) {
+        return false;
+      }
+      inputs.push_back(port);
+    }
+  }
+  return !inputs.empty() && inputs.size() <= kMaxTruthTableInputs;
+}
+
 // Truth-table check over the support of next_state.  A port is an enable at
 // value v when next_state equals the state for every assignment with that
 // port at v.  With every enable active, next_state must equal exactly one
@@ -202,96 +312,32 @@ NextStateShape nextStateShape(const sta::Sequential* seq)
   }
   const sta::LibertyPort* state = seq->output();
   const sta::LibertyPort* state_inv = seq->outputInv();
-  if (state == nullptr) {
-    return shape;
-  }
-
-  std::vector<const sta::LibertyPort*> support;
-  collectPorts(next, support);
   std::vector<const sta::LibertyPort*> inputs;
-  for (const sta::LibertyPort* port : support) {
-    if (port == state || port == state_inv) {
-      continue;
-    }
-    if (!port->direction()->isInput()) {
-      return shape;  // next_state reads something that is not an input
-    }
-    inputs.push_back(port);
-  }
-  constexpr size_t kMaxInputs = 6;  // at most 2^(6+1) truth-table rows
-  if (inputs.empty() || inputs.size() > kMaxInputs) {
+  if (state == nullptr || !nextStateInputs(next, state, state_inv, inputs)) {
     return shape;
   }
 
-  // Variables: the inputs, then the state; bit i of `row` is variable i.
-  std::vector<const sta::LibertyPort*> vars = inputs;
-  vars.push_back(state);
-  const unsigned rows = 1u << vars.size();
-  auto assignment = [&](unsigned row) {
-    Assignment values;
-    for (size_t i = 0; i < vars.size(); i++) {
-      values[vars[i]] = ((row >> i) & 1u) != 0;
-    }
-    return values;
-  };
-  auto bit = [](unsigned row, size_t i) { return ((row >> i) & 1u) != 0; };
-
-  // next_state == state for every row with input i at value v.
-  auto holds = [&](size_t i, bool v) {
-    for (unsigned row = 0; row < rows; row++) {
-      if (bit(row, i) != v) {
-        continue;
-      }
-      const Assignment values = assignment(row);
-      if (evalExpr(next, values, state, state_inv) != values.at(state)) {
-        return false;
-      }
-    }
-    return true;
-  };
+  const NextStateTable table(next, state, state_inv, inputs);
   std::vector<bool> is_enable(inputs.size(), false);
   for (size_t i = 0; i < inputs.size(); i++) {
     for (bool v : {false, true}) {
-      if (holds(i, v)) {
+      if (!is_enable[i] && table.holds(i, v)) {
         is_enable[i] = true;
         shape.enables.emplace_back(inputs[i], v);
-        break;
       }
     }
   }
   if (shape.enables.empty()) {
     return shape;
   }
-
-  // With every enable active, next_state == input `d` on every row.
-  auto passes = [&](size_t d) {
-    for (unsigned row = 0; row < rows; row++) {
-      bool active = true;
-      for (size_t i = 0; i < inputs.size() && active; i++) {
-        for (const auto& [port, inactive] : shape.enables) {
-          if (port == inputs[i] && bit(row, i) == inactive) {
-            active = false;
-          }
-        }
-      }
-      if (!active) {
-        continue;
-      }
-      const Assignment values = assignment(row);
-      if (evalExpr(next, values, state, state_inv) != bit(row, d)) {
-        return false;
-      }
-    }
-    return true;
-  };
   for (size_t i = 0; i < inputs.size(); i++) {
-    if (is_enable[i]) {
-      continue;
+    if (!is_enable[i]) {
+      // A second data candidate, or an input that is not passed through.
+      if (shape.data != nullptr || !table.passes(i, shape.enables)) {
+        return NextStateShape();
+      }
+      shape.data = inputs[i];
     }
-    if (shape.data != nullptr || !passes(i)) {
-      return NextStateShape();  // a second data candidate, or no pass-through
-    }
-    shape.data = inputs[i];
   }
   if (shape.data == nullptr) {
     return NextStateShape();
@@ -302,7 +348,7 @@ NextStateShape nextStateShape(const sta::Sequential* seq)
 
 odb::dbITerm* findITerm(odb::dbInst* inst, const sta::LibertyPort* port)
 {
-  return port ? inst->findITerm(port->name().c_str()) : nullptr;
+  return port != nullptr ? inst->findITerm(port->name().c_str()) : nullptr;
 }
 
 // 0 when an output pin function reads the register state, 1 when it reads
@@ -349,8 +395,10 @@ bool loadedOutput(sta::dbSta* sta,
       continue;
     }
     sta::Pin* sta_pin = network->dbToSta(iterm);
-    sta::LibertyPort* port = sta_pin ? network->libertyPort(sta_pin) : nullptr;
-    const int polarity = port ? outputPolarity(port->function(), seq) : -1;
+    sta::LibertyPort* port
+        = sta_pin != nullptr ? network->libertyPort(sta_pin) : nullptr;
+    const int polarity
+        = port != nullptr ? outputPolarity(port->function(), seq) : -1;
     if (polarity == 0 && state_pin == nullptr) {
       state_pin = iterm;
     }
@@ -451,7 +499,8 @@ odb::dbITerm* registerDataPin(sta::dbSta* sta, odb::dbInst* inst)
 bool isNegedgeRegister(sta::dbSta* sta, odb::dbInst* inst)
 {
   sta::LibertyCell* cell = sta->getDbNetwork()->libertyCell(inst);
-  const sta::Sequential* seq = cell ? singleSequential(cell) : nullptr;
+  const sta::Sequential* seq
+      = cell != nullptr ? singleSequential(cell) : nullptr;
   if (seq == nullptr || !seq->isRegister()) {
     return false;  // latches are don't-touch, not negative-edge registers
   }
@@ -474,7 +523,8 @@ RegisterClass registerClass(sta::dbSta* sta, odb::dbInst* inst)
   RegisterClass cls;
   cls.clock = registerClockNet(inst);
   sta::LibertyCell* cell = sta->getDbNetwork()->libertyCell(inst);
-  const sta::Sequential* seq = cell ? singleSequential(cell) : nullptr;
+  const sta::Sequential* seq
+      = cell != nullptr ? singleSequential(cell) : nullptr;
   if (seq == nullptr || !seq->isRegister()) {
     return cls;
   }
@@ -492,7 +542,7 @@ RegisterClass registerClass(sta::dbSta* sta, odb::dbInst* inst)
   if (!loadedOutput(sta, inst, seq, out_pin, out_inverted)) {
     return cls;
   }
-  cls.output = out_pin ? out_pin->getMTerm() : nullptr;
+  cls.output = out_pin != nullptr ? out_pin->getMTerm() : nullptr;
   if (shape.kind == RegisterKind::plain) {
     // One cycle later the loads see the data pin, or its complement when
     // exactly one of the stored value and the output pin is inverted.
@@ -517,12 +567,9 @@ RegisterClass registerClass(sta::dbSta* sta, odb::dbInst* inst)
     }
     cls.controls.emplace_back(iterm->getMTerm(), iterm->getNet());
   }
-  std::sort(cls.controls.begin(),
-            cls.controls.end(),
-            [](const auto& a, const auto& b) {
-              return strcmp(a.first->getConstName(), b.first->getConstName())
-                     < 0;
-            });
+  std::ranges::sort(cls.controls, [](const auto& a, const auto& b) {
+    return strcmp(a.first->getConstName(), b.first->getConstName()) < 0;
+  });
   for (odb::dbITerm* iterm : inst->getITerms()) {
     const odb::dbSigType sig = iterm->getSigType();
     if (sig == odb::dbSigType::CLOCK || sig == odb::dbSigType::POWER
@@ -575,7 +622,6 @@ bool isSelfDualGate(sta::dbSta* sta, odb::dbInst* inst)
   if (cell == nullptr || cell->isSequential()) {
     return false;
   }
-  constexpr size_t kMaxInputs = 6;  // at most 2^6 truth-table rows
   int outputs = 0;
   sta::LibertyCellPortIterator port_iter(cell);
   while (port_iter.hasNext()) {
@@ -589,7 +635,7 @@ bool isSelfDualGate(sta::dbSta* sta, odb::dbInst* inst)
     }
     std::vector<const sta::LibertyPort*> inputs;
     collectPorts(func, inputs);
-    if (inputs.empty() || inputs.size() > kMaxInputs) {
+    if (inputs.empty() || inputs.size() > kMaxTruthTableInputs) {
       return false;
     }
     const unsigned rows = 1u << inputs.size();

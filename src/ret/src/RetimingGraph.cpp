@@ -4,6 +4,7 @@
 #include "RetimingGraph.h"
 
 #include <algorithm>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -34,7 +35,7 @@ void RetimingGraph::findClockPeriod()
       continue;
     }
     clocks++;
-    clock_period_ = static_cast<float>(clock->period());
+    clock_period_ = clock->period();
   }
   if (clocks > 1) {
     logger_->error(
@@ -110,7 +111,7 @@ void RetimingGraph::walkFanout(int source,
         if (!continuesThrough(load, sink)) {
           continue;
         }
-        if (visited.count(load)) {
+        if (visited.contains(load)) {
           continue;
         }
         visited.insert(load);
@@ -123,8 +124,9 @@ void RetimingGraph::walkFanout(int source,
         if (it == index_.end()) {
           continue;
         }
-        adj_[source].push_back({it->second, weight});
-        phys_[source].push_back({out_pin, sink, flops});
+        adj_[source].push_back({.target = it->second, .weight = weight});
+        phys_[source].push_back(
+            {.driver = out_pin, .sink = sink, .flops = flops});
       }
     }
   }
@@ -178,8 +180,10 @@ void RetimingGraph::build()
 void RetimingGraph::fenceDontTouch()
 {
   std::vector<std::unordered_set<odb::dbNet*>> fanin_clocks(nodes_.size());
-  for (int u = 0; u < static_cast<int>(nodes_.size()); u++) {
-    for (int k = 0; k < static_cast<int>(adj_[u].size()); k++) {
+  const int n = static_cast<int>(nodes_.size());
+  for (int u = 0; u < n; u++) {
+    const int edge_count = static_cast<int>(adj_[u].size());
+    for (int k = 0; k < edge_count; k++) {
       const int target = adj_[u][k].target;
       if (pinned_[target]) {
         continue;
@@ -199,7 +203,7 @@ void RetimingGraph::fenceDontTouch()
   bool grew = true;
   while (grew) {
     grew = false;
-    for (int u = 0; u < static_cast<int>(nodes_.size()); u++) {
+    for (int u = 0; u < n; u++) {
       if (fanin_clocks[u].empty()) {
         continue;
       }
@@ -215,7 +219,7 @@ void RetimingGraph::fenceDontTouch()
       }
     }
   }
-  for (int v = 0; v < static_cast<int>(nodes_.size()); v++) {
+  for (int v = 0; v < n; v++) {
     if (fanin_clocks[v].size() > 1) {
       pinned_[v] = true;
     }

@@ -90,6 +90,8 @@ class Retime
   double markCriticalCone();
   double estimateSlideDelta(int v);
   bool forwardMovable(int v) const;
+  void reportSlide(int v, double worst, int moves);
+  void reportResult(double worst, int moves, int pi_rejects);
 
   RetimingGraph* graph_ = nullptr;
   sta::dbSta* sta_ = nullptr;

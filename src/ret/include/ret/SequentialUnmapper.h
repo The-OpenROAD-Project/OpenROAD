@@ -72,12 +72,12 @@ class SequentialUnmapper
   void decompose(odb::dbInst* inst, const sta::Sequential* seq);
   bool canSynth(const sta::FuncExpr* expr) const;
   odb::dbNet* synth(const sta::FuncExpr* expr);
-  bool isInverted(const sta::FuncExpr* expr) const;
+  bool isInverted(const sta::FuncExpr* func) const;
   RegPins getRegPins(odb::dbInst* inst, const sta::Sequential* seq) const;
 
   // Netlist builders; each returns the output net of the new cell.
-  odb::dbNet* newNet(const char* prefix);
-  odb::dbInst* newInst(const char* prefix, odb::dbMaster* master);
+  odb::dbNet* newNet(const char* base_name);
+  odb::dbInst* newInst(const char* base_name, odb::dbMaster* master);
   odb::dbNet* makeInverter(odb::dbNet* input);
   odb::dbNet* makeTwoInputGate(bool is_and, odb::dbNet* a, odb::dbNet* b);
   odb::dbNet* makeTie(bool one);
@@ -105,10 +105,10 @@ class SequentialUnmapper
   const sta::LibertyPort* out_inv_port_ = nullptr;
   odb::dbNet* state_net_ = nullptr;
   std::vector<odb::dbInst*> created_;  // cells made for this register
+  int uniquify_ = 0;
 
   int unmapped_ = 0;
   int skipped_ = 0;
-  int uniquify_ = 0;
 };
 
 }  // namespace ret

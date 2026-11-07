@@ -4,15 +4,19 @@
 #include "ret/SequentialUnmapper.h"
 
 #include <map>
+#include <memory>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sequential.hh"
 #include "utl/Logger.h"
@@ -151,7 +155,8 @@ bool SequentialUnmapper::findBaseSequentialCell(bool negedge,
       }
       odb::dbMaster* candidate = db_->findMaster(cell->name().c_str());
       odb::dbMTerm* candidate_q
-          = candidate ? candidate->findMTerm(q_port->name().c_str()) : nullptr;
+          = candidate != nullptr ? candidate->findMTerm(q_port->name().c_str())
+                                 : nullptr;
       if (candidate == nullptr || candidate_q == nullptr) {
         continue;
       }
@@ -331,7 +336,7 @@ bool SequentialUnmapper::findTieCell(bool one)
     }
   }
   odb::dbMTerm* out_mterm
-      = best ? best->findMTerm(best_port->name().c_str()) : nullptr;
+      = best != nullptr ? best->findMTerm(best_port->name().c_str()) : nullptr;
   if (one) {
     tie1_master_ = best;
     tie1_out_mterm_ = out_mterm;
@@ -353,14 +358,15 @@ void SequentialUnmapper::run(const std::unordered_set<odb::dbInst*>* candidates)
   int async = 0;
   int other = 0;
   for (odb::dbInst* inst : block_->getInsts()) {
-    if (candidates != nullptr && candidates->count(inst) == 0) {
+    if (candidates != nullptr && !candidates->contains(inst)) {
       continue;
     }
     if (!inst->getMaster()->isSequential()) {
       continue;
     }
     sta::LibertyCell* cell = network->libertyCell(inst);
-    const sta::Sequential* seq = cell ? singleSequential(cell) : nullptr;
+    const sta::Sequential* seq
+        = cell != nullptr ? singleSequential(cell) : nullptr;
     if (seq == nullptr) {
       other++;
       continue;
@@ -433,7 +439,7 @@ bool SequentialUnmapper::canSynth(const sta::FuncExpr* expr) const
     case sta::FuncExpr::Op::port: {
       const sta::LibertyPort* port = expr->port();
       return port == out_port_ || port == out_inv_port_
-             || in_port_net_.count(port) > 0;
+             || in_port_net_.contains(port);
     }
     case sta::FuncExpr::Op::not_:
       return inv_master_ != nullptr && canSynth(expr->left());
@@ -507,7 +513,8 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
     }
     if (iterm->getIoType() == odb::dbIoType::INPUT) {
       sta::Pin* pin = network->dbToSta(iterm);
-      sta::LibertyPort* port = pin ? network->libertyPort(pin) : nullptr;
+      sta::LibertyPort* port
+          = pin != nullptr ? network->libertyPort(pin) : nullptr;
       if (port != nullptr) {
         in_port_net_[port] = iterm->getNet();
       }
@@ -532,7 +539,7 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
     return;
   }
 
-  odb::dbInst* flop = newInst("unmap_ff_", base);
+  odb::dbInst* flop = newInst("unmap_ff", base);
   const RegPins pins
       = getRegPins(flop, singleSequential(network->libertyCell(flop)));
   if (pins.d == nullptr || pins.q == nullptr || pins.clk == nullptr) {
@@ -547,7 +554,7 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
     return;
   }
 
-  state_net_ = newNet("unmap_state_");
+  state_net_ = newNet("unmap_state");
   pins.q->connect(state_net_);
   pins.clk->connect(clock_net);
   pins.d->connect(synth(seq->data()));
@@ -684,7 +691,7 @@ SequentialUnmapper::RegPins SequentialUnmapper::getRegPins(
       pins.d = iterm;
     } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
       sta::LibertyPort* port = network->libertyPort(network->dbToSta(iterm));
-      const sta::FuncExpr* func = port ? port->function() : nullptr;
+      const sta::FuncExpr* func = port != nullptr ? port->function() : nullptr;
       if (func != nullptr && func->op() == sta::FuncExpr::Op::port
           && func->port() == seq->output()) {
         pins.q = iterm;
@@ -694,22 +701,22 @@ SequentialUnmapper::RegPins SequentialUnmapper::getRegPins(
   return pins;
 }
 
-odb::dbNet* SequentialUnmapper::newNet(const char* prefix)
+// The design may already hold names from an earlier run.
+odb::dbNet* SequentialUnmapper::newNet(const char* base_name)
 {
-  // The design may already hold names from an earlier run.
   std::string name;
   do {
-    name = std::string(prefix) + std::to_string(uniquify_++);
+    name = std::string(base_name) + "_" + std::to_string(uniquify_++);
   } while (block_->findNet(name.c_str()) != nullptr);
   return odb::dbNet::create(block_, name.c_str());
 }
 
-odb::dbInst* SequentialUnmapper::newInst(const char* prefix,
+odb::dbInst* SequentialUnmapper::newInst(const char* base_name,
                                          odb::dbMaster* master)
 {
   std::string name;
   do {
-    name = std::string(prefix) + std::to_string(uniquify_++);
+    name = std::string(base_name) + "_" + std::to_string(uniquify_++);
   } while (block_->findInst(name.c_str()) != nullptr);
   odb::dbInst* inst = odb::dbInst::create(block_, master, name.c_str());
   created_.push_back(inst);
@@ -718,8 +725,8 @@ odb::dbInst* SequentialUnmapper::newInst(const char* prefix,
 
 odb::dbNet* SequentialUnmapper::makeInverter(odb::dbNet* input)
 {
-  odb::dbInst* inv = newInst("unmap_inv_", inv_master_);
-  odb::dbNet* output = newNet("unmap_net_");
+  odb::dbInst* inv = newInst("unmap_inv", inv_master_);
+  odb::dbNet* output = newNet("unmap_net");
   for (odb::dbITerm* iterm : inv->getITerms()) {
     if (iterm->getIoType() == odb::dbIoType::INPUT) {
       iterm->connect(input);
@@ -734,9 +741,9 @@ odb::dbNet* SequentialUnmapper::makeTwoInputGate(bool is_and,
                                                  odb::dbNet* a,
                                                  odb::dbNet* b)
 {
-  odb::dbInst* gate = newInst(is_and ? "unmap_and_" : "unmap_or_",
+  odb::dbInst* gate = newInst(is_and ? "unmap_and" : "unmap_or",
                               is_and ? and2_master_ : or2_master_);
-  odb::dbNet* output = newNet("unmap_net_");
+  odb::dbNet* output = newNet("unmap_net");
   bool first_input = true;
   for (odb::dbITerm* iterm : gate->getITerms()) {
     if (iterm->getIoType() == odb::dbIoType::INPUT) {
@@ -751,10 +758,10 @@ odb::dbNet* SequentialUnmapper::makeTwoInputGate(bool is_and,
 
 odb::dbNet* SequentialUnmapper::makeTie(bool one)
 {
-  odb::dbInst* tie = newInst(one ? "unmap_tie1_" : "unmap_tie0_",
+  odb::dbInst* tie = newInst(one ? "unmap_tie1" : "unmap_tie0",
                              one ? tie1_master_ : tie0_master_);
   odb::dbMTerm* out_mterm = one ? tie1_out_mterm_ : tie0_out_mterm_;
-  odb::dbNet* output = newNet("unmap_net_");
+  odb::dbNet* output = newNet("unmap_net");
   for (odb::dbITerm* iterm : tie->getITerms()) {
     if (iterm->getMTerm() == out_mterm) {
       iterm->connect(output);

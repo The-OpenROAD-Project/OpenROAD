@@ -5,11 +5,13 @@
 
 #include <algorithm>
 #include <climits>
+#include <cstddef>
 #include <limits>
 #include <string>
 #include <unordered_set>
 #include <vector>
 
+#include "RetimingGraph.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
@@ -17,12 +19,10 @@
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
-#include "sta/Network.hh"
 #include "sta/Scene.hh"
 #include "sta/Sdc.hh"
 #include "sta/TableModel.hh"
 #include "sta/TimingArc.hh"
-#include "sta/TimingModel.hh"
 #include "sta/TimingRole.hh"
 #include "utl/Logger.h"
 
@@ -34,6 +34,9 @@ namespace {
 // such a path, so it must never be the worst arrival the search tries to
 // lower; it stays hugely negative through every max().
 constexpr double kExcluded = -1e30;
+
+// A move must lower the worst arrival by more than this to be accepted.
+constexpr double kEps = 1e-15;
 
 // Rule above and below the rows of the slide table.
 constexpr const char* kSlideTableRule
@@ -125,7 +128,8 @@ void Retime::computeArcDelays()
   fanin_.assign(n, {});
 
   sta::Scene* scene = sta_->cmdScene();
-  dcalc_ap_ = scene ? scene->dcalcAnalysisPtIndex(sta::MinMax::max()) : 0;
+  dcalc_ap_
+      = scene != nullptr ? scene->dcalcAnalysisPtIndex(sta::MinMax::max()) : 0;
 
   // Per-gate floor: the largest annotated arc through any of its input pins.
   for (int u = 0; u < n; u++) {
@@ -162,7 +166,7 @@ void Retime::resolveFlopDCap()
   if (flop_master_ != nullptr) {
     sta::Cell* cell = network->dbToSta(flop_master_);
     sta::LibertyCell* liberty_cell
-        = cell ? network->libertyCell(cell) : nullptr;
+        = cell != nullptr ? network->libertyCell(cell) : nullptr;
     if (liberty_cell != nullptr) {
       sta::LibertyPort* d = liberty_cell->findLibertyPort("D");
       if (d != nullptr) {
@@ -187,15 +191,20 @@ void Retime::computeWireArcs()
   for (int u = 0; u < n; u++) {
     const std::vector<Edge>& edges = graph_->adj_[u];
     const std::vector<EdgePhys>& handles = graph_->phys_[u];
-    for (int k = 0; k < static_cast<int>(edges.size()); k++) {
+    const int edge_count = static_cast<int>(edges.size());
+    for (int k = 0; k < edge_count; k++) {
       odb::dbITerm* sink = handles[k].sink;
-      float wire = pinArrival(sink) - pinArrival(handles[k].driver);
-      if (wire < 0.0f) {
-        wire = 0.0f;
-      }
+      const float wire
+          = std::max(pinArrival(sink) - pinArrival(handles[k].driver), 0.0f);
       const float fallback = getGateArc(sink);
-      fanin_[edges[k].target].push_back(
-          {u, edges[k].weight, wire, fallback, fallback, sink});
+      fanin_[edges[k].target].push_back({
+          .u = u,
+          .weight = edges[k].weight,
+          .wire = wire,
+          .arc_comb = fallback,
+          .arc_reg = fallback,
+          .sink = sink,
+      });
     }
   }
 }
@@ -210,7 +219,8 @@ void Retime::computeCombArcs()
   for (int v = 0; v < n; v++) {
     for (const EdgePhys& h : graph_->phys_[v]) {
       sta::Pin* pin = network->dbToSta(h.sink);
-      sta::LibertyPort* port = pin ? network->libertyPort(pin) : nullptr;
+      sta::LibertyPort* port
+          = pin != nullptr ? network->libertyPort(pin) : nullptr;
       if (port != nullptr) {
         load_comb[v] += port->capacitance();
       }
@@ -287,7 +297,7 @@ float Retime::characterizeArc(int v,
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Scene* scene = sta_->cmdScene();
   const sta::MinMax* min_max = sta::MinMax::max();
-  sta::Sdc* sdc = scene ? scene->sdc() : nullptr;
+  sta::Sdc* sdc = scene != nullptr ? scene->sdc() : nullptr;
 
   ArcCharStage stage = ArcCharStage::ok;
   float best = 0.0f;
@@ -295,11 +305,12 @@ float Retime::characterizeArc(int v,
 
   sta::Pin* pin = network->dbToSta(sink);
   sta::LibertyCell* cell = network->libertyCell(graph_->nodes_[v]);
-  sta::LibertyPort* from = pin ? network->libertyPort(pin) : nullptr;
+  sta::LibertyPort* from = pin != nullptr ? network->libertyPort(pin) : nullptr;
   // Per-instance PVT, then the SDC operating conditions, then the library
   // default (what the delay calculator itself uses).
   sta::Instance* inst = network->dbToSta(graph_->nodes_[v]);
-  const sta::Pvt* pvt = (sdc && inst) ? sdc->pvt(inst, min_max) : nullptr;
+  const sta::Pvt* pvt
+      = (sdc != nullptr && inst != nullptr) ? sdc->pvt(inst, min_max) : nullptr;
   if (pvt == nullptr && sdc != nullptr) {
     pvt = sdc->operatingConditions(min_max);
   }
@@ -359,9 +370,9 @@ bool Retime::outputRegistered(int v) const
 void Retime::computeArrivals()
 {
   const int n = static_cast<int>(graph_->nodes_.size());
-  std::fill(arrivals_.begin(), arrivals_.end(), 0.0);
-  std::fill(arrivals_pi_.begin(), arrivals_pi_.end(), kExcluded);
-  std::fill(scratch_.indeg.begin(), scratch_.indeg.end(), 0);
+  std::ranges::fill(arrivals_, 0.0);
+  std::ranges::fill(arrivals_pi_, kExcluded);
+  std::ranges::fill(scratch_.indeg, 0);
   for (int t = 0; t < n; t++) {
     for (const FaninEdge& fe : fanin_[t]) {
       if (fe.weight + r_[t] - r_[fe.u] == 0) {
@@ -425,7 +436,7 @@ double Retime::markCriticalCone()
   }
   critical_threshold_ = worst * (1.0 - kSlackBand);
 
-  std::fill(in_critical_cone_.begin(), in_critical_cone_.end(), 0);
+  std::ranges::fill(in_critical_cone_, 0);
   int head = 0;
   int tail = 0;
   for (int v = 0; v < n; v++) {
@@ -582,7 +593,7 @@ void Retime::run(int max_moves)
 
   computeArcDelays();
 
-  double cur = markCriticalCone();
+  double worst = markCriticalCone();
   // Input-rooted paths may not get worse than the period, or than they
   // already are.
   pi_limit_ = std::max(static_cast<double>(graph_->clock_period_), worst_pi_);
@@ -591,89 +602,92 @@ void Retime::run(int max_moves)
       20,
       "Start worst register-to-register arrival {:.4g} (model slack {:.4g} "
       "vs period {:.4g})",
-      cur,
-      graph_->clock_period_ - cur,
+      worst,
+      graph_->clock_period_ - worst,
       graph_->clock_period_);
-  if (cur <= 0.0) {
+  if (worst <= 0.0) {
     logger_->info(utl::RET, 21, "No register-to-register path to optimize.");
     return;
   }
 
   const int cap = max_moves <= 0 ? INT_MAX : max_moves;
-  const double eps = 1e-15;
   int moves = 0;
   int pi_rejects = 0;
-
-  while (moves < cap) {
-    bool accepted = false;
-    for (int v = 0; v < n; v++) {
-      if (!in_critical_cone_[v] || !forwardMovable(v)) {
-        continue;
-      }
-      if (estimateSlideDelta(v) >= -eps) {
-        continue;  // cheap cone estimate says no improvement
-      }
-      r_[v] -= 1;
-      const double trial = markCriticalCone();  // exact recompute decides
-      const bool pi_ok = worst_pi_ <= pi_limit_ + eps;
-      if (!pi_ok) {
-        pi_rejects++;
-      }
-      if (pi_ok && trial < cur - eps) {
-        cur = trial;
-        moves++;
-        std::string net_name = "?";
-        for (odb::dbITerm* iterm : graph_->nodes_[v]->getITerms()) {
-          if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-            if (iterm->getNet() != nullptr) {
-              net_name = iterm->getNet()->getName();
-            }
-            break;
-          }
+  bool accepted = true;
+  while (accepted && moves < cap) {
+    accepted = false;
+    for (int v = 0; v < n && !accepted; v++) {
+      if (in_critical_cone_[v] && forwardMovable(v)
+          && estimateSlideDelta(v) < -kEps) {
+        // The cheap cone estimate says the slide helps; an exact recompute
+        // decides.
+        r_[v] -= 1;
+        const double trial = markCriticalCone();
+        const bool pi_ok = worst_pi_ <= pi_limit_ + kEps;
+        if (!pi_ok) {
+          pi_rejects++;
         }
-        int max_wr = 0;
-        for (const Edge& e : graph_->adj_[v]) {
-          max_wr = std::max(max_wr, e.weight + r_[e.target] - r_[v]);
+        if (pi_ok && trial < worst - kEps) {
+          worst = trial;
+          moves++;
+          reportSlide(v, worst, moves);
+          accepted = true;  // first improvement: restart on the new cone
+        } else {
+          r_[v] += 1;
+          markCriticalCone();
         }
-        std::unordered_set<odb::dbInst*> moved_flops;
-        for (const FaninEdge& fe : fanin_[v]) {
-          const std::vector<Edge>& edges = graph_->adj_[fe.u];
-          for (int k = 0; k < static_cast<int>(edges.size()); k++) {
-            if (edges[k].target == v) {
-              const std::vector<odb::dbInst*>& flops
-                  = graph_->phys_[fe.u][k].flops;
-              moved_flops.insert(flops.begin(), flops.end());
-            }
-          }
-        }
-        if (moves == 1) {
-          logger_->report("");
-          logger_->report(
-              " Slide |  Worst arr | Flops | Sinks | Max wr | {:<20} | fanout "
-              "net",
-              "gate");
-          logger_->report(kSlideTableRule);
-        }
-        logger_->report(
-            "{:>6} | {:>10.4g} | {:>5} | {:>5} | {:>6} | {:<20} | {}",
-            moves,
-            cur,
-            moved_flops.size(),
-            graph_->adj_[v].size(),
-            max_wr,
-            graph_->nodes_[v]->getName(),
-            net_name);
-        accepted = true;
-        break;  // first improvement: restart the scan on the new cone
       }
-      r_[v] += 1;
-      markCriticalCone();
     }
-    if (!accepted) {
+  }
+  reportResult(worst, moves, pi_rejects);
+}
+
+// One line of the slide table for the move just accepted across gate v.
+void Retime::reportSlide(int v, double worst, int moves)
+{
+  std::string net_name = "?";
+  for (odb::dbITerm* iterm : graph_->nodes_[v]->getITerms()) {
+    if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+      if (iterm->getNet() != nullptr) {
+        net_name = iterm->getNet()->getName();
+      }
       break;
     }
   }
+  int max_wr = 0;
+  for (const Edge& e : graph_->adj_[v]) {
+    max_wr = std::max(max_wr, e.weight + r_[e.target] - r_[v]);
+  }
+  std::unordered_set<odb::dbInst*> moved_flops;
+  for (const FaninEdge& fe : fanin_[v]) {
+    const std::vector<Edge>& edges = graph_->adj_[fe.u];
+    const int edge_count = static_cast<int>(edges.size());
+    for (int k = 0; k < edge_count; k++) {
+      if (edges[k].target == v) {
+        const std::vector<odb::dbInst*>& flops = graph_->phys_[fe.u][k].flops;
+        moved_flops.insert(flops.begin(), flops.end());
+      }
+    }
+  }
+  if (moves == 1) {
+    logger_->report("");
+    logger_->report(
+        " Slide |  Worst arr | Flops | Sinks | Max wr | {:<20} | fanout net",
+        "gate");
+    logger_->report(kSlideTableRule);
+  }
+  logger_->report("{:>6} | {:>10.4g} | {:>5} | {:>5} | {:>6} | {:<20} | {}",
+                  moves,
+                  worst,
+                  moved_flops.size(),
+                  graph_->adj_[v].size(),
+                  max_wr,
+                  graph_->nodes_[v]->getName(),
+                  net_name);
+}
 
+void Retime::reportResult(double worst, int moves, int pi_rejects)
+{
   if (moves == 0) {
     if (pi_rejects > 0) {
       logger_->info(
@@ -693,8 +707,8 @@ void Retime::run(int max_moves)
       23,
       "Final worst arrival {:.4g} (model slack {:.4g}) after {} slides; {} "
       "candidates rejected for pushing an input path past the clock period",
-      cur,
-      graph_->clock_period_ - cur,
+      worst,
+      graph_->clock_period_ - worst,
       moves,
       pi_rejects);
 }
