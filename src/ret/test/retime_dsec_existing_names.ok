@@ -1,48 +1,38 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 worst slack max 0.8051
-[WARNING RET-0007] Using multi-output register cell DFF_X1 as the positive-edge base cell.
-[WARNING RET-0005] No tie-high cell found.
-[WARNING RET-0006] No tie-low cell found.
-[WARNING RET-0012] No negative-edge register cell found; negative-edge registers will be left untouched.
-[INFO RET-0014] Retiming graph: 18 gates, 16 edges (6 registered, max weight 1), clock period 1e-09
-[INFO RET-0015] 6 register slots, 6 distinct registers, 8 pinned gates (I/O boundary, don't-touch, or fed through a fenced register), 0 fenced registers (the chain reaches a port, a control pin or a don't-touch cell)
-[INFO RET-0018] Load-aware arc on 16/16 edges (fell back to the annotated arc: 0 no cell, 0 no port, 0 no operating conditions, 0 no table model); register D-pin load 1.14e-15
-[INFO RET-0020] Start worst register-to-register arrival 8.965e-11 (model slack 9.103e-10 vs period 1e-09)
+[INFO RET-0014] Retiming graph: 18 gates, 16 edges, 6 registers, 8 pinned gates, 0 fenced registers.
+[INFO RET-0020] Worst register-to-register arrival 0.090 before retiming, clock period 1.000.
 
  Slide |  Worst arr | Flops | Sinks | Max wr | gate                 | fanout net
 --------------------------------------------------------------------------------
-     1 |  8.671e-11 |     2 |     1 |      1 | g12                  | m1
-     2 |  7.026e-11 |     2 |     1 |      1 | g2                   | n1
-     3 |  7.012e-11 |     0 |     1 |      1 | g13                  | m2
-     4 |  5.748e-11 |     0 |     1 |      1 | g3                   | n2
-     5 |  5.744e-11 |     0 |     1 |      1 | g14                  | m3
-     6 |  4.588e-11 |     0 |     1 |      1 | g4                   | n3
-     7 |  4.587e-11 |     0 |     1 |      1 | g15                  | m4
-     8 |  3.461e-11 |     0 |     1 |      1 | g5                   | n4
+     1 |      0.087 |     2 |     1 |      1 | g12                  | m1
+     2 |      0.070 |     2 |     1 |      1 | g2                   | n1
+     3 |      0.070 |     0 |     1 |      1 | g13                  | m2
+     4 |      0.057 |     0 |     1 |      1 | g3                   | n2
+     5 |      0.057 |     0 |     1 |      1 | g14                  | m3
+     6 |      0.046 |     0 |     1 |      1 | g4                   | n3
+     7 |      0.046 |     0 |     1 |      1 | g15                  | m4
+     8 |      0.035 |     0 |     1 |      1 | g5                   | n4
 --------------------------------------------------------------------------------
-[INFO RET-0023] Final worst arrival 3.461e-11 (model slack 9.654e-10) after 8 slides; 0 candidates rejected for pushing an input path past the clock period
-[INFO RET-0008] Unmapped 2 registers (0 skipped: next_state not expressible with the available cells).
-[INFO RET-0009]        2 x DFF_X1
-[INFO RET-0028] Lag remap is ambiguous after unmapping; re-solving on the new netlist.
-[INFO RET-0018] Load-aware arc on 18/18 edges (fell back to the annotated arc: 0 no cell, 0 no port, 0 no operating conditions, 0 no table model); register D-pin load 1.14e-15
-[INFO RET-0020] Start worst register-to-register arrival 9.797e-11 (model slack 9.02e-10 vs period 1e-09)
+[INFO RET-0023] Worst register-to-register arrival 0.035 after 8 slides.
+[INFO RET-0008] Unmapped 2 registers.
+[INFO RET-0020] Worst register-to-register arrival 0.098 before retiming, clock period 1.000.
 
  Slide |  Worst arr | Flops | Sinks | Max wr | gate                 | fanout net
 --------------------------------------------------------------------------------
-     1 |  9.551e-11 |     1 |     1 |      1 | unmap_inv_5          | unmap_net_6
-     2 |  8.671e-11 |     1 |     1 |      1 | unmap_inv_3          | unmap_net_4
-     3 |  8.539e-11 |     2 |     1 |      1 | g2                   | n1
-     4 |  7.012e-11 |     0 |     1 |      1 | g12                  | m1
-     5 |  6.991e-11 |     0 |     1 |      1 | g3                   | n2
-     6 |  5.744e-11 |     0 |     1 |      1 | g13                  | m2
-     7 |  5.742e-11 |     0 |     1 |      1 | g4                   | n3
-     8 |  4.587e-11 |     0 |     1 |      1 | g14                  | m3
-     9 |  4.587e-11 |     0 |     1 |      1 | g5                   | n4
-    10 |  3.461e-11 |     0 |     1 |      1 | g15                  | m4
+     1 |      0.096 |     1 |     1 |      1 | unmap_inv_5          | unmap_net_6
+     2 |      0.087 |     1 |     1 |      1 | unmap_inv_3          | unmap_net_4
+     3 |      0.085 |     2 |     1 |      1 | g2                   | n1
+     4 |      0.070 |     0 |     1 |      1 | g12                  | m1
+     5 |      0.070 |     0 |     1 |      1 | g3                   | n2
+     6 |      0.057 |     0 |     1 |      1 | g13                  | m2
+     7 |      0.057 |     0 |     1 |      1 | g4                   | n3
+     8 |      0.046 |     0 |     1 |      1 | g14                  | m3
+     9 |      0.046 |     0 |     1 |      1 | g5                   | n4
+    10 |      0.035 |     0 |     1 |      1 | g15                  | m4
 --------------------------------------------------------------------------------
-[INFO RET-0023] Final worst arrival 3.461e-11 (model slack 9.654e-10) after 10 slides; 0 candidates rejected for pushing an input path past the clock period
-[INFO RET-0024] Removed 4 registers (6 of 18 register groups changed).
-[INFO RET-0025] Inserted 2 registers (0 kept their register class).
+[INFO RET-0023] Worst register-to-register arrival 0.035 after 10 slides.
+[INFO RET-0024] Rebuilt 6 of 18 register groups: 4 registers removed, 2 inserted, 0 of them keeping their class.
 worst slack max 0.8455
 Retime output passed/skipped sequential equivalence test
 No differences found.

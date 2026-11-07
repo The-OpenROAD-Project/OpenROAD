@@ -258,12 +258,14 @@ void Retime::computeCombArcs()
       }
     }
   }
-  logger_->info(
+  debugPrint(
+      logger_,
       utl::RET,
-      18,
-      "Load-aware arc on {}/{} edges (fell back to the annotated arc: "
-      "{} no cell, {} no port, {} no operating conditions, {} no table "
-      "model); register D-pin load {:.3g}",
+      "arcs",
+      1,
+      "load-aware arc on {}/{} edges; annotated arc kept on {} without a "
+      "cell, {} without a port, {} without operating conditions, {} without "
+      "a table model; register D-pin load {:.3g}",
       ok,
       total,
       no_cell,
@@ -597,14 +599,12 @@ void Retime::run(int max_moves)
   // Input-rooted paths may not get worse than the period, or than they
   // already are.
   pi_limit_ = std::max(static_cast<double>(graph_->clock_period_), worst_pi_);
-  logger_->info(
-      utl::RET,
-      20,
-      "Start worst register-to-register arrival {:.4g} (model slack {:.4g} "
-      "vs period {:.4g})",
-      worst,
-      graph_->clock_period_ - worst,
-      graph_->clock_period_);
+  logger_->info(utl::RET,
+                20,
+                "Worst register-to-register arrival {} before retiming, "
+                "clock period {}.",
+                sta::delayAsString(worst, 3, sta_),
+                sta::delayAsString(graph_->clock_period_, 3, sta_));
   if (worst <= 0.0) {
     logger_->info(utl::RET, 21, "No register-to-register path to optimize.");
     return;
@@ -676,9 +676,9 @@ void Retime::reportSlide(int v, double worst, int moves)
         "gate");
     logger_->report(kSlideTableRule);
   }
-  logger_->report("{:>6} | {:>10.4g} | {:>5} | {:>5} | {:>6} | {:<20} | {}",
+  logger_->report("{:>6} | {:>10} | {:>5} | {:>5} | {:>6} | {:<20} | {}",
                   moves,
-                  worst,
+                  sta::delayAsString(worst, 3, sta_),
                   moved_flops.size(),
                   graph_->adj_[v].size(),
                   max_wr,
@@ -689,28 +689,22 @@ void Retime::reportSlide(int v, double worst, int moves)
 void Retime::reportResult(double worst, int moves, int pi_rejects)
 {
   if (moves == 0) {
-    if (pi_rejects > 0) {
-      logger_->info(
-          utl::RET,
-          19,
-          "Retime found no slides ({} candidates rejected for pushing "
-          "an input path past the clock period).",
-          pi_rejects);
-    } else {
-      logger_->info(utl::RET, 16, "Retime found no slides.");
-    }
-    return;
+    logger_->info(utl::RET, 16, "Retime found no slides.");
+  } else {
+    logger_->report(kSlideTableRule);
+    logger_->info(utl::RET,
+                  23,
+                  "Worst register-to-register arrival {} after {} slides.",
+                  sta::delayAsString(worst, 3, sta_),
+                  moves);
   }
-  logger_->report(kSlideTableRule);
-  logger_->info(
-      utl::RET,
-      23,
-      "Final worst arrival {:.4g} (model slack {:.4g}) after {} slides; {} "
-      "candidates rejected for pushing an input path past the clock period",
-      worst,
-      graph_->clock_period_ - worst,
-      moves,
-      pi_rejects);
+  if (pi_rejects > 0) {
+    logger_->info(utl::RET,
+                  19,
+                  "{} candidate moves were rejected because they would push "
+                  "an input path past the clock period.",
+                  pi_rejects);
+  }
 }
 
 }  // namespace ret

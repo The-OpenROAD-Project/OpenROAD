@@ -1,26 +1,19 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 worst slack max 0.8014
-[WARNING RET-0007] Using multi-output register cell DFF_X1 as the positive-edge base cell.
-[WARNING RET-0005] No tie-high cell found.
-[WARNING RET-0006] No tie-low cell found.
-[WARNING RET-0012] No negative-edge register cell found; negative-edge registers will be left untouched.
-[INFO RET-0014] Retiming graph: 10 gates, 9 edges (3 registered, max weight 1), clock period 1e-09
-[INFO RET-0015] 3 register slots, 3 distinct registers, 4 pinned gates (I/O boundary, don't-touch, or fed through a fenced register), 0 fenced registers (the chain reaches a port, a control pin or a don't-touch cell)
-[INFO RET-0018] Load-aware arc on 9/9 edges (fell back to the annotated arc: 0 no cell, 0 no port, 0 no operating conditions, 0 no table model); register D-pin load 1.14e-15
-[INFO RET-0020] Start worst register-to-register arrival 9.801e-11 (model slack 9.02e-10 vs period 1e-09)
+[INFO RET-0014] Retiming graph: 10 gates, 9 edges, 3 registers, 4 pinned gates, 0 fenced registers.
+[INFO RET-0020] Worst register-to-register arrival 0.098 before retiming, clock period 1.000.
 
  Slide |  Worst arr | Flops | Sinks | Max wr | gate                 | fanout net
 --------------------------------------------------------------------------------
-     1 |  8.142e-11 |     2 |     1 |      1 | g2                   | n1
-     2 |  6.874e-11 |     0 |     1 |      1 | g3                   | n2
-     3 |  5.718e-11 |     0 |     1 |      1 | g4                   | n3
-     4 |  4.584e-11 |     0 |     1 |      1 | g5                   | n4
-     5 |  3.461e-11 |     0 |     1 |      1 | g6                   | n5
-     6 |          0 |     0 |     1 |      1 | g7                   | n6
+     1 |      0.081 |     2 |     1 |      1 | g2                   | n1
+     2 |      0.069 |     0 |     1 |      1 | g3                   | n2
+     3 |      0.057 |     0 |     1 |      1 | g4                   | n3
+     4 |      0.046 |     0 |     1 |      1 | g5                   | n4
+     5 |      0.035 |     0 |     1 |      1 | g6                   | n5
+     6 |      0.000 |     0 |     1 |      1 | g7                   | n6
 --------------------------------------------------------------------------------
-[INFO RET-0023] Final worst arrival 0 (model slack 1e-09) after 6 slides; 0 candidates rejected for pushing an input path past the clock period
-[INFO RET-0024] Removed 2 registers (3 of 9 register groups changed).
-[INFO RET-0025] Inserted 1 registers (0 kept their register class).
+[INFO RET-0023] Worst register-to-register arrival 0.000 after 6 slides.
+[INFO RET-0024] Rebuilt 3 of 9 register groups: 2 registers removed, 1 inserted, 0 of them keeping their class.
 worst slack max 0.8576
 Retime output passed/skipped sequential equivalence test
 No differences found.

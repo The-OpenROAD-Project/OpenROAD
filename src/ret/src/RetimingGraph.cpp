@@ -303,51 +303,25 @@ void RetimingGraph::fenceDontTouch()
 void RetimingGraph::report() const
 {
   int total_edges = 0;
-  int registered_edges = 0;
-  int max_weight = 0;
   for (const std::vector<Edge>& edges : adj_) {
-    for (const Edge& e : edges) {
-      total_edges++;
-      if (e.weight >= 1) {
-        registered_edges++;
-        max_weight = std::max(max_weight, e.weight);
-      }
-    }
+    total_edges += static_cast<int>(edges.size());
   }
-  int flop_slots = 0;
   std::unordered_set<odb::dbInst*> distinct;
   for (const std::vector<EdgePhys>& handles : phys_) {
     for (const EdgePhys& p : handles) {
-      flop_slots += static_cast<int>(p.flops.size());
       distinct.insert(p.flops.begin(), p.flops.end());
     }
   }
-  int pinned = 0;
-  for (bool b : pinned_) {
-    if (b) {
-      pinned++;
-    }
-  }
+  const int pinned = static_cast<int>(std::ranges::count(pinned_, true));
   logger_->info(utl::RET,
                 14,
-                "Retiming graph: {} gates, {} edges ({} registered, max weight "
-                "{}), clock period {:.3g}",
+                "Retiming graph: {} gates, {} edges, {} registers, {} pinned "
+                "gates, {} fenced registers.",
                 nodes_.size(),
                 total_edges,
-                registered_edges,
-                max_weight,
-                clock_period_);
-  logger_->info(
-      utl::RET,
-      15,
-      "{} register slots, {} distinct registers, {} pinned gates (I/O "
-      "boundary, don't-touch, or fed through a fenced register), {} fenced "
-      "registers (the chain reaches a port, a control pin or a don't-touch "
-      "cell)",
-      flop_slots,
-      distinct.size(),
-      pinned,
-      fenced_.size());
+                distinct.size(),
+                pinned,
+                fenced_.size());
 }
 
 }  // namespace ret

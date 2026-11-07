@@ -82,18 +82,17 @@ bool SequentialUnmapper::prepare()
     logger_->warn(utl::RET, 4, "No 2-input OR cell found.");
     ok = false;
   }
+  // Missing tie or negative-edge cells only matter for the registers that
+  // need them, which run() reports.
   if (!findTieCell(true)) {
-    logger_->warn(utl::RET, 5, "No tie-high cell found.");
+    debugPrint(logger_, utl::RET, "cells", 1, "no tie-high cell");
   }
   if (!findTieCell(false)) {
-    logger_->warn(utl::RET, 6, "No tie-low cell found.");
+    debugPrint(logger_, utl::RET, "cells", 1, "no tie-low cell");
   }
   if (!findBaseSequentialCell(
           true, negedge_seq_master_, negedge_seq_q_mterm_)) {
-    logger_->warn(utl::RET,
-                  12,
-                  "No negative-edge register cell found; negative-edge "
-                  "registers will be left untouched.");
+    debugPrint(logger_, utl::RET, "cells", 1, "no negative-edge register cell");
   }
   return ok;
 }
@@ -174,11 +173,13 @@ bool SequentialUnmapper::findBaseSequentialCell(bool negedge,
   }
 
   if (best == nullptr && fallback != nullptr) {
-    logger_->warn(utl::RET,
-                  7,
-                  "Using multi-output register cell {} as the {} base cell.",
-                  fallback->getName(),
-                  negedge ? "negative-edge" : "positive-edge");
+    debugPrint(logger_,
+               utl::RET,
+               "cells",
+               1,
+               "multi-output register cell {} is the {} base cell",
+               fallback->getName(),
+               negedge ? "negative-edge" : "positive-edge");
     best = fallback;
     best_q = fallback_q;
   }
@@ -405,21 +406,23 @@ void SequentialUnmapper::run(const std::unordered_set<odb::dbInst*>* candidates)
     }
   }
 
-  logger_->info(utl::RET,
-                8,
-                "Unmapped {} registers ({} skipped: next_state not "
-                "expressible with the available cells).",
-                unmapped_,
-                skipped_);
+  logger_->info(utl::RET, 8, "Unmapped {} registers.", unmapped_);
   for (const auto& [name, count] : per_cell) {
-    logger_->info(utl::RET, 9, "  {:>6} x {}", count, name);
+    debugPrint(logger_, utl::RET, "unmap", 1, "{:>6} x {}", count, name);
+  }
+  if (skipped_ > 0) {
+    logger_->warn(utl::RET,
+                  9,
+                  "{} registers were left as they are: their next_state "
+                  "needs a cell the libraries do not have.",
+                  skipped_);
   }
   const int untouched = async + latches + scan + other;
   if (untouched > 0) {
     logger_->warn(utl::RET,
                   10,
-                  "Left {} sequential cells untouched ({} with asynchronous "
-                  "controls, {} latches, {} scan, {} other).",
+                  "Left {} sequential cells as they are: {} with asynchronous "
+                  "controls, {} latches, {} scan cells, {} of another kind.",
                   untouched,
                   async,
                   latches,

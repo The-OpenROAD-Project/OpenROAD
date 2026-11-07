@@ -1,26 +1,22 @@
 [INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
 [INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
 worst slack max 4.1621
-[WARNING RET-0012] No negative-edge register cell found; negative-edge registers will be left untouched.
-[INFO RET-0014] Retiming graph: 14 gates, 12 edges (3 registered, max weight 2), clock period 5e-09
-[INFO RET-0015] 5 register slots, 5 distinct registers, 6 pinned gates (I/O boundary, don't-touch, or fed through a fenced register), 0 fenced registers (the chain reaches a port, a control pin or a don't-touch cell)
-[INFO RET-0018] Load-aware arc on 12/12 edges (fell back to the annotated arc: 0 no cell, 0 no port, 0 no operating conditions, 0 no table model); register D-pin load 1.68e-15
-[INFO RET-0020] Start worst register-to-register arrival 4.618e-10 (model slack 4.538e-09 vs period 5e-09)
+[INFO RET-0014] Retiming graph: 14 gates, 12 edges, 5 registers, 6 pinned gates, 0 fenced registers.
+[INFO RET-0020] Worst register-to-register arrival 0.462 before retiming, clock period 5.000.
 
  Slide |  Worst arr | Flops | Sinks | Max wr | gate                 | fanout net
 --------------------------------------------------------------------------------
-     1 |  3.892e-10 |     4 |     1 |      1 | g2                   | n1
-     2 |  3.454e-10 |     0 |     1 |      1 | g3                   | n2
-     3 |  3.047e-10 |     0 |     1 |      1 | g4                   | n3
-     4 |  2.648e-10 |     0 |     1 |      1 | g5                   | n4
-     5 |  2.274e-10 |     0 |     1 |      1 | g6                   | n5
-     6 |   2.25e-10 |     4 |     1 |      1 | g2                   | n1
-     7 |  1.947e-10 |     0 |     1 |      1 | g7                   | n6
-     8 |  1.851e-10 |     0 |     1 |      1 | g3                   | n2
+     1 |      0.389 |     4 |     1 |      1 | g2                   | n1
+     2 |      0.345 |     0 |     1 |      1 | g3                   | n2
+     3 |      0.305 |     0 |     1 |      1 | g4                   | n3
+     4 |      0.265 |     0 |     1 |      1 | g5                   | n4
+     5 |      0.227 |     0 |     1 |      1 | g6                   | n5
+     6 |      0.225 |     4 |     1 |      1 | g2                   | n1
+     7 |      0.195 |     0 |     1 |      1 | g7                   | n6
+     8 |      0.185 |     0 |     1 |      1 | g3                   | n2
 --------------------------------------------------------------------------------
-[INFO RET-0023] Final worst arrival 1.851e-10 (model slack 4.815e-09) after 8 slides; 0 candidates rejected for pushing an input path past the clock period
-[INFO RET-0024] Removed 4 registers (4 of 12 register groups changed).
-[INFO RET-0025] Inserted 2 registers (1 kept their register class).
+[INFO RET-0023] Worst register-to-register arrival 0.185 after 8 slides.
+[INFO RET-0024] Rebuilt 4 of 12 register groups: 4 registers removed, 2 inserted, 1 of them keeping their class.
 worst slack max 4.3550
 Retime output passed/skipped sequential equivalence test
 No differences found.

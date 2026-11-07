@@ -239,10 +239,12 @@ void Retimer::applyAfterUnmapping(
     return;
   }
 
-  logger_->info(utl::RET,
-                28,
-                "Lag remap is ambiguous after unmapping; re-solving on the new "
-                "netlist.");
+  debugPrint(logger_,
+             utl::RET,
+             "unmap",
+             1,
+             "lag remap is ambiguous after unmapping; re-solving on the new "
+             "netlist");
   constexpr int kMaxRounds = 20;
   for (int round = 0; round < kMaxRounds; round++) {
     RetimingGraph g(db_, sta_, logger_);
@@ -834,13 +836,11 @@ void Retimer::applyRetiming(const RetimingGraph& graph,
 
   logger_->info(utl::RET,
                 24,
-                "Removed {} registers ({} of {} register groups changed).",
-                stats.removed,
+                "Rebuilt {} of {} register groups: {} registers removed, {} "
+                "inserted, {} of them keeping their class.",
                 stats.groups_changed,
-                groups.size());
-  logger_->info(utl::RET,
-                25,
-                "Inserted {} registers ({} kept their register class).",
+                groups.size(),
+                stats.removed,
                 stats.inserted,
                 stats.inserted_classed);
   if (stats.groups_skipped > 0) {

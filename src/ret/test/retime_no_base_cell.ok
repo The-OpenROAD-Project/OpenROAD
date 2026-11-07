@@ -4,7 +4,5 @@
 [WARNING RET-0002] No inverter cell found.
 [WARNING RET-0003] No 2-input AND cell found.
 [WARNING RET-0004] No 2-input OR cell found.
-[WARNING RET-0005] No tie-high cell found.
-[WARNING RET-0006] No tie-low cell found.
 [ERROR RET-0036] The loaded libraries lack a usable base register, inverter, 2-input AND or 2-input OR cell (see the warnings above).
 RET-0036
