@@ -1,0 +1,57 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN polygon_t ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 40000 0 ) ( 40000 60000 ) ( 0 60000 ) ( 0 90000 ) ( 120000 90000 ) ( 120000 60000 ) ( 80000 60000 ) ( 80000 0 ) ;
+TRACKS X 190 DO 316 STEP 380 LAYER metal2 ;
+TRACKS Y 140 DO 321 STEP 280 LAYER metal2 ;
+TRACKS X 190 DO 316 STEP 380 LAYER metal3 ;
+TRACKS Y 140 DO 321 STEP 280 LAYER metal3 ;
+COMPONENTS 0 ;
+END COMPONENTS
+PINS 8 ;
+    - bar_bottom_left + NET bar_bottom_left + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + FIXED ( 19950 60070 ) N ;
+    - bar_bottom_right + NET bar_bottom_right + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + FIXED ( 100130 60070 ) N ;
+    - bar_left + NET bar_left + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + FIXED ( 70 74900 ) N ;
+    - bar_right + NET bar_right + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + FIXED ( 119930 74900 ) N ;
+    - bar_top + NET bar_top + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + FIXED ( 59850 89930 ) N ;
+    - stem_bottom + NET stem_bottom + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + FIXED ( 59850 70 ) N ;
+    - stem_left + NET stem_left + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + FIXED ( 40070 30100 ) N ;
+    - stem_right + NET stem_right + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + FIXED ( 79930 30100 ) N ;
+END PINS
+NETS 8 ;
+    - bar_bottom_left ( PIN bar_bottom_left ) + USE SIGNAL ;
+    - bar_bottom_right ( PIN bar_bottom_right ) + USE SIGNAL ;
+    - bar_left ( PIN bar_left ) + USE SIGNAL ;
+    - bar_right ( PIN bar_right ) + USE SIGNAL ;
+    - bar_top ( PIN bar_top ) + USE SIGNAL ;
+    - stem_bottom ( PIN stem_bottom ) + USE SIGNAL ;
+    - stem_left ( PIN stem_left ) + USE SIGNAL ;
+    - stem_right ( PIN stem_right ) + USE SIGNAL ;
+END NETS
+END DESIGN
