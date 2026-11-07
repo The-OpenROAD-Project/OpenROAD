@@ -528,7 +528,7 @@ int defrData::defyylex(YYSTYPE* pYylval)
 
 int defrData::sublex(YYSTYPE* pYylval)
 {
-  char fc;
+  int fc;
   double numVal;
   char* outMsg;
 
