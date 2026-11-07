@@ -16,10 +16,12 @@
 #include <vector>
 
 #include "hpwlBackend.h"
+#include "backendContext.h"
 
 namespace gpl {
 
 class DeviceState;
+struct KokkosContext;
 
 // PIMPL: the persistent device-side Kokkos state lives in Impl, hidden in
 // gpuHpwlBackend.cpp. This header stays Kokkos-free so it can be included by
@@ -39,7 +41,7 @@ class GpuHpwlBackend : public HpwlBackend
   // `device_state` is borrowed; must outlive this backend. Provided by the
   // factory in ../hpwl.cpp, owned by NesterovBaseCommon. `num_threads` fans
   // out the host-side mirror of per-net boxes (applyNetBoxesParallel).
-  GpuHpwlBackend(DeviceState* device_state, int num_threads);
+  GpuHpwlBackend(const BackendContext& ctx);
   ~GpuHpwlBackend() override;
 
   // Total HPWL over the nets. Bit-identical to the CPU loop (integer
@@ -77,6 +79,6 @@ void applyNetBoxesParallel(std::vector<GNet>& gNetStor,
                            const int* ly,
                            const int* ux,
                            const int* uy,
-                           int num_threads);
+                           const KokkosContext& kokkos_ctx);
 
 }  // namespace gpl

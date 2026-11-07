@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include "kokkosRuntime.h"
+
 namespace gpl {
 
 // Reads the ENABLE_GPU environment variable once (magic-static cached) and
@@ -19,10 +21,5 @@ namespace gpl {
 // (case-insensitive) return false — the CPU opt-out for A/B testing and the
 // golden suite. Any other value returns true.
 bool gpuEnabled();
-
-// Lazily initializes Kokkos on first call (std::call_once) and registers a
-// std::atexit handler that finalizes it once at process shutdown. Safe to
-// call from every GPU kernel entry point.
-void ensureKokkosInitialized();
 
 }  // namespace gpl
