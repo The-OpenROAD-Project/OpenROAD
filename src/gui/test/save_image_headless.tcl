@@ -45,8 +45,8 @@ proc png_size { path } {
 }
 
 if { ![gui::supported] } {
-  # Built without the GUI; nothing to exercise.
-  puts "pass"
+  # Registered only where the Qt gui is built in.
+  puts "fail: OpenROAD was built without the Qt gui"
 } else {
   if { ![info exists ::env(QT_QPA_PLATFORM)] } {
     set ::env(QT_QPA_PLATFORM) offscreen
