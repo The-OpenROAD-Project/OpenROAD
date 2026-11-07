@@ -2,6 +2,7 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cstdint>
 #include <limits>
 #include <tuple>
 #include <vector>
@@ -20,9 +21,15 @@ using odb::dbTechLayerDir;
 using odb::dbTechLayerType;
 
 namespace drt {
+namespace {
+
+constexpr int kMsgIdPinAccessCoordinateDomain = 6014;
+
+}  // namespace
 
 void FlexPA::initViaRawPriority()
 {
+  layer_num_to_via_defs_.clear();
   for (int layer_num = design_->getTech()->getBottomLayerNum();
        layer_num <= design_->getTech()->getTopLayerNum();
        ++layer_num) {
@@ -34,7 +41,15 @@ void FlexPA::initViaRawPriority()
          design_->getTech()->getLayer(layer_num)->getViaDefs()) {
       const int cutNum = int(via_def->getCutFigs().size());
       const ViaRawPriorityTuple priority = getViaRawPriority(via_def);
-      layer_num_to_via_defs_[layer_num][cutNum][priority] = via_def;
+      layer_num_to_via_defs_[layer_num][cutNum][priority].push_back(via_def);
+    }
+    for (auto& [cut_num, priorities] : layer_num_to_via_defs_[layer_num]) {
+      for (auto& [priority, vias] : priorities) {
+        // Priority describes geometry and preference, not via identity.
+        std::ranges::stable_sort(vias, [](const auto* lhs, const auto* rhs) {
+          return lhs->getName() < rhs->getName();
+        });
+      }
     }
   }
 }
@@ -104,37 +119,63 @@ ViaRawPriorityTuple FlexPA::getViaRawPriority(const frViaDef* via_def) const
 void FlexPA::initTrackCoords()
 {
   const int num_layers = getDesign()->getTech()->getLayers().size();
-  const frCoord manu_grid = getDesign()->getTech()->getManufacturingGrid();
+  const int64_t manu_grid = getDesign()->getTech()->getManufacturingGrid();
 
   // full coords
   track_coords_.clear();
   track_coords_.resize(num_layers);
   for (auto& track_pattern : design_->getTopBlock()->getTrackPatterns()) {
     const auto layer_num = track_pattern->getLayerNum();
-    const auto is_vert_layer
-        = (design_->getTech()->getLayer(layer_num)->getDir()
-           == dbTechLayerDir::VERTICAL);
-    const auto is_vert_track
+    const bool is_vertical_layer
+        = design_->getTech()->getLayer(layer_num)->getDir()
+          == dbTechLayerDir::VERTICAL;
+    const bool is_vertical_track
         = track_pattern->isHorizontal();  // true = vertical track
-    if ((!is_vert_layer && !is_vert_track)
-        || (is_vert_layer && is_vert_track)) {
-      frCoord curr_coord = track_pattern->getStartCoord();
-      for (int i = 0; i < (int) track_pattern->getNumTracks(); i++) {
-        track_coords_[layer_num][curr_coord] = frAccessPointEnum::OnGrid;
-        curr_coord += track_pattern->getTrackSpacing();
-      }
+    if (is_vertical_layer != is_vertical_track) {
+      continue;
+    }
+    const int64_t count = track_pattern->getNumTracks();
+    const int64_t start = track_pattern->getStartCoord();
+    const int64_t spacing = track_pattern->getTrackSpacing();
+    if (count > std::numeric_limits<int>::max()) {
+      logger_->error(DRT,
+                     kMsgIdPinAccessCoordinateDomain,
+                     "Pin-access track count on layer {} exceeds INT_MAX.",
+                     layer_num);
+    }
+    if (count != 0
+        && start + (count - 1) * spacing
+               > std::numeric_limits<frCoord>::max()) {
+      logger_->error(DRT,
+                     kMsgIdPinAccessCoordinateDomain,
+                     "Last pin-access track coordinate on layer {} is outside "
+                     "the native coordinate range.",
+                     layer_num);
+    }
+    for (int64_t i = 0; i < count; ++i) {
+      const auto coordinate = static_cast<frCoord>(start + i * spacing);
+      track_coords_[layer_num][coordinate] = frAccessPointEnum::OnGrid;
     }
   }
 
   // half coords
+  if (manu_grid <= 0 || manu_grid > std::numeric_limits<frCoord>::max()) {
+    logger_->error(DRT,
+                   kMsgIdPinAccessCoordinateDomain,
+                   "Manufacturing grid {} is invalid for pin-access track "
+                   "midpoint generation.",
+                   manu_grid);
+  }
   std::vector<std::vector<frCoord>> half_track_coords(num_layers);
   for (int i = 0; i < num_layers; i++) {
     frCoord prev_full_coord = std::numeric_limits<frCoord>::max();
 
     for (auto& [curr_full_coord, cost] : track_coords_[i]) {
       if (curr_full_coord > prev_full_coord) {
-        const frCoord curr_half_grid
-            = (curr_full_coord + prev_full_coord) / 2 / manu_grid * manu_grid;
+        const int64_t midpoint
+            = (static_cast<int64_t>(prev_full_coord) + curr_full_coord) / 2;
+        const auto curr_half_grid
+            = static_cast<frCoord>(midpoint / manu_grid * manu_grid);
         if (curr_half_grid != curr_full_coord
             && curr_half_grid != prev_full_coord) {
           half_track_coords[i].push_back(curr_half_grid);

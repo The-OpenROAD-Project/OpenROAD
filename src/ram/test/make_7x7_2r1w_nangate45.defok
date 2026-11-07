@@ -927,54 +927,54 @@ NETS 188 ;
       NEW metal2 ( 712 1001 ) ( 750 * )
       NEW metal2 ( 750 777 ) ( * 903 )
       NEW metal2 ( 750 623 ) ( * 777 )
-      NEW metal2 ( 750 63 ) ( * 217 )
-      NEW metal2 ( 750 217 ) ( * 343 )
-      NEW metal2 ( 750 343 ) ( * 497 )
       NEW metal2 ( 750 497 ) ( * 623 )
+      NEW metal2 ( 750 343 ) ( * 497 )
+      NEW metal2 ( 750 217 ) ( * 343 )
+      NEW metal2 ( 750 63 ) ( * 217 )
       NEW metal1 ( 750 903 ) via1_4
       NEW metal1 ( 712 1001 ) via1_7
       NEW metal1 ( 750 777 ) via1_4
       NEW metal1 ( 750 623 ) via1_4
-      NEW metal1 ( 750 217 ) via1_4
-      NEW metal1 ( 750 63 ) via1_4
+      NEW metal1 ( 750 497 ) via1_4
       NEW metal1 ( 750 343 ) via1_4
-      NEW metal1 ( 750 497 ) via1_4 ;
+      NEW metal1 ( 750 217 ) via1_4
+      NEW metal1 ( 750 63 ) via1_4 ;
     - D_nets.b2 ( buffer.in[2] Z ) ( storage_6_0_0.bit2.bit D ) ( storage_5_0_0.bit2.bit D ) ( storage_4_0_0.bit2.bit D ) ( storage_3_0_0.bit2.bit D ) ( storage_2_0_0.bit2.bit D ) ( storage_1_0_0.bit2.bit D )
       ( storage_0_0_0.bit2.bit D ) + USE SIGNAL
       + ROUTED metal2 ( 1396 903 ) ( * 1001 )
       NEW metal2 ( 1358 1001 ) ( 1396 * )
       NEW metal2 ( 1396 777 ) ( * 903 )
       NEW metal2 ( 1396 623 ) ( * 777 )
-      NEW metal2 ( 1396 63 ) ( * 217 )
-      NEW metal2 ( 1396 217 ) ( * 343 )
-      NEW metal2 ( 1396 343 ) ( * 497 )
       NEW metal2 ( 1396 497 ) ( * 623 )
+      NEW metal2 ( 1396 343 ) ( * 497 )
+      NEW metal2 ( 1396 217 ) ( * 343 )
+      NEW metal2 ( 1396 63 ) ( * 217 )
       NEW metal1 ( 1396 903 ) via1_4
       NEW metal1 ( 1358 1001 ) via1_7
       NEW metal1 ( 1396 777 ) via1_4
       NEW metal1 ( 1396 623 ) via1_4
-      NEW metal1 ( 1396 217 ) via1_4
-      NEW metal1 ( 1396 63 ) via1_4
+      NEW metal1 ( 1396 497 ) via1_4
       NEW metal1 ( 1396 343 ) via1_4
-      NEW metal1 ( 1396 497 ) via1_4 ;
+      NEW metal1 ( 1396 217 ) via1_4
+      NEW metal1 ( 1396 63 ) via1_4 ;
     - D_nets.b3 ( buffer.in[3] Z ) ( storage_6_0_0.bit3.bit D ) ( storage_5_0_0.bit3.bit D ) ( storage_4_0_0.bit3.bit D ) ( storage_3_0_0.bit3.bit D ) ( storage_2_0_0.bit3.bit D ) ( storage_1_0_0.bit3.bit D )
       ( storage_0_0_0.bit3.bit D ) + USE SIGNAL
       + ROUTED metal2 ( 2042 903 ) ( * 1001 )
       NEW metal2 ( 2004 1001 ) ( 2042 * )
       NEW metal2 ( 2042 777 ) ( * 903 )
       NEW metal2 ( 2042 623 ) ( * 777 )
-      NEW metal2 ( 2042 63 ) ( * 217 )
-      NEW metal2 ( 2042 217 ) ( * 343 )
-      NEW metal2 ( 2042 343 ) ( * 497 )
       NEW metal2 ( 2042 497 ) ( * 623 )
+      NEW metal2 ( 2042 343 ) ( * 497 )
+      NEW metal2 ( 2042 217 ) ( * 343 )
+      NEW metal2 ( 2042 63 ) ( * 217 )
       NEW metal1 ( 2042 903 ) via1_4
       NEW metal1 ( 2004 1001 ) via1_7
       NEW metal1 ( 2042 777 ) via1_4
       NEW metal1 ( 2042 623 ) via1_4
-      NEW metal1 ( 2042 217 ) via1_4
-      NEW metal1 ( 2042 63 ) via1_4
+      NEW metal1 ( 2042 497 ) via1_4
       NEW metal1 ( 2042 343 ) via1_4
-      NEW metal1 ( 2042 497 ) via1_4 ;
+      NEW metal1 ( 2042 217 ) via1_4
+      NEW metal1 ( 2042 63 ) via1_4 ;
     - D_nets.b4 ( buffer.in[4] Z ) ( storage_6_0_0.bit4.bit D ) ( storage_5_0_0.bit4.bit D ) ( storage_4_0_0.bit4.bit D ) ( storage_3_0_0.bit4.bit D ) ( storage_2_0_0.bit4.bit D ) ( storage_1_0_0.bit4.bit D )
       ( storage_0_0_0.bit4.bit D ) + USE SIGNAL
       + ROUTED metal2 ( 2688 903 ) ( * 1001 )
@@ -1060,10 +1060,10 @@ NETS 188 ;
       NEW metal4 ( 1017 945 ) ( * 1113 0 )
       NEW metal2 ( 997 805 ) ( * 945 )
       NEW metal2 ( 997 665 ) ( * 805 )
+      NEW metal2 ( 997 525 ) ( * 665 )
       NEW metal2 ( 997 385 ) ( * 525 )
       NEW metal2 ( 997 245 ) ( * 385 )
       NEW metal2 ( 997 105 ) ( * 245 )
-      NEW metal2 ( 997 525 ) ( * 665 )
       NEW metal1 ( 997 945 ) via1_4
       NEW metal2 ( 997 945 ) via2_5
       NEW metal3 ( 1017 945 ) via3_2
@@ -1079,10 +1079,10 @@ NETS 188 ;
       NEW metal4 ( 1633 945 ) ( * 1113 0 )
       NEW metal2 ( 1643 805 ) ( * 945 )
       NEW metal2 ( 1643 665 ) ( * 805 )
+      NEW metal2 ( 1643 525 ) ( * 665 )
       NEW metal2 ( 1643 385 ) ( * 525 )
       NEW metal2 ( 1643 245 ) ( * 385 )
       NEW metal2 ( 1643 105 ) ( * 245 )
-      NEW metal2 ( 1643 525 ) ( * 665 )
       NEW metal1 ( 1643 945 ) via1_4
       NEW metal2 ( 1643 945 ) via2_5
       NEW metal3 ( 1633 945 ) via3_2
@@ -1098,10 +1098,10 @@ NETS 188 ;
       NEW metal4 ( 2305 945 ) ( * 1113 0 )
       NEW metal2 ( 2289 805 ) ( * 945 )
       NEW metal2 ( 2289 665 ) ( * 805 )
+      NEW metal2 ( 2289 525 ) ( * 665 )
       NEW metal2 ( 2289 385 ) ( * 525 )
       NEW metal2 ( 2289 245 ) ( * 385 )
       NEW metal2 ( 2289 105 ) ( * 245 )
-      NEW metal2 ( 2289 525 ) ( * 665 )
       NEW metal1 ( 2289 945 ) via1_4
       NEW metal2 ( 2289 945 ) via2_5
       NEW metal3 ( 2305 945 ) via3_2
@@ -1193,10 +1193,10 @@ NETS 188 ;
       NEW metal4 ( 1129 945 ) ( * 1113 0 )
       NEW metal2 ( 1149 805 ) ( * 945 )
       NEW metal2 ( 1149 665 ) ( * 805 )
+      NEW metal2 ( 1149 525 ) ( * 665 )
       NEW metal2 ( 1149 385 ) ( * 525 )
       NEW metal2 ( 1149 245 ) ( * 385 )
       NEW metal2 ( 1149 105 ) ( * 245 )
-      NEW metal2 ( 1149 525 ) ( * 665 )
       NEW metal1 ( 1149 945 ) via1_4
       NEW metal2 ( 1149 945 ) via2_5
       NEW metal3 ( 1129 945 ) via3_2
@@ -1213,14 +1213,14 @@ NETS 188 ;
       NEW metal2 ( 1776 805 ) ( 1795 * )
       NEW metal2 ( 1776 805 ) ( * 945 )
       NEW metal2 ( 1795 665 ) ( * 805 )
-      NEW metal2 ( 1776 665 ) ( 1795 * )
       NEW metal2 ( 1776 525 ) ( 1795 * )
+      NEW metal2 ( 1776 525 ) ( * 665 )
+      NEW metal2 ( 1776 665 ) ( 1795 * )
       NEW metal2 ( 1795 385 ) ( * 525 )
       NEW metal2 ( 1776 245 ) ( 1795 * )
       NEW metal2 ( 1776 245 ) ( * 385 )
       NEW metal2 ( 1776 385 ) ( 1795 * )
       NEW metal2 ( 1795 105 ) ( * 245 )
-      NEW metal2 ( 1776 525 ) ( * 665 )
       NEW metal1 ( 1795 945 ) via1_4
       NEW metal2 ( 1795 945 ) via2_5
       NEW metal3 ( 1745 945 ) via3_2
@@ -1237,10 +1237,10 @@ NETS 188 ;
       NEW metal4 ( 2417 945 ) ( * 1113 0 )
       NEW metal2 ( 2441 805 ) ( * 945 )
       NEW metal2 ( 2441 665 ) ( * 805 )
+      NEW metal2 ( 2441 525 ) ( * 665 )
       NEW metal2 ( 2441 385 ) ( * 525 )
       NEW metal2 ( 2441 245 ) ( * 385 )
       NEW metal2 ( 2441 105 ) ( * 245 )
-      NEW metal2 ( 2441 525 ) ( * 665 )
       NEW metal1 ( 2441 945 ) via1_4
       NEW metal2 ( 2441 945 ) via2_5
       NEW metal3 ( 2417 945 ) via3_2
@@ -2086,13 +2086,12 @@ NETS 188 ;
       NEW metal2 ( 5405 889 ) via2_5 ;
     - storage_0_0_0.bit0.storage ( storage_0_0_0.bit0.obuf1 A ) ( storage_0_0_0.bit0.obuf0 A ) ( storage_0_0_0.bit0.bit Q ) + USE SIGNAL
       + ROUTED metal2 ( 332 63 ) ( 427 * )
-      NEW metal2 ( 560 49 ) ( * 63 )
+      NEW metal2 ( 560 49 ) ( * 53 )
       NEW metal2 ( 427 49 ) ( 560 * )
       NEW metal2 ( 427 49 ) ( * 63 )
-      NEW metal2 ( 560 63 ) ( 579 * )
       NEW metal1 ( 427 63 ) via1_4
       NEW metal1 ( 332 63 ) via1_4
-      NEW metal1 ( 579 63 ) via1_4 ;
+      NEW metal1 ( 560 53 ) via1_7 ;
     - storage_0_0_0.bit1.storage ( storage_0_0_0.bit1.obuf1 A ) ( storage_0_0_0.bit1.obuf0 A ) ( storage_0_0_0.bit1.bit Q ) + USE SIGNAL
       + ROUTED metal3 ( 978 63 ) ( 1073 * )
       NEW metal3 ( 1073 63 ) ( 1225 * )
@@ -2149,45 +2148,47 @@ NETS 188 ;
       NEW metal2 ( 4455 63 ) via2_5 ;
     - storage_0_0_0.gclock ( storage_0_0_0.cg GCK ) ( storage_0_0_0.bit6.bit CK ) ( storage_0_0_0.bit5.bit CK ) ( storage_0_0_0.bit4.bit CK ) ( storage_0_0_0.bit3.bit CK ) ( storage_0_0_0.bit2.bit CK ) ( storage_0_0_0.bit1.bit CK )
       ( storage_0_0_0.bit0.bit CK ) + USE SIGNAL
-      + ROUTED metal2 ( 180 49 ) ( * 63 )
+      + ROUTED metal2 ( 826 49 ) ( * 63 )
+      NEW metal2 ( 180 49 ) ( * 63 )
+      NEW metal3 ( 180 49 ) ( 826 * )
       NEW metal2 ( 4056 49 ) ( * 63 )
       NEW metal3 ( 4056 49 ) ( 4778 * )
+      NEW metal2 ( 1472 49 ) ( * 63 )
+      NEW metal2 ( 2118 49 ) ( * 63 )
+      NEW metal3 ( 1472 49 ) ( 2118 * )
       NEW metal2 ( 2764 49 ) ( * 63 )
+      NEW metal3 ( 2118 49 ) ( 2764 * )
       NEW metal2 ( 3410 49 ) ( * 63 )
       NEW metal3 ( 2764 49 ) ( 3410 * )
-      NEW metal3 ( 3410 49 ) ( 4056 * )
-      NEW metal2 ( 2118 49 ) ( * 63 )
-      NEW metal2 ( 1472 49 ) ( * 63 )
-      NEW metal3 ( 1472 49 ) ( 2118 * )
-      NEW metal2 ( 826 49 ) ( * 63 )
       NEW metal3 ( 826 49 ) ( 1472 * )
-      NEW metal3 ( 180 49 ) ( 826 * )
-      NEW metal3 ( 2118 49 ) ( 2764 * )
+      NEW metal3 ( 3410 49 ) ( 4056 * )
+      NEW metal1 ( 826 63 ) via1_4
+      NEW metal2 ( 826 49 ) via2_5
       NEW metal1 ( 180 63 ) via1_4
       NEW metal2 ( 180 49 ) via2_5
       NEW metal1 ( 4056 63 ) via1_4
       NEW metal2 ( 4056 49 ) via2_5
       NEW metal1 ( 4778 49 ) via1_4
       NEW metal2 ( 4778 49 ) via2_5
+      NEW metal1 ( 1472 63 ) via1_4
+      NEW metal2 ( 1472 49 ) via2_5
+      NEW metal1 ( 2118 63 ) via1_4
+      NEW metal2 ( 2118 49 ) via2_5
       NEW metal1 ( 2764 63 ) via1_4
       NEW metal2 ( 2764 49 ) via2_5
       NEW metal1 ( 3410 63 ) via1_4
-      NEW metal2 ( 3410 49 ) via2_5
-      NEW metal1 ( 2118 63 ) via1_4
-      NEW metal2 ( 2118 49 ) via2_5
-      NEW metal1 ( 1472 63 ) via1_4
-      NEW metal2 ( 1472 49 ) via2_5
-      NEW metal1 ( 826 63 ) via1_4
-      NEW metal2 ( 826 49 ) via2_5 ;
+      NEW metal2 ( 3410 49 ) via2_5 ;
     - storage_0_0_0.select0_b ( storage_0_0_0.select_inv_0 ZN ) ( storage_0_0_0.bit6.obuf0 EN ) ( storage_0_0_0.bit5.obuf0 EN ) ( storage_0_0_0.bit4.obuf0 EN ) ( storage_0_0_0.bit3.obuf0 EN ) ( storage_0_0_0.bit2.obuf0 EN ) ( storage_0_0_0.bit1.obuf0 EN )
       ( storage_0_0_0.bit0.obuf0 EN ) + USE SIGNAL
-      + ROUTED metal3 ( 4341 77 ) ( 4892 * )
+      + ROUTED metal3 ( 465 77 ) ( 1111 * )
+      NEW metal3 ( 4341 77 ) ( 4892 * )
       NEW metal3 ( 3695 77 ) ( 4341 * )
-      NEW metal3 ( 3049 77 ) ( 3695 * )
-      NEW metal3 ( 1111 77 ) ( 1757 * )
-      NEW metal3 ( 1757 77 ) ( 2403 * )
-      NEW metal3 ( 465 77 ) ( 1111 * )
       NEW metal3 ( 2403 77 ) ( 3049 * )
+      NEW metal3 ( 1757 77 ) ( 2403 * )
+      NEW metal3 ( 1111 77 ) ( 1757 * )
+      NEW metal3 ( 3049 77 ) ( 3695 * )
+      NEW metal1 ( 1111 77 ) via1_4
+      NEW metal2 ( 1111 77 ) via2_5
       NEW metal1 ( 465 77 ) via1_4
       NEW metal2 ( 465 77 ) via2_5
       NEW metal1 ( 4341 77 ) via1_4
@@ -2198,37 +2199,35 @@ NETS 188 ;
       NEW metal2 ( 3695 77 ) via2_5
       NEW metal1 ( 3049 77 ) via1_4
       NEW metal2 ( 3049 77 ) via2_5
-      NEW metal1 ( 1111 77 ) via1_4
-      NEW metal2 ( 1111 77 ) via2_5
-      NEW metal1 ( 1757 77 ) via1_4
-      NEW metal2 ( 1757 77 ) via2_5
       NEW metal1 ( 2403 77 ) via1_4
-      NEW metal2 ( 2403 77 ) via2_5 ;
+      NEW metal2 ( 2403 77 ) via2_5
+      NEW metal1 ( 1757 77 ) via1_4
+      NEW metal2 ( 1757 77 ) via2_5 ;
     - storage_0_0_0.select1_b ( storage_0_0_0.select_inv_1 ZN ) ( storage_0_0_0.bit6.obuf1 EN ) ( storage_0_0_0.bit5.obuf1 EN ) ( storage_0_0_0.bit4.obuf1 EN ) ( storage_0_0_0.bit3.obuf1 EN ) ( storage_0_0_0.bit2.obuf1 EN ) ( storage_0_0_0.bit1.obuf1 EN )
       ( storage_0_0_0.bit0.obuf1 EN ) + USE SIGNAL
-      + ROUTED metal3 ( 3847 91 ) ( 4493 * )
+      + ROUTED metal3 ( 617 91 ) ( 1263 * )
+      NEW metal3 ( 3847 91 ) ( 4493 * )
       NEW metal3 ( 4493 91 ) ( 4930 * )
-      NEW metal3 ( 3201 91 ) ( 3847 * )
-      NEW metal3 ( 617 91 ) ( 1263 * )
-      NEW metal3 ( 1263 91 ) ( 1909 * )
       NEW metal3 ( 1909 91 ) ( 2555 * )
       NEW metal3 ( 2555 91 ) ( 3201 * )
+      NEW metal3 ( 1263 91 ) ( 1909 * )
+      NEW metal3 ( 3201 91 ) ( 3847 * )
+      NEW metal1 ( 1263 91 ) via1_4
+      NEW metal2 ( 1263 91 ) via2_5
+      NEW metal1 ( 617 91 ) via1_4
+      NEW metal2 ( 617 91 ) via2_5
       NEW metal1 ( 3847 91 ) via1_4
       NEW metal2 ( 3847 91 ) via2_5
       NEW metal1 ( 4493 91 ) via1_4
       NEW metal2 ( 4493 91 ) via2_5
       NEW metal1 ( 4930 91 ) via1_4
       NEW metal2 ( 4930 91 ) via2_5
-      NEW metal1 ( 3201 91 ) via1_4
-      NEW metal2 ( 3201 91 ) via2_5
-      NEW metal1 ( 1263 91 ) via1_4
-      NEW metal2 ( 1263 91 ) via2_5
-      NEW metal1 ( 617 91 ) via1_4
-      NEW metal2 ( 617 91 ) via2_5
       NEW metal1 ( 1909 91 ) via1_4
       NEW metal2 ( 1909 91 ) via2_5
       NEW metal1 ( 2555 91 ) via1_4
-      NEW metal2 ( 2555 91 ) via2_5 ;
+      NEW metal2 ( 2555 91 ) via2_5
+      NEW metal1 ( 3201 91 ) via1_4
+      NEW metal2 ( 3201 91 ) via2_5 ;
     - storage_0_0_0.we ( storage_0_0_0.gcand ZN ) ( storage_0_0_0.cg E ) + USE SIGNAL
       + ROUTED metal3 ( 4645 63 ) ( 4854 * )
       NEW metal1 ( 4645 63 ) via1_4
@@ -2237,14 +2236,14 @@ NETS 188 ;
       NEW metal2 ( 4854 63 ) via2_5 ;
     - storage_1_0_0.bit0.storage ( storage_1_0_0.bit0.obuf1 A ) ( storage_1_0_0.bit0.obuf0 A ) ( storage_1_0_0.bit0.bit Q ) + USE SIGNAL
       + ROUTED metal3 ( 332 217 ) ( 427 * )
-      NEW metal3 ( 427 217 ) ( 560 * )
       NEW metal2 ( 560 217 ) ( 579 * )
+      NEW metal3 ( 427 217 ) ( 560 * )
       NEW metal1 ( 427 217 ) via1_4
       NEW metal2 ( 427 217 ) via2_5
       NEW metal1 ( 332 217 ) via1_4
       NEW metal2 ( 332 217 ) via2_5
-      NEW metal2 ( 560 217 ) via2_5
-      NEW metal1 ( 579 217 ) via1_4 ;
+      NEW metal1 ( 579 217 ) via1_4
+      NEW metal2 ( 560 217 ) via2_5 ;
     - storage_1_0_0.bit1.storage ( storage_1_0_0.bit1.obuf1 A ) ( storage_1_0_0.bit1.obuf0 A ) ( storage_1_0_0.bit1.bit Q ) + USE SIGNAL
       + ROUTED metal3 ( 978 217 ) ( 1073 * )
       NEW metal3 ( 1073 217 ) ( 1225 * )
@@ -2301,48 +2300,47 @@ NETS 188 ;
       NEW metal2 ( 4455 217 ) via2_5 ;
     - storage_1_0_0.gclock ( storage_1_0_0.cg GCK ) ( storage_1_0_0.bit6.bit CK ) ( storage_1_0_0.bit5.bit CK ) ( storage_1_0_0.bit4.bit CK ) ( storage_1_0_0.bit3.bit CK ) ( storage_1_0_0.bit2.bit CK ) ( storage_1_0_0.bit1.bit CK )
       ( storage_1_0_0.bit0.bit CK ) + USE SIGNAL
-      + ROUTED metal2 ( 180 217 ) ( * 231 )
+      + ROUTED metal2 ( 826 217 ) ( * 231 )
+      NEW metal2 ( 180 217 ) ( * 231 )
+      NEW metal3 ( 180 231 ) ( 826 * )
       NEW metal2 ( 4056 217 ) ( * 231 )
       NEW metal3 ( 4056 231 ) ( 4778 * )
+      NEW metal2 ( 1472 217 ) ( * 231 )
+      NEW metal2 ( 2118 217 ) ( * 231 )
+      NEW metal3 ( 1472 231 ) ( 2118 * )
       NEW metal2 ( 2764 217 ) ( * 231 )
+      NEW metal3 ( 2118 231 ) ( 2764 * )
       NEW metal2 ( 3410 217 ) ( * 231 )
       NEW metal3 ( 2764 231 ) ( 3410 * )
-      NEW metal3 ( 3410 231 ) ( 4056 * )
-      NEW metal2 ( 2118 217 ) ( * 231 )
-      NEW metal2 ( 1472 217 ) ( * 231 )
-      NEW metal3 ( 1472 231 ) ( 2118 * )
-      NEW metal2 ( 826 217 ) ( * 231 )
       NEW metal3 ( 826 231 ) ( 1472 * )
-      NEW metal3 ( 180 231 ) ( 826 * )
-      NEW metal3 ( 2118 231 ) ( 2764 * )
+      NEW metal3 ( 3410 231 ) ( 4056 * )
+      NEW metal1 ( 826 217 ) via1_4
+      NEW metal2 ( 826 231 ) via2_5
       NEW metal1 ( 180 217 ) via1_4
       NEW metal2 ( 180 231 ) via2_5
       NEW metal1 ( 4056 217 ) via1_4
       NEW metal2 ( 4056 231 ) via2_5
       NEW metal1 ( 4778 231 ) via1_4
       NEW metal2 ( 4778 231 ) via2_5
+      NEW metal1 ( 1472 217 ) via1_4
+      NEW metal2 ( 1472 231 ) via2_5
+      NEW metal1 ( 2118 217 ) via1_4
+      NEW metal2 ( 2118 231 ) via2_5
       NEW metal1 ( 2764 217 ) via1_4
       NEW metal2 ( 2764 231 ) via2_5
       NEW metal1 ( 3410 217 ) via1_4
-      NEW metal2 ( 3410 231 ) via2_5
-      NEW metal1 ( 2118 217 ) via1_4
-      NEW metal2 ( 2118 231 ) via2_5
-      NEW metal1 ( 1472 217 ) via1_4
-      NEW metal2 ( 1472 231 ) via2_5
-      NEW metal1 ( 826 217 ) via1_4
-      NEW metal2 ( 826 231 ) via2_5 ;
+      NEW metal2 ( 3410 231 ) via2_5 ;
     - storage_1_0_0.select0_b ( storage_1_0_0.select_inv_0 ZN ) ( storage_1_0_0.bit6.obuf0 EN ) ( storage_1_0_0.bit5.obuf0 EN ) ( storage_1_0_0.bit4.obuf0 EN ) ( storage_1_0_0.bit3.obuf0 EN ) ( storage_1_0_0.bit2.obuf0 EN ) ( storage_1_0_0.bit1.obuf0 EN )
       ( storage_1_0_0.bit0.obuf0 EN ) + USE SIGNAL
-      + ROUTED metal3 ( 4341 189 ) ( 4892 * )
+      + ROUTED metal3 ( 465 189 ) ( 1111 * )
+      NEW metal3 ( 4341 189 ) ( 4892 * )
       NEW metal3 ( 3695 189 ) ( 4341 * )
-      NEW metal3 ( 3453 189 ) ( * 203 )
-      NEW metal3 ( 3453 189 ) ( 3695 * )
-      NEW metal3 ( 3049 203 ) ( 3453 * )
-      NEW metal3 ( 1111 189 ) ( 1757 * )
+      NEW metal3 ( 2403 189 ) ( 3049 * )
       NEW metal3 ( 1757 189 ) ( 2403 * )
-      NEW metal3 ( 2403 189 ) ( * 203 )
-      NEW metal3 ( 465 189 ) ( 1111 * )
-      NEW metal3 ( 2403 203 ) ( 3049 * )
+      NEW metal3 ( 1111 189 ) ( 1757 * )
+      NEW metal3 ( 3049 189 ) ( 3695 * )
+      NEW metal1 ( 1111 189 ) via1_4
+      NEW metal2 ( 1111 189 ) via2_5
       NEW metal1 ( 465 189 ) via1_4
       NEW metal2 ( 465 189 ) via2_5
       NEW metal1 ( 4341 189 ) via1_4
@@ -2351,65 +2349,55 @@ NETS 188 ;
       NEW metal2 ( 4892 189 ) via2_5
       NEW metal1 ( 3695 189 ) via1_4
       NEW metal2 ( 3695 189 ) via2_5
-      NEW metal1 ( 3049 203 ) via1_4
-      NEW metal2 ( 3049 203 ) via2_5
-      NEW metal1 ( 1111 189 ) via1_4
-      NEW metal2 ( 1111 189 ) via2_5
-      NEW metal1 ( 1757 189 ) via1_4
-      NEW metal2 ( 1757 189 ) via2_5
+      NEW metal1 ( 3049 189 ) via1_4
+      NEW metal2 ( 3049 189 ) via2_5
       NEW metal1 ( 2403 189 ) via1_4
-      NEW metal2 ( 2403 189 ) via2_5 ;
+      NEW metal2 ( 2403 189 ) via2_5
+      NEW metal1 ( 1757 189 ) via1_4
+      NEW metal2 ( 1757 189 ) via2_5 ;
     - storage_1_0_0.select1_b ( storage_1_0_0.select_inv_1 ZN ) ( storage_1_0_0.bit6.obuf1 EN ) ( storage_1_0_0.bit5.obuf1 EN ) ( storage_1_0_0.bit4.obuf1 EN ) ( storage_1_0_0.bit3.obuf1 EN ) ( storage_1_0_0.bit2.obuf1 EN ) ( storage_1_0_0.bit1.obuf1 EN )
       ( storage_1_0_0.bit0.obuf1 EN ) + USE SIGNAL
-      + ROUTED metal2 ( 4493 203 ) ( * 217 )
-      NEW metal3 ( 4493 217 ) ( 4930 * )
-      NEW metal3 ( 3847 203 ) ( 4489 * )
-      NEW metal3 ( 4489 203 ) ( * 217 )
-      NEW metal3 ( 4489 217 ) ( 4493 * )
-      NEW metal2 ( 3847 175 ) ( * 203 )
-      NEW metal2 ( 3201 175 ) ( * 189 )
-      NEW metal3 ( 3201 175 ) ( 3847 * )
-      NEW metal3 ( 617 203 ) ( 1263 * )
+      + ROUTED metal3 ( 617 203 ) ( 1263 * )
+      NEW metal3 ( 3847 203 ) ( 4493 * )
+      NEW metal3 ( 4909 217 ) ( 4930 * )
+      NEW metal3 ( 4909 203 ) ( * 217 )
+      NEW metal3 ( 4493 203 ) ( 4909 * )
+      NEW metal3 ( 1909 203 ) ( 2555 * )
+      NEW metal3 ( 2555 203 ) ( 3201 * )
       NEW metal3 ( 1263 203 ) ( 1909 * )
-      NEW metal2 ( 2555 175 ) ( * 189 )
-      NEW metal3 ( 1909 175 ) ( 2555 * )
-      NEW metal2 ( 1909 175 ) ( * 203 )
-      NEW metal3 ( 2555 175 ) ( 3201 * )
-      NEW metal1 ( 4493 203 ) via1_4
-      NEW metal2 ( 4493 217 ) via2_5
-      NEW metal1 ( 4930 217 ) via1_4
-      NEW metal2 ( 4930 217 ) via2_5
-      NEW metal1 ( 3847 203 ) via1_4
-      NEW metal2 ( 3847 203 ) via2_5
-      NEW metal2 ( 3847 175 ) via2_5
-      NEW metal1 ( 3201 189 ) via1_4
-      NEW metal2 ( 3201 175 ) via2_5
+      NEW metal3 ( 3201 203 ) ( 3847 * )
       NEW metal1 ( 1263 203 ) via1_4
       NEW metal2 ( 1263 203 ) via2_5
       NEW metal1 ( 617 203 ) via1_4
       NEW metal2 ( 617 203 ) via2_5
+      NEW metal1 ( 3847 203 ) via1_4
+      NEW metal2 ( 3847 203 ) via2_5
+      NEW metal1 ( 4493 203 ) via1_4
+      NEW metal2 ( 4493 203 ) via2_5
+      NEW metal1 ( 4930 217 ) via1_4
+      NEW metal2 ( 4930 217 ) via2_5
       NEW metal1 ( 1909 203 ) via1_4
       NEW metal2 ( 1909 203 ) via2_5
-      NEW metal1 ( 2555 189 ) via1_4
-      NEW metal2 ( 2555 175 ) via2_5
-      NEW metal2 ( 1909 175 ) via2_5 ;
+      NEW metal1 ( 2555 203 ) via1_4
+      NEW metal2 ( 2555 203 ) via2_5
+      NEW metal1 ( 3201 203 ) via1_4
+      NEW metal2 ( 3201 203 ) via2_5 ;
     - storage_1_0_0.we ( storage_1_0_0.gcand ZN ) ( storage_1_0_0.cg E ) + USE SIGNAL
-      + ROUTED metal2 ( 4645 203 ) ( * 217 )
-      NEW metal3 ( 4645 203 ) ( 4854 * )
+      + ROUTED metal3 ( 4645 217 ) ( 4854 * )
       NEW metal1 ( 4645 217 ) via1_4
-      NEW metal2 ( 4645 203 ) via2_5
-      NEW metal1 ( 4854 203 ) via1_4
-      NEW metal2 ( 4854 203 ) via2_5 ;
+      NEW metal2 ( 4645 217 ) via2_5
+      NEW metal1 ( 4854 217 ) via1_4
+      NEW metal2 ( 4854 217 ) via2_5 ;
     - storage_2_0_0.bit0.storage ( storage_2_0_0.bit0.obuf1 A ) ( storage_2_0_0.bit0.obuf0 A ) ( storage_2_0_0.bit0.bit Q ) + USE SIGNAL
       + ROUTED metal3 ( 332 343 ) ( 427 * )
-      NEW metal3 ( 427 343 ) ( 560 * )
       NEW metal2 ( 560 343 ) ( 579 * )
+      NEW metal3 ( 427 343 ) ( 560 * )
       NEW metal1 ( 427 343 ) via1_4
       NEW metal2 ( 427 343 ) via2_5
       NEW metal1 ( 332 343 ) via1_4
       NEW metal2 ( 332 343 ) via2_5
-      NEW metal2 ( 560 343 ) via2_5
-      NEW metal1 ( 579 343 ) via1_4 ;
+      NEW metal1 ( 579 343 ) via1_4
+      NEW metal2 ( 560 343 ) via2_5 ;
     - storage_2_0_0.bit1.storage ( storage_2_0_0.bit1.obuf1 A ) ( storage_2_0_0.bit1.obuf0 A ) ( storage_2_0_0.bit1.bit Q ) + USE SIGNAL
       + ROUTED metal3 ( 978 343 ) ( 1073 * )
       NEW metal3 ( 1073 343 ) ( 1225 * )
@@ -2466,45 +2454,47 @@ NETS 188 ;
       NEW metal2 ( 4455 343 ) via2_5 ;
     - storage_2_0_0.gclock ( storage_2_0_0.cg GCK ) ( storage_2_0_0.bit6.bit CK ) ( storage_2_0_0.bit5.bit CK ) ( storage_2_0_0.bit4.bit CK ) ( storage_2_0_0.bit3.bit CK ) ( storage_2_0_0.bit2.bit CK ) ( storage_2_0_0.bit1.bit CK )
       ( storage_2_0_0.bit0.bit CK ) + USE SIGNAL
-      + ROUTED metal2 ( 180 329 ) ( * 343 )
+      + ROUTED metal2 ( 826 329 ) ( * 343 )
+      NEW metal2 ( 180 329 ) ( * 343 )
+      NEW metal3 ( 180 329 ) ( 826 * )
       NEW metal2 ( 4056 329 ) ( * 343 )
       NEW metal3 ( 4056 329 ) ( 4778 * )
+      NEW metal2 ( 1472 329 ) ( * 343 )
+      NEW metal2 ( 2118 329 ) ( * 343 )
+      NEW metal3 ( 1472 329 ) ( 2118 * )
       NEW metal2 ( 2764 329 ) ( * 343 )
+      NEW metal3 ( 2118 329 ) ( 2764 * )
       NEW metal2 ( 3410 329 ) ( * 343 )
       NEW metal3 ( 2764 329 ) ( 3410 * )
-      NEW metal3 ( 3410 329 ) ( 4056 * )
-      NEW metal2 ( 2118 329 ) ( * 343 )
-      NEW metal2 ( 1472 329 ) ( * 343 )
-      NEW metal3 ( 1472 329 ) ( 2118 * )
-      NEW metal2 ( 826 329 ) ( * 343 )
       NEW metal3 ( 826 329 ) ( 1472 * )
-      NEW metal3 ( 180 329 ) ( 826 * )
-      NEW metal3 ( 2118 329 ) ( 2764 * )
+      NEW metal3 ( 3410 329 ) ( 4056 * )
+      NEW metal1 ( 826 343 ) via1_4
+      NEW metal2 ( 826 329 ) via2_5
       NEW metal1 ( 180 343 ) via1_4
       NEW metal2 ( 180 329 ) via2_5
       NEW metal1 ( 4056 343 ) via1_4
       NEW metal2 ( 4056 329 ) via2_5
       NEW metal1 ( 4778 329 ) via1_4
       NEW metal2 ( 4778 329 ) via2_5
+      NEW metal1 ( 1472 343 ) via1_4
+      NEW metal2 ( 1472 329 ) via2_5
+      NEW metal1 ( 2118 343 ) via1_4
+      NEW metal2 ( 2118 329 ) via2_5
       NEW metal1 ( 2764 343 ) via1_4
       NEW metal2 ( 2764 329 ) via2_5
       NEW metal1 ( 3410 343 ) via1_4
-      NEW metal2 ( 3410 329 ) via2_5
-      NEW metal1 ( 2118 343 ) via1_4
-      NEW metal2 ( 2118 329 ) via2_5
-      NEW metal1 ( 1472 343 ) via1_4
-      NEW metal2 ( 1472 329 ) via2_5
-      NEW metal1 ( 826 343 ) via1_4
-      NEW metal2 ( 826 329 ) via2_5 ;
+      NEW metal2 ( 3410 329 ) via2_5 ;
     - storage_2_0_0.select0_b ( storage_2_0_0.select_inv_0 ZN ) ( storage_2_0_0.bit6.obuf0 EN ) ( storage_2_0_0.bit5.obuf0 EN ) ( storage_2_0_0.bit4.obuf0 EN ) ( storage_2_0_0.bit3.obuf0 EN ) ( storage_2_0_0.bit2.obuf0 EN ) ( storage_2_0_0.bit1.obuf0 EN )
       ( storage_2_0_0.bit0.obuf0 EN ) + USE SIGNAL
-      + ROUTED metal3 ( 4341 357 ) ( 4892 * )
+      + ROUTED metal3 ( 465 357 ) ( 1111 * )
+      NEW metal3 ( 4341 357 ) ( 4892 * )
       NEW metal3 ( 3695 357 ) ( 4341 * )
-      NEW metal3 ( 3049 357 ) ( 3695 * )
-      NEW metal3 ( 1111 357 ) ( 1757 * )
-      NEW metal3 ( 1757 357 ) ( 2403 * )
-      NEW metal3 ( 465 357 ) ( 1111 * )
       NEW metal3 ( 2403 357 ) ( 3049 * )
+      NEW metal3 ( 1757 357 ) ( 2403 * )
+      NEW metal3 ( 1111 357 ) ( 1757 * )
+      NEW metal3 ( 3049 357 ) ( 3695 * )
+      NEW metal1 ( 1111 357 ) via1_4
+      NEW metal2 ( 1111 357 ) via2_5
       NEW metal1 ( 465 357 ) via1_4
       NEW metal2 ( 465 357 ) via2_5
       NEW metal1 ( 4341 357 ) via1_4
@@ -2515,22 +2505,24 @@ NETS 188 ;
       NEW metal2 ( 3695 357 ) via2_5
       NEW metal1 ( 3049 357 ) via1_4
       NEW metal2 ( 3049 357 ) via2_5
-      NEW metal1 ( 1111 357 ) via1_4
-      NEW metal2 ( 1111 357 ) via2_5
-      NEW metal1 ( 1757 357 ) via1_4
-      NEW metal2 ( 1757 357 ) via2_5
       NEW metal1 ( 2403 357 ) via1_4
-      NEW metal2 ( 2403 357 ) via2_5 ;
+      NEW metal2 ( 2403 357 ) via2_5
+      NEW metal1 ( 1757 357 ) via1_4
+      NEW metal2 ( 1757 357 ) via2_5 ;
     - storage_2_0_0.select1_b ( storage_2_0_0.select_inv_1 ZN ) ( storage_2_0_0.bit6.obuf1 EN ) ( storage_2_0_0.bit5.obuf1 EN ) ( storage_2_0_0.bit4.obuf1 EN ) ( storage_2_0_0.bit3.obuf1 EN ) ( storage_2_0_0.bit2.obuf1 EN ) ( storage_2_0_0.bit1.obuf1 EN )
       ( storage_2_0_0.bit0.obuf1 EN ) + USE SIGNAL
-      + ROUTED metal3 ( 3847 371 ) ( 4493 * )
+      + ROUTED metal3 ( 617 371 ) ( 1263 * )
+      NEW metal3 ( 3847 371 ) ( 4493 * )
       NEW metal3 ( 4493 343 ) ( 4930 * )
       NEW metal2 ( 4493 343 ) ( * 371 )
-      NEW metal3 ( 3201 371 ) ( 3847 * )
-      NEW metal3 ( 617 371 ) ( 1263 * )
-      NEW metal3 ( 1263 371 ) ( 1909 * )
       NEW metal3 ( 1909 371 ) ( 2555 * )
       NEW metal3 ( 2555 371 ) ( 3201 * )
+      NEW metal3 ( 1263 371 ) ( 1909 * )
+      NEW metal3 ( 3201 371 ) ( 3847 * )
+      NEW metal1 ( 1263 371 ) via1_4
+      NEW metal2 ( 1263 371 ) via2_5
+      NEW metal1 ( 617 371 ) via1_4
+      NEW metal2 ( 617 371 ) via2_5
       NEW metal1 ( 3847 371 ) via1_4
       NEW metal2 ( 3847 371 ) via2_5
       NEW metal1 ( 4493 371 ) via1_4
@@ -2538,16 +2530,12 @@ NETS 188 ;
       NEW metal1 ( 4930 343 ) via1_4
       NEW metal2 ( 4930 343 ) via2_5
       NEW metal2 ( 4493 343 ) via2_5
-      NEW metal1 ( 3201 371 ) via1_4
-      NEW metal2 ( 3201 371 ) via2_5
-      NEW metal1 ( 1263 371 ) via1_4
-      NEW metal2 ( 1263 371 ) via2_5
-      NEW metal1 ( 617 371 ) via1_4
-      NEW metal2 ( 617 371 ) via2_5
       NEW metal1 ( 1909 371 ) via1_4
       NEW metal2 ( 1909 371 ) via2_5
       NEW metal1 ( 2555 371 ) via1_4
-      NEW metal2 ( 2555 371 ) via2_5 ;
+      NEW metal2 ( 2555 371 ) via2_5
+      NEW metal1 ( 3201 371 ) via1_4
+      NEW metal2 ( 3201 371 ) via2_5 ;
     - storage_2_0_0.we ( storage_2_0_0.gcand ZN ) ( storage_2_0_0.cg E ) + USE SIGNAL
       + ROUTED metal2 ( 4645 315 ) ( * 343 )
       NEW metal3 ( 4645 315 ) ( 4854 * )
@@ -2557,14 +2545,14 @@ NETS 188 ;
       NEW metal2 ( 4854 315 ) via2_5 ;
     - storage_3_0_0.bit0.storage ( storage_3_0_0.bit0.obuf1 A ) ( storage_3_0_0.bit0.obuf0 A ) ( storage_3_0_0.bit0.bit Q ) + USE SIGNAL
       + ROUTED metal3 ( 332 497 ) ( 427 * )
-      NEW metal3 ( 427 497 ) ( 560 * )
       NEW metal2 ( 560 497 ) ( 579 * )
+      NEW metal3 ( 427 497 ) ( 560 * )
       NEW metal1 ( 427 497 ) via1_4
       NEW metal2 ( 427 497 ) via2_5
       NEW metal1 ( 332 497 ) via1_4
       NEW metal2 ( 332 497 ) via2_5
-      NEW metal2 ( 560 497 ) via2_5
-      NEW metal1 ( 579 497 ) via1_4 ;
+      NEW metal1 ( 579 497 ) via1_4
+      NEW metal2 ( 560 497 ) via2_5 ;
     - storage_3_0_0.bit1.storage ( storage_3_0_0.bit1.obuf1 A ) ( storage_3_0_0.bit1.obuf0 A ) ( storage_3_0_0.bit1.bit Q ) + USE SIGNAL
       + ROUTED metal3 ( 978 497 ) ( 1073 * )
       NEW metal3 ( 1073 497 ) ( 1225 * )
@@ -2621,45 +2609,47 @@ NETS 188 ;
       NEW metal2 ( 4455 497 ) via2_5 ;
     - storage_3_0_0.gclock ( storage_3_0_0.cg GCK ) ( storage_3_0_0.bit6.bit CK ) ( storage_3_0_0.bit5.bit CK ) ( storage_3_0_0.bit4.bit CK ) ( storage_3_0_0.bit3.bit CK ) ( storage_3_0_0.bit2.bit CK ) ( storage_3_0_0.bit1.bit CK )
       ( storage_3_0_0.bit0.bit CK ) + USE SIGNAL
-      + ROUTED metal2 ( 180 497 ) ( * 511 )
+      + ROUTED metal2 ( 826 497 ) ( * 511 )
+      NEW metal2 ( 180 497 ) ( * 511 )
+      NEW metal3 ( 180 511 ) ( 826 * )
       NEW metal2 ( 4056 497 ) ( * 511 )
       NEW metal3 ( 4056 511 ) ( 4778 * )
+      NEW metal2 ( 1472 497 ) ( * 511 )
+      NEW metal2 ( 2118 497 ) ( * 511 )
+      NEW metal3 ( 1472 511 ) ( 2118 * )
       NEW metal2 ( 2764 497 ) ( * 511 )
+      NEW metal3 ( 2118 511 ) ( 2764 * )
       NEW metal2 ( 3410 497 ) ( * 511 )
       NEW metal3 ( 2764 511 ) ( 3410 * )
-      NEW metal3 ( 3410 511 ) ( 4056 * )
-      NEW metal2 ( 2118 497 ) ( * 511 )
-      NEW metal2 ( 1472 497 ) ( * 511 )
-      NEW metal3 ( 1472 511 ) ( 2118 * )
-      NEW metal2 ( 826 497 ) ( * 511 )
       NEW metal3 ( 826 511 ) ( 1472 * )
-      NEW metal3 ( 180 511 ) ( 826 * )
-      NEW metal3 ( 2118 511 ) ( 2764 * )
+      NEW metal3 ( 3410 511 ) ( 4056 * )
+      NEW metal1 ( 826 497 ) via1_4
+      NEW metal2 ( 826 511 ) via2_5
       NEW metal1 ( 180 497 ) via1_4
       NEW metal2 ( 180 511 ) via2_5
       NEW metal1 ( 4056 497 ) via1_4
       NEW metal2 ( 4056 511 ) via2_5
       NEW metal1 ( 4778 511 ) via1_4
       NEW metal2 ( 4778 511 ) via2_5
+      NEW metal1 ( 1472 497 ) via1_4
+      NEW metal2 ( 1472 511 ) via2_5
+      NEW metal1 ( 2118 497 ) via1_4
+      NEW metal2 ( 2118 511 ) via2_5
       NEW metal1 ( 2764 497 ) via1_4
       NEW metal2 ( 2764 511 ) via2_5
       NEW metal1 ( 3410 497 ) via1_4
-      NEW metal2 ( 3410 511 ) via2_5
-      NEW metal1 ( 2118 497 ) via1_4
-      NEW metal2 ( 2118 511 ) via2_5
-      NEW metal1 ( 1472 497 ) via1_4
-      NEW metal2 ( 1472 511 ) via2_5
-      NEW metal1 ( 826 497 ) via1_4
-      NEW metal2 ( 826 511 ) via2_5 ;
+      NEW metal2 ( 3410 511 ) via2_5 ;
     - storage_3_0_0.select0_b ( storage_3_0_0.select_inv_0 ZN ) ( storage_3_0_0.bit6.obuf0 EN ) ( storage_3_0_0.bit5.obuf0 EN ) ( storage_3_0_0.bit4.obuf0 EN ) ( storage_3_0_0.bit3.obuf0 EN ) ( storage_3_0_0.bit2.obuf0 EN ) ( storage_3_0_0.bit1.obuf0 EN )
       ( storage_3_0_0.bit0.obuf0 EN ) + USE SIGNAL
-      + ROUTED metal3 ( 4341 469 ) ( 4892 * )
+      + ROUTED metal3 ( 465 469 ) ( 1111 * )
+      NEW metal3 ( 4341 469 ) ( 4892 * )
       NEW metal3 ( 3695 469 ) ( 4341 * )
-      NEW metal3 ( 3049 469 ) ( 3695 * )
-      NEW metal3 ( 1111 469 ) ( 1757 * )
-      NEW metal3 ( 1757 469 ) ( 2403 * )
-      NEW metal3 ( 465 469 ) ( 1111 * )
       NEW metal3 ( 2403 469 ) ( 3049 * )
+      NEW metal3 ( 1757 469 ) ( 2403 * )
+      NEW metal3 ( 1111 469 ) ( 1757 * )
+      NEW metal3 ( 3049 469 ) ( 3695 * )
+      NEW metal1 ( 1111 469 ) via1_4
+      NEW metal2 ( 1111 469 ) via2_5
       NEW metal1 ( 465 469 ) via1_4
       NEW metal2 ( 465 469 ) via2_5
       NEW metal1 ( 4341 469 ) via1_4
@@ -2670,37 +2660,35 @@ NETS 188 ;
       NEW metal2 ( 3695 469 ) via2_5
       NEW metal1 ( 3049 469 ) via1_4
       NEW metal2 ( 3049 469 ) via2_5
-      NEW metal1 ( 1111 469 ) via1_4
-      NEW metal2 ( 1111 469 ) via2_5
-      NEW metal1 ( 1757 469 ) via1_4
-      NEW metal2 ( 1757 469 ) via2_5
       NEW metal1 ( 2403 469 ) via1_4
-      NEW metal2 ( 2403 469 ) via2_5 ;
+      NEW metal2 ( 2403 469 ) via2_5
+      NEW metal1 ( 1757 469 ) via1_4
+      NEW metal2 ( 1757 469 ) via2_5 ;
     - storage_3_0_0.select1_b ( storage_3_0_0.select_inv_1 ZN ) ( storage_3_0_0.bit6.obuf1 EN ) ( storage_3_0_0.bit5.obuf1 EN ) ( storage_3_0_0.bit4.obuf1 EN ) ( storage_3_0_0.bit3.obuf1 EN ) ( storage_3_0_0.bit2.obuf1 EN ) ( storage_3_0_0.bit1.obuf1 EN )
       ( storage_3_0_0.bit0.obuf1 EN ) + USE SIGNAL
-      + ROUTED metal3 ( 3847 483 ) ( 4493 * )
+      + ROUTED metal3 ( 617 483 ) ( 1263 * )
+      NEW metal3 ( 3847 483 ) ( 4493 * )
       NEW metal3 ( 4493 483 ) ( 4930 * )
-      NEW metal3 ( 3201 483 ) ( 3847 * )
-      NEW metal3 ( 617 483 ) ( 1263 * )
-      NEW metal3 ( 1263 483 ) ( 1909 * )
       NEW metal3 ( 1909 483 ) ( 2555 * )
       NEW metal3 ( 2555 483 ) ( 3201 * )
+      NEW metal3 ( 1263 483 ) ( 1909 * )
+      NEW metal3 ( 3201 483 ) ( 3847 * )
+      NEW metal1 ( 1263 483 ) via1_4
+      NEW metal2 ( 1263 483 ) via2_5
+      NEW metal1 ( 617 483 ) via1_4
+      NEW metal2 ( 617 483 ) via2_5
       NEW metal1 ( 3847 483 ) via1_4
       NEW metal2 ( 3847 483 ) via2_5
       NEW metal1 ( 4493 483 ) via1_4
       NEW metal2 ( 4493 483 ) via2_5
       NEW metal1 ( 4930 483 ) via1_4
       NEW metal2 ( 4930 483 ) via2_5
-      NEW metal1 ( 3201 483 ) via1_4
-      NEW metal2 ( 3201 483 ) via2_5
-      NEW metal1 ( 1263 483 ) via1_4
-      NEW metal2 ( 1263 483 ) via2_5
-      NEW metal1 ( 617 483 ) via1_4
-      NEW metal2 ( 617 483 ) via2_5
       NEW metal1 ( 1909 483 ) via1_4
       NEW metal2 ( 1909 483 ) via2_5
       NEW metal1 ( 2555 483 ) via1_4
-      NEW metal2 ( 2555 483 ) via2_5 ;
+      NEW metal2 ( 2555 483 ) via2_5
+      NEW metal1 ( 3201 483 ) via1_4
+      NEW metal2 ( 3201 483 ) via2_5 ;
     - storage_3_0_0.we ( storage_3_0_0.gcand ZN ) ( storage_3_0_0.cg E ) + USE SIGNAL
       + ROUTED metal3 ( 4645 497 ) ( 4854 * )
       NEW metal1 ( 4645 497 ) via1_4
@@ -3084,16 +3072,16 @@ NETS 188 ;
       NEW metal3 ( 180 889 ) ( 826 * )
       NEW metal2 ( 4056 903 ) ( * 917 )
       NEW metal3 ( 4056 917 ) ( 4778 * )
-      NEW metal2 ( 4056 861 ) ( * 903 )
-      NEW metal2 ( 3410 861 ) ( * 903 )
-      NEW metal2 ( 2764 861 ) ( * 903 )
-      NEW metal3 ( 2764 861 ) ( 3410 * )
-      NEW metal2 ( 2118 861 ) ( * 903 )
-      NEW metal3 ( 2118 861 ) ( 2764 * )
-      NEW metal2 ( 1472 861 ) ( * 903 )
-      NEW metal3 ( 1472 861 ) ( 2118 * )
+      NEW metal2 ( 4056 889 ) ( * 903 )
+      NEW metal2 ( 1472 889 ) ( * 903 )
+      NEW metal2 ( 2118 889 ) ( * 903 )
+      NEW metal3 ( 1472 889 ) ( 2118 * )
+      NEW metal2 ( 2764 889 ) ( * 903 )
+      NEW metal3 ( 2118 889 ) ( 2764 * )
+      NEW metal2 ( 3410 889 ) ( * 903 )
+      NEW metal3 ( 2764 889 ) ( 3410 * )
       NEW metal3 ( 826 889 ) ( 1472 * )
-      NEW metal3 ( 3410 861 ) ( 4056 * )
+      NEW metal3 ( 3410 889 ) ( 4056 * )
       NEW metal1 ( 826 903 ) via1_4
       NEW metal2 ( 826 889 ) via2_5
       NEW metal1 ( 180 903 ) via1_4
@@ -3102,16 +3090,15 @@ NETS 188 ;
       NEW metal2 ( 4056 917 ) via2_5
       NEW metal1 ( 4778 917 ) via1_4
       NEW metal2 ( 4778 917 ) via2_5
-      NEW metal2 ( 4056 861 ) via2_5
-      NEW metal1 ( 3410 903 ) via1_4
-      NEW metal2 ( 3410 861 ) via2_5
-      NEW metal1 ( 2764 903 ) via1_4
-      NEW metal2 ( 2764 861 ) via2_5
-      NEW metal1 ( 2118 903 ) via1_4
-      NEW metal2 ( 2118 861 ) via2_5
+      NEW metal2 ( 4056 889 ) via2_5
       NEW metal1 ( 1472 903 ) via1_4
-      NEW metal2 ( 1472 861 ) via2_5
-      NEW metal2 ( 1472 889 ) via2_5 ;
+      NEW metal2 ( 1472 889 ) via2_5
+      NEW metal1 ( 2118 903 ) via1_4
+      NEW metal2 ( 2118 889 ) via2_5
+      NEW metal1 ( 2764 903 ) via1_4
+      NEW metal2 ( 2764 889 ) via2_5
+      NEW metal1 ( 3410 903 ) via1_4
+      NEW metal2 ( 3410 889 ) via2_5 ;
     - storage_6_0_0.select0_b ( storage_6_0_0.select_inv_0 ZN ) ( storage_6_0_0.bit6.obuf0 EN ) ( storage_6_0_0.bit5.obuf0 EN ) ( storage_6_0_0.bit4.obuf0 EN ) ( storage_6_0_0.bit3.obuf0 EN ) ( storage_6_0_0.bit2.obuf0 EN ) ( storage_6_0_0.bit1.obuf0 EN )
       ( storage_6_0_0.bit0.obuf0 EN ) + USE SIGNAL
       + ROUTED metal3 ( 465 917 ) ( 1111 * )

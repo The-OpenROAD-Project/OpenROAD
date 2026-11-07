@@ -195,6 +195,26 @@ test_suite(
 )
 
 cc_test(
+    name = "via_access_test",
+    srcs = [
+        "fixture.cpp",
+        "fixture.h",
+        "viaAccessTest.cpp",
+    ],
+    includes = ["../src"],
+    deps = [
+        "//src/drt:base_types",
+        "//src/drt:drt_impl",
+        "//src/dst",
+        "//src/odb/src/db",
+        "//src/utl",
+        "@boost.serialization",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "ta_unittest",
     srcs = [
         "fixture.cpp",
