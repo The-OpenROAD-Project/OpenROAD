@@ -5,6 +5,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -64,6 +65,11 @@ struct MacroPlacerOptions
 
   bool keep_clustering_data{false};
   bool pin_aware_channels{false};
+
+  int random_seed{0};
+  std::optional<float> anneal_end_acceptance;
+  float anneal_patience{0.0f};
+  int placement_seeds{1};
 };
 
 // Every parameter accepted by the `mpl_debug` command.
@@ -110,6 +116,10 @@ class MacroPlacer
 
   void addGuidanceRegion(odb::dbInst* macro, odb::Rect region);
   void setMinChannelSize(int width, int height);
+  void setRandomSeed(int seed);
+  void setAnnealEndAcceptance(float end_acceptance);
+  void setAnnealPatience(float patience);
+  void setPlacementSeeds(int seeds);
 
   void configureDebug(MacroPlacerDebugOptions options);
 
@@ -117,6 +127,10 @@ class MacroPlacer
   std::unique_ptr<HierRTLMP> hier_rtlmp_;
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
+  int random_seed_ = 0;
+  float anneal_end_acceptance_ = 0.0f;
+  float anneal_patience_ = 0.0f;
+  int placement_seeds_ = 1;
 
   odb::PtrMap<odb::dbInst, odb::Rect> guidance_regions_;
 };

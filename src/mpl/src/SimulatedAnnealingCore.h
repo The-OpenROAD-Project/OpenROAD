@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <limits>
 #include <map>
+#include <memory>
 #include <random>
 #include <string>
 #include <vector>
@@ -69,6 +70,13 @@ class SimulatedAnnealingCore
   void setGuides(const std::map<int, odb::Rect>& guides);
   void setInitialSequencePair(const SequencePair& sequence_pair);
   void disallowInvalidStates() { invalid_states_allowed_ = false; }
+  void setAnnealEndAcceptance(float end_acceptance)
+  {
+    anneal_end_acceptance_ = end_acceptance;
+  }
+  void setAnnealPatience(float patience) { anneal_patience_ = patience; }
+  void setWeights(const SACoreWeights& weights) { core_weights_ = weights; }
+  void copyNormalizationFactorsFrom(const SimulatedAnnealingCore<T>& ref);
 
   virtual bool isValid() const;
   bool fitsIn(const odb::Rect& outline) const;
@@ -78,6 +86,7 @@ class SimulatedAnnealingCore
   int getHeight() const;
   int64_t getArea() const;
   float getAreaPenalty() const;
+  float getNormAreaPenalty() const { return norm_area_penalty_; }
   float getOutlinePenalty() const;
   float getNormOutlinePenalty() const;
   float getWirelength() const;
@@ -86,11 +95,18 @@ class SimulatedAnnealingCore
   float getNormGuidancePenalty() const;
   float getFencePenalty() const;
   float getNormFencePenalty() const;
+  int getStepsExecuted() const { return static_cast<int>(cost_list_.size()); }
+  float getInitTemperature() const { return init_temperature_; }
+  float getLastTemperature() const
+  {
+    return T_list_.empty() ? init_temperature_ : T_list_.back();
+  }
   std::vector<T> getMacros() const;
 
   virtual void initialize() = 0;
   virtual void run() = 0;
   virtual void fillDeadSpace() = 0;
+  void packFloorplan();
 
  protected:
   struct Result
@@ -102,14 +118,27 @@ class SimulatedAnnealingCore
     // [Only for SoftMacro] The same sequence pair can represent different
     // floorplan arrangements depending on the macros' shapes.
     std::map<int, int> macro_id_to_width;
+    std::vector<int> widths;
+    std::vector<int> heights;
   };
 
+  bool useRelativeScheduleOrPatience() const
+  {
+    return anneal_end_acceptance_ > 0.0f || anneal_patience_ > 0.0f;
+  }
+  bool shouldReplaceBestResult(float cost, bool is_valid) const;
+  void updateMinTemperature();
+
   void fastSA();
+  void fastSAStep(float temperature, float& pre_cost, int step, int& best_step);
   bool resultFitsInOutline() const;
 
   void setAvailableRegionsForUnconstrainedPins(
       const BoundaryRegionList& regions);
   void initSequencePair();
+  void syncSequencePairBuffers();
+  void saveSequencePairState();
+  void restoreSequencePairState();
   void setDieArea(const odb::Rect& die_area);
   void updateBestResult(float cost);
   void useBestResult();
@@ -118,6 +147,10 @@ class SimulatedAnnealingCore
   virtual void calPenalty() = 0;
   void calOutlinePenalty();
   void calWirelength();
+  void buildMacroNetIndex();
+  float computeSingleNetWL(const BundledNet& net) const;
+  float computeFullNetsWireLength();
+  float computeIncrementalNetsWireLength();
   float computeNetsWireLength(const BundledNetList& nets) const;
   int64_t computeWLForClusterOfUnplacedIOPins(const T& macro,
                                               const T& unplaced_ios,
@@ -127,7 +160,8 @@ class SimulatedAnnealingCore
   void calFencePenalty();
 
   // operations
-  void packFloorplan();
+  int queryFenwickMax(int pos) const;
+  void updateFenwickMax(int pos, int n, int val);
   virtual void perturb() = 0;
   virtual void saveState() = 0;
   virtual void restoreState() = 0;
@@ -151,10 +185,13 @@ class SimulatedAnnealingCore
 
   BoundaryRegionList available_regions_for_unconstrained_pins_;
   ClusterToBoundaryRegionMap io_cluster_to_constraint_;
+  std::vector<BoundaryRegion> io_cluster_constraints_by_id_;
+  std::vector<uint8_t> has_io_cluster_constraint_;
 
   int number_of_sequence_pair_macros_ = 0;
 
   BundledNetList nets_;
+  float nets_weight_sum_ = 0.0f;
   std::map<int, odb::Rect> fences_;  // Macro Id -> Fence
   std::map<int, odb::Rect> guides_;  // Macro Id -> Guide
 
@@ -163,8 +200,26 @@ class SimulatedAnnealingCore
   // Fast SA hyperparameter
   float init_prob_ = 0.0;
   float init_temperature_ = 1.0;
+  float min_temperature_ = 1e-10f;
   int max_num_step_ = 0;
   int num_perturb_per_step_ = 0;
+  float anneal_end_acceptance_ = 0.0f;
+  float anneal_patience_ = 0.0f;
+
+  // Incremental wirelength state (used when anneal_end_acceptance_ > 0)
+  std::vector<std::vector<int>> macro_to_nets_;
+  std::vector<float> net_wl_;
+  std::vector<std::pair<int, float>> undo_net_wl_;
+  std::vector<int> pre_pin_x_;
+  std::vector<int> pre_pin_y_;
+  std::vector<int> moved_macros_;
+  std::vector<int> touched_nets_;
+  std::vector<uint8_t> net_touched_flags_;
+  double raw_wirelength_sum_ = 0.0;
+  double pre_raw_wirelength_sum_ = 0.0;
+  bool wirelength_cache_valid_ = false;
+  bool has_pre_pin_snapshot_ = false;
+  bool can_undo_net_wl_ = false;
 
   // seed for reproduciabilty
   std::mt19937 generator_;
@@ -178,9 +233,12 @@ class SimulatedAnnealingCore
   // previous solution
   std::vector<int> pre_pos_seq_;
   std::vector<int> pre_neg_seq_;
-  std::vector<T> pre_macros_;  // here the macros can be HardMacro or SoftMacro
-  int macro_id_ = -1;          // the macro changed in the perturb
-  int action_id_ = -1;         // the action_id of current step
+  int macro_id_ = -1;   // the macro changed in the perturb
+  int action_id_ = -1;  // the action_id of current step
+
+  // Reusable buffers for packFloorplan
+  std::vector<int> neg_seq_pos_;
+  std::vector<int> fenwick_tree_;
 
   // metrics
   int width_ = 0;
@@ -231,6 +289,32 @@ void runSA(T* sa_core)
 {
   sa_core->initialize();
   sa_core->run();
+}
+
+template <class SACore>
+int selectBestCandidateByCommonCost(
+    const std::vector<std::unique_ptr<SACore>>& candidates,
+    const SACore& norm_reference,
+    const SACoreWeights& weights,
+    bool require_valid)
+{
+  int best_index = -1;
+  float best_cost = std::numeric_limits<float>::max();
+
+  for (int i = 0; i < static_cast<int>(candidates.size()); ++i) {
+    if (candidates[i] != nullptr
+        && (!require_valid || candidates[i]->isValid())) {
+      candidates[i]->copyNormalizationFactorsFrom(norm_reference);
+      candidates[i]->setWeights(weights);
+      const float cost = candidates[i]->getNormCost();
+      if (best_index < 0 || cost < best_cost) {
+        best_cost = cost;
+        best_index = i;
+      }
+    }
+  }
+
+  return best_index;
 }
 
 }  // namespace mpl

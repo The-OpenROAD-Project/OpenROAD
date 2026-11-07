@@ -57,6 +57,8 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   float getNormNotchPenalty() const;
   float getSoftBlockagePenalty() const;
   float getNormSoftBlockagePenalty() const;
+  float getNormFixedMacrosPenalty() const { return norm_fixed_macros_penalty_; }
+  void copyNormalizationFactorsFrom(const SACoreSoftMacro& ref);
 
   void printResults() const;  // just for test
 
@@ -74,6 +76,15 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void forceCentralization() { force_centralization_ = true; }
 
  private:
+  struct SoftMacroSnapshot
+  {
+    int x = 0;
+    int y = 0;
+    int width = 0;
+    int height = 0;
+    int64_t area = 0;
+  };
+
   // Used to check the vicinity of candidate notches
   struct NotchVicinity
   {
@@ -82,7 +93,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
     bool left = true;
     bool right = true;
 
-    int total() { return top + bottom + left + right; }
+    int total() const { return top + bottom + left + right; }
 
     bool operator==(const NotchVicinity&) const = default;
   };
@@ -115,6 +126,26 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                          int start_row,
                          int end_row);
   float calSingleNotchPenalty(int width, int height);
+  void populateNotchGrid();
+  bool tryExpandNotchRow(int start_row,
+                         int start_col,
+                         int end_col,
+                         int& end_row,
+                         NotchVicinity& current_vicinity) const;
+  bool tryExpandNotchCol(int start_row,
+                         int start_col,
+                         int end_row,
+                         int& end_col,
+                         NotchVicinity& current_vicinity) const;
+  NotchVicinity expandNotchRegion(int start_row,
+                                  int start_col,
+                                  int& end_row,
+                                  int& end_col);
+  void recordNotchIfPresent(int start_row,
+                            int start_col,
+                            int end_row,
+                            int end_col,
+                            const NotchVicinity& vicinity);
   void calNotchPenalty();
   void calSoftBlockagePenalty();
   void calFixedMacrosPenalty();
@@ -129,6 +160,15 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 
   std::vector<odb::Rect> soft_blockages_;
   std::vector<odb::Rect> fixed_macros_;
+  std::vector<SoftMacroSnapshot> pre_macros_;
+
+  // Reusable buffers for notch penalty and coordinate discretization
+  std::vector<int> notch_x_points_;
+  std::vector<int> notch_y_points_;
+  std::vector<int> notch_x_coords_;
+  std::vector<int> notch_y_coords_;
+  std::vector<std::vector<bool>> notch_grid_;
+  std::vector<std::vector<bool>> notch_visited_;
 
   Cluster* root_;
 

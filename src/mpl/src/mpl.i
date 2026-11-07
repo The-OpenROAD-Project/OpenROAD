@@ -54,6 +54,14 @@ static mpl::MacroPlacerOptions getOptions(
   checkKey(keys, "-soft_blockage_weight", options.soft_blockage_weight);
   checkKey(keys, "-target_util", options.target_util);
   checkKey(keys, "-min_ar", options.min_ar);
+  checkKey(keys, "-random_seed", options.random_seed);
+  if (keys.find("-anneal_end_acceptance") != keys.end()) {
+    float anneal_end_acceptance = 0.0f;
+    checkKey(keys, "-anneal_end_acceptance", anneal_end_acceptance);
+    options.anneal_end_acceptance = anneal_end_acceptance;
+  }
+  checkKey(keys, "-anneal_patience", options.anneal_patience);
+  checkKey(keys, "-placement_seeds", options.placement_seeds);
   checkKey(keys, "-report_directory", options.report_directory);
   checkKey(keys, "-write_macro_placement", options.macro_placement_file);
 

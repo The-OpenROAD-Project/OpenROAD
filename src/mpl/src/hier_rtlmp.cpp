@@ -109,6 +109,11 @@ void HierRTLMP::configure(int threads, const MacroPlacerOptions& options)
   macro_placement_file_ = options.macro_placement_file;
   keep_clustering_data_ = options.keep_clustering_data;
   pin_aware_channels_ = options.pin_aware_channels;
+
+  random_seed_ = options.random_seed;
+  anneal_end_acceptance_ = options.anneal_end_acceptance.value_or(0.0f);
+  anneal_patience_ = options.anneal_patience;
+  placement_seeds_ = options.placement_seeds;
 }
 
 void HierRTLMP::setMinChannelSize(int width, int height)
@@ -488,6 +493,8 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
                                               graphics_.get(),
                                               logger_,
                                               block_);
+      sa->setAnnealEndAcceptance(anneal_end_acceptance_);
+      sa->setAnnealPatience(anneal_patience_);
       sa_batch.push_back(std::move(sa));
     }
     if (sa_batch.size() == 1) {
@@ -546,6 +553,8 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
                                               graphics_.get(),
                                               logger_,
                                               block_);
+      sa->setAnnealEndAcceptance(anneal_end_acceptance_);
+      sa->setAnnealPatience(anneal_patience_);
       sa_batch.push_back(std::move(sa));
     }
     if (sa_batch.size() == 1) {
@@ -571,10 +580,20 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
   }
 
   if (tilings_set.empty()) {
+    int64_t total_macro_area = 0;
+    for (const SoftMacro& macro : macros) {
+      total_macro_area += macro.getArea();
+    }
+    const double area_pct = outline.area() > 0
+                                ? (100.0 * static_cast<double>(total_macro_area)
+                                   / static_cast<double>(outline.area()))
+                                : 0.0;
     logger_->error(MPL,
                    3,
-                   "There are no valid tilings for mixed cluster: {}",
-                   parent->getName());
+                   "There are no valid tilings for mixed cluster: {} (child "
+                   "macro minimum area is {:.1f}% of outline area).",
+                   parent->getName(),
+                   area_pct);
   }
 
   TilingList tilings_list(tilings_set.begin(), tilings_set.end());
@@ -1167,6 +1186,461 @@ void HierRTLMP::adjustSoftBlockageWeight()
   }
 }
 
+void HierRTLMP::mergeChildFencesAndGuides(
+    const Cluster* cluster,
+    const odb::Rect& outline,
+    const int macro_id,
+    std::map<int, odb::Rect>& fences,
+    std::map<int, odb::Rect>& guides) const
+{
+  // merge fences and guides for hard macros within cluster
+  if (cluster->getClusterType() == StdCellCluster) {
+    return;
+  }
+  odb::Rect fence, guide;
+  fence.mergeInit();
+  guide.mergeInit();
+  const std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
+  for (auto& hard_macro : hard_macros) {
+    if (fences_.find(hard_macro->getName()) != fences_.end()) {
+      fence.merge(fences_.at(hard_macro->getName()));
+    }
+    auto itr = guides_.find(hard_macro->getInst());
+    if (itr != guides_.end()) {
+      guide.merge(itr->second);
+    }
+  }
+
+  fence.intersection(outline, fence);
+  guide.intersection(outline, guide);
+
+  if (fence.area() > 0) {
+    // current macro id is macros.size() - 1
+    fence.moveDelta(-outline.xMin(), -outline.yMin());
+    fences[macro_id] = fence;
+  }
+  if (guide.area() > 0) {
+    // current macro id is macros.size() - 1
+    guide.moveDelta(-outline.xMin(), -outline.yMin());
+    guides[macro_id] = guide;
+  }
+}
+
+int HierRTLMP::populateChildClusterSoftMacros(
+    const Cluster* parent,
+    const odb::Rect& outline,
+    SoftMacroNameToIdMap& soft_macro_id_map,
+    std::map<int, odb::Rect>& fences,
+    std::map<int, odb::Rect>& guides,
+    std::vector<SoftMacro>& macros)
+{
+  // We store the io clusters to push them into the macros' vector
+  // only after it is already populated with the clusters we're trying to
+  // place. This will facilitate how we deal with fixed terminals in SA moves.
+  std::vector<Cluster*> io_clusters;
+
+  // Each cluster is modeled as Soft Macro
+  // The fences or guides for each cluster is created by merging
+  // the fences and guides for hard macros in each cluster
+  for (auto& cluster : parent->getChildren()) {
+    if (cluster->isIOCluster()) {
+      io_clusters.push_back(cluster.get());
+      continue;
+    }
+
+    soft_macro_id_map[cluster->getName()] = macros.size();
+
+    if (cluster->isFixedMacro()) {
+      macros.emplace_back(logger_, cluster->getHardMacros().front(), &outline);
+      continue;
+    }
+
+    auto soft_macro = std::make_unique<SoftMacro>(cluster.get());
+    // Needed for computing the nets.
+    clustering_engine_->updateInstancesAssociation(cluster.get());
+    macros.push_back(*soft_macro);
+    cluster->setSoftMacro(std::move(soft_macro));
+
+    mergeChildFencesAndGuides(cluster.get(),
+                              outline,
+                              static_cast<int>(macros.size()) - 1,
+                              fences,
+                              guides);
+  }
+
+  if (graphics_) {
+    graphics_->setGuides(guides);
+    graphics_->setFences(fences);
+  }
+
+  const int number_of_sequence_pair_macros = static_cast<int>(macros.size());
+
+  for (Cluster* io_cluster : io_clusters) {
+    soft_macro_id_map[io_cluster->getName()] = macros.size();
+
+    macros.emplace_back(odb::Point(io_cluster->getX() - outline.xMin(),
+                                   io_cluster->getY() - outline.yMin()),
+                        io_cluster->getName(),
+                        io_cluster->getWidth(),
+                        io_cluster->getHeight(),
+                        io_cluster);
+  }
+
+  return number_of_sequence_pair_macros;
+}
+
+void HierRTLMP::reportClusterPlacementFailure(
+    const Cluster* parent,
+    const std::vector<float>& utilization_list,
+    const std::set<int>& skipped_utilization_indices) const
+{
+  if (parent == tree_->root.get()) {
+    logger_->error(
+        MPL,
+        40,
+        "Failed to find a valid solution for any of the standard cell "
+        "densities below.\n\n{}\n\nCore utilization is probably too high. "
+        "Please, reduce it and try again.",
+        buildClusterPlacementErrorTable(utilization_list,
+                                        skipped_utilization_indices));
+  } else {
+    logger_->error(MPL,
+                   8,
+                   "Annealing engine failed to find a valid solution. "
+                   "Please, report this internal error.\nFailed at cluster "
+                   "({}): {}",
+                   parent->getId(),
+                   parent->getName());
+  }
+}
+
+std::vector<int> HierRTLMP::collectValidUtilizationIndices(
+    const Cluster* parent,
+    const odb::Rect& outline,
+    const std::vector<SoftMacro>& macros,
+    const std::vector<float>& utilization_list,
+    std::set<int>& skipped_utilization_indices) const
+{
+  std::vector<int> valid_indices;
+  for (int i = 0; i < static_cast<int>(utilization_list.size()); ++i) {
+    if (validUtilization(utilization_list[i], outline, macros)) {
+      valid_indices.push_back(i);
+    } else if (parent == tree_->root.get()) {
+      skipped_utilization_indices.insert(i);
+    }
+  }
+  return valid_indices;
+}
+
+std::unique_ptr<SACoreSoftMacro> HierRTLMP::createClusterPlacementSA(
+    const odb::Rect& outline,
+    const std::vector<SoftMacro>& macros,
+    const float utilization,
+    const float action_sum,
+    const int num_perturb_per_step,
+    const int number_of_sequence_pair_macros,
+    const unsigned seed,
+    const std::map<int, odb::Rect>& fences,
+    const std::map<int, odb::Rect>& guides,
+    const BundledNetList& nets,
+    const RectList& soft_blockages)
+{
+  std::vector<SoftMacro> inflated_macros
+      = applyUtilization(utilization, outline, macros);
+  const bool single_array_single_std_cell_cluster
+      = singleArraySingleStdCellCluster(macros);
+
+  std::unique_ptr<SACoreSoftMacro> sa
+      = std::make_unique<SACoreSoftMacro>(tree_.get(),
+                                          outline,
+                                          inflated_macros,
+                                          placement_core_weights_,
+                                          cluster_placement_weights_,
+                                          notch_h_th_,
+                                          notch_v_th_,
+                                          pos_swap_prob_ / action_sum,
+                                          neg_swap_prob_ / action_sum,
+                                          double_swap_prob_ / action_sum,
+                                          exchange_swap_prob_ / action_sum,
+                                          resize_prob_ / action_sum,
+                                          init_prob_,
+                                          max_num_step_,
+                                          num_perturb_per_step,
+                                          seed,
+                                          graphics_.get(),
+                                          logger_,
+                                          block_);
+  sa->setNumberOfSequencePairMacros(number_of_sequence_pair_macros);
+  sa->setAnnealEndAcceptance(anneal_end_acceptance_);
+  sa->setAnnealPatience(anneal_patience_);
+  sa->enableEnhancements();
+  sa->setFences(fences);
+  sa->setGuides(guides);
+  sa->setNets(nets);
+  sa->setSoftBlockages(soft_blockages);
+  if (single_array_single_std_cell_cluster) {
+    sa->forceCentralization();
+  }
+  return sa;
+}
+
+void HierRTLMP::runSoftSABatch(SoftSAVector& sa_batch)
+{
+  if (sa_batch.empty()) {
+    return;
+  }
+  if (graphics_ || sa_batch.size() == 1) {
+    runSA<SACoreSoftMacro>(sa_batch.front().get());
+    return;
+  }
+  std::vector<std::thread> threads;
+  threads.reserve(sa_batch.size());
+  for (auto& sa : sa_batch) {
+    threads.emplace_back(runSA<SACoreSoftMacro>, sa.get());
+  }
+  for (auto& th : threads) {
+    th.join();
+  }
+}
+
+void HierRTLMP::warnIfAdjustedUtilization(
+    const int utilization_index,
+    const std::vector<float>& utilization_list) const
+{
+  if (utilization_index != 0) {
+    logger_->warn(MPL,
+                  55,
+                  "Couldn't find a solution for the specified "
+                  "utilization. The utilization was adjusted to {}.",
+                  utilization_list[utilization_index]);
+  }
+}
+
+std::unique_ptr<SACoreSoftMacro> HierRTLMP::runSingleSeedClusterPlacement(
+    const Cluster* parent,
+    const odb::Rect& outline,
+    const std::vector<SoftMacro>& macros,
+    const std::vector<float>& utilization_list,
+    const int number_of_sequence_pair_macros,
+    const std::map<int, odb::Rect>& fences,
+    const std::map<int, odb::Rect>& guides,
+    const BundledNetList& nets,
+    const RectList& soft_blockages,
+    std::set<int>& skipped_utilization_indices)
+{
+  // The sum of probabilities should be 1.
+  const float action_sum = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
+                           + exchange_swap_prob_ + resize_prob_;
+  // The number of perturbations in each step should be larger than the
+  // number of macros
+  const int num_perturb_per_step
+      = std::max(static_cast<int>(macros.size()), num_perturb_per_step_);
+  int remaining_runs = static_cast<int>(utilization_list.size());
+  int run_id = 0;
+
+  while (remaining_runs > 0) {
+    SoftSAVector sa_batch;
+    // We need to track the utilization indices, because, when creating the
+    // annealers' batch, we skip invalid utilization values.
+    std::vector<int> sa_batch_utilization_indices;
+    const int number_of_attempts
+        = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
+
+    for (int i = 0; i < number_of_attempts; i++) {
+      const int utilization_index = run_id++;
+      const float utilization = utilization_list[utilization_index];
+      if (!validUtilization(utilization, outline, macros)) {
+        if (parent == tree_->root.get()) {
+          skipped_utilization_indices.insert(utilization_index);
+        }
+        continue;
+      }
+
+      sa_batch_utilization_indices.push_back(utilization_index);
+      sa_batch.push_back(
+          createClusterPlacementSA(outline,
+                                   macros,
+                                   utilization,
+                                   action_sum,
+                                   num_perturb_per_step,
+                                   number_of_sequence_pair_macros,
+                                   random_seed_,
+                                   fences,
+                                   guides,
+                                   nets,
+                                   soft_blockages));
+    }
+
+    runSoftSABatch(sa_batch);
+    remaining_runs -= number_of_attempts;
+
+    for (int sa_index = 0; sa_index < static_cast<int>(sa_batch.size());
+         ++sa_index) {
+      if (sa_batch[sa_index]->isValid()) {
+        warnIfAdjustedUtilization(sa_batch_utilization_indices[sa_index],
+                                  utilization_list);
+        return std::move(sa_batch[sa_index]);
+      }
+    }
+  }
+
+  return nullptr;
+}
+
+std::unique_ptr<SACoreSoftMacro> HierRTLMP::evaluateMultiSeedLevel(
+    SoftSAVector& level_candidates,
+    const int utilization_index,
+    const std::vector<float>& utilization_list,
+    SoftSAVector& all_candidates) const
+{
+  const int best_idx = selectBestCandidateByCommonCost(
+      level_candidates, *level_candidates[0], placement_core_weights_, true);
+  if (best_idx >= 0) {
+    warnIfAdjustedUtilization(utilization_index, utilization_list);
+    return std::move(level_candidates[best_idx]);
+  }
+  for (auto& sa : level_candidates) {
+    all_candidates.push_back(std::move(sa));
+  }
+  level_candidates.clear();
+  return nullptr;
+}
+
+std::unique_ptr<SACoreSoftMacro> HierRTLMP::runMultiSeedClusterPlacement(
+    const std::vector<int>& valid_utilization_indices,
+    const odb::Rect& outline,
+    const std::vector<SoftMacro>& macros,
+    const std::vector<float>& utilization_list,
+    const int number_of_sequence_pair_macros,
+    const std::map<int, odb::Rect>& fences,
+    const std::map<int, odb::Rect>& guides,
+    const BundledNetList& nets,
+    const RectList& soft_blockages)
+{
+  constexpr int kPlacementSeedStride = 100;
+  // The sum of probabilities should be 1.
+  const float action_sum = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
+                           + exchange_swap_prob_ + resize_prob_;
+  // The number of perturbations in each step should be larger than the
+  // number of macros
+  const int num_perturb_per_step
+      = std::max(static_cast<int>(macros.size()), num_perturb_per_step_);
+
+  const int num_levels = static_cast<int>(valid_utilization_indices.size());
+  const int total_tasks = num_levels * placement_seeds_;
+  std::vector<SoftSAVector> candidates_by_level(num_levels);
+  SoftSAVector all_candidates;
+  int next_task = 0;
+  int eval_level = 0;
+
+  while (next_task < total_tasks) {
+    const int batch_size
+        = graphics_ ? 1 : std::min(total_tasks - next_task, num_threads_);
+    SoftSAVector sa_batch;
+    std::vector<int> batch_levels;
+    sa_batch.reserve(batch_size);
+    batch_levels.reserve(batch_size);
+
+    for (int i = 0; i < batch_size; ++i) {
+      const int task_id = next_task + i;
+      const int level_pos = task_id / placement_seeds_;
+      const int seed_idx = task_id % placement_seeds_;
+      const float utilization
+          = utilization_list[valid_utilization_indices[level_pos]];
+      const unsigned seed = static_cast<unsigned>(
+          random_seed_ + seed_idx * kPlacementSeedStride);
+      batch_levels.push_back(level_pos);
+      sa_batch.push_back(
+          createClusterPlacementSA(outline,
+                                   macros,
+                                   utilization,
+                                   action_sum,
+                                   num_perturb_per_step,
+                                   number_of_sequence_pair_macros,
+                                   seed,
+                                   fences,
+                                   guides,
+                                   nets,
+                                   soft_blockages));
+    }
+
+    runSoftSABatch(sa_batch);
+    for (int i = 0; i < batch_size; ++i) {
+      candidates_by_level[batch_levels[i]].push_back(std::move(sa_batch[i]));
+    }
+    next_task += batch_size;
+
+    while (eval_level < num_levels
+           && static_cast<int>(candidates_by_level[eval_level].size())
+                  == placement_seeds_) {
+      auto best_sa
+          = evaluateMultiSeedLevel(candidates_by_level[eval_level],
+                                   valid_utilization_indices[eval_level],
+                                   utilization_list,
+                                   all_candidates);
+      if (best_sa) {
+        return best_sa;
+      }
+      ++eval_level;
+    }
+  }
+
+  if (!all_candidates.empty()) {
+    selectBestCandidateByCommonCost(
+        all_candidates, *all_candidates[0], placement_core_weights_, false);
+  }
+  return nullptr;
+}
+
+std::unique_ptr<SACoreSoftMacro> HierRTLMP::runClusterPlacementAnnealing(
+    const Cluster* parent,
+    const odb::Rect& outline,
+    const std::vector<SoftMacro>& macros,
+    const int number_of_sequence_pair_macros,
+    const std::map<int, odb::Rect>& fences,
+    const std::map<int, odb::Rect>& guides,
+    const BundledNetList& nets,
+    const RectList& soft_blockages)
+{
+  const int total_number_of_runs = 10;
+  std::vector<float> utilization_list
+      = computeUtilizationList(total_number_of_runs);
+  std::set<int> skipped_utilization_indices;
+  std::unique_ptr<SACoreSoftMacro> best_sa;
+
+  if (placement_seeds_ > 1) {
+    const std::vector<int> valid_indices = collectValidUtilizationIndices(
+        parent, outline, macros, utilization_list, skipped_utilization_indices);
+    best_sa = runMultiSeedClusterPlacement(valid_indices,
+                                           outline,
+                                           macros,
+                                           utilization_list,
+                                           number_of_sequence_pair_macros,
+                                           fences,
+                                           guides,
+                                           nets,
+                                           soft_blockages);
+  } else {
+    best_sa = runSingleSeedClusterPlacement(parent,
+                                            outline,
+                                            macros,
+                                            utilization_list,
+                                            number_of_sequence_pair_macros,
+                                            fences,
+                                            guides,
+                                            nets,
+                                            soft_blockages,
+                                            skipped_utilization_indices);
+  }
+
+  if (!best_sa) {
+    reportClusterPlacementFailure(
+        parent, utilization_list, skipped_utilization_indices);
+  }
+
+  return best_sa;
+}
+
 void HierRTLMP::placeChildren(Cluster* parent)
 {
   if (parent->getClusterType() == HardMacroCluster) {
@@ -1203,102 +1677,22 @@ void HierRTLMP::placeChildren(Cluster* parent)
   std::map<int, odb::Rect> fences;
   std::map<int, odb::Rect> guides;
   std::vector<SoftMacro> macros;
-
   RectList hard_blockages
       = findOffsetIntersections(placement_blockages_, outline);
   eliminateOverlaps(hard_blockages);
   createSoftMacrosForBlockages(hard_blockages, macros);
-
   RectList soft_blockages = findOffsetIntersections(io_blockages_, outline);
   if (graphics_) {
     graphics_->setSoftBlockages(soft_blockages);
   }
 
-  // We store the io clusters to push them into the macros' vector
-  // only after it is already populated with the clusters we're trying to
-  // place. This will facilitate how we deal with fixed terminals in SA moves.
-  std::vector<Cluster*> io_clusters;
-
-  // Each cluster is modeled as Soft Macro
-  // The fences or guides for each cluster is created by merging
-  // the fences and guides for hard macros in each cluster
-  for (auto& cluster : parent->getChildren()) {
-    if (cluster->isIOCluster()) {
-      io_clusters.push_back(cluster.get());
-      continue;
-    }
-
-    soft_macro_id_map[cluster->getName()] = macros.size();
-
-    if (cluster->isFixedMacro()) {
-      macros.emplace_back(logger_, cluster->getHardMacros().front(), &outline);
-      continue;
-    }
-
-    auto soft_macro = std::make_unique<SoftMacro>(cluster.get());
-    // Needed for computing the nets.
-    clustering_engine_->updateInstancesAssociation(cluster.get());
-    macros.push_back(*soft_macro);
-    cluster->setSoftMacro(std::move(soft_macro));
-
-    // merge fences and guides for hard macros within cluster
-    if (cluster->getClusterType() == StdCellCluster) {
-      continue;
-    }
-    odb::Rect fence, guide;
-    fence.mergeInit();
-    guide.mergeInit();
-    const std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
-    for (auto& hard_macro : hard_macros) {
-      if (fences_.find(hard_macro->getName()) != fences_.end()) {
-        fence.merge(fences_[hard_macro->getName()]);
-      }
-      auto itr = guides_.find(hard_macro->getInst());
-      if (itr != guides_.end()) {
-        guide.merge(itr->second);
-      }
-    }
-
-    fence.intersection(outline, fence);
-    guide.intersection(outline, guide);
-
-    if (fence.area() > 0) {
-      // current macro id is macros.size() - 1
-      fence.moveDelta(-outline.xMin(), -outline.yMin());
-      fences[macros.size() - 1] = fence;
-    }
-    if (guide.area() > 0) {
-      // current macro id is macros.size() - 1
-      guide.moveDelta(-outline.xMin(), -outline.yMin());
-      guides[macros.size() - 1] = guide;
-    }
-  }
-
-  if (graphics_) {
-    graphics_->setGuides(guides);
-    graphics_->setFences(fences);
-  }
-
-  const int number_of_sequence_pair_macros = static_cast<int>(macros.size());
-
-  for (Cluster* io_cluster : io_clusters) {
-    soft_macro_id_map[io_cluster->getName()] = macros.size();
-
-    macros.emplace_back(odb::Point(io_cluster->getX() - outline.xMin(),
-                                   io_cluster->getY() - outline.yMin()),
-                        io_cluster->getName(),
-                        io_cluster->getWidth(),
-                        io_cluster->getHeight(),
-                        io_cluster);
-  }
-
+  const int number_of_sequence_pair_macros = populateChildClusterSoftMacros(
+      parent, outline, soft_macro_id_map, fences, guides, macros);
   createFixedTerminals(parent, soft_macro_id_map, macros);
-
   clustering_engine_->rebuildConnections();
 
   BundledNetList nets = buildBundledNets(parent, soft_macro_id_map);
   mergeNets(nets);
-
   if (graphics_) {
     graphics_->setNets(nets);
   }
@@ -1313,147 +1707,18 @@ void HierRTLMP::placeChildren(Cluster* parent)
   }
 
   setMacroClustersShapes(macros);
-
-  // The sum of probabilities should be 1.
-  const float action_sum = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
-                           + exchange_swap_prob_ + resize_prob_;
-
-  // The number of perturbations in each step should be larger than the
-  // number of macros
-  const int num_perturb_per_step
-      = std::max(static_cast<int>(macros.size()), num_perturb_per_step_);
-
-  const int total_number_of_runs = 10;
-  std::vector<float> utilization_list
-      = computeUtilizationList(total_number_of_runs);
-  int remaining_runs = total_number_of_runs;
-  int run_id = 0;
-
-  std::unique_ptr<SACoreSoftMacro> best_sa;
-  std::set<int> skipped_utilization_indices;
-  while (remaining_runs > 0) {
-    SoftSAVector sa_batch;
-    // We need to track the utilization indices, because, when creating the
-    // annealers' batch, we skip invalid utilization values.
-    std::vector<int> sa_batch_utilization_indices;
-    const int number_of_attempts
-        = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
-
-    for (int i = 0; i < number_of_attempts; i++) {
-      const int utilization_index = run_id++;
-      const float utilization = utilization_list[utilization_index];
-      if (!validUtilization(utilization, outline, macros)) {
-        if (parent == tree_->root.get()) {
-          skipped_utilization_indices.insert(utilization_index);
-        }
-
-        continue;
-      }
-
-      sa_batch_utilization_indices.push_back(utilization_index);
-
-      std::vector<SoftMacro> inflated_macros
-          = applyUtilization(utilization, outline, macros);
-
-      const bool single_array_single_std_cell_cluster
-          = singleArraySingleStdCellCluster(macros);
-
-      std::unique_ptr<SACoreSoftMacro> sa
-          = std::make_unique<SACoreSoftMacro>(tree_.get(),
-                                              outline,
-                                              inflated_macros,
-                                              placement_core_weights_,
-                                              cluster_placement_weights_,
-                                              notch_h_th_,
-                                              notch_v_th_,
-                                              pos_swap_prob_ / action_sum,
-                                              neg_swap_prob_ / action_sum,
-                                              double_swap_prob_ / action_sum,
-                                              exchange_swap_prob_ / action_sum,
-                                              resize_prob_ / action_sum,
-                                              init_prob_,
-                                              max_num_step_,
-                                              num_perturb_per_step,
-                                              random_seed_,
-                                              graphics_.get(),
-                                              logger_,
-                                              block_);
-      sa->setNumberOfSequencePairMacros(number_of_sequence_pair_macros);
-      sa->enableEnhancements();
-      sa->setFences(fences);
-      sa->setGuides(guides);
-      sa->setNets(nets);
-      sa->setSoftBlockages(soft_blockages);
-      if (single_array_single_std_cell_cluster) {
-        sa->forceCentralization();
-      }
-
-      sa_batch.push_back(std::move(sa));
-    }
-
-    if (graphics_ && !sa_batch.empty()) {
-      runSA<SACoreSoftMacro>(sa_batch.front().get());
-    } else {
-      std::vector<std::thread> threads;
-      threads.reserve(sa_batch.size());
-      for (auto& sa : sa_batch) {
-        threads.emplace_back(runSA<SACoreSoftMacro>, sa.get());
-      }
-      for (auto& th : threads) {
-        th.join();
-      }
-    }
-
-    remaining_runs -= number_of_attempts;
-
-    for (int sa_index = 0; sa_index < sa_batch.size(); ++sa_index) {
-      auto& sa = sa_batch[sa_index];
-
-      if (sa->isValid()) {
-        const int utilization_index = sa_batch_utilization_indices[sa_index];
-        if (utilization_index != 0) {
-          logger_->warn(MPL,
-                        55,
-                        "Couldn't find a solution for the specified "
-                        "utilization. The utilization was adjusted to {}.",
-                        utilization_list[utilization_index]);
-        }
-
-        best_sa = std::move(sa);
-        break;
-      }
-    }
-
-    if (best_sa) {
-      break;
-    }
-  }
-
-  if (!best_sa) {
-    if (parent == tree_->root.get()) {
-      logger_->error(
-          MPL,
-          40,
-          "Failed to find a valid solution for any of the standard cell "
-          "densities below.\n\n{}\n\nCore utilization is probably too high. "
-          "Please, reduce it and try again.",
-          buildClusterPlacementErrorTable(utilization_list,
-                                          skipped_utilization_indices));
-    } else {
-      logger_->error(MPL,
-                     8,
-                     "Annealing engine failed to find a valid solution. "
-                     "Please, report this internal error.\nFailed at cluster "
-                     "({}): {}",
-                     parent->getId(),
-                     parent->getName());
-    }
-  }
-
+  std::unique_ptr<SACoreSoftMacro> best_sa
+      = runClusterPlacementAnnealing(parent,
+                                     outline,
+                                     macros,
+                                     number_of_sequence_pair_macros,
+                                     fences,
+                                     guides,
+                                     nets,
+                                     soft_blockages);
   best_sa->fillDeadSpace();
 
   std::vector<SoftMacro> placed_macros = best_sa->getMacros();
-
   if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 1)) {
     logger_->report("Cluster Placement Summary");
     printPlacementResult(parent, outline, best_sa.get());
@@ -1466,11 +1731,9 @@ void HierRTLMP::placeChildren(Cluster* parent)
 
   updateChildrenShapesAndLocations(parent, placed_macros, soft_macro_id_map);
   updateChildrenRealLocation(parent, outline.xMin(), outline.yMin());
-
   for (auto& cluster : parent->getChildren()) {
     placeChildren(cluster.get());
   }
-
   clustering_engine_->updateInstancesAssociation(parent);
 }
 
@@ -1807,6 +2070,213 @@ bool HierRTLMP::singleArraySingleStdCellCluster(
   return number_of_macro_arrays != 0 && number_of_std_clusters != 0;
 }
 
+void HierRTLMP::configureMacroPlacementParameters(
+    Cluster* cluster,
+    const int masters_count,
+    const int number_of_sequence_pair_macros,
+    float& pos_swap_prob,
+    float& neg_swap_prob,
+    float& double_swap_prob,
+    float& exchange_swap_prob,
+    int& perturbations_per_step,
+    SequencePair& initial_seq_pair,
+    bool& invalid_states_allowed)
+{
+  // Use exchange more often when there are more instances of a common
+  // master.
+  exchange_swap_prob
+      = exchange_swap_prob_ * 5
+        * (1
+           - (masters_count
+              / static_cast<float>(number_of_sequence_pair_macros)));
+
+  // set the action probabilities (summation to 1.0)
+  const float action_sum = pos_swap_prob_ * 10 + neg_swap_prob_ * 10
+                           + double_swap_prob_ + exchange_swap_prob;
+
+  pos_swap_prob = pos_swap_prob_ * 10 / action_sum;
+  neg_swap_prob = neg_swap_prob_ * 10 / action_sum;
+  double_swap_prob = double_swap_prob_ / action_sum;
+  exchange_swap_prob = exchange_swap_prob / action_sum;
+
+  const int minimum_perturbations_per_step = num_perturb_per_step_ / 10;
+  const bool large_macro_cluster
+      = number_of_sequence_pair_macros > minimum_perturbations_per_step;
+
+  perturbations_per_step = large_macro_cluster ? number_of_sequence_pair_macros
+                                               : minimum_perturbations_per_step;
+
+  invalid_states_allowed = true;
+  if (cluster->isMacroArray()) {
+    bool array_has_empty_space = false;
+    initial_seq_pair = computeArraySequencePair(cluster, array_has_empty_space);
+
+    if (array_has_empty_space) {
+      invalid_states_allowed = false;
+    } else {
+      // We don't need to explore different shapes, so we just swap
+      // macros until we find the best wire length.
+      pos_swap_prob = 0.0f;
+      neg_swap_prob = 0.0f;
+      double_swap_prob = 0.0f;
+      exchange_swap_prob = 1.0f;
+    }
+
+    // Large arrays need more steps to properly converge.
+    if (large_macro_cluster) {
+      perturbations_per_step = num_perturb_per_step_;
+    }
+  }
+}
+
+void HierRTLMP::runHardSABatch(HardSAVector& sa_batch)
+{
+  if (sa_batch.empty()) {
+    return;
+  }
+  if (sa_batch.size() == 1) {
+    runSA<SACoreHardMacro>(sa_batch[0].get());
+    return;
+  }
+  std::vector<std::thread> threads;
+  threads.reserve(sa_batch.size());
+  for (auto& sa : sa_batch) {
+    threads.emplace_back(runSA<SACoreHardMacro>, sa.get());
+  }
+  for (auto& th : threads) {
+    th.join();
+  }
+}
+
+HierRTLMP::HardSAVector HierRTLMP::runMacroPlacementAttempts(
+    const odb::Rect& outline,
+    const std::vector<HardMacro>& sa_macros,
+    const int number_of_sequence_pair_macros,
+    const float pos_swap_prob,
+    const float neg_swap_prob,
+    const float double_swap_prob,
+    const float exchange_swap_prob,
+    const int perturbations_per_step,
+    const BundledNetList& nets,
+    const std::map<int, odb::Rect>& fences,
+    const std::map<int, odb::Rect>& guides,
+    const SequencePair& initial_seq_pair,
+    const bool invalid_states_allowed)
+{
+  int run_id = 0;
+  int remaining_runs = num_runs_;
+  HardSAVector sa_containers;  // The owner of the SACore objects.
+
+  while (remaining_runs > 0) {
+    HardSAVector sa_batch;
+    const int run_thread
+        = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
+
+    for (int i = 0; i < run_thread; i++) {
+      if (graphics_) {
+        graphics_->setOutline(outline);
+      }
+
+      SACoreWeights new_weights = placement_core_weights_;
+      new_weights.outline *= (run_id + 1) * 10;
+      new_weights.wirelength /= (run_id + 1);
+
+      std::unique_ptr<SACoreHardMacro> sa
+          = std::make_unique<SACoreHardMacro>(tree_.get(),
+                                              outline,
+                                              sa_macros,
+                                              new_weights,
+                                              pos_swap_prob,
+                                              neg_swap_prob,
+                                              double_swap_prob,
+                                              exchange_swap_prob,
+                                              init_prob_,
+                                              max_num_step_,
+                                              perturbations_per_step,
+                                              random_seed_ + run_id,
+                                              graphics_.get(),
+                                              logger_,
+                                              block_);
+      sa->setNumberOfSequencePairMacros(number_of_sequence_pair_macros);
+      sa->setAnnealEndAcceptance(anneal_end_acceptance_);
+      sa->setAnnealPatience(anneal_patience_);
+      sa->setNets(nets);
+      sa->setFences(fences);
+      sa->setGuides(guides);
+      sa->setInitialSequencePair(initial_seq_pair);
+      if (!invalid_states_allowed) {
+        sa->disallowInvalidStates();
+      }
+
+      sa_batch.push_back(std::move(sa));
+      run_id++;
+    }
+
+    runHardSABatch(sa_batch);
+    for (auto& sa : sa_batch) {
+      sa_containers.push_back(std::move(sa));
+    }
+
+    remaining_runs -= run_thread;
+  }
+
+  return sa_containers;
+}
+
+SACoreHardMacro* HierRTLMP::selectBestMacroPlacement(
+    HardSAVector& sa_containers) const
+{
+  if (sa_containers.empty()) {
+    return nullptr;
+  }
+  if (placement_seeds_ > 1) {
+    const int best_idx = selectBestCandidateByCommonCost(
+        sa_containers, *sa_containers[0], placement_core_weights_, true);
+    return best_idx >= 0 ? sa_containers[best_idx].get() : nullptr;
+  }
+
+  float best_cost = std::numeric_limits<float>::max();
+  SACoreHardMacro* best_sa = nullptr;
+  for (auto& sa : sa_containers) {
+    // Reset weights so we can compare the final costs.
+    sa->setWeights(placement_core_weights_);
+    if (sa->isValid() && sa->getNormCost() < best_cost) {
+      best_cost = sa->getNormCost();
+      best_sa = sa.get();
+    }
+  }
+  return best_sa;
+}
+
+void HierRTLMP::applyBestMacroPlacement(Cluster* cluster,
+                                        const odb::Rect& outline,
+                                        SACoreHardMacro* best_sa,
+                                        const HardSAVector& sa_containers,
+                                        std::vector<HardMacro*>& hard_macros)
+{
+  if (best_sa == nullptr) {
+    for (const auto& sa : sa_containers) {
+      sa->printResults();
+    }
+    logger_->error(MPL,
+                   10,
+                   "Macro placement failed for macro cluster: {}",
+                   cluster->getName());
+    return;
+  }
+
+  std::vector<HardMacro> best_macros = best_sa->getMacros();
+
+  if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 1)) {
+    logger_->report("Macro Placement Summary");
+    printPlacementResult(cluster, outline, best_sa);
+  }
+
+  for (int i = 0; i < static_cast<int>(hard_macros.size()); i++) {
+    *(hard_macros[i]) = best_macros[i];
+  }
+}
+
 void HierRTLMP::placeMacros(Cluster* cluster)
 {
   if (cluster->isFixedMacro()) {
@@ -1851,154 +2321,43 @@ void HierRTLMP::placeMacros(Cluster* cluster)
     graphics_->setNets(nets);
   }
 
-  // Use exchange more often when there are more instances of a common
-  // master.
-  float exchange_swap_prob
-      = exchange_swap_prob_ * 5
-        * (1 - (masters.size() / (float) hard_macros.size()));
-
-  // set the action probabilities (summation to 1.0)
-  const float action_sum = pos_swap_prob_ * 10 + neg_swap_prob_ * 10
-                           + double_swap_prob_ + exchange_swap_prob;
-
-  float pos_swap_prob = pos_swap_prob_ * 10 / action_sum;
-  float neg_swap_prob = neg_swap_prob_ * 10 / action_sum;
-  float double_swap_prob = double_swap_prob_ / action_sum;
-  exchange_swap_prob = exchange_swap_prob / action_sum;
-
   const int number_of_sequence_pair_macros
       = static_cast<int>(hard_macros.size());
-  const int minimum_perturbations_per_step = num_perturb_per_step_ / 10;
-  const bool large_macro_cluster
-      = number_of_sequence_pair_macros > minimum_perturbations_per_step;
-
-  int perturbations_per_step = large_macro_cluster
-                                   ? number_of_sequence_pair_macros
-                                   : minimum_perturbations_per_step;
-
+  float pos_swap_prob = 0.0f;
+  float neg_swap_prob = 0.0f;
+  float double_swap_prob = 0.0f;
+  float exchange_swap_prob = 0.0f;
+  int perturbations_per_step = 0;
   SequencePair initial_seq_pair;
   bool invalid_states_allowed = true;
-  if (cluster->isMacroArray()) {
-    bool array_has_empty_space = false;
-    initial_seq_pair = computeArraySequencePair(cluster, array_has_empty_space);
+  configureMacroPlacementParameters(cluster,
+                                    static_cast<int>(masters.size()),
+                                    number_of_sequence_pair_macros,
+                                    pos_swap_prob,
+                                    neg_swap_prob,
+                                    double_swap_prob,
+                                    exchange_swap_prob,
+                                    perturbations_per_step,
+                                    initial_seq_pair,
+                                    invalid_states_allowed);
 
-    if (array_has_empty_space) {
-      invalid_states_allowed = false;
-    } else {
-      // We don't need to explore different shapes, so we just swap
-      // macros until we find the best wire length.
-      pos_swap_prob = 0.0f;
-      neg_swap_prob = 0.0f;
-      double_swap_prob = 0.0f;
-      exchange_swap_prob = 1.0f;
-    }
-
-    // Large arrays need more steps to properly converge.
-    if (large_macro_cluster) {
-      perturbations_per_step = num_perturb_per_step_;
-    }
-  }
-
-  int run_id = 0;
-  int remaining_runs = num_runs_;
-  float best_cost = std::numeric_limits<float>::max();
-
-  SACoreHardMacro* best_sa = nullptr;
-  HardSAVector sa_containers;  // The owner of the SACore objects.
-
-  while (remaining_runs > 0) {
-    HardSAVector sa_batch;
-    const int run_thread
-        = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
-
-    for (int i = 0; i < run_thread; i++) {
-      if (graphics_) {
-        graphics_->setOutline(outline);
-      }
-
-      SACoreWeights new_weights = placement_core_weights_;
-      new_weights.outline *= (run_id + 1) * 10;
-      new_weights.wirelength /= (run_id + 1);
-
-      std::unique_ptr<SACoreHardMacro> sa
-          = std::make_unique<SACoreHardMacro>(tree_.get(),
-                                              outline,
-                                              sa_macros,
-                                              new_weights,
-                                              pos_swap_prob,
-                                              neg_swap_prob,
-                                              double_swap_prob,
-                                              exchange_swap_prob,
-                                              init_prob_,
-                                              max_num_step_,
-                                              perturbations_per_step,
-                                              random_seed_ + run_id,
-                                              graphics_.get(),
-                                              logger_,
-                                              block_);
-      sa->setNumberOfSequencePairMacros(number_of_sequence_pair_macros);
-      sa->setNets(nets);
-      sa->setFences(fences);
-      sa->setGuides(guides);
-      sa->setInitialSequencePair(initial_seq_pair);
-      if (!invalid_states_allowed) {
-        sa->disallowInvalidStates();
-      }
-
-      sa_batch.push_back(std::move(sa));
-
-      run_id++;
-    }
-    if (sa_batch.size() == 1) {
-      runSA<SACoreHardMacro>(sa_batch[0].get());
-    } else {
-      std::vector<std::thread> threads;
-      threads.reserve(sa_batch.size());
-
-      for (auto& sa : sa_batch) {
-        threads.emplace_back(runSA<SACoreHardMacro>, sa.get());
-      }
-
-      for (auto& th : threads) {
-        th.join();
-      }
-    }
-
-    for (auto& sa : sa_batch) {
-      // Reset weights so we can compare the final costs.
-      sa->setWeights(placement_core_weights_);
-
-      if (sa->isValid() && sa->getNormCost() < best_cost) {
-        best_cost = sa->getNormCost();
-        best_sa = sa.get();
-      }
-
-      sa_containers.push_back(std::move(sa));
-    }
-
-    remaining_runs -= run_thread;
-  }
-
-  if (best_sa == nullptr) {
-    for (auto& sa : sa_containers) {
-      sa->printResults();
-    }
-    logger_->error(MPL,
-                   10,
-                   "Macro placement failed for macro cluster: {}",
-                   cluster->getName());
-  } else {
-    std::vector<HardMacro> best_macros = best_sa->getMacros();
-
-    if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 1)) {
-      logger_->report("Macro Placement Summary");
-      printPlacementResult(cluster, outline, best_sa);
-    }
-
-    for (int i = 0; i < hard_macros.size(); i++) {
-      *(hard_macros[i]) = best_macros[i];
-    }
-  }
+  HardSAVector sa_containers
+      = runMacroPlacementAttempts(outline,
+                                  sa_macros,
+                                  number_of_sequence_pair_macros,
+                                  pos_swap_prob,
+                                  neg_swap_prob,
+                                  double_swap_prob,
+                                  exchange_swap_prob,
+                                  perturbations_per_step,
+                                  nets,
+                                  fences,
+                                  guides,
+                                  initial_seq_pair,
+                                  invalid_states_allowed);
+  SACoreHardMacro* best_sa = selectBestMacroPlacement(sa_containers);
+  applyBestMacroPlacement(
+      cluster, outline, best_sa, sa_containers, hard_macros);
 
   for (auto& hard_macro : hard_macros) {
     hard_macro->setX(hard_macro->getX() + outline.xMin());

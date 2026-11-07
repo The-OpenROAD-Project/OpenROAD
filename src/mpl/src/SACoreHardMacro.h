@@ -42,8 +42,6 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
 
   void run() override;
 
-  void setWeights(const SACoreWeights& weights);
-
   // Initialize the SA worker
   void initialize() override;
   void fillDeadSpace() override {}
@@ -51,12 +49,20 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
   void printResults() const;
 
  private:
+  struct HardMacroSnapshot
+  {
+    int x = 0;
+    int y = 0;
+  };
+
   float calNormCost() const override;
   void calPenalty() override;
 
   void perturb() override;
   void saveState() override;
   void restoreState() override;
+
+  std::vector<HardMacroSnapshot> pre_macros_;
 };
 
 }  // namespace mpl

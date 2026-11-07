@@ -92,6 +92,7 @@ void SACoreSoftMacro::run()
     graphics_->startSA("soft", max_num_step_, num_perturb_per_step_);
   }
 
+  updateMinTemperature();
   fastSA();
 
   if (enhancements_on_) {
@@ -144,6 +145,15 @@ float SACoreSoftMacro::getNotchPenalty() const
 float SACoreSoftMacro::getNormNotchPenalty() const
 {
   return norm_notch_penalty_;
+}
+
+void SACoreSoftMacro::copyNormalizationFactorsFrom(const SACoreSoftMacro& ref)
+{
+  SimulatedAnnealingCore<SoftMacro>::copyNormalizationFactorsFrom(ref);
+  norm_boundary_penalty_ = ref.norm_boundary_penalty_;
+  norm_soft_blockage_penalty_ = ref.norm_soft_blockage_penalty_;
+  norm_fixed_macros_penalty_ = ref.norm_fixed_macros_penalty_;
+  norm_notch_penalty_ = ref.norm_notch_penalty_;
 }
 
 // Operations
@@ -243,9 +253,20 @@ void SACoreSoftMacro::saveState()
     return;
   }
 
-  pre_macros_ = macros_;
-  pre_pos_seq_ = pos_seq_;
-  pre_neg_seq_ = neg_seq_;
+  const size_t movable_count = pos_seq_.size();
+  if (pre_macros_.size() != movable_count) {
+    pre_macros_.resize(movable_count);
+  }
+  for (size_t i = 0; i < movable_count; ++i) {
+    const SoftMacro& macro = macros_[i];
+    pre_macros_[i] = {macro.getX(),
+                      macro.getY(),
+                      macro.getWidth(),
+                      macro.getHeight(),
+                      macro.getArea()};
+  }
+
+  saveSequencePairState();
 
   pre_width_ = width_;
   pre_height_ = height_;
@@ -269,16 +290,13 @@ void SACoreSoftMacro::restoreState()
   // again. So when we need to generate the final floorplan out,
   // we need to call PackFloorplan again at the end of SA process
 
-  if (action_id_ == 1) {
-    pos_seq_ = pre_pos_seq_;
-  } else if (action_id_ == 2) {
-    neg_seq_ = pre_neg_seq_;
-  } else if (action_id_ == 3 || action_id_ == 4) {
-    pos_seq_ = pre_pos_seq_;
-    neg_seq_ = pre_neg_seq_;
-  }
+  restoreSequencePairState();
 
-  macros_ = pre_macros_;
+  const size_t movable_count = pre_macros_.size();
+  for (size_t i = 0; i < movable_count; ++i) {
+    const SoftMacroSnapshot& snap = pre_macros_[i];
+    macros_[i].restoreState(snap.x, snap.y, snap.width, snap.height, snap.area);
+  }
 
   width_ = pre_width_;
   height_ = pre_height_;
@@ -629,43 +647,45 @@ void SACoreSoftMacro::attemptMacroClusterAlignment()
 void SACoreSoftMacro::fillCoordsLists(std::vector<int>& x_coords,
                                       std::vector<int>& y_coords)
 {
-  std::vector<int> x_point;
-  std::vector<int> y_point;
+  x_coords.clear();
+  y_coords.clear();
+  notch_x_points_.clear();
+  notch_y_points_.clear();
 
   for (auto& macro : macros_) {
     if (!macro.isMacroCluster() && !macro.isMixedCluster()) {
       continue;
     }
-    x_point.push_back(macro.getX());
-    x_point.push_back(macro.getX() + macro.getWidth());
-    y_point.push_back(macro.getY());
-    y_point.push_back(macro.getY() + macro.getHeight());
+    notch_x_points_.push_back(macro.getX());
+    notch_x_points_.push_back(macro.getX() + macro.getWidth());
+    notch_y_points_.push_back(macro.getY());
+    notch_y_points_.push_back(macro.getY() + macro.getHeight());
   }
-  x_point.push_back(0);
-  y_point.push_back(0);
-  x_point.push_back(outline_.dx());
-  y_point.push_back(outline_.dy());
+  notch_x_points_.push_back(0);
+  notch_y_points_.push_back(0);
+  notch_x_points_.push_back(outline_.dx());
+  notch_y_points_.push_back(outline_.dy());
 
-  std::ranges::sort(x_point);
-  std::ranges::sort(y_point);
+  std::ranges::sort(notch_x_points_);
+  std::ranges::sort(notch_y_points_);
 
   // getSegmentIndex requires the bigger value
   // from points within the same epsilon to work properly
   int epsilon = outline_.dx() / 100;
-  x_coords.push_back(x_point.back());
-  for (int i = x_point.size() - 2; i >= 0; i--) {
-    if (x_coords.back() - x_point[i] > epsilon) {
-      x_coords.push_back(x_point[i]);
+  x_coords.push_back(notch_x_points_.back());
+  for (int i = static_cast<int>(notch_x_points_.size()) - 2; i >= 0; i--) {
+    if (x_coords.back() - notch_x_points_[i] > epsilon) {
+      x_coords.push_back(notch_x_points_[i]);
     }
   }
   std::ranges::reverse(x_coords);
 
   epsilon = outline_.dy() / 100;
-  y_coords.push_back(y_point.back());
+  y_coords.push_back(notch_y_points_.back());
 
-  for (int i = y_point.size() - 2; i >= 0; i--) {
-    if (y_coords.back() - y_point[i] > epsilon) {
-      y_coords.push_back(y_point[i]);
+  for (int i = static_cast<int>(notch_y_points_.size()) - 2; i >= 0; i--) {
+    if (y_coords.back() - notch_y_points_[i] > epsilon) {
+      y_coords.push_back(notch_y_points_[i]);
     }
   }
   std::ranges::reverse(y_coords);
@@ -749,6 +769,137 @@ float SACoreSoftMacro::calSingleNotchPenalty(int width, int height)
   return std::sqrt((static_cast<double>(width) * height) / outline_.area());
 }
 
+void SACoreSoftMacro::populateNotchGrid()
+{
+  const int num_x = static_cast<int>(notch_x_coords_.size()) - 1;
+  const int num_y = static_cast<int>(notch_y_coords_.size()) - 1;
+
+  notch_grid_.resize(num_y);
+  notch_visited_.resize(num_y);
+  for (int row = 0; row < num_y; ++row) {
+    notch_grid_[row].assign(num_x, false);
+    notch_visited_[row].assign(num_x, false);
+  }
+
+  for (auto& macro : macros_) {
+    if (macro.isMacroCluster() || macro.isMixedCluster()) {
+      const int x_start = getSegmentIndex(macro.getX(), notch_x_coords_);
+      const int x_end
+          = getSegmentIndex(macro.getX() + macro.getWidth(), notch_x_coords_);
+      const int y_start = getSegmentIndex(macro.getY(), notch_y_coords_);
+      const int y_end
+          = getSegmentIndex(macro.getY() + macro.getHeight(), notch_y_coords_);
+      for (int row = y_start; row < y_end; row++) {
+        for (int col = x_start; col < x_end; col++) {
+          notch_grid_[row][col] = true;
+        }
+      }
+    }
+  }
+}
+
+bool SACoreSoftMacro::tryExpandNotchRow(const int start_row,
+                                        const int start_col,
+                                        const int end_col,
+                                        int& end_row,
+                                        NotchVicinity& current_vicinity) const
+{
+  const int num_y = static_cast<int>(notch_grid_.size());
+  if (end_row + 1 >= num_y
+      || !isRowEmpty(notch_grid_, end_row + 1, start_col, end_col)) {
+    return false;
+  }
+  const NotchVicinity expanded_vicinity = checkNotchVicinity(
+      notch_grid_, start_row, start_col, end_row + 1, end_col);
+  if (expanded_vicinity.total() > current_vicinity.total()
+      || expanded_vicinity == current_vicinity) {
+    end_row += 1;
+    current_vicinity = expanded_vicinity;
+    return true;
+  }
+  return false;
+}
+
+bool SACoreSoftMacro::tryExpandNotchCol(const int start_row,
+                                        const int start_col,
+                                        const int end_row,
+                                        int& end_col,
+                                        NotchVicinity& current_vicinity) const
+{
+  const int num_x = static_cast<int>(notch_grid_.front().size());
+  if (end_col + 1 >= num_x
+      || !isColEmpty(notch_grid_, end_col + 1, start_row, end_row)) {
+    return false;
+  }
+  const NotchVicinity expanded_vicinity = checkNotchVicinity(
+      notch_grid_, start_row, start_col, end_row, end_col + 1);
+  if (expanded_vicinity.total() > current_vicinity.total()
+      || expanded_vicinity == current_vicinity) {
+    end_col += 1;
+    current_vicinity = expanded_vicinity;
+    return true;
+  }
+  return false;
+}
+
+SACoreSoftMacro::NotchVicinity SACoreSoftMacro::expandNotchRegion(
+    const int start_row,
+    const int start_col,
+    int& end_row,
+    int& end_col)
+{
+  end_row = start_row;
+  end_col = start_col;
+  NotchVicinity current_vicinity
+      = checkNotchVicinity(notch_grid_, start_row, start_col, end_row, end_col);
+  bool expand_rows = true;
+  bool expand_cols = true;
+
+  while (expand_rows || expand_cols) {
+    if (expand_rows) {
+      expand_rows = tryExpandNotchRow(
+          start_row, start_col, end_col, end_row, current_vicinity);
+    }
+    if (expand_cols) {
+      expand_cols = tryExpandNotchCol(
+          start_row, start_col, end_row, end_col, current_vicinity);
+    }
+  }
+
+  for (int i = start_row; i <= end_row; i++) {
+    for (int j = start_col; j <= end_col; j++) {
+      notch_visited_[i][j] = true;
+    }
+  }
+
+  return current_vicinity;
+}
+
+void SACoreSoftMacro::recordNotchIfPresent(const int start_row,
+                                           const int start_col,
+                                           const int end_row,
+                                           const int end_col,
+                                           const NotchVicinity& vicinity)
+{
+  const int width = notch_x_coords_[end_col + 1] - notch_x_coords_[start_col];
+  const int height = notch_y_coords_[end_row + 1] - notch_y_coords_[start_row];
+
+  const bool is_h_notch
+      = vicinity.top && vicinity.bottom && height < notch_h_th_;
+  const bool is_v_notch
+      = vicinity.left && vicinity.right && width < notch_v_th_;
+
+  if (is_h_notch || is_v_notch) {
+    notch_penalty_ += calSingleNotchPenalty(width, height);
+    if (graphics_) {
+      graphics_->addNotch(odb::Rect(notch_x_coords_[start_col],
+                                    notch_y_coords_[start_row],
+                                    notch_x_coords_[end_col + 1],
+                                    notch_y_coords_[end_row + 1]));
+    }
+  }
+}
+
 // If there is no HardMacroCluster, we do not consider the notch penalty
 void SACoreSoftMacro::calNotchPenalty()
 {
@@ -764,14 +915,12 @@ void SACoreSoftMacro::calNotchPenalty()
   notch_penalty_ = 0.0;
   notch_h_th_ = outline_.dy() / 10;
   notch_v_th_ = outline_.dx() / 10;
-  int width = 0;
-  int height = 0;
 
   // If the floorplan is not valid
   // We think the entire floorplan is a "huge" notch
   if (!isValid()) {
-    width = std::max(width_, outline_.dx());
-    height = std::max(height_, outline_.dy());
+    const int width = std::max(width_, outline_.dx());
+    const int height = std::max(height_, outline_.dy());
     notch_penalty_ = calSingleNotchPenalty(width, height);
 
     if (graphics_) {
@@ -784,117 +933,24 @@ void SACoreSoftMacro::calNotchPenalty()
   }
 
   // Create grids based on location of MixedCluster and HardMacroCluster
-  std::vector<int> x_coords;
-  std::vector<int> y_coords;
-  fillCoordsLists(x_coords, y_coords);
+  fillCoordsLists(notch_x_coords_, notch_y_coords_);
+  populateNotchGrid();
 
-  int num_x = x_coords.size() - 1;
-  int num_y = y_coords.size() - 1;
-
-  std::vector<std::vector<bool>> grid(num_y, std::vector<bool>(num_x, false));
-  for (auto& macro : macros_) {
-    if (!macro.isMacroCluster() && !macro.isMixedCluster()) {
-      continue;
-    }
-    int x_start = getSegmentIndex(macro.getX(), x_coords);
-    int x_end = getSegmentIndex(macro.getX() + macro.getWidth(), x_coords);
-    int y_start = getSegmentIndex(macro.getY(), y_coords);
-    int y_end = getSegmentIndex(macro.getY() + macro.getHeight(), y_coords);
-    for (int row = y_start; row < y_end; row++) {
-      for (int col = x_start; col < x_end; col++) {
-        grid[row][col] = true;
-      }
-    }
-  }
-
-  std::vector<std::vector<bool>> visited(num_y,
-                                         std::vector<bool>(num_x, false));
+  const int num_x = static_cast<int>(notch_x_coords_.size()) - 1;
+  const int num_y = static_cast<int>(notch_y_coords_.size()) - 1;
 
   for (int start_row = 0; start_row < num_y; start_row++) {
     for (int start_col = 0; start_col < num_x; start_col++) {
-      if (grid[start_row][start_col] || visited[start_row][start_col]) {
+      if (notch_grid_[start_row][start_col]
+          || notch_visited_[start_row][start_col]) {
         continue;
       }
 
       int end_row = start_row;
       int end_col = start_col;
-
-      NotchVicinity current_vicinity
-          = checkNotchVicinity(grid, start_row, start_col, end_row, end_col);
-      bool expand_rows = true;
-      bool expand_cols = true;
-
-      while (expand_rows || expand_cols) {
-        if (expand_rows) {
-          end_row += 1;
-          if (end_row < num_y
-              && isRowEmpty(grid, end_row, start_col, end_col)) {
-            NotchVicinity expanded_vicinity = checkNotchVicinity(
-                grid, start_row, start_col, end_row, end_col);
-            if (expanded_vicinity.total() > current_vicinity.total()
-                || expanded_vicinity == current_vicinity) {
-              current_vicinity = expanded_vicinity;
-            } else {
-              expand_rows = false;
-              end_row -= 1;
-            }
-          } else {
-            expand_rows = false;
-            end_row -= 1;
-          }
-        }
-
-        if (expand_cols) {
-          end_col += 1;
-          if (end_col < num_x
-              && isColEmpty(grid, end_col, start_row, end_row)) {
-            NotchVicinity expanded_vicinity = checkNotchVicinity(
-                grid, start_row, start_col, end_row, end_col);
-            if (expanded_vicinity.total() > current_vicinity.total()
-                || expanded_vicinity == current_vicinity) {
-              current_vicinity = expanded_vicinity;
-            } else {
-              expand_cols = false;
-              end_col -= 1;
-            }
-          } else {
-            expand_cols = false;
-            end_col -= 1;
-          }
-        }
-      }
-
-      for (int i = start_row; i < end_row + 1; i++) {
-        for (int j = start_col; j < end_col + 1; j++) {
-          visited[i][j] = true;
-        }
-      }
-
-      width = x_coords[end_col + 1] - x_coords[start_col];
-      height = y_coords[end_row + 1] - y_coords[start_row];
-
-      bool is_notch = false;
-      if (current_vicinity.top && current_vicinity.bottom) {
-        if (height < notch_h_th_) {
-          is_notch = true;
-        }
-      }
-
-      if (current_vicinity.left && current_vicinity.right) {
-        if (width < notch_v_th_) {
-          is_notch = true;
-        }
-      }
-
-      if (is_notch) {
-        notch_penalty_ += calSingleNotchPenalty(width, height);
-        if (graphics_) {
-          graphics_->addNotch(odb::Rect(x_coords[start_col],
-                                        y_coords[start_row],
-                                        x_coords[end_col + 1],
-                                        y_coords[end_row + 1]));
-        }
-      }
+      const NotchVicinity vicinity
+          = expandNotchRegion(start_row, start_col, end_row, end_col);
+      recordNotchIfPresent(start_row, start_col, end_row, end_col, vicinity);
     }
   }
 

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
@@ -323,6 +324,69 @@ cc_test(
         "//src/mpl:pusher",
         "//src/odb/src/db",
         "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "mpl_annealer_core_unittest",
+    srcs = [
+        "cpp/MplTest.h",
+        "cpp/TestAnnealerCore.cpp",
+    ],
+    deps = [
+        "//src/mpl",
+        "//src/mpl:mpl_impl",
+        "//src/mpl:pusher",
+        "//src/odb/src/db",
+        "//src/tst",
+        "//src/tst:db_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+filegroup(
+    name = "packing_corpus",
+    srcs = ["testcases/packing_corpus.txt"],
+)
+
+cc_library(
+    name = "packing_oracle",
+    testonly = True,
+    srcs = ["cpp/PackingOracle.cpp"],
+    hdrs = ["cpp/PackingOracle.h"],
+    deps = [
+        "//src/mpl:mpl_impl",
+        "//src/mpl:pusher",
+        "//src/odb/src/db",
+        "//src/utl",
+        "@or-tools//ortools/sat:cp_model",
+        "@or-tools//ortools/sat:cp_model_cc_proto",
+        "@or-tools//ortools/sat:cp_model_solver",
+        "@or-tools//ortools/sat:sat_parameters_cc_proto",
+        "@or-tools//ortools/util:sorted_interval_list",
+    ],
+)
+
+cc_test(
+    name = "mpl_annealer_packing_unittest",
+    srcs = [
+        "cpp/MplTest.h",
+        "cpp/TestAnnealerPacking.cpp",
+    ],
+    data = [":packing_corpus"],
+    deps = [
+        ":packing_oracle",
+        "//src/mpl",
+        "//src/mpl:mpl_impl",
+        "//src/mpl:pusher",
+        "//src/odb/src/db",
+        "//src/tst",
+        "//src/tst:db_fixture",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

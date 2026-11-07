@@ -37,9 +37,29 @@ MacroPlacer::~MacroPlacer() = default;
 bool MacroPlacer::run(int threads, const MacroPlacerOptions& options)
 {
   utl::Timer timer;
+  if (options.anneal_end_acceptance.has_value()) {
+    setAnnealEndAcceptance(*options.anneal_end_acceptance);
+  }
+  if (options.anneal_patience != 0.0f) {
+    setAnnealPatience(options.anneal_patience);
+  }
+  if (options.placement_seeds != 1) {
+    setPlacementSeeds(options.placement_seeds);
+  }
+  if (options.random_seed != 0) {
+    setRandomSeed(options.random_seed);
+  }
   hier_rtlmp_->init();
   hier_rtlmp_->configure(threads, options);
   hier_rtlmp_->setGuidanceRegions(guidance_regions_);
+  hier_rtlmp_->setRandomSeed(random_seed_);
+  random_seed_ = 0;
+  hier_rtlmp_->setAnnealEndAcceptance(anneal_end_acceptance_);
+  anneal_end_acceptance_ = 0.0f;
+  hier_rtlmp_->setAnnealPatience(anneal_patience_);
+  anneal_patience_ = 0.0f;
+  hier_rtlmp_->setPlacementSeeds(placement_seeds_);
+  placement_seeds_ = 1;
 
   hier_rtlmp_->run();
   logger_->info(MPL, 500, "Runtime: {:.2f}s", timer.elapsed());
@@ -182,6 +202,41 @@ void MacroPlacer::addGuidanceRegion(odb::dbInst* macro, odb::Rect region)
 void MacroPlacer::setMinChannelSize(int width, int height)
 {
   hier_rtlmp_->setMinChannelSize(width, height);
+}
+
+void MacroPlacer::setRandomSeed(const int seed)
+{
+  random_seed_ = seed;
+  hier_rtlmp_->setRandomSeed(seed);
+}
+
+void MacroPlacer::setAnnealEndAcceptance(const float end_acceptance)
+{
+  if (end_acceptance <= 0.0f || end_acceptance >= 0.9f) {
+    logger_->error(
+        MPL, 81, "-anneal_end_acceptance must be in the range (0.0, 0.9).");
+  }
+  anneal_end_acceptance_ = end_acceptance;
+  hier_rtlmp_->setAnnealEndAcceptance(end_acceptance);
+}
+
+void MacroPlacer::setAnnealPatience(const float patience)
+{
+  if (patience < 0.0f || patience > 1.0f) {
+    logger_->error(
+        MPL, 82, "-anneal_patience must be in the range [0.0, 1.0].");
+  }
+  anneal_patience_ = patience;
+  hier_rtlmp_->setAnnealPatience(patience);
+}
+
+void MacroPlacer::setPlacementSeeds(const int seeds)
+{
+  if (seeds < 1) {
+    logger_->error(MPL, 83, "-placement_seeds must be >= 1.");
+  }
+  placement_seeds_ = seeds;
+  hier_rtlmp_->setPlacementSeeds(seeds);
 }
 
 void MacroPlacer::blockMacroChannels()

@@ -1153,6 +1153,19 @@ int64_t SoftMacro::getArea() const
   return area_ > 1 ? area_ : 0;
 }
 
+void SoftMacro::restoreState(const int x,
+                             const int y,
+                             const int width,
+                             const int height,
+                             const int64_t area)
+{
+  x_ = x;
+  y_ = y;
+  width_ = width;
+  height_ = height;
+  area_ = area;
+}
+
 odb::Rect SoftMacro::getBBox() const
 {
   return odb::Rect(x_, y_, x_ + width_, y_ + height_);
