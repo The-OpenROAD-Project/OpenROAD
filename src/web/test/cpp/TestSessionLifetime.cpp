@@ -57,7 +57,7 @@ int statusOf(const std::string& head)
   return code;
 }
 
-// What every response head must carry (issue #11167, F-06).
+// What every response head must carry.
 void expectSecurityHeaders(const std::string& head, const std::string& what)
 {
   for (const char* header : {
@@ -84,6 +84,12 @@ void expectSecurityHeaders(const std::string& head, const std::string& what)
   }
   EXPECT_EQ(policy.find("unsafe-eval"), std::string::npos) << what << '\n'
                                                            << policy;
+  // The requests' Host is localhost:<port>; pre-CSP3 browsers need the
+  // WebSocket named, since their 'self' does not match ws:.
+  EXPECT_NE(policy.find("connect-src 'self' ws://localhost:"),
+            std::string::npos)
+      << what << '\n'
+      << policy;
 }
 
 // A loopback listener with no design, so eagerInit() returns at once and the

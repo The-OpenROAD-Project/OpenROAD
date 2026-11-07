@@ -491,7 +491,7 @@ create_toolbar_button
 | `-name` | Key used to remove the button later. The type is `string`. The default is a generated `buttonN`. Re-using a registered name is an error. |
 | `-text` | Label to put on the button. The type is `string`. Required. |
 | `-script` | Tcl script to evaluate when the button is clicked, or — with `-toggle` — when it is switched on. The type is `string`. Required. |
-| `-icon` | Icon to show before the label: either literal text (an emoji, say) or an image referenced by `data:` URI or a path on this server starting with `/` or `./`. An `http(s):` URL is blocked by the viewer's Content-Security-Policy. The type is `string`. The default is no icon. |
+| `-icon` | Icon to show before the label: either literal text (an emoji, say) or an image referenced by a `data:` URI. An `http(s):` URL or a path starting with `/` or `./` is an error: the viewer's Content-Security-Policy blocks remote images and the server serves no image files. The type is `string`. The default is no icon. |
 | `-tooltip` | Hover text. The type is `string`. The default is no tooltip. |
 | `-toggle` | Make the button a two-state switch: clicking it runs `-script` when turning it on and `-script_off` when turning it off. |
 | `-script_off` | Tcl script to evaluate when a `-toggle` button is switched off. The type is `string`. Ignored without `-toggle`. |

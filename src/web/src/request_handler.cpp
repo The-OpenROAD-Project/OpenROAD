@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <any>
+#include <cctype>
 #include <chrono>
 #include <cmath>
 #include <cstddef>
@@ -454,6 +455,54 @@ bool webSocketOriginAllowed(const std::string_view origin,
   // and a proxy or non-browser client may vary it, which would otherwise 403 a
   // legitimate handshake.
   return boost::beast::iequals(authority, host);
+}
+
+namespace {
+
+// host-source per CSP: a host name of ALPHA / DIGIT / "-" / "." and an
+// optional ":port" of digits.  Anything else, such as an IPv6 literal or
+// characters that would end the directive, cannot be spelled.
+bool isCspHostSource(const std::string_view host)
+{
+  const size_t colon = host.find(':');
+  const std::string_view name = host.substr(0, colon);
+  if (name.empty()) {
+    return false;
+  }
+  for (const char c : name) {
+    if (std::isalnum(static_cast<unsigned char>(c)) == 0 && c != '-'
+        && c != '.') {
+      return false;
+    }
+  }
+  if (colon == std::string_view::npos) {
+    return true;
+  }
+  const std::string_view port = host.substr(colon + 1);
+  return !port.empty() && port.size() <= 5
+         && std::ranges::all_of(port, [](const char c) {
+              return std::isdigit(static_cast<unsigned char>(c)) != 0;
+            });
+}
+
+}  // namespace
+
+std::string contentSecurityPolicy(const std::string_view host)
+{
+  // script-src 'self' keeps an injected <img onerror> or inline <script> from
+  // running; styles stay inline-able for netlistsvg's SVG and the templates.
+  std::string policy
+      = "default-src 'self'; script-src 'self'; "
+        "style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
+        "connect-src 'self' ";
+  if (isCspHostSource(host)) {
+    policy.append("ws://").append(host).append(" wss://").append(host);
+    policy += ' ';
+  }
+  policy
+      += "data:; font-src 'self' data:; object-src 'none'; "
+         "base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+  return policy;
 }
 
 BindAddressKind classifyBindAddress(const std::string_view address)

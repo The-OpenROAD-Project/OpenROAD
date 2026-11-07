@@ -47,8 +47,9 @@ export function createToolbar(app) {
             if (btn.icon) {
                 const iconEl = document.createElement('span');
                 iconEl.className = 'toolbar-icon';
-                // Support both emoji/text icons and image data URIs / URLs.
-                if (/^(data:|https?:|\.?\/)/.test(btn.icon)) {
+                // Text (an emoji, say) or a data: URI image; the page's CSP
+                // blocks remote images and the server serves no image files.
+                if (btn.icon.startsWith('data:')) {
                     const img = document.createElement('img');
                     img.src = btn.icon;
                     img.alt = '';

@@ -51,11 +51,14 @@ WebSocket carries a small binary framing with JSON or PNG payloads.
   `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer` and this
   `Content-Security-Policy`:
   `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';
-  img-src 'self' data: blob:; connect-src 'self' data:; font-src 'self' data:;
-  object-src 'none'; base-uri 'none'; form-action 'none';
-  frame-ancestors 'none'`. The page runs no inline script and no `eval`, and
-  loads images only from itself, `data:` and `blob:`; another site cannot
-  frame it.
+  img-src 'self' data: blob:; connect-src 'self' ws://HOST wss://HOST data:;
+  font-src 'self' data:; object-src 'none'; base-uri 'none';
+  form-action 'none'; frame-ancestors 'none'`, where `HOST` is the request's
+  `Host` header. The page runs no inline script and no `eval`, and loads
+  images only from itself, `data:` and `blob:`; another site cannot frame it.
+  `ws://HOST wss://HOST` are there because browsers older than CSP Level 3
+  (Safari before 15.4, say) do not let `'self'` match a WebSocket; a `Host`
+  a CSP source cannot spell, such as an IPv6 literal, leaves them out.
 - The WebSocket upgrade is also at the root path. Once upgraded, all
   request/response traffic uses the binary framing below.
 

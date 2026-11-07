@@ -162,28 +162,21 @@ bool parseBbox(const std::string& s, odb::Rect& out)
   return true;
 }
 
-// script-src 'self' keeps an injected <img onerror> or inline <script> from
-// running; styles stay inline-able for netlistsvg's SVG and the templates.
-constexpr std::string_view kContentSecurityPolicy
-    = "default-src 'self'; script-src 'self'; "
-      "style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
-      "connect-src 'self' data:; font-src 'self' data:; object-src 'none'; "
-      "base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
-
-// The plain-text response every HTTP answer starts from, security headers
-// included (issue #11167, F-06).
-http::response<http::string_body> textResponse(const http::status status,
-                                               const unsigned version,
-                                               const bool keep_alive)
+// The plain-text response every HTTP answer to `req` starts from, security
+// headers included.
+http::response<http::string_body> textResponse(
+    const http::status status,
+    const http::request<http::string_body>& req,
+    const bool keep_alive)
 {
-  http::response<http::string_body> res{status, version};
+  http::response<http::string_body> res{status, req.version()};
   res.set(http::field::server, "OpenROAD");
   res.set(http::field::content_type, "text/plain");
-  // By name: older Beast releases have no enum for some of these.
-  res.set("Content-Security-Policy", kContentSecurityPolicy);
-  res.set("X-Content-Type-Options", "nosniff");
-  res.set("X-Frame-Options", "DENY");
-  res.set("Referrer-Policy", "no-referrer");
+  res.set(http::field::content_security_policy,
+          contentSecurityPolicy(req[http::field::host]));
+  res.set(http::field::x_content_type_options, "nosniff");
+  res.set(http::field::x_frame_options, "DENY");
+  res.set(http::field::referrer_policy, "no-referrer");
   res.keep_alive(keep_alive);
   return res;
 }
@@ -284,7 +277,7 @@ static http::response<http::string_body> dispatch_request(
     const std::shared_ptr<SessionAuth>& auth,
     utl::Logger* logger)
 {
-  auto res = textResponse(http::status::ok, req.version(), req.keep_alive());
+  auto res = textResponse(http::status::ok, req, req.keep_alive());
 
   if (req.method() == http::verb::get) {
     // The route match uses the path alone; the query carries the token, the
@@ -383,7 +376,7 @@ static http::response<http::string_body> handle_request(
   } catch (const std::exception& e) {
     logger->warn(utl::WEB, 126, "Request failed: {}", e.what());
     auto res = textResponse(
-        http::status::internal_server_error, req.version(), req.keep_alive());
+        http::status::internal_server_error, req, req.keep_alive());
     res.body() = "Request failed.";
     res.prepare_payload();
     return res;
@@ -1510,7 +1503,7 @@ void DetectSession::reject(const http::status status,
                            const std::string_view body)
 {
   auto res = std::make_shared<http::response<http::string_body>>(
-      textResponse(status, req_.version(), /*keep_alive=*/false));
+      textResponse(status, req_, /*keep_alive=*/false));
   res->set(http::field::server, "OpenROAD WebSocket Server");
   if (status == http::status::unauthorized) {
     res->set(http::field::www_authenticate, kTokenChallenge);
