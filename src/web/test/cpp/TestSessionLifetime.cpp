@@ -6,14 +6,15 @@
 
 #include <poll.h>
 
-#include <charconv>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <stdexcept>
 #include <string>
-#include <system_error>
+#include <string_view>
 #include <thread>
+#include <utility>
 
 #include "boost/asio/io_context.hpp"
 #include "boost/asio/ip/address.hpp"
@@ -35,16 +36,25 @@ namespace {
 namespace net = boost::asio;
 using Tcp = net::ip::tcp;
 
+constexpr const char* kToken = "0123456789abcdef0123456789abcdef";
+constexpr const char* kTicket = "fedcba9876543210fedcba9876543210";
+
+// `target` with the access token added to its query.
+std::string withToken(const std::string& target)
+{
+  return target + (target.find('?') == std::string::npos ? "?" : "&")
+         + "token=" + kToken;
+}
+
 // The status code of a response head; 0 when there is no status line.
 int statusOf(const std::string& head)
 {
   int code = 0;
-  if (!head.starts_with("HTTP/1.1 ") || head.size() < 12) {
+  if (!head.starts_with("HTTP/1.1 ")
+      || !parseIntExact(std::string_view(head).substr(9, 3), code)) {
     return 0;
   }
-  const char* const first = head.data() + 9;
-  const auto res = std::from_chars(first, first + 3, code);
-  return res.ec == std::errc{} && res.ptr == first + 3 ? code : 0;
+  return code;
 }
 
 // A loopback listener with no design, so eagerInit() returns at once and the
@@ -64,7 +74,8 @@ class ListenerFixture : public ::testing::Test
     tcl_eval_
         = std::make_shared<TclEvaluator>(/*interp=*/nullptr, logger_.get());
 
-    handle_ = startListener();
+    handle_ = startListener(
+        std::make_shared<SessionAuth>(kToken, kTicket, kTicketTtl));
     generator_baseline_ = generator_.use_count();
     io_thread_ = std::thread([this] { ioc_->run(); });
   }
@@ -81,7 +92,7 @@ class ListenerFixture : public ::testing::Test
     (void) logger_.release();  // NOLINT(bugprone-unused-return-value)
   }
 
-  ListenerHandle startListener()
+  ListenerHandle startListener(std::shared_ptr<SessionAuth> auth)
   {
     return createAndRunListener(
         *ioc_,
@@ -92,7 +103,8 @@ class ListenerFixture : public ::testing::Test
         std::make_shared<ClockTreeReport>(/*sta=*/nullptr),
         logger_.get(),
         hook_.get(),
-        /*max_in_flight=*/16);
+        /*max_in_flight=*/16,
+        std::move(auth));
   }
 
   // Runs before the generator exists; the default leaves the database empty.
@@ -161,10 +173,12 @@ class ListenerFixture : public ::testing::Test
     return readHead(socket);
   }
 
-  std::string upgradeRequest(const std::string& origin = "") const
+  std::string upgradeRequest(const std::string& query,
+                             const std::string& origin = "") const
   {
-    std::string request = "GET /ws HTTP/1.1\r\n"
-                          "Host: localhost:"
+    std::string request = "GET /ws" + query
+                          + " HTTP/1.1\r\n"
+                            "Host: localhost:"
                           + std::to_string(port())
                           + "\r\n"
                             "Upgrade: websocket\r\n"
@@ -177,16 +191,38 @@ class ListenerFixture : public ::testing::Test
     return request + "\r\n";
   }
 
-  std::string upgradeAndDrop(const std::string& origin = "")
+  std::string upgradeAndDrop(const std::string& query,
+                             const std::string& origin = "")
   {
-    return requestHead(upgradeRequest(origin));
+    return requestHead(upgradeRequest(query, origin));
   }
 
   std::string httpGet(const std::string& target)
   {
-    return requestHead("GET " + target + " HTTP/1.1\r\nHost: localhost:"
-                       + std::to_string(port())
-                       + "\r\nConnection: close\r\n\r\n");
+    return requestHead(getRequest(target));
+  }
+
+  // The head and the body: the server closes after one response.
+  std::string httpGetWhole(const std::string& target)
+  {
+    Tcp::socket socket = connectAndSend(getRequest(target));
+    std::string received;
+    while (waitReadable(socket)) {
+      char chunk[1024];
+      boost::system::error_code ec;
+      const std::size_t n = socket.read_some(net::buffer(chunk), ec);
+      received.append(chunk, n);
+      if (ec) {
+        break;
+      }
+    }
+    return received;
+  }
+
+  std::string getRequest(const std::string& target) const
+  {
+    return "GET " + target + " HTTP/1.1\r\nHost: localhost:"
+           + std::to_string(port()) + "\r\nConnection: close\r\n\r\n";
   }
 
   uint16_t port() const { return handle_.port; }
@@ -236,7 +272,8 @@ TEST_F(ListenerFixture, ClientThatDropsTheSocketDoesNotAbortTheServer)
 {
   constexpr int kConnections = 25;
   for (int i = 0; i < kConnections; ++i) {
-    EXPECT_EQ(statusOf(upgradeAndDrop()), 101) << "connection " << i;
+    EXPECT_EQ(statusOf(upgradeAndDrop(withToken(""))), 101)
+        << "connection " << i;
     ASSERT_TRUE(waitForSessionsGone(std::chrono::seconds(5)))
         << "connection " << i;
   }
@@ -245,8 +282,8 @@ TEST_F(ListenerFixture, ClientThatDropsTheSocketDoesNotAbortTheServer)
 // A refused handshake must not take the listener with it.
 TEST_F(ListenerFixture, RefusedUpgradeLeavesTheListenerServing)
 {
-  EXPECT_EQ(statusOf(upgradeAndDrop("http://evil.example")), 403);
-  EXPECT_EQ(statusOf(upgradeAndDrop()), 101);
+  EXPECT_EQ(statusOf(upgradeAndDrop("")), 401);
+  EXPECT_EQ(statusOf(upgradeAndDrop(withToken(""))), 101);
   EXPECT_TRUE(waitForSessionsGone(std::chrono::seconds(5)));
 }
 
@@ -254,7 +291,7 @@ TEST_F(ListenerFixture, RefusedUpgradeLeavesTheListenerServing)
 // thread or with a read pending; when it goes, it must not reach the hook.
 TEST_F(ListenerFixture, SessionThatOutlivesItsHookLeavesItAlone)
 {
-  Tcp::socket client = connectAndSend(upgradeRequest());
+  Tcp::socket client = connectAndSend(upgradeRequest(withToken("")));
   ASSERT_EQ(statusOf(readHead(client)), 101);
   ASSERT_TRUE(hook_->sessions().waitForClient(5, [] { return false; }));
   stopServing();
@@ -267,21 +304,119 @@ TEST_F(ListenerFixture, SessionThatOutlivesItsHookLeavesItAlone)
   EXPECT_TRUE(waitForSessionsGone(std::chrono::seconds(5)));
 }
 
-TEST_F(ListenerFixture, ImageDownloadWithoutADesignAnswers404)
+// The launch ticket keeps the token off the browser's command line: it is
+// redeemed once, for a redirect to the real token.
+TEST_F(ListenerFixture, TicketRedirectsToTheTokenExactlyOnce)
 {
-  EXPECT_EQ(statusOf(httpGet("/download/image?type=entire")), 404);
-  EXPECT_EQ(statusOf(httpGet("/")), 200);
+  const std::string head = httpGet(std::string("/?ticket=") + kTicket);
+  EXPECT_EQ(statusOf(head), 302) << head;
+  EXPECT_NE(head.find(std::string("Location: /?token=") + kToken),
+            std::string::npos)
+      << head;
+
+  // What `ps` saw is spent: presenting it again gets nothing, and the browser
+  // that lost the race is told why.
+  const std::string again = httpGetWhole(std::string("/?ticket=") + kTicket);
+  EXPECT_EQ(statusOf(again), 401) << again;
+  EXPECT_NE(again.find("already used"), std::string::npos) << again;
+  // And the token it handed out works.
+  EXPECT_EQ(statusOf(httpGet(withToken("/"))), 200);
 }
 
-// An escaping utl::Logger::error would drop the connection unanswered.  The
-// 500 keeps the CORS header, or a cross-origin client could not read it.
+// Deny by default: a route nobody listed is gated too.
+TEST_F(ListenerFixture, OnlyThePageAmongTheAssetsNeedsTheToken)
+{
+  for (const char* target :
+       {"/", "/index.html", "/download/image?type=entire", "/no-such-route"}) {
+    EXPECT_EQ(statusOf(httpGet(target)), 401) << target;
+  }
+  EXPECT_EQ(statusOf(httpGet(withToken("/no-such-route"))), 404);
+  EXPECT_EQ(statusOf(httpGet("/app.min.js")), 200);
+  EXPECT_EQ(statusOf(httpGet("/THIRD_PARTY_LICENSES.txt")), 200);
+}
+
+// The viewer gives up only on this server's refusal, not on a proxy's 401.
+TEST_F(ListenerFixture, UnauthorizedNamesTheTokenScheme)
+{
+  const std::string challenge = "WWW-Authenticate: OpenROAD-Token\r\n";
+  const std::string page = httpGet("/");
+  EXPECT_NE(page.find(challenge), std::string::npos) << page;
+  const std::string upgrade = upgradeAndDrop("");
+  EXPECT_NE(upgrade.find(challenge), std::string::npos) << upgrade;
+}
+
+TEST_F(ListenerFixture, TicketDoesNotOpenTheWebSocket)
+{
+  // Only the page redeems a ticket; the socket that carries the Tcl
+  // interpreter takes the token and nothing else.
+  EXPECT_EQ(statusOf(upgradeAndDrop(std::string("?ticket=") + kTicket)), 401);
+}
+
+TEST_F(ListenerFixture, TicketDoesNotUnlockTheImageDownload)
+{
+  EXPECT_EQ(statusOf(httpGet(std::string("/download/image?ticket=") + kTicket)),
+            401);
+}
+
+TEST_F(ListenerFixture, ImageDownloadWithoutADesignAnswers404)
+{
+  EXPECT_EQ(statusOf(httpGet(withToken("/download/image?type=entire"))), 404);
+  EXPECT_EQ(statusOf(httpGet(withToken("/"))), 200);
+}
+
+// An escaping utl::Logger::error would drop the connection unanswered.  Like
+// every other response, the 500 carries no wildcard CORS header.
 TEST_F(DegenerateDesignFixture, FailedRenderAnswers500AndKeepsServing)
 {
-  const std::string head = httpGet("/download/image?type=entire");
+  const std::string head = httpGet(withToken("/download/image?type=entire"));
   EXPECT_EQ(statusOf(head), 500);
-  EXPECT_NE(head.find("Access-Control-Allow-Origin: *"), std::string::npos)
+  EXPECT_EQ(head.find("Access-Control-Allow-Origin"), std::string::npos)
       << head;
-  EXPECT_EQ(statusOf(httpGet("/")), 200);
+  EXPECT_EQ(statusOf(httpGet(withToken("/"))), 200);
+}
+
+TEST_F(ListenerFixture, RedirectKeepsTheViewerOptions)
+{
+  const std::string head
+      = httpGet(std::string("/?mergetiles=0&ticket=") + kTicket);
+  EXPECT_NE(
+      head.find(std::string("Location: /?token=") + kToken + "&mergetiles=0"),
+      std::string::npos)
+      << head;
+}
+
+// A foreign page holding a leaked token could otherwise read the responses.
+TEST_F(ListenerFixture, ResponsesCarryNoWildcardCorsHeader)
+{
+  for (const std::string& target : {withToken("/"), std::string("/")}) {
+    const std::string head = httpGet(target);
+    EXPECT_EQ(head.find("Access-Control-Allow-Origin"), std::string::npos)
+        << head;
+  }
+}
+
+TEST_F(ListenerFixture, CrossOriginUpgradeIsForbiddenEvenWithTheToken)
+{
+  EXPECT_EQ(statusOf(upgradeAndDrop(withToken(""), "http://evil.example")),
+            403);
+}
+
+// Origin is judged first, so the log names the page that tried.
+TEST_F(ListenerFixture, CrossOriginUpgradeWithoutTheTokenIsForbidden)
+{
+  EXPECT_EQ(statusOf(upgradeAndDrop("", "http://evil.example")), 403);
+}
+
+TEST_F(ListenerFixture, SameOriginUpgradeWithTheTokenIsAccepted)
+{
+  const std::string origin = "http://localhost:" + std::to_string(port());
+  EXPECT_EQ(statusOf(upgradeAndDrop(withToken(""), origin)), 101);
+  EXPECT_TRUE(waitForSessionsGone(std::chrono::seconds(5)));
+}
+
+TEST_F(ListenerFixture, ListenerRefusesANullAuth)
+{
+  EXPECT_THROW(startListener(/*auth=*/nullptr), std::invalid_argument);
 }
 
 }  // namespace
