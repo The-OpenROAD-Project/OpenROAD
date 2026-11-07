@@ -387,7 +387,7 @@ std::vector<Retimer::Group> Retimer::collectGroups(
         }
         for (odb::dbInst* f : handles[k].flops) {
           group.flops.insert(f);
-          group.dont_touch = group.dont_touch || isDontTouchRegister(sta_, f);
+          group.dont_touch = group.dont_touch || graph.isDontTouch(f);
         }
       }
     }
@@ -769,14 +769,6 @@ void Retimer::rebuildGroup(const Group& group,
       s.pin->connect(depth_net[s.wr]);
     }
   }
-  // A primary output that collapsed onto the driver net reads the deepest tap.
-  const std::vector<odb::dbBTerm*> ports(group.driver_net->getBTerms().begin(),
-                                         group.driver_net->getBTerms().end());
-  for (odb::dbBTerm* bterm : ports) {
-    bterm->disconnect();
-    bterm->connect(depth_net[max_depth]);
-    stats.reregistered_ports++;
-  }
 }
 
 // Minimal-perturbation apply: rebuild only the register groups whose edge
@@ -851,12 +843,6 @@ void Retimer::applyRetiming(const RetimingGraph& graph,
                 "Inserted {} registers ({} kept their register class).",
                 stats.inserted,
                 stats.inserted_classed);
-  if (stats.reregistered_ports > 0) {
-    logger_->info(utl::RET,
-                  26,
-                  "Re-registered {} output ports.",
-                  stats.reregistered_ports);
-  }
   if (stats.groups_skipped > 0) {
     logger_->warn(utl::RET,
                   27,

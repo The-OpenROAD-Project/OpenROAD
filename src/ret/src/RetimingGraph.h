@@ -46,21 +46,32 @@ class RetimingGraph
   std::vector<odb::dbInst*> nodes_;          // vertex id -> gate
   std::vector<std::vector<Edge>> adj_;       // out edges of each vertex
   std::vector<std::vector<EdgePhys>> phys_;  // parallel to adj_
-  std::vector<bool> pinned_;  // gate may not move: I/O boundary or fed
-                              // through a don't-touch register
+  std::vector<bool> pinned_;  // gate may not move: I/O boundary, don't
+                              // touch, or fed through a fenced register
+  // Registers on a chain whose output reaches a primary output, a control
+  // pin or a cell outside the graph: moving any register of the chain would
+  // change what those see.
+  std::unordered_set<odb::dbInst*> fenced_;
   // Class of every register in the design (see RegisterUtils.h).
   std::unordered_map<odb::dbInst*, RegisterClass> reg_class_;
   std::vector<bool> self_dual_;  // gate function is self-dual
   float clock_period_ = 0.0f;
 
+  // A register that may not move: fenced, marked don't-touch (the instance
+  // or a net on it), or of a kind the retimer never moves (see
+  // isDontTouchRegister).
+  bool isDontTouch(odb::dbInst* reg) const;
+
  private:
   bool continuesThrough(odb::dbInst* reg, odb::dbITerm* pin) const;
+  bool fencesChain(odb::dbNet* net) const;
   void walkFanout(int source,
                   odb::dbInst* current,
                   int weight,
                   std::vector<odb::dbInst*>& flops,
                   std::unordered_set<odb::dbInst*>& visited);
   void markBoundary(odb::dbInst* inst, int id);
+  void markDontTouch(odb::dbInst* inst, int id);
   void fenceDontTouch();
   void findClockPeriod();
 

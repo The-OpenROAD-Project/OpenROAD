@@ -3,7 +3,7 @@
 worst slack max 4.1621
 [WARNING RET-0012] No negative-edge register cell found; negative-edge registers will be left untouched.
 [INFO RET-0014] Retiming graph: 14 gates, 12 edges (3 registered, max weight 2), clock period 5e-09
-[INFO RET-0015] 5 register slots, 5 distinct registers, 6 pinned gates (I/O boundary or fed through a don't-touch register)
+[INFO RET-0015] 5 register slots, 5 distinct registers, 6 pinned gates (I/O boundary, don't-touch, or fed through a fenced register), 0 fenced registers (the chain reaches a port, a control pin or a don't-touch cell)
 [INFO RET-0018] Load-aware arc on 12/12 edges (fell back to the annotated arc: 0 no cell, 0 no port, 0 no operating conditions, 0 no table model); register D-pin load 1.68e-15
 [INFO RET-0020] Start worst register-to-register arrival 4.618e-10 (model slack 4.538e-09 vs period 5e-09)
 

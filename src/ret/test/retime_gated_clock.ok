@@ -4,7 +4,7 @@
 [WARNING RET-0006] No tie-low cell found.
 [WARNING RET-0012] No negative-edge register cell found; negative-edge registers will be left untouched.
 [INFO RET-0014] Retiming graph: 23 gates, 19 edges (8 registered, max weight 1), clock period 1e-09
-[INFO RET-0015] 8 register slots, 8 distinct registers, 18 pinned gates (I/O boundary or fed through a don't-touch register)
+[INFO RET-0015] 8 register slots, 8 distinct registers, 18 pinned gates (I/O boundary, don't-touch, or fed through a fenced register), 0 fenced registers (the chain reaches a port, a control pin or a don't-touch cell)
 [INFO RET-0018] Load-aware arc on 19/19 edges (fell back to the annotated arc: 0 no cell, 0 no port, 0 no operating conditions, 0 no table model); register D-pin load 1.14e-15
 [INFO RET-0020] Start worst register-to-register arrival 8.28e-11 (model slack 9.172e-10 vs period 1e-09)
 

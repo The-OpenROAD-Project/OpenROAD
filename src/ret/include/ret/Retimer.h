@@ -98,7 +98,6 @@ class Retimer
     int removed = 0;
     int inserted = 0;
     int inserted_classed = 0;
-    int reregistered_ports = 0;
     int groups_changed = 0;
     int groups_skipped = 0;
   };

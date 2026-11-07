@@ -100,6 +100,9 @@ void RetimingGraph::walkFanout(int source,
     if (net == nullptr) {
       continue;
     }
+    if (!flops.empty() && fencesChain(net)) {
+      fenced_.insert(flops.begin(), flops.end());
+    }
     for (odb::dbITerm* sink : net->getITerms()) {
       if (sink->getIoType() != odb::dbIoType::INPUT) {
         continue;
@@ -132,6 +135,45 @@ void RetimingGraph::walkFanout(int source,
   }
 }
 
+// True when a register chain ending on `net` must stay as it is: the net
+// reaches a primary output, a control pin of a register, or a cell that is
+// not a gate of the graph, and all of those read the chain at its current
+// depth.
+bool RetimingGraph::fencesChain(odb::dbNet* net) const
+{
+  if (!net->getBTerms().empty()) {
+    return true;
+  }
+  for (odb::dbITerm* sink : net->getITerms()) {
+    if (sink->getIoType() == odb::dbIoType::INPUT) {
+      odb::dbInst* load = sink->getInst();
+      if (load->getMaster()->isSequential()) {
+        if (!continuesThrough(load, sink)) {
+          return true;
+        }
+      } else if (!index_.contains(load)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool RetimingGraph::isDontTouch(odb::dbInst* reg) const
+{
+  if (fenced_.contains(reg) || reg->isDoNotTouch()
+      || isDontTouchRegister(sta_, reg)) {
+    return true;
+  }
+  for (odb::dbITerm* pin : reg->getITerms()) {
+    odb::dbNet* net = pin->getNet();
+    if (net != nullptr && net->isDoNotTouch()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void RetimingGraph::build()
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
@@ -140,6 +182,7 @@ void RetimingGraph::build()
   nodes_.clear();
   index_.clear();
   reg_class_.clear();
+  fenced_.clear();
   for (odb::dbInst* inst : block->getInsts()) {
     if (inst->getMaster()->isSequential()) {
       reg_class_[inst] = registerClass(sta_, inst);
@@ -166,6 +209,7 @@ void RetimingGraph::build()
 
   for (int i = 0; i < n; i++) {
     markBoundary(nodes_[i], i);
+    markDontTouch(nodes_[i], i);
     std::vector<odb::dbInst*> flops;
     std::unordered_set<odb::dbInst*> visited;
     walkFanout(i, nodes_[i], 0, flops, visited);
@@ -173,10 +217,40 @@ void RetimingGraph::build()
   fenceDontTouch();
 }
 
-// Pin every gate that would have to move a don't-touch register, and every
-// gate whose fanin registers sit on different clock nets (a gated and an
-// ungated register cannot be merged into one), so the search never proposes
-// those slides.
+// A don't-touch gate, or one whose output net is don't-touch, is pinned,
+// and so is every gate feeding it, so that no register is pushed onto its
+// input pins either.
+void RetimingGraph::markDontTouch(odb::dbInst* inst, int id)
+{
+  bool dont_touch = inst->isDoNotTouch();
+  for (odb::dbITerm* pin : inst->getITerms()) {
+    odb::dbNet* net = pin->getNet();
+    if (pin->getIoType() == odb::dbIoType::OUTPUT && net != nullptr
+        && net->isDoNotTouch()) {
+      dont_touch = true;
+    }
+  }
+  if (dont_touch) {
+    pinned_[id] = true;
+    for (odb::dbITerm* pin : inst->getITerms()) {
+      odb::dbNet* net = pin->getNet();
+      if (pin->getIoType() == odb::dbIoType::INPUT && net != nullptr) {
+        for (odb::dbITerm* driver : net->getITerms()) {
+          auto it = index_.find(driver->getInst());
+          if (driver->getIoType() == odb::dbIoType::OUTPUT
+              && it != index_.end()) {
+            pinned_[it->second] = true;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Pin every gate that would have to move a register that may not move, and
+// every gate whose fanin registers sit on different clock nets (a gated and
+// an ungated register cannot be merged into one), so the search never
+// proposes those slides.
 void RetimingGraph::fenceDontTouch()
 {
   std::vector<std::unordered_set<odb::dbNet*>> fanin_clocks(nodes_.size());
@@ -190,7 +264,7 @@ void RetimingGraph::fenceDontTouch()
       }
       for (odb::dbInst* flop : phys_[u][k].flops) {
         fanin_clocks[target].insert(registerClockNet(flop));
-        if (isDontTouchRegister(sta_, flop)) {
+        if (isDontTouch(flop)) {
           pinned_[target] = true;
           break;
         }
@@ -267,10 +341,13 @@ void RetimingGraph::report() const
       utl::RET,
       15,
       "{} register slots, {} distinct registers, {} pinned gates (I/O "
-      "boundary or fed through a don't-touch register)",
+      "boundary, don't-touch, or fed through a fenced register), {} fenced "
+      "registers (the chain reaches a port, a control pin or a don't-touch "
+      "cell)",
       flop_slots,
       distinct.size(),
-      pinned);
+      pinned,
+      fenced_.size());
 }
 
 }  // namespace ret

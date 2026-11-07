@@ -1,0 +1,25 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+worst slack max 0.8014
+[WARNING RET-0007] Using multi-output register cell DFF_X1 as the positive-edge base cell.
+[WARNING RET-0005] No tie-high cell found.
+[WARNING RET-0006] No tie-low cell found.
+[WARNING RET-0012] No negative-edge register cell found; negative-edge registers will be left untouched.
+[INFO RET-0014] Retiming graph: 19 gates, 17 edges (6 registered, max weight 3), clock period 1e-09
+[INFO RET-0015] 8 register slots, 8 distinct registers, 9 pinned gates (I/O boundary, don't-touch, or fed through a fenced register), 1 fenced registers (the chain reaches a port, a control pin or a don't-touch cell)
+[INFO RET-0018] Load-aware arc on 17/17 edges (fell back to the annotated arc: 0 no cell, 0 no port, 0 no operating conditions, 0 no table model); register D-pin load 1.14e-15
+[INFO RET-0020] Start worst register-to-register arrival 8.671e-11 (model slack 9.133e-10 vs period 1e-09)
+
+ Slide |  Worst arr | Flops | Sinks | Max wr | gate                 | fanout net
+--------------------------------------------------------------------------------
+     1 |  7.012e-11 |     2 |     1 |      1 | g12                  | m1
+     2 |  5.744e-11 |     0 |     1 |      1 | g13                  | m2
+     3 |  4.587e-11 |     0 |     1 |      1 | g14                  | m3
+     4 |  3.461e-11 |     0 |     1 |      1 | g15                  | m4
+     5 |          0 |     0 |     1 |      1 | g16                  | m5
+--------------------------------------------------------------------------------
+[INFO RET-0023] Final worst arrival 0 (model slack 1e-09) after 5 slides; 0 candidates rejected for pushing an input path past the clock period
+[INFO RET-0024] Removed 2 registers (3 of 17 register groups changed).
+[INFO RET-0025] Inserted 1 registers (0 kept their register class).
+worst slack max 0.8014
+Retime output passed/skipped sequential equivalence test
+No differences found.
