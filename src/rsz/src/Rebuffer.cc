@@ -292,9 +292,10 @@ float Rebuffer::prevStageDriveResistance(const sta::Pin* prev_drvr_pin,
   float drive_res = bound->initValue();
   for (const sta::Scene* scene : sta_->scenes()) {
     if (prev_port != nullptr) {
-      drive_res = bound->minMax(
-          drive_res,
-          portDriveResistance(prev_port->scenePort(scene, max_), rf, bound));
+      drive_res
+          = bound->minMax(drive_res,
+                          cachedPortDriveResistance(
+                              prev_port->scenePort(scene, max_), rf, bound));
       continue;
     }
     // A top-level input: the set_driving_cell output, else set_drive, as in
@@ -311,7 +312,7 @@ float Rebuffer::prevStageDriveResistance(const sta::Pin* prev_drvr_pin,
             = drive->driveCell(drive_rf, max_);
         if (drive_cell != nullptr && drive_cell->toPort() != nullptr) {
           // Delay calculation times the driving cell in the scene's view.
-          res = portDriveResistance(
+          res = cachedPortDriveResistance(
               drive_cell->toPort()->scenePort(scene, max_), drive_rf, bound);
         } else {
           float drive_resistance;
@@ -328,9 +329,9 @@ float Rebuffer::prevStageDriveResistance(const sta::Pin* prev_drvr_pin,
   return drive_res;
 }
 
-float Rebuffer::portDriveResistance(const sta::LibertyPort* port,
-                                    const sta::RiseFall* rf,
-                                    const sta::MinMax* bound)
+float Rebuffer::cachedPortDriveResistance(const sta::LibertyPort* port,
+                                          const sta::RiseFall* rf,
+                                          const sta::MinMax* bound)
 {
   // LibertyPort::driveResistance walks every arc to the port, and the same
   // ports are queried for each candidate cell and tree.
@@ -853,7 +854,7 @@ bool Rebuffer::loadSlewSatisfactory(sta::LibertyPort* driver,
   const float r_drvr
       = (driver == drvr_port_ && pin_ != nullptr)
             ? resizer_->driveResistance(pin_)
-            : portDriveResistance(driver, nullptr, sta::MinMax::max());
+            : cachedPortDriveResistance(driver, nullptr, sta::MinMax::max());
   return r_drvr * bnet->cap() <= maxSlewMargined(bnet->maxLoadSlew());
 }
 
