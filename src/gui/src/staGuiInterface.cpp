@@ -1037,6 +1037,8 @@ void STAGuiInterface::updatePathGroups()
 {
   sta::StringSeq empty_group_names;
   for (sta::Mode* mode : sta_->modes()) {
+    // makePathGroups replaces the old groups without freeing them.
+    mode->deletePathGroups();
     mode->makePathGroups(1,                 /* group count */
                          1,                 /* endpoint count*/
                          false,             /* unique pins */

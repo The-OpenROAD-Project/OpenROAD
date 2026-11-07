@@ -169,6 +169,7 @@ cc_library(
         "src/bufferTreeDescriptor.h",
         "src/colorGenerator.h",
         "src/dbDescriptors.h",
+        "src/endpoint_slack.h",
         "src/staDescriptors.h",
     ],
     includes = [
