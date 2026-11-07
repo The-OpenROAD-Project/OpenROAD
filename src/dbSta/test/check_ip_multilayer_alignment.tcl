@@ -1,19 +1,23 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
+# LEF-CHK-003 cross-layer alignment: M1 and M3 are both horizontal, so one
+# macro Y translation must put the M1 and M3 signal pins on their tracks.
 source "helpers.tcl"
 
 read_lef check_ip_multilayer_alignment.lef
 read_def check_ip_multilayer_alignment.def
 
-if { [catch { check_ip -master cross_layer_pass } err] } {
-  puts "FAIL: expected cross_layer_pass to pass: $err"
-  exit 1
+# Run check_ip on one master and print whether it passed. A failing check
+# logs its CHK-0030/CHK-0031 warnings and the CHK-0003 summary above the
+# result line.
+proc report_check_ip { master_name } {
+  set failed [catch { check_ip -master $master_name }]
+  puts "check_ip $master_name: [expr { $failed ? "FAIL" : "PASS" }]"
 }
 
-if { ![catch { check_ip -master cross_layer_fail } err] } {
-  puts "FAIL: expected cross_layer_fail to fail"
-  exit 1
-}
+# M1 and M3 both need a Y translation of 150 mod 200.
+report_check_ip cross_layer_pass
 
-puts "pass"
+# M1 needs 150 mod 200 and M3 needs 50 mod 200, so no shared translation.
+report_check_ip cross_layer_fail
