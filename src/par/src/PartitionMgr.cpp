@@ -276,7 +276,8 @@ void PartitionMgr::tritonPartDesign(
     int max_num_vcycle,
     int num_coarsen_solutions,
     int num_vertices_threshold_ilp,
-    int global_net_threshold)
+    int global_net_threshold,
+    bool extra_delay_specified)
 {
   auto triton_part = std::make_unique<TritonPart>(
       db_network_, db_, sta_, logger_, num_threads_);
@@ -289,7 +290,8 @@ void PartitionMgr::tritonPartDesign(
                                path_snaking_factor,
                                timing_exp_factor,
                                extra_delay,
-                               guardband_flag);
+                               guardband_flag,
+                               extra_delay_specified);
   triton_part->SetFineTuneParams(  // coarsening related parameters
       thr_coarsen_hyperedge_size_skip,
       thr_coarsen_vertices,
@@ -367,7 +369,8 @@ void PartitionMgr::evaluatePartDesignSolution(
     bool guardband_flag,
     // weight parameters
     const std::vector<float>& e_wt_factors,
-    const std::vector<float>& v_wt_factors)
+    const std::vector<float>& v_wt_factors,
+    bool extra_delay_specified)
 {
   auto triton_part = std::make_unique<TritonPart>(
       db_network_, db_, sta_, logger_, num_threads_);
@@ -381,7 +384,8 @@ void PartitionMgr::evaluatePartDesignSolution(
                                path_snaking_factor,
                                timing_exp_factor,
                                extra_delay,
-                               guardband_flag);
+                               guardband_flag,
+                               extra_delay_specified);
 
   triton_part->EvaluatePartDesignSolution(num_parts_arg,
                                           balance_constraint_arg,

@@ -195,7 +195,8 @@ void triton_part_design(unsigned int num_parts_arg,
                         int max_num_vcycle,
                         int num_coarsen_solutions,
                         int num_vertices_threshold_ilp,
-                        int global_net_threshold)
+                        int global_net_threshold,
+                        bool extra_delay_specified = true)
 {
   getPartitionMgr()->tritonPartDesign(
       num_parts_arg,
@@ -247,7 +248,8 @@ void triton_part_design(unsigned int num_parts_arg,
       max_num_vcycle,
       num_coarsen_solutions,
       num_vertices_threshold_ilp,
-      global_net_threshold);
+      global_net_threshold,
+      extra_delay_specified);
 }
 
 void evaluate_part_design_solution(unsigned int num_parts_arg,
@@ -276,7 +278,8 @@ void evaluate_part_design_solution(unsigned int num_parts_arg,
                                    bool guardband_flag,
                                    // weight parameters
                                    const std::vector<float>& e_wt_factors,
-                                   const std::vector<float>& v_wt_factors)
+                                   const std::vector<float>& v_wt_factors,
+                                   bool extra_delay_specified = true)
 {
   getPartitionMgr()->evaluatePartDesignSolution(
       num_parts_arg,
@@ -305,7 +308,8 @@ void evaluate_part_design_solution(unsigned int num_parts_arg,
       guardband_flag,
       // weight parameters
       e_wt_factors,
-      v_wt_factors);
+      v_wt_factors,
+      extra_delay_specified);
 }
 
 void write_partition_verilog(
