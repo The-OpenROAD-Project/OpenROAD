@@ -1,0 +1,6 @@
+[INFO ODB-0227] LEF file: check_ip_multilayer_alignment.lef, created 2 layers, 2 library cells
+[INFO ODB-0128] Design: check_ip_multilayer_alignment
+check_ip cross_layer_pass: PASS
+[WARNING CHK-0031] Master cross_layer_fail signal pins on layers M1 and M3 cannot be aligned simultaneously to their track grids (required offsets 150 mod 200 and 50 mod 200)
+[ERROR CHK-0003] IP Check failed with 1 warnings
+check_ip cross_layer_fail: FAIL
