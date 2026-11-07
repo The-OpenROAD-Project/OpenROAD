@@ -36,6 +36,7 @@
     "https://bcr.bazel.build/modules/apple_support/1.22.1/MODULE.bazel": "90bd1a660590f3ceffbdf524e37483094b29352d85317060b2327fff8f3f4458",
     "https://bcr.bazel.build/modules/apple_support/1.24.1/MODULE.bazel": "f46e8ddad60aef170ee92b2f3d00ef66c147ceafea68b6877cb45bd91737f5f8",
     "https://bcr.bazel.build/modules/apple_support/1.24.2/MODULE.bazel": "0e62471818affb9f0b26f128831d5c40b074d32e6dda5a0d3852847215a41ca4",
+    "https://bcr.bazel.build/modules/apple_support/2.5.2/MODULE.bazel": "bb1b7081e390a8d3885f642cb0073dfcf8e7a36525e079fa8f5835af7079c0fe",
     "https://bcr.bazel.build/modules/apple_support/2.8.0/MODULE.bazel": "c45f5176057092afba0be6c48a9ea02101666802f8be536947e099e94757f8ed",
     "https://bcr.bazel.build/modules/apple_support/2.8.0/source.json": "b7f6d87669c206adaa7d82cc44733349c63e341b80a0e049496ebd91d78c3472",
     "https://bcr.bazel.build/modules/aspect_bazel_lib/1.31.2/MODULE.bazel": "7bee702b4862612f29333590f4b658a5832d433d6f8e4395f090e8f4e85d442f",
@@ -949,7 +950,7 @@
     },
     "@@aspect_rules_esbuild+//esbuild:extensions.bzl%esbuild": {
       "general": {
-        "bzlTransitiveDigest": "xOShwiP6h0tiy/zVgielnfgKy+58Vzahj/HMvFVkTFg=",
+        "bzlTransitiveDigest": "bwlWrOiY38h1EBCMzt3vWkJFxfUPs/ShxbNv7vqITqY=",
         "usagesDigest": "LZ71sshnfqI8R/HeWwBTwawxIa7KnitayBl2hYrqPo4=",
         "recordedInputs": [
           "REPO_MAPPING:aspect_rules_esbuild+,aspect_rules_js aspect_rules_js+",
@@ -1077,7 +1078,7 @@
     },
     "@@cel-spec+//:extensions.bzl%non_module_dependencies": {
       "general": {
-        "bzlTransitiveDigest": "/k4rP0NLDKXnXnc+iNRpIr5FMPa6XRM1utbdeU0e1yI=",
+        "bzlTransitiveDigest": "QqsyCaWHftb0GqXdwZuh6T3E1KoreqIAI1a+riRas2k=",
         "usagesDigest": "HFQJtQrL9nKaFZEjgwaHVMHALMW+cafu696xy7J4ueM=",
         "recordedInputs": [
           "REPO_MAPPING:cel-spec+,bazel_tools bazel_tools"
@@ -1260,7 +1261,7 @@
     },
     "@@envoy_api+//bazel:repositories.bzl%non_module_deps": {
       "general": {
-        "bzlTransitiveDigest": "PHeDljr2GgWcX+U7P7asavLkAjzkJr5o2W8+DPg7sRE=",
+        "bzlTransitiveDigest": "l8qskHDErSIrY/mnYj7AnKNazQHJEg5Jp2glkmbDCnA=",
         "usagesDigest": "cxAa0VVo9d210JBUBw6wpuGp8jg+ltqw3tzH0tPtIEg=",
         "recordedInputs": [
           "REPO_MAPPING:envoy_api+,bazel_tools bazel_tools",
@@ -1468,7 +1469,7 @@
     },
     "@@grpc+//bazel:grpc_deps.bzl%grpc_repo_deps_ext": {
       "general": {
-        "bzlTransitiveDigest": "9h9a2cAlrp7Qz3E3FDAiA/T72/wNSyv++7Xoe1J51ic=",
+        "bzlTransitiveDigest": "3y2YdhFkysTA6I1dFq1dBXRxXHHFkM1kLtuLgUuneso=",
         "usagesDigest": "JRy5mn8l60PheiZTvsAmif/CiZhfYCkdmx6ULADtUrg=",
         "recordedInputs": [
           "REPO_MAPPING:grpc+,bazel_tools bazel_tools",
@@ -1491,7 +1492,7 @@
     },
     "@@kepler-formal+//bazel:deps.bzl%deps": {
       "general": {
-        "bzlTransitiveDigest": "GO+8bSTCxdkcJQQ4dIAuwtP7eyEvGSoiYTnnCppnD6g=",
+        "bzlTransitiveDigest": "sdZluucWDqoMz+4vy5ezOw1bAeSA1YBuqH1qi/ZpESA=",
         "usagesDigest": "NGlTnl+c579bDhWB6NLbqkJQOniqcySno1qy4bSTx4k=",
         "recordedInputs": [
           "REPO_MAPPING:kepler-formal+,bazel_tools bazel_tools"
@@ -1654,7 +1655,7 @@
     },
     "@@rules_buf+//buf:extensions.bzl%buf": {
       "general": {
-        "bzlTransitiveDigest": "dSWqckK2ILN7aDIDHfv+Qrl1fb1hF7o7MDXY6T8C41s=",
+        "bzlTransitiveDigest": "tQHciQbZBDtHAn0xVQX53tmNmPzxzLDgQIJ9liFXdxM=",
         "usagesDigest": "vxN6C2h72rUERbAmd1476FWpxdxo1NhYoY5JSFXJT3g=",
         "recordedInputs": [
           "REPO_MAPPING:rules_buf+,bazel_tools bazel_tools"
@@ -1701,7 +1702,7 @@
     },
     "@@rules_kotlin+//src/main/starlark/core/repositories:bzlmod_setup.bzl%rules_kotlin_extensions": {
       "general": {
-        "bzlTransitiveDigest": "+Kp6j204mBZ3mxlIDDR0gBoP45BZ4jYRhRAcB8sU0qc=",
+        "bzlTransitiveDigest": "WDuVCwqV73DvcHB5Of+02lhUZgPxr9MqtpvMRyUi0eQ=",
         "usagesDigest": "QI2z8ZUR+mqtbwsf2fLqYdJAkPOHdOV+tF2yVAUgRzw=",
         "recordedInputs": [
           "REPO_MAPPING:rules_kotlin+,bazel_tools bazel_tools"
@@ -1787,7 +1788,7 @@
     },
     "@@rules_multitool+//multitool:extension.bzl%multitool": {
       "general": {
-        "bzlTransitiveDigest": "s+rg9YTYK9CxhExLmokBLy6sbL6I8ELJ7FgNiXGKZu4=",
+        "bzlTransitiveDigest": "SvQskkND68+yMLzGcvxo4bIgnY7cG4KpOuIJ6QHhpVQ=",
         "usagesDigest": "ZVm5YLWTHZE8lFq+UcA2T2lhKEur8bIVk9tvjn8SO2U=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
@@ -2006,7 +2007,7 @@
     },
     "@@rules_python+//python/uv:uv.bzl%uv": {
       "general": {
-        "bzlTransitiveDigest": "DafUArm1CsjJZcemT0FvUq9rUch+pq38+JqfOBJCpm8=",
+        "bzlTransitiveDigest": "+9d3Xk+XLM+3cS8xVHR6XRn3dYpPmBavXbfU8v/qtnc=",
         "usagesDigest": "L3N4SM/V2B+19qn+nxXwA6j50ZDHvoKsdsifoTeMSWQ=",
         "recordedInputs": [
           "REPO_MAPPING:rules_python+,bazel_tools bazel_tools",
@@ -2036,7 +2037,7 @@
     },
     "@@rules_rust+//crate_universe/private:internal_extensions.bzl%cu_nr": {
       "general": {
-        "bzlTransitiveDigest": "JX/hoYdEh3wMiIlXoY6UgjuietDn4CnBXf7tjUubLsA=",
+        "bzlTransitiveDigest": "F2LGoYOjJaifpHYz0pEk3tgr9FUpLZHT//e3rp69Tzg=",
         "usagesDigest": "dQ7SQZ7uSSL3vVKSMBKRxKJUm9OVrZZA+S1/QQfT570=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
@@ -2155,7 +2156,7 @@
     },
     "@@sv-elab+//:dependency_support/slang_ext.bzl%vendored_slang_extension": {
       "general": {
-        "bzlTransitiveDigest": "nHPUpZ6HkF6RLv0qMuWX7bijUEaPmsbsWQOWUTZLJ+Q=",
+        "bzlTransitiveDigest": "7peuAh46xZcmY1S4cAlU5zBL0DBudYwaoaqi2+qjCZg=",
         "usagesDigest": "TB1zatF/tybR5vf8uXtL4e2EqxAfEBW9z1OftR5BkiI=",
         "recordedInputs": [
           "REPO_MAPPING:sv-elab+,bazel_tools bazel_tools"
@@ -2174,7 +2175,7 @@
     },
     "@@sv-elab+//:dependency_support/tomlplusplus_ext.bzl%tomlplusplus_ext": {
       "general": {
-        "bzlTransitiveDigest": "2SZdzonzOVggvglSOxiJ9WOssG/HYK38ovmws7loigo=",
+        "bzlTransitiveDigest": "zbb8N3OBsLzc4en7SelPVDhC673MhyBY1/dtG6JmdB8=",
         "usagesDigest": "V8yFIfuWmaLiGS/0FiloBjB4m484dQxhAc+nmdZBc5s=",
         "recordedInputs": [
           "REPO_MAPPING:sv-elab+,bazel_tools bazel_tools"
@@ -2195,7 +2196,7 @@
     },
     "@@windows_support+//windows:extensions.bzl%msvc_runtime": {
       "general": {
-        "bzlTransitiveDigest": "yv3gSwY6QneXA6YvHLn9tSmuOkNp2EPN5NFXHC48mdE=",
+        "bzlTransitiveDigest": "/fpjACapwytnUWPsK9hfNxq/3i0vYEbGgvEFP3etVEA=",
         "usagesDigest": "fe0w49qOZpnzoEX7GmAfDXDCO0BbgNb1z0LOhMxLrgo=",
         "recordedInputs": [
           "REPO_MAPPING:windows_support+,bazel_tools bazel_tools"
@@ -2226,7 +2227,7 @@
     },
     "@@windows_support+//windows:extensions.bzl%windows_sdk": {
       "general": {
-        "bzlTransitiveDigest": "yv3gSwY6QneXA6YvHLn9tSmuOkNp2EPN5NFXHC48mdE=",
+        "bzlTransitiveDigest": "/fpjACapwytnUWPsK9hfNxq/3i0vYEbGgvEFP3etVEA=",
         "usagesDigest": "dSf/ZB7rdHRJw0y/SOPpQL1YYGpndOvmCQnHWzuEhvY=",
         "recordedInputs": [
           "REPO_MAPPING:windows_support+,bazel_tools bazel_tools"
