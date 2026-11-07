@@ -3,13 +3,8 @@
 
 #include "SwapPinsMtGenerator.hh"
 
-#include <algorithm>
-#include <cstddef>
 #include <map>
 #include <memory>
-#include <optional>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -17,12 +12,12 @@
 #include "MoveCommitter.hh"
 #include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
+#include "SwapPinsEquivalence.hh"
 #include "SwapPinsMtCandidate.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
-#include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
@@ -39,180 +34,6 @@ namespace rsz {
 namespace {
 
 using LibertyPortVec = std::vector<sta::LibertyPort*>;
-using PortStimulus
-    = std::unordered_map<const sta::LibertyPort*, std::vector<bool>>;
-
-// === Functional equivalence by Boolean simulation ==========================
-
-bool simulateExpr(utl::Logger* logger,
-                  sta::FuncExpr* expr,
-                  PortStimulus& port_stimulus,
-                  const size_t table_index)
-{
-  using Op = sta::FuncExpr::Op;
-  switch (expr->op()) {
-    case Op::not_:
-      return !simulateExpr(logger, expr->left(), port_stimulus, table_index);
-    case Op::and_:
-      return simulateExpr(logger, expr->left(), port_stimulus, table_index)
-             && simulateExpr(logger, expr->right(), port_stimulus, table_index);
-    case Op::or_:
-      return simulateExpr(logger, expr->left(), port_stimulus, table_index)
-             || simulateExpr(logger, expr->right(), port_stimulus, table_index);
-    case Op::xor_:
-      return simulateExpr(logger, expr->left(), port_stimulus, table_index)
-             ^ simulateExpr(logger, expr->right(), port_stimulus, table_index);
-    case Op::one:
-      return true;
-    case Op::zero:
-      return false;
-    case Op::port:
-      return port_stimulus[expr->port()][table_index];
-  }
-
-  logger->error(
-      utl::RSZ, kMsgUnknownFuncExprOp, "unrecognized expr op from OpenSTA");
-  return false;
-}
-
-std::vector<bool> simulateExpr(utl::Logger* logger,
-                               sta::FuncExpr* expr,
-                               PortStimulus& port_stimulus)
-{
-  const size_t table_length = 0x1 << port_stimulus.size();
-  std::vector<bool> result(table_length, false);
-  for (size_t i = 0; i < table_length; ++i) {
-    result[i] = simulateExpr(logger, expr, port_stimulus, i);
-  }
-  return result;
-}
-
-bool isPortEqiv(utl::Logger* logger,
-                const sta::FuncExpr* expr,
-                const sta::LibertyCell* cell,
-                const sta::LibertyPort* port_a,
-                const sta::LibertyPort* port_b)
-{
-  if (port_a->libertyCell() != cell || port_b->libertyCell() != cell) {
-    return false;
-  }
-
-  sta::LibertyCellPortIterator port_iter(cell);
-  PortStimulus port_stimulus;
-  size_t input_port_count = 0;
-  while (port_iter.hasNext()) {
-    sta::LibertyPort* port = port_iter.next();
-    if (port->direction()->isInput()) {
-      ++input_port_count;
-      port_stimulus[port] = {};
-    }
-  }
-  if (input_port_count > 16) {
-    return false;
-  }
-
-  size_t var_index = 0;
-  for (auto& [port, stimulus] : port_stimulus) {
-    const size_t truth_table_length = 0x1 << input_port_count;
-    stimulus.resize(truth_table_length, false);
-    for (size_t i = 0; i < truth_table_length; ++i) {
-      stimulus[i] = static_cast<bool>((i >> var_index) & 0x1);
-    }
-    ++var_index;
-  }
-
-  std::vector<bool> result_no_swap
-      = simulateExpr(logger, const_cast<sta::FuncExpr*>(expr), port_stimulus);
-  std::swap(port_stimulus.at(port_a), port_stimulus.at(port_b));
-  std::vector<bool> result_with_swap
-      = simulateExpr(logger, const_cast<sta::FuncExpr*>(expr), port_stimulus);
-  return result_no_swap == result_with_swap;
-}
-
-// The input ports of cell that are interchangeable with input_port on every
-// output function, in port id order.
-LibertyPortVec equivCellPins(utl::Logger* logger,
-                             const sta::LibertyCell* cell,
-                             sta::LibertyPort* input_port)
-{
-  LibertyPortVec ports;
-  if (cell->isSequential() || cell->isIsolationCell()) {
-    return ports;
-  }
-
-  sta::LibertyCellPortIterator port_iter(cell);
-  int outputs = 0;
-  int inputs = 0;
-  bool has_input_in_function = false;
-  while (port_iter.hasNext()) {
-    sta::LibertyPort* port = port_iter.next();
-    sta::PortDirection* direction = port->direction();
-    // A bus or bundle input is iterated as one port, not as its bits, and an
-    // output without a function is opaque (a block's timing model): the
-    // simulation below cannot tell whether the inputs are interchangeable.
-    if (port->hasMembers()) {
-      return ports;
-    }
-    if (direction->isOutput()) {
-      if (port->function() == nullptr) {
-        return ports;
-      }
-      has_input_in_function |= port->function()->hasPort(input_port);
-      ++outputs;
-    } else if (direction->isInput()) {
-      ++inputs;
-    } else if (port->isPwrGnd()) {
-      continue;
-    } else {
-      return ports;
-    }
-  }
-
-  // An input no output depends on, such as on a cell whose outputs are all
-  // constant, is trivially interchangeable with every other input.
-  if (outputs < 1 || inputs < 2 || !has_input_in_function) {
-    return ports;
-  }
-
-  sta::LibertyCellPortIterator port_iter2(cell);
-  std::unordered_set<sta::LibertyPort*> seen_ports;
-  while (port_iter2.hasNext()) {
-    sta::LibertyPort* candidate_port = port_iter2.next();
-    if (!candidate_port->direction()->isInput()) {
-      continue;
-    }
-
-    sta::LibertyCellPortIterator output_port_iter(cell);
-    std::optional<bool> is_equivalent;
-    while (output_port_iter.hasNext()) {
-      sta::LibertyPort* output_candidate_port = output_port_iter.next();
-      sta::FuncExpr* output_expr = output_candidate_port->function();
-      if (!output_candidate_port->direction()->isOutput()
-          || input_port == candidate_port) {
-        continue;
-      }
-
-      const bool is_equivalent_result
-          = isPortEqiv(logger, output_expr, cell, input_port, candidate_port);
-      if (!is_equivalent.has_value()) {
-        is_equivalent = is_equivalent_result;
-      } else {
-        is_equivalent = is_equivalent.value() && is_equivalent_result;
-      }
-    }
-
-    if (is_equivalent.has_value() && is_equivalent.value()
-        && !seen_ports.contains(candidate_port)) {
-      seen_ports.insert(candidate_port);
-      ports.push_back(candidate_port);
-    }
-  }
-
-  if (!seen_ports.empty()) {
-    std::ranges::sort(ports, {}, [](auto* port) { return port->id(); });
-  }
-  return ports;
-}
 
 // === Driver and swap-port selection =========================================
 
@@ -237,7 +58,9 @@ LibertyPortVec equivalentInputs(utl::Logger* logger,
 {
   EquivPinCache::iterator cached = cache.find(input_port);
   if (cached == cache.end()) {
-    cached = cache.emplace(input_port, equivCellPins(logger, cell, input_port))
+    cached = cache
+                 .emplace(input_port,
+                          equivalentSwapInputs(logger, cell, input_port))
                  .first;
   }
   return cached->second;

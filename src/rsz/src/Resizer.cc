@@ -45,6 +45,7 @@
 #include "RepairTargetCollector.hh"
 #include "ResizerObserver.hh"
 #include "SkewBudget.hh"
+#include "SwapPinsEquivalence.hh"
 #include "boost/functional/hash.hpp"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbSta.hh"
@@ -111,191 +112,6 @@ namespace rsz {
 namespace {
 
 using LibertyPortVec = std::vector<sta::LibertyPort*>;
-
-bool simulateExprForSwapReport(
-    utl::Logger* logger,
-    sta::FuncExpr* expr,
-    std::unordered_map<const sta::LibertyPort*, std::vector<bool>>&
-        port_stimulus,
-    const size_t table_index)
-{
-  using Op = sta::FuncExpr::Op;
-  switch (expr->op()) {
-    case Op::not_:
-      return !simulateExprForSwapReport(
-          logger, expr->left(), port_stimulus, table_index);
-    case Op::and_:
-      return simulateExprForSwapReport(
-                 logger, expr->left(), port_stimulus, table_index)
-             && simulateExprForSwapReport(
-                 logger, expr->right(), port_stimulus, table_index);
-    case Op::or_:
-      return simulateExprForSwapReport(
-                 logger, expr->left(), port_stimulus, table_index)
-             || simulateExprForSwapReport(
-                 logger, expr->right(), port_stimulus, table_index);
-    case Op::xor_:
-      return simulateExprForSwapReport(
-                 logger, expr->left(), port_stimulus, table_index)
-             ^ simulateExprForSwapReport(
-                 logger, expr->right(), port_stimulus, table_index);
-    case Op::one:
-      return true;
-    case Op::zero:
-      return false;
-    case Op::port:
-      return port_stimulus[expr->port()][table_index];
-  }
-
-  logger->error(RSZ, 108, "unrecognized expr op from OpenSTA");
-  return false;
-}
-
-std::vector<bool> simulateExprForSwapReport(
-    utl::Logger* logger,
-    sta::FuncExpr* expr,
-    std::unordered_map<const sta::LibertyPort*, std::vector<bool>>&
-        port_stimulus)
-{
-  const size_t table_length = 0x1 << port_stimulus.size();
-  std::vector<bool> result(table_length, false);
-  for (size_t i = 0; i < table_length; ++i) {
-    result[i] = simulateExprForSwapReport(logger, expr, port_stimulus, i);
-  }
-  return result;
-}
-
-bool isPortEquivalentForSwapReport(utl::Logger* logger,
-                                   const sta::FuncExpr* expr,
-                                   const sta::LibertyCell* cell,
-                                   const sta::LibertyPort* port_a,
-                                   const sta::LibertyPort* port_b)
-{
-  if (port_a->libertyCell() != cell || port_b->libertyCell() != cell) {
-    return false;
-  }
-
-  sta::LibertyCellPortIterator port_iter(cell);
-  std::unordered_map<const sta::LibertyPort*, std::vector<bool>> port_stimulus;
-  size_t input_port_count = 0;
-  while (port_iter.hasNext()) {
-    sta::LibertyPort* port = port_iter.next();
-    if (port->direction()->isInput()) {
-      ++input_port_count;
-      port_stimulus[port] = {};
-    }
-  }
-  if (input_port_count > 16) {
-    return false;
-  }
-
-  size_t var_index = 0;
-  for (auto& port_stimulus_entry : port_stimulus) {
-    const size_t truth_table_length = 0x1 << input_port_count;
-    std::vector<bool>& stimulus = port_stimulus_entry.second;
-    stimulus.resize(truth_table_length, false);
-    for (size_t table_index = 0; table_index < truth_table_length;
-         ++table_index) {
-      stimulus[table_index]
-          = static_cast<bool>((table_index >> var_index) & 0x1);
-    }
-    ++var_index;
-  }
-
-  std::vector<bool> result_no_swap = simulateExprForSwapReport(
-      logger, const_cast<sta::FuncExpr*>(expr), port_stimulus);
-  std::swap(port_stimulus.at(port_a), port_stimulus.at(port_b));
-  std::vector<bool> result_with_swap = simulateExprForSwapReport(
-      logger, const_cast<sta::FuncExpr*>(expr), port_stimulus);
-  return result_no_swap == result_with_swap;
-}
-
-void equivCellPinsForSwapReport(utl::Logger* logger,
-                                const sta::LibertyCell* cell,
-                                sta::LibertyPort* input_port,
-                                LibertyPortVec& ports)
-{
-  if (cell->isSequential() || cell->isIsolationCell()) {
-    ports.clear();
-    return;
-  }
-
-  sta::LibertyCellPortIterator port_iter(cell);
-  int outputs = 0;
-  int inputs = 0;
-  bool has_input_in_function = false;
-  while (port_iter.hasNext()) {
-    sta::LibertyPort* port = port_iter.next();
-    sta::PortDirection* direction = port->direction();
-    // A bus or bundle input is iterated as one port, not as its bits, and an
-    // output without a function is opaque (a block's timing model): the
-    // simulation below cannot tell whether the inputs are interchangeable.
-    if (port->hasMembers()) {
-      ports.clear();
-      return;
-    }
-    if (direction->isOutput()) {
-      if (port->function() == nullptr) {
-        ports.clear();
-        return;
-      }
-      has_input_in_function |= port->function()->hasPort(input_port);
-      ++outputs;
-    } else if (direction->isInput()) {
-      ++inputs;
-    } else if (port->isPwrGnd()) {
-      continue;
-    } else {
-      ports.clear();
-      return;
-    }
-  }
-
-  // An input no output depends on, such as on a cell whose outputs are all
-  // constant, is trivially interchangeable with every other input.
-  if (outputs < 1 || inputs < 2 || !has_input_in_function) {
-    return;
-  }
-
-  sta::LibertyCellPortIterator input_iter(cell);
-  std::unordered_set<sta::LibertyPort*> seen_ports;
-  while (input_iter.hasNext()) {
-    sta::LibertyPort* candidate_port = input_iter.next();
-    if (!candidate_port->direction()->isInput()) {
-      continue;
-    }
-
-    sta::LibertyCellPortIterator output_iter(cell);
-    std::optional<bool> is_equivalent;
-    while (output_iter.hasNext()) {
-      sta::LibertyPort* output_port = output_iter.next();
-      sta::FuncExpr* output_expr = output_port->function();
-      if (!output_port->direction()->isOutput()
-          || input_port == candidate_port) {
-        continue;
-      }
-
-      const bool is_equivalent_result = isPortEquivalentForSwapReport(
-          logger, output_expr, cell, input_port, candidate_port);
-      if (!is_equivalent.has_value()) {
-        is_equivalent = is_equivalent_result;
-      } else {
-        is_equivalent = is_equivalent.value() && is_equivalent_result;
-      }
-    }
-
-    if (is_equivalent.has_value() && is_equivalent.value()
-        && !seen_ports.contains(candidate_port)) {
-      seen_ports.insert(candidate_port);
-      ports.push_back(candidate_port);
-    }
-  }
-
-  if (!seen_ports.empty()) {
-    std::ranges::sort(
-        ports, {}, [](sta::LibertyPort* port) { return port->id(); });
-  }
-}
 
 bool bufferRemovalCreatesFeedthrough(odb::dbModNet* input_modnet,
                                      odb::dbModNet* output_modnet)
@@ -5663,8 +5479,7 @@ void Resizer::reportSwappablePins()
           continue;
         }
 
-        LibertyPortVec ports;
-        equivCellPinsForSwapReport(logger_, cell, port, ports);
+        const LibertyPortVec ports = equivalentSwapInputs(logger_, cell, port);
         std::ostringstream port_names;
         for (sta::LibertyPort* equiv_port : ports) {
           port_names << ' ' << equiv_port->name();

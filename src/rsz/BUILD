@@ -56,6 +56,8 @@ cc_library(
         "src/SequentialTimingEstimator.cc",
         "src/SkewBudget.cc",
         "src/SkewBudget.hh",
+        "src/SwapPinsEquivalence.cc",
+        "src/SwapPinsEquivalence.hh",
         "src/SwapArithModules.hh",
         "src/move/BufferCandidate.cc",
         "src/move/BufferCandidate.hh",
