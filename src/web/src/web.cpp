@@ -162,14 +162,21 @@ bool parseBbox(const std::string& s, odb::Rect& out)
   return true;
 }
 
-// The plain-text response every HTTP answer starts from.
-http::response<http::string_body> textResponse(const http::status status,
-                                               const unsigned version,
-                                               const bool keep_alive)
+// The plain-text response every HTTP answer to `req` starts from, security
+// headers included.
+http::response<http::string_body> textResponse(
+    const http::status status,
+    const http::request<http::string_body>& req,
+    const bool keep_alive)
 {
-  http::response<http::string_body> res{status, version};
+  http::response<http::string_body> res{status, req.version()};
   res.set(http::field::server, "OpenROAD");
   res.set(http::field::content_type, "text/plain");
+  res.set(http::field::content_security_policy,
+          contentSecurityPolicy(req[http::field::host]));
+  res.set(http::field::x_content_type_options, "nosniff");
+  res.set(http::field::x_frame_options, "DENY");
+  res.set(http::field::referrer_policy, "no-referrer");
   res.keep_alive(keep_alive);
   return res;
 }
@@ -270,7 +277,7 @@ static http::response<http::string_body> dispatch_request(
     const std::shared_ptr<SessionAuth>& auth,
     utl::Logger* logger)
 {
-  auto res = textResponse(http::status::ok, req.version(), req.keep_alive());
+  auto res = textResponse(http::status::ok, req, req.keep_alive());
 
   if (req.method() == http::verb::get) {
     // The route match uses the path alone; the query carries the token, the
@@ -369,7 +376,7 @@ static http::response<http::string_body> handle_request(
   } catch (const std::exception& e) {
     logger->warn(utl::WEB, 126, "Request failed: {}", e.what());
     auto res = textResponse(
-        http::status::internal_server_error, req.version(), req.keep_alive());
+        http::status::internal_server_error, req, req.keep_alive());
     res.body() = "Request failed.";
     res.prepare_payload();
     return res;
@@ -1496,7 +1503,7 @@ void DetectSession::reject(const http::status status,
                            const std::string_view body)
 {
   auto res = std::make_shared<http::response<http::string_body>>(
-      textResponse(status, req_.version(), /*keep_alive=*/false));
+      textResponse(status, req_, /*keep_alive=*/false));
   res->set(http::field::server, "OpenROAD WebSocket Server");
   if (status == http::status::unauthorized) {
     res->set(http::field::www_authenticate, kTokenChallenge);

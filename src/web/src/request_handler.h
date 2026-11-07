@@ -575,6 +575,14 @@ void serveEmbeddedAsset(
 // authority equals the Host header (strict same-origin).
 bool webSocketOriginAllowed(std::string_view origin, std::string_view host);
 
+// The Content-Security-Policy for a response to a request with this Host
+// header.  connect-src names ws://host and wss://host as well as 'self':
+// browsers older than CSP Level 3 (Safari before 15.4, say) do not let
+// 'self' match a WebSocket scheme and would refuse the viewer's socket.  A
+// Host that a CSP host-source cannot spell (empty, an IPv6 literal, or
+// anything with other characters) gets 'self' alone.
+std::string contentSecurityPolicy(std::string_view host);
+
 // Optional-field accessor: returns the JSON value at `key` converted to T,
 // or `default_val` when the key is missing.  Throws
 // (boost::system::system_error) when the key is present but the JSON type
