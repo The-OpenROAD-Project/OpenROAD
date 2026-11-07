@@ -17,7 +17,7 @@
 [INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
 [INFO DPL-0392] Negotiation cell height distribution (2 unique row-count(s)):
 [INFO DPL-0393]   height 1 row(s): 31 cells
-[INFO DPL-0393]   height 40 row(s): 1 cells
+[INFO DPL-0393]   height 27 row(s): 1 cells
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------

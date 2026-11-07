@@ -3,7 +3,23 @@
 
 // Timing report widget — path summary + detail tables.
 
-import { isStaticMode, makeResizableHeaders } from './ui-utils.js';
+import { isStaticMode, makeResizableHeaders, withBusyCursor }
+    from './ui-utils.js';
+
+// The rows a path's detail table shows, as the Qt GUI's "Expand clock"
+// setting does.  Collapsed (the default), the clock network -- every clock
+// node after the source, up to the register's clock pin -- is one "clock
+// network delay" row: its time the arrival at the clock pin, its delay the
+// network's insertion.  Each row is { node, summary }: `node` the index of
+// the path node it stands for (for the summary, the clock pin, which a click
+// highlights).
+export function detailRows(nodes, expandClock) {
+    let clkEnd = -1;
+    while (clkEnd + 1 < nodes.length && nodes[clkEnd + 1].clk) clkEnd++;
+    const all = nodes.map((_, i) => ({ node: i, summary: false }));
+    if (expandClock || clkEnd < 1) return all;
+    return [all[0], { node: clkEnd, summary: true }, ...all.slice(clkEnd + 1)];
+}
 
 // A path node is an instance pin ("inst/PIN"; master pins have no '/') or a
 // top-level port, which has no instance.
@@ -51,7 +67,21 @@ export class TimingWidget {
         this._pathCountLabel = document.createElement('span');
         this._pathCountLabel.className = 'timing-path-count';
 
+        // Qt's "Expand clock": off, each path's clock network is one row.
+        this._expandClock = false;
+        const expandLabel = document.createElement('label');
+        expandLabel.className = 'timing-expand-clock';
+        this._expandClockBox = document.createElement('input');
+        this._expandClockBox.type = 'checkbox';
+        this._expandClockBox.addEventListener('change', () => {
+            this._expandClock = this._expandClockBox.checked;
+            this._renderDetailTable();
+        });
+        expandLabel.appendChild(this._expandClockBox);
+        expandLabel.appendChild(document.createTextNode(' Expand clock'));
+
         toolbar.appendChild(this._updateBtn);
+        toolbar.appendChild(expandLabel);
         toolbar.appendChild(this._pathCountLabel);
         el.appendChild(toolbar);
 
@@ -276,7 +306,8 @@ export class TimingWidget {
     // (layout, Inspector, Charts…) came after it; else the selected instance.
     // The backend prefers pin_name and falls back to inst_name.
     _coneTarget() {
-        const node = this._detailNodes[this._selectedDetailIndex];
+        const row = this._detailRows?.[this._selectedDetailIndex];
+        const node = row && this._detailNodes[row.node];
         const inst = this._app.selectedInstanceName || '';
         if (node?.pin && this._app.selectionToken === this._rowSelectionToken) {
             return { pin: node.pin, inst: instanceOfPin(node.pin) };
@@ -386,10 +417,11 @@ export class TimingWidget {
         this._updateBtn.disabled = true;
         this._updateBtn.textContent = 'Loading...';
         try {
-            const [setupData, holdData] = await Promise.all([
-                this._app.websocketManager.request({ type: 'timing_report', is_setup: true, max_paths: 100 }),
-                this._app.websocketManager.request({ type: 'timing_report', is_setup: false, max_paths: 100 }),
-            ]);
+            const [setupData, holdData] = await withBusyCursor(
+                () => Promise.all([
+                    this._app.websocketManager.request({ type: 'timing_report', is_setup: true, max_paths: 100 }),
+                    this._app.websocketManager.request({ type: 'timing_report', is_setup: false, max_paths: 100 }),
+                ]));
             // Copy the arrays: in static mode the response is a shared
             // cached object whose path order must keep matching the
             // server-side overlay indices, so it must not be sorted.
@@ -589,6 +621,7 @@ export class TimingWidget {
 
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
         const path = paths[this._selectedPathIndex];
+        const node = this._detailNodes[this._detailRows[idx].node];
         // Use _originalIndex when paths were filtered (e.g. by histogram
         // column click in static mode) so the overlay lookup matches.
         const highlightIdx = path._originalIndex ?? this._selectedPathIndex;
@@ -596,7 +629,7 @@ export class TimingWidget {
             type: 'timing_highlight',
             path_index: highlightIdx,
             is_setup: this._currentTab === 'setup',
-            pin_name: this._detailNodes[idx].pin,
+            pin_name: node.pin,
         }).then(() => this._refreshOverlay());
     }
 
@@ -632,10 +665,17 @@ export class TimingWidget {
         this._detailTable.appendChild(thead);
 
         const tbody = document.createElement('tbody');
-        nodes.forEach((n, idx) => {
+        this._detailRows = detailRows(nodes, this._expandClock);
+        this._detailRows.forEach((row, idx) => {
+            const n = nodes[row.node];
             const tr = document.createElement('tr');
             if (n.clk) tr.classList.add('timing-clock-row');
-            const vals = [
+            const vals = row.summary ? [
+                'clock network delay', '', '',
+                fmtTime(n.time),
+                fmtTime(n.time - nodes[0].time),
+                '', '',
+            ] : [
                 n.pin,
                 n.fanout,
                 n.rise ? '↑' : '↓',

@@ -545,6 +545,12 @@ bool parseIntExact(std::string_view s, T& out, int base = 10)
   return res.ec == std::errc{} && res.ptr == last;
 }
 
+// Percent-decode a URL query value (e.g. the JSON `vis` payload).
+std::string urlDecode(std::string_view s);
+
+// Parse the "k=v&k2=v2" query of a request target into a map (values decoded).
+std::map<std::string, std::string> parseQuery(std::string_view target);
+
 // True if the gzipped bytes may be sent as stored: gzip, x-gzip or * without
 // q=0, an explicit gzip deciding over *; an empty header does not count.  A
 // q=0 on any gzip or x-gzip entry refuses it, whatever the other entries say.
@@ -564,9 +570,9 @@ void serveEmbeddedAsset(
 // ws://localhost:<port> is rejected here before it can drive tcl_eval.
 //
 // An absent Origin is allowed: browsers always send it on a WS handshake, so
-// its absence marks a non-browser client (local tooling, tests), which a
-// loopback bind (F-02) is what keeps local.  A present Origin is accepted only
-// when its authority equals the Host header (strict same-origin).
+// its absence marks a non-browser client (local tooling, tests), which the
+// access token authenticates.  A present Origin is accepted only when its
+// authority equals the Host header (strict same-origin).
 bool webSocketOriginAllowed(std::string_view origin, std::string_view host);
 
 // Optional-field accessor: returns the JSON value at `key` converted to T,
