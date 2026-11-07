@@ -67,7 +67,8 @@ class IpChecker
   // LEF-CHK-002: Pin coordinates aligned to manufacturing grid
   void checkPinManufacturingGridAlignment(odb::dbMaster* master);
 
-  // LEF-CHK-003: Pin routing grid alignment, including cross-layer compatibility
+  // LEF-CHK-003: Pin routing grid alignment, including cross-layer
+  // compatibility
   void checkPinRoutingGridAlignment(odb::dbMaster* master);
 
   // LEF-CHK-004-005: Pin accessibility (signal and power)
