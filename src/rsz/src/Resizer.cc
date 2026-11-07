@@ -223,10 +223,23 @@ void equivCellPinsForSwapReport(utl::Logger* logger,
   sta::LibertyCellPortIterator port_iter(cell);
   int outputs = 0;
   int inputs = 0;
+  bool has_input_in_function = false;
   while (port_iter.hasNext()) {
     sta::LibertyPort* port = port_iter.next();
     sta::PortDirection* direction = port->direction();
+    // A bus or bundle input is iterated as one port, not as its bits, and an
+    // output without a function is opaque (a block's timing model): the
+    // simulation below cannot tell whether the inputs are interchangeable.
+    if (port->hasMembers()) {
+      ports.clear();
+      return;
+    }
     if (direction->isOutput()) {
+      if (port->function() == nullptr) {
+        ports.clear();
+        return;
+      }
+      has_input_in_function |= port->function()->hasPort(input_port);
       ++outputs;
     } else if (direction->isInput()) {
       ++inputs;
@@ -238,7 +251,9 @@ void equivCellPinsForSwapReport(utl::Logger* logger,
     }
   }
 
-  if (outputs < 1 || inputs < 2) {
+  // An input no output depends on, such as on a cell whose outputs are all
+  // constant, is trivially interchangeable with every other input.
+  if (outputs < 1 || inputs < 2 || !has_input_in_function) {
     return;
   }
 
