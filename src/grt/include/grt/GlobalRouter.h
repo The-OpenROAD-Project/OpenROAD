@@ -704,7 +704,9 @@ class GlobalRouter
   const char* congestion_file_name_;
 
   // incremental grt
-  GRouteDbCbk* grouter_cbk_;
+  std::shared_ptr<GRouteDbCbk> acquireIncrementalCallback(odb::dbBlock* block);
+  std::weak_ptr<GRouteDbCbk> incremental_db_cbk_;
+  std::shared_ptr<GRouteDbCbk> grouter_cbk_;
   bool is_incremental_;
 
   friend class IncrementalGRoute;
@@ -760,7 +762,7 @@ class IncrementalGRoute
 
  private:
   GlobalRouter* groute_;
-  GRouteDbCbk db_cbk_;
+  std::shared_ptr<GRouteDbCbk> db_cbk_;
 };
 
 }  // namespace grt
