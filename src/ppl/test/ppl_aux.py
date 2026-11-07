@@ -70,7 +70,6 @@ def place_pins(
         else:
             params.setMinDistance(design.micronToDBU(min_dist))
     else:
-        utl.report(f"Using {min_dist} tracks default min distance between IO pins.")
         # setting min distance as 0u leads to the default min distance
         params.setMinDistance(0)
 

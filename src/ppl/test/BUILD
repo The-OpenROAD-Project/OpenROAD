@@ -223,6 +223,23 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "TestSlotGrid",
+    size = "small",
+    srcs = ["cpp/TestSlotGrid.cpp"],
+    data = [
+        "gcd.def",
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/odb/src/db",
+        "//src/ppl",
+        "//src/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 py_test(
     name = "ppl_man_tcl_check",
     srcs = ["ppl_man_tcl_check.py"],

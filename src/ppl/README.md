@@ -267,6 +267,7 @@ place_pins
     [-corner_avoidance length]
     [-min_distance distance]
     [-min_distance_in_tracks]
+    [-layer_min_distance layer_min_dists]
     [-exclude region]
     [-group_pins pin_list]
     [-annealing]
@@ -282,7 +283,8 @@ place_pins
 | `-ver_layers` | The layers to create the metal shapes of pins placed in vertical tracks. It can be a single layer or a list of layer names. |
 | `-corner_avoidance` | The distance (in microns) from each corner within which pin placement should be avoided. |
 | `-min_distance` | The minimum distance between pins on the die boundary. This distance can be in microns (default) or in number of tracks between each pin. The default value is the length of two routing tracks between each pin. |
-| `-min_distance_in_tracks` | Flag that allows setting the min distance in number of tracks instead of microns. |
+| `-min_distance_in_tracks` | Flag that allows setting the min distance in number of tracks instead of microns. It also applies to `-layer_min_distance`. It requires `-min_distance` or `-layer_min_distance`. |
+| `-layer_min_distance` | A list of layer and distance pairs, such as `{M3 2 M5 2}`, that sets the minimum distance between pins on those layers. The distances use the same unit as `-min_distance`. Layers not in the list use `-min_distance`. |
 | `-exclude` | A region where pins cannot be placed. Either `top\|bottom\|left\|right:edge_interval`, which is the edge interval from the selected edge; `begin:end` for begin-end of all edges. |
 | `-group_pins` | A list of pins to be placed together on the die boundary. |
 | `-annealing` | Flag to enable simulated annealing pin placement. |

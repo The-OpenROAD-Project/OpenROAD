@@ -4,18 +4,18 @@
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 88 connections.
 Found 0 macro blocks.
-Using 2 tracks default min distance between IO pins.
 [ERROR PPL-0018] -ver_layers or set_place_config -io_pin_ver_layers is required.
 PPL-0018
-[ERROR GPL-0192] -io_pin_min_distance_in_tracks requires -io_pin_min_distance.
+[ERROR GPL-0192] -io_pin_min_distance_in_tracks requires -io_pin_min_distance or -io_pin_layer_min_distance.
 GPL-0192
 Found 0 macro blocks.
-[ERROR PPL-0037] -min_distance_in_tracks requires -min_distance.
+[ERROR PPL-0037] -min_distance_in_tracks requires -min_distance or -layer_min_distance.
 PPL-0037
 io_pin_hor_layers: metal3
 io_pin_ver_layers: metal2
 io_pin_corner_avoidance: unset
 io_pin_min_distance: 1.0 um
+io_pin_layer_min_distance: unset
 Found 0 macro blocks.
 [INFO PPL-0001] Number of available slots 348
 [INFO PPL-0002] Number of I/O             54
@@ -52,6 +52,7 @@ io_pin_hor_layers: metal3
 io_pin_ver_layers: metal2
 io_pin_corner_avoidance: unset
 io_pin_min_distance: unset
+io_pin_layer_min_distance: unset
 Found 0 macro blocks.
 Using 2 tracks default min distance between IO pins.
 [INFO PPL-0001] Number of available slots 1220
@@ -61,11 +62,138 @@ Using 2 tracks default min distance between IO pins.
 [INFO PPL-0005] Slots per section         200
 [INFO PPL-0008] Successfully assigned pins to sections.
 [INFO PPL-0012] I/O nets HPWL: 818.55 um.
+io_pin_hor_layers: metal3
+io_pin_ver_layers: metal2
+io_pin_corner_avoidance: unset
+io_pin_min_distance: unset
+io_pin_layer_min_distance: metal3 4 tracks, metal2 3 tracks
+  Other layers use the default of 2 tracks.
+Found 0 macro blocks.
+[INFO PPL-0126] Min distance in tracks    metal2 3, metal3 4
+[INFO PPL-0001] Number of available slots 696
+[INFO PPL-0002] Number of I/O             54
+[INFO PPL-0003] Number of I/O w/sink      54
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 756.26 um.
+Found 0 macro blocks.
+[INFO PPL-0126] Min distance in tracks    metal2 2, metal3 1
+[INFO PPL-0001] Number of available slots 1924
+[INFO PPL-0002] Number of I/O             54
+[INFO PPL-0003] Number of I/O w/sink      54
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 810.72 um.
+Found 0 macro blocks.
+[INFO PPL-0126] Min distance in tracks    metal2 3, metal3 4
+[INFO PPL-0001] Number of available slots 696
+[INFO PPL-0002] Number of I/O             54
+[INFO PPL-0003] Number of I/O w/sink      54
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 756.26 um.
+Found 0 macro blocks.
+[INFO PPL-0126] Min distance in tracks    metal2 1000, metal3 1000
+[ERROR PPL-0024] Number of IO pins (54) exceeds maximum number of available positions (4). Increase the die perimeter from 401.86um to 10260.00um.
+PPL-0024
+Found 0 macro blocks.
+[INFO PPL-0126] Min distance in tracks    metal2 3, metal3 4
+[INFO PPL-0001] Number of available slots 696
+[INFO PPL-0002] Number of I/O             54
+[INFO PPL-0003] Number of I/O w/sink      54
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 756.26 um.
+Found 0 macro blocks.
+[WARNING STA-0366] port 'no_such_pin' not found.
+[ERROR PPL-0061] Pins {no_such_pin} for place_pins -group_pins command were not found.
+PPL-0061
+Found 0 macro blocks.
+[INFO PPL-0126] Min distance in tracks    metal2 3, metal3 4
+[INFO PPL-0001] Number of available slots 696
+[INFO PPL-0002] Number of I/O             54
+[INFO PPL-0003] Number of I/O w/sink      54
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 756.26 um.
+io_pin_hor_layers: metal3
+io_pin_ver_layers: metal2
+io_pin_corner_avoidance: unset
+io_pin_min_distance: 0.38 um
+io_pin_layer_min_distance: metal3 0.28 um
+  Other layers use io_pin_min_distance.
+Found 0 macro blocks.
+[INFO PPL-0126] Min distance in tracks    metal2 2, metal3 2
+[INFO PPL-0001] Number of available slots 1220
+[INFO PPL-0002] Number of I/O             54
+[INFO PPL-0003] Number of I/O w/sink      54
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 818.55 um.
+io_pin_hor_layers: metal3
+io_pin_ver_layers: metal2
+io_pin_corner_avoidance: unset
+io_pin_min_distance: 0.38 um
+io_pin_layer_min_distance: metal4 1 track
+  Other layers use io_pin_min_distance.
+  metal4 is not in io_pin_ver_layers.
+Found 0 macro blocks.
+[WARNING PPL-0125] The min distance of layer metal4 is unused because it is not an IO pin layer.
+[INFO PPL-0126] Min distance in tracks    metal2 2, metal3 3
+[INFO PPL-0001] Number of available slots 986
+[INFO PPL-0002] Number of I/O             54
+[INFO PPL-0003] Number of I/O w/sink      54
+[INFO PPL-0004] Number of I/O w/o sink    0
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 896.90 um.
+io_pin_hor_layers: metal3
+io_pin_ver_layers: metal2
+io_pin_corner_avoidance: unset
+io_pin_min_distance: unset
+io_pin_layer_min_distance: unset
+[ERROR PPL-0123] -io_pin_layer_min_distance must be a list of layer and distance pairs.
+PPL-0123
+[ERROR PPL-0130] -io_pin_layer_min_distance metal3: 0 is not a number of microns greater than zero.
+PPL-0130
+[ERROR PPL-0127] -io_pin_layer_min_distance gives layer metal3 more than once.
+PPL-0127
+[ERROR PPL-0128] -io_pin_layer_min_distance metal3: 0.0001 um is smaller than one database unit.
+PPL-0128
+[ERROR PPL-0124] -io_pin_layer_min_distance metal3: 0x4 is not a whole number of tracks greater than zero.
+PPL-0124
+[ERROR PPL-0129] -io_pin_layer_min_distance layer via1 is not a routing layer.
+PPL-0129
+[ERROR PPL-0130] -io_pin_min_distance: -1 is not a number of microns greater than zero.
+PPL-0130
+[ERROR PPL-0130] -io_pin_min_distance: 0x4 is not a number of microns greater than zero.
+PPL-0130
+Found 0 macro blocks.
+[ERROR PPL-0124] -layer_min_distance metal3: 1.5 is not a whole number of tracks greater than zero.
+PPL-0124
+Found 0 macro blocks.
+[ERROR PPL-0124] -min_distance: 2.5 is not a whole number of tracks greater than zero.
+PPL-0124
+Found 0 macro blocks.
+[ERROR PPL-0124] -min_distance: 0 is not a whole number of tracks greater than zero.
+PPL-0124
+io_pin_hor_layers: metal3
+io_pin_ver_layers: metal2
+io_pin_corner_avoidance: unset
+io_pin_min_distance: unset
+io_pin_layer_min_distance: metal3 10 tracks
+  Other layers use the default of 2 tracks.
 io_pin_hor_layers: unset
 io_pin_ver_layers: unset
 io_pin_corner_avoidance: unset
 io_pin_min_distance: unset
+io_pin_layer_min_distance: unset
 Found 0 macro blocks.
-Using 2 tracks default min distance between IO pins.
 [ERROR PPL-0017] -hor_layers or set_place_config -io_pin_hor_layers is required.
 PPL-0017
