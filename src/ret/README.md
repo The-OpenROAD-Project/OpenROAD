@@ -93,6 +93,12 @@ Simply run the following script:
   crossing a gate that is not self-dual.
 - A register unmapped on demand stays unmapped even when the search then
   finds no improving move.
+- The search restarts from the first gate after every accepted move and
+  recomputes the whole delay model for every trial, including rejected
+  ones.
+- The cone estimate that pre-filters candidates costs the fanin gates of a
+  slide with their pre-slide arcs, so it can skip a move the exact recompute
+  would accept.
 - Initial values of moved registers are not computed: the result is
   equivalent from the reset state only when the moved registers have no
   defined initial value. Verify with sequential equivalence checking.

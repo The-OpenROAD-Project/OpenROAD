@@ -112,8 +112,9 @@ entries:
   - file: main/src/fsv/README
     title: Capacitance Field Solver
   - file: main/src/ram/README
-  - file: main/src/ret/README
     title: RAM Generator
+  - file: main/src/ret/README
+    title: Retiming
   - file: main/src/wmk/README
     title: Watermarking
   - file: user/MessagesFinal.md
