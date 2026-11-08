@@ -253,6 +253,21 @@ json::object end(const LateralKey& key, const EndTable& table)
     }
     o["sides"] = std::move(sides);
   }
+  if (table.hasCorners()) {
+    // By width: [inner total, to the plane below, to the plane above, outer
+    // total, below, above].
+    json::array corners;
+    for (int w = 0; w < static_cast<int>(table.widths().size()); w++) {
+      const Corners& c = table.corners(w);
+      corners.push_back(json::array{rounded(c.inner.total),
+                                    rounded(c.inner.below),
+                                    rounded(c.inner.above),
+                                    rounded(c.outer.total),
+                                    rounded(c.outer.below),
+                                    rounded(c.outer.above)});
+    }
+    o["corners"] = std::move(corners);
+  }
   return o;
 }
 
@@ -300,6 +315,22 @@ void readEnd(const json::object& o, Model& model)
           table.setSides(w, l, r, {v[0], v[1], v[2], v[3], v[4]});
         }
       }
+    }
+  }
+  if (const json::value* found = o.if_contains("corners")) {
+    const json::array& corners = found->as_array();
+    if (corners.size() != table.widths().size()) {
+      throw std::runtime_error("end table of " + key.layer
+                               + " has the wrong number of corners");
+    }
+    for (size_t w = 0; w < corners.size(); w++) {
+      const std::vector<double> v = numbers(corners[w]);
+      if (v.size() != 6) {
+        throw std::runtime_error("end table of " + key.layer
+                                 + " has a malformed corner");
+      }
+      table.setCorners(static_cast<int>(w),
+                       {{v[0], v[1], v[2]}, {v[3], v[4], v[5]}});
     }
   }
   model.addEnd(key, std::move(table));

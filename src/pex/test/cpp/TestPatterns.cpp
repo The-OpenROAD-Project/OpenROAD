@@ -275,6 +275,42 @@ TEST(Patterns, EndWirePlacesThePlanes)
   EXPECT_THROW(pattern.build(stack), std::invalid_argument);
 }
 
+TEST(Patterns, CornerShapes)
+{
+  const fsv::Stack& stack = sky130();
+  CornerPattern pattern;
+  pattern.layer = stack.layer("met2");
+  pattern.width = 0.2;
+  pattern.length = 2;
+  pattern.above = stack.layer("met3");
+  pattern.extent = 1;
+  const CornerPattern::Wire straight = pattern.build(stack);
+  ASSERT_EQ(straight.geometry.boxes().size(), 2u);
+  EXPECT_EQ(straight.below, kNullNetIndex);
+  ASSERT_GE(straight.above, 0);
+  // The plane reaches the extent past the wires every way.
+  const fsv::Box& plane = straight.geometry.boxes()[1];
+  EXPECT_DOUBLE_EQ(plane.lo[0], -3);
+  EXPECT_DOUBLE_EQ(plane.hi[1], 3);
+  pattern.shape = CornerPattern::Shape::kCross;
+  const CornerPattern::Wire cross = pattern.build(stack);
+  const fsv::Box& across = cross.geometry.boxes()[1];
+  EXPECT_EQ(cross.geometry.boxNet(1), cross.wire);
+  EXPECT_DOUBLE_EQ(across.lo[0], -1);
+  EXPECT_DOUBLE_EQ(across.hi[0], 1);
+  EXPECT_DOUBLE_EQ(across.lo[1], 0.9);
+  EXPECT_DOUBLE_EQ(across.hi[1], 1.1);
+  pattern.shape = CornerPattern::Shape::kBend;
+  const CornerPattern::Wire bend = pattern.build(stack);
+  const fsv::Box& turn = bend.geometry.boxes()[1];
+  EXPECT_DOUBLE_EQ(turn.lo[0], -0.1);
+  EXPECT_DOUBLE_EQ(turn.hi[0], 1.9);
+  EXPECT_DOUBLE_EQ(turn.lo[1], 1.8);
+  EXPECT_DOUBLE_EQ(turn.hi[1], 2);
+  pattern.length = 0.2;
+  EXPECT_THROW(pattern.build(stack), std::invalid_argument);
+}
+
 TEST(Patterns, CrossingArrayRoundsToWholePitches)
 {
   const fsv::Stack& stack = sky130();

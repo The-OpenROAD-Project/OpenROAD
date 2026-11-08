@@ -208,6 +208,40 @@ EndPattern::Wire EndPattern::build(const fsv::Stack& stack) const
   return w;
 }
 
+CornerPattern::Wire CornerPattern::build(const fsv::Stack& stack) const
+{
+  if (width <= 0 || length <= width) {
+    throw std::invalid_argument(
+        "the corner pattern needs a positive width and a longer length");
+  }
+  PatternBuilder builder(stack);
+  Wire w;
+  w.wire = builder.net("wire");
+  const double h = width / 2;
+  builder.add(layer, w.wire, -h, 0, h, length);
+  if (shape == Shape::kCross) {
+    builder.add(layer,
+                w.wire,
+                -length / 2,
+                (length / 2) - h,
+                length / 2,
+                (length / 2) + h);
+  } else if (shape == Shape::kBend) {
+    builder.add(layer, w.wire, -h, length - width, length - h, length);
+  }
+  const double r = length + extent;
+  if (below.valid()) {
+    w.below = builder.net("below");
+    builder.add(below, w.below, -r, -r, r, r);
+  }
+  if (above.valid()) {
+    w.above = builder.net("above");
+    builder.add(above, w.above, -r, -r, r, r);
+  }
+  w.geometry = std::move(builder.geometry());
+  return w;
+}
+
 CrossingPattern::Array CrossingPattern::build(const fsv::Stack& stack) const
 {
   if (width <= 0 || crossing_width <= 0 || pitch <= 0 || length <= 0) {

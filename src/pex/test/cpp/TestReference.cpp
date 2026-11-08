@@ -197,6 +197,35 @@ TEST(Reference, BendCountsTheCornerOnce)
   EXPECT_NEAR(est.ground, (10 * 10) + (10 * 4.8) + 1, 1e-9);
 }
 
+// Each junction adds its corners once: a bend, overlapping or flush, an
+// inner and an outer corner, a T two inner corners, a cross four.
+TEST(Reference, JunctionCorners)
+{
+  const fsv::Stack stack = twoLayers();
+  const Model plain = constantModel();
+  Model model = plain;
+  EndTable& e
+      = model.addEnd({"m1", "", ""}, EndTable(*plain.end({"m1", "", ""})));
+  for (int w = 0; w < 2; w++) {
+    e.setCorners(w, {{-0.3, 0, 0}, {0.2, 0, 0}});
+  }
+  auto added = [&](const std::vector<fsv::Box>& boxes) {
+    fsv::Geometry g;
+    const int a = g.addNet("a");
+    for (const fsv::Box& b : boxes) {
+      g.addBox(a, b);
+    }
+    return estimate(g, stack, model, a).total()
+           - estimate(g, stack, plain, a).total();
+  };
+  const fsv::Box wire{{0, 0, 1}, {10, 0.2, 2}};
+  EXPECT_NEAR(added({wire, {{9.8, 0, 1}, {10, 5, 2}}}), -0.1, 1e-9);
+  EXPECT_NEAR(added({wire, {{9.8, 0.2, 1}, {10, 5, 2}}}), -0.1, 1e-9);
+  EXPECT_NEAR(added({wire, {{4.9, 0, 1}, {5.1, 5, 2}}}), -0.6, 1e-9);
+  EXPECT_NEAR(added({wire, {{4.9, -5, 1}, {5.1, 5, 2}}}), -1.2, 1e-9);
+  EXPECT_NEAR(added({wire}), 0, 1e-9);
+}
+
 // A line end facing another net's wire takes the facing table's total and
 // coupling, by the share of the face the wire overlaps.
 TEST(Reference, FacingEnd)

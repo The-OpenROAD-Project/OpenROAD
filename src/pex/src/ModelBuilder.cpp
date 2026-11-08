@@ -933,6 +933,73 @@ void buildEnds(const fsv::Stack& stack,
   buildEnds(stack, layer, planCovers(stack, layer, options), options, model);
 }
 
+namespace {
+
+// The corners of wires of a width meeting, from a straight wire, a cross
+// and a bend of the corner pattern and the per-length reference. As the
+// reference evaluator adds them, a cross is the two wires with the
+// overlap once and four inner corners; a bend is the two wires without
+// the ends at the turn, with the overlap once, an inner and an outer
+// corner.
+Corners solveCorners(const fsv::Stack& stack,
+                     const Layer layer,
+                     const double width,
+                     const Layer below,
+                     const Layer above,
+                     const BuildOptions& options,
+                     fsv::Solver& solver)
+{
+  const LateralCap unit = solveSection(stack,
+                                       layer,
+                                       width,
+                                       -1,
+                                       -1,
+                                       below,
+                                       above,
+                                       options,
+                                       solver,
+                                       options.tol / 3);
+  CornerPattern pattern;
+  pattern.layer = layer;
+  pattern.width = width;
+  pattern.length = std::max(options.end_length, 5 * width);
+  pattern.below = below;
+  pattern.above = above;
+  pattern.extent = options.extent;
+  auto solve = [&](const CornerPattern::Shape shape) {
+    pattern.shape = shape;
+    const CornerPattern::Wire wire = pattern.build(stack);
+    const fsv::Scene scene(wire.geometry, stack);
+    const fsv::CapRow row
+        = solver.solve(scene, wire.wire, solveOptions(options.tol));
+    auto coupling = [&](const NetIndex net) {
+      return net == kNullNetIndex ? 0.0 : row.coupling(net);
+    };
+    return CornerValue{row.total(), coupling(wire.below), coupling(wire.above)};
+  };
+  const CornerValue straight = solve(CornerPattern::Shape::kStraight);
+  const CornerValue cross = solve(CornerPattern::Shape::kCross);
+  const CornerValue bend = solve(CornerPattern::Shape::kBend);
+  const double length = pattern.length;
+  auto part
+      = [&](const double s, const double c, const double b, const double u) {
+          const double end = (s - (u * length)) / 2;
+          const double inner = (c - (2 * s) + (width * u)) / 4;
+          const double outer = b - ((2 * s) - (2 * end) - (width * u)) - inner;
+          return std::pair{inner, outer};
+        };
+  const auto [inner_total, outer_total]
+      = part(straight.total, cross.total, bend.total, unit.total());
+  const auto [inner_below, outer_below]
+      = part(straight.below, cross.below, bend.below, unit.below);
+  const auto [inner_above, outer_above]
+      = part(straight.above, cross.above, bend.above, unit.above);
+  return {{inner_total, inner_below, inner_above},
+          {outer_total, outer_below, outer_above}};
+}
+
+}  // namespace
+
 void buildEnds(const fsv::Stack& stack,
                const Layer layer,
                const CoverPlan& plan,
@@ -957,8 +1024,9 @@ void buildEnds(const fsv::Stack& stack,
   // One job per context, width and pair of spacing indices (the last is
   // none): the per-length reference, then the end. A like-sided pair
   // solves the end at each gap (and none), a different-sided one, left
-  // first, at none only. A table held without its different-sided ends
-  // gets those.
+  // first, at none only. And one job per context and width for the
+  // corners. A table held without its different-sided ends or corners gets
+  // those.
   struct Job
   {
     LateralKey key;
@@ -967,8 +1035,10 @@ void buildEnds(const fsv::Stack& stack,
     int width;
     int left;
     int right;
+    bool corner = false;
     std::vector<EndValue> values;  // like-sided: by gap
     EndSides sides;                // different-sided
+    Corners corners;
   };
   std::vector<Job> jobs;
   for (const Layer below : plan.below) {
@@ -981,17 +1051,19 @@ void buildEnds(const fsv::Stack& stack,
         requireGrid(what, built->widths(), widths);
         requireGrid(what, built->spacings(), spacings);
         requireGrid(what, built->gaps(), gaps);
-        if (built->hasSides()) {
-          continue;
-        }
       }
+      const bool need_sides = built == nullptr || !built->hasSides();
+      const bool need_corners = built == nullptr || !built->hasCorners();
       for (int w = 0; w < static_cast<int>(widths.size()); w++) {
         for (int l = 0; l < ns; l++) {
           for (int r = l; r < ns; r++) {
-            if (r != l || built == nullptr) {
-              jobs.push_back({key, below, above, w, l, r, {}, {}});
+            if (r == l ? built == nullptr : need_sides) {
+              jobs.push_back({key, below, above, w, l, r, false, {}, {}, {}});
             }
           }
+        }
+        if (need_corners) {
+          jobs.push_back({key, below, above, w, 0, 0, true, {}, {}, {}});
         }
       }
     }
@@ -999,6 +1071,11 @@ void buildEnds(const fsv::Stack& stack,
   runJobs(options, jobs.size(), [&](const int i, fsv::Solver& solver) {
     Job& job = jobs[i];
     const double w = widths[job.width];
+    if (job.corner) {
+      job.corners = solveCorners(
+          stack, layer, w, job.below, job.above, options, solver);
+      return;
+    }
     const double sl = job.left < ns - 1 ? spacings[job.left] : -1;
     const double sr = job.right < ns - 1 ? spacings[job.right] : -1;
     const LateralCap unit = solveSection(stack,
@@ -1065,7 +1142,9 @@ void buildEnds(const fsv::Stack& stack,
                    built != nullptr ? *built : EndTable(widths, spacings, gaps))
                .first;
     }
-    if (job.left == job.right) {
+    if (job.corner) {
+      it->second.setCorners(job.width, job.corners);
+    } else if (job.left == job.right) {
       for (int gi = 0; gi < ng; gi++) {
         it->second.set(job.width, job.left, gi, job.values[gi]);
       }

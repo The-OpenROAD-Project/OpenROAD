@@ -322,6 +322,78 @@ class Wire
            out);
   }
 
+  // The corners where another wire of the net meets this one over [x0, x1]
+  // along it: `inner` inner and `outer` outer corners, with the covers
+  // there. The parts to the planes go to the covering nets as a line
+  // end's do.
+  void addCorners(const double x0,
+                  const double x1,
+                  const int inner,
+                  const int outer,
+                  const NetIndex target,
+                  NetEstimate& out) const
+  {
+    const Cover below = coverOn(true, x0, x1);
+    const Cover above = coverOn(false, x0, x1);
+    double total = 0;
+    double plane_below = 0;
+    double plane_above = 0;
+    double rest_below = 0;
+    double rest_above = 0;
+    forStates(
+        below,
+        above,
+        [&](LateralKey& key, const double weight, const bool b, const bool t) {
+          fallback(model_, key);
+          if (model_.end(key) == nullptr) {
+            key = {name_, "", ""};
+          }
+          const Corners c = model_.corners(key, w_);
+          const double to_total
+              = (inner * c.inner.total) + (outer * c.outer.total);
+          const double to_below
+              = (inner * c.inner.below) + (outer * c.outer.below);
+          const double to_above
+              = (inner * c.inner.above) + (outer * c.outer.above);
+          total += weight * to_total;
+          if (b) {
+            plane_below += weight / below.share * to_below;
+          } else {
+            rest_below += weight * to_below;
+          }
+          if (t) {
+            plane_above += weight / above.share * to_above;
+          } else {
+            rest_above += weight * to_above;
+          }
+        });
+    const double to_below = below.cross * plane_below;
+    const double to_above = above.cross * plane_above;
+    const double ground = total - to_below - to_above - rest_below - rest_above;
+    out.ground += ground;
+    out.ground_sources[2] += ground;
+    for (const auto& [net, share] : below.rest_nets) {
+      if (net != target) {
+        couple(out, net, Source::kEndRest, rest_below * share);
+      }
+    }
+    for (const auto& [net, share] : above.rest_nets) {
+      if (net != target) {
+        couple(out, net, Source::kEndRest, rest_above * share);
+      }
+    }
+    for (const auto& [net, share] : below.nets) {
+      if (net != target) {
+        couple(out, net, Source::kEndCover, to_below * share);
+      }
+    }
+    for (const auto& [net, share] : above.nets) {
+      if (net != target) {
+        couple(out, net, Source::kEndCover, to_above * share);
+      }
+    }
+  }
+
  private:
   // Lateral candidates with their gap, cover runs by layer, and the cuts
   // where any of them starts or ends.
@@ -991,7 +1063,17 @@ NetEstimate estimate(const fsv::Geometry& geometry,
   const std::vector<Shape> shapes
       = shapesOf(geometry, stack, layers, target, out);
   // The junctions: wires (at least twice as long as wide) of the net on one
-  // layer crossing each other.
+  // layer crossing or touching each other. A bend has an inner and an
+  // outer corner, a T two inner corners and a cross four. Each junction's
+  // corners go to the wire along which the two meet over a length.
+  struct Junction
+  {
+    double x0;
+    double x1;
+    int inner;
+    int outer;
+  };
+  std::map<size_t, std::vector<Junction>> junctions;
   auto axis = [](const Shape& s) {
     return s.hi[0] - s.lo[0] >= s.hi[1] - s.lo[1] ? 0 : 1;
   };
@@ -1012,13 +1094,15 @@ NetEstimate estimate(const fsv::Geometry& geometry,
       }
       double o0[2];
       double o1[2];
-      bool overlap = true;
+      bool touch = true;
+      bool overlap = false;
       for (int d = 0; d < 2; d++) {
         o0[d] = std::max(x.lo[d], y.lo[d]);
         o1[d] = std::min(x.hi[d], y.hi[d]);
-        overlap = overlap && o1[d] - o0[d] > kEps;
+        touch = touch && o1[d] - o0[d] > -kEps;
+        overlap = overlap || o1[d] - o0[d] > kEps;
       }
-      if (!overlap) {
+      if (!touch || !overlap) {
         continue;
       }
       auto atEnd = [&](const Shape& s) {
@@ -1027,19 +1111,35 @@ NetEstimate estimate(const fsv::Geometry& geometry,
       };
       const int ends = atEnd(x) + atEnd(y);
       (ends == 2 ? out.bends : ends == 1 ? out.tees : out.crosses)++;
+      const int ax = axis(x);
+      const bool along_x = o1[ax] - o0[ax] > kEps;
+      const int a = along_x ? ax : axis(y);
+      junctions[along_x ? i : j].push_back({o0[a],
+                                            o1[a],
+                                            ends == 2   ? 1
+                                            : ends == 1 ? 2
+                                                        : 4,
+                                            ends == 2 ? 1 : 0});
     }
   }
   // One cover map per layer the net has wires on.
   std::map<int, CoverMap> maps;
-  for (const Shape& shape : shapes) {
+  for (size_t i = 0; i < shapes.size(); i++) {
+    const Shape& shape = shapes[i];
     if (shape.net != target || shape.layer < 0) {
       continue;
     }
     out.wires++;
     const auto it = maps.try_emplace(
         shape.layer, stack, model, layers.layers[shape.layer]);
-    Wire(shape, shapes, stack, layers, model, it.first->second, options)
-        .estimate(target, out);
+    Wire wire(shape, shapes, stack, layers, model, it.first->second, options);
+    wire.estimate(target, out);
+    const auto found = junctions.find(i);
+    if (found != junctions.end()) {
+      for (const Junction& j : found->second) {
+        wire.addCorners(j.x0, j.x1, j.inner, j.outer, target, out);
+      }
+    }
   }
   return out;
 }

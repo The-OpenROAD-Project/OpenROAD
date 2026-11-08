@@ -216,12 +216,31 @@ struct EndSides
   double right = 0;
 };
 
+// What one corner where two wires of a net meet adds, in fF: the total
+// and its parts to the planes below and above. An inner corner, between
+// the two wires, takes away what each one's side loses to the other; an
+// outer corner, where a bend turns, adds to the bend's two wires without
+// their ends.
+struct CornerValue
+{
+  double total = 0;
+  double below = 0;
+  double above = 0;
+};
+
+struct Corners
+{
+  CornerValue inner;
+  CornerValue outer;
+};
+
 // What one line end adds to a wire's capacitance over its width, the
 // spacing to a neighbor of minimum width on each side running past the end
 // (the same on both), and the gap to a wire as wide facing the end, end to
 // end. The column after the last spacing is no neighbor, and after the
 // last gap no facing wire. Optionally, the ends with a different spacing on
-// each side and no facing wire.
+// each side and no facing wire, and the corners of wires of the width
+// meeting, with no neighbors.
 class EndTable
 {
  public:
@@ -257,6 +276,13 @@ class EndTable
   // value that is not finite.
   void setSides(int width, int left, int right, const EndSides& value);
 
+  // Whether the corners are held.
+  bool hasCorners() const { return !corners_.empty(); }
+  const Corners& corners(int width) const { return corners_.at(width); }
+  // Throws std::invalid_argument for a width off the grid or a value that
+  // is not finite.
+  void setCorners(int width, const Corners& value);
+
  private:
   int index(int width, int spacing, int gap) const;
   int sideIndex(int width, int left, int right) const;
@@ -265,7 +291,8 @@ class EndTable
   std::vector<double> spacings_;  // µm, ascending
   std::vector<double> gaps_;      // µm, ascending
   std::vector<EndValue> values_;
-  std::vector<EndSides> sides_;  // [width][left][right]; empty if not held
+  std::vector<EndSides> sides_;   // [width][left][right]; empty if not held
+  std::vector<Corners> corners_;  // by width; empty if not held
 };
 
 // What one line end adds, in fF, looked up: the total, and its parts to
@@ -357,6 +384,10 @@ class Model
                        double far_spacing) const;
 
   EndTable& addEnd(const LateralKey& key, EndTable table);
+  // The context's corners, linear in the width and clamped to the table's
+  // range; none when its end table holds no corners. Throws
+  // std::out_of_range when the context has no end table.
+  Corners corners(const LateralKey& key, double width) const;
   const EndTable* end(const LateralKey& key) const;
   const std::map<LateralKey, EndTable>& ends() const { return ends_; }
   // What one line end adds: linear in the width, and in the logarithms

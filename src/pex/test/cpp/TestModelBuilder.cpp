@@ -234,6 +234,9 @@ TEST(ModelBuilder, CrossingAndEndTables)
   EXPECT_EQ(one.right, 0);
   EXPECT_LT(one.below, (e->at(0, 0, 2).below + free.below) / 2);
   EXPECT_EQ(e->sides(0, 1, 0).right, one.left);
+  // Where two wires meet, each shields the other's side.
+  ASSERT_TRUE(e->hasCorners());
+  EXPECT_LT(e->corners(0).inner.total, 0);
   // Built tables stay; one on another grid is refused.
   buildEnds(sky130(), L("met2"), o, model);
   EXPECT_EQ(model.end({"met2", "met1", ""}), e);
@@ -251,6 +254,7 @@ TEST(ModelBuilder, CrossingAndEndTables)
   buildEnds(sky130(), L("met2"), o, model);
   e = model.end({"met2", "met1", ""});
   EXPECT_TRUE(e->hasSides());
+  EXPECT_TRUE(e->hasCorners());
   EXPECT_EQ(e->at(0, 0, 2).total, kept.total);
   o.facing_factors = {1};
   EXPECT_THROW(buildEnds(sky130(), L("met2"), o, model), std::invalid_argument);

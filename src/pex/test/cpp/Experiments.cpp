@@ -2056,15 +2056,15 @@ void oneSided(Lab& lab)
 
 // e15: the pieces of a routed net that are not straight wires, each solved
 // and estimated by the reference evaluator: a bend with the boxes
-// overlapping at the corner and flush, a T, a change to the layer above
-// and below through a via, a landing pad between vias from the layer
-// below to the layer above, a wire of another net crossing from below and
-// from above, short boxes 1-8 widths long, and a line end facing another
-// net's wire. Each coupling is compared too. The
-// wire runs along x on --layer; branches go to +y. Open: nothing else.
-// Dense: a neighbor at minimum spacing on the -y side and a plane two
-// layers up. Tight, for the cases whose net stays on the wire's track:
-// neighbors at minimum spacing on both sides and the plane. The model is for
+// overlapping at the corner and flush, a T, a cross of two wires of the
+// net, a change to the layer above and below through a via, a landing pad
+// between vias from the layer below to the layer above, a wire of another net
+// crossing from below and from above, short boxes 1-8 widths long, and a line
+// end facing another net's wire. Each coupling is compared too. The wire runs
+// along x on --layer; branches go to +y. Open: nothing else. Dense: a neighbor
+// at minimum spacing on the -y side and a plane two layers up. Tight, for the
+// cases whose net stays on the wire's track: neighbors at minimum spacing on
+// both sides and the plane; the cross, open only. The model is for
 // --layers (default: the layer and those next to it).
 void junctions(Lab& lab)
 {
@@ -2095,6 +2095,7 @@ void junctions(Lab& lab)
     std::string name;
     std::function<void(pex::PatternBuilder&, pex::NetIndex)> add;
     bool straight = false;  // nothing of the wire's net off its track
+    bool below = false;     // the net reaches -y, where dense has a neighbor
   };
   std::vector<Case> cases;
   auto straight = [&](pex::PatternBuilder& b, const pex::NetIndex n) {
@@ -2115,6 +2116,18 @@ void junctions(Lab& lab)
          straight(b, n);
          b.add(lab.layer(m), n, (length - w) / 2, 0, (length + w) / 2, length);
        }});
+  cases.push_back({"cross",
+                   [&](pex::PatternBuilder& b, const pex::NetIndex n) {
+                     straight(b, n);
+                     b.add(lab.layer(m),
+                           n,
+                           (length - w) / 2,
+                           (w - length) / 2,
+                           (length + w) / 2,
+                           (w + length) / 2);
+                   },
+                   false,
+                   true});
   if (!cut_up.empty()) {
     cases.push_back(
         {"via_up", [&](pex::PatternBuilder& b, const pex::NetIndex n) {
@@ -2251,7 +2264,8 @@ void junctions(Lab& lab)
   }
   for (const std::string context : {"open", "dense", "tight"}) {
     for (const Case& c : trim(cases, o.smoke)) {
-      if (context == "tight" && !c.straight) {
+      if ((context == "tight" && !c.straight)
+          || (context != "open" && c.below)) {
         continue;
       }
       pex::PatternBuilder b(lab.stack());

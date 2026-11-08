@@ -229,6 +229,20 @@ void EndTable::setSides(const int width,
       = {value.total, value.below, value.above, value.right, value.left};
 }
 
+void EndTable::setCorners(const int width, const Corners& value)
+{
+  requireIndex("end width", width, static_cast<int>(widths_.size()));
+  for (const CornerValue& c : {value.inner, value.outer}) {
+    for (const double v : {c.total, c.below, c.above}) {
+      requireFinite("corner", v);
+    }
+  }
+  if (corners_.empty()) {
+    corners_.resize(widths_.size());
+  }
+  corners_[width] = value;
+}
+
 LateralTable& Model::addLateral(const LateralKey& key, LateralTable table)
 {
   return laterals_.insert_or_assign(key, std::move(table)).first->second;
@@ -575,6 +589,27 @@ const EndTable* Model::end(const LateralKey& key) const
 {
   const auto it = ends_.find(key);
   return it == ends_.end() ? nullptr : &it->second;
+}
+
+Corners Model::corners(const LateralKey& key, const double width) const
+{
+  const EndTable* t = end(key);
+  if (t == nullptr) {
+    throw std::out_of_range("no end table for layer " + key.layer + " below "
+                            + key.below + " above " + key.above);
+  }
+  if (!t->hasCorners()) {
+    return {};
+  }
+  const Bracket w = bracketLinear(t->widths(), width);
+  auto mix = [&](const CornerValue& a, const CornerValue& b) {
+    return CornerValue{(1 - w.t) * a.total + w.t * b.total,
+                       (1 - w.t) * a.below + w.t * b.below,
+                       (1 - w.t) * a.above + w.t * b.above};
+  };
+  const Corners& lo = t->corners(w.lo);
+  const Corners& hi = t->corners(w.hi);
+  return {mix(lo.inner, hi.inner), mix(lo.outer, hi.outer)};
 }
 
 EndCap Model::end(const LateralKey& key,

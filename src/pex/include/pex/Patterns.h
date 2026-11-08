@@ -160,6 +160,38 @@ struct EndPattern
   Wire build(const fsv::Stack& stack) const;
 };
 
+// The pattern behind the corner values: a wire along y over [0, length]
+// centered on x = 0, alone, crossed at its middle by a wire of its net as
+// wide and as long, or turning at its top end to run as long along +x, the
+// boxes overlapping where they meet; with a plane on the covering layer
+// below and above (none when the handle names no layer) reaching `extent`
+// past the wires every way.
+struct CornerPattern
+{
+  enum class Shape
+  {
+    kStraight,
+    kCross,
+    kBend
+  };
+  Layer layer;
+  double width;
+  double length;
+  Layer below;  // none: the substrate alone
+  Layer above;  // none: open above
+  double extent = 10;
+  Shape shape = Shape::kStraight;
+
+  struct Wire
+  {
+    fsv::Geometry geometry;
+    NetIndex wire = kNullNetIndex;
+    NetIndex below = kNullNetIndex;
+    NetIndex above = kNullNetIndex;
+  };
+  Wire build(const fsv::Stack& stack) const;
+};
+
 // The pattern behind the crossing table: a wire along y over [0, length]
 // under or over an array of crossing wires on `cover`, of a width and
 // pitch, running `margin` past both ends alike. The length is rounded to

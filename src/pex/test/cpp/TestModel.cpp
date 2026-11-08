@@ -366,6 +366,25 @@ TEST(Model, EndDifferentSides)
   EXPECT_DOUBLE_EQ(faced.facing, 0.0275);
 }
 
+TEST(Model, Corners)
+{
+  Model model;
+  const LateralKey key{"m2", "", ""};
+  EndTable& t = model.addEnd(key, EndTable({0.1, 0.3}));
+  EXPECT_FALSE(t.hasCorners());
+  EXPECT_EQ(model.corners(key, 0.1).inner.total, 0);
+  t.setCorners(0, {{-0.02, -0.004, 0}, {0.01, 0.002, 0}});
+  t.setCorners(1, {{-0.04, -0.008, 0}, {0.03, 0.006, 0}});
+  EXPECT_TRUE(t.hasCorners());
+  const Corners mid = model.corners(key, 0.2);
+  EXPECT_DOUBLE_EQ(mid.inner.total, -0.03);
+  EXPECT_DOUBLE_EQ(mid.inner.below, -0.006);
+  EXPECT_DOUBLE_EQ(mid.outer.total, 0.02);
+  EXPECT_DOUBLE_EQ(model.corners(key, 1).outer.total, 0.03);
+  EXPECT_THROW(t.setCorners(2, {}), std::invalid_argument);
+  EXPECT_THROW(model.corners({"m3", "", ""}, 0.1), std::out_of_range);
+}
+
 TEST(Model, MissingContextThrows)
 {
   const Model model = logLinearModel();
