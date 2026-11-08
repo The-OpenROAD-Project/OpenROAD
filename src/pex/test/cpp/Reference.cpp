@@ -545,12 +545,27 @@ class Wire
     double plane_above = 0;
     double rest_below = 0;  // to the farther cover in the other state
     double rest_above = 0;
+    double ground_below_only = 0;
+    double ground_above_only = 0;
     // The plane couplings are per covered state, so they divide out the
     // share of that side.
     forStates(
         below,
         above,
         [&](LateralKey& key, const double weight, const bool b, const bool t) {
+          {
+            // The piece's ground with one side's cover only.
+            LateralKey only_below{key.layer, key.below, ""};
+            LateralKey only_above{key.layer, "", key.above};
+            ground_below_only
+                += weight
+                   * model_.lateral(fallback(model_, only_below), w_, sl, sr)
+                         .ground;
+            ground_above_only
+                += weight
+                   * model_.lateral(fallback(model_, only_above), w_, sl, sr)
+                         .ground;
+          }
           const LateralCap cap
               = model_.lateral(fallback(model_, key), w_, sl, sr);
           total += weight * cap.total();
@@ -573,9 +588,11 @@ class Wire
         });
     const double to_below = below.cross * plane_below;
     const double to_above = above.cross * plane_above;
-    out.ground
-        += len
-           * (total - cl - cr - to_below - to_above - rest_below - rest_above);
+    const double piece_ground
+        = len
+          * (total - cl - cr - to_below - to_above - rest_below - rest_above);
+    out.ground += piece_ground;
+    out.ground_sources[0] += piece_ground;
     for (const auto& [net, share] : below.rest_nets) {
       if (net != target) {
         couple(out, net, Source::kRest, len * rest_below * share);
@@ -586,7 +603,16 @@ class Wire
         couple(out, net, Source::kRest, len * rest_above * share);
       }
     }
-    addDiagonals(x0, x1, sl, sr, target, cl, cr, out);
+    addDiagonals(x0,
+                 x1,
+                 sl,
+                 sr,
+                 ground_below_only,
+                 ground_above_only,
+                 target,
+                 cl,
+                 cr,
+                 out);
     if (l != nullptr && l->net != target) {
       couple(out, l->net, Source::kLateral, len * cl);
     }
@@ -614,12 +640,28 @@ class Wire
                     const double x1,
                     const double sl,
                     const double sr,
+                    const double ground_below_only,
+                    const double ground_above_only,
                     const NetIndex target,
                     double& cl,
                     double& cr,
                     NetEstimate& out) const
   {
     const double len = x1 - x0;
+    // The diagonal tables have no covers. A parallel wire below takes
+    // ground the piece's cover below would otherwise take, and one above
+    // ground the cover above would: its part taken from ground scales by
+    // the piece's ground with that side's cover alone over the ground with
+    // no cover. Its coupling stays, since the wire beside is nearer than
+    // the cover.
+    LateralKey open_key{name_, "", ""};
+    const double open_ground
+        = model_.lateral(fallback(model_, open_key), w_, sl, sr).ground;
+    auto ratio = [&](const double g) {
+      return open_ground > 0 ? std::clamp(g / open_ground, 0.0, 1.0) : 1.0;
+    };
+    const double covered_below = ratio(ground_below_only);
+    const double covered_above = ratio(ground_above_only);
     for (const bool right_side : {false, true}) {
       const double spacing = right_side ? sr : sl;
       double& lateral = right_side ? cr : cl;
@@ -685,10 +727,17 @@ class Wire
         d.coupling *= open;
         d.total_delta *= open;
         d.lateral_delta *= open;
+        const double taken = d.total_delta - d.coupling - d.lateral_delta;
+        d.total_delta
+            = (taken * (k < shape_.layer ? covered_below : covered_above))
+              + d.coupling + d.lateral_delta;
         if (best->net != target) {
           couple(out, best->net, Source::kDiagonal, len * d.coupling);
         }
-        out.ground += len * (d.total_delta - d.coupling - d.lateral_delta);
+        const double diagonal_ground
+            = len * (d.total_delta - d.coupling - d.lateral_delta);
+        out.ground += diagonal_ground;
+        out.ground_sources[1] += diagonal_ground;
         lateral += d.lateral_delta;
       }
     }
@@ -880,8 +929,10 @@ class Wire
     rest_below *= reach(below.rest, below.rest_reach0, below.rest_reach1, true);
     rest_above
         *= reach(above.rest, above.rest_reach0, above.rest_reach1, false);
-    out.ground += total - to_facing - to_left - to_right - to_below - to_above
-                  - rest_below - rest_above;
+    const double end_ground = total - to_facing - to_left - to_right - to_below
+                              - to_above - rest_below - rest_above;
+    out.ground += end_ground;
+    out.ground_sources[2] += end_ground;
     for (const auto& [net, share] : below.rest_nets) {
       if (net != target) {
         couple(out, net, Source::kEndRest, rest_below * share);

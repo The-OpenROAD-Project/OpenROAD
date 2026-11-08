@@ -301,6 +301,43 @@ TEST(Reference, CrossingInFrontOfAPlane)
   EXPECT_LT(plane, 2 * 10);
 }
 
+// A parallel wire takes from ground in proportion to what the piece's
+// cover on that side leaves of it: under an m3 plane whose ground is half
+// the open one, the m2 wire beside takes half its open part.
+TEST(Reference, ParallelWireUnderACover)
+{
+  fsv::Stack stack;
+  stack.addDielectric({"d", 0, 10, 1});
+  stack.addConductor(conductorAt("m1", 1, 2));
+  stack.addConductor(conductorAt("m2", 3, 4));
+  stack.addConductor(conductorAt("m3", 5, 6));
+  auto ground = [&](const double covered_ground) {
+    Model model = constantModel();
+    LateralTable& t
+        = model.addLateral({"m1", "", "m3"}, LateralTable({0.1, 1}, {0.1, 1}));
+    for (int w = 0; w < 2; w++) {
+      for (int l = 0; l < 3; l++) {
+        for (int r = 0; r < 3; r++) {
+          t.set(w, l, r, {covered_ground, 0, 0, 0, 1});
+        }
+      }
+    }
+    model.addEnd({"m1", "", "m3"}, EndTable(*model.end({"m1", "", ""})));
+    fsv::Geometry g;
+    const int a = g.addNet("a");
+    const int d = g.addNet("d");
+    const int p = g.addNet("p");
+    g.addBox(a, {{0, 0, 1}, {4, 0.2, 2}});
+    g.addBox(d, {{-1, 0.4, 3}, {5, 0.6, 4}});
+    g.addBox(p, {{-20, -20, 5}, {30, 20, 6}});
+    return estimate(g, stack, model, a, {.diagonal_depth = 1}).ground;
+  };
+  // The diagonal takes 8 - 7 + 1 = 2 per µm from ground in the open; with
+  // the covered ground 5 against the open 10 it takes 1. The pieces' own
+  // ground differs by 5 per µm; over 4 µm, 24 in all.
+  EXPECT_NEAR(ground(10) - ground(5), (4 * 5) + (4 * 1), 1e-9);
+}
+
 // Between two crossings of different nets, each takes the coupling its
 // own crossing keeps over the piece.
 TEST(Reference, CrossingCouplingSplitsByNet)

@@ -56,6 +56,7 @@
 // is the simplification's value and error = model / truth - 1.
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -1656,6 +1657,34 @@ void compareNet(Lab& lab,
     }
     std::printf("%s\n", line.c_str());
   };
+  // The net's ground and its couplings to signal nets, summed by source.
+  {
+    static const char* kNames[] = {"lateral",
+                                   "cover",
+                                   "rest",
+                                   "diagonal",
+                                   "end_lateral",
+                                   "end_facing",
+                                   "end_cover",
+                                   "end_rest"};
+    std::array<double, static_cast<size_t>(pex::Source::kCount)> coupled{};
+    std::array<double, static_cast<size_t>(pex::Source::kCount)> grounded{};
+    for (const auto& [n, parts] : est.sources) {
+      for (size_t k = 0; k < parts.size(); k++) {
+        (g.grounded(n) ? grounded : coupled)[k] += parts[k];
+      }
+    }
+    std::string line = "#     sums: ground piece " + fmt(est.ground_sources[0])
+                       + " diagonal " + fmt(est.ground_sources[1]) + " end "
+                       + fmt(est.ground_sources[2]);
+    for (size_t k = 0; k < coupled.size(); k++) {
+      line += " g_" + std::string(kNames[k]) + " " + fmt(grounded[k]);
+    }
+    for (size_t k = 0; k < coupled.size(); k++) {
+      line += " c_" + std::string(kNames[k]) + " " + fmt(coupled[k]);
+    }
+    std::printf("%s %s\n", line.c_str(), name.c_str());
+  }
   if (!o.truth.empty()) {
     // The truth from an earlier run: (case, quantity) -> (truth, sigma).
     static const std::map<std::pair<std::string, std::string>,
@@ -2072,6 +2101,31 @@ void junctions(Lab& lab)
                              length);
                      },
                      true});
+    // The crossing at the wire's end, of another net and of the wire's own
+    // net, and the wire's own net crossing its middle.
+    for (const bool own : {false, true}) {
+      for (const bool at_end : {false, true}) {
+        if (!own && !at_end) {
+          continue;  // crossed_ above
+        }
+        cases.push_back({std::string(own ? "own" : "other")
+                             + (at_end ? "_end_" : "_mid_") + other,
+                         [&, other, own, at_end](pex::PatternBuilder& b,
+                                                 const pex::NetIndex n) {
+                           straight(b, n);
+                           const double wc = lab.conductor(other).min_width;
+                           const double x
+                               = at_end ? length - (wc / 2) : length / 2;
+                           b.add(lab.layer(other),
+                                 own ? n : b.net("crossing"),
+                                 x - (wc / 2),
+                                 -length,
+                                 x + (wc / 2),
+                                 length);
+                         },
+                         false});
+      }
+    }
     // Three crossings of one net at four of their widths' pitch.
     cases.push_back({"crossed3_" + other,
                      [&, other](pex::PatternBuilder& b, const pex::NetIndex n) {

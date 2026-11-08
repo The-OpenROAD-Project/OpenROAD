@@ -47,7 +47,9 @@ enum class Source
 
 struct NetEstimate
 {
-  double ground = 0;                     // to the ground plane, fF
+  double ground = 0;  // to the ground plane, fF
+  // The ground by source: the pieces, the parallel wires, the line ends.
+  std::array<double, 3> ground_sources{};
   std::map<NetIndex, double> couplings;  // by net; the target excluded
   // The couplings by source.
   std::map<NetIndex, std::array<double, static_cast<size_t>(Source::kCount)>>
