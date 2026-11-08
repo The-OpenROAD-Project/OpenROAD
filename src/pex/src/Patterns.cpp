@@ -334,6 +334,13 @@ DiagonalPattern::Section DiagonalPattern::build(const fsv::Stack& stack) const
     const double x0 = w / 2 + gap;
     builder.add(other, section.diagonal, x0, x0 + other_width);
   }
+  if (opposite.valid()) {
+    section.opposite = builder.net("opposite");
+    builder.add(opposite,
+                section.opposite,
+                -w / 2 - extent,
+                w / 2 + std::max(gap, 0.0) + other_width + extent);
+  }
   section.geometry = std::move(builder.geometry());
   return section;
 }

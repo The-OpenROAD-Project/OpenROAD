@@ -175,7 +175,7 @@ struct Cover
 struct Run
 {
   NetIndex net;
-  double a0;  // over the wire
+  double a0;  // over the wire; the whole box when past an end
   double a1;
   double e0;  // the whole box
   double e1;
@@ -414,6 +414,10 @@ class Wire
   void collect()
   {
     cuts_ = {a0_, a1_};
+    // On each other layer, the nearest box covering the wire's line past
+    // each end: the end pieces and the ends take a share of it.
+    std::map<int, const Shape*> past_start;
+    std::map<int, const Shape*> past_end;
     for (const Shape& s : shapes_) {
       if (&s == &shape_) {
         continue;
@@ -421,6 +425,22 @@ class Wire
       const double o0 = std::max(a0_, s.lo[a_]);
       const double o1 = std::min(a1_, s.hi[a_]);
       if (o1 - o0 <= kEps) {
+        const double overlap
+            = std::min(p1_, s.hi[p_]) - std::max(p0_, s.lo[p_]);
+        if (s.layer >= 0 && s.layer != shape_.layer
+            && overlap >= options_.cover_overlap * w_) {
+          if (s.hi[a_] <= a0_ + kEps) {
+            const Shape*& best = past_start[s.layer];
+            if (best == nullptr || s.hi[a_] > best->hi[a_]) {
+              best = &s;
+            }
+          } else if (s.lo[a_] >= a1_ - kEps) {
+            const Shape*& best = past_end[s.layer];
+            if (best == nullptr || s.lo[a_] < best->lo[a_]) {
+              best = &s;
+            }
+          }
+        }
         continue;
       }
       if (s.layer == shape_.layer) {
@@ -458,6 +478,17 @@ class Wire
       }
       cuts_.insert(o0);
       cuts_.insert(o1);
+    }
+    for (const auto* past : {&past_start, &past_end}) {
+      for (const auto& [layer, s] : *past) {
+        runs_[layer].push_back({s->net,
+                                s->lo[a_],
+                                s->hi[a_],
+                                s->lo[a_],
+                                s->hi[a_],
+                                p0_ - s->lo[p_],
+                                s->hi[p_] - p1_});
+      }
     }
   }
 
@@ -709,6 +740,8 @@ class Wire
                  x1,
                  sl,
                  sr,
+                 below,
+                 above,
                  ground_below_only,
                  ground_above_only,
                  target,
@@ -736,12 +769,16 @@ class Wire
   // The nearest parallel wire on each nearby layer beside the piece, on
   // each side, where no run of that layer covers it, shielded by the
   // piece's neighbor on that side and on the other, and by covers on the
-  // layers between. One of the net's own
-  // shields like any other but adds no coupling.
+  // layers between. One of the net's own shields like any other but adds
+  // no coupling. A cover on the piece's other side from the parallel wire
+  // takes part of its coupling: the table with a plane on the nearest
+  // cover there blends in by that cover's share.
   void addDiagonals(const double x0,
                     const double x1,
                     const double sl,
                     const double sr,
+                    const Cover& below,
+                    const Cover& above,
                     const double ground_below_only,
                     const double ground_above_only,
                     const NetIndex target,
@@ -750,7 +787,8 @@ class Wire
                     NetEstimate& out) const
   {
     const double len = x1 - x0;
-    // The diagonal tables have no covers. A parallel wire below takes
+    // The diagonal tables have no covers on the parallel wire's side. A
+    // parallel wire below takes
     // ground the piece's cover below would otherwise take, and one above
     // ground the cover above would: its part taken from ground scales by
     // the piece's ground with that side's cover alone over the ground with
@@ -774,7 +812,7 @@ class Wire
         if (k == shape_.layer || coveredOn(k, x0, x1)) {
           continue;
         }
-        const DiagonalKey key{name_, layers_.names[k]};
+        const DiagonalKey key{name_, layers_.names[k], ""};
         if (model_.diagonal(key) == nullptr) {
           continue;
         }
@@ -821,11 +859,20 @@ class Wire
         if (best == nullptr) {
           continue;
         }
-        DiagonalCap d = model_.diagonal(key,
-                                        best->hi[p_] - best->lo[p_],
-                                        best_gap,
-                                        spacing,
-                                        right_side ? sl : sr);
+        const double width = best->hi[p_] - best->lo[p_];
+        const double far = right_side ? sl : sr;
+        DiagonalCap d = model_.diagonal(key, width, best_gap, spacing, far);
+        const Cover& opposite = k < shape_.layer ? above : below;
+        const DiagonalKey opposite_key{name_, layers_.names[k], opposite.layer};
+        if (!opposite.layer.empty() && opposite.share > 0
+            && model_.diagonal(opposite_key) != nullptr) {
+          const double t = std::clamp(opposite.share, 0.0, 1.0);
+          const DiagonalCap c
+              = model_.diagonal(opposite_key, width, best_gap, spacing, far);
+          d.coupling = ((1 - t) * d.coupling) + (t * c.coupling);
+          d.total_delta = ((1 - t) * d.total_delta) + (t * c.total_delta);
+          d.lateral_delta = ((1 - t) * d.lateral_delta) + (t * c.lateral_delta);
+        }
         d.coupling *= open;
         d.total_delta *= open;
         d.lateral_delta *= open;

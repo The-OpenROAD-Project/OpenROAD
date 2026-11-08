@@ -39,8 +39,10 @@ Model sample()
                     {{0.8, 0.85}, {0.5, 0.6}, {0.9, 0.95}, {0.7, 0.75}},
                     {0.14}));
   DiagonalTable& d = model.addDiagonal(
-      {"m2", "m1"},
+      {"m2", "m1", ""},
       DiagonalTable({0.14, 0.42}, {-0.07, 0, 0.5}, {0.14, 0.28}, {0.14}));
+  model.addDiagonal({"m2", "m1", "m3"},
+                    DiagonalTable({0.14}, {0}, {0.14}, {0.14}));
   const int nf = d.farCount();
   const int ns = d.spacingCount();
   const int ng = d.gapCount();
@@ -110,10 +112,12 @@ TEST(ModelJson, RoundTrip)
   EXPECT_EQ(beside->spacings(), (std::vector<double>{0.14}));
   EXPECT_EQ(beside->at(0, 1).total, 0.5);
   EXPECT_EQ(beside->at(1, 1).cross, 0.75);
-  const DiagonalTable* d = back.diagonal({"m2", "m1"});
+  ASSERT_EQ(back.diagonals().size(), 2u);
+  EXPECT_NE(back.diagonal({"m2", "m1", "m3"}), nullptr);
+  const DiagonalTable* d = back.diagonal({"m2", "m1", ""});
   ASSERT_NE(d, nullptr);
-  EXPECT_EQ(d->gaps(), model.diagonal({"m2", "m1"})->gaps());
-  EXPECT_EQ(d->farSpacings(), model.diagonal({"m2", "m1"})->farSpacings());
+  EXPECT_EQ(d->gaps(), model.diagonal({"m2", "m1", ""})->gaps());
+  EXPECT_EQ(d->farSpacings(), model.diagonal({"m2", "m1", ""})->farSpacings());
   ASSERT_EQ(d->values().size(), 2u * 3 * 3 * 2);
   EXPECT_EQ(d->values()[5].coupling, 0.05);
   EXPECT_DOUBLE_EQ(d->values()[5].total_delta, 1.1 * 0.05);

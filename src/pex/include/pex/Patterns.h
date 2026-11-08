@@ -250,7 +250,8 @@ struct ReachPattern
 // a neighbor at `spacing` on the right and another at `far_spacing` on the
 // left (none when negative), and a parallel wire on `other` to the right,
 // its left edge `gap` past the wire's right edge (overlapping when
-// negative), of `other_width` (none when 0).
+// negative), of `other_width` (none when 0); optionally a plane on
+// `opposite`, reaching `extent` past the wire and the parallel wire.
 struct DiagonalPattern
 {
   Layer layer;
@@ -260,6 +261,8 @@ struct DiagonalPattern
   double gap = 0;
   double spacing = -1;
   double far_spacing = -1;
+  Layer opposite;  // none when the handle names no layer
+  double extent = 10;
 
   struct Section
   {
@@ -268,6 +271,7 @@ struct DiagonalPattern
     NetIndex left = kNullNetIndex;
     NetIndex right = kNullNetIndex;
     NetIndex diagonal = kNullNetIndex;
+    NetIndex opposite = kNullNetIndex;
   };
   Section build(const fsv::Stack& stack) const;
 };

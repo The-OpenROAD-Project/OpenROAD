@@ -89,7 +89,7 @@ Model constantModel()
   add({"m2", "", ""}, 30);
   add({"m2", "m1", ""}, 40);
   DiagonalTable& d = model.addDiagonal(
-      {"m1", "m2"}, DiagonalTable({0.1, 1}, {0, 1}, {0.1, 1}, {0.1, 1}));
+      {"m1", "m2", ""}, DiagonalTable({0.1, 1}, {0, 1}, {0.1, 1}, {0.1, 1}));
   for (int w = 0; w < 2; w++) {
     for (int g = 0; g < 2; g++) {
       for (int s = 0; s < 3; s++) {
@@ -137,6 +137,27 @@ TEST(Reference, PiecesEndsAndCovers)
   // The total counts every piece's table total plus the two ends.
   EXPECT_GT(est.total(), 10 * 10 + 1);
   EXPECT_GT(est.ground, 10 * 10 - 4 * 4);
+}
+
+// A crossing just past the wire's end takes a share of the end piece and
+// of the end, which a crossing beyond it does not.
+TEST(Reference, CrossingPastTheEnd)
+{
+  const fsv::Stack stack = twoLayers();
+  const Model model = constantModel();
+  fsv::Geometry g;
+  const int a = g.addNet("a");
+  const int c = g.addNet("c");
+  const int d = g.addNet("d");
+  g.addBox(a, {{0, 0, 1}, {10, 0.2, 2}});
+  g.addBox(c, {{10.5, -5, 3}, {11, 5, 4}});
+  g.addBox(d, {{12, -5, 3}, {12.5, 5, 4}});
+  const NetEstimate est = estimate(g, stack, model, a);
+  EXPECT_EQ(est.pieces, 1);
+  ASSERT_TRUE(est.couplings.contains(c));
+  EXPECT_GT(est.couplings.at(c), 0);
+  EXPECT_LT(est.couplings.at(c), 4 * 3);
+  EXPECT_FALSE(est.couplings.contains(d));
 }
 
 // A cover starting within rounding of the wire's start leaves a zero-length

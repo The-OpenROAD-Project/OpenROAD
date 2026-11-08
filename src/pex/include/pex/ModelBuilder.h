@@ -214,12 +214,16 @@ void buildCrossings(const fsv::Stack& stack,
 // Builds the diagonal table of a layer and a nearby layer: a wire of
 // minimum width with a neighbor at a spacing on each side, and a parallel
 // wire on the other layer beside it on the right, at every width, gap and
-// pair of spacings of the options.
+// pair of spacings of the options; with a plane on `opposite` when it
+// names a layer, which must lie on the wire's other side. Each layer's
+// build tabulates a parallel wire with no plane and with one on the
+// nearest cover on the other side.
 void buildDiagonal(const fsv::Stack& stack,
                    Layer layer,
                    Layer other,
                    const BuildOptions& options,
-                   Model& model);
+                   Model& model,
+                   Layer opposite = Layer());
 
 // The layers within the diagonal depth of a layer, below and above, that
 // do not sit on the ground plane.

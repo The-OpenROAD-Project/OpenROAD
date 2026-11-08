@@ -409,6 +409,16 @@ TEST(Patterns, DiagonalSectionPlacesTheParallelWire)
   EXPECT_DOUBLE_EQ(diag.hi[0], 0.1 - 0.05 + 0.5);
   EXPECT_EQ(diag.lo[1], layerExtent(stack, stack.layer("met1")).bottom);
   EXPECT_DOUBLE_EQ(rects[2].lo[0], 0.1 + 0.3);
+  // A plane on the other side reaches the extent past both wires.
+  p.opposite = stack.layer("met3");
+  p.extent = 2;
+  const DiagonalPattern::Section planed = p.build(stack);
+  ASSERT_GE(planed.opposite, 0);
+  const fsv::Rect& plane = planed.geometry.rects()[4];
+  EXPECT_EQ(planed.geometry.rectNet(4), planed.opposite);
+  EXPECT_DOUBLE_EQ(plane.lo[0], -2.1);
+  EXPECT_DOUBLE_EQ(plane.hi[0], 0.1 + 0.5 + 2);
+  p.opposite = Layer();
   p.other_width = 0;
   p.spacing = -1;
   p.far_spacing = -1;

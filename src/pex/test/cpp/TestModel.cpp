@@ -265,7 +265,8 @@ TEST(Model, DiagonalLookup)
 {
   Model model;
   DiagonalTable& t = model.addDiagonal(
-      {"m2", "m1"}, DiagonalTable({0.1, 1}, {-0.05, 0, 1}, {0.1, 0.4}, {0.2}));
+      {"m2", "m1", ""},
+      DiagonalTable({0.1, 1}, {-0.05, 0, 1}, {0.1, 0.4}, {0.2}));
   const int open = 2;
   for (int w = 0; w < 2; w++) {
     for (int g = 0; g < 3; g++) {
@@ -280,7 +281,7 @@ TEST(Model, DiagonalLookup)
       }
     }
   }
-  const DiagonalKey key{"m2", "m1"};
+  const DiagonalKey key{"m2", "m1", ""};
   EXPECT_DOUBLE_EQ(model.diagonal(key, 0.1, 0, 0.1, -1).coupling, 2 * 0.5);
   EXPECT_DOUBLE_EQ(model.diagonal(key, 0.1, 0, 0.1, 0.2).coupling,
                    2 * 0.5 * 0.8);
@@ -295,7 +296,7 @@ TEST(Model, DiagonalLookup)
   EXPECT_DOUBLE_EQ(model.diagonal(key, 0.1, 4, -1, -1).lateral_delta, -0.025);
   // Before the first gap the values are the first point's.
   EXPECT_DOUBLE_EQ(model.diagonal(key, 0.1, -0.5, -1, -1).coupling, 3);
-  EXPECT_THROW(model.diagonal({"m2", "m3"}, 0.1, 0, 0.1, 0.1),
+  EXPECT_THROW(model.diagonal({"m2", "m3", ""}, 0.1, 0, 0.1, 0.1),
                std::out_of_range);
 }
 

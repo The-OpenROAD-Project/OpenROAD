@@ -198,6 +198,9 @@ json::object diagonal(const DiagonalKey& key, const DiagonalTable& table)
   json::object o;
   o["layer"] = key.layer;
   o["other"] = key.other;
+  if (!key.opposite.empty()) {
+    o["opposite"] = key.opposite;
+  }
   o["widths"] = numbers(table.widths());
   o["gaps"] = numbers(table.gaps());
   o["spacings"] = numbers(table.spacings());
@@ -216,8 +219,12 @@ json::object diagonal(const DiagonalKey& key, const DiagonalTable& table)
 
 void readDiagonal(const json::object& o, Model& model)
 {
-  const DiagonalKey key{std::string(o.at("layer").as_string()),
-                        std::string(o.at("other").as_string())};
+  DiagonalKey key{std::string(o.at("layer").as_string()),
+                  std::string(o.at("other").as_string()),
+                  ""};
+  if (const json::value* opposite = o.if_contains("opposite")) {
+    key.opposite = std::string(opposite->as_string());
+  }
   DiagonalTable table(numbers(o.at("widths")),
                       numbers(o.at("gaps")),
                       numbers(o.at("spacings")),

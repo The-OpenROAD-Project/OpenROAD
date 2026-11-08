@@ -166,10 +166,13 @@ struct DiagonalCap
   double lateral_delta = 0;
 };
 
+// A parallel wire on `other` beside a wire on `layer`, with a plane on
+// `opposite`, a layer on the wire's other side (none when empty).
 struct DiagonalKey
 {
   std::string layer;
   std::string other;
+  std::string opposite;
 
   auto operator<=>(const DiagonalKey&) const = default;
 };

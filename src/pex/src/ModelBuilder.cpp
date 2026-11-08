@@ -1289,11 +1289,24 @@ void buildDiagonal(const fsv::Stack& stack,
                    const Layer layer,
                    const Layer other,
                    const BuildOptions& options,
-                   Model& model)
+                   Model& model,
+                   const Layer opposite)
 {
   const fsv::Stack::Conductor& conductor = requireConductor(stack, layer);
   const fsv::Stack::Conductor& other_conductor = requireConductor(stack, other);
-  const DiagonalKey key{conductor.name, other_conductor.name};
+  DiagonalKey key{conductor.name, other_conductor.name, ""};
+  if (opposite.valid()) {
+    const fsv::Stack::Conductor& o = requireConductor(stack, opposite);
+    const bool other_above = other_conductor.bottom >= conductor.top;
+    const bool opposite_above = o.bottom >= conductor.top;
+    if (other_above == opposite_above
+        || (!opposite_above && o.top > conductor.bottom)) {
+      throw std::invalid_argument(o.name + " is not on the other side of "
+                                  + conductor.name + " from "
+                                  + other_conductor.name);
+    }
+    key.opposite = o.name;
+  }
   const double w = conductor.min_width;
   std::vector<double> widths;
   for (const double f : options.diagonal_width_factors) {
@@ -1344,6 +1357,8 @@ void buildDiagonal(const fsv::Stack& stack,
           pattern.gap = gap;
           pattern.spacing = s == ns - 1 ? -1 : table.spacings()[s];
           pattern.far_spacing = f == nf - 1 ? -1 : table.farSpacings()[f];
+          pattern.opposite = opposite;
+          pattern.extent = options.extent;
           return pattern.build(stack);
         };
   runJobs(options, points + ns * nf, [&](const int i, fsv::Solver& solver) {
@@ -1438,8 +1453,26 @@ void buildLayer(const fsv::Stack& stack,
     }
   }
   buildCrossings(stack, layer, covers, options, model);
+  // The nearest cover on each side, the plane opposite a parallel wire on
+  // the other.
+  auto nearest = [](const std::vector<Layer>& side) {
+    for (const Layer cover : side) {
+      if (cover.valid()) {
+        return cover;
+      }
+    }
+    return Layer();
+  };
+  const Layer nearest_below = nearest(plan.below);
+  const Layer nearest_above = nearest(plan.above);
   for (const Layer other : diagonalLayers(stack, layer, options)) {
     buildDiagonal(stack, layer, other, options, model);
+    const bool above = requireConductor(stack, other).bottom
+                       >= requireConductor(stack, layer).top;
+    const Layer opposite = above ? nearest_below : nearest_above;
+    if (opposite.valid()) {
+      buildDiagonal(stack, layer, other, options, model, opposite);
+    }
   }
 }
 

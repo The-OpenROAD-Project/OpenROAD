@@ -293,7 +293,7 @@ TEST(ModelBuilder, DiagonalTable)
   o.tol = 0.02;
   Model model;
   buildDiagonal(sky130(), L("met2"), L("met1"), o, model);
-  const DiagonalTable* t = model.diagonal({"met2", "met1"});
+  const DiagonalTable* t = model.diagonal({"met2", "met1", ""});
   ASSERT_NE(t, nullptr);
   ASSERT_EQ(t->values().size(), 1u * 2 * 2 * 2);
   // Alone, a met1 wire beside the met2 wire couples more at the near gap
@@ -311,6 +311,17 @@ TEST(ModelBuilder, DiagonalTable)
   EXPECT_LT(near_shielded.lateral_delta, 0);
   EXPECT_LT(far_shielded.coupling, near_open.coupling);
   EXPECT_EQ(far_shielded.lateral_delta, 0);
+  // A plane above the met2 wire, on its other side from the met1 wire,
+  // takes part of the coupling; a plane on the met1 wire's side is
+  // refused.
+  buildDiagonal(sky130(), L("met2"), L("met1"), o, model, L("met3"));
+  const DiagonalTable* planed = model.diagonal({"met2", "met1", "met3"});
+  ASSERT_NE(planed, nullptr);
+  EXPECT_LT(planed->at(0, 0, 1, 1).coupling, 0.95 * near_open.coupling);
+  EXPECT_GT(planed->at(0, 0, 1, 1).coupling, 0);
+  EXPECT_THROW(
+      buildDiagonal(sky130(), L("met2"), L("met1"), o, model, L("li1")),
+      std::invalid_argument);
   EXPECT_EQ(names(diagonalLayers(sky130(), L("met2"), o)),
             (std::vector<std::string>{"met1", "li1", "met3", "met4"}));
   // Only the technology's routing layers take part when they are given.
