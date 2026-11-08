@@ -417,6 +417,8 @@ cc_test(
     data = [
         "ar01.def",
         "ar02.def",
+        "asap7/asap7_tech_1x_201209.lef",
+        "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
         "core01.def",
         "nangate45.lef",
         "nograd01.def",
@@ -429,8 +431,6 @@ cc_test(
         "simple09.def",
         "simple10.def",
         "sky130hd.lef",
-        "asap7/asap7_tech_1x_201209.lef",
-        "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
         "//test:nangate45_data",
     ],
     env = GPU_ENV_OFF,
