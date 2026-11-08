@@ -2276,11 +2276,11 @@ NetRouteMap FastRouteCore::run()
   // First time L routing
   {
     const DebugScopedTimer timer(
-        timings.route_l, logger_, GRT, "timer", 1, "Initial routeLAll: {}");
+        timings.route_l, logger_, GRT, "timer", 1, "Initial L routing: {}");
     initialRouteLAll();
   }
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
-    logger_->report("After routeLAll");
+    logger_->report("After initial L routing");
   }
 
   // Congestion-driven rip-up and reroute L

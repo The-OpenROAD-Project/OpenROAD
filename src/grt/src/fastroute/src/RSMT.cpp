@@ -90,7 +90,7 @@ void FastRouteCore::copyStTree(const int ind, const stt::Tree& rsmt)
     treenodes[i].status = (i < d) ? 2 : 0;
     if (n != i) {  // not root
       treeedges[edgecnt].len = abs(x1 - x2) + abs(y1 - y2);
-      // make x1 always less than x2
+      // Keep n1/n2 ordered by x for initial pattern routing.
       if (x1 < x2) {
         treeedges[edgecnt].n1 = i;
         treeedges[edgecnt].n2 = n;
@@ -399,7 +399,7 @@ bool FastRouteCore::netCongestion(const int netID)
     const int y2 = tree.nodes[treeedge.n2].y;
     const auto [ymin, ymax] = std::minmax(y1, y2);
 
-    // remove L routing
+    // Check the chosen L path for congestion.
     if (treeedge.route.xFirst) {
       for (int i = x1; i < x2; i++) {
         const int cap
@@ -565,7 +565,6 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
   int numShift = 0;
 
   int wl = 0;
-  int wl1 = 0;
   int totalNumSeg = 0;
 
   for (const int& netID : net_ids_) {
@@ -606,12 +605,6 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
 
     copyStTree(netID, rsmt);
 
-    if (congestionDriven) {
-      for (int j = 0; j < sttrees_[netID].num_edges(); j++) {
-        wl1 += sttrees_[netID].edges[j].len;
-      }
-    }
-
     for (const TreeEdge& treeedge : sttrees_[netID].edges) {
       wl += treeedge.len;
       if (treeedge.len > 0) {
@@ -620,22 +613,17 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
     }
 
     if (reRoute) {
-      // update the est_usage due to the segments in this net
-      newrouteL(
-          netID,
-          RouteType::NoRoute,
-          true);  // route the net with no previous route for each tree edge
+      // Route the new tree and add its estimated usage.
+      newrouteL(netID, RouteType::NoRoute, true);
     }
-  }  // loop i
+  }
 
   debugPrint(logger_,
              GRT,
              "rsmt",
              1,
-             "Wirelength: {}, Wirelength1: {}\nNumber of segments: {}\nNumber "
-             "of shifts: {}",
+             "Wirelength: {}\nNumber of segments: {}\nNumber of shifts: {}",
              wl,
-             wl1,
              totalNumSeg,
              numShift);
 }

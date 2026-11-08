@@ -577,10 +577,13 @@ class FastRouteCore
   bool netCongestion(int netID);
 
   // route functions
-  // Initial L routing uses 0.5-0.5 demand estimation before choosing paths.
+  // Initial L routing estimates all nets before choosing any paths.
+  // These helpers and netCongestion() run before topology changes, on edges
+  // ordered by copyStTree() so that nodes[n1].x <= nodes[n2].x.
   void initialRouteLAll();
   void estimateOneEdge(int netID, const TreeEdge& treeedge);
   void routeEdgeLFirstTime(int netID, TreeEdge& treeedge);
+
   void newrouteL(int netID, RouteType ripuptype, bool viaGuided);
   void newrouteZ(int netID, int threshold);
   void newrouteZ_edge(int netID, int edgeID);
