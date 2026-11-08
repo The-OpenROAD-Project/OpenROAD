@@ -22,8 +22,8 @@ namespace rsz {
 // multiple VtSwapMtCandidate instances for parallel evaluation.
 //
 // prepareRequirements() asks for the estimator context and the flip-flop
-// input-side checks, and prepareInputs() captures the input-cap budgets and
-// the cell costs, so generate() runs on worker threads without live STA.
+// input-side checks, and prepareInputs() captures the input-cap budgets, so
+// generate() runs on worker threads without live STA.
 class VtSwapMtGenerator : public MoveGenerator
 {
  public:
@@ -37,27 +37,28 @@ class VtSwapMtGenerator : public MoveGenerator
     return kEstimatorContextCache | kSequentialEstimatorCache;
   }
   bool isApplicable(const Target& target) const override;
-  void prepareInputs(Target& target) const override;
+  void prepareInputs(Target& target) const override
+  {
+    prepareInputCapBudgets(target);
+  }
   std::vector<std::unique_ptr<MoveCandidate>> generate(
       const Target& target) override;
 
  private:
-  // The VT-equivalent cells of one current cell and their new/old cell cost
-  // ratios.  The library does not change in a run, so the options are cached
-  // for the run: prepareInputs() fills the cache on the main thread and
-  // generate() only reads it.
-  struct VtSwapOptions
+  // === Candidate-cell selection ============================================
+  struct CandidateCells
   {
+    bool applicable{false};
     std::vector<sta::LibertyCell*> cells;
+    // New/old cell cost ratio of each cell in cells.
     std::vector<float> cost_ratios;
   };
 
-  // === Candidate-cell selection ============================================
-  std::vector<sta::LibertyCell*> selectCandidateCells(
-      sta::LibertyCell* current_cell) const;
-  VtSwapOptions buildVtSwapOptions(sta::LibertyCell* current_cell) const;
-
-  mutable std::map<const sta::LibertyCell*, VtSwapOptions> vt_swap_options_;
+  // Reuse VT replacement cells across targets with the same current cell.
+  // Key: current Liberty cell. Value: applicability, alternative cells, and
+  // their cost ratios.
+  // Filled by isApplicable() on the main thread before generate() workers.
+  mutable std::map<sta::LibertyCell*, CandidateCells> candidate_cells_cache_;
 };
 
 }  // namespace rsz

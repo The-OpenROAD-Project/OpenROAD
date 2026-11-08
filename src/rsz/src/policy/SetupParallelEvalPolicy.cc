@@ -464,14 +464,16 @@ void SetupParallelEvalPolicy::analyzeBottlenecks(const BatchScope& scope)
     return;
   }
 
-  // One analysis serves bottleneck_refresh_batches batches; the tail's narrower
-  // endpoint set gets a fresh one.
+  // One analysis serves bottleneck_refresh_batches batches in the tail and
+  // twice as many in the broad phase; the narrower tail gets a fresh one.
   const BatchPriorityConfig& priority = policy_config_.parallel_eval.priority;
+  const int refresh_batches
+      = priority.bottleneck_refresh_batches * (tail_.active() ? 1 : 2);
   const bool tail_changed = tail_.active() != bottleneck_in_tail_;
   if (bottleneck_age_ < std::numeric_limits<int>::max()) {
     ++bottleneck_age_;
   }
-  if (!tail_changed && bottleneck_age_ < priority.bottleneck_refresh_batches) {
+  if (!tail_changed && bottleneck_age_ < refresh_batches) {
     return;
   }
   bottleneck_age_ = 0;

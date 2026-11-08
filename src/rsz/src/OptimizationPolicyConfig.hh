@@ -32,7 +32,9 @@ struct BatchPriorityConfig
   int bottleneck_max_endpoints{1024};
   // Maximum distinct cone startpoints analyzed, with the same per-vertex cost.
   int bottleneck_max_startpoints{1024};
-  // Batches one analysis serves; the start of the WNS tail refreshes it.
+  // Reuse one bottleneck analysis for this many weighted batches in the WNS
+  // tail.  The preceding batch stage reuses it for twice as many.
+  // Refresh it on the first weighted batch after entering the tail.
   int bottleneck_refresh_batches{4};
 };
 

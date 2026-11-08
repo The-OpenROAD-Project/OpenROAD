@@ -68,6 +68,8 @@ the two umbrella targets.
 | `//:tidy_yaml` | `sh_binary` | Runs `yamlfix` (auto-format) |
 | `//:fmt_py_test` | `sh_test` | Runs `black --check` (formatting) |
 | `//:tidy_py` | `sh_binary` | Runs `black` (auto-format) |
+| `//:fmt_cc_test` | `sh_test` | Runs `clang-format --dry-run --Werror` (formatting) |
+| `//:tidy_cc` | `sh_binary` | Runs `clang-format -i` (auto-format) |
 
 ## Configuration
 
@@ -87,6 +89,15 @@ workflow reads — the two see the same exclusions. The `black` version in
 `.github/workflows/black.yaml`; a mismatch lets `//:fix_lint` produce
 formatting that CI then rejects. Black has its own requirements file and pip
 hub because `tclint` pins `pathspec==0.11.2`, which black >= 26 cannot use.
+
+C/C++ formatting is controlled by the `.clang-format` files in the tree.
+`bazel/cc_ls_files.sh` lists the files it covers: submodules such as
+`src/sta`, `src/odb/src/codeGenerator/` templates and `third-party/` are
+excluded, as in the clang-format GitHub workflows. Files with no
+`.clang-format` above them are left alone (`--fallback-style=none`), so a
+downstream workspace running `//:fix_lint` keeps its own C/C++ style. The
+`clang-format` version in `bazel/requirements.in` must match
+`CLANG_FORMAT_VERSION` in those workflows.
 
 ## POLA
 
@@ -115,7 +126,6 @@ To add a new linter (e.g., C++ tidy):
 The following linters and formatters are planned for `//:lint_test` and
 `//:fix_lint`, replacing their ad-hoc CI equivalents:
 
-- **C++ clang-format** — formatting check/fix for C++ and header files
 - **Python ruff** — lint rules for Python scripts in `etc/`, `docs/`, tests
   (formatting is already covered by `//:fmt_py_test` / `//:tidy_py`)
 - **ShellCheck** — lint for bash scripts in `test/`, `bazel/`, `etc/`
@@ -130,14 +140,17 @@ testable locally with a single command.
 ## Relationship to CI
 
 The GitHub Actions workflows `github-actions-lint-tcl.yml` (`tclint`,
-`tclfmt`) and `black.yaml` (`black`) run the same checks over the same files
-as `//:lint_tcl_test` / `//:fmt_tcl_test` and `//:fmt_py_test`. Once Bazel
+`tclfmt`), `black.yaml` (`black`) and `github-actions-format-on-push.yml`
+(`clang-format`) run the same checks as `//:lint_tcl_test` /
+`//:fmt_tcl_test`, `//:fmt_py_test` and `//:fmt_cc_test`; the clang-format
+workflow checks only the changed files. Once Bazel
 lint targets are validated in CI, those workflows can be retired. The same
 applies to the Jenkins documentation and duplicate ID check stages.
 
 While both exist, the tool versions have to be kept in sync by hand:
 `bazel/requirements.in` on the Bazel side, and the workflow pins on the CI
-side (`black.yaml`, `github-actions-lint-tcl.yml` and the auto-format step of
+side (`black.yaml`, `github-actions-lint-tcl.yml`, `CLANG_FORMAT_VERSION` in
+the clang-format workflows and the auto-format step of
 `github-actions-on-master-push.yml`).
 
 C++ clang-tidy is provided via a separate Bazel aspect (`--config=lint`)

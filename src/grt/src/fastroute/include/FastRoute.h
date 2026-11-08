@@ -307,6 +307,8 @@ class FastRouteCore
   void updateNet3DUsage(int net_id, int cost);
   void setSoftNDR(int net_id);
   void applySoftNDR(const std::vector<int>& net_ids);
+  std::vector<StTree> saveInitialRoutes() const;
+  void restoreInitialRoutes(std::vector<StTree> initial_sttrees);
   void disableNDRForCongestedNets(const std::vector<int>& net_ids);
   // Variant that works from pre-converted grid segments (x0,y0,x1,y1,layer)
   // instead of sttrees, for use when sttrees are not yet populated.

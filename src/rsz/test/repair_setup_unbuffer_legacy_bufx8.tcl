@@ -1,4 +1,4 @@
-# Legacy UnbufferMove removes this stronger buffer chain after estimatedSlackOK;
+# Legacy UnbufferMove removes this stronger buffer chain after estimatedUnbufferSlackOK;
 # the new optimizer must match that behavior for setup repair QoR parity.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib

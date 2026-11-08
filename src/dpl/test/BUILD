@@ -354,6 +354,7 @@ cc_test(
     ],
     deps = [
         "//src/dpl",
+        "//src/dpl:dpl_impl",
         "//src/odb/src/db",
         "//src/odb/src/lefin",
         "//src/tst",
