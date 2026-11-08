@@ -1956,6 +1956,101 @@ void attribution(Lab& lab)
   }
 }
 
+// e18: how the model sees the power grid. Each net is compared in its e9
+// window, with the power and ground nets alone, and with those nets' boxes
+// merged where they overlap or abut along a side (a rail drawn as one box
+// with every cell's pin over it becomes one box). The solver sees the same
+// conductors either way, so a change between the last two is the model
+// reading fragments as separate wires.
+void powerGrid(Lab& lab)
+{
+  const Options& o = lab.options();
+  utl::Logger logger;
+  const Design design = readDesign(o, logger);
+  const pex::Model model = netsModel(lab, design);
+  for (odb::dbNet* net : targetNets(o, design.block)) {
+    const fsv::NetWindow window = netWindow(lab, design.block, net);
+    const fsv::Geometry& g = window.geometry;
+    const pex::NetIndex target = window.targets.front();
+    std::vector<bool> supply(g.netCount(), false);
+    for (int n = 0; n < g.netCount(); n++) {
+      odb::dbNet* found = design.block->findNet(g.netName(n).c_str());
+      supply[n] = found != nullptr && found->getSigType().isSupply();
+    }
+    auto build = [&](const bool merge) {
+      fsv::Geometry f;
+      std::vector<int> index(g.netCount(), -1);
+      auto netOf = [&](const int n) {
+        if (index[n] < 0) {
+          index[n] = f.addNet(g.netName(n));
+          if (g.grounded(n)) {
+            f.setGrounded(index[n]);
+          }
+        }
+        return index[n];
+      };
+      netOf(target);
+      std::map<int, std::vector<fsv::Box>> boxes;
+      for (int b = 0; b < static_cast<int>(g.boxes().size()); b++) {
+        const int n = g.boxNet(b);
+        if (n == target || supply[n]) {
+          boxes[n].push_back(g.boxes()[b]);
+        }
+      }
+      for (auto& [n, list] : boxes) {
+        if (merge && n != target) {
+          // Join pairs on the same z that share a side's extent and
+          // overlap or touch along the other axis, or where one holds the
+          // other, until none is left.
+          for (bool joined = true; joined;) {
+            joined = false;
+            for (size_t i = 0; i < list.size() && !joined; i++) {
+              for (size_t j = i + 1; j < list.size() && !joined; j++) {
+                fsv::Box& a = list[i];
+                const fsv::Box& c = list[j];
+                if (a.lo[2] != c.lo[2] || a.hi[2] != c.hi[2]) {
+                  continue;
+                }
+                bool inside = true;
+                bool holds = true;
+                for (int k = 0; k < 2; k++) {
+                  inside = inside && c.lo[k] >= a.lo[k] && c.hi[k] <= a.hi[k];
+                  holds = holds && a.lo[k] >= c.lo[k] && a.hi[k] <= c.hi[k];
+                }
+                bool along = false;
+                for (int k = 0; k < 2 && !along; k++) {
+                  const int q = 1 - k;
+                  along = a.lo[q] == c.lo[q] && a.hi[q] == c.hi[q]
+                          && c.lo[k] <= a.hi[k] && c.hi[k] >= a.lo[k];
+                }
+                if (inside || holds || along) {
+                  for (int k = 0; k < 2; k++) {
+                    a.lo[k] = std::min(a.lo[k], c.lo[k]);
+                    a.hi[k] = std::max(a.hi[k], c.hi[k]);
+                  }
+                  list.erase(list.begin() + j);
+                  joined = true;
+                }
+              }
+            }
+          }
+        }
+        for (const fsv::Box& b : list) {
+          f.addBox(netOf(n), b);
+        }
+      }
+      if (g.window()) {
+        f.setWindow(*g.window());
+      }
+      return f;
+    };
+    const std::string name = net->getName();
+    compareNet(lab, "e18", name + "/all", g, target, model, true);
+    compareNet(lab, "e18", name + "/power", build(false), 0, model, true);
+    compareNet(lab, "e18", name + "/merged", build(true), 0, model, true);
+  }
+}
+
 // The via between two conductors, or "" when the stack has none.
 std::string viaBetween(const Lab& lab,
                        const std::string& lower,
@@ -2624,6 +2719,9 @@ int main(int argc, char** argv)
     }
     if (wanted(o, "e17")) {
       denseContext(lab);
+    }
+    if (wanted(o, "e18")) {  // not among the default groups
+      powerGrid(lab);
     }
     if (wanted(o, "model")) {  // not among the default groups
       modelOnly(lab);
