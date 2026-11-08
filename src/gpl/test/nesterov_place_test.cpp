@@ -260,7 +260,7 @@ PlaceOptions skipIo()
 
 std::vector<QorCase> qorCases()
 {
-  const Design sky130{"simple07.def", "sky130hd.lef"};
+  const Design one_movable_cell{"simple07.def", "sky130hd.lef"};
   return {
       // 294-cell gcd, 65% utilization, IOs on all four sides.
       {"Basic", kSimple01, withoutInitialPlace(), 5195638, 235},
@@ -310,17 +310,19 @@ std::vector<QorCase> qorCases()
        withoutInitialPlace(1.0f),
        9989,
        0},
-      // One movable cell among 31 fixed ones.
-      {"OneMovableCell", sky130, withDensity({}, 0.75f), 84481, 0},
-      {"OneMovableCellCoarseBins", sky130, coarseBins(), 84481, 0},
+      // One movable inverter between two IO pins, among 31 fixed tap and
+      // decap cells with no signal nets.
+      {"OneMovableCell", one_movable_cell, withDensity({}, 0.75f), 84481, 0},
+      {"OneMovableCellCoarseBins", one_movable_cell, coarseBins(), 84481, 0},
       // One movable cell in an 8 mm die: a 2048 x 2048 bin grid.
       {"OneCellHugeDie",
        {"simple10.def", "sky130hd.lef"},
        withDensity({}, 0.75f),
        2065311,
        0},
-      // Nets whose pins are all on fixed objects, so they give no wirelength
-      // gradient.
+      // Six buffers, each driven by one IO pin and driving another. With
+      // skip_io every net has a single pin, so wirelength gives no gradient
+      // and the density penalty alone has to start the spreading.
       {"NetsWithoutGradient",
        {"nograd01.def",
         "asap7/asap7_tech_1x_201209.lef",
