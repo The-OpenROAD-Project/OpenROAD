@@ -1539,8 +1539,8 @@ void DefOut::Impl::writeWire(dbWire* wire)
         }
 
         std::string mask_statement;
-        if (point_cnt % 2 == 0 && color) {
-          mask_statement = fmt::format("MASK {}", color.value());
+        if (point_cnt > 1 && color && (_version >= DefOut::DEF_5_8)) {
+          mask_statement = fmt::format(" MASK {}", *color);
         }
 
         if (point_cnt == 1) {
@@ -1549,8 +1549,9 @@ void DefOut::Impl::writeWire(dbWire* wire)
           *_out << mask_statement << " ( * " << y << " )";
         } else if (y == prev_y) {
           *_out << mask_statement << " ( " << x << " * )";
+        } else {
+          *_out << mask_statement << " ( " << x << " " << y << " )";
         }
-
         prev_x = x;
         prev_y = y;
         prev_junction_id = decode.getJunctionId();
@@ -1577,16 +1578,23 @@ void DefOut::Impl::writeWire(dbWire* wire)
           break;
         }
 
+        std::string mask_statement;
+        if (point_cnt > 1 && color && (_version >= DefOut::DEF_5_8)) {
+          mask_statement = fmt::format(" MASK {}", *color);
+        }
+
         if (point_cnt == 1) {
           *_out << " ( " << x << " " << y << " " << ext << " )";
         } else if ((x == prev_x) && (y == prev_y)) {
-          *_out << " ( * * " << ext << " )";
+          *_out << mask_statement << " ( * * " << ext << " )";
         } else if (x == prev_x) {
-          *_out << " ( * " << y << " " << ext << " )";
+          *_out << mask_statement << " ( * " << y << " " << ext << " )";
         } else if (y == prev_y) {
-          *_out << " ( " << x << " * " << ext << " )";
+          *_out << mask_statement << " ( " << x << " * " << ext << " )";
+        } else {
+          *_out << mask_statement << " ( " << x << " " << y << " " << ext
+                << " )";
         }
-
         prev_x = x;
         prev_y = y;
         prev_junction_id = decode.getJunctionId();
