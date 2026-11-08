@@ -212,6 +212,8 @@ constexpr double kIterationTolerance = 0.2;
 // something; the rest are 1-6 cell edge cases.
 constexpr int kMinCellsForQualityChecks = 100;
 
+// The recorded results use an initial density penalty of 0.01, above the
+// PlaceOptions default of 0.00008; a case that wants another passes it.
 PlaceOptions withoutInitialPlace(const float density_penalty = 0.01f)
 {
   PlaceOptions options;
@@ -338,7 +340,8 @@ class QorTest : public NesterovPlaceTest,
     const odb::Rect core = block_->getCoreArea();
     for (const CellState& cell : before) {
       odb::dbInst* inst = cell.inst;
-      if (inst->isFixed()) {
+      if (cell.status.isFixed()) {
+        EXPECT_EQ(inst->getPlacementStatus(), cell.status) << inst->getName();
         EXPECT_EQ(inst->getLocation(), cell.location)
             << inst->getName() << " is fixed";
         continue;

@@ -47,6 +47,12 @@ check "initial place skipped" {
 } 0
 check "default bin count" { regexp {Bin count \(X, Y\):\s+16\s*,\s*16} $log } 1
 
+set log [place -skip_nesterov_place]
+check "nesterov place skipped" {
+  regexp {Global placement finished} $log
+} 0
+check "initial place runs" { regexp {\[InitialPlace\]  Iter:} $log } 1
+
 set log [place -skip_initial_place -bin_grid_count 32]
 check "bin count" { regexp {Bin count \(X, Y\):\s+32\s*,\s*32} $log } 1
 
