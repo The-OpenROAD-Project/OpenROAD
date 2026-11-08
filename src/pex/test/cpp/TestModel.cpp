@@ -139,9 +139,9 @@ TEST(Model, OpenSidesAndClampedWidth)
 TEST(Model, CrossingShareOverGaps)
 {
   Model model;
-  model.addCrossing({"m2", "m3"},
+  model.addCrossing({"m2", "m3", ""},
                     CrossingTable({1, 3}, {{0.8, 0.7}, {0.4, 0.3}}));
-  const CrossingKey key{"m2", "m3"};
+  const CrossingKey key{"m2", "m3", ""};
   EXPECT_EQ(model.crossing(key, 0).total, 1);
   EXPECT_EQ(model.crossing(key, 0).cross, 1);
   EXPECT_DOUBLE_EQ(model.crossing(key, 1).total, 0.8);
@@ -175,7 +175,7 @@ TEST(Model, CrossingShareOverGaps)
     }
     EXPECT_NEAR(model.crossing(key, gap).total, sum / n, 1e-3);
   }
-  EXPECT_THROW(model.crossing({"m2", "m4"}, 1), std::out_of_range);
+  EXPECT_THROW(model.crossing({"m2", "m4", ""}, 1), std::out_of_range);
 }
 
 // With neighbors, each side takes half from its spacing's column.
@@ -183,7 +183,7 @@ TEST(Model, CrossingShareWithNeighbors)
 {
   EXPECT_THROW(CrossingTable({1}, {{0.5, 0.5}}, {0.1}), std::invalid_argument);
   Model model;
-  const CrossingKey key{"m2", "m3"};
+  const CrossingKey key{"m2", "m3", ""};
   // At 0.1 the share over a gap of 1 is 0.4, at 0.4 0.6, with no neighbor
   // 0.8.
   model.addCrossing(
@@ -204,9 +204,9 @@ TEST(Model, CrossingShareWithNeighbors)
 TEST(Model, CrossingShareNeverNegative)
 {
   Model model;
-  model.addCrossing({"m2", "m3"},
+  model.addCrossing({"m2", "m3", ""},
                     CrossingTable({1, 2}, {{0.8, 0.7}, {0.3, 0.3}}));
-  const CrossingKey key{"m2", "m3"};
+  const CrossingKey key{"m2", "m3", ""};
   // Kept 0.8 at 1 but 0.6 at 2: the slope would be -0.2.
   EXPECT_EQ(model.crossingOneSided(key, 1.5).total, 0);
   EXPECT_DOUBLE_EQ(model.crossingKept(key, 2).total, 0.8);
@@ -223,7 +223,7 @@ TEST(Model, CrossingShareNeverNegative)
 TEST(Model, CrossingReach)
 {
   Model model;
-  const CrossingKey key{"m2", "m3"};
+  const CrossingKey key{"m2", "m3", ""};
   CrossingTable table({1, 3}, {{0.8, 0.7}, {0.4, 0.3}});
   model.addCrossing(key, table);
   EXPECT_EQ(model.crossingReach(key, 0, 1, 0, 0).total, 1);

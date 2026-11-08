@@ -204,12 +204,17 @@ void buildCrossing(const fsv::Stack& stack,
                    const BuildOptions& options,
                    Model& model);
 // The crossing tables of a layer and several covering layers, their solves
-// in one pool.
+// in one pool; for a cover under the wire with a plane on `plane_above`
+// too, and for one over it with a plane on `plane_below` (none when the
+// handle names no layer). A table with a plane whose shares fit no kept
+// amount is left out.
 void buildCrossings(const fsv::Stack& stack,
                     Layer layer,
                     const std::vector<Layer>& covers,
                     const BuildOptions& options,
-                    Model& model);
+                    Model& model,
+                    Layer plane_below = Layer(),
+                    Layer plane_above = Layer());
 
 // Builds the diagonal table of a layer and a nearby layer: a wire of
 // minimum width with a neighbor at a spacing on each side, and a parallel

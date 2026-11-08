@@ -99,7 +99,7 @@ Model constantModel()
       }
     }
   }
-  model.addCrossing({"m1", "m2"},
+  model.addCrossing({"m1", "m2", ""},
                     CrossingTable({1, 3}, {{0.8, 0.7}, {0.4, 0.3}}));
   return model;
 }

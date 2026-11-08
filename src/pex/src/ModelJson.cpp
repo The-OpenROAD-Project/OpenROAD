@@ -123,6 +123,9 @@ json::object crossing(const CrossingKey& key, const CrossingTable& table)
   json::object o;
   o["layer"] = key.layer;
   o["cover"] = key.cover;
+  if (!key.opposite.empty()) {
+    o["opposite"] = key.opposite;
+  }
   o["gaps"] = numbers(table.gaps());
   o["spacings"] = numbers(table.spacings());
   // Flat, in [spacing][gap] order with no neighbor last.
@@ -156,8 +159,12 @@ json::object crossing(const CrossingKey& key, const CrossingTable& table)
 
 void readCrossing(const json::object& o, Model& model)
 {
-  const CrossingKey key{std::string(o.at("layer").as_string()),
-                        std::string(o.at("cover").as_string())};
+  CrossingKey key{std::string(o.at("layer").as_string()),
+                  std::string(o.at("cover").as_string()),
+                  ""};
+  if (const json::value* opposite = o.if_contains("opposite")) {
+    key.opposite = std::string(opposite->as_string());
+  }
   const std::vector<double> gaps = numbers(o.at("gaps"));
   const std::vector<double> spacings = numbers(o.at("spacings"));
   const std::vector<double> total = numbers(o.at("total"));

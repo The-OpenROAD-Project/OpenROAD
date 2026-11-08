@@ -92,10 +92,13 @@ struct CrossingShare
   double cross = 0;
 };
 
+// Crossings on `cover` over or under a wire on `layer`, with a plane on
+// `opposite`, a layer on the wire's other side (none when empty).
 struct CrossingKey
 {
   std::string layer;
   std::string cover;
+  std::string opposite;
 
   auto operator<=>(const CrossingKey&) const = default;
 };

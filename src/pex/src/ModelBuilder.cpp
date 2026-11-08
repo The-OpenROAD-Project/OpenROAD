@@ -687,7 +687,7 @@ void buildReach(const fsv::Stack& stack,
   for (const Layer cover : covers) {
     const fsv::Stack::Conductor& cover_conductor
         = requireConductor(stack, cover);
-    const CrossingKey key{conductor.name, cover_conductor.name};
+    const CrossingKey key{conductor.name, cover_conductor.name, ""};
     const CrossingTable* held = model.crossing(key);
     if (held == nullptr || held->hasReach()) {
       continue;
@@ -774,7 +774,9 @@ void buildCrossings(const fsv::Stack& stack,
                     const Layer layer,
                     const std::vector<Layer>& covers,
                     const BuildOptions& options,
-                    Model& model)
+                    Model& model,
+                    const Layer plane_below,
+                    const Layer plane_above)
 {
   // Each coverage sets a pitch (width / f) and a gap (width (1 / f - 1)),
   // and the share divides by 1 - f: the fraction has to be strictly inside
@@ -810,6 +812,7 @@ void buildCrossings(const fsv::Stack& stack,
   struct Table
   {
     Layer cover;
+    Layer opposite;  // the plane on the wire's other side, if any
     CrossingKey key;
     bool over;
     std::vector<Job> jobs;
@@ -825,36 +828,47 @@ void buildCrossings(const fsv::Stack& stack,
       throw std::invalid_argument(cover_conductor.name + " is beside "
                                   + conductor.name + ", not over or under");
     }
-    const CrossingKey key{conductor.name, cover_conductor.name};
-    if (const CrossingTable* built = model.crossing(key)) {
-      requireGrid(
-          "crossing table of " + key.layer, built->spacings(), spacings);
-      continue;  // built before; its reach follows below
+    std::vector<Layer> opposites{Layer()};
+    if (const Layer plane = over ? plane_below : plane_above;
+        plane.valid() && plane != cover) {
+      opposites.push_back(plane);
     }
-    Table table{cover,
-                key,
-                over,
-                {},
-                std::vector<LateralCap>(ns),
-                std::vector<LateralCap>(ns)};
-    for (int si = 0; si < ns; si++) {
-      for (const double wf : options.crossing_width_factors) {
-        for (const double f : options.coverages) {
-          const double wc = wf * cover_conductor.min_width;
-          const double pitch = wc / f;
-          const int n_short = std::max(
-              1,
-              static_cast<int>(std::lround(options.crossing_length / pitch)));
-          const int n_long = std::max(
-              n_short + 1,
-              static_cast<int>(
-                  std::lround(options.crossing_length_long / pitch)));
-          table.jobs.push_back({si, wc, f, n_short * pitch});
-          table.jobs.push_back({si, wc, f, n_long * pitch});
+    for (const Layer opposite : opposites) {
+      CrossingKey key{conductor.name, cover_conductor.name, ""};
+      if (opposite.valid()) {
+        key.opposite = requireConductor(stack, opposite).name;
+      }
+      if (const CrossingTable* built = model.crossing(key)) {
+        requireGrid(
+            "crossing table of " + key.layer, built->spacings(), spacings);
+        continue;  // built before; its reach follows below
+      }
+      Table table{cover,
+                  opposite,
+                  key,
+                  over,
+                  {},
+                  std::vector<LateralCap>(ns),
+                  std::vector<LateralCap>(ns)};
+      for (int si = 0; si < ns; si++) {
+        for (const double wf : options.crossing_width_factors) {
+          for (const double f : options.coverages) {
+            const double wc = wf * cover_conductor.min_width;
+            const double pitch = wc / f;
+            const int n_short = std::max(
+                1,
+                static_cast<int>(std::lround(options.crossing_length / pitch)));
+            const int n_long = std::max(
+                n_short + 1,
+                static_cast<int>(
+                    std::lround(options.crossing_length_long / pitch)));
+            table.jobs.push_back({si, wc, f, n_short * pitch});
+            table.jobs.push_back({si, wc, f, n_long * pitch});
+          }
         }
       }
+      tables.push_back(std::move(table));
     }
-    tables.push_back(std::move(table));
   }
   // All the layer's solves in one pool, the long arrays first so the last
   // to finish are short: (table, job) for an array, (table, -1 - k) for
@@ -883,9 +897,11 @@ void buildCrossings(const fsv::Stack& stack,
       const int si = k / 2;
       const bool is_open = k % 2 == 0;
       LateralCap& cap = is_open ? table.open_cap[si] : table.plane_cap[si];
-      // The plane sits where the cover is; the open wire has none.
-      const Layer below = !is_open && !table.over ? table.cover : Layer();
-      const Layer above = !is_open && table.over ? table.cover : Layer();
+      // The plane sits where the cover is; the open wire has none. The
+      // plane on the other side is in both.
+      const Layer covered = is_open ? Layer() : table.cover;
+      const Layer below = table.over ? table.opposite : covered;
+      const Layer above = table.over ? covered : table.opposite;
       const double s = spacingOf(si);
       cap = solveSection(stack,
                          layer,
@@ -908,6 +924,7 @@ void buildCrossings(const fsv::Stack& stack,
     pattern.pitch = job.wc / job.coverage;
     pattern.length = job.length;
     pattern.spacing = spacingOf(job.spacing);
+    pattern.other = table.opposite;
     pattern.extent = options.extent;
     const CrossingPattern::Array array = pattern.build(stack);
     job.length = array.length;
@@ -994,6 +1011,9 @@ void buildCrossings(const fsv::Stack& stack,
     if (usable[none]) {
       length_total[none] = fitted(none, false);
       length_cross[none] = fitted(none, true);
+    }
+    if (length_cross[none] <= 0 && table.opposite.valid()) {
+      continue;  // the table without the plane stands in
     }
     if (length_cross[none] <= 0) {
       throw std::runtime_error("the crossing shares of " + table.key.layer
@@ -1428,6 +1448,21 @@ std::optional<CoverPlan> heldCovers(const fsv::Stack& stack,
   return plan;
 }
 
+namespace {
+
+// The nearest cover of a side of a plan; none when it has none.
+Layer nearestCover(const std::vector<Layer>& side)
+{
+  for (const Layer cover : side) {
+    if (cover.valid()) {
+      return cover;
+    }
+  }
+  return Layer();
+}
+
+}  // namespace
+
 void buildLayer(const fsv::Stack& stack,
                 const Layer layer,
                 const BuildOptions& options,
@@ -1452,19 +1487,17 @@ void buildLayer(const fsv::Stack& stack,
       }
     }
   }
-  buildCrossings(stack, layer, covers, options, model);
+  buildCrossings(stack,
+                 layer,
+                 covers,
+                 options,
+                 model,
+                 nearestCover(plan.below),
+                 nearestCover(plan.above));
   // The nearest cover on each side, the plane opposite a parallel wire on
   // the other.
-  auto nearest = [](const std::vector<Layer>& side) {
-    for (const Layer cover : side) {
-      if (cover.valid()) {
-        return cover;
-      }
-    }
-    return Layer();
-  };
-  const Layer nearest_below = nearest(plan.below);
-  const Layer nearest_above = nearest(plan.above);
+  const Layer nearest_below = nearestCover(plan.below);
+  const Layer nearest_above = nearestCover(plan.above);
   for (const Layer other : diagonalLayers(stack, layer, options)) {
     buildDiagonal(stack, layer, other, options, model);
     const bool above = requireConductor(stack, other).bottom

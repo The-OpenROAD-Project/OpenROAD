@@ -174,7 +174,7 @@ TEST(ModelBuilder, CrossingAndEndTables)
   }
   o.crossing_spacing_factors = {1};
   buildCrossing(sky130(), L("met2"), L("met3"), o, model);
-  const CrossingTable* c = model.crossing({"met2", "met3"});
+  const CrossingTable* c = model.crossing({"met2", "met3", ""});
   ASSERT_NE(c, nullptr);
   ASSERT_EQ(c->spacings().size(), 1u);
   // Neighbors under the crossings take part of what the crossings reach
@@ -210,13 +210,22 @@ TEST(ModelBuilder, CrossingAndEndTables)
   EXPECT_LT(reach.at(1, 1).cross, 1);
   EXPECT_EQ(reach.at(1, 2).cross, 1);
   EXPECT_EQ(reach.at(0, 2).total, 1);
+  // With a plane below the wire, the crossings above keep less of their
+  // coupling over a wide gap; the table has no reach of its own.
+  buildCrossings(
+      sky130(), L("met2"), {L("met3")}, o, model, L("met1"), Layer());
+  const CrossingTable* planed = model.crossing({"met2", "met3", "met1"});
+  ASSERT_NE(planed, nullptr);
+  EXPECT_EQ(planed->gaps(), c->gaps());
+  EXPECT_LT(planed->at(1, 2).cross, c->at(1, 2).cross);
+  EXPECT_FALSE(planed->hasReach());
   // A table held without a reach gains one and keeps its shares.
   const double share = c->at(1, 0).total;
-  model.addCrossing({"met2", "met3"},
+  model.addCrossing({"met2", "met3", ""},
                     CrossingTable(c->gaps(), c->values(), c->spacings()));
-  ASSERT_FALSE(model.crossing({"met2", "met3"})->hasReach());
+  ASSERT_FALSE(model.crossing({"met2", "met3", ""})->hasReach());
   buildCrossing(sky130(), L("met2"), L("met3"), o, model);
-  c = model.crossing({"met2", "met3"});
+  c = model.crossing({"met2", "met3", ""});
   EXPECT_TRUE(c->hasReach());
   EXPECT_EQ(c->at(1, 0).total, share);
 
@@ -391,8 +400,8 @@ TEST(ModelBuilder, ResumesAndBuildsFarLayers)
   EXPECT_NE(model.lateral({"met2", "met1", "met3"}), nullptr);
   EXPECT_NE(model.lateral({"met2", "", "met3"}), nullptr);
   EXPECT_NE(model.end({"met2", "met1", ""}), nullptr);
-  EXPECT_NE(model.crossing({"met2", "met3"}), nullptr);
-  EXPECT_NE(model.crossing({"met2", "met1"}), nullptr);
+  EXPECT_NE(model.crossing({"met2", "met3", ""}), nullptr);
+  EXPECT_NE(model.crossing({"met2", "met1", ""}), nullptr);
   solves = 0;
   buildLayer(sky130(), L("met2"), o, model);
   EXPECT_EQ(solves, 0);
@@ -572,7 +581,7 @@ TEST(ModelBuilder, ChangedPlanAddsMissingContexts)
   o.below_depth = o.above_depth = 1;
   buildLayer(sky130(), L("met2"), o, model);
   EXPECT_NE(model.lateral({"met2", "met1", "met3"}), nullptr);
-  EXPECT_NE(model.crossing({"met2", "met1"}), nullptr);
+  EXPECT_NE(model.crossing({"met2", "met1", ""}), nullptr);
 }
 
 TEST(ModelBuilder, RefusesBadLayersBeforeSolving)

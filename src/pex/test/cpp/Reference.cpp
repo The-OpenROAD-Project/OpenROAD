@@ -200,10 +200,12 @@ struct Lateral
 // the wire's sides keeps (Model::crossingReach).
 // The crossing table is `key`'s, the cover of the tabulated layer
 // standing in for `layer` when that one has none (CoverMap), at the
-// piece's neighbor spacings `left` and `right` (negative: none).
+// piece's neighbor spacings `left` and `right` (negative: none); the
+// reach is `reach_key`'s.
 Cover partialCover(const Model& model,
                    const std::string& layer,
                    const CrossingKey& key,
+                   const CrossingKey& reach_key,
                    const std::vector<Run>& runs,
                    const double x0,
                    const double x1,
@@ -235,7 +237,7 @@ Cover partialCover(const Model& model,
   double cross = 0;
   auto reach = [&](const Run& r, const double from, const double to) {
     return model.crossingReach(
-        key, from, to, r.past_lo, r.past_hi, left, right);
+        reach_key, from, to, r.past_lo, r.past_hi, left, right);
   };
   if (before != nullptr) {
     const CrossingShare f = reach(*before, x0 - before->a1, x1 - before->a1);
@@ -273,6 +275,30 @@ Cover partialCover(const Model& model,
     }
   }
   return cover;
+}
+
+// Two partial covers of one layer mixed, `b` by t: the shares, and the
+// nets by their part of the coupling.
+Cover blend(const Cover& a, const Cover& b, const double t)
+{
+  Cover out = a;
+  out.share = ((1 - t) * a.share) + (t * b.share);
+  out.cross = ((1 - t) * a.cross) + (t * b.cross);
+  out.nets.clear();
+  for (const auto& [net, wt] : a.nets) {
+    out.nets[net] += (1 - t) * a.cross * wt;
+  }
+  for (const auto& [net, wt] : b.nets) {
+    out.nets[net] += t * b.cross * wt;
+  }
+  double sum = 0;
+  for (const auto& [net, wt] : out.nets) {
+    sum += wt;
+  }
+  for (auto& [net, wt] : out.nets) {
+    wt = sum > 0 ? wt / sum : 0;
+  }
+  return out;
 }
 
 // One wire of the target, along axis `a`, with what lies around it.
@@ -317,23 +343,16 @@ class Wire
         continue;
       }
       out.pieces++;
-      const Cover below = coverOn(true, edges[i], edges[i + 1]);
-      const Cover above = coverOn(false, edges[i], edges[i + 1]);
+      const auto [below, above] = coversOn(edges[i], edges[i + 1]);
       addPiece(edges[i], edges[i + 1], below, above, target, out);
     }
     // An end takes the covers at the end itself, crossings by their share
     // there rather than over the end piece.
     const double d = std::min(1e-3, (a1_ - a0_) / 2);
-    addEnd(a0_,
-           coverOn(true, a0_, a0_ + d),
-           coverOn(false, a0_, a0_ + d),
-           target,
-           out);
-    addEnd(a1_,
-           coverOn(true, a1_ - d, a1_),
-           coverOn(false, a1_ - d, a1_),
-           target,
-           out);
+    const auto [start_below, start_above] = coversOn(a0_, a0_ + d);
+    addEnd(a0_, start_below, start_above, target, out);
+    const auto [end_below, end_above] = coversOn(a1_ - d, a1_);
+    addEnd(a1_, end_below, end_above, target, out);
   }
 
   // The corners where another wire of the net meets this one over [x0, x1]
@@ -347,8 +366,7 @@ class Wire
                   const NetIndex target,
                   NetEstimate& out) const
   {
-    const Cover below = coverOn(true, x0, x1);
-    const Cover above = coverOn(false, x0, x1);
+    const auto [below, above] = coversOn(x0, x1);
     double total = 0;
     double plane_below = 0;
     double plane_above = 0;
@@ -545,7 +563,22 @@ class Wire
 
   // The cover on a side: the nearest layer with a run over the piece, or
   // else the layer whose crossings keep the largest share.
-  Cover coverOn(const bool below, const double x0, const double x1) const
+  // The covers below and above a span, each side's crossings sharing as
+  // they do with the other side's cover.
+  std::pair<Cover, Cover> coversOn(const double x0, const double x1) const
+  {
+    const Cover below = coverOn(true, x0, x1);
+    const Cover above = coverOn(false, x0, x1);
+    return {coverOn(true, x0, x1, &above), coverOn(false, x0, x1, &below)};
+  }
+
+  // A side's crossings keep less where a cover on the other side pulls
+  // the field to it: with `other`, the crossing table with a plane on that
+  // cover's layer blends in by its share.
+  Cover coverOn(const bool below,
+                const double x0,
+                const double x1,
+                const Cover* other = nullptr) const
   {
     // The neighbors over the span, which hold the crossings' reach.
     const Lateral* l = nearest(left_, x0, x1);
@@ -581,7 +614,8 @@ class Wire
           }
           // A box crossing the wire keeps as much of a plane's effect as
           // it runs past the wire's sides.
-          const CrossingKey key{name_, map_.crossingCover(layers_.layers[l])};
+          const CrossingKey key{
+              name_, map_.crossingCover(layers_.layers[l]), ""};
           if (full.reach1 - full.reach0 <= r.past_lo + r.past_hi + w_
               && model_.crossing(key) != nullptr) {
             const CrossingShare f
@@ -599,15 +633,24 @@ class Wire
           return full;
         }
       }
-      const Cover partial
-          = partialCover(model_,
-                         layers_.names[l],
-                         {name_, map_.crossingCover(layers_.layers[l])},
-                         it->second,
-                         x0,
-                         x1,
-                         sl,
-                         sr);
+      const CrossingKey key{name_, map_.crossingCover(layers_.layers[l]), ""};
+      Cover partial = partialCover(
+          model_, layers_.names[l], key, key, it->second, x0, x1, sl, sr);
+      if (other != nullptr && other->share > 0 && !other->layer.empty()) {
+        const CrossingKey planed{key.layer, key.cover, other->layer};
+        if (model_.crossing(planed) != nullptr) {
+          const Cover with = partialCover(model_,
+                                          layers_.names[l],
+                                          planed,
+                                          key,
+                                          it->second,
+                                          x0,
+                                          x1,
+                                          sl,
+                                          sr);
+          partial = blend(partial, with, std::clamp(other->share, 0.0, 1.0));
+        }
+      }
       if (partial.share > best.share) {
         best = partial;
       }
@@ -831,7 +874,8 @@ class Wire
                     - partialCover(
                           model_,
                           layers_.names[j],
-                          {name_, map_.crossingCover(layers_.layers[j])},
+                          {name_, map_.crossingCover(layers_.layers[j]), ""},
+                          {name_, map_.crossingCover(layers_.layers[j]), ""},
                           runs->second,
                           x0,
                           x1,

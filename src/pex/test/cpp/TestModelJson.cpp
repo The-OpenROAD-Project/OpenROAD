@@ -29,12 +29,13 @@ Model sample()
     }
   }
   CrossingTable& crossing = model.addCrossing(
-      {"m2", "m3"},
+      {"m2", "m3", ""},
       CrossingTable({0.1, 0.9, 2.7}, {{0.88, 0.9}, {0.73, 0.8}, {0.48, 0.6}}));
+  model.addCrossing({"m2", "m3", "m1"}, CrossingTable({0.1}, {{0.5, 0.4}}));
   crossing.setReach(
       {0.14, {0, 0.3}, {0, 2}, {{0.5, 0.4}, {1, 1}, {0.3, 0.2}, {1, 1}}});
   model.addCrossing(
-      {"m2", "m1"},
+      {"m2", "m1", ""},
       CrossingTable({0.1, 0.9},
                     {{0.8, 0.85}, {0.5, 0.6}, {0.9, 0.95}, {0.7, 0.75}},
                     {0.14}));
@@ -93,20 +94,23 @@ TEST(ModelJson, RoundTrip)
     EXPECT_EQ(t->values()[i].below, e.values()[i].below);
     EXPECT_EQ(t->values()[i].above, e.values()[i].above);
   }
-  const CrossingTable* c = back.crossing({"m2", "m3"});
+  const CrossingTable* c = back.crossing({"m2", "m3", ""});
   ASSERT_NE(c, nullptr);
-  EXPECT_EQ(c->gaps(), model.crossing({"m2", "m3"})->gaps());
+  EXPECT_EQ(c->gaps(), model.crossing({"m2", "m3", ""})->gaps());
   ASSERT_EQ(c->values().size(), 3u);
   EXPECT_EQ(c->values()[1].total, 0.73);
   EXPECT_EQ(c->values()[2].cross, 0.6);
   EXPECT_TRUE(c->spacings().empty());
   ASSERT_TRUE(c->hasReach());
+  const CrossingTable* planed = back.crossing({"m2", "m3", "m1"});
+  ASSERT_NE(planed, nullptr);
+  EXPECT_EQ(planed->values()[0].cross, 0.4);
   EXPECT_EQ(c->reach().width, 0.14);
   EXPECT_EQ(c->reach().past, (std::vector<double>{0, 0.3}));
   EXPECT_EQ(c->reach().extents, (std::vector<double>{0, 2}));
   EXPECT_EQ(c->reach().at(1, 0).total, 0.3);
   EXPECT_EQ(c->reach().at(1, 0).cross, 0.2);
-  const CrossingTable* beside = back.crossing({"m2", "m1"});
+  const CrossingTable* beside = back.crossing({"m2", "m1", ""});
   ASSERT_NE(beside, nullptr);
   EXPECT_FALSE(beside->hasReach());
   EXPECT_EQ(beside->spacings(), (std::vector<double>{0.14}));
