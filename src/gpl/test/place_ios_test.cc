@@ -123,7 +123,7 @@ TEST(IoSlotFit, UnrollLeavesRoomOnBothSidesOfAStack)
             (std::vector<float>{-2, -1, 0, 1, 2}));
 }
 
-// global_placement -place_ios on simple01, driven through Replace and the pin
+// global_placement -place_ios on gcd, driven through Replace and the pin
 // placer the way the Tcl commands do.
 class PlaceIos : public tst::Fixture
 {
@@ -136,7 +136,7 @@ class PlaceIos : public tst::Fixture
     odb::dbChip* chip = odb::dbChip::create(db_.get(), lib->getTech());
     std::vector<odb::dbLib*> libs{lib};
     odb::defin reader(db_.get(), &logger_);
-    const std::string def = getFilePath("_main/src/gpl/test/simple01.def");
+    const std::string def = getFilePath("_main/src/gpl/test/gcd.def");
     ASSERT_TRUE(reader.readChip(libs, def.c_str(), chip));
     block_ = chip->getBlock();
     die_ = block_->getDieArea();
@@ -178,7 +178,7 @@ class PlaceIos : public tst::Fixture
     }
   }
 
-  // simple01 places its ports FIXED, which -place_ios keeps as anchors.
+  // gcd places its ports FIXED, which -place_ios keeps as anchors.
   void unfixPorts()
   {
     for (odb::dbBTerm* bterm : block_->getBTerms()) {

@@ -2,7 +2,7 @@
 # placer. Placement quality is covered by nesterov_place_test.
 source helpers.tcl
 read_lef ./nangate45.lef
-read_def ./simple01.def
+read_def ./gcd.def
 
 set block [ord::get_db_block]
 set input {}

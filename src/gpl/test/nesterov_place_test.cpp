@@ -45,8 +45,8 @@ struct Design
   const char* lib_lef = nullptr;
 };
 
-const Design kSimple01{"simple01.def", "nangate45.lef"};
-const Design kCore01{"core01.def", "nangate45.lef"};
+const Design kGcd{"gcd.def", "nangate45.lef"};
+const Design kInsetCore{"inset_core.def", "nangate45.lef"};
 
 // A placed cell, to compare placements and to restore the input.
 struct CellState
@@ -262,53 +262,53 @@ PlaceOptions skipIo()
 
 std::vector<QorCase> qorCases()
 {
-  const Design one_movable_cell{"simple07.def", "sky130hd.lef"};
+  const Design one_movable_cell{"one_movable_cell.def", "sky130hd.lef"};
   return {
       // 294-cell gcd, 65% utilization, IOs on all four sides.
-      {"Basic", kSimple01, withoutInitialPlace(), 5195638, 235},
-      {"WithInitialPlace", kSimple01, {}, 5200644, 357},
-      {"MovedIos", {"simple04.def", "nangate45.lef"}, {}, 5299387, 363},
+      {"Basic", kGcd, withoutInitialPlace(), 5195638, 235},
+      {"WithInitialPlace", kGcd, {}, 5200644, 357},
+      {"MovedIos", {"moved_ios.def", "nangate45.lef"}, {}, 5299387, 363},
       // A row one site short adds a dummy cell; the target is raised to fit.
       {"DensityBelowUtilization",
-       {"simple02.def", "nangate45.lef"},
+       {"density_below_utilization.def", "nangate45.lef"},
        withDensity(withoutInitialPlace(), 0.6f),
        5361141,
        240},
       // The core is inset from the die.
       {"InsetCore",
-       kCore01,
+       kInsetCore,
        withDensity(withoutInitialPlace(), 0.6f),
        5770600,
        236},
       {"TallCore",
-       {"ar01.def", "nangate45.lef"},
+       {"tall_core.def", "nangate45.lef"},
        withDensity(withoutInitialPlace(), 0.6f),
        5989080,
        236},
       {"WideCore",
-       {"ar02.def", "nangate45.lef"},
+       {"wide_core.def", "nangate45.lef"},
        withDensity(withoutInitialPlace(), 0.6f),
        5905140,
        232},
       // A hard and a 50% partial placement blockage.
       {"Blockages",
-       {"simple01-obs.def", "nangate45.lef"},
+       {"blockages.def", "nangate45.lef"},
        withDensity(withoutInitialPlace(), 0.8f),
        5432148,
        239},
-      {"UniformDensity", kSimple01, uniformDensity(), 5327360, 240},
-      {"ReferenceHpwl", kSimple01, referenceHpwl(), 5199938, 242},
-      {"SkipIo", kSimple01, skipIo(), 6002435, 376},
+      {"UniformDensity", kGcd, uniformDensity(), 5327360, 240},
+      {"ReferenceHpwl", kGcd, referenceHpwl(), 5199938, 242},
+      {"SkipIo", kGcd, skipIo(), 6002435, 376},
       // One cell, two nets, in a 2x2 bin grid.
       {"SingleCellSmallCore",
-       {"simple05.def", "nangate45.lef"},
+       {"single_cell_small_core.def", "nangate45.lef"},
        withoutInitialPlace(0.00008f),
        28787,
        0},
       // One cell with a density penalty high enough to diverge a real
       // design.
       {"SingleCellHighPenalty",
-       {"simple09.def", "nangate45.lef"},
+       {"single_cell_high_penalty.def", "nangate45.lef"},
        withoutInitialPlace(1.0f),
        9989,
        0},
@@ -318,7 +318,7 @@ std::vector<QorCase> qorCases()
       {"OneMovableCellCoarseBins", one_movable_cell, coarseBins(), 84481, 0},
       // One movable cell in an 8 mm die: a 2048 x 2048 bin grid.
       {"OneCellHugeDie",
-       {"simple10.def", "sky130hd.lef"},
+       {"one_cell_huge_die.def", "sky130hd.lef"},
        withDensity({}, 0.75f),
        2065311,
        0},
@@ -326,7 +326,7 @@ std::vector<QorCase> qorCases()
       // skip_io every net has a single pin, so wirelength gives no gradient
       // and the density penalty alone has to start the spreading.
       {"NetsWithoutGradient",
-       {"nograd01.def",
+       {"nets_without_gradient.def",
         "asap7/asap7_tech_1x_201209.lef",
         "asap7/asap7sc7p5t_28_R_1x_220121a.lef"},
        skipIo(),
@@ -429,7 +429,7 @@ INSTANTIATE_TEST_SUITE_P(Designs,
 
 TEST_F(NesterovPlaceTest, SameInputGivesTheSamePlacement)
 {
-  ASSERT_NO_FATAL_FAILURE(load(kCore01));
+  ASSERT_NO_FATAL_FAILURE(load(kInsetCore));
   const PlaceOptions options = withDensity(withoutInitialPlace(), 0.6f);
   const std::vector<CellState> input = cells();
 
@@ -443,7 +443,7 @@ TEST_F(NesterovPlaceTest, SameInputGivesTheSamePlacement)
 
 TEST_F(NesterovPlaceTest, ThreadCountDoesNotChangeThePlacement)
 {
-  ASSERT_NO_FATAL_FAILURE(load(kCore01));
+  ASSERT_NO_FATAL_FAILURE(load(kInsetCore));
   const PlaceOptions options = withDensity(withoutInitialPlace(), 0.6f);
   const std::vector<CellState> input = cells();
 
@@ -461,7 +461,8 @@ TEST_F(NesterovPlaceTest, ThreadCountDoesNotChangeThePlacement)
 // A target below what the cells need is raised to fit them, with a warning.
 TEST_F(NesterovPlaceTest, TargetDensityBelowUtilizationIsRaised)
 {
-  ASSERT_NO_FATAL_FAILURE(load({"simple02.def", "nangate45.lef"}));
+  ASSERT_NO_FATAL_FAILURE(
+      load({"density_below_utilization.def", "nangate45.lef"}));
   const std::string log = placeAndLog(withDensity(withoutInitialPlace(), 0.6f));
 
   EXPECT_NE(log.find("GPL-0302"), std::string::npos);
@@ -474,7 +475,7 @@ TEST_F(NesterovPlaceTest, TargetDensityBelowUtilizationIsRaised)
 // default 0.7.
 TEST_F(NesterovPlaceTest, UniformDensityTargetsTheUtilization)
 {
-  ASSERT_NO_FATAL_FAILURE(load(kSimple01));
+  ASSERT_NO_FATAL_FAILURE(load(kGcd));
   const float utilization
       = placer().getUniformTargetDensity(uniformDensity(), 1);
   const std::string log = placeAndLog(uniformDensity());
@@ -485,11 +486,11 @@ TEST_F(NesterovPlaceTest, UniformDensityTargetsTheUtilization)
   EXPECT_LT(*target, PlaceOptions{}.density);
 }
 
-// Padding widens every cell, so the uniform density counts it. On simple01
+// Padding widens every cell, so the uniform density counts it. On gcd
 // each site of padding per side adds about 0.2.
 TEST_F(NesterovPlaceTest, UniformDensityIncludesPadding)
 {
-  ASSERT_NO_FATAL_FAILURE(load(kSimple01));
+  ASSERT_NO_FATAL_FAILURE(load(kGcd));
   std::vector<float> densities;
   for (const int pad : {0, 1, 2}) {
     PlaceOptions options = withoutInitialPlace();
@@ -505,7 +506,7 @@ TEST_F(NesterovPlaceTest, UniformDensityIncludesPadding)
 
 TEST_F(NesterovPlaceTest, BinGridCountIsUsed)
 {
-  ASSERT_NO_FATAL_FAILURE(load({"simple07.def", "sky130hd.lef"}));
+  ASSERT_NO_FATAL_FAILURE(load({"one_movable_cell.def", "sky130hd.lef"}));
   PlaceResult result;
   const std::string log = placeAndLog(coarseBins(), &result);
 
@@ -521,7 +522,7 @@ TEST_F(NesterovPlaceTest, BinGridCountIsUsed)
 // global placement leaves for detailed placement to remove.
 TEST_F(NesterovPlaceTest, CellsStayOutOfHardBlockages)
 {
-  ASSERT_NO_FATAL_FAILURE(load({"simple01-obs.def", "nangate45.lef"}));
+  ASSERT_NO_FATAL_FAILURE(load({"blockages.def", "nangate45.lef"}));
   placer().doPlace(1, withDensity(withoutInitialPlace(), 0.8f));
 
   int hard = 0;
@@ -540,7 +541,7 @@ TEST_F(NesterovPlaceTest, CellsStayOutOfHardBlockages)
 // Ignoring the blockage here leaves it about 70% covered.
 TEST_F(NesterovPlaceTest, PartialBlockageLimitsDensity)
 {
-  ASSERT_NO_FATAL_FAILURE(load({"simple01-obs.def", "nangate45.lef"}));
+  ASSERT_NO_FATAL_FAILURE(load({"blockages.def", "nangate45.lef"}));
   const PlaceOptions options = withDensity(withoutInitialPlace(), 0.8f);
   placer().doPlace(1, options);
 
@@ -559,10 +560,10 @@ TEST_F(NesterovPlaceTest, PartialBlockageLimitsDensity)
 }
 
 // Initial placement alone places every cell and pulls connected cells
-// together; on simple01 it ends near 0.16 of a random spread's HPWL.
+// together; on gcd it ends near 0.16 of a random spread's HPWL.
 TEST_F(NesterovPlaceTest, InitialPlaceFollowsTheNets)
 {
-  ASSERT_NO_FATAL_FAILURE(load(kSimple01));
+  ASSERT_NO_FATAL_FAILURE(load(kGcd));
   placer().doInitialPlace(1, PlaceOptions{});
 
   for (odb::dbInst* inst : block_->getInsts()) {
@@ -575,7 +576,7 @@ TEST_F(NesterovPlaceTest, InitialPlaceFollowsTheNets)
 // move any cell.
 TEST_F(NesterovPlaceTest, SkipIoIgnoresPinLocations)
 {
-  ASSERT_NO_FATAL_FAILURE(load(kSimple01));
+  ASSERT_NO_FATAL_FAILURE(load(kGcd));
   const std::vector<CellState> input = cells();
   placer().doPlace(1, skipIo());
   const std::vector<CellState> placed = cells();
@@ -624,7 +625,7 @@ TEST_F(NesterovPlaceTest, ReferenceHpwlEasesThePenaltyRamp)
     }
     return slowest;
   };
-  ASSERT_NO_FATAL_FAILURE(load(kSimple01));
+  ASSERT_NO_FATAL_FAILURE(load(kGcd));
   const std::vector<CellState> input = cells();
   const PlaceResult by_default = placer().doPlace(1, withoutInitialPlace());
   restore(input);
