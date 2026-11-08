@@ -109,7 +109,8 @@ struct Options
                                   "e13",
                                   "e14",
                                   "e15",
-                                  "e16"};
+                                  "e16",
+                                  "e17"};
   std::string itf = "src/fsv/test/sky130.itf";
   std::string layer = "met2";
   int threads = 1;
@@ -1622,6 +1623,33 @@ fsv::NetWindow netWindow(const Lab& lab, odb::dbBlock* block, odb::dbNet* net)
   return fsv::readNetWindow(block, {net}, extent, {o.halo, o.margin});
 }
 
+// The pex::Source names, in order.
+constexpr std::array<const char*, static_cast<size_t>(pex::Source::kCount)>
+    kSourceNames{"lateral",
+                 "cover",
+                 "rest",
+                 "diagonal",
+                 "end_lateral",
+                 "end_facing",
+                 "end_cover",
+                 "end_rest"};
+
+// An estimate's coupling to a net by source, as a comment.
+void printSourcesOf(const pex::NetEstimate& est, const pex::NetIndex n)
+{
+  const auto parts = est.sources.find(n);
+  if (parts == est.sources.end()) {
+    return;
+  }
+  std::string line = "#     by source:";
+  for (size_t k = 0; k < parts->second.size(); k++) {
+    if (parts->second[k] != 0) {
+      line += " " + std::string(kSourceNames[k]) + " " + fmt(parts->second[k]);
+    }
+  }
+  std::printf("%s\n", line.c_str());
+}
+
 // A net of a geometry solved and estimated: rows for the total, the ground
 // (the plane and the grounded obstructions), the sum of the couplings to
 // other nets, and, when `couplings`, every coupling above 1% of the total.
@@ -1637,37 +1665,9 @@ void compareNet(Lab& lab,
   const pex::NetEstimate est
       = pex::estimate(g, lab.stack(), model, target, o.reference);
   // The estimate's coupling to a net by source, as a comment.
-  auto printSources = [&](const pex::NetIndex n) {
-    const auto parts = est.sources.find(n);
-    if (parts == est.sources.end()) {
-      return;
-    }
-    static const char* kNames[] = {"lateral",
-                                   "cover",
-                                   "rest",
-                                   "diagonal",
-                                   "end_lateral",
-                                   "end_facing",
-                                   "end_cover",
-                                   "end_rest"};
-    std::string line = "#     by source:";
-    for (size_t k = 0; k < parts->second.size(); k++) {
-      if (parts->second[k] != 0) {
-        line += " " + std::string(kNames[k]) + " " + fmt(parts->second[k]);
-      }
-    }
-    std::printf("%s\n", line.c_str());
-  };
+  auto printSources = [&](const pex::NetIndex n) { printSourcesOf(est, n); };
   // The net's ground and its couplings to signal nets, summed by source.
   {
-    static const char* kNames[] = {"lateral",
-                                   "cover",
-                                   "rest",
-                                   "diagonal",
-                                   "end_lateral",
-                                   "end_facing",
-                                   "end_cover",
-                                   "end_rest"};
     std::array<double, static_cast<size_t>(pex::Source::kCount)> coupled{};
     std::array<double, static_cast<size_t>(pex::Source::kCount)> grounded{};
     for (const auto& [n, parts] : est.sources) {
@@ -1679,10 +1679,10 @@ void compareNet(Lab& lab,
                        + " diagonal " + fmt(est.ground_sources[1]) + " end "
                        + fmt(est.ground_sources[2]);
     for (size_t k = 0; k < coupled.size(); k++) {
-      line += " g_" + std::string(kNames[k]) + " " + fmt(grounded[k]);
+      line += " g_" + std::string(kSourceNames[k]) + " " + fmt(grounded[k]);
     }
     for (size_t k = 0; k < coupled.size(); k++) {
-      line += " c_" + std::string(kNames[k]) + " " + fmt(coupled[k]);
+      line += " c_" + std::string(kSourceNames[k]) + " " + fmt(coupled[k]);
     }
     std::printf("%s %s\n", line.c_str(), name.c_str());
   }
@@ -2350,6 +2350,131 @@ void junctions(Lab& lab)
   }
 }
 
+// e17: a wire in the dense surroundings of a routed block, built up part by
+// part: rails of two nets crossing under it on the layer below (3.5 of that
+// layer's minimum widths wide at a pitch of 20), a strap on the layer two
+// up running beside it 25 of its minimum widths away (5 of the strap layer's
+// minimum widths wide), wires of two nets crossing on the layer above at a
+// coverage of 0.4 between them, and neighbors at minimum spacing on both
+// sides. Each case compares the ground, the total and every coupling, and
+// prints the model's coupling by source. The wire runs along x on --layer;
+// the model is for --layers.
+void denseContext(Lab& lab)
+{
+  const Options& o = lab.options();
+  const std::string m = o.layer;
+  const std::string below = lab.nearestBelow();
+  const std::string up1 = lab.nearestAbove();
+  const std::string up2 = lab.above().size() > 1 ? lab.above()[1] : "";
+  if (below.empty() || up1.empty() || up2.empty()) {
+    std::printf("# e17 needs a layer below and two above %s\n", m.c_str());
+    return;
+  }
+  std::vector<std::string> layers = o.layers;
+  if (layers.empty()) {
+    layers = {below, m, up1, up2};
+  }
+  const pex::Model model = buildModel(lab, layers);
+  const double w = lab.wmin();
+  const double s = lab.smin();
+  const double length = 10;
+  const double margin = 3;
+  const double rail_w = 3.5 * lab.conductor(below).min_width;
+  const double rail_pitch = 20 * lab.conductor(below).min_width;
+  const double strap_w = 5 * lab.conductor(up2).min_width;
+  const double strap_y = w + (25 * w);
+  const double cross_w = lab.conductor(up1).min_width;
+  const double cross_pitch = cross_w / 0.4;
+  const double y0 = -margin - s - w;
+  const double y1 = strap_y + strap_w + margin;
+  struct Parts
+  {
+    bool rails;
+    bool strap;
+    bool crossings;
+    bool neighbors;
+  };
+  const std::vector<std::pair<std::string, Parts>> cases{
+      {"rails", {true, false, false, false}},
+      {"strap", {false, true, false, false}},
+      {"crossings", {false, false, true, false}},
+      {"rails+strap", {true, true, false, false}},
+      {"rails+crossings", {true, false, true, false}},
+      {"strap+crossings", {false, true, true, false}},
+      {"rails+strap+crossings", {true, true, true, false}},
+      {"rails+strap neighbors", {true, true, false, true}},
+      {"all neighbors", {true, true, true, true}},
+  };
+  for (const auto& [name, parts] : trim(cases, o.smoke)) {
+    pex::PatternBuilder b(lab.stack());
+    const pex::NetIndex n = b.net("wire");
+    b.add(lab.layer(m), n, 0, 0, length, w);
+    if (parts.rails) {
+      const pex::NetIndex nets[2] = {b.net("rail_a"), b.net("rail_b")};
+      int k = 0;
+      for (double x = -margin + (rail_pitch / 2); x < length + margin;
+           x += rail_pitch, k++) {
+        b.add(lab.layer(below), nets[k % 2], x, y0, x + rail_w, y1);
+      }
+    }
+    if (parts.strap) {
+      b.add(lab.layer(up2),
+            b.net("strap"),
+            -margin,
+            strap_y,
+            length + margin,
+            strap_y + strap_w);
+    }
+    if (parts.crossings) {
+      const pex::NetIndex nets[2] = {b.net("cross_a"), b.net("cross_b")};
+      int k = 0;
+      for (double x = -margin + (cross_pitch / 2); x < length + margin;
+           x += cross_pitch, k++) {
+        b.add(lab.layer(up1), nets[k % 2], x, y0, x + cross_w, y1);
+      }
+    }
+    if (parts.neighbors) {
+      b.add(lab.layer(m), b.net("left"), -margin, -s - w, length + margin, -s);
+      b.add(lab.layer(m),
+            b.net("right"),
+            -margin,
+            w + s,
+            length + margin,
+            w + s + w);
+    }
+    const fsv::CapRow row = lab.solve(b.geometry(), n, o.tol);
+    const pex::NetEstimate est
+        = pex::estimate(b.geometry(), lab.stack(), model, n, o.reference);
+    double coupled = 0;
+    for (pex::NetIndex k = 0; k < b.geometry().netCount(); k++) {
+      if (k != n) {
+        coupled += row.coupling(k);
+      }
+    }
+    lab.row("e17", name, "total", row.total(), row.sigma[n], est.total());
+    lab.row(
+        "e17", name, "ground", row.total() - coupled, row.sigma[n], est.ground);
+    for (pex::NetIndex k = 0; k < b.geometry().netCount(); k++) {
+      if (k == n) {
+        continue;
+      }
+      const auto it = est.couplings.find(k);
+      lab.row("e17",
+              name,
+              "c:" + b.geometry().netName(k),
+              row.coupling(k),
+              row.sigma[k],
+              it == est.couplings.end() ? 0 : it->second);
+      printSourcesOf(est, k);
+    }
+    std::printf("#   %s: ground piece %s parallel %s end %s\n",
+                name.c_str(),
+                fmt(est.ground_sources[0]).c_str(),
+                fmt(est.ground_sources[1]).c_str(),
+                fmt(est.ground_sources[2]).c_str());
+  }
+}
+
 // e11: a parallel wire on a layer below or above, laterally offset from the
 // wire by an edge-to-edge gap (negative: overlapping by that much), alone
 // and with neighbors at minimum spacing on the wire's own layer. The
@@ -2496,6 +2621,9 @@ int main(int argc, char** argv)
     }
     if (wanted(o, "e16")) {
       oneSided(lab);
+    }
+    if (wanted(o, "e17")) {
+      denseContext(lab);
     }
     if (wanted(o, "model")) {  // not among the default groups
       modelOnly(lab);
