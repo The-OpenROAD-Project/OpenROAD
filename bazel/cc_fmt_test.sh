@@ -24,5 +24,5 @@ cd "$WORKSPACE"
 
 # --fallback-style=none leaves files without a .clang-format alone.
 "${CC_LS_FILES}" "${GIT_LS_FILES}" "${GIT}" \
-    | xargs -0 -n 50 -P "$(getconf _NPROCESSORS_ONLN)" \
+    | xargs -0 -r -n 50 -P "$(getconf _NPROCESSORS_ONLN)" \
         "${TOOL}" --fallback-style=none --dry-run --Werror
