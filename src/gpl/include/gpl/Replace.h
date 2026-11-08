@@ -119,6 +119,7 @@ struct PlaceOptions
   float initialPlaceNetWeightScale = 800;
 
   bool skipIoMode = false;
+  bool unplacedMacrosAsFixed = false;
   bool forceCenterInitialPlace = false;
   bool timingDrivenMode = false;
   bool timingDrivenRepairTiming = false;

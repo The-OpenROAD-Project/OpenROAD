@@ -16,6 +16,7 @@ TESTS = [
     "convergence01",
     "core01",
     "density01",
+    "uniform_density_unplaced_macros",
     "diverge01",
     "error01",
     "incremental01",
