@@ -5,47 +5,57 @@
 ### General C++ Guidelines
 - Follow the Google C++ Style Guide.
 - Use modern C++20 style and features.
-- Apply `const` qualifiers whenever possible.
+- Always use braces for `if`/`else`/`for`/`while` bodies, even single
+  statements.
+- In code you write or modify, apply `const` wherever possible: local
+  variables, member functions, `const T&`/`const T*` parameters, and
+  by-value parameters in function definitions (not in declarations).
+- Data members may be `const` when the type doesn't need to be copy- or
+  move-assignable.
+- Don't return by `const` value; it prevents moves.
+- Use C++ casts, not C-style casts.
+- For a new cross-module dependency, depend on the interface, not the
+  implementation library, and look up the provider with
+  `utl::ServiceRegistry::find<I>()` instead of having an instance
+  passed in. See the registry header for conventions.
 
-### Type Declarations
-- Use C++ casts, not C-style casts
+### Comments and Prose
+- Keep existing comments unless they're clearly outdated or wrong.
+- Add a brief one-line comment above non-obvious logic, workarounds,
+  or complex blocks. Don't comment self-explanatory code.
+- Comments describe current behavior; history and rationale for a
+  change go in the commit message or PR.
+  - Exception: keep the reason when the code would otherwise look
+    wrong or removable (a non-obvious gotcha, the bug that forced
+    this design). State it as a current constraint ("X must precede Y
+    because …"), not as a narrative.
+- Write in English, using American spelling (e.g., "color", "behavior").
+- Use the Oxford comma.
 
-### Braces
-- Use `{...}` even for single-line statements
+### Functions
+- Keep new functions under ~100 lines, and don't push an existing
+  function past that. Don't split already-long functions as a side
+  effect of a small change. Unit tests are exempt.
 
-### Comments
-- Do not remove existing comments
-- Recommend adding a single line comment for each important code block
-- All comments must be in English
-
-### Function Length
-- Factor out into multiple functions if a function exceeds 100 lines
-  - Exception: Unit tests can have long functions
+### Debugging
+- Trace bugs upstream: when a bug appears in output (e.g., Verilog),
+  fix it where the data is created (e.g., `buffer_ports`,
+  `remove_buffers`), not where it is serialized (e.g., `VerilogWriter`).
 
 ### Null Safety
-- Avoid adding too defensive null checks if the object cannot be null
-
-## Service Interfaces
-
-Abstract interfaces published through `utl::ServiceRegistry` use the
-`Service` suffix (e.g. `est::ParasiticsService`, `drt::PinAccessService`).
-Each interface lives in its owning module's public `include/<module>/`
-directory and is exposed as a small header-only Bazel target that
-consumers can depend on without pulling in the full implementation
-library. This keeps module dependency graphs acyclic and the decoupling
-visible at the build layer.
-
-Note that this is distinct from the `Abstract*` prefix used for
-graphics/visualization mock-swappable classes (e.g.
-`AbstractSteinerRenderer`); those are inherited for test/headless modes
-rather than looked up through a registry.
+- Don't add null checks for pointers that can't be null. Prefer
+  references when null isn't a valid value (ODB objects are passed by
+  pointer by convention).
 
 ## Common Coding Mistakes
 
 ### OpenROAD Message ID Duplicate Checker
-`etc/find_messages.py` uses regex to match **literal numeric IDs** in `logger->xxx(MODULE, NNNN, ...)` calls. When duplicating a message across modules, use named constants to bypass the checker:
+`etc/find_messages.py` uses regex to match **literal numeric IDs** in
+`logger->xxx(MODULE, NNNN, ...)` calls and flags any (MODULE, ID) pair
+that appears more than once. Give each new message its own ID. Only when
+one message is deliberately emitted from several call sites, define the ID
+once as a named constant (the checker only counts literal IDs):
 ```cpp
 constexpr int kMsgIdBufferInserted = 1234;
 logger_->info(RSZ, kMsgIdBufferInserted, "...");
 ```
-

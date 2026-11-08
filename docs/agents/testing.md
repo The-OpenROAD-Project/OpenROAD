@@ -117,3 +117,19 @@ alive while its `Design` or the module-level functions (`set_thread_count`,
 3.10 or later) that installs into any virtualenv with `pip install`.
 `//python/openroad:wheel_test` checks that it imports in a fresh interpreter
 without the Bazel runfiles.
+
+## Failures in Only One Build Mode
+
+Bazel builds `-c opt` by default, locally and in CI. To reproduce a
+failure that shows only in a Debug build, use `bazelisk test -c dbg ...`.
+`--config=release` only stamps the version and implies `opt`; it is not
+a Debug/Release switch.
+
+When a test passes in one mode and fails in the other, check for:
+- **Uninitialized memory**: neither mode initializes it, but at `-O0`
+  reads often happen to see zeros, so the bug hides in Debug. This
+  includes floats that read as zero in Debug and garbage or subnormal
+  values in `opt`. Run `bazelisk test --config=asan ...` to catch
+  memory errors.
+- **nullptr through custom hashers**: e.g., passing a null `Pin*` to
+  `PinIdHash` can crash.
