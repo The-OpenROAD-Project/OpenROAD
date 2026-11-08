@@ -22,7 +22,7 @@ namespace rsz {
 
 class MoveCandidate;
 class Resizer;
-class RepairSetupAnalysis;
+class RepairSetupMoveSampler;
 class RepairSetupAnalysisReport;
 
 // Run-local diagnostics.  Workers merge their counters after the join and
@@ -199,7 +199,7 @@ class RepairSetupProfiler : public odb::dbBlockCallBackObj
     uint64_t move_id{0};
     // Unset until the policy estimates the candidate.
     std::optional<Estimate> estimate;
-    std::shared_ptr<RepairSetupAnalysis> observer;
+    std::shared_ptr<RepairSetupMoveSampler> observer;
     // False when mode 3 skips the analysis of this move.
     bool observed{true};
   };
@@ -269,7 +269,7 @@ class RepairSetupProfiler : public odb::dbBlockCallBackObj
   uint64_t active_move_{0}, active_candidate_{0};
   std::string active_type_;
   // The mode 3 observer of the move between beginApply() and endApply().
-  std::shared_ptr<RepairSetupAnalysis> active_observer_;
+  std::shared_ptr<RepairSetupMoveSampler> active_observer_;
   // The endpoint() of the current phase.
   const sta::Pin* endpoint_{nullptr};
 

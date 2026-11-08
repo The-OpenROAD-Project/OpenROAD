@@ -37,7 +37,7 @@ TEST_F(TestResizerMt, RepairSetupProfilerConsecutiveCallsKeepFreshFiles)
 {
   ProfileTestDirectory directory;
   const std::vector<std::string> filenames{
-      "stats.csv", "events.csv", "timing.csv", "metadata.csv"};
+      "stats.csv", "timing.csv", "metadata.csv"};
   std::vector<std::string> first_outputs;
   for (int run = 1; run <= 2; ++run) {
     {
@@ -57,6 +57,8 @@ TEST_F(TestResizerMt, RepairSetupProfilerConsecutiveCallsKeepFreshFiles)
     const std::filesystem::path run_dir
         = directory.root() / ("run_" + std::to_string(run));
     EXPECT_FALSE(std::filesystem::exists(run_dir / "analysis"));
+    // Mode 1 writes no event trace.
+    EXPECT_FALSE(std::filesystem::exists(run_dir / "events.csv"));
     for (size_t index = 0; index < filenames.size(); ++index) {
       const std::string contents = readProfileFile(run_dir / filenames[index]);
       EXPECT_FALSE(contents.empty());
@@ -78,8 +80,6 @@ TEST_F(TestResizerMt, RepairSetupProfilerConsecutiveCallsKeepFreshFiles)
   EXPECT_NE(second_stats.find(",\"count\",\"second_only\",\"\",1,1,1\n"),
             std::string::npos);
   EXPECT_EQ(second_stats.find("first_only"), std::string::npos);
-  EXPECT_EQ(readProfileFile(directory.root() / "run_2/events.csv"),
-            first_outputs[1]);
   EXPECT_NE(readProfileFile(directory.root() / "run_2/metadata.csv")
                 .find("\"status\",\"completed\"\n"),
             std::string::npos);
@@ -108,7 +108,6 @@ TEST_F(TestResizerMt, RepairSetupProfilerEventSummaryAndTrace)
     const std::filesystem::path run_dir
         = directory.root() / ("run_" + std::to_string(static_cast<int>(mode)));
     const std::string stats = readProfileFile(run_dir / "stats.csv");
-    const std::string events = readProfileFile(run_dir / "events.csv");
     EXPECT_NE(stats.find(",\"count\",\"iterations\",\"\",1,1,1\n"),
               std::string::npos);
     EXPECT_NE(stats.find(",\"count\",\"retries\",\"\",1,1,1\n"),
@@ -116,11 +115,12 @@ TEST_F(TestResizerMt, RepairSetupProfilerEventSummaryAndTrace)
     EXPECT_NE(stats.find(",\"count\",\"targets_collected\",\"\",3,3,3\n"),
               std::string::npos);
     EXPECT_EQ(stats.find("journal_undo_begin"), std::string::npos);
-    EXPECT_EQ(events.find("retries"), std::string::npos);
+    // Mode 1 writes no event trace; mode 2 traces the events.
     if (mode == RepairSetupProfiler::Mode::kTiming) {
-      EXPECT_EQ(events.find("\"retry\""), std::string::npos);
-      EXPECT_EQ(events.find("\"journal_undo_begin\""), std::string::npos);
+      EXPECT_FALSE(std::filesystem::exists(run_dir / "events.csv"));
     } else {
+      const std::string events = readProfileFile(run_dir / "events.csv");
+      EXPECT_EQ(events.find("retries"), std::string::npos);
       EXPECT_NE(events.find("\"retry\""), std::string::npos);
       EXPECT_NE(events.find("\"journal_undo_begin\""), std::string::npos);
     }

@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <deque>
 #include <functional>
+#include <limits>
 #include <map>
 #include <memory>
 #include <optional>
@@ -54,7 +55,7 @@
 
 namespace rsz {
 class SetupLegacyBase;
-struct SlackEstimatorParams;
+struct UnbufferSlackParams;
 }  // namespace rsz
 
 namespace rsz {
@@ -425,6 +426,35 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                         float slack_margin);
 
   ////////////////////////////////////////////////////////////////
+  // Useful-skew budgeting via a minimum-perturbation LP. Emits
+  // set_clock_latency annotations on register CK pins for CTS to consume.
+  // See doc/useful_skew.md for the algorithm.
+  struct SkewBudgetOptions
+  {
+    float max_skew = 0.0f;            // Δ_max; 0 ⇒ default 0.15 * min period
+    float hold_margin = 50e-12f;      // G_h, seconds
+    bool one_sided = false;           // t ∈ [0, Δ_max]: delay-only schedule
+                                      // physically realizable by CTS
+    float quantum = 0.0f;             // snap final targets to multiples of
+                                      // this (the CTS delay-buffer delay);
+                                      // 0 ⇒ no snapping
+    float edge_threshold = 200e-12f;  // setup-endpoint candidate window
+                                      // for the augmentation pass
+    float emit_threshold = 1e-12f;    // below this, don't annotate
+    // Iter-0 augmentation pass: one batched findPathEnds over the
+    // critical endpoint set with this per-endpoint depth. 0 disables
+    // (pure cutting-plane); Tcl default is 200.
+    int paths_per_endpoint = 0;
+    // Cutting-plane iteration cap. Each iteration applies the LP's
+    // tentative latencies, re-walks endpoints with VertexPathIterator
+    // (which surfaces a *different* worst-per-tag launch once shifts
+    // change which path is critical), augments the LP edge set, and
+    // re-solves. Converges in a handful of iterations.
+    int max_iterations = 8;
+  };
+  void computeSkewBudget(const SkewBudgetOptions& opts);
+
+  ////////////////////////////////////////////////////////////////
 
   // Area of the design in meter^2.
   double designArea();
@@ -532,9 +562,13 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   //  restore resized gates
   // resizeSlackPreamble must be called before the first findResizeSlacks.
   void resizeSlackPreamble();
+  // placed_net limits buffering to the nets the placer models. Buffers added
+  // to any other net would have no connections in the placer.
   void findResizeSlacks(bool run_journal_restore,
                         bool run_repair_timing = false,
-                        float repair_tns_end_percent = 0.01);
+                        float repair_tns_end_percent = 0.01,
+                        const std::function<bool(const odb::dbNet*)>& placed_net
+                        = {});
   // Return nets with worst slack.
   sta::NetSeq resizeWorstSlackNets();
   // Return net slack, if any (indicated by the bool).
@@ -579,8 +613,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
   static std::vector<MoveType> parseMoveSequence(const std::string& sequence);
-  // "low" or "medium"; anything else is the default, high.
-  static RepairEffort repairEffortFromString(const std::string& effort);
+  // "low", "medium" or "high"; anything else is error RSZ-3242.
+  RepairEffort repairEffortFromString(const std::string& effort) const;
   void fullyRebuffer(sta::Pin* pin);
 
   bool hasFanout(sta::Vertex* drvr);
@@ -709,7 +743,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   void findLongWires(sta::VertexSeq& drvrs);
   int findMaxSteinerDist(sta::Vertex* drvr, const sta::Scene* corner);
-  float driveResistance(const sta::Pin* drvr_pin);
+  float driveResistance(const sta::Pin* drvr_pin) const;
   float bufferDriveResistance(const sta::LibertyCell* buffer) const;
   int vtCategoryCount() const;
   float cellDriveResistance(const sta::LibertyCell* cell) const;
@@ -921,19 +955,12 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool removeBufferIfPossible(sta::Instance* buffer,
                               bool honor_dont_touch_fixed = true);
   bool replacementPreservesMaxCap(sta::Instance* inst,
-                                  const sta::LibertyCell* replacement);
+                                  const sta::LibertyCell* replacement,
+                                  const sta::Mode* mode = nullptr);
+  // The load a driver can still take under its max-cap limit: none once the
+  // limit is violated, and no bound without a limit.
+  float maxCapIncrease(const sta::Pin* drvr_pin);
   bool checkMaxCapOK(const sta::Pin* drvr_pin, float cap_delta);
-
-  // One driver's current load, cap limit, and violation state.
-  struct DriverCapLimit
-  {
-    // Total load currently driven on this net.
-    float cap{0.0f};
-    // Effective max-cap limit for this driver.
-    float max_cap{0.0f};
-    // True when the driver's current max-cap check has negative slack.
-    bool negative_slack{false};
-  };
 
   // Cached fanin max-cap headroom for one input pin of a candidate cell.
   struct InputCapBudget
@@ -942,8 +969,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
     const sta::LibertyPort* port{nullptr};
     // Input capacitance of that current port.
     float current_cap{0.0f};
-    // Limits for all drivers that STA associates with the input net.
-    std::vector<DriverCapLimit> driver_limits;
+    // The smallest maxCapIncrease() of the drivers of the input net.
+    float max_cap_increase{std::numeric_limits<float>::infinity()};
   };
 
   // Capture fanin max-cap state once before screening equivalent cells.
@@ -952,6 +979,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool replacementFitsInputCapBudgets(
       const std::vector<InputCapBudget>& budgets,
       const sta::LibertyCell* replacement) const;
+
+  // === Buffer removal timing checks =======================================
   bool estimateInputSlewImpact(
       sta::Instance* instance,
       const sta::Scene* scene,
@@ -959,12 +988,20 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       const std::array<sta::Slew, sta::RiseFall::index_count>& old_in_slew,
       const std::array<sta::Slew, sta::RiseFall::index_count>& new_in_slew,
       float delay_adjust,
-      const rsz::SlackEstimatorParams& params,
+      const rsz::UnbufferSlackParams& params,
       bool accept_if_slack_improves);
   bool canRemoveBuffer(sta::Instance* buffer,
                        bool honor_dont_touch_fixed = true);
   bool removeBuffer(sta::Instance* buffer, bool honor_dont_touch_fixed = true);
-  bool estimatedSlackOK(const rsz::SlackEstimatorParams& params);
+  // Whether removeBuffer() keeps the output net of buffer and moves the pins
+  // of its input net onto it, instead of the other way round.
+  bool removeBufferKeepsOutputNet(sta::Instance* buffer) const;
+  // Check removal legality and optionally return the measured delay terms.
+  bool estimatedUnbufferSlackOK(const rsz::UnbufferSlackParams& params,
+                                float* upstream_delay_delta_out = nullptr,
+                                float* buffer_delay_saved_out = nullptr);
+
+  // === Buffered-net construction ==========================================
   BufferedNetPtr makeBufferedNet(const sta::Pin* drvr_pin,
                                  const sta::Scene* scene);
   BufferedNetPtr makeBufferedNetSteiner(const sta::Pin* drvr_pin,
@@ -993,7 +1030,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool isEditableLogicStdCell(const sta::Instance* inst);
 
   bool okToBufferNet(const sta::Pin* driver_pin) const;
+  // False for a net outside the placer's nets during findResizeSlacks.
+  bool isPlacedNet(const odb::dbNet* net) const;
   sta::LibertyCell* lowestDriveBufferCell() const;
+  sta::LibertyCell* selectBetterRfDriveVtCell(sta::LibertyCell* curr_cell);
   bool checkAndMarkVTSwappable(sta::Instance* inst,
                                std::unordered_set<sta::Instance*>& notSwappable,
                                sta::LibertyCell*& best_lib_cell);
@@ -1036,6 +1076,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Components
   std::unique_ptr<RecoverPower> recover_power_;
   std::unique_ptr<RepairDesign> repair_design_;
+  // Set only for the duration of findResizeSlacks.
+  std::function<bool(const odb::dbNet*)> placed_net_;
   std::unique_ptr<RepairHold> repair_hold_;
   std::unique_ptr<ConcreteSwapArithModules> swap_arith_modules_;
   std::unique_ptr<Rebuffer> rebuffer_;
@@ -1062,6 +1104,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   const sta::MinMax* max_ = sta::MinMax::max();
   sta::LibertyCellSeq buffer_cells_;
   sta::LibertyCell* buffer_lowest_drive_ = nullptr;
+  sta::LibertyCell* port_buffer_ = nullptr;
   std::unordered_set<sta::LibertyCell*> buffer_fast_sizes_;
   // Buffer list created by CTS kept here so that we use the
   // exact same buffers when reparing clock nets.

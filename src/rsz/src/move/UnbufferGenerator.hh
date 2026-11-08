@@ -17,9 +17,9 @@ namespace rsz {
 // path.
 //
 // Identifies single-output buffers on the target path, runs the legacy
-// estimatedSlackOK legality check, and produces one UnbufferCandidate if
-// removal is legal.  The committer also blocks removal
-// when the buffer was inserted by an earlier move in the same endpoint pass
+// estimatedUnbufferSlackOK legality check, and produces one UnbufferCandidate
+// if removal is legal.  The committer also blocks removal when the buffer was
+// inserted by an earlier move in the same endpoint pass
 // (hasBlockingBufferRemovalMove guard).  Single-threaded only.
 class UnbufferGenerator : public MoveGenerator
 {

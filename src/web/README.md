@@ -14,15 +14,19 @@ designs without a native GUI.
 
 ### Web Server
 
-Start the web viewer server. This opens a WebSocket server and launches the
-viewer in the default browser. The command blocks until the server stops, so
-the design can be explored interactively; Tcl commands typed in the browser
-console run on the server.
+Start the web viewer server. This opens a WebSocket server, reports the viewer
+url and, when the browser would open on this machine, launches the viewer in
+the default browser (see *Running on a remote machine*). The command blocks
+until the server stops, so the design can be explored interactively; Tcl
+commands typed in the browser console run on the server.
 
 ```tcl
 web_server
     [-port port]
     [-bind address]
+    [-token hex]
+    [-browser]
+    [-no_browser]
     [-stop]
 ```
 
@@ -32,32 +36,131 @@ web_server
 | ---------- | -------------------------------------------------- |
 | `-port` | TCP port to listen on. Default: `0`, which picks a free port. |
 | `-bind` | IP address to listen on. Default: `127.0.0.1` (loopback only). Accepts an IP literal, not a hostname. |
+| `-token` | Access token to use instead of minting one: 32 to 128 hexadecimal digits. For a caller that hands out the url itself, such as a proxy; no url carrying it is printed. |
+| `-no_browser` | Do not launch a browser; just report the viewer url. |
+| `-browser` | Launch a browser even where it is skipped by default (see below). |
 | `-stop` | Stop a running server and return from the blocked `web_server` call. |
 | `-dir` | Deprecated and ignored; the web assets are embedded in the binary. |
 
-```{warning}
-The browser console evaluates Tcl on the server, so anyone who can reach the
-port can run commands as the user who started `openroad`. The default loopback
-bind keeps that local. Only pass `-bind` (for example `-bind 0.0.0.0`) on a
-network you trust; the server has no authentication.
+#### Access token
+
+You never type the token. The browser `openroad` launches opens the viewer
+directly; when none is launched (ssh, batch jobs), open the url printed after
+`WEB-0001`, which already carries it:
+
+```
+[INFO WEB-0001] Server started on http://localhost:39217/?token=<redacted>
+To reach it from another machine, forward the port: ssh -L 39217:localhost:39217 farm-42
+Viewer url, not logged: http://localhost:39217/?token=2f1c...
 ```
 
-Because the default is loopback, a viewer started inside a container or on a
-remote host is not reachable from outside it — the connection is refused with no
-message from the server. Bind explicitly in that case, and publish the port:
+The token keeps other users of the machine out: they can all reach
+`127.0.0.1`, and the viewer's console runs Tcl as you. Without it the page, the
+image download and the WebSocket are refused, so a bookmark from an earlier
+session will not connect; every session mints a new one.
+
+- The launched browser gets a single-use *ticket* instead, so the token never
+  appears on a command line (`ps`). The ticket stops working once used, when
+  the launch fails or is skipped, or after five minutes.
+- If the viewer opens on `Unauthorized` right after a launch and `WEB-0129`
+  reports the ticket already used, someone else used it first: restart the
+  server, which mints a new token.
+- The url with the token goes to stdout only. The logger, and with it a `-log`
+  file and the browser console, gets it `<redacted>`; redirecting stdout to a
+  file others can read takes the token along. It travels in clear text over
+  HTTP, so it does not replace the loopback bind.
+
+The viewer also refuses to run inside another site's frame and runs no script
+that does not come from the server itself (a Content-Security-Policy with
+`script-src 'self'`), so markup that ends up in a design name cannot run code.
+
+#### Running on a remote machine
+
+By default no browser is launched from an ssh session, from a batch job, or
+where there is no display: the browser the user is looking at runs on another
+machine, and a second one started here cannot open the profile that one
+already holds. Open the reported url there instead; `WEB-0001` always says how
+to reach it:
+
+```shell
+$ ssh farm-42 "openroad -web design.tcl"
+[INFO WEB-0001] Server started on http://localhost:39217/?token=<redacted>
+To reach it from another machine, forward the port: ssh -L 39217:localhost:39217 farm-42
+Viewer url, not logged: http://localhost:39217/?token=2f1c...
+[INFO WEB-0120] Not launching a browser here (this is an ssh session); open the url above.
+Pass -browser (-web_browser) to launch one anyway.
+```
+
+Run that `ssh -L` line locally, then open the url in the browser already
+running there. Setting `OPENROAD_NO_BROWSER` (`1`, `true`, `on`, `yes`)
+suppresses the launch everywhere; `-browser` (or `-web_browser`) forces it
+back on.
+
+This includes `ssh -X`: a forwarded display is not enough, because the browser
+started on the remote host still wants the profile in `$HOME` that the browser
+on the workstation already holds — with a shared home it refuses to start at
+all. Pass `-browser` to try anyway. The forwarded display is recognised even
+where the ssh variables did not follow, as inside `docker_shell` or under
+`sudo`: sshd numbers it from `localhost:10`.
+
+Two kinds of ssh session do launch, because the browser they reach is the
+user's own:
+
+- a VS Code terminal (`VSCODE_IPC_HOOK_CLI` set and `$BROWSER` pointing at
+  VS Code's `helpers/browser.sh`): the url goes to that helper, which opens it
+  where the editor runs and forwards the port. A `$BROWSER` set by a shell
+  profile does not count;
+- a desktop of your own on this host, such as VNC or x2go started over ssh: a
+  bare `:N` display whose X socket belongs to you. Someone else's display never
+  counts.
+
+A batch job is skipped before either: `LSB_JOBID`, `SLURM_JOB_ID`, `JOB_ID` or
+`PBS_JOBID` means a scheduler picked the host this runs on, and schedulers copy
+the submitting shell's environment — `$DISPLAY` and the VS Code variables
+included. So is any session whose `$DISPLAY` names another machine, which is
+the same situation reached without a scheduler. The Windows side of a WSL
+session, which launches with or without an X server, is the user's own, not
+another machine. `WEB-0120` says which of these decided.
+
+Inside a `tmux` or `screen` session that outlived the connection that started
+it, `SSH_CONNECTION` and `SSH_CLIENT` can be missing or point at the old
+connection. With no display, or a forwarded one, the launch is still skipped;
+with a stale local one it is attempted and usually fails: `WEB-0003` reports that, and the url and the
+tunnel are printed with `WEB-0001` as always. To settle it, set `OPENROAD_NO_BROWSER` in
+the shell profile used on those hosts, or pass `-no_browser`.
+
+A tab left open across a restart on the same port says so and stops retrying,
+because the new server minted a new token. With the default `-port 0` the
+restarted server listens elsewhere, and the tab only sees a server that is
+gone.
+
+With `-bind` on a routable address the viewer is reachable without a tunnel,
+and `WEB-0001` says so instead of printing an `ssh -L` line that would point
+at a loopback port nobody is listening on.
+
+Binding past loopback is the other way to be reachable, and the one to avoid
+unless the network is trusted — the token is then the only thing between the
+port and a shell. With `--network host`, as ORFS's `docker_shell` runs, a
+container needs none of this: the default bind is reachable from the host. On
+its own network (Docker's default bridge) the loopback bind cannot be reached
+from the host — the connection is refused with no message from the server —
+and an ssh tunnel does not reach inside. Bind past loopback and publish the
+port:
 
 ```tcl
 web_server -port 8080 -bind 0.0.0.0
 ```
 
 ```shell
-docker run -p 8080:8080 ...        # then browse to http://localhost:8080
+docker run -p 8080:8080 ...        # then browse to the url openroad printed
 ```
 
-The same applies to the command-line entry point, which takes `-web_bind`:
+The command-line entry point takes the same options as `-web_*`, except
+`-token`: other users of the machine can read a command line.
 
 ```shell
 openroad -web -web_port 8080 -web_bind 0.0.0.0
+openroad -web -web_no_browser
 ```
 
 ### Save Image
@@ -65,6 +168,7 @@ openroad -web -web_port 8080 -web_bind 0.0.0.0
 Save the layout to a PNG file. By default, the command uses the GUI (Qt)
 renderer. Pass `-web` to use the web tile renderer instead, which runs
 entirely server-side without a display and is suitable for headless CI.
+OpenROAD built without Qt always uses the web tile renderer.
 
 ```tcl
 save_image
@@ -80,7 +184,7 @@ save_image
 
 | Switch Name | Description |
 | -------------- | ---------------------------------------------- |
-| `-web` | Use the web tile renderer instead of the GUI renderer. Does not require a display or a running web server. |
+| `-web` | Use the web tile renderer instead of the GUI renderer. Does not require a display or a running web server. Implied when OpenROAD is built without Qt. |
 | `-area` | Bounding box in microns `{x0 y0 x1 y1}`. Default: the whole design -- the die area unioned with the block bounding box -- plus a 5% margin. |
 | `-width` | Output image width in pixels. Cannot be used with `-resolution`. |
 | `-resolution` | Resolution in microns per pixel. Minimum: 1 DBU per pixel. Cannot be used with `-width`. |
@@ -387,7 +491,7 @@ create_toolbar_button
 | `-name` | Key used to remove the button later. The type is `string`. The default is a generated `buttonN`. Re-using a registered name is an error. |
 | `-text` | Label to put on the button. The type is `string`. Required. |
 | `-script` | Tcl script to evaluate when the button is clicked, or — with `-toggle` — when it is switched on. The type is `string`. Required. |
-| `-icon` | Icon to show before the label: either literal text (an emoji, say) or an image referenced by `data:` URI, `http(s):` URL or a path starting with `/` or `./`. The type is `string`. The default is no icon. |
+| `-icon` | Icon to show before the label: either literal text (an emoji, say) or an image referenced by a `data:` URI. An `http(s):` URL or a path starting with `/` or `./` is an error: the viewer's Content-Security-Policy blocks remote images and the server serves no image files. The type is `string`. The default is no icon. |
 | `-tooltip` | Hover text. The type is `string`. The default is no tooltip. |
 | `-toggle` | Make the button a two-state switch: clicking it runs `-script` when turning it on and `-script_off` when turning it off. |
 | `-script_off` | Tcl script to evaluate when a `-toggle` button is switched off. The type is `string`. Ignored without `-toggle`. |
@@ -582,14 +686,7 @@ To add or upgrade a library:
 # edit the version in src/web/package.json, then
 bazelisk run -- @pnpm//:pnpm --dir $PWD/src/web install --lockfile-only
 bazelisk mod deps --lockfile_mode=update   # refresh MODULE.bazel.lock
-bazelisk run //src/web/dist:dist           # rebuild the checked-in bundle
 ```
-
-**Changing what the bundle is built from needs that last step too** (the
-JavaScript, CSS, HTML or skin under `src/web/src/`, or `esbuild.config.mjs`),
-then commit what it changed: the CMake build cannot run the bundler, and embeds
-the copy in [`dist/`](dist/README.md) as it stands. CI fails a PR whose copy is
-stale.
 
 ## Server API
 

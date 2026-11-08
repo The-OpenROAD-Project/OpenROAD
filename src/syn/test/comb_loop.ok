@@ -4,6 +4,7 @@
 Top level design units:
     false_loop
 
+
 Build succeeded: 0 errors, 0 warnings
 [INFO SYN-0056] liveness: replaced 0 register bits, 0 combinational bits
 [INFO SYN-0017] mapCombinationals: done
@@ -20,6 +21,7 @@ Build succeeded: 0 errors, 0 warnings
 false_loop synthesized
 Top level design units:
     ram_loop
+
 
 Build succeeded: 0 errors, 0 warnings
 [INFO SYN-0056] liveness: replaced 0 register bits, 0 combinational bits
@@ -38,6 +40,7 @@ ram_loop synthesized
 Top level design units:
     dual_no_loop
 
+
 Build succeeded: 0 errors, 0 warnings
 [INFO SYN-0056] liveness: replaced 0 register bits, 0 combinational bits
 [INFO SYN-0017] mapCombinationals: done
@@ -53,6 +56,7 @@ dual_no_loop synthesized
 Top level design units:
     half_loop
 
+
 Build succeeded: 0 errors, 0 warnings
 [INFO SYN-0056] liveness: replaced 0 register bits, 0 combinational bits
 [WARNING SYN-0079] Combinational loop through: y, %5
@@ -60,6 +64,7 @@ Build succeeded: 0 errors, 0 warnings
 SYN-0080
 Top level design units:
     latch_clock_gate
+
 
 Build succeeded: 0 errors, 0 warnings
 [INFO SYN-0056] liveness: replaced 0 register bits, 0 combinational bits

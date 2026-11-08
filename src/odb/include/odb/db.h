@@ -3712,14 +3712,14 @@ class dbWire : public dbObject
   bool isGlobalWire();
 
   ///
-  /// Returns true if this wire has been ordered.
+  /// Returns true if this wire had its connectivity normalized.
   ///
-  bool isOrdered();
+  bool hasNormalizedConnectivity();
 
   ///
-  /// Set the ordered flag.
+  /// Set the normalized connectivity flag.
   ///
-  void setOrdered(bool ordered);
+  void setNormalizedConnectivity(bool normalized_connectivity);
 
   ///
   /// Get the bounding box of this wire
@@ -7366,6 +7366,8 @@ class dbChip : public dbObject
 
   dbChipInst* findChipInst(const std::string& name) const;
 
+  dbChipNet* findChipNet(const std::string& name) const;
+
   dbChipRegion* findChipRegion(const std::string& name) const;
 
   dbTech* getTech() const;
@@ -7897,6 +7899,12 @@ class dbDft : public dbObject
   bool isScanInserted() const;
 
   dbSet<dbScanChain> getScanChains() const;
+
+  // User Code Begin dbDft
+  // Destroys all scan chains, scan pins and the scan insts the chains list,
+  // and clears the scan-inserted flag.
+  void reset();
+  // User Code End dbDft
 };
 
 class dbGCellGrid : public dbObject
@@ -9254,6 +9262,10 @@ class dbScanList : public dbObject
   // User Code Begin dbScanList
   dbSet<dbScanInst> getScanInsts() const;
   dbScanInst* add(dbInst* inst);
+  // Detaches all dbScanInsts from this list without destroying them.
+  // After clear(), each detached dbScanInst may be re-attached to any list
+  // via insertAtFront().  Used by scan_opt cross-chain reassignment.
+  void clear();
   static dbScanList* create(dbScanPartition* scan_partition);
   // User Code End dbScanList
 };

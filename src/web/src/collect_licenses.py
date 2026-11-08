@@ -29,9 +29,15 @@ follow.
 
 
 def license_id(meta):
-    value = meta.get("license", "?")
-    # Older packages give {"type": "MIT", "url": ...}.
-    return value.get("type", "?") if isinstance(value, dict) else value
+    value = meta.get("license") or meta.get("licenses")
+    # Older packages give {"type": "MIT", "url": ...} or [{"type": "MIT"}].
+    if isinstance(value, list) and value:
+        value = value[0]
+    if isinstance(value, dict):
+        value = value.get("type")
+    if isinstance(value, str):
+        value = value.strip()
+    return value if value and value != "?" and value.upper() != "UNLICENSED" else None
 
 
 def find_license(pkg_dir):
@@ -48,7 +54,7 @@ def find_license(pkg_dir):
     for name in sorted(files):
         if name.lower().startswith(("license", "licence", "copying")):
             return os.path.join(pkg_dir, name)
-    raise SystemExit(f"{pkg_dir} has no licence file")
+    return None
 
 
 def source_url(meta):
@@ -87,9 +93,18 @@ def main():
         key = (meta["name"], meta["version"])
         if key in entries:
             continue
-        with open(find_license(pkg_dir), encoding="utf-8") as f:
-            text = f.read().strip()
-        entries[key] = (license_id(meta), source_url(meta), text)
+        lic_file = find_license(pkg_dir)
+        spdx = license_id(meta)
+        if not lic_file and not spdx:
+            raise SystemExit(
+                f"{meta.get('name', pkg_dir)} has neither a licence file nor a license in package.json"
+            )
+        if lic_file:
+            with open(lic_file, encoding="utf-8") as f:
+                text = f.read().strip()
+        else:
+            text = f"Licensed under {spdx} (declared in package.json)."
+        entries[key] = (spdx or "?", source_url(meta), text)
 
     parts = [_HEADER]
     for (name, version), (spdx, source, text) in sorted(entries.items()):

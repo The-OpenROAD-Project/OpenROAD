@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-import { GoldenLayout, LayoutConfig } from 'golden-layout';
+import { GridLayoutManager } from './grid-layout.js';
 import { latLngToDbu, dbuToLatLng, dbuRectToBounds } from './coordinates.js';
 import { WebSocketManager } from './websocket-manager.js';
 import {
@@ -13,7 +13,7 @@ import {
 import { createMergedTileLayer } from './merged-tile-layer.js';
 import { installDeviceGridSnapping } from './device-pixels.js';
 import {
-    BLANK_TILE, tileSizeCss, useFittedTileSize, useStaticTileSize,
+    BLANK_TILE, hasEntries, tileSizeCss, useFittedTileSize, useStaticTileSize,
     withDeviceExactTileSize, watchDevicePixelRatio, tileSizeFields,
 } from './tile-request.js';
 import { TimingWidget } from './timing-widget.js';
@@ -24,10 +24,10 @@ import { createInspectorPanel } from './inspector.js';
 import { SelectionBrowser } from './selection-browser.js';
 import { applyArrowStep, applySelectionFlags, beginSelection, boundsEqual,
          buildMapOptions, buildVisibilityFlags, clampArrowStep,
-         computeBoundsTransforms, computeScaleBar, decorateTabIcons,
+         computeBoundsTransforms, computeScaleBar,
          fittedTileSizeCss, formatDbu, formatDistance, installWheelPanning,
          isCurrentSelection, isStaticMode, maxUsefulZoom, parseDbu,
-         rafCoalesce, showToast, unitLabel }
+         rafCoalesce, showToast, unitLabel, websocketUrlFrom }
     from './ui-utils.js';
 import { clampFontScale, showAppFontDialog, showArrowStepDialog }
     from './options-dialogs.js';
@@ -65,6 +65,14 @@ function updateStatus() {
     const pendingCount = app.websocketManager ? app.websocketManager.pendingCount : 0;
     
     if (!isConnected) {
+        // Checked before _shutdown, which the manager also sets in this case.
+        if (app.websocketManager?._sessionEnded) {
+            statusDiv.innerHTML = '<div class="disconnected-banner">⚠ OpenROAD '
+                + 'restarted with a new access token — open the URL it '
+                + 'printed</div>';
+            statusDiv.style.display = 'block';
+            return;
+        }
         // After an intentional shutdown the "Server stopped" banner is
         // already showing — don't overwrite it with the generic message.
         if (app.websocketManager?._shutdown) {
@@ -73,7 +81,8 @@ function updateStatus() {
         // Only show banner after a delay to avoid flashing on page load
         if (!disconnectTimeout) {
             disconnectTimeout = setTimeout(() => {
-                if (!app.websocketManager?.isConnected) {
+                if (!app.websocketManager?.isConnected
+                        && !app.websocketManager?._shutdown) {
                     statusDiv.innerHTML = '<div class="disconnected-banner">⚠ OpenROAD disconnected — retrying…</div>';
                     statusDiv.style.display = 'block';
                 }
@@ -171,8 +180,13 @@ const app = {
     // display-controls.js once techData.chiplets arrives; null means
     // "render every chiplet" (single-chip designs).
     visibleChiplets: null,
-    // Per-layer fill pattern, keyed by raw tech-layer name → int matching the
-    // server's FillPattern enum (1 = solid). Populated/persisted by
+    // { chipletPath: [layer names] } a die hides (resp. makes unselectable)
+    // while another die still shows them; `visibleLayerNames` and
+    // `selectableLayers` are the unions.  Kept by display-controls.js.
+    chipletHiddenLayers: {},
+    chipletNonselectableLayers: {},
+    // Per-row fill pattern, keyed by the Display Controls row id → int matching
+    // the server's FillPattern enum (1 = solid). Populated/persisted by
     // display-controls.js and read lazily by websocket-tile-layer.js.
     layerPatterns: {},
     useTrueZ: getCookie('or_use_true_z') === '1',
@@ -1227,9 +1241,9 @@ const defaultLayoutConfig = {
     },
 };
 
-// ─── Golden Layout Init ─────────────────────────────────────────────────────
+// ─── Layout Manager Init ───────────────────────────────────────────────────
 
-app.goldenLayout = new GoldenLayout(document.getElementById('gl-container'));
+app.goldenLayout = new GridLayoutManager(document.getElementById('gl-container'));
 
 app.goldenLayout.registerComponentFactoryFunction('LayoutViewer', createLayoutViewer);
 app.goldenLayout.registerComponentFactoryFunction('DisplayControls', createDisplayControls);
@@ -1245,10 +1259,6 @@ app.goldenLayout.registerComponentFactoryFunction('3DViewer', create3DViewerWidg
 app.goldenLayout.registerComponentFactoryFunction('HelpWidget', createHelpWidget);
 app.goldenLayout.registerComponentFactoryFunction('SelectHighlight', createSelectHighlight);
 
-// Layout version — bump this to force a layout reset when components change.
-// v4: SelectHighlight (selection browser) added to the default layout.
-const LAYOUT_VERSION = 4;
-
 // ─── WebSocket Init ─────────────────────────────────────────────────────────
 // Must be created before loadLayout so that components (e.g. SchematicWidget)
 // constructed during layout initialisation can access app.websocketManager.
@@ -1260,8 +1270,9 @@ if (staticCache) {
     useStaticTileSize();
     app.websocketManager = WebSocketManager.fromCache(staticCache, updateStatus);
 } else {
-    const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
-    app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
+    const websocketUrl = websocketUrlFrom(window.location);
+    app.websocketManager = new WebSocketManager(
+        websocketUrl, updateStatus, { probeUrl: window.location.href });
     // Where each tech layer has shapes, so tiles that would come back empty
     // are never requested (see layer-extents.js).  Static reports have no
     // server to ask and keep requesting everything.
@@ -1278,96 +1289,29 @@ if (staticCache) {
 // Check initial connection status
 updateStatus();
 
-// Restore saved layout or use default
-const savedLayout = localStorage.getItem('gl-layout');
-const savedVersion = parseInt(localStorage.getItem('gl-layout-version'), 10);
-if (savedLayout && savedVersion === LAYOUT_VERSION) {
-    try {
-        const resolved = JSON.parse(savedLayout);
-        const restored = LayoutConfig.fromResolved(resolved);
-        restored.dimensions = {
-            ...restored.dimensions, headerHeight: kHeaderHeight,
-        };
-        app.goldenLayout.loadLayout(restored);
-    } catch (e) {
-        app.goldenLayout.loadLayout(defaultLayoutConfig);
-    }
-} else {
-    app.goldenLayout.loadLayout(defaultLayoutConfig);
-}
-localStorage.setItem('gl-layout-version', LAYOUT_VERSION);
-addTabIcons();
+// Mount layout components
+app.goldenLayout.loadLayout(defaultLayoutConfig);
 
-// Add the per-panel tab icons and, if any were added, make Golden Layout
-// measure the headers again -- it chose which tabs fit before the icons
-// widened them, so without this the tabs that no longer fit overlap the
-// stack's controls instead of moving into the overflow dropdown.
-function addTabIcons() {
-    if (decorateTabIcons() > 0) {
-        app.goldenLayout.updateSize();
-    }
-}
-
-// Persist layout on changes (drag, resize, close, etc.)
-app.goldenLayout.on('stateChanged', () => {
-    localStorage.setItem('gl-layout', JSON.stringify(app.goldenLayout.saveLayout()));
-    addTabIcons();
-});
-
-// Resize GoldenLayout to the space #gl-container actually has.  The container
-// is flex-sized (see style.css), so its height also moves when the toolbar
-// appears or collapses -- and GoldenLayout does not track its container on its
-// own, so every cause has to come through here.  Measuring the element beats
-// subtracting the chrome's height from window.innerHeight: that arithmetic has
-// to be kept in step with the chrome, and missing the toolbar pushed the
-// bottom of the panels (the Tcl console's prompt) off screen.
+// Sync layout size on window resize
 function syncLayoutSize() {
-    const el = document.getElementById('gl-container');
-    app.goldenLayout.setSize(el.clientWidth, el.clientHeight);
+    app.goldenLayout.updateSize();
 }
 app.syncLayoutSize = syncLayoutSize;
 
 window.addEventListener('resize', syncLayoutSize);
 
-// componentType → display title (must match defaultLayoutConfig).
-const componentTitles = {
-    LayoutViewer: 'Layout',
-    DisplayControls: 'Display Controls',
-    TclConsole: 'Tcl Console',
-    Inspector: 'Inspector',
-    Browser: 'Hierarchy',
-    TimingWidget: 'Timing',
-    DRCWidget: 'DRC',
-    ClockWidget: 'Clock Tree',
-    ChartsWidget: 'Charts',
-    SchematicWidget: 'Schematic',
-    '3DViewer': '3D Viewer',
-    HelpWidget: 'Help',
-    SelectHighlight: 'Select Highlight',
-};
-
-// Focus a Golden Layout component tab, or re-create it if it was closed.
+// Focus a component tab, or re-create it if it was closed.
 function focusComponent(componentType) {
-    function find(item) {
-        if (item.isComponent && item.componentType === componentType) return item;
-        if (item.contentItems) {
-            for (const child of item.contentItems) {
-                const found = find(child);
-                if (found) return found;
-            }
-        }
-        return null;
-    }
-    const item = find(app.goldenLayout.rootItem);
-    if (item) {
-        item.focus();
-    } else {
-        const title = componentTitles[componentType] || componentType;
-        app.goldenLayout.addComponent(componentType, undefined, title);
-    }
+    app.goldenLayout.focusComponent(componentType);
 }
 
 app.focusComponent = focusComponent;
+
+app.resetLayout = function() {
+    if (app.goldenLayout && typeof app.goldenLayout.resetLayout === 'function') {
+        app.goldenLayout.resetLayout();
+    }
+};
 
 app.toggleTheme = function() {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
@@ -1982,6 +1926,13 @@ app.websocketManager.readyPromise.then(async () => {
             }
             if (app.visibleChiplets instanceof Set) {
                 selectRequest.visible_chiplets = [...app.visibleChiplets];
+            }
+            if (hasEntries(app.chipletHiddenLayers)) {
+                selectRequest.chiplet_hidden_layers = app.chipletHiddenLayers;
+            }
+            if (hasEntries(app.chipletNonselectableLayers)) {
+                selectRequest.chiplet_nonselectable_layers
+                    = app.chipletNonselectableLayers;
             }
             const token = beginSelection(app);
             return app.websocketManager.request(selectRequest)

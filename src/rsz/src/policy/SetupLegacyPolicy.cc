@@ -343,8 +343,10 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
                  main_state.phase_marker);
       break;
     }
-    if (main_state.end_index == 1 && endpoint_state.worst_vertex != nullptr) {
+    if (main_state.end_index == 1 && endpoint_state.worst_vertex != nullptr
+        && endpoint_state.end != endpoint_state.worst_vertex) {
       endpoint_state.end = endpoint_state.worst_vertex;
+      endpoint_state.end_slack = endpoint_state.worst_slack;
       target_collector_->useWorstEndpoint(endpoint_state.end);
       committer_.setCurrentEndpoint(endpoint_state.end->pin());
     }

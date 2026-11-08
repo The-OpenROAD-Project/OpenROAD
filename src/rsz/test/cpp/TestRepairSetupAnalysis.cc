@@ -64,7 +64,7 @@ TEST_F(TestResizerMt, AnalysisSerialTargetRebindsAcrossStaUpdates)
   EXPECT_EQ(live.target().endpointPin(resizer_), target.endpoint_pin);
   EXPECT_EQ(live.target().violatedEndpointPin(resizer_), violated_endpoint);
 
-  RepairSetupAnalysis observer(
+  RepairSetupMoveSampler observer(
       resizer_, live.target(), live.originalEndpoint());
   EXPECT_EQ(observer.violatedEndpoint(), "path_out");
 
@@ -100,12 +100,36 @@ TEST_F(TestResizerMt, AnalysisSerialTargetReportsDriverPrefixFallback)
   EXPECT_EQ(live.target().endpoint_path, live.target().driver_path);
   EXPECT_EQ(live.target().endpointPin(resizer_), target.driver_pin);
   EXPECT_EQ(live.originalEndpoint(), target.endpoint_pin);
-  RepairSetupAnalysis observer(
+  RepairSetupMoveSampler observer(
       resizer_, live.target(), live.originalEndpoint());
   EXPECT_EQ(observer.selectedEndpoint(), "path_out");
   EXPECT_EQ(observer.selectedPathEnd(), "load0/Z");
   EXPECT_STREQ(observer.pathContext(), "driver_prefix");
   EXPECT_FALSE(observer.snapshot().pins.empty());
+  profiler.complete(true);
+}
+
+// A driver prefix ends at the target driver, not at the original endpoint, so
+// its window delay is measured on the prefix path.
+TEST_F(TestResizerMt, AnalysisMeasuresTheWindowOfADriverPrefix)
+{
+  ProfileTestDirectory directory;
+  resizer_.runRepairSetupPreamble();
+  Target target = makeTarget("out0", "load0", "Z");
+  target.endpoint_pin = sta_->network()->findPin("path_out");
+  ASSERT_NE(target.endpoint_pin, nullptr);
+  RepairSetupProfiler profiler(resizer_,
+                               RepairSetupProfiler::Mode::kAnalysis,
+                               directory.root().string());
+  RepairSetupAnalysisTarget live(resizer_, target);
+  ASSERT_TRUE(live.refresh());
+  Target prefix = live.target();
+  prefix.estimator_context = DelayEstimator::buildContext(resizer_, prefix, 0);
+  ASSERT_TRUE(prefix.estimator_context.has_value());
+  const RepairSetupMoveSampler observer(
+      resizer_, prefix, live.originalEndpoint());
+  ASSERT_STREQ(observer.pathContext(), "driver_prefix");
+  EXPECT_TRUE(observer.sample().contains("window_delay_s"));
   profiler.complete(true);
 }
 
@@ -121,13 +145,14 @@ TEST_F(TestResizerMt, AnalysisReportsPolicyEndpointOfLegacyTarget)
   const sta::Pin* policy_endpoint = sta_->network()->findPin("path_out");
   ASSERT_NE(policy_endpoint, nullptr);
 
-  const RepairSetupAnalysis legacy(resizer_, target, nullptr, policy_endpoint);
+  const RepairSetupMoveSampler legacy(
+      resizer_, target, nullptr, policy_endpoint);
   EXPECT_EQ(legacy.violatedEndpoint(), "path_out");
 
   Target instance_target;
   instance_target.views = kInstanceView;
   instance_target.driver_pin = target.driver_pin;
-  const RepairSetupAnalysis instance(
+  const RepairSetupMoveSampler instance(
       resizer_, instance_target, nullptr, policy_endpoint);
   EXPECT_TRUE(instance.violatedEndpoint().empty());
 }
@@ -138,7 +163,7 @@ TEST_F(TestResizerMt, AnalysisCapturesBothRfAndSharedFanin)
   sta_->findRequireds();
   const Target target = makeTarget("out0", "load0", "Z");
   ASSERT_NE(target.driver_pin, nullptr);
-  RepairSetupAnalysis observer(resizer_, target);
+  RepairSetupMoveSampler observer(resizer_, target);
   const AnalysisSnapshot snapshot = observer.snapshot();
   bool rise = false;
   bool fall = false;
@@ -196,7 +221,7 @@ TEST_F(TestResizerMt, AnalysisIncludesExtractedWireCapacitance)
         ->makePiElmore(driver, rf, sta::MinMax::max(), wire_cap, 1.0, pin_cap);
   }
 
-  RepairSetupAnalysis observer(resizer_, target);
+  RepairSetupMoveSampler observer(resizer_, target);
   int checked = 0;
   for (const AnalysisPinState& pin : observer.snapshot().pins) {
     if (pin.pin == "target/Z") {
@@ -370,7 +395,7 @@ TEST_F(TestResizerMt, AnalysisKeepsInputCapWithoutTimingPath)
   sta_->findRequireds();
   const Target target = makeTarget("path_out", "path_target", "ZN");
   ASSERT_NE(target.driver_pin, nullptr);
-  RepairSetupAnalysis observer(resizer_, target);
+  RepairSetupMoveSampler observer(resizer_, target);
   const AnalysisSnapshot snapshot = observer.snapshot();
   int observed = 0;
   for (const AnalysisPinState& pin : snapshot.pins) {

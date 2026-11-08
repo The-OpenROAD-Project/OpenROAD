@@ -39,11 +39,14 @@ Graphics::Graphics(bool coarse,
   web::Gui* gui = web::Gui::get();
   gui->registerRenderer(this);
 
-  // Setup the chart
+  // Setup the chart. No Qt gui and no web server means no chart surface to
+  // draw on (addChart returns nullptr), e.g. mpl_debug run without -gui.
   chart_ = gui->addChart("MPL", "Iteration", {"Area", "Outline", "WireLength"});
-  chart_->setXAxisFormat("%d");
-  chart_->setYAxisFormats({"%.2e", "%.2e", "%.2e"});
-  chart_->setYAxisMin({0, 0, 0});
+  if (chart_) {
+    chart_->setXAxisFormat("%d");
+    chart_->setYAxisFormats({"%.2e", "%.2e", "%.2e"});
+    chart_->setYAxisMin({0, 0, 0});
+  }
 }
 
 void Graphics::startCoarse()
@@ -78,7 +81,9 @@ void Graphics::startSA(const char* type,
                   num_perturb_per_step);
   best_norm_cost_ = std::numeric_limits<float>::max();
   skipped_ = 0;
-  chart_->clearPoints();
+  if (chart_) {
+    chart_->clearPoints();
+  }
   iter_ = 0;
 }
 
@@ -223,7 +228,9 @@ void Graphics::penaltyCalculated(float norm_cost)
     const float outline = outline_penalty_ ? outline_penalty_.value().value : 0;
     const float wirelength
         = wirelength_penalty_ ? wirelength_penalty_.value().value : 0;
-    chart_->addPoint(iter_, {area, outline, wirelength});
+    if (chart_) {
+      chart_->addPoint(iter_, {area, outline, wirelength});
+    }
 
     logger_->report("------ Penalty (Iter {}) ------", iter_);
     report(norm_cost);

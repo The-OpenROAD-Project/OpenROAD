@@ -1,9 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
-# Test Parity Note: All C++ tests from CMakeLists.txt are included in this BUILD file.
-# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
-
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 
 package(features = ["layering_check"])
@@ -30,7 +27,7 @@ cc_test(
         "sky130/sky130_fd_sc_hd__ss_n40C_1v40.lib",
         "sky130/sky130hd.tlef",
         "sky130/sky130hd_std_cell.lef",
-        "sky130_const_cell.v",
+        "sky130_const_cells.v",
     ],
     deps = [
         "//src/cut",
@@ -69,7 +66,7 @@ cc_test(
         "sky130/sky130_fd_sc_hd__ss_n40C_1v40.lib",
         "sky130/sky130hd.tlef",
         "sky130/sky130hd_std_cell.lef",
-        "sky130_const_cell.v",
+        "sky130_const_cells.v",
     ],
     deps = [
         "//src/cut",

@@ -49,6 +49,9 @@ class SizeUpMtGenerator : public MoveGenerator
       const Target& target) override;
 
  private:
+  // The unit tests (TestResizerMt) reach the internals through this peer.
+  friend class ResizerTestPeer;
+
   // === Candidate-cell selection ============================================
   // Replacement cells for one driver port and analysis view.  The library and
   // dont_use set are fixed for a run, so the options are cached for the run.

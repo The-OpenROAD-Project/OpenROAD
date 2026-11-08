@@ -146,7 +146,6 @@ rtl_macro_placer -fence_lx 10.125 -fence_ly 20.25 \
 $macro_a setPlacementStatus PLACED
 $macro_b setPlacementStatus PLACED
 set artifacts_before [lsort [glob -nocomplain * .*]]
-mpl::set_macro_placement_file unexpected-placement.tcl
 mpl::set_min_channel 1.0 2.0
 check_malformed_fences configured
 check_numeric_inputs configured

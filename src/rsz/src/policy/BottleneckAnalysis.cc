@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <bit>
+#include <climits>
 #include <cmath>
 #include <cstdint>
 #include <numeric>
@@ -22,23 +23,29 @@ namespace rsz {
 namespace {
 
 // The fanin edges that carry data arrivals: no timing checks, no clock-to-Q
-// or latch D-to-Q boundaries, no disabled loops.
+// or latch D-to-Q boundaries, no disabled loops.  The preset/clear arcs and
+// bidirect paths that levelization skips are skipped too, so every fanin
+// has a lower level.
 template <typename Fn>
-void forEachDataFanin(const sta::Graph* graph, sta::Vertex* vertex, Fn&& fn)
+void forEachDataFanin(const sta::dbSta* sta, sta::Vertex* vertex, Fn&& fn)
 {
+  const sta::Graph* graph = sta->graph();
   sta::VertexInEdgeIterator edge_iter(vertex, graph);
   while (edge_iter.hasNext()) {
     sta::Edge* edge = edge_iter.next();
     const sta::TimingRole* role = edge->role();
     if (role->isTimingCheck() || role == sta::TimingRole::regClkToQ()
-        || role->isLatchDtoQ() || edge->isDisabledLoop()) {
+        || role->isLatchDtoQ() || edge->isDisabledLoop()
+        || (role == sta::TimingRole::regSetClr()
+            && !sta->presetClrArcsEnabled())
+        || sta->isDisabledBidirectInstPath(edge)) {
       continue;
     }
     fn(edge->from(graph));
   }
 }
 
-constexpr size_t kBitsPerWord = 64;
+constexpr size_t kBitsPerWord = sizeof(uint64_t) * CHAR_BIT;
 
 }  // namespace
 
@@ -52,14 +59,14 @@ void BottleneckAnalysis::analyze(
     const std::span<const EndpointSlack> violating_endpoints,
     const float slack_margin,
     const int max_endpoints,
-    const int max_sources)
+    const int max_startpoints)
 {
   for (const Node& node : nodes_) {
     node_of_[node.id] = -1;
   }
   nodes_.clear();
   order_.clear();
-  max_cone_need_ = 0.0f;
+  max_bottleneck_severity_ = 0.0f;
 
   const std::vector<size_t> endpoint_nodes = collectCone(
       violating_endpoints.first(std::min(violating_endpoints.size(),
@@ -69,29 +76,33 @@ void BottleneckAnalysis::analyze(
     return;
   }
 
-  sumFanoutNeeds(endpoint_nodes);
-  sumFaninNeeds(max_sources);
+  sumEndpointDeficits(endpoint_nodes);
+  sumStartpointDeficits(max_startpoints);
   for (const Node& node : nodes_) {
-    max_cone_need_ = std::max(max_cone_need_, coneNeed(node));
+    max_bottleneck_severity_
+        = std::max(max_bottleneck_severity_, bottleneckSeverity(node));
   }
 }
 
-float BottleneckAnalysis::weightedScore(
+float BottleneckAnalysis::bottleneckPriorityScore(
     const float local_score,
     sta::Vertex* vertex,
     const BatchPriorityConfig& priority) const
 {
   const int32_t node_index = nodeOf(vertex);
-  const float weight = node_index >= 0 && max_cone_need_ > 0.0f
-                           ? coneNeed(nodes_[node_index]) / max_cone_need_
-                           : 0.0f;
+  const float severity_ratio
+      = node_index >= 0 && max_bottleneck_severity_ > 0.0f
+            ? bottleneckSeverity(nodes_[node_index]) / max_bottleneck_severity_
+            : 0.0f;
   // The factor also multiplies a negative score, so a cone-central target with
   // a loss ranks lower than the same loss elsewhere.
   return local_score
-         * (1.0f + priority.alpha * std::pow(weight, priority.gamma));
+         * (1.0f
+            + priority.bottleneck_scale
+                  * std::pow(severity_ratio, priority.bottleneck_exponent));
 }
 
-size_t BottleneckAnalysis::admit(sta::Vertex* vertex, const float need)
+size_t BottleneckAnalysis::admit(sta::Vertex* vertex, const float slack_deficit)
 {
   const size_t node_index = nodes_.size();
   const sta::VertexId id = sta_->graph()->id(vertex);
@@ -100,7 +111,8 @@ size_t BottleneckAnalysis::admit(sta::Vertex* vertex, const float need)
   if (id >= node_of_.size()) {
     node_of_.resize(id + 1, -1);
   }
-  nodes_.push_back({.vertex = vertex, .id = id, .need = need});
+  nodes_.push_back(
+      {.vertex = vertex, .id = id, .slack_deficit = slack_deficit});
   node_of_[id] = static_cast<int32_t>(node_index);
   return node_index;
 }
@@ -123,11 +135,12 @@ std::vector<size_t> BottleneckAnalysis::collectCone(
   std::vector<size_t> queue;
   for (const EndpointSlack& endpoint : endpoints) {
     sta::Vertex* vertex = graph->pinLoadVertex(endpoint.first);
-    const float need = slack_margin - sta::delayAsFloat(endpoint.second);
-    if (vertex == nullptr || need <= 0.0f || nodeOf(vertex) >= 0) {
+    const float slack_deficit
+        = slack_margin - sta::delayAsFloat(endpoint.second);
+    if (vertex == nullptr || slack_deficit <= 0.0f || nodeOf(vertex) >= 0) {
       continue;
     }
-    endpoint_nodes.push_back(admit(vertex, need));
+    endpoint_nodes.push_back(admit(vertex, slack_deficit));
     queue.push_back(endpoint_nodes.back());
   }
 
@@ -136,17 +149,17 @@ std::vector<size_t> BottleneckAnalysis::collectCone(
   while (!queue.empty()) {
     const size_t node_index = queue.back();
     queue.pop_back();
-    forEachDataFanin(graph, nodes_[node_index].vertex, [&](sta::Vertex* fanin) {
+    forEachDataFanin(sta_, nodes_[node_index].vertex, [&](sta::Vertex* fanin) {
       if (nodeOf(fanin) >= 0) {
         nodes_[node_index].has_cone_fanin = true;
         return;
       }
-      const float need
+      const float slack_deficit
           = slack_margin - sta::delayAsFloat(sta_->slack(fanin, min_max_));
-      if (need <= 0.0f) {
+      if (slack_deficit <= 0.0f) {
         return;
       }
-      queue.push_back(admit(fanin, need));
+      queue.push_back(admit(fanin, slack_deficit));
       nodes_[node_index].has_cone_fanin = true;
     });
   }
@@ -160,10 +173,9 @@ std::vector<size_t> BottleneckAnalysis::collectCone(
   return endpoint_nodes;
 }
 
-void BottleneckAnalysis::sumFanoutNeeds(
+void BottleneckAnalysis::sumEndpointDeficits(
     const std::vector<size_t>& endpoint_nodes)
 {
-  const sta::Graph* graph = sta_->graph();
   const size_t words
       = (endpoint_nodes.size() + kBitsPerWord - 1) / kBitsPerWord;
   std::vector<uint64_t> reach(nodes_.size() * words, 0);
@@ -176,7 +188,7 @@ void BottleneckAnalysis::sumFanoutNeeds(
   // has been visited, and is then handed to its fanins.
   for (size_t position = order_.size(); position-- > 0;) {
     const size_t node_index = order_[position];
-    forEachDataFanin(graph, nodes_[node_index].vertex, [&](sta::Vertex* fanin) {
+    forEachDataFanin(sta_, nodes_[node_index].vertex, [&](sta::Vertex* fanin) {
       const int32_t fanin_index = nodeOf(fanin);
       if (fanin_index < 0) {
         return;
@@ -195,39 +207,40 @@ void BottleneckAnalysis::sumFanoutNeeds(
       uint64_t bits = reach[node_index * words + word];
       while (bits != 0) {
         const size_t bit = word * kBitsPerWord + std::countr_zero(bits);
-        node.fanout_need += nodes_[endpoint_nodes[bit]].need;
+        node.endpoint_deficit_sum += nodes_[endpoint_nodes[bit]].slack_deficit;
         bits &= bits - 1;
       }
     }
   }
 }
 
-void BottleneckAnalysis::sumFaninNeeds(const int max_sources)
+void BottleneckAnalysis::sumStartpointDeficits(const int max_startpoints)
 {
-  // The cone sources, worst first.
-  std::vector<size_t> sources;
+  // The cone startpoints, worst deficit first.
+  std::vector<size_t> startpoints;
   for (size_t node_index = 0; node_index < nodes_.size(); ++node_index) {
     if (!nodes_[node_index].has_cone_fanin) {
-      sources.push_back(node_index);
+      startpoints.push_back(node_index);
     }
   }
-  std::ranges::stable_sort(sources, [this](const size_t lhs, const size_t rhs) {
-    return nodes_[lhs].need > nodes_[rhs].need;
-  });
-  sources.resize(std::min(sources.size(), static_cast<size_t>(max_sources)));
+  std::ranges::stable_sort(
+      startpoints, [this](const size_t lhs, const size_t rhs) {
+        return nodes_[lhs].slack_deficit > nodes_[rhs].slack_deficit;
+      });
+  startpoints.resize(
+      std::min(startpoints.size(), static_cast<size_t>(max_startpoints)));
 
-  const sta::Graph* graph = sta_->graph();
-  const size_t words = (sources.size() + kBitsPerWord - 1) / kBitsPerWord;
+  const size_t words = (startpoints.size() + kBitsPerWord - 1) / kBitsPerWord;
   std::vector<uint64_t> reach(nodes_.size() * words, 0);
-  for (size_t bit = 0; bit < sources.size(); ++bit) {
-    reach[sources[bit] * words + bit / kBitsPerWord] |= uint64_t{1}
-                                                        << (bit % kBitsPerWord);
+  for (size_t bit = 0; bit < startpoints.size(); ++bit) {
+    reach[startpoints[bit] * words + bit / kBitsPerWord]
+        |= uint64_t{1} << (bit % kBitsPerWord);
   }
 
   // Ascending level: the fanins are complete before the vertex collects
   // them.
   for (const size_t node_index : order_) {
-    forEachDataFanin(graph, nodes_[node_index].vertex, [&](sta::Vertex* fanin) {
+    forEachDataFanin(sta_, nodes_[node_index].vertex, [&](sta::Vertex* fanin) {
       const int32_t fanin_index = nodeOf(fanin);
       if (fanin_index < 0) {
         return;
@@ -246,18 +259,17 @@ void BottleneckAnalysis::sumFaninNeeds(const int max_sources)
       uint64_t bits = reach[node_index * words + word];
       while (bits != 0) {
         const size_t bit = word * kBitsPerWord + std::countr_zero(bits);
-        node.fanin_need += nodes_[sources[bit]].need;
+        node.startpoint_deficit_sum += nodes_[startpoints[bit]].slack_deficit;
         bits &= bits - 1;
       }
     }
   }
 }
 
-float BottleneckAnalysis::coneNeed(const Node& node) const
+float BottleneckAnalysis::bottleneckSeverity(const Node& node) const
 {
-  // The geometric mean keeps the weight in seconds and balances the two
-  // sides, so neither the sources nor the endpoints dominate.
-  return std::sqrt(node.fanin_need * node.fanout_need);
+  // The geometric mean keeps severity in seconds and balances both sides.
+  return std::sqrt(node.startpoint_deficit_sum * node.endpoint_deficit_sum);
 }
 
 }  // namespace rsz

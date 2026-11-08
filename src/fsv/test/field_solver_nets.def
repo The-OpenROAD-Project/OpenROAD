@@ -1,0 +1,40 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN field_solver_nets ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 20000 12000 ) ;
+COMPONENTS 3 ;
+- u1 sky130_fd_sc_hd__buf_1 + PLACED ( 2760 2720 ) N ;
+- u2 sky130_fd_sc_hd__buf_1 + PLACED ( 11040 2720 ) N ;
+- u3 sky130_fd_sc_hd__buf_1 + PLACED ( 5520 8160 ) N ;
+END COMPONENTS
+PINS 2 ;
+- in + NET b + DIRECTION INPUT + USE SIGNAL
+  + LAYER met2 ( -70 -70 ) ( 70 70 )
+  + PLACED ( 1000 7600 ) N ;
+- out + NET c + DIRECTION OUTPUT + USE SIGNAL
+  + LAYER met2 ( -70 -70 ) ( 70 70 )
+  + PLACED ( 19000 9000 ) N ;
+END PINS
+SPECIALNETS 2 ;
+- VPWR ( u1 VPWR ) ( u2 VPWR )
+  + ROUTED met1 480 + SHAPE FOLLOWPIN ( 0 5440 ) ( 20000 5440 )
+    NEW met1 0 + SHAPE STRIPE ( 12600 5440 ) M1M2_PR
+  + USE POWER ;
+- VGND ( u1 VGND ) ( u2 VGND )
+  + ROUTED met1 480 + SHAPE FOLLOWPIN ( 0 2720 ) ( 20000 2720 )
+  + USE GROUND ;
+END SPECIALNETS
+NETS 4 ;
+- a ( u1 X ) ( u2 A )
+  + ROUTED met2 ( 4000 7000 ) ( 12000 * ) M2M3_PR
+    NEW met3 ( 12000 7000 ) ( * 10000 ) ;
+- b ( PIN in ) ( u1 A )
+  + ROUTED met2 ( 1000 7600 ) ( 14000 * ) ;
+- c ( PIN out ) ( u2 X )
+  + ROUTED met2 ( 13000 9000 ) ( 19000 * ) ;
+- d
+  + ROUTED met2 ( 16000 1000 ) ( 19000 * ) ;
+END NETS
+END DESIGN

@@ -27,18 +27,18 @@ req_msg[7] (input)                   dpath.b_reg.out[7]$_DFFE_PP_/D (DFFHQNx1_AS
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-    final |       0 |     150 |        0 |      0 |     0 |    +0.0% |  -52.685 |    -1402.5 |     34 | dpath.b_reg.out\[3\]$_DFFE_PP_/D
+    final |       0 |     153 |        0 |      0 |     0 |    +0.0% |  -43.095 |    -1195.8 |     34 | dpath.a_reg.out\[7\]$_DFFE_PP_/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0051] Resized 150 instances: 0 up, 0 up match, 0 down, 150 VT
+[INFO RSZ-0051] Resized 153 instances: 0 up, 0 up match, 0 down, 153 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 -- reg2reg after
 Startpoint                           Endpoint                                Slack
 ---------------------------------------------------------------------------------
-dpath.b_reg.out[0]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL) dpath.b_reg.out[3]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_SL)  -52.685
+dpath.a_reg.out[13]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_SL) dpath.a_reg.out[7]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_SL)  -43.095
 
 -- in2reg after
 Startpoint                           Endpoint                                Slack
 ---------------------------------------------------------------------------------
-req_msg[4] (input)                   dpath.b_reg.out[4]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_SL)  -24.649
+req_msg[4] (input)                   dpath.b_reg.out[4]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_SL)  -24.642
 
 VT swapped cells off every reg2reg path: 0

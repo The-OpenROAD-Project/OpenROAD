@@ -108,7 +108,7 @@ using namespace rsz;
                               skip_pin_swap, skip_gate_cloning, skip_size_down_fanout,
                               skip_buffering, skip_buffer_removal, skip_buffer_to_inverters,
                               skip_last_gasp, skip_vt_swap, skip_crit_vt_swap,
-                              rsz::Resizer::repairEffortFromString(
+                              $self->repairEffortFromString(
                                   effort ? effort : "high"),
                               profile_mode, profile_dir ? profile_dir : "");
   }

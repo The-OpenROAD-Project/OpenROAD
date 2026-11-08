@@ -1,13 +1,9 @@
-# Exercises the escalating soft-NDR demotion schedule.
+# Exercises the soft-NDR demotion triggered by a stagnating overflow.
 #
 # Aggressive custom NDRs on every clock net, with tightened routing resources,
-# force global routing to disable congested NDR nets to relieve overflow.
-# Restarting the whole overflow loop once per demotion is O(N) restarts, so the
-# demotion instead escalates on a fixed iteration schedule: 10% of the congested
-# NDR nets are disabled at iteration 5, 50% at iteration 10, and all remaining
-# ones at iteration 15, with only the final step restarting the loop. This test
-# checks that the flow completes and produces a stable result under that
-# condition.
+# force global routing to disable congested NDR nets to relieve overflow. The
+# overflow iterations then restart from the initial routing. This test checks
+# that the flow completes and produces a stable result under that condition.
 source "helpers.tcl"
 read_liberty "sky130hs/sky130hs_tt.lib"
 read_lef "sky130hs/sky130hs.tlef"
