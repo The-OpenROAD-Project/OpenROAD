@@ -2010,6 +2010,35 @@ void FastRouteCore::getOverflowPositions(
   }
 }
 
+// Get the positions of the 3D edges that overflow
+void FastRouteCore::getOverflowPositions3D(
+    std::vector<std::pair<odb::Point, bool>>& overflow_pos)
+{
+  // One GCell can overflow on several layers; collect before emitting so the
+  // caller walks each tile once.
+  std::set<std::pair<int, int>> h_tiles, v_tiles;
+  for (int layer = 0; layer < num_layers_; layer++) {
+    for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
+      const auto& edge = h_edges_3D_[layer][y][x];
+      if (edge.usage > edge.cap) {
+        h_tiles.emplace(x, y);
+      }
+    }
+    for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
+      const auto& edge = v_edges_3D_[layer][y][x];
+      if (edge.usage > edge.cap) {
+        v_tiles.emplace(x, y);
+      }
+    }
+  }
+  for (const auto& [x, y] : h_tiles) {
+    overflow_pos.emplace_back(odb::Point(x, y), true);
+  }
+  for (const auto& [x, y] : v_tiles) {
+    overflow_pos.emplace_back(odb::Point(x, y), false);
+  }
+}
+
 // Search in range of 5 the correct adjustment to fix the overflow
 void FastRouteCore::getPrecisionAdjustment(const int x,
                                            const int y,
@@ -2088,9 +2117,12 @@ bool FastRouteCore::computeSuggestedAdjustment(int& suggested_adjustment)
 // The function will add the new nets to the congestion_nets set
 void FastRouteCore::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
 {
-  // Get overflow position -- [(x,y), is horizontal]
+  // Get overflow position -- [(x,y), is horizontal].  Both grids: the caller
+  // stops when the 3D overflow is gone, so a 3D-only overflow has to yield
+  // nets here or the caller has nothing left to try.
   std::vector<std::pair<odb::Point, bool>> overflow_positions;
   getOverflowPositions(overflow_positions);
+  getOverflowPositions3D(overflow_positions);
   if (overflow_positions.empty()) {
     return;
   }

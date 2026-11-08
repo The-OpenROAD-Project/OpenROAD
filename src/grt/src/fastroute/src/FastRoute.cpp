@@ -112,6 +112,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       ahth_(0),
       num_layers_(0),
       total_overflow_(0),
+      total_2d_overflow_(0),
       has_2D_overflow_(false),
       grid_hv_(0),
       verbose_(false),
@@ -149,6 +150,7 @@ void FastRouteCore::clear()
   v_capacity_ = 0;
   h_capacity_ = 0;
   total_overflow_ = 0;
+  total_2d_overflow_ = 0;
   has_2D_overflow_ = false;
 
   graph2d_.clear();
@@ -2741,6 +2743,12 @@ NetRouteMap FastRouteCore::run()
       past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
       getOverflow3D();
     }
+
+    // Keep the 2D figure: everything below reports total_overflow_, which is
+    // the 3D overflow from here on.  Callers that need to know whether the 2D
+    // grid is clean -- the incremental congestion recovery in GlobalRouter
+    // does, because its only lever acts on 2D congested tiles -- read this.
+    total_2d_overflow_ = past_cong;
 
     costheight_ = 3;
     via_cost_ = 1;

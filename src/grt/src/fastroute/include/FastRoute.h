@@ -170,7 +170,14 @@ class FastRouteCore
   void initBlockedIntervals(std::vector<int>& track_space);
   void initAuxVar();
   NetRouteMap run();
+  // The 3D overflow left by the last run(): layerAssignment() and the 3D maze
+  // route run after the 2D congestion iterations, and getOverflow3D() leaves
+  // its result here.  A run can therefore end with zero 2D overflow and a
+  // non-zero totalOverflow(); use total2DOverflow() to tell the two apart.
   int totalOverflow() const { return total_overflow_; }
+  // The 2D overflow measured at the start of the same run()'s finalization,
+  // before layerAssignment() overwrites total_overflow_ with the 3D figure.
+  int total2DOverflow() const { return total_2d_overflow_; }
   bool has2Doverflow() const { return has_2D_overflow_; }
   int getSnapshotBatchCount() const { return snapshot_batch_count_; }
   void getBlockage(odb::dbTechLayer* layer,
@@ -322,7 +329,16 @@ class FastRouteCore
   {
     return debug_->renderer.get();
   }
+  // GCells whose 2D edges overflow.
   void getOverflowPositions(
+      std::vector<std::pair<odb::Point, bool>>& overflow_pos);
+  // GCells whose 3D edges overflow, as positions on the same 2D grid.
+  // layerAssignment() can leave a layer over capacity while the 2D grid it
+  // assigned from is clean, so a caller that reads only the 2D overflow sees
+  // nothing to act on in exactly the case that needs acting on.  A tile
+  // overflowing on several layers is emitted once.  Appends, so the two can
+  // be collected into one vector.
+  void getOverflowPositions3D(
       std::vector<std::pair<odb::Point, bool>>& overflow_pos);
 
   NetRouteMap getPlanarRoutes();
@@ -819,7 +835,8 @@ class FastRouteCore
   int costheight_;
   int ahth_;
   int num_layers_;
-  int total_overflow_;  // total # overflow
+  int total_overflow_;     // total # overflow (3D once a run has finalized)
+  int total_2d_overflow_;  // 2D overflow of the last finalized run
   bool has_2D_overflow_;
   int grid_hv_;
   bool verbose_;

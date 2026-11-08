@@ -7556,18 +7556,29 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
         = findRouting(dirty_nets, getMinRoutingLayer(), getMaxRoutingLayer());
     mergeResults(new_route);
 
-    bool reroutingOverflow = true;
     if (fastroute_->totalOverflow() && !allow_congestion_) {
       // The maximum number of times that the nets traversing the congestion
       // area will be added
       int add_max = 30;
+      const int kAddMax = add_max;
+      debugPrint(logger_,
+                 GRT,
+                 "incr",
+                 1,
+                 "reroute of {} dirty nets left overflow: 2D {} / 3D {} -- "
+                 "entering congestion recovery",
+                 dirty_nets.size(),
+                 fastroute_->total2DOverflow(),
+                 fastroute_->totalOverflow());
       // The set will contain the nets for routing
       odb::PtrSet<odb::dbNet> congestion_nets;
       // The dirty nets that could not be routed are added
       for (auto& it : dirty_nets) {
         congestion_nets.insert(it->getDbNet());
       }
-      while (fastroute_->totalOverflow() && reroutingOverflow && add_max >= 0) {
+      int last_overflow = fastroute_->totalOverflow();
+      while (fastroute_->totalOverflow() && add_max >= 0) {
+        const size_t nets_before = congestion_nets.size();
         // The nets that cross the congestion area are obtained and added to
         // the set
         // if the nets have wires
@@ -7578,9 +7589,45 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
           // find nets on congestion areas using guides
           fastroute_->getCongestionNets(congestion_nets);
         }
+        debugPrint(logger_,
+                   GRT,
+                   "incr",
+                   1,
+                   "congestion recovery round {}/{}: 2D overflow {}, 3D "
+                   "overflow {}, congestion nets {} -> {}",
+                   kAddMax - add_max,
+                   kAddMax,
+                   fastroute_->total2DOverflow(),
+                   fastroute_->totalOverflow(),
+                   nets_before,
+                   congestion_nets.size());
+        // A round that neither pulled in a new net nor reduced the overflow
+        // rips up the same set and reroutes it to the same result, so
+        // repeating it to add_max buys nothing.  Go straight to the
+        // legalization below, which is the one remaining lever.
+        const bool progressed = congestion_nets.size() > nets_before
+                                || fastroute_->totalOverflow() < last_overflow;
+        last_overflow = fastroute_->totalOverflow();
+        if (!progressed && add_max > 0) {
+          debugPrint(logger_,
+                     GRT,
+                     "incr",
+                     1,
+                     "round {} made no progress -- skipping the remaining {} "
+                     "rounds",
+                     kAddMax - add_max,
+                     add_max);
+          add_max = 0;
+        }
         // When every attempt to increase the congestion region failed, try
         // legalizing the buffers inserted
         if (add_max == 0) {
+          debugPrint(logger_,
+                     GRT,
+                     "incr",
+                     1,
+                     "congestion recovery exhausted -- legalizing the "
+                     "placement as a last resort");
           opendp_->detailedPlacementQuiet();
           updateDirtyNets(dirty_nets);
           for (auto& it : dirty_nets) {
@@ -7610,6 +7657,15 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
         mergeResults(new_route);
         add_max--;
       }
+      debugPrint(logger_,
+                 GRT,
+                 "incr",
+                 1,
+                 "congestion recovery ended after {} rounds: 2D overflow {}, "
+                 "3D overflow {}",
+                 kAddMax - add_max,
+                 fastroute_->total2DOverflow(),
+                 fastroute_->totalOverflow());
       if (fastroute_->totalOverflow()) {
         is_congested_ = true;
         updateDbCongestion();
@@ -7639,8 +7695,11 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
 void GlobalRouter::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
 {
   std::vector<std::pair<odb::Point, bool>> pos_with_overflow;
-  // Get GCell positions with congestion
+  // Get GCell positions with congestion, on both grids: layer assignment can
+  // leave a 3D edge over capacity with the 2D grid clean, and the caller
+  // loops until the 3D overflow is gone.
   fastroute_->getOverflowPositions(pos_with_overflow);
+  fastroute_->getOverflowPositions3D(pos_with_overflow);
   for (auto& itr : pos_with_overflow) {
     odb::Point& position = itr.first;
     bool& is_horizontal = itr.second;
