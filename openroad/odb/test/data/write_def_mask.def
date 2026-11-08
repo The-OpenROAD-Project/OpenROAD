@@ -1,0 +1,20 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN write_def_mask ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 2000 2000 ) ;
+NETS 5 ;
+- a
+  + ROUTED M1 ( 50 50 ) MASK 1 ( 500 50 ) MASK 2 ( 950 50 ) ;
+- b
+  + ROUTED M1 ( 50 150 ) MASK 1 ( 500 150 ) ( 950 150 ) ;
+- c
+  + ROUTED M1 ( 50 250 ) MASK 1 ( 500 250 ) NEW M1 ( 50 350 ) ( 500 350 ) ;
+- d
+  + ROUTED M1 ( 50 450 10 ) MASK 1 ( 500 450 20 ) ( 950 450 30 ) ;
+- e
+  + ROUTED M1 ( 50 550 ) ( 100 * ) ( 150 * ) ( 200 * ) ( 250 * ) ( 300 * ) ( 350 * )
+    MASK 1 ( 400 * ) ( 450 * ) ;
+END NETS
+END DESIGN

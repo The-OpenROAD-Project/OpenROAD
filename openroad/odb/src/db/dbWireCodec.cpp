@@ -107,6 +107,7 @@ void dbWireEncoder::initPath(dbTechLayer* layer, unsigned char wire_type)
   non_default_rule_ = 0;
   rule_opcode_ = 0;
   prev_extended_colinear_pnt_ = false;
+  color_set_ = false;
 }
 
 void dbWireEncoder::initPath(dbTechLayer* layer,
@@ -126,6 +127,7 @@ void dbWireEncoder::initPath(dbTechLayer* layer,
   }
 
   prev_extended_colinear_pnt_ = false;
+  color_set_ = false;
   x_ = 0;
   y_ = 0;
 }
@@ -171,6 +173,7 @@ void dbWireEncoder::clear()
   point_cnt_ = 0;
   via_cnt_ = 0;
   prev_extended_colinear_pnt_ = false;
+  color_set_ = false;
 }
 
 void dbWireEncoder::append(dbWire* wire)
@@ -250,6 +253,11 @@ int dbWireEncoder::addPoint(int x, int y, uint32_t property)
   }
 
   prev_extended_colinear_pnt_ = false;
+
+  if (color_set_) {
+    clearColor();
+  }
+
   return jct_id;
 }
 
@@ -330,6 +338,10 @@ int dbWireEncoder::addPoint(int x, int y, int ext, uint32_t property)
   }
   if (point_cnt_ != 1) {
     addOp(kProperty, property);
+  }
+
+  if (color_set_) {
+    clearColor();
   }
 
   return jct_id;
@@ -618,12 +630,14 @@ void dbWireEncoder::setColor(uint8_t mask_color)
   }
 
   addOp(kColor, mask_color);
+  color_set_ = true;
 }
 
 void dbWireEncoder::clearColor()
 {
   // 0 is a special value representing no mask color.
   addOp(kColor, 0);
+  color_set_ = false;
 }
 
 void dbWireEncoder::setViaColor(uint8_t bottom_color,
@@ -688,6 +702,8 @@ void dbWireDecoder::begin(dbWire* wire)
   deltaY1_ = 0;
   deltaX2_ = 0;
   deltaY2_ = 0;
+  color_ = std::nullopt;
+  viacolor_ = std::nullopt;
 }
 
 inline unsigned char dbWireDecoder::nextOp(int& value)
@@ -822,6 +838,7 @@ nextOpCode:
           break;
       }
 
+      color_ = std::nullopt;
       return opcode_ = PATH;
     }
 
@@ -856,6 +873,7 @@ nextOpCode:
 
       // getjuction id
       nextOp(operand2_);
+      color_ = std::nullopt;
       return opcode_ = SHORT;
     }
 
@@ -893,6 +911,7 @@ nextOpCode:
           break;
       }
 
+      color_ = std::nullopt;
       return opcode_ = JUNCTION;
     }
 
@@ -993,6 +1012,7 @@ nextOpCode:
         layer_ = via->getBottomLayer();
       }
 
+      color_ = std::nullopt;
       return opcode_ = VIA;
     }
 
@@ -1005,6 +1025,7 @@ nextOpCode:
         layer_ = via->getBottomLayer();
       }
 
+      color_ = std::nullopt;
       return opcode_ = TECH_VIA;
     }
 
@@ -1060,6 +1081,7 @@ nextOpCode:
 
       // getjuction id
       nextOp(operand2_);
+      color_ = std::nullopt;
       return opcode_ = VWIRE;
     }
 
