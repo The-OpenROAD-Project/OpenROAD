@@ -13,10 +13,10 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -66.849 |    -1781.2 |     46 | resp_msg[13]
-    final |       0 |     174 |       27 |      0 |     0 |    +6.5% |  -10.182 |      -10.2 |      1 | resp_msg[13]
+    final |       0 |     165 |       28 |      0 |     0 |    +6.9% |  -10.113 |      -10.1 |      1 | resp_msg[13]
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0045] Inserted 27 buffers, 1 to split loads.
-[INFO RSZ-0051] Resized 174 instances: 22 up, 0 up match, 0 down, 152 VT
+[INFO RSZ-0045] Inserted 28 buffers, 1 to split loads.
+[INFO RSZ-0051] Resized 165 instances: 28 up, 0 up match, 0 down, 137 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
-worst slack max -10.182
-tns max -10.182
+worst slack max -10.113
+tns max -10.113

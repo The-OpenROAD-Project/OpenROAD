@@ -236,9 +236,11 @@ struct OptimizationPolicyConfig
   // Empirically tuned together with the relative cell cost of the two moves
   // (relativeCellCosts()).  A size-up costs more than a VT swap of similar
   // gain (area, input pin cap, legalizer displacement, side paths), so it
-  // ranks lower.
-  float vt_swap_mt_score_scale{1.25f};
-  float size_up_mt_score_scale{0.60f};
+  // ranks lower.  The relative cost compares a VT swap only with the other VT
+  // options, so the cheapest faster VT pays nothing although it adds far more
+  // leakage than a size-up; a VtSwapMt weight above 1 would favor it further.
+  float vt_swap_mt_score_scale{1.0f};
+  float size_up_mt_score_scale{0.75f};
 
   // Largest drive-resistance ratio (current / replacement) of a size-up;
   // zero means no bound.  PARALLEL_EVAL sets one.
