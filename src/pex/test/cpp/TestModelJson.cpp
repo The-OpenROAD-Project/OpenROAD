@@ -59,6 +59,7 @@ Model sample()
     const double v = 0.01 * (i + 1);
     e.set(0, i / 3, i % 3, {v, v / 2, v / 4, v / 8, v / 16});
   }
+  e.setSides(0, 0, 1, {0.07, 0.01, 0.02, 0.03, 0.004});
   return model;
 }
 
@@ -122,6 +123,13 @@ TEST(ModelJson, RoundTrip)
   EXPECT_EQ(covered->at(0, 1, 1).above, 0.0125);
   EXPECT_EQ(covered->at(0, 1, 1).lateral, 0.00625);
   EXPECT_EQ(covered->at(0, 1, 1).facing, 0.003125);
+  EXPECT_FALSE(end->hasSides());
+  ASSERT_TRUE(covered->hasSides());
+  EXPECT_EQ(covered->sides(0, 0, 1).total, 0.07);
+  EXPECT_EQ(covered->sides(0, 0, 1).above, 0.02);
+  EXPECT_EQ(covered->sides(0, 0, 1).left, 0.03);
+  EXPECT_EQ(covered->sides(0, 1, 0).left, 0.004);
+  EXPECT_EQ(covered->sides(0, 1, 0).right, 0.03);
 }
 
 // A lateral table is its own mirror image, so the file holds only the

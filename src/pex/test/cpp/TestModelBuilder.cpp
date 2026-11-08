@@ -226,9 +226,32 @@ TEST(ModelBuilder, CrossingAndEndTables)
   EXPECT_LT(e->at(0, 1, 0).facing, e->at(0, 1, 0).total);
   EXPECT_GT(e->at(0, 1, 0).total, free.total);
   EXPECT_LT(e->at(0, 0, 0).facing, e->at(0, 1, 0).facing);
+  // A neighbor on one side alone takes more of the end than half of
+  // what two take, and leaves less to the plane.
+  ASSERT_TRUE(e->hasSides());
+  const EndSides one = e->sides(0, 0, 1);
+  EXPECT_GT(one.left, e->at(0, 0, 2).lateral / 2);
+  EXPECT_EQ(one.right, 0);
+  EXPECT_LT(one.below, (e->at(0, 0, 2).below + free.below) / 2);
+  EXPECT_EQ(e->sides(0, 1, 0).right, one.left);
   // Built tables stay; one on another grid is refused.
   buildEnds(sky130(), L("met2"), o, model);
   EXPECT_EQ(model.end({"met2", "met1", ""}), e);
+  // A table held without the different-sided ends gains them and keeps
+  // its own values.
+  EndTable bare(e->widths(), e->spacings(), e->gaps());
+  for (int si = 0; si < bare.spacingCount(); si++) {
+    for (int gi = 0; gi < bare.gapCount(); gi++) {
+      bare.set(0, si, gi, e->at(0, si, gi));
+    }
+  }
+  const EndValue kept = e->at(0, 0, 2);
+  model.addEnd({"met2", "met1", ""}, std::move(bare));
+  ASSERT_FALSE(model.end({"met2", "met1", ""})->hasSides());
+  buildEnds(sky130(), L("met2"), o, model);
+  e = model.end({"met2", "met1", ""});
+  EXPECT_TRUE(e->hasSides());
+  EXPECT_EQ(e->at(0, 0, 2).total, kept.total);
   o.facing_factors = {1};
   EXPECT_THROW(buildEnds(sky130(), L("met2"), o, model), std::invalid_argument);
 }

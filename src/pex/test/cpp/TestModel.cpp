@@ -326,6 +326,46 @@ TEST(Model, EndNeighborsAndFacing)
   EXPECT_DOUBLE_EQ(model.end(key, 0.1, 0.1, 0.1, 0.1).facing, 0.02);
 }
 
+TEST(Model, EndDifferentSides)
+{
+  Model model;
+  const LateralKey key{"m2", "", ""};
+  EndTable& t = model.addEnd(key, EndTable({0.1}, {0.1, 0.4}, {0.2}));
+  t.set(0, 0, 0, {0.06, 0, 0, 0.04, 0.02});
+  t.set(0, 0, 1, {0.05, 0, 0, 0.04, 0});
+  t.set(0, 1, 0, {0.05, 0, 0, 0.01, 0.03});
+  t.set(0, 1, 1, {0.04, 0, 0, 0.01, 0});
+  t.set(0, 2, 0, {0.045, 0, 0, 0, 0.035});
+  t.set(0, 2, 1, {0.03, 0, 0, 0, 0});
+  EXPECT_FALSE(t.hasSides());
+  t.setSides(0, 0, 1, {0.047, 0, 0, 0.03, 0.008});
+  t.setSides(0, 0, 2, {0.045, 0.001, 0.002, 0.035, 0});
+  t.setSides(0, 1, 2, {0.036, 0, 0, 0.009, 0});
+  EXPECT_TRUE(t.hasSides());
+  EXPECT_THROW(t.setSides(0, 1, 1, {}), std::invalid_argument);
+  // A lone neighbor takes the held end, mirrored on the other side.
+  const EndCap one = model.end(key, 0.1, 0.1, -1);
+  EXPECT_DOUBLE_EQ(one.total, 0.045);
+  EXPECT_DOUBLE_EQ(one.below, 0.001);
+  EXPECT_DOUBLE_EQ(one.above, 0.002);
+  EXPECT_DOUBLE_EQ(one.left, 0.035);
+  EXPECT_DOUBLE_EQ(one.right, 0);
+  const EndCap mirrored = model.end(key, 0.1, -1, 0.1);
+  EXPECT_DOUBLE_EQ(mirrored.left, 0);
+  EXPECT_DOUBLE_EQ(mirrored.right, 0.035);
+  EXPECT_DOUBLE_EQ(model.end(key, 0.1, 0.4, 0.1).left, 0.008);
+  // Like sides read the like-sided end.
+  const EndCap both = model.end(key, 0.1, 0.1, 0.1);
+  EXPECT_DOUBLE_EQ(both.total, 0.05);
+  EXPECT_DOUBLE_EQ(both.left, 0.02);
+  // A facing wire adds what it adds to the like-sided ends: the halves at
+  // the gap (total 0.0525, left 0.02) less those with none (0.04, 0.02).
+  const EndCap faced = model.end(key, 0.1, 0.1, -1, 0.2);
+  EXPECT_DOUBLE_EQ(faced.total, 0.045 + 0.0525 - 0.04);
+  EXPECT_DOUBLE_EQ(faced.left, 0.035);
+  EXPECT_DOUBLE_EQ(faced.facing, 0.0275);
+}
+
 TEST(Model, MissingContextThrows)
 {
   const Model model = logLinearModel();

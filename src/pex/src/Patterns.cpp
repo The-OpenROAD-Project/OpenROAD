@@ -180,15 +180,21 @@ EndPattern::Wire EndPattern::build(const fsv::Stack& stack) const
     builder.add(
         layer, w.facing, -width / 2, length + facing_gap, width / 2, y1);
   }
-  if (neighbor_spacing >= 0) {
+  if (left_spacing >= 0 || right_spacing >= 0) {
     const double nw = stack.conductor(layer).min_width;
     if (nw <= 0) {
       throw std::invalid_argument("the neighbors need a positive width");
     }
-    w.neighbors = builder.net("neighbors");
-    const double x = width / 2 + neighbor_spacing;
-    builder.add(layer, w.neighbors, -x - nw, y0 - margin, -x, y1 + margin);
-    builder.add(layer, w.neighbors, x, y0 - margin, x + nw, y1 + margin);
+    if (left_spacing >= 0) {
+      w.left = builder.net("left");
+      const double x = width / 2 + left_spacing;
+      builder.add(layer, w.left, -x - nw, y0 - margin, -x, y1 + margin);
+    }
+    if (right_spacing >= 0) {
+      w.right = builder.net("right");
+      const double x = width / 2 + right_spacing;
+      builder.add(layer, w.right, x, y0 - margin, x + nw, y1 + margin);
+    }
   }
   if (below.valid()) {
     w.below = builder.net("below");

@@ -191,6 +191,44 @@ void EndTable::set(const int width,
   values_[index(width, spacing, gap)] = value;
 }
 
+EndSides EndTable::sides(const int width, const int left, const int right) const
+{
+  if (left == right) {
+    const EndValue& v = at(width, left, gapCount() - 1);
+    return {v.total, v.below, v.above, v.lateral / 2, v.lateral / 2};
+  }
+  return sides_.at(sideIndex(width, left, right));
+}
+
+int EndTable::sideIndex(const int width, const int left, const int right) const
+{
+  const int ns = spacingCount();
+  return (((width * ns) + left) * ns) + right;
+}
+
+void EndTable::setSides(const int width,
+                        const int left,
+                        const int right,
+                        const EndSides& value)
+{
+  requireIndex("end width", width, static_cast<int>(widths_.size()));
+  requireIndex("end spacing", left, spacingCount());
+  requireIndex("end spacing", right, spacingCount());
+  if (left >= right) {
+    throw std::invalid_argument("end sides need the left spacing first");
+  }
+  for (const double v :
+       {value.total, value.below, value.above, value.left, value.right}) {
+    requireFinite("end", v);
+  }
+  if (sides_.empty()) {
+    sides_.resize(widths_.size() * spacingCount() * spacingCount());
+  }
+  sides_[sideIndex(width, left, right)] = value;
+  sides_[sideIndex(width, right, left)]
+      = {value.total, value.below, value.above, value.right, value.left};
+}
+
 LateralTable& Model::addLateral(const LateralKey& key, LateralTable table)
 {
   return laterals_.insert_or_assign(key, std::move(table)).first->second;
@@ -567,10 +605,10 @@ EndCap Model::end(const LateralKey& key,
   };
   // The end with a spacing on both sides: over the gap, the spacing, then
   // linearly over the width.
-  auto both = [&](const double spacing) {
+  auto both = [&](const double spacing, const Bracket& over) {
     const Bracket s = bracketSpacing(t->spacings(), spacing);
     auto overGap = [&](const int wi, const int si) {
-      return mix(t->at(wi, si, g.lo), t->at(wi, si, g.hi), g.t);
+      return mix(t->at(wi, si, over.lo), t->at(wi, si, over.hi), over.t);
     };
     auto overSpacing = [&](const int wi) {
       return mix(overGap(wi, s.lo), overGap(wi, s.hi), s.t);
@@ -583,14 +621,55 @@ EndCap Model::end(const LateralKey& key,
                     (1 - w.t) * a.lateral + w.t * b.lateral,
                     (1 - w.t) * a.facing + w.t * b.facing};
   };
-  const EndValue l = both(left);
-  const EndValue r = left == right ? l : both(right);
-  return {(l.total + r.total) / 2,
-          (l.below + r.below) / 2,
-          (l.above + r.above) / 2,
-          l.lateral / 2,
-          r.lateral / 2,
-          (l.facing + r.facing) / 2};
+  // Each side takes half of the end with its spacing on both.
+  auto halves = [&](const Bracket& over) {
+    const EndValue l = both(left, over);
+    const EndValue r = left == right ? l : both(right, over);
+    return EndCap{(l.total + r.total) / 2,
+                  (l.below + r.below) / 2,
+                  (l.above + r.above) / 2,
+                  l.lateral / 2,
+                  r.lateral / 2,
+                  (l.facing + r.facing) / 2};
+  };
+  const EndCap at_gap = halves(g);
+  if (!t->hasSides()) {
+    return at_gap;
+  }
+  // The different-sided ends over both spacings, then the width.
+  const Bracket sl = bracketSpacing(t->spacings(), left);
+  const Bracket sr = bracketSpacing(t->spacings(), right);
+  auto mixSides = [&](const EndSides& a, const EndSides& b, const double u) {
+    return EndSides{(1 - u) * a.total + u * b.total,
+                    (1 - u) * a.below + u * b.below,
+                    (1 - u) * a.above + u * b.above,
+                    couple(a.left, b.left, u),
+                    couple(a.right, b.right, u)};
+  };
+  auto overSpacings = [&](const int wi) {
+    auto overRight = [&](const int li) {
+      return mixSides(t->sides(wi, li, sr.lo), t->sides(wi, li, sr.hi), sr.t);
+    };
+    return mixSides(overRight(sl.lo), overRight(sl.hi), sl.t);
+  };
+  const EndSides a = overSpacings(w.lo);
+  const EndSides b = overSpacings(w.hi);
+  const EndSides sides{(1 - w.t) * a.total + w.t * b.total,
+                       (1 - w.t) * a.below + w.t * b.below,
+                       (1 - w.t) * a.above + w.t * b.above,
+                       (1 - w.t) * a.left + w.t * b.left,
+                       (1 - w.t) * a.right + w.t * b.right};
+  // A facing wire adds what it adds to the like-sided ends.
+  const int open_gap = t->gapCount() - 1;
+  const EndCap none = g.lo == open_gap && g.hi == open_gap
+                          ? at_gap
+                          : halves(Bracket{open_gap, open_gap, 0});
+  return {sides.total + at_gap.total - none.total,
+          sides.below + at_gap.below - none.below,
+          sides.above + at_gap.above - none.above,
+          std::max(0.0, sides.left + at_gap.left - none.left),
+          std::max(0.0, sides.right + at_gap.right - none.right),
+          at_gap.facing};
 }
 
 }  // namespace pex

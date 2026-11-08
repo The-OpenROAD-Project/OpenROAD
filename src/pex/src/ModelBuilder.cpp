@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstdint>
 #include <functional>
+#include <map>
 #include <mutex>
 #include <optional>
 #include <set>
@@ -953,33 +954,44 @@ void buildEnds(const fsv::Stack& stack,
   }
   const int ns = static_cast<int>(spacings.size()) + 1;
   const int ng = static_cast<int>(gaps.size()) + 1;
-  // One job per context, width and spacing (and none): the per-length
-  // reference, then the end at each gap (and none).
+  // One job per context, width and pair of spacing indices (the last is
+  // none): the per-length reference, then the end. A like-sided pair
+  // solves the end at each gap (and none), a different-sided one, left
+  // first, at none only. A table held without its different-sided ends
+  // gets those.
   struct Job
   {
+    LateralKey key;
     Layer below;
     Layer above;
     int width;
-    int spacing;
-    std::vector<EndValue> values;  // by gap
+    int left;
+    int right;
+    std::vector<EndValue> values;  // like-sided: by gap
+    EndSides sides;                // different-sided
   };
   std::vector<Job> jobs;
-  std::vector<LateralKey> keys;
   for (const Layer below : plan.below) {
     for (const Layer above : plan.above) {
       const LateralKey key{
           conductor.name, keyName(stack, below), keyName(stack, above)};
-      if (const EndTable* built = model.end(key)) {
+      const EndTable* built = model.end(key);
+      if (built != nullptr) {
         const std::string what = "end table of " + key.layer;
         requireGrid(what, built->widths(), widths);
         requireGrid(what, built->spacings(), spacings);
         requireGrid(what, built->gaps(), gaps);
-        continue;
+        if (built->hasSides()) {
+          continue;
+        }
       }
-      keys.push_back(key);
       for (int w = 0; w < static_cast<int>(widths.size()); w++) {
-        for (int si = 0; si < ns; si++) {
-          jobs.push_back({below, above, w, si, {}});
+        for (int l = 0; l < ns; l++) {
+          for (int r = l; r < ns; r++) {
+            if (r != l || built == nullptr) {
+              jobs.push_back({key, below, above, w, l, r, {}, {}});
+            }
+          }
         }
       }
     }
@@ -987,12 +999,13 @@ void buildEnds(const fsv::Stack& stack,
   runJobs(options, jobs.size(), [&](const int i, fsv::Solver& solver) {
     Job& job = jobs[i];
     const double w = widths[job.width];
-    const double s = job.spacing < ns - 1 ? spacings[job.spacing] : -1;
+    const double sl = job.left < ns - 1 ? spacings[job.left] : -1;
+    const double sr = job.right < ns - 1 ? spacings[job.right] : -1;
     const LateralCap unit = solveSection(stack,
                                          layer,
                                          w,
-                                         s,
-                                         s,
+                                         sl,
+                                         sr,
                                          job.below,
                                          job.above,
                                          options,
@@ -1006,8 +1019,12 @@ void buildEnds(const fsv::Stack& stack,
     pattern.above = job.above;
     pattern.extent = options.extent;
     pattern.margin = options.extent;
-    pattern.neighbor_spacing = s;
-    for (int gi = 0; gi < ng; gi++) {
+    pattern.left_spacing = sl;
+    pattern.right_spacing = sr;
+    const int solved_gaps = job.left == job.right ? ng : 1;
+    for (int k = 0; k < solved_gaps; k++) {
+      // The like-sided ends' gaps, ending at none; else none alone.
+      const int gi = job.left == job.right ? k : ng - 1;
       pattern.facing_gap = gi < ng - 1 ? gaps[gi] : -1;
       const EndPattern::Wire wire = pattern.build(stack);
       const fsv::Scene scene(wire.geometry, stack);
@@ -1021,25 +1038,43 @@ void buildEnds(const fsv::Stack& stack,
       auto coupling = [&](const NetIndex net) {
         return net == kNullNetIndex ? 0.0 : row.coupling(net);
       };
-      EndValue v;
-      v.total = excess(row.total(), unit.total());
-      v.below = excess(coupling(wire.below), unit.below);
-      v.above = excess(coupling(wire.above), unit.above);
-      v.lateral = excess(coupling(wire.neighbors), unit.left + unit.right);
-      v.facing = coupling(wire.facing) / 2;
-      job.values.push_back(v);
-    }
-  });
-  const size_t per_key = widths.size() * ns;
-  for (size_t k = 0; k < keys.size(); k++) {
-    EndTable table(widths, spacings, gaps);
-    for (size_t j = 0; j < per_key; j++) {
-      const Job& job = jobs[(k * per_key) + j];
-      for (int gi = 0; gi < ng; gi++) {
-        table.set(job.width, job.spacing, gi, job.values[gi]);
+      const double total = excess(row.total(), unit.total());
+      const double to_below = excess(coupling(wire.below), unit.below);
+      const double to_above = excess(coupling(wire.above), unit.above);
+      const double to_left = excess(coupling(wire.left), unit.left);
+      const double to_right = excess(coupling(wire.right), unit.right);
+      if (job.left == job.right) {
+        job.values.push_back({total,
+                              to_below,
+                              to_above,
+                              to_left + to_right,
+                              coupling(wire.facing) / 2});
+      } else {
+        job.sides = {total, to_below, to_above, to_left, to_right};
       }
     }
-    model.addEnd(keys[k], std::move(table));
+  });
+  std::map<LateralKey, EndTable> tables;
+  for (const Job& job : jobs) {
+    auto it = tables.find(job.key);
+    if (it == tables.end()) {
+      const EndTable* built = model.end(job.key);
+      it = tables
+               .emplace(
+                   job.key,
+                   built != nullptr ? *built : EndTable(widths, spacings, gaps))
+               .first;
+    }
+    if (job.left == job.right) {
+      for (int gi = 0; gi < ng; gi++) {
+        it->second.set(job.width, job.left, gi, job.values[gi]);
+      }
+    } else {
+      it->second.setSides(job.width, job.left, job.right, job.sides);
+    }
+  }
+  for (auto& [key, table] : tables) {
+    model.addEnd(key, std::move(table));
   }
 }
 

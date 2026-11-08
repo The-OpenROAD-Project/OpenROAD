@@ -141,9 +141,11 @@ struct EndPattern
   // At least zero: a wire of another net, as wide and as long, beyond each
   // end at this gap, and the planes reaching past those.
   double facing_gap = -1;
-  // At least zero: a neighbor of minimum width on each side at this
-  // spacing, of one other net, running as far as the planes.
-  double neighbor_spacing = -1;
+  // At least zero: a neighbor of minimum width on the left (-x) and the
+  // right side at these spacings, each its own net, running as far as the
+  // planes.
+  double left_spacing = -1;
+  double right_spacing = -1;
 
   struct Wire
   {
@@ -152,7 +154,8 @@ struct EndPattern
     NetIndex below = kNullNetIndex;
     NetIndex above = kNullNetIndex;
     NetIndex facing = kNullNetIndex;
-    NetIndex neighbors = kNullNetIndex;
+    NetIndex left = kNullNetIndex;
+    NetIndex right = kNullNetIndex;
   };
   Wire build(const fsv::Stack& stack) const;
 };

@@ -108,7 +108,8 @@ struct Options
                                   "e12",
                                   "e13",
                                   "e14",
-                                  "e15"};
+                                  "e15",
+                                  "e16"};
   std::string itf = "src/fsv/test/sky130.itf";
   std::string layer = "met2";
   int threads = 1;
@@ -1968,6 +1969,91 @@ std::string viaBetween(const Lab& lab,
   return "";
 }
 
+// e16: a line end with a neighbor on one side against one on both sides.
+// The end table holds neighbors on both sides; one side alone is read as the
+// mean of the ends at the spacing and with none. Each end is the excess of a
+// 3D wire over the 2D section with the same neighbors, from wires of two
+// lengths: the total, the coupling to the neighbors and to the planes.
+void oneSided(Lab& lab)
+{
+  const Options& o = lab.options();
+  std::vector<std::string> layers = o.layers;
+  if (layers.empty()) {
+    for (const std::string& l :
+         {lab.nearestBelow(), o.layer, lab.nearestAbove()}) {
+      if (!l.empty() && lab.conductor(l).bottom > 0) {
+        layers.push_back(l);
+      }
+    }
+  }
+  const pex::Model model = buildModel(lab, layers);
+  const std::string far = lab.above().size() > 1 ? lab.above()[1] : "";
+  std::vector<Context> ctxs{{"", ""}, {"", far}};
+  if (!lab.nearestBelow().empty() && !lab.nearestAbove().empty()) {
+    ctxs.push_back({lab.nearestBelow(), lab.nearestAbove()});
+  }
+  const double w = lab.wmin();
+  const double length = 4;
+  for (const Context& ctx : trim(ctxs, o.smoke)) {
+    const pex::LateralKey key{o.layer, ctx.below, ctx.above};
+    for (const double sf : trim(std::vector<double>{1, 2, 4}, o.smoke)) {
+      const double s = sf * lab.smin();
+      for (const bool both : {true, false}) {
+        pex::LateralPattern p;
+        p.layer = lab.layer();
+        p.width = w;
+        p.left = s;
+        p.right = both ? s : -1;
+        p.below = lab.layer(ctx.below);
+        p.above = lab.layer(ctx.above);
+        p.extent = o.extent;
+        const pex::LateralPattern::Section sec = p.build(lab.stack());
+        const fsv::CapRow r2 = lab.solve(sec.geometry, sec.wire, o.tol / 3);
+        auto c2 = [&](const pex::NetIndex k) {
+          return k == pex::kNullNetIndex ? 0.0 : r2.coupling(k);
+        };
+        const double unit_lateral = c2(sec.left) + c2(sec.right);
+        const double unit_planes = c2(sec.below) + c2(sec.above);
+        Wire3D g = wire3D(lab, ctx, w, length, o.extent);
+        const pex::NetIndex nb = g.builder.net("neighbors");
+        const double x = (w / 2) + s;
+        const double nw = lab.wmin();
+        g.builder.add(
+            lab.layer(), nb, -x - nw, -o.extent, -x, length + o.extent);
+        if (both) {
+          g.builder.add(
+              lab.layer(), nb, x, -o.extent, x + nw, length + o.extent);
+        }
+        const fsv::CapRow r3 = lab.solve(g.builder.geometry(), g.wire, o.tol);
+        auto c3 = [&](const pex::NetIndex k) {
+          return k == pex::kNullNetIndex ? 0.0 : r3.coupling(k);
+        };
+        const pex::EndCap e = model.end(key, w, s, both ? s : -1, -1);
+        const std::string name
+            = ctx.name() + " s=" + fmt(sf) + "smin " + (both ? "both" : "one");
+        lab.row("e16",
+                name,
+                "end_total",
+                (r3.total() - (r2.total() * length)) / 2,
+                r3.sigma[g.wire] / 2,
+                e.total);
+        lab.row("e16",
+                name,
+                "end_lateral",
+                (c3(nb) - (unit_lateral * length)) / 2,
+                r3.sigma[g.wire] / 2,
+                e.left + e.right);
+        lab.row("e16",
+                name,
+                "end_planes",
+                (c3(g.below) + c3(g.above) - (unit_planes * length)) / 2,
+                r3.sigma[g.wire] / 2,
+                e.below + e.above);
+      }
+    }
+  }
+}
+
 // e15: the pieces of a routed net that are not straight wires, each solved
 // and estimated by the reference evaluator: a bend with the boxes
 // overlapping at the corner and flush, a T, a change to the layer above
@@ -2365,6 +2451,9 @@ int main(int argc, char** argv)
     }
     if (wanted(o, "e15")) {
       junctions(lab);
+    }
+    if (wanted(o, "e16")) {
+      oneSided(lab);
     }
     if (wanted(o, "model")) {  // not among the default groups
       modelOnly(lab);

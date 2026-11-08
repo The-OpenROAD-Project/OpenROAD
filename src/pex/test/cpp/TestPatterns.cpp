@@ -252,6 +252,25 @@ TEST(Patterns, EndWirePlacesThePlanes)
   EXPECT_DOUBLE_EQ(spans[0].second, -0.5);
   EXPECT_DOUBLE_EQ(spans[1].first, 3.5);
   EXPECT_DOUBLE_EQ(spans[1].second, 6.5);
+  // A neighbor on the left alone, of minimum width, as far as the plane.
+  pattern.facing_gap = -1;
+  pattern.left_spacing = 0.2;
+  const EndPattern::Wire n = pattern.build(stack);
+  ASSERT_GE(n.left, 0);
+  EXPECT_EQ(n.right, kNullNetIndex);
+  const double nw = stack.conductor(stack.layer("met2")).min_width;
+  int found = 0;
+  for (int i = 0; i < static_cast<int>(n.geometry.boxes().size()); i++) {
+    if (n.geometry.boxNet(i) == n.left) {
+      const fsv::Box& b = n.geometry.boxes()[i];
+      EXPECT_DOUBLE_EQ(b.hi[0], -0.3);
+      EXPECT_DOUBLE_EQ(b.lo[0], -0.3 - nw);
+      EXPECT_DOUBLE_EQ(b.lo[1], -1);
+      EXPECT_DOUBLE_EQ(b.hi[1], 4);
+      found++;
+    }
+  }
+  EXPECT_EQ(found, 1);
   pattern.length = 0;
   EXPECT_THROW(pattern.build(stack), std::invalid_argument);
 }

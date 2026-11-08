@@ -204,11 +204,24 @@ struct EndValue
   double facing = 0;
 };
 
+// What one line end adds, in fF, at a tabulated point with a different
+// spacing on each side and no facing wire: the total, and its parts to the
+// planes and to the left and right neighbors.
+struct EndSides
+{
+  double total = 0;
+  double below = 0;
+  double above = 0;
+  double left = 0;
+  double right = 0;
+};
+
 // What one line end adds to a wire's capacitance over its width, the
 // spacing to a neighbor of minimum width on each side running past the end
 // (the same on both), and the gap to a wire as wide facing the end, end to
 // end. The column after the last spacing is no neighbor, and after the
-// last gap no facing wire.
+// last gap no facing wire. Optionally, the ends with a different spacing on
+// each side and no facing wire.
 class EndTable
 {
  public:
@@ -233,13 +246,26 @@ class EndTable
   // that is not finite.
   void set(int width, int spacing, int gap, const EndValue& value);
 
+  // Whether the ends with a different spacing on each side are held.
+  bool hasSides() const { return !sides_.empty(); }
+  // The end with spacing indices `left` and `right` and no facing wire:
+  // the held value when they differ, the end with that spacing on both
+  // sides, halved between them, when they are the same.
+  EndSides sides(int width, int left, int right) const;
+  // Sets the end for left < right and its mirror. Throws
+  // std::invalid_argument for an index off the grid, left >= right, or a
+  // value that is not finite.
+  void setSides(int width, int left, int right, const EndSides& value);
+
  private:
   int index(int width, int spacing, int gap) const;
+  int sideIndex(int width, int left, int right) const;
 
   std::vector<double> widths_;    // µm, ascending
   std::vector<double> spacings_;  // µm, ascending
   std::vector<double> gaps_;      // µm, ascending
   std::vector<EndValue> values_;
+  std::vector<EndSides> sides_;  // [width][left][right]; empty if not held
 };
 
 // What one line end adds, in fF, looked up: the total, and its parts to
@@ -337,9 +363,11 @@ class Model
   // of the spacings and the gap, where the couplings interpolate in their
   // own logarithms; clamped to the table's ranges below. A spacing or gap
   // that is negative, or beyond the last tabulated, means no neighbor or
-  // no facing wire. Each side takes half of the end with that side's
-  // spacing on both. Throws std::out_of_range when the context has no
-  // table.
+  // no facing wire. With the different-sided ends held, those are
+  // interpolated over both spacings at no facing wire, and a facing wire
+  // adds what it adds to the like-sided ends; otherwise each side takes
+  // half of the end with that side's spacing on both. Throws
+  // std::out_of_range when the context has no table.
   EndCap end(const LateralKey& key,
              double width,
              double left = -1,

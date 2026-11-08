@@ -233,6 +233,26 @@ json::object end(const LateralKey& key, const EndTable& table)
                                  rounded(v.facing)});
   }
   o["values"] = std::move(values);
+  if (table.hasSides()) {
+    // Flat, in [width][left][right] order over the pairs with left <
+    // right; each value is [total, to the plane below, to the plane above,
+    // to the left neighbor, to the right neighbor].
+    json::array sides;
+    const int ns = table.spacingCount();
+    for (int w = 0; w < static_cast<int>(table.widths().size()); w++) {
+      for (int l = 0; l < ns; l++) {
+        for (int r = l + 1; r < ns; r++) {
+          const EndSides v = table.sides(w, l, r);
+          sides.push_back(json::array{rounded(v.total),
+                                      rounded(v.below),
+                                      rounded(v.above),
+                                      rounded(v.left),
+                                      rounded(v.right)});
+        }
+      }
+    }
+    o["sides"] = std::move(sides);
+  }
   return o;
 }
 
@@ -260,6 +280,27 @@ void readEnd(const json::object& o, Model& model)
     const int k = static_cast<int>(i);
     table.set(
         k / ng / ns, (k / ng) % ns, k % ng, {v[0], v[1], v[2], v[3], v[4]});
+  }
+  if (const json::value* found = o.if_contains("sides")) {
+    const json::array& sides = found->as_array();
+    const int nw = static_cast<int>(table.widths().size());
+    if (static_cast<int>(sides.size()) != nw * ns * (ns - 1) / 2) {
+      throw std::runtime_error("end table of " + key.layer
+                               + " has the wrong number of sides");
+    }
+    size_t i = 0;
+    for (int w = 0; w < nw; w++) {
+      for (int l = 0; l < ns; l++) {
+        for (int r = l + 1; r < ns; r++) {
+          const std::vector<double> v = numbers(sides[i++]);
+          if (v.size() != 5) {
+            throw std::runtime_error("end table of " + key.layer
+                                     + " has a malformed side");
+          }
+          table.setSides(w, l, r, {v[0], v[1], v[2], v[3], v[4]});
+        }
+      }
+    }
   }
   model.addEnd(key, std::move(table));
 }
