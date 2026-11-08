@@ -14,8 +14,9 @@
   move-assignable.
 - Don't return by `const` value; it prevents moves.
 - Use C++ casts, not C-style casts.
-- For a new cross-module dependency, depend on the interface, not the
-  implementation library, and look up the provider with
+- When a new cross-module dependency would otherwise add a dependency
+  on another module's implementation library (or a cycle), depend on
+  the interface and look up the provider with
   `utl::ServiceRegistry::find<I>()` instead of having an instance
   passed in. See the registry header for conventions.
 

@@ -129,7 +129,9 @@ When a test passes in one mode and fails in the other, check for:
 - **Uninitialized memory**: neither mode initializes it, but at `-O0`
   reads often happen to see zeros, so the bug hides in Debug. This
   includes floats that read as zero in Debug and garbage or subnormal
-  values in `opt`. Run `bazelisk test --config=asan ...` to catch
-  memory errors.
+  values in `opt`. Look for members missing a default initializer.
+- **Memory errors** (out-of-bounds access, use-after-free) can also
+  behave differently by mode. Run `bazelisk test --config=asan ...`;
+  ASan does not detect uninitialized reads.
 - **nullptr through custom hashers**: e.g., passing a null `Pin*` to
   `PinIdHash` can crash.
