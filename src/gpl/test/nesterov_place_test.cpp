@@ -3,8 +3,8 @@
 
 // Global placement on small designs, checked by what a good placement must
 // satisfy instead of by diffing the placed DEF:
-//  - QoR limits: final HPWL and iteration count no worse than recorded,
-//    within a tolerance, and overflow within the target.
+//  - QoR limits: final HPWL and iteration count within a tolerance of the
+//    recorded values, better or worse, and overflow within the target.
 //  - Invariants: movable cells placed with their center in the core, fixed
 //    cells unmoved, and HPWL well below a random spread of the same cells.
 //  - Convergence path: overflow mostly falls, with only small upticks, and
@@ -194,8 +194,9 @@ struct QorCase
   const char* name;
   Design design;
   PlaceOptions options;
-  // Recorded results. A run may do better; it may not do worse than
-  // kHpwlTolerance / kIterationTolerance.
+  // Recorded results. A run must stay within kHpwlTolerance /
+  // kIterationTolerance of them in both directions, so a gain beyond the
+  // tolerance is recorded and kept.
   int64_t hpwl;
   int iterations;
 };
@@ -205,7 +206,8 @@ void PrintTo(const QorCase& c, std::ostream* os)
   *os << c.name;
 }
 
-constexpr double kHpwlTolerance = 0.02;
+// Ordinary gpl changes move these HPWLs by under 0.5%.
+constexpr double kHpwlTolerance = 0.01;
 constexpr double kIterationTolerance = 0.2;
 
 // Designs with enough cells for spreading and the convergence path to mean
@@ -390,10 +392,19 @@ TEST_P(QorTest, PlacesWithinLimits)
   EXPECT_EQ(result.stop, PlaceStop::kConverged);
   EXPECT_LE(result.overflow, c.options.overflow);
   EXPECT_EQ(result.hpwl, hpwl());
-  EXPECT_LE(result.hpwl, c.hpwl * (1 + kHpwlTolerance));
+  const std::string record = "Record " + std::to_string(result.hpwl) + ", "
+                             + std::to_string(result.final_iteration)
+                             + " as this case's HPWL and iterations.";
+  EXPECT_LE(result.hpwl, c.hpwl * (1 + kHpwlTolerance)) << record;
+  EXPECT_GE(result.hpwl, c.hpwl * (1 - kHpwlTolerance)) << record;
   EXPECT_LE(
       result.final_iteration,
-      std::max(c.iterations * (1 + kIterationTolerance), c.iterations + 5.0));
+      std::max(c.iterations * (1 + kIterationTolerance), c.iterations + 5.0))
+      << record;
+  EXPECT_GE(
+      result.final_iteration,
+      std::min(c.iterations * (1 - kIterationTolerance), c.iterations - 5.0))
+      << record;
   expectInvariants(before);
 
   if (movableCount() < kMinCellsForQualityChecks) {
