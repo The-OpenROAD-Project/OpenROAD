@@ -178,21 +178,14 @@ class Rebuffer : public sta::dbStaState
   sta::Delay upstreamDelay(const sta::Pin* input,
                            const sta::RiseFall* rf,
                            sta::LibertyCell* cell);
-  // Margined max slew of a driver output port in `scene`; INF without a
-  // limit.
-  float drvrMaxSlew(const sta::LibertyPort* out_port, const sta::Scene* scene);
   // Slack at the driver pin if the driver were resized to `cell`, including
   // the extra delay a larger input capacitance adds to the previous stage.
-  // Empty when `cell` has no equivalent arc, violates its slew limits, or
-  // (for a resize) its max capacitance.
+  // Empty when `cell` has no equivalent arc or violates the driver's slew
+  // limit.
   std::optional<FixedDelay> slackWithDriverCell(const BufferedNetPtr& bnet,
                                                 sta::LibertyCell* cell);
-  // False when another arc into the driver output would exceed the slew
-  // limit with the driver resized to `cell`.
-  bool otherArcSlewsMeet(const BufferedNetPtr& bnet, sta::LibertyCell* cell);
-  // False when resizing the driver to `cell` would exceed the max capacitance
-  // of a previous-stage driver, or slow it enough to push one of its other
-  // loads below `slack_limit`.
+  // False when resizing the driver to `cell` would slow a previous-stage
+  // driver enough to push one of its other loads below `slack_limit`.
   bool upstreamStagesOk(sta::LibertyCell* cell, FixedDelay slack_limit);
   // Pick the smallest (tree + driver) area among the candidate trees and the
   // driver's swappable cells whose slack meets `slack_target`, the target the

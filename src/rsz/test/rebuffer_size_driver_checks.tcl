@@ -3,13 +3,11 @@
 #   base, side_ok, nand_far: controls that are upsized.
 #   aoi:       a candidate is timed with its slowest conditional arc.
 #   side_crit: a weak top-level input slows its critical sibling load.
-#   cap:       the larger input exceeds the input port's max capacitance.
 #   nand_near: the other input's slack does not constrain the resize.
 #   tied:      both inputs share one weak net, so both add to its delay.
 #   multi:     the input net's second, weak driver sets the extra delay.
 #   mixed:     like side_crit, with set_drive 0 under set_driving_cell.
 #   dff:       a flip-flop with only Q connected keeps its cell.
-#   capdn:     INV_X1 would meet timing but exceed its margined max cap.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
@@ -73,7 +71,7 @@ proc add_sibling { name } {
   make_inst side_$name INV_X1 5 [expr { $y - 10 }] [list A $in ZN $out]
 }
 
-foreach name {base cap side_ok side_crit mixed} {
+foreach name {base side_ok side_crit mixed} {
   make_circuit $name INV_X1 {A} 400
 }
 add_sibling side_ok
@@ -102,19 +100,6 @@ make_inst drv_dff DFF_X1 5 $y [list D [make_port in_dff_D INPUT 0 $y] \
 make_inst ld_dff INV_X1 350 $y \
   [list A $dff_q ZN [make_port out_dff OUTPUT 370 $y]]
 set y [expr { $y + 20 }]
-# drv_capdn (INV_X2) drives eight INV_X4 loads 2 um apart, about 50 fF:
-# above 0.8 x 60.73 fF, the margined max capacitance of INV_X1, but within
-# its slew limit, so only the candidate's max capacitance check keeps
-# INV_X2 instead of downsizing it.
-set capdn [odb::dbNet_create $block n_capdn]
-make_inst drv_capdn INV_X2 5 $y [list A [make_port in_capdn_A INPUT 0 $y] \
-  ZN $capdn]
-for { set i 0 } { $i < 8 } { incr i } {
-  set x [expr { 10 + 2 * $i }]
-  make_inst ld_capdn_$i INV_X4 $x $y \
-    [list A $capdn ZN [make_port out_capdn_$i OUTPUT $x [expr { $y + 10 }]]]
-}
-set y [expr { $y + 20 }]
 foreach net $dont_touch {
   $net setDoNotTouch true
 }
@@ -125,14 +110,12 @@ create_clock -period 0.1 -name dff_clk [get_ports in_dff_CK]
 set_input_delay -clock clk 0 [all_inputs]
 set_output_delay -clock clk 0 [all_outputs]
 set_output_delay -clock clk -0.1 [get_ports out_dff]
-set_output_delay -clock clk -0.3 [get_ports out_capdn_*]
 set_driving_cell -lib_cell INV_X1 -pin ZN \
   [get_ports {in_side_ok_A in_side_crit_A}]
 set_output_delay -clock clk 0.08 [get_ports out_side_crit_side]
 set_driving_cell -lib_cell INV_X1 -pin ZN [get_ports in_mixed_A]
 set_drive 0 [get_ports in_mixed_A]
 set_output_delay -clock clk 0.08 [get_ports out_mixed_side]
-set_max_capacitance 0.003 [get_ports in_cap_A]
 set_drive 20 [get_ports {in_nand_far_A2 in_nand_near_A2}]
 set_input_delay -clock clk -0.3 [get_ports in_nand_far_A2]
 set_input_delay -clock clk -0.07 [get_ports in_nand_near_A2]
@@ -149,7 +132,7 @@ estimate_parasitics -placement
 set_opt_config -rebuffer_size_driver true
 rsz::fully_rebuffer NULL
 
-foreach name {base side_ok nand_far aoi side_crit mixed cap nand_near tied multi dff capdn} {
+foreach name {base side_ok nand_far aoi side_crit mixed nand_near tied multi dff} {
   puts "drv_$name [[[$block findInst drv_$name] getMaster] getName]"
 }
 

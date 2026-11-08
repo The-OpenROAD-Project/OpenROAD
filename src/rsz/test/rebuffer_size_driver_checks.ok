@@ -3,19 +3,17 @@
    Iter   |    Area   | Removed | Inserted |   Pins
           |           | Buffers | Buffers  | Remaining
 -------------------------------------------------------
-        0 |     +0.0% |       0 |        0 |        12
-        1 |     +5.8% |       0 |        1 |        11
-        2 |     +6.7% |       0 |        1 |        10
-        3 |    +17.5% |       0 |        2 |         9
-        4 |    +19.2% |       0 |        2 |         8
-        5 |    +20.8% |       0 |        2 |         7
-        6 |    +26.7% |       0 |        3 |         6
-        7 |    +37.5% |       0 |        4 |         5
-        8 |    +43.3% |       0 |        5 |         4
-        9 |    +43.3% |       0 |        5 |         3
-       10 |    +54.2% |       0 |        6 |         2
-       11 |    +55.0% |       0 |        6 |         1
-    final |    +55.0% |       0 |        6 |         0
+        0 |     +0.0% |       0 |        0 |        10
+        1 |     +9.6% |       0 |        1 |         9
+        2 |    +11.0% |       0 |        1 |         8
+        3 |    +28.8% |       0 |        2 |         7
+        4 |    +31.5% |       0 |        2 |         6
+        5 |    +34.2% |       0 |        2 |         5
+        6 |    +43.8% |       0 |        3 |         4
+        7 |    +61.6% |       0 |        4 |         3
+        8 |    +71.2% |       0 |        5 |         2
+        9 |    +72.6% |       0 |        5 |         1
+    final |    +72.6% |       0 |        5 |         0
 -------------------------------------------------------
 [INFO RSZ-2023] Resized 4 drivers while rebuffering.
 drv_base INV_X2
@@ -24,10 +22,8 @@ drv_nand_far NAND2_X2
 drv_aoi AOI221_X2
 drv_side_crit INV_X1
 drv_mixed INV_X1
-drv_cap INV_X1
 drv_nand_near NAND2_X2
 drv_tied NAND2_X1
 drv_multi INV_X1
 drv_dff DFF_X1
-drv_capdn INV_X2
 [INFO RSZ-0175] Driver sizing during rebuffering has been disabled.
