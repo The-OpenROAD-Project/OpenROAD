@@ -58,6 +58,11 @@ struct BuildOptions
   std::vector<double> coverages{0.1, 0.25, 0.5, 0.75};
   double crossing_length = 10;
   double crossing_length_long = 30;
+  // The crossing reach: how far a single crossing of the cover's minimum
+  // width runs past the wire, and the wire past it, as multiples of the
+  // wider of the two layers' minimum widths; with a crossing running on
+  // as far as the planes (at least twice the last) besides.
+  std::vector<double> reach_factors{0, 2, 5, 12, 30};
   // The end patterns: a wire of this length, or five times its width if
   // longer.
   double end_length = 2;
@@ -190,7 +195,9 @@ KeptFit fitKept(const std::vector<double>& gaps,
 // at every crossing spacing; each array gives the share kept over the gap
 // between its crossings, and the table holds them fitted (fitKept). Throws
 // std::runtime_error when the coupling shares without neighbors fit no
-// kept amount.
+// kept amount. Each table also holds its reach (CrossingReach), from one
+// crossing over a wire alone at every pair of the reach factors, against
+// one running on and none; a held table without one gains it.
 void buildCrossing(const fsv::Stack& stack,
                    Layer layer,
                    Layer cover,

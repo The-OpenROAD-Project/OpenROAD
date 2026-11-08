@@ -311,6 +311,35 @@ TEST(Patterns, CornerShapes)
   EXPECT_THROW(pattern.build(stack), std::invalid_argument);
 }
 
+TEST(Patterns, ReachPattern)
+{
+  const fsv::Stack& stack = sky130();
+  ReachPattern p;
+  p.layer = stack.layer("met2");
+  p.cover = stack.layer("met1");
+  p.width = 0.14;
+  p.crossing_width = 0.2;
+  p.past = 1;
+  p.extent = 0.5;
+  const ReachPattern::Pair pair = p.build(stack);
+  ASSERT_EQ(pair.geometry.boxes().size(), 2u);
+  const fsv::Box& wire = pair.geometry.boxes()[0];
+  EXPECT_EQ(pair.geometry.boxNet(0), pair.wire);
+  EXPECT_DOUBLE_EQ(wire.lo[1], -1.1);
+  EXPECT_DOUBLE_EQ(wire.hi[1], 1.1);
+  const fsv::Box& cross = pair.geometry.boxes()[1];
+  EXPECT_EQ(pair.geometry.boxNet(1), pair.cross);
+  EXPECT_DOUBLE_EQ(cross.lo[0], -0.57);
+  EXPECT_DOUBLE_EQ(cross.hi[0], 0.57);
+  EXPECT_DOUBLE_EQ(cross.hi[1] - cross.lo[1], 0.2);
+  p.extent = -1;
+  const ReachPattern::Pair alone = p.build(stack);
+  EXPECT_EQ(alone.geometry.boxes().size(), 1u);
+  EXPECT_EQ(alone.cross, kNullNetIndex);
+  p.past = -1;
+  EXPECT_THROW(p.build(stack), std::invalid_argument);
+}
+
 TEST(Patterns, CrossingArrayRoundsToWholePitches)
 {
   const fsv::Stack& stack = sky130();

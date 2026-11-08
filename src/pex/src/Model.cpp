@@ -112,6 +112,29 @@ CrossingTable::CrossingTable(std::vector<double> gaps,
   }
 }
 
+void CrossingTable::setReach(CrossingReach reach)
+{
+  if (!(reach.width > 0)) {
+    throw std::invalid_argument("crossing reach needs a positive width");
+  }
+  requireGrid("crossing reach past", reach.past, false);
+  requireGrid("crossing reach extent", reach.extents, false);
+  if (reach.past.front() != 0 || reach.extents.front() != 0) {
+    throw std::invalid_argument("crossing reach grids start at 0");
+  }
+  if (reach.values.size() != reach.past.size() * reach.extents.size()) {
+    throw std::invalid_argument(
+        "crossing reach has " + std::to_string(reach.values.size())
+        + " values for " + std::to_string(reach.past.size()) + " x "
+        + std::to_string(reach.extents.size()));
+  }
+  for (const CrossingShare& v : reach.values) {
+    requireFinite("crossing reach", v.total);
+    requireFinite("crossing reach", v.cross);
+  }
+  reach_ = std::move(reach);
+}
+
 DiagonalTable::DiagonalTable(std::vector<double> widths,
                              std::vector<double> gaps,
                              std::vector<double> spacings,
@@ -522,6 +545,64 @@ CrossingShare Model::crossingOneSided(const CrossingKey& key,
     return CrossingShare{segmentAt(t, c, d, false).rate,
                          segmentAt(t, c, d, true).rate};
   });
+}
+
+CrossingShare Model::crossingReach(const CrossingKey& key,
+                                   const double from,
+                                   const double to,
+                                   const double extent_a,
+                                   const double extent_b,
+                                   const double left,
+                                   const double right) const
+{
+  const CrossingTable& t = requireCrossing(*this, key);
+  if (!t.hasReach()) {
+    return {1, 1};
+  }
+  const CrossingReach& r = t.reach();
+  auto ratio = [&](const double d, const double e) {
+    if (e >= r.extents.back()) {
+      return CrossingShare{1, 1};
+    }
+    const Bracket p = bracketLinear(r.past, d);
+    const Bracket x = bracketLinear(r.extents, std::max(0.0, e));
+    CrossingShare out;
+    for (const auto& [pi, pw] :
+         {std::pair{p.lo, 1 - p.t}, std::pair{p.hi, p.t}}) {
+      for (const auto& [xi, xw] :
+           {std::pair{x.lo, 1 - x.t}, std::pair{x.hi, x.t}}) {
+        out.total += pw * xw * r.at(pi, xi).total;
+        out.cross += pw * xw * r.at(pi, xi).cross;
+      }
+    }
+    return out;
+  };
+  auto both = [&](const double d) {
+    const CrossingShare a = ratio(d, extent_a);
+    const CrossingShare b = ratio(d, extent_b);
+    return CrossingShare{(a.total + b.total) / 2, (a.cross + b.cross) / 2};
+  };
+  const CrossingShare at_to = both(std::max(0.0, to));
+  if (to <= 0) {
+    return at_to;
+  }
+  const double d0 = std::max(0.0, from);
+  const CrossingShare at_from = both(d0);
+  const CrossingShare k0 = crossingKept(key, d0, left, right);
+  const CrossingShare k1 = crossingKept(key, to, left, right);
+  auto part = [&](const double kept0,
+                  const double kept1,
+                  const double ratio0,
+                  const double ratio1) {
+    const double g0 = (r.width + kept0) / 2;
+    const double g1 = (r.width + kept1) / 2;
+    if (g1 - g0 <= 1e-12) {
+      return ratio1;
+    }
+    return std::clamp(((ratio1 * g1) - (ratio0 * g0)) / (g1 - g0), 0.0, 2.0);
+  };
+  return {part(k0.total, k1.total, at_from.total, at_to.total),
+          part(k0.cross, k1.cross, at_from.cross, at_to.cross)};
 }
 
 DiagonalTable& Model::addDiagonal(const DiagonalKey& key, DiagonalTable table)

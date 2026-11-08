@@ -28,9 +28,11 @@ Model sample()
       }
     }
   }
-  model.addCrossing(
+  CrossingTable& crossing = model.addCrossing(
       {"m2", "m3"},
       CrossingTable({0.1, 0.9, 2.7}, {{0.88, 0.9}, {0.73, 0.8}, {0.48, 0.6}}));
+  crossing.setReach(
+      {0.14, {0, 0.3}, {0, 2}, {{0.5, 0.4}, {1, 1}, {0.3, 0.2}, {1, 1}}});
   model.addCrossing(
       {"m2", "m1"},
       CrossingTable({0.1, 0.9},
@@ -96,8 +98,15 @@ TEST(ModelJson, RoundTrip)
   EXPECT_EQ(c->values()[1].total, 0.73);
   EXPECT_EQ(c->values()[2].cross, 0.6);
   EXPECT_TRUE(c->spacings().empty());
+  ASSERT_TRUE(c->hasReach());
+  EXPECT_EQ(c->reach().width, 0.14);
+  EXPECT_EQ(c->reach().past, (std::vector<double>{0, 0.3}));
+  EXPECT_EQ(c->reach().extents, (std::vector<double>{0, 2}));
+  EXPECT_EQ(c->reach().at(1, 0).total, 0.3);
+  EXPECT_EQ(c->reach().at(1, 0).cross, 0.2);
   const CrossingTable* beside = back.crossing({"m2", "m1"});
   ASSERT_NE(beside, nullptr);
+  EXPECT_FALSE(beside->hasReach());
   EXPECT_EQ(beside->spacings(), (std::vector<double>{0.14}));
   EXPECT_EQ(beside->at(0, 1).total, 0.5);
   EXPECT_EQ(beside->at(1, 1).cross, 0.75);

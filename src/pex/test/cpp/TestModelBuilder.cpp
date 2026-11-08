@@ -69,6 +69,7 @@ BuildOptions smallBuild(const int threads)
   o.threads = threads;
   o.extent = 3;
   o.crossing_spacing_factors = {};  // the crossing test builds them
+  o.reach_factors = {0, 2};         // with a coarse reach
   o.end_spacing_factors = {};       // and the end test
   o.facing_factors = {};
   return o;
@@ -196,6 +197,28 @@ TEST(ModelBuilder, CrossingAndEndTables)
   EXPECT_GT(c->at(1, 1).cross, 0);
   EXPECT_THROW(buildCrossing(sky130(), L("met2"), L("met2"), o, model),
                std::invalid_argument);
+  // One crossing ending at the wire's sides keeps less of the coupling
+  // than one running past them; one running on keeps all of it.
+  ASSERT_TRUE(c->hasReach());
+  const CrossingReach& reach = c->reach();
+  EXPECT_EQ(reach.past, (std::vector<double>{0, 0.6}));
+  ASSERT_EQ(reach.extents.size(), 3u);
+  EXPECT_DOUBLE_EQ(reach.extents[2], 3);
+  EXPECT_DOUBLE_EQ(reach.width, 0.3);
+  EXPECT_LT(reach.at(1, 0).cross, reach.at(1, 1).cross);
+  EXPECT_GT(reach.at(1, 0).cross, 0.2);
+  EXPECT_LT(reach.at(1, 1).cross, 1);
+  EXPECT_EQ(reach.at(1, 2).cross, 1);
+  EXPECT_EQ(reach.at(0, 2).total, 1);
+  // A table held without a reach gains one and keeps its shares.
+  const double share = c->at(1, 0).total;
+  model.addCrossing({"met2", "met3"},
+                    CrossingTable(c->gaps(), c->values(), c->spacings()));
+  ASSERT_FALSE(model.crossing({"met2", "met3"})->hasReach());
+  buildCrossing(sky130(), L("met2"), L("met3"), o, model);
+  c = model.crossing({"met2", "met3"});
+  EXPECT_TRUE(c->hasReach());
+  EXPECT_EQ(c->at(1, 0).total, share);
 
   o.end_spacing_factors = {1};
   o.facing_factors = {1, 4};

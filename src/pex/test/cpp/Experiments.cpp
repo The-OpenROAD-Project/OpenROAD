@@ -2054,18 +2054,19 @@ void oneSided(Lab& lab)
   }
 }
 
-// e15: the pieces of a routed net that are not straight wires, each solved
-// and estimated by the reference evaluator: a bend with the boxes
-// overlapping at the corner and flush, a T, a cross of two wires of the
-// net, a change to the layer above and below through a via, a landing pad
-// between vias from the layer below to the layer above, a wire of another net
-// crossing from below and from above, short boxes 1-8 widths long, and a line
-// end facing another net's wire. Each coupling is compared too. The wire runs
-// along x on --layer; branches go to +y. Open: nothing else. Dense: a neighbor
-// at minimum spacing on the -y side and a plane two layers up. Tight, for the
-// cases whose net stays on the wire's track: neighbors at minimum spacing on
-// both sides and the plane; the cross, open only. The model is for
-// --layers (default: the layer and those next to it).
+// e15: the pieces of a routed net that are not straight wires, each solved and
+// estimated by the reference evaluator: a bend with the boxes overlapping at
+// the corner and flush, a T, a cross of two wires of the net, a change to the
+// layer above and below through a via, a landing pad between vias from the
+// layer below to the layer above, a wire of another net crossing from below and
+// from above, the net's own wire crossing and that wire as the target with the
+// first as another net, short boxes 1-8 widths long, and a line end facing
+// another net's wire. Each coupling is compared too. The wire runs along x on
+// --layer; branches go to +y. Open: nothing else. Dense: a neighbor at minimum
+// spacing on the -y side and a plane two layers up. Tight, for the cases whose
+// net stays on the wire's track: neighbors at minimum spacing on both sides and
+// the plane; the cross, open only. The model is for --layers (default: the
+// layer and those next to it).
 void junctions(Lab& lab)
 {
   const Options& o = lab.options();
@@ -2225,6 +2226,21 @@ void junctions(Lab& lab)
                          false});
       }
     }
+    // The own-net crossing's other wire as the target, the wire as
+    // another net: the crossing then ends short of the target's fringe.
+    cases.push_back({"flip_mid_" + other,
+                     [&, other](pex::PatternBuilder& b, const pex::NetIndex n) {
+                       b.add(lab.layer(m), b.net("crossing"), 0, 0, length, w);
+                       const double wc = lab.conductor(other).min_width;
+                       const double x = length / 2;
+                       b.add(lab.layer(other),
+                             n,
+                             x - (wc / 2),
+                             -length,
+                             x + (wc / 2),
+                             length);
+                     },
+                     false});
     // Three crossings of one net at four of their widths' pitch.
     cases.push_back({"crossed3_" + other,
                      [&, other](pex::PatternBuilder& b, const pex::NetIndex n) {
@@ -2308,7 +2324,8 @@ void junctions(Lab& lab)
       }
       std::printf(
           "#   %s: model - truth %+.4f fF; %d pieces, %d ends (%d via), "
-          "%d corners; %d bends, %d tees, %d crosses\n",
+          "%d corners; %d bends, %d tees, %d crosses; ground %.4f "
+          "(pieces %.4f, parallel %.4f, ends %.4f)\n",
           name.c_str(),
           est.total() - row.total(),
           est.pieces,
@@ -2317,7 +2334,18 @@ void junctions(Lab& lab)
           est.corners,
           est.bends,
           est.tees,
-          est.crosses);
+          est.crosses,
+          est.ground,
+          est.ground_sources[0],
+          est.ground_sources[1],
+          est.ground_sources[2]);
+      for (const auto& [k, src] : est.sources) {
+        std::printf("#     net %d by source:", static_cast<int>(k));
+        for (const double v : src) {
+          std::printf(" %.4f", v);
+        }
+        std::printf("\n");
+      }
     }
   }
 }

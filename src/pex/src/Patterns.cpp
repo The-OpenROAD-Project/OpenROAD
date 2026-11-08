@@ -284,6 +284,31 @@ CrossingPattern::Array CrossingPattern::build(const fsv::Stack& stack) const
   return array;
 }
 
+ReachPattern::Pair ReachPattern::build(const fsv::Stack& stack) const
+{
+  if (width <= 0 || crossing_width <= 0 || past < 0) {
+    throw std::invalid_argument(
+        "the reach pattern needs positive widths and a past of at least 0");
+  }
+  PatternBuilder builder(stack);
+  Pair pair;
+  const double w = width;
+  const double half = (crossing_width / 2) + past;
+  pair.wire = builder.net("wire");
+  builder.add(layer, pair.wire, -w / 2, -half, w / 2, half);
+  if (extent >= 0) {
+    pair.cross = builder.net("cross");
+    builder.add(cover,
+                pair.cross,
+                -w / 2 - extent,
+                -crossing_width / 2,
+                w / 2 + extent,
+                crossing_width / 2);
+  }
+  pair.geometry = std::move(builder.geometry());
+  return pair;
+}
+
 DiagonalPattern::Section DiagonalPattern::build(const fsv::Stack& stack) const
 {
   if (width <= 0) {

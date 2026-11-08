@@ -224,6 +224,28 @@ struct CrossingPattern
   Array build(const fsv::Stack& stack) const;
 };
 
+// The pattern behind a crossing table's reach: a wire along y on `layer`,
+// centered on 0, running `past` beyond both sides of one crossing of
+// `crossing_width` on `cover` along x at y = 0, which runs `extent` past
+// both of the wire's sides; no crossing when the extent is negative.
+struct ReachPattern
+{
+  Layer layer;
+  Layer cover;
+  double width;
+  double crossing_width;
+  double past;
+  double extent;
+
+  struct Pair
+  {
+    fsv::Geometry geometry;
+    NetIndex wire = kNullNetIndex;
+    NetIndex cross = kNullNetIndex;
+  };
+  Pair build(const fsv::Stack& stack) const;
+};
+
 // The cross section behind the diagonal table: a wire centered at x = 0,
 // a neighbor at `spacing` on the right and another at `far_spacing` on the
 // left (none when negative), and a parallel wire on `other` to the right,

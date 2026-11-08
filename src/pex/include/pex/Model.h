@@ -100,6 +100,25 @@ struct CrossingKey
   auto operator<=>(const CrossingKey&) const = default;
 };
 
+// How much of a crossing's effect a single crossing of a given width
+// keeps when it runs only `extent` past the wire's sides, for the wire
+// running `past` beyond the crossing's sides, relative to a crossing that
+// runs on: for the total and for the coupling, alone with no neighbor.
+// The past and extent grids start at 0; the last extent is one running
+// on. Values in [past][extent] order.
+struct CrossingReach
+{
+  double width = 0;  // the crossing's, µm
+  std::vector<double> past;
+  std::vector<double> extents;
+  std::vector<CrossingShare> values;
+
+  const CrossingShare& at(int p, int e) const
+  {
+    return values[(p * extents.size()) + e];
+  }
+};
+
 // The shares over the gaps, for each spacing to neighbors of minimum width
 // on both sides of the wire under the same crossings, and with no
 // neighbor last.
@@ -122,11 +141,18 @@ class CrossingTable
   {
     return values_[(spacing * gaps_.size()) + gap];
   }
+  // The reach is optional. Throws std::invalid_argument for a width that
+  // is not positive, a grid not ascending from 0, a value count that is
+  // not past x extents, or a value that is not finite.
+  bool hasReach() const { return !reach_.values.empty(); }
+  const CrossingReach& reach() const { return reach_; }
+  void setReach(CrossingReach reach);
 
  private:
   std::vector<double> gaps_;      // µm, ascending, all positive
   std::vector<double> spacings_;  // µm, ascending
   std::vector<CrossingShare> values_;
+  CrossingReach reach_;  // empty if not held
 };
 
 // The coupling per unit length to a parallel wire on a nearby layer lying
@@ -365,6 +391,22 @@ class Model
                                  double d,
                                  double left = -1,
                                  double right = -1) const;
+  // The part of a single crossing's effect on the wire over [from, to]
+  // past one of the crossing's sides (to <= 0: under the crossing) that
+  // the crossing keeps running `extent_a` and `extent_b` past the wire's
+  // two sides, each side of the crossing taking half: 1 without a reach.
+  // Through the reach, the effect kept up to a distance d is the
+  // crossing's half width plus half the kept amount, times the ratio at
+  // d, linear in both distances, held past the last past and 1 past the
+  // last extent; the part over the span is its difference across it.
+  // Throws std::out_of_range when the pair has no table.
+  CrossingShare crossingReach(const CrossingKey& key,
+                              double from,
+                              double to,
+                              double extent_a,
+                              double extent_b,
+                              double left = -1,
+                              double right = -1) const;
 
   DiagonalTable& addDiagonal(const DiagonalKey& key, DiagonalTable table);
   const DiagonalTable* diagonal(const DiagonalKey& key) const;

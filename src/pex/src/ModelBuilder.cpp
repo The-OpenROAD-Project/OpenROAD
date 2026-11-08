@@ -657,6 +657,110 @@ KeptFit fitKept(const std::vector<double>& gaps,
   return {length, std::sqrt(residual(length) / gaps.size())};
 }
 
+namespace {
+
+// The reach of each of the layer's crossing tables that has none. Per
+// table, the wire running each past factor beyond one crossing running
+// each extent factor past it, one running on, and none.
+void buildReach(const fsv::Stack& stack,
+                const Layer layer,
+                const std::vector<Layer>& covers,
+                const BuildOptions& options,
+                Model& model)
+{
+  const fsv::Stack::Conductor& conductor = requireConductor(stack, layer);
+  struct Job
+  {
+    double total = 0;
+    double cross = 0;
+  };
+  struct Table
+  {
+    Layer cover;
+    CrossingKey key;
+    double width;  // the crossing's
+    std::vector<double> grid;
+    double running_on;
+    std::vector<Job> jobs;  // [past][extent, running on, none]
+  };
+  std::vector<Table> tables;
+  for (const Layer cover : covers) {
+    const fsv::Stack::Conductor& cover_conductor
+        = requireConductor(stack, cover);
+    const CrossingKey key{conductor.name, cover_conductor.name};
+    const CrossingTable* held = model.crossing(key);
+    if (held == nullptr || held->hasReach()) {
+      continue;
+    }
+    const double unit
+        = std::max(conductor.min_width, cover_conductor.min_width);
+    Table table{cover, key, cover_conductor.min_width, {}, 0, {}};
+    for (const double f : options.reach_factors) {
+      table.grid.push_back(f * unit);
+    }
+    table.running_on = std::max(options.extent, 2 * table.grid.back() + unit);
+    table.jobs.resize(table.grid.size() * (table.grid.size() + 2));
+    tables.push_back(std::move(table));
+  }
+  std::vector<std::pair<int, int>> tasks;
+  for (int t = 0; t < static_cast<int>(tables.size()); t++) {
+    for (int j = 0; j < static_cast<int>(tables[t].jobs.size()); j++) {
+      tasks.emplace_back(t, j);
+    }
+  }
+  runJobs(options, tasks.size(), [&](const int i, fsv::Solver& solver) {
+    Table& table = tables[tasks[i].first];
+    const int j = tasks[i].second;
+    const int per_past = static_cast<int>(table.grid.size()) + 2;
+    const int e = j % per_past;
+    ReachPattern pattern;
+    pattern.layer = layer;
+    pattern.cover = table.cover;
+    pattern.width = conductor.min_width;
+    pattern.crossing_width = table.width;
+    pattern.past = table.grid[j / per_past];
+    pattern.extent = e < per_past - 2    ? table.grid[e]
+                     : e == per_past - 2 ? table.running_on
+                                         : -1;
+    const ReachPattern::Pair pair = pattern.build(stack);
+    const fsv::Scene scene(pair.geometry, stack);
+    const fsv::CapRow row
+        = solver.solve(scene, pair.wire, solveOptions(options.tol / 3));
+    table.jobs[j].total = row.total();
+    table.jobs[j].cross
+        = pair.cross == kNullNetIndex ? 0 : row.coupling(pair.cross);
+  });
+  for (const Table& table : tables) {
+    const int n = static_cast<int>(table.grid.size());
+    CrossingReach reach;
+    reach.width = table.width;
+    reach.past = table.grid;
+    reach.extents = table.grid;
+    reach.extents.push_back(table.running_on);
+    for (int p = 0; p < n; p++) {
+      const Job* row = &table.jobs[p * (n + 2)];
+      const Job& on = row[n];
+      const Job& none = row[n + 1];
+      // A total the crossing changes too little against the solver's
+      // error takes the coupling's ratio.
+      const double effect = on.total - none.total;
+      const bool total_usable = std::abs(effect) > 0.05 * none.total;
+      for (int e = 0; e <= n; e++) {
+        const Job& job = e < n ? row[e] : on;
+        const double cross = on.cross > 0 ? job.cross / on.cross : 1;
+        const double total
+            = total_usable ? (job.total - none.total) / effect : cross;
+        reach.values.push_back({total, cross});
+      }
+    }
+    CrossingTable updated = *model.crossing(table.key);
+    updated.setReach(std::move(reach));
+    model.addCrossing(table.key, std::move(updated));
+  }
+}
+
+}  // namespace
+
 void buildCrossing(const fsv::Stack& stack,
                    const Layer layer,
                    const Layer cover,
@@ -725,7 +829,7 @@ void buildCrossings(const fsv::Stack& stack,
     if (const CrossingTable* built = model.crossing(key)) {
       requireGrid(
           "crossing table of " + key.layer, built->spacings(), spacings);
-      continue;  // built before
+      continue;  // built before; its reach follows below
     }
     Table table{cover,
                 key,
@@ -923,6 +1027,7 @@ void buildCrossings(const fsv::Stack& stack,
     }
     model.addCrossing(table.key, CrossingTable(gaps, values, spacings));
   }
+  buildReach(stack, layer, covers, options, model);
 }
 
 void buildEnds(const fsv::Stack& stack,

@@ -134,6 +134,23 @@ json::object crossing(const CrossingKey& key, const CrossingTable& table)
   }
   o["total"] = std::move(total);
   o["cross"] = std::move(cross);
+  if (table.hasReach()) {
+    const CrossingReach& r = table.reach();
+    json::object reach;
+    reach["width"] = rounded(r.width);
+    reach["past"] = numbers(r.past);
+    reach["extents"] = numbers(r.extents);
+    // Flat, in [past][extent] order.
+    json::array reach_total;
+    json::array reach_cross;
+    for (const CrossingShare& s : r.values) {
+      reach_total.push_back(rounded(s.total));
+      reach_cross.push_back(rounded(s.cross));
+    }
+    reach["total"] = std::move(reach_total);
+    reach["cross"] = std::move(reach_cross);
+    o["reach"] = std::move(reach);
+  }
   return o;
 }
 
@@ -155,7 +172,25 @@ void readCrossing(const json::object& o, Model& model)
   for (size_t i = 0; i < total.size(); i++) {
     values.push_back({total[i], cross[i]});
   }
-  model.addCrossing(key, CrossingTable(gaps, values, spacings));
+  CrossingTable table(gaps, values, spacings);
+  if (const json::value* found = o.if_contains("reach")) {
+    const json::object& r = found->as_object();
+    CrossingReach reach;
+    reach.width = r.at("width").to_number<double>();
+    reach.past = numbers(r.at("past"));
+    reach.extents = numbers(r.at("extents"));
+    const std::vector<double> reach_total = numbers(r.at("total"));
+    const std::vector<double> reach_cross = numbers(r.at("cross"));
+    if (reach_total.size() != reach_cross.size()) {
+      throw std::runtime_error("crossing reach of " + key.layer
+                               + " has total and cross arrays that differ");
+    }
+    for (size_t i = 0; i < reach_total.size(); i++) {
+      reach.values.push_back({reach_total[i], reach_cross[i]});
+    }
+    table.setReach(std::move(reach));
+  }
+  model.addCrossing(key, std::move(table));
 }
 
 json::object diagonal(const DiagonalKey& key, const DiagonalTable& table)

@@ -179,6 +179,9 @@ struct Run
   double a1;
   double e0;  // the whole box
   double e1;
+  // How far the box runs past the wire's two sides.
+  double past_lo;
+  double past_hi;
 };
 
 struct Lateral
@@ -193,7 +196,8 @@ struct Lateral
 
 // The share of a layer's crossings over a piece [x0, x1] that no run
 // covers: from the nearest run before and after, through the one-sided
-// shares integrated over the piece.
+// shares integrated over the piece, each as much as the run reaches past
+// the wire's sides keeps (Model::crossingReach).
 // The crossing table is `key`'s, the cover of the tabulated layer
 // standing in for `layer` when that one has none (CoverMap), at the
 // piece's neighbor spacings `left` and `right` (negative: none).
@@ -229,20 +233,30 @@ Cover partialCover(const Model& model,
   };
   double total = 0;
   double cross = 0;
+  auto reach = [&](const Run& r, const double from, const double to) {
+    return model.crossingReach(
+        key, from, to, r.past_lo, r.past_hi, left, right);
+  };
   if (before != nullptr) {
-    const double t
-        = integral(x1 - before->a1, false) - integral(x0 - before->a1, false);
+    const CrossingShare f = reach(*before, x0 - before->a1, x1 - before->a1);
+    const double t = f.total
+                     * (integral(x1 - before->a1, false)
+                        - integral(x0 - before->a1, false));
     const double c
-        = integral(x1 - before->a1, true) - integral(x0 - before->a1, true);
+        = f.cross
+          * (integral(x1 - before->a1, true) - integral(x0 - before->a1, true));
     total += t;
     cross += c;
     cover.nets[before->net] += c;
   }
   if (after != nullptr) {
+    const CrossingShare f = reach(*after, after->a0 - x1, after->a0 - x0);
     const double t
-        = integral(after->a0 - x0, false) - integral(after->a0 - x1, false);
+        = f.total
+          * (integral(after->a0 - x0, false) - integral(after->a0 - x1, false));
     const double c
-        = integral(after->a0 - x0, true) - integral(after->a0 - x1, true);
+        = f.cross
+          * (integral(after->a0 - x0, true) - integral(after->a0 - x1, true));
     total += t;
     cross += c;
     cover.nets[after->net] += c;
@@ -431,7 +445,13 @@ class Wire
             continue;
           }
         } else {
-          runs_[s.layer].push_back({s.net, o0, o1, s.lo[a_], s.hi[a_]});
+          runs_[s.layer].push_back({s.net,
+                                    o0,
+                                    o1,
+                                    s.lo[a_],
+                                    s.hi[a_],
+                                    p0_ - s.lo[p_],
+                                    s.hi[p_] - p1_});
         }
       } else {
         continue;
@@ -527,6 +547,16 @@ class Wire
                 grew = true;
               }
             }
+          }
+          // A box crossing the wire keeps as much of a plane's effect as
+          // it runs past the wire's sides.
+          const CrossingKey key{name_, map_.crossingCover(layers_.layers[l])};
+          if (full.reach1 - full.reach0 <= r.past_lo + r.past_hi + w_
+              && model_.crossing(key) != nullptr) {
+            const CrossingShare f
+                = model_.crossingReach(key, 0, 0, r.past_lo, r.past_hi, sl, sr);
+            full.share = std::clamp(f.total, 0.0, 1.0);
+            full.cross = std::clamp(f.cross, 0.0, 1.0);
           }
           if (best.share > 0) {
             best.rest = full.layer;

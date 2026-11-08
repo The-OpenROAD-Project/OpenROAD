@@ -218,6 +218,49 @@ TEST(Model, CrossingShareNeverNegative)
   }
 }
 
+// A single crossing keeps as much of its effect as it runs past the
+// wire, and the wire past it.
+TEST(Model, CrossingReach)
+{
+  Model model;
+  const CrossingKey key{"m2", "m3"};
+  CrossingTable table({1, 3}, {{0.8, 0.7}, {0.4, 0.3}});
+  model.addCrossing(key, table);
+  EXPECT_EQ(model.crossingReach(key, 0, 1, 0, 0).total, 1);
+  CrossingReach reach;
+  reach.width = 0.2;
+  reach.past = {0, 1};
+  reach.extents = {0, 1, 4};
+  reach.values
+      = {{0.5, 0.4}, {0.8, 0.7}, {1, 1}, {0.3, 0.2}, {0.6, 0.5}, {1, 1}};
+  table.setReach(reach);
+  model.addCrossing(key, table);
+  // Under the crossing: the ratio at no past, each side of the crossing
+  // half; running on past the last extent keeps all.
+  EXPECT_DOUBLE_EQ(model.crossingReach(key, 0, 0, 0, 0).total, 0.5);
+  EXPECT_DOUBLE_EQ(model.crossingReach(key, 0, 0, 0, 10).total, 0.75);
+  EXPECT_DOUBLE_EQ(model.crossingReach(key, 0, 0, 0.5, 0.5).cross, 0.55);
+  EXPECT_EQ(model.crossingReach(key, 0, 0, 4, 5).cross, 1);
+  // Beside it, the difference of the kept effect: (width + kept) / 2
+  // times the ratio, 0.1 x 0.5 at 0 and 0.5 x 0.3 at 1 for the total,
+  // over the 0.4 a crossing running on keeps.
+  EXPECT_DOUBLE_EQ(model.crossingReach(key, 0, 1, 0, 0).total, 0.25);
+  EXPECT_DOUBLE_EQ(model.crossingReach(key, 0, 1, 0, 0).cross,
+                   (0.45 * 0.2 - 0.1 * 0.4) / 0.35);
+  // Past the last gap nothing more is kept: the ratio there, held past
+  // the last past.
+  EXPECT_DOUBLE_EQ(model.crossingReach(key, 3, 5, 0, 0).total, 0.3);
+  CrossingReach bad = reach;
+  bad.past = {0.1, 1};
+  EXPECT_THROW(table.setReach(bad), std::invalid_argument);
+  bad = reach;
+  bad.values.pop_back();
+  EXPECT_THROW(table.setReach(bad), std::invalid_argument);
+  bad = reach;
+  bad.width = 0;
+  EXPECT_THROW(table.setReach(bad), std::invalid_argument);
+}
+
 TEST(Model, DiagonalLookup)
 {
   Model model;
