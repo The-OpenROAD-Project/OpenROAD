@@ -12,19 +12,19 @@ Detailed guides are in `docs/agents/` subdirectory:
 ## Critical Rules
 
 1. **Ask before modifying `src/sta/` files** -- OpenSTA is managed upstream (`Sdc.cc`, `Power.cc`, `Sdc.tcl`, etc.). Prefer fixes in OpenROAD code (e.g., src/dbSta/, src/rsz/) when possible.
-2. Format C++ before commit with `bazelisk run //:tidy_cc` (CI's pinned clang-format; skips `src/sta`, `*.i`, generated ODB code and `third-party/`). Don't run a system `clang-format` on `src/sta/*` or `*.i` files.
+2. Format C++ before commit with `bazelisk run //:tidy_cc`, which uses CI's pinned clang-format and skips `src/sta`, `*.i`, generated ODB code, and `third-party/`. Don't use a system `clang-format`; its version can format differently from CI's.
 3. **Always use `git commit -s`** for DCO compliance. Do not review DCO compliance; CI handles it.
 4. After a merge or pull, run `git submodule update --init --recursive`. After committing or amending inside the `src/sta` submodule, `git add src/sta` in the parent and commit.
 
 ## Build and Test
 
 Bazel is the only build system, on Linux and macOS.
-Register new source files, tools and tests in Bazel `BUILD` files.
+Register new source files, tools, and tests in Bazel `BUILD` files.
 
-- Build: `bazelisk build //:openroad` (the binary is `bazel-bin/openroad`). `etc/Build.sh` is the release build-and-install script (ORFS, Docker, packaging), not for everyday builds.
+- Build: `bazelisk build //:openroad` (the binary is `bazel-bin/openroad`). `etc/Build.sh` is the release build-and-install script (ORFS, Docker, and packaging), not for everyday builds.
 - Test one module: `bazelisk test //src/<module>/test/...`
 - Test one Tcl test: `bazelisk test --test_output=errors //src/<module>/test:<name>-tcl_test`
-- Lint/format check for all languages (C++, Tcl, Bazel, Python, YAML): `bazelisk test //:lint_test`; auto-fix with `bazelisk run //:fix_lint`
+- Lint/format check for all languages (C++, Tcl, Bazel, Python, and YAML): `bazelisk test //:lint_test`; auto-fix with `bazelisk run //:fix_lint`
 
 ## AI Agent Skills
 

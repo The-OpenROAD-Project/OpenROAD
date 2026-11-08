@@ -17,11 +17,11 @@ Clang-Tidy CI fails on any clang-tidy finding in the lines the PR changes; revie
 ## What CI Runs
 
 **Jenkins** first runs `bazel-build-tests`; only if it succeeds do
-`bazel-ci` and the flow steps run, in parallel. `bazel-docs`, `bazel-nogui`
+`bazel-ci` and the flow steps run, in parallel. `bazel-docs`, `bazel-nogui`,
 and the Docker builds run alongside. Each step leaves a log named after it
 (see CI Artifacts). The build and test steps pass `--config=ci` (remote
 cache, needs credentials), `--//:platform=gui` (the local default is
-`cli`) and `--force_pic`. Drop `--config=ci` when reproducing locally;
+`cli`), and `--force_pic`. Drop `--config=ci` when reproducing locally;
 keep the other two.
 
 | Step | Reproduce locally |
@@ -37,15 +37,16 @@ keep the other two.
 - Jenkins also builds the Docker image on six Linux distros and
   smoke-tests the binary, which exercises `etc/DependencyInstaller.sh`.
 - `[skip ci]` or `[ci skip]` in the latest commit message skips the
-  Bazel build-tests, test and flow steps and the Docker smoke tests;
-  docs, nogui and the Docker image builds still run.
+  Bazel build-tests, test, and flow steps and the Docker smoke tests;
+  docs, nogui, and the Docker image builds still run.
 
 **GitHub Actions:**
 - C++ format on changed files (`bazelisk test //:fmt_cc_test` runs the
   same check on all files).
 - Clang-Tidy on the PR diff (see above).
-- Tcl lint, Bazel lint (buildifier) and Python format (black); all are
-  in `bazelisk test //:lint_test`.
+- Tcl lint, Bazel lint (buildifier), and Python format (black). Run
+  `bazelisk test //:lint_test` to check these locally, plus C++ and YAML
+  format.
 - `MODULE.bazel.lock` is up to date, generated ODB and web-bundle files
   are in sync, and no `.ok` file contains `Differences found`.
 - macOS Bazel build.
@@ -70,7 +71,7 @@ Every Jenkins build of a PR publishes its logs at
 `https://jenkins.openroad.tools/job/OpenROAD-Public/view/change-requests/job/PR-<N>-merge/<build>/artifact/`
 (`PR-<N>-head` for the unmerged head).
 
-- Each CI step leaves `bazel-<step>-attempt<k>.log.gz` (e.g. `bazel-ci-`,
+- Each CI step leaves `bazel-<step>-attempt<k>.log.gz` (e.g., `bazel-ci-`,
   `bazel-build-tests-`, `bazel-nogui-`, `bazel-docs-`); each flow design
   leaves `bazel-flow-<design>_<platform>-attempt<k>.log.gz`. A higher
   `<k>` is a retry.

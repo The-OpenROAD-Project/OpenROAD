@@ -16,9 +16,10 @@
 - Use C++ casts, not C-style casts.
 - When a new cross-module dependency would otherwise add a dependency
   on another module's implementation library (or a cycle), depend on
-  the interface and look up the provider with
-  `utl::ServiceRegistry::find<I>()` instead of having an instance
-  passed in. See the registry header for conventions.
+  the interface and look up the provider in `utl::ServiceRegistry`
+  instead of having an instance passed in: `find<I>()` returns null
+  when no provider is registered, `require<I>()` errors. See
+  `src/utl/include/utl/ServiceRegistry.h` for conventions.
 
 ### Comments and Prose
 - Keep existing comments unless they're clearly outdated or wrong.
