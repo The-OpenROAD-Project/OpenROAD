@@ -1136,6 +1136,32 @@ proc report_buffers { args } {
   rsz::report_buffers_cmd $filtered
 }
 
+sta::define_cmd_args "repair_power" {[-setup_margin setup_margin]\
+                                     [-hold_margin hold_margin]\
+                                     [-setup_tolerance percent]\
+                                     [-verbose]}
+
+proc repair_power { args } {
+  sta::parse_key_args "repair_power" args \
+    keys {-setup_margin -hold_margin -setup_tolerance} flags {-verbose}
+  sta::check_argc_eq0 "repair_power" $args
+  set setup_margin [rsz::parse_time_margin_arg "-setup_margin" keys]
+  set hold_margin [rsz::parse_time_margin_arg "-hold_margin" keys]
+  set setup_tolerance 0.0
+  if { [info exists keys(-setup_tolerance)] } {
+    set setup_tolerance $keys(-setup_tolerance)
+    sta::check_percent "-setup_tolerance" $setup_tolerance
+  }
+  # Cell swaps keep the area; drop a limit an earlier command left.
+  rsz::set_max_utilization 0
+  if { [design_is_routed] } {
+    est::set_parasitics_src "detailed_routing"
+  }
+  est::check_parasitics
+  rsz::repair_power_cmd $setup_margin $hold_margin $setup_tolerance \
+    [info exists flags(-verbose)]
+}
+
 sta::define_cmd_args "report_delay_estimator_accuracy" {\
   -inst instance \
   -lib_cell lib_cell \

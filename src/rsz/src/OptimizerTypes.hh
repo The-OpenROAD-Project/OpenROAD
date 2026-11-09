@@ -611,6 +611,13 @@ struct TargetEvaluation
 struct OptimizerRunConfig
 {
   double setup_slack_margin{0.0};
+  // repair_power: the hold slack kept, the setup slack each endpoint may
+  // lose below the lower of the margin and its slack at the start (percent
+  // of the PARALLEL_EVAL reference clock period), and the run is a power
+  // run.
+  double hold_slack_margin{0.0};
+  double setup_tolerance{0.0};
+  bool repair_power{false};
   double repair_tns_end_percent{1.0};
   int max_iterations{0};
   int max_passes{100};

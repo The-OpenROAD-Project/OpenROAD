@@ -364,6 +364,36 @@ then works on the worst endpoints one batch at a time. The policy differs from
 | rebuffer | Buffering for setup fixing |
 | split | Split off non-critical loads behind a buffer to reduce load |
 
+### Repair Power
+
+The `repair_power` command swaps cells to a higher VT where setup slack
+allows, ranking the swaps by the total power they save at the STA
+activities per unit of setup slack they spend. It runs the PARALLEL_EVAL batches of `repair_timing -setup` and
+keeps a batch only while setup and hold worst slack stay above their margin,
+or no worse than at the start where they already were below it, and their
+total negative slack within 1% of the start. With `-setup_tolerance`, the
+setup rule is per endpoint instead: each endpoint may lose that much setup
+slack below the lower of the margin and its slack at the start. Swaps whose
+estimate makes a max slew or capacitance violation new or larger are skipped.
+This command is experimental.
+
+```tcl
+repair_power
+    [-setup_margin setup_margin]
+    [-hold_margin hold_margin]
+    [-setup_tolerance percent]
+    [-verbose]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-setup_margin` | Setup slack the moves leave untouched. The default is 0. |
+| `-hold_margin` | Hold slack the moves leave untouched. The default is 0. |
+| `-setup_tolerance` | Setup slack, in percent of the clock period, each endpoint may lose below the lower of `-setup_margin` and its slack at the start, to save more power; a later `repair_timing` may not win that slack back. The default is 0, which keeps the setup WS and TNS rule. |
+| `-verbose` | Print one row per batch. |
+
 ### Repair Clock Nets
 
 The `clock_tree_synthesis` command inserts a clock tree in the design

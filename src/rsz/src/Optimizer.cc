@@ -12,6 +12,7 @@
 #include "GlobalSizingPolicy.hh"
 #include "OptimizationPolicy.hh"
 #include "OptimizerTypes.hh"
+#include "PowerParallelEvalPolicy.hh"
 #include "ProgressReporter.hh"
 #include "RepairSetupContext.hh"
 #include "RepairSetupProfiler.hh"
@@ -133,6 +134,10 @@ std::unique_ptr<OptimizationPolicy> Optimizer::makePolicyForPhase(
 
   if (phase_name == "PARALLEL_EVAL") {
     return std::make_unique<SetupParallelEvalPolicy>(
+        resizer_, committer_, setup_context, config_);
+  }
+  if (phase_name == "POWER" && config_.repair_power) {
+    return std::make_unique<PowerParallelEvalPolicy>(
         resizer_, committer_, setup_context, config_);
   }
   if (phase_name == "GLOBAL_SIZING") {
@@ -295,8 +300,11 @@ bool Optimizer::reportRepairSummary(
                  "Replaced {} buffers with inverters.",
                  buffer_to_inverters_moves);
   }
-  logger->metric("design__instance__count__setup_buffer",
-                 buffer_moves + split_load_moves);
+  // repair_power inserts no buffers; the metric is repair_timing's.
+  if (!config_.repair_power) {
+    logger->metric("design__instance__count__setup_buffer",
+                   buffer_moves + split_load_moves);
+  }
   if (size_up_moves + size_down_fanout_moves + size_up_match_moves
           + vt_swap_moves
       > 0) {
@@ -326,7 +334,8 @@ bool Optimizer::reportRepairSummary(
         utl::RSZ, 53, "Rerouted {} nets resistance-aware.", reroute_moves);
   }
 
-  if (sta::fuzzyLess(setup_context.final_wns, config_.setup_slack_margin)) {
+  if (!config_.repair_power
+      && sta::fuzzyLess(setup_context.final_wns, config_.setup_slack_margin)) {
     repaired = true;
     logger->warn(utl::RSZ, 62, "Unable to repair all setup violations.");
   }

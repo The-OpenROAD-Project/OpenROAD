@@ -85,6 +85,7 @@
 #include "sta/Path.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PortDirection.hh"
+#include "sta/PowerClass.hh"
 #include "sta/Scene.hh"
 #include "sta/Sdc.hh"
 #include "sta/SdcClass.hh"
@@ -5629,6 +5630,55 @@ bool Resizer::repairSetup(double setup_margin,
   bool result = optimizer.run();
   logger_->info(RSZ, 505, "Runtime: {:.2f}s", timer.elapsed());
   return result;
+}
+
+void Resizer::repairPower(const double setup_margin,
+                          const double hold_margin,
+                          const double setup_tolerance,
+                          const bool verbose)
+{
+  utl::Timer timer;
+  const auto design_power = [this]() {
+    sta::PowerResult total, sequential, combinational, clock, macro, pad;
+    sta_->power(
+        sta_->cmdScene(), total, sequential, combinational, clock, macro, pad);
+    return total;
+  };
+  const sta::PowerResult before = design_power();
+  logger_->info(RSZ,
+                3260,
+                "Power before: internal {:.4g} W, switching {:.4g} W, leakage "
+                "{:.4g} W, total {:.4g} W.",
+                before.internal(),
+                before.switching(),
+                before.leakage(),
+                before.total());
+
+  OptimizerRunConfig config;
+  config.setup_slack_margin = setup_margin;
+  config.hold_slack_margin = hold_margin;
+  config.setup_tolerance = setup_tolerance;
+  config.repair_power = true;
+  config.verbose = verbose;
+  config.phases = "POWER";
+  rsz::Optimizer optimizer(this);
+  optimizer.configure(config);
+  optimizer.run();
+
+  logger_->info(RSZ, 3262, "Runtime: {:.2f}s", timer.elapsed());
+  // The swaps invalidate the activities, and propagating them again is slow
+  // on large designs.
+  if (verbose) {
+    const sta::PowerResult after = design_power();
+    logger_->info(RSZ,
+                  3261,
+                  "Power after: internal {:.4g} W, switching {:.4g} W, leakage "
+                  "{:.4g} W, total {:.4g} W.",
+                  after.internal(),
+                  after.switching(),
+                  after.leakage(),
+                  after.total());
+  }
 }
 
 void Resizer::reportSwappablePins()

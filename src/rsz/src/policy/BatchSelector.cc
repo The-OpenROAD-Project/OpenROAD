@@ -4,6 +4,9 @@
 #include "BatchSelector.hh"
 
 #include <algorithm>
+#include <array>
+#include <cstddef>
+#include <limits>
 #include <optional>
 #include <unordered_map>
 #include <unordered_set>
@@ -14,13 +17,38 @@ namespace rsz {
 
 namespace {
 
-// True when the two lists share an element.
-template <typename T>
-bool intersects(const std::vector<T>& lhs, const std::vector<T>& rhs)
+constexpr size_t kNoMember = std::numeric_limits<size_t>::max();
+
+// The earliest member that has one of objects, or kNoMember.
+template <typename T, typename K>
+size_t firstMember(const std::vector<T>& objects,
+                   const std::unordered_map<K, size_t>& members)
 {
-  return std::ranges::any_of(lhs, [&rhs](const T& value) {
-    return std::ranges::find(rhs, value) != rhs.end();
-  });
+  size_t first = kNoMember;
+  for (const T& object : objects) {
+    const auto member = members.find(object);
+    if (member != members.end()) {
+      first = std::min(first, member->second);
+    }
+  }
+  return first;
+}
+
+template <typename T, typename K>
+void addMember(const std::vector<T>& objects,
+               const size_t member,
+               std::unordered_map<K, size_t>& members)
+{
+  for (const T& object : objects) {
+    members.emplace(object, member);
+  }
+}
+
+template <typename T, typename K>
+bool sharesAny(const std::vector<T>& objects, const std::unordered_set<K>& set)
+{
+  return std::ranges::any_of(
+      objects, [&set](const T& object) { return set.contains(object); });
 }
 
 }  // namespace
@@ -69,7 +97,6 @@ BatchSelection BatchSelector::select(
       });
 
   Admission admission;
-  admission.impacts.reserve(ranked.size());
   fillWorstReserve(
       ranked, worstReserve(ranked.size(), batch_cap, reserve_worst), admission);
   fillByScore(ranked, batch_cap, admission);
@@ -91,27 +118,44 @@ bool BatchSelector::admit(const BatchCandidate& candidate,
     return false;
   }
 
+  // A move conflicts with a member that writes an instance or net it writes,
+  // reconnects a pin it reconnects, or writes an instance the other
+  // reconnects.  The reason is the first of those, in that order, with the
+  // earliest member it conflicts with.
+  const MoveImpact& impact = candidate.impact;
+  const std::array<std::pair<BatchConflictReason, size_t>, 4> firsts{{
+      {BatchConflictReason::kWriteInstance,
+       firstMember(impact.write_instances, admission.write_instances)},
+      {BatchConflictReason::kWriteNet,
+       firstMember(impact.write_nets, admission.write_nets)},
+      {BatchConflictReason::kReconnectPin,
+       firstMember(impact.reconnect_pins, admission.reconnect_pins)},
+      {BatchConflictReason::kWriteReconnectInstance,
+       std::min(
+           firstMember(impact.reconnect_instances, admission.write_instances),
+           firstMember(impact.write_instances, admission.reconnect_instances))},
+  }};
+  size_t earliest = kNoMember;
+  for (const auto& [reason, first] : firsts) {
+    earliest = std::min(earliest, first);
+  }
   std::optional<BatchConflictReason> conflict;
-  for (const MoveImpact* selected_impact : admission.impacts) {
-    const BatchConflictReason reason
-        = hardConflict(*selected_impact, candidate.impact);
-    if (reason != BatchConflictReason::kCount) {
-      conflict = reason;
-      break;
-    }
+  if (earliest != kNoMember) {
+    conflict = std::ranges::find(firsts, earliest, [](const auto& first) {
+                 return first.second;
+               })->first;
   }
 
   // The check is one way.  A member whose estimate read timing this candidate
   // changes does not stop it, though that estimate goes stale too: every
   // estimate reads the pre-batch timing, and the batch verdict and the salvage
   // catch a batch that misses.  A two-way check would defer more candidates.
-  if (!conflict.has_value()) {
-    for (const MoveImpact* selected_impact : admission.impacts) {
-      if (dependsOn(candidate.impact, *selected_impact)) {
-        conflict = BatchConflictReason::kForwardDependency;
-        break;
-      }
-    }
+  if (!conflict.has_value()
+      && (sharesAny(impact.timing_dependency_instances,
+                    admission.timing_effect_instances)
+          || sharesAny(impact.timing_dependency_nets,
+                       admission.timing_effect_nets))) {
+    conflict = BatchConflictReason::kForwardDependency;
   }
 
   if (conflict.has_value()) {
@@ -120,7 +164,16 @@ bool BatchSelector::admit(const BatchCandidate& candidate,
   }
 
   selection.evaluation_indices.push_back(candidate.evaluation_index);
-  admission.impacts.push_back(&candidate.impact);
+  const size_t member = admission.members++;
+  addMember(impact.write_instances, member, admission.write_instances);
+  addMember(impact.write_nets, member, admission.write_nets);
+  addMember(impact.reconnect_pins, member, admission.reconnect_pins);
+  addMember(impact.reconnect_instances, member, admission.reconnect_instances);
+  admission.timing_effect_instances.insert(
+      impact.timing_effect_instances.begin(),
+      impact.timing_effect_instances.end());
+  admission.timing_effect_nets.insert(impact.timing_effect_nets.begin(),
+                                      impact.timing_effect_nets.end());
   admission.taken.insert(&candidate);
 
   return true;
@@ -226,38 +279,6 @@ void BatchSelector::orderByScore(const std::vector<BatchCandidate>& candidates,
                            [&score_of](const size_t lhs, const size_t rhs) {
                              return score_of[lhs] > score_of[rhs];
                            });
-}
-
-BatchConflictReason BatchSelector::hardConflict(const MoveImpact& selected,
-                                                const MoveImpact& candidate)
-{
-  if (intersects(selected.write_instances, candidate.write_instances)) {
-    return BatchConflictReason::kWriteInstance;
-  }
-
-  if (intersects(selected.write_nets, candidate.write_nets)) {
-    return BatchConflictReason::kWriteNet;
-  }
-
-  if (intersects(selected.reconnect_pins, candidate.reconnect_pins)) {
-    return BatchConflictReason::kReconnectPin;
-  }
-
-  if (intersects(selected.write_instances, candidate.reconnect_instances)
-      || intersects(candidate.write_instances, selected.reconnect_instances)) {
-    return BatchConflictReason::kWriteReconnectInstance;
-  }
-
-  return BatchConflictReason::kCount;
-}
-
-bool BatchSelector::dependsOn(const MoveImpact& candidate,
-                              const MoveImpact& selected)
-{
-  return intersects(selected.timing_effect_instances,
-                    candidate.timing_dependency_instances)
-         || intersects(selected.timing_effect_nets,
-                       candidate.timing_dependency_nets);
 }
 
 }  // namespace rsz

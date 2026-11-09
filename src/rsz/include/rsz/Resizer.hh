@@ -386,6 +386,15 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                    RepairEffort effort = RepairEffort::kHigh,
                    int profile_mode = 0,
                    const char* profile_dir = "");
+  // Swaps cells for lower power where setup slack allows, keeping setup and
+  // hold WS above their margins (or no worse than at the start below them)
+  // and their TNS within 1% of the start.  A setup_tolerance, in percent of
+  // the clock period, instead lets each endpoint lose that much setup slack
+  // below the lower of the margin and its slack at the start.
+  void repairPower(double setup_margin,
+                   double hold_margin,
+                   double setup_tolerance,
+                   bool verbose);
   // For testing.
   void repairSetup(const sta::Pin* end_pin);
   // For testing.

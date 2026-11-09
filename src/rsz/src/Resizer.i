@@ -626,6 +626,15 @@ void report_equiv_cells_cmd(LibertyCell* cell, bool match_cell_footprint,
                                  report_vt_equiv);
 }
 
+void
+repair_power_cmd(double setup_margin, double hold_margin,
+                 double setup_tolerance, bool verbose)
+{
+  ensureLinked();
+  getResizer()->repairPower(setup_margin, hold_margin, setup_tolerance,
+                            verbose);
+}
+
 void report_buffers_cmd(bool filtered)
 {
   ensureLinked();
