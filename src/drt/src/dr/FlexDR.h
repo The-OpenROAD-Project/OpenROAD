@@ -16,7 +16,6 @@
 
 #include "boost/polygon/polygon.hpp"
 #include "boost/serialization/export.hpp"
-#include "boost/serialization/version.hpp"
 #include "db/drObj/drAccessPattern.h"
 #include "db/drObj/drFig.h"
 #include "db/drObj/drMarker.h"
@@ -568,7 +567,7 @@ class FlexDRWorker
   int pinCnt_{0};
   int initNumMarkers_{0};
   // stop routing once the markers grow far past initNumMarkers_ (stubborn
-  // tiles only, see dr/MarkerGrowth.h)
+  // tiles only, see route_queue_markersGrew)
   bool stopOnMarkerGrowth_{false};
   std::map<FlexMazeIdx, drAccessPattern*> apSVia_;
   std::set<FlexMazeIdx> planarHistoryMarkers_;
@@ -1172,6 +1171,3 @@ class FlexDRWorker
   friend class boost::serialization::access;
 };
 }  // namespace drt
-
-// 1: stopOnMarkerGrowth_
-BOOST_CLASS_VERSION(drt::FlexDRWorker, 1)

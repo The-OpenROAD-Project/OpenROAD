@@ -248,16 +248,6 @@ regression_test(
 )
 
 cc_test(
-    name = "MarkerGrowthTest",
-    srcs = ["MarkerGrowthTest.cpp"],
-    deps = [
-        "//src/drt:base_types",
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-    ],
-)
-
-cc_test(
     name = "WatermarkCostTest",
     srcs = ["WatermarkCostTest.cpp"],
     deps = [

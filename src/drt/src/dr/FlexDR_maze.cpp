@@ -36,7 +36,6 @@
 #include "db/tech/frViaDef.h"
 #include "dr/FlexDR.h"
 #include "dr/FlexMazeTypes.h"
-#include "dr/MarkerGrowth.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frProfileTask.h"
@@ -1893,8 +1892,26 @@ void FlexDRWorker::identifyCongestionLevel()
   }
 }
 
-// Counts the worker's markers with a full check (see dr/MarkerGrowth.h); no
-// routing decision reads the markers it leaves in gcWorker_.
+// A stubborn-tiles worker is one of nine cost variants of its tile, and in DRC
+// ripup mode a worker that ends with more markers than it started with is not
+// written back (FlexDRWorker::end). So a variant whose markers have grown far
+// past its initial count stops routing instead of running on (#11992): every
+// kMarkerGrowthCheckPeriod routed nets it counts its markers and stops once
+// they exceed markerGrowthLimit(initial markers).
+static constexpr int kMarkerGrowthCheckPeriod = 50;
+
+static int markerGrowthLimit(const int init_markers)
+{
+  return 10 * init_markers + 20;
+}
+
+static bool isMarkerGrowthCheck(const int num_routed)
+{
+  return num_routed > 0 && num_routed % kMarkerGrowthCheckPeriod == 0;
+}
+
+// Counts the worker's markers with a full check; no routing decision reads the
+// markers it leaves in gcWorker_.
 bool FlexDRWorker::route_queue_markersGrew(const int num_routed)
 {
   gcWorker_->resetTargetNet();
@@ -1928,6 +1945,17 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
   std::map<frBlockObject*, std::pair<int, int>> obj_gc_version;
   auto& workerRegionQuery = getWorkerRegionQuery();
   int num_routed = 0;
+  // The full check of route_queue_markersGrew runs only when its count can
+  // exceed the limit. A marker it counts either sat in the DRC box when routing
+  // started, unchanged since, or involves an object that changed: the last net
+  // routed among its objects. The check after that route found the marker, and
+  // a later check of the same object in obj_gc_version still finds it, since
+  // none of its objects has changed. So the markers at the start plus the
+  // latest marker count of every object in obj_gc_version bound the full count
+  // from above, except for a marker that a net's own check does not report:
+  // one between two other shapes that the net's wire only qualifies (an
+  // end-of-line PARALLELEDGE, a spacing-table INFLUENCE).
+  int marker_bound = getNumMarkers();
   while (!rerouteQueue.empty()) {
     auto& entry = rerouteQueue.front();
     frBlockObject* obj = entry.block;
@@ -2031,8 +2059,10 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
           }
         }
         didCheck = true;
-        obj_gc_version[net->getFrNet()]
-            = {gc_version, gcWorker_->getMarkers().size()};
+        const int num_markers = gcWorker_->getMarkers().size();
+        auto& net_gc = obj_gc_version[net->getFrNet()];
+        marker_bound += num_markers - net_gc.second;
+        net_gc = {gc_version, num_markers};
 
       } else {
         logger_->error(DRT, 1006, "failed to setTargetNet");
@@ -2106,7 +2136,10 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
             didCheck = true;
           }
         }
-        obj_gc_version[obj] = {gc_version, gcWorker_->getMarkers().size()};
+        const int num_markers = gcWorker_->getMarkers().size();
+        auto& obj_gc = obj_gc_version[obj];
+        marker_bound += num_markers - obj_gc.second;
+        obj_gc = {gc_version, num_markers};
       }
     }
     // end
@@ -2129,6 +2162,7 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
     if (didRoute) {
       ++num_routed;
       if (stopOnMarkerGrowth_ && isMarkerGrowthCheck(num_routed)
+          && marker_bound > markerGrowthLimit(getInitNumMarkers())
           && route_queue_markersGrew(num_routed)) {
         break;
       }

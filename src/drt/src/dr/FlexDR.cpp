@@ -2337,9 +2337,7 @@ void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
   (ar) & markers_;
   (ar) & bestMarkers_;
   (ar) & isCongested_;
-  if (version >= 1) {
-    (ar) & stopOnMarkerGrowth_;
-  }
+  (ar) & stopOnMarkerGrowth_;
   if (is_loading(ar)) {
     // boundaryPin_
     int sz = 0;
