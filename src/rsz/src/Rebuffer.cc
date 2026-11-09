@@ -550,52 +550,22 @@ BnetPtr Rebuffer::chooseTreeAndDriver(const std::vector<BnetPtr>& trees,
   // The current cell first: its best feasible area bounds every other cell.
   consider(current_cell);
   sta::LibertyCellSeq cells = resizer_->getSwappableCells(current_cell);
-  // Equal-area cells with less load on connected input nets are tried first.
-  std::vector<const sta::LibertyPort*> connected_inputs;
-  std::unique_ptr<sta::InstancePinIterator> pin_iter(
-      network_->pinIterator(network_->instance(pin_)));
-  while (pin_iter->hasNext()) {
-    const sta::Pin* input = pin_iter->next();
-    if (network_->direction(input)->isAnyInput()
-        && network_->net(input) != nullptr) {
-      if (const sta::LibertyPort* port = network_->libertyPort(input)) {
-        connected_inputs.push_back(port);
-      }
-    }
-  }
-
-  struct CellCandidate
-  {
-    sta::LibertyCell* cell;
-    float input_cap;
-  };
-  std::vector<CellCandidate> candidates;
-  candidates.reserve(cells.size());
+  // Equal-area cells with lower average input capacitance are tried first.
+  std::ranges::stable_sort(
+      cells, [this](const sta::LibertyCell* a, const sta::LibertyCell* b) {
+        if (a->area() != b->area()) {
+          return a->area() < b->area();
+        }
+        float a_cap;
+        float b_cap;
+        resizer_->getCin(a, a_cap);
+        resizer_->getCin(b, b_cap);
+        if (a_cap != b_cap) {
+          return a_cap < b_cap;
+        }
+        return a->name() < b->name();
+      });
   for (sta::LibertyCell* cell : cells) {
-    float input_cap = 0.0f;
-    for (const sta::LibertyPort* port : connected_inputs) {
-      const sta::LibertyPort* candidate_port
-          = cell->findLibertyPort(port->name());
-      if (candidate_port == nullptr) {
-        input_cap = std::numeric_limits<float>::infinity();
-        break;
-      }
-      input_cap += candidate_port->capacitance();
-    }
-    candidates.push_back({cell, input_cap});
-  }
-  std::ranges::stable_sort(candidates,
-                           [](const CellCandidate& a, const CellCandidate& b) {
-                             if (a.cell->area() != b.cell->area()) {
-                               return a.cell->area() < b.cell->area();
-                             }
-                             if (a.input_cap != b.input_cap) {
-                               return a.input_cap < b.input_cap;
-                             }
-                             return a.cell->name() < b.cell->name();
-                           });
-  for (const CellCandidate& candidate : candidates) {
-    sta::LibertyCell* cell = candidate.cell;
     if (cell == current_cell) {
       continue;
     }
