@@ -20,6 +20,7 @@
 
 namespace odb {
 class dbDatabase;
+class dbBlock;
 class dbInst;
 class dbBTerm;
 class dbNet;
@@ -91,6 +92,11 @@ class TritonRoute : public PinAccessService
   ~TritonRoute() override;
 
   void updateDirtyPinAccess() override;
+  bool hasPinAccess() const override;
+  bool hasUsablePinAccess(odb::dbInst* inst,
+                          const odb::Point& candidate_location) const override;
+  std::vector<odb::dbInst*> findPinAccessFailures(
+      const std::vector<odb::dbInst*>& instances) const override;
 
   void initGraphics(std::unique_ptr<AbstractGraphicsFactory> graphics_factory);
 
@@ -212,6 +218,7 @@ class TritonRoute : public PinAccessService
   std::optional<boost::asio::thread_pool> dist_pool_;
   std::unique_ptr<FlexPA> pa_{nullptr};
   bool pa_rebuild_required_{false};
+  odb::dbBlock* pa_block_{nullptr};
   std::unique_ptr<AbstractGraphicsFactory> graphics_factory_{nullptr};
 
   void initDesign();

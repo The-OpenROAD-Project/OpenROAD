@@ -148,6 +148,13 @@ void FlexGCWorker::Impl::initObj(const odb::Rect& box,
 
 bool FlexGCWorker::Impl::initDesign_skipObj(frBlockObject* obj)
 {
+  if (replacement_source_) {
+    return (obj->typeId() == frcInstTerm
+            && static_cast<frInstTerm*>(obj)->getInst() == replacement_source_)
+           || (obj->typeId() == frcInstBlockage
+               && static_cast<frInstBlockage*>(obj)->getInst()
+                      == replacement_source_);
+  }
   if (targetObjs_.empty()) {
     return false;
   }
@@ -197,6 +204,50 @@ void FlexGCWorker::Impl::initDesign(const frDesign* design, bool skipDR)
         continue;
       }
       initObj(box, i, obj, true);
+    }
+  }
+  // The live region query has no geometry for the trial placement.
+  if (replacement_candidate_) {
+    const auto transform = replacement_candidate_->getTransform();
+    const auto import_pin = [&](const auto* pin, frBlockObject* owner) {
+      for (const auto& figure : pin->getFigs()) {
+        const auto layer = static_cast<frShape*>(figure.get())->getLayerNum();
+        if (figure->typeId() == frcPolygon) {
+          std::vector<gtl::point_data<frCoord>> points;
+          for (auto point :
+               static_cast<frPolygon*>(figure.get())->getPoints()) {
+            transform.apply(point);
+            points.emplace_back(point.x(), point.y());
+          }
+          gtl::polygon_90_data<frCoord> polygon;
+          polygon.set(points.begin(), points.end());
+          gtl::polygon_90_set_data<frCoord> polygons;
+          polygons.insert(polygon);
+          std::vector<gtl::rectangle_data<frCoord>> rectangles;
+          polygons.get_rectangles(rectangles);
+          for (const auto& rect : rectangles) {
+            const odb::Rect box(
+                gtl::xl(rect), gtl::yl(rect), gtl::xh(rect), gtl::yh(rect));
+            if (box.intersects(extBox)) {
+              initObj(box, layer, owner, true);
+            }
+          }
+        } else {
+          auto box = figure->getBBox();
+          transform.apply(box);
+          if (box.intersects(extBox)) {
+            initObj(box, layer, owner, true);
+          }
+        }
+      }
+    };
+    for (const auto& term : replacement_candidate_->getInstTerms()) {
+      for (const auto& pin : term->getTerm()->getPins()) {
+        import_pin(pin.get(), term.get());
+      }
+    }
+    for (const auto& blockage : replacement_candidate_->getInstBlockages()) {
+      import_pin(blockage->getBlockage()->getPin(), blockage.get());
     }
   }
   // init all dr objs from design

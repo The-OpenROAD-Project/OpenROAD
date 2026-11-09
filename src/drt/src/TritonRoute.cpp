@@ -4,6 +4,7 @@
 #include "drt/TritonRoute.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -61,6 +62,7 @@
 #include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
 #include "utl/ServiceRegistry.h"
+#include "utl/exception.h"
 #include "utl/timer.h"
 
 using odb::dbTechLayerType;
@@ -91,6 +93,63 @@ TritonRoute::TritonRoute(odb::dbDatabase* db,
 TritonRoute::~TritonRoute()
 {
   service_registry_->withdraw<PinAccessService>(this);
+}
+
+bool TritonRoute::hasPinAccess() const
+{
+  return pa_block_ && db_callback_->hasOwner() && db_->getChip()
+         && pa_block_ == db_->getChip()->getBlock() && pa_
+         && !pa_rebuild_required_;
+}
+
+bool TritonRoute::hasUsablePinAccess(odb::dbInst* inst,
+                                     const odb::Point& candidate_location) const
+{
+  return hasPinAccess() && inst && inst->getBlock() == pa_block_
+         && pa_->hasUsablePinAccess(inst, candidate_location);
+}
+
+std::vector<odb::dbInst*> TritonRoute::findPinAccessFailures(
+    const std::vector<odb::dbInst*>& instances) const
+{
+  if (instances.empty() || !hasPinAccess()) {
+    return instances;
+  }
+  std::vector<odb::Point> locations(instances.size());
+  std::vector<uint8_t> failures(instances.size());
+  for (size_t i = 0; i < instances.size(); ++i) {
+    auto* inst = instances[i];
+    failures[i] = !inst || inst->getBlock() != pa_block_;
+    if (!failures[i]) {
+      locations[i] = inst->getLocation();
+    }
+  }
+  const int num_threads = std::min<size_t>(
+      std::max(1, router_cfg_->MAX_THREADS), instances.size());
+  std::vector<std::unique_ptr<FlexPA>> workers;
+  for (int i = 0; i < num_threads; ++i) {
+    workers.push_back(pa_->makeQueryWorker());
+  }
+  utl::ThreadException exception;
+#pragma omp parallel for num_threads(num_threads) schedule(dynamic)
+  for (size_t i = 0; i < instances.size(); ++i) {
+    try {
+      if (!failures[i]) {
+        failures[i] = !workers[omp_get_thread_num()]->hasUsablePinAccess(
+            instances[i], locations[i]);
+      }
+    } catch (...) {
+      exception.capture();
+    }
+  }
+  exception.rethrow();
+  std::vector<odb::dbInst*> result;
+  for (size_t i = 0; i < instances.size(); ++i) {
+    if (failures[i]) {
+      result.push_back(instances[i]);
+    }
+  }
+  return result;
 }
 
 void TritonRoute::updateDirtyPinAccess()
@@ -372,6 +431,7 @@ void TritonRoute::resetDb(const char* file_name)
 void TritonRoute::clearDesign(bool detach_callback)
 {
   pa_.reset();
+  pa_block_ = nullptr;
   pa_rebuild_required_ = false;
   if (detach_callback) {
     db_callback_->removeOwner();
@@ -589,6 +649,7 @@ bool TritonRoute::initGuide()
 }
 void TritonRoute::initDesign()
 {
+  pa_block_ = nullptr;
   if (db_ == nullptr || db_->getChip() == nullptr
       || db_->getChip()->getBlock() == nullptr) {
     logger_->error(utl::DRT, 151, "Database, chip or block not initialized.");
@@ -1135,6 +1196,9 @@ void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
   pa_->main();
   io::Writer writer(getDesign(), logger_);
   writer.updateDb(db_, router_cfg_.get(), true);
+  if (target_insts.empty()) {
+    pa_block_ = db_->getChip()->getBlock();
+  }
 }
 
 void TritonRoute::deleteInstancePAData(frInst* inst, bool delete_inst)
@@ -1175,6 +1239,7 @@ void TritonRoute::updateDirtyPAData()
     }
   } catch (...) {
     pa_rebuild_required_ = true;
+    pa_block_ = nullptr;
     throw;
   }
 }

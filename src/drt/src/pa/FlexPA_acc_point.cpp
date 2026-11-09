@@ -22,6 +22,7 @@
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
 #include "frProfileTask.h"
+#include "frRegionQuery.h"
 #include "gc/FlexGC.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
@@ -371,11 +372,11 @@ void FlexPA::createMultipleAccessPoints(
     }
   }
   const int new_aps_size = aps.size() - aps_size_before;
-  if (inst_term && isStdCell(inst_term->getInst())) {
+  if (!query_ && inst_term && isStdCell(inst_term->getInst())) {
 #pragma omp atomic
     std_cell_pin_gen_ap_cnt_ += new_aps_size;
   }
-  if (inst_term && isMacroCell(inst_term->getInst())) {
+  if (!query_ && inst_term && isMacroCell(inst_term->getInst())) {
 #pragma omp atomic
     macro_cell_pin_gen_ap_cnt_ += new_aps_size;
   }
@@ -723,7 +724,10 @@ bool FlexPA::isPlanarViolationFree(frAccessPoint* ap,
   tmp_box.bloat(extension, ext_box);
   design_rule_checker.setExtBox(ext_box);
   design_rule_checker.setDrcBox(ext_box);
-  if (inst_term) {
+  if (query_) {
+    design_rule_checker.setReplacementInst(query_->source,
+                                           inst_term->getInst());
+  } else if (inst_term) {
     design_rule_checker.addTargetObj(inst_term->getInst());
   } else {
     design_rule_checker.addTargetObj(pin->getTerm());
@@ -751,7 +755,7 @@ bool FlexPA::isPlanarViolationFree(frAccessPoint* ap,
   design_rule_checker.initPA1();
   design_rule_checker.main();
 
-  if (graphics_) {
+  if (graphics_ && !query_) {
     graphics_->setPlanarAP(ap, ps, design_rule_checker.getMarkers());
   }
 
@@ -1074,7 +1078,10 @@ bool FlexPA::isViaViolationFree(frAccessPoint* ap,
   auto pin_net = pin_term->getNet();
   design_rule_checker.setExtBox(ext_box);
   design_rule_checker.setDrcBox(ext_box);
-  if (inst_term) {
+  if (query_) {
+    design_rule_checker.setReplacementInst(query_->source,
+                                           inst_term->getInst());
+  } else if (inst_term) {
     auto* it_net = inst_term->getNet();
     if (!it_net || !it_net->hasNDR()
         || it_net->autoTaperEnabled(router_cfg_->AUTO_TAPER_NDR_NETS)) {
@@ -1112,7 +1119,7 @@ bool FlexPA::isViaViolationFree(frAccessPoint* ap,
 
   const bool no_drv = design_rule_checker.getMarkers().empty();
 
-  if (graphics_) {
+  if (graphics_ && !query_) {
     graphics_->setViaAP(ap, via, design_rule_checker.getMarkers());
   }
   return no_drv;
@@ -1312,7 +1319,7 @@ bool FlexPA::genPinAccessCostBounded(
   }
   filterMultipleAPAccesses(
       new_aps, pin_shapes, pin, inst_term, is_std_cell_pin);
-  if (graphics_) {
+  if (graphics_ && !query_) {
     graphics_->setAPs(new_aps, lower_type, upper_type);
   }
   for (auto& ap : new_aps) {
@@ -1406,19 +1413,30 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
 template <typename T>
 int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
 {
-  // IO term pin always only have one access
   const int pin_access_idx
       = inst_term ? inst_term->getInst()->getPinAccessIdx() : 0;
-  if (pin->getPinAccess(pin_access_idx)->getNumAccessPoints() > 0) {
-    pin->getPinAccess(pin_access_idx)->clearAccessPoints();
+  auto access = pin->getPinAccess(pin_access_idx);
+  access->clearAccessPoints();
+  auto aps = generatePinAccess(pin, inst_term);
+  updatePinStats(aps, inst_term);
+  const int count = aps.size();
+  for (auto& ap : aps) {
+    access->addAccessPoint(std::move(ap));
   }
+  return count;
+}
 
+template <typename T>
+std::vector<std::unique_ptr<frAccessPoint>> FlexPA::generatePinAccess(
+    T* pin,
+    frInstTerm* inst_term)
+{
   // aps are after xform
   // before checkPoints, ap->hasAccess(dir) indicates whether to check drc
   std::vector<std::unique_ptr<frAccessPoint>> aps;
   std::set<std::pair<odb::Point, frLayerNum>> apset;
 
-  if (graphics_) {
+  if (graphics_ && !query_) {
     UniqueClass* inst_class = nullptr;
     if (inst_term) {
       inst_class = unique_insts_.getUniqueClass(inst_term->getInst());
@@ -1503,12 +1521,149 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
     ap->sortViaDefs(cost_map);
   }
 
-  updatePinStats(aps, inst_term);
-  // write to pa
-  for (auto& ap : aps) {
-    pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
+  return aps;
+}
+
+bool FlexPA::signalPinsOverlapSupply(frInst* candidate)
+{
+  // Native PA suppresses fixed/fixed shorts, so check all signal-pin copper
+  // first.
+  for (const auto& term : candidate->getInstTerms()) {
+    if (term->getTerm()->getType().isSupply()) {
+      continue;
+    }
+    for (const auto& pin : term->getTerm()->getPins()) {
+      auto shapes = mergePinShapes(pin.get(), term.get());
+      for (int layer = 0; layer < static_cast<int>(shapes.size()); ++layer) {
+        if (!getTech()->getLayer(layer)->isRoutable()) {
+          continue;
+        }
+        std::vector<gtl::rectangle_data<frCoord>> rectangles;
+        shapes[layer].get_rectangles(rectangles);
+        for (const auto& rect : rectangles) {
+          const odb::Rect copper(
+              gtl::xl(rect), gtl::yl(rect), gtl::xh(rect), gtl::yh(rect));
+          frRegionQuery::Objects<frBlockObject> objects;
+          getDesign()->getRegionQuery()->query(copper, layer, objects);
+          for (const auto& [box, object] : objects) {
+            if (object->typeId() != frcPathSeg && object->typeId() != frcVia
+                && object->typeId() != frcPatchWire) {
+              continue;
+            }
+            const auto net = static_cast<frConnFig*>(object)->getNet();
+            if (net && net->getType().isSupply() && net != term->getNet()
+                && copper.intersects(box)) {
+              return true;
+            }
+          }
+        }
+      }
+    }
   }
-  return aps.size();
+  return false;
+}
+
+bool FlexPA::hasUsablePinAccess(odb::dbInst* db_inst,
+                                const odb::Point& candidate_location)
+{
+  auto source = getDesign()->getTopBlock()->findInst(db_inst);
+  if (!source || source->isToBeDeleted()) {
+    return false;
+  }
+  auto transform = db_inst->getTransform();
+  const auto location = db_inst->getLocation();
+  const auto origin = transform.getOffset();
+  transform.setOffset(
+      odb::Point(origin.x() + candidate_location.x() - location.x(),
+                 origin.y() + candidate_location.y() - location.y()));
+  frInst candidate(source->getName(), source->getMaster(), nullptr);
+  candidate.setTransform(transform);
+  for (const auto& term : source->getInstTerms()) {
+    auto trial = std::make_unique<frInstTerm>(&candidate, term->getTerm());
+    trial->addToNet(term->getNet());
+    trial->setIndexInOwner(term->getIndexInOwner());
+    trial->setStubborn(term->isStubborn());
+    candidate.addInstTerm(std::move(trial));
+  }
+  for (const auto& blockage : source->getInstBlockages()) {
+    candidate.addInstBlockage(
+        std::make_unique<frInstBlockage>(&candidate, blockage->getBlockage()));
+  }
+  if (signalPinsOverlapSupply(&candidate)) {
+    return false;
+  }
+  QueryContext context{source};
+  struct QueryScope
+  {
+    QueryContext*& slot;
+    ~QueryScope() { slot = nullptr; }
+  } scope{query_};
+  query_ = &context;
+  const auto latest = source->getLatestPATransform();
+  const bool reuse = source->hasPinAccessIdx()
+                     && latest.getOrient() == transform.getOrient()
+                     && latest.getOffset() == candidate_location;
+  for (const auto& term : candidate.getInstTerms()) {
+    if (isSkipInstTermLocal(term.get())) {
+      continue;
+    }
+    bool usable = false;
+    for (const auto& pin : term->getTerm()->getPins()) {
+      if (reuse) {
+        auto shapes = mergePinShapes(pin.get(), term.get());
+        std::vector<std::vector<gtl::polygon_90_data<frCoord>>> polygons(
+            shapes.size());
+        for (size_t layer = 0; layer < shapes.size(); ++layer) {
+          shapes[layer].get_polygons(polygons[layer]);
+        }
+        for (const auto& stored :
+             pin->getPinAccess(source->getPinAccessIdx())->getAccessPoints()) {
+          frAccessPoint ap(*stored);
+          const odb::dbTransform shift(candidate_location);
+          auto point = ap.getPoint();
+          shift.apply(point);
+          ap.setPoint(point);
+          for (auto& segment : ap.getPathSegs()) {
+            segment.move(shift);
+          }
+          const auto layer = ap.getLayerNum();
+          if (!isStdCellTerm(term.get())
+              || layer > router_cfg_->VIA_ACCESS_LAYERNUM) {
+            usable = validateAPForPlanarAccess(
+                &ap, polygons, pin.get(), term.get());
+          }
+          if (!usable) {
+            for (const auto& vias : stored->getAllViaDefs()) {
+              for (auto via_def : vias) {
+                frVia via(via_def, point);
+                if (checkViaPlanarAccess(
+                        &ap, &via, pin.get(), term.get(), polygons[layer])) {
+                  usable = true;
+                  break;
+                }
+              }
+              if (usable) {
+                break;
+              }
+            }
+          }
+          if (usable) {
+            break;
+          }
+        }
+      }
+      if (!usable) {
+        usable = !generatePinAccess(pin.get(), term.get()).empty();
+      }
+      if (usable) {
+        break;
+      }
+    }
+    if (!usable) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void FlexPA::genInstAccessPoints(frInst* unique_inst)
