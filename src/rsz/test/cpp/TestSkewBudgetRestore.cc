@@ -148,4 +148,47 @@ TEST_F(SkewBudgetRestoreTest, PinPropagatedClockPreserved)
   EXPECT_TRUE(sdc->isPropagatedClock(ck));
 }
 
+// A pin can be propagated and still carry a clock-specific set_clock_latency:
+// setPropagatedClock only strips the clock-agnostic (null-clock) latency, so
+// the two coexist on the same pin. compute_skew_budget's restore must put both
+// back, not just the propagation flag.
+TEST_F(SkewBudgetRestoreTest, PropagatedClockAndLatencyCoexist)
+{
+  sta::Sdc* sdc = sta_->cmdMode()->sdc();
+  sta::Pin* ck = db_network_->findPin("r3/CK");
+  ASSERT_NE(ck, nullptr);
+  sta::Clock* clk = sdc->findClock("clk");
+  ASSERT_NE(clk, nullptr);
+
+  // set_clock_latency -clock clk 0.07 [get_pins r3/CK] followed by
+  // set_propagated_clock [get_pins r3/CK]. The clock-specific latency survives
+  // the propagation flag, so both annotations are set at once.
+  const float latency = ns(0.07);
+  sta_->setClockLatency(clk,
+                        ck,
+                        sta::RiseFallBoth::riseFall(),
+                        sta::MinMaxAll::all(),
+                        latency,
+                        sdc);
+  sta_->setPropagatedClock(ck, sta_->cmdMode());
+
+  ASSERT_TRUE(sdc->isPropagatedClock(ck));
+  ASSERT_FLOAT_EQ(pinLatency(clk, ck, sta::MinMax::min()), latency);
+  ASSERT_FLOAT_EQ(pinLatency(clk, ck, sta::MinMax::max()), latency);
+
+  sta_->ensureGraph();
+  sta_->ensureLevelized();
+  resizer_.initBlock();
+  ep_.estimateWireParasitics();
+
+  Resizer::SkewBudgetOptions opts;
+  opts.max_iterations = 1;
+  resizer_.computeSkewBudget(opts);
+
+  // Both the propagation flag and the clock-specific latency must survive.
+  EXPECT_TRUE(sdc->isPropagatedClock(ck));
+  EXPECT_FLOAT_EQ(pinLatency(clk, ck, sta::MinMax::min()), latency);
+  EXPECT_FLOAT_EQ(pinLatency(clk, ck, sta::MinMax::max()), latency);
+}
+
 }  // namespace rsz
