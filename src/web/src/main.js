@@ -13,7 +13,7 @@ import {
 import { createMergedTileLayer } from './merged-tile-layer.js';
 import { installDeviceGridSnapping } from './device-pixels.js';
 import {
-    BLANK_TILE, tileSizeCss, useFittedTileSize, useStaticTileSize,
+    BLANK_TILE, hasEntries, tileSizeCss, useFittedTileSize, useStaticTileSize,
     withDeviceExactTileSize, watchDevicePixelRatio, tileSizeFields,
 } from './tile-request.js';
 import { TimingWidget } from './timing-widget.js';
@@ -65,6 +65,14 @@ function updateStatus() {
     const pendingCount = app.websocketManager ? app.websocketManager.pendingCount : 0;
     
     if (!isConnected) {
+        // Checked before _shutdown, which the manager also sets in this case.
+        if (app.websocketManager?._sessionEnded) {
+            statusDiv.innerHTML = '<div class="disconnected-banner">⚠ OpenROAD '
+                + 'restarted with a new access token — open the URL it '
+                + 'printed</div>';
+            statusDiv.style.display = 'block';
+            return;
+        }
         // After an intentional shutdown the "Server stopped" banner is
         // already showing — don't overwrite it with the generic message.
         if (app.websocketManager?._shutdown) {
@@ -73,7 +81,8 @@ function updateStatus() {
         // Only show banner after a delay to avoid flashing on page load
         if (!disconnectTimeout) {
             disconnectTimeout = setTimeout(() => {
-                if (!app.websocketManager?.isConnected) {
+                if (!app.websocketManager?.isConnected
+                        && !app.websocketManager?._shutdown) {
                     statusDiv.innerHTML = '<div class="disconnected-banner">⚠ OpenROAD disconnected — retrying…</div>';
                     statusDiv.style.display = 'block';
                 }
@@ -171,8 +180,13 @@ const app = {
     // display-controls.js once techData.chiplets arrives; null means
     // "render every chiplet" (single-chip designs).
     visibleChiplets: null,
-    // Per-layer fill pattern, keyed by raw tech-layer name → int matching the
-    // server's FillPattern enum (1 = solid). Populated/persisted by
+    // { chipletPath: [layer names] } a die hides (resp. makes unselectable)
+    // while another die still shows them; `visibleLayerNames` and
+    // `selectableLayers` are the unions.  Kept by display-controls.js.
+    chipletHiddenLayers: {},
+    chipletNonselectableLayers: {},
+    // Per-row fill pattern, keyed by the Display Controls row id → int matching
+    // the server's FillPattern enum (1 = solid). Populated/persisted by
     // display-controls.js and read lazily by websocket-tile-layer.js.
     layerPatterns: {},
     useTrueZ: getCookie('or_use_true_z') === '1',
@@ -1257,7 +1271,8 @@ if (staticCache) {
     app.websocketManager = WebSocketManager.fromCache(staticCache, updateStatus);
 } else {
     const websocketUrl = websocketUrlFrom(window.location);
-    app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
+    app.websocketManager = new WebSocketManager(
+        websocketUrl, updateStatus, { probeUrl: window.location.href });
     // Where each tech layer has shapes, so tiles that would come back empty
     // are never requested (see layer-extents.js).  Static reports have no
     // server to ask and keep requesting everything.
@@ -1911,6 +1926,13 @@ app.websocketManager.readyPromise.then(async () => {
             }
             if (app.visibleChiplets instanceof Set) {
                 selectRequest.visible_chiplets = [...app.visibleChiplets];
+            }
+            if (hasEntries(app.chipletHiddenLayers)) {
+                selectRequest.chiplet_hidden_layers = app.chipletHiddenLayers;
+            }
+            if (hasEntries(app.chipletNonselectableLayers)) {
+                selectRequest.chiplet_nonselectable_layers
+                    = app.chipletNonselectableLayers;
             }
             const token = beginSelection(app);
             return app.websocketManager.request(selectRequest)

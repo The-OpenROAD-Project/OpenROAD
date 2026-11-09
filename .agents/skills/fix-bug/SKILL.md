@@ -3,7 +3,7 @@ name: fix-bug
 description: >
   Fix an OpenROAD bug from a GitHub issue. Analyzes the issue, traces the
   root cause through the codebase, implements the fix, creates regression
-  tests (registered in Bazel; CMake is deprecated), runs clang-format, and
+  tests (registered in Bazel), runs clang-format, and
   prepares a signed-off commit. Use when given a bug report issue number,
   error code (e.g. GPL-0305, DRT-0001, RSZ-2007), or when asked to fix a
   bug in any OpenROAD module (ant, cts, dpl, drt, gpl, grt, mpl, odb,
@@ -68,13 +68,13 @@ future regression is caught immediately.
 
 Use the **add-test** skill (`.agents/skills/add-test/SKILL.md`) for the
 full workflow: writing the test, generating golden files, and
-registering in Bazel (CMake test registration is not required).
+registering in Bazel.
 
 ## 5. Format and commit
 
 ```bash
-# Format changed C++ files (NEVER format src/sta/* or *.i files)
-clang-format -i <changed-cpp-files>
+# Format C++ with CI's pinned clang-format (skips src/sta and *.i)
+bazelisk run //:tidy_cc
 
 # Stage and commit with DCO sign-off
 git add <changed-files>
@@ -89,5 +89,5 @@ Fixes #ISSUE_NUMBER"
 - [ ] No unintended changes: `git diff HEAD`
 - [ ] Test registered in Bazel `BUILD`
 - [ ] No `src/sta/` files modified
-- [ ] C++ files formatted with clang-format
+- [ ] C++ files formatted with `bazelisk run //:tidy_cc`
 - [ ] Commit is signed off (`-s`)

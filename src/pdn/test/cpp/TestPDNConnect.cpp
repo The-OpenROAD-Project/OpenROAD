@@ -9,6 +9,7 @@
 // (-min_width_layers in particular), plus the intermediate-layer discovery
 // and the complex-stacked-via path they interact with.
 
+#include <algorithm>
 #include <functional>
 #include <memory>
 #include <set>
@@ -177,6 +178,46 @@ class TestConnect : public PdnTest
       }
     }
     return vias;
+  }
+
+  // Check the emitted rectangles, independently of the generator's checks.
+  // These fixtures have no cut-layer enclosure overrides.
+  static void expectDefaultEnclosures(odb::dbSWire* wire)
+  {
+    const auto vias = placedVias(wire);
+    ASSERT_FALSE(vias.empty());
+    for (auto* box : vias) {
+      auto* via = box->getBlockVia();
+      ASSERT_NE(via, nullptr);
+      auto* rule = via->getViaGenerateRule();
+      ASSERT_NE(rule, nullptr);
+      odb::Rect cuts;
+      cuts.mergeInit();
+      for (auto* shape : via->getBoxes()) {
+        if (shape->getTechLayer()->getType() == odb::dbTechLayerType::CUT) {
+          cuts.merge(shape->getBox());
+        }
+      }
+      for (const int index : {0, 2}) {
+        auto* landing = rule->getViaLayerRule(index);
+        SCOPED_TRACE(landing->getLayer()->getName());
+        odb::Rect metal;
+        metal.mergeInit();
+        for (auto* shape : via->getBoxes()) {
+          if (shape->getTechLayer() == landing->getLayer()) {
+            metal.merge(shape->getBox());
+          }
+        }
+        int first, second;
+        landing->getEnclosure(first, second);
+        const int x
+            = std::min(cuts.xMin() - metal.xMin(), metal.xMax() - cuts.xMax());
+        const int y
+            = std::min(cuts.yMin() - metal.yMin(), metal.yMax() - cuts.yMax());
+        EXPECT_TRUE((x >= first && y >= second) || (x >= second && y >= first))
+            << "actual enclosure: " << x << ", " << y;
+      }
+    }
   }
 
   // The markers recordFailedVias() filed for a failure reason on this
@@ -993,21 +1034,17 @@ TEST_F(TestConnect, MakeViaPrefersTheRuleWithMoreCutArea)
 // A shape that cannot grow -- one that is locked, or that an instance pin
 // lands on -- must hold the whole via, so the via is narrowed to fit rather
 // than allowed to spill past the shape's end.
-//
-// Narrowed to fit, the via has no enclosure past the shape's end, where the
-// rule asks for 10, so it does not meet the rule either. Only that it stays
-// inside the shape is checked.
 TEST_F(TestConnect, MakeViaKeepsTheViaInsideAShapeThatCannotGrow)
 {
   addGenerateRule(1, "RULE12");
   Connect connect(grid_, m(1), m(2));
 
-  // The M1 strap ends 50 into the M2 strap, so a via's 10 of enclosure past
-  // a 50 cut would reach past its end.
-  ShapePtr locked = makeShape(1, odb::Rect(0, 1000, 2050, 1200));
+  // The 70 overlap fits a 50 cut with 10 of enclosure on each side.
+  ShapePtr locked = makeShape(1, odb::Rect(0, 1000, 2070, 1200));
   locked->setLocked();
   DbVia::ViaLayerShape shapes;
-  connect.makeVia(makeWire(),
+  odb::dbSWire* locked_wire = makeWire();
+  connect.makeVia(locked_wire,
                   locked,
                   makeShape(2, kM2Strap),
                   odb::dbWireShapeType::STRIPE,
@@ -1016,12 +1053,14 @@ TEST_F(TestConnect, MakeViaKeepsTheViaInsideAShapeThatCannotGrow)
   for (const auto& [rect, box] : shapes.bottom) {
     EXPECT_TRUE(locked->getRect().contains(rect));
   }
+  expectDefaultEnclosures(locked_wire);
 
-  // The same for an M2 strap that ends 50 into the M1 strap and carries an
+  // The same for an M2 strap that ends 70 into the M1 strap and carries an
   // instance pin.
-  ShapePtr pinned = makeShape(2, odb::Rect(2000, 0, 2200, 1050));
+  ShapePtr pinned = makeShape(2, odb::Rect(2000, 0, 2200, 1070));
   pinned->addITermConnection(odb::Rect(2000, 0, 2200, 100));
-  connect.makeVia(makeWire(),
+  odb::dbSWire* pinned_wire = makeWire();
+  connect.makeVia(pinned_wire,
                   makeShape(1, kM1Strap),
                   pinned,
                   odb::dbWireShapeType::STRIPE,
@@ -1029,6 +1068,31 @@ TEST_F(TestConnect, MakeViaKeepsTheViaInsideAShapeThatCannotGrow)
   ASSERT_FALSE(shapes.top.empty());
   for (const auto& [rect, box] : shapes.top) {
     EXPECT_TRUE(pinned->getRect().contains(rect));
+  }
+  expectDefaultEnclosures(pinned_wire);
+}
+
+TEST_F(TestConnect, MakeViaRejectsInsufficientEnclosureWhenAShapeCannotGrow)
+{
+  addGenerateRule(1, "RULE12");
+  Connect connect(grid_, m(1), m(2));
+  for (const bool lock_lower : {true, false}) {
+    SCOPED_TRACE(lock_lower);
+    auto lower
+        = makeShape(1, lock_lower ? odb::Rect(0, 1000, 2050, 1200) : kM1Strap);
+    auto upper
+        = makeShape(2, lock_lower ? kM2Strap : odb::Rect(2000, 0, 2200, 1050));
+    if (lock_lower) {
+      lower->setLocked();
+    } else {
+      upper->addITermConnection(odb::Rect(2000, 0, 2200, 100));
+    }
+    odb::dbSWire* wire = makeWire();
+    DbVia::ViaLayerShape shapes;
+    connect.makeVia(wire, lower, upper, odb::dbWireShapeType::STRIPE, shapes);
+    EXPECT_TRUE(placedVias(wire).empty());
+    EXPECT_TRUE(shapes.bottom.empty());
+    EXPECT_TRUE(shapes.top.empty());
   }
 }
 
@@ -1089,28 +1153,48 @@ TEST_F(TestConnect, MakeViaStacksAViaOnEachCutLayer)
 // An overlap narrower than the intermediate layer's minimum width takes the
 // tapered path, which offers the intermediate layer a rect grown to its
 // minimum width, and the stack is still built.
-//
-// The M3 strap is itself under M3's minimum width, so no via here meets every
-// rule: the M3 enclosure across the strap is 5 against the rule's 10, and the
-// M2 metal between the two vias is 70 wide against M2's minimum of 100. Only
-// that the stack is built is checked.
 TEST_F(TestConnect, MakeViaStacksThroughAnOverlapUnderTheMinimumWidth)
 {
-  addGenerateRule(1, "RULE12");
-  addGenerateRule(2, "RULE23");
+  auto* lower_rule = addGenerateRule(1, "RULE12");
+  auto* upper_rule = addGenerateRule(2, "RULE23");
+  lower_rule->getViaLayerRule(2)->setEnclosure(25, 25);
+  upper_rule->getViaLayerRule(0)->setEnclosure(25, 25);
   Connect connect(grid_, m(1), m(3));
   odb::dbSWire* wire = makeWire();
 
   DbVia::ViaLayerShape shapes;
   connect.makeVia(wire,
                   makeShape(1, kM1Strap),
-                  makeShape(3, odb::Rect(2000, 1000, 2060, 1200)),
+                  makeShape(3, odb::Rect(4920, 1000, 9000, 1200)),
                   odb::dbWireShapeType::STRIPE,
                   shapes);
   ASSERT_TRUE(connect.isMultiLayerVia());
   EXPECT_EQ(placedVias(wire).size(), 2u);
   EXPECT_FALSE(shapes.bottom.empty());
   EXPECT_FALSE(shapes.top.empty());
+  expectDefaultEnclosures(wire);
+  for (auto* via : placedVias(wire)) {
+    for (auto* box : via->getBlockVia()->getBoxes()) {
+      if (box->getTechLayer() == m(2)) {
+        EXPECT_GE(box->getBox().dx(), kMinWidth);
+      }
+    }
+  }
+}
+
+TEST_F(TestConnect, MakeViaRejectsAStackWithInsufficientOuterEnclosure)
+{
+  addGenerateRule(1, "RULE12");
+  addGenerateRule(2, "RULE23");
+  Connect connect(grid_, m(1), m(3));
+  odb::dbSWire* wire = makeWire();
+  DbVia::ViaLayerShape shapes;
+  connect.makeVia(wire,
+                  makeShape(1, kM1Strap),
+                  makeShape(3, odb::Rect(2000, 1000, 2060, 1200)),
+                  odb::dbWireShapeType::STRIPE,
+                  shapes);
+  EXPECT_TRUE(placedVias(wire).empty());
 }
 
 // Split cuts on an intermediate layer place one single-cut via per pitch, and
@@ -1494,11 +1578,12 @@ TEST_F(TestConnect, ViaConvertVectorToTreeIndexesByArea)
 // are connected with a STRIPE via.
 TEST_F(TestConnect, WriteToDbExtendsAShapeAlongItsLayer)
 {
-  addGenerateRule(1, "RULE12");
+  auto* rule = addGenerateRule(1, "RULE12", 30);
+  rule->getViaLayerRule(0)->setEnclosure(20, 10);
   Connect connect(grid_, m(1), m(2));
   odb::dbSWire* wire = makeWire();
-  // The M1 strap ends 50 into the M2 strap; the via's 10 of enclosure past
-  // its 50 cut reaches 10 beyond that.
+  // The top landing fits the 50 overlap. The bottom needs 20 on each
+  // side of a 30 cut, extending the M1 strap by 10.
   ShapePtr lower = makeShape(1,
                              odb::Rect(0, 1000, 2050, 1200),
                              power_,
@@ -1517,13 +1602,15 @@ TEST_F(TestConnect, WriteToDbExtendsAShapeAlongItsLayer)
   const std::vector<odb::dbSBox*> vias = placedVias(wire);
   ASSERT_EQ(vias.size(), 1u);
   EXPECT_EQ(vias[0]->getWireShapeType(), odb::dbWireShapeType::STRIPE);
+  expectDefaultEnclosures(wire);
 }
 
 // A via whose metal would grow a shape into an obstruction is removed, and
 // recorded as ripped up.
 TEST_F(TestConnect, WriteToDbRipsUpAViaThatReachesAnObstruction)
 {
-  addGenerateRule(1, "RULE12");
+  auto* rule = addGenerateRule(1, "RULE12", 30);
+  rule->getViaLayerRule(0)->setEnclosure(20, 10);
   Connect connect(grid_, m(1), m(2));
   odb::dbSWire* wire = makeWire();
   ShapePtr lower = makeShape(1, odb::Rect(0, 1000, 2050, 1200));
@@ -1576,10 +1663,11 @@ TEST_F(TestConnect, WriteToDbRipsUpATechViaThatReachesAnObstruction)
 
 // Growing a shape across its layer's routing direction would widen it, so a
 // via that needs that is removed instead -- unless the shape allows it. The
-// 40 x 60 M1 shape and the 60 x 40 M2 shape both run against their layers.
+// 60 x 80 M1 shape runs against its layer.
 TEST_F(TestConnect, WriteToDbRipsUpAViaThatWidensAShapeAcrossItsLayer)
 {
-  addGenerateRule(1, "RULE12");
+  auto* rule = addGenerateRule(1, "RULE12");
+  rule->getViaLayerRule(1)->setRect(odb::Rect(-15, -45, 15, 45));
   Connect connect(grid_, m(1), m(2));
   auto write = [&](const ShapePtr& lower, const ShapePtr& upper) {
     Via via(&connect,
@@ -1587,19 +1675,70 @@ TEST_F(TestConnect, WriteToDbRipsUpAViaThatWidensAShapeAcrossItsLayer)
             lower->getRect().intersect(upper->getRect()),
             lower,
             upper);
-    via.writeToDb(makeWire(), block(), {});
+    odb::dbSWire* wire = makeWire();
+    via.writeToDb(wire, block(), {});
+    if (!via.isFailed()) {
+      expectDefaultEnclosures(wire);
+    }
     return !via.isFailed();
   };
 
-  const odb::Rect m1_stub(2000, 1000, 2040, 1060);
+  const odb::Rect m1_stub(2000, 1000, 2060, 1080);
   EXPECT_FALSE(write(makeShape(1, m1_stub), makeShape(2, kM2Strap)));
   ShapePtr m1_widening = makeShape(1, m1_stub);
   m1_widening->setAllowsNonPreferredDirectionChange();
   EXPECT_TRUE(write(m1_widening, makeShape(2, kM2Strap)));
   EXPECT_GT(m1_widening->getRect().dy(), m1_stub.dy());
+}
 
-  const odb::Rect m2_stub(2000, 1000, 2060, 1040);
-  EXPECT_FALSE(write(makeShape(1, kM1Strap), makeShape(2, m2_stub)));
+TEST_F(TestConnect, WriteToDbRipsUpAViaThatWidensTheUpperShapeAcrossItsLayer)
+{
+  auto* rule = addGenerateRule(1, "RULE12");
+  rule->getViaLayerRule(1)->setRect(odb::Rect(-45, -15, 45, 15));
+  Connect connect(grid_, m(1), m(2));
+  const odb::Rect stub(2000, 1000, 2080, 1060);
+  for (const bool allow_widening : {false, true}) {
+    SCOPED_TRACE(allow_widening);
+    auto lower = makeShape(1, kM1Strap);
+    auto upper = makeShape(2, stub);
+    if (allow_widening) {
+      upper->setAllowsNonPreferredDirectionChange();
+    }
+    Via via(&connect, power_, lower->getRect().intersect(stub), lower, upper);
+    odb::dbSWire* wire = makeWire();
+    via.writeToDb(wire, block(), {});
+    EXPECT_EQ(via.isFailed(), !allow_widening);
+    if (allow_widening) {
+      EXPECT_GT(upper->getRect().dx(), stub.dx());
+      expectDefaultEnclosures(wire);
+    } else {
+      EXPECT_TRUE(placedVias(wire).empty());
+      EXPECT_EQ(upper->getRect(), stub);
+    }
+  }
+}
+
+TEST_F(TestConnect, WriteToDbRejectsInsufficientEnclosureDespiteAllowedWidening)
+{
+  addGenerateRule(1, "RULE12");
+  Connect connect(grid_, m(1), m(2));
+  for (const bool narrow_lower : {true, false}) {
+    SCOPED_TRACE(narrow_lower);
+    auto lower = makeShape(
+        1, narrow_lower ? odb::Rect(2000, 1000, 2040, 1060) : kM1Strap);
+    auto upper = makeShape(
+        2, narrow_lower ? kM2Strap : odb::Rect(2000, 1000, 2060, 1040));
+    (narrow_lower ? lower : upper)->setAllowsNonPreferredDirectionChange();
+    Via via(&connect,
+            power_,
+            lower->getRect().intersect(upper->getRect()),
+            lower,
+            upper);
+    odb::dbSWire* wire = makeWire();
+    via.writeToDb(wire, block(), {});
+    EXPECT_TRUE(via.isFailed());
+    EXPECT_TRUE(placedVias(wire).empty());
+  }
 }
 
 // When no via can be built the via is marked as failed to build.
