@@ -8,13 +8,10 @@ src/sta/debug/
 # existing checkouts and reused CI runners; Bazel takes these from MODULE.bazel.
 third-party/abc/
 third-party/lemon/
+third-party/sv-elab/
 
 # standalone workspace for downstream consumer tests
 test/downstream/
-
-# Prevent //... from walking into sv-elab as its BUILD files expect
-# sv-elab is the root
-third-party/sv-elab/
 
 # Other things to ignore
 tmp/

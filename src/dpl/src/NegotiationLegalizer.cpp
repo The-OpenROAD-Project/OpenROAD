@@ -408,27 +408,36 @@ bool NegotiationLegalizer::initFromDb()
     cell.node = network_ ? network_->getNode(db_inst) : nullptr;
     cell.fixed = status.isFixed();
 
-    int db_x = 0;
-    int db_y = 0;
-    db_inst->getLocation(db_x, db_y);
-    // Snap to grid, findBestLocation() iterates over grid positions
-    cell.init_x = dpl_grid->gridRoundX(DbuX{db_x - die_xlo_}).v;
-    cell.init_y = dpl_grid->gridRoundY(DbuY{db_y - die_ylo_}).v;
+    if (cell.fixed) {
+      // Cover the oriented footprint at its actual location.
+      const auto footprint = dpl_grid->gridCovering(opendp_->getBbox(db_inst));
+      cell.init_x = footprint.xlo.v;
+      cell.init_y = footprint.ylo.v;
+      cell.width = footprint.xhi.v - footprint.xlo.v;
+      cell.height = footprint.yhi.v - footprint.ylo.v;
+    } else {
+      int db_x = 0;
+      int db_y = 0;
+      db_inst->getLocation(db_x, db_y);
+      // Snap to grid, findBestLocation() iterates over grid positions
+      cell.init_x = dpl_grid->gridRoundX(DbuX{db_x - die_xlo_}).v;
+      cell.init_y = dpl_grid->gridRoundY(DbuY{db_y - die_ylo_}).v;
 
-    // Width/height must be computed before clamping so the upper bounds
-    // account for the full cell footprint (x + width <= grid_w_, etc.).
-    auto* master = db_inst->getMaster();
-    cell.width = std::max(
-        1,
-        static_cast<int>(
-            std::round(static_cast<double>(master->getWidth()) / site_width_)));
-    cell.height = dpl_grid->gridHeight(master).v;
+      // Width/height must be computed before clamping so the upper bounds
+      // account for the full cell footprint (x + width <= grid_w_, etc.).
+      auto* master = db_inst->getMaster();
+      cell.width = std::max(
+          1,
+          static_cast<int>(std::round(static_cast<double>(master->getWidth())
+                                      / site_width_)));
+      cell.height = dpl_grid->gridHeight(master).v;
 
-    // Clamp to valid grid range – gridRoundY can return grid_h_ when the
-    // instance is near the top edge.  Use (grid_w_ - width) so the full
-    // footprint stays within the grid (matches Opendp::legalPt behaviour).
-    cell.init_x = std::max(0, std::min(cell.init_x, grid_w_ - cell.width));
-    cell.init_y = std::max(0, std::min(cell.init_y, grid_h_ - cell.height));
+      // Clamp to valid grid range. gridRoundY can return grid_h_ when the
+      // instance is near the top edge.  Use (grid_w_ - width) so the full
+      // footprint stays within the grid (matches Opendp::legalPt behaviour).
+      cell.init_x = std::max(0, std::min(cell.init_x, grid_w_ - cell.width));
+      cell.init_y = std::max(0, std::min(cell.init_y, grid_h_ - cell.height));
+    }
     cell.x = cell.init_x;
     cell.y = cell.init_y;
 

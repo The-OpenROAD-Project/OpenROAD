@@ -25,8 +25,23 @@ _coverity_bazel() {
     # Coverity captures compiler invocations, so cached or sandboxed Bazel
     # actions can make the capture incomplete. Clear the local action cache,
     # disable the persistent action caches, and execute spawns locally.
+    #
+    # cov-build --bazel adds --@rules_coverity//... flags to the build, so
+    # the rules_coverity module shipped with cov-analysis must be visible
+    # from the main repository.
+    local cov_build cov_rules
+    cov_build=$(command -v cov-build) || {
+        echo "cov-build is not on PATH." >&2
+        exit 1
+    }
+    cov_rules="$(dirname "$(dirname "$(readlink -f "${cov_build}")")")/bazel/rules_coverity"
+    if [[ ! -d ${cov_rules} ]]; then
+        echo "Coverity Bazel rules not found at ${cov_rules}." >&2
+        exit 1
+    fi
     bazelisk clean
     cov-build --dir cov-int --bazel bazelisk build \
+        --inject_repository=rules_coverity="${cov_rules}" \
         --spawn_strategy=local \
         --remote_cache= \
         --disk_cache= \

@@ -3,11 +3,6 @@ set openroad_test_dir [file normalize [file join $script_dir .. .. .. test]]
 
 source [file join $openroad_test_dir helpers.tcl]
 
-if { ![gui::supported] } {
-  puts "fail"
-  exit 1
-}
-
 suppress_message ODB 128
 suppress_message ODB 130
 suppress_message ODB 131

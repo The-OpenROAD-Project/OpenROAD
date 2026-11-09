@@ -63,7 +63,10 @@ cc_test(
 
 cc_test(
     name = "opt_test",
-    srcs = ["opt_test.cc"],
+    srcs = [
+        "equivalence_check.h",
+        "opt_test.cc",
+    ],
     deps = [
         "//src/syn",
         "//src/syn/src/ir",
