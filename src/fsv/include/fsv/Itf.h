@@ -42,12 +42,12 @@ struct ItfWarning
 // section, and the header's USE_SI_DENSITY and
 // DROP_FACTOR_LATERAL_SPACING.
 //
-// Refused with an error naming the keyword: effects on the geometry or the
-// dielectrics the solver does not model (thickness variation with width,
+// Warned about with a message naming the keyword: effects on the geometry or
+// the dielectrics the solver does not model (thickness variation with width,
 // spacing or density, ILD, air gaps, dielectric fill, permittivity against
 // spacing, fill emulation, drop factors, multiple-mask etch,
 // ETCH_FROM_TOP). A non-zero SIDE_TANGENT, sloped sidewalls, is not
-// modeled either but only warned about: the conductor is taken with
+// modeled either and also warned about: the conductor is taken with
 // vertical sidewalls.
 //
 // Any other keyword is skipped with a warning: one per statement, so an
@@ -56,7 +56,7 @@ struct ItfWarning
 //
 // The solver itself places wires as drawn: the etch, resistance and
 // temperature values are carried for the extractor that builds its models
-// from the stack, and the solver's own read_itf refuses a stack whose
+// from the stack, and the solver's own read_itf warns about a stack whose
 // etch would change capacitance. The ground plane is placed at the top of
 // the lowest dielectric, which is not part of the returned stack.
 //

@@ -44,7 +44,10 @@ constexpr double kHeightTolerance = 1e-9;
 // The characters that are tokens on their own.
 constexpr std::string_view kPunctuation = "{}=()";
 // The via endpoint that names the substrate, i.e. the ground plane.
-constexpr std::string_view kSubstrate = "SUBSTRATE";
+bool isSubstrate(const std::string_view name)
+{
+  return name == "SUBSTRATE" || name == "substrate";
+}
 
 [[noreturn]] void fail(const int line, const std::string_view message)
 {
@@ -160,13 +163,23 @@ const std::vector<const char*> kSkippedConductor
     = {"DEVICE_TYPE",
        "GATE_TO_CONTACT_SMIN",
        "GATE_TO_DIFFUSION_CAP",
+       "GATE_TO_DIFFUSION_ADJUSTMENT_CAP",
        "FLOATING_GATE_TO_DIFFUSION_CONTACT_CAP",
        "IS_PLANAR",
        "IS_DIFF",
        "RAISED_DIFFUSION_ETCH",
        "RAISED_DIFFUSION_THICKNESS",
        "RAISED_DIFFUSION_TO_GATE_SMIN",
-       "RAISED_DIFFUSION_GATE_SIDE_CONFORMAL_ER"};
+       "RAISED_DIFFUSION_GATE_SIDE_CONFORMAL_ER",
+       "TRENCH_CONTACT_EXTENSION",
+       "VERTICAL_RESISTANCE_VS_WIDTH_AND_LENGTH",
+       "CUT_END_EXTENSION_TABLE",
+       "LINE_END_EXTENSION_TABLE",
+       "EXTENSIONMIN",
+       "THICKNESS_VARIATION_VS_MASK",
+       "LINKED_TO",
+       "MEASURED_FROM",
+       "ASSOCIATED_CONDUCTOR"};
 // Contact and trench-contact forms, device-level.
 const std::vector<const char*> kSkippedVia
     = {"ETCH_VS_CONTACT_AND_GATE_SPACINGS",
@@ -174,7 +187,9 @@ const std::vector<const char*> kSkippedVia
        "RPV_VS_COVERAGE",
        "RPV_VS_WIDTH_AND_LENGTH",
        "RPV_VS_SI_WIDTH_AND_LENGTH",
-       "ETCH_ASSOCIATED_LAYER"};
+       "ETCH_ASSOCIATED_LAYER",
+       "WMIN",
+       "SMIN"};
 
 // Every keyword the reader handles, whether it models, refuses or skips
 // it. Each starts a statement of its own, so a group's options never
@@ -230,6 +245,7 @@ const std::set<std::string_view>& statementKeywords()
         "SPACINGS",
         "WIDTHS",
         "VALUES",
+        "INTERPOLATE_RPV_AREA",
     };
     all.insert(kSpacerTable);
     for (const std::vector<const char*>* list : {&kRefusedDielectric,
@@ -629,12 +645,12 @@ class Fields
   }
 
   // Keywords the reader cannot model yet.
-  void refuse(const std::vector<const char*>& keys) const
+  void refuse(const std::vector<const char*>& keys)
   {
     for (const char* key : keys) {
-      if (has(key)) {
-        fail(lineOf(key),
-             std::string(key) + " in " + label() + " is not supported");
+      for (const Node* n : takeAll(key)) {
+        warn_(n->line,
+              std::string(key) + " in " + label() + " is not supported");
       }
     }
   }
@@ -688,7 +704,13 @@ std::vector<double> numberList(const Node& n)
 // as in RPSQ_VS_SI_WIDTH { (0.1, 0.5) (0.2, 0.4) }.
 std::vector<std::vector<double>> tupleList(const Node& n, const size_t arity)
 {
-  if (!n.has_block || n.has_value || n.hasHeader() || !n.children.empty()
+  bool has_header = n.hasHeader();
+  if (n.keyword == "RPV_VS_AREA" && n.words.size() == 1
+      && n.words.front().text == "INTERPOLATE_RPV_AREA" && n.settings.empty()
+      && n.tuple_options.empty()) {
+    has_header = false;
+  }
+  if (!n.has_block || n.has_value || has_header || !n.children.empty()
       || !n.numbers.empty() || n.tuples.empty()) {
     fail(
         n.line,
@@ -933,6 +955,17 @@ void Reader::readGlobal(const Node& n, Stack& stack)
                                                  "REFERENCE_DIRECTION",
                                                  "USE_SI_DENSITY",
                                                  "DROP_FACTOR_LATERAL_SPACING"};
+  static const std::set<std::string> kSkippedGlobals
+      = {"PROCESS_FOUNDRY",
+         "PROCESS_NODE",
+         "PROCESS_VERSION",
+         "PROCESS_TYPE",
+         "PROCESS_CORNER",
+         "MULTIGATE",
+         "GATE_RESISTANCE_ADJUSTMENT_FACTOR"};
+  if (kSkippedGlobals.count(k)) {
+    return;
+  }
   if (!kGlobals.count(k)) {
     // Unknown, block and all.
     skipUnknown(n, "", warn());
@@ -1043,6 +1076,7 @@ void Reader::readDielectric(Fields& b, Placed& placed, double& planar_top)
            "IS_CONFORMAL dielectric " + name
                + " cannot use MEASURED_FROM a layer");
     }
+    b.take("BW_T");
     const Stack::ConformalDielectric conformal{
         .name = name,
         .side_thickness = b.number("SW_T", 0),
@@ -1218,9 +1252,9 @@ void Reader::readEtchTable(const Node& n, Stack::Conductor& c)
                                                    "PERPENDICULAR_TO_REFERENCE",
                                                    "PARALLEL_TO_GATE"});
   if (options.count("ETCH_FROM_TOP")) {
-    fail(n.line,
-         "ETCH_FROM_TOP (a trapezoidal cross section) of " + c.name
-             + " is not supported");
+    warn()(n.line,
+           "ETCH_FROM_TOP (a trapezoidal cross section) of " + c.name
+               + " is not supported");
   }
   if (options.count("RESISTIVE_ONLY") && options.count("CAPACITIVE_ONLY")) {
     fail(n.line, "ETCH_VS_WIDTH_AND_SPACING of " + c.name + " is both "
@@ -1239,9 +1273,10 @@ void Reader::readEtchTable(const Node& n, Stack::Conductor& c)
   // A multiple-mask table (NUMBER_OF_MASKS, MASKS) is a different shape.
   for (const Node& child : n.children) {
     if (child.keyword == "NUMBER_OF_MASKS" || child.keyword == "MASKS") {
-      fail(child.line,
-           "multiple-mask etch tables (" + child.keyword + ") of " + c.name
-               + " are not supported");
+      warn()(child.line,
+             "multiple-mask etch tables (" + child.keyword + ") of " + c.name
+                 + " are not supported");
+      return;
     }
   }
   if (options.count("PARALLEL_TO_GATE")) {
@@ -1285,14 +1320,43 @@ void Reader::readVia(const Node& n, Stack& stack) const
   }
   const int from_line = b.lineOf("FROM");
   const int to_line = b.lineOf("TO");
-  const std::string from = b.text("FROM");
-  const std::string to = b.text("TO");
+  auto get_layers = [](const Node* node) -> std::vector<std::string> {
+    if (node == nullptr) {
+      return {};
+    }
+    if (node->has_value) {
+      return {node->value.text};
+    }
+    if (node->has_block) {
+      std::vector<std::string> layers;
+      for (const Node& c : node->children) {
+        layers.push_back(c.keyword);
+      }
+      return layers;
+    }
+    return {};
+  };
+  const Node* from_node = b.take("FROM");
+  const Node* to_node = b.take("TO");
+  const std::vector<std::string> from_layers = get_layers(from_node);
+  const std::vector<std::string> to_layers = get_layers(to_node);
+  if (from_layers.empty() || to_layers.empty()) {
+    fail(n.line, "VIA " + name + " needs FROM and TO");
+  }
+  if (from_layers.size() > 1 || to_layers.size() > 1) {
+    warn()(n.line,
+           "VIA " + name + " connecting multiple layers is not supported");
+    return;
+  }
+  const std::string& from = from_layers.front();
+  const std::string& to = to_layers.front();
   Stack::Via via;
   via.name = name;
   via.rpv = b.number("RPV", 0);
   via.area = b.number("AREA", 0);
   via.rho = b.number("RHO", 0);
   if (const Node* curve_node = b.take("RPV_VS_AREA")) {
+    modifiers(*curve_node, {"INTERPOLATE_RPV_AREA"});
     via.rpv_vs_area = curve(*curve_node, "areas");
   }
   const int forms = (b.has("RPV") || b.has("AREA")) + b.has("RHO")
@@ -1303,8 +1367,18 @@ void Reader::readVia(const Node& n, Stack& stack) const
              + " gives its resistance in more than one form (RPV with AREA, "
                "RHO, RPV_VS_AREA)");
   }
-  if (b.has("RPV") != b.has("AREA")) {
-    fail(n.line, "VIA " + name + " needs both RPV and AREA");
+  if (b.has("RPV") && !b.has("AREA")) {
+    warn()(n.line,
+           "VIA " + name
+               + " has RPV without AREA, which is not supported; resistance is "
+                 "ignored");
+    via.rpv = 0;
+  } else if (!b.has("RPV") && b.has("AREA")) {
+    warn()(n.line,
+           "VIA " + name
+               + " has AREA without RPV, which is not supported; resistance is "
+                 "ignored");
+    via.area = 0;
   }
   if (via.rpv < 0 || via.rho < 0 || (b.has("AREA") && !(via.area > 0))) {
     fail(n.line,
@@ -1330,17 +1404,17 @@ void Reader::readVia(const Node& n, Stack& stack) const
 
   const Stack::Layer a = stack.layer(from);
   const Stack::Layer c = stack.layer(to);
-  if (from != kSubstrate && !stack.isConductor(a)) {
+  if (!isSubstrate(from) && !stack.isConductor(a)) {
     fail(from_line, "VIA " + name + " names unknown layer " + from);
   }
-  if (to != kSubstrate && !stack.isConductor(c)) {
+  if (!isSubstrate(to) && !stack.isConductor(c)) {
     fail(to_line, "VIA " + name + " names unknown layer " + to);
   }
   if (from == to) {
     fail(n.line, "VIA " + name + " connects " + from + " to itself");
   }
-  if (from == kSubstrate || to == kSubstrate) {
-    via.upper = from == kSubstrate ? c : a;
+  if (isSubstrate(from) || isSubstrate(to)) {
+    via.upper = isSubstrate(from) ? c : a;
     stack.addVia(via);
     return;
   }

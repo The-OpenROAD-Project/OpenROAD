@@ -625,12 +625,14 @@ TEST(Itf, RefusesAndChecksResistanceForms)
   };
   const std::string table
       = "{ WIDTHS { 0.1 } SPACINGS { 0.1 } VALUES { 0.01 } }";
-  expectError(conductor("THICKNESS_VS_WIDTH_AND_SPACING " + table),
-              "THICKNESS_VS_WIDTH_AND_SPACING in CONDUCTOR M is not "
-              "supported");
+  std::vector<ItfWarning> warnings;
+  parse(conductor("THICKNESS_VS_WIDTH_AND_SPACING " + table), &warnings);
+  ASSERT_EQ(warnings.size(), 1u);
+  EXPECT_EQ(warnings[0].message,
+            "THICKNESS_VS_WIDTH_AND_SPACING in CONDUCTOR M is not supported");
   // Sloped sidewalls are warned about, not refused; vertical ones are
   // simply read.
-  std::vector<ItfWarning> warnings;
+  warnings.clear();
   const Stack sloped
       = parse(conductor("RPSQ=1 SIDE_TANGENT=0.06992"), &warnings);
   EXPECT_EQ(sloped.conductor(sloped.layer("M")).rpsq, 1);
@@ -643,16 +645,31 @@ TEST(Itf, RefusesAndChecksResistanceForms)
   EXPECT_TRUE(warnings.empty());
   expectError(conductor("SIDE_TANGENT=x"),
               "SIDE_TANGENT expects a finite number");
-  expectError(conductor("FILL_RATIO=0.2"),
-              "FILL_RATIO in CONDUCTOR M is not supported");
-  expectError(conductor("THICKNESS_VS_DENSITY { (0.1, 0.01) }"),
-              "THICKNESS_VS_DENSITY in CONDUCTOR M is not supported");
-  expectError(conductor("ETCH_VS_WIDTH_AND_SPACING ETCH_FROM_TOP " + table),
-              "ETCH_FROM_TOP");
-  expectError(conductor("ETCH_VS_WIDTH_AND_SPACING { NUMBER_OF_MASKS=2 "
-                        "MASKS(1,2) WIDTHS { 0.1 } SPACINGS { 0.1 } VALUES { "
-                        "0.01 } }"),
-              "multiple-mask etch tables (NUMBER_OF_MASKS)");
+  warnings.clear();
+  parse(conductor("FILL_RATIO=0.2"), &warnings);
+  ASSERT_EQ(warnings.size(), 1u);
+  EXPECT_EQ(warnings[0].message, "FILL_RATIO in CONDUCTOR M is not supported");
+  warnings.clear();
+  parse(conductor("THICKNESS_VS_DENSITY { (0.1, 0.01) }"), &warnings);
+  ASSERT_EQ(warnings.size(), 1u);
+  EXPECT_EQ(warnings[0].message,
+            "THICKNESS_VS_DENSITY in CONDUCTOR M is not supported");
+  warnings.clear();
+  parse(conductor("ETCH_VS_WIDTH_AND_SPACING ETCH_FROM_TOP " + table),
+        &warnings);
+  ASSERT_EQ(warnings.size(), 1u);
+  EXPECT_EQ(
+      warnings[0].message,
+      "ETCH_FROM_TOP (a trapezoidal cross section) of M is not supported");
+  warnings.clear();
+  parse(conductor("ETCH_VS_WIDTH_AND_SPACING { NUMBER_OF_MASKS=2 "
+                  "MASKS(1,2) WIDTHS { 0.1 } SPACINGS { 0.1 } VALUES { "
+                  "0.01 } }"),
+        &warnings);
+  ASSERT_EQ(warnings.size(), 1u);
+  EXPECT_EQ(
+      warnings[0].message,
+      "multiple-mask etch tables (NUMBER_OF_MASKS) of M are not supported");
   expectError(conductor("ETCH_VS_WIDTH_AND_SPACING SIDEWAYS " + table),
               "unsupported option SIDEWAYS of ETCH_VS_WIDTH_AND_SPACING");
   expectError(
@@ -721,9 +738,13 @@ TEST(Itf, RefusesAndChecksResistanceForms)
       "needs its ASSOCIATED_CONDUCTOR M to be a GATE layer");
   expectError(head + "DIELECTRIC E { THICKNESS=1 ER=4 " + spacer + " }\n" + sub,
               "needs IS_CONFORMAL and an ASSOCIATED_CONDUCTOR");
-  expectError(head + "DIELECTRIC E { THICKNESS=1 ER=4 ER_VS_SI_SPACING { "
-                     "(0.1, 4) } }\n" + sub,
-              "ER_VS_SI_SPACING in DIELECTRIC E is not supported");
+  warnings.clear();
+  parse(head + "DIELECTRIC E { THICKNESS=1 ER=4 ER_VS_SI_SPACING { "
+               "(0.1, 4) } }\n" + sub,
+        &warnings);
+  ASSERT_EQ(warnings.size(), 1u);
+  EXPECT_EQ(warnings[0].message,
+            "ER_VS_SI_SPACING in DIELECTRIC E is not supported");
   expectError(head + "DROP_FACTOR_LATERAL_SPACING = 1\n"
                      "DROP_FACTOR_LATERAL_SPACING = 2\n" + sub,
               "DROP_FACTOR_LATERAL_SPACING is given twice");
@@ -745,8 +766,12 @@ TEST(Itf, RefusesAndChecksResistanceForms)
   const std::string two = head + "CONDUCTOR M2 { THICKNESS=0.2 }\n"
                           + "DIELECTRIC D0 { THICKNESS=0.5 ER=4 }\n"
                           + "CONDUCTOR M1 { THICKNESS=0.2 }\n" + sub;
-  expectError(two + "VIA v { FROM=M1 TO=M2 RPV=1 }\n",
-              "VIA v needs both RPV and AREA");
+  warnings.clear();
+  parse(two + "VIA v { FROM=M1 TO=M2 RPV=1 }\n", &warnings);
+  ASSERT_EQ(warnings.size(), 1u);
+  EXPECT_EQ(warnings[0].message,
+            "VIA v has RPV without AREA, which is not supported; resistance is "
+            "ignored");
   expectError(two + "VIA v { FROM=M1 TO=M2 RPV=1 AREA=0 }\n",
               "VIA v needs a non-negative resistance and a positive area");
   // A zero resistance per via with an area is a zero-ohm via, in both the
@@ -819,12 +844,19 @@ TEST(Itf, SkipsUnknownKeywordsWithAWarning)
   EXPECT_EQ(flagged.conductor(flagged.layer("M")).min_width, 0.1);
   EXPECT_EQ(flagged.conductor(flagged.layer("M")).rpsq_vs_width.x.size(), 1u);
   EXPECT_EQ(warnings.size(), 3u);
-  expectError(
+  warnings.clear();
+  parse(
       "TECHNOLOGY = t\nDIELECTRIC D { THICKNESS=1 ER=4 }\n"
       "CONDUCTOR M { THICKNESS=0.2 NEW_FLAG FILL_RATIO = 0.5 "
       "THICKNESS_VS_DENSITY { (0.1, 0.01) } }\n"
       "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n",
-      "FILL_RATIO in CONDUCTOR M is not supported");
+      &warnings);
+  ASSERT_EQ(warnings.size(), 3u);
+  EXPECT_EQ(warnings[0].message, "FILL_RATIO in CONDUCTOR M is not supported");
+  EXPECT_EQ(warnings[1].message,
+            "THICKNESS_VS_DENSITY in CONDUCTOR M is not supported");
+  EXPECT_EQ(warnings[2].message,
+            "unknown keyword NEW_FLAG in CONDUCTOR M, skipped");
   // Tuples among a group's options, alone or mixed with words and
   // settings, are skipped with the group.
   warnings.clear();
@@ -997,6 +1029,41 @@ TEST(Itf, SyntaxErrors)
   expectError(head + "TSV t\n", "TSV expects { ... }");
   // Options do not reach past a keyword the reader handles.
   expectError(head + "TSV t = 1\n" + sub, "TSV expects { ... }");
+}
+
+TEST(Itf, RealProcessConstructs)
+{
+  const std::string head
+      = "TECHNOLOGY = t\nDIELECTRIC D { THICKNESS=1 ER=4 }\n";
+  const std::string sub = "DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }\n";
+  const std::string two
+      = head + "CONDUCTOR M2 { THICKNESS=0.2 WMIN=0.1 SMIN=0.1 }\n"
+        + "DIELECTRIC D0 { THICKNESS=0.5 ER=4 }\n"
+        + "CONDUCTOR M1 { THICKNESS=0.2 WMIN=0.1 SMIN=0.1 }\n" + sub;
+
+  // VIA with braced single layers, WMIN/SMIN and INTERPOLATE_RPV_AREA.
+  std::vector<ItfWarning> warnings;
+  const Stack stack = parse(
+      two
+      + "VIA v { FROM { M1 } TO { M2 } WMIN=0.1 SMIN=0.1\n"
+        "  RPV_VS_AREA INTERPOLATE_RPV_AREA { (0.01, 10) (0.02, 5) } }\n",
+      &warnings);
+  EXPECT_TRUE(warnings.empty());
+  ASSERT_EQ(stack.vias().size(), 1u);
+  EXPECT_EQ(stack.vias()[0].name, "v");
+  EXPECT_EQ(stack.vias()[0].rpv_vs_area.x.size(), 2u);
+
+  // VIA with multiple layers in FROM is warned about and skipped.
+  warnings.clear();
+  const Stack multi = parse(
+      two
+      + "VIA v { FROM { M1 M2 } TO { M2 }\n"
+        "  RPV_VS_AREA { (0.01, 10) } }\n",
+      &warnings);
+  ASSERT_EQ(warnings.size(), 1u);
+  EXPECT_EQ(warnings[0].message,
+            "VIA v connecting multiple layers is not supported");
+  EXPECT_TRUE(multi.vias().empty());
 }
 
 }  // namespace
