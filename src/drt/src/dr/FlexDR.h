@@ -129,6 +129,11 @@ class FlexDR
       const std::vector<SearchRepairArgs>& default_strategy,
       frUInt4 shapeCost,
       frUInt4 markerCost);
+  static void updateUnidirStubbornThreshold(
+      int it,
+      int post_drvs,
+      const std::vector<int>& history_drvs,
+      FlexDRFlow& flow_state_machine);
 
   const FlexDRViaData* getViaData() const { return &via_data_; }
   void setDebug(std::unique_ptr<AbstractDRGraphics> dr_graphics);
@@ -256,6 +261,8 @@ class FlexDRFlow
   void setFixingMaxSpacing(bool value);
 
   void setStubbornFlowViolationThreshold(int threshold);
+
+  void resetStubbornFlowViolationThreshold();
 
  private:
   bool isArgsChanged(const FlowContext& context) const;

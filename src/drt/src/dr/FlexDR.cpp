@@ -1848,14 +1848,22 @@ std::optional<FlexDR::SearchRepairArgs> FlexDR::nextStepStrategy(
   // Unidirectional / LEF58_RECTONLY layers (e.g. asap7 7nm): run the first
   // shifted pass (strategy[1]: size=7, offset=-2, RipUpMode::ALL) to
   // straighten it=0 tile seams across the chip, skip the redundant second
-  // RipUpMode::ALL pass (strategy[2]: offset=-5), and step directly into
-  // strategy[3..] (7x7 DRC).
+  // RipUpMode::ALL pass (strategy[2]: offset=-5), and step through the
+  // RipUpMode::DRC entries in strategy[3..] while skipping non-DRC reset rows
+  // (ALL/NEARDRC such as strategy[17], strategy[23], strategy[25]).
   if (has_unidir_layer) {
     if (it == 1) {
       return default_strategy[1];
     }
-    const size_t idx = std::min<size_t>(default_strategy.size() - 1,
-                                        static_cast<size_t>(it + 1));
+    size_t idx = 3;
+    for (int k = 3; k <= it; ++k) {
+      ++idx;
+      while (idx + 1 < default_strategy.size()
+             && default_strategy[idx].ripupMode != RipUpMode::DRC) {
+        ++idx;
+      }
+    }
+    idx = std::min<size_t>(default_strategy.size() - 1, idx);
     return default_strategy[idx];
   }
 
@@ -1992,6 +2000,20 @@ std::optional<FlexDR::SearchRepairArgs> FlexDR::nextStepStrategy(
   const float decay = is_very_high ? 0.950f : 0.990f;
   return SearchRepairArgs{adaptive_size, -(it % adaptive_size), maze_end, drc_cost, mkr_cost, drc_cost, decay, RipUpMode::DRC, follow_guide};
   // clang-format on
+}
+
+void FlexDR::updateUnidirStubbornThreshold(const int it,
+                                           const int post_drvs,
+                                           const std::vector<int>& history_drvs,
+                                           FlexDRFlow& flow_state_machine)
+{
+  if (it == 0 && post_drvs >= kAdaptiveMinInitialDrvs) {
+    flow_state_machine.setStubbornFlowViolationThreshold(
+        kAdaptiveUnidirStubbornThreshold);
+  } else if (it >= 3 && !history_drvs.empty()
+             && post_drvs * 5 > history_drvs.back() * 3) {
+    flow_state_machine.resetStubbornFlowViolationThreshold();
+  }
 }
 
 void addRectToPolySet(gtl::polygon_90_set_data<frCoord>& polySet,
@@ -2413,10 +2435,9 @@ int FlexDR::main()
     }
     searchRepair(args);
     const int post_drvs = getDesign()->getTopBlock()->getNumMarkers();
-    if (iter_ == 0 && router_cfg_->ADAPTIVE_STRATEGY && has_unidir_layer
-        && post_drvs >= kAdaptiveMinInitialDrvs) {
-      flow_state_machine_->setStubbornFlowViolationThreshold(
-          kAdaptiveUnidirStubbornThreshold);
+    if (router_cfg_->ADAPTIVE_STRATEGY && has_unidir_layer) {
+      updateUnidirStubbornThreshold(
+          iter_, post_drvs, history_drvs, *flow_state_machine_);
     }
     history_drvs.push_back(post_drvs);
     if (post_drvs == 0) {

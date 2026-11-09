@@ -62,6 +62,11 @@ void FlexDRFlow::setStubbornFlowViolationThreshold(int threshold)
   stubborn_flow_violation_threshold_ = threshold;
 }
 
+void FlexDRFlow::resetStubbornFlowViolationThreshold()
+{
+  stubborn_flow_violation_threshold_ = STUBBORN_FLOW_VIOLATION_THRESHOLD;
+}
+
 bool FlexDRFlow::isArgsChanged(const FlowContext& context) const
 {
   return !context.args.isEqualIgnoringSizeAndOffset(last_args_);

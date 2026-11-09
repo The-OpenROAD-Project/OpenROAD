@@ -76,23 +76,56 @@ TEST(AdaptiveStrategyTest, DefaultsToDisabledInParamsAndRouterConfig)
   EXPECT_EQ(FlexDR::kAdaptiveUnidirStubbornThreshold, 15);
 }
 
-TEST(AdaptiveStrategyTest, FlowStateMachineUsesCustomStubbornThreshold)
+TEST(AdaptiveStrategyTest,
+     UpdateUnidirStubbornThresholdLowersAndRestoresThreshold)
 {
   const auto table = FlexDR::strategy(kShapeCost, kMarkerCost);
-  FlexDRFlow default_flow;
-  EXPECT_EQ(
-      default_flow.determineNextFlow({.num_violations = 50, .args = table[3]}),
-      FlexDRFlow::State::GUIDES);
+  FlexDRFlow small_design_flow;
+  FlexDR::updateUnidirStubbornThreshold(
+      /*it=*/0,
+      /*post_drvs=*/FlexDR::kAdaptiveMinInitialDrvs - 1,
+      /*history_drvs=*/{},
+      small_design_flow);
+  EXPECT_EQ(small_design_flow.determineNextFlow(
+                {.num_violations = 50, .args = table[3]}),
+            FlexDRFlow::State::GUIDES);
+
+  // Slow reduction before iteration 3 (it = 2) does not restore threshold 100.
+  FlexDRFlow early_slow_flow;
+  std::vector<int> early_history;
+  for (const auto [it, post_drvs] :
+       std::vector<std::pair<int, int>>{{0, 1000}, {1, 80}, {2, 70}}) {
+    FlexDR::updateUnidirStubbornThreshold(
+        it, post_drvs, early_history, early_slow_flow);
+    early_history.push_back(post_drvs);
+  }
+  EXPECT_EQ(early_slow_flow.determineNextFlow(
+                {.num_violations = 70, .args = table[3]}),
+            FlexDRFlow::State::OPTIMIZATION);
 
   FlexDRFlow adaptive_unidir_flow;
-  adaptive_unidir_flow.setStubbornFlowViolationThreshold(
-      FlexDR::kAdaptiveUnidirStubbornThreshold);
-  EXPECT_EQ(adaptive_unidir_flow.determineNextFlow(
-                {.num_violations = 50, .args = table[3]}),
-            FlexDRFlow::State::OPTIMIZATION);
-  EXPECT_EQ(adaptive_unidir_flow.determineNextFlow(
-                {.num_violations = 15, .args = table[3]}),
-            FlexDRFlow::State::GUIDES);
+  std::vector<int> history_drvs;
+  const std::vector<int> trace_drvs = {274632, 42402, 1642, 124, 51, 35};
+  for (int it = 0; it < static_cast<int>(trace_drvs.size()); ++it) {
+    const int post_drvs = trace_drvs[it];
+    FlexDR::updateUnidirStubbornThreshold(
+        it, post_drvs, history_drvs, adaptive_unidir_flow);
+    history_drvs.push_back(post_drvs);
+    if (it == 4) {
+      // 124 -> 51 is a 58.9% reduction (>= 40%), so threshold stays at 15.
+      EXPECT_EQ(adaptive_unidir_flow.determineNextFlow(
+                    {.num_violations = post_drvs, .args = table[5]}),
+                FlexDRFlow::State::OPTIMIZATION);
+      EXPECT_EQ(adaptive_unidir_flow.determineNextFlow(
+                    {.num_violations = 15, .args = table[5]}),
+                FlexDRFlow::State::GUIDES);
+    } else if (it == 5) {
+      // 51 -> 35 is a 31.4% reduction (< 40%), restoring threshold to 100.
+      EXPECT_EQ(adaptive_unidir_flow.determineNextFlow(
+                    {.num_violations = post_drvs, .args = table[6]}),
+                FlexDRFlow::State::GUIDES);
+    }
+  }
 }
 
 TEST(AdaptiveStrategyTest, StopsOnZeroDrvsOrEndOfTable)
@@ -143,9 +176,22 @@ TEST(AdaptiveStrategyTest, UnidirectionalLargeDesignSkipsSecondRipupAllPass)
 {
   TraceRunner runner(4500, /*unidir=*/true);
   // Iteration 1 runs table[1] (shifted RipUpMode::ALL); iteration 2 skips
-  // table[2] and steps directly into table[3] (RipUpMode::DRC).
-  runner.expectStep(runner.table[1], /*post_step_drvs=*/400);
-  runner.expectStep(runner.table[3], /*post_step_drvs=*/0);
+  // table[2] and steps directly into table[3..16] (RipUpMode::DRC).
+  runner.expectStep(runner.table[1], /*post_step_drvs=*/1500);
+  for (size_t idx = 3; idx <= 16; ++idx) {
+    runner.expectStep(runner.table[idx],
+                      /*post_step_drvs=*/static_cast<int>(1000 - idx * 40));
+  }
+  // Iteration 16 skips table[17] (RipUpMode::ALL) and steps through
+  // table[18..22] (RipUpMode::DRC).
+  for (size_t idx = 18; idx <= 22; ++idx) {
+    runner.expectStep(runner.table[idx],
+                      /*post_step_drvs=*/static_cast<int>(300 - idx * 10));
+  }
+  // Skips table[23] (RipUpMode::NEARDRC) -> table[24] (DRC), and skips
+  // table[25] (RipUpMode::ALL) -> table[26] (DRC).
+  runner.expectStep(runner.table[24], /*post_step_drvs=*/40);
+  runner.expectStep(runner.table[26], /*post_step_drvs=*/0);
 }
 
 // clang-format off
