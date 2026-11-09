@@ -16,11 +16,11 @@ import { getCookie, setCookie } from './theme.js';
 // paints it.
 const VIEWS = [
     { name: 'instances', label: 'Verilog Modules',
-        gate: 'module_view', layer: 'modulesLayer', noun: 'modules',
+        gate: 'module_view', layer: 'modulesLayer',
         build: (c, app, redraw, gate) =>
             new HierarchyBrowser(c, app, redraw, gate) },
     { name: 'clusters', label: 'Instance Groups',
-        gate: 'cluster_view', layer: 'clustersLayer', noun: 'groups',
+        gate: 'cluster_view', layer: 'clustersLayer',
         build: (c, app, redraw, gate) =>
             new ClustersWidget(c, app, redraw, gate) },
 ];

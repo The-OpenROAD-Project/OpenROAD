@@ -278,6 +278,15 @@ class CallBack : public dbBlockCallBackObj
   }
   // dbObstruction End
 
+  // dbModInst Start
+  void inDbModInstDestroy(dbModInst* modinst) override
+  {
+    if (!_pause) {
+      events.push_back(std::string("Destroy modinst ") + modinst->getName());
+    }
+  }
+  // dbModInst End
+
   // dbGroup Start
   void inDbGroupCreate(dbGroup* group) override
   {

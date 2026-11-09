@@ -3327,7 +3327,7 @@ class SelectHandlerTest : public tst::Nangate45Fixture
   FakeInspectable fake_previous_;
 };
 
-// select_group tests.  They go through the descriptor registry, so the
+// Tests that select a dbGroup.  They go through the descriptor registry, so the
 // fixture registers FakeGroupDescriptor for dbGroup* and removes it again
 // afterwards (the registry is a process-wide singleton).
 class GroupSelectTest : public tst::Nangate45Fixture
@@ -3338,9 +3338,7 @@ class GroupSelectTest : public tst::Nangate45Fixture
     block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
     block_->setCoreArea(odb::Rect(0, 0, 100000, 100000));
 
-    const ClusterTree tree = makeClusterTreeIn(block_, lib_, /*child_insts=*/1);
-    root_ = tree.root;
-    child_ = tree.child;
+    root_ = makeClusterTreeIn(block_, lib_, /*child_insts=*/1).root;
 
     gen_ = std::make_shared<TileGenerator>(
         getDb(), /*sta=*/nullptr, getLogger());
@@ -3362,184 +3360,7 @@ class GroupSelectTest : public tst::Nangate45Fixture
   std::unique_ptr<SelectHandler> handler_;
   SessionState state_;
   odb::dbGroup* root_ = nullptr;
-  odb::dbGroup* child_ = nullptr;
 };
-
-// Clicking a row in the Clusters panel selects the dbGroup, and the group's
-// descriptor turns that into one highlight shape per member instance — the
-// whole point of MPL's -keep_clustering_data.
-TEST_F(GroupSelectTest, SelectGroupHighlightsEveryMemberInstance)
-{
-  WebSocketRequest req;
-  req.id = 3;
-  req.type = WebSocketRequest::kSelectGroup;
-  req.json = parseObj(R"({"odb_id":)" + std::to_string(root_->getId()) + "}");
-
-  auto resp = handler_->handleSelectGroup(req, state_);
-  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
-  auto obj = parseObj(payloadStr(resp));
-  EXPECT_EQ(obj.at("name").as_string(), "root");
-  EXPECT_EQ(obj.at("selection_count").as_int64(), 1);
-  EXPECT_FALSE(obj.at("highlight_truncated").as_bool());
-
-  // root's own instance plus the nested cluster's.
-  EXPECT_EQ(state_.highlight_rects.size(), 2u);
-  EXPECT_EQ(state_.selection_set.size(), 1u);
-}
-
-TEST_F(GroupSelectTest, SelectGroupReplacesSelectionUnlessAskedToAdd)
-{
-  WebSocketRequest req;
-  req.id = 4;
-  req.type = WebSocketRequest::kSelectGroup;
-  req.json = parseObj(R"({"odb_id":)" + std::to_string(root_->getId()) + "}");
-  handler_->handleSelectGroup(req, state_);
-
-  req.json = parseObj(R"({"odb_id":)" + std::to_string(child_->getId())
-                      + R"(,"add_to_selection":true})");
-  handler_->handleSelectGroup(req, state_);
-  EXPECT_EQ(state_.selection_set.size(), 2u);
-
-  req.json = parseObj(R"({"odb_id":)" + std::to_string(child_->getId()) + "}");
-  handler_->handleSelectGroup(req, state_);
-  EXPECT_EQ(state_.selection_set.size(), 1u);
-}
-
-// How the Clusters panel clicks a row: it isolates the cluster through the
-// `_clusters` color map, so it wants the selection (for the Inspector) without
-// the overlay shapes, whose yellow veil would cover the cluster's color.
-TEST_F(GroupSelectTest, NoHighlightSelectsWithoutOverlayShapes)
-{
-  WebSocketRequest req;
-  req.id = 9;
-  req.type = WebSocketRequest::kSelectGroup;
-  req.json = parseObj(R"({"odb_id":)" + std::to_string(root_->getId())
-                      + R"(,"no_highlight":true})");
-
-  auto resp = handler_->handleSelectGroup(req, state_);
-  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
-  auto obj = parseObj(payloadStr(resp));
-  // Still selected and still described — only the shapes are skipped.
-  EXPECT_EQ(obj.at("name").as_string(), "root");
-  EXPECT_EQ(obj.at("selection_count").as_int64(), 1);
-  EXPECT_FALSE(obj.at("highlight_truncated").as_bool());
-  EXPECT_EQ(state_.selection_set.size(), 1u);
-  EXPECT_TRUE(state_.highlight_rects.empty());
-  EXPECT_TRUE(state_.highlight_polys.empty());
-}
-
-// Selecting with no_highlight after a normal selection must clear what the
-// previous one left on the overlay, or the old shapes would outlive it.
-TEST_F(GroupSelectTest, NoHighlightClearsShapesLeftByAPreviousSelection)
-{
-  WebSocketRequest req;
-  req.id = 10;
-  req.type = WebSocketRequest::kSelectGroup;
-  req.json = parseObj(R"({"odb_id":)" + std::to_string(root_->getId()) + "}");
-  handler_->handleSelectGroup(req, state_);
-  ASSERT_FALSE(state_.highlight_rects.empty());
-
-  req.json = parseObj(R"({"odb_id":)" + std::to_string(child_->getId())
-                      + R"(,"no_highlight":true})");
-  handler_->handleSelectGroup(req, state_);
-  EXPECT_EQ(state_.selection_set.size(), 1u);
-  EXPECT_TRUE(state_.highlight_rects.empty());
-}
-
-// Deselecting is what the Clusters panel does when the row is clicked again or
-// the cluster is hidden: without it the member instances stay highlighted while
-// the panel shows the cluster as neither selected nor visible.
-TEST_F(GroupSelectTest, SelectGroupCanDeselect)
-{
-  WebSocketRequest req;
-  req.id = 6;
-  req.type = WebSocketRequest::kSelectGroup;
-  req.json = parseObj(R"({"odb_id":)" + std::to_string(root_->getId()) + "}");
-  handler_->handleSelectGroup(req, state_);
-  ASSERT_EQ(state_.selection_set.size(), 1u);
-  ASSERT_FALSE(state_.highlight_rects.empty());
-
-  req.json = parseObj(R"({"odb_id":)" + std::to_string(root_->getId())
-                      + R"(,"deselect":true})");
-  auto resp = handler_->handleSelectGroup(req, state_);
-  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
-  auto obj = parseObj(payloadStr(resp));
-  EXPECT_EQ(obj.at("selection_count").as_int64(), 0);
-  EXPECT_TRUE(state_.selection_set.empty());
-  EXPECT_TRUE(state_.highlight_rects.empty());
-  EXPECT_FALSE(state_.current_inspected);
-  // Nothing is being described, and that is not an error condition.
-  EXPECT_FALSE(obj.if_contains("error"));
-  EXPECT_FALSE(obj.if_contains("name"));
-}
-
-// Deselecting one of several keeps the others lit.
-TEST_F(GroupSelectTest, DeselectLeavesTheRestOfTheSelectionHighlighted)
-{
-  WebSocketRequest req;
-  req.id = 7;
-  req.type = WebSocketRequest::kSelectGroup;
-  req.json = parseObj(R"({"odb_id":)" + std::to_string(root_->getId()) + "}");
-  handler_->handleSelectGroup(req, state_);
-  req.json = parseObj(R"({"odb_id":)" + std::to_string(child_->getId())
-                      + R"(,"add_to_selection":true})");
-  handler_->handleSelectGroup(req, state_);
-  ASSERT_EQ(state_.selection_set.size(), 2u);
-
-  req.json = parseObj(R"({"odb_id":)" + std::to_string(child_->getId())
-                      + R"(,"deselect":true})");
-  handler_->handleSelectGroup(req, state_);
-  EXPECT_EQ(state_.selection_set.size(), 1u);
-  // root still holds its own instance plus the nested cluster's.
-  EXPECT_EQ(state_.highlight_rects.size(), 2u);
-}
-
-// Deselecting something that was never selected is a no-op, not an error: the
-// panel fires it whenever a cluster is hidden, selected or not.
-TEST_F(GroupSelectTest, DeselectOfAnUnselectedGroupIsHarmless)
-{
-  WebSocketRequest req;
-  req.id = 8;
-  req.type = WebSocketRequest::kSelectGroup;
-  req.json = parseObj(R"({"odb_id":)" + std::to_string(child_->getId())
-                      + R"(,"deselect":true})");
-  auto resp = handler_->handleSelectGroup(req, state_);
-  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
-  EXPECT_TRUE(state_.selection_set.empty());
-  EXPECT_TRUE(state_.highlight_rects.empty());
-}
-
-TEST_F(GroupSelectTest, SelectGroupWithUnknownIdReturnsError)
-{
-  WebSocketRequest req;
-  req.id = 5;
-  req.type = WebSocketRequest::kSelectGroup;
-  req.json = parseObj(R"({"odb_id":9999})");
-
-  auto resp = handler_->handleSelectGroup(req, state_);
-  EXPECT_EQ(resp.type, WebSocketResponse::kError);
-  EXPECT_NE(payloadStr(resp).find("Group not found"), std::string::npos);
-}
-
-// After a destroy the selection may hold dangling objects; adding to it would
-// highlight them and run their deselect action.
-TEST_F(GroupSelectTest, SelectGroupDropsAStaleSelection)
-{
-  WebSocketRequest req;
-  req.id = 11;
-  req.type = WebSocketRequest::kSelectGroup;
-  req.json = parseObj(R"({"odb_id":)" + std::to_string(root_->getId()) + "}");
-  handler_->handleSelectGroup(req, state_);
-  state_.selection_stale = true;
-
-  req.json = parseObj(R"({"odb_id":)" + std::to_string(child_->getId())
-                      + R"(,"add_to_selection":true})");
-  const auto obj
-      = parseObj(payloadStr(handler_->handleSelectGroup(req, state_)));
-
-  EXPECT_EQ(obj.at("selection_count").as_int64(), 1);
-  EXPECT_FALSE(state_.selection_stale.load());
-}
 
 // A descriptor can emit one shape per leaf, so the budget has to bound what ONE
 // object accumulates, not only the total.  Driven on the collector: reaching
@@ -3593,13 +3414,10 @@ TEST(ShapeCollectorBudget, ResetClearsShapesAndOverflow)
 // and the Find dialog's "Clear highlights" button is not a deselect.
 TEST_F(GroupSelectTest, ClearHighlightsKeepsTheSelection)
 {
-  WebSocketRequest select;
-  select.id = 10;
-  select.type = WebSocketRequest::kSelectGroup;
-  select.json
-      = parseObj(R"({"odb_id":)" + std::to_string(root_->getId()) + "}");
-  ASSERT_EQ(handler_->handleSelectGroup(select, state_).type,
-            WebSocketResponse::kJson);
+  const web::Selected sel
+      = web::DescriptorRegistry::instance()->makeSelected(root_);
+  state_.selection_set.insert(sel);
+  state_.current_inspected = sel;
 
   WebSocketRequest highlight;
   highlight.id = 11;

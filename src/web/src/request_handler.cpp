@@ -1316,9 +1316,8 @@ static int selectionIteratorPosition(const web::SelectionSet& set,
 }
 
 // Accumulate highlight shapes from all items in a selection set, degrading
-// gracefully on huge sets (see kMaxHighlightShapes).  Returns true when the
-// shapes had to be coarsened or dropped.
-static bool collectMultiHighlightShapes(const web::SelectionSet& selections,
+// gracefully on huge sets (see kMaxHighlightShapes).
+static void collectMultiHighlightShapes(const web::SelectionSet& selections,
                                         std::vector<odb::Rect>& rects,
                                         std::vector<odb::Polygon>& polys,
                                         std::vector<FlightLine>& lines,
@@ -1327,7 +1326,6 @@ static bool collectMultiHighlightShapes(const web::SelectionSet& selections,
   rects.clear();
   polys.clear();
   lines.clear();
-  bool truncated = false;
   // Reused across every selected object: a fresh collector per object is two
   // vector allocations each, and a wide selection holds thousands.
   ShapeCollector collector;
@@ -1341,20 +1339,18 @@ static bool collectMultiHighlightShapes(const web::SelectionSet& selections,
     const size_t used = rects.size() + polys.size();
     if (used >= kMaxHighlightShapes) {
       // Budget exhausted even for one box per object.
-      return true;
+      return;
     }
     collector.reset(kMaxHighlightShapes - used);
     appendHighlightShapes(sel, rects, polys, lines, flywires_only, collector);
     if (!collector.overflowed()) {
       continue;
     }
-    truncated = true;
     const odb::Rect stand_in = standInBox(sel, collector);
     if (!stand_in.isInverted()) {
       rects.push_back(stand_in);
     }
   }
-  return truncated;
 }
 
 // Report whether the selection set contains any instance / any net, so the
@@ -1517,19 +1513,16 @@ static void setSelectionHighlights(SessionState& state,
                                : SessionState::HighlightSource::kNone;
 }
 
-// Returns true when the shapes had to be coarsened (see kMaxHighlightShapes);
-// handlers that report it to the client pass it on as `highlight_truncated`.
-static bool setSelectionSetHighlights(SessionState& state)
+static void setSelectionSetHighlights(SessionState& state)
 {
-  const bool truncated = collectMultiHighlightShapes(state.selection_set,
-                                                     state.highlight_rects,
-                                                     state.highlight_polys,
-                                                     state.highlight_lines,
-                                                     state.flywires_only);
+  collectMultiHighlightShapes(state.selection_set,
+                              state.highlight_rects,
+                              state.highlight_polys,
+                              state.highlight_lines,
+                              state.flywires_only);
   state.highlight_source = state.selection_set.empty()
                                ? SessionState::HighlightSource::kNone
                                : SessionState::HighlightSource::kSelectionSet;
-  return truncated;
 }
 
 // Rebuild the per-group overlay shapes from the group members.  Colors
@@ -2090,11 +2083,6 @@ void SelectHandler::registerRequests(RequestDispatcher& d)
         WebSocketRequest::kSelectLayer,
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleSelectLayer(req, state);
-        });
-  d.add("select_group",
-        WebSocketRequest::kSelectGroup,
-        [this](const WebSocketRequest& req, SessionState& state) {
-          return handleSelectGroup(req, state);
         });
   d.add("find",
         WebSocketRequest::kFind,
@@ -3630,128 +3618,6 @@ WebSocketResponse SelectHandler::handleSelectLayer(const WebSocketRequest& req,
                         gen_->getLogger());
     root["selection_count"] = static_cast<int64_t>(sel_count);
     root["selection_index"] = static_cast<int64_t>(sel_index);
-    {
-      std::lock_guard<std::mutex> lock(state.selectables_mutex);
-      state.selectables = std::move(new_selectables);
-    }
-
-    writePayload(resp, root);
-  } catch (const std::exception& e) {
-    resp.type = WebSocketResponse::kError;
-    const std::string err = std::string("server error: ") + e.what();
-    resp.payload.assign(err.begin(), err.end());
-  }
-  return resp;
-}
-
-// Select (or deselect) a cluster (dbGroup) by its ODB id.  Driven by a row
-// click in the Clusters panel, which is also the only place the selection can
-// be undone from — hence `deselect`: clicking the row again, or hiding the
-// cluster, has to be able to drop it.
-WebSocketResponse SelectHandler::handleSelectGroup(const WebSocketRequest& req,
-                                                   SessionState& state)
-{
-  WebSocketResponse resp;
-  resp.id = req.id;
-  resp.type = WebSocketResponse::kJson;
-
-  try {
-    consumeStaleSelection(state);
-    odb::dbBlock* block = gen_->getBlock();
-    if (block == nullptr) {
-      throw std::runtime_error("No design loaded");
-    }
-    const auto odb_id = static_cast<uint32_t>(req.json.at("odb_id").as_int64());
-    // Resolved by scanning the (small) group table rather than with
-    // dbGroup::getGroup, which dereferences the id without validating it and
-    // so crashes on a stale id from a client whose tree predates a reload.
-    odb::dbGroup* group = nullptr;
-    for (odb::dbGroup* candidate : block->getGroups()) {
-      if (candidate->getId() == odb_id) {
-        group = candidate;
-        break;
-      }
-    }
-    if (group == nullptr) {
-      throw std::runtime_error("Group not found: " + std::to_string(odb_id));
-    }
-
-    web::Selected sel
-        = web::DescriptorRegistry::instance()->makeSelected(group);
-    const bool add_to_selection = jsonOr(req.json, "add_to_selection", false);
-    const bool deselect = jsonOr(req.json, "deselect", false);
-    const bool no_highlight = jsonOr(req.json, "no_highlight", false);
-
-    // STA's highlight()/getProperties() are not thread-safe; serialize with
-    // the other STA callers (timing, clock tree, tcl eval).
-    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
-    const bool use_dbu = jsonOr(req.json, "use_dbu", false);
-    ScopedDbuFormat dbu_fmt(gen_->getDb(), use_dbu);
-
-    bool truncated = false;
-    int sel_count = 0;
-    int sel_index = -1;
-    {
-      std::lock_guard<std::mutex> lock(state.selection_mutex);
-      state.hover_rects.clear();
-      state.timing_rects.clear();
-      state.timing_lines.clear();
-      state.navigation_history.clear();
-
-      if (deselect) {
-        state.selection_set.erase(sel);
-        // Whatever is left keeps its highlight; with nothing left the overlay
-        // clears, which is the point of the request.
-        if (state.current_inspected == sel) {
-          runDeselectAction(state.current_inspected, web::Selected());
-          state.current_inspected = web::Selected();
-        }
-      } else {
-        if (!add_to_selection) {
-          state.selection_set.clear();
-        }
-        state.selection_set.insert(sel);
-        // Before the overwrite: the outgoing object's deselect action is what
-        // tears down whatever it put up (a timing cone, say), and it cannot be
-        // reached once current_inspected has moved on.
-        runDeselectAction(state.current_inspected, sel);
-        state.current_inspected = sel;
-      }
-      state.selection_itr = deselect ? state.selection_set.begin()
-                                     : state.selection_set.find(sel);
-
-      if (no_highlight) {
-        // For a client that shows the cluster through set_group_colors
-        // instead: the `_clusters` layer paints it in the cluster's own color,
-        // which the selection veil would cover.
-        clearSelectionHighlights(state);
-      } else {
-        truncated = setSelectionSetHighlights(state);
-      }
-      sel_count = static_cast<int>(state.selection_set.size());
-      sel_index
-          = selectionIteratorPosition(state.selection_set, state.selection_itr);
-    }
-
-    boost::json::object root;
-    std::vector<web::Selected> new_selectables;
-    if (deselect) {
-      // No object to describe: the Inspector goes back to its placeholder
-      // rather than still showing the cluster the user just dropped.  Not
-      // writeInspectPayload(Selected()) — that reports an "invalid select_id"
-      // error, which this is not.
-      root["can_navigate_back"] = 0;
-    } else {
-      writeInspectPayload(root,
-                          sel,
-                          new_selectables,
-                          /*can_navigate_back=*/false,
-                          use_dbu,
-                          gen_->getLogger());
-    }
-    root["selection_count"] = static_cast<int64_t>(sel_count);
-    root["selection_index"] = static_cast<int64_t>(sel_index);
-    root["highlight_truncated"] = truncated;
     {
       std::lock_guard<std::mutex> lock(state.selectables_mutex);
       state.selectables = std::move(new_selectables);

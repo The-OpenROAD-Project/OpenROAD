@@ -348,6 +348,25 @@ TEST_F(CallbackFixture, test_group_destroy_grouped_inst)
   EXPECT_TRUE(group->getInsts().empty());
 }
 
+TEST_F(CallbackFixture, test_group_destroy_grouped_modinst)
+{
+  create2LevetDbWithBTerms();
+  dbBlock* block = db_->getChip()->getBlock();
+  dbModule* parent_mod = dbModule::create(block, "parent_mod");
+  dbModule* master_mod = dbModule::create(block, "master_mod");
+  dbModInst* modinst = dbModInst::create(parent_mod, master_mod, "mi");
+  ASSERT_NE(modinst, nullptr);
+  dbGroup* group = dbGroup::create(block, "g");
+  group->addModInst(modinst);
+  cb_.addOwner(block);
+
+  dbModInst::destroy(modinst);
+  EXPECT_EQ(cb_.events.size(), 2);
+  EXPECT_EQ(cb_.events[0], "Remove modinst mi from group g");
+  EXPECT_EQ(cb_.events[1], "Destroy modinst mi");
+  EXPECT_TRUE(group->getModInsts().empty());
+}
+
 TEST_F(CallbackFixture, test_row)
 {
   create2LevetDbWithBTerms();

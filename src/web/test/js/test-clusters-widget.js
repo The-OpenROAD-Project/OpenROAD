@@ -357,7 +357,6 @@ describe('ClustersWidget', () => {
         }
         await waitForMicrotasks();
 
-        assert.deepEqual(app.sent.filter(m => m.type === 'select_group'), []);
         assert.equal(app.sent.filter(m => m.type === 'set_group_colors')
                          .at(-1).colors, before);
         assert.equal(widget._table.querySelector('tr.selected'), null);

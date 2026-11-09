@@ -5,7 +5,7 @@
 
 import { CheckboxTreeModel } from './checkbox-tree-model.js';
 import {
-    buildTreeIndex, fmtArea, fmtInt, isHidden,
+    buildTreeIndex, computeEffectiveColors, fmtArea, fmtInt, isHidden,
     serializeColorMap,
 } from './color-tree.js';
 import {
@@ -237,34 +237,11 @@ export class HierarchyBrowser {
         }
     }
 
-    // When a MODULE is collapsed, all descendant MODULEs inherit its effective
-    // color (highest collapsed ancestor wins).  Structural rows (leaf/type
-    // folders) carry no color and are simply absent from _moduleState.
+    // A collapsed row paints its subtree; the rule is shared with the Instance
+    // Groups view and the server (see color-tree.js).
     _computeEffectiveColors() {
-        for (const row of this._rows) {
-            const node = this._nodeMap.get(row.id);
-            if (!node || !isColorable(node.node_kind || 0)) continue;
-            const st = this._moduleState.get(node.odb_id);
-            if (!st) continue;
-
-            // Find nearest ancestor MODULE that is collapsed
-            let parentId = node.parent_id;
-            let inheritedColor = null;
-            while (parentId >= 0) {
-                const parent = this._nodeMap.get(parentId);
-                if (!parent) break;
-                if (isColorable(parent.node_kind || 0)) {
-                    const pst = this._moduleState.get(parent.odb_id);
-                    if (pst && this._collapsed.has(parent.id)) {
-                        inheritedColor = pst.effectiveColor;
-                        // Don't break — keep walking up, the highest
-                        // collapsed ancestor's effective color wins.
-                    }
-                }
-                parentId = parent.parent_id;
-            }
-            st.effectiveColor = inheritedColor || st.color;
-        }
+        computeEffectiveColors(this._rows, this._nodeMap, this._moduleState,
+                               this._collapsed);
     }
 
     // Re-send this view's map to the server.  The colors live in the session,

@@ -309,7 +309,6 @@ struct WebSocketRequest
     kSetModuleColors,
     kGroupHierarchy,
     kSetGroupColors,
-    kSelectGroup,
     kFind,
     kSetFocusNets,
     kSetRouteGuides,
@@ -703,8 +702,6 @@ class SelectHandler
   WebSocketResponse handleDeselect(const WebSocketRequest& req,
                                    SessionState& state);
   WebSocketResponse handleSelectLayer(const WebSocketRequest& req,
-                                      SessionState& state);
-  WebSocketResponse handleSelectGroup(const WebSocketRequest& req,
                                       SessionState& state);
   WebSocketResponse handleFind(const WebSocketRequest& req,
                                SessionState& state);

@@ -5225,7 +5225,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               (int) std::ceil((inst_bbox.yMax() - dbu_y_min) * scale));
           for (int iy = pyl; iy < pyh; ++iy) {
             for (int ix = pxl; ix < pxh; ++ix) {
-              blendPixel(image_buffer, ix, draw_px - 1 - iy, c);
+              blendPixel(image_buffer, ix, draw_px - 1 - iy, c, draw_px);
             }
           }
         }
@@ -5278,7 +5278,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               (int) std::ceil((inst_bbox.yMax() - dbu_y_min) * scale));
           for (int iy = pyl; iy < pyh; ++iy) {
             for (int ix = pxl; ix < pxh; ++ix) {
-              blendPixel(image_buffer, ix, draw_px - 1 - iy, c);
+              blendPixel(image_buffer, ix, draw_px - 1 - iy, c, draw_px);
             }
           }
         }
@@ -6646,7 +6646,7 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
       // Nothing to color by: warn and drop the layer saveImageLayerOrder put
       // in for the flag, rather than compositing an empty pass over the image.
       logger_->warn(utl::WEB,
-                    121,
+                    131,
                     "{} is on but the design has nothing to color it by.",
                     flag);
       std::erase_if(layers_to_render,
