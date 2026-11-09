@@ -142,7 +142,7 @@ size_t OperatorPool::memoryBytes() const
   absl::MutexLock lock(&mutex_);
   size_t total
       = specs_.capacity() * sizeof(const OpSpec*)
-        + index_.bucket_count() * sizeof(void*)
+        + index_.capacity() * (sizeof(void*) + 1)
         + cache_.capacity() * (sizeof(std::pair<OperatorKey, ModId>) + 1);
   for (const auto& [spec, id] : index_) {
     total += sizeof(std::pair<const OpSpec, uint32_t>)
