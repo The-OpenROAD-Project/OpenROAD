@@ -105,6 +105,24 @@ class CongestionNetsTest : public tst::DbFixture
         x, y, x, y + 1, /*layer=*/1, kOverflowUsage, overflow_net_);
   }
 
+  // Overflow one layer of a tile without touching the 2D grid.
+  // incrementEdge3DUsage() writes h_edges_3D_/v_edges_3D_ only, so the 2D
+  // edge stays inside its capacity -- the sum over layers -- while a single
+  // layer goes over.  This is the state layerAssignment() leaves behind.
+  void overflow3DH(const int x, const int y, const int layer)
+  {
+    for (int i = 0; i <= kEdgeCap; i++) {
+      fastroute_->incrementEdge3DUsage(x, y, x + 1, y, layer);
+    }
+  }
+
+  void overflow3DV(const int x, const int y, const int layer)
+  {
+    for (int i = 0; i <= kEdgeCap; i++) {
+      fastroute_->incrementEdge3DUsage(x, y, x, y + 1, layer);
+    }
+  }
+
   odb::PtrSet<odb::dbNet> getCongestionNets()
   {
     odb::PtrSet<odb::dbNet> nets;
@@ -117,6 +135,13 @@ class CongestionNetsTest : public tst::DbFixture
     std::vector<std::pair<odb::Point, bool>> positions;
     fastroute_->getOverflowPositions(positions);
     return positions.size();
+  }
+
+  std::vector<std::pair<odb::Point, bool>> overflowPositions3D()
+  {
+    std::vector<std::pair<odb::Point, bool>> positions;
+    fastroute_->getOverflowPositions3D(positions);
+    return positions;
   }
 
   odb::dbBlock* block_ = nullptr;
@@ -255,6 +280,88 @@ TEST_F(CongestionNetsTest, AllNetsOnOverflowCellFound)
   EXPECT_EQ(nets.size(), 2u);
   EXPECT_EQ(nets.count(net_a), 1u);
   EXPECT_EQ(nets.count(net_b), 1u);
+}
+
+// Overflow that exists only on the 3D grid.
+//
+// GlobalRouter's incremental congestion recovery exits on
+// FastRouteCore::totalOverflow(), which is the 3D figure left by
+// layerAssignment(), and its only lever is getCongestionNets().  When a
+// reroute leaves a tile over capacity on one layer while the 2D edge is still
+// inside its own (summed) capacity, a 2D-only search returns nothing: the
+// loop rips up the same net set for all of its rounds, reaches the same
+// result every time, and then gives up.  These cases hold the 3D grid in the
+// search.
+
+TEST_F(CongestionNetsTest, ThreeDOverflowWithCleanTwoDGridFindsNets)
+{
+  odb::dbNet* h_net = makeFrNet("h_net");
+  addRouteH(h_net, 2, 5, 3);
+
+  overflow3DH(3, 3, /*layer=*/1);
+
+  // Nothing to find on the 2D grid: the route puts one unit of 2D usage on
+  // the edge, against a 2D capacity of kEdgeCap * kNumLayers.
+  EXPECT_EQ(overflowPositionCount(), 0u);
+  const auto positions = overflowPositions3D();
+  ASSERT_EQ(positions.size(), 1u);
+  EXPECT_EQ(positions[0].first, odb::Point(3, 3));
+  EXPECT_TRUE(positions[0].second);
+
+  const auto nets = getCongestionNets();
+  EXPECT_EQ(nets.size(), 1u);
+  EXPECT_EQ(nets.count(h_net), 1u);
+}
+
+TEST_F(CongestionNetsTest, VerticalThreeDOverflowFindsOnlyVerticalNet)
+{
+  odb::dbNet* v_net = makeFrNet("v_net");
+  addRouteV(v_net, 7, 2, 5);
+  // Crosses the same tile horizontally; a position emitted with the wrong
+  // direction flag would pull this one in instead.
+  odb::dbNet* h_net = makeFrNet("h_net");
+  addRouteH(h_net, 6, 9, 3);
+
+  overflow3DV(7, 3, /*layer=*/1);
+
+  EXPECT_EQ(overflowPositionCount(), 0u);
+  const auto positions = overflowPositions3D();
+  ASSERT_EQ(positions.size(), 1u);
+  EXPECT_EQ(positions[0].first, odb::Point(7, 3));
+  EXPECT_FALSE(positions[0].second);
+
+  const auto nets = getCongestionNets();
+  EXPECT_EQ(nets.size(), 1u);
+  EXPECT_EQ(nets.count(v_net), 1u);
+}
+
+TEST_F(CongestionNetsTest, TileOverflowingOnSeveralLayersReportedOnce)
+{
+  odb::dbNet* h_net = makeFrNet("h_net");
+  addRouteH(h_net, 2, 5, 3);
+
+  for (int layer = 1; layer <= kNumLayers; layer++) {
+    overflow3DH(3, 3, layer);
+  }
+
+  // The caller walks the positions once per search radius, so a tile that
+  // overflows on every layer must still appear once.
+  EXPECT_EQ(overflowPositions3D().size(), 1u);
+}
+
+TEST_F(CongestionNetsTest, ThreeDOverflowOffTheUsedGridIgnored)
+{
+  odb::dbNet* h_net = makeFrNet("h_net");
+  addRouteH(h_net, 2, 5, 3);
+
+  // No route on this edge, so it is not in graph2d_'s used grid.
+  overflow3DH(6, 6, /*layer=*/1);
+
+  // getOverflow3D() counts the used grid only, so the exit condition never
+  // sees this edge.  The search has to scan the same population, or the loop
+  // would chase an overflow its own gate reports as zero.
+  EXPECT_EQ(overflowPositions3D().size(), 0u);
+  EXPECT_TRUE(getCongestionNets().empty());
 }
 
 }  // namespace
