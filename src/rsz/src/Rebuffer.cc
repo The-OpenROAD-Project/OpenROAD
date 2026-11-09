@@ -550,20 +550,9 @@ BnetPtr Rebuffer::chooseTreeAndDriver(const std::vector<BnetPtr>& trees,
   // The current cell first: its best feasible area bounds every other cell.
   consider(current_cell);
   sta::LibertyCellSeq cells = resizer_->getSwappableCells(current_cell);
-  // Equal-area cells with lower average input capacitance are tried first.
   std::ranges::stable_sort(
-      cells, [this](const sta::LibertyCell* a, const sta::LibertyCell* b) {
-        if (a->area() != b->area()) {
-          return a->area() < b->area();
-        }
-        float a_cap;
-        float b_cap;
-        resizer_->getCin(a, a_cap);
-        resizer_->getCin(b, b_cap);
-        if (a_cap != b_cap) {
-          return a_cap < b_cap;
-        }
-        return a->name() < b->name();
+      cells, [](const sta::LibertyCell* a, const sta::LibertyCell* b) {
+        return a->area() < b->area();
       });
   for (sta::LibertyCell* cell : cells) {
     if (cell == current_cell) {
