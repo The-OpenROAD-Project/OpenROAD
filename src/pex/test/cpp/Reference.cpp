@@ -762,8 +762,8 @@ class Wire
             }
           }
         });
-    const double to_below = below.cross * plane_below;
-    const double to_above = above.cross * plane_above;
+    double to_below = below.cross * plane_below;
+    double to_above = above.cross * plane_above;
     const double piece_ground
         = len
           * (total - cl - cr - to_below - to_above - rest_below - rest_above);
@@ -790,6 +790,8 @@ class Wire
                  target,
                  cl,
                  cr,
+                 to_below,
+                 to_above,
                  out);
     if (l != nullptr && l->net != target) {
       couple(out, l->net, Source::kLateral, len * cl);
@@ -815,7 +817,10 @@ class Wire
   // layers between. One of the net's own shields like any other but adds
   // no coupling. A cover on the piece's other side from the parallel wire
   // takes part of its coupling: the table with a plane on the nearest
-  // cover there blends in by that cover's share.
+  // cover there blends in by that cover's share, and what the parallel wire
+  // takes from that plane comes off the coupling to the cover (`to_below`
+  // or `to_above`, per unit length) as much as the cover keeps of the
+  // plane's coupling.
   void addDiagonals(const double x0,
                     const double x1,
                     const double sl,
@@ -827,6 +832,8 @@ class Wire
                     const NetIndex target,
                     double& cl,
                     double& cr,
+                    double& to_below,
+                    double& to_above,
                     NetEstimate& out) const
   {
     const double len = x1 - x0;
@@ -916,19 +923,24 @@ class Wire
           d.coupling = ((1 - t) * d.coupling) + (t * c.coupling);
           d.total_delta = ((1 - t) * d.total_delta) + (t * c.total_delta);
           d.lateral_delta = ((1 - t) * d.lateral_delta) + (t * c.lateral_delta);
+          d.plane_delta = std::clamp(opposite.cross, 0.0, 1.0) * c.plane_delta;
         }
         d.coupling *= open;
         d.total_delta *= open;
         d.lateral_delta *= open;
-        const double taken = d.total_delta - d.coupling - d.lateral_delta;
+        d.plane_delta *= open;
+        const double taken
+            = d.total_delta - d.coupling - d.lateral_delta - d.plane_delta;
         d.total_delta
             = (taken * (k < shape_.layer ? covered_below : covered_above))
-              + d.coupling + d.lateral_delta;
+              + d.coupling + d.lateral_delta + d.plane_delta;
         if (best->net != target) {
           couple(out, best->net, Source::kDiagonal, len * d.coupling);
         }
+        (k < shape_.layer ? to_above : to_below) += d.plane_delta;
         const double diagonal_ground
-            = len * (d.total_delta - d.coupling - d.lateral_delta);
+            = len
+              * (d.total_delta - d.coupling - d.lateral_delta - d.plane_delta);
         out.ground += diagonal_ground;
         out.ground_sources[1] += diagonal_ground;
         lateral += d.lateral_delta;

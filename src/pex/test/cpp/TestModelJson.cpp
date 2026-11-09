@@ -42,8 +42,10 @@ Model sample()
   DiagonalTable& d = model.addDiagonal(
       {"m2", "m1", ""},
       DiagonalTable({0.14, 0.42}, {-0.07, 0, 0.5}, {0.14, 0.28}, {0.14}));
-  model.addDiagonal({"m2", "m1", "m3"},
-                    DiagonalTable({0.14}, {0}, {0.14}, {0.14}));
+  model
+      .addDiagonal({"m2", "m1", "m3"},
+                   DiagonalTable({0.14}, {0}, {0.14}, {0.14}))
+      .set(0, 0, 0, 0, {0.01, 0.005, -0.001, -0.004});
   const int nf = d.farCount();
   const int ns = d.spacingCount();
   const int ng = d.gapCount();
@@ -117,7 +119,9 @@ TEST(ModelJson, RoundTrip)
   EXPECT_EQ(beside->at(0, 1).total, 0.5);
   EXPECT_EQ(beside->at(1, 1).cross, 0.75);
   ASSERT_EQ(back.diagonals().size(), 2u);
-  EXPECT_NE(back.diagonal({"m2", "m1", "m3"}), nullptr);
+  const DiagonalTable* opposite = back.diagonal({"m2", "m1", "m3"});
+  ASSERT_NE(opposite, nullptr);
+  EXPECT_EQ(opposite->at(0, 0, 0, 0).plane_delta, -0.004);
   const DiagonalTable* d = back.diagonal({"m2", "m1", ""});
   ASSERT_NE(d, nullptr);
   EXPECT_EQ(d->gaps(), model.diagonal({"m2", "m1", ""})->gaps());

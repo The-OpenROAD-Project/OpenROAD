@@ -161,12 +161,14 @@ class CrossingTable
 // The coupling per unit length to a parallel wire on a nearby layer lying
 // beside the wire rather than over it, in fF/µm, with what it adds to the
 // wire's total and takes from the coupling to the wire's own neighbor on
-// that side.
+// that side; with a plane on the wire's other side, also what it changes in
+// the coupling to that plane.
 struct DiagonalCap
 {
   double coupling = 0;
   double total_delta = 0;
   double lateral_delta = 0;
+  double plane_delta = 0;
 };
 
 // A parallel wire on `other` beside a wire on `layer`, with a plane on

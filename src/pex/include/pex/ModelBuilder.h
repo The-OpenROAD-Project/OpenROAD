@@ -28,6 +28,16 @@ struct BuildOptions
   // The lateral grid, as multiples of the layer's minimum width and spacing.
   std::vector<double> width_factors{1, 1.5, 2, 3, 5, 10};
   std::vector<double> spacing_factors{1, 1.25, 1.5, 2, 3, 5, 7, 10};
+  // Past the last spacing, more spacings out to a multiple of the distance
+  // from the wire to the nearest plane (the substrate, or the nearest
+  // cover below or above): `lateral_reach` with covers on both sides or
+  // none, `lateral_reach_one_sided` with a cover on one side only, whose
+  // open side lets the field spread further. Consecutive added spacings
+  // differ by at most the ratio `lateral_reach_step`. A neighbor past the
+  // last spacing is looked up as none. 0 adds none.
+  double lateral_reach = 6;
+  double lateral_reach_one_sided = 10;
+  double lateral_reach_step = 1.6;
   // Covering layers tabulated below the layer (plus the substrate alone)
   // and above it (plus none), nearest first. These and the far factors
   // below apply only when cover_tolerance is 0.
@@ -78,6 +88,10 @@ struct BuildOptions
   // spacing, and how many layers each way.
   std::vector<double> diagonal_width_factors{1, 3, 10};
   std::vector<double> diagonal_gap_factors{-0.5, 0, 0.25, 0.5, 1, 2, 4, 8, 16};
+  // Past the last gap, more gaps out to this multiple of the vertical
+  // distance between the two layers, consecutive ones at most twice apart;
+  // a parallel wire farther out fades as one over its gap. 0 adds none.
+  double diagonal_reach = 4;
   std::vector<double> diagonal_spacing_factors{1, 2, 4, 8};
   std::vector<double> diagonal_far_spacing_factors{1, 4};
   int diagonal_depth = 2;

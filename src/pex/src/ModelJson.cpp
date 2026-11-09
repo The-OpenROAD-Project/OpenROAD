@@ -213,12 +213,17 @@ json::object diagonal(const DiagonalKey& key, const DiagonalTable& table)
   o["spacings"] = numbers(table.spacings());
   o["far_spacings"] = numbers(table.farSpacings());
   // Flat, in [width][gap][spacing][far] order; each value is [coupling,
-  // total_delta, lateral_delta].
+  // total_delta, lateral_delta], with plane_delta after them when the
+  // table has an opposite plane.
   json::array values;
   values.reserve(table.values().size());
   for (const DiagonalCap& c : table.values()) {
-    values.push_back(json::array{
-        rounded(c.coupling), rounded(c.total_delta), rounded(c.lateral_delta)});
+    json::array v{
+        rounded(c.coupling), rounded(c.total_delta), rounded(c.lateral_delta)};
+    if (!key.opposite.empty()) {
+      v.push_back(rounded(c.plane_delta));
+    }
+    values.push_back(std::move(v));
   }
   o["values"] = std::move(values);
   return o;
@@ -246,7 +251,7 @@ void readDiagonal(const json::object& o, Model& model)
   const int ng = table.gapCount();
   for (size_t i = 0; i < values.size(); i++) {
     const std::vector<double> v = numbers(values[i]);
-    if (v.size() != 3) {
+    if (v.size() != 3 && (v.size() != 4 || key.opposite.empty())) {
       throw std::runtime_error("diagonal table of " + key.layer
                                + " has a malformed value");
     }
@@ -255,7 +260,7 @@ void readDiagonal(const json::object& o, Model& model)
               (k / nf / ns) % ng,
               (k / nf) % ns,
               k % nf,
-              {v[0], v[1], v[2]});
+              {v[0], v[1], v[2], v.size() > 3 ? v[3] : 0});
   }
   model.addDiagonal(key, std::move(table));
 }

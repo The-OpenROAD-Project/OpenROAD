@@ -171,7 +171,8 @@ void DiagonalTable::set(const int width,
   requireIndex("diagonal gap", gap, gapCount());
   requireIndex("diagonal spacing", spacing, spacingCount());
   requireIndex("diagonal far spacing", far, farCount());
-  for (const double v : {cap.coupling, cap.total_delta, cap.lateral_delta}) {
+  for (const double v :
+       {cap.coupling, cap.total_delta, cap.lateral_delta, cap.plane_delta}) {
     requireFinite("diagonal", v);
   }
   values_[index(width, gap, spacing, far)] = cap;
@@ -648,6 +649,7 @@ DiagonalCap Model::diagonal(const DiagonalKey& key,
           out.coupling += weight * v.coupling;
           out.total_delta += weight * v.total_delta;
           out.lateral_delta += weight * v.lateral_delta;
+          out.plane_delta += weight * v.plane_delta;
         }
       }
     }
@@ -657,6 +659,7 @@ DiagonalCap Model::diagonal(const DiagonalKey& key,
     out.coupling *= fade;
     out.total_delta *= fade;
     out.lateral_delta *= fade;
+    out.plane_delta *= fade;
   }
   return out;
 }

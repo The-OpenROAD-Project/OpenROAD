@@ -72,6 +72,9 @@ BuildOptions smallBuild(const int threads)
   o.reach_factors = {0, 2};         // with a coarse reach
   o.end_spacing_factors = {};       // and the end test
   o.facing_factors = {};
+  o.lateral_reach = 0;  // the grids' reach has its own test too
+  o.lateral_reach_one_sided = 0;
+  o.diagonal_reach = 0;
   return o;
 }
 
@@ -292,6 +295,51 @@ TEST(ModelBuilder, CrossingAndEndTables)
   EXPECT_THROW(buildEnds(sky130(), L("met2"), o, model), std::invalid_argument);
 }
 
+// Past the last spacing the lateral grid reaches a multiple of the
+// distance to the nearest plane, further with a cover on one side only; the
+// diagonal gaps reach a multiple of the distance between the layers.
+TEST(ModelBuilder, GridsReachByHeight)
+{
+  BuildOptions o = smallBuild(4);
+  o.width_factors = {1};
+  o.spacing_factors = {1};
+  o.tol = 0.05;
+  o.lateral_reach = 6;
+  o.lateral_reach_one_sided = 10;
+  o.lateral_reach_step = 1.6;
+  Model model;
+  buildLateral(sky130(), L("met2"), o, model);
+  const fsv::Stack::Conductor& met1 = sky130().conductor(L("met1"));
+  const fsv::Stack::Conductor& met2 = sky130().conductor(L("met2"));
+  auto check = [&](const LateralKey& key, const double reach) {
+    const LateralTable* t = model.lateral(key);
+    ASSERT_NE(t, nullptr);
+    const std::vector<double>& s = t->spacings();
+    ASSERT_GT(s.size(), 2u);
+    EXPECT_DOUBLE_EQ(s.front(), met2.min_spacing);
+    EXPECT_NEAR(s.back(), reach, 1e-9);
+    for (size_t i = 1; i < s.size(); i++) {
+      EXPECT_LE(s[i] / s[i - 1], 1.6 + 1e-9);
+    }
+  };
+  check({"met2", "", ""}, 6 * met2.bottom);
+  check({"met2", "met1", ""}, 10 * (met2.bottom - met1.top));
+
+  o.diagonal_width_factors = {1};
+  o.diagonal_gap_factors = {0, 2};
+  o.diagonal_spacing_factors = {1};
+  o.diagonal_far_spacing_factors = {1};
+  o.diagonal_reach = 4;
+  buildDiagonal(sky130(), L("met2"), L("met1"), o, model);
+  const DiagonalTable* d = model.diagonal({"met2", "met1", ""});
+  ASSERT_NE(d, nullptr);
+  ASSERT_GT(d->gaps().size(), 2u);
+  EXPECT_NEAR(d->gaps().back(), 4 * (met2.bottom - met1.top), 1e-9);
+  for (size_t i = 2; i < d->gaps().size(); i++) {
+    EXPECT_LE(d->gaps()[i] / d->gaps()[i - 1], 2 + 1e-9);
+  }
+}
+
 TEST(ModelBuilder, DiagonalTable)
 {
   BuildOptions o = smallBuild(4);
@@ -328,6 +376,10 @@ TEST(ModelBuilder, DiagonalTable)
   ASSERT_NE(planed, nullptr);
   EXPECT_LT(planed->at(0, 0, 1, 1).coupling, 0.95 * near_open.coupling);
   EXPECT_GT(planed->at(0, 0, 1, 1).coupling, 0);
+  // The parallel wire takes part of the plane's coupling; the tables with
+  // no plane have none to take.
+  EXPECT_LT(planed->at(0, 0, 1, 1).plane_delta, 0);
+  EXPECT_EQ(near_open.plane_delta, 0);
   EXPECT_THROW(
       buildDiagonal(sky130(), L("met2"), L("met1"), o, model, L("li1")),
       std::invalid_argument);

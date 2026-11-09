@@ -30,6 +30,23 @@ namespace pex {
 
 namespace {
 
+// `grid` extended past its last value to `reach` in steps of at most the
+// ratio `step`, evenly in the logarithm.
+void extendGrid(std::vector<double>& grid,
+                const double reach,
+                const double step)
+{
+  if (grid.empty() || grid.back() <= 0 || reach <= grid.back() * 1.05) {
+    return;
+  }
+  const double last = grid.back();
+  const int n = static_cast<int>(
+      std::ceil(std::log(reach / last) / std::log(step) - 1e-9));
+  for (int i = 1; i <= n; i++) {
+    grid.push_back(last * std::pow(reach / last, static_cast<double>(i) / n));
+  }
+}
+
 // A conductor a wire can be on: the stack's, with a minimum width and
 // spacing, and off the ground plane.
 const fsv::Stack::Conductor& requireConductor(const fsv::Stack& stack,
@@ -275,6 +292,9 @@ std::string buildFingerprint(const fsv::Stack& stack,
   };
   list("w", options.width_factors);
   list("s", options.spacing_factors);
+  text << "lr " << options.lateral_reach << ' '
+       << options.lateral_reach_one_sided << ' ' << options.lateral_reach_step
+       << " dr " << options.diagonal_reach << '|';
   list("cw", options.crossing_width_factors);
   list("cf", options.coverages);
   list("dw", options.diagonal_width_factors);
@@ -561,6 +581,22 @@ void buildLateral(const fsv::Stack& stack,
       std::vector<double> spacings;
       for (const double f : options.spacing_factors) {
         spacings.push_back(f * conductor.min_spacing);
+      }
+      {
+        // The distance to the nearest plane: the substrate or a cover.
+        double h = below.valid()
+                       ? conductor.bottom - requireConductor(stack, below).top
+                       : conductor.bottom;
+        if (above.valid()) {
+          h = std::min(h,
+                       requireConductor(stack, above).bottom - conductor.top);
+        }
+        const double reach = below.valid() != above.valid()
+                                 ? options.lateral_reach_one_sided
+                                 : options.lateral_reach;
+        if (reach > 0 && h > 0) {
+          extendGrid(spacings, reach * h, options.lateral_reach_step);
+        }
       }
       if (const LateralTable* built = model.lateral(key)) {
         requireGrid("lateral table of " + key.layer, built->widths(), widths);
@@ -1336,6 +1372,12 @@ void buildDiagonal(const fsv::Stack& stack,
   for (const double f : options.diagonal_gap_factors) {
     gaps.push_back(f * w);
   }
+  if (options.diagonal_reach > 0) {
+    const double dz = other_conductor.bottom >= conductor.top
+                          ? other_conductor.bottom - conductor.top
+                          : conductor.bottom - other_conductor.top;
+    extendGrid(gaps, options.diagonal_reach * dz, 2);
+  }
   std::vector<double> spacings;
   for (const double f : options.diagonal_spacing_factors) {
     spacings.push_back(f * conductor.min_spacing);
@@ -1363,6 +1405,7 @@ void buildDiagonal(const fsv::Stack& stack,
   {
     double total = 0;
     double right = 0;
+    double plane = 0;  // the coupling to the opposite plane, if any
   };
   std::vector<Base> bases(ns * nf);
   const int points = table.widthCount() * ng * ns * nf;
@@ -1388,8 +1431,9 @@ void buildDiagonal(const fsv::Stack& stack,
       const fsv::Scene2D scene(d.geometry, stack);
       const fsv::CapRow row
           = solver.solve(scene, d.wire, solveOptions(options.tol / 3));
-      bases[b]
-          = {row.total(), d.right != kNullNetIndex ? row.coupling(d.right) : 0};
+      bases[b] = {row.total(),
+                  d.right != kNullNetIndex ? row.coupling(d.right) : 0,
+                  d.opposite != kNullNetIndex ? row.coupling(d.opposite) : 0};
       return;
     }
     const int f = i % nf;
@@ -1405,6 +1449,8 @@ void buildDiagonal(const fsv::Stack& stack,
     cap.coupling = row.coupling(d.diagonal);
     cap.total_delta = row.total();
     cap.lateral_delta = d.right != kNullNetIndex ? row.coupling(d.right) : 0;
+    cap.plane_delta
+        = d.opposite != kNullNetIndex ? row.coupling(d.opposite) : 0;
   });
   // Deltas are against the wire without the parallel one.
   for (int i = 0; i < points; i++) {
@@ -1415,6 +1461,7 @@ void buildDiagonal(const fsv::Stack& stack,
     DiagonalCap cap = raw[i];
     cap.total_delta -= bases[s * nf + f].total;
     cap.lateral_delta -= bases[s * nf + f].right;
+    cap.plane_delta -= bases[s * nf + f].plane;
     table.set(wi, gi, s, f, cap);
   }
 }
