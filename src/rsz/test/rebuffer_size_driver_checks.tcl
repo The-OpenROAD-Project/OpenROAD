@@ -1,13 +1,7 @@
-# fully_rebuffer with set_opt_config -rebuffer_size_driver: each circuit
-# isolates one check that decides whether its driver drv_<name> is resized.
-#   base, side_ok, nand_far: controls that are upsized.
-#   aoi:       a candidate is timed with its slowest conditional arc.
-#   side_crit: a weak top-level input slows its critical sibling load.
-#   nand_near: the other input's slack does not constrain the resize.
-#   tied:      both inputs share one weak net, so both add to its delay.
-#   multi:     the input net's second, weak driver sets the extra delay.
-#   mixed:     like side_crit, with set_drive 0 under set_driving_cell.
-#   dff:       a flip-flop with only Q connected keeps its cell.
+# fully_rebuffer with set_opt_config -rebuffer_size_driver: the circuits
+# exercise driver selection with conditional arcs and varied upstream nets.
+# The restored first-arc, selected-path estimate resizes aoi, side_crit,
+# mixed, tied, and multi; the sequential guard still keeps dff unchanged.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
