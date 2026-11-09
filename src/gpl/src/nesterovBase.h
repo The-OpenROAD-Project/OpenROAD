@@ -964,10 +964,7 @@ class NesterovBaseCommon
   // Raw gCellStor_ accessor for DeviceState init (index correspondence).
   const std::vector<GCell>& getGCellStor() const { return gCellStor_; }
 
-  const KokkosContext& getKokkosContext() const
-  {
-    return *kokkos_context_;
-  }
+  const KokkosContext& getKokkosContext() const { return *kokkos_context_; }
 
   GCell* getGCellByIndex(size_t i);
 

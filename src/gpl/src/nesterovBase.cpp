@@ -30,8 +30,8 @@
 #include "fft.h"
 #include "gpl/Replace.h"
 #include "hpwlBackend.h"
-#include "kokkosRuntime.h"
 #include "ioPinBase.h"
+#include "kokkosRuntime.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"
 #include "placerBase.h"
@@ -1167,12 +1167,12 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
                      block->dbuAreaToMicrons(bin.getNonPlaceAreaUnscaled()));
         }
       });
-      for (float overflowArea : overflowAreas) {
-        sumOverflowArea_ += overflowArea;
-      }
-      for (float overflowAreaUnscaled : overflowAreasUnscaled) {
-        sumOverflowAreaUnscaled_ += overflowAreaUnscaled;
-      }
+  for (float overflowArea : overflowAreas) {
+    sumOverflowArea_ += overflowArea;
+  }
+  for (float overflowAreaUnscaled : overflowAreasUnscaled) {
+    sumOverflowAreaUnscaled_ += overflowAreaUnscaled;
+  }
 }
 
 std::pair<int, int> BinGrid::getDensityMinMaxIdxX(const GCell* gcell) const
@@ -1263,8 +1263,8 @@ NesterovBaseCommon::NesterovBaseCommon(
     int num_threads,
     const Clusters& clusters)
     : nbVars_(nbVars),
-      kokkos_context_(std::make_unique<KokkosContext>(
-          hostExecutionSpace(num_threads)))
+      kokkos_context_(
+          std::make_unique<KokkosContext>(hostExecutionSpace(num_threads)))
 {
   // hpwl_backend_ and device_state_ are constructed at the end of this ctor
   // body, after gCellStor_ / gPinStor_ / gNetStor_ are populated — the GPU
@@ -2853,8 +2853,7 @@ float NesterovBase::estimateTargetDensity(float overflow)
   }
 
   // Populates each bin's placed-instance area
-  bg_.updateBinsGCellDensityArea(nb_gcells_,
-                                 nbc_->getKokkosContext());
+  bg_.updateBinsGCellDensityArea(nb_gcells_, nbc_->getKokkosContext());
 
   // Do a binary search to find the density value that results in the
   // target overflow.
@@ -3512,7 +3511,9 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
   const size_t numGCells = nb_gcells_.size();
   const auto& kokkos_ctx = nbc_->getKokkosContext();
   Kokkos::parallel_for(
-      "gpl::updateGradients", HostRange(kokkos_ctx.space, 0, numGCells), [&](size_t i) {
+      "gpl::updateGradients",
+      HostRange(kokkos_ctx.space, 0, numGCells),
+      [&](size_t i) {
         GCell* gCell = nb_gcells_[i];
 
         sumGrads[i].x
@@ -3618,8 +3619,9 @@ void NesterovBase::updateInitialPrevSLPCoordi()
             = curSLPCoordi_[i].y
               - (npVars_->initialPrevCoordiUpdateCoef * curSLPSumGrads_[i].y);
 
-        FloatPoint newCoordi(getDensityCoordiLayoutInsideX(curGCell, prevCoordiX),
-                             getDensityCoordiLayoutInsideY(curGCell, prevCoordiY));
+        FloatPoint newCoordi(
+            getDensityCoordiLayoutInsideX(curGCell, prevCoordiX),
+            getDensityCoordiLayoutInsideY(curGCell, prevCoordiY));
 
         prevSLPCoordi_[i] = newCoordi;
       });
@@ -3867,7 +3869,9 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
   const size_t numGCells = nb_gcells_.size();
   const auto& kokkos_ctx = nbc_->getKokkosContext();
   Kokkos::parallel_for(
-      "gpl::updateCoordinates", HostRange(kokkos_ctx.space, 0, numGCells), [&](size_t k) {
+      "gpl::updateCoordinates",
+      HostRange(kokkos_ctx.space, 0, numGCells),
+      [&](size_t k) {
         GCell* curGCell = nb_gcells_[k];
         if (curGCell->isLocked()) {
           nextCoordi_[k] = curCoordi_[k];

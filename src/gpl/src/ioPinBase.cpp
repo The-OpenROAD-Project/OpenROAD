@@ -132,13 +132,13 @@ void IoPinBase::computeNext()
 {
   const size_t n = bterms_.size();
   const auto& kokkos_ctx = nbc_->getKokkosContext();
-  Kokkos::parallel_for(
-      "gpl::computeNextIoPins",
-      HostRange(kokkos_ctx.space, 0, n),
-      [&](size_t i) {
-        // Followers are reflected below.
-        next_[i] = isMirrorFollower(i) ? cur_[i] : optimum(i, cur_[i]);
-      });
+  Kokkos::parallel_for("gpl::computeNextIoPins",
+                       HostRange(kokkos_ctx.space, 0, n),
+                       [&](size_t i) {
+                         // Followers are reflected below.
+                         next_[i] = isMirrorFollower(i) ? cur_[i]
+                                                        : optimum(i, cur_[i]);
+                       });
   if (log_->debugCheck(GPL, "placeIos", 1)) {
     optimum_ = next_;
   }
