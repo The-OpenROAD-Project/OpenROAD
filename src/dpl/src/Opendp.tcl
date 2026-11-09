@@ -95,6 +95,38 @@ proc detailed_placement { args } {
   }
 }
 
+sta::define_cmd_args "repair_pin_access" {[-max_displacement {sites rows}] \
+                                       [-max_rounds count]}
+
+proc repair_pin_access { args } {
+  sta::parse_key_args "repair_pin_access" args \
+    keys {-max_displacement -max_rounds} flags {}
+  sta::check_argc_eq0 "repair_pin_access" $args
+
+  set max_displacement_x 20
+  set max_displacement_y 2
+  if { [info exists keys(-max_displacement)] } {
+    if { [llength $keys(-max_displacement)] != 2 } {
+      utl::error DPL 350 "-max_displacement requires {sites rows}."
+    }
+    lassign $keys(-max_displacement) max_displacement_x max_displacement_y
+  }
+  foreach value [list $max_displacement_x $max_displacement_y] {
+    if { ![string is integer -strict $value] || $value < 0 } {
+      utl::error DPL 349 "-max_displacement requires nonnegative integers."
+    }
+  }
+  set max_rounds 3
+  if { [info exists keys(-max_rounds)] } {
+    set max_rounds $keys(-max_rounds)
+  }
+  if { ![string is integer -strict $max_rounds] || $max_rounds < 1 } {
+    utl::error DPL 349 "-max_rounds requires a positive integer."
+  }
+  return [dpl::repair_pin_access_cmd \
+    $max_displacement_x $max_displacement_y $max_rounds]
+}
+
 sta::define_cmd_args "set_placement_padding" { -global|-masters masters|-instances insts\
                                                  [-right site_count]\
                                                  [-left site_count] \
