@@ -18,6 +18,17 @@ class Logger;
 // Each interface type may have at most one provider at a time; a
 // duplicate provide<I>() call is a programming error and is reported
 // through the logger.
+//
+// Conventions for published interfaces:
+// - Name them with a `Service` suffix (e.g., est::ParasiticsService,
+//   drt::PinAccessService).
+// - Put each in its owning module's public include/<module>/ directory
+//   and expose it as a small header-only Bazel target, so consumers can
+//   depend on it without pulling in the implementation library. This
+//   keeps module dependency graphs acyclic.
+// - This is distinct from the Abstract* prefix used for mock-swappable
+//   graphics classes (e.g., AbstractSteinerRenderer), which are inherited
+//   for test/headless modes rather than looked up here.
 class ServiceRegistry
 {
  public:
