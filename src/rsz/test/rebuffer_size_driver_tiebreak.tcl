@@ -1,10 +1,7 @@
-# fully_rebuffer with set_opt_config -rebuffer_size_driver: an equal-area
-# swap to a faster cell is taken only on a net that misses timing.  INVxp67
-# and INVx1 have the same area, and both drivers start as INVx2.  drv_crit
-# becomes INVx1, while drv_relaxed, which meets timing, becomes INVxp67
-# rather than the equal-area INVx1.  drv_ha, a critical half adder with
-# both outputs connected, keeps its cell although its L and SL variants have
-# the same area.
+# fully_rebuffer with set_opt_config -rebuffer_size_driver: INVxp67 and INVx1
+# have the same area, and both drivers start as INVx2.  Both drv_crit and the
+# timing-met drv_relaxed become INVx1 when it gives more slack at equal area.
+# The multi-output drv_ha keeps its cell.
 source "helpers.tcl"
 source asap7/asap7.vars
 foreach vt {RVT LVT SLVT} {

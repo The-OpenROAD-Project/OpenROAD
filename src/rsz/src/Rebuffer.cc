@@ -526,13 +526,9 @@ BnetPtr Rebuffer::chooseTreeAndDriver(const std::vector<BnetPtr>& trees,
         continue;
       }
       // An equal-area swap must gain real slack to be worth a resize, which
-      // costs an upstream timing update.  A swap to another cell is only
-      // taken on a net that misses timing: once timing is met, a faster cell
-      // only adds leakage and input load on the previous stage.
-      const bool equal_area_gain
-          = *slack > best_slack + FixedDelay(kEqualAreaMinGain, resizer_)
-            && (cell == chosen_cell || best_slack < FixedDelay::ZERO);
-      if (area < best_area || equal_area_gain) {
+      // costs an upstream timing update.
+      if (area < best_area
+          || *slack > best_slack + FixedDelay(kEqualAreaMinGain, resizer_)) {
         if (!side_loads_ok) {
           side_loads_ok = upstreamSideLoadsOk(cell, slack_target);
         }
@@ -558,8 +554,9 @@ BnetPtr Rebuffer::chooseTreeAndDriver(const std::vector<BnetPtr>& trees,
     if (cell == current_cell) {
       continue;
     }
-    // Cells are in increasing area, so later cells cannot reduce area once
-    // even the cheapest tree exceeds the best area.
+    // Cells are in increasing area, so once even the cheapest tree cannot
+    // match the best area, no later cell can either.  Equal area is still
+    // evaluated: a same-area cell with more slack wins the tie.
     if (min_tree_area + cell->area() - current_cell->area() > best_area) {
       break;
     }

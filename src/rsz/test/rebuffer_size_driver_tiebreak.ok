@@ -15,6 +15,6 @@
 -------------------------------------------------------
 [INFO RSZ-2023] Resized 2 drivers while rebuffering.
 drv_crit INVx1_ASAP7_75t_R
-drv_relaxed INVxp67_ASAP7_75t_R
+drv_relaxed INVx1_ASAP7_75t_R
 drv_ha HAxp5_ASAP7_75t_R
 [INFO RSZ-0175] Driver sizing during rebuffering has been disabled.
