@@ -1,3 +1,4 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
 load("//bazel/gpu:copts.bzl", "CUDA_COPTS")
@@ -500,4 +501,49 @@ doc_check_test(
     name = "gpl_messages_txt_check",
     check_log = False,
     data = ["//src/gpl:messages_txt"],
+)
+
+cc_library(
+    name = "gpl_design_builder",
+    testonly = True,
+    srcs = ["gpl_design_builder.cpp"],
+    hdrs = ["gpl_design_builder.h"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:physical_builder",
+    ],
+)
+
+cc_test(
+    name = "known_answer_test",
+    srcs = ["known_answer_test.cpp"],
+    env = GPU_ENV_OFF,
+    deps = [
+        ":gpl_design_builder",
+        "//src/gpl",
+        "//src/odb/src/db",
+        "//src/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "metamorphic_test",
+    srcs = ["metamorphic_test.cpp"],
+    data = [
+        "gcd.def",
+        "nangate45.lef",
+    ],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/gpl",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/odb/src/lefin",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
 )
