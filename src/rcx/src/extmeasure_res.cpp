@@ -170,11 +170,9 @@ void extMeasure::calcRes(int rsegId1,
     }
 
     extDistRC* rc = rcModel->_resOver[tgtMet]->getRes(0, _width, dist1, dist2);
-    if (rc != nullptr) {
-      double R1 = rc->diag_ > 0 ? rc->diag_ : rc->res_;
-      double R = len * R1;
-      _rc[ii]->res_ += R;
-    }
+    double R1 = rc->diag_ > 0 ? rc->diag_ : rc->res_;
+    double R = len * R1;
+    _rc[ii]->res_ += R;
   }
 }
 

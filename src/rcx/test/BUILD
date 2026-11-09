@@ -19,6 +19,10 @@ COMPULSORY_TESTS = [
     "no_merging",
     "perpendicular_route_touching_bterm",
     "perpendicular_route_touching_iterm",
+    "rules_without_layer_data",
+    "rules_without_layer_resistance",
+    "rules_without_layer_resistance_lef_res",
+    "rules_without_unused_layer_data",
     "short_resover",
 ]
 
@@ -94,6 +98,16 @@ filegroup(
             "no_merging": [
                 "ext_pattern.rules",
                 "gcd.def",
+            ],
+            "rules_without_layer_data": ["gcd.def"],
+            "rules_without_layer_resistance": ["gcd.def"],
+            "rules_without_layer_resistance_lef_res": [
+                "gcd.def",
+                "rules_without_layer_resistance.rules",
+            ],
+            "rules_without_unused_layer_data": [
+                "perpendicular_route_touching_bterm.def",
+                "perpendicular_route_touching_bterm.spefok",
             ],
             "short_resover": ["gcd.def"],
             "test_dielectric_epsilon": [
