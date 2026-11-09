@@ -7582,9 +7582,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
         congestion_nets.insert(it->getDbNet());
       }
       int last_overflow = fastroute_->totalOverflow();
-      // Counted separately from add_max, which the no-progress check below
-      // drops to zero: kAddMax - add_max would then report the whole budget as
-      // spent on a loop that ran a handful of rounds.
+      // Counted separately from add_max, which the no-progress check zeroes.
       int round = 0;
       while (fastroute_->totalOverflow() && add_max >= 0) {
         const size_t nets_before = congestion_nets.size();
@@ -7611,9 +7609,8 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
                    nets_before,
                    congestion_nets.size());
         // A round that neither pulled in a new net nor reduced the overflow
-        // rips up the same set and reroutes it to the same result, so
-        // repeating it to add_max buys nothing.  Go straight to the
-        // legalization below, which is the one remaining lever.
+        // reroutes the same set to the same result, so skip to the
+        // legalization below.
         const bool progressed = congestion_nets.size() > nets_before
                                 || fastroute_->totalOverflow() < last_overflow;
         last_overflow = fastroute_->totalOverflow();
@@ -7705,9 +7702,8 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
 void GlobalRouter::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
 {
   std::vector<std::pair<odb::Point, bool>> pos_with_overflow;
-  // Get GCell positions with congestion, on both grids: layer assignment can
-  // leave a 3D edge over capacity with the 2D grid clean, and the caller
-  // loops until the 3D overflow is gone.
+  // Get GCell positions with congestion on both grids: layer assignment can
+  // leave a 3D edge over capacity with the 2D grid clean.
   fastroute_->getOverflowPositions(pos_with_overflow);
   fastroute_->getOverflowPositions3D(pos_with_overflow);
   for (auto& itr : pos_with_overflow) {

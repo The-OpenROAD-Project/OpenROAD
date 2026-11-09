@@ -1,13 +1,9 @@
 # The congestion recovery loop an incremental reroute runs when it leaves
 # overflow: it pulls in the nets crossing the congested area and reroutes them,
 # gives up on a round that changes nothing, legalizes the placement as a last
-# resort, and errors if overflow survives all of it.
-#
-# Stacking cells on one site is what the flow does before legalizing --
-# repair_timing places buffers at their ideal location and GRT reroutes the
-# dirty nets before detailed placement moves them apart. Here it is taken far
-# enough that the nets cannot be routed without overflow, so the loop runs out
-# of options and every stage of it is visible.
+# resort, and errors if overflow survives all of it.  Stacking cells on one
+# site, as repair_timing does before legalizing, is taken far enough here that
+# the nets cannot be routed without overflow and every stage runs.
 source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_def gcd.def
@@ -46,8 +42,7 @@ check "the move dirtied nets to reroute" {
   expr { $moved == 120 }
 } 1
 
-# -end_incremental deliberately omits -allow_congestion: every global_route
-# call decides acceptance for itself.
+# -end_incremental omits -allow_congestion: every call decides acceptance.
 set failed [catch {
   tee -variable incremental_log {
     global_route -end_incremental
@@ -68,9 +63,6 @@ check "the placement legalization runs as the last resort" {
     {legalizing the placement as a last resort} $incremental_log]
 } 1
 
-# The summary must count the rounds actually spent. It used to derive them
-# from the remaining budget, which the no-progress check zeroes, so a loop
-# that left early reported the whole budget as spent.
 check "the summary counts the rounds actually spent" {
   set rounds_logged [llength [regexp -all -inline \
     {congestion recovery round [0-9]+/} $incremental_log]]

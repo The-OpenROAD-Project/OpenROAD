@@ -2024,8 +2024,7 @@ void FastRouteCore::getOverflowPositions(
 void FastRouteCore::getOverflowPositions3D(
     std::vector<std::pair<odb::Point, bool>>& overflow_pos)
 {
-  // One GCell can overflow on several layers; collect before emitting so the
-  // caller walks each tile once.
+  // One GCell can overflow on several layers; dedup before emitting.
   std::set<std::pair<int, int>> h_tiles, v_tiles;
   for (int layer = 0; layer < num_layers_; layer++) {
     for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
@@ -2127,9 +2126,8 @@ bool FastRouteCore::computeSuggestedAdjustment(int& suggested_adjustment)
 // The function will add the new nets to the congestion_nets set
 void FastRouteCore::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
 {
-  // Get overflow position -- [(x,y), is horizontal].  Both grids: the caller
-  // stops when the 3D overflow is gone, so a 3D-only overflow has to yield
-  // nets here or the caller has nothing left to try.
+  // Get overflow position -- [(x,y), is horizontal].  Both grids: callers
+  // stop when the 3D overflow is gone.
   std::vector<std::pair<odb::Point, bool>> overflow_positions;
   getOverflowPositions(overflow_positions);
   getOverflowPositions3D(overflow_positions);

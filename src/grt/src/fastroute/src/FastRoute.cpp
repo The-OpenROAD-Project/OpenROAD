@@ -2817,10 +2817,7 @@ NetRouteMap FastRouteCore::run()
       getOverflow3D();
     }
 
-    // Keep the 2D figure: everything below reports total_overflow_, which is
-    // the 3D overflow from here on.  Callers that need to know whether the 2D
-    // grid is clean -- the incremental congestion recovery in GlobalRouter
-    // does, because its only lever acts on 2D congested tiles -- read this.
+    // Keep the 2D figure: total_overflow_ is the 3D overflow from here on.
     total_2d_overflow_ = past_cong;
 
     costheight_ = 3;
