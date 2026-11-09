@@ -285,7 +285,8 @@ TEST_F(SaveReportTest, ScriptsAreBalanced)
   ASSERT_NE(begin, std::string::npos);
   html.erase(begin, end - begin);
 
-  EXPECT_GE(countOccurrences(html, "<script"), 3);
+  // The static cache and the report bundle.
+  EXPECT_GE(countOccurrences(html, "<script"), 2);
   EXPECT_EQ(countOccurrences(html, "<script"),
             countOccurrences(html, "</script>"));
 }

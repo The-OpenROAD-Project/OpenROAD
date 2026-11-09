@@ -968,6 +968,37 @@ TEST(WebSocketOriginAllowed, OpaqueOriginIsRejected)
   EXPECT_FALSE(webSocketOriginAllowed("null", "localhost:8080"));
 }
 
+// Browsers before CSP Level 3 do not let 'self' match ws: or wss:.
+TEST(ContentSecurityPolicy, NamesTheSameHostWebSocket)
+{
+  for (const char* host : {"localhost:8080", "127.0.0.1:8080", "viewer-host"}) {
+    const std::string policy = contentSecurityPolicy(host);
+    EXPECT_NE(policy.find(std::string("connect-src 'self' ws://") + host
+                          + " wss://" + host + " data:;"),
+              std::string::npos)
+        << policy;
+  }
+}
+
+// A Host a host-source cannot spell must not reach the header: ';' or a
+// space would end the directive and let the client add its own sources.
+TEST(ContentSecurityPolicy, UnspellableHostGetsSelfOnly)
+{
+  for (const char* host : {"",
+                           "[::1]:8080",
+                           "a; script-src *",
+                           "a b",
+                           "localhost:",
+                           "localhost:80a",
+                           ":8080"}) {
+    const std::string policy = contentSecurityPolicy(host);
+    EXPECT_NE(policy.find("connect-src 'self' data:;"), std::string::npos)
+        << host << ": " << policy;
+    EXPECT_EQ(policy.find("ws:"), std::string::npos) << host << ": " << policy;
+    EXPECT_NE(policy.find("script-src 'self';"), std::string::npos) << policy;
+  }
+}
+
 // Bind-address classification for web_server -bind (issue #11167).
 TEST(ClassifyBindAddress, LoopbackIsRecognised)
 {
@@ -6588,6 +6619,33 @@ TEST_F(CustomUiTest, ToggleButtonFieldsSerialized)
   EXPECT_EQ(std::string(b.at("tooltip").as_string()), "tip");
   EXPECT_TRUE(b.at("toggle").as_bool());
   EXPECT_EQ(std::string(b.at("script_off").as_string()), "off");
+}
+
+// The viewer's CSP blocks remote images and the server serves no image files.
+TEST_F(CustomUiTest, UnloadableIconErrors)
+{
+  WebViewerHook hook;
+  for (const char* icon : {"https://example.com/a.png",
+                           "http://example.com/a.png",
+                           "/a.png",
+                           "./a.png"}) {
+    EXPECT_THROW(hook.addToolbarButton(
+                     getLogger(), "", "A", "s", icon, "", false, "", false),
+                 std::runtime_error)
+        << icon;
+  }
+  EXPECT_EQ(registry(hook).at("toolbar").as_array().size(), 0u);
+
+  hook.addToolbarButton(getLogger(),
+                        "",
+                        "A",
+                        "s",
+                        "data:image/png;base64,AAAA",
+                        "",
+                        false,
+                        "",
+                        false);
+  EXPECT_EQ(registry(hook).at("toolbar").as_array().size(), 1u);
 }
 
 TEST_F(CustomUiTest, DuplicateNameErrors)

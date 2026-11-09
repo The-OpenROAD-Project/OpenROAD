@@ -82,3 +82,36 @@ describe('setCookie', () => {
         assert.ok(dom.window.document.cookie.includes('or_theme=light'));
     });
 });
+
+describe('applyGLTheme', () => {
+    // As index.html ships them: the light theme starts off through media,
+    // since an inline script to disable it would be blocked by the CSP.
+    function addThemeStyles(document) {
+        document.head.innerHTML =
+            '<style id="gl-theme-dark"></style>' +
+            '<style id="gl-theme-light" media="not all"></style>';
+        return {
+            dark: document.getElementById('gl-theme-dark'),
+            light: document.getElementById('gl-theme-light'),
+        };
+    }
+
+    it('turns the light theme on by clearing its media', async () => {
+        const { dom, mod } = await loadTheme();
+        const { dark, light } = addThemeStyles(dom.window.document);
+        mod.applyGLTheme('light');
+        assert.equal(light.media, '');
+        assert.equal(light.disabled, false);
+        assert.equal(dark.disabled, true);
+    });
+
+    it('turns the dark theme on and the light one off', async () => {
+        const { dom, mod } = await loadTheme();
+        const { dark, light } = addThemeStyles(dom.window.document);
+        mod.applyGLTheme('dark');
+        assert.equal(dark.disabled, false);
+        assert.equal(light.disabled, true);
+        // Cleared whichever theme is picked; disabled alone decides now.
+        assert.equal(light.media, '');
+    });
+});
