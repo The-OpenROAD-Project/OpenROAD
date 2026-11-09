@@ -1148,6 +1148,13 @@ void TritonRoute::addInstancePAData(frInst* inst)
   }
 }
 
+void TritonRoute::saveInstancePAData(frInst* inst)
+{
+  if (pa_) {
+    pa_->saveSwappedInst(inst);
+  }
+}
+
 void TritonRoute::addAvoidViaDefPA(const frViaDef* via_def)
 {
   if (pa_) {

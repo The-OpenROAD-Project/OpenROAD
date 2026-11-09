@@ -80,6 +80,12 @@ void DesignCallBack::inDbInstDestroy(odb::dbInst* db_inst)
 void DesignCallBack::inDbInstSwapMasterBefore(odb::dbInst* db_inst,
                                               odb::dbMaster* db_master)
 {
+  auto design = router_->getDesign();
+  if (design != nullptr && design->getTopBlock() != nullptr) {
+    if (auto inst = design->getTopBlock()->getInst(db_inst->getName())) {
+      router_->saveInstancePAData(inst);
+    }
+  }
   inDbInstDestroy(db_inst);
 }
 

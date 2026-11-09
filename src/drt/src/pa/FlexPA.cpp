@@ -119,6 +119,93 @@ void FlexPA::removeDirtyInst(frInst* inst)
   dirty_insts_.erase(inst);
 }
 
+namespace {
+
+std::array<bool, 6> accessDirs(const frAccessPoint* ap)
+{
+  return {ap->hasAccess(frDirEnum::E),
+          ap->hasAccess(frDirEnum::S),
+          ap->hasAccess(frDirEnum::W),
+          ap->hasAccess(frDirEnum::N),
+          ap->hasAccess(frDirEnum::U),
+          ap->hasAccess(frDirEnum::D)};
+}
+
+}  // namespace
+
+void FlexPA::saveSwappedInst(frInst* inst)
+{
+  SavedInst saved{.transform = inst->getTransform(), .terms = {}};
+  bool has_access = false;
+  for (auto& inst_term : inst->getInstTerms()) {
+    auto& pins = saved.terms[inst_term->getTerm()->getName()];
+    for (frAccessPoint* ap : inst_term->getAccessPoints()) {
+      if (ap == nullptr) {
+        pins.emplace_back();
+        continue;
+      }
+      has_access = true;
+      pins.emplace_back(SavedAccessPoint{.id = ap->getId(),
+                                         .point = ap->getPoint(),
+                                         .layer = ap->getLayerNum(),
+                                         .access = accessDirs(ap)});
+    }
+  }
+  // A swap back before the update finds no access points; the first swap's
+  // stay.
+  if (has_access) {
+    swapped_insts_[inst->getDBInst()] = std::move(saved);
+  }
+}
+
+bool FlexPA::restoreSwappedInst(frInst* inst)
+{
+  const auto saved = swapped_insts_.find(inst->getDBInst());
+  if (saved == swapped_insts_.end()
+      || saved->second.transform != inst->getTransform()) {
+    return false;
+  }
+  std::vector<std::pair<frInstTerm*, std::vector<frAccessPoint*>>> restored;
+  for (auto& inst_term : inst->getInstTerms()) {
+    const auto old_pins
+        = saved->second.terms.find(inst_term->getTerm()->getName());
+    const auto& pins = inst_term->getTerm()->getPins();
+    if (old_pins == saved->second.terms.end()
+        || old_pins->second.size() != pins.size()) {
+      return false;
+    }
+    std::vector<frAccessPoint*> aps(pins.size(), nullptr);
+    for (size_t pin_idx = 0; pin_idx < pins.size(); pin_idx++) {
+      const auto& old_ap = old_pins->second[pin_idx];
+      if (!old_ap.has_value()) {
+        continue;
+      }
+      if (inst->getPinAccessIdx() < 0
+          || inst->getPinAccessIdx() >= pins[pin_idx]->getNumPinAccess()) {
+        return false;
+      }
+      const frPinAccess* pin_access
+          = pins[pin_idx]->getPinAccess(inst->getPinAccessIdx());
+      if (old_ap->id >= pin_access->getNumAccessPoints()) {
+        return false;
+      }
+      frAccessPoint* ap = pin_access->getAccessPoint(old_ap->id);
+      if (ap->getPoint() != old_ap->point || ap->getLayerNum() != old_ap->layer
+          || accessDirs(ap) != old_ap->access) {
+        return false;
+      }
+      aps[pin_idx] = ap;
+    }
+    restored.emplace_back(inst_term.get(), std::move(aps));
+  }
+  for (auto& [inst_term, aps] : restored) {
+    inst_term->setAccessPoints(aps);
+  }
+  inst->setLatestPATransform();
+  inst->setHasPinAccessUpdate(true);
+  return true;
+}
+
 void FlexPA::updateDirtyInsts()
 {
   auto cmp = [](UniqueClass* a, UniqueClass* b) { return a->key() < b->key(); };
@@ -183,6 +270,15 @@ void FlexPA::updateDirtyInsts()
       addToInstsSet(inst);
     }
   }
+  // A master swap that kept every access point keeps its row pattern.
+  for (auto it = pattern_insts.begin(); it != pattern_insts.end();) {
+    if (restoreSwappedInst(*it)) {
+      it = pattern_insts.erase(it);
+    } else {
+      ++it;
+    }
+  }
+  swapped_insts_.clear();
   frOrderedIdSet<frInst*> processed_insts;
   std::vector<std::vector<frInst*>> inst_rows;
   for (auto& inst : pattern_insts) {
