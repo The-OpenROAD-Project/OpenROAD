@@ -214,14 +214,58 @@ static void foldCombinationals(Graph& g)
       }
 
     } else if (auto* op = inst->try_as<Adc>()) {
-      auto ac = lookupConst(g, op->a());
-      auto bc = lookupConst(g, op->b());
-      Net cin = stripBuffers(g, op->cin());
-      if (ac && bc && cin.isConst()) {
-        Const result = ac->adc(*bc, cin.constTrit());
-        Bundle repl = Bundle::fromConst(result);
-        for (uint32_t i = 0; i < width; i++) {
-          new_output[i] = repl[i];
+      // Bits worth of output already emitted
+      uint32_t emitted = 0;
+
+      // Carry out of the last emitted stage. If we are
+      // just starting this is the primary carry in
+      Net carry = stripBuffers(g, op->cin());
+
+      // Credit goes to prjunnamed for formulating the elegant
+      // rule as used below
+      for (uint32_t i = 0; i < width - 1; i++) {
+        Net ai = stripBuffers(g, op->a()[i]);
+        Net bi = stripBuffers(g, op->b()[i]);
+
+        // Both summands to this stage being equal
+        // always breaks the carry chain
+        if (ai == bi) {
+          uint32_t batch_width = i - emitted;
+          BundleView batch_value
+              = (batch_width > 0)
+                    ? g.add<Adc>(op->a().slice(emitted, batch_width),
+                                 op->b().slice(emitted, batch_width),
+                                 carry)
+                    : BundleView(carry);
+
+          for (uint32_t j = 0; j < batch_width + 1; j++) {
+            new_output[emitted++] = batch_value[j];
+          }
+          carry = ai;
+        } else if (emitted == i) {
+          // Apply further rules enabled by knowing `carry` is the carry in
+          // to the current stage
+          if (ai == carry) {
+            new_output[emitted++] = bi;
+            // no update to carry: carry out equals carry in
+          } else if (bi == carry) {
+            new_output[emitted++] = ai;
+            // no update to carry: carry out equals carry in
+          }
+        }
+      }
+
+      if (emitted > 0) {
+        // Flush any remaining stages
+        uint32_t batch_width = width - 1 - emitted;
+        BundleView batch_value
+            = (batch_width > 0)
+                  ? g.add<Adc>(op->a().slice(emitted, batch_width),
+                               op->b().slice(emitted, batch_width),
+                               carry)
+                  : BundleView(carry);
+        for (uint32_t j = 0; j < batch_width + 1; j++) {
+          new_output[emitted++] = batch_value[j];
         }
         do_replace = true;
       }
