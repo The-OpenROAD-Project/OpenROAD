@@ -3,6 +3,7 @@
 
 # LEF-CHK-003 cross-layer alignment: M1 and M3 are both horizontal, so one
 # macro Y translation must put the M1 and M3 signal pins on their tracks.
+# Vertical layers constrain X; mixed directions constrain separate axes.
 source "helpers.tcl"
 
 read_lef check_ip_multilayer_alignment.lef
@@ -21,3 +22,10 @@ report_check_ip cross_layer_pass
 
 # M1 needs 150 mod 200 and M3 needs 50 mod 200, so no shared translation.
 report_check_ip cross_layer_fail
+
+# Vertical M2 and M4 use the X translation for compatibility.
+report_check_ip vertical_pass
+report_check_ip vertical_fail
+
+# M1 and M2 require different offsets on independent axes.
+report_check_ip mixed_direction_pass
