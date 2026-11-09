@@ -74,8 +74,11 @@
 #include "dbIsolation.h"
 #include "dbJournal.h"
 #include "dbLevelShifter.h"
+#include "dbLib.h"
 #include "dbLogicPort.h"
+#include "dbMPin.h"
 #include "dbMarkerCategory.h"
+#include "dbMaster.h"
 #include "dbModBTerm.h"
 #include "dbModITerm.h"
 #include "dbModInst.h"
@@ -507,7 +510,36 @@ _dbBlock::~_dbBlock()
 void dbBlock::clear()
 {
   _dbBlock* block = (_dbBlock*) this;
+  for (auto callback : block->callbacks_) {
+    callback->inDbBlockClear(this);
+  }
   _dbDatabase* db = block->getDatabase();
+  // Master pins outlive the block contents and must not retain their AP IDs.
+  for (auto access_point : getAccessPoints()) {
+    const auto* ap = static_cast<_dbAccessPoint*>(access_point->getImpl());
+    if (!ap->mpin_.isValid() || !db->lib_tbl_->validId(ap->lib_)) {
+      continue;
+    }
+    const auto* lib = db->lib_tbl_->getPtr(ap->lib_);
+    if (!lib->master_tbl_->validId(ap->master_)) {
+      continue;
+    }
+    const auto* master = lib->master_tbl_->getPtr(ap->master_);
+    if (master->mpin_tbl_->validId(ap->mpin_)) {
+      auto& pin_aps = master->mpin_tbl_->getPtr(ap->mpin_)->aps_;
+      for (auto& aps : pin_aps) {
+        const auto pos = std::find(aps.begin(), aps.end(), ap->getOID());
+        if (pos != aps.end()) {
+          aps.erase(pos);
+          break;
+        }
+      }
+      if (std::ranges::all_of(pin_aps,
+                              [](const auto& aps) { return aps.empty(); })) {
+        pin_aps.clear();
+      }
+    }
+  }
   _dbBlock* parent = (_dbBlock*) getParent();
   _dbChip* chip = (_dbChip*) getChip();
 
