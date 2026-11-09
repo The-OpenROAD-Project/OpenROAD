@@ -330,13 +330,6 @@ void IpChecker::checkPinRoutingGridAlignment(odb::dbMaster* master)
     }
   }
 
-  struct LayerAlignmentConstraint
-  {
-    odb::dbTechLayer* layer;
-    int pitch;
-    int required_offset;
-    bool is_horizontal;
-  };
   std::vector<LayerAlignmentConstraint> constraints;
 
   auto positive_mod = [](int value, int modulus) {
@@ -426,6 +419,13 @@ void IpChecker::checkPinRoutingGridAlignment(odb::dbMaster* master)
          is_horizontal});
   }
 
+  checkCrossLayerPinRoutingGridAlignment(master_name, constraints);
+}
+
+void IpChecker::checkCrossLayerPinRoutingGridAlignment(
+    const std::string& master_name,
+    const std::vector<LayerAlignmentConstraint>& constraints)
+{
   // A single macro translation must satisfy every layer that moves on the
   // same placement axis. By the generalized Chinese Remainder Theorem,
   // t = a (mod m) and t = b (mod n) are compatible iff a-b is divisible by
@@ -444,7 +444,7 @@ void IpChecker::checkPinRoutingGridAlignment(odb::dbMaster* master)
       }
 
       int offset_delta = first.required_offset - second.required_offset;
-      if (positive_mod(offset_delta, common_pitch) != 0) {
+      if (offset_delta % common_pitch != 0) {
         logger_->warn(
             utl::CHK,
             31,

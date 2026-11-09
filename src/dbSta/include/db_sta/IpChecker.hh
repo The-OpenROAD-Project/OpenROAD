@@ -4,6 +4,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -55,6 +56,14 @@ class IpChecker
   int getWarningCount() const { return warning_count_; }
 
  private:
+  struct LayerAlignmentConstraint
+  {
+    odb::dbTechLayer* layer;
+    int pitch;
+    int required_offset;
+    bool is_horizontal;
+  };
+
   // Reset warning counter before a new check
   void reset();
 
@@ -70,6 +79,9 @@ class IpChecker
   // LEF-CHK-003: Pin routing grid alignment, including cross-layer
   // compatibility
   void checkPinRoutingGridAlignment(odb::dbMaster* master);
+  void checkCrossLayerPinRoutingGridAlignment(
+      const std::string& master_name,
+      const std::vector<LayerAlignmentConstraint>& constraints);
 
   // LEF-CHK-004-005: Pin accessibility (signal and power)
   void checkPinAccessibility(odb::dbMaster* master);
