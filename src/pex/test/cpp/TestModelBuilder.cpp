@@ -231,6 +231,21 @@ TEST(ModelBuilder, CrossingAndEndTables)
   c = model.crossing({"met2", "met3", ""});
   EXPECT_TRUE(c->hasReach());
   EXPECT_EQ(c->at(1, 0).total, share);
+  // A reach held on another grid is refused, and reach factors that do
+  // not ascend from 0 are refused before any solve.
+  BuildOptions other_reach = o;
+  other_reach.reach_factors = {0, 3};
+  EXPECT_THROW(
+      buildCrossing(sky130(), L("met2"), L("met3"), other_reach, model),
+      std::invalid_argument);
+  for (const std::vector<double>& bad :
+       {std::vector<double>{}, {1, 2}, {0, 0, 2}, {0, 3, 2}}) {
+    BuildOptions refused = o;
+    refused.reach_factors = bad;
+    Model fresh;
+    EXPECT_THROW(buildCrossing(sky130(), L("met2"), L("met3"), refused, fresh),
+                 std::invalid_argument);
+  }
 
   o.end_spacing_factors = {1};
   o.facing_factors = {1, 4};
@@ -324,6 +339,14 @@ TEST(ModelBuilder, GridsReachByHeight)
   };
   check({"met2", "", ""}, 6 * met2.bottom);
   check({"met2", "met1", ""}, 10 * (met2.bottom - met1.top));
+  // A step of 1 or less could not reach; refused.
+  for (const double step : {1.0, 0.5}) {
+    BuildOptions flat = o;
+    flat.lateral_reach_step = step;
+    Model fresh;
+    EXPECT_THROW(buildLateral(sky130(), L("met2"), flat, fresh),
+                 std::invalid_argument);
+  }
 
   o.diagonal_width_factors = {1};
   o.diagonal_gap_factors = {0, 2};
@@ -680,6 +703,9 @@ TEST(ModelBuilder, FingerprintFollowsTheStackAndTheOptions)
   BuildOptions deeper = o;
   deeper.diagonal_depth++;
   EXPECT_NE(buildFingerprint(sky130(), deeper), base);
+  BuildOptions reach = o;
+  reach.reach_factors.push_back(30);
+  EXPECT_NE(buildFingerprint(sky130(), reach), base);
   // A stack like sky130's with one conductor thicker, and one renamed.
   auto rebuilt = [&](const char* technology, const double extra_top) {
     fsv::Stack stack;

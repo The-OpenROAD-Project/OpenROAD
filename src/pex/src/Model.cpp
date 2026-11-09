@@ -556,11 +556,16 @@ CrossingShare Model::crossingReach(const CrossingKey& key,
                                    const double left,
                                    const double right) const
 {
-  const CrossingTable& t = requireCrossing(*this, key);
-  if (!t.hasReach()) {
+  const CrossingTable* t = &requireCrossing(*this, key);
+  if (!t->hasReach() && !key.opposite.empty()) {
+    if (const CrossingTable* plain = crossing({key.layer, key.cover, ""})) {
+      t = plain;
+    }
+  }
+  if (!t->hasReach()) {
     return {1, 1};
   }
-  const CrossingReach& r = t.reach();
+  const CrossingReach& r = t->reach();
   auto ratio = [&](const double d, const double e) {
     if (e >= r.extents.back()) {
       return CrossingShare{1, 1};

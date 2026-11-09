@@ -36,6 +36,9 @@ void extendGrid(std::vector<double>& grid,
                 const double reach,
                 const double step)
 {
+  if (!(step > 1) || !std::isfinite(step)) {
+    throw std::invalid_argument("a reach step must be finite and above 1");
+  }
   if (grid.empty() || grid.back() <= 0 || reach <= grid.back() * 1.05) {
     return;
   }
@@ -172,6 +175,21 @@ void requireGrid(const std::string& what,
   }
 }
 
+// The reach factors ascend strictly from 0, so the reach grid starts at a
+// crossing ending flush with the wire.
+void requireReachFactors(const BuildOptions& options)
+{
+  const std::vector<double>& factors = options.reach_factors;
+  if (factors.empty() || factors.front() != 0
+      || std::adjacent_find(
+             factors.begin(), factors.end(), std::greater_equal<>())
+             != factors.end()
+      || !std::isfinite(factors.back())) {
+    throw std::invalid_argument(
+        "the reach factors must ascend from 0 and be finite");
+  }
+}
+
 fsv::SolveOptions solveOptions(const double tol)
 {
   fsv::SolveOptions options;
@@ -295,6 +313,7 @@ std::string buildFingerprint(const fsv::Stack& stack,
   text << "lr " << options.lateral_reach << ' '
        << options.lateral_reach_one_sided << ' ' << options.lateral_reach_step
        << " dr " << options.diagonal_reach << '|';
+  list("rf", options.reach_factors);
   list("cw", options.crossing_width_factors);
   list("cf", options.coverages);
   list("dw", options.diagonal_width_factors);
@@ -705,6 +724,8 @@ void buildReach(const fsv::Stack& stack,
                 Model& model)
 {
   const fsv::Stack::Conductor& conductor = requireConductor(stack, layer);
+  requireReachFactors(options);
+  const std::vector<double>& factors = options.reach_factors;
   struct Job
   {
     double total = 0;
@@ -725,14 +746,20 @@ void buildReach(const fsv::Stack& stack,
         = requireConductor(stack, cover);
     const CrossingKey key{conductor.name, cover_conductor.name, ""};
     const CrossingTable* held = model.crossing(key);
-    if (held == nullptr || held->hasReach()) {
+    if (held == nullptr) {
       continue;
     }
     const double unit
         = std::max(conductor.min_width, cover_conductor.min_width);
     Table table{cover, key, cover_conductor.min_width, {}, 0, {}};
-    for (const double f : options.reach_factors) {
+    for (const double f : factors) {
       table.grid.push_back(f * unit);
+    }
+    if (held->hasReach()) {
+      requireGrid("crossing reach of " + key.layer + " and " + key.cover,
+                  held->reach().past,
+                  table.grid);
+      continue;
     }
     table.running_on = std::max(options.extent, 2 * table.grid.back() + unit);
     table.jobs.resize(table.grid.size() * (table.grid.size() + 2));
@@ -816,7 +843,8 @@ void buildCrossings(const fsv::Stack& stack,
 {
   // Each coverage sets a pitch (width / f) and a gap (width (1 / f - 1)),
   // and the share divides by 1 - f: the fraction has to be strictly inside
-  // (0, 1), checked before any solve runs.
+  // (0, 1), checked before any solve runs, as are the reach factors.
+  requireReachFactors(options);
   for (const double f : options.coverages) {
     if (!(f > 0 && f < 1)) {
       throw std::invalid_argument("the crossing coverage " + std::to_string(f)
@@ -877,7 +905,7 @@ void buildCrossings(const fsv::Stack& stack,
       if (const CrossingTable* built = model.crossing(key)) {
         requireGrid(
             "crossing table of " + key.layer, built->spacings(), spacings);
-        continue;  // built before; its reach follows below
+        continue;  // built before; the reach follows below
       }
       Table table{cover,
                   opposite,

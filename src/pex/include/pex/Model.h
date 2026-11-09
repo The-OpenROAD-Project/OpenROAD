@@ -406,8 +406,10 @@ class Model
   // Through the reach, the effect kept up to a distance d is the
   // crossing's half width plus half the kept amount, times the ratio at
   // d, linear in both distances, held past the last past and 1 past the
-  // last extent; the part over the span is its difference across it.
-  // Throws std::out_of_range when the pair has no table.
+  // last extent; the part over the span is its difference across it. A
+  // table with a plane opposite and no reach of its own takes the reach of
+  // the pair's table without the plane. Throws std::out_of_range when the
+  // pair has no table.
   CrossingShare crossingReach(const CrossingKey& key,
                               double from,
                               double to,

@@ -250,6 +250,11 @@ TEST(Model, CrossingReach)
   // Past the last gap nothing more is kept: the ratio there, held past
   // the last past.
   EXPECT_DOUBLE_EQ(model.crossingReach(key, 3, 5, 0, 0).total, 0.3);
+  // A table with a plane opposite and no reach takes the reach of the
+  // table without the plane.
+  const CrossingKey planed{"m2", "m3", "m1"};
+  model.addCrossing(planed, CrossingTable({1, 3}, {{0.8, 0.7}, {0.4, 0.3}}));
+  EXPECT_DOUBLE_EQ(model.crossingReach(planed, 0, 0, 0, 0).total, 0.5);
   CrossingReach bad = reach;
   bad.past = {0.1, 1};
   EXPECT_THROW(table.setReach(bad), std::invalid_argument);

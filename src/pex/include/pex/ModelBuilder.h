@@ -33,8 +33,8 @@ struct BuildOptions
   // cover below or above): `lateral_reach` with covers on both sides or
   // none, `lateral_reach_one_sided` with a cover on one side only, whose
   // open side lets the field spread further. Consecutive added spacings
-  // differ by at most the ratio `lateral_reach_step`. A neighbor past the
-  // last spacing is looked up as none. 0 adds none.
+  // differ by at most the ratio `lateral_reach_step`, which must be above
+  // 1. A neighbor past the last spacing is looked up as none. 0 adds none.
   double lateral_reach = 6;
   double lateral_reach_one_sided = 10;
   double lateral_reach_step = 1.6;
@@ -209,9 +209,12 @@ KeptFit fitKept(const std::vector<double>& gaps,
 // at every crossing spacing; each array gives the share kept over the gap
 // between its crossings, and the table holds them fitted (fitKept). Throws
 // std::runtime_error when the coupling shares without neighbors fit no
-// kept amount. Each table also holds its reach (CrossingReach), from one
-// crossing over a wire alone at every pair of the reach factors, against
-// one running on and none; a held table without one gains it.
+// kept amount. The table without a plane opposite also holds the pair's
+// reach (CrossingReach), from one crossing over a wire alone at every pair
+// of the reach factors, against one running on and none; a held table
+// without one gains it, and one with a reach on another grid is refused.
+// Throws std::invalid_argument for reach factors that do not ascend from
+// 0.
 void buildCrossing(const fsv::Stack& stack,
                    Layer layer,
                    Layer cover,
