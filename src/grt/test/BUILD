@@ -255,7 +255,7 @@ regression_test(
 )
 
 regression_test(
-    name = "incremental_congestion_is_accepted",
+    name = "incremental_congestion_recovery",
     check_log = False,
     check_passfail = True,
     data = [":test_resources"],

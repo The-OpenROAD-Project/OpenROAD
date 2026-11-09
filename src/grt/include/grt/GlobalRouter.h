@@ -660,13 +660,6 @@ class GlobalRouter
   // when they were routed; later changes to allow_congestion_ do not
   // withdraw it.
   bool congestion_accepted_{false};
-  // Set when an incremental reroute ends with overflow the recovery could not
-  // clear.  Treated the way CUGR's congestion is: reported once at the end of
-  // the incremental session and accepted rather than raised as an error.
-  // Detailed routing usually absorbs a handful of overflowing edges, and
-  // erroring mid-session kills the repair_timing call that asked for the
-  // reroute -- after it has already modified the netlist.
-  bool incremental_congestion_{false};
   bool incremental_congestion_report_pending_{false};
   // Block property recording which engine produced the persisted guides.
   static constexpr char kUseCugrProperty[] = "grt_use_cugr";

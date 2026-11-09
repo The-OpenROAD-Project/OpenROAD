@@ -166,9 +166,6 @@ void GlobalRouter::clear()
   horizontal_capacities_.clear();
   initialized_ = false;
   congestion_accepted_ = false;
-  // A fresh route is judged on its own: congestion accepted from a previous
-  // incremental session must not excuse it.
-  incremental_congestion_ = false;
 }
 
 GlobalRouter::~GlobalRouter()
@@ -491,17 +488,11 @@ void GlobalRouter::endIncremental(bool save_guides)
 
 void GlobalRouter::reportIncrementalCongestion()
 {
-  if (!incremental_congestion_report_pending_) {
+  if (!incremental_congestion_report_pending_ || cugr_ == nullptr) {
     return;
   }
   incremental_congestion_report_pending_ = false;
-  // CUGR is asked now, since it routes the whole session's dirty nets at
-  // once.  FastRoute reroutes many times per session and the last one may be
-  // clean, so its flag is sticky and set where the overflow was seen.
-  const bool congested = use_cugr_
-                             ? (cugr_ != nullptr && cugr_->totalOverflow() > 0)
-                             : incremental_congestion_;
-  if (congested) {
+  if (cugr_->totalOverflow() > 0) {
     is_congested_ = true;
     logger_->warn(GRT,
                   128,
@@ -577,8 +568,7 @@ void GlobalRouter::finishGlobalRouting(bool save_guides)
 {
   updateDbCongestion();
   saveCongestion();
-  congestion_accepted_
-      = allow_congestion_ || use_cugr_ || incremental_congestion_;
+  congestion_accepted_ = allow_congestion_ || use_cugr_;
 
   if (verbose_) {
     reportCongestion();
@@ -606,9 +596,8 @@ void GlobalRouter::finishGlobalRouting(bool save_guides)
       suggestAdjustment();
     }
     // CUGR overflow is downgraded to a warning even without -allow_congestion,
-    // since it produces good results on detailed routing.  Overflow left by
-    // an incremental reroute is downgraded for the same reason.
-    if (congestion_accepted_) {
+    // since it produces good results on detailed routing.
+    if (allow_congestion_ || use_cugr_) {
       logger_->warn(GRT,
                     115,
                     "Global routing finished with congestion. Check the "
@@ -7691,14 +7680,13 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
         is_congested_ = true;
         updateDbCongestion();
         saveCongestion();
-        // Accepted, not raised here: the same treatment CUGR's incremental
-        // congestion gets.  One GRT-0128 is reported at the end of the
-        // session by reportIncrementalCongestion(), and finishGlobalRouting()
-        // reports the layer table and the suggested adjustment once, instead
-        // of on every reroute that leaves overflow.
-        incremental_congestion_ = true;
-        congestion_accepted_ = true;
-        incremental_congestion_report_pending_ = true;
+        reportFastRouteCongestion();
+        // Suggest adjustment value
+        suggestAdjustment();
+        logger_->error(GRT,
+                       232,
+                       "Routing congestion too high. Check the congestion "
+                       "heatmap in the GUI.");
       }
     }
     fastroute_->setCriticalNetsPercentage(old_critical_nets_percentage);
