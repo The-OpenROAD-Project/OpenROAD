@@ -11,7 +11,10 @@
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "sta/Graph.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
+#include "sta/SdcClass.hh"
+#include "sta/Units.hh"
 #include "timing_report.h"
 #include "tst/nangate45_fixture.h"
 
@@ -178,6 +181,89 @@ TEST_F(TimingConeGraphTest, ConeLevelsFormAnUnbrokenChain)
   // A linear chain: every node but the far end is driven by exactly one other.
   EXPECT_EQ(links, result.nodes.size() - 1);
   EXPECT_EQ(sourceless, 1u);
+}
+
+//------------------------------------------------------------------------------
+// TimingReport::getReport over two clock domains, one path group each:
+// r0/Q -> r1/D on clk and r2/Q -> r3/D on clk2.
+//------------------------------------------------------------------------------
+
+class TimingReportPathsTest : public tst::Nangate45Fixture
+{
+ protected:
+  void SetUp() override
+  {
+    readLiberty("_main/test/Nangate45/Nangate45_typ.lib");
+    block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
+    makeDomain("clk", "d0", "q0", "r0", "r1", 1000);
+    makeDomain("clk2", "d1", "q1", "r2", "r3", 5000);
+    sta_->postReadDef(block_);
+    sta_->getDbNetwork()->setBlock(block_);
+    makeClock("clk");
+    makeClock("clk2");
+  }
+
+  // launch/Q -> capture/D, both clocked from the port clk.
+  void makeDomain(const char* clk,
+                  const char* d,
+                  const char* q,
+                  const char* launch,
+                  const char* capture,
+                  const int y)
+  {
+    makeBTerm(block_, clk);
+    odb::dbMaster* dff = lib_->findMaster("DFF_X1");
+    ASSERT_NE(dff, nullptr);
+    tst::InstOptions opts;
+    opts.location = odb::Point(1000, y);
+    opts.status = odb::dbPlacementStatus::PLACED;
+    opts.iterms = {
+        {.net_name = clk, .term_name = "CK"},
+        {.net_name = d, .term_name = "D"},
+        {.net_name = q, .term_name = "Q"},
+    };
+    makeInst(block_, dff, launch, opts);
+    opts.location = odb::Point(5000, y);
+    opts.iterms = {
+        {.net_name = clk, .term_name = "CK"},
+        {.net_name = q, .term_name = "D"},
+    };
+    makeInst(block_, dff, capture, opts);
+  }
+
+  void makeClock(const char* port)
+  {
+    sta::dbNetwork* network = sta_->getDbNetwork();
+    sta::PinSet pins(network);
+    pins.insert(network->dbToSta(block_->findBTerm(port)));
+    const float period = sta_->units()->timeUnit()->userToSta(2.0);
+    sta_->makeClock(port,
+                    pins,
+                    /*add_to_pins=*/false,
+                    period,
+                    sta::FloatSeq{0, period / 2},
+                    /*comment=*/"",
+                    sta_->cmdMode());
+  }
+};
+
+// As in the Qt GUI, max_paths counts per path group: one path from each.
+TEST_F(TimingReportPathsTest, MaxPathsCountsPerPathGroup)
+{
+  TimingReport report(getSta());
+  std::vector<std::string> ends;
+  for (const TimingPathSummary& path : report.getReport(true, 1)) {
+    ends.push_back(path.end_pin);
+  }
+  std::ranges::sort(ends);
+  EXPECT_EQ(ends, (std::vector<std::string>{"r1/D", "r3/D"}));
+}
+
+TEST_F(TimingReportPathsTest, ZeroMaxPathsReturnsNoPaths)
+{
+  TimingReport report(getSta());
+  EXPECT_TRUE(report.getReport(true, 0).empty());
+  EXPECT_TRUE(report.getReport(false, 0).empty());
 }
 
 }  // namespace

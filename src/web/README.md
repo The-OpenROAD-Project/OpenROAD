@@ -338,8 +338,8 @@ web_save_report
 
 | Switch Name | Description |
 | ----------- | ------------------------------------------------- |
-| `-setup_paths` | Maximum number of setup timing paths to include. Default: `100`. |
-| `-hold_paths` | Maximum number of hold timing paths to include. Default: `100`. |
+| `-setup_paths` | Maximum number of setup timing paths per path group to include, at most 10000 in all. Default: `100`. |
+| `-hold_paths` | Maximum number of hold timing paths per path group to include, at most 10000 in all. Default: `100`. |
 | `path` | Output HTML file path. |
 
 The report includes:
