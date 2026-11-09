@@ -10,6 +10,9 @@ third-party/abc/
 third-party/lemon/
 third-party/sv-elab/
 
+# Old vendored sources left in existing checkouts.
+third-party/mockturtle/
+
 # standalone workspace for downstream consumer tests
 test/downstream/
 
