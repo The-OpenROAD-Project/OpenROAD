@@ -31,6 +31,7 @@ ALL_TESTS = [
     "3dic_spef",
     "block_sta1",
     "check_axioms",
+    "check_ip_multilayer_alignment",
     "clock_pin",
     "constant1",
     "dont_touch_attr",
