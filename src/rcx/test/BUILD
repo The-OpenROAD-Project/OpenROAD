@@ -102,7 +102,7 @@ filegroup(
             "rules_without_layer_data": ["gcd.def"],
             "rules_without_layer_resistance": ["gcd.def"],
             "rules_without_layer_resistance_lef_res": [
-                "gcd.def",
+                "met4_two_widths.def",
                 "rules_without_layer_resistance.rules",
             ],
             "rules_without_unused_layer_data": [

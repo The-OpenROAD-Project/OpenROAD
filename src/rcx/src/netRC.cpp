@@ -1698,13 +1698,14 @@ void extMain::checkRulesCoverRoutedLayers()
     const std::string layer_name = _tech->findRoutingLayer(level)->getName();
     measure._met = level;
 
-    for (const int width : widths) {
-      const double width_in_microns = _block->dbuToMicrons(width);
-      measure._width = width;
+    for (uint32_t i = 0; i < _modelMap.getCnt(); i++) {
+      extMetRCTable* rc_model = _currentModel->getMetRCTable(_modelMap.get(i));
+      extDistWidthRCTable*& res_table = rc_model->_resOver[level];
+      bool resistance_data_missing = false;
 
-      for (uint32_t i = 0; i < _modelMap.getCnt(); i++) {
-        extMetRCTable* rc_model
-            = _currentModel->getMetRCTable(_modelMap.get(i));
+      for (const int width : widths) {
+        const double width_in_microns = _block->dbuToMicrons(width);
+        measure._width = width;
 
         if (!rc_model->getOverFringeRC(&measure)) {
           logger_->error(RCX,
@@ -1715,8 +1716,6 @@ void extMain::checkRulesCoverRoutedLayers()
                          layer_name,
                          width_in_microns);
         }
-
-        extDistWidthRCTable*& res_table = rc_model->_resOver[level];
 
         if (res_table->getRes(0, width, 0, 0)) {
           continue;
@@ -1740,6 +1739,11 @@ void extMain::checkRulesCoverRoutedLayers()
                       layer_name,
                       width_in_microns);
 
+        resistance_data_missing = true;
+      }
+
+      // Dropped after the loop so that every width is checked against it.
+      if (resistance_data_missing) {
         delete res_table;
         res_table = nullptr;
       }
