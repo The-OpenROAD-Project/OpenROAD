@@ -7588,6 +7588,10 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
         congestion_nets.insert(it->getDbNet());
       }
       int last_overflow = fastroute_->totalOverflow();
+      // Counted separately from add_max, which the no-progress check below
+      // drops to zero: kAddMax - add_max would then report the whole budget as
+      // spent on a loop that ran a handful of rounds.
+      int round = 0;
       while (fastroute_->totalOverflow() && add_max >= 0) {
         const size_t nets_before = congestion_nets.size();
         // The nets that cross the congestion area are obtained and added to
@@ -7606,7 +7610,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
                    1,
                    "congestion recovery round {}/{}: 2D overflow {}, 3D "
                    "overflow {}, congestion nets {} -> {}",
-                   kAddMax - add_max,
+                   round,
                    kAddMax,
                    fastroute_->total2DOverflow(),
                    fastroute_->totalOverflow(),
@@ -7626,7 +7630,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
                      1,
                      "round {} made no progress -- skipping the remaining {} "
                      "rounds",
-                     kAddMax - add_max,
+                     round,
                      add_max);
           add_max = 0;
         }
@@ -7667,6 +7671,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
             dirty_nets, getMinRoutingLayer(), getMaxRoutingLayer());
         mergeResults(new_route);
         add_max--;
+        round++;
       }
       debugPrint(logger_,
                  GRT,
@@ -7674,7 +7679,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
                  1,
                  "congestion recovery ended after {} rounds: 2D overflow {}, "
                  "3D overflow {}",
-                 kAddMax - add_max,
+                 round,
                  fastroute_->total2DOverflow(),
                  fastroute_->totalOverflow());
       if (fastroute_->totalOverflow()) {
