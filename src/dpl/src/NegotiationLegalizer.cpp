@@ -406,7 +406,8 @@ bool NegotiationLegalizer::initFromDb()
     NegCell cell;
     cell.db_inst = db_inst;
     cell.node = network_ ? network_->getNode(db_inst) : nullptr;
-    cell.fixed = status.isFixed();
+    // Placed macros are forced fixed in the Opendp network (DPL-0404).
+    cell.fixed = status.isFixed() || (cell.node && cell.node->isFixed());
 
     if (cell.fixed) {
       // Cover the oriented footprint at its actual location.
@@ -437,17 +438,6 @@ bool NegotiationLegalizer::initFromDb()
       // footprint stays within the grid (matches Opendp::legalPt behaviour).
       cell.init_x = std::max(0, std::min(cell.init_x, grid_w_ - cell.width));
       cell.init_y = std::max(0, std::min(cell.init_y, grid_h_ - cell.height));
-      // Block macros often have no SITE in LEF. On hybrid-row grids with
-      // non-uniform row heights, gridHeight(master) cannot determine the row
-      // span from the master alone and returns 1, so derive the grid footprint
-      // from the placed instance's bounding box via gridCovering().
-      if (dpl_grid->hasHybridRows() && cell.node && !master->getSite()) {
-        const GridRect r = dpl_grid->gridCovering(cell.node);
-        cell.init_x = r.xlo.v;
-        cell.init_y = r.ylo.v;
-        cell.width = (r.xhi - r.xlo).v;
-        cell.height = (r.yhi - r.ylo).v;
-      }
     }
     cell.x = cell.init_x;
     cell.y = cell.init_y;
