@@ -177,6 +177,20 @@ bazel_dep(name = "spdlog", version = "1.17.0")
 # sv-elab: the SystemVerilog frontend whose sources src/syn/src/elab
 # compiles, from the BCR like every dependency that is not a fork.
 bazel_dep(name = "sv-elab", version = "2026-10-29")
+
+# frontend_hdrs uses strip_include_prefix = "src" while common_srcs also
+# globs src/*.h, staging the headers at both external/sv-elab+/src/*.h and
+# _virtual_includes/frontend_hdrs/*.h. On RBE those materialize as distinct
+# inodes, so #pragma once does not stop slang_frontend.h from being included
+# twice when compiled via both paths.
+single_version_override(
+    module_name = "sv-elab",
+    patch_strip = 1,
+    patches = [
+        "//bazel/sv-elab-patches:0001-build-avoid-duplicate-header-paths-with-includes.patch",
+    ],
+)
+
 bazel_dep(name = "tcl_lang", version = "9.0.2.bcr.2")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
 bazel_dep(name = "yaml-cpp", version = "0.9.0")
