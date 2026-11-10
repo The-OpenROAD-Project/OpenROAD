@@ -257,3 +257,22 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "paPatternGCReuseTest",
+    srcs = [
+        "fixture.cpp",
+        "fixture.h",
+        "paPatternGCReuseTest.cpp",
+    ],
+    deps = [
+        "//src/drt:base_types",
+        "//src/drt:drt_impl",
+        "//src/odb/src/db",
+        "//src/utl",
+        "@boost.polygon",
+        "@boost.serialization",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

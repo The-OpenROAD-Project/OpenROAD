@@ -45,6 +45,7 @@ class access;
 }
 
 namespace drt {
+class PatternGCContext;
 // not default via, upperWidth, lowerWidth, not align upper, upperArea,
 // lowerArea, not align lower
 using ViaRawPriorityTuple
@@ -772,7 +773,8 @@ class FlexPA
       std::set<std::vector<int>>& inst_access_patterns,
       std::set<std::pair<int, int>>& used_access_points,
       std::set<std::pair<int, int>>& viol_access_points,
-      int max_access_point_size);
+      int max_access_point_size,
+      PatternGCContext& gc_context);
 
   /**
    * @brief Initializes the nodes' data structures that will be used to solve
@@ -803,7 +805,8 @@ class FlexPA
       std::vector<int>& vio_edges,
       const std::set<std::pair<int, int>>& used_access_points,
       const std::set<std::pair<int, int>>& viol_access_points,
-      int max_access_point_size);
+      int max_access_point_size,
+      PatternGCContext& gc_context);
 
   /**
    * @brief Determines the edge cost between two DP nodes
@@ -815,7 +818,8 @@ class FlexPA
                   std::vector<int>& vio_edges,
                   const std::set<std::pair<int, int>>& used_access_points,
                   const std::set<std::pair<int, int>>& viol_access_points,
-                  int max_access_point_size);
+                  int max_access_point_size,
+                  PatternGCContext& gc_context);
 
   /**
    * @brief Extracts the access patterns given the graph nodes composing the
@@ -846,7 +850,8 @@ class FlexPA
       std::set<std::vector<int>>& inst_access_patterns,
       std::set<std::pair<int, int>>& used_access_points,
       std::set<std::pair<int, int>>& viol_access_points,
-      int max_access_point_size);
+      int max_access_point_size,
+      PatternGCContext& gc_context);
 
   /**
    * @brief Auxilary function for debugging
@@ -879,7 +884,8 @@ class FlexPA
       const std::set<frBlockObject*>& target_objs,
       const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
       PatternType pattern_type,
-      std::set<frBlockObject*>* owners = nullptr);
+      std::set<frBlockObject*>* owners = nullptr,
+      PatternGCContext* gc_context = nullptr);
 
   /**
    * @brief populates the insts_set_ data structure

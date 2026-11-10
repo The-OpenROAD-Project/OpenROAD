@@ -6,6 +6,7 @@
 #include <memory>
 #include <set>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include "db/obj/frBlockObject.h"
@@ -58,8 +59,12 @@ class FlexGCWorker
   int main();
   void clearPWires();
   // initialization from FlexPA, initPA0 --> addPAObj --> initPA1
-  void initPA0(const frDesign* design);
+  // Enable reuse only for seeds owned by one pattern-generation operation.
+  void initPA0(const frDesign* design, bool enableReuse = false);
   void initPA1();
+  bool hasSamePAFixedGeometry(const FlexGCWorker& other) const;
+  bool replacePAObjects(
+      const std::vector<std::pair<frConnFig*, frBlockObject*>>& objects);
   void updateDRNet(drNet* net);
   // used in rp_prep
   void checkMinStep(gcPin* pin);
