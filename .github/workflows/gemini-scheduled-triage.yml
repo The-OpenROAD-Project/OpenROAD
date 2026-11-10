@@ -264,7 +264,9 @@ jobs:
             // or preamble around the model's JSON reply
             let triagedIssues;
             try {
-              const span = (process.env.TRIAGED_ISSUES || '[]').match(/\[[\s\S]*\]/);
+              const text = process.env.TRIAGED_ISSUES || '[]';
+              const fenced = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+              const span = (fenced ? fenced[1] : text).match(/\[[\s\S]*\]/);
               triagedIssues = JSON.parse(span ? span[0] : '');
             } catch (err) {
               core.setFailed(`Gemini reply is not valid JSON: ${err.message}`);
@@ -325,7 +327,8 @@ jobs:
                 continue;
               }
               core.debug(`Setting labels on issue  #${issueNumber} to ${labelsToSet.join(', ')} (${issue.explanation || 'no explanation'})`)
-              await github.rest.issues.setLabels({
+              // Add rather than replace, so labels a maintainer set are kept.
+              await github.rest.issues.addLabels({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issueNumber,

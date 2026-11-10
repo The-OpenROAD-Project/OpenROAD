@@ -98,11 +98,12 @@ jobs:
         if: |-
           ${{ steps.get_labels.outputs.available_labels != '' }}
         # A Gemini API call can stall without any output. Stopping it leaves
-        # the issue unlabeled, so the hourly scheduled triage retries it;
-        # the run still succeeds so the issue author is not sent a failure
-        # notice.
+        # the issue unlabeled, so the hourly scheduled triage retries it. On
+        # a newly opened issue the run still succeeds, so the issue author is
+        # not sent a failure notice; a failed @gemini-cli /triage request
+        # fails the run, so dispatch posts its failure comment.
         timeout-minutes: 5
-        continue-on-error: true
+        continue-on-error: ${{ github.event_name == 'issues' }}
         uses: google-github-actions/run-gemini-cli@v0  # ratchet:exclude
         env:
           # The workspace holds only the checked-out commands and the
@@ -211,11 +212,13 @@ jobs:
             const availableLabels = (process.env.AVAILABLE_LABELS || '').split(',')
               .map((label) => label.trim())
               .sort()
-            // Parse the model's JSON reply, tolerating a markdown code fence
-            // or preamble
+            // Parse the model's JSON reply: the fenced block if there is one,
+            // else the outermost braces, so text around the reply is ignored
             let reply;
             try {
-              const span = (process.env.SELECTED_LABELS || '').match(/\{[\s\S]*\}/);
+              const text = process.env.SELECTED_LABELS || '';
+              const fenced = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+              const span = (fenced ? fenced[1] : text).match(/\{[\s\S]*\}/);
               reply = JSON.parse(span ? span[0] : '');
             } catch (err) {
               core.setFailed(`Gemini reply is not valid JSON: ${err.message}`);
@@ -236,13 +239,14 @@ jobs:
               core.info(`Failed to determine labels to set. There may not be enough information in the issue or pull request.`)
               return;
             }
-            await github.rest.issues.setLabels({
+            // Add rather than replace, so labels a maintainer set are kept.
+            await github.rest.issues.addLabels({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issueNumber,
               labels: selectedLabels,
             });
-            core.info(`Successfully set labels: ${selectedLabels.join(',')} (${reply.explanation || 'no explanation'})`);
+            core.info(`Successfully added labels: ${selectedLabels.join(',')} (${reply.explanation || 'no explanation'})`);
             // Assignment is best effort; the labels are already applied.
             if (process.env.HAS_APP_TOKEN !== 'true') {
               core.info(`#${issueNumber}: no App token; skipping assignment.`);

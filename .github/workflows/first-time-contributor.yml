@@ -8,9 +8,10 @@ on:
 
 jobs:
   greet:
-    # Org members, owners and collaborators are never first-time contributors.
+    # Bots, org members, owners and collaborators are never greeted.
     if: |-
-      ${{ !contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'),
+      ${{ github.event.sender.type == 'User' &&
+          !contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'),
           github.event.issue.author_association || github.event.pull_request.author_association) }}
     runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted-ubuntu-26.04' || 'ubuntu-26.04' }}
     permissions:
