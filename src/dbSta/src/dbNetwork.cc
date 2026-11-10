@@ -1458,6 +1458,29 @@ std::string dbNetwork::stripParentPrefix(const std::string& name)
   return name;
 }
 
+size_t dbNetwork::modulePrefixLength(const std::string_view db_name,
+                                     const dbModule* const module) const
+{
+  if (module == nullptr || module == block_->getTopModule()) {
+    return 0;
+  }
+  const odb::dbModInst* mod_inst = module->getModInst();
+  if (mod_inst == nullptr) {
+    return std::string::npos;
+  }
+  const size_t pos = modulePrefixLength(db_name, mod_inst->getParent());
+  if (pos == std::string::npos) {
+    return pos;
+  }
+  const std::string_view rest = db_name.substr(pos);
+  const std::string_view inst_name = mod_inst->getName();
+  if (rest.size() > inst_name.size() && rest.starts_with(inst_name)
+      && rest[inst_name.size()] == block_->getHierarchyDelimiter()) {
+    return pos + inst_name.size() + 1;
+  }
+  return std::string::npos;
+}
+
 std::string dbNetwork::name(const Port* port) const
 {
   if (isConcretePort(port)) {
@@ -1523,10 +1546,20 @@ std::string dbNetwork::name(const Instance* instance) const
   dbInst* db_inst;
   odb::dbModInst* mod_inst;
   staToDb(instance, db_inst, mod_inst);
-  std::string name;
   if (db_inst) {
-    name = db_inst->getName();
+    std::string name = db_inst->getName();
+    if (hasHierarchy()) {
+      // The db name is the full path; its in-module name may contain
+      // dividers of its own (e.g. a cell of a flattened child).
+      const size_t pos = modulePrefixLength(name, db_inst->getModule());
+      if (pos == std::string::npos) {
+        return stripParentPrefix(name);
+      }
+      name.erase(0, pos);
+    }
+    return name;
   }
+  std::string name;
   if (mod_inst) {
     name = mod_inst->getName();
   }
@@ -2568,45 +2601,24 @@ std::string dbNetwork::name(const Net* net) const
   staToDb(net, dnet, modnet);
   std::string name;
 
-  Network* sta_nwk = (Network*) this;
-
   if (dnet && !modnet) {
     name = dnet->getName();
     // strip out the parent name in hierarchy mode
     // turn this off to get full flat names
 
     if (hasHierarchy()) {
-      //
-      // If this is not a hierarchical name, return it
-      //
-      if (name.find_last_of('/') == std::string::npos) {
+      // Fast path: a flat name has no module path to strip.
+      if (name.find(block_->getHierarchyDelimiter()) == std::string::npos) {
         return name;
       }
-      //
-      // Get the net name within this module of the hierarchy
-      // Note we know we are dealing with an instance pin
-      // of the form parent/instance/Z
-      // Strip out the parent/instance part from the net name.
-      // Because this object is not hooked to a modnet
-      // then we know it is inside the core of the module..
-      //
+      // Without a modnet, the net lives in its driver's module; strip
+      // that module instance's path.
       dbITerm* connected_iterm = dnet->getFirstOutput();
       if (connected_iterm) {
-        Pin* related_pin = dbToSta(connected_iterm);
-        std::string related_pin_name_string = sta_nwk->pathName(related_pin);
-        const size_t last_idx = related_pin_name_string.find_last_of('/');
-        if (last_idx != std::string::npos) {
-          related_pin_name_string = related_pin_name_string.substr(0, last_idx);
-          const size_t second_last_idx
-              = related_pin_name_string.find_last_of('/');
-          if (second_last_idx != std::string::npos) {
-            std::string header_to_remove
-                = related_pin_name_string.substr(0, second_last_idx);
-            size_t pos = name.find(header_to_remove);
-            if (pos != std::string::npos) {
-              name.erase(pos, header_to_remove.length() + 1);
-            }
-          }
+        const size_t pos
+            = modulePrefixLength(name, connected_iterm->getInst()->getModule());
+        if (pos != std::string::npos) {
+          name.erase(0, pos);
         }
       }
     }
