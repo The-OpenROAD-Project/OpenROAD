@@ -2271,25 +2271,26 @@ Port* dbNetwork::port(const Pin* pin) const
   return ret;
 }
 
-PortDirection* dbNetwork::direction(const Port* port) const
+const PortDirection* dbNetwork::direction(const Port* port) const
 {
   dbMTerm* mterm = nullptr;
   dbModBTerm* modbterm = nullptr;
   dbBTerm* bterm = nullptr;
   staToDb(port, bterm, mterm, modbterm);
   if (bterm) {
-    PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
+    const PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
     return dir;
   }
   if (modbterm) {
-    PortDirection* dir = dbToSta(modbterm->getSigType(), modbterm->getIoType());
+    const PortDirection* dir
+        = dbToSta(modbterm->getSigType(), modbterm->getIoType());
     return dir;
   }
   const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
   return cport->direction();
 }
 
-PortDirection* dbNetwork::direction(const Pin* pin) const
+const PortDirection* dbNetwork::direction(const Pin* pin) const
 {
   // A bump pad pin reads its direction from its LEF MTerm like any other
   // iterm; a passive bump pad is INOUT -> bidirect, so wire edges form
@@ -2308,11 +2309,11 @@ PortDirection* dbNetwork::direction(const Pin* pin) const
 
   staToDb(pin, iterm, bterm, moditerm);
   if (iterm) {
-    PortDirection* dir = dbToSta(iterm->getSigType(), iterm->getIoType());
+    const PortDirection* dir = dbToSta(iterm->getSigType(), iterm->getIoType());
     return dir;
   }
   if (bterm) {
-    PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
+    const PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
     return dir;
   }
   if (moditerm) {
@@ -2322,7 +2323,7 @@ PortDirection* dbNetwork::direction(const Pin* pin) const
     dbModule* module = mod_inst->getMaster();
     dbModBTerm* modbterm_local = module->findModBTerm(pin_name.c_str());
     assert(modbterm_local != nullptr);
-    PortDirection* dir
+    const PortDirection* dir
         = dbToSta(modbterm_local->getSigType(), modbterm_local->getIoType());
     return dir;
   }
@@ -3000,7 +3001,7 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
   for (dbMTerm* mterm : master->getMTerms()) {
     const char* port_name = mterm->getConstName();
     Port* port = makePort(cell, port_name);
-    PortDirection* dir = dbToSta(mterm->getSigType(), mterm->getIoType());
+    const PortDirection* dir = dbToSta(mterm->getSigType(), mterm->getIoType());
     setDirection(port, dir);
     mterm->staSetPort(reinterpret_cast<void*>(port));
     ConcretePort* cport = reinterpret_cast<ConcretePort*>(port);
@@ -3116,7 +3117,7 @@ Port* dbNetwork::makeTopPort(dbBTerm* bterm)
 {
   const char* port_name = bterm->getConstName();
   Port* port = makePort(top_cell_, port_name);
-  PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
+  const PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
   setDirection(port, dir);
   registerConcretePort(port);
   return port;
@@ -3125,7 +3126,7 @@ Port* dbNetwork::makeTopPort(dbBTerm* bterm)
 void dbNetwork::setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type)
 {
   Port* port = findPort(top_cell_, bterm->getConstName());
-  PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
+  const PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
   setDirection(port, dir);
 }
 
@@ -3474,7 +3475,7 @@ Pin* dbNetwork::connect(Instance* inst, Port* port, Net* net)
       bterm->connect(dnet);
     } else {
       bterm = dbBTerm::create(dnet, port_name.c_str());
-      PortDirection* dir = direction(port);
+      const PortDirection* dir = direction(port);
       dbSigType sig_type;
       dbIoType io_type;
       staToDb(dir, sig_type, io_type);
@@ -3519,7 +3520,7 @@ Pin* dbNetwork::connect(Instance* inst, LibertyPort* port, Net* net)
     } else {
       bterm = dbBTerm::create(dnet, port_name);
     }
-    PortDirection* dir = port->direction();
+    const PortDirection* dir = port->direction();
     dbSigType sig_type;
     dbIoType io_type;
     staToDb(dir, sig_type, io_type);
@@ -4108,7 +4109,7 @@ dbMTerm* dbNetwork::staToDb(const LibertyPort* port) const
   return mterm;
 }
 
-void dbNetwork::staToDb(PortDirection* dir,
+void dbNetwork::staToDb(const PortDirection* dir,
                         // Return values.
                         dbSigType& sig_type,
                         dbIoType& io_type) const
@@ -4248,8 +4249,8 @@ Cell* dbNetwork::dbToSta(dbMaster* master) const
   return reinterpret_cast<Cell*>(master->staCell());
 }
 
-PortDirection* dbNetwork::dbToSta(const dbSigType& sig_type,
-                                  const dbIoType& io_type) const
+const PortDirection* dbNetwork::dbToSta(const dbSigType& sig_type,
+                                        const dbIoType& io_type) const
 {
   if (sig_type == dbSigType::POWER) {
     return PortDirection::power();
