@@ -5,6 +5,7 @@
 
 #include <array>
 #include <cstddef>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -72,13 +73,22 @@ class BatchSelector
                         bool reserve_worst) const;
 
  private:
-  // The batch under construction: the selection, the impacts of its members
-  // for the conflict checks and the candidates already admitted.
+  // The batch under construction: the selection, the candidates already
+  // admitted, and what its members change, by object, so a candidate is
+  // checked against the whole batch at once.  A write or reconnect maps to
+  // the admission order of the first member that has it, which picks the
+  // conflict reason the member-by-member check would.
   struct Admission
   {
     BatchSelection selection;
-    std::vector<const MoveImpact*> impacts;
     std::unordered_set<const BatchCandidate*> taken;
+    size_t members{0};
+    std::unordered_map<const sta::Instance*, size_t> write_instances;
+    std::unordered_map<const sta::Net*, size_t> write_nets;
+    std::unordered_map<const sta::Pin*, size_t> reconnect_pins;
+    std::unordered_map<const sta::Instance*, size_t> reconnect_instances;
+    std::unordered_set<const sta::Instance*> timing_effect_instances;
+    std::unordered_set<const sta::Net*> timing_effect_nets;
   };
 
   // Takes one candidate when it does not conflict with the batch.
@@ -101,12 +111,6 @@ class BatchSelector
   // are in the batch, not the order they are applied in.
   static void orderByScore(const std::vector<BatchCandidate>& candidates,
                            BatchSelection& selection);
-  // Returns the first write or reconnect conflict between two moves.
-  static BatchConflictReason hardConflict(const MoveImpact& selected,
-                                          const MoveImpact& candidate);
-  // Tests whether the candidate's estimate read timing changed by a member.
-  static bool dependsOn(const MoveImpact& candidate,
-                        const MoveImpact& selected);
 
   // Score floor and worst-endpoint reserve used for each selection.
   BatchSelectorConfig config_;

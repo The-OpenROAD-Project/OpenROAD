@@ -64,7 +64,7 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
                                       sta::Slack best_wns,
                                       sta::Slack wns_tolerance);
 
- private:
+ protected:
   // The unit tests (TestResizerMt) reach the internals through this peer.
   friend class ResizerTestPeer;
 
@@ -126,7 +126,7 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   // === Run setup ============================================================
   // start() steps: the move set from -sequence, the run counters and the first
   // checkpoint.
-  void selectMoveSequence();
+  virtual void selectMoveSequence();
   void resetRunState();
   // Capture initial QoR and reset checkpoint, stall, and work references.
   void saveInitialCheckpoint();
@@ -142,7 +142,7 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   // === Batch scope ==========================================================
   // Collects the violating endpoints, prints the progress row and sets the
   // batch scope.
-  BatchScope collectTargetEndpoints();
+  virtual BatchScope collectTargetEndpoints();
   // Clamp the current failing-endpoint count to the active batch limits.
   int effectiveBatchCap(size_t failing_endpoint_count) const;
   // Restart a run whose batches kept no move with a smaller batch cap once.
@@ -157,7 +157,7 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   BatchPool evaluateTargets(const BatchScope& scope);
   // The path-driver targets of the violating endpoints [begin, end);
   // visited_pins dedups drivers across chunks.
-  std::vector<Target> collectTargets(
+  virtual std::vector<Target> collectTargets(
       size_t begin_endpoint,
       size_t end_endpoint,
       std::unordered_set<sta::Pin*>& visited_pins) const;
@@ -187,7 +187,7 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   std::vector<BatchCandidate> makeBatchCandidates(
       const std::vector<TargetEvaluation>& evaluations) const;
   // The conflict-free batch over the whole pool.
-  void selectBatch(BatchPool& pool, int batch_cap);
+  virtual void selectBatch(BatchPool& pool, int batch_cap);
   // The profiler records of the batch evaluateTargets() selected.
   void recordSelection(const BatchPool& pool) const;
 
@@ -205,7 +205,7 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   // A parasitics-and-timing update or journal restore the policy requests.
   void noteTimingUpdate();
   // The batch's parasitics-and-timing update, charged to the work meter.
-  void updateTiming();
+  virtual void updateTiming();
   // Read WNS and TNS after the batch timing update.  Under -path_group they
   // are the group's, as LEGACY judges: another group's worse paths at the
   // same endpoints would hide every gain in the group.
@@ -218,9 +218,9 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   sta::Slack checkpointWnsTolerance() const;
   // batchImprovesCheckpoint() plus the tail's limit on the TNS a WNS gain may
   // cost.
-  bool acceptsBatch(sta::Slack wns_after, sta::Slack tns_after) const;
+  virtual bool acceptsBatch(sta::Slack wns_after, sta::Slack tns_after) const;
   // Keep the batch and advance the saved WNS/TNS reference.
-  void saveBatchCheckpoint(sta::Slack wns, sta::Slack tns);
+  virtual void saveBatchCheckpoint(sta::Slack wns, sta::Slack tns);
   // Charge a missed batch to the checkpoint-miss and stall counters.
   void noteMissedBatch(bool utilization_legal);
   // Speculates on a missed batch in the WNS tail, else undoes it.
@@ -248,7 +248,7 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   // whose own endpoint got worse than the slack its target was collected with
   // (the group's under -path_group).  spared gets the endpoint-worse cell
   // swaps whose own stages did not slow down.
-  std::vector<MoveCandidate*> findBatchCulprits(
+  virtual std::vector<MoveCandidate*> findBatchCulprits(
       sta::Slack pre_batch_wns,
       std::vector<MoveCandidate*>& spared) const;
   // The change of a cell swap's own and fanin stage delays since prepare;
@@ -263,7 +263,7 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
 
   // === Stop rules ===========================================================
   // Ends the run when no setup violation is left in what the verdict judges.
-  bool finishIfNoSetupViolations();
+  virtual bool finishIfNoSetupViolations();
   // Ends the run at the -max_utilization area, where nothing may run.
   bool finishAtMaxArea();
   // Ends the run at a hard limit with `reason`: the open journal rolls back to
@@ -275,7 +275,7 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   void applyStopRules(int batch_moves);
   // Hands a stalled run to the small-batch retry when no move was kept, else
   // to the WNS tail, or ends it with `reason`.
-  void startTailOrFinish(const char* reason);
+  virtual void startTailOrFinish(const char* reason);
   void printTrackerBatchSummary() const;
 
   // === WNS tail =============================================================

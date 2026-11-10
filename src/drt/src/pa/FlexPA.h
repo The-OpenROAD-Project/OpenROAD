@@ -3,10 +3,12 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <tuple>
@@ -122,6 +124,9 @@ class FlexPA
   void addDirtyInst(frInst* inst);
   void addAvoidViaDef(const frViaDef* via_def);
   void removeDirtyInst(frInst* inst);
+  // Saves the access points inst uses before a master swap, so that
+  // updateDirtyInsts() keeps them when the new master has the same ones.
+  void saveSwappedInst(frInst* inst);
   void updateDirtyInsts();
   void removeFromInstsSet(frInst* inst);
   void addToInstsSet(frInst* inst);
@@ -161,6 +166,20 @@ class FlexPA
   frCollection<odb::dbInst*> target_insts_;
   frInstLocationSet insts_set_;
   frOrderedIdSet<frInst*> dirty_insts_;  // set of dirty instances
+  struct SavedAccessPoint
+  {
+    int id;
+    odb::Point point;
+    frLayerNum layer;
+    std::array<bool, 6> access;
+  };
+  struct SavedInst
+  {
+    odb::dbTransform transform;
+    // Per instance term name, per pin; no value for a pin without one.
+    std::map<std::string, std::vector<std::optional<SavedAccessPoint>>> terms;
+  };
+  std::unordered_map<odb::dbInst*, SavedInst> swapped_insts_;
   std::string remote_host_;
   uint16_t remote_port_ = -1;
   std::string shared_vol_;
@@ -168,6 +187,9 @@ class FlexPA
 
   // helper functions
   frDesign* getDesign() const { return design_; }
+  // Gives a swapped inst its saved access points when the new master has
+  // the same ones where it stands; false leaves it to the row pattern.
+  bool restoreSwappedInst(frInst* inst);
   frTechObject* getTech() const { return design_->getTech(); }
   void setDesign(frDesign* in)
   {

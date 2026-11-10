@@ -43,6 +43,8 @@ using ord::getResizer;
 using ord::ensureLinked;
 
 using sta::Scene;
+using sta::FloatSeq;
+using sta::IntSeq;
 using sta::LibertyCellSeq;
 using sta::LibertyCell;
 using sta::Instance;
@@ -624,6 +626,27 @@ void report_equiv_cells_cmd(LibertyCell* cell, bool match_cell_footprint,
   Resizer* resizer = getResizer();
   resizer->reportEquivalentCells(cell, match_cell_footprint, report_all_cells,
                                  report_vt_equiv);
+}
+
+// vt_budget_groups gives the budget of each cell in vt_budget_cells.
+void
+repair_power_cmd(double setup_margin, double hold_margin,
+                 double setup_tolerance, LibertyCellSeq* vt_budget_cells,
+                 IntSeq vt_budget_groups, FloatSeq vt_budget_percents,
+                 bool verbose)
+{
+  ensureLinked();
+  std::vector<rsz::VtBudget> vt_budgets(vt_budget_percents.size());
+  for (size_t i = 0; i < vt_budget_percents.size(); i++) {
+    vt_budgets[i].max_percent = vt_budget_percents[i];
+  }
+  if (vt_budget_cells != nullptr) {
+    for (size_t i = 0; i < vt_budget_cells->size(); i++) {
+      vt_budgets[vt_budget_groups[i]].cells.push_back((*vt_budget_cells)[i]);
+    }
+  }
+  getResizer()->repairPower(setup_margin, hold_margin, setup_tolerance,
+                            verbose, vt_budgets);
 }
 
 void report_buffers_cmd(bool filtered)

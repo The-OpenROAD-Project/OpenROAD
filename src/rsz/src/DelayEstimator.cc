@@ -1773,35 +1773,13 @@ void applyDualRfCheck(const EstimatorContext& context,
                       const sta::LibertyCell* candidate_cell,
                       DelayEstimate& estimate)
 {
-  const DelayStageState& target = context.target();
-  if (target.opposite_rf_arcs.empty()) {
+  const std::optional<float> opposite_delta
+      = oppositeRfDelayDelta(context, candidate_cell);
+  if (!opposite_delta.has_value()) {
     return;
   }
 
-  float worst_delta = -std::numeric_limits<float>::infinity();
-  for (const OppositeRfArc& opposite : target.opposite_rf_arcs) {
-    float delay = 0.0f;
-    float output_slew = 0.0f;
-    if (!lookupArcDelayAndSlewForArc(target.arc.scene,
-                                     target.arc.min_max,
-                                     target.arc.pvt,
-                                     opposite.ref_arc,
-                                     opposite.input_slew,
-                                     target.load_cap,
-                                     candidate_cell,
-                                     delay,
-                                     output_slew,
-                                     ArcMatchMode::kRelaxedCandidate)) {
-      continue;
-    }
-
-    worst_delta = std::max(worst_delta, delay - opposite.current_model_delay);
-  }
-
-  if (!std::isfinite(worst_delta)) {
-    return;
-  }
-
+  const float worst_delta = *opposite_delta;
   if (worst_delta <= 0.0f || !std::isfinite(context.opposite_rf_slack)) {
     return;
   }
@@ -2162,6 +2140,34 @@ std::optional<EstimatorContext> DelayEstimator::buildContext(
     collectOppositeRfArcs(resizer, context);
   }
   return context;
+}
+
+std::optional<float> oppositeRfDelayDelta(
+    const EstimatorContext& context,
+    const sta::LibertyCell* candidate_scene_cell)
+{
+  const DelayStageState& target = context.target();
+  std::optional<float> worst_delta;
+  for (const OppositeRfArc& opposite : target.opposite_rf_arcs) {
+    float delay = 0.0f;
+    float output_slew = 0.0f;
+    if (!lookupArcDelayAndSlewForArc(target.arc.scene,
+                                     target.arc.min_max,
+                                     target.arc.pvt,
+                                     opposite.ref_arc,
+                                     opposite.input_slew,
+                                     target.load_cap,
+                                     candidate_scene_cell,
+                                     delay,
+                                     output_slew,
+                                     ArcMatchMode::kRelaxedCandidate)) {
+      continue;
+    }
+
+    const float delta = delay - opposite.current_model_delay;
+    worst_delta = std::max(worst_delta.value_or(delta), delta);
+  }
+  return worst_delta;
 }
 
 float oppositeRfSideLoss(const float opposite_slack, const float delay_delta)

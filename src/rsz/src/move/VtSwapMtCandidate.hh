@@ -45,7 +45,7 @@ class VtSwapMtCandidate : public MoveCandidate
   }
   MoveType type() const override { return MoveType::kVtSwap; }
 
- private:
+ protected:
   // === Candidate state ======================================================
   sta::Instance* inst_{nullptr};
   sta::LibertyCell* current_cell_{nullptr};

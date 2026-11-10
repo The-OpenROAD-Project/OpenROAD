@@ -1144,6 +1144,57 @@ proc report_buffers { args } {
   rsz::report_buffers_cmd $filtered
 }
 
+sta::define_cmd_args "repair_power" {[-setup_margin setup_margin]\
+                                     [-hold_margin hold_margin]\
+                                     [-setup_tolerance percent]\
+                                     [-vt_budget {lib_cells percent ...}]\
+                                     [-verbose]}
+
+proc repair_power { args } {
+  sta::parse_key_args "repair_power" args \
+    keys {-setup_margin -hold_margin -setup_tolerance -vt_budget} \
+    flags {-verbose}
+  sta::check_argc_eq0 "repair_power" $args
+  set setup_margin [rsz::parse_time_margin_arg "-setup_margin" keys]
+  set hold_margin [rsz::parse_time_margin_arg "-hold_margin" keys]
+  set setup_tolerance 0.0
+  if { [info exists keys(-setup_tolerance)] } {
+    set setup_tolerance $keys(-setup_tolerance)
+    sta::check_percent "-setup_tolerance" $setup_tolerance
+  }
+  set vt_budget_cells {}
+  set vt_budget_groups {}
+  set vt_budget_percents {}
+  if { [info exists keys(-vt_budget)] } {
+    set vt_budget $keys(-vt_budget)
+    if { [llength $vt_budget] == 0 || [llength $vt_budget] % 2 != 0 } {
+      utl::error RSZ 3271 \
+        "-vt_budget must be pairs of library cells and a percent."
+    }
+    foreach {cells percent} $vt_budget {
+      sta::check_percent "-vt_budget" $percent
+      set lib_cells [sta::get_lib_cells_arg "-vt_budget" $cells sta::sta_warn]
+      if { [llength $lib_cells] == 0 } {
+        utl::error RSZ 3272 "-vt_budget $cells matches no library cell."
+      }
+      foreach lib_cell $lib_cells {
+        lappend vt_budget_cells $lib_cell
+        lappend vt_budget_groups [llength $vt_budget_percents]
+      }
+      lappend vt_budget_percents $percent
+    }
+  }
+  # Cell swaps keep the area; drop a limit an earlier command left.
+  rsz::set_max_utilization 0
+  if { [design_is_routed] } {
+    est::set_parasitics_src "detailed_routing"
+  }
+  est::check_parasitics
+  rsz::repair_power_cmd $setup_margin $hold_margin $setup_tolerance \
+    $vt_budget_cells $vt_budget_groups $vt_budget_percents \
+    [info exists flags(-verbose)]
+}
+
 sta::define_cmd_args "report_delay_estimator_accuracy" {\
   -inst instance \
   -lib_cell lib_cell \

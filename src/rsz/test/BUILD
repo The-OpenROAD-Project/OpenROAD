@@ -317,6 +317,7 @@ PASSFAIL_TESTS = [
     "repair_design_fixed_driver",
     "repair_slew_corner",
     "gain_buffering_top_port_hier",
+    "repair_power_smoke",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
@@ -326,6 +327,7 @@ SELF_CHECKING_TESTS = [
     "repair_design_fixed_driver",
     "repair_slew_corner",
     "gain_buffering_top_port_hier",
+    "repair_power_smoke",
 ]
 
 # Hierarchical Verilog netlists reused as corpus input by
@@ -667,6 +669,7 @@ cc_test(
         "cpp/TestCellSwapMt.cc",
         "cpp/TestDelayEstimatorMt.cc",
         "cpp/TestParallelEvalPolicy.cc",
+        "cpp/TestRepairPower.cc",
         "cpp/TestRepairSetupAnalysis.cc",
         "cpp/TestRepairSetupProfiler.cc",
         "cpp/TestRepairTargetCollector.cc",
@@ -680,6 +683,7 @@ cc_test(
         "Nangate45/Nangate45_lvt.lef",
         "Nangate45/Nangate45_lvt.lib",
         "Nangate45/Nangate45_typ.lib",
+        "cpp/TestRepairPower.v",
         "cpp/TestResizerMt_DelayEstimator.v",
         "cpp/TestSplitLoadMt.v",
     ],

@@ -148,6 +148,14 @@ struct VTCategory
   bool operator!=(const VTCategory& other) const { return !(*this == other); }
 };
 
+// repair_power: instances of these cells may be at most max_percent of the
+// logic cells.
+struct VtBudget
+{
+  sta::LibertyCellSeq cells;
+  float max_percent{100.0f};
+};
+
 // Leakage statistics for cells in a single VT category
 struct VTLeakageStats
 {
@@ -386,6 +394,18 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                    RepairEffort effort = RepairEffort::kHigh,
                    int profile_mode = 0,
                    const char* profile_dir = "");
+  // Swaps cells for lower power where setup slack allows, keeping setup and
+  // hold WS above their margins (or no worse than at the start below them)
+  // and their TNS within 1% of the start.  A setup_tolerance, in percent of
+  // the clock period, instead lets each endpoint lose that much setup slack
+  // below the lower of the margin and its slack at the start.  VT budgets are
+  // brought down first, at the cost of TNS and then WNS where the setup slack
+  // does not cover them, and no later swap breaks them.
+  void repairPower(double setup_margin,
+                   double hold_margin,
+                   double setup_tolerance,
+                   bool verbose,
+                   const std::vector<VtBudget>& vt_budgets = {});
   // For testing.
   void repairSetup(const sta::Pin* end_pin);
   // For testing.
