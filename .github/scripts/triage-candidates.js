@@ -102,8 +102,8 @@ function resolveLabels(rules, labels) {
     const module = modules.get(label.toLowerCase());
     if (module) {
       resolved[label] = {path: `/src/${module}/x`, module};
-    } else if (kLabelPaths[label]) {
-      resolved[label] = {path: kLabelPaths[label], module: null};
+    } else if (kLabelPaths[label.toLowerCase()]) {
+      resolved[label] = {path: kLabelPaths[label.toLowerCase()], module: null};
     }
   }
   return resolved;
