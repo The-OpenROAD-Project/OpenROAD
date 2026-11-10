@@ -5783,7 +5783,16 @@ void Resizer::computeSkewBudget(const SkewBudgetOptions& opts)
   std::vector<PinLatency> orig_pin_latency(ck_pins.size(), PinLatency{});
   std::vector<PinLatencySet> orig_pin_latency_set(ck_pins.size(),
                                                   PinLatencySet{});
+  // A pin-level set_propagated_clock is mutually exclusive with
+  // set_clock_latency on the same pin, so the LP's setClockLatency calls below
+  // strip it. Capture it here (before the cutting-plane loop) so
+  // restore_pin_latency can re-apply it afterwards.
+  std::vector<bool> orig_pin_propagated(ck_pins.size(), false);
   for (int i = 0; i < static_cast<int>(ck_pins.size()); ++i) {
+    // Read the raw SDC annotation (the source of truth setClockLatency
+    // strips), not Sta::isPropagatedClock, which queries the derived clock
+    // network and is not current here.
+    orig_pin_propagated[i] = sdc->isPropagatedClock(ck_pins[i]);
     if (ck_propagated[i]) {
       // Max rise *clock-path* arrival at the CK pin. Sta::arrival()
       // would take the max over every tag, including non-clock paths
@@ -6250,6 +6259,10 @@ void Resizer::computeSkewBudget(const SkewBudgetOptions& opts)
   // would duplicate the original as a clock-specific annotation.
   auto restore_pin_latency = [&](int i) {
     sta_->removeClockLatency(ck_clocks[i], ck_pins[i], sdc);
+    // Restore the per-clock annotated latencies first. A pin can be propagated
+    // and still carry a clock-specific set_clock_latency: setPropagatedClock
+    // only strips the clock-agnostic (null-clock) latency, not per-clock ones,
+    // so the two can coexist and both must be put back.
     for (const sta::RiseFall* rf : sta::RiseFall::range()) {
       for (const sta::MinMax* mm : sta::MinMax::range()) {
         const size_t ri = rf->index();
@@ -6270,7 +6283,16 @@ void Resizer::computeSkewBudget(const SkewBudgetOptions& opts)
         }
       }
     }
+    // Re-apply pin-level set_propagated_clock last. setClockLatency above
+    // clears it as a side effect, and setPropagatedClock only removes the
+    // clock-agnostic latency, so the per-clock annotations restored above
+    // survive.
+    if (orig_pin_propagated[i]) {
+      sta_->setPropagatedClock(const_cast<sta::Pin*>(ck_pins[i]),
+                               sta_->cmdMode());
+    }
   };
+
   auto restore_initial_latencies = [&]() {
     for (int i = 0; i < static_cast<int>(ck_pins.size()); ++i) {
       restore_pin_latency(i);
