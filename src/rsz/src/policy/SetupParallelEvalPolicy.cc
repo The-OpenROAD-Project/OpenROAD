@@ -200,10 +200,8 @@ void SetupParallelEvalPolicy::selectMoveSequence()
   // of a target compete on score, and the sequence order only breaks exact
   // ties; SizeUpMt scores carry the 0.75 size_up_mt_score_scale.  The default
   // goes through the same filter, so -skip_vt_swap and a single-VT library
-  // still remove VtSwapMt.  A single-VT library keeps it when instances use
-  // a dont_use VT that has an equivalent in the usable VT.
-  dont_use_vt_swap_
-      = resizer_.vtCategoryCount() < 2 && resizer_.hasDontUseVtSwapInstances();
+  // still remove VtSwapMt.  A library with dont_use VTs keeps it: VtSwapMt
+  // can move the instances on a dont_use VT to the usable VT.
   std::vector<MoveType> requested_sequence = config_.sequence;
   if (requested_sequence.empty()) {
     requested_sequence = {MoveType::kUnbuffer,
@@ -1725,8 +1723,7 @@ bool SetupParallelEvalPolicy::moveEnabled(const MoveType type) const
 {
   switch (type) {
     case MoveType::kVtSwap:
-      return !config_.skip_vt_swap
-             && (resizer_.vtCategoryCount() > 1 || dont_use_vt_swap_);
+      return !config_.skip_vt_swap && resizer_.vtCategoryCountWithDontUse() > 1;
     case MoveType::kSizeUp:
     case MoveType::kSizeUpMatch:
     case MoveType::kReroute:

@@ -1446,28 +1446,9 @@ bool Resizer::canVtSwap(sta::LibertyCell* cell)
   return dontUse(cell) && getVTEquivCells(cell).size() > 1;
 }
 
-bool Resizer::hasDontUseVtSwapInstances()
+int Resizer::vtCategoryCountWithDontUse() const
 {
-  // Check each master once; designs repeat few masters many times.
-  std::unordered_map<sta::LibertyCell*, bool> swappable;
-  std::unique_ptr<sta::LeafInstanceIterator> inst_iter(
-      network_->leafInstanceIterator());
-  while (inst_iter->hasNext()) {
-    sta::Instance* inst = inst_iter->next();
-    sta::LibertyCell* cell = network_->libertyCell(inst);
-    if (cell == nullptr || !dontUse(cell) || dontTouch(inst)
-        || !isLogicStdCell(inst)) {
-      continue;
-    }
-    auto [it, inserted] = swappable.try_emplace(cell, false);
-    if (inserted) {
-      it->second = getVTEquivCells(cell).size() > 1;
-    }
-    if (it->second) {
-      return true;
-    }
-  }
-  return false;
+  return lib_data_->vt_category_count_with_dont_use;
 }
 
 // This should be exported by STA
@@ -2058,6 +2039,8 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
     lib_data_->sorted_vt_categories.clear();
   }
 
+  // VT categories of the buffers, dont_use ones included
+  std::set<VTCategory> vt_categories_with_dont_use;
   sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
     sta::LibertyLibrary* lib = lib_iter->next();
@@ -2068,10 +2051,14 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
           continue;
         }
       }
-      if (!dontUse(buffer) && !buffer->alwaysOn() && !buffer->isIsolationCell()
+      if (!buffer->alwaysOn() && !buffer->isIsolationCell()
           && !buffer->isLevelShifter() && isLinkCell(buffer)) {
         odb::dbMaster* master = db_network_->staToDb(buffer);
         if (!master) {
+          continue;
+        }
+        vt_categories_with_dont_use.insert(cellVTType(master));
+        if (dontUse(buffer)) {
           continue;
         }
 
@@ -2096,6 +2083,8 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
     }
   }
   delete lib_iter;
+  lib_data_->vt_category_count_with_dont_use
+      = static_cast<int>(vt_categories_with_dont_use.size());
 
   if (!buffer_list.empty()) {
     // Sort buffer list by VT type, then by drive resistance
