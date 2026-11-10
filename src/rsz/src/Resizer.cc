@@ -1075,7 +1075,8 @@ void Resizer::findBuffers()
 
 void Resizer::findBuffersNoPruning()
 {
-  if (!lib_data_) {
+  // A dont_use change clears buffer_cells_; the library data is stale then.
+  if (!lib_data_ || buffer_cells_.empty()) {
     sta::LibertyCellSeq buffer_list;
     getBufferList(buffer_list);
   }
@@ -2289,7 +2290,9 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
     return cache_it->second;
   }
 
-  if (!lib_data_) {
+  // A dont_use change clears buffer_cells_; rebuild the library data when a
+  // caller asks before findBuffers() does.
+  if (!lib_data_ || buffer_cells_.empty()) {
     sta::LibertyCellSeq buffer_list;
     getBufferList(buffer_list);
     // We just need library data
@@ -2418,8 +2421,12 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
   vt_equiv_cells_cache_[source_cell] = std::move(vt_equiv_cells);
   const sta::LibertyCellSeq& vt_equiv_cells_new
       = vt_equiv_cells_cache_[source_cell];
-  for (sta::LibertyCell* equiv_cell : vt_equiv_cells_new) {
-    vt_equiv_cells_cache_[equiv_cell] = vt_equiv_cells_new;
+  // The list of a dont_use source cell holds that cell, so it is not shared:
+  // the other cells must not move to a dont_use cell.
+  if (!dontUse(source_cell)) {
+    for (sta::LibertyCell* equiv_cell : vt_equiv_cells_new) {
+      vt_equiv_cells_cache_[equiv_cell] = vt_equiv_cells_new;
+    }
   }
   return vt_equiv_cells_cache_[source_cell];
 }

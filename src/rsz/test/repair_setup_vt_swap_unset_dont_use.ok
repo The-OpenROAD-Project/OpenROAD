@@ -44,19 +44,19 @@ before: R 284 L 61 SL 125
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -66.849 |    -1781.2 |     46 | resp_msg[13]
-    final |       0 |      39 |        0 |      0 |     0 |    +0.0% |  -45.420 |     -814.3 |     43 | resp_msg[15]
+    final |       0 |      38 |        0 |      0 |     0 |    +0.0% |  -45.431 |     -864.8 |     43 | resp_msg[15]
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0051] Resized 39 instances: 0 up, 0 up match, 0 down, 39 VT
+[INFO RSZ-0051] Resized 38 instances: 0 up, 0 up match, 0 down, 38 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
-SLVT dont_use: R 247 L 79 SL 144
+SLVT dont_use: R 246 L 99 SL 125
 [WARNING RSZ-2024] Experimental repair setup policy 'SetupParallelEvalPolicy' selected. Do not use this for production.
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -45.420 |     -814.3 |     43 | resp_msg[15]
-    final |       0 |      37 |        0 |      0 |     0 |    +0.0% |  -30.679 |     -387.0 |     36 | resp_msg[13]
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -45.431 |     -864.8 |     43 | resp_msg[15]
+    final |       0 |      44 |        0 |      0 |     0 |    +0.0% |  -34.293 |     -518.7 |     40 | resp_msg[13]
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0051] Resized 37 instances: 0 up, 0 up match, 0 down, 37 VT
+[INFO RSZ-0051] Resized 44 instances: 0 up, 0 up match, 0 down, 44 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
-SLVT usable: R 228 L 61 SL 181
-worst slack max -30.679
+SLVT usable: R 224 L 78 SL 168
+worst slack max -34.293
