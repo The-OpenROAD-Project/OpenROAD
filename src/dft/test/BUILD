@@ -20,7 +20,10 @@ COMPULSORY_TESTS = [
     "scan_opt_skip_sky130",
     "scan_opt_sky130",
     "scan_replace_activity_sky130",
+    "scan_replace_clock_mismatch_sky130",
     "scan_replace_dont_use_sky130",
+    "scan_replace_inverted_data_sky130",
+    "scan_replace_state_binding_sky130",
     "scandef_core_sky130",
     "scandef_sky130",
     "sub_modules_sky130",
@@ -80,8 +83,14 @@ filegroup(
             "scan_replace_activity_sky130": [
                 "one_cell_sky130.def",
             ],
+            "scan_replace_clock_mismatch_sky130": [
+                "one_cell_reset_sky130.def",
+            ],
             "scan_replace_dont_use_sky130": [
                 "one_cell_sky130.def",
+            ],
+            "scan_replace_state_binding_sky130": [
+                "one_cell_reset_sky130.def",
             ],
             "scandef_core_sky130": [
                 "register_bank_cores.lef",
@@ -152,6 +161,27 @@ cc_test(
         "//src/dft/src/utils",
         "//src/odb/src/db",
         "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "dft_execute_plan_unittest",
+    srcs = ["cpp/TestDftExecutePlan.cpp"],
+    data = [
+        "max_chain_count_sky130.v",
+        ":regression_resources",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/dft",
+        "//src/dft/src/config",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/tst",
+        "//src/tst:loaded_design",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

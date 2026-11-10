@@ -10,8 +10,10 @@
 // wirelength increase) or checks that the optimizer finds the known-optimal
 // ordering for a hand-crafted instance.
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <unordered_set>
@@ -223,6 +225,218 @@ TEST(TestScanOptimizer, AllCellsPreservedAfterOptimization)
 
   ASSERT_EQ(cells.size(), positions.size());
   EXPECT_EQ(cellNameSet(cells), expected_names);
+}
+
+// n cells placed at random, about one per 10x10 um at 1000 DBU/um, with the
+// scan-in and scan-out pins at fixed offsets from the origin.
+std::vector<std::unique_ptr<ScanCell>> randomCells(const int n,
+                                                   utl::Logger* logger)
+{
+  const int side = static_cast<int>(std::sqrt(n) * 10000);
+  uint32_t r = 12345;
+  const auto next = [&]() {
+    r = r * 1103515245u + 12345u;
+    return static_cast<int>((r >> 1) % side);
+  };
+  std::vector<std::unique_ptr<ScanCell>> cells;
+  for (int i = 0; i < n; i++) {
+    const odb::Point o(next(), next());
+    cells.push_back(std::make_unique<PlacedScanCellMock>(
+        "cell" + std::to_string(i),
+        o,
+        odb::Point(o.x() + 100, o.y() + 200),
+        odb::Point(o.x() + 2000, o.y() + 300),
+        logger));
+  }
+  return cells;
+}
+
+// A long chain of randomly placed cells keeps every cell and comes out much
+// shorter than its random input order.
+TEST(TestScanOptimizer, LongChainPreservesCells)
+{
+  utl::Logger logger;
+  const int n = 5000;
+  auto cells = randomCells(n, &logger);
+  const auto expected_names = cellNameSet(cells);
+  const int64_t before = chainWirelength(cells);
+
+  OptimizeScanWirelength(cells, &logger);
+
+  ASSERT_EQ(cells.size(), static_cast<size_t>(n));
+  EXPECT_EQ(cellNameSet(cells), expected_names);
+  EXPECT_LT(chainWirelength(cells) * 20, before);
+}
+
+// Expects that no 2-Opt or 3-Opt move through each node's 10 nearest
+// neighbors shortens the path of pins si/so, whose first and last nodes are
+// fixed.  The optimizer searches more neighbors than the 10 checked here.
+// Gains come from walking the path before and after each move.
+void expectLocalOptimum(const std::vector<odb::Point>& si,
+                        const std::vector<odb::Point>& so)
+{
+  const int n = static_cast<int>(si.size());
+  const auto D
+      = [&](const int a, const int b) { return manhattanDist(so[a], si[b]); };
+  const auto length = [&](const std::vector<int>& path) {
+    int64_t total = 0;
+    for (size_t m = 0; m + 1 < path.size(); m++) {
+      total += D(path[m], path[m + 1]);
+    }
+    return total;
+  };
+  const auto span = [](const int first, const int last) {
+    std::vector<int> positions;
+    for (int m = first; m <= last; m++) {
+      positions.push_back(m);
+    }
+    return positions;
+  };
+  const auto concat = [](std::initializer_list<std::vector<int>> parts) {
+    std::vector<int> path;
+    for (const auto& part : parts) {
+      path.insert(path.end(), part.begin(), part.end());
+    }
+    return path;
+  };
+
+  // near[a] = the 10 positions b nearest position a, by D(a, b).
+  constexpr int kNear = 10;
+  std::vector<std::vector<int>> near(n);
+  for (int a = 0; a < n; a++) {
+    std::vector<std::pair<int64_t, int>> ranked;
+    for (int b = 0; b < n; b++) {
+      if (b != a) {
+        ranked.emplace_back(D(a, b), b);
+      }
+    }
+    const int keep = std::min(kNear, static_cast<int>(ranked.size()));
+    std::partial_sort(ranked.begin(), ranked.begin() + keep, ranked.end());
+    for (int r = 0; r < keep; r++) {
+      near[a].push_back(ranked[r].second);
+    }
+  }
+
+  // 2-Opt: reverse [i+1..j], with j a neighbor of i+1.
+  for (int i = 0; i + 3 < n; i++) {
+    for (const int j : near[i + 1]) {
+      if (j < i + 2 || j > n - 2) {
+        continue;
+      }
+      std::vector<int> reversed = span(i + 1, j);
+      std::reverse(reversed.begin(), reversed.end());
+      const int64_t gain
+          = length(span(i, j + 1)) - length(concat({{i}, reversed, {j + 1}}));
+      EXPECT_LE(gain, 0) << "2-Opt i=" << i << " j=" << j;
+    }
+  }
+
+  // 3-Opt: swap [i+1..j] and [j+1..k], with j+1 a neighbor of i and k+1 a
+  // neighbor of j, skipping moves whose partial gains the optimizer prunes.
+  for (int i = 0; i + 5 < n; i++) {
+    for (const int j1 : near[i]) {
+      const int j = j1 - 1;
+      if (j < i + 2 || j >= n - 3) {
+        continue;
+      }
+      const int64_t g1 = D(i, i + 1) - D(i, j + 1);
+      if (g1 <= 0) {
+        continue;
+      }
+      for (const int k1 : near[j]) {
+        const int k = k1 - 1;
+        if (k < j + 2 || k >= n - 1) {
+          continue;
+        }
+        if (g1 + D(j, j + 1) - D(j, k + 1) <= 0) {
+          continue;
+        }
+        const int64_t gain
+            = length(span(i, k + 1))
+              - length(concat({{i}, span(j + 1, k), span(i + 1, j), {k + 1}}));
+        EXPECT_LE(gain, 0) << "3-Opt i=" << i << " j=" << j << " k=" << k;
+      }
+    }
+  }
+}
+
+// The optimized chain is a local optimum.
+TEST(TestScanOptimizer, ChainIsLocalOptimum)
+{
+  utl::Logger logger;
+  const int n = 2000;
+  auto cells = randomCells(n, &logger);
+
+  OptimizeScanWirelength(cells, &logger);
+  ASSERT_EQ(cells.size(), static_cast<size_t>(n));
+
+  std::vector<odb::Point> si, so;
+  for (const auto& cell : cells) {
+    si.push_back(cell->getScanInLocation());
+    so.push_back(cell->getScanOutLocation());
+  }
+  expectLocalOptimum(si, so);
+}
+
+// The optimized chain, with its source and sink, is a local optimum.
+TEST(TestScanOptimizer, ChainWithSourceAndSinkIsLocalOptimum)
+{
+  utl::Logger logger;
+  const int n = 2000;
+  auto cells = randomCells(n, &logger);
+  const odb::Point source(0, 0);
+  const odb::Point sink(200000, 0);
+
+  OptimizeScanWirelength(cells, &logger, source, sink);
+  ASSERT_EQ(cells.size(), static_cast<size_t>(n));
+
+  std::vector<odb::Point> si{source}, so{source};
+  for (const auto& cell : cells) {
+    si.push_back(cell->getScanInLocation());
+    so.push_back(cell->getScanOutLocation());
+  }
+  si.push_back(sink);
+  so.push_back(sink);
+  expectLocalOptimum(si, so);
+}
+
+// 200 cells on a ring whose scan-outs sit at the center all list the hub
+// cell, whose scan-in is at the center, as their nearest neighbor.  The
+// optimizer keeps every cell and shortens the chain.
+TEST(TestScanOptimizer, CellListedByManyKeepsCells)
+{
+  utl::Logger logger;
+  constexpr int kRing = 200;
+  constexpr double kPi = 3.14159265358979323846;
+  const odb::Point center(1000000, 1000000);
+  const int radius = 500000;
+
+  std::vector<std::unique_ptr<ScanCell>> cells;
+  cells.push_back(std::make_unique<PlacedScanCellMock>(
+      "hub",
+      center,
+      center,
+      odb::Point(center.x() + 100, center.y()),
+      &logger));
+  for (int i = 0; i < kRing; i++) {
+    const double angle = 2 * kPi * i / kRing;
+    const odb::Point o(center.x() + static_cast<int>(radius * std::cos(angle)),
+                       center.y() + static_cast<int>(radius * std::sin(angle)));
+    cells.push_back(std::make_unique<PlacedScanCellMock>(
+        "ring" + std::to_string(i),
+        o,
+        o,
+        odb::Point(center.x() + 10 * i, center.y() + 1000),
+        &logger));
+  }
+  const auto expected_names = cellNameSet(cells);
+  const int64_t before = chainWirelength(cells);
+
+  OptimizeScanWirelength(cells, &logger);
+
+  ASSERT_EQ(cells.size(), static_cast<size_t>(kRing + 1));
+  EXPECT_EQ(cellNameSet(cells), expected_names);
+  EXPECT_LE(chainWirelength(cells), before);
 }
 
 // Five cells placed on a horizontal line (x = 0, 10, 20, 30, 40) with

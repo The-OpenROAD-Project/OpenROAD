@@ -85,6 +85,12 @@ TEST(TestScanArchitect, CalculatesChainCountAndMaxLength)
   EXPECT_TRUE(CompareUnordered(
       ScanArchitect::inferChainCountFromMaxLength({{1, 10}}, 5, {1}),
       {{1, CreateTestHashDomainLimits(1, 10)}}));
+
+  // A max chain count that does not divide the bits evenly: 10 bits in 6
+  // chains have a length of 2, which only needs 5 chains
+  EXPECT_TRUE(CompareUnordered(
+      ScanArchitect::inferChainCountFromMaxLength({{1, 10}}, 1, {6}),
+      {{1, CreateTestHashDomainLimits(5, 2)}}));
 }
 
 // Verify single-character 's'/'S' scan insertion matching across leading,

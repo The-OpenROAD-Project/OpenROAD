@@ -1,0 +1,9 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+{
+	"timing__fmax__clock:core_clock": 3.33565e+09,
+	"timing__fmax__clock:vclk_core_clock": 8.41216e+09,
+	"timing__fmax": 3.33565e+09,
+	"vclk_only__timing__fmax__clock:vclk_core_clock": 8.41216e+09,
+	"vclk_only__timing__fmax": 8.41216e+09
+}
+
