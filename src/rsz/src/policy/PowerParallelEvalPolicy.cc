@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <functional>
 #include <memory>
@@ -48,7 +49,13 @@ PowerParallelEvalPolicy::PowerParallelEvalPolicy(
     MoveCommitter& committer,
     RepairSetupContext& setup_context,
     const OptimizerRunConfig& config)
-    : SetupParallelEvalPolicy(resizer, committer, setup_context, config)
+    : SetupParallelEvalPolicy(resizer, committer, setup_context, config),
+      vt_budget_(config.vt_budgets, config.vt_budget_run),
+      // Past the setup contract the floor is the contract; a VT budget run
+      // there spends the whole room.
+      slack_ratio_(config.vt_budget_ws.has_value()
+                       ? 1.0f
+                       : PowerSwapCandidate::kSlackRatio)
 {
   // Power moves never improve WNS, so the WNS tail, the cone weights, the score
   // floor and the worst-endpoint reserve have nothing to work on, and the
@@ -93,6 +100,9 @@ bool PowerParallelEvalPolicy::start()
                   time_unit->asString(reference_period_),
                   time_unit->scaleAbbrevSuffix());
   }
+  if (config_.vt_budget_ws.has_value()) {
+    setBudgetFloor(0.0);
+  }
   if (move_sequence_.empty()) {
     logger_->warn(utl::RSZ,
                   3263,
@@ -100,7 +110,11 @@ bool PowerParallelEvalPolicy::start()
     markRunComplete(false);
     return true;
   }
-  power_model_.init();
+  vt_budget_.count(resizer_);
+  start_excess_ = vt_budget_.excess();
+  if (!vt_budget_.lowering()) {
+    power_model_.init();
+  }
   return true;
 }
 
@@ -110,7 +124,16 @@ void PowerParallelEvalPolicy::iterate()
   const int batch_before = batch_index_;
   batch_saved_ = 0.0f;
   SetupParallelEvalPolicy::iterate();
-  if (config_.verbose && batch_index_ > batch_before) {
+  vt_budget_.count(resizer_);
+  if (config_.verbose && batch_index_ > batch_before && vt_budget_.lowering()) {
+    logger_->report(
+        "VT budget batch {:4}: kept {:6} moves, {:7} in total, {} "
+        "missed",
+        batch_index_,
+        committed_moves_ - committed_before,
+        committed_moves_,
+        checkpoint_misses_);
+  } else if (config_.verbose && batch_index_ > batch_before) {
     logger_->report(
         "Power batch {:4}: kept {:6} moves, {:7} in total, {} missed, "
         "saved {:.3e} W",
@@ -122,6 +145,14 @@ void PowerParallelEvalPolicy::iterate()
   }
   // A missed batch is the miss rules' to judge, not the stall rule's.
   if (converged_ || checkpoint_misses_ > 0) {
+    return;
+  }
+  if (vt_budget_.lowering()) {
+    if (vt_budget_.met()
+        || (committed_moves_ - committed_before <= kStallRatio * start_excess_
+            && !lowerBudgetFloor())) {
+      markRunComplete(false);
+    }
     return;
   }
 
@@ -158,6 +189,9 @@ PowerParallelEvalPolicy::collectTargetEndpoints()
   savePreBatchSlews();
 
   collectSwappableDrivers();
+  while (swappable_drivers_.empty() && lowerBudgetFloor()) {
+    collectSwappableDrivers();
+  }
   worst_paths_.clear();
   // PowerVtSwapGenerator reads slew checks.
   sta_->checkSlewsPreamble();
@@ -252,32 +286,57 @@ PowerParallelEvalPolicy::FloorRequired PowerParallelEvalPolicy::floorRequired()
   // Back from the endpoints by level.  An arc's delay is its largest over the
   // scenes, so the room errs low.
   const sta::SearchPred* pred = sta_->search()->evalPred();
-  for (sta::Vertex* vertex : order) {
-    std::array<float, 2>& from = required[graph_->id(vertex)];
-    sta::VertexOutEdgeIterator edge_iter(vertex, graph_);
-    while (edge_iter.hasNext()) {
-      sta::Edge* edge = edge_iter.next();
-      sta::Vertex* to = edge->to(graph_);
-      if (edge->role()->isTimingCheck() || to->level() <= vertex->level()
-          || !pred->searchThru(edge)) {
+  // Returns whether the edge lowered a required time of its from vertex.
+  const auto pull = [&](sta::Edge* edge) {
+    std::array<float, 2>& from = required[graph_->id(edge->from(graph_))];
+    const std::array<float, 2>& to_required
+        = required[graph_->id(edge->to(graph_))];
+    bool lowered = false;
+    for (const sta::TimingArc* arc : edge->timingArcSet()->arcs()) {
+      const sta::RiseFall* from_rf = arc->fromEdge()->asRiseFall();
+      const sta::RiseFall* to_rf = arc->toEdge()->asRiseFall();
+      if (from_rf == nullptr || to_rf == nullptr) {
         continue;
       }
-      const std::array<float, 2>& to_required = required[graph_->id(to)];
-      for (const sta::TimingArc* arc : edge->timingArcSet()->arcs()) {
-        const sta::RiseFall* from_rf = arc->fromEdge()->asRiseFall();
-        const sta::RiseFall* to_rf = arc->toEdge()->asRiseFall();
-        if (from_rf == nullptr || to_rf == nullptr) {
+      float delay = 0.0f;
+      for (const sta::DcalcAPIndex ap_index : ap_indices) {
+        delay = std::max(
+            delay, sta::delayAsFloat(graph_->arcDelay(edge, arc, ap_index)));
+      }
+      float& from_required = from[from_rf->index()];
+      if (to_required[to_rf->index()] - delay < from_required) {
+        from_required = to_required[to_rf->index()] - delay;
+        lowered = true;
+      }
+    }
+    return lowered;
+  };
+  // A transparent latch passes later data on to its output, but levels do not
+  // order its D pin after its output: its D to Q edges pull after each pass,
+  // and the pass repeats while they lower a required time.
+  std::vector<sta::Edge*> latch_edges;
+  for (int pass = 0; pass <= kLatchPasses; ++pass) {
+    for (sta::Vertex* vertex : order) {
+      sta::VertexOutEdgeIterator edge_iter(vertex, graph_);
+      while (edge_iter.hasNext()) {
+        sta::Edge* edge = edge_iter.next();
+        sta::Vertex* to = edge->to(graph_);
+        if (edge->role()->isTimingCheck() || !pred->searchThru(edge)) {
           continue;
         }
-        float delay = 0.0f;
-        for (const sta::DcalcAPIndex ap_index : ap_indices) {
-          delay = std::max(
-              delay, sta::delayAsFloat(graph_->arcDelay(edge, arc, ap_index)));
+        if (to->level() > vertex->level()) {
+          pull(edge);
+        } else if (pass == 0 && edge->role() == sta::TimingRole::latchDtoQ()) {
+          latch_edges.push_back(edge);
         }
-        float& from_required = from[from_rf->index()];
-        from_required
-            = std::min(from_required, to_required[to_rf->index()] - delay);
       }
+    }
+    bool lowered = false;
+    for (sta::Edge* edge : latch_edges) {
+      lowered |= pull(edge);
+    }
+    if (!lowered) {
+      break;
     }
   }
   return required;
@@ -302,13 +361,57 @@ float PowerParallelEvalPolicy::floorRoom(sta::Vertex* vertex,
   return room;
 }
 
+void PowerParallelEvalPolicy::setBudgetFloor(const double loss)
+{
+  budget_floor_loss_ = loss;
+  const float below
+      = reference_period_ < sta::INF ? loss / 100.0 * reference_period_ : 0.0f;
+  const float floor = std::min(*config_.vt_budget_ws,
+                               static_cast<float>(config_.setup_slack_margin))
+                      - below;
+  floors_ = SlackFloors::uniform(floor);
+  const sta::Unit* time_unit = sta_->units()->timeUnit();
+  logger_->info(utl::RSZ,
+                3267,
+                "VT budget: every endpoint may fall to setup slack {}{}.",
+                time_unit->asString(floor),
+                time_unit->scaleAbbrevSuffix());
+}
+
+bool PowerParallelEvalPolicy::lowerBudgetFloor()
+{
+  if (!config_.vt_budget_ws.has_value() || budget_floor_loss_ >= 100.0) {
+    return false;
+  }
+  // Fine steps first, then half again each time.
+  setBudgetFloor(
+      budget_floor_loss_ == 0.0
+          ? 1.0
+          : std::min(100.0,
+                     std::max(budget_floor_loss_ + 1.0,
+                              std::round(budget_floor_loss_ * 1.5))));
+  // The room grew, so the swaps over the old one may fit.
+  rejected_.clear();
+  return true;
+}
+
+void PowerParallelEvalPolicy::startTailOrFinish(const char* reason)
+{
+  if (vt_budget_.lowering() && !vt_budget_.met() && lowerBudgetFloor()) {
+    checkpoint_misses_ = 0;
+    return;
+  }
+  SetupParallelEvalPolicy::startTailOrFinish(reason);
+}
+
 bool PowerParallelEvalPolicy::canSwap(const sta::Instance* inst) const
 {
-  return std::ranges::any_of(
-      higherVtCells(resizer_, network_->libertyCell(inst)),
-      [&](const sta::LibertyCell* cell) {
-        return !isRejected(rejected_, inst, cell);
-      });
+  sta::LibertyCell* from = network_->libertyCell(inst);
+  return std::ranges::any_of(higherVtCells(resizer_, from),
+                             [&](const sta::LibertyCell* cell) {
+                               return !isRejected(rejected_, inst, cell)
+                                      && vt_budget_.admits(from, cell);
+                             });
 }
 
 std::vector<Target> PowerParallelEvalPolicy::collectTargets(
@@ -423,7 +526,7 @@ void PowerParallelEvalPolicy::buildMoveGenerators(
   for (const MoveType type : move_types) {
     if (type == MoveType::kVtSwap) {
       move_generators_.push_back(std::make_unique<PowerVtSwapGenerator>(
-          context, power_model_, rejected_, floors_));
+          context, power_model_, rejected_, floors_, vt_budget_, slack_ratio_));
     }
   }
 }
@@ -570,31 +673,42 @@ void PowerParallelEvalPolicy::addPathMoves(
   };
 
   const sta::Mode* mode = sta_->cmdMode();
-  const sta::PathExpanded expanded(path, sta_);
-  for (size_t i = expanded.startIndex(); i < expanded.size(); ++i) {
-    const sta::Pin* pin = expanded.path(i)->pin(sta_);
-    const sta::Instance* inst = network_->instance(pin);
-    if (inst == network_->topInstance()) {
-      continue;
-    }
-    add(inst, on_path);
-    const sta::LibertyCell* cell = network_->libertyCell(inst);
-    const bool sequential = cell != nullptr && cell->isSequential();
-    if (!sequential && !network_->isDriver(pin)) {
-      continue;
-    }
-    if (network_->isDriver(pin)) {
-      add_net(network_->net(pin));
-    }
-    std::unique_ptr<sta::InstancePinIterator> pin_iter(
-        network_->pinIterator(inst));
-    while (pin_iter->hasNext()) {
-      const sta::Pin* inst_pin = pin_iter->next();
-      if (network_->isLoad(inst_pin)
-          && (network_->isDriver(pin) || sta_->isClock(inst_pin, mode))) {
-        add_net(network_->net(inst_pin));
+  // A path through a transparent latch starts at its D pin, which the moves
+  // on the worst path to that pin delay too.
+  for (int latch = 0; path != nullptr && latch <= kLatchPasses; ++latch) {
+    const sta::PathExpanded expanded(path, sta_);
+    for (size_t i = expanded.startIndex(); i < expanded.size(); ++i) {
+      const sta::Pin* pin = expanded.path(i)->pin(sta_);
+      const sta::Instance* inst = network_->instance(pin);
+      if (inst == network_->topInstance()) {
+        continue;
+      }
+      add(inst, on_path);
+      const sta::LibertyCell* cell = network_->libertyCell(inst);
+      const bool sequential = cell != nullptr && cell->isSequential();
+      if (!sequential && !network_->isDriver(pin)) {
+        continue;
+      }
+      if (network_->isDriver(pin)) {
+        add_net(network_->net(pin));
+      }
+      std::unique_ptr<sta::InstancePinIterator> pin_iter(
+          network_->pinIterator(inst));
+      while (pin_iter->hasNext()) {
+        const sta::Pin* inst_pin = pin_iter->next();
+        if (network_->isLoad(inst_pin)
+            && (network_->isDriver(pin) || sta_->isClock(inst_pin, mode))) {
+          add_net(network_->net(inst_pin));
+        }
       }
     }
+    const sta::Pin* start
+        = expanded.size() > 0 ? expanded.path(0)->pin(sta_) : nullptr;
+    sta::Vertex* latch_d = start != nullptr && network_->isLatchData(start)
+                               ? graph_->pinLoadVertex(start)
+                               : nullptr;
+    path = latch_d != nullptr ? sta_->vertexWorstArrivalPath(latch_d, max_)
+                              : nullptr;
   }
 }
 
@@ -910,6 +1024,8 @@ void PowerParallelEvalPolicy::selectBatch(BatchPool& pool, const int batch_cap)
   std::unordered_map<sta::Vertex*, std::vector<size_t>> covering;
   std::vector<float> remaining;
   std::vector<size_t> admitted;
+  // The VT budgets with the admitted swaps.
+  VtBudgetCounts vt_budget = vt_budget_;
   for (const size_t index : pool.selection.evaluation_indices) {
     if (static_cast<int>(admitted.size()) >= batch_cap) {
       break;
@@ -927,7 +1043,7 @@ void PowerParallelEvalPolicy::selectBatch(BatchPool& pool, const int batch_cap)
         spent += at->second;
       }
     }
-    const float limit = PowerSwapCandidate::kSlackRatio
+    const float limit = slack_ratio_
                         * (sta::delayAsFloat(target.slack)
                            - floors_.driver(target.driver_pin));
     if (spent + cost > limit) {
@@ -939,6 +1055,11 @@ void PowerParallelEvalPolicy::selectBatch(BatchPool& pool, const int batch_cap)
         })) {
       continue;
     }
+    const sta::LibertyCell* from = network_->libertyCell(target.inst(resizer_));
+    if (!vt_budget.admits(from, candidate.candidateCell())) {
+      continue;
+    }
+    vt_budget.move(from, candidate.candidateCell());
     for (const size_t move : covered_by) {
       remaining[move] -= cost;
     }

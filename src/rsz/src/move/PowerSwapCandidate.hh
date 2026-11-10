@@ -41,15 +41,18 @@ struct SlewHeadroom
 class PowerSwapCandidate : public VtSwapMtCandidate
 {
  public:
-  // slack is the target's slack above its floor; power_gain the watts the
-  // swap saves.
+  // slack is the target's slack above its floor, of which the swap may spend
+  // slack_ratio; power_gain the watts the swap saves.  cheapest_first scores
+  // by the slack spent alone.
   PowerSwapCandidate(Resizer& resizer,
                      const Target& target,
                      sta::Instance* inst,
                      sta::LibertyCell* candidate_cell,
                      float power_gain,
                      float slack,
-                     SlewHeadroom slew_headroom);
+                     SlewHeadroom slew_headroom,
+                     float slack_ratio = kSlackRatio,
+                     bool cheapest_first = false);
 
   Estimate estimate() override;
   float powerGain() const { return power_gain_; }
@@ -71,6 +74,8 @@ class PowerSwapCandidate : public VtSwapMtCandidate
   float power_gain_{0.0f};
   float slack_{0.0f};
   SlewHeadroom slew_headroom_;
+  float slack_ratio_{kSlackRatio};
+  bool cheapest_first_{false};
   float cost_{0.0f};
 };
 

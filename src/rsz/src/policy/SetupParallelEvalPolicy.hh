@@ -275,7 +275,7 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   void applyStopRules(int batch_moves);
   // Hands a stalled run to the small-batch retry when no move was kept, else
   // to the WNS tail, or ends it with `reason`.
-  void startTailOrFinish(const char* reason);
+  virtual void startTailOrFinish(const char* reason);
   void printTrackerBatchSummary() const;
 
   // === WNS tail =============================================================

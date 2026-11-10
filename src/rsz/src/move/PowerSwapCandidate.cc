@@ -41,11 +41,15 @@ PowerSwapCandidate::PowerSwapCandidate(Resizer& resizer,
                                        sta::LibertyCell* candidate_cell,
                                        const float power_gain,
                                        const float slack,
-                                       SlewHeadroom slew_headroom)
+                                       SlewHeadroom slew_headroom,
+                                       const float slack_ratio,
+                                       const bool cheapest_first)
     : VtSwapMtCandidate(resizer, target, inst, candidate_cell),
       power_gain_(power_gain),
       slack_(slack),
-      slew_headroom_(std::move(slew_headroom))
+      slew_headroom_(std::move(slew_headroom)),
+      slack_ratio_(slack_ratio),
+      cheapest_first_(cheapest_first)
 {
 }
 
@@ -96,11 +100,12 @@ Estimate PowerSwapCandidate::estimate()
     cost += delay_est.side_loss;
   }
 
-  if (cost > kSlackRatio * slack_) {
+  if (cost > slack_ratio_ * slack_) {
     return rejected(kBudgetReason);
   }
   cost_ = cost;
-  estimate.score = power_gain_ / std::max(cost, kMinCost);
+  estimate.score
+      = (cheapest_first_ ? 1.0f : power_gain_) / std::max(cost, kMinCost);
   estimate.reason = failReasonName(FailReason::kEstimateLegal);
   return estimate;
 }

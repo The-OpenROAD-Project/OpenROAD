@@ -377,13 +377,26 @@ slack below the lower of the margin and its slack at the start. Swaps whose
 estimate makes a max slew or capacitance violation new or larger are skipped.
 This command is experimental.
 
+With `-vt_budget`, the command first brings each budget's share of the
+logic cells down to its limit, taking the swaps that spend the least setup
+slack first. It keeps the setup rule while it can; then it lets every
+endpoint fall to the setup worst slack, which grows the total negative slack,
+spending the whole room of each swap; and while that stalls it lowers the
+floor by a growing share of the clock period, which lowers the worst slack. The power swaps that follow keep every budget. Instances that cannot
+change VT, such as clock cells, raise a budget's limit to their number.
+
 ```tcl
 repair_power
     [-setup_margin setup_margin]
     [-hold_margin hold_margin]
     [-setup_tolerance percent]
+    [-vt_budget {lib_cells percent ...}]
     [-verbose]
 ```
+
+For example, `-vt_budget {*_SL 5 {*_SL *_L} 20}` keeps the `*_SL` cells at
+most 5% of the logic cells, and the `*_SL` and `*_L` cells together at most
+20%.
 
 #### Options
 
@@ -392,6 +405,7 @@ repair_power
 | `-setup_margin` | Setup slack the moves leave untouched. The default is 0. |
 | `-hold_margin` | Hold slack the moves leave untouched. The default is 0. |
 | `-setup_tolerance` | Setup slack, in percent of the clock period, each endpoint may lose below the lower of `-setup_margin` and its slack at the start, to save more power; a later `repair_timing` may not win that slack back. The default is 0, which keeps the setup WS and TNS rule. |
+| `-vt_budget` | Pairs of library cells, as names, patterns or `get_lib_cells` objects, and the most percent of the logic cells their instances may be. Budgets may share cells. |
 | `-verbose` | Print one row per batch. |
 
 ### Repair Clock Nets

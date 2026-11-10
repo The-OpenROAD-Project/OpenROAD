@@ -10,9 +10,11 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 #include "PowerModel.hh"
 #include "TestResizerMtFixture.hh"
+#include "rsz/Resizer.hh"
 #include "sta/PowerClass.hh"
 
 namespace rsz {
@@ -140,6 +142,39 @@ class TestRepairPower : public TestResizerMt
       result[inst->getName()] = inst->getMaster()->getName();
     }
     return result;
+  }
+
+  int lvtCount() const
+  {
+    int count = 0;
+    for (const auto& [inst, cell] : masters()) {
+      count += cell.ends_with("_L");
+    }
+    return count;
+  }
+
+  VtBudget budget(const std::vector<std::string>& cells, const float percent)
+  {
+    VtBudget budget{.cells = {}, .max_percent = percent};
+    for (const std::string& cell : cells) {
+      budget.cells.push_back(db_network_->findLibertyCell(cell.c_str()));
+    }
+    return budget;
+  }
+
+  VtBudget lvtBudget(const float percent)
+  {
+    return budget({"AND2_X1_L", "BUF_X1_L"}, percent);
+  }
+
+  // Every p<k> on the chain to oend, which has `room` of slack: too little
+  // for a swap within the contract.
+  void timeTightChain(const float room)
+  {
+    for (int k = 0; k < kChain; ++k) {
+      setInputDelay(name("s", k), 0.0f);
+    }
+    setOutputDelay("oend", kPeriod - arrival("oend") - room);
   }
 
   float totalPower()
@@ -454,6 +489,89 @@ TEST_F(TestRepairPowerSingleVt, LeavesEveryCell)
   const std::map<std::string, std::string> start = masters();
   resizer_.repairPower(0.0, 0.0, 0.0, false);
   EXPECT_EQ(masters(), start);
+}
+
+// 9 of the 16 logic cells are LVT.  With room everywhere the budget holds
+// within the contract, and the power swaps after it take the rest.
+TEST_F(TestRepairPower, VtBudgetWithinTheContract)
+{
+  for (int k = 0; k < kChain; ++k) {
+    setInputDelay(name("s", k), 0.0f);
+  }
+  const Contract start = contract();
+  resizer_.repairPower(0.0, 0.0, 0.0, false, {lvtBudget(25.0f)});
+  EXPECT_EQ(lvtCount(), 0);
+  expectKept(start, contract(), 0.0f, 0.0f);
+}
+
+// r_out fails by 30 ps and oend has 1 ps, too little for a swap on the
+// chain.  Within the contract only f0 goes; the budget of 6 LVT cells takes
+// two chain cells, whose endpoint oend falls below zero but not below the
+// WS: TNS grows and WNS stays.
+TEST_F(TestRepairPower, VtBudgetGrowsTnsBeforeWns)
+{
+  timeTightChain(1e-12f);
+  setOutputDelay("r_out", kPeriod - arrival("r_out") + 30e-12f);
+  const Contract start = contract();
+  ASSERT_NEAR(start.setup_ws, -30e-12f, 1e-13f);
+
+  resizer_.repairPower(0.0, 0.0, 0.0, false, {lvtBudget(37.5f)});
+  EXPECT_EQ(master("f0"), "BUF_X1");
+  EXPECT_EQ(master("r0"), "BUF_X1_L");
+  EXPECT_EQ(lvtCount(), 6);
+  const Contract now = contract();
+  EXPECT_GE(now.setup_ws, start.setup_ws - kNoise);
+  EXPECT_LT(slack("oend"), 0.0f);
+  EXPECT_LT(now.setup_tns, start.setup_tns);
+  EXPECT_GE(now.hold_ws, std::min(start.hold_ws, 0.0f) - kNoise);
+}
+
+// No endpoint fails, so no TNS can absorb the chain swaps: the budget of 4
+// LVT cells lowers the WS below zero, though not by a large share of the
+// period.
+TEST_F(TestRepairPower, VtBudgetLowersWnsLast)
+{
+  timeTightChain(1e-12f);
+  const Contract start = contract();
+  ASSERT_GT(start.setup_ws, 0.0f);
+
+  resizer_.repairPower(0.0, 0.0, 0.0, false, {lvtBudget(25.0f)});
+  EXPECT_LE(lvtCount(), 4);
+  const Contract now = contract();
+  EXPECT_LT(now.setup_ws, 0.0f);
+  EXPECT_GT(now.setup_ws, -0.2f * kPeriod);
+  EXPECT_GE(now.hold_ws, std::min(start.hold_ws, 0.0f) - kNoise);
+}
+
+// A budget on the typical-VT cells, 9 of 16, leaves room for two power swaps
+// out of the nine that fit the slack.
+TEST_F(TestRepairPower, VtBudgetLimitsThePowerSwaps)
+{
+  for (int k = 0; k < kChain; ++k) {
+    setInputDelay(name("s", k), 0.0f);
+  }
+  resizer_.repairPower(
+      0.0,
+      0.0,
+      0.0,
+      false,
+      {budget({"AND2_X1", "BUF_X1", "BUF_X4"}, 100.0f * 9 / 16)});
+  EXPECT_EQ(lvtCount(), 7);
+}
+
+// f0 cannot change VT, so a budget of no LVT cell at all ends at one, with
+// the timing kept.
+TEST_F(TestRepairPower, VtBudgetCountsTheCellsThatCannotMove)
+{
+  for (int k = 0; k < kChain; ++k) {
+    setInputDelay(name("s", k), 0.0f);
+  }
+  resizer_.setDontTouch(db_network_->findInstance("f0"), true);
+  const Contract start = contract();
+  resizer_.repairPower(0.0, 0.0, 0.0, false, {lvtBudget(0.0f)});
+  EXPECT_EQ(master("f0"), "BUF_X1_L");
+  EXPECT_EQ(lvtCount(), 1);
+  expectKept(start, contract(), 0.0f, 0.0f);
 }
 
 // The same netlist and constraints give the same swaps.

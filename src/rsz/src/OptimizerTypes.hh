@@ -618,6 +618,13 @@ struct OptimizerRunConfig
   double hold_slack_margin{0.0};
   double setup_tolerance{0.0};
   bool repair_power{false};
+  // repair_power -vt_budget: the budgets no swap may break, and whether the
+  // run brings them down instead of saving power.  Such a run may let every
+  // endpoint fall to the lower of the margin and vt_budget_ws, and lower
+  // that floor while it stalls.
+  std::vector<VtBudget> vt_budgets;
+  bool vt_budget_run{false};
+  std::optional<float> vt_budget_ws;
   double repair_tns_end_percent{1.0};
   int max_iterations{0};
   int max_passes{100};

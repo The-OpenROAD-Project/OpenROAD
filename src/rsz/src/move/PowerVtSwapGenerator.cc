@@ -47,8 +47,18 @@ std::vector<sta::LibertyCell*> higherVtCells(Resizer& resizer,
 }
 
 SlackFloors::SlackFloors(const float margin, const float tolerance)
-    : margin_(margin), tolerance_(tolerance), lowest_(margin - tolerance)
+    : margin_(margin),
+      tolerance_(tolerance),
+      per_endpoint_(tolerance > 0.0f),
+      lowest_(margin - tolerance)
 {
+}
+
+SlackFloors SlackFloors::uniform(const float floor)
+{
+  SlackFloors floors(floor, 0.0f);
+  floors.per_endpoint_ = true;
+  return floors;
 }
 
 void SlackFloors::recordEndpoint(const sta::Pin* pin, const float start_slack)
@@ -76,11 +86,15 @@ float SlackFloors::driver(const sta::Pin* pin) const
 PowerVtSwapGenerator::PowerVtSwapGenerator(const GeneratorContext& context,
                                            PowerModel& power_model,
                                            const RejectedSwaps& rejected,
-                                           const SlackFloors& floors)
+                                           const SlackFloors& floors,
+                                           const VtBudgetCounts& vt_budget,
+                                           const float slack_ratio)
     : VtSwapMtGenerator(context),
       power_model_(power_model),
       rejected_(rejected),
-      floors_(floors)
+      floors_(floors),
+      vt_budget_(vt_budget),
+      slack_ratio_(slack_ratio)
 {
 }
 
@@ -101,7 +115,9 @@ void PowerVtSwapGenerator::prepareInputs(Target& target) const
     float& side_floor = target.estimator_context->side_slack_floor;
     side_floor = std::min(side_floor, floors_.lowest());
   }
-  power_model_.prepare(target.inst(resizer_));
+  if (!vt_budget_.lowering()) {
+    power_model_.prepare(target.inst(resizer_));
+  }
   sta::LibertyCell* current_cell
       = resizer_.network()->libertyCell(target.inst(resizer_));
   resizer_.cellLeakage(current_cell);
@@ -123,13 +139,27 @@ std::vector<std::unique_ptr<MoveCandidate>> PowerVtSwapGenerator::generate(
       = headroom != slew_headroom_.end() ? headroom->second : SlewHeadroom{};
   for (sta::LibertyCell* candidate_cell :
        higherVtCells(resizer_, current_cell)) {
-    if (isRejected(rejected_, inst, candidate_cell)) {
+    if (isRejected(rejected_, inst, candidate_cell)
+        || !vt_budget_.admits(current_cell, candidate_cell)) {
       continue;
     }
     if (!resizer_.replacementFitsInputCapBudgets(inputCapBudgets(target),
                                                  candidate_cell)) {
       RepairSetupProfiler::event(
           "max_cap_rejects", 1, moveName(MoveType::kVtSwap));
+      continue;
+    }
+    if (vt_budget_.lowering()) {
+      candidates.push_back(
+          std::make_unique<PowerSwapCandidate>(resizer_,
+                                               target,
+                                               inst,
+                                               candidate_cell,
+                                               0.0f,
+                                               slack,
+                                               slew_headroom,
+                                               slack_ratio_,
+                                               /*cheapest_first=*/true));
       continue;
     }
     const float gain = power_model_.gain(inst, candidate_cell);

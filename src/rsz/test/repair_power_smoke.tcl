@@ -1,6 +1,6 @@
 # repair_power binding: every option reaches the command, a slow cell goes to
-# a higher VT, and a tolerance outside 0-100 is an error.  The behavior is
-# tested in cpp/TestRepairPower.cc.
+# a higher VT, a VT budget holds, and malformed arguments are errors.  The
+# behavior is tested in cpp/TestRepairPower.cc.
 source "helpers.tcl"
 source asap7/asap7.vars
 foreach vt {RVT LVT SLVT} {
@@ -38,4 +38,21 @@ repair_power -setup_margin 1 -hold_margin 1 -setup_tolerance 1 -verbose
 check "cells go to a higher VT" { expr { [slvt_count] < $slvt } } 1
 check_error "-setup_tolerance above 100" \
   { repair_power -setup_tolerance 150 } STA-0576
+
+proc logic_count { } {
+  set count 0
+  foreach inst [[ord::get_db_block] getInsts] {
+    if { [[$inst getMaster] getType] == "CORE" } {
+      incr count
+    }
+  }
+  return $count
+}
+repair_power -vt_budget {*_ASAP7_75t_SL 3}
+check "SLVT cells within the VT budget" \
+  { expr { [slvt_count] <= int(0.03 * [logic_count]) } } 1
+check_error "-vt_budget without a percent" \
+  { repair_power -vt_budget *_ASAP7_75t_SL } RSZ-3271
+check_error "-vt_budget matching no cell" \
+  { repair_power -vt_budget {NO_SUCH_CELL 10} } RSZ-3272
 exit_summary

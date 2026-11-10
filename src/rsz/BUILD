@@ -118,6 +118,8 @@ cc_library(
         "src/move/UnbufferGenerator.hh",
         "src/move/UnbufferMtCandidate.cc",
         "src/move/UnbufferMtGenerator.cc",
+        "src/move/VtBudget.cc",
+        "src/move/VtBudget.hh",
         "src/move/VtSwapCandidate.cc",
         "src/move/VtSwapCandidate.hh",
         "src/move/VtSwapGenerator.cc",

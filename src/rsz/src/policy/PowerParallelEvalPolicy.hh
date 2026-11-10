@@ -15,6 +15,7 @@
 #include "PowerVtSwapGenerator.hh"
 #include "RepairSetupContext.hh"
 #include "SetupParallelEvalPolicy.hh"
+#include "VtBudget.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 
@@ -27,6 +28,8 @@ class MoveCommitter;
 // above their margins, or no worse than at the start below them, and their
 // TNS within kTnsTolerance of the start.  With a setup tolerance, every
 // endpoint above its floor (SlackFloors) replaces the setup WS and TNS rule.
+// A VT budget run takes the swaps that bring the budgets down, cheapest
+// first, and ends once they hold.
 class PowerParallelEvalPolicy : public SetupParallelEvalPolicy
 {
  public:
@@ -79,6 +82,8 @@ class PowerParallelEvalPolicy : public SetupParallelEvalPolicy
   // run first: new access points reroute nets, and the batch is judged on
   // the routes it leaves.
   void updateTiming() override;
+  // A VT budget run past the setup contract lowers its floor instead.
+  void startTailOrFinish(const char* reason) override;
 
  private:
   struct Contract
@@ -98,6 +103,12 @@ class PowerParallelEvalPolicy : public SetupParallelEvalPolicy
   using FloorRequired = std::vector<std::array<float, 2>>;
   FloorRequired floorRequired() const;
   float floorRoom(sta::Vertex* vertex, const FloorRequired& required) const;
+  // Past the setup contract, every endpoint may fall loss percent of the
+  // clock period below the lower of the margin and the WS at the start.
+  void setBudgetFloor(double loss);
+  // Lowers that floor a step and forgets the rejects; false at the last step
+  // or within the contract.
+  bool lowerBudgetFloor();
   // inst has a higher VT it has not been rejected for.
   bool canSwap(const sta::Instance* inst) const;
   void rejectSwap(const MoveCandidate& candidate) const;
@@ -147,6 +158,16 @@ class PowerParallelEvalPolicy : public SetupParallelEvalPolicy
       std::unordered_set<MoveCandidate*>& sources) const;
 
   PowerModel power_model_{resizer_};
+  // Counted at the start and after every batch.
+  VtBudgetCounts vt_budget_;
+  // A VT budget run stops after a batch that kept at most kStallRatio of the
+  // instances over the limits at its start, or past the setup contract lowers
+  // its floor.
+  int start_excess_{0};
+  // Percent of the clock period the floor is below the WS the run started at.
+  double budget_floor_loss_{0.0};
+  // The share of its room a swap, and the swaps in series with it, may spend.
+  float slack_ratio_;
   // Swaps whose estimate failed for a lasting reason, misestimated culprits
   // and slew sources; selectBatch() and findBatchCulprits() add.
   mutable RejectedSwaps rejected_;
@@ -178,6 +199,8 @@ class PowerParallelEvalPolicy : public SetupParallelEvalPolicy
   std::deque<float> saved_window_;
 
   static constexpr float kTnsTolerance = 0.01f;
+  // The latches in series the floor room and the culprit paths follow.
+  static constexpr int kLatchPasses = 4;
   // The run stops once the last kStallBatches saved batches together saved at
   // most kStallRatio of what the run saved.
   static constexpr size_t kStallBatches = 4;

@@ -45,6 +45,7 @@
 #include "RepairTargetCollector.hh"
 #include "ResizerObserver.hh"
 #include "SkewBudget.hh"
+#include "VtBudget.hh"
 #include "boost/functional/hash.hpp"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbSta.hh"
@@ -5635,7 +5636,8 @@ bool Resizer::repairSetup(double setup_margin,
 void Resizer::repairPower(const double setup_margin,
                           const double hold_margin,
                           const double setup_tolerance,
-                          const bool verbose)
+                          const bool verbose,
+                          const std::vector<VtBudget>& vt_budgets)
 {
   utl::Timer timer;
   const auto design_power = [this]() {
@@ -5661,9 +5663,18 @@ void Resizer::repairPower(const double setup_margin,
   config.repair_power = true;
   config.verbose = verbose;
   config.phases = "POWER";
+  config.vt_budgets = vt_budgets;
+  VtBudgetCounts budget_counts(vt_budgets, false);
+  budget_counts.count(*this);
+  reportVtBudgets(*this, budget_counts, false);
+  if (!budget_counts.met()) {
+    lowerVtBudgets(*this, config);
+  }
   rsz::Optimizer optimizer(this);
   optimizer.configure(config);
   optimizer.run();
+  budget_counts.count(*this);
+  reportVtBudgets(*this, budget_counts, true);
 
   logger_->info(RSZ, 3262, "Runtime: {:.2f}s", timer.elapsed());
   // The swaps invalidate the activities, and propagating them again is slow

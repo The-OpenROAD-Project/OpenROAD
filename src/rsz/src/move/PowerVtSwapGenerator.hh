@@ -11,6 +11,7 @@
 #include "OptimizerTypes.hh"
 #include "PowerModel.hh"
 #include "PowerSwapCandidate.hh"
+#include "VtBudget.hh"
 #include "VtSwapMtGenerator.hh"
 #include "rsz/Resizer.hh"
 #include "sta/NetworkClass.hh"
@@ -39,8 +40,11 @@ class SlackFloors
 {
  public:
   SlackFloors(float margin, float tolerance);
+  // A VT budget run's: every endpoint may fall to floor.
+  static SlackFloors uniform(float floor);
 
-  bool tolerant() const { return tolerance_ > 0.0f; }
+  // Each endpoint has its own floor.
+  bool tolerant() const { return per_endpoint_; }
   // Only with a tolerance.
   void recordEndpoint(const sta::Pin* pin, float start_slack);
   void setDriver(const sta::Pin* pin, float floor) { drivers_[pin] = floor; }
@@ -52,6 +56,7 @@ class SlackFloors
  private:
   float margin_;
   float tolerance_;
+  bool per_endpoint_;
   float lowest_;
   std::unordered_map<const sta::Pin*, float> endpoints_;
   std::unordered_map<const sta::Pin*, float> drivers_;
@@ -63,14 +68,17 @@ std::vector<sta::LibertyCell*> higherVtCells(Resizer& resizer,
                                              sta::LibertyCell* cell);
 
 // The repair_power form of VtSwapMt: every higher VT of the same size, which
-// leaks less and spends the target's slack.
+// leaks less and spends the target's slack.  A VT budget run ranks them by
+// the slack they spend alone.
 class PowerVtSwapGenerator : public VtSwapMtGenerator
 {
  public:
   PowerVtSwapGenerator(const GeneratorContext& context,
                        PowerModel& power_model,
                        const RejectedSwaps& rejected,
-                       const SlackFloors& floors);
+                       const SlackFloors& floors,
+                       const VtBudgetCounts& vt_budget,
+                       float slack_ratio);
 
   bool isApplicable(const Target& target) const override;
   // Also fills the leakage cache and the slew headroom the workers read in
@@ -89,6 +97,8 @@ class PowerVtSwapGenerator : public VtSwapMtGenerator
   PowerModel& power_model_;
   const RejectedSwaps& rejected_;
   const SlackFloors& floors_;
+  const VtBudgetCounts& vt_budget_;
+  float slack_ratio_;
   mutable std::unordered_map<const sta::Pin*, SlewHeadroom> slew_headroom_;
 };
 
