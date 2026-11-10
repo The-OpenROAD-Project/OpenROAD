@@ -11,6 +11,11 @@ on:
       - .github/commands/openroad-scheduled-triage.toml
       - .github/scripts/**
   workflow_dispatch:
+    inputs:
+      all_ages:
+        description: Also triage unlabeled issues opened more than two days ago
+        type: boolean
+        default: false
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: true
@@ -59,14 +64,22 @@ jobs:
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN || github.token }}
+          ALL_AGES: ${{ inputs.all_ages || false }}
         run: |-
           echo '🔍 Finding unlabeled issues...'
+          # Only recent issues are retried, so one that Gemini cannot label
+          # (or a stalled API) costs at most about two days of hourly runs.
+          # Older ones need a person or a manual run with all_ages.
+          SEARCH='no:label'
+          if [[ "${ALL_AGES}" != 'true' ]]; then
+            SEARCH+=" created:>=$(date -u -d '2 days ago' +%Y-%m-%d)"
+          fi
           # Truncate bodies and cap the batch so ISSUES_TO_TRIAGE stays under
           # the 128 KiB Linux limit on a single environment variable; later
           # runs pick up the remaining issues.
           ISSUES="$(gh issue list \
             --state 'open' \
-            --search 'no:label' \
+            --search "${SEARCH}" \
             --json number,title,body \
             --limit '20' \
             --repo "${GITHUB_REPOSITORY}" |
