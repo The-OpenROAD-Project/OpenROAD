@@ -59,6 +59,8 @@ cc_library(
         "src/SACoreSoftMacro.h",
         "src/SimulatedAnnealingCore.cpp",
         "src/clusterEngine.cpp",
+        "src/hardMacroFactory.cpp",
+        "src/hardMacroFactory.h",
         "src/hier_rtlmp.cpp",
         "src/hier_rtlmp.h",
         "src/rtl_mp.cpp",
