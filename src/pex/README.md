@@ -169,6 +169,12 @@ What remains, largest first:
 - **Crossing reach by side.** A crossing reaching past one side of the
   wire only is split evenly between the sides; with a neighbor on one
   side the coupling to the crossing is off by −25% to +46% (e15).
+- **Opposite plane in the diagonal tables.** The plane on the wire's
+  other side ends past the parallel wire, so it is wider in each sample
+  solve than in the base solve without that wire; the plane's own edge
+  effect goes into the deltas, `plane_delta` included. The plane is to
+  have one extent across a table, which needs the diagonal tables
+  rebuilt.
 - **Sample size.** 200 nets per design, so that a 2-point change is
   measurable.
 
