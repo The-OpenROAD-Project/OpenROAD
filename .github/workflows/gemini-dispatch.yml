@@ -53,10 +53,10 @@ jobs:
       - name: Mint identity token
         id: mint_identity_token
         if: |-
-          ${{ vars.APP_ID }}
+          ${{ vars.APP_CLIENT_ID }}
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510  # ratchet:actions/create-github-app-token@v2
         with:
-          app-id: ${{ vars.APP_ID }}
+          client-id: ${{ vars.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           permission-contents: read
           permission-issues: write
@@ -118,10 +118,10 @@ jobs:
       - name: Mint identity token
         id: mint_identity_token
         if: |-
-          ${{ vars.APP_ID }}
+          ${{ vars.APP_CLIENT_ID }}
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510  # ratchet:actions/create-github-app-token@v2
         with:
-          app-id: ${{ vars.APP_ID }}
+          client-id: ${{ vars.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           permission-contents: read
           permission-issues: write

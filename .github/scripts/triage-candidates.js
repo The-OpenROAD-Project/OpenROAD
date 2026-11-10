@@ -13,12 +13,13 @@
 //  - recent_commits: their commits among the module's last 100 commits in
 //    the past year.
 //
-// Used from actions/github-script:
+// Used from actions/github-script in the job that runs Gemini:
 //   const run = require('./.github/scripts/triage-candidates.js');
 //   await run({github, context, core});
 //
-// Sets the outputs assignee_candidates (JSON table) and allowed_assignees
-// (comma-separated logins of every CODEOWNERS team member).
+// Exports the masked table as the environment variable ASSIGNEE_CANDIDATES
+// (empty on failure).  A masked value cannot be passed between jobs, so the
+// job that applies the assignment calls allowedAssignees() itself.
 
 const fs = require('fs');
 
@@ -270,27 +271,40 @@ async function repoLabels(github, context) {
   return labels.map((label) => label.name);
 }
 
+// Returns the logins of every CODEOWNERS team member, the only people
+// triage may assign.
+async function allowedAssignees({github, core}) {
+  const rules = parseCodeowners(fs.readFileSync('.github/CODEOWNERS', 'utf8'));
+  const teams = [...new Set(rules.flatMap((rule) => rule.teams))].sort();
+  const members = await teamMembers(github, core, teams);
+  return [...new Set(Object.values(members).flat())].sort();
+}
+
 module.exports = async ({github, context, core}) => {
+  let json = '';
   try {
     const labels = await repoLabels(github, context);
     const codeowners = fs.readFileSync('.github/CODEOWNERS', 'utf8');
     const {table, allowed} = await buildCandidates({
       github, context, core, labels, codeowners,
     });
-    const json = JSON.stringify(table);
-    core.setOutput('assignee_candidates', json);
-    core.setOutput('allowed_assignees', allowed.join(','));
+    json = JSON.stringify(table);
     core.info(`Assignee candidates for ${Object.keys(table).length} labels ` +
       `(${json.length} bytes), ${allowed.length} allowed assignees.`);
   } catch (err) {
     // Assignment is best effort: labeling continues without candidates.
     core.warning(`Could not build assignee candidates: ${err.message}`);
-    core.setOutput('assignee_candidates', '');
-    core.setOutput('allowed_assignees', '');
   }
+  // The table shows who is on each team, which teams keep visible only to
+  // org members, so mask it before it can appear in a public log.
+  if (json) {
+    core.setSecret(json);
+  }
+  core.exportVariable('ASSIGNEE_CANDIDATES', json);
 };
 
 module.exports.parseCodeowners = parseCodeowners;
 module.exports.ownersForPath = ownersForPath;
 module.exports.resolveLabels = resolveLabels;
 module.exports.buildCandidates = buildCandidates;
+module.exports.allowedAssignees = allowedAssignees;
