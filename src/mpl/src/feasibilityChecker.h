@@ -16,7 +16,6 @@ class Logger;
 
 namespace mpl {
 
-// Refuses, before the solver runs, a setup it could not place.
 class FeasibilityChecker
 {
  public:
@@ -27,29 +26,36 @@ class FeasibilityChecker
                      float target_utilization);
 
   void run();
+
   bool foundUnfixedMacros() const { return found_unfixed_macros_; }
 
  private:
   void checkUnfixedMacros();
+
   void checkTargetUtilization() const;
+
   void checkMacrosFitInCore() const;
+  std::string macroAndCoreDimensionsTable(const HardMacro* hard_macro,
+                                          const odb::Rect& core) const;
+
   void checkMovableCellsFit() const;
+  int64_t blockagesArea() const;
+
   void checkVirtualUtilization() const;
   int64_t stdCellArea() const;
   int64_t unfixedMacrosArea() const;
   int64_t fixedMacrosArea() const;
-  int64_t blockagesArea() const;
-  std::string macroAndCoreDimensionsTable(const HardMacro* hard_macro,
-                                          const odb::Rect& core) const;
 
   // The annealer may struggle to find a valid result above this.
   static constexpr float kVirtualUtilWarnThreshold = 0.9f;
 
   odb::dbBlock* block_;
   utl::Logger* logger_;
+
   const InstToHardMap& hard_macros_;
   odb::Rect floorplan_shape_;
   float target_utilization_{0.0f};
+
   bool found_unfixed_macros_{false};
 };
 

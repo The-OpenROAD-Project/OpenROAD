@@ -86,6 +86,24 @@ void FeasibilityChecker::checkMacrosFitInCore() const
   }
 }
 
+std::string FeasibilityChecker::macroAndCoreDimensionsTable(
+    const HardMacro* hard_macro,
+    const odb::Rect& core) const
+{
+  std::string table;
+
+  table += fmt::format("\n          |   Macro + Halos   |   Core   ");
+  table += fmt::format("\n-----------------------------------------");
+  table += fmt::format("\n   Width  | {:>17.2f} | {:>8.2f}",
+                       block_->dbuToMicrons(hard_macro->getWidth()),
+                       block_->dbuToMicrons(core.dx()));
+  table += fmt::format("\n  Height  | {:>17.2f} | {:>8.2f}\n",
+                       block_->dbuToMicrons(hard_macro->getHeight()),
+                       block_->dbuToMicrons(core.dy()));
+
+  return table;
+}
+
 void FeasibilityChecker::checkMovableCellsFit() const
 {
   int64_t occupied_area = 0;
@@ -115,6 +133,30 @@ void FeasibilityChecker::checkMovableCellsFit() const
     logger_->error(
         MPL, 65, "The movable cells do not fit in the macro placement area.");
   }
+}
+
+int64_t FeasibilityChecker::blockagesArea() const
+{
+  namespace gtl = boost::polygon;
+  using gtl::operators::operator+=;
+  using PolygonSet = gtl::polygon_90_set_data<int>;
+
+  PolygonSet polygons;
+  for (odb::dbBlockage* blockage : block_->getBlockages()) {
+    const odb::Rect bbox = blockage->getBBox()->getBox();
+    odb::Rect intersection;
+    bbox.intersection(floorplan_shape_, intersection);
+    polygons += intersection;
+  }
+
+  std::vector<odb::Rect> blockages_without_overlap;
+  polygons.get_rectangles(blockages_without_overlap);
+
+  int64_t area = 0;
+  for (const odb::Rect& blockage : blockages_without_overlap) {
+    area += blockage.area();
+  }
+  return area;
 }
 
 // Mirrors the check the root cluster placement makes before each run, with
@@ -195,48 +237,6 @@ int64_t FeasibilityChecker::fixedMacrosArea() const
     area += intersection.area();
   }
   return area;
-}
-
-int64_t FeasibilityChecker::blockagesArea() const
-{
-  namespace gtl = boost::polygon;
-  using gtl::operators::operator+=;
-  using PolygonSet = gtl::polygon_90_set_data<int>;
-
-  PolygonSet polygons;
-  for (odb::dbBlockage* blockage : block_->getBlockages()) {
-    const odb::Rect bbox = blockage->getBBox()->getBox();
-    odb::Rect intersection;
-    bbox.intersection(floorplan_shape_, intersection);
-    polygons += intersection;
-  }
-
-  std::vector<odb::Rect> blockages_without_overlap;
-  polygons.get_rectangles(blockages_without_overlap);
-
-  int64_t area = 0;
-  for (const odb::Rect& blockage : blockages_without_overlap) {
-    area += blockage.area();
-  }
-  return area;
-}
-
-std::string FeasibilityChecker::macroAndCoreDimensionsTable(
-    const HardMacro* hard_macro,
-    const odb::Rect& core) const
-{
-  std::string table;
-
-  table += fmt::format("\n          |   Macro + Halos   |   Core   ");
-  table += fmt::format("\n-----------------------------------------");
-  table += fmt::format("\n   Width  | {:>17.2f} | {:>8.2f}",
-                       block_->dbuToMicrons(hard_macro->getWidth()),
-                       block_->dbuToMicrons(core.dx()));
-  table += fmt::format("\n  Height  | {:>17.2f} | {:>8.2f}\n",
-                       block_->dbuToMicrons(hard_macro->getHeight()),
-                       block_->dbuToMicrons(core.dy()));
-
-  return table;
 }
 
 }  // namespace mpl
