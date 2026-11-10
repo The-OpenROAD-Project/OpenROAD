@@ -95,9 +95,12 @@ jobs:
         id: gemini_analysis
         if: |-
           ${{ steps.get_labels.outputs.available_labels != '' }}
-        # A Gemini API call can stall without any output; failing here leaves
-        # the issue unlabeled, so the hourly scheduled triage retries it.
+        # A Gemini API call can stall without any output. Stopping it leaves
+        # the issue unlabeled, so the hourly scheduled triage retries it;
+        # the run still succeeds so the issue author is not sent a failure
+        # notice.
         timeout-minutes: 5
+        continue-on-error: true
         uses: google-github-actions/run-gemini-cli@v0  # ratchet:exclude
         env:
           # The workspace holds only the checked-out commands and the
