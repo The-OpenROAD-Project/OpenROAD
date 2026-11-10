@@ -399,8 +399,12 @@ void NesterovPlace::runTimingDriven(int iter,
   // if virtual, do reweight on timing-critical nets,
   // otherwise keep all modifications by rsz.
   if (npVars_.timingDrivenMode
-      && tb_->isTimingNetWeightOverflow(average_overflow_unscaled_)
-      && (!is_routability_gpl_iter || !npVars_.routability_driven_mode)) {
+      && (!is_routability_gpl_iter || !npVars_.routability_driven_mode)
+      // A pending routability revert would discard repair_design's changes.
+      && !(npVars_.routability_driven_mode && is_routability_snapshot_saved_
+           && is_routability_need_)
+      // isTimingNetWeightOverflow() is stateful: keep it last.
+      && tb_->isTimingNetWeightOverflow(average_overflow_unscaled_)) {
     // update db's instance location from current density coordinates
     updateDb();
 

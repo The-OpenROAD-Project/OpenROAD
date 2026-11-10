@@ -153,6 +153,11 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
   }
 
   bool routabilityNeeded() const { return np_->is_routability_need_; }
+  void setRoutabilitySnapshotSaved(bool saved)
+  {
+    np_->is_routability_snapshot_saved_ = saved;
+  }
+  void setRoutabilityNeeded(bool needed) { np_->is_routability_need_ = needed; }
 
   int64_t inflateCellForTest(GCell* cell,
                              float ratio,
@@ -452,6 +457,10 @@ TEST_P(TimingRepairRoutabilityPhaseTest,
     runOrdinaryPass(1000000);
     ASSERT_TRUE(routabilityNeeded());
     ASSERT_GT(rb_->getTotalInflation(), 0);
+    // Clear the saved-snapshot flag so runTiming() exercises the pre-completion
+    // density path directly rather than returning early at the settle-wait
+    // gate.
+    setRoutabilitySnapshotSaved(false);
   } else if (phase == 2) {
     completeRoutability();
     ASSERT_FALSE(routabilityNeeded());
@@ -826,6 +835,10 @@ TEST_F(MixedMacroTimingRepairIntegrationTest,
   ASSERT_GT(ordinary_iterations_, 0);
   ASSERT_GT(rb_->getTotalInflation(), 0);
   const int64_t ordinary_charge = rb_->getTotalInflation();
+  // Clear the saved-snapshot flag so runTiming() exercises the pre-completion
+  // macro-density path directly rather than returning early at the settle-wait
+  // gate.
+  setRoutabilitySnapshotSaved(false);
   expectLegacyDensityAfterRetainedRepair();
   EXPECT_TRUE(routabilityNeeded());
   EXPECT_EQ(rb_->getTotalInflation(), ordinary_charge);
@@ -948,6 +961,13 @@ TEST_F(TimingRepairIntegrationTest,
   EXPECT_EQ(timing_iterations_, 0);
   EXPECT_EQ(block_->getInsts().size(), initial_names_.size());
   EXPECT_EQ(rb_->getTotalTilesCount(), 0);
+
+  setRoutabilitySnapshotSaved(true);  // is_routability_need_ is true
+  runTiming(0.1f);
+  EXPECT_EQ(timing_iterations_, 0);
+  setRoutabilityNeeded(false);
+  runTiming(0.1f);
+  EXPECT_EQ(timing_iterations_, 1);
 }
 
 TEST_F(TimingRepairIntegrationTest, BeforeFirstRoutabilityPassDefersInflation)
@@ -1308,6 +1328,35 @@ TEST_F(TimingRepairIntegrationTest,
   ASSERT_EQ(timing_iterations_, 1);
 
   runSubDbuStepAfterRefreshCurGradients();
+}
+
+TEST_F(TimingRepairIntegrationTest,
+       RevertToSnapshotPreservesNewBufferCoordinates)
+{
+  makePlacer();
+  NesterovBase& nb = *nb_vec_[0];
+  nb.saveSnapshot();
+  runTiming(0.2f);
+  ASSERT_EQ(timing_iterations_, 1);
+
+  std::vector<std::pair<const GCell*, std::pair<int, int>>> placed_new_cells;
+  for (const auto& cell : nb.getGCells()) {
+    if (!cell->isStdInstance()
+        || initial_names_.contains(
+            cell->insts().front()->dbInst()->getName())) {
+      continue;
+    }
+    ASSERT_GT(cell->dCx(), 0);
+    ASSERT_GT(cell->dCy(), 0);
+    placed_new_cells.emplace_back(cell, std::pair{cell->dCx(), cell->dCy()});
+  }
+  ASSERT_FALSE(placed_new_cells.empty());
+
+  nb.revertToSnapshot();
+  for (const auto& [cell, placed_pos] : placed_new_cells) {
+    EXPECT_EQ(cell->dCx(), placed_pos.first);
+    EXPECT_EQ(cell->dCy(), placed_pos.second);
+  }
 }
 
 }  // namespace gpl
