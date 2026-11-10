@@ -111,13 +111,14 @@ class Rudy
     if (net_rect.isInverted()) {
       return;
     }
-    const auto net_area = net_rect.area();
-    if (net_area == 0) {
-      // TODO: handle nets with 0 area from getTermBBox()
+    const auto hpwl = static_cast<float>(net_rect.dx() + net_rect.dy());
+    if (hpwl == 0) {
+      // All terminals on one point: no wire to route.
       return;
     }
-    const auto hpwl = static_cast<float>(net_rect.dx() + net_rect.dy());
-    const auto net_congestion = (hpwl * wire_width_) / net_area;
+    const auto net_area = net_rect.area();
+    const bool is_line = net_area == 0;
+    const auto net_congestion = is_line ? 0 : (hpwl * wire_width_) / net_area;
 
     const int min_x_index
         = std::max(0, (net_rect.xMin() - grid_block_.xMin()) / tile_size_);
@@ -134,9 +135,16 @@ class Rudy
         if (!net_rect.overlaps(tile_box)) {
           continue;
         }
-        const auto intersect_area = net_rect.intersect(tile_box).area();
-        const auto tile_net_box_ratio = static_cast<float>(intersect_area)
-                                        / static_cast<float>(tile_box.area());
+        const odb::Rect intersect = net_rect.intersect(tile_box);
+        const auto tile_area = static_cast<float>(tile_box.area());
+        if (is_line) {
+          const auto length
+              = static_cast<float>(intersect.dx() + intersect.dy());
+          visit(x, y, length * wire_width_ / tile_area * 100);
+          continue;
+        }
+        const auto tile_net_box_ratio
+            = static_cast<float>(intersect.area()) / tile_area;
         visit(x, y, net_congestion * tile_net_box_ratio * 100);
       }
     }

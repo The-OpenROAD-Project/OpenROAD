@@ -3,12 +3,14 @@
 
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbSta.hh"
 #include "grt/GlobalRouter.h"
 #include "grt/Rudy.h"
 #include "gtest/gtest.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/defin.h"
@@ -114,6 +116,43 @@ TEST_F(GlobalRouterTest, RudySkipsUnplacedPinsWhenPinPlacementCheckDisabled)
 
   // Full global routing still enforces pin placement checks.
   EXPECT_THROW(grt_.globalRoute(), std::runtime_error);
+}
+
+TEST_F(GlobalRouterTest, RudyCountsNetsWithAlignedTerminals)
+{
+  grt::Rudy* rudy = grt_.getRudy();
+  odb::dbTechLayer* metal3 = db_->getTech()->findLayer("metal3");
+  ASSERT_NE(metal3, nullptr);
+
+  // Total RUDY demand of a two-pin net from (20000, 50000) to
+  // (180000, 50000 + dy).
+  auto total_demand = [&](const std::string& name, int dy) {
+    odb::dbNet* net = odb::dbNet::create(block_, name.c_str());
+    const std::pair<int, int> pins[] = {{20000, 50000}, {180000, 50000 + dy}};
+    for (const auto& [x, y] : pins) {
+      odb::dbBTerm* bterm
+          = odb::dbBTerm::create(net, (name + "_" + std::to_string(x)).c_str());
+      odb::dbBPin* bpin = odb::dbBPin::create(bterm);
+      odb::dbBox::create(bpin, metal3, x - 100, y - 100, x + 100, y + 100);
+      bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    }
+    odb::PtrSet<odb::dbNet> selection{net};
+    rudy->calculateRudy(&selection);
+    const auto [grid_x, grid_y] = rudy->getGridSize();
+    float demand = 0;
+    for (int x = 0; x < grid_x; x++) {
+      for (int y = 0; y < grid_y; y++) {
+        demand += rudy->getTile(x, y).getDemand();
+      }
+    }
+    return demand;
+  };
+
+  const float aligned = total_demand("aligned", 0);
+  const float almost_aligned = total_demand("almost_aligned", 1);
+  EXPECT_GT(aligned, 0);
+  // A 1 DBU tall box over a 160000 DBU run is the line up to 1/160000.
+  EXPECT_NEAR(aligned, almost_aligned, almost_aligned * 1e-4);
 }
 
 }  // namespace
