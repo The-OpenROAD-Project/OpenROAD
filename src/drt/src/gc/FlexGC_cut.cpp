@@ -2,6 +2,7 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cassert>
 #include <iterator>
 #include <memory>
 #include <string>
@@ -721,6 +722,7 @@ void FlexGCWorker::Impl::checkLef58Enclosure_main(
     gcRect* encRect,
     const std::vector<gcRect*>& candidates)
 {
+  assert(encRect != nullptr);
   auto* lastCon = findLef58EnclosureViolation(
       viaRect,
       candidates,
@@ -806,7 +808,8 @@ void FlexGCWorker::Impl::checkFixedLef58Enclosure(
     std::unique_ptr<FixedEnclosureLayerCache>& cache)
 {
   const auto* net = via->getNet();
-  if (layer_num < 0 || layer_num >= getTech()->getLayers().size()
+  if (layer_num < 0
+      || static_cast<size_t>(layer_num) >= getTech()->getLayers().size()
       || net->getPolygons(layer_num, false).empty()) {
     return;
   }
