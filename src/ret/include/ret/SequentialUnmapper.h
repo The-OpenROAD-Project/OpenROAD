@@ -3,8 +3,11 @@
 
 #pragma once
 
+#include <map>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "odb/db.h"
@@ -22,27 +25,17 @@ class Logger;
 
 namespace ret {
 
-// Rewrites every synchronous register of the design as a plain D flip-flop
-// plus explicit combinational logic built from inverters, 2-input ANDs,
-// 2-input ORs and tie cells.  The replacement is derived from the liberty
-// `next_state` function of the original cell, so an enable, synchronous
-// set/reset, inverted data or inverted output all become ordinary logic in
-// front of (or behind) one base register.  Registers with asynchronous
-// controls, latches, scan cells and multi-bit cells are left untouched.
-//
-// This is the normalization step for register retiming: after it, every
-// movable register is the same cell with the same (empty) control set.
+// Rewrites synchronous registers as a plain D flip-flop plus logic
+// (inverters, 2-input ANDs and ORs, tie cells) computing the cell's liberty
+// `next_state`.  Registers with asynchronous controls, latches, scan cells
+// and multi-bit cells are left untouched.
 class SequentialUnmapper
 {
  public:
   SequentialUnmapper(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
 
-  // Locate the library cells used to rebuild registers (base posedge and
-  // negedge D flip-flops, inverter, AND2, OR2, tie cells).  Returns false
-  // when a required cell is missing; the reason is logged.
   bool prepare();
 
-  // Unmap every register, or only the instances in `candidates` when given.
   void run(const std::unordered_set<odb::dbInst*>* candidates = nullptr);
 
   odb::dbMaster* getBaseSequentialMaster() const { return seq_master_; }
@@ -53,6 +46,8 @@ class SequentialUnmapper
   }
 
  private:
+  using Register = std::pair<odb::dbInst*, const sta::Sequential*>;
+
   struct RegPins
   {
     odb::dbITerm* d = nullptr;
@@ -60,7 +55,22 @@ class SequentialUnmapper
     odb::dbITerm* clk = nullptr;
   };
 
-  // Library discovery.  Each picks the smallest-area qualifying cell.
+  struct Untouched
+  {
+    int async = 0;
+    int latches = 0;
+    int scan = 0;
+    int other = 0;
+  };
+
+  struct OutputMove
+  {
+    odb::dbNet* old_net = nullptr;
+    odb::dbNet* new_net = nullptr;
+    std::vector<odb::dbITerm*> loads;
+    std::vector<odb::dbBTerm*> ports;
+  };
+
   bool findBaseSequentialCell(bool negedge,
                               odb::dbMaster*& master,
                               odb::dbMTerm*& q_mterm);
@@ -68,14 +78,27 @@ class SequentialUnmapper
   bool findTwoInputGate(bool is_and, odb::dbMaster*& master);
   bool findTieCell(bool one);
 
-  // One register.
+  std::vector<Register> collectRegisters(
+      const std::unordered_set<odb::dbInst*>* candidates,
+      Untouched& untouched) const;
+  void reportRun(const std::map<std::string, int>& per_cell,
+                 const Untouched& untouched) const;
+
   void decompose(odb::dbInst* inst, const sta::Sequential* seq);
+  odb::dbNet* collectRegisterNets(odb::dbInst* inst,
+                                  std::vector<odb::dbITerm*>& out_pins);
+  std::vector<OutputMove> collectOutputMoves(
+      odb::dbInst* inst,
+      const std::vector<odb::dbITerm*>& out_pins);
+  void applyOutputMoves(const std::vector<OutputMove>& moves);
+  void traceDecompose(const std::string& inst_name,
+                      const std::string& inst_master,
+                      odb::dbInst* flop);
   bool canSynth(const sta::FuncExpr* expr) const;
   odb::dbNet* synth(const sta::FuncExpr* expr);
   bool isInverted(const sta::FuncExpr* func) const;
   RegPins getRegPins(odb::dbInst* inst, const sta::Sequential* seq) const;
 
-  // Netlist builders; each returns the output net of the new cell.
   odb::dbNet* newNet(const char* base_name);
   odb::dbInst* newInst(const char* base_name, odb::dbMaster* master);
   odb::dbNet* makeInverter(odb::dbNet* input);
@@ -99,12 +122,11 @@ class SequentialUnmapper
   odb::dbMaster* tie0_master_ = nullptr;
   odb::dbMTerm* tie0_out_mterm_ = nullptr;
 
-  // Per-register state while decompose() runs.
   std::unordered_map<const sta::LibertyPort*, odb::dbNet*> in_port_net_;
   const sta::LibertyPort* out_port_ = nullptr;
   const sta::LibertyPort* out_inv_port_ = nullptr;
   odb::dbNet* state_net_ = nullptr;
-  std::vector<odb::dbInst*> created_;  // cells made for this register
+  std::vector<odb::dbInst*> created_;
 
   int unmapped_ = 0;
   int skipped_ = 0;

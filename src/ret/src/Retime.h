@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <vector>
 
 #include "RetimingGraph.h"
@@ -19,24 +20,14 @@ class Logger;
 
 namespace ret {
 
-// Forward retiming search for the best worst-case arrival.
-//
-// Delays are read once from STA: per-edge wire delay (arrival difference
-// between driver and sink pin) and per-gate arcs.  Only register-to-register
-// paths form the objective; a path that starts at a pinned gate (fed by a
-// primary input, driving an output, or fenced) cannot be shortened by a
-// forward move, so it is excluded from the worst arrival but kept as a
-// constraint: a move that would push such a path past the clock period (or
-// past its starting value when it already violates) is rejected.  Each
-// gate arc is characterized twice from the liberty table model, under its
-// combinational output load and under the register D-pin load, and the arrival
-// sweep picks the variant matching the current register configuration (a gate
-// whose output is registered after a slide sees the register load).
-//
-// The loop repeatedly slides one register forward across a gate (r[v] -= 1),
-// keeps the slide only if the exact recomputed worst arrival improves, and
-// restarts; a cheap estimate over the near-critical cone filters candidates
-// before the exact recompute.
+// Greedy forward retiming on a delay model read from STA: wire delays per
+// edge, and two NLDM arcs per gate (combinational load, register D-pin
+// load) chosen by the current register configuration.  Register-to-register
+// paths are the objective; a path rooted at a pinned gate cannot be
+// shortened by a forward move and is a constraint instead: it may not grow
+// past the clock period, or past its starting value when it already
+// violates.  Each slide r[v] -= 1 is kept only if the exact recomputed worst
+// arrival improves; a cone estimate filters the candidates.
 class Retime
 {
  public:
@@ -45,20 +36,18 @@ class Retime
          utl::Logger* logger,
          odb::dbMaster* flop_master);
 
-  // max_moves <= 0 means unlimited.
-  void run(int max_moves);
+  void run(int max_moves);  // <= 0: unlimited
   const std::vector<int>& getRetiming() const { return r_; }
 
  private:
-  // Fanin edge carrying both arc variants of the target gate for this pin.
   struct FaninEdge
   {
     int u;
     int weight;
     float wire;
-    float arc_comb;      // target's arc when its output is combinational
-    float arc_reg;       // target's arc when its output drives a register
-    odb::dbITerm* sink;  // the target's input pin this edge drives
+    float arc_comb;  // target's arc when its output is combinational
+    float arc_reg;   // target's arc when its output drives a register
+    odb::dbITerm* sink;
   };
 
   enum class ArcCharStage
@@ -69,6 +58,7 @@ class Retime
     no_pvt,
     no_table_model
   };
+  static constexpr size_t kArcCharStages = 5;
 
   float pinArrival(odb::dbITerm* pin);
   float getGateArc(odb::dbITerm* input_pin);
@@ -86,8 +76,18 @@ class Retime
                         ArcCharStage* stage);
 
   bool outputRegistered(int v) const;
+  bool isCombinational(int u, const Edge& e) const;
+  bool isCombinational(int t, const FaninEdge& fe) const;
+  void setArrival(int t);
   void computeArrivals();
-  double markCriticalCone();
+  double slide(int v);
+  void undoSlide(int v);
+  double worstArrival();
+  void markCriticalCone(double worst);
+  double excess(double arrival) const;
+  double arrivalAfterSlide(int v) const;
+  void collectSlideCone(int v);
+  void sweepSlideCone(int v);
   double estimateSlideDelta(int v);
   bool forwardMovable(int v) const;
   void reportSlide(int v, double worst, int moves);
@@ -105,7 +105,6 @@ class Retime
   std::vector<std::vector<FaninEdge>> fanin_;
   std::vector<char> in_critical_cone_;
 
-  // Scratch for the arrival sweeps and the cone recompute, sized once in run().
   struct Scratch
   {
     std::vector<int> indeg;
@@ -114,6 +113,10 @@ class Retime
     std::vector<double> local_arr;
     std::vector<char> in_cone;
     std::vector<int> cone;
+    std::vector<char> in_dirty;
+    std::vector<int> dirty;
+    std::vector<double> saved_arrivals;
+    std::vector<double> saved_arrivals_pi;
     void init(int n)
     {
       indeg.assign(n, 0);
@@ -123,6 +126,11 @@ class Retime
       in_cone.assign(n, 0);
       cone.clear();
       cone.reserve(n);
+      in_dirty.assign(n, 0);
+      dirty.clear();
+      dirty.reserve(n);
+      saved_arrivals.reserve(n);
+      saved_arrivals_pi.reserve(n);
     }
   };
   Scratch scratch_;

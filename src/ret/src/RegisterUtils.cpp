@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -22,9 +23,6 @@ namespace ret {
 
 namespace {
 
-// Truth tables are enumerated over at most this many input ports (plus
-// the state of a register), so a cell function is checked in at most
-// 2^(kMaxTruthTableInputs + 1) rows.
 constexpr size_t kMaxTruthTableInputs = 6;
 
 const sta::Sequential* singleSequential(const sta::LibertyCell* cell)
@@ -38,17 +36,16 @@ const sta::Sequential* singleSequential(const sta::LibertyCell* cell)
   return count == 1 ? seq : nullptr;
 }
 
-// 0/1 when the net is a supply net or is driven by a tie cell, else -1.
-int constNetValue(sta::dbSta* sta, odb::dbNet* net)
+std::optional<bool> constNetValue(sta::dbSta* sta, odb::dbNet* net)
 {
   if (net == nullptr) {
-    return -1;
+    return std::nullopt;
   }
   if (net->getSigType() == odb::dbSigType::POWER) {
-    return 1;
+    return true;
   }
   if (net->getSigType() == odb::dbSigType::GROUND) {
-    return 0;
+    return false;
   }
   sta::dbNetwork* network = sta->getDbNetwork();
   for (odb::dbITerm* iterm : net->getITerms()) {
@@ -59,26 +56,23 @@ int constNetValue(sta::dbSta* sta, odb::dbNet* net)
     sta::LibertyPort* port
         = pin != nullptr ? network->libertyPort(pin) : nullptr;
     const sta::FuncExpr* func = port != nullptr ? port->function() : nullptr;
-    if (func == nullptr) {
-      return -1;
+    if (func != nullptr && func->op() == sta::FuncExpr::Op::one) {
+      return true;
     }
-    if (func->op() == sta::FuncExpr::Op::one) {
-      return 1;
+    if (func != nullptr && func->op() == sta::FuncExpr::Op::zero) {
+      return false;
     }
-    if (func->op() == sta::FuncExpr::Op::zero) {
-      return 0;
-    }
-    return -1;
+    return std::nullopt;
   }
-  return -1;
+  return std::nullopt;
 }
 
-// Ternary evaluation of a control expression under the constants on the
-// register's input nets: 0, 1, or -1 (unknown).
-int evalConstExpr(sta::dbSta* sta, odb::dbInst* inst, const sta::FuncExpr* e)
+std::optional<bool> evalConstExpr(sta::dbSta* sta,
+                                  odb::dbInst* inst,
+                                  const sta::FuncExpr* e)
 {
   if (e == nullptr) {
-    return -1;
+    return std::nullopt;
   }
   switch (e->op()) {
     case sta::FuncExpr::Op::port: {
@@ -88,45 +82,46 @@ int evalConstExpr(sta::dbSta* sta, odb::dbInst* inst, const sta::FuncExpr* e)
           return constNetValue(sta, iterm->getNet());
         }
       }
-      return -1;
+      return std::nullopt;
     }
     case sta::FuncExpr::Op::not_: {
-      const int v = evalConstExpr(sta, inst, e->left());
-      return v < 0 ? -1 : 1 - v;
+      const std::optional<bool> v = evalConstExpr(sta, inst, e->left());
+      return v.has_value() ? std::optional<bool>(!*v) : std::nullopt;
     }
     case sta::FuncExpr::Op::and_: {
-      const int a = evalConstExpr(sta, inst, e->left());
-      const int b = evalConstExpr(sta, inst, e->right());
-      if (a == 0 || b == 0) {
-        return 0;
+      const std::optional<bool> a = evalConstExpr(sta, inst, e->left());
+      const std::optional<bool> b = evalConstExpr(sta, inst, e->right());
+      if (a == false || b == false) {
+        return false;
       }
-      return (a == 1 && b == 1) ? 1 : -1;
+      return (a == true && b == true) ? std::optional<bool>(true)
+                                      : std::nullopt;
     }
     case sta::FuncExpr::Op::or_: {
-      const int a = evalConstExpr(sta, inst, e->left());
-      const int b = evalConstExpr(sta, inst, e->right());
-      if (a == 1 || b == 1) {
-        return 1;
+      const std::optional<bool> a = evalConstExpr(sta, inst, e->left());
+      const std::optional<bool> b = evalConstExpr(sta, inst, e->right());
+      if (a == true || b == true) {
+        return true;
       }
-      return (a == 0 && b == 0) ? 0 : -1;
+      return (a == false && b == false) ? std::optional<bool>(false)
+                                        : std::nullopt;
     }
     case sta::FuncExpr::Op::xor_: {
-      const int a = evalConstExpr(sta, inst, e->left());
-      const int b = evalConstExpr(sta, inst, e->right());
-      if (a < 0 || b < 0) {
-        return -1;
+      const std::optional<bool> a = evalConstExpr(sta, inst, e->left());
+      const std::optional<bool> b = evalConstExpr(sta, inst, e->right());
+      if (!a.has_value() || !b.has_value()) {
+        return std::nullopt;
       }
-      return a != b ? 1 : 0;
+      return *a != *b;
     }
     case sta::FuncExpr::Op::one:
-      return 1;
+      return true;
     case sta::FuncExpr::Op::zero:
-      return 0;
+      return false;
   }
-  return -1;
+  return std::nullopt;
 }
 
-// Distinct ports of an expression, in first-appearance order.
 void collectPorts(const sta::FuncExpr* e,
                   std::vector<const sta::LibertyPort*>& ports)
 {
@@ -143,8 +138,6 @@ void collectPorts(const sta::FuncExpr* e,
   collectPorts(e->right(), ports);
 }
 
-// Boolean evaluation of next_state under one assignment of its support.
-// The inverted state port reads as the complement of the state.
 using Assignment = std::unordered_map<const sta::LibertyPort*, bool>;
 
 bool evalExpr(const sta::FuncExpr* e,
@@ -177,19 +170,16 @@ bool evalExpr(const sta::FuncExpr* e,
   return false;
 }
 
-// What the liberty next_state function says about a cell, independent of any
-// instance: the data port and the enable ports (each with the value at which
-// it holds the state), or `other` when the function has no such shape.
+using EnableLevels = std::vector<std::pair<const sta::LibertyPort*, bool>>;
+
 struct NextStateShape
 {
   RegisterKind kind = RegisterKind::other;
   const sta::LibertyPort* data = nullptr;
-  bool data_inverted = false;  // next_state is the inverse of `data`
-  std::vector<std::pair<const sta::LibertyPort*, bool>> enables;  // inactive
+  bool data_inverted = false;
+  EnableLevels enables_inactive_at;
 };
 
-// Truth table of a register's next_state over its input ports and its
-// state.  Bit i of a row is input i; the top bit is the state.
 class NextStateTable
 {
  public:
@@ -205,9 +195,7 @@ class NextStateTable
   {
   }
 
-  // next_state == state on every row with input i at value v: input i is
-  // an enable, inactive at v.
-  bool holds(size_t i, bool v) const
+  bool holdsStateWhen(size_t i, bool v) const
   {
     for (unsigned row = 0; row < rows_; row++) {
       if (bit(row, i) == v && value(row) != stateBit(row)) {
@@ -217,10 +205,7 @@ class NextStateTable
     return true;
   }
 
-  // next_state == input d on every row where every enable is active.
-  bool passes(size_t d,
-              const std::vector<std::pair<const sta::LibertyPort*, bool>>&
-                  enables) const
+  bool passesWhenEnabled(size_t d, const EnableLevels& enables) const
   {
     for (unsigned row = 0; row < rows_; row++) {
       if (enablesActive(row, enables) && value(row) != bit(row, d)) {
@@ -234,10 +219,7 @@ class NextStateTable
   static bool bit(unsigned row, size_t i) { return ((row >> i) & 1u) != 0; }
   bool stateBit(unsigned row) const { return bit(row, inputs_.size()); }
 
-  bool enablesActive(
-      unsigned row,
-      const std::vector<std::pair<const sta::LibertyPort*, bool>>& enables)
-      const
+  bool enablesActive(unsigned row, const EnableLevels& enables) const
   {
     for (size_t i = 0; i < inputs_.size(); i++) {
       for (const auto& [port, inactive] : enables) {
@@ -249,7 +231,6 @@ class NextStateTable
     return true;
   }
 
-  // next_state evaluated on a row.
   bool value(unsigned row) const
   {
     Assignment values;
@@ -267,8 +248,6 @@ class NextStateTable
   unsigned rows_;
 };
 
-// The input ports next_state reads, excluding the state; false when it
-// reads something that is not an input, or too many inputs to enumerate.
 bool nextStateInputs(const sta::FuncExpr* next,
                      const sta::LibertyPort* state,
                      const sta::LibertyPort* state_inv,
@@ -287,10 +266,6 @@ bool nextStateInputs(const sta::FuncExpr* next,
   return !inputs.empty() && inputs.size() <= kMaxTruthTableInputs;
 }
 
-// Truth-table check over the support of next_state.  A port is an enable at
-// value v when next_state equals the state for every assignment with that
-// port at v.  With every enable active, next_state must equal exactly one
-// remaining input port, the data port, and no other input may remain.
 NextStateShape nextStateShape(const sta::Sequential* seq)
 {
   NextStateShape shape;
@@ -321,19 +296,19 @@ NextStateShape nextStateShape(const sta::Sequential* seq)
   std::vector<bool> is_enable(inputs.size(), false);
   for (size_t i = 0; i < inputs.size(); i++) {
     for (bool v : {false, true}) {
-      if (!is_enable[i] && table.holds(i, v)) {
+      if (!is_enable[i] && table.holdsStateWhen(i, v)) {
         is_enable[i] = true;
-        shape.enables.emplace_back(inputs[i], v);
+        shape.enables_inactive_at.emplace_back(inputs[i], v);
       }
     }
   }
-  if (shape.enables.empty()) {
+  if (shape.enables_inactive_at.empty()) {
     return shape;
   }
   for (size_t i = 0; i < inputs.size(); i++) {
     if (!is_enable[i]) {
-      // A second data candidate, or an input that is not passed through.
-      if (shape.data != nullptr || !table.passes(i, shape.enables)) {
+      if (shape.data != nullptr
+          || !table.passesWhenEnabled(i, shape.enables_inactive_at)) {
         return NextStateShape();
       }
       shape.data = inputs[i];
@@ -351,12 +326,11 @@ odb::dbITerm* findITerm(odb::dbInst* inst, const sta::LibertyPort* port)
   return port != nullptr ? inst->findITerm(port->name().c_str()) : nullptr;
 }
 
-// 0 when an output pin function reads the register state, 1 when it reads
-// its complement, -1 for anything else.
-int outputPolarity(const sta::FuncExpr* func, const sta::Sequential* seq)
+std::optional<bool> outputInverted(const sta::FuncExpr* func,
+                                   const sta::Sequential* seq)
 {
   if (func == nullptr) {
-    return -1;
+    return std::nullopt;
   }
   bool inverted = false;
   if (func->op() == sta::FuncExpr::Op::not_) {
@@ -364,21 +338,17 @@ int outputPolarity(const sta::FuncExpr* func, const sta::Sequential* seq)
     func = func->left();
   }
   if (func == nullptr || func->op() != sta::FuncExpr::Op::port) {
-    return -1;
+    return std::nullopt;
   }
   if (func->port() == seq->output()) {
-    return inverted ? 1 : 0;
+    return inverted;
   }
   if (seq->outputInv() != nullptr && func->port() == seq->outputInv()) {
-    return inverted ? 0 : 1;
+    return !inverted;
   }
-  return -1;
+  return std::nullopt;
 }
 
-// The one output pin the register's loads read, and whether it presents the
-// complement of the state.  With no load at all the pin that reads the state
-// is returned.  False when two output pins carry loads or the loaded pin has
-// no recognizable function: such a register cannot be rebuilt pin for pin.
 bool loadedOutput(sta::dbSta* sta,
                   odb::dbInst* inst,
                   const sta::Sequential* seq,
@@ -397,9 +367,10 @@ bool loadedOutput(sta::dbSta* sta,
     sta::Pin* sta_pin = network->dbToSta(iterm);
     sta::LibertyPort* port
         = sta_pin != nullptr ? network->libertyPort(sta_pin) : nullptr;
-    const int polarity
-        = port != nullptr ? outputPolarity(port->function(), seq) : -1;
-    if (polarity == 0 && state_pin == nullptr) {
+    const std::optional<bool> pin_inverted
+        = port != nullptr ? outputInverted(port->function(), seq)
+                          : std::nullopt;
+    if (pin_inverted == false && state_pin == nullptr) {
       state_pin = iterm;
     }
     odb::dbNet* net = iterm->getNet();
@@ -408,11 +379,11 @@ bool loadedOutput(sta::dbSta* sta,
       continue;
     }
     loaded++;
-    if (polarity < 0) {
+    if (!pin_inverted.has_value()) {
       return false;
     }
     pin = iterm;
-    inverted = polarity == 1;
+    inverted = *pin_inverted;
   }
   if (loaded > 1) {
     return false;
@@ -441,9 +412,12 @@ bool isDontTouchRegister(sta::dbSta* sta, odb::dbInst* inst)
   if (seq == nullptr || !seq->isRegister()) {
     return true;
   }
-  // Asynchronous controls tied inactive make the register plain in practice.
   for (const sta::FuncExpr* control : {seq->clear(), seq->preset()}) {
-    if (control != nullptr && evalConstExpr(sta, inst, control) != 0) {
+    if (control == nullptr) {
+      continue;
+    }
+    const std::optional<bool> active = evalConstExpr(sta, inst, control);
+    if (!active.has_value() || *active) {
       return true;
     }
   }
@@ -479,7 +453,6 @@ odb::dbITerm* registerDataPin(sta::dbSta* sta, odb::dbInst* inst)
   if (cls.data != nullptr) {
     return inst->getITerm(cls.data);
   }
-  // No recognized shape: the first input in the next_state support.
   for (odb::dbITerm* iterm : inst->getITerms()) {
     if (iterm->getIoType() != odb::dbIoType::INPUT) {
       continue;
@@ -502,7 +475,7 @@ bool isNegedgeRegister(sta::dbSta* sta, odb::dbInst* inst)
   const sta::Sequential* seq
       = cell != nullptr ? singleSequential(cell) : nullptr;
   if (seq == nullptr || !seq->isRegister()) {
-    return false;  // latches are don't-touch, not negative-edge registers
+    return false;
   }
   const sta::FuncExpr* clock = seq->clock();
   return clock != nullptr && clock->op() == sta::FuncExpr::Op::not_;
@@ -517,6 +490,47 @@ odb::dbNet* registerClockNet(odb::dbInst* inst)
   }
   return nullptr;
 }
+
+namespace {
+
+void classifyEnableRegister(odb::dbInst* inst,
+                            const NextStateShape& shape,
+                            RegisterClass& cls)
+{
+  for (const auto& [port, inactive] : shape.enables_inactive_at) {
+    odb::dbITerm* iterm = findITerm(inst, port);
+    if (iterm == nullptr) {
+      return;
+    }
+    cls.enables.emplace_back(iterm->getMTerm(), iterm->getNet());
+  }
+  std::ranges::sort(cls.enables, [](const auto& a, const auto& b) {
+    return strcmp(a.first->getConstName(), b.first->getConstName()) < 0;
+  });
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    const odb::dbSigType sig = iterm->getSigType();
+    if (sig == odb::dbSigType::CLOCK || sig == odb::dbSigType::POWER
+        || sig == odb::dbSigType::GROUND
+        || iterm->getIoType() != odb::dbIoType::INPUT
+        || iterm->getMTerm() == cls.data) {
+      continue;
+    }
+    bool is_control = false;
+    for (const auto& [mterm, net] : cls.enables) {
+      is_control = is_control || mterm == iterm->getMTerm();
+    }
+    if (!is_control) {
+      return;
+    }
+  }
+  if (cls.output == nullptr || cls.clock == nullptr) {
+    return;
+  }
+  cls.kind = RegisterKind::enable;
+  cls.master = inst->getMaster();
+}
+
+}  // namespace
 
 RegisterClass registerClass(sta::dbSta* sta, odb::dbInst* inst)
 {
@@ -535,8 +549,6 @@ RegisterClass registerClass(sta::dbSta* sta, odb::dbInst* inst)
   }
   cls.data = data->getMTerm();
 
-  // The loads decide which output pin a rebuilt register drives.  Loads on
-  // two output pins cannot be reproduced by a bypass or by a chain register.
   odb::dbITerm* out_pin = nullptr;
   bool out_inverted = false;
   if (!loadedOutput(sta, inst, seq, out_pin, out_inverted)) {
@@ -544,9 +556,8 @@ RegisterClass registerClass(sta::dbSta* sta, odb::dbInst* inst)
   }
   cls.output = out_pin != nullptr ? out_pin->getMTerm() : nullptr;
   if (shape.kind == RegisterKind::plain) {
-    // One cycle later the loads see the data pin, or its complement when
-    // exactly one of the stored value and the output pin is inverted.
-    if (shape.data_inverted == out_inverted) {
+    const bool loads_see_complement = shape.data_inverted != out_inverted;
+    if (!loads_see_complement) {
       cls.kind = RegisterKind::plain;
     } else if (cls.output != nullptr && cls.clock != nullptr) {
       cls.kind = RegisterKind::inverting;
@@ -554,46 +565,9 @@ RegisterClass registerClass(sta::dbSta* sta, odb::dbInst* inst)
     }
     return cls;
   }
-  if (out_inverted) {
-    return cls;  // an enable register read through its inverted output
+  if (!out_inverted) {
+    classifyEnableRegister(inst, shape, cls);
   }
-
-  // Enable register: every signal input must be the data pin, an enable pin
-  // or the clock.
-  for (const auto& [port, inactive] : shape.enables) {
-    odb::dbITerm* iterm = findITerm(inst, port);
-    if (iterm == nullptr) {
-      return cls;
-    }
-    cls.controls.emplace_back(iterm->getMTerm(), iterm->getNet());
-  }
-  std::ranges::sort(cls.controls, [](const auto& a, const auto& b) {
-    return strcmp(a.first->getConstName(), b.first->getConstName()) < 0;
-  });
-  for (odb::dbITerm* iterm : inst->getITerms()) {
-    const odb::dbSigType sig = iterm->getSigType();
-    if (sig == odb::dbSigType::CLOCK || sig == odb::dbSigType::POWER
-        || sig == odb::dbSigType::GROUND) {
-      continue;
-    }
-    if (iterm->getIoType() == odb::dbIoType::INPUT) {
-      if (iterm->getMTerm() == cls.data) {
-        continue;
-      }
-      bool is_control = false;
-      for (const auto& [mterm, net] : cls.controls) {
-        is_control = is_control || mterm == iterm->getMTerm();
-      }
-      if (!is_control) {
-        return cls;  // an input the next_state shape does not account for
-      }
-    }
-  }
-  if (cls.output == nullptr || cls.clock == nullptr) {
-    return cls;
-  }
-  cls.kind = RegisterKind::enable;
-  cls.master = inst->getMaster();
   return cls;
 }
 
@@ -607,7 +581,7 @@ bool sameRegisterClass(const RegisterClass& a, const RegisterClass& b)
       return a.clock == b.clock;
     case RegisterKind::enable:
       return a.master == b.master && a.clock == b.clock && a.output == b.output
-             && a.controls == b.controls;
+             && a.enables == b.enables;
     case RegisterKind::inverting:
       return a.master == b.master && a.clock == b.clock && a.output == b.output;
     case RegisterKind::other:

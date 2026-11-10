@@ -25,7 +25,6 @@ RetimingGraph::RetimingGraph(odb::dbDatabase* db,
 {
 }
 
-// The period of the single non-virtual clock; more than one is an error.
 void RetimingGraph::findClockPeriod()
 {
   clock_period_ = 0.0f;
@@ -46,8 +45,6 @@ void RetimingGraph::findClockPeriod()
   }
 }
 
-// A gate is pinned when an input pin is driven by a primary input or an
-// output pin drives a primary output.
 void RetimingGraph::markBoundary(odb::dbInst* inst, int id)
 {
   for (odb::dbITerm* pin : inst->getITerms()) {
@@ -68,12 +65,7 @@ void RetimingGraph::markBoundary(odb::dbInst* inst, int id)
   }
 }
 
-// True when a path entering register `reg` at `pin` continues through the
-// register.  For a plain or enable register only the data pin does: an enable
-// pin is a class attribute that travels with the register, not a data edge,
-// so the enable logic never becomes combinational in the model.  Any other
-// register continues through every pin in its next_state support, as it is
-// unmapped to a plain register before it moves.
+// An enable pin travels with its register's class; it is not a data edge.
 bool RetimingGraph::continuesThrough(odb::dbInst* reg, odb::dbITerm* pin) const
 {
   auto it = reg_class_.find(reg);
@@ -83,9 +75,6 @@ bool RetimingGraph::continuesThrough(odb::dbInst* reg, odb::dbITerm* pin) const
   return isRegisterDataPin(sta_, pin);
 }
 
-// Walk forward from `current`, through register chains while counting the
-// weight, and add an edge at every combinational sink reached.  The visited
-// set guards register rings.
 void RetimingGraph::walkFanout(int source,
                                odb::dbInst* current,
                                int weight,
@@ -109,8 +98,6 @@ void RetimingGraph::walkFanout(int source,
       }
       odb::dbInst* load = sink->getInst();
       if (load->getMaster()->isSequential()) {
-        // Only a data pin continues the path; a control pin (enable, async
-        // set/reset, scan, clock) is not a retimeable data edge.
         if (!continuesThrough(load, sink)) {
           continue;
         }
@@ -135,10 +122,6 @@ void RetimingGraph::walkFanout(int source,
   }
 }
 
-// True when a register chain ending on `net` must stay as it is: the net
-// reaches a primary output, a control pin of a register, or a cell that is
-// not a gate of the graph, and all of those read the chain at its current
-// depth.
 bool RetimingGraph::fencesChain(odb::dbNet* net) const
 {
   if (!net->getBTerms().empty()) {
@@ -217,9 +200,6 @@ void RetimingGraph::build()
   fenceDontTouch();
 }
 
-// A don't-touch gate, or one whose output net is don't-touch, is pinned,
-// and so is every gate feeding it, so that no register is pushed onto its
-// input pins either.
 void RetimingGraph::markDontTouch(odb::dbInst* inst, int id)
 {
   bool dont_touch = inst->isDoNotTouch();
@@ -247,10 +227,6 @@ void RetimingGraph::markDontTouch(odb::dbInst* inst, int id)
   }
 }
 
-// Pin every gate that would have to move a register that may not move, and
-// every gate whose fanin registers sit on different clock nets (a gated and
-// an ungated register cannot be merged into one), so the search never
-// proposes those slides.
 void RetimingGraph::fenceDontTouch()
 {
   std::vector<std::unordered_set<odb::dbNet*>> fanin_clocks(nodes_.size());
@@ -271,9 +247,6 @@ void RetimingGraph::fenceDontTouch()
       }
     }
   }
-  // A register pushed across a gate lands on that gate's fanout edges, so a
-  // gate also sees the clock nets of every gate that feeds it through an edge
-  // without registers.
   bool grew = true;
   while (grew) {
     grew = false;

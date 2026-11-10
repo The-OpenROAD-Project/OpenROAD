@@ -23,10 +23,9 @@ cannot be shortened by a forward move; they are constraints instead, and a
 move that pushes one past the clock period is rejected.
 
 Only the register groups whose edge weights changed are rebuilt; every
-other cell keeps its placement. New registers are placed at the centroid of
-the registers they replace and legalized only when parasitics come from a
-routing, as the resizer does; otherwise run `detailed_placement` afterwards.
-Estimated parasitics of the nets that changed are refreshed.
+other cell keeps its placement. The new registers are left unplaced: run
+`global_placement -incremental` after `retime` to place them. Estimated
+parasitics of the nets that changed are refreshed.
 
 Registers move by class, read from the liberty `next_state` function:
 
@@ -93,9 +92,7 @@ Simply run the following script:
   crossing a gate that is not self-dual.
 - A register unmapped on demand stays unmapped even when the search then
   finds no improving move.
-- The search restarts from the first gate after every accepted move and
-  recomputes the whole delay model for every trial, including rejected
-  ones.
+- The search restarts from the first gate after every accepted move.
 - The cone estimate that pre-filters candidates costs the fanin gates of a
   slide with their pre-slide arcs, so it can skip a move the exact recompute
   would accept.

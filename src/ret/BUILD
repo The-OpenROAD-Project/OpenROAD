@@ -33,7 +33,6 @@ cc_library(
     deps = [
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/dpl",
         "//src/est",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",

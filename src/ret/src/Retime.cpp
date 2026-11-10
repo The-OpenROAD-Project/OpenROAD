@@ -4,6 +4,7 @@
 #include "Retime.h"
 
 #include <algorithm>
+#include <array>
 #include <climits>
 #include <cstddef>
 #include <limits>
@@ -29,16 +30,13 @@
 namespace ret {
 
 namespace {
-// Arrival given to a path that starts at a pinned gate (fed by a primary
-// input, driving an output, or fenced).  A forward move can only lengthen
-// such a path, so it must never be the worst arrival the search tries to
-// lower; it stays hugely negative through every max().
+// Arrival of a path rooted at a pinned gate: a forward move can only
+// lengthen it, so it never becomes the worst arrival the search lowers.
 constexpr double kExcluded = -1e30;
+constexpr double kNegInf = -std::numeric_limits<double>::infinity();
 
-// A move must lower the worst arrival by more than this to be accepted.
 constexpr double kEps = 1e-15;
 
-// Rule above and below the rows of the slide table.
 constexpr const char* kSlideTableRule
     = "----------------------------------------"
       "----------------------------------------";
@@ -52,7 +50,6 @@ Retime::Retime(RetimingGraph* graph,
 {
 }
 
-// Late arrival at a pin, worst of rise and fall over all scenes.
 float Retime::pinArrival(odb::dbITerm* db_pin)
 {
   sta::Pin* pin = sta_->getDbNetwork()->dbToSta(db_pin);
@@ -75,7 +72,6 @@ float Retime::pinArrival(odb::dbITerm* db_pin)
   return std::max(rise, fall);
 }
 
-// Largest annotated STA arc delay from an input pin through its gate.
 float Retime::getGateArc(odb::dbITerm* input_pin)
 {
   sta::Pin* pin = sta_->getDbNetwork()->dbToSta(input_pin);
@@ -123,7 +119,7 @@ float Retime::getPinSlew(sta::Pin* pin)
 void Retime::computeArcDelays()
 {
   const int n = static_cast<int>(graph_->nodes_.size());
-  sta_->updateTiming(false);  // arc delays and arrivals must be current
+  sta_->updateTiming(false);
   gate_floor_.assign(n, 0.0);
   fanin_.assign(n, {});
 
@@ -131,7 +127,6 @@ void Retime::computeArcDelays()
   dcalc_ap_
       = scene != nullptr ? scene->dcalcAnalysisPtIndex(sta::MinMax::max()) : 0;
 
-  // Per-gate floor: the largest annotated arc through any of its input pins.
   for (int u = 0; u < n; u++) {
     for (odb::dbITerm* iterm : graph_->nodes_[u]->getITerms()) {
       if (iterm->getIoType() == odb::dbIoType::INPUT) {
@@ -158,7 +153,6 @@ void Retime::computeArcDelays()
   computeSeqArcs();
 }
 
-// Register D-pin load for the registered-output arc variant.
 void Retime::resolveFlopDCap()
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
@@ -183,8 +177,6 @@ void Retime::resolveFlopDCap()
   }
 }
 
-// Fanin skeleton: wire delay from the STA arrivals plus the annotated arc as
-// the fallback for both variants.
 void Retime::computeWireArcs()
 {
   const int n = static_cast<int>(graph_->nodes_.size());
@@ -209,7 +201,6 @@ void Retime::computeWireArcs()
   }
 }
 
-// Combinational-output arc: the gate arc under the sum of its sink pin caps.
 void Retime::computeCombArcs()
 {
   const int n = static_cast<int>(graph_->nodes_.size());
@@ -228,34 +219,14 @@ void Retime::computeCombArcs()
   }
 
   int total = 0;
-  int ok = 0;
-  int no_cell = 0;
-  int no_port = 0;
-  int no_pvt = 0;
-  int no_model = 0;
+  std::array<int, kArcCharStages> counts{};
   for (int v = 0; v < n; v++) {
     for (FaninEdge& fe : fanin_[v]) {
       total++;
       ArcCharStage stage = ArcCharStage::ok;
       fe.arc_comb
           = characterizeArc(v, fe.sink, load_comb[v], fe.arc_comb, &stage);
-      switch (stage) {
-        case ArcCharStage::ok:
-          ok++;
-          break;
-        case ArcCharStage::no_cell:
-          no_cell++;
-          break;
-        case ArcCharStage::no_from_port:
-          no_port++;
-          break;
-        case ArcCharStage::no_pvt:
-          no_pvt++;
-          break;
-        case ArcCharStage::no_table_model:
-          no_model++;
-          break;
-      }
+      counts[static_cast<size_t>(stage)]++;
     }
   }
   debugPrint(
@@ -266,16 +237,15 @@ void Retime::computeCombArcs()
       "load-aware arc on {}/{} edges; annotated arc kept on {} without a "
       "cell, {} without a port, {} without operating conditions, {} without "
       "a table model; register D-pin load {:.3g}",
-      ok,
+      counts[static_cast<size_t>(ArcCharStage::ok)],
       total,
-      no_cell,
-      no_port,
-      no_pvt,
-      no_model,
+      counts[static_cast<size_t>(ArcCharStage::no_cell)],
+      counts[static_cast<size_t>(ArcCharStage::no_from_port)],
+      counts[static_cast<size_t>(ArcCharStage::no_pvt)],
+      counts[static_cast<size_t>(ArcCharStage::no_table_model)],
       flop_d_cap_);
 }
 
-// Registered-output arc: the same characterization under the D-pin load.
 void Retime::computeSeqArcs()
 {
   const int n = static_cast<int>(graph_->nodes_.size());
@@ -287,9 +257,6 @@ void Retime::computeSeqArcs()
   }
 }
 
-// Gate arc through v from input pin `sink` under `load`, from the liberty NLDM
-// table at the pin's real input slew; `fallback` when any ingredient is
-// missing.
 float Retime::characterizeArc(int v,
                               odb::dbITerm* sink,
                               float load,
@@ -354,7 +321,6 @@ float Retime::characterizeArc(int v,
   return got ? best : fallback;
 }
 
-// True when any fanout edge of v carries a register under the current r.
 bool Retime::outputRegistered(int v) const
 {
   for (const Edge& e : graph_->adj_[v]) {
@@ -365,10 +331,42 @@ bool Retime::outputRegistered(int v) const
   return false;
 }
 
-// Longest-path sweep over the w_r == 0 subgraph.  A gate's arrival is the max
-// over its combinational fanins of (fanin arrival + wire + the gate's arc
-// variant for the current configuration).  Paths rooted at a pinned gate
-// carry kExcluded: only paths a forward move can shorten are measured.
+bool Retime::isCombinational(int u, const Edge& e) const
+{
+  return e.weight + r_[e.target] - r_[u] == 0;
+}
+
+bool Retime::isCombinational(int t, const FaninEdge& fe) const
+{
+  return fe.weight + r_[t] - r_[fe.u] == 0;
+}
+
+// Arrival of t from the fanins it reads without a register in between; a
+// gate without any is a path root.
+void Retime::setArrival(int t)
+{
+  const bool registered = outputRegistered(t);
+  bool root = true;
+  double a = kExcluded;
+  double a_pi = kExcluded;
+  for (const FaninEdge& fe : fanin_[t]) {
+    if (!isCombinational(t, fe)) {
+      continue;
+    }
+    root = false;
+    const double arc = registered ? fe.arc_reg : fe.arc_comb;
+    a = std::max(a, arrivals_[fe.u] + fe.wire + arc);
+    a_pi = std::max(a_pi, arrivals_pi_[fe.u] + fe.wire + arc);
+  }
+  if (root) {
+    arrivals_[t] = graph_->pinned_[t] ? kExcluded : gate_floor_[t];
+    arrivals_pi_[t] = graph_->pinned_[t] ? pi_source_[t] : kExcluded;
+  } else {
+    arrivals_[t] = a;
+    arrivals_pi_[t] = a_pi;
+  }
+}
+
 void Retime::computeArrivals()
 {
   const int n = static_cast<int>(graph_->nodes_.size());
@@ -377,7 +375,7 @@ void Retime::computeArrivals()
   std::ranges::fill(scratch_.indeg, 0);
   for (int t = 0; t < n; t++) {
     for (const FaninEdge& fe : fanin_[t]) {
-      if (fe.weight + r_[t] - r_[fe.u] == 0) {
+      if (isCombinational(t, fe)) {
         scratch_.indeg[t]++;
       }
     }
@@ -386,56 +384,118 @@ void Retime::computeArrivals()
   int tail = 0;
   for (int u = 0; u < n; u++) {
     if (scratch_.indeg[u] == 0) {
-      if (graph_->pinned_[u]) {
-        arrivals_[u] = kExcluded;
-        arrivals_pi_[u] = pi_source_[u];
-      } else {
-        arrivals_[u] = gate_floor_[u];
-      }
       scratch_.queue[tail++] = u;
     }
   }
   while (head < tail) {
     const int u = scratch_.queue[head++];
+    setArrival(u);
     for (const Edge& e : graph_->adj_[u]) {
-      if (e.weight + r_[e.target] - r_[u] != 0) {
-        continue;
-      }
-      const int s = e.target;
-      if (--scratch_.indeg[s] == 0) {
-        const bool registered = outputRegistered(s);
-        double a = kExcluded;
-        double a_pi = kExcluded;
-        for (const FaninEdge& fe : fanin_[s]) {
-          if (fe.weight + r_[s] - r_[fe.u] != 0) {
-            continue;
-          }
-          const double arc = registered ? fe.arc_reg : fe.arc_comb;
-          a = std::max(a, arrivals_[fe.u] + fe.wire + arc);
-          a_pi = std::max(a_pi, arrivals_pi_[fe.u] + fe.wire + arc);
-        }
-        arrivals_[s] = a;
-        arrivals_pi_[s] = a_pi;
-        scratch_.queue[tail++] = s;
+      if (isCombinational(u, e) && --scratch_.indeg[e.target] == 0) {
+        scratch_.queue[tail++] = e.target;
       }
     }
   }
 }
 
-// Fills arrivals_, marks the near-critical cone (gates within kSlackBand of
-// the worst plus their combinational fanin cone) and returns the worst arrival.
-double Retime::markCriticalCone()
+// A slide across v changes the arrivals of v, of its fanins (their output
+// may stop being registered), of its fanouts (they may become roots), and
+// of everything downstream of those without a register in between.  Only
+// that set is recomputed, in topological order, and saved for undoSlide.
+double Retime::slide(int v)
 {
-  constexpr double kSlackBand = 1e-3;
-  const int n = static_cast<int>(graph_->nodes_.size());
-  computeArrivals();
+  r_[v] -= 1;
+  Scratch& s = scratch_;
+  s.dirty.clear();
+  auto mark = [&](int t) {
+    if (!s.in_dirty[t]) {
+      s.in_dirty[t] = 1;
+      s.dirty.push_back(t);
+    }
+  };
+  mark(v);
+  for (const FaninEdge& fe : fanin_[v]) {
+    mark(fe.u);
+  }
+  for (const Edge& e : graph_->adj_[v]) {
+    mark(e.target);
+  }
+  size_t next = 0;
+  while (next < s.dirty.size()) {
+    const int u = s.dirty[next++];
+    for (const Edge& e : graph_->adj_[u]) {
+      if (isCombinational(u, e)) {
+        mark(e.target);
+      }
+    }
+  }
 
+  s.saved_arrivals.clear();
+  s.saved_arrivals_pi.clear();
+  for (int t : s.dirty) {
+    s.saved_arrivals.push_back(arrivals_[t]);
+    s.saved_arrivals_pi.push_back(arrivals_pi_[t]);
+    s.local_indeg[t] = 0;
+    for (const FaninEdge& fe : fanin_[t]) {
+      if (isCombinational(t, fe) && s.in_dirty[fe.u]) {
+        s.local_indeg[t]++;
+      }
+    }
+  }
+  int head = 0;
+  int tail = 0;
+  for (int t : s.dirty) {
+    if (s.local_indeg[t] == 0) {
+      s.queue[tail++] = t;
+    }
+  }
+  while (head < tail) {
+    const int t = s.queue[head++];
+    setArrival(t);
+    s.in_dirty[t] = 0;
+    for (const Edge& e : graph_->adj_[t]) {
+      if (isCombinational(t, e) && s.in_dirty[e.target]
+          && --s.local_indeg[e.target] == 0) {
+        s.queue[tail++] = e.target;
+      }
+    }
+  }
+  for (int t : s.dirty) {
+    if (s.in_dirty[t]) {  // on a combinational loop, as computeArrivals
+      arrivals_[t] = 0.0;
+      arrivals_pi_[t] = kExcluded;
+      s.in_dirty[t] = 0;
+    }
+  }
+  return worstArrival();
+}
+
+void Retime::undoSlide(int v)
+{
+  r_[v] += 1;
+  const Scratch& s = scratch_;
+  for (size_t i = 0; i < s.dirty.size(); i++) {
+    arrivals_[s.dirty[i]] = s.saved_arrivals[i];
+    arrivals_pi_[s.dirty[i]] = s.saved_arrivals_pi[i];
+  }
+}
+
+double Retime::worstArrival()
+{
+  const int n = static_cast<int>(graph_->nodes_.size());
   double worst = 0.0;
   worst_pi_ = kExcluded;
   for (int v = 0; v < n; v++) {
     worst = std::max(worst, arrivals_[v]);
     worst_pi_ = std::max(worst_pi_, arrivals_pi_[v]);
   }
+  return worst;
+}
+
+void Retime::markCriticalCone(double worst)
+{
+  constexpr double kSlackBand = 1e-3;
+  const int n = static_cast<int>(graph_->nodes_.size());
   critical_threshold_ = worst * (1.0 - kSlackBand);
 
   std::ranges::fill(in_critical_cone_, 0);
@@ -450,54 +510,37 @@ double Retime::markCriticalCone()
   while (head < tail) {
     const int t = scratch_.queue[head++];
     for (const FaninEdge& fe : fanin_[t]) {
-      if (fe.weight + r_[t] - r_[fe.u] != 0) {
-        continue;
-      }
-      if (!in_critical_cone_[fe.u]) {
+      if (isCombinational(t, fe) && !in_critical_cone_[fe.u]) {
         in_critical_cone_[fe.u] = 1;
         scratch_.queue[tail++] = fe.u;
       }
     }
   }
-  return worst;
 }
 
-// Predicted change of the worst-arrival excess for the slide r[v] -= 1,
-// without mutating r_.  After the slide v's output is registered, so v uses
-// the registered-output arc.  Only the near-critical cone can move the worst,
-// so the recompute is restricted to it.
-double Retime::estimateSlideDelta(int v)
+double Retime::excess(double arrival) const
 {
-  const double kNeg = -std::numeric_limits<double>::infinity();
-  auto excess = [&](double a) {
-    return a > critical_threshold_ ? a - critical_threshold_ : 0.0;
-  };
+  return arrival > critical_threshold_ ? arrival - critical_threshold_ : 0.0;
+}
 
-  double new_v = kNeg;
+double Retime::arrivalAfterSlide(int v) const
+{
+  double arrival = kNegInf;
   for (const FaninEdge& fe : fanin_[v]) {
     if (fe.weight + r_[v] - r_[fe.u] == 1) {
-      new_v = std::max(new_v, arrivals_[fe.u] + fe.wire + fe.arc_reg);
+      arrival = std::max(arrival, arrivals_[fe.u] + fe.wire + fe.arc_reg);
     }
   }
-  if (new_v == kNeg) {
-    new_v = graph_->pinned_[v] ? kExcluded : gate_floor_[v];
+  if (arrival == kNegInf) {
+    return graph_->pinned_[v] ? kExcluded : gate_floor_[v];
   }
-  const double v_delta = excess(new_v) - excess(arrivals_[v]);
+  return arrival;
+}
 
+void Retime::collectSlideCone(int v)
+{
   scratch_.cone.clear();
-  for (const Edge& e : graph_->adj_[v]) {
-    const int t = e.target;
-    if (e.weight + r_[t] - r_[v] == 0 && in_critical_cone_[t]
-        && !scratch_.in_cone[t]) {
-      scratch_.in_cone[t] = 1;
-      scratch_.cone.push_back(t);
-    }
-  }
-  if (scratch_.cone.empty()) {
-    return v_delta;
-  }
-  for (size_t i = 0; i < scratch_.cone.size(); i++) {
-    const int u = scratch_.cone[i];
+  auto visit = [&](int u) {
     for (const Edge& e : graph_->adj_[u]) {
       const int t = e.target;
       if (e.weight + r_[t] - r_[u] == 0 && in_critical_cone_[t]
@@ -506,8 +549,16 @@ double Retime::estimateSlideDelta(int v)
         scratch_.cone.push_back(t);
       }
     }
+  };
+  visit(v);
+  size_t next = 0;
+  while (next < scratch_.cone.size()) {
+    visit(scratch_.cone[next++]);
   }
+}
 
+void Retime::sweepSlideCone(int v)
+{
   for (int t : scratch_.cone) {
     scratch_.local_indeg[t] = 0;
   }
@@ -531,7 +582,7 @@ double Retime::estimateSlideDelta(int v)
   while (head < tail) {
     const int t = scratch_.queue[head++];
     const bool registered = outputRegistered(t);
-    double a = kNeg;
+    double a = kNegInf;
     for (const FaninEdge& fe : fanin_[t]) {
       if (fe.weight + r_[t] - r_[fe.u] != 0 || fe.u == v) {
         continue;
@@ -541,7 +592,7 @@ double Retime::estimateSlideDelta(int v)
       const double arc = registered ? fe.arc_reg : fe.arc_comb;
       a = std::max(a, src + fe.wire + arc);
     }
-    if (a == kNeg) {
+    if (a == kNegInf) {
       a = graph_->pinned_[t] ? kExcluded : gate_floor_[t];
     }
     scratch_.local_arr[t] = a;
@@ -555,7 +606,16 @@ double Retime::estimateSlideDelta(int v)
       }
     }
   }
+}
 
+double Retime::estimateSlideDelta(int v)
+{
+  const double v_delta = excess(arrivalAfterSlide(v)) - excess(arrivals_[v]);
+  collectSlideCone(v);
+  if (scratch_.cone.empty()) {
+    return v_delta;
+  }
+  sweepSlideCone(v);
   double cone_delta = 0.0;
   for (int t : scratch_.cone) {
     cone_delta += excess(scratch_.local_arr[t]) - excess(arrivals_[t]);
@@ -564,8 +624,6 @@ double Retime::estimateSlideDelta(int v)
   return v_delta + cone_delta;
 }
 
-// r[v] -= 1 is legal when v is not pinned, no fanout edge already holds a
-// register in the original netlist, and every fanin edge carries one.
 bool Retime::forwardMovable(int v) const
 {
   if (graph_->pinned_[v] || fanin_[v].empty()) {
@@ -594,10 +652,9 @@ void Retime::run(int max_moves)
   scratch_.init(n);
 
   computeArcDelays();
-
-  double worst = markCriticalCone();
-  // Input-rooted paths may not get worse than the period, or than they
-  // already are.
+  computeArrivals();
+  double worst = worstArrival();
+  markCriticalCone(worst);
   pi_limit_ = std::max(static_cast<double>(graph_->clock_period_), worst_pi_);
   logger_->info(utl::RET,
                 20,
@@ -619,10 +676,7 @@ void Retime::run(int max_moves)
     for (int v = 0; v < n && !accepted; v++) {
       if (in_critical_cone_[v] && forwardMovable(v)
           && estimateSlideDelta(v) < -kEps) {
-        // The cheap cone estimate says the slide helps; an exact recompute
-        // decides.
-        r_[v] -= 1;
-        const double trial = markCriticalCone();
+        const double trial = slide(v);
         const bool pi_ok = worst_pi_ <= pi_limit_ + kEps;
         if (!pi_ok) {
           pi_rejects++;
@@ -631,10 +685,10 @@ void Retime::run(int max_moves)
           worst = trial;
           moves++;
           reportSlide(v, worst, moves);
-          accepted = true;  // first improvement: restart on the new cone
+          markCriticalCone(worst);
+          accepted = true;
         } else {
-          r_[v] += 1;
-          markCriticalCone();
+          undoSlide(v);
         }
       }
     }
@@ -642,7 +696,6 @@ void Retime::run(int max_moves)
   reportResult(worst, moves, pi_rejects);
 }
 
-// One line of the slide table for the move just accepted across gate v.
 void Retime::reportSlide(int v, double worst, int moves)
 {
   std::string net_name = "?";

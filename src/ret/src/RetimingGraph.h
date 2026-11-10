@@ -21,20 +21,19 @@ namespace ret {
 
 struct Edge
 {
-  int target;  // sink gate
-  int weight;  // number of registers on the edge
+  int target;
+  int weight;  // registers on the edge
 };
 
-// odb handles for one edge, used by the register move surgery.
 struct EdgePhys
 {
-  odb::dbITerm* driver;             // output pin feeding the sink
-  odb::dbITerm* sink;               // input pin of the target gate
-  std::vector<odb::dbInst*> flops;  // registers crossed, driver to sink
+  odb::dbITerm* driver;
+  odb::dbITerm* sink;
+  std::vector<odb::dbInst*> flops;  // driver to sink
 };
 
-// Leiserson-Saxe retiming graph G = (V, E, w): vertices are combinational
-// gates, registers live on edges as weights.
+// Leiserson-Saxe retiming graph: vertices are combinational gates,
+// registers are edge weights.
 class RetimingGraph
 {
  public:
@@ -43,23 +42,15 @@ class RetimingGraph
   void build();
   void report() const;
 
-  std::vector<odb::dbInst*> nodes_;          // vertex id -> gate
-  std::vector<std::vector<Edge>> adj_;       // out edges of each vertex
+  std::vector<odb::dbInst*> nodes_;
+  std::vector<std::vector<Edge>> adj_;
   std::vector<std::vector<EdgePhys>> phys_;  // parallel to adj_
-  std::vector<bool> pinned_;  // gate may not move: I/O boundary, don't
-                              // touch, or fed through a fenced register
-  // Registers on a chain whose output reaches a primary output, a control
-  // pin or a cell outside the graph: moving any register of the chain would
-  // change what those see.
-  std::unordered_set<odb::dbInst*> fenced_;
-  // Class of every register in the design (see RegisterUtils.h).
+  std::vector<bool> pinned_;                 // gates the search never crosses
+  std::unordered_set<odb::dbInst*> fenced_;  // registers that never move
   std::unordered_map<odb::dbInst*, RegisterClass> reg_class_;
-  std::vector<bool> self_dual_;  // gate function is self-dual
+  std::vector<bool> self_dual_;
   float clock_period_ = 0.0f;
 
-  // A register that may not move: fenced, marked don't-touch (the instance
-  // or a net on it), or of a kind the retimer never moves (see
-  // isDontTouchRegister).
   bool isDontTouch(odb::dbInst* reg) const;
 
  private:
@@ -78,7 +69,7 @@ class RetimingGraph
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
-  std::unordered_map<odb::dbInst*, int> index_;  // build-time only
+  std::unordered_map<odb::dbInst*, int> index_;
 };
 
 }  // namespace ret
