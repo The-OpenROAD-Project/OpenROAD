@@ -840,14 +840,6 @@ CONFORMANCE_EXPECTED_FAIL = [
         ],
     ),
     xfail(
-        path = "hier",
-        mode = "tool-error",
-        symptom = "Netlist loading failed - wire collision for net u1/und",
-        netlists = [
-            "bx_dangling_undriven_leak_collide.v",
-        ],
-    ),
-    xfail(
         path = "flat",
         mode = "tool-error",
         symptom = "SEC cannot run - Missing observed output expression",
@@ -2317,7 +2309,6 @@ STRUCTURAL_EXPECTED_FAIL = [
             "bx_dangling_deadwire_decl.v",
             "bx_dangling_deadwire_escaped.v",
             "bx_dangling_subout_dead_assign.v",
-            "bx_dangling_undriven_leak_collide.v",
             "bx_naming_escaped_net_kw_logic.v",
             "bx_naming_escaped_net_kw_wire.v",
             "bx_port_rewiring_offset_net_range_high.v",
@@ -2356,23 +2347,6 @@ STRUCTURAL_EXPECTED_FAIL = [
         symptom = "a declared net or port is erased; _NC filler wires are invented",
         netlists = [
             "structural/wb_sta_reader_bus_dcl_initializer.v",
-        ],
-    ),
-    structural_xfail(
-        path = "hier",
-        check = "declared_nets",
-        symptom = "a declared net or port is erased; a module-local net is renamed to an instance path",
-        netlists = [
-            "bx_dangling_gate_island_leaf.v",
-            "bx_dangling_positional_in_sub.v",
-            "bx_dangling_undriven_bus_in_sub.v",
-            "bx_dangling_undriven_depth2_island.v",
-            "bx_dangling_undriven_esc_leak.v",
-            "bx_dangling_undriven_leak_escinst.v",
-            "bx_dangling_undriven_two_inst.v",
-            "structural/bx_dangling_undriven_live_sub.v",
-            "structural/bx_port_rewiring_header_concat_port_positional.v",
-            "structural/bx_port_rewiring_header_concat_port_second.v",
         ],
     ),
     structural_xfail(
@@ -2782,7 +2756,6 @@ STRUCTURAL_EXPECTED_FAIL = [
             "bx_dangling_nc_collision_mid.v",
             "bx_dangling_nc_collision_scalar_live.v",
             "bx_dangling_nc_filler_all4_taken.v",
-            "bx_dangling_undriven_leak_collide.v",
             "s2_collisions_nc_two_digit.v",
         ],
     ),

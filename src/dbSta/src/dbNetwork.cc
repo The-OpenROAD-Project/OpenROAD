@@ -2612,14 +2612,23 @@ std::string dbNetwork::name(const Net* net) const
         return name;
       }
       // Without a modnet, the net lives in its driver's module; strip
-      // that module instance's path.
-      dbITerm* connected_iterm = dnet->getFirstOutput();
-      if (connected_iterm) {
-        const size_t pos
-            = modulePrefixLength(name, connected_iterm->getInst()->getModule());
-        if (pos != std::string::npos) {
-          name.erase(0, pos);
+      // that module instance's path. An undriven net lives in the
+      // deepest module of its loads whose path its name starts with.
+      size_t pos = std::string::npos;
+      if (dbITerm* drvr = dnet->getFirstOutput()) {
+        pos = modulePrefixLength(name, drvr->getInst()->getModule());
+      } else {
+        for (dbITerm* iterm : dnet->getITerms()) {
+          const size_t load_pos
+              = modulePrefixLength(name, iterm->getInst()->getModule());
+          if (load_pos != std::string::npos
+              && (pos == std::string::npos || load_pos > pos)) {
+            pos = load_pos;
+          }
         }
+      }
+      if (pos != std::string::npos) {
+        name.erase(0, pos);
       }
     }
   }
