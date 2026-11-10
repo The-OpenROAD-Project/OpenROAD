@@ -42,20 +42,20 @@ class TestSACorePenalties : public MplTest
     };
 
     return std::make_unique<SACoreHardMacro>(&tree_,
-                                              outline_,
-                                              macros,
-                                              weights,
-                                              /*pos_swap_prob=*/0.25,
-                                              /*neg_swap_prob=*/0.25,
-                                              /*double_swap_prob=*/0.25,
-                                              /*exchange_prob=*/0.25,
-                                              /*init_prob=*/0.1,
-                                              /*max_num_step=*/1,
-                                              /*num_perturb_per_step=*/10,
-                                              /*seed=*/42,
-                                              /*graphics=*/nullptr,
-                                              &logger_,
-                                              block());
+                                             outline_,
+                                             macros,
+                                             weights,
+                                             /*pos_swap_prob=*/0.25,
+                                             /*neg_swap_prob=*/0.25,
+                                             /*double_swap_prob=*/0.25,
+                                             /*exchange_prob=*/0.25,
+                                             /*init_prob=*/0.1,
+                                             /*max_num_step=*/1,
+                                             /*num_perturb_per_step=*/10,
+                                             /*seed=*/42,
+                                             /*graphics=*/nullptr,
+                                             &logger_,
+                                             block());
   }
 
   PhysicalHierarchy tree_;
