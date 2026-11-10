@@ -2,11 +2,12 @@
 # Copyright (c) 2019-2026, The OpenROAD Authors
 
 sta::define_cmd_args "web_server" \
-  { [-port port] [-bind address] [-dir dir] [-browser] [-no_browser] [-stop] }
+  { [-port port] [-bind address] [-token hex] [-dir dir] [-browser] \
+    [-no_browser] [-stop] }
 
 proc web_server { args } {
   sta::parse_key_args "web_server" args \
-    keys {-port -bind -dir} flags {-stop -browser -no_browser}
+    keys {-port -bind -token -dir} flags {-stop -browser -no_browser}
 
   if { [info exists flags(-stop)] } {
     web::web_server_stop_cmd
@@ -22,6 +23,15 @@ proc web_server { args } {
     # -port of 70000 would silently listen on 4464.
     if { ![string is integer -strict $port] || $port < 0 || $port > 65535 } {
       utl::error WEB 81 "-port must be an integer between 0 and 65535."
+    }
+  }
+
+  # Empty has the server mint its own.
+  set token ""
+  if { [info exists keys(-token)] } {
+    set token $keys(-token)
+    if { ![regexp {^[0-9a-fA-F]{32,128}$} $token] } {
+      utl::error WEB 128 "-token must be 32 to 128 hexadecimal digits."
     }
   }
 
@@ -49,7 +59,7 @@ proc web_server { args } {
     set browser "never"
   }
 
-  web::web_server_cmd $port $bind $browser
+  web::web_server_cmd $port $bind $browser $token
   web::web_server_wait_cmd
 }
 

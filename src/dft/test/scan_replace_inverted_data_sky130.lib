@@ -1,0 +1,98 @@
+/* Minimal sky130hd subset for scan_replace_inverted_data_sky130.
+   The scan cell stores the inverted data: its first state variable IQN holds
+   !D (test_cell next_state "!D"), Q_N is IQN and Q is IQNN. Binding state
+   variables by position alone would map the non-scan Q onto Q_N. */
+library ("scan_replace_inverted_data") {
+    delay_model : "table_lookup";
+    time_unit : "1ns";
+    voltage_unit : "1V";
+    current_unit : "1mA";
+    pulling_resistance_unit : "1kohm";
+    leakage_power_unit : "1nW";
+    capacitive_load_unit (1, "pf");
+    nom_process : 1.0;
+    nom_temperature : 25.0;
+    nom_voltage : 1.8;
+    cell ("sky130_fd_sc_hd__dfxtp_1") {
+        area : 20.0;
+        ff ("IQ","IQ_N") {
+            clocked_on : "CLK";
+            next_state : "D";
+        }
+        pin ("CLK") {
+            direction : "input";
+            clock : "true";
+            capacitance : 0.002;
+        }
+        pin ("D") {
+            direction : "input";
+            capacitance : 0.002;
+        }
+        pin ("Q") {
+            direction : "output";
+            function : "IQ";
+        }
+    }
+    cell ("sky130_fd_sc_hd__sdfxbp_1") {
+        area : 30.0;
+        ff ("IQN","IQNN") {
+            clocked_on : "CLK";
+            next_state : "(!D&!SCE) | (!SCD&SCE)";
+        }
+        pin ("CLK") {
+            direction : "input";
+            clock : "true";
+            capacitance : 0.002;
+        }
+        pin ("D") {
+            direction : "input";
+            capacitance : 0.002;
+        }
+        pin ("SCD") {
+            direction : "input";
+            capacitance : 0.002;
+        }
+        pin ("SCE") {
+            direction : "input";
+            capacitance : 0.002;
+        }
+        pin ("Q") {
+            direction : "output";
+            function : "IQNN";
+        }
+        pin ("Q_N") {
+            direction : "output";
+            function : "IQN";
+        }
+        test_cell () {
+            ff ("IQN","IQNN") {
+                clocked_on : "CLK";
+                next_state : "!D";
+            }
+            pin ("CLK") {
+                direction : "input";
+            }
+            pin ("D") {
+                direction : "input";
+            }
+            pin ("Q") {
+                direction : "output";
+                function : "IQNN";
+                signal_type : "test_scan_out";
+            }
+            pin ("Q_N") {
+                direction : "output";
+                function : "IQN";
+                signal_type : "test_scan_out_inverted";
+            }
+            pin ("SCD") {
+                direction : "input";
+                signal_type : "test_scan_in";
+            }
+            pin ("SCE") {
+                direction : "input";
+                signal_type : "test_scan_enable";
+            }
+        }
+    }
+}

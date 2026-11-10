@@ -892,6 +892,13 @@ proc report_opt_config { args } {
     set disable_buffer_pruning [expr { $no_buffer_pruning_value ? "true" : "false" }]
   }
 
+  set rebuffer_size_driver "false"
+  set size_driver_prop [odb::dbBoolProperty_find $block "rebuffer_size_driver"]
+  if { $size_driver_prop ne "NULL" && $size_driver_prop ne "" } {
+    set size_driver_value [$size_driver_prop getValue]
+    set rebuffer_size_driver [expr { $size_driver_value ? "true" : "false" }]
+  }
+
   puts "*******************************************"
   puts "Optimization config:"
   puts "-limit_sizing_area:                 $area_limit_value"
@@ -901,6 +908,7 @@ proc report_opt_config { args } {
   puts "-set_early_sizing_cap_ratio:        $sizing_cap_ratio"
   puts "-set_early_buffer_sizing_cap_ratio: $buffer_cap_ratio"
   puts "-disable_buffer_pruning:            $disable_buffer_pruning"
+  puts "-rebuffer_size_driver:              $rebuffer_size_driver"
   puts "*******************************************"
 }
 

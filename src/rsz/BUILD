@@ -57,6 +57,8 @@ cc_library(
         "src/SkewBudget.cc",
         "src/SkewBudget.hh",
         "src/SwapArithModules.hh",
+        "src/SwapPinsEquivalence.cc",
+        "src/SwapPinsEquivalence.hh",
         "src/move/BufferCandidate.cc",
         "src/move/BufferCandidate.hh",
         "src/move/BufferGenerator.cc",
