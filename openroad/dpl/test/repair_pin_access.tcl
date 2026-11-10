@@ -17,7 +17,7 @@ proc full_pin_access { } {
     -via_in_pin_top_layer M1 -min_access_points 1 -verbose 0
 }
 
-check_error "reject before pin access" {repair_pin_access} DPL-0510
+check_error "reject before pin access" {repair_pin_access -recovery_attempts 0} DPL-0510
 check "missing PA preserves placement" {$inst getLocation} "0 0"
 full_pin_access
 check "zero displacement preserves unresolved cells" {
@@ -61,5 +61,5 @@ set saved_db [make_result_file repair_pin_access.odb]
 write_db $saved_db
 odb::dbChip_destroy [[ord::get_db] getChip]
 read_db $saved_db
-check_error "reject loaded stale pin access" {repair_pin_access} DPL-0510
+check_error "reject loaded stale pin access" {repair_pin_access -recovery_attempts 0} DPL-0510
 exit_summary

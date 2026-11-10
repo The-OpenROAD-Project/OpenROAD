@@ -133,7 +133,9 @@ class Opendp
   int repairPinAccess(drt::PinAccessService* pa,
                       int max_displacement_x,
                       int max_displacement_y,
-                      int max_rounds);
+                      int max_rounds,
+                      int recovery_attempts = 3,
+                      int min_access_points = 1);
   void reportLegalizationStats() const;
   void reportLegalizationSummary(double runtime);
 

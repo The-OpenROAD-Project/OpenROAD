@@ -96,11 +96,13 @@ proc detailed_placement { args } {
 }
 
 sta::define_cmd_args "repair_pin_access" {[-max_displacement {sites rows}] \
-                                       [-max_rounds count]}
+                                       [-max_rounds count] \
+                                       [-recovery_attempts count] \
+                                       [-min_access_points count]}
 
 proc repair_pin_access { args } {
   sta::parse_key_args "repair_pin_access" args \
-    keys {-max_displacement -max_rounds} flags {}
+    keys {-max_displacement -max_rounds -recovery_attempts -min_access_points} flags {}
   sta::check_argc_eq0 "repair_pin_access" $args
 
   set max_displacement_x 20
@@ -123,8 +125,19 @@ proc repair_pin_access { args } {
   if { ![string is integer -strict $max_rounds] || $max_rounds < 1 } {
     utl::error DPL 351 "-max_rounds requires a positive integer."
   }
+  set recovery_attempts 3
+  set min_access_points 1
+  foreach option {recovery_attempts min_access_points} {
+    if { [info exists keys(-$option)] } {
+      set $option $keys(-$option)
+    }
+    if { ![string is integer -strict [set $option]] } {
+      utl::error DPL 352 "-$option requires an integer."
+    }
+  }
   return [dpl::repair_pin_access_cmd \
-    $max_displacement_x $max_displacement_y $max_rounds]
+    $max_displacement_x $max_displacement_y $max_rounds \
+    $recovery_attempts $min_access_points]
 }
 
 sta::define_cmd_args "set_placement_padding" { -global|-masters masters|-instances insts\

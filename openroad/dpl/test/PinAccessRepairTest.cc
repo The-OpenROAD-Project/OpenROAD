@@ -3,6 +3,8 @@
 
 #include <functional>
 #include <stdexcept>
+#include <utility>
+#include <vector>
 
 #include "dpl/Opendp.h"
 #include "drt/PinAccessService.h"
@@ -18,6 +20,10 @@ class RepairService : public drt::PinAccessService
 {
  public:
   bool hasPinAccess() const override { return ready; }
+  bool hasMinimumPinAccess(int min_access_points) const override
+  {
+    return minimum(min_access_points);
+  }
   bool hasUsablePinAccess(odb::dbInst* inst,
                           const odb::Point& location) const override
   {
@@ -41,10 +47,57 @@ class RepairService : public drt::PinAccessService
       refresh();
     }
   }
+  std::vector<odb::dbITerm*> beginPinAccessRecovery(int minimum) override
+  {
+    ++begins;
+    requested_minimum = minimum;
+    if (!missing) {
+      return {};
+    }
+    auto result = missing();
+    active = !result.empty();
+    ready = !active;
+    return result;
+  }
+  std::vector<odb::dbITerm*> updatePinAccessRecovery() override
+  {
+    ++native_updates;
+    return missing();
+  }
+  void finishPinAccessRecovery() override
+  {
+    if (finish) {
+      finish();
+    }
+    ++finishes;
+    active = false;
+    ready = true;
+  }
+  void cancelPinAccessRecovery() noexcept override
+  {
+    if (active) {
+      ++cancels;
+      active = false;
+      ready = false;
+      if (cancel) {
+        cancel();
+      }
+    }
+  }
   bool ready = true;
+  bool active = false;
+  int begins = 0;
+  int requested_minimum = 0;
+  int native_updates = 0;
+  int finishes = 0;
+  int cancels = 0;
+  std::function<std::vector<odb::dbITerm*>()> missing;
+  std::function<void()> finish;
+  std::function<void()> cancel;
   int updates = 0;
   std::function<bool(odb::dbInst*, const odb::Point&)> usable;
   std::function<void()> refresh;
+  std::function<bool(int)> minimum = [](int) { return true; };
 };
 
 class PinAccessRepairTest : public tst::Nangate45Fixture
@@ -75,6 +128,10 @@ class PinAccessRepairTest : public tst::Nangate45Fixture
     master->setHeight(kHeight);
     master->setSite(site);
     master->setSymmetryY();
+    for (const char* name : {"A", "B", "C"}) {
+      odb::dbMTerm::create(
+          master, name, odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+    }
     master->setFrozen();
     inst_ = makeCell("target", kX);
     service_.usable = [&](odb::dbInst* inst, const odb::Point& location) {
@@ -94,7 +151,24 @@ class PinAccessRepairTest : public tst::Nangate45Fixture
 
   int repair(int dx = 1, int rounds = 3)
   {
-    return dp_.repairPinAccess(&service_, dx, 0, rounds);
+    return dp_.repairPinAccess(&service_, dx, 0, rounds, 0);
+  }
+
+  void configureRecovery(std::function<std::vector<odb::dbITerm*>()> missing)
+  {
+    service_.ready = false;
+    service_.missing = std::move(missing);
+    service_.usable = [](odb::dbInst*, const odb::Point&) { return true; };
+  }
+
+  int recover(int attempts = 3, int dx = 4, int minimum = 1)
+  {
+    return dp_.repairPinAccess(&service_, dx, 0, 3, attempts, minimum);
+  }
+
+  std::vector<odb::dbITerm*> missingA() const
+  {
+    return {inst_->findITerm("A")};
   }
 
   odb::dbInst* inst_;
@@ -269,10 +343,225 @@ TEST_F(PinAccessRepairTest, RefreshExceptionRestoresPlacement)
   EXPECT_EQ(service_.updates, 3);
 }
 
+TEST_F(PinAccessRepairTest, DefaultRecoveryReachesThirdUntriedSite)
+{
+  std::vector<int> visited;
+  configureRecovery([&] {
+    const int x = inst_->getLocation().x();
+    if (x != kX) {
+      visited.push_back(x);
+    }
+    return x == kX - 2 * kSite ? std::vector<odb::dbITerm*>{} : missingA();
+  });
+  inst_->setOrient(odb::dbOrientType::MY);
+  inst_->setLocation(kX, 0);
+  EXPECT_EQ(dp_.repairPinAccess(&service_, 4, 0, 3), 0);
+  EXPECT_EQ(visited,
+            (std::vector<int>{kX - kSite, kX + kSite, kX - 2 * kSite}));
+  EXPECT_EQ(inst_->getOrient(), odb::dbOrientType::MY);
+  EXPECT_EQ(service_.native_updates, 5);
+  EXPECT_EQ(service_.finishes, 1);
+  EXPECT_EQ(service_.updates, 0);
+  EXPECT_TRUE(service_.ready);
+}
+
+TEST_F(PinAccessRepairTest, RecoveryAttemptLimitRollsBackAndCanBeRaised)
+{
+  configureRecovery([&] {
+    return inst_->getLocation().x() == kX - 2 * kSite
+               ? std::vector<odb::dbITerm*>{}
+               : missingA();
+  });
+  EXPECT_THROW(recover(2), std::runtime_error);
+  EXPECT_EQ(inst_->getLocation(), odb::Point(kX, 0));
+  EXPECT_EQ(service_.native_updates, 4);
+  EXPECT_EQ(service_.cancels, 1);
+  EXPECT_FALSE(service_.ready);
+  EXPECT_EQ(recover(3), 0);
+  EXPECT_EQ(inst_->getLocation(), odb::Point(kX - 2 * kSite, 0));
+}
+
+TEST_F(PinAccessRepairTest, DisabledRecoveryRequiresPublishedAccess)
+{
+  configureRecovery([&] { return missingA(); });
+  EXPECT_THROW(recover(0), std::runtime_error);
+  EXPECT_EQ(service_.begins, 0);
+  EXPECT_EQ(service_.native_updates, 0);
+  EXPECT_EQ(inst_->getLocation(), odb::Point(kX, 0));
+  service_.ready = true;
+  EXPECT_EQ(recover(0, 4, 1000), 0);
+  EXPECT_EQ(service_.begins, 0);
+}
+
+TEST_F(PinAccessRepairTest, RecoverySkipsOccupiedSitesWithoutSpendingAttempts)
+{
+  makeCell("left", kX - kSite)
+      ->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+  makeCell("right", kX + kSite);
+  configureRecovery([&] {
+    return inst_->getLocation().x() == kX - 2 * kSite
+               ? std::vector<odb::dbITerm*>{}
+               : missingA();
+  });
+  EXPECT_EQ(recover(1, 2, 7), 0);
+  EXPECT_EQ(service_.native_updates, 1);
+  EXPECT_EQ(service_.requested_minimum, 7);
+}
+
+TEST_F(PinAccessRepairTest, RecoveryRejectsLossOfHealthySiblingPin)
+{
+  auto* a = inst_->findITerm("A");
+  auto* b = inst_->findITerm("B");
+  auto* c = inst_->findITerm("C");
+  configureRecovery([&] {
+    if (inst_->getLocation().x() != kX) {
+      return std::vector<odb::dbITerm*>{b};
+    }
+    return std::vector<odb::dbITerm*>{a, c};
+  });
+  EXPECT_THROW(recover(1), std::runtime_error);
+  EXPECT_EQ(inst_->getLocation(), odb::Point(kX, 0));
+  EXPECT_EQ(service_.finishes, 0);
+}
+
+TEST_F(PinAccessRepairTest, RecoveryPreservesPreviouslyRecoveredPins)
+{
+  auto* a = inst_->findITerm("A");
+  auto* b = inst_->findITerm("B");
+  auto* c = inst_->findITerm("C");
+  configureRecovery([&] {
+    const int x = inst_->getLocation().x();
+    if (x == kX) {
+      return std::vector<odb::dbITerm*>{c, a, b, a};
+    }
+    if (x == kX - kSite) {
+      return std::vector<odb::dbITerm*>{c, b, b};
+    }
+    return std::vector<odb::dbITerm*>{a};
+  });
+  EXPECT_THROW(recover(2), std::runtime_error);
+  EXPECT_EQ(inst_->getLocation(), odb::Point(kX, 0));
+  EXPECT_EQ(service_.native_updates, 3);
+  EXPECT_EQ(service_.cancels, 1);
+}
+
+TEST_F(PinAccessRepairTest, RecoveryRejectsNewGeometryFailure)
+{
+  auto* healthy = makeCell("healthy", kX + 6 * kSite);
+  configureRecovery([&] {
+    return inst_->getLocation().x() == kX ? missingA()
+                                          : std::vector<odb::dbITerm*>{};
+  });
+  service_.usable = [&](odb::dbInst* inst, const odb::Point&) {
+    return inst != healthy || inst_->getLocation().x() == kX;
+  };
+  EXPECT_THROW(recover(1), std::runtime_error);
+  EXPECT_EQ(inst_->getLocation(), odb::Point(kX, 0));
+  EXPECT_EQ(healthy->getLocation(), odb::Point(kX + 6 * kSite, 0));
+}
+
+TEST_F(PinAccessRepairTest, RecoveryExceptionRestoresAllEarlierAcceptedMoves)
+{
+  auto* second = makeCell("second", kX + 6 * kSite);
+  auto* a = inst_->findITerm("A");
+  auto* b = second->findITerm("B");
+  bool canceled_before_restore = false;
+  configureRecovery([&] {
+    if (service_.native_updates == 2) {
+      throw std::runtime_error("native update failed");
+    }
+    std::vector<odb::dbITerm*> pins{b};
+    if (inst_->getLocation().x() == kX) {
+      pins.push_back(a);
+    }
+    return pins;
+  });
+  service_.cancel = [&] {
+    canceled_before_restore = inst_->getLocation().x() == kX - kSite
+                              && second->getLocation().x() == kX + 4 * kSite;
+  };
+  EXPECT_THROW(recover(3), std::runtime_error);
+  EXPECT_TRUE(canceled_before_restore);
+  EXPECT_EQ(inst_->getLocation(), odb::Point(kX, 0));
+  EXPECT_EQ(second->getLocation(), odb::Point(kX + 6 * kSite, 0));
+  EXPECT_EQ(service_.native_updates, 2);
+}
+
+TEST_F(PinAccessRepairTest, RecoveryPublicationExceptionCancelsBeforeRestore)
+{
+  bool canceled_before_restore = false;
+  configureRecovery([&] {
+    return inst_->getLocation().x() == kX ? missingA()
+                                          : std::vector<odb::dbITerm*>{};
+  });
+  service_.finish
+      = [] { throw std::runtime_error("pattern generation failed"); };
+  service_.cancel
+      = [&] { canceled_before_restore = inst_->getLocation().x() != kX; };
+  EXPECT_THROW(recover(), std::runtime_error);
+  EXPECT_TRUE(canceled_before_restore);
+  EXPECT_EQ(inst_->getLocation(), odb::Point(kX, 0));
+  EXPECT_EQ(service_.cancels, 1);
+}
+
+TEST_F(PinAccessRepairTest, RecoveryFailsForFixedCellsAndNoLegalSites)
+{
+  configureRecovery([&] { return missingA(); });
+  inst_->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+  EXPECT_THROW(recover(), std::runtime_error);
+  EXPECT_EQ(service_.native_updates, 0);
+  inst_->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  EXPECT_THROW(recover(3, 0), std::runtime_error);
+  EXPECT_EQ(service_.native_updates, 0);
+  EXPECT_EQ(inst_->getLocation(), odb::Point(kX, 0));
+}
+
+TEST_F(PinAccessRepairTest, RecoveryPublishesDespiteExistingGeometryFailure)
+{
+  auto* blocker = makeCell("blocker", kX + 6 * kSite);
+  blocker->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+  configureRecovery([&] {
+    return inst_->getLocation().x() == kX ? missingA()
+                                          : std::vector<odb::dbITerm*>{};
+  });
+  service_.usable
+      = [&](odb::dbInst* inst, const odb::Point&) { return inst != blocker; };
+  EXPECT_EQ(recover(), 1);
+  EXPECT_EQ(service_.finishes, 1);
+  EXPECT_TRUE(service_.ready);
+  EXPECT_EQ(inst_->getLocation(), odb::Point(kX - kSite, 0));
+}
+
+TEST_F(PinAccessRepairTest, ReadyRecoveryFastPathDoesNotRefreshNativeAccess)
+{
+  service_.usable = [](odb::dbInst*, const odb::Point&) { return true; };
+  EXPECT_EQ(recover(), 0);
+  EXPECT_EQ(service_.begins, 1);
+  EXPECT_EQ(service_.native_updates, 0);
+  EXPECT_EQ(service_.finishes, 0);
+  EXPECT_EQ(service_.updates, 0);
+}
+
+TEST_F(PinAccessRepairTest, GeometryRepairPreservesRequestedMinimum)
+{
+  service_.minimum = [&](int minimum) {
+    EXPECT_EQ(minimum, 2);
+    return inst_->getLocation().x() == kX;
+  };
+  EXPECT_EQ(recover(3, 1, 2), 1);
+  EXPECT_EQ(inst_->getLocation(), odb::Point(kX, 0));
+  EXPECT_EQ(service_.requested_minimum, 2);
+  EXPECT_EQ(service_.native_updates, 0);
+  EXPECT_EQ(service_.updates, 2);
+  EXPECT_TRUE(service_.hasMinimumPinAccess(2));
+}
+
 TEST_F(PinAccessRepairTest, RejectsInvalidOptions)
 {
   EXPECT_THROW(repair(-1), std::runtime_error);
   EXPECT_THROW(repair(1, 0), std::runtime_error);
+  EXPECT_THROW(recover(-1), std::runtime_error);
+  EXPECT_THROW(recover(3, 1, 0), std::runtime_error);
   EXPECT_EQ(inst_->getLocation(), odb::Point(kX, 0));
 }
 
