@@ -8,7 +8,14 @@ on:
       - release/**/*
     paths:
       - .github/workflows/gemini-scheduled-triage.yml
+      - .github/commands/openroad-scheduled-triage.toml
+      - .github/scripts/**
   workflow_dispatch:
+    inputs:
+      all_ages:
+        description: Also triage unlabeled issues opened more than two days ago
+        type: boolean
+        default: false
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: true
@@ -57,14 +64,22 @@ jobs:
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN || github.token }}
+          ALL_AGES: ${{ inputs.all_ages || false }}
         run: |-
           echo '🔍 Finding unlabeled issues...'
+          # Only recent issues are retried, so one that Gemini cannot label
+          # (or a stalled API) costs at most about two days of hourly runs.
+          # Older ones need a person or a manual run with all_ages.
+          SEARCH='no:label'
+          if [[ "${ALL_AGES}" != 'true' ]]; then
+            SEARCH+=" created:>=$(date -u -d '2 days ago' +%Y-%m-%d)"
+          fi
           # Truncate bodies and cap the batch so ISSUES_TO_TRIAGE stays under
           # the 128 KiB Linux limit on a single environment variable; later
           # runs pick up the remaining issues.
           ISSUES="$(gh issue list \
             --state 'open' \
-            --search 'no:label' \
+            --search "${SEARCH}" \
             --json number,title,body \
             --limit '20' \
             --repo "${GITHUB_REPOSITORY}" |
@@ -78,20 +93,53 @@ jobs:
           echo "✅ Found ${ISSUE_COUNT} issue(s) to triage! 🎯"
       # The Gemini action installs its own gemini-*.toml commands, so ours
       # use distinct names to avoid being overwritten.
-      - name: Checkout triage commands
+      - name: Checkout triage commands and scripts
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
-          sparse-checkout: .github/commands
+          sparse-checkout: |-
+            .github/CODEOWNERS
+            .github/commands
+            .github/scripts
           sparse-checkout-cone-mode: false
       - name: Install triage commands
         run: |-
           mkdir -p .gemini/commands
           cp .github/commands/openroad-*.toml .gemini/commands/
+      # Assignee candidates are best effort: these steps may fail without
+      # failing the job, and labeling then runs without assignments.
+      # Reading CODEOWNERS team membership needs the App's org-level
+      # "Members: read" permission. The token is read-only and never reaches
+      # the Gemini step.
+      - name: Mint candidates token
+        id: candidates_token
+        continue-on-error: true
+        if: |-
+          ${{ vars.APP_CLIENT_ID && steps.find_issues.outputs.issues_to_triage != '[]' }}
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510  # ratchet:actions/create-github-app-token@v2
+        with:
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-contents: read
+          permission-issues: read
+          permission-members: read
+      # Exports the masked table as ASSIGNEE_CANDIDATES.
+      - name: Build assignee candidates
+        continue-on-error: true
+        if: steps.candidates_token.outputs.token != ''
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # ratchet:actions/github-script@v9.0.0
+        with:
+          github-token: ${{ steps.candidates_token.outputs.token }}
+          script: |-
+            const run = require('./.github/scripts/triage-candidates.js');
+            await run({github, context, core});
       - name: Run Gemini Issue Analysis
         id: gemini_issue_analysis
         if: |-
           ${{ steps.find_issues.outputs.issues_to_triage != '[]' }}
+        # A Gemini API call can stall without any output; failing here leaves
+        # the issues unlabeled, so the next hourly run retries them.
+        timeout-minutes: 5
         uses: google-github-actions/run-gemini-cli@v0  # ratchet:exclude
         env:
           # The workspace holds only the checked-out commands and the
@@ -118,6 +166,10 @@ jobs:
           # Overriding default telemetry inputs because scheduled workflows lack an event payload
           # We pass the dynamically generated list of batch issues to the issue number field
           github_issue_number: ${{ steps.find_issues.outputs.issue_numbers }}
+          # In GitHub Actions the CLI passes shell commands only its own list
+          # of environment variables, so the prompt's `!{echo $VAR}` reads
+          # any other variable, such as ASSIGNEE_CANDIDATES, as empty unless
+          # it is allowed here.
           settings: |-
             {
               "model": {
@@ -127,6 +179,13 @@ jobs:
                 "enabled": true,
                 "target": "local",
                 "outfile": ".gemini/telemetry.log"
+              },
+              "security": {
+                "environmentVariableRedaction": {
+                  "allowed": [
+                    "ASSIGNEE_CANDIDATES"
+                  ]
+                }
               },
               "tools": {
                 "core": [
@@ -140,6 +199,8 @@ jobs:
     needs:
       - triage
     if: |-
+      !cancelled() &&
+      needs.triage.result == 'success' &&
       needs.triage.outputs.available_labels != '' &&
       needs.triage.outputs.available_labels != '[]' &&
       needs.triage.outputs.triaged_issues != '' &&
@@ -149,20 +210,35 @@ jobs:
       issues: write
       pull-requests: write
     steps:
+      # Without the App token, labels are applied with GITHUB_TOKEN and
+      # assignment is skipped.
       - name: Mint identity token
         id: mint_identity_token
+        continue-on-error: true
         if: |-
-          ${{ vars.APP_ID }}
+          ${{ vars.APP_CLIENT_ID }}
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510  # ratchet:actions/create-github-app-token@v2
         with:
-          app-id: ${{ vars.APP_ID }}
+          client-id: ${{ vars.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           permission-contents: read
           permission-issues: write
+          permission-members: read
           permission-pull-requests: write
-      - name: Apply labels
+      # Only assignment needs these files; labeling must not depend on them.
+      - name: Checkout triage scripts
+        continue-on-error: true
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |-
+            .github/CODEOWNERS
+            .github/scripts
+          sparse-checkout-cone-mode: false
+      - name: Apply labels and assignees
         env:
           AVAILABLE_LABELS: ${{ needs.triage.outputs.available_labels }}
+          HAS_APP_TOKEN: ${{ steps.mint_identity_token.outputs.token != '' }}
           ISSUE_NUMBERS: ${{ needs.triage.outputs.issue_numbers }}
           TRIAGED_ISSUES: ${{ needs.triage.outputs.triaged_issues }}
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # ratchet:actions/github-script@v9.0.0
@@ -180,13 +256,11 @@ jobs:
             const batchIssueNumbers = (process.env.ISSUE_NUMBERS || '').split(',')
               .map((number) => Number(number.trim()))
             // Parse out the triaged issues, tolerating a markdown code fence
-            // around the model's JSON reply
-            const triagedJson = (process.env.TRIAGED_ISSUES || '[]').trim()
-              .replace(/^```(?:json)?\s*/, '')
-              .replace(/\s*```$/, '')
+            // or preamble around the model's JSON reply
             let triagedIssues;
             try {
-              triagedIssues = JSON.parse(triagedJson);
+              const span = (process.env.TRIAGED_ISSUES || '[]').match(/\[[\s\S]*\]/);
+              triagedIssues = JSON.parse(span ? span[0] : '');
             } catch (err) {
               core.setFailed(`Gemini reply is not valid JSON: ${err.message}`);
               return;
@@ -195,7 +269,27 @@ jobs:
               core.setFailed('Gemini reply is not a JSON array.');
               return;
             }
-            triagedIssues.sort((a, b) => a.issue_number - b.issue_number)
+            // Drop non-object entries before sorting so one bad entry cannot
+            // abort the batch
+            triagedIssues = triagedIssues
+              .filter((issue) => issue && typeof issue === 'object')
+              .sort((a, b) => a.issue_number - b.issue_number)
+            // Assignment is best effort: without the App token or the scripts
+            // it is skipped, and labeling continues.
+            let assign = null;
+            let allowed = '';
+            if (process.env.HAS_APP_TOKEN !== 'true') {
+              core.info('No App token; skipping assignment.');
+            } else {
+              try {
+                const {allowedAssignees} = require('./.github/scripts/triage-candidates.js');
+                assign = require('./.github/scripts/triage-assign.js');
+                allowed = (await allowedAssignees({github, core})).join(',');
+              } catch (err) {
+                assign = null;
+                core.warning(`Assignment disabled: ${err.message}`);
+              }
+            }
             core.debug(`Triaged issues: ${JSON.stringify(triagedIssues)}`);
             // Iterate over each label
             for (const issue of triagedIssues) {
@@ -214,8 +308,8 @@ jobs:
               }
               // Extract and reject invalid labels - we do this just in case
               // someone was able to prompt inject malicious labels.
-              let labelsToSet = (issue.labels_to_set || [])
-                .map((label) => label.trim())
+              let labelsToSet = (Array.isArray(issue.labels_to_set) ? issue.labels_to_set : [])
+                .map((label) => String(label).replace(/`/g, '').trim())
                 .filter((label) => availableLabels.includes(label))
                 .sort()
               core.debug(`Identified labels to set: ${JSON.stringify(labelsToSet)}`);
@@ -230,4 +324,21 @@ jobs:
                 issue_number: issueNumber,
                 labels: labelsToSet,
               });
+              // Assignment is best effort; a failure must not stop the batch.
+              try {
+                if (assign) {
+                  await assign({
+                    github,
+                    context,
+                    core,
+                    issueNumber: Number(issueNumber),
+                    labels: labelsToSet,
+                    primaryLabel: String(issue.primary_label || '').replace(/`/g, '').trim(),
+                    assignee: issue.assignee,
+                    allowed,
+                  });
+                }
+              } catch (err) {
+                core.warning(`#${issueNumber}: assignment failed: ${err.message}`);
+              }
             }

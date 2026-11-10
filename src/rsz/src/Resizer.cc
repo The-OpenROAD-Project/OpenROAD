@@ -716,7 +716,7 @@ bool Resizer::bufferSizeOutmatched(sta::LibertyCell* worse,
   float extra_input_cap
       = std::max(bin->capacitance() - win->capacitance(), 0.0f);
   float delay_penalty = max_drive_resist * extra_input_cap;
-  float wlimit = maxLoad(network_->cell(worse));
+  float wlimit = outputMaxCap(network_->cell(worse));
 
   std::vector<float> test_points;
   populateBufferCapTestPoints(worse, win, wout, test_points);
@@ -1526,13 +1526,13 @@ sta::LibertyCell* Resizer::closestDriver(sta::LibertyCell* cell,
     return nullptr;
   }
   const auto output_pin = libraryOutputPins(cell)[0];
-  const auto current_limit = scale * maxLoad(output_pin->cell());
+  const auto current_limit = scale * outputMaxCap(output_pin->cell());
   auto diff = sta::INF;
   for (auto& cand : candidates) {
     if (dontUse(cand)) {
       continue;
     }
-    auto limit = maxLoad(libraryOutputPins(cand)[0]->cell());
+    auto limit = outputMaxCap(libraryOutputPins(cand)[0]->cell());
     if (limit == current_limit) {
       return cand;
     }
@@ -1545,42 +1545,55 @@ sta::LibertyCell* Resizer::closestDriver(sta::LibertyCell* cell,
   return closest;
 }
 
-float Resizer::maxLoad(sta::Cell* cell)
+float Resizer::outputMaxCap(sta::Cell* cell)
 {
+  return outputMaxCap(cell, sta_->cmdScene());
+}
+
+float Resizer::outputMaxCap(sta::Cell* cell, const sta::Scene* scene)
+{
+  // The first output with a limit.
   sta::LibertyCell* lib_cell = network_->libertyCell(cell);
-  auto min_max = sta::MinMax::max();
   sta::LibertyCellPortIterator itr(lib_cell);
   while (itr.hasNext()) {
     sta::LibertyPort* port = itr.next();
     if (port->direction()->isOutput()) {
-      float limit, limit1;
-      bool exists, exists1;
-      const sta::Scene* corner = sta_->cmdScene();
-      sta::Sdc* sdc = corner->sdc();
-      // Default to top ("design") limit.
-      sta::Cell* top_cell = network_->cell(network_->topInstance());
-      sdc->capacitanceLimit(top_cell, min_max, limit, exists);
-      sdc->capacitanceLimit(cell, min_max, limit1, exists1);
-
-      if (exists1 && (!exists || min_max->compare(limit, limit1))) {
-        limit = limit1;
-        exists = true;
-      }
-      sta::LibertyPort* corner_port = port->scenePort(corner, min_max);
-      corner_port->capacitanceLimit(min_max, limit1, exists1);
-      if (!exists1 && port->direction()->isAnyOutput()) {
-        corner_port->libertyLibrary()->defaultMaxCapacitance(limit1, exists1);
-      }
-      if (exists1 && (!exists || min_max->compare(limit, limit1))) {
-        limit = limit1;
-        exists = true;
-      }
-      if (exists) {
+      const float limit = outputMaxCap(port, scene);
+      if (limit > 0.0) {
         return limit;
       }
     }
   }
   return 0;
+}
+
+float Resizer::outputMaxCap(const sta::LibertyPort* port,
+                            const sta::Scene* scene)
+{
+  const sta::MinMax* min_max = sta::MinMax::max();
+  float limit, limit1;
+  bool exists, exists1;
+  sta::Sdc* sdc = scene->sdc();
+  // Default to top ("design") limit.
+  sta::Cell* top_cell = network_->cell(network_->topInstance());
+  sdc->capacitanceLimit(top_cell, min_max, limit, exists);
+  sdc->capacitanceLimit(
+      network_->cell(port->libertyCell()), min_max, limit1, exists1);
+
+  if (exists1 && (!exists || min_max->compare(limit, limit1))) {
+    limit = limit1;
+    exists = true;
+  }
+  const sta::LibertyPort* corner_port = port->scenePort(scene, min_max);
+  corner_port->capacitanceLimit(min_max, limit1, exists1);
+  if (!exists1 && port->direction()->isAnyOutput()) {
+    corner_port->libertyLibrary()->defaultMaxCapacitance(limit1, exists1);
+  }
+  if (exists1 && (!exists || min_max->compare(limit, limit1))) {
+    limit = limit1;
+    exists = true;
+  }
+  return exists ? limit : 0.0;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -5770,7 +5783,16 @@ void Resizer::computeSkewBudget(const SkewBudgetOptions& opts)
   std::vector<PinLatency> orig_pin_latency(ck_pins.size(), PinLatency{});
   std::vector<PinLatencySet> orig_pin_latency_set(ck_pins.size(),
                                                   PinLatencySet{});
+  // A pin-level set_propagated_clock is mutually exclusive with
+  // set_clock_latency on the same pin, so the LP's setClockLatency calls below
+  // strip it. Capture it here (before the cutting-plane loop) so
+  // restore_pin_latency can re-apply it afterwards.
+  std::vector<bool> orig_pin_propagated(ck_pins.size(), false);
   for (int i = 0; i < static_cast<int>(ck_pins.size()); ++i) {
+    // Read the raw SDC annotation (the source of truth setClockLatency
+    // strips), not Sta::isPropagatedClock, which queries the derived clock
+    // network and is not current here.
+    orig_pin_propagated[i] = sdc->isPropagatedClock(ck_pins[i]);
     if (ck_propagated[i]) {
       // Max rise *clock-path* arrival at the CK pin. Sta::arrival()
       // would take the max over every tag, including non-clock paths
@@ -6237,6 +6259,10 @@ void Resizer::computeSkewBudget(const SkewBudgetOptions& opts)
   // would duplicate the original as a clock-specific annotation.
   auto restore_pin_latency = [&](int i) {
     sta_->removeClockLatency(ck_clocks[i], ck_pins[i], sdc);
+    // Restore the per-clock annotated latencies first. A pin can be propagated
+    // and still carry a clock-specific set_clock_latency: setPropagatedClock
+    // only strips the clock-agnostic (null-clock) latency, not per-clock ones,
+    // so the two can coexist and both must be put back.
     for (const sta::RiseFall* rf : sta::RiseFall::range()) {
       for (const sta::MinMax* mm : sta::MinMax::range()) {
         const size_t ri = rf->index();
@@ -6257,7 +6283,16 @@ void Resizer::computeSkewBudget(const SkewBudgetOptions& opts)
         }
       }
     }
+    // Re-apply pin-level set_propagated_clock last. setClockLatency above
+    // clears it as a side effect, and setPropagatedClock only removes the
+    // clock-agnostic latency, so the per-clock annotations restored above
+    // survive.
+    if (orig_pin_propagated[i]) {
+      sta_->setPropagatedClock(const_cast<sta::Pin*>(ck_pins[i]),
+                               sta_->cmdMode());
+    }
   };
+
   auto restore_initial_latencies = [&]() {
     for (int i = 0; i < static_cast<int>(ck_pins.size()); ++i) {
       restore_pin_latency(i);
