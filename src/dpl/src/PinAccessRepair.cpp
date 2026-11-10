@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <cstdlib>
 #include <exception>
+#include <map>
+#include <set>
 #include <tuple>
 #include <vector>
 
@@ -13,6 +15,7 @@
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/network.h"
+#include "odb/PtrSetMap.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -25,9 +28,16 @@ class PinAccessRepair
   {
   }
 
-  int run(int max_rounds)
+  int run(const int max_rounds,
+          const int recovery_attempts,
+          const int min_access_points)
   {
     initialize();
+    if (recovery_attempts > 0) {
+      recover(recovery_attempts, min_access_points);
+    }
+    const bool preserve_minimum
+        = recovery_attempts > 0 && min_access_points > 1;
     auto failures = scan();
     for (int round = 0; round < max_rounds && !failures.empty(); ++round) {
       std::vector<Move> moves;
@@ -38,26 +48,31 @@ class PinAccessRepair
         if (moves.empty()) {
           break;
         }
-        for (const Move& move : moves) {
-          const odb::Point location = dp_.getDplLocation(move.cell);
-          move.cell->getDbInst()->setLocation(location.x(), location.y());
-        }
+        writeLocations(moves);
         pa_->updateDirtyPinAccess();
-        // A move can change access for neighbors outside the moved batch.
-        auto next = scan();
-        const bool healthy_preserved = std::ranges::includes(
-            failures, next, [](const Node* lhs, const Node* rhs) {
-              return lhs->getDbInst()->getId() < rhs->getDbInst()->getId();
-            });
-        if (next.size() < failures.size() && healthy_preserved) {
-          failures = std::move(next);
-          continue;
+        if (!preserve_minimum || pa_->hasMinimumPinAccess(min_access_points)) {
+          // A move can change access for neighbors outside the moved batch.
+          auto next = scan();
+          const bool healthy_preserved = subset(next, failures);
+          if (next.size() < failures.size() && healthy_preserved) {
+            failures = std::move(next);
+            continue;
+          }
         }
       } catch (...) {
         const auto error = std::current_exception();
         restorePlacement(moves);
         try {
           pa_->updateDirtyPinAccess();
+          if (preserve_minimum
+              && !pa_->hasMinimumPinAccess(min_access_points)) {
+            dp_.logger_->warn(
+                utl::DPL,
+                519,
+                "Pin access repair restored placement, but the native access "
+                "point minimum {} was not restored.",
+                min_access_points);
+          }
         } catch (const std::exception& rollback_error) {
           dp_.logger_->warn(utl::DPL,
                             513,
@@ -69,6 +84,13 @@ class PinAccessRepair
       }
       restorePlacement(moves);
       pa_->updateDirtyPinAccess();
+      if (preserve_minimum && !pa_->hasMinimumPinAccess(min_access_points)) {
+        dp_.logger_->error(utl::DPL,
+                           520,
+                           "Pin access repair could not restore the native "
+                           "access point minimum {} after restoring placement.",
+                           min_access_points);
+      }
       break;
     }
     if (!failures.empty()) {
@@ -88,6 +110,144 @@ class PinAccessRepair
     odb::Point location;
     odb::dbOrientType orient;
   };
+
+  struct RecoveryTrials
+  {
+    int attempts = 0;
+    std::set<std::pair<int, int>> sites;
+  };
+
+  static bool subset(const odb::PtrSet<odb::dbITerm>& next,
+                     const odb::PtrSet<odb::dbITerm>& previous)
+  {
+    return std::ranges::includes(previous, next, previous.key_comp());
+  }
+
+  static bool subset(const std::vector<Node*>& next,
+                     const std::vector<Node*>& previous)
+  {
+    return std::ranges::includes(
+        previous, next, [](const Node* lhs, const Node* rhs) {
+          return lhs->getDbInst()->getId() < rhs->getDbInst()->getId();
+        });
+  }
+
+  void writeLocations(const std::vector<Move>& moves)
+  {
+    for (const Move& move : moves) {
+      const odb::Point location = dp_.getDplLocation(move.cell);
+      move.cell->getDbInst()->setLocation(location.x(), location.y());
+    }
+  }
+
+  void recover(const int max_attempts, const int min_access_points)
+  {
+    std::vector<Move> originals;
+    std::map<Node*, RecoveryTrials> trials;
+    try {
+      const auto initial = pa_->beginPinAccessRecovery(min_access_points);
+      odb::PtrSet<odb::dbITerm> missing(initial.begin(), initial.end());
+      if (missing.empty()) {
+        if (!pa_->hasPinAccess()) {
+          dp_.logger_->error(
+              utl::DPL, 517, "Pin access recovery did not publish access.");
+        }
+        return;
+      }
+      auto failures = scan();
+      while (!missing.empty()) {
+        std::set<Node*> missing_cells;
+        for (auto* pin : missing) {
+          missing_cells.insert(dp_.network_->getNode(pin->getInst()));
+        }
+        std::vector<Move> moves;
+        for (Node* cell : cells_) {
+          if (missing_cells.contains(cell) && !cell->isFixed()) {
+            recoverySearch(cell, max_attempts, trials[cell], originals, moves);
+          }
+        }
+        if (moves.empty()) {
+          break;
+        }
+        writeLocations(moves);
+        const auto updated = pa_->updatePinAccessRecovery();
+        odb::PtrSet<odb::dbITerm> next(updated.begin(), updated.end());
+        auto next_failures = scan();
+        if (next.size() < missing.size() && subset(next, missing)
+            && subset(next_failures, failures)) {
+          missing = std::move(next);
+          failures = std::move(next_failures);
+          continue;
+        }
+        restorePlacement(moves);
+        const auto restored = pa_->updatePinAccessRecovery();
+        if (odb::PtrSet<odb::dbITerm>(restored.begin(), restored.end())
+                != missing
+            || !subset(scan(), failures)) {
+          dp_.logger_->error(
+              utl::DPL,
+              518,
+              "Pin access recovery could not restore its previous access.");
+        }
+      }
+      if (!missing.empty()) {
+        dp_.logger_->error(
+            utl::DPL,
+            516,
+            "Pin access recovery stopped with {} pins below {} native access "
+            "points after at most {} attempts per cell.",
+            missing.size(),
+            min_access_points,
+            max_attempts);
+      }
+      pa_->finishPinAccessRecovery();
+    } catch (...) {
+      // Detach native callbacks before restoring placement after a failed
+      // recovery.
+      pa_->cancelPinAccessRecovery();
+      restorePlacement(originals);
+      throw;
+    }
+  }
+
+  void recoverySearch(Node* cell,
+                      const int max_attempts,
+                      RecoveryTrials& trials,
+                      std::vector<Move>& originals,
+                      std::vector<Move>& moves)
+  {
+    if (trials.attempts >= max_attempts) {
+      return;
+    }
+    auto* inst = cell->getDbInst();
+    const GridPt old{dp_.grid_->gridX(cell), dp_.grid_->gridSnapDownY(cell)};
+    const auto orient = cell->getOrient();
+    const auto candidates = candidateSites(cell);
+    if (trials.sites.empty()) {
+      trials.sites.emplace(old.x.v, old.y.v);
+      originals.push_back({cell, old, inst->getLocation(), orient});
+    }
+    // Record the active trial before unplacing so every exception can roll
+    // back.
+    moves.push_back({cell, old, inst->getLocation(), orient});
+    dp_.unplaceCell(cell);
+    for (const auto& candidate : candidates) {
+      const GridX gx{std::get<2>(candidate)};
+      const GridY gy{std::get<1>(candidate)};
+      if (trials.sites.contains({gx.v, gy.v})
+          || !legalCandidate(cell, gx, gy, orient)) {
+        continue;
+      }
+      trials.sites.emplace(gx.v, gy.v);
+      ++trials.attempts;
+      dp_.placeCell(cell, gx, gy);
+      cell->setOrient(orient);
+      return;
+    }
+    dp_.placeCell(cell, old.x, old.y);
+    cell->setOrient(orient);
+    moves.pop_back();
+  }
 
   void initialize()
   {
@@ -227,19 +387,24 @@ class PinAccessRepair
 int Opendp::repairPinAccess(drt::PinAccessService* pa,
                             const int max_displacement_x,
                             const int max_displacement_y,
-                            const int max_rounds)
+                            const int max_rounds,
+                            const int recovery_attempts,
+                            const int min_access_points)
 {
-  if (pa == nullptr || !pa->hasPinAccess()) {
+  if (pa == nullptr || (recovery_attempts == 0 && !pa->hasPinAccess())) {
     logger_->error(
         utl::DPL,
         510,
         "repair_pin_access requires successful current live pin access.");
   }
-  if (max_displacement_x < 0 || max_displacement_y < 0 || max_rounds < 1) {
-    logger_->error(utl::DPL,
-                   511,
-                   "Pin access repair requires nonnegative displacement and "
-                   "positive rounds.");
+  if (max_displacement_x < 0 || max_displacement_y < 0 || max_rounds < 1
+      || recovery_attempts < 0 || min_access_points < 1) {
+    logger_->error(
+        utl::DPL,
+        511,
+        "Pin access repair requires nonnegative displacement and "
+        "positive rounds, nonnegative recovery attempts, and a positive "
+        "native access point minimum.");
   }
   if (db_->getChip() == nullptr || db_->getChip()->getBlock() == nullptr) {
     logger_->error(utl::DPL, 512, "Pin access repair requires a loaded block.");
@@ -247,13 +412,15 @@ int Opendp::repairPinAccess(drt::PinAccessService* pa,
   if (db_->getChip()->getBlock()->getRows().empty()) {
     logger_->error(utl::DPL, 515, "Pin access repair requires placement rows.");
   }
-  pa->updateDirtyPinAccess();
+  if (recovery_attempts == 0) {
+    pa->updateDirtyPinAccess();
+  }
   try {
     // Fixed physical cells can lie outside placement rows.
     checkPlacement(false, "", false, true);
     const int remaining
         = PinAccessRepair(*this, pa, max_displacement_x, max_displacement_y)
-              .run(max_rounds);
+              .run(max_rounds, recovery_attempts, min_access_points);
     grid_->releasePixels();
     return remaining;
   } catch (...) {

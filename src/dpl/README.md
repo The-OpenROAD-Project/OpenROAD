@@ -85,7 +85,7 @@ supply bindings.
 ### Repair Pin Access
 
 The `repair_pin_access` command moves standard cells with unusable pin access to
-nearby legal sites. Run successful `pin_access` in the current session first.
+nearby legal sites, recovering missing native access before repairing geometry.
 DRT checks each candidate against routing rules and fixed supply geometry.
 The command preserves orientation, placement constraints, and usable access in
 previously healthy cells. It returns the number of unresolved cells.
@@ -94,12 +94,20 @@ previously healthy cells. It returns the number of unresolved cells.
 repair_pin_access
     [-max_displacement {sites rows}]
     [-max_rounds count]
+    [-recovery_attempts count]
+    [-min_access_points count]
 ```
 
 | Option | Description |
 | ----- | ----- |
 | `-max_displacement` | Nonnegative displacement from the input placement, in sites and rows. Default: `{20 2}`. |
-| `-max_rounds` | Positive maximum number of improving move batches. Default: `3`. |
+| `-max_rounds` | Positive maximum number of improving geometry repair batches. Default: `3`. |
+| `-recovery_attempts` | Maximum native recovery trials per cell. Default: `3`; `0` requires successful current `pin_access` and disables recovery. |
+| `-min_access_points` | Positive native access point count required per standard-cell pin. Default: `1`. |
+
+Later incremental pin access uses the same standard-cell target.
+
+Example: `repair_pin_access -recovery_attempts 3 -min_access_points 2`.
 
 ### Set Placement Padding
 

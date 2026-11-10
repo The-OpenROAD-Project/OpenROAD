@@ -126,12 +126,24 @@ class FlexPA
   void removeFromInstsSet(frInst* inst);
   void addToInstsSet(frInst* inst);
 
+  void setRecoveryMinimum(int minimum)
+  {
+    recovery_min_access_points_ = minimum;
+  }
+  int getRecoveryMinimum() const { return recovery_min_access_points_; }
+  bool hasDirtyInsts() const { return !dirty_insts_.empty(); }
+  void initRecovery();
+  void regenerateDeficientClasses();
+  std::vector<odb::dbITerm*> findDeficientITerms(int minimum);
+  void finishRecovery();
   int main();
   bool hasUsablePinAccess(odb::dbInst* inst,
                           const odb::Point& candidate_location);
   std::unique_ptr<FlexPA> makeQueryWorker() const;
 
  private:
+  void resetClassAccessPoints(UniqueClass* unique_class);
+  int recovery_min_access_points_{0};
   bool signalPinsOverlapSupply(frInst* candidate);
 
   frDesign* design_;

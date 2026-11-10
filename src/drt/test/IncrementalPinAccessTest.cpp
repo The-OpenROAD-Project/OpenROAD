@@ -1,17 +1,23 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <algorithm>
 #include <cstdio>
 #include <fstream>
 #include <memory>
+#include <stdexcept>
 #include <vector>
 
 #include "AbstractGraphicsFactory.h"
+#include "db/obj/frInst.h"
+#include "db/obj/frInstTerm.h"
+#include "db/obj/frMPin.h"
 #include "drt-global.h"
 #include "drt/TritonRoute.h"
 #include "dst/Distributed.h"
 #include "frDesign.h"
 #include "gtest/gtest.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/defin.h"
 #include "tst/db_fixture.h"
@@ -86,10 +92,386 @@ class IncrementalPinAccessTest : public tst::DbFixture
     return neighbor;
   }
 
+  int nativeCount(odb::dbITerm* term)
+  {
+    auto* inst = router_.getDesign()->getTopBlock()->findInst(term->getInst());
+    for (const auto& native_term : inst->getInstTerms()) {
+      if (native_term->getTerm()->getName() == term->getMTerm()->getName()) {
+        int count = 0;
+        for (const auto& pin : native_term->getTerm()->getPins()) {
+          count += pin->getPinAccess(inst->getPinAccessIdx())
+                       ->getNumAccessPoints();
+        }
+        return count;
+      }
+    }
+    ADD_FAILURE() << "Missing native term " << term->getName();
+    return 0;
+  }
+
+  void replacePinShape(odb::dbITerm* term, const odb::Rect& shape)
+  {
+    auto* original = term->getInst()->getMaster();
+    auto* replacement
+        = odb::dbMaster::create(original->getLib(), "phase_cell_variant");
+    replacement->setWidth(original->getWidth());
+    replacement->setHeight(original->getHeight());
+    replacement->setType(original->getType());
+    replacement->setSite(original->getSite());
+    const auto origin = original->getOrigin();
+    replacement->setOrigin(origin.x(), origin.y());
+    for (auto* old_term : original->getMTerms()) {
+      auto* new_term = odb::dbMTerm::create(replacement,
+                                            old_term->getConstName(),
+                                            old_term->getIoType(),
+                                            old_term->getSigType());
+      for (auto* old_pin : old_term->getMPins()) {
+        auto* new_pin = odb::dbMPin::create(new_term);
+        for (auto* box : old_pin->getGeometry()) {
+          const auto rectangle
+              = old_term == term->getMTerm() ? shape : box->getBox();
+          odb::dbBox::create(new_pin,
+                             box->getTechLayer(),
+                             rectangle.xMin(),
+                             rectangle.yMin(),
+                             rectangle.xMax(),
+                             rectangle.yMax());
+        }
+      }
+    }
+    replacement->setFrozen();
+    for (auto* inst : db_->getChip()->getBlock()->getInsts()) {
+      if (inst->getMaster() == original) {
+        ASSERT_TRUE(inst->swapMaster(replacement));
+      }
+    }
+  }
+
   dst::Distributed dist_{&logger_};
   utl::ServiceRegistry services_{&logger_};
   TritonRoute router_{db_.get(), &logger_, &services_, &dist_, nullptr};
 };
+
+TEST_F(IncrementalPinAccessTest, ColdRecoveryKeepsPartialAccessPrivate)
+{
+  auto* block = db_->getChip()->getBlock();
+  auto* inst = block->findInst("u");
+  auto* missing = inst->findITerm("A");
+  inst->setLocation(700, 0);
+  EXPECT_EQ(router_.beginPinAccessRecovery(1),
+            std::vector<odb::dbITerm*>{missing});
+  EXPECT_FALSE(router_.hasPinAccess());
+  EXPECT_TRUE(block->getAccessPoints().empty());
+  EXPECT_EQ(nativeCount(missing), 0);
+  EXPECT_GT(nativeCount(block->findInst("v")->findITerm("A")), 0);
+  EXPECT_TRUE(router_.hasUsablePinAccess(inst, odb::Point(0, 0)));
+  inst->setLocation(1100, 0);
+  ASSERT_NO_THROW(router_.updateDirtyPinAccess());
+  EXPECT_FALSE(router_.hasPinAccess());
+  EXPECT_TRUE(block->getAccessPoints().empty());
+  EXPECT_EQ(router_.updatePinAccessRecovery(),
+            std::vector<odb::dbITerm*>{missing});
+  inst->setLocation(0, 0);
+  EXPECT_TRUE(router_.updatePinAccessRecovery().empty());
+  EXPECT_FALSE(router_.hasPinAccess());
+  EXPECT_TRUE(block->getAccessPoints().empty());
+  ASSERT_NO_THROW(router_.finishPinAccessRecovery());
+  EXPECT_TRUE(router_.hasPinAccess());
+  EXPECT_FALSE(missing->getPrefAccessPoints().empty());
+}
+
+TEST_F(IncrementalPinAccessTest, ColdRecoveryContinuesAfterZeroAccessTerm)
+{
+  auto* block = db_->getChip()->getBlock();
+  auto* inst = block->findInst("u");
+  auto* missing = inst->findITerm("B");
+  missing->connect(block->findNet("n2"));
+  replacePinShape(missing, odb::Rect(450, 400, 550, 600));
+  EXPECT_EQ(router_.beginPinAccessRecovery(1),
+            std::vector<odb::dbITerm*>{missing});
+  EXPECT_EQ(nativeCount(missing), 0);
+  EXPECT_GT(nativeCount(inst->findITerm("A")), 0);
+  EXPECT_GT(nativeCount(block->findInst("v")->findITerm("A")), 0);
+  EXPECT_TRUE(block->getAccessPoints().empty());
+  router_.cancelPinAccessRecovery();
+}
+
+TEST_F(IncrementalPinAccessTest, ReadyRecoveryFastPathPreservesAccess)
+{
+  auto* inst = db_->getChip()->getBlock()->findInst("u");
+  ASSERT_NO_THROW(router_.pinAccess());
+  auto* term = inst->findITerm("A");
+  const auto preferred = term->getPrefAccessPoints();
+  const auto catalogue = term->getAccessPoints();
+  auto* native = router_.getDesign()->getTopBlock()->findInst(inst);
+  auto* pin = native->getInstTerm(term->getMTerm()->getIndex())
+                  ->getTerm()
+                  ->getPins()
+                  .front()
+                  .get();
+  auto* access
+      = pin->getPinAccess(native->getPinAccessIdx())->getAccessPoint(0);
+  ASSERT_FALSE(router_.hasUsablePinAccess(inst, inst->getLocation()));
+  EXPECT_TRUE(router_.beginPinAccessRecovery(1).empty());
+  EXPECT_TRUE(router_.hasPinAccess());
+  EXPECT_EQ(pin->getPinAccess(native->getPinAccessIdx())->getAccessPoint(0),
+            access);
+  EXPECT_EQ(term->getPrefAccessPoints(), preferred);
+  EXPECT_EQ(term->getAccessPoints(), catalogue);
+}
+
+TEST_F(IncrementalPinAccessTest, RecoveryRaisesGenerationTargetWithoutMoving)
+{
+  auto* block = db_->getChip()->getBlock();
+  auto* inst = block->findInst("u");
+  auto* term = inst->findITerm("A");
+  replacePinShape(term, odb::Rect(350, 200, 450, 800));
+  ASSERT_NO_THROW(router_.pinAccess());
+  const int available = nativeCount(term);
+  auto* cfg = router_.getRouterConfiguration();
+  const auto native_minimum = cfg->MINNUMACCESSPOINT_STDCELLPIN;
+  const auto macro_minimum = cfg->MINNUMACCESSPOINT_MACROCELLPIN;
+  auto* native = router_.getDesign()->getTopBlock()->findInst(inst);
+  auto* access = native->getInstTerm(term->getMTerm()->getIndex())
+                     ->getTerm()
+                     ->getPins()
+                     .front()
+                     ->getPinAccess(native->getPinAccessIdx());
+  auto* first = access->getAccessPoint(0);
+  ASSERT_GT(available, native_minimum);
+  EXPECT_TRUE(router_.beginPinAccessRecovery(available).empty());
+  EXPECT_EQ(access->getAccessPoint(0), first);
+  EXPECT_EQ(cfg->MINNUMACCESSPOINT_STDCELLPIN, available);
+  EXPECT_EQ(cfg->MINNUMACCESSPOINT_MACROCELLPIN, macro_minimum);
+  const int minimum = available + 1;
+  EXPECT_TRUE(router_.beginPinAccessRecovery(minimum).empty());
+  EXPECT_TRUE(router_.hasPinAccess());
+  EXPECT_GE(nativeCount(term), minimum);
+  EXPECT_EQ(inst->getLocation(), odb::Point(400, 0));
+  EXPECT_EQ(block->findInst("v")->getLocation(), odb::Point(4400, 0));
+  EXPECT_EQ(router_.getRouterConfiguration()->MINNUMACCESSPOINT_STDCELLPIN,
+            std::max(native_minimum, minimum));
+  EXPECT_EQ(cfg->MINNUMACCESSPOINT_MACROCELLPIN, macro_minimum);
+  EXPECT_TRUE(router_.hasMinimumPinAccess(minimum));
+  EXPECT_FALSE(router_.hasMinimumPinAccess(100));
+}
+
+TEST_F(IncrementalPinAccessTest, RecoveryResetsOldAndNewClassRequirements)
+{
+  auto* block = db_->getChip()->getBlock();
+  auto* moving = block->findInst("u");
+  auto* remaining = block->findInst("v");
+  auto* moving_a = moving->findITerm("A");
+  auto* moving_b = moving->findITerm("B");
+  auto* remaining_a = remaining->findITerm("A");
+  moving_b->connect(block->findNet("n2"));
+  const odb::PtrSet<odb::dbITerm> all_required{moving_a, moving_b, remaining_a};
+  const auto initial_missing = router_.beginPinAccessRecovery(100);
+  EXPECT_EQ(
+      odb::PtrSet<odb::dbITerm>(initial_missing.begin(), initial_missing.end()),
+      all_required);
+  auto* old_native = router_.getDesign()->getTopBlock()->findInst(remaining);
+  const int old_index = old_native->getPinAccessIdx();
+  auto* old_a_access
+      = old_native->getInstTerm(remaining_a->getMTerm()->getIndex())
+            ->getTerm()
+            ->getPins()
+            .front()
+            ->getPinAccess(old_index);
+  auto* old_b_access = old_native->getInstTerm(moving_b->getMTerm()->getIndex())
+                           ->getTerm()
+                           ->getPins()
+                           .front()
+                           ->getPinAccess(old_index);
+  ASSERT_GT(old_b_access->getNumAccessPoints(), 0);
+  moving->setLocation(700, 0);
+  const auto moved_missing = router_.updatePinAccessRecovery();
+  EXPECT_EQ(
+      odb::PtrSet<odb::dbITerm>(moved_missing.begin(), moved_missing.end()),
+      all_required);
+  EXPECT_EQ(old_b_access->getNumAccessPoints(), 0);
+  EXPECT_GT(old_a_access->getNumAccessPoints(), 0);
+  auto* moved_native = router_.getDesign()->getTopBlock()->findInst(moving);
+  auto* moved_b_access
+      = moved_native->getInstTerm(moving_b->getMTerm()->getIndex())
+            ->getTerm()
+            ->getPins()
+            .front()
+            ->getPinAccess(moved_native->getPinAccessIdx());
+  ASSERT_GT(moved_b_access->getNumAccessPoints(), 0);
+  for (const auto& ap : moved_b_access->getAccessPoints()) {
+    EXPECT_TRUE(odb::Rect(750, 200, 1050, 400).intersects(ap->getPoint()));
+  }
+  moving_b->disconnect();
+  moving->setLocation(1100, 0);
+  const odb::PtrSet<odb::dbITerm> remaining_required{moving_a, remaining_a};
+  const auto disconnected_missing = router_.updatePinAccessRecovery();
+  EXPECT_EQ(odb::PtrSet<odb::dbITerm>(disconnected_missing.begin(),
+                                      disconnected_missing.end()),
+            remaining_required);
+  EXPECT_EQ(nativeCount(moving_b), 0);
+  remaining->setLocation(4700, 0);
+  const auto empty_class_missing = router_.updatePinAccessRecovery();
+  EXPECT_EQ(odb::PtrSet<odb::dbITerm>(empty_class_missing.begin(),
+                                      empty_class_missing.end()),
+            remaining_required);
+  EXPECT_EQ(old_a_access->getNumAccessPoints(), 0);
+  EXPECT_EQ(old_b_access->getNumAccessPoints(), 0);
+  router_.cancelPinAccessRecovery();
+}
+
+TEST_F(IncrementalPinAccessTest, RecoveryCountsAllMPinsAndSkipsSupply)
+{
+  auto* block = db_->getChip()->getBlock();
+  auto* inst = block->findInst("u");
+  auto* term = inst->findITerm("A");
+  replacePinShape(term, odb::Rect(350, 450, 450, 550));
+  auto* pin = odb::dbMPin::create(term->getMTerm());
+  odb::dbBox::create(pin, db_->getTech()->findLayer("M1"), 750, 650, 850, 750);
+  auto* skipped = inst->findITerm("B");
+  skipped->getMTerm()->setSigType(odb::dbSigType::POWER);
+  skipped->connect(block->findNet("VDD"));
+  EXPECT_TRUE(router_.beginPinAccessRecovery(2).empty());
+  EXPECT_TRUE(router_.hasPinAccess());
+  EXPECT_EQ(nativeCount(term), 2);
+  auto* native = router_.getDesign()->getTopBlock()->findInst(inst);
+  for (const auto& native_pin :
+       native->getInstTerm(term->getMTerm()->getIndex())
+           ->getTerm()
+           ->getPins()) {
+    EXPECT_EQ(native_pin->getPinAccess(native->getPinAccessIdx())
+                  ->getNumAccessPoints(),
+              1);
+  }
+  EXPECT_EQ(nativeCount(skipped), 0);
+}
+
+TEST_F(IncrementalPinAccessTest, CancelRecoveryRebuildsNormally)
+{
+  auto* block = db_->getChip()->getBlock();
+  auto* inst = block->findInst("u");
+  ASSERT_FALSE(router_.beginPinAccessRecovery(100).empty());
+  auto* scratch = router_.getDesign();
+  inst->setLocation(700, 0);
+  router_.cancelPinAccessRecovery();
+  router_.cancelPinAccessRecovery();
+  EXPECT_EQ(router_.getDesign(), scratch);
+  EXPECT_FALSE(router_.hasPinAccess());
+  EXPECT_FALSE(router_.hasUsablePinAccess(inst, odb::Point(0, 0)));
+  inst->setLocation(400, 0);
+  ASSERT_NO_THROW(router_.pinAccess());
+  EXPECT_TRUE(router_.hasPinAccess());
+  ASSERT_FALSE(router_.beginPinAccessRecovery(100).empty());
+  block->clear();
+  EXPECT_FALSE(router_.hasPinAccess());
+  EXPECT_THROW(router_.updatePinAccessRecovery(), std::logic_error);
+  EXPECT_NO_THROW(router_.cancelPinAccessRecovery());
+}
+
+TEST_F(IncrementalPinAccessTest, RecoveryGenerationFailureInvalidatesScratch)
+{
+  auto* block = db_->getChip()->getBlock();
+  auto* pin = *block->findBTerm("OUT")->getBPins().begin();
+  while (!pin->getBoxes().empty()) {
+    odb::dbBox::destroy(*pin->getBoxes().begin());
+  }
+  EXPECT_LOGGER_ERROR(router_.beginPinAccessRecovery(1), "DRT-0074");
+  EXPECT_NE(router_.getDesign(), nullptr);
+  EXPECT_FALSE(router_.hasPinAccess());
+  EXPECT_NO_THROW(router_.cancelPinAccessRecovery());
+  odb::dbBox::create(
+      pin, db_->getTech()->findLayer("M2"), 1550, 400, 1650, 600);
+  ASSERT_NO_THROW(router_.pinAccess());
+  EXPECT_TRUE(router_.hasPinAccess());
+}
+
+TEST_F(IncrementalPinAccessTest, ActiveRecoveryPreservesPublishedDbAccess)
+{
+  auto* block = db_->getChip()->getBlock();
+  auto* inst = block->findInst("u");
+  auto* term = inst->findITerm("A");
+  ASSERT_NO_THROW(router_.pinAccess());
+  const auto minimum
+      = router_.getRouterConfiguration()->MINNUMACCESSPOINT_STDCELLPIN;
+  const auto preferred = term->getPrefAccessPoints();
+  const auto catalogue = term->getAccessPoints();
+  std::vector<std::pair<odb::dbAccessPoint*, odb::Point>> published;
+  for (auto* point : block->getAccessPoints()) {
+    published.emplace_back(point, point->getPoint());
+  }
+  auto check_published = [&]() {
+    EXPECT_FALSE(router_.hasPinAccess());
+    EXPECT_EQ(router_.getRouterConfiguration()->MINNUMACCESSPOINT_STDCELLPIN,
+              minimum);
+    EXPECT_EQ(term->getPrefAccessPoints(), preferred);
+    EXPECT_EQ(term->getAccessPoints(), catalogue);
+    EXPECT_EQ(block->getAccessPoints().size(), published.size());
+    for (const auto& [point, location] : published) {
+      EXPECT_EQ(point->getPoint(), location);
+    }
+  };
+  ASSERT_FALSE(router_.beginPinAccessRecovery(100).empty());
+  check_published();
+  inst->setLocation(700, 0);
+  ASSERT_NO_THROW(router_.updateDirtyPinAccess());
+  check_published();
+  router_.cancelPinAccessRecovery();
+  check_published();
+}
+
+TEST_F(IncrementalPinAccessTest, RecoveryRejectsMacroWithoutAccess)
+{
+  auto* block = db_->getChip()->getBlock();
+  auto* master = odb::dbMaster::create(db_->findLib("test"), "missing_macro");
+  master->setType(odb::dbMasterType::BLOCK);
+  master->setWidth(1200);
+  master->setHeight(1000);
+  auto* a = odb::dbMTerm::create(
+      master, "A", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+  auto* b = odb::dbMTerm::create(
+      master, "B", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+  odb::dbBox::create(odb::dbMPin::create(b),
+                     db_->getTech()->findLayer("M1"),
+                     750,
+                     200,
+                     1050,
+                     400);
+  master->setFrozen();
+  auto* inst = block->findInst("u");
+  ASSERT_TRUE(inst->swapMaster(master));
+  EXPECT_LOGGER_ERROR(router_.beginPinAccessRecovery(1), "DRT-0073");
+  EXPECT_FALSE(router_.hasPinAccess());
+  EXPECT_NE(router_.getDesign(), nullptr);
+  odb::dbBox::create(odb::dbMPin::create(a),
+                     db_->getTech()->findLayer("M1"),
+                     350,
+                     400,
+                     450,
+                     600);
+  ASSERT_NO_THROW(router_.pinAccess());
+  EXPECT_TRUE(router_.hasPinAccess());
+}
+
+TEST_F(IncrementalPinAccessTest, RecoveryPatternBudgetFailureInvalidatesScratch)
+{
+  auto* block = db_->getChip()->getBlock();
+  auto* inst = block->findInst("u");
+  inst->setLocation(700, 0);
+  ASSERT_FALSE(router_.beginPinAccessRecovery(1).empty());
+  inst->setLocation(0, 0);
+  ASSERT_TRUE(router_.updatePinAccessRecovery().empty());
+  ASSERT_GT(nativeCount(inst->findITerm("A")), 0);
+  auto* cfg = router_.getRouterConfiguration();
+  const auto budget = cfg->ACCESS_PATTERN_END_ITERATION_NUM;
+  cfg->ACCESS_PATTERN_END_ITERATION_NUM = 0;
+  EXPECT_LOGGER_ERROR(router_.finishPinAccessRecovery(), "DRT-0085");
+  EXPECT_FALSE(router_.hasPinAccess());
+  EXPECT_TRUE(block->getAccessPoints().empty());
+  EXPECT_NE(router_.getDesign(), nullptr);
+  cfg->ACCESS_PATTERN_END_ITERATION_NUM = budget;
+  ASSERT_NO_THROW(router_.pinAccess());
+  EXPECT_TRUE(router_.hasPinAccess());
+}
 
 TEST_F(IncrementalPinAccessTest, QueryPreservesPublishedAccess)
 {

@@ -1247,7 +1247,9 @@ bool FlexPA::EnoughSparsePoints(
   }
 
   if (is_std_cell_pin
-      && n_sparse_access_points >= router_cfg_->MINNUMACCESSPOINT_STDCELLPIN) {
+      && n_sparse_access_points
+             >= std::max(router_cfg_->MINNUMACCESSPOINT_STDCELLPIN,
+                         recovery_min_access_points_)) {
     return true;
   }
   if (is_macro_cell_pin
@@ -1678,7 +1680,8 @@ void FlexPA::genInstAccessPoints(frInst* unique_inst)
     for (auto& pin : inst_term->getTerm()->getPins()) {
       n_aps += genPinAccess(pin.get(), inst_term.get());
     }
-    if (!n_aps) {
+    if (!n_aps
+        && !(recovery_min_access_points_ > 0 && isStdCell(unique_inst))) {
       logger_->error(DRT,
                      73,
                      "No access point for {}/{} ({}).",
@@ -1701,6 +1704,9 @@ void FlexPA::genAllAccessPoints()
 #pragma omp parallel for schedule(dynamic)
   for (const auto& unique_class : unique) {  // NOLINT
     try {
+      if (unique_class->getInsts().empty()) {
+        continue;
+      }
       auto candidate_inst = unique_class->getFirstInst();
       // only do for core and block cells
       if (!isStdCell(candidate_inst) && !isMacroCell(candidate_inst)) {

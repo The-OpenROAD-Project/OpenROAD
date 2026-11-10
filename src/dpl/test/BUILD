@@ -112,6 +112,7 @@ PASSFAIL_TESTS = [
     "repair_pin_access",
     "repair_pin_access_failure",
     "repair_pin_access_phase",
+    "repair_pin_access_zero_ap",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -335,6 +336,11 @@ filegroup(
             "repair_pin_access_failure": ["repair_pin_access_tech.lef"],
             "repair_pin_access_phase": [
                 "repair_pin_access_tech.lef",
+                "repair_pin_access_failure.def",
+            ],
+            "repair_pin_access_zero_ap": [
+                "repair_pin_access_tech.lef",
+                "repair_pin_access_failure.lef",
                 "repair_pin_access_failure.def",
             ],
         }.get(test_name, []),
