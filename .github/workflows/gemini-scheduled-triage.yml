@@ -180,6 +180,10 @@ jobs:
           # Overriding default telemetry inputs because scheduled workflows lack an event payload
           # We pass the dynamically generated list of batch issues to the issue number field
           github_issue_number: ${{ steps.find_issues.outputs.issue_numbers }}
+          # In GitHub Actions the CLI passes shell commands only its own list
+          # of environment variables, so the prompt's `!{echo $VAR}` reads
+          # any other variable, such as ASSIGNEE_CANDIDATES, as empty unless
+          # it is allowed here.
           settings: |-
             {
               "model": {
@@ -189,6 +193,13 @@ jobs:
                 "enabled": true,
                 "target": "local",
                 "outfile": ".gemini/telemetry.log"
+              },
+              "security": {
+                "environmentVariableRedaction": {
+                  "allowed": [
+                    "ASSIGNEE_CANDIDATES"
+                  ]
+                }
               },
               "tools": {
                 "core": [

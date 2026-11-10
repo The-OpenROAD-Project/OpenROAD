@@ -140,6 +140,10 @@ jobs:
           workflow_name: gemini-triage
           # Explicitly set the issue number to handle `issue_comment` triggers where the context might be ambiguous
           github_issue_number: ${{ github.event.issue.number }}
+          # In GitHub Actions the CLI passes shell commands only its own list
+          # of environment variables, so the prompt's `!{echo $VAR}` reads
+          # any other variable, such as ASSIGNEE_CANDIDATES, as empty unless
+          # it is allowed here.
           settings: |-
             {
               "model": {
@@ -149,6 +153,13 @@ jobs:
                 "enabled": true,
                 "target": "local",
                 "outfile": ".gemini/telemetry.log"
+              },
+              "security": {
+                "environmentVariableRedaction": {
+                  "allowed": [
+                    "ASSIGNEE_CANDIDATES"
+                  ]
+                }
               },
               "tools": {
                 "core": [
