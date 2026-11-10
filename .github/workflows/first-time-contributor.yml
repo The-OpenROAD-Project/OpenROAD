@@ -45,18 +45,20 @@ jobs:
             const isPR = context.eventName === 'pull_request_target';
             const item = isPR ? context.payload.pull_request : context.payload.issue;
             const {owner, repo} = context.repo;
-            // Count the author's earlier issues (or PRs). Bounding by creation
+            // A PR author is greeted on their first PR, whose message covers
+            // CI and review. An issue author is greeted only if they have
+            // opened nothing here before, issue or PR. Bounding by creation
             // time keeps the answer right even before the search index has
             // the new item.
             const q = [
               `repo:${owner}/${repo}`,
-              isPR ? 'is:pr' : 'is:issue',
+              ...(isPR ? ['is:pr'] : []),
               `author:${item.user.login}`,
               `created:<${item.created_at}`,
             ].join(' ');
             const {data} = await github.rest.search.issuesAndPullRequests({q, per_page: 1});
             if (data.total_count > 0) {
-              core.info(`${item.user.login} has ${data.total_count} earlier ${isPR ? 'PR' : 'issue'}(s); not greeting.`);
+              core.info(`${item.user.login} has ${data.total_count} earlier ${isPR ? 'PR(s)' : 'issue(s) or PR(s)'}; not greeting.`);
               return;
             }
             await github.rest.issues.createComment({
