@@ -5,6 +5,7 @@ import './setup-dom.js';
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { SelectionBrowser } from '../../src/selection-browser.js';
+import { makeFakeView } from './fake-view.js';
 
 const PALETTE = Array.from({ length: 16 }, (_, i) => [i, 2 * i, 3 * i, 100]);
 
@@ -35,12 +36,11 @@ function createMockApp(responses = {}) {
         },
         techData: { highlight_colors: PALETTE },
         designScale: 1,
-        designMaxDXDY: 100000,
         designOriginX: 0,
         designOriginY: 0,
         showDbu: true,
         getDbuPerMicron() { return 1000; },
-        map: { fitBounds() {} },
+        view: makeFakeView(),
         focusComponent() {},
         updateInspector() {},
         _requests: requests,
@@ -228,5 +228,16 @@ describe('SelectionBrowser lifecycle', () => {
         container.fire('destroy');
         assert.equal(browser._pendingRefresh, null,
                      'destroy cleared the pending timer');
+    });
+});
+
+describe('SelectionBrowser zoom', () => {
+    it('zooms to a row with the DRC widget margin', () => {
+        const app = createMockApp({ list_selection: () => LIST });
+        const browser = new SelectionBrowser(makeContainer(), app, () => {});
+        browser._zoomToBBox([100, 100, 300, 200]);
+        // margin = min(10 um, 2 * 200) = 400 DBU.
+        assert.deepEqual(app.view.calls.at(-1),
+                         ['fitWorldRect', [-300, -300, 700, 600], undefined]);
     });
 });

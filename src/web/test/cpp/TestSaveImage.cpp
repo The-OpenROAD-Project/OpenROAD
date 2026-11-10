@@ -693,9 +693,9 @@ std::vector<std::string> namesOf(const std::vector<PaintLayer>& order)
   return names;
 }
 
-// saveImage must composite in the same z order Leaflet stacks the layers in on
-// screen (display-controls.js addPseudoLayer), otherwise the saved PNG is not
-// the view the user was looking at.  Before the fix every pseudo layer was
+// saveImage must composite in the same z order the view stacks the layers in
+// on screen (the draw lists in display-controls.js), otherwise the saved PNG is
+// not the view the user was looking at.  Before the fix every pseudo layer was
 // appended after the tech layers, which put the manufacturing grid over the
 // routing and the pin markers over the tech layers (PR #10806 review).
 //

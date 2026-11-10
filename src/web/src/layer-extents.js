@@ -212,8 +212,8 @@ export class LayerExtents {
     }
 }
 
-// Whether a tile layer should request `layer` at `coords`.  `ctx` is a tile
-// layer's context ({ visibility, app }); app.layerExtents is absent until
+// Whether a tile source should request `layer` at `coords`.  `ctx` is the
+// tile request context ({ visibility, app }); app.layerExtents is absent until
 // main.js installs it, and in that case everything is requested.  `chiplet`
 // is the die a scoped row draws.
 export function tileMayHaveContent(ctx, layer, coords, chiplet) {

@@ -3,77 +3,48 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { dbuToLatLng, dbuRectToBounds, latLngToDbu } from '../../src/coordinates.js';
+import { dbuToWorld, worldToDbu, dbuRectToWorldRect }
+    from '../../src/coordinates.js';
 
-describe('dbuToLatLng', () => {
-    const scale = 1e-6;
-    const maxDXDY = 1000000;
-
-    it('converts origin', () => {
-        const [lat, lng] = dbuToLatLng(0, 0, scale, maxDXDY);
-        assert.equal(lng, 0);
-        assert.equal(lat, -maxDXDY * scale);
+// The layout view's world: (dbu - origin) * scale with y up, so the tile grid
+// is the square [0, tileSize] whatever the design's aspect.
+describe('dbuToWorld / worldToDbu', () => {
+    const scale = 240 / 1000;   // tile size 240 over a 1000-DBU grid
+    it('maps the grid origin to world (0, 0) and keeps y up', () => {
+        assert.deepEqual(dbuToWorld(500, 700, scale, 500, 700), [0, 0]);
+        assert.deepEqual(dbuToWorld(1500, 1700, scale, 500, 700), [240, 240]);
     });
 
-    it('converts max corner', () => {
-        const [lat, lng] = dbuToLatLng(maxDXDY, maxDXDY, scale, maxDXDY);
-        assert.equal(lat, 0);
-        assert.equal(lng, maxDXDY * scale);
+    it('round-trips to whole DBU', () => {
+        const [wx, wy] = dbuToWorld(1234, 567, scale, 100, 50);
+        assert.deepEqual(worldToDbu(wx, wy, scale, 100, 50),
+                         { dbuX: 1234, dbuY: 567 });
     });
 
-    it('converts mid-point', () => {
-        const mid = maxDXDY / 2;
-        const [lat, lng] = dbuToLatLng(mid, mid, scale, maxDXDY);
-        assert.equal(lat, -mid * scale);
-        assert.equal(lng, mid * scale);
+    it('turns two corners in any order into [minX, minY, maxX, maxY]', () => {
+        assert.deepEqual(dbuRectToWorldRect(1000, 0, 0, 500, scale),
+                         [0, 0, 240, 120]);
     });
 });
 
-describe('dbuRectToBounds', () => {
-    it('converts a rectangle', () => {
-        const scale = 1e-6;
-        const maxDXDY = 1000000;
-        const [[lat1, lng1], [lat2, lng2]] = dbuRectToBounds(
-            100, 200, 300, 400, scale, maxDXDY);
-        assert.equal(lng1, 100 * scale);
-        assert.equal(lng2, 300 * scale);
-        assert.equal(lat1, (200 - maxDXDY) * scale);
-        assert.equal(lat2, (400 - maxDXDY) * scale);
-    });
-});
-
-describe('latLngToDbu', () => {
-    it('converts back to dbu', () => {
-        const scale = 1e-6;
-        const maxDXDY = 1000000;
-        const { dbuX, dbuY } = latLngToDbu(-0.5, 0.25, scale, maxDXDY);
-        assert.equal(dbuX, Math.round(0.25 / scale));
-        assert.equal(dbuY, Math.round(maxDXDY + (-0.5) / scale));
-    });
-});
-
-describe('round-trip dbu ↔ latLng', () => {
-    it('preserves coordinates', () => {
-        const scale = 1e-6, maxDXDY = 500000;
-        const [lat, lng] = dbuToLatLng(12345, 67890, scale, maxDXDY);
-        const { dbuX, dbuY } = latLngToDbu(lat, lng, scale, maxDXDY);
-        assert.equal(dbuX, 12345);
-        assert.equal(dbuY, 67890);
-    });
-
+describe('round-trip dbu <-> world', () => {
     it('preserves zero', () => {
-        const scale = 1e-6, maxDXDY = 1000000;
-        const [lat, lng] = dbuToLatLng(0, 0, scale, maxDXDY);
-        const { dbuX, dbuY } = latLngToDbu(lat, lng, scale, maxDXDY);
-        assert.equal(dbuX, 0);
-        assert.equal(dbuY, 0);
+        const [wx, wy] = dbuToWorld(0, 0, 1e-6);
+        assert.deepEqual(worldToDbu(wx, wy, 1e-6), { dbuX: 0, dbuY: 0 });
     });
 
     it('preserves large values', () => {
-        const scale = 1e-6, maxDXDY = 10000000;
-        const [lat, lng] = dbuToLatLng(9999999, 9999999, scale, maxDXDY);
-        const { dbuX, dbuY } = latLngToDbu(lat, lng, scale, maxDXDY);
-        assert.equal(dbuX, 9999999);
-        assert.equal(dbuY, 9999999);
+        const scale = 240 / 1e7;
+        const [wx, wy] = dbuToWorld(9999999, 9999999, scale);
+        assert.deepEqual(worldToDbu(wx, wy, scale),
+                         { dbuX: 9999999, dbuY: 9999999 });
+    });
+
+    it('preserves negative coordinates below the origin', () => {
+        const scale = 240 / 1000;
+        const [wx, wy] = dbuToWorld(-50, 20, scale, 100, 100);
+        assert.ok(wx < 0 && wy < 0);
+        assert.deepEqual(worldToDbu(wx, wy, scale, 100, 100),
+                         { dbuX: -50, dbuY: 20 });
     });
 });

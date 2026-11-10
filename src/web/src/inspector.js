@@ -4,9 +4,11 @@
 // Inspector panel — property tree, hover highlights, bbox display,
 // property editing (server descriptor editors).
 
-import { dbuRectToBounds } from './coordinates.js';
-import { beginSelection, isCurrentSelection, isStaticMode, showConfirmModal,
-         showToast } from './ui-utils.js';
+import { dbuRectToWorldRect } from './coordinates.js';
+import { DRAW_ORDER, toRgba } from './layout-view.js';
+import { easeOutQuad } from './view-math.js';
+import { beginSelection, isCurrentSelection, isStaticMode,
+         prefersReducedMotion, showConfirmModal, showToast } from './ui-utils.js';
 
 // Delete: trash can (Material "delete")
 const DELETE_SVG =
@@ -181,9 +183,8 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             });
             if (!resp.ok && resp.error) showToast(resp.error);
             updateInspector(resp.properties ? resp : null);
-            if (resp.deleted && app.highlightRect && app.map) {
-                app.map.removeLayer(app.highlightRect);
-                app.highlightRect = null;
+            if (resp.deleted) {
+                clearSelectionOutline();
             }
             clearClientHoverHighlight();
             refreshOverlay();
@@ -327,11 +328,115 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
         if (lastInspectData) updateInspector(lastInspectData);
     }
 
-    function clearClientHoverHighlight() {
-        if (app.hoverHighlightLayer) {
-            app.map.removeLayer(app.hoverHighlightLayer);
-            app.hoverHighlightLayer = null;
+    // ─── Client-side shapes on the layout view ──────────────────────────
+    //
+    // The hover boxes, the selection outline, the selection pulse and the
+    // Qt-style selection animation.  Kept in DBU and turned into world shapes
+    // when drawn, so a zoom can recompute the minimum on-screen hover size.
+
+    function worldRect(x1, y1, x2, y2) {
+        return dbuRectToWorldRect(x1, y1, x2, y2, app.designScale,
+                                  app.designOriginX, app.designOriginY);
+    }
+
+    function lerp(a, b, t) {
+        return a + (b - a) * t;
+    }
+
+    function lerpColor(a, b, t) {
+        return a.map((v, i) => Math.round(lerp(v, b[i], t)));
+    }
+
+    // Value of a CSS-like keyframe list at fraction `t` of one cycle.
+    // `frames` is [{at, ...numbers or rgb arrays}], at in 0..1.
+    function keyframeAt(frames, t) {
+        let i = 0;
+        while (i < frames.length - 2 && t > frames[i + 1].at) {
+            i++;
         }
+        const a = frames[i];
+        const b = frames[i + 1];
+        const local = Math.max(0, Math.min(1, (t - a.at) / (b.at - a.at)));
+        const out = {};
+        for (const key of Object.keys(a)) {
+            if (key === 'at') continue;
+            out[key] = Array.isArray(a[key]) ? lerpColor(a[key], b[key], local)
+                : lerp(a[key], b[key], local);
+        }
+        return out;
+    }
+
+    // Run `draw(t)` every frame for `cycles` of `cycleMs`, then `done()`.
+    // Reduced motion jumps to the end, as the stylesheet's rule did.
+    function runKeyframes(cycleMs, cycles, draw, done) {
+        if (prefersReducedMotion()
+            || typeof requestAnimationFrame !== 'function') {
+            done();
+            return () => {};
+        }
+        const start = performance.now();
+        let stopped = false;
+        const step = () => {
+            if (stopped) return;
+            const elapsed = performance.now() - start;
+            if (elapsed >= cycleMs * cycles) {
+                done();
+                return;
+            }
+            draw((elapsed % cycleMs) / cycleMs);
+            requestAnimationFrame(step);
+        };
+        step();
+        return () => { stopped = true; };
+    }
+
+    function setShapes(id, shapes, order = DRAW_ORDER.highlight) {
+        if (app.view) {
+            app.view.setOverlay(id, shapes, { order });
+        }
+    }
+
+    // Hover boxes: at least kMinHoverBoxPixels on screen, so a tiny object
+    // still shows where it is.
+    let hoverRects = null;
+    let stopHoverPulse = () => {};
+    const HOVER_FILL = [255, 242, 122];
+    const HOVER_FRAMES = [
+        { at: 0, stroke: [255, 246, 176], width: 7, alpha: 1, fill: 0.28 },
+        { at: 0.55, stroke: [255, 255, 255], width: 5, alpha: 1, fill: 0.06 },
+        { at: 1, stroke: [255, 232, 92], width: 3, alpha: 0.95, fill: 0.14 },
+    ];
+    const HOVER_REST = { stroke: [255, 232, 92], width: 3, alpha: 1, fill: 0.14 };
+
+    function hoverWorldRect(x1, y1, x2, y2) {
+        const [x0, y0, x3, y3] = worldRect(x1, y1, x2, y2);
+        // The view scales world units by 2^zoom on both axes.
+        const min = kMinHoverBoxPixels / 2 ** app.view.getZoom();
+        const padX = Math.max(0, (min - (x3 - x0)) / 2);
+        const padY = Math.max(0, (min - (y3 - y0)) / 2);
+        return [x0 - padX, y0 - padY, x3 + padX, y3 + padY];
+    }
+
+    function drawHover(style) {
+        if (!hoverRects) return;
+        setShapes('hover', hoverRects.map(([x1, y1, x2, y2]) => ({
+            kind: 'rect',
+            rect: hoverWorldRect(x1, y1, x2, y2),
+            stroke: toRgba(style.stroke, style.alpha),
+            width: style.width,
+            fill: toRgba(HOVER_FILL, style.fill),
+        })));
+    }
+
+    function redrawHoverOnZoom() {
+        drawHover(HOVER_REST);
+    }
+
+    function clearClientHoverHighlight() {
+        stopHoverPulse();
+        hoverRects = null;
+        setShapes('hover', null);
+        app.view?.off('zoom', redrawHoverOnZoom);
     }
 
     function clearHoverHighlight() {
@@ -341,64 +446,16 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             .catch(() => {});
     }
 
-    function boundsWithMinimumScreenSize(x1, y1, x2, y2) {
-        const baseBounds = L.latLngBounds(
-            dbuRectToBounds(x1, y1, x2, y2, app.designScale, app.designMaxDXDY, app.designOriginX, app.designOriginY)
-        );
-        if (!app.map) {
-            return baseBounds;
-        }
-
-        const southWest = baseBounds.getSouthWest();
-        const northEast = baseBounds.getNorthEast();
-        const swPoint = app.map.latLngToContainerPoint(southWest);
-        const nePoint = app.map.latLngToContainerPoint(northEast);
-
-        const minX = Math.min(swPoint.x, nePoint.x);
-        const maxX = Math.max(swPoint.x, nePoint.x);
-        const minY = Math.min(swPoint.y, nePoint.y);
-        const maxY = Math.max(swPoint.y, nePoint.y);
-
-        let expandedMinX = minX;
-        let expandedMaxX = maxX;
-        let expandedMinY = minY;
-        let expandedMaxY = maxY;
-
-        if ((maxX - minX) < kMinHoverBoxPixels) {
-            const pad = (kMinHoverBoxPixels - (maxX - minX)) / 2;
-            expandedMinX -= pad;
-            expandedMaxX += pad;
-        }
-        if ((maxY - minY) < kMinHoverBoxPixels) {
-            const pad = (kMinHoverBoxPixels - (maxY - minY)) / 2;
-            expandedMinY -= pad;
-            expandedMaxY += pad;
-        }
-
-        const topLeft = app.map.containerPointToLatLng(L.point(expandedMinX, expandedMinY));
-        const bottomRight = app.map.containerPointToLatLng(L.point(expandedMaxX, expandedMaxY));
-        return L.latLngBounds(topLeft, bottomRight);
-    }
-
     function renderHoverRects(rects) {
         clearClientHoverHighlight();
-        if (!app.map || !app.designScale || !rects || rects.length === 0) {
+        if (!app.view || !app.designScale || !rects || rects.length === 0) {
             return;
         }
-
-        app.hoverHighlightLayer = L.layerGroup(
-            rects.map(([x1, y1, x2, y2]) => L.rectangle(boundsWithMinimumScreenSize(x1, y1, x2, y2), {
-                color: '#ffe85c',
-                weight: 3,
-                fill: true,
-                fillColor: '#fff27a',
-                fillOpacity: 0.14,
-                opacity: 1,
-                interactive: false,
-                className: 'hover-highlight',
-                pane: app.hoverHighlightPane,
-            }))
-        ).addTo(app.map);
+        hoverRects = rects;
+        app.view.on('zoom', redrawHoverOnZoom);
+        stopHoverPulse = runKeyframes(900, 3,
+            (t) => drawHover(keyframeAt(HOVER_FRAMES, easeOutQuad(t))),
+            () => drawHover(HOVER_REST));
     }
 
     function makeClickable(el, selectId) {
@@ -463,15 +520,9 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                         app.schematicWidget.refresh();
                     }
                 }
-                if (app.map) {
-                    app.map.closePopup();
-                }
                 clearClientHoverHighlight();
-                if (app.highlightRect && app.map) {
-                    app.map.removeLayer(app.highlightRect);
-                    app.highlightRect = null;
-                }
-                if (data.bbox && app.map && app.designScale) {
+                clearSelectionOutline();
+                if (data.bbox && app.view && app.designScale) {
                     const [x1, y1, x2, y2] = data.bbox;
                     if (data.type !== 'Inst') {
                         highlightBBox(x1, y1, x2, y2, data.type);
@@ -517,13 +568,9 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                 }
                 updateInspector(data);
 
-                app.map.closePopup();
                 clearClientHoverHighlight();
-                if (app.highlightRect) {
-                    app.map.removeLayer(app.highlightRect);
-                    app.highlightRect = null;
-                }
-                if (data.bbox && app.map && app.designScale) {
+                clearSelectionOutline();
+                if (data.bbox && app.view && app.designScale) {
                     const [x1, y1, x2, y2] = data.bbox;
                     // For non-instance objects, show dashed bbox outline
                     // (instances get the yellow tile-based highlight instead)
@@ -563,13 +610,9 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                 }
                 updateInspector(data);
 
-                app.map.closePopup();
                 clearClientHoverHighlight();
-                if (app.highlightRect) {
-                    app.map.removeLayer(app.highlightRect);
-                    app.highlightRect = null;
-                }
-                if (data.bbox && app.map && app.designScale) {
+                clearSelectionOutline();
+                if (data.bbox && app.view && app.designScale) {
                     if (data.type !== 'Inst') {
                         const [x1, y1, x2, y2] = data.bbox;
                         highlightBBox(x1, y1, x2, y2, data.type);
@@ -584,116 +627,106 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             });
     }
 
+    // The selection outline: kept in DBU, drawn while the "Highlight
+    // selected" toggle (Misc) is on, so turning it back on shows the current
+    // selection's outline again (redrawAllLayers -> renderSelectionOutline).
+    let selectionBBox = null;
+
+    function renderSelectionOutline() {
+        const show = selectionBBox && app.designScale
+            && !(app.visibility && app.visibility.highlight_selected === false);
+        setShapes('selection', show ? [{
+            kind: 'rect',
+            rect: worldRect(...selectionBBox),
+            stroke: toRgba('#ff0'), width: 2, dash: [6, 4],
+        }] : null, DRAW_ORDER.selection);
+    }
+
+    function clearSelectionOutline() {
+        selectionBBox = null;
+        renderSelectionOutline();
+    }
+
     function highlightBBox(x1, y1, x2, y2, type) {
-        if (app.highlightRect) {
-            app.map.removeLayer(app.highlightRect);
-            app.highlightRect = null;
-        }
         // A net's bbox spans its whole extent, which is distracting; the net's
         // trace is already highlighted via the overlay, so skip the rectangle.
-        if (type === 'Net') {
-            return;
-        }
-        const bounds = dbuRectToBounds(x1, y1, x2, y2, app.designScale, app.designMaxDXDY, app.designOriginX, app.designOriginY);
-        // Always build the outline; only attach it while the "Highlight
-        // selected" toggle (Misc) is on, so toggling it back on can
-        // re-attach the current selection's outline (redrawAllLayers).
-        app.highlightRect = L.rectangle(bounds, {
-            color: '#ff0', weight: 2, fill: false, dashArray: '6,4',
-        });
-        if (!(app.visibility && app.visibility.highlight_selected === false)) {
-            app.highlightRect.addTo(app.map);
-        }
+        selectionBBox = type === 'Net' ? null : [x1, y1, x2, y2];
+        renderSelectionOutline();
     }
 
     // Briefly pulse the object's bbox so the user can see which object
     // the inspector is now showing — mirrors the Qt GUI's selection
     // animation.  The pulse is a filled rectangle that fades in and out
-    // several times, then removes itself.
-    let pulseLayer = null;
+    // three times, then removes itself.
+    let stopPulse = null;
+    const PULSE_FRAMES = [
+        { at: 0, alpha: 0, fill: 0 },
+        { at: 0.5, alpha: 1, fill: 0.28 },
+        { at: 1, alpha: 0, fill: 0 },
+    ];
+    function clearPulse() {
+        if (stopPulse) {
+            stopPulse();
+            stopPulse = null;
+        }
+        setShapes('pulse', null);
+    }
     function pulseHighlight(bbox, type) {
-        if (!bbox || !app.map || !app.designScale) return;
+        if (!bbox || !app.view || !app.designScale) return;
         // Clear any pulse in flight before honoring the toggle, so a call
         // while highlighting is off doesn't leave a stale pulse behind.
         if (animTimer !== null) stopSelectionAnimation();
-        if (pulseLayer) {
-            app.map.removeLayer(pulseLayer);
-            pulseLayer = null;
-        }
+        clearPulse();
         // Honor the "Highlight selected" toggle (Misc).
         if (app.visibility && app.visibility.highlight_selected === false) {
             return;
         }
         // A net's bbox spans the whole net; don't pulse a giant rectangle.
         if (type === 'Net') return;
-        const [x1, y1, x2, y2] = bbox;
-        const bounds = dbuRectToBounds(
-            x1, y1, x2, y2, app.designScale, app.designMaxDXDY,
-            app.designOriginX, app.designOriginY);
-        pulseLayer = L.rectangle(bounds, {
-            color: '#ff0',
-            weight: 3,
-            fill: true,
-            fillColor: '#ff0',
-            fillOpacity: 0.25,
-            opacity: 1,
-            interactive: false,
-            className: 'selection-pulse',
-            pane: app.hoverHighlightPane,
-        }).addTo(app.map);
-        // Remove after the animation finishes (3 cycles × 350ms = 1050ms).
-        const layerToRemove = pulseLayer;
-        setTimeout(() => {
-            if (layerToRemove && app.map && app.map.hasLayer(layerToRemove)) {
-                app.map.removeLayer(layerToRemove);
-            }
-            if (pulseLayer === layerToRemove) {
-                pulseLayer = null;
-            }
-        }, 1100);
+        const rect = worldRect(...bbox);
+        stopPulse = runKeyframes(350, 3, (t) => {
+            const k = keyframeAt(PULSE_FRAMES,
+                                 0.5 - 0.5 * Math.cos(Math.PI * t));
+            setShapes('pulse', [{
+                kind: 'rect', rect,
+                stroke: toRgba('#ff0', k.alpha), width: 3,
+                fill: toRgba('#ff0', k.fill),
+            }]);
+        }, () => {
+            stopPulse = null;
+            setShapes('pulse', null);
+        });
     }
 
     // Qt-style selection animation (layoutViewer.cpp selectionAnimation):
     // every tick the outline weight cycles 1→2→3 px with a yellow brush
-    // flash on the weight-1 tick.  Unlike Qt, only this Leaflet path
-    // repaints — the layout tiles are untouched.  repeats=0 animates
-    // until stopSelectionAnimation() or a new animation replaces it.
-    let animLayer = null;
+    // flash on the weight-1 tick.  Unlike Qt, only this shape repaints —
+    // the layout tiles are untouched.  repeats=0 animates until
+    // stopSelectionAnimation() or a new animation replaces it.
     let animTimer = null;
+    function drawAnim(rect, weight) {
+        setShapes('anim', [{
+            kind: 'rect', rect,
+            stroke: toRgba('#ff0'), width: weight,
+            fill: toRgba('#ff0', weight === 1 ? 0.39 : 0),  // ≈ Qt kHighlight 100/255
+        }]);
+    }
     function stopSelectionAnimation() {
         if (animTimer !== null) {
             clearInterval(animTimer);
             animTimer = null;
         }
-        if (animLayer) {
-            if (app.map && app.map.hasLayer(animLayer)) {
-                app.map.removeLayer(animLayer);
-            }
-            animLayer = null;
-        }
+        setShapes('anim', null);
     }
     function animateSelection(bbox, { repeats = 6, intervalMs = 300 } = {}) {
-        if (!bbox || !app.map || !app.designScale) return;
+        if (!bbox || !app.view || !app.designScale) return;
         stopSelectionAnimation();
-        if (typeof matchMedia === 'function'
-            && matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        if (prefersReducedMotion()) {
             pulseHighlight(bbox);
             return;
         }
-        const [x1, y1, x2, y2] = bbox;
-        const bounds = dbuRectToBounds(
-            x1, y1, x2, y2, app.designScale, app.designMaxDXDY,
-            app.designOriginX, app.designOriginY);
-        animLayer = L.rectangle(bounds, {
-            color: '#ff0',
-            weight: 1,
-            fill: true,
-            fillColor: '#ff0',
-            fillOpacity: 0.39,  // ≈ Qt kHighlight brush alpha 100/255
-            opacity: 1,
-            interactive: false,
-            pane: app.hoverHighlightPane,
-        }).addTo(app.map);
+        const rect = worldRect(...bbox);
+        drawAnim(rect, 1);
         let state = 0;
         const maxState = repeats > 0 ? repeats * 3 : Infinity;
         animTimer = setInterval(() => {
@@ -702,22 +735,15 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                 stopSelectionAnimation();
                 return;
             }
-            const weight = (state % 3) + 1;
-            animLayer.setStyle({
-                weight,
-                fillOpacity: weight === 1 ? 0.39 : 0,
-            });
+            drawAnim(rect, (state % 3) + 1);
         }, intervalMs);
     }
 
     // Let redrawAllLayers cancel an in-flight pulse when the "Highlight
-    // selected" toggle is turned off (pulseLayer is private to this closure).
-    app.clearSelectionPulse = function() {
-        if (pulseLayer) {
-            app.map.removeLayer(pulseLayer);
-            pulseLayer = null;
-        }
-    };
+    // selected" toggle is turned off, and keep the outline in step with it.
+    app.clearSelectionPulse = clearPulse;
+    app.renderSelectionOutline = renderSelectionOutline;
+    app.clearSelectionOutline = clearSelectionOutline;
 
     // Build the collapsible shell (header row + body) shared by the group and
     // table property renderers.  `count` is the parenthesised badge after the
@@ -970,10 +996,8 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
     }
 
     function zoomToBBox(bbox) {
-        if (!bbox || !app.map || !app.designScale) return;
-        const [x1, y1, x2, y2] = bbox;
-        app.map.fitBounds(dbuRectToBounds(x1, y1, x2, y2, app.designScale, app.designMaxDXDY, app.designOriginX, app.designOriginY),
-                          { padding: [20, 20] });
+        if (!bbox || !app.view || !app.designScale) return;
+        app.view.fitWorldRect(worldRect(...bbox), { padding: [20, 20] });
     }
 
     function updateInspector(data) {
@@ -1170,12 +1194,18 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
 
     // Re-request the currently inspected object from the server
     // (e.g. after toggling show-DBU so property formatting changes).
-    // Rulers are client-side so we re-select instead of re-requesting.
+    // Rulers are client-side, so they show themselves again instead.
     function refreshInspector() {
         if (!lastInspectData) return;
         if (lastInspectData.type === 'Ruler') {
-            if (app.rulerManager && app.rulerManager._selectedRulerId !== null) {
-                app.rulerManager._selectRuler(app.rulerManager._selectedRulerId);
+            app.rulerManager?.refreshInspector();
+            return;
+        }
+        // So are labels, as far as the Inspector goes: the server's selection
+        // is something else.
+        if (lastInspectData.type === 'Label') {
+            if (lastInspectData.name) {
+                app.labelManager?.refreshInspector(lastInspectData.name);
             }
             return;
         }

@@ -5,6 +5,7 @@ import './setup-dom.js';
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { DrcWidget } from '../../src/drc-widget.js';
+import { makeFakeView } from './fake-view.js';
 
 // Mock app with a fake WebSocket manager.
 function createMockApp(responses = {}) {
@@ -20,14 +21,10 @@ function createMockApp(responses = {}) {
             },
         },
         designScale: 1,
-        designMaxDXDY: 100000,
         designOriginX: 0,
         designOriginY: 0,
         getDbuPerMicron() { return 1000; },
-        map: {
-            fitBounds() {},
-            getContainer() { return document.createElement('div'); },
-        },
+        view: makeFakeView(),
         focusComponent() {},
     };
 }
@@ -317,5 +314,23 @@ describe('DrcWidget', () => {
 
             assert.equal(loadedCategory, 'DRC');
         });
+    });
+});
+
+describe('DrcWidget on the view', () => {
+    it('zooms to a marker with the Qt margin', () => {
+        const app = createMockApp({ drc_categories: () => ({ categories: [] }) });
+        const widget = new DrcWidget(app, () => {});
+        // margin = min(10 um, 2 * max(w, h)) = min(10000, 4000) DBU.
+        widget._zoomToBBox([0, 0, 1000, 2000]);
+        assert.deepEqual(app.view.calls.at(-1),
+                         ['fitWorldRect', [-4000, -4000, 5000, 6000], undefined]);
+    });
+
+    it('flashes the tiles when a marker is made visible', () => {
+        const app = createMockApp({ drc_categories: () => ({ categories: [] }) });
+        const widget = new DrcWidget(app, () => {});
+        widget._flashHighlight();
+        assert.equal(app.view.flashes, 1);
     });
 });

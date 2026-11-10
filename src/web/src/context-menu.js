@@ -73,9 +73,9 @@ export class ContextMenu {
             }
         });
 
-        // Hide the menu when the map moves.
-        if (this._app.map) {
-            this._app.map.on('movestart', () => this.hide());
+        // Hide the menu when the view moves.
+        if (this._app.view) {
+            this._app.view.on('movestart', () => this.hide());
         }
     }
 
@@ -134,9 +134,9 @@ export class ContextMenu {
         const maxLeft = window.innerWidth - rect.width - margin;
         const maxTop = window.innerHeight - rect.height - margin;
         const left = Math.max(margin,
-            Math.min(e.originalEvent.clientX, maxLeft));
+            Math.min(e.clientX, maxLeft));
         const top = Math.max(margin,
-            Math.min(e.originalEvent.clientY, maxTop));
+            Math.min(e.clientY, maxTop));
         this._el.style.left = left + 'px';
         this._el.style.top = top + 'px';
     }
@@ -246,6 +246,14 @@ export class ContextMenu {
     // server no longer has selected or highlighted.
     _syncAfterAction(action) {
         const app = this._app;
+        // The Inspector's Focus and Route Guides buttons read these
+        // client-side copies of what the server just cleared.
+        if (action === 'clear_focus_nets' || action === 'clear_all') {
+            app.focusNets?.clear();
+        }
+        if (action === 'clear_route_guides' || action === 'clear_all') {
+            app.routeGuideNets?.clear();
+        }
         // Base tiles only carry focus nets and route guides; every other
         // action lives entirely in the overlay.
         if ((action === 'clear_focus_nets' || action === 'clear_route_guides'
@@ -259,10 +267,7 @@ export class ContextMenu {
         if (action === 'clear_selections' || action === 'clear_all') {
             app.updateInspector?.(null);
             app.stopSelectionAnimation?.();
-            if (app.highlightRect && app.map) {
-                app.map.removeLayer(app.highlightRect);
-                app.highlightRect = null;
-            }
+            app.clearSelectionOutline?.();
             app.lastSelectionBounds = null;
         } else {
             // Selection count/index and the highlight-group badge changed.
