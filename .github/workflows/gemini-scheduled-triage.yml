@@ -35,6 +35,7 @@ jobs:
       available_labels: ${{ steps.get_labels.outputs.available_labels }}
       issue_numbers: ${{ steps.find_issues.outputs.issue_numbers }}
       triaged_issues: ${{ steps.gemini_issue_analysis.outputs.summary }}
+      candidates_built: ${{ steps.build_candidates.outputs.built }}
     steps:
       - name: Get repository labels
         id: get_labels
@@ -125,6 +126,7 @@ jobs:
           permission-members: read
       # Exports the masked table as ASSIGNEE_CANDIDATES.
       - name: Build assignee candidates
+        id: build_candidates
         continue-on-error: true
         if: steps.candidates_token.outputs.token != ''
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # ratchet:actions/github-script@v9.0.0
@@ -239,6 +241,9 @@ jobs:
         env:
           AVAILABLE_LABELS: ${{ needs.triage.outputs.available_labels }}
           HAS_APP_TOKEN: ${{ steps.mint_identity_token.outputs.token != '' }}
+          # Gemini picks from the candidate table; without one, its assignee
+          # is not trusted and only labels are applied.
+          CANDIDATES_BUILT: ${{ needs.triage.outputs.candidates_built }}
           ISSUE_NUMBERS: ${{ needs.triage.outputs.issue_numbers }}
           TRIAGED_ISSUES: ${{ needs.triage.outputs.triaged_issues }}
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # ratchet:actions/github-script@v9.0.0
@@ -280,6 +285,8 @@ jobs:
             let allowed = '';
             if (process.env.HAS_APP_TOKEN !== 'true') {
               core.info('No App token; skipping assignment.');
+            } else if (process.env.CANDIDATES_BUILT !== 'true') {
+              core.info('No assignee candidates; skipping assignment.');
             } else {
               try {
                 const {allowedAssignees} = require('./.github/scripts/triage-candidates.js');

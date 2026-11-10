@@ -18,8 +18,10 @@
 //   await run({github, context, core});
 //
 // Exports the masked table as the environment variable ASSIGNEE_CANDIDATES
-// (empty on failure).  A masked value cannot be passed between jobs, so the
-// job that applies the assignment calls allowedAssignees() itself.
+// (empty on failure) and sets the step output `built` to 'true' or 'false'.
+// A masked value cannot be passed between jobs, so the job that applies the
+// assignment calls allowedAssignees() itself, and assigns only when `built`
+// is 'true'.
 
 const fs = require('fs');
 
@@ -301,6 +303,8 @@ module.exports = async ({github, context, core}) => {
     core.setSecret(json);
   }
   core.exportVariable('ASSIGNEE_CANDIDATES', json);
+  // Unlike the table, a plain flag can pass to the job that assigns.
+  core.setOutput('built', json ? 'true' : 'false');
 };
 
 module.exports.parseCodeowners = parseCodeowners;
