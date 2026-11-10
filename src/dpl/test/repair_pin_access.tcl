@@ -51,8 +51,8 @@ foreach {arguments error_id} {
   {-max_displacement 1} DPL-0350
   {-max_displacement {1 -1}} DPL-0349
   {-max_displacement {1 1.5}} DPL-0349
-  {-max_rounds 0} DPL-0349
-  {-max_rounds wrong} DPL-0349
+  {-max_rounds 0} DPL-0351
+  {-max_rounds wrong} DPL-0351
 } {
   check_error "invalid repair arguments $arguments" {repair_pin_access {*}$arguments} $error_id
 }

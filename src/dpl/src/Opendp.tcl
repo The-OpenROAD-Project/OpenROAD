@@ -121,7 +121,7 @@ proc repair_pin_access { args } {
     set max_rounds $keys(-max_rounds)
   }
   if { ![string is integer -strict $max_rounds] || $max_rounds < 1 } {
-    utl::error DPL 349 "-max_rounds requires a positive integer."
+    utl::error DPL 351 "-max_rounds requires a positive integer."
   }
   return [dpl::repair_pin_access_cmd \
     $max_displacement_x $max_displacement_y $max_rounds]
