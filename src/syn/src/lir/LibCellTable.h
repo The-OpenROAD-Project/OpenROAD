@@ -6,7 +6,8 @@
 // and output bit ports in Liberty order.
 //
 // Read-only by default, like NameInterner: adding a new cell requires write
-// mode (Design::SingleWriteScope).
+// mode (Design::SingleWriteScope). The table keeps pointers into the Liberty
+// library, which must outlive it (and its Design).
 
 #pragma once
 
@@ -36,20 +37,22 @@ namespace syn::lir {
 // How instances of a Liberty cell are represented.
 enum class LibCellKind : uint8_t
 {
-  // No state: a kCell.
+  // No state, and every output has a known function: a kCell.
   kCombinational,
   // Integrated clock gate: a kCell (GCLK = CLK & enable in cycle semantics).
   kClockGate,
-  // Stateful, every output depends only on the state: a mapped RegOut/RegIn
-  // pair. Latches and async flops qualify.
+  // An ff or latch (async flops included) whose every output depends only
+  // on the state: a mapped RegOut/RegIn pair.
   kRegister,
-  // Stateful, with an output that also depends on an input or whose function
-  // is unknown: an instance of a black-box module.
+  // Any other cell: an output with an unknown function (hard macro, memory,
+  // analog cell), a stateful cell with an output that also depends on an
+  // input, a statetable (other than a clock gate), or state defined only in
+  // the test_cell. An instance of a black-box module.
   kBlackBox,
 };
 
 // Returns "combinational", "clock_gate", "register" or "black_box".
-const char* libCellKindName(LibCellKind kind);
+std::string_view libCellKindName(LibCellKind kind);
 
 class LibCellInfo
 {
@@ -61,12 +64,14 @@ class LibCellInfo
   sta::LibertyCell* cell() const { return cell_; }
   std::string_view name() const;
   // True if the cell has an ff/latch group or a statetable (clock gates
-  // included). Use kind() to choose a representation.
+  // included), in the cell or only in its test_cell. Use kind() to choose a
+  // representation.
   bool isSequential() const;
   LibCellKind kind() const { return kind_; }
 
-  // Input bit ports in Liberty order, buses expanded LSB-first. Power/ground,
-  // internal, bidirectional and undirected pins are excluded.
+  // Input bit ports in Liberty order, buses expanded LSB-first and bundles
+  // listed by their members. Power/ground, internal, bidirectional and
+  // undirected pins are excluded.
   std::span<sta::LibertyPort* const> inputs() const
       ABSL_ATTRIBUTE_LIFETIME_BOUND
   {

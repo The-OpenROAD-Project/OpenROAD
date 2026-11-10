@@ -8,8 +8,10 @@
 
 #include <initializer_list>
 #include <string_view>
+#include <vector>
 
 #include "liberty/LibertyBuilder.hh"
+#include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/PortDirection.hh"
@@ -34,12 +36,13 @@ class TestLiberty
   sta::LibertyPort* port(sta::LibertyCell* cell,
                          std::string_view name,
                          sta::PortDirection* direction);
-  // A cell with these input ports, then these output ports.
+  // A cell with these input ports, then these output ports; every output's
+  // function is the AND of the inputs (0 without inputs).
   sta::LibertyCell* combinational(
       std::string_view name,
       std::initializer_list<std::string_view> inputs,
       std::initializer_list<std::string_view> outputs);
-  // The half adder HA(A, B) -> (S, CO).
+  // The half adder HA(A, B) -> (S = A ^ B, CO = A & B).
   sta::LibertyCell* halfAdder(std::string_view name = "HA");
   // A flip-flop DFF(D, <clock>) -> (Q, QN), whose state is Q and QN.
   sta::LibertyCell* dff(std::string_view name = "DFF",
@@ -51,6 +54,8 @@ class TestLiberty
                    bool is_register,
                    sta::LibertyPort* q,
                    sta::LibertyPort* qn);
+  // The AND of `ports` (constant 0 if empty).
+  static sta::FuncExpr* andOf(const std::vector<sta::LibertyPort*>& ports);
   // Gives `cell` an empty statetable over these ports.
   static void statetable(sta::LibertyCell* cell,
                          sta::LibertyPortSeq inputs,

@@ -18,6 +18,7 @@
 #include "absl/synchronization/mutex.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sequential.hh"
 #include "syn/lir/Checksum.h"
@@ -26,8 +27,14 @@
 namespace syn::lir {
 namespace {
 
+// Appends the bit ports of top-level port `port`. A bus expands to its bits,
+// LSB-first. A bundle adds nothing: OpenSTA lists its members as top-level
+// ports too, in declaration order.
 void appendPortBits(sta::LibertyPort* port, std::vector<sta::LibertyPort*>& out)
 {
+  if (port->isBundle()) {
+    return;
+  }
   if (!port->isBus()) {
     out.push_back(port);
     return;
@@ -65,29 +72,64 @@ int findPortByName(std::span<sta::LibertyPort* const> ports,
   return -1;
 }
 
-// True if output `port` depends only on the cell's state. Tristate outputs
-// and outputs without a known function are false.
+// True if `port` is a state variable of one of `cell`'s ff or latch groups
+// (e.g. IQ or IQN of ff (IQ, IQN)).
+bool isStatePort(const sta::LibertyCell* cell, const sta::LibertyPort* port)
+{
+  for (const sta::Sequential& seq : cell->sequentials()) {
+    if (seq.output() == port || seq.outputInv() == port) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// True if output `port` depends only on the state of `cell`'s ff or latch:
+// it is a state variable, or its function reads state variables only.
+// Tristate outputs and outputs without a known function are false.
 bool dependsOnlyOnState(const sta::LibertyCell* cell,
                         const sta::LibertyPort* port)
 {
   if (port->tristateEnable() != nullptr) {
     return false;
   }
-  for (const sta::Sequential& seq : cell->sequentials()) {
-    if (seq.output() == port || seq.outputInv() == port) {
-      return true;
-    }
+  if (isStatePort(cell, port)) {
+    return true;
   }
   const sta::FuncExpr* function = port->function();
   if (function == nullptr) {
     return false;
   }
-  for (const sta::LibertyPort* read : function->ports()) {
-    if (!read->direction()->isInternal()) {
+  const sta::LibertyPortSet reads = function->ports();
+  if (reads.empty()) {
+    return false;  // a constant
+  }
+  for (const sta::LibertyPort* read : reads) {
+    if (!isStatePort(cell, read)) {
       return false;
     }
   }
   return true;
+}
+
+// True if every output has a known function (a combinational cell can then
+// be a kCell).
+bool allOutputsHaveFunctions(std::span<sta::LibertyPort* const> outputs)
+{
+  for (const sta::LibertyPort* port : outputs) {
+    if (port->function() == nullptr) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// True if `cell`'s ff, latch or statetable is only in its test_cell, which
+// OpenSTA keeps as a separate cell.
+bool hasOnlyTestCellState(const sta::LibertyCell* cell)
+{
+  return !cell->isSequential() && cell->testCell() != nullptr
+         && cell->testCell()->isSequential();
 }
 
 LibCellKind classify(const sta::LibertyCell* cell,
@@ -96,8 +138,22 @@ LibCellKind classify(const sta::LibertyCell* cell,
   if (cell->isClockGate()) {
     return LibCellKind::kClockGate;
   }
+  // The test cell's ports are separate objects, not tied to the cell's
+  // outputs yet: a black box for now.
+  if (hasOnlyTestCellState(cell)) {
+    return LibCellKind::kBlackBox;
+  }
+  // Other statetable cells (synchronizers, retention flops, ...) have no ff
+  // or latch and OpenSTA does not read their state_function: black boxes.
+  if (cell->statetable() != nullptr) {
+    return LibCellKind::kBlackBox;
+  }
+  // Without an ff or latch, a cell whose outputs all have functions is
+  // combinational; one with an unknown output (hard macro, memory, analog
+  // cell) is a black box.
   if (!cell->isSequential()) {
-    return LibCellKind::kCombinational;
+    return allOutputsHaveFunctions(outputs) ? LibCellKind::kCombinational
+                                            : LibCellKind::kBlackBox;
   }
   if (outputs.empty()) {
     return LibCellKind::kBlackBox;
@@ -112,7 +168,7 @@ LibCellKind classify(const sta::LibertyCell* cell,
 
 }  // namespace
 
-const char* libCellKindName(LibCellKind kind)
+std::string_view libCellKindName(LibCellKind kind)
 {
   switch (kind) {
     case LibCellKind::kCombinational:
@@ -148,8 +204,7 @@ LibCellInfo::LibCellInfo(sta::LibertyCell* cell) : cell_(cell)
       has_unknown_direction_pins_ = true;
       continue;
     }
-    // Bundles too, though appendPortBits expands only buses.
-    has_bus_pins_ |= port->hasMembers();
+    has_bus_pins_ |= port->hasMembers();  // bus or bundle
     if (direction->isInput()) {
       appendPortBits(port, inputs_);
     } else if (direction->isOutput() || direction->isTristate()) {
@@ -200,7 +255,7 @@ std::string_view LibCellInfo::name() const
 
 bool LibCellInfo::isSequential() const
 {
-  return cell_->isSequential();
+  return cell_->isSequential() || hasOnlyTestCellState(cell_);
 }
 
 int LibCellInfo::findInput(const sta::LibertyPort* port) const

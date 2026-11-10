@@ -5,7 +5,9 @@
 
 #include <initializer_list>
 #include <string_view>
+#include <vector>
 
+#include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/NetworkClass.hh"
@@ -40,18 +42,27 @@ sta::LibertyCell* TestLiberty::combinational(
     std::initializer_list<std::string_view> outputs)
 {
   sta::LibertyCell* c = cell(name);
+  std::vector<sta::LibertyPort*> ins;
   for (const std::string_view input : inputs) {
-    port(c, input, sta::PortDirection::input());
+    ins.push_back(port(c, input, sta::PortDirection::input()));
   }
   for (const std::string_view output : outputs) {
-    port(c, output, sta::PortDirection::output());
+    port(c, output, sta::PortDirection::output())->setFunction(andOf(ins));
   }
   return c;
 }
 
 sta::LibertyCell* TestLiberty::halfAdder(std::string_view name)
 {
-  return combinational(name, {"A", "B"}, {"S", "CO"});
+  sta::LibertyCell* c = cell(name);
+  sta::LibertyPort* a = port(c, "A", sta::PortDirection::input());
+  sta::LibertyPort* b = port(c, "B", sta::PortDirection::input());
+  // setFunction() does not free a previous function: set each one once.
+  port(c, "S", sta::PortDirection::output())
+      ->setFunction(sta::FuncExpr::makeXor(sta::FuncExpr::makePort(a),
+                                           sta::FuncExpr::makePort(b)));
+  port(c, "CO", sta::PortDirection::output())->setFunction(andOf({a, b}));
+  return c;
 }
 
 sta::LibertyCell* TestLiberty::dff(std::string_view name,
@@ -62,6 +73,16 @@ sta::LibertyCell* TestLiberty::dff(std::string_view name,
   sta::LibertyPort* qn = port(c, "QN", sta::PortDirection::output());
   flop(c, true, q, qn);
   return c;
+}
+
+sta::FuncExpr* TestLiberty::andOf(const std::vector<sta::LibertyPort*>& ports)
+{
+  sta::FuncExpr* expr = nullptr;
+  for (sta::LibertyPort* p : ports) {
+    sta::FuncExpr* term = sta::FuncExpr::makePort(p);
+    expr = expr == nullptr ? term : sta::FuncExpr::makeAnd(expr, term);
+  }
+  return expr == nullptr ? sta::FuncExpr::makeZero() : expr;
 }
 
 void TestLiberty::flop(sta::LibertyCell* cell,
