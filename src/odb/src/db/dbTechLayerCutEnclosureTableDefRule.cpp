@@ -4,9 +4,6 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerCutEnclosureTableDefRule.h"
 
-#include <cstdint>
-#include <cstring>
-
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbProperty.h"
@@ -39,9 +36,6 @@ bool _dbTechLayerCutEnclosureTableDefRule::operator==(
     const _dbTechLayerCutEnclosureTableDefRule& rhs) const
 {
   // NOLINTBEGIN(readability-simplify-boolean-expr)
-  if (flags_.cut_class_valid != rhs.flags_.cut_class_valid) {
-    return false;
-  }
   if (cut_class_ != rhs.cut_class_) {
     return false;
   }
@@ -70,7 +64,6 @@ bool _dbTechLayerCutEnclosureTableDefRule::operator<(
 _dbTechLayerCutEnclosureTableDefRule::_dbTechLayerCutEnclosureTableDefRule(
     _dbDatabase* db)
 {
-  flags_ = {};
 }
 
 static dbIStream& operator>>(
@@ -106,10 +99,6 @@ static dbIStream& operator>>(dbIStream& stream,
 dbIStream& operator>>(dbIStream& stream,
                       _dbTechLayerCutEnclosureTableDefRule& obj)
 {
-  uint32_t flags_bit_field;
-  stream >> flags_bit_field;
-  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
-  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> obj.cut_class_;
   stream >> obj.default_rows_;
   stream >> obj.width_rows_;
@@ -146,10 +135,6 @@ static dbOStream& operator<<(
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCutEnclosureTableDefRule& obj)
 {
-  uint32_t flags_bit_field;
-  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
-  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
-  stream << flags_bit_field;
   stream << obj.cut_class_;
   stream << obj.default_rows_;
   stream << obj.width_rows_;
@@ -191,22 +176,6 @@ dbTechLayerCutClassRule* dbTechLayerCutEnclosureTableDefRule::getCutClass()
   _dbTechLayer* par = (_dbTechLayer*) obj->getOwner();
   return (dbTechLayerCutClassRule*) par->cut_class_rules_tbl_->getPtr(
       obj->cut_class_);
-}
-
-void dbTechLayerCutEnclosureTableDefRule::setCutClassValid(bool cut_class_valid)
-{
-  _dbTechLayerCutEnclosureTableDefRule* obj
-      = (_dbTechLayerCutEnclosureTableDefRule*) this;
-
-  obj->flags_.cut_class_valid = cut_class_valid;
-}
-
-bool dbTechLayerCutEnclosureTableDefRule::isCutClassValid() const
-{
-  _dbTechLayerCutEnclosureTableDefRule* obj
-      = (_dbTechLayerCutEnclosureTableDefRule*) this;
-
-  return obj->flags_.cut_class_valid;
 }
 
 dbTechLayerCutEnclosureTableDefRule*

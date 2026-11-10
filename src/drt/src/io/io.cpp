@@ -2344,7 +2344,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
                     layer->getName());
       continue;
     }
-    if (rule->getCutClass() == nullptr) {
+    if (!rule->isCutClassValid()) {
       logger_->warn(DRT,
                     349,
                     "LEF58_ENCLOSURE with no CUTCLASS is not supported. "

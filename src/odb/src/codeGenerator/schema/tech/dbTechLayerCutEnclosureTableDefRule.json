@@ -3,10 +3,6 @@
   "type": "dbObject",
   "fields": [
     {
-      "type": "bit",
-      "name": "cut_class_valid"
-    },
-    {
       "type": "dbId<_dbTechLayerCutClassRule>",
       "name": "cut_class_",
       "parent": "dbTechLayer"

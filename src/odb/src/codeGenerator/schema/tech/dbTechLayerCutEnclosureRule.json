@@ -13,8 +13,7 @@
     },
     {
       "type": "bit",
-      "name": "cut_class_valid",
-      "flags": ["no-get", "no-set", "no-cmp"]
+      "name": "cut_class_valid"
     },
     {
       "type": "dbId<_dbTechLayerCutClassRule>",

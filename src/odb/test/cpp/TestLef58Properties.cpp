@@ -306,7 +306,7 @@ TEST_F(Fixture, test_default)
   EXPECT_TRUE(encRule->isWidthValid());
   EXPECT_TRUE(encRule->isIncludeAbutted());
   EXPECT_TRUE(encRule->isAbove());
-  EXPECT_NE(encRule->getCutClass(), nullptr);
+  EXPECT_TRUE(encRule->isCutClassValid());
   EXPECT_STREQ(encRule->getCutClass()->getName(), "cls1");
   EXPECT_TRUE(!encRule->isBelow());
   EXPECT_EQ(encRule->getMinWidth(), 0.2 * distFactor);
@@ -762,11 +762,9 @@ TEST_F(Fixture, TestEnclosureTableDefRuleApi)
 
   dbTechLayerCutEnclosureTableDefRule* rule
       = dbTechLayerCutEnclosureTableDefRule::create(layer);
-  EXPECT_FALSE(rule->isCutClassValid());
+  EXPECT_EQ(rule->getCutClass(), nullptr);
 
   rule->setCutClass(cutClass);
-  rule->setCutClassValid(true);
-  EXPECT_TRUE(rule->isCutClassValid());
   EXPECT_EQ(rule->getCutClass(), cutClass);
 
   rule->addDefaultRow({dbCutEnclosureAboveBelow::kBoth, 40, 40, 60, 60});
@@ -827,7 +825,6 @@ TEST_F(Fixture, TestEnclosureTableDefRuleApi)
   auto rules2 = layer2->getTechLayerCutEnclosureTableDefRules();
   ASSERT_EQ(rules2.size(), 1);
   dbTechLayerCutEnclosureTableDefRule* rule2 = *rules2.begin();
-  EXPECT_TRUE(rule2->isCutClassValid());
   EXPECT_STREQ(rule2->getCutClass()->getName(), "cls1");
 
   std::vector<dbTechLayerCutEnclosureTableDefRule::DefaultRow> defaultRows2;
