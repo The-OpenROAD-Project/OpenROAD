@@ -4,14 +4,20 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <sstream>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
 
+#include "db/drObj/drNet.h"
+#include "db/drObj/drShape.h"
 #include "db/obj/frMarker.h"
 #include "db/obj/frNet.h"
 #include "db/tech/frConstraint.h"
 #include "db/tech/frViaDef.h"
+#include "distributed/frArchive.h"
+#include "dr/FlexDR.h"
 #include "fixture.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
@@ -20,6 +26,7 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "serialization.h"
 
 using odb::dbTechLayerType;
 
@@ -1808,6 +1815,238 @@ TEST_P(EnclosureCandidateFixture, lef58_enclosure_below_width_threshold)
 
 INSTANTIATE_TEST_SUITE_P(EnclosureCandidates,
                          EnclosureCandidateFixture,
+                         testing::Combine(testing::Bool(), testing::Bool()));
+
+struct FixedCutEnclosureFixture : public EnclosureCandidateFixture
+{
+  odb::Rect orient(const odb::Rect& box) const
+  {
+    return std::get<1>(GetParam())
+               ? odb::Rect(box.yMin(), box.xMin(), box.yMax(), box.xMax())
+               : box;
+  }
+
+  frLayerNum metalLayer() const { return std::get<0>(GetParam()) ? 4 : 2; }
+
+  void initLayers(const frCoord height = 40)
+  {
+    addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+    addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+    makeCutClass(3, "Vx", 40, height);
+  }
+
+  void addFixed(frNet* net,
+                const std::vector<std::pair<frLayerNum, odb::Rect>>& shapes)
+  {
+    auto [master, db_master] = makeMacro("fixed", 0, 0, 2000, 2000);
+    for (size_t i = 0; i < shapes.size(); ++i) {
+      const auto box = orient(shapes[i].second);
+      makeMacroPin(master,
+                   std::to_string(i),
+                   box.xMin(),
+                   box.yMin(),
+                   box.xMax(),
+                   box.yMax(),
+                   shapes[i].first);
+    }
+    auto* inst = makeInst("fixed", master, db_master);
+    for (const auto& term : inst->getInstTerms()) {
+      term->addToNet(net);
+      net->addInstTerm(term.get());
+    }
+  }
+
+  void initIncremental(const std::vector<frNet*>& nets)
+  {
+    FlexDRWorker seed(nullptr, design.get(), logger.get(), router_cfg.get());
+    for (auto* net : nets) {
+      seed.getNets().push_back(std::make_unique<drNet>(net, router_cfg.get()));
+    }
+    // Loading rebuilds the DR net lookup used by incremental GC updates.
+    std::ostringstream bytes(std::ios::binary | std::ios::out);
+    {
+      frOArchive archive(bytes);
+      registerTypes(archive);
+      archive << seed;
+    }
+    dr_worker = FlexDRWorker::load(
+        bytes.str(), nullptr, design.get(), logger.get(), router_cfg.get());
+    initRegionQuery();
+    gc = std::make_unique<FlexGCWorker>(
+        design->getTech(), logger.get(), router_cfg.get(), dr_worker.get());
+    gc->setExtBox({0, 0, 2000, 2000});
+    gc->setDrcBox({0, 0, 2000, 2000});
+    gc->init(design.get());
+  }
+
+  void replaceRoutes(frNet* net, const std::vector<odb::Rect>& boxes)
+  {
+    auto* dr_net = dr_worker->getDRNets(net)->front();
+    dr_net->clearRouteConnFigs();
+    for (const auto& box : boxes) {
+      auto patch = std::make_unique<drPatchWire>();
+      patch->setLayerNum(metalLayer());
+      patch->setOffsetBox(orient(box));
+      patch->setOrigin({0, 0});
+      dr_net->addRoute(std::move(patch));
+    }
+    gc->updateDRNet(dr_net);
+    gc->updateGCWorker();
+  }
+
+  std::vector<frMarker*> enclosureMarkers()
+  {
+    gc->main();
+    std::vector<frMarker*> result;
+    for (const auto& marker : gc->getMarkers()) {
+      if (marker->getConstraint()->typeId()
+          == frConstraintTypeEnum::frcLef58EnclosureConstraint) {
+        result.push_back(marker.get());
+      }
+    }
+    return result;
+  }
+
+  std::unique_ptr<FlexDRWorker> dr_worker;
+  std::unique_ptr<FlexGCWorker> gc;
+};
+
+TEST_P(FixedCutEnclosureFixture, lifecycle_and_contributors)
+{
+  initLayers();
+  auto* net = makeNet("n1");
+  addFixed(
+      net,
+      {{3, {1355, 400, 1395, 440}}, {metalLayer(), {1262, 390, 1425, 450}}});
+  initIncremental({net});
+  EXPECT_TRUE(enclosureMarkers().empty());
+  addRule(60, 10, 25);
+  auto* strict = addRule(80, 20, 20);
+  EXPECT_TRUE(enclosureMarkers().empty());
+
+  for (const bool target : {false, true}) {
+    SCOPED_TRACE(target);
+    if (target) {
+      ASSERT_TRUE(gc->setTargetNet(net));
+    }
+    replaceRoutes(net, {{1325, 400, 1425, 500}});
+    const auto markers = enclosureMarkers();
+    ASSERT_EQ(markers.size(), 1);
+    auto* marker = markers.front();
+    EXPECT_EQ(marker->getConstraint(), strict);
+    testMarker(marker,
+               metalLayer(),
+               frConstraintTypeEnum::frcLef58EnclosureConstraint,
+               orient({1325, 400, 1425, 500}));
+    ASSERT_EQ(marker->getSrcs().size(), 1);
+    EXPECT_EQ(*marker->getSrcs().begin(), net);
+    ASSERT_EQ(marker->getVictims().size(), 1);
+    EXPECT_EQ(marker->getVictims()[0].first, net);
+    EXPECT_EQ(marker->getVictims()[0].second,
+              std::make_tuple(3, orient({1355, 400, 1395, 440}), true));
+    ASSERT_EQ(marker->getAggressors().size(), 1);
+    EXPECT_EQ(marker->getAggressors()[0].first, net);
+    EXPECT_EQ(
+        marker->getAggressors()[0].second,
+        std::make_tuple(metalLayer(), orient({1325, 450, 1425, 500}), false));
+    replaceRoutes(net, {});
+    EXPECT_TRUE(enclosureMarkers().empty());
+    replaceRoutes(net, {{1325, 370, 1425, 470}});
+    EXPECT_TRUE(enclosureMarkers().empty());
+  }
+}
+
+TEST_P(FixedCutEnclosureFixture, rectangular_endside_alternatives)
+{
+  initLayers(80);
+  addRule(60, 30, 30, true);
+  addRule(60, 25, 10, true);
+  auto* strict = addRule(80, 30, 30, true);
+  auto* net = makeNet("n1");
+  addFixed(net,
+           {{3, {100, 100, 140, 180}}, {metalLayer(), {90, 75, 150, 205}}});
+  initIncremental({net});
+  EXPECT_TRUE(enclosureMarkers().empty());
+  replaceRoutes(net, {{90, 75, 170, 205}});
+  const auto markers = enclosureMarkers();
+  ASSERT_EQ(markers.size(), 1);
+  EXPECT_EQ(markers.front()->getConstraint(), strict);
+  EXPECT_EQ(markers.front()->getLayerNum(), metalLayer());
+  addRule(80, 25, 10, true);
+  EXPECT_TRUE(enclosureMarkers().empty());
+}
+
+TEST_P(FixedCutEnclosureFixture, waived_fixed_baselines)
+{
+  initLayers();
+  addRule(60, 10, 25);
+  addRule(80, 20, 20);
+  auto* net = makeNet("n1");
+  addFixed(net,
+           {{3, {100, 100, 140, 140}},
+            {metalLayer(), {130, 90, 190, 150}},
+            {3, {300, 100, 340, 140}},
+            {metalLayer(), {290, 90, 370, 170}}});
+  initIncremental({net});
+  replaceRoutes(net, {{90, 90, 170, 170}, {290, 90, 390, 190}});
+  EXPECT_TRUE(enclosureMarkers().empty());
+}
+
+TEST_P(FixedCutEnclosureFixture, first_width_bucket_and_exact_threshold)
+{
+  initLayers();
+  auto* strict = addRule(80, 20, 20);
+  auto* net = makeNet("n1");
+  addFixed(
+      net,
+      {{3, {1355, 400, 1395, 440}}, {metalLayer(), {1262, 390, 1425, 450}}});
+  initIncremental({net});
+  replaceRoutes(net, {{1325, 400, 1404, 479}});
+  EXPECT_TRUE(enclosureMarkers().empty());
+  replaceRoutes(net, {{1325, 400, 1405, 480}});
+  const auto markers = enclosureMarkers();
+  ASSERT_EQ(markers.size(), 1);
+  EXPECT_EQ(markers.front()->getConstraint(), strict);
+}
+
+TEST_P(FixedCutEnclosureFixture, fixed_and_combined_containing_alternatives)
+{
+  initLayers();
+  addRule(60, 10, 25);
+  auto* strict = addRule(80, 20, 20);
+  auto* net = makeNet("n1");
+  addFixed(net,
+           {{3, {100, 100, 140, 140}},
+            {metalLayer(), {75, 90, 165, 150}},
+            {metalLayer(), {90, 90, 150, 170}}});
+  initIncremental({net});
+  replaceRoutes(net, {{75, 100, 165, 190}});
+  const auto markers = enclosureMarkers();
+  ASSERT_EQ(markers.size(), 1);
+  EXPECT_EQ(markers.front()->getConstraint(), strict);
+  replaceRoutes(net, {{75, 100, 165, 190}, {80, 80, 160, 160}});
+  EXPECT_TRUE(enclosureMarkers().empty());
+}
+
+TEST_P(FixedCutEnclosureFixture, unrelated_metal_does_not_strengthen_width)
+{
+  initLayers();
+  auto* net = makeNet("n1");
+  auto* foreign = makeNet("foreign");
+  addFixed(
+      net,
+      {{3, {1355, 400, 1395, 440}}, {metalLayer(), {1262, 390, 1425, 450}}});
+  initIncremental({net, foreign});
+  replaceRoutes(net, {{1395, 400, 1495, 500}, {1425, 390, 1525, 490}});
+  replaceRoutes(foreign, {{1325, 400, 1425, 500}});
+  EXPECT_TRUE(enclosureMarkers().empty());
+  addRule(60, 10, 25);
+  addRule(80, 20, 20);
+  EXPECT_TRUE(enclosureMarkers().empty());
+}
+
+INSTANTIATE_TEST_SUITE_P(FixedCutEnclosures,
+                         FixedCutEnclosureFixture,
                          testing::Combine(testing::Bool(), testing::Bool()));
 
 using CutSpcTblOrthFixture = FixtureWithParam<std::pair<bool, int>>;
