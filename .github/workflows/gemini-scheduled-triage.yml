@@ -11,6 +11,11 @@ on:
       - .github/commands/openroad-scheduled-triage.toml
       - .github/scripts/**
   workflow_dispatch:
+    inputs:
+      all_ages:
+        description: Also triage unlabeled issues opened more than two days ago
+        type: boolean
+        default: false
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: true
@@ -18,68 +23,9 @@ defaults:
   run:
     shell: bash
 jobs:
-  candidates:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      assignee_candidates: ${{ steps.build.outputs.assignee_candidates }}
-      allowed_assignees: ${{ steps.build.outputs.allowed_assignees }}
-    permissions:
-      contents: read
-      issues: read
-    steps:
-      # Candidates are best effort: every step may fail without failing the
-      # job, so labeling still runs and only assignment is skipped.
-      - name: Check for untriaged issues
-        id: check
-        continue-on-error: true
-        env:
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |-
-          COUNT="$(gh issue list --state open --search 'no:label' --limit 1 \
-            --json number --repo "${GITHUB_REPOSITORY}" | jq 'length')"
-          echo "found=$([[ "${COUNT}" -gt 0 ]] && echo true || echo false)" >> "${GITHUB_OUTPUT}"
-      # Reading CODEOWNERS team membership needs the app's org-level
-      # "Members: read" permission.
-      - name: Mint identity token
-        id: mint_identity_token
-        continue-on-error: true
-        if: |-
-          ${{ vars.APP_ID && steps.check.outputs.found == 'true' }}
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510  # ratchet:actions/create-github-app-token@v2
-        with:
-          app-id: ${{ vars.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          permission-contents: read
-          permission-issues: read
-          permission-members: read
-      - name: Checkout triage scripts
-        continue-on-error: true
-        if: steps.mint_identity_token.outputs.token != ''
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          persist-credentials: false
-          sparse-checkout: |-
-            .github/CODEOWNERS
-            .github/scripts
-          sparse-checkout-cone-mode: false
-      - name: Build assignee candidates
-        id: build
-        continue-on-error: true
-        if: steps.mint_identity_token.outputs.token != ''
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # ratchet:actions/github-script@v9.0.0
-        with:
-          github-token: ${{ steps.mint_identity_token.outputs.token }}
-          script: |-
-            const run = require('./.github/scripts/triage-candidates.js');
-            await run({github, context, core});
   triage:
     runs-on: ubuntu-latest
     timeout-minutes: 7
-    needs:
-      - candidates
-    if: ${{ !cancelled() }}
     permissions:
       contents: read
       id-token: write
@@ -118,14 +64,22 @@ jobs:
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN || github.token }}
+          ALL_AGES: ${{ inputs.all_ages || false }}
         run: |-
           echo '🔍 Finding unlabeled issues...'
+          # Only recent issues are retried, so one that Gemini cannot label
+          # (or a stalled API) costs at most about two days of hourly runs.
+          # Older ones need a person or a manual run with all_ages.
+          SEARCH='no:label'
+          if [[ "${ALL_AGES}" != 'true' ]]; then
+            SEARCH+=" created:>=$(date -u -d '2 days ago' +%Y-%m-%d)"
+          fi
           # Truncate bodies and cap the batch so ISSUES_TO_TRIAGE stays under
           # the 128 KiB Linux limit on a single environment variable; later
           # runs pick up the remaining issues.
           ISSUES="$(gh issue list \
             --state 'open' \
-            --search 'no:label' \
+            --search "${SEARCH}" \
             --json number,title,body \
             --limit '20' \
             --repo "${GITHUB_REPOSITORY}" |
@@ -139,20 +93,53 @@ jobs:
           echo "✅ Found ${ISSUE_COUNT} issue(s) to triage! 🎯"
       # The Gemini action installs its own gemini-*.toml commands, so ours
       # use distinct names to avoid being overwritten.
-      - name: Checkout triage commands
+      - name: Checkout triage commands and scripts
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
-          sparse-checkout: .github/commands
+          sparse-checkout: |-
+            .github/CODEOWNERS
+            .github/commands
+            .github/scripts
           sparse-checkout-cone-mode: false
       - name: Install triage commands
         run: |-
           mkdir -p .gemini/commands
           cp .github/commands/openroad-*.toml .gemini/commands/
+      # Assignee candidates are best effort: these steps may fail without
+      # failing the job, and labeling then runs without assignments.
+      # Reading CODEOWNERS team membership needs the App's org-level
+      # "Members: read" permission. The token is read-only and never reaches
+      # the Gemini step.
+      - name: Mint candidates token
+        id: candidates_token
+        continue-on-error: true
+        if: |-
+          ${{ vars.APP_CLIENT_ID && steps.find_issues.outputs.issues_to_triage != '[]' }}
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510  # ratchet:actions/create-github-app-token@v2
+        with:
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-contents: read
+          permission-issues: read
+          permission-members: read
+      # Exports the masked table as ASSIGNEE_CANDIDATES.
+      - name: Build assignee candidates
+        continue-on-error: true
+        if: steps.candidates_token.outputs.token != ''
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # ratchet:actions/github-script@v9.0.0
+        with:
+          github-token: ${{ steps.candidates_token.outputs.token }}
+          script: |-
+            const run = require('./.github/scripts/triage-candidates.js');
+            await run({github, context, core});
       - name: Run Gemini Issue Analysis
         id: gemini_issue_analysis
         if: |-
           ${{ steps.find_issues.outputs.issues_to_triage != '[]' }}
+        # A Gemini API call can stall without any output; failing here leaves
+        # the issues unlabeled, so the next hourly run retries them.
+        timeout-minutes: 5
         uses: google-github-actions/run-gemini-cli@v0  # ratchet:exclude
         env:
           # The workspace holds only the checked-out commands and the
@@ -162,7 +149,6 @@ jobs:
           ISSUES_TO_TRIAGE: ${{ steps.find_issues.outputs.issues_to_triage }}
           REPOSITORY: ${{ github.repository }}
           AVAILABLE_LABELS: ${{ steps.get_labels.outputs.available_labels }}
-          ASSIGNEE_CANDIDATES: ${{ needs.candidates.outputs.assignee_candidates }}
         with:
           gcp_location: ${{ vars.GOOGLE_CLOUD_LOCATION }}
           gcp_project_id: ${{ vars.GOOGLE_CLOUD_PROJECT }}
@@ -211,7 +197,6 @@ jobs:
   label:
     runs-on: ubuntu-latest
     needs:
-      - candidates
       - triage
     if: |-
       !cancelled() &&
@@ -225,29 +210,35 @@ jobs:
       issues: write
       pull-requests: write
     steps:
+      # Without the App token, labels are applied with GITHUB_TOKEN and
+      # assignment is skipped.
       - name: Mint identity token
         id: mint_identity_token
+        continue-on-error: true
         if: |-
-          ${{ vars.APP_ID }}
+          ${{ vars.APP_CLIENT_ID }}
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510  # ratchet:actions/create-github-app-token@v2
         with:
-          app-id: ${{ vars.APP_ID }}
+          client-id: ${{ vars.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           permission-contents: read
           permission-issues: write
+          permission-members: read
           permission-pull-requests: write
-      # Only assignment needs these scripts; labeling must not depend on them.
+      # Only assignment needs these files; labeling must not depend on them.
       - name: Checkout triage scripts
         continue-on-error: true
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
-          sparse-checkout: .github/scripts
+          sparse-checkout: |-
+            .github/CODEOWNERS
+            .github/scripts
           sparse-checkout-cone-mode: false
       - name: Apply labels and assignees
         env:
-          ALLOWED_ASSIGNEES: ${{ needs.candidates.outputs.allowed_assignees }}
           AVAILABLE_LABELS: ${{ needs.triage.outputs.available_labels }}
+          HAS_APP_TOKEN: ${{ steps.mint_identity_token.outputs.token != '' }}
           ISSUE_NUMBERS: ${{ needs.triage.outputs.issue_numbers }}
           TRIAGED_ISSUES: ${{ needs.triage.outputs.triaged_issues }}
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # ratchet:actions/github-script@v9.0.0
@@ -283,12 +274,21 @@ jobs:
             triagedIssues = triagedIssues
               .filter((issue) => issue && typeof issue === 'object')
               .sort((a, b) => a.issue_number - b.issue_number)
-            // Assignment is best effort: a missing script only disables it.
+            // Assignment is best effort: without the App token or the scripts
+            // it is skipped, and labeling continues.
             let assign = null;
-            try {
-              assign = require('./.github/scripts/triage-assign.js');
-            } catch (err) {
-              core.warning(`Assignment disabled: ${err.message}`);
+            let allowed = '';
+            if (process.env.HAS_APP_TOKEN !== 'true') {
+              core.info('No App token; skipping assignment.');
+            } else {
+              try {
+                const {allowedAssignees} = require('./.github/scripts/triage-candidates.js');
+                assign = require('./.github/scripts/triage-assign.js');
+                allowed = (await allowedAssignees({github, core})).join(',');
+              } catch (err) {
+                assign = null;
+                core.warning(`Assignment disabled: ${err.message}`);
+              }
             }
             core.debug(`Triaged issues: ${JSON.stringify(triagedIssues)}`);
             // Iterate over each label
@@ -335,7 +335,7 @@ jobs:
                     labels: labelsToSet,
                     primaryLabel: String(issue.primary_label || '').replace(/`/g, '').trim(),
                     assignee: issue.assignee,
-                    allowed: process.env.ALLOWED_ASSIGNEES,
+                    allowed,
                   });
                 }
               } catch (err) {
