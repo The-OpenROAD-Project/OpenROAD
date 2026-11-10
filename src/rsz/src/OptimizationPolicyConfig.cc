@@ -38,7 +38,8 @@ OptimizationPolicyConfig OptimizationPolicyConfig::forParallelEval(
     case RepairEffort::kMedium:
       // Both stall rules fire sooner and the tail widens less.
       parallel_eval.stall_max_batches = 12;
-      parallel_eval.progress_pct = 1.0f;
+      parallel_eval.progress_tns_pct = 1.0f;
+      parallel_eval.progress_wns_period_pct = 0.08f;
       parallel_eval.wns_tail_max_endpoints = 16;
       parallel_eval.wns_tail_work_pct = 100.0f;
       parallel_eval.wns_tail_min_work = 15.0f;

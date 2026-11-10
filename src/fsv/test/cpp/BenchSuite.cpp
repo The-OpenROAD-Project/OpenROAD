@@ -294,13 +294,22 @@ void runNets(const Options& o,
     throw std::runtime_error("cannot read " + o.def);
   }
   odb::dbBlock* block = chip->getBlock();
-  const fsv::Stack stack = fsv::readItfFile(o.itf);
+  std::vector<fsv::ItfWarning> warnings;
+  const fsv::Stack stack = fsv::readItfFile(o.itf, &warnings);
+  for (const fsv::ItfWarning& w : warnings) {
+    std::printf("# %s line %d: %s\n", o.itf.c_str(), w.line, w.message.c_str());
+  }
   const fsv::LayerExtent extent = [&](const std::string_view layer) {
-    const fsv::Stack::ZExtent z = stack.zExtent(layer);
-    if (z.status != fsv::Stack::ZExtent::kFound) {
+    const fsv::Stack::Layer handle = stack.layer(layer);
+    if (!handle.valid()) {
       throw std::invalid_argument("layer " + std::string(layer)
-                                  + " has no z extent in the stack");
+                                  + " is not in the stack");
     }
+    if (stack.isVia(handle) && !stack.via(handle).lower.valid()) {
+      throw std::invalid_argument("via " + std::string(layer)
+                                  + " lands on the ground plane");
+    }
+    const fsv::Stack::ZExtent z = stack.zExtent(handle);
     return std::make_pair(z.bottom, z.top);
   };
   for (const std::string& name : o.nets) {

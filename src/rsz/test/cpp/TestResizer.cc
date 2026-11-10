@@ -1433,4 +1433,38 @@ TEST_F(TestResizer, GetVtEquivCellsDeduplicatesNonAdjacentSameVtCells)
             resizer_.cellLeakage(vt_equiv[1]).value_or(0.0f));
 }
 
+TEST_F(TestResizer, DisabledConditionalArcIgnoredInDriveResistance)
+{
+  readDefForTiming("remove_buffers3.def");
+  resizer_.initBlock();
+
+  odb::dbInst* gate
+      = odb::dbInst::create(block_, db_->findMaster("XNOR2_X1"), "g1");
+  sta::Instance* sta_gate = db_network_->dbToSta(gate);
+  sta_->connectPin(sta_gate,
+                   findLibertyPort(sta_gate, "A"),
+                   db_network_->dbToSta(block_->findNet("in1")));
+  sta_->connectPin(sta_gate,
+                   findLibertyPort(sta_gate, "B"),
+                   db_network_->dbToSta(block_->findNet("n1")));
+
+  sta::Pin* b_pin = db_network_->dbToSta(gate->findITerm("B"));
+  sta::Pin* zn_pin = db_network_->dbToSta(gate->findITerm("ZN"));
+  const float port_res = db_network_->libertyPort(zn_pin)->driveResistance();
+
+  sta_->updateTiming(false);
+  EXPECT_FLOAT_EQ(resizer_.driveResistance(zn_pin), port_res);
+
+  // B=1 disables B->ZN and the slower `when : "!B"` arc, leaving `when : "B"`.
+  sta_->setCaseAnalysis(b_pin, sta::LogicValue::one, sta_->cmdMode());
+  sta_->updateTiming(false);
+  EXPECT_GT(resizer_.driveResistance(zn_pin), 0.0f);
+  EXPECT_LT(resizer_.driveResistance(zn_pin), 0.6f * port_res);
+
+  // B=0 re-enables the slower `when : "!B"` A->ZN arc.
+  sta_->setCaseAnalysis(b_pin, sta::LogicValue::zero, sta_->cmdMode());
+  sta_->updateTiming(false);
+  EXPECT_GT(resizer_.driveResistance(zn_pin), 0.99f * port_res);
+}
+
 }  // namespace rsz

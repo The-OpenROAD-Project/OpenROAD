@@ -1,0 +1,38 @@
+*SPEF "ieee 1481-1999"
+*DESIGN "top"
+*DATE "15:04:13 Wednesday October 14, 2026"
+*VENDOR "The OpenROAD Project"
+*PROGRAM "OpenROAD"
+*VERSION "bazel-nostamp"
+*DESIGN_FLOW "NAME_SCOPE LOCAL" "PIN_CAP NONE"
+*DIVIDER /
+*DELIMITER :
+*BUS_DELIMITER []
+*T_UNIT 1 NS
+*C_UNIT 1 PF
+*R_UNIT 1 OHM
+*L_UNIT 1 HENRY
+
+*NAME_MAP
+*1 n1
+
+*PORTS
+in1 I
+out1 O
+out2 O
+
+*D_NET *1 0.00035156
+*CONN
+*P out2 O
+*P out1 O
+*P in1 I
+*CAP
+1 out2 1.7765e-05
+2 out1 0.000158015
+3 in1 9.45909e-05
+4 *1:7 8.11893e-05
+*RES
+1 in1 out1 10.8393 
+2 out1 *1:7 7.26786 
+3 *1:7 out2 2.03572 
+*END

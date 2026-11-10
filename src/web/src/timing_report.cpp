@@ -522,7 +522,15 @@ SlackHistogramResult TimingReport::getSlackHistogram(
 
   sta_->ensureGraph();
   sta_->searchPreamble();
-  result.time_unit = sta_->units()->timeUnit()->scaleAbbrevSuffix();
+  sta::Unit* time_unit = sta_->units()->timeUnit();
+  result.time_unit = time_unit->scaleAbbrevSuffix();
+  for (sta::Clock* clk : sta_->cmdScene()->sdc()->clocks()) {
+    if (clock_name.empty() || clock_name == clk->name()) {
+      result.clocks.push_back(
+          {clk->name(),
+           static_cast<float>(time_unit->staToUser(clk->period()))});
+    }
+  }
 
   // Build (group_name, slacks) entries.  Multiple entries → stacked series.
   std::vector<std::pair<std::string, std::vector<float>>> group_slacks;
@@ -958,6 +966,15 @@ boost::json::object serializeSlackHistogram(const SlackHistogramResult& h)
   o["unconstrained_count"] = h.unconstrained_count;
   o["total_endpoints"] = h.total_endpoints;
   o["time_unit"] = h.time_unit;
+  boost::json::array clocks;
+  clocks.reserve(h.clocks.size());
+  for (const auto& c : h.clocks) {
+    boost::json::object co;
+    co["name"] = c.name;
+    co["period"] = c.period;
+    clocks.emplace_back(std::move(co));
+  }
+  o["clocks"] = std::move(clocks);
   if (!h.series.empty()) {
     boost::json::array series;
     series.reserve(h.series.size());

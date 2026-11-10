@@ -4,8 +4,11 @@
 #include "wireNormalizer.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <memory>
+#include <optional>
+#include <span>
 
 #include "connectionGraph.h"
 #include "odb/db.h"
@@ -84,10 +87,12 @@ void WireNormalizer::normalizeWireConnectivity()
   loadWire();
 
   if (!wire_points_.empty()) {
+    setManufacturingGrid();
     loadTerminals();
     sliceBPinsOverlappingITerms();
 
     populateShapeSearch();
+    splitSectionsForTerminalConnection();
 
     // Apparent performance trick from the original implementation.
     if (wire_sections_.size() < kMaxNumOfWireSections) {
@@ -228,6 +233,7 @@ void WireNormalizer::clear()
 
   net_ = nullptr;
   has_special_wires_ = false;
+  manufacturing_grid_ = 0;
 
   wire_sections_.clear();
   wire_points_.clear();
@@ -245,6 +251,13 @@ void WireNormalizer::clear()
   need_short_wire_id_ = false;
   first_segment_after_via_ = false;
   new_wire_ = nullptr;
+}
+
+void WireNormalizer::setManufacturingGrid()
+{
+  dbTech* tech = net_->getBlock()->getTech();
+  manufacturing_grid_
+      = tech->hasManufacturingGrid() ? tech->getManufacturingGrid() : 0;
 }
 
 void WireNormalizer::loadTerminals()
@@ -402,6 +415,95 @@ void WireNormalizer::splitBySj(const int j,
 
     splitWireSection(k, Point(x, y));
   }
+}
+
+// A terminal binds only to wire points, but a route can run along or across
+// a pin without having one there. Give such a terminal a point on a section
+// that touches the pin.
+void WireNormalizer::splitSectionsForTerminalConnection()
+{
+  for (int i = 0; i < terminals_.size(); i++) {
+    // Identify candidates as we go so that we capture a previous split.
+    identifyCandidateSections(i);
+
+    if (terminalContainsWirePoint(i)) {
+      continue;
+    }
+
+    const std::span<const CandidateSection> candidates(
+        candidate_sections_[i].data(), candidate_section_count_[i]);
+
+    for (const CandidateSection& candidate : candidates) {
+      const std::optional<Point> split_point = findSplitPoint(candidate);
+
+      if (split_point) {
+        splitWireSection(candidate.index, *split_point);
+        break;
+      }
+    }
+  }
+}
+
+std::optional<Point> WireNormalizer::findSplitPoint(
+    const CandidateSection& candidate) const
+{
+  const WireSection& wire_section = wire_sections_[candidate.index];
+
+  if (wire_section.shape.isVia()) {
+    return std::nullopt;
+  }
+
+  const Rect& pin = candidate.terminal_box;
+  const Rect& section_shape = wire_section.shape.rect();
+
+  // The shape search still holds a section's original extent
+  // after a split for an earlier terminal was made, so a
+  // candidate may no longer touch the pin.
+  if (!pin.intersects(section_shape)) {
+    return std::nullopt;
+  }
+
+  const Rect contact = pin.intersect(section_shape);
+
+  const WirePoint& from = wire_points_[wire_section.from_idx];
+  const WirePoint& to = wire_points_[wire_section.to_idx];
+  const Point from_point(from.x, from.y);
+  const Point to_point(to.x, to.y);
+
+  // This automatically sets the axis correctly, so we only
+  // need to adjust one of the coordinates.
+  Point split_point = from_point;
+  if (wire_section.is_vertical) {
+    split_point.setY(computeSnappedCenter(contact.yMin(), contact.yMax()));
+  } else {
+    split_point.setX(computeSnappedCenter(contact.xMin(), contact.xMax()));
+  }
+
+  const Rect center_line(from_point, to_point);
+
+  // Odd, but can happen: the pin touches only the extension of the route, or
+  // the contact is centered on an end point. The end point serves either way,
+  // so no splitting is required.
+  if (!center_line.intersects(split_point)
+      || (split_point == from_point || split_point == to_point)) {
+    return std::nullopt;
+  }
+
+  return split_point;
+}
+
+int WireNormalizer::computeSnappedCenter(const int min, const int max) const
+{
+  const int center = (min + max) / 2;
+
+  if (manufacturing_grid_ <= 0) {
+    return center;
+  }
+
+  const int grid_steps = static_cast<int>(
+      std::lround(static_cast<double>(center) / manufacturing_grid_));
+
+  return grid_steps * manufacturing_grid_;
 }
 
 // The target section keeps the part up to the new point and
@@ -1269,6 +1371,32 @@ void WireNormalizer::connectShapes(const int j, const int k)
   addShort(i0, i1);
 }
 
+// Whether an end point of one of the terminal's candidate sections lies
+// inside the pin box on the pin's routing level.
+bool WireNormalizer::terminalContainsWirePoint(const int terminal_index) const
+{
+  const CandidateSections& candidate_sections
+      = candidate_sections_[terminal_index];
+  const int candidate_section_count = candidate_section_count_[terminal_index];
+
+  for (int i = 0; i < candidate_section_count; i++) {
+    const CandidateSection& candidate_section = candidate_sections[i];
+    const WireSection& wire_section = wire_sections_[candidate_section.index];
+
+    for (const int point_index : {wire_section.from_idx, wire_section.to_idx}) {
+      const WirePoint& wire_point = wire_points_[point_index];
+      const Point point(wire_point.x, wire_point.y);
+
+      if (candidate_section.routing_level == wire_point.layer->getRoutingLevel()
+          && candidate_section.terminal_box.intersects(point)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 void WireNormalizer::connectTerm(const int terminal_index, const bool soft)
 {
   const CandidateSections& candidate_sections
@@ -1283,14 +1411,27 @@ void WireNormalizer::connectTerm(const int terminal_index, const bool soft)
   }
   first_for_clear_ = nullptr;
 
+  const bool contains_wire_point = terminalContainsWirePoint(terminal_index);
+
   for (int ii = 0; ii < candidate_section_count; ii++) {
     const CandidateSection& candidate_section = candidate_sections[ii];
     const int k = candidate_section.index;
     WirePoint* pfr = &wire_points_[wire_sections_[k].from_idx];
     WirePoint* pto = &wire_points_[wire_sections_[k].to_idx];
+
+    Rect pin_box = candidate_section.terminal_box;
+
+    // When a perpendicular wire section touches the pin, we split it
+    // to create a wire point where the terminal can bind to. For such
+    // situations, we need to extend the geometry of the pin so that it
+    // reaches the new wire point.
+    if (!contains_wire_point) {
+      pin_box = pin_box.bloat(wire_sections_[k].width / 2);
+    }
+
     const Point afr(pfr->x, pfr->y);
     if (candidate_section.routing_level == pfr->layer->getRoutingLevel()
-        && candidate_section.terminal_box.intersects(afr)) {
+        && pin_box.intersects(afr)) {
       if (!(pfr->is_pin_point || pfr->is_connected_to_a_pin_point)) {
         pfr->next_for_clear = first_for_clear_;
         first_for_clear_ = pfr;
@@ -1305,7 +1446,7 @@ void WireNormalizer::connectTerm(const int terminal_index, const bool soft)
     }
     const Point ato(pto->x, pto->y);
     if (candidate_section.routing_level == pto->layer->getRoutingLevel()
-        && candidate_section.terminal_box.intersects(ato)) {
+        && pin_box.intersects(ato)) {
       if (!(pfr->is_pin_point || pfr->is_connected_to_a_pin_point)) {
         pfr->next_for_clear = first_for_clear_;
         first_for_clear_ = pfr;

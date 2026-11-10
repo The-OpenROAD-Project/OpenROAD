@@ -28,8 +28,8 @@ TEST(Utl, SortAndUnique)
 // strip used to run across the integer part instead of a fractional one.  For a
 // value that formats to all zeros it consumed the whole string, and the back()
 // that follows then read an empty string: undefined behavior, an abort under a
-// hardened libstdc++ (which is on by default at -O0, hence a CMake debug CI
-// build), silently "" in an optimized one.  Reached in practice through a
+// hardened libstdc++ (which is on by default at -O0, hence a debug build),
+// silently "" in an optimized one.  Reached in practice through a
 // DBU-per-micron scale of 1, which makes web::dbuPrecision return 0.
 TEST(Utl, ToNumericStringPrecisionZeroFormatsZeroAsZero)
 {
