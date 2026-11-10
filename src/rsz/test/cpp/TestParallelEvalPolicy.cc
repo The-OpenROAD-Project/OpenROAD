@@ -7,6 +7,8 @@
 #include <utility>
 
 #include "TestResizerMtFixture.hh"
+#include "sta/ExceptionPath.hh"
+#include "sta/Transition.hh"
 
 namespace rsz {
 
@@ -417,7 +419,8 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyEffortPresets)
   struct StopKnobs
   {
     int stall_max_batches;
-    float progress_pct;
+    float progress_tns_pct;
+    float progress_wns_period_pct;
     int endpoints;
     int max_endpoints;
     float work_pct;
@@ -429,7 +432,8 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyEffortPresets)
           const ParallelEvalPolicyConfig tuned
               = OptimizationPolicyConfig::forParallelEval(effort).parallel_eval;
           return StopKnobs{tuned.stall_max_batches,
-                           tuned.progress_pct,
+                           tuned.progress_tns_pct,
+                           tuned.progress_wns_period_pct,
                            tuned.wns_tail_endpoints,
                            tuned.wns_tail_max_endpoints,
                            tuned.wns_tail_work_pct,
@@ -447,12 +451,13 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyEffortPresets)
   const StopKnobs medium = knobs(RepairEffort::kMedium);
   EXPECT_EQ(medium.endpoints, high.endpoints);
   EXPECT_LE(medium.stall_max_batches, high.stall_max_batches);
-  EXPECT_GE(medium.progress_pct, high.progress_pct);
+  EXPECT_GE(medium.progress_tns_pct, high.progress_tns_pct);
+  EXPECT_GE(medium.progress_wns_period_pct, high.progress_wns_period_pct);
   EXPECT_LE(medium.max_endpoints, high.max_endpoints);
   EXPECT_LE(medium.work_pct, high.work_pct);
   EXPECT_LE(medium.min_work, high.min_work);
   EXPECT_TRUE(medium.stall_max_batches < high.stall_max_batches
-              || medium.progress_pct > high.progress_pct);
+              || medium.progress_tns_pct > high.progress_tns_pct);
   EXPECT_TRUE(medium.max_endpoints < high.max_endpoints
               || medium.work_pct < high.work_pct
               || medium.min_work < high.min_work);
@@ -461,7 +466,8 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyEffortPresets)
   const StopKnobs low = knobs(RepairEffort::kLow);
   EXPECT_EQ(low.endpoints, 0);
   EXPECT_EQ(low.stall_max_batches, high.stall_max_batches);
-  EXPECT_FLOAT_EQ(low.progress_pct, high.progress_pct);
+  EXPECT_FLOAT_EQ(low.progress_tns_pct, high.progress_tns_pct);
+  EXPECT_FLOAT_EQ(low.progress_wns_period_pct, high.progress_wns_period_pct);
 
   EXPECT_EQ(resizer_.repairEffortFromString("low"), RepairEffort::kLow);
   EXPECT_EQ(resizer_.repairEffortFromString("medium"), RepairEffort::kMedium);
@@ -703,6 +709,164 @@ TEST(TestParallelEvalRules, ParallelEvalCheckpointPrioritizesWns)
   // The band is anchored on the best checkpoint, not the last one.
   EXPECT_FALSE(SetupParallelEvalPolicy::batchImprovesCheckpoint(
       -10.1f, -100.0f, -10.15f, -90.0f, -10.0f, 0.1f));
+}
+
+// The WNS progress step is a share of the reference clock period, so the
+// same gain counts the same at any WNS, also near zero.
+TEST(TestParallelEvalRules, ParallelEvalStallProgressFollowsThePeriod)
+{
+  const ParallelEvalPolicyConfig config;
+  const float period = 500e-12f;
+  const float step = period * config.progress_wns_period_pct / 100.0f;
+  StallMonitor stall(config);
+  stall.reset(-1e-9f, period);
+
+  // TNS stays flat, so the WNS gain alone decides.
+  for (const float wns : {-100e-12f, -1e-12f, -0.01e-12f}) {
+    stall.onSaved(-1e-9f, wns, wns + 2.0f * step, -1e-9f, 0.0);
+    EXPECT_FALSE(stall.wnsStalled()) << wns;
+    stall.onSaved(-1e-9f, wns, wns + 0.5f * step, -1e-9f, 0.0);
+    EXPECT_TRUE(stall.wnsStalled()) << wns;
+  }
+
+  // A shorter period lowers the step with it.
+  stall.reset(-1e-9f, period / 10.0f);
+  stall.onSaved(-1e-9f, -1e-12f, -1e-12f + 0.5f * step, -1e-9f, 0.0);
+  EXPECT_FALSE(stall.wnsStalled());
+}
+
+namespace {
+
+// True when the stall window stops the batches after saves that each gain
+// `gain` from `wns`, with TNS and the failing endpoint count unchanged.
+bool windowStallsAfterGains(const ParallelEvalPolicyConfig& config,
+                            const float period,
+                            const float wns,
+                            const float gain)
+{
+  StallMonitor stall(config);
+  stall.reset(-1e-9f, period);
+  float best_wns = wns;
+  for (int save = 0; save <= config.stall_window; ++save) {
+    stall.beginBatch(config.min_batch_cap, 10);
+    stall.onSaved(-1e-9f, best_wns, best_wns + gain, -1e-9f, 100.0 * save);
+    best_wns += gain;
+  }
+  return stall.windowStalled();
+}
+
+}  // namespace
+
+// The window weighs the average WNS gain against the reference clock period,
+// so gains far below it stop the batches near WNS zero as well.
+TEST(TestParallelEvalRules, ParallelEvalStallWindowFollowsThePeriod)
+{
+  const ParallelEvalPolicyConfig config;
+  const float period = 500e-12f;
+  const float step = period * config.stall_wns_period_pct / 100.0f;
+  EXPECT_TRUE(windowStallsAfterGains(config, period, -0.5e-12f, 0.5f * step));
+  EXPECT_TRUE(windowStallsAfterGains(config, period, -100e-12f, 0.5f * step));
+  EXPECT_FALSE(windowStallsAfterGains(config, period, -0.5e-12f, 2.0f * step));
+  EXPECT_FALSE(windowStallsAfterGains(config, period, -100e-12f, 2.0f * step));
+}
+
+// A tail batch is WNS progress only when it gains a share of the reference
+// clock period, whatever the WNS.
+TEST(TestParallelEvalRules, ParallelEvalTailGainFollowsThePeriod)
+{
+  const ParallelEvalPolicyConfig config;
+  const float period = 500e-12f;
+  const float min_gain = period * config.wns_tail_min_gain_period_pct / 100.0f;
+  WnsTail tail(config);
+  ASSERT_TRUE(tail.start(0.0, period));
+  for (const float wns : {-100e-12f, -0.01e-12f}) {
+    tail.afterBatch(wns, wns + 0.5f * min_gain, true);
+    EXPECT_EQ(ResizerTestPeer::batchesWithoutGain(tail), 1) << wns;
+    tail.afterBatch(wns, wns + 2.0f * min_gain, true);
+    EXPECT_EQ(ResizerTestPeer::batchesWithoutGain(tail), 0) << wns;
+  }
+}
+
+// The reference clock period is the shortest period of a clock with source
+// pins, and it scales the checkpoint tolerance.  Without clocks the shortest
+// set_max_delay sets it.
+TEST_F(TestResizerMt, SetupParallelEvalPolicyReferencePeriod)
+{
+  prepareUniqueViolatingEndpoint();
+  MoveCommitter committer(resizer_);
+  RepairSetupContext setup_context(resizer_);
+  OptimizerRunConfig config;
+  config.sequence = {MoveType::kSizeUp};
+  SetupParallelEvalPolicy policy(resizer_, committer, setup_context, config);
+  ASSERT_TRUE(policy.start());
+
+  sta::Sdc* sdc = sta_->cmdMode()->sdc();
+  const float period = sdc->findClock("clk")->period();
+  const ParallelEvalPolicyConfig& parallel_eval
+      = ResizerTestPeer::policyConfig(policy).parallel_eval;
+  EXPECT_FLOAT_EQ(ResizerTestPeer::referencePeriod(policy), period);
+  EXPECT_FLOAT_EQ(
+      ResizerTestPeer::checkpointWnsTolerance(policy),
+      period * parallel_eval.checkpoint_wns_tolerance_period_pct / 100.0f);
+
+  // A faster virtual clock times only IO constraints and does not count.
+  const sta::FloatSeq waveform{0.0f, period / 8.0f};
+  sta_->makeClock("vclk",
+                  sta::PinSet(db_network_),
+                  /*add_to_pins=*/false,
+                  period / 4.0f,
+                  waveform,
+                  /*comment=*/"",
+                  sta_->cmdMode());
+  EXPECT_FLOAT_EQ(ResizerTestPeer::findReferencePeriod(policy, -1e-12f),
+                  period);
+
+  // Without a clock with source pins the virtual clock sets the scale, and
+  // without any clock the initial WNS does.
+  sta_->removeClock(sdc->findClock("clk"), sdc);
+  EXPECT_FLOAT_EQ(ResizerTestPeer::findReferencePeriod(policy, -1e-12f),
+                  period / 4.0f);
+  sta_->removeClock(sdc->findClock("vclk"), sdc);
+  EXPECT_FLOAT_EQ(ResizerTestPeer::findReferencePeriod(policy, -1e-12f),
+                  1e-12f);
+
+  // The shortest set_max_delay stands in for the period; a shorter
+  // set_min_delay bounds hold and does not count.
+  for (const sta::MinMax* min_max : {sta::MinMax::max(), sta::MinMax::min()}) {
+    sta::PinSet* to_pins = new sta::PinSet(db_network_);
+    to_pins->insert(db_network_->findPin("out2"));
+    sta::ExceptionTo* to = sta_->makeExceptionTo(to_pins,
+                                                 /*to_clks=*/nullptr,
+                                                 /*to_insts=*/nullptr,
+                                                 sta::RiseFallBoth::riseFall(),
+                                                 sta::RiseFallBoth::riseFall(),
+                                                 sdc);
+    sta_->makePathDelay(
+        /*from=*/nullptr,
+        /*thrus=*/nullptr,
+        to,
+        min_max,
+        /*ignore_clk_latency=*/false,
+        /*break_path=*/false,
+        min_max == sta::MinMax::max() ? period / 2.0f : period / 8.0f,
+        /*comment=*/"",
+        sdc);
+  }
+  EXPECT_FLOAT_EQ(ResizerTestPeer::findReferencePeriod(policy, -1e-12f),
+                  period / 2.0f);
+
+  // A clock outranks set_max_delay even when the max delay is shorter.
+  sta::PinSet clk_pins(db_network_);
+  clk_pins.insert(db_network_->findPin("clk"));
+  sta_->makeClock("clk",
+                  clk_pins,
+                  /*add_to_pins=*/false,
+                  period,
+                  sta::FloatSeq{0.0f, period / 2.0f},
+                  /*comment=*/"",
+                  sta_->cmdMode());
+  EXPECT_FLOAT_EQ(ResizerTestPeer::findReferencePeriod(policy, -1e-12f),
+                  period);
 }
 
 // The tabu takes only instances a rollback kept: a deleted instance can hand
@@ -951,7 +1115,7 @@ TEST_F(TestResizerMt, ParallelEvalMaxIterationsEndsTheTail)
   SetupParallelEvalPolicy policy(resizer_, committer, setup_context, config);
   policy.start();
   ASSERT_FALSE(policy.converged());
-  ASSERT_TRUE(ResizerTestPeer::tail(policy).start(0.0));
+  ASSERT_TRUE(ResizerTestPeer::tail(policy).start(0.0, 0.0f));
 
   ResizerTestPeer::batchIndex(policy) = config.max_iterations;
   ResizerTestPeer::applyStopRules(policy, 1);
@@ -963,7 +1127,7 @@ TEST(TestParallelEvalRules, ParallelEvalWnsTailStopPrecedence)
 {
   const ParallelEvalPolicyConfig config;
   WnsTail tail(config);
-  ASSERT_TRUE(tail.start(100.0));
+  ASSERT_TRUE(tail.start(100.0, 0.0f));
   const char* reason = nullptr;
   EXPECT_EQ(tail.nextStep(1, 100.0, reason), WnsTail::Step::kContinue);
   EXPECT_EQ(reason, nullptr);

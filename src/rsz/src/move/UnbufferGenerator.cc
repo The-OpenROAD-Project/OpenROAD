@@ -225,17 +225,20 @@ bool passesCapGuard(UnbufferSelectionContext& ctx)
   return false;
 }
 
+// Apply the same unbuffer-specific setup check as the parallel generator.
 bool passesSlackGuard(const UnbufferSelectionContext& ctx)
 {
-  SlackEstimatorParams params(ctx.setup_slack_margin, ctx.slack_scene);
-  params.driver_pin = ctx.drvr_pin;
-  params.prev_driver_pin = ctx.prev_drvr_pin;
-  params.driver_input_pin = ctx.drvr_input_pin;
-  params.driver = ctx.drvr;
-  params.driver_path = ctx.target.driverPath(ctx.resizer);
-  params.prev_driver_path = ctx.prev_drvr_path;
-  params.driver_cell = ctx.drvr_cell;
-  return ctx.resizer.estimatedSlackOK(params);
+  const UnbufferSlackParams params{
+      .buffer_output_pin = ctx.drvr_pin,
+      .upstream_driver_pin = ctx.prev_drvr_pin,
+      .buffer_input_pin = ctx.drvr_input_pin,
+      .buffer_instance = ctx.drvr,
+      .buffer_path = ctx.target.driverPath(ctx.resizer),
+      .upstream_path = ctx.prev_drvr_path,
+      .buffer_cell = ctx.drvr_cell,
+      .setup_slack_margin = ctx.setup_slack_margin,
+      .scene = ctx.slack_scene};
+  return ctx.resizer.estimatedUnbufferSlackOK(params);
 }
 
 bool isEligible(UnbufferSelectionContext& ctx)

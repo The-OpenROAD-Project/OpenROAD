@@ -7,6 +7,8 @@
 
 #include <algorithm>
 #include <any>
+#include <cctype>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -58,6 +60,7 @@
 #include "timing_report.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
+#include "utl/random_bytes.h"
 #include "web/core.h"
 #include "web/descriptor_registry.h"
 #include "web/heatMap.h"
@@ -333,6 +336,23 @@ std::string assetPathFromTarget(const std::string_view target)
   return path;
 }
 
+namespace {
+
+// Constant time in the length of `expected`: stopping at the first mismatch
+// would tell a guesser how much of it was right.
+bool constantTimeEquals(const std::string_view got,
+                        const std::string_view expected)
+{
+  unsigned char diff = got.size() == expected.size() ? 0 : 1;
+  for (std::size_t i = 0; i < expected.size(); ++i) {
+    const unsigned char a = i < got.size() ? got[i] : 0;
+    diff |= a ^ static_cast<unsigned char>(expected[i]);
+  }
+  return diff == 0;
+}
+
+}  // namespace
+
 bool acceptsGzip(const std::string_view accept_encoding)
 {
   namespace beast = boost::beast;
@@ -407,11 +427,10 @@ bool webSocketOriginAllowed(const std::string_view origin,
   // This gates the BROWSER cross-site vector only: a page's JavaScript cannot
   // forge its Origin, so a foreign page is rejected below.  A non-browser
   // client controls every header (it can omit Origin or spoof any value), so
-  // this check cannot authenticate one — that requires binding to loopback
-  // (issue #11167, F-02), on which this guard depends.
+  // this check cannot authenticate one — the access token does.
   //
   // Absent Origin: browsers always send it on a WS handshake, so its absence
-  // is a non-browser client; allow it (F-02 is what keeps such a client local).
+  // is a non-browser client; allow it here and let the token decide.
   if (origin.empty()) {
     return true;
   }
@@ -436,6 +455,54 @@ bool webSocketOriginAllowed(const std::string_view origin,
   // and a proxy or non-browser client may vary it, which would otherwise 403 a
   // legitimate handshake.
   return boost::beast::iequals(authority, host);
+}
+
+namespace {
+
+// host-source per CSP: a host name of ALPHA / DIGIT / "-" / "." and an
+// optional ":port" of digits.  Anything else, such as an IPv6 literal or
+// characters that would end the directive, cannot be spelled.
+bool isCspHostSource(const std::string_view host)
+{
+  const size_t colon = host.find(':');
+  const std::string_view name = host.substr(0, colon);
+  if (name.empty()) {
+    return false;
+  }
+  for (const char c : name) {
+    if (std::isalnum(static_cast<unsigned char>(c)) == 0 && c != '-'
+        && c != '.') {
+      return false;
+    }
+  }
+  if (colon == std::string_view::npos) {
+    return true;
+  }
+  const std::string_view port = host.substr(colon + 1);
+  return !port.empty() && port.size() <= 5
+         && std::ranges::all_of(port, [](const char c) {
+              return std::isdigit(static_cast<unsigned char>(c)) != 0;
+            });
+}
+
+}  // namespace
+
+std::string contentSecurityPolicy(const std::string_view host)
+{
+  // script-src 'self' keeps an injected <img onerror> or inline <script> from
+  // running; styles stay inline-able for netlistsvg's SVG and the templates.
+  std::string policy
+      = "default-src 'self'; script-src 'self'; "
+        "style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
+        "connect-src 'self' ";
+  if (isCspHostSource(host)) {
+    policy.append("ws://").append(host).append(" wss://").append(host);
+    policy += ' ';
+  }
+  policy
+      += "data:; font-src 'self' data:; object-src 'none'; "
+         "base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+  return policy;
 }
 
 BindAddressKind classifyBindAddress(const std::string_view address)
@@ -477,6 +544,66 @@ std::string browserHostForBind(const boost::asio::ip::address& address)
   }
   const std::string literal = address.to_string();
   return address.is_v6() ? "[" + literal + "]" : literal;
+}
+
+std::string urlDecode(const std::string_view s)
+{
+  std::string out;
+  out.reserve(s.size());
+  for (std::size_t i = 0; i < s.size(); ++i) {
+    if (s[i] == '%' && i + 2 < s.size()) {
+      unsigned value = 0;
+      if (parseIntExact(s.substr(i + 1, 2), value, 16)) {
+        out.push_back(static_cast<char>(value));
+        i += 2;
+        continue;
+      }
+      // Not valid hex: keep the literal '%'.
+    }
+    out.push_back(s[i] == '+' ? ' ' : s[i]);
+  }
+  return out;
+}
+
+namespace {
+
+// The query of a request target, without the '?'.  Empty when there is none.
+std::string_view queryOf(const std::string_view target)
+{
+  const auto pos = target.find('?');
+  return pos == std::string_view::npos ? std::string_view()
+                                       : target.substr(pos + 1);
+}
+
+// Call `fn` with each "k=v" of a query.  One definition so the parsing side
+// and the redirect side cannot disagree on what separates a pair.
+template <typename Fn>
+void forEachQueryPair(const std::string_view query, Fn fn)
+{
+  std::size_t start = 0;
+  while (start < query.size()) {
+    std::size_t amp = query.find('&', start);
+    if (amp == std::string_view::npos) {
+      amp = query.size();
+    }
+    fn(query.substr(start, amp - start));
+    start = amp + 1;
+  }
+}
+
+}  // namespace
+
+std::map<std::string, std::string> parseQuery(const std::string_view target)
+{
+  std::map<std::string, std::string> params;
+  forEachQueryPair(queryOf(target), [&params](const std::string_view kv) {
+    const std::size_t eq = kv.find('=');
+    if (eq != std::string_view::npos) {
+      params.emplace(std::string(kv.substr(0, eq)),
+                     urlDecode(kv.substr(eq + 1)));
+    }
+  });
+  return params;
 }
 
 void joinUnlessSelf(std::thread& t)
@@ -653,9 +780,12 @@ BrowserLaunch browserLaunchFromString(const std::string_view mode)
 std::string reachabilityHint(const BindAddressKind kind,
                              const boost::asio::ip::address& address,
                              const std::string_view host,
-                             const uint16_t port)
+                             const uint16_t port,
+                             const std::string_view target)
 {
   const std::string port_str = std::to_string(port);
+  const std::string other_url
+      = otherMachineUrl(kind, address, host, port, target);
   if (kind == BindAddressKind::kLoopback) {
     // The far end of the tunnel is the address the listener is actually on:
     // 127.0.0.0/8 is all loopback, and "localhost" is only one of it.
@@ -663,20 +793,122 @@ std::string reachabilityHint(const BindAddressKind kind,
     std::string hint
         = "To reach it from another machine, forward the port: ssh -L "
           + port_str + ":" + far_end + ":" + port_str + " " + std::string(host);
-    // ssh listens on localhost there, not on the address in the url above.
-    if (far_end != "localhost") {
-      hint += ", then open http://localhost:" + port_str;
+    if (!other_url.empty()) {
+      hint += ", then open " + other_url;
     }
     return hint;
+  }
+  if (!other_url.empty()) {
+    return "From another machine, reach it at " + other_url;
+  }
+  // The URL already carries the address it is listening on.
+  return "That url is reachable from other machines.";
+}
+
+std::string otherMachineUrl(const BindAddressKind kind,
+                            const boost::asio::ip::address& address,
+                            const std::string_view host,
+                            const uint16_t port,
+                            const std::string_view target)
+{
+  const std::string port_str = std::to_string(port);
+  if (kind == BindAddressKind::kLoopback) {
+    // ssh listens on localhost there, not on the address in the url above.
+    if (browserHostForBind(address) == "localhost") {
+      return {};
+    }
+    return "http://localhost:" + port_str + std::string(target);
   }
   if (address.is_unspecified()) {
     // Bound to every interface, but browserHostForBind() had no address to
     // name and said "localhost", which is this machine only.
-    return "From another machine, reach it at http://" + std::string(host) + ":"
-           + port_str;
+    return "http://" + std::string(host) + ":" + port_str + std::string(target);
   }
-  // The URL already carries the address it is listening on.
-  return "That url is reachable from other machines.";
+  return {};
+}
+
+std::string generateAuthToken()
+{
+  std::vector<std::uint8_t> bytes;
+  if (!utl::randomBytes(16, bytes)) {  // 128 bits
+    return {};
+  }
+  return utl::toHex(bytes.data(), bytes.size());
+}
+
+bool tokenAllowed(const std::map<std::string, std::string>& params,
+                  const std::string_view expected)
+{
+  if (expected.empty()) {
+    return false;
+  }
+  const auto it = params.find("token");
+  return it != params.end() && constantTimeEquals(it->second, expected);
+}
+
+bool requestTokenAllowed(const std::string_view target,
+                         const std::string_view expected)
+{
+  return tokenAllowed(parseQuery(target), expected);
+}
+
+std::string authRedirectTarget(const std::string_view target,
+                               const std::string_view token)
+{
+  const auto query_pos = target.find('?');
+  const std::string_view path = query_pos == std::string_view::npos
+                                    ? target
+                                    : target.substr(0, query_pos);
+
+  // Everything but the ticket is copied byte for byte, still percent-encoded.
+  std::string kept;
+  forEachQueryPair(queryOf(target), [&kept](const std::string_view pair) {
+    if (pair.empty() || pair == "ticket" || pair.starts_with("ticket=")) {
+      return;
+    }
+    if (!kept.empty()) {
+      kept += '&';
+    }
+    kept.append(pair);
+  });
+
+  std::string redirect(path.empty() ? std::string_view("/") : path);
+  redirect += "?token=";
+  redirect.append(token);
+  if (!kept.empty()) {
+    redirect += '&';
+    redirect += kept;
+  }
+  return redirect;
+}
+
+SessionAuth::SessionAuth(std::string token,
+                         std::string ticket,
+                         const std::chrono::seconds ticket_ttl)
+    : token_(std::move(token)),
+      ticket_(std::move(ticket)),
+      expiry_(std::chrono::steady_clock::now() + ticket_ttl)
+{
+}
+
+TicketUse SessionAuth::redeemTicket(const std::string_view candidate)
+{
+  if (candidate.empty() || !constantTimeEquals(candidate, ticket_)) {
+    return TicketUse::kRefused;
+  }
+  auto live = TicketState::kLive;
+  if (std::chrono::steady_clock::now() < expiry_
+      && ticket_state_.compare_exchange_strong(live, TicketState::kRedeemed)) {
+    return TicketUse::kRedeemed;
+  }
+  return ticket_state_ == TicketState::kRedeemed ? TicketUse::kReused
+                                                 : TicketUse::kRefused;
+}
+
+void SessionAuth::revokeTicket()
+{
+  auto live = TicketState::kLive;
+  ticket_state_.compare_exchange_strong(live, TicketState::kRevoked);
 }
 
 WebSocketResponse errorResponse(const uint32_t id,
@@ -1188,9 +1420,9 @@ static void addSelectionTypeFlags(boost::json::object& root,
 
 // Qt parity: MainWindow::selectHighlightConnectedNets (Ctrl+LeftClick).
 // Expands the selection with SIGNAL nets attached to the selected
-// instances' ITerms (OUTPUT/INPUT/INOUT; FEEDTHRU excluded).  v1 inserts
-// the plain net for input pins too: NetWithSink lives in a gui-private
-// header under CMake, so the driver->sink flight line is a follow-up.
+// instances' ITerms (OUTPUT/INPUT/INOUT; FEEDTHRU excluded).  It inserts
+// the plain net for input pins too.  Qt selects NetWithSink there for a
+// driver->sink flight line; see the TODO in the connected-nets handler.
 static int addConnectedNets(web::SelectionSet& selection_set)
 {
   // Snapshot the instances first: nets are inserted into the same set,
@@ -1266,9 +1498,8 @@ static void runDeselectAction(const web::Selected& old_sel,
     return;
   }
   try {
-    // getDescriptorActions(): Selected::getActions() lives in the full
-    // gui library (its "Zoom to" needs Gui::get()); the web only links
-    // gui_descriptors and blocklists "Zoom to" anyway.
+    // getDescriptorActions(): the web zooms on its own, so it skips the
+    // "Zoom to" entry that getActions() adds.
     for (const auto& action : old_sel.getDescriptorActions()) {
       if (action.name == web::Descriptor::kDeselectAction) {
         action.callback();
@@ -2173,9 +2404,10 @@ web::SelectionSet computeConnectedSet(const std::string& action,
         if (input
             && (dir == odb::dbIoType::INPUT || dir == odb::dbIoType::INOUT)) {
           // TODO: the Qt GUI selects DbNetDescriptor::NetWithSink{net, iterm}
-          // so the input flightline points at this specific sink pin.  That
-          // descriptor lives in a private gui header; until it is exposed the
-          // web selects the plain net (all sinks highlighted).
+          // so the input flightline points at this specific sink pin.  The
+          // web selects the plain net (all sinks highlighted) because
+          // appendHighlightShapes() and the has_guides check handle only
+          // dbNet* payloads; they need NetWithSink support first.
           result.insert(registry->makeSelected(net));
         }
       }
@@ -5427,6 +5659,17 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     for (const std::string& k : sel_keys) {
       key_obj.erase(k);
     }
+    // Only the tiles that filter by layer name read these; in every other key
+    // one layer toggle would miss the cache for all the rest.
+    if (!TileGenerator::readsLayerVisibility(layer, vis)) {
+      key_obj.erase("visible_layers");
+      key_obj.erase("chiplet_hidden_layers");
+    }
+    // A tile scoped to a die depends on that die being shown, not the others.
+    if (!vis.chiplet.empty()) {
+      key_obj.erase("visible_chiplets");
+      key_obj["chiplet_visible"] = vis.isChipletVisible(vis.chiplet);
+    }
     key_obj["dpr"] = dpr;
     // Pinned like dpr: two clients on different displays ask for different
     // pixel counts of the same tile, and they are different images.
@@ -5446,10 +5689,11 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                  utl::WEB,
                  "tile",
                  1,
-                 "tile: id={} layer={} z/x/y={}/{}/{} dpr={} tile_px={} "
-                 "cache=hit bytes={}",
+                 "tile: id={} layer={} chiplet={} z/x/y={}/{}/{} dpr={} "
+                 "tile_px={} cache=hit bytes={}",
                  req.id,
                  layer,
+                 vis.chiplet,
                  z,
                  x,
                  y,
@@ -5490,10 +5734,11 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
              utl::WEB,
              "tile",
              1,
-             "tile: id={} layer={} z/x/y={}/{}/{} dpr={} tile_px={} cache={} "
-             "module_colors={} focus_nets={} detailed={} bytes={}",
+             "tile: id={} layer={} chiplet={} z/x/y={}/{}/{} dpr={} tile_px={} "
+             "cache={} module_colors={} focus_nets={} detailed={} bytes={}",
              req.id,
              layer,
+             vis.chiplet,
              z,
              x,
              y,

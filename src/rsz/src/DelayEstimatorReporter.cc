@@ -2416,7 +2416,7 @@ DelayEstimatorReporter::captureFixedStages(const Target& target,
       fixed_stage.input_pin_name = network_->pathName(input_pin);
     }
 
-    fixed_stages.push_back(fixed_stage);
+    fixed_stages.push_back(std::move(fixed_stage));
   }
 
   assignNextPins(fixed_stages, expanded, nullptr, -1);

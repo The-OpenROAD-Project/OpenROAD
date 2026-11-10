@@ -1,0 +1,5 @@
+$ A conductor etched for capacitance, which the solver does not apply.
+TECHNOLOGY = capacitive_etch
+DIELECTRIC D1 { THICKNESS=0.5 ER=4.0 }
+CONDUCTOR M1 { THICKNESS=0.2 WMIN=0.1 SMIN=0.1 CAPACITIVE_ONLY_ETCH=0.01 }
+DIELECTRIC SUB { THICKNESS=0.1 ER=11.9 }

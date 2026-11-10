@@ -53,10 +53,29 @@ FieldSolver::~FieldSolver() = default;
 void FieldSolver::readItf(const std::string& path)
 {
   Stack stack;
+  std::vector<ItfWarning> warnings;
   try {
-    stack = readItfFile(path);
+    stack = readItfFile(path, &warnings);
   } catch (const std::exception& e) {
     logger_->error(utl::FSV, 1, "{}", coreMessage(e));
+  }
+  for (const ItfWarning& w : warnings) {
+    logger_->warn(utl::FSV, 26, "ITF line {}: {}", w.line, w.message);
+  }
+  for (const Stack::Conductor& c : stack.conductors()) {
+    bool etched = c.capacitive_etch != 0;
+    for (const Stack::EtchTable& table : c.etch_tables) {
+      etched
+          = etched || table.affects != Stack::EtchTable::Affects::kResistance;
+    }
+    if (etched) {
+      // Solving as drawn would give capacitances of the wrong geometry.
+      logger_->error(utl::FSV,
+                     19,
+                     "Conductor {} has a capacitive etch, which the solver "
+                     "does not apply.",
+                     c.name);
+    }
   }
   std::set<std::string> conformals;
   for (const Stack::Conductor& c : stack.conductors()) {

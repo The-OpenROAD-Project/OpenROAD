@@ -1,0 +1,4 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO DFT-0016] Reordered 0 of 1 scan chain(s); scan wire length 345.32 um -> 345.32 um.
+chain_0: unchanged 1

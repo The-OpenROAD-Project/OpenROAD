@@ -294,7 +294,11 @@ void runNets(const Options& o,
     throw std::runtime_error("cannot read " + o.def);
   }
   odb::dbBlock* block = chip->getBlock();
-  const fsv::Stack stack = fsv::readItfFile(o.itf);
+  std::vector<fsv::ItfWarning> warnings;
+  const fsv::Stack stack = fsv::readItfFile(o.itf, &warnings);
+  for (const fsv::ItfWarning& w : warnings) {
+    std::printf("# %s line %d: %s\n", o.itf.c_str(), w.line, w.message.c_str());
+  }
   const fsv::LayerExtent extent = [&](const std::string_view layer) {
     const fsv::Stack::Layer handle = stack.layer(layer);
     if (!handle.valid()) {

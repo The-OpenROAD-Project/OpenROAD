@@ -25,6 +25,88 @@ void requireEps(const double eps, const std::string& what)
   }
 }
 
+// A table's axes ascend and are positive, its values fill the grid, and
+// a resistance is never negative.
+void requireAxis(const std::vector<double>& axis, const std::string& what)
+{
+  if (axis.empty()) {
+    throw std::invalid_argument(what + " has no points");
+  }
+  for (size_t i = 0; i < axis.size(); i++) {
+    if (!(axis[i] > 0) || !std::isfinite(axis[i])) {
+      throw std::invalid_argument(what + " must be positive");
+    }
+    if (i > 0 && !(axis[i] > axis[i - 1])) {
+      throw std::invalid_argument(what + " must be ascending");
+    }
+  }
+}
+
+void requireNonNegative(const std::vector<double>& values,
+                        const std::string& what)
+{
+  for (const double v : values) {
+    if (!(v >= 0) || !std::isfinite(v)) {
+      throw std::invalid_argument(what + " must not be negative");
+    }
+  }
+}
+
+void requireFinite(const std::vector<double>& values, const std::string& what)
+{
+  for (const double v : values) {
+    if (!std::isfinite(v)) {
+      throw std::invalid_argument(what + " must be finite");
+    }
+  }
+}
+
+void requireFiniteCrt(const Stack::CrtCurve& curve, const std::string& what)
+{
+  for (const Stack::Crt& crt : curve.crt) {
+    if (!std::isfinite(crt.crt1) || !std::isfinite(crt.crt2)) {
+      throw std::invalid_argument(what + " must be finite");
+    }
+  }
+}
+
+void requireTable(const Stack::WidthSpacingTable& table,
+                  const std::string& what)
+{
+  if (table.empty()) {
+    return;
+  }
+  requireAxis(table.widths, what + " widths");
+  requireAxis(table.spacings, what + " spacings");
+  if (table.values.size() != table.widths.size() * table.spacings.size()) {
+    throw std::invalid_argument(what + " has "
+                                + std::to_string(table.values.size())
+                                + " values for its grid");
+  }
+}
+
+void requireCurve(const Stack::Curve& curve, const std::string& what)
+{
+  if (curve.empty()) {
+    return;
+  }
+  requireAxis(curve.x, what);
+  if (curve.y.size() != curve.x.size()) {
+    throw std::invalid_argument(what + " has a value count that differs");
+  }
+}
+
+void requireCrtCurve(const Stack::CrtCurve& curve, const std::string& what)
+{
+  if (curve.empty()) {
+    return;
+  }
+  requireAxis(curve.x, what);
+  if (curve.crt.size() != curve.x.size()) {
+    throw std::invalid_argument(what + " has a value count that differs");
+  }
+}
+
 }  // namespace
 
 void Stack::setTechnology(std::string technology)
@@ -36,6 +118,27 @@ void Stack::setBackgroundEps(const double eps)
 {
   requireEps(eps, "the background");
   background_eps_ = eps;
+}
+
+void Stack::setGlobalTemperature(const double celsius)
+{
+  if (!std::isfinite(celsius)) {
+    throw std::invalid_argument("the global temperature must be finite");
+  }
+  global_temperature_ = celsius;
+}
+
+void Stack::setHalfNodeScaleFactor(const double factor)
+{
+  if (!(factor > 0) || !std::isfinite(factor)) {
+    throw std::invalid_argument("the half-node scale factor must be positive");
+  }
+  half_node_scale_factor_ = factor;
+}
+
+void Stack::setReferenceDirection(const ReferenceDirection direction)
+{
+  reference_direction_ = direction;
 }
 
 void Stack::addDielectric(const Dielectric& dielectric)
@@ -83,6 +186,42 @@ Stack::Layer Stack::addConductor(const Conductor& conductor)
                                   + " has a negative thickness");
     }
   }
+  const std::string of = " of conductor " + conductor.name;
+  requireFinite({conductor.capacitive_etch, conductor.resistive_etch},
+                "the etch" + of);
+  for (const EtchTable& etch : conductor.etch_tables) {
+    requireTable(etch.table, "an etch table" + of);
+    if (etch.table.empty()) {
+      throw std::invalid_argument("an etch table" + of + " is empty");
+    }
+    requireFinite(etch.table.values, "an etch table" + of);
+    if (etch.direction != EtchTable::Direction::kAll
+        && reference_direction_ == ReferenceDirection::kNone) {
+      throw std::invalid_argument("an etch table" + of
+                                  + " names the reference direction, which "
+                                    "the stack does not have");
+    }
+  }
+  requireNonNegative({conductor.rpsq, conductor.rho}, "the resistance" + of);
+  requireCurve(conductor.rpsq_vs_width, "the RPSQ widths" + of);
+  requireNonNegative(conductor.rpsq_vs_width.y, "the RPSQ" + of);
+  requireTable(conductor.rpsq_vs_width_spacing, "the RPSQ table" + of);
+  requireNonNegative(conductor.rpsq_vs_width_spacing.values, "the RPSQ" + of);
+  requireTable(conductor.rho_vs_width_spacing, "the RHO table" + of);
+  requireNonNegative(conductor.rho_vs_width_spacing.values, "the RHO" + of);
+  const int forms = (conductor.rpsq > 0) + (conductor.rho > 0)
+                    + !conductor.rpsq_vs_width.empty()
+                    + !conductor.rpsq_vs_width_spacing.empty()
+                    + !conductor.rho_vs_width_spacing.empty();
+  if (forms > 1) {
+    throw std::invalid_argument("conductor " + conductor.name
+                                + " gives its resistance in more than one "
+                                  "form");
+  }
+  requireFinite({conductor.t0, conductor.crt.crt1, conductor.crt.crt2},
+                "the temperature coefficients" + of);
+  requireCrtCurve(conductor.crt_vs_width, "the CRT widths" + of);
+  requireFiniteCrt(conductor.crt_vs_width, "the CRT values" + of);
   conductors_.push_back(conductor);
   return Layer(static_cast<int>(conductors_.size()) - 1);
 }
@@ -113,6 +252,25 @@ Stack::Layer Stack::addVia(const Via& via)
     throw std::invalid_argument("via " + via.name + " connects "
                                 + name(via.upper) + " to itself");
   }
+  const std::string of = " of via " + via.name;
+  requireNonNegative({via.rpv, via.area, via.rho}, "the resistance" + of);
+  if (via.rpv > 0 && !(via.area > 0)) {
+    throw std::invalid_argument("via " + via.name
+                                + " needs a positive area with its "
+                                  "resistance per via");
+  }
+  requireCurve(via.rpv_vs_area, "the RPV areas" + of);
+  requireNonNegative(via.rpv_vs_area.y, "the RPV" + of);
+  const int forms = (via.area > 0) + (via.rho > 0) + !via.rpv_vs_area.empty();
+  if (forms > 1) {
+    throw std::invalid_argument("via " + via.name
+                                + " gives its resistance in more than one "
+                                  "form");
+  }
+  requireFinite({via.t0, via.crt.crt1, via.crt.crt2},
+                "the temperature coefficients" + of);
+  requireCrtCurve(via.crt_vs_area, "the CRT areas" + of);
+  requireFiniteCrt(via.crt_vs_area, "the CRT values" + of);
   vias_.push_back(via);
   return Layer(static_cast<int>(conductors_.size() + vias_.size()) - 1);
 }

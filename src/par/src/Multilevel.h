@@ -35,6 +35,7 @@ class MultilevelPartitioner
                         int max_num_vcycle,
                         int num_coarsen_solutions,
                         int seed,
+                        int num_threads,
                         // pointers
                         CoarseningPtr coarsener,
                         PartitioningPtr partitioner,
@@ -117,7 +118,8 @@ class MultilevelPartitioner
   const int max_num_vcycle_ = 10;  // maximum number of vcycles
   const int num_coarsen_solutions_
       = 3;  // number of coarsening solutions with different random seed
-  const int seed_ = 0;  // random seed
+  const int seed_ = 0;         // random seed
+  const int num_threads_ = 1;  // maximum number of threads
   const bool v_cycle_flag_ = true;
 
   // pointers
