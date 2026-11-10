@@ -72,7 +72,7 @@ read_itf substrate_via.itf
 check_error "a via on the ground plane" {
   add_field_solver_box -net t -layer tie -rect {0 0 0.1 0.1}
 } FSV-0014
-# Capacitive etch is warned about, not refused.
+# A capacitive etch reads with a warning (FSV-0019).
 read_itf capacitive_etch.itf
 
 exit_summary

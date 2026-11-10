@@ -614,7 +614,7 @@ TEST(Itf, SkipsDeviceAndVariationBlocks)
 
 // Keywords whose effect the solver cannot model are refused by name, and
 // the forms the format makes exclusive are checked.
-TEST(Itf, RefusesAndChecksResistanceForms)
+TEST(Itf, WarnsOnUnmodeledAndChecksResistanceForms)
 {
   const std::string head
       = "TECHNOLOGY = t\nDIELECTRIC D { THICKNESS=1 ER=4 }\n";
@@ -770,8 +770,19 @@ TEST(Itf, RefusesAndChecksResistanceForms)
   parse(two + "VIA v { FROM=M1 TO=M2 RPV=1 }\n", &warnings);
   ASSERT_EQ(warnings.size(), 1u);
   EXPECT_EQ(warnings[0].message,
-            "VIA v has RPV without AREA, which is not supported; resistance is "
-            "ignored");
+            "VIA v has RPV without AREA, which is not supported; its "
+            "resistance is ignored");
+  // So is AREA without RPV, leaving a zero-ohm via.
+  warnings.clear();
+  const Stack area_only
+      = parse(two + "VIA v { FROM=M1 TO=M2 AREA=0.01 }\n", &warnings);
+  ASSERT_EQ(warnings.size(), 1u);
+  EXPECT_EQ(warnings[0].message,
+            "VIA v has AREA without RPV, which is not supported; its "
+            "resistance is ignored");
+  ASSERT_EQ(area_only.vias().size(), 1u);
+  EXPECT_EQ(area_only.vias()[0].rpv, 0);
+  EXPECT_EQ(area_only.vias()[0].area, 0);
   expectError(two + "VIA v { FROM=M1 TO=M2 RPV=1 AREA=0 }\n",
               "VIA v needs a non-negative resistance and a positive area");
   // A zero resistance per via with an area is a zero-ohm via, in both the
@@ -1052,6 +1063,14 @@ TEST(Itf, RealProcessConstructs)
   ASSERT_EQ(stack.vias().size(), 1u);
   EXPECT_EQ(stack.vias()[0].name, "v");
   EXPECT_EQ(stack.vias()[0].rpv_vs_area.x.size(), 2u);
+  EXPECT_TRUE(stack.vias()[0].interpolate_rpv_vs_area);
+  expectError(
+      two + "VIA v { FROM=M1 TO=M2 RPV_VS_AREA NEAREST { (0.01, 10) } }\n",
+      "unsupported option NEAREST of RPV_VS_AREA");
+  expectError(two + "VIA v { FROM { M1 = x } TO=M2 }\n",
+              "FROM of VIA v expects layer names, not M1");
+  expectError(two + "VIA v { FROM { } TO=M2 }\n",
+              "FROM of VIA v names no layer");
 
   // VIA with multiple layers in FROM is warned about and skipped.
   warnings.clear();
@@ -1064,6 +1083,61 @@ TEST(Itf, RealProcessConstructs)
   EXPECT_EQ(warnings[0].message,
             "VIA v connecting multiple layers is not supported");
   EXPECT_TRUE(multi.vias().empty());
+  // A skipped via still claims its name.
+  expectError(two + "VIA v { FROM { M1 M2 } TO=M2 }\n"
+                    "VIA v { FROM=M1 TO=M2 }\n",
+              "VIA v is defined twice");
+
+  // The substrate in lower case.
+  const Stack tie = parse(two + "VIA t { FROM=substrate TO=M1 }\n");
+  ASSERT_EQ(tie.vias().size(), 1u);
+  EXPECT_EQ(tie.vias()[0].upper, tie.layer("M1"));
+  EXPECT_FALSE(tie.vias()[0].lower.valid());
+
+  // Process identification in the header is skipped without a warning.
+  warnings.clear();
+  parse(
+      "TECHNOLOGY = t\nPROCESS_NODE = 3\nPROCESS_FOUNDRY = f\n"
+      "GATE_RESISTANCE_ADJUSTMENT_FACTOR = 1\n"
+      "DIELECTRIC D { THICKNESS=1 ER=4 }\n"
+      "CONDUCTOR M { THICKNESS=0.2 }\n"
+          + sub,
+      &warnings);
+  EXPECT_TRUE(warnings.empty());
+
+  // Geometry a conductor does not model is read with a warning.
+  warnings.clear();
+  parse(head + "CONDUCTOR M { THICKNESS=0.2 MEASURED_FROM=D "
+               "THICKNESS_VARIATION_VS_MASK { (1, 0.01) } }\n" + sub,
+        &warnings);
+  ASSERT_EQ(warnings.size(), 2u);
+  EXPECT_EQ(warnings[0].message,
+            "THICKNESS_VARIATION_VS_MASK in CONDUCTOR M is not supported");
+  EXPECT_EQ(warnings[1].message,
+            "MEASURED_FROM in CONDUCTOR M is not supported");
+
+  // A conformal dielectric's BW_T is not placed: warned about unless zero.
+  const std::string conformal
+      = "TECHNOLOGY = t\nDIELECTRIC D2 { THICKNESS=1 ER=4 }\n"
+        "DIELECTRIC C { THICKNESS=0 ER=7 SW_T=0.05 TW_T=0.05 BW_T={} "
+        "IS_CONFORMAL }\n"
+        "DIELECTRIC D1 { THICKNESS=0.05 ER=4 }\n"
+        "CONDUCTOR M { THICKNESS=0.2 }\n"
+        + sub;
+  auto with_bw_t = [&](const std::string& value) {
+    std::string text = conformal;
+    text.replace(text.find("{}"), 2, value);
+    return text;
+  };
+  warnings.clear();
+  const Stack bottom = parse(with_bw_t("0.02"), &warnings);
+  ASSERT_EQ(warnings.size(), 1u);
+  EXPECT_EQ(warnings[0].message,
+            "BW_T of IS_CONFORMAL dielectric C is not supported");
+  EXPECT_EQ(bottom.conductor(bottom.layer("M")).conformals.size(), 1u);
+  warnings.clear();
+  parse(with_bw_t("0"), &warnings);
+  EXPECT_TRUE(warnings.empty());
 }
 
 }  // namespace
