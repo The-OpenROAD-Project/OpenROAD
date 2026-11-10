@@ -264,6 +264,8 @@ TEST(Model, CrossingReach)
   bad = reach;
   bad.width = 0;
   EXPECT_THROW(table.setReach(bad), std::invalid_argument);
+  bad.width = std::numeric_limits<double>::infinity();
+  EXPECT_THROW(table.setReach(bad), std::invalid_argument);
 }
 
 TEST(Model, DiagonalLookup)

@@ -34,7 +34,8 @@ struct BuildOptions
   // none, `lateral_reach_one_sided` with a cover on one side only, whose
   // open side lets the field spread further. Consecutive added spacings
   // differ by at most the ratio `lateral_reach_step`, which must be above
-  // 1. A neighbor past the last spacing is looked up as none. 0 adds none.
+  // 1. A neighbor past the last spacing is looked up as none. 0 adds none;
+  // the reaches must be finite and not negative.
   double lateral_reach = 6;
   double lateral_reach_one_sided = 10;
   double lateral_reach_step = 1.6;
@@ -90,7 +91,8 @@ struct BuildOptions
   std::vector<double> diagonal_gap_factors{-0.5, 0, 0.25, 0.5, 1, 2, 4, 8, 16};
   // Past the last gap, more gaps out to this multiple of the vertical
   // distance between the two layers, consecutive ones at most twice apart;
-  // a parallel wire farther out fades as one over its gap. 0 adds none.
+  // a parallel wire farther out fades as one over its gap. 0 adds none; it
+  // must be finite and not negative.
   double diagonal_reach = 4;
   std::vector<double> diagonal_spacing_factors{1, 2, 4, 8};
   std::vector<double> diagonal_far_spacing_factors{1, 4};

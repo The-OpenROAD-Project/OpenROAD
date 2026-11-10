@@ -50,6 +50,15 @@ void extendGrid(std::vector<double>& grid,
   }
 }
 
+// A reach option must be finite and not negative; 0 adds no grid points.
+void requireReach(const char* name, const double reach)
+{
+  if (!(reach >= 0) || !std::isfinite(reach)) {
+    throw std::invalid_argument(std::string(name)
+                                + " must be finite and not negative");
+  }
+}
+
 // A conductor a wire can be on: the stack's, with a minimum width and
 // spacing, and off the ground plane.
 const fsv::Stack::Conductor& requireConductor(const fsv::Stack& stack,
@@ -610,6 +619,9 @@ void buildLateral(const fsv::Stack& stack,
           h = std::min(h,
                        requireConductor(stack, above).bottom - conductor.top);
         }
+        requireReach("lateral_reach", options.lateral_reach);
+        requireReach("lateral_reach_one_sided",
+                     options.lateral_reach_one_sided);
         const double reach = below.valid() != above.valid()
                                  ? options.lateral_reach_one_sided
                                  : options.lateral_reach;
@@ -1400,6 +1412,7 @@ void buildDiagonal(const fsv::Stack& stack,
   for (const double f : options.diagonal_gap_factors) {
     gaps.push_back(f * w);
   }
+  requireReach("diagonal_reach", options.diagonal_reach);
   if (options.diagonal_reach > 0) {
     const double dz = other_conductor.bottom >= conductor.top
                           ? other_conductor.bottom - conductor.top

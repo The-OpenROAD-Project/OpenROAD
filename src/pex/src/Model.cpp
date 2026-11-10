@@ -114,8 +114,9 @@ CrossingTable::CrossingTable(std::vector<double> gaps,
 
 void CrossingTable::setReach(CrossingReach reach)
 {
-  if (!(reach.width > 0)) {
-    throw std::invalid_argument("crossing reach needs a positive width");
+  if (!(reach.width > 0) || !std::isfinite(reach.width)) {
+    throw std::invalid_argument(
+        "crossing reach needs a finite, positive width");
   }
   requireGrid("crossing reach past", reach.past, false);
   requireGrid("crossing reach extent", reach.extents, false);

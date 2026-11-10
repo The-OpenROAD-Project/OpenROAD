@@ -675,6 +675,25 @@ TEST(ModelBuilder, RefusesBadLayersBeforeSolving)
   EXPECT_THROW(buildLateral(sky130(), L("metX"), o, model),
                std::invalid_argument);
   EXPECT_TRUE(model.laterals().empty());
+  // A reach that is not finite, or negative, is refused.
+  for (const double bad : {std::numeric_limits<double>::quiet_NaN(),
+                           std::numeric_limits<double>::infinity(),
+                           -1.0}) {
+    BuildOptions r = smallBuild(2);
+    r.lateral_reach = bad;
+    EXPECT_THROW(buildLateral(sky130(), L("met2"), r, model),
+                 std::invalid_argument);
+    r = smallBuild(2);
+    r.lateral_reach_one_sided = bad;
+    EXPECT_THROW(buildLateral(sky130(), L("met2"), r, model),
+                 std::invalid_argument);
+    r = smallBuild(2);
+    r.diagonal_reach = bad;
+    EXPECT_THROW(buildDiagonal(sky130(), L("met2"), L("met1"), r, model),
+                 std::invalid_argument);
+  }
+  EXPECT_TRUE(model.laterals().empty());
+  EXPECT_TRUE(model.diagonals().empty());
 }
 
 // A failure inside a solver job reaches the caller as the exception it
