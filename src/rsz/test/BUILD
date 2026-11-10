@@ -301,6 +301,7 @@ TESTS = [
     "repair_setup_parallel_eval_reference_period",
     "repair_setup_parallel_eval_reference_period_modes",
     "repair_setup_vt_swap2",
+    "repair_setup_vt_swap_unset_dont_use",
     "global_sizing",
     "global_sizing_threads",
     "global_sizing_presize",

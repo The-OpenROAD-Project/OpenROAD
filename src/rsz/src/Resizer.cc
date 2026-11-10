@@ -3659,6 +3659,8 @@ void Resizer::setDontUse(sta::LibertyCell* cell, bool dont_use)
   buffer_lowest_drive_ = nullptr;
   port_buffer_ = nullptr;
   swappable_cells_cache_.clear();
+  // getVTEquivCells skips dont_use cells too.
+  vt_equiv_cells_cache_.clear();
   // findTargetLoads skips dont_use cells, so a cell re-enabled with
   // unset_dont_use would otherwise keep a target load of zero and be ranked
   // worst by findTargetCell.
@@ -3675,6 +3677,7 @@ void Resizer::resetDontUse()
   buffer_lowest_drive_ = nullptr;
   port_buffer_ = nullptr;
   swappable_cells_cache_.clear();
+  vt_equiv_cells_cache_.clear();
   target_load_map_ = nullptr;
 
   // recopy in liberty cell dont uses
