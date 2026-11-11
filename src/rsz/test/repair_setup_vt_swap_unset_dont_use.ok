@@ -54,9 +54,9 @@ SLVT dont_use: R 246 L 99 SL 125
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -45.431 |     -864.8 |     43 | resp_msg[15]
-    final |       0 |      44 |        0 |      0 |     0 |    +0.0% |  -34.293 |     -518.7 |     40 | resp_msg[13]
+    final |       0 |      43 |        0 |      0 |     0 |    +0.0% |  -34.223 |     -515.6 |     40 | resp_msg[13]
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0051] Resized 44 instances: 0 up, 0 up match, 0 down, 44 VT
+[INFO RSZ-0051] Resized 43 instances: 0 up, 0 up match, 0 down, 43 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
-SLVT usable: R 224 L 78 SL 168
-worst slack max -34.293
+SLVT usable: R 225 L 98 SL 147
+worst slack max -34.223
