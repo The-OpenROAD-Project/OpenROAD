@@ -170,6 +170,9 @@ class GRNet
   {
     return pin_index_to_iterm_;
   }
+  // Maps each port on a same-net pin's metal to that pin's index.
+  const std::map<int, int>& getCoveringPins() const { return covering_pins_; }
+  void shareCoveringPinAccessPoints();
   // Grid point of the driver pin's selected access point, if any.
   std::optional<PointT> getDriverAccessPoint() const;
   bool isLocal() const;
@@ -188,6 +191,7 @@ class GRNet
   std::vector<std::vector<GRPoint>> pin_access_points_;
   std::map<int, odb::dbITerm*> pin_index_to_iterm_;
   std::map<int, odb::dbBTerm*> pin_index_to_bterm_;
+  std::map<int, int> covering_pins_;
   std::map<int, AccessPoint> preferred_aps_;
   BoxT bounding_box_;
   std::shared_ptr<GRTreeNode> routing_tree_;

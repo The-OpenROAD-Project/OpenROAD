@@ -70,6 +70,8 @@ TESTS = [
     "obs_out_of_die",
     "obstruction",
     "overlapping_edges",
+    "pad_pin_edge",
+    "pad_pin_edge_cugr",
     "pd1",
     "pd2",
     "pd3",

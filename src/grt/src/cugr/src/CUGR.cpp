@@ -2549,6 +2549,10 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
   const std::vector<std::vector<GRPoint>>& pin_aps
       = new_net->getPinAccessPoints();
   for (int pin_index = 0; pin_index < new_net->getNumPins(); pin_index++) {
+    // A port on a same-net pin's metal takes that pin's access point below.
+    if (new_net->getCoveringPins().contains(pin_index)) {
+      continue;
+    }
     bool covered = false;
     for (const GRPoint& candidate : pin_aps[pin_index]) {
       if (occupied.contains(grid_graph_->hashCell(candidate))) {
@@ -2565,6 +2569,7 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
       return false;
     }
   }
+  new_net->shareCoveringPinAccessPoints();
 
   new_net->setRoutingTree(std::move(tree));
   // The flag records provenance, not geometry: adopted routes come from

@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "PinGeometry.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -15,18 +16,6 @@
 namespace grt {
 
 class Net;
-
-// For iterm pins this is the edge on a macro/pad cell that the pin lies on.
-// For bterm pins this is the edge on block that the pin lies on.
-// It is none for standard cells.
-enum class PinEdge
-{
-  north,
-  south,
-  east,
-  west,
-  none
-};
 
 class Pin
 {
@@ -58,6 +47,8 @@ class Pin
     return boxes_per_layer_;
   }
   bool isPort() const { return is_port_; }
+  // Same-net iterm whose metal covers this port, or nullptr.
+  odb::dbITerm* getCoveringITerm() const { return covering_iterm_; }
   bool isConnectedToPadOrMacro() const { return connected_to_pad_or_macro_; }
   const odb::Point& getOnGridPosition() const { return on_grid_position_; }
   void setOnGridPosition(odb::Point on_grid_pos)
@@ -86,6 +77,7 @@ class Pin
   std::map<int, std::vector<odb::Rect>> boxes_per_layer_;
   bool is_port_;
   bool connected_to_pad_or_macro_;
+  odb::dbITerm* covering_iterm_ = nullptr;
 };
 
 }  // namespace grt
