@@ -1089,7 +1089,15 @@ void buildCrossings(const fsv::Stack& stack,
       length_cross[none] = fitted(none, true);
     }
     if (length_cross[none] <= 0 && table.opposite.valid()) {
-      continue;  // the table without the plane stands in
+      // The table without the plane stands in, held under this key too so
+      // that a resumed build finds it; its reach stays with that table.
+      // The planeless table comes first in `tables` or was held before.
+      const CrossingTable* plain
+          = model.crossing({table.key.layer, table.key.cover, ""});
+      model.addCrossing(
+          table.key,
+          CrossingTable(plain->gaps(), plain->values(), plain->spacings()));
+      continue;
     }
     if (length_cross[none] <= 0) {
       throw std::runtime_error("the crossing shares of " + table.key.layer
