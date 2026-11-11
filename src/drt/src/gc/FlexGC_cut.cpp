@@ -2,6 +2,8 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cassert>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -681,18 +683,19 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable()
   }
 }
 
-void FlexGCWorker::Impl::checkLef58Enclosure_main(
+template <typename Rect>
+frLef58EnclosureConstraint* FlexGCWorker::Impl::findLef58EnclosureViolation(
     gcRect* viaRect,
-    gcRect* encRect,
-    const std::vector<gcRect*>& candidates)
+    const std::vector<Rect*>& candidates,
+    const frCoord width,
+    const bool above)
 {
   auto layer = getTech()->getLayer(viaRect->getLayerNum());
   auto cutClassIdx = layer->getCutClassIdx(viaRect->width(), viaRect->length());
-  bool above = encRect->getLayerNum() > viaRect->getLayerNum();
-  const auto& constraints = layer->getLef58EnclosureConstraints(
-      cutClassIdx, encRect->width(), above);
+  const auto& constraints
+      = layer->getLef58EnclosureConstraints(cutClassIdx, width, above);
   if (constraints.empty()) {
-    return;
+    return nullptr;
   }
   frLef58EnclosureConstraint* lastCon = nullptr;
   for (auto* candidate : candidates) {
@@ -707,9 +710,26 @@ void FlexGCWorker::Impl::checkLef58Enclosure_main(
     for (auto con : constraints) {
       lastCon = con;
       if (con->isValidOverhang(endOverhang, sideOverhang)) {
-        return;  // valid overhangs
+        return nullptr;  // valid overhangs
       }
     }
+  }
+  return lastCon;
+}
+
+void FlexGCWorker::Impl::checkLef58Enclosure_main(
+    gcRect* viaRect,
+    gcRect* encRect,
+    const std::vector<gcRect*>& candidates)
+{
+  assert(encRect != nullptr);
+  auto* lastCon = findLef58EnclosureViolation(
+      viaRect,
+      candidates,
+      encRect->width(),
+      encRect->getLayerNum() > viaRect->getLayerNum());
+  if (lastCon == nullptr) {
+    return;
   }
   odb::Rect markerBox(gtl::xl(*viaRect),
                       gtl::yl(*viaRect),
@@ -740,11 +760,168 @@ void FlexGCWorker::Impl::checkLef58Enclosure_main(
   marker->addSrc(net->getOwner());
   addMarker(std::move(marker));
 }
-void FlexGCWorker::Impl::checkLef58Enclosure_main(gcRect* rect)
+
+gcRect* FlexGCWorker::Impl::getLef58Enclosure(gcRect* rect,
+                                              const frLayerNum layerNum,
+                                              std::vector<gcRect*>& candidates)
 {
-  if (rect->isFixed()) {
+  std::vector<rq_box_value_t<gcRect*>> results;
+  auto& workerRegionQuery = getWorkerRegionQuery();
+  workerRegionQuery.queryMaxRectangle(*rect, layerNum, results);
+  gcRect* encRect = nullptr;
+  for (auto& [box, ptr] : results) {
+    if (ptr->getNet() != rect->getNet()) {
+      continue;
+    }
+    if (!gtl::contains(*ptr, *rect)) {
+      continue;
+    }
+    candidates.push_back(ptr);
+    if (encRect == nullptr) {
+      encRect = ptr;
+    } else if (ptr->width() > encRect->width()) {
+      encRect = ptr;
+    }
+  }
+  return encRect;
+}
+
+FlexGCWorker::Impl::FixedEnclosureLayerCache::FixedEnclosureLayerCache(
+    const gcNet* net,
+    const frLayerNum layer_num)
+{
+  gtl::get_max_rectangles(rects, net->getPolygons(layer_num, true));
+  std::vector<rq_box_value_t<size_t>> values;
+  values.reserve(rects.size());
+  for (size_t i = 0; i < rects.size(); ++i) {
+    const auto& rect = rects[i];
+    values.push_back(
+        {odb::Rect(gtl::xl(rect), gtl::yl(rect), gtl::xh(rect), gtl::yh(rect)),
+         i});
+  }
+  index = RTree<size_t>(values);
+}
+
+void FlexGCWorker::Impl::checkFixedLef58Enclosure(
+    gcRect* via,
+    const frLayerNum layer_num,
+    std::unique_ptr<FixedEnclosureLayerCache>& cache)
+{
+  const auto* net = via->getNet();
+  if (layer_num < 0
+      || static_cast<size_t>(layer_num) >= getTech()->getLayers().size()
+      || net->getPolygons(layer_num, false).empty()) {
     return;
   }
+  std::vector<gcRect*> combined_candidates;
+  const auto* combined = getLef58Enclosure(via, layer_num, combined_candidates);
+  if (combined == nullptr) {
+    return;
+  }
+  const bool above = layer_num > via->getLayerNum();
+  auto* constraint = findLef58EnclosureViolation(
+      via, combined_candidates, combined->width(), above);
+  if (constraint == nullptr) {
+    return;
+  }
+  // Construct the fixed baseline only when combined metal fails enclosure.
+  if (cache == nullptr) {
+    cache = std::make_unique<FixedEnclosureLayerCache>(net, layer_num);
+  }
+  const odb::Rect query_box(
+      gtl::xl(*via), gtl::yl(*via), gtl::xh(*via), gtl::yh(*via));
+  std::vector<rq_box_value_t<size_t>> results;
+  cache->index.query(bgi::intersects(query_box), std::back_inserter(results));
+  std::vector<const gtl::rectangle_data<frCoord>*> fixed_candidates;
+  frCoord fixed_width = 0;
+  for (const auto& [box, index] : results) {
+    const auto& rect = cache->rects[index];
+    if (gtl::contains(rect, *via)) {
+      fixed_candidates.push_back(&rect);
+      const frCoord width = std::min(gtl::delta(rect, gtl::HORIZONTAL),
+                                     gtl::delta(rect, gtl::VERTICAL));
+      fixed_width = std::max(fixed_width, width);
+    }
+  }
+  // Missing fixed enclosure and intrinsic fixed violations remain waived.
+  if (fixed_candidates.empty()
+      || findLef58EnclosureViolation(via, fixed_candidates, fixed_width, above)
+             != nullptr) {
+    return;
+  }
+  gtl::rectangle_data<frCoord> delta_piece;
+  if (getRoutedEnclosureDelta(*combined, *cache, delta_piece)) {
+    addFixedLef58EnclosureMarker(via, layer_num, constraint, delta_piece);
+  }
+}
+
+bool FlexGCWorker::Impl::getRoutedEnclosureDelta(
+    const gtl::rectangle_data<frCoord>& witness,
+    const FixedEnclosureLayerCache& cache,
+    gtl::rectangle_data<frCoord>& delta_piece)
+{
+  const odb::Rect query_box(
+      gtl::xl(witness), gtl::yl(witness), gtl::xh(witness), gtl::yh(witness));
+  std::vector<rq_box_value_t<size_t>> results;
+  cache.index.query(bgi::intersects(query_box), std::back_inserter(results));
+  using gtl::operators::operator-=;
+  gtl::polygon_90_set_data<frCoord> delta;
+  delta.insert(witness);
+  for (const auto& [box, index] : results) {
+    delta -= cache.rects[index];
+  }
+  std::vector<gtl::rectangle_data<frCoord>> pieces;
+  gtl::get_rectangles(pieces, delta);
+  pieces.erase(std::remove_if(pieces.begin(),
+                              pieces.end(),
+                              [](const auto& rect) {
+                                return gtl::xh(rect) <= gtl::xl(rect)
+                                       || gtl::yh(rect) <= gtl::yl(rect);
+                              }),
+               pieces.end());
+  if (pieces.empty()) {
+    return false;
+  }
+  delta_piece = *std::min_element(
+      pieces.begin(), pieces.end(), [](const auto& lhs, const auto& rhs) {
+        return std::make_tuple(
+                   gtl::xl(lhs), gtl::yl(lhs), gtl::xh(lhs), gtl::yh(lhs))
+               < std::make_tuple(
+                   gtl::xl(rhs), gtl::yl(rhs), gtl::xh(rhs), gtl::yh(rhs));
+      });
+  return true;
+}
+
+void FlexGCWorker::Impl::addFixedLef58EnclosureMarker(
+    gcRect* via,
+    const frLayerNum layer_num,
+    frLef58EnclosureConstraint* constraint,
+    const gtl::rectangle_data<frCoord>& delta_piece)
+{
+  const odb::Rect via_box(
+      gtl::xl(*via), gtl::yl(*via), gtl::xh(*via), gtl::yh(*via));
+  const odb::Rect delta_box(gtl::xl(delta_piece),
+                            gtl::yl(delta_piece),
+                            gtl::xh(delta_piece),
+                            gtl::yh(delta_piece));
+  const odb::Rect marker_box(std::min(via_box.xMin(), delta_box.xMin()),
+                             std::min(via_box.yMin(), delta_box.yMin()),
+                             std::max(via_box.xMax(), delta_box.xMax()),
+                             std::max(via_box.yMax(), delta_box.yMax()));
+  auto* owner = via->getNet()->getOwner();
+  auto marker = std::make_unique<frMarker>();
+  marker->setBBox(marker_box);
+  marker->setLayerNum(layer_num);
+  marker->setConstraint(constraint);
+  marker->addSrc(owner);
+  marker->addAggressor(owner, std::make_tuple(layer_num, delta_box, false));
+  marker->addVictim(owner, std::make_tuple(via->getLayerNum(), via_box, true));
+  addMarker(std::move(marker));
+}
+
+void FlexGCWorker::Impl::checkLef58Enclosure_main(gcRect* rect,
+                                                  FixedEnclosureCaches& caches)
+{
   auto layer = getTech()->getLayer(rect->getLayerNum());
   auto cutClassIdx = layer->getCutClassIdx(rect->width(), rect->length());
   bool hasAboveConstraints
@@ -754,38 +931,25 @@ void FlexGCWorker::Impl::checkLef58Enclosure_main(gcRect* rect)
   if (!hasAboveConstraints && !hasBelowConstraints) {
     return;
   }
-  auto getEnclosure = [this](gcRect* rect,
-                             frLayerNum layerNum,
-                             std::vector<gcRect*>& candidates) {
-    std::vector<rq_box_value_t<gcRect*>> results;
-    auto& workerRegionQuery = getWorkerRegionQuery();
-    workerRegionQuery.queryMaxRectangle(*rect, layerNum, results);
-    gcRect* encRect = nullptr;
-    for (auto& [box, ptr] : results) {
-      if (ptr->getNet() != rect->getNet()) {
-        continue;
-      }
-      if (!gtl::contains(*ptr, *rect)) {
-        continue;
-      }
-      candidates.push_back(ptr);
-      if (encRect == nullptr) {
-        encRect = ptr;
-      } else if (ptr->width() > encRect->width()) {
-        encRect = ptr;
-      }
-    }
-    return encRect;
-  };
   if (hasBelowConstraints) {
-    std::vector<gcRect*> candidates;
-    gcRect* belowEnc = getEnclosure(rect, layer->getLayerNum() - 1, candidates);
-    checkLef58Enclosure_main(rect, belowEnc, candidates);
+    if (rect->isFixed()) {
+      checkFixedLef58Enclosure(rect, layer->getLayerNum() - 1, caches[0]);
+    } else {
+      std::vector<gcRect*> candidates;
+      gcRect* belowEnc
+          = getLef58Enclosure(rect, layer->getLayerNum() - 1, candidates);
+      checkLef58Enclosure_main(rect, belowEnc, candidates);
+    }
   }
   if (hasAboveConstraints) {
-    std::vector<gcRect*> candidates;
-    gcRect* aboveEnc = getEnclosure(rect, layer->getLayerNum() + 1, candidates);
-    checkLef58Enclosure_main(rect, aboveEnc, candidates);
+    if (rect->isFixed()) {
+      checkFixedLef58Enclosure(rect, layer->getLayerNum() + 1, caches[1]);
+    } else {
+      std::vector<gcRect*> candidates;
+      gcRect* aboveEnc
+          = getLef58Enclosure(rect, layer->getLayerNum() + 1, candidates);
+      checkLef58Enclosure_main(rect, aboveEnc, candidates);
+    }
   }
 }
 
