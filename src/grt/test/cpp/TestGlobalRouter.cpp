@@ -118,7 +118,98 @@ TEST_F(GlobalRouterTest, RudySkipsUnplacedPinsWhenPinPlacementCheckDisabled)
   EXPECT_THROW(grt_.globalRoute(), std::runtime_error);
 }
 
-TEST_F(GlobalRouterTest, RudyCountsNetsWithAlignedTerminals)
+// RUDY demand a two-pin net should deposit in one tile: the net needs
+// hpwl * wire_width of wire area, spread uniformly over its terminal bounding
+// box, and the tile gets the share of that box it covers, relative to the
+// tile's own area. The share is an area ratio for a box with area, and a
+// length ratio for a box that is a line (terminals aligned on x or y).
+float expectedDemand(const odb::Rect& net_box,
+                     const odb::Rect& tile,
+                     const int wire_width)
+{
+  if (!net_box.overlaps(tile)) {
+    return 0;
+  }
+  const odb::Rect inside = net_box.intersect(tile);
+  const float hpwl = net_box.dx() + net_box.dy();
+  const float share = net_box.area() > 0
+                          ? static_cast<float>(inside.area()) / net_box.area()
+                          : (inside.dx() + inside.dy()) / hpwl;
+  return hpwl * wire_width * share / tile.area() * 100;
+}
+
+TEST_F(GlobalRouterTest, RudyDepositsWireAreaPerTile)
+{
+  constexpr int kWireWidth = 100;
+  grt::Rudy* rudy = grt_.getRudy();
+  rudy->setWireWidth(kWireWidth);
+  odb::dbTechLayer* metal3 = db_->getTech()->findLayer("metal3");
+  ASSERT_NE(metal3, nullptr);
+  const auto [grid_x, grid_y] = rudy->getGridSize();
+  ASSERT_GE(grid_x, 8);
+  ASSERT_GE(grid_y, 8);
+
+  // Tile centers, so a line net lies strictly inside the tiles it crosses.
+  auto center = [&](int x, int y) {
+    const odb::Rect tile = rudy->getTile(x, y).getRect();
+    return odb::Point(tile.xCenter(), tile.yCenter());
+  };
+  auto make_net = [&](const std::string& name, odb::Point a, odb::Point b) {
+    odb::dbNet* net = odb::dbNet::create(block_, name.c_str());
+    for (const odb::Point& p : {a, b}) {
+      const std::string pin_name
+          = name + "_" + std::to_string(p.x()) + "_" + std::to_string(p.y());
+      odb::dbBTerm* bterm = odb::dbBTerm::create(net, pin_name.c_str());
+      EXPECT_NE(bterm, nullptr);
+      odb::dbBPin* bpin = odb::dbBPin::create(bterm);
+      odb::dbBox::create(
+          bpin, metal3, p.x() - 100, p.y() - 100, p.x() + 100, p.y() + 100);
+      bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    }
+    return net;
+  };
+
+  // Interior tiles only: the last row and column absorb the die remainder, so
+  // every tile the nets touch has the same area as tile (0, 0).
+  const struct
+  {
+    const char* name;
+    odb::Point a;
+    odb::Point b;
+  } cases[] = {
+      {"horizontal_line", center(1, 2), center(6, 2)},
+      {"vertical_line", center(3, 1), center(3, 6)},
+      {"rectangle", center(1, 1), center(5, 4)},
+  };
+  const float tile_area = rudy->getTile(0, 0).getRect().area();
+  for (const auto& [name, a, b] : cases) {
+    SCOPED_TRACE(name);
+    odb::dbNet* net = make_net(name, a, b);
+    const odb::Rect net_box = net->getTermBBox();
+    odb::PtrSet<odb::dbNet> selection{net};
+    rudy->calculateRudy(&selection);
+
+    float total = 0;
+    int touched = 0;
+    for (int x = 0; x < grid_x; x++) {
+      for (int y = 0; y < grid_y; y++) {
+        const odb::Rect tile = rudy->getTile(x, y).getRect();
+        const float demand = rudy->getTile(x, y).getDemand();
+        EXPECT_FLOAT_EQ(demand, expectedDemand(net_box, tile, kWireWidth))
+            << "tile (" << x << ", " << y << ")";
+        total += demand;
+        touched += demand > 0;
+      }
+    }
+    // The net spans several tiles, and its wire area adds up to the whole
+    // hpwl * wire_width whether the box is a line or a rectangle.
+    EXPECT_GT(touched, 1);
+    const float hpwl = net_box.dx() + net_box.dy();
+    EXPECT_NEAR(total, hpwl * kWireWidth / tile_area * 100, total * 1e-5);
+  }
+}
+
+TEST_F(GlobalRouterTest, RudyLineNetIsTheLimitOfAThinRectangle)
 {
   grt::Rudy* rudy = grt_.getRudy();
   odb::dbTechLayer* metal3 = db_->getTech()->findLayer("metal3");

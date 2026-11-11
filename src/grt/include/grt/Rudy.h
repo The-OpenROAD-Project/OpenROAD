@@ -138,9 +138,9 @@ class Rudy
         const odb::Rect intersect = net_rect.intersect(tile_box);
         const auto tile_area = static_cast<float>(tile_box.area());
         if (is_line) {
-          const auto length
+          const auto intersect_length
               = static_cast<float>(intersect.dx() + intersect.dy());
-          visit(x, y, length * wire_width_ / tile_area * 100);
+          visit(x, y, intersect_length * wire_width_ / tile_area * 100);
           continue;
         }
         const auto tile_net_box_ratio
