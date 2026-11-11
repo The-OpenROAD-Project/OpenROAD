@@ -6,7 +6,7 @@ UNITS DISTANCE MICRONS 2000 ;
 
 DIEAREA ( 0 0 ) ( 200000 200000 ) ;
 
-COMPONENTS 14 ;
+COMPONENTS 16 ;
 - inv_multi INV_X1 + PLACED ( 20000 20000 ) N
  ;
 - inv_gater INV_X1 + PLACED ( 20000 60000 ) N
@@ -14,6 +14,8 @@ COMPONENTS 14 ;
 - inv_single INV_X1 + PLACED ( 20000 100000 ) N
  ;
 - inv_port INV_X1 + PLACED ( 20000 140000 ) N
+ ;
+- inv_mixed INV_X1 + PLACED ( 20000 180000 ) N
  ;
 - gater CLKGATE_X1 + PLACED ( 60000 60000 ) N
  ;
@@ -27,6 +29,8 @@ COMPONENTS 14 ;
  ;
 - ff_s0 DFF_X1 + PLACED ( 60000 100000 ) N
  ;
+- ff_x0 DFF_X1 + PLACED ( 60000 180000 ) N
+ ;
 - ff0 DFF_X1 + PLACED ( 140000 20000 ) N
  ;
 - ff1 DFF_X1 + PLACED ( 140000 60000 ) N
@@ -37,19 +41,22 @@ COMPONENTS 14 ;
  ;
 END COMPONENTS
 
-PINS 2 ;
+PINS 3 ;
 - clk + NET clk + DIRECTION INPUT + USE SIGNAL
   + LAYER metal6 ( -140 0 ) ( 140 280 )
   + FIXED ( 100000 200000 ) S ;
 - clk_out + NET inv_port_out + DIRECTION OUTPUT + USE SIGNAL
   + LAYER metal6 ( -140 0 ) ( 140 280 )
   + FIXED ( 0 140000 ) E ;
+- clk_mixed_out + NET inv_mixed_out + DIRECTION OUTPUT + USE SIGNAL
+  + LAYER metal6 ( -140 0 ) ( 140 280 )
+  + FIXED ( 0 180000 ) E ;
 END PINS
 
-NETS 6 ;
+NETS 7 ;
 - clk
   ( PIN clk ) ( inv_multi A ) ( inv_gater A ) ( inv_single A )
-  ( inv_port A ) ( ff0 CK ) ( ff1 CK ) ( ff2 CK ) ( ff3 CK )
+  ( inv_port A ) ( inv_mixed A ) ( ff0 CK ) ( ff1 CK ) ( ff2 CK ) ( ff3 CK )
  ;
 - inv_multi_out
   ( inv_multi ZN ) ( ff_m0 CK ) ( ff_m1 CK )
@@ -65,6 +72,9 @@ NETS 6 ;
  ;
 - inv_port_out
   ( PIN clk_out ) ( inv_port ZN )
+ ;
+- inv_mixed_out
+  ( PIN clk_mixed_out ) ( inv_mixed ZN ) ( ff_x0 CK )
  ;
 END NETS
 

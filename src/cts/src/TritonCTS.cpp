@@ -1558,34 +1558,34 @@ bool TritonCTS::separateMacroRegSinks(
         odb::dbITerm* invertedTerm = nullptr;
         int invertedLoads = 0;
         if (invertedNet) {
+          // Ports count as loads.
+          invertedLoads = invertedNet->getBTerms().size();
           for (odb::dbITerm* loadTerm : invertedNet->getITerms()) {
+            if (invertedLoads > 1) {
+              break;  // already settles the classification
+            }
             if (loadTerm->isInputSignal()) {
               ++invertedLoads;
-              if (invertedTerm == nullptr) {
-                invertedTerm = loadTerm;
-              } else {
-                // A second load already settles the classification below.
-                break;
-              }
+              invertedTerm = loadTerm;
             }
           }
         }
         if (invertedLoads == 1) {
-          // Register sink only when the lone load is a register; a macro or a
-          // clock gater keeps the inverter on the macro side.
-          nonSinkMacro
-              &= invertedTerm->getInst()->isBlock() || !isSink(invertedTerm);
-        } else if (invertedLoads == 0) {
-          if (invertedNet && !invertedNet->getBTerms().empty()) {
-            // Port-only fanout: leaf, no tree below.
-            nonSinkMacro = false;
+          // Register sink only when the lone load is a register; a macro or
+          // a clock gater keeps the inverter on the macro side.
+          if (invertedTerm) {
+            nonSinkMacro
+                &= invertedTerm->getInst()->isBlock() || !isSink(invertedTerm);
           } else {
-            logger_->warn(CTS,
-                          136,
-                          "Inverter {} output net has no signal input; "
-                          "treating as a dangling clock inverter.",
-                          inst->getName());
+            // Single port load: leaf, no tree below.
+            nonSinkMacro = false;
           }
+        } else if (invertedLoads == 0) {
+          logger_->warn(CTS,
+                        136,
+                        "Inverter {} output net has no signal input; "
+                        "treating as a dangling clock inverter.",
+                        inst->getName());
         }
       }
 
