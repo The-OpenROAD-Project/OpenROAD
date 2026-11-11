@@ -556,6 +556,38 @@ void RamGen::makeSlice(const int slice_idx,
     // a word of one group: its nets drive no more than a group's pins
     // already, and a buffer would only add a level
     const bool one_group = word_bits_ <= kDriveGroup;
+    // a word of more than kDriveGroup groups: its group buffers take the
+    // enable or take through a buffer per kDriveGroup groups, so the
+    // enable drives no more than kDriveGroup buffers either
+    const int word_groups = (word_bits_ + kDriveGroup - 1) / kDriveGroup;
+    const int word_group = (start_bit_idx + local_bit) / kDriveGroup;
+    auto group_source = [&](dbNet* root, const int port) {
+      if (word_groups <= kDriveGroup) {
+        return root;
+      }
+      const int super = word_group / kDriveGroup;
+      dbNet*& net = super_nets_[{row_idx, word_idx, port, super}];
+      if (net == nullptr) {
+        const std::string what = port < 0 ? "we" : fmt::format("take{}", port);
+        net = makeNet(prefix, fmt::format("{}_s{}", what, super));
+        makeInst(
+            bit_cell.get(),
+            prefix,
+            fmt::format("{}_sbuf{}", what, super),
+            buffer_cell_,
+            {
+                {
+                    buffer_ports_[{.type = PortRoleType::DataIn, .index = 0}],
+                    root,
+                },
+                {
+                    buffer_ports_[{.type = PortRoleType::DataOut, .index = 0}],
+                    net,
+                },
+            });
+      }
+      return net;
+    };
     if (num_write > 1 && one_group && take_group.empty()) {
       take_group = take;
     } else if (num_write > 1
@@ -572,7 +604,7 @@ void RamGen::makeSlice(const int slice_idx,
             {
                 {
                     buffer_ports_[{.type = PortRoleType::DataIn, .index = 0}],
-                    take[i],
+                    group_source(take[i], i),
                 },
                 {
                     buffer_ports_[{.type = PortRoleType::DataOut, .index = 0}],
@@ -598,7 +630,7 @@ void RamGen::makeSlice(const int slice_idx,
             {
                 {
                     buffer_ports_[{.type = PortRoleType::DataIn, .index = 0}],
-                    we_net,
+                    group_source(we_net, -1),
                 },
                 {
                     buffer_ports_[{.type = PortRoleType::DataOut, .index = 0}],
@@ -2469,6 +2501,7 @@ void RamGen::generate(const int mask_size,
   storage_nets_.clear();
   tree_nodes_.clear();
   word_write_.clear();
+  super_nets_.clear();
   storage_cell_ = storage_cell;
   tristate_cell_ = tristate_cell;
   inv_cell_ = inv_cell;
