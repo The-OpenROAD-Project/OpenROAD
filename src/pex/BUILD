@@ -57,6 +57,22 @@ cc_library(
     ],
 )
 
+# The model applied to conductor boxes.
+cc_library(
+    name = "evaluator",
+    srcs = ["src/Evaluator.cpp"],
+    hdrs = ["include/pex/Evaluator.h"],
+    includes = ["include"],
+    deps = [
+        ":cover_map",
+        ":model",
+        ":patterns",
+        "//src/fsv:geometry",
+        "//src/fsv:stack",
+        "//src/odb/src/db",
+    ],
+)
+
 # The model file.
 cc_library(
     name = "model_json",
