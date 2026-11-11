@@ -1,0 +1,402 @@
+VERSION 5.6 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+MACRO STDFF_X1
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  FOREIGN STDFF_X1 0 0 ;
+  SIZE 3.23 BY 1.4 ;
+  SYMMETRY X Y ;
+  SITE FreePDK45_38x28_10R_NP_162NW_34O ;
+  PIN D
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.81 0.53 0.97 0.7 ;
+    END
+  END D
+  PIN CK
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 1.56 0.53 1.67 0.7 ;
+    END
+  END CK
+  PIN Q
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 3.1 0.26 3.17 1.13 ;
+    END
+  END Q
+  PIN QN
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 2.72 0.26 2.79 0.785 ;
+    END
+  END QN
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    SHAPE ABUTMENT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0 1.315 3.23 1.485 ;
+        RECT 2.905 0.985 2.975 1.485 ;
+        RECT 2.345 1.1 2.48 1.485 ;
+        RECT 1.61 0.9 1.68 1.485 ;
+        RECT 1.005 1.08 1.075 1.485 ;
+        RECT 0.24 0.98 0.31 1.485 ;
+    END
+  END VDD
+  PIN VSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    SHAPE ABUTMENT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0 -0.085 3.23 0.085 ;
+        RECT 2.905 -0.085 2.975 0.46 ;
+        RECT 2.345 -0.085 2.48 0.37 ;
+        RECT 1.61 -0.085 1.68 0.36 ;
+        RECT 0.975 -0.085 1.11 0.3 ;
+        RECT 0.24 -0.085 0.31 0.405 ;
+    END
+  END VSS
+  OBS
+    LAYER metal1 ;
+      RECT 2.57 0.225 2.64 1.115 ;
+      RECT 2.57 0.85 3.035 0.92 ;
+      RECT 2.965 0.525 3.035 0.92 ;
+      RECT 2.265 0.73 2.64 0.8 ;
+      RECT 2 0.285 2.07 1.2 ;
+      RECT 2 0.525 2.505 0.66 ;
+      RECT 1.14 1.18 1.495 1.25 ;
+      RECT 1.425 0.225 1.495 1.25 ;
+      RECT 0.485 1.18 0.94 1.25 ;
+      RECT 0.87 0.945 0.94 1.25 ;
+      RECT 1.14 0.945 1.21 1.25 ;
+      RECT 0.87 0.945 1.21 1.015 ;
+      RECT 1.425 0.765 1.925 0.835 ;
+      RECT 1.855 0.15 1.925 0.835 ;
+      RECT 1.855 0.15 2.205 0.22 ;
+      RECT 1.275 0.37 1.345 0.995 ;
+      RECT 0.38 0.15 0.45 0.545 ;
+      RECT 0.785 0.37 1.345 0.44 ;
+      RECT 1.2 0.27 1.27 0.44 ;
+      RECT 0.785 0.15 0.855 0.44 ;
+      RECT 0.38 0.15 0.855 0.22 ;
+      RECT 0.635 0.285 0.705 1.115 ;
+      RECT 0.635 0.765 1.19 0.835 ;
+      RECT 1.12 0.53 1.19 0.835 ;
+      RECT 0.06 0.27 0.13 1.13 ;
+      RECT 0.06 0.61 0.57 0.745 ;
+  END
+END STDFF_X1
+
+MACRO STDFF_X2
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  FOREIGN STDFF_X2 0 0 ;
+  SIZE 3.61 BY 1.4 ;
+  SYMMETRY X Y ;
+  SITE FreePDK45_38x28_10R_NP_162NW_34O ;
+  PIN D
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.94 0.56 1.08 0.7 ;
+    END
+  END D
+  PIN CK
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 1.57 0.56 1.65 0.7 ;
+    END
+  END CK
+  PIN Q
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 3.29 0.25 3.36 1.115 ;
+    END
+  END Q
+  PIN QN
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 2.91 0.25 2.98 0.925 ;
+    END
+  END QN
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    SHAPE ABUTMENT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0 1.315 3.61 1.485 ;
+        RECT 3.485 0.84 3.555 1.485 ;
+        RECT 3.105 1.205 3.175 1.485 ;
+        RECT 2.73 1.205 2.8 1.485 ;
+        RECT 2.35 0.875 2.485 1.485 ;
+        RECT 1.62 0.9 1.69 1.485 ;
+        RECT 1.015 1.08 1.085 1.485 ;
+        RECT 0.255 0.965 0.325 1.485 ;
+    END
+  END VDD
+  PIN VSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    SHAPE ABUTMENT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0 -0.085 3.61 0.085 ;
+        RECT 3.485 -0.085 3.555 0.46 ;
+        RECT 3.105 -0.085 3.175 0.46 ;
+        RECT 2.73 -0.085 2.8 0.46 ;
+        RECT 2.35 -0.085 2.485 0.45 ;
+        RECT 1.62 -0.085 1.69 0.385 ;
+        RECT 0.985 -0.085 1.12 0.215 ;
+        RECT 0.255 -0.085 0.325 0.385 ;
+    END
+  END VSS
+  OBS
+    LAYER metal1 ;
+      RECT 2.575 1.045 3.215 1.115 ;
+      RECT 3.145 0.525 3.215 1.115 ;
+      RECT 2.575 0.2 2.645 1.115 ;
+      RECT 2.245 0.735 2.645 0.805 ;
+      RECT 2.01 0.35 2.08 0.975 ;
+      RECT 2.01 0.525 2.51 0.66 ;
+      RECT 1.15 1.18 1.505 1.25 ;
+      RECT 1.435 0.25 1.505 1.25 ;
+      RECT 0.5 1.18 0.935 1.25 ;
+      RECT 0.865 0.945 0.935 1.25 ;
+      RECT 1.15 0.945 1.22 1.25 ;
+      RECT 0.865 0.945 1.22 1.015 ;
+      RECT 1.435 0.765 1.945 0.835 ;
+      RECT 1.875 0.215 1.945 0.835 ;
+      RECT 1.875 0.215 2.215 0.285 ;
+      RECT 1.285 0.285 1.355 1.115 ;
+      RECT 0.39 0.15 0.46 0.7 ;
+      RECT 0.825 0.285 1.355 0.355 ;
+      RECT 0.825 0.15 0.895 0.355 ;
+      RECT 0.39 0.15 0.895 0.22 ;
+      RECT 0.61 1 0.76 1.07 ;
+      RECT 0.69 0.285 0.76 1.07 ;
+      RECT 0.69 0.765 1.215 0.835 ;
+      RECT 1.145 0.565 1.215 0.835 ;
+      RECT 0.61 0.285 0.76 0.355 ;
+      RECT 0.075 0.325 0.145 1.055 ;
+      RECT 0.075 0.765 0.625 0.835 ;
+      RECT 0.555 0.565 0.625 0.835 ;
+  END
+END STDFF_X2
+
+MACRO STDFFR_X1
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  FOREIGN STDFFR_X1 0 0 ;
+  SIZE 3.8 BY 1.4 ;
+  SYMMETRY X Y ;
+  SITE FreePDK45_38x28_10R_NP_162NW_34O ;
+  PIN D
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.6 0.56 0.72 0.745 ;
+    END
+  END D
+  PIN RN
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 2.455 0.64 2.89 0.71 ;
+        RECT 2.455 0.56 2.6 0.71 ;
+        RECT 2.105 1.18 2.525 1.25 ;
+        RECT 2.455 0.56 2.525 1.25 ;
+        RECT 2.105 0.93 2.175 1.25 ;
+        RECT 1.815 0.93 2.175 1 ;
+        RECT 1.495 1.165 1.885 1.235 ;
+        RECT 1.815 0.93 1.885 1.235 ;
+    END
+  END RN
+  PIN CK
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.175 0.42 0.32 0.56 ;
+    END
+  END CK
+  PIN Q
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 3.66 0.185 3.74 1.25 ;
+    END
+  END Q
+  PIN QN
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 3.285 0.4 3.36 1.25 ;
+    END
+  END QN
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    SHAPE ABUTMENT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0 1.315 3.8 1.485 ;
+        RECT 3.465 0.975 3.535 1.485 ;
+        RECT 3.08 1.065 3.15 1.485 ;
+        RECT 2.7 0.98 2.77 1.485 ;
+        RECT 1.95 1.065 2.02 1.485 ;
+        RECT 1.295 1.03 1.43 1.485 ;
+        RECT 0.575 1.015 0.645 1.485 ;
+        RECT 0.23 1.065 0.3 1.485 ;
+    END
+  END VDD
+  PIN VSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    SHAPE ABUTMENT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0 -0.085 3.8 0.085 ;
+        RECT 3.465 -0.085 3.535 0.195 ;
+        RECT 2.7 -0.085 2.77 0.32 ;
+        RECT 1.895 -0.085 2.03 0.285 ;
+        RECT 1.515 -0.085 1.585 0.41 ;
+        RECT 0.575 -0.085 0.645 0.32 ;
+        RECT 0.23 -0.085 0.3 0.32 ;
+    END
+  END VSS
+  OBS
+    LAYER metal1 ;
+      RECT 2.89 0.81 2.96 1.25 ;
+      RECT 2.59 0.81 3.185 0.88 ;
+      RECT 3.115 0.265 3.185 0.88 ;
+      RECT 3.525 0.265 3.595 0.66 ;
+      RECT 3.05 0.265 3.595 0.335 ;
+      RECT 2.32 0.185 2.39 1.115 ;
+      RECT 2.98 0.425 3.05 0.66 ;
+      RECT 2.32 0.425 3.05 0.495 ;
+      RECT 1.68 0.76 1.75 0.96 ;
+      RECT 1.19 0.76 2.255 0.83 ;
+      RECT 2.185 0.35 2.255 0.83 ;
+      RECT 1.69 0.35 2.255 0.42 ;
+      RECT 1.69 0.185 1.76 0.42 ;
+      RECT 0.42 0.185 0.49 1.25 ;
+      RECT 0.82 0.15 0.89 0.785 ;
+      RECT 1.985 0.485 2.12 0.67 ;
+      RECT 1.09 0.485 2.12 0.555 ;
+      RECT 0.42 0.425 0.89 0.495 ;
+      RECT 1.09 0.15 1.16 0.555 ;
+      RECT 0.82 0.15 1.16 0.22 ;
+      RECT 0.955 0.29 1.025 1.125 ;
+      RECT 0.955 0.625 1.895 0.695 ;
+      RECT 1.135 0.895 1.205 1.125 ;
+      RECT 1.495 1.025 1.63 1.095 ;
+      RECT 1.495 0.895 1.565 1.095 ;
+      RECT 1.135 0.895 1.565 0.965 ;
+      RECT 0.04 0.185 0.11 1.25 ;
+      RECT 0.04 0.7 0.355 0.835 ;
+  END
+END STDFFR_X1
+
+MACRO STDLH_X1
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  FOREIGN STDLH_X1 0 0 ;
+  SIZE 1.9 BY 1.4 ;
+  SYMMETRY X Y ;
+  SITE FreePDK45_38x28_10R_NP_162NW_34O ;
+  PIN D
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.95 0.525 1.08 0.7 ;
+    END
+  END D
+  PIN G
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.2 0.525 0.32 0.7 ;
+    END
+  END G
+  PIN Q
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.44 0.185 0.51 0.785 ;
+    END
+  END Q
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    SHAPE ABUTMENT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0 1.315 1.9 1.485 ;
+        RECT 1.595 1.025 1.665 1.485 ;
+        RECT 0.845 0.965 0.915 1.485 ;
+        RECT 0.25 0.985 0.32 1.485 ;
+    END
+  END VDD
+  PIN VSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    SHAPE ABUTMENT ;
+    PORT
+      LAYER metal1 ;
+        RECT 0 -0.085 1.9 0.085 ;
+        RECT 1.595 -0.085 1.665 0.445 ;
+        RECT 0.805 -0.085 0.94 0.285 ;
+        RECT 0.25 -0.085 0.32 0.32 ;
+    END
+  END VSS
+  OBS
+    LAYER metal1 ;
+      RECT 1.79 0.32 1.86 1.16 ;
+      RECT 1.485 0.525 1.86 0.595 ;
+      RECT 1.19 1.045 1.415 1.115 ;
+      RECT 1.345 0.35 1.415 1.115 ;
+      RECT 1.345 0.66 1.725 0.795 ;
+      RECT 0.785 0.35 0.855 0.66 ;
+      RECT 0.785 0.35 1.415 0.42 ;
+      RECT 1.025 1.18 1.43 1.25 ;
+      RECT 1.025 0.765 1.095 1.25 ;
+      RECT 0.65 0.185 0.72 1.115 ;
+      RECT 0.65 0.765 1.215 0.835 ;
+      RECT 1.145 0.49 1.215 0.835 ;
+      RECT 1.145 0.49 1.28 0.56 ;
+      RECT 0.505 1.18 0.78 1.25 ;
+      RECT 0.065 0.185 0.135 1.24 ;
+      RECT 0.505 0.85 0.575 1.25 ;
+      RECT 0.065 0.85 0.575 0.92 ;
+  END
+END STDLH_X1
+
+END LIBRARY

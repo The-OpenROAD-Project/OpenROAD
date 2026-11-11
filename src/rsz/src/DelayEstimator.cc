@@ -1673,7 +1673,8 @@ void collectFaninSideLoads(Resizer& resizer,
           {.pin = pin,
            .slack = sta::delayAsFloat(slack),
            .weight = sideLoadWeight(
-               pin, options.critical_load_pins, options.off_path_weight)});
+               pin, options.critical_load_pins, options.off_path_weight),
+           .on_target = network->instance(pin) == target_inst});
     }
 
     if (side_net.loads.empty()) {
@@ -1875,6 +1876,9 @@ void applyFaninSideLoss(const EstimatorContext& context,
 
     delay_delta += kSideSlewDelayFactor * std::max(slew_delta, 0.0f);
     for (const SideLoad& side : side_net.loads) {
+      if (side.on_target && context.skip_target_side_loads) {
+        continue;
+      }
       const float slack_after = side.slack - delay_delta;
       loss += side.weight
               * (std::min(side.slack, 0.0f) - std::min(slack_after, 0.0f));

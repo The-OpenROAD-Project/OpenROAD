@@ -320,6 +320,7 @@ void OptimizationPolicy::prepareSequentialEstimator(Target& target) const
   target.sequential_timing_estimator
       = SequentialTimingEstimator::prepare(resizer_, target);
   if (target.sequential_timing_estimator != nullptr) {
+    target.estimator_context->skip_target_side_loads = true;
     RepairSetupProfiler::event("sequential_targets_prepared");
   }
 }

@@ -7134,15 +7134,9 @@ void Resizer::checkLoadSlews(const sta::Pin* drvr_pin,
       const sta::RiseFall* tr1;
       sta::Slew slew1;
       float limit1, slack1;
-      sta_->checkSlew(pin,
-                      sta_->scenes(),
-                      max_,
-                      false,
-                      slew1,
-                      limit1,
-                      slack1,
-                      tr1,
-                      corner1);
+      // check_clks: honor clock -clock_path/-data_path slew limits.
+      sta_->checkSlew(
+          pin, sta_->scenes(), max_, true, slew1, limit1, slack1, tr1, corner1);
       if (!corner1) {
         // Fixup for nangate45: see comment in maxInputSlew
         sta::LibertyPort* port = network_->libertyPort(pin);
