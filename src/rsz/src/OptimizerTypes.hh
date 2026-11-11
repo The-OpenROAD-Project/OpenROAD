@@ -133,6 +133,15 @@ const sta::TimingArc* findMatchingTimingArc(const sta::TimingArc* reference,
 bool driveResNoHigherOnBothRf(const sta::LibertyPort* current,
                               const sta::LibertyPort* candidate);
 
+// Score divisors of one move's options for a target, from their new/old cell
+// cost ratios r: max(1, r / r_min), where r_min is the smallest ratio above 1.
+// The cheapest costlier option keeps its full score and a costlier one pays
+// only its extra cost; an option at most as costly as the current cell, and
+// every option when none costs more, gets 1.  A divisor is never below 1, so
+// the cost never raises a score.  The cost so orders the options of a move,
+// and the move weights set the balance between moves.
+std::vector<float> relativeCellCosts(const std::vector<float>& cost_ratios);
+
 // === Target preparation flags ==============================================
 
 // The target-level data the generators read, prepared for every target of a

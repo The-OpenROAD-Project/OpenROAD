@@ -38,13 +38,11 @@ RebufferMtCandidate::RebufferMtCandidate(
     Resizer& resizer,
     const Target& target,
     const RebufferTreePlan& plan,
-    const float score_scale,
     const float min_score,
     std::vector<BufferTreeSidePathContext> side_contexts)
     : MoveCandidate(resizer, target),
       plan_(plan),
       side_contexts_(std::move(side_contexts)),
-      score_scale_(score_scale),
       min_score_(min_score)
 {
 }
@@ -59,7 +57,7 @@ Estimate RebufferMtCandidate::estimate()
       = estimateTree(estimator_context, plan_, side_contexts_);
   raw_score_ = delay_est.arrival_impr - delay_est.side_loss;
   Estimate estimate{.reason = failReasonName(delay_est.reason)};
-  estimate.score = scaledScore();
+  estimate.score = raw_score_;
   if (delay_est.side_paths_evaluated > 0) {
     estimate.side_loss = delay_est.side_loss;
   }
@@ -151,12 +149,11 @@ MoveResult RebufferMtCandidate::apply()
              "rebuffer_mt",
              1,
              "ACCEPT rebuffer_mt {}: inserted {} buffers, tree loads {}, "
-             "raw_score {:.3e}, scaled_score {:.3e}",
+             "raw_score {:.3e}",
              logName(),
              inserted_count,
              plan_.load_count,
-             raw_score_,
-             scaledScore());
+             raw_score_);
 
   return {
       .accepted = true,
