@@ -315,9 +315,10 @@ RamGen::TreeEnd RamGen::planReadTree(const std::string& prefix,
 // read path is handled by the AOI mux in the buffer row, so all tristates in
 // a row can share the same row-select enable signal.
 
-// The most pins a select the array makes drives: a word's write enable
-// and hold, a write port's take. More take a copy a group, each from its
-// own buffer or inverter.
+// The most pins a select or literal the array makes drives: a word's
+// write enable and hold, a write port's take, a word's read select, an
+// address literal. More take a copy a group, each from its own buffer or
+// inverter.
 constexpr int kDriveGroup = 8;
 
 void RamGen::makeSlice(const int slice_idx,
@@ -933,6 +934,20 @@ void RamGen::makeBufferColumn(const std::string& prefix,
           {{buffer_ports_[{PortRoleType::DataIn, 0}],
             decoder_output_nets[word]},
            {buffer_ports_[{PortRoleType::DataOut, 0}], select_nets[word]}});
+      // a read select's other groups, each its own buffer
+      auto groups = select_groups_.find(select_nets[word]);
+      if (groups != select_groups_.end()) {
+        for (size_t g = 1; g < groups->second.size(); ++g) {
+          makeInst(
+              buf_cell.get(),
+              prefix,
+              fmt::format("sel_buf_{}_g{}", word, g),
+              buffer_cell_,
+              {{buffer_ports_[{PortRoleType::DataIn, 0}],
+                decoder_output_nets[word]},
+               {buffer_ports_[{PortRoleType::DataOut, 0}], groups->second[g]}});
+        }
+      }
     }
     buffer_layout->addCell(std::move(buf_cell));
     for (int f = 1; f < bit_folds_; ++f) {
@@ -958,6 +973,26 @@ void RamGen::makeWordDecoderColumn(
       const int word = row * words_per_row + k;
       if (literals[word].empty()) {
         continue;  // a banked read port's other banks
+      }
+      auto group = literal_cells_.find({prefix, word});
+      if (group != literal_cells_.end()) {
+        for (const LiteralCell& lit : group->second) {
+          if (lit.invert) {
+            makeInst(row_cell.get(),
+                     prefix,
+                     lit.name,
+                     inv_cell_,
+                     {{inv_ports_[{PortRoleType::DataIn, 0}], lit.in},
+                      {inv_ports_[{PortRoleType::DataOut, 0}], lit.out}});
+          } else {
+            makeInst(row_cell.get(),
+                     prefix,
+                     lit.name,
+                     buffer_cell_,
+                     {{buffer_ports_[{PortRoleType::DataIn, 0}], lit.in},
+                      {buffer_ports_[{PortRoleType::DataOut, 0}], lit.out}});
+          }
+        }
       }
       // a balanced AND2 tree over the word's address literals
       vector<dbNet*> level = literals[word];
@@ -1043,8 +1078,13 @@ std::unique_ptr<Layout> RamGen::makeInverterColumn(
                   {addr_flop_q_, flop_out}});
       }
       // the inverter: the address (or the flop's) in, its complement out;
-      // from a flop holding the complement, the address out
+      // from a flop holding the complement, the address out; a port whose
+      // literals are made per group of words has none
       const bool from_complement = flop_out && addr_flop_inverted_;
+      if (grouped_literals_[p]) {
+        cell_inv_layout->addCell(std::move(inv_grid_cell));
+        continue;
+      }
       makeInst(inv_grid_cell.get(),
                fmt::format("decoder_p{}", p),
                fmt::format("inv_p{}_a{}", p, bit),
@@ -2510,6 +2550,8 @@ void RamGen::generate(const int mask_size,
   tree_nodes_.clear();
   word_write_.clear();
   super_nets_.clear();
+  select_groups_.clear();
+  literal_cells_.clear();
   storage_cell_ = storage_cell;
   tristate_cell_ = tristate_cell;
   inv_cell_ = inv_cell;
@@ -2750,6 +2792,7 @@ void RamGen::generate(const int mask_size,
 
   addr_inputs_.clear();
   addr_inputs_.resize(total_ports);
+  grouped_literals_.assign(total_ports, false);
   addr_true_.assign(total_ports, {});
   addr_flop_out_.assign(total_ports, {});
   vector<vector<dbNet*>> inv_addr_nets(total_ports);
@@ -2837,6 +2880,52 @@ void RamGen::generate(const int mask_size,
         }
       }
     }
+    // a port that decodes more than kDriveGroup words: its address
+    // literals a buffer and an inverter per group of words, so no literal
+    // drives more than a group's decoders (the column inverter drove
+    // half the words'). Not where a flop holds the address's complement.
+    const bool complement_flop = registered && addr_flop_inverted_;
+    if (banked_ && !complement_flop) {
+      vector<int> slots;
+      for (int slot = 0; slot < static_cast<int>(decoder_input_nets[p].size());
+           ++slot) {
+        if (!decoder_input_nets[p][slot].empty()) {
+          slots.push_back(slot);
+        }
+      }
+      if (static_cast<int>(slots.size()) > kDriveGroup) {
+        grouped_literals_[p] = true;
+        const std::string decoder = fmt::format("decoder_p{}", p);
+        for (size_t k = 0; k < slots.size(); ++k) {
+          const int g = static_cast<int>(k) / kDriveGroup;
+          const int first = slots[g * kDriveGroup];
+          auto& literals = decoder_input_nets[p][slots[k]];
+          for (int input = 0; input < port_inputs; ++input) {
+            const bool high = literals[input] == addr_true_[p][input];
+            const std::string name = fmt::format(
+                "{}_p{}_a{}_g{}", high ? "buf" : "inv", p, input, g);
+            auto& cells = literal_cells_[{decoder, first}];
+            dbNet* out = nullptr;
+            for (const LiteralCell& lit : cells) {
+              if (lit.name == name) {
+                out = lit.out;
+              }
+            }
+            if (out == nullptr) {
+              // the net named apart from its cell: Verilog has one namespace
+              out = makeNet(decoder, fmt::format("{}_y", name));
+              cells.push_back({!high, addr_true_[p][input], out, name});
+            }
+            literals[input] = out;
+          }
+        }
+        // the column inverters' nets, now unused
+        for (int input = 0; input < port_inputs; ++input) {
+          dbNet::destroy(inv_addr_nets[p][input]);
+          inv_addr_nets[p][input] = nullptr;
+        }
+      }
+    }
     if (!banked_) {
       decoder_input_nets[p].assign(num_rows, vector<dbNet*>(num_row_bits));
     }
@@ -2876,11 +2965,33 @@ void RamGen::generate(const int mask_size,
     if (p >= rw_ports + w_ports) {
       read_select_nets[r_sel_idx++] = makeSelectNets(
           fmt::format("r_sel_p{}", p), num_selects, RamPortType::Read);
+      // AND-OR reads: a word's read select reaches the word's bits a
+      // group of kDriveGroup at a time, a buffer a group
+      if (and_or_read_ && banked_ && word_bits_ > kDriveGroup) {
+        const int groups = (word_bits_ + kDriveGroup - 1) / kDriveGroup;
+        for (int slot = 0; slot < num_selects; ++slot) {
+          dbNet* select = read_select_nets[r_sel_idx - 1][slot];
+          auto& copies = select_groups_[select];
+          copies.push_back(select);
+          for (int g = 1; g < groups; ++g) {
+            copies.push_back(makeNet(fmt::format("r_sel_p{}", p),
+                                     fmt::format("select_r{}_g{}", slot, g)));
+          }
+        }
+      }
     }
     // a banked read port selects only its bank's words
     if (port_bank >= 0) {
       for (int slot = 0; slot < num_selects; ++slot) {
         if (decoder_input_nets[p][slot].empty()) {
+          auto groups
+              = select_groups_.find(read_select_nets[r_sel_idx - 1][slot]);
+          if (groups != select_groups_.end()) {
+            for (size_t g = 1; g < groups->second.size(); ++g) {
+              dbNet::destroy(groups->second[g]);
+            }
+            select_groups_.erase(groups);
+          }
           dbNet::destroy(decoder_output_nets[p][slot]);
           dbNet::destroy(read_select_nets[r_sel_idx - 1][slot]);
           decoder_output_nets[p][slot] = nullptr;
@@ -3064,8 +3175,16 @@ void RamGen::generate(const int mask_size,
               = banked_ ? fmt::format("read_p{}_b{}", port, bit)
                         : fmt::format("read_w{}_p{}_b{}", w, port, bit);
           dbNet* out = word_q_nets[w][port][bit];
-          const TreeEnd root
-              = planReadTree(prefix, bit, terms, 0, n, flip ? nullptr : out);
+          // the bit's group's copy of each word's select
+          vector<Term> bit_terms = terms;
+          for (Term& term : bit_terms) {
+            auto groups = select_groups_.find(term.select);
+            if (groups != select_groups_.end()) {
+              term.select = groups->second[bit / kDriveGroup];
+            }
+          }
+          const TreeEnd root = planReadTree(
+              prefix, bit, bit_terms, 0, n, flip ? nullptr : out);
           if (flip) {
             const Term& at
                 = banked_ ? terms.back() : Term{num_rows - 1, w, nullptr};

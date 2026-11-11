@@ -11,6 +11,7 @@
 #include <set>
 #include <string>
 #include <tuple>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -186,6 +187,25 @@ class RamGen
     int word_idx;
     odb::dbNet* select;
   };
+  // A read select's copies, one per group of kDriveGroup bits, each from
+  // its own buffer: the first is the select itself. Keyed by the select,
+  // only ever looked up, never walked.
+  std::unordered_map<odb::dbNet*, std::vector<odb::dbNet*>> select_groups_;
+  // An address literal's cells for a group of kDriveGroup words: a buffer
+  // or an inverter from the address, made in the decoder cell of the
+  // group's first word. Keyed by the port's decoder prefix and that word.
+  struct LiteralCell
+  {
+    bool invert;
+    odb::dbNet* in;
+    odb::dbNet* out;
+    std::string name;
+  };
+  std::map<std::pair<std::string, int>, std::vector<LiteralCell>>
+      literal_cells_;
+  // ports whose address literals are made per group of words: their
+  // column inverters are not made
+  std::vector<bool> grouped_literals_;
   // the tree over terms[lo, hi), each node in the bit cell of a term it
   // covers
   TreeEnd planReadTree(const std::string& prefix,
