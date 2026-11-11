@@ -2175,7 +2175,7 @@
     },
     "@@sv-elab+//:dependency_support/tomlplusplus_ext.bzl%tomlplusplus_ext": {
       "general": {
-        "bzlTransitiveDigest": "zbb8N3OBsLzc4en7SelPVDhC673MhyBY1/dtG6JmdB8=",
+        "bzlTransitiveDigest": "8glv+ykC+v18BP94Oa7UhIKJhNWEE2zgkwkPcmI+x/8=",
         "usagesDigest": "V8yFIfuWmaLiGS/0FiloBjB4m484dQxhAc+nmdZBc5s=",
         "recordedInputs": [
           "REPO_MAPPING:sv-elab+,bazel_tools bazel_tools"
@@ -2187,6 +2187,7 @@
               "urls": [
                 "https://github.com/marzer/tomlplusplus/archive/refs/tags/v3.4.0.tar.gz"
               ],
+              "integrity": "sha256-hRf2WTik+q6cz467NmMaOMHK37XvqF2acuFbnpfSUVU=",
               "strip_prefix": "tomlplusplus-3.4.0",
               "build_file": "@@sv-elab+//:dependency_support/tomlplusplus.BUILD.bazel"
             }

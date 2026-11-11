@@ -183,11 +183,17 @@ bazel_dep(name = "sv-elab", version = "2026-10-29")
 # _virtual_includes/frontend_hdrs/*.h. On RBE those materialize as distinct
 # inodes, so #pragma once does not stop slang_frontend.h from being included
 # twice when compiled via both paths.
+#
+# Patch 0002 adds the integrity that sv-elab's tomlplusplus_ext leaves out of
+# its http_archive. build:ci fetches through the cache's Remote Asset API
+# (--experimental_remote_downloader). Without a checksum the cache cannot
+# answer from its CAS and downloads the archive again on every fetch.
 single_version_override(
     module_name = "sv-elab",
     patch_strip = 1,
     patches = [
         "//bazel/sv-elab-patches:0001-build-avoid-duplicate-header-paths-with-includes.patch",
+        "//bazel/sv-elab-patches:0002-tomlplusplus-pin-the-archive-checksum.patch",
     ],
 )
 
