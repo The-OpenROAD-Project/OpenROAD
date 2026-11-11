@@ -99,7 +99,9 @@ void PrometheusMetricsServer::RunServer()
 
   while (!shutdown_) {
     tcp::socket socket(io_context);
-    if (acceptor.accept(socket, ec)) {
+    acceptor.accept(socket, ec);
+
+    if (ec) {
       logger_.load()->warn(
           utl::UTL, 105, "Metrics server accept error: {}", ec.message());
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -127,10 +129,12 @@ void PrometheusMetricsServer::RunServer()
 
     // Close the socket
     if (socket.is_open()) {
-      if (socket.shutdown(tcp::socket::shutdown_send, ec)) {
+      socket.shutdown(tcp::socket::shutdown_send, ec);
+      if (ec) {
         logger_.load()->warn(utl::UTL, 107, "Shutdown error: {}", ec.message());
       }
-      if (socket.close(ec)) {
+      socket.close(ec);
+      if (ec) {
         logger_.load()->warn(
             utl::UTL, 108, "Socket close error: {}", ec.message());
       }
