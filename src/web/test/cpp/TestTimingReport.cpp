@@ -43,14 +43,13 @@ class TimingReportTest : public tst::Nangate45Fixture
       const std::string root = std::string("c") + d;
       const std::string q0 = std::string("q") + d + "0";
       const std::string q1 = std::string("q") + d + "1";
+      const std::string root_in = root + "_in";
       tst::InstOptions opts;
-      opts.iterms = {{(root + "_in").c_str(), "A"}, {clk.c_str(), "Z"}};
+      opts.iterms = {{root_in.c_str(), "A"}, {clk.c_str(), "Z"}};
       makeInst(block_, buf, root.c_str(), opts);
-      opts.iterms
-          = {{clk.c_str(), "CK"}, {q1.c_str(), "D"}, {q0.c_str(), "Q"}};
+      opts.iterms = {{clk.c_str(), "CK"}, {q1.c_str(), "D"}, {q0.c_str(), "Q"}};
       makeInst(block_, dff, (std::string(d) + "0").c_str(), opts);
-      opts.iterms
-          = {{clk.c_str(), "CK"}, {q0.c_str(), "D"}, {q1.c_str(), "Q"}};
+      opts.iterms = {{clk.c_str(), "CK"}, {q0.c_str(), "D"}, {q1.c_str(), "Q"}};
       makeInst(block_, dff, (std::string(d) + "1").c_str(), opts);
     }
 
@@ -61,9 +60,7 @@ class TimingReportTest : public tst::Nangate45Fixture
     makeClock("clk_b", "cb/Z", 2.0);
   }
 
-  void makeClock(const char* name,
-                 const char* pin_name,
-                 const double period_ns)
+  void makeClock(const char* name, const char* pin_name, const double period_ns)
   {
     sta::dbNetwork* network = sta_->getDbNetwork();
     sta::PinSet pins(network);
@@ -119,6 +116,11 @@ TEST_F(TimingReportTest, PathGroupFilterKeepsItsPaths)
 {
   EXPECT_EQ(endClocks(report({"clk_a"}, "")),
             (std::multiset<std::string>{"clk_a", "clk_a"}));
+}
+
+TEST_F(TimingReportTest, UnknownClockReportsNothing)
+{
+  EXPECT_TRUE(report({}, "clk_c").empty());
 }
 
 TEST_F(TimingReportTest, DisjointFiltersReportNothing)
