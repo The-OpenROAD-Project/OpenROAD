@@ -82,7 +82,6 @@
 #include <utility>
 #include <vector>
 
-#include "Reference.h"
 #include "fsv/Geometry.h"
 #include "fsv/Itf.h"
 #include "fsv/NetWindow.h"
@@ -93,6 +92,7 @@
 #include "odb/defin.h"
 #include "odb/lefin.h"
 #include "pex/CoverMap.h"
+#include "pex/Evaluator.h"
 #include "pex/Model.h"
 #include "pex/ModelBuilder.h"
 #include "pex/ModelJson.h"
@@ -127,7 +127,7 @@ struct Options
   std::string csv;
   std::string truth;       // e9, e14: truth rows from an earlier --csv
   std::string drop_below;  // e9: boxes below this layer's bottom removed
-  pex::ReferenceOptions reference;
+  pex::EvaluatorOptions reference;
   double extent = 10;
   bool smoke = false;
   // e9

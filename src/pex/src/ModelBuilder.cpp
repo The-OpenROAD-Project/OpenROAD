@@ -1138,7 +1138,7 @@ namespace {
 
 // The corners of wires of a width meeting, from a straight wire, a cross
 // and a bend of the corner pattern and the per-length reference. As the
-// reference evaluator adds them, a cross is the two wires with the
+// evaluator adds them, a cross is the two wires with the
 // overlap once and four inner corners; a bend is the two wires without
 // the ends at the turn, with the overlap once, an inner and an outer
 // corner.
