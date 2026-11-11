@@ -749,4 +749,40 @@ TEST_F(Fixture, TestLef58MinWidthWrongDirectionTrailingSpace)
   EXPECT_EQ(logger_.getWarningCount(), 0);
 }
 
+TEST_F(Fixture, TestLef58VoltageSpacingMultipleStatements)
+{
+  const char* libname = "lef58_voltagespacing_multi.lef";
+  loadTechAndLib(
+      "tech", libname, prefix + "data/lef58_voltagespacing_multi.lef");
+
+  dbTech* tech = db_->getTech();
+
+  // Both statements in a single property are kept.
+  auto layer = tech->findLayer("M1");
+  ASSERT_NE(layer, nullptr);
+  auto voltage_spacings = layer->getTechLayerVoltageSpacings();
+  ASSERT_EQ(voltage_spacings.size(), 2);
+  auto voltage_spacing_itr = voltage_spacings.begin();
+  auto voltage_spacing = *voltage_spacing_itr;
+  EXPECT_FALSE(voltage_spacing->isTocutAbove());
+  EXPECT_FALSE(voltage_spacing->isTocutBelow());
+  auto voltage_table = voltage_spacing->getTable();
+  EXPECT_EQ(voltage_table.size(), 2);
+  EXPECT_EQ(voltage_table.at(1.2), 75);
+  EXPECT_EQ(voltage_table.at(3.3), 150);
+  voltage_spacing = *(++voltage_spacing_itr);
+  EXPECT_TRUE(voltage_spacing->isTocutAbove());
+  EXPECT_FALSE(voltage_spacing->isTocutBelow());
+  voltage_table = voltage_spacing->getTable();
+  EXPECT_EQ(voltage_table.size(), 2);
+  EXPECT_EQ(voltage_table.at(1.2), 80);
+  EXPECT_EQ(voltage_table.at(5.0), 300);
+
+  // A malformed statement drops every statement of that property.
+  layer = tech->findLayer("M2");
+  ASSERT_NE(layer, nullptr);
+  EXPECT_EQ(layer->getTechLayerVoltageSpacings().size(), 0);
+  EXPECT_EQ(logger_.getWarningCount(), 1);
+}
+
 }  // namespace odb
