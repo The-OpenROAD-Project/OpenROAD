@@ -47,11 +47,12 @@ Layer L(const std::string& name)
 }
 
 // The names of layers, "" for none, for comparisons.
-std::vector<std::string> names(const std::vector<Layer>& layers)
+std::vector<std::string> names(const std::vector<Layer>& layers,
+                               const fsv::Stack& stack = sky130())
 {
   std::vector<std::string> out;
   for (const Layer layer : layers) {
-    out.push_back(layer.valid() ? sky130().name(layer) : "");
+    out.push_back(layer.valid() ? stack.name(layer) : "");
   }
   return out;
 }
@@ -542,62 +543,76 @@ TEST(ModelBuilder, PickCoversKeepsOnlyWhatInterpolationNeeds)
   EXPECT_EQ(last, d.size());
 }
 
-// The plan from probes on sky130 met2, routing layers only: below are met1
-// and li1, both kept; above are met3, met4 and met5, of which the probes
-// decide met4. The nearest and farthest are always kept, and the plan
-// does not depend on the thread count.
+// The plan from probes on a uniform-dielectric stack, routing layers only:
+// below m3 are m2 and m1, both kept without probing; above are m4, m5 and
+// m6 at geometric distances (0.4, 1.2 and 3.6 µm), where a tight tolerance
+// keeps m5 and a loose one keeps only the nearest and farthest. The plan
+// does not depend on the thread count, and omits non-routing layers.
 TEST(ModelBuilder, PlanCoversFromProbes)
 {
+  using Strings = std::vector<std::string>;
+  fsv::Stack stack;
+  auto addConductor = [&](const char* name, const double bottom) {
+    fsv::Stack::Conductor c = conductorAt(name, bottom, bottom + 0.2);
+    c.min_width = c.min_spacing = 0.2;
+    return stack.addConductor(c);
+  };
+  const Layer diff = addConductor("diff", 0.0);
+  addConductor("poly", 0.3);
+  addConductor("m1", 0.8);
+  addConductor("m2", 1.4);
+  const Layer m3 = addConductor("m3", 2.0);
+  addConductor("m4", 2.6);
+  addConductor("m5", 3.4);
+  const Layer m6 = addConductor("m6", 5.8);
+
   BuildOptions o = smallBuild(4);
-  o.layers = {"li1", "met1", "met2", "met3", "met4", "met5"};
-  o.cover_tolerance = 0.01;
-  o.tol = 0.01;
+  o.layers = {"m1", "m2", "m3", "m4", "m5", "m6"};
+  o.cover_tolerance = 0.02;
+  o.tol = 0.03;
   int probes = 0;
   o.progress = [&](int, int) { probes++; };
-  const CoverPlan plan = planCovers(sky130(), L("met2"), o);
+  const CoverPlan plan = planCovers(stack, m3, o);
   EXPECT_EQ(probes, 3 * 8);  // the below side has nothing to decide
-  EXPECT_EQ(names(plan.below), (std::vector<std::string>{"", "met1", "li1"}));
-  ASSERT_GE(plan.above.size(), 3u);
-  EXPECT_EQ(sky130().name(plan.above[1]), "met3");
-  EXPECT_EQ(sky130().name(plan.above.back()), "met5");
+  EXPECT_EQ(names(plan.below, stack), (Strings{"", "m2", "m1"}));
+  EXPECT_EQ(names(plan.above, stack), (Strings{"", "m4", "m5", "m6"}));
+
   BuildOptions one = o;
   one.threads = 1;
-  one.progress = nullptr;
-  EXPECT_EQ(names(planCovers(sky130(), L("met2"), one).above),
-            names(plan.above));
-  // A looser tolerance never keeps more.
-  BuildOptions loose = one;
+  EXPECT_EQ(coversAbove(stack, m3, one), plan.above);
+
+  BuildOptions loose = o;
   loose.cover_tolerance = 0.5;
-  EXPECT_EQ(names(planCovers(sky130(), L("met2"), loose).above),
-            (std::vector<std::string>{"", "met3", "met5"}));
-  EXPECT_NE(buildFingerprint(sky130(), o), buildFingerprint(sky130(), loose));
-  BuildOptions negative = one;
-  negative.cover_tolerance = -1;
-  EXPECT_THROW(planCovers(sky130(), L("met2"), negative),
-               std::invalid_argument);
-  negative.cover_tolerance = std::numeric_limits<double>::infinity();
-  EXPECT_THROW(planCovers(sky130(), L("met2"), negative),
-               std::invalid_argument);
+  EXPECT_EQ(names(coversAbove(stack, m3, loose), stack),
+            (Strings{"", "m4", "m6"}));
+  EXPECT_NE(buildFingerprint(stack, o), buildFingerprint(stack, loose));
+
+  BuildOptions bad_tolerance = o;
+  bad_tolerance.cover_tolerance = -1;
+  EXPECT_THROW(planCovers(stack, m3, bad_tolerance), std::invalid_argument);
+  bad_tolerance.cover_tolerance = std::numeric_limits<double>::infinity();
+  EXPECT_THROW(planCovers(stack, m3, bad_tolerance), std::invalid_argument);
   // The far factors are checked whichever way the covers are chosen.
-  BuildOptions bad_factor = one;
+  BuildOptions bad_factor = o;
   bad_factor.far_cover_factors = {1, 0};
-  EXPECT_THROW(planCovers(sky130(), L("met2"), bad_factor),
-               std::invalid_argument);
-  // With nothing above met5, the probes below skip the variants with the
-  // other side's cover: 5 candidates × 4 variants; a grid of one width
-  // probes it once: 5 × 2.
+  EXPECT_THROW(planCovers(stack, m3, bad_factor), std::invalid_argument);
+
+  // With nothing above m6, the probes below skip the variants with the
+  // other side's cover: 5 candidates × 4 variants; one width probes 5 × 2.
+  BuildOptions count_only = o;
+  count_only.tol = 0.1;
   probes = 0;
-  planCovers(sky130(), L("met5"), o);
+  planCovers(stack, m6, count_only);
   EXPECT_EQ(probes, 5 * 4);
-  BuildOptions single = o;
-  single.width_factors = {1};
+  count_only.width_factors = {1};
   probes = 0;
-  planCovers(sky130(), L("met5"), single);
+  planCovers(stack, m6, count_only);
   EXPECT_EQ(probes, 5 * 2);
+
   // Choosing by depth needs no probes, and no layer fit to probe.
-  BuildOptions fixed = one;
+  BuildOptions fixed = o;
   fixed.cover_tolerance = 0;
-  EXPECT_EQ(names(coversAbove(sky130(), L("DIFF"), fixed)).front(), "");
+  EXPECT_EQ(names(coversAbove(stack, diff, fixed), stack), (Strings{""}));
 }
 
 // A resumed build with probe-chosen covers takes the plan from the model
