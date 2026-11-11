@@ -87,7 +87,7 @@ Snapper::LayerDataList Snapper::computeLayerDataList(
   odb::dbBlock* block = inst_->getBlock();
 
   for (odb::dbITerm* iterm : inst_->getITerms()) {
-    if (iterm->getSigType() != odb::dbSigType::SIGNAL) {
+    if (iterm->getSigType().isSupply()) {
       continue;
     }
 
