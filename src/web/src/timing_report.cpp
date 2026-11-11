@@ -194,6 +194,9 @@ std::vector<TimingPathSummary> TimingReport::getReport(
   const sta::Clock* clk = nullptr;
   if (!clock_name.empty()) {
     clk = sta_->cmdSdc()->findClock(clock_name);
+    if (clk == nullptr) {
+      return result;
+    }
   }
   sta::PathEndSeq path_ends = search->findPathEnds(
       /*from*/ nullptr,
