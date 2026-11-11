@@ -3,6 +3,7 @@
 
 #include "pa/PatternGCContext.h"
 
+#include <algorithm>
 #include <utility>
 #include <vector>
 
@@ -41,9 +42,8 @@ FlexGCWorker& PatternGCContext::check(
     worker.setExtBox(extBox);
     worker.setDrcBox(drcBox);
     worker.main();
-    auto used = std::move(workers_[i]);
-    workers_.erase(workers_.begin() + i);
-    workers_.insert(workers_.begin(), std::move(used));
+    std::rotate(
+        workers_.begin(), workers_.begin() + i, workers_.begin() + i + 1);
     return *workers_.front();
   }
   checkFresh(*seed, objects, extBox, drcBox);
