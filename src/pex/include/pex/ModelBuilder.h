@@ -226,7 +226,7 @@ void buildCrossing(const fsv::Stack& stack,
 // in one pool; for a cover under the wire with a plane on `plane_above`
 // too, and for one over it with a plane on `plane_below` (none when the
 // handle names no layer). A table with a plane whose shares fit no kept
-// amount is left out.
+// amount holds the values of the table without the plane, and no reach.
 void buildCrossings(const fsv::Stack& stack,
                     Layer layer,
                     const std::vector<Layer>& covers,
