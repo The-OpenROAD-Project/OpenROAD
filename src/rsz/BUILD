@@ -35,7 +35,7 @@ cc_library(
         "src/OptimizerTypes.cc",
         "src/PathGroupFilter.cc",
         "src/PathGroupFilter.hh",
-        "src/PlacementDensityMap.cc",
+        "src/PlacementDensityGrid.cc",
         "src/PreChecks.cc",
         "src/Rebuffer.cc",
         "src/RecoverPower.cc",
@@ -150,7 +150,7 @@ cc_library(
     hdrs = [
         "include/rsz/GlobalSizingConfig.hh",
         "include/rsz/OdbCallBack.hh",
-        "include/rsz/PlacementDensityMap.hh",
+        "include/rsz/PlacementDensityGrid.hh",
         "include/rsz/Resizer.hh",
         "src/BufferedNet.hh",
         "src/DelayEstimator.hh",
@@ -226,7 +226,7 @@ cc_library(
     hdrs = [
         "include/rsz/GlobalSizingConfig.hh",
         "include/rsz/OdbCallBack.hh",
-        "include/rsz/PlacementDensityMap.hh",
+        "include/rsz/PlacementDensityGrid.hh",
         "include/rsz/Resizer.hh",
     ],
     includes = [

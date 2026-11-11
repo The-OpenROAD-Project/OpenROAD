@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "rsz/PlacementDensityMap.hh"
+#include "rsz/PlacementDensityGrid.hh"
 
 #include <algorithm>
 #include <cstddef>
@@ -29,18 +29,9 @@ constexpr int64_t kMaxDefaultBinsPerSide = 1024;
 // Bounds the bin count however fine a bin size is asked for.
 constexpr int64_t kMaxBins = int64_t{1} << 24;
 
-int64_t overlapArea(const Rect& a, const Rect& b)
-{
-  const int64_t dx = static_cast<int64_t>(std::min(a.xMax(), b.xMax()))
-                     - std::max(a.xMin(), b.xMin());
-  const int64_t dy = static_cast<int64_t>(std::min(a.yMax(), b.yMax()))
-                     - std::max(a.yMin(), b.yMin());
-  return (dx > 0 && dy > 0) ? dx * dy : 0;
-}
-
 // What the heat map counts with its default settings: placed instances
 // other than fillers, pads and covers.
-bool isCounted(dbInst* inst, const dbPlacementStatus& status)
+bool contributesToDensity(dbInst* inst, const dbPlacementStatus& status)
 {
   if (!status.isPlaced()) {
     return false;
@@ -58,9 +49,9 @@ int64_t globalPlacementBinSize(dbBlock* block, const char* name)
 
 }  // namespace
 
-PlacementDensityMap::PlacementDensityMap(dbBlock* block,
-                                         const int bin_width,
-                                         const int bin_height)
+PlacementDensityGrid::PlacementDensityGrid(dbBlock* block,
+                                           const int bin_width,
+                                           const int bin_height)
     : block_(block),
       requested_bin_width_(bin_width),
       requested_bin_height_(bin_height)
@@ -68,7 +59,7 @@ PlacementDensityMap::PlacementDensityMap(dbBlock* block,
   addOwner(block_);
 }
 
-PlacementDensity PlacementDensityMap::getDensity(const Rect& region)
+PlacementDensity PlacementDensityGrid::getDensity(const Rect& region)
 {
   if (stale_) {
     build();
@@ -76,7 +67,7 @@ PlacementDensity PlacementDensityMap::getDensity(const Rect& region)
   }
 
   PlacementDensity density;
-  if (bin_area_.empty() || !region.overlaps(core_)) {
+  if (occupied_area_.empty() || !region.overlaps(core_)) {
     return density;
   }
   const Rect inside = region.intersect(core_);
@@ -104,7 +95,7 @@ PlacementDensity PlacementDensityMap::getDensity(const Rect& region)
 
   double area = 0;
   for (int y = range.y_lo; y <= range.y_hi; y++) {
-    const int64_t* row = &bin_area_[binIndex(0, y)];
+    const int64_t* row = &occupied_area_[binIndex(0, y)];
     double row_area = lo_x_share * static_cast<double>(row[range.x_lo]);
     if (range.x_hi > range.x_lo) {
       int64_t whole = 0;
@@ -121,7 +112,7 @@ PlacementDensity PlacementDensityMap::getDensity(const Rect& region)
   return density;
 }
 
-Rect PlacementDensityMap::getBinRect(const int x, const int y) const
+Rect PlacementDensityGrid::getBinRect(const int x, const int y) const
 {
   const int64_t lx = core_.xMin() + (static_cast<int64_t>(x) * bin_width_);
   const int64_t ly = core_.yMin() + (static_cast<int64_t>(y) * bin_height_);
@@ -133,7 +124,7 @@ Rect PlacementDensityMap::getBinRect(const int x, const int y) const
               static_cast<int>(uy));
 }
 
-PlacementDensityMap::BinRange PlacementDensityMap::binsCovering(
+PlacementDensityGrid::BinRange PlacementDensityGrid::binsCovering(
     const Rect& rect) const
 {
   // The upper edges are exclusive: a rect ending on a bin boundary does not
@@ -144,12 +135,12 @@ PlacementDensityMap::BinRange PlacementDensityMap::binsCovering(
           .y_hi = (rect.yMax() - 1 - core_.yMin()) / bin_height_};
 }
 
-void PlacementDensityMap::build()
+void PlacementDensityGrid::build()
 {
   core_ = block_->getCoreArea();
   bin_count_x_ = 0;
   bin_count_y_ = 0;
-  bin_area_.clear();
+  occupied_area_.clear();
   inst_boxes_.clear();
   if (core_.dx() <= 0 || core_.dy() <= 0) {
     return;
@@ -162,7 +153,7 @@ void PlacementDensityMap::build()
   bin_height_ = static_cast<int>(height);
   bin_count_x_ = static_cast<int>((core_.dx() + width - 1) / width);
   bin_count_y_ = static_cast<int>((core_.dy() + height - 1) / height);
-  bin_area_.assign(static_cast<size_t>(bin_count_x_) * bin_count_y_, 0);
+  occupied_area_.assign(static_cast<size_t>(bin_count_x_) * bin_count_y_, 0);
 
   // Room for every instance id, and some to spare for the ones to come.
   const size_t inst_count = block_->getInsts().size();
@@ -172,7 +163,7 @@ void PlacementDensityMap::build()
   }
 }
 
-void PlacementDensityMap::pickBinSize(int64_t& width, int64_t& height) const
+void PlacementDensityGrid::pickBinSize(int64_t& width, int64_t& height) const
 {
   width = requested_bin_width_;
   height = requested_bin_height_;
@@ -204,10 +195,10 @@ void PlacementDensityMap::pickBinSize(int64_t& width, int64_t& height) const
   }
 }
 
-void PlacementDensityMap::updateInst(dbInst* inst,
-                                     const dbPlacementStatus& status)
+void PlacementDensityGrid::updateInst(dbInst* inst,
+                                      const dbPlacementStatus& status)
 {
-  if (bin_area_.empty()) {
+  if (occupied_area_.empty()) {
     return;
   }
   const uint32_t id = inst->getId();
@@ -217,14 +208,14 @@ void PlacementDensityMap::updateInst(dbInst* inst,
     addBox(added, -1);
     added = Rect();
   }
-  if (isCounted(inst, status)) {
+  if (contributesToDensity(inst, status)) {
     Rect& added = recordFor(id);
     added = inst->getBBox()->getBox();
     addBox(added, 1);
   }
 }
 
-void PlacementDensityMap::addBox(const Rect& box, const int sign)
+void PlacementDensityGrid::addBox(const Rect& box, const int sign)
 {
   // Off the core, an instance is recorded but adds nothing.
   if (box.area() == 0 || !box.overlaps(core_)) {
@@ -234,12 +225,13 @@ void PlacementDensityMap::addBox(const Rect& box, const int sign)
   const BinRange range = binsCovering(inside);
   for (int y = range.y_lo; y <= range.y_hi; y++) {
     for (int x = range.x_lo; x <= range.x_hi; x++) {
-      bin_area_[binIndex(x, y)] += sign * overlapArea(inside, getBinRect(x, y));
+      occupied_area_[binIndex(x, y)]
+          += sign * inside.intersect(getBinRect(x, y)).area();
     }
   }
 }
 
-Rect& PlacementDensityMap::recordFor(const uint32_t inst_id)
+Rect& PlacementDensityGrid::recordFor(const uint32_t inst_id)
 {
   if (inst_id >= inst_boxes_.size()) {
     if (inst_id >= inst_boxes_.capacity()) {
@@ -257,21 +249,21 @@ Rect& PlacementDensityMap::recordFor(const uint32_t inst_id)
 // dbBlockCallBackObj.  While stale_ is set, the coming build reads every
 // instance afresh, so there is nothing to keep up to date.
 
-void PlacementDensityMap::inDbInstCreate(dbInst* inst)
+void PlacementDensityGrid::inDbInstCreate(dbInst* inst)
 {
   if (!stale_) {
     updateInst(inst, inst->getPlacementStatus());
   }
 }
 
-void PlacementDensityMap::inDbInstDestroy(dbInst* inst)
+void PlacementDensityGrid::inDbInstDestroy(dbInst* inst)
 {
   if (!stale_) {
     updateInst(inst, dbPlacementStatus(dbPlacementStatus::NONE));
   }
 }
 
-void PlacementDensityMap::inDbInstPlacementStatusBefore(
+void PlacementDensityGrid::inDbInstPlacementStatusBefore(
     dbInst* inst,
     const dbPlacementStatus& status)
 {
@@ -280,21 +272,21 @@ void PlacementDensityMap::inDbInstPlacementStatusBefore(
   }
 }
 
-void PlacementDensityMap::inDbInstSwapMasterAfter(dbInst* inst)
+void PlacementDensityGrid::inDbInstSwapMasterAfter(dbInst* inst)
 {
   if (!stale_) {
     updateInst(inst, inst->getPlacementStatus());
   }
 }
 
-void PlacementDensityMap::inDbPostMoveInst(dbInst* inst)
+void PlacementDensityGrid::inDbPostMoveInst(dbInst* inst)
 {
   if (!stale_) {
     updateInst(inst, inst->getPlacementStatus());
   }
 }
 
-void PlacementDensityMap::inDbBlockSetCoreArea(dbBlock*)
+void PlacementDensityGrid::inDbBlockSetCoreArea(dbBlock*)
 {
   stale_ = true;
 }

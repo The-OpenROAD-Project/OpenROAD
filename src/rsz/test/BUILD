@@ -399,7 +399,7 @@ test_suite(
     name = "cpp_tests",
     tests = [
         ":TestBufRem1",
-        ":TestPlacementDensityMap",
+        ":TestPlacementDensityGrid",
         ":TestResizer",
         ":TestSkewBudget",
     ],
@@ -552,8 +552,8 @@ cc_test(
 )
 
 cc_test(
-    name = "TestPlacementDensityMap",
-    srcs = ["cpp/TestPlacementDensityMap.cc"],
+    name = "TestPlacementDensityGrid",
+    srcs = ["cpp/TestPlacementDensityGrid.cc"],
     deps = [
         "//src/odb/src/db",
         "//src/rsz",

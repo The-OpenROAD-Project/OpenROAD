@@ -44,7 +44,7 @@ struct PlacementDensity
 // placement blockages.  An instance of a child block counts as a whole.
 //
 // The heat map throws its whole map away whenever an instance changes, and
-// rebuilds it on the next read.  This map is built by its first query, and
+// rebuilds it on the next read.  This grid is built by its first query, and
 // odb callbacks then keep the bins current through every instance create,
 // destroy, move, resize and placement status change.  So a query only costs
 // a walk over the bins it covers, however much changed since the last one.
@@ -56,17 +56,17 @@ struct PlacementDensity
 // of date until its next callback.
 //
 // Not thread safe: queries and db edits must not run concurrently.
-class PlacementDensityMap : public odb::dbBlockCallBackObj
+class PlacementDensityGrid : public odb::dbBlockCallBackObj
 {
  public:
   // Bins of bin_width x bin_height DBU from the lower left corner of the
   // core.  A size of 0 takes the heat map's default, picked when the map is
   // built: the bins global placement last optimized on, or 10 microns before
-  // it has run, coarsened if need be to at most 1024 bins a side.  The map
+  // it has run, coarsened if need be to at most 1024 bins a side.  The grid
   // is built by the first query, so making one costs nothing until then.
-  explicit PlacementDensityMap(odb::dbBlock* block,
-                               int bin_width = 0,
-                               int bin_height = 0);
+  explicit PlacementDensityGrid(odb::dbBlock* block,
+                                int bin_width = 0,
+                                int bin_height = 0);
 
   odb::dbBlock* getBlock() const { return block_; }
 
@@ -79,9 +79,9 @@ class PlacementDensityMap : public odb::dbBlockCallBackObj
   int getBinCountX() const { return bin_count_x_; }
   int getBinCountY() const { return bin_count_y_; }
   odb::Rect getBinRect(int x, int y) const;
-  int64_t getBinInstanceArea(int x, int y) const
+  int64_t getBinOccupiedArea(int x, int y) const
   {
-    return bin_area_[binIndex(x, y)];
+    return occupied_area_[binIndex(x, y)];
   }
 
   // dbBlockCallBackObj
@@ -135,9 +135,9 @@ class PlacementDensityMap : public odb::dbBlockCallBackObj
   int bin_count_x_ = 0;
   int bin_count_y_ = 0;
   // The instance area inside each bin, row after row.
-  std::vector<int64_t> bin_area_;
+  std::vector<int64_t> occupied_area_;
   // By dbInst id, the box each instance added to the bins; empty for the
-  // instances the map does not count.
+  // instances the grid does not count.
   std::vector<odb::Rect> inst_boxes_;
 };
 

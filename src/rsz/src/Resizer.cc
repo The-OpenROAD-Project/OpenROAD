@@ -58,7 +58,7 @@
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "rsz/PlacementDensityMap.hh"
+#include "rsz/PlacementDensityGrid.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/ClkNetwork.hh"
 #include "sta/Clock.hh"
@@ -254,13 +254,13 @@ double Resizer::maxArea() const
 
 PlacementDensity Resizer::placementDensity(const odb::Rect& region)
 {
-  // A map whose block was destroyed has lost its owner.
-  if (density_map_ == nullptr || !density_map_->hasOwner()
-      || density_map_->getBlock() != block_) {
+  // A grid whose block was destroyed has lost its owner.
+  if (density_grid_ == nullptr || !density_grid_->hasOwner()
+      || density_grid_->getBlock() != block_) {
     initBlock();
-    density_map_ = std::make_unique<PlacementDensityMap>(block_);
+    density_grid_ = std::make_unique<PlacementDensityGrid>(block_);
   }
-  return density_map_->getDensity(region);
+  return density_grid_->getDensity(region);
 }
 
 void Resizer::reportPlacementDensity(const odb::Rect& region)
@@ -297,8 +297,8 @@ void Resizer::reportPlacementDensity(const odb::Rect& region)
   };
   logger_->report("Region ({:.3f}, {:.3f}) ({:.3f}, {:.3f})", x1, y1, x2, y2);
   logger_->report("  Bin size:             {:.3f} x {:.3f} um",
-                  block_->dbuToMicrons(density_map_->getBinWidth()),
-                  block_->dbuToMicrons(density_map_->getBinHeight()));
+                  block_->dbuToMicrons(density_grid_->getBinWidth()),
+                  block_->dbuToMicrons(density_grid_->getBinHeight()));
   logger_->report("  Area inside the core: {:12.3f} um^2",
                   to_um2(static_cast<double>(density.region_area)));
   logger_->report("  Instance area:        {:12.3f} um^2",

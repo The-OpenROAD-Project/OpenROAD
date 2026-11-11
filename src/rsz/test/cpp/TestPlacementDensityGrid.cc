@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include <algorithm>
 #include <cstdint>
 #include <random>
 #include <string>
@@ -11,7 +10,7 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "rsz/PlacementDensityMap.hh"
+#include "rsz/PlacementDensityGrid.hh"
 #include "tst/db_fixture.h"
 
 namespace rsz {
@@ -27,18 +26,9 @@ using odb::dbPlacementStatus;
 using odb::dbSite;
 using odb::Rect;
 
-int64_t overlapArea(const Rect& a, const Rect& b)
-{
-  const int64_t dx = static_cast<int64_t>(std::min(a.xMax(), b.xMax()))
-                     - std::max(a.xMin(), b.xMin());
-  const int64_t dy = static_cast<int64_t>(std::min(a.yMax(), b.yMax()))
-                     - std::max(a.yMin(), b.yMin());
-  return (dx > 0 && dy > 0) ? dx * dy : 0;
-}
-
 // A core of kRows rows of kRowSites sites, and a master of each kind the
 // heat map tells apart.
-class PlacementDensityMapTest : public tst::DbFixture
+class PlacementDensityGridTest : public tst::DbFixture
 {
  protected:
   static constexpr int kDbuPerMicron = 1000;
@@ -137,23 +127,24 @@ class PlacementDensityMapTest : public tst::DbFixture
     int64_t area = 0;
     for (dbInst* inst : block_->getInsts()) {
       dbMaster* master = inst->getMaster();
+      const Rect box = inst->getBBox()->getBox();
       if (inst->getPlacementStatus().isPlaced() && !master->isFiller()
-          && !master->isPad() && !master->isCover()) {
-        area += overlapArea(inst->getBBox()->getBox(), rect);
+          && !master->isPad() && !master->isCover() && box.overlaps(rect)) {
+        area += box.intersect(rect).area();
       }
     }
     return area;
   }
 
   // Every bin holds what a count from scratch gives.
-  void expectBinsMatchTheDb(PlacementDensityMap& map) const
+  void expectBinsMatchTheDb(PlacementDensityGrid& grid) const
   {
-    map.getDensity(core());
-    ASSERT_GT(map.getBinCountX(), 0);
-    for (int y = 0; y < map.getBinCountY(); y++) {
-      for (int x = 0; x < map.getBinCountX(); x++) {
-        EXPECT_EQ(map.getBinInstanceArea(x, y),
-                  expectedArea(map.getBinRect(x, y)))
+    grid.getDensity(core());
+    ASSERT_GT(grid.getBinCountX(), 0);
+    for (int y = 0; y < grid.getBinCountY(); y++) {
+      for (int x = 0; x < grid.getBinCountX(); x++) {
+        EXPECT_EQ(grid.getBinOccupiedArea(x, y),
+                  expectedArea(grid.getBinRect(x, y)))
             << "bin " << x << ", " << y;
       }
     }
@@ -173,7 +164,7 @@ class PlacementDensityMapTest : public tst::DbFixture
   int inst_count_ = 0;
 };
 
-TEST_F(PlacementDensityMapTest, CountsWhatTheHeatMapCounts)
+TEST_F(PlacementDensityGridTest, CountsWhatTheHeatMapCounts)
 {
   // Counted: a placed cell, a fixed macro, a tap and an endcap.
   place(cell_, siteX(0), rowY(0));
@@ -186,8 +177,8 @@ TEST_F(PlacementDensityMapTest, CountsWhatTheHeatMapCounts)
   place(cover_, siteX(30), rowY(1), dbPlacementStatus::COVER);
   place(cell_, siteX(40), rowY(0), dbPlacementStatus::UNPLACED);
 
-  PlacementDensityMap map(block_, kBinWidth, kBinHeight);
-  const PlacementDensity density = map.getDensity(core());
+  PlacementDensityGrid grid(block_, kBinWidth, kBinHeight);
+  const PlacementDensity density = grid.getDensity(core());
   const int64_t counted
       = area(cell_) + area(macro_) + area(tap_) + area(endcap_);
   EXPECT_EQ(density.region_area, core().area());
@@ -195,32 +186,32 @@ TEST_F(PlacementDensityMapTest, CountsWhatTheHeatMapCounts)
   EXPECT_DOUBLE_EQ(
       density.getDensity(),
       static_cast<double>(counted) / static_cast<double>(core().area()));
-  expectBinsMatchTheDb(map);
+  expectBinsMatchTheDb(grid);
 }
 
-TEST_F(PlacementDensityMapTest, IsBuiltByTheFirstQuery)
+TEST_F(PlacementDensityGridTest, IsBuiltByTheFirstQuery)
 {
   place(cell_, siteX(0), rowY(0));
-  PlacementDensityMap map(block_, kBinWidth, kBinHeight);
-  EXPECT_EQ(map.getBinCountX(), 0);
+  PlacementDensityGrid grid(block_, kBinWidth, kBinHeight);
+  EXPECT_EQ(grid.getBinCountX(), 0);
 
   // An edit before the first query is read by the build.
   place(cell_, siteX(50), rowY(5));
-  EXPECT_DOUBLE_EQ(map.getDensity(core()).instance_area,
+  EXPECT_DOUBLE_EQ(grid.getDensity(core()).instance_area,
                    static_cast<double>(2 * area(cell_)));
-  EXPECT_EQ(map.getBinCountX(), kRowSites / 10);
-  EXPECT_EQ(map.getBinCountY(), kRows);
+  EXPECT_EQ(grid.getBinCountX(), kRowSites / 10);
+  EXPECT_EQ(grid.getBinCountY(), kRows);
 }
 
-TEST_F(PlacementDensityMapTest, DefaultBinsFollowTheHeatMap)
+TEST_F(PlacementDensityGridTest, DefaultBinsFollowTheHeatMap)
 {
   // Before global placement has run, bins of 10 microns.
   {
-    PlacementDensityMap map(block_);
-    map.getDensity(core());
-    EXPECT_EQ(map.getBinCountX(), 2);
-    EXPECT_EQ(map.getBinCountY(), 2);
-    EXPECT_EQ(map.getBinRect(0, 0),
+    PlacementDensityGrid grid(block_);
+    grid.getDensity(core());
+    EXPECT_EQ(grid.getBinCountX(), 2);
+    EXPECT_EQ(grid.getBinCountY(), 2);
+    EXPECT_EQ(grid.getBinRect(0, 0),
               Rect(kCoreLx,
                    kCoreLy,
                    kCoreLx + (10 * kDbuPerMicron),
@@ -232,11 +223,11 @@ TEST_F(PlacementDensityMapTest, DefaultBinsFollowTheHeatMap)
   odb::dbIntProperty::create(block_, "gpl_bin_size_x", 3000);
   odb::dbIntProperty::create(block_, "gpl_bin_size_y", 4000);
   {
-    PlacementDensityMap map(block_);
-    map.getDensity(core());
-    EXPECT_EQ(map.getBinCountX(), 7);
-    EXPECT_EQ(map.getBinCountY(), 5);
-    EXPECT_EQ(map.getBinRect(6, 4),
+    PlacementDensityGrid grid(block_);
+    grid.getDensity(core());
+    EXPECT_EQ(grid.getBinCountX(), 7);
+    EXPECT_EQ(grid.getBinCountY(), 5);
+    EXPECT_EQ(grid.getBinRect(6, 4),
               Rect(kCoreLx + 18000, kCoreLy + 16000, kCoreUx, kCoreUy));
   }
 
@@ -244,36 +235,36 @@ TEST_F(PlacementDensityMapTest, DefaultBinsFollowTheHeatMap)
   odb::dbIntProperty::find(block_, "gpl_bin_size_x")->setValue(10);
   odb::dbIntProperty::find(block_, "gpl_bin_size_y")->setValue(10);
   {
-    PlacementDensityMap map(block_);
-    map.getDensity(core());
-    EXPECT_EQ(map.getBinCountX(), 1000);
-    EXPECT_EQ(map.getBinCountY(), 1000);
+    PlacementDensityGrid grid(block_);
+    grid.getDensity(core());
+    EXPECT_EQ(grid.getBinCountX(), 1000);
+    EXPECT_EQ(grid.getBinCountY(), 1000);
   }
 
   // A size asked for wins.
   {
-    PlacementDensityMap map(block_, kBinWidth, kBinHeight);
-    map.getDensity(core());
-    EXPECT_EQ(map.getBinCountX(), kRowSites / 10);
-    EXPECT_EQ(map.getBinCountY(), kRows);
+    PlacementDensityGrid grid(block_, kBinWidth, kBinHeight);
+    grid.getDensity(core());
+    EXPECT_EQ(grid.getBinCountX(), kRowSites / 10);
+    EXPECT_EQ(grid.getBinCountY(), kRows);
   }
 }
 
-TEST_F(PlacementDensityMapTest, RegionQueries)
+TEST_F(PlacementDensityGridTest, RegionQueries)
 {
   // A wide cell over the first four sites of bin (0, 0), a cell straddling
   // bins (0, 3) and (1, 3), and a macro over bins (3..4, 5..7).
   place(wide_cell_, siteX(0), rowY(0));
   place(cell_, siteX(9), rowY(3));
   place(macro_, siteX(30), rowY(5), dbPlacementStatus::FIRM);
-  PlacementDensityMap map(block_, kBinWidth, kBinHeight);
+  PlacementDensityGrid grid(block_, kBinWidth, kBinHeight);
 
   // Regions made of whole bins are exact.
   for (const Rect& region : {core(),
                              Rect(siteX(0), rowY(0), siteX(10), rowY(1)),
                              Rect(siteX(0), rowY(3), siteX(10), rowY(4)),
                              Rect(siteX(10), rowY(2), siteX(50), rowY(8))}) {
-    const PlacementDensity density = map.getDensity(region);
+    const PlacementDensity density = grid.getDensity(region);
     EXPECT_EQ(density.region_area, region.area());
     EXPECT_DOUBLE_EQ(density.instance_area,
                      static_cast<double>(expectedArea(region)));
@@ -283,17 +274,17 @@ TEST_F(PlacementDensityMapTest, RegionQueries)
   // spread evenly: the right half of bin (0, 0) gets half the wide cell,
   // though the cell sits in the left half.
   const Rect right_half(siteX(5), rowY(0), siteX(10), rowY(1));
-  EXPECT_DOUBLE_EQ(map.getDensity(right_half).instance_area,
+  EXPECT_DOUBLE_EQ(grid.getDensity(right_half).instance_area,
                    0.5 * static_cast<double>(area(wide_cell_)));
   // And so across the edges of a region over several bins: a quarter of
   // bin (0, 3) and half of bin (1, 3) each hold half of the cell.
   const Rect across(siteX(7) + (kSiteWidth / 2), rowY(3), siteX(15), rowY(4));
-  EXPECT_DOUBLE_EQ(map.getDensity(across).instance_area,
+  EXPECT_DOUBLE_EQ(grid.getDensity(across).instance_area,
                    (0.25 + 0.5) * 0.5 * static_cast<double>(area(cell_)));
 
   // A region reaching out of the core is clipped to it.
   const Rect hanging(0, 0, siteX(10), rowY(1));
-  const PlacementDensity clipped = map.getDensity(hanging);
+  const PlacementDensity clipped = grid.getDensity(hanging);
   EXPECT_EQ(clipped.region_area,
             Rect(kCoreLx, kCoreLy, siteX(10), rowY(1)).area());
   EXPECT_DOUBLE_EQ(clipped.instance_area,
@@ -302,14 +293,14 @@ TEST_F(PlacementDensityMapTest, RegionQueries)
   // Nothing outside the core, or in an empty region.
   for (const Rect& region : {Rect(0, 0, kCoreLx, kCoreLy),
                              Rect(siteX(5), rowY(5), siteX(5), rowY(6))}) {
-    const PlacementDensity density = map.getDensity(region);
+    const PlacementDensity density = grid.getDensity(region);
     EXPECT_EQ(density.region_area, 0);
     EXPECT_EQ(density.instance_area, 0);
     EXPECT_EQ(density.getDensity(), 0);
   }
 }
 
-TEST_F(PlacementDensityMapTest, BinsMatchTheDbUnderRandomEdits)
+TEST_F(PlacementDensityGridTest, BinsMatchTheDbUnderRandomEdits)
 {
   std::mt19937 rng(1);
   const auto pick = [&rng](const int lo, const int hi) {
@@ -338,8 +329,8 @@ TEST_F(PlacementDensityMapTest, BinsMatchTheDbUnderRandomEdits)
   }
   // Bins that line up with neither the sites nor the rows, the last ones
   // clipped to the core.
-  PlacementDensityMap map(block_, 1700, 1300);
-  expectBinsMatchTheDb(map);
+  PlacementDensityGrid grid(block_, 1700, 1300);
+  expectBinsMatchTheDb(grid);
 
   for (int step = 1; step <= 1000; step++) {
     dbInst* inst = insts[pick(0, static_cast<int>(insts.size()) - 1)];
@@ -377,12 +368,12 @@ TEST_F(PlacementDensityMapTest, BinsMatchTheDbUnderRandomEdits)
         break;
     }
     if (step % 25 == 0) {
-      expectBinsMatchTheDb(map);
-      // A map built afresh answers alike.
-      PlacementDensityMap fresh(block_, 1700, 1300);
+      expectBinsMatchTheDb(grid);
+      // A grid built afresh answers alike.
+      PlacementDensityGrid fresh(block_, 1700, 1300);
       for (int query = 0; query < 10; query++) {
         const Rect region(random_x(), random_y(), random_x(), random_y());
-        const PlacementDensity got = map.getDensity(region);
+        const PlacementDensity got = grid.getDensity(region);
         const PlacementDensity want = fresh.getDensity(region);
         EXPECT_EQ(got.region_area, want.region_area);
         EXPECT_DOUBLE_EQ(got.instance_area, want.instance_area);
@@ -391,12 +382,12 @@ TEST_F(PlacementDensityMapTest, BinsMatchTheDbUnderRandomEdits)
   }
 }
 
-TEST_F(PlacementDensityMapTest, JournalUndoLeavesNothingBehind)
+TEST_F(PlacementDensityGridTest, JournalUndoLeavesNothingBehind)
 {
   dbInst* moved = place(cell_, siteX(0), rowY(0));
   dbInst* resized = place(cell_, siteX(20), rowY(2));
-  PlacementDensityMap map(block_, kBinWidth, kBinHeight);
-  expectBinsMatchTheDb(map);
+  PlacementDensityGrid grid(block_, kBinWidth, kBinHeight);
+  expectBinsMatchTheDb(grid);
 
   // A repair move rolled back: a buffer added, placed and turned, a cell
   // moved and another resized.
@@ -407,31 +398,31 @@ TEST_F(PlacementDensityMapTest, JournalUndoLeavesNothingBehind)
   buffer->setOrient(dbOrientType::R90);
   moved->setLocation(siteX(35), rowY(4));
   resized->swapMaster(wide_cell_);
-  expectBinsMatchTheDb(map);
+  expectBinsMatchTheDb(grid);
   odb::dbDatabase::undoEco(block_);
 
   // Undo restores the buffer's orientation and status without callbacks,
   // yet nothing of it is left.
   EXPECT_EQ(block_->findInst("buffer"), nullptr);
-  expectBinsMatchTheDb(map);
+  expectBinsMatchTheDb(grid);
 }
 
-TEST_F(PlacementDensityMapTest, ANewCoreIsCutIntoBinsAfresh)
+TEST_F(PlacementDensityGridTest, ANewCoreIsCutIntoBinsAfresh)
 {
   place(cell_, siteX(0), rowY(0));
   place(cell_, siteX(80), rowY(0));
-  PlacementDensityMap map(block_, kBinWidth, kBinHeight);
-  EXPECT_DOUBLE_EQ(map.getDensity(core()).instance_area,
+  PlacementDensityGrid grid(block_, kBinWidth, kBinHeight);
+  EXPECT_DOUBLE_EQ(grid.getDensity(core()).instance_area,
                    static_cast<double>(2 * area(cell_)));
 
   // The left half of the core holds one of the cells.
   const Rect left_half(kCoreLx, kCoreLy, siteX(50), kCoreUy);
   block_->setCoreArea(left_half);
-  const PlacementDensity density = map.getDensity(core());
-  EXPECT_EQ(map.getBinCountX(), 5);
+  const PlacementDensity density = grid.getDensity(core());
+  EXPECT_EQ(grid.getBinCountX(), 5);
   EXPECT_EQ(density.region_area, left_half.area());
   EXPECT_DOUBLE_EQ(density.instance_area, static_cast<double>(area(cell_)));
-  expectBinsMatchTheDb(map);
+  expectBinsMatchTheDb(grid);
 }
 
 }  // namespace

@@ -23,7 +23,7 @@
 #include "odb/defin.h"
 #include "odb/geom.h"
 #include "policy/SetupLegacyPolicy.hh"
-#include "rsz/PlacementDensityMap.hh"
+#include "rsz/PlacementDensityGrid.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
@@ -1519,7 +1519,7 @@ TEST_F(TestResizer, PlacementDensityTracksPlacedInstances)
   EXPECT_EQ(density.region_area, core.area());
   EXPECT_DOUBLE_EQ(density.instance_area, buffer_area);
 
-  // The map follows the buffer to the far corner of the core, in the last
+  // The grid follows the buffer to the far corner of the core, in the last
   // of its 10 micron bins.
   placed->setLocation(core.xMax() - buffer->getWidth(),
                       core.yMax() - buffer->getHeight());
