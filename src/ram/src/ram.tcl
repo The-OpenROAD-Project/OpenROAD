@@ -20,6 +20,7 @@ sta::define_cmd_args "generate_ram_netlist" {[-mask_size bits]
                                              [-cells {role master ...}]
                                              [-name name]
                                              [-decoder row|word]
+                                             [-w_port_words {{word ...} ...}]
                                              [-bit_folds count]
                                              [-periphery placed|unplaced|verilog]
                                              [-wrapper_verilog file]
@@ -41,7 +42,7 @@ proc generate_ram_netlist { args } {
       -write_behavioral_verilog -read_style -zero_word -reset_value
       -banks -bank_columns -bank_order -rb_ports -register_read_address -write_style -write_priority
       -periphery -pin_layer -cells -name -decoder -bit_folds -wrapper_verilog -service_columns
-      -bank_column_layout } flags {}
+      -bank_column_layout -w_port_words } flags {}
 
   set column_mux_ratio 1
   if { [info exists keys(-column_mux_ratio)] } {
@@ -258,6 +259,18 @@ proc generate_ram_netlist { args } {
     }
   }
 
+  # -w_port_words: per write port, the words it writes. A word gets
+  # write logic from the ports that write it only: one port, and its data
+  # goes straight to the word, no data mux. A port must not address a
+  # word outside its list.
+  set w_port_words {}
+  if { [info exists keys(-w_port_words)] } {
+    foreach words $keys(-w_port_words) {
+      lappend w_port_words [join $words " "]
+    }
+  }
+  ram::set_write_port_words [join $w_port_words ";"]
+
   # How a word holds its value between writes: a clock gate per word
   # (clock_gate), or a mux per bit (mux).
   set write_style clock_gate
@@ -303,7 +316,7 @@ proc generate_ram_netlist { args } {
   foreach key {-read_style -zero_word -reset_value -banks -bank_columns -bank_order
     -rb_ports -register_read_address -write_style -write_priority -cells -name
     -decoder -bit_folds -periphery -pin_layer -wrapper_verilog -service_columns
-    -bank_column_layout} {
+    -bank_column_layout -w_port_words} {
     if { [info exists keys($key)] } {
       lappend experimental $key
     }
@@ -364,6 +377,7 @@ sta::define_cmd_args "generate_ram" {[-mask_size bits]
                                      [-periphery placed|verilog]
                                      [-wrapper_verilog file]
                                      [-tracks file]
+                                     [-w_port_words {{word ...} ...}]
                                      }
 
 # user arguments for generate ram arguments
@@ -378,7 +392,7 @@ proc generate_ram { args } {
            -banks -bank_columns -bank_order -rb_ports -register_read_address
            -write_style -write_priority
            -cells -name -decoder -bit_folds -service_columns
-           -bank_column_layout -periphery -wrapper_verilog -tracks } flags {}
+           -bank_column_layout -periphery -wrapper_verilog -tracks -w_port_words } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
 
@@ -439,7 +453,7 @@ proc generate_ram { args } {
   foreach key {-banks -bank_columns -bank_order -rb_ports -register_read_address
                -write_style -write_priority
                -cells -name -decoder -bit_folds -service_columns
-               -bank_column_layout -periphery -wrapper_verilog} {
+               -bank_column_layout -periphery -wrapper_verilog -w_port_words} {
     if { [info exists keys($key)] } {
       lappend ram_netlist_args $key $keys($key)
     }

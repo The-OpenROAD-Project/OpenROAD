@@ -146,6 +146,9 @@ class RamGen
   void ramRouting(int thread_count);
 
   void setBehavioralVerilogFilename(const std::string& filename);
+  // -w_port_words: per write port, the words it writes, as space-separated
+  // word indices with ';' between ports; empty: every port every word
+  void setWritePortWords(const std::string& text);
   void writeBehavioralVerilog(const std::string& filename,
                               int slices_per_word,
                               int mask_size,
@@ -354,6 +357,10 @@ class RamGen
   std::vector<odb::dbBTerm*> data_inputs_;  // every write port's data
   std::vector<std::vector<odb::dbBTerm*>> q_outputs_;
   std::string behavioral_verilog_filename_;
+  // per write port, the words it writes; empty: every port every word
+  std::vector<std::set<int>> w_port_words_;
+  // the write ports that write a word: every port without -w_port_words
+  std::vector<int> writersOf(int word) const;
   std::string aoi22_in_a1_, aoi22_in_a2_, aoi22_in_b1_, aoi22_in_b2_,
       aoi22_out_;
   std::array<std::string, 4> ao22_in_;

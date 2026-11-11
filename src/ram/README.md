@@ -60,6 +60,7 @@ generate_ram [-mask_size bits]
              [-cells {role master ...}]
              [-name name]
              [-decoder row|word]
+             [-w_port_words {{word ...} ...}]
              [-bit_folds count]
              [-inv_cell name]
              [-power_net_name name]
@@ -103,6 +104,7 @@ generate_ram [-mask_size bits]
 | `-cells` | **Experimental.** The cell for a role (`inv`, `and2`, `buffer`, `clock_gate`, `aoi22`, `ao22`, `or2`, `nand2`, `nor2`, `tie`, `addr_flop`), instead of the smallest the libraries have of its function. An AOI22 or AO22 given is checked by its truth table. Default: the smallest of each. |
 | `-name` | **Experimental.** The block's and the behavioral model's name. Default: `RAM<words>x<bits>`. |
 | `-decoder` | **Experimental.** `row`: a decoder per row, an AND2 chain over the row address, the column mux selecting within the row. `word`: a balanced AND2 tree over each word's whole address, as with banks; shallower for the read path. Default: `row`. |
+| `-w_port_words` | **Experimental.** Per write port, the words it writes: a list of word lists, one per write port, in port order. A word gets write logic only from the ports that list it: written by one port, the port's data goes straight to the word, with no data mux and no OR of the ports' enables, and a port builds no decoder for a word it does not list. A port must not address a word outside its list; such a write is lost. Every word must be listed by some port. With `-decoder word` or banks. Default: every port writes every word. |
 | `-bit_folds` | **Experimental.** A word in `count` rows: its bits in slices of `-mask_size` (the word divided by `count`, rounded up; the last slice may be short), one slice a row, so a wide word with many ports is not a long thin strip. A folded word is written whole, one write enable a port, its write logic built once and shared by its rows. Not with `-use_latch` or the row decoder's `-column_mux_ratio` above 1. Default: 1. |
 | `-inv_cell` | Name of the master to use for inverters. Default: auto-select from the loaded cell library. |
 | `-routing_layer` | A list of the metal layer and metal width (in microns) for generating standard cell power tracks (followpins). Example: `{met1 0.48}`. |

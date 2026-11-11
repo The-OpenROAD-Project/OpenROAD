@@ -157,6 +157,12 @@ void set_behavioral_verilog_filename(const char* filename)
   ram_gen->setBehavioralVerilogFilename(filename);
 }
 
+void set_write_port_words(const char* text)
+{
+  RamGen* ram_gen = ord::getRamGen();
+  ram_gen->setWritePortWords(text);
+}
+
 } //namespace_ram
 
 %} // inline
