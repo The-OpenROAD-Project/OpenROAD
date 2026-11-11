@@ -76,6 +76,29 @@ jobs:
           # finding emitted under multiple cc_library consumers of a
           # shared source.
           BAZEL_BIN=$(bazel info bazel-bin)
+          # rules_lint records clang-tidy's exit code without failing the
+          # build, so a broken linter would otherwise pass as "0 findings".
+          # A non-zero exit with no file:line:col diagnostic means clang-tidy
+          # itself failed (bad binary, bad flags), not that code has findings.
+          OUT_COUNT=0
+          TOOL_FAILURES=0
+          while IFS= read -r -d '' out; do
+            OUT_COUNT=$((OUT_COUNT + 1))
+            code=$(cat "${out}.exit_code" 2>/dev/null || echo 0)
+            if [ "${code}" != "0" ] \
+                && ! grep -qE ':[0-9]+:[0-9]+: (warning|error):' "${out}"; then
+              TOOL_FAILURES=$((TOOL_FAILURES + 1))
+              if [ "${TOOL_FAILURES}" -le 5 ]; then
+                echo "::error::clang-tidy failed (exit ${code}) for ${out##*/}:"
+                head -5 "${out}"
+              fi
+            fi
+          done < <(find "${BAZEL_BIN}" -name '*.AspectRulesLintClangTidy.out' -print0)
+          echo "clang-tidy outputs: ${OUT_COUNT}, tool failures: ${TOOL_FAILURES}"
+          if [ "${OUT_COUNT}" -eq 0 ] || [ "${TOOL_FAILURES}" -gt 0 ]; then
+            echo "::error::clang-tidy did not run correctly"
+            exit 1
+          fi
           find "${BAZEL_BIN}" -name '*.AspectRulesLintClangTidy.out' -print0 \
             | xargs -0 cat \
             | sed -E 's|^.*/execroot/_main/||' \
