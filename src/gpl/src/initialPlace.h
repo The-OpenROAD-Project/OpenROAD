@@ -89,6 +89,11 @@ class InitialPlace
   void setPlaceInstExtId();
   void updatePinInfo();
   void createSparseMatrix();
+  // Adds a unit diagonal and the cell's current position for each cell
+  // with no entry in list.
+  void anchorEmptyRows(std::vector<Eigen::Triplet<float>>& list,
+                       Eigen::VectorXf& fixed_force,
+                       int (Instance::*center)() const);
   void updateCoordi();
 };
 

@@ -478,8 +478,31 @@ void InitialPlace::createSparseMatrix()
     }
   }
 
+  // A cell no net pulls on, in x or y, has an empty row. Hold it where it
+  // is, as for a locked cell: otherwise, when no row anchors a position, the
+  // right-hand side is zero and the solver puts every cell at 0.
+  anchorEmptyRows(listX, fixedInstForceVecX_, &Instance::cx);
+  anchorEmptyRows(listY, fixedInstForceVecY_, &Instance::cy);
+
   placeInstForceMatrixX_.setFromTriplets(listX.begin(), listX.end());
   placeInstForceMatrixY_.setFromTriplets(listY.begin(), listY.end());
+}
+
+void InitialPlace::anchorEmptyRows(std::vector<T>& list,
+                                   Eigen::VectorXf& fixed_force,
+                                   int (Instance::*center)() const)
+{
+  std::vector<bool> has_entry(pbc_->placeInsts().size(), false);
+  for (const T& entry : list) {
+    has_entry[entry.row()] = true;
+  }
+  for (Instance* inst : pbc_->placeInsts()) {
+    const int idx = inst->getExtId();
+    if (!has_entry[idx]) {
+      list.emplace_back(idx, idx, 1.0f);
+      fixed_force(idx) = (inst->*center)();
+    }
+  }
 }
 
 void InitialPlace::updateCoordi()
