@@ -29,26 +29,32 @@ struct ItfWarning
 // RESISTIVE_ONLY_ETCH, ETCH_VS_WIDTH_AND_SPACING), sheet resistance (RPSQ,
 // RHO, RPSQ_VS_SI_WIDTH, RPSQ_VS_WIDTH_AND_SPACING,
 // RHO_VS_WIDTH_AND_SPACING) and temperature coefficients (T0, CRT1, CRT2,
-// CRT_VS_SI_WIDTH); VIA layers with FROM and TO, in either order (the
-// upper layer is decided by height; SUBSTRATE names the ground plane),
-// their resistance (RPV with AREA, RHO, RPV_VS_AREA) and temperature
+// CRT_VS_SI_WIDTH); VIA layers with FROM and TO, in either order, each a
+// layer or a braced list of one (the upper layer is decided by height;
+// SUBSTRATE or substrate names the ground plane), their resistance (RPV
+// with AREA, RHO, RPV_VS_AREA [INTERPOLATE_RPV_AREA]) and temperature
 // coefficients (T0, CRT1, CRT2, CRT_VS_AREA). Commas separate values like
 // spaces, and a '$' starts a comment that runs to the end of the line.
 //
 // Parsed and skipped: device-level modeling (DEVICE_TYPE, gate and
 // diffusion keywords, PARALLEL_TO_GATE etch tables, a gate spacer's
 // SPACER_ER_VS_WIDTH_AND_SPACING, contact and trench contact via tables,
-// MULTIGATE), TSV blocks, VARIATION_PARAMETERS and the EM_INFORMATION
-// section, and the header's USE_SI_DENSITY and
-// DROP_FACTOR_LATERAL_SPACING.
+// MULTIGATE, extension tables), a via's WMIN and SMIN, TSV blocks,
+// VARIATION_PARAMETERS and the EM_INFORMATION section, and the header's
+// USE_SI_DENSITY, DROP_FACTOR_LATERAL_SPACING, PROCESS_* identification and
+// GATE_RESISTANCE_ADJUSTMENT_FACTOR.
 //
-// Refused with an error naming the keyword: effects on the geometry or the
-// dielectrics the solver does not model (thickness variation with width,
-// spacing or density, ILD, air gaps, dielectric fill, permittivity against
-// spacing, fill emulation, drop factors, multiple-mask etch,
-// ETCH_FROM_TOP). A non-zero SIDE_TANGENT, sloped sidewalls, is not
-// modeled either but only warned about: the conductor is taken with
-// vertical sidewalls.
+// Read with a warning naming the keyword, so the stack is usable while
+// showing what it misses: effects on the geometry or the dielectrics the
+// solver does not model (thickness variation with width, spacing, density
+// or mask, ILD, air gaps, dielectric fill, permittivity against spacing,
+// fill emulation, drop factors, a conductor's MEASURED_FROM, LINKED_TO or
+// ASSOCIATED_CONDUCTOR, ETCH_FROM_TOP, taken as a vertical etch). Also:
+// a non-zero SIDE_TANGENT (the conductor is taken with vertical
+// sidewalls), a non-zero BW_T of a conformal dielectric (not placed),
+// multiple-mask etch tables and vias connecting more than one layer
+// (both dropped), and a via's RPV without AREA or AREA without RPV (its
+// resistance is dropped).
 //
 // Any other keyword is skipped with a warning: one per statement, so an
 // unknown block ({ ... }) gives one warning for the block and none for
@@ -56,7 +62,7 @@ struct ItfWarning
 //
 // The solver itself places wires as drawn: the etch, resistance and
 // temperature values are carried for the extractor that builds its models
-// from the stack, and the solver's own read_itf refuses a stack whose
+// from the stack, and the solver's own read_itf warns about a stack whose
 // etch would change capacitance. The ground plane is placed at the top of
 // the lowest dielectric, which is not part of the returned stack.
 //
