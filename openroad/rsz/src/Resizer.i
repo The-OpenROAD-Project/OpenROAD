@@ -87,11 +87,6 @@ using rsz::Resizer;
   delete pins;
 }
 
-%typemap(in) std::vector<rsz::MoveType> {
-  const char* str = Tcl_GetString($input);
-  $1 = Resizer::parseMoveSequence(std::string(str));
-}
-
 
 
 ////////////////////////////////////////////////////////////////
@@ -365,7 +360,7 @@ repair_setup(double setup_margin,
              int max_repairs_per_pass,
              bool match_cell_footprint,
              bool verbose,
-             std::vector<rsz::MoveType> sequence,
+             const char* sequence,
              const char* phases,
              const char* path_group,
              bool skip_pin_swap,
@@ -383,10 +378,16 @@ repair_setup(double setup_margin,
 {
   ensureLinked();
   Resizer *resizer = getResizer();
+  std::vector<rsz::MoveType> move_sequence;
+  try {
+    move_sequence = Resizer::parseMoveSequence(sequence);
+  } catch (const std::invalid_argument& e) {
+    resizer->logger()->error(utl::RSZ, 3282, "-sequence: {}.", e.what());
+  }
   return resizer->repairSetup(setup_margin, repair_tns_end_percent,
                        max_passes, max_iterations,
                        max_repairs_per_pass, match_cell_footprint,
-                       verbose, sequence, phases, path_group,
+                       verbose, move_sequence, phases, path_group,
                        skip_pin_swap, skip_gate_cloning,
                        skip_size_down_fanout,
                        skip_buffering, skip_buffer_removal, skip_buffer_to_inverters,
