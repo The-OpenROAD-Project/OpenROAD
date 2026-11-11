@@ -203,7 +203,7 @@ ir::Value BackendGraphBuilder::Unop(ast::UnaryOperator op,
     case ast::UnaryOperator::BitwiseXnor: {
       // Reduction operators: reduce all bits to a single bit
       if (ab.width() == 0) {
-        return ir::Value(ir::Sx);
+        return ir::Value({Trit::S0});
       }
 
       syn::Net result = ab[0];
@@ -241,7 +241,7 @@ ir::Value BackendGraphBuilder::Unop(ast::UnaryOperator op,
     case ast::UnaryOperator::LogicalNot: {
       // !empty == 1 (vacuous truth)
       if (ab.width() == 0) {
-        ir::Value rv{ir::S1};
+        ir::Value rv{Trit::S1};
         rv.extend_u0(y_width);
         return rv;
       }
@@ -727,7 +727,7 @@ void BackendGraphBuilder::connect(ir::Value target, ir::Value source)
   }
 }
 
-void BackendGraphBuilder::set_initialization(ir::Value, ir::Const)
+void BackendGraphBuilder::set_initialization(ir::Value, TritVector)
 {
 }
 
@@ -957,7 +957,7 @@ ir::WritePort* BackendGraphBuilder::add_write_port(ir::Memory*,
 void BackendGraphBuilder::add_memory_init(ir::Memory*,
                                           uint64_t,
                                           bool,
-                                          ir::Const)
+                                          TritVector)
 {
   syn::reportError(graph_->logger(), 95, "Memories are unsupported");
 }
