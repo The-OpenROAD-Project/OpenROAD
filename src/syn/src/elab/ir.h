@@ -20,129 +20,12 @@
 #include "syn/ir/Bundle.h"
 #include "syn/ir/Net.h"
 
+namespace slang_frontend {
+enum Trit : uint8_t;
+class TritVector;
+};  // namespace slang_frontend
+
 namespace ir {
-
-// Four-valued bit constant
-struct Trit
-{
-  enum State : uint8_t
-  {
-    kS0 = 0,
-    kS1 = 1,
-    kSx = 2
-  };
-  State raw_;
-
-  constexpr Trit() : raw_(kSx) {}
-  constexpr Trit(State s) : raw_(s) {}
-
-  constexpr bool operator==(Trit o) const { return raw_ == o.raw_; }
-  constexpr bool operator!=(Trit o) const { return raw_ != o.raw_; }
-
-  // Map to/from syn::Net constants
-  syn::Net to_net() const
-  {
-    switch (raw_) {
-      case kS0:
-        return syn::Net::zero();
-      case kS1:
-        return syn::Net::one();
-      case kSx:
-        return syn::Net::undef();
-    }
-    return syn::Net::undef();
-  }
-
-  static Trit from_net(syn::Net n)
-  {
-    if (n == syn::Net::zero()) {
-      return Trit(kS0);
-    }
-    if (n == syn::Net::one()) {
-      return Trit(kS1);
-    }
-    if (n == syn::Net::undef()) {
-      return Trit(kSx);
-    }
-    // Non-constant net — shouldn't call trit() on it, but return Sx
-    return Trit(kSx);
-  }
-};
-
-inline constexpr Trit S0{Trit::kS0};
-inline constexpr Trit S1{Trit::kS1};
-inline constexpr Trit Sx{Trit::kSx};
-
-// Multi-bit constant value
-class Const
-{
-  std::vector<Trit> bits_;
-
- public:
-  Const() = default;
-  explicit Const(int val, uint64_t width)
-  {
-    bits_.reserve(width);
-    for (uint64_t i = 0; i < width; i++) {
-      bits_.push_back(((uint64_t) val >> i) & 1 ? S1 : S0);
-    }
-  }
-  explicit Const(Trit t, uint64_t width) : bits_(width, t) {}
-  Const(const std::vector<Trit>& bits) : bits_(bits) {}
-
-  int size() const { return (int) bits_.size(); }
-  bool empty() const { return bits_.empty(); }
-
-  Const extract(int offset, int length) const
-  {
-    Const result;
-    result.bits_.assign(bits_.begin() + offset,
-                        bits_.begin() + offset + length);
-    return result;
-  }
-
-  void append(Const other)
-  {
-    bits_.insert(bits_.end(), other.bits_.begin(), other.bits_.end());
-  }
-  void append(Trit t) { bits_.push_back(t); }
-
-  int as_int(bool is_signed = false) const
-  {
-    int result = 0;
-    for (int i = 0; i < size() && i < 32; i++) {
-      if (bits_[i] == S1) {
-        result |= (1 << i);
-      }
-    }
-    if (is_signed && size() > 0 && size() <= 32 && bits_[size() - 1] == S1) {
-      for (int i = size(); i < 32; i++) {
-        result |= (1 << i);
-      }
-    }
-    return result;
-  }
-
-  bool is_fully_undef() const
-  {
-    for (auto& b : bits_) {
-      if (b != Sx) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  void set(int i, Trit t) { bits_[i] = t; }
-
-  Trit operator[](int i) const { return bits_[i]; }
-
-  using const_iterator = std::vector<Trit>::const_iterator;
-  const_iterator begin() const { return bits_.begin(); }
-  const_iterator end() const { return bits_.end(); }
-
-  const std::vector<Trit>& bits() const { return bits_; }
-};
 
 struct Value;
 
@@ -153,28 +36,16 @@ struct Net
 
   Net() : raw_(syn::Net::undef()) {}
   Net(syn::Net n) : raw_(n) {}
-  Net(Trit t) : raw_(t.to_net()) {}
+  Net(slang_frontend::Trit t);
 
   syn::Net raw() const { return raw_; }
 
   Value repeat(uint64_t width);
 
-  Trit trit() const { return Trit::from_net(raw_); }
+  slang_frontend::Trit as_trit() const;
 
   bool operator==(Net o) const { return raw_ == o.raw_; }
   bool operator!=(Net o) const { return raw_ != o.raw_; }
-  bool operator==(Trit t) const { return raw_ == t.to_net(); }
-  bool operator!=(Trit t) const { return raw_ != t.to_net(); }
-
-  bool is_const() const
-  {
-    return raw_ == syn::Net::zero() || raw_ == syn::Net::one()
-           || raw_ == syn::Net::undef();
-  }
-  bool is_def() const
-  {
-    return raw_ == syn::Net::zero() || raw_ == syn::Net::one();
-  }
 };
 
 // Proxy returned by Value::operator[] for read and write access
@@ -198,9 +69,7 @@ class NetProxy
   }
   bool operator==(Net n) const { return Net(nets_[idx_]) == n; }
   bool operator!=(Net n) const { return Net(nets_[idx_]) != n; }
-  bool operator==(Trit t) const { return Net(nets_[idx_]) == t; }
-  bool operator!=(Trit t) const { return Net(nets_[idx_]) != t; }
-  Trit trit() const { return Net(nets_[idx_]).trit(); }
+  slang_frontend::Trit as_trit() const { return Net(nets_[idx_]).as_trit(); }
 };
 
 // Multi-bit signal — stores a vector of syn::Net, convertible to/from
@@ -212,23 +81,14 @@ struct Value
   // Construction
   Value() = default;
   Value(Net bit) : nets_{bit.raw_} {}
-  Value(Trit t) : nets_{t.to_net()} {}
-  Value(Trit t, uint64_t width) : nets_(width, t.to_net()) {}
-  Value(const Const& c)
+  Value(std::initializer_list<Net> parts)
   {
-    nets_.reserve(c.size());
-    for (auto i : c) {
-      nets_.push_back(i.to_net());
+    for (auto it = parts.end(); it != parts.begin();) {
+      --it;
+      nets_.push_back(it->raw_);
     }
   }
-  explicit Value(int val, int width = 32)
-  {
-    nets_.reserve(width);
-    for (int i = 0; i < width; i++) {
-      nets_.push_back(((uint32_t) val >> i) & 1 ? syn::Net::one()
-                                                : syn::Net::zero());
-    }
-  }
+  Value(const slang_frontend::TritVector& c);
 
   // From syn::Bundle
   Value(const syn::Bundle& b)
@@ -281,8 +141,8 @@ struct Value
     return extract(offset, nets_.size() - offset);
   }
   void append(Net bit) { nets_.push_back(bit.raw_); }
+  void append(slang_frontend::Trit t) { nets_.push_back(Net(t).raw_); }
   void append(const NetProxy& p) { nets_.push_back(Net(p).raw_); }
-  void append(Trit t) { nets_.push_back(t.to_net()); }
   void append(Value other)
   {
     nets_.insert(nets_.end(), other.nets_.begin(), other.nets_.end());
@@ -358,15 +218,9 @@ struct Value
     assert(nets_.size() == 1);
     return nets_[0];
   }
-  Const as_const() const
-  {
-    std::vector<Trit> bits;
-    bits.reserve(nets_.size());
-    for (auto& n : nets_) {
-      bits.push_back(Trit::from_net(n));
-    }
-    return Const(bits);
-  }
+
+  slang_frontend::TritVector as_const() const;
+
   bool as_bool() const
   {
     for (auto& n : nets_) {
@@ -375,10 +229,6 @@ struct Value
       }
     }
     return false;
-  }
-  int as_int(bool is_signed = false) const
-  {
-    return as_const().as_int(is_signed);
   }
 
   // Iteration
