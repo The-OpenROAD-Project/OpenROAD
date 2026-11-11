@@ -5350,9 +5350,12 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
   sta::Pin* out_pin = network_->findPin(inv, out_port);
   sta::Net* in_net = db_network_->findFlatNet(in_pin);
   odb::dbNet* in_net_db = db_network_->findFlatDbNet(in_net);
+  // Resolve the flat net, as for in_net: in the hierarchical flow
+  // net(out_pin) is the dbModNet, whose pin iterator misses loads outside
+  // the inverter's module segment, and deleting it crashes deleteNet.
   sta::Net* out_net = network_->isTopLevelPort(out_pin)
                           ? network_->net(network_->term(out_pin))
-                          : network_->net(out_pin);
+                          : db_network_->findFlatNet(out_pin);
   if (out_net) {
     std::string inv_name = network_->name(inv);
     sta::Instance* top_inst = network_->topInstance();
@@ -5395,10 +5398,14 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
 
     if (!has_term) {
       // Delete inv
+      odb::dbModNet* out_mod_net = db_network_->hierNet(out_pin);
       sta_->disconnectPin(in_pin);
       sta_->disconnectPin(out_pin);
       sta_->deleteNet(out_net);
       estimate_parasitics_->removeNetFromParasiticsInvalid(out_net);
+      if (out_mod_net) {
+        sta_->deleteNet(db_network_->dbToSta(out_mod_net));
+      }
       sta_->deleteInstance(inv);
     }
   }

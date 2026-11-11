@@ -3765,8 +3765,18 @@ Net* dbNetwork::makeNet(std::string_view base_name,
 void dbNetwork::deleteNet(Net* net)
 {
   deleteNetBefore(net);
-  dbNet* dnet = staToDb(net);
-  dbNet::destroy(dnet);
+  // In the hierarchical flow a Net* can be a dbModNet (net(pin) prefers the
+  // modnet); the one-argument staToDb returns nullptr for it and
+  // dbNet::destroy(nullptr) crashes.
+  dbNet* dnet = nullptr;
+  odb::dbModNet* modnet = nullptr;
+  staToDb(net, dnet, modnet);
+  if (modnet) {
+    odb::dbModNet::destroy(modnet);
+  }
+  if (dnet) {
+    dbNet::destroy(dnet);
+  }
 }
 
 void dbNetwork::deleteNetBefore(const Net* net)
