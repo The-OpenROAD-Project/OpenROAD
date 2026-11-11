@@ -205,17 +205,18 @@ TEST_F(OverflowTest, StackedCellsOverflow)
   EXPECT_NEAR(nb.getSumOverflowUnscaled(), 186.0 / 256.0, kTolerance);
 }
 
-// A cell partly over its bins and partly not: the bins it covers fully
-// overflow and the ones it touches lightly do not.
+// A cell in the core corner covers its first bin fully, with 25e6 against
+// 17.5e6 of capacity, and overflows it by 7.5e6. It puts only 15e6 in each
+// edge bin and 9e6 in the diagonal bin, which stay under capacity: 7.5e6
+// over 64e6 of cell area.
 TEST_F(OverflowTest, PartialOverlapOverflowsOnlyFullBins)
 {
-  const std::vector<Cell> cells{{0, 0}, {0, 0}};
-  const double expected = expectedOverflow(cells);
-  ASSERT_GT(expected, 0.0);
+  const std::vector<Cell> cells{{0, 0}};
+  ASSERT_NEAR(expectedOverflow(cells), 7.5 / 64.0, kTolerance);
 
   const NesterovBase& nb = place(cells);
-  EXPECT_NEAR(nb.getSumOverflow(), expected, kTolerance);
-  EXPECT_NEAR(nb.getSumOverflowUnscaled(), expected, kTolerance);
+  EXPECT_NEAR(nb.getSumOverflow(), 7.5 / 64.0, kTolerance);
+  EXPECT_NEAR(nb.getSumOverflowUnscaled(), 7.5 / 64.0, kTolerance);
 }
 
 // A fixed instance under a movable one uses 0.7 of its overlap with each
