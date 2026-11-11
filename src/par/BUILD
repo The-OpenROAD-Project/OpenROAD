@@ -48,6 +48,9 @@ cc_library(
     hdrs = [
         "include/par/PartitionMgr.h",
     ],
+    copts = [
+        "-fopenmp",
+    ],
     includes = [
         "include",
     ],
@@ -59,6 +62,7 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.range",
+        "@openmp",
         "@or-tools//ortools/linear_solver",
         "@or-tools//ortools/linear_solver:linear_solver_base",
     ],

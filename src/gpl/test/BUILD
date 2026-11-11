@@ -1,3 +1,4 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
 load("//bazel/gpu:copts.bzl", "CUDA_COPTS")
@@ -7,51 +8,33 @@ load("//test:regression.bzl", "doc_check_test", "regression_test")
 package(features = ["layering_check"])
 
 TESTS = [
-    "ar01",
-    "ar02",
     "clust01",
     "clust02",
     "clust03",
     "cluster_place01",
     "convergence01",
-    "core01",
-    "density01",
     "diverge01",
     "error01",
     "incremental01",
+    "mbff_activity",
     "mbff_hier",
     "mbff_orig_name",
     "mbff_clock_power_off",
     "mbff_clock_power_on",
-    "mt_invariance01",
-    "nograd01",
-    "simple01",
-    "simple01-obs",
     "simple01-rd",
-    "simple01-ref",
-    "simple01-skip-io",
     "simple01-td",
     "simple01-td-net-percentage",
     "simple01-td-tune",
     "simple01-td-repair",
     "simple01-td-restart",
-    "simple01-uniform",
+    "simple01-td-scan-net",
     "simple01-vcts",
     "simple01-vcts-clamp",
     "simple01-vcts-noclk",
     "simple01-vcts-userlat",
-    "simple02",
     "simple02-rd",
-    "simple03",
     "simple03-rd",
-    "simple04",
     "simple04-rd",
-    "simple05",
-    "simple06",
-    "simple07",
-    "simple08",
-    "simple09",
-    "simple10",
     "region01",
 ]
 
@@ -59,11 +42,12 @@ PASSFAIL_TESTS = [
     "congestion_inflation_default",
     "incremental02",
     "incremental03",
+    "options01",
     "place_ios_rd",
     "place_ios_td",
 ]
 
-# Longer-running regression tests (see regression_tests_large.tcl). These are
+# Longer-running regression tests. These are
 # tagged "manual" so they are excluded from the default `bazel test //...`
 # wildcard and must be requested explicitly, e.g. via the :large_tests suite.
 LARGE_TESTS = [
@@ -80,8 +64,7 @@ LARGE_TESTS = [
     "large02",
 ]
 
-# GPU-only PASSFAIL regressions, pinned to the GPU code path (mirrors
-# the ENABLE_GPU=1 tests in src/gpl/test/CMakeLists.txt).
+# GPU-only PASSFAIL regressions, pinned to the GPU code path (ENABLE_GPU=1).
 GPU_TESTS = [
     "region01_gpu",
     "region01_gpu_asym",
@@ -161,30 +144,13 @@ test_suite(
 ) for test_name in GPU_TESTS]
 
 PY_TESTS = [
-    "ar01",
-    "ar02",
     "convergence01",
-    "core01",
     "error01",
     "incremental01",
-    "nograd01",
-    "simple01",
-    "simple01-obs",
-    "simple01-ref",
-    "simple01-skip-io",
     "simple01-td",
     "simple01-td-net-percentage",
     "simple01-td-tune",
     "simple01-td-repair",
-    "simple01-uniform",
-    "simple02",
-    "simple03",
-    "simple04",
-    "simple05",
-    "simple07",
-    "simple08",
-    "simple09",
-    "simple10",
 ]
 
 [
@@ -213,7 +179,6 @@ cc_test(
         "//src/gpl:gpl_impl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        "@spdlog",
     ],
 )
 
@@ -235,8 +200,7 @@ cc_test(
 )
 
 # GPU wirelength-kernel correctness test. Includes Kokkos-laden headers
-# directly, so the TU itself is compiled as CUDA (mirrors the
-# set_source_files_properties block in test/CMakeLists.txt).
+# directly, so the TU itself is compiled as CUDA.
 cc_test(
     name = "wl_gpu_test",
     srcs = ["wl_gpu_test.cc"],
@@ -264,8 +228,8 @@ cc_test(
     name = "place_ios_test",
     srcs = ["place_ios_test.cc"],
     data = [
+        "gcd.def",
         "nangate45.lef",
-        "simple01.def",
         "//test:nangate45_data",
     ],
     env = GPU_ENV_OFF,
@@ -310,6 +274,35 @@ cc_test(
 )
 
 cc_test(
+    name = "power_base_test",
+    srcs = ["power_base_test.cpp"],
+    data = [
+        "library/nangate45/NangateOpenCellLibrary_typical.lib",
+        "nangate45.lef",
+        "simple01-td.def",
+    ],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/dpl",
+        "//src/est",
+        "//src/gpl:gpl_impl",
+        "//src/grt",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/stt",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "placer_base_test",
     srcs = ["placer_base_test.cpp"],
     env = GPU_ENV_OFF,
@@ -326,7 +319,7 @@ cc_test(
 cc_test(
     name = "route_base_test",
     srcs = ["route_base_test.cpp"],
-    data = ["ar02.def"],
+    data = ["wide_core.def"],
     env = GPU_ENV_OFF,
     deps = [
         "//src/dbSta",
@@ -386,7 +379,7 @@ cc_test(
         "congestion_buffers_timing_test.cpp",
     ],
     data = [
-        "simple01.def",
+        "gcd.def",
         "simple01-td-repair.def",
     ],
     env = GPU_ENV_OFF,
@@ -400,6 +393,84 @@ cc_test(
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "overflow_test",
+    srcs = ["overflow_test.cpp"],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/gpl:gpl_impl",
+        "//src/odb/src/db",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "nesterov_place_test",
+    srcs = ["nesterov_place_test.cpp"],
+    data = [
+        "asap7/asap7_tech_1x_201209.lef",
+        "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
+        "blockages.def",
+        "density_below_utilization.def",
+        "gcd.def",
+        "inset_core.def",
+        "moved_ios.def",
+        "nangate45.lef",
+        "nets_without_gradient.def",
+        "one_cell_huge_die.def",
+        "one_movable_cell.def",
+        "single_cell_high_penalty.def",
+        "single_cell_small_core.def",
+        "sky130hd.lef",
+        "tall_core.def",
+        "wide_core.def",
+        "//test:nangate45_data",
+    ],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/gpl",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "place_result_test",
+    srcs = ["place_result_test.cpp"],
+    data = [
+        "gcd.def",
+        "nangate45.lef",
+        "//test:nangate45_data",
+    ],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/gpl",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "wirelength_gradient_test",
+    srcs = ["wirelength_gradient_test.cpp"],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/gpl:gpl_impl",
+        "//src/odb/src/db",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -430,4 +501,49 @@ doc_check_test(
     name = "gpl_messages_txt_check",
     check_log = False,
     data = ["//src/gpl:messages_txt"],
+)
+
+cc_library(
+    name = "gpl_design_builder",
+    testonly = True,
+    srcs = ["gpl_design_builder.cpp"],
+    hdrs = ["gpl_design_builder.h"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:physical_builder",
+    ],
+)
+
+cc_test(
+    name = "known_answer_test",
+    srcs = ["known_answer_test.cpp"],
+    env = GPU_ENV_OFF,
+    deps = [
+        ":gpl_design_builder",
+        "//src/gpl",
+        "//src/odb/src/db",
+        "//src/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "metamorphic_test",
+    srcs = ["metamorphic_test.cpp"],
+    data = [
+        "gcd.def",
+        "nangate45.lef",
+    ],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//src/gpl",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/odb/src/lefin",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
 )

@@ -10,6 +10,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -29,12 +30,6 @@ class Graph2D
   {
     const int lo;
     const int hi;
-  };
-
-  struct Cap3D
-  {
-    uint16_t cap;    // max layer capacity
-    double cap_ndr;  // capacity available for NDR
   };
 
   struct NDRCongestion
@@ -129,6 +124,8 @@ class Graph2D
                    int layer,
                    EdgeDirection direction,
                    double cap);
+  // Adds to a layer's capacity, keeping the NDR capacity reserved on it.
+  void addCap3D(int x, int y, int layer, EdgeDirection direction, int delta);
 
   void clearNDRnets();
   void clearCongestedNDRnets() { congested_ndrs_.clear(); };
@@ -136,8 +133,32 @@ class Graph2D
   void sortCongestedNDRnets();
   std::vector<int> getCongestedNDRnetsByFraction(double fraction);
 
+  // An NDR net must fit in a single layer of each edge it uses. Where no
+  // layer has enough NDR capacity left, the tracks the net misses on its
+  // best layer are its NDR deficit on the edge. The deficits are kept apart
+  // from the edge usage, which only holds the tracks the nets take: the
+  // regular nets still see the room the edge has, the NDR nets pay for the
+  // deficits in their routing cost, and the 2D overflow counts them.
+
+  // Deficit of the net on the edge, zero when the net does not use it.
+  int getNDRDeficit(FrNet* net, int x, int y, EdgeDirection direction) const;
+  // Deficit of the NDR nets on the edge once `net` uses it: theirs plus,
+  // when `net` is not one of them yet, the tracks it would miss there. They
+  // compete for the same layers, so an NDR net that fits also sees the ones
+  // it leaves without room. Zero for nets without NDR.
+  int getNDRDeficitIfRouted(FrNet* net,
+                            int x,
+                            int y,
+                            EdgeDirection direction) const;
+  // True when an NDR net using the edge fits no single layer there.
+  bool hasNDRDeficit(int x, int y, EdgeDirection direction) const;
+  // Deficit of all the NDR nets using the edge.
+  int getEdgeNDRDeficit(int x, int y, EdgeDirection direction) const;
+  int getTotalNDRDeficit() const { return ndr_deficit_total_; }
+
  private:
   friend class Graph2DTestPeer;
+  friend class OverflowTestPeer;
 
   int x_grid_ = 0;
   int y_grid_ = 0;
@@ -151,11 +172,25 @@ class Graph2D
                          int y,
                          double edge_cost,
                          EdgeDirection direction);
-  bool hasNDRCapacity(FrNet* net, int x, int y, EdgeDirection direction);
+  int computeNDRDeficit(FrNet* net,
+                        int x,
+                        int y,
+                        EdgeDirection direction) const;
   void printNDRCap(int x, int y);
   void printEdgeCapPerLayer();
   void initNDRnets();
   void resetNDRCap();
+  // The capacity left for NDR nets on a layer of an edge: the layer's
+  // capacity less what NDR nets reserved there.
+  int getCapNDR(int x, int y, int layer, EdgeDirection direction) const;
+  void debitNDRCap(int x,
+                   int y,
+                   int layer,
+                   EdgeDirection direction,
+                   int amount);
+  // Keys of the sparse NDR state: an edge, and an edge on one layer.
+  int64_t edgeKey(int x, int y, EdgeDirection direction) const;
+  int64_t edgeLayerKey(int x, int y, int layer, EdgeDirection direction) const;
 
   void foreachEdge(const std::function<void(Edge&)>& func);
   void checkDirtyLists() const;
@@ -210,12 +245,12 @@ class Graph2D
   // from it must be stored per net: the layer with free capacity at routing
   // time is generally not the layer with used capacity at rip-up time, and
   // the per-layer costs differ, so re-deriving them at rip-up time makes
-  // cap_ndr drift (see reserveNDRCapLayer/releaseNDRCapLayer).
+  // the NDR capacity drift (see reserveNDRCapLayer/releaseNDRCapLayer).
   struct NDRUsage
   {
-    int16_t layer = -1;             // layer whose cap_ndr was debited
-    int8_t amount = 0;              // amount debited from that layer
-    bool charged_overflow = false;  // net was charged the overflow edge cost
+    int16_t layer = -1;  // layer whose NDR capacity was debited
+    int8_t amount = 0;   // amount debited from that layer
+    int8_t deficit = 0;  // tracks missing on the best layer (0 = fits)
   };
 
   NDRUsage reserveNDRCapLayer(int x, int y, FrNet* net, EdgeDirection dir);
@@ -223,19 +258,27 @@ class Graph2D
                           int y,
                           EdgeDirection dir,
                           const NDRUsage& ndr_usage);
+  void refitNDRDeficitNets(int x, int y, EdgeDirection dir);
+  // NDR nets using an edge; nullptr when none does.
+  const std::map<FrNet*, NDRUsage>* findNDRnets(int x,
+                                                int y,
+                                                EdgeDirection direction) const;
 
-  multi_array<Edge, 2> v_edges_;    // The way it is indexed is (X, Y)
-  multi_array<Edge, 2> h_edges_;    // The way it is indexed is (X, Y)
-  multi_array<Cap3D, 3> v_cap_3D_;  // The way it is indexed is (Layer, X, Y)
-  multi_array<Cap3D, 3> h_cap_3D_;  // The way it is indexed is (Layer, X, Y)
-  // NDR nets currently using each edge, mapped to the resources they took
-  // there. A rip-up must return exactly what the net reserved, otherwise the
-  // edge usage and the 3D NDR capacity drift (see getCostNDRAware).
-  multi_array<std::map<FrNet*, NDRUsage>, 2>
-      v_ndr_nets_;  // The way it is indexed is (X, Y)
-  multi_array<std::map<FrNet*, NDRUsage>, 2>
-      h_ndr_nets_;  // The way it is indexed is (X, Y)
+  multi_array<Edge, 2> v_edges_;  // The way it is indexed is (X, Y)
+  multi_array<Edge, 2> h_edges_;  // The way it is indexed is (X, Y)
+  // Each layer's capacity, indexed (Layer, X, Y).
+  multi_array<uint16_t, 3> v_cap_3D_;
+  multi_array<uint16_t, 3> h_cap_3D_;
+  // What NDR nets reserved on a layer of an edge (edgeLayerKey), kept only
+  // where it is not zero: most designs route few NDR nets, or none.
+  std::unordered_map<int64_t, int> ndr_debit_;
+  // NDR nets currently using an edge (edgeKey), mapped to the resources
+  // they took there, kept only for edges an NDR net uses. A rip-up must
+  // return exactly what the net reserved, otherwise the edge usage and the
+  // 3D NDR capacity drift (see getCostNDRAware).
+  std::unordered_map<int64_t, std::map<FrNet*, NDRUsage>> ndr_nets_;
   std::vector<NDRCongestion> congested_ndrs_;
+  int ndr_deficit_total_ = 0;  // sum of Edge::ndr_deficit
 
   utl::Logger* logger_ = nullptr;
 

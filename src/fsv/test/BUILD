@@ -109,7 +109,10 @@ cc_test(
 cc_test(
     name = "TestItf",
     srcs = ["cpp/TestItf.cpp"],
-    data = ["sky130.itf"],
+    data = [
+        "GT2.itf",
+        "sky130.itf",
+    ],
     deps = [
         "//src/fsv:stack",
         "@googletest//:gtest",
@@ -227,6 +230,12 @@ filegroup(
         "sky130hd/sky130hd.tlef",
     ],
 )
+
+exports_files([
+    "GT2.itf",
+    "field_solver_gcd.def",
+    "sky130.itf",
+])
 
 [regression_test(
     name = test_name,

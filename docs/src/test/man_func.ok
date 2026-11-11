@@ -1,216 +1,117 @@
-openroad(0)							   openroad(0)
-
-
-
-NAME
-       openroad - OpenROAD command-line-interface.
-
-SYNOPSIS
-       openroad	 [-help]  [-version]  [-no_init]  [-no_splash]	[-exit] [-gui]
-       [-threads count|max] [-log file_name]  [-metrics	 file_name]  [-python]
-       cmd_file
-
-DESCRIPTION
-       The  openroad  command  is  the command-line interface for OpenROAD, an
-       open-source initiative for chip design and optimization.	 It provides a
-       range of options to control its behavior and execute commands specified
-       in the cmd_file.
-
-OPTIONS
-       -help: Display help information.
-
-       -version: Display version information.
-
-       -no_init: Skip initialization steps.
-
-       -no_splash: Do not show the license splash at startup.
-
-       -exit: Exit after executing commands in cmd_file.
-
-       -gui: Launch the graphical user interface (GUI).
-
-       -threads	 count|max: Specify the number of threads to use (or  use  max
-       available).
-
-       -log file_name: Log output to the specified file.
-
-       -metrics file_name: Save performance metrics to the specified file.
-
-       -python: Execute the cmd_file as a Python script.
-
-ARGUMENTS
-       cmd_file: The command file containing OpenROAD commands to be executed.
-
-EXAMPLES
-       openroad -help: Prints the help information
-
-       openroad	 -version -exit: Prints the version information, and exits the
-       program thereafter.
-
-       openroad -threads max -log test.log -metrics test.metrics:  Prints  the
-       log  and	 metric	 respectively to test.log and test.metrics.  Also runs
-       the script with maximum available number of threads.
-
-       openroad -gui: Launches OpenROAD GUI,  which  further  interactive  Tcl
-       commands can be run.
-
-TCL COMMANDS
-       These Tcl-based commands are callable from within the OpenROAD binary.
-
-       • read_lef [-tech] [-library] filename
-
-	 • Read Library Exchange Format (.lef) files.
-
-	 • tech: Technology-specific information
-
-	 • library: .lib files
-
-       • read_def filename
-
-	 • Read Design Exchange Format (.def) files.
-
-       • write_def [-version 5.8|5.7|5.6|5.5|5.4|5.3] filename
-
-	 • Write Design Exchange Format (.def) files.
-
-	 • version 5.8|5.7|5.6|5.5|5.4|5.3: Corresponding DEF version to use.
-
-       • read_verilog filename
-	 • Read Verilog (.v) input file.
-
-       • write_verilog filename
-
-	 • Write Verilog (.v) file based on current database.
-
-       • read_db filename
-
-	 • Read OpenDB (.odb) database files.
-
-       • write_db filename
-
-	 • Write OpenDB (.odb) database files.
-
-       • write_abstract_lef filename
-
-	 • Write  abstract  Library Exchange Format (.lef) files based on cur‐
-	   rent database.
-
-       • write_cdl [-include_fillers] -masters out_filename
-
-	 • Write Circuit Design Language (.cdl) netlist file.
-
-ENVIRONMENT
-FILES
-SEE ALSO
-HISTORY
-BUGS
-				  2024/02/09			   openroad(0)
-
-openroad(0)							   openroad(0)
-
-
+openroad
+2024/02/09
 
 NAME
-       openroad - OpenROAD command-line-interface.
+
+openroad - OpenROAD command-line-interface.
 
 SYNOPSIS
-       openroad	 [-help]  [-version]  [-no_init]  [-no_splash]	[-exit] [-gui]
-       [-threads count|max] [-log file_name]  [-metrics	 file_name]  [-python]
-       cmd_file
+
+openroad [-help] [-version] [-no_init] [-no_splash] [-exit] [-gui]
+[-threads count|max] [-log file_name] [-metrics file_name] cmd_file
 
 DESCRIPTION
-       The  openroad  command  is  the command-line interface for OpenROAD, an
-       open-source initiative for chip design and optimization.	 It provides a
-       range of options to control its behavior and execute commands specified
-       in the cmd_file.
+
+The openroad command is the command-line interface for OpenROAD, an
+open-source initiative for chip design and optimization. It provides a
+range of options to control its behavior and execute commands specified
+in the cmd_file.
 
 OPTIONS
-       -help: Display help information.
 
-       -version: Display version information.
+-help: Display help information.
 
-       -no_init: Skip initialization steps.
+-version: Display version information.
 
-       -no_splash: Do not show the license splash at startup.
+-no_init: Skip initialization steps.
 
-       -exit: Exit after executing commands in cmd_file.
+-no_splash: Do not show the license splash at startup.
 
-       -gui: Launch the graphical user interface (GUI).
+-exit: Exit after executing commands in cmd_file.
 
-       -threads	 count|max: Specify the number of threads to use (or  use  max
-       available).
+-gui: Launch the graphical user interface (GUI).
 
-       -log file_name: Log output to the specified file.
+-threads  count|max: Specify the number of threads to use (or use max
+available).
 
-       -metrics file_name: Save performance metrics to the specified file.
+-log file_name: Log output to the specified file.
 
-       -python: Execute the cmd_file as a Python script.
+-metrics file_name: Save performance metrics to the specified file.
 
 ARGUMENTS
-       cmd_file: The command file containing OpenROAD commands to be executed.
+
+cmd_file: The command file containing OpenROAD commands to be executed.
 
 EXAMPLES
-       openroad -help: Prints the help information
 
-       openroad	 -version -exit: Prints the version information, and exits the
-       program thereafter.
+openroad -help: Prints the help information
 
-       openroad -threads max -log test.log -metrics test.metrics:  Prints  the
-       log  and	 metric	 respectively to test.log and test.metrics.  Also runs
-       the script with maximum available number of threads.
+openroad -version -exit: Prints the version information, and exits the
+program thereafter.
 
-       openroad -gui: Launches OpenROAD GUI,  which  further  interactive  Tcl
-       commands can be run.
+openroad -threads max -log test.log -metrics test.metrics: Prints the
+log and metric respectively to test.log and test.metrics. Also runs the
+script with maximum available number of threads.
+
+openroad -gui: Launches OpenROAD GUI, which further interactive Tcl
+commands can be run.
 
 TCL COMMANDS
-       These Tcl-based commands are callable from within the OpenROAD binary.
 
-       • read_lef [-tech] [-library] filename
+These Tcl-based commands are callable from within the OpenROAD binary.
 
-	 • Read Library Exchange Format (.lef) files.
+- read_lef [-tech] [-library] filename
 
-	 • tech: Technology-specific information
+  - Read Library Exchange Format (.lef) files.
 
-	 • library: .lib files
+  - tech: Technology-specific information
 
-       • read_def filename
+  - library: .lib files
 
-	 • Read Design Exchange Format (.def) files.
+- read_def filename
 
-       • write_def [-version 5.8|5.7|5.6|5.5|5.4|5.3] filename
+  - Read Design Exchange Format (.def) files.
 
-	 • Write Design Exchange Format (.def) files.
+- write_def [-version 5.8|5.7|5.6|5.5|5.4|5.3] filename
 
-	 • version 5.8|5.7|5.6|5.5|5.4|5.3: Corresponding DEF version to use.
+  - Write Design Exchange Format (.def) files.
 
-       • read_verilog filename
-	 • Read Verilog (.v) input file.
+  - version 5.8|5.7|5.6|5.5|5.4|5.3: Corresponding DEF version to use.
 
-       • write_verilog filename
+- read_verilog filename
 
-	 • Write Verilog (.v) file based on current database.
+  - Read Verilog (.v) input file.
 
-       • read_db filename
+- write_verilog filename
 
-	 • Read OpenDB (.odb) database files.
+  - Write Verilog (.v) file based on current database.
 
-       • write_db filename
+- read_db filename
 
-	 • Write OpenDB (.odb) database files.
+  - Read OpenDB (.odb) database files.
 
-       • write_abstract_lef filename
+- write_db filename
 
-	 • Write  abstract  Library Exchange Format (.lef) files based on cur‐
-	   rent database.
+  - Write OpenDB (.odb) database files.
 
-       • write_cdl [-include_fillers] -masters out_filename
+- write_abstract_lef filename
 
-	 • Write Circuit Design Language (.cdl) netlist file.
+  - Write abstract Library Exchange Format (.lef) files based on current
+    database.
+
+- write_cdl [-include_fillers] -masters out_filename
+
+  - Write Circuit Design Language (.cdl) netlist file.
 
 ENVIRONMENT
-FILES
-SEE ALSO
-HISTORY
-BUGS
-				  2024/02/09			   openroad(0)
 
+FILES
+
+SEE ALSO
+
+HISTORY
+
+BUGS
+
+[ERROR UTL-0100] Man page for openroad is not found.
+UTL-0100

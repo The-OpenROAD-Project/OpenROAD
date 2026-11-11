@@ -12,6 +12,7 @@
 [INFO GRT-0302] Inserted 4 jumpers for 4 nets.
 [DEBUG GRT-repair_antennas] antenna violations clk
 [INFO GRT-0012] Found 1 antenna violations.
+[INFO DPL-0009] Utilization: 8.0%
 [INFO DPL-0501] Legalized with 0 moves: displacement total 0.0 u, max 0.0 u; HPWL 19603.9 -> 19603.9 u (+0.0 %).
 [INFO GRT-0015] Inserted 1 diodes.
 use_cugr: 1
