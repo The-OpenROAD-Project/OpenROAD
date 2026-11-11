@@ -7150,6 +7150,16 @@ float Resizer::maxInputSlew(const sta::LibertyPort* input,
   return limit;
 }
 
+bool Resizer::haveClkSlewLimits() const
+{
+  for (const sta::Scene* scene : sta_->scenes()) {
+    if (scene->sdc()->haveClkSlewLimits()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void Resizer::checkLoadSlews(const sta::Pin* drvr_pin,
                              double slew_margin,
                              // Return values.
@@ -7160,6 +7170,9 @@ void Resizer::checkLoadSlews(const sta::Pin* drvr_pin,
 {
   slack = sta::INF;
   limit = sta::INF;
+  // Only pay for the per-pin clock-domain lookup when a clock slew limit
+  // exists; otherwise check_clks = false keeps the pre-existing fast path.
+  const bool check_clks = haveClkSlewLimits();
   sta::PinConnectedPinIterator* pin_iter
       = network_->connectedPinIterator(drvr_pin);
   while (pin_iter->hasNext()) {
@@ -7170,8 +7183,15 @@ void Resizer::checkLoadSlews(const sta::Pin* drvr_pin,
       sta::Slew slew1;
       float limit1, slack1;
       // check_clks: honor clock -clock_path/-data_path slew limits.
-      sta_->checkSlew(
-          pin, sta_->scenes(), max_, true, slew1, limit1, slack1, tr1, corner1);
+      sta_->checkSlew(pin,
+                      sta_->scenes(),
+                      max_,
+                      check_clks,
+                      slew1,
+                      limit1,
+                      slack1,
+                      tr1,
+                      corner1);
       if (!corner1) {
         // Fixup for nangate45: see comment in maxInputSlew
         sta::LibertyPort* port = network_->libertyPort(pin);

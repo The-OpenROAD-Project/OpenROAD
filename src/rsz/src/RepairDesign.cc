@@ -953,7 +953,7 @@ bool RepairDesign::repairDriverSlew(const sta::Scene* corner,
         sta_->findSlewLimit(port, corner, max_, limit, limit_exists);
         // findSlewLimit only sees design and Liberty limits; a clock
         // -data_path/-clock_path limit binds every size the same way.
-        if (clk_limit < limit) {
+        if (clk_limit < (limit_exists ? limit : sta::INF)) {
           limit = clk_limit;
           limit_exists = true;
         }
@@ -1341,11 +1341,12 @@ void RepairDesign::checkSlew(const sta::Pin* drvr_pin,
   sta::Slew slew1;
   float limit1, slack1;
   // check_clks: honor set_max_transition -clock_path/-data_path limits, as
-  // report_check_types -max_slew does.
+  // report_check_types -max_slew does.  Gated on the presence of a clock slew
+  // limit so the per-pin clock-domain lookup is skipped otherwise.
   sta_->checkSlew(drvr_pin,
                   sta_->scenes(),
                   max_,
-                  true,
+                  resizer_->haveClkSlewLimits(),
                   slew1,
                   limit1,
                   slack1,
