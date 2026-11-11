@@ -2076,7 +2076,13 @@ void RamGen::ramPinplacer(const char* ver_name, const char* hor_name)
 
   auto pin_tech = block_->getDb()->getTech();
   odb::dbTechLayer* hor_layer = pin_tech->findLayer(hor_name);
+  if (hor_layer == nullptr) {
+    logger_->error(RAM, 132, "Horizontal layer {} not found.", hor_name);
+  }
   odb::dbTechLayer* ver_layer = pin_tech->findLayer(ver_name);
+  if (ver_layer == nullptr) {
+    logger_->error(RAM, 133, "Vertical layer {} not found.", ver_name);
+  }
   io_placer_->addHorLayer(hor_layer);
   io_placer_->addVerLayer(ver_layer);
 
