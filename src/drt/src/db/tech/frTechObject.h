@@ -114,7 +114,7 @@ class frTechObject
     auto type = in->typeId();
     if (type == frConstraintTypeEnum::frcMinStepConstraint
         || type == frConstraintTypeEnum::frcLef58MinStepConstraint) {
-      hasCornerSpacingConstraint_ = true;
+      hasMinStepConstraint_ = true;
     }
     uConstraints_.push_back(std::move(in));
   }
@@ -264,10 +264,7 @@ class frTechObject
   friend class io::Parser;
   void setVia2ViaMinStep(bool in) { hasVia2viaMinStep_ = in; }
   bool hasVia2ViaMinStep() const { return hasVia2viaMinStep_; }
-  bool hasCornerSpacingConstraint() const
-  {
-    return hasCornerSpacingConstraint_;
-  }
+  bool hasMinStepConstraint() const { return hasMinStepConstraint_; }
 
   bool isHorizontalLayer(frLayerNum l)
   {
@@ -396,7 +393,7 @@ class frTechObject
   // for up via
   ByLayer<std::array<bool, 4>> viaForbiddenThrough_;
   bool hasVia2viaMinStep_ = false;
-  bool hasCornerSpacingConstraint_ = false;
+  bool hasMinStepConstraint_ = false;
 
   friend class FlexRP;
 };

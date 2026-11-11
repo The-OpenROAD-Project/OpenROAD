@@ -4105,7 +4105,7 @@ int FlexGCWorker::Impl::main()
   if (surgicalFixEnabled_ && getDRWorker()) {
     checkMetalShape(true);
     //  minStep patching for GF14
-    if (tech_->hasVia2ViaMinStep() || tech_->hasCornerSpacingConstraint()) {
+    if (tech_->hasVia2ViaMinStep() || tech_->hasMinStepConstraint()) {
       patchMetalShape();
     }
     if (!pwires_.empty()) {
