@@ -406,29 +406,39 @@ bool NegotiationLegalizer::initFromDb()
     NegCell cell;
     cell.db_inst = db_inst;
     cell.node = network_ ? network_->getNode(db_inst) : nullptr;
-    cell.fixed = status.isFixed();
+    // Placed macros are forced fixed in the Opendp network (DPL-0404).
+    cell.fixed = status.isFixed() || (cell.node && cell.node->isFixed());
 
-    int db_x = 0;
-    int db_y = 0;
-    db_inst->getLocation(db_x, db_y);
-    // Snap to grid, findBestLocation() iterates over grid positions
-    cell.init_x = dpl_grid->gridRoundX(DbuX{db_x - die_xlo_}).v;
-    cell.init_y = dpl_grid->gridRoundY(DbuY{db_y - die_ylo_}).v;
+    if (cell.fixed) {
+      // Cover the oriented footprint at its actual location.
+      const auto footprint = dpl_grid->gridCovering(opendp_->getBbox(db_inst));
+      cell.init_x = footprint.xlo.v;
+      cell.init_y = footprint.ylo.v;
+      cell.width = footprint.xhi.v - footprint.xlo.v;
+      cell.height = footprint.yhi.v - footprint.ylo.v;
+    } else {
+      int db_x = 0;
+      int db_y = 0;
+      db_inst->getLocation(db_x, db_y);
+      // Snap to grid, findBestLocation() iterates over grid positions
+      cell.init_x = dpl_grid->gridRoundX(DbuX{db_x - die_xlo_}).v;
+      cell.init_y = dpl_grid->gridRoundY(DbuY{db_y - die_ylo_}).v;
 
-    // Width/height must be computed before clamping so the upper bounds
-    // account for the full cell footprint (x + width <= grid_w_, etc.).
-    auto* master = db_inst->getMaster();
-    cell.width = std::max(
-        1,
-        static_cast<int>(
-            std::round(static_cast<double>(master->getWidth()) / site_width_)));
-    cell.height = dpl_grid->gridHeight(master).v;
+      // Width/height must be computed before clamping so the upper bounds
+      // account for the full cell footprint (x + width <= grid_w_, etc.).
+      auto* master = db_inst->getMaster();
+      cell.width = std::max(
+          1,
+          static_cast<int>(std::round(static_cast<double>(master->getWidth())
+                                      / site_width_)));
+      cell.height = dpl_grid->gridHeight(master).v;
 
-    // Clamp to valid grid range – gridRoundY can return grid_h_ when the
-    // instance is near the top edge.  Use (grid_w_ - width) so the full
-    // footprint stays within the grid (matches Opendp::legalPt behaviour).
-    cell.init_x = std::max(0, std::min(cell.init_x, grid_w_ - cell.width));
-    cell.init_y = std::max(0, std::min(cell.init_y, grid_h_ - cell.height));
+      // Clamp to valid grid range. gridRoundY can return grid_h_ when the
+      // instance is near the top edge.  Use (grid_w_ - width) so the full
+      // footprint stays within the grid (matches Opendp::legalPt behaviour).
+      cell.init_x = std::max(0, std::min(cell.init_x, grid_w_ - cell.width));
+      cell.init_y = std::max(0, std::min(cell.init_y, grid_h_ - cell.height));
+    }
     cell.x = cell.init_x;
     cell.y = cell.init_y;
 
@@ -573,11 +583,33 @@ void NegotiationLegalizer::initialSnap()
 {
   const Grid* dpl_grid = opendp_->grid_.get();
 
+  // Mirrors PlacementDRC::checkOneSiteGap against fixed cells only: the DPL
+  // grid has no cells painted yet, and movable usage is added after the snap,
+  // so usage > 0 here means a fixed cell. Off-grid counts as a wall, as there.
+  auto occupied = [&](int gx, int gy) {
+    return !gridExists(gx, gy) || gridAt(gx, gy).usage > 0;
+  };
+  auto oneSiteGap = [&](const NegCell& cell, int px, int py) {
+    if (!opendp_->disallow_one_site_gaps_) {
+      return false;
+    }
+    const int left = px - 1;
+    const int right = px + cell.width;
+    for (int gy = py; gy < py + cell.height; ++gy) {
+      if ((!occupied(left, gy) && occupied(left - 1, gy))
+          || (!occupied(right, gy) && occupied(right + 1, gy))) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   // Can cell `ci` geometrically occupy (px, py)? True when the body footprint
-  // is in-die, on real sites (capacity 0 = no site or fixed blockage) and
-  // inside the fence. Deliberately ignores row legality (site type,
-  // orientation, power), movable overlap and padding — negotiation handles all
-  // of those; the snap only keeps cells off fixed blockages and off-die.
+  // is in-die, on real sites (capacity 0 = no site or fixed blockage), inside
+  // the fence and leaves no one-site gap to a fixed cell. Deliberately ignores
+  // row legality (site type, orientation, power), movable overlap and padding —
+  // negotiation handles all of those; the snap only keeps cells off fixed
+  // blockages and off-die.
   auto placeable = [&](int ci, int px, int py) -> bool {
     const NegCell& cell = cells_[ci];
     if (!inDie(px, py, cell.width, cell.height)) {
@@ -590,7 +622,7 @@ void NegotiationLegalizer::initialSnap()
         }
       }
     }
-    return respectsFence(ci, px, py);
+    return respectsFence(ci, px, py) && !oneSiteGap(cell, px, py);
   };
 
   for (int idx = 0; idx < static_cast<int>(cells_.size()); ++idx) {

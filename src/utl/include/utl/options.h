@@ -54,6 +54,13 @@ inline void convert(const std::string& str, float& field)
   field = std::stof(str);
 }
 
+// String to string (passthrough)
+template <>
+inline void convert(const std::string& str, std::string& field)
+{
+  field = str;
+}
+
 // String to vector<T>
 template <typename T>
 inline void convert(const std::string& str, std::vector<T>& field)

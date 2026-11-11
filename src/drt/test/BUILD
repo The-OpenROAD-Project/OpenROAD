@@ -1,9 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
-# Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
-# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
-
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
@@ -30,6 +27,7 @@ COMPULSORY_TESTS = [
     "ndr_vias3",
     "ndr_no_auto_taper",
     "obstruction",
+    "pa_above_top_layer",
     "pa_single_pin",
     "single_cut_minimumcut",
     "single_step",
@@ -40,7 +38,6 @@ COMPULSORY_TESTS = [
     "via_access_layer",
 ]
 
-# From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
 ]
 
@@ -178,6 +175,8 @@ cc_test(
         "fixture.cpp",
         "fixture.h",
         "gcTest.cpp",
+        "parserTest.cpp",
+        "pathSegTest.cpp",
     ],
     includes = [
         "../src",

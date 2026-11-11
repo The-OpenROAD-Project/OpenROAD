@@ -45,6 +45,7 @@
 #include "RepairTargetCollector.hh"
 #include "ResizerObserver.hh"
 #include "SkewBudget.hh"
+#include "SwapPinsEquivalence.hh"
 #include "boost/functional/hash.hpp"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbSta.hh"
@@ -111,176 +112,6 @@ namespace rsz {
 namespace {
 
 using LibertyPortVec = std::vector<sta::LibertyPort*>;
-
-bool simulateExprForSwapReport(
-    utl::Logger* logger,
-    sta::FuncExpr* expr,
-    std::unordered_map<const sta::LibertyPort*, std::vector<bool>>&
-        port_stimulus,
-    const size_t table_index)
-{
-  using Op = sta::FuncExpr::Op;
-  switch (expr->op()) {
-    case Op::not_:
-      return !simulateExprForSwapReport(
-          logger, expr->left(), port_stimulus, table_index);
-    case Op::and_:
-      return simulateExprForSwapReport(
-                 logger, expr->left(), port_stimulus, table_index)
-             && simulateExprForSwapReport(
-                 logger, expr->right(), port_stimulus, table_index);
-    case Op::or_:
-      return simulateExprForSwapReport(
-                 logger, expr->left(), port_stimulus, table_index)
-             || simulateExprForSwapReport(
-                 logger, expr->right(), port_stimulus, table_index);
-    case Op::xor_:
-      return simulateExprForSwapReport(
-                 logger, expr->left(), port_stimulus, table_index)
-             ^ simulateExprForSwapReport(
-                 logger, expr->right(), port_stimulus, table_index);
-    case Op::one:
-      return true;
-    case Op::zero:
-      return false;
-    case Op::port:
-      return port_stimulus[expr->port()][table_index];
-  }
-
-  logger->error(RSZ, 108, "unrecognized expr op from OpenSTA");
-  return false;
-}
-
-std::vector<bool> simulateExprForSwapReport(
-    utl::Logger* logger,
-    sta::FuncExpr* expr,
-    std::unordered_map<const sta::LibertyPort*, std::vector<bool>>&
-        port_stimulus)
-{
-  const size_t table_length = 0x1 << port_stimulus.size();
-  std::vector<bool> result(table_length, false);
-  for (size_t i = 0; i < table_length; ++i) {
-    result[i] = simulateExprForSwapReport(logger, expr, port_stimulus, i);
-  }
-  return result;
-}
-
-bool isPortEquivalentForSwapReport(utl::Logger* logger,
-                                   const sta::FuncExpr* expr,
-                                   const sta::LibertyCell* cell,
-                                   const sta::LibertyPort* port_a,
-                                   const sta::LibertyPort* port_b)
-{
-  if (port_a->libertyCell() != cell || port_b->libertyCell() != cell) {
-    return false;
-  }
-
-  sta::LibertyCellPortIterator port_iter(cell);
-  std::unordered_map<const sta::LibertyPort*, std::vector<bool>> port_stimulus;
-  size_t input_port_count = 0;
-  while (port_iter.hasNext()) {
-    sta::LibertyPort* port = port_iter.next();
-    if (port->direction()->isInput()) {
-      ++input_port_count;
-      port_stimulus[port] = {};
-    }
-  }
-  if (input_port_count > 16) {
-    return false;
-  }
-
-  size_t var_index = 0;
-  for (auto& port_stimulus_entry : port_stimulus) {
-    const size_t truth_table_length = 0x1 << input_port_count;
-    std::vector<bool>& stimulus = port_stimulus_entry.second;
-    stimulus.resize(truth_table_length, false);
-    for (size_t table_index = 0; table_index < truth_table_length;
-         ++table_index) {
-      stimulus[table_index]
-          = static_cast<bool>((table_index >> var_index) & 0x1);
-    }
-    ++var_index;
-  }
-
-  std::vector<bool> result_no_swap = simulateExprForSwapReport(
-      logger, const_cast<sta::FuncExpr*>(expr), port_stimulus);
-  std::swap(port_stimulus.at(port_a), port_stimulus.at(port_b));
-  std::vector<bool> result_with_swap = simulateExprForSwapReport(
-      logger, const_cast<sta::FuncExpr*>(expr), port_stimulus);
-  return result_no_swap == result_with_swap;
-}
-
-void equivCellPinsForSwapReport(utl::Logger* logger,
-                                const sta::LibertyCell* cell,
-                                sta::LibertyPort* input_port,
-                                LibertyPortVec& ports)
-{
-  if (cell->isSequential() || cell->isIsolationCell()) {
-    ports.clear();
-    return;
-  }
-
-  sta::LibertyCellPortIterator port_iter(cell);
-  int outputs = 0;
-  int inputs = 0;
-  while (port_iter.hasNext()) {
-    sta::LibertyPort* port = port_iter.next();
-    sta::PortDirection* direction = port->direction();
-    if (direction->isOutput()) {
-      ++outputs;
-    } else if (direction->isInput()) {
-      ++inputs;
-    } else if (port->isPwrGnd()) {
-      continue;
-    } else {
-      ports.clear();
-      return;
-    }
-  }
-
-  if (outputs < 1 || inputs < 2) {
-    return;
-  }
-
-  sta::LibertyCellPortIterator input_iter(cell);
-  std::unordered_set<sta::LibertyPort*> seen_ports;
-  while (input_iter.hasNext()) {
-    sta::LibertyPort* candidate_port = input_iter.next();
-    if (!candidate_port->direction()->isInput()) {
-      continue;
-    }
-
-    sta::LibertyCellPortIterator output_iter(cell);
-    std::optional<bool> is_equivalent;
-    while (output_iter.hasNext()) {
-      sta::LibertyPort* output_port = output_iter.next();
-      sta::FuncExpr* output_expr = output_port->function();
-      if (!output_port->direction()->isOutput() || output_expr == nullptr
-          || input_port == candidate_port) {
-        continue;
-      }
-
-      const bool is_equivalent_result = isPortEquivalentForSwapReport(
-          logger, output_expr, cell, input_port, candidate_port);
-      if (!is_equivalent.has_value()) {
-        is_equivalent = is_equivalent_result;
-      } else {
-        is_equivalent = is_equivalent.value() && is_equivalent_result;
-      }
-    }
-
-    if (is_equivalent.has_value() && is_equivalent.value()
-        && !seen_ports.contains(candidate_port)) {
-      seen_ports.insert(candidate_port);
-      ports.push_back(candidate_port);
-    }
-  }
-
-  if (!seen_ports.empty()) {
-    std::ranges::sort(
-        ports, {}, [](sta::LibertyPort* port) { return port->id(); });
-  }
-}
 
 bool bufferRemovalCreatesFeedthrough(odb::dbModNet* input_modnet,
                                      odb::dbModNet* output_modnet)
@@ -455,7 +286,7 @@ sta::VertexSeq Resizer::orderedLoadPinVertices()
   sta::VertexIterator vertex_iter(graph_);
   while (vertex_iter.hasNext()) {
     sta::Vertex* vertex = vertex_iter.next();
-    sta::PortDirection* dir = network_->direction(vertex->pin());
+    const sta::PortDirection* dir = network_->direction(vertex->pin());
     bool top_level = network_->isTopLevelPort(vertex->pin());
     if (!top_level && dir->isAnyInput()) {
       loads.emplace_back(vertex);
@@ -885,7 +716,7 @@ bool Resizer::bufferSizeOutmatched(sta::LibertyCell* worse,
   float extra_input_cap
       = std::max(bin->capacitance() - win->capacitance(), 0.0f);
   float delay_penalty = max_drive_resist * extra_input_cap;
-  float wlimit = maxLoad(network_->cell(worse));
+  float wlimit = outputMaxCap(network_->cell(worse));
 
   std::vector<float> test_points;
   populateBufferCapTestPoints(worse, win, wout, test_points);
@@ -1539,7 +1370,7 @@ void Resizer::bufferOutput(const sta::Pin* top_pin,
 
 ////////////////////////////////////////////////////////////////
 
-float Resizer::driveResistance(const sta::Pin* drvr_pin)
+float Resizer::driveResistance(const sta::Pin* drvr_pin) const
 {
   if (network_->isTopLevelPort(drvr_pin)) {
     sta::InputDrive* drive
@@ -1568,8 +1399,25 @@ float Resizer::driveResistance(const sta::Pin* drvr_pin)
       return max_res;
     }
   } else {
-    sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
-    if (drvr_port) {
+    if (sta::Graph* graph = sta_->graph()) {
+      if (sta::Vertex* drvr_vertex = graph->pinDrvrVertex(drvr_pin)) {
+        float max_res = -std::numeric_limits<float>::infinity();
+        graph->visitFaninEdges(
+            drvr_vertex,
+            sta_->search()->evalPred(),
+            [&](sta::Edge* edge, sta::Vertex*) {
+              if (!edge->role()->isWire()) {
+                for (sta::TimingArc* arc : edge->timingArcSet()->arcs()) {
+                  max_res = std::max(max_res, arc->driveResistance());
+                }
+              }
+            });
+        if (std::isfinite(max_res)) {
+          return max_res;
+        }
+      }
+    }
+    if (sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin)) {
       return drvr_port->driveResistance();
     }
   }
@@ -1678,13 +1526,13 @@ sta::LibertyCell* Resizer::closestDriver(sta::LibertyCell* cell,
     return nullptr;
   }
   const auto output_pin = libraryOutputPins(cell)[0];
-  const auto current_limit = scale * maxLoad(output_pin->cell());
+  const auto current_limit = scale * outputMaxCap(output_pin->cell());
   auto diff = sta::INF;
   for (auto& cand : candidates) {
     if (dontUse(cand)) {
       continue;
     }
-    auto limit = maxLoad(libraryOutputPins(cand)[0]->cell());
+    auto limit = outputMaxCap(libraryOutputPins(cand)[0]->cell());
     if (limit == current_limit) {
       return cand;
     }
@@ -1697,42 +1545,55 @@ sta::LibertyCell* Resizer::closestDriver(sta::LibertyCell* cell,
   return closest;
 }
 
-float Resizer::maxLoad(sta::Cell* cell)
+float Resizer::outputMaxCap(sta::Cell* cell)
 {
+  return outputMaxCap(cell, sta_->cmdScene());
+}
+
+float Resizer::outputMaxCap(sta::Cell* cell, const sta::Scene* scene)
+{
+  // The first output with a limit.
   sta::LibertyCell* lib_cell = network_->libertyCell(cell);
-  auto min_max = sta::MinMax::max();
   sta::LibertyCellPortIterator itr(lib_cell);
   while (itr.hasNext()) {
     sta::LibertyPort* port = itr.next();
     if (port->direction()->isOutput()) {
-      float limit, limit1;
-      bool exists, exists1;
-      const sta::Scene* corner = sta_->cmdScene();
-      sta::Sdc* sdc = corner->sdc();
-      // Default to top ("design") limit.
-      sta::Cell* top_cell = network_->cell(network_->topInstance());
-      sdc->capacitanceLimit(top_cell, min_max, limit, exists);
-      sdc->capacitanceLimit(cell, min_max, limit1, exists1);
-
-      if (exists1 && (!exists || min_max->compare(limit, limit1))) {
-        limit = limit1;
-        exists = true;
-      }
-      sta::LibertyPort* corner_port = port->scenePort(corner, min_max);
-      corner_port->capacitanceLimit(min_max, limit1, exists1);
-      if (!exists1 && port->direction()->isAnyOutput()) {
-        corner_port->libertyLibrary()->defaultMaxCapacitance(limit1, exists1);
-      }
-      if (exists1 && (!exists || min_max->compare(limit, limit1))) {
-        limit = limit1;
-        exists = true;
-      }
-      if (exists) {
+      const float limit = outputMaxCap(port, scene);
+      if (limit > 0.0) {
         return limit;
       }
     }
   }
   return 0;
+}
+
+float Resizer::outputMaxCap(const sta::LibertyPort* port,
+                            const sta::Scene* scene)
+{
+  const sta::MinMax* min_max = sta::MinMax::max();
+  float limit, limit1;
+  bool exists, exists1;
+  sta::Sdc* sdc = scene->sdc();
+  // Default to top ("design") limit.
+  sta::Cell* top_cell = network_->cell(network_->topInstance());
+  sdc->capacitanceLimit(top_cell, min_max, limit, exists);
+  sdc->capacitanceLimit(
+      network_->cell(port->libertyCell()), min_max, limit1, exists1);
+
+  if (exists1 && (!exists || min_max->compare(limit, limit1))) {
+    limit = limit1;
+    exists = true;
+  }
+  const sta::LibertyPort* corner_port = port->scenePort(scene, min_max);
+  corner_port->capacitanceLimit(min_max, limit1, exists1);
+  if (!exists1 && port->direction()->isAnyOutput()) {
+    corner_port->libertyLibrary()->defaultMaxCapacitance(limit1, exists1);
+  }
+  if (exists1 && (!exists || min_max->compare(limit, limit1))) {
+    limit = limit1;
+    exists = true;
+  }
+  return exists ? limit : 0.0;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -3351,11 +3212,21 @@ void Resizer::resizeSlackPreamble()
 
 // Run repair_design to repair long wires and max slew, capacitance and fanout
 // violations. Find the slacks, and then undo all changes to the netlist.
-void Resizer::findResizeSlacks(bool run_journal_restore,
-                               bool run_repair_timing,
-                               float repair_tns_end_percent)
+void Resizer::findResizeSlacks(
+    bool run_journal_restore,
+    bool run_repair_timing,
+    float repair_tns_end_percent,
+    const std::function<bool(const odb::dbNet*)>& placed_net)
 {
   initBlock();
+
+  // Restores the caller's predicate on every exit, including errors.
+  struct PlacedNetGuard
+  {
+    Resizer* resizer;
+    std::function<bool(const odb::dbNet*)> previous;
+    ~PlacedNetGuard() { resizer->placed_net_ = std::move(previous); }
+  } placed_net_guard{this, std::exchange(placed_net_, placed_net)};
 
   est::ParasiticsSrc parasitics_src = global_router_->haveRoutes()
                                           ? est::ParasiticsSrc::kGlobalRouting
@@ -4717,7 +4588,7 @@ sta::NetSeq* Resizer::findOverdrivenNets(bool include_parallel_driven)
               network_->pinIterator(inst));
           while (inst_pin_iter->hasNext()) {
             sta::Pin* inst_pin = inst_pin_iter->next();
-            sta::PortDirection* dir = network_->direction(inst_pin);
+            const sta::PortDirection* dir = network_->direction(inst_pin);
             if (dir->isAnyInput()) {
               input_nets.insert(network_->net(inst_pin));
             }
@@ -5621,8 +5492,7 @@ void Resizer::reportSwappablePins()
           continue;
         }
 
-        LibertyPortVec ports;
-        equivCellPinsForSwapReport(logger_, cell, port, ports);
+        const LibertyPortVec ports = equivalentSwapInputs(logger_, cell, port);
         std::ostringstream port_names;
         for (sta::LibertyPort* equiv_port : ports) {
           port_names << ' ' << equiv_port->name();
@@ -5913,7 +5783,16 @@ void Resizer::computeSkewBudget(const SkewBudgetOptions& opts)
   std::vector<PinLatency> orig_pin_latency(ck_pins.size(), PinLatency{});
   std::vector<PinLatencySet> orig_pin_latency_set(ck_pins.size(),
                                                   PinLatencySet{});
+  // A pin-level set_propagated_clock is mutually exclusive with
+  // set_clock_latency on the same pin, so the LP's setClockLatency calls below
+  // strip it. Capture it here (before the cutting-plane loop) so
+  // restore_pin_latency can re-apply it afterwards.
+  std::vector<bool> orig_pin_propagated(ck_pins.size(), false);
   for (int i = 0; i < static_cast<int>(ck_pins.size()); ++i) {
+    // Read the raw SDC annotation (the source of truth setClockLatency
+    // strips), not Sta::isPropagatedClock, which queries the derived clock
+    // network and is not current here.
+    orig_pin_propagated[i] = sdc->isPropagatedClock(ck_pins[i]);
     if (ck_propagated[i]) {
       // Max rise *clock-path* arrival at the CK pin. Sta::arrival()
       // would take the max over every tag, including non-clock paths
@@ -6380,6 +6259,10 @@ void Resizer::computeSkewBudget(const SkewBudgetOptions& opts)
   // would duplicate the original as a clock-specific annotation.
   auto restore_pin_latency = [&](int i) {
     sta_->removeClockLatency(ck_clocks[i], ck_pins[i], sdc);
+    // Restore the per-clock annotated latencies first. A pin can be propagated
+    // and still carry a clock-specific set_clock_latency: setPropagatedClock
+    // only strips the clock-agnostic (null-clock) latency, not per-clock ones,
+    // so the two can coexist and both must be put back.
     for (const sta::RiseFall* rf : sta::RiseFall::range()) {
       for (const sta::MinMax* mm : sta::MinMax::range()) {
         const size_t ri = rf->index();
@@ -6400,7 +6283,16 @@ void Resizer::computeSkewBudget(const SkewBudgetOptions& opts)
         }
       }
     }
+    // Re-apply pin-level set_propagated_clock last. setClockLatency above
+    // clears it as a side effect, and setPropagatedClock only removes the
+    // clock-agnostic latency, so the per-clock annotations restored above
+    // survive.
+    if (orig_pin_propagated[i]) {
+      sta_->setPropagatedClock(const_cast<sta::Pin*>(ck_pins[i]),
+                               sta_->cmdMode());
+    }
   };
+
   auto restore_initial_latencies = [&]() {
     for (int i = 0; i < static_cast<int>(ck_pins.size()); ++i) {
       restore_pin_latency(i);
@@ -6796,7 +6688,7 @@ void Resizer::getBufferPins(sta::Instance* buffer, sta::Pin*& ip, sta::Pin*& op)
       network_->pinIterator(buffer));
   while (pin_iter->hasNext()) {
     sta::Pin* pin = pin_iter->next();
-    sta::PortDirection* dir = network_->direction(pin);
+    const sta::PortDirection* dir = network_->direction(pin);
     if (dir->isAnyOutput()) {
       op = pin;
     }
@@ -7153,17 +7045,19 @@ sta::Instance* Resizer::makeInstance(sta::LibertyCell* cell,
 
 void Resizer::insertBufferPostProcess(dbInst* buffer_inst)
 {
-  // ODB's insertBuffer* already placed the instance; re-run through
-  // setLocation so clampLocToCore can pull it back inside the core if
-  // the insertion point landed in the die-core gap.
-  setLocation(buffer_inst, buffer_inst->getLocation());
+  if (buffer_inst->isPlaced()) {
+    // ODB's insertBuffer* already placed the instance; re-run through
+    // setLocation so clampLocToCore can pull it back inside the core if
+    // the insertion point landed in the die-core gap.
+    setLocation(buffer_inst, buffer_inst->getLocation());
 
-  // Legalize the cell position for accurate parasitic estimation
-  if (estimate_parasitics_->getParasiticsSrc()
-          == est::ParasiticsSrc::kGlobalRouting
-      || estimate_parasitics_->getParasiticsSrc()
-             == est::ParasiticsSrc::kDetailedRouting) {
-    opendp_->legalCellPos(buffer_inst);
+    // Legalize the cell position for accurate parasitic estimation
+    if (estimate_parasitics_->getParasiticsSrc()
+            == est::ParasiticsSrc::kGlobalRouting
+        || estimate_parasitics_->getParasiticsSrc()
+               == est::ParasiticsSrc::kDetailedRouting) {
+      opendp_->legalCellPos(buffer_inst);
+    }
   }
 
   // Increment the design area
@@ -7773,7 +7667,13 @@ bool Resizer::okToBufferNet(const sta::Pin* driver_pin) const
 
   odb::dbNet* db_net = db_network_->staToDb(net);
 
-  return !(db_net->isConnectedByAbutment() || db_net->isSpecial());
+  return !(db_net->isConnectedByAbutment() || db_net->isSpecial())
+         && isPlacedNet(db_net);
+}
+
+bool Resizer::isPlacedNet(const odb::dbNet* net) const
+{
+  return !placed_net_ || placed_net_(net);
 }
 
 sta::LibertyCell* Resizer::selectBetterRfDriveVtCell(
@@ -8584,25 +8484,8 @@ bool Resizer::replacementPreservesMaxCap(sta::Instance* inst,
       continue;
     }
 
-    // Skip the max-cap check on a register clock pin only when its clock is
-    // ideal: the clock net's capacitance is irrelevant to timing then.
-    if (network_->isRegClkPin(pin) && mode != nullptr
-        && mode->clkNetwork()->isIdealClock(pin)) {
+    if (skipsFaninMaxCap(pin, mode)) {
       continue;
-    }
-
-    // Skip the max-cap check on scan-enable/scan-in pins because they
-    // tend to be high fanout pins
-    if (db_network_ != nullptr) {
-      odb::dbITerm* iterm = nullptr;
-      odb::dbBTerm* bterm = nullptr;
-      odb::dbModITerm* moditerm = nullptr;
-      db_network_->staToDb(pin, iterm, bterm, moditerm);
-      if (iterm != nullptr
-          && (db_network_->isScanEnable(iterm)
-              || db_network_->isScanIn(iterm))) {
-        continue;
-      }
     }
 
     const float old_cap
@@ -8622,8 +8505,33 @@ bool Resizer::replacementPreservesMaxCap(sta::Instance* inst,
   return true;
 }
 
+bool Resizer::skipsFaninMaxCap(const sta::Pin* pin, const sta::Mode* mode)
+{
+  // Skip the max-cap check on a register clock pin only when its clock is
+  // ideal: the clock net's capacitance is irrelevant to timing then.
+  if (network_->isRegClkPin(pin) && mode != nullptr
+      && mode->clkNetwork()->isIdealClock(pin)) {
+    return true;
+  }
+
+  // Skip the max-cap check on scan-enable/scan-in pins because they
+  // tend to be high fanout pins
+  if (db_network_ != nullptr) {
+    odb::dbITerm* iterm = nullptr;
+    odb::dbBTerm* bterm = nullptr;
+    odb::dbModITerm* moditerm = nullptr;
+    db_network_->staToDb(pin, iterm, bterm, moditerm);
+    if (iterm != nullptr
+        && (db_network_->isScanEnable(iterm) || db_network_->isScanIn(iterm))) {
+      return true;
+    }
+  }
+  return false;
+}
+
 std::vector<Resizer::InputCapBudget> Resizer::inputCapBudgets(
-    sta::Instance* inst)
+    sta::Instance* inst,
+    const sta::Mode* mode)
 {
   std::vector<InputCapBudget> budgets;
   sta::LibertyCell* current_cell = network_->libertyCell(inst);
@@ -8643,6 +8551,11 @@ std::vector<Resizer::InputCapBudget> Resizer::inputCapBudgets(
     sta::PinSet* drivers = network_->drivers(pin);
     sta::LibertyPort* port = network_->libertyPort(pin);
     if (drivers == nullptr || port == nullptr) {
+      continue;
+    }
+    // Same exemptions as replacementPreservesMaxCap(), so generation screens
+    // like apply() checks.
+    if (skipsFaninMaxCap(pin, mode)) {
       continue;
     }
 
@@ -8696,7 +8609,7 @@ bool Resizer::estimateInputSlewImpact(
     const std::array<sta::Slew, sta::RiseFall::index_count>& old_in_slew,
     const std::array<sta::Slew, sta::RiseFall::index_count>& new_in_slew,
     const float delay_adjust,
-    const rsz::SlackEstimatorParams& params,
+    const rsz::UnbufferSlackParams& params,
     const bool accept_if_slack_improves)
 {
   auto pin_iter = std::unique_ptr<sta::InstancePinIterator>(
@@ -8714,7 +8627,7 @@ bool Resizer::estimateInputSlewImpact(
                  "remove_buffer",
                  1,
                  "buffer {} is not removed because pin {} has no liberty port",
-                 db_network_->name(params.driver),
+                 db_network_->name(params.buffer_instance),
                  db_network_->name(pin));
       return false;
     }
@@ -8757,7 +8670,7 @@ bool Resizer::estimateInputSlewImpact(
           1,
           "buffer {} is not removed because pin {} will have a violating "
           "or worse slack of {}",
-          db_network_->name(params.driver),
+          db_network_->name(params.buffer_instance),
           db_network_->name(pin),
           new_slack);
       return false;
@@ -8767,7 +8680,10 @@ bool Resizer::estimateInputSlewImpact(
   return true;
 }
 
-bool Resizer::estimatedSlackOK(const rsz::SlackEstimatorParams& params)
+// Check the buffer removal's electrical limits and affected setup slack.
+bool Resizer::estimatedUnbufferSlackOK(const rsz::UnbufferSlackParams& params,
+                                       float* upstream_delay_delta_out,
+                                       float* buffer_delay_saved_out)
 {
   if (params.scene == nullptr) {
     return false;
@@ -8779,8 +8695,8 @@ bool Resizer::estimatedSlackOK(const rsz::SlackEstimatorParams& params)
   sta::Slew new_drvr_slew[sta::RiseFall::index_count];
   float old_cap;
   float new_cap;
-  if (!computeNewDelaysSlews(params.prev_driver_pin,
-                             params.driver,
+  if (!computeNewDelaysSlews(params.upstream_driver_pin,
+                             params.buffer_instance,
                              params.scene,
                              old_delay,
                              new_delay,
@@ -8791,32 +8707,32 @@ bool Resizer::estimatedSlackOK(const rsz::SlackEstimatorParams& params)
     return false;
   }
 
-  if (!checkMaxCapOK(params.prev_driver_pin, new_cap - old_cap)) {
+  if (!checkMaxCapOK(params.upstream_driver_pin, new_cap - old_cap)) {
     debugPrint(logger_,
                utl::RSZ,
                "remove_buffer",
                1,
                "buffer {} is not removed because of max cap violation",
-               db_network_->name(params.driver));
+               db_network_->name(params.buffer_instance));
     return false;
   }
 
-  const sta::RiseFall* prev_driver_rf
-      = params.prev_driver_path->transition(sta_);
-  const float delay_degrad
-      = new_delay[prev_driver_rf->index()] - old_delay[prev_driver_rf->index()];
-  const float delay_imp
-      = bufferDelay(params.driver_cell,
-                    params.driver_path->transition(sta_),
-                    sta_->graphDelayCalc()->loadCap(
-                        params.driver_pin, params.scene, sta::MinMax::max()),
-                    params.scene,
-                    sta::MinMax::max());
+  // Measure both delay terms while checking the proposed removal.
+  const sta::RiseFall* upstream_rf = params.upstream_path->transition(sta_);
+  const float upstream_delay_delta
+      = new_delay[upstream_rf->index()] - old_delay[upstream_rf->index()];
+  const float buffer_delay_saved = bufferDelay(
+      params.buffer_cell,
+      params.buffer_path->transition(sta_),
+      sta_->graphDelayCalc()->loadCap(
+          params.buffer_output_pin, params.scene, sta::MinMax::max()),
+      params.scene,
+      sta::MinMax::max());
 
   std::map<const sta::Pin*, float> load_pin_slew;
-  if (!estimateSlewsAfterBufferRemoval(params.prev_driver_pin,
-                                       params.driver,
-                                       new_drvr_slew[prev_driver_rf->index()],
+  if (!estimateSlewsAfterBufferRemoval(params.upstream_driver_pin,
+                                       params.buffer_instance,
+                                       new_drvr_slew[upstream_rf->index()],
                                        params.scene,
                                        load_pin_slew)) {
     return false;
@@ -8842,35 +8758,35 @@ bool Resizer::estimatedSlackOK(const rsz::SlackEstimatorParams& params)
         "estimated in slew at fanout pin {} is {}, prev drvr out slew={}",
         db_network_->name(load_pin),
         estimated_new_load_slew,
-        new_drvr_slew[prev_driver_rf->index()]);
+        new_drvr_slew[upstream_rf->index()]);
 
     if (!estimateInputSlewImpact(network_->instance(load_pin),
                                  scene,
                                  sta::MinMax::max(),
                                  old_load_slew,
                                  new_load_slew,
-                                 delay_degrad - delay_imp,
+                                 upstream_delay_delta - buffer_delay_saved,
                                  params,
                                  true)) {
       return false;
     }
   }
 
-  sta::Net* input_net = network_->net(params.prev_driver_pin);
+  sta::Net* input_net = network_->net(params.upstream_driver_pin);
   auto pin_iter = std::unique_ptr<sta::NetConnectedPinIterator>(
       network_->connectedPinIterator(input_net));
   while (pin_iter->hasNext()) {
     const sta::Pin* side_input_pin = pin_iter->next();
     if (network_->isHierarchical(side_input_pin)
-        || side_input_pin == params.prev_driver_pin
-        || side_input_pin == params.driver_input_pin) {
+        || side_input_pin == params.upstream_driver_pin
+        || side_input_pin == params.buffer_input_pin) {
       continue;
     }
 
     const float old_slack
         = sta_->slack(graph_->pinLoadVertex(side_input_pin), max_);
     const float new_slack
-        = old_slack - delay_degrad - params.setup_slack_margin;
+        = old_slack - upstream_delay_delta - params.setup_slack_margin;
     if (new_slack < 0) {
       const float slack_degrad = old_slack - new_slack;
       const float kSlackDegradRatioLimit = 0.1;
@@ -8884,13 +8800,13 @@ bool Resizer::estimatedSlackOK(const rsz::SlackEstimatorParams& params)
             1,
             "buffer {} is not removed because side input pin {} will "
             "have a violating slack of {}: old slack={}, slack margin={}, "
-            "delay_degrad={}",
-            db_network_->name(params.driver),
+            "upstream_delay_delta={}",
+            db_network_->name(params.buffer_instance),
             db_network_->name(side_input_pin),
             new_slack,
             old_slack,
             params.setup_slack_margin,
-            delay_degrad);
+            upstream_delay_delta);
         return false;
       }
     }
@@ -8906,7 +8822,7 @@ bool Resizer::estimatedSlackOK(const rsz::SlackEstimatorParams& params)
                                  sta::MinMax::max(),
                                  old_slew,
                                  new_slew,
-                                 delay_degrad,
+                                 upstream_delay_delta,
                                  params,
                                  false)) {
       return false;
@@ -8919,7 +8835,14 @@ bool Resizer::estimatedSlackOK(const rsz::SlackEstimatorParams& params)
              1,
              "buffer {} can be removed because direct fanouts and side fanouts "
              "can absorb delay/slew degradation",
-             db_network_->name(params.driver));
+             db_network_->name(params.buffer_instance));
+  // Reuse these terms for gain scoring only after the slack guard succeeds.
+  if (upstream_delay_delta_out != nullptr) {
+    *upstream_delay_delta_out = upstream_delay_delta;
+  }
+  if (buffer_delay_saved_out != nullptr) {
+    *buffer_delay_saved_out = buffer_delay_saved;
+  }
   return true;
 }
 

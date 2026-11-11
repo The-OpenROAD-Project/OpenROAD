@@ -16,7 +16,6 @@
 #include <cmath>
 #include <fstream>
 #include <functional>
-#include <initializer_list>
 #include <istream>
 #include <locale>
 #include <map>
@@ -44,8 +43,12 @@ struct Token
 constexpr double kHeightTolerance = 1e-9;
 // The characters that are tokens on their own.
 constexpr std::string_view kPunctuation = "{}=()";
-// The via endpoint that names the substrate, i.e. the ground plane.
-constexpr std::string_view kSubstrate = "SUBSTRATE";
+// The via endpoint that names the substrate, i.e. the ground plane. Files
+// spell it in either case.
+bool isSubstrate(const std::string_view name)
+{
+  return name == "SUBSTRATE" || name == "substrate";
+}
 
 [[noreturn]] void fail(const int line, const std::string_view message)
 {
@@ -131,18 +134,150 @@ std::vector<Token> tokenize(std::istream& in)
   return tokens;
 }
 
+// The keywords the semantic pass refuses or skips inside a layer block.
+const std::vector<const char*> kRefusedDielectric = {"ER_VS_SI_SPACING"};
+// A gate spacer's permittivity table: device-level, so skipped, but only
+// where the format allows it (readDielectric checks).
+constexpr const char* kSpacerTable = "SPACER_ER_VS_WIDTH_AND_SPACING";
+// Effects on the geometry or the dielectrics the solver does not model.
+const std::vector<const char*> kRefusedConductor
+    = {"AIR_GAP_VS_SPACING",
+       "DIELECTRIC_FILL_VS_SI_SPACING",
+       "BOTTOM_DIELECTRIC_THICKNESS",
+       "BOTTOM_DIELECTRIC_ER",
+       "BOTTOM_THICKNESS_VS_SI_WIDTH",
+       "DENSITY_BOX_WEIGHTING_FACTOR",
+       "DROP_FACTOR",
+       "FILL_RATIO",
+       "FILL_WIDTH",
+       "FILL_SPACING",
+       "FILL_TYPE",
+       "ILD_VS_WIDTH_AND_SPACING",
+       "POLYNOMIAL_BASED_THICKNESS_VARIATION",
+       "RHO_VS_SI_WIDTH_AND_THICKNESS",
+       "THICKNESS_VS_DENSITY",
+       "THICKNESS_VS_WIDTH_AND_SPACING",
+       "TVF_FILE",
+       "TVF_ADJUSTMENT_TABLES",
+       "THICKNESS_VARIATION_VS_MASK",
+       "MEASURED_FROM",
+       "LINKED_TO",
+       "ASSOCIATED_CONDUCTOR"};
+// Device-level modeling, which gate-level extraction never meets.
+const std::vector<const char*> kSkippedConductor
+    = {"DEVICE_TYPE",
+       "GATE_TO_CONTACT_SMIN",
+       "GATE_TO_DIFFUSION_CAP",
+       "GATE_TO_DIFFUSION_ADJUSTMENT_CAP",
+       "FLOATING_GATE_TO_DIFFUSION_CONTACT_CAP",
+       "IS_PLANAR",
+       "IS_DIFF",
+       "RAISED_DIFFUSION_ETCH",
+       "RAISED_DIFFUSION_THICKNESS",
+       "RAISED_DIFFUSION_TO_GATE_SMIN",
+       "RAISED_DIFFUSION_GATE_SIDE_CONFORMAL_ER",
+       "TRENCH_CONTACT_EXTENSION",
+       "VERTICAL_RESISTANCE_VS_WIDTH_AND_LENGTH",
+       "CUT_END_EXTENSION_TABLE",
+       "LINE_END_EXTENSION_TABLE",
+       "EXTENSIONMIN"};
+// Contact and trench-contact forms, device-level.
+const std::vector<const char*> kSkippedVia
+    = {"ETCH_VS_CONTACT_AND_GATE_SPACINGS",
+       "ETCH_VS_WIDTH_AND_LENGTH",
+       "RPV_VS_COVERAGE",
+       "RPV_VS_WIDTH_AND_LENGTH",
+       "RPV_VS_SI_WIDTH_AND_LENGTH",
+       "ETCH_ASSOCIATED_LAYER",
+       "WMIN",
+       "SMIN"};
+
+// Every keyword the reader handles, whether it models, refuses or skips
+// it. Each starts a statement of its own, so a group's options never
+// hold one: an unknown flag before it ends there rather than taking it.
+const std::set<std::string_view>& statementKeywords()
+{
+  static const std::set<std::string_view> keywords = [] {
+    std::set<std::string_view> all = {
+        "TECHNOLOGY",
+        "GLOBAL_TEMPERATURE",
+        "BACKGROUND_ER",
+        "HALF_NODE_SCALE_FACTOR",
+        "REFERENCE_DIRECTION",
+        "USE_SI_DENSITY",
+        "DROP_FACTOR_LATERAL_SPACING",
+        "DIELECTRIC",
+        "CONDUCTOR",
+        "VIA",
+        "TSV",
+        "MULTIGATE",
+        "VARIATION_PARAMETERS",
+        "EM_INFORMATION",
+        "ER",
+        "THICKNESS",
+        "MEASURED_FROM",
+        "IS_CONFORMAL",
+        "SW_T",
+        "TW_T",
+        "ASSOCIATED_CONDUCTOR",
+        "WMIN",
+        "SMIN",
+        "LAYER_TYPE",
+        "ETCH",
+        "CAPACITIVE_ONLY_ETCH",
+        "RESISTIVE_ONLY_ETCH",
+        "ETCH_VS_WIDTH_AND_SPACING",
+        "RPSQ",
+        "SIDE_TANGENT",
+        "RHO",
+        "RPSQ_VS_SI_WIDTH",
+        "RPSQ_VS_WIDTH_AND_SPACING",
+        "RHO_VS_WIDTH_AND_SPACING",
+        "T0",
+        "CRT1",
+        "CRT2",
+        "CRT_VS_SI_WIDTH",
+        "FROM",
+        "TO",
+        "RPV",
+        "AREA",
+        "RPV_VS_AREA",
+        "CRT_VS_AREA",
+        "SPACINGS",
+        "WIDTHS",
+        "VALUES",
+    };
+    all.insert(kSpacerTable);
+    for (const std::vector<const char*>* list : {&kRefusedDielectric,
+                                                 &kRefusedConductor,
+                                                 &kSkippedConductor,
+                                                 &kSkippedVia}) {
+      all.insert(list->begin(), list->end());
+    }
+    return all;
+  }();
+  return keywords;
+}
+
 // ---------------------------------------------------------------------------
 // The syntax pass.
 
-// One statement. A block's leading words are its name (DIELECTRIC D) or a
-// table's modifiers (ETCH_VS_WIDTH_AND_SPACING RESISTIVE_ONLY); the
-// semantic pass knows which.
+// One statement: KEY = value, a bare KEY, KEY (a, b) ..., or a group. A
+// group is named by its keyword; its options are what follows the name
+// before the '{': bare words, NAME = value settings and (a, b) tuples, so
+// in GROUP A=1 B (1, 2) { ... } the options are A=1, B and (1, 2). Which words
+// are a layer's name (DIELECTRIC D) and which a table's modifiers
+// (ETCH_VS_WIDTH_AND_SPACING RESISTIVE_ONLY), the semantic pass knows. A group
+// may instead give its name a value, GROUP = value { ... }, so that siblings of
+// one name can sit side by side; KEY = { ... } is a group with no options.
 struct Node
 {
   std::string keyword;
   int line = 0;
   std::vector<Token> words;
-  // After '=': a word, or a block (KEY = { ... }).
+  std::vector<std::pair<Token, Token>> settings;
+  std::vector<std::vector<Token>> tuple_options;
+  // KEY = value, alone or giving a group its value.
   bool has_value = false;
   Token value;
   bool has_block = false;
@@ -150,10 +285,19 @@ struct Node
   std::vector<Token> numbers;              // bare words in the block
   std::vector<std::vector<Token>> tuples;  // ( ... ) groups in the block
 
-  // The statement's name for messages: the keyword and its first word.
+  // The statement's name for messages: the keyword with its first word,
+  // or with its value for a group given one.
   std::string label() const
   {
+    if (has_value && has_block) {
+      return keyword + " = " + value.text;
+    }
     return words.empty() ? keyword : keyword + " " + words.front().text;
+  }
+
+  bool hasHeader() const
+  {
+    return !words.empty() || !settings.empty() || !tuple_options.empty();
   }
 };
 
@@ -249,36 +393,100 @@ Node SyntaxParser::parseStatement()
     next();
     if (peekIs("{")) {
       parseBlock(node);
-    } else {
-      node.has_value = true;
-      node.value = nextWord("a value for " + node.keyword);
+      return node;
+    }
+    node.has_value = true;
+    node.value = nextWord("a value for " + node.keyword);
+    if (peekIs("{")) {
+      parseBlock(node);  // GROUP = value { ... }
     }
     return node;
   }
-  // Words up to a '{' belong to the statement; without the '{' the
-  // statement is a bare flag and the words are the statements after it.
-  // The few flags the format has never open a block, so a table right
-  // after one is not taken for the flag's.
+  // The options up to a '{' make the statement a group; without the '{'
+  // the keyword is a bare flag and what follows it are the next
+  // statements. Where an unknown flag ends and the next statement begins
+  // is decided by these rules:
+  // - A keyword the reader handles (models, refuses or skips) ends the
+  //   options, so its own statement is read as usual. The first word
+  //   after a handled keyword is exempt, since it may be a layer named
+  //   like a keyword, as in CONDUCTOR WMIN { ... }.
+  // - KEY = value directly before the '{' is always an option: no
+  //   keyword the reader handles takes a group after its value, so the
+  //   pair cannot be a statement of its own.
+  // - Any other setting is an option only on the keyword's own line;
+  //   words and tuples may continue on later lines, as a table's
+  //   modifiers often do.
+  // Without a '{', tuples after the keyword are its own: KEY (a, b) ...
+  // The few flags the format has never open a group.
   static const std::set<std::string_view> kFlags
       = {"IS_CONFORMAL", "IS_PLANAR", "IS_DIFF"};
+  auto word = [&](const size_t k) {
+    return k < tokens_.size() && !isPunctuation(tokens_[k]);
+  };
+  std::vector<Token> words;
+  std::vector<std::pair<Token, Token>> settings;
+  const bool handled = statementKeywords().count(node.keyword) > 0;
+  auto ends_options = [&](const Token& t) {
+    const bool name = handled && words.empty() && settings.empty();
+    return !name && statementKeywords().count(t.text) > 0;
+  };
   size_t j = pos_;
-  while (!kFlags.count(node.keyword) && j < tokens_.size()
-         && !isPunctuation(tokens_[j])) {
-    j++;
+  // The end of a ( ... ) of words starting at k, or 0 when there is none.
+  auto tuple_end = [&](const size_t k) -> size_t {
+    if (k >= tokens_.size() || tokens_[k].text != "(") {
+      return 0;
+    }
+    size_t e = k + 1;
+    while (word(e)) {
+      e++;
+    }
+    return e < tokens_.size() && tokens_[e].text == ")" ? e + 1 : 0;
+  };
+  std::vector<std::vector<Token>> tuple_options;
+  while (!kFlags.count(node.keyword) && (word(j) || tuple_end(j) > 0)) {
+    if (const size_t e = tuple_end(j)) {
+      tuple_options.emplace_back(tokens_.begin() + j + 1,
+                                 tokens_.begin() + e - 1);
+      j = e;
+      continue;
+    }
+    const Token& t = tokens_[j];
+    const bool ends_here = ends_options(t);
+    if (j + 1 < tokens_.size() && tokens_[j + 1].text == "=") {
+      if (!word(j + 2)) {
+        break;
+      }
+      const bool before_group
+          = j + 3 < tokens_.size() && tokens_[j + 3].text == "{";
+      if (!before_group && (ends_here || t.line != keyword.line)) {
+        break;
+      }
+      settings.emplace_back(t, tokens_[j + 2]);
+      j += 3;
+    } else {
+      if (ends_here) {
+        break;
+      }
+      words.push_back(tokens_[j++]);
+    }
   }
   if (j < tokens_.size() && tokens_[j].text == "{") {
-    node.words.assign(tokens_.begin() + pos_, tokens_.begin() + j);
+    node.words = std::move(words);
+    node.settings = std::move(settings);
+    node.tuple_options = std::move(tuple_options);
     pos_ = j;
     parseBlock(node);
-  } else if (peekIs("(")) {
-    // KEY(a, b), as in MASKS(1, 2).
-    next();
-    std::vector<Token> tuple;
-    while (!peekIs(")")) {
-      tuple.push_back(nextWord("a value in " + node.keyword + "( )"));
+  } else {
+    // KEY (a, b) ..., as in MASKS(1, 2).
+    while (peekIs("(")) {
+      next();
+      std::vector<Token> tuple;
+      while (!peekIs(")")) {
+        tuple.push_back(nextWord("a value in " + node.keyword + "( )"));
+      }
+      next();
+      node.tuples.push_back(std::move(tuple));
     }
-    next();
-    node.tuples.push_back(std::move(tuple));
   }
   return node;
 }
@@ -314,75 +522,9 @@ void SyntaxParser::parseBlock(Node& node)
 // Where skipped keywords are reported.
 using Warn = std::function<void(int line, const std::string& message)>;
 
-// Every keyword the reader acts on. An unknown statement whose block
-// header holds one of these most likely is an unknown flag followed by
-// that keyword's block (the syntax pass cannot tell FLAG KEY { } from
-// KIND name { }); skipping it would drop a layer or table silently.
-const std::set<std::string_view>& knownKeywords()
-{
-  static const std::set<std::string_view> keywords = {
-      "TECHNOLOGY",
-      "GLOBAL_TEMPERATURE",
-      "BACKGROUND_ER",
-      "HALF_NODE_SCALE_FACTOR",
-      "REFERENCE_DIRECTION",
-      "USE_SI_DENSITY",
-      "DROP_FACTOR_LATERAL_SPACING",
-      "DIELECTRIC",
-      "CONDUCTOR",
-      "VIA",
-      "TSV",
-      "MULTIGATE",
-      "VARIATION_PARAMETERS",
-      "EM_INFORMATION",
-      "ER",
-      "THICKNESS",
-      "MEASURED_FROM",
-      "IS_CONFORMAL",
-      "SW_T",
-      "TW_T",
-      "ASSOCIATED_CONDUCTOR",
-      "WMIN",
-      "SMIN",
-      "LAYER_TYPE",
-      "ETCH",
-      "CAPACITIVE_ONLY_ETCH",
-      "RESISTIVE_ONLY_ETCH",
-      "ETCH_VS_WIDTH_AND_SPACING",
-      "RPSQ",
-      "RHO",
-      "RPSQ_VS_SI_WIDTH",
-      "RPSQ_VS_WIDTH_AND_SPACING",
-      "RHO_VS_WIDTH_AND_SPACING",
-      "T0",
-      "CRT1",
-      "CRT2",
-      "CRT_VS_SI_WIDTH",
-      "FROM",
-      "TO",
-      "RPV",
-      "AREA",
-      "RPV_VS_AREA",
-      "CRT_VS_AREA",
-      "SPACINGS",
-      "WIDTHS",
-      "VALUES",
-  };
-  return keywords;
-}
-
-// Skips an unknown statement with a warning, unless it took a known
-// keyword's block with it.
+// Skips an unknown statement with a warning; a group goes whole.
 void skipUnknown(const Node& n, const std::string& where, const Warn& warn)
 {
-  for (const Token& word : n.words) {
-    if (knownKeywords().count(word.text)) {
-      fail(n.line,
-           "unknown keyword " + n.keyword + " before " + word.text
-               + " { ... }" + where + "; a flag the reader does not know "
-                 "cannot be told from a block's name");
-    }
-  }
   warn(n.line, "unknown keyword " + n.label() + where + ", skipped");
 }
 
@@ -481,8 +623,7 @@ class Fields
     if (n == nullptr) {
       return false;
     }
-    if (n->has_value || n->has_block || !n->words.empty()
-        || !n->tuples.empty()) {
+    if (n->has_value || n->has_block || n->hasHeader() || !n->tuples.empty()) {
       fail(n->line, std::string(key) + " takes no value");
     }
     return true;
@@ -496,7 +637,7 @@ class Fields
   }
 
   // Keywords the reader does not need: taken without a look.
-  void skip(const std::initializer_list<const char*> keys)
+  void skip(const std::vector<const char*>& keys)
   {
     for (const char* key : keys) {
       takeAll(key);
@@ -504,12 +645,12 @@ class Fields
   }
 
   // Keywords the reader cannot model yet.
-  void refuse(const std::initializer_list<const char*> keys) const
+  void refuse(const std::vector<const char*>& keys)
   {
     for (const char* key : keys) {
-      if (has(key)) {
-        fail(lineOf(key),
-             std::string(key) + " in " + label() + " is not supported");
+      for (const Node* n : takeAll(key)) {
+        warn_(n->line,
+              std::string(key) + " in " + label() + " is not supported");
       }
     }
   }
@@ -528,6 +669,9 @@ class Fields
   // The value of a KEY = value statement.
   static const Token& valueOf(const Node& n)
   {
+    if (n.has_block) {
+      fail(n.line, n.keyword + " takes a value, not a block");
+    }
     if (!n.has_value) {
       fail(n.line, n.keyword + " needs a value (" + n.keyword + " = ...)");
     }
@@ -544,7 +688,7 @@ class Fields
 // The numbers of a block that holds nothing else, as in WIDTHS { 1 2 }.
 std::vector<double> numberList(const Node& n)
 {
-  if (!n.has_block || !n.words.empty() || !n.children.empty()
+  if (!n.has_block || n.has_value || n.hasHeader() || !n.children.empty()
       || !n.tuples.empty()) {
     fail(n.line, n.keyword + " expects { numbers }");
   }
@@ -557,11 +701,14 @@ std::vector<double> numberList(const Node& n)
 }
 
 // The tuples of a block that holds nothing else, each of `arity` numbers,
-// as in RPSQ_VS_SI_WIDTH { (0.1, 0.5) (0.2, 0.4) }.
-std::vector<std::vector<double>> tupleList(const Node& n, const size_t arity)
+// as in RPSQ_VS_SI_WIDTH { (0.1, 0.5) (0.2, 0.4) }. A header is refused
+// unless the caller has already checked it with modifiers().
+std::vector<std::vector<double>> tupleList(const Node& n,
+                                           const size_t arity,
+                                           const bool header_checked)
 {
-  if (!n.has_block || !n.words.empty() || !n.children.empty()
-      || !n.numbers.empty() || n.tuples.empty()) {
+  if (!n.has_block || n.has_value || (!header_checked && n.hasHeader())
+      || !n.children.empty() || !n.numbers.empty() || n.tuples.empty()) {
     fail(
         n.line,
         n.keyword + " expects { (" + std::to_string(arity) + " numbers) ... }");
@@ -602,10 +749,12 @@ void requireAscending(const Node& n,
 }
 
 // A curve from (x, y) tuples.
-Stack::Curve curve(const Node& n, const std::string_view what)
+Stack::Curve curve(const Node& n,
+                   const std::string_view what,
+                   const bool header_checked = false)
 {
   Stack::Curve out;
-  for (const std::vector<double>& pair : tupleList(n, 2)) {
+  for (const std::vector<double>& pair : tupleList(n, 2, header_checked)) {
     out.x.push_back(pair[0]);
     out.y.push_back(pair[1]);
   }
@@ -617,7 +766,7 @@ Stack::Curve curve(const Node& n, const std::string_view what)
 Stack::CrtCurve crtCurve(const Node& n, const std::string_view what)
 {
   Stack::CrtCurve out;
-  for (const std::vector<double>& triple : tupleList(n, 3)) {
+  for (const std::vector<double>& triple : tupleList(n, 3, false)) {
     out.x.push_back(triple[0]);
     out.crt.push_back({triple[1], triple[2]});
   }
@@ -628,7 +777,10 @@ Stack::CrtCurve crtCurve(const Node& n, const std::string_view what)
 // A { SPACINGS { } WIDTHS { } VALUES { } } table.
 Stack::WidthSpacingTable widthSpacingTable(const Node& n, const Warn& warn)
 {
-  if (!n.has_block || !n.numbers.empty() || !n.tuples.empty()) {
+  // Its modifiers are words, which the caller checks; settings and tuples
+  // it never takes.
+  if (!n.has_block || n.has_value || !n.settings.empty()
+      || !n.tuple_options.empty() || !n.numbers.empty() || !n.tuples.empty()) {
     fail(n.line, n.keyword + " expects { SPACINGS WIDTHS VALUES }");
   }
   Fields fields(n, warn);
@@ -661,6 +813,16 @@ Stack::WidthSpacingTable widthSpacingTable(const Node& n, const Warn& warn)
 std::set<std::string> modifiers(const Node& n,
                                 const std::set<std::string_view>& allowed)
 {
+  if (n.has_value) {
+    fail(n.line, n.keyword + " takes no value");
+  }
+  if (!n.settings.empty()) {
+    const Token& name = n.settings.front().first;
+    fail(name.line, "unsupported option " + name.text + " of " + n.keyword);
+  }
+  if (!n.tuple_options.empty()) {
+    fail(n.line, "unsupported option ( ) of " + n.keyword);
+  }
   std::set<std::string> out;
   for (const Token& word : n.words) {
     if (!allowed.count(word.text)) {
@@ -676,7 +838,8 @@ std::set<std::string> modifiers(const Node& n,
 // A block that names a layer: KIND name { ... }.
 const Token& blockName(const Node& n)
 {
-  if (n.words.size() != 1 || !n.has_block) {
+  if (n.words.size() != 1 || !n.settings.empty() || !n.tuple_options.empty()
+      || n.has_value || !n.has_block) {
     fail(n.line, n.keyword + " expects a name and { ... }");
   }
   return n.words.front();
@@ -711,12 +874,13 @@ class Reader
                      const Stack& stack,
                      Stack::Conductor& conductor);
   void readDielectric(Fields& fields, Placed& placed, double& planar_top);
-  void readVia(const Node& n, Stack& stack) const;
+  void readVia(const Node& n, Stack& stack);
   void readEtchTable(const Node& n, Stack::Conductor& conductor);
 
   std::set<std::string> globals_seen_;
   std::map<std::string, double> tops_by_name_;  // planar dielectric tops
   std::set<std::string> layer_names_;
+  std::set<std::string> skipped_vias_;  // read but not added to the stack
   std::map<std::string, int> conductor_lines_;
   int directional_etch_line_ = 0;  // a table that needs the direction
   std::vector<ItfWarning>* warnings_;
@@ -791,6 +955,16 @@ void Reader::readGlobal(const Node& n, Stack& stack)
                                                  "REFERENCE_DIRECTION",
                                                  "USE_SI_DENSITY",
                                                  "DROP_FACTOR_LATERAL_SPACING"};
+  static const std::set<std::string> kSkippedGlobals
+      = {"PROCESS_FOUNDRY",
+         "PROCESS_NODE",
+         "PROCESS_VERSION",
+         "PROCESS_TYPE",
+         "PROCESS_CORNER",
+         "GATE_RESISTANCE_ADJUSTMENT_FACTOR"};
+  if (kSkippedGlobals.count(k)) {
+    return;
+  }
   if (!kGlobals.count(k)) {
     // Unknown, block and all.
     skipUnknown(n, "", warn());
@@ -821,12 +995,14 @@ void Reader::readGlobal(const Node& n, Stack& stack)
       stack.setReferenceDirection(Stack::ReferenceDirection::kVertical);
     } else if (value.text == "HORIZONTAL") {
       stack.setReferenceDirection(Stack::ReferenceDirection::kHorizontal);
+    } else if (value.text == "GATE") {
+      stack.setReferenceDirection(Stack::ReferenceDirection::kGate);
     } else {
-      fail(n.line, "REFERENCE_DIRECTION must be VERTICAL or HORIZONTAL");
+      fail(n.line, "REFERENCE_DIRECTION must be VERTICAL, HORIZONTAL or GATE");
     }
   }
   // USE_SI_DENSITY and DROP_FACTOR_LATERAL_SPACING only qualify effects
-  // the reader refuses (density thickness variation, drop factors).
+  // the reader does not model (density thickness variation, drop factors).
 }
 
 // Places the layers bottom-up. A layer's bottom is the top of the planar
@@ -872,7 +1048,17 @@ void Reader::readDielectric(Fields& b, Placed& placed, double& planar_top)
 {
   const std::string name = blockName(b.node()).text;
   const int line = b.node().line;
-  b.refuse({"ER_VS_SI_SPACING", "SPACER_ER_VS_WIDTH_AND_SPACING"});
+  b.refuse(kRefusedDielectric);
+  // The spacer table belongs to a conformal dielectric wrapping a gate,
+  // which gate-level extraction never meets; it is skipped there and
+  // refused anywhere else, where the file would be malformed.
+  const Node* spacer = b.take(kSpacerTable);
+  if (spacer != nullptr
+      && (!b.has("IS_CONFORMAL") || !b.has("ASSOCIATED_CONDUCTOR"))) {
+    fail(spacer->line,
+         std::string(kSpacerTable) + " in " + b.label()
+             + " needs IS_CONFORMAL and an ASSOCIATED_CONDUCTOR");
+  }
   const double eps = b.required("ER");
   if (!(eps > 0)) {
     fail(b.lineOf("ER"), "ER of " + name + " must be positive");
@@ -888,6 +1074,12 @@ void Reader::readDielectric(Fields& b, Placed& placed, double& planar_top)
       fail(line,
            "IS_CONFORMAL dielectric " + name
                + " cannot use MEASURED_FROM a layer");
+    }
+    // The thickness below the conductor is not modeled: the conformal
+    // dielectric wraps only the sides and top.
+    if (b.number("BW_T", 0) != 0) {
+      warn()(b.lineOf("BW_T"),
+             "BW_T of IS_CONFORMAL dielectric " + name + " is not supported");
     }
     const Stack::ConformalDielectric conformal{
         .name = name,
@@ -909,6 +1101,12 @@ void Reader::readDielectric(Fields& b, Placed& placed, double& planar_top)
                               ? c.name == associated
                               : outer_top > planar_top + kHeightTolerance;
       if (target) {
+        if (spacer != nullptr && c.layer_type != "GATE") {
+          fail(spacer->line,
+               std::string(kSpacerTable) + " in " + b.label()
+                   + " needs its ASSOCIATED_CONDUCTOR " + c.name
+                   + " to be a GATE layer");
+        }
         c.conformals.push_back(conformal);
         wrapped = true;
       }
@@ -957,38 +1155,18 @@ void Reader::readDielectric(Fields& b, Placed& placed, double& planar_top)
 void Reader::readConductor(Fields& b, const Stack& stack, Stack::Conductor& c)
 {
   const int line = b.node().line;
-  // Effects on the geometry or the dielectrics that the solver does not
-  // model yet.
-  b.refuse({"AIR_GAP_VS_SPACING",
-            "DIELECTRIC_FILL_VS_SI_SPACING",
-            "BOTTOM_DIELECTRIC_THICKNESS",
-            "BOTTOM_DIELECTRIC_ER",
-            "BOTTOM_THICKNESS_VS_SI_WIDTH",
-            "DENSITY_BOX_WEIGHTING_FACTOR",
-            "DROP_FACTOR",
-            "FILL_RATIO",
-            "FILL_WIDTH",
-            "FILL_SPACING",
-            "FILL_TYPE",
-            "ILD_VS_WIDTH_AND_SPACING",
-            "POLYNOMIAL_BASED_THICKNESS_VARIATION",
-            "RHO_VS_SI_WIDTH_AND_THICKNESS",
-            "SIDE_TANGENT",
-            "THICKNESS_VS_DENSITY",
-            "THICKNESS_VS_WIDTH_AND_SPACING",
-            "TVF_FILE",
-            "TVF_ADJUSTMENT_TABLES"});
-  // Device-level modeling, which gate-level extraction never meets.
-  b.skip({"DEVICE_TYPE",
-          "GATE_TO_CONTACT_SMIN",
-          "GATE_TO_DIFFUSION_CAP",
-          "FLOATING_GATE_TO_DIFFUSION_CONTACT_CAP",
-          "IS_PLANAR",
-          "IS_DIFF",
-          "RAISED_DIFFUSION_ETCH",
-          "RAISED_DIFFUSION_THICKNESS",
-          "RAISED_DIFFUSION_TO_GATE_SMIN",
-          "RAISED_DIFFUSION_GATE_SIDE_CONFORMAL_ER"});
+  b.refuse(kRefusedConductor);
+  b.skip(kSkippedConductor);
+  // Sloped sidewalls are not modeled yet: the conductor is solved with
+  // vertical ones, which is said rather than refused.
+  if (const Node* tangent = b.take("SIDE_TANGENT")) {
+    const Token& value = Fields::valueOf(*tangent);
+    if (parseNumber(value, "SIDE_TANGENT") != 0) {
+      warn()(tangent->line,
+             "SIDE_TANGENT = " + value.text + " in " + b.label()
+                 + " is not modeled; its sidewalls are taken as vertical");
+    }
+  }
   c.min_width = b.number("WMIN", 0);
   c.min_spacing = b.number("SMIN", 0);
   c.layer_type = b.text("LAYER_TYPE");
@@ -1078,9 +1256,9 @@ void Reader::readEtchTable(const Node& n, Stack::Conductor& c)
                                                    "PERPENDICULAR_TO_REFERENCE",
                                                    "PARALLEL_TO_GATE"});
   if (options.count("ETCH_FROM_TOP")) {
-    fail(n.line,
-         "ETCH_FROM_TOP (a trapezoidal cross section) of " + c.name
-             + " is not supported");
+    warn()(n.line,
+           "ETCH_FROM_TOP (a trapezoidal cross section) of " + c.name
+               + " is not supported");
   }
   if (options.count("RESISTIVE_ONLY") && options.count("CAPACITIVE_ONLY")) {
     fail(n.line, "ETCH_VS_WIDTH_AND_SPACING of " + c.name + " is both "
@@ -1099,9 +1277,10 @@ void Reader::readEtchTable(const Node& n, Stack::Conductor& c)
   // A multiple-mask table (NUMBER_OF_MASKS, MASKS) is a different shape.
   for (const Node& child : n.children) {
     if (child.keyword == "NUMBER_OF_MASKS" || child.keyword == "MASKS") {
-      fail(child.line,
-           "multiple-mask etch tables (" + child.keyword + ") of " + c.name
-               + " are not supported");
+      warn()(child.line,
+             "multiple-mask etch tables (" + child.keyword + ") of " + c.name
+                 + " are not supported");
+      return;
     }
   }
   if (options.count("PARALLEL_TO_GATE")) {
@@ -1129,37 +1308,68 @@ void Reader::readEtchTable(const Node& n, Stack::Conductor& c)
 
 // Resolves each via's layers. FROM and TO may come in either order, so the
 // upper layer is decided by height; SUBSTRATE means the ground plane.
-void Reader::readVia(const Node& n, Stack& stack) const
+void Reader::readVia(const Node& n, Stack& stack)
 {
   const std::string name = blockName(n).text;
-  if (stack.isVia(stack.layer(name))) {
+  if (stack.isVia(stack.layer(name)) || skipped_vias_.count(name)) {
     fail(n.line, "VIA " + name + " is defined twice");
   }
   if (stack.layer(name).valid()) {
     fail(n.line, "VIA " + name + " has the name of a conductor");
   }
   Fields b(n, warn());
-  // Contact and trench-contact forms, device-level.
-  b.skip({"ETCH_VS_CONTACT_AND_GATE_SPACINGS",
-          "ETCH_VS_WIDTH_AND_LENGTH",
-          "RPV_VS_COVERAGE",
-          "RPV_VS_WIDTH_AND_LENGTH",
-          "RPV_VS_SI_WIDTH_AND_LENGTH",
-          "ETCH_ASSOCIATED_LAYER"});
+  b.skip(kSkippedVia);
   if (!b.has("FROM") || !b.has("TO")) {
     fail(n.line, "VIA " + name + " needs FROM and TO");
   }
   const int from_line = b.lineOf("FROM");
   const int to_line = b.lineOf("TO");
-  const std::string from = b.text("FROM");
-  const std::string to = b.text("TO");
+  // FROM = M1, or a braced list of layer names: FROM { M1 }.
+  auto get_layers = [&](const Node* node) -> std::vector<std::string> {
+    if (node->has_value && !node->has_block) {
+      return {node->value.text};
+    }
+    if (!node->has_block || node->has_value || node->hasHeader()
+        || !node->numbers.empty() || !node->tuples.empty()) {
+      fail(
+          node->line,
+          node->keyword + " of VIA " + name + " expects a layer or { layers }");
+    }
+    std::vector<std::string> layers;
+    for (const Node& c : node->children) {
+      if (c.has_value || c.has_block || c.hasHeader() || !c.tuples.empty()) {
+        fail(c.line,
+             node->keyword + " of VIA " + name + " expects layer names, not "
+                 + c.label());
+      }
+      layers.push_back(c.keyword);
+    }
+    if (layers.empty()) {
+      fail(node->line, node->keyword + " of VIA " + name + " names no layer");
+    }
+    return layers;
+  };
+  const std::vector<std::string> from_layers = get_layers(b.take("FROM"));
+  const std::vector<std::string> to_layers = get_layers(b.take("TO"));
+  if (from_layers.size() > 1 || to_layers.size() > 1) {
+    warn()(n.line,
+           "VIA " + name + " connecting multiple layers is not supported");
+    skipped_vias_.insert(name);
+    return;
+  }
+  const std::string& from = from_layers.front();
+  const std::string& to = to_layers.front();
   Stack::Via via;
   via.name = name;
   via.rpv = b.number("RPV", 0);
   via.area = b.number("AREA", 0);
   via.rho = b.number("RHO", 0);
   if (const Node* curve_node = b.take("RPV_VS_AREA")) {
-    via.rpv_vs_area = curve(*curve_node, "areas");
+    via.interpolate_rpv_vs_area
+        = modifiers(*curve_node, {"INTERPOLATE_RPV_AREA"})
+              .count("INTERPOLATE_RPV_AREA")
+          > 0;
+    via.rpv_vs_area = curve(*curve_node, "areas", true);
   }
   const int forms = (b.has("RPV") || b.has("AREA")) + b.has("RHO")
                     + !via.rpv_vs_area.empty();
@@ -1169,10 +1379,18 @@ void Reader::readVia(const Node& n, Stack& stack) const
              + " gives its resistance in more than one form (RPV with AREA, "
                "RHO, RPV_VS_AREA)");
   }
+  // RPV is per via of AREA: one without the other is dropped, leaving a
+  // zero-ohm via.
+  const bool rpv_with_area = b.has("RPV") && b.has("AREA");
   if (b.has("RPV") != b.has("AREA")) {
-    fail(n.line, "VIA " + name + " needs both RPV and AREA");
+    warn()(n.line,
+           "VIA " + name + " has "
+               + (b.has("RPV") ? "RPV without AREA" : "AREA without RPV")
+               + ", which is not supported; its resistance is ignored");
+    via.rpv = 0;
+    via.area = 0;
   }
-  if (via.rpv < 0 || via.rho < 0 || (b.has("AREA") && !(via.area > 0))) {
+  if (via.rpv < 0 || via.rho < 0 || (rpv_with_area && !(via.area > 0))) {
     fail(n.line,
          "VIA " + name + " needs a non-negative resistance and a positive "
                          "area");
@@ -1196,17 +1414,17 @@ void Reader::readVia(const Node& n, Stack& stack) const
 
   const Stack::Layer a = stack.layer(from);
   const Stack::Layer c = stack.layer(to);
-  if (from != kSubstrate && !stack.isConductor(a)) {
+  if (!isSubstrate(from) && !stack.isConductor(a)) {
     fail(from_line, "VIA " + name + " names unknown layer " + from);
   }
-  if (to != kSubstrate && !stack.isConductor(c)) {
+  if (!isSubstrate(to) && !stack.isConductor(c)) {
     fail(to_line, "VIA " + name + " names unknown layer " + to);
   }
   if (from == to) {
     fail(n.line, "VIA " + name + " connects " + from + " to itself");
   }
-  if (from == kSubstrate || to == kSubstrate) {
-    via.upper = from == kSubstrate ? c : a;
+  if (isSubstrate(from) || isSubstrate(to)) {
+    via.upper = isSubstrate(from) ? c : a;
     stack.addVia(via);
     return;
   }

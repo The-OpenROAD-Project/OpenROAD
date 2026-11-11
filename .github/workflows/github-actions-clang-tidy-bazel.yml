@@ -59,34 +59,28 @@ jobs:
           # --remote_download_minimal and --config=opt (LTO), but we need
           # the .AspectRulesLintClangTidy.out files materialized locally
           # to feed reviewdog, and LTO is wasted work for lint.
+          # Self-hosted runners keep the output base between jobs; drop lint
+          # outputs from earlier builds so collection sees only this build's.
+          # Bazel recreates or re-downloads the ones this build needs.
+          BAZEL_BIN=$(bazel info bazel-bin)
+          if [ -d "${BAZEL_BIN}" ]; then
+            find "${BAZEL_BIN}" -name '*.AspectRulesLintClangTidy.out*' -delete
+          fi
           set -x
           bazel build \
             "${REMOTE_FLAGS[@]}" \
             --config=lint \
-            -- //src/... //third-party/... -//src/sta/... -//third-party/abc/...
+            -- //src/... //third-party/... -//src/sta/...
 
       - name: Collect clang-tidy diagnostics
         run: |
-          # Paths in .out files are sandbox-absolute; strip to workspace-
-          # relative so reviewdog can match against the PR diff. Keep only
-          # `path:line:col: warning|error:` lines — drops source-context
-          # carets, notes, and clang-tidy's header noise in one filter.
-          # `grep -v bazel-out/` drops findings against external virtual
-          # includes (not in any PR diff). `sort -u` dedupes the same
-          # finding emitted under multiple cc_library consumers of a
-          # shared source.
-          BAZEL_BIN=$(bazel info bazel-bin)
-          find "${BAZEL_BIN}" -name '*.AspectRulesLintClangTidy.out' -print0 \
-            | xargs -0 cat \
-            | sed -E 's|^.*/execroot/_main/||' \
-            | grep -E '^[^:]+:[0-9]+:[0-9]+: (warning|error):' \
-            | grep -vE '^(bazel-out|external)/' \
-            | sort -u \
-            > clang-tidy.txt
+          # Fails the step if clang-tidy itself failed (non-zero or missing
+          # exit code, or no outputs), so a broken linter can't pass as
+          # "0 findings".
+          bash tools/lint/collect_clang_tidy.sh "$(bazel info bazel-bin)" clang-tidy.txt
           echo "::group::clang-tidy.txt (head)"
           head -50 clang-tidy.txt || true
           echo "::endgroup::"
-          echo "Findings: $(wc -l < clang-tidy.txt)"
 
       - name: Save PR metadata for post workflow
         run: |

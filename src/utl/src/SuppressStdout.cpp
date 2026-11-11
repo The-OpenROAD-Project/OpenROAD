@@ -48,9 +48,8 @@ SuppressStdout::~SuppressStdout()
                    76,
                    "dup2 failed to restore stdout, all stdout is likely broken "
                    "from this point forward.");
-  } else {
-    close(saved_fd_);
   }
+  close(saved_fd_);
 }
 
 }  // namespace utl

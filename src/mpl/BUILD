@@ -61,6 +61,8 @@ cc_library(
         "src/SimulatedAnnealingCore.cpp",
         "src/SimulatedAnnealingCore.h",
         "src/clusterEngine.cpp",
+        "src/hardMacroFactory.cpp",
+        "src/hardMacroFactory.h",
         "src/hier_rtlmp.cpp",
         "src/hier_rtlmp.h",
         "src/rtl_mp.cpp",
@@ -147,6 +149,7 @@ tcl_wrap_cc(
     srcs = [
         "src/mpl.i",
         "//:error_swig",
+        "//:options_swig",
     ],
     module = "mpl",
     namespace_prefix = "mpl",

@@ -1352,6 +1352,11 @@ void Opendp::legalCellPos(odb::dbInst* db_inst)
   if (db_inst->getPlacementStatus().isFixed()) {
     return;
   }
+  if (grid_->pixelsReleased()) {
+    // detailed_placement and check_placement free the pixels on return;
+    // pointOffMacro below reads them.
+    initMacrosAndGrid();
+  }
   Node cell;
   convertDbToCell(db_inst, cell);
   // returns the initial position of the cell

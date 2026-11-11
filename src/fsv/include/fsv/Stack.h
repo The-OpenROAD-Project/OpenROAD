@@ -171,17 +171,23 @@ class Stack
     double rpv = 0;
     double area = 0;
     Curve rpv_vs_area;
+    // Whether rpv_vs_area is interpolated between its points (ITF
+    // INTERPOLATE_RPV_AREA) rather than looked up.
+    bool interpolate_rpv_vs_area = false;
     double rho = 0;
     double t0 = 25;  // °C
     Crt crt;
     CrtCurve crt_vs_area;
   };
 
+  // kGate is the direction of the design's gates, which the stack does
+  // not know; whoever applies the etch tables resolves it from the design.
   enum class ReferenceDirection
   {
     kNone,
     kVertical,
     kHorizontal,
+    kGate,
   };
 
   // Building. Each add throws std::invalid_argument for a layer that

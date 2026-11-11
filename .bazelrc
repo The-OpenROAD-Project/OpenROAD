@@ -240,9 +240,8 @@ build:profile --//:profile
 # only adds the coverage-specific bits. --combined_report=lcov merges every
 # test's per-target lcov into one file at
 # bazel-out/_coverage/_coverage_report.dat, which CI renders with genhtml
-# (lcov is installed in bazel/Dockerfile). The instrumentation_filter mirrors
-# the exclusions of the retired cmake/lcov flow (etc/CodeCoverage.sh _lcov):
-# instrument OpenROAD's own //src/... code, minus OpenSTA (src/sta, which has
+# (lcov is installed in bazel/Dockerfile). The instrumentation_filter
+# instruments OpenROAD's own //src/... code, minus OpenSTA (src/sta, which has
 # its own private test suite) and drt's unused global-routing code. Third-party
 # deps live under external repos / //third-party and are simply never matched
 # by //src, so they need no explicit exclusion.
@@ -269,6 +268,12 @@ test --build_tests_only
 # --- Performance Optimizations ---
 # Use a high number of jobs and let the scheduler manage concurrency
 build --jobs=200
+
+# CopyToDirectory staging (e.g. the hermetic toolchain's libc++ header tree,
+# ~1,700 files) is a sub-second local copy, but a cache hit has to check every
+# file in the tree. On a cold or busy disk cache that takes minutes, and every
+# C++ compile waits on it. Run it locally instead.
+build --modify_execution_info=CopyToDirectory=+no-cache
 
 # Enable local disk caching to supplement the remote cache.
 build --disk_cache=~/.cache/bazel-disk-cache
@@ -303,7 +308,7 @@ build:ci --experimental_remote_downloader=grpcs://bazel.precisioninno.com:443
 # clang-tidy via aspect_rules_lint, using clang-tidy from the LLVM toolchain.
 # Usage: bazel build --config=lint //src/utl/...
 build:lint --aspects=//tools/lint:linters.bzl%clang_tidy
-build:lint --output_groups=rules_lint_report
+build:lint --output_groups=rules_lint_human
 build:lint --remote_download_outputs=all
 
 # Telling real work from cache hits.

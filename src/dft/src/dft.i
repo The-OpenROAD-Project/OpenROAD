@@ -119,9 +119,14 @@ void report_dft_config() {
   getDft()->reportDftConfig();
 }
 
-void scan_opt()
+void scan_opt(bool rebalance_chains)
 {
-  getDft()->scanOpt();
+  getDft()->scanOpt(rebalance_chains);
+}
+
+void report_chain_metrics()
+{
+  getDft()->reportChainMetrics();
 }
 
 %}  // inline
