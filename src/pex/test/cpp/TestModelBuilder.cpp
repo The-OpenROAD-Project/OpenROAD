@@ -68,6 +68,13 @@ BuildOptions smallBuild(const int threads)
   o.tol = 0.02;
   o.threads = threads;
   o.extent = 3;
+  o.crossing_spacing_factors = {};  // the crossing test builds them
+  o.reach_factors = {0, 2};         // with a coarse reach
+  o.end_spacing_factors = {};       // and the end test
+  o.facing_factors = {};
+  o.lateral_reach = 0;  // the grids' reach has its own test too
+  o.lateral_reach_one_sided = 0;
+  o.diagonal_reach = 0;
   return o;
 }
 
@@ -130,6 +137,24 @@ TEST(ModelBuilder, TablesAreSymmetricAndThreadIndependent)
   }
 }
 
+// The kept form: a share of 1 at no gap, L / g far out; a fit recovers the
+// length from shares 5% off either way.
+TEST(ModelBuilder, KeptFit)
+{
+  EXPECT_EQ(keptShare(0.9, 0), 1);
+  EXPECT_NEAR(keptShare(0.9, 90), 0.01, 1e-6);
+  const std::vector<double> gaps{0.05, 0.1, 0.2, 0.3, 0.5, 0.9, 1.5, 3, 8};
+  std::vector<double> shares;
+  for (size_t i = 0; i < gaps.size(); i++) {
+    const double noise = (i % 2 == 0 ? 1 : -1) * 0.05;
+    shares.push_back(keptShare(0.9, gaps[i]) * (1 + noise));
+  }
+  const KeptFit fit = fitKept(gaps, shares);
+  EXPECT_NEAR(fit.length, 0.9, 0.05);
+  EXPECT_LT(fit.residual, kKeptFitTolerance * fit.length);
+  EXPECT_THROW(fitKept({1, 2}, {0.5}), std::invalid_argument);
+}
+
 TEST(ModelBuilder, CrossingAndEndTables)
 {
   BuildOptions o = smallBuild(4);
@@ -150,30 +175,192 @@ TEST(ModelBuilder, CrossingAndEndTables)
     EXPECT_THROW(buildCrossing(sky130(), L("met2"), L("met3"), full, model),
                  std::invalid_argument);
   }
+  o.crossing_spacing_factors = {1};
   buildCrossing(sky130(), L("met2"), L("met3"), o, model);
-  const CrossingTable* c = model.crossing({"met2", "met3"});
+  const CrossingTable* c = model.crossing({"met2", "met3", ""});
   ASSERT_NE(c, nullptr);
+  ASSERT_EQ(c->spacings().size(), 1u);
+  // Neighbors under the crossings take part of what the crossings reach
+  // over a wide gap.
+  EXPECT_LT(c->at(0, 2).total, c->at(1, 2).total);
+  // A table built on another spacing grid is refused.
+  BuildOptions other = o;
+  other.crossing_spacing_factors = {2};
+  EXPECT_THROW(buildCrossing(sky130(), L("met2"), L("met3"), other, model),
+               std::invalid_argument);
   // Gaps are wc (1 / f - 1): 0.3, 0.9 (twice, merged) and 2.7 µm.
   ASSERT_EQ(c->gaps().size(), 3u);
   EXPECT_NEAR(c->gaps()[0], 0.3, 1e-9);
   EXPECT_NEAR(c->gaps()[1], 0.9, 1e-9);
   EXPECT_NEAR(c->gaps()[2], 2.7, 1e-9);
   // Crossings keep a share of the plane's effect, less over wider gaps.
-  EXPECT_GT(c->values()[0].total, 0.5);
-  EXPECT_LT(c->values()[0].total, 1.0);
-  EXPECT_GT(c->values()[0].total, c->values()[1].total);
-  EXPECT_GT(c->values()[1].cross, 0);
+  EXPECT_GT(c->at(1, 0).total, 0.5);
+  EXPECT_LT(c->at(1, 0).total, 1.0);
+  EXPECT_GT(c->at(1, 0).total, c->at(1, 1).total);
+  EXPECT_GT(c->at(1, 1).cross, 0);
   EXPECT_THROW(buildCrossing(sky130(), L("met2"), L("met2"), o, model),
                std::invalid_argument);
+  // One crossing ending at the wire's sides keeps less of the coupling
+  // than one running past them; one running on keeps all of it.
+  ASSERT_TRUE(c->hasReach());
+  const CrossingReach& reach = c->reach();
+  EXPECT_EQ(reach.past, (std::vector<double>{0, 0.6}));
+  ASSERT_EQ(reach.extents.size(), 3u);
+  EXPECT_DOUBLE_EQ(reach.extents[2], 3);
+  EXPECT_DOUBLE_EQ(reach.width, 0.3);
+  EXPECT_LT(reach.at(1, 0).cross, reach.at(1, 1).cross);
+  EXPECT_GT(reach.at(1, 0).cross, 0.2);
+  EXPECT_LT(reach.at(1, 1).cross, 1);
+  EXPECT_EQ(reach.at(1, 2).cross, 1);
+  EXPECT_EQ(reach.at(0, 2).total, 1);
+  // With a plane below the wire, the crossings above keep less of their
+  // coupling over a wide gap; the table has no reach of its own.
+  buildCrossings(
+      sky130(), L("met2"), {L("met3")}, o, model, L("met1"), Layer());
+  const CrossingTable* planed = model.crossing({"met2", "met3", "met1"});
+  ASSERT_NE(planed, nullptr);
+  EXPECT_EQ(planed->gaps(), c->gaps());
+  EXPECT_LT(planed->at(1, 2).cross, c->at(1, 2).cross);
+  EXPECT_FALSE(planed->hasReach());
+  // A table held without a reach gains one and keeps its shares.
+  const double share = c->at(1, 0).total;
+  model.addCrossing({"met2", "met3", ""},
+                    CrossingTable(c->gaps(), c->values(), c->spacings()));
+  ASSERT_FALSE(model.crossing({"met2", "met3", ""})->hasReach());
+  buildCrossing(sky130(), L("met2"), L("met3"), o, model);
+  c = model.crossing({"met2", "met3", ""});
+  EXPECT_TRUE(c->hasReach());
+  EXPECT_EQ(c->at(1, 0).total, share);
+  // A reach held on another grid is refused, and reach factors that do
+  // not ascend from 0 are refused before any solve.
+  BuildOptions other_reach = o;
+  other_reach.reach_factors = {0, 3};
+  EXPECT_THROW(
+      buildCrossing(sky130(), L("met2"), L("met3"), other_reach, model),
+      std::invalid_argument);
+  for (const std::vector<double>& bad :
+       {std::vector<double>{}, {1, 2}, {0, 0, 2}, {0, 3, 2}}) {
+    BuildOptions refused = o;
+    refused.reach_factors = bad;
+    Model fresh;
+    EXPECT_THROW(buildCrossing(sky130(), L("met2"), L("met3"), refused, fresh),
+                 std::invalid_argument);
+  }
 
+  o.end_spacing_factors = {1};
+  o.facing_factors = {1, 4};
   buildEnds(sky130(), L("met2"), o, model);
   EXPECT_EQ(model.ends().size(), 2u);
   const EndTable* e = model.end({"met2", "met1", ""});
   ASSERT_NE(e, nullptr);
-  ASSERT_EQ(e->excess().size(), 1u);
-  // One end of a minimum-width wire adds a few hundredths of a fF.
-  EXPECT_GT(e->excess()[0], 0.01);
-  EXPECT_LT(e->excess()[0], 0.1);
+  ASSERT_EQ(e->values().size(), 1u * 2 * 3);
+  EXPECT_DOUBLE_EQ(e->spacings()[0], 0.14);
+  EXPECT_DOUBLE_EQ(e->gaps()[1], 0.56);
+  // A free end of a minimum-width wire adds a few hundredths of a fF,
+  // part of it to the plane below, none above.
+  const EndValue& free = e->at(0, 1, 2);
+  EXPECT_GT(free.total, 0.01);
+  EXPECT_LT(free.total, 0.1);
+  EXPECT_GT(free.below, 0);
+  EXPECT_LT(free.below, free.total);
+  EXPECT_EQ(free.above, 0);
+  EXPECT_EQ(free.lateral, 0);
+  EXPECT_EQ(free.facing, 0);
+  // Neighbors running past the end take part of it.
+  EXPECT_GT(e->at(0, 0, 2).lateral, 0);
+  EXPECT_LT(e->at(0, 0, 2).lateral, e->at(0, 0, 2).total);
+  // A facing wire takes more across a narrower gap, and less with
+  // neighbors beside the end.
+  EXPECT_GT(e->at(0, 1, 0).facing, e->at(0, 1, 1).facing);
+  EXPECT_GT(e->at(0, 1, 1).facing, 0);
+  EXPECT_LT(e->at(0, 1, 0).facing, e->at(0, 1, 0).total);
+  EXPECT_GT(e->at(0, 1, 0).total, free.total);
+  EXPECT_LT(e->at(0, 0, 0).facing, e->at(0, 1, 0).facing);
+  // A neighbor on one side alone takes more of the end than half of
+  // what two take, and leaves less to the plane.
+  ASSERT_TRUE(e->hasSides());
+  const EndSides one = e->sides(0, 0, 1);
+  EXPECT_GT(one.left, e->at(0, 0, 2).lateral / 2);
+  EXPECT_EQ(one.right, 0);
+  EXPECT_LT(one.below, (e->at(0, 0, 2).below + free.below) / 2);
+  EXPECT_EQ(e->sides(0, 1, 0).right, one.left);
+  // Where two wires meet, each shields the other's side.
+  ASSERT_TRUE(e->hasCorners());
+  EXPECT_LT(e->corners(0).inner.total, 0);
+  // Built tables stay; one on another grid is refused.
+  buildEnds(sky130(), L("met2"), o, model);
+  EXPECT_EQ(model.end({"met2", "met1", ""}), e);
+  // A table held without the different-sided ends gains them and keeps
+  // its own values.
+  EndTable bare(e->widths(), e->spacings(), e->gaps());
+  for (int si = 0; si < bare.spacingCount(); si++) {
+    for (int gi = 0; gi < bare.gapCount(); gi++) {
+      bare.set(0, si, gi, e->at(0, si, gi));
+    }
+  }
+  const EndValue kept = e->at(0, 0, 2);
+  model.addEnd({"met2", "met1", ""}, std::move(bare));
+  ASSERT_FALSE(model.end({"met2", "met1", ""})->hasSides());
+  buildEnds(sky130(), L("met2"), o, model);
+  e = model.end({"met2", "met1", ""});
+  EXPECT_TRUE(e->hasSides());
+  EXPECT_TRUE(e->hasCorners());
+  EXPECT_EQ(e->at(0, 0, 2).total, kept.total);
+  o.facing_factors = {1};
+  EXPECT_THROW(buildEnds(sky130(), L("met2"), o, model), std::invalid_argument);
+}
+
+// Past the last spacing the lateral grid reaches a multiple of the
+// distance to the nearest plane, further with a cover on one side only; the
+// diagonal gaps reach a multiple of the distance between the layers.
+TEST(ModelBuilder, GridsReachByHeight)
+{
+  BuildOptions o = smallBuild(4);
+  o.width_factors = {1};
+  o.spacing_factors = {1};
+  o.tol = 0.05;
+  o.lateral_reach = 6;
+  o.lateral_reach_one_sided = 10;
+  o.lateral_reach_step = 1.6;
+  Model model;
+  buildLateral(sky130(), L("met2"), o, model);
+  const fsv::Stack::Conductor& met1 = sky130().conductor(L("met1"));
+  const fsv::Stack::Conductor& met2 = sky130().conductor(L("met2"));
+  auto check = [&](const LateralKey& key, const double reach) {
+    const LateralTable* t = model.lateral(key);
+    ASSERT_NE(t, nullptr);
+    const std::vector<double>& s = t->spacings();
+    ASSERT_GT(s.size(), 2u);
+    EXPECT_DOUBLE_EQ(s.front(), met2.min_spacing);
+    EXPECT_NEAR(s.back(), reach, 1e-9);
+    for (size_t i = 1; i < s.size(); i++) {
+      EXPECT_LE(s[i] / s[i - 1], 1.6 + 1e-9);
+    }
+  };
+  check({"met2", "", ""}, 6 * met2.bottom);
+  check({"met2", "met1", ""}, 10 * (met2.bottom - met1.top));
+  // A step of 1 or less could not reach; refused.
+  for (const double step : {1.0, 0.5}) {
+    BuildOptions flat = o;
+    flat.lateral_reach_step = step;
+    Model fresh;
+    EXPECT_THROW(buildLateral(sky130(), L("met2"), flat, fresh),
+                 std::invalid_argument);
+  }
+
+  o.diagonal_width_factors = {1};
+  o.diagonal_gap_factors = {0, 2};
+  o.diagonal_spacing_factors = {1};
+  o.diagonal_far_spacing_factors = {1};
+  o.diagonal_reach = 4;
+  buildDiagonal(sky130(), L("met2"), L("met1"), o, model);
+  const DiagonalTable* d = model.diagonal({"met2", "met1", ""});
+  ASSERT_NE(d, nullptr);
+  ASSERT_GT(d->gaps().size(), 2u);
+  EXPECT_NEAR(d->gaps().back(), 4 * (met2.bottom - met1.top), 1e-9);
+  for (size_t i = 2; i < d->gaps().size(); i++) {
+    EXPECT_LE(d->gaps()[i] / d->gaps()[i - 1], 2 + 1e-9);
+  }
 }
 
 TEST(ModelBuilder, DiagonalTable)
@@ -186,7 +373,7 @@ TEST(ModelBuilder, DiagonalTable)
   o.tol = 0.02;
   Model model;
   buildDiagonal(sky130(), L("met2"), L("met1"), o, model);
-  const DiagonalTable* t = model.diagonal({"met2", "met1"});
+  const DiagonalTable* t = model.diagonal({"met2", "met1", ""});
   ASSERT_NE(t, nullptr);
   ASSERT_EQ(t->values().size(), 1u * 2 * 2 * 2);
   // Alone, a met1 wire beside the met2 wire couples more at the near gap
@@ -204,6 +391,21 @@ TEST(ModelBuilder, DiagonalTable)
   EXPECT_LT(near_shielded.lateral_delta, 0);
   EXPECT_LT(far_shielded.coupling, near_open.coupling);
   EXPECT_EQ(far_shielded.lateral_delta, 0);
+  // A plane above the met2 wire, on its other side from the met1 wire,
+  // takes part of the coupling; a plane on the met1 wire's side is
+  // refused.
+  buildDiagonal(sky130(), L("met2"), L("met1"), o, model, L("met3"));
+  const DiagonalTable* planed = model.diagonal({"met2", "met1", "met3"});
+  ASSERT_NE(planed, nullptr);
+  EXPECT_LT(planed->at(0, 0, 1, 1).coupling, 0.95 * near_open.coupling);
+  EXPECT_GT(planed->at(0, 0, 1, 1).coupling, 0);
+  // The parallel wire takes part of the plane's coupling; the tables with
+  // no plane have none to take.
+  EXPECT_LT(planed->at(0, 0, 1, 1).plane_delta, 0);
+  EXPECT_EQ(near_open.plane_delta, 0);
+  EXPECT_THROW(
+      buildDiagonal(sky130(), L("met2"), L("met1"), o, model, L("li1")),
+      std::invalid_argument);
   EXPECT_EQ(names(diagonalLayers(sky130(), L("met2"), o)),
             (std::vector<std::string>{"met1", "li1", "met3", "met4"}));
   // Only the technology's routing layers take part when they are given.
@@ -273,8 +475,8 @@ TEST(ModelBuilder, ResumesAndBuildsFarLayers)
   EXPECT_NE(model.lateral({"met2", "met1", "met3"}), nullptr);
   EXPECT_NE(model.lateral({"met2", "", "met3"}), nullptr);
   EXPECT_NE(model.end({"met2", "met1", ""}), nullptr);
-  EXPECT_NE(model.crossing({"met2", "met3"}), nullptr);
-  EXPECT_NE(model.crossing({"met2", "met1"}), nullptr);
+  EXPECT_NE(model.crossing({"met2", "met3", ""}), nullptr);
+  EXPECT_NE(model.crossing({"met2", "met1", ""}), nullptr);
   solves = 0;
   buildLayer(sky130(), L("met2"), o, model);
   EXPECT_EQ(solves, 0);
@@ -454,7 +656,7 @@ TEST(ModelBuilder, ChangedPlanAddsMissingContexts)
   o.below_depth = o.above_depth = 1;
   buildLayer(sky130(), L("met2"), o, model);
   EXPECT_NE(model.lateral({"met2", "met1", "met3"}), nullptr);
-  EXPECT_NE(model.crossing({"met2", "met1"}), nullptr);
+  EXPECT_NE(model.crossing({"met2", "met1", ""}), nullptr);
 }
 
 TEST(ModelBuilder, RefusesBadLayersBeforeSolving)
@@ -473,6 +675,25 @@ TEST(ModelBuilder, RefusesBadLayersBeforeSolving)
   EXPECT_THROW(buildLateral(sky130(), L("metX"), o, model),
                std::invalid_argument);
   EXPECT_TRUE(model.laterals().empty());
+  // A reach that is not finite, or negative, is refused.
+  for (const double bad : {std::numeric_limits<double>::quiet_NaN(),
+                           std::numeric_limits<double>::infinity(),
+                           -1.0}) {
+    BuildOptions r = smallBuild(2);
+    r.lateral_reach = bad;
+    EXPECT_THROW(buildLateral(sky130(), L("met2"), r, model),
+                 std::invalid_argument);
+    r = smallBuild(2);
+    r.lateral_reach_one_sided = bad;
+    EXPECT_THROW(buildLateral(sky130(), L("met2"), r, model),
+                 std::invalid_argument);
+    r = smallBuild(2);
+    r.diagonal_reach = bad;
+    EXPECT_THROW(buildDiagonal(sky130(), L("met2"), L("met1"), r, model),
+                 std::invalid_argument);
+  }
+  EXPECT_TRUE(model.laterals().empty());
+  EXPECT_TRUE(model.diagonals().empty());
 }
 
 // A failure inside a solver job reaches the caller as the exception it
@@ -501,6 +722,9 @@ TEST(ModelBuilder, FingerprintFollowsTheStackAndTheOptions)
   BuildOptions deeper = o;
   deeper.diagonal_depth++;
   EXPECT_NE(buildFingerprint(sky130(), deeper), base);
+  BuildOptions reach = o;
+  reach.reach_factors.push_back(30);
+  EXPECT_NE(buildFingerprint(sky130(), reach), base);
   // A stack like sky130's with one conductor thicker, and one renamed.
   auto rebuilt = [&](const char* technology, const double extra_top) {
     fsv::Stack stack;
