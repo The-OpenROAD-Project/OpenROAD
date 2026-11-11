@@ -285,6 +285,13 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
 
   if (finish_ != Finish::kPhase2Recovery) {
     finish_ = Finish::kPhase2IterLimit;
+    std::vector<int> illegal_cells;
+    for (int idx : active) {
+      if (!cells_[idx].fixed && !isCellLegal(idx)) {
+        illegal_cells.push_back(idx);
+      }
+    }
+    diamondRecovery(illegal_cells);
   }
 
   // Non-convergence is reported by the caller (Opendp::detailedPlacement)

@@ -105,6 +105,7 @@ COMPULSORY_TESTS = [
 ]
 
 PASSFAIL_TESTS = [
+    "negotiation_iter_limit",
     "pdn_via",
     "pdn_via_array",
     "pdn_via_cut",
