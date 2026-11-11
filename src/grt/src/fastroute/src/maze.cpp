@@ -7,7 +7,6 @@
 #include <cstdint>
 #include <map>
 #include <memory>
-#include <set>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -2024,27 +2023,24 @@ void FastRouteCore::getOverflowPositions(
 void FastRouteCore::getOverflowPositions3D(
     std::vector<std::pair<odb::Point, bool>>& overflow_pos)
 {
-  // One GCell can overflow on several layers; dedup before emitting.
-  std::set<std::pair<int, int>> h_tiles, v_tiles;
-  for (int layer = 0; layer < num_layers_; layer++) {
-    for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
+  // One GCell can overflow on several layers; emit it once.
+  for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
+    for (int layer = 0; layer < num_layers_; layer++) {
       const auto& edge = h_edges_3D_[layer][y][x];
       if (edge.usage > edge.cap) {
-        h_tiles.emplace(x, y);
+        overflow_pos.emplace_back(odb::Point(x, y), true);
+        break;
       }
     }
-    for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
+  }
+  for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
+    for (int layer = 0; layer < num_layers_; layer++) {
       const auto& edge = v_edges_3D_[layer][y][x];
       if (edge.usage > edge.cap) {
-        v_tiles.emplace(x, y);
+        overflow_pos.emplace_back(odb::Point(x, y), false);
+        break;
       }
     }
-  }
-  for (const auto& [x, y] : h_tiles) {
-    overflow_pos.emplace_back(odb::Point(x, y), true);
-  }
-  for (const auto& [x, y] : v_tiles) {
-    overflow_pos.emplace_back(odb::Point(x, y), false);
   }
 }
 
