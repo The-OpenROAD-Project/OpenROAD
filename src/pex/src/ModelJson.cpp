@@ -123,7 +123,12 @@ json::object crossing(const CrossingKey& key, const CrossingTable& table)
   json::object o;
   o["layer"] = key.layer;
   o["cover"] = key.cover;
+  if (!key.opposite.empty()) {
+    o["opposite"] = key.opposite;
+  }
   o["gaps"] = numbers(table.gaps());
+  o["spacings"] = numbers(table.spacings());
+  // Flat, in [spacing][gap] order with no neighbor last.
   json::array total;
   json::array cross;
   for (const CrossingShare& s : table.values()) {
@@ -132,18 +137,40 @@ json::object crossing(const CrossingKey& key, const CrossingTable& table)
   }
   o["total"] = std::move(total);
   o["cross"] = std::move(cross);
+  if (table.hasReach()) {
+    const CrossingReach& r = table.reach();
+    json::object reach;
+    reach["width"] = rounded(r.width);
+    reach["past"] = numbers(r.past);
+    reach["extents"] = numbers(r.extents);
+    // Flat, in [past][extent] order.
+    json::array reach_total;
+    json::array reach_cross;
+    for (const CrossingShare& s : r.values) {
+      reach_total.push_back(rounded(s.total));
+      reach_cross.push_back(rounded(s.cross));
+    }
+    reach["total"] = std::move(reach_total);
+    reach["cross"] = std::move(reach_cross);
+    o["reach"] = std::move(reach);
+  }
   return o;
 }
 
 void readCrossing(const json::object& o, Model& model)
 {
-  const CrossingKey key{std::string(o.at("layer").as_string()),
-                        std::string(o.at("cover").as_string())};
+  CrossingKey key{std::string(o.at("layer").as_string()),
+                  std::string(o.at("cover").as_string()),
+                  ""};
+  if (const json::value* opposite = o.if_contains("opposite")) {
+    key.opposite = std::string(opposite->as_string());
+  }
   const std::vector<double> gaps = numbers(o.at("gaps"));
+  const std::vector<double> spacings = numbers(o.at("spacings"));
   const std::vector<double> total = numbers(o.at("total"));
   const std::vector<double> cross = numbers(o.at("cross"));
   // The two are zipped into shares; the table checks the count against
-  // the gaps.
+  // the grids.
   if (total.size() != cross.size()) {
     throw std::runtime_error("crossing table of " + key.layer
                              + " has total and cross arrays that differ");
@@ -152,7 +179,25 @@ void readCrossing(const json::object& o, Model& model)
   for (size_t i = 0; i < total.size(); i++) {
     values.push_back({total[i], cross[i]});
   }
-  model.addCrossing(key, CrossingTable(gaps, values));
+  CrossingTable table(gaps, values, spacings);
+  if (const json::value* found = o.if_contains("reach")) {
+    const json::object& r = found->as_object();
+    CrossingReach reach;
+    reach.width = r.at("width").to_number<double>();
+    reach.past = numbers(r.at("past"));
+    reach.extents = numbers(r.at("extents"));
+    const std::vector<double> reach_total = numbers(r.at("total"));
+    const std::vector<double> reach_cross = numbers(r.at("cross"));
+    if (reach_total.size() != reach_cross.size()) {
+      throw std::runtime_error("crossing reach of " + key.layer
+                               + " has total and cross arrays that differ");
+    }
+    for (size_t i = 0; i < reach_total.size(); i++) {
+      reach.values.push_back({reach_total[i], reach_cross[i]});
+    }
+    table.setReach(std::move(reach));
+  }
+  model.addCrossing(key, std::move(table));
 }
 
 json::object diagonal(const DiagonalKey& key, const DiagonalTable& table)
@@ -160,17 +205,25 @@ json::object diagonal(const DiagonalKey& key, const DiagonalTable& table)
   json::object o;
   o["layer"] = key.layer;
   o["other"] = key.other;
+  if (!key.opposite.empty()) {
+    o["opposite"] = key.opposite;
+  }
   o["widths"] = numbers(table.widths());
   o["gaps"] = numbers(table.gaps());
   o["spacings"] = numbers(table.spacings());
   o["far_spacings"] = numbers(table.farSpacings());
   // Flat, in [width][gap][spacing][far] order; each value is [coupling,
-  // total_delta, lateral_delta].
+  // total_delta, lateral_delta], with plane_delta after them when the
+  // table has an opposite plane.
   json::array values;
   values.reserve(table.values().size());
   for (const DiagonalCap& c : table.values()) {
-    values.push_back(json::array{
-        rounded(c.coupling), rounded(c.total_delta), rounded(c.lateral_delta)});
+    json::array v{
+        rounded(c.coupling), rounded(c.total_delta), rounded(c.lateral_delta)};
+    if (!key.opposite.empty()) {
+      v.push_back(rounded(c.plane_delta));
+    }
+    values.push_back(std::move(v));
   }
   o["values"] = std::move(values);
   return o;
@@ -178,8 +231,12 @@ json::object diagonal(const DiagonalKey& key, const DiagonalTable& table)
 
 void readDiagonal(const json::object& o, Model& model)
 {
-  const DiagonalKey key{std::string(o.at("layer").as_string()),
-                        std::string(o.at("other").as_string())};
+  DiagonalKey key{std::string(o.at("layer").as_string()),
+                  std::string(o.at("other").as_string()),
+                  ""};
+  if (const json::value* opposite = o.if_contains("opposite")) {
+    key.opposite = std::string(opposite->as_string());
+  }
   DiagonalTable table(numbers(o.at("widths")),
                       numbers(o.at("gaps")),
                       numbers(o.at("spacings")),
@@ -194,7 +251,7 @@ void readDiagonal(const json::object& o, Model& model)
   const int ng = table.gapCount();
   for (size_t i = 0; i < values.size(); i++) {
     const std::vector<double> v = numbers(values[i]);
-    if (v.size() != 3) {
+    if (v.size() != 3 && (v.size() != 4 || key.opposite.empty())) {
       throw std::runtime_error("diagonal table of " + key.layer
                                + " has a malformed value");
     }
@@ -203,7 +260,7 @@ void readDiagonal(const json::object& o, Model& model)
               (k / nf / ns) % ng,
               (k / nf) % ns,
               k % nf,
-              {v[0], v[1], v[2]});
+              {v[0], v[1], v[2], v.size() > 3 ? v[3] : 0});
   }
   model.addDiagonal(key, std::move(table));
 }
@@ -215,7 +272,56 @@ json::object end(const LateralKey& key, const EndTable& table)
   o["below"] = key.below;
   o["above"] = key.above;
   o["widths"] = numbers(table.widths());
-  o["excess"] = numbers(table.excess());
+  o["spacings"] = numbers(table.spacings());
+  o["gaps"] = numbers(table.gaps());
+  // Flat, in [width][spacing][gap] order with the open spacing and the
+  // missing facing wire last; each value is [total, to the plane below,
+  // to the plane above, to the neighbors, to the facing wire].
+  json::array values;
+  values.reserve(table.values().size());
+  for (const EndValue& v : table.values()) {
+    values.push_back(json::array{rounded(v.total),
+                                 rounded(v.below),
+                                 rounded(v.above),
+                                 rounded(v.lateral),
+                                 rounded(v.facing)});
+  }
+  o["values"] = std::move(values);
+  if (table.hasSides()) {
+    // Flat, in [width][left][right] order over the pairs with left <
+    // right; each value is [total, to the plane below, to the plane above,
+    // to the left neighbor, to the right neighbor].
+    json::array sides;
+    const int ns = table.spacingCount();
+    for (int w = 0; w < static_cast<int>(table.widths().size()); w++) {
+      for (int l = 0; l < ns; l++) {
+        for (int r = l + 1; r < ns; r++) {
+          const EndSides v = table.sides(w, l, r);
+          sides.push_back(json::array{rounded(v.total),
+                                      rounded(v.below),
+                                      rounded(v.above),
+                                      rounded(v.left),
+                                      rounded(v.right)});
+        }
+      }
+    }
+    o["sides"] = std::move(sides);
+  }
+  if (table.hasCorners()) {
+    // By width: [inner total, to the plane below, to the plane above, outer
+    // total, below, above].
+    json::array corners;
+    for (int w = 0; w < static_cast<int>(table.widths().size()); w++) {
+      const Corners& c = table.corners(w);
+      corners.push_back(json::array{rounded(c.inner.total),
+                                    rounded(c.inner.below),
+                                    rounded(c.inner.above),
+                                    rounded(c.outer.total),
+                                    rounded(c.outer.below),
+                                    rounded(c.outer.above)});
+    }
+    o["corners"] = std::move(corners);
+  }
   return o;
 }
 
@@ -224,7 +330,64 @@ void readEnd(const json::object& o, Model& model)
   const LateralKey key{std::string(o.at("layer").as_string()),
                        std::string(o.at("below").as_string()),
                        std::string(o.at("above").as_string())};
-  model.addEnd(key, EndTable(numbers(o.at("widths")), numbers(o.at("excess"))));
+  EndTable table(numbers(o.at("widths")),
+                 numbers(o.at("spacings")),
+                 numbers(o.at("gaps")));
+  const json::array& values = o.at("values").as_array();
+  if (values.size() != table.values().size()) {
+    throw std::runtime_error("end table of " + key.layer
+                             + " has the wrong number of values");
+  }
+  const int ng = table.gapCount();
+  const int ns = table.spacingCount();
+  for (size_t i = 0; i < values.size(); i++) {
+    const std::vector<double> v = numbers(values[i]);
+    if (v.size() != 5) {
+      throw std::runtime_error("end table of " + key.layer
+                               + " has a malformed value");
+    }
+    const int k = static_cast<int>(i);
+    table.set(
+        k / ng / ns, (k / ng) % ns, k % ng, {v[0], v[1], v[2], v[3], v[4]});
+  }
+  if (const json::value* found = o.if_contains("sides")) {
+    const json::array& sides = found->as_array();
+    const int nw = static_cast<int>(table.widths().size());
+    if (static_cast<int>(sides.size()) != nw * ns * (ns - 1) / 2) {
+      throw std::runtime_error("end table of " + key.layer
+                               + " has the wrong number of sides");
+    }
+    size_t i = 0;
+    for (int w = 0; w < nw; w++) {
+      for (int l = 0; l < ns; l++) {
+        for (int r = l + 1; r < ns; r++) {
+          const std::vector<double> v = numbers(sides[i++]);
+          if (v.size() != 5) {
+            throw std::runtime_error("end table of " + key.layer
+                                     + " has a malformed side");
+          }
+          table.setSides(w, l, r, {v[0], v[1], v[2], v[3], v[4]});
+        }
+      }
+    }
+  }
+  if (const json::value* found = o.if_contains("corners")) {
+    const json::array& corners = found->as_array();
+    if (corners.size() != table.widths().size()) {
+      throw std::runtime_error("end table of " + key.layer
+                               + " has the wrong number of corners");
+    }
+    for (size_t w = 0; w < corners.size(); w++) {
+      const std::vector<double> v = numbers(corners[w]);
+      if (v.size() != 6) {
+        throw std::runtime_error("end table of " + key.layer
+                                 + " has a malformed corner");
+      }
+      table.setCorners(static_cast<int>(w),
+                       {{v[0], v[1], v[2]}, {v[3], v[4], v[5]}});
+    }
+  }
+  model.addEnd(key, std::move(table));
 }
 
 }  // namespace
@@ -330,6 +493,7 @@ Model readModel(std::istream& in, ModelSource* source)
     for (const json::value& v : tables("end")) {
       readEnd(v.as_object(), model);
     }
+
   } catch (const std::runtime_error&) {
     throw;
   } catch (const std::exception& e) {

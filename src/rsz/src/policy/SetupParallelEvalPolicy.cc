@@ -198,10 +198,11 @@ void SetupParallelEvalPolicy::selectMoveSequence()
 {
   // -sequence is the move set; without it the default runs.  The candidates
   // of a target compete on score, and the sequence order only breaks exact
-  // ties; SizeUpMt scores carry the 0.75 size_up_mt_score_scale.  The default
-  // goes through the same filter, so -skip_vt_swap and a single-VT library
-  // still remove VtSwapMt.  A library with dont_use VTs keeps it: VtSwapMt
-  // can move the instances on a dont_use VT to the usable VT.
+  // ties; the move weights such as size_up_mt_score_scale scale the scores.
+  // The default goes through the same filter, so -skip_vt_swap and a
+  // single-VT library still remove VtSwapMt.  A library with dont_use VTs
+  // keeps it: VtSwapMt can move the instances on a dont_use VT to the usable
+  // VT.
   std::vector<MoveType> requested_sequence = config_.sequence;
   if (requested_sequence.empty()) {
     requested_sequence = {MoveType::kUnbuffer,
@@ -928,11 +929,14 @@ void SetupParallelEvalPolicy::estimateTargets(
     tasks.push_back(&evaluation);
   }
 
+  const OptimizationPolicyConfig& policy_config = policy_config_;
   thread_pool_->parallelFor(
-      tasks, [profiling, permissive](TargetEvaluation* const& evaluation) {
+      tasks,
+      [profiling, permissive, &policy_config](
+          TargetEvaluation* const& evaluation) {
         const WorkerTimer timer(profiling ? &evaluation->worker_elapsed
                                           : nullptr);
-        estimateTarget(*evaluation, permissive);
+        estimateTarget(*evaluation, permissive, policy_config);
       });
 
   // Fold the candidate counters into the profiler on the main thread, after
@@ -957,12 +961,17 @@ void SetupParallelEvalPolicy::estimateTargets(
   }
 }
 
-void SetupParallelEvalPolicy::estimateTarget(TargetEvaluation& evaluation,
-                                             const bool permissive)
+void SetupParallelEvalPolicy::estimateTarget(
+    TargetEvaluation& evaluation,
+    const bool permissive,
+    const OptimizationPolicyConfig& policy_config)
 {
   evaluation.estimates.reserve(evaluation.candidates.size());
   for (std::unique_ptr<MoveCandidate>& candidate : evaluation.candidates) {
     Estimate estimate = candidate->estimate();
+    // The candidate scores its own gain and cost; the move weight sets the
+    // balance between moves.
+    estimate.score *= policy_config.scoreScale(candidate->type());
     if (permissive && !estimate.legal && estimate.tail_admissible) {
       // Trust the own-path gain and leave the side cost to the batch STA.  The
       // adjusted score keeps clean estimates ahead: it is zero or less, or

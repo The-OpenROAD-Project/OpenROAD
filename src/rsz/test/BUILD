@@ -301,6 +301,7 @@ TESTS = [
     "repair_setup_parallel_eval_path_group",
     "repair_setup_parallel_eval_reference_period",
     "repair_setup_parallel_eval_reference_period_modes",
+    "repair_setup_parallel_eval_fanin_max_cap",
     "repair_setup_vt_swap2",
     "repair_setup_vt_swap_dont_use",
     "repair_setup_vt_swap_unset_dont_use",
