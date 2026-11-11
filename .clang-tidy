@@ -1,6 +1,7 @@
 
 Checks: >
   clang-diagnostic-*,
+  -clang-diagnostic-builtin-macro-redefined,
   clang-analyzer-*,
   -clang-analyzer-core.NonNullParamChecker,
   -clang-analyzer-core.CallAndMessage,
@@ -64,7 +65,9 @@ CheckOptions:
   - key:             google-runtime-int.TypeSuffix
     value:           _t
   - key:             misc-include-cleaner.IgnoreHeaders
-    value:           '.*/QtCore/.*;.*/QtGui/.*;.*/QtWidgets/.*;.*/spdlog/fmt/bundled/.*;boost/.*'
+    value:           '.*/QtCore/.*;.*/QtGui/.*;.*/QtWidgets/.*;.*/spdlog/fmt/bundled/.*;boost/.*;.*/tclDecls\.h;.*/bits/.*'
+  - key:             bugprone-signed-bitwise.IgnorePositiveIntegerLiterals
+    value:           true
   
 # All modules but sta
 # Exclude build as there is too much noise from swig generated code
