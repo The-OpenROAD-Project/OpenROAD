@@ -24,6 +24,8 @@ defaults:
     shell: bash
 jobs:
   triage:
+    # Gemini triage runs only in the public repository.
+    if: github.repository == 'The-OpenROAD-Project/OpenROAD'
     runs-on: ubuntu-latest
     timeout-minutes: 7
     permissions:
