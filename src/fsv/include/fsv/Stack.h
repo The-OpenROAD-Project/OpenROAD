@@ -171,6 +171,9 @@ class Stack
     double rpv = 0;
     double area = 0;
     Curve rpv_vs_area;
+    // Whether rpv_vs_area is interpolated between its points (ITF
+    // INTERPOLATE_RPV_AREA) rather than looked up.
+    bool interpolate_rpv_vs_area = false;
     double rho = 0;
     double t0 = 25;  // °C
     Crt crt;
