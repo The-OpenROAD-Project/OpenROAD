@@ -203,6 +203,21 @@ TEST_F(PinAccessRepairTest, RejectsIllegalInputPlacement)
   EXPECT_EQ(inst_->getLocation(), odb::Point(kX + kSite / 2, 0));
 }
 
+TEST_F(PinAccessRepairTest, AcceptsNonemptyProperSubset)
+{
+  auto* right = makeCell("right", kX + 4 * kSite);
+  auto* left = makeCell("left", kX - 4 * kSite);
+  right->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+  left->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+  service_.usable = [&](odb::dbInst* inst, const odb::Point& location) {
+    return inst == inst_ && location.x() != kX;
+  };
+  EXPECT_EQ(repair(), 2);
+  EXPECT_EQ(inst_->getLocation(), odb::Point(kX - kSite, 0));
+  EXPECT_EQ(right->getLocation(), odb::Point(kX + 4 * kSite, 0));
+  EXPECT_EQ(left->getLocation(), odb::Point(kX - 4 * kSite, 0));
+}
+
 TEST_F(PinAccessRepairTest, RejectsNewHealthyNeighborFailure)
 {
   auto* second = makeCell("second", kX + 6 * kSite);

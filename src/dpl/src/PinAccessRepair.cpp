@@ -45,10 +45,10 @@ class PinAccessRepair
         pa_->updateDirtyPinAccess();
         // A move can change access for neighbors outside the moved batch.
         auto next = scan();
-        const bool healthy_preserved
-            = std::ranges::all_of(next, [&](Node* cell) {
-                return std::ranges::find(failures, cell) != failures.end();
-              });
+        const bool healthy_preserved = std::ranges::includes(
+            failures, next, [](const Node* lhs, const Node* rhs) {
+              return lhs->getDbInst()->getId() < rhs->getDbInst()->getId();
+            });
         if (next.size() < failures.size() && healthy_preserved) {
           failures = std::move(next);
           continue;
