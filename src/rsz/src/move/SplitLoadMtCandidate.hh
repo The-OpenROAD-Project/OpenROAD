@@ -54,8 +54,7 @@ class SplitLoadMtCandidate : public MoveCandidate
   // === Construction =========================================================
   SplitLoadMtCandidate(Resizer& resizer,
                        const Target& target,
-                       std::shared_ptr<const SplitLoadMtInput> input,
-                       float score_scale);
+                       std::shared_ptr<const SplitLoadMtInput> input);
 
   // === MoveCandidate API ====================================================
   Estimate estimate() override;
@@ -69,7 +68,6 @@ class SplitLoadMtCandidate : public MoveCandidate
 
   // === Candidate state ======================================================
   std::shared_ptr<const SplitLoadMtInput> input_;
-  float score_scale_{1.0f};
 };
 
 }  // namespace rsz

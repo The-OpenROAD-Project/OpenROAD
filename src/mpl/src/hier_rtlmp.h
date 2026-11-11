@@ -82,6 +82,10 @@ class HierRTLMP
   // call. Must be called after init() (it reads/writes tree_ and block_)
   // and before run().
   void configure(int threads, const MacroPlacerOptions& options = {});
+  void setHardMacros(InstToHardMap hard_macros);
+
+  const odb::Rect& floorplanShape() const;
+  const Channel& minChannel() const;
 
   // Options set by commands other than rtl_macro_placer, so they live
   // outside MacroPlacerOptions.

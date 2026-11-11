@@ -498,6 +498,16 @@ std::string WebViewerHook::addToolbarButton(utl::Logger* logger,
                                             const std::string& script_off,
                                             bool echo)
 {
+  // The page's Content-Security-Policy blocks remote images and the server
+  // serves no image files, so an image icon must be a data: URI.
+  if (icon.starts_with("http:") || icon.starts_with("https:")
+      || icon.starts_with("/") || icon.starts_with("./")) {
+    logger->error(utl::WEB,
+                  130,
+                  "The viewer cannot load toolbar icon {}; use literal text "
+                  "or a data: URI.",
+                  icon);
+  }
   bool is_duplicate = false;
   const std::string key = registerCustom(custom_buttons_,
                                          next_button_id_,

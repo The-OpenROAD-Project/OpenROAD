@@ -69,12 +69,13 @@ void FieldSolver::readItf(const std::string& path)
           = etched || table.affects != Stack::EtchTable::Affects::kResistance;
     }
     if (etched) {
-      // Solving as drawn would give capacitances of the wrong geometry.
-      logger_->error(utl::FSV,
-                     19,
-                     "Conductor {} has a capacitive etch, which the solver "
-                     "does not apply.",
-                     c.name);
+      // The solver places wires as drawn, so its capacitances miss the
+      // etch.
+      logger_->warn(utl::FSV,
+                    19,
+                    "Conductor {} has a capacitive etch, which the solver "
+                    "does not apply.",
+                    c.name);
     }
   }
   std::set<std::string> conformals;
