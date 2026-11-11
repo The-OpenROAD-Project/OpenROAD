@@ -73,6 +73,17 @@ cc_test(
 )
 
 cc_test(
+    name = "TestIndex",
+    srcs = ["cpp/TestIndex.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/pex:index",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestEvaluator",
     srcs = ["cpp/TestEvaluator.cpp"],
     deps = [

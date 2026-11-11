@@ -73,6 +73,20 @@ cc_library(
     ],
 )
 
+# The block's boxes in an rtree per layer.
+cc_library(
+    name = "index",
+    srcs = ["src/Index.cpp"],
+    hdrs = ["include/pex/Index.h"],
+    includes = ["include"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/utl",
+        "@boost.geometry",
+        "@boost.iterator",
+    ],
+)
+
 # The model file.
 cc_library(
     name = "model_json",
