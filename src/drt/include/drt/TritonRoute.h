@@ -78,6 +78,7 @@ struct ParamStruct
   bool saveGuideUpdates = false;
   std::string repairPDNLayerName;
   int num_threads = 1;
+  bool adaptiveStrategy = false;
 };
 
 class TritonRoute : public PinAccessService
