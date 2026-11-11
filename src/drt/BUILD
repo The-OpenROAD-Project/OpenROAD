@@ -183,6 +183,7 @@ cc_library(
         "src/pa/AbstractPAGraphics.h",
         "src/pa/FlexPA.h",
         "src/pa/FlexPA_unique.h",
+        "src/pa/ViaAccess.h",
         "src/ta/AbstractTAGraphics.h",
         "src/ta/FlexTA.h",
     ],

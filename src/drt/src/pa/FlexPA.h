@@ -155,8 +155,10 @@ class FlexPA
 
   // helper structures
   std::vector<std::map<frCoord, frAccessPointEnum>> track_coords_;
-  std::map<frLayerNum,
-           std::map<int, std::map<ViaRawPriorityTuple, const frViaDef*>>>
+  std::map<
+      frLayerNum,
+      std::map<int,
+               std::map<ViaRawPriorityTuple, std::vector<const frViaDef*>>>>
       layer_num_to_via_defs_;
   frCollection<odb::dbInst*> target_insts_;
   frInstLocationSet insts_set_;
@@ -167,6 +169,15 @@ class FlexPA
   int cloud_sz_ = -1;
 
   // helper functions
+  struct ViaAccessSearch;
+  void genViaAccessPoints(
+      std::vector<std::unique_ptr<frAccessPoint>>& aps,
+      const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+      const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>&
+          layer_polys,
+      frMPin* pin,
+      frInstTerm* inst_term);
+
   frDesign* getDesign() const { return design_; }
   frTechObject* getTech() const { return design_->getTech(); }
   void setDesign(frDesign* in)
@@ -288,11 +299,15 @@ class FlexPA
       frAccessPointEnum upper_type,
       pa_requirements_met& reqs);
 
+  bool revertAccessPoint(frAccessPoint* access_point,
+                         const odb::Point& offset) const;
+
   void getViasFromMetalWidthMap(
       const odb::Point& pt,
       frLayerNum layer_num,
       const gtl::polygon_90_set_data<frCoord>& polyset,
-      std::vector<const frViaDef*>& via_defs);
+      std::vector<const frViaDef*>& via_defs,
+      const std::vector<gtl::rectangle_data<frCoord>>* maxrects = nullptr);
 
   /**
    * @brief Contructs a vector with all pin figures in each layer
@@ -432,6 +447,10 @@ class FlexPA
                                                   frInstTerm* inst_term
                                                   = nullptr,
                                                   int max_vias = 2) const;
+
+  // All via identities in raw priority/name order, without native trial limits.
+  std::vector<const frViaDef*> getViaCatalogue(frLayerNum layer_num,
+                                               frInstTerm* inst_term) const;
 
   void genViaEnclosedCoords(std::map<frCoord, frAccessPointEnum>& coords,
                             const gtl::rectangle_data<frCoord>& rect,
@@ -984,6 +1003,7 @@ class FlexPA
       std::vector<std::unique_ptr<frVia>>& vias,
       bool isPrev);
 
+  friend class ViaAccessTest;
   friend class RoutingCallBack;
 };
 
