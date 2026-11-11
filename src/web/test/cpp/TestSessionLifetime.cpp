@@ -4,17 +4,23 @@
 // The web server against a real listener; the other web tests drive the
 // handlers directly.
 
+#include <fcntl.h>
+#include <netinet/in.h>
 #include <poll.h>
+#include <sys/socket.h>
 
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
+#include <filesystem>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <thread>
 #include <utility>
+#include <vector>
 
 #include "boost/asio/io_context.hpp"
 #include "boost/asio/ip/address.hpp"
@@ -490,6 +496,41 @@ TEST_F(ListenerFixture, SameOriginUpgradeWithTheTokenIsAccepted)
   const std::string origin = "http://localhost:" + std::to_string(port());
   EXPECT_EQ(statusOf(upgradeAndDrop(withToken(""), origin)), 101);
   EXPECT_TRUE(waitForSessionsGone(std::chrono::seconds(5)));
+}
+
+// This process's descriptors for IPv4 sockets on local `port`.
+std::vector<int> socketsOnPort(const uint16_t port)
+{
+  std::vector<int> fds;
+  for (const auto& entry : std::filesystem::directory_iterator("/dev/fd")) {
+    const int fd = std::stoi(entry.path().filename().string());
+    sockaddr_storage address{};
+    socklen_t length = sizeof(address);
+    if (getsockname(fd, reinterpret_cast<sockaddr*>(&address), &length) != 0
+        || address.ss_family != AF_INET) {
+      continue;
+    }
+    sockaddr_in in{};
+    std::memcpy(&in, &address, sizeof(in));
+    if (ntohs(in.sin_port) == port) {
+      fds.push_back(fd);
+    }
+  }
+  return fds;
+}
+
+// A browser the viewer starts, or a Tcl `exec`, must not keep the port or a
+// connection open.
+TEST_F(ListenerFixture, ServerSocketsAreCloseOnExec)
+{
+  Tcp::socket client = connectAndSend(upgradeRequest(withToken("")));
+  ASSERT_EQ(statusOf(readHead(client)), 101);
+  const std::vector<int> fds = socketsOnPort(port());
+  // The listener and the connection it accepted.
+  ASSERT_EQ(fds.size(), 2u);
+  for (const int fd : fds) {
+    EXPECT_EQ(fcntl(fd, F_GETFD), FD_CLOEXEC) << fd;
+  }
 }
 
 TEST_F(ListenerFixture, ListenerRefusesANullAuth)

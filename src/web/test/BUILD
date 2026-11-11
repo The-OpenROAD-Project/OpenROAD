@@ -70,6 +70,7 @@ py_test(
 test_suite(
     name = "cpp_tests",
     tests = [
+        ":browser_launcher_test",
         ":gif_test",
         ":heat_map_test",
         ":request_handler_test",
@@ -579,6 +580,16 @@ cc_test(
         "//src/web:color",
         "//src/web:core",
         "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "browser_launcher_test",
+    srcs = ["cpp/TestBrowserLauncher.cpp"],
+    deps = [
+        "//src/web:browser_launcher",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
