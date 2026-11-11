@@ -167,7 +167,9 @@ class TimingReport
       int max_paths = 100,
       float slack_min = -std::numeric_limits<float>::max(),
       float slack_max = std::numeric_limits<float>::max(),
-      bool include_unconstrained = false) const;
+      bool include_unconstrained = false,
+      const std::vector<std::string>& path_groups = {},
+      const std::string& clock_name = "") const;
 
   // `path_groups` (optional) requests a per-group stacked breakdown: when it
   // has entries, `result.series` is populated over the shared bin edges and the

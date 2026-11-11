@@ -177,7 +177,9 @@ std::vector<TimingPathSummary> TimingReport::getReport(
     int max_paths,
     float slack_min,
     float slack_max,
-    bool include_unconstrained) const
+    bool include_unconstrained,
+    const std::vector<std::string>& path_groups,
+    const std::string& clock_name) const
 {
   std::vector<TimingPathSummary> result;
   if (!sta_) {
@@ -196,7 +198,12 @@ std::vector<TimingPathSummary> TimingReport::getReport(
 
   sta::Search* search = sta_->search();
   sta::SceneSeq scenes = sta_->scenes();
-  sta::StringSeq group_names;
+  // The slack histogram's filters, so a bar lists the paths it counted.
+  sta::StringSeq group_names(path_groups.begin(), path_groups.end());
+  const sta::Clock* clk = nullptr;
+  if (!clock_name.empty()) {
+    clk = sta_->cmdSdc()->findClock(clock_name);
+  }
   sta::PathEndSeq path_ends = search->findPathEnds(
       /*from*/ nullptr,
       /*thrus*/ nullptr,
@@ -220,6 +227,9 @@ std::vector<TimingPathSummary> TimingReport::getReport(
       /*clk_gating_hold*/ false);
 
   for (auto& path_end : path_ends) {
+    if (clk && path_end->targetClk(sta_) != clk) {
+      continue;
+    }
     TimingPathSummary summary;
 
     sta::Path* path = path_end->path();

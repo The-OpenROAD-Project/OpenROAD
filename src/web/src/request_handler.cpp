@@ -5460,6 +5460,12 @@ static std::vector<TimingPathSummary> requestedReport(
     const boost::json::object& json,
     const int max_paths)
 {
+  std::vector<std::string> path_groups;
+  if (auto* v = json.if_contains("path_groups")) {
+    for (const auto& e : v->as_array()) {
+      path_groups.emplace_back(e.as_string());
+    }
+  }
   return report.getReport(
       json.at("is_setup").as_bool(),
       max_paths,
@@ -5467,7 +5473,9 @@ static std::vector<TimingPathSummary> requestedReport(
           json, "slack_min", -std::numeric_limits<float>::max())),
       static_cast<float>(
           jsonOr<double>(json, "slack_max", std::numeric_limits<float>::max())),
-      jsonOr(json, "unconstrained", false));
+      jsonOr(json, "unconstrained", false),
+      path_groups,
+      jsonOr<std::string>(json, "clock_name", ""));
 }
 
 WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)

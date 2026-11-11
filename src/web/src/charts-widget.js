@@ -820,6 +820,14 @@ export class ChartsWidget {
             slack_max: bar.upper,
             unconstrained: false,
         };
+        // The histogram's filters, so a bar lists the paths it counted.
+        const groups = Array.from(
+            this._pathGroupSelect.selectedOptions, (o) => o.value)
+            .filter(Boolean);
+        if (groups.length > 0) reportOptions.path_groups = groups;
+        if (this._clockSelect.value) {
+            reportOptions.clock_name = this._clockSelect.value;
+        }
         try {
             const resp = await withBusyCursor(
                 () => this._app.websocketManager.request({
