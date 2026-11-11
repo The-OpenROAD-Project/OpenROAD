@@ -429,6 +429,11 @@ class RamGen
     std::vector<odb::dbNet*> select_b;
   };
   std::map<std::pair<int, int>, WordWrite> word_write_;
+  // A word of more than kDriveGroup groups: a buffer between its enable
+  // (or a port's take, -1 for the enable) and each kDriveGroup of its
+  // group buffers, shared by the word's folds. Keyed by row, word, the
+  // port or -1, and the group of groups.
+  std::map<std::tuple<int, int, int, int>, odb::dbNet*> super_nets_;
   int sliceOffset(int slice) const
   {
     return bit_folds_ > 1 ? 0 : slice * slice_width_;
