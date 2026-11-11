@@ -479,6 +479,12 @@ void GlobalRouter::startIncremental()
 
 void GlobalRouter::endIncremental(bool save_guides)
 {
+  if (grouter_cbk_ == nullptr) {
+    logger_->error(GRT,
+                   1255,
+                   "global_route -end_incremental requires a prior "
+                   "global_route -start_incremental.");
+  }
   is_incremental_ = true;
   updateDirtyRoutes(save_guides);
   reportIncrementalCongestion();
