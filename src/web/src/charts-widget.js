@@ -814,14 +814,23 @@ export class ChartsWidget {
         if (!bar || bar.count === 0) return;
 
         try {
+            // The histogram's filters, so a bar lists the paths it counted.
+            const req = {
+                type: 'timing_report',
+                is_setup: this._currentTab === 'setup',
+                max_paths: 50,
+                slack_min: bar.lower,
+                slack_max: bar.upper,
+            };
+            const groups = Array.from(
+                this._pathGroupSelect.selectedOptions, (o) => o.value)
+                .filter(Boolean);
+            if (groups.length > 0) req.path_groups = groups;
+            if (this._clockSelect.value) {
+                req.clock_name = this._clockSelect.value;
+            }
             const resp = await withBusyCursor(
-                () => this._app.websocketManager.request({
-                    type: 'timing_report',
-                    is_setup: this._currentTab === 'setup',
-                    max_paths: 50,
-                    slack_min: bar.lower,
-                    slack_max: bar.upper,
-                }));
+                () => this._app.websocketManager.request(req));
             if (this._app.timingWidget) {
                 this._app.timingWidget.showPaths(
                     this._currentTab, resp.paths || []);

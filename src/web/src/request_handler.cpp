@@ -4933,13 +4933,21 @@ WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)
   resp.type = WebSocketResponse::kJson;
   try {
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
+    std::vector<std::string> path_groups;
+    if (auto* v = req.json.if_contains("path_groups")) {
+      for (const auto& e : v->as_array()) {
+        path_groups.emplace_back(e.as_string());
+      }
+    }
     auto paths = timing_report_->getReport(
         req.json.at("is_setup").as_bool(),
         static_cast<int>(req.json.at("max_paths").as_int64()),
         static_cast<float>(jsonOr<double>(
             req.json, "slack_min", -std::numeric_limits<float>::max())),
         static_cast<float>(jsonOr<double>(
-            req.json, "slack_max", std::numeric_limits<float>::max())));
+            req.json, "slack_max", std::numeric_limits<float>::max())),
+        path_groups,
+        jsonOr<std::string>(req.json, "clock_name", ""));
     writePayload(resp, serializeTimingPaths(paths));
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
