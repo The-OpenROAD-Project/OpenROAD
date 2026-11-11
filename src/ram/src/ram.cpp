@@ -553,7 +553,13 @@ void RamGen::makeSlice(const int slice_idx,
                             storage,
                             reset_bit,
                             reset_off);
-    if (num_write > 1 && (local_bit % kDriveGroup == 0 || take_group.empty())) {
+    // a word of one group: its nets drive no more than a group's pins
+    // already, and a buffer would only add a level
+    const bool one_group = word_bits_ <= kDriveGroup;
+    if (num_write > 1 && one_group && take_group.empty()) {
+      take_group = take;
+    } else if (num_write > 1
+               && (local_bit % kDriveGroup == 0 || take_group.empty())) {
       const int group = local_bit / kDriveGroup;
       take_group.assign(num_write, nullptr);
       for (int i = 0; i < num_write; ++i) {
@@ -576,25 +582,30 @@ void RamGen::makeSlice(const int slice_idx,
       }
     }
     if (write_mux_ && (local_bit % kDriveGroup == 0 || we_group == nullptr)) {
-      // a group's enable and hold, in its first bit's cell
+      // a group's enable and hold, in its first bit's cell; a word of one
+      // group takes the word's enable itself
       const int group = local_bit / kDriveGroup;
-      we_group = makeNet(prefix, fmt::format("we_g{}", group));
       hold = makeNet(prefix, fmt::format("hold_g{}", group));
-      makeInst(
-          bit_cell.get(),
-          prefix,
-          fmt::format("we_buf{}", group),
-          buffer_cell_,
-          {
-              {
-                  buffer_ports_[{.type = PortRoleType::DataIn, .index = 0}],
-                  we_net,
-              },
-              {
-                  buffer_ports_[{.type = PortRoleType::DataOut, .index = 0}],
-                  we_group,
-              },
-          });
+      if (one_group) {
+        we_group = we_net;
+      } else {
+        we_group = makeNet(prefix, fmt::format("we_g{}", group));
+        makeInst(
+            bit_cell.get(),
+            prefix,
+            fmt::format("we_buf{}", group),
+            buffer_cell_,
+            {
+                {
+                    buffer_ports_[{.type = PortRoleType::DataIn, .index = 0}],
+                    we_net,
+                },
+                {
+                    buffer_ports_[{.type = PortRoleType::DataOut, .index = 0}],
+                    we_group,
+                },
+            });
+      }
       makeInst(
           bit_cell.get(),
           prefix,
