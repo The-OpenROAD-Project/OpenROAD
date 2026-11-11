@@ -42,10 +42,8 @@ std::string formatNetCheck(const NetCheck& net_check)
     for (const LayerCheck& layer : pin.layers) {
       report += fmt::format("    Layer: {}\n", layer.layer->getConstName());
       formatRatio(report, "Partial area ratio", "Gate area", layer.par);
-      if (layer.car) {
-        formatRatio(
-            report, "Cumulative area ratio", "Cumulative area", *layer.car);
-      }
+      formatRatio(
+          report, "Cumulative area ratio", "Cumulative area", layer.car);
       if (layer.psr) {
         formatRatio(report, "Partial area ratio", "Side area", *layer.psr);
       }
@@ -58,6 +56,17 @@ std::string formatNetCheck(const NetCheck& net_check)
       report += "\n";
     }
     report += "\n";
+  }
+  return report;
+}
+
+std::string formatReport(const DesignCheck& design, bool include_clean_nets)
+{
+  std::string report;
+  for (const NetCheck& net_check : design.nets) {
+    if (include_clean_nets || net_check.violated) {
+      report += formatNetCheck(net_check);
+    }
   }
   return report;
 }

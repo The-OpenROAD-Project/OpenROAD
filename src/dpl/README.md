@@ -47,6 +47,7 @@ detailed_placement
     [-disallow_one_site_gaps]
     [-report_file_name filename]
     [-use_diamond_legalizer]
+    [-pdn_aware]
     [-site_search_window sites]
     [-row_search_window rows]
     [-drc_penalty penalty]
@@ -64,11 +65,22 @@ detailed_placement
 | `-incremental` | By default DPL initiates with all instances unplaced. With this flag DPL will check for already legalized instances and set them as placed. |
 | `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
 | `-use_diamond_legalizer` | Use the legacy diamond search engine instead of the default NegotiationLegalizer. |
+| `-pdn_aware` | Check cell pins and obstructions against fixed vias on special power and ground nets. This check is disabled by default and works with both legalization engines. Supply pins must be connected to their special nets for same-net exemptions. The mode remains active for subsequent `optimize_mirroring` and `check_placement` commands until the next `detailed_placement` call. |
 | `-site_search_window` | NegotiationLegalizer: base number of sites a cell may be moved left or right of its initial position, capped by `-max_displacement`. Default `20`, `0` allowed (no horizontal movement). |
 | `-row_search_window` | NegotiationLegalizer: base number of rows a cell may be moved up or down from its initial position, capped by `-max_displacement`. Default `5`, `0` allowed (no row changes). |
 | `-disable_window_extension` | NegotiationLegalizer: disables all search-window extensions, so the window is fixed to the base `-site_search_window`/`-row_search_window` size regardless of cell size or nearby walls. By default, the effective search window can instead grow past base sizing in two ways: (1) it's extended to at least the cell's own width/height, and (2) extended if cut short by a macro or core boundary. |
 | `-drc_penalty` | NegotiationLegalizer: priority to DRC violations, ramped up each iteration to push DRC cleanup later in the run. Lower values tolerate DRC violations early on while overlaps are resolved. Default `5`, `0` allowed (disables the escalating per-candidate penalty, DRC-violating cells still accrue history cost separately). |
 | `-quiet` | Less verbose, shows: number of instances moves, displacement, HPWL, and runtime at logs and json. Use it when dpl is called by other stages (e.g. after clock tree synthesis or antenna repair). |
+
+The PDN-aware check covers overlap, conservative width/parallel-run-length
+routing spacing, and default cut spacing, with same-net pin exemptions.
+It does not check end-of-line rules, conditional cut-spacing rules, or
+geometry added during pin access.
+The existing pin-blockage check also exempts same-net pin geometry,
+with or without `-pdn_aware`.
+Run `global_connect` after buffer insertion or resizing and before
+`detailed_placement -pdn_aware` when global connection rules define the
+supply bindings.
 
 ### Set Placement Padding
 
@@ -141,10 +153,17 @@ remove_fillers
 The `check_placement` command checks the placement legality. It returns
 `0` if the placement is legal.
 
+With `-fixed`, only fixed instances (e.g., tapcells and endcaps) and macros
+are checked, which validates the floorplan before the standard cells are
+placed. With `-placeable`, only the movable cells are checked. Without either
+option, both are checked.
+
 ```tcl
 check_placement
     [-verbose]
     [-disallow_one_site_gaps]
+    [-fixed]
+    [-placeable]
     [-report_file_name filename]
 ```
 
@@ -154,6 +173,8 @@ check_placement
 | ----- | ----- |
 | `-verbose` | Enable verbose logging. |
 | `-disallow_one_site_gaps` | Option is deprecated. |
+| `-fixed` | Check fixed instances and macros. |
+| `-placeable` | Check movable cells. |
 | `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
 
 ### Optimize Mirroring
@@ -201,10 +222,10 @@ Examples scripts demonstrating how to run `dpl` on a sample design of `aes` as f
 
 There are a set of regression tests in `./test`. Refer to this [section](../../README.md#regression-tests) for more information.
 
-Simply run the following script:
+Simply run the following command:
 
 ```shell
-./test/regression
+bazelisk test //src/dpl/...
 ```
 
 ## Limitations

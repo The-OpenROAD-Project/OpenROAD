@@ -12,19 +12,19 @@ spice file written before analysis: 0
 ########## IR report #################
 Net              : VDD
 Corner           : default
-Total power      : 1.38e-04 W
+Total power      : 7.90e-05 W
 Supply voltage   : 1.10e+00 V
 Worstcase voltage: 1.10e+00 V
 Average voltage  : 1.10e+00 V
-Average IR drop  : 3.13e-04 V
-Worstcase IR drop: 5.04e-04 V
-Percentage drop  : 0.05 %
+Average IR drop  : 1.79e-04 V
+Worstcase IR drop: 2.97e-04 V
+Percentage drop  : 0.03 %
 ######################################
 ########## EM analysis ###############
 Net                : VDD
 Corner             : default
-Maximum current    : 8.10e-05 A
-Average current    : 1.20e-06 A
+Maximum current    : 4.62e-05 A
+Average current    : 6.87e-07 A
 Number of resistors: 2503
 ######################################
 [INFO PSM-0015] Reading location of sources from: Vsrc_gcd_vdd.loc.

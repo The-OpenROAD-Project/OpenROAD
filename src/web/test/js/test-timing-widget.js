@@ -4,7 +4,7 @@
 import './setup-dom.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { TimingWidget } from '../../src/timing-widget.js';
+import { TimingWidget, detailRows } from '../../src/timing-widget.js';
 
 // jsdom does not implement scrollIntoView; stub it so _selectPathRow runs.
 if (!window.HTMLElement.prototype.scrollIntoView) {
@@ -338,5 +338,67 @@ describe('TimingWidget path table sorting', () => {
         assert.equal(tip.style.display, 'none');
         move(1);
         assert.equal(tip.style.display, 'none');
+    });
+});
+
+// A launch path through a two-buffer clock tree: source, two buffers, the
+// register's clock pin, then data.
+function clockedNodes() {
+    const n = (pin, clk, time) => ({ pin, clk, time, fanout: 1, rise: true,
+                                     delay: 0, slew: 0, load: 0 });
+    return [n('clock', true, 0), n('cb1/Y', true, 40), n('cb2/Y', true, 90),
+            n('r1/CLK', true, 100), n('r1/QN', false, 160),
+            n('u1/Y', false, 200), n('r2/D', false, 210)];
+}
+
+describe('detailRows (Expand clock)', () => {
+    it('collapses the clock network to one row, as Qt does', () => {
+        const rows = detailRows(clockedNodes(), false);
+        assert.deepEqual(rows.map((r) => [r.node, r.summary]), [
+            [0, false], [3, true], [4, false], [5, false], [6, false]]);
+    });
+
+    it('lists every clock node when expanded', () => {
+        assert.equal(detailRows(clockedNodes(), true).length, 7);
+    });
+
+    it('has nothing to collapse without a clock network', () => {
+        const nodes = clockedNodes().slice(3);  // ideal clock: pin, then data
+        assert.equal(detailRows(nodes, false).length, 4);
+        assert.equal(detailRows([], false).length, 0);
+    });
+});
+
+describe('TimingWidget Expand clock', () => {
+    it('shows the clock network delay row, and every clock pin when checked', () => {
+        const app = createMockApp();
+        const widget = new TimingWidget(app, () => {});
+        document.body.appendChild(widget.element);
+        widget.showPaths('setup', [makePath(-0.1, 'r2/D',
+                                            { data_nodes: clockedNodes() })]);
+        widget._selectPathRow(0);
+        const pins = () => Array.from(
+            widget._detailTable.querySelectorAll('tbody tr'),
+            (tr) => tr.firstChild.textContent);
+        assert.deepEqual(pins(), ['clock', 'clock network delay',
+                                  'r1/QN', 'u1/Y', 'r2/D']);
+        // the summary row's time is the arrival at the register's clock pin,
+        // and with the source at 0 its delay (the insertion) is the same
+        const summary = widget._detailTable.querySelectorAll('tbody tr')[1];
+        const summaryTime = summary.children[3].textContent;
+        assert.equal(summary.children[4].textContent, summaryTime);
+
+        // clicking the summary highlights the register's clock pin
+        app.requests.length = 0;
+        widget._selectDetailRow(1);
+        const hl = app.requests.find((r) => r.type === 'timing_highlight');
+        assert.equal(hl.pin_name, 'r1/CLK');
+
+        widget._expandClockBox.checked = true;
+        widget._expandClockBox.dispatchEvent(new window.Event('change'));
+        assert.equal(pins().length, 7);
+        assert.equal(pins()[3], 'r1/CLK');
+        const clkRow = widget._detailTable.querySelectorAll('tbody tr')[3];
+        assert.equal(clkRow.children[3].textContent, summaryTime);
     });
 });

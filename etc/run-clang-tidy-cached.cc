@@ -41,8 +41,10 @@ B=${0%%.cc}; [ "$B" -nt "$0" ] || c++ -std=c++17 -o"$B" "$0" && exec "$B" "$@";
 //  CLANG_TIDY_CONFIG  = override configuration file in kConfig.clang_tidy_file
 //  CACHE_DIR          = where to put the cached content; default ~/.cache
 //  CLANG_TIDY_JOBS    = Number of tasks to run in parallel.
-//  COMPILE_JSON       = where to find cmake compile commands;
-//                       default build/compile_commands.json
+//  COMPILE_JSON       = where to find the compilation database;
+//                       default build/compile_commands.json, falling back
+//                       to compile_flags.txt from
+//                       etc/bazel-make-compilation-db.sh
 
 // This file shall be c++17 self-contained; not using any re2 or absl niceties.
 #include <unistd.h>
@@ -94,8 +96,8 @@ struct ConfigValues
   std::string_view file_exclude_re = "^(\\.git|\\.github|build)/";
 
   // A file in the toplevel of the project that should exist, typically
-  // something used to set up the build environment, such as MODULE.bazel,
-  // CMakeLists.txt or similar.
+  // something used to set up the build environment, such as MODULE.bazel
+  // or similar.
   // It is used two-fold:
   //   - As validation if this script is started in the correct directory.
   //   - To take changes there into account as that build file might provide

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -22,7 +23,7 @@ namespace sta {
 // Checks performed:
 // LEF-CHK-001: Macro dimensions aligned to manufacturing grid
 // LEF-CHK-002: Pin coordinates aligned to manufacturing grid
-// LEF-CHK-003: Pin routing grid alignment
+// LEF-CHK-003: Pin routing grid alignment, including cross-layer compatibility
 // LEF-CHK-004-005: Pin accessibility (signal and power)
 // LEF-CHK-006: Polygon count
 // LEF-CHK-007: Antenna information present
@@ -32,6 +33,7 @@ namespace sta {
 // LEF-CHK-010b: Pin minimum area
 // LEF/LIB-CHK-011: Pin direction matches Liberty
 // LEF/LIB-CHK-012: LEF macros and signal pins exist in Liberty
+// LEF/LIB-CHK-013: LEF and Liberty cell areas match
 
 class IpChecker
 {
@@ -54,6 +56,14 @@ class IpChecker
   int getWarningCount() const { return warning_count_; }
 
  private:
+  struct LayerAlignmentConstraint
+  {
+    odb::dbTechLayer* layer;
+    int pitch;
+    int required_offset;
+    bool is_horizontal;
+  };
+
   // Reset warning counter before a new check
   void reset();
 
@@ -66,8 +76,12 @@ class IpChecker
   // LEF-CHK-002: Pin coordinates aligned to manufacturing grid
   void checkPinManufacturingGridAlignment(odb::dbMaster* master);
 
-  // LEF-CHK-003: Pin routing grid alignment
+  // LEF-CHK-003: Pin routing grid alignment, including cross-layer
+  // compatibility
   void checkPinRoutingGridAlignment(odb::dbMaster* master);
+  void checkCrossLayerPinRoutingGridAlignment(
+      const std::string& master_name,
+      const std::vector<LayerAlignmentConstraint>& constraints);
 
   // LEF-CHK-004-005: Pin accessibility (signal and power)
   void checkPinAccessibility(odb::dbMaster* master);
@@ -90,7 +104,7 @@ class IpChecker
   // LEF-CHK-010b: Pin minimum area
   void checkPinMinArea(odb::dbMaster* master);
 
-  // LEF/LIB-CHK-011-012: Check Liberty pin presence and direction
+  // LEF/LIB-CHK-011-013: Check Liberty pin presence, direction, and area
   void checkLibertyPins(odb::dbMaster* master);
 
   // Helper: Check if a pin shape has at least one accessible edge

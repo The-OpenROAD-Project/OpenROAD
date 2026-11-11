@@ -69,12 +69,22 @@ struct SlackHistogramSeries
   std::vector<int> counts;
 };
 
+// A clock the histogram's endpoints are timed against, for the axis title
+// (Qt's "Clocks: <name> <period>").
+struct SlackHistogramClock
+{
+  std::string name;
+  float period;  // in time_unit
+};
+
 struct SlackHistogramResult
 {
   std::vector<SlackHistogramBin> bins;
   int unconstrained_count = 0;
   int total_endpoints = 0;
   std::string time_unit;
+  // The filter's clock, or every clock when none is given.
+  std::vector<SlackHistogramClock> clocks;
   // Per-path-group breakdown over the same bin edges.  Empty for the single
   // aggregate histogram; populated when multiple path groups are requested.
   std::vector<SlackHistogramSeries> series;

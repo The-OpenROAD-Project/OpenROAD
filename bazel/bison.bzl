@@ -1,47 +1,39 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2020-2026, The OpenROAD Authors
-
 """Build rule for generating C or C++ sources with Bison.
+
+Runs the Bazel-built bison from the `bison` BCR module. That bison has no
+data or m4 paths compiled in, so the action passes them through
+BISON_PKGDATADIR and M4, as @bison//:bison.bzl does.
 """
 
-def correct_bison_env_for_action(env, bison):
-    """Modify the Bison environment variables to work in an action that doesn't a have built bison runfiles directory.
+def _pkgdatadir(files):
+    """Derives BISON_PKGDATADIR from @bison//:bison_pkgdatadir.
 
-    The `bison_toolchain.bison_env` parameter assumes that Bison will provided via an executable attribute
-    and thus have built runfiles available to it. This is not the case for this action and any other actions
-    trying to use bison as a tool via the toolchain. This function transforms existing environment variables
-    to support running Bison as desired.
-
-    Args:
-        env (dict): The existing bison environment variables
-        bison (File): The Bison executable
-
-    Returns:
-        Dict: Environment variables required for running Bison.
+    Mirrors _resolve_pkgdatadir in @bison//:bison.bzl: the label resolves
+    either to one tree artifact, or to data files that share a `data`
+    path component.
     """
-    bison_env = dict(env)
+    if len(files) == 1 and files[0].is_directory:
+        return files[0].path
+    for f in files:
+        index = f.path.find("/data/")
+        if index >= 0:
+            return f.path[:index + 5]
+        if f.path.startswith("data/"):
+            return "data"
+    fail("Could not determine BISON_PKGDATADIR: no 'data' directory in %s" % files)
 
-    # Convert the environment variables to non-runfiles forms
-    bison_runfiles_dir = "{}.runfiles/{}".format(
-        bison.path,
-        bison.owner.workspace_name,
-    )
-
-    bison_env["BISON_PKGDATADIR"] = bison_env["BISON_PKGDATADIR"].replace(
-        bison_runfiles_dir,
-        "external/{}".format(bison.owner.workspace_name),  # buildifier: disable=external-path
-    )
-    bison_env["M4"] = bison_env["M4"].replace(
-        bison_runfiles_dir,
-        "{}/external/{}".format(bison.root.path, bison.owner.workspace_name),  # buildifier: disable=external-path
-    )
-
-    return bison_env
+def _tool_files(target):
+    """A target's own files plus its default runfiles, for `tools`."""
+    info = target[DefaultInfo]
+    transitive = [info.files]
+    if info.default_runfiles:
+        transitive.append(info.default_runfiles.files)
+    return depset(transitive = transitive)
 
 def _genyacc_impl(ctx):
     """Implementation for genyacc rule."""
-
-    bison_toolchain = ctx.toolchains["@rules_bison//bison:toolchain_type"].bison_toolchain
 
     # Argument list
     args = ctx.actions.args()
@@ -59,14 +51,18 @@ def _genyacc_impl(ctx):
     ]
 
     ctx.actions.run(
-        executable = bison_toolchain.bison_tool.executable,
-        env = correct_bison_env_for_action(
-            env = bison_toolchain.bison_env,
-            bison = bison_toolchain.bison_tool.executable,
-        ),
+        executable = ctx.executable._bison,
+        env = {
+            "BISON_PKGDATADIR": _pkgdatadir(ctx.files._bison_pkgdatadir),
+            "M4": ctx.file._m4.path,
+        },
         arguments = [args],
         inputs = ctx.files.src,
-        tools = [bison_toolchain.all_files],
+        tools = depset(transitive = [
+            _tool_files(ctx.attr._bison),
+            _tool_files(ctx.attr._m4),
+            _tool_files(ctx.attr._bison_pkgdatadir),
+        ]),
         outputs = outputs,
         mnemonic = "Yacc",
         progress_message = "Generating %s and %s from %s" %
@@ -107,8 +103,19 @@ genyacc = rule(
             allow_single_file = [".y", ".yy", ".yc", ".ypp", ".yxx"],
             doc = "The .y, .yy, or .yc source file for this rule",
         ),
+        "_bison": attr.label(
+            default = Label("@bison//:bison"),
+            cfg = "exec",
+            executable = True,
+        ),
+        "_bison_pkgdatadir": attr.label(
+            default = Label("@bison//:bison_pkgdatadir"),
+            allow_files = True,
+        ),
+        "_m4": attr.label(
+            default = Label("@bison//:m4"),
+            cfg = "exec",
+            allow_single_file = True,
+        ),
     },
-    toolchains = [
-        "@rules_bison//bison:toolchain_type",
-    ],
 )

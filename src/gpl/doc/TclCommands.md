@@ -22,6 +22,11 @@ global_placement
 * __skip_initial_place__ : Skip the initial placement (BiCGSTAB solving) before Nesterov placement. IP improves HPWL by ~5% on large designs.
 * __incremental__ : Enable the incremental global placement. Users would need to tune other parameters (e.g. init_density_penalty) with the pre-placed solutions.
 
+When timing-driven and routability-driven placement are both enabled, retained
+timing-repair cells in congested areas are inflated after routability refinement
+finishes. This uses the shared inflation allowance and available fillers without
+raising density or restarting routability.
+
 ## Tuning Parameters
 * __bin_grid_count__ : Set bin grid's count manually. Default: Defined by internal algorithm. [64,128,256,512,..., int]
 * __density__ : Set target density. Default: 0.70 [0-1, float]

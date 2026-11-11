@@ -68,6 +68,12 @@ struct frInstLocationComp
     if (lp.getX() != rp.getX()) {
       return lp.getX() < rp.getX();
     }
+    // Overlapping instances, such as a buffer inserted on top of another
+    // before legalization, are ordered by id so the order does not depend
+    // on where the instances were allocated.
+    if (lhs->getId() != rhs->getId()) {
+      return lhs->getId() < rhs->getId();
+    }
     return lhs < rhs;
   }
 };

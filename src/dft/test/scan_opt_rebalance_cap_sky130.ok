@@ -1,0 +1,16 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO DFT-0025] Kept 2 chains on clock clock1 (rising edge) as they are; rebalancing does not shorten their scan wiring (57.01 um vs 57.01 um).
+[INFO DFT-0025] Kept 2 chains on clock clock1 (falling edge) as they are; rebalancing does not shorten their scan wiring (58.73 um vs 58.73 um).
+[INFO DFT-0025] Kept 2 chains on clock clock2 (rising edge) as they are; rebalancing does not shorten their scan wiring (45.34 um vs 48.67 um).
+[INFO DFT-0024] Kept 2 chains on clock clock2 (falling edge) as they are; rebalancing would make a chain longer than 5 bits.
+[INFO DFT-0016] Reordered 0 of 8 scan chain(s); scan wire length 195.70 um -> 195.70 um.
+chain_0: bits 5 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+chain_1: bits 4 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+chain_2: bits 5 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+chain_3: bits 4 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+chain_4: bits 5 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+chain_5: bits 4 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+chain_6: bits 5 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+chain_7: bits 4 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+max chain bits: before 5 after 5

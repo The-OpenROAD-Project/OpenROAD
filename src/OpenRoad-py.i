@@ -28,9 +28,6 @@ openroad_git_describe();
 bool
 openroad_gpu_compiled();
 
-bool 
-openroad_python_compiled();
-
 bool
 openroad_gui_compiled();
 

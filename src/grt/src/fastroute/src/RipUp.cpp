@@ -126,11 +126,15 @@ bool FastRouteCore::newRipupCongestedL(const TreeEdge* treeedge,
   const int x_check = treeedge->route.xFirst ? x2 : x1;
   // The y value for the horizontal check
   const int y_check = treeedge->route.xFirst ? y1 : y2;
+  // An NDR net also leaves the edges where the NDR nets fit no single layer
+  const bool check_ndr = edgeCost > 1;
 
   for (int i = ymin; i < ymax; i++) {
     const int cap
         = getEdgeCapacity(nets_[netID], x_check, i, EdgeDirection::Vertical);
-    if (graph2d_.getEstUsageV(x_check, i) > cap) {
+    if (graph2d_.getEstUsageV(x_check, i) > cap
+        || (check_ndr
+            && graph2d_.hasNDRDeficit(x_check, i, EdgeDirection::Vertical))) {
       needRipup = true;
       break;
     }
@@ -139,7 +143,10 @@ bool FastRouteCore::newRipupCongestedL(const TreeEdge* treeedge,
     for (int i = x1; i < x2; i++) {
       const int cap = getEdgeCapacity(
           nets_[netID], i, y_check, EdgeDirection::Horizontal);
-      if (graph2d_.getEstUsageH(i, y_check) > cap) {
+      if (graph2d_.getEstUsageH(i, y_check) > cap
+          || (check_ndr
+              && graph2d_.hasNDRDeficit(
+                  i, y_check, EdgeDirection::Horizontal))) {
         needRipup = true;
         break;
       }
@@ -192,20 +199,29 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
 
   bool needRipup = false;
   FrNet* net = nets_[netID];
+  // An NDR net is also rerouted out of the edges where the NDR nets fit no
+  // single layer, even below the edge capacity
+  const bool check_ndr = net->getEdgeCost() > 1;
 
   const std::vector<GPoint3D>& grids = treeedge->route.grids;
   for (int i = 0; i < treeedge->route.routelen; i++) {
     if (grids[i].x == grids[i + 1].x) {  // a vertical edge
-      if (graph2d_.getUsageRedV(grids[i].x,
-                                std::min(grids[i].y, grids[i + 1].y))
-          >= v_capacity_ - ripup_threshold) {
+      const int min_y = std::min(grids[i].y, grids[i + 1].y);
+      if (graph2d_.getUsageRedV(grids[i].x, min_y)
+              >= v_capacity_ - ripup_threshold
+          || (check_ndr
+              && graph2d_.hasNDRDeficit(
+                  grids[i].x, min_y, EdgeDirection::Vertical))) {
         needRipup = true;
         break;
       }
     } else if (grids[i].y == grids[i + 1].y) {  // a horizontal edge
-      if (graph2d_.getUsageRedH(std::min(grids[i].x, grids[i + 1].x),
-                                grids[i].y)
-          >= h_capacity_ - ripup_threshold) {
+      const int min_x = std::min(grids[i].x, grids[i + 1].x);
+      if (graph2d_.getUsageRedH(min_x, grids[i].y)
+              >= h_capacity_ - ripup_threshold
+          || (check_ndr
+              && graph2d_.hasNDRDeficit(
+                  min_x, grids[i].y, EdgeDirection::Horizontal))) {
         needRipup = true;
         break;
       }

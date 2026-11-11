@@ -35,9 +35,8 @@ class AbcLibrary
   abc::SC_Lib* abc_library() { return abc_library_.get(); }
   abc::Mio_Library_t* mio_library();
   bool IsSupportedCell(const std::string& cell_name);
-  bool IsConst0Cell(const std::string& cell_name);
-  bool IsConst1Cell(const std::string& cell_name);
-  bool IsConstCell(const std::string& cell_name);
+  bool IsConst0Port(const std::string& cell_name, const std::string& port_name);
+  bool IsConst1Port(const std::string& cell_name, const std::string& port_name);
   std::pair<abc::SC_Cell*, abc::SC_Pin*> ConstantZeroCell();
   std::pair<abc::SC_Cell*, abc::SC_Pin*> ConstantOneCell();
 
@@ -48,8 +47,8 @@ class AbcLibrary
   utl::UniquePtrWithDeleter<abc::Mio_Library_t> mio_library_ = nullptr;
   utl::Logger* logger_ = nullptr;
   std::set<std::string> supported_cells_;
-  std::unordered_set<std::string> const1_gates_;
-  std::unordered_set<std::string> const0_gates_;
+  std::unordered_map<std::string, std::string> const1_gates_;
+  std::unordered_map<std::string, std::string> const0_gates_;
   std::optional<std::pair<abc::SC_Cell*, abc::SC_Pin*>> const0_cell_;
   std::optional<std::pair<abc::SC_Cell*, abc::SC_Pin*>> const1_cell_;
   bool const_gates_initalized_ = false;

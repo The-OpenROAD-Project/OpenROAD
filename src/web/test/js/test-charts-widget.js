@@ -6,7 +6,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
     ChartsWidget,
-    computeHistogramLayout, hitTestColumn, buildChartCsv,
+    computeHistogramLayout, hitTestColumn, buildChartCsv, slackAxisTitle,
     kLeftMargin, kRightMargin, kTopMargin, kBottomMargin,
 } from '../../src/charts-widget.js';
 
@@ -495,5 +495,39 @@ describe('ChartsWidget fanout tab', () => {
         // nor reported in the (now Setup) status label.
         assert.notEqual(widget._histogramData, fanoutResponse);
         assert.doesNotMatch(widget._statusLabel.textContent, /20 nets/);
+    });
+});
+
+describe('slackAxisTitle', () => {
+    it('is the unit alone without clocks', () => {
+        assert.deepEqual(slackAxisTitle('ps', []), ['Slack [ps]']);
+        assert.deepEqual(slackAxisTitle('ps', undefined), ['Slack [ps]']);
+    });
+
+    it('names each clock with its period, as Qt does', () => {
+        assert.deepEqual(
+            slackAxisTitle('ps', [{ name: 'clock', period: 473 }]),
+            ['Slack [ps], Clocks: clock 473']);
+        assert.deepEqual(
+            slackAxisTitle('ns', [{ name: 'clk', period: 0.47312 }]),
+            ['Slack [ns], Clocks: clk 0.473']);
+    });
+
+    it('wraps two clocks on the first line, three after', () => {
+        const clocks = ['a', 'b', 'c', 'd', 'e'].map(
+            (name, i) => ({ name, period: 100 * (i + 1) }));
+        assert.deepEqual(slackAxisTitle('ps', clocks), [
+            'Slack [ps], Clocks: a 100, b 200',
+            'c 300, d 400, e 500',
+        ]);
+    });
+
+    it('says how many clocks it leaves out past the last line', () => {
+        const clocks = Array.from({ length: 9 },
+            (_, i) => ({ name: `c${i}`, period: 1000 }));
+        const lines = slackAxisTitle('ps', clocks);
+        assert.equal(lines.length, 2);
+        assert.equal(lines[0], 'Slack [ps], Clocks: c0 1000, c1 1000');
+        assert.equal(lines[1], '… and 7 more clocks');
     });
 });

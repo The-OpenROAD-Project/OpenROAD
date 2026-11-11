@@ -1,0 +1,541 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: reg1
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 19 components and 100 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 38 connections.
+[INFO ODB-0133]     Created 9 nets and 33 connections.
+Critical-path comparison: Rebuffer tree impact summary compares estimated vs golden arrival delta.
+Side-load comparison: Rebuffer tree side-path impact summary compares each side-load estimated delta vs golden delta.
+Delay estimator Rebuffer tree accuracy
+  instance:          r1
+  driver pin:        r1/Q
+  endpoint path:     r2/D
+  delay levels:      1
+  estimator legal:   true (estimate_legal)
+  tree buffers:      3
+  tree loads:        11
+  target load pin:   u1/A
+  side loss:         -78.988 ps
+
+Rebuffer tree impact summary
+                                      estimated         golden          error
+  pre-post arrival delta:            135.465 ps     136.651 ps      -1.186 ps
+  worst side improvement:              7.999 ps      30.790 ps     -22.790 ps
+  worst side slack after:              5.494 ps      29.427 ps     -23.934 ps
+
+============================================================
+Critical path (r1/Q -> u1/A)
+============================================================
+Stage-window output arrival reference
+  reference pin:                   u2/A
+  golden before arrival:              285.015 ps
+  golden after arrival:               148.365 ps
+  golden reference arrival delta:     136.651 ps
+
+Stage window detail
+  estimated delay = cell_delay + extra_est; golden delay = cell_delay + wire_delay
+
+[0] target  path_index=2  pin=r1/Q
+    cell: pre=DFF_X1  post=DFF_X1
+
+    metric                           estimated       golden        error
+    pre-ECO input slew(ps)               0.000        0.000       +0.000
+    post-ECO input slew(ps)              0.000        0.000       +0.000
+    pre-ECO cell delay(ps)             203.704      203.704       +0.000
+    post-ECO cell delay(ps)            103.076      102.214       +0.862
+    pre-ECO output slew(ps)            147.571      147.571       +0.000
+    post-ECO output slew(ps)            24.797       24.377       +0.420
+    pre-ECO wire delay(ps)              27.399       27.399       +0.000
+    post-ECO wire delay(ps)              1.914        1.776       +0.139
+    pre-ECO load cap(fF)                81.401       81.401       +0.000
+    post-ECO load cap(fF)                9.984        9.844       +0.140
+    ------------------------------------------------------------------
+    pre-ECO stage delay(ps)            231.103      231.103       +0.000
+    post-ECO stage delay(ps)           104.990      103.990       +1.001
+    pre-post delay delta(ps)           126.113      127.113       -1.001
+
+[1] fanout  path_index=4  pin=u1/Z
+    cell: pre=BUF_X1  post=BUF_X1
+
+    metric                           estimated       golden        error
+    pre-ECO input slew(ps)             154.838      154.838       +0.000
+    post-ECO input slew(ps)             24.922       24.390       +0.531
+    pre-ECO cell delay(ps)              52.221       52.221       +0.000
+    post-ECO cell delay(ps)             42.869       42.685       +0.183
+    pre-ECO output slew(ps)             23.372       23.372       +0.000
+    post-ECO output slew(ps)            21.469       21.344       +0.125
+    pre-ECO wire delay(ps)               1.692        1.692       +0.000
+    post-ECO wire delay(ps)              1.692        1.690       +0.002
+    pre-ECO load cap(fF)                 8.509        8.509       +0.000
+    post-ECO load cap(fF)                8.509        8.509       +0.000
+    ------------------------------------------------------------------
+    pre-ECO stage delay(ps)             53.912       53.912       +0.000
+    post-ECO stage delay(ps)            44.560       44.375       +0.185
+    pre-post delay delta(ps)             9.352        9.537       -0.185
+
+============================================================
+Side-path aggregate summary
+============================================================
+Rebuffer tree side-path impact summary
+     est delta       golden        error    est slack golden slack    slack err     result  load pin
+        34.055       54.999      -20.944       63.911       84.855      -20.944      legal  side_r3/A
+        22.554       45.702      -23.148       15.031       38.179      -23.148      legal  r5/D
+        35.883       59.531      -23.648        8.673       32.321      -23.648      legal  r6/D
+        49.748       73.682      -23.934        5.494       29.427      -23.934      legal  r7/D
+         7.999       30.790      -22.790       11.119       33.910      -22.790      legal  side_r4/A
+
+Rebuffer tree side-path stage details
+
+============================================================
+Side path #1 (r1/Q -> side_r3/A)
+============================================================
+  reference pin:   side_r3/A
+  estimated delta:     34.055 ps
+  golden delta:        54.999 ps
+  error:              -20.944 ps
+
+Stage window detail
+  estimated delay = cell_delay + extra_est; golden delay = cell_delay + wire_delay
+
+[0] fanin  path_index=2  pin=r1/Q -> side_r3/A <pre-ECO side branch>
+    cell: pre=DFF_X1  post=DFF_X1
+
+    metric                           estimated       golden        error
+    pre-ECO input slew(ps)               0.000        0.000       +0.000
+    post-ECO input slew(ps)              0.000        0.000       +0.000
+    pre-ECO cell delay(ps)             203.704      203.704       +0.000
+    post-ECO cell delay(ps)            103.076      102.214       +0.862
+    pre-ECO output slew(ps)            147.571      147.571       +0.000
+    post-ECO output slew(ps)            24.797       24.377       +0.420
+    pre-ECO wire delay(ps)                   -            -            -
+    post-ECO wire delay(ps)                  -            -            -
+    pre-ECO load cap(fF)                81.401       81.401       +0.000
+    post-ECO load cap(fF)                9.984        9.844       +0.140
+    ------------------------------------------------------------------
+    pre-ECO stage delay(ps)            203.704      203.704       +0.000
+    post-ECO stage delay(ps)           103.146      102.243       +0.903
+    pre-post delay delta(ps)           100.558      101.461       -0.903
+
+[1] target  path_index=2  pin=delay_estimator_rebuffer3/Z
+    cell: pre=-  post=BUF_X1
+
+    metric                           estimated       golden        error
+    pre-ECO input slew(ps)                   -            -            -
+    post-ECO input slew(ps)             24.797       24.377       +0.420
+    pre-ECO cell delay(ps)                   -            -            -
+    post-ECO cell delay(ps)             60.382       47.025      +13.356
+    pre-ECO output slew(ps)                  -            -            -
+    post-ECO output slew(ps)            38.288       25.363      +12.925
+    pre-ECO wire delay(ps)                   -            -            -
+    post-ECO wire delay(ps)                  -            -            -
+    pre-ECO load cap(fF)                     -            -            -
+    post-ECO load cap(fF)               17.780       10.351       +7.429
+    ------------------------------------------------------------------
+    pre-ECO stage delay(ps)                  -            -            -
+    post-ECO stage delay(ps)            60.382       47.025      +13.356
+    pre-post delay delta(ps)                 -            -            -
+
+[2] fanout  path_index=2  pin=side_r3/A <side-load wire>
+    cell: pre=tree-wire  post=tree-wire
+
+    metric                           estimated       golden        error
+    pre-ECO input slew(ps)             147.571      147.571       +0.000
+    post-ECO input slew(ps)             38.288       25.363      +12.925
+    pre-ECO cell delay(ps)                   -            -            -
+    post-ECO cell delay(ps)                  -            -            -
+    pre-ECO output slew(ps)                  -            -            -
+    post-ECO output slew(ps)                 -            -            -
+    pre-ECO wire delay(ps)                   -            -            -
+    post-ECO wire delay(ps)              6.700        0.015       +6.685
+    pre-ECO load cap(fF)                81.401       81.401       +0.000
+    post-ECO load cap(fF)               17.780       10.351       +7.429
+    ------------------------------------------------------------------
+    pre-ECO stage delay(ps)              0.579        0.579       +0.000
+    post-ECO stage delay(ps)             6.700        0.015       +6.685
+    pre-post delay delta(ps)            -6.121        0.563       -6.685
+
+[3] fanout  path_index=4  pin=side_r3/Z
+    cell: pre=BUF_X1  post=BUF_X1
+
+    metric                           estimated       golden        error
+    pre-ECO input slew(ps)                   -      147.573            -
+    post-ECO input slew(ps)                  -       25.363            -
+    pre-ECO cell delay(ps)                   -       33.540            -
+    post-ECO cell delay(ps)                  -       26.370            -
+    pre-ECO output slew(ps)                  -       11.676            -
+    post-ECO output slew(ps)                 -        7.135            -
+    pre-ECO wire delay(ps)                   -        0.027            -
+    post-ECO wire delay(ps)                  -        0.027            -
+    pre-ECO load cap(fF)                     -        1.556            -
+    post-ECO load cap(fF)                    -        1.556            -
+    ------------------------------------------------------------------
+    pre-ECO stage delay(ps)                  -       33.567            -
+    post-ECO stage delay(ps)                 -       26.396            -
+    pre-post delay delta(ps)                 -        7.171            -
+
+============================================================
+Side path #2 (r1/Q -> r5/D)
+============================================================
+  reference pin:   r5/D
+  estimated delta:     22.554 ps
+  golden delta:        45.702 ps
+  error:              -23.148 ps
+
+Stage window detail
+  estimated delay = cell_delay + extra_est; golden delay = cell_delay + wire_delay
+
+[0] fanin  path_index=2  pin=r1/Q -> r5/D <pre-ECO side branch>
+    cell: pre=DFF_X1  post=DFF_X1
+
+    metric                           estimated       golden        error
+    pre-ECO input slew(ps)               0.000        0.000       +0.000
+    post-ECO input slew(ps)              0.000        0.000       +0.000
+    pre-ECO cell delay(ps)             203.704      203.704       +0.000
+    post-ECO cell delay(ps)            103.076      102.214       +0.862
+    pre-ECO output slew(ps)            147.571      147.571       +0.000
+    post-ECO output slew(ps)            24.797       24.377       +0.420
+    pre-ECO wire delay(ps)                   -            -            -
+    post-ECO wire delay(ps)                  -            -            -
+    pre-ECO load cap(fF)                81.401       81.401       +0.000
+    post-ECO load cap(fF)                9.984        9.844       +0.140
+    ------------------------------------------------------------------
+    pre-ECO stage delay(ps)            203.704      203.704       +0.000
+    post-ECO stage delay(ps)           103.146      102.243       +0.903
+    pre-post delay delta(ps)           100.558      101.461       -0.903
+
+[1] target  path_index=2  pin=delay_estimator_rebuffer3/Z
+    cell: pre=-  post=BUF_X1
+
+    metric                           estimated       golden        error
+    pre-ECO input slew(ps)                   -            -            -
+    post-ECO input slew(ps)             24.797       24.377       +0.420
+    pre-ECO cell delay(ps)                   -            -            -
+    post-ECO cell delay(ps)             60.382       47.025      +13.356
+    pre-ECO output slew(ps)                  -            -            -
+    post-ECO output slew(ps)            38.288       25.363      +12.925
+    pre-ECO wire delay(ps)                   -            -            -
+    post-ECO wire delay(ps)              5.008        1.974       +3.034
+    pre-ECO load cap(fF)                     -            -            -
+    post-ECO load cap(fF)               17.780       10.351       +7.429
+    ------------------------------------------------------------------
+    pre-ECO stage delay(ps)                  -            -            -
+    post-ECO stage delay(ps)            65.390       49.000      +16.390
+    pre-post delay delta(ps)                 -            -            -
+
+[2] target  path_index=2  pin=delay_estimator_rebuffer2/Z
+    cell: pre=-  post=BUF_X2
+
+    metric                           estimated       golden        error
+    pre-ECO input slew(ps)                   -            -            -
+    post-ECO input slew(ps)             38.881       25.396      +13.484
+    pre-ECO cell delay(ps)                   -            -            -
+    post-ECO cell delay(ps)             54.548       49.046       +5.501
+    pre-ECO output slew(ps)                  -            -            -
+    post-ECO output slew(ps)            31.372       30.568       +0.805
+    pre-ECO wire delay(ps)                   -            -            -
+    post-ECO wire delay(ps)                  -            -            -
+    pre-ECO load cap(fF)                     -            -            -
+    post-ECO load cap(fF)               28.352       28.407       -0.055
+    ------------------------------------------------------------------
+    pre-ECO stage delay(ps)                  -            -            -
+    post-ECO stage delay(ps)            54.548       49.046       +5.501
+    pre-post delay delta(ps)                 -            -            -
+
+[3] fanout  path_index=2  pin=r5/D <side-load wire>
+    cell: pre=tree-wire  post=tree-wire
+
+    metric                           estimated       golden        error
+    pre-ECO input slew(ps)             147.571      147.571       +0.000
+    post-ECO input slew(ps)             31.372       30.568       +0.805
+    pre-ECO cell delay(ps)                   -            -            -
+    post-ECO cell delay(ps)                  -            -            -
+    pre-ECO output slew(ps)                  -            -            -
+    post-ECO output slew(ps)                 -            -            -
+    pre-ECO wire delay(ps)              50.780       50.780       +0.000
+    post-ECO wire delay(ps)              8.846        8.493       +0.353
+    pre-ECO load cap(fF)                81.401       81.401       +0.000
+    post-ECO load cap(fF)               28.352       28.407       -0.055
+    ------------------------------------------------------------------
+    pre-ECO stage delay(ps)             50.780       50.780       +0.000
+    post-ECO stage delay(ps)             8.846        8.493       +0.353
+    pre-post delay delta(ps)            41.934       42.287       -0.353
+
+============================================================
+Side path #3 (r1/Q -> r6/D)
+============================================================
+  reference pin:   r6/D
+  estimated delta:     35.883 ps
+  golden delta:        59.531 ps
+  error:              -23.648 ps
+
+Stage window detail
+  estimated delay = cell_delay + extra_est; golden delay = cell_delay + wire_delay
+
+[0] fanin  path_index=2  pin=r1/Q -> r6/D <pre-ECO side branch>
+    cell: pre=DFF_X1  post=DFF_X1
+
+    metric                           estimated       golden        error
+    pre-ECO input slew(ps)               0.000        0.000       +0.000
+    post-ECO input slew(ps)              0.000        0.000       +0.000
+    pre-ECO cell delay(ps)             203.704      203.704       +0.000
+    post-ECO cell delay(ps)            103.076      102.214       +0.862
+    pre-ECO output slew(ps)            147.571      147.571       +0.000
+    post-ECO output slew(ps)            24.797       24.377       +0.420
+    pre-ECO wire delay(ps)                   -            -            -
+    post-ECO wire delay(ps)                  -            -            -
+    pre-ECO load cap(fF)                81.401       81.401       +0.000
+    post-ECO load cap(fF)                9.984        9.844       +0.140
+    ------------------------------------------------------------------
+    pre-ECO stage delay(ps)            203.704      203.704       +0.000
+    post-ECO stage delay(ps)           103.146      102.243       +0.903
+    pre-post delay delta(ps)           100.558      101.461       -0.903
+
+[1] target  path_index=2  pin=delay_estimator_rebuffer3/Z
+    cell: pre=-  post=BUF_X1
+
+    metric                           estimated       golden        error
+    pre-ECO input slew(ps)                   -            -            -
+    post-ECO input slew(ps)             24.797       24.377       +0.420
+    pre-ECO cell delay(ps)                   -            -            -
+    post-ECO cell delay(ps)             60.382       47.025      +13.356
+    pre-ECO output slew(ps)                  -            -            -
+    post-ECO output slew(ps)            38.288       25.363      +12.925
+    pre-ECO wire delay(ps)                   -            -            -
+    post-ECO wire delay(ps)              5.008        1.974       +3.034
+    pre-ECO load cap(fF)                     -            -            -
+    post-ECO load cap(fF)               17.780       10.351       +7.429
+    ------------------------------------------------------------------
+    pre-ECO stage delay(ps)                  -            -            -
+    post-ECO stage delay(ps)            65.390       49.000      +16.390
+    pre-post delay delta(ps)                 -            -            -
+
+[2] target  path_index=2  pin=delay_estimator_rebuffer2/Z
+    cell: pre=-  post=BUF_X2
+
+    metric                           estimated       golden        error
+    pre-ECO input slew(ps)                   -            -            -
+    post-ECO input slew(ps)             38.881       25.396      +13.484
+    pre-ECO cell delay(ps)                   -            -            -
+    post-ECO cell delay(ps)             54.548       49.046       +5.501
+    pre-ECO output slew(ps)                  -            -            -
+    post-ECO output slew(ps)            31.372       30.568       +0.805
+    pre-ECO wire delay(ps)                   -            -            -
+    post-ECO wire delay(ps)                  -            -            -
+    pre-ECO load cap(fF)                     -            -            -
+    post-ECO load cap(fF)               28.352       28.407       -0.055
+    ------------------------------------------------------------------
+    pre-ECO stage delay(ps)                  -            -            -
+    post-ECO stage delay(ps)            54.548       49.046       +5.501
+    pre-post delay delta(ps)                 -            -            -
+
+[3] fanout  path_index=2  pin=r6/D <side-load wire>
+    cell: pre=tree-wire  post=tree-wire
+
+    metric                           estimated       golden        error
+    pre-ECO input slew(ps)             147.571      147.571       +0.000
+    post-ECO input slew(ps)             31.372       30.568       +0.805
+    pre-ECO cell delay(ps)                   -            -            -
+    post-ECO cell delay(ps)                  -            -            -
+    pre-ECO output slew(ps)                  -            -            -
+    post-ECO output slew(ps)                 -            -            -
+    pre-ECO wire delay(ps)              69.302       69.302       +0.000
+    post-ECO wire delay(ps)             14.039       13.186       +0.853
+    pre-ECO load cap(fF)                81.401       81.401       +0.000
+    post-ECO load cap(fF)               28.352       28.407       -0.055
+    ------------------------------------------------------------------
+    pre-ECO stage delay(ps)             69.302       69.302       +0.000
+    post-ECO stage delay(ps)            14.039       13.186       +0.853
+    pre-post delay delta(ps)            55.263       56.116       -0.853
+
+============================================================
+Side path #4 (r1/Q -> r7/D)
+============================================================
+  reference pin:   r7/D
+  estimated delta:     49.748 ps
+  golden delta:        73.682 ps
+  error:              -23.934 ps
+
+Stage window detail
+  estimated delay = cell_delay + extra_est; golden delay = cell_delay + wire_delay
+
+[0] fanin  path_index=2  pin=r1/Q -> r7/D <pre-ECO side branch>
+    cell: pre=DFF_X1  post=DFF_X1
+
+    metric                           estimated       golden        error
+    pre-ECO input slew(ps)               0.000        0.000       +0.000
+    post-ECO input slew(ps)              0.000        0.000       +0.000
+    pre-ECO cell delay(ps)             203.704      203.704       +0.000
+    post-ECO cell delay(ps)            103.076      102.214       +0.862
+    pre-ECO output slew(ps)            147.571      147.571       +0.000
+    post-ECO output slew(ps)            24.797       24.377       +0.420
+    pre-ECO wire delay(ps)                   -            -            -
+    post-ECO wire delay(ps)                  -            -            -
+    pre-ECO load cap(fF)                81.401       81.401       +0.000
+    post-ECO load cap(fF)                9.984        9.844       +0.140
+    ------------------------------------------------------------------
+    pre-ECO stage delay(ps)            203.704      203.704       +0.000
+    post-ECO stage delay(ps)           103.146      102.243       +0.903
+    pre-post delay delta(ps)           100.558      101.461       -0.903
+
+[1] target  path_index=2  pin=delay_estimator_rebuffer3/Z
+    cell: pre=-  post=BUF_X1
+
+    metric                           estimated       golden        error
+    pre-ECO input slew(ps)                   -            -            -
+    post-ECO input slew(ps)             24.797       24.377       +0.420
+    pre-ECO cell delay(ps)                   -            -            -
+    post-ECO cell delay(ps)             60.382       47.025      +13.356
+    pre-ECO output slew(ps)                  -            -            -
+    post-ECO output slew(ps)            38.288       25.363      +12.925
+    pre-ECO wire delay(ps)                   -            -            -
+    post-ECO wire delay(ps)              5.008        1.974       +3.034
+    pre-ECO load cap(fF)                     -            -            -
+    post-ECO load cap(fF)               17.780       10.351       +7.429
+    ------------------------------------------------------------------
+    pre-ECO stage delay(ps)                  -            -            -
+    post-ECO stage delay(ps)            65.390       49.000      +16.390
+    pre-post delay delta(ps)                 -            -            -
+
+[2] target  path_index=2  pin=delay_estimator_rebuffer2/Z
+    cell: pre=-  post=BUF_X2
+
+    metric                           estimated       golden        error
+    pre-ECO input slew(ps)                   -            -            -
+    post-ECO input slew(ps)             38.881       25.396      +13.484
+    pre-ECO cell delay(ps)                   -            -            -
+    post-ECO cell delay(ps)             54.548       49.046       +5.501
+    pre-ECO output slew(ps)                  -            -            -
+    post-ECO output slew(ps)            31.372       30.568       +0.805
+    pre-ECO wire delay(ps)                   -            -            -
+    post-ECO wire delay(ps)                  -            -            -
+    pre-ECO load cap(fF)                     -            -            -
+    post-ECO load cap(fF)               28.352       28.407       -0.055
+    ------------------------------------------------------------------
+    pre-ECO stage delay(ps)                  -            -            -
+    post-ECO stage delay(ps)            54.548       49.046       +5.501
+    pre-post delay delta(ps)                 -            -            -
+
+[3] fanout  path_index=2  pin=r7/D <side-load wire>
+    cell: pre=tree-wire  post=tree-wire
+
+    metric                           estimated       golden        error
+    pre-ECO input slew(ps)             147.571      147.571       +0.000
+    post-ECO input slew(ps)             31.372       30.568       +0.805
+    pre-ECO cell delay(ps)                   -            -            -
+    post-ECO cell delay(ps)                  -            -            -
+    pre-ECO output slew(ps)                  -            -            -
+    post-ECO output slew(ps)                 -            -            -
+    pre-ECO wire delay(ps)              85.266       85.266       +0.000
+    post-ECO wire delay(ps)             16.138       14.999       +1.139
+    pre-ECO load cap(fF)                81.401       81.401       +0.000
+    post-ECO load cap(fF)               28.352       28.407       -0.055
+    ------------------------------------------------------------------
+    pre-ECO stage delay(ps)             85.266       85.266       +0.000
+    post-ECO stage delay(ps)            16.138       14.999       +1.139
+    pre-post delay delta(ps)            69.128       70.267       -1.139
+
+============================================================
+Side path #5 (r1/Q -> side_r4/A)
+============================================================
+  reference pin:   side_r4/A
+  estimated delta:      7.999 ps
+  golden delta:        30.790 ps
+  error:              -22.790 ps
+
+Stage window detail
+  estimated delay = cell_delay + extra_est; golden delay = cell_delay + wire_delay
+
+[0] fanin  path_index=2  pin=r1/Q -> side_r4/A <pre-ECO side branch>
+    cell: pre=DFF_X1  post=DFF_X1
+
+    metric                           estimated       golden        error
+    pre-ECO input slew(ps)               0.000        0.000       +0.000
+    post-ECO input slew(ps)              0.000        0.000       +0.000
+    pre-ECO cell delay(ps)             203.704      203.704       +0.000
+    post-ECO cell delay(ps)            103.076      102.214       +0.862
+    pre-ECO output slew(ps)            147.571      147.571       +0.000
+    post-ECO output slew(ps)            24.797       24.377       +0.420
+    pre-ECO wire delay(ps)                   -            -            -
+    post-ECO wire delay(ps)                  -            -            -
+    pre-ECO load cap(fF)                81.401       81.401       +0.000
+    post-ECO load cap(fF)                9.984        9.844       +0.140
+    ------------------------------------------------------------------
+    pre-ECO stage delay(ps)            203.704      203.704       +0.000
+    post-ECO stage delay(ps)           103.146      102.243       +0.903
+    pre-post delay delta(ps)           100.558      101.461       -0.903
+
+[1] target  path_index=2  pin=delay_estimator_rebuffer3/Z
+    cell: pre=-  post=BUF_X1
+
+    metric                           estimated       golden        error
+    pre-ECO input slew(ps)                   -            -            -
+    post-ECO input slew(ps)             24.797       24.377       +0.420
+    pre-ECO cell delay(ps)                   -            -            -
+    post-ECO cell delay(ps)             60.382       47.025      +13.356
+    pre-ECO output slew(ps)                  -            -            -
+    post-ECO output slew(ps)            38.288       25.363      +12.925
+    pre-ECO wire delay(ps)                   -            -            -
+    post-ECO wire delay(ps)              5.008        1.974       +3.034
+    pre-ECO load cap(fF)                     -            -            -
+    post-ECO load cap(fF)               17.780       10.351       +7.429
+    ------------------------------------------------------------------
+    pre-ECO stage delay(ps)                  -            -            -
+    post-ECO stage delay(ps)            65.390       49.000      +16.390
+    pre-post delay delta(ps)                 -            -            -
+
+[2] target  path_index=2  pin=delay_estimator_rebuffer2/Z
+    cell: pre=-  post=BUF_X2
+
+    metric                           estimated       golden        error
+    pre-ECO input slew(ps)                   -            -            -
+    post-ECO input slew(ps)             38.881       25.396      +13.484
+    pre-ECO cell delay(ps)                   -            -            -
+    post-ECO cell delay(ps)             54.548       49.046       +5.501
+    pre-ECO output slew(ps)                  -            -            -
+    post-ECO output slew(ps)            31.372       30.568       +0.805
+    pre-ECO wire delay(ps)                   -            -            -
+    post-ECO wire delay(ps)                  -            -            -
+    pre-ECO load cap(fF)                     -            -            -
+    post-ECO load cap(fF)               28.352       28.407       -0.055
+    ------------------------------------------------------------------
+    pre-ECO stage delay(ps)                  -            -            -
+    post-ECO stage delay(ps)            54.548       49.046       +5.501
+    pre-post delay delta(ps)                 -            -            -
+
+[3] fanout  path_index=2  pin=side_r4/A <side-load wire>
+    cell: pre=tree-wire  post=tree-wire
+
+    metric                           estimated       golden        error
+    pre-ECO input slew(ps)             147.571      147.571       +0.000
+    post-ECO input slew(ps)             31.372       30.568       +0.805
+    pre-ECO cell delay(ps)                   -            -            -
+    post-ECO cell delay(ps)                  -            -            -
+    pre-ECO output slew(ps)                  -            -            -
+    post-ECO output slew(ps)                 -            -            -
+    pre-ECO wire delay(ps)              27.379       27.379       +0.000
+    post-ECO wire delay(ps)                  -            -            -
+    pre-ECO load cap(fF)                81.401       81.401       +0.000
+    post-ECO load cap(fF)               28.352       28.407       -0.055
+    ------------------------------------------------------------------
+    pre-ECO stage delay(ps)             27.379       27.379       +0.000
+    post-ECO stage delay(ps)             0.000        0.004       -0.004
+    pre-post delay delta(ps)            27.379       27.375       +0.004
+
+[4] fanout  path_index=4  pin=side_r4/Z
+    cell: pre=BUF_X1  post=BUF_X1
+
+    metric                           estimated       golden        error
+    pre-ECO input slew(ps)                   -      154.829            -
+    post-ECO input slew(ps)                  -       30.568            -
+    pre-ECO cell delay(ps)                   -       33.412            -
+    post-ECO cell delay(ps)                  -       27.414            -
+    pre-ECO output slew(ps)                  -       11.909            -
+    post-ECO output slew(ps)                 -        7.319            -
+    pre-ECO wire delay(ps)                   -        0.027            -
+    post-ECO wire delay(ps)                  -        0.027            -
+    pre-ECO load cap(fF)                     -        1.556            -
+    post-ECO load cap(fF)                    -        1.556            -
+    ------------------------------------------------------------------
+    pre-ECO stage delay(ps)                  -       33.439            -
+    post-ECO stage delay(ps)                 -       27.441            -
+    pre-post delay delta(ps)                 -        5.998            -

@@ -134,7 +134,7 @@ regression_rule_test = rule(
             mandatory = True,
         ),
         "test_type": attr.string(
-            doc = "Test type: 'tcl', 'python' (via openroad), or 'standalone_python'. Auto-detected if not specified.",
+            doc = "Test type: 'tcl', 'python' or 'standalone_python' (both run under python3). Auto-detected if not specified.",
             default = "",
         ),
     },

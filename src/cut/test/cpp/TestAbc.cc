@@ -42,6 +42,13 @@
 #include "utl/deleter.h"
 #include "utl/unique_name.h"
 
+// Without explicit main the main from ABC is picked over gtest's one
+int main(int argc, char** argv)
+{
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
+
 // Headers have duplicate declarations so we include
 // a forward one to get at this function without angering
 // gcc.
@@ -595,18 +602,23 @@ TEST_F(AbcTestSky130, EnsureThatSky130MultiOutputConstCellsAreMapped)
   factory.AddDbSta(sta_.get());
   AbcLibrary abc_library = factory.Build();
 
-  LoadVerilog(kPrefix + "sky130_const_cell.v");
+  LoadVerilog(kPrefix + "sky130_const_cells.v");
 
   sta::dbNetwork* network = sta_->getDbNetwork();
-  sta::Instance* flop_input_instance = network->findInstance("_403_");
-  EXPECT_NE(flop_input_instance, nullptr);
-  sta::Net* flop_net = network->findNet("flop_net");
-  EXPECT_NE(flop_net, nullptr);
+  sta::Instance* tie_hi = network->findInstance("tie_hi");
+  sta::Instance* tie_lo = network->findInstance("tie_lo");
+  EXPECT_NE(tie_hi, nullptr);
+  EXPECT_NE(tie_lo, nullptr);
+  sta::Net* tie_hi_net = network->findNet("tie_hi_net");
+  sta::Net* tie_lo_net = network->findNet("tie_lo_net");
+  EXPECT_NE(tie_hi_net, nullptr);
+  EXPECT_NE(tie_lo_net, nullptr);
 
-  std::vector<sta::Net*> primary_inputs = {};
-  std::vector<sta::Net*> primary_outputs = {flop_net};
+  std::vector<sta::Net*> primary_inputs;
+  std::vector<sta::Net*> primary_outputs = {tie_hi_net, tie_lo_net};
   sta::InstanceSet cut_instances(network);
-  cut_instances.insert(flop_input_instance);
+  cut_instances.insert(tie_hi);
+  cut_instances.insert(tie_lo);
   LogicCut cut(std::move(primary_inputs),
                std::move(primary_outputs),
                std::move(cut_instances));
@@ -623,26 +635,34 @@ TEST_F(AbcTestSky130, EnsureThatSky130MultiOutputConstCellsAreMapped)
       = abc::Abc_SclDeriveGenlibSimple(abc_library.abc_library());
   abc_network->pManFunc = mio_library;
 
-  abc::Abc_Obj_t* output = abc::Abc_NtkCreatePo(abc_network.get());
-  abc::Abc_Obj_t* output_net = abc::Abc_NtkCreateNet(abc_network.get());
-
+  abc::Abc_Obj_t* hi_output = abc::Abc_NtkCreatePo(abc_network.get());
+  abc::Abc_Obj_t* hi_output_net = abc::Abc_NtkCreateNet(abc_network.get());
   abc::Abc_Obj_t* const_1 = abc::Abc_NtkCreateNode(abc_network.get());
   abc::Abc_ObjSetData(const_1, abc::Mio_LibraryReadConst1(mio_library));
+  abc::Abc_ObjAddFanin(hi_output, hi_output_net);
+  abc::Abc_ObjAddFanin(hi_output_net, const_1);
+  std::string hi_output_name = "tie_hi_net";
+  abc::Abc_ObjAssignName(
+      hi_output_net, hi_output_name.data(), /*pSuffix=*/nullptr);
 
-  abc::Abc_ObjAddFanin(output, output_net);
-  abc::Abc_ObjAddFanin(output_net, const_1);
-
-  std::string output_name = "flop_net";
-  abc::Abc_ObjAssignName(output_net, output_name.data(), /*pSuffix=*/nullptr);
+  abc::Abc_Obj_t* lo_output = abc::Abc_NtkCreatePo(abc_network.get());
+  abc::Abc_Obj_t* lo_output_net = abc::Abc_NtkCreateNet(abc_network.get());
+  abc::Abc_Obj_t* const_0 = abc::Abc_NtkCreateNode(abc_network.get());
+  abc::Abc_ObjSetData(const_0, abc::Mio_LibraryReadConst0(mio_library));
+  abc::Abc_ObjAddFanin(lo_output, lo_output_net);
+  abc::Abc_ObjAddFanin(lo_output_net, const_0);
+  std::string lo_output_name = "tie_lo_net";
+  abc::Abc_ObjAssignName(
+      lo_output_net, lo_output_name.data(), /*pSuffix=*/nullptr);
 
   utl::UniqueName unique_namer;
 
   // We want to make sure this thing correctly maps to the multi-output sky130
-  // cell.
+  // cells.
   cut.InsertMappedAbcNetwork(
       abc_network.get(), abc_library, network, unique_namer, &logger_);
 
-  // Go searching for our const cell. It has a random name now.
+  // Go searching for our const cells. Each one has a random name now.
   odb::dbSet<odb::dbInst> insts = db_->getChip()->getBlock()->getInsts();
   std::vector<odb::dbInst*> constant_cells;
   for (odb::dbInst* inst : insts) {
@@ -652,8 +672,73 @@ TEST_F(AbcTestSky130, EnsureThatSky130MultiOutputConstCellsAreMapped)
     }
   }
 
-  EXPECT_EQ(constant_cells.size(), 1);
-  EXPECT_NE(std::string(constant_cells[0]->getName()), "_403_");
+  EXPECT_EQ(constant_cells.size(), 2);
+  for (odb::dbInst* inst : constant_cells) {
+    EXPECT_NE(std::string(inst->getName()), "tie_hi");
+    EXPECT_NE(std::string(inst->getName()), "tie_lo");
+    odb::dbITerm* hi_pin = inst->findITerm("HI");
+    odb::dbITerm* lo_pin = inst->findITerm("LO");
+    sta::Net* hi_net = network->net(network->dbToSta(hi_pin));
+    sta::Net* lo_net = network->net(network->dbToSta(lo_pin));
+    if (hi_net != nullptr) {
+      EXPECT_EQ(hi_net, tie_hi_net);
+      EXPECT_EQ(lo_net, nullptr);
+    } else {
+      EXPECT_EQ(lo_net, tie_lo_net);
+      EXPECT_EQ(hi_net, nullptr);
+    }
+  }
+}
+
+TEST_F(AbcTestSky130,
+       EnsureThatSky130MultiOutputConstCellsAreTranslatedToCorrectMioConstants)
+{
+  AbcLibraryFactory factory(&logger_);
+  factory.AddDbSta(sta_.get());
+  AbcLibrary abc_library = factory.Build();
+
+  LoadVerilog(kPrefix + "sky130_const_cells.v");
+
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Instance* tie_hi = network->findInstance("tie_hi");
+  sta::Instance* tie_lo = network->findInstance("tie_lo");
+  ASSERT_NE(tie_hi, nullptr);
+  ASSERT_NE(tie_lo, nullptr);
+  sta::Net* tie_hi_net = network->findNet("tie_hi_net");
+  sta::Net* tie_lo_net = network->findNet("tie_lo_net");
+  ASSERT_NE(tie_hi_net, nullptr);
+  ASSERT_NE(tie_lo_net, nullptr);
+
+  std::vector<sta::Net*> primary_inputs;
+  std::vector<sta::Net*> primary_outputs = {tie_hi_net, tie_lo_net};
+  sta::InstanceSet cut_instances(network);
+  cut_instances.insert(tie_hi);
+  cut_instances.insert(tie_lo);
+  LogicCut cut(std::move(primary_inputs),
+               std::move(primary_outputs),
+               std::move(cut_instances));
+
+  utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> abc_network
+      = cut.BuildMappedAbcNetwork(abc_library, network, &logger_);
+  ASSERT_NE(abc_network, nullptr);
+  ASSERT_EQ(abc::Abc_NtkPoNum(abc_network.get()), 2);
+  EXPECT_EQ(abc::Abc_NtkNodeNum(abc_network.get()), 2);
+  abc::Mio_Library_t* mio_library
+      = static_cast<abc::Mio_Library_t*>(abc_network->pManFunc);
+
+  std::string tie_hi_name = "tie_hi";
+  abc::Abc_Obj_t* abc_tie_hi
+      = abc::Abc_NtkFindNode(abc_network.get(), tie_hi_name.data());
+  ASSERT_NE(abc_tie_hi, nullptr);
+  EXPECT_EQ(abc::Abc_ObjData(abc_tie_hi),
+            abc::Mio_LibraryReadConst1(mio_library));
+
+  std::string tie_lo_name = "tie_lo";
+  abc::Abc_Obj_t* abc_tie_lo
+      = abc::Abc_NtkFindNode(abc_network.get(), tie_lo_name.data());
+  ASSERT_NE(abc_tie_lo, nullptr);
+  EXPECT_EQ(abc::Abc_ObjData(abc_tie_lo),
+            abc::Mio_LibraryReadConst0(mio_library));
 }
 
 }  // namespace cut

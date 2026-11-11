@@ -26,6 +26,7 @@
 #include "sta/NetworkCmp.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Property.hh"
+#include "sta/StringUtil.hh"
 #include "sta/VerilogReader.hh"
 #include "utl/Logger.h"
 
@@ -208,6 +209,10 @@ bool dbLinkDesign(const char* top_cell_name,
   bool success = verilog_network->linkNetwork(
       top_cell_name, link_make_black_boxes, verilog_network->report());
   if (success) {
+    if (verilog_network->properties()->isUserProperty("instance", "src")) {
+      verilog_network->properties()->defineProperty<Instance>(
+          "instance", "src", "string");
+    }
     Verilog2db v2db(verilog_network, db, logger, hierarchy, omit_filename_prop);
     v2db.makeBlock();
     v2db.makeDbNetlist();
@@ -316,6 +321,8 @@ void Verilog2db::storeLineInfo(const std::string& attribute, dbInst* db_inst)
   if (attribute.empty()) {
     return;
   }
+
+  odb::dbStringProperty::create(db_inst, "src", attribute.c_str());
 
   std::smatch match;
 
@@ -581,7 +588,23 @@ void Verilog2db::makeChildInsts(Instance* inst,
       const auto dont_touch
           = network_->properties()->stringProperty(child, "dont_touch");
       if (!dont_touch.empty()) {
-        if (std::stoi(dont_touch)) {
+        bool set = sta::stringEqual(dont_touch, "true")
+                   || sta::stringEqual(dont_touch, "yes");
+        if (!set && !sta::stringEqual(dont_touch, "false")
+            && !sta::stringEqual(dont_touch, "no")) {
+          const auto [value, valid] = sta::stringLong(dont_touch);
+          if (valid) {
+            set = value != 0;
+          } else {
+            logger_->warn(ORD,
+                          2059,
+                          "Ignoring unrecognized dont_touch value \"{}\" on "
+                          "instance {}.",
+                          dont_touch,
+                          network_->pathName(child));
+          }
+        }
+        if (set) {
           dont_touch_insts_.push_back(db_inst);
         }
       }
@@ -863,10 +886,12 @@ void Verilog2db::makeModNetsForSubmodule(const Instance* inst,
 
     // make sure any top level bterms are connected to this net too...
     if (parent_module == block_->getTopModule()) {
-      std::unique_ptr<NetConnectedPinIterator> pin_iter{
-          network_->connectedPinIterator(inst_pin_net)};
-      while (pin_iter->hasNext()) {
-        const Pin* pin = pin_iter->next();
+      // Only terminals on this local net belong to the top module.
+      // Traversing through child feedthroughs would reconnect unrelated ports.
+      std::unique_ptr<NetTermIterator> term_iter{
+          network_->termIterator(inst_pin_net)};
+      while (term_iter->hasNext()) {
+        const Pin* pin = network_->pin(term_iter->next());
         staToDb(parent_module, pin, bterm, iterm, mod_bterm, mod_iterm);
         if (bterm) {
           bterm->connect(upper_mod_net);

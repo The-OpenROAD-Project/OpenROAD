@@ -293,6 +293,31 @@ void lefout::writeObstructions(std::ostream& out, dbBlock* db_block)
     fmt::print(out, "    LAYER {} ;\n", overlap->getName());
     writePolygon(out, "   ", die_area);
   }
+
+  for (dbObstruction* obs : db_block->getObstructions()) {
+    if (obs->isSystemReserved()) {
+      continue;
+    }
+    dbBox* box = obs->getBBox();
+    const std::string layer_name = box->getTechLayer()->getName();
+
+    if (obs->hasMinSpacing()) {
+      fmt::print(out,
+                 "    LAYER {} SPACING {:.11g} ;\n",
+                 layer_name,
+                 lefdist(obs->getMinSpacing()));
+      writeBox(out, "   ", box);
+    }
+
+    if (obs->hasEffectiveWidth()) {
+      fmt::print(out,
+                 "    LAYER {} DESIGNRULEWIDTH {:.11g} ;\n",
+                 layer_name,
+                 lefdist(obs->getEffectiveWidth()));
+      writeBox(out, "   ", box);
+    }
+  }
+
   for (const auto& [tech_layer, polySet] : obstructions) {
     fmt::print(out, "    LAYER {} ;\n", tech_layer->getName().c_str());
 
@@ -332,7 +357,12 @@ void lefout::getObstructions(dbBlock* db_block,
     if (obs->isSystemReserved()) {
       continue;
     }
-    insertObstruction(obs->getBBox(), obstructions);
+    // Modified obstructions are written individually to keep their
+    // attributes, but they still mark their layer as occupied.
+    if (bloat_occupied_layers_
+        || (!obs->hasMinSpacing() && !obs->hasEffectiveWidth())) {
+      insertObstruction(obs->getBBox(), obstructions);
+    }
   }
 
   findInstsObstructions(obstructions, db_block);

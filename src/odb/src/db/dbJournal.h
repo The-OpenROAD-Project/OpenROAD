@@ -5,6 +5,8 @@
 
 #include <cstdint>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "dbJournalLog.h"
 #include "odb/db.h"
@@ -64,6 +66,17 @@ class dbJournal
   void pushParam(double value);
   void pushParam(const char* value);
   void pushParam(const std::string& value);
+  // An instance's pin access index and the (mpin, access point) ids of each
+  // iterm's preferred access points, by iterm position.
+  struct InstAccessPoints
+  {
+    uint32_t pin_access_idx{0};
+    std::vector<std::vector<std::pair<uint32_t, uint32_t>>> iterm_aps;
+  };
+  static InstAccessPoints getAccessPoints(dbInst* inst);
+  // Records access points that swapMaster or destroy clears, so undo can
+  // restore them.
+  void pushAccessPoints(const InstAccessPoints& aps);
   void endAction();
 
   //
@@ -143,6 +156,9 @@ class dbJournal
   void undo_connectObject();
   void undo_disconnectObject();
   void undo_swapObject();
+  // Pops the access points recorded by pushAccessPoints.  When restore is
+  // true they are put back on inst's iterms.
+  void popAccessPoints(dbInst* inst, bool restore);
   void undo_updateField();
   void undo_updateNetField();
   void undo_updateModNetField();

@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "mpl-util.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -45,6 +46,7 @@ using TilingList = std::vector<Tiling>;
 using TilingSet = std::set<Tiling>;
 using UniqueClusterVector = std::vector<std::unique_ptr<Cluster>>;
 using BundledNetList = std::vector<BundledNet>;
+using InstToHardMap = odb::PtrMap<odb::dbInst, std::unique_ptr<HardMacro>>;
 
 // ****************************************************************************
 // This file includes the basic functions and basic classes for the HierRTLMP
@@ -303,7 +305,6 @@ class HardMacro
   HardMacro(odb::dbInst* inst, Halo halo);
 
   bool operator<(const HardMacro& macro) const;
-  bool operator==(const HardMacro& macro) const;
 
   void setCluster(Cluster* cluster) { cluster_ = cluster; }
   Cluster* getCluster() const { return cluster_; }
@@ -331,6 +332,9 @@ class HardMacro
   int64_t getArea() const { return width_ * static_cast<int64_t>(height_); }
   odb::Rect getBBox() const;
   bool isFixed() const { return fixed_; }
+  // Fixed and outside the floorplan shape, so clustering and placement skip it.
+  void setIgnorable(bool ignorable) { ignorable_ = ignorable; }
+  bool isIgnorable() const { return ignorable_; }
 
   // Note that the real X and Y does NOT include halo
   void setRealLocation(const odb::Point& location);
@@ -371,6 +375,7 @@ class HardMacro
   int pin_y_{0};
 
   bool fixed_{false};
+  bool ignorable_{false};
 
   odb::dbInst* inst_{nullptr};
   odb::dbBlock* block_{nullptr};

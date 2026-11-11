@@ -3,7 +3,7 @@ load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_pkg//pkg:mappings.bzl", "pkg_files", "strip_prefix")
 load("@rules_pkg//pkg:zip.bzl", "pkg_zip")
-load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 load("@rules_python//python/entry_points:py_console_script_binary.bzl", "py_console_script_binary")
 
@@ -14,6 +14,72 @@ package(features = ["layering_check"])
 config_setting(
     name = "stamp",
     values = {"stamp": "1"},
+    visibility = ["//visibility:public"],
+)
+
+# ord/Version.hh. The version is written into the linked binary by
+# stamped_binary.bzl.
+cc_library(
+    name = "openroad_version",
+    srcs = ["version/version.cc"],
+    hdrs = ["version/ord/Version.hh"],
+    includes = ["version"],
+    visibility = ["//:__pkg__"],
+)
+
+# Writes the version into a linked binary for stamped_binary.bzl.
+py_binary(
+    name = "stamp_version",
+    srcs = ["stamp_version.py"],
+    visibility = ["//visibility:public"],
+)
+
+py_test(
+    name = "stamp_version_test",
+    size = "small",
+    srcs = [
+        "stamp_version.py",
+        "stamp_version_test.py",
+    ],
+    imports = ["."],
+)
+
+# Stamps the real linked binary, so the slot layout in version/version.cc and
+# stamp_version.py stay in sync. Runs without --stamp.
+py_test(
+    name = "stamp_version_binary_test",
+    size = "small",
+    srcs = ["stamp_version_binary_test.py"],
+    args = [
+        "$(rootpath :stamp_version)",
+        "$(rootpath //:openroad_unstamped)",
+    ] + select({
+        "@platforms//os:macos": ["--codesign"],
+        "//conditions:default": [],
+    }),
+    data = [
+        ":stamp_version",
+        "//:openroad_unstamped",
+    ],
+)
+
+config_setting(
+    name = "_macos_aarch64",
+    constraint_values = [
+        "@platforms//os:macos",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+# pandoc for //docs:man_pages. man_pages.bzl takes it with cfg = "exec", so
+# this select() matches the platform that runs pandoc. The wheel's macOS
+# arm64 pandoc is an x86_64 binary; see pandoc_macos_arm64 in MODULE.bazel.
+filegroup(
+    name = "pandoc",
+    srcs = select({
+        ":_macos_aarch64": ["@pandoc_macos_arm64//:pandoc"],
+        "//conditions:default": ["@openroad-pip//pypandoc_binary:extracted_whl_files"],
+    }),
     visibility = ["//visibility:public"],
 )
 
@@ -29,6 +95,9 @@ exports_files(
         "bzl_fmt_test.sh",
         "bzl_lint_test.sh",
         "bzl_tidy.sh",
+        "cc_fmt_test.sh",
+        "cc_ls_files.sh",
+        "cc_tidy.sh",
         "fix_lint.sh",
         "git_ls_files.sh",
         "install.sh",
@@ -43,11 +112,18 @@ exports_files(
     visibility = ["//visibility:public"],
 )
 
-# tclint / tclfmt / yamlfix / black binaries from pip — versions pinned in
+# tclint / tclfmt / yamlfix / black / clang-format binaries from pip — versions pinned in
 # requirements.in
 py_console_script_binary(
     name = "tclint",
     pkg = "@openroad-pip//tclint",
+    visibility = ["//visibility:public"],
+)
+
+py_console_script_binary(
+    name = "clang-format",
+    pkg = "@openroad-pip//clang_format",
+    script = "clang-format",
     visibility = ["//visibility:public"],
 )
 

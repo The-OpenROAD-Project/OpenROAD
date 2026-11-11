@@ -446,13 +446,13 @@ To regenerate training data and refit Padé coefficients via Bazel:
 
 ```bash
 # 1. Generate training dataset (dmp_training_data.csv)
-bazel build //src/dbSta:generate_training_data
+bazelisk build //src/dbSta:generate_training_data
 
 # 2. Fit Padé coefficients (outputs PadeCoefficients.h)
-bazel build //src/dbSta:generate_pade_coefficients
+bazelisk build //src/dbSta:generate_pade_coefficients
 
 # 3. Run regression unit tests
-bazel test //src/dbSta/test:test_lambert_w
+bazelisk test //src/dbSta/test:dbsta_lambertw_test
 ```
 
 ---

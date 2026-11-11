@@ -176,6 +176,11 @@ ScanArchitect::inferChainCountFromMaxLength(
       domain_max_length = bits / domain_chain_count + 1;
     }
 
+    // Capping the chain count can leave more chains than the balanced length
+    // needs (10 bits capped at 6 chains have a length of 2, so 5 chains), and
+    // the extra chains would be empty.
+    domain_chain_count = (bits + domain_max_length - 1) / domain_max_length;
+
     HashDomainLimits hash_domain_limits;
     hash_domain_limits.chain_count = domain_chain_count;
     hash_domain_limits.max_length = domain_max_length;
@@ -205,6 +210,13 @@ std::vector<std::unique_ptr<ScanChain>> ScanArchitect::getScanChains()
   for (auto& [hash_domain, scan_chains] : hash_domain_scan_chains_) {
     std::ranges::move(scan_chains, std::back_inserter(scan_chains_flat));
   }
+
+  // Multi-bit cells can overshoot a chain's max length and use up the cells
+  // of the domain before its last chains are filled. An empty chain has
+  // nothing to stitch, so it is dropped.
+  std::erase_if(scan_chains_flat, [](const std::unique_ptr<ScanChain>& chain) {
+    return chain->getBits() == 0;
+  });
 
   std::ranges::sort(scan_chains_flat, [](const auto& lhs, const auto& rhs) {
     return lhs->getName() < rhs->getName();

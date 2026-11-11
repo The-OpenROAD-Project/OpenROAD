@@ -14,9 +14,9 @@
     "net": "r2q",
     "x": 0.000203135,
     "y": 0.000100695,
-    "arrival": 8.371e-11,
-    "capacitance": 9.747e-16,
-    "slew": 7.314e-12
+    "arrival": 8.37e-11,
+    "capacitance": 9.75e-16,
+    "slew": 7.31e-12
   },
   {
     "instance": "u1",
@@ -26,8 +26,8 @@
     "net": "r2q",
     "x": 0.000400125,
     "y": 0.000100612,
-    "arrival": 8.371e-11,
-    "slew": 7.314e-12
+    "arrival": 8.37e-11,
+    "slew": 7.31e-12
   },
   {
     "instance": "u1",
@@ -37,9 +37,9 @@
     "net": "u1z",
     "x": 0.000400465,
     "y": 0.000100715,
-    "arrival": 1.030e-10,
-    "capacitance": 9.746e-16,
-    "slew": 5.617e-12
+    "arrival": 1.03e-10,
+    "capacitance": 9.75e-16,
+    "slew": 5.62e-12
   },
   {
     "instance": "u2",
@@ -49,8 +49,8 @@
     "net": "u1z",
     "x": 0.000100315,
     "y": 0.000400613,
-    "arrival": 1.030e-10,
-    "slew": 5.617e-12
+    "arrival": 1.03e-10,
+    "slew": 5.62e-12
   },
   {
     "instance": "u2",
@@ -60,9 +60,9 @@
     "net": "u2z",
     "x": 0.000100655,
     "y": 0.000400720,
-    "arrival": 1.313e-10,
-    "capacitance": 1.140e-15,
-    "slew": 7.352e-12
+    "arrival": 1.31e-10,
+    "capacitance": 1.14e-15,
+    "slew": 7.35e-12
   },
   {
     "instance": "r3",
@@ -72,8 +72,8 @@
     "net": "u2z",
     "x": 0.000300890,
     "y": 0.000300615,
-    "arrival": 1.313e-10,
-    "slew": 7.352e-12
+    "arrival": 1.31e-10,
+    "slew": 7.35e-12
   }
 ]
 }

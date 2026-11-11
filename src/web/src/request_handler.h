@@ -5,6 +5,7 @@
 
 #include <array>
 #include <atomic>
+#include <charconv>
 #include <condition_variable>
 #include <cstdint>
 #include <functional>
@@ -15,9 +16,13 @@
 #include <shared_mutex>
 #include <string>
 #include <string_view>
+#include <system_error>
+#include <thread>
 #include <utility>
 #include <vector>
 
+#include "boost/beast/http/message.hpp"
+#include "boost/beast/http/string_body.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/value.hpp"
 #include "boost/json/value_to.hpp"
@@ -29,6 +34,10 @@
 #include "utl/Logger.h"
 #include "web/core.h"
 
+namespace boost::asio {
+class io_context;
+}
+
 namespace web {
 
 class HeatMapDataSource;
@@ -36,6 +45,7 @@ class HeatMapSourceRegistration;
 class RequestDispatcher;
 class TimingReport;
 class ClockTreeReport;
+struct EmbeddedAsset;
 
 // Sentinel string set as the Tcl result by WebServer::tclExitHandler
 // when the browser-side Tcl `exit`/`quit` is invoked.  TclHandler
@@ -516,16 +526,62 @@ struct SessionState
 // so the whole page 404s.  Also maps "/" onto the index document.
 std::string assetPathFromTarget(std::string_view target);
 
+// Join `t`, or detach it when called from `t` itself, where a join throws
+// EDEADLK.  A non-joinable thread is left alone.
+void joinUnlessSelf(std::thread& t);
+
+// Run `ioc` until it stops.  A handler that throws is logged, not fatal, but
+// whatever it would have re-armed (a read, a timer) stays stopped.
+void runIoContext(boost::asio::io_context& ioc, utl::Logger* logger);
+
+// Parse an integer that must span the whole string_view (no trailing garbage),
+// exception-free.  Returns false on any malformed/partial input.
+template <typename T>
+bool parseIntExact(std::string_view s, T& out, int base = 10)
+{
+  const char* const first = s.data();
+  const char* const last = first + s.size();
+  const auto res = std::from_chars(first, last, out, base);
+  return res.ec == std::errc{} && res.ptr == last;
+}
+
+// Percent-decode a URL query value (e.g. the JSON `vis` payload).
+std::string urlDecode(std::string_view s);
+
+// Parse the "k=v&k2=v2" query of a request target into a map (values decoded).
+std::map<std::string, std::string> parseQuery(std::string_view target);
+
+// True if the gzipped bytes may be sent as stored: gzip, x-gzip or * without
+// q=0, an explicit gzip deciding over *; an empty header does not count.  A
+// q=0 on any gzip or x-gzip entry refuses it, whatever the other entries say.
+bool acceptsGzip(std::string_view accept_encoding);
+
+// Fills in res for an embedded asset: the stored gzip bytes with
+// Content-Encoding: gzip when accept_encoding allows them, else the inflated
+// bytes (or a 500 if the asset cannot be inflated).
+void serveEmbeddedAsset(
+    const EmbeddedAsset& asset,
+    std::string_view accept_encoding,
+    boost::beast::http::response<boost::beast::http::string_body>& res);
+
 // True if a WebSocket handshake carrying this Origin/Host may be accepted.
 // Blocks Cross-Site WebSocket Hijacking (issue #11167): a browser sets the
 // Origin header and JavaScript cannot forge it, so a cross-site page opening
 // ws://localhost:<port> is rejected here before it can drive tcl_eval.
 //
 // An absent Origin is allowed: browsers always send it on a WS handshake, so
-// its absence marks a non-browser client (local tooling, tests), which a
-// loopback bind (F-02) is what keeps local.  A present Origin is accepted only
-// when its authority equals the Host header (strict same-origin).
+// its absence marks a non-browser client (local tooling, tests), which the
+// access token authenticates.  A present Origin is accepted only when its
+// authority equals the Host header (strict same-origin).
 bool webSocketOriginAllowed(std::string_view origin, std::string_view host);
+
+// The Content-Security-Policy for a response to a request with this Host
+// header.  connect-src names ws://host and wss://host as well as 'self':
+// browsers older than CSP Level 3 (Safari before 15.4, say) do not let
+// 'self' match a WebSocket scheme and would refuse the viewer's socket.  A
+// Host that a CSP host-source cannot spell (empty, an IPv6 literal, or
+// anything with other characters) gets 'self' alone.
+std::string contentSecurityPolicy(std::string_view host);
 
 // Optional-field accessor: returns the JSON value at `key` converted to T,
 // or `default_val` when the key is missing.  Throws

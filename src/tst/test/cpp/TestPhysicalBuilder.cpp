@@ -14,7 +14,9 @@
 #include "odb/dbWireCodec.h"
 #include "odb/geom.h"
 #include "tst/db_fixture.h"
+#include "tst/logger_checks.h"
 #include "tst/physical_builder.h"
+#include "utl/Logger.h"
 
 namespace tst {
 namespace {
@@ -312,6 +314,21 @@ TEST_F(PhysicalBuilderTest, Guide)
       = addGuide(net, stack_.metal(2), {0, 0, 1000, 1000}, stack_.metal(3));
   EXPECT_EQ(via_guide->getViaLayer(), stack_.metal(3));
   EXPECT_EQ(net->getGuides().size(), 2);
+}
+
+TEST_F(PhysicalBuilderTest, LoggerErrorMacro)
+{
+  EXPECT_LOGGER_ERROR(logger_.error(utl::UTL, 904, "bad"), "UTL-0904");
+}
+
+TEST_F(PhysicalBuilderTest, MetricsCaptureReadsLatestValue)
+{
+  MetricsCapture metrics(logger_);
+  EXPECT_EQ(metrics.value("tst__count"), std::nullopt);
+  logger_.metric("tst__count", 3);
+  EXPECT_EQ(metrics.value("tst__count"), "3");
+  logger_.metric("tst__count", 5);
+  EXPECT_EQ(metrics.value("tst__count"), "5");
 }
 
 class ReadDefTest : public DbFixture

@@ -6,8 +6,8 @@
 // electrostatic potential, and the two field components). Only include from
 // translation units compiled as CUDA/HIP TUs (gpu/regionDensityField.cpp,
 // gpu/gpuFftBackend.cpp, gpu/gpuDensityGradientBackend.cpp,
-// gpu/nesterovDeviceContext.cpp, gpu/densityOp.cpp), listed in
-// src/gpl/CMakeLists.txt's source-language section.
+// gpu/nesterovDeviceContext.cpp, gpu/densityOp.cpp), listed in the
+// :gpl_kokkos srcs in src/gpl/BUILD.
 //
 // Including this from a plain CXX TU would pull in <Kokkos_Core.hpp>, which
 // expects __CUDACC__ when KOKKOS_ENABLE_CUDA is defined.

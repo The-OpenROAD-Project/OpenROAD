@@ -117,7 +117,8 @@ class RepairHoldSharedDriverTest : public tst::IntegratedFixture
                         /*max_passes=*/10000,
                         /*max_iterations=*/-1,
                         /*match_cell_footprint=*/false,
-                        /*verbose=*/false);
+                        /*verbose=*/false,
+                        /*path_group=*/"");
   }
 
   sta::Slack setupSlack(const char* pin_name)

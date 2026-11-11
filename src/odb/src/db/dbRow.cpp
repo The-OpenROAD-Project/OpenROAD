@@ -20,6 +20,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "utl/Logger.h"
 
 namespace odb {
 
@@ -245,6 +246,26 @@ dbRow* dbRow::create(dbBlock* block_,
 {
   _dbBlock* block = (_dbBlock*) block_;
   _dbSite* site = (_dbSite*) site_;
+
+  // A spacing smaller than the site extent along the row would make the
+  // row's sites overlap.
+  if (num_sites > 1) {
+    Rect site_box(0, 0, site_->getWidth(), site_->getHeight());
+    dbTransform(orient).apply(site_box);
+    const int site_extent
+        = direction == dbRowDir::VERTICAL ? site_box.dy() : site_box.dx();
+    if (spacing < site_extent) {
+      block->getLogger()->error(
+          utl::ODB,
+          1221,
+          "Row {} has site spacing ({}) smaller than the site extent along "
+          "the row ({}); the row's sites overlap.",
+          name,
+          spacing,
+          site_extent);
+    }
+  }
+
   _dbLib* lib = (_dbLib*) site->getOwner();
   _dbRow* row = block->row_tbl_->create();
   row->name_ = safe_strdup(name);

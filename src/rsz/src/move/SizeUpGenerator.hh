@@ -17,6 +17,7 @@ class LibertyCell;
 class LibertyPort;
 class MinMax;
 class Pin;
+class RiseFall;
 class Scene;
 }  // namespace sta
 
@@ -52,16 +53,23 @@ class SizeUpGenerator : public MoveGenerator
                         const sta::MinMax*& min_max,
                         float& load_cap,
                         sta::LibertyPort*& in_port,
+                        const sta::RiseFall*& in_rf,
+                        const sta::RiseFall*& drvr_rf,
                         float& prev_drive) const;
   sta::LibertyCell* selectReplacement(sta::LibertyPort* in_port,
+                                      const sta::RiseFall* in_rf,
                                       sta::LibertyPort* drvr_port,
+                                      const sta::RiseFall* drvr_rf,
                                       float load_cap,
                                       float prev_drive,
                                       const sta::Scene* scene,
                                       const sta::MinMax* min_max) const;
 
+ protected:
   sta::LibertyCell* upsizeCell(sta::LibertyPort* in_port,
+                               const sta::RiseFall* in_rf,
                                sta::LibertyPort* drvr_port,
+                               const sta::RiseFall* drvr_rf,
                                float load_cap,
                                float prev_drive,
                                const sta::Scene* scene,

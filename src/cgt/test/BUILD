@@ -9,6 +9,8 @@ TESTS = [
     "aes_nangate45",
     "countdown_asap7",
     "ibex_sky130hd",
+    "multi_corner_nangate45",
+    "no_function_output",
 ]
 
 filegroup(
@@ -47,6 +49,19 @@ filegroup(
                     "sky130hd/sky130_fd_sc_hd__ss_n40C_1v40.lib",
                     "sky130hd/sky130hd.tlef",
                     "sky130hd/sky130hd_std_cell.lef",
+                ],
+                "multi_corner_nangate45": [
+                    "Nangate45/Nangate45.lef",
+                    "Nangate45/Nangate45_stdcell.lef",
+                    "Nangate45/Nangate45_fast.lib",
+                    "Nangate45/Nangate45_slow.lib",
+                    "enable_reg_nangate45.v",
+                ],
+                "no_function_output": [
+                    "Nangate45/Nangate45.lef",
+                    "Nangate45/Nangate45_stdcell.lef",
+                    "Nangate45/Nangate45_typ.lib",
+                    "enable_reg_nangate45.v",
                 ],
             }.get(test_name, []),
         ),

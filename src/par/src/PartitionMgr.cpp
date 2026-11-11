@@ -137,8 +137,8 @@ void PartitionMgr::tritonPartHypergraph(
   // Use TritonPart to partition a hypergraph
   // In this mode, TritonPart works as hMETIS.
   // Thus users can use this function to partition the input hypergraph
-  auto triton_part
-      = std::make_unique<TritonPart>(db_network_, db_, sta_, logger_);
+  auto triton_part = std::make_unique<TritonPart>(
+      db_network_, db_, sta_, logger_, num_threads_);
   // Convert the string e_wt_factors_str to vector
   triton_part->SetNetWeight(e_wt_factors);
   triton_part->SetVertexWeight(v_wt_factors);
@@ -200,8 +200,8 @@ void PartitionMgr::evaluateHypergraphSolution(
     const std::vector<float>& e_wt_factors,
     const std::vector<float>& v_wt_factors)
 {
-  auto triton_part
-      = std::make_unique<TritonPart>(db_network_, db_, sta_, logger_);
+  auto triton_part = std::make_unique<TritonPart>(
+      db_network_, db_, sta_, logger_, num_threads_);
   // Convert the string e_wt_factors_str to vector
   triton_part->SetNetWeight(e_wt_factors);
   triton_part->SetVertexWeight(v_wt_factors);
@@ -278,8 +278,8 @@ void PartitionMgr::tritonPartDesign(
     int num_vertices_threshold_ilp,
     int global_net_threshold)
 {
-  auto triton_part
-      = std::make_unique<TritonPart>(db_network_, db_, sta_, logger_);
+  auto triton_part = std::make_unique<TritonPart>(
+      db_network_, db_, sta_, logger_, num_threads_);
   // Convert the string e_wt_factors_str to vector
   triton_part->SetNetWeight(e_wt_factors);
   triton_part->SetVertexWeight(v_wt_factors);
@@ -369,8 +369,8 @@ void PartitionMgr::evaluatePartDesignSolution(
     const std::vector<float>& e_wt_factors,
     const std::vector<float>& v_wt_factors)
 {
-  auto triton_part
-      = std::make_unique<TritonPart>(db_network_, db_, sta_, logger_);
+  auto triton_part = std::make_unique<TritonPart>(
+      db_network_, db_, sta_, logger_, num_threads_);
   // Convert the string e_wt_factors_str to vector
   triton_part->SetNetWeight(e_wt_factors);
   triton_part->SetVertexWeight(v_wt_factors);
@@ -411,8 +411,8 @@ std::vector<int> PartitionMgr::PartitionKWaySimpleMode(
     const std::vector<float>& vertex_weights,
     const std::vector<float>& hyperedge_weights)
 {
-  auto triton_part
-      = std::make_unique<TritonPart>(db_network_, db_, sta_, logger_);
+  auto triton_part = std::make_unique<TritonPart>(
+      db_network_, db_, sta_, logger_, num_threads_);
   return triton_part->PartitionKWaySimpleMode(num_parts_arg,
                                               balance_constraint_arg,
                                               seed_arg,

@@ -38,8 +38,7 @@ class DplObserver
                          GridX xl,
                          GridY yl,
                          GridX xh,
-                         GridY yh)
-      = 0;
+                         GridY yh) = 0;
 
   // Drop the candidates recorded for |cell| (call at the start of each
   // diamond search, so only the latest search for that cell is kept).

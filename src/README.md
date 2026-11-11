@@ -31,19 +31,9 @@ The following commands are used to read and write design data.
 
 Use the Tcl `source` command to read commands from a file.
 
-````{eval-rst}
-.. tabs::
-
-   .. code-tab:: tcl
-
-      source [-echo] file
-
-   .. code-tab:: py
-
-      # Source is not supported in Python.
-      # Instead run this at the start:
-      openroad -python script.py
-````
+```tcl
+source [-echo] file
+```
 
 If an error is encountered in a command while reading the command file,
 then the error is printed and no more commands are read from the file. If

@@ -436,6 +436,7 @@ class Rect final
 
   // Bloat each side of the rectangle by the margin.
   void bloat(int margin, Rect& result) const;
+  Rect bloat(int margin) const;
 
   // Bloat the rectangle by the margin in the required orientation.
   Rect bloat(int margin, Orientation2D orient) const;
@@ -815,6 +816,13 @@ inline void Rect::bloat(int margin, Rect& result) const
   result.ylo_ = ylo_ - margin;
   result.xhi_ = xhi_ + margin;
   result.yhi_ = yhi_ + margin;
+}
+
+inline Rect Rect::bloat(int margin) const
+{
+  Rect result;
+  bloat(margin, result);
+  return result;
 }
 
 inline Rect Rect::bloat(int margin, Orientation2D orient) const

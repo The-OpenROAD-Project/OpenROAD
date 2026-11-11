@@ -319,3 +319,35 @@ describe('SchematicWidget.syncCone', () => {
         assert.deepEqual(depths(s), ['2', '10']);
     });
 });
+
+// A stand-in again: building the widget needs a window.
+describe('SchematicWidget without netlistsvg', () => {
+    function makeStub(isStaticMode) {
+        const stub = Object.create(SchematicWidget.prototype);
+        stub.appState = { websocketManager: { isStaticMode } };
+        stub.statuses = [];
+        stub.setStatus = (msg) => stub.statuses.push(msg);
+        return stub;
+    }
+
+    it('says a saved report has no schematic, even after Refresh', () => {
+        delete globalThis.netlistsvg;
+        delete globalThis.openroadSkin;
+        const widget = makeStub(true);
+        widget.initNetlistSVG();
+        widget.refresh();
+        assert.equal(widget._netlistsvgReady, false);
+        assert.equal(widget.statuses.length, 2);
+        for (const status of widget.statuses) {
+            assert.match(status, /not available in saved reports/);
+        }
+    });
+
+    it('reports missing libraries on a live server as an error', () => {
+        delete globalThis.netlistsvg;
+        delete globalThis.openroadSkin;
+        const widget = makeStub(false);
+        widget.initNetlistSVG();
+        assert.match(widget.statuses.at(-1), /^Init error/);
+    });
+});

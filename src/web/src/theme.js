@@ -50,6 +50,8 @@ export function applyGLTheme(theme) {
     const dark  = document.getElementById('gl-theme-dark');
     const light = document.getElementById('gl-theme-light');
     if (!dark || !light) return;
+    // index.html starts the light theme off through media, not disabled.
+    light.media = '';
     dark.disabled  = (theme !== 'dark');
     light.disabled = (theme !== 'light');
 }

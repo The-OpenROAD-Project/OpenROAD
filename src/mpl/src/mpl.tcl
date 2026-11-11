@@ -50,64 +50,9 @@ proc rtl_macro_placer { args } {
 
   sta::check_argc_eq0 "rtl_macro_placer" $args
 
-  #
   # Check for valid design
   if { [ord::get_db_block] == "NULL" } {
     utl::error MPL 1 "No block found for Macro Placement."
-  }
-
-  # Set the default parameters for the macro_placer
-  # Set auto defaults for min/max std cells and macros based on design
-  set max_num_macro 0
-  set min_num_macro 0
-  set max_num_inst 0
-  set min_num_inst 0
-  set tolerance 0.1
-  set max_num_level 2
-  set coarsening_ratio 10.0
-  set large_net_threshold 50
-  set fence_lx 0.0
-  set fence_ly 0.0
-  set fence_ux 0.0
-  set fence_uy 0.0
-
-  set area_weight 0.1
-  set outline_weight 100.0
-  set wirelength_weight 100.0
-  set guidance_weight 10.0
-  set fence_weight 10.0
-  set boundary_weight 50.0
-  set notch_weight 50.0
-  set soft_blockage_weight 10.0
-  set target_util 0.25
-  set min_ar 0.33
-  set report_directory "hier_rtlmp"
-
-  if { [info exists keys(-max_num_macro)] } {
-    set max_num_macro $keys(-max_num_macro)
-  }
-  if { [info exists keys(-min_num_macro)] } {
-    set min_num_macro $keys(-min_num_macro)
-  }
-  if { [info exists keys(-max_num_inst)] } {
-    set max_num_inst $keys(-max_num_inst)
-  }
-  if { [info exists keys(-min_num_inst)] } {
-    set min_num_inst $keys(-min_num_inst)
-  }
-
-  if { [info exists keys(-tolerance)] } {
-    set tolerance $keys(-tolerance)
-  }
-
-  if { [info exists keys(-max_num_level)] } {
-    set max_num_level $keys(-max_num_level)
-  }
-  if { [info exists keys(-coarsening_ratio)] } {
-    set coarsening_ratio $keys(-coarsening_ratio)
-  }
-  if { [info exists keys(-large_net_threshold)] } {
-    set large_net_threshold $keys(-large_net_threshold)
   }
 
   if { [info exists keys(-halo_width)] || [info exists keys(-halo_height)] } {
@@ -156,39 +101,6 @@ proc rtl_macro_placer { args } {
     utl::error MPL 79 "-pin_aware_channels requires -min_channel_size to be set."
   }
 
-  if { [info exists keys(-fence_lx)] } {
-    set fence_lx $keys(-fence_lx)
-  }
-  if { [info exists keys(-fence_ly)] } {
-    set fence_ly $keys(-fence_ly)
-  }
-  if { [info exists keys(-fence_ux)] } {
-    set fence_ux $keys(-fence_ux)
-  }
-  if { [info exists keys(-fence_uy)] } {
-    set fence_uy $keys(-fence_uy)
-  }
-  if { [info exists keys(-area_weight)] } {
-    set area_weight $keys(-area_weight)
-  }
-  if { [info exists keys(-wirelength_weight)] } {
-    set wirelength_weight $keys(-wirelength_weight)
-  }
-  if { [info exists keys(-outline_weight)] } {
-    set outline_weight $keys(-outline_weight)
-  }
-  if { [info exists keys(-guidance_weight)] } {
-    set guidance_weight $keys(-guidance_weight)
-  }
-  if { [info exists keys(-fence_weight)] } {
-    set fence_weight $keys(-fence_weight)
-  }
-  if { [info exists keys(-boundary_weight)] } {
-    set boundary_weight $keys(-boundary_weight)
-  }
-  if { [info exists keys(-notch_weight)] } {
-    set notch_weight $keys(-notch_weight)
-  }
   if { [info exists keys(-macro_blockage_weight)] } {
     if { [info exists keys(-soft_blockage_weight)] } {
       utl::error MPL 69 "Cannot set -macro_blockage_weight along with\
@@ -197,46 +109,10 @@ proc rtl_macro_placer { args } {
 
     utl::warn MPL 70 "-macro_blockage_weight is deprecated, use\
                       -soft_blockage_weight instead."
-    set soft_blockage_weight $keys(-macro_blockage_weight)
-  }
-  if { [info exists keys(-soft_blockage_weight)] } {
-    set soft_blockage_weight $keys(-soft_blockage_weight)
-  }
-  if { [info exists keys(-target_util)] } {
-    set target_util $keys(-target_util)
-  }
-  if { [info exists keys(-min_ar)] } {
-    set min_ar $keys(-min_ar)
-  }
-  if { [info exists keys(-report_directory)] } {
-    set report_directory $keys(-report_directory)
+    set keys(-soft_blockage_weight) $keys(-macro_blockage_weight)
   }
 
-  file mkdir $report_directory
-
-  if { [info exists keys(-write_macro_placement)] } {
-    mpl::set_macro_placement_file $keys(-write_macro_placement)
-  }
-
-  if {
-    ![mpl::rtl_macro_placer_cmd $max_num_macro \
-      $min_num_macro \
-      $max_num_inst \
-      $min_num_inst \
-      $tolerance \
-      $max_num_level \
-      $coarsening_ratio \
-      $large_net_threshold \
-      $fence_lx $fence_ly $fence_ux $fence_uy \
-      $area_weight $outline_weight $wirelength_weight \
-      $guidance_weight $fence_weight $boundary_weight \
-      $notch_weight $soft_blockage_weight \
-      $target_util \
-      $min_ar \
-      $report_directory \
-      [info exists flags(-keep_clustering_data)] \
-      [info exists flags(-pin_aware_channels)]]
-  } {
+  if { ![mpl::rtl_macro_placer_cmd [array get keys] [array get flags]] } {
     return false
   }
 
@@ -397,31 +273,11 @@ proc parse_macro_name { cmd macro_name } {
 
 proc mpl_debug { args } {
   sta::parse_key_args "mpl_debug" args \
-    keys { -target_cluster_id target_cluster_id } \
+    keys { -target_cluster_id } \
     flags {-coarse -fine -show_bundled_nets \
            -show_clusters_ids \
            -skip_steps -only_final_result} ;# checker off
 
-  set coarse [info exists flags(-coarse)]
-  set fine [info exists flags(-fine)]
-  if { !$coarse && !$fine } {
-    set coarse true
-    set fine true
-  }
-  set block [ord::get_db_block]
-
-  set target_cluster_id -1
-  if { [info exists keys(-target_cluster_id)] } {
-    set target_cluster_id $keys(-target_cluster_id)
-  }
-
-  mpl::set_debug_cmd $block \
-    $coarse \
-    $fine \
-    [info exists flags(-show_bundled_nets)] \
-    [info exists flags(-show_clusters_ids)] \
-    [info exists flags(-skip_steps)] \
-    [info exists flags(-only_final_result)] \
-    $target_cluster_id
+  mpl::set_debug_cmd [array get keys] [array get flags]
 }
 }

@@ -1689,6 +1689,127 @@ TEST_F(GCFixture, lef58_enclosure)
   }
 }
 
+struct EnclosureCandidateFixture
+    : public FixtureWithParam<std::tuple<bool, bool>>
+{
+  frLef58EnclosureConstraint* addRule(frCoord width,
+                                      frCoord first,
+                                      frCoord second,
+                                      bool end_side = false)
+  {
+    const bool above = std::get<0>(GetParam());
+    auto* layer = design->getTech()->getLayer(3);
+    auto* rule = odb::dbTechLayerCutEnclosureRule::create(layer->getDbLayer());
+    rule->setAbove(above);
+    rule->setBelow(!above);
+    rule->setMinWidth(width);
+    rule->setFirstOverhang(first);
+    rule->setSecondOverhang(second);
+    rule->setType(end_side ? odb::dbTechLayerCutEnclosureRule::ENDSIDE
+                           : odb::dbTechLayerCutEnclosureRule::DEFAULT);
+    auto con = std::make_unique<frLef58EnclosureConstraint>(rule);
+    con->setCutClassIdx(0);
+    auto* result = con.get();
+    layer->addLef58EnclosureConstraint(result);
+    design->getTech()->addUConstraint(std::move(con));
+    return result;
+  }
+
+  odb::Rect makeEnclosure(const odb::Rect& cut,
+                          const odb::Rect& plate,
+                          const odb::Rect& wire)
+  {
+    const auto [above, transpose] = GetParam();
+    const auto point = [transpose](int x, int y) {
+      return odb::Point(700 + (transpose ? y : x), 1100 + (transpose ? x : y));
+    };
+    const auto rectangle = [&point](const odb::Rect& box) {
+      return odb::Rect(point(box.xMin(), box.yMin()),
+                       point(box.xMax(), box.yMax()));
+    };
+    addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+    addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+    makeCutClass(3, "Vx", cut.minDXDY(), cut.maxDXDY());
+    auto via = std::make_unique<frViaDef>("v");
+    for (int layer = 2; layer <= 4; ++layer) {
+      auto shape = std::make_unique<frRect>();
+      shape->setLayerNum(layer);
+      shape->setBBox(rectangle(layer == 3 ? cut
+                               : layer == (above ? 4 : 2)
+                                   ? plate
+                                   : odb::Rect(-250, -250, 250, 250)));
+      if (layer == 2) {
+        via->addLayer1Fig(std::move(shape));
+      } else if (layer == 3) {
+        via->addCutFig(std::move(shape));
+      } else {
+        via->addLayer2Fig(std::move(shape));
+      }
+    }
+    auto* net = makeNet("n1");
+    makeVia(design->getTech()->addVia(std::move(via)), net, {0, 0});
+    makePathseg(net,
+                above ? 4 : 2,
+                point(wire.xMin(), wire.yCenter()),
+                point(wire.xMax(), wire.yCenter()),
+                wire.dy());
+    return rectangle(cut);
+  }
+};
+
+TEST_P(EnclosureCandidateFixture, lef58_enclosure_containing_alternative)
+{
+  makeEnclosure({-50, -50, 50, 50}, {-150, -60, 150, 60}, {-80, -50, 400, 70});
+  addRule(0, 10, 100);
+
+  runGC();
+
+  EXPECT_TRUE(worker.getMarkers().empty());
+}
+
+TEST_P(EnclosureCandidateFixture, lef58_enclosure_endside_alternative)
+{
+  makeEnclosure(
+      {-50, -100, 50, 100}, {-60, -200, 60, 200}, {-70, -130, 400, 130});
+  addRule(0, 100, 10, true);
+
+  runGC();
+
+  EXPECT_TRUE(worker.getMarkers().empty());
+}
+
+TEST_P(EnclosureCandidateFixture, lef58_enclosure_widest_width_bucket)
+{
+  const auto cut = makeEnclosure(
+      {-50, -50, 50, 50}, {-150, -60, 150, 60}, {-80, -20, 400, 100});
+  addRule(0, 10, 100);
+  auto* strict = addRule(150, 80, 80);
+
+  runGC();
+
+  const auto& markers = worker.getMarkers();
+  ASSERT_EQ(markers.size(), 1);
+  EXPECT_EQ(markers[0]->getConstraint(), strict);
+  testMarker(markers[0].get(),
+             std::get<0>(GetParam()) ? 4 : 2,
+             frConstraintTypeEnum::frcLef58EnclosureConstraint,
+             cut);
+}
+
+TEST_P(EnclosureCandidateFixture, lef58_enclosure_below_width_threshold)
+{
+  makeEnclosure({-50, -50, 50, 50}, {-150, -60, 150, 60}, {-80, -20, 400, 100});
+  addRule(200, 80, 80);
+
+  runGC();
+
+  EXPECT_TRUE(worker.getMarkers().empty());
+}
+
+INSTANTIATE_TEST_SUITE_P(EnclosureCandidates,
+                         EnclosureCandidateFixture,
+                         testing::Combine(testing::Bool(), testing::Bool()));
+
 using CutSpcTblOrthFixture = FixtureWithParam<std::pair<bool, int>>;
 TEST_P(CutSpcTblOrthFixture, cut_spc_tbl_orth)
 {

@@ -18,26 +18,13 @@
 [INFO DPL-0392] Negotiation cell height distribution (2 unique row-count(s)):
 [INFO DPL-0393]   height 1 row(s): 4 cells
 [INFO DPL-0393]   height 36 row(s): 1 cells
-          |      Total |  Illegal |  Illegal
-Iteration | Violations |    Cells |    Sites
----------------------------------------------
-        0 |         29 |         5 |        24
-        1 |         29 |         5 |        24
-        2 |         29 |         5 |        24
-        3 |         29 |         5 |        24
-[WARNING DPL-0700] Negotiation phase 1: violations stuck at 29 for 3 consecutive iterations.
-Using old diamond search for 5 remaining illegal cells.
-diamond recovery: recovered 4/5 stuck cells.
-Negotiation phase 2: isolation point active, 1000 iterations.
-      400 |          0 |         0 |         0
-Negotiation phase 2 converged at iteration 0.
 Detailed Placement Analysis
 ---------------------------------
 legalizer            negotiation
-total moves                  20
-total displacement         66.6 u
-average displacement       13.3 u
-max displacement           17.8 u
+total moves                   0
+total displacement         64.0 u
+average displacement       12.8 u
+max displacement           17.1 u
 original HPWL               0.0 u
 legalized HPWL              0.0 u
 delta HPWL                    0 %

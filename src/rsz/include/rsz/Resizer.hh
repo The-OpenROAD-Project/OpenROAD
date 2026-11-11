@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <deque>
 #include <functional>
+#include <limits>
 #include <map>
 #include <memory>
 #include <optional>
@@ -55,7 +56,7 @@
 
 namespace rsz {
 class SetupLegacyBase;
-struct SlackEstimatorParams;
+struct UnbufferSlackParams;
 }  // namespace rsz
 
 namespace rsz {
@@ -115,6 +116,16 @@ enum class MoveType : uint8_t
   kReroute,
   kBufferToInverters,
   kCount
+};
+
+// How long repair_timing -setup keeps working once WNS and TNS converge.
+// Only PARALLEL_EVAL reads it: low skips the WNS tail, medium stalls the
+// batches and the tail sooner, and high runs the full tail.
+enum class RepairEffort : uint8_t
+{
+  kLow,
+  kMedium,
+  kHigh
 };
 
 // Voltage Threshold (VT) category identifier
@@ -188,6 +199,7 @@ struct LibraryAnalysisData
 
 class OdbCallBack;
 
+// Owns timing-driven netlist repair and its OpenDB/STA services.
 class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 {
  public:
@@ -229,6 +241,12 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
     return estimate_parasitics_;
   }
   bool& matchCellFootprint() { return match_cell_footprint_; }
+  // Group `repair_timing -path_group` restricts optimization to, empty when
+  // every group is repaired.  Set only for one repair_timing run.
+  const std::string& pathGroup() const { return path_group_; }
+  // Validates a -path_group name, defining the matching OpenSTA group_path
+  // if the SDC has none.  Returns "" to repair every group.
+  std::string resolvePathGroup(const char* path_group);
   const GlobalSizingConfig& globalSizingConfig() const
   {
     return global_sizing_config_;
@@ -364,6 +382,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                    bool verbose,
                    const std::vector<MoveType>& sequence,
                    const char* phases,
+                   // Path group to restrict repair to, "" for all groups.
+                   const char* path_group,
                    bool skip_pin_swap,
                    bool skip_gate_cloning,
                    bool skip_size_down_fanout,
@@ -372,7 +392,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                    bool skip_buffer_to_inverters,
                    bool skip_last_gasp,
                    bool skip_vt_swap,
-                   bool skip_crit_vt_swap);
+                   bool skip_crit_vt_swap,
+                   RepairEffort effort = RepairEffort::kHigh,
+                   int profile_mode = 0,
+                   const char* profile_dir = "");
   // For testing.
   void repairSetup(const sta::Pin* end_pin);
   // For testing.
@@ -391,7 +414,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                   int max_passes,
                   int max_iterations,
                   bool match_cell_footprint,
-                  bool verbose);
+                  bool verbose,
+                  // Path group to restrict repair to, "" for all groups.
+                  const char* path_group);
   void repairHold(const sta::Pin* end_pin,
                   double setup_margin,
                   double hold_margin,
@@ -409,6 +434,35 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void swapArithModules(int path_count,
                         const std::string& target,
                         float slack_margin);
+
+  ////////////////////////////////////////////////////////////////
+  // Useful-skew budgeting via a minimum-perturbation LP. Emits
+  // set_clock_latency annotations on register CK pins for CTS to consume.
+  // See doc/useful_skew.md for the algorithm.
+  struct SkewBudgetOptions
+  {
+    float max_skew = 0.0f;            // Δ_max; 0 ⇒ default 0.15 * min period
+    float hold_margin = 50e-12f;      // G_h, seconds
+    bool one_sided = false;           // t ∈ [0, Δ_max]: delay-only schedule
+                                      // physically realizable by CTS
+    float quantum = 0.0f;             // snap final targets to multiples of
+                                      // this (the CTS delay-buffer delay);
+                                      // 0 ⇒ no snapping
+    float edge_threshold = 200e-12f;  // setup-endpoint candidate window
+                                      // for the augmentation pass
+    float emit_threshold = 1e-12f;    // below this, don't annotate
+    // Iter-0 augmentation pass: one batched findPathEnds over the
+    // critical endpoint set with this per-endpoint depth. 0 disables
+    // (pure cutting-plane); Tcl default is 200.
+    int paths_per_endpoint = 0;
+    // Cutting-plane iteration cap. Each iteration applies the LP's
+    // tentative latencies, re-walks endpoints with VertexPathIterator
+    // (which surfaces a *different* worst-per-tag launch once shifts
+    // change which path is critical), augments the LP edge set, and
+    // re-solves. Converges in a handful of iterations.
+    int max_iterations = 8;
+  };
+  void computeSkewBudget(const SkewBudgetOptions& opts);
 
   ////////////////////////////////////////////////////////////////
 
@@ -518,9 +572,13 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   //  restore resized gates
   // resizeSlackPreamble must be called before the first findResizeSlacks.
   void resizeSlackPreamble();
+  // placed_net limits buffering to the nets the placer models. Buffers added
+  // to any other net would have no connections in the placer.
   void findResizeSlacks(bool run_journal_restore,
                         bool run_repair_timing = false,
-                        float repair_tns_end_percent = 0.01);
+                        float repair_tns_end_percent = 0.01,
+                        const std::function<bool(const odb::dbNet*)>& placed_net
+                        = {});
   // Return nets with worst slack.
   sta::NetSeq resizeWorstSlackNets();
   // Return net slack, if any (indicated by the bool).
@@ -552,6 +610,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                              bool report_all_cells,
                              bool report_vt_equiv);
   void reportBuffers(bool filtered);
+  void reportDelayEstimatorAccuracyForRebufferTree(sta::Instance* inst,
+                                                   sta::Pin* driver_pin,
+                                                   int delay_levels);
   void reportDelayEstimatorAccuracy(sta::Instance* inst,
                                     sta::LibertyCell* replacement,
                                     const std::string& estimator,
@@ -562,6 +623,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
   static std::vector<MoveType> parseMoveSequence(const std::string& sequence);
+  // "low", "medium" or "high"; anything else is error RSZ-3242.
+  RepairEffort repairEffortFromString(const std::string& effort) const;
   void fullyRebuffer(sta::Pin* pin);
 
   bool hasFanout(sta::Vertex* drvr);
@@ -649,7 +712,13 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool isCombinational(sta::LibertyCell* cell) const;
   std::vector<sta::LibertyPort*> libraryOutputPins(
       sta::LibertyCell* cell) const;
-  float maxLoad(sta::Cell* cell);
+  // Max capacitance limit of the first output of `cell` that has one (SDC
+  // design and cell limits, Liberty port limit or library default) in the
+  // command scene or `scene`; 0 when there is no limit.
+  float outputMaxCap(sta::Cell* cell);
+  float outputMaxCap(sta::Cell* cell, const sta::Scene* scene);
+  // The same limit for the output `port` of a cell with several outputs.
+  float outputMaxCap(const sta::LibertyPort* port, const sta::Scene* scene);
   //==============================
   float findTargetLoad(sta::LibertyCell* cell);
   float findTargetLoad(sta::LibertyCell* cell,
@@ -690,7 +759,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   void findLongWires(sta::VertexSeq& drvrs);
   int findMaxSteinerDist(sta::Vertex* drvr, const sta::Scene* corner);
-  float driveResistance(const sta::Pin* drvr_pin);
+  float driveResistance(const sta::Pin* drvr_pin) const;
   float bufferDriveResistance(const sta::LibertyCell* buffer) const;
   int vtCategoryCount() const;
   float cellDriveResistance(const sta::LibertyCell* cell) const;
@@ -734,6 +803,16 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                             sta::LibertyPort** swap_port,
                             sta::ArcDelay* base_delay = nullptr,
                             sta::ArcDelay* candidate_delay = nullptr);
+  // The arc delays findSwapPinCandidate() compares, under the annotated
+  // input slews and load_cap: through input_port (base_delay, -INF without
+  // an arc) and through every other input of the cell (port_delays).
+  void swapPinDelays(sta::LibertyPort* input_port,
+                     sta::LibertyPort* drvr_port,
+                     float load_cap,
+                     const sta::Scene* scene,
+                     const sta::MinMax* min_max,
+                     sta::ArcDelay& base_delay,
+                     std::map<sta::LibertyPort*, sta::ArcDelay>& port_delays);
   void gateDelays(const sta::LibertyPort* drvr_port,
                   float load_cap,
                   const sta::Scene* scene,
@@ -892,8 +971,37 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool removeBufferIfPossible(sta::Instance* buffer,
                               bool honor_dont_touch_fixed = true);
   bool replacementPreservesMaxCap(sta::Instance* inst,
-                                  const sta::LibertyCell* replacement);
+                                  const sta::LibertyCell* replacement,
+                                  const sta::Mode* mode = nullptr);
+  // An input pin whose fanin max-cap check a cell swap skips: a register
+  // clock pin of an ideal clock, or a scan-enable/scan-in pin.
+  bool skipsFaninMaxCap(const sta::Pin* pin, const sta::Mode* mode);
+  // The load a driver can still take under its max-cap limit: none once the
+  // limit is violated, and no bound without a limit.
+  float maxCapIncrease(const sta::Pin* drvr_pin);
   bool checkMaxCapOK(const sta::Pin* drvr_pin, float cap_delta);
+
+  // Cached fanin max-cap headroom for one input pin of a candidate cell.
+  struct InputCapBudget
+  {
+    // Current cell's Liberty input port matched to candidate ports.
+    const sta::LibertyPort* port{nullptr};
+    // Input capacitance of that current port.
+    float current_cap{0.0f};
+    // The smallest maxCapIncrease() of the drivers of the input net.
+    float max_cap_increase{std::numeric_limits<float>::infinity()};
+  };
+
+  // Capture fanin max-cap state once before screening equivalent cells.
+  // The pins that skipsFaninMaxCap() exempts get no budget.
+  std::vector<InputCapBudget> inputCapBudgets(sta::Instance* inst,
+                                              const sta::Mode* mode = nullptr);
+  // Test a replacement using captured headroom without new STA queries.
+  bool replacementFitsInputCapBudgets(
+      const std::vector<InputCapBudget>& budgets,
+      const sta::LibertyCell* replacement) const;
+
+  // === Buffer removal timing checks =======================================
   bool estimateInputSlewImpact(
       sta::Instance* instance,
       const sta::Scene* scene,
@@ -901,12 +1009,20 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       const std::array<sta::Slew, sta::RiseFall::index_count>& old_in_slew,
       const std::array<sta::Slew, sta::RiseFall::index_count>& new_in_slew,
       float delay_adjust,
-      const rsz::SlackEstimatorParams& params,
+      const rsz::UnbufferSlackParams& params,
       bool accept_if_slack_improves);
   bool canRemoveBuffer(sta::Instance* buffer,
                        bool honor_dont_touch_fixed = true);
   bool removeBuffer(sta::Instance* buffer, bool honor_dont_touch_fixed = true);
-  bool estimatedSlackOK(const rsz::SlackEstimatorParams& params);
+  // Whether removeBuffer() keeps the output net of buffer and moves the pins
+  // of its input net onto it, instead of the other way round.
+  bool removeBufferKeepsOutputNet(sta::Instance* buffer) const;
+  // Check removal legality and optionally return the measured delay terms.
+  bool estimatedUnbufferSlackOK(const rsz::UnbufferSlackParams& params,
+                                float* upstream_delay_delta_out = nullptr,
+                                float* buffer_delay_saved_out = nullptr);
+
+  // === Buffered-net construction ==========================================
   BufferedNetPtr makeBufferedNet(const sta::Pin* drvr_pin,
                                  const sta::Scene* scene);
   BufferedNetPtr makeBufferedNetSteiner(const sta::Pin* drvr_pin,
@@ -935,7 +1051,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool isEditableLogicStdCell(const sta::Instance* inst);
 
   bool okToBufferNet(const sta::Pin* driver_pin) const;
+  // False for a net outside the placer's nets during findResizeSlacks.
+  bool isPlacedNet(const odb::dbNet* net) const;
   sta::LibertyCell* lowestDriveBufferCell() const;
+  sta::LibertyCell* selectBetterRfDriveVtCell(sta::LibertyCell* curr_cell);
   bool checkAndMarkVTSwappable(sta::Instance* inst,
                                std::unordered_set<sta::Instance*>& notSwappable,
                                sta::LibertyCell*& best_lib_cell);
@@ -954,6 +1073,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void journalRestore();
   void journalMakeBuffer(sta::Instance* buffer);
   void initForJournalRestore();
+  // An ECO undo skips the incremental area updates of the undone edits.
+  void recountDesignAreaAfterUndo();
   void updateParasiticsAndTiming();
   void invalidateParasitics(sta::Net* net);
   void addAcceptedLegacyMoveCount(int count);
@@ -976,6 +1097,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Components
   std::unique_ptr<RecoverPower> recover_power_;
   std::unique_ptr<RepairDesign> repair_design_;
+  // Set only for the duration of findResizeSlacks.
+  std::function<bool(const odb::dbNet*)> placed_net_;
   std::unique_ptr<RepairHold> repair_hold_;
   std::unique_ptr<ConcreteSwapArithModules> swap_arith_modules_;
   std::unique_ptr<Rebuffer> rebuffer_;
@@ -1002,6 +1125,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   const sta::MinMax* max_ = sta::MinMax::max();
   sta::LibertyCellSeq buffer_cells_;
   sta::LibertyCell* buffer_lowest_drive_ = nullptr;
+  sta::LibertyCell* port_buffer_ = nullptr;
   std::unordered_set<sta::LibertyCell*> buffer_fast_sizes_;
   // Buffer list created by CTS kept here so that we use the
   // exact same buffers when reparing clock nets.
@@ -1031,6 +1155,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   int removed_buffer_count_ = 0;
   bool exclude_clock_buffers_ = true;
   bool match_cell_footprint_ = false;
+  std::string path_group_;
 
   // Equivalence classes over the link cells, owned by equiv_cell_groups_ (a
   // deque so the classes keep stable addresses).  No dont_use filtering;

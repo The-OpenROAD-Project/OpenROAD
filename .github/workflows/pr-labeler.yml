@@ -6,7 +6,7 @@ on:
 
 jobs:
   label:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted-ubuntu-26.04' || 'ubuntu-26.04' }}
     permissions:
       pull-requests: write
     steps:
@@ -24,4 +24,4 @@ jobs:
           l_max_size: '1000'
           xl_label: 'size/XL'
           fail_if_xl: 'false'
-          files_to_ignore: '*ok'
+          files_to_ignore: '*ok *.rules'

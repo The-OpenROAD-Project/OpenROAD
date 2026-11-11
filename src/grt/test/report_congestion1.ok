@@ -1,0 +1,28 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 676 components and 2850 component-terminals.
+[INFO ODB-0133]     Created 579 nets and 1498 connections.
+[ERROR GRT-0132] Run global_route before checking congestion.
+[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
+has_congestion: 0
+[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
+[WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
+has_congestion: 1
+
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
+---------------------------------------------------------------------------------------
+metal1               0             0            0.00%             0 /  0 /  0
+metal2            1190          1502          126.22%             1 /  4 / 606
+metal3            2380          1918           80.59%             4 /  2 / 440
+metal4               0             0            0.00%             0 /  0 /  0
+metal5               0             0            0.00%             0 /  0 /  0
+metal6               0             0            0.00%             0 /  0 /  0
+metal7               0             0            0.00%             0 /  0 /  0
+metal8               0             0            0.00%             0 /  0 /  0
+metal9               0             0            0.00%             0 /  0 /  0
+metal10              0             0            0.00%             0 /  0 /  0
+---------------------------------------------------------------------------------------
+Total             3570          3420           95.80%             5 /  6 / 1046
+
