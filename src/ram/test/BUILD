@@ -31,6 +31,7 @@ PASSFAIL_TESTS = [
     "bank_column_layout_asap7",
     "option_errors_asap7",
     "write_port_words_asap7",
+    "write_mux_fanout_asap7",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
