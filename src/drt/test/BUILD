@@ -175,6 +175,7 @@ cc_test(
         "fixture.cpp",
         "fixture.h",
         "gcTest.cpp",
+        "parserTest.cpp",
         "pathSegTest.cpp",
     ],
     includes = [

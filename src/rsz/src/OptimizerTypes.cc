@@ -3,9 +3,11 @@
 
 #include "OptimizerTypes.hh"
 
+#include <algorithm>
 #include <functional>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
@@ -207,6 +209,28 @@ const sta::TimingArc* findMatchingTimingArc(const sta::TimingArc* reference,
 {
   return findMatchingTimingArc(
       reference, candidate, ArcMatchMode::kExact, nullptr);
+}
+
+std::vector<float> relativeCellCosts(const std::vector<float>& cost_ratios)
+{
+  // The cheapest option that costs more than the current cell is the
+  // reference; without one, no option pays.
+  float reference = 0.0f;
+  for (const float ratio : cost_ratios) {
+    if (ratio > 1.0f && (reference == 0.0f || ratio < reference)) {
+      reference = ratio;
+    }
+  }
+
+  // Clamp at 1 after taking the relative cost, so a cheaper option never
+  // scores above its cost-free score.
+  std::vector<float> divisors;
+  divisors.reserve(cost_ratios.size());
+  for (const float ratio : cost_ratios) {
+    divisors.push_back(reference > 0.0f ? std::max(1.0f, ratio / reference)
+                                        : 1.0f);
+  }
+  return divisors;
 }
 
 bool driveResNoHigherOnBothRf(const sta::LibertyPort* current,

@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "MplObserver.h"
+#include "hardMacroFactory.h"
 #include "hier_rtlmp.h"
 #include "object.h"
 #include "odb/db.h"
@@ -37,13 +38,21 @@ MacroPlacer::~MacroPlacer() = default;
 bool MacroPlacer::run(int threads, const MacroPlacerOptions& options)
 {
   utl::Timer timer;
+
   hier_rtlmp_->init();
   hier_rtlmp_->configure(threads, options);
   hier_rtlmp_->setGuidanceRegions(guidance_regions_);
 
-  hier_rtlmp_->run();
-  logger_->info(MPL, 500, "Runtime: {:.2f}s", timer.elapsed());
+  HardMacroFactory factory(db_->getChip()->getBlock(),
+                           logger_,
+                           hier_rtlmp_->floorplanShape(),
+                           hier_rtlmp_->minChannel(),
+                           options.pin_aware_channels);
 
+  hier_rtlmp_->setHardMacros(factory.create());
+  hier_rtlmp_->run();
+
+  logger_->info(MPL, 500, "Runtime: {:.2f}s", timer.elapsed());
   return true;
 }
 

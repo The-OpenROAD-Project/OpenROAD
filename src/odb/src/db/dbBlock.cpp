@@ -3841,6 +3841,7 @@ std::string _dbBlock::makeNewName(
                    parent->getHierarchicalName(),
                    block->getHierarchyDelimiter());
   }
+  assert(base_name != nullptr);
   buf.append(fmt::string_view(base_name));
   buf.push_back('\0');  // Null-terminate for find* functions
 
@@ -3984,6 +3985,7 @@ std::string dbBlock::makeNewInstName(dbModInst* parent,
 
 const char* dbBlock::getBaseName(const char* full_name) const
 {
+  assert(full_name != nullptr);
   const char hierarchy_delimiter = getHierarchyDelimiter();
   const char* base_name = full_name;
   size_t backslash_run = 0;

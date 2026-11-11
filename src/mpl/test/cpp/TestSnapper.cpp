@@ -97,6 +97,57 @@ TEST_F(TestSnapper, SingleLayer)
   EXPECT_EQ(macro->getOrigin().y(), 1523);
 }
 
+// A clock pin is aligned like a signal pin; a supply pin is not aligned
+TEST_F(TestSnapper, ClockPin)
+{
+  db_->getTech()->setManufacturingGrid(1);
+
+  const int track_pitch = 36;
+  odb::dbTechLayer* horizontal_layer = odb::dbTechLayer::create(
+      db_->getTech(), "H1", odb::dbTechLayerType::DEFAULT);
+  horizontal_layer->setDirection(odb::dbTechLayerDir::HORIZONTAL);
+  odb::dbTrackGrid* track
+      = odb::dbTrackGrid::create(db_->getChip()->getBlock(), horizontal_layer);
+  track->addGridPatternY(0, die_height_ / track_pitch, track_pitch);
+
+  odb::dbMaster* macro_master
+      = odb::dbMaster::create(db_->findLib("lib"), "macro_master");
+  macro_master->setHeight(10000);
+  macro_master->setWidth(10000);
+  macro_master->setType(odb::dbMasterType::BLOCK);
+
+  const int pin_height = 20;
+  const int pin_width = 50;
+
+  odb::dbMTerm* clock = odb::dbMTerm::create(
+      macro_master, "clock", odb::dbIoType::INPUT, odb::dbSigType::CLOCK);
+  odb::dbBox::create(odb::dbMPin::create(clock),
+                     horizontal_layer,
+                     0,
+                     0,
+                     pin_height,
+                     pin_width);
+
+  // Lower than the clock pin, so it would be snapped first if it were
+  // taken, and off the clock pin's tracks: both cannot be aligned
+  odb::dbMTerm* power = odb::dbMTerm::create(
+      macro_master, "vdd", odb::dbIoType::INOUT, odb::dbSigType::POWER);
+  odb::dbBox::create(
+      odb::dbMPin::create(power), horizontal_layer, 0, -30, pin_height, -12);
+
+  macro_master->setFrozen();
+
+  odb::dbInst* macro
+      = odb::dbInst::create(db_->getChip()->getBlock(), macro_master, "macro");
+  macro->setOrigin(1500, 1500);
+
+  snapper_->setMacro(macro);
+  snapper_->snapMacro();
+
+  // 1523 (origin) + 25 (clock pin center) equals 1548, a multiple of 36
+  EXPECT_EQ(macro->getOrigin().y(), 1523);
+}
+
 // Snaps a macro with two pins, with pins in different layers but same direction
 TEST_F(TestSnapper, DoubleLayer)
 {
