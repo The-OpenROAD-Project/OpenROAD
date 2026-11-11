@@ -232,12 +232,14 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
 
   prev_violations = -1;
   stall_count = 0;
+  std::vector<int> phase_2_history;
   for (int iter = 0; iter < kMaxIterNeg2; ++iter) {
     const int actual_iter = iter + max_iter_neg_;
     const bool print_row = shouldPrintIteration(actual_iter);
     const int phase_2_violations = negotiationIter(
         active, actual_iter, /*updateHistory=*/true, print_row);
     phase2_iterations_ = iter + 1;
+    phase_2_history.push_back(phase_2_violations);
     if (print_row) {
       last_printed_iter_ = actual_iter;
     }
@@ -290,6 +292,25 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
       if (!cells_[idx].fixed && !isCellLegal(idx)) {
         illegal_cells.push_back(idx);
       }
+    }
+    if (!illegal_cells.empty()) {
+      // The count was still changing: say how much, so a run that was
+      // converging slowly can be told from one that oscillates.
+      const size_t n = phase_2_history.size();
+      const size_t from = n > 100 ? n - 100 : 0;
+      const auto [lo, hi] = std::minmax_element(phase_2_history.begin() + from,
+                                                phase_2_history.end());
+      logger_->warn(utl::DPL,
+                    704,
+                    "Negotiation phase 2: reached its limit of {} iterations "
+                    "with {} violations, {} to {} over the last {}. Using "
+                    "diamond search for {} remaining illegal cells.",
+                    kMaxIterNeg2,
+                    phase_2_history.empty() ? 0 : phase_2_history.back(),
+                    n ? *lo : 0,
+                    n ? *hi : 0,
+                    n - from,
+                    illegal_cells.size());
     }
     diamondRecovery(illegal_cells);
   }
@@ -1178,11 +1199,15 @@ void NegotiationLegalizer::diamondRecovery(const std::vector<int>& activeCells)
   }
   ++diamond_recoveries_;
   int recovered = 0;
+  RecoveryDiagnosis diag;
+  diagnoseOverFixed(activeCells, diag);
   for (int idx : activeCells) {
     if (cells_[idx].fixed || isCellLegal(idx)) {
       continue;
     }
     const NegCell& cell = cells_[idx];
+    ++diag.stuck;
+    diagnoseStart(cell, diag);
     Node* node = cell.node;
     if (node == nullptr) {
       continue;
@@ -1194,6 +1219,7 @@ void NegotiationLegalizer::diamondRecovery(const std::vector<int>& activeCells)
         = opendp_->diamondSearch(node, GridX{cell.x}, GridY{cell.y});
     if (pt.pixel) {
       place(idx, pt.x.v, pt.y.v);
+      diagnoseMove(cell, diag);
       debugPrint(logger_,
                  utl::DPL,
                  "negotiation",
@@ -1212,6 +1238,219 @@ void NegotiationLegalizer::diamondRecovery(const std::vector<int>& activeCells)
   logger_->report("diamond recovery: recovered {}/{} stuck cells.",
                   recovered,
                   activeCells.size());
+  reportRecovery(diag, static_cast<int>(activeCells.size()), recovered);
+}
+
+// ===========================================================================
+// Recovery diagnosis – why cells were left to the diamond search, in numbers
+// that name the fix.  It reads the grid and the cells' positions only, so
+// the placement is the same with or without it.
+// ===========================================================================
+
+void NegotiationLegalizer::diagnoseStart(const NegCell& cell,
+                                         RecoveryDiagnosis& diag) const
+{
+  // Is there a free run of the cell's width anywhere in the window around
+  // it?  If not, the area is full and no window of that size can help.
+  const int sw = effectiveSiteWindow(cell);
+  const int rw = effectiveRowCap(cell);
+  bool slot = false;
+  for (int y = std::max(0, cell.y - rw);
+       !slot && y + cell.height <= std::min(grid_h_, cell.y + rw + 1);
+       ++y) {
+    int run = 0;
+    for (int x = std::max(0, cell.x - sw);
+         x < std::min(grid_w_, cell.x + sw + cell.width);
+         ++x) {
+      bool free = true;
+      for (int dy = 0; dy < cell.height; ++dy) {
+        const Pixel& p = gridAt(x, y + dy);
+        free = free && p.capacity > 0 && p.usage == 0;
+      }
+      run = free ? run + 1 : 0;
+      if (run >= cell.width) {
+        slot = true;
+        break;
+      }
+    }
+  }
+  if (!slot) {
+    ++diag.full_window;
+  }
+}
+
+// Did global placement put the cells over fixed instances?  Name the
+// instance's hierarchy, where a generator or a hard block shows up.  The
+// grid's pixels do not name fixed cells here, and the cells' grid
+// coordinates are not all taken from the same origin, so this compares
+// the database's boxes: a stuck cell where global placement left it (its
+// position is written back only at the end) against the fixed cells on
+// the rows it spans, collected in one pass.
+void NegotiationLegalizer::diagnoseOverFixed(
+    const std::vector<int>& activeCells,
+    RecoveryDiagnosis& diag) const
+{
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  odb::dbRow* first_row = *block->getRows().begin();
+  const int row_h = first_row->getSite()->getHeight();
+  std::vector<odb::Rect> stuck;
+  std::unordered_map<int, std::vector<const NegCell*>> fixed_by_row;
+  for (int idx : activeCells) {
+    const NegCell& cell = cells_[idx];
+    if (cell.fixed || isCellLegal(idx) || cell.db_inst == nullptr) {
+      continue;
+    }
+    const odb::Rect box = cell.db_inst->getBBox()->getBox();
+    stuck.push_back(box);
+    for (int r = box.yMin() / row_h; r <= (box.yMax() - 1) / row_h; ++r) {
+      fixed_by_row.try_emplace(r);
+    }
+  }
+  if (stuck.empty()) {
+    return;
+  }
+  for (const NegCell& f : cells_) {
+    if (!f.fixed || f.db_inst == nullptr) {
+      continue;
+    }
+    const odb::Rect box = f.db_inst->getBBox()->getBox();
+    for (int r = box.yMin() / row_h; r <= (box.yMax() - 1) / row_h; ++r) {
+      auto it = fixed_by_row.find(r);
+      if (it != fixed_by_row.end()) {
+        it->second.push_back(&f);
+      }
+    }
+  }
+  for (const odb::Rect& box : stuck) {
+    const NegCell* owner = nullptr;
+    for (int r = box.yMin() / row_h;
+         owner == nullptr && r <= (box.yMax() - 1) / row_h;
+         ++r) {
+      for (const NegCell* f : fixed_by_row[r]) {
+        const odb::Rect fb = f->db_inst->getBBox()->getBox();
+        if (fb.xMin() < box.xMax() && box.xMin() < fb.xMax()
+            && fb.yMin() < box.yMax() && box.yMin() < fb.yMax()) {
+          owner = f;
+          break;
+        }
+      }
+    }
+    if (owner == nullptr) {
+      continue;
+    }
+    ++diag.over_fixed;
+    // the owner's hierarchy, cut to what all owners share below
+    const std::string name = owner->db_inst->getName();
+    const size_t dot = name.rfind('.');
+    const std::string where = dot == std::string::npos
+                                  ? owner->db_inst->getMaster()->getName()
+                                  : name.substr(0, dot);
+    if (diag.over_fixed == 1) {
+      diag.over_fixed_where = where;
+    } else {
+      // keep the leading hierarchy levels both share
+      std::string& common = diag.over_fixed_where;
+      size_t keep = 0;
+      size_t i = 0;
+      while (i <= common.size() && i <= where.size()) {
+        const bool end_c = i == common.size() || common[i] == '.';
+        const bool end_w = i == where.size() || where[i] == '.';
+        if (end_c && end_w) {
+          keep = i;  // a whole level matches up to here
+          if (i == common.size() || i == where.size()) {
+            break;
+          }
+        } else if (end_c != end_w || common[i] != where[i]) {
+          break;
+        }
+        ++i;
+      }
+      common.resize(keep);
+    }
+    ++diag.over_fixed_by[name.substr(0, name.find('.'))];
+  }
+}
+
+void NegotiationLegalizer::diagnoseMove(const NegCell& cell,
+                                        RecoveryDiagnosis& diag) const
+{
+  const int dx = std::abs(cell.x - cell.init_x);
+  const int dy = std::abs(cell.y - cell.init_y);
+  if (dx > effectiveSiteWindow(cell) || dy > effectiveRowCap(cell)) {
+    ++diag.beyond_window;
+    diag.max_dx = std::max(diag.max_dx, dx);
+    diag.max_dy = std::max(diag.max_dy, dy);
+  }
+}
+
+void NegotiationLegalizer::reportRecovery(const RecoveryDiagnosis& diag,
+                                          int handed,
+                                          int recovered) const
+{
+  if (diag.stuck == 0) {
+    return;
+  }
+  const double dbu = db_->getTech()->getDbUnitsPerMicron();
+  std::string advice;
+  if (diag.over_fixed > 0) {
+    // where: the hierarchy all their fixed instances share, else the
+    // top-level instance most of them are in
+    std::string where = diag.over_fixed_where;
+    int count = diag.over_fixed;
+    if (where.empty()) {
+      const auto top = std::ranges::max_element(
+          diag.over_fixed_by,
+          [](const auto& a, const auto& b) { return a.second < b.second; });
+      where = top->first;
+      count = top->second;
+    }
+    advice += fmt::format(
+        "\n  Started over fixed instances: {} of the {}, {} of them over {}. "
+        "Global placement put them where there are no free sites; keep it "
+        "out of {} (a placement blockage) or leave free rows beside it.",
+        diag.over_fixed,
+        handed,
+        count,
+        where,
+        where);
+  }
+  if (diag.full_window > 0) {
+    advice += fmt::format(
+        "\n  No free run of their width anywhere in the window around "
+        "them: {}. The area is full; give it room (fewer cells there, a "
+        "lower placement density, pins spread wider) rather than a wider "
+        "window.",
+        diag.full_window);
+  }
+  if (diag.beyond_window > 0) {
+    advice += fmt::format(
+        "\n  Placed beyond the negotiation window: {}, up to {} sites "
+        "({:.2f} um) and {} rows away; -site_search_window {} "
+        "-row_search_window {} would let negotiation reach them.",
+        diag.beyond_window,
+        diag.max_dx,
+        diag.max_dx * site_width_ / dbu,
+        diag.max_dy,
+        std::max(diag.max_dx, site_search_window_),
+        std::max(diag.max_dy, row_search_window_));
+  }
+  const int left = diag.stuck - recovered;
+  if (left > 0) {
+    advice += fmt::format(
+        "\n  No free site within the maximum displacement, +/-{} sites "
+        "and +/-{} rows (-max_displacement): {}.",
+        opendp_->max_displacement_x_,
+        opendp_->max_displacement_y_,
+        left);
+  }
+  logger_->info(utl::DPL,
+                703,
+                "Negotiation left {} cells to the diamond search; still "
+                "illegal when it reached them: {}; placed: {}.{}",
+                handed,
+                diag.stuck,
+                recovered,
+                advice);
 }
 
 }  // namespace dpl

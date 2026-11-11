@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdint>
 #include <limits>
+#include <map>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -227,6 +228,25 @@ class NegotiationLegalizer
 
   // Stall recovery
   void diamondRecovery(const std::vector<int>& activeCells);
+  // Why cells were left to the diamond search, for DPL-0703.
+  struct RecoveryDiagnosis
+  {
+    int stuck{0};
+    int over_fixed{0};             // started over a fixed instance
+    std::string over_fixed_where;  // the hierarchy their owners share
+    std::map<std::string, int> over_fixed_by;  // top-level instance
+    int full_window{0};    // no free run of its width in its window
+    int beyond_window{0};  // placed beyond the negotiation window
+    int max_dx{0};         // sites
+    int max_dy{0};         // rows
+  };
+  void diagnoseStart(const NegCell& cell, RecoveryDiagnosis& diag) const;
+  void diagnoseOverFixed(const std::vector<int>& activeCells,
+                         RecoveryDiagnosis& diag) const;
+  void diagnoseMove(const NegCell& cell, RecoveryDiagnosis& diag) const;
+  void reportRecovery(const RecoveryDiagnosis& diag,
+                      int handed,
+                      int recovered) const;
 
   // Constraint helpers
   [[nodiscard]] bool isValidRow(int rowIdx,
