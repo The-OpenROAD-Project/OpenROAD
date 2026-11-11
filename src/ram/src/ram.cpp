@@ -400,6 +400,10 @@ void RamGen::makeSlice(const int slice_idx,
   // group.
   dbNet* hold = nullptr;
   dbNet* we_group = nullptr;
+  // more than one write port: each port's take, its data's select in
+  // every bit's data mux, reaches the bits a group of kDriveGroup at a
+  // time, a buffer a port a group
+  vector<dbNet*> take_group;
   // (sel0 & a) | (sel1 & b): an AO22, or the AOI22 and an inverter where
   // the library has no AO22
   auto ao22 = [&](Cell* cell,
@@ -549,6 +553,28 @@ void RamGen::makeSlice(const int slice_idx,
                             storage,
                             reset_bit,
                             reset_off);
+    if (num_write > 1 && (local_bit % kDriveGroup == 0 || take_group.empty())) {
+      const int group = local_bit / kDriveGroup;
+      take_group.assign(num_write, nullptr);
+      for (int i = 0; i < num_write; ++i) {
+        take_group[i] = makeNet(prefix, fmt::format("take{}_g{}", i, group));
+        makeInst(
+            bit_cell.get(),
+            prefix,
+            fmt::format("take_buf{}_g{}", i, group),
+            buffer_cell_,
+            {
+                {
+                    buffer_ports_[{.type = PortRoleType::DataIn, .index = 0}],
+                    take[i],
+                },
+                {
+                    buffer_ports_[{.type = PortRoleType::DataOut, .index = 0}],
+                    take_group[i],
+                },
+            });
+      }
+    }
     if (write_mux_ && (local_bit % kDriveGroup == 0 || we_group == nullptr)) {
       // a group's enable and hold, in its first bit's cell
       const int group = local_bit / kDriveGroup;
@@ -618,9 +644,9 @@ void RamGen::makeSlice(const int slice_idx,
                    name,
                    fmt::format("dmux{}", w / 2),
                    aoi22_cell_,
-                   {{aoi22_in_a1_, take[w]},
+                   {{aoi22_in_a1_, take_group[w]},
                     {aoi22_in_a2_, data_input[w][local_bit]},
-                    {aoi22_in_b1_, take[w + 1]},
+                    {aoi22_in_b1_, take_group[w + 1]},
                     {aoi22_in_b2_, data_input[w + 1][local_bit]},
                     {aoi22_out_, out_b}});
           makeInst(bit_cell.get(),
@@ -634,9 +660,9 @@ void RamGen::makeSlice(const int slice_idx,
                    name,
                    fmt::format("dmux{}", w / 2),
                    ao22_cell_,
-                   {{ao22_in_[0], take[w]},
+                   {{ao22_in_[0], take_group[w]},
                     {ao22_in_[1], data_input[w][local_bit]},
-                    {ao22_in_[2], take[w + 1]},
+                    {ao22_in_[2], take_group[w + 1]},
                     {ao22_in_[3], data_input[w + 1][local_bit]},
                     {ao22_out_, out}});
         } else {
@@ -644,7 +670,10 @@ void RamGen::makeSlice(const int slice_idx,
                    name,
                    fmt::format("dmux{}", w / 2),
                    and2_cell_,
-                   {{and2_ports_[{PortRoleType::DataIn, 0}], take[w]},
+                   {{
+                        and2_ports_[{.type = PortRoleType::DataIn, .index = 0}],
+                        take_group[w],
+                    },
                     {and2_ports_[{PortRoleType::DataIn, 1}],
                      data_input[w][local_bit]},
                     {and2_ports_[{PortRoleType::DataOut, 0}], out}});
