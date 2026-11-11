@@ -1,0 +1,56 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: aes_cipher_top
+[INFO ODB-0130]     Created 391 pins.
+[INFO ODB-0131]     Created 21340 components and 108388 component-terminals.
+[INFO ODB-0133]     Created 19675 nets and 65708 connections.
+[INFO DPL-0006] Core area: 289247.87 um^2
+[INFO DPL-0007] Movable instances area: 24135.51 um^2
+[INFO DPL-0008] Fixed instances area within core: 653.56 um^2
+[INFO DPL-0009] Utilization: 8.6%
+[INFO DPL-0005] Diamond search max displacement: +/- 10 sites horizontally, +/- 1 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
+Movements Summary
+---------------------------------------
+Total cells:                   18883
+Diamond Move Success:          18866 ( 99.91%)
+Diamond Move Failure:             17
+Rip-up and replace Success:       13 ( 76.47% of diamond failures)
+Rip-up and replace Failure:        4
+Total Placement Failures:          8
+---------------------------------------
+[INFO DPL-0034] Detailed placement failed on the following 8 instances:
+[INFO DPL-0035]  _36868_
+[INFO DPL-0035]  _37334_
+[INFO DPL-0035]  _37378_
+[INFO DPL-0035]  _33161_
+[INFO DPL-0035]  _35778_
+[INFO DPL-0035]  _35823_
+[INFO DPL-0035]  _35789_
+[INFO DPL-0035]  _35825_
+[ERROR DPL-0036] Detailed placement failed inside DPL.
+[INFO DPL-0006] Core area: 289247.87 um^2
+[INFO DPL-0007] Movable instances area: 24135.51 um^2
+[INFO DPL-0008] Fixed instances area within core: 653.56 um^2
+[INFO DPL-0009] Utilization: 8.6%
+[INFO DPL-0005] Diamond search max displacement: +/- 10 sites horizontally, +/- 1 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
+Movements Summary
+---------------------------------------
+Total cells:                   18883
+Diamond Move Success:          18866 ( 99.91%)
+Diamond Move Failure:             17
+Rip-up and replace Success:       13 ( 76.47% of diamond failures)
+Rip-up and replace Failure:        4
+Total Placement Failures:          8
+---------------------------------------
+[INFO DPL-0034] Detailed placement failed on the following 8 instances:
+[INFO DPL-0035]  _36868_
+[INFO DPL-0035]  _37334_
+[INFO DPL-0035]  _37378_
+[INFO DPL-0035]  _33161_
+[INFO DPL-0035]  _35778_
+[INFO DPL-0035]  _35823_
+[INFO DPL-0035]  _35789_
+[INFO DPL-0035]  _35825_
+[ERROR DPL-0036] Detailed placement failed inside DPL.
+placements match

@@ -31,6 +31,7 @@ COMPULSORY_TESTS = [
     "diamond_multi_height",
     "diamond_one_site_gap",
     "diamond_regions",
+    "diamond_ripup_order",
     "fence01",
     "fence02",
     "fence03",
@@ -196,6 +197,9 @@ filegroup(
             ],
             "diamond_regions": [
                 "regions1.def",
+            ],
+            "diamond_ripup_order": [
+                "aes_cipher_top_replace.def",
             ],
             "edge_spacing": [
                 "multi_height_rows.def",
