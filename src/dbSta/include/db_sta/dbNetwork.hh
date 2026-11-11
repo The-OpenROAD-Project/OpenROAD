@@ -599,6 +599,12 @@ class dbNetwork : public ConcreteNetwork
   // hierarchy separators.  Used to recover an in-module name from a
   // path-qualified one stored in ODB.
   static std::string stripParentPrefix(const std::string& name);
+  // Length of the path of `module`'s instance plus the divider after it
+  // when db_name starts with it, 0 for the top module, std::string::npos
+  // otherwise. Matches dbModInst::getHierarchicalName() without building
+  // it, as this runs for every name() of a dbInst or dbNet.
+  size_t modulePrefixLength(std::string_view db_name,
+                            const odb::dbModule* module) const;
 
   std::set<const Cell*> hier_modules_;
   std::set<const Port*> concrete_ports_;

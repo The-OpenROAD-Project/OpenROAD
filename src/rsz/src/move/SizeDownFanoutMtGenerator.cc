@@ -703,11 +703,8 @@ std::vector<std::unique_ptr<MoveCandidate>> SizeDownFanoutMtGenerator::generate(
       continue;
     }
 
-    candidates.push_back(std::make_unique<SizeDownFanoutMtCandidate>(
-        resizer_,
-        target,
-        load,
-        policy_config_.size_down_fanout_mt_score_scale));
+    candidates.push_back(
+        std::make_unique<SizeDownFanoutMtCandidate>(resizer_, target, load));
   }
   return candidates;
 }
