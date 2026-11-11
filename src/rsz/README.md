@@ -410,7 +410,7 @@ The `report_placement_density` command reports the placement density of the core
 
 The density is counted as the GUI's placement density heat map counts it with its default settings: the area of the placed instances inside the region over the area of the region. Fixed instances, macros, taps and endcaps count; filler cells, pads and covers do not, nor do placement blockages. The density goes over `1` where instances overlap.
 
-The instance area is kept in the heat map's default bins over the core: the bins of the last global placement, or 10 microns before global placement has run. A bin the region covers only in part adds that share of its instance area, as if the area were spread evenly over the bin, so the result is exact for a region made of whole bins. The report states the bin size.
+The instance area is kept per GCell, the global router's grid: squares from the lower left corner of the die, sized from the routing track pitches, so the routing layers must be set, as `set_routing_layers` does. The density of a GCell, or of any region made of whole GCells, is exact. A GCell the region covers only in part adds that share of its instance area, as if the area were spread evenly over the GCell. The report states the GCell size.
 
 ```tcl
 report_placement_density

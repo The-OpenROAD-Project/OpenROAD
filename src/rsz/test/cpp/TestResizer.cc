@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -1501,6 +1502,18 @@ TEST_F(TestResizer, PlacementDensityTracksPlacedInstances)
   block_->setCoreArea(block_->computeCoreArea());
   const odb::Rect core = block_->getCoreArea();
 
+  // The bins are the router's gcells, which need the routing layers, and
+  // tracks on metal2 to metal4.
+  EXPECT_THROW(resizer_.placementDensity(core), std::runtime_error);
+  for (const char* name : {"metal2", "metal3", "metal4"}) {
+    odb::dbTechLayer* layer = db_->getTech()->findLayer(name);
+    odb::dbTrackGrid* tracks = odb::dbTrackGrid::create(block_, layer);
+    tracks->addGridPatternX(0, 100, layer->getPitch());
+    tracks->addGridPatternY(0, 100, layer->getPitch());
+  }
+  block_->setMaxRoutingLayer(4);
+  const int gcell = block_->getGCellTileSize();
+
   // A buffer counts and the filler beside it does not.
   odb::dbMaster* buffer = db_->findMaster("BUF_X1");
   odb::dbMaster* filler = db_->findMaster("FILLCELL_X1");
@@ -1519,14 +1532,16 @@ TEST_F(TestResizer, PlacementDensityTracksPlacedInstances)
   EXPECT_EQ(density.region_area, core.area());
   EXPECT_DOUBLE_EQ(density.instance_area, buffer_area);
 
-  // The grid follows the buffer to the far corner of the core, in the last
-  // of its 10 micron bins.
+  // The grid follows the buffer to the far corner of the core, into the
+  // last gcell, which the router stretches to the edge of the die.
   placed->setLocation(core.xMax() - buffer->getWidth(),
                       core.yMax() - buffer->getHeight());
-  const int bin = 10 * block_->getDbUnitsPerMicron();
-  const odb::Rect last_bin(
-      core.xMin() + bin, core.yMin() + bin, core.xMax(), core.yMax());
-  EXPECT_DOUBLE_EQ(resizer_.placementDensity(last_bin).instance_area,
+  const odb::Rect die = block_->getDieArea();
+  const odb::Rect last_gcell(die.xMin() + (((die.dx() / gcell) - 1) * gcell),
+                             die.yMin() + (((die.dy() / gcell) - 1) * gcell),
+                             die.xMax(),
+                             die.yMax());
+  EXPECT_DOUBLE_EQ(resizer_.placementDensity(last_gcell).instance_area,
                    buffer_area);
   EXPECT_DOUBLE_EQ(resizer_.placementDensity(core).instance_area, buffer_area);
 }

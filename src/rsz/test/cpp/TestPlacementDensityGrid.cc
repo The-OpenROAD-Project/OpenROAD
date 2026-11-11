@@ -42,15 +42,23 @@ class PlacementDensityGridTest : public tst::DbFixture
   static constexpr int kCoreLy = kRowHeight;
   static constexpr int kCoreUx = kCoreLx + (kRowSites * kSiteWidth);
   static constexpr int kCoreUy = kCoreLy + (kRows * kRowHeight);
-  // Bins of ten sites by one row.
+  // Bins of ten sites by one row, which the tests line up on the core.
   static constexpr int kBinWidth = 10 * kSiteWidth;
   static constexpr int kBinHeight = kRowHeight;
+  // The track pitches on metal2, metal3 and metal4.  The router's gcells are
+  // 15 of the middle one.
+  static constexpr int kTrackPitches[] = {200, 300, 400};
+  static constexpr int kGCellSize = 15 * 300;
 
   void SetUp() override
   {
     db_->setDbuPerMicron(kDbuPerMicron);
     odb::dbTech* tech = odb::dbTech::create(db_.get(), "tech");
     odb::dbTechLayer::create(tech, "metal1", odb::dbTechLayerType::ROUTING);
+    for (const char* name : {"metal2", "metal3", "metal4"}) {
+      odb::dbTechLayer::create(tech, name, odb::dbTechLayerType::ROUTING)
+          ->setDirection(odb::dbTechLayerDir::VERTICAL);
+    }
 
     lib_ = dbLib::create(db_.get(), "lib", tech);
     site_ = dbSite::create(lib_, "site");
@@ -110,6 +118,19 @@ class PlacementDensityGridTest : public tst::DbFixture
     inst->setLocation(x, y);
     inst->setPlacementStatus(status);
     return inst;
+  }
+
+  // What the router's gcells need: tracks on metal2 to metal4, and the
+  // routing layers set.
+  void addRoutingTracks()
+  {
+    for (int level = 2; level <= 4; level++) {
+      odb::dbTechLayer* layer = db_->getTech()->findRoutingLayer(level);
+      const int pitch = kTrackPitches[level - 2];
+      odb::dbTrackGrid::create(block_, layer)
+          ->addGridPatternX(0, kCoreUx / pitch, pitch);
+    }
+    block_->setMaxRoutingLayer(4);
   }
 
   static int siteX(const int site) { return kCoreLx + (site * kSiteWidth); }
@@ -177,7 +198,7 @@ TEST_F(PlacementDensityGridTest, CountsWhatTheHeatMapCounts)
   place(cover_, siteX(30), rowY(1), dbPlacementStatus::COVER);
   place(cell_, siteX(40), rowY(0), dbPlacementStatus::UNPLACED);
 
-  PlacementDensityGrid grid(block_, kBinWidth, kBinHeight);
+  PlacementDensityGrid grid(block_, core().ll(), kBinWidth, kBinHeight);
   const PlacementDensity density = grid.getDensity(core());
   const int64_t counted
       = area(cell_) + area(macro_) + area(tap_) + area(endcap_);
@@ -192,7 +213,7 @@ TEST_F(PlacementDensityGridTest, CountsWhatTheHeatMapCounts)
 TEST_F(PlacementDensityGridTest, IsBuiltByTheFirstQuery)
 {
   place(cell_, siteX(0), rowY(0));
-  PlacementDensityGrid grid(block_, kBinWidth, kBinHeight);
+  PlacementDensityGrid grid(block_, core().ll(), kBinWidth, kBinHeight);
   EXPECT_EQ(grid.getBinCountX(), 0);
 
   // An edit before the first query is read by the build.
@@ -203,51 +224,60 @@ TEST_F(PlacementDensityGridTest, IsBuiltByTheFirstQuery)
   EXPECT_EQ(grid.getBinCountY(), kRows);
 }
 
-TEST_F(PlacementDensityGridTest, DefaultBinsFollowTheHeatMap)
+TEST_F(PlacementDensityGridTest, DefaultBinsAreTheRoutersGCells)
 {
-  // Before global placement has run, bins of 10 microns.
-  {
-    PlacementDensityGrid grid(block_);
-    grid.getDensity(core());
-    EXPECT_EQ(grid.getBinCountX(), 2);
-    EXPECT_EQ(grid.getBinCountY(), 2);
-    EXPECT_EQ(grid.getBinRect(0, 0),
-              Rect(kCoreLx,
-                   kCoreLy,
-                   kCoreLx + (10 * kDbuPerMicron),
-                   kCoreLy + (10 * kDbuPerMicron)));
-  }
+  addRoutingTracks();
+  // Cells across gcell edges, a macro over several gcells, and a cell in the
+  // top right corner, in the gcells the router stretches to the die edge.
+  place(wide_cell_, kGCellSize - kSiteWidth, rowY(1));
+  place(cell_, siteX(30), kGCellSize - (kRowHeight / 2));
+  place(macro_, siteX(40), rowY(3), dbPlacementStatus::FIRM);
+  place(cell_, kCoreUx - (2 * kSiteWidth), rowY(kRows - 1));
 
-  // Then the bins global placement published, the last ones clipped to the
-  // core.
-  odb::dbIntProperty::create(block_, "gpl_bin_size_x", 3000);
-  odb::dbIntProperty::create(block_, "gpl_bin_size_y", 4000);
-  {
-    PlacementDensityGrid grid(block_);
-    grid.getDensity(core());
-    EXPECT_EQ(grid.getBinCountX(), 7);
-    EXPECT_EQ(grid.getBinCountY(), 5);
-    EXPECT_EQ(grid.getBinRect(6, 4),
-              Rect(kCoreLx + 18000, kCoreLy + 16000, kCoreUx, kCoreUy));
-  }
+  PlacementDensityGrid grid(block_);
+  grid.getDensity(core());
+  EXPECT_EQ(grid.getBinWidth(), kGCellSize);
+  EXPECT_EQ(grid.getBinHeight(), kGCellSize);
+  // The gcells start at the die origin, below and left of the core.
+  EXPECT_EQ(grid.getBinRect(0, 0),
+            Rect(kCoreLx, kCoreLy, kGCellSize, kGCellSize));
+  expectBinsMatchTheDb(grid);
 
-  // Coarsened to at most 1024 bins a side.
-  odb::dbIntProperty::find(block_, "gpl_bin_size_x")->setValue(10);
-  odb::dbIntProperty::find(block_, "gpl_bin_size_y")->setValue(10);
-  {
-    PlacementDensityGrid grid(block_);
-    grid.getDensity(core());
-    EXPECT_EQ(grid.getBinCountX(), 1000);
-    EXPECT_EQ(grid.getBinCountY(), 1000);
+  // Every gcell, as the router lays them out, gets its exact area.
+  const Rect die = block_->getDieArea();
+  const int x_grids = die.dx() / kGCellSize;
+  const int y_grids = die.dy() / kGCellSize;
+  for (int y = 0; y < y_grids; y++) {
+    for (int x = 0; x < x_grids; x++) {
+      const Rect gcell(
+          die.xMin() + (x * kGCellSize),
+          die.yMin() + (y * kGCellSize),
+          x == x_grids - 1 ? die.xMax() : die.xMin() + ((x + 1) * kGCellSize),
+          y == y_grids - 1 ? die.yMax() : die.yMin() + ((y + 1) * kGCellSize));
+      EXPECT_DOUBLE_EQ(grid.getDensity(gcell).instance_area,
+                       static_cast<double>(expectedArea(gcell)))
+          << "gcell " << x << ", " << y;
+    }
   }
+}
 
-  // A size asked for wins.
-  {
-    PlacementDensityGrid grid(block_, kBinWidth, kBinHeight);
-    grid.getDensity(core());
-    EXPECT_EQ(grid.getBinCountX(), kRowSites / 10);
-    EXPECT_EQ(grid.getBinCountY(), kRows);
-  }
+TEST_F(PlacementDensityGridTest, TheGCellsFollowTheDie)
+{
+  addRoutingTracks();
+  place(cell_, siteX(0), rowY(0));
+  PlacementDensityGrid grid(block_);
+  grid.getDensity(core());
+  EXPECT_EQ(grid.getBinRect(0, 0),
+            Rect(kCoreLx, kCoreLy, kGCellSize, kGCellSize));
+
+  // A die reaching further down and left moves the gcells with it.
+  const int shift = kGCellSize / 3;
+  block_->setDieArea(
+      Rect(-shift, -shift, kCoreUx + kSiteWidth, kCoreUy + kRowHeight));
+  grid.getDensity(core());
+  EXPECT_EQ(grid.getBinRect(0, 0),
+            Rect(kCoreLx, kCoreLy, kGCellSize - shift, kGCellSize - shift));
+  expectBinsMatchTheDb(grid);
 }
 
 TEST_F(PlacementDensityGridTest, RegionQueries)
@@ -257,7 +287,7 @@ TEST_F(PlacementDensityGridTest, RegionQueries)
   place(wide_cell_, siteX(0), rowY(0));
   place(cell_, siteX(9), rowY(3));
   place(macro_, siteX(30), rowY(5), dbPlacementStatus::FIRM);
-  PlacementDensityGrid grid(block_, kBinWidth, kBinHeight);
+  PlacementDensityGrid grid(block_, core().ll(), kBinWidth, kBinHeight);
 
   // Regions made of whole bins are exact.
   for (const Rect& region : {core(),
@@ -327,9 +357,10 @@ TEST_F(PlacementDensityGridTest, BinsMatchTheDbUnderRandomEdits)
   for (int i = 0; i < 60; i++) {
     insts.push_back(place(masters[pick(0, 3)], random_x(), random_y()));
   }
-  // Bins that line up with neither the sites nor the rows, the last ones
-  // clipped to the core.
-  PlacementDensityGrid grid(block_, 1700, 1300);
+  // Bins on a grid through the die origin that lines up with neither the
+  // sites, the rows nor the core, so the first and last ones are clipped to
+  // the core.
+  PlacementDensityGrid grid(block_, odb::Point(0, 0), 1700, 1300);
   expectBinsMatchTheDb(grid);
 
   for (int step = 1; step <= 1000; step++) {
@@ -370,7 +401,7 @@ TEST_F(PlacementDensityGridTest, BinsMatchTheDbUnderRandomEdits)
     if (step % 25 == 0) {
       expectBinsMatchTheDb(grid);
       // A grid built afresh answers alike.
-      PlacementDensityGrid fresh(block_, 1700, 1300);
+      PlacementDensityGrid fresh(block_, odb::Point(0, 0), 1700, 1300);
       for (int query = 0; query < 10; query++) {
         const Rect region(random_x(), random_y(), random_x(), random_y());
         const PlacementDensity got = grid.getDensity(region);
@@ -386,7 +417,7 @@ TEST_F(PlacementDensityGridTest, JournalUndoLeavesNothingBehind)
 {
   dbInst* moved = place(cell_, siteX(0), rowY(0));
   dbInst* resized = place(cell_, siteX(20), rowY(2));
-  PlacementDensityGrid grid(block_, kBinWidth, kBinHeight);
+  PlacementDensityGrid grid(block_, core().ll(), kBinWidth, kBinHeight);
   expectBinsMatchTheDb(grid);
 
   // A repair move rolled back: a buffer added, placed and turned, a cell
@@ -411,7 +442,7 @@ TEST_F(PlacementDensityGridTest, ANewCoreIsCutIntoBinsAfresh)
 {
   place(cell_, siteX(0), rowY(0));
   place(cell_, siteX(80), rowY(0));
-  PlacementDensityGrid grid(block_, kBinWidth, kBinHeight);
+  PlacementDensityGrid grid(block_, core().ll(), kBinWidth, kBinHeight);
   EXPECT_DOUBLE_EQ(grid.getDensity(core()).instance_area,
                    static_cast<double>(2 * area(cell_)));
 

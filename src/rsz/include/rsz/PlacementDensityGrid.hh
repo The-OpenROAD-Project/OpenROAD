@@ -37,11 +37,12 @@ struct PlacementDensity
   }
 };
 
-// Placement density over the core of a block, counted as the GUI's
-// placement density heat map counts it with its default settings: the core
-// is cut into bins, and each placed instance adds the area it covers in
-// each bin.  Taps and endcaps count; fillers, pads and covers do not, nor do
-// placement blockages.  An instance of a child block counts as a whole.
+// Placement density over the core of a block: the core is cut into bins, by
+// default the global router's gcells, and each placed instance adds the
+// area it covers in each bin.  Instances count as the GUI's placement
+// density heat map counts them with its default settings: taps and endcaps
+// count; fillers, pads and covers do not, nor do placement blockages.  An
+// instance of a child block counts as a whole.
 //
 // The heat map throws its whole map away whenever an instance changes, and
 // rebuilds it on the next read.  This grid is built by its first query, and
@@ -59,14 +60,22 @@ struct PlacementDensity
 class PlacementDensityGrid : public odb::dbBlockCallBackObj
 {
  public:
-  // Bins of bin_width x bin_height DBU from the lower left corner of the
-  // core.  A size of 0 takes the heat map's default, picked when the map is
-  // built: the bins global placement last optimized on, or 10 microns before
-  // it has run, coarsened if need be to at most 1024 bins a side.  The grid
-  // is built by the first query, so making one costs nothing until then.
-  explicit PlacementDensityGrid(odb::dbBlock* block,
-                                int bin_width = 0,
-                                int bin_height = 0);
+  // Bins that are the global router's gcells as the block defines them when
+  // the grid is built: squares of block->getGCellTileSize() from the lower
+  // left corner of the die.  So the density of a gcell is exact.  The router
+  // stretches its last column and row of gcells to the edge of the die, and
+  // each of those gcells takes up to two bins, four in the corner.  The tile
+  // size needs the block's routing layers and their tracks.
+  //
+  // The grid is built by the first query, so making one costs nothing until
+  // then.
+  explicit PlacementDensityGrid(odb::dbBlock* block);
+  // Bins of bin_width x bin_height DBU, at least 1, on a grid through
+  // origin, which can lie outside the core.
+  PlacementDensityGrid(odb::dbBlock* block,
+                       const odb::Point& origin,
+                       int bin_width,
+                       int bin_height);
 
   odb::dbBlock* getBlock() const { return block_; }
 
@@ -78,6 +87,7 @@ class PlacementDensityGrid : public odb::dbBlockCallBackObj
   int getBinHeight() const { return bin_height_; }
   int getBinCountX() const { return bin_count_x_; }
   int getBinCountY() const { return bin_count_y_; }
+  // Bin (x, y) clipped to the core.
   odb::Rect getBinRect(int x, int y) const;
   int64_t getBinOccupiedArea(int x, int y) const
   {
@@ -92,6 +102,7 @@ class PlacementDensityGrid : public odb::dbBlockCallBackObj
       const odb::dbPlacementStatus& status) override;
   void inDbInstSwapMasterAfter(odb::dbInst* inst) override;
   void inDbPostMoveInst(odb::dbInst* inst) override;
+  void inDbBlockSetDieArea(odb::dbBlock* block) override;
   void inDbBlockSetCoreArea(odb::dbBlock* block) override;
 
  private:
@@ -105,7 +116,6 @@ class PlacementDensityGrid : public odb::dbBlockCallBackObj
   };
 
   void build();
-  void pickBinSize(int64_t& width, int64_t& height) const;
 
   // Brings what inst adds in line with status, the placement status it has
   // or is about to have.
@@ -122,14 +132,20 @@ class PlacementDensityGrid : public odb::dbBlockCallBackObj
   BinRange binsCovering(const odb::Rect& rect) const;
 
   odb::dbBlock* block_;
+  // The grid of bins asked for; a width of 0 asks for the router's gcells.
+  const odb::Point requested_origin_;
   const int requested_bin_width_;
   const int requested_bin_height_;
 
-  // Set until the first query, and by a change to the core.  The next query
-  // then builds the bins afresh.
+  // Set until the first query, and by a change to the die or the core.  The
+  // next query then builds the bins afresh.
   bool stale_ = true;
 
   odb::Rect core_;
+  // The lower left corner of bin (0, 0) before it is clipped to the core:
+  // the grid point nearest the core's lower left corner from below and from
+  // the left.
+  odb::Point bin_origin_;
   int bin_width_ = 1;
   int bin_height_ = 1;
   int bin_count_x_ = 0;

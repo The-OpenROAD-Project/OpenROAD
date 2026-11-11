@@ -220,9 +220,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   double maxArea() const;
   // Placement density of region, given in block (DBU) coordinates, counted
   // as the GUI's placement density heat map counts it; see
-  // PlacementDensityGrid.  The first call builds the grid, which odb
-  // callbacks then keep current, so later calls cost a walk over the bins
-  // the region covers.
+  // PlacementDensityGrid.  The bins are the global router's gcells, so the
+  // density of a gcell is exact; they need the routing layers set.  The first
+  // call builds the grid, which odb callbacks then keep current, so later
+  // calls cost a walk over the bins the region covers.
   PlacementDensity placementDensity(const odb::Rect& region);
   // Reports the placement density of region, as placementDensity() counts
   // it.  Backs report_placement_density.

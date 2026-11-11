@@ -258,6 +258,13 @@ PlacementDensity Resizer::placementDensity(const odb::Rect& region)
   if (density_grid_ == nullptr || !density_grid_->hasOwner()
       || density_grid_->getBlock() != block_) {
     initBlock();
+    // The gcell size follows the routing layers.
+    if (block_->getMaxRoutingLayer() <= 0) {
+      logger_->error(RSZ,
+                     3217,
+                     "Placement density is counted per GCell, which needs the "
+                     "routing layers. Set them with set_routing_layers.");
+    }
     density_grid_ = std::make_unique<PlacementDensityGrid>(block_);
   }
   return density_grid_->getDensity(region);
@@ -296,7 +303,7 @@ void Resizer::reportPlacementDensity(const odb::Rect& region)
     return dbu_area / (dbu_per_micron * dbu_per_micron);
   };
   logger_->report("Region ({:.3f}, {:.3f}) ({:.3f}, {:.3f})", x1, y1, x2, y2);
-  logger_->report("  Bin size:             {:.3f} x {:.3f} um",
+  logger_->report("  GCell size:           {:.3f} x {:.3f} um",
                   block_->dbuToMicrons(density_grid_->getBinWidth()),
                   block_->dbuToMicrons(density_grid_->getBinHeight()));
   logger_->report("  Area inside the core: {:12.3f} um^2",

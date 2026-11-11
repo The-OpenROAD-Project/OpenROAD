@@ -15,19 +15,12 @@ namespace rsz {
 
 using odb::dbBlock;
 using odb::dbInst;
-using odb::dbIntProperty;
 using odb::dbMaster;
 using odb::dbPlacementStatus;
+using odb::Point;
 using odb::Rect;
 
 namespace {
-
-// The heat map's bin size before global placement has run.
-constexpr int kDefaultBinMicrons = 10;
-// The heat map coarsens its default bins to keep within this many a side.
-constexpr int64_t kMaxDefaultBinsPerSide = 1024;
-// Bounds the bin count however fine a bin size is asked for.
-constexpr int64_t kMaxBins = int64_t{1} << 24;
 
 // What the heat map counts with its default settings: placed instances
 // other than fillers, pads and covers.
@@ -40,21 +33,29 @@ bool contributesToDensity(dbInst* inst, const dbPlacementStatus& status)
   return !master->isFiller() && !master->isPad() && !master->isCover();
 }
 
-// A bin size, in DBU, that global placement published on block, or 0.
-int64_t globalPlacementBinSize(dbBlock* block, const char* name)
+// The last line at or below coord, of lines through origin every step.
+int lineAtOrBelow(const int coord, const int origin, const int step)
 {
-  dbIntProperty* prop = dbIntProperty::find(block, name);
-  return prop != nullptr ? prop->getValue() : 0;
+  const int64_t offset = (int64_t{coord} - origin) % step;
+  return static_cast<int>(coord - (offset < 0 ? offset + step : offset));
 }
 
 }  // namespace
 
+PlacementDensityGrid::PlacementDensityGrid(dbBlock* block)
+    : block_(block), requested_bin_width_(0), requested_bin_height_(0)
+{
+  addOwner(block_);
+}
+
 PlacementDensityGrid::PlacementDensityGrid(dbBlock* block,
+                                           const Point& origin,
                                            const int bin_width,
                                            const int bin_height)
     : block_(block),
-      requested_bin_width_(bin_width),
-      requested_bin_height_(bin_height)
+      requested_origin_(origin),
+      requested_bin_width_(std::max(bin_width, 1)),
+      requested_bin_height_(std::max(bin_height, 1))
 {
   addOwner(block_);
 }
@@ -114,14 +115,13 @@ PlacementDensity PlacementDensityGrid::getDensity(const Rect& region)
 
 Rect PlacementDensityGrid::getBinRect(const int x, const int y) const
 {
-  const int64_t lx = core_.xMin() + (static_cast<int64_t>(x) * bin_width_);
-  const int64_t ly = core_.yMin() + (static_cast<int64_t>(y) * bin_height_);
-  const int64_t ux = std::min<int64_t>(lx + bin_width_, core_.xMax());
-  const int64_t uy = std::min<int64_t>(ly + bin_height_, core_.yMax());
-  return Rect(static_cast<int>(lx),
-              static_cast<int>(ly),
-              static_cast<int>(ux),
-              static_cast<int>(uy));
+  const int64_t lx = bin_origin_.x() + (static_cast<int64_t>(x) * bin_width_);
+  const int64_t ly = bin_origin_.y() + (static_cast<int64_t>(y) * bin_height_);
+  return Rect(
+      static_cast<int>(std::max<int64_t>(lx, core_.xMin())),
+      static_cast<int>(std::max<int64_t>(ly, core_.yMin())),
+      static_cast<int>(std::min<int64_t>(lx + bin_width_, core_.xMax())),
+      static_cast<int>(std::min<int64_t>(ly + bin_height_, core_.yMax())));
 }
 
 PlacementDensityGrid::BinRange PlacementDensityGrid::binsCovering(
@@ -129,10 +129,10 @@ PlacementDensityGrid::BinRange PlacementDensityGrid::binsCovering(
 {
   // The upper edges are exclusive: a rect ending on a bin boundary does not
   // reach into the next bin.
-  return {.x_lo = (rect.xMin() - core_.xMin()) / bin_width_,
-          .y_lo = (rect.yMin() - core_.yMin()) / bin_height_,
-          .x_hi = (rect.xMax() - 1 - core_.xMin()) / bin_width_,
-          .y_hi = (rect.yMax() - 1 - core_.yMin()) / bin_height_};
+  return {.x_lo = (rect.xMin() - bin_origin_.x()) / bin_width_,
+          .y_lo = (rect.yMin() - bin_origin_.y()) / bin_height_,
+          .x_hi = (rect.xMax() - 1 - bin_origin_.x()) / bin_width_,
+          .y_hi = (rect.yMax() - 1 - bin_origin_.y()) / bin_height_};
 }
 
 void PlacementDensityGrid::build()
@@ -146,13 +146,22 @@ void PlacementDensityGrid::build()
     return;
   }
 
-  int64_t width = 0;
-  int64_t height = 0;
-  pickBinSize(width, height);
-  bin_width_ = static_cast<int>(width);
-  bin_height_ = static_cast<int>(height);
-  bin_count_x_ = static_cast<int>((core_.dx() + width - 1) / width);
-  bin_count_y_ = static_cast<int>((core_.dy() + height - 1) / height);
+  Point origin = requested_origin_;
+  bin_width_ = requested_bin_width_;
+  bin_height_ = requested_bin_height_;
+  if (bin_width_ == 0) {
+    // As the global router lays out its gcells.
+    origin = block_->getDieArea().ll();
+    bin_width_ = block_->getGCellTileSize();
+    bin_height_ = bin_width_;
+  }
+  bin_origin_ = Point(lineAtOrBelow(core_.xMin(), origin.x(), bin_width_),
+                      lineAtOrBelow(core_.yMin(), origin.y(), bin_height_));
+  bin_count_x_ = static_cast<int>(
+      (int64_t{core_.xMax()} - bin_origin_.x() + bin_width_ - 1) / bin_width_);
+  bin_count_y_ = static_cast<int>(
+      (int64_t{core_.yMax()} - bin_origin_.y() + bin_height_ - 1)
+      / bin_height_);
   occupied_area_.assign(static_cast<size_t>(bin_count_x_) * bin_count_y_, 0);
 
   // Room for every instance id, and some to spare for the ones to come.
@@ -160,38 +169,6 @@ void PlacementDensityGrid::build()
   inst_boxes_.reserve(inst_count + (inst_count / 8) + 1);
   for (dbInst* inst : block_->getInsts()) {
     updateInst(inst, inst->getPlacementStatus());
-  }
-}
-
-void PlacementDensityGrid::pickBinSize(int64_t& width, int64_t& height) const
-{
-  width = requested_bin_width_;
-  height = requested_bin_height_;
-  if (width <= 0 || height <= 0) {
-    // As the heat map: the bins global placement last optimized on, or 10
-    // microns before it has run.
-    width = globalPlacementBinSize(block_, "gpl_bin_size_x");
-    height = globalPlacementBinSize(block_, "gpl_bin_size_y");
-    if (width <= 0 || height <= 0) {
-      width = int64_t{kDefaultBinMicrons} * block_->getDbUnitsPerMicron();
-      height = width;
-    }
-    while (core_.dx() > kMaxDefaultBinsPerSide * width
-           || core_.dy() > kMaxDefaultBinsPerSide * height) {
-      width *= 2;
-      height *= 2;
-    }
-  }
-
-  width = std::clamp<int64_t>(width, 1, core_.dx());
-  height = std::clamp<int64_t>(height, 1, core_.dy());
-  const auto bin_count = [&] {
-    return ((core_.dx() + width - 1) / width)
-           * ((core_.dy() + height - 1) / height);
-  };
-  while (bin_count() > kMaxBins) {
-    width = std::min<int64_t>(2 * width, core_.dx());
-    height = std::min<int64_t>(2 * height, core_.dy());
   }
 }
 
@@ -284,6 +261,12 @@ void PlacementDensityGrid::inDbPostMoveInst(dbInst* inst)
   if (!stale_) {
     updateInst(inst, inst->getPlacementStatus());
   }
+}
+
+void PlacementDensityGrid::inDbBlockSetDieArea(dbBlock*)
+{
+  // The router's gcells start at the die.
+  stale_ = true;
 }
 
 void PlacementDensityGrid::inDbBlockSetCoreArea(dbBlock*)
