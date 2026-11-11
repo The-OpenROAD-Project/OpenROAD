@@ -2897,6 +2897,7 @@ void RamGen::generate(const int mask_size,
             for (const LiteralCell& lit : cells) {
               if (lit.name == name) {
                 out = lit.out;
+                break;
               }
             }
             if (out == nullptr) {
