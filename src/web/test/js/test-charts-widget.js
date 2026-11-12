@@ -42,6 +42,7 @@ function installCanvasStubs() {
 
 function createWidgetApp(responses = {}) {
     const requests = [];
+    const shown = [];
     return {
         requests,
         websocketManager: {
@@ -57,8 +58,12 @@ function createWidgetApp(responses = {}) {
             },
         },
         focusComponent() {},
+        // Each showPaths call the drill-down made.
+        shown,
         timingWidget: {
-            showPaths() {},
+            showPaths(tab, paths, query) {
+                shown.push({ tab, paths, query });
+            },
         },
     };
 }
@@ -426,6 +431,21 @@ describe('ChartsWidget slack bar drill-down', () => {
     function timingReports(app) {
         return app.requests.filter((r) => r.type === 'timing_report');
     }
+
+    it('hands the timing widget the query its list was fetched with',
+        async () => {
+            const { app, widget } = createWidget();
+            populate(widget);
+            widget._clockSelect.value = 'clk_b';
+            await showBar(widget);
+            await widget._handleClick({ clientX: 50, clientY: 50 });
+            const [shown] = app.shown;
+            assert.equal(shown.tab, 'setup');
+            assert.deepEqual(shown.query, {
+                max_paths: 50, slack_min: -20, slack_max: -10,
+                unconstrained: false, clock_name: 'clk_b',
+            });
+        });
 
     it('asks for every path group and clock when none is selected',
         async () => {

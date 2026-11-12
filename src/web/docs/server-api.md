@@ -710,12 +710,14 @@ single stage emphasized.
 | `max_paths`  | `int`    | optional, `>= 0` only    | Report path limit. Defaults to `100`.                         |
 | `slack_min`  | `double` | optional, `>= 0` only    | Report lower slack bound. Defaults to `-FLT_MAX`.             |
 | `slack_max`  | `double` | optional, `>= 0` only    | Report upper slack bound. Defaults to `+FLT_MAX`.             |
+| `path_groups` | `string[]` | optional, `>= 0` only | Report path groups, as in `timing_report`. Defaults to every group. |
+| `clock_name` | `string` | optional, `>= 0` only    | Report capturing clock, as in `timing_report`. Defaults to every clock. |
 | `pin_name`   | `string` | optional, `>= 0` only    | If set, emphasize this pin's net within the path.              |
 
 The server re-runs the report with `unconstrained`, `max_paths`,
-`slack_min`, and `slack_max`, then picks the path whose pins and clocks all
-match: a register two clocks capture has a path per clock with the same pins.
-If the options differ from the `timing_report` the row came from, the worst
+`slack_min`, `slack_max`, `path_groups`, and `clock_name`, then picks the
+path whose pins and clocks all match: a register two clocks capture has a
+path per clock with the same pins. If the options differ from the `timing_report` the row came from, the worst
 case is no highlight rather than a different path.
 
 **Response (JSON):** `{"ok": true}`. The actual update is the layer
