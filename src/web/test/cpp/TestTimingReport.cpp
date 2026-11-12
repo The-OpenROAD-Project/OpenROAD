@@ -175,6 +175,8 @@ TEST_F(TimingReportTest, ReportListsWhatHistogramCounts)
       {.path_groups = {"to_b1"}, .clock_name = ""},
       {.path_groups = {"to_b1"}, .clock_name = "clk_a"},
       {.path_groups = {"to_b1"}, .clock_name = "clk_b"},
+      {.path_groups = {}, .clock_name = "clk_c"},
+      {.path_groups = {"to_b1"}, .clock_name = "clk_c"},
   };
   TimingReport timing_report(getSta());
   for (const Filter& filter : filters) {

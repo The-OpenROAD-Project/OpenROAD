@@ -186,6 +186,21 @@ static sta::StringSeq filterGroupNames(
   return {path_groups.begin(), path_groups.end()};
 }
 
+// The clock a chart filter names, nullptr for none, looked up as
+// getSlackHistogram and getReport both do.  Returns false when the name is
+// no clock: the filter matches no path, so the bar and the list are empty.
+static bool findFilterClock(sta::dbSta* sta,
+                            const std::string& clock_name,
+                            sta::Clock*& clk)
+{
+  clk = nullptr;
+  if (clock_name.empty()) {
+    return true;
+  }
+  clk = sta->cmdSdc()->findClock(clock_name);
+  return clk != nullptr;
+}
+
 std::vector<TimingPathSummary> TimingReport::getReport(
     bool is_setup,
     int max_paths,
@@ -214,12 +229,9 @@ std::vector<TimingPathSummary> TimingReport::getReport(
   sta::SceneSeq scenes = sta_->scenes();
   // The slack histogram's filters, so a bar lists the paths it counted.
   sta::StringSeq group_names = filterGroupNames(path_groups, clock_name);
-  const sta::Clock* clk = nullptr;
-  if (!clock_name.empty()) {
-    clk = sta_->cmdSdc()->findClock(clock_name);
-    if (clk == nullptr) {
-      return result;
-    }
+  sta::Clock* clk = nullptr;
+  if (!findFilterClock(sta_, clock_name, clk)) {
+    return result;
   }
   sta::PathEndSeq path_ends = search->findPathEnds(
       /*from*/ nullptr,
@@ -435,15 +447,9 @@ static void collectFilteredSlacks(sta::dbSta* sta,
       = is_setup ? sta::MinMax::max() : sta::MinMax::min();
   const float time_scale = sta->units()->timeUnit()->scale();
 
-  // Find the clock pointer if a clock name was given.
-  const sta::Clock* clk = nullptr;
-  if (!clock_name.empty()) {
-    for (sta::Clock* c : sta->cmdScene()->sdc()->clocks()) {
-      if (clock_name == c->name()) {
-        clk = c;
-        break;
-      }
-    }
+  sta::Clock* clk = nullptr;
+  if (!findFilterClock(sta, clock_name, clk)) {
+    return;
   }
 
   // Find the path group.
