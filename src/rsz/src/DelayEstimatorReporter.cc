@@ -1321,7 +1321,7 @@ std::vector<sta::Pin*> DelayEstimatorReporter::outputPins(
       network_->pinIterator(inst));
   while (pin_iter->hasNext()) {
     sta::Pin* pin = pin_iter->next();
-    sta::PortDirection* direction = network_->direction(pin);
+    const sta::PortDirection* direction = network_->direction(pin);
     if (direction != nullptr && direction->isAnyOutput()) {
       pins.push_back(pin);
     }
@@ -2416,7 +2416,7 @@ DelayEstimatorReporter::captureFixedStages(const Target& target,
       fixed_stage.input_pin_name = network_->pathName(input_pin);
     }
 
-    fixed_stages.push_back(fixed_stage);
+    fixed_stages.push_back(std::move(fixed_stage));
   }
 
   assignNextPins(fixed_stages, expanded, nullptr, -1);

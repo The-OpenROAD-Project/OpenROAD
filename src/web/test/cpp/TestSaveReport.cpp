@@ -284,7 +284,8 @@ TEST_F(SaveReportTest, ScriptsAreBalanced)
   ASSERT_NE(begin, std::string::npos);
   html.erase(begin, end - begin);
 
-  EXPECT_GE(countOccurrences(html, "<script"), 3);
+  // The static cache and the report bundle.
+  EXPECT_GE(countOccurrences(html, "<script"), 2);
   EXPECT_EQ(countOccurrences(html, "<script"),
             countOccurrences(html, "</script>"));
 }
@@ -493,9 +494,12 @@ TEST_F(SaveReportTest, SerializeSlackHistogramRoundTrip)
   h.unconstrained_count = 5;
   h.total_endpoints = 35;
   h.time_unit = "ns";
+  h.clocks.push_back({"core_clock", 0.473f});
 
   const std::string json = boost::json::serialize(serializeSlackHistogram(h));
 
+  EXPECT_TRUE(contains(json, "\"clocks\":"));
+  EXPECT_TRUE(contains(json, "\"core_clock\""));
   EXPECT_TRUE(contains(json, "\"bins\":"));
   EXPECT_TRUE(contains(json, "\"unconstrained_count\":5"));
   EXPECT_TRUE(contains(json, "\"total_endpoints\":35"));

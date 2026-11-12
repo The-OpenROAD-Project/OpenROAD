@@ -35,7 +35,6 @@ py_binary(
 
 # ── The browser bundle ──────────────────────────────────────────────────────
 # The viewer and its npm libraries, bundled and minified for web_assets below.
-# The CMake build embeds the copy in dist/ (see dist/README.md).
 
 npm_link_all_packages(name = "node_modules")
 
@@ -246,7 +245,6 @@ cc_library(
         "src/web_assets.h",
     ],
     copts = [
-        "-DBOOST_ASIO_NO_DEPRECATED",
         "-DBOOST_JSON_HEADER_ONLY",
     ],
     includes = [

@@ -264,8 +264,12 @@ class GNet
 
   void setTimingWeight(float timingWeight);
   void setCustomWeight(float customWeight);
+  void setPowerWeight(float powerWeight);
 
-  float getTotalWeight() const { return timingWeight_ * customWeight_; }
+  float getTotalWeight() const
+  {
+    return (timingWeight_ + powerWeight_) * customWeight_;
+  }
   float getTimingWeight() const { return timingWeight_; }
   float getCustomWeight() const { return customWeight_; }
 
@@ -320,6 +324,7 @@ class GNet
 
   float timingWeight_ = 1;
   float customWeight_ = 1;
+  float powerWeight_ = 0;
 
   //
   // weighted average WL model stor for better indexing
@@ -1092,8 +1097,17 @@ class NesterovBase
 
   float getSumOverflow() const { return sum_overflow_; }
   float getSumOverflowUnscaled() const { return sum_overflow_unscaled_; }
+  // Unscaled overflow of the placement the bins hold now, normalized as
+  // updateNextIter(iter) normalizes it.  Unlike getSumOverflowUnscaled(),
+  // this reflects a revert to the snapshot or a change in cell sizes since
+  // the last update.
+  float getCurrentSumOverflowUnscaled(int iter) const;
   float getBaseWireLengthCoef() const { return baseWireLengthCoef_; }
   float getDensityPenalty() const { return densityPenalty_; }
+  // HPWL that the last updateNextIter() measured.  A converged region skips
+  // the update, so its value is from an earlier iteration.
+  int64_t getIterHpwl() const { return prev_hpwl_; }
+  bool isConverged() const { return isConverged_; }
   // Sets densityPenalty_ from the wirelength/density gradient ratio times
   // factor
   void updateDensityPenaltyFromRatio(float factor);
@@ -1226,6 +1240,7 @@ class NesterovBase
                       const std::vector<FloatPoint>& curSLPSumGrads_);
 
   void updateNextIter(int iter);
+  float getOverflowDenominator(int iter) const;
   void setTrueReprintIterHeader() { reprint_iter_header_ = true; }
   float getPhiCoef(float scaledDiffHpwl) const;
   float getStoredPhiCoef() const { return phiCoef_; }
@@ -1276,6 +1291,7 @@ class NesterovBase
   void nesterovAdjustPhi();
 
   void resetMinSumOverflow();
+  void setPrevHpwl(int64_t prev_hpwl) { prev_hpwl_ = prev_hpwl; }
 
   bool isDiverged() const { return isDiverged_; }
   // Resets isDiverged_ when no snapshot exists to revert to instead (the only

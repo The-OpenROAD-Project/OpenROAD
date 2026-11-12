@@ -3,7 +3,10 @@
 
 %include "../../Exception.i"
 %{
+#include "db_sta/dbNetwork.hh"
 #include "ord/OpenRoad.hh"
+#include "odb/db.h"
+#include <vector>
 #include "psm/pdnsim.h"
 #include "sta/Scene.hh"
 
@@ -19,6 +22,40 @@ class dbNet;
 using ord::getPDNSim;
 using psm::PDNSim;
 using sta::Scene;
+
+namespace {
+
+odb::dbNet* resolvePowerGridNet(const char* net_name)
+{
+  auto* openroad = ord::OpenRoad::openRoad();
+  auto* chip = openroad->getDb()->getChip();
+  if (!sta::dbNetwork::is3DicTopChip(chip)) {
+    auto* net = chip->getBlock()->findNet(net_name);
+    if (net != nullptr) {
+      return net;
+    }
+  } else {
+    for (auto* chip_net : chip->getChipNets()) {
+      if (std::string(chip_net->getName()) != net_name) {
+        continue;
+      }
+      for (uint32_t index = 0; index < chip_net->getNumBumpInsts(); ++index) {
+        std::vector<odb::dbChipInst*> path;
+        auto* bump = chip_net->getBumpInst(index, path);
+        if (bump != nullptr && bump->getChipBump() != nullptr
+            && bump->getChipBump()->getNet() != nullptr) {
+          return bump->getChipBump()->getNet();
+        }
+      }
+      break;
+    }
+  }
+  openroad->getLogger()->error(
+      utl::PSM, 30, "Cannot find net {} in the design.", net_name);
+  return nullptr;
+}
+
+}  // namespace
 
 #if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
   typedef int Tcl_Size;
@@ -46,19 +83,47 @@ using sta::Scene;
 
 %inline %{
 
+bool
+is_3d_design(odb::dbChip* chip)
+{
+  return sta::dbNetwork::is3DicTopChip(chip);
+}
 
-void 
+void
+set_interchip_resistance_cmd(Scene* scene, float resistance)
+{
+  getPDNSim()->setInterchipResistance(scene, resistance);
+}
+
+void
 set_net_voltage_cmd(odb::dbNet* net, Scene* corner, double voltage)
 {
   PDNSim* pdnsim = getPDNSim();
   pdnsim->setNetVoltage(net, corner, voltage);
 }
 
-void 
-analyze_power_grid_cmd(odb::dbNet* net, Scene* corner, psm::GeneratedSourceType type, const char* error_file, bool reuse_solution, bool enable_em, const char* em_file, const char* voltage_file, const char* voltage_source_file)
+void
+analyze_power_grid_cmd(const char* net_name,
+                       Scene* corner,
+                       psm::GeneratedSourceType type,
+                       const char* error_file,
+                       bool reuse_solution,
+                       bool enable_em,
+                       const char* em_file,
+                       const char* voltage_file,
+                       const char* voltage_source_file)
 {
-  PDNSim* pdnsim = getPDNSim();
-  pdnsim->analyzePowerGrid(net, corner, type, voltage_file, reuse_solution, enable_em, em_file, error_file, voltage_source_file);
+  auto* net = resolvePowerGridNet(net_name);
+
+  getPDNSim()->analyzePowerGrid(net,
+                                corner,
+                                type,
+                                voltage_file,
+                                reuse_solution,
+                                enable_em,
+                                em_file,
+                                error_file,
+                                voltage_source_file);
 }
 
 void
@@ -76,10 +141,15 @@ insert_decap_cmd(const float target, const char* net_name)
 }
 
 bool
-check_connectivity_cmd(odb::dbNet* net, bool floorplanning, const char* error_file, bool dont_require_bterm)
+check_connectivity_cmd(const char* net_name,
+                       bool floorplanning,
+                       const char* error_file,
+                       bool dont_require_bterm)
 {
-  PDNSim* pdnsim = getPDNSim();
-  return pdnsim->checkConnectivity(net, floorplanning, error_file, !dont_require_bterm);
+  return getPDNSim()->checkConnectivity(resolvePowerGridNet(net_name),
+                                        floorplanning,
+                                        error_file,
+                                        !dont_require_bterm);
 }
 
 void

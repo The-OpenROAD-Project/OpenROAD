@@ -22,6 +22,7 @@
 #include "nesterovBase.h"
 #include "odb/db.h"
 #include "placerBase.h"
+#include "powerBase.h"
 #include "routeBase.h"
 #include "timingBase.h"
 #include "utl/Logger.h"
@@ -37,6 +38,7 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
                              std::shared_ptr<RouteBase> rb,
                              std::shared_ptr<TimingBase> tb,
                              std::shared_ptr<ClockBase> cb,
+                             std::shared_ptr<PowerBase> pwb,
                              std::unique_ptr<gpl::AbstractGraphics> graphics,
                              utl::Logger* log)
     : npVars_(npVars)
@@ -48,6 +50,7 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
   rb_ = std::move(rb);
   tb_ = std::move(tb);
   cb_ = std::move(cb);
+  pwb_ = std::move(pwb);
   log_ = log;
 
   db_cbk_ = std::make_unique<nesterovDbCbk>(this);
@@ -486,6 +489,10 @@ void NesterovPlace::runTimingDriven(int iter,
       // Inflate before initializing the new cells' optimizer/device state.
       rb_->inflateNewCells();
     }
+    // Virtual iterations undo their netlist edits, so activity is unchanged.
+    if (pwb_ && !virtual_td_iter) {
+      pwb_->setPowerNetWeights();
+    }
     // Device-side sync (no-op on the CPU path). Non-virtual iterations ran
     // repair_design, whose callbacks created/destroyed/resized instances —
     // the DeviceState topology must be rebuilt from the repaired host
@@ -603,6 +610,8 @@ void NesterovPlace::runTimingDriven(int iter,
           nesterov->updateDensitySize();
         }
         nesterov->checkConsistency();
+        nesterov->resetMinSumOverflow();
+        nesterov->setPrevHpwl(nbc_->getHpwl());
       }
       nbc_->resetDeltaArea();
       nbc_->resetNewGcellsCount();
@@ -617,6 +626,9 @@ void NesterovPlace::runTimingDriven(int iter,
             = average_overflow_unscaled_;
         diverge_snapshot_iter_ = iter + 1;
         is_min_hpwl_ = true;
+      } else {
+        min_hpwl_ = std::numeric_limits<int64_t>::max();
+        is_min_hpwl_ = false;
       }
 
       reset_nesterov_momentum_ = true;
@@ -752,6 +764,7 @@ bool NesterovPlace::tryRoutabilityDivergeRecovery(float& curA)
     nb->revertToSnapshot();
     nb->resetMinSumOverflow();
   }
+  overflow_update_is_stale_ = true;
 
   // Momentum reset due to divergence.
   curA = 1.0;
@@ -778,6 +791,7 @@ void NesterovPlace::revertToDivergeSnapshot()
     nb->revertToSnapshot();
     nb->resetMinSumOverflow();
   }
+  overflow_update_is_stale_ = true;
 }
 
 NesterovPlace::DivergeAction NesterovPlace::isDiverged(float& curA)
@@ -1050,6 +1064,7 @@ void NesterovPlace::runRoutability(int iter,
         nb->revertToSnapshot();
         nb->resetMinSumOverflow();
       }
+      overflow_update_is_stale_ = true;
     }
 
     if (is_routability_need_ && isRevertInitNeeded) {
@@ -1302,13 +1317,26 @@ void NesterovPlace::reportResults(int nesterov_iter,
   log_->metric("gpl__area__final__percent", placement_diff);
 }
 
-int NesterovPlace::doNesterovPlace(int start_iter)
+PlaceResult NesterovPlace::doNesterovPlace(int start_iter)
 {
+  trace_.clear();
+  if (npVars_.maxNesterovIter > start_iter) {
+    trace_.reserve(npVars_.maxNesterovIter - start_iter);
+  }
+  // Until this call's first update, average_overflow_unscaled_ is from
+  // init() or an earlier call, if it was set at all.
+  overflow_update_is_stale_ = true;
+  last_overflow_iter_ = start_iter;
+
   // if replace diverged in init() function, Nesterov must be skipped.
   if (num_region_diverged_ > 0) {
     if (allow_divergence_recovery_) {
       log_->warn(GPL, divergeCode_, divergeMsg_);
-      return start_iter;
+      PlaceResult result;
+      result.final_iteration = start_iter;
+      result.overflow = getFinalOverflow();
+      result.stop = PlaceStop::kDiverged;
+      return result;
     }
     log_->error(GPL, divergeCode_, divergeMsg_);
   }
@@ -1394,6 +1422,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   }
 
   // Core Nesterov Loop
+  PlaceStop stop = PlaceStop::kIterationLimit;
   int nesterov_iter = start_iter;
   for (; nesterov_iter < npVars_.maxNesterovIter; nesterov_iter++) {
     if (reset_nesterov_momentum_) {
@@ -1419,6 +1448,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     }
 
     if (num_region_diverged_ > 0) {
+      stop = PlaceStop::kDiverged;
       break;
     }
 
@@ -1455,6 +1485,9 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
     const DivergeAction diverge_action = isDiverged(curA);
     if (diverge_action == DivergeAction::kStop) {
+      // A stop that left no region diverged reverted to the snapshot first.
+      stop = num_region_diverged_ > 0 ? PlaceStop::kDiverged
+                                      : PlaceStop::kRevertedAfterDivergence;
       break;
     }
     if (diverge_action == DivergeAction::kResume) {
@@ -1475,6 +1508,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                    curA);
 
     if (isConverged(nesterov_iter, routability_gpl_iter_count_)) {
+      stop = PlaceStop::kConverged;
       break;
     }
   }
@@ -1539,7 +1573,14 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   if (db_cbk_ != nullptr) {
     db_cbk_->removeOwner();
   }
-  return nesterov_iter;
+
+  PlaceResult result;
+  result.final_iteration = nesterov_iter;
+  result.overflow = getFinalOverflow();
+  result.stop = stop;
+  result.trace = std::move(trace_);
+  trace_.clear();
+  return result;
 }
 
 void NesterovPlace::updateWireLengthCoef(float overflow)
@@ -1563,8 +1604,18 @@ void NesterovPlace::updateNextIter(int iter)
   total_sum_overflow_ = 0;
   total_sum_overflow_unscaled_ = 0;
 
+  // The penalty before this update is the one the iteration table reports.
+  const float density_penalty = nbVec_[0]->getDensityPenalty();
+  // Each region measures HPWL in its update.  Converged regions skip the
+  // update and move nothing, so the last region that does update measures
+  // the HPWL of the whole placement after this iteration.
+  std::optional<int64_t> updated_hpwl;
   for (auto& nb : nbVec_) {
+    const bool updates = !nb->isConverged();
     nb->updateNextIter(iter);
+    if (updates) {
+      updated_hpwl = nb->getIterHpwl();
+    }
     total_sum_overflow_ += nb->getSumOverflow();
     total_sum_overflow_unscaled_ += nb->getSumOverflowUnscaled();
   }
@@ -1575,9 +1626,17 @@ void NesterovPlace::updateNextIter(int iter)
   // For coefficient, using average regions' overflow
   updateWireLengthCoef(average_overflow_);
 
+  overflow_update_is_stale_ = false;
+  last_overflow_iter_ = iter;
+
+  const int64_t hpwl = updated_hpwl ? *updated_hpwl : nbc_->getHpwl();
+  trace_.push_back({.iteration = iter,
+                    .overflow = average_overflow_unscaled_,
+                    .hpwl = hpwl,
+                    .density_penalty = density_penalty});
+
   // Update divergence snapshot
   if (!npVars_.disableRevertIfDiverge) {
-    int64_t hpwl = nbc_->getHpwl();
     hpwl_gauge_->Set(hpwl);
     if (hpwl < min_hpwl_ && average_overflow_unscaled_ <= 0.25) {
       min_hpwl_ = hpwl;
@@ -1588,6 +1647,20 @@ void NesterovPlace::updateNextIter(int iter)
       is_min_hpwl_ = false;
     }
   }
+}
+
+float NesterovPlace::getFinalOverflow() const
+{
+  if (!overflow_update_is_stale_) {
+    return average_overflow_unscaled_;
+  }
+  // The bins hold the placement as it is now, including any regions a
+  // revert left alone because they had converged.
+  float sum = 0;
+  for (const auto& nb : nbVec_) {
+    sum += nb->getCurrentSumOverflowUnscaled(last_overflow_iter_);
+  }
+  return sum / nbVec_.size();
 }
 
 void NesterovPlace::updateDb()

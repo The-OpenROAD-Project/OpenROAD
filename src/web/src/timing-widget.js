@@ -3,7 +3,23 @@
 
 // Timing report widget — path summary + detail tables.
 
-import { isStaticMode, makeResizableHeaders } from './ui-utils.js';
+import { isStaticMode, makeResizableHeaders, withBusyCursor }
+    from './ui-utils.js';
+
+// The rows a path's detail table shows, as the Qt GUI's "Expand clock"
+// setting does.  Collapsed (the default), the clock network -- every clock
+// node after the source, up to the register's clock pin -- is one "clock
+// network delay" row: its time the arrival at the clock pin, its delay the
+// network's insertion.  Each row is { node, summary }: `node` the index of
+// the path node it stands for (for the summary, the clock pin, which a click
+// highlights).
+export function detailRows(nodes, expandClock) {
+    let clkEnd = -1;
+    while (clkEnd + 1 < nodes.length && nodes[clkEnd + 1].clk) clkEnd++;
+    const all = nodes.map((_, i) => ({ node: i, summary: false }));
+    if (expandClock || clkEnd < 1) return all;
+    return [all[0], { node: clkEnd, summary: true }, ...all.slice(clkEnd + 1)];
+}
 
 // The report options of a plain Update; a histogram drill-down narrows them.
 const kDefaultReportOptions = { max_paths: 100, unconstrained: false };
@@ -68,8 +84,22 @@ export class TimingWidget {
             unconstrainedLabel.style.display = 'none';
         }
 
+        // Qt's "Expand clock": off, each path's clock network is one row.
+        this._expandClock = false;
+        const expandLabel = document.createElement('label');
+        expandLabel.className = 'timing-expand-clock';
+        this._expandClockBox = document.createElement('input');
+        this._expandClockBox.type = 'checkbox';
+        this._expandClockBox.addEventListener('change', () => {
+            this._expandClock = this._expandClockBox.checked;
+            this._renderDetailTable();
+        });
+        expandLabel.appendChild(this._expandClockBox);
+        expandLabel.appendChild(document.createTextNode(' Expand clock'));
+
         toolbar.appendChild(this._updateBtn);
         toolbar.appendChild(unconstrainedLabel);
+        toolbar.appendChild(expandLabel);
         toolbar.appendChild(this._pathCountLabel);
         el.appendChild(toolbar);
 
@@ -412,10 +442,11 @@ export class TimingWidget {
             unconstrained: this._unconstrainedBox.checked,
         };
         try {
-            const [setupData, holdData] = await Promise.all([
-                this._app.websocketManager.request({ type: 'timing_report', is_setup: true, ...reportOptions }),
-                this._app.websocketManager.request({ type: 'timing_report', is_setup: false, ...reportOptions }),
-            ]);
+            const [setupData, holdData] = await withBusyCursor(
+                () => Promise.all([
+                    this._app.websocketManager.request({ type: 'timing_report', is_setup: true, ...reportOptions }),
+                    this._app.websocketManager.request({ type: 'timing_report', is_setup: false, ...reportOptions }),
+                ]));
             if (generation !== this._updateGeneration) {
                 return false;
             }
@@ -669,8 +700,9 @@ export class TimingWidget {
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
         const path = paths[this._selectedPathIndex];
         const nodes = this._detailTab === 'data' ? path.data_nodes : path.capture_nodes;
+        const node = nodes[this._detailRows[idx].node];
         this._app.websocketManager.request(this._highlightRequest(
-            path, this._selectedPathIndex, { pin_name: nodes[idx].pin }))
+            path, this._selectedPathIndex, { pin_name: node.pin }))
             .then(() => this._refreshOverlay());
     }
 
@@ -699,10 +731,17 @@ export class TimingWidget {
         this._detailTable.appendChild(thead);
 
         const tbody = document.createElement('tbody');
-        nodes.forEach((n, idx) => {
+        this._detailRows = detailRows(nodes, this._expandClock);
+        this._detailRows.forEach((row, idx) => {
+            const n = nodes[row.node];
             const tr = document.createElement('tr');
             if (n.clk) tr.classList.add('timing-clock-row');
-            const vals = [
+            const vals = row.summary ? [
+                'clock network delay', '', '',
+                fmtTime(n.time),
+                fmtTime(n.time - nodes[0].time),
+                '', '',
+            ] : [
                 n.pin,
                 n.fanout,
                 n.rise ? '↑' : '↓',

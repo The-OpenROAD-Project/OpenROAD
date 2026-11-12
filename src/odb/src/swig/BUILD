@@ -103,7 +103,7 @@ cc_library(
     ],
 )
 
-# Standalone Tcl shell with only the odb module loaded (CMake: odbtcl-bin).
+# Standalone Tcl shell with only the odb module loaded.
 # stub.cpp supplies a null ord::OpenRoad::openRoad() so the full OpenROAD
 # application is not linked.
 cc_binary(

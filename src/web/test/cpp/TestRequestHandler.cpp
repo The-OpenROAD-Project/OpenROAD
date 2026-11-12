@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <any>
 #include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <exception>
 #include <functional>
@@ -471,6 +472,17 @@ class TileHandlerTest : public tst::Nangate45Fixture
     state_.highlight_source = SessionState::HighlightSource::kInspected;
   }
 
+  // Serves the tile request `json`; returns how many tiles are cached after.
+  size_t cachedAfterTile(const std::string& json)
+  {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(json);
+    handler_->handleTile(req, state_);
+    return gen_->tileCacheSize();
+  }
+
   // An overlay-tile request with the "Flywires only" toggle in a given
   // position.
   static WebSocketRequest overlayRequest(uint32_t id, bool flywires_only)
@@ -823,6 +835,37 @@ TEST(WebSocketOriginAllowed, OpaqueOriginIsRejected)
   EXPECT_FALSE(webSocketOriginAllowed("null", "localhost:8080"));
 }
 
+// Browsers before CSP Level 3 do not let 'self' match ws: or wss:.
+TEST(ContentSecurityPolicy, NamesTheSameHostWebSocket)
+{
+  for (const char* host : {"localhost:8080", "127.0.0.1:8080", "viewer-host"}) {
+    const std::string policy = contentSecurityPolicy(host);
+    EXPECT_NE(policy.find(std::string("connect-src 'self' ws://") + host
+                          + " wss://" + host + " data:;"),
+              std::string::npos)
+        << policy;
+  }
+}
+
+// A Host a host-source cannot spell must not reach the header: ';' or a
+// space would end the directive and let the client add its own sources.
+TEST(ContentSecurityPolicy, UnspellableHostGetsSelfOnly)
+{
+  for (const char* host : {"",
+                           "[::1]:8080",
+                           "a; script-src *",
+                           "a b",
+                           "localhost:",
+                           "localhost:80a",
+                           ":8080"}) {
+    const std::string policy = contentSecurityPolicy(host);
+    EXPECT_NE(policy.find("connect-src 'self' data:;"), std::string::npos)
+        << host << ": " << policy;
+    EXPECT_EQ(policy.find("ws:"), std::string::npos) << host << ": " << policy;
+    EXPECT_NE(policy.find("script-src 'self';"), std::string::npos) << policy;
+  }
+}
+
 // Bind-address classification for web_server -bind (issue #11167).
 TEST(ClassifyBindAddress, LoopbackIsRecognised)
 {
@@ -1106,7 +1149,7 @@ TEST(BrowserLaunchSkipReason, OwnDesktopOverSshLaunches)
 
 TEST(BrowserLaunchSkipReason, ForeignOrForwardedDisplayOverSshSkips)
 {
-  // Another user's X server would get our browser.
+  // Another user's X server would get our browser and the live ticket.
   BrowserEnv foreign = sshEnv();
   foreign.display = ":0";
   foreign.has_display = true;
@@ -1203,7 +1246,8 @@ TEST(ReachabilityHint, LoopbackNamesTheHostAndBothEndsOfThePort)
   EXPECT_EQ(reachabilityHint(BindAddressKind::kLoopback,
                              boost::asio::ip::make_address("127.0.0.1"),
                              "farm-42",
-                             8080),
+                             8080,
+                             "/?token=abc"),
             "To reach it from another machine, forward the port: ssh -L "
             "8080:localhost:8080 farm-42");
 }
@@ -1216,9 +1260,11 @@ TEST(ReachabilityHint, LoopbackTunnelNamesTheAddressItListensOn)
   EXPECT_EQ(reachabilityHint(BindAddressKind::kLoopback,
                              boost::asio::ip::make_address("127.0.0.2"),
                              "farm-42",
-                             8080),
+                             8080,
+                             "/?token=abc"),
             "To reach it from another machine, forward the port: ssh -L "
-            "8080:127.0.0.2:8080 farm-42, then open http://localhost:8080");
+            "8080:127.0.0.2:8080 farm-42, then open "
+            "http://localhost:8080/?token=abc");
 }
 
 TEST(ReachabilityHint, WildcardNamesThisHostInsteadOfATunnel)
@@ -1229,8 +1275,11 @@ TEST(ReachabilityHint, WildcardNamesThisHostInsteadOfATunnel)
       = reachabilityHint(BindAddressKind::kExposed,
                          boost::asio::ip::make_address("0.0.0.0"),
                          "farm-42",
-                         8080);
-  EXPECT_NE(hint.find("http://farm-42:8080"), std::string::npos);
+                         8080,
+                         "/?token=abc");
+  // The url the user is told to open elsewhere has to carry the token, or it
+  // is refused on arrival.
+  EXPECT_NE(hint.find("http://farm-42:8080/?token=abc"), std::string::npos);
   EXPECT_EQ(hint.find("ssh -L"), std::string::npos);
 }
 
@@ -1241,9 +1290,205 @@ TEST(ReachabilityHint, ConcreteAddressNeedsNeitherTunnelNorHostName)
       = reachabilityHint(BindAddressKind::kExposed,
                          boost::asio::ip::make_address("10.0.0.5"),
                          "farm-42",
-                         8080);
+                         8080,
+                         "/?token=abc");
   EXPECT_EQ(hint.find("ssh -L"), std::string::npos);
   EXPECT_EQ(hint.find("farm-42"), std::string::npos);
+}
+
+TEST(OtherMachineUrl, IsTheUrlTheHintNames)
+{
+  // serve() prints these with the token, and the hint only with it redacted.
+  EXPECT_EQ(otherMachineUrl(BindAddressKind::kLoopback,
+                            boost::asio::ip::make_address("127.0.0.2"),
+                            "farm-42",
+                            8080,
+                            "/?token=abc"),
+            "http://localhost:8080/?token=abc");
+  EXPECT_EQ(otherMachineUrl(BindAddressKind::kExposed,
+                            boost::asio::ip::make_address("0.0.0.0"),
+                            "farm-42",
+                            8080,
+                            "/?token=abc"),
+            "http://farm-42:8080/?token=abc");
+}
+
+TEST(OtherMachineUrl, IsEmptyWhenTheReportedUrlServes)
+{
+  // Through a tunnel to localhost, or at an address already in the url.
+  EXPECT_EQ(otherMachineUrl(BindAddressKind::kLoopback,
+                            boost::asio::ip::make_address("127.0.0.1"),
+                            "farm-42",
+                            8080,
+                            "/?token=abc"),
+            "");
+  EXPECT_EQ(otherMachineUrl(BindAddressKind::kExposed,
+                            boost::asio::ip::make_address("10.0.0.5"),
+                            "farm-42",
+                            8080,
+                            "/?token=abc"),
+            "");
+}
+
+TEST(GenerateAuthToken, IsHexAndUnpredictable)
+{
+  const std::string token = generateAuthToken();
+  EXPECT_EQ(token.size(), 32u);  // 128 bits
+  EXPECT_TRUE(std::all_of(token.begin(), token.end(), [](const char c) {
+    return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+  }));
+  // Not proof of entropy, but a token minted from a clock-free source must
+  // not repeat between two calls in the same process.
+  EXPECT_NE(token, generateAuthToken());
+}
+
+TEST(RequestTokenAllowed, AcceptsTheExactToken)
+{
+  EXPECT_TRUE(requestTokenAllowed("/ws?token=abc123", "abc123"));
+  EXPECT_TRUE(requestTokenAllowed("/?token=abc123", "abc123"));
+  // Other parameters may sit on either side of it.
+  EXPECT_TRUE(requestTokenAllowed("/?mergetiles=0&token=abc123&x=1", "abc123"));
+}
+
+TEST(RequestTokenAllowed, RejectsAnythingElse)
+{
+  EXPECT_FALSE(requestTokenAllowed("/ws", "abc123"));
+  EXPECT_FALSE(requestTokenAllowed("/ws?token=", "abc123"));
+  EXPECT_FALSE(requestTokenAllowed("/ws?token=wrong", "abc123"));
+  // A prefix and an extension of the real token are both wrong: a length
+  // check is part of the comparison, not an optimization skipped for it.
+  EXPECT_FALSE(requestTokenAllowed("/ws?token=abc12", "abc123"));
+  EXPECT_FALSE(requestTokenAllowed("/ws?token=abc1234", "abc123"));
+  // The parameter name is exact; "tokens" is not "token".
+  EXPECT_FALSE(requestTokenAllowed("/ws?tokens=abc123", "abc123"));
+}
+
+TEST(RequestTokenAllowed, DecodesThePercentEncodedValue)
+{
+  EXPECT_TRUE(requestTokenAllowed("/ws?token=a%2Bb", "a+b"));
+}
+
+TEST(RequestTokenAllowed, AnEmptyExpectedTokenMatchesNothing)
+{
+  // Fail closed: with no token minted there is nothing to present.
+  EXPECT_FALSE(requestTokenAllowed("/ws", ""));
+  EXPECT_FALSE(requestTokenAllowed("/ws?token=", ""));
+}
+
+TEST(AuthRedirectTarget, SwapsTheTicketForTheToken)
+{
+  EXPECT_EQ(authRedirectTarget("/?ticket=abc", "tok"), "/?token=tok");
+  EXPECT_EQ(authRedirectTarget("/index.html?ticket=abc", "tok"),
+            "/index.html?token=tok");
+}
+
+TEST(AuthRedirectTarget, KeepsTheViewerOptionsAroundIt)
+{
+  // ?mergetiles=0 and friends are how the viewer is A/B tested; losing them
+  // in the redirect would silently ignore what the user asked for.
+  EXPECT_EQ(authRedirectTarget("/?ticket=abc&mergetiles=0", "tok"),
+            "/?token=tok&mergetiles=0");
+  EXPECT_EQ(
+      authRedirectTarget("/?mergetiles=0&ticket=abc&tilebudget=500", "tok"),
+      "/?token=tok&mergetiles=0&tilebudget=500");
+}
+
+TEST(AuthRedirectTarget, PassesEncodedValuesThroughUntouched)
+{
+  // The query is copied byte for byte; decoding and re-encoding here would
+  // be a chance to mangle a value for no gain.
+  EXPECT_EQ(authRedirectTarget("/?ticket=abc&vis=%7B%22a%22%3A1%7D", "tok"),
+            "/?token=tok&vis=%7B%22a%22%3A1%7D");
+}
+
+TEST(AuthRedirectTarget, HandlesATargetWithNoQueryAtAll)
+{
+  EXPECT_EQ(authRedirectTarget("/", "tok"), "/?token=tok");
+}
+
+TEST(SessionAuth, RedeemsTheTicketExactlyOnce)
+{
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  EXPECT_EQ(auth.token(), "tok");
+  EXPECT_EQ(auth.ticket(), "tik");
+
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRedeemed);
+  // The whole point: what `ps` saw on the browser's command line stops
+  // working as soon as the browser has used it, and says it was used.
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kReused);
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kReused);
+  EXPECT_EQ(auth.token(), "tok");
+}
+
+TEST(SessionAuth, RejectsAWrongOrEmptyTicket)
+{
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  EXPECT_EQ(auth.redeemTicket("nope"), TicketUse::kRefused);
+  EXPECT_EQ(auth.redeemTicket(""), TicketUse::kRefused);
+  EXPECT_EQ(auth.redeemTicket("ti"), TicketUse::kRefused);
+  EXPECT_EQ(auth.redeemTicket("tikk"), TicketUse::kRefused);
+  // None of those consumed it.
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRedeemed);
+  // Nor does a wrong one pass for a reuse afterwards.
+  EXPECT_EQ(auth.redeemTicket("nope"), TicketUse::kRefused);
+}
+
+TEST(SessionAuth, RejectsAnExpiredTicket)
+{
+  SessionAuth auth("tok", "tik", std::chrono::seconds(0));
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRefused);
+}
+
+TEST(SessionAuth, RevokedTicketIsRefused)
+{
+  // Not kReused: a launch reported as failed may still have opened a browser,
+  // and that one is not someone else.
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  auth.revokeTicket();
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRefused);
+}
+
+TEST(SessionAuth, RevokingARedeemedTicketKeepsItRedeemed)
+{
+  // The browser can redeem it before launchBrowser() reports a failure.
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRedeemed);
+  auth.revokeTicket();
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kReused);
+}
+
+TEST(SessionAuth, ReportsOnlyTheFirstReuse)
+{
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  EXPECT_TRUE(auth.firstReuse());
+  EXPECT_FALSE(auth.firstReuse());
+  // Independent of the WebSocket rejections.
+  EXPECT_TRUE(auth.firstRejection());
+}
+
+TEST(SessionAuth, ReportsOnlyTheFirstRejection)
+{
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  EXPECT_TRUE(auth.firstRejection());
+  EXPECT_FALSE(auth.firstRejection());
+  EXPECT_FALSE(auth.firstRejection());
+}
+
+TEST(ParseQuery, DecodesValuesAndIgnoresValuelessKeys)
+{
+  const auto params = parseQuery("/download/image?type=entire&filename=a%20b");
+  EXPECT_EQ(params.at("type"), "entire");
+  EXPECT_EQ(params.at("filename"), "a b");
+
+  EXPECT_TRUE(parseQuery("/index.html").empty());
+  EXPECT_TRUE(parseQuery("/ws?flag").empty());
+}
+
+TEST(UrlDecode, ASignIsNotAHexDigit)
+{
+  // Read as signed hex these would turn into a NUL byte and 0xff.
+  EXPECT_EQ(urlDecode("%-0"), "%-0");
+  EXPECT_EQ(urlDecode("%-1x"), "%-1x");
 }
 
 TEST_F(TileHandlerTest, HonoursTheClientReportedDpr)
@@ -1396,6 +1641,47 @@ TEST_F(TileHandlerTest, PixelCountIsPartOfTheTileCacheKey)
   // ...and back, which must come from the cache at its own size, not the last
   // one rendered.
   EXPECT_EQ(render("400"), 400u);
+}
+
+// A tech-layer tile does not read visible_layers, so a toggle of another layer
+// must not cost it its cache entry; the tiles that do read it keep it keyed.
+TEST_F(TileHandlerTest, LayerTileCacheIgnoresVisibleLayers)
+{
+  const auto cached_after
+      = [&](const std::string& layer, const std::string& visible) {
+          return cachedAfterTile(R"({"layer":")" + layer
+                                 + R"(","z":0,"x":0,"y":0,"visible_layers":)"
+                                 + visible + "}");
+        };
+  const size_t after_metal1 = cached_after("metal1", R"(["metal1"])");
+  EXPECT_EQ(cached_after("metal1", R"(["metal1","metal2"])"), after_metal1)
+      << "a metal1 tile missed the cache because another layer was toggled";
+
+  const size_t after_pins = cached_after("_pins", R"(["metal1"])");
+  EXPECT_EQ(cached_after("_pins", R"(["metal1","metal2"])"), after_pins + 1)
+      << "_pins filters by visible_layers, so it must stay in its key";
+}
+
+// Two dies' rows of one layer name differ only in `chiplet`, so it keys the
+// cache; hiding another die must not cost a row its entry, hiding its own must.
+TEST_F(TileHandlerTest, ScopedTileCacheIgnoresOtherChiplets)
+{
+  // Only the key is under test, so the dies need not exist (the fixture's
+  // single chip has an empty path, which scopes nothing).
+  const auto cached_after = [&](const std::string& die,
+                                const std::string& visible_chiplets) {
+    return cachedAfterTile(R"({"layer":"metal1","chiplet":")" + die
+                           + R"(","z":0,"x":0,"y":0,"visible_layers":[],)"
+                           + R"("visible_chiplets":)" + visible_chiplets + "}");
+  };
+  const std::string both = R"(["top/die0","top/die1"])";
+  const size_t first = cached_after("top/die0", both);
+  EXPECT_EQ(cached_after("top/die1", both), first + 1)
+      << "one die's row was served the other die's tile";
+  EXPECT_EQ(cached_after("top/die0", R"(["top/die0"])"), first + 1)
+      << "another die's visibility moved this die's cache key";
+  EXPECT_EQ(cached_after("top/die0", R"(["top/die1"])"), first + 2)
+      << "the die's own visibility must stay in its key";
 }
 
 TEST_F(TileHandlerTest, TileReturnsPng)
@@ -6418,6 +6704,33 @@ TEST_F(CustomUiTest, ToggleButtonFieldsSerialized)
   EXPECT_EQ(std::string(b.at("tooltip").as_string()), "tip");
   EXPECT_TRUE(b.at("toggle").as_bool());
   EXPECT_EQ(std::string(b.at("script_off").as_string()), "off");
+}
+
+// The viewer's CSP blocks remote images and the server serves no image files.
+TEST_F(CustomUiTest, UnloadableIconErrors)
+{
+  WebViewerHook hook;
+  for (const char* icon : {"https://example.com/a.png",
+                           "http://example.com/a.png",
+                           "/a.png",
+                           "./a.png"}) {
+    EXPECT_THROW(hook.addToolbarButton(
+                     getLogger(), "", "A", "s", icon, "", false, "", false),
+                 std::runtime_error)
+        << icon;
+  }
+  EXPECT_EQ(registry(hook).at("toolbar").as_array().size(), 0u);
+
+  hook.addToolbarButton(getLogger(),
+                        "",
+                        "A",
+                        "s",
+                        "data:image/png;base64,AAAA",
+                        "",
+                        false,
+                        "",
+                        false);
+  EXPECT_EQ(registry(hook).at("toolbar").as_array().size(), 1u);
 }
 
 TEST_F(CustomUiTest, DuplicateNameErrors)

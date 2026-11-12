@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <algorithm>
 #include <memory>
 #include <sstream>
+#include <vector>
 
+#include "equivalence_check.h"
 #include "flow/constant_fold.h"
 #include "gtest/gtest.h"
 #include "syn/ir/Bundle.h"
@@ -176,6 +179,76 @@ TEST(OptTest, PreservesDff)
   g.add<Output>("q", output);
   constantFold(g);
   g.findOne<Dff>();
+}
+
+TEST(OptTest, AdcEqualSummandsBreaksCarryChain)
+{
+  // A carry chain with equal summands at a middle stage can be cut there:
+  // the sum bit at that stage is just the carry in and the carry out is
+  // the shared summand. The single full-width adder should become two
+  // shorter adders, one below and one above the cut.
+  const uint32_t width = 8;
+  const uint32_t stage = 4;
+
+  auto build = [&]() {
+    auto g = std::make_unique<Graph>();
+    Bundle a = g->add<Input>("a", width);
+    Bundle b = g->add<Input>("b", width);
+    Bundle cin = g->add<Input>("cin", 1);
+    b.mutableNet(stage) = a[stage];
+    Bundle sum = g->add<Adc>(a, b, cin[0]);
+    g->add<Output>("sum", sum);
+    return g;
+  };
+
+  std::unique_ptr<Graph> gold = build();
+  std::unique_ptr<Graph> gate = build();
+
+  constantFold(*gate);
+  gate->normalize();
+
+  EXPECT_EQ(gate->count<Adc>(), 2);
+  std::vector<uint32_t> widths;
+  gate->forEachInstance([&](const Instance* inst) {
+    if (auto* adc = inst->try_as<Adc>()) {
+      widths.push_back(adc->a().width());
+    }
+  });
+  std::sort(widths.begin(), widths.end());
+  EXPECT_EQ(widths, (std::vector<uint32_t>{width - stage - 1, stage}));
+
+  EXPECT_TRUE(equivalenceCheck(
+      *gold, *gate, /*inputsDefined=*/true, /*allowRefinement=*/false));
+}
+
+TEST(OptTest, AdcCarryInEqualsSummand)
+{
+  // When the carry in to a stage equals one of that stage's summands, the
+  // sum bit is the other summand and the carry passes through unchanged.
+  // Here a[0] is also the primary carry in, so the first stage disappears
+  // and the remaining adder shrinks by one bit.
+  const uint32_t width = 8;
+
+  auto build = [&]() {
+    auto g = std::make_unique<Graph>();
+    Bundle a = g->add<Input>("a", width);
+    Bundle b = g->add<Input>("b", width);
+    Bundle sum = g->add<Adc>(a, b, a[0]);
+    g->add<Output>("sum", sum);
+    return g;
+  };
+
+  std::unique_ptr<Graph> gold = build();
+  std::unique_ptr<Graph> gate = build();
+
+  constantFold(*gate);
+  gate->normalize();
+
+  EXPECT_EQ(gate->count<Adc>(), 1);
+  EXPECT_EQ(gate->findOne<Adc>()->a().width(), width - 1);
+
+  EXPECT_TRUE(equivalenceCheck(
+      *gold, *gate, /*inputsDefined=*/true, /*allowRefinement=*/false));
 }
 
 }  // namespace syn

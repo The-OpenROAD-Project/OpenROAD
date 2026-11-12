@@ -23,12 +23,12 @@ SizeUpMtCandidate::SizeUpMtCandidate(Resizer& resizer,
                                      const Target& target,
                                      sta::Instance* inst,
                                      sta::LibertyCell* replacement,
-                                     float score_scale)
+                                     float cost_divisor)
     : MoveCandidate(resizer, target),
       inst_(inst),
       current_cell_(resizer.network()->libertyCell(inst)),
       replacement_(replacement),
-      score_scale_(score_scale)
+      cost_divisor_(cost_divisor)
 {
 }
 
@@ -41,12 +41,12 @@ Estimate SizeUpMtCandidate::estimate()
   Estimate estimate{.legal = delay_est.legal,
                     .raw_gain = delay_est.arrival_impr,
                     .reason = failReasonName(delay_est.reason)};
-  estimate.score = delay_est.arrival_impr * score_scale_;
+  estimate.score = delay_est.arrival_impr;
   if (!delay_est.legal) {
     // The opposite-transition reject carries the target gain in its score.
     return {
         .legal = false,
-        .score = estimate.score,
+        .score = costScaled(estimate.score),
         .raw_gain = delay_est.reason == FailReason::kEstimateNonImproving
                         ? std::optional<float>(delay_est.arrival_impr)
                         : std::nullopt,
@@ -55,8 +55,19 @@ Estimate SizeUpMtCandidate::estimate()
                            && estimate.score > 0.0f};
   }
 
-  chargeCellSwapSideCosts(delay_est, replacement_, score_scale_, estimate);
+  chargeCellSwapSideCosts(delay_est, replacement_, estimate);
+  // Rank the gain per unit of cost, as SizeUpGenerator::upsizeCell does, so a
+  // larger cell must buy its extra leakage or area with extra slack.
+  estimate.score = costScaled(estimate.score);
   return estimate;
+}
+
+float SizeUpMtCandidate::costScaled(const float score) const
+{
+  // Only a positive score pays the cost: dividing a negative score by a
+  // divisor of at least 1 would pull it toward zero and rank a costlier move
+  // higher.
+  return score > 0.0f ? score / cost_divisor_ : score;
 }
 
 MoveResult SizeUpMtCandidate::apply()
@@ -65,7 +76,8 @@ MoveResult SizeUpMtCandidate::apply()
   // Candidates were screened on a pre-batch snapshot, so two accepted
   // size-ups on different sinks of the same fanin net could each pass
   // independently yet combine past the driver's max-cap limit.
-  if (!resizer_.replacementPreservesMaxCap(inst_, replacement_)) {
+  if (!resizer_.replacementPreservesMaxCap(
+          inst_, replacement_, target().mode(resizer_))) {
     debugPrint(resizer_.logger(),
                RSZ,
                "opt_moves",
