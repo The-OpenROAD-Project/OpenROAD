@@ -23,6 +23,7 @@ worst slack max 0.7256
 --------------------------------------------------------------------------------
 [INFO RET-0023] Worst register-to-register arrival 0.035 after 15 slides.
 [INFO RET-0008] Unmapped 2 registers.
+[INFO RET-0043] Iteration 2: repeating the search on the netlist with the unmapped registers.
 [INFO RET-0020] Worst register-to-register arrival 0.184 before retiming, clock period 1.000.
 
  Slide |  Worst arr | Flops | Sinks | Max wr | gate                 | fanout net

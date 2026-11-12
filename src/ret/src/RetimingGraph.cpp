@@ -36,6 +36,12 @@ void RetimingGraph::findClockPeriod()
     clocks++;
     clock_period_ = clock->period();
   }
+  if (clocks == 0) {
+    logger_->error(
+      utl::RET,
+      30,
+      "No clock defined.");
+  }
   if (clocks > 1) {
     logger_->error(
         utl::RET,

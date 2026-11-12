@@ -114,8 +114,7 @@ void Retimer::retime(int max_moves)
   if (sta_->getDbNetwork()->hasHierarchy()) {
     logger_->error(utl::RET,
                    42,
-                   "Hierarchical netlists are not supported yet; link the "
-                   "design without -hier.");
+                   "Hierarchical netlists are not supported.");
   }
   if (!unmapper_->prepare()) {
     logger_->error(
@@ -131,10 +130,6 @@ void Retimer::retime(int max_moves)
   RetimingGraph graph(db_, sta_, logger_);
   graph.build();
   graph.report();
-  if (graph.clock_period_ <= 0.0f) {
-    logger_->error(
-        utl::RET, 30, "No clock defined; retiming needs a clock period.");
-  }
   clock_net_ = findClockNet(block);
 
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
@@ -197,6 +192,11 @@ void Retimer::applyAfterUnmapping(
              "netlist");
   constexpr int kMaxRounds = 20;
   for (int round = 0; round < kMaxRounds; round++) {
+    logger_->info(utl::RET,
+                  43,
+                  "Iteration {}: repeating the search on the netlist with the "
+                  "unmapped registers.",
+                  round + 2);
     RetimingGraph g(db_, sta_, logger_);
     g.build();
     Retime s(&g, sta_, logger_, dff_master_);
