@@ -533,9 +533,11 @@ static SlackBinEdges computeSlackBinEdges(const std::vector<float>& slacks)
   const float bin_min = std::floor(min_slack / bin_width) * bin_width;
   const float bin_max = std::ceil(max_slack / bin_width) * bin_width;
   int num_bins = static_cast<int>(std::round((bin_max - bin_min) / bin_width));
-  SlackBinEdges edges{.bin_min = bin_min,
-                      .bin_width = bin_width,
-                      .num_bins = std::max(num_bins, 1)};
+  SlackBinEdges edges{
+      .bin_min = bin_min,
+      .bin_width = bin_width,
+      .num_bins = std::max(num_bins, 1),
+  };
   // The bins are half-open, so a maximum on the top edge needs a bin above
   // it, and rounding must not leave the minimum below the bottom edge.
   while (edges.edge(0) > min_slack) {
