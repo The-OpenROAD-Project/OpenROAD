@@ -193,8 +193,8 @@ std::vector<TimingPathSummary> TimingReport::getReport(
   const float time_scale = sta_->units()->timeUnit()->scale();
   const float sta_slack_min
       = (slack_min <= -1e30f) ? -sta::INF : slack_min * time_scale;
-  const float sta_slack_max
-      = (slack_max >= 1e30f) ? sta::INF : slack_max * time_scale;
+  const bool has_slack_max = slack_max < 1e30f;
+  const float sta_slack_max = has_slack_max ? slack_max * time_scale : sta::INF;
 
   sta::Search* search = sta_->search();
   sta::SceneSeq scenes = sta_->scenes();
@@ -233,6 +233,14 @@ std::vector<TimingPathSummary> TimingReport::getReport(
     if (clk && path_end->targetClk(sta_) != clk) {
       continue;
     }
+    // findPathEnds keeps [slack_min, slack_max] with fuzzy comparisons; the
+    // range is [slack_min, slack_max), compared in user units as the slack
+    // histogram bins them, so a path on a bar's edge is listed under one bar.
+    // Without a slack_max, unconstrained ends (slack INF) stay in.
+    const float slack = path_end->slack(sta_) / time_scale;
+    if (slack < slack_min || (has_slack_max && slack >= slack_max)) {
+      continue;
+    }
     TimingPathSummary summary;
 
     sta::Path* path = path_end->path();
@@ -244,8 +252,7 @@ std::vector<TimingPathSummary> TimingReport::getReport(
     summary.end_clk = end_clk ? end_clk->name() : "<No clock>";
 
     // Path-level metrics (convert from internal units to user units)
-    const float time_scale = sta_->units()->timeUnit()->scale();
-    summary.slack = path_end->slack(sta_) / time_scale;
+    summary.slack = slack;
     summary.arrival = path_end->dataArrivalTime(sta_) / time_scale;
     summary.required = path_end->requiredTime(sta_) / time_scale;
     summary.skew = path_end->clkSkew(sta_) / time_scale;
@@ -467,6 +474,10 @@ struct SlackBinEdges
   float bin_min;
   float bin_width;
   int num_bins;
+
+  // Edge i, 0 <= i <= num_bins: bin i is [edge(i), edge(i + 1)), the
+  // half-open range a bar's drill-down asks timing_report for.
+  float edge(const int i) const { return bin_min + i * bin_width; }
 };
 
 static SlackBinEdges computeSlackBinEdges(const std::vector<float>& slacks)
@@ -491,18 +502,35 @@ static SlackBinEdges computeSlackBinEdges(const std::vector<float>& slacks)
   const float bin_min = std::floor(min_slack / bin_width) * bin_width;
   const float bin_max = std::ceil(max_slack / bin_width) * bin_width;
   int num_bins = static_cast<int>(std::round((bin_max - bin_min) / bin_width));
-  num_bins = std::max(num_bins, 1);
-  return {bin_min, bin_width, num_bins};
+  SlackBinEdges edges{bin_min, bin_width, std::max(num_bins, 1)};
+  // The bins are half-open, so a maximum on the top edge needs a bin above
+  // it, and rounding must not leave the minimum below the bottom edge.
+  while (edges.edge(0) > min_slack) {
+    edges.bin_min -= bin_width;
+    edges.num_bins++;
+  }
+  while (edges.edge(edges.num_bins) <= max_slack) {
+    edges.num_bins++;
+  }
+  return edges;
 }
 
 // Count `values` into the given bin edges (parallel to the edges' bins).
+// computeSlackBinEdges puts every value in [edge(0), edge(num_bins)).
 static std::vector<int> binIntoEdges(const std::vector<float>& values,
                                      const SlackBinEdges& edges)
 {
+  std::vector<float> uppers;
+  uppers.reserve(edges.num_bins);
+  for (int i = 1; i <= edges.num_bins; i++) {
+    uppers.push_back(edges.edge(i));
+  }
   std::vector<int> counts(edges.num_bins, 0);
   for (float s : values) {
-    int idx = static_cast<int>((s - edges.bin_min) / edges.bin_width);
-    idx = std::clamp(idx, 0, edges.num_bins - 1);
+    // The first bin whose upper edge is above s.
+    const auto it = std::upper_bound(uppers.begin(), uppers.end(), s);
+    const int idx
+        = std::min(static_cast<int>(it - uppers.begin()), edges.num_bins - 1);
     counts[idx]++;
   }
   return counts;
@@ -602,8 +630,8 @@ SlackHistogramResult TimingReport::getSlackHistogram(
   const std::vector<int> counts = binIntoEdges(all_slacks, edges);
   result.bins.reserve(edges.num_bins);
   for (int i = 0; i < edges.num_bins; i++) {
-    const float lower = edges.bin_min + i * edges.bin_width;
-    const float upper = lower + edges.bin_width;
+    const float lower = edges.edge(i);
+    const float upper = edges.edge(i + 1);
     const float center = (lower + upper) / 2.0f;
     result.bins.push_back({lower, upper, counts[i], center < 0});
   }
