@@ -88,6 +88,59 @@ describe('GridLayoutManager', () => {
         assert.equal(tclTab.icon, TabIcon.TCL_CONSOLE);
     });
 
+    it('settles queued resize notifications without feeding the window resize listener', async (t) => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+        const originalRAF = globalThis.requestAnimationFrame;
+        const frames = [];
+        const onWindowResize = () => layout.updateSize();
+        globalThis.requestAnimationFrame = callback => frames.push(callback);
+        t.after(() => {
+            window.removeEventListener('resize', onWindowResize);
+            globalThis.requestAnimationFrame = originalRAF;
+            frames.length = 0;
+        });
+
+        const notifications = { LayoutViewer: 0, '3DViewer': 0, Inspector: 0 };
+        for (const name of Object.keys(notifications)) {
+            layout.registerComponentFactoryFunction(name, container => {
+                container.on('resize', () => ++notifications[name]);
+            });
+        }
+        const flushFrames = async () => {
+            let count = 0;
+            while (frames.length > 0) {
+                assert.ok(count < 4, 'Resize notifications must settle');
+                const callbacks = frames.splice(0);
+                await Promise.resolve();
+                for (const callback of callbacks) callback(count);
+                ++count;
+            }
+            return count;
+        };
+        const clearNotifications = () => {
+            for (const name of Object.keys(notifications)) notifications[name] = 0;
+        };
+
+        layout.loadLayout({});
+        layout.activateTab('3DViewer');
+        await flushFrames();
+        clearNotifications();
+        // Mirror main.js: real browser resizes request a layout update.
+        window.addEventListener('resize', onWindowResize);
+
+        layout.updateSize();
+        layout.updateSize();
+        assert.equal(frames.length, 1);
+        assert.equal(await flushFrames(), 1);
+        assert.deepEqual(notifications, { LayoutViewer: 0, '3DViewer': 1, Inspector: 1 });
+
+        clearNotifications();
+        window.dispatchEvent(new Event('resize'));
+        assert.equal(frames.length, 1);
+        assert.equal(await flushFrames(), 1);
+        assert.deepEqual(notifications, { LayoutViewer: 0, '3DViewer': 1, Inspector: 1 });
+    });
+
     it('switches tabs and delivers lifecycle events', () => {
         const events = { LayoutViewer: [], SchematicWidget: [] };
 

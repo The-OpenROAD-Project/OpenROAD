@@ -1321,7 +1321,7 @@ std::vector<sta::Pin*> DelayEstimatorReporter::outputPins(
       network_->pinIterator(inst));
   while (pin_iter->hasNext()) {
     sta::Pin* pin = pin_iter->next();
-    sta::PortDirection* direction = network_->direction(pin);
+    const sta::PortDirection* direction = network_->direction(pin);
     if (direction != nullptr && direction->isAnyOutput()) {
       pins.push_back(pin);
     }

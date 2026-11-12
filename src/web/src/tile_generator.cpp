@@ -1124,6 +1124,7 @@ const BoolField kBoolFields[] = {
   {"mfg_grid",           &TileVisibility::mfg_grid,           false},
   {"gcell_grid",         &TileVisibility::gcell_grid,         false},
   {"rudy",               &TileVisibility::rudy,               false},
+  {"routing_congestion", &TileVisibility::routing_congestion, false},
   {"inst_names",         &TileVisibility::inst_names,         true},
   {"inst_pins",          &TileVisibility::inst_pins,          true},
   {"inst_pin_names",     &TileVisibility::inst_pin_names,     false},
@@ -4402,6 +4403,19 @@ void TileGenerator::drawRudyLayer(std::vector<unsigned char>& image,
   }
 }
 
+void TileGenerator::drawRoutingCongestionLayer(
+    std::vector<unsigned char>& image,
+    odb::dbBlock* /*block*/,
+    const TileFrame& frame,
+    const TileVisibility& /*vis*/,
+    const TextSink& /*emit*/) const
+{
+  auto routing = getHeatMapSource("Routing");
+  if (routing) {
+    drawHeatMap(image, *routing, frame);
+  }
+}
+
 /* static */
 std::vector<PaintLayer> TileGenerator::saveImageLayerOrder(
     const TileVisibility& vis,
@@ -4454,14 +4468,14 @@ std::vector<PaintLayer> TileGenerator::saveImageLayerOrder(
   return entries;
 }
 
-const std::array<TileGenerator::PseudoLayerDef, 6>&
+const std::array<TileGenerator::PseudoLayerDef, 7>&
 TileGenerator::pseudoLayerDefs()
 {
   // z_index follows the GUI's paint order (renderThread.cpp:1201-1298), where
   // the manufacturing grid goes down before the routing layers, the instance
   // names right after them, and access points, regions and the gcell grid on
   // top.
-  static const std::array<PseudoLayerDef, 6> defs = {{
+  static const std::array<PseudoLayerDef, 7> defs = {{
       {.name = "_access_points",
        .shown_by = {{"access_points"}},
        .layers_by = {{}},
@@ -4488,6 +4502,11 @@ TileGenerator::pseudoLayerDefs()
        .layers_by = {},
        .painter = &TileGenerator::drawRudyLayer,
        .z_index = 1003},
+      {.name = "_routing_congestion",
+       .shown_by = {{"routing_congestion"}},
+       .layers_by = {},
+       .painter = &TileGenerator::drawRoutingCongestionLayer,
+       .z_index = 1004},
       {.name = kInstLabelsLayer,
        .shown_by = {{"inst_names"}, {"inst_pins", "inst_pin_names"}},
        .layers_by = {{"inst_pins", "inst_pin_names"}},
@@ -8141,35 +8160,49 @@ void TileGenerator::drawRouteGuides(std::vector<unsigned char>& image,
 // Timing path highlight shape collection
 //------------------------------------------------------------------------------
 
+std::vector<std::pair<const ChipletNode*, const char*>> chipletPrefixMatches(
+    const std::vector<ChipletNode>& chiplets,
+    const std::string& name)
+{
+  const std::string_view name_view(name);
+  std::vector<std::pair<const ChipletNode*, const char*>> matches;
+  // Timing paths qualify a name with the chip-inst's name, and the layout's
+  // selection with its full path from the root.  Names are tried first.
+  for (const bool by_path : {false, true}) {
+    for (const ChipletNode& node : chiplets) {
+      // Only a chip-inst contributes a path component: the root node's name
+      // is its block's, which never prefixes a name.
+      if (node.inst == nullptr || !node.block) {
+        continue;
+      }
+      const std::string& prefix = by_path ? node.path : node.name;
+      if (name_view.size() <= prefix.size() || !name_view.starts_with(prefix)
+          || name_view[prefix.size()] != odb::kChipletPathDelimiter) {
+        continue;
+      }
+      matches.emplace_back(&node, name.c_str() + prefix.size() + 1);
+    }
+  }
+  return matches;
+}
+
 std::tuple<odb::dbITerm*, odb::dbBTerm*, const ChipletNode*> resolvePin(
     const std::vector<ChipletNode>& chiplets,
     const std::string& pin_name)
 {
-  const std::string_view pin_view(pin_name);
-
   // Prefixed pass first.  Hierarchical instance names contain '/' too, so an
   // earlier chiplet can match the whole name and claim a pin that names a
   // later one.
-  bool prefix_matched = false;
-  for (const ChipletNode& node : chiplets) {
-    // Only a chip-inst contributes a path component: the root node's name is
-    // its block's, which never prefixes a pin name.
-    if (node.inst == nullptr || !node.block
-        || pin_view.size() <= node.name.size()
-        || !pin_view.starts_with(node.name)
-        || pin_view[node.name.size()] != odb::kChipletPathDelimiter) {
-      continue;
+  const auto matches = chipletPrefixMatches(chiplets, pin_name);
+  for (const auto& [node, local] : matches) {
+    if (odb::dbITerm* iterm = node->block->findITerm(local)) {
+      return {iterm, nullptr, node};
     }
-    prefix_matched = true;
-    const char* local = pin_name.c_str() + node.name.size() + 1;
-    if (odb::dbITerm* iterm = node.block->findITerm(local)) {
-      return {iterm, nullptr, &node};
-    }
-    if (odb::dbBTerm* bterm = node.block->findBTerm(local)) {
-      return {nullptr, bterm, &node};
+    if (odb::dbBTerm* bterm = node->block->findBTerm(local)) {
+      return {nullptr, bterm, node};
     }
   }
-  if (prefix_matched) {
+  if (!matches.empty()) {
     // The prefix named a chiplet; do not let another one claim the pin.
     return {nullptr, nullptr, nullptr};
   }
@@ -8618,6 +8651,11 @@ boost::json::object serializeTechResponse(const TileGenerator& gen)
     out["dbu_per_micron"] = gen.getBlock()->getDbUnitsPerMicron();
     out["block_name"] = gen.getBlock()->getName();
   } else {
+    // HIER roots have no block, but their geometry uses database units.
+    const auto dbu_per_micron = gen.getDb()->getDbuPerMicron();
+    if (dbu_per_micron > 0) {
+      out["dbu_per_micron"] = dbu_per_micron;
+    }
     odb::dbChip* top_chip = gen.getChip();
     out["block_name"] = top_chip ? top_chip->getName() : "";
   }

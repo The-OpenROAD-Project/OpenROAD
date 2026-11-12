@@ -13,7 +13,7 @@
 >> read_sdc jpeg.sdc
 number instances in verilog is 39324
 wns max -85.02
-tns max -174555.69
+tns max -174551.98
 replace_arith_modules -path_count 10 -target setup -slack_threshold 0.0
 [INFO RSZ-0151] Starting arithmetic module replacement to optimize 'setup' target
 [INFO RSZ-0152] Analyzing 10 critical paths with slack < 0.00
@@ -31,4 +31,4 @@ replace_arith_modules -path_count 10 -target setup -slack_threshold 0.0
 [INFO ODB-0496] swapMaster sanity check passed (0 failures)
 [INFO RSZ-0160] 10 arithmetic instances have swapped to improve 'setup' target
 wns max -74.50
-tns max -163086.14
+tns max -163084.69

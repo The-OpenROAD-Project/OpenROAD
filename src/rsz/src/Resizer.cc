@@ -286,7 +286,7 @@ sta::VertexSeq Resizer::orderedLoadPinVertices()
   sta::VertexIterator vertex_iter(graph_);
   while (vertex_iter.hasNext()) {
     sta::Vertex* vertex = vertex_iter.next();
-    sta::PortDirection* dir = network_->direction(vertex->pin());
+    const sta::PortDirection* dir = network_->direction(vertex->pin());
     bool top_level = network_->isTopLevelPort(vertex->pin());
     if (!top_level && dir->isAnyInput()) {
       loads.emplace_back(vertex);
@@ -4588,7 +4588,7 @@ sta::NetSeq* Resizer::findOverdrivenNets(bool include_parallel_driven)
               network_->pinIterator(inst));
           while (inst_pin_iter->hasNext()) {
             sta::Pin* inst_pin = inst_pin_iter->next();
-            sta::PortDirection* dir = network_->direction(inst_pin);
+            const sta::PortDirection* dir = network_->direction(inst_pin);
             if (dir->isAnyInput()) {
               input_nets.insert(network_->net(inst_pin));
             }
@@ -6688,7 +6688,7 @@ void Resizer::getBufferPins(sta::Instance* buffer, sta::Pin*& ip, sta::Pin*& op)
       network_->pinIterator(buffer));
   while (pin_iter->hasNext()) {
     sta::Pin* pin = pin_iter->next();
-    sta::PortDirection* dir = network_->direction(pin);
+    const sta::PortDirection* dir = network_->direction(pin);
     if (dir->isAnyOutput()) {
       op = pin;
     }
@@ -8484,25 +8484,8 @@ bool Resizer::replacementPreservesMaxCap(sta::Instance* inst,
       continue;
     }
 
-    // Skip the max-cap check on a register clock pin only when its clock is
-    // ideal: the clock net's capacitance is irrelevant to timing then.
-    if (network_->isRegClkPin(pin) && mode != nullptr
-        && mode->clkNetwork()->isIdealClock(pin)) {
+    if (skipsFaninMaxCap(pin, mode)) {
       continue;
-    }
-
-    // Skip the max-cap check on scan-enable/scan-in pins because they
-    // tend to be high fanout pins
-    if (db_network_ != nullptr) {
-      odb::dbITerm* iterm = nullptr;
-      odb::dbBTerm* bterm = nullptr;
-      odb::dbModITerm* moditerm = nullptr;
-      db_network_->staToDb(pin, iterm, bterm, moditerm);
-      if (iterm != nullptr
-          && (db_network_->isScanEnable(iterm)
-              || db_network_->isScanIn(iterm))) {
-        continue;
-      }
     }
 
     const float old_cap
@@ -8522,8 +8505,33 @@ bool Resizer::replacementPreservesMaxCap(sta::Instance* inst,
   return true;
 }
 
+bool Resizer::skipsFaninMaxCap(const sta::Pin* pin, const sta::Mode* mode)
+{
+  // Skip the max-cap check on a register clock pin only when its clock is
+  // ideal: the clock net's capacitance is irrelevant to timing then.
+  if (network_->isRegClkPin(pin) && mode != nullptr
+      && mode->clkNetwork()->isIdealClock(pin)) {
+    return true;
+  }
+
+  // Skip the max-cap check on scan-enable/scan-in pins because they
+  // tend to be high fanout pins
+  if (db_network_ != nullptr) {
+    odb::dbITerm* iterm = nullptr;
+    odb::dbBTerm* bterm = nullptr;
+    odb::dbModITerm* moditerm = nullptr;
+    db_network_->staToDb(pin, iterm, bterm, moditerm);
+    if (iterm != nullptr
+        && (db_network_->isScanEnable(iterm) || db_network_->isScanIn(iterm))) {
+      return true;
+    }
+  }
+  return false;
+}
+
 std::vector<Resizer::InputCapBudget> Resizer::inputCapBudgets(
-    sta::Instance* inst)
+    sta::Instance* inst,
+    const sta::Mode* mode)
 {
   std::vector<InputCapBudget> budgets;
   sta::LibertyCell* current_cell = network_->libertyCell(inst);
@@ -8543,6 +8551,11 @@ std::vector<Resizer::InputCapBudget> Resizer::inputCapBudgets(
     sta::PinSet* drivers = network_->drivers(pin);
     sta::LibertyPort* port = network_->libertyPort(pin);
     if (drivers == nullptr || port == nullptr) {
+      continue;
+    }
+    // Same exemptions as replacementPreservesMaxCap(), so generation screens
+    // like apply() checks.
+    if (skipsFaninMaxCap(pin, mode)) {
       continue;
     }
 

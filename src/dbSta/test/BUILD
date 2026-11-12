@@ -95,6 +95,7 @@ ALL_TESTS = [
     "supply_port_graph",
     "tcl_unknown_handler",
     "write_sdc1",
+    "write_spef_hier_inst_name",
     "write_verilog1",
     "write_verilog10",
     "write_verilog2",
@@ -336,6 +337,10 @@ _3DIC_CROSS_FIXTURES = [
             "write_sdc1": [
                 "hier1.sdc",
                 "hier1.v",
+            ],
+            "write_spef_hier_inst_name": [
+                "escape_slash_hier.def",
+                "escape_slash_hier.v",
             ],
             "write_verilog1": [
                 "reg1.def",

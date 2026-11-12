@@ -21,8 +21,9 @@ It provides:
   dielectrics around the conductors of each layer. The stack also carries
   each conductor's etch, sheet resistance and temperature coefficients and
   each via's resistance for the extractor; the solver places wires as
-  drawn, so `read_itf` refuses a stack whose etch would change
-  capacitance. Keywords the reader does not know are skipped with a
+  drawn, so `read_itf` warns about a stack whose etch would change
+  capacitance. Keywords for effects the stack does not model are read
+  with a warning naming each one. Keywords the reader does not know are skipped with a
   warning, one per statement.
 - Exact cube Green's-function tables from Fourier series, for a uniform cube
   and for a cube split by one interface plane (`LayeredCubeGreens`), sampled

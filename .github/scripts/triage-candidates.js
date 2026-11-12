@@ -12,13 +12,17 @@
 //  - open_assigned: their open assigned issues across the repository;
 //  - recent_commits: their commits among the module's last 100 commits in
 //    the past year.
+// and `suggested`, the member the assignment rule picks (suggestAssignee).
 //
-// Used from actions/github-script:
+// Used from actions/github-script in the job that runs Gemini:
 //   const run = require('./.github/scripts/triage-candidates.js');
 //   await run({github, context, core});
 //
-// Sets the outputs assignee_candidates (JSON table) and allowed_assignees
-// (comma-separated logins of every CODEOWNERS team member).
+// Exports the masked table as the environment variable ASSIGNEE_CANDIDATES
+// (empty on failure) and sets the step output `built` to 'true' or 'false'.
+// A masked value cannot be passed between jobs, so the job that applies the
+// assignment calls allowedAssignees() itself, and assigns only when `built`
+// is 'true'.
 
 const fs = require('fs');
 
@@ -216,6 +220,27 @@ async function recentCommitCounts(github, context, module, candidates) {
   return counts;
 }
 
+// The assignment rule spreads work among the people who handle an area.
+// The pool is the members with area_assigned above 0, else those with
+// recent_commits above 0, else all of them. From the pool, the member with
+// the fewest open_assigned wins; ties go to the higher area_assigned, then
+// the higher recent_commits, then the login, so the pick is deterministic.
+function suggestAssignee(members) {
+  let pool = members.filter((m) => m.area_assigned > 0);
+  if (pool.length === 0) {
+    pool = members.filter((m) => m.recent_commits > 0);
+  }
+  if (pool.length === 0) {
+    pool = members;
+  }
+  const best = [...pool].sort((a, b) =>
+    a.open_assigned - b.open_assigned ||
+    b.area_assigned - a.area_assigned ||
+    b.recent_commits - a.recent_commits ||
+    a.login.localeCompare(b.login))[0];
+  return best ? best.login : '';
+}
+
 async function buildCandidates({github, context, core, labels, codeowners}) {
   const rules = parseCodeowners(codeowners);
   const resolved = resolveLabels(rules, labels);
@@ -244,14 +269,16 @@ async function buildCandidates({github, context, core, labels, codeowners}) {
       {} : await areaAssignedCounts(github, context, entry.label);
     const commits = entry.module ? await recentCommitCounts(
       github, context, entry.module, new Set(entry.logins)) : {};
+    const rowMembers = entry.logins.map((login) => ({
+      login,
+      area_assigned: assigned[login] || 0,
+      open_assigned: workload[login] || 0,
+      recent_commits: commits[login] || 0,
+    }));
     return {
       teams: entry.teams.map((team) => team.split('/')[1]),
-      members: entry.logins.map((login) => ({
-        login,
-        area_assigned: assigned[login] || 0,
-        open_assigned: workload[login] || 0,
-        recent_commits: commits[login] || 0,
-      })),
+      suggested: suggestAssignee(rowMembers),
+      members: rowMembers,
     };
   });
   const table = {};
@@ -270,27 +297,43 @@ async function repoLabels(github, context) {
   return labels.map((label) => label.name);
 }
 
+// Returns the logins of every CODEOWNERS team member, the only people
+// triage may assign.
+async function allowedAssignees({github, core}) {
+  const rules = parseCodeowners(fs.readFileSync('.github/CODEOWNERS', 'utf8'));
+  const teams = [...new Set(rules.flatMap((rule) => rule.teams))].sort();
+  const members = await teamMembers(github, core, teams);
+  return [...new Set(Object.values(members).flat())].sort();
+}
+
 module.exports = async ({github, context, core}) => {
+  let json = '';
   try {
     const labels = await repoLabels(github, context);
     const codeowners = fs.readFileSync('.github/CODEOWNERS', 'utf8');
     const {table, allowed} = await buildCandidates({
       github, context, core, labels, codeowners,
     });
-    const json = JSON.stringify(table);
-    core.setOutput('assignee_candidates', json);
-    core.setOutput('allowed_assignees', allowed.join(','));
+    json = JSON.stringify(table);
     core.info(`Assignee candidates for ${Object.keys(table).length} labels ` +
       `(${json.length} bytes), ${allowed.length} allowed assignees.`);
   } catch (err) {
     // Assignment is best effort: labeling continues without candidates.
     core.warning(`Could not build assignee candidates: ${err.message}`);
-    core.setOutput('assignee_candidates', '');
-    core.setOutput('allowed_assignees', '');
   }
+  // The table shows who is on each team, which teams keep visible only to
+  // org members, so mask it before it can appear in a public log.
+  if (json) {
+    core.setSecret(json);
+  }
+  core.exportVariable('ASSIGNEE_CANDIDATES', json);
+  // Unlike the table, a plain flag can pass to the job that assigns.
+  core.setOutput('built', json ? 'true' : 'false');
 };
 
 module.exports.parseCodeowners = parseCodeowners;
 module.exports.ownersForPath = ownersForPath;
 module.exports.resolveLabels = resolveLabels;
 module.exports.buildCandidates = buildCandidates;
+module.exports.allowedAssignees = allowedAssignees;
+module.exports.suggestAssignee = suggestAssignee;

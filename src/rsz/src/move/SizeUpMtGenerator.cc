@@ -4,6 +4,7 @@
 #include "SizeUpMtGenerator.hh"
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -53,7 +54,6 @@ std::vector<std::unique_ptr<MoveCandidate>> SizeUpMtGenerator::generate(
   sta::Instance* target_inst = target.inst(resizer_);
   const EstimatorContext& estimator_context = target.estimator_context.value();
   const SelectedArc& target_arc = estimator_context.target().arc;
-  const float score_scale = policy_config_.size_up_mt_score_scale;
   const SizeUpOptions& options = size_up_options_.at(
       {target_arc.outputPort(), target_arc.scene, target_arc.min_max});
   if (options.dual_rf_rejects > 0) {
@@ -66,16 +66,26 @@ std::vector<std::unique_ptr<MoveCandidate>> SizeUpMtGenerator::generate(
 
   // Fanin max-cap headroom is instance-level, captured once per target.
   const std::vector<Resizer::InputCapBudget>& budgets = inputCapBudgets(target);
-  candidates.reserve(replacements.size());
-  for (sta::LibertyCell* replacement : replacements) {
+  std::vector<sta::LibertyCell*> fitting;
+  std::vector<float> cost_ratios;
+  for (size_t i = 0; i < replacements.size(); ++i) {
+    sta::LibertyCell* replacement = replacements[i];
     if (!resizer_.replacementFitsInputCapBudgets(budgets, replacement)) {
       RepairSetupProfiler::event(
           "max_cap_rejects", 1, moveName(MoveType::kSizeUp));
       continue;
     }
+    fitting.push_back(replacement);
+    cost_ratios.push_back(options.cost_ratios[i]);
+  }
 
+  // The cheapest fitting size keeps its full score; a larger one pays only
+  // its extra cost.
+  const std::vector<float> cost_divisors = relativeCellCosts(cost_ratios);
+  candidates.reserve(fitting.size());
+  for (size_t i = 0; i < fitting.size(); ++i) {
     candidates.push_back(std::make_unique<SizeUpMtCandidate>(
-        resizer_, target, target_inst, replacement, score_scale));
+        resizer_, target, target_inst, fitting[i], cost_divisors[i]));
   }
   return candidates;
 }
@@ -129,6 +139,8 @@ SizeUpMtGenerator::SizeUpOptions SizeUpMtGenerator::buildSizeUpOptions(
   const bool limit_ratio = max_ratio > 0.0f && drive_r > 0.0f;
   const float min_drive_r = limit_ratio ? drive_r / max_ratio : 0.0f;
   odb::dbMaster* current_master = resizer_.dbNetwork()->staToDb(cell);
+  // The current cell's costs, shared by every swap below.
+  const CellCosts cell_costs = cellCosts(cell);
   for (sta::LibertyCell* swappable : swappable_cells) {
     if (swappable == cell) {
       continue;
@@ -163,7 +175,16 @@ SizeUpMtGenerator::SizeUpOptions SizeUpMtGenerator::buildSizeUpOptions(
     const float swappable_drive_r = swappable_drvr->driveResistance();
     if (swappable_drive_r <= drive_r
         && (!limit_ratio || swappable_drive_r >= min_drive_r)) {
+      // As in SizeUpGenerator::upsizeCell, a cell without a cost on a metric
+      // both cells have is not a candidate.  cellLeakage() fills a cache, so
+      // the costs are found here on the main thread.
+      const std::optional<float> cost_ratio
+          = cellCostRatio(cell_costs, swappable);
+      if (!cost_ratio) {
+        continue;
+      }
       replacements.push_back(swappable);
+      options.cost_ratios.push_back(*cost_ratio);
     }
   }
   return options;
