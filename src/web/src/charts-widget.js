@@ -218,6 +218,8 @@ export class ChartsWidget {
         // Histogram kind: 'setup'|'hold' (endpoint slack), 'fanout', 'netlength'.
         this._currentTab = 'setup';
         this._histogramData = null;
+        // The filters _histogramData was fetched with, for a bar's drill-down.
+        this._histogramFilters = {};
         this._bars = [];
         this._yMax = 0;
         this._yTicks = [];
@@ -469,23 +471,19 @@ export class ChartsWidget {
             // rendered/interpreted as the wrong histogram type.
             const requestedTab = this._currentTab;
             let req;
+            let filters = {};
             if (requestedTab === 'fanout') {
                 req = { type: 'fanout_histogram' };
             } else if (requestedTab === 'netlength') {
                 req = { type: 'net_length_histogram',
                         use_dbu: !!this._app.showDbu };
             } else {
+                filters = this._slackFilters();
                 req = {
                     type: 'slack_histogram',
                     is_setup: requestedTab === 'setup',
+                    ...filters,
                 };
-                const groups = Array.from(
-                    this._pathGroupSelect.selectedOptions, (o) => o.value)
-                    .filter(Boolean);
-                if (groups.length > 0) req.path_groups = groups;
-                if (this._clockSelect.value) {
-                    req.clock_name = this._clockSelect.value;
-                }
             }
             const data = await this._app.websocketManager.request(req);
             // Stale response: the user switched tabs while this was in flight.
@@ -493,6 +491,7 @@ export class ChartsWidget {
                 return;
             }
             this._histogramData = data;
+            this._histogramFilters = filters;
             this._syncView();
 
             if (requestedTab === 'fanout' || requestedTab === 'netlength') {
@@ -508,6 +507,20 @@ export class ChartsWidget {
         } catch (err) {
             this._statusLabel.textContent = 'Error: ' + err.message;
         }
+    }
+
+    // The slack histogram's path group and clock filters, as the
+    // slack_histogram and timing_report requests take them.
+    _slackFilters() {
+        const filters = {};
+        const groups = Array.from(
+            this._pathGroupSelect.selectedOptions, (o) => o.value)
+            .filter(Boolean);
+        if (groups.length > 0) filters.path_groups = groups;
+        if (this._clockSelect.value) {
+            filters.clock_name = this._clockSelect.value;
+        }
+        return filters;
     }
 
     _selectTab(tab) {
@@ -814,21 +827,17 @@ export class ChartsWidget {
         if (!bar || bar.count === 0) return;
 
         try {
-            // The histogram's filters, so a bar lists the paths it counted.
+            // The filters the drawn histogram was fetched with, not the
+            // selects', which may have changed since, so a bar lists the
+            // paths it counted.
             const req = {
                 type: 'timing_report',
                 is_setup: this._currentTab === 'setup',
                 max_paths: 50,
                 slack_min: bar.lower,
                 slack_max: bar.upper,
+                ...this._histogramFilters,
             };
-            const groups = Array.from(
-                this._pathGroupSelect.selectedOptions, (o) => o.value)
-                .filter(Boolean);
-            if (groups.length > 0) req.path_groups = groups;
-            if (this._clockSelect.value) {
-                req.clock_name = this._clockSelect.value;
-            }
             const resp = await withBusyCursor(
                 () => this._app.websocketManager.request(req));
             if (this._app.timingWidget) {
