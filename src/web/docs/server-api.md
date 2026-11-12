@@ -593,12 +593,14 @@ reports candidate completions plus the replacement range.
 
 Return the worst N timing paths.
 
-| Field        | Type     | Required | Default                          | Description                                          |
-| ------------ | -------- | :------: | -------------------------------- | ---------------------------------------------------- |
-| `is_setup`   | `bool`   |    ✓     | —                                | `true` → setup paths, `false` → hold.                |
-| `max_paths`  | `int`    |    ✓     | —                                | Maximum number of paths to return.                   |
-| `slack_min`  | `double` |          | `-FLT_MAX`                       | Lower slack bound (inclusive). Optional filter.      |
-| `slack_max`  | `double` |          | `+FLT_MAX`                       | Upper slack bound (exclusive). Optional filter.      |
+| Field         | Type       | Required | Default            | Description                                                                                                    |
+| ------------- | ---------- | :------: | ------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `is_setup`    | `bool`     |    ✓     | —                  | `true` → setup paths, `false` → hold.                                                                          |
+| `max_paths`   | `int`      |    ✓     | —                  | Maximum number of paths to return.                                                                             |
+| `slack_min`   | `double`   |          | `-FLT_MAX`         | Lower slack bound (inclusive). Optional filter.                                                                |
+| `slack_max`   | `double`   |          | `+FLT_MAX`         | Upper slack bound (exclusive). Optional filter.                                                                |
+| `path_groups` | `string[]` |          | `[]` (every group) | Path groups to report. Optional filter.                                                                        |
+| `clock_name`  | `string`   |          | `""` (every clock) | Keep the paths whose capturing clock has this name. A name that is no clock returns no paths. Optional filter. |
 
 **Response (JSON):**
 ```json
