@@ -20,6 +20,7 @@
 #include "boost/geometry/index/predicates.hpp"
 #include "boost/geometry/index/rtree.hpp"
 #include "dpl/Opendp.h"
+#include "infrastructure/Coordinates.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"
@@ -1207,12 +1208,14 @@ bool PlacementDRC::checkPadding(const Node* cell,
                                 const GridX x,
                                 const GridY y) const
 {
-  return checkPadding(cell,
-                      GridRect{.xlo = x,
-                               .ylo = y,
-                               .xhi = x + grid_->gridWidth(cell),
-                               .yhi = grid_->gridEndY(grid_->gridYToDbu(y)
-                                                      + cell->getHeight())});
+  return checkPadding(
+      cell,
+      GridRect{
+          .xlo = x,
+          .ylo = y,
+          .xhi = x + grid_->gridWidth(cell),
+          .yhi = grid_->gridEndY(grid_->gridYToDbu(y) + cell->getHeight()),
+      });
 }
 
 bool PlacementDRC::checkPadding(const Node* cell, const GridRect& rect) const
