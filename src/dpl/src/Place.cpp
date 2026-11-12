@@ -220,7 +220,8 @@ void Opendp::checkWindowSupply(const bool fatal)
         }
       }
       if (need > have) {
-        shortfalls.push_back({bx, by, need, have});
+        shortfalls.push_back(
+            {.bx = bx, .by = by, .demand = need, .supply = have});
       }
     }
   }
