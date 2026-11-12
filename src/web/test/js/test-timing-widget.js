@@ -372,7 +372,15 @@ describe('TimingWidget path table sorting', () => {
 });
 
 describe('TimingWidget cone target', () => {
-    const nodes = [{ pin: 'in1' }, { pin: '_12_/A' }, { pin: '_12_/Z' }];
+    // As the server sends them: a port has no instance, and a 3DBlox chiplet's
+    // names carry its chip-inst prefix.
+    const nodes = [
+        { pin: 'in1', inst: '' },
+        { pin: '_12_/A', inst: '_12_' },
+        { pin: '_12_/Z', inst: '_12_' },
+        { pin: 'chip/in2', inst: '' },
+        { pin: 'chip/_13_/A', inst: 'chip/_13_' },
+    ];
 
     // One setup path, selected, so its detail table lists `nodes`.
     function makeWidget(app) {
@@ -439,6 +447,25 @@ describe('TimingWidget cone target', () => {
         assert.equal(cone.pin_name, 'in1');
         assert.equal(cone.inst_name, '');
         assert.deepEqual(synced, []);
+    });
+
+    it('cones a chiplet port without syncing the schematic', async () => {
+        const app = createMockApp();
+        const widget = makeWidget(app);
+        widget._selectDetailRow(3);
+        const { cone, synced } = await applyCone(widget, app);
+        assert.equal(cone.pin_name, 'chip/in2');
+        assert.equal(cone.inst_name, '');
+        assert.deepEqual(synced, []);
+    });
+
+    it('syncs a chiplet pin\'s prefixed instance', async () => {
+        const app = createMockApp();
+        const widget = makeWidget(app);
+        widget._selectDetailRow(4);
+        const { cone, synced } = await applyCone(widget, app);
+        assert.equal(cone.pin_name, 'chip/_13_/A');
+        assert.deepEqual(synced, ['chip/_13_']);
     });
 
     it('asks for a target when there is none', async () => {

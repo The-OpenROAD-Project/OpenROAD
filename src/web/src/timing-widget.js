@@ -22,13 +22,6 @@ export function detailRows(nodes, expandClock) {
     return [all[0], { node: clkEnd, summary: true }, ...all.slice(clkEnd + 1)];
 }
 
-// A path node is an instance pin ("inst/PIN"; master pins have no '/') or a
-// top-level port, which has no instance.
-function instanceOfPin(pin) {
-    const slash = pin.lastIndexOf('/');
-    return slash > 0 ? pin.slice(0, slash) : '';
-}
-
 // The report options of a plain Update; a histogram drill-down narrows them.
 const kDefaultReportOptions = { max_paths: 100, unconstrained: false };
 
@@ -343,7 +336,9 @@ export class TimingWidget {
         const node = row && this._detailNodes[row.node];
         const inst = this._app.selectedInstanceName || '';
         if (node?.pin && this._app.selectionToken === this._rowSelectionToken) {
-            return { pin: node.pin, inst: instanceOfPin(node.pin) };
+            // A port's inst is empty; its name alone can't tell (3DBlox
+            // prefixes a chiplet port with its chip-inst).
+            return { pin: node.pin, inst: node.inst || '' };
         }
         return { pin: '', inst };
     }
