@@ -18,6 +18,7 @@ namespace mpl {
 namespace {
 
 constexpr int kTrackSearchAttemptsLimit = 100;
+constexpr int kSiteSearchAttemptsLimit = 20;
 
 // Offsets 0, +1, -1, +2, -2, ... so that the search spreads from the start.
 int alternatingOffset(const int attempt)
@@ -40,14 +41,92 @@ void Snapper::snapMacro()
 {
   loadLayerData();
 
-  snapToTracks(odb::dbTechLayerDir::VERTICAL);
-  snapToTracks(odb::dbTechLayerDir::HORIZONTAL);
+  if (snap_to_site_grid_) {
+    site_grid_ = findSiteGrid();
+    snapToSites(odb::dbTechLayerDir::VERTICAL);
+    snapToSites(odb::dbTechLayerDir::HORIZONTAL);
+  } else {
+    snapToTracks(odb::dbTechLayerDir::VERTICAL);
+    snapToTracks(odb::dbTechLayerDir::HORIZONTAL);
+  }
+}
+
+void Snapper::setSnapToSiteGrid(const bool snap_to_site_grid)
+{
+  snap_to_site_grid_ = snap_to_site_grid;
 }
 
 void Snapper::loadLayerData()
 {
   vertical_layers_ = computeLayerDataList(odb::dbTechLayerDir::VERTICAL);
   horizontal_layers_ = computeLayerDataList(odb::dbTechLayerDir::HORIZONTAL);
+}
+
+// Snaps to the site position that aligns the largest number of pins. We first
+// snap the origin to its nearest site and then jump from site to site around
+// it looking for the optimal position. When no site position aligns any pin,
+// the track-grid snap takes over.
+void Snapper::snapToSites(const odb::dbTechLayerDir& target_direction)
+{
+  const LayerDataList& layers_data_list = layersOf(target_direction);
+  if (layers_data_list.empty()) {
+    snapToNearestSite(target_direction);
+    return;
+  }
+
+  const int total_pins = totalPins(layers_data_list);
+  const int pitch = sitePitch(target_direction);
+  const int origin = getOrigin(target_direction);
+
+  snapToNearestSite(target_direction);
+  const int start = getOrigin(target_direction);
+
+  int best_position = start;
+  int best_aligned_pins = 0;
+  for (int attempt = 0; attempt <= kSiteSearchAttemptsLimit; attempt++) {
+    const int position = start + alternatingOffset(attempt) * pitch;
+    setOrigin(position, target_direction);
+
+    const int aligned_pins
+        = totalAlignedPins(layers_data_list, target_direction);
+    if (aligned_pins > best_aligned_pins) {
+      best_aligned_pins = aligned_pins;
+      best_position = position;
+      if (best_aligned_pins == total_pins) {
+        break;
+      }
+    }
+  }
+
+  if (best_aligned_pins == 0) {
+    logger_->warn(
+        utl::MPL,
+        82,
+        "Could not snap {} to the site grid in {}. No site position "
+        "around it aligns any pin with the track-grid. Snapping it "
+        "to the track-grid only.",
+        inst_->getName(),
+        target_direction == odb::dbTechLayerDir::VERTICAL ? "x" : "y");
+    setOrigin(origin, target_direction);
+    snapToTracks(target_direction);
+    return;
+  }
+
+  setOrigin(best_position, target_direction);
+  reportUnalignedPins(
+      layers_data_list, target_direction, best_aligned_pins, total_pins);
+}
+
+void Snapper::snapToNearestSite(const odb::dbTechLayerDir& direction)
+{
+  const int grid_origin = direction == odb::dbTechLayerDir::VERTICAL
+                              ? site_grid_.origin.x()
+                              : site_grid_.origin.y();
+  const int pitch = sitePitch(direction);
+  const double sites
+      = (getOrigin(direction) - grid_origin) / static_cast<double>(pitch);
+
+  setOrigin(grid_origin + std::lround(sites) * pitch, direction);
 }
 
 // Snaps to the location that aligns the largest number of pins. We first align
@@ -98,6 +177,41 @@ int Snapper::nearestManufacturingGridPosition(const int position) const
 
   return std::round(position / static_cast<double>(manufacturing_grid))
          * manufacturing_grid;
+}
+
+// The grid of the smallest core site. Rows of taller sites, such as
+// double-height rows, sit on it as well.
+Snapper::SiteGrid Snapper::findSiteGrid()
+{
+  SiteGrid site_grid;
+  for (odb::dbRow* row : inst_->getBlock()->getRows()) {
+    odb::dbSite* site = row->getSite();
+    if (row->getDirection() != odb::dbRowDir::HORIZONTAL
+        || site->getClass() != odb::dbSiteClass::CORE) {
+      continue;
+    }
+
+    if (!site_grid.site || site->getHeight() < site_grid.site->getHeight()) {
+      site_grid = {.origin = row->getOrigin(), .site = site};
+    }
+  }
+
+  if (!site_grid.site) {
+    logger_->error(utl::MPL,
+                   83,
+                   "Could not snap {} to the site grid. The block has no core "
+                   "rows.",
+                   inst_->getName());
+  }
+
+  return site_grid;
+}
+
+int Snapper::sitePitch(const odb::dbTechLayerDir& direction) const
+{
+  return direction == odb::dbTechLayerDir::VERTICAL
+             ? site_grid_.site->getWidth()
+             : site_grid_.site->getHeight();
 }
 
 const Snapper::LayerDataList& Snapper::layersOf(

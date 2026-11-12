@@ -7,11 +7,13 @@
 #include <vector>
 
 #include "odb/PtrSetMap.h"
+#include "odb/geom.h"
 
 namespace odb {
 class dbInst;
 class dbITerm;
 class dbMPin;
+class dbSite;
 class dbTechLayer;
 class dbTechLayerDir;
 class dbTrackGrid;
@@ -32,6 +34,7 @@ class Snapper
   void snapMacro();
 
   void setMacro(odb::dbInst* inst) { inst_ = inst; }
+  void setSnapToSiteGrid(bool snap_to_site_grid);
 
  private:
   struct LayerData
@@ -42,15 +45,27 @@ class Snapper
     std::vector<odb::dbITerm*> pins;
   };
 
+  struct SiteGrid
+  {
+    odb::Point origin;
+    odb::dbSite* site{nullptr};
+  };
+
   // ordered by TrackGrid layer number
   using LayerDataList = std::vector<LayerData>;
   using TrackGridToPinListMap
       = odb::PtrMap<odb::dbTrackGrid, std::vector<odb::dbITerm*>>;
 
   void loadLayerData();
+
+  void snapToSites(const odb::dbTechLayerDir& target_direction);
+  void snapToNearestSite(const odb::dbTechLayerDir& direction);
+
   void snapToTracks(const odb::dbTechLayerDir& target_direction);
   void snapToManufacturingGrid(const odb::dbTechLayerDir& direction);
   int nearestManufacturingGridPosition(int position) const;
+  SiteGrid findSiteGrid();
+  int sitePitch(const odb::dbTechLayerDir& direction) const;
   const LayerDataList& layersOf(const odb::dbTechLayerDir& direction) const;
   int getOrigin(const odb::dbTechLayerDir& direction);
   void setOrigin(int origin, const odb::dbTechLayerDir& direction);
@@ -84,6 +99,9 @@ class Snapper
 
   LayerDataList vertical_layers_;
   LayerDataList horizontal_layers_;
+
+  bool snap_to_site_grid_{false};
+  SiteGrid site_grid_;
 };
 
 }  // namespace mpl
