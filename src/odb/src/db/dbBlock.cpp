@@ -2566,8 +2566,31 @@ int dbBlock::getGCellTileSize()
   const int upper_layer_for_gcell_size = 4;
   const int pitches_in_tile = 15;
 
-  if (block->max_routing_layer_ < upper_layer_for_gcell_size) {
-    return getAverageTrackSpacing(block->max_routing_layer_) * pitches_in_tile;
+  // layer_idx below is frontside-only (see isBackside() above), so count
+  // how many frontside layers are enabled up to max_routing_layer_ here
+  // instead of using that raw, backside-inclusive level directly. A
+  // non-positive max_routing_layer_ matches no raw level, leaving the
+  // count at 0.
+  dbTech* tech = getTech();
+  int enabled_frontside_layers = 0;
+  int raw_level = 0;
+  if (block->max_routing_layer_ > 0) {
+    for (auto* layer : tech->getLayers()) {
+      if (layer->getType() != dbTechLayerType::ROUTING) {
+        continue;
+      }
+      ++raw_level;
+      if (!layer->isBackside()) {
+        ++enabled_frontside_layers;
+      }
+      if (raw_level == block->max_routing_layer_) {
+        break;
+      }
+    }
+  }
+
+  if (enabled_frontside_layers < upper_layer_for_gcell_size) {
+    return getAverageTrackSpacing(enabled_frontside_layers) * pitches_in_tile;
   }
 
   // Use the middle track spacing between M2, M3 and M4
@@ -3818,6 +3841,7 @@ std::string _dbBlock::makeNewName(
                    parent->getHierarchicalName(),
                    block->getHierarchyDelimiter());
   }
+  assert(base_name != nullptr);
   buf.append(fmt::string_view(base_name));
   buf.push_back('\0');  // Null-terminate for find* functions
 
@@ -3961,6 +3985,7 @@ std::string dbBlock::makeNewInstName(dbModInst* parent,
 
 const char* dbBlock::getBaseName(const char* full_name) const
 {
+  assert(full_name != nullptr);
   const char hierarchy_delimiter = getHierarchyDelimiter();
   const char* base_name = full_name;
   size_t backslash_run = 0;

@@ -7,7 +7,6 @@ load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
-# From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "aes",
     "blockage01",
@@ -55,6 +54,7 @@ COMPULSORY_TESTS = [
     "gcd",
     "hybrid_cells",
     "hybrid_cells2",
+    "hybrid_cells_block",
     "ibex",
     "macro_placed_not_fixed",
     "max_disp1",
@@ -104,7 +104,15 @@ COMPULSORY_TESTS = [
     "regions2-opt",
 ]
 
-ALL_TESTS = COMPULSORY_TESTS
+PASSFAIL_TESTS = [
+    "pdn_via",
+    "pdn_via_array",
+    "pdn_via_cut",
+    "pdn_via_euclidean",
+    "pdn_via_mirror",
+]
+
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -248,6 +256,10 @@ filegroup(
             "hybrid_cells2": [
                 "Nangate45/fake_macros.lef",
             ],
+            "hybrid_cells_block": [
+                "hybrid_cells.def",
+                "Nangate45/fake_macros.lef",
+            ],
             "ibex": [
                 "ibex_core_replace.def",
             ],
@@ -329,6 +341,8 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        check_log = False if test_name in PASSFAIL_TESTS else True,
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":" + test_name + "_resources"],
         tags = [],
         visibility = ["//visibility:public"],
@@ -339,9 +353,13 @@ filegroup(
 cc_test(
     name = "dpl_unittest",
     srcs = ["dpl_test.cc"],
-    data = ["extra.lef"],
+    data = [
+        "extra.lef",
+        "gcd_replace.def",
+    ],
     deps = [
         "//src/dpl",
+        "//src/dpl:dpl_impl",
         "//src/odb/src/db",
         "//src/odb/src/lefin",
         "//src/tst",

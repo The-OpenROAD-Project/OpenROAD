@@ -3,8 +3,8 @@
 # Copyright (c) 2026, The OpenROAD Authors
 """Per-unit-length reference capacitances for fsv cross-section structures.
 
-Solves the 2D Laplace equation in the y-z plane by finite volumes: a ground
-plane at z = 0, planar layers, and wires infinitely long along x (the box x
+Solves the 2D Laplace equation in the x-z plane by finite volumes: a ground
+plane at z = 0, planar layers, and wires infinitely long along y (the box y
 extents are ignored). Needs numpy and scipy:
 
   python3 fv2d_golden.py etch_stop_pair.txt three_wires.txt > cross_section.txt
@@ -76,7 +76,7 @@ def read_structure(path):
 
 def shells(boxes, conformals):
     """(name, eps, outer, inner, group, depth) of every conformal shell,
-    innermost first per box. outer and inner are (y0, z0, y1, z1): the box
+    innermost first per box. outer and inner are (x0, z0, x1, z1): the box
     grown by this conformal and those inside it, and by those inside it only.
     The boxes of one net on one layer form a group (a number), whose shells
     grow from the union of its boxes; depth is 1 for the innermost
@@ -84,7 +84,7 @@ def shells(boxes, conformals):
     result = []
     groups = {}
     for net, b in boxes:
-        inner = (b[1], b[2], b[4], b[5])
+        inner = (b[0], b[2], b[3], b[5])
         side = top = 0.0
         depth = 0
         for name, bottom, ztop, sw, tw, eps in conformals:
@@ -93,7 +93,7 @@ def shells(boxes, conformals):
             side += sw
             top += tw
             depth += 1
-            outer = (b[1] - side, b[2], b[4] + side, b[5] + top)
+            outer = (b[0] - side, b[2], b[3] + side, b[5] + top)
             group = groups.setdefault((net, bottom, ztop), len(groups))
             result.append((name, eps, outer, inner, group, depth))
             inner = outer
@@ -119,29 +119,29 @@ def grid_lines(breaks, lo, hi, h, far_lo, far_hi):
 
 
 class Grid:
-    """A structure discretized at spacing h: the grid lines Y and Z, and per
+    """A structure discretized at spacing h: the grid lines X and Z, and per
     cell its permittivity, the net it belongs to (-1 outside conductors) and
     its conformal dielectric ("" outside shells)."""
 
     def __init__(self, background, layers, boxes, h, conformals=()):
         self.names = list(dict.fromkeys(name for name, _ in boxes))
         self.shells = shells(boxes, conformals)
-        y_breaks = [v for _, b in boxes for v in (b[1], b[4])]
-        y_breaks += [v for s in self.shells for v in (s[2][0], s[2][2])]
+        x_breaks = [v for _, b in boxes for v in (b[0], b[3])]
+        x_breaks += [v for s in self.shells for v in (s[2][0], s[2][2])]
         z_breaks = [v for _, b in boxes for v in (b[2], b[5])]
         z_breaks += [v for s in self.shells for v in (s[2][1], s[2][3])]
         # The uniform grid covers the wires and shells; layer tops above it
         # are grid lines in the growing cells.
         z_hi = max(z_breaks) + MARGIN
         z_breaks += [top for top, _ in layers]
-        y_lo, y_hi = min(y_breaks) - MARGIN, max(y_breaks) + MARGIN
-        # The uniform region, (y0, z0, y1, z1).
-        self.near = (y_lo, 0.0, y_hi, z_hi)
-        self.Y = grid_lines(y_breaks, y_lo, y_hi, h, y_lo - FAR, y_hi + FAR)
+        x_lo, x_hi = min(x_breaks) - MARGIN, max(x_breaks) + MARGIN
+        # The uniform region, (x0, z0, x1, z1).
+        self.near = (x_lo, 0.0, x_hi, z_hi)
+        self.X = grid_lines(x_breaks, x_lo, x_hi, h, x_lo - FAR, x_hi + FAR)
         self.Z = grid_lines(z_breaks + [0.0], 0.0, z_hi, h, 0.0, z_hi + FAR)
-        yc = 0.5 * (self.Y[1:] + self.Y[:-1])
+        xc = 0.5 * (self.X[1:] + self.X[:-1])
         zc = 0.5 * (self.Z[1:] + self.Z[:-1])
-        shape = (len(yc), len(zc))
+        shape = (len(xc), len(zc))
 
         def eps_at(z):
             for top, eps in layers:
@@ -155,8 +155,8 @@ class Grid:
         self.owner = -np.ones(shape, dtype=int)
         for name, b in boxes:
             inside = (
-                (yc[:, None] > b[1])
-                & (yc[:, None] < b[4])
+                (xc[:, None] > b[0])
+                & (xc[:, None] < b[3])
                 & (zc[None, :] > b[2])
                 & (zc[None, :] < b[5])
             )
@@ -168,8 +168,8 @@ class Grid:
 
         def within(r):
             return (
-                (yc[:, None] > r[0])
-                & (yc[:, None] < r[2])
+                (xc[:, None] > r[0])
+                & (xc[:, None] < r[2])
                 & (zc[None, :] > r[1])
                 & (zc[None, :] < r[3])
             )
@@ -199,10 +199,10 @@ def solve(background, layers, boxes, h, conformals=()):
     grid = Grid(background, layers, boxes, h, conformals)
     names = grid.names
     eps, owner = grid.eps, grid.owner
-    dy, dz = np.diff(grid.Y), np.diff(grid.Z)
-    ny, nz = eps.shape
+    dx, dz = np.diff(grid.X), np.diff(grid.Z)
+    nx, nz = eps.shape
     free = owner < 0
-    index = -np.ones((ny, nz), dtype=int)
+    index = -np.ones((nx, nz), dtype=int)
     index[free] = np.arange(free.sum())
     n = int(free.sum())
 
@@ -232,20 +232,20 @@ def solve(background, layers, boxes, h, conformals=()):
             wire_net.append(owner[w_side][m])
             wire_g.append(g)
 
-    I, J = np.meshgrid(np.arange(ny), np.arange(nz), indexing="ij")
-    # Neighbors along y, then along z.
+    I, J = np.meshgrid(np.arange(nx), np.arange(nz), indexing="ij")
+    # Neighbors along x, then along z.
     a = (I[:-1, :], J[:-1, :])
     b = (I[1:, :], J[1:, :])
-    couple(a, b, dz[J[:-1, :]], dy[I[:-1, :]] / 2, dy[I[1:, :]] / 2)
+    couple(a, b, dz[J[:-1, :]], dx[I[:-1, :]] / 2, dx[I[1:, :]] / 2)
     a = (I[:, :-1], J[:, :-1])
     b = (I[:, 1:], J[:, 1:])
-    couple(a, b, dy[I[:, :-1]], dz[J[:, :-1]] / 2, dz[J[:, 1:]] / 2)
+    couple(a, b, dx[I[:, :-1]], dz[J[:, :-1]] / 2, dz[J[:, 1:]] / 2)
     # Grounded boundaries: the plane at z = 0 and the far edges.
     for cells, area, half in (
-        ((I[:, 0], J[:, 0]), dy, dz[0] / 2),
-        ((I[:, -1], J[:, -1]), dy, dz[-1] / 2),
-        ((I[0, :], J[0, :]), dz, dy[0] / 2),
-        ((I[-1, :], J[-1, :]), dz, dy[-1] / 2),
+        ((I[:, 0], J[:, 0]), dx, dz[0] / 2),
+        ((I[:, -1], J[:, -1]), dx, dz[-1] / 2),
+        ((I[0, :], J[0, :]), dz, dx[0] / 2),
+        ((I[-1, :], J[-1, :]), dz, dx[-1] / 2),
     ):
         m = free[cells]
         g = area[m] / (half / eps[cells][m])
@@ -311,7 +311,7 @@ def plot(path, out_dir, h):
     )
     for ax, near in zip(axes, (True, False)):
         mesh = ax.pcolormesh(
-            grid.Y,
+            grid.X,
             grid.Z,
             np.ma.masked_where(grid.owner >= 0, grid.eps).T,
             cmap="Blues",
@@ -320,7 +320,7 @@ def plot(path, out_dir, h):
             linewidth=0.15 if near else 0.05,
         )
         ax.pcolormesh(
-            grid.Y,
+            grid.X,
             grid.Z,
             np.ma.masked_where(grid.owner < 0, np.zeros(grid.owner.shape)).T,
             cmap=mcolors.ListedColormap([copper]),
@@ -329,7 +329,7 @@ def plot(path, out_dir, h):
         if near:
             for name, b in boxes:
                 ax.text(
-                    0.5 * (b[1] + b[4]),
+                    0.5 * (b[0] + b[3]),
                     0.5 * (b[2] + b[5]),
                     name,
                     color="white",
@@ -350,7 +350,7 @@ def plot(path, out_dir, h):
                         linestyle=shell_styles[materials.index(name) % 4],
                     )
                 )
-            y0, z0, y1, z1 = grid.near
+            x0, z0, x1, z1 = grid.near
             bottom = 0.0
             for top, eps in layers:
                 if top <= z1:
@@ -358,19 +358,19 @@ def plot(path, out_dir, h):
                 mid = 0.5 * (bottom + min(top, z1))
                 if bottom < z1:
                     ax.text(
-                        y1, mid, f" ε {eps:g}", color=muted, va="center", fontsize=8
+                        x1, mid, f" ε {eps:g}", color=muted, va="center", fontsize=8
                     )
                 bottom = top
             if bottom < z1:
                 ax.text(
-                    y1,
+                    x1,
                     0.5 * (bottom + z1),
                     f" ε {background:g}",
                     color=muted,
                     va="center",
                     fontsize=8,
                 )
-            ax.set_xlim(y0, y1)
+            ax.set_xlim(x0, x1)
             ax.set_ylim(z0, z1)
             ax.set_title("Uniform region: every cell", color=ink, fontsize=11)
             handles = [
@@ -388,18 +388,18 @@ def plot(path, out_dir, h):
             ]
             ax.legend(handles=handles, loc="upper left", fontsize=8, framealpha=0.9)
         else:
-            y0, z0, y1, z1 = grid.near
+            x0, z0, x1, z1 = grid.near
             ax.add_patch(
                 mpatches.Rectangle(
-                    (y0, z0),
-                    y1 - y0,
+                    (x0, z0),
+                    x1 - x0,
                     z1 - z0,
                     fill=False,
                     edgecolor="#b0307a",
                     linewidth=1.2,
                 )
             )
-            ax.set_xlim(grid.Y[0], grid.Y[-1])
+            ax.set_xlim(grid.X[0], grid.X[-1])
             ax.set_ylim(grid.Z[0], grid.Z[-1])
             ax.set_title(
                 "Whole domain, out to the grounded far boundaries",
@@ -407,7 +407,7 @@ def plot(path, out_dir, h):
                 fontsize=11,
             )
         ax.set_aspect("equal")
-        ax.set_xlabel("y (µm)", color=muted)
+        ax.set_xlabel("x (µm)", color=muted)
         ax.set_ylabel("z (µm)", color=muted)
         ax.tick_params(colors=muted, labelsize=8)
     bar = fig.colorbar(mesh, ax=axes, shrink=0.8)
@@ -416,7 +416,7 @@ def plot(path, out_dir, h):
     cells = grid.eps.size
     fig.suptitle(
         f"{structure}: h = {h:g} µm, {cells} cells "
-        f"({len(grid.Y) - 1} × {len(grid.Z) - 1})",
+        f"({len(grid.X) - 1} × {len(grid.Z) - 1})",
         color=ink,
         fontsize=13,
     )

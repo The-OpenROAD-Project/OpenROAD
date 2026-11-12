@@ -1,0 +1,17 @@
+[INFO ODB-0227] LEF file: sky130hs/sky130hs.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hs/sky130hs_std_cell.lef, created 390 library cells
+
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
+---------------------------------------------------------------------------------------
+li1                  0             0            0.00%             0 /  0 /  0
+met1             25721          1545            6.01%             0 /  0 /  0
+met2              3360          1247           37.11%             0 /  0 /  0
+met3              1720           194           11.28%             0 /  0 /  0
+met4              1680           229           13.63%             0 /  0 /  0
+met5              3600            20            0.56%             0 /  0 /  0
+---------------------------------------------------------------------------------------
+Total            36081          3235            8.97%             0 /  0 /  0
+
+[INFO GRT-0018] Total wirelength: 32025 um
+[INFO GRT-0014] Routed nets: 411

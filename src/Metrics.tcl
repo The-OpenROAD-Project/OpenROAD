@@ -73,6 +73,7 @@ proc report_fmax_metric { args } {
   # Taken from: https://github.com/siliconcompiler/siliconcompiler/blob/e46c702df218c93483b951533fe00bcf01cf772d/siliconcompiler/tools/openroad/scripts/common/reports.tcl#L98
   # Modeled on: https://github.com/The-OpenROAD-Project/OpenSTA/blob/f913c3ddbb3e7b4364ed4437c65ac78c4da9174b/tcl/Search.tcl#L1078
   set fmax_metric 0
+  set vclk_fmax_metric 0
   foreach clk [sta::sort_by_name [all_clocks]] {
     set clk_name [get_name $clk]
     set min_period [sta::find_clk_min_period $clk 1]
@@ -81,7 +82,18 @@ proc report_fmax_metric { args } {
     }
     set fmax [expr { 1.0 / $min_period }]
     utl::metric_float "timing__fmax__clock:${clk_name}" $fmax
-    set fmax_metric [expr { max($fmax_metric, $fmax) }]
+    # A virtual clock only times I/O paths, so it keeps its own
+    # per-clock metric but stays out of the real clocks' fmax.
+    if { [$clk is_virtual] } {
+      set vclk_fmax_metric [expr { max($vclk_fmax_metric, $fmax) }]
+    } else {
+      set fmax_metric [expr { max($fmax_metric, $fmax) }]
+    }
+  }
+  # A design timed only by virtual clocks (e.g. combinational) keeps
+  # their fmax.
+  if { $fmax_metric == 0 } {
+    set fmax_metric $vclk_fmax_metric
   }
   if { $fmax_metric == 0 } {
     # attempt to compute based on combinatorial path

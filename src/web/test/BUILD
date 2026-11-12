@@ -75,6 +75,7 @@ test_suite(
         ":interconnect3d_test",
         ":request_handler_test",
         ":save_display_controls_test",
+        ":session_lifetime_test",
         ":tile_generator_test",
         ":web_assets_test",
     ],
@@ -470,7 +471,10 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
+        "//src/sta:opensta_lib",
         "//src/tst:nangate45_fixture",
         "//src/utl",
         "//src/web",
@@ -478,6 +482,19 @@ cc_test(
         "@boost.asio",
         "@boost.beast",
         "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "session_lifetime_test",
+    srcs = ["cpp/TestSessionLifetime.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/utl",
+        "//src/web",
+        "@boost.asio",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -553,6 +570,7 @@ cc_test(
         "//src/web",
         "//src/web:color",
         "//src/web:core",
+        "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

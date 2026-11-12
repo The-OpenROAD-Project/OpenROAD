@@ -45,6 +45,9 @@ class dbSdcNetwork : public SdcNetwork
   void onInstDestroyed(Instance* inst);
   void onInstRenamed(Instance* inst);
 
+  // Count full hierarchy scans for cache-maintenance diagnostics.
+  size_t sdcPathCacheBuildCount() const { return sdc_path_cache_build_count_; }
+
  protected:
   void findInstancesMatching1(const PatternMatch* pattern,
                               InstanceSeq& insts) const;
@@ -98,6 +101,7 @@ class dbSdcNetwork : public SdcNetwork
   mutable SdcPathToInstMap sdc_path_to_inst_;
   mutable InstToSdcPathMap inst_to_sdc_path_;
   mutable bool cache_built_ = false;
+  mutable size_t sdc_path_cache_build_count_ = 0;
 };
 
 }  // namespace sta

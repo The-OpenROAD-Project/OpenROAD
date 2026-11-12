@@ -41,7 +41,27 @@ generate_ram_netlist_cmd(int mask_size,
                          const char* tristate_cell_name,
                          const char* inv_cell_name,
                          const char* tapcell_name,
-                         const int max_tap_dist)
+                         const int max_tap_dist,
+                         const char* read_style,
+                         const int zero_word,
+                         const char* reset_value,
+                         const int banks,
+                         const int bank_columns,
+                         const char* bank_order,
+                         const int rb_ports,
+                         const int register_read_address,
+                         const char* write_style,
+                         const char* write_priority,
+                         const char* periphery,
+                         const char* pin_layer,
+                         const char* cells,
+                         const char* name,
+                         const char* decoder,
+                         const int bit_folds,
+                         const char* wrapper_verilog,
+                         const int service_every,
+                         const int service_sites,
+                         const char* bank_column_layout)
 {
   RamGen* ram_gen = ord::getRamGen();
   odb::dbDatabase* db = ord::getDb();
@@ -93,7 +113,11 @@ generate_ram_netlist_cmd(int mask_size,
 
   ram_gen->generate(mask_size, word_size, num_words, rw_ports, r_ports, w_ports,
                     column_mux_ratio, use_latch, storage_cell, tristate_cell, inv_cell, 
-                    tapcell, max_tap_dist);
+                    tapcell, max_tap_dist, read_style, zero_word,
+                    reset_value, banks, bank_columns, bank_order, rb_ports,
+                    register_read_address, write_style, write_priority, periphery, pin_layer, cells,
+                    name, decoder, bit_folds, wrapper_verilog,
+                    service_every, service_sites, bank_column_layout);
 }
 
 void ram_pdngen(const char* power_net_name, const char* ground_net_name,

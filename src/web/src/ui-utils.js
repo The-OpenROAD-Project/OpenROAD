@@ -12,6 +12,16 @@ export function isStaticMode(app) {
     return !!app?.websocketManager?.isStaticMode;
 }
 
+// The WebSocket for the page at `loc`, carrying the page's access token: the
+// server refuses the upgrade without it.
+export function websocketUrlFrom(loc) {
+    const scheme = loc?.protocol === 'https:' ? 'wss' : 'ws';
+    const host = loc?.host || 'localhost:8080';
+    const token = new URLSearchParams(loc?.search || '').get('token');
+    const query = token ? `?token=${encodeURIComponent(token)}` : '';
+    return `${scheme}://${host}/ws${query}`;
+}
+
 // Serialize the layer/selectability visibility flags the way the server
 // parses them: each visibility key as a boolean, each selectability key with
 // an `s_` prefix.  Callers add request-specific fields (visible_layers,
@@ -195,6 +205,27 @@ export function onSelectionReset(app, fn) {
         app.selectionResetters = [];
     }
     app.selectionResetters.push(fn);
+}
+
+// A busy cursor over the whole page while `fn` runs, as the Qt GUI sets a
+// wait cursor while it builds a timing report: a click whose answer takes
+// seconds on a large design otherwise looks ignored.  Counted, so overlapping
+// requests keep it until the last one ends; cleared when `fn` throws.
+// `root` is the element that carries the class (document.body in the page).
+const busyCounts = new WeakMap();
+
+export async function withBusyCursor(fn, root = document.body) {
+    busyCounts.set(root, (busyCounts.get(root) || 0) + 1);
+    root.classList.add('op-busy');
+    try {
+        return await fn();
+    } finally {
+        const count = busyCounts.get(root) - 1;
+        busyCounts.set(root, count);
+        if (count === 0) {
+            root.classList.remove('op-busy');
+        }
+    }
 }
 
 // Leaflet map options for the 2D layout viewer.

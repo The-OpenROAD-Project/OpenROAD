@@ -49,8 +49,7 @@ class _dbModule : public _dbObject
   void collectMemInfo(MemInfo& info);
   // User Code Begin Methods
 
-  // This is only used when destroying an inst
-  void removeInst(dbInst* inst);
+  void removeInst(dbInst* inst, bool notify = true);
 
   // Copy and uniquify a given module based on current instance
   using modBTMap = odb::PtrMap<dbModBTerm, dbModBTerm*>;

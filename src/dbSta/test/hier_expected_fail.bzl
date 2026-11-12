@@ -373,16 +373,6 @@ CONFORMANCE_EXPECTED_FAIL = [
     xfail(
         path = "flat",
         mode = "or-error",
-        symptom = "Error - out_flat.tcl, 4 stoi - no conversion",
-        netlists = [
-            "wb_dbsta_link_attr_dont_touch_string.v",
-            "wb_sta_reader_attr_dont_touch_string.v",
-            "wb_sta_reader_attr_survival.v",
-        ],
-    ),
-    xfail(
-        path = "flat",
-        mode = "or-error",
         symptom = "Error - out_flat.tcl, 4 stoi - out of range",
         netlists = [
             "wb_sta_reader_attr_src_line_overflow.v",
@@ -398,16 +388,6 @@ CONFORMANCE_EXPECTED_FAIL = [
         netlists = [
             "bx_constants_unsized_b0.v",
             "bx_constants_unsized_d1.v",
-        ],
-    ),
-    xfail(
-        path = "hier",
-        mode = "or-error",
-        symptom = "Error - out_hier.tcl, 4 stoi - no conversion",
-        netlists = [
-            "wb_dbsta_link_attr_dont_touch_string.v",
-            "wb_sta_reader_attr_dont_touch_string.v",
-            "wb_sta_reader_attr_survival.v",
         ],
     ),
     xfail(
@@ -842,39 +822,6 @@ CONFORMANCE_EXPECTED_FAIL = [
     xfail(
         path = "hier",
         mode = "tool-error",
-        symptom = "Netlist loading failed - ... wire collision for net ab",
-        netlists = [
-            "wb_dbnetwork_overlay_netname_header_single_bslash.v",
-        ],
-    ),
-    xfail(
-        path = "hier",
-        mode = "tool-error",
-        symptom = "Netlist loading failed - ... wire collision for net n",
-        netlists = [
-            "wb_dbnetwork_overlay_dcflat_hier_mixed.v",
-            "wb_dbnetwork_overlay_dcflat_pathnames_short.v",
-        ],
-    ),
-    xfail(
-        path = "hier",
-        mode = "tool-error",
-        symptom = "Netlist loading failed - ... wire collision for net u1/w",
-        netlists = [
-            "wb_dbnetwork_overlay_stamped_path_dup_decl.v",
-        ],
-    ),
-    xfail(
-        path = "hier",
-        mode = "tool-error",
-        symptom = "Netlist loading failed - ... wire collision for net x",
-        netlists = [
-            "wb_dbnetwork_overlay_erase_overshoot_net_victim.v",
-        ],
-    ),
-    xfail(
-        path = "hier",
-        mode = "tool-error",
         symptom = "Netlist loading failed - wire collision for net _NC1",
         netlists = [
             "bx_dangling_busport_ncname_collision.v",
@@ -890,14 +837,6 @@ CONFORMANCE_EXPECTED_FAIL = [
         symptom = "Netlist loading failed - wire collision for net _NC2",
         netlists = [
             "bx_dangling_busport_nc2_collision.v",
-        ],
-    ),
-    xfail(
-        path = "hier",
-        mode = "tool-error",
-        symptom = "Netlist loading failed - wire collision for net u1/und",
-        netlists = [
-            "bx_dangling_undriven_leak_collide.v",
         ],
     ),
     xfail(
@@ -1001,8 +940,6 @@ CONFORMANCE_EXPECTED_FAIL = [
         mode = "tool-error",
         symptom = "SEC cannot run on this design pair - No aligned observed outputs remain after skipping cones with no",
         netlists = [
-            "wb_dbnetwork_overlay_depth0_escslash_rename_port.v",
-            "wb_dbnetwork_overlay_netname_erase_overshoot_port.v",
             "wb_sta_reader_supply_tie.v",
         ],
     ),
@@ -1414,10 +1351,7 @@ STRUCTURAL_EXPECTED_FAIL = [
         check = "round_trip",
         symptom = "read_verilog/link_design rejects the input netlist by throwing with no OpenROAD error code",
         netlists = [
-            "wb_dbsta_link_attr_dont_touch_string.v",
-            "wb_sta_reader_attr_dont_touch_string.v",
             "wb_sta_reader_attr_src_line_overflow.v",
-            "wb_sta_reader_attr_survival.v",
         ],
     ),
     # Moved here from the LEC corpus 2026-08-12: 1'bx has no binary value, so a
@@ -1503,10 +1437,7 @@ STRUCTURAL_EXPECTED_FAIL = [
         check = "round_trip",
         symptom = "read_verilog/link_design rejects the input netlist by throwing with no OpenROAD error code",
         netlists = [
-            "wb_dbsta_link_attr_dont_touch_string.v",
-            "wb_sta_reader_attr_dont_touch_string.v",
             "wb_sta_reader_attr_src_line_overflow.v",
-            "wb_sta_reader_attr_survival.v",
         ],
     ),
     structural_xfail(
@@ -2378,7 +2309,6 @@ STRUCTURAL_EXPECTED_FAIL = [
             "bx_dangling_deadwire_decl.v",
             "bx_dangling_deadwire_escaped.v",
             "bx_dangling_subout_dead_assign.v",
-            "bx_dangling_undriven_leak_collide.v",
             "bx_naming_escaped_net_kw_logic.v",
             "bx_naming_escaped_net_kw_wire.v",
             "bx_port_rewiring_offset_net_range_high.v",
@@ -2396,16 +2326,10 @@ STRUCTURAL_EXPECTED_FAIL = [
             "fanout_two_paths.v",
             "nameorder_top_assign_only.v",
             "structural/bx_constants_assign_z_wire.v",
-            "structural/wb_dbnetwork_overlay_stamped_tail_eq_port.v",
             "structural/wb_sta_reader_bitselect_out_of_range.v",
             "structural/wb_sta_reader_scalar_dcl_initializer.v",
             "structural/wb_writer_bitsel_index_stoi_range.v",
             "structural/wb_writer_wire_index_overflow.v",
-            "wb_dbnetwork_overlay_depth0_escslash_rename_port.v",
-            "wb_dbnetwork_overlay_erase_overshoot_net_victim.v",
-            "wb_dbnetwork_overlay_netname_erase_overshoot_port.v",
-            "wb_dbnetwork_overlay_netname_header_single_bslash.v",
-            "wb_dbnetwork_overlay_stamped_path_dup_decl.v",
             "wb_dbsta_link_alias_name_after_port.v",
             "wb_dbsta_link_alias_name_before_port.v",
             "wb_dbsta_link_supply_net_hier_boundary.v",
@@ -2428,26 +2352,6 @@ STRUCTURAL_EXPECTED_FAIL = [
     structural_xfail(
         path = "hier",
         check = "declared_nets",
-        symptom = "a declared net or port is erased; a module-local net is renamed to an instance path",
-        netlists = [
-            "bx_dangling_gate_island_leaf.v",
-            "bx_dangling_positional_in_sub.v",
-            "bx_dangling_undriven_bus_in_sub.v",
-            "bx_dangling_undriven_depth2_island.v",
-            "bx_dangling_undriven_esc_leak.v",
-            "bx_dangling_undriven_leak_escinst.v",
-            "bx_dangling_undriven_two_inst.v",
-            "structural/TestInsertBuffer_BusBitTracePortName_post.v",
-            "structural/bx_dangling_undriven_live_sub.v",
-            "structural/bx_port_rewiring_header_concat_port_positional.v",
-            "structural/bx_port_rewiring_header_concat_port_second.v",
-            "structural/wb_dbnetwork_overlay_netname_drvr_escslash.v",
-            "structural/wb_dbnetwork_overlay_strip_parent_trailing_bslash.v",
-        ],
-    ),
-    structural_xfail(
-        path = "hier",
-        check = "declared_nets",
         symptom = "a declared net or port is erased; a name absent from the input is invented",
         netlists = [
             "bx_bus_geometry_neg_partsel.v",
@@ -2457,9 +2361,6 @@ STRUCTURAL_EXPECTED_FAIL = [
             "structural/bx_port_rewiring_explicit_port_bus_whole.v",
             "structural/bx_port_rewiring_explicit_port_concat_perm.v",
             "structural/bx_port_rewiring_explicit_port_positional_bus.v",
-            "structural/wb_dbnetwork_overlay_depth0_escslash_rename.v",
-            "wb_dbnetwork_overlay_dcflat_hier_mixed.v",
-            "wb_dbnetwork_overlay_dcflat_pathnames_short.v",
         ],
     ),
     structural_xfail(
@@ -2592,8 +2493,6 @@ STRUCTURAL_EXPECTED_FAIL = [
             "structural/bx_collisions_escaped_equals_plain_inst.v",
             "structural/bx_collisions_uniq_vs_module_uninst.v",
             "structural/bx_sequential_shift8_4mods.v",
-            "structural/wb_dbnetwork_overlay_strip_bslash_inst_dup.v",
-            "structural/wb_dbnetwork_overlay_strip_parent_trailing_bslash.v",
             "structural/wb_sta_reader_ifdef_body_compiled.v",
             "two_subs_chained.v",
             "uniquified_module_collision.v",
@@ -2857,13 +2756,7 @@ STRUCTURAL_EXPECTED_FAIL = [
             "bx_dangling_nc_collision_mid.v",
             "bx_dangling_nc_collision_scalar_live.v",
             "bx_dangling_nc_filler_all4_taken.v",
-            "bx_dangling_undriven_leak_collide.v",
             "s2_collisions_nc_two_digit.v",
-            "wb_dbnetwork_overlay_dcflat_hier_mixed.v",
-            "wb_dbnetwork_overlay_dcflat_pathnames_short.v",
-            "wb_dbnetwork_overlay_erase_overshoot_net_victim.v",
-            "wb_dbnetwork_overlay_netname_header_single_bslash.v",
-            "wb_dbnetwork_overlay_stamped_path_dup_decl.v",
         ],
     ),
     structural_xfail(

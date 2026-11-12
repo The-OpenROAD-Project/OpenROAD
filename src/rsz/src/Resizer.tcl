@@ -693,13 +693,15 @@ sta::define_cmd_args "set_opt_config" { [-limit_sizing_area] \
                                           [-sizing_leakage_limit] \
                                           [-set_early_sizing_cap_ratio] \
                                           [-set_early_buffer_sizing_cap_ratio] \
-                                          [-disable_buffer_pruning] }
+                                          [-disable_buffer_pruning] \
+                                          [-rebuffer_size_driver] }
 
 proc set_opt_config { args } {
   sta::parse_key_args "set_opt_config" args \
     keys {-limit_sizing_area -limit_sizing_leakage -sizing_area_limit \
       -sizing_leakage_limit -keep_sizing_site -keep_sizing_vt -disable_buffer_pruning \
-      -set_early_sizing_cap_ratio -set_early_buffer_sizing_cap_ratio} flags {}
+      -set_early_sizing_cap_ratio -set_early_buffer_sizing_cap_ratio \
+      -rebuffer_size_driver} flags {}
 
   set area_limit "NULL"
   if { [info exists keys(-limit_sizing_area)] } {
@@ -766,6 +768,18 @@ proc set_opt_config { args } {
         "Buffer pruning will be enabled for repair_design and repair_timing"
     }
   }
+
+  if { [info exists keys(-rebuffer_size_driver)] } {
+    set value $keys(-rebuffer_size_driver)
+    rsz::set_boolean_prop $value "-rebuffer_size_driver" "rebuffer_size_driver"
+    if { $value } {
+      utl::info RSZ 173 \
+        "Rebuffering will size drivers together with buffer trees"
+    } else {
+      utl::info RSZ 174 \
+        "Rebuffering will not size drivers"
+    }
+  }
 }
 
 sta::define_cmd_args "reset_opt_config" { [-limit_sizing_area] \
@@ -776,14 +790,15 @@ sta::define_cmd_args "reset_opt_config" { [-limit_sizing_area] \
                                             [-sizing_leakage_limit] \
                                             [-set_early_sizing_cap_ratio] \
                                             [-set_early_buffer_sizing_cap_ratio] \
-                                            [-disable_buffer_pruning] }
+                                            [-disable_buffer_pruning] \
+                                            [-rebuffer_size_driver] }
 
 proc reset_opt_config { args } {
   sta::parse_key_args "reset_opt_config" args \
     keys {} flags {-limit_sizing_area -limit_sizing_leakage -keep_sizing_site \
                      -sizing_area_limit -sizing_leakage_limit -keep_sizing_vt \
                      -set_early_sizing_cap_ratio -set_early_buffer_sizing_cap_ratio \
-                     -disable_buffer_pruning}
+                     -disable_buffer_pruning -rebuffer_size_driver}
   set reset_all [expr { [array size flags] == 0 }]
 
   if {
@@ -819,6 +834,10 @@ proc reset_opt_config { args } {
   if { $reset_all || [info exists flags(-disable_buffer_pruning)] } {
     rsz::clear_bool_prop "disable_buffer_pruning"
     utl::info RSZ 166 "Buffer pruning has been enabled."
+  }
+  if { $reset_all || [info exists flags(-rebuffer_size_driver)] } {
+    rsz::clear_bool_prop "rebuffer_size_driver"
+    utl::info RSZ 175 "Driver sizing during rebuffering has been disabled."
   }
 }
 
@@ -873,6 +892,13 @@ proc report_opt_config { args } {
     set disable_buffer_pruning [expr { $no_buffer_pruning_value ? "true" : "false" }]
   }
 
+  set rebuffer_size_driver "false"
+  set size_driver_prop [odb::dbBoolProperty_find $block "rebuffer_size_driver"]
+  if { $size_driver_prop ne "NULL" && $size_driver_prop ne "" } {
+    set size_driver_value [$size_driver_prop getValue]
+    set rebuffer_size_driver [expr { $size_driver_value ? "true" : "false" }]
+  }
+
   puts "*******************************************"
   puts "Optimization config:"
   puts "-limit_sizing_area:                 $area_limit_value"
@@ -882,6 +908,7 @@ proc report_opt_config { args } {
   puts "-set_early_sizing_cap_ratio:        $sizing_cap_ratio"
   puts "-set_early_buffer_sizing_cap_ratio: $buffer_cap_ratio"
   puts "-disable_buffer_pruning:            $disable_buffer_pruning"
+  puts "-rebuffer_size_driver:              $rebuffer_size_driver"
   puts "*******************************************"
 }
 

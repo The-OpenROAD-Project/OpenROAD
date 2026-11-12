@@ -7,7 +7,7 @@
 // canvas.
 
 import { getThemeColors } from './theme.js';
-import { isStaticMode, beginSelection, isCurrentSelection }
+import { isStaticMode, beginSelection, isCurrentSelection, withBusyCursor }
     from './ui-utils.js';
 
 // Layout margins (pixels)
@@ -160,6 +160,31 @@ function computeLogYAxis(maxCount) {
         ticks.push(v);
     }
     return { yMax: topDecade, yTicks: ticks };
+}
+
+// The slack axis title, as the Qt GUI writes it: the unit, then every clock
+// the endpoints are timed against with its period, two clocks on the first
+// line and three on each after.  Returns the lines; at most `maxLines`, the
+// last one then saying how many clocks it left out.
+export function slackAxisTitle(unit, clocks, maxLines = 2) {
+    let first = `Slack [${unit}]`;
+    if (!clocks || clocks.length === 0) return [first];
+    const fmt = (c) => {
+        const p = Math.abs(c.period) < 1
+            ? Math.round(c.period * 1000) / 1000 : c.period;
+        return `${c.name} ${Number(p.toFixed(3))}`;
+    };
+    const lines = [`${first}, Clocks: ` + clocks.slice(0, 2).map(fmt).join(', ')];
+    for (let i = 2; i < clocks.length; i += 3) {
+        lines.push(clocks.slice(i, i + 3).map(fmt).join(', '));
+    }
+    if (lines.length > maxLines) {
+        const shown = 2 + 3 * (maxLines - 1) - 3;
+        const kept = lines.slice(0, maxLines - 1);
+        kept.push(`… and ${clocks.length - shown} more clocks`);
+        return kept;
+    }
+    return lines;
 }
 
 // Build CSV text for a histogram (bins + optional stacked series) or a line
@@ -631,10 +656,11 @@ export class ChartsWidget {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         let xTitle;
-        if (tab === 'fanout') xTitle = 'Fanout (loads)';
-        else if (tab === 'netlength') xTitle = `Net length [${unit}]`;
-        else xTitle = `Slack [${unit}]`;
-        ctx.fillText(xTitle, (ca.left + ca.right) / 2, ca.bottom + 22);
+        if (tab === 'fanout') xTitle = ['Fanout (loads)'];
+        else if (tab === 'netlength') xTitle = [`Net length [${unit}]`];
+        else xTitle = slackAxisTitle(unit, this._histogramData.clocks);
+        xTitle.forEach((line, i) => ctx.fillText(
+            line, (ca.left + ca.right) / 2, ca.bottom + 22 + 13 * i));
     }
 
     _drawBars(ctx) {
@@ -787,17 +813,23 @@ export class ChartsWidget {
         const bar = this._hitTestBar(e);
         if (!bar || bar.count === 0) return;
 
+        const tab = this._currentTab;
+        const reportOptions = {
+            max_paths: 50,
+            slack_min: bar.lower,
+            slack_max: bar.upper,
+            unconstrained: false,
+        };
         try {
-            const resp = await this._app.websocketManager.request({
-                type: 'timing_report',
-                is_setup: this._currentTab === 'setup',
-                max_paths: 50,
-                slack_min: bar.lower,
-                slack_max: bar.upper,
-            });
+            const resp = await withBusyCursor(
+                () => this._app.websocketManager.request({
+                    type: 'timing_report',
+                    is_setup: tab === 'setup',
+                    ...reportOptions,
+                }));
             if (this._app.timingWidget) {
                 this._app.timingWidget.showPaths(
-                    this._currentTab, resp.paths || []);
+                    tab, resp.paths || [], reportOptions);
                 if (this._app.focusComponent) {
                     this._app.focusComponent('TimingWidget');
                 }
@@ -821,12 +853,13 @@ export class ChartsWidget {
         // other panel's in-flight selection (see ui-utils.js).
         const token = beginSelection(this._app);
         try {
-            const resp = await this._app.websocketManager.request({
-                type,
-                lower: bar.lower,
-                upper: bar.upper,
-                use_dbu: this._app.showDbu,
-            });
+            const resp = await withBusyCursor(
+                () => this._app.websocketManager.request({
+                    type,
+                    lower: bar.lower,
+                    upper: bar.upper,
+                    use_dbu: this._app.showDbu,
+                }));
             if (!isCurrentSelection(this._app, token)) return;
             if (resp && resp.truncated) {
                 console.warn(

@@ -1,0 +1,118 @@
+name: 🔀 Gemini Dispatch
+on:
+  issues:
+    types:
+      - opened
+  issue_comment:
+    types:
+      - created
+defaults:
+  run:
+    shell: bash
+jobs:
+  debugger:
+    if: |-
+      ${{ fromJSON(vars.GEMINI_DEBUG || vars.ACTIONS_STEP_DEBUG || false) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Print context for debugging
+        env:
+          DEBUG_event_name: ${{ github.event_name }}
+          DEBUG_event__action: ${{ github.event.action }}
+          DEBUG_event__comment__author_association: ${{ github.event.comment.author_association }}
+          DEBUG_event__issue__author_association: ${{ github.event.issue.author_association }}
+          DEBUG_event: ${{ toJSON(github.event) }}
+        run: |-
+          env | grep '^DEBUG_'
+  dispatch:
+    # For issues: only on open. A reopened issue keeps the labels and
+    # assignee it already has.
+    # For comments: only if user types @gemini-cli and is OWNER/MEMBER/COLLABORATOR
+    # Gemini triage runs only in the public repository.
+    if: |-
+      github.repository == 'The-OpenROAD-Project/OpenROAD' && ((
+        github.event_name == 'issues' &&
+        github.event.action == 'opened'
+      ) || (
+        github.event.sender.type == 'User' &&
+        startsWith(github.event.comment.body || github.event.issue.body, '@gemini-cli') &&
+        contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association || github.event.issue.author_association)
+      ))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      command: ${{ steps.extract_command.outputs.command }}
+      request: ${{ steps.extract_command.outputs.request }}
+      additional_context: ${{ steps.extract_command.outputs.additional_context }}
+      issue_number: ${{ github.event.issue.number }}
+    steps:
+      - name: Extract command
+        id: extract_command
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # ratchet:actions/github-script@v7
+        env:
+          EVENT_TYPE: ${{ github.event_name }}.${{ github.event.action }}
+          REQUEST: ${{ github.event.comment.body || github.event.issue.body }}
+        with:
+          script: |
+            const eventType = process.env.EVENT_TYPE;
+            const request = process.env.REQUEST;
+            core.setOutput('request', request);
+            if (eventType === 'issues.opened') {
+              core.setOutput('command', 'triage');
+            } else if (request.startsWith("@gemini-cli /triage")) {
+              core.setOutput('command', 'triage');
+            } else {
+              core.setOutput('command', 'fallthrough');
+            }
+  triage:
+    needs: dispatch
+    if: |-
+      ${{ needs.dispatch.outputs.command == 'triage' }}
+    uses: ./.github/workflows/gemini-triage.yml
+    permissions:
+      contents: read
+      id-token: write
+      issues: write
+      pull-requests: write
+    with:
+      additional_context: ${{ needs.dispatch.outputs.additional_context }}
+    secrets: inherit
+  fallthrough:
+    needs:
+      - dispatch
+      - triage
+    # Issue-open triage fails quietly: the issue stays unlabeled and the
+    # hourly scheduled triage retries it.
+    if: |-
+      ${{ always() && !cancelled() && github.event_name != 'issues' && (failure() || needs.dispatch.outputs.command == 'fallthrough') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Mint identity token
+        id: mint_identity_token
+        if: |-
+          ${{ vars.APP_CLIENT_ID }}
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510  # ratchet:actions/create-github-app-token@v2
+        with:
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-contents: read
+          permission-issues: write
+          permission-pull-requests: write
+      - name: Send failure comment
+        env:
+          GITHUB_TOKEN: ${{ steps.mint_identity_token.outputs.token || secrets.GITHUB_TOKEN || github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          MESSAGE: |-
+            🤖 I'm sorry @${{ github.actor }}, but I was unable to process your request. Please [see the logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for more details.
+          REPOSITORY: ${{ github.repository }}
+        run: |-
+          gh issue comment "${ISSUE_NUMBER}" \
+            --body "${MESSAGE}" \
+            --repo "${REPOSITORY}"

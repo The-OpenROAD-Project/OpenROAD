@@ -1,11 +1,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2019-2026, The OpenROAD Authors
 
-sta::define_cmd_args "web_server" { [-port port] [-bind address] [-dir dir] [-stop] }
+sta::define_cmd_args "web_server" \
+  { [-port port] [-bind address] [-token hex] [-dir dir] [-browser] \
+    [-no_browser] [-stop] }
 
 proc web_server { args } {
   sta::parse_key_args "web_server" args \
-    keys {-port -bind -dir} flags {-stop}
+    keys {-port -bind -token -dir} flags {-stop -browser -no_browser}
 
   if { [info exists flags(-stop)] } {
     web::web_server_stop_cmd
@@ -24,6 +26,15 @@ proc web_server { args } {
     }
   }
 
+  # Empty has the server mint its own.
+  set token ""
+  if { [info exists keys(-token)] } {
+    set token $keys(-token)
+    if { ![regexp {^[0-9a-fA-F]{32,128}$} $token] } {
+      utl::error WEB 128 "-token must be 32 to 128 hexadecimal digits."
+    }
+  }
+
   if { [info exists keys(-dir)] } {
     utl::warn WEB 37 "-dir is deprecated and ignored; assets are embedded in the binary."
   }
@@ -35,7 +46,20 @@ proc web_server { args } {
     set bind $keys(-bind)
   }
 
-  web::web_server_cmd $port $bind
+  # auto skips the launch where it cannot work (ssh session, no display);
+  # the two flags force it either way.
+  set browser "auto"
+  if { [info exists flags(-browser)] && [info exists flags(-no_browser)] } {
+    utl::error WEB 122 "-browser and -no_browser cannot be used together."
+  }
+  if { [info exists flags(-browser)] } {
+    set browser "always"
+  }
+  if { [info exists flags(-no_browser)] } {
+    set browser "never"
+  }
+
+  web::web_server_cmd $port $bind $browser $token
   web::web_server_wait_cmd
 }
 
@@ -52,7 +76,8 @@ proc save_image { args } {
   sta::parse_key_args "save_image" args \
     keys {-area -width -resolution} flags {-web}
 
-  set use_web [info exists flags(-web)]
+  # Without Qt the web renderer is the only one there is.
+  set use_web [expr { [info exists flags(-web)] || ![gui::supported] }]
 
   set resolution 0
   if { [info exists keys(-resolution)] } {
@@ -195,8 +220,8 @@ proc web_load_chiplet_heatmap { args } {
 # is why a Qt build launched without -gui lands on the web viewer rather than
 # on the GUI command's "not usable in non-GUI mode".
 #
-# gui::has_ui is the predicate: gui.i exports it in a Qt build and stub.cpp
-# defines it in a build without Qt, so it always answers.
+# gui::has_ui is the predicate: gui.i exports it in every build, so it always
+# answers.
 
 namespace eval web {
 # Options the web viewer adds that the Qt path cannot honour: its toolbar

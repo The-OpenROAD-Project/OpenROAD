@@ -1,0 +1,26 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 676 components and 2850 component-terminals.
+[INFO ODB-0133]     Created 579 nets and 1498 connections.
+[WARNING GRT-0309] Timing is not available, setting critical nets percentage to 0.
+[WARNING GRT-0118] Iterative RRR finished with congestion remaining (200).
+[WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
+[WARNING GRT-0128] Incremental global routing finished with congestion. Check the congestion regions in the DRC Viewer.
+[WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
+has_congestion: 1
+[INFO GRT-0130] CUGR congestion report:
+Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)   Wire Ovf    Via Ovf  Max Edge Ovf
+--------------------------------------------------------------------------------------------------------------
+metal1    H         0.00         0.00         0.00         0.00       0.00       0.00       0.00          0.00
+metal2    V      1791.80       869.00       136.74      1005.74      56.13      36.96       8.25          1.24
+metal3    H      2448.00      1187.00       129.56      1316.56      53.78      56.06      10.55          0.64
+metal4    V      1217.20       383.00        70.01       453.01      37.22      32.73       7.31          0.44
+metal5    H      1224.00       383.00        48.74       431.74      35.27      22.68       3.66          0.29
+metal6    V      1217.20       377.00        27.20       404.20      33.21      12.78       1.44          0.25
+metal7    H      1190.00       106.00        23.30       129.30      10.87       6.62       1.38          0.42
+metal8    V      1190.00        91.00        10.06       101.06       8.49       4.43       0.86          0.28
+metal9    H      1190.00         0.00         1.12         1.12       0.09       0.00       0.00          0.00
+metal10   V      1190.00         8.00         1.12         9.12       0.77       0.44       0.12          0.28
+--------------------------------------------------------------------------------------------------------------
+Total           12658.20      3404.00       447.85      3851.85      30.43     172.69      33.56          1.24

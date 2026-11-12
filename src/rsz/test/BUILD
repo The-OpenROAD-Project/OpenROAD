@@ -1,8 +1,5 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
-# Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
-# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
-
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -29,6 +26,7 @@ TESTS = [
     "buffer_varying_lengths",
     "clone_flat",
     "clone_hier",
+    "clone_hier_cross",
     "eliminate_dead_logic1",
     "eliminate_dead_logic2",
     "eqy_repair_setup2",
@@ -44,10 +42,13 @@ TESTS = [
     "liberty_dont_use",
     "pinswap_flat",
     "pinswap_hier",
+    "swap_pins_constant_output",
     "swap_pins_dont_touch",
     "pin_swap1",
     "rebuffer1",
     "rebuffer1_hier",
+    "rebuffer_size_driver",
+    "rebuffer_size_driver_guards",
     "recover_power_verbose",
     "remove_buffers_hier1",
     "remove_buffers1",
@@ -108,6 +109,8 @@ TESTS = [
     "repair_hold8",
     "repair_hold9",
     "repair_hold9_verbose",
+    "repair_hold_clock_as_data",
+    "repair_hold_clock_as_data_clk_tree",
     "repair_hold_multi_output_load",
     "repair_setup_max_iter",
     "repair_setup_path1",
@@ -296,6 +299,9 @@ TESTS = [
     "repair_setup_parallel_eval_threads",
     "repair_setup_parallel_eval_max_util",
     "repair_setup_parallel_eval_path_group",
+    "repair_setup_parallel_eval_reference_period",
+    "repair_setup_parallel_eval_reference_period_modes",
+    "repair_setup_parallel_eval_fanin_max_cap",
     "repair_setup_vt_swap2",
     "global_sizing",
     "global_sizing_threads",
@@ -308,22 +314,19 @@ TESTS = [
     "latch_borrow_chain",
 ]
 
-# From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
-    # NOTE: cpp_tests excluded - it's a CMake-specific wrapper script that expects
-    # build directory structure not compatible with Bazel
-    # "cpp_tests",
     "repair_timing_fixed",
     "repair_design_fixed_driver",
+    "repair_slew_corner",
     "gain_buffering_top_port_hier",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
 
-# PASSFAIL tests that assert their own results and have no .ok to diff,
-# as CMake runs every PASSFAIL test.
+# PASSFAIL tests that assert their own results and have no .ok to diff.
 SELF_CHECKING_TESTS = [
     "repair_design_fixed_driver",
+    "repair_slew_corner",
     "gain_buffering_top_port_hier",
 ]
 
@@ -548,6 +551,26 @@ cc_test(
 )
 
 cc_test(
+    name = "TestPreChecks",
+    srcs = ["cpp/TestPreChecks.cc"],
+    copts = ["-Isrc/rsz/src"],
+    data = [
+        "Nangate45/Nangate45_fast.lib",
+        "Nangate45/Nangate45_slow.lib",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb/src/db",
+        "//src/rsz:rsz_impl",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestResizer",
     srcs = ["cpp/TestResizer.cc"],
     copts = ["-Isrc/rsz/src"],
@@ -707,6 +730,30 @@ cc_test(
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
         "repair_hold_shared_driver.def",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestSkewBudgetRestore",
+    size = "small",
+    srcs = ["cpp/TestSkewBudgetRestore.cc"],
+    copts = ["-Isrc/rsz/src"],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "repair_hold1.def",
     ],
     deps = [
         "//src/dbSta",

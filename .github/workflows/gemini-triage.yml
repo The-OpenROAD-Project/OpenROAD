@@ -1,0 +1,275 @@
+name: 🔀 Gemini Triage
+on:
+  workflow_call:
+    inputs:
+      additional_context:
+        type: string
+        description: Any additional context from the request
+        required: false
+concurrency:
+  group: ${{ github.workflow }}-triage-${{ github.event_name }}-${{ github.event.pull_request.number
+    || github.event.issue.number }}
+  cancel-in-progress: true
+defaults:
+  run:
+    shell: bash
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    outputs:
+      available_labels: ${{ steps.get_labels.outputs.available_labels }}
+      selected_labels: ${{ steps.gemini_analysis.outputs.summary }}
+      candidates_built: ${{ steps.build_candidates.outputs.built }}
+    permissions:
+      contents: read
+      id-token: write
+      issues: read
+      pull-requests: read
+    steps:
+      - name: Get repository labels
+        id: get_labels
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # ratchet:actions/github-script@v9.0.0
+        with:
+          # NOTE: we intentionally do not use the given token. The default
+          # GITHUB_TOKEN provided by the action has enough permissions to read
+          # the labels.
+          script: |-
+            const labels = [];
+            for await (const response of github.paginate.iterator(github.rest.issues.listLabelsForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100, // Maximum per page to reduce API calls
+            })) {
+              labels.push(...response.data);
+            }
+            if (!labels || labels.length === 0) {
+              core.setFailed('There are no issue labels in this repository.')
+            }
+            const labelNames = labels.map(label => label.name).sort();
+            core.setOutput('available_labels', labelNames.join(','));
+            core.info(`Found ${labelNames.length} labels: ${labelNames.join(', ')}`);
+            return labelNames;
+      # The Gemini action installs its own gemini-*.toml commands, so ours
+      # use distinct names to avoid being overwritten.
+      - name: Checkout triage commands and scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |-
+            .github/CODEOWNERS
+            .github/commands
+            .github/scripts
+          sparse-checkout-cone-mode: false
+      - name: Install triage commands
+        run: |-
+          mkdir -p .gemini/commands
+          cp .github/commands/openroad-*.toml .gemini/commands/
+      # Assignee candidates are best effort: these steps may fail without
+      # failing the job, and labeling then runs without an assignment.
+      # Reading CODEOWNERS team membership needs the App's org-level
+      # "Members: read" permission. The token is read-only and never reaches
+      # the Gemini step.
+      - name: Mint candidates token
+        id: candidates_token
+        continue-on-error: true
+        if: |-
+          ${{ vars.APP_CLIENT_ID }}
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510  # ratchet:actions/create-github-app-token@v2
+        with:
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-contents: read
+          permission-issues: read
+          permission-members: read
+      # Exports the masked table as ASSIGNEE_CANDIDATES.
+      - name: Build assignee candidates
+        id: build_candidates
+        continue-on-error: true
+        if: steps.candidates_token.outputs.token != ''
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # ratchet:actions/github-script@v9.0.0
+        with:
+          github-token: ${{ steps.candidates_token.outputs.token }}
+          script: |-
+            const run = require('./.github/scripts/triage-candidates.js');
+            await run({github, context, core});
+      - name: Run Gemini issue analysis
+        id: gemini_analysis
+        if: |-
+          ${{ steps.get_labels.outputs.available_labels != '' }}
+        # A Gemini API call can stall without any output. Stopping it leaves
+        # the issue unlabeled, so the hourly scheduled triage retries it. On
+        # a newly opened issue the run still succeeds, so the issue author is
+        # not sent a failure notice; a failed @gemini-cli /triage request
+        # fails the run, so dispatch posts its failure comment.
+        timeout-minutes: 5
+        continue-on-error: ${{ github.event_name == 'issues' }}
+        uses: google-github-actions/run-gemini-cli@v0  # ratchet:exclude
+        env:
+          # The workspace holds only the checked-out commands and the
+          # action's settings; issue text arrives through env vars.
+          GEMINI_CLI_TRUST_WORKSPACE: 'true'
+          GITHUB_TOKEN: '' # Do NOT pass any auth tokens here since this runs on untrusted inputs
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          AVAILABLE_LABELS: ${{ steps.get_labels.outputs.available_labels }}
+        with:
+          gcp_location: ${{ vars.GOOGLE_CLOUD_LOCATION }}
+          gcp_project_id: ${{ vars.GOOGLE_CLOUD_PROJECT }}
+          gcp_service_account: ${{ vars.SERVICE_ACCOUNT_EMAIL }}
+          gcp_workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          gemini_cli_version: ${{ vars.GEMINI_CLI_VERSION }}
+          gemini_debug: ${{ fromJSON(vars.GEMINI_DEBUG || vars.ACTIONS_STEP_DEBUG || false) }}
+          gemini_model: ${{ vars.GEMINI_MODEL }}
+          google_api_key: ${{ secrets.GOOGLE_API_KEY }}
+          use_gemini_code_assist: ${{ vars.GOOGLE_GENAI_USE_GCA }}
+          use_vertex_ai: ${{ vars.GOOGLE_GENAI_USE_VERTEXAI }}
+          upload_artifacts: ${{ vars.UPLOAD_ARTIFACTS }}
+          workflow_name: gemini-triage
+          # Explicitly set the issue number to handle `issue_comment` triggers where the context might be ambiguous
+          github_issue_number: ${{ github.event.issue.number }}
+          # In GitHub Actions the CLI passes shell commands only its own list
+          # of environment variables, so the prompt's `!{echo $VAR}` reads
+          # any other variable, such as ASSIGNEE_CANDIDATES, as empty unless
+          # it is allowed here.
+          settings: |-
+            {
+              "model": {
+                "maxSessionTurns": 25
+              },
+              "telemetry": {
+                "enabled": true,
+                "target": "local",
+                "outfile": ".gemini/telemetry.log"
+              },
+              "security": {
+                "environmentVariableRedaction": {
+                  "allowed": [
+                    "ASSIGNEE_CANDIDATES"
+                  ]
+                }
+              },
+              "tools": {
+                "core": [
+                  "run_shell_command(echo)"
+                ]
+              }
+            }
+          prompt: /openroad-triage
+  label:
+    runs-on: ubuntu-latest
+    needs:
+      - triage
+    if: |-
+      ${{ !cancelled() && needs.triage.result == 'success' && needs.triage.outputs.selected_labels != '' }}
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      # Without the App token, labels are applied with GITHUB_TOKEN and
+      # assignment is skipped.
+      - name: Mint identity token
+        id: mint_identity_token
+        continue-on-error: true
+        if: |-
+          ${{ vars.APP_CLIENT_ID }}
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510  # ratchet:actions/create-github-app-token@v2
+        with:
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-contents: read
+          permission-issues: write
+          permission-members: read
+          permission-pull-requests: write
+      # Only assignment needs these files; labeling must not depend on them.
+      - name: Checkout triage scripts
+        continue-on-error: true
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |-
+            .github/CODEOWNERS
+            .github/scripts
+          sparse-checkout-cone-mode: false
+      - name: Apply labels and assignee
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          AVAILABLE_LABELS: ${{ needs.triage.outputs.available_labels }}
+          SELECTED_LABELS: ${{ needs.triage.outputs.selected_labels }}
+          HAS_APP_TOKEN: ${{ steps.mint_identity_token.outputs.token != '' }}
+          # Gemini picks from the candidate table; without one, its assignee
+          # is not trusted and only labels are applied.
+          CANDIDATES_BUILT: ${{ needs.triage.outputs.candidates_built }}
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # ratchet:actions/github-script@v9.0.0
+        with:
+          # Use the provided token so that the "gemini-cli" is the actor in the
+          # log for what changed the labels.
+          github-token: ${{ steps.mint_identity_token.outputs.token || secrets.GITHUB_TOKEN || github.token }}
+          script: |-
+            // Parse the available labels
+            const availableLabels = (process.env.AVAILABLE_LABELS || '').split(',')
+              .map((label) => label.trim())
+              .sort()
+            // Parse the model's JSON reply: the fenced block if there is one,
+            // else the outermost braces, so text around the reply is ignored
+            let reply;
+            try {
+              const text = process.env.SELECTED_LABELS || '';
+              const fenced = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+              const span = (fenced ? fenced[1] : text).match(/\{[\s\S]*\}/);
+              reply = JSON.parse(span ? span[0] : '');
+            } catch (err) {
+              core.setFailed(`Gemini reply is not valid JSON: ${err.message}`);
+              return;
+            }
+            if (!reply || typeof reply !== 'object' || Array.isArray(reply)) {
+              core.setFailed('Gemini reply is not a JSON object.');
+              return;
+            }
+            // Reject labels that are not in the repository - we do this just
+            // in case someone was able to prompt inject malicious labels.
+            const selectedLabels = (Array.isArray(reply.labels) ? reply.labels : [])
+              .map((label) => String(label).replace(/`/g, '').trim())
+              .filter((label) => availableLabels.includes(label))
+              .sort()
+            const issueNumber = Number(process.env.ISSUE_NUMBER);
+            if (selectedLabels.length === 0) {
+              core.info(`Failed to determine labels to set. There may not be enough information in the issue or pull request.`)
+              return;
+            }
+            // Add rather than replace, so labels a maintainer set are kept.
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              labels: selectedLabels,
+            });
+            core.info(`Successfully added labels: ${selectedLabels.join(',')} (${reply.explanation || 'no explanation'})`);
+            // Assignment is best effort; the labels are already applied.
+            if (process.env.HAS_APP_TOKEN !== 'true') {
+              core.info(`#${issueNumber}: no App token; skipping assignment.`);
+              return;
+            }
+            if (process.env.CANDIDATES_BUILT !== 'true') {
+              core.info(`#${issueNumber}: no assignee candidates; skipping assignment.`);
+              return;
+            }
+            try {
+              const {allowedAssignees} = require('./.github/scripts/triage-candidates.js');
+              const assign = require('./.github/scripts/triage-assign.js');
+              const allowed = await allowedAssignees({github, core});
+              await assign({
+                github,
+                context,
+                core,
+                issueNumber,
+                labels: selectedLabels,
+                primaryLabel: String(reply.primary_label || '').replace(/`/g, '').trim(),
+                assignee: reply.assignee,
+                allowed: allowed.join(','),
+              });
+            } catch (err) {
+              core.warning(`#${issueNumber}: assignment failed: ${err.message}`);
+            }

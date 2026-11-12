@@ -38,7 +38,8 @@ OptimizationPolicyConfig OptimizationPolicyConfig::forParallelEval(
     case RepairEffort::kMedium:
       // Both stall rules fire sooner and the tail widens less.
       parallel_eval.stall_max_batches = 12;
-      parallel_eval.progress_pct = 1.0f;
+      parallel_eval.progress_tns_pct = 1.0f;
+      parallel_eval.progress_wns_period_pct = 0.08f;
       parallel_eval.wns_tail_max_endpoints = 16;
       parallel_eval.wns_tail_work_pct = 100.0f;
       parallel_eval.wns_tail_min_work = 15.0f;
@@ -48,6 +49,32 @@ OptimizationPolicyConfig OptimizationPolicyConfig::forParallelEval(
   }
 
   return config;
+}
+
+float OptimizationPolicyConfig::scoreScale(const MoveType type) const
+{
+  // No default case: a new move type must pick its weight here.
+  switch (type) {
+    case MoveType::kVtSwap:
+      return vt_swap_mt_score_scale;
+    case MoveType::kSizeUp:
+      return size_up_mt_score_scale;
+    case MoveType::kBuffer:
+      return rebuffer_mt_score_scale;
+    case MoveType::kSplitLoad:
+      return split_load_mt_score_scale;
+    case MoveType::kSizeDownFanout:
+      return size_down_fanout_mt_score_scale;
+    case MoveType::kClone:
+    case MoveType::kSizeUpMatch:
+    case MoveType::kSwapPins:
+    case MoveType::kUnbuffer:
+    case MoveType::kReroute:
+    case MoveType::kBufferToInverters:
+    case MoveType::kCount:
+      return 1.0f;
+  }
+  return 1.0f;
 }
 
 }  // namespace rsz
