@@ -2,6 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <limits>
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -10,8 +11,11 @@
 #include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "sta/MinMax.hh"
 #include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Sdc.hh"
+#include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "timing_report.h"
 #include "tst/nangate45_fixture.h"
@@ -125,6 +129,103 @@ TEST_F(TimingReportTest, UnknownClockReportsNothing)
 TEST_F(TimingReportTest, DisjointFiltersReportNothing)
 {
   EXPECT_TRUE(report({"clk_a"}, "clk_b").empty());
+}
+
+// The flops above, plus a wire from an input port to an output port per
+// clock, both delays 0, so that path's slack is the clock's period: 1 and
+// 2, edges of the histogram's bars.
+class TimingReportBinEdgeTest : public TimingReportTest
+{
+ protected:
+  void SetUp() override
+  {
+    for (const char* d : {"a", "b"}) {
+      odb::dbNet* net
+          = odb::dbNet::create(block_, (std::string("p") + d).c_str());
+      odb::dbBTerm::create(net, (std::string("in_") + d).c_str())
+          ->setIoType(odb::dbIoType::INPUT);
+      odb::dbBTerm::create(net, (std::string("out_") + d).c_str())
+          ->setIoType(odb::dbIoType::OUTPUT);
+    }
+    TimingReportTest::SetUp();
+    for (const char* d : {"a", "b"}) {
+      const sta::Clock* clk
+          = sta_->cmdSdc()->findClock((std::string("clk_") + d).c_str());
+      ASSERT_NE(clk, nullptr);
+      setPortDelay((std::string("in_") + d).c_str(), clk, /*input=*/true);
+      setPortDelay((std::string("out_") + d).c_str(), clk, /*input=*/false);
+    }
+  }
+
+  void setPortDelay(const char* port, const sta::Clock* clk, const bool input)
+  {
+    sta::dbNetwork* network = sta_->getDbNetwork();
+    const sta::Pin* pin = network->dbToSta(block_->findBTerm(port));
+    ASSERT_NE(pin, nullptr);
+    if (input) {
+      sta_->setInputDelay(pin,
+                          sta::RiseFallBoth::riseFall(),
+                          clk,
+                          sta::RiseFall::rise(),
+                          /*ref_pin=*/nullptr,
+                          /*source_latency_included=*/false,
+                          /*network_latency_included=*/false,
+                          sta::MinMaxAll::all(),
+                          /*add=*/false,
+                          /*delay=*/0.0f,
+                          sta_->cmdSdc());
+    } else {
+      sta_->setOutputDelay(pin,
+                           sta::RiseFallBoth::riseFall(),
+                           clk,
+                           sta::RiseFall::rise(),
+                           /*ref_pin=*/nullptr,
+                           /*source_latency_included=*/false,
+                           /*network_latency_included=*/false,
+                           sta::MinMaxAll::all(),
+                           /*add=*/false,
+                           /*delay=*/0.0f,
+                           sta_->cmdSdc());
+    }
+  }
+};
+
+// Every endpoint the histogram counts is listed by exactly one bar's
+// drill-down, and each bar lists as many paths as it counts, also for the
+// port paths whose slack sits on an edge.
+TEST_F(TimingReportBinEdgeTest, EachPathIsListedUnderOneBar)
+{
+  TimingReport timing_report(getSta());
+  const SlackHistogramResult histogram
+      = timing_report.getSlackHistogram(/*is_setup=*/true,
+                                        /*path_group=*/"",
+                                        /*clock_name=*/"",
+                                        /*path_groups=*/{});
+  ASSERT_FALSE(histogram.bins.empty());
+  std::map<std::string, int> bars_listing;
+  int counted = 0;
+  for (const auto& bin : histogram.bins) {
+    const std::vector<TimingPathSummary> paths
+        = timing_report.getReport(/*is_setup=*/true,
+                                  /*max_paths=*/100,
+                                  bin.lower,
+                                  bin.upper,
+                                  /*path_groups=*/{},
+                                  /*clock_name=*/"");
+    EXPECT_EQ(static_cast<int>(paths.size()), bin.count)
+        << "[" << bin.lower << ", " << bin.upper << ")";
+    for (const TimingPathSummary& path : paths) {
+      EXPECT_GE(path.slack, bin.lower) << path.end_pin;
+      EXPECT_LT(path.slack, bin.upper) << path.end_pin;
+      bars_listing[path.end_pin]++;
+    }
+    counted += bin.count;
+  }
+  EXPECT_EQ(counted, 6);
+  for (const char* end_pin :
+       {"a0/D", "a1/D", "b0/D", "b1/D", "out_a", "out_b"}) {
+    EXPECT_EQ(bars_listing[end_pin], 1) << end_pin;
+  }
 }
 
 }  // namespace
