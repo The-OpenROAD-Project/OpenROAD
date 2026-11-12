@@ -91,6 +91,7 @@ cc_library(
         "//src/utl",
         "@boost.polygon",
         "@boost.random",
+        "@fmt",
     ],
 )
 
