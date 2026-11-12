@@ -18,6 +18,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
 #include "sta/ExceptionPath.hh"

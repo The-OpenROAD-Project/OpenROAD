@@ -2684,9 +2684,10 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
       setSelectionHighlights(state, sel, xfm);
       if (sel) {
         if (state.current_inspected && state.current_inspected != sel) {
-          state.navigation_history.push_back(
-              {.sel = state.current_inspected,
-               .xfm = state.current_inspected_xfm});
+          state.navigation_history.push_back({
+              .sel = state.current_inspected,
+              .xfm = state.current_inspected_xfm,
+          });
         }
         runDeselectAction(state.current_inspected, sel);
         setCurrentInspected(state, sel, xfm);
@@ -3130,8 +3131,10 @@ WebSocketResponse SelectHandler::handleTriggerAction(
         runDeselectAction(sel, next);
         const odb::dbTransform next_xfm = inspectedXfm(state, next);
         if (next) {
-          state.navigation_history.push_back(
-              {.sel = sel, .xfm = inspectedXfm(state, sel)});
+          state.navigation_history.push_back({
+              .sel = sel,
+              .xfm = inspectedXfm(state, sel),
+          });
         }
         setCurrentInspected(state, next, next_xfm);
         state.selection_itr = state.selection_set.find(next);
@@ -3530,9 +3533,10 @@ static WebSocketResponse inspectBrowserRow(const WebSocketRequest& req,
       state.timing_rects.clear();
       state.timing_lines.clear();
       if (state.current_inspected && state.current_inspected != sel) {
-        state.navigation_history.push_back(
-            {.sel = state.current_inspected,
-             .xfm = state.current_inspected_xfm});
+        state.navigation_history.push_back({
+            .sel = state.current_inspected,
+            .xfm = state.current_inspected_xfm,
+        });
       }
       xfm = inspectedXfm(state, sel);
       runDeselectAction(state.current_inspected, sel);
@@ -4347,10 +4351,7 @@ static std::vector<std::vector<std::string>> classifyAoiOai(
 static bool usesExactlyIterms(const std::vector<odb::dbITerm*>& connected,
                               const std::vector<odb::dbITerm*>& symbol_iterms)
 {
-  return std::is_permutation(connected.begin(),
-                             connected.end(),
-                             symbol_iterms.begin(),
-                             symbol_iterms.end());
+  return std::ranges::is_permutation(connected, symbol_iterms);
 }
 
 static sta::LibertyPort* simplePortExpr(const sta::FuncExpr* expr)
@@ -4501,8 +4502,13 @@ static GateClass classifyRegister(sta::dbNetwork* network, odb::dbInst* inst)
   }
 
   GateClass result;
-  result.kind
-      = clear != nullptr ? "dffr" : (preset != nullptr ? "dffs" : "dff");
+  if (clear != nullptr) {
+    result.kind = "dffr";
+  } else if (preset != nullptr) {
+    result.kind = "dffs";
+  } else {
+    result.kind = "dff";
+  }
   result.ports["D"] = data->getMTerm()->getName();
   result.ports["CK"] = clock->getMTerm()->getName();
   if (clear != nullptr) {
