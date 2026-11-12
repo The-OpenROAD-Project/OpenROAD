@@ -25,11 +25,17 @@ Iteration | Violations |    Cells |    Sites
 [WARNING DPL-0700] Negotiation phase 1: violations stuck at 8 for 3 consecutive iterations.
 Using old diamond search for 1 remaining illegal cells.
 diamond recovery: recovered 0/1 stuck cells.
+[INFO DPL-0703] Negotiation left 1 cells to the diamond search; still illegal when it reached them: 1; placed: 0.
+  No free run of their width anywhere in the window around them: 1. The area is full; give it room (fewer cells there, a lower placement density, pins spread wider) rather than a wider window.
+  No free site within the maximum displacement, +/-500 sites and +/-100 rows (-max_displacement): 1.
 Negotiation phase 2: isolation point active, 1000 iterations.
       400 |          8 |         1 |         7
       403 |          8 |         1 |         7
 [WARNING DPL-0702] Negotiation phase 2: violations stuck at 8 for 3 consecutive iterations. Using diamond search for 1 remaining illegal cells.
 diamond recovery: recovered 0/1 stuck cells.
+[INFO DPL-0703] Negotiation left 1 cells to the diamond search; still illegal when it reached them: 1; placed: 0.
+  No free run of their width anywhere in the window around them: 1. The area is full; give it room (fewer cells there, a lower placement density, pins spread wider) rather than a wider window.
+  No free site within the maximum displacement, +/-500 sites and +/-100 rows (-max_displacement): 1.
 [WARNING DPL-0701] NegotiationLegalizer did not fully converge. Violations remain: 1
 Detailed Placement Analysis
 ---------------------------------

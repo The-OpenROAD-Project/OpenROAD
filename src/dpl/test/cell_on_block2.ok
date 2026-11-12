@@ -47,6 +47,9 @@ Iteration | Violations |    Cells |    Sites
 [WARNING DPL-0700] Negotiation phase 1: violations stuck at 2 for 3 consecutive iterations.
 Using old diamond search for 2 remaining illegal cells.
 diamond recovery: recovered 1/2 stuck cells.
+[INFO DPL-0703] Negotiation left 2 cells to the diamond search; still illegal when it reached them: 1; placed: 1.
+  Started over fixed instances: 1 of the 2, 1 of them over Inst_eFPGA. Global placement put them where there are no free sites; keep it out of Inst_eFPGA (a placement blockage) or leave free rows beside it.
+  Placed beyond the negotiation window: 1, up to 4 sites (1.84 um) and 26 rows away; -site_search_window 20 -row_search_window 26 would let negotiation reach them.
 Negotiation phase 2: isolation point active, 1000 iterations.
       400 |          0 |         0 |         0
 Negotiation phase 2 converged at iteration 0.

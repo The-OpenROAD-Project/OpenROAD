@@ -26,11 +26,15 @@ Iteration | Violations |    Cells |    Sites
 [WARNING DPL-0700] Negotiation phase 1: violations stuck at 17 for 3 consecutive iterations.
 Using old diamond search for 3 remaining illegal cells.
 diamond recovery: recovered 0/3 stuck cells.
+[INFO DPL-0703] Negotiation left 3 cells to the diamond search; still illegal when it reached them: 3; placed: 0.
+  No free site within the maximum displacement, +/-500 sites and +/-100 rows (-max_displacement): 3.
 Negotiation phase 2: isolation point active, 1000 iterations.
       400 |         17 |         3 |         8
       403 |         17 |         3 |         8
 [WARNING DPL-0702] Negotiation phase 2: violations stuck at 17 for 3 consecutive iterations. Using diamond search for 3 remaining illegal cells.
 diamond recovery: recovered 0/3 stuck cells.
+[INFO DPL-0703] Negotiation left 3 cells to the diamond search; still illegal when it reached them: 3; placed: 0.
+  No free site within the maximum displacement, +/-500 sites and +/-100 rows (-max_displacement): 3.
 [WARNING DPL-0701] NegotiationLegalizer did not fully converge. Violations remain: 3
 Detailed Placement Analysis
 ---------------------------------
