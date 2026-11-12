@@ -721,8 +721,10 @@ export function makeResizableHeaders(table, columns = new ColumnWidths()) {
         columns.auto = widths.slice();
     }
     const last = count - 1;
-    // Lock in widths and switch to fixed layout
+    // Lock in widths and switch to fixed layout.  A width includes the
+    // cell's padding, as measured, so the columns add up to the table width.
     headers.forEach((th, i) => {
+        th.style.boxSizing = 'border-box';
         th.style.width = i === last ? '' : widths[i] + 'px';
     });
     table.style.tableLayout = 'fixed';

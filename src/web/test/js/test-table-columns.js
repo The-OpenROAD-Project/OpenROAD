@@ -64,6 +64,8 @@ describe('makeResizableHeaders', () => {
         assert.equal(ths[0].style.width, '500px');
         assert.equal(ths[1].style.width, '200px');
         assert.equal(table.style.width, '750px');
+        // widths include the padding, so the columns sum to the table width
+        assert.equal(ths[0].style.boxSizing, 'border-box');
     });
 
     it('widens the last column too, and keeps it when the table is rebuilt', () => {
