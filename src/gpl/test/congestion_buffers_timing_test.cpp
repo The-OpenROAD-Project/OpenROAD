@@ -158,6 +158,12 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
     np_->is_routability_snapshot_saved_ = saved;
   }
   void setRoutabilityNeeded(bool needed) { np_->is_routability_need_ = needed; }
+  // How doNesterovPlace() classifies an iteration at this overflow.
+  bool isRoutabilityIteration(float overflow)
+  {
+    np_->average_overflow_unscaled_ = overflow;
+    return np_->isRoutabilityGplIter();
+  }
 
   int64_t inflateCellForTest(GCell* cell,
                              float ratio,
@@ -457,10 +463,6 @@ TEST_P(TimingRepairRoutabilityPhaseTest,
     runOrdinaryPass(1000000);
     ASSERT_TRUE(routabilityNeeded());
     ASSERT_GT(rb_->getTotalInflation(), 0);
-    // Clear the saved-snapshot flag so runTiming() exercises the pre-completion
-    // density path directly rather than returning early at the settle-wait
-    // gate.
-    setRoutabilitySnapshotSaved(false);
   } else if (phase == 2) {
     completeRoutability();
     ASSERT_FALSE(routabilityNeeded());
@@ -835,10 +837,6 @@ TEST_F(MixedMacroTimingRepairIntegrationTest,
   ASSERT_GT(ordinary_iterations_, 0);
   ASSERT_GT(rb_->getTotalInflation(), 0);
   const int64_t ordinary_charge = rb_->getTotalInflation();
-  // Clear the saved-snapshot flag so runTiming() exercises the pre-completion
-  // macro-density path directly rather than returning early at the settle-wait
-  // gate.
-  setRoutabilitySnapshotSaved(false);
   expectLegacyDensityAfterRetainedRepair();
   EXPECT_TRUE(routabilityNeeded());
   EXPECT_EQ(rb_->getTotalInflation(), ordinary_charge);
@@ -963,10 +961,10 @@ TEST_F(TimingRepairIntegrationTest,
   EXPECT_EQ(rb_->getTotalTilesCount(), 0);
 
   setRoutabilitySnapshotSaved(true);  // is_routability_need_ is true
-  runTiming(0.1f);
+  runTiming(0.1f, isRoutabilityIteration(0.1f));
   EXPECT_EQ(timing_iterations_, 0);
   setRoutabilityNeeded(false);
-  runTiming(0.1f);
+  runTiming(0.1f, isRoutabilityIteration(0.1f));
   EXPECT_EQ(timing_iterations_, 1);
 }
 

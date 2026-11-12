@@ -400,9 +400,6 @@ void NesterovPlace::runTimingDriven(int iter,
   // otherwise keep all modifications by rsz.
   if (npVars_.timingDrivenMode
       && (!is_routability_gpl_iter || !npVars_.routability_driven_mode)
-      // A pending routability revert would discard repair_design's changes.
-      && !(npVars_.routability_driven_mode && is_routability_snapshot_saved_
-           && is_routability_need_)
       // isTimingNetWeightOverflow() is stateful: keep it last.
       && tb_->isTimingNetWeightOverflow(average_overflow_unscaled_)) {
     // update db's instance location from current density coordinates
@@ -1123,6 +1120,13 @@ float NesterovPlace::getWorstSettleRatio() const
   return worst;
 }
 
+bool NesterovPlace::isRoutabilityGplIter() const
+{
+  return is_routability_snapshot_saved_
+         && (is_routability_need_
+             || average_overflow_unscaled_ > npVars_.routability_end_overflow);
+}
+
 bool NesterovPlace::isConverged(int gpl_iter_count,
                                 int routability_gpl_iter_count)
 {
@@ -1471,9 +1475,7 @@ PlaceResult NesterovPlace::doNesterovPlace(int start_iter)
                        timing_driven_count,
                        final_routability_image_saved);
 
-    bool is_routability_gpl_iter
-        = is_routability_snapshot_saved_
-          && average_overflow_unscaled_ > npVars_.routability_end_overflow;
+    const bool is_routability_gpl_iter = isRoutabilityGplIter();
     if (is_routability_gpl_iter) {
       ++routability_gpl_iter_count_;
       ++npVars_.maxNesterovIter;
