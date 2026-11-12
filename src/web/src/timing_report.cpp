@@ -172,6 +172,20 @@ void TimingReport::expandPath(sta::Path* path,
   logic_depth = static_cast<int>(logic_insts.size());
 }
 
+// The path groups a chart filter searches, as getSlackHistogram counts
+// them: the selected groups; with none selected and a clock, that clock's
+// default group, which PathGroups names after the clock; with neither, every
+// group (an empty list).
+static sta::StringSeq filterGroupNames(
+    const std::vector<std::string>& path_groups,
+    const std::string& clock_name)
+{
+  if (path_groups.empty() && !clock_name.empty()) {
+    return {clock_name};
+  }
+  return {path_groups.begin(), path_groups.end()};
+}
+
 std::vector<TimingPathSummary> TimingReport::getReport(
     bool is_setup,
     int max_paths,
@@ -199,7 +213,7 @@ std::vector<TimingPathSummary> TimingReport::getReport(
   sta::Search* search = sta_->search();
   sta::SceneSeq scenes = sta_->scenes();
   // The slack histogram's filters, so a bar lists the paths it counted.
-  sta::StringSeq group_names(path_groups.begin(), path_groups.end());
+  sta::StringSeq group_names = filterGroupNames(path_groups, clock_name);
   const sta::Clock* clk = nullptr;
   if (!clock_name.empty()) {
     clk = sta_->cmdSdc()->findClock(clock_name);
