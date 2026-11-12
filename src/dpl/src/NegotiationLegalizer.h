@@ -227,6 +227,9 @@ class NegotiationLegalizer
   }
 
   // Stall recovery
+  // The cells of `cells` that are movable and not legal where they are.
+  [[nodiscard]] std::vector<int> illegalMovableCells(
+      const std::vector<int>& cells) const;
   void diamondRecovery(const std::vector<int>& activeCells);
   // Why cells were left to the diamond search, for DPL-0703.
   struct RecoveryDiagnosis

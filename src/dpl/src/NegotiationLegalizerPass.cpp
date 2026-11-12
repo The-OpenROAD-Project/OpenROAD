@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <iterator>
 #include <ranges>
 #include <string>
 #include <tuple>
@@ -193,12 +194,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
       ++stall_count;
       if (stall_count == 3) {
         print_last_if_needed();
-        std::vector<int> illegal_cells;
-        for (int idx : active) {
-          if (!cells_[idx].fixed && !isCellLegal(idx)) {
-            illegal_cells.push_back(idx);
-          }
-        }
+        const std::vector<int> illegal_cells = illegalMovableCells(active);
         logger_->warn(
             utl::DPL,
             700,
@@ -261,12 +257,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
       ++stall_count;
       if (stall_count == 3) {
         print_last_if_needed();
-        std::vector<int> illegal_cells;
-        for (int idx : active) {
-          if (!cells_[idx].fixed && !isCellLegal(idx)) {
-            illegal_cells.push_back(idx);
-          }
-        }
+        const std::vector<int> illegal_cells = illegalMovableCells(active);
         logger_->warn(utl::DPL,
                       702,
                       "Negotiation phase 2: violations stuck at {} for 3 "
@@ -287,12 +278,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
 
   if (finish_ != Finish::kPhase2Recovery) {
     finish_ = Finish::kPhase2IterLimit;
-    std::vector<int> illegal_cells;
-    for (int idx : active) {
-      if (!cells_[idx].fixed && !isCellLegal(idx)) {
-        illegal_cells.push_back(idx);
-      }
-    }
+    const std::vector<int> illegal_cells = illegalMovableCells(active);
     if (!illegal_cells.empty()) {
       // The count was still changing: say how much, so a run that was
       // converging slowly can be told from one that oscillates.
@@ -1239,6 +1225,16 @@ void NegotiationLegalizer::diamondRecovery(const std::vector<int>& activeCells)
                   recovered,
                   activeCells.size());
   reportRecovery(diag, static_cast<int>(activeCells.size()), recovered);
+}
+
+std::vector<int> NegotiationLegalizer::illegalMovableCells(
+    const std::vector<int>& cells) const
+{
+  std::vector<int> illegal;
+  std::ranges::copy_if(cells, std::back_inserter(illegal), [this](int idx) {
+    return !cells_[idx].fixed && !isCellLegal(idx);
+  });
+  return illegal;
 }
 
 // ===========================================================================
