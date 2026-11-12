@@ -72,6 +72,7 @@ test_suite(
     tests = [
         ":gif_test",
         ":heat_map_test",
+        ":interconnect3d_test",
         ":request_handler_test",
         ":save_display_controls_test",
         ":session_lifetime_test",
@@ -91,6 +92,13 @@ js_test(
     name = "ui_utils_test",
     data = JS_FILES,
     entry_point = "js/test-ui-utils.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "table_columns_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-table-columns.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -414,6 +422,27 @@ cc_test(
 )
 
 cc_test(
+    name = "interconnect3d_test",
+    srcs = ["cpp/Test3DInterconnects.cpp"],
+    data = ["//test:nangate45_data"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+js_test(
+    name = "interconnect3d_js_test",
+    data = DOM_TEST_DATA + ["//src/web:node_modules/three"],
+    entry_point = "js/test-interconnect3d.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+cc_test(
     name = "heat_map_test",
     srcs = ["cpp/TestHeatMap.cpp"],
     data = [
@@ -449,7 +478,10 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
+        "//src/sta:opensta_lib",
         "//src/tst:nangate45_fixture",
         "//src/utl",
         "//src/web",
@@ -545,6 +577,7 @@ cc_test(
         "//src/web",
         "//src/web:color",
         "//src/web:core",
+        "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

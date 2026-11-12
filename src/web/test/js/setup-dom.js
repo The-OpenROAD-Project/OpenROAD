@@ -29,6 +29,10 @@ globalThis.ResizeObserver = globalThis.ResizeObserver || class {
     observe() {}
     disconnect() {}
 };
+// jsdom does not implement scrollIntoView, which row selection calls.
+if (!dom.window.HTMLElement.prototype.scrollIntoView) {
+    dom.window.HTMLElement.prototype.scrollIntoView = function () {};
+}
 globalThis.requestAnimationFrame = globalThis.requestAnimationFrame || ((cb) => setTimeout(cb, 0));
 globalThis.cancelAnimationFrame = globalThis.cancelAnimationFrame || ((id) => clearTimeout(id));
 if (dom.window.customElements) {

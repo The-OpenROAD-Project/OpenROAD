@@ -406,7 +406,8 @@ bool NegotiationLegalizer::initFromDb()
     NegCell cell;
     cell.db_inst = db_inst;
     cell.node = network_ ? network_->getNode(db_inst) : nullptr;
-    cell.fixed = status.isFixed();
+    // Placed macros are forced fixed in the Opendp network (DPL-0404).
+    cell.fixed = status.isFixed() || (cell.node && cell.node->isFixed());
 
     if (cell.fixed) {
       // Cover the oriented footprint at its actual location.

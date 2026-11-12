@@ -3614,6 +3614,24 @@ float NesterovBase::getPhiCoef(float scaledDiffHpwl) const
   return retCoef;
 }
 
+float NesterovBase::getOverflowDenominator(const int iter) const
+{
+  // In a macro dominated design like mock-array you may be placing
+  // very few std cells in a sea of fixed macros.  The overflow denominator
+  // may be quite small and prevent convergence.  This is mostly due
+  // to our limited ability to move instances off macros cleanly.  As that
+  // improves this should no longer be needed.
+  const float fractionOfMaxIters
+      = static_cast<float>(iter) / npVars_->maxNesterovIter;
+  return std::max(static_cast<float>(getNesterovInstsArea()),
+                  fractionOfMaxIters * pb_->nonPlaceInstsArea() * 0.05f);
+}
+
+float NesterovBase::getCurrentSumOverflowUnscaled(const int iter) const
+{
+  return getOverflowAreaUnscaled() / getOverflowDenominator(iter);
+}
+
 void NesterovBase::updateNextIter(const int iter)
 {
   assert(omp_get_thread_num() == 0);
@@ -3655,16 +3673,7 @@ void NesterovBase::updateNextIter(const int iter)
   }
 #endif
 
-  // In a macro dominated design like mock-array you may be placing
-  // very few std cells in a sea of fixed macros.  The overflow denominator
-  // may be quite small and prevent convergence.  This is mostly due
-  // to our limited ability to move instances off macros cleanly.  As that
-  // improves this should no longer be needed.
-  const float fractionOfMaxIters
-      = static_cast<float>(iter) / npVars_->maxNesterovIter;
-  const float overflowDenominator
-      = std::max(static_cast<float>(getNesterovInstsArea()),
-                 fractionOfMaxIters * pb_->nonPlaceInstsArea() * 0.05f);
+  const float overflowDenominator = getOverflowDenominator(iter);
 
   sum_overflow_ = getOverflowArea() / overflowDenominator;
   sum_overflow_unscaled_ = getOverflowAreaUnscaled() / overflowDenominator;
@@ -3759,6 +3768,12 @@ bool NesterovBase::nesterovUpdateStepLength()
       curSLPCoordi_, curSLPSumGrads_, nextSLPCoordi_, nextSLPSumGrads_);
 
   debugPrint(log_, GPL, "np", 1, "NewStepLength: {:g}", newStepLength);
+
+  if (gradDistance_ == 0.0f && coordiDistance_ > 0.0f) {
+    // A sub-DBU step can leave integer-truncated gradients unchanged; keep
+    // stepLength_ and accept the step instead of flagging 1/0 as divergence.
+    return false;
+  }
 
   if (std::isnan(newStepLength) || std::isinf(newStepLength)) {
     isDiverged_ = true;

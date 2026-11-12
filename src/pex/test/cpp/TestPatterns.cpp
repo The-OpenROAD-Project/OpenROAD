@@ -3,6 +3,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "fsv/Geometry.h"
@@ -227,8 +228,116 @@ TEST(Patterns, EndWirePlacesThePlanes)
       EXPECT_EQ(b.hi[2], layerExtent(stack, stack.layer("met1")).top);
     }
   }
+  // Facing wires beyond both ends at the gap, as wide and as long; the
+  // plane reaches past them.
+  pattern.facing_gap = 0.5;
+  const EndPattern::Wire f = pattern.build(stack);
+  ASSERT_GE(f.facing, 0);
+  const auto& faced = f.geometry.boxes();
+  ASSERT_EQ(faced.size(), 4u);
+  std::vector<std::pair<double, double>> spans;
+  for (int i = 0; i < 4; i++) {
+    const fsv::Box& b = faced[i];
+    if (f.geometry.boxNet(i) == f.facing) {
+      EXPECT_DOUBLE_EQ(b.lo[0], -0.1);
+      EXPECT_DOUBLE_EQ(b.hi[0], 0.1);
+      spans.emplace_back(b.lo[1], b.hi[1]);
+    } else if (f.geometry.boxNet(i) == f.below) {
+      EXPECT_DOUBLE_EQ(b.lo[1], -3.5 - 1);
+      EXPECT_DOUBLE_EQ(b.hi[1], 6.5 + 1);
+    }
+  }
+  ASSERT_EQ(spans.size(), 2u);
+  EXPECT_DOUBLE_EQ(spans[0].first, -3.5);
+  EXPECT_DOUBLE_EQ(spans[0].second, -0.5);
+  EXPECT_DOUBLE_EQ(spans[1].first, 3.5);
+  EXPECT_DOUBLE_EQ(spans[1].second, 6.5);
+  // A neighbor on the left alone, of minimum width, as far as the plane.
+  pattern.facing_gap = -1;
+  pattern.left_spacing = 0.2;
+  const EndPattern::Wire n = pattern.build(stack);
+  ASSERT_GE(n.left, 0);
+  EXPECT_EQ(n.right, kNullNetIndex);
+  const double nw = stack.conductor(stack.layer("met2")).min_width;
+  int found = 0;
+  for (int i = 0; i < static_cast<int>(n.geometry.boxes().size()); i++) {
+    if (n.geometry.boxNet(i) == n.left) {
+      const fsv::Box& b = n.geometry.boxes()[i];
+      EXPECT_DOUBLE_EQ(b.hi[0], -0.3);
+      EXPECT_DOUBLE_EQ(b.lo[0], -0.3 - nw);
+      EXPECT_DOUBLE_EQ(b.lo[1], -1);
+      EXPECT_DOUBLE_EQ(b.hi[1], 4);
+      found++;
+    }
+  }
+  EXPECT_EQ(found, 1);
   pattern.length = 0;
   EXPECT_THROW(pattern.build(stack), std::invalid_argument);
+}
+
+TEST(Patterns, CornerShapes)
+{
+  const fsv::Stack& stack = sky130();
+  CornerPattern pattern;
+  pattern.layer = stack.layer("met2");
+  pattern.width = 0.2;
+  pattern.length = 2;
+  pattern.above = stack.layer("met3");
+  pattern.extent = 1;
+  const CornerPattern::Wire straight = pattern.build(stack);
+  ASSERT_EQ(straight.geometry.boxes().size(), 2u);
+  EXPECT_EQ(straight.below, kNullNetIndex);
+  ASSERT_GE(straight.above, 0);
+  // The plane reaches the extent past the wires every way.
+  const fsv::Box& plane = straight.geometry.boxes()[1];
+  EXPECT_DOUBLE_EQ(plane.lo[0], -3);
+  EXPECT_DOUBLE_EQ(plane.hi[1], 3);
+  pattern.shape = CornerPattern::Shape::kCross;
+  const CornerPattern::Wire cross = pattern.build(stack);
+  const fsv::Box& across = cross.geometry.boxes()[1];
+  EXPECT_EQ(cross.geometry.boxNet(1), cross.wire);
+  EXPECT_DOUBLE_EQ(across.lo[0], -1);
+  EXPECT_DOUBLE_EQ(across.hi[0], 1);
+  EXPECT_DOUBLE_EQ(across.lo[1], 0.9);
+  EXPECT_DOUBLE_EQ(across.hi[1], 1.1);
+  pattern.shape = CornerPattern::Shape::kBend;
+  const CornerPattern::Wire bend = pattern.build(stack);
+  const fsv::Box& turn = bend.geometry.boxes()[1];
+  EXPECT_DOUBLE_EQ(turn.lo[0], -0.1);
+  EXPECT_DOUBLE_EQ(turn.hi[0], 1.9);
+  EXPECT_DOUBLE_EQ(turn.lo[1], 1.8);
+  EXPECT_DOUBLE_EQ(turn.hi[1], 2);
+  pattern.length = 0.2;
+  EXPECT_THROW(pattern.build(stack), std::invalid_argument);
+}
+
+TEST(Patterns, ReachPattern)
+{
+  const fsv::Stack& stack = sky130();
+  ReachPattern p;
+  p.layer = stack.layer("met2");
+  p.cover = stack.layer("met1");
+  p.width = 0.14;
+  p.crossing_width = 0.2;
+  p.past = 1;
+  p.extent = 0.5;
+  const ReachPattern::Pair pair = p.build(stack);
+  ASSERT_EQ(pair.geometry.boxes().size(), 2u);
+  const fsv::Box& wire = pair.geometry.boxes()[0];
+  EXPECT_EQ(pair.geometry.boxNet(0), pair.wire);
+  EXPECT_DOUBLE_EQ(wire.lo[1], -1.1);
+  EXPECT_DOUBLE_EQ(wire.hi[1], 1.1);
+  const fsv::Box& cross = pair.geometry.boxes()[1];
+  EXPECT_EQ(pair.geometry.boxNet(1), pair.cross);
+  EXPECT_DOUBLE_EQ(cross.lo[0], -0.57);
+  EXPECT_DOUBLE_EQ(cross.hi[0], 0.57);
+  EXPECT_DOUBLE_EQ(cross.hi[1] - cross.lo[1], 0.2);
+  p.extent = -1;
+  const ReachPattern::Pair alone = p.build(stack);
+  EXPECT_EQ(alone.geometry.boxes().size(), 1u);
+  EXPECT_EQ(alone.cross, kNullNetIndex);
+  p.past = -1;
+  EXPECT_THROW(p.build(stack), std::invalid_argument);
 }
 
 TEST(Patterns, CrossingArrayRoundsToWholePitches)
@@ -300,6 +409,16 @@ TEST(Patterns, DiagonalSectionPlacesTheParallelWire)
   EXPECT_DOUBLE_EQ(diag.hi[0], 0.1 - 0.05 + 0.5);
   EXPECT_EQ(diag.lo[1], layerExtent(stack, stack.layer("met1")).bottom);
   EXPECT_DOUBLE_EQ(rects[2].lo[0], 0.1 + 0.3);
+  // A plane on the other side reaches the extent past both wires.
+  p.opposite = stack.layer("met3");
+  p.extent = 2;
+  const DiagonalPattern::Section planed = p.build(stack);
+  ASSERT_GE(planed.opposite, 0);
+  const fsv::Rect& plane = planed.geometry.rects()[4];
+  EXPECT_EQ(planed.geometry.rectNet(4), planed.opposite);
+  EXPECT_DOUBLE_EQ(plane.lo[0], -2.1);
+  EXPECT_DOUBLE_EQ(plane.hi[0], 0.1 + 0.5 + 2);
+  p.opposite = Layer();
   p.other_width = 0;
   p.spacing = -1;
   p.far_spacing = -1;

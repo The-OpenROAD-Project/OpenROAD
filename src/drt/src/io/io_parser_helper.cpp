@@ -129,8 +129,8 @@ void io::Parser::initDefaultVias()
     }
     // generate via if default via enclosure is not along pref dir
     if (router_cfg_->ENABLE_VIA_GEN
-        && layerNum >= router_cfg_->BOTTOM_ROUTING_LAYER
-        && layerNum <= router_cfg_->TOP_ROUTING_LAYER) {
+        && layerNum <= router_cfg_->TOP_ROUTING_LAYER
+        && layer->getDefaultViaDef() != nullptr) {
       auto techDefautlViaDef
           = getTech()->getLayer(layerNum)->getDefaultViaDef();
       frVia via(techDefautlViaDef);

@@ -728,7 +728,7 @@ The slack deficit of a vertex is `slack_margin - slack`. `BottleneckAnalysis` wa
 | `bottleneck_scale` | `2` | Strength of the bottleneck priority factor. `0` ranks by score alone. |
 | `bottleneck_exponent` | `2` | Emphasis on the most shared bottlenecks. |
 | `bottleneck_max_wns_stall_batches` | `8` | The bonus applies to at most this many WNS-stalled saved batches in a row. `0` ranks by score alone. |
-| `bottleneck_refresh_batches` | `4` | Batches one analysis serves. The start of the WNS tail refreshes it. |
+| `bottleneck_refresh_batches` | `4` | Weighted batches per analysis: 4 in the WNS tail stage and 8 in the preceding batch stage. Analyze again on the first weighted tail batch. |
 | `bottleneck_max_endpoints` | `1024` | Violating endpoints one analysis weighs, worst slack first. |
 | `bottleneck_max_startpoints` | `1024` | Distinct cone startpoints one analysis weighs. |
 

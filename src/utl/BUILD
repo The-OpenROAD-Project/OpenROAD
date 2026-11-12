@@ -98,6 +98,7 @@ cc_library(
         "@boost.iterator",
         "@boost.random",
         "@boost.tokenizer",
+        "@fmt",
         "@spdlog",
         "@tcl_lang//:tcl",
     ],

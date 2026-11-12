@@ -51,4 +51,30 @@ OptimizationPolicyConfig OptimizationPolicyConfig::forParallelEval(
   return config;
 }
 
+float OptimizationPolicyConfig::scoreScale(const MoveType type) const
+{
+  // No default case: a new move type must pick its weight here.
+  switch (type) {
+    case MoveType::kVtSwap:
+      return vt_swap_mt_score_scale;
+    case MoveType::kSizeUp:
+      return size_up_mt_score_scale;
+    case MoveType::kBuffer:
+      return rebuffer_mt_score_scale;
+    case MoveType::kSplitLoad:
+      return split_load_mt_score_scale;
+    case MoveType::kSizeDownFanout:
+      return size_down_fanout_mt_score_scale;
+    case MoveType::kClone:
+    case MoveType::kSizeUpMatch:
+    case MoveType::kSwapPins:
+    case MoveType::kUnbuffer:
+    case MoveType::kReroute:
+    case MoveType::kBufferToInverters:
+    case MoveType::kCount:
+      return 1.0f;
+  }
+  return 1.0f;
+}
+
 }  // namespace rsz

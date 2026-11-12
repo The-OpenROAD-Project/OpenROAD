@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -89,19 +90,50 @@ void LateralTable::set(const int width,
 }
 
 CrossingTable::CrossingTable(std::vector<double> gaps,
-                             std::vector<CrossingShare> values)
-    : gaps_(std::move(gaps)), values_(std::move(values))
+                             std::vector<CrossingShare> values,
+                             std::vector<double> spacings)
+    : gaps_(std::move(gaps)),
+      spacings_(std::move(spacings)),
+      values_(std::move(values))
 {
   requireGrid("crossing gap", gaps_, true);
-  if (values_.size() != gaps_.size()) {
+  if (!spacings_.empty()) {
+    requireGrid("crossing spacing", spacings_, true);
+  }
+  if (values_.size() != gaps_.size() * spacingCount()) {
     throw std::invalid_argument(
         "crossing table has " + std::to_string(values_.size()) + " values for "
-        + std::to_string(gaps_.size()) + " gaps");
+        + std::to_string(gaps_.size()) + " gaps and "
+        + std::to_string(spacingCount()) + " spacing columns");
   }
   for (const CrossingShare& s : values_) {
     requireFinite("crossing", s.total);
     requireFinite("crossing", s.cross);
   }
+}
+
+void CrossingTable::setReach(CrossingReach reach)
+{
+  if (!(reach.width > 0) || !std::isfinite(reach.width)) {
+    throw std::invalid_argument(
+        "crossing reach needs a finite, positive width");
+  }
+  requireGrid("crossing reach past", reach.past, false);
+  requireGrid("crossing reach extent", reach.extents, false);
+  if (reach.past.front() != 0 || reach.extents.front() != 0) {
+    throw std::invalid_argument("crossing reach grids start at 0");
+  }
+  if (reach.values.size() != reach.past.size() * reach.extents.size()) {
+    throw std::invalid_argument(
+        "crossing reach has " + std::to_string(reach.values.size())
+        + " values for " + std::to_string(reach.past.size()) + " x "
+        + std::to_string(reach.extents.size()));
+  }
+  for (const CrossingShare& v : reach.values) {
+    requireFinite("crossing reach", v.total);
+    requireFinite("crossing reach", v.cross);
+  }
+  reach_ = std::move(reach);
 }
 
 DiagonalTable::DiagonalTable(std::vector<double> widths,
@@ -140,24 +172,100 @@ void DiagonalTable::set(const int width,
   requireIndex("diagonal gap", gap, gapCount());
   requireIndex("diagonal spacing", spacing, spacingCount());
   requireIndex("diagonal far spacing", far, farCount());
-  for (const double v : {cap.coupling, cap.total_delta, cap.lateral_delta}) {
+  for (const double v :
+       {cap.coupling, cap.total_delta, cap.lateral_delta, cap.plane_delta}) {
     requireFinite("diagonal", v);
   }
   values_[index(width, gap, spacing, far)] = cap;
 }
 
-EndTable::EndTable(std::vector<double> widths, std::vector<double> excess)
-    : widths_(std::move(widths)), excess_(std::move(excess))
+EndTable::EndTable(std::vector<double> widths,
+                   std::vector<double> spacings,
+                   std::vector<double> gaps)
+    : widths_(std::move(widths)),
+      spacings_(std::move(spacings)),
+      gaps_(std::move(gaps))
 {
   requireGrid("end width", widths_, true);
-  if (excess_.size() != widths_.size()) {
-    throw std::invalid_argument(
-        "end table has " + std::to_string(excess_.size()) + " values for "
-        + std::to_string(widths_.size()) + " widths");
+  if (!spacings_.empty()) {
+    requireGrid("end spacing", spacings_, true);
   }
-  for (const double v : excess_) {
+  if (!gaps_.empty()) {
+    requireGrid("end gap", gaps_, true);
+  }
+  values_.resize(widths_.size() * spacingCount() * gapCount());
+}
+
+int EndTable::index(const int width, const int spacing, const int gap) const
+{
+  return (((width * spacingCount()) + spacing) * gapCount()) + gap;
+}
+
+void EndTable::set(const int width,
+                   const int spacing,
+                   const int gap,
+                   const EndValue& value)
+{
+  requireIndex("end width", width, static_cast<int>(widths_.size()));
+  requireIndex("end spacing", spacing, spacingCount());
+  requireIndex("end gap", gap, gapCount());
+  for (const double v :
+       {value.total, value.below, value.above, value.lateral, value.facing}) {
     requireFinite("end", v);
   }
+  values_[index(width, spacing, gap)] = value;
+}
+
+EndSides EndTable::sides(const int width, const int left, const int right) const
+{
+  if (left == right) {
+    const EndValue& v = at(width, left, gapCount() - 1);
+    return {v.total, v.below, v.above, v.lateral / 2, v.lateral / 2};
+  }
+  return sides_.at(sideIndex(width, left, right));
+}
+
+int EndTable::sideIndex(const int width, const int left, const int right) const
+{
+  const int ns = spacingCount();
+  return (((width * ns) + left) * ns) + right;
+}
+
+void EndTable::setSides(const int width,
+                        const int left,
+                        const int right,
+                        const EndSides& value)
+{
+  requireIndex("end width", width, static_cast<int>(widths_.size()));
+  requireIndex("end spacing", left, spacingCount());
+  requireIndex("end spacing", right, spacingCount());
+  if (left >= right) {
+    throw std::invalid_argument("end sides need the left spacing first");
+  }
+  for (const double v :
+       {value.total, value.below, value.above, value.left, value.right}) {
+    requireFinite("end", v);
+  }
+  if (sides_.empty()) {
+    sides_.resize(widths_.size() * spacingCount() * spacingCount());
+  }
+  sides_[sideIndex(width, left, right)] = value;
+  sides_[sideIndex(width, right, left)]
+      = {value.total, value.below, value.above, value.right, value.left};
+}
+
+void EndTable::setCorners(const int width, const Corners& value)
+{
+  requireIndex("end width", width, static_cast<int>(widths_.size()));
+  for (const CornerValue& c : {value.inner, value.outer}) {
+    for (const double v : {c.total, c.below, c.above}) {
+      requireFinite("corner", v);
+    }
+  }
+  if (corners_.empty()) {
+    corners_.resize(widths_.size());
+  }
+  corners_[width] = value;
 }
 
 LateralTable& Model::addLateral(const LateralKey& key, LateralTable table)
@@ -336,12 +444,16 @@ struct Segment
   double rate;  // the one-sided share along it
 };
 
-// The segment holding d, with d past the last gap on a final segment of
-// rate 0.
-Segment segmentAt(const CrossingTable& t, const double d, const bool cross)
+// The segment holding d in a spacing's column, with d past the last gap on
+// a final segment of rate 0.
+Segment segmentAt(const CrossingTable& t,
+                  const int column,
+                  const double d,
+                  const bool cross)
 {
   auto value = [&](const int i) {
-    return cross ? t.values()[i].cross : t.values()[i].total;
+    const CrossingShare& v = t.at(column, i);
+    return cross ? v.cross : v.total;
   };
   double g0 = 0;
   double k0 = 0;
@@ -357,12 +469,15 @@ Segment segmentAt(const CrossingTable& t, const double d, const bool cross)
   return {g0, std::numeric_limits<double>::infinity(), 0};
 }
 
-double kept(const CrossingTable& t, const double d, const bool cross)
+double kept(const CrossingTable& t,
+            const int column,
+            const double d,
+            const bool cross)
 {
   double sum = 0;
   double g0 = 0;
   while (g0 < d) {
-    const Segment s = segmentAt(t, std::nextafter(g0, d), cross);
+    const Segment s = segmentAt(t, column, std::nextafter(g0, d), cross);
     const double g1 = std::min(s.g1, d);
     sum += s.rate * (g1 - g0);
     g0 = g1;
@@ -370,35 +485,131 @@ double kept(const CrossingTable& t, const double d, const bool cross)
   return sum;
 }
 
+// A per-column value over the two sides' spacings: each side half, from
+// its spacing's column, interpolated in the spacing's logarithm.
+template <class F>
+CrossingShare overSides(const CrossingTable& t,
+                        const double left,
+                        const double right,
+                        F&& column)
+{
+  auto side = [&](const double s) {
+    const Bracket b = bracketSpacing(t.spacings(), s);
+    const CrossingShare lo = column(b.lo);
+    const CrossingShare hi = b.hi == b.lo ? lo : column(b.hi);
+    return CrossingShare{(1 - b.t) * lo.total + b.t * hi.total,
+                         (1 - b.t) * lo.cross + b.t * hi.cross};
+  };
+  const CrossingShare l = side(left);
+  const CrossingShare r = left == right ? l : side(right);
+  return {(l.total + r.total) / 2, (l.cross + r.cross) / 2};
+}
+
 }  // namespace
 
-CrossingShare Model::crossingKept(const CrossingKey& key, const double d) const
+CrossingShare Model::crossingKept(const CrossingKey& key,
+                                  const double d,
+                                  const double left,
+                                  const double right) const
 {
   const CrossingTable& t = requireCrossing(*this, key);
   if (d <= 0) {
     return {0, 0};
   }
-  return {kept(t, d, false), kept(t, d, true)};
+  return overSides(t, left, right, [&](const int c) {
+    return CrossingShare{kept(t, c, d, false), kept(t, c, d, true)};
+  });
 }
 
-CrossingShare Model::crossing(const CrossingKey& key, const double gap) const
+CrossingShare Model::crossing(const CrossingKey& key,
+                              const double gap,
+                              const double left,
+                              const double right) const
 {
   if (gap <= 0) {
     requireCrossing(*this, key);
     return {1, 1};
   }
-  const CrossingShare k = crossingKept(key, gap);
+  const CrossingShare k = crossingKept(key, gap, left, right);
   return {k.total / gap, k.cross / gap};
 }
 
 CrossingShare Model::crossingOneSided(const CrossingKey& key,
-                                      const double d) const
+                                      const double d,
+                                      const double left,
+                                      const double right) const
 {
   const CrossingTable& t = requireCrossing(*this, key);
   if (d <= 0) {
     return {1, 1};
   }
-  return {segmentAt(t, d, false).rate, segmentAt(t, d, true).rate};
+  return overSides(t, left, right, [&](const int c) {
+    return CrossingShare{segmentAt(t, c, d, false).rate,
+                         segmentAt(t, c, d, true).rate};
+  });
+}
+
+CrossingShare Model::crossingReach(const CrossingKey& key,
+                                   const double from,
+                                   const double to,
+                                   const double extent_a,
+                                   const double extent_b,
+                                   const double left,
+                                   const double right) const
+{
+  const CrossingTable* t = &requireCrossing(*this, key);
+  if (!t->hasReach() && !key.opposite.empty()) {
+    if (const CrossingTable* plain = crossing({key.layer, key.cover, ""})) {
+      t = plain;
+    }
+  }
+  if (!t->hasReach()) {
+    return {1, 1};
+  }
+  const CrossingReach& r = t->reach();
+  auto ratio = [&](const double d, const double e) {
+    if (e >= r.extents.back()) {
+      return CrossingShare{1, 1};
+    }
+    const Bracket p = bracketLinear(r.past, d);
+    const Bracket x = bracketLinear(r.extents, std::max(0.0, e));
+    CrossingShare out;
+    for (const auto& [pi, pw] :
+         {std::pair{p.lo, 1 - p.t}, std::pair{p.hi, p.t}}) {
+      for (const auto& [xi, xw] :
+           {std::pair{x.lo, 1 - x.t}, std::pair{x.hi, x.t}}) {
+        out.total += pw * xw * r.at(pi, xi).total;
+        out.cross += pw * xw * r.at(pi, xi).cross;
+      }
+    }
+    return out;
+  };
+  auto both = [&](const double d) {
+    const CrossingShare a = ratio(d, extent_a);
+    const CrossingShare b = ratio(d, extent_b);
+    return CrossingShare{(a.total + b.total) / 2, (a.cross + b.cross) / 2};
+  };
+  const CrossingShare at_to = both(std::max(0.0, to));
+  if (to <= 0) {
+    return at_to;
+  }
+  const double d0 = std::max(0.0, from);
+  const CrossingShare at_from = both(d0);
+  const CrossingShare k0 = crossingKept(key, d0, left, right);
+  const CrossingShare k1 = crossingKept(key, to, left, right);
+  auto part = [&](const double kept0,
+                  const double kept1,
+                  const double ratio0,
+                  const double ratio1) {
+    const double g0 = (r.width + kept0) / 2;
+    const double g1 = (r.width + kept1) / 2;
+    if (g1 - g0 <= 1e-12) {
+      return ratio1;
+    }
+    return std::clamp(((ratio1 * g1) - (ratio0 * g0)) / (g1 - g0), 0.0, 2.0);
+  };
+  return {part(k0.total, k1.total, at_from.total, at_to.total),
+          part(k0.cross, k1.cross, at_from.cross, at_to.cross)};
 }
 
 DiagonalTable& Model::addDiagonal(const DiagonalKey& key, DiagonalTable table)
@@ -444,6 +655,7 @@ DiagonalCap Model::diagonal(const DiagonalKey& key,
           out.coupling += weight * v.coupling;
           out.total_delta += weight * v.total_delta;
           out.lateral_delta += weight * v.lateral_delta;
+          out.plane_delta += weight * v.plane_delta;
         }
       }
     }
@@ -453,6 +665,7 @@ DiagonalCap Model::diagonal(const DiagonalKey& key,
     out.coupling *= fade;
     out.total_delta *= fade;
     out.lateral_delta *= fade;
+    out.plane_delta *= fade;
   }
   return out;
 }
@@ -468,15 +681,120 @@ const EndTable* Model::end(const LateralKey& key) const
   return it == ends_.end() ? nullptr : &it->second;
 }
 
-double Model::endExcess(const LateralKey& key, const double width) const
+Corners Model::corners(const LateralKey& key, const double width) const
 {
   const EndTable* t = end(key);
   if (t == nullptr) {
     throw std::out_of_range("no end table for layer " + key.layer + " below "
                             + key.below + " above " + key.above);
   }
-  const Bracket b = bracketLinear(t->widths(), width);
-  return (1 - b.t) * t->excess()[b.lo] + b.t * t->excess()[b.hi];
+  if (!t->hasCorners()) {
+    return {};
+  }
+  const Bracket w = bracketLinear(t->widths(), width);
+  auto mix = [&](const CornerValue& a, const CornerValue& b) {
+    return CornerValue{(1 - w.t) * a.total + w.t * b.total,
+                       (1 - w.t) * a.below + w.t * b.below,
+                       (1 - w.t) * a.above + w.t * b.above};
+  };
+  const Corners& lo = t->corners(w.lo);
+  const Corners& hi = t->corners(w.hi);
+  return {mix(lo.inner, hi.inner), mix(lo.outer, hi.outer)};
+}
+
+EndCap Model::end(const LateralKey& key,
+                  const double width,
+                  const double left,
+                  const double right,
+                  const double gap) const
+{
+  const EndTable* t = end(key);
+  if (t == nullptr) {
+    throw std::out_of_range("no end table for layer " + key.layer + " below "
+                            + key.below + " above " + key.above);
+  }
+  const Bracket w = bracketLinear(t->widths(), width);
+  const Bracket g = bracketSpacing(t->gaps(), gap);
+  auto couple = [](const double a, const double b, const double u) {
+    if (u == 0 || a <= 0 || b <= 0) {
+      return (1 - u) * a + u * b;
+    }
+    return std::exp((1 - u) * std::log(a) + u * std::log(b));
+  };
+  auto mix = [&](const EndValue& a, const EndValue& b, const double u) {
+    return EndValue{(1 - u) * a.total + u * b.total,
+                    (1 - u) * a.below + u * b.below,
+                    (1 - u) * a.above + u * b.above,
+                    couple(a.lateral, b.lateral, u),
+                    couple(a.facing, b.facing, u)};
+  };
+  // The end with a spacing on both sides: over the gap, the spacing, then
+  // linearly over the width.
+  auto both = [&](const double spacing, const Bracket& over) {
+    const Bracket s = bracketSpacing(t->spacings(), spacing);
+    auto overGap = [&](const int wi, const int si) {
+      return mix(t->at(wi, si, over.lo), t->at(wi, si, over.hi), over.t);
+    };
+    auto overSpacing = [&](const int wi) {
+      return mix(overGap(wi, s.lo), overGap(wi, s.hi), s.t);
+    };
+    const EndValue a = overSpacing(w.lo);
+    const EndValue b = overSpacing(w.hi);
+    return EndValue{(1 - w.t) * a.total + w.t * b.total,
+                    (1 - w.t) * a.below + w.t * b.below,
+                    (1 - w.t) * a.above + w.t * b.above,
+                    (1 - w.t) * a.lateral + w.t * b.lateral,
+                    (1 - w.t) * a.facing + w.t * b.facing};
+  };
+  // Each side takes half of the end with its spacing on both.
+  auto halves = [&](const Bracket& over) {
+    const EndValue l = both(left, over);
+    const EndValue r = left == right ? l : both(right, over);
+    return EndCap{(l.total + r.total) / 2,
+                  (l.below + r.below) / 2,
+                  (l.above + r.above) / 2,
+                  l.lateral / 2,
+                  r.lateral / 2,
+                  (l.facing + r.facing) / 2};
+  };
+  const EndCap at_gap = halves(g);
+  if (!t->hasSides()) {
+    return at_gap;
+  }
+  // The different-sided ends over both spacings, then the width.
+  const Bracket sl = bracketSpacing(t->spacings(), left);
+  const Bracket sr = bracketSpacing(t->spacings(), right);
+  auto mixSides = [&](const EndSides& a, const EndSides& b, const double u) {
+    return EndSides{(1 - u) * a.total + u * b.total,
+                    (1 - u) * a.below + u * b.below,
+                    (1 - u) * a.above + u * b.above,
+                    couple(a.left, b.left, u),
+                    couple(a.right, b.right, u)};
+  };
+  auto overSpacings = [&](const int wi) {
+    auto overRight = [&](const int li) {
+      return mixSides(t->sides(wi, li, sr.lo), t->sides(wi, li, sr.hi), sr.t);
+    };
+    return mixSides(overRight(sl.lo), overRight(sl.hi), sl.t);
+  };
+  const EndSides a = overSpacings(w.lo);
+  const EndSides b = overSpacings(w.hi);
+  const EndSides sides{(1 - w.t) * a.total + w.t * b.total,
+                       (1 - w.t) * a.below + w.t * b.below,
+                       (1 - w.t) * a.above + w.t * b.above,
+                       (1 - w.t) * a.left + w.t * b.left,
+                       (1 - w.t) * a.right + w.t * b.right};
+  // A facing wire adds what it adds to the like-sided ends.
+  const int open_gap = t->gapCount() - 1;
+  const EndCap none = g.lo == open_gap && g.hi == open_gap
+                          ? at_gap
+                          : halves(Bracket{open_gap, open_gap, 0});
+  return {sides.total + at_gap.total - none.total,
+          sides.below + at_gap.below - none.below,
+          sides.above + at_gap.above - none.above,
+          std::max(0.0, sides.left + at_gap.left - none.left),
+          std::max(0.0, sides.right + at_gap.right - none.right),
+          at_gap.facing};
 }
 
 }  // namespace pex

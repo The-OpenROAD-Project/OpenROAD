@@ -45,13 +45,15 @@ namespace {
 // report_delay_estimator_accuracy_for_rebuffering, which prints the estimate
 // of every stage of the planned tree next to the delay STA measures after the
 // tree is built.  The data set is the Nangate45 cases of that report, the
-// report_delay_estimator_rebuffer_* tests; other platforms are not checked.
+// report_delay_estimator_rebuffer_* tests.  The target-path factor was then
+// checked on another platform; its new value increases estimate error in
+// some Nangate45 cases, while the other factors retain the original fit.
 // The estimate only ranks candidate trees and STA times each batch before it
 // is kept, so an off factor costs QoR, not correctness.
 //
 // The effective load of a buffer stage as a fraction of its lumped downstream
 // capacitance: on the target path, on a side path, and for a direct load.
-constexpr float kBufferTreeTargetEffectiveLoadCapFactor = 0.65f;
+constexpr float kBufferTreeTargetEffectiveLoadCapFactor = 0.675f;
 constexpr float kBufferTreeSideEffectiveLoadCapFactor = 0.875f;
 constexpr float kBufferTreeDirectLoadCapFactor = 0.60f;
 // A stage that keeps part of its load keeps its slew at least to this power

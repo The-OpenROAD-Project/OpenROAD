@@ -50,7 +50,10 @@ namespace odb {
 inline constexpr uint32_t kSchemaMajor = 0;  // Not used...
 inline constexpr uint32_t kSchemaInitial = 57;
 
-inline constexpr uint32_t kSchemaMinor = 141;  // Current revision number
+inline constexpr uint32_t kSchemaMinor = 142;  // Current revision number
+
+// Revision where dbTechLayerCutEnclosureTableDefRule was added
+inline constexpr uint32_t kSchemaCutEnclosureTableDefRule = 142;
 
 // Revision where _dbPolygon::min_spacing_ was added
 inline constexpr uint32_t kSchemaPolygonMinSpacing = 141;

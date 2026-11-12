@@ -254,7 +254,6 @@ void RebufferMtGenerator::addTreePlanCandidates(
         resizer_,
         target,
         plan,
-        policy_config_.rebuffer_mt_score_scale,
         policy_config_.rebuffer_mt_min_score,
         makeSideContexts(plan, target.rebuffer_load_timing)));
   }

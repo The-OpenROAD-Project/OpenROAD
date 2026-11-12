@@ -62,8 +62,7 @@ class SizeDownFanoutMtCandidate : public MoveCandidate
   // === Construction =========================================================
   SizeDownFanoutMtCandidate(Resizer& resizer,
                             const Target& target,
-                            std::shared_ptr<const SizeDownFanoutMtLoad> load,
-                            float score_scale);
+                            std::shared_ptr<const SizeDownFanoutMtLoad> load);
 
   // === MoveCandidate API ====================================================
   Estimate estimate() override;
@@ -74,7 +73,6 @@ class SizeDownFanoutMtCandidate : public MoveCandidate
  private:
   // === Candidate state ======================================================
   std::shared_ptr<const SizeDownFanoutMtLoad> load_;
-  float score_scale_{1.0f};
 };
 
 }  // namespace rsz

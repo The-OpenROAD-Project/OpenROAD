@@ -179,8 +179,11 @@ class SetupParallelEvalPolicy : public OptimizationPolicy
   // Score each target's generated candidates on the worker pool.
   void estimateTargets(std::vector<TargetEvaluation>& evaluations);
   // permissive (WNS tail) keeps estimator-rejected candidates with a positive
-  // own gain; the batch STA judges them.
-  static void estimateTarget(TargetEvaluation& evaluation, bool permissive);
+  // own gain; the batch STA judges them.  policy_config holds the move
+  // weights.
+  static void estimateTarget(TargetEvaluation& evaluation,
+                             bool permissive,
+                             const OptimizationPolicyConfig& policy_config);
 
   // === Selection ============================================================
   // Candidates know their Target, so the pool alone identifies each entry.

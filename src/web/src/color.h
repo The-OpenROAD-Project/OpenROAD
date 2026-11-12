@@ -49,6 +49,10 @@ inline constexpr Color kOutlinedLabelYellow{.r = 255,
                                             .a = 255};
 inline constexpr Color kLabelOutline{.r = 0, .g = 0, .b = 0, .a = 255};
 
+// The stage of a timing path picked in its detail table.  Shared with the
+// tests so the value cannot drift.
+inline constexpr Color kTimingStageColor{.r = 255, .g = 255, .b = 0, .a = 180};
+
 // Die, core, region and instance outlines, plus the instance orientation tag.
 // Qt paints all of them with QPen(Qt::gray, 0) — drawChip, drawRegions and
 // drawInstanceOutlines in renderThread.cpp — and Qt::gray is #A0A0A4, not the
