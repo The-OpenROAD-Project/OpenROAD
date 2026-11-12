@@ -358,19 +358,19 @@ void dbGroup::addPowerNet(dbNet* net)
 {
   _dbGroup* _group = (_dbGroup*) this;
   _dbNet* _net = (_dbNet*) net;
+  const dbId<_dbNet> net_oid(_net->getOID());
   for (const dbId<_dbNet>& _child : _group->power_nets_) {
-    if (_child == _net->getOID()) {
+    if (_child == net_oid) {
       return;
     }
   }
   bool found = false;
-  auto it
-      = std::ranges::find(_group->ground_nets_, dbId<_dbNet>(_net->getOID()));
-  if (it != _group->ground_nets_.end()) {
+  if (auto it = std::ranges::find(_group->ground_nets_, net_oid);
+      it != _group->ground_nets_.end()) {
     _group->ground_nets_.erase(it);
     found = true;
   }
-  _group->power_nets_.push_back(_net->getOID());
+  _group->power_nets_.push_back(net_oid);
   if (!found) {
     _net->groups_.push_back(_group->getOID());
   }
@@ -380,19 +380,19 @@ void dbGroup::addGroundNet(dbNet* net)
 {
   _dbGroup* _group = (_dbGroup*) this;
   _dbNet* _net = (_dbNet*) net;
+  const dbId<_dbNet> net_oid(_net->getOID());
   for (const dbId<_dbNet>& _child : _group->ground_nets_) {
-    if (_child == _net->getOID()) {
+    if (_child == net_oid) {
       return;
     }
   }
   bool found = false;
-  auto it
-      = std::ranges::find(_group->power_nets_, dbId<_dbNet>(_net->getOID()));
-  if (it != _group->power_nets_.end()) {
+  if (auto it = std::ranges::find(_group->power_nets_, net_oid);
+      it != _group->power_nets_.end()) {
     _group->power_nets_.erase(it);
     found = true;
   }
-  _group->ground_nets_.push_back(_net->getOID());
+  _group->ground_nets_.push_back(net_oid);
   if (!found) {
     _net->groups_.push_back(_group->getOID());
   }
@@ -402,26 +402,22 @@ void dbGroup::removeNet(dbNet* net)
 {
   _dbGroup* _group = (_dbGroup*) this;
   _dbNet* _net = (_dbNet*) net;
+  const dbId<_dbNet> net_oid(_net->getOID());
   bool found = false;
-  auto net_itr
-      = std::ranges::find(_group->power_nets_, dbId<_dbNet>(_net->getOID()));
-  if (net_itr != _group->power_nets_.end()) {
-    _group->power_nets_.erase(net_itr);
+  if (auto it = std::ranges::find(_group->power_nets_, net_oid);
+      it != _group->power_nets_.end()) {
+    _group->power_nets_.erase(it);
+    found = true;
+  } else if (auto it = std::ranges::find(_group->ground_nets_, net_oid);
+             it != _group->ground_nets_.end()) {
+    _group->ground_nets_.erase(it);
     found = true;
   }
-  if (!found) {
-    net_itr
-        = std::ranges::find(_group->ground_nets_, dbId<_dbNet>(_net->getOID()));
-    if (net_itr != _group->ground_nets_.end()) {
-      _group->ground_nets_.erase(net_itr);
-      found = true;
-    }
-  }
   if (found) {
-    auto group_itr
+    if (auto it
         = std::ranges::find(_net->groups_, dbId<_dbGroup>(_group->getOID()));
-    if (group_itr != _net->groups_.end()) {
-      _net->groups_.erase(group_itr);
+        it != _net->groups_.end()) {
+      _net->groups_.erase(it);
     }
   }
 }
