@@ -4,7 +4,7 @@
 // Timing report widget — path summary + detail tables.
 
 import {
-    isStaticMode, makeResizableHeaders, savedColumnWidths, withBusyCursor,
+    ColumnWidths, isStaticMode, makeResizableHeaders, withBusyCursor,
 } from './ui-utils.js';
 
 // The rows a path's detail table shows, as the Qt GUI's "Expand clock"
@@ -34,6 +34,8 @@ export class TimingWidget {
         this._currentTab = 'setup';
         this._setupPaths = [];
         this._holdPaths = [];
+        this._pathColumns = new ColumnWidths();
+        this._detailColumns = new ColumnWidths();
         this._selectedPathIndex = -1;
         this._detailTab = 'data';
         this._selectedDetailIndex = -1;
@@ -427,11 +429,18 @@ export class TimingWidget {
             this._setupTab.classList.remove('active');
         }
         this._applySort();
+        this._resetColumnWidths();
         this._selectedPathIndex = -1;
         this._pathCountLabel.textContent = paths.length + ' paths';
         this._renderPathTable();
         this._renderDetailTable();
         this._clearTimingHighlight();
+    }
+
+    // New paths: both tables measure their columns afresh.
+    _resetColumnWidths() {
+        this._pathColumns.reset();
+        this._detailColumns.reset();
     }
 
     async update() {
@@ -461,6 +470,7 @@ export class TimingWidget {
                 hold: { ...reportOptions },
             };
             this._applySort();
+            this._resetColumnWidths();
             this._selectedPathIndex = -1;
             this._renderPathTable();
             this._renderDetailTable();
@@ -605,9 +615,6 @@ export class TimingWidget {
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
         this._pathCountLabel.textContent = paths.length + ' paths';
 
-        // Preserve dragged column widths across re-renders.
-        const savedWidths = savedColumnWidths(this._pathTable);
-
         this._pathTable.innerHTML = '';
 
         const thead = document.createElement('thead');
@@ -681,8 +688,7 @@ export class TimingWidget {
 
         this._pathTable.appendChild(tbody);
 
-        // Install resize grips with the widths of any dragged columns.
-        makeResizableHeaders(this._pathTable, savedWidths);
+        makeResizableHeaders(this._pathTable, this._pathColumns);
     }
 
     _selectDetailRow(idx) {
@@ -706,9 +712,6 @@ export class TimingWidget {
     }
 
     _renderDetailTable() {
-        // Preserve dragged column widths across re-renders.
-        const savedWidths = savedColumnWidths(this._detailTable);
-
         this._detailTable.innerHTML = '';
         this._selectedDetailIndex = -1;
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
@@ -762,8 +765,7 @@ export class TimingWidget {
         });
         this._detailTable.appendChild(tbody);
 
-        // Install resize grips with the widths of any dragged columns.
-        makeResizableHeaders(this._detailTable, savedWidths);
+        makeResizableHeaders(this._detailTable, this._detailColumns);
     }
 
 }

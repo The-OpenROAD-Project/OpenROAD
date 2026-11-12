@@ -620,91 +620,118 @@ export function runTclScript(app, script, echo) {
         .catch(() => {});
 }
 
-// Make table column headers resizable by dragging.
-// widths is an optional array of CSS width strings, one per column, that
-// savedColumnWidths() took from the previous render; when given, the
-// columns were dragged and keep those widths.  Otherwise each column is
-// measured from its text.
-// Widening a column widens the table, as Qt's header view does, rather than
-// taking the width from the other columns: a fixed-layout table held at 100 %
-// of its panel shares the panel among its columns, so dragging one long
-// path-name column wider squeezed every other one.  The last column has no
-// width of its own and takes whatever the panel has left over, at least the
-// width it started with or was dragged to (kept on the table, so a re-render
-// that rebuilds the header keeps it); the container scrolls sideways past
-// that.
-//
-// Widths the table measured itself are not kept as a choice: a table first
-// drawn empty ("Click Update") measured its header text alone, and reusing
-// that for the rows that follow left every column cramped.  Until a column
-// is dragged, each render measures the rows it has, a column at most
-// kMaxAutoColumnPx wide (a long path name is elided, not given the panel).
-// Once one is dragged, savedColumnWidths() hands every width on to the
-// next render, including to a table that replaces this one.
+// Column widths of a table that is rebuilt on every render.  The widget
+// keeps one per set of columns (a table with tabs keeps one per tab) and
+// passes it to every makeResizableHeaders() call for that table, so the
+// widths outlive the table element.
+//   dragged: every column's width once the user has dragged one, else null.
+//   auto:    the measured widths.  They only grow from render to render, so
+//            sorting, expanding a tree node or selecting another row does
+//            not move the columns; reset() measures afresh for new data.
+export class ColumnWidths {
+    constructor() {
+        this.dragged = null;
+        this.auto = null;
+    }
+
+    reset() {
+        this.auto = null;
+    }
+}
+
+// A measured column is at most this wide; a longer name is elided and shown
+// in full in its cell's tooltip.
 export const kMaxAutoColumnPx = 480;
 
-// A column's width from its text, not from the layout: a table filled while
-// its panel is hidden (a histogram click fills the timing table, then shows
-// it) has no layout, every offsetWidth is 0, and the last column took the
-// whole panel.  The longest of the header and the first `kMeasureRows` rows,
-// at the table's font size (monospace digits and names are about 0.6 em a
-// character), plus the cell padding and the grip.
+// Each column's width from the browser's layout: the table is laid out at
+// its natural width, then every header cell is read.  Returns null when the
+// table has no layout (a hidden panel, or no layout engine at all).
+function layoutColumnWidths(table, headers) {
+    const saved = [table.style.tableLayout, table.style.width,
+                   table.style.minWidth];
+    table.style.tableLayout = 'auto';
+    table.style.width = 'max-content';
+    table.style.minWidth = '';
+    headers.forEach((th) => { th.style.width = ''; });
+    const widths = Array.from(headers, (th) => th.getBoundingClientRect().width);
+    [table.style.tableLayout, table.style.width, table.style.minWidth] = saved;
+    if (!widths.length || widths.every((w) => !w)) {
+        return null;
+    }
+    // the grip sits over the cell's right padding; leave room for it
+    return widths.map((w) => Math.min(Math.ceil(w) + 8, kMaxAutoColumnPx));
+}
+
+// A column's width from its text, for a table with no layout: a table filled
+// while its panel is hidden (a histogram click fills the timing table, then
+// shows it) reports every width as 0.  The longest of the header and the
+// first `kMeasureRows` rows, at the table's font size (monospace digits and
+// names are about 0.6 em a character), plus the cell padding and the grip.
+// A cell's own left padding (a tree indent) and its checkboxes and empty
+// spans (color swatches) are added too, at about 16 px each.
 const kMeasureRows = 200;
+const kInlineWidgetPx = 16;
 export function textColumnWidths(table) {
     const headers = table.querySelectorAll('thead th');
     let fontPx = 12;
     try {
         fontPx = parseFloat(getComputedStyle(table).fontSize) || 12;
     } catch (e) { /* no getComputedStyle: 12 px */ }
-    const longest = Array.from(headers, (th) => th.textContent.length);
+    const charPx = 0.6 * fontPx;
+    const cellPx = (cell) => {
+        const widgets = cell.querySelectorAll('input, span:empty').length;
+        return cell.textContent.length * charPx
+            + (parseFloat(cell.style.paddingLeft) || 0)
+            + widgets * kInlineWidgetPx;
+    };
+    const widest = Array.from(headers, cellPx);
     const rows = table.querySelectorAll('tbody tr');
     for (let r = 0; r < rows.length && r < kMeasureRows; r++) {
         const cells = rows[r].children;
         if (cells.length !== headers.length) continue;  // a colspan message
         for (let i = 0; i < cells.length; i++) {
-            longest[i] = Math.max(longest[i], cells[i].textContent.length);
+            widest[i] = Math.max(widest[i], cellPx(cells[i]));
         }
     }
-    return longest.map((n) => Math.min(
-        Math.ceil(n * 0.6 * fontPx) + 24, kMaxAutoColumnPx));
+    return widest.map((px) => Math.min(Math.ceil(px) + 24, kMaxAutoColumnPx));
 }
 
-// The widths to pass to makeResizableHeaders when `table` is rendered
-// again or replaced: undefined until one of its columns was dragged.  They
-// are kept on the table, not read from its header, so a table emptied in
-// between (the detail table with no path selected) still has them.
-export function savedColumnWidths(table) {
-    const saved = table?.dataset.columnWidths;
-    return saved ? JSON.parse(saved) : undefined;
-}
-
-export function makeResizableHeaders(table, widths) {
+// Make table column headers resizable by dragging.  `columns` is the
+// ColumnWidths the widget keeps for this table: once a column was dragged,
+// every column keeps its dragged width; until then each column is as wide
+// as its widest cell so far, at most kMaxAutoColumnPx.
+// Widening a column widens the table, as Qt's header view does, rather than
+// taking the width from the other columns.  The last column has no width of
+// its own and takes whatever the panel has left over, at least the width it
+// was measured or dragged to; the container scrolls sideways past that.
+export function makeResizableHeaders(table, columns = new ColumnWidths()) {
     const headers = table.querySelectorAll('thead th');
-    let dragged = !!widths && widths.length === headers.length;
-    if (!dragged) {
-        // no widths, or saved for other columns (another tab's table)
-        delete table.dataset.columnWidths;
-        widths = textColumnWidths(table).map((w) => w + 'px');
+    const count = headers.length;
+    let widths;
+    if (columns.dragged?.length === count) {
+        widths = columns.dragged.slice();
+    } else {
+        const measured = layoutColumnWidths(table, headers)
+            ?? textColumnWidths(table);
+        if (columns.auto?.length === count) {
+            widths = measured.map((w, i) => Math.max(w, columns.auto[i]));
+        } else {
+            widths = measured;
+        }
+        columns.auto = widths.slice();
     }
-    const last = headers.length - 1;
-    let lastMin = parseFloat(widths[last]) || 0;
+    const last = count - 1;
     // Lock in widths and switch to fixed layout
-    headers.forEach((th, i) => th.style.width = i === last ? '' : (widths[i] || ''));
+    headers.forEach((th, i) => {
+        th.style.width = i === last ? '' : widths[i] + 'px';
+    });
     table.style.tableLayout = 'fixed';
     const fit = () => {
-        let total = lastMin;
-        headers.forEach((th, i) => {
-            if (i !== last) total += parseFloat(th.style.width) || 0;
-        });
-        table.style.width = total + 'px';
+        table.style.width = widths.reduce((sum, w) => sum + w, 0) + 'px';
         table.style.minWidth = '100%';
-        if (dragged) {
-            // the last column's width is kept here, not on its header
-            table.dataset.columnWidths = JSON.stringify(Array.from(headers,
-                (th, i) => (i === last ? lastMin + 'px' : th.style.width)));
-        }
     };
     fit();
+    showElidedText(table);
 
     headers.forEach((th, idx) => {
         const grip = document.createElement('div');
@@ -714,12 +741,11 @@ export function makeResizableHeaders(table, widths) {
 
         let startX, startW;
         const onMouseMove = (e) => {
-            const w = Math.max(30, startW + e.clientX - startX);
-            if (idx === last) {
-                lastMin = w;  // the last column keeps no width of its own
-            } else {
-                th.style.width = w + 'px';
+            widths[idx] = Math.max(30, startW + e.clientX - startX);
+            if (idx !== last) {
+                th.style.width = widths[idx] + 'px';
             }
+            columns.dragged = widths.slice();
             fit();
         };
         const onMouseUp = () => {
@@ -740,12 +766,27 @@ export function makeResizableHeaders(table, widths) {
         };
         grip.addEventListener('mousedown', (e) => {
             e.preventDefault();
-            dragged = true;
             startX = e.clientX;
-            startW = th.offsetWidth;
+            // A stretched last column starts from its shown width, so a
+            // drag moves its edge from where the user sees it.
+            startW = th.offsetWidth || widths[idx];
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('mouseup', onMouseUp);
         });
+    });
+}
+
+// A cell whose text is elided shows it in full as its tooltip.  The title
+// is set on hover, when the cell's layout is known.
+function showElidedText(table) {
+    if (table.dataset.elidedTooltips) return;  // the table is re-rendered
+    table.dataset.elidedTooltips = '1';
+    table.addEventListener('mouseover', (e) => {
+        const td = e.target.closest?.('td');
+        if (!td || td.hasAttribute('title')) return;
+        if (td.scrollWidth > td.clientWidth) {
+            td.title = td.textContent;
+        }
     });
 }
 

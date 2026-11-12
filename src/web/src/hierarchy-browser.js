@@ -4,7 +4,7 @@
 // Hierarchy browser widget — module tree with coloring.
 
 import { CheckboxTreeModel } from './checkbox-tree-model.js';
-import { isStaticMode, makeResizableHeaders, savedColumnWidths }
+import { ColumnWidths, isStaticMode, makeResizableHeaders }
     from './ui-utils.js';
 
 const COLS = [
@@ -32,6 +32,7 @@ export class HierarchyBrowser {
         this._nameGrouped = false;     // tree synthesized from instance names
         this._nameGroupsCapped = false;
         this._rows = [];       // DFS-ordered rows with depth
+        this._columns = new ColumnWidths();
         this._childrenMap = new Map();  // id → [child ids]
         this._collapsed = new Set();   // collapsed node ids
 
@@ -102,6 +103,7 @@ export class HierarchyBrowser {
             this._nameGrouped = !!data.name_grouped;
             this._nameGroupsCapped = !!data.name_groups_capped;
             this._buildTree();
+            this._columns.reset();
             this._readServerColors();
             this._computeEffectiveColors();
             this._render();
@@ -274,7 +276,6 @@ export class HierarchyBrowser {
     }
 
     _render() {
-        const savedWidths = savedColumnWidths(this._table);
         this._table.innerHTML = '';
 
         // Header
@@ -407,7 +408,7 @@ export class HierarchyBrowser {
         }
 
         this._table.appendChild(tbody);
-        makeResizableHeaders(this._table, savedWidths);
+        makeResizableHeaders(this._table, this._columns);
     }
 
     _isHidden(node) {

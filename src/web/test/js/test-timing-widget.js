@@ -385,12 +385,33 @@ describe('TimingWidget detail table columns', () => {
             makePath(0.1, 'b', { data_nodes: [node('core/u_alu/sub_reg/Q')] }),
         ]);
 
-        // 20 characters at 0.6 em of jsdom's 16 px default font, plus 24 px
-        // of padding and grip
+        widget._detailTable.style.fontSize = '10px';
+
+        // 20 characters at 0.6 em of 10 px, plus 24 px of padding and grip
         widget._selectPathRow(0);
-        assert.equal(pinWidth(widget), '216px');
+        assert.equal(pinWidth(widget), '144px');
         widget._selectPathRow(1);
-        assert.equal(pinWidth(widget), '216px');
+        assert.equal(pinWidth(widget), '144px');
+    });
+
+    it('does not narrow the pin column for a shorter path', () => {
+        const widget = new TimingWidget(createMockApp(), () => {});
+        widget.showPaths('setup', [
+            makePath(0.0, 'a', { data_nodes: [node('core/u_alu/add_reg/D')] }),
+            makePath(0.1, 'b', { data_nodes: [node('x/D')] }),
+        ]);
+        widget._detailTable.style.fontSize = '10px';
+        widget._selectPathRow(0);
+        assert.equal(pinWidth(widget), '144px');
+        widget._selectPathRow(1);
+        assert.equal(pinWidth(widget), '144px');
+        // a new report measures afresh
+        widget.showPaths('setup', [
+            makePath(0.1, 'b', { data_nodes: [node('x/D')] }),
+        ]);
+        widget._detailTable.style.fontSize = '10px';
+        widget._selectPathRow(0);
+        assert.notEqual(pinWidth(widget), '144px');
     });
 
     it('keeps a dragged pin column from one path to the next', () => {
@@ -401,12 +422,14 @@ describe('TimingWidget detail table columns', () => {
         ]);
         widget._selectPathRow(0);
         const grip = widget._detailTable.querySelector('thead th .col-resize-grip');
+        // a drag starts from the measured width
+        const width = parseFloat(widget._detailTable.querySelector('thead th').style.width) + 300 + 'px';
         grip.dispatchEvent(new window.MouseEvent('mousedown', { clientX: 0, bubbles: true }));
         document.dispatchEvent(new window.MouseEvent('mousemove', { clientX: 300 }));
         document.dispatchEvent(new window.MouseEvent('mouseup', {}));
-        assert.equal(pinWidth(widget), '300px');
+        assert.equal(pinWidth(widget), width);
         widget._selectPathRow(1);
-        assert.equal(pinWidth(widget), '300px');
+        assert.equal(pinWidth(widget), width);
     });
 });
 

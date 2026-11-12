@@ -126,15 +126,49 @@ describe('SelectionBrowser', () => {
     it('keeps a dragged column width when the table is rebuilt', () => {
         const firstTh = () => container.element.querySelector('.sb-table thead th');
         const grip = firstTh().querySelector('.col-resize-grip');
+        // a drag starts from the measured width
+        const width = parseFloat(firstTh().style.width) + 300 + 'px';
         grip.dispatchEvent(new window.MouseEvent('mousedown', { clientX: 0, bubbles: true }));
         document.dispatchEvent(new window.MouseEvent('mousemove', { clientX: 300 }));
         document.dispatchEvent(new window.MouseEvent('mouseup', {}));
-        assert.equal(firstTh().style.width, '300px');
+        assert.equal(firstTh().style.width, width);
         // sorting replaces the table element
         const before = container.element.querySelector('.sb-table');
         container.element.querySelector('th.sb-sortable').click();
         assert.notEqual(container.element.querySelector('.sb-table'), before);
-        assert.equal(firstTh().style.width, '300px');
+        assert.equal(firstTh().style.width, width);
+    });
+
+    it("keeps each tab's dragged widths across a tab switch", () => {
+        const firstTh = () => container.element.querySelector('.sb-table thead th');
+        const grip = firstTh().querySelector('.col-resize-grip');
+        // a drag starts from the measured width
+        const width = parseFloat(firstTh().style.width) + 300 + 'px';
+        grip.dispatchEvent(new window.MouseEvent('mousedown', { clientX: 0, bubbles: true }));
+        document.dispatchEvent(new window.MouseEvent('mousemove', { clientX: 300 }));
+        document.dispatchEvent(new window.MouseEvent('mouseup', {}));
+        const tab = (i) => container.element.querySelectorAll('.sb-tab')[i];
+        tab(1).click();
+        assert.notEqual(firstTh().style.width, width);
+        tab(0).click();
+        assert.equal(firstTh().style.width, width);
+    });
+
+    it('keeps dragged widths while the table is empty', () => {
+        const firstTh = () => container.element.querySelector('.sb-table thead th');
+        const grip = firstTh().querySelector('.col-resize-grip');
+        // a drag starts from the measured width
+        const width = parseFloat(firstTh().style.width) + 300 + 'px';
+        grip.dispatchEvent(new window.MouseEvent('mousedown', { clientX: 0, bubbles: true }));
+        document.dispatchEvent(new window.MouseEvent('mousemove', { clientX: 300 }));
+        document.dispatchEvent(new window.MouseEvent('mouseup', {}));
+        const filter = container.element.querySelector('.sb-filter');
+        filter.value = 'no such object';
+        filter.dispatchEvent(new window.Event('input'));
+        assert.equal(container.element.querySelector('.sb-table'), null);
+        filter.value = '';
+        filter.dispatchEvent(new window.Event('input'));
+        assert.equal(firstTh().style.width, width);
     });
 
     it('sorting keeps actions on the right object', async () => {
