@@ -3850,7 +3850,9 @@ void FlexGCWorker::Impl::checkMinimumCut_marker(gcRect* wideRect,
   addMarker(std::move(marker));
 }
 
-void FlexGCWorker::Impl::checkMinimumCut_main(gcRect* rect)
+void FlexGCWorker::Impl::checkMinimumCut_main(
+    gcRect* rect,
+    const std::vector<std::unique_ptr<gcRect>>& pin_rects)
 {
   auto layerNum = rect->getLayerNum();
   auto layer = getTech()->getLayer(layerNum);
@@ -3878,10 +3880,12 @@ void FlexGCWorker::Impl::checkMinimumCut_main(gcRect* rect)
     if (con->getConnection() != frMinimumcutConnectionEnum::FROMBELOW
         && layerNum < getTech()->getTopLayerNum()) {
       std::vector<rq_box_value_t<gcRect*>> above_result;
-      workerRegionQuery.queryMaxRectangle(queryBox, layerNum + 1, result);
+      workerRegionQuery.queryMaxRectangle(queryBox, layerNum + 1, above_result);
       result.insert(result.end(), above_result.begin(), above_result.end());
     }
 
+    int valid_vias = 0;
+    gcRect* any_via = nullptr;
     odb::Rect wideRect(
         gtl::xl(*rect), gtl::yl(*rect), gtl::xh(*rect), gtl::yh(*rect));
     for (auto [viaBox, via] : result) {
@@ -3891,30 +3895,30 @@ void FlexGCWorker::Impl::checkMinimumCut_main(gcRect* rect)
       if (via->isFixed() && rect->isFixed()) {
         continue;
       }
-      if (con->hasLength() && wideRect.contains(viaBox)) {
-        continue;
-      }
-      if (!con->hasLength()) {
-        checkMinimumCut_marker(rect, via, con);
-        continue;
-      }
-      std::vector<rq_box_value_t<gcRect*>> encResult;
-      workerRegionQuery.queryMaxRectangle(viaBox, layerNum, encResult);
-      bool viol = false;
-
-      for (auto [encBox, encObj] : encResult) {
-        if (encObj->getNet() != via->getNet()) {
+      if (wideRect.contains(viaBox)) {
+        if (con->hasLength()) {
           continue;
         }
-
-        if (encBox.intersects(viaBox) && encBox.intersects(wideRect)) {
-          viol = true;
+        any_via = via;
+        valid_vias++;
+        continue;
+      }
+      for (auto& prect : pin_rects) {
+        if (prect->getLayerNum() != rect->getLayerNum()) {
+          continue;
+        }
+        odb::Rect pinRect(
+            gtl::xl(*prect), gtl::yl(*prect), gtl::xh(*prect), gtl::yh(*prect));
+        if (pinRect.intersects(viaBox)) {
+          any_via = via;
+          valid_vias++;
           break;
         }
       }
-      if (viol) {
-        checkMinimumCut_marker(rect, via, con);
-      }
+    }
+
+    if (valid_vias > 0 && valid_vias < con->getNumCuts()) {
+      checkMinimumCut_marker(rect, any_via, con);
     }
   }
 }
@@ -3935,7 +3939,7 @@ void FlexGCWorker::Impl::checkMinimumCut()
       }
       for (auto& pin : targetNet_->getPins(i)) {
         for (auto& maxrect : pin->getMaxRectangles()) {
-          checkMinimumCut_main(maxrect.get());
+          checkMinimumCut_main(maxrect.get(), pin->getMaxRectangles());
         }
       }
     }
@@ -3954,7 +3958,7 @@ void FlexGCWorker::Impl::checkMinimumCut()
       for (auto& net : getNets()) {
         for (auto& pin : net->getPins(i)) {
           for (auto& maxrect : pin->getMaxRectangles()) {
-            checkMinimumCut_main(maxrect.get());
+            checkMinimumCut_main(maxrect.get(), pin->getMaxRectangles());
           }
         }
       }

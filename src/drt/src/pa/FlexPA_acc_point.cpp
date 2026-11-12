@@ -49,18 +49,25 @@ std::vector<const frViaDef*> FlexPA::getPriorityViaDefs(
     const int max_vias) const
 {
   std::vector<const frViaDef*> priority_via_defs;
-  if (!layer_num_to_via_defs_.contains(layer_num)
-      || !layer_num_to_via_defs_.at(layer_num).contains(1)) {
+  if (!layer_num_to_via_defs_.contains(layer_num)) {
     return priority_via_defs;
   }
-  for (auto& [tup, via_def] : layer_num_to_via_defs_.at(layer_num).at(1)) {
-    if (inst_term && inst_term->isStubborn()
-        && avoid_via_defs_.contains(via_def)) {
-      continue;
-    }
-    priority_via_defs.push_back(via_def);
-    if ((int) priority_via_defs.size() >= max_vias) {
+  const int max_num_cuts = 2;
+  for (const auto& [num_cuts, via_set] : layer_num_to_via_defs_.at(layer_num)) {
+    if (num_cuts > max_num_cuts) {
       break;
+    }
+    int group_count = 0;
+    for (const auto& [tup, via_def] : via_set) {
+      if (group_count >= max_vias) {
+        break;
+      }
+      if (inst_term && inst_term->isStubborn()
+          && avoid_via_defs_.contains(via_def)) {
+        continue;
+      }
+      priority_via_defs.push_back(via_def);
+      group_count++;
     }
   }
   return priority_via_defs;
@@ -920,9 +927,8 @@ void FlexPA::filterViaAccess(
     if (isIOTerm(inst_term)
         && layer_num > getDesign()->getTech()->getBottomLayerNum()
         && layer_num - 1 <= router_cfg_->TOP_ROUTING_LAYER) {
-      const int remaining_vias = max_vias - (int) via_defs.size();
       std::vector<const frViaDef*> down_vias
-          = getPriorityViaDefs(layer_num - 1, inst_term, remaining_vias);
+          = getPriorityViaDefs(layer_num - 1, inst_term, max_vias);
       via_defs.insert(via_defs.end(), down_vias.begin(), down_vias.end());
     }
   }
