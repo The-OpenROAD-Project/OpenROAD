@@ -11,6 +11,7 @@
 #include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "sta/ExceptionPath.hh"
 #include "sta/MinMax.hh"
 #include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
@@ -28,8 +29,9 @@ namespace {
 //   clk_a: a0/Q -> a1/D, a1/Q -> a0/D
 //   clk_b: b0/Q -> b1/D, b1/Q -> b0/D
 //
-// Each clock gets its default path group, named after it, so one setup path
-// ends on each flop and each group and clock holds two of them.
+// Each clock gets its default path group, named after it, and a group_path,
+// to_b1, takes b1/D out of clk_b's, as the chart's path group filter lists
+// only group_path groups.  One setup path ends on each flop.
 class TimingReportTest : public tst::Nangate45Fixture
 {
  protected:
@@ -62,6 +64,29 @@ class TimingReportTest : public tst::Nangate45Fixture
 
     makeClock("clk_a", "ca/Z", 1.0);
     makeClock("clk_b", "cb/Z", 2.0);
+    makeGroupPath("to_b1", {"b1/D"});
+  }
+
+  void makeGroupPath(const char* name, const std::vector<const char*>& to_pins)
+  {
+    sta::dbNetwork* network = sta_->getDbNetwork();
+    auto* pins = new sta::PinSet(network);
+    for (const char* pin_name : to_pins) {
+      pins->insert(network->dbToSta(block_->findITerm(pin_name)));
+    }
+    sta::ExceptionTo* to = sta_->makeExceptionTo(pins,
+                                                 /*to_clks=*/nullptr,
+                                                 /*to_insts=*/nullptr,
+                                                 sta::RiseFallBoth::riseFall(),
+                                                 sta::RiseFallBoth::riseFall(),
+                                                 sta_->cmdSdc());
+    sta_->makeGroupPath(name,
+                        /*is_default=*/false,
+                        /*from=*/nullptr,
+                        /*thrus=*/nullptr,
+                        to,
+                        /*comment=*/"",
+                        sta_->cmdSdc());
   }
 
   void makeClock(const char* name, const char* pin_name, const double period_ns)
@@ -93,6 +118,16 @@ class TimingReportTest : public tst::Nangate45Fixture
                                    clock_name);
   }
 
+  static std::multiset<std::string> endPins(
+      const std::vector<TimingPathSummary>& paths)
+  {
+    std::multiset<std::string> pins;
+    for (const TimingPathSummary& path : paths) {
+      pins.insert(path.end_pin);
+    }
+    return pins;
+  }
+
   static std::multiset<std::string> endClocks(
       const std::vector<TimingPathSummary>& paths)
   {
@@ -118,8 +153,8 @@ TEST_F(TimingReportTest, ClockFilterKeepsPathsEndingOnIt)
 
 TEST_F(TimingReportTest, PathGroupFilterKeepsItsPaths)
 {
-  EXPECT_EQ(endClocks(report({"clk_a"}, "")),
-            (std::multiset<std::string>{"clk_a", "clk_a"}));
+  EXPECT_EQ(endPins(report({"to_b1"}, "")),
+            (std::multiset<std::string>{"b1/D"}));
 }
 
 TEST_F(TimingReportTest, UnknownClockReportsNothing)
@@ -129,7 +164,7 @@ TEST_F(TimingReportTest, UnknownClockReportsNothing)
 
 TEST_F(TimingReportTest, DisjointFiltersReportNothing)
 {
-  EXPECT_TRUE(report({"clk_a"}, "clk_b").empty());
+  EXPECT_TRUE(report({"to_b1"}, "clk_a").empty());
 }
 
 // The flops above, plus a wire from an input port to an output port per
