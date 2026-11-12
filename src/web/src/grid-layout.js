@@ -120,7 +120,8 @@ export class IdePaneElement extends LitElement {
         }
 
         /* Fills up to the controls, so the fixed right-edge fade lies over
-           empty space when the tabs fit; a tab scrolled into view clears it. */
+           empty space when the tabs fit; a tab scrolled into view clears it,
+           and the end padding lets the last tab scroll clear of it too. */
         .ide-tabs {
             display: flex;
             flex: 1;
@@ -128,6 +129,8 @@ export class IdePaneElement extends LitElement {
             min-width: 0;
             overflow-x: auto;
             scrollbar-width: none;
+            padding-inline-end: 24px;
+            box-sizing: border-box;
             scroll-padding-inline-end: 24px;
             -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
             mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
@@ -266,6 +269,11 @@ export class IdePaneElement extends LitElement {
 
     willUpdate(changedProperties) {
         if (!this._menuOpen) return;
+        // An empty menu has nothing to pick; its ▼ is disabled.
+        if (this._menuTabs.length === 0) {
+            this._closeMenu();
+            return;
+        }
         if (this.collapsed || changedProperties.has('maximized')) {
             this._closeMenu(this._menuRef.value?.contains(this.renderRoot.activeElement));
             return;
@@ -459,6 +467,7 @@ export class IdePaneElement extends LitElement {
                         title="List all tabs"
                         aria-haspopup="menu"
                         aria-expanded=${this._menuOpen ? 'true' : 'false'}
+                        ?disabled=${this._menuTabs.length === 0}
                         ${ref(this._btnRef)}
                         @click=${this._onMenuButtonClick}
                     >▼</button>

@@ -649,6 +649,25 @@ describe('GridLayoutManager', () => {
         assert.equal(pane.shadowRoot.activeElement, btn);
     });
 
+    it('disables the tab menu while the pane has no open tabs', async () => {
+        const { pane, btn } = await mountMenuPane({ open: true });
+        for (const type of ['Inspector', 'Browser', 'TimingWidget']) {
+            layout.closeComponent(type);
+        }
+        await pane.updateComplete;
+        assert.ok(menuOf(pane));
+        assert.equal(btn.disabled, false);
+
+        layout.closeComponent('ChartsWidget');
+        await pane.updateComplete;
+        assert.equal(menuOf(pane), null, 'closing the last tab closes the menu');
+        assert.equal(btn.disabled, true);
+
+        layout.focusComponent('ChartsWidget');
+        await pane.updateComplete;
+        assert.equal(btn.disabled, false);
+    });
+
     it('lists a tab added while the tab menu is open', async () => {
         const { pane } = await mountMenuPane({ open: true });
 
