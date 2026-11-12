@@ -1108,7 +1108,8 @@ export class GridLayoutManager extends EventEmitter {
             if (typeof app !== 'undefined' && app && app.map) {
                 app.map.invalidateSize({ animate: false });
             }
-            window.dispatchEvent(new Event('resize'));
+            // Internal changes notify components directly. Emitting a window
+            // resize here would feed back through its updateSize() listener.
         });
     }
 
