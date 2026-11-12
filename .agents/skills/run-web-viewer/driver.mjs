@@ -16,7 +16,8 @@
 //   shiftclickxy <x> <y>   add to the selection
 //   drag <selector> <dx>   press on the element, move dx px, release
 //   hover <selector>       move the mouse over an element
-//   fill <selector> <text> type into an input
+//   fill <selector> | <text>
+//                          type into an input
 //   key <key>              press a key (Enter, Escape, ...)
 //   tcl <command>          run a Tcl command in the console, print its output
 //   wait <ms>              sleep
@@ -84,13 +85,27 @@ if (response.status() === 401) {
 }
 // Ready once the display controls list the server's layers (rows exist even
 // when the first is hidden).  A design with no tech layers never gets
-// there: carry on after the timeout.
-try {
-  await page.waitForFunction(
-      () => document.querySelectorAll('.vis-leaf').length > 0,
-      null, { timeout: 30000 });
-} catch (e) {
-  pageError('ERROR: no layers listed after 30 s; the page did not load');
+// there: save a screenshot of the broken page and stop, since every
+// command would only time out.
+// Poll from here: the page's CSP forbids eval, which waitForFunction's
+// in-page polling needs.
+const layersListed = async () => {
+  for (const deadline = Date.now() + 30000; Date.now() < deadline;) {
+    if (await page.evaluate(
+        () => document.querySelectorAll('.vis-leaf').length > 0)) {
+      return true;
+    }
+    await page.waitForTimeout(250);
+  }
+  return false;
+};
+if (!await layersListed()) {
+  const file = path.join(out, 'load-failed.png');
+  await page.screenshot({ path: file });
+  console.log('ERROR: no layers listed after 30 s; the page did not load;',
+              'see', file);
+  await browser.close();
+  process.exit(1);
 }
 await page.waitForTimeout(500);
 
@@ -115,6 +130,9 @@ for (const command of commands) {
       case 'clickxy':
       case 'shiftclickxy': {
         const [x, y] = arg.split(/\s+/).map(Number);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) {
+          throw new Error(`expected <x> <y>, got: ${arg}`);
+        }
         if (op === 'shiftclickxy') await page.keyboard.down('Shift');
         await page.mouse.click(x, y);
         if (op === 'shiftclickxy') await page.keyboard.up('Shift');
@@ -124,6 +142,9 @@ for (const command of commands) {
         const at = arg.lastIndexOf(' ');
         const sel = arg.slice(0, at);
         const dx = Number(arg.slice(at + 1));
+        if (at < 0 || !Number.isFinite(dx)) {
+          throw new Error(`expected <selector> <dx>, got: ${arg}`);
+        }
         const el = page.locator(sel).first();
         await el.scrollIntoViewIfNeeded();
         const box = await el.boundingBox();
@@ -140,8 +161,10 @@ for (const command of commands) {
         await page.locator(arg).first().hover();
         break;
       case 'fill': {
-        const [sel, text] = split(arg);
-        await page.locator(sel).first().fill(text);
+        // ' | ' separates them: both the selector and the text may hold spaces
+        const at = arg.indexOf(' | ');
+        if (at < 0) throw new Error(`expected <selector> | <text>, got: ${arg}`);
+        await page.locator(arg.slice(0, at)).first().fill(arg.slice(at + 3));
         break;
       }
       case 'key':
@@ -172,7 +195,7 @@ for (const command of commands) {
         break;
       case 'eval':
         console.log('eval =>', JSON.stringify(
-            await page.evaluate((js) => eval(js), arg)));
+            await page.evaluate(arg)));
         break;
       case 'shot': {
         const file = path.join(out, `${arg}.png`);

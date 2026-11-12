@@ -75,12 +75,13 @@ binary, `bazel-bin/openroad`).
 Driver commands (one argument each, run in order; the full list and
 syntax are in the header of `driver.mjs`): `tab <Title>`,
 `click <selector>`, `clickxy x y`, `shiftclickxy x y`,
-`drag <selector> <dx>`, `hover`, `fill <selector> <text>`, `key`,
+`drag <selector> <dx>`, `hover`, `fill <selector> | <text>`, `key`,
 `tcl <command>`, `wait <ms>`, `widths <table-selector>`, `eval <js>`,
 `shot <name>`. `tcl` prints the console output the command added. The
-first failing command prints `FAILED ...` and skips the rest. Page
-errors, console errors, failed HTTP requests, and a page that never lists
-its layers are printed (`PAGEERROR`, `CONSOLE`, `HTTP <status> <url>`,
+first failing command prints `FAILED ...` and skips the rest. A page
+that never lists its layers stops the run with `$O/load-failed.png`. Page
+errors, console errors, failed HTTP requests, and that load failure are
+printed (`PAGEERROR`, `CONSOLE`, `HTTP <status> <url>`,
 `ERROR`). The driver exits 1 after any of these or a rejected token, so
 exit 0 means the commands ran on a page that reported no errors.
 

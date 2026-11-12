@@ -26,7 +26,8 @@ if ! is_viewer; then
   echo "viewer $pid had already exited; removed its stale pid file"
   exit 0
 fi
-kill "$pid"
+# it may exit between the check and the signal
+kill "$pid" 2>/dev/null || true
 # the server takes a few seconds to close its session and release the port
 for _ in $(seq 30); do
   if ! is_viewer; then

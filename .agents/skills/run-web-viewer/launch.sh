@@ -49,7 +49,7 @@ fi
 # the token goes: only a new or empty directory of this user's is accepted.
 if [ -e "$out" ] || [ -L "$out" ]; then
   if [ -L "$out" ] || [ ! -d "$out" ] || [ ! -O "$out" ] \
-     || [ -n "$(ls -A "$out")" ]; then
+     || [ -n "$(ls -A -- "$out")" ]; then
     echo "out_dir must be new, or an empty directory you own: $out" >&2
     exit 1
   fi
