@@ -625,11 +625,16 @@ Return the worst N timing paths.
 Highlight one timing path's shapes on the layout, optionally with a
 single stage emphasized.
 
-| Field        | Type     | Required when            | Description                                                    |
-| ------------ | -------- | ------------------------ | -------------------------------------------------------------- |
-| `path_index` | `int`    | always                   | Index into the most recent `timing_report.paths`. `-1` clears. |
-| `is_setup`   | `bool`   | `path_index >= 0`        | Which side of the report `path_index` indexes into.            |
-| `pin_name`   | `string` | optional, `>= 0` only    | If set, emphasize this pin's net within the path.              |
+| Field         | Type       | Required when         | Description                                                                |
+| ------------- | ---------- | --------------------- | -------------------------------------------------------------------------- |
+| `path_index`  | `int`      | always                | Index into the `timing_report` paths the fields below select. `-1` clears. |
+| `is_setup`    | `bool`     | `path_index >= 0`     | Which side of the report `path_index` indexes into.                        |
+| `max_paths`   | `int`      | optional, `>= 0` only | As in `timing_report`; default 100.                                        |
+| `slack_min`   | `double`   | optional, `>= 0` only | As in `timing_report`.                                                     |
+| `slack_max`   | `double`   | optional, `>= 0` only | As in `timing_report`.                                                     |
+| `path_groups` | `string[]` | optional, `>= 0` only | As in `timing_report`.                                                     |
+| `clock_name`  | `string`   | optional, `>= 0` only | As in `timing_report`.                                                     |
+| `pin_name`    | `string`   | optional, `>= 0` only | If set, emphasize this pin's net within the path.                          |
 
 **Response (JSON):** `{"ok": true}`. The actual update is the layer
 overlay redraw on the next `tile` request.

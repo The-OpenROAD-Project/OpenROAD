@@ -96,6 +96,48 @@ describe('TimingWidget._selectPathRow', () => {
         assert.equal(highlight.is_setup, false);
     });
 
+    it('sends the query the list was fetched with', () => {
+        // A histogram bar's drill-down: the server indexes this list, not
+        // the unfiltered report.
+        const app = createMockApp();
+        const widget = new TimingWidget(app, () => {});
+        const query = {
+            max_paths: 50, slack_min: -20, slack_max: -10,
+            path_groups: ['reg2reg'], clock_name: 'clk_b',
+        };
+        widget.showPaths('setup', [makePath(-15, 'a'), makePath(-12, 'b')],
+            query);
+
+        app.requests.length = 0;
+        widget._selectPathRow(1);
+
+        const highlight = app.requests.find(r => r.type === 'timing_highlight');
+        assert.equal(highlight.path_index, 1);
+        assert.equal(highlight.max_paths, 50);
+        assert.equal(highlight.slack_min, -20);
+        assert.equal(highlight.slack_max, -10);
+        assert.deepEqual(highlight.path_groups, ['reg2reg']);
+        assert.equal(highlight.clock_name, 'clk_b');
+    });
+
+    it('sends the main report\'s query after update()', async () => {
+        const app = createMockApp({
+            timing_report: () => ({ paths: [makePath(0.0, 'a')] }),
+        });
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [makePath(-15, 'a')],
+            { max_paths: 50, slack_min: -20, slack_max: -10 });
+        await widget.update();
+
+        app.requests.length = 0;
+        widget._selectPathRow(0);
+
+        const highlight = app.requests.find(r => r.type === 'timing_highlight');
+        assert.equal(highlight.max_paths, 100);
+        assert.equal('slack_min' in highlight, false);
+        assert.equal('slack_max' in highlight, false);
+    });
+
     it('ignores out-of-range indices without sending a request', () => {
         const app = createMockApp();
         const widget = new TimingWidget(app, () => {});

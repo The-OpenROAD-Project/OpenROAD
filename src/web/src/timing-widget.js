@@ -6,6 +6,9 @@
 import { isStaticMode, makeResizableHeaders, withBusyCursor }
     from './ui-utils.js';
 
+// The main report's paths per path group, also timing_highlight's default.
+const kReportMaxPaths = 100;
+
 // The rows a path's detail table shows, as the Qt GUI's "Expand clock"
 // setting does.  Collapsed (the default), the clock network -- every clock
 // node after the source, up to the register's clock pin -- is one "clock
@@ -30,6 +33,11 @@ export class TimingWidget {
         this._currentTab = 'setup';
         this._setupPaths = [];
         this._holdPaths = [];
+        // The timing_report fields each list was fetched with.
+        // timing_highlight sends them back, so the server indexes the same
+        // list, not the unfiltered report.
+        this._setupQuery = { max_paths: kReportMaxPaths };
+        this._holdQuery = { max_paths: kReportMaxPaths };
         this._selectedPathIndex = -1;
         this._detailTab = 'data';
         this._selectedDetailIndex = -1;
@@ -377,14 +385,18 @@ export class TimingWidget {
         this._coneStatus.textContent = '';
     }
 
-    showPaths(tab, paths) {
+    // `query` holds the timing_report fields (max_paths, slack range,
+    // path_groups, clock_name) the paths were fetched with.
+    showPaths(tab, paths, query = { max_paths: kReportMaxPaths }) {
         this._currentTab = tab;
         // Copy so sorting never reorders the caller's array.
         if (tab === 'setup') {
+            this._setupQuery = query;
             this._setupPaths = [...paths];
             this._setupTab.classList.add('active');
             this._holdTab.classList.remove('active');
         } else {
+            this._holdQuery = query;
             this._holdPaths = [...paths];
             this._holdTab.classList.add('active');
             this._setupTab.classList.remove('active');
@@ -403,14 +415,16 @@ export class TimingWidget {
         try {
             const [setupData, holdData] = await withBusyCursor(
                 () => Promise.all([
-                    this._app.websocketManager.request({ type: 'timing_report', is_setup: true, max_paths: 100 }),
-                    this._app.websocketManager.request({ type: 'timing_report', is_setup: false, max_paths: 100 }),
+                    this._app.websocketManager.request({ type: 'timing_report', is_setup: true, max_paths: kReportMaxPaths }),
+                    this._app.websocketManager.request({ type: 'timing_report', is_setup: false, max_paths: kReportMaxPaths }),
                 ]));
             // Copy the arrays: in static mode the response is a shared
             // cached object whose path order must keep matching the
             // server-side overlay indices, so it must not be sorted.
             this._setupPaths = [...(setupData.paths || [])];
             this._holdPaths = [...(holdData.paths || [])];
+            this._setupQuery = { max_paths: kReportMaxPaths };
+            this._holdQuery = { max_paths: kReportMaxPaths };
             this._applySort();
             this._selectedPathIndex = -1;
             this._renderPathTable();
@@ -484,6 +498,10 @@ export class TimingWidget {
             .then(() => this._refreshOverlay());
     }
 
+    _currentQuery() {
+        return this._currentTab === 'setup' ? this._setupQuery : this._holdQuery;
+    }
+
     _selectPathRow(idx) {
         const rows = this._pathTable.querySelectorAll('tbody tr');
         if (idx < 0 || idx >= rows.length) return;
@@ -499,6 +517,7 @@ export class TimingWidget {
         const highlightIdx = paths[idx]?._originalIndex ?? idx;
         this._app.websocketManager.request({
             type: 'timing_highlight',
+            ...this._currentQuery(),
             path_index: highlightIdx,
             is_setup: this._currentTab === 'setup',
         }).then(() => this._refreshOverlay())
@@ -611,6 +630,7 @@ export class TimingWidget {
         const highlightIdx = path._originalIndex ?? this._selectedPathIndex;
         this._app.websocketManager.request({
             type: 'timing_highlight',
+            ...this._currentQuery(),
             path_index: highlightIdx,
             is_setup: this._currentTab === 'setup',
             pin_name: node.pin,

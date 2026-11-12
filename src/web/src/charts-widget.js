@@ -830,19 +830,24 @@ export class ChartsWidget {
             // The filters the drawn histogram was fetched with, not the
             // selects', which may have changed since, so a bar lists the
             // paths it counted.
-            const req = {
-                type: 'timing_report',
-                is_setup: this._currentTab === 'setup',
+            const query = {
                 max_paths: 50,
                 slack_min: bar.lower,
                 slack_max: bar.upper,
                 ...this._histogramFilters,
             };
+            const req = {
+                type: 'timing_report',
+                is_setup: this._currentTab === 'setup',
+                ...query,
+            };
             const resp = await withBusyCursor(
                 () => this._app.websocketManager.request(req));
             if (this._app.timingWidget) {
+                // The query goes along so a row's highlight finds its path in
+                // this list.
                 this._app.timingWidget.showPaths(
-                    this._currentTab, resp.paths || []);
+                    this._currentTab, resp.paths || [], query);
                 if (this._app.focusComponent) {
                     this._app.focusComponent('TimingWidget');
                 }

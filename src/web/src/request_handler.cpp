@@ -4926,6 +4926,27 @@ void TimingHandler::registerRequests(RequestDispatcher& d)
         });
 }
 
+namespace {
+
+// The paths a timing_report request lists.  timing_highlight takes the same
+// fields, so its path_index points into the list the client shows.
+std::vector<TimingPathSummary> reportPaths(const TimingReport& timing_report,
+                                           const boost::json::object& json,
+                                           const int max_paths)
+{
+  return timing_report.getReport(
+      json.at("is_setup").as_bool(),
+      max_paths,
+      static_cast<float>(jsonOr<double>(
+          json, "slack_min", -std::numeric_limits<float>::max())),
+      static_cast<float>(
+          jsonOr<double>(json, "slack_max", std::numeric_limits<float>::max())),
+      jsonOr<std::vector<std::string>>(json, "path_groups", {}),
+      jsonOr<std::string>(json, "clock_name", ""));
+}
+
+}  // namespace
+
 WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)
 {
   WebSocketResponse resp;
@@ -4933,17 +4954,10 @@ WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)
   resp.type = WebSocketResponse::kJson;
   try {
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
-    const auto path_groups
-        = jsonOr<std::vector<std::string>>(req.json, "path_groups", {});
-    auto paths = timing_report_->getReport(
-        req.json.at("is_setup").as_bool(),
-        static_cast<int>(req.json.at("max_paths").as_int64()),
-        static_cast<float>(jsonOr<double>(
-            req.json, "slack_min", -std::numeric_limits<float>::max())),
-        static_cast<float>(jsonOr<double>(
-            req.json, "slack_max", std::numeric_limits<float>::max())),
-        path_groups,
-        jsonOr<std::string>(req.json, "clock_name", ""));
+    const auto paths
+        = reportPaths(*timing_report_,
+                      req.json,
+                      static_cast<int>(req.json.at("max_paths").as_int64()));
     writePayload(resp, serializeTimingPaths(paths));
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -4968,9 +4982,13 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
 
     // path_index < 0 is the clear-highlight signal (no other fields used).
     if (path_index >= 0) {
-      const bool is_setup = req.json.at("is_setup").as_bool();
       std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
-      auto paths = timing_report_->getReport(is_setup);
+      // The list the client shows: the timing_report fields it was fetched
+      // with, max_paths defaulting to getReport's.
+      const auto paths = reportPaths(
+          *timing_report_,
+          req.json,
+          static_cast<int>(jsonOr<int64_t>(req.json, "max_paths", 100)));
       if (path_index < static_cast<int>(paths.size())) {
         // chiplets() covers both cases: for a single-die design its root node
         // carries the top block with an identity transform.
