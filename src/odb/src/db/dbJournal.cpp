@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -1164,6 +1165,38 @@ void dbJournal::redo_updateModNetField()
   }
 }
 
+namespace {
+
+// Sets inst's flags to a journaled value. An orientation change moves the
+// instance's shapes, so it is bracketed by the same move callbacks as
+// dbInst::setOrient. Observers that index the shapes by transform, such as
+// the detailed router's region query, would otherwise keep shapes they can
+// no longer find to remove.
+void restoreInstFlags(_dbBlock* block, _dbInst* inst, const uint32_t flags)
+{
+  static_assert(sizeof(inst->flags_) == sizeof(flags), "flags size != 4");
+  _dbInstFlags new_flags;
+  std::memcpy(&new_flags, &flags, sizeof(new_flags));
+  const bool orient_changed = inst->flags_.orient != new_flags.orient;
+  if (orient_changed) {
+    for (dbBlockCallBackObj* callback : block->callbacks_) {
+      callback->inDbPreMoveInst(reinterpret_cast<dbInst*>(inst));
+    }
+  }
+
+  inst->flags_ = new_flags;
+
+  if (orient_changed) {
+    // Changing the orientation flag requires updating the cached bbox
+    _dbInst::setInstBBox(inst);
+    for (dbBlockCallBackObj* callback : block->callbacks_) {
+      callback->inDbPostMoveInst(reinterpret_cast<dbInst*>(inst));
+    }
+  }
+}
+
+}  // namespace
+
 void dbJournal::redo_updateInstField()
 {
   uint32_t inst_id;
@@ -1177,15 +1210,9 @@ void dbJournal::redo_updateInstField()
     case _dbInst::kFlags: {
       uint32_t prev_flags;
       log_.pop(prev_flags);
-      uint32_t* flags = (uint32_t*) &inst->flags_;
-      log_.pop(*flags);
-
-      // Changing the orientation flag requires updating the cached bbox
-      _dbInstFlags* a = (_dbInstFlags*) flags;
-      _dbInstFlags* b = (_dbInstFlags*) &prev_flags;
-      if (a->orient != b->orient) {
-        _dbInst::setInstBBox(inst);
-      }
+      uint32_t flags;
+      log_.pop(flags);
+      restoreInstFlags(reinterpret_cast<_dbBlock*>(block_), inst, flags);
 
       debugPrint(logger_,
                  utl::ODB,
@@ -1194,7 +1221,7 @@ void dbJournal::redo_updateInstField()
                  "REDO ECO: dbInst {}, updateInstField: {} to {}",
                  inst_id,
                  prev_flags,
-                 *flags);
+                 flags);
       break;
     }
 
@@ -2738,8 +2765,8 @@ void dbJournal::undo_updateInstField()
 
   switch ((_dbInst::Field) field) {
     case _dbInst::kFlags: {
-      uint32_t* flags = (uint32_t*) &inst->flags_;
-      log_.pop(*flags);
+      uint32_t prev_flags;
+      log_.pop(prev_flags);
       uint32_t new_flags;
       log_.pop(new_flags);
       debugPrint(logger_,
@@ -2749,12 +2776,7 @@ void dbJournal::undo_updateInstField()
                  "UNDO ECO: dbInst {}, updateFlags",
                  inst_id);
 
-      // Changing the orientation flag requires updating the cached bbox
-      _dbInstFlags* a = (_dbInstFlags*) flags;
-      _dbInstFlags* b = (_dbInstFlags*) &new_flags;
-      if (a->orient != b->orient) {
-        _dbInst::setInstBBox(inst);
-      }
+      restoreInstFlags(reinterpret_cast<_dbBlock*>(block_), inst, prev_flags);
       break;
     }
 
