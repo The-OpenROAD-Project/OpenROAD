@@ -212,8 +212,12 @@ export class SchematicWidget {
 
         c.addEventListener('mousedown', (e) => {
             if (!this._svgEl || e.button !== 0) return;
-            if (e.detail >= 2) {
-                this._handleCellDoubleClick(e);
+            // The second click on a cell expands from it; later clicks of
+            // the same burst do nothing.  Off a cell, they select or pan.
+            if (e.detail >= 2 && this._cellHitFromTarget(e.target)) {
+                if (e.detail === 2) {
+                    this._handleCellDoubleClick(e);
+                }
                 return;
             }
             if (this._selectMode) {
@@ -294,8 +298,9 @@ export class SchematicWidget {
         if (this._backInFlight) {
             return Promise.resolve(false);
         }
-        const snapshot = this._schematicHistory.pop();
-        this._setBackButtonEnabled();
+        // The entry stays in the history until its view renders, so a Back
+        // that fails or is superseded by a newer load loses nothing.
+        const snapshot = this._schematicHistory.at(-1);
         if (!snapshot) {
             this.setStatus('No previous schematic.');
             return Promise.resolve(false);
@@ -318,10 +323,14 @@ export class SchematicWidget {
                         this.appState.selectedInstanceName
                             = previousSelectedInstanceName;
                     }
-                    this._pushSchematicHistory(snapshot);
                     return false;
                 }
 
+                const index = this._schematicHistory.lastIndexOf(snapshot);
+                if (index >= 0) {
+                    this._schematicHistory.splice(index, 1);
+                }
+                this._setBackButtonEnabled();
                 this._leaveTimingSchematic();
                 if (!snapshot.selectedInstanceName) {
                     return true;
@@ -808,10 +817,20 @@ export class SchematicWidget {
         e.stopPropagation();
         // Save the current view so Back can restore it after expansion.
         const previousSnapshot = this._currentSchematicSnapshot();
-        this.appState.selectedInstanceName = hit.name;
         this._highlightCellGroup(hit.group);
-        this._fetchInspect(hit.name);
-        return this._expandFromInstance(hit.name, previousSnapshot);
+        // The selection moves only once the expanded view is on screen, so a
+        // failed or superseded expansion leaves it with the view shown.
+        return this._expandFromInstance(hit.name, previousSnapshot)
+            .then((expanded) => {
+                if (expanded) {
+                    this.appState.selectedInstanceName = hit.name;
+                    // In select mode the first click already inspected it.
+                    if (!this._selectMode) {
+                        this._fetchInspect(hit.name);
+                    }
+                }
+                return expanded;
+            });
     }
 
     // Back waits for the restored inspector selection.
@@ -1336,7 +1355,7 @@ export class SchematicWidget {
         try {
             this.setStatus('Rendering…');
 
-            // Rewrite recognised logic gates to skin types so netlistsvg can
+            // Rewrite recognized logic gates to skin types so netlistsvg can
             // place and route the upstream symbols natively.
             const renderJson = canonicalizeForSkin(yosysJson);
 
@@ -2003,10 +2022,10 @@ export function scopeCssSelector(selectorText, scope) {
 
 // ── Skin canonicalization ──────────────────────────────────────────────────
 //
-// The server tags recognised combinational and register cells with `gate_kind`.
+// The server tags recognized combinational and register cells with `gate_kind`.
 // Rewrite them to the custom skin's types and port ids before rendering.
 
-// gate_kind -> skin symbol type (a Yosys primitive alias the skin recognises).
+// gate_kind -> skin symbol type (a Yosys primitive alias the skin recognizes).
 const SKIN_SIMPLE_TYPE = {
     and: '$_AND_', nand: '$_NAND_', or: '$_OR_', nor: '$_NOR_',
     xor: '$_XOR_', xnor: '$_XNOR_', not: '$_NOT_', buf: '$_BUF_',
@@ -2032,10 +2051,10 @@ const SKIN_REGISTER_TYPE = new Map([
 ]);
 const PID_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
-// Rewrite one cell to a custom-skin gate symbol when it carries a recognised
+// Rewrite one cell to a custom-skin gate symbol when it carries a recognized
 // `gate_kind`: set its `type` to the canonical symbol name and remap its
 // `connections`/`port_directions` keys to the symbol's port ids.  Pins not part
-// of the gate (power/ground) are dropped.  Cells that aren't recognised — or
+// of the gate (power/ground) are dropped.  Cells that aren't recognized — or
 // whose computed type has no symbol — are returned unchanged so they render as
 // a labelled generic box with their real pin names.
 export function canonicalizeCell(cell) {
@@ -2120,7 +2139,7 @@ export function canonicalizeCell(cell) {
     };
 }
 
-// Return a copy of the netlist with recognised logic gates rewritten to the
+// Return a copy of the netlist with recognized logic gates rewritten to the
 // custom skin's gate symbols.  Cell keys (instance names) are preserved so
 // selection/inspect keep working.
 export function canonicalizeForSkin(json) {

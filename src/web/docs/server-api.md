@@ -520,7 +520,7 @@ keep the schematic readable.
 
 #### Gate symbol hints
 
-Cells recognised from their Liberty function carry three extra fields
+Cells recognized from their Liberty function carry three extra fields
 beyond the Yosys schema. They are rendering *hints* only — `type` stays
 the real master name, and a client that ignores them still gets a
 correct netlist, just drawn as generic boxes.

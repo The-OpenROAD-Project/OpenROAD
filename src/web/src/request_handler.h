@@ -465,8 +465,9 @@ struct SessionState
   web::Selected current_inspected;
   // World transform of the chiplet placement current_inspected was inspected
   // in; every highlight of it maps its shapes through this, or they land in
-  // die-local coordinates.  Only a schematic inspect sets one, as only it
-  // names an instance by its chiplet path.  Change the two together through
+  // die-local coordinates.  A layout click or schematic inspect sets it from
+  // the chiplet the object was found in; an inspector link to an object in
+  // the same block inherits it.  Change the two together through
   // setCurrentInspected.
   odb::dbTransform current_inspected_xfm;
   // Where the inspector's Back returns to, each with its transform.

@@ -6047,6 +6047,20 @@ class ChipletSchematicHandlerTest : public SchematicHandlerTest
     SchematicHandlerTest::TearDown();
   }
 
+  // The "bbox" an inspect payload reports, or an empty Rect without one.
+  static odb::Rect responseBBox(const WebSocketResponse& resp)
+  {
+    const auto json = parseObj(payloadStr(resp));
+    if (!json.contains("bbox")) {
+      return {};
+    }
+    const auto& bbox = json.at("bbox").as_array();
+    return {bbox[0].to_number<int>(),
+            bbox[1].to_number<int>(),
+            bbox[2].to_number<int>(),
+            bbox[3].to_number<int>()};
+  }
+
   // Where die1 places other_buffer_, which is what a highlight of it shows.
   odb::Rect otherBufferWorldRect() const
   {
@@ -6330,6 +6344,7 @@ TEST_F(ChipletSchematicHandlerTest, InspectorNavigationKeepsTheChipletTransform)
   ASSERT_EQ(inspect_resp.type, WebSocketResponse::kJson)
       << payloadStr(inspect_resp);
   expect_highlight(expected, "a re-inspect");
+  EXPECT_EQ(responseBBox(inspect_resp), expected) << "a re-inspect";
 
   {
     std::lock_guard<std::mutex> lock(state.selectables_mutex);
@@ -6347,6 +6362,94 @@ TEST_F(ChipletSchematicHandlerTest, InspectorNavigationKeepsTheChipletTransform)
   const auto back_resp = handler_->handleInspectBack(back, state);
   ASSERT_EQ(back_resp.type, WebSocketResponse::kJson) << payloadStr(back_resp);
   expect_highlight(expected, "the inspector's Back");
+  EXPECT_EQ(responseBBox(back_resp), expected) << "the inspector's Back";
+}
+
+// An inspector link from a chiplet instance to another object in its block
+// stays on that chiplet: the highlight, the hover outline, and the payload
+// bbox all carry the placement's transform.
+TEST_F(ChipletSchematicHandlerTest,
+       InspectorLinkInTheSameBlockKeepsTheTransform)
+{
+  odb::dbMaster* buffer = lib_->findMaster("BUF_X1");
+  ASSERT_NE(buffer, nullptr);
+  odb::dbInst* neighbor = makeInst(other_buffer_->getBlock(), buffer, "buf2");
+  neighbor->setLocation(20000, 30000);
+  neighbor->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  odb::Rect expected = neighbor->getBBox()->getBox();
+  expected.moveDelta(kOtherOffsetX, kOtherOffsetY);
+
+  SessionState state;
+  WebSocketRequest req;
+  req.id = 14;
+  req.type = WebSocketRequest::kSchematicInspect;
+  req.json = parseObj(R"({"inst_name":"die1/buf"})");
+  const auto resp = handler_->handleSchematicInspect(req, state);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+
+  {
+    std::lock_guard<std::mutex> lock(state.selectables_mutex);
+    state.selectables
+        = {web::DescriptorRegistry::instance()->makeSelected(neighbor)};
+  }
+  WebSocketRequest hover;
+  hover.id = 15;
+  hover.type = WebSocketRequest::kHover;
+  hover.json = parseObj(R"({"select_id":0})");
+  const auto hover_resp = handler_->handleHover(hover, state);
+  ASSERT_EQ(hover_resp.type, WebSocketResponse::kJson)
+      << payloadStr(hover_resp);
+  {
+    std::lock_guard<std::mutex> lock(state.selection_mutex);
+    ASSERT_EQ(state.hover_rects.size(), 1);
+    EXPECT_EQ(state.hover_rects.front(), expected);
+  }
+
+  WebSocketRequest inspect;
+  inspect.id = 16;
+  inspect.type = WebSocketRequest::kInspect;
+  inspect.json = parseObj(R"({"select_id":0})");
+  const auto inspect_resp = handler_->handleInspect(inspect, state);
+  ASSERT_EQ(inspect_resp.type, WebSocketResponse::kJson)
+      << payloadStr(inspect_resp);
+  EXPECT_EQ(responseBBox(inspect_resp), expected);
+  std::lock_guard<std::mutex> lock(state.selection_mutex);
+  ASSERT_EQ(state.highlight_rects.size(), 1);
+  EXPECT_EQ(state.highlight_rects.front(), expected);
+}
+
+// An instance clicked in the layout on a translated die keeps that die's
+// transform when it is highlighted again later (here, by a re-inspect).
+TEST_F(ChipletSchematicHandlerTest, LayoutClickRecordsTheChipletTransform)
+{
+  // The layout search only finds placed instances.
+  other_buffer_->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  const odb::Rect expected = otherBufferWorldRect();
+  SessionState state;
+  WebSocketRequest select;
+  select.id = 17;
+  select.type = WebSocketRequest::kSelect;
+  select.json = parseObj(R"({"dbu_x":)" + std::to_string(expected.xCenter())
+                         + R"(,"dbu_y":)" + std::to_string(expected.yCenter())
+                         + R"(,"zoom":10,"visible_layers":[]})");
+  const auto select_resp = handler_->handleSelect(select, state);
+  ASSERT_EQ(select_resp.type, WebSocketResponse::kJson)
+      << payloadStr(select_resp);
+  ASSERT_TRUE(state.current_inspected) << payloadStr(select_resp);
+  ASSERT_EQ(std::any_cast<odb::dbInst*>(state.current_inspected.getObject()),
+            other_buffer_);
+
+  WebSocketRequest inspect;
+  inspect.id = 18;
+  inspect.type = WebSocketRequest::kInspect;
+  inspect.json = parseObj(R"({"select_id":-1})");
+  const auto inspect_resp = handler_->handleInspect(inspect, state);
+  ASSERT_EQ(inspect_resp.type, WebSocketResponse::kJson)
+      << payloadStr(inspect_resp);
+  EXPECT_EQ(responseBBox(inspect_resp), expected);
+  std::lock_guard<std::mutex> lock(state.selection_mutex);
+  ASSERT_EQ(state.highlight_rects.size(), 1);
+  EXPECT_EQ(state.highlight_rects.front(), expected);
 }
 
 // Two placements of one chip share its block, and so its instances: only the

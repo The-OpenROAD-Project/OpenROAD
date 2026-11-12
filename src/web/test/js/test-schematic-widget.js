@@ -222,16 +222,17 @@ describe('SchematicWidget schematic navigation', () => {
         assert.equal(event.defaultPrevented, true);
         assert.equal(event.propagationStopped, true);
         assert.equal(appState.selectedInstanceName, 'u2');
+        // The cell is inspected once its expansion is on screen.
         assert.deepEqual(requests[0], {
-            type: 'schematic_inspect',
-            inst_name: 'u2',
-            use_dbu: false,
-        });
-        assert.deepEqual(requests[1], {
             type: 'schematic_cone',
             inst_name: 'u2',
             fanin_depth: 2,
             fanout_depth: 3,
+        });
+        assert.deepEqual(requests[1], {
+            type: 'schematic_inspect',
+            inst_name: 'u2',
+            use_dbu: false,
         });
         assert.deepEqual(rendered, [{
             modules: {
@@ -611,9 +612,75 @@ describe('SchematicWidget schematic navigation', () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
 
         assert.equal(appState.selectedInstanceName, 'u1');
-        assert.equal(requests[0].type, 'schematic_inspect');
-        assert.equal(requests[1].type, 'schematic_cone');
-        assert.equal(requests[1].inst_name, 'u1');
+        assert.equal(requests[0].type, 'schematic_cone');
+        assert.equal(requests[0].inst_name, 'u1');
+        assert.equal(requests[1].type, 'schematic_inspect');
+        container.element.remove();
+    });
+
+    function clickBurstWidget(coneResult) {
+        const requests = [];
+        const appState = {
+            selectedInstanceName: 'before',
+            websocketManager: {
+                readyPromise: Promise.resolve(),
+                request: (request) => {
+                    requests.push(request);
+                    if (request.type === 'schematic_cone') {
+                        return Promise.resolve(coneResult);
+                    }
+                    return Promise.resolve({ selected: [{ name: request.inst_name }] });
+                },
+            },
+        };
+        const { widget, container } = makeWidget(appState);
+        widget._netlistsvgReady = true;
+        widget.renderNetlist = async () => {};
+        return { requests, appState, widget, container };
+    }
+
+    function mousedown(target, detail) {
+        target.dispatchEvent(new window.MouseEvent('mousedown', {
+            bubbles: true, button: 0, detail,
+        }));
+        return new Promise((resolve) => setTimeout(resolve, 0));
+    }
+
+    it('keeps the selection when a double-click expansion fails', async () => {
+        const { requests, appState, widget, container }
+            = clickBurstWidget({ modules: { top: { cells: {} } } });
+        const { path } = makeInteractiveCell(widget, 'u1');
+
+        await mousedown(path, 2);
+
+        assert.equal(appState.selectedInstanceName, 'before');
+        assert.deepEqual(requests.map(r => r.type), ['schematic_cone']);
+        container.element.remove();
+    });
+
+    it('inspects once for a select-mode double-click, and ignores a third click', async () => {
+        const { requests, widget, container } = clickBurstWidget(netlist);
+        const { path } = makeInteractiveCell(widget, 'u1');
+        widget._toggleSelectMode();
+
+        await mousedown(path, 1);
+        await mousedown(path, 2);
+        await mousedown(path, 3);
+
+        assert.deepEqual(requests.map(r => r.type),
+                         ['schematic_inspect', 'schematic_cone']);
+        container.element.remove();
+    });
+
+    it('pans on a fast second mousedown off any cell', async () => {
+        const { requests, widget, container } = clickBurstWidget(netlist);
+        makeInteractiveCell(widget, 'u1');
+
+        await mousedown(widget.svgContainer, 2);
+
+        assert.equal(widget.svgContainer.style.cursor, 'grabbing');
+        assert.deepEqual(requests, []);
+        window.dispatchEvent(new window.MouseEvent('mouseup'));
         container.element.remove();
     });
 
@@ -647,8 +714,8 @@ describe('SchematicWidget schematic navigation', () => {
 
         assert.equal(didCenter, true);
         assert.equal(appState.selectedInstanceName, 'u1');
-        assert.equal(requests[1].type, 'schematic_cone');
-        assert.equal(requests[1].inst_name, 'u1');
+        assert.equal(requests[0].type, 'schematic_cone');
+        assert.equal(requests[0].inst_name, 'u1');
         container.element.remove();
     });
 
@@ -1314,8 +1381,12 @@ describe('SchematicWidget timing path overlay', () => {
                              ['selected']);
             assertColor(widget._svgEl.querySelector('path').style.stroke, '#ff0000');
             assert.equal(legendOf(widget).hidden, false);
-            assert.equal(widget._schematicHistory.length, 1);
-            assert.ok(widget._schematicHistory[0].netlist.modules.top.cells.base);
+            // A superseded Back keeps its entry, under the view the path
+            // load replaced.
+            const history = widget._schematicHistory.map(
+                s => Object.keys(s.netlist.modules.top.cells));
+            assert.deepEqual(history, navigation === 'Refresh'
+                ? [['base']] : [['previous'], ['base']]);
             container.element.remove();
         });
     }
@@ -2134,7 +2205,7 @@ describe('SchematicWidget timing path overlay', () => {
 });
 
 describe('canonicalizeForSkin', () => {
-    it('rewrites recognised cells but preserves instance-name keys', () => {
+    it('rewrites recognized cells but preserves instance-name keys', () => {
         const json = { modules: { top: { cells: {
             _983_: {
                 type: 'NOR2_X1', gate_kind: 'nor', attributes: { ref: '_983_' },

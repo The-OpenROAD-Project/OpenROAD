@@ -44,6 +44,7 @@
 #include "cli_completer.h"
 #include "clock_tree_report.h"
 #include "color.h"
+#include "dbDescriptors.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "hierarchy_report.h"
@@ -1588,16 +1589,49 @@ static void setCurrentInspected(SessionState& state,
   state.current_inspected_xfm = xfm;
 }
 
+// The block a db object selection lives in, or null for objects with no
+// placement in a block (masters, layers, STA-only objects).
+static odb::dbBlock* owningBlock(const web::Selected& sel)
+{
+  const std::any& obj = sel.getObject();
+  if (auto* const* inst = std::any_cast<odb::dbInst*>(&obj)) {
+    return (*inst)->getBlock();
+  }
+  if (auto* const* net = std::any_cast<odb::dbNet*>(&obj)) {
+    return (*net)->getBlock();
+  }
+  if (const auto* nws
+      = std::any_cast<web::DbNetDescriptor::NetWithSink>(&obj)) {
+    return nws->net->getBlock();
+  }
+  if (auto* const* iterm = std::any_cast<odb::dbITerm*>(&obj)) {
+    return (*iterm)->getBlock();
+  }
+  if (auto* const* bterm = std::any_cast<odb::dbBTerm*>(&obj)) {
+    return (*bterm)->getBlock();
+  }
+  return nullptr;
+}
+
 // The transform to highlight `sel` with: the inspected object keeps its own,
-// anything else is inspected without one.  Requires selection_mutex.
+// and so does anything in the same block (an inspector link from a chiplet
+// instance to its nets or pins stays on that chiplet).  Anything else is
+// inspected without one.  Requires selection_mutex.
 static odb::dbTransform inspectedXfm(const SessionState& state,
                                      const web::Selected& sel)
 {
   // Comparing two empty Selecteds would call through a null descriptor.
-  if (!sel || !state.current_inspected || sel != state.current_inspected) {
+  if (!sel || !state.current_inspected) {
     return odb::dbTransform();
   }
-  return state.current_inspected_xfm;
+  if (sel == state.current_inspected) {
+    return state.current_inspected_xfm;
+  }
+  odb::dbBlock* block = owningBlock(sel);
+  if (block != nullptr && block == owningBlock(state.current_inspected)) {
+    return state.current_inspected_xfm;
+  }
+  return odb::dbTransform();
 }
 
 // Rebuild the per-group overlay shapes from the group members.  Colors
@@ -1814,11 +1848,18 @@ static void writeInspectTrailer(boost::json::object& root,
                                 utl::Logger* logger,
                                 int hl_group,
                                 int sel_count,
-                                int sel_index)
+                                int sel_index,
+                                const odb::dbTransform& xfm)
 {
   std::vector<web::Selected> new_selectables;
-  writeInspectPayload(
-      root, sel, new_selectables, can_navigate_back, use_dbu, logger, hl_group);
+  writeInspectPayload(root,
+                      sel,
+                      new_selectables,
+                      can_navigate_back,
+                      use_dbu,
+                      logger,
+                      hl_group,
+                      xfm);
   root["selection_count"] = static_cast<int64_t>(sel_count);
   root["selection_index"] = static_cast<int64_t>(sel_index);
   std::lock_guard<std::mutex> lock(state.selectables_mutex);
@@ -2229,6 +2270,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
     std::vector<web::Selected> new_selectables;
     auto* registry = web::DescriptorRegistry::instance();
     web::Selected inspected_sel;
+    odb::dbTransform inspected_xfm;
     if (!results.empty()) {
       int pick = 0;
       if (results.size() > 1) {
@@ -2248,6 +2290,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
         }
       }
       inspected_sel = registry->makeSelected(results[pick].object);
+      inspected_xfm = results[pick].world_xfm;
       int hl_group = -1;
       {
         std::lock_guard<std::mutex> lock(state.selection_mutex);
@@ -2262,7 +2305,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
                           use_dbu,
                           gen_->getLogger(),
                           hl_group,
-                          results[pick].world_xfm);
+                          inspected_xfm);
     } else {
       root["can_navigate_back"] = 0;
     }
@@ -2313,7 +2356,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
       // has to keep describing what the user last inspected.
       if (inspected_sel || !context) {
         runDeselectAction(state.current_inspected, inspected_sel);
-        setCurrentInspected(state, inspected_sel);
+        setCurrentInspected(state, inspected_sel, inspected_xfm);
       }
 
       root["selection_count"]
@@ -2631,12 +2674,13 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
     int sel_count = 0;
     int sel_index = -1;
     int hl_group = -1;
+    odb::dbTransform xfm;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       state.hover_rects.clear();
       state.timing_rects.clear();
       state.timing_lines.clear();
-      const odb::dbTransform xfm = inspectedXfm(state, sel);
+      xfm = inspectedXfm(state, sel);
       setSelectionHighlights(state, sel, xfm);
       if (sel) {
         if (state.current_inspected && state.current_inspected != sel) {
@@ -2670,7 +2714,8 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
                         gen_->getLogger(),
                         hl_group,
                         sel_count,
-                        sel_index);
+                        sel_index,
+                        xfm);
     writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -2696,6 +2741,7 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
     int sel_count = 0;
     int sel_index = -1;
     int hl_group = -1;
+    odb::dbTransform xfm;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       state.hover_rects.clear();
@@ -2713,7 +2759,8 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
         sel = state.current_inspected;
       }
 
-      setSelectionHighlights(state, sel, state.current_inspected_xfm);
+      xfm = state.current_inspected_xfm;
+      setSelectionHighlights(state, sel, xfm);
       can_navigate_back = !state.navigation_history.empty();
       sel_count = static_cast<int>(state.selection_set.size());
       sel_index
@@ -2731,7 +2778,8 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
                         gen_->getLogger(),
                         hl_group,
                         sel_count,
-                        sel_index);
+                        sel_index,
+                        xfm);
     writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -2764,6 +2812,7 @@ static WebSocketResponse handleSelectionCycle(
     int sel_count = 0;
     int sel_index = -1;
     int hl_group = -1;
+    odb::dbTransform xfm;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       sel_count = static_cast<int>(state.selection_set.size());
@@ -2793,6 +2842,7 @@ static WebSocketResponse handleSelectionCycle(
       sel_index
           = selectionIteratorPosition(state.selection_set, state.selection_itr);
       hl_group = highlightGroupOfLocked(state, sel);
+      xfm = inspectedXfm(state, sel);
     }
 
     resp.type = WebSocketResponse::kJson;
@@ -2805,7 +2855,8 @@ static WebSocketResponse handleSelectionCycle(
                         logger,
                         hl_group,
                         sel_count,
-                        sel_index);
+                        sel_index,
+                        xfm);
     writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -2930,6 +2981,7 @@ WebSocketResponse SelectHandler::handleSetProperty(const WebSocketRequest& req,
     int sel_count = 0;
     int sel_index = -1;
     int hl_group = -1;
+    odb::dbTransform xfm;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       if (accepted) {
@@ -2947,6 +2999,7 @@ WebSocketResponse SelectHandler::handleSetProperty(const WebSocketRequest& req,
       sel_index
           = selectionIteratorPosition(state.selection_set, state.selection_itr);
       hl_group = highlightGroupOfLocked(state, sel);
+      xfm = inspectedXfm(state, sel);
     }
 
     resp.type = WebSocketResponse::kJson;
@@ -2959,7 +3012,8 @@ WebSocketResponse SelectHandler::handleSetProperty(const WebSocketRequest& req,
                         gen_->getLogger(),
                         hl_group,
                         sel_count,
-                        sel_index);
+                        sel_index,
+                        xfm);
     // After the trailer so the handler error wins over writeInspectPayload's
     // "invalid select_id" default when nothing is inspected.
     root["ok"] = accepted ? 1 : 0;
@@ -3050,6 +3104,7 @@ WebSocketResponse SelectHandler::handleTriggerAction(
     int sel_count = 0;
     int sel_index = -1;
     int hl_group = -1;
+    odb::dbTransform xfm;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       if (deleted) {
@@ -3073,14 +3128,15 @@ WebSocketResponse SelectHandler::handleTriggerAction(
         state.highlight_group_lines.clear();
       } else if (executed && next != sel) {
         runDeselectAction(sel, next);
+        const odb::dbTransform next_xfm = inspectedXfm(state, next);
         if (next) {
           state.navigation_history.push_back(
               {.sel = sel, .xfm = inspectedXfm(state, sel)});
         }
-        setCurrentInspected(state, next);
+        setCurrentInspected(state, next, next_xfm);
         state.selection_itr = state.selection_set.find(next);
         state.hover_rects.clear();
-        setSelectionHighlights(state, next);
+        setSelectionHighlights(state, next, next_xfm);
       } else if (executed) {
         next = sel;  // action kept the selection (e.g. a toggle)
       }
@@ -3090,6 +3146,9 @@ WebSocketResponse SelectHandler::handleTriggerAction(
           = selectionIteratorPosition(state.selection_set, state.selection_itr);
       hl_group
           = highlightGroupOfLocked(state, (deleted || executed) ? next : sel);
+      // After a destroy `sel` dangles; current_inspected is then `next`, so
+      // this never looks inside the destroyed object.
+      xfm = inspectedXfm(state, (deleted || executed) ? next : sel);
     }
 
     resp.type = WebSocketResponse::kJson;
@@ -3104,7 +3163,8 @@ WebSocketResponse SelectHandler::handleTriggerAction(
                         gen_->getLogger(),
                         hl_group,
                         sel_count,
-                        sel_index);
+                        sel_index,
+                        xfm);
     if (executed && !next) {
       // The action deselected (e.g. Delete): an empty payload with no
       // "error" clears the client inspector.
@@ -3175,6 +3235,7 @@ WebSocketResponse SelectHandler::handleHighlight(const WebSocketRequest& req,
     int sel_count = 0;
     int sel_index = -1;
     int hl_group = -1;
+    odb::dbTransform xfm;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       if (ok) {
@@ -3187,6 +3248,7 @@ WebSocketResponse SelectHandler::handleHighlight(const WebSocketRequest& req,
       sel_index
           = selectionIteratorPosition(state.selection_set, state.selection_itr);
       hl_group = highlightGroupOfLocked(state, sel);
+      xfm = inspectedXfm(state, sel);
     }
 
     resp.type = WebSocketResponse::kJson;
@@ -3199,7 +3261,8 @@ WebSocketResponse SelectHandler::handleHighlight(const WebSocketRequest& req,
                         gen_->getLogger(),
                         hl_group,
                         sel_count,
-                        sel_index);
+                        sel_index,
+                        xfm);
     root["ok"] = ok ? 1 : 0;
     if (!ok) {
       root["error"] = error;
@@ -3248,6 +3311,7 @@ WebSocketResponse SelectHandler::handleUnhighlight(const WebSocketRequest& req,
     int sel_count = 0;
     int sel_index = -1;
     int hl_group = -1;
+    odb::dbTransform xfm;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       if (ok && removeFromHighlightGroupsLocked(state, sel)) {
@@ -3260,6 +3324,7 @@ WebSocketResponse SelectHandler::handleUnhighlight(const WebSocketRequest& req,
       // On success the object left every group (-1); on the error path it
       // stays put, so report its real group instead of clearing the badge.
       hl_group = ok ? -1 : highlightGroupOfLocked(state, sel);
+      xfm = inspectedXfm(state, sel);
     }
 
     resp.type = WebSocketResponse::kJson;
@@ -3272,7 +3337,8 @@ WebSocketResponse SelectHandler::handleUnhighlight(const WebSocketRequest& req,
                         gen_->getLogger(),
                         hl_group,
                         sel_count,
-                        sel_index);
+                        sel_index,
+                        xfm);
     root["ok"] = ok ? 1 : 0;
     if (!ok) {
       root["error"] = error;
@@ -3444,6 +3510,7 @@ static WebSocketResponse inspectBrowserRow(const WebSocketRequest& req,
     int sel_count = 0;
     int sel_index = -1;
     int hl_group = -1;
+    odb::dbTransform xfm;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       const web::SelectionSet& set
@@ -3467,8 +3534,9 @@ static WebSocketResponse inspectBrowserRow(const WebSocketRequest& req,
             {.sel = state.current_inspected,
              .xfm = state.current_inspected_xfm});
       }
+      xfm = inspectedXfm(state, sel);
       runDeselectAction(state.current_inspected, sel);
-      setCurrentInspected(state, sel);
+      setCurrentInspected(state, sel, xfm);
       state.selection_itr = state.selection_set.find(sel);
       if (browsing_group < 0) {
         // Selection rows behave like Next/Previous: keep every selected
@@ -3477,7 +3545,7 @@ static WebSocketResponse inspectBrowserRow(const WebSocketRequest& req,
       } else {
         // Group rows behave like a link inspect: highlight the object
         // itself (its group color is already visible in the overlay).
-        setSelectionHighlights(state, sel);
+        setSelectionHighlights(state, sel, xfm);
       }
       can_navigate_back = !state.navigation_history.empty();
       sel_count = static_cast<int>(state.selection_set.size());
@@ -3497,7 +3565,8 @@ static WebSocketResponse inspectBrowserRow(const WebSocketRequest& req,
                         logger,
                         hl_group,
                         sel_count,
-                        sel_index);
+                        sel_index,
+                        xfm);
     writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -3726,6 +3795,10 @@ WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
             if (sel.getBBox(bbox)) {
               state.hover_rects.push_back(bbox);
             }
+          }
+          const odb::dbTransform xfm = inspectedXfm(state, sel);
+          for (odb::Rect& rect : state.hover_rects) {
+            xfm.apply(rect);
           }
           count = static_cast<int>(state.hover_rects.size());
           hover_rects = state.hover_rects;
@@ -4194,7 +4267,7 @@ struct GateClass
   // "and"/"nand"/"or"/"nor"/"xor"/"xnor"/"not"/"buf" for simple gates,
   // "aoi"/"oai" for compound and/or-invert gates,
   // "dff"/"dffr"/"dffs" for supported registers, or "" when the cell is not a
-  // recognised schematic gate.
+  // recognized schematic gate.
   std::string kind;
   // Register symbol port id -> real Liberty/dbMTerm pin name.
   std::map<std::string, std::string> ports;
