@@ -37,7 +37,7 @@ class Interconnect3DTest : public tst::Nangate45Fixture
     die_ = getDb()->getChip();
     die_->setWidth(100000);
     die_->setHeight(80000);
-    die_->setThickness(10000);
+    die_->setThickness(die_thickness_);
     auto* master = odb::dbMaster::create(lib_, "BUMP");
     master->setType(odb::dbMasterType::COVER_BUMP);
     master->setWidth(400);
@@ -155,6 +155,9 @@ class Interconnect3DTest : public tst::Nangate45Fixture
     EXPECT_GT(checked, 0);
   }
 
+  // Regions take their Z range from the thickness at creation, so this must
+  // be set before SetUp() runs.
+  int die_thickness_ = 10000;
   odb::dbChip* die_ = nullptr;
   odb::dbChip* group_ = nullptr;
   odb::dbChip* root_ = nullptr;
@@ -237,6 +240,49 @@ TEST_F(Interconnect3DTest, EmptyTechResponseOmitsDatabaseUnits)
   EXPECT_FALSE(tech.contains("dbu_per_micron"));
   EXPECT_EQ(tech.at("block_name").as_string(), "");
   EXPECT_TRUE(tech.at("chiplets").as_array().empty());
+}
+
+class ZeroThicknessInterconnect3DTest : public Interconnect3DTest
+{
+ protected:
+  void SetUp() override
+  {
+    die_thickness_ = 0;
+    Interconnect3DTest::SetUp();
+  }
+};
+
+TEST_F(ZeroThicknessInterconnect3DTest, BumpsSitOnTheDrawnBody)
+{
+  const auto result = data();
+  const auto& chips = result.at("chiplets").as_array();
+  const auto& bumps = result.at("bumps").as_array();
+  ASSERT_EQ(bumps.size(), 12);
+  int bottom = 0;
+  int top = 0;
+  int center = 0;
+  for (const auto& value : bumps) {
+    const auto& bump = value.as_array();
+    const auto& chip = chips[bump[0].to_number<size_t>()].as_object();
+    const int z = chip.at("z").to_number<int>();
+    const int thickness = chip.at("thickness").to_number<int>();
+    ASSERT_GT(thickness, 0);
+    const int bump_z = bump[5].to_number<int>();
+    if (bump_z == z) {
+      ++bottom;
+    } else if (bump_z == z + thickness) {
+      ++top;
+    } else if (bump_z == z + thickness / 2) {
+      ++center;
+    } else {
+      ADD_FAILURE() << "bump at z " << bump_z << " is off the body [" << z
+                    << ", " << z + thickness << "]";
+    }
+  }
+  // Per occurrence: one FRONT, one BACK, and one INTERNAL placed bump.
+  EXPECT_EQ(bottom, 4);
+  EXPECT_EQ(top, 4);
+  EXPECT_EQ(center, 4);
 }
 
 TEST_F(Interconnect3DTest, MatchesODBGeometryAcrossRepeatedRotatedFlippedChips)

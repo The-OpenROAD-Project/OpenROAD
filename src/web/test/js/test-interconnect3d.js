@@ -76,7 +76,6 @@ function widget() {
     _showLinks: true,
     _showChipBodies: true,
     _chipletMeshes: [],
-    _chipletStackOffsets: [],
     _designGroup: new THREE.Group(),
     _hideTooltip() {},
     render() {},
@@ -194,7 +193,7 @@ it('initial scene build and reset fit actual rendered bounds including stacking'
     {name: 'a', x: -500, y: 20, z: 30, width: 2000, height: 50, thickness: 60},
     {name: 'b', x: -400, y: 20, z: 30, width: 1000, height: 50, thickness: 90},
   ]});
-  assert.ok(value._chipletStackOffsets.some(offset => offset > 0));
+  assert.ok(value._chipletMeshes.some(m => m.stackOffset > 0));
   assertFits(value);
   value._distance *= 0.2;
   value._panX = 100;

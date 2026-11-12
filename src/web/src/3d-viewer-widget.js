@@ -544,15 +544,7 @@ export class ThreeDViewerWidget {
     }
 
     if (this._designGroup) {
-      while (this._designGroup.children.length > 0) {
-        const child = this._designGroup.children[0];
-        this._designGroup.remove(child);
-        if (child.isInstancedMesh) child.dispose();
-        if (child.geometry)
-          child.geometry.dispose();
-        if (child.material && !child.material._shared)
-          child.material.dispose();
-      }
+      this._clearScene();
     }
 
     if (this._edgeMaterial) {
@@ -808,7 +800,6 @@ export class ThreeDViewerWidget {
         ? new Array(chiplets.length).fill(0)
         : computeZOffsetSlots(chiplets);
 
-    this._chipletStackOffsets = [];
     chiplets.forEach((chiplet, idx) => {
       const width = chiplet.width / dbu;
       const height = chiplet.height / dbu;
@@ -829,13 +820,13 @@ export class ThreeDViewerWidget {
       const cx = (chiplet.x / dbu) + width / 2;
       const cy = (chiplet.y / dbu) + height / 2;
       const stackGap = depth * kStackGapFactor;
-      const cz = ((chiplet.z / dbu) * kZScale) + depth / 2 +
-                 zOffsets[idx] * (depth + stackGap);
-      this._chipletStackOffsets[idx] = zOffsets[idx] * (depth + stackGap);
+      const stackOffset = zOffsets[idx] * (depth + stackGap);
+      const cz = ((chiplet.z / dbu) * kZScale) + depth / 2 + stackOffset;
 
       mesh.position.set(cx, cy, cz);
       this._designGroup.add(mesh);
-      this._chipletMeshes.push({mesh, data : chiplet, color : colorHex});
+      this._chipletMeshes.push(
+          {mesh, data : chiplet, color : colorHex, stackOffset});
 
       const edges = new THREE.EdgesGeometry(geometry);
       const line = new THREE.LineSegments(edges, this._edgeMaterial);
@@ -855,7 +846,8 @@ export class ThreeDViewerWidget {
 
   _buildInterconnects(data, dbu) {
     this._interconnectMeshes = createInterconnectMeshes(
-        data, this._chipletStackOffsets, dbu, kZScale, THREE);
+        data, this._chipletMeshes.map((m) => m.stackOffset), dbu, kZScale,
+        THREE);
     for (const mesh of Object.values(this._interconnectMeshes)) {
       if (mesh) this._designGroup.add(mesh);
     }
@@ -901,14 +893,12 @@ export class ThreeDViewerWidget {
   // Given a DRC point (z, cx, cy) in DBU, return the extra Z displacement
   // applied to the chiplet it belongs to (due to stacking in buildScene), so
   // that highlights land on the rendered chiplet, not its nominal z.
-  _stackOffsetForPoint(z, cx, cy, dbu) {
-    for (const {mesh, data: chiplet} of this._chipletMeshes) {
+  _stackOffsetForPoint(z, cx, cy) {
+    for (const {data: chiplet, stackOffset} of this._chipletMeshes) {
       if (z !== chiplet.z) continue;
       if (cx < chiplet.x || cx > chiplet.x + chiplet.width) continue;
       if (cy < chiplet.y || cy > chiplet.y + chiplet.height) continue;
-      const chipDepth = (chiplet.thickness / dbu) * kZScale;
-      const originalCZ = ((chiplet.z / dbu) * kZScale) + chipDepth / 2;
-      return mesh.position.z - originalCZ;
+      return stackOffset;
     }
     return 0;
   }
@@ -999,8 +989,8 @@ export class ThreeDViewerWidget {
           currentZMin = (z1 / dbu) * kZScale;
           const z2Scaled = (z2 / dbu) * kZScale;
           currentDepth = Math.max(z2Scaled - currentZMin, 0.001);
-          czOffset = this._stackOffsetForPoint(
-              z1, (x1 + x2) / 2, (y1 + y2) / 2, dbu);
+          czOffset =
+              this._stackOffsetForPoint(z1, (x1 + x2) / 2, (y1 + y2) / 2);
         }
         const cx = (x1 / dbu) + width / 2;
         const cy = (y1 / dbu) + height / 2;
