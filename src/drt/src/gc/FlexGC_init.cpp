@@ -21,6 +21,7 @@
 #include "db/obj/frFig.h"
 #include "db/obj/frInstBlockage.h"
 #include "db/obj/frInstTerm.h"
+#include "db/obj/frNet.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frTerm.h"
 #include "db/obj/frVia.h"
@@ -139,6 +140,13 @@ void FlexGCWorker::Impl::initObj(const odb::Rect& box,
                                  bool isFixed)
 {
   auto currNet = getNet(obj);
+  if (recordingPAInputs_) {
+    if (isFixed) {
+      paFixedGeometry_.push_back({obj, currNet->getOwner(), layerNum, box});
+    } else {
+      paHasDBRoutes_ = true;
+    }
+  }
   if (getTech()->getLayer(layerNum)->getType() == dbTechLayerType::CUT) {
     currNet->addRectangle(box, layerNum, isFixed);
   } else {
@@ -225,6 +233,10 @@ void FlexGCWorker::Impl::addPAObj(frConnFig* obj, frBlockObject* owner)
     currNet = addNet(owner);
   } else {
     currNet = it->second;
+  }
+
+  if (paDesign_ != nullptr) {
+    paCandidateNets_.insert(currNet);
   }
 
   frLayerNum layerNum;
@@ -1008,18 +1020,91 @@ void FlexGCWorker::Impl::init(const frDesign* design)
 }
 
 // init initializes all nets from frDesign if no drWorker is provided
-void FlexGCWorker::Impl::initPA0(const frDesign* design)
+void FlexGCWorker::Impl::initPA0(const frDesign* design, bool enableReuse)
 {
+  paDesign_ = enableReuse ? design : nullptr;
+  recordingPAInputs_ = enableReuse;
   addNet(design->getTopBlock()->getFakeVSSNet());  //[0] floating VSS
   addNet(design->getTopBlock()->getFakeVDDNet());  //[1] floating VDD
   initDesign(design);
   initDRWorker();
+  recordingPAInputs_ = false;
+  if (enableReuse) {
+    paOriginalOwnerNets_ = owner2nets_;
+    for (const auto& net : nets_) {
+      paOriginalOwners_.push_back(net->getOwner());
+    }
+  }
 }
 
 void FlexGCWorker::Impl::initPA1()
 {
   initNets();
   initRegionQuery();
+  paInitialized_ = true;
+}
+
+bool FlexGCWorker::Impl::hasSamePAFixedGeometry(const Impl& other) const
+{
+  const auto target_owner
+      = [](gcNet* net) { return net == nullptr ? nullptr : net->getOwner(); };
+  return paDesign_ != nullptr && other.paDesign_ != nullptr
+         && !recordingPAInputs_ && !other.recordingPAInputs_ && !paHasDBRoutes_
+         && !other.paHasDBRoutes_ && drWorker_ == nullptr
+         && other.drWorker_ == nullptr && paDesign_ == other.paDesign_
+         && tech_ == other.tech_ && router_cfg_ == other.router_cfg_
+         && target_owner(targetNet_) == target_owner(other.targetNet_)
+         && targetDRNet_ == other.targetDRNet_
+         && targetObjs_ == other.targetObjs_ && ignoreDB_ == other.ignoreDB_
+         && ignoreMinArea_ == other.ignoreMinArea_
+         && ignoreLongSideEOL_ == other.ignoreLongSideEOL_
+         && ignoreCornerSpacing_ == other.ignoreCornerSpacing_
+         && minLayerNum_ == other.minLayerNum_
+         && maxLayerNum_ == other.maxLayerNum_
+         && surgicalFixEnabled_ == other.surgicalFixEnabled_
+         && paOriginalOwners_ == other.paOriginalOwners_
+         && paFixedGeometry_ == other.paFixedGeometry_;
+}
+
+bool FlexGCWorker::Impl::replacePAObjects(
+    const std::vector<std::pair<frConnFig*, frBlockObject*>>& objects)
+{
+  // Validate every owner before mutating reusable fixed context.
+  if (paDesign_ == nullptr || !paInitialized_ || drWorker_ != nullptr
+      || surgicalFixEnabled_ || paHasDBRoutes_
+      || nets_.size() != paOriginalOwners_.size()) {
+    return false;
+  }
+  std::set<gcNet*> touched = paCandidateNets_;
+  for (const auto& [obj, owner] : objects) {
+    const auto it = paOriginalOwnerNets_.find(owner);
+    if (obj == nullptr || it == paOriginalOwnerNets_.end()) {
+      return false;
+    }
+    touched.insert(it->second);
+  }
+  // Region-query entries must go before their owning pins and rectangles.
+  for (auto* net : touched) {
+    rq_.removeFromRegionQuery(net);
+  }
+  clearMarkers();
+  pwires_.clear();
+  for (auto* net : touched) {
+    net->clear();
+  }
+  paCandidateNets_.clear();
+  for (const auto& [obj, owner] : objects) {
+    addPAObj(obj, owner);
+  }
+  // Retain net order when rebuilding both current and former candidate owners.
+  for (const auto& net : nets_) {
+    if (touched.find(net.get()) != touched.end()) {
+      initNet(net.get());
+    }
+  }
+  // Fresh-worker query order preserves deterministic marker contributors.
+  initRegionQuery();
+  return true;
 }
 
 void FlexGCWorker::Impl::updateGCWorker()
