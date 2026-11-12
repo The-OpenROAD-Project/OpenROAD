@@ -5352,13 +5352,9 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
   odb::dbNet* in_net_db = db_network_->findFlatDbNet(in_net);
   // The flat net includes loads beyond the inverter's module segment.
   sta::Net* out_net = db_network_->findFlatNet(out_pin);
-  if (out_net) {
+  if (out_net && !dontTouch(out_net)) {
     std::string inv_name = network_->name(inv);
-    sta::NetTermIterator* term_iter = network_->termIterator(out_net);
-    const bool has_term = term_iter->hasNext();
-    delete term_iter;
-
-    // Collect the loads before insertion rewires the net.
+    // Collect every load, including top-level ports, before editing the net.
     std::vector<sta::Pin*> load_pins;
     sta::NetConnectedPinIterator* load_iter = network_->pinIterator(out_net);
     while (load_iter->hasNext()) {
@@ -5368,50 +5364,24 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
       }
     }
     delete load_iter;
+    sta::NetTermIterator* term_iter = network_->termIterator(out_net);
+    while (term_iter->hasNext()) {
+      load_pins.push_back(network_->pin(term_iter->next()));
+    }
+    delete term_iter;
 
-    if (has_term) {
-      // Keep the original inverter when its output drives a top-level port.
-      // Connect clones through the hierarchy to reach loads in other modules.
-      sta::Instance* parent_inst = db_network_->parent(inv);
-      odb::dbModNet* in_mod_net = db_network_->hierNet(in_pin);
-      for (sta::Pin* load_pin : load_pins) {
-        odb::Point clone_loc = db_network_->location(load_pin);
-        sta::Instance* clone
-            = makeInstance(inv_cell,
-                           inv_name.c_str(),
-                           parent_inst,
-                           clone_loc,
-                           odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
-        journalMakeBuffer(clone);
-        sta::Net* clone_out_net = db_network_->makeNet(parent_inst);
-        odb::dbNet* clone_out_net_db = db_network_->staToDb(clone_out_net);
-        clone_out_net_db->setSigType(in_net_db->getSigType());
-        sta_->connectPin(clone, in_port, in_net);
-        odb::dbITerm* clone_in_iterm
-            = db_network_->flatPin(network_->findPin(clone, in_port));
-        if (in_mod_net) {
-          clone_in_iterm->connect(in_mod_net);
-        }
-        sta_->connectPin(clone, out_port, clone_out_net);
-        odb::dbITerm* load_iterm = db_network_->flatPin(load_pin);
-        sta_->disconnectPin(load_pin);
-        if (db_network_->hasHierarchy()) {
-          odb::dbITerm* clone_out_iterm
-              = db_network_->flatPin(network_->findPin(clone, out_port));
-          db_network_->hierarchicalConnect(
-              clone_out_iterm, load_iterm, clone_out_net_db->getConstName());
-        } else {
-          sta_->connectPin(network_->instance(load_pin),
-                           network_->port(load_pin),
-                           clone_out_net);
-        }
+    // A protected load would make insertion fail after earlier loads changed.
+    for (sta::Pin* load_pin : load_pins) {
+      if (dontTouch(load_pin)) {
+        return;
       }
-      return;
     }
 
-    // Insert each clone in its load's module, preserving the existing ports.
+    // Insert each clone at its load, preserving the existing module ports.
     for (sta::Pin* load_pin : load_pins) {
-      odb::Point clone_loc = db_network_->location(load_pin);
+      odb::Point clone_loc = network_->isTopLevelPort(load_pin)
+                                 ? db_network_->location(out_pin)
+                                 : db_network_->location(load_pin);
       sta::Instance* clone = insertBufferBeforeLoad(
           load_pin,
           inv_cell,

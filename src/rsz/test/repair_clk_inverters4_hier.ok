@@ -12,9 +12,9 @@ Driver pins
  clk input port
 
 Load pins
- m1/c1/A input (INV_X1) 1.55-1.70
- m1/c1_1/A input (INV_X1) 1.55-1.70 (2, 1)
- m1/c1_2/A input (INV_X1) 1.55-1.70 (2, 1)
+ c1_3/A input (INV_X1) 1.55-1.70 (0, 1)
+ m1/u_regs/c1_1/A input (INV_X1) 1.55-1.70 (2, 1)
+ m1/u_regs/c1_2/A input (INV_X1) 1.55-1.70 (2, 1)
 
 module top (clk,
     clk_n_o,
@@ -27,10 +27,13 @@ module top (clk,
  output q1;
  output q2;
 
+ wire net3;
 
+ INV_X1 c1_3 (.A(net3),
+    .ZN(clk_n_o));
  mid m1 (.clk_in(clk),
     .d(d),
-    .clk_n_out(clk_n_o),
+    .clk_n_out(net3),
     .q1(q1),
     .q2(q2));
 endmodule
@@ -45,37 +48,33 @@ module mid (clk_in,
  output q1;
  output q2;
 
- wire net3_4;
- wire net1_2;
 
- INV_X1 c1 (.A(clk_in),
-    .ZN(clk_n_out));
- INV_X1 c1_1 (.A(clk_in),
-    .ZN(net1_2));
- INV_X1 c1_2 (.A(clk_in),
-    .ZN(net3_4));
- regs u_regs (.net3_i(net3_4),
-    .net1_i(net1_2),
+ regs u_regs (.ck(clk_in),
     .d(d),
     .q1(q1),
     .q2(q2));
+ assign clk_n_out = clk_in;
 endmodule
-module regs (net3_i,
-    net1_i,
+module regs (ck,
     d,
     q1,
     q2);
- input net3_i;
- input net1_i;
+ input ck;
  input d;
  output q1;
  output q2;
 
+ wire net_1;
+ wire net_2;
 
+ INV_X1 c1_1 (.A(ck),
+    .ZN(net_1));
+ INV_X1 c1_2 (.A(ck),
+    .ZN(net_2));
  DFF_X1 r1 (.D(d),
-    .CK(net3_i),
+    .CK(net_2),
     .Q(q1));
  DFF_X1 r2 (.D(d),
-    .CK(net1_i),
+    .CK(net_1),
     .Q(q2));
 endmodule
