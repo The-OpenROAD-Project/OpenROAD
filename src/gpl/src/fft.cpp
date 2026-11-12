@@ -85,7 +85,7 @@ CpuFftBackend::CpuFftBackend(int bin_cnt_x,
 
   for (int i = 0; i < bin_cnt_y_; i++) {
     wy_[i] = kPi * static_cast<float>(i) / static_cast<float>(bin_cnt_y_)
-             * bin_size_y / bin_size_x;
+             * bin_size_x / bin_size_y;
     wy_square_[i] = wy_[i] * wy_[i];
   }
 }

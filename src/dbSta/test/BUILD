@@ -28,8 +28,10 @@ ALL_TESTS = [
     "3dic_cross",
     "3dic_get_cells",
     "3dic_read_db",
+    "3dic_spef",
     "block_sta1",
     "check_axioms",
+    "check_ip_multilayer_alignment",
     "clock_pin",
     "constant1",
     "dont_touch_attr",
@@ -93,6 +95,7 @@ ALL_TESTS = [
     "supply_port_graph",
     "tcl_unknown_handler",
     "write_sdc1",
+    "write_spef_hier_inst_name",
     "write_verilog1",
     "write_verilog10",
     "write_verilog2",
@@ -131,6 +134,20 @@ filegroup(
     ],
 )
 
+# The two-chiplet 3DIC fixture, shared by every test that reads 3dic_cross.3dbx.
+# 3dic_cross itself omits the .3dbx because its own test_name + ".*" glob
+# already picks it up.
+_3DIC_CROSS_FIXTURES = [
+    "//src/odb/test:regression_resources",
+    "3dic_cross.3dbx",
+    "3dic_cross_flop.3dbv",
+    "3dic_cross_flop_a.bmap",
+    "3dic_cross_flop_a.def",
+    "3dic_cross_flop_b.bmap",
+    "3dic_cross_flop_b.def",
+    "3dic_cross_top.v",
+]
+
 [
     filegroup(
         name = test_name + "_resources",
@@ -151,17 +168,10 @@ filegroup(
             "3dic_get_cells": [
                 "//src/odb/test:regression_resources",
             ],
-            "3dic_read_db": [
-                "//src/odb/test:regression_resources",
-                "3dic_cross.3dbx",
-                "3dic_cross_flop.3dbv",
-                "3dic_cross_flop_a.bmap",
-                "3dic_cross_flop_a.def",
-                "3dic_cross_flop_b.bmap",
-                "3dic_cross_flop_b.def",
-                "3dic_cross_top.v",
+            "3dic_read_db": _3DIC_CROSS_FIXTURES + [
                 "3dic_read_db_reload.tcl",
             ],
+            "3dic_spef": _3DIC_CROSS_FIXTURES,
             "block_sta1": [
                 "example1_typ.lib",
                 "example1.def",
@@ -327,6 +337,10 @@ filegroup(
             "write_sdc1": [
                 "hier1.sdc",
                 "hier1.v",
+            ],
+            "write_spef_hier_inst_name": [
+                "escape_slash_hier.def",
+                "escape_slash_hier.v",
             ],
             "write_verilog1": [
                 "reg1.def",

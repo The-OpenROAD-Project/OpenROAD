@@ -446,7 +446,9 @@ class frPathSeg : public frShape
         end_(in.end_),
         layer_(in.layer_),
         style_(in.style_),
-        tapered_(in.tapered_)
+        tapered_(in.tapered_),
+        is_ap_pathseg_(in.is_ap_pathseg_),
+        ap_loc_(in.ap_loc_)
   {
   }
   frPathSeg(const drPathSeg& in);

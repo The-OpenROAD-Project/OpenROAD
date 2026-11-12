@@ -33,15 +33,149 @@
 namespace dft {
 
 namespace {
-// Checks the ports
+// Binds each state variable of a non-scan cell to the state variable that
+// holds the same role in a scan cell.
+using StatePortMap
+    = std::unordered_map<const sta::LibertyPort*, const sta::LibertyPort*>;
+
+// Returns true if scan_port is a scan cell state variable bound in
+// state_ports.
+bool IsBoundScanStatePort(const sta::LibertyPort* scan_port,
+                          const StatePortMap& state_ports)
+{
+  return std::ranges::any_of(state_ports, [scan_port](const auto& binding) {
+    return binding.second == scan_port;
+  });
+}
+
+// Structural function equivalence where references to state variables are
+// compared through their binding rather than by name.
+bool FuncEquiv(const sta::FuncExpr* non_scan_expr,
+               const sta::FuncExpr* scan_expr,
+               const StatePortMap& state_ports)
+{
+  if (non_scan_expr == nullptr || scan_expr == nullptr) {
+    return non_scan_expr == scan_expr;
+  }
+  if (non_scan_expr->op() != scan_expr->op()) {
+    return false;
+  }
+  switch (non_scan_expr->op()) {
+    case sta::FuncExpr::Op::port: {
+      const sta::LibertyPort* non_scan_port = non_scan_expr->port();
+      const sta::LibertyPort* scan_port = scan_expr->port();
+      if (auto it = state_ports.find(non_scan_port); it != state_ports.end()) {
+        return it->second == scan_port;
+      }
+      return !IsBoundScanStatePort(scan_port, state_ports)
+             && sta::LibertyPort::equiv(non_scan_port, scan_port);
+    }
+    case sta::FuncExpr::Op::not_:
+      return FuncEquiv(non_scan_expr->left(), scan_expr->left(), state_ports);
+    default:
+      return FuncEquiv(non_scan_expr->left(), scan_expr->left(), state_ports)
+             && FuncEquiv(
+                 non_scan_expr->right(), scan_expr->right(), state_ports);
+  }
+}
+
+// Binds the state variables of from_seqs to those of to_seqs by position: the
+// first variable of the i-th ff or latch group to the first variable of the
+// i-th group, and likewise for the second (inverted) variable. Returns false
+// when the groups do not line up.
+bool BindSequentialOutputs(const sta::SequentialSeq& from_seqs,
+                           const sta::SequentialSeq& to_seqs,
+                           StatePortMap& state_ports)
+{
+  if (from_seqs.size() != to_seqs.size()) {
+    return false;
+  }
+  const auto bind = [&state_ports](const sta::LibertyPort* from,
+                                   const sta::LibertyPort* to) {
+    if ((from == nullptr) != (to == nullptr)) {
+      return false;
+    }
+    if (from) {
+      state_ports[from] = to;
+    }
+    return true;
+  };
+  for (size_t i = 0; i < from_seqs.size(); ++i) {
+    const sta::Sequential& from_seq = from_seqs[i];
+    const sta::Sequential& to_seq = to_seqs[i];
+    if (from_seq.isRegister() != to_seq.isRegister()
+        || !bind(from_seq.output(), to_seq.output())
+        || !bind(from_seq.outputInv(), to_seq.outputInv())) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// State variable names (e.g. IQ and IQ_N in ff(IQ, IQ_N)) are local to each
+// cell, so the non-scan cell's state variables are bound to the scan cell's
+// by position (see BindSequentialOutputs). The binding only holds if each
+// pair of groups behaves the same:
+// - clock (clocked_on / enable), clear and preset functions and the
+//   clear-and-preset output values match the scan cell's;
+// - next_state matches the scan cell's test_cell, which describes the cell
+//   with scan disabled. The scan cell's own next_state includes the scan mux.
+//   Comparing it catches a scan cell that stores the inverted data, e.g.
+//   next_state "!D" in the test_cell against "D".
+// Returns false when no such binding exists.
+bool BindStatePorts(const sta::LibertyCell* non_scan_cell,
+                    const sta::LibertyCell* scan_cell,
+                    StatePortMap& state_ports)
+{
+  const sta::SequentialSeq& non_scan_seqs = non_scan_cell->sequentials();
+  const sta::SequentialSeq& scan_seqs = scan_cell->sequentials();
+  if (!BindSequentialOutputs(non_scan_seqs, scan_seqs, state_ports)) {
+    return false;
+  }
+  for (size_t i = 0; i < non_scan_seqs.size(); ++i) {
+    const sta::Sequential& non_scan_seq = non_scan_seqs[i];
+    const sta::Sequential& scan_seq = scan_seqs[i];
+    if (!FuncEquiv(non_scan_seq.clock(), scan_seq.clock(), state_ports)
+        || !FuncEquiv(non_scan_seq.clear(), scan_seq.clear(), state_ports)
+        || !FuncEquiv(non_scan_seq.preset(), scan_seq.preset(), state_ports)
+        || non_scan_seq.clearPresetOutput() != scan_seq.clearPresetOutput()
+        || non_scan_seq.clearPresetOutputInv()
+               != scan_seq.clearPresetOutputInv()) {
+      return false;
+    }
+  }
+
+  const sta::TestCell* test_cell = scan_cell->testCell();
+  if (!test_cell) {
+    return false;
+  }
+  const sta::SequentialSeq& test_seqs = test_cell->sequentials();
+  StatePortMap test_state_ports;
+  if (!BindSequentialOutputs(non_scan_seqs, test_seqs, test_state_ports)) {
+    return false;
+  }
+  for (size_t i = 0; i < non_scan_seqs.size(); ++i) {
+    if (!FuncEquiv(
+            non_scan_seqs[i].data(), test_seqs[i].data(), test_state_ports)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Finds the scan cell port equivalent to a non-scan cell signal port. Bound
+// state variables are not signal ports: BindStatePorts has already matched
+// them, so they are skipped on both sides.
 sta::LibertyPort* FindEquivalentPortInScanCell(
     const sta::LibertyPort* non_scan_cell_port,
-    const sta::LibertyCell* scan_cell)
+    const sta::LibertyCell* scan_cell,
+    const StatePortMap& state_ports)
 {
   sta::LibertyCellPortIterator scan_cell_ports_iter(scan_cell);
   while (scan_cell_ports_iter.hasNext()) {
     sta::LibertyPort* scan_cell_port = scan_cell_ports_iter.next();
-    if (scan_cell_port->isPwrGnd()) {
+    if (scan_cell_port->isPwrGnd()
+        || IsBoundScanStatePort(scan_cell_port, state_ports)) {
       continue;
     }
     bool port_equiv
@@ -53,8 +187,9 @@ sta::LibertyPort* FindEquivalentPortInScanCell(
           = port_equiv && non_scan_cell_port->name() == scan_cell_port->name();
     } else {
       port_equiv = port_equiv
-                   && sta::FuncExpr::equiv(non_scan_cell_port->function(),
-                                           scan_cell_port->function());
+                   && FuncEquiv(non_scan_cell_port->function(),
+                                scan_cell_port->function(),
+                                state_ports);
     }
 
     if (port_equiv) {
@@ -95,15 +230,23 @@ bool IsScanEquivalent(
     const sta::LibertyCell* scan_cell,
     std::unordered_map<std::string, std::string>& port_mapping)
 {
+  StatePortMap state_ports;
+  if (!BindStatePorts(non_scan_cell, scan_cell, state_ports)) {
+    return false;
+  }
+
   std::set<sta::LibertyPort*> seen_on_scan_cell;
   sta::LibertyCellPortIterator non_scan_cell_ports_iter(non_scan_cell);
   while (non_scan_cell_ports_iter.hasNext()) {
     sta::LibertyPort* non_scan_cell_port = non_scan_cell_ports_iter.next();
-    if (non_scan_cell_port->isPwrGnd()) {
+    // Bound state variables were matched by BindStatePorts and have no pins
+    // to reconnect, so they stay out of port_mapping.
+    if (non_scan_cell_port->isPwrGnd()
+        || state_ports.contains(non_scan_cell_port)) {
       continue;
     }
-    sta::LibertyPort* scan_equiv_port
-        = FindEquivalentPortInScanCell(non_scan_cell_port, scan_cell);
+    sta::LibertyPort* scan_equiv_port = FindEquivalentPortInScanCell(
+        non_scan_cell_port, scan_cell, state_ports);
     if (!scan_equiv_port) {
       return false;
     }
@@ -135,7 +278,8 @@ bool IsScanEquivalent(
   sta::LibertyCellPortIterator scan_cell_ports_iter(scan_cell);
   while (scan_cell_ports_iter.hasNext()) {
     sta::LibertyPort* scan_cell_port = scan_cell_ports_iter.next();
-    if (scan_cell_port->isPwrGnd()) {
+    if (scan_cell_port->isPwrGnd()
+        || IsBoundScanStatePort(scan_cell_port, state_ports)) {
       continue;
     }
     if (seen_on_scan_cell.find(scan_cell_port) != seen_on_scan_cell.end()) {
@@ -224,8 +368,11 @@ double RelativeDriveResistanceDiff(const sta::LibertyPort* non_scan_out,
       it != port_mapping.end()) {
     scan_out = scan_cell->findLibertyPort(it->second.c_str());
   }
-  if (!scan_out) {
-    scan_out = FindEquivalentPortInScanCell(non_scan_out, scan_cell);
+  StatePortMap state_ports;
+  if (!scan_out
+      && BindStatePorts(non_scan_out->libertyCell(), scan_cell, state_ports)) {
+    scan_out
+        = FindEquivalentPortInScanCell(non_scan_out, scan_cell, state_ports);
   }
   if (!scan_out) {
     scan_out = scan_cell->findLibertyPort(non_scan_out->name());
@@ -594,7 +741,7 @@ void ScanReplace::scanReplace(odb::dbBlock* block)
     odb::dbMaster* master_scan_cell = db_network_->staToDb(scan_cell);
 
     odb::dbInst* new_cell = utils::ReplaceCell(
-        block, inst, master_scan_cell, scan_candidate->getPortMapping());
+        sta_, block, inst, master_scan_cell, scan_candidate->getPortMapping());
 
     already_replaced.insert(new_cell);
     addCellForRollback(master, master_scan_cell, scan_candidate);
@@ -637,7 +784,8 @@ void ScanReplace::rollbackScanReplace(odb::dbBlock* block)
     }
 
     RollbackCandidate& rollback_candidate = *found->second;
-    utils::ReplaceCell(block,
+    utils::ReplaceCell(sta_,
+                       block,
                        inst,
                        rollback_candidate.getMaster(),
                        rollback_candidate.getPortMapping());

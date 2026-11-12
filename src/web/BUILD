@@ -245,7 +245,6 @@ cc_library(
         "src/web_assets.h",
     ],
     copts = [
-        "-DBOOST_ASIO_NO_DEPRECATED",
         "-DBOOST_JSON_HEADER_ONLY",
     ],
     includes = [

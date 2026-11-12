@@ -64,16 +64,14 @@ void WriteAll(FILE* file, std::span<const uint8_t> data, Logger* logger)
   while (total_written < data.size()) {
     size_t this_size = data.size() - total_written;
     size_t written = fwrite(data.data() + total_written, 1, this_size, file);
-    if (written == 0) {
-      if (ferror(file)) {
-        std::string error = strerror(errno);
-        logger->error(UTL,
-                      4,
-                      "error writing {} bytes from file at offset {}: {}",
-                      this_size,
-                      total_written,
-                      error);
-      }
+    if (written == 0 && ferror(file)) {
+      std::string error = strerror(errno);
+      logger->error(UTL,
+                    4,
+                    "error writing {} bytes from file at offset {}: {}",
+                    this_size,
+                    total_written,
+                    error);
     }
     total_written += written;
   }

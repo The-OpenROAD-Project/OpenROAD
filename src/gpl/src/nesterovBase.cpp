@@ -1824,6 +1824,22 @@ void NesterovBaseCommon::fixPointers()
         if (isValidSigType(iterm->getSigType())) {
           auto it = db_iterm_to_index_map_.find(iterm);
           if (it != db_iterm_to_index_map_.end()) {
+            // Like the initial netlist, a gcell only has pins on nets with
+            // a GNet. The resizer only buffers nets that gpl places, so a
+            // new pin on any other net breaks that agreement.
+            odb::dbNet* db_net = iterm->getNet();
+            if (db_net == nullptr) {
+              continue;
+            }
+            if (!db_net_to_index_map_.contains(db_net)) {
+              log_->error(GPL,
+                          335,
+                          "Pin {} is on net {} ({}), which global placement "
+                          "does not place.",
+                          iterm->getName(),
+                          db_net->getName(),
+                          db_net->getSigType().getString());
+            }
             size_t gpin_index = it->second;
             gCell.addGPin(&gPinStor_[gpin_index]);
           } else {
@@ -3581,6 +3597,8 @@ void NesterovBase::resetMinSumOverflow()
   // reset the divergence detect conditions
   minSumOverflow_ = 1e30;
   hpwlWithMinSumOverflow_ = 1e30;
+  prev_reported_overflow_unscaled_ = 0;
+  prev_reported_hpwl_ = 0;
 }
 
 float NesterovBase::getPhiCoef(float scaledDiffHpwl) const
@@ -3594,6 +3612,24 @@ float NesterovBase::getPhiCoef(float scaledDiffHpwl) const
                             * pow(nbVars_.maxPhiCoef, scaledDiffHpwl * -1.0);
   retCoef = std::max(nbVars_.minPhiCoef, retCoef);
   return retCoef;
+}
+
+float NesterovBase::getOverflowDenominator(const int iter) const
+{
+  // In a macro dominated design like mock-array you may be placing
+  // very few std cells in a sea of fixed macros.  The overflow denominator
+  // may be quite small and prevent convergence.  This is mostly due
+  // to our limited ability to move instances off macros cleanly.  As that
+  // improves this should no longer be needed.
+  const float fractionOfMaxIters
+      = static_cast<float>(iter) / npVars_->maxNesterovIter;
+  return std::max(static_cast<float>(getNesterovInstsArea()),
+                  fractionOfMaxIters * pb_->nonPlaceInstsArea() * 0.05f);
+}
+
+float NesterovBase::getCurrentSumOverflowUnscaled(const int iter) const
+{
+  return getOverflowAreaUnscaled() / getOverflowDenominator(iter);
 }
 
 void NesterovBase::updateNextIter(const int iter)
@@ -3637,16 +3673,7 @@ void NesterovBase::updateNextIter(const int iter)
   }
 #endif
 
-  // In a macro dominated design like mock-array you may be placing
-  // very few std cells in a sea of fixed macros.  The overflow denominator
-  // may be quite small and prevent convergence.  This is mostly due
-  // to our limited ability to move instances off macros cleanly.  As that
-  // improves this should no longer be needed.
-  const float fractionOfMaxIters
-      = static_cast<float>(iter) / npVars_->maxNesterovIter;
-  const float overflowDenominator
-      = std::max(static_cast<float>(getNesterovInstsArea()),
-                 fractionOfMaxIters * pb_->nonPlaceInstsArea() * 0.05f);
+  const float overflowDenominator = getOverflowDenominator(iter);
 
   sum_overflow_ = getOverflowArea() / overflowDenominator;
   sum_overflow_unscaled_ = getOverflowAreaUnscaled() / overflowDenominator;
@@ -3741,6 +3768,12 @@ bool NesterovBase::nesterovUpdateStepLength()
       curSLPCoordi_, curSLPSumGrads_, nextSLPCoordi_, nextSLPSumGrads_);
 
   debugPrint(log_, GPL, "np", 1, "NewStepLength: {:g}", newStepLength);
+
+  if (gradDistance_ == 0.0f && coordiDistance_ > 0.0f) {
+    // A sub-DBU step can leave integer-truncated gradients unchanged; keep
+    // stepLength_ and accept the step instead of flagging 1/0 as divergence.
+    return false;
+  }
 
   if (std::isnan(newStepLength) || std::isinf(newStepLength)) {
     isDiverged_ = true;

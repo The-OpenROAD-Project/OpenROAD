@@ -275,10 +275,7 @@ std::vector<std::unique_ptr<MoveCandidate>> SplitLoadMtGenerator::generate(
   }
 
   candidates.push_back(std::make_unique<SplitLoadMtCandidate>(
-      resizer_,
-      target,
-      target.split_load_input,
-      policy_config_.split_load_mt_score_scale));
+      resizer_, target, target.split_load_input));
   return candidates;
 }
 

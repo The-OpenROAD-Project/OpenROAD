@@ -23,6 +23,7 @@ using gpl::Replace;
 %}
 
 %include "typemaps.i"
+%include "stdint.i"
 %include "std_vector.i"
 %include "../../Exception-py.i"
 %include "gpl/Replace.h"
@@ -32,4 +33,5 @@ namespace std {
 #define SWIG_VECTOR_INT
     %template(IntVector) vector<int>;
 #endif
+    %template(PlaceIterationVector) vector<gpl::PlaceIteration>;
 }

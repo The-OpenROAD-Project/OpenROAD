@@ -43,7 +43,7 @@ void importTargets(Graph& g, sta::Network* network, utl::Logger* logger)
       if (port->isPwrGnd()) {
         continue;
       }
-      sta::PortDirection* dir = port->direction();
+      const sta::PortDirection* dir = port->direction();
       if (dir->isInput()) {
         lib_input_offset[port->name()] = lib_input_width;
         lib_input_width += port->size();
