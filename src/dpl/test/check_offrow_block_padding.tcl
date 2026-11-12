@@ -40,4 +40,4 @@ offrow_scenario "padded cell next to an off-site block" \
 offrow_scenario "padded cell one site clear of an off-site block" \
   {2050 2800} {12400 2800} R0 pass
 
-#exit_summary
+exit_summary
