@@ -3,6 +3,13 @@
 
 #pragma once
 
+#include <vector>
+
+namespace odb {
+class dbInst;
+class Point;
+}  // namespace odb
+
 namespace drt {
 
 // Service interface published by the detailed router. Consumers look
@@ -12,6 +19,18 @@ class PinAccessService
 {
  public:
   virtual ~PinAccessService() = default;
+
+  // Successful full pin access is available for the current live block.
+  virtual bool hasPinAccess() const = 0;
+  // Check required pins at the candidate lower-left without changing state.
+  // Tests native PA escapes and signal-pin supply overlap, not full placement
+  // DRC.
+  virtual bool hasUsablePinAccess(odb::dbInst* inst,
+                                  const odb::Point& candidate_location) const
+      = 0;
+  // Return failures at current lower-left locations, preserving input order.
+  virtual std::vector<odb::dbInst*> findPinAccessFailures(
+      const std::vector<odb::dbInst*>& instances) const = 0;
 
   // Recompute pin access for any instances that have become dirty.
   virtual void updateDirtyPinAccess() = 0;

@@ -127,12 +127,23 @@ class FlexPA
   void addToInstsSet(frInst* inst);
 
   int main();
+  bool hasUsablePinAccess(odb::dbInst* inst,
+                          const odb::Point& candidate_location);
+  std::unique_ptr<FlexPA> makeQueryWorker() const;
 
  private:
+  bool signalPinsOverlapSupply(frInst* candidate);
+
   frDesign* design_;
   utl::Logger* logger_;
   dst::Distributed* dist_;
   RouterConfiguration* router_cfg_;
+
+  struct QueryContext
+  {
+    frInst* source;
+  };
+  QueryContext* query_ = nullptr;
 
   std::unique_ptr<AbstractPAGraphics> graphics_;
   std::string debugPinName_;
@@ -219,6 +230,11 @@ class FlexPA
    */
   template <typename T>
   int genPinAccess(T* pin, frInstTerm* inst_term = nullptr);
+
+  template <typename T>
+  std::vector<std::unique_ptr<frAccessPoint>> generatePinAccess(
+      T* pin,
+      frInstTerm* inst_term);
 
   /**
    * @brief determines if the current access points are enough to say PA is done

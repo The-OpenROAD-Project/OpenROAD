@@ -156,6 +156,8 @@ class FlexGCWorker::Impl
 
   // for pin prep
   std::set<frBlockObject*> targetObjs_;
+  frInst* replacement_source_ = nullptr;
+  frInst* replacement_candidate_ = nullptr;
   bool ignoreDB_;
   bool ignoreMinArea_;
   bool ignoreLongSideEOL_;
