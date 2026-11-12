@@ -33,6 +33,8 @@ class TestSnapper : public MplTest
     site->setWidth(site_width);
     site->setHeight(site_height);
     site->setClass(odb::dbSiteClass::CORE);
+    db_->getChip()->getBlock()->setCoreArea(
+        odb::Rect(x, y, die_width_, die_height_));
     odb::dbRow::create(db_->getChip()->getBlock(),
                        "row",
                        site,
@@ -667,6 +669,84 @@ TEST_F(TestSnapper, SiteGridFallsBackToTracks)
   EXPECT_EQ(macro->getOrigin().x(), 1512);
   // Same result as the track-grid snap from 1500 (see SingleLayer)
   EXPECT_EQ(macro->getOrigin().y(), 1523);
+}
+
+// Skips the nearest site when it would push the macro out of the core
+TEST_F(TestSnapper, SiteGridKeepsMacroInCore)
+{
+  db_->getTech()->setManufacturingGrid(1);
+  createCoreRow(100, 200, 0, 0);
+
+  odb::dbMaster* macro_master
+      = odb::dbMaster::create(db_->findLib("lib"), "macro_master");
+  macro_master->setHeight(10000);
+  macro_master->setWidth(10000);
+  macro_master->setType(odb::dbMasterType::BLOCK);
+  macro_master->setFrozen();
+
+  odb::dbInst* macro
+      = odb::dbInst::create(db_->getChip()->getBlock(), macro_master, "macro");
+  macro->setOrigin(1000, die_height_ - 10000 + 110);
+  snapper_->setMacro(macro);
+  snapper_->setSnapToSiteGrid(true);
+  snapper_->snapMacro();
+
+  // The nearest site, 490200, would leave the top 200 above the core
+  EXPECT_EQ(macro->getOrigin().y(), 490000);
+}
+
+// Skips the nearest site when the macro would overlap a placed macro there
+TEST_F(TestSnapper, SiteGridAvoidsOverlap)
+{
+  db_->getTech()->setManufacturingGrid(1);
+  createCoreRow(100, 200, 0, 0);
+
+  odb::dbMaster* macro_master
+      = odb::dbMaster::create(db_->findLib("lib"), "macro_master");
+  macro_master->setHeight(10000);
+  macro_master->setWidth(10000);
+  macro_master->setType(odb::dbMasterType::BLOCK);
+  macro_master->setFrozen();
+
+  odb::dbInst* placed
+      = odb::dbInst::create(db_->getChip()->getBlock(), macro_master, "placed");
+  placed->setOrigin(0, 0);
+  placed->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+
+  odb::dbInst* macro
+      = odb::dbInst::create(db_->getChip()->getBlock(), macro_master, "macro");
+  macro->setOrigin(9940, 0);
+  snapper_->setMacro(macro);
+  snapper_->setSnapToSiteGrid(true);
+  snapper_->snapMacro();
+
+  // The nearest site, 9900, overlaps the placed macro that ends at 10000
+  EXPECT_EQ(macro->getOrigin().x(), 10000);
+}
+
+// Skips the nearest site when the macro would overlap a hard blockage there
+TEST_F(TestSnapper, SiteGridAvoidsBlockage)
+{
+  db_->getTech()->setManufacturingGrid(1);
+  createCoreRow(100, 200, 0, 0);
+  odb::dbBlockage::create(db_->getChip()->getBlock(), 0, 0, 10000, 10000);
+
+  odb::dbMaster* macro_master
+      = odb::dbMaster::create(db_->findLib("lib"), "macro_master");
+  macro_master->setHeight(10000);
+  macro_master->setWidth(10000);
+  macro_master->setType(odb::dbMasterType::BLOCK);
+  macro_master->setFrozen();
+
+  odb::dbInst* macro
+      = odb::dbInst::create(db_->getChip()->getBlock(), macro_master, "macro");
+  macro->setOrigin(9940, 0);
+  snapper_->setMacro(macro);
+  snapper_->setSnapToSiteGrid(true);
+  snapper_->snapMacro();
+
+  // The nearest site, 9900, overlaps the blockage that ends at 10000
+  EXPECT_EQ(macro->getOrigin().x(), 10000);
 }
 
 TEST_F(TestSnapper, SiteGridWithoutCoreRows)

@@ -59,6 +59,7 @@ static mpl::MacroPlacerOptions getOptions(
 
   checkFlag(flags, "-keep_clustering_data", options.keep_clustering_data);
   checkFlag(flags, "-pin_aware_channels", options.pin_aware_channels);
+  checkFlag(flags, "-snap_to_site_grid", options.snap_to_site_grid);
 
   return options;
 }
@@ -130,12 +131,18 @@ place_macro(odb::dbInst* inst,
             float y_origin,
             std::string orientation_string,
             bool exact,
-            bool allow_overlap)
+            bool allow_overlap,
+            bool snap_to_site_grid)
 {
   odb::dbOrientType orientation(orientation_string.c_str());
 
-  getMacroPlacer()->placeMacro(
-    inst, x_origin, y_origin, orientation, exact, allow_overlap);
+  getMacroPlacer()->placeMacro(inst,
+                               x_origin,
+                               y_origin,
+                               orientation,
+                               exact,
+                               allow_overlap,
+                               snap_to_site_grid);
 }
 
 void

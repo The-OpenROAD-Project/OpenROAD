@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iterator>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -45,6 +46,7 @@ void Snapper::snapMacro()
 
   if (snap_to_site_grid_) {
     site_grid_ = findSiteGrid();
+    obstacles_ = findObstacles();
     snapToSites(odb::dbTechLayerDir::VERTICAL);
     snapToSites(odb::dbTechLayerDir::HORIZONTAL);
   } else {
@@ -66,27 +68,25 @@ void Snapper::snapToSites(const odb::dbTechLayerDir& target_direction)
 {
   const LayerDataList& layers_data_list = layerDataList(target_direction);
 
-  if (layers_data_list.empty()) {
-    snapToNearestSite(target_direction);
-    return;
-  }
-
   const int total_pins = totalPins(layers_data_list);
   const int pitch = sitePitch(target_direction);
   const int origin = getOrigin(target_direction);
+  const int start = nearestSitePosition(target_direction);
 
-  snapToNearestSite(target_direction);
-  const int start = getOrigin(target_direction);
-
-  int best_position = start;
+  std::optional<int> best_position;
   int best_aligned_pins = 0;
   for (int attempt = 0; attempt <= kSiteSearchAttemptsLimit; attempt++) {
     const int position = start + alternatingOffset(attempt) * pitch;
     setOrigin(position, target_direction);
 
+    if (!isLegalPosition()) {
+      continue;
+    }
+
+    // A macro without pins takes the first legal site.
     const int aligned_pins
         = totalAlignedPins(layers_data_list, target_direction);
-    if (aligned_pins > best_aligned_pins) {
+    if (aligned_pins > best_aligned_pins || aligned_pins == total_pins) {
       best_aligned_pins = aligned_pins;
       best_position = position;
       if (best_aligned_pins == total_pins) {
@@ -95,17 +95,17 @@ void Snapper::snapToSites(const odb::dbTechLayerDir& target_direction)
     }
   }
 
-  if (best_aligned_pins != 0) {
-    setOrigin(best_position, target_direction);
+  if (best_position) {
+    setOrigin(*best_position, target_direction);
     reportUnalignedPins(
         layers_data_list, target_direction, best_aligned_pins, total_pins);
   } else {
     logger_->warn(
         utl::MPL,
         82,
-        "Could not snap {} to the site grid in {}. No site position "
-        "around it aligns any pin with the track-grid. Snapping it "
-        "to the track-grid only.",
+        "Could not snap {} to the site grid in {}. No site position around "
+        "it keeps it inside the core, off other macros and blockages, and "
+        "with pins on the track-grid. Snapping it to the track-grid only.",
         inst_->getName(),
         target_direction == odb::dbTechLayerDir::VERTICAL ? "x" : "y");
 
@@ -114,7 +114,7 @@ void Snapper::snapToSites(const odb::dbTechLayerDir& target_direction)
   }
 }
 
-void Snapper::snapToNearestSite(const odb::dbTechLayerDir& direction)
+int Snapper::nearestSitePosition(const odb::dbTechLayerDir& direction)
 {
   const int grid_origin = direction == odb::dbTechLayerDir::VERTICAL
                               ? site_grid_.origin.x()
@@ -123,7 +123,7 @@ void Snapper::snapToNearestSite(const odb::dbTechLayerDir& direction)
   const double sites
       = (getOrigin(direction) - grid_origin) / static_cast<double>(pitch);
 
-  setOrigin(grid_origin + std::lround(sites) * pitch, direction);
+  return grid_origin + std::lround(sites) * pitch;
 }
 
 // Snaps to the location that aligns the largest number of pins. We first align
@@ -212,6 +212,43 @@ int Snapper::sitePitch(const odb::dbTechLayerDir& direction) const
   return direction == odb::dbTechLayerDir::VERTICAL
              ? site_grid_.site->getWidth()
              : site_grid_.site->getHeight();
+}
+
+// The other placed macros and the hard placement blockages.
+std::vector<odb::Rect> Snapper::findObstacles() const
+{
+  std::vector<odb::Rect> obstacles;
+  odb::dbBlock* block = inst_->getBlock();
+
+  for (odb::dbInst* inst : block->getInsts()) {
+    if (inst != inst_ && inst->isBlock() && inst->isPlaced()) {
+      obstacles.push_back(inst->getBBox()->getBox());
+    }
+  }
+
+  for (odb::dbBlockage* blockage : block->getBlockages()) {
+    if (!blockage->isSoft()) {
+      obstacles.push_back(blockage->getBBox()->getBox());
+    }
+  }
+
+  return obstacles;
+}
+
+bool Snapper::isLegalPosition() const
+{
+  const odb::Rect bbox = inst_->getBBox()->getBox();
+  if (!inst_->getBlock()->getCoreArea().contains(bbox)) {
+    return false;
+  }
+
+  for (const odb::Rect& obstacle : obstacles_) {
+    if (bbox.overlaps(obstacle)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 const Snapper::LayerDataList& Snapper::layerDataList(

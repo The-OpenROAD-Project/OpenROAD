@@ -57,13 +57,15 @@ class Snapper
       = odb::PtrMap<odb::dbTrackGrid, std::vector<odb::dbITerm*>>;
 
   void snapToSites(const odb::dbTechLayerDir& target_direction);
-  void snapToNearestSite(const odb::dbTechLayerDir& direction);
+  int nearestSitePosition(const odb::dbTechLayerDir& direction);
 
   void snapToTracks(const odb::dbTechLayerDir& target_direction);
   void snapToManufacturingGrid(const odb::dbTechLayerDir& direction);
   int nearestManufacturingGridPosition(int position) const;
   SiteGrid findSiteGrid();
   int sitePitch(const odb::dbTechLayerDir& direction) const;
+  std::vector<odb::Rect> findObstacles() const;
+  bool isLegalPosition() const;
   const LayerDataList& layerDataList(
       const odb::dbTechLayerDir& direction) const;
   int getOrigin(const odb::dbTechLayerDir& direction);
@@ -101,6 +103,7 @@ class Snapper
 
   bool snap_to_site_grid_{false};
   SiteGrid site_grid_;
+  std::vector<odb::Rect> obstacles_;
 };
 
 }  // namespace mpl
