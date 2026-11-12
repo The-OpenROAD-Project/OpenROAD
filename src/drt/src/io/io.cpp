@@ -1967,7 +1967,12 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
           con->setTwoCuts(rule->getTwoCuts());
         }
         con->setSameCut(rule->isSameCut());
-        con->setCutWithin(rule->getWithin());
+        if (rule->getSecondWithin() > 0) {
+          con->setCutWithin1(rule->getWithin());
+          con->setCutWithin2(rule->getSecondWithin());
+        } else {
+          con->setCutWithin(rule->getWithin());
+        }
         if (rule->getCutClass() != nullptr) {
           std::string className = rule->getCutClass()->getName();
           con->setCutClassName(className);

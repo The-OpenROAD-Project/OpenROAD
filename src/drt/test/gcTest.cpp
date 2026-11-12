@@ -1717,6 +1717,68 @@ INSTANTIATE_TEST_SUITE_P(CutSpcAdjacentCutsSuite,
                          CutSpcAdjacentCutsFixture,
                          testing::Bool());
 
+TEST_F(GCFixture, cut_spc_adjacent_cuts_two_within_no_viol)
+{
+  // Setup
+  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  makeCutClass(3, "VA", 110, 110);
+
+  auto con = makeLef58CutSpacingConstraint_adjacentCut(3, 190, 3, 1, 190, 250);
+  EXPECT_TRUE(con->hasTwoCutWithin());
+  EXPECT_EQ(con->getCutWithin1(), 190);
+  EXPECT_EQ(con->getCutWithin2(), 250);
+
+  frNet* n1 = makeNet("n1");
+  frNet* n2 = makeNet("n2");
+  frNet* n3 = makeNet("n3");
+  frNet* n4 = makeNet("n4");
+  frViaDef* vd = makeViaDef("v", 3, {0, 0}, {110, 110});
+
+  makeVia(vd, n1, {1000, 1000});
+  makeVia(vd, n2, {1000, 820});
+  makeVia(vd, n3, {820, 1000});
+  makeVia(vd, n4, {1000, 1180});
+
+  runGC();
+
+  // All 3 neighbors at dist 180 are below within1 (190), so threshold of 3 is
+  // not met
+  auto& markers = worker.getMarkers();
+  EXPECT_EQ(markers.size(), 0);
+}
+
+TEST_F(GCFixture, cut_spc_adjacent_cuts_two_within_viol)
+{
+  // Setup
+  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  makeCutClass(3, "VA", 110, 110);
+
+  auto con = makeLef58CutSpacingConstraint_adjacentCut(3, 190, 3, 1, 150, 200);
+  EXPECT_TRUE(con->hasTwoCutWithin());
+  EXPECT_EQ(con->getCutWithin1(), 150);
+  EXPECT_EQ(con->getCutWithin2(), 200);
+
+  frNet* n1 = makeNet("n1");
+  frNet* n2 = makeNet("n2");
+  frNet* n3 = makeNet("n3");
+  frNet* n4 = makeNet("n4");
+  frViaDef* vd = makeViaDef("v", 3, {0, 0}, {110, 110});
+
+  makeVia(vd, n1, {1000, 1000});
+  // 3 neighbors at dist 180 (within [150, 200))
+  makeVia(vd, n2, {1000, 820});
+  makeVia(vd, n3, {820, 1000});
+  makeVia(vd, n4, {1000, 1180});
+
+  runGC();
+
+  // 3 neighbors in [150, 200) violate spacing of 190
+  auto& markers = worker.getMarkers();
+  EXPECT_EQ(markers.size(), 3);
+}
+
 TEST_F(GCFixture, cut_keepoutzone)
 {
   // Setup
