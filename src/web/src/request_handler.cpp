@@ -5460,12 +5460,6 @@ static std::vector<TimingPathSummary> requestedReport(
     const boost::json::object& json,
     const int max_paths)
 {
-  std::vector<std::string> path_groups;
-  if (auto* v = json.if_contains("path_groups")) {
-    for (const auto& e : v->as_array()) {
-      path_groups.emplace_back(e.as_string());
-    }
-  }
   return report.getReport(
       json.at("is_setup").as_bool(),
       max_paths,
@@ -5474,7 +5468,7 @@ static std::vector<TimingPathSummary> requestedReport(
       static_cast<float>(
           jsonOr<double>(json, "slack_max", std::numeric_limits<float>::max())),
       jsonOr(json, "unconstrained", false),
-      path_groups,
+      jsonOr<std::vector<std::string>>(json, "path_groups", {}),
       jsonOr<std::string>(json, "clock_name", ""));
 }
 
@@ -5770,12 +5764,8 @@ WebSocketResponse TimingHandler::handleSlackHistogram(
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
     // `path_groups` (array) requests a stacked per-group breakdown; the scalar
     // `path_group` remains for the single/unfiltered case.
-    std::vector<std::string> path_groups;
-    if (auto* v = req.json.if_contains("path_groups")) {
-      for (const auto& e : v->as_array()) {
-        path_groups.emplace_back(e.as_string());
-      }
-    }
+    const auto path_groups
+        = jsonOr<std::vector<std::string>>(req.json, "path_groups", {});
     auto histogram = timing_report_->getSlackHistogram(
         req.json.at("is_setup").as_bool(),
         jsonOr<std::string>(req.json, "path_group", ""),
