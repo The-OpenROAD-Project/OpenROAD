@@ -29,8 +29,9 @@ class Snapper
   Snapper(utl::Logger* logger);
   Snapper(utl::Logger* logger, odb::dbInst* inst);
 
-  void setMacro(odb::dbInst* inst) { inst_ = inst; }
   void snapMacro();
+
+  void setMacro(odb::dbInst* inst) { inst_ = inst; }
 
  private:
   struct LayerData
@@ -40,17 +41,27 @@ class Snapper
     // ordered by pin centers
     std::vector<odb::dbITerm*> pins;
   };
+
   // ordered by TrackGrid layer number
   using LayerDataList = std::vector<LayerData>;
   using TrackGridToPinListMap
       = odb::PtrMap<odb::dbTrackGrid, std::vector<odb::dbITerm*>>;
 
-  void snap(const odb::dbTechLayerDir& target_direction);
-  void alignWithManufacturingGrid(int& origin);
-  void setOrigin(int origin, const odb::dbTechLayerDir& target_direction);
+  void loadLayerData();
+  void snapToTracks(const odb::dbTechLayerDir& target_direction);
+  void snapToManufacturingGrid(const odb::dbTechLayerDir& direction);
+  int nearestManufacturingGridPosition(int position) const;
+  const LayerDataList& layersOf(const odb::dbTechLayerDir& direction) const;
+  int getOrigin(const odb::dbTechLayerDir& direction);
+  void setOrigin(int origin, const odb::dbTechLayerDir& direction);
+  static int totalPins(const LayerDataList& layers_data_list);
   int totalAlignedPins(const LayerDataList& layers_data_list,
                        const odb::dbTechLayerDir& direction,
                        bool error_unaligned_right_way_on_grid = false);
+  void reportUnalignedPins(const LayerDataList& layers_data_list,
+                           const odb::dbTechLayerDir& direction,
+                           int aligned_pins,
+                           int total_pins);
 
   LayerDataList computeLayerDataList(
       const odb::dbTechLayerDir& target_direction);
@@ -70,6 +81,9 @@ class Snapper
 
   utl::Logger* logger_;
   odb::dbInst* inst_;
+
+  LayerDataList vertical_layers_;
+  LayerDataList horizontal_layers_;
 };
 
 }  // namespace mpl
