@@ -28,6 +28,7 @@
 #include "boost/json/value_to.hpp"
 #include "color.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "odb/geom.h"
 #include "tcl.h"
 #include "tile_generator.h"
@@ -318,6 +319,7 @@ struct WebSocketRequest
     kSnap,
     kSchematicCone,
     kSchematicFull,
+    kSchematicPath,
     kSchematicInspect,
     kDrcCategories,
     kDrcMarkers,
@@ -461,7 +463,20 @@ struct SessionState
   std::vector<web::Selected> selectables;
 
   web::Selected current_inspected;
-  std::vector<web::Selected> navigation_history;
+  // World transform of the chiplet placement current_inspected was inspected
+  // in; every highlight of it maps its shapes through this, or they land in
+  // die-local coordinates.  A layout click or schematic inspect sets it from
+  // the chiplet the object was found in; an inspector link to an object in
+  // the same block inherits it.  Change the two together through
+  // setCurrentInspected.
+  odb::dbTransform current_inspected_xfm;
+  // Where the inspector's Back returns to, each with its transform.
+  struct NavigationEntry
+  {
+    web::Selected sel;
+    odb::dbTransform xfm;
+  };
+  std::vector<NavigationEntry> navigation_history;
 
   // Multi-selection set and iterator position (mirrors Qt GUI's SelectionSet).
   web::SelectionSet selection_set;
@@ -574,6 +589,14 @@ void serveEmbeddedAsset(
 // access token authenticates.  A present Origin is accepted only when its
 // authority equals the Host header (strict same-origin).
 bool webSocketOriginAllowed(std::string_view origin, std::string_view host);
+
+// The Content-Security-Policy for a response to a request with this Host
+// header.  connect-src names ws://host and wss://host as well as 'self':
+// browsers older than CSP Level 3 (Safari before 15.4, say) do not let
+// 'self' match a WebSocket scheme and would refuse the viewer's socket.  A
+// Host that a CSP host-source cannot spell (empty, an IPv6 literal, or
+// anything with other characters) gets 'self' alone.
+std::string contentSecurityPolicy(std::string_view host);
 
 // Optional-field accessor: returns the JSON value at `key` converted to T,
 // or `default_val` when the key is missing.  Throws
@@ -696,6 +719,7 @@ class SelectHandler
   WebSocketResponse handleSnap(const WebSocketRequest& req);
   WebSocketResponse handleSchematicCone(const WebSocketRequest& req);
   WebSocketResponse handleSchematicFull(const WebSocketRequest& req);
+  WebSocketResponse handleSchematicPath(const WebSocketRequest& req);
   WebSocketResponse handleSchematicInspect(const WebSocketRequest& req,
                                            SessionState& state);
   WebSocketResponse handleGet3DData(const WebSocketRequest& req);

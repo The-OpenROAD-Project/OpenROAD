@@ -70,6 +70,10 @@ session will not connect; every session mints a new one.
   file others can read takes the token along. It travels in clear text over
   HTTP, so it does not replace the loopback bind.
 
+The viewer also refuses to run inside another site's frame and runs no script
+that does not come from the server itself (a Content-Security-Policy with
+`script-src 'self'`), so markup that ends up in a design name cannot run code.
+
 #### Running on a remote machine
 
 By default no browser is launched from an ssh session, from a batch job, or
@@ -212,6 +216,7 @@ field and the value is `true` or `false`.
 | `rows` | false | Row outlines |
 | `tracks_pref` | false | Preferred-direction tracks |
 | `rudy` | false | Estimated congestion (RUDY) heatmap overlay |
+| `routing_congestion` | false | Global routing congestion heatmap overlay |
 
 #### Examples
 
@@ -238,6 +243,9 @@ save_image -web -display_option {routing false} \
 
 # Save with RUDY congestion heatmap overlay
 save_image -web -display_option {rudy true} layout_rudy.png
+
+# Save with global routing congestion heatmap overlay
+save_image -web -display_option {routing_congestion true} layout_congestion.png
 ```
 
 ### Save Animated GIF
@@ -487,7 +495,7 @@ create_toolbar_button
 | `-name` | Key used to remove the button later. The type is `string`. The default is a generated `buttonN`. Re-using a registered name is an error. |
 | `-text` | Label to put on the button. The type is `string`. Required. |
 | `-script` | Tcl script to evaluate when the button is clicked, or — with `-toggle` — when it is switched on. The type is `string`. Required. |
-| `-icon` | Icon to show before the label: either literal text (an emoji, say) or an image referenced by `data:` URI, `http(s):` URL or a path starting with `/` or `./`. The type is `string`. The default is no icon. |
+| `-icon` | Icon to show before the label: either literal text (an emoji, say) or an image referenced by a `data:` URI. An `http(s):` URL or a path starting with `/` or `./` is an error: the viewer's Content-Security-Policy blocks remote images and the server serves no image files. The type is `string`. The default is no icon. |
 | `-tooltip` | Hover text. The type is `string`. The default is no tooltip. |
 | `-toggle` | Make the button a two-state switch: clicking it runs `-script` when turning it on and `-script_off` when turning it off. |
 | `-script_off` | Tcl script to evaluate when a `-toggle` button is switched off. The type is `string`. Ignored without `-toggle`. |

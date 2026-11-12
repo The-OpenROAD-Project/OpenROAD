@@ -50,8 +50,9 @@ class NesterovPlace
                 utl::Logger* log);
   ~NesterovPlace();
 
-  // return iteration count
-  int doNesterovPlace(int start_iter = 0);
+  // Runs the Nesterov loop from start_iter.  The result's hpwl is left 0;
+  // Replace fills it in once the placement is written back.
+  PlaceResult doNesterovPlace(int start_iter = 0);
 
   void updateWireLengthCoef(float overflow);
 
@@ -79,17 +80,16 @@ class NesterovPlace
   // doNesterovPlace() call before it does any work.
   void clearDivergence();
   // When true, a divergence is reported as a warning and doNesterovPlace()
-  // returns normally (check divergedLastRun()) instead of logging an ERROR
-  // and throwing. Defaults to false, so a plain (non-incremental) placement
-  // run still fails loudly and immediately on divergence, as before. The
-  // caller is responsible for toggling this back off once the recoverable
+  // returns normally (check for PlaceStop::kDiverged) instead of logging an
+  // ERROR and throwing. Defaults to false, so a plain (non-incremental)
+  // placement run still fails loudly and immediately on divergence, as before.
+  // The caller is responsible for toggling this back off once the recoverable
   // window has passed (e.g. incremental placement's phase 2 has no further
   // fallback, so it should not set this).
   void setAllowDivergenceRecovery(bool allow)
   {
     allow_divergence_recovery_ = allow;
   }
-  bool divergedLastRun() const { return num_region_diverged_ > 0; }
 
   void npUpdatePrevGradient(const std::shared_ptr<NesterovBase>& nb);
   void npUpdateCurGradient(const std::shared_ptr<NesterovBase>& nb);
@@ -133,6 +133,8 @@ class NesterovPlace
   };
   DivergeAction isDiverged(float& curA);
   void revertToDivergeSnapshot();
+  // Unscaled overflow of the current placement, averaged over the regions.
+  float getFinalOverflow() const;
   void routabilitySnapshot(int iter,
                            float curA,
                            const std::string& routability_driven_dir,
@@ -192,6 +194,15 @@ class NesterovPlace
   // The average here is between regions (NB objects)
   float average_overflow_ = 0;
   float average_overflow_unscaled_ = 0;
+  // Set when average_overflow_unscaled_ does not describe the current
+  // placement: no update has run in this doNesterovPlace() call yet, or the
+  // placement was reverted to the snapshot since the last one.
+  bool overflow_update_is_stale_ = true;
+  // The iteration of the last overflow update, which sets its normalization.
+  int last_overflow_iter_ = 0;
+
+  // The iterations of the current doNesterovPlace() call.
+  std::vector<PlaceIteration> trace_;
 
   // Snapshot saving for revert if diverge
   float diverge_snapshot_average_overflow_unscaled_ = 0;

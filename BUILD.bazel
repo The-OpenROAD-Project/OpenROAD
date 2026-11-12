@@ -857,12 +857,56 @@ sh_binary(
     visibility = ["//visibility:public"],
 )
 
+# --- C/C++ formatting check (clang-format --dry-run) ----------------------
+
+# buildifier: disable=native-sh-test
+sh_test(
+    name = "fmt_cc_test",
+    srcs = ["//bazel:cc_fmt_test.sh"],
+    args = [
+        "$(rootpath //bazel:clang-format)",
+        "$(rootpath @git)",
+    ],
+    data = [
+        "MODULE.bazel",
+        "//bazel:cc_ls_files.sh",
+        "//bazel:clang-format",
+        "//bazel:git_ls_files.sh",
+        "@git",
+    ],
+    tags = [
+        "external",
+        "local",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# --- C/C++ auto-format only (clang-format -i) -----------------------------
+
+# buildifier: disable=native-sh-binary
+sh_binary(
+    name = "tidy_cc",
+    srcs = ["//bazel:cc_tidy.sh"],
+    args = [
+        "$(rootpath //bazel:clang-format)",
+        "$(rootpath @git)",
+    ],
+    data = [
+        "//bazel:cc_ls_files.sh",
+        "//bazel:clang-format",
+        "//bazel:git_ls_files.sh",
+        "@git",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 # --- Umbrella targets ------------------------------------------------------
 
 test_suite(
     name = "lint_test",
     tests = [
         ":fmt_bzl_test",
+        ":fmt_cc_test",
         ":fmt_py_test",
         ":fmt_tcl_test",
         ":fmt_yaml_test",
@@ -894,6 +938,8 @@ sh_binary(
         "$(rootpath //bazel:yamlfix)",
         "$(rootpath //bazel:py_tidy.sh)",
         "$(rootpath //bazel:black)",
+        "$(rootpath //bazel:cc_tidy.sh)",
+        "$(rootpath //bazel:clang-format)",
     ],
     data = [
         "MODULE.bazel",
@@ -903,6 +949,9 @@ sh_binary(
         "//bazel:black",
         "//bazel:bzl_lint_test.sh",
         "//bazel:bzl_tidy.sh",
+        "//bazel:cc_ls_files.sh",
+        "//bazel:cc_tidy.sh",
+        "//bazel:clang-format",
         "//bazel:git_ls_files.sh",
         "//bazel:py_tidy.sh",
         "//bazel:tcl_lint_test.sh",
