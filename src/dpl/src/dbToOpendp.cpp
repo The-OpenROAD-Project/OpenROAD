@@ -397,7 +397,12 @@ void Opendp::createArchitecture()
       continue;
     }
     odb::dbSite* site = row->getSite();
-    if (site->getHeight() > min_row_height) {
+    if (grid_->hasHybridRows() && site->hasRowPattern()) {
+      skip_list[site->getHeight()].insert(site->getName());
+      continue;
+    }
+
+    if (!grid_->hasHybridRows() && site->getHeight() > min_row_height) {
       skip_list[site->getHeight()].insert(site->getName());
       continue;
     }

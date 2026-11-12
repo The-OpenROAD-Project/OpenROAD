@@ -264,7 +264,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-0133] Unlocking all instances
 [INFO GPL-0084] ---- Execute Nesterov Global Placement.
 [INFO GPL-0191] Incremental density-penalty guard enabled: penalty factor 1, starting overflow 0.388.
-      610 |   0.1867 |  1.806430e+02 |  -31.51% |  7.77e-08 |      
+      610 |   0.1867 |  1.806430e+02 |   +0.00% |  7.77e-08 |      
 [INFO GPL-0193] Incremental density-penalty guard: overflow regressed past 0.182; escalating the penalty factor to 2 in place (retry 1).
 [INFO GPL-0193] Incremental density-penalty guard: overflow regressed past 0.182; escalating the penalty factor to 4 in place (retry 2).
 [INFO GPL-0193] Incremental density-penalty guard: overflow regressed past 0.182; escalating the penalty factor to 8 in place (retry 3).

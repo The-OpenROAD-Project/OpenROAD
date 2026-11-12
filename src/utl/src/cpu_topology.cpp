@@ -8,6 +8,7 @@
 #include <fstream>
 #include <set>
 #include <string>
+#include <system_error>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -82,7 +83,7 @@ int physicalCoreCount(const std::string& sysfs_cpu_dir)
       for (const auto& entry :
            std::filesystem::directory_iterator(sysfs_cpu_dir, ec)) {
         const std::string name = entry.path().filename().string();
-        if (name.size() > 3 && name.rfind("cpu", 0) == 0
+        if (name.size() > 3 && name.starts_with("cpu")
             && std::isdigit(static_cast<unsigned char>(name[3]))) {
           cpus.push_back(std::stoi(name.substr(3)));
         }

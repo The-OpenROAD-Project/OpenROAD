@@ -26,22 +26,34 @@ ResidualError cpuSparseSolve(int maxSolverIter,
   BiCGSTAB<SMatrix, IdentityPreconditioner> solver;
   solver.setMaxIterations(maxSolverIter);
 
-  solver.compute(placeInstForceMatrixX);
-  instLocVecX = solver.solveWithGuess(fixedInstForceVecX, instLocVecX);
-  if (solver.info() == Eigen::NoConvergence
-      || solver.info() == Eigen::Success) {
-    residual_error.x = solver.error();
+  // With no pin or locked cell holding a position in an axis, the
+  // right-hand side is zero and BiCGSTAB would put every cell at 0. Keep the
+  // current positions instead.
+
+  if (fixedInstForceVecX.squaredNorm() == 0) {
+    residual_error.x = 0;
   } else {
-    residual_error.x = std::numeric_limits<float>::quiet_NaN();
+    solver.compute(placeInstForceMatrixX);
+    instLocVecX = solver.solveWithGuess(fixedInstForceVecX, instLocVecX);
+    if (solver.info() == Eigen::NoConvergence
+        || solver.info() == Eigen::Success) {
+      residual_error.x = solver.error();
+    } else {
+      residual_error.x = std::numeric_limits<float>::quiet_NaN();
+    }
   }
 
-  solver.compute(placeInstForceMatrixY);
-  instLocVecY = solver.solveWithGuess(fixedInstForceVecY, instLocVecY);
-  if (solver.info() == Eigen::NoConvergence
-      || solver.info() == Eigen::Success) {
-    residual_error.y = solver.error();
+  if (fixedInstForceVecY.squaredNorm() == 0) {
+    residual_error.y = 0;
   } else {
-    residual_error.y = std::numeric_limits<float>::quiet_NaN();
+    solver.compute(placeInstForceMatrixY);
+    instLocVecY = solver.solveWithGuess(fixedInstForceVecY, instLocVecY);
+    if (solver.info() == Eigen::NoConvergence
+        || solver.info() == Eigen::Success) {
+      residual_error.y = solver.error();
+    } else {
+      residual_error.y = std::numeric_limits<float>::quiet_NaN();
+    }
   }
 
   return residual_error;
