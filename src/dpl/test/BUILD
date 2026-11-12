@@ -179,7 +179,6 @@ filegroup(
             ],
             "check_offrow_block_padding": [
                 "offrow_block.lef",
-                "offrow_block.tcl",
             ],
             "check_placeable_only": [
                 "check_fixed_only.def",
