@@ -16,6 +16,7 @@
 #include "NegotiationLegalizer.h"
 #include "PlacementDRC.h"
 #include "dpl/Opendp.h"
+#include "fmt/format.h"
 #include "graphics/DplObserver.h"
 #include "infrastructure/Coordinates.h"
 #include "infrastructure/Grid.h"
