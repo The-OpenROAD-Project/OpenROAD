@@ -26,6 +26,7 @@ TESTS = [
     "buffer_varying_lengths",
     "clone_flat",
     "clone_hier",
+    "clone_hier_cross",
     "eliminate_dead_logic1",
     "eliminate_dead_logic2",
     "eqy_repair_setup2",
