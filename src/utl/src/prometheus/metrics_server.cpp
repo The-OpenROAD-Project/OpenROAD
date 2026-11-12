@@ -78,7 +78,7 @@ PrometheusMetricsServer::~PrometheusMetricsServer()
 
 void PrometheusMetricsServer::RunServer()
 {
-  using tcp = boost::asio::ip::tcp;
+  using boost::asio::ip::tcp;
   namespace http = boost::beast::http;
 
   boost::asio::io_context io_context;

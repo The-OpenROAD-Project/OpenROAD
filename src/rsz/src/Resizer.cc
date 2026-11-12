@@ -286,7 +286,7 @@ sta::VertexSeq Resizer::orderedLoadPinVertices()
   sta::VertexIterator vertex_iter(graph_);
   while (vertex_iter.hasNext()) {
     sta::Vertex* vertex = vertex_iter.next();
-    sta::PortDirection* dir = network_->direction(vertex->pin());
+    const sta::PortDirection* dir = network_->direction(vertex->pin());
     bool top_level = network_->isTopLevelPort(vertex->pin());
     if (!top_level && dir->isAnyInput()) {
       loads.emplace_back(vertex);
@@ -4588,7 +4588,7 @@ sta::NetSeq* Resizer::findOverdrivenNets(bool include_parallel_driven)
               network_->pinIterator(inst));
           while (inst_pin_iter->hasNext()) {
             sta::Pin* inst_pin = inst_pin_iter->next();
-            sta::PortDirection* dir = network_->direction(inst_pin);
+            const sta::PortDirection* dir = network_->direction(inst_pin);
             if (dir->isAnyInput()) {
               input_nets.insert(network_->net(inst_pin));
             }
@@ -6714,7 +6714,7 @@ void Resizer::getBufferPins(sta::Instance* buffer, sta::Pin*& ip, sta::Pin*& op)
       network_->pinIterator(buffer));
   while (pin_iter->hasNext()) {
     sta::Pin* pin = pin_iter->next();
-    sta::PortDirection* dir = network_->direction(pin);
+    const sta::PortDirection* dir = network_->direction(pin);
     if (dir->isAnyOutput()) {
       op = pin;
     }

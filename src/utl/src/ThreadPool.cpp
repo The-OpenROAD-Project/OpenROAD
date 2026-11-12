@@ -27,7 +27,7 @@ ThreadPool::ThreadPool(const size_t thread_count)
 ThreadPool::~ThreadPool()
 {
   {
-    std::lock_guard<std::mutex> lock(lock_);
+    std::scoped_lock lock(lock_);
     stop_ = true;
   }
   cv_.notify_all();
@@ -55,7 +55,7 @@ bool ThreadPool::tryRunPendingTask()
 {
   std::function<void()> task;
   {
-    std::lock_guard<std::mutex> lock(lock_);
+    std::scoped_lock lock(lock_);
     if (tasks_.empty()) {
       return false;
     }
@@ -79,7 +79,7 @@ void ThreadPool::workerLoop()
     bool exit_worker = false;
     {
       std::unique_lock<std::mutex> lock(lock_);
-      cv_.wait(lock, [this]() { return stop_ || !tasks_.empty(); });
+      cv_.wait(lock, [this] { return stop_ || !tasks_.empty(); });
       if (stop_ && tasks_.empty()) {
         exit_worker = true;
       } else {

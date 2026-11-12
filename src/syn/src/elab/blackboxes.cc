@@ -137,7 +137,7 @@ void importBlackboxesFromLiberty(SourceManager& mgr,
 
         // Determine direction
         TokenKind direction;
-        sta::PortDirection* dir = port->direction();
+        const sta::PortDirection* dir = port->direction();
         if (dir->isInput()) {
           direction = TokenKind::InputKeyword;
         } else if (dir->isOutput()) {
