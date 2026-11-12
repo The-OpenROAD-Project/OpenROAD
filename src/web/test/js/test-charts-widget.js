@@ -411,11 +411,16 @@ describe('ChartsWidget slack bar drill-down', () => {
         x: 0, y: 0, width: 160, height: 120, count: 7, lower: -20, upper: -10,
     };
 
-    function showBar(widget) {
-        widget._populatePathGroups(['in2reg', 'reg2out', 'reg2reg']);
-        widget._populateClocks(['clk_a', 'clk_b']);
+    // Draws the histogram with the selects' filters, then puts `bar` up.
+    async function showBar(widget) {
+        await widget._fetchHistogram();
         widget._bars = [bar];
         widget._chartArea = { left: 0, right: 200, top: 0, bottom: 200 };
+    }
+
+    function populate(widget) {
+        widget._populatePathGroups(['in2reg', 'reg2out', 'reg2reg']);
+        widget._populateClocks(['clk_a', 'clk_b']);
     }
 
     function timingReports(app) {
@@ -425,7 +430,8 @@ describe('ChartsWidget slack bar drill-down', () => {
     it('asks for every path group and clock when none is selected',
         async () => {
             const { app, widget } = createWidget();
-            showBar(widget);
+            populate(widget);
+            await showBar(widget);
             await widget._handleClick({ clientX: 50, clientY: 50 });
             const [req] = timingReports(app);
             assert.equal(req.slack_min, -20);
@@ -436,11 +442,12 @@ describe('ChartsWidget slack bar drill-down', () => {
 
     it('keeps the histogram\'s path groups and clock', async () => {
         const { app, widget } = createWidget();
-        showBar(widget);
+        populate(widget);
         for (const opt of widget._pathGroupSelect.options) {
             opt.selected = opt.value !== 'reg2out';
         }
         widget._clockSelect.value = 'clk_b';
+        await showBar(widget);
         await widget._handleClick({ clientX: 50, clientY: 50 });
         const [req] = timingReports(app);
         assert.deepEqual(req.path_groups, ['in2reg', 'reg2reg']);
@@ -448,6 +455,24 @@ describe('ChartsWidget slack bar drill-down', () => {
         assert.equal(req.slack_min, -20);
         assert.equal(req.slack_max, -10);
     });
+
+    it('keeps the drawn histogram\'s filters when the selects changed since',
+        async () => {
+            // A click before the refetch the change started returns, or
+            // after it failed and the old bars stayed up.
+            const { app, widget } = createWidget();
+            populate(widget);
+            widget._clockSelect.value = 'clk_b';
+            await showBar(widget);
+            widget._clockSelect.value = 'clk_a';
+            for (const opt of widget._pathGroupSelect.options) {
+                opt.selected = opt.value === 'reg2reg';
+            }
+            await widget._handleClick({ clientX: 50, clientY: 50 });
+            const [req] = timingReports(app);
+            assert.equal(req.clock_name, 'clk_b');
+            assert.equal('path_groups' in req, false);
+        });
 });
 
 describe('ChartsWidget net length', () => {
