@@ -144,16 +144,63 @@ TEST_F(TimingReportTest, NoFilterReportsEveryClock)
             (std::multiset<std::string>{"clk_a", "clk_a", "clk_b", "clk_b"}));
 }
 
-TEST_F(TimingReportTest, ClockFilterKeepsPathsEndingOnIt)
+// As the histogram counts a clock with no path group: its default group,
+// which to_b1 took b1/D out of.
+TEST_F(TimingReportTest, ClockFilterKeepsItsDefaultGroup)
 {
-  EXPECT_EQ(endClocks(report({}, "clk_b")),
-            (std::multiset<std::string>{"clk_b", "clk_b"}));
+  EXPECT_EQ(endPins(report({}, "clk_b")), (std::multiset<std::string>{"b0/D"}));
 }
 
 TEST_F(TimingReportTest, PathGroupFilterKeepsItsPaths)
 {
   EXPECT_EQ(endPins(report({"to_b1"}, "")),
             (std::multiset<std::string>{"b1/D"}));
+}
+
+// For every filter the chart sends, each bar of the slack histogram lists as
+// many paths as it counts, and the report lists every path the histogram
+// counted.
+TEST_F(TimingReportTest, ReportListsWhatHistogramCounts)
+{
+  struct Filter
+  {
+    std::vector<std::string> path_groups;
+    std::string clock_name;
+  };
+  const std::vector<Filter> filters = {
+      {.path_groups = {}, .clock_name = ""},
+      {.path_groups = {}, .clock_name = "clk_a"},
+      {.path_groups = {}, .clock_name = "clk_b"},
+      {.path_groups = {"to_b1"}, .clock_name = ""},
+      {.path_groups = {"to_b1"}, .clock_name = "clk_a"},
+      {.path_groups = {"to_b1"}, .clock_name = "clk_b"},
+  };
+  TimingReport timing_report(getSta());
+  for (const Filter& filter : filters) {
+    SCOPED_TRACE("path_groups=" + testing::PrintToString(filter.path_groups)
+                 + " clock_name=" + filter.clock_name);
+    const SlackHistogramResult histogram
+        = timing_report.getSlackHistogram(/*is_setup=*/true,
+                                          /*path_group=*/"",
+                                          filter.clock_name,
+                                          filter.path_groups);
+    int counted = 0;
+    for (const auto& bin : histogram.bins) {
+      const std::vector<TimingPathSummary> paths
+          = timing_report.getReport(/*is_setup=*/true,
+                                    /*max_paths=*/100,
+                                    bin.lower,
+                                    bin.upper,
+                                    filter.path_groups,
+                                    filter.clock_name);
+      EXPECT_EQ(static_cast<int>(paths.size()), bin.count)
+          << "[" << bin.lower << ", " << bin.upper << ")";
+      counted += bin.count;
+    }
+    EXPECT_EQ(
+        static_cast<int>(report(filter.path_groups, filter.clock_name).size()),
+        counted);
+  }
 }
 
 TEST_F(TimingReportTest, UnknownClockReportsNothing)
