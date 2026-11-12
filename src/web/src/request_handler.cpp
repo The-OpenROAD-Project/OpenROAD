@@ -5104,12 +5104,14 @@ void append3DInterconnects(const std::vector<ChipletNode>& nodes,
         odb::Rect footprint = inst->getBBox()->getBox();
         node.world_xfm.apply(footprint);
         bump_indices[{node.path, bump_inst->getId()}] = bumps.size();
-        bumps.emplace_back(boost::json::array{chiplet->second,
-                                              footprint.xMin(),
-                                              footprint.yMin(),
-                                              footprint.xMax(),
-                                              footprint.yMax(),
-                                              z});
+        bumps.emplace_back(boost::json::array{
+            chiplet->second,
+            footprint.xMin(),
+            footprint.yMin(),
+            footprint.xMax(),
+            footprint.yMax(),
+            z,
+        });
       }
     }
   }
@@ -5140,7 +5142,8 @@ void append3DInterconnects(const std::vector<ChipletNode>& nodes,
       if (endpoints.size() > 1) {
         nets.emplace_back(boost::json::object{
             {"name", node.path + odb::kChipletPathDelimiter + net->getName()},
-            {"bumps", std::move(endpoints)}});
+            {"bumps", std::move(endpoints)},
+        });
       }
     }
   }
