@@ -33,7 +33,7 @@ Model sampleModel()
       model.addLateral({"met2", below, above}, LateralTable({0.14}, {0.14}));
     }
   }
-  model.addCrossing({"met2", "met3"}, CrossingTable({1}, {{0.5, 0.5}}));
+  model.addCrossing({"met2", "met3", ""}, CrossingTable({1}, {{0.5, 0.5}}));
   return model;
 }
 

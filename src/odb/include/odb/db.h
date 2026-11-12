@@ -164,6 +164,7 @@ class dbTechLayerArraySpacingRule;
 class dbTechLayerCornerSpacingRule;
 class dbTechLayerCutClassRule;
 class dbTechLayerCutEnclosureRule;
+class dbTechLayerCutEnclosureTableDefRule;
 class dbTechLayerCutSpacingRule;
 class dbTechLayerCutSpacingTableDefRule;
 class dbTechLayerCutSpacingTableOrthRule;
@@ -7899,6 +7900,12 @@ class dbDft : public dbObject
   bool isScanInserted() const;
 
   dbSet<dbScanChain> getScanChains() const;
+
+  // User Code Begin dbDft
+  // Destroys all scan chains, scan pins and the scan insts the chains list,
+  // and clears the scan-inserted flag.
+  void reset();
+  // User Code End dbDft
 };
 
 class dbGCellGrid : public dbObject
@@ -9256,6 +9263,10 @@ class dbScanList : public dbObject
   // User Code Begin dbScanList
   dbSet<dbScanInst> getScanInsts() const;
   dbScanInst* add(dbInst* inst);
+  // Detaches all dbScanInsts from this list without destroying them.
+  // After clear(), each detached dbScanInst may be re-attached to any list
+  // via insertAtFront().  Used by scan_opt cross-chain reassignment.
+  void clear();
   static dbScanList* create(dbScanPartition* scan_partition);
   // User Code End dbScanList
 };
@@ -9359,6 +9370,9 @@ class dbTechLayer : public dbObject
       const;
 
   dbSet<dbTechLayerCutEnclosureRule> getTechLayerCutEnclosureRules() const;
+
+  dbSet<dbTechLayerCutEnclosureTableDefRule>
+  getTechLayerCutEnclosureTableDefRules() const;
 
   dbSet<dbTechLayerEolExtensionRule> getTechLayerEolExtensionRules() const;
 
@@ -10157,6 +10171,41 @@ class dbTechLayerCutEnclosureRule : public dbObject
       dbTechLayer* inly,
       uint32_t dbid);
   // User Code End dbTechLayerCutEnclosureRule
+};
+
+class dbTechLayerCutEnclosureTableDefRule : public dbObject
+{
+ public:
+  struct DefaultRow
+  {
+    dbCutEnclosureAboveBelow above_below;
+    int overhang1;
+    int overhang2;
+    int overhang3;
+    int overhang4;
+  };
+  struct WidthRow
+  {
+    int width;
+    dbCutEnclosureAboveBelow above_below;
+    int overhang1;
+    int overhang2;
+    int overhang3;
+    int overhang4;
+  };
+
+  void setCutClass(dbTechLayerCutClassRule* cut_class);
+
+  dbTechLayerCutClassRule* getCutClass() const;
+
+  static dbTechLayerCutEnclosureTableDefRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerCutEnclosureTableDefRule* obj);
+  // User Code Begin dbTechLayerCutEnclosureTableDefRule
+  void addDefaultRow(const DefaultRow& row);
+  void addWidthRow(const WidthRow& row);
+  void getDefaultRows(std::vector<DefaultRow>& rows) const;
+  void getWidthRows(std::vector<WidthRow>& rows) const;
+  // User Code End dbTechLayerCutEnclosureTableDefRule
 };
 
 class dbTechLayerCutSpacingRule : public dbObject

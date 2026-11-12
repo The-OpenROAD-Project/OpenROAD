@@ -86,6 +86,15 @@ void HierRTLMP::configure(int threads, const MacroPlacerOptions& options)
     tree_->global_fence = block_->getCoreArea();
   }
 
+  tree_->floorplan_shape = block_->getCoreArea().intersect(tree_->global_fence);
+  if (tree_->floorplan_shape.area() == 0) {
+    logger_->error(
+        MPL, 68, "The global fence set is completely outside the core area.");
+  }
+
+  tree_->die_area = block_->getDieArea();
+  tree_->min_channel = min_channel_;
+
   // Options related to clustering
   tree_->base_max_macro = options.max_num_macro;
   tree_->base_min_macro = options.min_num_macro;
@@ -109,6 +118,21 @@ void HierRTLMP::configure(int threads, const MacroPlacerOptions& options)
   macro_placement_file_ = options.macro_placement_file;
   keep_clustering_data_ = options.keep_clustering_data;
   pin_aware_channels_ = options.pin_aware_channels;
+}
+
+void HierRTLMP::setHardMacros(InstToHardMap hard_macros)
+{
+  tree_->maps.inst_to_hard = std::move(hard_macros);
+}
+
+const odb::Rect& HierRTLMP::floorplanShape() const
+{
+  return tree_->floorplan_shape;
+}
+
+const Channel& HierRTLMP::minChannel() const
+{
+  return min_channel_;
 }
 
 void HierRTLMP::setMinChannelSize(int width, int height)
@@ -250,7 +274,6 @@ void HierRTLMP::init()
 // Transform the logical hierarchy into a physical hierarchy.
 void HierRTLMP::runMultilevelAutoclustering()
 {
-  clustering_engine_->setChannel(min_channel_, pin_aware_channels_);
   clustering_engine_->run();
 
   if (!tree_->has_unfixed_macros) {
@@ -2462,6 +2485,10 @@ void HierRTLMP::commitMacroPlacementToDb()
   Snapper snapper(logger_);
 
   for (auto& [inst, hard_macro] : tree_->maps.inst_to_hard) {
+    if (hard_macro->isIgnorable()) {
+      continue;
+    }
+
     if (!inst->isFixed()) {
       snapper.setMacro(inst);
       snapper.snapMacro();

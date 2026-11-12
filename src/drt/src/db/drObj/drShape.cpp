@@ -37,6 +37,9 @@ drPathSeg::drPathSeg(const frPathSeg& in) : layer_(in.getLayerNum())
   std::tie(begin_, end_) = in.getPoints();
   style_ = in.getStyle();
   setTapered(in.isTapered());
+  if (in.isApPathSeg()) {
+    setApPathSeg(in.getApLoc());
+  }
 }
 
 drPatchWire::drPatchWire(const frPatchWire& in) : layer_(in.getLayerNum())

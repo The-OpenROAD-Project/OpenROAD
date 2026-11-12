@@ -19,6 +19,8 @@ YAML_TIDY_SH="${10:-}"
 YAMLFIX="${11:-}"
 PY_TIDY_SH="${12:-}"
 BLACK="${13:-}"
+CC_TIDY_SH="${14:-}"
+CLANG_FORMAT="${15:-}"
 
 export BUILD_WORKSPACE_DIRECTORY="${BUILD_WORKSPACE_DIRECTORY:-$PWD}"
 # TCL: auto-format then lint
@@ -38,6 +40,11 @@ fi
 # separate lint pass to run afterwards.
 if [ -n "${PY_TIDY_SH}" ] && [ -n "${BLACK}" ]; then
     "${PY_TIDY_SH}" "${BLACK}" "${GIT}" || rc=$?
+fi
+
+# C/C++: auto-format. Every clang-format violation is auto-fixable.
+if [ -n "${CC_TIDY_SH}" ] && [ -n "${CLANG_FORMAT}" ]; then
+    "${CC_TIDY_SH}" "${CLANG_FORMAT}" "${GIT}" || rc=$?
 fi
 
 "${GIT}" -C "$BUILD_WORKSPACE_DIRECTORY" status

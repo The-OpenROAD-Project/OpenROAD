@@ -286,7 +286,7 @@ std::optional<FixedDelay> Rebuffer::slackWithDriverCell(const BnetPtr& bnet,
   }
   sta::Delay correction = sta::INF;
   sta::LibertyPort* out_port = nullptr;
-  for (auto rf : bnet->slackTransition()->range()) {
+  for (const sta::RiseFall* rf : bnet->slackTransition()->range()) {
     const sta::Path* arrival_path = arrival_paths_[rf->index()];
     if (arrival_path == nullptr) {
       return {};
@@ -330,15 +330,15 @@ std::optional<FixedDelay> Rebuffer::slackWithDriverCell(const BnetPtr& bnet,
                                           driver_edge,
                                           driver_path->scene(sta_),
                                           driver_path->minMax(sta_));
-    auto dcalc_result
-        = arc_delay_calc_->gateDelay(nullptr,
-                                     arc,
-                                     in_slew,
-                                     bnet->cap() + out_port->capacitance(),
-                                     nullptr,
-                                     load_pin_index_map,
-                                     driver_path->scene(sta_),
-                                     driver_path->minMax(sta_));
+    sta::ArcDcalcResult dcalc_result
+        = delayCalc()->gateDelay(nullptr,
+                                 arc,
+                                 in_slew,
+                                 bnet->cap() + out_port->capacitance(),
+                                 nullptr,
+                                 load_pin_index_map,
+                                 driver_path->scene(sta_),
+                                 driver_path->minMax(sta_));
     if (dcalc_result.drvrSlew() > drvr_pin_max_slew_) {
       return {};
     }
@@ -347,10 +347,9 @@ std::optional<FixedDelay> Rebuffer::slackWithDriverCell(const BnetPtr& bnet,
     sta::Delay upstream = 0.0;
     const sta::Path* prev_drvr_path = driver_path->prevPath();
     if (prev_drvr_path != nullptr) {
-      const sta::LibertyPort* prev_port
-          = network_->libertyPort(prev_drvr_path->pin(sta_));
-      if (prev_port != nullptr) {
-        upstream = prev_port->driveResistance()
+      const sta::Pin* prev_drvr_pin = prev_drvr_path->pin(sta_);
+      if (prev_drvr_pin != nullptr) {
+        upstream = resizer_->driveResistance(prev_drvr_pin)
                    * (from->capacitance() - driver_arc->from()->capacitance());
       }
     }
@@ -393,7 +392,7 @@ bool Rebuffer::upstreamSideLoadsOk(sta::LibertyCell* cell,
       continue;
     }
     const float delta
-        = prev_port->driveResistance()
+        = resizer_->driveResistance(prev_drvr_pin)
           * (from->capacitance() - driver_arc->from()->capacitance());
     if (delta <= 0.0) {
       continue;
@@ -448,7 +447,11 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
   sta::Instance* drvr_inst = network_->instance(drvr_pin);
   sta::LibertyCell* current_cell
       = drvr_inst != nullptr ? network_->libertyCell(drvr_inst) : nullptr;
-  if (current_cell == nullptr || resizer_->dontTouch(drvr_inst)) {
+  // Only the output being rebuffered is timed, so cells with other outputs or
+  // sequential checks are left alone; fixed cells may not change footprint.
+  if (current_cell == nullptr || resizer_->dontTouch(drvr_inst)
+      || resizer_->isFixed(drvr_inst) || current_cell->isSequential()
+      || resizer_->hasMultipleOutputs(drvr_inst)) {
     return area_tree;
   }
   // Tree area is buffer area, so nothing is cheaper than a buffer-free
@@ -474,7 +477,11 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
     return area_tree;
   }
   if (chosen_cell != current_cell) {
-    resizer_->replaceCell(drvr_inst, chosen_cell);
+    // The chosen tree was timed with the new cell; keep the option-off
+    // result if replaceCell finds no master for it.
+    if (!resizer_->replaceCell(drvr_inst, chosen_cell)) {
+      return area_tree;
+    }
     driver_resize_count_++;
   }
   return chosen;
@@ -561,7 +568,9 @@ BnetPtr Rebuffer::chooseTreeAndDriver(const std::vector<BnetPtr>& trees,
 bool Rebuffer::loadSlewSatisfactory(sta::LibertyPort* driver,
                                     const BnetPtr& bnet)
 {
-  float r_drvr = driver->driveResistance();
+  const float r_drvr = (driver == drvr_port_ && pin_ != nullptr)
+                           ? resizer_->driveResistance(pin_)
+                           : driver->driveResistance();
   return r_drvr * bnet->cap() <= maxSlewMargined(bnet->maxLoadSlew());
 }
 
@@ -3091,10 +3100,64 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
   size_ra_runtime_ = 0;
   size_eval_runtime_ = 0;
 
+  // Drivers are visited in decreasing level order. Drivers on one level are
+  // not in each other's fanin or fanout, so netlist edits are propagated to
+  // timing once per level rather than once per driver. The exception is an
+  // instance resized earlier in the level: its other outputs are refreshed
+  // (through their loads) before they are rebuffered.
+  sta::Level timing_level = -1;
+  // Loads of edited trees whose edits are not yet propagated. Their levels
+  // are read when propagating, after the whole batch has been levelized.
+  std::vector<const sta::Pin*> edited_loads;
+  std::unordered_set<const sta::Instance*> resized_insts;
+
+  auto record_loads = [&](const BnetPtr& tree) {
+    visitTree(
+        [&](auto& recurse, int, const BnetPtr& bnet) -> int {
+          switch (bnet->type()) {
+            case BnetType::wire:
+            case BnetType::via:
+            case BnetType::buffer:
+              return recurse(bnet->ref());
+            case BnetType::junction:
+              return recurse(bnet->ref()) + recurse(bnet->ref2());
+            case BnetType::load:
+              edited_loads.push_back(bnet->loadPin());
+              return 1;
+          }
+          abort();
+        },
+        tree);
+  };
+
+  auto propagate_edits = [&]() {
+    if (edited_loads.empty()) {
+      return;
+    }
+    sta_->ensureLevelized();
+    sta::Level max_level = 0;
+    for (const sta::Pin* load : edited_loads) {
+      max_level = std::max(max_level, graph_->pinDrvrVertex(load)->level());
+    }
+    estimate_parasitics_->updateParasitics();
+    utl::DebugScopedTimer timer(sta_runtime);
+    sta_->findDelays(max_level);
+    search_->findArrivals(max_level);
+    edited_loads.clear();
+    resized_insts.clear();
+  };
+
+  auto refresh_timing = [&](sta::Vertex* drvr) {
+    propagate_edits();
+    utl::DebugScopedTimer timer(sta_runtime);
+    search_->findRequireds(drvr->level());
+  };
+
   for (auto iter = 0; iter < filtered_pins.size(); iter++) {
     printProgress(iter, false, false, filtered_pins.size() - iter);
 
     sta::Pin* drvr_pin = filtered_pins[iter];
+    sta::Instance* drvr_inst = network_->instance(drvr_pin);
 
     odb::dbNet* db_net = nullptr;
     if (network_->isTopLevelPort(drvr_pin)) {
@@ -3105,9 +3168,9 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
     sta::Vertex* drvr = graph_->pinDrvrVertex(drvr_pin);
 
-    {
-      utl::DebugScopedTimer timer(sta_runtime);
-      search_->findRequireds(drvr->level());
+    if (drvr->level() != timing_level) {
+      timing_level = drvr->level();
+      refresh_timing(drvr);
     }
 
     // set rebuffering globals
@@ -3132,6 +3195,11 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
                        network_->name(drvr_pin));
       }
       continue;
+    }
+
+    if (drvr_inst && resized_insts.contains(drvr_inst)) {
+      record_loads(original_tree);
+      refresh_timing(drvr);
     }
 
     bool debug = (drvr_pin == resizer_->debug_pin_);
@@ -3236,8 +3304,10 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
       break;
     }
 
+    const int prev_resize_count = driver_resize_count_;
     area_opt_tree = sizeDriverWithTree(
         drvr_pin, timing_tree, area_opt_tree, target_slack);
+    const bool driver_resized = driver_resize_count_ != prev_resize_count;
 
     sta::Instance* parent = db_network_->getOwningInstanceParent(drvr_pin);
     odb::dbITerm* drvr_op_iterm = nullptr;
@@ -3248,43 +3318,20 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
     auto insts = collectImportedTreeBufferInstances(drvr_pin, unbuffered_tree);
 
-    inserted_count_ += exportBufferTree(
+    const int inserted = exportBufferTree(
         area_opt_tree, db_network_->dbToSta(db_net), 1, parent, "place");
+    inserted_count_ += inserted;
 
     for (auto* inst : insts) {
       resizer_->removeBuffer(inst);
       removed_count_++;
     }
 
-    sta_->ensureLevelized();
-    sta::Level max_level = 0;
-    visitTree(
-        [&](auto& recurse, int level, const BnetPtr& bnet) -> int {
-          switch (bnet->type()) {
-            case BnetType::wire:
-            case BnetType::via:
-              return recurse(bnet->ref());
-            case BnetType::junction:
-              return recurse(bnet->ref()) + recurse(bnet->ref2());
-            case BnetType::load:
-              max_level = std::max(
-                  max_level, graph_->pinDrvrVertex(bnet->loadPin())->level());
-              return 1;
-            case BnetType::buffer: {
-              return recurse(bnet->ref());
-            }
-            default:
-              abort();
-          }
-        },
-        unbuffered_tree);
-
-    estimate_parasitics_->updateParasitics();
-
-    {
-      utl::DebugScopedTimer timer(sta_runtime);
-      sta_->findDelays(max_level);
-      search_->findArrivals(max_level);
+    if (driver_resized || inserted > 0 || !insts.empty()) {
+      record_loads(unbuffered_tree);
+      if (driver_resized) {
+        resized_insts.insert(drvr_inst);
+      }
     }
 
     debugPrint(logger_, RSZ, "rebuffer", 2, "-------------------------------");
@@ -3293,6 +3340,8 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
       logger_->setDebugLevel(RSZ, "rebuffer", 0);
     }
   }
+
+  propagate_edits();
 
   printProgress(filtered_pins.size(), false, true, 0);
   if (size_driver_) {

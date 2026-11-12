@@ -1,0 +1,15 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+[INFO ODB-0128] Design: multi_sink
+[INFO ODB-0252]     Updated 1 pins.
+[INFO ODB-0253]     Updated 2 components.
+[INFO ODB-0254]     Updated 2 nets and 3 connections.
+cell h1 name h1
+cell h1/core/dispatch/ff0 name core/dispatch/ff0
+cell h1/core/dispatch/gclk_inst name core/dispatch/gclk_inst
+net clk name clk
+net multi_sink/hier_block/childclk name childclk
+net h1/gclk name gclk
+h1/gclk pin h1/core/dispatch/ff0/CK
+h1/gclk pin h1/core/dispatch/gclk_inst/GCK
+No differences found.

@@ -1458,6 +1458,29 @@ std::string dbNetwork::stripParentPrefix(const std::string& name)
   return name;
 }
 
+size_t dbNetwork::modulePrefixLength(const std::string_view db_name,
+                                     const dbModule* const module) const
+{
+  if (module == nullptr || module == block_->getTopModule()) {
+    return 0;
+  }
+  const odb::dbModInst* mod_inst = module->getModInst();
+  if (mod_inst == nullptr) {
+    return std::string::npos;
+  }
+  const size_t pos = modulePrefixLength(db_name, mod_inst->getParent());
+  if (pos == std::string::npos) {
+    return pos;
+  }
+  const std::string_view rest = db_name.substr(pos);
+  const std::string_view inst_name = mod_inst->getName();
+  if (rest.size() > inst_name.size() && rest.starts_with(inst_name)
+      && rest[inst_name.size()] == block_->getHierarchyDelimiter()) {
+    return pos + inst_name.size() + 1;
+  }
+  return std::string::npos;
+}
+
 std::string dbNetwork::name(const Port* port) const
 {
   if (isConcretePort(port)) {
@@ -1523,10 +1546,20 @@ std::string dbNetwork::name(const Instance* instance) const
   dbInst* db_inst;
   odb::dbModInst* mod_inst;
   staToDb(instance, db_inst, mod_inst);
-  std::string name;
   if (db_inst) {
-    name = db_inst->getName();
+    std::string name = db_inst->getName();
+    if (hasHierarchy()) {
+      // The db name is the full path; its in-module name may contain
+      // dividers of its own (e.g. a cell of a flattened child).
+      const size_t pos = modulePrefixLength(name, db_inst->getModule());
+      if (pos == std::string::npos) {
+        return stripParentPrefix(name);
+      }
+      name.erase(0, pos);
+    }
+    return name;
   }
+  std::string name;
   if (mod_inst) {
     name = mod_inst->getName();
   }
@@ -2271,25 +2304,26 @@ Port* dbNetwork::port(const Pin* pin) const
   return ret;
 }
 
-PortDirection* dbNetwork::direction(const Port* port) const
+const PortDirection* dbNetwork::direction(const Port* port) const
 {
   dbMTerm* mterm = nullptr;
   dbModBTerm* modbterm = nullptr;
   dbBTerm* bterm = nullptr;
   staToDb(port, bterm, mterm, modbterm);
   if (bterm) {
-    PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
+    const PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
     return dir;
   }
   if (modbterm) {
-    PortDirection* dir = dbToSta(modbterm->getSigType(), modbterm->getIoType());
+    const PortDirection* dir
+        = dbToSta(modbterm->getSigType(), modbterm->getIoType());
     return dir;
   }
   const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
   return cport->direction();
 }
 
-PortDirection* dbNetwork::direction(const Pin* pin) const
+const PortDirection* dbNetwork::direction(const Pin* pin) const
 {
   // A bump pad pin reads its direction from its LEF MTerm like any other
   // iterm; a passive bump pad is INOUT -> bidirect, so wire edges form
@@ -2308,11 +2342,11 @@ PortDirection* dbNetwork::direction(const Pin* pin) const
 
   staToDb(pin, iterm, bterm, moditerm);
   if (iterm) {
-    PortDirection* dir = dbToSta(iterm->getSigType(), iterm->getIoType());
+    const PortDirection* dir = dbToSta(iterm->getSigType(), iterm->getIoType());
     return dir;
   }
   if (bterm) {
-    PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
+    const PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
     return dir;
   }
   if (moditerm) {
@@ -2322,7 +2356,7 @@ PortDirection* dbNetwork::direction(const Pin* pin) const
     dbModule* module = mod_inst->getMaster();
     dbModBTerm* modbterm_local = module->findModBTerm(pin_name.c_str());
     assert(modbterm_local != nullptr);
-    PortDirection* dir
+    const PortDirection* dir
         = dbToSta(modbterm_local->getSigType(), modbterm_local->getIoType());
     return dir;
   }
@@ -2568,46 +2602,34 @@ std::string dbNetwork::name(const Net* net) const
   staToDb(net, dnet, modnet);
   std::string name;
 
-  Network* sta_nwk = (Network*) this;
-
   if (dnet && !modnet) {
     name = dnet->getName();
     // strip out the parent name in hierarchy mode
     // turn this off to get full flat names
 
     if (hasHierarchy()) {
-      //
-      // If this is not a hierarchical name, return it
-      //
-      if (name.find_last_of('/') == std::string::npos) {
+      // Fast path: a flat name has no module path to strip.
+      if (name.find(block_->getHierarchyDelimiter()) == std::string::npos) {
         return name;
       }
-      //
-      // Get the net name within this module of the hierarchy
-      // Note we know we are dealing with an instance pin
-      // of the form parent/instance/Z
-      // Strip out the parent/instance part from the net name.
-      // Because this object is not hooked to a modnet
-      // then we know it is inside the core of the module..
-      //
-      dbITerm* connected_iterm = dnet->getFirstOutput();
-      if (connected_iterm) {
-        Pin* related_pin = dbToSta(connected_iterm);
-        std::string related_pin_name_string = sta_nwk->pathName(related_pin);
-        const size_t last_idx = related_pin_name_string.find_last_of('/');
-        if (last_idx != std::string::npos) {
-          related_pin_name_string = related_pin_name_string.substr(0, last_idx);
-          const size_t second_last_idx
-              = related_pin_name_string.find_last_of('/');
-          if (second_last_idx != std::string::npos) {
-            std::string header_to_remove
-                = related_pin_name_string.substr(0, second_last_idx);
-            size_t pos = name.find(header_to_remove);
-            if (pos != std::string::npos) {
-              name.erase(pos, header_to_remove.length() + 1);
-            }
+      // Without a modnet, the net lives in its driver's module; strip
+      // that module instance's path. An undriven net lives in the
+      // deepest module of its loads whose path its name starts with.
+      size_t pos = std::string::npos;
+      if (dbITerm* drvr = dnet->getFirstOutput()) {
+        pos = modulePrefixLength(name, drvr->getInst()->getModule());
+      } else {
+        for (dbITerm* iterm : dnet->getITerms()) {
+          const size_t load_pos
+              = modulePrefixLength(name, iterm->getInst()->getModule());
+          if (load_pos != std::string::npos
+              && (pos == std::string::npos || load_pos > pos)) {
+            pos = load_pos;
           }
         }
+      }
+      if (pos != std::string::npos) {
+        name.erase(0, pos);
       }
     }
   }
@@ -3000,7 +3022,7 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
   for (dbMTerm* mterm : master->getMTerms()) {
     const char* port_name = mterm->getConstName();
     Port* port = makePort(cell, port_name);
-    PortDirection* dir = dbToSta(mterm->getSigType(), mterm->getIoType());
+    const PortDirection* dir = dbToSta(mterm->getSigType(), mterm->getIoType());
     setDirection(port, dir);
     mterm->staSetPort(reinterpret_cast<void*>(port));
     ConcretePort* cport = reinterpret_cast<ConcretePort*>(port);
@@ -3116,7 +3138,7 @@ Port* dbNetwork::makeTopPort(dbBTerm* bterm)
 {
   const char* port_name = bterm->getConstName();
   Port* port = makePort(top_cell_, port_name);
-  PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
+  const PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
   setDirection(port, dir);
   registerConcretePort(port);
   return port;
@@ -3125,7 +3147,7 @@ Port* dbNetwork::makeTopPort(dbBTerm* bterm)
 void dbNetwork::setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type)
 {
   Port* port = findPort(top_cell_, bterm->getConstName());
-  PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
+  const PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
   setDirection(port, dir);
 }
 
@@ -3474,7 +3496,7 @@ Pin* dbNetwork::connect(Instance* inst, Port* port, Net* net)
       bterm->connect(dnet);
     } else {
       bterm = dbBTerm::create(dnet, port_name.c_str());
-      PortDirection* dir = direction(port);
+      const PortDirection* dir = direction(port);
       dbSigType sig_type;
       dbIoType io_type;
       staToDb(dir, sig_type, io_type);
@@ -3519,7 +3541,7 @@ Pin* dbNetwork::connect(Instance* inst, LibertyPort* port, Net* net)
     } else {
       bterm = dbBTerm::create(dnet, port_name);
     }
-    PortDirection* dir = port->direction();
+    const PortDirection* dir = port->direction();
     dbSigType sig_type;
     dbIoType io_type;
     staToDb(dir, sig_type, io_type);
@@ -4108,7 +4130,7 @@ dbMTerm* dbNetwork::staToDb(const LibertyPort* port) const
   return mterm;
 }
 
-void dbNetwork::staToDb(PortDirection* dir,
+void dbNetwork::staToDb(const PortDirection* dir,
                         // Return values.
                         dbSigType& sig_type,
                         dbIoType& io_type) const
@@ -4248,8 +4270,8 @@ Cell* dbNetwork::dbToSta(dbMaster* master) const
   return reinterpret_cast<Cell*>(master->staCell());
 }
 
-PortDirection* dbNetwork::dbToSta(const dbSigType& sig_type,
-                                  const dbIoType& io_type) const
+const PortDirection* dbNetwork::dbToSta(const dbSigType& sig_type,
+                                        const dbIoType& io_type) const
 {
   if (sig_type == dbSigType::POWER) {
     return PortDirection::power();
