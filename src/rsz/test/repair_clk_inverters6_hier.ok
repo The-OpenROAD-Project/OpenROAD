@@ -1,5 +1,6 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+[WARNING RSZ-3248] repair_clock_inverters left inverter m1/c1 in the clock tree because load m1/r0/CK is dont_touch.
 Net clk
  Pin capacitance: 1.55-1.70
  Wire capacitance: 0.00

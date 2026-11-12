@@ -5379,6 +5379,12 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
     // A protected load would make insertion fail after earlier loads changed.
     for (sta::Pin* load_pin : load_pins) {
       if (dontTouch(load_pin)) {
+        logger_->warn(RSZ,
+                      3248,
+                      "repair_clock_inverters left inverter {} in the clock "
+                      "tree because load {} is dont_touch.",
+                      network_->pathName(inv),
+                      network_->pathName(load_pin));
         return;
       }
     }
