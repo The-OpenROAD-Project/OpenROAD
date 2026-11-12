@@ -5350,64 +5350,83 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
   sta::Pin* out_pin = network_->findPin(inv, out_port);
   sta::Net* in_net = db_network_->findFlatNet(in_pin);
   odb::dbNet* in_net_db = db_network_->findFlatDbNet(in_net);
-  // Resolve the flat net, as for in_net: in the hierarchical flow
-  // net(out_pin) is the dbModNet, whose pin iterator misses loads outside
-  // the inverter's module segment, and deleting it crashes deleteNet.
-  sta::Net* out_net = network_->isTopLevelPort(out_pin)
-                          ? network_->net(network_->term(out_pin))
-                          : db_network_->findFlatNet(out_pin);
+  // The flat net includes loads beyond the inverter's module segment.
+  sta::Net* out_net = db_network_->findFlatNet(out_pin);
   if (out_net) {
     std::string inv_name = network_->name(inv);
-    sta::Instance* top_inst = network_->topInstance();
+    sta::NetTermIterator* term_iter = network_->termIterator(out_net);
+    const bool has_term = term_iter->hasNext();
+    delete term_iter;
+
+    // Collect the loads before insertion rewires the net.
+    std::vector<sta::Pin*> load_pins;
     sta::NetConnectedPinIterator* load_iter = network_->pinIterator(out_net);
     while (load_iter->hasNext()) {
       const sta::Pin* load_pin = load_iter->next();
       if (load_pin != out_pin) {
-        odb::Point clone_loc = db_network_->location(load_pin);
-        sta::Instance* clone
-            = makeInstance(inv_cell,
-                           inv_name.c_str(),
-                           top_inst,
-                           clone_loc,
-                           odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
-        journalMakeBuffer(clone);
-
-        sta::Net* clone_out_net = db_network_->makeNet(top_inst);
-        odb::dbNet* clone_out_net_db = db_network_->staToDb(clone_out_net);
-        clone_out_net_db->setSigType(in_net_db->getSigType());
-
-        sta::Instance* load = network_->instance(load_pin);
-        sta_->connectPin(clone, in_port, in_net);
-        sta_->connectPin(clone, out_port, clone_out_net);
-
-        // Connect load to clone
-        sta_->disconnectPin(const_cast<sta::Pin*>(load_pin));
-        sta::Port* load_port = network_->port(load_pin);
-        sta_->connectPin(load, load_port, clone_out_net);
+        load_pins.push_back(const_cast<sta::Pin*>(load_pin));
       }
     }
     delete load_iter;
 
-    bool has_term = false;
-    sta::NetTermIterator* term_iter = network_->termIterator(out_net);
-    while (term_iter->hasNext()) {
-      has_term = true;
-      break;
-    }
-    delete term_iter;
-
-    if (!has_term) {
-      // Delete inv
-      odb::dbModNet* out_mod_net = db_network_->hierNet(out_pin);
-      sta_->disconnectPin(in_pin);
-      sta_->disconnectPin(out_pin);
-      sta_->deleteNet(out_net);
-      estimate_parasitics_->removeNetFromParasiticsInvalid(out_net);
-      if (out_mod_net) {
-        sta_->deleteNet(db_network_->dbToSta(out_mod_net));
+    if (has_term) {
+      // Keep the original inverter when its output drives a top-level port.
+      // Connect clones through the hierarchy to reach loads in other modules.
+      sta::Instance* parent_inst = db_network_->parent(inv);
+      odb::dbModNet* in_mod_net = db_network_->hierNet(in_pin);
+      for (sta::Pin* load_pin : load_pins) {
+        odb::Point clone_loc = db_network_->location(load_pin);
+        sta::Instance* clone
+            = makeInstance(inv_cell,
+                           inv_name.c_str(),
+                           parent_inst,
+                           clone_loc,
+                           odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
+        journalMakeBuffer(clone);
+        sta::Net* clone_out_net = db_network_->makeNet(parent_inst);
+        odb::dbNet* clone_out_net_db = db_network_->staToDb(clone_out_net);
+        clone_out_net_db->setSigType(in_net_db->getSigType());
+        sta_->connectPin(clone, in_port, in_net);
+        odb::dbITerm* clone_in_iterm
+            = db_network_->flatPin(network_->findPin(clone, in_port));
+        if (in_mod_net) {
+          clone_in_iterm->connect(in_mod_net);
+        }
+        sta_->connectPin(clone, out_port, clone_out_net);
+        odb::dbITerm* load_iterm = db_network_->flatPin(load_pin);
+        sta_->disconnectPin(load_pin);
+        if (db_network_->hasHierarchy()) {
+          odb::dbITerm* clone_out_iterm
+              = db_network_->flatPin(network_->findPin(clone, out_port));
+          db_network_->hierarchicalConnect(
+              clone_out_iterm, load_iterm, clone_out_net_db->getConstName());
+        } else {
+          sta_->connectPin(network_->instance(load_pin),
+                           network_->port(load_pin),
+                           clone_out_net);
+        }
       }
-      sta_->deleteInstance(inv);
+      return;
     }
+
+    // Insert each clone in its load's module, preserving the existing ports.
+    for (sta::Pin* load_pin : load_pins) {
+      odb::Point clone_loc = db_network_->location(load_pin);
+      sta::Instance* clone = insertBufferBeforeLoad(
+          load_pin,
+          inv_cell,
+          &clone_loc,
+          inv_name.c_str(),
+          kDefaultNetBaseName,
+          odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
+      journalMakeBuffer(clone);
+      odb::dbNet* clone_out_net_db
+          = db_network_->flatNet(network_->findPin(clone, out_port));
+      clone_out_net_db->setSigType(in_net_db->getSigType());
+    }
+
+    // Merge the original inverter's output hierarchy into its input net.
+    removeBuffer(inv);
   }
 }
 

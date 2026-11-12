@@ -1,0 +1,81 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+Net clk
+ Pin capacitance: 4.65-5.10
+ Wire capacitance: 0.00
+ Total capacitance: 4.65-5.10
+ Number of drivers: 1
+ Number of loads: 3
+ Number of pins: 4
+
+Driver pins
+ clk input port
+
+Load pins
+ m1/c1/A input (INV_X1) 1.55-1.70
+ m1/c1_1/A input (INV_X1) 1.55-1.70 (2, 1)
+ m1/c1_2/A input (INV_X1) 1.55-1.70 (2, 1)
+
+module top (clk,
+    clk_n_o,
+    d,
+    q1,
+    q2);
+ input clk;
+ output clk_n_o;
+ input d;
+ output q1;
+ output q2;
+
+
+ mid m1 (.clk_in(clk),
+    .d(d),
+    .clk_n_out(clk_n_o),
+    .q1(q1),
+    .q2(q2));
+endmodule
+module mid (clk_in,
+    d,
+    clk_n_out,
+    q1,
+    q2);
+ input clk_in;
+ input d;
+ output clk_n_out;
+ output q1;
+ output q2;
+
+ wire net3_4;
+ wire net1_2;
+
+ INV_X1 c1 (.A(clk_in),
+    .ZN(clk_n_out));
+ INV_X1 c1_1 (.A(clk_in),
+    .ZN(net1_2));
+ INV_X1 c1_2 (.A(clk_in),
+    .ZN(net3_4));
+ regs u_regs (.net3_i(net3_4),
+    .net1_i(net1_2),
+    .d(d),
+    .q1(q1),
+    .q2(q2));
+endmodule
+module regs (net3_i,
+    net1_i,
+    d,
+    q1,
+    q2);
+ input net3_i;
+ input net1_i;
+ input d;
+ output q1;
+ output q2;
+
+
+ DFF_X1 r1 (.D(d),
+    .CK(net3_i),
+    .Q(q1));
+ DFF_X1 r2 (.D(d),
+    .CK(net1_i),
+    .Q(q2));
+endmodule

@@ -1,9 +1,9 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
 Net clk
- Pin capacitance: 0.00
+ Pin capacitance: 4.65-5.10
  Wire capacitance: 0.00
- Total capacitance: 0.00
+ Total capacitance: 4.65-5.10
  Number of drivers: 1
  Number of loads: 3
  Number of pins: 4
@@ -12,49 +12,71 @@ Driver pins
  clk input port
 
 Load pins
- c1_1/A input (INV_X1) 1.55-1.70 (2, 1)
- c1_2/A input (INV_X1) 1.55-1.70 (2, 1)
- c1_3/A input (INV_X1) 1.55-1.70 (2, 1)
+ m1/c1_3/A input (INV_X1) 1.55-1.70 (2, 1)
+ m1/u_regs/c1_1/A input (INV_X1) 1.55-1.70 (2, 1)
+ m1/u_regs/c1_2/A input (INV_X1) 1.55-1.70 (2, 1)
 
-Net net1
- Pin capacitance: 0.86-0.95
- Wire capacitance: 0.00
- Total capacitance: 0.86-0.95
- Number of drivers: 1
- Number of loads: 1
- Number of pins: 2
+module top (clk,
+    d,
+    q0,
+    q1,
+    q2);
+ input clk;
+ input d;
+ output q0;
+ output q1;
+ output q2;
 
-Driver pins
- c1_1/ZN output (INV_X1) (2, 1)
 
-Load pins
- m1/u_regs/r2/CK input (DFF_X1) 0.86-0.95
+ mid m1 (.clk_in(clk),
+    .d(d),
+    .q0(q0),
+    .q1(q1),
+    .q2(q2));
+endmodule
+module mid (clk_in,
+    d,
+    q0,
+    q1,
+    q2);
+ input clk_in;
+ input d;
+ output q0;
+ output q1;
+ output q2;
 
-Net net2
- Pin capacitance: 0.86-0.95
- Wire capacitance: 0.00
- Total capacitance: 0.86-0.95
- Number of drivers: 1
- Number of loads: 1
- Number of pins: 2
+ wire net_3;
 
-Driver pins
- c1_2/ZN output (INV_X1) (2, 1)
+ INV_X1 c1_3 (.A(clk_in),
+    .ZN(net_3));
+ DFF_X1 r0 (.D(d),
+    .CK(net_3),
+    .Q(q0));
+ regs u_regs (.clk_n(clk_in),
+    .d(d),
+    .q1(q1),
+    .q2(q2));
+endmodule
+module regs (clk_n,
+    d,
+    q1,
+    q2);
+ input clk_n;
+ input d;
+ output q1;
+ output q2;
 
-Load pins
- m1/u_regs/r1/CK input (DFF_X1) 0.86-0.95
+ wire net_1;
+ wire net_2;
 
-Net net3
- Pin capacitance: 0.86-0.95
- Wire capacitance: 0.00
- Total capacitance: 0.86-0.95
- Number of drivers: 1
- Number of loads: 1
- Number of pins: 2
-
-Driver pins
- c1_3/ZN output (INV_X1) (2, 1)
-
-Load pins
- m1/r0/CK input (DFF_X1) 0.86-0.95
-
+ INV_X1 c1_1 (.A(clk_n),
+    .ZN(net_1));
+ INV_X1 c1_2 (.A(clk_n),
+    .ZN(net_2));
+ DFF_X1 r1 (.D(d),
+    .CK(net_2),
+    .Q(q1));
+ DFF_X1 r2 (.D(d),
+    .CK(net_1),
+    .Q(q2));
+endmodule
