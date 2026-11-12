@@ -18,6 +18,7 @@ TESTS = [
     "retime_dsec_loop",
     "retime_dsec_plain",
     "retime_dsec_port_tap",
+    "retime_dsec_unmapped_neighbor",
     "retime_gated_clock",
     "retime_hierarchical",
     "retime_input_limit",
