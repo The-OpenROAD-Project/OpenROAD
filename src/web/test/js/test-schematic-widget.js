@@ -1674,6 +1674,29 @@ describe('SchematicWidget timing path overlay', () => {
         container.element.remove();
     });
 
+    it('redraws the shown view\'s instance on Refresh after expand and Back', async () => {
+        const cones = [];
+        const { widget, container } = makeRenderingPathWidget(msg => {
+            if (msg.type === 'schematic_cone') cones.push(msg.inst_name);
+            return Promise.resolve(netlistWith(msg.inst_name));
+        });
+        // A timing cone draws u1 without selecting it.
+        widget.appState.selectedInstanceName = 'u0';
+        await widget.refresh('u1');
+
+        await widget._expandFromInstance('u2', widget._currentSchematicSnapshot());
+        cones.length = 0;
+        await widget._onRefresh();
+        assert.deepEqual(cones, ['u2']);
+
+        await widget._expandFromInstance('u3', widget._currentSchematicSnapshot());
+        assert.equal(await widget._goBackSchematic(), true);
+        cones.length = 0;
+        await widget._onRefresh();
+        assert.deepEqual(cones, ['u2']);
+        container.element.remove();
+    });
+
     it('reloads a path once something else was drawn over it', async () => {
         const requests = [];
         const { widget, container } = makeRenderingPathWidget(msg => {

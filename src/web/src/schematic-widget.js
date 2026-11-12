@@ -278,6 +278,8 @@ export class SchematicWidget {
         return {
             netlist: this._currentNetlist,
             selectedInstanceName: this.appState.selectedInstanceName || null,
+            // The instance Refresh redraws while this view is shown.
+            instName: this._instName,
         };
     }
 
@@ -332,6 +334,7 @@ export class SchematicWidget {
                 }
                 this._setBackButtonEnabled();
                 this._leaveTimingSchematic();
+                this._instName = snapshot.instName;
                 if (!snapshot.selectedInstanceName) {
                     return true;
                 }
@@ -1092,6 +1095,7 @@ export class SchematicWidget {
             // Record Back history only after expansion renders.
             this._pushSchematicHistory(previousSnapshot);
             this._leaveTimingSchematic();
+            this._instName = instName;
             return true;
         } catch (err) {
             if (isCurrent()) this.setStatus(`Error: ${err}`);
