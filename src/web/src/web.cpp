@@ -6,7 +6,9 @@
 #include <netinet/in.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cctype>
+#include <chrono>
 #include <cmath>
 #include <csignal>
 #include <cstdint>
@@ -33,6 +35,7 @@
 
 #include "boost/asio/io_context.hpp"
 #include "boost/asio/ip/tcp.hpp"
+#include "boost/asio/steady_timer.hpp"
 #include "boost/asio/strand.hpp"
 #include "boost/beast/core.hpp"
 #include "boost/beast/http.hpp"
@@ -384,6 +387,50 @@ static http::response<http::string_body> handle_request(
 }
 
 //------------------------------------------------------------------------------
+// Connection count - caps the connections open at once
+//------------------------------------------------------------------------------
+
+namespace {
+
+class ConnectionCount : public std::enable_shared_from_this<ConnectionCount>
+{
+ public:
+  // One open connection; the session that owns it gives the place back.
+  class Slot
+  {
+   public:
+    explicit Slot(std::shared_ptr<ConnectionCount> count)
+        : count_(std::move(count))
+    {
+    }
+    ~Slot() { --count_->open_; }
+    Slot(const Slot&) = delete;
+    Slot& operator=(const Slot&) = delete;
+
+   private:
+    std::shared_ptr<ConnectionCount> count_;
+  };
+
+  explicit ConnectionCount(const int max) : max_(max) {}
+
+  // Null when max connections are already open.
+  std::unique_ptr<Slot> tryAcquire()
+  {
+    if (open_.fetch_add(1) >= max_) {
+      --open_;
+      return nullptr;
+    }
+    return std::make_unique<Slot>(shared_from_this());
+  }
+
+ private:
+  const int max_;
+  std::atomic<int> open_{0};
+};
+
+}  // namespace
+
+//------------------------------------------------------------------------------
 // WebSocket session - multiplexes many requests over a single connection
 //------------------------------------------------------------------------------
 
@@ -408,15 +455,18 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
   // Registration-based request dispatcher (replaces parse/dispatch switches)
   RequestDispatcher dispatcher_;
 
-  // Write serialization: strand + queue ensures one async_write at a time
+  // One async_write at a time: the queue is only touched on the socket's
+  // executor, which is the connection's strand (see Listener::do_accept).
   struct PendingWrite
   {
     std::vector<unsigned char> frame;
     std::function<void()> on_complete;
   };
-  net::strand<net::any_io_executor> strand_;
   std::deque<PendingWrite> write_queue_;
   bool writing_ = false;
+  // Request handlers run here, off the connection's strand, so that one
+  // session's requests still run in parallel.
+  net::any_io_executor pool_;
 
   // Background search index initialization
   std::shared_ptr<TileGenerator> generator_;
@@ -432,15 +482,19 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
   // In-flight request window announced to the client on connect.
   int max_in_flight_ = 16;
 
+  std::unique_ptr<ConnectionCount::Slot> slot_;
+
  public:
   WebSocketSession(Tcp::socket&& socket,
+                   net::any_io_executor pool,
                    std::shared_ptr<TileGenerator> generator,
                    std::shared_ptr<TclEvaluator> tcl_eval,
                    std::shared_ptr<TimingReport> timing_report,
                    std::shared_ptr<ClockTreeReport> clock_report,
                    utl::Logger* logger,
                    WebViewerHook* viewer_hook,
-                   int max_in_flight);
+                   int max_in_flight,
+                   std::unique_ptr<ConnectionCount::Slot> slot);
   ~WebSocketSession();
 
   void run(http::request<http::string_body>&& req);
@@ -677,6 +731,7 @@ void applyRendererControlExclusivity(WebViewerHook* hook,
 
 WebSocketSession::WebSocketSession(
     Tcp::socket&& socket,
+    net::any_io_executor pool,
     // NOLINTBEGIN(performance-unnecessary-value-param)
     std::shared_ptr<TileGenerator> generator,
     std::shared_ptr<TclEvaluator> tcl_eval,
@@ -685,7 +740,8 @@ WebSocketSession::WebSocketSession(
     std::shared_ptr<ClockTreeReport> clock_report,
     utl::Logger* logger,
     WebViewerHook* viewer_hook,
-    int max_in_flight)
+    int max_in_flight,
+    std::unique_ptr<ConnectionCount::Slot> slot)
     : websocket_(std::move(socket)),
       logger_(logger),
       select_handler_(generator, tcl_eval),
@@ -695,11 +751,12 @@ WebSocketSession::WebSocketSession(
       tile_handler_(generator),
       drc_handler_(generator),
       edit_handler_(generator, tcl_eval),
-      strand_(net::make_strand(websocket_.get_executor())),
+      pool_(std::move(pool)),
       generator_(std::move(generator)),
       tcl_eval_(std::move(tcl_eval)),
       viewer_hook_(viewer_hook),
-      max_in_flight_(max_in_flight)
+      max_in_flight_(max_in_flight),
+      slot_(std::move(slot))
 {
   if (generator_) {
     odb::dbChip* chip = generator_->getChip();
@@ -1197,6 +1254,11 @@ void WebSocketSession::on_read(beast::error_code ec)
                  "websocket read error: {}",
                  ec.message());
     }
+    // The init thread or a posted handler can keep the session alive past its
+    // connection, so give the descriptor and the place back now.
+    beast::error_code ignored;
+    beast::get_lowest_layer(websocket_).socket().close(ignored);
+    slot_.reset();
     return;
   }
 
@@ -1213,7 +1275,7 @@ void WebSocketSession::on_read(beast::error_code ec)
     } else {
       auto handle = entry->handle;
       net::post(
-          websocket_.get_executor(),
+          pool_,
           [self = std::move(self),
            req = std::move(req),
            handle = std::move(handle)]() {
@@ -1276,9 +1338,8 @@ void WebSocketSession::queue_response(const WebSocketResponse& resp,
 
   std::vector<unsigned char> frame = serialize_response(resp);
 
-  // Post to the strand to serialize write queue access
   net::post(
-      strand_,
+      websocket_.get_executor(),
       [self = shared_from_this(),
        frame = std::move(frame),
        on_complete = std::move(on_complete)]() mutable {
@@ -1301,24 +1362,22 @@ void WebSocketSession::do_write()
   websocket_.async_write(
       net::buffer(write_queue_.front().frame),
       [self = shared_from_this()](beast::error_code ec, std::size_t) {
-        net::post(self->strand_, [self, ec]() {
-          auto on_complete = std::move(self->write_queue_.front().on_complete);
-          self->write_queue_.pop_front();
-          if (on_complete) {
-            on_complete();
-          }
-          if (ec) {
-            debugPrint(self->logger_,
-                       utl::WEB,
-                       "websocket",
-                       1,
-                       "websocket write error: {}",
-                       ec.message());
-            self->writing_ = false;
-            return;
-          }
-          self->do_write();
-        });
+        auto on_complete = std::move(self->write_queue_.front().on_complete);
+        self->write_queue_.pop_front();
+        if (on_complete) {
+          on_complete();
+        }
+        if (ec) {
+          debugPrint(self->logger_,
+                     utl::WEB,
+                     "websocket",
+                     1,
+                     "websocket write error: {}",
+                     ec.message());
+          self->writing_ = false;
+          return;
+        }
+        self->do_write();
       });
 }
 
@@ -1331,18 +1390,23 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
   beast::tcp_stream stream_;
   beast::flat_buffer buffer_;
   std::shared_ptr<http::response<http::string_body>> res_;
+  std::unique_ptr<http::response_serializer<http::string_body>> serializer_;
   http::request<http::string_body> req_;
   std::shared_ptr<TileGenerator> generator_;
   std::shared_ptr<TclEvaluator> tcl_eval_;
   utl::Logger* logger_;
   std::shared_ptr<SessionAuth> auth_;
+  ConnectionLimits limits_;
+  std::unique_ptr<ConnectionCount::Slot> slot_;
 
  public:
   HttpSession(Tcp::socket&& socket,
               std::shared_ptr<TileGenerator> generator,
               std::shared_ptr<TclEvaluator> tcl_eval,
               utl::Logger* logger,
-              std::shared_ptr<SessionAuth> auth);
+              std::shared_ptr<SessionAuth> auth,
+              const ConnectionLimits& limits,
+              std::unique_ptr<ConnectionCount::Slot> slot);
 
   void run() { do_read(); }
 
@@ -1361,12 +1425,16 @@ HttpSession::HttpSession(Tcp::socket&& socket,
                          std::shared_ptr<TileGenerator> generator,
                          std::shared_ptr<TclEvaluator> tcl_eval,
                          utl::Logger* logger,
-                         std::shared_ptr<SessionAuth> auth)
+                         std::shared_ptr<SessionAuth> auth,
+                         const ConnectionLimits& limits,
+                         std::unique_ptr<ConnectionCount::Slot> slot)
     : stream_(std::move(socket)),
       generator_(std::move(generator)),
       tcl_eval_(std::move(tcl_eval)),
       logger_(logger),
-      auth_(std::move(auth))
+      auth_(std::move(auth)),
+      limits_(limits),
+      slot_(std::move(slot))
 {
 }
 
@@ -1381,6 +1449,8 @@ void HttpSession::run_with_request(http::request<http::string_body> req,
 void HttpSession::do_read()
 {
   req_ = {};
+  // Also what an idle keep-alive connection gets before it is dropped.
+  stream_.expires_after(limits_.request_timeout);
   http::async_read(
       stream_,
       buffer_,
@@ -1404,15 +1474,24 @@ void HttpSession::on_read(beast::error_code ec)
 
   res_ = std::make_shared<http::response<http::string_body>>(handle_request(
       std::move(req_), generator_, tcl_eval_->script_gate, auth_, logger_));
+  serializer_
+      = std::make_unique<http::response_serializer<http::string_body>>(*res_);
   do_write();
 }
 
 void HttpSession::do_write()
 {
-  http::async_write(
+  // Re-armed for each write, so a slow reader that keeps reading is not cut
+  // off; one that stops is.
+  stream_.expires_after(limits_.write_timeout);
+  http::async_write_some(
       stream_,
-      *res_,
+      *serializer_,
       [self = shared_from_this()](beast::error_code ec, std::size_t) {
+        if (!ec && !self->serializer_->is_done()) {
+          self->do_write();
+          return;
+        }
         self->on_write(ec);
       });
 }
@@ -1426,6 +1505,7 @@ void HttpSession::on_write(beast::error_code ec)
   }
 
   bool keep_alive = res_->keep_alive();
+  serializer_.reset();
   res_ = nullptr;
 
   if (keep_alive) {
@@ -1448,6 +1528,7 @@ void HttpSession::do_close()
 class DetectSession : public std::enable_shared_from_this<DetectSession>
 {
   beast::tcp_stream stream_;
+  net::any_io_executor pool_;
   beast::flat_buffer buffer_;
   std::shared_ptr<TileGenerator> generator_;
   std::shared_ptr<TclEvaluator> tcl_eval_;
@@ -1458,9 +1539,12 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
   WebViewerHook* viewer_hook_ = nullptr;
   int max_in_flight_ = 16;
   std::shared_ptr<SessionAuth> auth_;
+  ConnectionLimits limits_;
+  std::unique_ptr<ConnectionCount::Slot> slot_;
 
  public:
   DetectSession(Tcp::socket&& socket,
+                net::any_io_executor pool,
                 std::shared_ptr<TileGenerator> generator,
                 std::shared_ptr<TclEvaluator> tcl_eval,
                 std::shared_ptr<TimingReport> timing_report,
@@ -1468,7 +1552,9 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
                 utl::Logger* logger,
                 WebViewerHook* viewer_hook,
                 int max_in_flight,
-                std::shared_ptr<SessionAuth> auth);
+                std::shared_ptr<SessionAuth> auth,
+                const ConnectionLimits& limits,
+                std::unique_ptr<ConnectionCount::Slot> slot);
 
   void run();
 
@@ -1479,6 +1565,7 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
 };
 
 DetectSession::DetectSession(Tcp::socket&& socket,
+                             net::any_io_executor pool,
                              std::shared_ptr<TileGenerator> generator,
                              std::shared_ptr<TclEvaluator> tcl_eval,
                              std::shared_ptr<TimingReport> timing_report,
@@ -1486,8 +1573,11 @@ DetectSession::DetectSession(Tcp::socket&& socket,
                              utl::Logger* logger,
                              WebViewerHook* viewer_hook,
                              int max_in_flight,
-                             std::shared_ptr<SessionAuth> auth)
+                             std::shared_ptr<SessionAuth> auth,
+                             const ConnectionLimits& limits,
+                             std::unique_ptr<ConnectionCount::Slot> slot)
     : stream_(std::move(socket)),
+      pool_(std::move(pool)),
       generator_(std::move(generator)),
       tcl_eval_(std::move(tcl_eval)),
       timing_report_(std::move(timing_report)),
@@ -1495,7 +1585,9 @@ DetectSession::DetectSession(Tcp::socket&& socket,
       logger_(logger),
       viewer_hook_(viewer_hook),
       max_in_flight_(max_in_flight),
-      auth_(std::move(auth))
+      auth_(std::move(auth)),
+      limits_(limits),
+      slot_(std::move(slot))
 {
 }
 
@@ -1512,6 +1604,7 @@ void DetectSession::reject(const http::status status,
   res->prepare_payload();
   // Keep `res` alive until the write completes, then shut the socket down
   // for a graceful FIN — same teardown as HttpSession::do_close.
+  stream_.expires_after(limits_.write_timeout);
   http::async_write(
       stream_,
       *res,
@@ -1523,6 +1616,9 @@ void DetectSession::reject(const http::status status,
 
 void DetectSession::run()
 {
+  // The token is only checked once the request is in, so this also bounds a
+  // client that never sends one.
+  stream_.expires_after(limits_.request_timeout);
   http::async_read(
       stream_,
       buffer_,
@@ -1591,18 +1687,25 @@ void DetectSession::on_read(beast::error_code ec)
     // WebSocket upgrade - hand off to WebSocketSession
     auto websocket_session
         = std::make_shared<WebSocketSession>(stream_.release_socket(),
+                                             pool_,
                                              generator_,
                                              tcl_eval_,
                                              timing_report_,
                                              clock_report_,
                                              logger_,
                                              viewer_hook_,
-                                             max_in_flight_);
+                                             max_in_flight_,
+                                             std::move(slot_));
     websocket_session->run(std::move(req_));
   } else {
     // Regular HTTP - hand off to session with already-read request
-    auto s = std::make_shared<HttpSession>(
-        stream_.release_socket(), generator_, tcl_eval_, logger_, auth_);
+    auto s = std::make_shared<HttpSession>(stream_.release_socket(),
+                                           generator_,
+                                           tcl_eval_,
+                                           logger_,
+                                           auth_,
+                                           limits_,
+                                           std::move(slot_));
     s->run_with_request(std::move(req_), std::move(buffer_));
   }
 }
@@ -1615,6 +1718,7 @@ class Listener : public std::enable_shared_from_this<Listener>
 {
   net::io_context& ioc_;
   Tcp::acceptor acceptor_;
+  net::steady_timer accept_retry_;
   std::shared_ptr<TileGenerator> generator_;
   std::shared_ptr<TclEvaluator> tcl_eval_;
   std::shared_ptr<TimingReport> timing_report_;
@@ -1623,6 +1727,9 @@ class Listener : public std::enable_shared_from_this<Listener>
   WebViewerHook* viewer_hook_ = nullptr;
   int max_in_flight_ = 16;
   std::shared_ptr<SessionAuth> auth_;
+  ConnectionLimits limits_;
+  std::shared_ptr<ConnectionCount> connections_;
+  bool refusal_warned_ = false;
 
  public:
   Listener(net::io_context& ioc,
@@ -1634,7 +1741,8 @@ class Listener : public std::enable_shared_from_this<Listener>
            utl::Logger* logger,
            WebViewerHook* viewer_hook,
            int max_in_flight,
-           std::shared_ptr<SessionAuth> auth);
+           std::shared_ptr<SessionAuth> auth,
+           const ConnectionLimits& limits);
 
   void run() { do_accept(); }
 
@@ -1664,9 +1772,11 @@ Listener::Listener(net::io_context& ioc,
                    utl::Logger* logger,
                    WebViewerHook* viewer_hook,
                    int max_in_flight,
-                   std::shared_ptr<SessionAuth> auth)
+                   std::shared_ptr<SessionAuth> auth,
+                   const ConnectionLimits& limits)
     : ioc_(ioc),
       acceptor_(ioc),
+      accept_retry_(ioc),
       generator_(std::move(generator)),
       tcl_eval_(std::move(tcl_eval)),
       timing_report_(std::move(timing_report)),
@@ -1674,7 +1784,9 @@ Listener::Listener(net::io_context& ioc,
       logger_(logger),
       viewer_hook_(viewer_hook),
       max_in_flight_(max_in_flight),
-      auth_(std::move(auth))
+      auth_(std::move(auth)),
+      limits_(limits),
+      connections_(std::make_shared<ConnectionCount>(limits.max_connections))
 {
   beast::error_code ec;
 
@@ -1703,8 +1815,10 @@ Listener::Listener(net::io_context& ioc,
 
 void Listener::do_accept()
 {
+  // A strand per connection: a stream's timer must not run alongside its
+  // reads and writes.
   acceptor_.async_accept(
-      ioc_,
+      net::make_strand(ioc_),
       [self = shared_from_this()](beast::error_code ec, Tcp::socket socket) {
         self->on_accept(ec, std::move(socket));
       });
@@ -1717,9 +1831,20 @@ void Listener::on_accept(beast::error_code ec, Tcp::socket socket)
     if (ec == net::error::operation_aborted || !acceptor_.is_open()) {
       return;
     }
-  } else {
+    // Out of descriptors, say: retrying at once would only spin.
+    accept_retry_.expires_after(std::chrono::milliseconds(100));
+    accept_retry_.async_wait(
+        [self = shared_from_this()](const beast::error_code& wait_ec) {
+          if (!wait_ec && self->acceptor_.is_open()) {
+            self->do_accept();
+          }
+        });
+    return;
+  }
+  if (auto slot = connections_->tryAcquire()) {
     // Route through DetectSession to handle both HTTP and WebSocket
     std::make_shared<DetectSession>(std::move(socket),
+                                    ioc_.get_executor(),
                                     generator_,
                                     tcl_eval_,
                                     timing_report_,
@@ -1727,8 +1852,28 @@ void Listener::on_accept(beast::error_code ec, Tcp::socket socket)
                                     logger_,
                                     viewer_hook_,
                                     max_in_flight_,
-                                    auth_)
+                                    auth_,
+                                    limits_,
+                                    std::move(slot))
         ->run();
+  } else {
+    // Accepts run one at a time, so a plain flag makes a flood warn once.
+    if (!std::exchange(refusal_warned_, true)) {
+      logger_->warn(utl::WEB,
+                    138,
+                    "Refused a connection: {} are already open; further "
+                    "refusals: set_debug_level WEB http 1.",
+                    limits_.max_connections);
+    } else {
+      debugPrint(logger_,
+                 utl::WEB,
+                 "http",
+                 1,
+                 "Refused a connection: {} are already open.",
+                 limits_.max_connections);
+    }
+    beast::error_code ignored;
+    socket.close(ignored);
   }
   do_accept();
 }
@@ -2827,7 +2972,8 @@ ListenerHandle createAndRunListener(
     utl::Logger* logger,
     WebViewerHook* viewer_hook,
     int max_in_flight,
-    std::shared_ptr<SessionAuth> auth)
+    std::shared_ptr<SessionAuth> auth,
+    const ConnectionLimits limits)
 {
   if (!auth) {
     throw std::invalid_argument("createAndRunListener needs a SessionAuth");
@@ -2841,7 +2987,8 @@ ListenerHandle createAndRunListener(
                                              logger,
                                              viewer_hook,
                                              max_in_flight,
-                                             std::move(auth));
+                                             std::move(auth),
+                                             limits);
   listener->run();
   return {.shutdown = [listener]() { listener->close(); },
           .port = listener->port()};

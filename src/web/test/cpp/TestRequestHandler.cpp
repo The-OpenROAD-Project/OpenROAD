@@ -10,6 +10,7 @@
 #include <functional>
 #include <future>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <mutex>
 #include <set>
@@ -35,6 +36,7 @@
 #include "odb/db.h"
 #include "request_handler.h"
 #include "tile_generator.h"
+#include "timing_report.h"
 #include "tst/nangate45_fixture.h"
 #include "utl/Logger.h"
 #include "web/core.h"
@@ -5911,6 +5913,35 @@ TEST_F(CustomUiTest, RemoveIsIdempotent)
   boost::json::object root = registry(hook);
   EXPECT_EQ(root.at("toolbar").as_array().size(), 0u);
   EXPECT_EQ(root.at("menu").as_array().size(), 0u);
+}
+
+// ─── TimingHandler: timing_report ────────────────────────────────────────────
+
+// The path count reaches the timer with the Tcl lock held.
+TEST(TimingHandlerTest, MaxPathsOutsideTheQtRangeIsRefused)
+{
+  utl::Logger logger;
+  TimingHandler handler(
+      /*gen=*/nullptr,
+      std::make_shared<TimingReport>(/*sta=*/nullptr),
+      std::make_shared<TclEvaluator>(/*interp=*/nullptr, &logger));
+  WebSocketRequest req;
+  req.type = WebSocketRequest::kTimingReport;
+  constexpr int64_t kMax = TimingReport::kMaxPaths;
+  for (const int64_t max_paths :
+       {int64_t{-1}, kMax + 1, std::numeric_limits<int64_t>::max()}) {
+    req.json = {{"is_setup", true}, {"max_paths", max_paths}};
+    const WebSocketResponse resp = handler.handleTimingReport(req);
+    EXPECT_EQ(resp.type, WebSocketResponse::kError) << max_paths;
+    EXPECT_NE(payloadStr(resp).find("\"max_paths\" is outside [0, 10000]"),
+              std::string::npos)
+        << max_paths;
+  }
+  for (const int64_t max_paths : {int64_t{0}, kMax}) {
+    req.json = {{"is_setup", true}, {"max_paths", max_paths}};
+    EXPECT_EQ(handler.handleTimingReport(req).type, WebSocketResponse::kJson)
+        << max_paths;
+  }
 }
 
 // ─── EditHandler: Global Connect + Insert Buffer ─────────────────────────────

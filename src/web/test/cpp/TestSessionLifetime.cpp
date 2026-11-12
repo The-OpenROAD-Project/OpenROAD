@@ -4,7 +4,7 @@
 // The web server against a real listener; the other web tests drive the
 // handlers directly.
 
-#include <poll.h>
+#include <sys/poll.h>
 
 #include <chrono>
 #include <cstddef>
@@ -15,6 +15,7 @@
 #include <string_view>
 #include <thread>
 #include <utility>
+#include <vector>
 
 #include "boost/asio/io_context.hpp"
 #include "boost/asio/ip/address.hpp"
@@ -28,6 +29,7 @@
 #include "timing_report.h"
 #include "utl/Logger.h"
 #include "web/web.h"
+#include "web_assets.h"
 #include "web_viewer_hook.h"
 
 namespace web {
@@ -139,11 +141,14 @@ class ListenerFixture : public ::testing::Test
         logger_.get(),
         hook_.get(),
         /*max_in_flight=*/16,
-        std::move(auth));
+        std::move(auth),
+        limits());
   }
 
   // Runs before the generator exists; the default leaves the database empty.
   virtual void buildDesign(odb::dbDatabase* /*db*/) {}
+
+  virtual ConnectionLimits limits() const { return {}; }
 
   // What WebServer::stop() does to the io side, dropping the listener with its
   // handle as stop() does.  Safe to call twice.
@@ -160,22 +165,60 @@ class ListenerFixture : public ::testing::Test
     io_thread_.join();
   }
 
-  // False when nothing arrives in five seconds, so a server that stops
-  // answering fails the test instead of hanging it.
-  static bool waitReadable(Tcp::socket& socket)
+  // False when nothing arrives in time, so a server that stops answering
+  // fails the test instead of hanging it.
+  static bool waitReadable(Tcp::socket& socket, const int timeout_ms = 5000)
   {
     pollfd pfd{};
     pfd.fd = socket.native_handle();
     pfd.events = POLLIN;
-    return ::poll(&pfd, 1, /*timeout=*/5000) > 0;
+    return ::poll(&pfd, 1, timeout_ms) > 0;
+  }
+
+  Tcp::endpoint endpoint() const
+  {
+    return {net::ip::address_v4::loopback(), port()};
+  }
+
+  Tcp::socket connect()
+  {
+    Tcp::socket socket(*ioc_);
+    socket.connect(endpoint());
+    return socket;
   }
 
   Tcp::socket connectAndSend(const std::string& request)
   {
-    Tcp::socket socket(*ioc_);
-    socket.connect(Tcp::endpoint{net::ip::address_v4::loopback(), port()});
+    Tcp::socket socket = connect();
     net::write(socket, net::buffer(request));
     return socket;
+  }
+
+  // True once the server closes; false if it is quiet for timeout_ms (with 0:
+  // still open).  What it sends goes to `received`, when given.
+  static bool closedByServer(Tcp::socket& socket,
+                             const int timeout_ms = 5000,
+                             std::string* received = nullptr)
+  {
+    while (waitReadable(socket, timeout_ms)) {
+      char chunk[65536];
+      boost::system::error_code ec;
+      const std::size_t n = socket.read_some(net::buffer(chunk), ec);
+      if (received != nullptr) {
+        received->append(chunk, n);
+      }
+      if (ec) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static std::string readUntilClosed(Tcp::socket& socket)
+  {
+    std::string received;
+    closedByServer(socket, /*timeout_ms=*/5000, &received);
+    return received;
   }
 
   // The status line and headers.  Read in chunks: a slow reader lets the init
@@ -241,23 +284,15 @@ class ListenerFixture : public ::testing::Test
   std::string httpGetWhole(const std::string& target)
   {
     Tcp::socket socket = connectAndSend(getRequest(target));
-    std::string received;
-    while (waitReadable(socket)) {
-      char chunk[1024];
-      boost::system::error_code ec;
-      const std::size_t n = socket.read_some(net::buffer(chunk), ec);
-      received.append(chunk, n);
-      if (ec) {
-        break;
-      }
-    }
-    return received;
+    return readUntilClosed(socket);
   }
 
-  std::string getRequest(const std::string& target) const
+  std::string getRequest(const std::string& target,
+                         const bool keep_alive = false) const
   {
-    return "GET " + target + " HTTP/1.1\r\nHost: localhost:"
-           + std::to_string(port()) + "\r\nConnection: close\r\n\r\n";
+    return "GET " + target
+           + " HTTP/1.1\r\nHost: localhost:" + std::to_string(port()) + "\r\n"
+           + (keep_alive ? "" : "Connection: close\r\n") + "\r\n";
   }
 
   uint16_t port() const { return handle_.port; }
@@ -495,6 +530,160 @@ TEST_F(ListenerFixture, SameOriginUpgradeWithTheTokenIsAccepted)
 TEST_F(ListenerFixture, ListenerRefusesANullAuth)
 {
   EXPECT_THROW(startListener(/*auth=*/nullptr), std::invalid_argument);
+}
+
+// One timeout short at a time: the deadline set before a write still holds
+// for the read after it, and would hide a read that sets none.
+class ShortRequestTimeoutFixture : public ListenerFixture
+{
+ protected:
+  ConnectionLimits limits() const override
+  {
+    return {.request_timeout = std::chrono::milliseconds(200)};
+  }
+};
+
+class ShortWriteTimeoutFixture : public ListenerFixture
+{
+ protected:
+  ConnectionLimits limits() const override
+  {
+    return {.write_timeout = std::chrono::milliseconds(200)};
+  }
+};
+
+// The token is checked only once a request is in, so without a timeout a
+// client with no token could hold a connection for good.
+TEST_F(ShortRequestTimeoutFixture, SilentClientIsDropped)
+{
+  Tcp::socket silent = connect();
+  EXPECT_TRUE(closedByServer(silent));
+  EXPECT_EQ(statusOf(httpGet(withToken("/"))), 200);
+}
+
+TEST_F(ShortRequestTimeoutFixture, HalfSentRequestIsDropped)
+{
+  Tcp::socket slow = connectAndSend("GET / HTTP/1.1\r\nHost: localhost\r\n");
+  EXPECT_TRUE(closedByServer(slow));
+}
+
+TEST_F(ShortRequestTimeoutFixture, IdleKeepAliveIsDropped)
+{
+  Tcp::socket client = connectAndSend(
+      getRequest(withToken("/no-such-route"), /*keep_alive=*/true));
+  ASSERT_EQ(statusOf(readHead(client)), 404);
+  EXPECT_TRUE(closedByServer(client));
+}
+
+// A client that stops reading must not keep the responses, and the
+// connection, forever.
+TEST_F(ShortWriteTimeoutFixture, StalledReaderIsDropped)
+{
+  // Pipelined, so the replies outgrow whatever the kernel buffers for a
+  // reader that has stopped.
+  constexpr std::size_t kRequests = 16;
+  const EmbeddedAsset* bundle = findEmbeddedAsset("/app.min.js");
+  ASSERT_NE(bundle, nullptr);
+  std::string requests;
+  for (std::size_t i = 0; i < kRequests; ++i) {
+    requests += getRequest("/app.min.js", /*keep_alive=*/true);
+  }
+  Tcp::socket client(*ioc_);
+  client.open(Tcp::v4());
+  client.set_option(net::socket_base::receive_buffer_size(4096));
+  client.connect(endpoint());
+  net::write(client, net::buffer(requests));
+  std::this_thread::sleep_for(3 * limits().write_timeout);
+
+  // Without gzip in the request, each body goes out inflated.
+  EXPECT_LT(readUntilClosed(client).size(), kRequests * bundle->original_size);
+}
+
+// The upgrade hands the socket on without the request timeout.
+TEST_F(ShortRequestTimeoutFixture, UpgradedWebSocketOutlivesTheRequestTimeout)
+{
+  Tcp::socket client = connectAndSend(upgradeRequest(withToken("")));
+  ASSERT_EQ(statusOf(readHead(client)), 101);
+  std::this_thread::sleep_for(2 * limits().request_timeout);
+  EXPECT_FALSE(closedByServer(client, /*timeout_ms=*/0));
+}
+
+class SmallCapFixture : public ListenerFixture
+{
+ protected:
+  ConnectionLimits limits() const override { return {.max_connections = 3}; }
+
+  // GET / until a place frees up, for up to two seconds.
+  int statusOnceThereIsRoom()
+  {
+    const auto deadline
+        = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+    int status = 0;
+    while ((status = statusOf(httpGet(withToken("/")))) != 200
+           && std::chrono::steady_clock::now() < deadline) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    return status;
+  }
+
+  // `count` connections that send nothing.
+  std::vector<Tcp::socket> hold(const int count)
+  {
+    std::vector<Tcp::socket> held;
+    held.reserve(count);
+    for (int i = 0; i < count; ++i) {
+      held.push_back(connect());
+    }
+    return held;
+  }
+
+  bool nextIsRefused()
+  {
+    Tcp::socket socket = connect();
+    return closedByServer(socket);
+  }
+};
+
+// Each idle connection holds a descriptor; past the cap new ones are closed
+// at once, before they can run the whole process out of them.
+TEST_F(SmallCapFixture, ConnectionsPastTheCapAreClosed)
+{
+  std::vector<Tcp::socket> held = hold(3);
+  EXPECT_TRUE(nextIsRefused());
+  for (Tcp::socket& socket : held) {
+    EXPECT_FALSE(closedByServer(socket, /*timeout_ms=*/0));
+  }
+
+  // A closed connection gives its place back.
+  held.pop_back();
+  EXPECT_EQ(statusOnceThereIsRoom(), 200);
+}
+
+// Keeps the script gate closed for its lifetime, as a running script does.
+class ClosedGate
+{
+ public:
+  explicit ClosedGate(ScriptGate& gate) : gate_(&gate) { gate_->close(); }
+  ~ClosedGate() { gate_->open(); }
+  ClosedGate(const ClosedGate&) = delete;
+  ClosedGate& operator=(const ClosedGate&) = delete;
+
+ private:
+  ScriptGate* gate_;
+};
+
+// While a script runs, the init thread keeps a WebSocket session alive; once
+// its client leaves, the place must still come back.
+TEST_F(SmallCapFixture, WebSocketHoldsItsPlaceUntilTheClientLeaves)
+{
+  const ClosedGate gate(tcl_eval_->script_gate);
+  Tcp::socket websocket = connectAndSend(upgradeRequest(withToken("")));
+  ASSERT_EQ(statusOf(readHead(websocket)), 101);
+  const std::vector<Tcp::socket> held = hold(2);
+  EXPECT_TRUE(nextIsRefused());
+
+  websocket.close();
+  EXPECT_EQ(statusOnceThereIsRoom(), 200);
 }
 
 }  // namespace

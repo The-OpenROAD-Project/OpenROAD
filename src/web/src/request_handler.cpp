@@ -4932,14 +4932,24 @@ WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   try {
-    std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
-    auto paths = timing_report_->getReport(
-        req.json.at("is_setup").as_bool(),
-        static_cast<int>(req.json.at("max_paths").as_int64()),
-        static_cast<float>(jsonOr<double>(
-            req.json, "slack_min", -std::numeric_limits<float>::max())),
-        static_cast<float>(jsonOr<double>(
-            req.json, "slack_max", std::numeric_limits<float>::max())));
+    const int64_t max_paths = req.json.at("max_paths").as_int64();
+    if (max_paths < 0 || max_paths > TimingReport::kMaxPaths) {
+      return errorResponse(req.id,
+                           "\"max_paths\" is outside [0, "
+                               + std::to_string(TimingReport::kMaxPaths) + "]");
+    }
+    std::vector<TimingPathSummary> paths;
+    {
+      // Only STA needs the lock; serializing up to kMaxPaths paths does not.
+      const std::scoped_lock lock(tcl_eval_->mutex);
+      paths = timing_report_->getReport(
+          req.json.at("is_setup").as_bool(),
+          static_cast<int>(max_paths),
+          static_cast<float>(jsonOr<double>(
+              req.json, "slack_min", -std::numeric_limits<float>::max())),
+          static_cast<float>(jsonOr<double>(
+              req.json, "slack_max", std::numeric_limits<float>::max())));
+    }
     writePayload(resp, serializeTimingPaths(paths));
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;

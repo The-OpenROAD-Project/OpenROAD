@@ -156,6 +156,9 @@ struct TimingConeResult
 class TimingReport
 {
  public:
+  // The Qt GUI's path count spin box goes up to the same.
+  static constexpr int kMaxPaths = 10000;
+
   explicit TimingReport(sta::dbSta* sta);
 
   std::vector<TimingPathSummary> getReport(

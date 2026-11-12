@@ -244,6 +244,15 @@ struct ListenerHandle
   uint16_t port;
 };
 
+// A connection that does not send a request, or read a response, in time is
+// dropped; past max_connections, new ones are closed on accept.
+struct ConnectionLimits
+{
+  std::chrono::milliseconds request_timeout{std::chrono::seconds(30)};
+  std::chrono::milliseconds write_timeout{std::chrono::seconds(60)};
+  int max_connections = 128;
+};
+
 // Factory that creates, starts, and returns a handle for a Listener.
 // Defined in web.cpp (where Listener is local); called from web_serve.cpp.
 ListenerHandle createAndRunListener(
@@ -256,7 +265,8 @@ ListenerHandle createAndRunListener(
     utl::Logger* logger,
     WebViewerHook* viewer_hook,
     int max_in_flight,
-    std::shared_ptr<SessionAuth> auth);
+    std::shared_ptr<SessionAuth> auth,
+    ConnectionLimits limits = {});
 
 // A layout web server.  serve() starts the server in background I/O
 // threads; waitForStop() blocks the calling thread until requestStop()

@@ -9,6 +9,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <ranges>
 #include <set>
 #include <string>
 #include <utility>
@@ -170,7 +171,8 @@ std::vector<TimingPathSummary> TimingReport::getReport(bool is_setup,
                                                        float slack_max) const
 {
   std::vector<TimingPathSummary> result;
-  if (!sta_) {
+  // findPathEnds needs at least one path per group.
+  if (!sta_ || max_paths <= 0) {
     return result;
   }
 
@@ -209,7 +211,8 @@ std::vector<TimingPathSummary> TimingReport::getReport(bool is_setup,
       /*clk_gating_setup*/ false,
       /*clk_gating_hold*/ false);
 
-  for (auto& path_end : path_ends) {
+  // max_paths counts per path group; take() bounds the total.
+  for (auto& path_end : path_ends | std::views::take(kMaxPaths)) {
     TimingPathSummary summary;
 
     sta::Path* path = path_end->path();
