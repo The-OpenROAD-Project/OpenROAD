@@ -57,6 +57,13 @@ bool UniqueClass::isSkipTerm(frMTerm* term) const
   return skip_term_.at(term);
 }
 
+void UniqueClass::resetSkipTerms()
+{
+  for (auto& [term, skip] : skip_term_) {
+    skip = true;
+  }
+}
+
 void UniqueClass::setSkipTerm(frMTerm* term, bool skip)
 {
   auto it = skip_term_.find(term);

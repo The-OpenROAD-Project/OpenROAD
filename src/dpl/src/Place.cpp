@@ -1035,7 +1035,8 @@ bool Opendp::checkPixels(const Node* cell,
                          const GridX x,
                          const GridY y,
                          const GridX x_end,
-                         const GridY y_end) const
+                         const GridY y_end,
+                         const odb::dbOrientType* candidate_orient) const
 {
   if (x_end > grid_->getRowSiteCount()) {
     return false;
@@ -1106,7 +1107,9 @@ bool Opendp::checkPixels(const Node* cell,
     }
   }
 
-  const auto orient = grid_->getSiteOrientation(x, y, site).value();
+  const auto orient = candidate_orient == nullptr
+                          ? grid_->getSiteOrientation(x, y, site).value()
+                          : *candidate_orient;
 
   // Check for symmetry
   auto* dbMaster = cell->getDbInst()->getMaster();

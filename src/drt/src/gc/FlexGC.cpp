@@ -255,6 +255,12 @@ void FlexGCWorker::resetTargetNet()
   impl_->targetDRNet_ = nullptr;
 }
 
+void FlexGCWorker::setReplacementInst(frInst* source, frInst* candidate)
+{
+  impl_->replacement_source_ = source;
+  impl_->replacement_candidate_ = candidate;
+}
+
 void FlexGCWorker::addTargetObj(frBlockObject* in)
 {
   impl_->targetObjs_.insert(in);

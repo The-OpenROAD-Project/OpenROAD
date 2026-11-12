@@ -28,6 +28,10 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
+namespace drt {
+class PinAccessService;
+}
+
 namespace odb {
 class dbBlockCallBackObj;
 }
@@ -126,6 +130,12 @@ class Opendp
                          bool pdn_aware = false);
   // C++ equivalent of `detailed_placement -quiet`.
   void detailedPlacementQuiet();
+  int repairPinAccess(drt::PinAccessService* pa,
+                      int max_displacement_x,
+                      int max_displacement_y,
+                      int max_rounds,
+                      int recovery_attempts = 3,
+                      int min_access_points = 1);
   void reportLegalizationStats() const;
   void reportLegalizationSummary(double runtime);
 
@@ -220,6 +230,8 @@ class Opendp
   friend class Graphics;
   friend class CellPlaceOrderLess;
   friend class NegotiationLegalizer;
+  friend class PinAccessRepair;
+  friend class PinAccessRepairTest_ReleasesGridPixels_Test;
   void findDisplacementStats();
   DbuPt pointOffMacro(const Node& cell);
   void convertDbToCell(odb::dbInst* db_inst, Node& cell);
@@ -264,7 +276,8 @@ class Opendp
                    GridX x,
                    GridY y,
                    GridX x_end,
-                   GridY y_end) const;
+                   GridY y_end,
+                   const odb::dbOrientType* candidate_orient = nullptr) const;
   bool checkMasterSym(unsigned masterSym, unsigned cellOri) const;
   bool checkRowPowerCompatible(const Node* cell, GridY y) const;
   bool ripUpAndReplace(Node* cell);

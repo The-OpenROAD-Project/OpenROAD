@@ -89,7 +89,10 @@ class frInst : public frRef
     xform_ = xformIn;
   }
   odb::dbInst* getDBInst() const { return db_inst_; }
-  odb::dbTransform getDBTransform() const { return db_inst_->getTransform(); }
+  odb::dbTransform getDBTransform() const
+  {
+    return db_inst_ ? db_inst_->getTransform() : xform_;
+  }
 
   /* from frPinFig
    * hasPin
