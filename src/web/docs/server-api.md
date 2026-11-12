@@ -656,13 +656,15 @@ reports candidate completions plus the replacement range.
 
 Return the worst N timing paths.
 
-| Field        | Type     | Required | Default                          | Description                                          |
-| ------------ | -------- | :------: | -------------------------------- | ---------------------------------------------------- |
-| `is_setup`   | `bool`   |    ✓     | —                                | `true` → setup paths, `false` → hold.                |
-| `max_paths`  | `int`    |    ✓     | —                                | Maximum number of paths to return.                   |
-| `slack_min`  | `double` |          | `-FLT_MAX`                       | Lower slack bound (inclusive). Optional filter.      |
-| `slack_max`  | `double` |          | `+FLT_MAX`                       | Upper slack bound (exclusive). Optional filter.      |
-| `unconstrained` | `bool` |          | `false`                          | Include paths with no timing constraint.             |
+| Field           | Type       | Required | Default            | Description                                                                                                    |
+| --------------- | ---------- | :------: | ------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `is_setup`      | `bool`     |    ✓     | —                  | `true` → setup paths, `false` → hold.                                                                          |
+| `max_paths`     | `int`      |    ✓     | —                  | Maximum number of paths to return.                                                                             |
+| `slack_min`     | `double`   |          | `-FLT_MAX`         | Lower slack bound (inclusive). Optional filter.                                                                |
+| `slack_max`     | `double`   |          | `+FLT_MAX`         | Upper slack bound (exclusive). Optional filter.                                                                |
+| `unconstrained` | `bool`     |          | `false`            | Include paths with no timing constraint.                                                                       |
+| `path_groups`   | `string[]` |          | `[]` (every group) | Path groups to report. Optional filter.                                                                        |
+| `clock_name`    | `string`   |          | `""` (every clock) | Keep the paths whose capturing clock has this name. A name that is no clock returns no paths. Optional filter. |
 
 A design with no SDC constraints has no constrained path ends, so
 `unconstrained: false` returns an empty `paths` array. This mirrors the
