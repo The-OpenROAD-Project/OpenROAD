@@ -124,9 +124,11 @@ struct LateralPattern
   Section build(const fsv::Stack& stack) const;
 };
 
-// The pattern behind the end table: a wire along y over [0, length] with
-// a plane on the covering layer below and above (none when the handle
-// names no layer), reaching `extent` sideways and `margin` past both ends.
+// The pattern behind the end and facing tables: a wire along y over
+// [0, length] with a plane on the covering layer below and above (none
+// when the handle names no layer), reaching `extent` sideways and `margin`
+// past both ends, and optionally wires facing its ends and neighbors
+// beside it.
 struct EndPattern
 {
   Layer layer;
@@ -136,6 +138,49 @@ struct EndPattern
   Layer above;  // none: open above
   double extent = 10;
   double margin = 2;
+  // At least zero: a wire of another net, as wide and as long, beyond each
+  // end at this gap, and the planes reaching past those.
+  double facing_gap = -1;
+  // At least zero: a neighbor of minimum width on the left (-x) and the
+  // right side at these spacings, each its own net, running as far as the
+  // planes.
+  double left_spacing = -1;
+  double right_spacing = -1;
+
+  struct Wire
+  {
+    fsv::Geometry geometry;
+    NetIndex wire = kNullNetIndex;
+    NetIndex below = kNullNetIndex;
+    NetIndex above = kNullNetIndex;
+    NetIndex facing = kNullNetIndex;
+    NetIndex left = kNullNetIndex;
+    NetIndex right = kNullNetIndex;
+  };
+  Wire build(const fsv::Stack& stack) const;
+};
+
+// The pattern behind the corner values: a wire along y over [0, length]
+// centered on x = 0, alone, crossed at its middle by a wire of its net as
+// wide and as long, or turning at its top end to run as long along +x, the
+// boxes overlapping where they meet; with a plane on the covering layer
+// below and above (none when the handle names no layer) reaching `extent`
+// past the wires every way.
+struct CornerPattern
+{
+  enum class Shape
+  {
+    kStraight,
+    kCross,
+    kBend
+  };
+  Layer layer;
+  double width;
+  double length;
+  Layer below;  // none: the substrate alone
+  Layer above;  // none: open above
+  double extent = 10;
+  Shape shape = Shape::kStraight;
 
   struct Wire
   {
@@ -179,11 +224,34 @@ struct CrossingPattern
   Array build(const fsv::Stack& stack) const;
 };
 
+// The pattern behind a crossing table's reach: a wire along y on `layer`,
+// centered on 0, running `past` beyond both sides of one crossing of
+// `crossing_width` on `cover` along x at y = 0, which runs `extent` past
+// both of the wire's sides; no crossing when the extent is negative.
+struct ReachPattern
+{
+  Layer layer;
+  Layer cover;
+  double width;
+  double crossing_width;
+  double past;
+  double extent;
+
+  struct Pair
+  {
+    fsv::Geometry geometry;
+    NetIndex wire = kNullNetIndex;
+    NetIndex cross = kNullNetIndex;
+  };
+  Pair build(const fsv::Stack& stack) const;
+};
+
 // The cross section behind the diagonal table: a wire centered at x = 0,
 // a neighbor at `spacing` on the right and another at `far_spacing` on the
 // left (none when negative), and a parallel wire on `other` to the right,
 // its left edge `gap` past the wire's right edge (overlapping when
-// negative), of `other_width` (none when 0).
+// negative), of `other_width` (none when 0); optionally a plane on
+// `opposite`, reaching `extent` past the wire and the parallel wire.
 struct DiagonalPattern
 {
   Layer layer;
@@ -193,6 +261,8 @@ struct DiagonalPattern
   double gap = 0;
   double spacing = -1;
   double far_spacing = -1;
+  Layer opposite;  // none when the handle names no layer
+  double extent = 10;
 
   struct Section
   {
@@ -201,6 +271,7 @@ struct DiagonalPattern
     NetIndex left = kNullNetIndex;
     NetIndex right = kNullNetIndex;
     NetIndex diagonal = kNullNetIndex;
+    NetIndex opposite = kNullNetIndex;
   };
   Section build(const fsv::Stack& stack) const;
 };

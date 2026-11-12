@@ -84,6 +84,7 @@ cc_library(
         "include/utl/unique_name.h",
         "include/utl/validation.h",
     ],
+    copts = ["-DBOOST_ASIO_NO_DEPRECATED"],
     includes = [
         "include",
         "src",
@@ -98,6 +99,7 @@ cc_library(
         "@boost.iterator",
         "@boost.random",
         "@boost.tokenizer",
+        "@fmt",
         "@spdlog",
         "@tcl_lang//:tcl",
     ],

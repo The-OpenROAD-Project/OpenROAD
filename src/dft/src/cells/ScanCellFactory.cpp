@@ -208,6 +208,8 @@ std::vector<std::unique_ptr<ScanCell>> CollectScanCells(odb::dbDatabase* db,
 {
   std::vector<std::unique_ptr<ScanCell>> scan_cells;
 
+  sta->ensureClkNetwork(sta->cmdMode());
+
   odb::dbChip* chip = db->getChip();
   CollectScanCells(chip->getBlock(), sta, logger, scan_cells);
 

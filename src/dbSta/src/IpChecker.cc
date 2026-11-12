@@ -57,7 +57,7 @@ static bool getLefPinDirection(odb::dbMTerm* mterm, PinDirection& direction)
 
 static bool getLibertyPinDirection(LibertyPort* port, PinDirection& direction)
 {
-  PortDirection* port_direction = port->direction();
+  const PortDirection* port_direction = port->direction();
   if (port_direction == nullptr || port_direction->isUnknown()
       || port_direction->isPowerGround() || port_direction->isInternal()) {
     return false;

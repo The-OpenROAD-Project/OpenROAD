@@ -12,7 +12,7 @@
 
 namespace pex {
 
-inline constexpr int kModelFormatVersion = 1;
+inline constexpr int kModelFormatVersion = 2;
 
 // What a model was built from: the technology name of its stack and the
 // file it came from.

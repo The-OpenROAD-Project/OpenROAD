@@ -194,40 +194,14 @@ INSTANTIATE_TEST_SUITE_P(Placement,
                                                          : "NesterovOnly");
                          });
 
-// Cells on no nets, piled up in the lower-left corner of the core, are
-// spread by density alone until every part of the core holds about the same
-// cell area. With uniform target density the cells, 60% of the core, must
-// fill it evenly.
-//
-// Initial placement is skipped: with no nets it collapses the cells into one
-// stack at the core center, where the density force on each is zero and
-// Nesterov placement cannot move them.
-TEST_F(KnownAnswerTest, DensitySpreadsUnconnectedCells)
+// Checks that cells, together 60% of the core, fill it evenly: the cell area
+// in each tile of a 4 x 4 grid over the core is within 0.5 to 1.5 times the
+// mean. Each tile covers 2 x 2 of gpl's 8 x 8 density bins, the grid its
+// overflow is measured on; tiles that cut across bins see unevenness the
+// overflow target allows.
+void expectEvenlySpread(const std::vector<odb::dbInst*>& cells,
+                        const odb::Rect& core)
 {
-  constexpr int kCellSites = 6;
-  DesignBuilder builder(db_.get(), kCellSites);
-  const std::vector<odb::dbInst*> cells = makeUnconnected(builder, 100);
-  const odb::Rect core = builder.core();
-  // A 10 x 10 pile of overlapping cells, a half cell wide and a quarter row
-  // apart, covering the lower-left third of the core in each direction.
-  constexpr int kPerRow = 10;
-  constexpr int kStepX = kCellSites * DesignBuilder::kSiteWidth / 2;
-  constexpr int kStepY = DesignBuilder::kRowHeight / 4;
-  for (std::size_t k = 0; k < cells.size(); ++k) {
-    cells[k]->setLocation(core.xMin() + (k % kPerRow) * kStepX,
-                          core.yMin() + (k / kPerRow) * kStepY);
-    cells[k]->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-  }
-
-  PlaceOptions options;
-  options.initialPlaceMaxIter = 0;
-  options.uniformTargetDensityMode = true;
-  EXPECT_EQ(place(options).stop, PlaceStop::kConverged);
-
-  // Cell area in each tile of a 4 x 4 grid over the core. Each tile covers
-  // 2 x 2 of gpl's 8 x 8 density bins, the grid its overflow is measured on;
-  // tiles that cut across bins see unevenness the overflow target allows.
-  // Measured 0.76 to 1.29 times the mean.
   constexpr int kTiles = 4;
   const int width = core.dx() / kTiles;
   const int height = core.dy() / kTiles;
@@ -252,6 +226,50 @@ TEST_F(KnownAnswerTest, DensitySpreadsUnconnectedCells)
     EXPECT_GT(used[t], 0.5 * mean) << "tile " << t;
     EXPECT_LT(used[t], 1.5 * mean) << "tile " << t;
   }
+}
+
+// Cells on no nets, piled up in the lower-left corner of the core, are
+// spread by Nesterov placement's density force alone until every part of
+// the core holds about the same cell area. Measured 0.76 to 1.29 times the
+// mean tile area.
+TEST_F(KnownAnswerTest, DensitySpreadsUnconnectedCells)
+{
+  constexpr int kCellSites = 6;
+  DesignBuilder builder(db_.get(), kCellSites);
+  const std::vector<odb::dbInst*> cells = makeUnconnected(builder, 100);
+  const odb::Rect core = builder.core();
+  // A 10 x 10 pile of overlapping cells, a half cell wide and a quarter row
+  // apart, covering the lower-left third of the core in each direction.
+  constexpr int kPerRow = 10;
+  constexpr int kStepX = kCellSites * DesignBuilder::kSiteWidth / 2;
+  constexpr int kStepY = DesignBuilder::kRowHeight / 4;
+  for (std::size_t k = 0; k < cells.size(); ++k) {
+    cells[k]->setLocation(core.xMin() + (k % kPerRow) * kStepX,
+                          core.yMin() + (k / kPerRow) * kStepY);
+    cells[k]->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  }
+
+  PlaceOptions options;
+  options.initialPlaceMaxIter = 0;
+  options.uniformTargetDensityMode = true;
+  EXPECT_EQ(place(options).stop, PlaceStop::kConverged);
+  expectEvenlySpread(cells, core);
+}
+
+// Unplaced cells on no nets, through the whole flow: initial placement
+// leaves them at the core center, and Nesterov placement spreads them over
+// the core. When no net anchors any position, initial placement must still
+// hold each cell where it is, not move them all to one point. Measured 0.73
+// to 1.21 times the mean tile area.
+TEST_F(KnownAnswerTest, UnplacedUnconnectedCellsSpread)
+{
+  DesignBuilder builder(db_.get(), /*cell_sites=*/6);
+  const std::vector<odb::dbInst*> cells = makeUnconnected(builder, 100);
+
+  PlaceOptions options;
+  options.uniformTargetDensityMode = true;
+  EXPECT_EQ(place(options).stop, PlaceStop::kConverged);
+  expectEvenlySpread(cells, builder.core());
 }
 
 }  // namespace
