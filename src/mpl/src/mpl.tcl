@@ -50,6 +50,10 @@ proc rtl_macro_placer { args } {
 
   sta::check_argc_eq0 "rtl_macro_placer" $args
 
+  if { [info exists keys(-target_util)] } {
+    sta::check_positive_float "-target_util" $keys(-target_util)
+  }
+
   # Check for valid design
   if { [ord::get_db_block] == "NULL" } {
     utl::error MPL 1 "No block found for Macro Placement."

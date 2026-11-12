@@ -9,10 +9,11 @@
 
 #include "boost/polygon/polygon.hpp"
 #include "boost/polygon/polygon_90_set_data.hpp"
+#include "fmt/format.h"
 #include "object.h"
 #include "odb/db.h"
 #include "odb/geom.h"
-#include "odb/geom_boost.h"
+#include "odb/geom_boost.h"  // IWYU pragma: keep (polygon traits for odb::Rect)
 #include "utl/Logger.h"
 
 namespace mpl {
