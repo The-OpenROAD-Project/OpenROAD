@@ -5352,8 +5352,14 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
   odb::dbNet* in_net_db = db_network_->findFlatDbNet(in_net);
   // The flat net includes loads beyond the inverter's module segment.
   sta::Net* out_net = db_network_->findFlatNet(out_pin);
-  if (out_net && !dontTouch(out_net)) {
+  if (in_net && out_net && !dontTouch(out_net) && !dontTouch(in_net)) {
     std::string inv_name = network_->name(inv);
+    odb::dbInst* db_inv = db_network_->staToDb(inv);
+    // A flat link can retain module scopes while STA reports the full path.
+    if (!db_network_->hasHierarchy()
+        && db_inv->getModule() != block_->getTopModule()) {
+      inv_name = block_->getBaseName(db_inv->getConstName());
+    }
     // Collect every load, including top-level ports, before editing the net.
     std::vector<sta::Pin*> load_pins;
     sta::NetConnectedPinIterator* load_iter = network_->pinIterator(out_net);
