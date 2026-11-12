@@ -33,10 +33,12 @@
 #include "sta/PathGroup.hh"
 #include "sta/Scene.hh"
 #include "sta/Sdc.hh"
+#include "sta/SdcClass.hh"
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
 #include "sta/Sta.hh"
 #include "sta/StringUtil.hh"
+#include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "sta/VisitPathEnds.hh"
 
@@ -233,10 +235,22 @@ std::vector<TimingPathSummary> TimingReport::getReport(
   if (!findFilterClock(sta_, clock_name, clk)) {
     return result;
   }
+  // The clock filter goes into the search, as report_checks -to [get_clocks]
+  // does, so max_paths caps that clock's ends, not every clock's; Search
+  // owns `to` and deletes it at the next searchPreamble().
+  sta::ExceptionTo* to = nullptr;
+  if (clk != nullptr) {
+    to = sta_->makeExceptionTo(/*to_pins=*/nullptr,
+                               new sta::ClockSet{clk},
+                               /*to_insts=*/nullptr,
+                               sta::RiseFallBoth::riseFall(),
+                               sta::RiseFallBoth::riseFall(),
+                               sta_->cmdSdc());
+  }
   sta::PathEndSeq path_ends = search->findPathEnds(
       /*from*/ nullptr,
       /*thrus*/ nullptr,
-      /*to*/ nullptr,
+      to,
       /*unconstrained*/ include_unconstrained,
       scenes,
       is_setup ? sta::MinMaxAll::max() : sta::MinMaxAll::min(),
@@ -256,9 +270,6 @@ std::vector<TimingPathSummary> TimingReport::getReport(
       /*clk_gating_hold*/ false);
 
   for (auto& path_end : path_ends) {
-    if (clk && path_end->targetClk(sta_) != clk) {
-      continue;
-    }
     // findPathEnds keeps [slack_min, slack_max] with fuzzy comparisons; the
     // range is [slack_min, slack_max), compared in user units as the slack
     // histogram bins them, so a path on a bar's edge is listed under one bar.

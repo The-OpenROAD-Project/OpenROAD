@@ -207,6 +207,22 @@ TEST_F(TimingReportTest, ReportListsWhatHistogramCounts)
   }
 }
 
+// max_paths caps the paths of the clock filtered on: a group spanning two
+// clocks, its worst path on the other clock, still lists the clock's.
+TEST_F(TimingReportTest, MaxPathsCapsTheClocksPaths)
+{
+  makeGroupPath("mixed", {"a0/D", "b0/D"});
+  TimingReport timing_report(getSta());
+  EXPECT_EQ(endPins(timing_report.getReport(/*is_setup=*/true,
+                                            /*max_paths=*/1,
+                                            -std::numeric_limits<float>::max(),
+                                            std::numeric_limits<float>::max(),
+                                            /*include_unconstrained=*/false,
+                                            {"mixed"},
+                                            "clk_b")),
+            (std::multiset<std::string>{"b0/D"}));
+}
+
 TEST_F(TimingReportTest, UnknownClockReportsNothing)
 {
   EXPECT_TRUE(report({}, "clk_c").empty());
