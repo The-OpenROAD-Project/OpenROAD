@@ -4933,12 +4933,8 @@ WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)
   resp.type = WebSocketResponse::kJson;
   try {
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
-    std::vector<std::string> path_groups;
-    if (auto* v = req.json.if_contains("path_groups")) {
-      for (const auto& e : v->as_array()) {
-        path_groups.emplace_back(e.as_string());
-      }
-    }
+    const auto path_groups
+        = jsonOr<std::vector<std::string>>(req.json, "path_groups", {});
     auto paths = timing_report_->getReport(
         req.json.at("is_setup").as_bool(),
         static_cast<int>(req.json.at("max_paths").as_int64()),
@@ -5205,12 +5201,8 @@ WebSocketResponse TimingHandler::handleSlackHistogram(
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
     // `path_groups` (array) requests a stacked per-group breakdown; the scalar
     // `path_group` remains for the single/unfiltered case.
-    std::vector<std::string> path_groups;
-    if (auto* v = req.json.if_contains("path_groups")) {
-      for (const auto& e : v->as_array()) {
-        path_groups.emplace_back(e.as_string());
-      }
-    }
+    const auto path_groups
+        = jsonOr<std::vector<std::string>>(req.json, "path_groups", {});
     auto histogram = timing_report_->getSlackHistogram(
         req.json.at("is_setup").as_bool(),
         jsonOr<std::string>(req.json, "path_group", ""),
