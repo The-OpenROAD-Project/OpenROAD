@@ -306,9 +306,9 @@ class HTreeBuilder : public TreeBuilder
   void createClockSubNets();
   void createSingleBufferClockNet();
   void initTopLevelSinks(std::vector<std::pair<float, float>>& sinkLocations,
-                         std::vector<const ClockInst*>& sinkInsts);
+                         std::vector<ClockInst*>& sinkInsts);
   void initSecondLevelSinks(std::vector<std::pair<float, float>>& sinkLocations,
-                            std::vector<const ClockInst*>& sinkInsts);
+                            std::vector<ClockInst*>& sinkInsts);
   void computeBranchSinks(
       const LevelTopology& topology,
       unsigned branchIdx,
@@ -341,7 +341,7 @@ class HTreeBuilder : public TreeBuilder
                         std::vector<std::pair<float, float>>& points,
                         std::vector<unsigned>& mapSinkToPoint);
   void preSinkClustering(const std::vector<std::pair<float, float>>& sinks,
-                         const std::vector<const ClockInst*>& sinkInsts,
+                         const std::vector<ClockInst*>& sinkInsts,
                          float maxDiameter,
                          unsigned clusterSize,
                          bool secondLevel = false);
@@ -379,7 +379,10 @@ class HTreeBuilder : public TreeBuilder
  private:
   Box<double> sinkRegion_;
   std::vector<LevelTopology> topologyForEachLevel_;
-  std::map<Point<double>, ClockInst*> mapLocationToSink_;
+  // Every sink and sink buffer at a location, in the order they were added.
+  // Two clock pins can share a location (two registers placed on top of
+  // each other), and each of them must still be connected.
+  std::map<Point<double>, std::vector<ClockInst*>> mapLocationToSink_;
   std::vector<std::pair<float, float>> topLevelSinksClustered_;
 
   int wireSegmentUnit_ = 0;
