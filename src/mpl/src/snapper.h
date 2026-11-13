@@ -56,12 +56,15 @@ class Snapper
   using TrackGridToPinListMap
       = odb::PtrMap<odb::dbTrackGrid, std::vector<odb::dbITerm*>>;
 
+  void snapToSites();
   void snapToSites(const odb::dbTechLayerDir& target_direction);
   int nearestSitePosition(const odb::dbTechLayerDir& direction);
 
+  void snapToTracks();
   void snapToTracks(const odb::dbTechLayerDir& target_direction);
   void snapToManufacturingGrid(const odb::dbTechLayerDir& direction);
   int nearestManufacturingGridPosition(int position) const;
+  bool hasMultiHeightRows() const;
   SiteGrid findSiteGrid();
   int sitePitch(const odb::dbTechLayerDir& direction) const;
   std::vector<odb::Rect> findObstacles() const;

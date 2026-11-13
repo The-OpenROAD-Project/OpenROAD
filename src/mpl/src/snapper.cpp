@@ -7,6 +7,7 @@
 #include <cmath>
 #include <iterator>
 #include <optional>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -28,6 +29,12 @@ int alternatingOffset(const int attempt)
   return (attempt % 2 == 1) ? (attempt + 1) / 2 : -(attempt / 2);
 }
 
+bool isCoreRow(odb::dbRow* row)
+{
+  return row->getDirection() == odb::dbRowDir::HORIZONTAL
+         && row->getSite()->getClass() == odb::dbSiteClass::CORE;
+}
+
 }  // namespace
 
 Snapper::Snapper(utl::Logger* logger) : logger_(logger), inst_(nullptr)
@@ -45,20 +52,31 @@ void Snapper::snapMacro()
   vertical_layers_ = computeLayerDataList(odb::dbTechLayerDir::VERTICAL);
   horizontal_layers_ = computeLayerDataList(odb::dbTechLayerDir::HORIZONTAL);
 
-  if (snap_to_site_grid_) {
+  if (snap_to_site_grid_ && hasMultiHeightRows()) {
+    logger_->warn(utl::MPL,
+                  84,
+                  "Could not snap {} to the site grid. Multi-height rows are "
+                  "not supported. Snapping it to the track-grid only.",
+                  inst_->getName());
+    snapToTracks();
+  } else if (snap_to_site_grid_) {
     site_grid_ = findSiteGrid();
     obstacles_ = findObstacles();
-    snapToSites(odb::dbTechLayerDir::VERTICAL);
-    snapToSites(odb::dbTechLayerDir::HORIZONTAL);
+    snapToSites();
   } else {
-    snapToTracks(odb::dbTechLayerDir::VERTICAL);
-    snapToTracks(odb::dbTechLayerDir::HORIZONTAL);
+    snapToTracks();
   }
 }
 
 void Snapper::setSnapToSiteGrid(const bool snap_to_site_grid)
 {
   snap_to_site_grid_ = snap_to_site_grid;
+}
+
+void Snapper::snapToSites()
+{
+  snapToSites(odb::dbTechLayerDir::VERTICAL);
+  snapToSites(odb::dbTechLayerDir::HORIZONTAL);
 }
 
 // Snaps to the site position that aligns the largest number of pins. We first
@@ -127,6 +145,12 @@ int Snapper::nearestSitePosition(const odb::dbTechLayerDir& direction)
   return grid_origin + std::lround(sites) * pitch;
 }
 
+void Snapper::snapToTracks()
+{
+  snapToTracks(odb::dbTechLayerDir::VERTICAL);
+  snapToTracks(odb::dbTechLayerDir::HORIZONTAL);
+}
+
 // Snaps to the location that aligns the largest number of pins. We first align
 // the lowest pin, which is closest to the origin, with its nearest track and
 // then jump from track to track around it looking for the optimal location.
@@ -180,32 +204,35 @@ int Snapper::nearestManufacturingGridPosition(const int position) const
          * manufacturing_grid;
 }
 
-// The grid of the smallest core site. Rows of taller sites, such as
-// double-height rows, sit on it as well.
+// Site-grid snapping needs all core rows to have the same height, so that
+// rotation and row offset can be ignored.
+bool Snapper::hasMultiHeightRows() const
+{
+  std::set<int> heights;
+  for (odb::dbRow* row : inst_->getBlock()->getRows()) {
+    if (isCoreRow(row)) {
+      heights.insert(row->getSite()->getHeight());
+    }
+  }
+
+  return heights.size() > 1;
+}
+
+// The site grid of the core rows. The first core row defines it because
+// multi-height rows are ruled out beforehand.
 Snapper::SiteGrid Snapper::findSiteGrid()
 {
-  SiteGrid site_grid;
   for (odb::dbRow* row : inst_->getBlock()->getRows()) {
-    odb::dbSite* site = row->getSite();
-    if (row->getDirection() != odb::dbRowDir::HORIZONTAL
-        || site->getClass() != odb::dbSiteClass::CORE) {
-      continue;
-    }
-
-    if (!site_grid.site || site->getHeight() < site_grid.site->getHeight()) {
-      site_grid = {.origin = row->getOrigin(), .site = site};
+    if (isCoreRow(row)) {
+      return {.origin = row->getOrigin(), .site = row->getSite()};
     }
   }
 
-  if (!site_grid.site) {
-    logger_->error(utl::MPL,
-                   83,
-                   "Could not snap {} to the site grid. The block has no core "
-                   "rows.",
-                   inst_->getName());
-  }
-
-  return site_grid;
+  logger_->error(utl::MPL,
+                 83,
+                 "Could not snap {} to the site grid. The block has no core "
+                 "rows.",
+                 inst_->getName());
 }
 
 int Snapper::sitePitch(const odb::dbTechLayerDir& direction) const
