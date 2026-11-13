@@ -139,6 +139,17 @@ class BackendGraphBuilder : public BackendGraphBuilderBase
                   bool clk_polarity,
                   bool en_polarity,
                   bool aload_polarity) override;
+  void add_dffsre(std::string_view name,
+                  const ir::Net clk,
+                  const ir::Net en,
+                  const ir::Net set,
+                  const ir::Net clear,
+                  const ir::Value& d,
+                  const ir::Value& q,
+                  bool clk_polarity,
+                  bool set_polarity,
+                  bool clear_polarity,
+                  bool set_over_clear) override;
 
   std::unique_ptr<syn::Graph> graph_;
   unsigned next_id = 0;
