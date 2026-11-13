@@ -250,6 +250,17 @@ regression_test(
 )
 
 cc_test(
+    name = "LookupTblTest",
+    srcs = ["LookupTblTest.cpp"],
+    deps = [
+        "//src/drt:base_types",
+        "//src/drt:drt_impl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "WatermarkCostTest",
     srcs = ["WatermarkCostTest.cpp"],
     deps = [

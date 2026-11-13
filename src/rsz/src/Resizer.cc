@@ -1489,12 +1489,9 @@ std::vector<sta::LibertyPort*> Resizer::libraryOutputPins(
     sta::LibertyCell* cell) const
 {
   auto pins = libraryPins(cell);
-  for (auto it = pins.begin(); it != pins.end(); it++) {
-    if (!((*it)->direction()->isAnyOutput())) {
-      it = pins.erase(it);
-      it--;
-    }
-  }
+  std::erase_if(pins, [](const sta::LibertyPort* pin) {
+    return !pin->direction()->isAnyOutput();
+  });
   return pins;
 }
 

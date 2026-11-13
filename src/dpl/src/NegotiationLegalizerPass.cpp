@@ -168,7 +168,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   int prev_violations = -1;
   int stall_count = 0;
   // True once the violation count has repeated for 3 consecutive iterations.
-  auto stalled = [&](const int violations) {
+  auto is_stalled = [&](const int violations) {
     stall_count = (violations == prev_violations) ? stall_count + 1 : 0;
     prev_violations = violations;
     return stall_count == 3;
@@ -209,7 +209,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
       debugPause("Pause after convergence at phase 1.");
       return;
     }
-    if (stalled(phase_1_violations)) {
+    if (is_stalled(phase_1_violations)) {
       recover_stall(1, phase_1_violations);
       break;
     }
@@ -254,7 +254,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
       debugPause("Pause after convergence at phase 2.");
       return;
     }
-    if (stalled(phase_2_violations)) {
+    if (is_stalled(phase_2_violations)) {
       finish_ = Finish::kPhase2Recovery;
       recover_stall(2, phase_2_violations);
       break;
