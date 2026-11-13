@@ -62,6 +62,8 @@ struct Flop
 
 class AbstractGraphics;
 
+struct KokkosContext;
+
 class MBFF
 {
   friend class MBFFTestPeer;
@@ -253,7 +255,7 @@ class MBFF
   std::unique_ptr<AbstractGraphics> graphics_;
   utl::Logger* log_;
   rsz::Resizer* resizer_;
-  int num_threads_;
+  std::unique_ptr<KokkosContext> kokkos_context_;
   int multistart_;
   int num_paths_;
   float multiplier_;

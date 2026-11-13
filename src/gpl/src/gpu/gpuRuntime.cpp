@@ -11,10 +11,8 @@
 
 #include "gpuRuntime.h"
 
-#include <Kokkos_Core.hpp>
 #include <cctype>
 #include <cstdlib>
-#include <mutex>
 #include <string>
 
 namespace gpl {
@@ -50,32 +48,6 @@ bool gpuEnabled()
     return true;
   }();
   return enabled;
-}
-
-// Lazy Kokkos lifecycle owned by gpl_lib so that the host application
-// (the openroad binary, regression drivers, etc.) does not need to know
-// Kokkos exists. The first GPU kernel call initializes Kokkos and registers
-// an atexit handler that finalizes it once at process shutdown — this is
-// the upstream-safe pattern for opt-in CUDA backends without disrupting
-// OpenROAD's existing main(). std::call_once keeps the initialization
-// safe if a future caller drops the master-thread invariant.
-void ensureKokkosInitialized()
-{
-  static std::once_flag once;
-  std::call_once(once, [] {
-    if (Kokkos::is_initialized()) {
-      return;
-    }
-    // Keep Kokkos warnings enabled. In particular, Kokkos reports when the
-    // compiled CUDA architecture differs from the selected device. Compatible
-    // architectures can still run, but the mismatch may reduce performance.
-    Kokkos::initialize();
-    std::atexit([] {
-      if (Kokkos::is_initialized() && !Kokkos::is_finalized()) {
-        Kokkos::finalize();
-      }
-    });
-  });
 }
 
 }  // namespace gpl
