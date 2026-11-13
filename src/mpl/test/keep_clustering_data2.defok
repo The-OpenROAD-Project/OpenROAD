@@ -303,8 +303,8 @@ COMPONENTS 10 ;
     - mixed_module0/b1 BUF_X1 + PLACED ( 405600 599280 ) N ;
     - mixed_module0/b2 BUF_X1 + PLACED ( 405600 599280 ) N ;
     - mixed_module0/b3 BUF_X1 + PLACED ( 405600 599280 ) N ;
-    - mixed_module0/m0 HM_100x100_1x1 + FIXED ( 20280 222910 ) FN ;
-    - mixed_module0/m1 HM_100x100_1x1 + FIXED ( 20280 22710 ) FN ;
+    - mixed_module0/m0 HM_100x100_1x1 + FIXED ( 20400 222910 ) FN ;
+    - mixed_module0/m1 HM_100x100_1x1 + FIXED ( 20400 22710 ) FN ;
 END COMPONENTS
 PINS 4 ;
     - in0 + NET in0 + DIRECTION INPUT + USE SIGNAL ;
@@ -313,8 +313,8 @@ PINS 4 ;
     - out1 + NET out1 + DIRECTION OUTPUT + USE SIGNAL ;
 END PINS
 BLOCKAGES 2 ;
-    - PLACEMENT + SOFT + COMPONENT mixed_module0/m1 RECT ( 20140 22570 ) ( 220420 222850 ) ;
-    - PLACEMENT + SOFT + COMPONENT mixed_module0/m0 RECT ( 20140 222770 ) ( 220420 423050 ) ;
+    - PLACEMENT + SOFT + COMPONENT mixed_module0/m1 RECT ( 20260 22570 ) ( 220540 222850 ) ;
+    - PLACEMENT + SOFT + COMPONENT mixed_module0/m0 RECT ( 20260 222770 ) ( 220540 423050 ) ;
 END BLOCKAGES
 NETS 12 ;
     - in0 ( PIN in0 ) ( g0 A ) + USE SIGNAL ;

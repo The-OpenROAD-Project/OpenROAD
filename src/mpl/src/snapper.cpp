@@ -5,8 +5,11 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
+#include <cstdlib>
 #include <iterator>
 #include <numeric>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -35,9 +38,26 @@ void Snapper::snap(const odb::dbTechLayerDir& target_direction)
 {
   LayerDataList layers_data_list = computeLayerDataList(target_direction);
 
-  int origin = target_direction == odb::dbTechLayerDir::VERTICAL
-                   ? inst_->getOrigin().x()
-                   : inst_->getOrigin().y();
+  int origin = getOrigin(target_direction);
+
+  const std::optional<SiteGrid> site_grid = computeSiteGrid(target_direction);
+  if (site_grid) {
+    if (snapOnSiteGrid(*site_grid, layers_data_list, target_direction)) {
+      return;
+    }
+    // Either the macro's pins are not on a grid consistent with the rows, so
+    // it was not built on them, or no such position is legal: align its pins
+    // only.
+    debugPrint(logger_,
+               utl::MPL,
+               "snapper",
+               1,
+               "No legal position on the site grid aligns all pins of {} with "
+               "the track-grid; snapping {} to the track-grid only.",
+               inst_->getName(),
+               target_direction == odb::dbTechLayerDir::VERTICAL ? "x" : "y");
+    setOrigin(origin, target_direction);
+  }
 
   if (layers_data_list.empty()) {
     alignWithManufacturingGrid(origin);
@@ -67,6 +87,254 @@ void Snapper::snap(const odb::dbTechLayerDir& target_direction)
 
   attemptSnapToExtraPatterns(
       starting_position_index, layers_data_list, target_direction);
+}
+
+// A macro built on the same rows as the block it is placed in, such as a
+// hardened sub-block, holds its cells on that site grid measured from its own
+// origin.  Keeping the macro's origin on the grid keeps those cells on the
+// device grids (e.g. fin and poly pitches) of the cells around it.
+std::optional<Snapper::SiteGrid> Snapper::computeSiteGrid(
+    const odb::dbTechLayerDir& target_direction)
+{
+  const bool along_x = target_direction == odb::dbTechLayerDir::VERTICAL;
+
+  // With rows of several sites (e.g. single and double height), the smallest
+  // site is the base unit the others are multiples of.
+  odb::dbRow* base_row = nullptr;
+  for (odb::dbRow* row : inst_->getBlock()->getRows()) {
+    odb::dbSite* site = row->getSite();
+    if (site == nullptr || site->getClass() != odb::dbSiteClass::CORE
+        || row->getDirection() != odb::dbRowDir::HORIZONTAL) {
+      continue;
+    }
+    if (base_row == nullptr) {
+      base_row = row;
+      continue;
+    }
+    odb::dbSite* base_site = base_row->getSite();
+    if (std::pair(site->getHeight(), site->getWidth())
+        < std::pair(base_site->getHeight(), base_site->getWidth())) {
+      base_row = row;
+    }
+  }
+  if (base_row == nullptr) {
+    return std::nullopt;
+  }
+
+  odb::dbSite* site = base_row->getSite();
+  const int pitch = along_x ? site->getWidth() : site->getHeight();
+  if (pitch <= 0) {
+    return std::nullopt;
+  }
+  const odb::Point row_origin = base_row->getOrigin();
+  const int row_pos = along_x ? row_origin.x() : row_origin.y();
+  const int row_residue = ((row_pos % pitch) + pitch) % pitch;
+
+  // The macro's grid sits at the same residue from its origin as the rows'
+  // does from the block's: origin + residue = residue unmirrored, and
+  // origin - residue = residue mirrored (mod pitch).
+  const odb::dbOrientType orient = inst_->getOrient();
+  const bool mirrored = along_x ? (orient == odb::dbOrientType::MY
+                                   || orient == odb::dbOrientType::R180)
+                                : (orient == odb::dbOrientType::MX
+                                   || orient == odb::dbOrientType::R180);
+
+  return SiteGrid{.pitch = pitch,
+                  .residue = mirrored ? (2 * row_residue) % pitch : 0};
+}
+
+// Moves the origin to the closest site position that aligns all pins with the
+// track-grid without moving the macro out of the core or onto another macro
+// (unless it already was).  Returns false, leaving the origin anywhere, if
+// there is none.
+bool Snapper::snapOnSiteGrid(const SiteGrid& site_grid,
+                             const LayerDataList& layers_data_list,
+                             const odb::dbTechLayerDir& target_direction)
+{
+  const bool along_x = target_direction == odb::dbTechLayerDir::VERTICAL;
+  const int pitch = site_grid.pitch;
+  const int origin = getOrigin(target_direction);
+
+  const int offset = (((origin - site_grid.residue) % pitch) + pitch) % pitch;
+  int nearest = origin - offset;
+  if (2 * offset > pitch) {
+    nearest += pitch;
+  }
+
+  if (!siteGridCanAlignPins(
+          pitch, nearest - origin, layers_data_list, target_direction)) {
+    return false;
+  }
+
+  // Bound the search by the core, or, if the macro is already outside the
+  // core, by the die and wherever the macro already is.
+  odb::dbBlock* block = inst_->getBlock();
+  const odb::Rect bbox = inst_->getBBox()->getBox();
+  const odb::Rect core = block->getCoreArea();
+  odb::Rect bounds = core;
+  if (!core.contains(bbox)) {
+    bounds = block->getDieArea();
+    bounds.merge(bbox);
+  }
+  const int lo_offset = (along_x ? bbox.xMin() : bbox.yMin()) - origin;
+  const int hi_offset = (along_x ? bbox.xMax() : bbox.yMax()) - origin;
+  const int64_t min_origin
+      = static_cast<int64_t>(along_x ? bounds.xMin() : bounds.yMin())
+        - lo_offset;
+  const int64_t max_origin
+      = static_cast<int64_t>(along_x ? bounds.xMax() : bounds.yMax())
+        - hi_offset;
+  if (max_origin < min_origin) {
+    return false;
+  }
+
+  // Moving along one axis, the macro can only run into macros that share its
+  // span on the other axis.  Ones it already overlaps are ignored.
+  std::vector<odb::Rect> obstacles;
+  for (odb::dbInst* other : block->getInsts()) {
+    if (other == inst_ || !other->getMaster()->isBlock()
+        || !other->getPlacementStatus().isPlaced()) {
+      continue;
+    }
+    const odb::Rect other_box = other->getBBox()->getBox();
+    const bool shares_span = along_x ? (other_box.yMax() > bbox.yMin()
+                                        && other_box.yMin() < bbox.yMax())
+                                     : (other_box.xMax() > bbox.xMin()
+                                        && other_box.xMin() < bbox.xMax());
+    if (shares_span && !other_box.overlaps(bbox)) {
+      obstacles.push_back(other_box);
+    }
+  }
+
+  const int total_pins = std::accumulate(layers_data_list.begin(),
+                                         layers_data_list.end(),
+                                         0,
+                                         [](int total, const LayerData& data) {
+                                           return total + data.pins.size();
+                                         });
+
+  // Visit the site positions within the bounds in order of distance: nearest,
+  // then alternating sides starting with the one closer to the original
+  // origin.
+  auto floor_div = [](const int64_t a, const int64_t b) {
+    return a / b - (a % b != 0 && a < 0 ? 1 : 0);
+  };
+  const int64_t min_steps = -floor_div(nearest - min_origin, pitch);
+  const int64_t max_steps = floor_div(max_origin - nearest, pitch);
+  if (max_steps < min_steps) {
+    return false;
+  }
+  auto snaps_at = [&](const int64_t steps) {
+    if (steps < min_steps || steps > max_steps) {
+      return false;
+    }
+    setOrigin(static_cast<int>(nearest + steps * pitch), target_direction);
+
+    const odb::Rect candidate_box = inst_->getBBox()->getBox();
+    if (std::ranges::any_of(obstacles, [&](const odb::Rect& obstacle) {
+          return obstacle.overlaps(candidate_box);
+        })) {
+      return false;
+    }
+    return totalAlignedPins(layers_data_list, target_direction) == total_pins;
+  };
+
+  // Distances in steps from the nearest site position, from the first one
+  // within the bounds to the farthest.
+  const int64_t min_distance
+      = min_steps > 0 ? min_steps : (max_steps < 0 ? -max_steps : 0);
+  const int64_t max_distance
+      = std::max(std::abs(min_steps), std::abs(max_steps));
+  const int first_side = nearest > origin ? -1 : 1;
+  for (int64_t distance = min_distance; distance <= max_distance; distance++) {
+    if (snaps_at(first_side * distance)
+        || (distance != 0 && snaps_at(-first_side * distance))) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// Whether some site position could align all pins, taking each track pattern
+// as unbounded: if none can, none can with the actual track extents either.
+// Shifting the origin by the lcm of the site pitch and the track steps repeats
+// the alignments, so one such period of site positions is enough to check.
+bool Snapper::siteGridCanAlignPins(const int pitch,
+                                   const int nearest_shift,
+                                   const LayerDataList& layers_data_list,
+                                   const odb::dbTechLayerDir& target_direction)
+{
+  const bool along_x = target_direction == odb::dbTechLayerDir::VERTICAL;
+  const int64_t max_site_steps = 1000;
+
+  struct Pattern
+  {
+    int origin;
+    int step;
+  };
+  std::vector<std::vector<Pattern>> layer_patterns;
+  std::vector<std::vector<int>> layer_pin_centers;
+  int64_t period = pitch;
+  for (const LayerData& data : layers_data_list) {
+    std::vector<Pattern>& patterns = layer_patterns.emplace_back();
+    const int count = along_x ? data.track_grid->getNumGridPatternsX()
+                              : data.track_grid->getNumGridPatternsY();
+    for (int i = 0; i < count; i++) {
+      Pattern pattern;
+      getTrackGridPattern(
+          data.track_grid, i, pattern.origin, pattern.step, target_direction);
+      if (pattern.step <= 0) {
+        // A single track doesn't repeat; leave it to the actual search.
+        return true;
+      }
+      // Grow the period to lcm(period, step), giving up before it exceeds
+      // max_site_steps site pitches rather than risk overflowing.
+      const int64_t factor = period / std::gcd(period, int64_t{pattern.step});
+      if (factor > max_site_steps * pitch / pattern.step) {
+        return true;
+      }
+      period = factor * pattern.step;
+      patterns.push_back(pattern);
+    }
+
+    std::vector<int>& centers = layer_pin_centers.emplace_back();
+    for (odb::dbITerm* pin : data.pins) {
+      centers.push_back(along_x ? pin->getBBox().xCenter()
+                                : pin->getBBox().yCenter());
+    }
+  }
+
+  for (int64_t k = 0; k < period / pitch; k++) {
+    const int64_t shift = nearest_shift + k * pitch;
+    bool all_aligned = true;
+    for (size_t layer = 0; layer < layer_patterns.size() && all_aligned;
+         layer++) {
+      for (const int center : layer_pin_centers[layer]) {
+        const int64_t pos = center + shift;
+        const bool aligned = std::ranges::any_of(
+            layer_patterns[layer], [&](const Pattern& pattern) {
+              return (pos - pattern.origin) % pattern.step == 0;
+            });
+        if (!aligned) {
+          all_aligned = false;
+          break;
+        }
+      }
+    }
+    if (all_aligned) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+int Snapper::getOrigin(const odb::dbTechLayerDir& target_direction)
+{
+  return target_direction == odb::dbTechLayerDir::VERTICAL
+             ? inst_->getOrigin().x()
+             : inst_->getOrigin().y();
 }
 
 void Snapper::setOrigin(const int origin,
