@@ -55,6 +55,24 @@ using odb::dbTechLayerType;
 
 namespace drt {
 
+namespace {
+
+void setViaCutClass(frViaDef* viaDef, frLayer* cutLayer)
+{
+  for (const auto& cutFig : viaDef->getCutFigs()) {
+    const odb::Rect box = cutFig->getBBox();
+    const int cutClassIdx
+        = cutLayer->getCutClassIdx(box.minDXDY(), box.maxDXDY());
+    if (cutClassIdx != -1) {
+      viaDef->setCutClass(cutLayer->getCutClass(cutClassIdx));
+      viaDef->setCutClassIdx(cutClassIdx);
+      break;
+    }
+  }
+}
+
+}  // namespace
+
 io::Parser::Parser(odb::dbDatabase* dbIn,
                    frDesign* designIn,
                    utl::Logger* loggerIn,
@@ -338,22 +356,7 @@ void io::Parser::setVias(odb::dbBlock* block)
       for (auto& uShape : cutFigs) {
         viaDef->addCutFig(std::move(uShape));
       }
-      int cutClassIdx = -1;
-      frLef58CutClass* cutClass = nullptr;
-      for (auto& cutFig : viaDef->getCutFigs()) {
-        odb::Rect box = cutFig->getBBox();
-        auto width = box.minDXDY();
-        auto length = box.maxDXDY();
-        cutClassIdx = cutLayer->getCutClassIdx(width, length);
-        if (cutClassIdx != -1) {
-          cutClass = cutLayer->getCutClass(cutClassIdx);
-          break;
-        }
-      }
-      if (cutClass) {
-        viaDef->setCutClass(cutClass);
-        viaDef->setCutClassIdx(cutClassIdx);
-      }
+      setViaCutClass(viaDef.get(), cutLayer);
       if (!getTech()->addVia(std::move(viaDef))) {
         logger_->error(
             utl::DRT, 337, "Duplicated via definition for {}", via->getName());
@@ -413,6 +416,8 @@ void io::Parser::setVias(odb::dbBlock* block)
       if (via->isDefault()) {
         viaDef->setDefault(true);
       }
+      setViaCutClass(viaDef.get(),
+                     getTech()->getLayer(viaDef->getCutLayerNum()));
       if (!getTech()->addVia(std::move(viaDef))) {
         logger_->error(
             utl::DRT, 338, "Duplicated via definition for {}", via->getName());
@@ -3328,25 +3333,7 @@ void io::Parser::setTechVias(odb::dbTech* db_tech)
         viaDef->addCutFig(std::move(pinFig));
       }
     }
-    auto cutLayerNum = viaDef->getCutLayerNum();
-    auto cutLayer = getTech()->getLayer(cutLayerNum);
-    int cutClassIdx = -1;
-    frLef58CutClass* cutClass = nullptr;
-
-    for (auto& cutFig : viaDef->getCutFigs()) {
-      odb::Rect box = cutFig->getBBox();
-      auto width = box.minDXDY();
-      auto length = box.maxDXDY();
-      cutClassIdx = cutLayer->getCutClassIdx(width, length);
-      if (cutClassIdx != -1) {
-        cutClass = cutLayer->getCutClass(cutClassIdx);
-        break;
-      }
-    }
-    if (cutClass) {
-      viaDef->setCutClass(cutClass);
-      viaDef->setCutClassIdx(cutClassIdx);
-    }
+    setViaCutClass(viaDef.get(), getTech()->getLayer(viaDef->getCutLayerNum()));
     if (!getTech()->addVia(std::move(viaDef))) {
       logger_->error(
           utl::DRT, 339, "Duplicated via definition for {}", via->getName());

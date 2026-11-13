@@ -202,6 +202,8 @@ void io::Parser::initDefaultVias()
         viaDef->addLayer1Fig(std::move(uBotFig));
         viaDef->addLayer2Fig(std::move(uTopFig));
         viaDef->addCutFig(std::move(uCutFig));
+        viaDef->setCutClass(techDefautlViaDef->getCutClass());
+        viaDef->setCutClassIdx(techDefautlViaDef->getCutClassIdx());
         viaDef->setAddedByRouter(true);
         auto vdfPtr = getTech()->addVia(std::move(viaDef));
         if (vdfPtr == nullptr) {

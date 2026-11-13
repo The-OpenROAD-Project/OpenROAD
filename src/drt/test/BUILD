@@ -192,6 +192,29 @@ cc_test(
 )
 
 test_suite(
+    name = "io_test",
+    tests = [":io_unittest"],
+)
+
+cc_test(
+    name = "io_unittest",
+    srcs = [
+        "viaCutClassTest.cpp",
+    ],
+    includes = [
+        "../src",
+    ],
+    deps = [
+        "//src/drt:base_types",
+        "//src/drt:drt_impl",
+        "//src/odb/src/db",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+test_suite(
     name = "ta_test",
     tests = [":ta_unittest"],
 )
