@@ -153,6 +153,10 @@ class NesterovPlace
   // every region, i.e. the placement is close to where it is going.
   bool isPlacementSettled() const;
   float getWorstSettleRatio() const;
+  // True once the routability snapshot is saved, while overflow is above the
+  // routability end overflow or a routability pass is still pending. The
+  // latter keeps the wait for the placement to settle a routability iteration.
+  bool isRoutabilityGplIter() const;
 
   bool isConverged(int gpl_iter_count, int routability_gpl_iter_count);
   // Re-derives densityPenalty_ for every region via

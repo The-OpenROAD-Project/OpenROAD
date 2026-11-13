@@ -84,7 +84,6 @@ cc_library(
         "include/utl/unique_name.h",
         "include/utl/validation.h",
     ],
-    copts = ["-DBOOST_ASIO_NO_DEPRECATED"],
     includes = [
         "include",
         "src",

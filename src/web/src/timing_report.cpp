@@ -18,6 +18,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
 #include "sta/ExceptionPath.hh"
@@ -111,6 +112,7 @@ void TimingReport::expandPath(sta::Path* path,
     db_network->staToDb(pin, term, port, moditerm);
 
     std::string pin_name;
+    std::string inst_name = term ? term->getInst()->getName() : "";
     odb::dbBlock* block = nullptr;
     if (term) {
       pin_name = term->getName();
@@ -125,7 +127,12 @@ void TimingReport::expandPath(sta::Path* path,
     // back off, and what dbNetwork composes for the unfolded model.
     if (block != nullptr) {
       if (odb::dbChipInst* chip_inst = db_network->chipInstOf(block)) {
-        pin_name.insert(0, chip_inst->getName() + odb::kChipletPathDelimiter);
+        const std::string prefix
+            = chip_inst->getName() + odb::kChipletPathDelimiter;
+        pin_name.insert(0, prefix);
+        if (term) {
+          inst_name.insert(0, prefix);
+        }
       }
     }
 
@@ -150,6 +157,7 @@ void TimingReport::expandPath(sta::Path* path,
     }
 
     nodes.push_back(TimingNode{.pin_name = std::move(pin_name),
+                               .inst_name = std::move(inst_name),
                                .fanout = node_fanout,
                                .is_rising = is_rising,
                                .is_clock = pin_is_clock,
@@ -164,10 +172,12 @@ void TimingReport::expandPath(sta::Path* path,
   logic_depth = static_cast<int>(logic_insts.size());
 }
 
-std::vector<TimingPathSummary> TimingReport::getReport(bool is_setup,
-                                                       int max_paths,
-                                                       float slack_min,
-                                                       float slack_max) const
+std::vector<TimingPathSummary> TimingReport::getReport(
+    bool is_setup,
+    int max_paths,
+    float slack_min,
+    float slack_max,
+    bool include_unconstrained) const
 {
   std::vector<TimingPathSummary> result;
   if (!sta_) {
@@ -191,7 +201,7 @@ std::vector<TimingPathSummary> TimingReport::getReport(bool is_setup,
       /*from*/ nullptr,
       /*thrus*/ nullptr,
       /*to*/ nullptr,
-      /*unconstrained*/ false,
+      /*unconstrained*/ include_unconstrained,
       scenes,
       is_setup ? sta::MinMaxAll::max() : sta::MinMaxAll::min(),
       /*group_count*/ max_paths,
@@ -897,6 +907,7 @@ boost::json::object serializeTimingNode(const TimingNode& n)
 {
   boost::json::object o;
   o["pin"] = n.pin_name;
+  o["inst"] = n.inst_name;
   o["fanout"] = n.fanout;
   o["rise"] = n.is_rising;
   o["clk"] = n.is_clock;
