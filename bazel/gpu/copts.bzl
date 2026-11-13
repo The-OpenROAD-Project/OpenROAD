@@ -61,9 +61,10 @@ CUDA_COPTS = CUDA_TOOLKIT_COPTS + CUDA_ARCH_COPTS + [
     # additional_compiler_inputs, which is what makes the expansion legal.
     "-include",
     "$(location //bazel/gpu:cuda_placement_new.h)",
+] + select({
     # Required by Kokkos's OpenMP backend headers in every TU that includes
-    # Kokkos (the registry module adds it to its own copts); gpl's sources also use OpenMP pragmas
-    # on the host side. Same flag (and @openmp dependency) as
-    # //src/gpl:gpl_impl.
-    "-fopenmp",
-]
+    # Kokkos (the registry module adds it to its own copts). Only with the
+    # OpenMP host backend (--@kokkos//:backend), matching //src/gpl:gpl_impl.
+    "@kokkos//:openmp": ["-fopenmp"],
+    "//conditions:default": [],
+})
