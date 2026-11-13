@@ -1534,4 +1534,21 @@ TEST_F(TestResizer, IsClockCellCandidateRequiresLefMaster)
       resizer_.isClockCellCandidate(db_network_->findLibertyCell("CLKBUF_X1")));
 }
 
+TEST_F(TestResizer, GetSwappableCellsKeepsClockAndDataBuffersDisjoint)
+{
+  resizer_.makeEquivCells();
+  const sta::LibertyCellSeq data_swaps
+      = resizer_.getSwappableCells(db_network_->findLibertyCell("BUF_X1"));
+  const sta::LibertyCellSeq clk_swaps
+      = resizer_.getSwappableCells(db_network_->findLibertyCell("CLKBUF_X1"));
+  EXPECT_GT(data_swaps.size(), 1u);
+  EXPECT_GT(clk_swaps.size(), 1u);
+  for (sta::LibertyCell* cell : data_swaps) {
+    EXPECT_EQ(resizer_.getBufferUse(cell), BufferUse::DATA) << cell->name();
+  }
+  for (sta::LibertyCell* cell : clk_swaps) {
+    EXPECT_EQ(resizer_.getBufferUse(cell), BufferUse::CLOCK) << cell->name();
+  }
+}
+
 }  // namespace rsz
