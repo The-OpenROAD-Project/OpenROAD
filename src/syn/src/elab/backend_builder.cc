@@ -665,6 +665,23 @@ void BackendGraphBuilder::add_aldffe(std::string_view,
   connect(q, fromBundle(dff_out));
 }
 
+void BackendGraphBuilder::add_dffsre(std::string_view,
+                                     const ir::Net,
+                                     const ir::Net,
+                                     const ir::Net,
+                                     const ir::Net,
+                                     const ir::Value&,
+                                     const ir::Value&,
+                                     bool,
+                                     bool,
+                                     bool,
+                                     bool)
+{
+  syn::reportError(graph_->logger(),
+                   96,
+                   "Flops with asynchronous set/reset are unsupported");
+}
+
 void BackendGraphBuilder::add_dual_edge_aldff(const std::string&,
                                               ir::Net clk,
                                               ir::Net aload,
