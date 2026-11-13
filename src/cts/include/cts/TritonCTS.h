@@ -34,6 +34,7 @@ class LibertyCell;
 class Vertex;
 class Graph;
 class Pin;
+class Instance;
 }  // namespace sta
 
 namespace stt {
@@ -134,6 +135,12 @@ class TritonCTS
   void resolveLocationCollision(odb::dbInst* clone,
                                 odb::Point location,
                                 std::set<odb::Point>& occupiedPositions);
+  void connectClone(odb::dbInst* original,
+                    odb::dbInst* clone,
+                    odb::dbNet* outputNet);
+  void moveSinkToClone(odb::dbITerm* sink,
+                       odb::dbInst* clone,
+                       sta::Instance* scope);
   void initOneClockTree(odb::dbNet* driverNet,
                         odb::dbNet* clkInputNet,
                         const std::string& sdcClockName,
@@ -228,6 +235,22 @@ class TritonCTS
   // has a usable delay.
   double getMaxDelayBufferDelay(double extra_out_cap);
 
+  // ---- clock gate sinks ----
+  using ClockPins = std::vector<std::pair<odb::Point, odb::dbITerm*>>;
+  ClockPins registerClockPins(odb::dbITerm* gateClockPin);
+  static odb::Rect boundingBox(const ClockPins& clockPins,
+                               size_t begin,
+                               size_t end);
+  bool fitsSinkCluster(size_t count, const odb::Rect& bbox) const;
+  bool isClockGateSink(odb::dbITerm* gateClockPin);
+  bool isFrozenClockNet(odb::dbNet* net);
+  void splitClockGatesToClusters(odb::dbNet* clkNet,
+                                 std::set<odb::Point>& occupiedPositions,
+                                 std::unordered_set<odb::dbNet*>& visitedNets);
+  void splitClockGateToClusters(odb::dbITerm* gateClockPin,
+                                std::set<odb::Point>& occupiedPositions);
+  void resizeClockGateSinks();
+
   sta::dbSta* openSta_ = nullptr;
   sta::dbNetwork* network_ = nullptr;
   utl::Logger* logger_ = nullptr;
@@ -241,6 +264,12 @@ class TritonCTS
   odb::PtrMap<odb::dbInst, ClockInst*> inst2clkbuf_;
   std::map<ClockInst*, ClockSubNet*> driver2subnet_;
   odb::PtrMap<odb::dbNet, TreeBuilder*> net2builder_;
+
+  // ---- clock gate sinks ----
+  odb::PtrSet<odb::dbInst> clockGateSinks_;
+  odb::PtrSet<odb::dbNet> clockRootNets_;
+  int splitGateCount_ = 0;
+  int splitGateCloneCount_ = 0;
 
   // db vars
   odb::dbDatabase* db_ = nullptr;

@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -53,7 +54,6 @@ void HTreeBuilder::preSinkClustering(
                                       ? min_clustering_macro_sinks_
                                       : min_clustering_sinks_;
 
-  const std::vector<std::pair<float, float>>& points = sinks;
   if (!secondLevel) {
     clock_.forEachSink([&](ClockInst& inst) {
       const Point<double> normLocation((float) inst.getX() / wireSegmentUnit_,
@@ -77,17 +77,34 @@ void HTreeBuilder::preSinkClustering(
     return;
   }
 
+  // The H-tree drives a clock gate sink directly in place of a leaf buffer.
+  std::vector<std::pair<float, float>> gatePoints;
+  std::vector<std::pair<float, float>> points;
+  std::vector<const ClockInst*> pointInsts;
+  for (size_t i = 0; i < sinks.size(); i++) {
+    if (!secondLevel && sinkInsts[i]->isClockGateSink()) {
+      gatePoints.push_back(sinks[i]);
+    } else {
+      points.push_back(sinks[i]);
+      pointInsts.push_back(sinkInsts[i]);
+    }
+  }
+  if (points.size() <= 1) {
+    topLevelSinksClustered_ = sinks;
+    return;
+  }
+
   SinkClustering matching(options_, techChar_, this);
   const unsigned numPoints = points.size();
 
   for (int pointIdx = 0; pointIdx < numPoints; ++pointIdx) {
     const std::pair<float, float>& point = points[pointIdx];
     matching.addPoint(point.first, point.second);
-    if (sinkInsts[pointIdx]->getInputCap() == 0) {
+    if (pointInsts[pointIdx]->getInputCap() == 0) {
       // Comes here in second level since first level buf cap is not set
       matching.addCap(options_->getSinkBufferInputCap());
     } else {
-      matching.addCap(sinkInsts[pointIdx]->getInputCap());
+      matching.addCap(pointInsts[pointIdx]->getInputCap());
     }
   }
 
@@ -209,6 +226,8 @@ void HTreeBuilder::preSinkClustering(
     }
     clusterCount++;
   }
+  newSinkLocations.insert(
+      newSinkLocations.end(), gatePoints.begin(), gatePoints.end());
   topLevelSinksClustered_ = std::move(newSinkLocations);
   if (clusterCount) {
     treeBufLevels_++;
