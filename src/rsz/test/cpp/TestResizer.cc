@@ -1506,4 +1506,32 @@ TEST_F(TestResizer, LibraryOutputPinsFiltersLeadingInputsAndInputOnlyCells)
   EXPECT_FALSE(resizer_.isSingleOutputCombinational(fill_cell));
 }
 
+TEST_F(TestResizer, BalanceRowUsageClampsOutOfCoreInstances)
+{
+  readDefForTiming("remove_buffers3.def");
+  block_->setCoreArea(odb::Rect(200, 200, 300, 300));
+  resizer_.balanceRowUsage();
+  EXPECT_EQ(block_->getInsts().size(), 4u);
+}
+
+TEST_F(TestResizer, SetMaxUtilizationInitializesBlock)
+{
+  readDefForTiming("remove_buffers3.def");
+  block_->setCoreArea(odb::Rect(0, 0, 1000, 1000));
+  resizer_.setMaxUtilization(0.5);
+  EXPECT_GT(resizer_.maxArea(), 0.0);
+  EXPECT_DOUBLE_EQ(resizer_.maxArea(), resizer_.coreArea() * 0.5);
+}
+
+TEST_F(TestResizer, IsClockCellCandidateRequiresLefMaster)
+{
+  sta::LibertyLibrary* lib
+      = readLiberty(test_root_path_ + "cpp/TestResizerIntrinsic.lib");
+  ASSERT_NE(lib, nullptr);
+  EXPECT_FALSE(
+      resizer_.isClockCellCandidate(lib->findLibertyCell("INTRINSIC_FAST")));
+  EXPECT_TRUE(
+      resizer_.isClockCellCandidate(db_network_->findLibertyCell("CLKBUF_X1")));
+}
+
 }  // namespace rsz
