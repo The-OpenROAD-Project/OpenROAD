@@ -2,6 +2,7 @@ load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
 load("//bazel/gpu:copts.bzl", "CUDA_COPTS")
 load("//bazel/gpu:defs.bzl", "GPU_ENV_OFF", "GPU_ONLY")
+load("//bazel/kokkos:defs.bzl", "kokkos_backend_tests")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -145,6 +146,28 @@ test_suite(
     name = "large_tests",
     tags = ["manual"],
     tests = [":" + test_name + "-tcl_test" for test_name in LARGE_TESTS],
+)
+
+# Re-run Kokkos-heavy regressions with the non-default host backends
+# (--//bazel/kokkos:backend=serial|threads). The default build only covers
+# openmp. Results must be bit-identical across backends, so the same golden
+# files are used. Covers Nesterov placement (core01, simple01*), the
+# multi-threaded path (mt_invariance01, set_thread_count 8) and MBFF
+# clustering (cluster_flops).
+kokkos_backend_tests(
+    tags = ["kokkos_backend"],
+    tests = [
+        ":" + test_name + "-tcl_test"
+        for test_name in [
+            "core01",
+            "incremental01",
+            "mbff_clock_power_on",
+            "mbff_hier",
+            "mt_invariance01",
+            "simple01",
+            "simple01-td",
+        ]
+    ],
 )
 
 # ENABLE_GPU=1 overrides the GPU_ENV_OFF default that regression_test()
