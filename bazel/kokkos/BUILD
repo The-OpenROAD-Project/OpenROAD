@@ -3,17 +3,12 @@
 
 package(default_visibility = ["//visibility:public"])
 
-exports_files(["BUILD.kokkos_host.bazel"])
-
 alias(
     name = "backend",
-    actual = "@kokkos_host//:backend",
+    actual = "@kokkos//:backend",
 )
 
 alias(
     name = "kokkos",
-    actual = select({
-        "//:gpu_cuda": "@kokkos",
-        "//conditions:default": "@kokkos_host//:kokkos",
-    }),
+    actual = "@kokkos//:kokkos",
 )

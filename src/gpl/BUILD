@@ -264,7 +264,7 @@ cc_library(
         "src/timingBase.h",
     ],
     copts = select({
-        "@kokkos_host//:openmp": ["-fopenmp"],
+        "@kokkos//:openmp": ["-fopenmp"],
         "//conditions:default": [],
     }),
     includes = [
