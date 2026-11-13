@@ -179,9 +179,10 @@ bazel_dep(name = "spdlog", version = "1.17.0")
 # Pinned via single_version_override because src/syn/src/elab compiles
 # sv-elab's sources directly against OpenROAD's backend implementation.
 bazel_dep(name = "sv-elab", version = "2026-11-09")
-single_version_override(
+git_override(
     module_name = "sv-elab",
-    version = "2026-11-09",
+    commit = "dd29bd6bbdce24bd1bb8dd9074e72c1c89b3733d",
+    remote = "https://github.com/povik/sv-elab",
 )
 
 bazel_dep(name = "tcl_lang", version = "9.0.2.bcr.2")
