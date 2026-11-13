@@ -352,6 +352,7 @@ def regression_test(
     Args:
         name: The base name of the test (without extension).
         **kwargs: Additional keyword arguments to pass to the regression_rule_test.
+            `openroad` picks the binary to run, //:openroad by default.
     """
 
     # TODO: we should _not_ have the magic to figure out if tcl or py exists
@@ -370,6 +371,7 @@ def regression_test(
     size = _pop(kwargs, "size", "small")
     test_type = _pop(kwargs, "test_type", "")
     tags = _pop(kwargs, "tags", [])
+    openroad = _pop(kwargs, "openroad", "//:openroad")
 
     # Default every regression test to the GPU_ENV_OFF pin: on a GPU build
     # (--config=gpu) the runtime gate defaults on, and any test that runs
@@ -398,7 +400,7 @@ def regression_test(
             test_type = effective_test_type,
             data = test_data,
             bazel_test_sh = "//test:bazel_test.sh",
-            openroad = "//:openroad",
+            openroad = openroad,
             regression_test = "//test:regression_test.sh",
             # top showed me 50-400mByte of usage, so "enormous" for
             # long running tests, but the OpenROAD tests are generally

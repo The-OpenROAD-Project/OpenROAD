@@ -267,6 +267,8 @@ enum class InstCategory
   kStdLevelShift,
   kStdSequential,
   kStdCombinational,
+  kStdPhysical,  // a liberty cell with no ports (decap, ...)
+  kStdOther,     // no liberty cell, and not a core master
 };
 
 InstCategory classifyInstance(odb::dbInst* inst, sta::dbSta* sta);
@@ -306,6 +308,10 @@ struct TileVisibility
   bool std_level_shift = true;
   bool std_sequential = true;
   bool std_combinational = true;
+  // Qt draws these by Instances/Physical and Instances; a payload without
+  // their keys gives them stdcells' value.
+  bool std_physical = true;
+  bool std_other = true;
 
   // Net sub-types (by dbSigType)
   bool net_signal = true;
@@ -474,6 +480,8 @@ struct TileVisibility
   bool std_level_shift_selectable = true;
   bool std_sequential_selectable = true;
   bool std_combinational_selectable = true;
+  bool std_physical_selectable = true;
+  bool std_other_selectable = true;
 
   bool net_signal_selectable = true;
   bool net_power_selectable = true;
@@ -510,6 +518,11 @@ struct TileVisibility
   bool pinNamesShown() const { return inst_pins && inst_pin_names; }
   // The boolean field a JSON key sets, or none for a key it does not know.
   std::optional<bool> flag(std::string_view key) const;
+  static bool isFlag(std::string_view key);
+  // Sets the field a JSON key names; false for a key it does not know.
+  bool setFlag(std::string_view key, bool value);
+  // setFlag for each, with stdcells before the std_physical/std_other it sets.
+  void setFlags(const std::map<std::string, bool>& flags);
   // Visibility for an already-classified instance.  Lets callers that already
   // computed the category (e.g. the tile render loop) avoid reclassifying.
   bool isCategoryVisible(InstCategory cat) const;
@@ -521,6 +534,9 @@ struct TileVisibility
   bool isLayerSelectableOn(const std::string& path,
                            const std::string& layer_name) const;
 };
+
+// Nothing of the design: an image of only what is drawn over it.
+TileVisibility overlayOnlyVisibility();
 
 class TileGenerator
 {

@@ -69,6 +69,11 @@ bool Gui::hasUI()
   return backend != nullptr && backend->hasWindow();
 }
 
+bool Gui::hasViewer()
+{
+  return Gui::get()->viewTarget() != nullptr;
+}
+
 void Gui::setHeadlessViewer(GuiBackend* viewer)
 {
   headless_viewer_ = viewer;
@@ -479,10 +484,9 @@ void Gui::setResolution(double pixels_per_dbu)
 
 void Gui::fit()
 {
-  if (!hasUI()) {
-    return;
+  if (auto* target = viewTarget()) {
+    target->fit();
   }
-  activeBackend()->fit();
 }
 
 std::string Gui::addLabel(int x,
@@ -545,36 +549,49 @@ void Gui::clearRulers()
   activeBackend()->clearRulers();
 }
 
-// The display-control queries are the one group that always had a headless
-// path: they answered from the web viewer when no window was up.  Dispatching
-// through the backend is that same fallback, without the special case -- the
-// defaults here are the ones Gui used with nothing installed at all.
+// With no Qt window the controls are the script view's, with Qt's names and
+// defaults; the defaults here are Gui's with nothing installed.
 void Gui::setDisplayControlsVisible(const std::string& name, bool value)
 {
-  if (auto* backend = activeBackend()) {
-    backend->setDisplayControlVisible(name, value);
+  if (auto* target = viewTarget()) {
+    target->setDisplayControlVisible(name, value);
   }
 }
 
 bool Gui::checkDisplayControlsVisible(const std::string& name)
 {
-  if (auto* backend = activeBackend()) {
-    return backend->checkDisplayControlVisible(name);
+  if (auto* target = viewTarget()) {
+    return target->checkDisplayControlVisible(name);
   }
   return true;
 }
 
+bool Gui::checkRendererControl(const std::string& path)
+{
+  if (auto* target = viewTarget()) {
+    return target->checkRendererControl(path);
+  }
+  return true;
+}
+
+void Gui::setRendererControl(const std::string& path, const bool value)
+{
+  if (auto* target = viewTarget()) {
+    target->setRendererControl(path, value);
+  }
+}
+
 void Gui::setDisplayControlsSelectable(const std::string& name, bool value)
 {
-  if (auto* backend = activeBackend()) {
-    backend->setDisplayControlSelectable(name, value);
+  if (auto* target = viewTarget()) {
+    target->setDisplayControlSelectable(name, value);
   }
 }
 
 bool Gui::checkDisplayControlsSelectable(const std::string& name)
 {
-  if (auto* backend = activeBackend()) {
-    return backend->checkDisplayControlSelectable(name);
+  if (auto* target = viewTarget()) {
+    return target->checkDisplayControlSelectable(name);
   }
   return false;
 }
@@ -582,23 +599,31 @@ bool Gui::checkDisplayControlsSelectable(const std::string& name)
 void Gui::setDisplayControlsColor(const std::string& name,
                                   const Painter::Color& color)
 {
-  if (auto* backend = activeBackend()) {
-    backend->setDisplayControlColor(name, color);
+  if (auto* target = viewTarget()) {
+    target->setDisplayControlColor(name, color);
   }
 }
 
 void Gui::saveDisplayControls()
 {
-  if (auto* backend = activeBackend()) {
-    backend->saveDisplayControls();
+  if (auto* target = viewTarget()) {
+    target->saveDisplayControls();
   }
 }
 
 void Gui::restoreDisplayControls()
 {
-  if (auto* backend = activeBackend()) {
-    backend->restoreDisplayControls();
+  if (auto* target = viewTarget()) {
+    target->restoreDisplayControls();
   }
+}
+
+std::vector<std::string> Gui::displayControlPaths()
+{
+  if (auto* target = viewTarget()) {
+    return target->displayControlPaths();
+  }
+  return {};
 }
 
 void Gui::addFocusNet(odb::dbNet* net)
@@ -1137,6 +1162,13 @@ void Gui::unregisterHeatMap(HeatMapDataSource* heatmap)
     backend->unregisterHeatMap(heatmap);
   }
   heat_maps_.erase(heatmap);
+}
+
+bool Gui::isHeatMapRenderer(const Renderer* renderer) const
+{
+  return std::ranges::any_of(
+      heat_map_renderers_,
+      [renderer](const auto& entry) { return entry.second.get() == renderer; });
 }
 
 void Gui::setChartFactory(ChartFactory factory)
