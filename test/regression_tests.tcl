@@ -3,6 +3,7 @@
 record_flow_tests {
   gcd_nangate45
   gcd_sky130hd
+  gcd_sky130hd_dummy_via
   gcd_sky130hd_fast_slow
   gcd_sky130hs
   gcd_asap7
