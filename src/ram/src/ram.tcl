@@ -396,7 +396,8 @@ proc generate_ram { args } {
            -banks -bank_columns -bank_order -rb_ports -register_read_address
            -write_style -write_priority
            -cells -name -decoder -bit_folds -service_columns
-           -bank_column_layout -periphery -wrapper_verilog -tracks -segmentation -rows_per_segment } flags {}
+           -bank_column_layout -periphery -wrapper_verilog -tracks
+           -segmentation -rows_per_segment } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
 

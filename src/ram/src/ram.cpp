@@ -7,6 +7,7 @@
 #include <array>
 #include <cctype>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <fstream>
 #include <functional>
@@ -24,6 +25,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "dpl/Opendp.h"
 #include "drt/TritonRoute.h"
+#include "fmt/format.h"
 #include "grt/GlobalRouter.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
@@ -753,8 +755,10 @@ void RamGen::makeWord(const int slices_per_word,
     const vector<dbNet*> slice_sel_b
         = per_slice_sel
               ? vector<dbNet*>(
-                    shared_select_b_nets.begin() + slice * r_total,
-                    shared_select_b_nets.begin() + (slice + 1) * r_total)
+                    shared_select_b_nets.begin()
+                        + static_cast<std::ptrdiff_t>(slice) * r_total,
+                    shared_select_b_nets.begin()
+                        + static_cast<std::ptrdiff_t>(slice + 1) * r_total)
               : shared_select_b_nets;
 
     makeSlice(slice,
@@ -2856,8 +2860,8 @@ void RamGen::generate(const int mask_size,
 
   auto ceil_log2 = [](int v) {
     int b = 0;
-    while ((1 << b) < v) {
-      ++b;
+    for (int p = 1; p < v; p *= 2) {
+      b++;
     }
     return b;
   };
@@ -3064,7 +3068,8 @@ void RamGen::generate(const int mask_size,
   }
 
   for (int row = 0; row < num_rows; ++row) {
-    vector<dbNet*> shared_select_b_nets(r_total * slices_per_word);
+    vector<dbNet*> shared_select_b_nets(static_cast<size_t>(r_total)
+                                        * slices_per_word);
     // (the AND-OR trees read the true selects: none)
     if (column_mux_ratio > 1 && !banked_ && !and_or_read_) {
       for (int sl = 0; sl < slices_per_word; ++sl) {
@@ -3148,21 +3153,23 @@ void RamGen::generate(const int mask_size,
             // col base_col+0: buffer
             // col base_col+1: AOI22 + inverter side by side in same cell/column
             auto aoi_out = makeNet(port_prefix, "aoi_out");
-            makeInst(
-                mux_cell.get(),
-                port_prefix,
-                "aoi",
-                aoi22_cell_,
-                {{aoi22_in_a1_,
-                  (wsel_buf && addr_port == 0) ? wsel_n[slice]
-                                               : inv_addr_nets[addr_port][0]},
-                 {aoi22_in_a2_, bit_word_q_nets[0]},
-                 {aoi22_in_b1_,
-                  (wsel_buf && addr_port == 0)
-                      ? wsel_t[slice]
-                      : addr_inputs_[addr_port][0]->getNet()},
-                 {aoi22_in_b2_, bit_word_q_nets[1]},
-                 {aoi22_out_, aoi_out}});
+            dbNet* aoi_sel_n = (wsel_buf && addr_port == 0)
+                                   ? wsel_n[slice]
+                                   : inv_addr_nets[addr_port][0];
+            dbNet* aoi_sel_t = (wsel_buf && addr_port == 0)
+                                   ? wsel_t[slice]
+                                   : addr_inputs_[addr_port][0]->getNet();
+            makeInst(mux_cell.get(),
+                     port_prefix,
+                     "aoi",
+                     aoi22_cell_,
+                     {
+                         {aoi22_in_a1_, aoi_sel_n},
+                         {aoi22_in_a2_, bit_word_q_nets[0]},
+                         {aoi22_in_b1_, aoi_sel_t},
+                         {aoi22_in_b2_, bit_word_q_nets[1]},
+                         {aoi22_out_, aoi_out},
+                     });
             makeInst(mux_cell.get(),
                      port_prefix,
                      "inv",
@@ -3380,8 +3387,16 @@ void RamGen::generate(const int mask_size,
              "word_sel",
              "inv_addr_0",
              wsel_inv,
-             {{wp[{PortRoleType::DataIn, 0}], addr_inputs_[0][0]->getNet()},
-              {wp[{PortRoleType::DataOut, 0}], inv_addr_nets[0][0]}});
+             {
+                 {
+                     wp[{.type = PortRoleType::DataIn, .index = 0}],
+                     addr_inputs_[0][0]->getNet(),
+                 },
+                 {
+                     wp[{.type = PortRoleType::DataOut, .index = 0}],
+                     inv_addr_nets[0][0],
+                 },
+             });
 
     if (wsel_buf) {
       auto bp = buildPortMap(wsel_buf);
@@ -3393,22 +3408,34 @@ void RamGen::generate(const int mask_size,
           cn = std::make_unique<Cell>();
           n_target = cn.get();
         }
-        makeInst(n_target,
-                 "word_sel",
-                 fmt::format("buf_n_{}", s),
-                 wsel_buf,
-                 {{bp[{PortRoleType::DataIn, 0}], inv_addr_nets[0][0]},
-                  {bp[{PortRoleType::DataOut, 0}], wsel_n[s]}});
+        makeInst(
+            n_target,
+            "word_sel",
+            fmt::format("buf_n_{}", s),
+            wsel_buf,
+            {
+                {
+                    bp[{.type = PortRoleType::DataIn, .index = 0}],
+                    inv_addr_nets[0][0],
+                },
+                {bp[{.type = PortRoleType::DataOut, .index = 0}], wsel_n[s]},
+            });
         if (s > 0) {
           ram_grid_.addCell(std::move(cn), selColumn(s, 0, mask_size));
         }
         auto ct = std::make_unique<Cell>();
-        makeInst(ct.get(),
-                 "word_sel",
-                 fmt::format("buf_t_{}", s),
-                 wsel_buf,
-                 {{bp[{PortRoleType::DataIn, 0}], addr_inputs_[0][0]->getNet()},
-                  {bp[{PortRoleType::DataOut, 0}], wsel_t[s]}});
+        makeInst(
+            ct.get(),
+            "word_sel",
+            fmt::format("buf_t_{}", s),
+            wsel_buf,
+            {
+                {
+                    bp[{.type = PortRoleType::DataIn, .index = 0}],
+                    addr_inputs_[0][0]->getNet(),
+                },
+                {bp[{.type = PortRoleType::DataOut, .index = 0}], wsel_t[s]},
+            });
         ram_grid_.addCell(std::move(ct), selColumn(s, 1, mask_size));
       }
     }
@@ -3493,6 +3520,9 @@ void RamGen::generate(const int mask_size,
   // by name ("and2_1" -> "and2_2", "TBUF_X1" -> "TBUF_X4"). Returns `base`
   // when the library has no such variant.
   auto upsized = [&](dbMaster* base, int factor) -> dbMaster* {
+    if (!base) {
+      logger_->error(RAM, 114, "Required cell is missing for upsizing.");
+    }
     const std::string name = base->getName();
     size_t pos = name.size();
     while (pos > 0 && std::isdigit(static_cast<unsigned char>(name[pos - 1]))) {
@@ -3533,7 +3563,9 @@ void RamGen::generate(const int mask_size,
       for (int j = 0; j < seg_bits; ++j) {
         const int a = num_word_bits + rps_bits + j;
         dbNet* bit_net
-            = ((s >> j) & 1) ? addr_true_[0][a] : inv_addr_nets[0][a];
+            = ((static_cast<unsigned>(s) >> static_cast<unsigned>(j)) & 1U)
+                  ? addr_true_[0][a]
+                  : inv_addr_nets[0][a];
         if (!seg_sel) {
           seg_sel = bit_net;
           continue;
@@ -3543,9 +3575,11 @@ void RamGen::generate(const int mask_size,
                  sp,
                  fmt::format("and{}", j),
                  seg_and,
-                 {{ap[{PortRoleType::DataIn, 0}], seg_sel},
-                  {ap[{PortRoleType::DataIn, 1}], bit_net},
-                  {ap[{PortRoleType::DataOut, 0}], out}});
+                 {
+                     {ap[{.type = PortRoleType::DataIn, .index = 0}], seg_sel},
+                     {ap[{.type = PortRoleType::DataIn, .index = 1}], bit_net},
+                     {ap[{.type = PortRoleType::DataOut, .index = 0}], out},
+                 });
         seg_sel = out;
       }
 
@@ -3561,8 +3595,16 @@ void RamGen::generate(const int mask_size,
               sp,
               fmt::format("inv_s{}_w{}", sl, w),
               inv_cell_,
-              {{inv_ports_[{PortRoleType::DataIn, 0}], seg_sel},
-               {inv_ports_[{PortRoleType::DataOut, 0}], seg_sel_b[sl][w]}});
+              {
+                  {
+                      inv_ports_[{.type = PortRoleType::DataIn, .index = 0}],
+                      seg_sel,
+                  },
+                  {
+                      inv_ports_[{.type = PortRoleType::DataOut, .index = 0}],
+                      seg_sel_b[sl][w],
+                  },
+              });
         }
       }
 
@@ -3576,14 +3618,24 @@ void RamGen::generate(const int mask_size,
             const int col = bitColumn(sl, k, w, mask_size);
             row_cells[col] = std::make_unique<Cell>();
             // second-stage tristate: segment line -> word's Q net
-            makeInst(
-                row_cells[col].get(),
-                sp,
-                fmt::format("obuf_w{}_b{}", w, bit),
-                seg_tri_cell,
-                {{tp[{PortRoleType::DataIn, 0}], seg_q_nets[s][w][bit]},
-                 {tp[{PortRoleType::TriEnable, 0}], seg_sel_b[sl][w]},
-                 {tp[{PortRoleType::DataOut, 0}], word_q_nets[w][0][bit]}});
+            makeInst(row_cells[col].get(),
+                     sp,
+                     fmt::format("obuf_w{}_b{}", w, bit),
+                     seg_tri_cell,
+                     {
+                         {
+                             tp[{.type = PortRoleType::DataIn, .index = 0}],
+                             seg_q_nets[s][w][bit],
+                         },
+                         {
+                             tp[{.type = PortRoleType::TriEnable, .index = 0}],
+                             seg_sel_b[sl][w],
+                         },
+                         {
+                             tp[{.type = PortRoleType::DataOut, .index = 0}],
+                             word_q_nets[w][0][bit],
+                         },
+                     });
           }
         }
       }
