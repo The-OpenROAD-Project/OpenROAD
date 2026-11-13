@@ -23,7 +23,7 @@ def main():
         contents = log_file.read_text()
         assert "Stack trace:\ntest frame" in contents, contents
         assert (
-            "[CRITICAL ORD-2055] libc++ check failed: test condition" in contents
+            "[CRITICAL ORD-2057] libc++ check failed: test condition" in contents
         ), contents
 
 

@@ -21,7 +21,7 @@ namespace ord {
                                    const std::string& message)
 {
   logger.report("Stack trace:\n{}", trace);
-  logger.critical(utl::ORD, 2055, "libc++ check failed: {}", message);
+  logger.critical(utl::ORD, 2057, "libc++ check failed: {}", message);
 }
 
 }  // namespace ord
