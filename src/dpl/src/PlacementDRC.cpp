@@ -161,29 +161,15 @@ class PlacementDRC::FixedSupplyVias
       const int max_spacing = maximumSpacing(layer, data);
       data.query_halo = std::max(0, max_spacing - 1);
       max_query_halo = std::max(max_query_halo, data.query_halo);
-      // maximumSpacing() populates the cache via spacing(); resolve directly in
-      // case it returned before evaluating any dimension pair.
-      auto [lef58_it, inserted] = lef58_spacing_.try_emplace(layer, 0);
-      if (inserted) {
-        lef58_it->second = lef58MaxSpacing(layer);
-      }
       debugPrint(logger_,
                  DPL,
                  "fixed_supply_via",
                  1,
-                 "layer {} ({}): spacing={} (legacy LEF={} LEF58 "
-                 "shape-independent={}; EOL resolved per shape pair) query "
-                 "halo={} for {} fixed shapes in {} size classes vs {} master "
-                 "shape size classes",
+                 "layer {}: spacing={} query halo={} for {} fixed shapes",
                  layer->getName(),
-                 layer->getType().getString(),
                  max_spacing,
-                 layer->getSpacing(),
-                 lef58_it->second,
                  data.query_halo,
-                 data.shapes.size(),
-                 data.fixed_dimensions.size(),
-                 master_dimensions_.at(layer).size());
+                 data.shapes.size());
       data.fixed_dimensions.clear();
       if (max_spacing == 0) {
         // No spacing rule this code understands resolved on a layer that both
@@ -1104,9 +1090,9 @@ class PlacementDRC::FixedSupplyVias
   // worst entry over every class pair instead would inflate the keepout well
   // past the rule that actually governs these two shapes.  The bound sizes the
   // query halo and the candidate sites; cutViolation() decides the conflict.
-  int cutClassSpacing(odb::dbTechLayer* layer,
-                      const odb::Rect& fixed,
-                      const odb::Rect& cell) const
+  static int cutClassSpacing(odb::dbTechLayer* layer,
+                             const odb::Rect& fixed,
+                             const odb::Rect& cell)
   {
     if (layer->getType() != odb::dbTechLayerType::CUT) {
       return 0;
@@ -1149,20 +1135,7 @@ class PlacementDRC::FixedSupplyVias
         max_spacing = std::max(max_spacing, rule->getDefault());
       }
     }
-    if (!resolved) {
-      return 0;
-    }
-    debugPrint(logger_,
-               DPL,
-               "fixed_supply_via",
-               3,
-               "  layer {}: LEF58_SPACINGTABLE resolved cut class {} to {} "
-               "spacing={}",
-               layer->getName(),
-               fixed_class,
-               cell_class,
-               max_spacing);
-    return max_spacing;
+    return resolved ? max_spacing : 0;
   }
 
   // The cut-class spacing tables that govern a cut pair on different nets,
@@ -1342,30 +1315,16 @@ class PlacementDRC::FixedSupplyVias
     return std::nullopt;
   }
 
-  int lef58MaxSpacing(odb::dbTechLayer* layer) const
+  static int lef58MaxSpacing(odb::dbTechLayer* layer)
   {
     int max_spacing = 0;
     if (layer->getType() == odb::dbTechLayerType::CUT) {
       for (auto rule : layer->getTechLayerCutSpacingRules()) {
         max_spacing = std::max(max_spacing, rule->getCutSpacing());
-        debugPrint(logger_,
-                   DPL,
-                   "fixed_supply_via",
-                   2,
-                   "  layer {}: LEF58_SPACING cut spacing={}",
-                   layer->getName(),
-                   rule->getCutSpacing());
       }
       for (auto rule : layer->getTechLayerCutSpacingTableDefRules()) {
         if (rule->isDefaultValid()) {
           max_spacing = std::max(max_spacing, rule->getDefault());
-          debugPrint(logger_,
-                     DPL,
-                     "fixed_supply_via",
-                     2,
-                     "  layer {}: LEF58_SPACINGTABLE DEFAULT={}",
-                     layer->getName(),
-                     rule->getDefault());
         }
         // The table is indexed by cut-class pair and holds the spacing
         // without and with parallel run length; the worst entry bounds every
@@ -1381,17 +1340,6 @@ class PlacementDRC::FixedSupplyVias
             }
             const auto& [no_prl, prl] = table[row_idx][col_idx];
             max_spacing = std::max({max_spacing, no_prl, prl});
-            debugPrint(logger_,
-                       DPL,
-                       "fixed_supply_via",
-                       2,
-                       "  layer {}: LEF58_SPACINGTABLE CUTCLASS {} to {} "
-                       "no_prl={} prl={}",
-                       layer->getName(),
-                       row_class,
-                       col_class,
-                       no_prl,
-                       prl);
           }
         }
       }
@@ -1400,15 +1348,6 @@ class PlacementDRC::FixedSupplyVias
         rule->getSpacingTable(orth_table);
         for (const auto& [within, orth_spacing] : orth_table) {
           max_spacing = std::max(max_spacing, orth_spacing);
-          debugPrint(logger_,
-                     DPL,
-                     "fixed_supply_via",
-                     2,
-                     "  layer {}: LEF58_SPACINGTABLE ORTHOGONAL within={} "
-                     "spacing={}",
-                     layer->getName(),
-                     within,
-                     orth_spacing);
         }
       }
       return max_spacing;
@@ -1424,9 +1363,9 @@ class PlacementDRC::FixedSupplyVias
   // apply to them.  A rectangle's end-of-line edges are its narrow ones, so the
   // shape's minimum dimension is the edge width to test.  This is only the
   // rule's reach, for the query halo; eolKeepout() decides the conflict.
-  int eolSpacing(odb::dbTechLayer* layer,
-                 const odb::Rect& fixed,
-                 const odb::Rect& cell) const
+  static int eolSpacing(odb::dbTechLayer* layer,
+                        const odb::Rect& fixed,
+                        const odb::Rect& cell)
   {
     if (layer->getType() == odb::dbTechLayerType::CUT) {
       return 0;
@@ -1449,17 +1388,6 @@ class PlacementDRC::FixedSupplyVias
           max_spacing = std::max(max_spacing, 2 * rule->getExtension());
         }
       }
-      debugPrint(logger_,
-                 DPL,
-                 "fixed_supply_via",
-                 3,
-                 "  layer {}: LEF58_SPACING EOL space={} applies to fixed "
-                 "width={} cell width={} (EOLWIDTH={})",
-                 layer->getName(),
-                 rule->getEolSpace(),
-                 fixed_width,
-                 cell_width,
-                 rule->getEolWidth());
     }
     return max_spacing;
   }
@@ -1651,7 +1579,7 @@ class PlacementDRC::FixedSupplyVias
   odb::dbBlock* block_;
   // Recording per-conflict provenance costs memory on every page recipe, so it
   // is enabled only when the debug level asks for those reports.
-  const bool report_conflicts_{logger_->debugCheck(DPL, "fixed_supply_via", 1)};
+  const bool report_conflicts_{logger_->debugCheck(DPL, "fixed_supply_via", 2)};
   // Shape-independent LEF58 spacing bound per layer, resolved on first use.
   mutable std::unordered_map<odb::dbTechLayer*, int> lef58_spacing_;
   // Kept after construction: fixedSupplyViaKeepouts() needs it for drawing.

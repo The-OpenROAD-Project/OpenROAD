@@ -66,6 +66,7 @@ class Graphics : public web::Renderer, public DplObserver
   void clearCurrentIterMovers() override;
 
   // From Renderer API
+  const char* getDisplayControlGroupName() override { return "DPL"; }
   void drawLayer(odb::dbTechLayer* layer, web::Painter& painter) override;
   void drawObjects(web::Painter& painter) override;
 

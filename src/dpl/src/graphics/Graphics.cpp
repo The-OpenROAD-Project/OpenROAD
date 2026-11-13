@@ -30,11 +30,15 @@
 
 namespace dpl {
 
+using utl::DPL;
+
 namespace {
 
 using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
 using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
 using BoostRect = boost::polygon::rectangle_data<int>;
+
+constexpr const char* kSupplyViaKeepouts = "Supply via keepouts";
 
 // |rect| grown by |radius| with round corners, as a polygon since the web
 // painter does not draw rounded rectangles.
@@ -74,6 +78,7 @@ Graphics::Graphics(Opendp* dp,
       paint_pixels_(paint_pixels),
       paint_negotiation_pixels_(paint_negotiation_pixels)
 {
+  addDisplayControl(kSupplyViaKeepouts, false);
   web::Gui::get()->registerRenderer(this);
 
   web::Gui* gui = web::Gui::get();
@@ -97,6 +102,14 @@ void Graphics::startPlacement(odb::dbBlock* block)
   // relocks.
   searched_diamond_.clear();
   track_iter_movers_ = false;
+  if (dp_->pdn_aware_) {
+    dp_->logger_->warn(DPL,
+                       503,
+                       "The \"{}/{}\" debug drawing shows the worst case over "
+                       "all master shapes; cells inside it may still be legal.",
+                       getDisplayControlGroupName(),
+                       kSupplyViaKeepouts);
+  }
 }
 
 void Graphics::drawSelected(odb::dbInst* instance, bool force)
@@ -195,7 +208,7 @@ void Graphics::redrawAndPause()
 
 void Graphics::drawLayer(odb::dbTechLayer* layer, web::Painter& painter)
 {
-  if (!dp_->drc_engine_) {
+  if (!dp_->drc_engine_ || !checkDisplayControl(kSupplyViaKeepouts)) {
     return;
   }
   // Fixed supply via keepouts, to see which pins and obstructions they reach.

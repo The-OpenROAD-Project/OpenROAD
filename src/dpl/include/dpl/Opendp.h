@@ -241,7 +241,6 @@ class Opendp
 
   void initGrid(bool check_fixed_supply_vias = false);
 
-
   void initPlacementDRC();
 
   std::string printBgBox(const boost::geometry::model::box<bgPoint>& queryBox);
