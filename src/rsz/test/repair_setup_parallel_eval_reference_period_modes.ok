@@ -10,11 +10,11 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.212 |       -7.0 |     45 | _869_/D
-[DEBUG RSZ-repair_setup] PARALLEL_EVAL WNS tail after no_committed_moves at batch 16 (WNS -1.222e-10)
-    final |      58 |     104 |       26 |      0 |     2 |    +5.6% |   -0.110 |       -3.6 |     42 | resp_msg[15]
+[DEBUG RSZ-repair_setup] PARALLEL_EVAL WNS tail after no_committed_moves at batch 20 (WNS -1.146e-10)
+    final |      60 |     112 |       34 |      0 |     2 |    +8.6% |   -0.111 |       -3.5 |     44 | resp_msg[15]
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 58 buffers.
-[INFO RSZ-0040] Inserted 26 buffers.
-[INFO RSZ-0051] Resized 104 instances: 101 up, 0 up match, 3 down, 0 VT
+[INFO RSZ-0059] Removed 60 buffers.
+[INFO RSZ-0040] Inserted 34 buffers.
+[INFO RSZ-0051] Resized 112 instances: 110 up, 0 up match, 2 down, 0 VT
 [INFO RSZ-0043] Swapped pins on 2 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.

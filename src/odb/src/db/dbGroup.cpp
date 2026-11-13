@@ -367,8 +367,9 @@ void dbGroup::addPowerNet(dbNet* net)
        it != _group->ground_nets_.end() && !found;
        it++) {
     if (*it == _net->getOID()) {
-      _group->ground_nets_.erase(it--);
+      _group->ground_nets_.erase(it);
       found = true;
+      break;
     }
   }
   _group->power_nets_.push_back(_net->getOID());
@@ -392,8 +393,9 @@ void dbGroup::addGroundNet(dbNet* net)
        it != _group->power_nets_.end() && !found;
        it++) {
     if (*it == _net->getOID()) {
-      _group->power_nets_.erase(it--);
+      _group->power_nets_.erase(it);
       found = true;
+      break;
     }
   }
   _group->ground_nets_.push_back(_net->getOID());
@@ -412,16 +414,18 @@ void dbGroup::removeNet(dbNet* net)
        net_itr != _group->power_nets_.end() && !found;
        net_itr++) {
     if (*net_itr == _net->getOID()) {
-      _group->power_nets_.erase(net_itr--);
+      _group->power_nets_.erase(net_itr);
       found = true;
+      break;
     }
   }
   for (net_itr = _group->ground_nets_.begin();
        net_itr != _group->ground_nets_.end() && !found;
        net_itr++) {
     if (*net_itr == _net->getOID()) {
-      _group->ground_nets_.erase(net_itr--);
+      _group->ground_nets_.erase(net_itr);
       found = true;
+      break;
     }
   }
   if (found) {
@@ -429,7 +433,7 @@ void dbGroup::removeNet(dbNet* net)
     for (group_itr = _net->groups_.begin(); group_itr != _net->groups_.end();
          group_itr++) {
       if (*group_itr == _group->getOID()) {
-        _net->groups_.erase(group_itr--);
+        _net->groups_.erase(group_itr);
         return;
       }
     }

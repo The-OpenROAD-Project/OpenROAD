@@ -21,7 +21,7 @@ module dec_tlu_ctl (dec_tlu_ic_diag_pkt_2);
  output dec_tlu_ic_diag_pkt_2;
 
 
- BUF_X1 driver (.A(\swerv_inst/dec_tlu/zero_ ),
+ BUF_X1 driver (.A(zero_),
     .Z(dec_tlu_ic_diag_pkt_2));
 endmodule
 module ifu (ic_debug_addr_2_2,
