@@ -296,6 +296,13 @@ void Opendp::detailedPlacement(const int max_displacement_x,
       logger_->metric("NL__no__converge__final_violations",
                       negotiation.numViolations());
       const auto illegal_nodes = negotiation.getIllegalNodes();
+      for (const Node* node : illegal_nodes) {
+        logger_->report("  {} ({}) at dbu ({}, {})",
+                        node->name(),
+                        node->getDbInst()->getMaster()->getName(),
+                        (core_.xMin() + node->getLeft()).v,
+                        (core_.yMin() + node->getBottom()).v);
+      }
       saveFailures({}, {}, {}, {}, {}, {}, {}, illegal_nodes, {}, {}, {});
       if (!report_file_name.empty()) {
         writeJsonReport(report_file_name);
