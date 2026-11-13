@@ -32,6 +32,13 @@ void ensureKokkosInitialized(std::optional<int> num_threads)
 
 Kokkos::DefaultHostExecutionSpace hostExecutionSpace(int num_threads)
 {
+#ifdef KOKKOS_ENABLE_OPENMP
+    num_threads = std::clamp(num_threads, 1, Kokkos::Impl::OpenMPTraits::MAX_THREAD_COUNT);
+#endif
+#ifdef KOKKOS_ENABLE_THREADS
+  num_threads = std::clamp(
+      num_threads, 1, Kokkos::Impl::ThreadsInternal::MAX_THREAD_COUNT);
+#endif
   ensureKokkosInitialized(num_threads);
 #ifdef KOKKOS_ENABLE_OPENMP
   return Kokkos::DefaultHostExecutionSpace(num_threads);
