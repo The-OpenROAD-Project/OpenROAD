@@ -61,7 +61,9 @@ generate_ram_netlist_cmd(int mask_size,
                          const char* wrapper_verilog,
                          const int service_every,
                          const int service_sites,
-                         const char* bank_column_layout)
+                         const char* bank_column_layout,
+                         const int segmentation, 
+                         const int rows_per_segment)
 {
   RamGen* ram_gen = ord::getRamGen();
   odb::dbDatabase* db = ord::getDb();
@@ -117,7 +119,7 @@ generate_ram_netlist_cmd(int mask_size,
                     reset_value, banks, bank_columns, bank_order, rb_ports,
                     register_read_address, write_style, write_priority, periphery, pin_layer, cells,
                     name, decoder, bit_folds, wrapper_verilog,
-                    service_every, service_sites, bank_column_layout);
+                    service_every, service_sites, bank_column_layout, segmentation, rows_per_segment);
 }
 
 void ram_pdngen(const char* power_net_name, const char* ground_net_name,
