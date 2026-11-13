@@ -153,6 +153,17 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
   }
 
   bool routabilityNeeded() const { return np_->is_routability_need_; }
+  void setRoutabilitySnapshotSaved(bool saved)
+  {
+    np_->is_routability_snapshot_saved_ = saved;
+  }
+  void setRoutabilityNeeded(bool needed) { np_->is_routability_need_ = needed; }
+  // How doNesterovPlace() classifies an iteration at this overflow.
+  bool isRoutabilityIteration(float overflow)
+  {
+    np_->average_overflow_unscaled_ = overflow;
+    return np_->isRoutabilityGplIter();
+  }
 
   int64_t inflateCellForTest(GCell* cell,
                              float ratio,
@@ -948,6 +959,13 @@ TEST_F(TimingRepairIntegrationTest,
   EXPECT_EQ(timing_iterations_, 0);
   EXPECT_EQ(block_->getInsts().size(), initial_names_.size());
   EXPECT_EQ(rb_->getTotalTilesCount(), 0);
+
+  setRoutabilitySnapshotSaved(true);  // is_routability_need_ is true
+  runTiming(0.1f, isRoutabilityIteration(0.1f));
+  EXPECT_EQ(timing_iterations_, 0);
+  setRoutabilityNeeded(false);
+  runTiming(0.1f, isRoutabilityIteration(0.1f));
+  EXPECT_EQ(timing_iterations_, 1);
 }
 
 TEST_F(TimingRepairIntegrationTest, BeforeFirstRoutabilityPassDefersInflation)
@@ -1308,6 +1326,35 @@ TEST_F(TimingRepairIntegrationTest,
   ASSERT_EQ(timing_iterations_, 1);
 
   runSubDbuStepAfterRefreshCurGradients();
+}
+
+TEST_F(TimingRepairIntegrationTest,
+       RevertToSnapshotPreservesNewBufferCoordinates)
+{
+  makePlacer();
+  NesterovBase& nb = *nb_vec_[0];
+  nb.saveSnapshot();
+  runTiming(0.2f);
+  ASSERT_EQ(timing_iterations_, 1);
+
+  std::vector<std::pair<const GCell*, std::pair<int, int>>> placed_new_cells;
+  for (const auto& cell : nb.getGCells()) {
+    if (!cell->isStdInstance()
+        || initial_names_.contains(
+            cell->insts().front()->dbInst()->getName())) {
+      continue;
+    }
+    ASSERT_GT(cell->dCx(), 0);
+    ASSERT_GT(cell->dCy(), 0);
+    placed_new_cells.emplace_back(cell, std::pair{cell->dCx(), cell->dCy()});
+  }
+  ASSERT_FALSE(placed_new_cells.empty());
+
+  nb.revertToSnapshot();
+  for (const auto& [cell, placed_pos] : placed_new_cells) {
+    EXPECT_EQ(cell->dCx(), placed_pos.first);
+    EXPECT_EQ(cell->dCy(), placed_pos.second);
+  }
 }
 
 }  // namespace gpl
