@@ -152,7 +152,6 @@ void FastRouteCore::clear()
   has_2D_overflow_ = false;
 
   graph2d_.clear();
-  seglist_.clear();
 
   gxs_.clear();
   gys_.clear();
@@ -311,7 +310,6 @@ void FastRouteCore::clearNets()
   }
   nets_.clear();
   net_ids_.clear();
-  seglist_.clear();
   db_net_id_map_.clear();
 }
 
@@ -433,14 +431,12 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
   if (exists) {
     net = nets_[netID];
     clearNetRoute(netID);
-    seglist_[netID].clear();
   } else {
     net = new FrNet;
     nets_.push_back(net);
     netID = nets_.size() - 1;
     db_net_id_map_[db_net] = netID;
-    // at most (2*num_pins-2) nodes -> (2*num_pins-3) segs_ for a net
-    seglist_.emplace_back();
+    // At most (2*num_pins-2) nodes -> (2*num_pins-3) tree edges for a net.
     sttrees_.emplace_back();
     gxs_.emplace_back();
     gys_.emplace_back();
@@ -2272,7 +2268,7 @@ NetRouteMap FastRouteCore::run()
   {
     const DebugScopedTimer timer(
         timings.initial_rsmt, logger_, GRT, "timer", 1, "Initial RSMT: {}");
-    gen_brk_RSMT(false, false, false, false, noADJ);
+    gen_brk_RSMT(false, false, noADJ);
   }
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
     logger_->report("After RSMT");
@@ -2281,11 +2277,11 @@ NetRouteMap FastRouteCore::run()
   // First time L routing
   {
     const DebugScopedTimer timer(
-        timings.route_l, logger_, GRT, "timer", 1, "Initial routeLAll: {}");
-    routeLAll(true);
+        timings.route_l, logger_, GRT, "timer", 1, "Initial L routing: {}");
+    initialRouteLAll();
   }
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
-    logger_->report("After routeLAll");
+    logger_->report("After initial L routing");
   }
 
   // Congestion-driven rip-up and reroute L
@@ -2296,7 +2292,7 @@ NetRouteMap FastRouteCore::run()
                                  "timer",
                                  1,
                                  "Congestion-driven RSMT: {}");
-    gen_brk_RSMT(true, true, true, false, noADJ);
+    gen_brk_RSMT(true, true, noADJ);
   }
   getOverflow2D(&maxOverflow);
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {

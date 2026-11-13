@@ -15,24 +15,6 @@ namespace grt {
 
 using utl::GRT;
 
-// rip-up a L segment
-void FastRouteCore::ripupSegL(const Segment* seg)
-{
-  FrNet* net = nets_[seg->netID];
-  const int8_t edgeCost = seg->cost;
-
-  const auto [ymin, ymax] = std::minmax(seg->y1, seg->y2);
-
-  // remove L routing
-  if (seg->xFirst) {
-    graph2d_.updateEstUsageH({seg->x1, seg->x2}, seg->y1, net, -edgeCost);
-    graph2d_.updateEstUsageV(seg->x2, {ymin, ymax}, net, -edgeCost);
-  } else {
-    graph2d_.updateEstUsageV(seg->x1, {ymin, ymax}, net, -edgeCost);
-    graph2d_.updateEstUsageH({seg->x1, seg->x2}, seg->y2, net, -edgeCost);
-  }
-}
-
 void FastRouteCore::newRipup(const TreeEdge* treeedge,
                              const int x1,
                              const int y1,
