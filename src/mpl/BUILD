@@ -130,7 +130,6 @@ cc_library(
         "//src/odb/src/db",
         "//src/utl",
         "//src/web:core",
-        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
 )

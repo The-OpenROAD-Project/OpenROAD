@@ -34,6 +34,19 @@ build --cxxopt "-DBAZEL_BUILD"     --host_cxxopt "-DBAZEL_BUILD"
 # (e.g. socket close/shutdown return void, not error_code), so every
 # translation unit must agree on it or the ODR is violated.
 build --cxxopt "-DBOOST_ASIO_NO_DEPRECATED" --host_cxxopt "-DBOOST_ASIO_NO_DEPRECATED"
+# libc++ "fast" hardening: cheap bounds and precondition checks (operator[],
+# front/back on empty, span/string_view/optional access) that trap instead of
+# continuing with undefined behavior. The mode does not affect the ABI, so it
+# is safe to set per translation unit.
+build --cxxopt "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST"
+build --host_cxxopt "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST"
+# Report a failed hardening check through std::__libcpp_verbose_abort (which
+# src/Main.cc overrides to log it) instead of a bare trap. Choosing the
+# assertion semantic is gated behind libc++'s experimental-library switch.
+build --cxxopt "-D_LIBCPP_ENABLE_EXPERIMENTAL"
+build --host_cxxopt "-D_LIBCPP_ENABLE_EXPERIMENTAL"
+build --cxxopt "-D_LIBCPP_ASSERTION_SEMANTIC=_LIBCPP_ASSERTION_SEMANTIC_ENFORCE"
+build --host_cxxopt "-D_LIBCPP_ASSERTION_SEMANTIC=_LIBCPP_ASSERTION_SEMANTIC_ENFORCE"
 
 # Default to optimized build (-c opt)
 build -c opt

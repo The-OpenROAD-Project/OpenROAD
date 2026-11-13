@@ -56,7 +56,6 @@ cc_library(
         "//src/web:core",
         "@boost.geometry",
         "@boost.polygon",
-        "@boost.stacktrace",
         "@eigen",
         "@tcl_lang//:tcl",
     ],

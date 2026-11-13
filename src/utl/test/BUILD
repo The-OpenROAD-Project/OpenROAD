@@ -1,3 +1,4 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 # SPDX-License-Identifier: BSD-3-Clause
@@ -86,6 +87,7 @@ test_suite(
         ":TestCsvParser",
         ":TestMetrics",
         ":TestRandomBytes",
+        ":TestStackTrace",
         ":TestSuppressStdout",
     ],
 )
@@ -206,4 +208,31 @@ cc_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+)
+
+cc_test(
+    name = "TestStackTrace",
+    srcs = ["cpp/TestStackTrace.cpp"],
+    deps = [
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_binary(
+    name = "libcxx_hardening_probe",
+    srcs = ["cpp/libcxx_hardening_probe.cpp"],
+    deps = [
+        "//:libcxx_abort",
+        "//:ord",
+        "//src/utl",
+    ],
+)
+
+py_test(
+    name = "libcxx_hardening_test",
+    srcs = ["libcxx_hardening_test.py"],
+    args = ["$(location :libcxx_hardening_probe)"],
+    data = [":libcxx_hardening_probe"],
 )
