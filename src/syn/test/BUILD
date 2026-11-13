@@ -176,7 +176,6 @@ cc_test(
     data = [
         "elab_diag_expr.sv",
         "elab_diag_hier.sv",
-        "elab_diag_stmt.sv",
         "elab_diag_tops.sv",
     ],
     deps = [
