@@ -213,6 +213,7 @@ sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
                                   [-corner_avoidance distance]\
                                   [-min_distance min_dist]\
                                   [-min_distance_in_tracks]\
+                                  [-layer_min_distance layer_min_dists]\
                                   [-exclude region]\
                                   [-group_pins pin_list]\
                                   [-annealing] \
@@ -224,7 +225,7 @@ proc place_pins { args } {
   ord::parse_list_args "place_pins" args list {-exclude -group_pins}
   sta::parse_key_args "place_pins" args \
     keys {-hor_layers -ver_layers -random_seed -corner_avoidance \
-          -min_distance -write_pin_placement} \
+          -min_distance -layer_min_distance -write_pin_placement} \
     flags {-random -min_distance_in_tracks -annealing -minimize_displacement}
 
   sta::check_argc_eq0 "place_pins" $args
@@ -245,8 +246,6 @@ proc place_pins { args } {
       utl::error PPL 32 "No block found."
     }
 
-    set db [ord::get_db]
-
     set blockages {}
 
     foreach inst [$dbBlock getInsts] {
@@ -261,33 +260,25 @@ proc place_pins { args } {
 
     utl::report "Found [llength $blockages] macro blocks."
 
-    # set default interval_length from boundaries as 1u
-    set distance 1
-    if { [info exists keys(-corner_avoidance)] } {
-      set distance $keys(-corner_avoidance)
-      ppl::set_corner_avoidance [ord::microns_to_dbu $distance]
-    }
-
-    set min_dist 2
     set dist_in_tracks [info exists flags(-min_distance_in_tracks)]
-    if { $dist_in_tracks && ![info exists keys(-min_distance)] } {
-      utl::error PPL 37 "-min_distance_in_tracks requires -min_distance."
+    if {
+      $dist_in_tracks && ![info exists keys(-min_distance)]
+      && ![info exists keys(-layer_min_distance)]
+    } {
+      utl::error PPL 37 "-min_distance_in_tracks requires -min_distance or\
+        -layer_min_distance."
     }
+    # 0 means unset: the run uses set_place_config's value or the default
+    set min_dist 0
     if { [info exists keys(-min_distance)] } {
-      set min_dist $keys(-min_distance)
-      if { $dist_in_tracks } {
-        ppl::set_min_distance $min_dist
-      } else {
-        ppl::set_min_distance [ord::microns_to_dbu $min_dist]
-      }
-    } else {
-      if { [ppl::get_default_min_distance] == 0 } {
-        utl::report "Using $min_dist tracks default min distance between IO pins."
-      }
-      # 0 means unset: the run uses set_place_config's value or the default
-      ppl::set_min_distance 0
+      set min_dist [ppl::parse_min_distance -min_distance \
+        $keys(-min_distance) $dist_in_tracks]
     }
-    ppl::set_min_distance_in_tracks $dist_in_tracks
+    set layer_min_dist {}
+    if { [info exists keys(-layer_min_distance)] } {
+      set layer_min_dist [ppl::parse_layer_min_distance -layer_min_distance \
+        $keys(-layer_min_distance) $dist_in_tracks]
+    }
 
     set bterms_cnt [llength [$dbBlock getBTerms]]
 
@@ -314,17 +305,10 @@ proc place_pins { args } {
       utl::error PPL 18 "-ver_layers or set_place_config -io_pin_ver_layers\
         is required."
     }
-    # Checks every layer before adding any, so an error leaves no partial set.
-    foreach { dir layer } [ppl::check_io_pin_layers $hor_layers $ver_layers] {
-      ppl::add_${dir}_layer $layer
-    }
+    set pin_layers [ppl::check_io_pin_layers $hor_layers $ver_layers]
 
-    if { [llength $regions] != 0 } {
-      set lef_units [$dbTech getLefUnits]
-
-      foreach region $regions {
-        exclude_io_pin_region -region $region
-      }
+    foreach region $regions {
+      exclude_io_pin_region -region $region
     }
 
     if { [llength $pin_groups] != 0 } {
@@ -336,6 +320,20 @@ proc place_pins { args } {
       }
     }
 
+    # The switches are set just before the run, which clears them even when it
+    # fails, so that they last for this run only.
+    if { [info exists keys(-corner_avoidance)] } {
+      ppl::set_corner_avoidance [ord::microns_to_dbu $keys(-corner_avoidance)]
+    }
+    ppl::set_min_distance $min_dist
+    ppl::set_min_distance_in_tracks $dist_in_tracks
+    foreach { name dist } $layer_min_dist {
+      ppl::set_layer_min_distance [ppl::parse_layer_name $name] $dist \
+        $dist_in_tracks
+    }
+    foreach { dir layer } $pin_layers {
+      ppl::add_${dir}_layer $layer
+    }
     if { [info exists keys(-write_pin_placement)] } {
       ppl::set_pin_placement_file $keys(-write_pin_placement)
     }
@@ -373,6 +371,53 @@ proc check_io_pin_layers { hor_layers ver_layers } {
     lappend layers ver $layer
   }
   return $layers
+}
+
+# Checks a min distance and returns it in tracks, or in DBU when not in
+# tracks.
+proc parse_min_distance { option dist in_tracks } {
+  # Decimal only: Tcl 8 reads 010 as octal, and Tcl reads 0x4 as hex.
+  if { $in_tracks } {
+    if { ![regexp {^0*([1-9][0-9]*)$} $dist -> tracks] } {
+      utl::error PPL 124 "$option: $dist is not a whole number of tracks\
+        greater than zero."
+    }
+    return $tracks
+  }
+  if {
+    ![regexp {^([0-9]+\.?[0-9]*|\.[0-9]+)$} $dist]
+    || [set microns [scan $dist %f]] == 0
+  } {
+    utl::error PPL 130 "$option: $dist is not a number of microns greater\
+      than zero."
+  }
+  set dbu [ord::microns_to_dbu $microns]
+  if { $dbu == 0 } {
+    utl::error PPL 128 "$option: $dist um is smaller than one database unit."
+  }
+  return $dbu
+}
+
+# Checks a {layer distance ...} list and returns it with the distances in
+# tracks, or in DBU when not in tracks.
+proc parse_layer_min_distance { option layer_dists in_tracks } {
+  if { [llength $layer_dists] == 0 || [llength $layer_dists] % 2 != 0 } {
+    utl::error PPL 123 "$option must be a list of layer and distance pairs."
+  }
+  set result {}
+  foreach { name dist } $layer_dists {
+    set layer [ppl::parse_layer_name $name]
+    if { [$layer getRoutingLevel] == 0 } {
+      utl::error PPL 129 "$option layer $name is not a routing layer."
+    }
+    set layer_name [$layer getName]
+    if { [dict exists $result $layer_name] } {
+      utl::error PPL 127 "$option gives layer $layer_name more than once."
+    }
+    dict set result $layer_name \
+      [ppl::parse_min_distance "$option $layer_name" $dist $in_tracks]
+  }
+  return $result
 }
 
 proc parse_edge { cmd edge } {
