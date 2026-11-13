@@ -5275,11 +5275,28 @@ void Resizer::repairClkInverters()
   initDesignArea();
   sta_->ensureLevelized();
   graph_ = sta_->graph();
-  for (const sta::Instance* inv : findClkInverters()) {
-    if (!dontTouch(inv)) {
-      cloneClkInverter(const_cast<sta::Instance*>(inv));
-    }
+  const sta::InstanceSeq clk_inverters = findClkInverters();
+  if (clk_inverters.empty()) {
+    return;
   }
+
+  const int inserted_buffer_count_before = inserted_buffer_count_;
+  // Inserting clones temporarily adds a second inversion to each clock path.
+  odb::dbDatabase::beginEco(block_);
+  try {
+    for (const sta::Instance* inv : clk_inverters) {
+      if (!dontTouch(inv)) {
+        cloneClkInverter(const_cast<sta::Instance*>(inv));
+      }
+    }
+  } catch (...) {
+    odb::dbDatabase::undoEco(block_);
+    inserted_buffer_count_ = inserted_buffer_count_before;
+    invalidateVertexOrdering();
+    init();
+    throw;
+  }
+  odb::dbDatabase::commitEco(block_);
 }
 
 class ClkArrivalSearchPred : public sta::EvalPred
@@ -5390,6 +5407,7 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
     }
 
     // Insert each clone at its load, preserving the existing module ports.
+    std::unordered_set<const sta::Pin*> clone_input_pins;
     for (sta::Pin* load_pin : load_pins) {
       odb::Point clone_loc = network_->isTopLevelPort(load_pin)
                                  ? db_network_->location(out_pin)
@@ -5401,14 +5419,47 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
           inv_name.c_str(),
           kDefaultNetBaseName,
           odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
+      clone_input_pins.insert(network_->findPin(clone, in_port));
       journalMakeBuffer(clone);
       odb::dbNet* clone_out_net_db
           = db_network_->flatNet(network_->findPin(clone, out_port));
       clone_out_net_db->setSigType(in_net_db->getSigType());
     }
 
+    // Every old load must sit behind a clone before removing the original
+    // inverter, leaving exactly one inversion on each clock path.
+    bool found_driver = false;
+    bool unexpected_pin = false;
+    sta::NetConnectedPinIterator* remaining_iter
+        = network_->pinIterator(out_net);
+    while (remaining_iter->hasNext()) {
+      const sta::Pin* pin = remaining_iter->next();
+      if (pin == out_pin) {
+        found_driver = true;
+      } else {
+        unexpected_pin |= clone_input_pins.erase(pin) != 1;
+      }
+    }
+    delete remaining_iter;
+    sta::NetTermIterator* remaining_terms = network_->termIterator(out_net);
+    const bool remaining_port = remaining_terms->hasNext();
+    delete remaining_terms;
+    if (!found_driver || unexpected_pin || !clone_input_pins.empty()
+        || remaining_port) {
+      logger_->error(RSZ,
+                     3249,
+                     "Clock inverter {} clone coverage is incomplete.",
+                     network_->pathName(inv));
+    }
+
     // Merge the original inverter's output hierarchy into its input net.
-    removeBuffer(inv);
+    if (!removeBuffer(inv)) {
+      logger_->error(
+          RSZ,
+          3250,
+          "Could not remove clock inverter {} after cloning its loads.",
+          network_->pathName(inv));
+    }
   }
 }
 
