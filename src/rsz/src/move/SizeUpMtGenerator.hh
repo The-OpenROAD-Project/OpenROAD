@@ -49,6 +49,9 @@ class SizeUpMtGenerator : public MoveGenerator
       const Target& target) override;
 
  private:
+  // The unit tests (TestResizerMt) reach the internals through this peer.
+  friend class ResizerTestPeer;
+
   // === Candidate-cell selection ============================================
   // Replacement cells for one driver port and analysis view.  The library and
   // dont_use set are fixed for a run, so the options are cached for the run.
@@ -57,6 +60,9 @@ class SizeUpMtGenerator : public MoveGenerator
   struct SizeUpOptions
   {
     std::vector<sta::LibertyCell*> cells;
+    // New/old cell cost of each entry of cells; generate() turns the ratios
+    // of the fitting cells into score divisors with relativeCellCosts().
+    std::vector<float> cost_ratios;
     int dual_rf_rejects{0};
   };
 

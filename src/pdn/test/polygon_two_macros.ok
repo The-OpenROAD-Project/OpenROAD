@@ -6,4 +6,6 @@
 [INFO PDN-0001] Inserting grid: Core
 [INFO PDN-0001] Inserting grid: tall_macros - macro_left
 [INFO PDN-0001] Inserting grid: tall_macros - macro_right
+[WARNING PDN-0110] No via inserted between metal6 and metal7 at (27.5000, 79.7000) - (28.3000, 79.8000) on VDD
+[WARNING PDN-0110] No via inserted between metal6 and metal7 at (123.7000, 79.7000) - (124.5000, 79.8000) on VDD
 No differences found.

@@ -1174,6 +1174,47 @@ void Gui::timingPathsThrough(const std::set<Term>& terms)
   activeBackend()->timingPathsThrough(terms);
 }
 
+void Gui::showWorstTimingPath(bool setup)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->showWorstTimingPath(setup);
+}
+
+void Gui::clearTimingPath()
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->clearTimingPath();
+}
+
+void Gui::selectMarkers(odb::dbMarkerCategory* markers)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->selectMarkers(markers);
+}
+
+void Gui::selectClockviewerClock(const std::string& clock_name,
+                                 std::optional<int> depth)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->selectClockviewerClock(clock_name, depth);
+}
+
+void Gui::showWidget(const std::string& name, bool show)
+{
+  if (!hasUI()) {
+    return;
+  }
+  activeBackend()->showWidget(name, show);
+}
+
 void Gui::triggerAction(const std::string& name)
 {
   if (!hasUI()) {
@@ -1192,6 +1233,22 @@ void Gui::initCommon(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
   registry->initDescriptors(db, sta);
 
   registerBuiltinHeatMapSources(sta, logger);
+
+  // One instance per source registered so far, so gui::set_heatmap and
+  // gui::dump_heatmap work in every build, not only with Qt.
+  for (const auto& source : getRegisteredHeatMapSources()) {
+    const bool already_registered = std::ranges::any_of(
+        heat_maps_, [&source](HeatMapDataSource* heatmap) {
+          return heatmap->getShortName() == source->getShortName();
+        });
+    if (already_registered) {
+      continue;
+    }
+    auto instance = source->createInstance();
+    instance->setChip(db->getChip());
+    registerHeatMap(instance.get());
+    owned_heat_maps_.push_back(std::move(instance));
+  }
 }
 
 }  // namespace web

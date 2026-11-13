@@ -12,7 +12,7 @@ sh_binary(
         "//docs:man_pages",
     ] + select({
         # Ship the desktop entry + icon only for GUI builds so install.sh
-        # can register a menu launcher (mirrors the CMake GUI install).
+        # can register a menu launcher.
         "//:platform_gui": ["//src/gui:desktop_files"],
         "//conditions:default": [],
     }),

@@ -66,7 +66,7 @@ void Opendp::diamondDPL()
   }
 
   placement_failures_.clear();
-  initGrid();
+  initGrid(pdn_aware_);
   // Paint fixed cells.
   setFixedGridCells();
   // Paint initially place2d cells (respecting already legalized ones).
@@ -1349,6 +1349,11 @@ void Opendp::legalCellPos(odb::dbInst* db_inst)
 {
   if (db_inst->getPlacementStatus().isFixed()) {
     return;
+  }
+  if (grid_->pixelsReleased()) {
+    // detailed_placement and check_placement free the pixels on return;
+    // pointOffMacro below reads them.
+    initMacrosAndGrid();
   }
   Node cell;
   convertDbToCell(db_inst, cell);

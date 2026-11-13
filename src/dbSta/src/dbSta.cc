@@ -39,6 +39,7 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
+#include "power/Power.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
@@ -58,6 +59,7 @@
 #include "sta/ParasiticsClass.hh"
 #include "sta/Path.hh"
 #include "sta/PortDirection.hh"
+#include "sta/Property.hh"
 #include "sta/ReportTcl.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
@@ -379,11 +381,37 @@ void dbSta::postReadLef(odb::dbTech* tech, odb::dbLib* library)
   }
 }
 
+static void registerSrcAttributeProperties(Properties* props,
+                                           dbNetwork* network)
+{
+  props->defineProperty<Instance>("instance", "src", "string");
+  props->defineProperty(
+      "src", [network](const Instance* inst, Sta*) -> PropertyValue {
+        if (odb::dbInst* db_inst = network->staToDb(inst)) {
+          if (auto* prop = odb::dbStringProperty::find(db_inst, "src")) {
+            return PropertyValue(prop->getValue());
+          }
+        }
+        return PropertyValue();
+      });
+  props->defineProperty<Pin>("pin", "src", "string");
+  props->defineProperty(
+      "src", [network](const Pin* pin, Sta*) -> PropertyValue {
+        if (odb::dbObject* obj = network->staToDb(pin)) {
+          if (auto* prop = odb::dbStringProperty::find(obj, "src")) {
+            return PropertyValue(prop->getValue());
+          }
+        }
+        return PropertyValue();
+      });
+}
+
 void dbSta::postReadDef(odb::dbBlock* block)
 {
   // If this is the top block of the main chip:
   if (!block->getParent() && block->getChip() == block->getDb()->getChip()) {
     db_network_->readDefAfter(block);
+    registerSrcAttributeProperties(properties(), db_network_);
     db_cbk_->addOwner(block);
     db_cbk_->setNetwork(db_network_);
   }
@@ -449,6 +477,7 @@ void dbSta::postRead3Dbx(odb::dbChip* chip)
 void dbSta::postReadDb(odb::dbDatabase* db)
 {
   db_network_->readDbAfter(db);
+  registerSrcAttributeProperties(properties(), db_network_);
   odb::dbChip* chip = db_->getChip();
   if (chip) {
     odb::dbBlock* block = chip->getBlock();
@@ -470,6 +499,18 @@ float dbSta::slack(const odb::dbNet* db_net, const MinMax* min_max)
 {
   const Net* net = db_network_->dbToSta(db_net);
   return slack(net, min_max);
+}
+
+void dbSta::copyUserActivity(odb::dbITerm* from, odb::dbITerm* to)
+{
+  const Pin* from_pin = db_network_->dbToSta(from);
+  if (power()->hasUserActivity(from_pin)) {
+    const PwrActivity& activity = power()->userActivity(from_pin);
+    power()->setUserActivity(db_network_->dbToSta(to),
+                             activity.density(),
+                             activity.duty(),
+                             activity.origin());
+  }
 }
 
 odb::PtrSet<odb::dbNet> dbSta::findClkNets()
@@ -1320,12 +1361,18 @@ void dbStaCbk::inDbPostInstRename(odb::dbInst* inst, const char* /*old_name*/)
   }
 }
 
-void dbStaCbk::inDbPostInstParentChange(odb::dbInst*)
+void dbStaCbk::inDbPostInstParentChange(odb::dbInst* inst)
 {
-  // Reparenting moves a whole subtree at once and can flip descendants'
-  // pathological status. Drop the cache; reparent is rare.
   if (sdc_network_) {
-    sdc_network_->invalidateSdcPathToInstMap();
+    if (inst->getModule() == nullptr) {
+      // Remove the detached leaf's old path before any later observer queries
+      // it. The instance-destroy callback can safely repeat this erase.
+      sdc_network_->onInstDestroyed(network_->dbToSta(inst));
+    } else {
+      // Reparenting moves a whole subtree at once and can flip descendants'
+      // pathological status. Drop the cache; reparent is rare.
+      sdc_network_->invalidateSdcPathToInstMap();
+    }
   }
 }
 
@@ -1503,6 +1550,7 @@ void dbStaCbk::inDbBTermSetSigType(odb::dbBTerm* bterm,
   // The above is insufficient, see OpenROAD#6089, clear the vertex id as a
   // workaround.
   bterm->staSetVertexId(object_id_null);
+  network_->setTopPortDirection(bterm, bterm->getIoType());
 }
 
 void dbStaCbk::inDbModInstCreate(odb::dbModInst* modinst)

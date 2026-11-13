@@ -6,15 +6,32 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <string>
 #include <utility>
 #include <vector>
 
 #include "OptimizationPolicyConfig.hh"
 #include "RepairSetupProfiler.hh"
+#include "db_sta/dbNetwork.hh"
+#include "odb/db.h"
 #include "sta/Delay.hh"
 #include "sta/NetworkClass.hh"
 
 namespace rsz {
+
+std::vector<sta::Instance*> keptInstances(
+    const sta::dbNetwork* network,
+    const std::vector<InstanceRecord>& records)
+{
+  std::vector<sta::Instance*> kept;
+  for (const InstanceRecord& record : records) {
+    odb::dbInst* db_inst = network->block()->findInst(record.name.c_str());
+    if (db_inst != nullptr && network->dbToSta(db_inst) == record.inst) {
+      kept.push_back(record.inst);
+    }
+  }
+  return kept;
+}
 
 // === WorkMeter ==============================================================
 
@@ -56,11 +73,11 @@ double WorkMeter::seconds(const ParallelEvalPolicyConfig& config) const
 
 // === StallMonitor ===========================================================
 
-void StallMonitor::reset(const sta::Slack initial_wns,
-                         const sta::Slack initial_tns)
+void StallMonitor::reset(const sta::Slack initial_tns,
+                         const float reference_period)
 {
-  initial_wns_ = initial_wns;
   initial_tns_ = initial_tns;
+  reference_period_ = reference_period;
   stalled_batches_ = 0;
   stalled_moves_ = 0;
   last_batch_moves_ = 0;
@@ -82,12 +99,12 @@ void StallMonitor::onSaved(const sta::Slack prev_tns,
                            const sta::Slack tns,
                            const double work)
 {
-  // Progress must be a visible part of the initial WNS or TNS; otherwise tiny
-  // gains keep paying full timing updates.
+  // Progress must be a visible part of the reference clock period or of the
+  // initial TNS; otherwise tiny gains keep paying full timing updates.
   const float tns_step = std::abs(sta::delayAsFloat(initial_tns_))
-                         * config_.progress_pct / 100.0f;
-  const float wns_step = std::abs(sta::delayAsFloat(initial_wns_))
-                         * config_.progress_wns_pct / 100.0f;
+                         * config_.progress_tns_pct / 100.0f;
+  const float wns_step
+      = reference_period_ * config_.progress_wns_period_pct / 100.0f;
   const bool wns_progressed
       = sta::delayAsFloat(wns) - sta::delayAsFloat(best_wns) > wns_step;
   const bool tns_progressed
@@ -109,7 +126,8 @@ void StallMonitor::onSaved(const sta::Slack prev_tns,
 bool StallMonitor::weightsPriority() const
 {
   return wns_stall_batches_ > 0
-         && wns_stall_batches_ <= config_.priority.weight_max_wns_stall_batches;
+         && wns_stall_batches_
+                <= config_.priority.bottleneck_max_wns_stall_batches;
 }
 
 StallMonitor::Stall StallMonitor::stall() const
@@ -133,7 +151,9 @@ void StallMonitor::updateWindow(const sta::Slack wns,
                                 const double work)
 {
   const int window = config_.stall_window;
-  window_.push_back({.wns = sta::delayAsFloat(wns), .fep = fep_, .work = work});
+  window_.push_back({.wns = sta::delayAsFloat(wns),
+                     .failing_endpoints = failing_endpoints_,
+                     .work = work});
   if (static_cast<int>(window_.size()) <= window) {
     return;
   }
@@ -150,19 +170,23 @@ void StallMonitor::updateWindow(const sta::Slack wns,
     return;
   }
 
-  // The average gain per saved batch over the window, relative to the current
+  // The average gain per saved batch over the window: WNS against the
+  // reference clock period, the failing endpoint count against its current
   // value.  The window holds `window` checkpoints, so window - 1 intervals.
   const SavedCheckpoint& first = window_.front();
   const SavedCheckpoint& last = window_.back();
-  const float rel = config_.stall_rel_pct / 100.0f;
   const float intervals = static_cast<float>(window_.size() - 1);
   const float wns_gain = (last.wns - first.wns) / intervals;
-  const float fep_gain
-      = static_cast<float>(first.fep) - static_cast<float>(last.fep);
-  const bool wns_moving = wns_gain >= rel * std::abs(last.wns);
-  const bool fep_moving
-      = fep_gain / intervals >= rel * static_cast<float>(last.fep);
-  if (!wns_moving && !fep_moving) {
+  const float failing_endpoint_gain
+      = static_cast<float>(first.failing_endpoints)
+        - static_cast<float>(last.failing_endpoints);
+  const bool wns_moving
+      = wns_gain >= reference_period_ * config_.stall_wns_period_pct / 100.0f;
+  const bool failing_endpoints_moving
+      = failing_endpoint_gain / intervals
+        >= config_.stall_failing_endpoint_pct / 100.0f
+               * static_cast<float>(last.failing_endpoints);
+  if (!wns_moving && !failing_endpoints_moving) {
     window_stalled_ = true;
     RepairSetupProfiler::event("stall_window_triggered");
   }
@@ -181,12 +205,13 @@ void WnsTail::reset()
   batch_cap_ = 0;
   work_start_ = 0.0;
   budget_work_ = 0.0;
+  min_gain_ = 0.0f;
   speculative_batches_ = 0;
   speculative_instances_.clear();
   greedy_stalled_ = false;
 }
 
-bool WnsTail::start(const double work)
+bool WnsTail::start(const double work, const float reference_period)
 {
   if (config_.wns_tail_endpoints <= 0 || started_) {
     return false;
@@ -203,6 +228,7 @@ bool WnsTail::start(const double work)
   // The tail budget is a percentage of the batch stage's work, with a floor.
   budget_work_ = std::max(work_start_ * config_.wns_tail_work_pct / 100.0,
                           static_cast<double>(config_.wns_tail_min_work));
+  min_gain_ = reference_period * config_.wns_tail_min_gain_period_pct / 100.0f;
   return true;
 }
 
@@ -214,11 +240,9 @@ void WnsTail::afterBatch(const sta::Slack best_wns_before,
 
   // Only a visible WNS gain counts in the tail, not TNS-only saves or tiny
   // gains.
-  const float tail_step = std::abs(sta::delayAsFloat(best_wns_before))
-                          * config_.wns_tail_min_gain_pct / 100.0f;
   const bool tail_progressed
       = sta::delayAsFloat(best_wns_after) - sta::delayAsFloat(best_wns_before)
-        > tail_step;
+        > min_gain_;
 
   // A run of speculative batches is judged when it ends.
   if (speculative_batches_ == 0) {
@@ -293,14 +317,14 @@ bool WnsTail::maySpeculate() const
   return speculative_batches_ < config_.wns_tail_speculate && greedy_stalled_;
 }
 
-void WnsTail::keepSpeculative(const std::vector<sta::Instance*>& instances)
+void WnsTail::keepSpeculative(const std::vector<InstanceRecord>& instances)
 {
   ++speculative_batches_;
   speculative_instances_.insert(
       speculative_instances_.end(), instances.begin(), instances.end());
 }
 
-std::vector<sta::Instance*> WnsTail::endSpeculation()
+std::vector<InstanceRecord> WnsTail::endSpeculation()
 {
   speculative_batches_ = 0;
   return std::exchange(speculative_instances_, {});
@@ -308,8 +332,9 @@ std::vector<sta::Instance*> WnsTail::endSpeculation()
 
 // === MissTabu ===============================================================
 
-void MissTabu::reset()
+void MissTabu::reset(const sta::dbNetwork* network)
 {
+  network_ = network;
   until_.clear();
   undo_counts_.clear();
   excluded_.clear();
@@ -317,14 +342,18 @@ void MissTabu::reset()
 
 void MissTabu::addTabu(sta::Instance* inst, const int now)
 {
-  until_[inst] = now + config_.miss_tabu_batches;
+  until_[inst] = {.name = name(inst), .value = now + config_.miss_tabu_batches};
 }
 
 bool MissTabu::recordUndo(sta::Instance* inst, const int now)
 {
   addTabu(inst, now);
-  if (++undo_counts_[inst] >= config_.max_undos_per_instance) {
-    excluded_.insert(inst);
+  // An entry left by a deleted instance at this address starts over.
+  if (!hasEntry(undo_counts_, inst)) {
+    undo_counts_[inst] = {.name = name(inst), .value = 0};
+  }
+  if (++undo_counts_[inst].value >= config_.max_undos_per_instance) {
+    excluded_[inst] = {.name = name(inst)};
     return true;
   }
   return false;
@@ -333,9 +362,38 @@ bool MissTabu::recordUndo(sta::Instance* inst, const int now)
 void MissTabu::expire(const int now)
 {
   std::erase_if(until_,
-                [now](const std::pair<sta::Instance* const, int>& entry) {
-                  return entry.second <= now;
+                [now](const std::pair<sta::Instance* const, Entry>& entry) {
+                  return entry.second.value <= now;
                 });
+}
+
+bool MissTabu::isExcluded(sta::Instance* inst) const
+{
+  return hasEntry(excluded_, inst);
+}
+
+bool MissTabu::isTabu(sta::Instance* inst) const
+{
+  return hasEntry(until_, inst);
+}
+
+std::string MissTabu::name(sta::Instance* inst) const
+{
+  return network_->staToDb(inst)->getName();
+}
+
+bool MissTabu::hasEntry(
+    const std::unordered_map<sta::Instance*, Entry>& entries,
+    sta::Instance* inst) const
+{
+  // Only the live `inst` is read; a stale key is compared, never read.
+  if (entries.empty()) {
+    return false;
+  }
+  const std::unordered_map<sta::Instance*, Entry>::const_iterator entry
+      = entries.find(inst);
+  return entry != entries.end()
+         && entry->second.name == network_->staToDb(inst)->getConstName();
 }
 
 }  // namespace rsz

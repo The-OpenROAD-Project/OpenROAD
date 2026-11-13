@@ -4,7 +4,6 @@
 #include "utl/MakeLogger.h"
 
 #include "tcl.h"
-#include "utl/Logger.h"
 #include "utl/decode.h"
 
 extern "C" {

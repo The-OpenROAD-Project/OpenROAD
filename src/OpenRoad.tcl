@@ -46,8 +46,7 @@ sta::define_cmd_args "read_def" {[-floorplan_initialize|-incremental]\
 
 proc read_def { args } {
   sta::parse_key_args "read_def" args keys {-tech -chip} \
-    flags {-floorplan_initialize -incremental \
-           -order_wires -continue_on_errors}
+    flags {-floorplan_initialize -incremental -continue_on_errors}
   sta::check_argc_eq1 "read_def" $args
   set filename [file nativename [lindex $args 0]]
   if { ![file exists $filename] } {
@@ -66,9 +65,6 @@ proc read_def { args } {
     utl::error "ORD" 5 "No technology has been read."
   } else {
     set tech [[ord::get_db] getTech]
-  }
-  if { [info exists flags(-order_wires)] } {
-    utl::warn "ORD" 33 "-order_wires is deprecated."
   }
   set continue_on_errors [info exists flags(-continue_on_errors)]
   set floorplan_init [info exists flags(-floorplan_initialize)]

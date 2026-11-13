@@ -46,8 +46,8 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -71.183 |     -431.2 |     21 | capture_2/D
-      65* |       8 |      23 |        2 |      0 |     4 |    -1.1% |  -10.663 |      -25.1 |     21 | capture_2/D
-    final |       8 |      35 |        2 |      0 |     4 |    -1.1% |  -10.779 |      -19.6 |      3 | capture_2/D
+      65* |       8 |      23 |        2 |      0 |     4 |    -1.1% |  -10.701 |      -25.2 |     21 | capture_2/D
+    final |       8 |      35 |        2 |      0 |     4 |    -1.1% |  -10.817 |      -19.8 |      3 | capture_2/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 8 buffers.
 [INFO RSZ-0040] Inserted 2 buffers.
@@ -65,12 +65,12 @@ Path Type: max
    0.0000    0.0000   clock network delay (ideal)
    0.0000    0.0000 ^ launch_32/CLK (DFFHQx4_ASAP7_75t_SL)
   32.9247   32.9247 ^ launch_32/Q (DFFHQx4_ASAP7_75t_SL)
-  12.2123   45.1370 v inst1/CON (HAxp5_ASAP7_75t_SL)
-   7.1740   52.3109 ^ inst2/Y (INVx1_ASAP7_75t_SL)
-  22.5507   74.8617 ^ inst3/Y (AND5x1_ASAP7_75t_SL)
-  13.5051   88.3667 ^ inst3_neighbor1/Y (AND2x2_ASAP7_75t_SL)
-   0.9374   89.3042 ^ capture_2/D (DFFHQx4_ASAP7_75t_SL)
-            89.3042   data arrival time
+  12.2417   45.1663 v inst1/CON (HAxp5_ASAP7_75t_SL)
+   7.1807   52.3470 ^ inst2/Y (INVx1_ASAP7_75t_SL)
+  22.5531   74.9001 ^ inst3/Y (AND5x1_ASAP7_75t_SL)
+  13.5051   88.4052 ^ inst3_neighbor1/Y (AND2x2_ASAP7_75t_SL)
+   0.9374   89.3426 ^ capture_2/D (DFFHQx4_ASAP7_75t_SL)
+            89.3426   data arrival time
 
   85.0000   85.0000   clock clk (rise edge)
    0.0000   85.0000   clock network delay (ideal)
@@ -80,8 +80,8 @@ Path Type: max
             78.5254   data required time
 -------------------------------------------------------------
             78.5254   data required time
-           -89.3042   data arrival time
+           -89.3426   data arrival time
 -------------------------------------------------------------
-           -10.7787   slack (VIOLATED)
+           -10.8172   slack (VIOLATED)
 
 

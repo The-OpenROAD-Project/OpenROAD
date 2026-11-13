@@ -4,10 +4,6 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerCutEnclosureTableDefRule.h"
 
-#include <cassert>
-#include <cstdint>
-#include <cstring>
-
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbProperty.h"
@@ -40,9 +36,6 @@ bool _dbTechLayerCutEnclosureTableDefRule::operator==(
     const _dbTechLayerCutEnclosureTableDefRule& rhs) const
 {
   // NOLINTBEGIN(readability-simplify-boolean-expr)
-  if (flags_.cut_class_valid != rhs.flags_.cut_class_valid) {
-    return false;
-  }
   if (cut_class_ != rhs.cut_class_) {
     return false;
   }
@@ -71,38 +64,41 @@ bool _dbTechLayerCutEnclosureTableDefRule::operator<(
 _dbTechLayerCutEnclosureTableDefRule::_dbTechLayerCutEnclosureTableDefRule(
     _dbDatabase* db)
 {
-  flags_ = {};
 }
 
 static dbIStream& operator>>(
     dbIStream& stream,
     dbTechLayerCutEnclosureTableDefRule::DefaultRow& obj)
 {
-  stream >> obj.above_below;
   stream >> obj.overhang1;
   stream >> obj.overhang2;
   stream >> obj.overhang3;
   stream >> obj.overhang4;
+  // User Code Begin >>DefaultRow
+  int above_below;
+  stream >> above_below;
+  obj.above_below = static_cast<dbCutEnclosureAboveBelow>(above_below);
+  // User Code End >>DefaultRow
   return stream;
 }
 static dbIStream& operator>>(dbIStream& stream,
                              dbTechLayerCutEnclosureTableDefRule::WidthRow& obj)
 {
   stream >> obj.width;
-  stream >> obj.above_below;
   stream >> obj.overhang1;
   stream >> obj.overhang2;
   stream >> obj.overhang3;
   stream >> obj.overhang4;
+  // User Code Begin >>WidthRow
+  int above_below;
+  stream >> above_below;
+  obj.above_below = static_cast<dbCutEnclosureAboveBelow>(above_below);
+  // User Code End >>WidthRow
   return stream;
 }
 dbIStream& operator>>(dbIStream& stream,
                       _dbTechLayerCutEnclosureTableDefRule& obj)
 {
-  uint32_t flags_bit_field;
-  stream >> flags_bit_field;
-  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
-  std::memcpy(&obj.flags_, &flags_bit_field, sizeof(flags_bit_field));
   stream >> obj.cut_class_;
   stream >> obj.default_rows_;
   stream >> obj.width_rows_;
@@ -113,11 +109,13 @@ static dbOStream& operator<<(
     dbOStream& stream,
     const dbTechLayerCutEnclosureTableDefRule::DefaultRow& obj)
 {
-  stream << obj.above_below;
   stream << obj.overhang1;
   stream << obj.overhang2;
   stream << obj.overhang3;
   stream << obj.overhang4;
+  // User Code Begin <<DefaultRow
+  stream << static_cast<int>(obj.above_below);
+  // User Code End <<DefaultRow
   return stream;
 }
 static dbOStream& operator<<(
@@ -125,20 +123,18 @@ static dbOStream& operator<<(
     const dbTechLayerCutEnclosureTableDefRule::WidthRow& obj)
 {
   stream << obj.width;
-  stream << obj.above_below;
   stream << obj.overhang1;
   stream << obj.overhang2;
   stream << obj.overhang3;
   stream << obj.overhang4;
+  // User Code Begin <<WidthRow
+  stream << static_cast<int>(obj.above_below);
+  // User Code End <<WidthRow
   return stream;
 }
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCutEnclosureTableDefRule& obj)
 {
-  uint32_t flags_bit_field;
-  static_assert(sizeof(obj.flags_) == sizeof(flags_bit_field));
-  std::memcpy(&flags_bit_field, &obj.flags_, sizeof(obj.flags_));
-  stream << flags_bit_field;
   stream << obj.cut_class_;
   stream << obj.default_rows_;
   stream << obj.width_rows_;
@@ -182,22 +178,6 @@ dbTechLayerCutClassRule* dbTechLayerCutEnclosureTableDefRule::getCutClass()
       obj->cut_class_);
 }
 
-void dbTechLayerCutEnclosureTableDefRule::setCutClassValid(bool cut_class_valid)
-{
-  _dbTechLayerCutEnclosureTableDefRule* obj
-      = (_dbTechLayerCutEnclosureTableDefRule*) this;
-
-  obj->flags_.cut_class_valid = cut_class_valid;
-}
-
-bool dbTechLayerCutEnclosureTableDefRule::isCutClassValid() const
-{
-  _dbTechLayerCutEnclosureTableDefRule* obj
-      = (_dbTechLayerCutEnclosureTableDefRule*) this;
-
-  return obj->flags_.cut_class_valid;
-}
-
 dbTechLayerCutEnclosureTableDefRule*
 dbTechLayerCutEnclosureTableDefRule::create(dbTechLayer* parent)
 {
@@ -216,7 +196,6 @@ void dbTechLayerCutEnclosureTableDefRule::destroy(
 // User Code Begin dbTechLayerCutEnclosureTableDefRulePublicMethods
 void dbTechLayerCutEnclosureTableDefRule::addDefaultRow(const DefaultRow& row)
 {
-  assert(row.above_below >= 0 && row.above_below <= 2);
   _dbTechLayerCutEnclosureTableDefRule* obj
       = (_dbTechLayerCutEnclosureTableDefRule*) this;
   obj->default_rows_.push_back(row);
@@ -224,7 +203,6 @@ void dbTechLayerCutEnclosureTableDefRule::addDefaultRow(const DefaultRow& row)
 
 void dbTechLayerCutEnclosureTableDefRule::addWidthRow(const WidthRow& row)
 {
-  assert(row.above_below >= 0 && row.above_below <= 2);
   _dbTechLayerCutEnclosureTableDefRule* obj
       = (_dbTechLayerCutEnclosureTableDefRule*) this;
   obj->width_rows_.push_back(row);

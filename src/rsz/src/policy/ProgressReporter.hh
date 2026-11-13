@@ -38,8 +38,7 @@ class ProgressReporter
   void printFinal(RepairTargetCollector& collector,
                   bool show_startpoint_metrics) const;
   // The design area at the committer's current edit count: computeDesignArea()
-  // walks every instance, so the area is walked once per edit and shared with
-  // the utilization checks of the policies.
+  // walks every instance, so the area is walked once per edit.
   double designArea() const;
 
  private:

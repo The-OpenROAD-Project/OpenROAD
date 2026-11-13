@@ -1,5 +1,7 @@
-# Critical-path slice extracted from gf180/riscv32i post-CTS ODB.
-# Drives LEGACY repair_setup on a real RISC-V ALU sum critical path.
+# LEGACY repair_setup on the ALU sum critical path of gf180 riscv32i (post-CTS)
+# with 20 violating endpoints. The golden log covers buffer removal, sizing up,
+# pin swaps and buffering, and its worst path runs from an input port to an
+# output port.
 
 source "helpers.tcl"
 

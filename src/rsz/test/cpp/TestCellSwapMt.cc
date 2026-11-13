@@ -81,7 +81,7 @@ TEST_F(TestResizerMt, SwapPinsMtCandidateChargesDisplacedSignal)
   EXPECT_EQ(impact.timing_effect_nets.size(), 3u);
 }
 
-TEST_F(TestResizerMt, SizeUpMtCandidateAppliesScoreScale)
+TEST_F(TestResizerMt, SizeUpMtCandidateAppliesCellCost)
 {
   Resizer& resizer = resizer_;
   resizer.runRepairSetupPreamble();
@@ -107,17 +107,59 @@ TEST_F(TestResizerMt, SizeUpMtCandidateAppliesScoreScale)
       = DelayEstimator::estimate(estimator_context.value(), replacement_cell);
   ASSERT_TRUE(raw_estimate.legal);
 
-  SizeUpMtCandidate default_scale_candidate(
-      resizer, target, target_inst, replacement_cell, 1.0f);
-  const Estimate default_scale = default_scale_candidate.estimate();
-  EXPECT_EQ(default_scale.legal, raw_estimate.legal);
-  EXPECT_FLOAT_EQ(default_scale.score, raw_estimate.arrival_impr);
+  // The policy applies the move weight; the candidate scores its own gain.
+  SizeUpMtCandidate cheapest_candidate(resizer,
+                                       target,
+                                       target_inst,
+                                       replacement_cell,
+                                       /*cost_divisor=*/1.0f);
+  const Estimate cheapest = cheapest_candidate.estimate();
+  EXPECT_EQ(cheapest.legal, raw_estimate.legal);
+  EXPECT_FLOAT_EQ(cheapest.score, raw_estimate.arrival_impr);
 
-  SizeUpMtCandidate half_scale_candidate(
-      resizer, target, target_inst, replacement_cell, 0.5f);
-  const Estimate half_scale = half_scale_candidate.estimate();
-  EXPECT_EQ(half_scale.legal, raw_estimate.legal);
-  EXPECT_FLOAT_EQ(half_scale.score, raw_estimate.arrival_impr * 0.5f);
+  // The score is the gain per unit of relative cell cost.  raw_gain stays the
+  // estimated gain.
+  SizeUpMtCandidate costly_candidate(resizer,
+                                     target,
+                                     target_inst,
+                                     replacement_cell,
+                                     /*cost_divisor=*/2.0f);
+  const Estimate costly = costly_candidate.estimate();
+  EXPECT_FLOAT_EQ(costly.score, raw_estimate.arrival_impr / 2.0f);
+  ASSERT_TRUE(costly.raw_gain.has_value());
+  EXPECT_FLOAT_EQ(*costly.raw_gain, raw_estimate.arrival_impr);
+
+  // VtSwapMt applies its relative cell cost the same way.
+  VtSwapMtCandidate vt_candidate(resizer,
+                                 target,
+                                 target_inst,
+                                 replacement_cell,
+                                 /*cost_divisor=*/2.0f);
+  const Estimate vt = vt_candidate.estimate();
+  EXPECT_FLOAT_EQ(vt.score, raw_estimate.arrival_impr / 2.0f);
+  ASSERT_TRUE(vt.raw_gain.has_value());
+  EXPECT_FLOAT_EQ(*vt.raw_gain, raw_estimate.arrival_impr);
+}
+
+TEST_F(TestResizerMt, RelativeCellCostsKeepTheCheapestOptionWhole)
+{
+  // The cheapest option above the current cost is the reference; an option at
+  // most as costly as the current cell keeps its full score.
+  const std::vector<float> divisors
+      = relativeCellCosts({1.25f, 2.5f, 0.8f, 1.0f, 10.0f});
+  ASSERT_EQ(divisors.size(), 5);
+  EXPECT_FLOAT_EQ(divisors[0], 1.0f);
+  EXPECT_FLOAT_EQ(divisors[1], 2.0f);
+  EXPECT_FLOAT_EQ(divisors[2], 1.0f);
+  EXPECT_FLOAT_EQ(divisors[3], 1.0f);
+  EXPECT_FLOAT_EQ(divisors[4], 8.0f);
+  EXPECT_TRUE(relativeCellCosts({}).empty());
+
+  // Without a costlier option, as for a VT swap compared by LEF area, every
+  // option keeps its full score; no divisor ever drops below 1.
+  for (const float divisor : relativeCellCosts({0.5f, 1.0f, 0.9f})) {
+    EXPECT_FLOAT_EQ(divisor, 1.0f);
+  }
 }
 
 TEST_F(TestResizerMt, DualRfDriveGuardRequiresBothTransitions)
@@ -147,24 +189,111 @@ TEST_F(TestResizerMt, SizeUpMtGeneratorCachesLibraryOptionsPerDriverPort)
   ASSERT_TRUE(target.estimator_context.has_value());
   const SelectedArc& arc = target.estimator_context->target().arc;
 
-  const SizeUpMtGenerator::SizeUpOptions& first
-      = generator.findSizeUpOptions(arc.outputPort(), arc.scene, arc.min_max);
-  const SizeUpMtGenerator::SizeUpOptions& second
-      = generator.findSizeUpOptions(arc.outputPort(), arc.scene, arc.min_max);
+  const ResizerTestPeer::SizeUpOptions& first
+      = ResizerTestPeer::findSizeUpOptions(
+          generator, arc.outputPort(), arc.scene, arc.min_max);
+  const ResizerTestPeer::SizeUpOptions& second
+      = ResizerTestPeer::findSizeUpOptions(
+          generator, arc.outputPort(), arc.scene, arc.min_max);
   EXPECT_EQ(&first, &second);
-  EXPECT_EQ(generator.size_up_options_.size(), 1u);
+  EXPECT_EQ(ResizerTestPeer::sizeUpOptionCount(generator), 1u);
   EXPECT_FALSE(first.cells.empty());
-  EXPECT_EQ(
-      first.cells,
-      generator.buildSizeUpOptions(arc.outputPort(), arc.scene, arc.min_max)
-          .cells);
+  EXPECT_EQ(first.cells,
+            ResizerTestPeer::buildSizeUpOptions(
+                generator, arc.outputPort(), arc.scene, arc.min_max)
+                .cells);
 
   // Generation consumes the cached options without changing the candidates;
   // generate() reads the prepared fanin headroom.
   generator.prepareInputs(target);
   const CandidateVector candidates = generator.generate(target);
   EXPECT_EQ(candidates.size(), first.cells.size());
-  EXPECT_EQ(generator.size_up_options_.size(), 1u);
+  EXPECT_EQ(ResizerTestPeer::sizeUpOptionCount(generator), 1u);
+}
+
+// The input cap budgets that SizeUpMt and VtSwapMt read on workers accept the
+// same replacements as the live max-cap check, with headroom left and after a
+// violation.
+TEST_F(TestResizerMt, InputCapBudgetsMatchMaxCapCheck)
+{
+  resizer_.runRepairSetupPreamble();
+  sta::Network* network = sta_->network();
+  sta::Instance* inst = network->findInstance("path_target");
+  ASSERT_NE(inst, nullptr);
+  std::vector<sta::LibertyCell*> cells;
+  for (const char* name : {"NAND2_X1", "NAND2_X2", "NAND2_X4"}) {
+    sta::LibertyCell* cell = network->findLibertyCell(name);
+    ASSERT_NE(cell, nullptr) << name;
+    cells.push_back(cell);
+  }
+
+  const auto input_cap = [](const sta::LibertyCell* cell, const char* port) {
+    float cap = 0.0f;
+    for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+      cap = std::max(
+          cap,
+          cell->findLibertyPort(port)->capacitance(rf, sta::MinMax::max()));
+    }
+    return cap;
+  };
+  const auto driver_load = [this](const sta::Pin* driver) {
+    float cap;
+    float limit;
+    float slack;
+    const sta::RiseFall* rf;
+    const sta::Scene* scene;
+    sta_->checkCapacitance(driver,
+                           sta_->scenes(),
+                           sta::MinMax::max(),
+                           cap,
+                           limit,
+                           slack,
+                           rf,
+                           scene);
+    return cap;
+  };
+  // Every replacement gets the same answer from both checks.
+  const auto expect_same_answers = [&]() {
+    const std::vector<Resizer::InputCapBudget> budgets
+        = resizer_.inputCapBudgets(inst);
+    std::vector<bool> fits;
+    for (sta::LibertyCell* cell : cells) {
+      const bool budget_fits
+          = resizer_.replacementFitsInputCapBudgets(budgets, cell);
+      EXPECT_EQ(budget_fits, resizer_.replacementPreservesMaxCap(inst, cell))
+          << cell->name();
+      fits.push_back(budget_fits);
+    }
+    return fits;
+  };
+
+  sta::Sdc* sdc = sta_->cmdMode()->sdc();
+  sta::Pin* a1_driver = network->findPin("path_pre1/Z");
+  sta::Pin* a2_driver = network->findPin("path_side_buf/Z");
+  ASSERT_NE(a1_driver, nullptr);
+  ASSERT_NE(a2_driver, nullptr);
+
+  // Headroom on the A1 net that the X2 input fits and the X4 input does not.
+  const float x2_increase
+      = input_cap(cells[1], "A1") - input_cap(cells[0], "A1");
+  const float x4_increase
+      = input_cap(cells[2], "A1") - input_cap(cells[0], "A1");
+  ASSERT_GT(x2_increase, 0.0f);
+  ASSERT_GT(x4_increase, x2_increase);
+  // STA takes the limit of an instance pin from its cell, not from the pin.
+  sta_->setCapacitanceLimit(
+      network->cell(network->instance(a1_driver)),
+      sta::MinMax::max(),
+      driver_load(a1_driver) + (x2_increase + x4_increase) / 2.0f,
+      sdc);
+  EXPECT_EQ(expect_same_answers(), (std::vector<bool>{true, true, false}));
+
+  // A violated limit on the A2 net takes no input growth at all.
+  sta_->setCapacitanceLimit(network->cell(network->instance(a2_driver)),
+                            sta::MinMax::max(),
+                            driver_load(a2_driver) / 2.0f,
+                            sdc);
+  EXPECT_EQ(expect_same_answers(), (std::vector<bool>{true, false, false}));
 }
 
 }  // namespace rsz

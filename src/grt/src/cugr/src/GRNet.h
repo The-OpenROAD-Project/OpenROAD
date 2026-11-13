@@ -144,10 +144,22 @@ class GRNet
   {
     return preferred_aps_;
   }
-  // Restores a saved getPreferredAccessPoints(), as a rolled-back reroute does.
-  void setPreferredAccessPoints(std::map<int, AccessPoint> aps)
+  // The route and the access points it was routed to, for a rollback.
+  struct SavedRoute
   {
-    preferred_aps_ = std::move(aps);
+    std::shared_ptr<GRTreeNode> tree;
+    bool adopted;
+    std::map<int, AccessPoint> access_points;
+  };
+  SavedRoute saveRoute() const
+  {
+    return {routing_tree_, adopted_, preferred_aps_};
+  }
+  void restoreRoute(SavedRoute route)
+  {
+    routing_tree_ = std::move(route.tree);
+    adopted_ = route.adopted;
+    preferred_aps_ = std::move(route.access_points);
   }
   // Terminals keyed by the pin index that also keys getPinAccessPoints().
   const std::map<int, odb::dbBTerm*>& getBTermsByPinIndex() const
@@ -165,6 +177,9 @@ class GRNet
   // carry wrong-way spans; add/removeTreeUsage must allow them symmetrically.
   bool isAdopted() const { return adopted_; }
   void setAdopted(bool adopted) { adopted_ = adopted; }
+  // Pins out of date (GlobalRouter kept the old route): the relief skips it.
+  bool isStale() const { return stale_; }
+  void setStale(bool stale) { stale_ = stale; }
 
  private:
   int index_;
@@ -181,6 +196,7 @@ class GRNet
   bool is_critical_;
   bool is_res_aware_ = false;
   bool adopted_ = false;
+  bool stale_ = false;
   float resistance_ = 0.0f;
   int net_length_ = 0;
   std::vector<double> ndr_costs_;

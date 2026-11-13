@@ -79,7 +79,7 @@ class RecoverPower : public sta::dbStaState
   utl::Logger* logger_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
-  est::EstimateParasitics* estimate_parasitics_;
+  est::EstimateParasitics* estimate_parasitics_ = nullptr;
   const sta::Scene* scene_ = nullptr;
   int resize_count_ = 0;
   const sta::MinMax* max_ = sta::MinMax::max();

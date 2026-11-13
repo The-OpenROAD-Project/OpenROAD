@@ -305,13 +305,7 @@ openroad_git_describe()
 bool
 openroad_gpu_compiled()
 {
-  return ord::OpenRoad::getGUICompileOption();
-}
-
-bool
-openroad_python_compiled()
-{
-  return ord::OpenRoad::getPythonCompileOption();
+  return ord::OpenRoad::getGPUCompileOption();
 }
 
 bool

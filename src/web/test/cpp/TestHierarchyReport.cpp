@@ -251,5 +251,47 @@ TEST_F(HierarchyReportTest, RealModulesAreNeverReplacedByNameGroups)
   EXPECT_EQ(result.nodes[0].node_kind, HierarchyNodeKind::kModule);
 }
 
+// The viewer's starting palette: every module below the top starts collapsed,
+// so it paints its whole subtree, and structural rows get no entry.
+TEST(DefaultModuleColors, FoldEachSubtreeBelowTheTopIntoItsModule)
+{
+  constexpr Color kTop{10, 20, 30, 255};
+  constexpr Color kA{40, 50, 60, 255};
+  constexpr Color kB{70, 80, 90, 255};
+  constexpr Color kC{100, 110, 120, 255};
+  constexpr Color kD{130, 140, 150, 255};
+
+  HierarchyResult result;
+  auto add = [&result](const int parent,
+                       const HierarchyNodeKind kind,
+                       const unsigned int odb_id,
+                       const Color& color) {
+    HierarchyNode node;
+    node.id = static_cast<int>(result.nodes.size());
+    node.parent_id = parent;
+    node.node_kind = kind;
+    node.odb_id = odb_id;
+    node.color = color;
+    result.nodes.push_back(node);
+    return node.id;
+  };
+  // top ── a ── b ── c, top ── "Leaf instances" ── one macro, top ── d.
+  const int top = add(-1, HierarchyNodeKind::kModule, 1, kTop);
+  const int a = add(top, HierarchyNodeKind::kModule, 2, kA);
+  const int b = add(a, HierarchyNodeKind::kModule, 3, kB);
+  add(b, HierarchyNodeKind::kModule, 4, kC);
+  const int leaf = add(top, HierarchyNodeKind::kLeafGroup, 0, Color{});
+  add(leaf, HierarchyNodeKind::kInstance, 0, Color{});
+  add(top, HierarchyNodeKind::kModule, 5, kD);
+
+  const std::map<uint32_t, Color> colors = computeDefaultModuleColors(result);
+  EXPECT_EQ(colors.size(), 5u) << "one entry per module, none per folder";
+  EXPECT_EQ(colors.at(1), kTop) << "the top is never collapsed";
+  EXPECT_EQ(colors.at(2), kA);
+  EXPECT_EQ(colors.at(3), kA) << "b is folded into the collapsed a";
+  EXPECT_EQ(colors.at(4), kA) << "the highest collapsed ancestor wins";
+  EXPECT_EQ(colors.at(5), kD) << "a module without children keeps its color";
+}
+
 }  // namespace
 }  // namespace web

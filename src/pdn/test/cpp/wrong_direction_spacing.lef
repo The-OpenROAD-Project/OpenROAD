@@ -1,0 +1,45 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+UNITS
+  DATABASE MICRONS 1000 ;
+END UNITS
+
+MANUFACTURINGGRID 0.005 ;
+
+# Two routing layers of opposite directions. Each has a plain spacing of
+# 0.1 and a LEF58 WRONGDIRECTION spacing table of 0.5, five times as much,
+# so a test can tell which of the two a shape was given.
+
+LAYER M1
+  TYPE ROUTING ;
+  DIRECTION HORIZONTAL ;
+  PITCH 0.4 ;
+  WIDTH 0.1 ;
+  SPACING 0.1 ;
+  PROPERTY LEF58_SPACINGTABLE
+    "SPACINGTABLE PARALLELRUNLENGTH WRONGDIRECTION
+       0.0
+       WIDTH 0.0 0.5 ;" ;
+END M1
+
+LAYER V1
+  TYPE CUT ;
+  SPACING 0.1 ;
+  WIDTH 0.1 ;
+END V1
+
+LAYER M2
+  TYPE ROUTING ;
+  DIRECTION VERTICAL ;
+  PITCH 0.4 ;
+  WIDTH 0.1 ;
+  SPACING 0.1 ;
+  PROPERTY LEF58_SPACINGTABLE
+    "SPACINGTABLE PARALLELRUNLENGTH WRONGDIRECTION
+       0.0
+       WIDTH 0.0 0.5 ;" ;
+END M2
+
+END LIBRARY

@@ -3,7 +3,7 @@ set DIR ../../test
 # Read LEF and DEF
 read_lef ${DIR}/Nangate45/Nangate45.lef
 
-read_def -order_wires ${DIR}/45_gcd.def
+read_def ${DIR}/45_gcd.def
 
 # extRules file location (OpenRCX RC tech file)
 set extRules patterns.rules

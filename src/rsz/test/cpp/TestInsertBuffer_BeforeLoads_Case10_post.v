@@ -7,4 +7,5 @@ module top (in,
 
  BUF_X4 new_buf1 (.A(n1),
     .Z(out));
+ assign n1 = in;
 endmodule

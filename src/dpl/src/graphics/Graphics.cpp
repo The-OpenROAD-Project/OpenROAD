@@ -334,7 +334,7 @@ void Graphics::drawObjects(web::Painter& painter)
 
   if (paint_pixels_) {
     const Grid* grid = dp_->grid_.get();
-    if (grid) {
+    if (grid && grid->hasPixels()) {
       const odb::Rect core = grid->getCore();
       const DbuX site_width = grid->getSiteWidth();
 

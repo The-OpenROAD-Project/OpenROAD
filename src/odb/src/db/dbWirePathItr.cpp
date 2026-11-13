@@ -189,7 +189,7 @@ nextOpCode:
       return false;
 
     case dbWireDecoder::RECT: {
-      // order wires doesn't understand RECTs so just hide them for now
+      // the wire normalizer doesn't understand RECTs so just hide them for now
       // they aren't required to establish connectivity in our flow
       opcode_ = decoder_.next();
       goto nextOpCode;

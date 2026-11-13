@@ -30,7 +30,7 @@ class MetricsPolicy
  public:
   MetricsPolicy(const std::string& key_pattern,
                 MetricsPolicyType policy,
-                bool repeating_use_exact_match);
+                bool repeating_use_regex);
 
   void applyPolicy(std::list<MetricsEntry>& entries);
 

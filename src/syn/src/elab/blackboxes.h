@@ -2,7 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 //
-// syn IR backend for slang-elab
+// syn IR backend for sv-elab
 //
 // Import Liberty cell definitions as blackbox modules into a slang Compilation.
 //

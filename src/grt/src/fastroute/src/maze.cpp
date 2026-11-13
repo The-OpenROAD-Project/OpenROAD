@@ -1321,8 +1321,13 @@ void FastRouteCore::mazeRouteMSMDSequential(const int iter,
         = is_horizontal ? &Graph2D::getUsageRedH : &Graph2D::getUsageRedV;
     auto last_usage
         = is_horizontal ? &Graph2D::getLastUsageH : &Graph2D::getLastUsageV;
-    const int pos1 = (graph2d_.*usage_red)(p1_x, p1_y)
-                     + L * (graph2d_.*last_usage)(p1_x, p1_y);
+    const EdgeDirection direction
+        = is_horizontal ? EdgeDirection::Horizontal : EdgeDirection::Vertical;
+    FrNet* net = nets_[net_id];
+    const int pos1
+        = static_cast<int>(getUsageNDRAware(
+              net, p1_x, p1_y, direction, (graph2d_.*usage_red)(p1_x, p1_y)))
+          + L * (graph2d_.*last_usage)(p1_x, p1_y);
 
     double cost1 = getCost(pos1, is_horizontal, cost_params);
 
@@ -1332,7 +1337,12 @@ void FastRouteCore::mazeRouteMSMDSequential(const int iter,
       tmp += via;
 
       if (maybe_hyper) {
-        const int pos2 = (graph2d_.*usage_red)(p2_x, p2_y)
+        const int pos2 = static_cast<int>(getUsageNDRAware(
+                             net,
+                             p2_x,
+                             p2_y,
+                             direction,
+                             (graph2d_.*usage_red)(p2_x, p2_y)))
                          + L * (graph2d_.*last_usage)(p2_x, p2_y);
 
         double cost2 = getCost(pos2, is_horizontal, cost_params);
@@ -2192,7 +2202,8 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
 {
   check2DEdgesUsage();
   const auto totals = graph2d_.overflowStatistics(false);
-  const int overflow = totals[0].overflow + totals[1].overflow;
+  const int overflow
+      = totals[0].overflow + totals[1].overflow + graph2d_.getTotalNDRDeficit();
   const int usage = totals[0].usage + totals[1].usage;
   const int maximum = std::max(totals[0].max_overflow, totals[1].max_overflow);
   const bool check = logger_->debugCheck(GRT, "overflowcheck", 1);
@@ -2225,7 +2236,8 @@ int FastRouteCore::getOverflow2D(int* maxOverflow)
     return scanOverflow2D(maxOverflow);
   }
   const auto totals = graph2d_.overflowStatistics(true);
-  const int overflow = totals[0].overflow + totals[1].overflow;
+  const int overflow
+      = totals[0].overflow + totals[1].overflow + graph2d_.getTotalNDRDeficit();
   const int usage = totals[0].usage + totals[1].usage;
   const int maximum = std::max(totals[0].max_overflow, totals[1].max_overflow);
   const bool check = logger_->debugCheck(GRT, "overflowcheck", 1);
@@ -2259,8 +2271,10 @@ int FastRouteCore::scanOverflow2Dmaze(int* maxOverflow, int* tUsage)
   check2DEdgesUsage();
 
   int total_usage = 0;
+  int ndr_deficit = 0;
   for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
     total_usage += graph2d_.getUsageH(x, y);
+    ndr_deficit += graph2d_.getEdgeNDRDeficit(x, y, EdgeDirection::Horizontal);
     const int overflow = graph2d_.getOverflowH(x, y);
     if (overflow > 0) {
       if (logger_->debugCheck(GRT, "congestion2D", 1)) {
@@ -2278,6 +2292,7 @@ int FastRouteCore::scanOverflow2Dmaze(int* maxOverflow, int* tUsage)
 
   for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
     total_usage += graph2d_.getUsageV(x, y);
+    ndr_deficit += graph2d_.getEdgeNDRDeficit(x, y, EdgeDirection::Vertical);
     const int overflow = graph2d_.getOverflowV(x, y);
     if (overflow > 0) {
       if (logger_->debugCheck(GRT, "congestion2D", 1)) {
@@ -2294,7 +2309,10 @@ int FastRouteCore::scanOverflow2Dmaze(int* maxOverflow, int* tUsage)
   }
 
   int max_overflow = std::max(max_H_overflow, max_V_overflow);
-  total_overflow_ = H_overflow + V_overflow;
+  // The tracks the NDR nets miss are overflow too, though not edge usage.
+  // They are summed over the edges rather than read from the running
+  // total, so that the overflow checks catch the total drifting.
+  total_overflow_ = H_overflow + V_overflow + ndr_deficit;
   *maxOverflow = max_overflow;
 
   if (logger_->debugCheck(GRT, "congestion2D", 1)) {
@@ -2306,6 +2324,7 @@ int FastRouteCore::scanOverflow2Dmaze(int* maxOverflow, int* tUsage)
     logger_->report("Number congestion edges: {}", numedges);
     logger_->report("H   congestion         : {}", H_overflow);
     logger_->report("V   congestion         : {}", V_overflow);
+    logger_->report("NDR deficit            : {}", ndr_deficit);
     logger_->report("Final congestion       : {}\n", total_overflow_);
   }
 
@@ -2335,9 +2354,11 @@ int FastRouteCore::scanOverflow2D(int* maxOverflow)
   int numedges = 0;
 
   int total_usage = 0;
+  int ndr_deficit = 0;
 
   for (const auto& [x, y] : graph2d_.getUsedGridsH()) {
     total_usage += graph2d_.getEstUsageH(x, y);
+    ndr_deficit += graph2d_.getEdgeNDRDeficit(x, y, EdgeDirection::Horizontal);
     const int overflow = graph2d_.getEstUsageH(x, y) - graph2d_.getCapH(x, y);
     hCap += graph2d_.getCapH(x, y);
     if (overflow > 0) {
@@ -2356,6 +2377,7 @@ int FastRouteCore::scanOverflow2D(int* maxOverflow)
 
   for (const auto& [x, y] : graph2d_.getUsedGridsV()) {
     total_usage += graph2d_.getEstUsageV(x, y);
+    ndr_deficit += graph2d_.getEdgeNDRDeficit(x, y, EdgeDirection::Vertical);
     const int overflow = graph2d_.getEstUsageV(x, y) - graph2d_.getCapV(x, y);
     vCap += graph2d_.getCapV(x, y);
     if (overflow > 0) {
@@ -2373,7 +2395,10 @@ int FastRouteCore::scanOverflow2D(int* maxOverflow)
   }
 
   const int max_overflow = std::max(max_H_overflow, max_V_overflow);
-  total_overflow_ = H_overflow + V_overflow;
+  // The tracks the NDR nets miss are overflow too, though not edge usage.
+  // They are summed over the edges rather than read from the running
+  // total, so that the overflow checks catch the total drifting.
+  total_overflow_ = H_overflow + V_overflow + ndr_deficit;
   *maxOverflow = max_overflow;
 
   if (total_usage > 800000) {
@@ -2393,6 +2418,7 @@ int FastRouteCore::scanOverflow2D(int* maxOverflow)
     logger_->report("Number of congestion edges : {}", numedges);
     logger_->report("H   congestion             : {}", H_overflow);
     logger_->report("V   congestion             : {}", V_overflow);
+    logger_->report("NDR deficit                : {}", ndr_deficit);
     logger_->report("Final congestion           : {}\n", total_overflow_);
   }
 

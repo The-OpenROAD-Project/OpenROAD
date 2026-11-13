@@ -3,9 +3,11 @@
 
 #include "OptimizerTypes.hh"
 
+#include <algorithm>
 #include <functional>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
@@ -15,6 +17,7 @@
 #include "sta/Network.hh"
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
+#include "sta/Scene.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingRole.hh"
 #include "sta/Transition.hh"
@@ -208,6 +211,28 @@ const sta::TimingArc* findMatchingTimingArc(const sta::TimingArc* reference,
       reference, candidate, ArcMatchMode::kExact, nullptr);
 }
 
+std::vector<float> relativeCellCosts(const std::vector<float>& cost_ratios)
+{
+  // The cheapest option that costs more than the current cell is the
+  // reference; without one, no option pays.
+  float reference = 0.0f;
+  for (const float ratio : cost_ratios) {
+    if (ratio > 1.0f && (reference == 0.0f || ratio < reference)) {
+      reference = ratio;
+    }
+  }
+
+  // Clamp at 1 after taking the relative cost, so a cheaper option never
+  // scores above its cost-free score.
+  std::vector<float> divisors;
+  divisors.reserve(cost_ratios.size());
+  for (const float ratio : cost_ratios) {
+    divisors.push_back(reference > 0.0f ? std::max(1.0f, ratio / reference)
+                                        : 1.0f);
+  }
+  return divisors;
+}
+
 bool driveResNoHigherOnBothRf(const sta::LibertyPort* current,
                               const sta::LibertyPort* candidate)
 {
@@ -362,6 +387,12 @@ const sta::Scene* Target::activeScene(const Resizer& resizer) const
   }
   return endpoint_path != nullptr ? endpoint_path->scene(resizer.staState())
                                   : nullptr;
+}
+
+const sta::Mode* Target::mode(const Resizer& resizer) const
+{
+  const sta::Scene* active_scene = activeScene(resizer);
+  return active_scene != nullptr ? active_scene->mode() : nullptr;
 }
 
 const sta::MinMax* Target::minMax(const Resizer& resizer) const

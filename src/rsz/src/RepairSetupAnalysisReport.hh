@@ -13,11 +13,11 @@
 #include <vector>
 
 #include "OptimizerTypes.hh"
-#include "RepairSetupAnalysisData.hh"
+#include "RepairSetupMoveSnapshot.hh"
 
 namespace rsz {
 
-class RepairSetupAnalysis;
+class RepairSetupMoveSampler;
 class Resizer;
 
 // Writes per-move timing evidence and classified bad-move reports for mode 3.
@@ -47,9 +47,9 @@ class RepairSetupAnalysisReport
 
   // === Move lifecycle =======================================================
   // Capture the pre-ECO state and establish the active move identity.
-  void beginMove(const Context& context, RepairSetupAnalysis& observer);
+  void beginMove(const Context& context, RepairSetupMoveSampler& observer);
   // Capture post-ECO state and classify any timing regression.
-  void endMove(const MoveResult& result, RepairSetupAnalysis& observer);
+  void endMove(const MoveResult& result, RepairSetupMoveSampler& observer);
   // Record one OpenDB edit under the active move.
   void edit(const std::string& event,
             const std::string& object,
@@ -115,23 +115,23 @@ class RepairSetupAnalysisReport
   // Write the move's row of the moves table.
   void writeMoveRow(const Entry& entry,
                     bool accepted,
-                    const RepairSetupAnalysis& observer,
+                    const RepairSetupMoveSampler& observer,
                     double after_time);
   // Render the case report of a flagged move and write it, or keep it until
   // the move's journal settles.
   void reportFlaggedMove(const Entry& entry,
-                         const RepairSetupAnalysis& observer);
+                         const RepairSetupMoveSampler& observer);
   // Identify timing losses and their likely electrical cause.
-  void classify(Entry& entry, const RepairSetupAnalysis& observer) const;
+  void classify(Entry& entry, const RepairSetupMoveSampler& observer) const;
   // The nets whose load grew because a target input pin on them grew.
   std::set<std::string> growingInputNets() const;
   // Build a self-contained explanation for one flagged move.
   CaseReport renderCase(const Entry& entry,
-                        const RepairSetupAnalysis& observer) const;
+                        const RepairSetupMoveSampler& observer) const;
   void writeCase(const Entry& entry, const CaseReport& report);
   void writeOverview(std::ostream& output,
                      const Entry& entry,
-                     const RepairSetupAnalysis& observer) const;
+                     const RepairSetupMoveSampler& observer) const;
   void writeInterpretation(std::ostream& output, const Entry& entry) const;
   void writeTargetTiming(std::ostream& output, const Entry& entry) const;
   void writeElectrical(std::ostream& output, const Entry& entry) const;

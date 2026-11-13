@@ -628,7 +628,7 @@ endmodule
 )",
         },
         {
-            // slang-elab issue 110
+            // sv-elab issue 110
             R"(
 module func_logic_arg (input logic [7:0] a, input logic [7:0] b,
                        output logic [8:0] y);
@@ -650,7 +650,7 @@ endmodule
 )",
         },
         {
-            // slang-elab issue 174
+            // sv-elab issue 174
             R"(
 module func_recurse (input logic [3:0] inp, output logic [3:0] out);
   function automatic [3:0] pow_a;
@@ -674,7 +674,7 @@ endmodule
 )",
         },
         {
-            // slang-elab issue 176
+            // sv-elab issue 176
             R"(
 module func_recurse_mutual (input logic [3:0] inp, output logic [3:0] out);
   function automatic [3:0] flip;
@@ -702,7 +702,7 @@ endmodule
 )",
         },
         {
-            // slang-elab issue 78
+            // sv-elab issue 78
             R"(
 module width_cast_shl
   #(parameter int unsigned W = 8)
@@ -720,7 +720,7 @@ endmodule
 )",
         },
         {
-            // slang-elab issue 142
+            // sv-elab issue 142
             R"(
 module init_rom (input logic [3:0] addr, output logic [7:0] data);
   reg [7:0] rom [0:15];
@@ -759,7 +759,7 @@ endmodule
 )",
         },
         {
-            // slang-elab issue 161
+            // sv-elab issue 161
             R"(
 module postdec_comb (input  logic [7:0] a, input  logic [7:0] b,
                      output logic [7:0] diff, output logic [7:0] var_out);

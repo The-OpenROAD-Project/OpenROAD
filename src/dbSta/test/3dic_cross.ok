@@ -23,19 +23,18 @@ Net chipA/q
  Pin capacitance: 0.88-0.97
  Wire capacitance: 0.00
  Total capacitance: 0.88-0.97
- Number of drivers: 2
- Number of loads: 1
- Number of pins: 2
+ Number of drivers: 3
+ Number of loads: 2
+ Number of pins: 3
 
 Driver pins
  chipA/buf/Z output (BUF_X1) (13, 6)
  chipA/bump_q/PAD bidirect (BUMP) (4, 4)
+ chipB/bump_d/PAD bidirect (BUMP) (4, 4)
 
 Load pins
  chipA/bump_q/PAD bidirect (BUMP) (4, 4)
-
-Hierarchical pins
- chipA/q output
+ chipB/bump_d/PAD bidirect (BUMP) (4, 4)
 
 Net chipA/ext
  Pin capacitance: 0.00

@@ -24,7 +24,6 @@ class RebufferMtCandidate : public MoveCandidate
   RebufferMtCandidate(Resizer& resizer,
                       const Target& target,
                       const RebufferTreePlan& plan,
-                      float score_scale,
                       float min_score,
                       std::vector<BufferTreeSidePathContext> side_contexts
                       = {});
@@ -35,7 +34,6 @@ class RebufferMtCandidate : public MoveCandidate
   MoveType type() const override { return MoveType::kBuffer; }
   MoveImpact impact() const override;
   std::vector<const sta::Pin*> guardedSidePins() const override;
-  float scaledScore() const { return raw_score_ * score_scale_; }
   // The tree plan and its side contexts, for the accuracy report.
   const RebufferTreePlan& plan() const { return plan_; }
   const std::vector<BufferTreeSidePathContext>& sideContexts() const
@@ -58,7 +56,6 @@ class RebufferMtCandidate : public MoveCandidate
   // === Candidate state ======================================================
   RebufferTreePlan plan_;
   std::vector<BufferTreeSidePathContext> side_contexts_;
-  const float score_scale_;
   const float min_score_;
   float raw_score_{0.0f};
 };

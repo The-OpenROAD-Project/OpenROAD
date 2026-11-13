@@ -123,7 +123,7 @@ TEST(IoSlotFit, UnrollLeavesRoomOnBothSidesOfAStack)
             (std::vector<float>{-2, -1, 0, 1, 2}));
 }
 
-// global_placement -place_ios on simple01, driven through Replace and the pin
+// global_placement -place_ios on gcd, driven through Replace and the pin
 // placer the way the Tcl commands do.
 class PlaceIos : public tst::Fixture
 {
@@ -136,7 +136,7 @@ class PlaceIos : public tst::Fixture
     odb::dbChip* chip = odb::dbChip::create(db_.get(), lib->getTech());
     std::vector<odb::dbLib*> libs{lib};
     odb::defin reader(db_.get(), &logger_);
-    const std::string def = getFilePath("_main/src/gpl/test/simple01.def");
+    const std::string def = getFilePath("_main/src/gpl/test/gcd.def");
     ASSERT_TRUE(reader.readChip(libs, def.c_str(), chip));
     block_ = chip->getBlock();
     die_ = block_->getDieArea();
@@ -178,7 +178,7 @@ class PlaceIos : public tst::Fixture
     }
   }
 
-  // simple01 places its ports FIXED, which -place_ios keeps as anchors.
+  // gcd places its ports FIXED, which -place_ios keeps as anchors.
   void unfixPorts()
   {
     for (odb::dbBTerm* bterm : block_->getBTerms()) {
@@ -211,7 +211,7 @@ class PlaceIos : public tst::Fixture
         block_->findConstraintRegion(edge, begin, end));
   }
 
-  void place(PlaceOptions options = {})
+  void place(PlaceOptions&& options = {})
   {
     options.placeIosMode = true;
     options.initDensityPenaltyFactor = 0.01;
@@ -477,6 +477,49 @@ TEST_F(PlaceIos, MirroredFollowersKeepTheSlotPitch)
   }
 }
 
+// Each follower carries odb's copy of its master's top region, yet must land
+// at the reflection on the bottom. The excluded stretch of the bottom edge
+// must still keep the masters off its reflection on the top.
+TEST_F(PlaceIos, MirroredMastersKeepTheirRegion)
+{
+  unplacePorts();
+  const auto masters = ports("req_msg", 0, 4);
+  const auto followers = ports("resp_msg", 0, 4);
+  block_->addBTermsToConstraint(
+      masters,
+      block_->findConstraintRegion(odb::north, die_.xMin(), die_.xMax()));
+  for (size_t i = 0; i < masters.size(); ++i) {
+    masters[i]->setMirroredBTerm(followers[i]);
+  }
+  const int excluded_to = 15 * block_->getDbUnitsPerMicron();
+  excludeEdge(odb::south, die_.xMin(), excluded_to);
+  setPinLayers({"metal5"}, {"metal6"});
+  place();
+
+  for (size_t i = 0; i < masters.size(); ++i) {
+    const odb::Rect box = pinBox(masters[i])->getBox();
+    EXPECT_EQ(edgeOf(box), 'T') << masters[i]->getName() << " left its region";
+    EXPECT_GE(box.xCenter(), excluded_to)
+        << masters[i]->getName() << " reflects into the excluded stretch";
+    expectMirrored(masters[i], followers[i]);
+  }
+}
+
+// A follower's own region is dropped too, so a box region on it needs no pin
+// grid.
+TEST_F(PlaceIos, FollowerBoxRegionIsIgnored)
+{
+  unplacePorts();
+  odb::dbBTerm* master = port("req_msg[0]");
+  odb::dbBTerm* follower = port("resp_msg[0]");
+  follower->setConstraintRegion(odb::Rect(20000, 20000, 40000, 40000));
+  master->setMirroredBTerm(follower);
+  setPinLayers({"metal5"}, {"metal6"});
+  place();
+
+  expectMirrored(master, follower);
+}
+
 // The constraints the solve does not model itself must hold after the pin
 // placer legalizes it. The pin placer cannot yet take mirrored pairs, a group
 // and an excluded stretch all at once, so the parameter picks mirror or
@@ -591,7 +634,7 @@ TEST_F(PlaceIos, TopLayerPinsStayInTheirRegion)
 
   PlaceOptions options;
   options.initialPlaceMaxIter = 0;
-  place(options);
+  place(std::move(options));
 
   for (odb::dbBTerm* bterm : block_->getBTerms()) {
     odb::dbBox* box = pinBox(bterm);

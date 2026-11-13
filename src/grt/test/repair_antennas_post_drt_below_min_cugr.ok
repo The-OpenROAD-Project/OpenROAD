@@ -17,6 +17,7 @@ added li1 span to net3
 [INFO ANT-0002] Found 3 net violations.
 [INFO ANT-0001] Found 3 pin violations.
 [INFO GRT-0012] Found 3 antenna violations.
+[INFO DPL-0009] Utilization: 8.0%
 [INFO DPL-0501] Legalized with 0 moves: displacement total 0.0 u, max 0.0 u; HPWL 19603.4 -> 19603.4 u (+0.0 %).
 [INFO GRT-0015] Inserted 3 diodes.
 [INFO ANT-0002] Found 0 net violations.

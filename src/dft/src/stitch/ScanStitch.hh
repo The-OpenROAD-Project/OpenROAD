@@ -42,9 +42,11 @@ class ScanStitch
   void Stitch(odb::dbBlock* block, ScanChain& scan_chain, size_t ordinal = 0);
 
  private:
+  // A new port and its net get sig_type.
   ScanDriver FindOrCreateDriver(std::string_view kind,
                                 odb::dbBlock* block,
-                                const std::string& with_name);
+                                const std::string& with_name,
+                                odb::dbSigType sig_type);
   ScanDriver FindOrCreateScanEnable(odb::dbBlock* block,
                                     const std::string& with_name);
   ScanDriver FindOrCreateScanIn(odb::dbBlock* block,
@@ -57,9 +59,11 @@ class ScanStitch
   template <typename Port>
   Port CreateNewPort(odb::dbBlock* block,
                      const std::string& port_name,
-                     odb::dbNet* net = nullptr)
+                     odb::dbNet* net = nullptr,
+                     odb::dbSigType sig_type = odb::dbSigType::SCAN)
   {
-    auto port = dft::utils::CreateNewPort(block, port_name, logger_, net);
+    auto port
+        = dft::utils::CreateNewPort(block, port_name, logger_, net, sig_type);
 
     if constexpr (std::is_same_v<Port, ScanLoad>) {
       port->setIoType(odb::dbIoType::OUTPUT);

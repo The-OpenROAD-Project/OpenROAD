@@ -34,6 +34,11 @@ MoveImpact UnbufferMtCandidate::impact() const
   if (cell != nullptr) {
     cell->bufferPorts(input_port, output_port);
   }
+  // removeBuffer() keeps one of the two nets and moves the pins of the other.
+  const sta::LibertyPort* moved_port
+      = cell != nullptr && resizer_.removeBufferKeepsOutputNet(buffer)
+            ? input_port
+            : output_port;
 
   for (sta::LibertyPort* port : {input_port, output_port}) {
     sta::Pin* pin = port != nullptr ? network->findPin(buffer, port) : nullptr;
@@ -45,8 +50,8 @@ MoveImpact UnbufferMtCandidate::impact() const
     impact.write_nets.push_back(net);
     impact.timing_effect_nets.push_back(net);
 
-    // The upstream driver and the loads change nets or load.  The load pins of
-    // the output net move to the input net.
+    // The upstream driver and the loads change nets or load, and the pins of
+    // the dropped net move to the kept one.
     std::unique_ptr<sta::NetConnectedPinIterator> pin_iter(
         network->connectedPinIterator(net));
     while (pin_iter->hasNext()) {
@@ -56,7 +61,7 @@ MoveImpact UnbufferMtCandidate::impact() const
         continue;
       }
 
-      if (port == output_port) {
+      if (port == moved_port) {
         impact.reconnect_pins.push_back(net_pin);
         impact.reconnect_instances.push_back(inst);
       }

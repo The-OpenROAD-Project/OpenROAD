@@ -62,6 +62,7 @@ jobs:
             | grep -E '\.(h|hh|hpp|hxx|c|cc|cpp|cxx)$' \
             | grep -v '^src/sta/' \
             | grep -v '^src/odb/src/codeGenerator/' \
+            | grep -v '^third-party/' \
             | xargs --no-run-if-empty "$RUNNER_TEMP/clang-format/bin/clang-format" -i
 
           # Run black on changed Python files

@@ -66,6 +66,20 @@ describe('Toolbar', () => {
         assert.equal(icons[1].querySelector('img').src, 'data:image/png;base64,AAAA');
     });
 
+    it('loads no image the page CSP would block', () => {
+        const app = makeApp();
+        app.customToolbar = [
+            { key: 'b0', text: 'Remote', script: 'x',
+              icon: 'https://example.com/a.png', tooltip: '',
+              toggle: false, script_off: '', echo: false },
+        ];
+        createToolbar(app);
+
+        const icon = buttons()[0].querySelector('.toolbar-icon');
+        assert.equal(icon.querySelector('img'), null, 'no <img> for a URL');
+        assert.equal(icon.textContent, 'https://example.com/a.png');
+    });
+
     it('toggles between script and script_off, tracking active state', () => {
         const app = makeApp();
         app.customToolbar = [

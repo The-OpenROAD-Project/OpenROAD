@@ -12,6 +12,29 @@ export function isStaticMode(app) {
     return !!app?.websocketManager?.isStaticMode;
 }
 
+// Visibility keys that drive other keys here and never reach the wire, marked
+// by name the way selectability keys are marked with `s_`.  A list of them
+// would be a fourth place to remember a new one, and forgetting is silent:
+// the tile cache is keyed on the request JSON minus the flags the server
+// recognizes (request_handler.cpp), so a key it has never heard of survives
+// that subtraction and turns its own toggle into a full-screen cache miss.
+const CLIENT_ONLY_PREFIX = 'ui_';
+
+// The one message both hierarchy views show when their overlay is switched
+// off, so the two cannot drift apart on the name of the control to blame.
+export const HIERARCHY_OFF_HINT
+    = 'Hierarchy view is off — enable it in Display Controls';
+
+// The WebSocket for the page at `loc`, carrying the page's access token: the
+// server refuses the upgrade without it.
+export function websocketUrlFrom(loc) {
+    const scheme = loc?.protocol === 'https:' ? 'wss' : 'ws';
+    const host = loc?.host || 'localhost:8080';
+    const token = new URLSearchParams(loc?.search || '').get('token');
+    const query = token ? `?token=${encodeURIComponent(token)}` : '';
+    return `${scheme}://${host}/ws${query}`;
+}
+
 // Serialize the layer/selectability visibility flags the way the server
 // parses them: each visibility key as a boolean, each selectability key with
 // an `s_` prefix.  Callers add request-specific fields (visible_layers,
@@ -20,6 +43,7 @@ export function isStaticMode(app) {
 export function buildVisibilityFlags(visibility, selectability) {
     const vf = {};
     for (const [k, v] of Object.entries(visibility || {})) {
+        if (k.startsWith(CLIENT_ONLY_PREFIX)) continue;
         vf[k] = !!v;
     }
     for (const [k, v] of Object.entries(selectability || {})) {
@@ -195,6 +219,38 @@ export function onSelectionReset(app, fn) {
         app.selectionResetters = [];
     }
     app.selectionResetters.push(fn);
+}
+
+// Fit the map to a DBU rectangle [xMin, yMin, xMax, yMax].  Shared by the
+// Inspector's "Zoom to", the Clusters panel's double-click and the DRC widget.
+export function zoomToBBox(app, bbox, padding = 20) {
+    if (!bbox || !app || !app.map || !app.designScale) return;
+    const [x1, y1, x2, y2] = bbox;
+    app.map.fitBounds(
+        dbuRectToBounds(x1, y1, x2, y2, app.designScale, app.designMaxDXDY,
+                        app.designOriginX, app.designOriginY),
+        { padding: [padding, padding] });
+}
+
+// A busy cursor over the whole page while `fn` runs, as the Qt GUI sets a
+// wait cursor while it builds a timing report: a click whose answer takes
+// seconds on a large design otherwise looks ignored.  Counted, so overlapping
+// requests keep it until the last one ends; cleared when `fn` throws.
+// `root` is the element that carries the class (document.body in the page).
+const busyCounts = new WeakMap();
+
+export async function withBusyCursor(fn, root = document.body) {
+    busyCounts.set(root, (busyCounts.get(root) || 0) + 1);
+    root.classList.add('op-busy');
+    try {
+        return await fn();
+    } finally {
+        const count = busyCounts.get(root) - 1;
+        busyCounts.set(root, count);
+        if (count === 0) {
+            root.classList.remove('op-busy');
+        }
+    }
 }
 
 // Leaflet map options for the 2D layout viewer.
@@ -589,25 +645,122 @@ export function runTclScript(app, script, echo) {
         .catch(() => {});
 }
 
-// Make table column headers resizable by dragging.
-// widths is an optional array of CSS width strings (e.g. saved from a
-// previous render); when given, it is applied directly instead of
-// measuring natural widths, avoiding a forced reflow.
-export function makeResizableHeaders(table, widths) {
-    const headers = table.querySelectorAll('thead th');
-    if (!widths || !widths[0]) {
-        // Reset to auto layout so browser computes natural column widths;
-        // reading offsetWidth forces a reflow.
-        table.style.tableLayout = 'auto';
-        headers.forEach((th) => th.style.width = '');
-        widths = Array.from(headers, (th) => th.offsetWidth + 'px');
+// Column widths of a table that is rebuilt on every render.  The widget
+// keeps one per set of columns (a table with tabs keeps one per tab) and
+// passes it to every makeResizableHeaders() call for that table, so the
+// widths outlive the table element.
+//   dragged: every column's width once the user has dragged one, else null.
+//   auto:    the measured widths.  They only grow from render to render, so
+//            sorting, expanding a tree node or selecting another row does
+//            not move the columns; reset() measures afresh for new data.
+export class ColumnWidths {
+    constructor() {
+        this.dragged = null;
+        this.auto = null;
     }
-    // Lock in widths and switch to fixed layout
-    headers.forEach((th, i) => th.style.width = widths[i] || '');
+
+    reset() {
+        this.auto = null;
+    }
+}
+
+// A measured column is at most this wide; a longer name is elided and shown
+// in full in its cell's tooltip.
+export const kMaxAutoColumnPx = 480;
+
+// Each column's width from the browser's layout: the table is laid out at
+// its natural width, then every header cell is read.  Returns null when the
+// table has no layout (a hidden panel, or no layout engine at all).
+function layoutColumnWidths(table, headers) {
+    const saved = [table.style.tableLayout, table.style.width,
+                   table.style.minWidth];
+    table.style.tableLayout = 'auto';
+    table.style.width = 'max-content';
+    table.style.minWidth = '';
+    headers.forEach((th) => { th.style.width = ''; });
+    const widths = Array.from(headers, (th) => th.getBoundingClientRect().width);
+    [table.style.tableLayout, table.style.width, table.style.minWidth] = saved;
+    if (!widths.length || widths.every((w) => !w)) {
+        return null;
+    }
+    // the grip sits over the cell's right padding; leave room for it
+    return widths.map((w) => Math.min(Math.ceil(w) + 8, kMaxAutoColumnPx));
+}
+
+// A column's width from its text, for a table with no layout: a table filled
+// while its panel is hidden (a histogram click fills the timing table, then
+// shows it) reports every width as 0.  The longest of the header and the
+// first `kMeasureRows` rows, at the table's font size (monospace digits and
+// names are about 0.6 em a character), plus the cell padding and the grip.
+// A cell's own left padding (a tree indent) and its checkboxes and empty
+// spans (color swatches) are added too, at about 16 px each.
+const kMeasureRows = 200;
+const kInlineWidgetPx = 16;
+export function textColumnWidths(table) {
+    const headers = table.querySelectorAll('thead th');
+    let fontPx = 12;
+    try {
+        fontPx = parseFloat(getComputedStyle(table).fontSize) || 12;
+    } catch (e) { /* no getComputedStyle: 12 px */ }
+    const charPx = 0.6 * fontPx;
+    const cellPx = (cell) => {
+        const widgets = cell.querySelectorAll('input, span:empty').length;
+        return cell.textContent.length * charPx
+            + (parseFloat(cell.style.paddingLeft) || 0)
+            + widgets * kInlineWidgetPx;
+    };
+    const widest = Array.from(headers, cellPx);
+    const rows = table.querySelectorAll('tbody tr');
+    for (let r = 0; r < rows.length && r < kMeasureRows; r++) {
+        const cells = rows[r].children;
+        if (cells.length !== headers.length) continue;  // a colspan message
+        for (let i = 0; i < cells.length; i++) {
+            widest[i] = Math.max(widest[i], cellPx(cells[i]));
+        }
+    }
+    return widest.map((px) => Math.min(Math.ceil(px) + 24, kMaxAutoColumnPx));
+}
+
+// Make table column headers resizable by dragging.  `columns` is the
+// ColumnWidths the widget keeps for this table: once a column was dragged,
+// every column keeps its dragged width; until then each column is as wide
+// as its widest cell so far, at most kMaxAutoColumnPx.
+// Widening a column widens the table, as Qt's header view does, rather than
+// taking the width from the other columns.  The last column has no width of
+// its own and takes whatever the panel has left over, at least the width it
+// was measured or dragged to; the container scrolls sideways past that.
+export function makeResizableHeaders(table, columns = new ColumnWidths()) {
+    const headers = table.querySelectorAll('thead th');
+    const count = headers.length;
+    let widths;
+    if (columns.dragged?.length === count) {
+        widths = columns.dragged.slice();
+    } else {
+        const measured = layoutColumnWidths(table, headers)
+            ?? textColumnWidths(table);
+        if (columns.auto?.length === count) {
+            widths = measured.map((w, i) => Math.max(w, columns.auto[i]));
+        } else {
+            widths = measured;
+        }
+        columns.auto = widths.slice();
+    }
+    const last = count - 1;
+    // Lock in widths and switch to fixed layout.  A width includes the
+    // cell's padding, as measured, so the columns add up to the table width.
+    headers.forEach((th, i) => {
+        th.style.boxSizing = 'border-box';
+        th.style.width = i === last ? '' : widths[i] + 'px';
+    });
     table.style.tableLayout = 'fixed';
+    const fit = () => {
+        table.style.width = widths.reduce((sum, w) => sum + w, 0) + 'px';
+        table.style.minWidth = '100%';
+    };
+    fit();
+    showElidedText(table);
 
     headers.forEach((th, idx) => {
-        if (idx === headers.length - 1) return; // skip last column
         const grip = document.createElement('div');
         grip.className = 'col-resize-grip';
         th.style.position = 'relative';
@@ -615,7 +768,12 @@ export function makeResizableHeaders(table, widths) {
 
         let startX, startW;
         const onMouseMove = (e) => {
-            th.style.width = Math.max(30, startW + e.clientX - startX) + 'px';
+            widths[idx] = Math.max(30, startW + e.clientX - startX);
+            if (idx !== last) {
+                th.style.width = widths[idx] + 'px';
+            }
+            columns.dragged = widths.slice();
+            fit();
         };
         const onMouseUp = () => {
             document.removeEventListener('mousemove', onMouseMove);
@@ -636,86 +794,37 @@ export function makeResizableHeaders(table, widths) {
         grip.addEventListener('mousedown', (e) => {
             e.preventDefault();
             startX = e.clientX;
-            startW = th.offsetWidth;
+            // A stretched last column starts from its shown width, so a
+            // drag moves its edge from where the user sees it.
+            startW = th.offsetWidth || widths[idx];
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('mouseup', onMouseUp);
         });
     });
 }
 
-// ─── Panel tab icons ────────────────────────────────────────────────────────
-
-// A 16-viewBox stroke glyph per panel, keyed by the tab title in
-// defaultLayoutConfig (and in componentTitles, which must agree).  A stack can
-// hold six panels whose titles all read alike at tab width; the icon is what
-// makes one findable at a glance.
-const kPanelIconPaths = {
-    'Layout':           '<rect x="2.5" y="2.5" width="19" height="19" rx="2"/>'
-                        + '<path d="M2.5 9h19M9 2.5v19"/>',
-    'Schematic':        '<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/>'
-                        + '<path d="M6 15.5V8a2 2 0 012-2h7.5"/>',
-    '3D Viewer':        '<path d="M12 2.5l9 5v9l-9 5-9-5v-9z"/><path d="M12 12l9-4.5M12 12v9.5M12 12L3 7.5"/>',
-    'Display Controls': '<path d="M3 6h18M3 12h18M3 18h18"/><circle cx="8" cy="6" r="2"/>'
-                        + '<circle cx="15" cy="12" r="2"/><circle cx="10" cy="18" r="2"/>',
-    'Inspector':        '<path d="M4 6h16M4 12h16M4 18h10"/>',
-    'Hierarchy':        '<path d="M5 4v13a2 2 0 002 2h4M5 10h6"/>'
-                        + '<rect x="13" y="2" width="7" height="5" rx="1"/>'
-                        + '<rect x="13" y="15" width="7" height="5" rx="1"/>',
-    'Timing':           '<path d="M2 14h5l3-8 4 14 3-6h5"/>',
-    'DRC':              '<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/>',
-    'Select Highlight': '<path d="M4 3l14 9-6 1 4 7-3 2-4-7-5 4z"/>',
-    'Clock Tree':       '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
-    'Charts':           '<path d="M4 20V10M10 20V4M16 20v-7M22 20V7"/>',
-    'Tcl Console':      '<path d="M5 8l4 4-4 4M12 16h7"/>',
-    'Help':             '<circle cx="12" cy="12" r="9"/>'
-                        + '<path d="M9.5 9.5a2.5 2.5 0 115 .5c0 1.5-2.5 2-2.5 3.5M12 17h.01"/>',
-};
-
-// Build the icon element for a tab title, or null when the title has none --
-// a Tcl-added panel, say, which should get a plain tab rather than a wrong
-// icon.
-export function panelTabIcon(title) {
-    const path = kPanelIconPaths[title];
-    if (!path) return null;
-    const span = document.createElement('span');
-    span.className = 'or-tab-icon';
-    span.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"'
-        + ' stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"'
-        + ' aria-hidden="true">' + path + '</svg>';
-    return span;
+// A cell whose text is elided shows it in full as its tooltip.  The title
+// is set on hover, when the cell's layout is known.
+function showElidedText(table) {
+    if (table.dataset.elidedTooltips) return;  // the table is re-rendered
+    table.dataset.elidedTooltips = '1';
+    table.addEventListener('mouseover', (e) => {
+        const td = e.target.closest?.('td');
+        if (!td || td.hasAttribute('title')) return;
+        if (td.scrollWidth > td.clientWidth) {
+            td.title = td.textContent;
+        }
+    });
 }
 
-// Prepend the icon to every tab that does not have one yet, and return how
-// many were added.  Idempotent, so it can be called again after any layout
-// change -- Golden Layout rebuilds tab elements when a stack is dragged, split
-// or reordered -- without accumulating icons.  Titles are read from .lm_title
-// rather than from the component, so the overflow dropdown's tabs are
-// decorated by the same pass.
-//
-// The return value matters: an icon widens its tab, and Golden Layout decides
-// which tabs fit in a header before these exist, so the caller has to make it
-// measure again.  Reporting zero when there was nothing to do is what keeps
-// that re-measure from looping through the layout event that triggered it.
+// Legacy compatibility stubs for panel tab icons.
+// Tab icons are managed natively via TabIcon in grid-layout.js and <ide-tab>.
+export function panelTabIcon(title) {
+    return null;
+}
+
 export function decorateTabIcons(root = document) {
-    let added = 0;
-    for (const tab of root.querySelectorAll('.lm_tab:not([data-or-icon])')) {
-        const titleEl = tab.querySelector('.lm_title');
-        if (!titleEl) continue;
-        const title = titleEl.textContent.trim();
-        // An empty title means the tab is not built yet.  Marking it now would
-        // spend its one chance at an icon on a title we cannot match, so leave
-        // it for the next layout change.
-        if (!title) continue;
-        // Mark before the lookup, so a title with no icon of its own is not
-        // re-examined on every subsequent layout change.
-        tab.setAttribute('data-or-icon', '');
-        const icon = panelTabIcon(title);
-        if (icon) {
-            tab.insertBefore(icon, titleEl);
-            added++;
-        }
-    }
-    return added;
+    return 0;
 }
 
 // Qt's LayoutScroll::wheelEvent, ported.  The preference and the Ctrl modifier
@@ -733,7 +842,7 @@ export function installWheelPanning(map, wheelZoomEnabled) {
     map.getContainer().addEventListener('wheel', (e) => {
         e.preventDefault();
         if (wheelZoomEnabled() === e.ctrlKey) {
-            const [dx, dy] = wheelDeltaPx(e, map.getContainer());
+            const [dx, dy] = wheelDeltaPx(e, () => map.getContainer().clientHeight);
             map.panBy([dx, dy], { animate: false });
             return;
         }
@@ -746,14 +855,16 @@ export function installWheelPanning(map, wheelZoomEnabled) {
 // A wheel event's scroll amount in CSS pixels.  deltaMode is not always pixels:
 // Firefox reports lines, and a page-mode event (rare, but produced by some
 // remote-desktop stacks) means a viewport at a time.  Treating either as pixels
-// would make one notch pan by a couple of pixels.
-function wheelDeltaPx(e, container) {
+// would make one notch pan by a couple of pixels.  `pagePx()` gives the
+// viewport's size along the direction the caller scrolls; it is called only
+// for page-mode events, keeping the layout read off the common path.
+export function wheelDeltaPx(e, pagePx) {
     const kLineHeightPx = 16;
     let scale = 1;
     if (e.deltaMode === 1) {
         scale = kLineHeightPx;
     } else if (e.deltaMode === 2) {
-        scale = container.clientHeight || kLineHeightPx;
+        scale = pagePx() || kLineHeightPx;
     }
     return [e.deltaX * scale, e.deltaY * scale];
 }

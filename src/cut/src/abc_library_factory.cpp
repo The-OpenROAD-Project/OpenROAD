@@ -117,6 +117,19 @@ static bool HasNonInputOutputPorts(sta::LibertyCell* cell)
   return false;
 }
 
+static bool HasOutputWithoutFunction(sta::LibertyCell* cell)
+{
+  sta::LibertyCellPortIterator cell_port_iterator(cell);
+  while (cell_port_iterator.hasNext()) {
+    sta::LibertyPort* port = cell_port_iterator.next();
+    if (port->direction()->isOutput() && port->function() == nullptr) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 static bool isCompatibleWithAbc(sta::LibertyCell* cell, rsz::Resizer* resizer)
 {
   if (resizer != nullptr && resizer->dontUse(cell)) {
@@ -133,6 +146,12 @@ static bool isCompatibleWithAbc(sta::LibertyCell* cell, rsz::Resizer* resizer)
   }
 
   if (HasNonInputOutputPorts(cell)) {
+    return false;
+  }
+
+  // ABC needs the Boolean function of every output (e.g. power-gating
+  // fillers have none).
+  if (HasOutputWithoutFunction(cell)) {
     return false;
   }
 
@@ -609,7 +628,7 @@ void AbcLibrary::InitializeConstGates()
     for (int i = current_cell->n_inputs;
          i < current_cell->n_inputs + current_cell->n_outputs;
          i++) {
-      abc::SC_Pin* pin = abc::SC_CellPin(current_cell, 0);
+      abc::SC_Pin* pin = abc::SC_CellPin(current_cell, i);
       // In ABC land we store the right hand side of the truth
       // table in a bit vector sort of thing. Since the const
       // cell has less than 6 inputs its truth table should be
@@ -618,11 +637,13 @@ void AbcLibrary::InitializeConstGates()
       abc::word constant_1 = ~constant_0;
       abc::word truth_table = abc::Vec_WrdEntry(&pin->vFunc, 0);
       if (truth_table == constant_0) {
-        const0_gates_.insert(current_cell->pName);
+        const0_gates_.insert(
+            {current_cell->pName, abc::SC_CellPinName(current_cell, i)});
       }
 
       if (truth_table == constant_1) {
-        const1_gates_.insert(current_cell->pName);
+        const1_gates_.insert(
+            {current_cell->pName, abc::SC_CellPinName(current_cell, i)});
       }
     }
   }
@@ -694,24 +715,27 @@ std::pair<abc::SC_Cell*, abc::SC_Pin*> AbcLibrary::ConstantOneCell()
   return const1_cell_.value();
 }
 
-bool AbcLibrary::IsConst0Cell(const std::string& cell_name)
+bool AbcLibrary::IsConst0Port(const std::string& cell_name,
+                              const std::string& port_name)
 {
   if (!const_gates_initalized_) {
     InitializeConstGates();
   }
-  return const0_gates_.find(cell_name) != const0_gates_.end();
+  if (auto it = const0_gates_.find(cell_name); it != const0_gates_.end()) {
+    return it->second == port_name;
+  }
+  return false;
 }
-bool AbcLibrary::IsConst1Cell(const std::string& cell_name)
+bool AbcLibrary::IsConst1Port(const std::string& cell_name,
+                              const std::string& port_name)
 {
   if (!const_gates_initalized_) {
     InitializeConstGates();
   }
-  return const1_gates_.find(cell_name) != const1_gates_.end();
-}
-
-bool AbcLibrary::IsConstCell(const std::string& cell_name)
-{
-  return IsConst1Cell(cell_name) || IsConst0Cell(cell_name);
+  if (auto it = const1_gates_.find(cell_name); it != const1_gates_.end()) {
+    return it->second == port_name;
+  }
+  return false;
 }
 
 static bool abc_initialized = false;
