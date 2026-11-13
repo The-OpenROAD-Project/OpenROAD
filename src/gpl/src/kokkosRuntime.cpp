@@ -17,7 +17,12 @@ void ensureKokkosInitialized(std::optional<int> num_threads)
       return;
     }
     Kokkos::InitializationSettings settings;
+    // Keep Kokkos warnings enabled when GPU build is enabled. In particular,
+    // Kokkos reports when the compiled CUDA architecture differs from the selected device.
+    // Compatible architectures can still run, but the mismatch may reduce performance.
+    #ifndef ENABLE_GPU
     settings.set_disable_warnings(true);
+    #endif
     if (num_threads) {
       settings.set_num_threads(*num_threads);
     }
