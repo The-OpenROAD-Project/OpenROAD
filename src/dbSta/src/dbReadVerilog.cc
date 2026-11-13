@@ -1228,6 +1228,7 @@ void Verilog2db::makeUnusedBlock(const char* name)
 //
 void Verilog2db::makeUnusedDbNetlist()
 {
+  mod_nets_.clear();
   recordBusPortsOrder();
   Instance* inst = network_->topInstance();
   dbModule* module = block_->getTopModule();
