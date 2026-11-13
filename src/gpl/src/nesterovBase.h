@@ -786,6 +786,9 @@ class BinGrid
  private:
   std::vector<Bin> bins_;
   std::shared_ptr<PlacerBase> pb_;
+  // Per-bin overflow scratch buffers, reused across Nesterov iterations
+  std::vector<float> overflowAreas_;
+  std::vector<float> overflowAreasUnscaled_;
   utl::Logger* log_ = nullptr;
   int lx_ = 0;
   int ly_ = 0;

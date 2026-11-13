@@ -1111,8 +1111,8 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
   sumOverflowAreaUnscaled_ = 0;
   // update density and overflowArea
   // for nesterov use and FFT library
-  std::vector<float> overflowAreas(bins_.size());
-  std::vector<float> overflowAreasUnscaled(bins_.size());
+  overflowAreas_.resize(bins_.size());
+  overflowAreasUnscaled_.resize(bins_.size());
   Kokkos::parallel_for(
       "gpl::updateBinDensity",
       HostRange(kokkos_ctx.space, 0, bins_.size()),
@@ -1135,14 +1135,14 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
             0.0f,
             static_cast<float>(bin.instPlacedArea())
                 + static_cast<float>(bin.getNonPlaceArea()) - scaledBinArea);
-        overflowAreas[index] = overflowArea;
+        overflowAreas_[index] = overflowArea;
 
         const float overflowAreaUnscaled
             = std::max(0.0f,
                        static_cast<float>(bin.getInstPlacedAreaUnscaled())
                            + static_cast<float>(bin.getNonPlaceAreaUnscaled())
                            - scaledBinArea);
-        overflowAreasUnscaled[index] = overflowAreaUnscaled;
+        overflowAreasUnscaled_[index] = overflowAreaUnscaled;
         if (overflowAreaUnscaled > 0) {
           debugPrint(log_,
                      GPL,
@@ -1169,10 +1169,10 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
                      block->dbuAreaToMicrons(bin.getNonPlaceAreaUnscaled()));
         }
       });
-  for (float overflowArea : overflowAreas) {
+  for (float overflowArea : overflowAreas_) {
     sumOverflowArea_ += overflowArea;
   }
-  for (float overflowAreaUnscaled : overflowAreasUnscaled) {
+  for (float overflowAreaUnscaled : overflowAreasUnscaled_) {
     sumOverflowAreaUnscaled_ += overflowAreaUnscaled;
   }
 }
