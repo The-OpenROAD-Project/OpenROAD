@@ -204,7 +204,7 @@ Render a single 256×256 PNG tile of the layout.
 
 | Field            | Type     | Required | Description |
 | ---------------- | -------- | :------: | ----------- |
-| `layer`          | `string` |    ✓     | Layer name (`metal1`, `metal2`, …) or one of the synthetic layers `_instances`, `_modules`, `_pins`, or `_overlay`. |
+| `layer`          | `string` |    ✓     | Layer name (`metal1`, `metal2`, …) or one of the synthetic layers `_instances`, `_modules`, `_clusters`, `_pins`, or `_overlay`. |
 | `z`              | `int`    |    ✓     | Leaflet tile zoom level (0 = whole design). |
 | `x`              | `int`    |    ✓     | Tile column at zoom `z`. |
 | `y`              | `int`    |    ✓     | Tile row at zoom `z`. |
@@ -240,6 +240,17 @@ layer's geometry.
 **Response:** PNG image (frame type `1`), or frame type `3` with no body
 when nothing is highlighted in this tile — which is the usual case, since
 the overlay holds nothing at all until something is selected.
+
+The `_modules` and `_clusters` layers color each instance by its `dbModule` /
+`dbGroup`, and each draws only while its own flag (`module_view` /
+`cluster_view`) is true and the session holds a color map (`set_module_colors` /
+`set_group_colors`); otherwise the tile comes back fully transparent.  Clients
+should therefore keep both layers mounted and toggle the flag, not the layer:
+making the map's layer set a second record of the flag is what let the viewer's
+hierarchy coloring checkbox get stuck until a page reload.  The viewer drives
+both flags from one "Hierarchy view" checkbox and the Hierarchy tab's active
+source, so at most one of them is ever true there; a Tcl or test client is free
+to set both.
 
 ### `bounds`
 
@@ -788,11 +799,11 @@ Highlight a single clock-tree node's instance in the layout.
 
 ---
 
-## Module hierarchy
+## Module and cluster hierarchy
 
 ### `module_hierarchy`
 
-Return the module hierarchy tree (left sidebar).
+Return the `dbModule` tree (Verilog Modules view of the Hierarchy panel).
 
 No request fields.
 
@@ -825,6 +836,76 @@ layer).
 | `colors` | `string` |    ✓     | Custom delimited form: `<id>:<r>,<g>,<b>,<a>;<id>:<r>,<g>,<b>,<a>;...`. Empty = clear all. |
 
 **Response (JSON):** `{"ok": 1, "count": <updated module count>}`.
+
+### `group_hierarchy`
+
+Return the `dbGroup` tree (Instance Groups view of the Hierarchy panel).  Every group in the block
+is reported, whatever created it — power/voltage domains, regions, or the
+nested `VISUAL_DEBUG` clustering `rtl_macro_placer -keep_clustering_data`
+writes — distinguished by `type`.  Nodes are in DFS order, so a parent always
+precedes its children.
+
+No request fields.
+
+**Response (JSON):**
+```json
+{
+  "nodes": [
+    {
+      "id": 0, "parent_id": -1,
+      "name":  "root", "type": "VISUAL_DEBUG",
+      "odb_id": 42,
+      "insts": 1234, "macros": 2, "groups": 7,   // hierarchical
+      "area":  1.23,                              // μm², hierarchical
+      "local_insts": 100, "local_macros": 0, "local_groups": 3,
+      "bbox":  [xMin, yMin, xMax, yMax],          // members, recursive; zeros when empty
+      "color": [r, g, b]
+    },
+    ...
+  ]
+}
+```
+
+### `set_group_colors`
+
+Update the per-cluster color override map (for the `_clusters` tile layer).
+Same payload shape as `set_module_colors`, keyed by `dbGroup` id.
+
+| Field    | Type     | Required | Description                                                                                  |
+| -------- | -------- | :------: | -------------------------------------------------------------------------------------------- |
+| `colors` | `string` |    ✓     | Custom delimited form: `<id>:<r>,<g>,<b>,<a>;<id>:<r>,<g>,<b>,<a>;...`. Empty = clear all. |
+
+**Response (JSON):** `{"ok": 1, "count": <updated cluster count>}`.
+
+### `find`
+
+Select every object of one type whose name matches a pattern — the
+counterpart of the Qt GUI's Find dialog.  The matches are added to the
+selection rather than replacing it, as in the Qt GUI.
+
+| Field        | Type     | Required | Description                                                  |
+| ------------ | -------- | :------: | ------------------------------------------------------------ |
+| `obj_type`   | `string` |    ✓     | `inst`, `net` or `port`. Note it is *not* `type`, which the envelope uses. |
+| `pattern`    | `string` |    ✓     | Unix glob (`*`, `?`, `[...]`); a plain name matches only itself. |
+| `match_case` | `bool`   |    —     | Default `false`.                                              |
+| `use_dbu`    | `bool`   |    —     | Same as `inspect`.                                            |
+
+**Response (JSON):** `count` (every match) and `truncated` (`true` when more
+than 1000 matched; only the first 1000 are selected), `selection_count`,
+`sel_has_inst` and `sel_has_net`.  When something matched it also carries the
+inspect payload of the first match and `selection_index`.  Errors on an unknown
+`obj_type`.
+
+### `clear_highlights`
+
+Drop the members of the colored highlight groups.  The selection is separate
+state and is left alone.
+
+| Field   | Type  | Required | Description                                                     |
+| ------- | ----- | :------: | --------------------------------------------------------------- |
+| `group` | `int` |    —     | `0..15` to clear just that group; `-1` (default) clears them all. |
+
+**Response (JSON):** `{"ok": 1, "cleared": <members removed>}`.
 
 ### `set_focus_nets`
 
