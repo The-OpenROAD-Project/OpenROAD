@@ -251,6 +251,7 @@ cc_library(
 # headers to consumers, so direct binary deps are what each Main.cc
 # include needs to see.
 OPENROAD_MAIN_DEPS = [
+    ":libcxx_abort",
     ":ord",
     ":tcl_readline_setup",
     "//bazel:tcl_library_init",
@@ -261,6 +262,19 @@ OPENROAD_MAIN_DEPS = [
     "@abseil-cpp//absl/base:no_destructor",
     "@tcl_lang//:tcl",
 ]
+
+cc_library(
+    name = "libcxx_abort",
+    srcs = ["src/LibcxxAbort.cc"],
+    hdrs = ["src/LibcxxAbort.h"],
+    includes = ["src"],
+    visibility = ["//src/utl/test:__pkg__"],
+    deps = [
+        ":ord",
+        "//src/utl",
+    ],
+    alwayslink = True,
+)
 
 # Linked with a placeholder version; :openroad writes the version in after
 # the link (see bazel/stamped_binary.bzl).

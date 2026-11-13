@@ -10,7 +10,6 @@
 #include <climits>
 #include <clocale>
 #include <csignal>
-#include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -91,36 +90,6 @@ struct TechAndDesign
 };
 
 static absl::NoDestructor<TechAndDesign> the_tech_and_design;
-
-#if defined(_LIBCPP_VERSION)
-// Replaces libc++'s weak default, which a failed hardening check calls under
-// the "enforce" assertion semantic. Report it through the logger so it lands
-// in the log file; fall back to stderr before the logger exists.
-[[noreturn]] void std::__libcpp_verbose_abort(const char* format, ...) noexcept
-{
-  std::array<char, 1024> buffer{};
-  va_list args;
-  va_start(args, format);
-  std::vsnprintf(buffer.data(), buffer.size(), format, args);
-  va_end(args);
-  std::string message(buffer.data());
-  while (!message.empty() && message.back() == '\n') {
-    message.pop_back();
-  }
-
-  const std::string trace = utl::stackTrace();
-
-  ord::OpenRoad* app = ord::OpenRoad::openRoad();
-  utl::Logger* logger = app ? app->getLogger() : nullptr;
-  if (logger) {
-    logger->report("Stack trace:\n{}", trace);
-    logger->critical(utl::ORD, 2055, "libc++ check failed: {}", message);
-  }
-  std::cerr << "Stack trace:\n"
-            << trace << "libc++ check failed: " << message << '\n';
-  std::abort();
-}
-#endif
 
 static void handler(int sig)
 {
