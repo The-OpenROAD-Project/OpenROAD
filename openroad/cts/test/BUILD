@@ -294,6 +294,19 @@ cc_test(
 )
 
 cc_test(
+    name = "TestClockGateSinks",
+    srcs = ["cpp/TestClockGateSinks.cc"],
+    data = ["cpp/clock_gate_sinks.v"],
+    deps = [
+        "//openroad/cts:cts_impl",
+        "//openroad/odb/src/db",
+        "//openroad/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestDelayBufList",
     srcs = ["cpp/TestDelayBufList.cc"],
     data = [
