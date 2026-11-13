@@ -25,6 +25,7 @@ COMPULSORY_TESTS = [
     "check8",
     "check9",
     "check_fixed_only",
+    "check_offrow_block_padding",
     "check_placeable_only",
     "diamond01",
     "diamond_multi_height",
@@ -175,6 +176,9 @@ filegroup(
             ],
             "check_fixed_only": [
                 "extra.lef",
+            ],
+            "check_offrow_block_padding": [
+                "offrow_block.lef",
             ],
             "check_placeable_only": [
                 "check_fixed_only.def",

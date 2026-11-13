@@ -20,6 +20,7 @@
 #include "boost/geometry/index/predicates.hpp"
 #include "boost/geometry/index/rtree.hpp"
 #include "dpl/Opendp.h"
+#include "infrastructure/Coordinates.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"
@@ -1182,7 +1183,8 @@ bool PlacementDRC::hasPaddingConflict(const Node* cell,
 
 bool PlacementDRC::checkPadding(const Node* cell) const
 {
-  return checkPadding(cell, grid_->gridX(cell), grid_->gridRoundY(cell));
+  // Use the same approach as grid pixel painting, using gridCovering.
+  return checkPadding(cell, grid_->gridCovering(cell));
 }
 
 // CLASSes are grouped as follows
@@ -1206,15 +1208,24 @@ bool PlacementDRC::checkPadding(const Node* cell,
                                 const GridX x,
                                 const GridY y) const
 {
-  const GridX cell_x_end = x + grid_->gridWidth(cell);
-  const GridY cell_y_end
-      = grid_->gridEndY(grid_->gridYToDbu(y) + cell->getHeight());
+  return checkPadding(
+      cell,
+      GridRect{
+          .xlo = x,
+          .ylo = y,
+          .xhi = x + grid_->gridWidth(cell),
+          .yhi = grid_->gridEndY(grid_->gridYToDbu(y) + cell->getHeight()),
+      });
+}
 
+bool PlacementDRC::checkPadding(const Node* cell, const GridRect& rect) const
+{
   // Get the cell's padding requirements
   const GridX left_pad = padding_->padLeft(cell);
   const GridX right_pad = padding_->padRight(cell);
-  for (GridX grid_x{x - left_pad}; grid_x < cell_x_end + right_pad; grid_x++) {
-    for (GridY grid_y{y}; grid_y < cell_y_end; grid_y++) {
+  for (GridX grid_x{rect.xlo - left_pad}; grid_x < rect.xhi + right_pad;
+       grid_x++) {
+    for (GridY grid_y{rect.ylo}; grid_y < rect.yhi; grid_y++) {
       const Pixel* pixel = grid_->gridPixel(grid_x, grid_y);
       if (pixel == nullptr) {  // at the core edge
         continue;
