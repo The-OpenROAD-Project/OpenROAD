@@ -16,6 +16,7 @@
 
 #include "backend_builder.h"
 #include "blackboxes.h"
+#include "diag.h"
 #include "slang/ast/Compilation.h"
 #include "slang/ast/SemanticFacts.h"
 #include "slang/ast/symbols/CompilationUnitSymbols.h"
@@ -48,6 +49,8 @@ std::unique_ptr<Graph> elaborateImpl(utl::Logger* logger,
 
   SynthesisSettings settings;
   settings.addOptions(driver.cmdLine);
+
+  diag::setup_messages(driver.diagEngine);
 
   if (buffer) {
     // Feed the source text directly into slang's source manager.
