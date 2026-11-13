@@ -16,11 +16,15 @@ def main():
 
     with tempfile.TemporaryDirectory() as directory:
         log_file = Path(directory) / "hardening.log"
-        logged = subprocess.run([sys.argv[1], str(log_file)], capture_output=True, text=True)
+        logged = subprocess.run(
+            [sys.argv[1], str(log_file)], capture_output=True, text=True
+        )
         assert logged.returncode == 1, logged
         contents = log_file.read_text()
         assert "Stack trace:\ntest frame" in contents, contents
-        assert "[CRITICAL ORD-2055] libc++ check failed: test condition" in contents, contents
+        assert (
+            "[CRITICAL ORD-2055] libc++ check failed: test condition" in contents
+        ), contents
 
 
 if __name__ == "__main__":
