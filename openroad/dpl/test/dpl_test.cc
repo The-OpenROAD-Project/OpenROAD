@@ -576,6 +576,31 @@ TEST_F(CheckPlacementTest, LegalCellPosAfterFixedOnlyCheckLeavesMacro)
   EXPECT_FALSE(buf->getBBox()->getBox().overlaps(macro_box));
 }
 
+TEST_F(CheckPlacementTest, LegalCellPosWithoutGridLeavesMacro)
+{
+  // No dpl command has run, so the grid was never made. The resizer calls
+  // legalCellPos for a buffer it inserted under global route parasitics,
+  // and the cell must be moved off a macro, which legalCellPos finds in the
+  // pixels.
+  odb::dbInst* macro = makeCell("BLOCK1",
+                                "macro",
+                                {kCoreX + 10 * kSiteWidth, kCoreY},
+                                odb::dbPlacementStatus::FIRM);
+  odb::dbInst* buf = makeCell("BUF_X1",
+                              "buf",
+                              {kCoreX + 11 * kSiteWidth, kCoreY + kRowHeight},
+                              odb::dbPlacementStatus::PLACED);
+  ASSERT_NE(macro, nullptr);
+  ASSERT_NE(buf, nullptr);
+
+  const odb::Rect macro_box = macro->getBBox()->getBox();
+  ASSERT_TRUE(buf->getBBox()->getBox().overlaps(macro_box));
+
+  dp_.legalCellPos(buf);
+
+  EXPECT_FALSE(buf->getBBox()->getBox().overlaps(macro_box));
+}
+
 TEST_F(CheckPlacementTest, LegalCellPosRebuildsReleasedGridOnce)
 {
   // detailed_placement frees the pixels on return. The first legalCellPos
