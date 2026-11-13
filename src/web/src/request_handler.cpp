@@ -6238,7 +6238,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     SessionState::OwnerColors& owner
         = modules_layer ? state.module_colors : state.group_colors;
     {
-      std::lock_guard<std::mutex> lock(owner.mutex);
+      std::scoped_lock lock(owner.mutex);
       overlay_colors = owner.colors;
     }
     // Nothing synced: paint the palette the panel starts from, so the checkbox
@@ -6953,7 +6953,7 @@ WebSocketResponse TileHandler::handleSetOwnerColors(
 
   const int count = static_cast<int>(colors->size());
   {
-    std::lock_guard<std::mutex> lock(owner.mutex);
+    std::scoped_lock lock(owner.mutex);
     owner.colors = std::move(colors);
   }
 

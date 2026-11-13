@@ -202,7 +202,7 @@ namespace {
 // The block a group hangs off, for the callback loops below.
 _dbBlock* groupBlock(dbGroup* group)
 {
-  return (_dbBlock*) ((_dbGroup*) group)->getOwner();
+  return static_cast<_dbBlock*>(reinterpret_cast<_dbGroup*>(group)->getOwner());
 }
 }  // namespace
 
@@ -492,7 +492,7 @@ dbGroup* dbGroup::create(dbBlock* block, const char* name)
   _group->flags_.type = dbGroupType::PHYSICAL_CLUSTER;
   _block->group_hash_.insert(_group);
   for (auto callback : _block->callbacks_) {
-    callback->inDbGroupCreate((dbGroup*) _group);
+    callback->inDbGroupCreate(reinterpret_cast<dbGroup*>(_group));
   }
   return (dbGroup*) _group;
 }
@@ -509,7 +509,7 @@ dbGroup* dbGroup::create(dbGroup* parent, const char* name)
   _group->flags_.type = dbGroupType::PHYSICAL_CLUSTER;
   _block->group_hash_.insert(_group);
   for (auto callback : _block->callbacks_) {
-    callback->inDbGroupCreate((dbGroup*) _group);
+    callback->inDbGroupCreate(reinterpret_cast<dbGroup*>(_group));
   }
   parent->addGroup((dbGroup*) _group);
   return (dbGroup*) _group;
@@ -527,7 +527,7 @@ dbGroup* dbGroup::create(dbRegion* region, const char* name)
   _group->flags_.type = dbGroupType::PHYSICAL_CLUSTER;
   _block->group_hash_.insert(_group);
   for (auto callback : _block->callbacks_) {
-    callback->inDbGroupCreate((dbGroup*) _group);
+    callback->inDbGroupCreate(reinterpret_cast<dbGroup*>(_group));
   }
   region->addGroup((dbGroup*) _group);
   return (dbGroup*) _group;

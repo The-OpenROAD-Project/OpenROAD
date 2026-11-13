@@ -554,7 +554,7 @@ std::vector<char> hasChildrenByIndex(const size_t node_count,
 {
   std::vector<char> has_children(node_count, 0);
   for (const int parent_id : parent_ids) {
-    if (parent_id >= 0 && static_cast<size_t>(parent_id) < node_count) {
+    if (parent_id >= 0 && std::cmp_less(parent_id, node_count)) {
       has_children[parent_id] = 1;
     }
   }
@@ -580,19 +580,19 @@ std::map<uint32_t, Color> computeEffectiveOwnerColors(
     // id == index, so a parent is always already resolved.  The guard keeps a
     // producer that reorders the vector from reading entries not yet written;
     // the assert makes that a test failure instead of silently wrong colors.
-    const bool has_parent
-        = node.parent >= 0 && static_cast<size_t>(node.parent) < i;
+    const bool has_parent = node.parent >= 0 && std::cmp_less(node.parent, i);
     assert(node.parent < 0 || has_parent);
     inheriting[i]
         = has_parent
           && (nodes[node.parent].collapsed || inheriting[node.parent]);
     const std::optional<Color> from_ancestor
         = inheriting[i] ? paint[node.parent] : std::nullopt;
-    paint[i] = from_ancestor    ? from_ancestor
-               : node.has_color ? std::optional<Color>(node.color)
-                                : std::nullopt;
     if (node.has_color) {
-      colors[node.odb_id] = *paint[i];
+      const Color color = from_ancestor.value_or(node.color);
+      paint[i] = color;
+      colors[node.odb_id] = color;
+    } else {
+      paint[i] = from_ancestor;
     }
   }
   return colors;
@@ -621,12 +621,13 @@ std::map<uint32_t, Color> computeDefaultModuleColors(
     const bool folder = n.node_kind == HierarchyNodeKind::kLeafGroup
                         || n.node_kind == HierarchyNodeKind::kTypeGroup;
     const bool colorable = isColorable(n.node_kind);
-    nodes.push_back(
-        {.parent = n.parent_id,
-         .odb_id = n.odb_id,
-         .color = n.color,
-         .collapsed = kids && (folder || (colorable && n.parent_id >= 0)),
-         .has_color = colorable});
+    nodes.push_back({
+        .parent = n.parent_id,
+        .odb_id = n.odb_id,
+        .color = n.color,
+        .collapsed = kids && (folder || (colorable && n.parent_id >= 0)),
+        .has_color = colorable,
+    });
   }
   // getReport() emits nodes in DFS order with id == index, which is the
   // parent-before-child order computeEffectiveOwnerColors requires.

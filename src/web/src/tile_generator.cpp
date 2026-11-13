@@ -2562,7 +2562,7 @@ TileGenerator::OwnerColorMap TileGenerator::defaultModuleColors() const
     return nullptr;
   }
   const uint64_t rev = search_->revision();
-  std::lock_guard lock(overlay_cache_mutex_);
+  std::scoped_lock lock(overlay_cache_mutex_);
   dropOverlayCachesIfStale(rev);
   if (!default_module_colors_) {
     HierarchyResult result = HierarchyReport(block, sta_).getReport();
@@ -2587,7 +2587,7 @@ TileGenerator::OwnerColorMap TileGenerator::defaultGroupColors() const
     return nullptr;
   }
   const uint64_t rev = search_->revision();
-  std::lock_guard lock(overlay_cache_mutex_);
+  std::scoped_lock lock(overlay_cache_mutex_);
   dropOverlayCachesIfStale(rev);
   if (!default_group_colors_) {
     default_group_colors_ = std::make_shared<const std::map<uint32_t, Color>>(
@@ -2600,7 +2600,7 @@ TileGenerator::BpinApList TileGenerator::bpinAccessPoints(
     odb::dbBlock* block) const
 {
   const uint64_t rev = search_->revision();
-  std::lock_guard lock(overlay_cache_mutex_);
+  std::scoped_lock lock(overlay_cache_mutex_);
   dropOverlayCachesIfStale(rev);
   auto [it, inserted] = bpin_ap_cache_.try_emplace(block);
   if (inserted) {
@@ -2631,7 +2631,7 @@ TileGenerator::GridList TileGenerator::gcellGrid(
     const std::function<void(odb::dbGCellGrid*, std::vector<int>&)>& fill) const
 {
   const uint64_t rev = search_->revision();
-  std::lock_guard lock(overlay_cache_mutex_);
+  std::scoped_lock lock(overlay_cache_mutex_);
   dropOverlayCachesIfStale(rev);
   auto [it, inserted] = cache.try_emplace(block);
   if (inserted) {
@@ -5232,16 +5232,18 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             continue;
           }
           const Color& c = it->second;
-          const int pxl
-              = std::max(0, (int) ((inst_bbox.xMin() - dbu_x_min) * scale));
-          const int pyl
-              = std::max(0, (int) ((inst_bbox.yMin() - dbu_y_min) * scale));
+          const int pxl = std::max(
+              0, static_cast<int>((inst_bbox.xMin() - dbu_x_min) * scale));
+          const int pyl = std::max(
+              0, static_cast<int>((inst_bbox.yMin() - dbu_y_min) * scale));
           const int pxh = std::min(
               draw_px - 1,
-              (int) std::ceil((inst_bbox.xMax() - dbu_x_min) * scale));
+              static_cast<int>(
+                  std::ceil((inst_bbox.xMax() - dbu_x_min) * scale)));
           const int pyh = std::min(
               draw_px - 1,
-              (int) std::ceil((inst_bbox.yMax() - dbu_y_min) * scale));
+              static_cast<int>(
+                  std::ceil((inst_bbox.yMax() - dbu_y_min) * scale)));
           for (int iy = pyl; iy < pyh; ++iy) {
             for (int ix = pxl; ix < pxh; ++ix) {
               blendPixel(image_buffer, ix, draw_px - 1 - iy, c, draw_px);
@@ -5285,16 +5287,18 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             continue;
           }
           const Color c = it->second;
-          const int pxl
-              = std::max(0, (int) ((inst_bbox.xMin() - dbu_x_min) * scale));
-          const int pyl
-              = std::max(0, (int) ((inst_bbox.yMin() - dbu_y_min) * scale));
+          const int pxl = std::max(
+              0, static_cast<int>((inst_bbox.xMin() - dbu_x_min) * scale));
+          const int pyl = std::max(
+              0, static_cast<int>((inst_bbox.yMin() - dbu_y_min) * scale));
           const int pxh = std::min(
               draw_px - 1,
-              (int) std::ceil((inst_bbox.xMax() - dbu_x_min) * scale));
+              static_cast<int>(
+                  std::ceil((inst_bbox.xMax() - dbu_x_min) * scale)));
           const int pyh = std::min(
               draw_px - 1,
-              (int) std::ceil((inst_bbox.yMax() - dbu_y_min) * scale));
+              static_cast<int>(
+                  std::ceil((inst_bbox.yMax() - dbu_y_min) * scale)));
           for (int iy = pyl; iy < pyh; ++iy) {
             for (int ix = pxl; ix < pxh; ++ix) {
               blendPixel(image_buffer, ix, draw_px - 1 - iy, c, draw_px);

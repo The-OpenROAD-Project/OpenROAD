@@ -144,10 +144,12 @@ bool parseHexColor(std::string_view s, Color& out)
   if (s.size() != 6 || !parseIntExact(s, rgb, 16)) {
     return false;
   }
-  out = Color{.r = static_cast<unsigned char>((rgb >> 16) & 0xFF),
-              .g = static_cast<unsigned char>((rgb >> 8) & 0xFF),
-              .b = static_cast<unsigned char>(rgb & 0xFF),
-              .a = 255};
+  out = Color{
+      .r = static_cast<unsigned char>((rgb >> 16) & 0xFF),
+      .g = static_cast<unsigned char>((rgb >> 8) & 0xFF),
+      .b = static_cast<unsigned char>(rgb & 0xFF),
+      .a = 255,
+  };
   return true;
 }
 
@@ -536,6 +538,7 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
     state_.highlight_geometry_stale = true;
   }
 
+ public:
   void inDbInstDestroy(odb::dbInst*) override { invalidateSelection(); }
   void inDbNetDestroy(odb::dbNet*) override { invalidateSelection(); }
   void inDbITermDestroy(odb::dbITerm*) override { invalidateSelection(); }

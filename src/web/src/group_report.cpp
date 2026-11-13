@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "boost/json/array.hpp"
@@ -158,10 +159,16 @@ boost::json::object serializeGroupResult(const GroupResult& result)
     o["local_macros"] = n.local_macros;
     o["local_groups"] = n.local_groups;
     o["bbox"] = boost::json::array{
-        n.bbox.xMin(), n.bbox.yMin(), n.bbox.xMax(), n.bbox.yMax()};
-    o["color"] = boost::json::array{static_cast<int>(n.color.r),
-                                    static_cast<int>(n.color.g),
-                                    static_cast<int>(n.color.b)};
+        n.bbox.xMin(),
+        n.bbox.yMin(),
+        n.bbox.xMax(),
+        n.bbox.yMax(),
+    };
+    o["color"] = boost::json::array{
+        static_cast<int>(n.color.r),
+        static_cast<int>(n.color.g),
+        static_cast<int>(n.color.b),
+    };
     nodes.emplace_back(std::move(o));
   }
   boost::json::object out;
@@ -186,11 +193,13 @@ std::map<uint32_t, Color> computeDefaultGroupColors(const GroupResult& result)
   std::vector<OwnerColorNode> nodes;
   nodes.reserve(result.nodes.size());
   for (const auto& n : result.nodes) {
-    nodes.push_back({.parent = n.parent_id,
-                     .odb_id = n.odb_id,
-                     .color = n.color,
-                     .collapsed = n.parent_id >= 0 && has_children[n.id] != 0,
-                     .has_color = true});
+    nodes.push_back({
+        .parent = n.parent_id,
+        .odb_id = n.odb_id,
+        .color = n.color,
+        .collapsed = n.parent_id >= 0 && has_children[n.id] != 0,
+        .has_color = true,
+    });
   }
   // getReport() emits DFS order with id == index (see addGroup), which is the
   // parent-before-child order the shared helper requires.
