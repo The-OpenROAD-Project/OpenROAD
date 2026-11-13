@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
+#include <array>
 #include <exception>
 #include <memory>
 #include <string>
@@ -46,6 +47,176 @@ TEST_F(TestSnapper, ManufacturingGrid)
   // Closest grid position to 1019
   EXPECT_EQ(macro->getOrigin().y(), 1020);
 }
+
+// Keeps a macro inside a core that has no legal manufacturing-grid coordinate.
+TEST_F(TestSnapper, ManufacturingGridPreservesCoreContainedOrigin)
+{
+  db_->getTech()->setManufacturingGrid(10);
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  block->setCoreArea(odb::Rect(5, 5, 105, 105));
+
+  odb::dbMaster* macro_master
+      = odb::dbMaster::create(db_->findLib("lib"), "macro_master");
+  macro_master->setWidth(100);
+  macro_master->setHeight(100);
+  macro_master->setType(odb::dbMasterType::BLOCK);
+  macro_master->setFrozen();
+
+  odb::dbInst* macro = odb::dbInst::create(block, macro_master, "macro");
+  macro->setOrigin(5, 5);
+  snapper_->setMacro(macro);
+  snapper_->snapMacro();
+
+  EXPECT_EQ(macro->getOrigin().x(), 5);
+  EXPECT_EQ(macro->getOrigin().y(), 5);
+}
+
+class TestSnapperCoreBoundary : public TestSnapper,
+                                public testing::WithParamInterface<int>
+{
+ protected:
+  odb::dbInst* makeMacro(bool pins, int pin_min = 4, int height = 100)
+  {
+    db_->getTech()->setManufacturingGrid(10);
+    auto* block = db_->getChip()->getBlock();
+    auto* master = odb::dbMaster::create(db_->findLib("lib"), "macro_master");
+    master->setWidth(100);
+    master->setHeight(height);
+    master->setType(odb::dbMasterType::BLOCK);
+    if (pins) {
+      for (const auto direction :
+           {odb::dbTechLayerDir::VERTICAL, odb::dbTechLayerDir::HORIZONTAL}) {
+        const char* name
+            = direction == odb::dbTechLayerDir::VERTICAL ? "V" : "H";
+        auto* layer = odb::dbTechLayer::create(
+            db_->getTech(), name, odb::dbTechLayerType::DEFAULT);
+        layer->setDirection(direction);
+        auto* grid = odb::dbTrackGrid::create(block, layer);
+        if (direction == odb::dbTechLayerDir::VERTICAL) {
+          grid->addGridPatternX(0, 22, 10);
+        } else {
+          grid->addGridPatternY(0, 22, 10);
+        }
+        auto* term = odb::dbMTerm::create(
+            master, name, odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+        auto* pin = odb::dbMPin::create(term);
+        odb::dbBox::create(
+            pin, layer, pin_min, pin_min, pin_min + 2, pin_min + 2);
+      }
+    }
+    master->setFrozen();
+    auto* macro = odb::dbInst::create(block, master, "macro");
+    const std::array<odb::dbOrientType, 8> orientations{
+        odb::dbOrientType::R0,
+        odb::dbOrientType::R90,
+        odb::dbOrientType::R180,
+        odb::dbOrientType::R270,
+        odb::dbOrientType::MX,
+        odb::dbOrientType::MY,
+        odb::dbOrientType::MXR90,
+        odb::dbOrientType::MYR90};
+    macro->setOrient(orientations[GetParam()]);
+    snapper_->setMacro(macro);
+    return macro;
+  }
+};
+
+TEST_P(TestSnapperCoreBoundary, ManufacturingRoundingAtCoreEdges)
+{
+  auto* macro = makeMacro(false);
+  auto* block = db_->getChip()->getBlock();
+  const odb::Rect core(5, 5, 205, 205);
+  block->setCoreArea(core);
+  for (const int x : {5, 105}) {
+    for (const int y : {5, 105}) {
+      SCOPED_TRACE(testing::Message() << "location=" << x << "," << y);
+      macro->setLocation(x, y);
+      ASSERT_TRUE(core.contains(macro->getBBox()->getBox()));
+      snapper_->snapMacro();
+      const auto& box = macro->getBBox()->getBox();
+      EXPECT_TRUE(core.contains(box));
+      EXPECT_EQ(box.xMin(), x == 5 ? 10 : 100);
+      EXPECT_EQ(box.yMin(), y == 5 ? 10 : 100);
+    }
+  }
+}
+
+TEST_P(TestSnapperCoreBoundary, NoManufacturingGridCoordinatePreservesOrigin)
+{
+  auto* macro = makeMacro(false);
+  const odb::Rect core(5, 5, 105, 105);
+  macro->getBlock()->setCoreArea(core);
+  macro->setLocation(5, 5);
+  const auto origin = macro->getOrigin();
+  snapper_->snapMacro();
+  EXPECT_EQ(macro->getOrigin(), origin);
+  EXPECT_EQ(macro->getBBox()->getBox(), core);
+}
+
+TEST_P(TestSnapperCoreBoundary, TrackCandidateIncludesManufacturingRounding)
+{
+  auto* macro = makeMacro(true);
+  const odb::Rect core(5, 5, 205, 205);
+  macro->getBlock()->setCoreArea(core);
+  macro->setLocation(105, 105);
+  ASSERT_TRUE(core.contains(macro->getBBox()->getBox()));
+  snapper_->snapMacro();
+  const auto& box = macro->getBBox()->getBox();
+  EXPECT_TRUE(core.contains(box));
+  EXPECT_EQ(box.xMin(), 100);
+  EXPECT_EQ(box.yMin(), 100);
+}
+
+TEST_P(TestSnapperCoreBoundary, NoLegalTrackCandidatePreservesOrigin)
+{
+  auto* macro = makeMacro(true);
+  const odb::Rect core(5, 5, 105, 105);
+  macro->getBlock()->setCoreArea(core);
+  macro->setLocation(5, 5);
+  const auto origin = macro->getOrigin();
+  snapper_->snapMacro();
+  EXPECT_EQ(macro->getOrigin(), origin);
+  EXPECT_EQ(macro->getBBox()->getBox(), core);
+}
+
+TEST_P(TestSnapperCoreBoundary, NonsquareRotatedMacroStaysInsideCore)
+{
+  auto* macro = makeMacro(true, 4, 60);
+  const odb::Rect core(5, 5, 205, 205);
+  macro->getBlock()->setCoreArea(core);
+  const int x = core.xMax() - macro->getBBox()->getBox().dx();
+  const int y = core.yMax() - macro->getBBox()->getBox().dy();
+  macro->setLocation(x, y);
+  ASSERT_TRUE(core.contains(macro->getBBox()->getBox()));
+  snapper_->snapMacro();
+  const auto& box = macro->getBBox()->getBox();
+  EXPECT_TRUE(core.contains(box));
+  EXPECT_EQ(box.xMin(), x - 5);
+  EXPECT_EQ(box.yMin(), y - 5);
+}
+
+TEST_P(TestSnapperCoreBoundary, NoLegalCandidateStillChecksRequiredGrid)
+{
+  auto* macro = makeMacro(true, 0);
+  const odb::Rect core(5, 5, 105, 105);
+  macro->getBlock()->setCoreArea(core);
+  macro->setLocation(5, 5);
+  db_->getTech()->findLayer("H")->setRightWayOnGridOnly(true);
+  db_->getTech()->findLayer("V")->setRightWayOnGridOnly(true);
+  const auto origin = macro->getOrigin();
+  try {
+    snapper_->snapMacro();
+    FAIL() << "Expected an unsnappable RightWayOnGridOnly pin to fail";
+  } catch (const std::exception& error) {
+    EXPECT_STREQ(error.what(), "MPL-0005");
+  }
+  EXPECT_EQ(macro->getOrigin(), origin);
+  EXPECT_EQ(macro->getBBox()->getBox(), core);
+}
+
+INSTANTIATE_TEST_SUITE_P(AllOrientations,
+                         TestSnapperCoreBoundary,
+                         testing::Range(0, 8));
 
 // Snaps a macro using one horizontal layer, aligning one pin
 TEST_F(TestSnapper, SingleLayer)
