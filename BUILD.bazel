@@ -259,7 +259,6 @@ OPENROAD_MAIN_DEPS = [
     "//src/utl",
     "//src/web",
     "@abseil-cpp//absl/base:no_destructor",
-    "@boost.stacktrace",
     "@tcl_lang//:tcl",
 ]
 
@@ -353,7 +352,6 @@ cc_library(
         "//src/sta:opensta_lib",
         "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/synchronization",
-        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ] + OPENROAD_LIBRARY_DEPS,
 )
@@ -383,7 +381,6 @@ cc_library(
         "//src/sta:opensta_lib",
         "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/synchronization",
-        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ] + OPENROAD_LIBRARY_DEPS,
 )

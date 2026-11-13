@@ -43,7 +43,6 @@ cc_library(
         "//src/odb/src/db",
         "//src/utl",
         "//src/web:core",
-        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
 )
@@ -102,7 +101,6 @@ QT_GUI_PLATFORMS = {
             "@boost.algorithm",
             "@boost.geometry",
             "@boost.multi_array",
-            "@boost.stacktrace",
             "@spdlog",
             "@tcl_lang//:tcl",
         ] + ([":uic_lib"] if platform == "headless" else []),

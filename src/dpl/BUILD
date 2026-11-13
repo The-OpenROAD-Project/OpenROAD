@@ -145,7 +145,6 @@ cc_library(
         "//src/web:core",
         "@boost.icl",
         "@boost.polygon",
-        "@boost.stacktrace",
         "@boost.utility",
         "@tcl_lang//:tcl",
     ],

@@ -295,7 +295,6 @@ cc_library(
         ":web",
         "//:ord",
         "//src/utl",
-        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
 )
