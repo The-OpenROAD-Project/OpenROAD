@@ -1034,7 +1034,8 @@ void BinGrid::scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
 
 // Core Part
 void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
-                                         const KokkosContext& kokkos_ctx)
+                                         const KokkosContext& kokkos_ctx,
+                                         const bool use_device_mirror_scatter)
 {
   // clear the Bin-area info
   for (Bin& bin : bins_) {
@@ -1048,7 +1049,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
   // The device build keeps its pre-existing flat-buffer scatter for threaded
   // runs: that one is thread-order-dependent, and this change cannot
   // re-verify the device path.
-  if (kokkos_ctx.space.concurrency() > 1) {
+  if (use_device_mirror_scatter && kokkos_ctx.space.concurrency() > 1) {
     const int nbins = static_cast<int>(bins_.size());
     std::vector<float> inst_area(nbins, 0.0f);
     std::vector<float> filler_area(nbins, 0.0f);
@@ -1101,6 +1102,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
     scatterDensityAreaInPlace(cells, kokkos_ctx);
   }
 #else
+  (void) use_device_mirror_scatter;
   scatterDensityAreaInPlace(cells, kokkos_ctx);
 #endif
 
@@ -2644,6 +2646,7 @@ void NesterovBase::updateGCellCenterLocation(
 void NesterovBase::updateGCellDensityCenterLocation(
     const std::vector<FloatPoint>& coordis)
 {
+  bool use_device_mirror_scatter = false;
   for (int idx = 0; idx < coordis.size(); ++idx) {
     nb_gcells_[idx]->setDensityCenterLocation(coordis[idx].x, coordis[idx].y);
   }
@@ -2658,8 +2661,12 @@ void NesterovBase::updateGCellDensityCenterLocation(
   if (nbc_->getDeviceState()) {
     nbc_->getDeviceState()->invalidateCoords();
   }
+  // Only the device path takes the thread-order-dependent flat-buffer
+  // scatter; CPU mode keeps the order-independent in-place scatter.
+  use_device_mirror_scatter = (nb_device_ctx_ != nullptr);
 #endif
-  bg_.updateBinsGCellDensityArea(nb_gcells_, nbc_->getKokkosContext());
+  bg_.updateBinsGCellDensityArea(
+      nb_gcells_, nbc_->getKokkosContext(), use_device_mirror_scatter);
 }
 
 void NesterovBase::setTargetDensity(float density)
@@ -2853,7 +2860,9 @@ float NesterovBase::estimateTargetDensity(float overflow)
   }
 
   // Populates each bin's placed-instance area
-  bg_.updateBinsGCellDensityArea(nb_gcells_, nbc_->getKokkosContext());
+ bg_.updateBinsGCellDensityArea(nb_gcells_,
+                                 nbc_->getKokkosContext(),
+                                 /*use_device_mirror_scatter*/ true);
 
   // Do a binary search to find the density value that results in the
   // target overflow.

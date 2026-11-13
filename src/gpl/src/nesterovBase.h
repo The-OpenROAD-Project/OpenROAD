@@ -737,7 +737,8 @@ class BinGrid
   void setBinCnt(int binCntX, int binCntY);
   void setBinTargetDensity(float density);
   void updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
-                                  const KokkosContext& kokkos_ctx);
+                                  const KokkosContext& kokkos_ctx,
+                                  const bool use_device_mirror_scatter = false);
   void scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
                                  const KokkosContext& kokkos_ctx);
 
