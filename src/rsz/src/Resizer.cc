@@ -2190,6 +2190,13 @@ sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
         }
       }
 
+      // Keep data and clock buffers disjoint during gate sizing.
+      if (exclude_clock_buffers_ && source_cell->isBuffer()
+          && equiv_cell->isBuffer()
+          && getBufferUse(source_cell) != getBufferUse(equiv_cell)) {
+        continue;
+      }
+
       if (match_cell_footprint_) {
         const bool footprints_match
             = source_cell->footprint() == equiv_cell->footprint();
