@@ -518,8 +518,8 @@
     "https://bcr.bazel.build/modules/hermetic_launcher/0.0.15/source.json": "aceb903a3bda5131b0a3132ccf77f36f32b96dcb70864049ec8cfdf9c0b0f068",
     "https://bcr.bazel.build/modules/highs/1.11.0/MODULE.bazel": "f820e7fc99bd332d5133502c49f3ff35c754566ae593b4cf5c91931c8d122f9b",
     "https://bcr.bazel.build/modules/highs/1.11.0/source.json": "122976647568ee73c10d15078f4554624ce9c390ee3d9f2a5dcb0b95b63a782b",
-    "https://bcr.bazel.build/modules/icu/76.1.bcr.3/MODULE.bazel": "0af631e5c94380fcf75cc779cd4d66352fb23deba224f6ac0d3f32933b5698d4",
-    "https://bcr.bazel.build/modules/icu/76.1.bcr.3/source.json": "a8e28c19f6bee73132069a28c8fb3830dff126c1faaab493fbd90cc2d694c1a3",
+    "https://bcr.bazel.build/modules/icu/76.1.bcr.4/MODULE.bazel": "76a777524983908dbc913d7ecec57967a1843d122b91a27889df6041551b47a2",
+    "https://bcr.bazel.build/modules/icu/76.1.bcr.4/source.json": "97e037879a8dc41992244bc0fba85c8d10d7fe77f9ae93bfd4003281a25998a7",
     "https://bcr.bazel.build/modules/jq.bzl/0.1.0/MODULE.bazel": "2ce69b1af49952cd4121a9c3055faa679e748ce774c7f1fda9657f936cae902f",
     "https://bcr.bazel.build/modules/jq.bzl/0.4.0/MODULE.bazel": "a7b39b37589f2b0dad53fd6c1ccaabbdb290330caa920d7ef3e6aad068cd4ab2",
     "https://bcr.bazel.build/modules/jq.bzl/0.6.0/MODULE.bazel": "26ec5118e66a55fef36f8ea39d6415d55fc966671fe4d61a6b9ef0cd6bc7b6a1",
@@ -2175,7 +2175,7 @@
     },
     "@@sv-elab+//:dependency_support/tomlplusplus_ext.bzl%tomlplusplus_ext": {
       "general": {
-        "bzlTransitiveDigest": "zbb8N3OBsLzc4en7SelPVDhC673MhyBY1/dtG6JmdB8=",
+        "bzlTransitiveDigest": "8glv+ykC+v18BP94Oa7UhIKJhNWEE2zgkwkPcmI+x/8=",
         "usagesDigest": "V8yFIfuWmaLiGS/0FiloBjB4m484dQxhAc+nmdZBc5s=",
         "recordedInputs": [
           "REPO_MAPPING:sv-elab+,bazel_tools bazel_tools"
@@ -2187,6 +2187,7 @@
               "urls": [
                 "https://github.com/marzer/tomlplusplus/archive/refs/tags/v3.4.0.tar.gz"
               ],
+              "integrity": "sha256-hRf2WTik+q6cz467NmMaOMHK37XvqF2acuFbnpfSUVU=",
               "strip_prefix": "tomlplusplus-3.4.0",
               "build_file": "@@sv-elab+//:dependency_support/tomlplusplus.BUILD.bazel"
             }

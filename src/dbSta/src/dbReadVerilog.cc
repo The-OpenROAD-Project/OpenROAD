@@ -156,7 +156,7 @@ class Verilog2db
   void makeModBTerms(Cell* cell, dbModule* module);
   void makeModITerms(Instance* inst, dbModInst* modinst);
   void registerHierModule(dbModule* module);
-  dbIoType staToDb(PortDirection* dir);
+  dbIoType staToDb(const PortDirection* dir);
   bool staToDb(dbModule* module,
                const Pin* pin,
                dbBTerm*& bterm,
@@ -704,7 +704,7 @@ bool Verilog2db::staToDb(dbModule* module,
   return false;
 }
 
-dbIoType Verilog2db::staToDb(PortDirection* dir)
+dbIoType Verilog2db::staToDb(const PortDirection* dir)
 {
   if (dir == PortDirection::input()) {
     return dbIoType::INPUT;

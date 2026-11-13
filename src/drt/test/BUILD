@@ -175,6 +175,7 @@ cc_test(
         "fixture.cpp",
         "fixture.h",
         "gcTest.cpp",
+        "parserTest.cpp",
         "pathSegTest.cpp",
     ],
     includes = [
@@ -249,10 +250,38 @@ regression_test(
 )
 
 cc_test(
+    name = "LookupTblTest",
+    srcs = ["LookupTblTest.cpp"],
+    deps = [
+        "//src/drt:base_types",
+        "//src/drt:drt_impl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "WatermarkCostTest",
     srcs = ["WatermarkCostTest.cpp"],
     deps = [
         "//src/drt:base_types",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "PinAccessTest",
+    srcs = ["PinAccessTest.cpp"],
+    data = ["Nangate45/Nangate45_tech.lef"],
+    includes = ["../src"],
+    deps = [
+        "//src/drt",
+        "//src/drt:drt_impl",
+        "//src/dst",
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

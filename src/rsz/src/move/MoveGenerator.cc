@@ -3,9 +3,12 @@
 
 #include "MoveGenerator.hh"
 
+#include <optional>
 #include <string>
 #include <tuple>
 
+#include "db_sta/dbNetwork.hh"
+#include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
@@ -13,6 +16,35 @@
 #include "sta/Transition.hh"
 
 namespace rsz {
+
+MoveGenerator::CellCosts MoveGenerator::cellCosts(sta::LibertyCell* cell) const
+{
+  CellCosts costs;
+  const std::optional<float> leakage = resizer_.cellLeakage(cell);
+  if (leakage && *leakage > 0.0f) {
+    costs[0] = leakage;
+  }
+  const odb::dbMaster* master = resizer_.dbNetwork()->staToDb(cell);
+  if (master != nullptr && master->getArea() > 0) {
+    costs[1] = static_cast<float>(master->getArea());
+  }
+  if (cell->area() > 0.0f) {
+    costs[2] = cell->area();
+  }
+  return costs;
+}
+
+std::optional<float> MoveGenerator::cellCostRatio(const CellCosts& from_costs,
+                                                  sta::LibertyCell* to) const
+{
+  const CellCosts to_costs = cellCosts(to);
+  for (size_t metric = 0; metric < from_costs.size(); ++metric) {
+    if (from_costs[metric] && to_costs[metric]) {
+      return *to_costs[metric] / *from_costs[metric];
+    }
+  }
+  return std::nullopt;
+}
 
 const sta::LibertyPort* MoveGenerator::findScenePort(
     const sta::LibertyCell* cell,

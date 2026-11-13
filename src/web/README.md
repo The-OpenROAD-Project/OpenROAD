@@ -220,6 +220,7 @@ field and the value is `true` or `false`.
 | `rows` | false | Row outlines |
 | `tracks_pref` | false | Preferred-direction tracks |
 | `rudy` | false | Estimated congestion (RUDY) heatmap overlay |
+| `routing_congestion` | false | Global routing congestion heatmap overlay |
 | `module_view` | false | Color each instance by the `dbModule` it belongs to |
 | `cluster_view` | false | Color each instance by the `dbGroup` it belongs to |
 
@@ -276,6 +277,9 @@ rtl_macro_placer -keep_clustering_data
 save_image -web -width 1200 \
                 -display_option {cluster_view true} \
                 clusters.png
+
+# Save with global routing congestion heatmap overlay
+save_image -web -display_option {routing_congestion true} layout_congestion.png
 ```
 
 ### Save Animated GIF

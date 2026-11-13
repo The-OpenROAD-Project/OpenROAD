@@ -1467,4 +1467,43 @@ TEST_F(TestResizer, DisabledConditionalArcIgnoredInDriveResistance)
   EXPECT_GT(resizer_.driveResistance(zn_pin), 0.99f * port_res);
 }
 
+TEST_F(TestResizer, LibraryOutputPinsFiltersLeadingInputsAndInputOnlyCells)
+{
+  auto port_names = [](const std::vector<sta::LibertyPort*>& ports) {
+    std::vector<std::string> names;
+    names.reserve(ports.size());
+    for (const sta::LibertyPort* port : ports) {
+      names.emplace_back(port->name());
+    }
+    return names;
+  };
+
+  // BUF_X1 has leading input pin A followed by output pin Z.
+  sta::LibertyCell* buf_cell = sta_->network()->findLibertyCell("BUF_X1");
+  ASSERT_NE(buf_cell, nullptr);
+  EXPECT_EQ(port_names(resizer_.libraryOutputPins(buf_cell)),
+            (std::vector<std::string>{"Z"}));
+  EXPECT_TRUE(resizer_.isSingleOutputCombinational(buf_cell));
+
+  // FA_X1 has leading inputs (A, B, CI) followed by multiple outputs (CO, S).
+  sta::LibertyCell* fa_cell = sta_->network()->findLibertyCell("FA_X1");
+  ASSERT_NE(fa_cell, nullptr);
+  EXPECT_EQ(port_names(resizer_.libraryOutputPins(fa_cell)),
+            (std::vector<std::string>{"CO", "S"}));
+  EXPECT_FALSE(resizer_.isSingleOutputCombinational(fa_cell));
+
+  // ANTENNA_X1 has only an input pin (A); all pins are erased.
+  sta::LibertyCell* antenna_cell
+      = sta_->network()->findLibertyCell("ANTENNA_X1");
+  ASSERT_NE(antenna_cell, nullptr);
+  EXPECT_TRUE(resizer_.libraryOutputPins(antenna_cell).empty());
+  EXPECT_FALSE(resizer_.isSingleOutputCombinational(antenna_cell));
+
+  // FILLCELL_X1 has no signal pins.
+  sta::LibertyCell* fill_cell = sta_->network()->findLibertyCell("FILLCELL_X1");
+  ASSERT_NE(fill_cell, nullptr);
+  EXPECT_TRUE(resizer_.libraryOutputPins(fill_cell).empty());
+  EXPECT_FALSE(resizer_.isSingleOutputCombinational(fill_cell));
+}
+
 }  // namespace rsz

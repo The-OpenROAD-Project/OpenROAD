@@ -45,7 +45,7 @@ std::vector<sta::Vertex*> GetEndpoints(sta::dbSta* sta,
   sta::dbNetwork* network = sta->getDbNetwork();
   for (sta::Vertex* vertex : sta->endpoints()) {
     sta::Pin* pin = vertex->pin();
-    sta::PortDirection* direction = network->direction(vertex->pin());
+    const sta::PortDirection* direction = network->direction(vertex->pin());
     if (!direction->isInput()) {
       continue;
     }

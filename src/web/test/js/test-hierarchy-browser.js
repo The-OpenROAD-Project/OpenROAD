@@ -201,3 +201,21 @@ describe('HierarchyBrowser module mode is unchanged', () => {
         assert.equal(MODULE, 0);
     });
 });
+
+describe('HierarchyBrowser columns', () => {
+    it('keeps a dragged column width when the tree is loaded again', async () => {
+        const { browser } = makeBrowser(NAME_GROUPED);
+        await browser.update();
+        const firstTh = () => browser._table.querySelector('thead th');
+        const grip = firstTh().querySelector('.col-resize-grip');
+        const { MouseEvent } = dom.window;
+        // a drag starts from the measured width
+        const width = parseFloat(firstTh().style.width) + 300 + 'px';
+        grip.dispatchEvent(new MouseEvent('mousedown', { clientX: 0, bubbles: true }));
+        document.dispatchEvent(new MouseEvent('mousemove', { clientX: 300 }));
+        document.dispatchEvent(new MouseEvent('mouseup', {}));
+        assert.equal(firstTh().style.width, width);
+        await browser.update();
+        assert.equal(firstTh().style.width, width);
+    });
+});

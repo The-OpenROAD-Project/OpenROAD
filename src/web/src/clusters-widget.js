@@ -12,7 +12,8 @@ import {
     serializeColorMap,
 } from './color-tree.js';
 import {
-    HIERARCHY_OFF_HINT, isStaticMode, makeResizableHeaders, zoomToBBox,
+    ColumnWidths, HIERARCHY_OFF_HINT, isStaticMode, makeResizableHeaders,
+    zoomToBBox,
 } from './ui-utils.js';
 
 const COLS = [
@@ -30,6 +31,7 @@ export class ClustersWidget {
         this._gate = gate;
         this._nodes = [];               // flat server response
         this._rows = [];                // DFS-ordered rows with depth
+        this._columns = new ColumnWidths();
         this._childrenMap = new Map();  // id → [child ids]
         this._nodeMap = new Map();      // id → node
         this._collapsed = new Set();    // collapsed node ids
@@ -178,6 +180,7 @@ export class ClustersWidget {
             this._nodes = data.nodes || [];
             this._loaded = true;
             this._buildTree();
+            this._columns.reset();
             this._readServerColors();
             this._computeEffectiveColors();
             this._render();
@@ -419,7 +422,7 @@ export class ClustersWidget {
         }
 
         this._table.appendChild(tbody);
-        makeResizableHeaders(this._table);
+        makeResizableHeaders(this._table, this._columns);
     }
 
     _toggleNode(id) {

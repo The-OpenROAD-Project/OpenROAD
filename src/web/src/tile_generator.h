@@ -334,6 +334,8 @@ struct TileVisibility
   bool mfg_grid = false;  // manufacturing-grid dots, off by default (Qt parity)
   bool gcell_grid = false;  // GCell grid lines, off by default (Qt parity)
   bool rudy = false;        // RUDY congestion heatmap, off by default
+  bool routing_congestion
+      = false;  // Routing congestion heatmap, off by default
 
   // Shapes — other per-layer geometry (not routing sub-types)
   bool blockages = true;  // master obstructions (LEF OBS)
@@ -926,7 +928,7 @@ class TileGenerator
     // Whether this design gives the overlay anything to draw; null is always.
     bool (TileGenerator::*present)() const = nullptr;
   };
-  static const std::array<PseudoLayerDef, 6>& pseudoLayerDefs();
+  static const std::array<PseudoLayerDef, 7>& pseudoLayerDefs();
   static bool anyGroupOn(const std::vector<std::vector<const char*>>& groups,
                          const TileVisibility& vis);
   // Whether `layer`'s tiles read visible_layers and chiplet_hidden_layers:
@@ -1339,6 +1341,11 @@ class TileGenerator
                      const TileFrame& frame,
                      const TileVisibility& vis,
                      const TextSink& emit) const;
+  void drawRoutingCongestionLayer(std::vector<unsigned char>& image,
+                                  odb::dbBlock* block,
+                                  const TileFrame& frame,
+                                  const TileVisibility& vis,
+                                  const TextSink& emit) const;
   void drawInstLabelsLayer(std::vector<unsigned char>& image,
                            odb::dbBlock* block,
                            const TileFrame& frame,
@@ -1425,6 +1432,15 @@ class TileGenerator
 };
 
 struct TimingPathSummary;
+
+// The chip-inst nodes whose name, or full path from the root, prefixes `name`
+// as a whole path component, each with the rest of `name` (pointing into it):
+// the name local to that node's block.  Several can match, so callers try them
+// in order, names before paths.  Any match means `name` is chiplet-qualified,
+// and an unqualified lookup must not claim it instead.
+std::vector<std::pair<const ChipletNode*, const char*>> chipletPrefixMatches(
+    const std::vector<ChipletNode>& chiplets,
+    const std::string& name);
 
 // Resolve a (possibly "<chip-inst>/"-prefixed) pin name against the chiplets,
 // returning the owning node so the caller can transform the pin's geometry.

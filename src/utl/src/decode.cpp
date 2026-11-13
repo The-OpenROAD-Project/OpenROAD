@@ -28,15 +28,17 @@
 #include "utl/decode.h"
 
 #include <cctype>
+#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
 #include <string>
+#include <string_view>
 
 #include "tcl.h"
 
 namespace utl {
 
-static const std::string base64_chars
+static constexpr std::string_view kBase64Chars
     = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
       "abcdefghijklmnopqrstuvwxyz"
       "0123456789+/";
@@ -52,16 +54,16 @@ std::string base64_decode(const std::string& encoded_string)
   int i = 0;
   int j = 0;
   int in_ = 0;
-  char char_array_4[4], char_array_3[3];
+  size_t char_array_4[4], char_array_3[3];
   std::string ret;
 
   while (in_len-- && (encoded_string[in_] != '=')
          && is_base64(encoded_string[in_])) {
-    char_array_4[i++] = encoded_string[in_];
+    char_array_4[i++] = static_cast<unsigned char>(encoded_string[in_]);
     in_++;
     if (i == 4) {
       for (i = 0; i < 4; i++) {
-        char_array_4[i] = base64_chars.find(char_array_4[i]);
+        char_array_4[i] = kBase64Chars.find(static_cast<char>(char_array_4[i]));
       }
 
       char_array_3[0]
@@ -71,7 +73,7 @@ std::string base64_decode(const std::string& encoded_string)
       char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
       for (i = 0; (i < 3); i++) {
-        ret += char_array_3[i];
+        ret += static_cast<char>(char_array_3[i]);
       }
       i = 0;
     }
@@ -83,7 +85,7 @@ std::string base64_decode(const std::string& encoded_string)
     }
 
     for (j = 0; j < 4; j++) {
-      char_array_4[j] = base64_chars.find(char_array_4[j]);
+      char_array_4[j] = kBase64Chars.find(static_cast<char>(char_array_4[j]));
     }
 
     char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
@@ -92,7 +94,7 @@ std::string base64_decode(const std::string& encoded_string)
     char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
     for (j = 0; (j < i - 1); j++) {
-      ret += char_array_3[j];
+      ret += static_cast<char>(char_array_3[j]);
     }
   }
 

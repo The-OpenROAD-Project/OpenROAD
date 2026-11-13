@@ -9,7 +9,7 @@ import {
     serializeColorMap,
 } from './color-tree.js';
 import {
-    HIERARCHY_OFF_HINT, isStaticMode, makeResizableHeaders,
+    ColumnWidths, HIERARCHY_OFF_HINT, isStaticMode, makeResizableHeaders,
 } from './ui-utils.js';
 
 const COLS = [
@@ -42,6 +42,7 @@ export class HierarchyBrowser {
         this._nameGrouped = false;     // tree synthesized from instance names
         this._nameGroupsCapped = false;
         this._rows = [];       // DFS-ordered rows with depth
+        this._columns = new ColumnWidths();
         this._childrenMap = new Map();  // id → [child ids]
         this._nodeMap = new Map();      // id → node
         this._collapsed = new Set();   // collapsed node ids
@@ -131,6 +132,7 @@ export class HierarchyBrowser {
             this._nameGrouped = !!data.name_grouped;
             this._nameGroupsCapped = !!data.name_groups_capped;
             this._buildTree();
+            this._columns.reset();
             this._readServerColors();
             this._computeEffectiveColors();
             this._render();
@@ -410,7 +412,7 @@ export class HierarchyBrowser {
         }
 
         this._table.appendChild(tbody);
-        makeResizableHeaders(this._table);
+        makeResizableHeaders(this._table, this._columns);
     }
 
     _toggleNode(id) {
