@@ -4,10 +4,10 @@
 #include "dbJournal.h"
 
 #include <algorithm>
+#include <bit>
 #include <cassert>
 #include <cstdint>
 #include <cstdio>
-#include <cstring>
 #include <string>
 #include <vector>
 
@@ -1174,9 +1174,7 @@ namespace {
 // no longer find to remove.
 void restoreInstFlags(_dbBlock* block, _dbInst* inst, const uint32_t flags)
 {
-  static_assert(sizeof(inst->flags_) == sizeof(flags), "flags size != 4");
-  _dbInstFlags new_flags;
-  std::memcpy(&new_flags, &flags, sizeof(new_flags));
+  const _dbInstFlags new_flags = std::bit_cast<_dbInstFlags>(flags);
   const bool orient_changed = inst->flags_.orient != new_flags.orient;
   if (orient_changed) {
     for (dbBlockCallBackObj* callback : block->callbacks_) {
