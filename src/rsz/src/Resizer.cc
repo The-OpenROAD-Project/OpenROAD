@@ -5408,7 +5408,13 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
     }
 
     // Merge the original inverter's output hierarchy into its input net.
-    removeBuffer(inv);
+    if (!removeBuffer(inv)) {
+      logger_->error(
+          RSZ,
+          3249,
+          "Could not remove clock inverter {} after cloning its loads.",
+          network_->pathName(inv));
+    }
   }
 }
 
