@@ -883,6 +883,9 @@ void extMeasure::calcRes0(double* deltaRes,
     }
 
     extDistRC* rc = rcModel->_resOver[tgtMet]->getRes(0, _width, dist1, dist2);
+    if (rc == nullptr) {
+      continue;
+    }
     double R = len * rc->_res;
     deltaRes[ii] = R;
 
