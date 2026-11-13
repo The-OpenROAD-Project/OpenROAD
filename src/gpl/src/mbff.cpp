@@ -844,8 +844,9 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
       slots_used += mapped[index][tray_idx];
     }
 
-    // check that tray_used <= slots_used
-    cp_model.AddLessOrEqual(tray_used[i], slots_used);
+    // Require an active tray to use all of its slots.
+    const int num_slots = trays[i].slots.size();
+    cp_model.AddEquality(slots_used, num_slots * tray_used[i]);
   }
 
   // calculate the cost of each tray

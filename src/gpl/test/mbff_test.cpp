@@ -423,5 +423,54 @@ TEST_F(MBFFTestFixture, GetSilhHandlesColocatedSlotsAndSingleTrayWithoutNaN)
   EXPECT_FLOAT_EQ(silh_single_tray, 0.0f);
 }
 
+TEST_F(MBFFTestFixture, RunDoesNotProduceUnderfilledTrays)
+{
+  // In test0.lib, a 2-bit MBFF2SE cell has lower total leakage (1000) than a
+  // single 1-bit DFF (2000), and -clock_power_weight further discounts trays.
+  // With 3 DFFs, an unconstrained tray_used <= slots_used ILP would instantiate
+  // two MBFF2SE trays (one full 2/2 and one underfilled 1/2). Ensure every
+  // instantiated tray has all of its slots connected.
+  odb::dbNet* clk_net = odb::dbNet::create(block_, "clk");
+  clk_net->setSigType(odb::dbSigType::CLOCK);
+
+  for (int i = 0; i < 3; ++i) {
+    odb::dbInst* ff = CreateTmpCell("ff", "test0", "DFF");
+    ff->setLocation(i * 1000, 0);
+    ff->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    ff->findITerm("CP")->connect(clk_net);
+    ff->findITerm("D")->connect(
+        odb::dbNet::create(block_, absl::StrCat("d_", i).c_str()));
+    ff->findITerm("Q")->connect(
+        odb::dbNet::create(block_, absl::StrCat("q_", i).c_str()));
+    ff->findITerm("SE")->connect(
+        odb::dbNet::create(block_, absl::StrCat("se_", i).c_str()));
+    ff->findITerm("SI")->connect(
+        odb::dbNet::create(block_, absl::StrCat("si_", i).c_str()));
+  }
+  sta_->postReadDef(block_);
+
+  mbff_->Run(/*mx_sz=*/-1,
+             /*alpha=*/40.0f,
+             /*beta=*/0.0f,
+             /*clock_power_weight=*/1.0f);
+
+  int single_bit_count = 0;
+  int two_bit_count = 0;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    const std::string master_name = inst->getMaster()->getName();
+    if (master_name == "DFF") {
+      ++single_bit_count;
+    } else if (master_name == "MBFF2SE") {
+      ++two_bit_count;
+      EXPECT_NE(inst->findITerm("D0")->getNet(), nullptr);
+      EXPECT_NE(inst->findITerm("D1")->getNet(), nullptr);
+      EXPECT_NE(inst->findITerm("Q0")->getNet(), nullptr);
+      EXPECT_NE(inst->findITerm("Q1")->getNet(), nullptr);
+    }
+  }
+  EXPECT_EQ(two_bit_count, 1);
+  EXPECT_EQ(single_bit_count, 1);
+}
+
 }  // namespace
 }  // namespace gpl
