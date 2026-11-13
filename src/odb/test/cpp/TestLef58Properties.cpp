@@ -315,13 +315,13 @@ TEST_F(Fixture, test_default)
   EXPECT_EQ(encTableRules.size(), 1);
   odb::dbTechLayerCutEnclosureTableDefRule* encTableRule
       = *encTableRules.begin();
-  EXPECT_TRUE(encTableRule->isCutClassValid());
+  EXPECT_NE(encTableRule->getCutClass(), nullptr);
   EXPECT_STREQ(encTableRule->getCutClass()->getName(), "cls1");
 
   std::vector<odb::dbTechLayerCutEnclosureTableDefRule::DefaultRow> defaultRows;
   encTableRule->getDefaultRows(defaultRows);
   ASSERT_EQ(defaultRows.size(), 1);
-  EXPECT_EQ(defaultRows[0].above_below, 0);
+  EXPECT_EQ(defaultRows[0].above_below, dbCutEnclosureAboveBelow::kBoth);
   EXPECT_EQ(defaultRows[0].overhang1, 0.02 * distFactor);
   EXPECT_EQ(defaultRows[0].overhang2, 0.02 * distFactor);
   EXPECT_EQ(defaultRows[0].overhang3, 0.03 * distFactor);
@@ -331,13 +331,13 @@ TEST_F(Fixture, test_default)
   encTableRule->getWidthRows(widthRows);
   ASSERT_EQ(widthRows.size(), 4);
   EXPECT_EQ(widthRows[0].width, 0.15 * distFactor);
-  EXPECT_EQ(widthRows[0].above_below, 1);
+  EXPECT_EQ(widthRows[0].above_below, dbCutEnclosureAboveBelow::kAbove);
   EXPECT_EQ(widthRows[0].overhang1, 0.01 * distFactor);
   EXPECT_EQ(widthRows[0].overhang2, 0.01 * distFactor);
   EXPECT_EQ(widthRows[0].overhang3, 0.02 * distFactor);
   EXPECT_EQ(widthRows[0].overhang4, 0.02 * distFactor);
   EXPECT_EQ(widthRows[1].width, 0.15 * distFactor);
-  EXPECT_EQ(widthRows[1].above_below, 2);
+  EXPECT_EQ(widthRows[1].above_below, dbCutEnclosureAboveBelow::kBelow);
   EXPECT_EQ(widthRows[1].overhang1, 0.015 * distFactor);
   EXPECT_EQ(widthRows[1].overhang2, 0.016 * distFactor);
   EXPECT_EQ(widthRows[1].overhang3, 0.017 * distFactor);
@@ -348,7 +348,7 @@ TEST_F(Fixture, test_default)
   // group omits it, so it correctly parses as 0 (applies to both), not 2
   // (BELOW).
   EXPECT_EQ(widthRows[2].width, 0.15 * distFactor);
-  EXPECT_EQ(widthRows[2].above_below, 0);
+  EXPECT_EQ(widthRows[2].above_below, dbCutEnclosureAboveBelow::kBoth);
   EXPECT_EQ(widthRows[2].overhang1, 0.025 * distFactor);
   EXPECT_EQ(widthRows[2].overhang2, 0.03 * distFactor);
   EXPECT_EQ(widthRows[2].overhang3, 0);
@@ -357,7 +357,7 @@ TEST_F(Fixture, test_default)
   // clause is discarded, but the row's own overhang values still get stored
   // like any other row.
   EXPECT_EQ(widthRows[3].width, 0.2 * distFactor);
-  EXPECT_EQ(widthRows[3].above_below, 1);
+  EXPECT_EQ(widthRows[3].above_below, dbCutEnclosureAboveBelow::kAbove);
   EXPECT_EQ(widthRows[3].overhang1, 0.04 * distFactor);
   EXPECT_EQ(widthRows[3].overhang2, 0.04 * distFactor);
   EXPECT_EQ(widthRows[3].overhang3, 0.05 * distFactor);

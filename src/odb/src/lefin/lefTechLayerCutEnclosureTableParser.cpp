@@ -33,7 +33,6 @@ void lefTechLayerCutEnclosureTableRuleParser::setCutClass(
     return;
   }
   curRule_->setCutClass(cutClass);
-  curRule_->setCutClassValid(true);
 }
 
 void lefTechLayerCutEnclosureTableRuleParser::setWidth(double val)
@@ -44,18 +43,19 @@ void lefTechLayerCutEnclosureTableRuleParser::setWidth(double val)
 void lefTechLayerCutEnclosureTableRuleParser::addDefaultRow(
     boost::fusion::vector<int, double, double, double, double>& params)
 {
-  curRule_->addDefaultRow({at_c<0>(params),
-                           lefin_->dbdist(at_c<1>(params)),
-                           lefin_->dbdist(at_c<2>(params)),
-                           lefin_->dbdist(at_c<3>(params)),
-                           lefin_->dbdist(at_c<4>(params))});
+  curRule_->addDefaultRow(
+      {static_cast<dbCutEnclosureAboveBelow>(at_c<0>(params)),
+       lefin_->dbdist(at_c<1>(params)),
+       lefin_->dbdist(at_c<2>(params)),
+       lefin_->dbdist(at_c<3>(params)),
+       lefin_->dbdist(at_c<4>(params))});
 }
 
 void lefTechLayerCutEnclosureTableRuleParser::addWidthRow(
     boost::fusion::vector<int, double, double, double, double>& params)
 {
   curRule_->addWidthRow({curWidth_,
-                         at_c<0>(params),
+                         static_cast<dbCutEnclosureAboveBelow>(at_c<0>(params)),
                          lefin_->dbdist(at_c<1>(params)),
                          lefin_->dbdist(at_c<2>(params)),
                          lefin_->dbdist(at_c<3>(params)),
