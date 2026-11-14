@@ -142,5 +142,36 @@ TEST_F(LefInRounding, FreePdk45HasNoWarnings)
   EXPECT_EQ(log.find("WARNING"), std::string::npos);
 }
 
+class LefInComment : public tst::DbFixture
+{
+};
+
+// A 0xFF byte inside a comment is an ordinary character, not the end of the
+// file: the statements after the comment are still read.
+TEST_F(LefInComment, ByteFFDoesNotEndTheFile)
+{
+  const std::string path = testing::TempDir() + "/comment_ff.lef";
+  std::ofstream lef(path, std::ios::binary);
+  lef << "VERSION 5.8 ;\n"
+      << "UNITS\n"
+      << "  DATABASE MICRONS 1000 ;\n"
+      << "END UNITS\n"
+      << "# comment with a \xff byte\n"
+      << "LAYER M1\n"
+      << "  TYPE ROUTING ;\n"
+      << "  DIRECTION HORIZONTAL ;\n"
+      << "  PITCH 0.2 ;\n"
+      << "  WIDTH 0.05 ;\n"
+      << "END M1\n"
+      << "END LIBRARY\n";
+  lef.close();
+
+  lefin reader(db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
+  dbTech* tech = reader.createTech("tech", path.c_str());
+
+  ASSERT_NE(tech, nullptr);
+  EXPECT_NE(tech->findLayer("M1"), nullptr);
+}
+
 }  // namespace
 }  // namespace odb
