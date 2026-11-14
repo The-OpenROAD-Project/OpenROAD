@@ -11,6 +11,7 @@
 #include <optional>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include "BufferedNet.hh"
@@ -156,6 +157,21 @@ class Rebuffer : public sta::dbStaState
   std::tuple<sta::Delay, sta::Delay, sta::Slew> drvrPinTiming(
       const BufferedNetPtr& bnet);
   FixedDelay slackAtDriverPin(const BufferedNetPtr& bnet);
+  // Timing of the driver arc on transition `rf` if the driver were `cell`
+  // driving `tree_cap`; the correction includes the extra delay a larger
+  // input capacitance adds to the previous stage.  All zero with no
+  // out_port when the path starts at the driver pin; empty when `cell` has
+  // no equivalent arc.
+  struct CellArcTiming
+  {
+    sta::Delay delay = 0.0;
+    sta::Delay correction = 0.0;
+    sta::Slew slew = 0.0;
+    sta::LibertyPort* out_port = nullptr;
+  };
+  std::optional<CellArcTiming> cellArcTiming(const sta::RiseFall* rf,
+                                             sta::LibertyCell* cell,
+                                             float tree_cap);
   // Slack at the driver pin if the driver were resized to `cell`, including
   // the extra delay a larger input capacitance adds to the previous stage.
   // Empty when `cell` has no equivalent arc or violates slew or capacitance
@@ -171,6 +187,13 @@ class Rebuffer : public sta::dbStaState
   // buffer; nullptr otherwise.  An upsized driver can then take the
   // buffer's place.
   BufferedNetPtr withoutFirstBuffer(const BufferedNetPtr& tree);
+  // Buffer the net from scratch, timing and area recovery alike, as though
+  // the driver were `cell`.  Returns the timing and area-recovered trees;
+  // both null when `cell` cannot be planned for.
+  std::pair<BufferedNetPtr, BufferedNetPtr> planForDriverCell(
+      const BufferedNetPtr& unbuffered_tree,
+      sta::LibertyCell* cell,
+      FixedDelay relaxation);
   // The cells driver sizing may choose for one driver, and the leakage the
   // driver and its buffers may reach together.
   struct DriverChoices
@@ -178,6 +201,14 @@ class Rebuffer : public sta::dbStaState
     sta::LibertyCellSeq cells;
     std::optional<float> leakage_budget;
   };
+  // Append to `trees` the trees planForDriverCell() builds for each of
+  // `choices` that speeds up `timing_tree`.
+  void addTreesPlannedForDrivers(const BufferedNetPtr& unbuffered_tree,
+                                 const BufferedNetPtr& timing_tree,
+                                 sta::LibertyCell* current_cell,
+                                 const DriverChoices& choices,
+                                 FixedDelay relaxation,
+                                 std::vector<BufferedNetPtr>& trees);
   DriverChoices driverChoices(sta::LibertyCell* current_cell,
                               const BufferedNetPtr& timing_tree);
   // Leakage of `cell` driving `tree` plus the tree's buffers; nullopt when a
@@ -207,6 +238,7 @@ class Rebuffer : public sta::dbStaState
   // `drvr_pin`, and resize the driver when that wins.  Returns the tree to
   // export.
   BufferedNetPtr sizeDriverWithTree(const sta::Pin* drvr_pin,
+                                    const BufferedNetPtr& unbuffered_tree,
                                     const BufferedNetPtr& timing_tree,
                                     const BufferedNetPtr& area_tree,
                                     FixedDelay slack_target);
@@ -506,6 +538,10 @@ class Rebuffer : public sta::dbStaState
   float drvr_load_high_water_mark_ = 0.0f;
   const sta::Scene* corner_ = nullptr;
   sta::LibertyPort* drvr_port_ = nullptr;
+  // While planForDriverCell() plans for a driver resize: the cell and its
+  // output port that driver timing and slew checks use instead.
+  sta::LibertyCell* plan_cell_ = nullptr;
+  sta::LibertyPort* plan_port_ = nullptr;
   sta::Path* arrival_paths_[sta::RiseFall::index_count] = {nullptr};
 
   // A worker planner's private delay calculator (see initForPlanning); every
@@ -545,6 +581,7 @@ class Rebuffer : public sta::dbStaState
   int driver_resize_count_ = 0;
   double size_ra_runtime_ = 0;
   double size_eval_runtime_ = 0;
+  double size_plan_runtime_ = 0;
 
   friend class rsz::BufferCandidate;
   friend class rsz::SetupLegacyBase;
