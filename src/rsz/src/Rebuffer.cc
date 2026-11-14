@@ -4,6 +4,7 @@
 #include "Rebuffer.hh"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cmath>
 #include <cstddef>
@@ -1087,6 +1088,76 @@ static std::optional<int> findWireLayer(BnetPtr node)
   return {};
 }
 
+// Lengths of the upstream stage of an evenly spaced chain, relative to its
+// other stages.
+constexpr std::array<float, 3> kUpstreamStageFractions{1.0f, 0.5f, 0.25f};
+
+// The point `distance` along a Manhattan path from `from` to `to`, moving in
+// x and y in proportion to the remaining offsets.
+static odb::Point stepToward(const odb::Point& from,
+                             const odb::Point& to,
+                             const int distance)
+{
+  int dx = to.x() - from.x();
+  int dy = to.y() - from.y();
+  if (abs(dx) + abs(dy) >= distance) {
+    const float ratio
+        = static_cast<float>(abs(dx)) / static_cast<float>(abs(dx) + abs(dy));
+    const int dx_abs = std::min(static_cast<int>(ratio * distance), distance);
+    const int dy_abs = distance - dx_abs;
+    dx = dx > 0 ? dx_abs : -dx_abs;
+    dy = dy > 0 ? dy_abs : -dy_abs;
+  }
+  odb::Point point = from;
+  point.addX(dx);
+  point.addY(dy);
+  return point;
+}
+
+BnetPtr Rebuffer::bufferAt(const BnetPtr& head,
+                           const odb::Point location,
+                           const int layer,
+                           BufferSize& size)
+{
+  const BnetPtr wire_head = addWire(head, location, layer);
+  if (!bufferSizeCanDriveLoad(size, wire_head, 0)) {
+    return nullptr;
+  }
+  // The buffer delay depends on wire_head->slackTransition().
+  const FixedDelay buffer_delay
+      = bufferDelay(size.cell, wire_head->slackTransition(), wire_head->cap());
+  BnetPtr buffer = make_shared<BufferedNet>(BnetType::buffer,
+                                            location,
+                                            size.cell,
+                                            wire_head,
+                                            corner_,
+                                            resizer_,
+                                            estimate_parasitics_);
+  buffer->setSlack(wire_head->slack() - buffer_delay);
+  buffer->setSlackTransition(wire_head->slackTransition());
+  buffer->setDelay(buffer_delay);
+  return buffer;
+}
+
+BnetPtr Rebuffer::evenlySpacedChain(const BnetPtr& head,
+                                    const odb::Point target_location,
+                                    const int layer,
+                                    BufferSize& size,
+                                    const int count,
+                                    const float upstream_fraction)
+{
+  const odb::Point start = head->location();
+  const double length = odb::Point::manhattanDistance(target_location, start);
+  const double spacing = length / (count + upstream_fraction);
+  BnetPtr chain = head;
+  for (int i = 1; i <= count && chain; i++) {
+    const int distance = static_cast<int>(spacing * i);
+    chain = bufferAt(
+        chain, stepToward(start, target_location, distance), layer, size);
+  }
+  return chain;
+}
+
 // Find ranked timing-optimized buffering choices over the provided tree.
 std::vector<Rebuffer::RankedOption> Rebuffer::bufferForTimingTopK(
     const BnetPtr& tree,
@@ -1156,79 +1227,63 @@ std::vector<Rebuffer::RankedOption> Rebuffer::bufferForTimingTopK(
               }
 
               if (head && wire_cap > 0.0) {
-                bool inserted_buffer = false;
+                utl::DebugScopedTimer timer(long_wire_stepping_runtime_);
+                // Chains are wired to the segment's upstream end and kept in
+                // increasing cap order.
+                auto add_chain = [&](BnetPtr chain) {
+                  const int remaining_wl = odb::Point::manhattanDistance(
+                      target_location, chain->location());
+                  BufferSize& strong_driver = buffer_sizes_.back();
+                  if (!bufferSizeCanDriveLoad(
+                          strong_driver, chain, remaining_wl)) {
+                    return;
+                  }
+                  chain = addWire(chain, target_location, layer);
+                  auto it = std::ranges::find_if(
+                      wired_opts, [&](const BnetPtr& opt) {
+                        return opt->cap() >= chain->cap();
+                      });
+                  wired_opts.insert(it, std::move(chain));
+                };
 
+                // Step from the load end at the asymptotic spacing.
+                BnetPtr stepped = head;
+                int stepped_count = 0;
                 while (true) {
-                  int remaining_wl = odb::Point::manhattanDistance(
-                      target_location, head->location());
-                  int step_wl = resizer_->metersToDbu(
-                      (target_load - head->cap()) / wire_cap);
-
+                  const int remaining_wl = odb::Point::manhattanDistance(
+                      target_location, stepped->location());
+                  const int step_wl = resizer_->metersToDbu(
+                      (target_load - stepped->cap()) / wire_cap);
                   if (step_wl >= remaining_wl) {
                     break;
                   }
-
-                  // move `head->location()` towards `target_location` by
-                  // `step_wl`
-                  int dx = target_location.x() - head->location().x();
-                  int dy = target_location.y() - head->location().y();
-
-                  if (abs(dx) + abs(dy) >= step_wl) {
-                    const float ratio
-                        = (float) abs(dx) / (float) (abs(dx) + abs(dy));
-                    const int dx_abs
-                        = std::min((int) (ratio * step_wl), step_wl);
-                    const int dy_abs = step_wl - dx_abs;
-                    dx = dx > 0 ? dx_abs : -dx_abs;
-                    dy = dy > 0 ? dy_abs : -dy_abs;
-                  }
-
-                  odb::Point next_location = head->location();
-                  next_location.addX(dx);
-                  next_location.addY(dy);
-
-                  // Fetch the true buffer_delay as it depends on
-                  // head->slackTransition()
-                  BnetPtr wire_head = addWire(head, next_location, layer);
-                  FixedDelay buffer_delay
-                      = bufferDelay(size.cell,
-                                    wire_head->slackTransition(),
-                                    wire_head->cap());
-
-                  if (!bufferSizeCanDriveLoad(size, wire_head, 0)) {
-                    inserted_buffer = false;
+                  stepped = bufferAt(
+                      stepped,
+                      stepToward(stepped->location(), target_location, step_wl),
+                      layer,
+                      size);
+                  if (!stepped) {
                     break;
                   }
-
-                  BnetPtr buffer
-                      = make_shared<BufferedNet>(BnetType::buffer,
-                                                 next_location,
-                                                 size.cell,
-                                                 wire_head,
-                                                 corner_,
-                                                 resizer_,
-                                                 estimate_parasitics_);
-                  buffer->setSlack(wire_head->slack() - buffer_delay);
-                  buffer->setSlackTransition(wire_head->slackTransition());
-                  buffer->setDelay(buffer_delay);
-
-                  head = buffer;
-                  inserted_buffer = true;
+                  stepped_count++;
+                }
+                if (stepped && stepped_count > 0) {
+                  add_chain(stepped);
                 }
 
-                if (inserted_buffer) {
-                  int remaining_wl = odb::Point::manhattanDistance(
-                      target_location, head->location());
-                  BufferSize& strong_driver = buffer_sizes_.back();
-                  if (bufferSizeCanDriveLoad(
-                          strong_driver, head, remaining_wl)) {
-                    head = addWire(head, target_location, layer);
-                    auto it = std::find_if(wired_opts.begin(),
-                                           wired_opts.end(),
-                                           [&](const BnetPtr& opt) {
-                                             return opt->cap() >= head->cap();
-                                           });
-                    wired_opts.insert(it, std::move(head));
+                // Stepping leaves the remainder on the upstream side; also
+                // offer the same and one more buffer spaced evenly, with
+                // the upstream stage a fraction of the others for a weak
+                // upstream driver.
+                if (stepped_count > 0) {
+                  for (const int count : {stepped_count, stepped_count + 1}) {
+                    for (const float fraction : kUpstreamStageFractions) {
+                      BnetPtr even = evenlySpacedChain(
+                          head, target_location, layer, size, count, fraction);
+                      if (even) {
+                        add_chain(even);
+                      }
+                    }
                   }
                 }
               }

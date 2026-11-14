@@ -444,6 +444,22 @@ class Rebuffer : public sta::dbStaState
   sta::Delay characterizationDelay(BufferSize& size, float load_cap);
   void findLongWireAsymptotics(int layer, Rebuffer::BufferSize& size);
 
+  // `size` at `location` driving `head` through a wire on `layer`; nullptr
+  // when it cannot drive that load.
+  BufferedNetPtr bufferAt(const BufferedNetPtr& head,
+                          odb::Point location,
+                          int layer,
+                          BufferSize& size);
+  // `count` buffers of `size` evenly spaced from `head` toward
+  // `target_location`, except that the stage reaching `target_location` is
+  // `upstream_fraction` of the others; nullptr when a buffer cannot drive
+  // its stage.
+  BufferedNetPtr evenlySpacedChain(const BufferedNetPtr& head,
+                                   odb::Point target_location,
+                                   int layer,
+                                   BufferSize& size,
+                                   int count,
+                                   float upstream_fraction);
   bool bufferSizeCanDriveLoad(const BufferSize& size,
                               const BufferedNetPtr& bnet,
                               int extra_wire_length = 0);
