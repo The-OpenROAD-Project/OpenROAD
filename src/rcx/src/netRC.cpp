@@ -11,7 +11,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <list>
+#include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -1650,6 +1652,105 @@ void extMain::setCornerCount()
   _block->setCornerCount(_cornerCnt, _extDbCnt, nullptr);
 }
 
+WidthsPerLevelMap extMain::findWidthsPerLevel() const
+{
+  WidthsPerLevelMap level_to_widths;
+  for (odb::dbNet* net : _block->getNets()) {
+    if (net->getSigType().isSupply() || (!_allNet && !net->isMarked())) {
+      continue;
+    }
+
+    odb::dbWire* wire = net->getWire();
+    if (!wire) {
+      continue;
+    }
+
+    odb::dbWireShapeItr shapes;
+    odb::dbShape shape;
+    shapes.begin(wire);
+    while (shapes.next(shape)) {
+      if (shape.isVia()) {
+        continue;
+      }
+
+      const int level = shape.getTechLayer()->getRoutingLevel();
+      level_to_widths[level].insert(std::min(shape.getDX(), shape.getDY()));
+    }
+  }
+  return level_to_widths;
+}
+
+// Refuses extraction rules with no RC data for a layer and width the design
+// routes on. Layers the design does not route on may be missing from the
+// rules. With -lef_res the resistance comes from LEF and the rules only supply
+// the neighbor adjustment, so missing resistance data drops that adjustment
+// with a warning.
+void extMain::checkRulesCoverRoutedLayers()
+{
+  WidthsPerLevelMap level_to_widths = findWidthsPerLevel();
+  extMeasure measure(logger_);
+
+  _currentModel = getRCmodel(0);
+  measure._underMet = 0;
+  measure._overMet = 0;
+
+  for (const auto& [level, widths] : level_to_widths) {
+    const std::string layer_name = _tech->findRoutingLayer(level)->getName();
+    measure._met = level;
+
+    for (uint32_t i = 0; i < _modelMap.getCnt(); i++) {
+      extMetRCTable* rc_model = _currentModel->getMetRCTable(_modelMap.get(i));
+      extDistWidthRCTable*& res_table = rc_model->_resOver[level];
+      bool resistance_data_missing = false;
+
+      for (const int width : widths) {
+        const double width_in_microns = _block->dbuToMicrons(width);
+        measure._width = width;
+
+        if (!rc_model->getOverFringeRC(&measure)) {
+          logger_->error(RCX,
+                         24,
+                         "Could not extract. The extraction rules have no "
+                         "capacitance data for layer {} at width {:.3f}um, "
+                         "which the design routes on.",
+                         layer_name,
+                         width_in_microns);
+        }
+
+        if (res_table->getRes(0, width, 0, 0)) {
+          continue;
+        }
+
+        if (!_lef_res) {
+          logger_->error(RCX,
+                         25,
+                         "Could not extract. The extraction rules have no "
+                         "resistance data for layer {} at width {:.3f}um, "
+                         "which the design routes on.",
+                         layer_name,
+                         width_in_microns);
+        }
+
+        logger_->warn(RCX,
+                      26,
+                      "The extraction rules have no resistance data for "
+                      "layer {} at width {:.3f}um. Its resistance comes from "
+                      "LEF without the neighbor adjustment.",
+                      layer_name,
+                      width_in_microns);
+
+        resistance_data_missing = true;
+      }
+
+      // Dropped after the loop so that every width is checked against it.
+      if (resistance_data_missing) {
+        delete res_table;
+        res_table = nullptr;
+      }
+    }
+  }
+}
+
 void extMain::run()
 {
   _diagFlow = true;
@@ -1685,6 +1786,7 @@ void extMain::run()
   setupMapping();
 
   if (_couplingFlag > 1) {
+    checkRulesCoverRoutedLayers();
     calcMinMaxRC();
     getResCapTable();
   }
