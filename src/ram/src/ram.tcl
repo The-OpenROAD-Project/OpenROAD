@@ -27,6 +27,8 @@ sta::define_cmd_args "generate_ram_netlist" {[-mask_size bits]
                                              [-service_columns {every sites}]
                                              [-bank_column_layout interleaved|contiguous]
                                              [-inv_cell name]
+                                             [-buffer_cell name]
+                                             [-input_buffer_cell name|none]
                                              [-rw_ports count]
                                              [-r_ports count]
                                              [-w_ports count]
@@ -37,7 +39,7 @@ sta::define_cmd_args "generate_ram_netlist" {[-mask_size bits]
 proc generate_ram_netlist { args } {
   sta::parse_key_args "generate_ram_netlist" args \
     keys { -mask_size -word_size -num_words -column_mux_ratio -storage_cell -tristate_cell -inv_cell
-      -rw_ports -r_ports -w_ports -use_latch -tapcell -max_tap_dist
+      -buffer_cell -input_buffer_cell -rw_ports -r_ports -w_ports -use_latch -tapcell -max_tap_dist
       -write_behavioral_verilog -read_style -zero_word -reset_value
       -banks -bank_columns -bank_order -rb_ports -register_read_address -write_style -write_priority
       -periphery -pin_layer -cells -name -decoder -bit_folds -wrapper_verilog -service_columns
@@ -212,6 +214,16 @@ proc generate_ram_netlist { args } {
   if { [info exists keys(-cells)] } {
     set cells [join $keys(-cells) " "]
   }
+  foreach {flag role} {-buffer_cell buffer -input_buffer_cell input_buffer} {
+    if { [info exists keys($flag)] } {
+      foreach {given_role given_cell} $cells {
+        if { $given_role eq $role } {
+          utl::error RAM 115 "$flag and -cells $role both set the $role cell."
+        }
+      }
+      lappend cells $role $keys($flag)
+    }
+  }
   set name ""
   if { [info exists keys(-name)] } {
     set name $keys(-name)
@@ -351,6 +363,8 @@ sta::define_cmd_args "generate_ram" {[-mask_size bits]
                                      [-service_columns {every sites}]
                                      [-bank_column_layout interleaved|contiguous]
                                      [-inv_cell name]
+                                     [-buffer_cell name]
+                                     [-input_buffer_cell name|none]
                                      [-power_net_name name]
                                      [-ground_net_name name]
                                      -routing_layer config
@@ -370,7 +384,7 @@ sta::define_cmd_args "generate_ram" {[-mask_size bits]
 proc generate_ram { args } {
   sta::parse_key_args "generate_ram" args \
     keys { -mask_size -word_size -num_words -column_mux_ratio
-           -storage_cell -tristate_cell -inv_cell -rw_ports
+           -storage_cell -tristate_cell -inv_cell -buffer_cell -input_buffer_cell -rw_ports
            -r_ports -w_ports -use_latch -power_net_name
            -ground_net_name -routing_layer -ver_layer
            -hor_layer -filler_cells -tapcell -max_tap_dist
@@ -436,7 +450,8 @@ proc generate_ram { args } {
     lappend ram_netlist_args -reset_value $keys(-reset_value)
   }
 
-  foreach key {-banks -bank_columns -bank_order -rb_ports -register_read_address
+  foreach key {-buffer_cell -input_buffer_cell
+               -banks -bank_columns -bank_order -rb_ports -register_read_address
                -write_style -write_priority
                -cells -name -decoder -bit_folds -service_columns
                -bank_column_layout -periphery -wrapper_verilog} {

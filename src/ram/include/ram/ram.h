@@ -324,6 +324,9 @@ class RamGen
   odb::dbMaster* and2_cell_{nullptr};
   odb::dbMaster* clock_gate_cell_{nullptr};
   odb::dbMaster* buffer_cell_{nullptr};
+  odb::dbMaster* in_buf_cell_{nullptr};
+  // -input_buffer_cell none: the data pins drive the storage directly
+  bool input_buffers_{true};
   odb::dbMaster* aoi22_cell_{nullptr};
   // with more than one write port: the write data mux (an AO22, or where
   // the library has none the AOI22 and an inverter) and the write
@@ -345,6 +348,7 @@ class RamGen
   std::map<PortRole, std::string> and2_ports_;
   std::map<PortRole, std::string> clock_gate_ports_;
   std::map<PortRole, std::string> buffer_ports_;
+  std::map<PortRole, std::string> in_buf_ports_;
   std::map<PortRole, std::string> latch_ports_;
   std::map<PortRole, std::string> or2_ports_;
   std::map<PortRole, std::string> nand2_ports_;
