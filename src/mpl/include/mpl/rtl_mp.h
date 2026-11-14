@@ -64,6 +64,7 @@ struct MacroPlacerOptions
 
   bool keep_clustering_data{false};
   bool pin_aware_channels{false};
+  bool snap_to_site_grid{false};
 };
 
 // Every parameter accepted by the `mpl_debug` command.
@@ -105,7 +106,8 @@ class MacroPlacer
                   const float& y_origin,
                   const odb::dbOrientType& orientation,
                   bool exact,
-                  bool allow_overlap);
+                  bool allow_overlap,
+                  bool snap_to_site_grid);
   std::vector<odb::dbInst*> findOverlappedMacros(odb::dbInst* macro);
 
   void addGuidanceRegion(odb::dbInst* macro, odb::Rect region);

@@ -118,6 +118,7 @@ void HierRTLMP::configure(int threads, const MacroPlacerOptions& options)
   macro_placement_file_ = options.macro_placement_file;
   keep_clustering_data_ = options.keep_clustering_data;
   pin_aware_channels_ = options.pin_aware_channels;
+  snap_to_site_grid_ = options.snap_to_site_grid;
 }
 
 void HierRTLMP::setHardMacros(InstToHardMap hard_macros)
@@ -2483,6 +2484,7 @@ void HierRTLMP::updateMacroOnDb(const HardMacro* hard_macro)
 void HierRTLMP::commitMacroPlacementToDb()
 {
   Snapper snapper(logger_);
+  snapper.setSnapToSiteGrid(snap_to_site_grid_);
 
   for (auto& [inst, hard_macro] : tree_->maps.inst_to_hard) {
     if (hard_macro->isIgnorable()) {
