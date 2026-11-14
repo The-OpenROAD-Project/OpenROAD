@@ -20,6 +20,7 @@ class dbInst;
 namespace sta {
 class dbSta;
 class Path;
+class PathEnd;
 }  // namespace sta
 
 namespace web {
@@ -161,21 +162,21 @@ class TimingReport
  public:
   explicit TimingReport(sta::dbSta* sta);
 
-  // Matches the Qt GUI's option to include unconstrained path ends.
+  // With a slack range or a chart filter, the worst path of each endpoint the
+  // slack histogram counts there; otherwise the worst paths per path group.
   std::vector<TimingPathSummary> getReport(
       bool is_setup,
       int max_paths = 100,
       float slack_min = -std::numeric_limits<float>::max(),
       float slack_max = std::numeric_limits<float>::max(),
-      bool include_unconstrained = false) const;
+      bool include_unconstrained = false,
+      const std::vector<std::string>& path_groups = {},
+      const std::string& clock_name = "") const;
 
-  // `path_groups` (optional) requests a per-group stacked breakdown: when it
-  // has entries, `result.series` is populated over the shared bin edges and the
-  // aggregate `bins` cover the union of those groups.  The single `path_group`
-  // arg is kept for the unfiltered / single-group case.
+  // The `bins` count the union of `path_groups` (every group when empty);
+  // several groups are also stacked in `result.series` over the same bins.
   SlackHistogramResult getSlackHistogram(
       bool is_setup,
-      const std::string& path_group = "",
       const std::string& clock_name = "",
       const std::vector<std::string>& path_groups = {}) const;
 
@@ -194,6 +195,15 @@ class TimingReport
                                      int fanout_depth) const;
 
  private:
+  // Endpoints whose counted slack is in [slack_min, slack_max), by slack.
+  std::vector<TimingPathSummary> endpointReport(
+      bool is_setup,
+      int max_paths,
+      float slack_min,
+      float slack_max,
+      const std::vector<std::string>& path_groups,
+      const std::string& clock_name) const;
+  TimingPathSummary summarizePathEnd(sta::PathEnd& path_end) const;
   void expandPath(sta::Path* path,
                   float offset,
                   bool clock_expanded,

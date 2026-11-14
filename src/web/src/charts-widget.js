@@ -218,6 +218,11 @@ export class ChartsWidget {
         // Histogram kind: 'setup'|'hold' (endpoint slack), 'fanout', 'netlength'.
         this._currentTab = 'setup';
         this._histogramData = null;
+        // { tab, filters } _histogramData was fetched with, for a bar's
+        // drill-down; null until a histogram is drawn.
+        this._drawnHistogram = null;
+        // Bumped per histogram request; only the latest one's reply is drawn.
+        this._histogramGeneration = 0;
         this._bars = [];
         this._yMax = 0;
         this._yTicks = [];
@@ -463,36 +468,34 @@ export class ChartsWidget {
     }
 
     async _fetchHistogram() {
+        const requestedTab = this._currentTab;
+        const generation = ++this._histogramGeneration;
+        // A reply to an older request, or for a tab no longer shown, is
+        // dropped rather than drawn as the wrong histogram.
+        const stale = () => generation !== this._histogramGeneration
+            || this._currentTab !== requestedTab;
         try {
-            // Remember which tab issued this request so a response that arrives
-            // after the user switches tabs can be discarded instead of being
-            // rendered/interpreted as the wrong histogram type.
-            const requestedTab = this._currentTab;
             let req;
+            let filters = {};
             if (requestedTab === 'fanout') {
                 req = { type: 'fanout_histogram' };
             } else if (requestedTab === 'netlength') {
                 req = { type: 'net_length_histogram',
                         use_dbu: !!this._app.showDbu };
             } else {
+                filters = this._slackFilters();
                 req = {
                     type: 'slack_histogram',
                     is_setup: requestedTab === 'setup',
+                    ...filters,
                 };
-                const groups = Array.from(
-                    this._pathGroupSelect.selectedOptions, (o) => o.value)
-                    .filter(Boolean);
-                if (groups.length > 0) req.path_groups = groups;
-                if (this._clockSelect.value) {
-                    req.clock_name = this._clockSelect.value;
-                }
             }
             const data = await this._app.websocketManager.request(req);
-            // Stale response: the user switched tabs while this was in flight.
-            if (this._currentTab !== requestedTab) {
+            if (stale()) {
                 return;
             }
             this._histogramData = data;
+            this._drawnHistogram = { tab: requestedTab, filters };
             this._syncView();
 
             if (requestedTab === 'fanout' || requestedTab === 'netlength') {
@@ -506,8 +509,24 @@ export class ChartsWidget {
                     (unconstrained > 0 ? `, ${unconstrained} unconstrained` : '');
             }
         } catch (err) {
-            this._statusLabel.textContent = 'Error: ' + err.message;
+            if (!stale()) {
+                this._statusLabel.textContent = 'Error: ' + err.message;
+            }
         }
+    }
+
+    // The slack histogram's path group and clock filters, as the
+    // slack_histogram and timing_report requests take them.
+    _slackFilters() {
+        const filters = {};
+        const groups = Array.from(
+            this._pathGroupSelect.selectedOptions, (o) => o.value)
+            .filter(Boolean);
+        if (groups.length > 0) filters.path_groups = groups;
+        if (this._clockSelect.value) {
+            filters.clock_name = this._clockSelect.value;
+        }
+        return filters;
     }
 
     _selectTab(tab) {
@@ -806,19 +825,20 @@ export class ChartsWidget {
 
     async _handleClick(e) {
         if (this._activeDebugChart >= 0) return;
-        // Only slack histograms drill down to timing paths.
-        if (this._currentTab === 'fanout' || this._currentTab === 'netlength') {
-            return;
-        }
+        // Only slack histograms drill down to timing paths, and the drawn
+        // bars may be another tab's until the current one's arrive.
+        const tab = this._drawnHistogram?.tab;
+        if (tab !== 'setup' && tab !== 'hold') return;
         const bar = this._hitTestBar(e);
         if (!bar || bar.count === 0) return;
 
-        const tab = this._currentTab;
         const reportOptions = {
             max_paths: 50,
             slack_min: bar.lower,
             slack_max: bar.upper,
             unconstrained: false,
+            // The drawn histogram's filters; the selects may have changed.
+            ...this._drawnHistogram.filters,
         };
         try {
             const resp = await withBusyCursor(

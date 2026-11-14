@@ -610,6 +610,26 @@ cc_test(
 )
 
 cc_test(
+    name = "timing_report_test",
+    srcs = ["cpp/TestTimingReport.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb/src/db",
+        "//src/sta:opensta_lib",
+        "//src/tst:db_fixture",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "//src/web:core",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "charts_test",
     srcs = ["cpp/TestCharts.cpp"],
     data = [
