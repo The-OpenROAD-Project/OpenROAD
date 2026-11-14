@@ -4278,18 +4278,10 @@ double RamGen::reportTiming()
                                 sta::RiseFallBoth::riseFall(),
                                 sta_->cmdSdc());
 
-  sta::ExceptionTo* setup_to
-      = sta_->makeExceptionTo(collect_endpoints(),
-                              nullptr,
-                              nullptr,
-                              sta::RiseFallBoth::riseFall(),
-                              sta::RiseFallBoth::riseFall(),
-                              sta_->cmdSdc());
-
   sta::PathEndSeq setup_ends
       = sta_->findPathEnds(setup_from,            /* from */
                            nullptr,               /* thrus */
-                           setup_to,              /* to */
+                           nullptr,               /* to */
                            true,                  /* unconstrained */
                            scenes,                /* scenes */
                            sta::MinMaxAll::max(), /* min_max */
