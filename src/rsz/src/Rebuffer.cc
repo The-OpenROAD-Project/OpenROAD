@@ -379,42 +379,17 @@ std::optional<FixedDelay> Rebuffer::slackWithDriverCell(const BnetPtr& bnet,
 bool Rebuffer::upstreamSideLoadsOk(sta::LibertyCell* cell,
                                    const FixedDelay slack_limit)
 {
-  for (const sta::Path* arrival_path : arrival_paths_) {
-    if (arrival_path == nullptr) {
-      continue;
-    }
-    const sta::Path* driver_path = arrival_path->prevPath();
-    const sta::TimingArc* driver_arc = arrival_path->prevArc(resizer_);
-    if (driver_path == nullptr || driver_arc == nullptr) {
-      continue;
-    }
-    const sta::Path* prev_drvr_path = driver_path->prevPath();
-    if (prev_drvr_path == nullptr) {
-      continue;
-    }
-    const sta::Pin* prev_drvr_pin = prev_drvr_path->pin(sta_);
-    const sta::LibertyPort* prev_port = network_->libertyPort(prev_drvr_pin);
-    const sta::LibertyPort* from
-        = cell->findLibertyPort(driver_arc->from()->name());
-    if (prev_port == nullptr || from == nullptr) {
-      continue;
-    }
-    const float delta
-        = resizer_->driveResistance(prev_drvr_pin)
-          * (from->capacitance() - driver_arc->from()->capacitance());
-    if (delta <= 0.0) {
-      continue;
-    }
-    const sta::Pin* driver_input = driver_path->pin(sta_);
-    sta::Net* prev_net = network_->net(prev_drvr_pin);
-    if (prev_net == nullptr) {
-      continue;
-    }
+  // False when slowing `net` by `delta` would push one of its loads other
+  // than `skip` below both its current slack and `slack_limit`.
+  auto loads_ok = [&](sta::Net* net,
+                      const sta::Pin* drvr_pin,
+                      const sta::Pin* skip,
+                      const float delta) {
     std::unique_ptr<sta::NetConnectedPinIterator> pin_iter(
-        network_->connectedPinIterator(prev_net));
+        network_->connectedPinIterator(net));
     while (pin_iter->hasNext()) {
       const sta::Pin* pin = pin_iter->next();
-      if (pin == driver_input || pin == prev_drvr_pin || !network_->isLoad(pin)
+      if (pin == skip || pin == drvr_pin || !network_->isLoad(pin)
           || network_->isHierarchical(pin)) {
         continue;
       }
@@ -438,6 +413,73 @@ bool Rebuffer::upstreamSideLoadsOk(sta::LibertyCell* cell,
       if (after < before && after < slack_limit) {
         return false;
       }
+    }
+    return true;
+  };
+
+  // The input on the timed path: slackWithDriverCell() charges the path
+  // itself, so only the previous net's other loads are checked.
+  std::set<const sta::Pin*> timed_inputs;
+  for (const sta::Path* arrival_path : arrival_paths_) {
+    if (arrival_path == nullptr) {
+      continue;
+    }
+    const sta::Path* driver_path = arrival_path->prevPath();
+    const sta::TimingArc* driver_arc = arrival_path->prevArc(resizer_);
+    if (driver_path == nullptr || driver_arc == nullptr) {
+      continue;
+    }
+    const sta::Pin* driver_input = driver_path->pin(sta_);
+    timed_inputs.insert(driver_input);
+    const sta::Path* prev_drvr_path = driver_path->prevPath();
+    if (prev_drvr_path == nullptr) {
+      continue;
+    }
+    const sta::Pin* prev_drvr_pin = prev_drvr_path->pin(sta_);
+    const sta::LibertyPort* prev_port = network_->libertyPort(prev_drvr_pin);
+    const sta::LibertyPort* from
+        = cell->findLibertyPort(driver_arc->from()->name());
+    if (prev_port == nullptr || from == nullptr) {
+      continue;
+    }
+    const float delta
+        = resizer_->driveResistance(prev_drvr_pin)
+          * (from->capacitance() - driver_arc->from()->capacitance());
+    sta::Net* prev_net = network_->net(prev_drvr_pin);
+    if (delta <= 0.0 || prev_net == nullptr) {
+      continue;
+    }
+    if (!loads_ok(prev_net, prev_drvr_pin, driver_input, delta)) {
+      return false;
+    }
+  }
+
+  // Every other input takes the new cell's input capacitance too, slowing
+  // the paths through it and its net's other loads.
+  std::unique_ptr<sta::InstancePinIterator> input_iter(
+      network_->pinIterator(network_->instance(pin_)));
+  while (input_iter->hasNext()) {
+    const sta::Pin* input = input_iter->next();
+    if (!network_->direction(input)->isInput()
+        || timed_inputs.contains(input)) {
+      continue;
+    }
+    const sta::LibertyPort* old_port = network_->libertyPort(input);
+    const sta::LibertyPort* new_port
+        = old_port ? cell->findLibertyPort(old_port->name()) : nullptr;
+    sta::Net* net = network_->net(input);
+    if (new_port == nullptr || net == nullptr) {
+      continue;
+    }
+    const float delta_cap = new_port->capacitance() - old_port->capacitance();
+    const sta::PinSet* drivers = network_->drivers(input);
+    if (delta_cap <= 0.0 || drivers == nullptr || drivers->empty()) {
+      continue;
+    }
+    const sta::Pin* drvr_pin = *drivers->begin();
+    const float delta = resizer_->driveResistance(drvr_pin) * delta_cap;
+    if (!loads_ok(net, drvr_pin, nullptr, delta)) {
+      return false;
     }
   }
   return true;

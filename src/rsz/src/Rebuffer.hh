@@ -162,9 +162,9 @@ class Rebuffer : public sta::dbStaState
   // limits.
   std::optional<FixedDelay> slackWithDriverCell(const BufferedNetPtr& bnet,
                                                 sta::LibertyCell* cell);
-  // False when resizing the driver to `cell` would slow the previous stage
-  // enough to push one of its other loads below both its current slack and
-  // `slack_limit`.
+  // False when resizing the driver to `cell` would slow the nets on its
+  // inputs enough to push one of their other loads below both its current
+  // slack and `slack_limit`.
   bool upstreamSideLoadsOk(sta::LibertyCell* cell, FixedDelay slack_limit);
   // Pick the smallest (tree + driver) area among the candidate trees and the
   // driver's swappable cells whose slack meets `slack_target`, the target the
