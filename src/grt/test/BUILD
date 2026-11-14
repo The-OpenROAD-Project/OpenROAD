@@ -318,6 +318,7 @@ cc_test(
     size = "small",
     srcs = ["cpp/TestGuideRestore.cpp"],
     data = [
+        "gcd.def",
         "remove_buffers1.def",
         "//test:nangate45_data",
     ],
