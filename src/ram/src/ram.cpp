@@ -2073,15 +2073,42 @@ void RamGen::ramPinplacer(const char* ver_name, const char* hor_name)
   // moving clock and we pins to the top
   block_->addBTermsToConstraint(clk_pins, top_constraint);
   block_->addBTermsToConstraint(we_pins, top_constraint);
-  for (const auto& inputs : addr_inputs_) {
-    block_->addBTermsToConstraint(inputs, right_constraint);
-  }
 
   auto pin_tech = block_->getDb()->getTech();
   odb::dbTechLayer* hor_layer = pin_tech->findLayer(hor_name);
+  if (hor_layer == nullptr) {
+    logger_->error(RAM, 132, "Horizontal layer {} not found.", hor_name);
+  }
   odb::dbTechLayer* ver_layer = pin_tech->findLayer(ver_name);
+  if (ver_layer == nullptr) {
+    logger_->error(RAM, 133, "Vertical layer {} not found.", ver_name);
+  }
   io_placer_->addHorLayer(hor_layer);
   io_placer_->addVerLayer(ver_layer);
+
+  // no pin within a pitch of a corner: the first track along an edge is
+  // the last one before the perpendicular edge, and a via from a pin on
+  // it to the layer below lands its enclosure outside the die (asap7:
+  // VIA34's M3 reaches 68 nm below the first M4 track, 48 nm up), which
+  // the detailed router cannot route (DRT-0255)
+  const int hor_pitch = hor_layer->getPitch();
+  const int ver_pitch = ver_layer->getPitch();
+  // the right edge's excluded intervals of pin centres, for its capacity
+  std::vector<std::pair<int, int>> right_excluded{
+      {die_bounds.yMin(), die_bounds.yMin() + hor_pitch},
+      {die_bounds.yMax() - hor_pitch, die_bounds.yMax()}};
+  for (const ppl::Edge edge : {ppl::Edge::right, ppl::Edge::left}) {
+    io_placer_->excludeInterval(
+        edge, die_bounds.yMin(), die_bounds.yMin() + hor_pitch);
+    io_placer_->excludeInterval(
+        edge, die_bounds.yMax() - hor_pitch, die_bounds.yMax());
+  }
+  for (const ppl::Edge edge : {ppl::Edge::top, ppl::Edge::bottom}) {
+    io_placer_->excludeInterval(
+        edge, die_bounds.xMin(), die_bounds.xMin() + ver_pitch);
+    io_placer_->excludeInterval(
+        edge, die_bounds.xMax() - ver_pitch, die_bounds.xMax());
+  }
 
   // no pin on a power strap of its own layer: where a strap reaches an
   // edge, a pin on the tracks under it cannot be reached (asap7's M4
@@ -2104,6 +2131,7 @@ void RamGen::ramPinplacer(const char* ver_name, const char* hor_name)
               ppl::Edge::right, r.yMin() - s, r.yMax() + s);
           io_placer_->excludeInterval(
               ppl::Edge::left, r.yMin() - s, r.yMax() + s);
+          right_excluded.emplace_back(r.yMin() - s, r.yMax() + s);
         } else if (box->getTechLayer() == ver_layer) {
           const int s = ver_layer->getSpacing() + ver_layer->getWidth() / 2;
           io_placer_->excludeInterval(
@@ -2114,6 +2142,39 @@ void RamGen::ramPinplacer(const char* ver_name, const char* hor_name)
       }
     }
   }
+
+  // the address pins on the right edge, beside the decoders, as many
+  // ports as a third of its free tracks hold; the other ports' on the
+  // bottom edge. The pin placer keeps a pin every other track and loses
+  // tracks beside each excluded interval: 8 words of 8 bits with six
+  // ports have 18 address pins for a 2.43 um edge whose 32 free tracks
+  // gave 13 slots.
+  int free_tracks = 0;
+  if (odb::dbTrackGrid* grid = block_->findTrackGrid(hor_layer)) {
+    std::vector<int> ys;
+    grid->getGridY(ys);
+    for (const int y : ys) {
+      const bool excluded = std::ranges::any_of(
+          right_excluded,
+          [y](const auto& e) { return y >= e.first && y <= e.second; });
+      if (y > die_bounds.yMin() && y < die_bounds.yMax() && !excluded) {
+        ++free_tracks;
+      }
+    }
+  }
+  const int right_capacity = free_tracks / 3;
+  odb::Rect bottom_constraint = block_->findConstraintRegion(
+      odb::Direction2D::South, die_bounds.xMin(), die_bounds.xMax());
+  int on_right = 0;
+  for (const auto& inputs : addr_inputs_) {
+    if (on_right + static_cast<int>(inputs.size()) <= right_capacity) {
+      block_->addBTermsToConstraint(inputs, right_constraint);
+      on_right += inputs.size();
+    } else {
+      block_->addBTermsToConstraint(inputs, bottom_constraint);
+    }
+  }
+
   io_placer_->getParameters()->setCornerAvoidance(0);
   io_placer_->runHungarianMatching();
 }
