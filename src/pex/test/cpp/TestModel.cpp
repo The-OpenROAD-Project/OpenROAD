@@ -298,9 +298,9 @@ TEST(Model, DiagonalLookup)
   EXPECT_DOUBLE_EQ(model.diagonal(key, 0.1, 0.5, -1, -1).coupling, 1.5);
   EXPECT_DOUBLE_EQ(model.diagonal(key, std::sqrt(0.1), 0, -1, -1).coupling,
                    2 * 1.5);
-  // Past the last gap the coupling fades as 1 / gap.
-  EXPECT_DOUBLE_EQ(model.diagonal(key, 0.1, 4, -1, -1).coupling, 0.25);
-  EXPECT_DOUBLE_EQ(model.diagonal(key, 0.1, 4, -1, -1).lateral_delta, -0.025);
+  // Past the last gap the parallel wire adds nothing.
+  EXPECT_EQ(model.diagonal(key, 0.1, 4, -1, -1).coupling, 0);
+  EXPECT_EQ(model.diagonal(key, 0.1, 4, -1, -1).lateral_delta, 0);
   // Before the first gap the values are the first point's.
   EXPECT_DOUBLE_EQ(model.diagonal(key, 0.1, -0.5, -1, -1).coupling, 3);
   EXPECT_THROW(model.diagonal({"m2", "m3", ""}, 0.1, 0, 0.1, 0.1),

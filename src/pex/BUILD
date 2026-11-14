@@ -57,6 +57,36 @@ cc_library(
     ],
 )
 
+# The model applied to conductor boxes.
+cc_library(
+    name = "evaluator",
+    srcs = ["src/Evaluator.cpp"],
+    hdrs = ["include/pex/Evaluator.h"],
+    includes = ["include"],
+    deps = [
+        ":cover_map",
+        ":model",
+        ":patterns",
+        "//src/fsv:geometry",
+        "//src/fsv:stack",
+        "//src/odb/src/db",
+    ],
+)
+
+# The block's boxes in an rtree per layer.
+cc_library(
+    name = "index",
+    srcs = ["src/Index.cpp"],
+    hdrs = ["include/pex/Index.h"],
+    includes = ["include"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/utl",
+        "@boost.geometry",
+        "@boost.iterator",
+    ],
+)
+
 # The model file.
 cc_library(
     name = "model_json",

@@ -11,9 +11,10 @@ nets.
 The first step is in: the patterns built from a stack by layer name
 (`pex/Patterns.h`), the model tables with their lookups (`pex/Model.h`),
 the table builder (`pex/ModelBuilder.h`), the model file
-(`pex/ModelJson.h`), a reference evaluator that applies the model to a
-field-solver geometry by brute force (`test/cpp/Reference.h`), and the
-modeling experiments below. There are no commands yet; the extractor
+(`pex/ModelJson.h`), the evaluator that applies the model to conductor
+boxes (`pex/Evaluator.h`), which the experiments run by brute force on a
+field-solver geometry, and the modeling experiments below. There are no
+commands yet; the extractor
 itself (block index, segmentation, ODB and SPEF output) comes next, with
 the accuracy work below resumed once it runs end to end.
 
@@ -72,7 +73,7 @@ open). Four kinds of table describe a layer:
   other side, a second table holds the same with that plane, plus what the
   parallel wire takes from the coupling to the plane; the evaluator blends
   the two by the plane's share. The gaps run out to 4 times the distance
-  between the two layers.
+  between the two layers; a parallel wire farther out adds nothing.
 - **End.** One table per context holds what a line end adds to the wire's
   capacitance, over the width, the spacing to a neighbor on each side
   running past the end and the gap to a wire facing the end, split into
@@ -107,15 +108,15 @@ bazel-bin/src/pex/test/Experiments --threads 64 --tol 0.003 \
 | e6 asymmetric | different spacings on the two sides | the ground averaged over the two symmetric cases, each coupling from its own | whether the table keeps both spacings |
 | e7 interpolation | off-grid widths and spacings, spacings past the grid, a width past the grid | the interpolated table | the table grid and the interpolation |
 | e8 vias | a via at a wire's end and in its middle, with and without the cut | the wires without the via | the via term |
-| e9 nets | nets of a routed design, each solved within a halo | the model applied to the same boxes by the reference evaluator | the attainable accuracy |
+| e9 nets | nets of a routed design, each solved within a halo | the model applied to the same boxes by the evaluator | the attainable accuracy |
 | e11 diagonal | a parallel wire on a nearby layer beside the wire, alone and with neighbors | the wire without it | the diagonal table |
 | e12 far covers | a wire under or over a plane on each layer the builder would not tabulate | the tabulated covers it resolves to, and the open context a lookup would fall back to without them | the far cover factors |
 | e13 probed covers | the same, for the covers chosen from probes, at widths and spacings the probes did not use | the chosen covers it resolves to | the cover tolerance and the probe variants |
 | e14 attribution | e9's nets in nested windows: alone, own layers, next layers, everything | the model in each window | which interaction causes a net's error |
-| e15 junctions | bends, T junctions, layer changes, landing pads, crossings reaching past one side or both, facing ends, in open, dense and tight surroundings | the reference evaluator | the evaluator's handling of each structure |
+| e15 junctions | bends, T junctions, layer changes, landing pads, crossings reaching past one side or both, facing ends, in open, dense and tight surroundings | the evaluator | the evaluator's handling of each structure |
 | e16 one-sided ends | a line end with a neighbor on one side only | the end table | the end table's neighbor columns |
-| e17 dense context | a wire among rails, a strap, crossings and neighbors, built up part by part; rails at several coverages | the reference evaluator | how the tables combine in dense layout |
-| e18 power grid | e9's nets with the power nets alone, merged, split by layer, and with groups of signal wires added back | the reference evaluator | where the coupling to the power grid goes wrong |
+| e17 dense context | a wire among rails, a strap, crossings and neighbors, built up part by part; rails at several coverages | the evaluator | how the tables combine in dense layout |
+| e18 power grid | e9's nets with the power nets alone, merged, split by layer, and with groups of signal wires added back | the evaluator | where the coupling to the power grid goes wrong |
 | e19 lateral reach | neighbors at spacings in multiples of the height to the nearest plane | the wire alone | how far the lateral table reaches |
 
 e9 reads LEF and DEF (by default the gcd window of the fsv tests) or an
