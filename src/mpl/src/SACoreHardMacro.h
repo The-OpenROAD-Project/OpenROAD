@@ -44,14 +44,11 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
 
   void setWeights(const SACoreWeights& weights);
 
-  // Initialize the SA worker
-  void initialize() override;
   void fillDeadSpace() override {}
   // print results
   void printResults() const;
 
  private:
-  float calNormCost() const override;
   void calPenalty() override;
 
   void perturb() override;

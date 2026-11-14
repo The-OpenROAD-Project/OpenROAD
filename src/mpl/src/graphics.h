@@ -40,15 +40,7 @@ class Graphics : public web::Renderer, public MplObserver
   void finishedClustering(PhysicalHierarchy* tree) override;
 
   void setMaxLevel(int max_level) override;
-  void setAreaPenalty(const PenaltyData& penalty) override;
-  void setBoundaryPenalty(const PenaltyData& penalty) override;
-  void setFencePenalty(const PenaltyData& penalty) override;
-  void setGuidancePenalty(const PenaltyData& penalty) override;
-  void setSoftBlockagePenalty(const PenaltyData& penalty) override;
-  void setFixedMacrosPenalty(const PenaltyData& penalty) override;
-  void setNotchPenalty(const PenaltyData& penalty) override;
-  void setOutlinePenalty(const PenaltyData& penalty) override;
-  void setWirelengthPenalty(const PenaltyData& penalty) override;
+  void setPenalty(const Penalty& penalty) override;
   void penaltyCalculated(float norm_cost) override;
 
   void drawObjects(web::Painter& painter) override;
@@ -109,9 +101,9 @@ class Graphics : public web::Renderer, public MplObserver
   template <typename T>
   bool isSkippable(const T& macro);
 
-  template <typename T>
-  void report(const std::optional<T>& value);
+  void report(const Penalty& penalty);
   void report(float norm_cost);
+  void addChartPoint();
 
   std::vector<SoftMacro> soft_macros_;
   std::vector<HardMacro> hard_macros_;
@@ -146,15 +138,8 @@ class Graphics : public web::Renderer, public MplObserver
   utl::Logger* logger_;
 
   std::optional<int> max_level_;
-  std::optional<PenaltyData> outline_penalty_;
-  std::optional<PenaltyData> fence_penalty_;
-  std::optional<PenaltyData> wirelength_penalty_;
-  std::optional<PenaltyData> guidance_penalty_;
-  std::optional<PenaltyData> boundary_penalty_;
-  std::optional<PenaltyData> soft_blockage_penalty_;
-  std::optional<PenaltyData> fixed_macros_penalty_;
-  std::optional<PenaltyData> notch_penalty_;
-  std::optional<PenaltyData> area_penalty_;
+  // Keyed by Penalty::name.
+  std::map<std::string, Penalty> penalties_;
 
   float best_norm_cost_ = 0;
   int skipped_ = 0;

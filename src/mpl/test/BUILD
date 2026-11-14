@@ -329,6 +329,23 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "mpl_sa_core_penalties_unittest",
+    srcs = [
+        "cpp/MplTest.h",
+        "cpp/TestSACorePenalties.cpp",
+    ],
+    deps = [
+        "//src/mpl:mpl_impl",
+        "//src/mpl:pusher",
+        "//src/odb/src/db",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 py_test(
     name = "mpl_man_tcl_check",
     srcs = ["mpl_man_tcl_check.py"],
