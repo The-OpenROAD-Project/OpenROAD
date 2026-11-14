@@ -2118,25 +2118,39 @@ sta::LibertyCellSeq Resizer::getFastBufferSizes(
 
 sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
 {
-  if (swappable_cells_cache_.contains(source_cell)) {
-    return swappable_cells_cache_[source_cell];
+  return findSwappableCells(source_cell).cells;
+}
+
+sta::LibertyCellSeq Resizer::getSwappableCellsAnyLeakage(
+    sta::LibertyCell* source_cell)
+{
+  return findSwappableCells(source_cell).any_leakage;
+}
+
+const Resizer::SwappableCells& Resizer::findSwappableCells(
+    sta::LibertyCell* source_cell)
+{
+  auto cached = swappable_cells_cache_.find(source_cell);
+  if (cached != swappable_cells_cache_.end()) {
+    return cached->second;
   }
+  SwappableCells& result = swappable_cells_cache_[source_cell];
 
   dbMaster* master = db_network_->staToDb(source_cell);
   if (master == nullptr || !master->isCore()) {
-    swappable_cells_cache_[source_cell] = {};
-    return {};
+    return result;
   }
 
   // An instance of a dont_use cell is left alone rather than sized.  Its
   // target load is not in target_load_map_, which findTargetLoads builds
   // without dont_use cells, so it has no usable baseline to size against.
   if (dontUse(source_cell)) {
-    swappable_cells_cache_[source_cell] = {source_cell};
-    return {source_cell};
+    result.cells = {source_cell};
+    result.any_leakage = {source_cell};
+    return result;
   }
 
-  sta::LibertyCellSeq swappable_cells;
+  sta::LibertyCellSeq& swappable_cells = result.cells;
   sta::LibertyCellSeq* equiv_cells = equivCells(source_cell);
 
   if (equiv_cells) {
@@ -2207,6 +2221,7 @@ sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
         }
       }
 
+      result.any_leakage.push_back(equiv_cell);
       const int64_t equiv_cell_area = equiv_cell_master->getArea();
       if (exceeds_leakage_limit) {
         if (equiv_cell_area > source_cell_area
@@ -2232,10 +2247,9 @@ sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
     }
   } else {
     swappable_cells.push_back(source_cell);
+    result.any_leakage.push_back(source_cell);
   }
-
-  swappable_cells_cache_[source_cell] = swappable_cells;
-  return swappable_cells;
+  return result;
 }
 
 static size_t getCommonLength(const std::string& string1,

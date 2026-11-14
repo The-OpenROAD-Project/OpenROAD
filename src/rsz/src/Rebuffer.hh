@@ -171,18 +171,35 @@ class Rebuffer : public sta::dbStaState
   // buffer; nullptr otherwise.  An upsized driver can then take the
   // buffer's place.
   BufferedNetPtr withoutFirstBuffer(const BufferedNetPtr& tree);
+  // The cells driver sizing may choose for one driver, and the leakage the
+  // driver and its buffers may reach together.
+  struct DriverChoices
+  {
+    sta::LibertyCellSeq cells;
+    std::optional<float> leakage_budget;
+  };
+  DriverChoices driverChoices(sta::LibertyCell* current_cell,
+                              const BufferedNetPtr& timing_tree);
+  // Leakage of `cell` driving `tree` plus the tree's buffers; nullopt when a
+  // cell has no leakage data.
+  std::optional<float> netLeakage(sta::LibertyCell* cell,
+                                  const BufferedNetPtr& tree);
+  bool withinLeakageBudget(const DriverChoices& choices,
+                           sta::LibertyCell* cell,
+                           const BufferedNetPtr& tree);
   // The most slack any of `trees` reaches with the current driver or one of
-  // its swappable cells that upstreamSideLoadsOk() accepts for
-  // `slack_limit`.
+  // `choices` that upstreamSideLoadsOk() accepts for `slack_limit`.
   FixedDelay bestSlackWithDriver(const std::vector<BufferedNetPtr>& trees,
                                  sta::LibertyCell* current_cell,
+                                 const DriverChoices& choices,
                                  FixedDelay slack_limit);
   // Pick the smallest (tree + driver) area among the candidate trees and the
-  // driver's swappable cells whose slack meets `slack_target`.  Returns the
-  // chosen tree and sets `chosen_cell`; returns nullptr when no combination
-  // meets the target.
+  // driver `choices` whose slack meets `slack_target`.  Returns the chosen
+  // tree and sets `chosen_cell`; returns nullptr when no combination meets
+  // the target.
   BufferedNetPtr chooseTreeAndDriver(const std::vector<BufferedNetPtr>& trees,
                                      sta::LibertyCell* current_cell,
+                                     const DriverChoices& choices,
                                      FixedDelay slack_target,
                                      sta::LibertyCell*& chosen_cell);
   // With -rebuffer_size_driver, choose between `area_tree` and alternative
