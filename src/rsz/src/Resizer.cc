@@ -139,6 +139,23 @@ bool bufferRemovalKeepsOutputNet(const sta::dbNetwork* network,
          && network->hasPort(network->dbToSta(network->flatNet(output_pin)));
 }
 
+template <typename Object>
+bool hasSdcConstraint(const sta::dbSta* sta, const Object* object)
+{
+  for (const sta::Mode* mode : sta->modes()) {
+    if (mode->sdc()->isConstrained(object)) {
+      return true;
+    }
+    for (const std::pair<const sta::AnalysisCorner* const, sta::Sdc*>&
+             corner_sdc : mode->cornerSdcs()) {
+      if (corner_sdc.second->isConstrained(object)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 float inputPinCapacitance(sta::Network* network,
                           sta::Pin* pin,
                           const sta::LibertyCell* cell,
@@ -5341,6 +5358,54 @@ sta::InstanceSeq Resizer::findClkInverters()
   return clk_inverters;
 }
 
+void Resizer::warnClockPolarityChanges(sta::Pin* out_pin)
+{
+  sta::NetSet connected_nets(network_);
+  network_->connectedNets(out_pin, &connected_nets);
+  std::map<std::string, bool> changed_objects;
+
+  // Capture names and constraints before removal merges the output hierarchy.
+  for (const sta::Net* net : connected_nets) {
+    odb::dbNet* flat_net = nullptr;
+    odb::dbModNet* mod_net = nullptr;
+    db_network_->staToDb(net, flat_net, mod_net);
+    if (mod_net == nullptr) {
+      continue;
+    }
+    changed_objects["net " + network_->pathName(net)]
+        |= hasSdcConstraint(sta_, net);
+
+    sta::NetConnectedPinIterator* pin_iter = network_->pinIterator(net);
+    while (pin_iter->hasNext()) {
+      const sta::Pin* pin = pin_iter->next();
+      if (network_->isHierarchical(pin)) {
+        changed_objects["pin " + network_->pathName(pin)]
+            |= hasSdcConstraint(sta_, pin);
+      }
+    }
+    delete pin_iter;
+    sta::NetTermIterator* term_iter = network_->termIterator(net);
+    while (term_iter->hasNext()) {
+      const sta::Pin* pin = network_->pin(term_iter->next());
+      if (pin != nullptr && network_->isHierarchical(pin)) {
+        changed_objects["pin " + network_->pathName(pin)]
+            |= hasSdcConstraint(sta_, pin);
+      }
+    }
+    delete term_iter;
+  }
+
+  for (const std::pair<const std::string, bool>& changed : changed_objects) {
+    logger_->warn(RSZ,
+                  3250,
+                  "Removing clock inverter {} changes polarity at {} (SDC "
+                  "attached: {}).",
+                  network_->pathName(network_->instance(out_pin)),
+                  changed.first,
+                  changed.second ? "yes" : "no");
+  }
+}
+
 void Resizer::cloneClkInverter(sta::Instance* inv)
 {
   sta::LibertyCell* inv_cell = network_->libertyCell(inv);
@@ -5406,6 +5471,8 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
           = db_network_->flatNet(network_->findPin(clone, out_port));
       clone_out_net_db->setSigType(in_net_db->getSigType());
     }
+
+    warnClockPolarityChanges(out_pin);
 
     // Merge the original inverter's output hierarchy into its input net.
     if (!removeBuffer(inv)) {

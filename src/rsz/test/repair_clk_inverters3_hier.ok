@@ -1,5 +1,10 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+[WARNING RSZ-3250] Removing clock inverter c1 changes polarity at net clk_n (SDC attached: no).
+[WARNING RSZ-3250] Removing clock inverter c1 changes polarity at net top/regs/ck (SDC attached: no).
+[WARNING RSZ-3250] Removing clock inverter c1 changes polarity at net top/regs_u_b/ck (SDC attached: no).
+[WARNING RSZ-3250] Removing clock inverter c1 changes polarity at pin u_a/ck (SDC attached: no).
+[WARNING RSZ-3250] Removing clock inverter c1 changes polarity at pin u_b/ck (SDC attached: no).
 Net clk
  Pin capacitance: 6.20-6.80
  Wire capacitance: 0.00
