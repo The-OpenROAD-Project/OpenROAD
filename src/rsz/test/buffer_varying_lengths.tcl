@@ -1,9 +1,13 @@
 # Generate wires over a range of lengths to observe buffering trends.
 # buffer_varying_lengths_size_driver.tcl runs the same flow with driver
-# sizing enabled during rebuffering.
+# sizing enabled during rebuffering. rebuffer_reference/ sources it with
+# buffer_varying_lengths_tight_only set to stop after the tight-timing step.
 source "helpers.tcl"
 if { ![info exists buffer_varying_lengths_size_driver] } {
   set buffer_varying_lengths_size_driver 0
+}
+if { ![info exists buffer_varying_lengths_tight_only] } {
+  set buffer_varying_lengths_tight_only 0
 }
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
@@ -121,6 +125,9 @@ rsz::fully_rebuffer NULL
 puts "\nSolution under tight timing constraint:"
 report_check_types
 summarize_solution 1.0
+if { $buffer_varying_lengths_tight_only } {
+  return
+}
 
 # now relax timing
 set_input_delay -clock clk 0.0 [all_inputs]
