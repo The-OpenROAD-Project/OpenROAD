@@ -609,6 +609,15 @@ void FlexTAWorker::assignIroute_availTracks(taPin* iroute,
   }
   getTrackIdx(coordLow, coordHigh, lNum, idx1, idx2);
   if (idx2 < idx1) {
+    // The span holds no usable track, e.g. a layer whose pitch exceeds the
+    // GCell size, or a die-edge GCell after the via shrink above.  Offer the
+    // nearest tracks on either side instead; idx2 and idx1 already index
+    // them.
+    std::swap(idx1, idx2);
+    idx1 = std::max(idx1, 0);
+    idx2 = std::min(idx2, static_cast<int>(getTrackLocs(lNum).size()) - 1);
+  }
+  if (idx2 < idx1) {
     const double dbu = getDesign()->getTopBlock()->getDBUPerUU();
     logger_->error(DRT,
                    406,
@@ -647,15 +656,9 @@ frUInt4 FlexTAWorker::assignIroute_getNextIrouteDirCost(taPin* iroute,
       nextIrouteDirCost = abs(nextIrouteDir) * (endBox.xMax() - trackLoc);
     }
   }
-  if (nextIrouteDirCost < 0) {
-    double dbu = getDesign()->getTopBlock()->getDBUPerUU();
-    std::cout << "Error: nextIrouteDirCost < 0" << ", trackLoc@"
-              << trackLoc / dbu << " box (" << endBox.xMin() / dbu << ", "
-              << endBox.yMin() / dbu << ") (" << endBox.xMax() / dbu << ", "
-              << endBox.yMax() / dbu << ")\n";
-    return (frUInt4) 0;
-  }
-  return (frUInt4) nextIrouteDirCost;
+  // Negative when the track lies beyond the GCell on the preferred side, as
+  // the nearest-track fallback in assignIroute_availTracks allows.
+  return static_cast<frUInt4>(std::max(nextIrouteDirCost, 0));
 }
 
 frUInt4 FlexTAWorker::assignIroute_getPinCost(taPin* iroute, frCoord trackLoc)
