@@ -158,7 +158,8 @@ class Rebuffer : public sta::dbStaState
   FixedDelay slackAtDriverPin(const BufferedNetPtr& bnet);
   // Slack at the driver pin if the driver were resized to `cell`, including
   // the extra delay a larger input capacitance adds to the previous stage.
-  // Empty when `cell` has no equivalent arc or violates slew limits.
+  // Empty when `cell` has no equivalent arc or violates slew or capacitance
+  // limits.
   std::optional<FixedDelay> slackWithDriverCell(const BufferedNetPtr& bnet,
                                                 sta::LibertyCell* cell);
   // False when resizing the driver to `cell` would slow the previous stage

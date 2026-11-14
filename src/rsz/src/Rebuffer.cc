@@ -365,6 +365,14 @@ std::optional<FixedDelay> Rebuffer::slackWithDriverCell(const BnetPtr& bnet,
   if (out_port == nullptr || !loadSlewSatisfactory(out_port, bnet)) {
     return {};
   }
+  // The trees were built against the capacitance limits of their buffers,
+  // not of the driver cell.
+  bool cap_limit_exists = false;
+  float cap_limit = 0.0;
+  out_port->capacitanceLimit(max_, cap_limit, cap_limit_exists);
+  if (cap_limit_exists && bnet->cap() > maxCapMargined(cap_limit)) {
+    return {};
+  }
   return bnet->slack() + FixedDelay(correction, resizer_);
 }
 
