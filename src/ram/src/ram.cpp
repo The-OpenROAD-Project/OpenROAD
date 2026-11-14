@@ -339,6 +339,13 @@ void RamGen::makeSlice(const int slice_idx,
   // port
   const vector<int> writers = writersOf(wordAt(row_idx, word_idx));
   const int n_writers = static_cast<int>(writers.size());
+  // an AND2's inputs and output
+  const std::string& and2_a
+      = and2_ports_[{.type = PortRoleType::DataIn, .index = 0}];
+  const std::string& and2_b
+      = and2_ports_[{.type = PortRoleType::DataIn, .index = 1}];
+  const std::string& and2_y
+      = and2_ports_[{.type = PortRoleType::DataOut, .index = 0}];
   const int start_bit_idx = slice_idx * mask_size;
   std::string prefix
       = fmt::format("storage_{}_{}_{}", row_idx, word_idx, start_bit_idx);
@@ -467,14 +474,16 @@ void RamGen::makeSlice(const int slice_idx,
     vector<dbNet*> we(n_writers);
     for (int i = 0; i < n_writers; ++i) {
       const int w = writers[i];
-      we[i] = makeNet(prefix, fmt::format("we{}", w));
+      we[i] = makeNet(prefix, "we" + std::to_string(w));
       makeInst(sel_cell.get(),
                prefix,
-               fmt::format("gcand{}", w),
+               "gcand" + std::to_string(w),
                and2_cell_,
-               {{and2_ports_[{PortRoleType::DataIn, 0}], selects[w]},
-                {and2_ports_[{PortRoleType::DataIn, 1}], write_enable[w]},
-                {and2_ports_[{PortRoleType::DataOut, 0}], we[i]}});
+               {
+                   {and2_a, selects[w]},
+                   {and2_b, write_enable[w]},
+                   {and2_y, we[i]},
+               });
     }
     take[n_writers - 1] = we[n_writers - 1];
     dbNet* later = we[n_writers - 1];
@@ -615,10 +624,11 @@ void RamGen::makeSlice(const int slice_idx,
                    name,
                    fmt::format("dmux{}", w / 2),
                    and2_cell_,
-                   {{and2_ports_[{PortRoleType::DataIn, 0}], take[w]},
-                    {and2_ports_[{PortRoleType::DataIn, 1}],
-                     data_input[writers[w]][local_bit]},
-                    {and2_ports_[{PortRoleType::DataOut, 0}], out}});
+                   {
+                       {and2_a, take[w]},
+                       {and2_b, data_input[writers[w]][local_bit]},
+                       {and2_y, out},
+                   });
         }
         if (acc != nullptr) {
           dbNet* sum
@@ -670,23 +680,26 @@ void RamGen::makeSlice(const int slice_idx,
              prefix,
              "word_and",
              and2_cell_,
-             {{and2_ports_[{PortRoleType::DataIn, 0}], selects[writers[0]]},
-              {and2_ports_[{PortRoleType::DataIn, 1}], word_select},
-              {and2_ports_[{PortRoleType::DataOut, 0}], write_sel}});
+             {
+                 {and2_a, selects[writers[0]]},
+                 {and2_b, word_select},
+                 {and2_y, write_sel},
+             });
   }
 
   // Make clock and
   // this AND gate needs to be fed a net created by a decoder
   // adding any net will automatically connect with any port
   if (n_writers == 1 && !shared) {
-    makeInst(
-        sel_cell.get(),
-        prefix,
-        "gcand",
-        and2_cell_,
-        {{and2_ports_[{PortRoleType::DataIn, 0}], write_sel},
-         {and2_ports_[{PortRoleType::DataIn, 1}], write_enable[writers[0]]},
-         {and2_ports_[{PortRoleType::DataOut, 0}], we_net}});
+    makeInst(sel_cell.get(),
+             prefix,
+             "gcand",
+             and2_cell_,
+             {
+                 {and2_a, write_sel},
+                 {and2_b, write_enable[writers[0]]},
+                 {and2_y, we_net},
+             });
   }
 
   // Make select inverters
@@ -2403,7 +2416,7 @@ void RamGen::generate(const int mask_size,
                      "-w_port_words is for write ports; a read-write port "
                      "reads every word.");
     }
-    if (static_cast<int>(w_port_words.size()) != num_write_) {
+    if (std::cmp_not_equal(w_port_words.size(), num_write_)) {
       logger_->error(RAM,
                      128,
                      "-w_port_words lists {} ports; the array has {} write "
@@ -2759,7 +2772,7 @@ void RamGen::generate(const int mask_size,
           }
           // -w_port_words: a write port decodes only the words it writes
           if (!w_port_words_.empty() && p < rw_ports + w_ports
-              && w_port_words_[p].count(wordAt(row, w)) == 0) {
+              && !w_port_words_[p].contains(wordAt(row, w))) {
             literals.clear();
             continue;
           }
@@ -3950,7 +3963,7 @@ std::vector<int> RamGen::writersOf(const int word) const
 {
   std::vector<int> writers;
   for (int w = 0; w < num_write_; ++w) {
-    if (w_port_words_.empty() || w_port_words_[w].count(word) > 0) {
+    if (w_port_words_.empty() || w_port_words_[w].contains(word)) {
       writers.push_back(w);
     }
   }
@@ -4176,11 +4189,12 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
       return words;
     }
     for (const int word : w_port_words_[w]) {
-      words
-          += fmt::format("{}{} == {}", words.empty() ? "" : " || ", addr, word);
+      words += (words.empty() ? "" : " || ") + addr
+               + " == " + std::to_string(word);
     }
-    return fmt::format(" && ({})", words);
+    return " && (" + words + ")";
   };
+
   std::string data_declarations;
   std::string enable_declarations;
   std::string write_logic;
