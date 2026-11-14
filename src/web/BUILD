@@ -198,6 +198,14 @@ cc_library(
 )
 
 cc_library(
+    name = "browser_launcher",
+    srcs = ["src/browser_launcher.cpp"],
+    hdrs = ["src/browser_launcher.h"],
+    includes = ["src"],
+    visibility = ["//src/web/test:__pkg__"],
+)
+
+cc_library(
     name = "web",
     srcs = [
         "src/asset_gzip.cpp",
@@ -256,6 +264,7 @@ cc_library(
     ],
     local_defines = ["HAVE_LIBDEFLATE"],
     deps = [
+        ":browser_launcher",
         ":color",
         ":core",
         "//:cli_completer",

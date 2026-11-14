@@ -15,8 +15,8 @@ namespace tst {
 //
 // Never linked: kepler-formal is GPL-3.0 and OpenROAD is BSD-3-Clause, so
 // linking would pull the combined work under GPL. In-tree precedent for
-// shelling out: popen in src/rcx/src/parse.cpp, std::system in
-// src/web/src/web_serve.cpp.
+// running another program: popen in src/rcx/src/parse.cpp, posix_spawnp in
+// src/web/src/browser_launcher.cpp.
 //
 // Under bazel the binary is built from the pinned @kepler-formal module and
 // arrives in the test's runfiles (//src/tst:kepler_formal_bin is a data dep of

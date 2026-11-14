@@ -3,6 +3,7 @@
 
 #include "web/web.h"
 
+#include <fcntl.h>
 #include <netinet/in.h>
 
 #include <algorithm>
@@ -1700,6 +1701,9 @@ Listener::Listener(net::io_context& ioc,
   if (ec) {
     logger_->error(utl::WEB, 10, "Failed to open acceptor: {}", ec.message());
   }
+  // Not inherited by a browser or a Tcl `exec`, which would hold the port
+  // after openroad exits.
+  fcntl(acceptor_.native_handle(), F_SETFD, FD_CLOEXEC);
 
   acceptor_.set_option(net::socket_base::reuse_address(true), ec);
   if (ec) {
@@ -1730,6 +1734,10 @@ void Listener::do_accept()
 
 void Listener::on_accept(beast::error_code ec, Tcp::socket socket)
 {
+  if (!ec) {
+    // Like the acceptor's: not inherited by a browser or a Tcl `exec`.
+    fcntl(socket.native_handle(), F_SETFD, FD_CLOEXEC);
+  }
   if (ec) {
     debugPrint(logger_, utl::WEB, "http", 1, "accept error: {}", ec.message());
     if (ec == net::error::operation_aborted || !acceptor_.is_open()) {
