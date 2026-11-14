@@ -117,9 +117,31 @@ estimate_parasitics -placement
 repair_design
 if { $buffer_varying_lengths_size_driver } {
   set_opt_config -rebuffer_size_driver true
+  # Rebuffering does not resize fixed instances, so unlock the drivers.
+  for { set i 1 } { $i <= 100 } { incr i } {
+    set driver [$block findInst i1-$i]
+    $driver setPlacementStatus PLACED
+    set driver_location($i) [$driver getLocation]
+  }
 }
+
+# Resizing an unlocked driver must not move it.
+proc check_drivers_unmoved { } {
+  global block buffer_varying_lengths_size_driver driver_location
+  if { !$buffer_varying_lengths_size_driver } {
+    return
+  }
+  for { set i 1 } { $i <= 100 } { incr i } {
+    set location [[$block findInst i1-$i] getLocation]
+    if { $location != $driver_location($i) } {
+      error "driver i1-$i moved from $driver_location($i) to $location"
+    }
+  }
+}
+
 # second, trigger placement buffering
 rsz::fully_rebuffer NULL
+check_drivers_unmoved
 
 # characterize solution
 puts "\nSolution under tight timing constraint:"
@@ -133,6 +155,7 @@ if { $buffer_varying_lengths_tight_only } {
 set_input_delay -clock clk 0.0 [all_inputs]
 # ripup and rebuffer
 rsz::fully_rebuffer NULL
+check_drivers_unmoved
 
 # print a second table
 puts "\nSolution with relaxed timing:"
