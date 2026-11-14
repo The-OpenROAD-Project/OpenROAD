@@ -166,6 +166,11 @@ class Rebuffer : public sta::dbStaState
   // inputs enough to push one of their other loads below both its current
   // slack and `slack_limit`.
   bool upstreamSideLoadsOk(sta::LibertyCell* cell, FixedDelay slack_limit);
+  // `tree` with its first buffer removed and the driver wired straight to
+  // the buffer's load, when only wires lie between the driver and that
+  // buffer; nullptr otherwise.  An upsized driver can then take the
+  // buffer's place.
+  BufferedNetPtr withoutFirstBuffer(const BufferedNetPtr& tree);
   // The most slack any of `trees` reaches with the current driver or one of
   // its swappable cells that upstreamSideLoadsOk() accepts for
   // `slack_limit`.

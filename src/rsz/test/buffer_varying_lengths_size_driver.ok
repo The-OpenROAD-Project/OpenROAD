@@ -12,36 +12,36 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
           |           | Buffers | Buffers  | Remaining
 -------------------------------------------------------
         0 |     +0.0% |       0 |        0 |       100
-       10 |    +33.3% |      20 |       45 |        90
-       20 |    +43.6% |      38 |       79 |        80
-       30 |    +51.9% |      55 |      106 |        70
-       40 |    +76.9% |      64 |      133 |        60
-       50 |    +99.0% |      73 |      160 |        50
-       60 |   +113.2% |      82 |      178 |        40
-       70 |   +131.2% |      82 |      196 |        30
-       80 |   +139.1% |      82 |      203 |        20
-       90 |   +140.6% |      82 |      203 |        10
-    final |   +145.7% |      84 |      208 |         0
+       10 |    +30.8% |      20 |       40 |        90
+       20 |    +37.0% |      38 |       67 |        80
+       30 |    +45.2% |      55 |       94 |        70
+       40 |    +65.2% |      64 |      116 |        60
+       50 |    +80.6% |      73 |      134 |        50
+       60 |    +93.3% |      82 |      150 |        40
+       70 |   +104.4% |      82 |      159 |        30
+       80 |   +111.0% |      82 |      164 |        20
+       90 |   +112.5% |      82 |      164 |        10
+    final |   +116.6% |      84 |      168 |         0
 -------------------------------------------------------
-[INFO RSZ-2023] Resized 95 drivers while rebuffering.
+[INFO RSZ-2023] Resized 100 drivers while rebuffering.
 
 Solution under tight timing constraint:
 Group                                  Slack
 --------------------------------------------
 clk                                     1.04
-clk                                    -0.35
+clk                                    -0.34
 
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-i1-82/Z                                 0.20    0.03    0.17 (MET)
+i1-89/Z                                 0.20    0.04    0.16 (MET)
 
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-i1-95/Z                                60.65    3.44   57.21 (MET)
+p1-1                                   60.65    1.82   58.84 (MET)
 
 ----------------------------------------------------------------------
  Distance | Driver  | Area  | Path delay | Sequence
@@ -78,46 +78,46 @@ i1-95/Z                                60.65    3.44   57.21 (MET)
     750.0 | CLKBUF_X3 |  1.33 |      0.143 | 
     775.0 | BUF_X2  |  4.52 |      0.140 |  BUF_X8
     800.0 | BUF_X2  |  4.52 |      0.144 |  BUF_X8
-    825.0 | BUF_X2  |  4.52 |      0.148 |  BUF_X8
-    850.0 | BUF_X2  |  6.38 |      0.151 |  BUF_X8 BUF_X4
-    875.0 | BUF_X2  |  6.38 |      0.153 |  BUF_X8 BUF_X4
-    900.0 | BUF_X2  |  6.38 |      0.155 |  BUF_X8 BUF_X4
-    925.0 | BUF_X2  |  6.38 |      0.158 |  BUF_X8 BUF_X4
-    950.0 | BUF_X2  |  6.38 |      0.161 |  BUF_X8 BUF_X4
-    975.0 | BUF_X2  |  6.38 |      0.163 |  BUF_X8 BUF_X4
-   1000.0 | BUF_X2  |  6.38 |      0.166 |  BUF_X8 BUF_X4
-   1025.0 | BUF_X2  |  7.98 |      0.168 |  BUF_X8 BUF_X8
-   1050.0 | BUF_X2  |  7.98 |      0.171 |  BUF_X8 BUF_X8
-   1075.0 | BUF_X2  |  7.98 |      0.174 |  BUF_X8 BUF_X8
-   1100.0 | BUF_X2  |  7.98 |      0.177 |  BUF_X8 BUF_X8
-   1125.0 | BUF_X2  |  4.79 |      0.176 |  BUF_X4 BUF_X4
-   1150.0 | BUF_X2  |  7.98 |      0.180 |  BUF_X8 BUF_X8
+    825.0 | BUF_X2  |  4.52 |      0.133 |  BUF_X8
+    850.0 | BUF_X2  |  4.52 |      0.136 |  BUF_X8
+    875.0 | BUF_X2  |  4.52 |      0.138 |  BUF_X8
+    900.0 | BUF_X2  |  4.52 |      0.141 |  BUF_X8
+    925.0 | BUF_X2  |  4.52 |      0.144 |  BUF_X8
+    950.0 | BUF_X2  |  4.52 |      0.147 |  BUF_X8
+    975.0 | BUF_X2  |  4.52 |      0.150 |  BUF_X8
+   1000.0 | CLKBUF_X3 |  4.79 |      0.164 |  BUF_X8
+   1025.0 | CLKBUF_X3 |  4.79 |      0.167 |  BUF_X8
+   1050.0 | CLKBUF_X3 |  4.79 |      0.171 |  BUF_X8
+   1075.0 | CLKBUF_X3 |  4.79 |      0.175 |  BUF_X8
+   1100.0 | CLKBUF_X3 |  4.79 |      0.179 |  BUF_X8
+   1125.0 | BUF_X2  |  2.93 |      0.171 |  BUF_X4
+   1150.0 | CLKBUF_X3 |  4.79 |      0.187 |  BUF_X8
    1175.0 | BUF_X2  |  7.98 |      0.182 |  BUF_X8 BUF_X8
    1200.0 | BUF_X2  |  7.98 |      0.184 |  BUF_X8 BUF_X8
    1225.0 | BUF_X2  |  7.98 |      0.186 |  BUF_X8 BUF_X8
    1250.0 | BUF_X2  |  7.98 |      0.188 |  BUF_X8 BUF_X8
    1275.0 | BUF_X2  |  7.98 |      0.190 |  BUF_X8 BUF_X8
-   1300.0 | BUF_X2  |  7.98 |      0.205 |  BUF_X8 BUF_X8
-   1325.0 | BUF_X2  |  7.98 |      0.209 |  BUF_X8 BUF_X8
-   1350.0 | BUF_X2  |  9.84 |      0.212 |  BUF_X8 BUF_X8 BUF_X4
-   1375.0 | BUF_X2  |  9.84 |      0.214 |  BUF_X8 BUF_X8 BUF_X4
-   1400.0 | BUF_X2  |  9.84 |      0.217 |  BUF_X8 BUF_X8 BUF_X4
-   1425.0 | BUF_X2  |  9.84 |      0.219 |  BUF_X8 BUF_X8 BUF_X4
-   1450.0 | BUF_X2  |  9.84 |      0.222 |  BUF_X8 BUF_X8 BUF_X4
-   1475.0 | BUF_X2  |  9.84 |      0.225 |  BUF_X8 BUF_X8 BUF_X4
-   1500.0 | BUF_X2  | 11.44 |      0.226 |  BUF_X8 BUF_X8 BUF_X8
-   1525.0 | BUF_X2  | 11.44 |      0.229 |  BUF_X8 BUF_X8 BUF_X8
-   1550.0 | BUF_X2  | 11.44 |      0.232 |  BUF_X8 BUF_X8 BUF_X8
-   1575.0 | BUF_X2  | 11.44 |      0.235 |  BUF_X8 BUF_X8 BUF_X8
-   1600.0 | BUF_X2  | 11.44 |      0.238 |  BUF_X8 BUF_X8 BUF_X8
-   1625.0 | BUF_X2  | 11.44 |      0.240 |  BUF_X8 BUF_X8 BUF_X8
-   1650.0 | BUF_X2  | 11.44 |      0.242 |  BUF_X8 BUF_X8 BUF_X8
-   1675.0 | BUF_X2  | 11.44 |      0.243 |  BUF_X8 BUF_X8 BUF_X8
+   1300.0 | BUF_X2  |  7.98 |      0.192 |  BUF_X8 BUF_X8
+   1325.0 | BUF_X2  |  7.98 |      0.195 |  BUF_X8 BUF_X8
+   1350.0 | BUF_X2  |  7.98 |      0.197 |  BUF_X8 BUF_X8
+   1375.0 | BUF_X2  |  7.98 |      0.200 |  BUF_X8 BUF_X8
+   1400.0 | BUF_X2  |  7.98 |      0.202 |  BUF_X8 BUF_X8
+   1425.0 | BUF_X2  |  7.98 |      0.205 |  BUF_X8 BUF_X8
+   1450.0 | BUF_X2  |  7.98 |      0.208 |  BUF_X8 BUF_X8
+   1475.0 | BUF_X2  |  7.98 |      0.211 |  BUF_X8 BUF_X8
+   1500.0 | BUF_X2  |  7.98 |      0.215 |  BUF_X8 BUF_X8
+   1525.0 | CLKBUF_X3 |  8.25 |      0.229 |  BUF_X8 BUF_X8
+   1550.0 | CLKBUF_X3 |  8.25 |      0.233 |  BUF_X8 BUF_X8
+   1575.0 | CLKBUF_X3 |  8.25 |      0.236 |  BUF_X8 BUF_X8
+   1600.0 | CLKBUF_X3 |  8.25 |      0.240 |  BUF_X8 BUF_X8
+   1625.0 | CLKBUF_X3 |  8.25 |      0.244 |  BUF_X8 BUF_X8
+   1650.0 | CLKBUF_X3 |  8.25 |      0.248 |  BUF_X8 BUF_X8
+   1675.0 | CLKBUF_X3 |  8.25 |      0.252 |  BUF_X8 BUF_X8
    1700.0 | BUF_X2  | 11.44 |      0.245 |  BUF_X8 BUF_X8 BUF_X8
    1725.0 | BUF_X2  | 11.44 |      0.247 |  BUF_X8 BUF_X8 BUF_X8
    1750.0 | BUF_X2  | 11.44 |      0.249 |  BUF_X8 BUF_X8 BUF_X8
-   1775.0 | BUF_X2  | 11.44 |      0.263 |  BUF_X8 BUF_X8 BUF_X8
-   1800.0 | BUF_X2  | 11.44 |      0.267 |  BUF_X8 BUF_X8 BUF_X8
+   1775.0 | BUF_X2  | 11.44 |      0.251 |  BUF_X8 BUF_X8 BUF_X8
+   1800.0 | BUF_X2  | 11.44 |      0.253 |  BUF_X8 BUF_X8 BUF_X8
    1825.0 | BUF_X2  |  6.65 |      0.254 |  BUF_X4 BUF_X4 BUF_X4
    1850.0 | BUF_X2  |  6.65 |      0.257 |  BUF_X4 BUF_X4 BUF_X4
    1875.0 | BUF_X2  |  6.65 |      0.260 |  BUF_X4 BUF_X4 BUF_X4
@@ -128,41 +128,41 @@ i1-95/Z                                60.65    3.44   57.21 (MET)
    2000.0 | BUF_X2  |  6.65 |      0.276 |  BUF_X4 BUF_X4 BUF_X4
    2025.0 | BUF_X2  |  6.65 |      0.279 |  BUF_X4 BUF_X4 BUF_X4
    2050.0 | BUF_X2  |  6.65 |      0.282 |  BUF_X4 BUF_X4 BUF_X4
-   2075.0 | BUF_X2  |  8.51 |      0.294 |  BUF_X4 BUF_X4 BUF_X4 BUF_X4
-   2100.0 | BUF_X2  |  8.51 |      0.296 |  BUF_X4 BUF_X4 BUF_X4 BUF_X4
-   2125.0 | BUF_X2  |  8.51 |      0.298 |  BUF_X4 BUF_X4 BUF_X4 BUF_X4
-   2150.0 | BUF_X2  |  8.51 |      0.299 |  BUF_X4 BUF_X4 BUF_X4 BUF_X4
-   2175.0 | BUF_X2  |  8.51 |      0.301 |  BUF_X4 BUF_X4 BUF_X4 BUF_X4
-   2200.0 | BUF_X2  |  8.51 |      0.303 |  BUF_X4 BUF_X4 BUF_X4 BUF_X4
-   2225.0 | BUF_X2  |  8.51 |      0.306 |  BUF_X4 BUF_X4 BUF_X4 BUF_X4
+   2075.0 | BUF_X2  |  6.65 |      0.286 |  BUF_X4 BUF_X4 BUF_X4
+   2100.0 | BUF_X2  |  6.65 |      0.290 |  BUF_X4 BUF_X4 BUF_X4
+   2125.0 | BUF_X2  |  6.65 |      0.294 |  BUF_X4 BUF_X4 BUF_X4
+   2150.0 | BUF_X2  |  6.65 |      0.298 |  BUF_X4 BUF_X4 BUF_X4
+   2175.0 | BUF_X2  |  6.65 |      0.302 |  BUF_X4 BUF_X4 BUF_X4
+   2200.0 | BUF_X2  |  6.65 |      0.306 |  BUF_X4 BUF_X4 BUF_X4
+   2225.0 | BUF_X2  |  6.65 |      0.310 |  BUF_X4 BUF_X4 BUF_X4
    2250.0 | BUF_X2  |  8.51 |      0.308 |  BUF_X4 BUF_X4 BUF_X4 BUF_X4
-   2275.0 | BUF_X2  | 14.90 |      0.324 |  BUF_X8 BUF_X8 BUF_X8 BUF_X8
-   2300.0 | BUF_X2  | 14.90 |      0.328 |  BUF_X8 BUF_X8 BUF_X8 BUF_X8
-   2325.0 | BUF_X2  | 14.90 |      0.332 |  BUF_X8 BUF_X8 BUF_X8 BUF_X8
-   2350.0 | BUF_X2  | 14.90 |      0.336 |  BUF_X8 BUF_X8 BUF_X8 BUF_X8
-   2375.0 | BUF_X1  | 16.49 |      0.339 |  BUF_X8 BUF_X8 BUF_X8 BUF_X8 BUF_X4
-   2400.0 | BUF_X1  | 16.49 |      0.342 |  BUF_X8 BUF_X8 BUF_X8 BUF_X8 BUF_X4
-   2425.0 | BUF_X1  | 16.49 |      0.345 |  BUF_X8 BUF_X8 BUF_X8 BUF_X8 BUF_X4
-   2450.0 | BUF_X1  | 16.49 |      0.347 |  BUF_X8 BUF_X8 BUF_X8 BUF_X8 BUF_X4
-   2475.0 | BUF_X1  | 16.49 |      0.350 |  BUF_X8 BUF_X8 BUF_X8 BUF_X8 BUF_X4
-   2500.0 | BUF_X2  | 18.35 |      0.349 |  BUF_X8 BUF_X8 BUF_X8 BUF_X8 BUF_X8
+   2275.0 | BUF_X2  | 14.90 |      0.312 |  BUF_X8 BUF_X8 BUF_X8 BUF_X8
+   2300.0 | BUF_X2  | 14.90 |      0.315 |  BUF_X8 BUF_X8 BUF_X8 BUF_X8
+   2325.0 | BUF_X2  | 14.90 |      0.317 |  BUF_X8 BUF_X8 BUF_X8 BUF_X8
+   2350.0 | BUF_X2  | 14.90 |      0.320 |  BUF_X8 BUF_X8 BUF_X8 BUF_X8
+   2375.0 | BUF_X2  | 14.90 |      0.322 |  BUF_X8 BUF_X8 BUF_X8 BUF_X8
+   2400.0 | BUF_X2  | 14.90 |      0.325 |  BUF_X8 BUF_X8 BUF_X8 BUF_X8
+   2425.0 | BUF_X2  | 14.90 |      0.328 |  BUF_X8 BUF_X8 BUF_X8 BUF_X8
+   2450.0 | BUF_X2  | 14.90 |      0.331 |  BUF_X8 BUF_X8 BUF_X8 BUF_X8
+   2475.0 | BUF_X2  | 14.90 |      0.334 |  BUF_X8 BUF_X8 BUF_X8 BUF_X8
+   2500.0 | BUF_X2  | 14.90 |      0.337 |  BUF_X8 BUF_X8 BUF_X8 BUF_X8
 ----------------------------------------------------------------------
    Iter   |    Area   | Removed | Inserted |   Pins
           |           | Buffers | Buffers  | Remaining
 -------------------------------------------------------
         0 |     +0.0% |       0 |        0 |       100
-       10 |    -15.8% |      45 |       20 |        90
-       20 |    -22.4% |      79 |       34 |        80
-       30 |    -28.4% |     106 |       43 |        70
-       40 |    -39.5% |     133 |       52 |        60
-       50 |    -49.5% |     160 |       61 |        50
-       60 |    -56.5% |     178 |       70 |        40
-       70 |    -63.5% |     196 |       70 |        30
-       80 |    -66.7% |     203 |       70 |        20
-       90 |    -67.3% |     203 |       70 |        10
-    final |    -69.6% |     208 |       72 |         0
+       10 |    -16.8% |      40 |       20 |        90
+       20 |    -22.5% |      67 |       30 |        80
+       30 |    -29.3% |      94 |       39 |        70
+       40 |    -39.5% |     116 |       48 |        60
+       50 |    -47.8% |     134 |       57 |        50
+       60 |    -55.1% |     150 |       62 |        40
+       70 |    -59.9% |     159 |       62 |        30
+       80 |    -62.9% |     164 |       62 |        20
+       90 |    -63.6% |     164 |       62 |        10
+    final |    -65.7% |     168 |       64 |         0
 -------------------------------------------------------
-[INFO RSZ-2023] Resized 62 drivers while rebuffering.
+[INFO RSZ-2023] Resized 69 drivers while rebuffering.
 
 Solution with relaxed timing:
 Group                                  Slack
@@ -229,10 +229,10 @@ i1-55/Z                                60.65   45.58   15.08 (MET)
    1050.0 | BUF_X2  |  1.06 |      0.186 | 
    1075.0 | BUF_X2  |  1.06 |      0.191 | 
    1100.0 | BUF_X2  |  1.06 |      0.196 | 
-   1125.0 | BUF_X1  |  1.60 |      0.262 |  BUF_X1
-   1150.0 | BUF_X1  |  1.60 |      0.267 |  BUF_X1
-   1175.0 | BUF_X1  |  1.60 |      0.272 |  BUF_X1
-   1200.0 | BUF_X1  |  1.60 |      0.277 |  BUF_X1
+   1125.0 | CLKBUF_X3 |  1.33 |      0.219 | 
+   1150.0 | CLKBUF_X3 |  1.33 |      0.225 | 
+   1175.0 | CLKBUF_X3 |  1.33 |      0.231 | 
+   1200.0 | CLKBUF_X3 |  1.33 |      0.237 | 
    1225.0 | BUF_X1  |  1.60 |      0.282 |  BUF_X1
    1250.0 | BUF_X1  |  1.60 |      0.287 |  BUF_X1
    1275.0 | BUF_X1  |  1.60 |      0.292 |  BUF_X1
@@ -250,8 +250,8 @@ i1-55/Z                                60.65   45.58   15.08 (MET)
    1575.0 | BUF_X2  |  1.86 |      0.299 |  BUF_X1
    1600.0 | BUF_X2  |  1.86 |      0.304 |  BUF_X1
    1625.0 | BUF_X2  |  1.86 |      0.309 |  BUF_X1
-   1650.0 | BUF_X1  |  1.86 |      0.311 |  BUF_X2
-   1675.0 | BUF_X1  |  1.86 |      0.316 |  BUF_X2
+   1650.0 | CLKBUF_X3 |  2.13 |      0.318 |  BUF_X1
+   1675.0 | CLKBUF_X3 |  2.13 |      0.324 |  BUF_X1
    1700.0 | BUF_X1  |  1.86 |      0.321 |  BUF_X2
    1725.0 | BUF_X1  |  1.86 |      0.327 |  BUF_X2
    1750.0 | BUF_X1  |  1.86 |      0.332 |  BUF_X2
@@ -270,19 +270,19 @@ i1-55/Z                                60.65   45.58   15.08 (MET)
    2075.0 | BUF_X2  |  2.13 |      0.347 |  BUF_X2
    2100.0 | BUF_X2  |  2.13 |      0.353 |  BUF_X2
    2125.0 | BUF_X2  |  2.66 |      0.418 |  BUF_X1 BUF_X1
-   2150.0 | BUF_X1  |  2.66 |      0.421 |  BUF_X2 BUF_X1
-   2175.0 | BUF_X1  |  2.66 |      0.426 |  BUF_X2 BUF_X1
-   2200.0 | BUF_X1  |  2.66 |      0.431 |  BUF_X2 BUF_X1
-   2225.0 | BUF_X1  |  2.66 |      0.436 |  BUF_X2 BUF_X1
+   2150.0 | CLKBUF_X3 |  2.39 |      0.382 |  BUF_X2
+   2175.0 | CLKBUF_X3 |  2.39 |      0.388 |  BUF_X2
+   2200.0 | CLKBUF_X3 |  2.39 |      0.394 |  BUF_X2
+   2225.0 | CLKBUF_X3 |  2.39 |      0.400 |  BUF_X2
    2250.0 | BUF_X1  |  2.66 |      0.442 |  BUF_X2 BUF_X1
    2275.0 | BUF_X1  |  2.66 |      0.447 |  BUF_X2 BUF_X1
    2300.0 | BUF_X1  |  2.66 |      0.452 |  BUF_X2 BUF_X1
    2325.0 | BUF_X1  |  2.66 |      0.458 |  BUF_X2 BUF_X1
    2350.0 | BUF_X1  |  2.66 |      0.463 |  BUF_X2 BUF_X1
-   2375.0 | BUF_X1  |  2.93 |      0.414 |  BUF_X2 BUF_X2
-   2400.0 | BUF_X1  |  2.93 |      0.418 |  BUF_X2 BUF_X2
-   2425.0 | BUF_X1  |  2.93 |      0.423 |  BUF_X2 BUF_X2
-   2450.0 | BUF_X1  |  2.93 |      0.428 |  BUF_X2 BUF_X2
-   2475.0 | BUF_X1  |  2.93 |      0.432 |  BUF_X2 BUF_X2
+   2375.0 | BUF_X2  |  2.93 |      0.416 |  BUF_X2 BUF_X1
+   2400.0 | BUF_X2  |  2.93 |      0.420 |  BUF_X2 BUF_X1
+   2425.0 | BUF_X2  |  2.93 |      0.425 |  BUF_X2 BUF_X1
+   2450.0 | BUF_X2  |  2.93 |      0.429 |  BUF_X2 BUF_X1
+   2475.0 | BUF_X2  |  2.93 |      0.434 |  BUF_X2 BUF_X1
    2500.0 | BUF_X2  |  2.93 |      0.438 |  BUF_X1 BUF_X2
 ----------------------------------------------------------------------

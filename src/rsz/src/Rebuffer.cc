@@ -518,7 +518,12 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
   BnetPtr chosen;
   {
     utl::DebugScopedTimer timer(size_eval_runtime_);
-    const std::vector<BnetPtr> trees{cheapest, area_tree, timing_tree};
+    std::vector<BnetPtr> trees{cheapest, area_tree, timing_tree};
+    for (const BnetPtr& tree : {cheapest, area_tree, timing_tree}) {
+      if (tree) {
+        trees.push_back(withoutFirstBuffer(tree));
+      }
+    }
     // slack_target is the timing tree's slack with the current driver less
     // the relaxation allowed for area recovery (about 1% of the path delay
     // on a failing path).  Anchored to the current driver, it lets a cheaper
@@ -548,6 +553,24 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
     driver_resize_count_++;
   }
   return chosen;
+}
+
+BnetPtr Rebuffer::withoutFirstBuffer(const BnetPtr& tree)
+{
+  BnetPtr node = tree;
+  int layer = BufferedNet::null_layer;
+  while (node->type() == BnetType::wire) {
+    layer = node->layer();
+    node = node->ref();
+  }
+  if (node->type() != BnetType::buffer) {
+    return nullptr;
+  }
+  const BnetPtr& below = node->ref();
+  if (below->location() == tree->location()) {
+    return below;
+  }
+  return addWire(below, tree->location(), layer);
 }
 
 FixedDelay Rebuffer::bestSlackWithDriver(const std::vector<BnetPtr>& trees,
