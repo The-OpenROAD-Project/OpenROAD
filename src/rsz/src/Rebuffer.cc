@@ -518,10 +518,23 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
   BnetPtr chosen;
   {
     utl::DebugScopedTimer timer(size_eval_runtime_);
-    chosen = chooseTreeAndDriver({cheapest, area_tree, timing_tree},
-                                 current_cell,
-                                 slack_target,
-                                 chosen_cell);
+    const std::vector<BnetPtr> trees{cheapest, area_tree, timing_tree};
+    // slack_target is the timing tree's slack with the current driver less
+    // the relaxation allowed for area recovery (about 1% of the path delay
+    // on a failing path).  Anchored to the current driver, it lets a cheaper
+    // combination win over a resize that gains slack.  On a failing path,
+    // anchor it instead to the best slack any tree reaches with any allowed
+    // driver cell, less the same relaxation; the smallest area meeting it
+    // still wins.
+    FixedDelay target = slack_target;
+    if (slack_target < FixedDelay::ZERO) {
+      const FixedDelay relaxation
+          = slackAtDriverPin(timing_tree) - slack_target;
+      target = std::max(
+          slack_target,
+          bestSlackWithDriver(trees, current_cell, slack_target) - relaxation);
+    }
+    chosen = chooseTreeAndDriver(trees, current_cell, target, chosen_cell);
   }
   if (!chosen) {
     return area_tree;
@@ -535,6 +548,42 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
     driver_resize_count_++;
   }
   return chosen;
+}
+
+FixedDelay Rebuffer::bestSlackWithDriver(const std::vector<BnetPtr>& trees,
+                                         sta::LibertyCell* current_cell,
+                                         const FixedDelay slack_limit)
+{
+  FixedDelay best_slack = -FixedDelay::INF;
+  auto consider = [&](sta::LibertyCell* cell) {
+    std::optional<bool> side_loads_ok;
+    if (cell == current_cell) {
+      side_loads_ok = true;
+    }
+    for (const BnetPtr& tree : trees) {
+      if (!tree) {
+        continue;
+      }
+      const std::optional<FixedDelay> slack = slackWithDriverCell(tree, cell);
+      if (!slack || *slack <= best_slack) {
+        continue;
+      }
+      if (!side_loads_ok) {
+        side_loads_ok = upstreamSideLoadsOk(cell, slack_limit);
+      }
+      if (!*side_loads_ok) {
+        return;
+      }
+      best_slack = *slack;
+    }
+  };
+  consider(current_cell);
+  for (sta::LibertyCell* cell : resizer_->getSwappableCells(current_cell)) {
+    if (cell != current_cell) {
+      consider(cell);
+    }
+  }
+  return best_slack;
 }
 
 // Minimum slack gain for picking an equal-area tree/driver combination.

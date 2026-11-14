@@ -166,10 +166,16 @@ class Rebuffer : public sta::dbStaState
   // inputs enough to push one of their other loads below both its current
   // slack and `slack_limit`.
   bool upstreamSideLoadsOk(sta::LibertyCell* cell, FixedDelay slack_limit);
+  // The most slack any of `trees` reaches with the current driver or one of
+  // its swappable cells that upstreamSideLoadsOk() accepts for
+  // `slack_limit`.
+  FixedDelay bestSlackWithDriver(const std::vector<BufferedNetPtr>& trees,
+                                 sta::LibertyCell* current_cell,
+                                 FixedDelay slack_limit);
   // Pick the smallest (tree + driver) area among the candidate trees and the
-  // driver's swappable cells whose slack meets `slack_target`, the target the
-  // tree search used with the current driver.  Returns the chosen tree and
-  // sets `chosen_cell`; returns nullptr when no combination meets the target.
+  // driver's swappable cells whose slack meets `slack_target`.  Returns the
+  // chosen tree and sets `chosen_cell`; returns nullptr when no combination
+  // meets the target.
   BufferedNetPtr chooseTreeAndDriver(const std::vector<BufferedNetPtr>& trees,
                                      sta::LibertyCell* current_cell,
                                      FixedDelay slack_target,
