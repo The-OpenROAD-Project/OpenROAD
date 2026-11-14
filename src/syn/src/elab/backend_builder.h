@@ -83,7 +83,7 @@ class BackendGraphBuilder : public BackendGraphBuilderBase
                             std::span<PortConnection> port_connections,
                             std::span<ParameterValue> param_values) override;
   void connect(ir::Value target, ir::Value source) override;
-  void set_initialization(ir::Value signal, ir::Const init_value) override;
+  void set_initialization(ir::Value signal, TritVector init_value) override;
   ir::Memory* add_memory(std::string_view name,
                          uint64_t width,
                          slang::ConstantRange range) override;
@@ -101,7 +101,7 @@ class BackendGraphBuilder : public BackendGraphBuilderBase
   void add_memory_init(ir::Memory* memory,
                        uint64_t bit_offset,
                        bool big_endian,
-                       ir::Const data) override;
+                       TritVector data) override;
   void add_dual_edge_aldff(const std::string& base_name,
                            ir::Net clk,
                            ir::Net aload,
@@ -139,6 +139,17 @@ class BackendGraphBuilder : public BackendGraphBuilderBase
                   bool clk_polarity,
                   bool en_polarity,
                   bool aload_polarity) override;
+  void add_dffsre(std::string_view name,
+                  const ir::Net clk,
+                  const ir::Net en,
+                  const ir::Net set,
+                  const ir::Net clear,
+                  const ir::Value& d,
+                  const ir::Value& q,
+                  bool clk_polarity,
+                  bool set_polarity,
+                  bool clear_polarity,
+                  bool set_over_clear) override;
 
   std::unique_ptr<syn::Graph> graph_;
   unsigned next_id = 0;
