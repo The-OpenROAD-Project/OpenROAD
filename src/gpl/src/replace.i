@@ -83,6 +83,9 @@ static gpl::PlaceOptions getOptions(
   checkKey(keys, "-overflow", options.overflow);
   checkKey(keys, "-timing_driven_net_weight_max", options.timingNetWeightMax);
   checkKey(keys, "-power_driven_net_weight", options.powerDrivenNetWeight);
+  checkKey(keys,
+           "-power_driven_clock_leaf_overflow",
+           options.powerDrivenClockLeafOverflows);
   checkKey(
       keys, "-keep_resize_below_overflow", options.keepResizeBelowOverflow);
   checkKey(keys,

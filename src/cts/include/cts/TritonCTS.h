@@ -75,8 +75,11 @@ class TritonCTS
   std::string getRootBufferToString();
   void resetRootBuffer() { rootBuffers_.clear(); }
   void setSinkBuffer(const char* buffers);
+  std::vector<std::vector<odb::dbITerm*>> predictSinkClusters(
+      const std::vector<odb::dbNet*>& nets);
 
  private:
+  void inferBufferList(std::vector<std::string>& buffers);
   std::string selectRootBuffer(std::vector<std::string>& buffers);
   std::string selectSinkBuffer(std::vector<std::string>& buffers);
   std::string selectBestMaxCapBuffer(const std::vector<std::string>& buffers,
@@ -93,6 +96,11 @@ class TritonCTS
   int getBufferFanoutLimit(const std::string& bufferName);
   void setupCharacterization();
   void checkCharacterization();
+  struct ClusteringContext;
+  bool setupSinkClustering(ClusteringContext& ctx);
+  void predictSinkClusters(odb::dbNet* net,
+                           const ClusteringContext& ctx,
+                           std::vector<std::vector<odb::dbITerm*>>& clusters);
   void findClockRoots();
   void buildClockTrees();
   void writeDataToDb();
@@ -166,6 +174,12 @@ class TritonCTS
       const std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& sinks,
       TreeBuilder* parentBuilder,
       const std::string& macrosOrRegs);
+  bool needsSeparateTrees(
+      const std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& macroSinks,
+      const std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& registerSinks)
+      const;
+  void addNetSinks(Clock& clockNet, odb::dbNet* net);
+  void addClockSink(Clock& clockNet, odb::dbITerm* iterm);
   Clock forkRegisterClockNetwork(
       Clock& clockNet,
       const std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& registerSinks,

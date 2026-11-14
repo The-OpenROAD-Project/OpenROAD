@@ -22,6 +22,7 @@
 
 namespace cts {
 class Graphics;
+class SinkClustering;
 
 class SegmentBuilder
 {
@@ -163,6 +164,7 @@ class HTreeBuilder : public TreeBuilder
   }
 
   void run() override;
+  std::vector<std::vector<const ClockInst*>> predictSinkClusters();
   Point<double> legalizeOneBuffer(Point<double> bufferLoc,
                                   const std::string& bufferName) override;
   void findLegalLocations(const Point<double>& parentPoint,
@@ -345,6 +347,16 @@ class HTreeBuilder : public TreeBuilder
                          float maxDiameter,
                          unsigned clusterSize,
                          bool secondLevel = false);
+  bool clusterSinks(const std::vector<std::pair<float, float>>& sinks,
+                    const std::vector<const ClockInst*>& sinkInsts,
+                    float maxDiameter,
+                    unsigned clusterSize,
+                    bool secondLevel,
+                    SinkClustering& matching,
+                    unsigned& bestClusterSize,
+                    float& bestDiameter);
+  double sinkClusteringDiameter() const;
+  unsigned sinkClusteringSize() const;
   void assignSinksToBranches(
       LevelTopology& topology,
       unsigned branchPtIdx1,

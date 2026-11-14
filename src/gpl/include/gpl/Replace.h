@@ -18,6 +18,10 @@ namespace sta {
 class dbSta;
 }
 
+namespace cts {
+class TritonCTS;
+}
+
 namespace ppl {
 class IOPlacer;
 }
@@ -129,6 +133,7 @@ struct PlaceOptions
   float timingNetWeightMax = 5;
   bool powerDrivenMode = false;
   float powerDrivenNetWeight = 1;
+  std::vector<int> powerDrivenClockLeafOverflows{64, 20};
   float timingDrivenNetsPercentage = 10;
   float overflow = 0.1;
   int nesterovPlaceMaxIter = 5000;
@@ -211,6 +216,7 @@ class Replace
           rsz::Resizer* resizer,
           grt::GlobalRouter* router,
           ppl::IOPlacer* pin_placer,
+          cts::TritonCTS* cts,
           utl::Logger* logger);
 
   ~Replace();
@@ -271,6 +277,7 @@ class Replace
   rsz::Resizer* rs_ = nullptr;
   grt::GlobalRouter* fr_ = nullptr;
   ppl::IOPlacer* pin_placer_ = nullptr;
+  cts::TritonCTS* cts_ = nullptr;
   utl::Logger* log_ = nullptr;
 
   std::unique_ptr<AbstractGraphics> graphics_;

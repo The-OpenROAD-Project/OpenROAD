@@ -52,7 +52,12 @@ activity, so that nets that toggle often are kept short and use less switching
 power. The activity is read from `read_saif`, `read_vcd` or
 `set_power_activity` if given, otherwise from the OpenSTA default propagation,
 in the same scene (`set_scene`) that `report_power` uses. The extra weight
-scales with activity. Clock nets are not weighted.
+scales with activity and covers both signal and clock nets. A signal net gets
+it directly. For a clock net, `gpl` predicts the sink clusters that
+`clock_tree_synthesis -sink_clustering_enable` would build at the current
+placement with the `set_cts_config` settings, and adds a virtual leaf net over
+each cluster, weighted by the activity of the clock. The leaf nets are
+predicted at each overflow of `-power_driven_clock_leaf_overflow`.
 
 When the routability-driven option is enabled, each of its iterations will 
 execute RUDY to provide an estimation of routing congestion. Congested tiles 
@@ -82,7 +87,7 @@ Timing-driven arguments
 - `-timing_driven_net_reweight_overflow`, `-timing_driven_net_weight_max`, `-timing_driven_nets_percentage`, `keep_resize_below_overflow`, `-timing_driven_repair_timing`, `-timing_driven_repair_tns_end_percent`
 
 Power-driven arguments
-- `-power_driven_net_weight`
+- `-power_driven_net_weight`, `-power_driven_clock_leaf_overflow`
 
 ```tcl
 global_placement
@@ -120,6 +125,7 @@ global_placement
     [-timing_driven_repair_timing]\
     [-timing_driven_repair_tns_end_percent timing_driven_repair_tns_end_percent]\
     [-power_driven_net_weight power_driven_net_weight]\
+    [-power_driven_clock_leaf_overflow power_driven_clock_leaf_overflow]\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
     [-disable_revert_if_diverge]\
@@ -198,7 +204,8 @@ global_placement
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-power_driven_net_weight` | Set the extra net weight in power-driven mode for a net that toggles once per cycle of the fastest clock. A net gains this value times its toggles per cycle, capped at one toggle. The default value is `1`, and the allowed values are floats `>= 0`. |
+| `-power_driven_net_weight` | Set the extra net weight in power-driven mode for a net that toggles once per cycle of the fastest clock. A signal net gains this value times its toggles per cycle, capped at one toggle. A clock leaf net gains this value times the toggles per cycle of its clock, uncapped. The default value is `1`, and the allowed values are floats `>= 0`. |
+| `-power_driven_clock_leaf_overflow` | Set overflow thresholds for predicting the clock leaf nets in power-driven mode. Allowed value is a Tcl list of integers where each number is `[0, 100]`. Default values are [64, 20]. An empty list disables the clock leaf nets. |
 
 ### Placement Configuration
 
