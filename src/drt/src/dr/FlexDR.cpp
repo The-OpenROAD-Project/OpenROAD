@@ -2147,25 +2147,46 @@ int FlexDR::main()
   // solution's violations.
   const int num_db_markers = getDesign()->getTopBlock()->getNumMarkers();
   if (num_db_markers > 0) {
-    // Never resume past the configured end iteration, otherwise no repair
-    // iteration would run at all.
-    iter_ = std::max(0,
-                     std::min(router_cfg_->REROUTE_VIOLATIONS_START_ITER,
-                              router_cfg_->END_ITERATION));
-    // gcell2BoundaryPin_ is only consumed by iteration 0 and is normally freed
-    // at the end of that iteration. When resuming past iteration 0 that cleanup
-    // never runs, so release it now to avoid holding the memory for the whole
-    // routing.
-    if (iter_ > 0) {
-      removeGCell2BoundaryPin();
+    // Only the initial iterations route nets that have guides but no routing
+    // (e.g. nets ripped up by an ECO after the run that produced the
+    // markers). If there are any, do not resume; route from iteration 0.
+    int num_unrouted_nets = 0;
+    for (const auto& net : getDesign()->getTopBlock()->getNets()) {
+      if (!net->isSpecial() && !net->isFake() && !net->hasInitialRouting()
+          && !net->getGuides().empty()) {
+        ++num_unrouted_nets;
+      }
     }
-    if (router_cfg_->VERBOSE > 0) {
-      logger_->info(DRT,
-                    627,
-                    "Found {} DRC marker(s) in the database; resuming detailed "
-                    "routing from iteration {}.",
-                    num_db_markers,
-                    iter_);
+    if (num_unrouted_nets > 0) {
+      if (router_cfg_->VERBOSE > 0) {
+        logger_->info(DRT,
+                      629,
+                      "Found {} DRC marker(s) in the database and {} net(s) "
+                      "without routing; routing from iteration 0.",
+                      num_db_markers,
+                      num_unrouted_nets);
+      }
+    } else {
+      // Never resume past the configured end iteration, otherwise no repair
+      // iteration would run at all.
+      iter_ = std::max(0,
+                       std::min(router_cfg_->REROUTE_VIOLATIONS_START_ITER,
+                                router_cfg_->END_ITERATION));
+      if (router_cfg_->VERBOSE > 0) {
+        logger_->info(DRT,
+                      627,
+                      "Found {} DRC marker(s) in the database; resuming "
+                      "detailed routing from iteration {}.",
+                      num_db_markers,
+                      iter_);
+      }
+      // gcell2BoundaryPin_ is only consumed by iteration 0 and is normally
+      // freed at the end of that iteration. When resuming past iteration 0
+      // that cleanup never runs, so release it now to avoid holding the
+      // memory for the whole routing.
+      if (iter_ > 0) {
+        removeGCell2BoundaryPin();
+      }
     }
   }
   bool incremental = false;
