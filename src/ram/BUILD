@@ -40,7 +40,6 @@ cc_library(
         "//src/ppl",
         "//src/sta:opensta_lib",
         "//src/utl",
-        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
 )

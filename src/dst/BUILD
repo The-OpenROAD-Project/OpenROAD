@@ -90,7 +90,6 @@ cc_library(
         ":dst_impl",
         "//:ord",
         "//src/utl",
-        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
 )

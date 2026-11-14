@@ -4272,6 +4272,7 @@ void NesterovBase::updateGCellState()
       updateDensityCoordiLayoutInside(gcell);
       curSLPCoordi_[gcells_index] = prevSLPCoordi_[gcells_index]
           = curCoordi_[gcells_index] = initCoordi_[gcells_index]
+          = snapshotCoordi_[gcells_index] = snapshotSLPCoordi_[gcells_index]
           = FloatPoint(gcell->dCx(), gcell->dCy());
 
       // Gradients are left to NesterovPlace::refreshCurGradients(), which

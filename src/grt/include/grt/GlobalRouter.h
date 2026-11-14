@@ -468,6 +468,7 @@ class GlobalRouter
   void addResourcesForPinAccess(const std::vector<Net*>& nets);
   bool isPinReachable(const Pin& pin, const odb::Point& pos_on_grid);
   int computeNetWirelength(odb::dbNet* db_net);
+  int computeNetVias(odb::dbNet* db_net);
   void computeWirelength();
   // Detour metric: capture the initial Steiner-tree wirelength (from the STT
   // builder) for each net before overflow-removal routing runs.

@@ -27,6 +27,7 @@ cc_library(
         "src/Progress.cpp",
         "src/ScopedTemporaryFile.cpp",
         "src/ServiceRegistry.cpp",
+        "src/StackTrace.cpp",
         "src/SuppressStdout.cpp",
         "src/ThreadPool.cpp",
         "src/cpu_topology.cpp",
@@ -46,6 +47,7 @@ cc_library(
         "include/utl/Progress.h",
         "include/utl/ScopedTemporaryFile.h",
         "include/utl/ServiceRegistry.h",
+        "include/utl/StackTrace.h",
         "include/utl/SuppressStdout.h",
         "include/utl/ThreadPool.h",
         "include/utl/algorithms.h",
@@ -84,12 +86,13 @@ cc_library(
         "include/utl/unique_name.h",
         "include/utl/validation.h",
     ],
-    copts = ["-DBOOST_ASIO_NO_DEPRECATED"],
     includes = [
         "include",
         "src",
     ],
     deps = [
+        "@abseil-cpp//absl/debugging:stacktrace",
+        "@abseil-cpp//absl/debugging:symbolize",
         "@abseil-cpp//absl/synchronization",
         "@boost.algorithm",
         "@boost.asio",
@@ -131,7 +134,6 @@ cc_library(
     deps = [
         ":utl",
         "//:ord",
-        "@boost.stacktrace",
         "@rules_python//python/cc:current_py_cc_headers",
         "@tcl_lang//:tcl",
     ],

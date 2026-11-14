@@ -202,14 +202,20 @@ void dbTechLayerSpacingTablePrlRule::destroy(
 
 uint32_t _dbTechLayerSpacingTablePrlRule::getWidthIdx(const int width) const
 {
-  auto pos = --(std::ranges::lower_bound(width_tbl_, width));
-  return std::max(0, (int) std::distance(width_tbl_.begin(), pos));
+  auto pos = std::ranges::lower_bound(width_tbl_, width);
+  if (pos != width_tbl_.begin()) {
+    --pos;
+  }
+  return std::distance(width_tbl_.begin(), pos);
 }
 
 uint32_t _dbTechLayerSpacingTablePrlRule::getLengthIdx(const int length) const
 {
-  auto pos = --(std::ranges::lower_bound(length_tbl_, length));
-  return std::max(0, (int) std::distance(length_tbl_.begin(), pos));
+  auto pos = std::ranges::lower_bound(length_tbl_, length);
+  if (pos != length_tbl_.begin()) {
+    --pos;
+  }
+  return std::distance(length_tbl_.begin(), pos);
 }
 
 void dbTechLayerSpacingTablePrlRule::setTable(

@@ -47,7 +47,6 @@ cc_library(
         "@boost.graph",
         "@boost.icl",
         "@boost.polygon",
-        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
 )
