@@ -110,7 +110,10 @@ ALL_TESTS = [
 ]
 
 PASSFAIL_TESTS = [
+    "check_ip_liberty_corners",
+    "check_ip_liberty_corners_reversed",
     "check_ip_liberty_pins",
+    "check_ip_liberty_values",
     "write_verilog_def_alias",
     "write_verilog_def_shared_inputs",
 ]
@@ -176,6 +179,15 @@ _3DIC_CROSS_FIXTURES = [
                 "example1_typ.lib",
                 "example1.def",
                 "example1.lef",
+            ],
+            "check_ip_liberty_corners": [
+                "check_ip_liberty_values.lef",
+                "check_ip_liberty_values.lib",
+            ],
+            "check_ip_liberty_corners_reversed": [
+                "check_ip_liberty_corners.lib",
+                "check_ip_liberty_values.lef",
+                "check_ip_liberty_values.lib",
             ],
             "find_clks1": [
                 "pad.lef",

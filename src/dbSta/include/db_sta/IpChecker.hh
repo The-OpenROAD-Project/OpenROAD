@@ -11,6 +11,8 @@
 
 namespace sta {
 class dbSta;
+class LibertyCell;
+class LibertyLibrary;
 }  // namespace sta
 
 namespace utl {
@@ -34,6 +36,8 @@ namespace sta {
 // LEF/LIB-CHK-011: Pin direction matches Liberty
 // LEF/LIB-CHK-012: LEF macros and signal pins exist in Liberty
 // LEF/LIB-CHK-013: LEF and Liberty cell areas match
+// LIB-CHK-014: Liberty transition tables hold sane values
+// LIB-CHK-015: Liberty input pin capacitance within the characterized load
 
 class IpChecker
 {
@@ -42,6 +46,10 @@ class IpChecker
 
   // Configuration
   void setMaxPolygons(int max) { max_polygons_ = max; }
+  // Transition/capacitance limits. Zero means derive the limit from the
+  // loaded Liberty libraries.
+  void setMaxTransition(float max) { max_transition_ = max; }
+  void setMaxCapacitance(float max) { max_capacitance_ = max; }
   void setVerbose(bool verbose) { verbose_ = verbose; }
 
   // Check a specific macro by name
@@ -107,6 +115,16 @@ class IpChecker
   // LEF/LIB-CHK-011-013: Check Liberty pin presence, direction, and area
   void checkLibertyPins(odb::dbMaster* master);
 
+  // LIB-CHK-014-015: Check Liberty transition tables and input capacitance
+  void checkLibertyValues(odb::dbMaster* master);
+  void checkLibertyCellValues(odb::dbMaster* master,
+                              LibertyLibrary* library,
+                              LibertyCell* liberty_cell);
+
+  // Largest output load any loaded Liberty library is characterized for.
+  // Zero when no table declares a load axis.
+  float maxCharacterizedLoad();
+
   // Helper: Check if a pin shape has at least one accessible edge
   bool hasAccessibleEdge(odb::dbMaster* master,
                          const odb::Rect& pin_rect,
@@ -119,6 +137,10 @@ class IpChecker
 
   // Configuration
   int max_polygons_ = 10000;
+  float max_transition_ = 0.0;
+  float max_capacitance_ = 0.0;
+  float max_characterized_load_ = -1.0;
+  static constexpr float transition_tolerance_ = 1e-4;
   bool verbose_ = false;
 
   // Warning counter
