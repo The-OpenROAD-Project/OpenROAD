@@ -517,6 +517,119 @@ TEST_F(CheckPlacementTest, DetailedPlacementAvoidsMisalignedFixedMacroOverlap)
   EXPECT_EQ(failureCount("Overlap_failures"), 0);
 }
 
+// Window-supply check: a window of +/- 4 sites and +/- 1 row reaches
+// 3 x 2 boxes of 4 sites by 1 row from the core's corner, 24 sites.
+class WindowSupplyTest : public CheckPlacementTest
+{
+ protected:
+  static constexpr int kWindowSites = 4;
+  static constexpr int kWindowRows = 1;
+
+  // count BUF_X1 (3 sites each) left by global placement at one spot.
+  void stackBuffers(const int count, const odb::Point& location)
+  {
+    for (int i = 0; i < count; ++i) {
+      const std::string name = "buf" + std::to_string(i);
+      makeCell(
+          "BUF_X1", name.c_str(), location, odb::dbPlacementStatus::PLACED);
+    }
+  }
+
+  // Run detailed placement and return the logger error id it raised, or
+  // "" if none.
+  std::string runPlacement(const bool use_diamond)
+  {
+    try {
+      dp_.detailedPlacement(kWindowSites,
+                            kWindowRows,
+                            /*report_file_name=*/"",
+                            /*incremental=*/false,
+                            use_diamond);
+    } catch (const std::runtime_error& error) {
+      return error.what();
+    }
+    return "";
+  }
+};
+
+TEST_F(WindowSupplyTest, DiamondStopsWhenWindowsCannotHoldTheCells)
+{
+  // 30 buffers need 90 sites; 24 are within reach.
+  stackBuffers(30, {kCoreX, kCoreY});
+  EXPECT_EQ(runPlacement(/*use_diamond=*/true), "DPL-1107");
+}
+
+TEST_F(WindowSupplyTest, NegotiationIsNotStoppedByTheCheck)
+{
+  // The negotiation can move cells further than the window, so the same
+  // placement only warns.
+  stackBuffers(30, {kCoreX, kCoreY});
+  EXPECT_NE(runPlacement(/*use_diamond=*/false), "DPL-1107");
+}
+
+TEST_F(WindowSupplyTest, DiamondLegalizesWhenWindowsHoldTheCells)
+{
+  // 3 buffers need 9 sites; the window reaches 24.
+  stackBuffers(3, {kCoreX, kCoreY});
+  EXPECT_EQ(runPlacement(/*use_diamond=*/true), "");
+  EXPECT_EQ(runCheck(/*check_fixed=*/false, /*check_placeable=*/true), "");
+}
+
+// With -incremental the legal cells are painted before the check, but
+// rip-up-and-replace moves them again, so they are not fixed: one row of 14
+// sites, INV_X1 cells 2 sites wide, a and t both at site 0, legal cells at
+// sites 2 to 11, sites 12 and 13 free. t at 0, a at 2 and every legal cell
+// shifted right by two sites, none further than its window, is legal; counting
+// the legal cells as fixed leaves only sites 0 and 1 for a and t, and would
+// stop it.
+class IncrementalWindowSupplyTest : public WindowSupplyTest
+{
+ protected:
+  static constexpr int kRowSites = 14;
+
+  void SetUp() override
+  {
+    ASSERT_TRUE(updateLib(lib_, "_main/src/dpl/test/extra.lef"));
+    block_->setDieArea(odb::Rect(0, 0, 20000, 20000));
+    site_ = lib_->findSite("FreePDK45_38x28_10R_NP_162NW_34O");
+    ASSERT_NE(site_, nullptr);
+    makeRow("ROW_0", 0, kRowSites, kCoreY, odb::dbOrientType::R0);
+    block_->setCoreArea(block_->computeCoreArea());
+  }
+
+  odb::Point siteLocation(const int site) const
+  {
+    return {kCoreX + site * kSiteWidth, kCoreY};
+  }
+};
+
+TEST_F(IncrementalWindowSupplyTest, LegalCellsCountAsMovable)
+{
+  makeCell("INV_X1", "a", siteLocation(0), odb::dbPlacementStatus::PLACED);
+  makeCell("INV_X1", "t", siteLocation(0), odb::dbPlacementStatus::PLACED);
+  for (int site = 2; site < 12; site += 2) {
+    const std::string name = "legal" + std::to_string(site);
+    makeCell("INV_X1",
+             name.c_str(),
+             siteLocation(site),
+             odb::dbPlacementStatus::PLACED);
+  }
+  std::string error;
+  try {
+    dp_.detailedPlacement(kWindowSites,
+                          kWindowRows,
+                          /*report_file_name=*/"",
+                          /*incremental=*/true,
+                          /*use_diamond=*/true);
+  } catch (const std::runtime_error& e) {
+    error = e.what();
+  }
+  // A legal placement exists, so the check must not stop the search. The
+  // search itself does not find it here: rip-up unplaces the cells within
+  // +/- 8 sites of t, and the cell at site 10 is not among them.
+  EXPECT_NE(error, "DPL-1107");
+}
+
 TEST_F(CheckPlacementTest, LegalCellPosAfterDetailedPlacementLeavesMacro)
 {
   // detailed_placement frees its pixel grid on return. The resizer then

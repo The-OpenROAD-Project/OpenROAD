@@ -246,6 +246,19 @@ class Opendp
 
   std::string printBgBox(const boost::geometry::model::box<bgPoint>& queryBox);
   void diamondDPL();
+  // A box of the window-supply check whose cells need more sites than are
+  // within reach of it.
+  struct WindowShortfall
+  {
+    int bx;
+    int by;
+    int64_t demand;
+    int64_t supply;
+  };
+  void checkWindowSupply(bool fatal);
+  void reportWindowShortfalls(std::vector<WindowShortfall>& shortfalls,
+                              int64_t total_boxes,
+                              bool fatal);
   DbuPt nearestPt(const Node* cell, const DbuRect& rect) const;
   int distToRect(const Node* cell, const odb::Rect& rect) const;
   static bool checkOverlap(const odb::Rect& cell, const odb::Rect& box);

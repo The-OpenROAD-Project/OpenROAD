@@ -267,6 +267,9 @@ void Opendp::detailedPlacement(const int max_displacement_x,
       groupInitPixels2();
       groupInitPixels();
     }
+    // The negotiation can move a cell further than its window, so a
+    // shortfall within the windows is a warning here, not a stop.
+    checkWindowSupply(/*fatal=*/false);
     if (!quiet_) {
       logger_->info(DPL, 1102, "Legalizing using negotiation legalizer.");
     }
