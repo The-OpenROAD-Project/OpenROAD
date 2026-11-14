@@ -100,10 +100,6 @@ class RepairDesign : sta::dbStaState
                           float limit,
                           float& violation);
   bool repairDriverSlew(const sta::Scene* corner, const sta::Pin* drvr_pin);
-  // Tightest set_max_transition -clock_path/-data_path limit of the clocks
-  // whose paths reach pin, INF when none applies.  It does not depend on the
-  // driver cell, so it bounds every candidate size alike.
-  float clockSlewLimit(const sta::Pin* pin, const sta::Scene* corner) const;
 
   void repairDriver(sta::Vertex* drvr,
                     bool check_slew,
@@ -267,6 +263,8 @@ class RepairDesign : sta::dbStaState
   double slew_margin_ = 0;
   double cap_margin_ = 0;
   const sta::Scene* corner_ = nullptr;
+  // Clock slew limit of drvr_pin_, applied to repeaters inserted on its net.
+  float net_clk_slew_limit_ = sta::INF;
 
   bool reroute_ = false;
   int rerouted_nets_ = 0;

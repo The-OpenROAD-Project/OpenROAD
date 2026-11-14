@@ -7150,6 +7150,43 @@ float Resizer::maxInputSlew(const sta::LibertyPort* input,
   return limit;
 }
 
+float Resizer::maxInputSlew(const sta::Pin* pin, const sta::Scene* scene) const
+{
+  float limit = sta::INF;
+  const sta::LibertyPort* port = network_->libertyPort(pin);
+  if (port) {
+    limit = maxInputSlew(port, scene);
+  }
+  return std::min(limit, clockSlewLimit(pin, scene));
+}
+
+float Resizer::clockSlewLimit(const sta::Pin* pin,
+                              const sta::Scene* scene) const
+{
+  float limit = sta::INF;
+  const sta::Sdc* sdc = scene->sdc();
+  if (pin == nullptr || !sdc->haveClkSlewLimits()) {
+    return limit;
+  }
+
+  // Same clock set and clk/data split as CheckSlews (check_clks = true).
+  const sta::Mode* mode = scene->mode();
+  const sta::PathClkOrData clk_data = mode->clkNetwork()->isIdealClock(pin)
+                                          ? sta::PathClkOrData::clk
+                                          : sta::PathClkOrData::data;
+  for (const sta::Clock* clk : search_->clockDomains(pin, mode)) {
+    for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+      float clk_limit;
+      bool exists;
+      sdc->slewLimit(clk, rf, clk_data, sta::MinMax::max(), clk_limit, exists);
+      if (exists) {
+        limit = std::min(limit, clk_limit);
+      }
+    }
+  }
+  return limit;
+}
+
 bool Resizer::haveClkSlewLimits() const
 {
   for (const sta::Scene* scene : sta_->scenes()) {

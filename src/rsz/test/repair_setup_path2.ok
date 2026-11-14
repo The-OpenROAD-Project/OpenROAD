@@ -47,11 +47,11 @@
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -184.565 |    -1425.4 |     13 | capture_17/D
       74* |       8 |      28 |       11 |      0 |     2 |    +2.4% |  -38.360 |     -189.4 |     13 | capture_19/D
-    final |       8 |      42 |       11 |      0 |     2 |    +2.4% |  -38.717 |     -176.2 |      7 | capture_19/D
+    final |       8 |      43 |       11 |      0 |     2 |    +2.4% |  -38.717 |     -170.8 |      7 | capture_19/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 8 buffers.
 [INFO RSZ-0040] Inserted 11 buffers.
-[INFO RSZ-0051] Resized 42 instances: 11 up, 0 up match, 0 down, 31 VT
+[INFO RSZ-0051] Resized 43 instances: 11 up, 0 up match, 0 down, 32 VT
 [INFO RSZ-0043] Swapped pins on 2 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Startpoint: launch_4 (rising edge-triggered flip-flop clocked by clk)

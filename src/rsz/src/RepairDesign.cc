@@ -15,6 +15,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -297,7 +298,7 @@ void RepairDesign::repairDesign(
       sta::LibertyPort* port = network_->libertyPort(vertex->pin());
       if (port) {
         for (auto corner : sta_->scenes()) {
-          float limit = resizer_->maxInputSlew(port, corner);
+          float limit = resizer_->maxInputSlew(vertex->pin(), corner);
           float actual;
           bool slew_viol = false;
           for (const sta::RiseFall* rf : sta::RiseFall::range()) {
@@ -937,12 +938,36 @@ bool RepairDesign::repairDriverSlew(const sta::Scene* corner,
       && !resizer_->isFixed(inst) && cell && resizer_->isLogicStdCell(inst)) {
     sta::LibertyCellSeq equiv_cells = resizer_->getSwappableCells(cell);
     if (!equiv_cells.empty()) {
-      const float clk_limit = clockSlewLimit(drvr_pin, corner);
-      // Pair of slew violation magnitude and cell pointer
-      using SizeCandidate = std::pair<float, sta::LibertyCell*>;
-      std::vector<SizeCandidate> sizes;
+      const float clk_limit = resizer_->clockSlewLimit(drvr_pin, corner);
 
+      // Candidates: the sizing set (same VT under keep_sizing_vt), then the
+      // VT equivalents of each size, which are only used when no size in
+      // the sizing set meets the limit.  A faster VT of the same footprint
+      // can repair the slew in place where buffering is not possible.
+      struct SizeCandidate
+      {
+        float violation;
+        sta::LibertyCell* cell;
+        bool vt_change;
+      };
+      std::vector<std::pair<sta::LibertyCell*, bool>> candidates;
+      std::unordered_set<sta::LibertyCell*> seen;
       for (sta::LibertyCell* size_cell : equiv_cells) {
+        if (seen.insert(size_cell).second) {
+          candidates.emplace_back(size_cell, false);
+        }
+      }
+      // getVTEquivCells is empty with fewer than two VT categories.
+      for (sta::LibertyCell* size_cell : equiv_cells) {
+        for (sta::LibertyCell* vt_cell : resizer_->getVTEquivCells(size_cell)) {
+          if (seen.insert(vt_cell).second) {
+            candidates.emplace_back(vt_cell, true);
+          }
+        }
+      }
+
+      std::vector<SizeCandidate> sizes;
+      for (const auto& [size_cell, vt_change] : candidates) {
         float limit, violation = 0;
         bool limit_exists = false;
         sta::LibertyPort* port
@@ -977,7 +1002,7 @@ bool RepairDesign::repairDriverSlew(const sta::Scene* corner,
           }
         }
 
-        sizes.emplace_back(violation, size_cell);
+        sizes.push_back({violation, size_cell, vt_change});
       }
 
       if (sizes.empty()) {
@@ -985,15 +1010,31 @@ bool RepairDesign::repairDriverSlew(const sta::Scene* corner,
             RSZ, 144, "sizes list empty for cell {}\n", cell->name());
       }
 
-      std::ranges::sort(sizes, [](SizeCandidate a, SizeCandidate b) {
-        if (a.first == 0 && b.first == 0) {
-          // both sizes non-violating: sta::sort by area
-          return a.second->area() < b.second->area();
-        }
-        return a.first < b.first;
-      });
+      // Non-violating cells first: sizing-set cells by area, then VT changes
+      // by area and leakage.  Otherwise the smallest violation.
+      const auto leakage = [this](sta::LibertyCell* c) {
+        return resizer_->cellLeakage(c).value_or(0.0f);
+      };
+      std::ranges::sort(sizes,
+                        [&](const SizeCandidate& a, const SizeCandidate& b) {
+                          const bool a_ok = a.violation == 0;
+                          const bool b_ok = b.violation == 0;
+                          if (a_ok != b_ok) {
+                            return a_ok;
+                          }
+                          if (!a_ok) {
+                            return a.violation < b.violation;
+                          }
+                          if (a.vt_change != b.vt_change) {
+                            return !a.vt_change;
+                          }
+                          if (a.cell->area() != b.cell->area()) {
+                            return a.cell->area() < b.cell->area();
+                          }
+                          return leakage(a.cell) < leakage(b.cell);
+                        });
 
-      sta::LibertyCell* selected_size = sizes.front().second;
+      sta::LibertyCell* selected_size = sizes.front().cell;
       if (selected_size != cell) {
         return resizer_->replaceCell(inst, selected_size, true);
       }
@@ -1001,34 +1042,6 @@ bool RepairDesign::repairDriverSlew(const sta::Scene* corner,
   }
 
   return false;
-}
-
-float RepairDesign::clockSlewLimit(const sta::Pin* pin,
-                                   const sta::Scene* corner) const
-{
-  float limit = sta::INF;
-  const sta::Sdc* sdc = corner->sdc();
-  if (!sdc->haveClkSlewLimits()) {
-    return limit;
-  }
-
-  // Same clock set and clk/data split as CheckSlews (check_clks = true):
-  // the clocks of the paths already found at pin, no new arrival search.
-  const sta::Mode* mode = corner->mode();
-  const sta::PathClkOrData clk_data = mode->clkNetwork()->isIdealClock(pin)
-                                          ? sta::PathClkOrData::clk
-                                          : sta::PathClkOrData::data;
-  for (const sta::Clock* clk : search_->clockDomains(pin, mode)) {
-    for (const sta::RiseFall* rf : sta::RiseFall::range()) {
-      float clk_limit;
-      bool exists;
-      sdc->slewLimit(clk, rf, clk_data, max_, clk_limit, exists);
-      if (exists) {
-        limit = std::min(limit, clk_limit);
-      }
-    }
-  }
-  return limit;
 }
 
 void RepairDesign::repairDriver(sta::Vertex* drvr,
@@ -1369,7 +1382,7 @@ float RepairDesign::bufferInputMaxSlew(sta::LibertyCell* buffer,
 {
   sta::LibertyPort *input, *output;
   buffer->bufferPorts(input, output);
-  return resizer_->maxInputSlew(input, corner);
+  return std::min(resizer_->maxInputSlew(input, corner), net_clk_slew_limit_);
 }
 
 // Find the output port load capacitance that results in slew.
@@ -1434,6 +1447,9 @@ void RepairDesign::repairNet(const BufferedNetPtr& bnet,
   max_cap_ = max_cap;
   max_length_ = max_length;
   corner_ = corner;
+  // Repeaters inserted on this net carry the driver's clock domains; their
+  // new input pins have no arrivals yet, so take the limit from the driver.
+  net_clk_slew_limit_ = resizer_->clockSlewLimit(drvr_pin, corner);
 
   if (graphics_) {
     sta::Net* net = db_network_->net(drvr_pin);

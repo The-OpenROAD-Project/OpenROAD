@@ -315,6 +315,9 @@ TESTS = [
 ]
 
 PASSFAIL_TESTS = [
+    "repair_setup_crit_vt_capture",
+    "repair_slew_clk_data_path_vt",
+    "repair_slew_clk_load_wire",
     "repair_timing_fixed",
     "repair_design_fixed_driver",
     "repair_slew_clk_data_path",
@@ -326,6 +329,9 @@ ALL_TESTS = TESTS + PASSFAIL_TESTS
 
 # PASSFAIL tests that assert their own results and have no .ok to diff.
 SELF_CHECKING_TESTS = [
+    "repair_setup_crit_vt_capture",
+    "repair_slew_clk_data_path_vt",
+    "repair_slew_clk_load_wire",
     "repair_design_fixed_driver",
     "repair_slew_clk_data_path",
     "repair_slew_corner",

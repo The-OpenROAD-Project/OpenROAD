@@ -44,8 +44,13 @@ TEST_F(TestResizerMtStatetable, RegisterCellReadsStatetables)
 {
   // Statetable registers have no ff/ff_bank groups, so sequentials() is
   // empty; the old isFlipFlop test rejected every one of them.
-  for (const char* name :
-       {"STDFF_X1", "STDFF_X2", "STDFFR_X1", "MB2STDFF_X1"}) {
+  for (const char* name : {"STDFF_X1",
+                           "STDFF_X2",
+                           "STDFFR_X1",
+                           "MB2STDFF_X1",
+                           "STDFFHL_X1",
+                           "STDFFHL_X2",
+                           "STSDFFHL_X1"}) {
     const sta::LibertyCell* reg = cell(name);
     ASSERT_NE(reg, nullptr) << name;
     ASSERT_NE(reg->statetable(), nullptr) << name;
@@ -110,6 +115,51 @@ TEST_F(TestResizerMtStatetable, StatetableFlipFlopGetsSequentialEstimator)
   const SequentialTimingEstimator::Result swap = estimator->estimate(candidate);
   ASSERT_TRUE(swap.legal) << swap.reason;
   EXPECT_GT(swap.max_side_slack_loss, 0.0f);
+}
+
+TEST_F(TestResizerMtStatetable, ShorthandStatetablesExpandHighLowRows)
+{
+  // "H/L R : - : H/L" is one row in OpenSTA (high_low input and next
+  // values), standing for an H row and an L row.  Vendor MBFF libraries
+  // write every data and scan load this way.
+  for (const char* name : {"STDFFHL_X1", "STSDFFHL_X1", "STDLHHL_X1"}) {
+    const sta::LibertyCell* shorthand = cell(name);
+    ASSERT_NE(shorthand, nullptr) << name;
+    ASSERT_NE(shorthand->statetable(), nullptr) << name;
+    bool has_high_low_row = false;
+    for (const sta::StatetableRow& row : shorthand->statetable()->table()) {
+      for (const sta::StateInputValue value : row.inputValues()) {
+        has_high_low_row |= value == sta::StateInputValue::high_low;
+      }
+    }
+    EXPECT_TRUE(has_high_low_row) << name;
+  }
+
+  EXPECT_TRUE(isRegisterCell(cell("STDFFHL_X1")));
+  EXPECT_TRUE(isRegisterCell(cell("STSDFFHL_X1")));
+  // The same shorthand at a level is still a latch.
+  const sta::LibertyCell* latch = cell("STDLHHL_X1");
+  EXPECT_TRUE(hasRole(latch, sta::TimingRole::regClkToQ()));
+  EXPECT_FALSE(isRegisterCell(latch));
+}
+
+TEST_F(TestResizerMtStatetable, ShorthandFlipFlopGetsSequentialEstimator)
+{
+  prepareFlipFlop("STDFFHL_X1");
+  ASSERT_FALSE(HasFatalFailure());
+  sta::LibertyCell* current = cell("STDFFHL_X1");
+  ASSERT_NE(current, nullptr);
+  setDataSlack(5e-12, sta::MinMax::max());
+  ASSERT_FALSE(HasFatalFailure());
+  const Target target = makeTarget("out0", "dq_seq", "Q");
+
+  const std::shared_ptr<const SequentialTimingEstimator> estimator
+      = SequentialTimingEstimator::prepare(resizer_, target);
+  ASSERT_NE(estimator, nullptr);
+  const SequentialTimingEstimator::Result identity
+      = estimator->estimate(current);
+  ASSERT_TRUE(identity.legal) << identity.reason;
+  EXPECT_FLOAT_EQ(identity.max_side_slack_loss, 0.0f);
 }
 
 TEST_F(TestResizerMtStatetable, StatetableLatchGetsNoSequentialEstimator)
