@@ -11,6 +11,7 @@
 #include <set>
 #include <string>
 #include <tuple>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -146,6 +147,9 @@ class RamGen
   void ramRouting(int thread_count);
 
   void setBehavioralVerilogFilename(const std::string& filename);
+  // -w_port_words: per write port, the words it writes, as space-separated
+  // word indices with ';' between ports; empty: every port every word
+  void setWritePortWords(const std::string& text);
   void writeBehavioralVerilog(const std::string& filename,
                               int slices_per_word,
                               int mask_size,
@@ -183,6 +187,36 @@ class RamGen
     int word_idx;
     odb::dbNet* select;
   };
+  // A read select's copies, one per group of kDriveGroup bits, each from
+  // its own buffer: the first is the select itself. Keyed by the select,
+  // only ever looked up, never walked.
+  std::unordered_map<odb::dbNet*, std::vector<odb::dbNet*>> select_groups_;
+  // Where a read select's group buffers come from: the buffer column's
+  // prefix, the select's word and the decoder output its buffers take.
+  // Each group's buffer is made in the bit cell of the group's first bit,
+  // beside the bits it selects.
+  struct SelectSource
+  {
+    std::string prefix;
+    int word;
+    odb::dbNet* decoder_output;
+  };
+  std::unordered_map<odb::dbNet*, SelectSource> select_sources_;
+  // An address literal's cells for a group of kDriveGroup words: a buffer
+  // or an inverter from the address, made in the decoder cell of the
+  // group's first word. Keyed by the port's decoder prefix and that word.
+  struct LiteralCell
+  {
+    bool invert;
+    odb::dbNet* in;
+    odb::dbNet* out;
+    std::string name;
+  };
+  std::map<std::pair<std::string, int>, std::vector<LiteralCell>>
+      literal_cells_;
+  // ports whose address literals are made per group of words: their
+  // column inverters are not made
+  std::vector<bool> grouped_literals_;
   // the tree over terms[lo, hi), each node in the bit cell of a term it
   // covers
   TreeEnd planReadTree(const std::string& prefix,
@@ -354,6 +388,10 @@ class RamGen
   std::vector<odb::dbBTerm*> data_inputs_;  // every write port's data
   std::vector<std::vector<odb::dbBTerm*>> q_outputs_;
   std::string behavioral_verilog_filename_;
+  // per write port, the words it writes; empty: every port every word
+  std::vector<std::set<int>> w_port_words_;
+  // the write ports that write a word: every port without -w_port_words
+  std::vector<int> writersOf(int word) const;
   std::string aoi22_in_a1_, aoi22_in_a2_, aoi22_in_b1_, aoi22_in_b2_,
       aoi22_out_;
   std::array<std::string, 4> ao22_in_;
@@ -422,6 +460,11 @@ class RamGen
     std::vector<odb::dbNet*> select_b;
   };
   std::map<std::pair<int, int>, WordWrite> word_write_;
+  // A word of more than kDriveGroup groups: a buffer between its enable
+  // (or a port's take, -1 for the enable) and each kDriveGroup of its
+  // group buffers, shared by the word's folds. Keyed by row, word, the
+  // port or -1, and the group of groups.
+  std::map<std::tuple<int, int, int, int>, odb::dbNet*> super_nets_;
   int sliceOffset(int slice) const
   {
     return bit_folds_ > 1 ? 0 : slice * slice_width_;
