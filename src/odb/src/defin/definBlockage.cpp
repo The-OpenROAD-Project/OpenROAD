@@ -100,6 +100,10 @@ void definBlockage::blockageRoutingRect(int x1, int y1, int x2, int y2)
     o->setFillObstruction();
   }
 
+  if (_except_pg_nets) {
+    o->setExceptPGNetsObstruction();
+  }
+
   if (_slots) {
     o->setSlotObstruction();
   }
