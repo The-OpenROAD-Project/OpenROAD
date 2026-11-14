@@ -1,0 +1,75 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+[WARNING RSZ-3248] repair_clock_inverters left inverter m1/c1 in the clock tree because load m1/r0/CK is dont_touch.
+Net clk
+ Pin capacitance: 1.55-1.70
+ Wire capacitance: 0.00
+ Total capacitance: 1.55-1.70
+ Number of drivers: 1
+ Number of loads: 1
+ Number of pins: 2
+
+Driver pins
+ clk input port
+
+Load pins
+ m1/c1/A input (INV_X1) 1.55-1.70
+
+module top (clk,
+    d,
+    q0,
+    q1,
+    q2);
+ input clk;
+ input d;
+ output q0;
+ output q1;
+ output q2;
+
+
+ mid m1 (.clk_in(clk),
+    .d(d),
+    .q0(q0),
+    .q1(q1),
+    .q2(q2));
+endmodule
+module mid (clk_in,
+    d,
+    q0,
+    q1,
+    q2);
+ input clk_in;
+ input d;
+ output q0;
+ output q1;
+ output q2;
+
+ wire clk_n;
+
+ INV_X1 c1 (.A(clk_in),
+    .ZN(clk_n));
+ DFF_X1 r0 (.D(d),
+    .CK(clk_n),
+    .Q(q0));
+ regs u_regs (.clk_n(clk_n),
+    .d(d),
+    .q1(q1),
+    .q2(q2));
+endmodule
+module regs (clk_n,
+    d,
+    q1,
+    q2);
+ input clk_n;
+ input d;
+ output q1;
+ output q2;
+
+
+ DFF_X1 r1 (.D(d),
+    .CK(clk_n),
+    .Q(q1));
+ DFF_X1 r2 (.D(d),
+    .CK(clk_n),
+    .Q(q2));
+endmodule

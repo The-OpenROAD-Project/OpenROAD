@@ -1,0 +1,85 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+[WARNING RSZ-3250] Removing clock inverter m1/c1 changes polarity at net net3 (SDC attached: no).
+[WARNING RSZ-3250] Removing clock inverter m1/c1 changes polarity at net top/mid/clk_n_out (SDC attached: no).
+[WARNING RSZ-3250] Removing clock inverter m1/c1 changes polarity at net top/mid/regs/ck (SDC attached: no).
+[WARNING RSZ-3250] Removing clock inverter m1/c1 changes polarity at pin m1/clk_n_out (SDC attached: no).
+[WARNING RSZ-3250] Removing clock inverter m1/c1 changes polarity at pin m1/u_regs/ck (SDC attached: no).
+Net clk
+ Pin capacitance: 4.65-5.10
+ Wire capacitance: 0.00
+ Total capacitance: 4.65-5.10
+ Number of drivers: 1
+ Number of loads: 3
+ Number of pins: 4
+
+Driver pins
+ clk input port
+
+Load pins
+ c1_3/A input (INV_X1) 1.55-1.70 (0, 1)
+ m1/u_regs/c1_1/A input (INV_X1) 1.55-1.70 (2, 1)
+ m1/u_regs/c1_2/A input (INV_X1) 1.55-1.70 (2, 1)
+
+module top (clk,
+    clk_n_o,
+    d,
+    q1,
+    q2);
+ input clk;
+ output clk_n_o;
+ input d;
+ output q1;
+ output q2;
+
+ wire net3;
+
+ INV_X1 c1_3 (.A(net3),
+    .ZN(clk_n_o));
+ mid m1 (.clk_in(clk),
+    .d(d),
+    .clk_n_out(net3),
+    .q1(q1),
+    .q2(q2));
+endmodule
+module mid (clk_in,
+    d,
+    clk_n_out,
+    q1,
+    q2);
+ input clk_in;
+ input d;
+ output clk_n_out;
+ output q1;
+ output q2;
+
+
+ regs u_regs (.ck(clk_in),
+    .d(d),
+    .q1(q1),
+    .q2(q2));
+ assign clk_n_out = clk_in;
+endmodule
+module regs (ck,
+    d,
+    q1,
+    q2);
+ input ck;
+ input d;
+ output q1;
+ output q2;
+
+ wire net_1;
+ wire net_2;
+
+ INV_X1 c1_1 (.A(ck),
+    .ZN(net_1));
+ INV_X1 c1_2 (.A(ck),
+    .ZN(net_2));
+ DFF_X1 r1 (.D(d),
+    .CK(net_2),
+    .Q(q1));
+ DFF_X1 r2 (.D(d),
+    .CK(net_1),
+    .Q(q2));
+endmodule

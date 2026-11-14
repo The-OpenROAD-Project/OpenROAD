@@ -1,0 +1,72 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+[WARNING RSZ-3250] Removing clock inverter u_cg/c1 changes polarity at net clk_n (SDC attached: no).
+[WARNING RSZ-3250] Removing clock inverter u_cg/c1 changes polarity at net top/cgen/clk_n_out (SDC attached: no).
+[WARNING RSZ-3250] Removing clock inverter u_cg/c1 changes polarity at net top/regs/ck (SDC attached: no).
+[WARNING RSZ-3250] Removing clock inverter u_cg/c1 changes polarity at pin u_cg/clk_n_out (SDC attached: no).
+[WARNING RSZ-3250] Removing clock inverter u_cg/c1 changes polarity at pin u_regs/ck (SDC attached: no).
+[WARNING ORD-2038] SanityCheck: Module 'u_cg' has no instances.
+Net clk
+ Pin capacitance: 3.10-3.40
+ Wire capacitance: 0.00
+ Total capacitance: 3.10-3.40
+ Number of drivers: 1
+ Number of loads: 2
+ Number of pins: 3
+
+Driver pins
+ clk input port
+
+Load pins
+ u_regs/c1_1/A input (INV_X1) 1.55-1.70 (2, 1)
+ u_regs/c1_2/A input (INV_X1) 1.55-1.70 (2, 1)
+
+module top (clk,
+    d,
+    q1,
+    q2);
+ input clk;
+ input d;
+ output q1;
+ output q2;
+
+ wire clk_n;
+
+ cgen u_cg (.clk(clk),
+    .clk_n_out(clk_n));
+ regs u_regs (.ck(clk_n),
+    .d(d),
+    .q1(q1),
+    .q2(q2));
+endmodule
+module cgen (clk,
+    clk_n_out);
+ input clk;
+ output clk_n_out;
+
+
+ assign clk_n_out = clk;
+endmodule
+module regs (ck,
+    d,
+    q1,
+    q2);
+ input ck;
+ input d;
+ output q1;
+ output q2;
+
+ wire net_1;
+ wire net_2;
+
+ INV_X1 c1_1 (.A(ck),
+    .ZN(net_1));
+ INV_X1 c1_2 (.A(ck),
+    .ZN(net_2));
+ DFF_X1 r1 (.D(d),
+    .CK(net_2),
+    .Q(q1));
+ DFF_X1 r2 (.D(d),
+    .CK(net_1),
+    .Q(q2));
+endmodule
