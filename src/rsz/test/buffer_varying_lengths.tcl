@@ -1,5 +1,10 @@
 # Generate wires over a range of lengths to observe buffering trends.
+# buffer_varying_lengths_size_driver.tcl runs the same flow with driver
+# sizing enabled during rebuffering.
 source "helpers.tcl"
+if { ![info exists buffer_varying_lengths_size_driver] } {
+  set buffer_varying_lengths_size_driver 0
+}
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 
@@ -49,21 +54,27 @@ proc arrival { vertex } {
   return [[sta::vertex_worst_arrival_path $vertex max] arrival]
 }
 
-proc summarize_solution { } {
+# Path delay is measured to the endpoint (i2/Z) from the start of the
+# input external delay, so it includes the port driving cell delay into
+# the driver and the load delay that depends on the delivered slew.
+proc summarize_solution { input_delay } {
   estimate_parasitics -placement
   sta::find_timing
-  puts "-------------------------------------------------------------"
-  puts " Distance | Buffer area | Path delay | Sequence"
-  puts "-------------------------------------------------------------"
+  puts "----------------------------------------------------------------------"
+  puts " Distance | Driver  | Area  | Path delay | Sequence"
+  puts "----------------------------------------------------------------------"
   set micron2 [expr [ord::microns_to_dbu 1]**2]
   for { set i 1 } { $i <= 100 } { incr i } {
     set i1i [get_pin i1-$i/A]
     set i1o [get_pin i1-$i/Z]
     set i2i [get_pin i2-$i/A]
+    set i2o [get_pin i2-$i/Z]
 
-    set delay [expr [arrival [$i2i vertices]] - [arrival [$i1i vertices]]]
+    set delay [expr [arrival [$i2o vertices]] - [sta::time_ui_sta $input_delay]]
 
-    set area 0.0
+    set driver [[$i1o instance] liberty_cell]
+    set driver_master [sta::sta_to_db_master $driver]
+    set area [expr { double([$driver_master getArea]) }]
     set sequence ""
     foreach buffer [get_fanout -only_cells -from $i1o] {
       if {
@@ -82,29 +93,34 @@ proc summarize_solution { } {
     set distance [expr abs($x1 - $x2) + abs($y1 - $y2)]
 
     puts " [format %8.1f [ord::dbu_to_microns $distance]] |\
-      [format %11.2f [expr $area / $micron2]] |\
-      [format %10.2f [sta::time_sta_ui $delay]] |\
+      [format %-7s [$driver_master getName]] |\
+      [format %5.2f [expr $area / $micron2]] |\
+      [format %10.3f [sta::time_sta_ui $delay]] |\
       $sequence"
   }
-  puts "-------------------------------------------------------------"
+  puts "----------------------------------------------------------------------"
 }
 
 create_clock -period 1 -name clk
 set_input_delay -clock clk 1.0 [all_inputs]
 set_output_delay -clock clk 0.0 [all_outputs]
+set_driving_cell -lib_cell BUF_X1 -pin Z [all_inputs]
 
 set_wire_rc -layer metal2
 estimate_parasitics -placement
 
 # first, repair design to normalize slews
 repair_design
+if { $buffer_varying_lengths_size_driver } {
+  set_opt_config -rebuffer_size_driver true
+}
 # second, trigger placement buffering
 rsz::fully_rebuffer NULL
 
 # characterize solution
 puts "\nSolution under tight timing constraint:"
 report_check_types
-summarize_solution
+summarize_solution 1.0
 
 # now relax timing
 set_input_delay -clock clk 0.0 [all_inputs]
@@ -114,4 +130,4 @@ rsz::fully_rebuffer NULL
 # print a second table
 puts "\nSolution with relaxed timing:"
 report_check_types
-summarize_solution
+summarize_solution 0.0
