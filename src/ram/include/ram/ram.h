@@ -146,6 +146,9 @@ class RamGen
   void ramRouting(int thread_count);
 
   void setBehavioralVerilogFilename(const std::string& filename);
+  // -w_port_words: per write port, the words it writes, as space-separated
+  // word indices with ';' between ports; empty: every port every word
+  void setWritePortWords(const std::string& text);
   void writeBehavioralVerilog(const std::string& filename,
                               int slices_per_word,
                               int mask_size,
@@ -354,6 +357,10 @@ class RamGen
   std::vector<odb::dbBTerm*> data_inputs_;  // every write port's data
   std::vector<std::vector<odb::dbBTerm*>> q_outputs_;
   std::string behavioral_verilog_filename_;
+  // per write port, the words it writes; empty: every port every word
+  std::vector<std::set<int>> w_port_words_;
+  // the write ports that write a word: every port without -w_port_words
+  std::vector<int> writersOf(int word) const;
   std::string aoi22_in_a1_, aoi22_in_a2_, aoi22_in_b1_, aoi22_in_b2_,
       aoi22_out_;
   std::array<std::string, 4> ao22_in_;
@@ -422,6 +429,11 @@ class RamGen
     std::vector<odb::dbNet*> select_b;
   };
   std::map<std::pair<int, int>, WordWrite> word_write_;
+  // A word of more than kDriveGroup groups: a buffer between its enable
+  // (or a port's take, -1 for the enable) and each kDriveGroup of its
+  // group buffers, shared by the word's folds. Keyed by row, word, the
+  // port or -1, and the group of groups.
+  std::map<std::tuple<int, int, int, int>, odb::dbNet*> super_nets_;
   int sliceOffset(int slice) const
   {
     return bit_folds_ > 1 ? 0 : slice * slice_width_;
