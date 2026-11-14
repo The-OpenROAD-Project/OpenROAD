@@ -2187,7 +2187,8 @@ void RamGen::generate(const int mask_size,
                       const std::string& wrapper_verilog,
                       const int service_every,
                       const int service_sites,
-                      const std::string& bank_column_layout)
+                      const std::string& bank_column_layout,
+                      const vector<vector<int>>& w_port_words)
 {
   if (banks < 1 || bank_columns < 1) {
     logger_->error(RAM,
@@ -2393,26 +2394,32 @@ void RamGen::generate(const int mask_size,
   num_write_ = rw_ports + w_ports;
   read_style_ = read_style;
   zero_word_ = zero_word;
-  if (!w_port_words_.empty()) {
-    if (static_cast<int>(w_port_words_.size()) != num_write_) {
-      logger_->error(RAM,
-                     128,
-                     "-w_port_words lists {} ports; the array has {} write "
-                     "ports.",
-                     w_port_words_.size(),
-                     num_write_);
-    }
-    if (!banked_) {
-      logger_->error(RAM, 129, "-w_port_words needs -decoder word or -banks.");
-    }
+  // -w_port_words: from this call's argument only, never a previous one's
+  w_port_words_.clear();
+  if (!w_port_words.empty()) {
     if (rw_ports > 0) {
       logger_->error(RAM,
                      132,
                      "-w_port_words is for write ports; a read-write port "
                      "reads every word.");
     }
-    for (const auto& words : w_port_words_) {
-      for (const int word : words) {
+    if (static_cast<int>(w_port_words.size()) != num_write_) {
+      logger_->error(RAM,
+                     128,
+                     "-w_port_words lists {} ports; the array has {} write "
+                     "ports.",
+                     w_port_words.size(),
+                     num_write_);
+    }
+    if (!banked_) {
+      logger_->error(RAM, 129, "-w_port_words needs -decoder word or -banks.");
+    }
+    for (int p = 0; p < num_write_; ++p) {
+      if (w_port_words[p].empty()) {
+        logger_->error(
+            RAM, 134, "-w_port_words: write port {} lists no words.", p);
+      }
+      for (const int word : w_port_words[p]) {
         if (word < 0 || word >= num_words) {
           logger_->error(RAM,
                          130,
@@ -2421,6 +2428,8 @@ void RamGen::generate(const int mask_size,
                          num_words);
         }
       }
+      w_port_words_.emplace_back(w_port_words[p].begin(),
+                                 w_port_words[p].end());
     }
     for (int word = 0; word < num_words; ++word) {
       if (word != zero_word && writersOf(word).empty()) {
@@ -3937,25 +3946,6 @@ void RamGen::unplacePeriphery()
                 block_->dbuToMicrons(height));
 }
 
-void RamGen::setWritePortWords(const std::string& text)
-{
-  w_port_words_.clear();
-  if (text.empty()) {
-    return;
-  }
-  std::stringstream ports(text);
-  std::string port;
-  while (std::getline(ports, port, ';')) {
-    std::stringstream words(port);
-    std::set<int> set;
-    int word;
-    while (words >> word) {
-      set.insert(word);
-    }
-    w_port_words_.push_back(std::move(set));
-  }
-}
-
 std::vector<int> RamGen::writersOf(const int word) const
 {
   std::vector<int> writers;
@@ -4178,6 +4168,19 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
   // cycle, the last one's data is kept. With -write_priority or each
   // port also writes the data of every earlier port writing the same
   // slice, so the last one writes the OR of them all.
+  // With -w_port_words a port writes only the words it lists, as in the
+  // netlist: a write to any other word is dropped.
+  auto listed = [this](const int w, const std::string& addr) {
+    std::string words;
+    if (w_port_words_.empty()) {
+      return words;
+    }
+    for (const int word : w_port_words_[w]) {
+      words
+          += fmt::format("{}{} == {}", words.empty() ? "" : " || ", addr, word);
+    }
+    return fmt::format(" && ({})", words);
+  };
   std::string data_declarations;
   std::string enable_declarations;
   std::string write_logic;
@@ -4188,11 +4191,12 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
         = fmt::format("{}[i*{} +:{}]", wbus("D", w), mask_size, mask_size);
     for (int v = 0; write_or_ && v < w; ++v) {
       write_data += fmt::format(
-          "\n          | ({{{}{{{}[i] && {} == {}}}}} & {}[i*{} +:{}])",
+          "\n          | ({{{}{{{}[i] && {} == {}{}}}}} & {}[i*{} +:{}])",
           mask_size,
           wbus("we", v),
           wbus("addr_w", v),
           write_addr,
+          listed(v, wbus("addr_w", v)),
           wbus("D", v),
           mask_size,
           mask_size);
@@ -4203,7 +4207,7 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
         "  input [{}:0] {};\n", slices_per_word - 1, wbus("we", w));
     write_logic += fmt::format(
         R"(    for (i = 0; i < {}; i = i + 1) begin
-      if ({}[i]{}) begin
+      if ({}[i]{}{}) begin
         mem[{}][i*{} +:{}] <= {};
       end
     end
@@ -4212,6 +4216,7 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
         wbus("we", w),
         zero_word_ >= 0 ? fmt::format(" && {} != {}", write_addr, zero_word_)
                         : std::string(),
+        listed(w, write_addr),
         write_addr,
         mask_size,
         mask_size,

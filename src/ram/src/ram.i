@@ -24,6 +24,34 @@ utl::Logger* getLogger();
 %template(vector_str) std::vector<std::string>;
 %include "../../Exception.i"
 
+// A Tcl list of integer lists: -w_port_words, one word list per write
+// port. A list item that is not an integer is an error, not dropped.
+%typemap(in) const std::vector<std::vector<int>>& (std::vector<std::vector<int>> lists) {
+  Tcl_Size n_lists;
+  Tcl_Obj** list_objs;
+  if (Tcl_ListObjGetElements(interp, $input, &n_lists, &list_objs) != TCL_OK) {
+    return TCL_ERROR;
+  }
+  for (Tcl_Size i = 0; i < n_lists; i++) {
+    Tcl_Size n_items;
+    Tcl_Obj** item_objs;
+    if (Tcl_ListObjGetElements(interp, list_objs[i], &n_items, &item_objs)
+        != TCL_OK) {
+      return TCL_ERROR;
+    }
+    std::vector<int> list;
+    for (Tcl_Size j = 0; j < n_items; j++) {
+      int item;
+      if (Tcl_GetIntFromObj(interp, item_objs[j], &item) != TCL_OK) {
+        return TCL_ERROR;
+      }
+      list.push_back(item);
+    }
+    lists.push_back(std::move(list));
+  }
+  $1 = &lists;
+}
+
 %inline %{
 
 namespace ram {
@@ -61,7 +89,8 @@ generate_ram_netlist_cmd(int mask_size,
                          const char* wrapper_verilog,
                          const int service_every,
                          const int service_sites,
-                         const char* bank_column_layout)
+                         const char* bank_column_layout,
+                         const std::vector<std::vector<int>>& w_port_words)
 {
   RamGen* ram_gen = ord::getRamGen();
   odb::dbDatabase* db = ord::getDb();
@@ -117,7 +146,8 @@ generate_ram_netlist_cmd(int mask_size,
                     reset_value, banks, bank_columns, bank_order, rb_ports,
                     register_read_address, write_style, write_priority, periphery, pin_layer, cells,
                     name, decoder, bit_folds, wrapper_verilog,
-                    service_every, service_sites, bank_column_layout);
+                    service_every, service_sites, bank_column_layout,
+                    w_port_words);
 }
 
 void ram_pdngen(const char* power_net_name, const char* ground_net_name,
@@ -155,12 +185,6 @@ void set_behavioral_verilog_filename(const char* filename)
 {
   RamGen* ram_gen = ord::getRamGen();
   ram_gen->setBehavioralVerilogFilename(filename);
-}
-
-void set_write_port_words(const char* text)
-{
-  RamGen* ram_gen = ord::getRamGen();
-  ram_gen->setWritePortWords(text);
 }
 
 } //namespace_ram

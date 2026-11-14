@@ -265,11 +265,21 @@ proc generate_ram_netlist { args } {
   # word outside its list.
   set w_port_words {}
   if { [info exists keys(-w_port_words)] } {
-    foreach words $keys(-w_port_words) {
-      lappend w_port_words [join $words " "]
+    set w_port_words $keys(-w_port_words)
+    if { [llength $w_port_words] == 0 } {
+      utl::error RAM 135 "-w_port_words lists no write ports."
+    }
+    set port 0
+    foreach words $w_port_words {
+      foreach word $words {
+        if { ![string is integer -strict $word] } {
+          utl::error RAM 133 "-w_port_words: port $port lists '$word',\
+            not a word index."
+        }
+      }
+      incr port
     }
   }
-  ram::set_write_port_words [join $w_port_words ";"]
 
   # How a word holds its value between writes: a clock gate per word
   # (clock_gate), or a mux per bit (mux).
@@ -335,7 +345,7 @@ proc generate_ram_netlist { args } {
     $rb_ports $register_read_address $write_style $write_priority $periphery $pin_layer \
     $cells $name \
     $decoder $bit_folds $wrapper_verilog $service_every $service_sites \
-    $bank_column_layout
+    $bank_column_layout $w_port_words
 }
 
 sta::define_cmd_args "generate_ram" {[-mask_size bits]

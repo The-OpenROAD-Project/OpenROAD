@@ -17,6 +17,12 @@ foreach {options id} {
   {-w_port_words {{0 4} {1 5} {2 6} {3 7}}} RAM-0129
   {-decoder word -w_port_words {{0 4} {1 5} {2 6} {3 9}}} RAM-0130
   {-decoder word -w_port_words {{0 4} {1 5} {2 6} {3}}} RAM-0131
+  {-decoder word -rw_ports 1 -w_ports 0 -w_port_words {{0 1 2 3 4 5 6 7}}}
+  RAM-0132
+  {-decoder word -w_port_words {{0 x 4} {1 5} {2 6} {3 7}}} RAM-0133
+  {-decoder word -w_port_words {{0 3 4 7} {1 5} {2 6} {}}} RAM-0134
+  {-decoder word -w_port_words {{}}} RAM-0128
+  {-decoder word -w_port_words {}} RAM-0135
 } {
   set rc [catch { generate_ram_netlist {*}$base {*}$options } msg]
   ram_sim::check { $rc && [string match "*$id*" $msg] } \
