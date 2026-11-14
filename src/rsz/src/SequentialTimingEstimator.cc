@@ -40,6 +40,112 @@
 #include "sta/VisitPathEnds.hh"
 
 namespace rsz {
+
+bool statetableIsEdgeTriggered(const sta::Statetable& statetable)
+{
+  using InputValue = sta::StateInputValue;
+  using InternalValue = sta::StateInternalValue;
+
+  const sta::StatetableRows& rows = statetable.table();
+  const size_t node_count = statetable.internalPorts().size();
+  if (node_count == 0 || rows.empty()) {
+    return false;
+  }
+
+  const auto loads = [](const InternalValue value) {
+    return value == InternalValue::low || value == InternalValue::high;
+  };
+  const auto has_edge = [](const sta::StatetableRow& row) {
+    return std::ranges::any_of(row.inputValues(), [](const InputValue value) {
+      return value == InputValue::rise || value == InputValue::fall;
+    });
+  };
+
+  for (size_t node = 0; node < node_count; ++node) {
+    // A data load is a pair of rows that differ only in one input flipping
+    // L<->H and load opposite values: the node follows that input.  Rows
+    // that load a constant whatever the data (async set/clear) never pair.
+    bool data_load = false;
+    for (size_t i = 0; i < rows.size(); ++i) {
+      const InternalValue next_i = rows[i].nextValues()[node];
+      if (!loads(next_i)) {
+        continue;
+      }
+      for (size_t j = i + 1; j < rows.size(); ++j) {
+        const InternalValue next_j = rows[j].nextValues()[node];
+        if (!loads(next_j) || next_i == next_j
+            || rows[i].currentValues() != rows[j].currentValues()) {
+          continue;
+        }
+
+        const sta::StateInputValues& inputs_i = rows[i].inputValues();
+        const sta::StateInputValues& inputs_j = rows[j].inputValues();
+        int differing = 0;
+        bool level_flip = false;
+        for (size_t k = 0; k < inputs_i.size() && k < inputs_j.size(); ++k) {
+          if (inputs_i[k] != inputs_j[k]) {
+            ++differing;
+            level_flip = (inputs_i[k] == InputValue::low
+                          && inputs_j[k] == InputValue::high)
+                         || (inputs_i[k] == InputValue::high
+                             && inputs_j[k] == InputValue::low);
+          }
+        }
+        if (differing != 1 || !level_flip) {
+          continue;
+        }
+
+        data_load = true;
+        // Loading data at a level, not an edge, is a transparent latch.
+        if (!has_edge(rows[i]) || !has_edge(rows[j])) {
+          return false;
+        }
+      }
+    }
+    if (!data_load) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool isRegisterCell(const sta::LibertyCell* cell)
+{
+  if (cell == nullptr) {
+    return false;
+  }
+
+  if (!cell->sequentials().empty()) {
+    return std::ranges::all_of(cell->sequentials(),
+                               [](const sta::Sequential& sequential) {
+                                 return sequential.isRegister();
+                               });
+  }
+
+  // Statetable-modelled cells (e.g. MBFFs) have no ff/latch groups.  Without
+  // read_liberty -infer_latches every edge arc of such a cell is regClkToQ, so
+  // the arcs alone cannot tell a register from a latch; the table can.
+  const sta::Statetable* statetable = cell->statetable();
+  if (statetable == nullptr && cell->testCell() != nullptr) {
+    statetable = cell->testCell()->statetable();
+  }
+  if (statetable == nullptr || !statetableIsEdgeTriggered(*statetable)) {
+    return false;
+  }
+
+  // The estimator scores clk->Q, setup and hold arcs, so require clk->Q.
+  bool has_clock_to_q = false;
+  for (const sta::TimingArcSet* arc_set : cell->timingArcSets()) {
+    const sta::TimingRole* role = arc_set->role()->genericRole();
+    if (role == sta::TimingRole::latchEnToQ()
+        || role == sta::TimingRole::latchDtoQ()) {
+      return false;
+    }
+    has_clock_to_q |= role == sta::TimingRole::regClkToQ();
+  }
+  return has_clock_to_q;
+}
+
 namespace {
 
 // A side check's slack loss counts fully at or below zero slack and fades out
@@ -87,15 +193,6 @@ std::optional<sta::Pvt> copyPvt(const sta::Pvt* pvt)
 const sta::Pvt* pvtValue(const std::optional<sta::Pvt>& pvt)
 {
   return pvt ? &*pvt : nullptr;
-}
-
-bool isFlipFlop(const sta::LibertyCell* cell)
-{
-  return cell != nullptr && !cell->sequentials().empty()
-         && std::ranges::all_of(cell->sequentials(),
-                                [](const sta::Sequential& sequential) {
-                                  return sequential.isRegister();
-                                });
 }
 
 const sta::TimingArc* matchingArc(const sta::TimingArc* reference,
@@ -602,7 +699,7 @@ SequentialTimingEstimator::prepare(Resizer& resizer, const Target& target)
   sta::Instance* inst = target.inst(resizer);
   sta::LibertyCell* cell
       = inst != nullptr ? resizer.network()->libertyCell(inst) : nullptr;
-  if (!isFlipFlop(cell)) {
+  if (!isRegisterCell(cell)) {
     return nullptr;
   }
 
@@ -623,13 +720,13 @@ SequentialTimingEstimator::prepare(Resizer& resizer, const Target& target)
   } else {
     std::set<sta::LibertyCell*> candidates{cell};
     for (sta::LibertyCell* candidate : resizer.getSwappableCells(cell)) {
-      if (isFlipFlop(candidate)) {
+      if (isRegisterCell(candidate)) {
         candidates.insert(candidate);
       }
     }
 
     for (sta::LibertyCell* candidate : resizer.getVTEquivCells(cell)) {
-      if (isFlipFlop(candidate)) {
+      if (isRegisterCell(candidate)) {
         candidates.insert(candidate);
       }
     }

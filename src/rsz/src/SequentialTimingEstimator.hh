@@ -8,11 +8,21 @@
 
 namespace sta {
 class LibertyCell;
-}
+class Statetable;
+}  // namespace sta
 
 namespace rsz {
 class Resizer;
 struct Target;
+
+// True when every internal node of statetable loads data only on a clock
+// edge (R/F input), i.e. the table models registers rather than latches.
+bool statetableIsEdgeTriggered(const sta::Statetable& statetable);
+
+// True when cell is an edge-triggered register with a clk->Q arc: every
+// ff/ff_bank group is a register or, for a statetable-modelled cell such as
+// an MBFF, the statetable is edge triggered.
+bool isRegisterCell(const sta::LibertyCell* cell);
 
 // Estimates setup/hold impact at a flip-flop's data and clock inputs when
 // scoring a Q-path size or VT swap. Uses local load and Liberty-check deltas

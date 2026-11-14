@@ -273,6 +273,9 @@ struct SideLoad
   const sta::Pin* pin{nullptr};
   float slack{0.0f};
   float weight{1.0f};
+  // The pin is an input of the target instance itself.  For a register
+  // target its setup/hold checks are scored by SequentialTimingEstimator.
+  bool on_target{false};
 };
 
 // One input net of the target instance.  A new cell changes every input pin
@@ -307,6 +310,10 @@ struct EstimatorContext
   float side_floor_margin{1.0f};
   // Weight of the summed side loss before it is subtracted from the gain.
   float fanin_side_loss_weight{1.0f};
+  // A SequentialTimingEstimator scores the target's own register inputs
+  // (cap-driven data delay and Liberty check margins), so the fanin side
+  // loss must skip them or charge them twice.
+  bool skip_target_side_loads{false};
   // Worst slack of the opposite output transition at the target driver; the
   // dual rise/fall check treats that transition as one more side path.
   float opposite_rf_slack{std::numeric_limits<float>::infinity()};

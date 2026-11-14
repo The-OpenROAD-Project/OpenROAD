@@ -317,6 +317,7 @@ TESTS = [
 PASSFAIL_TESTS = [
     "repair_timing_fixed",
     "repair_design_fixed_driver",
+    "repair_slew_clk_data_path",
     "repair_slew_corner",
     "gain_buffering_top_port_hier",
 ]
@@ -326,6 +327,7 @@ ALL_TESTS = TESTS + PASSFAIL_TESTS
 # PASSFAIL tests that assert their own results and have no .ok to diff.
 SELF_CHECKING_TESTS = [
     "repair_design_fixed_driver",
+    "repair_slew_clk_data_path",
     "repair_slew_corner",
     "gain_buffering_top_port_hier",
 ]
@@ -675,6 +677,7 @@ cc_test(
         "cpp/TestResizerMt.cc",
         "cpp/TestResizerMtFixture.hh",
         "cpp/TestSplitLoadMt.cc",
+        "cpp/TestStatetableRegister.cc",
         "cpp/TestUnbufferMt.cc",
     ],
     data = [
@@ -684,6 +687,8 @@ cc_test(
         "Nangate45/Nangate45_typ.lib",
         "cpp/TestResizerMt_DelayEstimator.v",
         "cpp/TestSplitLoadMt.v",
+        "statetable_dff.lef",
+        "statetable_dff.lib",
     ],
     deps = [
         "//src/dbSta",

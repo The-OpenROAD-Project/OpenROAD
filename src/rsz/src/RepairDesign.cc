@@ -937,6 +937,7 @@ bool RepairDesign::repairDriverSlew(const sta::Scene* corner,
       && !resizer_->isFixed(inst) && cell && resizer_->isLogicStdCell(inst)) {
     sta::LibertyCellSeq equiv_cells = resizer_->getSwappableCells(cell);
     if (!equiv_cells.empty()) {
+      const float clk_limit = clockSlewLimit(drvr_pin, corner);
       // Pair of slew violation magnitude and cell pointer
       using SizeCandidate = std::pair<float, sta::LibertyCell*>;
       std::vector<SizeCandidate> sizes;
@@ -946,11 +947,22 @@ bool RepairDesign::repairDriverSlew(const sta::Scene* corner,
         bool limit_exists = false;
         sta::LibertyPort* port
             = size_cell->findLibertyPort(network_->portName(drvr_pin));
+        if (port == nullptr) {
+          continue;
+        }
         sta_->findSlewLimit(port, corner, max_, limit, limit_exists);
+        // findSlewLimit only sees design and Liberty limits; a clock
+        // -data_path/-clock_path limit binds every size the same way.
+        if (clk_limit < (limit_exists ? limit : sta::INF)) {
+          limit = clk_limit;
+          limit_exists = true;
+        }
 
         if (limit_exists) {
           float limit_w_margin = maxSlewMargined(limit);
-          for (sta::TimingArcSet* arc_set : size_cell->timingArcSets()) {
+          // Only arcs that drive drvr_pin see load_cap.  A multi-output cell
+          // (MBFF) has arcs to its other outputs too, whose loads differ.
+          for (sta::TimingArcSet* arc_set : size_cell->timingArcSetsTo(port)) {
             const sta::TimingRole* role = arc_set->role();
             if (!role->isTimingCheck()
                 && role != sta::TimingRole::tristateDisable()
@@ -989,6 +1001,34 @@ bool RepairDesign::repairDriverSlew(const sta::Scene* corner,
   }
 
   return false;
+}
+
+float RepairDesign::clockSlewLimit(const sta::Pin* pin,
+                                   const sta::Scene* corner) const
+{
+  float limit = sta::INF;
+  const sta::Sdc* sdc = corner->sdc();
+  if (!sdc->haveClkSlewLimits()) {
+    return limit;
+  }
+
+  // Same clock set and clk/data split as CheckSlews (check_clks = true):
+  // the clocks of the paths already found at pin, no new arrival search.
+  const sta::Mode* mode = corner->mode();
+  const sta::PathClkOrData clk_data = mode->clkNetwork()->isIdealClock(pin)
+                                          ? sta::PathClkOrData::clk
+                                          : sta::PathClkOrData::data;
+  for (const sta::Clock* clk : search_->clockDomains(pin, mode)) {
+    for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+      float clk_limit;
+      bool exists;
+      sdc->slewLimit(clk, rf, clk_data, max_, clk_limit, exists);
+      if (exists) {
+        limit = std::min(limit, clk_limit);
+      }
+    }
+  }
+  return limit;
 }
 
 void RepairDesign::repairDriver(sta::Vertex* drvr,
@@ -1300,10 +1340,13 @@ void RepairDesign::checkSlew(const sta::Pin* drvr_pin,
   const sta::RiseFall* tr1;
   sta::Slew slew1;
   float limit1, slack1;
+  // check_clks: honor set_max_transition -clock_path/-data_path limits, as
+  // report_check_types -max_slew does.  Gated on the presence of a clock slew
+  // limit so the per-pin clock-domain lookup is skipped otherwise.
   sta_->checkSlew(drvr_pin,
                   sta_->scenes(),
                   max_,
-                  false,
+                  resizer_->haveClkSlewLimits(),
                   slew1,
                   limit1,
                   slack1,
