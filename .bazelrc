@@ -30,6 +30,23 @@ common --incompatible_default_to_explicit_init_py
 build --cxxopt "-std=c++20"        --host_cxxopt "-std=c++20"
 build --cxxopt "-xc++"             --host_cxxopt "-xc++"
 build --cxxopt "-DBAZEL_BUILD"     --host_cxxopt "-DBAZEL_BUILD"
+# BOOST_ASIO_NO_DEPRECATED changes the return type of inline Asio members
+# (e.g. socket close/shutdown return void, not error_code), so every
+# translation unit must agree on it or the ODR is violated.
+build --cxxopt "-DBOOST_ASIO_NO_DEPRECATED" --host_cxxopt "-DBOOST_ASIO_NO_DEPRECATED"
+# libc++ "fast" hardening: cheap bounds and precondition checks (operator[],
+# front/back on empty, span/string_view/optional access) that trap instead of
+# continuing with undefined behavior. The mode does not affect the ABI, so it
+# is safe to set per translation unit.
+build --cxxopt "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST"
+build --host_cxxopt "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST"
+# Report a failed hardening check through std::__libcpp_verbose_abort (which
+# src/Main.cc overrides to log it) instead of a bare trap. Choosing the
+# assertion semantic is gated behind libc++'s experimental-library switch.
+build --cxxopt "-D_LIBCPP_ENABLE_EXPERIMENTAL"
+build --host_cxxopt "-D_LIBCPP_ENABLE_EXPERIMENTAL"
+build --cxxopt "-D_LIBCPP_ASSERTION_SEMANTIC=_LIBCPP_ASSERTION_SEMANTIC_ENFORCE"
+build --host_cxxopt "-D_LIBCPP_ASSERTION_SEMANTIC=_LIBCPP_ASSERTION_SEMANTIC_ENFORCE"
 
 # Default to optimized build (-c opt)
 build -c opt
@@ -230,6 +247,9 @@ build:profile --copt -fno-omit-frame-pointer --host_copt -fno-omit-frame-pointer
 # Compress the DWARF debug sections (transparent to gdb/perf/addr2line).
 build:profile --copt=-gz=zlib --host_copt=-gz=zlib
 build:profile --linkopt=-gz=zlib
+# Links //:openroad with --no-rosegment on Linux so VTune resolves symbols
+# (see OPENROAD_LINKOPTS in BUILD.bazel).
+build:profile --//:profile
 
 # Settings for --config=coverage C++ coverage build (LLVM source-based).
 # Usage: bazel coverage --config=coverage //...
@@ -237,9 +257,8 @@ build:profile --linkopt=-gz=zlib
 # only adds the coverage-specific bits. --combined_report=lcov merges every
 # test's per-target lcov into one file at
 # bazel-out/_coverage/_coverage_report.dat, which CI renders with genhtml
-# (lcov is installed in bazel/Dockerfile). The instrumentation_filter mirrors
-# the exclusions of the retired cmake/lcov flow (etc/CodeCoverage.sh _lcov):
-# instrument OpenROAD's own //src/... code, minus OpenSTA (src/sta, which has
+# (lcov is installed in bazel/Dockerfile). The instrumentation_filter
+# instruments OpenROAD's own //src/... code, minus OpenSTA (src/sta, which has
 # its own private test suite) and drt's unused global-routing code. Third-party
 # deps live under external repos / //third-party and are simply never matched
 # by //src, so they need no explicit exclusion.
@@ -266,6 +285,12 @@ test --build_tests_only
 # --- Performance Optimizations ---
 # Use a high number of jobs and let the scheduler manage concurrency
 build --jobs=200
+
+# CopyToDirectory staging (e.g. the hermetic toolchain's libc++ header tree,
+# ~1,700 files) is a sub-second local copy, but a cache hit has to check every
+# file in the tree. On a cold or busy disk cache that takes minutes, and every
+# C++ compile waits on it. Run it locally instead.
+build --modify_execution_info=CopyToDirectory=+no-cache
 
 # Enable local disk caching to supplement the remote cache.
 build --disk_cache=~/.cache/bazel-disk-cache
@@ -300,7 +325,7 @@ build:ci --experimental_remote_downloader=grpcs://bazel.precisioninno.com:443
 # clang-tidy via aspect_rules_lint, using clang-tidy from the LLVM toolchain.
 # Usage: bazel build --config=lint //src/utl/...
 build:lint --aspects=//tools/lint:linters.bzl%clang_tidy
-build:lint --output_groups=rules_lint_report
+build:lint --output_groups=rules_lint_human
 build:lint --remote_download_outputs=all
 
 # Telling real work from cache hits.

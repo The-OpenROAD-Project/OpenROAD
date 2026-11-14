@@ -6,61 +6,42 @@ cd "$(dirname $(readlink -f $0))/../"
 
 _help() {
     cat <<EOF
-usage: $0 [dynamic|test]
-       $0 static <TOKEN>
-       $0 static-bazel <TOKEN>
+usage: $0 static <TOKEN>
        $0 upload <TOKEN> [VERSION]
+       $0 test
+
+  static <TOKEN>            Capture a Coverity build of //:openroad with
+                            Bazel and upload it. static-bazel is an alias.
+  upload <TOKEN> [VERSION]  Upload an existing openroad.tgz capture.
+  test                      Run the tests for this script.
+
+For line coverage, run: bazelisk coverage --config=coverage <targets>
 
 EOF
     exit "${1:-1}"
-}
-
-_lcov() {
-    ctest --test-dir build -j $(nproc)
-
-    # sta has a private test suite
-    # drt's gr is not in use
-    mkdir -p coverage-output
-    lcov \
-        --capture \
-        --directory ./build \
-        --exclude "/usr/include/*" \
-        --exclude "/opt/*" \
-        --exclude "/usr/lib/*" \
-        --exclude "/usr/local/*" \
-        --exclude "*/.local/*" \
-        --exclude "*build*" \
-        --exclude "*/third-party/*" \
-        --exclude "*/sta/*" \
-        --exclude "*/test/*" \
-        --exclude "*/drt/src/gr/*" \
-        --exclude "*/drt/src/db/grObj/*" \
-        --output-file ./coverage-output/main_coverage.info
-
-    genhtml ./coverage-output/main_coverage.info \
-        --output-directory ./coverage-output \
-        --ignore-errors source
-
-}
-
-_coverity_cmake() {
-    cmakeOptions=""
-    if [[ -f "/etc/openroad_deps_prefixes.txt" ]]; then
-        cmakeOptions="$(cat "/etc/openroad_deps_prefixes.txt")"
-    fi
-    cmake ${cmakeOptions} -B build .
-    # compile abc before calling cov-build to exclude from analysis.
-    # Coverity fails to process abc code due to -fpermissive flag.
-    cmake --build build -j $(nproc) --target abc
-    cov-build --dir cov-int cmake --build build -j $(nproc)
 }
 
 _coverity_bazel() {
     # Coverity captures compiler invocations, so cached or sandboxed Bazel
     # actions can make the capture incomplete. Clear the local action cache,
     # disable the persistent action caches, and execute spawns locally.
+    #
+    # cov-build --bazel adds --@rules_coverity//... flags to the build, so
+    # the rules_coverity module shipped with cov-analysis must be visible
+    # from the main repository.
+    local cov_build cov_rules
+    cov_build=$(command -v cov-build) || {
+        echo "cov-build is not on PATH." >&2
+        exit 1
+    }
+    cov_rules="$(dirname "$(dirname "$(readlink -f "${cov_build}")")")/bazel/rules_coverity"
+    if [[ ! -d ${cov_rules} ]]; then
+        echo "Coverity Bazel rules not found at ${cov_rules}." >&2
+        exit 1
+    fi
     bazelisk clean
     cov-build --dir cov-int --bazel bazelisk build \
+        --inject_repository=rules_coverity="${cov_rules}" \
         --spawn_strategy=local \
         --remote_cache= \
         --disk_cache= \
@@ -182,10 +163,14 @@ _coverity_upload() {
 
 token=""
 
-target="${1:-dynamic}"
+if [[ $# -lt 1 ]]; then
+    _help
+fi
+
+target="${1}"
 case "${target}" in
-    dynamic )
-        _lcov
+    -h | -help | --help )
+        _help 0
         ;;
     test )
         bazelisk test //etc:code_coverage_test
@@ -202,11 +187,7 @@ case "${target}" in
             _help
         fi
         token="${2}"
-        if [[ ${target} == "static-bazel" ]]; then
-            _coverity_capture _coverity_bazel
-        else
-            _coverity_capture _coverity_cmake
-        fi
+        _coverity_capture _coverity_bazel
         _coverity_upload
         ;;
     upload )

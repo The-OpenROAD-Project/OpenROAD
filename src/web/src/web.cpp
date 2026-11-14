@@ -23,6 +23,7 @@
 #include <mutex>
 #include <set>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -43,6 +44,7 @@
 #include "boost/json/value.hpp"
 #include "clock_tree_report.h"
 #include "color.h"
+#include "group_report.h"
 #include "hierarchy_report.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
@@ -98,6 +100,10 @@ static std::vector<unsigned char> serialize_response(
 
 namespace {
 
+// The scheme every 401 names, so the viewer can tell this server's refusal of
+// its token from a proxy's.
+constexpr std::string_view kTokenChallenge = "OpenROAD-Token";
+
 // Sanitize a client-supplied download filename before it goes into the
 // Content-Disposition header: drop directory components, keep only
 // [A-Za-z0-9._-] (replacing the rest with '_'), cap the length, and fall back
@@ -126,50 +132,25 @@ std::string sanitizeFilename(std::string name)
   return name;
 }
 
-// Percent-decode a URL query value (e.g. the JSON `vis` payload).
-std::string urlDecode(std::string_view s)
+// "rrggbb", with or without a leading '#', to an opaque Color.  False for
+// anything else: the /image query parameter writes it bare, the viewer's
+// or_bg_color cookie carries the '#'.
+bool parseHexColor(std::string_view s, Color& out)
 {
-  std::string out;
-  out.reserve(s.size());
-  for (std::size_t i = 0; i < s.size(); ++i) {
-    if (s[i] == '%' && i + 2 < s.size()) {
-      int value = 0;
-      if (parseIntExact(s.substr(i + 1, 2), value, 16)) {
-        out.push_back(static_cast<char>(value));
-        i += 2;
-        continue;
-      }
-      // Not valid hex: keep the literal '%'.
-    }
-    out.push_back(s[i] == '+' ? ' ' : s[i]);
+  if (!s.empty() && s.front() == '#') {
+    s.remove_prefix(1);
   }
-  return out;
-}
-
-// Parse the "k=v&k2=v2" query of a request target into a map (values decoded).
-std::map<std::string, std::string> parseQuery(std::string_view target)
-{
-  std::map<std::string, std::string> params;
-  const auto qpos = target.find('?');
-  if (qpos == std::string_view::npos) {
-    return params;
+  unsigned rgb = 0;
+  if (s.size() != 6 || !parseIntExact(s, rgb, 16)) {
+    return false;
   }
-  const std::string_view qs = target.substr(qpos + 1);
-  std::size_t start = 0;
-  while (start < qs.size()) {
-    std::size_t amp = qs.find('&', start);
-    if (amp == std::string_view::npos) {
-      amp = qs.size();
-    }
-    const std::string_view kv = qs.substr(start, amp - start);
-    const std::size_t eq = kv.find('=');
-    if (eq != std::string_view::npos) {
-      params.emplace(std::string(kv.substr(0, eq)),
-                     urlDecode(kv.substr(eq + 1)));
-    }
-    start = amp + 1;
-  }
-  return params;
+  out = Color{
+      .r = static_cast<unsigned char>((rgb >> 16) & 0xFF),
+      .g = static_cast<unsigned char>((rgb >> 8) & 0xFF),
+      .b = static_cast<unsigned char>(rgb & 0xFF),
+      .a = 255,
+  };
+  return true;
 }
 
 // Parse "x0,y0,x1,y1" (DBU) into a Rect.  Returns false on malformed input.
@@ -203,22 +184,28 @@ bool parseBbox(const std::string& s, odb::Rect& out)
   return true;
 }
 
-// The plain-text response every HTTP answer starts from.
-http::response<http::string_body> textResponse(const http::status status,
-                                               const unsigned version,
-                                               const bool keep_alive)
+// The plain-text response every HTTP answer to `req` starts from, security
+// headers included.
+http::response<http::string_body> textResponse(
+    const http::status status,
+    const http::request<http::string_body>& req,
+    const bool keep_alive)
 {
-  http::response<http::string_body> res{status, version};
+  http::response<http::string_body> res{status, req.version()};
   res.set(http::field::server, "OpenROAD");
   res.set(http::field::content_type, "text/plain");
-  res.set(http::field::access_control_allow_origin, "*");
+  res.set(http::field::content_security_policy,
+          contentSecurityPolicy(req[http::field::host]));
+  res.set(http::field::x_content_type_options, "nosniff");
+  res.set(http::field::x_frame_options, "DENY");
+  res.set(http::field::referrer_policy, "no-referrer");
   res.keep_alive(keep_alive);
   return res;
 }
 
 // Render the layout image requested by /download/image into `res`.
 void handleImageDownload(const std::shared_ptr<TileGenerator>& generator,
-                         std::string_view target,
+                         const std::map<std::string, std::string>& params,
                          http::response<http::string_body>& res)
 {
   if (!generator || !generator->getBlock()) {
@@ -226,7 +213,6 @@ void handleImageDownload(const std::shared_ptr<TileGenerator>& generator,
     res.body() = "No design loaded.";
     return;
   }
-  const auto params = parseQuery(target);
   const auto type_it = params.find("type");
   const std::string type = type_it == params.end() ? "entire" : type_it->second;
 
@@ -254,18 +240,12 @@ void handleImageDownload(const std::shared_ptr<TileGenerator>& generator,
   }
 
   // Background color (RRGGBB hex) so the saved image matches the viewer's
-  // background; absent => transparent.
+  // background; absent or malformed => transparent.
   Color bg{};  // {0,0,0,0}
   const auto bg_it = params.find("bg");
-  unsigned rgb = 0;
-  if (bg_it != params.end() && bg_it->second.size() == 6
-      && parseIntExact(bg_it->second, rgb, 16)) {
-    bg = Color{.r = static_cast<unsigned char>((rgb >> 16) & 0xFF),
-               .g = static_cast<unsigned char>((rgb >> 8) & 0xFF),
-               .b = static_cast<unsigned char>(rgb & 0xFF),
-               .a = 255};
+  if (bg_it != params.end()) {
+    parseHexColor(bg_it->second, bg);
   }
-  // Malformed/absent bg: keep transparent.
 
   const std::vector<unsigned char> png = generator->renderImagePng(
       region, /*width_px=*/0, /*dbu_per_pixel=*/0, vis, bg);
@@ -309,26 +289,80 @@ class ScriptGateScope
 static http::response<http::string_body> dispatch_request(
     const http::request<http::string_body>& req,
     const std::shared_ptr<TileGenerator>& generator,
-    ScriptGate& script_gate)
+    ScriptGate& script_gate,
+    const std::shared_ptr<SessionAuth>& auth,
+    utl::Logger* logger)
 {
-  auto res = textResponse(http::status::ok, req.version(), req.keep_alive());
+  auto res = textResponse(http::status::ok, req, req.keep_alive());
 
   if (req.method() == http::verb::get) {
-    // The route match uses the path alone; the download handler needs the
-    // raw target because its parameters live in the query string.
+    // The route match uses the path alone; the query carries the token, the
+    // ticket and the download's options.
     const std::string target(req.target());
     const std::string file_path = assetPathFromTarget(target);
+
+    // Deny by default: only the embedded assets other than the page, which it
+    // fetches without a query, are ungated; a new route cannot be left open.
+    const auto* asset = findEmbeddedAsset(file_path);
+    const bool needs_token = asset == nullptr || file_path == "/index.html";
+    const auto params = parseQuery(target);
+
+    // The launch ticket buys one redirect to the token, and only for the page:
+    // the WebSocket and the download are reached after it, with the token.
+    TicketUse ticket_use = TicketUse::kRefused;
+    if (file_path == "/index.html") {
+      const auto ticket = params.find("ticket");
+      if (ticket != params.end()) {
+        ticket_use = auth->redeemTicket(ticket->second);
+      }
+      if (ticket_use == TicketUse::kRedeemed) {
+        res.result(http::status::found);
+        res.set(http::field::location,
+                authRedirectTarget(target, auth->token()));
+        res.set(http::field::cache_control, "no-store");
+        res.body() = "Redirecting to the viewer.";
+        res.prepare_payload();
+        return res;
+      }
+      if (ticket_use == TicketUse::kReused) {
+        if (auth->firstReuse()) {
+          logger->warn(utl::WEB,
+                       129,
+                       "Refused a launch ticket that was already used. If the "
+                       "viewer did not open in your browser, another client "
+                       "got there first: restart the server to revoke its "
+                       "access.");
+        } else {
+          debugPrint(logger,
+                     utl::WEB,
+                     "auth",
+                     1,
+                     "Refused a launch ticket that was already used.");
+        }
+      }
+    }
+
+    if (needs_token && !tokenAllowed(params, auth->token())) {
+      res.result(http::status::unauthorized);
+      res.set(http::field::www_authenticate, kTokenChallenge);
+      res.body() = ticket_use == TicketUse::kReused
+                       ? "Unauthorized: this launch link was already used; "
+                         "see the OpenROAD log."
+                       : "Unauthorized: this viewer requires the access token "
+                         "printed by OpenROAD when the server started.";
+      res.prepare_payload();
+      return res;
+    }
 
     if (file_path == "/download/image") {
       const ScriptGateScope gate(script_gate);
       if (gate.entered()) {
-        handleImageDownload(generator, target, res);
+        handleImageDownload(generator, params, res);
       } else {
         res.result(http::status::service_unavailable);
         res.body() = kScriptBusyMsg;
       }
     } else {
-      const auto* asset = findEmbeddedAsset(file_path);
       if (asset) {
         serveEmbeddedAsset(*asset, req[http::field::accept_encoding], res);
       } else {
@@ -350,14 +384,15 @@ static http::response<http::string_body> handle_request(
     http::request<http::string_body>&& req,
     const std::shared_ptr<TileGenerator>& generator,
     ScriptGate& script_gate,
+    const std::shared_ptr<SessionAuth>& auth,
     utl::Logger* logger)
 {
   try {
-    return dispatch_request(req, generator, script_gate);
+    return dispatch_request(req, generator, script_gate, auth, logger);
   } catch (const std::exception& e) {
     logger->warn(utl::WEB, 126, "Request failed: {}", e.what());
     auto res = textResponse(
-        http::status::internal_server_error, req.version(), req.keep_alive());
+        http::status::internal_server_error, req, req.keep_alive());
     res.body() = "Request failed.";
     res.prepare_payload();
     return res;
@@ -503,11 +538,13 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
     state_.highlight_geometry_stale = true;
   }
 
+ public:
   void inDbInstDestroy(odb::dbInst*) override { invalidateSelection(); }
   void inDbNetDestroy(odb::dbNet*) override { invalidateSelection(); }
   void inDbITermDestroy(odb::dbITerm*) override { invalidateSelection(); }
   void inDbBTermDestroy(odb::dbBTerm*) override { invalidateSelection(); }
   void inDbBlockageDestroy(odb::dbBlockage*) override { invalidateSelection(); }
+  void inDbGroupDestroy(odb::dbGroup*) override { invalidateSelection(); }
   void inDbObstructionDestroy(odb::dbObstruction*) override
   {
     invalidateSelection();
@@ -1316,12 +1353,14 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
   std::shared_ptr<TileGenerator> generator_;
   std::shared_ptr<TclEvaluator> tcl_eval_;
   utl::Logger* logger_;
+  std::shared_ptr<SessionAuth> auth_;
 
  public:
   HttpSession(Tcp::socket&& socket,
               std::shared_ptr<TileGenerator> generator,
               std::shared_ptr<TclEvaluator> tcl_eval,
-              utl::Logger* logger);
+              utl::Logger* logger,
+              std::shared_ptr<SessionAuth> auth);
 
   void run() { do_read(); }
 
@@ -1339,11 +1378,13 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
 HttpSession::HttpSession(Tcp::socket&& socket,
                          std::shared_ptr<TileGenerator> generator,
                          std::shared_ptr<TclEvaluator> tcl_eval,
-                         utl::Logger* logger)
+                         utl::Logger* logger,
+                         std::shared_ptr<SessionAuth> auth)
     : stream_(std::move(socket)),
       generator_(std::move(generator)),
       tcl_eval_(std::move(tcl_eval)),
-      logger_(logger)
+      logger_(logger),
+      auth_(std::move(auth))
 {
 }
 
@@ -1380,7 +1421,7 @@ void HttpSession::on_read(beast::error_code ec)
   }
 
   res_ = std::make_shared<http::response<http::string_body>>(handle_request(
-      std::move(req_), generator_, tcl_eval_->script_gate, logger_));
+      std::move(req_), generator_, tcl_eval_->script_gate, auth_, logger_));
   do_write();
 }
 
@@ -1434,6 +1475,7 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
   utl::Logger* logger_;
   WebViewerHook* viewer_hook_ = nullptr;
   int max_in_flight_ = 16;
+  std::shared_ptr<SessionAuth> auth_;
 
  public:
   DetectSession(Tcp::socket&& socket,
@@ -1443,12 +1485,15 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
                 std::shared_ptr<ClockTreeReport> clock_report,
                 utl::Logger* logger,
                 WebViewerHook* viewer_hook,
-                int max_in_flight);
+                int max_in_flight,
+                std::shared_ptr<SessionAuth> auth);
 
   void run();
 
  private:
   void on_read(beast::error_code ec);
+  // Answer and close, for a handshake refused before the upgrade.
+  void reject(http::status status, std::string_view body);
 };
 
 DetectSession::DetectSession(Tcp::socket&& socket,
@@ -1458,7 +1503,8 @@ DetectSession::DetectSession(Tcp::socket&& socket,
                              std::shared_ptr<ClockTreeReport> clock_report,
                              utl::Logger* logger,
                              WebViewerHook* viewer_hook,
-                             int max_in_flight)
+                             int max_in_flight,
+                             std::shared_ptr<SessionAuth> auth)
     : stream_(std::move(socket)),
       generator_(std::move(generator)),
       tcl_eval_(std::move(tcl_eval)),
@@ -1466,8 +1512,31 @@ DetectSession::DetectSession(Tcp::socket&& socket,
       clock_report_(std::move(clock_report)),
       logger_(logger),
       viewer_hook_(viewer_hook),
-      max_in_flight_(max_in_flight)
+      max_in_flight_(max_in_flight),
+      auth_(std::move(auth))
 {
+}
+
+void DetectSession::reject(const http::status status,
+                           const std::string_view body)
+{
+  auto res = std::make_shared<http::response<http::string_body>>(
+      textResponse(status, req_, /*keep_alive=*/false));
+  res->set(http::field::server, "OpenROAD WebSocket Server");
+  if (status == http::status::unauthorized) {
+    res->set(http::field::www_authenticate, kTokenChallenge);
+  }
+  res->body() = std::string(body);
+  res->prepare_payload();
+  // Keep `res` alive until the write completes, then shut the socket down
+  // for a graceful FIN — same teardown as HttpSession::do_close.
+  http::async_write(
+      stream_,
+      *res,
+      [self = shared_from_this(), res](beast::error_code, std::size_t) {
+        beast::error_code ec;
+        self->stream_.socket().shutdown(Tcp::socket::shutdown_send, ec);
+      });
 }
 
 void DetectSession::run()
@@ -1495,8 +1564,7 @@ void DetectSession::on_read(beast::error_code ec)
     // not stop a foreign page a victim visits from opening the socket.  The
     // browser sets Origin and page JavaScript cannot forge it, so this gates
     // the browser cross-site vector.  It does NOT authenticate a non-browser
-    // network client, which controls every header; that is the job of binding
-    // to loopback (issue #11167, F-02), on which this guard depends.
+    // network client, which controls every header; the token below does.
     const std::string_view origin = req_[http::field::origin];
     const std::string_view host = req_[http::field::host];
     if (!webSocketOriginAllowed(origin, host)) {
@@ -1513,22 +1581,29 @@ void DetectSession::on_read(beast::error_code ec)
                     78,
                     "Rejected WebSocket upgrade from disallowed Origin \"{}\".",
                     safe_origin);
-      auto res = std::make_shared<http::response<http::string_body>>(
-          http::status::forbidden, req_.version());
-      res->set(http::field::server, "OpenROAD WebSocket Server");
-      res->set(http::field::content_type, "text/plain");
-      res->keep_alive(false);
-      res->body() = "Forbidden: cross-origin WebSocket rejected.";
-      res->prepare_payload();
-      // Keep `res` alive until the write completes, then shut the socket down
-      // for a graceful FIN — same teardown as HttpSession::do_close.
-      http::async_write(
-          stream_,
-          *res,
-          [self = shared_from_this(), res](beast::error_code, std::size_t) {
-            beast::error_code ec;
-            self->stream_.socket().shutdown(Tcp::socket::shutdown_send, ec);
-          });
+      reject(http::status::forbidden,
+             "Forbidden: cross-origin WebSocket rejected.");
+      return;
+    }
+    // Only the first refusal warns; repeats, such as a tab left from an old
+    // session, are debug output.
+    if (!requestTokenAllowed(req_.target(), auth_->token())) {
+      if (auth_->firstRejection()) {
+        logger_->warn(utl::WEB,
+                      121,
+                      "Rejected WebSocket upgrade with a missing or invalid "
+                      "access token; further rejections: set_debug_level WEB "
+                      "auth 1.");
+      } else {
+        debugPrint(logger_,
+                   utl::WEB,
+                   "auth",
+                   1,
+                   "Rejected WebSocket upgrade with a missing or invalid "
+                   "access token.");
+      }
+      reject(http::status::unauthorized,
+             "Unauthorized: missing or invalid access token.");
       return;
     }
     // WebSocket upgrade - hand off to WebSocketSession
@@ -1545,7 +1620,7 @@ void DetectSession::on_read(beast::error_code ec)
   } else {
     // Regular HTTP - hand off to session with already-read request
     auto s = std::make_shared<HttpSession>(
-        stream_.release_socket(), generator_, tcl_eval_, logger_);
+        stream_.release_socket(), generator_, tcl_eval_, logger_, auth_);
     s->run_with_request(std::move(req_), std::move(buffer_));
   }
 }
@@ -1565,6 +1640,7 @@ class Listener : public std::enable_shared_from_this<Listener>
   utl::Logger* logger_;
   WebViewerHook* viewer_hook_ = nullptr;
   int max_in_flight_ = 16;
+  std::shared_ptr<SessionAuth> auth_;
 
  public:
   Listener(net::io_context& ioc,
@@ -1575,7 +1651,8 @@ class Listener : public std::enable_shared_from_this<Listener>
            std::shared_ptr<ClockTreeReport> clock_report,
            utl::Logger* logger,
            WebViewerHook* viewer_hook,
-           int max_in_flight);
+           int max_in_flight,
+           std::shared_ptr<SessionAuth> auth);
 
   void run() { do_accept(); }
 
@@ -1604,7 +1681,8 @@ Listener::Listener(net::io_context& ioc,
                    std::shared_ptr<ClockTreeReport> clock_report,
                    utl::Logger* logger,
                    WebViewerHook* viewer_hook,
-                   int max_in_flight)
+                   int max_in_flight,
+                   std::shared_ptr<SessionAuth> auth)
     : ioc_(ioc),
       acceptor_(ioc),
       generator_(std::move(generator)),
@@ -1613,7 +1691,8 @@ Listener::Listener(net::io_context& ioc,
       clock_report_(std::move(clock_report)),
       logger_(logger),
       viewer_hook_(viewer_hook),
-      max_in_flight_(max_in_flight)
+      max_in_flight_(max_in_flight),
+      auth_(std::move(auth))
 {
   beast::error_code ec;
 
@@ -1665,7 +1744,8 @@ void Listener::on_accept(beast::error_code ec, Tcp::socket socket)
                                     clock_report_,
                                     logger_,
                                     viewer_hook_,
-                                    max_in_flight_)
+                                    max_in_flight_,
+                                    auth_)
         ->run();
   }
   do_accept();
@@ -1851,7 +1931,6 @@ void WebServer::saveReport(const std::string& filename,
       = boost::json::serialize(serializeTechResponse(*generator_));
   const std::string bounds_json
       = boost::json::serialize(serializeBoundsResponse(*generator_, true));
-  const auto tech_layers = generator_->getLayers();
 
   // ── Serialize module hierarchy ──
 
@@ -1870,6 +1949,13 @@ void WebServer::saveReport(const std::string& filename,
   const std::string hierarchy_json
       = boost::json::serialize(serializeHierarchyResult(hier_result));
 
+  // ── Serialize group (cluster) hierarchy ──
+
+  GroupReport group_report(block);
+  auto group_result = group_report.getReport();
+  const std::string groups_json
+      = boost::json::serialize(serializeGroupResult(group_result));
+
   // The tiles below are rendered in-process, so the module overlay baked into
   // them reads the same mapping the live viewer would.
   if (hier_result.name_grouped) {
@@ -1879,9 +1965,14 @@ void WebServer::saveReport(const std::string& filename,
                               search_revision);
   }
 
+  // Not via TileGenerator::defaultModuleColors(): both reports are already
+  // built above, and going through the generator would walk each tree again.
   auto module_colors = computeDefaultModuleColors(hier_result);
   const std::map<uint32_t, Color>* mod_colors_ptr
       = module_colors.empty() ? nullptr : &module_colors;
+  auto group_colors = computeDefaultGroupColors(group_result);
+  const std::map<uint32_t, Color>* group_colors_ptr
+      = group_colors.empty() ? nullptr : &group_colors;
 
   // ── Render tiles at a fixed zoom level ──
 
@@ -1892,6 +1983,11 @@ void WebServer::saveReport(const std::string& filename,
   const int num_tiles = 1 << kZ;
 
   TileVisibility vis;
+  // The renderer gates these overlays on the flags, so the pre-rendered tiles
+  // must be produced with them on or the saved HTML caches empty ones.
+  vis.module_view = true;
+  vis.cluster_view = true;
+
   // An image the renderer drew nothing into.  Asked of the encoding rather than
   // of its size: the tile entry points hand back one shared buffer per size for
   // a fully transparent image, so this is exact, where a byte threshold has to
@@ -1901,21 +1997,56 @@ void WebServer::saveReport(const std::string& filename,
     return png.empty() || TileGenerator::isBlankTilePng(png);
   };
 
-  // Every pane the viewer mounts by default, the same stack save_image draws,
-  // plus the module coloring.
-  std::vector<std::string> all_layers
-      = TileGenerator::saveImageLayerOrder(vis, tech_layers);
-  all_layers.emplace_back("_modules");
+  // In the z order save_image composites them, derived from `vis`, so a new
+  // layer is cached here without this code learning about it.  Both overlays
+  // are in it already: the flags above are on.
+  std::vector<PaintLayer> all_layers
+      = TileGenerator::saveImageLayerOrder(vis, generator_->paintOrderLayers());
+  // An overlay with no colors renders nothing, so caching its tiles would only
+  // grow the HTML.
+  std::erase_if(all_layers, [&](const PaintLayer& e) {
+    return (e.layer == "_modules" && mod_colors_ptr == nullptr)
+           || (e.layer == "_clusters" && group_colors_ptr == nullptr);
+  });
 
-  // Collect non-empty tiles as "layer/z/x/y" -> base64.
+  // Collect non-empty tiles as "[chiplet|]layer/z/x/y" -> base64.  Must match
+  // the key WebSocketManager._cacheRequest builds.
   std::vector<std::pair<std::string, std::string>> tile_entries;
-  for (const auto& layer : all_layers) {
+  TileVisibility scoped_vis = vis;
+  const auto extents = generator_->layerExtents();
+  // World rect of each tile, indexed [ty][tx] with ty as Leaflet counts it.
+  const odb::Rect bounds = generator_->getBounds();
+  std::vector<std::vector<odb::Rect>> tile_rects(num_tiles);
+  for (int ty = 0; ty < num_tiles; ++ty) {
+    for (int tx = 0; tx < num_tiles; ++tx) {
+      tile_rects[ty].push_back(
+          TileGenerator::tileWorldRect(bounds, kZ, tx, num_tiles - 1 - ty));
+    }
+  }
+  for (const PaintLayer& entry : all_layers) {
+    scoped_vis.chiplet = entry.chiplet;
+    const std::string prefix = entry.chiplet.empty()
+                                   ? entry.layer
+                                   : entry.chiplet + "|" + entry.layer;
     for (int ty = 0; ty < num_tiles; ++ty) {
       for (int tx = 0; tx < num_tiles; ++tx) {
-        auto png = generator_->generateTile(
-            layer, kZ, tx, ty, vis, {}, {}, {}, {}, mod_colors_ptr);
+        if (!TileGenerator::rowMayDraw(
+                *extents, entry, tile_rects[ty][tx], scoped_vis)) {
+          continue;
+        }
+        auto png = generator_->generateTile(entry.layer,
+                                            kZ,
+                                            tx,
+                                            ty,
+                                            scoped_vis,
+                                            {},
+                                            {},
+                                            {},
+                                            {},
+                                            mod_colors_ptr,
+                                            group_colors_ptr);
         if (!is_blank(png)) {
-          std::string key = layer + "/" + std::to_string(kZ) + "/"
+          std::string key = prefix + "/" + std::to_string(kZ) + "/"
                             + std::to_string(tx) + "/" + std::to_string(ty);
           tile_entries.emplace_back(std::move(key), base64Encode(png));
         }
@@ -2021,7 +2152,9 @@ window.__STATIC_CACHE__ = )";
     "chart_filters": )"
         << filters << R"(,
     "module_hierarchy": )"
-        << hierarchy_json << R"(
+        << hierarchy_json << R"(,
+    "group_hierarchy": )"
+        << groups_json << R"(
   },
   tiles: {)";
 
@@ -2157,38 +2290,18 @@ Color viewerBackground(const WebViewerHook* hook)
   if (hook == nullptr) {
     return kBlack;
   }
-  const std::string state = hook->getDisplayState();
-  if (state.empty()) {
-    return kBlack;
-  }
+  // The snapshot is {"version":1,"entries":{"or_bg_color":"#rrggbb",...}}.
   std::error_code ec;
-  const boost::json::value parsed = boost::json::parse(state, ec);
-  if (ec) {
-    return kBlack;
+  const boost::json::value state
+      = boost::json::parse(hook->getDisplayState(), ec);
+  const auto* color
+      = ec ? nullptr : state.find_pointer("/entries/or_bg_color", ec);
+  Color parsed{};
+  if (color != nullptr && color->is_string()
+      && parseHexColor(color->get_string(), parsed)) {
+    return parsed;
   }
-  const boost::json::object* obj = parsed.if_object();
-  if (obj == nullptr) {
-    return kBlack;
-  }
-  const boost::json::value* entries = obj->if_contains("entries");
-  if (entries == nullptr || !entries->is_object()) {
-    return kBlack;
-  }
-  const boost::json::value* color
-      = entries->get_object().if_contains("or_bg_color");
-  if (color == nullptr || !color->is_string()) {
-    return kBlack;
-  }
-  const std::string_view hex(color->get_string());
-  unsigned rgb = 0;
-  if (hex.size() != 7 || hex[0] != '#'
-      || !parseIntExact(hex.substr(1), rgb, 16)) {
-    return kBlack;
-  }
-  return Color{.r = static_cast<unsigned char>((rgb >> 16) & 0xFF),
-               .g = static_cast<unsigned char>((rgb >> 8) & 0xFF),
-               .b = static_cast<unsigned char>(rgb & 0xFF),
-               .a = 255};
+  return kBlack;
 }
 }  // namespace
 
@@ -2737,8 +2850,12 @@ ListenerHandle createAndRunListener(
     std::shared_ptr<ClockTreeReport> clock_report,
     utl::Logger* logger,
     WebViewerHook* viewer_hook,
-    int max_in_flight)
+    int max_in_flight,
+    std::shared_ptr<SessionAuth> auth)
 {
+  if (!auth) {
+    throw std::invalid_argument("createAndRunListener needs a SessionAuth");
+  }
   auto listener = std::make_shared<Listener>(ioc,
                                              endpoint,
                                              std::move(generator),
@@ -2747,7 +2864,8 @@ ListenerHandle createAndRunListener(
                                              std::move(clock_report),
                                              logger,
                                              viewer_hook,
-                                             max_in_flight);
+                                             max_in_flight,
+                                             std::move(auth));
   listener->run();
   return {.shutdown = [listener]() { listener->close(); },
           .port = listener->port()};

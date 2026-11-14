@@ -7,7 +7,10 @@
 // Split out of websocket-tile-layer.js so both layer types share one definition
 // of the payload and cannot drift on the wire — a divergence would give the two
 // paths different server-side tile-cache keys, and one of them would miss the
-// cache entirely.
+// cache entirely.  The flag columns come from buildVisibilityFlags for the same
+// reason, shared with click-select and the Save export.
+
+import { buildVisibilityFlags } from './ui-utils.js';
 
 // Normalize the display's device pixel ratio into the value sent on the wire.
 //
@@ -72,10 +75,28 @@ export const STATIC_TILE_SIZE_CSS = 256;
 // It carries a Graphic Control Extension declaring colour 0 transparent.  A 1x1
 // GIF without one is a common paste and is NOT transparent: an <img> stretches
 // its single opaque pixel over the whole tile, so a viewport of empty tiles
-// comes out a solid wash instead of showing the layout underneath.
+// comes out a solid wash instead of showing the layout underneath.  This exact
+// image is also the only blank a tile may hold: a 1x1 PNG in its place leaves a
+// grey fringe per tile in Firefox, which lines up into a grid over the layout.
 export const BLANK_TILE
     = 'data:image/gif;base64,'
       + 'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+// Release the object URL a tile is holding, if that is what it holds.  Every
+// path that drops a tile image -- a new src, the load event, a pruned tile --
+// has to do this or the blob stays alive for the life of the document.
+export function releaseTileBlob(tile) {
+    if (tile.src && tile.src.startsWith('blob:')) {
+        URL.revokeObjectURL(tile.src);
+    }
+}
+
+// Point a tile at an image.  Every src assignment in every tile layer goes
+// through here, so there is one answer to what an empty tile holds.
+export function setTileSrc(tile, src) {
+    releaseTileBlob(tile);
+    tile.src = src;
+}
 
 // The CSS tile size in force for this session.  Resolved once rather than
 // passed around: the map's coordinate scale, all three tile layers and the
@@ -202,6 +223,11 @@ export function tileSizeFields(dpr, tileSize = tileSizeCss()) {
     };
 }
 
+// Whether an object map such as app.chipletHiddenLayers has any key.
+export function hasEntries(map) {
+    return !!map && Object.keys(map).length > 0;
+}
+
 // Pure builder for the tile-request payload. `ctx` carries the per-layer
 // visibility/selectability context.
 //
@@ -210,19 +236,15 @@ export function tileSizeFields(dpr, tileSize = tileSizeCss()) {
 //
 // `dpr` is passed in rather than read here so a caller can override it without
 // this module knowing anything about why.
+//
+// `row` is the Display Controls row asking: `chiplet` is the die it draws (two
+// dies can share a layer name), `rowId` keys its fill pattern and
+// `rendererHost` marks the row that carries the renderers' layer pass.
 export function buildTileRequestFor(coords, layerName, ctx, dpr,
-                                    tileSize = tileSizeCss()) {
+                                    tileSize = tileSizeCss(), row = {}) {
     const { visibility, selectability, visibleLayers, selectableLayers, app }
         = ctx;
-    const vf = {};
-    for (const [k, v] of Object.entries(visibility || {})) {
-        vf[k] = !!v;
-    }
-    if (selectability) {
-        for (const [k, v] of Object.entries(selectability)) {
-            vf['s_' + k] = !!v;
-        }
-    }
+    const vf = buildVisibilityFlags(visibility, selectability);
     const req = {
         type: 'tile',
         layer: layerName,
@@ -237,11 +259,22 @@ export function buildTileRequestFor(coords, layerName, ctx, dpr,
     if (app && app.visibleChiplets instanceof Set) {
         req.visible_chiplets = [...app.visibleChiplets];
     }
+    // A row is only requested while it is checked, so a die's exceptions
+    // cannot change its pixels; leaving them out keeps its cache key stable.
+    if (row.chiplet) {
+        req.chiplet = row.chiplet;
+    } else if (app && hasEntries(app.chipletHiddenLayers)) {
+        req.chiplet_hidden_layers = app.chipletHiddenLayers;
+    }
+    // Debug tiles skip the cache, so this flag cannot fragment it.
+    if (row.rendererHost && vf.debug_renderers) {
+        req.renderer_host = true;
+    }
     // Per-layer fill pattern (int matching the server's FillPattern enum;
     // 1 = solid). Read lazily so a change via the layer context menu is picked
     // up on the next refresh without rebuilding the layer.
     if (app && app.layerPatterns) {
-        const p = app.layerPatterns[layerName];
+        const p = app.layerPatterns[row.rowId ?? layerName];
         if (p !== undefined && p !== 1) {
             req.pattern = p;
         }

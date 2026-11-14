@@ -7,7 +7,6 @@ load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
-# From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "array",
     "array_ins_delay",
@@ -41,6 +40,7 @@ COMPULSORY_TESTS = [
     "gated_clock_ndr_root",
     "hier_insertion_delay",
     "insertion_delay",
+    "inverter_sinks",
     "inverters",
     "lvt_lib",
     "max_cap",
@@ -57,10 +57,10 @@ COMPULSORY_TESTS = [
     "sink_clustering_single_sink",
     "skip_nets",
     "twice",
+    "useful_skew",
     "virtual_clock_latency",
 ]
 
-# From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
     "dangling_clock_inverter",
     "dont_touch_sink",
@@ -257,6 +257,10 @@ filegroup(
             ],
             "twice": [
                 "16sinks.def",
+            ],
+            "useful_skew": [
+                "array_tile_ins_delay.lef",
+                "array_tile_ins_delay.lib",
             ],
             "virtual_clock_latency": [
                 "16sinks.def",

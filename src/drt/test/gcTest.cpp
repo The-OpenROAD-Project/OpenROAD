@@ -8,9 +8,13 @@
 #include <utility>
 #include <vector>
 
+#include "db/gcObj/gcNet.h"
 #include "db/obj/frMarker.h"
 #include "db/obj/frNet.h"
+#include "db/obj/frShape.h"
 #include "db/tech/frConstraint.h"
+#include "db/tech/frLayer.h"
+#include "db/tech/frLookupTbl.h"
 #include "db/tech/frViaDef.h"
 #include "fixture.h"
 #include "frBaseTypes.h"
@@ -66,6 +70,187 @@ class FixtureWithParam : public GCFixture,
                          public ::testing::WithParamInterface<T>
 {
 };
+
+class GCWorkerBoundaryFixture : public FixtureWithParam<std::tuple<bool, bool>>
+{
+ protected:
+  odb::Point point(int x, int y)
+  {
+    return std::get<0>(GetParam()) ? odb::Point(y, x) : odb::Point(x, y);
+  }
+
+  odb::Rect box(int xl, int yl, int xh, int yh)
+  {
+    return odb::Rect(point(xl, yl), point(xh, yh));
+  }
+
+  frLayerNum metalLayer() { return std::get<1>(GetParam()) ? 6 : 4; }
+
+  void makeBoundaryDesign(bool connected, int wire_y = 3300)
+  {
+    auto* tech = design->getTech();
+    tech->setDBUPerUU(2000);
+    addLayer(tech, "v1", dbTechLayerType::CUT);
+    addLayer(tech, "m2", dbTechLayerType::ROUTING);
+    addLayer(tech, "v2", dbTechLayerType::CUT);
+    addLayer(tech, "m3", dbTechLayerType::ROUTING);
+    fr2DLookupTbl<frCoord, frCoord, frCoord> spacing_table(
+        "WIDTH", {0}, "PARALLELRUNLENGTH", {0}, {{140}});
+    auto spacing = std::make_unique<frSpacingTablePrlConstraint>(spacing_table);
+    tech->getLayer(metalLayer())->setMinSpacing(spacing.get());
+    tech->addUConstraint(std::move(spacing));
+
+    auto* via = makeViaDef("v2", 5, point(-70, -140), point(70, 140));
+    static_cast<frRect*>(via->getCutFigs()[0].get())
+        ->setBBox(odb::Rect(-70, -70, 70, 70));
+    auto* narrow = std::get<1>(GetParam()) ? via->getLayer2Figs()[0].get()
+                                           : via->getLayer1Figs()[0].get();
+    auto* wide = std::get<1>(GetParam()) ? via->getLayer1Figs()[0].get()
+                                         : via->getLayer2Figs()[0].get();
+    static_cast<frRect*>(narrow)->setBBox(box(-70, -140, 70, 140));
+    static_cast<frRect*>(wide)->setBBox(box(-140, -70, 140, 70));
+
+    auto* net = makeNet("n1");
+    makeVia(via, net, point(27290, 3020));
+    makePathsegExt(
+        net, metalLayer(), point(27290, wire_y), point(27670, wire_y), 140);
+    if (connected) {
+      makePathsegExt(
+          net, metalLayer(), point(27290, 2740), point(27290, wire_y), 140);
+    }
+    initRegionQuery();
+  }
+
+  void runBoundaryGC(int ext_min)
+  {
+    worker.setExtBox(box(ext_min, -2000, 52000, 26000));
+    worker.setDrcBox(box(28900, -500, 50500, 24500));
+    worker.init(design.get());
+    worker.main();
+  }
+};
+
+TEST_P(GCWorkerBoundaryFixture, connected_metal_outside_context)
+{
+  makeBoundaryDesign(true);
+  // The wide landing reaches 27430, selecting the whole via. The narrow
+  // landing and its connecting wire end at 27360, outside this context.
+  runBoundaryGC(27400);
+  EXPECT_TRUE(worker.getMarkers().empty());
+}
+
+TEST_P(GCWorkerBoundaryFixture, connected_metal_touching_context)
+{
+  makeBoundaryDesign(true);
+  runBoundaryGC(27360);
+  EXPECT_TRUE(worker.getMarkers().empty());
+}
+
+TEST_P(GCWorkerBoundaryFixture, connected_metal_crossing_context)
+{
+  makeBoundaryDesign(true);
+  runBoundaryGC(27300);
+  EXPECT_TRUE(worker.getMarkers().empty());
+}
+
+TEST_P(GCWorkerBoundaryFixture, real_gap)
+{
+  makeBoundaryDesign(false);
+  worker.setExtBox(box(27000, 2500, 28000, 4000));
+  // The genuine marker straddles the checking-region boundary.
+  worker.setDrcBox(box(27290, 2700, 27900, 3900));
+  worker.init(design.get());
+  worker.main();
+  const auto& markers = worker.getMarkers();
+  ASSERT_EQ(markers.size(), 1);
+  testMarker(markers.front().get(),
+             metalLayer(),
+             frConstraintTypeEnum::frcSpacingTablePrlConstraint,
+             box(27220, 3160, 27360, 3230));
+}
+
+TEST_P(GCWorkerBoundaryFixture, legal_gap)
+{
+  makeBoundaryDesign(false, 3370);
+  runBoundaryGC(27000);
+  EXPECT_TRUE(worker.getMarkers().empty());
+}
+
+INSTANTIATE_TEST_SUITE_P(Boundary,
+                         GCWorkerBoundaryFixture,
+                         ::testing::Combine(::testing::Bool(),
+                                            ::testing::Bool()));
+
+class GCViaContextFixture : public FixtureWithParam<int>
+{
+};
+
+TEST_P(GCViaContextFixture, imports_intersecting_figures)
+{
+  const int index = GetParam();
+  const int layer = 2 + index % 3;
+  const int offsets[] = {-201, -100, -50, 100, 1101};
+  const int offset = offsets[(index / 3) % 5];
+  const bool transpose = index >= 15;
+  auto* tech = design->getTech();
+  addLayer(tech, "v1", dbTechLayerType::CUT);
+  addLayer(tech, "m2", dbTechLayerType::ROUTING);
+  auto* via = makeViaDef("V1", 3, {100, 100}, {200, 200});
+  odb::Rect local(offset, 100, offset + 100, 200);
+  if (transpose) {
+    local = odb::Rect(100, offset, 200, offset + 100);
+  }
+  auto* figure = layer == 2   ? via->getLayer1Figs()[0].get()
+                 : layer == 3 ? via->getCutFigs()[0].get()
+                              : via->getLayer2Figs()[0].get();
+  static_cast<frRect*>(figure)->setBBox(local);
+  auto outside = std::make_unique<frRect>();
+  outside->setLayerNum(layer);
+  outside->setBBox(odb::Rect(3000, 3000, 3100, 3100));
+  if (layer == 2) {
+    via->addLayer1Fig(std::move(outside));
+  } else if (layer == 3) {
+    via->addCutFig(std::move(outside));
+  } else {
+    via->addLayer2Fig(std::move(outside));
+  }
+  auto* net = makeNet("signal");
+  makeVia(via, net, {10000, 10000});
+  initRegionQuery();
+  worker.setExtBox(odb::Rect(10000, 10000, 11000, 11000));
+  worker.setDrcBox(odb::Rect(10200, 10200, 10800, 10800));
+  worker.init(design.get());
+  const auto* imported = worker.getNet(net);
+  ASSERT_NE(imported, nullptr);
+  const bool included = offset == -100 || offset == -50 || offset == 100;
+  odb::Rect translated = local;
+  odb::dbTransform(odb::Point(10000, 10000)).apply(translated);
+  const gtl::rectangle_data<frCoord> expected(translated.xMin(),
+                                              translated.yMin(),
+                                              translated.xMax(),
+                                              translated.yMax());
+  if (layer == 3) {
+    const auto& rectangles = imported->getRectangles(layer);
+    ASSERT_EQ(rectangles.size(), included ? 1 : 0);
+    if (included) {
+      EXPECT_EQ(rectangles.front(), expected);
+    }
+  } else {
+    using gtl::operators::operator+=;
+    using gtl::operators::operator^=;
+    auto difference = imported->getPolygons(layer);
+    gtl::polygon_90_set_data<frCoord> expected_set;
+    if (included) {
+      expected_set += expected;
+    }
+    difference ^= expected_set;
+    EXPECT_TRUE(difference.empty());
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(ViaContext,
+                         GCViaContextFixture,
+                         ::testing::Range(0, 30));
 
 // Two touching metal shape from different nets generate a short
 TEST_F(GCFixture, metal_short)
@@ -1688,6 +1873,127 @@ TEST_F(GCFixture, lef58_enclosure)
                odb::Rect(0, 0, 200, 100));
   }
 }
+
+struct EnclosureCandidateFixture
+    : public FixtureWithParam<std::tuple<bool, bool>>
+{
+  frLef58EnclosureConstraint* addRule(frCoord width,
+                                      frCoord first,
+                                      frCoord second,
+                                      bool end_side = false)
+  {
+    const bool above = std::get<0>(GetParam());
+    auto* layer = design->getTech()->getLayer(3);
+    auto* rule = odb::dbTechLayerCutEnclosureRule::create(layer->getDbLayer());
+    rule->setAbove(above);
+    rule->setBelow(!above);
+    rule->setMinWidth(width);
+    rule->setFirstOverhang(first);
+    rule->setSecondOverhang(second);
+    rule->setType(end_side ? odb::dbTechLayerCutEnclosureRule::ENDSIDE
+                           : odb::dbTechLayerCutEnclosureRule::DEFAULT);
+    auto con = std::make_unique<frLef58EnclosureConstraint>(rule);
+    con->setCutClassIdx(0);
+    auto* result = con.get();
+    layer->addLef58EnclosureConstraint(result);
+    design->getTech()->addUConstraint(std::move(con));
+    return result;
+  }
+
+  odb::Rect makeEnclosure(const odb::Rect& cut,
+                          const odb::Rect& plate,
+                          const odb::Rect& wire)
+  {
+    const auto [above, transpose] = GetParam();
+    const auto point = [transpose](int x, int y) {
+      return odb::Point(700 + (transpose ? y : x), 1100 + (transpose ? x : y));
+    };
+    const auto rectangle = [&point](const odb::Rect& box) {
+      return odb::Rect(point(box.xMin(), box.yMin()),
+                       point(box.xMax(), box.yMax()));
+    };
+    addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+    addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+    makeCutClass(3, "Vx", cut.minDXDY(), cut.maxDXDY());
+    auto via = std::make_unique<frViaDef>("v");
+    for (int layer = 2; layer <= 4; ++layer) {
+      auto shape = std::make_unique<frRect>();
+      shape->setLayerNum(layer);
+      shape->setBBox(rectangle(layer == 3 ? cut
+                               : layer == (above ? 4 : 2)
+                                   ? plate
+                                   : odb::Rect(-250, -250, 250, 250)));
+      if (layer == 2) {
+        via->addLayer1Fig(std::move(shape));
+      } else if (layer == 3) {
+        via->addCutFig(std::move(shape));
+      } else {
+        via->addLayer2Fig(std::move(shape));
+      }
+    }
+    auto* net = makeNet("n1");
+    makeVia(design->getTech()->addVia(std::move(via)), net, {0, 0});
+    makePathseg(net,
+                above ? 4 : 2,
+                point(wire.xMin(), wire.yCenter()),
+                point(wire.xMax(), wire.yCenter()),
+                wire.dy());
+    return rectangle(cut);
+  }
+};
+
+TEST_P(EnclosureCandidateFixture, lef58_enclosure_containing_alternative)
+{
+  makeEnclosure({-50, -50, 50, 50}, {-150, -60, 150, 60}, {-80, -50, 400, 70});
+  addRule(0, 10, 100);
+
+  runGC();
+
+  EXPECT_TRUE(worker.getMarkers().empty());
+}
+
+TEST_P(EnclosureCandidateFixture, lef58_enclosure_endside_alternative)
+{
+  makeEnclosure(
+      {-50, -100, 50, 100}, {-60, -200, 60, 200}, {-70, -130, 400, 130});
+  addRule(0, 100, 10, true);
+
+  runGC();
+
+  EXPECT_TRUE(worker.getMarkers().empty());
+}
+
+TEST_P(EnclosureCandidateFixture, lef58_enclosure_widest_width_bucket)
+{
+  const auto cut = makeEnclosure(
+      {-50, -50, 50, 50}, {-150, -60, 150, 60}, {-80, -20, 400, 100});
+  addRule(0, 10, 100);
+  auto* strict = addRule(150, 80, 80);
+
+  runGC();
+
+  const auto& markers = worker.getMarkers();
+  ASSERT_EQ(markers.size(), 1);
+  EXPECT_EQ(markers[0]->getConstraint(), strict);
+  testMarker(markers[0].get(),
+             std::get<0>(GetParam()) ? 4 : 2,
+             frConstraintTypeEnum::frcLef58EnclosureConstraint,
+             cut);
+}
+
+TEST_P(EnclosureCandidateFixture, lef58_enclosure_below_width_threshold)
+{
+  makeEnclosure({-50, -50, 50, 50}, {-150, -60, 150, 60}, {-80, -20, 400, 100});
+  addRule(200, 80, 80);
+
+  runGC();
+
+  EXPECT_TRUE(worker.getMarkers().empty());
+}
+
+INSTANTIATE_TEST_SUITE_P(EnclosureCandidates,
+                         EnclosureCandidateFixture,
+                         testing::Combine(testing::Bool(), testing::Bool()));
 
 using CutSpcTblOrthFixture = FixtureWithParam<std::pair<bool, int>>;
 TEST_P(CutSpcTblOrthFixture, cut_spc_tbl_orth)

@@ -17,17 +17,77 @@ WebSocket carries a small binary framing with JSON or PNG payloads.
 - HTTP `GET` serves the three assets embedded in the binary: `/` (or
   `/index.html`), `/app.min.js`, and `/THIRD_PARTY_LICENSES.txt`. A query
   string or fragment is ignored. `GET /download/image` renders a PNG of
-  the layout from its query parameters. Anything else is 404, and no
-  method other than GET is supported.
+  the layout from its query parameters. No method other than GET is
+  supported. A path with no embedded asset needs the token (see below) and
+  answers 401 without one, 404 with it — the gate is deny-by-default, so a
+  route added later cannot be left open by accident.
 - The assets are stored gzipped. When `Accept-Encoding` allows
   gzip (`gzip`, `x-gzip` or `*`, not at `q=0`; an explicit `gzip` entry
   wins over `*`), the stored bytes go out with `Content-Encoding: gzip`;
   otherwise the server inflates them first. Every asset response carries
   `Vary: Accept-Encoding` and `Cache-Control: no-store`.
+- Each session mints an access token and prints the url carrying it
+  (`http://<host>:<port>/?token=<hex>`) to stdout; the logger gets it
+  redacted. `web_server -token <hex>` supplies the token instead, and then it
+  is not printed at all. Pass it as the `token` query
+  parameter on the WebSocket upgrade, on `GET /` and on
+  `GET /download/image`; without it those are answered with 401. Every
+  401 carries `WWW-Authenticate: OpenROAD-Token`, by which the viewer tells
+  the server's refusal from a proxy's. The other assets are not gated. A new
+  `web_server` mints a new token.
+- The session also mints a single-use `ticket`, used only to launch the
+  browser without the token on a command line. `GET /?ticket=<hex>` answers
+  `302` with `Location: /?token=<hex>` (other query parameters are carried
+  over) and the ticket is spent; a second use, one after five minutes, or one
+  after the launch it was minted for failed or was skipped, gets 401. A
+  second use also logs `WEB-0129` and says so in the 401's body. A
+  ticket is not accepted on the WebSocket or on the image download. An
+  alternate client has no reason to use one — it has the token. Because it
+  is handed over on the browser's command line, a ticket is readable by
+  other users of that machine until it is redeemed.
 - `GET /download/image` answers 404 when no design is loaded, 400 for a
   malformed `bbox`, and 500 when the render fails.
+- Every HTTP response, refusals included, carries `X-Frame-Options: DENY`,
+  `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer` and this
+  `Content-Security-Policy`:
+  `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';
+  img-src 'self' data: blob:; connect-src 'self' ws://HOST wss://HOST data:;
+  font-src 'self' data:; object-src 'none'; base-uri 'none';
+  form-action 'none'; frame-ancestors 'none'`, where `HOST` is the request's
+  `Host` header. The page runs no inline script and no `eval`, and loads
+  images only from itself, `data:` and `blob:`; another site cannot frame it.
+  `ws://HOST wss://HOST` are there because browsers older than CSP Level 3
+  (Safari before 15.4, say) do not let `'self'` match a WebSocket; a `Host`
+  a CSP source cannot spell, such as an IPv6 literal, leaves them out.
 - The WebSocket upgrade is also at the root path. Once upgraded, all
   request/response traffic uses the binary framing below.
+
+## 3D Interconnect Data
+
+`get_3d_data` returns `chiplets`, `bumps`, and `nets` arrays. Coordinates are
+in the database's DBU, in the root chip's coordinate system. Chiplet entries
+contain `name` (the hierarchical occurrence path), `x`, `y`, `z`, `width`,
+`height`, and `thickness`.
+
+Each `bumps` entry is the compact array
+`[chiplet_index, xmin, ymin, xmax, ymax, surface_z]`. The index references
+`chiplets`. The XY footprint is the placed bump instance's bounding box,
+transformed through the complete chip-instance hierarchy. Z is the owning
+region's surface, including face-down orientation. Unplaced bumps are omitted.
+Footprints do not imply a bump height or an exact pin polygon.
+
+Each `nets` entry contains `name` (a hierarchical net occurrence path) and
+`bumps` (distinct indices into the response's `bumps` array). Nets with fewer
+than two displayed terminals are omitted. These are logical `dbChipNet`
+memberships, not routed wire segments. The frontend draws first-terminal
+flight lines to the remaining terminals, with no physical routing claim.
+Repeated chip masters retain separate occurrence indices and connectivity.
+
+The viewer offers independent Bumps, Net links, and Chip bodies controls.
+Bump footprints and link endpoints follow the same visual stacking offsets
+as their owning chips; True Z removes those offsets. No TSV shapes are
+inferred from the chip-level TSV flag: ODB does not expose dedicated TSV
+geometry here. Designs without chip data instead return an `info` message.
 
 ## Wire frame format
 
@@ -144,11 +204,13 @@ Render a single 256×256 PNG tile of the layout.
 
 | Field            | Type     | Required | Description |
 | ---------------- | -------- | :------: | ----------- |
-| `layer`          | `string` |    ✓     | Layer name (`metal1`, `metal2`, …) or one of the synthetic layers `_instances`, `_modules`, `_pins`, or `_overlay`. |
+| `layer`          | `string` |    ✓     | Layer name (`metal1`, `metal2`, …) or one of the synthetic layers `_instances`, `_modules`, `_clusters`, `_pins`, or `_overlay`. |
 | `z`              | `int`    |    ✓     | Leaflet tile zoom level (0 = whole design). |
 | `x`              | `int`    |    ✓     | Tile column at zoom `z`. |
 | `y`              | `int`    |    ✓     | Tile row at zoom `z`. |
-| `visible_layers` | `string[]` | ✓ | Tech layers currently visible on the *pins* synthetic layer; empty array means hide all pin markers. |
+| `visible_layers` | `string[]` | ✓ | Tech layers currently visible, the union over the dies; an empty array hides them all. Read only by `_pins` and by the overlays whose `layers_by` group is on (see `tech`); every other tile ignores it, and it is left out of their cache key. |
+| `chiplet`        | `string` |    —     | Chiplet path (as in the `tech` response's `chiplets[].path`) of the die a tech-layer tile draws. Two dies can share a layer name; omitted draws every visible chiplet. |
+| `chiplet_hidden_layers` | `object` | — | `{ "<chiplet path>": ["<layer>", …] }`: layers hidden on that die only, while `visible_layers` still lists them. Read by the same tiles as `visible_layers`; a tech-layer tile names its die with `chiplet` instead. |
 | *visibility flags* | `bool` |  per-flag default | See *TileVisibility flags* below. Any flag may be omitted to take the default. |
 | `site_<name>`    | `bool`   |    —     | Per-row-site visibility. Only consulted when `rows == true`. |
 
@@ -178,6 +240,17 @@ layer's geometry.
 **Response:** PNG image (frame type `1`), or frame type `3` with no body
 when nothing is highlighted in this tile — which is the usual case, since
 the overlay holds nothing at all until something is selected.
+
+The `_modules` and `_clusters` layers color each instance by its `dbModule` /
+`dbGroup`, and each draws only while its own flag (`module_view` /
+`cluster_view`) is true and the session holds a color map (`set_module_colors` /
+`set_group_colors`); otherwise the tile comes back fully transparent.  Clients
+should therefore keep both layers mounted and toggle the flag, not the layer:
+making the map's layer set a second record of the flag is what let the viewer's
+hierarchy coloring checkbox get stuck until a page reload.  The viewer drives
+both flags from one "Hierarchy view" checkbox and the Hierarchy tab's active
+source, so at most one of them is ever true there; a Tcl or test client is free
+to set both.
 
 ### `bounds`
 
@@ -235,8 +308,25 @@ from `layers` (the `_`-prefixed pseudo layers) must always be requested,
 unless it is in `sized` below.
 Only design geometry is covered: tracks and the debug overlays also draw on
 layer tiles, so tiles are requested regardless while those are on.
-`supported` is false for multi-chiplet designs, and the client then
+`supported` is false when no chiplet has geometry, and the client then
 requests every tile.
+
+A multi-chiplet design leaves `layers` and `gated` empty and describes each
+die under `chiplets`, keyed by chiplet path, for the tiles a `chiplet` scopes
+to that die:
+```json
+"chiplets": {
+  "top/die0": {
+    "outline": [[x0, y0, x1, y1], …],
+    "layers": {"metal1": [x0, y0, x1, y1]},
+    "gated": {"inst_pins": {"metal1": [x0, y0, x1, y1]}, …}
+  }
+}
+```
+`outline` holds one box per edge of the die outline, which every layer tile of
+a die draws; such a tile can be skipped when it misses every edge as well as
+the die's `layers` and `gated` rects. A die or a layer it does not list must
+always be requested.
 
 A layer in `sized` draws only on features long enough on screen — the
 instance and pin names of `_inst_labels` need an instance at least
@@ -309,6 +399,8 @@ overlapping objects on repeated calls at the same point.
 | `dbu_y`          | `int`    |    ✓     | Y coordinate in DBU. |
 | `zoom`           | `int` or `double` | ✓ | Current Leaflet zoom level. Server truncates fractional values. |
 | `visible_layers` | `string[]`|    ✓    | Same semantics as `tile`. |
+| `chiplet_hidden_layers` | `object` | — | Same as `tile`: a layer hidden on one die is not picked there. |
+| `chiplet_nonselectable_layers` | `object` | — | `{ "<chiplet path>": ["<layer>", …] }`: layers made unselectable on that die only, while `selectable_layers` still lists them. |
 | *visibility flags* | `bool` |  per-flag default | Same as `tile`. |
 | `site_<name>`    | `bool`   |    —     | Same as `tile`. |
 
@@ -431,6 +523,13 @@ On `"found": false`, `edge` and `is_point` are absent.
 Build a cone of influence around an instance (fanin/fanout) and return
 it as a Yosys-format netlist for the netlistsvg renderer.
 
+For 3DBlox designs, instance names use the chip-instance prefix, for example
+`die0/buf1`. The chip instance's full path from the root, as layout selection
+reports it (for example `top/die0/buf1`), is accepted too. Returned cell, port,
+and net names use the short prefix to keep objects on different dies distinct.
+`schematic_path` and `schematic_inspect` accept these qualified instance names
+as well.
+
 | Field           | Type     | Required | Description                                |
 | --------------- | -------- | :------: | ------------------------------------------ |
 | `inst_name`     | `string` |    ✓     | Anchor instance name.                      |
@@ -457,10 +556,39 @@ limited to one module named `top`:
 Cones are capped at 150 instances; nets with fanout > 30 are skipped to
 keep the schematic readable.
 
+#### Gate symbol hints
+
+Cells recognized from their Liberty function carry three extra fields
+beyond the Yosys schema. They are rendering *hints* only — `type` stays
+the real master name, and a client that ignores them still gets a
+correct netlist, just drawn as generic boxes.
+
+| Field         | Type     | Description                                          |
+| ------------- | -------- | ---------------------------------------------------- |
+| `gate_kind`   | `string` | `and`/`nand`/`or`/`nor`/`xor`/`xnor`/`not`/`buf` for simple gates, `aoi`/`oai` for compound and/or-invert gates, `dff`/`dffr`/`dffs` for D-flip flops. Absent when the cell is not recognized. |
+| `gate_ports`  | `object` | Register symbol port id → real Liberty pin name (e.g. `{"CK": "CK", "Q": "Q"}`), letting the viewer route the skin symbol while still labeling the design's own pin names. |
+| `gate_terms`  | `array`  | `aoi`/`oai` only: the input pin names of each first-level term (AOI21 → `[["A"], ["B1", "B2"]]`). A one-pin term feeds the second-level gate directly. The viewer derives the symbol port ids from this grouping, so no `gate_ports` is sent. |
+
 ### `schematic_full`
 
 Same shape as `schematic_cone` but emits the entire block (no caps). No
 request fields.
+
+### `schematic_path`
+
+Build a schematic from an explicit list of instances — used to draw the
+cells of one timing path, as listed in the timing panel's detail table.
+
+| Field        | Type       | Required | Description                              |
+| ------------ | ---------- | :------: | ---------------------------------------- |
+| `inst_names` | `string[]` |    ✓     | Instance names to include. |
+
+Names that match no instance are skipped rather than erroring, so callers
+may pass pin-derived names that include block ports. Capped at 400
+instances. Only nets touching a listed instance are wired; every other
+pin renders as a short dangling stub.
+
+**Response (JSON):** same Yosys netlist shape as `schematic_cone`.
 
 ### `schematic_inspect`
 
@@ -545,6 +673,11 @@ Return the worst N timing paths.
 | `max_paths`  | `int`    |    ✓     | —                                | Maximum number of paths to return.                   |
 | `slack_min`  | `double` |          | `-FLT_MAX`                       | Lower slack bound (inclusive). Optional filter.      |
 | `slack_max`  | `double` |          | `+FLT_MAX`                       | Upper slack bound (exclusive). Optional filter.      |
+| `unconstrained` | `bool` |          | `false`                          | Include paths with no timing constraint.             |
+
+A design with no SDC constraints has no constrained path ends, so
+`unconstrained: false` returns an empty `paths` array. This mirrors the
+Qt GUI's "Unconstrained" checkbox in `TimingControlsDialog`.
 
 **Response (JSON):**
 ```json
@@ -556,13 +689,18 @@ Return the worst N timing paths.
       "slack":    -0.5,    "skew":    0.0,
       "path_delay": 0.9,   "logic_depth": 4, "fanout": 12,
       "start_pin":  "ff1/CK", "end_pin": "ff2/D",
-      "data_nodes":    [{"pin": "...", "fanout": 1, "rise": true,  "clk": false, "time": 0.0, "delay": 0.0, "slew": 0.0, "load": 0.0}, ...],
+      "data_nodes":    [{"pin": "...", "inst": "...", "fanout": 1, "rise": true,  "clk": false, "time": 0.0, "delay": 0.0, "slew": 0.0, "load": 0.0}, ...],
       "capture_nodes": [{...}]
     },
     ...
   ]
 }
 ```
+
+`inst` is the instance owning `pin`, empty for block ports. It lets
+clients join a path onto instance-keyed views without splitting `pin` on
+the hierarchy delimiter, which is ambiguous when instance names contain
+it.
 
 ### `timing_highlight`
 
@@ -571,9 +709,23 @@ single stage emphasized.
 
 | Field        | Type     | Required when            | Description                                                    |
 | ------------ | -------- | ------------------------ | -------------------------------------------------------------- |
-| `path_index` | `int`    | always                   | Index into the most recent `timing_report.paths`. `-1` clears. |
-| `is_setup`   | `bool`   | `path_index >= 0`        | Which side of the report `path_index` indexes into.            |
+| `path_index` | `int`    | always                   | `-1` clears; any other value highlights the path the fields below identify. A saved report, which has no server, picks its pre-rendered overlay by this index. |
+| `is_setup`   | `bool`   | `path_index >= 0`        | Which side of the report holds the path: setup or hold.        |
+| `start_pin`  | `string` | `path_index >= 0`        | `start_pin` of the selected path.                              |
+| `end_pin`    | `string` | `path_index >= 0`        | `end_pin` of the selected path.                                |
+| `start_clk`  | `string` | `path_index >= 0`        | `start_clk` of the selected path.                              |
+| `end_clk`    | `string` | `path_index >= 0`        | `end_clk` of the selected path.                                |
+| `unconstrained` | `bool` | optional, `>= 0` only   | Include unconstrained paths in the re-run report.              |
+| `max_paths`  | `int`    | optional, `>= 0` only    | Report path limit. Defaults to `100`.                         |
+| `slack_min`  | `double` | optional, `>= 0` only    | Report lower slack bound. Defaults to `-FLT_MAX`.             |
+| `slack_max`  | `double` | optional, `>= 0` only    | Report upper slack bound. Defaults to `+FLT_MAX`.             |
 | `pin_name`   | `string` | optional, `>= 0` only    | If set, emphasize this pin's net within the path.              |
+
+The server re-runs the report with `unconstrained`, `max_paths`,
+`slack_min`, and `slack_max`, then picks the path whose pins and clocks all
+match: a register two clocks capture has a path per clock with the same pins.
+If the options differ from the `timing_report` the row came from, the worst
+case is no highlight rather than a different path.
 
 **Response (JSON):** `{"ok": true}`. The actual update is the layer
 overlay redraw on the next `tile` request.
@@ -647,11 +799,11 @@ Highlight a single clock-tree node's instance in the layout.
 
 ---
 
-## Module hierarchy
+## Module and cluster hierarchy
 
 ### `module_hierarchy`
 
-Return the module hierarchy tree (left sidebar).
+Return the `dbModule` tree (Verilog Modules view of the Hierarchy panel).
 
 No request fields.
 
@@ -684,6 +836,76 @@ layer).
 | `colors` | `string` |    ✓     | Custom delimited form: `<id>:<r>,<g>,<b>,<a>;<id>:<r>,<g>,<b>,<a>;...`. Empty = clear all. |
 
 **Response (JSON):** `{"ok": 1, "count": <updated module count>}`.
+
+### `group_hierarchy`
+
+Return the `dbGroup` tree (Instance Groups view of the Hierarchy panel).  Every group in the block
+is reported, whatever created it — power/voltage domains, regions, or the
+nested `VISUAL_DEBUG` clustering `rtl_macro_placer -keep_clustering_data`
+writes — distinguished by `type`.  Nodes are in DFS order, so a parent always
+precedes its children.
+
+No request fields.
+
+**Response (JSON):**
+```json
+{
+  "nodes": [
+    {
+      "id": 0, "parent_id": -1,
+      "name":  "root", "type": "VISUAL_DEBUG",
+      "odb_id": 42,
+      "insts": 1234, "macros": 2, "groups": 7,   // hierarchical
+      "area":  1.23,                              // μm², hierarchical
+      "local_insts": 100, "local_macros": 0, "local_groups": 3,
+      "bbox":  [xMin, yMin, xMax, yMax],          // members, recursive; zeros when empty
+      "color": [r, g, b]
+    },
+    ...
+  ]
+}
+```
+
+### `set_group_colors`
+
+Update the per-cluster color override map (for the `_clusters` tile layer).
+Same payload shape as `set_module_colors`, keyed by `dbGroup` id.
+
+| Field    | Type     | Required | Description                                                                                  |
+| -------- | -------- | :------: | -------------------------------------------------------------------------------------------- |
+| `colors` | `string` |    ✓     | Custom delimited form: `<id>:<r>,<g>,<b>,<a>;<id>:<r>,<g>,<b>,<a>;...`. Empty = clear all. |
+
+**Response (JSON):** `{"ok": 1, "count": <updated cluster count>}`.
+
+### `find`
+
+Select every object of one type whose name matches a pattern — the
+counterpart of the Qt GUI's Find dialog.  The matches are added to the
+selection rather than replacing it, as in the Qt GUI.
+
+| Field        | Type     | Required | Description                                                  |
+| ------------ | -------- | :------: | ------------------------------------------------------------ |
+| `obj_type`   | `string` |    ✓     | `inst`, `net` or `port`. Note it is *not* `type`, which the envelope uses. |
+| `pattern`    | `string` |    ✓     | Unix glob (`*`, `?`, `[...]`); a plain name matches only itself. |
+| `match_case` | `bool`   |    —     | Default `false`.                                              |
+| `use_dbu`    | `bool`   |    —     | Same as `inspect`.                                            |
+
+**Response (JSON):** `count` (every match) and `truncated` (`true` when more
+than 1000 matched; only the first 1000 are selected), `selection_count`,
+`sel_has_inst` and `sel_has_net`.  When something matched it also carries the
+inspect payload of the first match and `selection_index`.  Errors on an unknown
+`obj_type`.
+
+### `clear_highlights`
+
+Drop the members of the colored highlight groups.  The selection is separate
+state and is left alone.
+
+| Field   | Type  | Required | Description                                                     |
+| ------- | ----- | :------: | --------------------------------------------------------------- |
+| `group` | `int` |    —     | `0..15` to clear just that group; `-1` (default) clears them all. |
+
+**Response (JSON):** `{"ok": 1, "cleared": <members removed>}`.
 
 ### `set_focus_nets`
 

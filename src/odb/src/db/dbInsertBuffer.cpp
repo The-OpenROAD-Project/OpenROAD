@@ -104,8 +104,12 @@ dbInst* dbInsertBuffer::insertBufferSimple(dbObject* term_obj,
                        ? static_cast<dbITerm*>(term_obj)->getInst()->getModule()
                        : nullptr;
   buffer_master_ = buffer_master;
-  new_buf_base_name_ = new_buf_base_name;
-  new_net_base_name_ = new_net_base_name;
+  new_buf_base_name_ = (new_buf_base_name && new_buf_base_name[0] != '\0')
+                           ? new_buf_base_name
+                           : kDefaultBufBaseName;
+  new_net_base_name_ = (new_net_base_name && new_net_base_name[0] != '\0')
+                           ? new_net_base_name
+                           : kDefaultNetBaseName;
   uniquify_ = uniquify;
 
   // Store original driver pin before buffer insertion modifies net structure
@@ -161,12 +165,18 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoads(
   resetMembers();
 
   buffer_master_ = buffer_master;
-  new_buf_base_name_ = new_buf_base_name;
-  new_net_base_name_ = new_net_base_name;
+  new_buf_base_name_ = (new_buf_base_name && new_buf_base_name[0] != '\0')
+                           ? new_buf_base_name
+                           : kDefaultBufBaseName;
+  new_net_base_name_ = (new_net_base_name && new_net_base_name[0] != '\0')
+                           ? new_net_base_name
+                           : kDefaultNetBaseName;
   uniquify_ = uniquify;
 
-  // Store original driver pin before buffer insertion modifies net structure
-  orig_drvr_pin_ = net_->getFirstDriverTerm();
+  if (loc == nullptr) {
+    // Store original driver pin before buffer insertion modifies net structure
+    orig_drvr_pin_ = net_->getFirstDriverTerm();
+  }
 
   dlogBeforeLoadsParams(load_pins, loc, loads_on_diff_nets);
 

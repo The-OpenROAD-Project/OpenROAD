@@ -44,10 +44,18 @@ const STUCK_BYTES = 256 * 1024;
 const STUCK_MS = 12000;
 const DEAD_MS = 30000;
 const LIVENESS_INTERVAL_MS = 3000;
+// How long the session probe after a failed connect may take.
+const PROBE_TIMEOUT_MS = 5000;
+// The WWW-Authenticate scheme of the server's own 401; a proxy's has another.
+const TOKEN_CHALLENGE = 'OpenROAD-Token';
 
 export class WebSocketManager {
-    constructor(url, onStatusChange) {
+    // `probeUrl`, when given, is fetched after a connect that never opened: the
+    // server's 401 there means it minted a new token and retrying is futile.
+    constructor(url, onStatusChange, { probeUrl } = {}) {
         this.url = url;
+        this._probeUrl = probeUrl || null;
+        this._sessionEnded = false; // set when the probe got the server's 401
         this.socket = null;
         this.nextId = 1;
         this.pending = new Map(); // id -> {resolve, reject} — sent, still tracked
@@ -158,6 +166,7 @@ export class WebSocketManager {
     // schedule a reconnect unless the server told us to shut down. Invoked by
     // socket.onclose and, for a wedged socket, directly by _forceReconnect().
     _handleClose() {
+        const opened = this._isConnected;
         this._isConnected = false;
         this._inFlight = 0;
         this._inFlightIds.clear();
@@ -178,9 +187,49 @@ export class WebSocketManager {
             this._stopLivenessMonitor(); // no socket will reopen
             return; // don't reconnect after intentional shutdown
         }
+        // The browser hides a refused handshake's status; the page shows it.
+        if (!opened && this._probeUrl) {
+            return this._probeSession();
+        }
+        this._scheduleReconnect();
+    }
+
+    _scheduleReconnect() {
         console.log('WebSocket closed, reconnecting...');
         setTimeout(() => this.connect(), this.reconnectDelay);
         this.reconnectDelay = Math.min(this.reconnectDelay * 2, 30000);
+    }
+
+    // The server's 401 on the page means it now expects another token, so no
+    // reconnect can succeed; down, unreachable or anything else is retried.
+    async _probeSession() {
+        let refused = false;
+        // Not AbortSignal.timeout(): Safari before 16 lacks it.
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
+        try {
+            const resp = await fetch(this._probeUrl, {
+                cache: 'no-store',
+                signal: controller.signal,
+            });
+            refused = resp.status === 401
+                && resp.headers.get('WWW-Authenticate') === TOKEN_CHALLENGE;
+        } catch {
+            // down, unreachable or timed out: retried below
+        } finally {
+            clearTimeout(timer);
+        }
+        if (this._shutdown) {
+            return; // an intentional shutdown arrived while we waited
+        }
+        if (refused) {
+            this._sessionEnded = true;
+            this._shutdown = true;
+            this._stopLivenessMonitor();
+            this.onStatusChange();
+            return;
+        }
+        this._scheduleReconnect();
     }
 
     // Abandon a wedged socket and reconnect now, without waiting for close()
@@ -477,7 +526,9 @@ export class WebSocketManager {
 
         // Tile requests — return a data URI string.
         if (type === 'tile') {
-            const key = msg.layer + '/' + msg.z + '/' + msg.x + '/' + msg.y;
+            // Must match the keys WebServer::saveReport writes.
+            const key = (msg.chiplet ? msg.chiplet + '|' : '') + msg.layer
+                        + '/' + msg.z + '/' + msg.x + '/' + msg.y;
             const b64 = this._cache.tiles && this._cache.tiles[key];
             if (b64) {
                 return Promise.resolve('data:image/png;base64,' + b64);
@@ -501,8 +552,8 @@ export class WebSocketManager {
             return Promise.resolve({});
         }
 
-        // set_module_colors is a no-op in static mode (tiles are pre-rendered).
-        if (type === 'set_module_colors') {
+        // Color overrides are no-ops in static mode (tiles are pre-rendered).
+        if (type === 'set_module_colors' || type === 'set_group_colors') {
             return Promise.resolve({ok: 1, count: 0});
         }
 

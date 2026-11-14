@@ -3,11 +3,7 @@
 
 #include "ScanStitch.hh"
 
-#include <algorithm>
 #include <cstddef>
-#include <deque>
-#include <functional>
-#include <iterator>
 #include <memory>
 #include <optional>
 #include <string>
@@ -60,6 +56,11 @@ void ScanStitch::Stitch(odb::dbBlock* block,
                         ScanChain& scan_chain,
                         size_t ordinal)
 {
+  // An empty chain has no cells to connect, so it gets no scan ports either
+  if (scan_chain.empty()) {
+    return;
+  }
+
   auto scan_enable_name
       = fmt::format(FMT_RUNTIME(config_.getEnableNamePattern()), kEnableNumber);
   auto scan_enable_driver = FindOrCreateScanEnable(block, scan_enable_name);
@@ -71,14 +72,8 @@ void ScanStitch::Stitch(odb::dbBlock* block,
   scan_chain.setScanIn(scan_in_driver);
   scan_chain.setScanEnable(scan_enable_driver);
 
-  // We need fast pop for front and back
-  std::deque<std::reference_wrapper<const std::unique_ptr<ScanCell>>>
-      scan_cells;
-
-  const std::vector<std::unique_ptr<ScanCell>>& original_scan_cells
+  const std::vector<std::unique_ptr<ScanCell>>& scan_cells
       = scan_chain.getScanCells();
-
-  std::ranges::copy(original_scan_cells, std::back_inserter(scan_cells));
 
   // All the cells in the scan chain are controlled by the same scan enable
   for (const std::unique_ptr<ScanCell>& scan_cell : scan_cells) {
@@ -86,39 +81,22 @@ void ScanStitch::Stitch(odb::dbBlock* block,
   }
 
   // Lets get the first and last cell
-  const std::unique_ptr<ScanCell>& first_scan_cell = *scan_cells.begin();
-  const std::unique_ptr<ScanCell>& last_scan_cell = *(scan_cells.end() - 1);
+  const std::unique_ptr<ScanCell>& first_scan_cell = scan_cells.front();
+  const std::unique_ptr<ScanCell>& last_scan_cell = scan_cells.back();
 
-  if (!scan_cells.empty()) {
-    scan_cells.pop_front();
-  }
-
-  if (!scan_cells.empty()) {
-    scan_cells.pop_back();
-  }
-
-  for (auto it = scan_cells.begin(); it != scan_cells.end(); ++it) {
-    const std::unique_ptr<ScanCell>& current = *it;
-    // The last middle cell connects to the last cell, already popped off the
-    // back, so it is never *end()
-    const auto next_it = std::next(it);
-    const std::unique_ptr<ScanCell>& next
-        = next_it != scan_cells.end() ? next_it->get() : last_scan_cell;
-    // Connects current cell scan out to next cell scan in
-    next->connectScanIn(current->getScanOut());
+  // Connects current cell scan out to next cell scan in, starting with the
+  // third cell. The second cell is connected after the first cell below.
+  for (size_t i = 2; i < scan_cells.size(); ++i) {
+    scan_cells[i]->connectScanIn(scan_cells[i - 1]->getScanOut());
   }
 
   // Let's connect the first cell
   first_scan_cell->connectScanEnable(scan_enable_driver);
   first_scan_cell->connectScanIn(scan_in_driver);
 
-  if (!scan_cells.empty()) {
-    scan_cells.begin()->get()->connectScanIn(first_scan_cell->getScanOut());
-  } else {
-    // If last_scan_cell == first_scan_cell, then scan in was already connected
-    if (last_scan_cell != first_scan_cell) {
-      last_scan_cell->connectScanIn(first_scan_cell->getScanOut());
-    }
+  // If the chain has a single cell, then there is nothing else to connect
+  if (scan_cells.size() > 1) {
+    scan_cells[1]->connectScanIn(first_scan_cell->getScanOut());
   }
 
   // Let's connect the last cell
@@ -149,7 +127,8 @@ static std::pair<std::string, std::optional<std::string>> SplitTermIdentifier(
 
 ScanDriver ScanStitch::FindOrCreateDriver(std::string_view kind,
                                           odb::dbBlock* block,
-                                          const std::string& with_name)
+                                          const std::string& with_name,
+                                          odb::dbSigType sig_type)
 {
   auto term_info = SplitTermIdentifier(with_name);
 
@@ -189,19 +168,23 @@ ScanDriver ScanStitch::FindOrCreateDriver(std::string_view kind,
     // We don't actually care if it's an output, that works here too.
     return ScanDriver(bterm);
   }
-  return CreateNewPort<ScanDriver>(block, with_name);
+  return CreateNewPort<ScanDriver>(block, with_name, nullptr, sig_type);
 }
 
 ScanDriver ScanStitch::FindOrCreateScanEnable(odb::dbBlock* block,
                                               const std::string& with_name)
 {
-  return FindOrCreateDriver(kScanEnable, block, with_name);
+  // Scan enable is an ordinary high-fanout control net, not part of a chain
+  // that scan_opt reorders, so placement and buffering treat it like any
+  // other signal.
+  return FindOrCreateDriver(
+      kScanEnable, block, with_name, odb::dbSigType::SIGNAL);
 }
 
 ScanDriver ScanStitch::FindOrCreateScanIn(odb::dbBlock* block,
                                           const std::string& with_name)
 {
-  return FindOrCreateDriver(kScanIn, block, with_name);
+  return FindOrCreateDriver(kScanIn, block, with_name, odb::dbSigType::SCAN);
 }
 
 ScanLoad ScanStitch::FindOrCreateScanOut(odb::dbBlock* block,

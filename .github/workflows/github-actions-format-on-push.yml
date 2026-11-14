@@ -31,7 +31,7 @@ jobs:
         run: |
           clang-format --version
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-            if [[ "${file##*.}" =~ ^(h|C|cc|cp|cpp|c++|CPP|cxx|hh)$ \
+            if [[ "${file##*.}" =~ ^(h|hh|hpp|hxx|c|cc|cpp|cxx)$ \
                   && "${file}" != "src/sta/"* \
                   && "${file}" != "src/odb/src/codeGenerator/"* \
                   && "${file}" != "third-party/"* ]]; then

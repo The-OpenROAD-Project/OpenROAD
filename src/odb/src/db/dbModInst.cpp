@@ -266,6 +266,13 @@ void dbModInst::destroy(dbModInst* modinst)
     moditerm_itr = dbModITerm::destroy(moditerm_itr);
   }
 
+  // Before the destroy callback, so no receiver hears of a group change for a
+  // modinst it was told is gone.  The journal still records the group.
+  const dbId<_dbGroup> group = _modinst->group_;
+  if (group) {
+    modinst->getGroup()->removeModInst(modinst);
+  }
+
   for (auto cb : _block->callbacks_) {
     cb->inDbModInstDestroy(modinst);
   }
@@ -308,15 +315,11 @@ void dbModInst::destroy(dbModInst* modinst)
     _block->journal_->pushParam(modinst->getId());
     _block->journal_->pushParam(_module->getId());
     _block->journal_->pushParam(_master->getId());
-    _block->journal_->pushParam(_modinst->group_);
+    _block->journal_->pushParam(group);
     _block->journal_->endAction();
   }
 
   // unlink from parent end
-  if (_modinst->group_) {
-    modinst->getGroup()->removeModInst(modinst);
-  }
-
   _dbModule* _parent = (_dbModule*) (modinst->getParent());
   _parent->modinst_hash_.erase(modinst->getName());
   _block->modinst_tbl_->destroy(_modinst);

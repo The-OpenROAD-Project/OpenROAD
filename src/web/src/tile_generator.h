@@ -205,6 +205,16 @@ struct ChipletNode
   }
 };
 
+// A tech layer as one die draws it, which is one Display Controls row.
+// An empty chiplet draws every die, as the pseudo layers do.
+struct PaintLayer
+{
+  std::string layer;
+  std::string chiplet;
+
+  bool operator==(const PaintLayer&) const = default;
+};
+
 // Walk the chiplet hierarchy and return a flat list with each chiplet's
 // accumulated world transform.
 //
@@ -324,6 +334,8 @@ struct TileVisibility
   bool mfg_grid = false;  // manufacturing-grid dots, off by default (Qt parity)
   bool gcell_grid = false;  // GCell grid lines, off by default (Qt parity)
   bool rudy = false;        // RUDY congestion heatmap, off by default
+  bool routing_congestion
+      = false;  // Routing congestion heatmap, off by default
 
   // Shapes — other per-layer geometry (not routing sub-types)
   bool blockages = true;  // master obstructions (LEF OBS)
@@ -363,6 +375,10 @@ struct TileVisibility
   // limit (mirroring LayoutViewer::instanceSizeLimit()/shapeSizeLimit()).
   bool detailed = false;
 
+  // "Color by owner" overlays.  Plain visibility flags: the client keeps the
+  // `_modules`/`_clusters` layers mounted and these decide whether they draw.
+  bool module_view = false;   // color instances by their dbModule
+  bool cluster_view = false;  // color instances by their dbGroup
   // Extent in DBU of the VIEW this tile belongs to, for the sizes Qt derives
   // from the region it is drawing rather than from the design: the IO pin
   // markers (RenderThread::setupIOPins takes min(die, bounds)).
@@ -407,6 +423,24 @@ struct TileVisibility
   std::set<std::string> visible_chiplets;
   bool has_visible_chiplets = false;
   bool isChipletVisible(const std::string& path) const;
+
+  // The die a routing-layer tile draws, as a ChipletNode::path; empty draws
+  // every die.  Per-request, like fill_pattern.
+  std::string chiplet;
+  // This die's row hosts the renderers' per-layer pass for its layer name,
+  // which renderers draw in world space with no notion of dies.
+  bool renderer_host = false;
+
+  // Layer names hidden on one die while another die still shows them, keyed
+  // by chiplet path.  `visible_layers` is the union over the dies.
+  std::unordered_map<std::string, std::set<std::string>> chiplet_hidden_layers;
+  bool isLayerHiddenOn(const std::string& path, const std::string& layer) const;
+  // Names the die being drawn hides; set per die by renderTileBuffer.
+  const std::set<std::string>* hidden_here = nullptr;
+  // Whether `layer` shows: in visible_layers (when sent) and not hidden_here.
+  bool isLayerShown(const std::string& layer) const;
+  // Same, without reading the name when nothing filters.
+  bool isLayerShown(odb::dbTechLayer* layer) const;
 
   // ── Selectability ──
   // Parallel to the visibility flags above: when off, the corresponding
@@ -464,6 +498,9 @@ struct TileVisibility
   // selectAt() skips layers not in this set.
   std::set<std::string> selectable_layers;
   bool has_selectable_layers = false;
+  // Peer to chiplet_hidden_layers: names one die's rows made unselectable.
+  std::unordered_map<std::string, std::set<std::string>>
+      chiplet_nonselectable_layers;
 
   void parseFromJson(const boost::json::object& json);
 
@@ -481,6 +518,8 @@ struct TileVisibility
   bool isInstSelectable(odb::dbInst* inst, sta::dbSta* sta) const;
   bool isSiteSelectable(const std::string& site_name) const;
   bool isLayerSelectable(const std::string& layer_name) const;
+  bool isLayerSelectableOn(const std::string& path,
+                           const std::string& layer_name) const;
 };
 
 class TileGenerator
@@ -496,6 +535,13 @@ class TileGenerator
   bool hasRegions() const;
   sta::dbSta* getSta() const { return sta_; }
   utl::Logger* getLogger() const { return logger_; }
+
+  // The palette the Hierarchy panel starts from, for an overlay no session has
+  // sent colors for.  The tile path and `save_image -web` share it, so the two
+  // cannot disagree about what "on" looks like.
+  using OwnerColorMap = std::shared_ptr<const std::map<uint32_t, Color>>;
+  OwnerColorMap defaultModuleColors() const;
+  OwnerColorMap defaultGroupColors() const;
 
   int getThreadCount() const { return num_threads_; }
   void setThreadCount(const int num_threads) { num_threads_ = num_threads; }
@@ -513,10 +559,11 @@ class TileGenerator
 
   std::vector<std::string> getLayers() const;
 
-  // getLayers(), reordered the way the client paints: per chiplet, and with a
-  // face-down die's own layers reversed.  What save_image composites with, so
-  // an exported PNG stacks the layers the way the screen does.
-  std::vector<std::string> paintOrderLayers() const;
+  // One entry per Display Controls row, in the order the client paints them:
+  // per chiplet, and with a face-down die's own layers reversed.  What
+  // save_image composites with, so an exported PNG stacks the layers the way
+  // the screen does.
+  std::vector<PaintLayer> paintOrderLayers() const;
 
   std::vector<std::string> getSites() const;
 
@@ -592,9 +639,8 @@ class TileGenerator
   // extents a client fetches.
   struct LayerExtents
   {
-    // False for multi-chiplet designs, which draw each die outline on every
-    // layer and place chiplets by transforms this does not model; the client
-    // then skips nothing.
+    // False when no chiplet has a block and a tech; the client then skips
+    // nothing.
     bool supported = false;
     // The getBounds() rect the extents were computed against, i.e. the tile
     // grid they are expressed on.
@@ -612,7 +658,16 @@ class TileGenerator
       std::optional<odb::Rect> routing_obstructions;  // dbObstruction
       std::optional<odb::Rect> fills;                 // dbFill
     };
+    // Single-die designs; empty with several dies, which use `chiplets`.
     std::map<std::string, Extent> layers;
+    // Multi-die: one entry per chiplet path, in world DBU.  `outline` holds
+    // the die outline's edges, which every layer pass of that die draws.
+    struct ChipletExtents
+    {
+      std::vector<odb::Rect> outline;
+      std::map<std::string, Extent> layers;
+    };
+    std::map<std::string, ChipletExtents> chiplets;
     // Where kInstLabelsLayer can draw: for each k, the bbox of the instances
     // at least 2^k DBU at their longest side (World DBU), from the smallest
     // instance's k to one past the largest, which is empty.  No instance takes
@@ -625,6 +680,15 @@ class TileGenerator
     std::optional<SizedExtent> inst_labels;
   };
   std::shared_ptr<const LayerExtents> layerExtents() const;
+  // What the client asks before requesting a tile: can row `entry` draw on
+  // `tile` (world DBU) under `vis`, by `extents`?
+  static bool rowMayDraw(const LayerExtents& extents,
+                         const PaintLayer& entry,
+                         const odb::Rect& tile,
+                         const TileVisibility& vis);
+  // Tile (z, x, y) of the grid on `bounds` in world DBU, y counted from the
+  // bottom, grown by the margin the client's extents test allows.
+  static odb::Rect tileWorldRect(const odb::Rect& bounds, int z, int x, int y);
 
   std::vector<SelectionResult> selectAt(
       int dbu_x,
@@ -719,6 +783,9 @@ class TileGenerator
   // change, which no dbBlockCallBackObj reports (see geomCache()).  Refreshes
   // the chiplet cache, so the value returned reflects the live hierarchy.
   uint64_t chipletsGeneration() const;
+  // Treats a chiplet change since the last call (or design load) as a design
+  // edit: ODB reports none for setLoc/setOrient/create on a dbChipInst.
+  void noticeChipletEdits();
 
   // True when `png` came back from generateTile (or any of the other tile
   // entry points) carrying nothing: the layer had no geometry in that tile.
@@ -737,6 +804,7 @@ class TileGenerator
       const std::vector<ColoredRect>& colored_rects = {},
       const std::vector<FlightLine>& flight_lines = {},
       const std::map<uint32_t, Color>* module_colors = nullptr,
+      const std::map<uint32_t, Color>* group_colors = nullptr,
       const std::set<uint32_t>* focus_net_ids = nullptr,
       const std::set<uint32_t>* route_guide_net_ids = nullptr,
       double dpr = 1.0,
@@ -860,17 +928,21 @@ class TileGenerator
     // Whether this design gives the overlay anything to draw; null is always.
     bool (TileGenerator::*present)() const = nullptr;
   };
-  static const std::array<PseudoLayerDef, 6>& pseudoLayerDefs();
+  static const std::array<PseudoLayerDef, 7>& pseudoLayerDefs();
   static bool anyGroupOn(const std::vector<std::vector<const char*>>& groups,
                          const TileVisibility& vis);
+  // Whether `layer`'s tiles read visible_layers and chiplet_hidden_layers:
+  // the _pins pass and the overlays whose layers_by group is on.
+  static bool readsLayerVisibility(const std::string& layer,
+                                   const TileVisibility& vis);
 
   // The layers saveImage composites, bottom to top, from `tech_layers` in
   // paintOrderLayers() order.  Public so a test can pin the order down:
   // it has to match the zIndex the client gives each layer in
   // display-controls.js, or the saved PNG is not the view on screen.
-  static std::vector<std::string> saveImageLayerOrder(
+  static std::vector<PaintLayer> saveImageLayerOrder(
       const TileVisibility& vis,
-      const std::vector<std::string>& tech_layers);
+      const std::vector<PaintLayer>& tech_layers);
 
   // Render timing path overlay (colored rects + flight lines) to PNG bytes.
   std::vector<unsigned char> renderOverlayPng(
@@ -956,6 +1028,7 @@ class TileGenerator
       const std::vector<ColoredRect>& colored_rects = {},
       const std::vector<FlightLine>& flight_lines = {},
       const std::map<uint32_t, Color>* module_colors = nullptr,
+      const std::map<uint32_t, Color>* group_colors = nullptr,
       const std::set<uint32_t>* focus_net_ids = nullptr,
       const std::set<uint32_t>* route_guide_net_ids = nullptr,
       double dpr = 1.0,
@@ -1183,6 +1256,8 @@ class TileGenerator
   mutable size_t chiplets_cache_inst_hash_ = 0;
   // See chipletsGeneration().
   mutable uint64_t chiplets_cache_generation_ = 0;
+  // The generation clients last heard about; see noticeChipletEdits().
+  std::atomic<uint64_t> announced_chiplets_generation_{0};
 
   // LRU cache of PNG-encoded clean tiles (see tileCacheGet/Put).  The list
   // holds (key, png) most-recent-first; the index maps key → list iterator.
@@ -1266,6 +1341,11 @@ class TileGenerator
                      const TileFrame& frame,
                      const TileVisibility& vis,
                      const TextSink& emit) const;
+  void drawRoutingCongestionLayer(std::vector<unsigned char>& image,
+                                  odb::dbBlock* block,
+                                  const TileFrame& frame,
+                                  const TileVisibility& vis,
+                                  const TextSink& emit) const;
   void drawInstLabelsLayer(std::vector<unsigned char>& image,
                            odb::dbBlock* block,
                            const TileFrame& frame,
@@ -1336,7 +1416,10 @@ class TileGenerator
   mutable odb::PtrMap<odb::dbBlock, BpinApList> bpin_ap_cache_;
   mutable odb::PtrMap<odb::dbBlock, GridList> gcell_x_cache_;
   mutable odb::PtrMap<odb::dbBlock, GridList> gcell_y_cache_;
-  // The Search::revision() the three caches above were built at; see
+  // Default color map per overlay, for the top block; see defaultModuleColors.
+  mutable OwnerColorMap default_module_colors_;
+  mutable OwnerColorMap default_group_colors_;
+  // The Search::revision() the caches above were built at; see
   // dropOverlayCachesIfStale.
   mutable uint64_t overlay_cache_revision_ = 0;
 
@@ -1349,6 +1432,15 @@ class TileGenerator
 };
 
 struct TimingPathSummary;
+
+// The chip-inst nodes whose name, or full path from the root, prefixes `name`
+// as a whole path component, each with the rest of `name` (pointing into it):
+// the name local to that node's block.  Several can match, so callers try them
+// in order, names before paths.  Any match means `name` is chiplet-qualified,
+// and an unqualified lookup must not claim it instead.
+std::vector<std::pair<const ChipletNode*, const char*>> chipletPrefixMatches(
+    const std::vector<ChipletNode>& chiplets,
+    const std::string& name);
 
 // Resolve a (possibly "<chip-inst>/"-prefixed) pin name against the chiplets,
 // returning the owning node so the caller can transform the pin's geometry.

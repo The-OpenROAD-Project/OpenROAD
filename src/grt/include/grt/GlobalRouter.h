@@ -441,6 +441,7 @@ class GlobalRouter
   std::vector<Net*> initNets(bool check_pin_placement = true);
   void initRoutingGrid(int min_routing_layer, int max_routing_layer);
   std::vector<Net*> initCUGR(int min_routing_layer, int max_routing_layer);
+  void initEngineWithExistingRouting();
   void makeFastrouteNet(Net* net);
   bool pinPositionsChanged(Net* net);
   bool newPinOnGrid(Net* net, std::multiset<RoutePt>& last_pos);
@@ -467,6 +468,7 @@ class GlobalRouter
   void addResourcesForPinAccess(const std::vector<Net*>& nets);
   bool isPinReachable(const Pin& pin, const odb::Point& pos_on_grid);
   int computeNetWirelength(odb::dbNet* db_net);
+  int computeNetVias(odb::dbNet* db_net);
   void computeWirelength();
   // Detour metric: capture the initial Steiner-tree wirelength (from the STT
   // builder) for each net before overflow-removal routing runs.
@@ -565,7 +567,8 @@ class GlobalRouter
   void checkPinPlacement();
 
   // incremental funcions
-  std::vector<Net*> updateDirtyRoutes(bool save_guides = false);
+  std::vector<Net*> updateDirtyRoutes(bool save_guides = false,
+                                      bool update_pin_access = true);
   std::vector<Net*> updateDirtyRoutesCugr(bool save_guides);
   std::vector<Net*> updateDirtyRoutesFastRoute(bool save_guides);
   void mergeResults(NetRouteMap& routes);
@@ -747,7 +750,12 @@ class IncrementalGRoute
   // Saves global router state and enables db callbacks.
   IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block);
   // Update global routes for dirty nets. Returns every net it rerouted.
-  std::vector<odb::dbNet*> updateRoutes(bool save_guides = true);
+  // Pass update_pin_access only once the changed instances are legalized;
+  // until then pins without access points route from the center of their
+  // shapes.  Updating pin access marks the nets whose access points changed
+  // dirty, so they are rerouted in the same call.
+  std::vector<odb::dbNet*> updateRoutes(bool save_guides = true,
+                                        bool update_pin_access = false);
   // Disables db callbacks.
   ~IncrementalGRoute();
 

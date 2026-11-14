@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { applyArrowStep, boundsEqual, computeBoundsTransforms, computeScaleBar,
          cssColorToHex, fittedTileSizeCss, installWheelPanning, isValidHexColor,
          kArrowStepDefault, kZoomMargin, maxUsefulZoom, MAX_TILE_ZOOM,
-         niceRoundParts, websocketUrlFrom }
+         niceRoundParts, websocketUrlFrom, withBusyCursor }
     from '../../src/ui-utils.js';
 import { isDeviceExactTileSize, TILE_SIZE_CSS, TILE_SIZE_QUANTUM }
     from '../../src/tile-request.js';
@@ -442,6 +442,13 @@ describe('installWheelPanning', () => {
         assert.deepEqual(calls.zoom, []);
     });
 
+    it('pans a page-mode notch by the map\'s height', () => {
+        const { map, calls, fire } = makeWheelMap({ clientHeight: 600 });
+        installWheelPanning(map, () => false);
+        fire({ deltaY: 1, deltaMode: 2 });
+        assert.deepEqual(calls.pan, [[0, 600]]);
+    });
+
     it('zooms on Ctrl+wheel when the preference is off', () => {
         const { map, calls, fire } = makeWheelMap({ zoom: 3 });
         installWheelPanning(map, () => false);
@@ -543,13 +550,84 @@ describe('applyArrowStep', () => {
 describe('websocketUrlFrom', () => {
     // A page served over https may not open a plain ws:// socket.
     it('uses wss when the page came over https', () => {
-        assert.equal(websocketUrlFrom({ protocol: 'https:', host: 'h:1' }),
-                     'wss://h:1/ws');
+        assert.equal(websocketUrlFrom({ protocol: 'https:', host: 'h:1',
+                                        search: '?token=x' }),
+                     'wss://h:1/ws?token=x');
     });
 
-    it('uses ws otherwise, and the default host when there is none', () => {
-        assert.equal(websocketUrlFrom({ protocol: 'http:', host: 'h:1' }),
+    // The server gates the socket on the token it put in the page url
+    // (issue #11389), so the page has to hand it back.
+    it('carries the token from the page url', () => {
+        assert.equal(websocketUrlFrom({ host: 'farm-42:8080',
+                                        search: '?token=deadbeef' }),
+                     'ws://farm-42:8080/ws?token=deadbeef');
+    });
+
+    it('keeps the token when other options share the query', () => {
+        assert.equal(websocketUrlFrom({ host: 'localhost:8080',
+                                        search: '?mergetiles=0&token=abc' }),
+                     'ws://localhost:8080/ws?token=abc');
+    });
+
+    // Decoded on the way in and re-encoded on the way out, so the server
+    // reads back the bytes the page was given.
+    it('escapes a token that needs it', () => {
+        assert.equal(websocketUrlFrom({ host: 'h:1', search: '?token=a%2Bb' }),
+                     'ws://h:1/ws?token=a%2Bb');
+    });
+
+    // A page opened without a token still connects and is refused by the
+    // server; building a broken url here would hide that behind a typo.
+    it('omits the query when there is no token', () => {
+        assert.equal(websocketUrlFrom({ host: 'h:1', search: '' }),
                      'ws://h:1/ws');
-        assert.equal(websocketUrlFrom({ host: '' }), 'ws://localhost:8080/ws');
+        assert.equal(websocketUrlFrom({ host: 'h:1' }), 'ws://h:1/ws');
+    });
+
+    it('falls back to the default host when there is none', () => {
+        assert.equal(websocketUrlFrom({ host: '', search: '?token=x' }),
+                     'ws://localhost:8080/ws?token=x');
+    });
+});
+
+// A stand-in for document.body: just the class list withBusyCursor touches.
+function fakeRoot() {
+    const classes = new Set();
+    return { classList: { add: (c) => classes.add(c),
+                          remove: (c) => classes.delete(c) },
+             has: (c) => classes.has(c) };
+}
+
+describe('withBusyCursor', () => {
+    it('is busy while the request runs and clears after it', async () => {
+        const root = fakeRoot();
+        let during;
+        const result = await withBusyCursor(async () => {
+            during = root.has('op-busy');
+            return 42;
+        }, root);
+        assert.equal(during, true);
+        assert.equal(result, 42);
+        assert.equal(root.has('op-busy'), false);
+    });
+
+    it('stays busy until the last overlapping request ends', async () => {
+        const root = fakeRoot();
+        let finishFirst;
+        const first = withBusyCursor(
+            () => new Promise((resolve) => { finishFirst = resolve; }), root);
+        await withBusyCursor(async () => {}, root);
+        assert.equal(root.has('op-busy'), true);
+        finishFirst();
+        await first;
+        assert.equal(root.has('op-busy'), false);
+    });
+
+    it('clears when the request fails', async () => {
+        const root = fakeRoot();
+        await assert.rejects(withBusyCursor(async () => {
+            throw new Error('timing report failed');
+        }, root));
+        assert.equal(root.has('op-busy'), false);
     });
 });

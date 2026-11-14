@@ -86,8 +86,10 @@ class fr1DLookupTbl
         retIdx = pos - rows_.begin();
       } else {
         auto pos = upper_bound(rows_.begin(), rows_.end(), rowVal);
-        retIdx
-            = std::min((frUInt4) (pos - rows_.begin()), (frUInt4) rows_.size());
+        if (pos == rows_.end()) {
+          --pos;
+        }
+        retIdx = pos - rows_.begin();
       }
     } else if (rowVal < rows_.front()) {  // lower extrapolation
       retIdx = 0;
@@ -191,14 +193,20 @@ class fr2DLookupTbl
   frUInt4 getRowIdx(const rowClass& rowVal) const
   {
     // currently only implement spacingtable style
-    auto pos = --(std::lower_bound(rows_.begin(), rows_.end(), rowVal));
-    return std::max(0, (int) std::distance(rows_.begin(), pos));
+    auto pos = std::lower_bound(rows_.begin(), rows_.end(), rowVal);
+    if (pos != rows_.begin()) {
+      --pos;
+    }
+    return std::distance(rows_.begin(), pos);
   }
   frUInt4 getColIdx(const colClass& colVal) const
   {
     // currently only implement spacingtable style
-    auto pos = --(std::lower_bound(cols_.begin(), cols_.end(), colVal));
-    return std::max(0, (int) std::distance(cols_.begin(), pos));
+    auto pos = std::lower_bound(cols_.begin(), cols_.end(), colVal);
+    if (pos != cols_.begin()) {
+      --pos;
+    }
+    return std::distance(cols_.begin(), pos);
   }
 
   frCollection<rowClass> rows_;

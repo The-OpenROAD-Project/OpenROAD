@@ -7,6 +7,8 @@
 
 #include <algorithm>
 #include <any>
+#include <cctype>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -42,22 +44,28 @@
 #include "cli_completer.h"
 #include "clock_tree_report.h"
 #include "color.h"
+#include "dbDescriptors.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "group_report.h"
 #include "hierarchy_report.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
+#include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "request_dispatcher.h"
+#include "shape_collector.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
+#include "sta/Sequential.hh"
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
+#include "utl/random_bytes.h"
 #include "web/core.h"
 #include "web/descriptor_registry.h"
 #include "web/heatMap.h"
@@ -65,60 +73,6 @@
 #include "web_assets.h"
 
 namespace web {
-
-//------------------------------------------------------------------------------
-// ShapeCollector — a web::Painter that collects rectangles, polygons and
-// lines from descriptor->highlight() calls for use in tile rendering.
-// Lines matter for nets: an unrouted net's highlight (and the Qt GUI's
-// NetWithSink sink path) is drawn as flight lines, which used to be
-// silently dropped here.
-//------------------------------------------------------------------------------
-
-class ShapeCollector : public web::Painter
-{
- public:
-  ShapeCollector() : Painter(nullptr, odb::Rect(), 1.0) {}
-
-  std::vector<odb::Rect> rects;
-  std::vector<odb::Polygon> polys;
-  std::vector<FlightLine> lines;
-
-  void drawRect(const odb::Rect& rect, int, int) override
-  {
-    rects.push_back(rect);
-  }
-  void drawPolygon(const odb::Polygon& polygon) override
-  {
-    polys.push_back(polygon);
-  }
-  void drawOctagon(const odb::Oct& oct) override { polys.emplace_back(oct); }
-  void drawLine(const odb::Point& p1, const odb::Point& p2) override
-  {
-    // Selection-highlight yellow (matches the rect/poly highlight color).
-    lines.push_back(
-        {.p1 = p1, .p2 = p2, .color = {.r = 255, .g = 255, .b = 0, .a = 255}});
-  }
-
-  // No-ops
-  Color getPenColor() override { return {}; }
-  void setPen(odb::dbTechLayer*, bool) override {}
-  void setPen(const Color&, bool, int) override {}
-  void setPenWidth(int) override {}
-  void setBrush(odb::dbTechLayer*, int) override {}
-  void setBrush(const Color&, const Brush&) override {}
-  void setFont(const Font&) override {}
-  void saveState() override {}
-  void restoreState() override {}
-  void drawCircle(int, int, int) override {}
-  void drawX(int, int, int) override {}
-  void drawPolygon(const std::vector<odb::Point>&) override {}
-  void drawString(int, int, Anchor, const std::string&, bool) override {}
-  odb::Rect stringBoundaries(int, int, Anchor, const std::string&) override
-  {
-    return {};
-  }
-  void drawRuler(int, int, int, int, bool, const std::string&) override {}
-};
 
 namespace {
 
@@ -333,6 +287,23 @@ std::string assetPathFromTarget(const std::string_view target)
   return path;
 }
 
+namespace {
+
+// Constant time in the length of `expected`: stopping at the first mismatch
+// would tell a guesser how much of it was right.
+bool constantTimeEquals(const std::string_view got,
+                        const std::string_view expected)
+{
+  unsigned char diff = got.size() == expected.size() ? 0 : 1;
+  for (std::size_t i = 0; i < expected.size(); ++i) {
+    const unsigned char a = i < got.size() ? got[i] : 0;
+    diff |= a ^ static_cast<unsigned char>(expected[i]);
+  }
+  return diff == 0;
+}
+
+}  // namespace
+
 bool acceptsGzip(const std::string_view accept_encoding)
 {
   namespace beast = boost::beast;
@@ -407,11 +378,10 @@ bool webSocketOriginAllowed(const std::string_view origin,
   // This gates the BROWSER cross-site vector only: a page's JavaScript cannot
   // forge its Origin, so a foreign page is rejected below.  A non-browser
   // client controls every header (it can omit Origin or spoof any value), so
-  // this check cannot authenticate one — that requires binding to loopback
-  // (issue #11167, F-02), on which this guard depends.
+  // this check cannot authenticate one — the access token does.
   //
   // Absent Origin: browsers always send it on a WS handshake, so its absence
-  // is a non-browser client; allow it (F-02 is what keeps such a client local).
+  // is a non-browser client; allow it here and let the token decide.
   if (origin.empty()) {
     return true;
   }
@@ -436,6 +406,54 @@ bool webSocketOriginAllowed(const std::string_view origin,
   // and a proxy or non-browser client may vary it, which would otherwise 403 a
   // legitimate handshake.
   return boost::beast::iequals(authority, host);
+}
+
+namespace {
+
+// host-source per CSP: a host name of ALPHA / DIGIT / "-" / "." and an
+// optional ":port" of digits.  Anything else, such as an IPv6 literal or
+// characters that would end the directive, cannot be spelled.
+bool isCspHostSource(const std::string_view host)
+{
+  const size_t colon = host.find(':');
+  const std::string_view name = host.substr(0, colon);
+  if (name.empty()) {
+    return false;
+  }
+  for (const char c : name) {
+    if (std::isalnum(static_cast<unsigned char>(c)) == 0 && c != '-'
+        && c != '.') {
+      return false;
+    }
+  }
+  if (colon == std::string_view::npos) {
+    return true;
+  }
+  const std::string_view port = host.substr(colon + 1);
+  return !port.empty() && port.size() <= 5
+         && std::ranges::all_of(port, [](const char c) {
+              return std::isdigit(static_cast<unsigned char>(c)) != 0;
+            });
+}
+
+}  // namespace
+
+std::string contentSecurityPolicy(const std::string_view host)
+{
+  // script-src 'self' keeps an injected <img onerror> or inline <script> from
+  // running; styles stay inline-able for netlistsvg's SVG and the templates.
+  std::string policy
+      = "default-src 'self'; script-src 'self'; "
+        "style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
+        "connect-src 'self' ";
+  if (isCspHostSource(host)) {
+    policy.append("ws://").append(host).append(" wss://").append(host);
+    policy += ' ';
+  }
+  policy
+      += "data:; font-src 'self' data:; object-src 'none'; "
+         "base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+  return policy;
 }
 
 BindAddressKind classifyBindAddress(const std::string_view address)
@@ -477,6 +495,66 @@ std::string browserHostForBind(const boost::asio::ip::address& address)
   }
   const std::string literal = address.to_string();
   return address.is_v6() ? "[" + literal + "]" : literal;
+}
+
+std::string urlDecode(const std::string_view s)
+{
+  std::string out;
+  out.reserve(s.size());
+  for (std::size_t i = 0; i < s.size(); ++i) {
+    if (s[i] == '%' && i + 2 < s.size()) {
+      unsigned value = 0;
+      if (parseIntExact(s.substr(i + 1, 2), value, 16)) {
+        out.push_back(static_cast<char>(value));
+        i += 2;
+        continue;
+      }
+      // Not valid hex: keep the literal '%'.
+    }
+    out.push_back(s[i] == '+' ? ' ' : s[i]);
+  }
+  return out;
+}
+
+namespace {
+
+// The query of a request target, without the '?'.  Empty when there is none.
+std::string_view queryOf(const std::string_view target)
+{
+  const auto pos = target.find('?');
+  return pos == std::string_view::npos ? std::string_view()
+                                       : target.substr(pos + 1);
+}
+
+// Call `fn` with each "k=v" of a query.  One definition so the parsing side
+// and the redirect side cannot disagree on what separates a pair.
+template <typename Fn>
+void forEachQueryPair(const std::string_view query, Fn fn)
+{
+  std::size_t start = 0;
+  while (start < query.size()) {
+    std::size_t amp = query.find('&', start);
+    if (amp == std::string_view::npos) {
+      amp = query.size();
+    }
+    fn(query.substr(start, amp - start));
+    start = amp + 1;
+  }
+}
+
+}  // namespace
+
+std::map<std::string, std::string> parseQuery(const std::string_view target)
+{
+  std::map<std::string, std::string> params;
+  forEachQueryPair(queryOf(target), [&params](const std::string_view kv) {
+    const std::size_t eq = kv.find('=');
+    if (eq != std::string_view::npos) {
+      params.emplace(std::string(kv.substr(0, eq)),
+                     urlDecode(kv.substr(eq + 1)));
+    }
+  });
+  return params;
 }
 
 void joinUnlessSelf(std::thread& t)
@@ -653,9 +731,12 @@ BrowserLaunch browserLaunchFromString(const std::string_view mode)
 std::string reachabilityHint(const BindAddressKind kind,
                              const boost::asio::ip::address& address,
                              const std::string_view host,
-                             const uint16_t port)
+                             const uint16_t port,
+                             const std::string_view target)
 {
   const std::string port_str = std::to_string(port);
+  const std::string other_url
+      = otherMachineUrl(kind, address, host, port, target);
   if (kind == BindAddressKind::kLoopback) {
     // The far end of the tunnel is the address the listener is actually on:
     // 127.0.0.0/8 is all loopback, and "localhost" is only one of it.
@@ -663,20 +744,122 @@ std::string reachabilityHint(const BindAddressKind kind,
     std::string hint
         = "To reach it from another machine, forward the port: ssh -L "
           + port_str + ":" + far_end + ":" + port_str + " " + std::string(host);
-    // ssh listens on localhost there, not on the address in the url above.
-    if (far_end != "localhost") {
-      hint += ", then open http://localhost:" + port_str;
+    if (!other_url.empty()) {
+      hint += ", then open " + other_url;
     }
     return hint;
+  }
+  if (!other_url.empty()) {
+    return "From another machine, reach it at " + other_url;
+  }
+  // The URL already carries the address it is listening on.
+  return "That url is reachable from other machines.";
+}
+
+std::string otherMachineUrl(const BindAddressKind kind,
+                            const boost::asio::ip::address& address,
+                            const std::string_view host,
+                            const uint16_t port,
+                            const std::string_view target)
+{
+  const std::string port_str = std::to_string(port);
+  if (kind == BindAddressKind::kLoopback) {
+    // ssh listens on localhost there, not on the address in the url above.
+    if (browserHostForBind(address) == "localhost") {
+      return {};
+    }
+    return "http://localhost:" + port_str + std::string(target);
   }
   if (address.is_unspecified()) {
     // Bound to every interface, but browserHostForBind() had no address to
     // name and said "localhost", which is this machine only.
-    return "From another machine, reach it at http://" + std::string(host) + ":"
-           + port_str;
+    return "http://" + std::string(host) + ":" + port_str + std::string(target);
   }
-  // The URL already carries the address it is listening on.
-  return "That url is reachable from other machines.";
+  return {};
+}
+
+std::string generateAuthToken()
+{
+  std::vector<std::uint8_t> bytes;
+  if (!utl::randomBytes(16, bytes)) {  // 128 bits
+    return {};
+  }
+  return utl::toHex(bytes.data(), bytes.size());
+}
+
+bool tokenAllowed(const std::map<std::string, std::string>& params,
+                  const std::string_view expected)
+{
+  if (expected.empty()) {
+    return false;
+  }
+  const auto it = params.find("token");
+  return it != params.end() && constantTimeEquals(it->second, expected);
+}
+
+bool requestTokenAllowed(const std::string_view target,
+                         const std::string_view expected)
+{
+  return tokenAllowed(parseQuery(target), expected);
+}
+
+std::string authRedirectTarget(const std::string_view target,
+                               const std::string_view token)
+{
+  const auto query_pos = target.find('?');
+  const std::string_view path = query_pos == std::string_view::npos
+                                    ? target
+                                    : target.substr(0, query_pos);
+
+  // Everything but the ticket is copied byte for byte, still percent-encoded.
+  std::string kept;
+  forEachQueryPair(queryOf(target), [&kept](const std::string_view pair) {
+    if (pair.empty() || pair == "ticket" || pair.starts_with("ticket=")) {
+      return;
+    }
+    if (!kept.empty()) {
+      kept += '&';
+    }
+    kept.append(pair);
+  });
+
+  std::string redirect(path.empty() ? std::string_view("/") : path);
+  redirect += "?token=";
+  redirect.append(token);
+  if (!kept.empty()) {
+    redirect += '&';
+    redirect += kept;
+  }
+  return redirect;
+}
+
+SessionAuth::SessionAuth(std::string token,
+                         std::string ticket,
+                         const std::chrono::seconds ticket_ttl)
+    : token_(std::move(token)),
+      ticket_(std::move(ticket)),
+      expiry_(std::chrono::steady_clock::now() + ticket_ttl)
+{
+}
+
+TicketUse SessionAuth::redeemTicket(const std::string_view candidate)
+{
+  if (candidate.empty() || !constantTimeEquals(candidate, ticket_)) {
+    return TicketUse::kRefused;
+  }
+  auto live = TicketState::kLive;
+  if (std::chrono::steady_clock::now() < expiry_
+      && ticket_state_.compare_exchange_strong(live, TicketState::kRedeemed)) {
+    return TicketUse::kRedeemed;
+  }
+  return ticket_state_ == TicketState::kRedeemed ? TicketUse::kReused
+                                                 : TicketUse::kRefused;
+}
+
+void SessionAuth::revokeTicket()
+{
+  auto live = TicketState::kLive;
+  ticket_state_.compare_exchange_strong(live, TicketState::kRevoked);
 }
 
 WebSocketResponse errorResponse(const uint32_t id,
@@ -1075,11 +1258,16 @@ static void collectSpecialWireShapes(odb::dbNet* net,
 // toggle off, unrouted nets still get flywires (GUI fallback — the
 // descriptor emits them via painter.drawLine, which ShapeCollector
 // drops, so they are recomputed here).
+// `collector` comes from the caller so it can bound one object (see
+// kMaxHighlightShapes) and reuse the allocation.  Nothing is appended for an
+// object that overflowed: ask the collector and stand in for it with
+// standInBox().
 static void appendHighlightShapes(const web::Selected& sel,
                                   std::vector<odb::Rect>& rects,
                                   std::vector<odb::Polygon>& polys,
                                   std::vector<FlightLine>& lines,
-                                  const bool flywires_only)
+                                  const bool flywires_only,
+                                  ShapeCollector& collector)
 {
   if (!sel) {
     return;
@@ -1113,14 +1301,38 @@ static void appendHighlightShapes(const web::Selected& sel,
       own_flywires = true;
     }
   }
-  ShapeCollector collector;
   sel.highlight(collector);
+  if (collector.overflowed()) {
+    return;
+  }
   rects.insert(rects.end(), collector.rects.begin(), collector.rects.end());
   polys.insert(polys.end(), collector.polys.begin(), collector.polys.end());
   if (!own_flywires) {
     lines.insert(lines.end(), collector.lines.begin(), collector.lines.end());
   }
 }
+
+// The single box standing in for an object whose shapes did not fit: its own if
+// it has one (a dbGroup only reports a bbox when it has a region), else the
+// union of what it tried to draw.  Inverted when there is nothing to draw.
+// Shared so both highlight paths coarsen an oversized cluster the same way.
+static odb::Rect standInBox(const web::Selected& sel,
+                            const ShapeCollector& collector)
+{
+  odb::Rect box;
+  if (!sel.getBBox(box) || box.isInverted()) {
+    box = collector.unionBBox();
+  }
+  return box;
+}
+
+// Maximum highlight shapes one request may push onto the overlay, which the
+// renderer walks per tile.  Past this, objects are coarsened to one box each
+// and the response flags the truncation.
+constexpr size_t kMaxHighlightShapes = 20000;
+
+// Each hover rect becomes an SVG element in the browser.
+constexpr size_t kMaxHoverShapes = 1000;
 
 static void collectHighlightShapes(const web::Selected& sel,
                                    std::vector<odb::Rect>& rects,
@@ -1131,7 +1343,16 @@ static void collectHighlightShapes(const web::Selected& sel,
   rects.clear();
   polys.clear();
   lines.clear();
-  appendHighlightShapes(sel, rects, polys, lines, flywires_only);
+  // Capped like a selection set: one object can be a root cluster holding
+  // every instance, and then it is drawn as one box.
+  ShapeCollector collector(kMaxHighlightShapes);
+  appendHighlightShapes(sel, rects, polys, lines, flywires_only, collector);
+  if (collector.overflowed()) {
+    const odb::Rect stand_in = standInBox(sel, collector);
+    if (!stand_in.isInverted()) {
+      rects.push_back(stand_in);
+    }
+  }
 }
 
 // Return the 0-based position of the iterator within the selection set,
@@ -1146,7 +1367,8 @@ static int selectionIteratorPosition(const web::SelectionSet& set,
   return static_cast<int>(std::distance(set.begin(), itr));
 }
 
-// Accumulate highlight shapes from all items in a selection set.
+// Accumulate highlight shapes from all items in a selection set, degrading
+// gracefully on huge sets (see kMaxHighlightShapes).
 static void collectMultiHighlightShapes(const web::SelectionSet& selections,
                                         std::vector<odb::Rect>& rects,
                                         std::vector<odb::Polygon>& polys,
@@ -1156,8 +1378,30 @@ static void collectMultiHighlightShapes(const web::SelectionSet& selections,
   rects.clear();
   polys.clear();
   lines.clear();
+  // Reused across every selected object: a fresh collector per object is two
+  // vector allocations each, and a wide selection holds thousands.
+  ShapeCollector collector;
   for (const auto& sel : selections) {
-    appendHighlightShapes(sel, rects, polys, lines, flywires_only);
+    if (!sel) {
+      continue;
+    }
+    // `>=`, not `==`: the net paths write special-wire shapes into `rects` with
+    // no budget, so `used` can already be past the cap and the unsigned
+    // subtraction below would wrap.
+    const size_t used = rects.size() + polys.size();
+    if (used >= kMaxHighlightShapes) {
+      // Budget exhausted even for one box per object.
+      return;
+    }
+    collector.reset(kMaxHighlightShapes - used);
+    appendHighlightShapes(sel, rects, polys, lines, flywires_only, collector);
+    if (!collector.overflowed()) {
+      continue;
+    }
+    const odb::Rect stand_in = standInBox(sel, collector);
+    if (!stand_in.isInverted()) {
+      rects.push_back(stand_in);
+    }
   }
 }
 
@@ -1188,9 +1432,9 @@ static void addSelectionTypeFlags(boost::json::object& root,
 
 // Qt parity: MainWindow::selectHighlightConnectedNets (Ctrl+LeftClick).
 // Expands the selection with SIGNAL nets attached to the selected
-// instances' ITerms (OUTPUT/INPUT/INOUT; FEEDTHRU excluded).  v1 inserts
-// the plain net for input pins too: NetWithSink lives in a gui-private
-// header under CMake, so the driver->sink flight line is a follow-up.
+// instances' ITerms (OUTPUT/INPUT/INOUT; FEEDTHRU excluded).  It inserts
+// the plain net for input pins too.  Qt selects NetWithSink there for a
+// driver->sink flight line; see the TODO in the connected-nets handler.
 static int addConnectedNets(web::SelectionSet& selection_set)
 {
   // Snapshot the instances first: nets are inserted into the same set,
@@ -1266,9 +1510,8 @@ static void runDeselectAction(const web::Selected& old_sel,
     return;
   }
   try {
-    // getDescriptorActions(): Selected::getActions() lives in the full
-    // gui library (its "Zoom to" needs Gui::get()); the web only links
-    // gui_descriptors and blocklists "Zoom to" anyway.
+    // getDescriptorActions(): the web zooms on its own, so it skips the
+    // "Zoom to" entry that getActions() adds.
     for (const auto& action : old_sel.getDescriptorActions()) {
       if (action.name == web::Descriptor::kDeselectAction) {
         action.callback();
@@ -1311,13 +1554,24 @@ static void clearSelectionHighlights(SessionState& state)
 }
 
 static void setSelectionHighlights(SessionState& state,
-                                   const web::Selected& sel)
+                                   const web::Selected& sel,
+                                   const odb::dbTransform& world_xfm = {})
 {
   collectHighlightShapes(sel,
                          state.highlight_rects,
                          state.highlight_polys,
                          state.highlight_lines,
                          state.flywires_only);
+  for (odb::Rect& rect : state.highlight_rects) {
+    world_xfm.apply(rect);
+  }
+  for (odb::Polygon& polygon : state.highlight_polys) {
+    world_xfm.apply(polygon);
+  }
+  for (FlightLine& line : state.highlight_lines) {
+    world_xfm.apply(line.p1);
+    world_xfm.apply(line.p2);
+  }
   state.highlight_source = sel ? SessionState::HighlightSource::kInspected
                                : SessionState::HighlightSource::kNone;
 }
@@ -1334,6 +1588,61 @@ static void setSelectionSetHighlights(SessionState& state)
                                : SessionState::HighlightSource::kSelectionSet;
 }
 
+// current_inspected and the transform its highlight is mapped through change
+// together (see SessionState); callers hold selection_mutex.
+static void setCurrentInspected(SessionState& state,
+                                const web::Selected& sel,
+                                const odb::dbTransform& xfm = {})
+{
+  state.current_inspected = sel;
+  state.current_inspected_xfm = xfm;
+}
+
+// The block a db object selection lives in, or null for objects with no
+// placement in a block (masters, layers, STA-only objects).
+static odb::dbBlock* owningBlock(const web::Selected& sel)
+{
+  const std::any& obj = sel.getObject();
+  if (auto* const* inst = std::any_cast<odb::dbInst*>(&obj)) {
+    return (*inst)->getBlock();
+  }
+  if (auto* const* net = std::any_cast<odb::dbNet*>(&obj)) {
+    return (*net)->getBlock();
+  }
+  if (const auto* nws
+      = std::any_cast<web::DbNetDescriptor::NetWithSink>(&obj)) {
+    return nws->net->getBlock();
+  }
+  if (auto* const* iterm = std::any_cast<odb::dbITerm*>(&obj)) {
+    return (*iterm)->getBlock();
+  }
+  if (auto* const* bterm = std::any_cast<odb::dbBTerm*>(&obj)) {
+    return (*bterm)->getBlock();
+  }
+  return nullptr;
+}
+
+// The transform to highlight `sel` with: the inspected object keeps its own,
+// and so does anything in the same block (an inspector link from a chiplet
+// instance to its nets or pins stays on that chiplet).  Anything else is
+// inspected without one.  Requires selection_mutex.
+static odb::dbTransform inspectedXfm(const SessionState& state,
+                                     const web::Selected& sel)
+{
+  // Comparing two empty Selecteds would call through a null descriptor.
+  if (!sel || !state.current_inspected) {
+    return odb::dbTransform();
+  }
+  if (sel == state.current_inspected) {
+    return state.current_inspected_xfm;
+  }
+  odb::dbBlock* block = owningBlock(sel);
+  if (block != nullptr && block == owningBlock(state.current_inspected)) {
+    return state.current_inspected_xfm;
+  }
+  return odb::dbTransform();
+}
+
 // Rebuild the per-group overlay shapes from the group members.  Colors
 // come from the Qt GUI's palette (web::Painter::kHighlightColors,
 // translucent fill); filled=true reuses the DRC/timing colored-rect
@@ -1346,6 +1655,9 @@ static void rebuildHighlightGroupShapesLocked(SessionState& state)
   state.highlight_group_rects.clear();
   state.highlight_group_polys.clear();
   state.highlight_group_lines.clear();
+  // Reused across every member: a fresh collector per member is three vector
+  // allocations each, and a wide Find highlights thousands.
+  ShapeCollector collector;
   for (int group = 0; group < web::kNumHighlightSet; ++group) {
     if (state.highlight_groups[group].empty()) {
       continue;
@@ -1359,10 +1671,28 @@ static void rebuildHighlightGroupShapesLocked(SessionState& state)
       if (!sel) {
         continue;
       }
+      // Budget each member to the room left, and coarsen it to one box if it
+      // does not fit.  Checking the cap only *between* members would let a
+      // single root cluster push one rect per member instance.
+      const size_t used = state.highlight_group_rects.size()
+                          + state.highlight_group_polys.size();
+      if (used >= kMaxHighlightShapes) {
+        return;
+      }
       std::vector<odb::Rect> rects;
       std::vector<odb::Polygon> polys;
       std::vector<FlightLine> lines;
-      appendHighlightShapes(sel, rects, polys, lines, state.flywires_only);
+      collector.reset(kMaxHighlightShapes - used);
+      appendHighlightShapes(
+          sel, rects, polys, lines, state.flywires_only, collector);
+      if (collector.overflowed()) {
+        const odb::Rect stand_in = standInBox(sel, collector);
+        if (!stand_in.isInverted()) {
+          state.highlight_group_rects.push_back(
+              {.rect = stand_in, .color = color, .layer = "", .filled = true});
+        }
+        continue;
+      }
       for (const auto& rect : rects) {
         state.highlight_group_rects.push_back(
             {.rect = rect, .color = color, .layer = "", .filled = true});
@@ -1399,7 +1729,7 @@ bool consumeStaleSelection(SessionState& state)
   }
   {
     std::lock_guard<std::mutex> lock(state.selection_mutex);
-    state.current_inspected = web::Selected();
+    setCurrentInspected(state, web::Selected());
     state.navigation_history.clear();
     state.selection_set.clear();
     state.selection_itr = state.selection_set.end();
@@ -1548,11 +1878,18 @@ static void writeInspectTrailer(boost::json::object& root,
                                 utl::Logger* logger,
                                 int hl_group,
                                 int sel_count,
-                                int sel_index)
+                                int sel_index,
+                                const odb::dbTransform& xfm)
 {
   std::vector<web::Selected> new_selectables;
-  writeInspectPayload(
-      root, sel, new_selectables, can_navigate_back, use_dbu, logger, hl_group);
+  writeInspectPayload(root,
+                      sel,
+                      new_selectables,
+                      can_navigate_back,
+                      use_dbu,
+                      logger,
+                      hl_group,
+                      xfm);
   root["selection_count"] = static_cast<int64_t>(sel_count);
   root["selection_index"] = static_cast<int64_t>(sel_index);
   std::lock_guard<std::mutex> lock(state.selectables_mutex);
@@ -1733,6 +2070,7 @@ WebSocketResponse TileHandler::renderTile(
     const std::vector<ColoredRect>& colored_rects,
     const std::vector<FlightLine>& flight_lines,
     const std::map<uint32_t, Color>* module_colors,
+    const std::map<uint32_t, Color>* group_colors,
     const std::set<uint32_t>* focus_net_ids,
     const std::set<uint32_t>* route_guide_net_ids,
     const double dpr,
@@ -1751,6 +2089,7 @@ WebSocketResponse TileHandler::renderTile(
                                   colored_rects,
                                   flight_lines,
                                   module_colors,
+                                  group_colors,
                                   focus_net_ids,
                                   route_guide_net_ids,
                                   dpr,
@@ -1804,6 +2143,11 @@ void SelectHandler::registerRequests(RequestDispatcher& d)
         WebSocketRequest::kSchematicFull,
         [this](const WebSocketRequest& req, SessionState&) {
           return handleSchematicFull(req);
+        });
+  d.add("schematic_path",
+        WebSocketRequest::kSchematicPath,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleSchematicPath(req);
         });
   d.add("schematic_inspect",
         WebSocketRequest::kSchematicInspect,
@@ -1870,6 +2214,11 @@ void SelectHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleSelectLayer(req, state);
         });
+  d.add("find",
+        WebSocketRequest::kFind,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleFind(req, state);
+        });
   d.add("set_focus_nets",
         WebSocketRequest::kSetFocusNets,
         [this](const WebSocketRequest& req, SessionState& state) {
@@ -1884,11 +2233,6 @@ void SelectHandler::registerRequests(RequestDispatcher& d)
         WebSocketRequest::kSelectNetLengthBin,
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleSelectNetLengthBin(req, state);
-        });
-  d.add("find",
-        WebSocketRequest::kFind,
-        [this](const WebSocketRequest& req, SessionState& state) {
-          return handleFind(req, state);
         });
   d.add("set_route_guides",
         WebSocketRequest::kSetRouteGuides,
@@ -1958,6 +2302,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
     std::vector<web::Selected> new_selectables;
     auto* registry = web::DescriptorRegistry::instance();
     web::Selected inspected_sel;
+    odb::dbTransform inspected_xfm;
     if (!results.empty()) {
       int pick = 0;
       if (results.size() > 1) {
@@ -1977,6 +2322,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
         }
       }
       inspected_sel = registry->makeSelected(results[pick].object);
+      inspected_xfm = results[pick].world_xfm;
       int hl_group = -1;
       {
         std::lock_guard<std::mutex> lock(state.selection_mutex);
@@ -1991,7 +2337,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
                           use_dbu,
                           gen_->getLogger(),
                           hl_group,
-                          results[pick].world_xfm);
+                          inspected_xfm);
     } else {
       root["can_navigate_back"] = 0;
     }
@@ -2036,13 +2382,14 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
             = static_cast<int64_t>(addConnectedNets(state.selection_set));
       }
 
-      // Highlight all items in the selection set.
+      // Highlight all items in the selection set (capped: a wide selection can
+      // hold thousands of objects).
       setSelectionSetHighlights(state);
       // Keep the current inspected object on an empty context click: the menu
       // has to keep describing what the user last inspected.
       if (inspected_sel || !context) {
         runDeselectAction(state.current_inspected, inspected_sel);
-        state.current_inspected = inspected_sel;
+        setCurrentInspected(state, inspected_sel, inspected_xfm);
       }
 
       root["selection_count"]
@@ -2173,9 +2520,10 @@ web::SelectionSet computeConnectedSet(const std::string& action,
         if (input
             && (dir == odb::dbIoType::INPUT || dir == odb::dbIoType::INOUT)) {
           // TODO: the Qt GUI selects DbNetDescriptor::NetWithSink{net, iterm}
-          // so the input flightline points at this specific sink pin.  That
-          // descriptor lives in a private gui header; until it is exposed the
-          // web selects the plain net (all sinks highlighted).
+          // so the input flightline points at this specific sink pin.  The
+          // web selects the plain net (all sinks highlighted) because
+          // appendHighlightShapes() and the has_guides check handle only
+          // dbNet* payloads; they need NetWithSink support first.
           result.insert(registry->makeSelected(net));
         }
       }
@@ -2224,6 +2572,8 @@ WebSocketResponse SelectHandler::handleContextAction(
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   try {
+    // Before the locks below: it takes selection_mutex itself.
+    consumeStaleSelection(state);
     const std::string action(req.json.at("action").as_string());
     const bool output = jsonOr(req.json, "output", false);
     const bool input = jsonOr(req.json, "input", false);
@@ -2242,7 +2592,7 @@ WebSocketResponse SelectHandler::handleContextAction(
     auto clearSelection = [&]() {
       state.selection_set.clear();
       state.selection_itr = state.selection_set.end();
-      state.current_inspected = web::Selected();
+      setCurrentInspected(state, web::Selected());
       state.navigation_history.clear();
       clearSelectionHighlights(state);
     };
@@ -2359,18 +2709,23 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
     int sel_count = 0;
     int sel_index = -1;
     int hl_group = -1;
+    odb::dbTransform xfm;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       state.hover_rects.clear();
       state.timing_rects.clear();
       state.timing_lines.clear();
-      setSelectionHighlights(state, sel);
+      xfm = inspectedXfm(state, sel);
+      setSelectionHighlights(state, sel, xfm);
       if (sel) {
         if (state.current_inspected && state.current_inspected != sel) {
-          state.navigation_history.push_back(state.current_inspected);
+          state.navigation_history.push_back({
+              .sel = state.current_inspected,
+              .xfm = state.current_inspected_xfm,
+          });
         }
         runDeselectAction(state.current_inspected, sel);
-        state.current_inspected = sel;
+        setCurrentInspected(state, sel, xfm);
         // Realign the cycling iterator with the linked target so that
         // selection_index reflects the object actually being rendered, and
         // the next Next/Previous starts from this object. If the link goes
@@ -2395,7 +2750,8 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
                         gen_->getLogger(),
                         hl_group,
                         sel_count,
-                        sel_index);
+                        sel_index,
+                        xfm);
     writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -2421,6 +2777,7 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
     int sel_count = 0;
     int sel_index = -1;
     int hl_group = -1;
+    odb::dbTransform xfm;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       state.hover_rects.clear();
@@ -2428,15 +2785,18 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
       state.timing_lines.clear();
 
       if (!state.navigation_history.empty()) {
-        sel = state.navigation_history.back();
+        const SessionState::NavigationEntry entry
+            = state.navigation_history.back();
         state.navigation_history.pop_back();
+        sel = entry.sel;
         runDeselectAction(state.current_inspected, sel);
-        state.current_inspected = sel;
+        setCurrentInspected(state, sel, entry.xfm);
       } else {
         sel = state.current_inspected;
       }
 
-      setSelectionHighlights(state, sel);
+      xfm = state.current_inspected_xfm;
+      setSelectionHighlights(state, sel, xfm);
       can_navigate_back = !state.navigation_history.empty();
       sel_count = static_cast<int>(state.selection_set.size());
       sel_index
@@ -2454,7 +2814,8 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
                         gen_->getLogger(),
                         hl_group,
                         sel_count,
-                        sel_index);
+                        sel_index,
+                        xfm);
     writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -2487,6 +2848,7 @@ static WebSocketResponse handleSelectionCycle(
     int sel_count = 0;
     int sel_index = -1;
     int hl_group = -1;
+    odb::dbTransform xfm;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       sel_count = static_cast<int>(state.selection_set.size());
@@ -2504,7 +2866,7 @@ static WebSocketResponse handleSelectionCycle(
         }
         sel = *state.selection_itr;
         runDeselectAction(state.current_inspected, sel);
-        state.current_inspected = sel;
+        setCurrentInspected(state, sel);
         state.hover_rects.clear();
         state.timing_rects.clear();
         state.timing_lines.clear();
@@ -2516,6 +2878,7 @@ static WebSocketResponse handleSelectionCycle(
       sel_index
           = selectionIteratorPosition(state.selection_set, state.selection_itr);
       hl_group = highlightGroupOfLocked(state, sel);
+      xfm = inspectedXfm(state, sel);
     }
 
     resp.type = WebSocketResponse::kJson;
@@ -2528,7 +2891,8 @@ static WebSocketResponse handleSelectionCycle(
                         logger,
                         hl_group,
                         sel_count,
-                        sel_index);
+                        sel_index,
+                        xfm);
     writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -2653,6 +3017,7 @@ WebSocketResponse SelectHandler::handleSetProperty(const WebSocketRequest& req,
     int sel_count = 0;
     int sel_index = -1;
     int hl_group = -1;
+    odb::dbTransform xfm;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       if (accepted) {
@@ -2660,7 +3025,7 @@ WebSocketResponse SelectHandler::handleSetProperty(const WebSocketRequest& req,
         if (state.selection_set.find(sel) != state.selection_set.end()) {
           setSelectionSetHighlights(state);
         } else {
-          setSelectionHighlights(state, sel);
+          setSelectionHighlights(state, sel, inspectedXfm(state, sel));
         }
         // Group shapes derive from geometry too.
         rebuildHighlightGroupShapesLocked(state);
@@ -2670,6 +3035,7 @@ WebSocketResponse SelectHandler::handleSetProperty(const WebSocketRequest& req,
       sel_index
           = selectionIteratorPosition(state.selection_set, state.selection_itr);
       hl_group = highlightGroupOfLocked(state, sel);
+      xfm = inspectedXfm(state, sel);
     }
 
     resp.type = WebSocketResponse::kJson;
@@ -2682,7 +3048,8 @@ WebSocketResponse SelectHandler::handleSetProperty(const WebSocketRequest& req,
                         gen_->getLogger(),
                         hl_group,
                         sel_count,
-                        sel_index);
+                        sel_index,
+                        xfm);
     // After the trailer so the handler error wins over writeInspectPayload's
     // "invalid select_id" default when nothing is inspected.
     root["ok"] = accepted ? 1 : 0;
@@ -2773,6 +3140,7 @@ WebSocketResponse SelectHandler::handleTriggerAction(
     int sel_count = 0;
     int sel_index = -1;
     int hl_group = -1;
+    odb::dbTransform xfm;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       if (deleted) {
@@ -2785,7 +3153,7 @@ WebSocketResponse SelectHandler::handleTriggerAction(
         }
         state.selection_itr = state.selection_set.begin();
         state.hover_rects.clear();
-        state.current_inspected = next;
+        setCurrentInspected(state, next);
         setSelectionHighlights(state, next);
         // Highlight-group members may also reference destroyed objects.
         for (auto& members : state.highlight_groups) {
@@ -2796,13 +3164,17 @@ WebSocketResponse SelectHandler::handleTriggerAction(
         state.highlight_group_lines.clear();
       } else if (executed && next != sel) {
         runDeselectAction(sel, next);
+        const odb::dbTransform next_xfm = inspectedXfm(state, next);
         if (next) {
-          state.navigation_history.push_back(sel);
+          state.navigation_history.push_back({
+              .sel = sel,
+              .xfm = inspectedXfm(state, sel),
+          });
         }
-        state.current_inspected = next;
+        setCurrentInspected(state, next, next_xfm);
         state.selection_itr = state.selection_set.find(next);
         state.hover_rects.clear();
-        setSelectionHighlights(state, next);
+        setSelectionHighlights(state, next, next_xfm);
       } else if (executed) {
         next = sel;  // action kept the selection (e.g. a toggle)
       }
@@ -2812,6 +3184,9 @@ WebSocketResponse SelectHandler::handleTriggerAction(
           = selectionIteratorPosition(state.selection_set, state.selection_itr);
       hl_group
           = highlightGroupOfLocked(state, (deleted || executed) ? next : sel);
+      // After a destroy `sel` dangles; current_inspected is then `next`, so
+      // this never looks inside the destroyed object.
+      xfm = inspectedXfm(state, (deleted || executed) ? next : sel);
     }
 
     resp.type = WebSocketResponse::kJson;
@@ -2826,7 +3201,8 @@ WebSocketResponse SelectHandler::handleTriggerAction(
                         gen_->getLogger(),
                         hl_group,
                         sel_count,
-                        sel_index);
+                        sel_index,
+                        xfm);
     if (executed && !next) {
       // The action deselected (e.g. Delete): an empty payload with no
       // "error" clears the client inspector.
@@ -2897,6 +3273,7 @@ WebSocketResponse SelectHandler::handleHighlight(const WebSocketRequest& req,
     int sel_count = 0;
     int sel_index = -1;
     int hl_group = -1;
+    odb::dbTransform xfm;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       if (ok) {
@@ -2909,6 +3286,7 @@ WebSocketResponse SelectHandler::handleHighlight(const WebSocketRequest& req,
       sel_index
           = selectionIteratorPosition(state.selection_set, state.selection_itr);
       hl_group = highlightGroupOfLocked(state, sel);
+      xfm = inspectedXfm(state, sel);
     }
 
     resp.type = WebSocketResponse::kJson;
@@ -2921,7 +3299,8 @@ WebSocketResponse SelectHandler::handleHighlight(const WebSocketRequest& req,
                         gen_->getLogger(),
                         hl_group,
                         sel_count,
-                        sel_index);
+                        sel_index,
+                        xfm);
     root["ok"] = ok ? 1 : 0;
     if (!ok) {
       root["error"] = error;
@@ -2970,6 +3349,7 @@ WebSocketResponse SelectHandler::handleUnhighlight(const WebSocketRequest& req,
     int sel_count = 0;
     int sel_index = -1;
     int hl_group = -1;
+    odb::dbTransform xfm;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       if (ok && removeFromHighlightGroupsLocked(state, sel)) {
@@ -2982,6 +3362,7 @@ WebSocketResponse SelectHandler::handleUnhighlight(const WebSocketRequest& req,
       // On success the object left every group (-1); on the error path it
       // stays put, so report its real group instead of clearing the badge.
       hl_group = ok ? -1 : highlightGroupOfLocked(state, sel);
+      xfm = inspectedXfm(state, sel);
     }
 
     resp.type = WebSocketResponse::kJson;
@@ -2994,7 +3375,8 @@ WebSocketResponse SelectHandler::handleUnhighlight(const WebSocketRequest& req,
                         gen_->getLogger(),
                         hl_group,
                         sel_count,
-                        sel_index);
+                        sel_index,
+                        xfm);
     root["ok"] = ok ? 1 : 0;
     if (!ok) {
       root["error"] = error;
@@ -3166,6 +3548,7 @@ static WebSocketResponse inspectBrowserRow(const WebSocketRequest& req,
     int sel_count = 0;
     int sel_index = -1;
     int hl_group = -1;
+    odb::dbTransform xfm;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       const web::SelectionSet& set
@@ -3185,10 +3568,14 @@ static WebSocketResponse inspectBrowserRow(const WebSocketRequest& req,
       state.timing_rects.clear();
       state.timing_lines.clear();
       if (state.current_inspected && state.current_inspected != sel) {
-        state.navigation_history.push_back(state.current_inspected);
+        state.navigation_history.push_back({
+            .sel = state.current_inspected,
+            .xfm = state.current_inspected_xfm,
+        });
       }
+      xfm = inspectedXfm(state, sel);
       runDeselectAction(state.current_inspected, sel);
-      state.current_inspected = sel;
+      setCurrentInspected(state, sel, xfm);
       state.selection_itr = state.selection_set.find(sel);
       if (browsing_group < 0) {
         // Selection rows behave like Next/Previous: keep every selected
@@ -3197,7 +3584,7 @@ static WebSocketResponse inspectBrowserRow(const WebSocketRequest& req,
       } else {
         // Group rows behave like a link inspect: highlight the object
         // itself (its group color is already visible in the overlay).
-        setSelectionHighlights(state, sel);
+        setSelectionHighlights(state, sel, xfm);
       }
       can_navigate_back = !state.navigation_history.empty();
       sel_count = static_cast<int>(state.selection_set.size());
@@ -3217,7 +3604,8 @@ static WebSocketResponse inspectBrowserRow(const WebSocketRequest& req,
                         logger,
                         hl_group,
                         sel_count,
-                        sel_index);
+                        sel_index,
+                        xfm);
     writePayload(resp, root);
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -3324,6 +3712,7 @@ WebSocketResponse SelectHandler::handleSelectLayer(const WebSocketRequest& req,
   resp.type = WebSocketResponse::kJson;
 
   try {
+    consumeStaleSelection(state);
     const std::string layer_name
         = std::string(req.json.at("layer").as_string());
 
@@ -3383,7 +3772,7 @@ WebSocketResponse SelectHandler::handleSelectLayer(const WebSocketRequest& req,
       // vectors and the source tag are one invariant, and the tag is what lets
       // a "Flywires only" flip re-derive from the right selection.
       setSelectionSetHighlights(state);
-      state.current_inspected = sel;
+      setCurrentInspected(state, sel);
       sel_count = static_cast<int>(state.selection_set.size());
       sel_index
           = selectionIteratorPosition(state.selection_set, state.selection_itr);
@@ -3437,15 +3826,24 @@ WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
           }
         }
         if (sel) {
-          ShapeCollector collector;
+          ShapeCollector collector(kMaxHoverShapes);
           sel.highlight(collector);
-          if (!collector.rects.empty()) {
+          if (collector.overflowed()) {
+            const odb::Rect stand_in = standInBox(sel, collector);
+            if (!stand_in.isInverted()) {
+              state.hover_rects.push_back(stand_in);
+            }
+          } else if (!collector.rects.empty()) {
             state.hover_rects = std::move(collector.rects);
           } else {
             odb::Rect bbox;
             if (sel.getBBox(bbox)) {
               state.hover_rects.push_back(bbox);
             }
+          }
+          const odb::dbTransform xfm = inspectedXfm(state, sel);
+          for (odb::Rect& rect : state.hover_rects) {
+            xfm.apply(rect);
           }
           count = static_cast<int>(state.hover_rects.size());
           hover_rects = state.hover_rects;
@@ -3619,7 +4017,7 @@ void SelectHandler::selectMatchedNets(std::vector<odb::dbNet*>& matched,
     // Highlight every selected net in the layout.
     setSelectionSetHighlights(state);
     runDeselectAction(state.current_inspected, first);
-    state.current_inspected = first;
+    setCurrentInspected(state, first);
 
     root["selection_count"] = static_cast<int64_t>(state.selection_set.size());
     root["selection_index"] = static_cast<int64_t>(
@@ -3687,6 +4085,7 @@ WebSocketResponse SelectHandler::handleFind(const WebSocketRequest& req,
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   try {
+    consumeStaleSelection(state);
     const std::string obj_type(req.json.at("obj_type").as_string());
     const std::string pattern(req.json.at("pattern").as_string());
     const bool match_case = jsonOr(req.json, "match_case", false);
@@ -3799,7 +4198,7 @@ WebSocketResponse SelectHandler::handleFind(const WebSocketRequest& req,
                                   : state.selection_set.begin();
         setSelectionSetHighlights(state);
         runDeselectAction(state.current_inspected, first);
-        state.current_inspected = first;
+        setCurrentInspected(state, first);
         root["selection_count"]
             = static_cast<int64_t>(state.selection_set.size());
         root["selection_index"]
@@ -3912,9 +4311,12 @@ static const char* ioTypeToDirection(odb::dbIoType io_type)
 struct GateClass
 {
   // "and"/"nand"/"or"/"nor"/"xor"/"xnor"/"not"/"buf" for simple gates,
-  // "aoi"/"oai" for compound and/or-invert gates, or "" when the cell is not a
-  // recognised combinational gate.
+  // "aoi"/"oai" for compound and/or-invert gates,
+  // "dff"/"dffr"/"dffs" for supported registers, or "" when the cell is not a
+  // recognized schematic gate.
   std::string kind;
+  // Register symbol port id -> real Liberty/dbMTerm pin name.
+  std::map<std::string, std::string> ports;
   // For "aoi"/"oai" only: the input pin names of each first-level term (e.g.
   // AOI21 -> {{"A"}, {"B1", "B2"}}).  A one-pin term is a literal fed straight
   // into the second-level gate; multi-pin terms become an AND (aoi) or OR (oai)
@@ -3986,6 +4388,181 @@ static std::vector<std::vector<std::string>> classifyAoiOai(
     return {};
   }
   return groups;
+}
+
+static bool usesExactlyIterms(const std::vector<odb::dbITerm*>& connected,
+                              const std::vector<odb::dbITerm*>& symbol_iterms)
+{
+  return std::ranges::is_permutation(connected, symbol_iterms);
+}
+
+static sta::LibertyPort* simplePortExpr(const sta::FuncExpr* expr)
+{
+  if (expr != nullptr && expr->op() == sta::FuncExpr::Op::port) {
+    return expr->port();
+  }
+  return nullptr;
+}
+
+static sta::LibertyPort* activeLowPortExpr(const sta::FuncExpr* expr)
+{
+  if (expr != nullptr && expr->op() == sta::FuncExpr::Op::not_) {
+    return simplePortExpr(expr->left());
+  }
+  return nullptr;
+}
+
+static odb::dbITerm* findItermForPort(const std::vector<odb::dbITerm*>& iterms,
+                                      const sta::LibertyPort* port,
+                                      sta::dbNetwork* network)
+{
+  if (port == nullptr) {
+    return nullptr;
+  }
+
+  for (odb::dbITerm* iterm : iterms) {
+    if (network->libertyPort(network->dbToSta(iterm)) == port) {
+      return iterm;
+    }
+  }
+  return nullptr;
+}
+
+// Match a direct state output, including the inversion of its complement.
+static bool outputPortMatchesState(sta::LibertyPort* output_port,
+                                   const sta::LibertyPort* state_port,
+                                   const sta::LibertyPort* inverted_state_port)
+{
+  const sta::FuncExpr* function
+      = output_port != nullptr ? output_port->function() : nullptr;
+  return (state_port != nullptr && simplePortExpr(function) == state_port)
+         || (inverted_state_port != nullptr
+             && activeLowPortExpr(function) == inverted_state_port);
+}
+
+static bool addRegisterOutputs(const std::vector<odb::dbITerm*>& signal_outputs,
+                               const sta::Sequential& sequential,
+                               sta::dbNetwork* network,
+                               GateClass& result)
+{
+  odb::dbITerm* output = nullptr;
+  odb::dbITerm* output_inv = nullptr;
+  for (odb::dbITerm* output_iterm : signal_outputs) {
+    sta::LibertyPort* output_port
+        = network->libertyPort(network->dbToSta(output_iterm));
+    if (outputPortMatchesState(
+            output_port, sequential.output(), sequential.outputInv())) {
+      output = output_iterm;
+    } else if (outputPortMatchesState(
+                   output_port, sequential.outputInv(), sequential.output())) {
+      output_inv = output_iterm;
+    }
+  }
+
+  std::vector<odb::dbITerm*> symbol_outputs;
+  if (output != nullptr) {
+    symbol_outputs.push_back(output);
+    result.ports["Q"] = output->getMTerm()->getName();
+  }
+  if (output_inv != nullptr) {
+    symbol_outputs.push_back(output_inv);
+    result.ports["QN"] = output_inv->getMTerm()->getName();
+  }
+  return !symbol_outputs.empty()
+         && usesExactlyIterms(signal_outputs, symbol_outputs);
+}
+
+// Classify DFF-like sequentials that match OpenROAD's register symbols.
+// Unsupported cells fall back to generic boxes.
+static GateClass classifyRegister(sta::dbNetwork* network, odb::dbInst* inst)
+{
+  if (network == nullptr) {
+    return {};
+  }
+
+  // Multi-bit and statetable cells have no matching symbol.
+  sta::LibertyCell* cell = network->libertyCell(inst);
+  if (cell == nullptr || cell->sequentials().size() != 1) {
+    return {};
+  }
+  const sta::Sequential& sequential = cell->sequentials().front();
+  if (!sequential.isRegister()) {
+    return {};
+  }
+
+  // Every signal pin must fit the symbol so no dangling connection is hidden.
+  std::vector<odb::dbITerm*> signal_inputs;
+  std::vector<odb::dbITerm*> signal_outputs;
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    if (iterm->getSigType().isSupply()) {
+      continue;
+    }
+    if (iterm->getIoType() == odb::dbIoType::INPUT) {
+      signal_inputs.push_back(iterm);
+    } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+      signal_outputs.push_back(iterm);
+    } else {
+      return {};
+    }
+  }
+
+  if (signal_inputs.empty() || signal_outputs.empty()) {
+    return {};
+  }
+
+  // Require direct data and clock ports.
+  odb::dbITerm* data = findItermForPort(
+      signal_inputs, simplePortExpr(sequential.data()), network);
+  odb::dbITerm* clock = findItermForPort(
+      signal_inputs, simplePortExpr(sequential.clock()), network);
+  if (data == nullptr || clock == nullptr) {
+    return {};
+  }
+
+  // Support one active-low async control: reset or set, not both.
+  odb::dbITerm* clear = findItermForPort(
+      signal_inputs, activeLowPortExpr(sequential.clear()), network);
+  odb::dbITerm* preset = findItermForPort(
+      signal_inputs, activeLowPortExpr(sequential.preset()), network);
+  if ((sequential.clear() != nullptr && clear == nullptr)
+      || (sequential.preset() != nullptr && preset == nullptr)) {
+    return {};
+  }
+  if (clear != nullptr && preset != nullptr) {
+    return {};
+  }
+
+  std::vector<odb::dbITerm*> symbol_inputs{data, clock};
+  if (clear != nullptr) {
+    symbol_inputs.push_back(clear);
+  }
+  if (preset != nullptr) {
+    symbol_inputs.push_back(preset);
+  }
+  if (!usesExactlyIterms(signal_inputs, symbol_inputs)) {
+    return {};
+  }
+
+  GateClass result;
+  if (clear != nullptr) {
+    result.kind = "dffr";
+  } else if (preset != nullptr) {
+    result.kind = "dffs";
+  } else {
+    result.kind = "dff";
+  }
+  result.ports["D"] = data->getMTerm()->getName();
+  result.ports["CK"] = clock->getMTerm()->getName();
+  if (clear != nullptr) {
+    result.ports["RN"] = clear->getMTerm()->getName();
+  }
+  if (preset != nullptr) {
+    result.ports["SN"] = preset->getMTerm()->getName();
+  }
+  if (!addRegisterOutputs(signal_outputs, sequential, network, result)) {
+    return {};
+  }
+  return result;
 }
 
 // Classify a leaf instance into a schematic gate symbol using its Liberty
@@ -4104,6 +4681,43 @@ static GateClass classifyGate(sta::dbNetwork* network, odb::dbInst* inst)
   return result;
 }
 
+// Keep schematic names in the same chiplet namespace as timing-path nodes.
+// The placement is passed in: looking it up by block would pick one placement
+// for every chip placed more than once.
+static std::string schematicName(const ChipletNode& chiplet,
+                                 const std::string& local_name)
+{
+  return chiplet.inst ? chiplet.name + odb::kChipletPathDelimiter + local_name
+                      : local_name;
+}
+
+// Also returns the chiplet placement the name resolved in.  Two placements of
+// one chip share its block, and so its instances; only the name tells them
+// apart.
+static std::pair<odb::dbInst*, const ChipletNode*> findSchematicInst(
+    const std::vector<ChipletNode>& chiplets,
+    const std::string& inst_name)
+{
+  const auto matches = chipletPrefixMatches(chiplets, inst_name);
+  for (const auto& [node, local] : matches) {
+    if (odb::dbInst* inst = node->block->findInst(local)) {
+      return {inst, node};
+    }
+  }
+  if (!matches.empty()) {
+    return {nullptr, nullptr};
+  }
+
+  // Unqualified names belong to the root block. A blockless 3DBlox root
+  // requires a chiplet prefix rather than guessing between die-local names.
+  for (const ChipletNode& node : chiplets) {
+    if (!node.inst && node.block) {
+      return {node.block->findInst(inst_name.c_str()), &node};
+    }
+  }
+  return {nullptr, nullptr};
+}
+
 // Emit one Yosys-format cell object for `inst` into `cells`.  The cell is
 // always emitted verbatim (master name + real pin names) so netlistsvg renders
 // it with its instance and port labels.  When it classifies as a standard
@@ -4114,7 +4728,8 @@ static void emitSchematicCell(boost::json::object& cells,
                               odb::dbInst* inst,
                               sta::dbNetwork* network,
                               odb::PtrMap<odb::dbNet, int>& net_to_id,
-                              int& next_net_id)
+                              int& next_net_id,
+                              const std::string& inst_name)
 {
   boost::json::object cell;
   cell["hide_name"] = 0;
@@ -4123,9 +4738,20 @@ static void emitSchematicCell(boost::json::object& cells,
   cell["attributes"] = boost::json::object{};
   cell["parameters"] = boost::json::object{};
 
-  const GateClass gate = classifyGate(network, inst);
+  // Registers need classification before classifyGate rejects sequentials.
+  GateClass gate = classifyRegister(network, inst);
+  if (gate.kind.empty()) {
+    gate = classifyGate(network, inst);
+  }
   if (!gate.kind.empty()) {
     cell["gate_kind"] = gate.kind;
+    if (!gate.ports.empty()) {
+      boost::json::object gate_ports;
+      for (const auto& [symbol_port, real_port] : gate.ports) {
+        gate_ports[symbol_port] = real_port;
+      }
+      cell["gate_ports"] = std::move(gate_ports);
+    }
     if (!gate.terms.empty()) {
       boost::json::array terms;
       for (const std::vector<std::string>& group : gate.terms) {
@@ -4165,7 +4791,80 @@ static void emitSchematicCell(boost::json::object& cells,
   cell["port_directions"] = std::move(port_directions);
   cell["connections"] = std::move(connections);
 
-  cells[inst->getName()] = std::move(cell);
+  cells[inst_name] = std::move(cell);
+}
+
+// The instances a cone or path schematic draws, by the chiplet placement each
+// was named in.  Two placements of one chip share its block, and so its
+// instances and nets; keyed by placement, each keeps its own cells, nets and
+// ports.  The nodes all live in one chiplets vector, so the map keeps its
+// order.
+using SchematicInsts = std::map<const ChipletNode*, odb::PtrSet<odb::dbInst>>;
+
+// Cone/path requests wire only nets touching their selected instances.
+static boost::json::object buildSchematicNetlist(const SchematicInsts& insts,
+                                                 sta::dbNetwork* network)
+{
+  // A net in two placements of one chip is two nets, so ids are per placement.
+  std::map<const ChipletNode*, odb::PtrMap<odb::dbNet, int>> net_ids;
+  int next_net_id = 2;  // 0 = const-0, 1 = const-1 reserved by Yosys
+  for (const auto& [chiplet, chiplet_insts] : insts) {
+    odb::PtrMap<odb::dbNet, int>& net_to_id = net_ids[chiplet];
+    for (odb::dbInst* inst : chiplet_insts) {
+      for (odb::dbITerm* iterm : inst->getITerms()) {
+        // emitSchematicCell draws no supply pins, so a supply net would only
+        // add a name and ports with nothing attached.
+        if (iterm->getSigType().isSupply()) {
+          continue;
+        }
+        odb::dbNet* net = iterm->getNet();
+        if (net && !net_to_id.contains(net)) {
+          net_to_id[net] = next_net_id++;
+        }
+      }
+    }
+  }
+
+  boost::json::object top;
+  top["attributes"] = boost::json::object{};
+
+  boost::json::object ports;
+  boost::json::object netnames;
+  for (const auto& [chiplet, net_to_id] : net_ids) {
+    for (const auto& [net, net_id] : net_to_id) {
+      const boost::json::array bits{boost::json::value(net_id)};
+      for (odb::dbBTerm* bterm : net->getBTerms()) {
+        boost::json::object p;
+        p["direction"] = ioTypeToDirection(bterm->getIoType());
+        p["bits"] = bits;
+        ports[schematicName(*chiplet, bterm->getName())] = std::move(p);
+      }
+      boost::json::object n;
+      n["hide_name"] = 0;
+      n["bits"] = bits;
+      n["attributes"] = boost::json::object{};
+      netnames[schematicName(*chiplet, net->getName())] = std::move(n);
+    }
+  }
+  top["ports"] = std::move(ports);
+
+  boost::json::object cells;
+  for (const auto& [chiplet, chiplet_insts] : insts) {
+    for (odb::dbInst* inst : chiplet_insts) {
+      emitSchematicCell(cells,
+                        inst,
+                        network,
+                        net_ids[chiplet],
+                        next_net_id,
+                        schematicName(*chiplet, inst->getName()));
+    }
+  }
+  top["cells"] = std::move(cells);
+  top["netnames"] = std::move(netnames);
+
+  boost::json::object root;
+  root["modules"] = boost::json::object{{"top", std::move(top)}};
+  return root;
 }
 
 WebSocketResponse SelectHandler::handleSchematicCone(
@@ -4184,17 +4883,19 @@ WebSocketResponse SelectHandler::handleSchematicCone(
         = static_cast<int>(req.json.at("fanin_depth").as_int64());
     const int fanout_depth
         = static_cast<int>(req.json.at("fanout_depth").as_int64());
-    odb::dbBlock* block = gen_->getBlock();
-    if (!block) {
+    const auto& chiplets = gen_->chiplets();
+    if (gen_->blocks().empty()) {
       throw std::runtime_error("No block loaded");
     }
 
-    odb::dbInst* target_inst = block->findInst(inst_name.c_str());
+    const auto [target_inst, chiplet] = findSchematicInst(chiplets, inst_name);
     if (!target_inst) {
       throw std::runtime_error("Instance not found: " + inst_name);
     }
 
-    odb::PtrSet<odb::dbInst> all_insts;
+    // The cone stays in the target's block, so in the target's placement.
+    SchematicInsts cone;
+    odb::PtrSet<odb::dbInst>& all_insts = cone[chiplet];
     all_insts.insert(target_inst);
     bool cone_full = false;
 
@@ -4282,53 +4983,48 @@ WebSocketResponse SelectHandler::handleSchematicCone(
       }
     }
 
-    // Collect all nets that touch any visited instance.
-    odb::PtrMap<odb::dbNet, int> net_to_id;
-    int next_net_id = 2;  // 0 = const-0, 1 = const-1 reserved by Yosys
-    for (odb::dbInst* inst : all_insts) {
-      for (odb::dbITerm* iterm : inst->getITerms()) {
-        odb::dbNet* net = iterm->getNet();
-        if (net && !net_to_id.contains(net)) {
-          net_to_id[net] = next_net_id++;
-        }
-      }
+    sta::dbNetwork* network
+        = gen_->getSta() ? gen_->getSta()->getDbNetwork() : nullptr;
+    writePayload(resp, buildSchematicNetlist(cone, network));
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+// Pin-derived path names can include block ports, so unknown names are skipped.
+WebSocketResponse SelectHandler::handleSchematicPath(
+    const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  static constexpr size_t kMaxPathInsts = 400;
+
+  try {
+    const auto& chiplets = gen_->chiplets();
+    if (gen_->blocks().empty()) {
+      throw std::runtime_error("No block loaded");
     }
 
-    boost::json::object top;
-    top["attributes"] = boost::json::object{};
-
-    boost::json::object ports;
-    for (const auto& [net, _id] : net_to_id) {
-      for (odb::dbBTerm* bterm : net->getBTerms()) {
-        boost::json::object p;
-        p["direction"] = ioTypeToDirection(bterm->getIoType());
-        p["bits"] = boost::json::array{net_to_id[net]};
-        ports[bterm->getName()] = std::move(p);
+    SchematicInsts path_insts;
+    size_t inst_count = 0;
+    for (const auto& name_val : req.json.at("inst_names").as_array()) {
+      if (inst_count >= kMaxPathInsts) {
+        break;
+      }
+      const std::string name = std::string(name_val.as_string());
+      const auto [inst, chiplet] = findSchematicInst(chiplets, name);
+      if (inst && path_insts[chiplet].insert(inst).second) {
+        ++inst_count;
       }
     }
-    top["ports"] = std::move(ports);
 
     sta::dbNetwork* network
         = gen_->getSta() ? gen_->getSta()->getDbNetwork() : nullptr;
-    boost::json::object cells;
-    for (odb::dbInst* inst : all_insts) {
-      emitSchematicCell(cells, inst, network, net_to_id, next_net_id);
-    }
-    top["cells"] = std::move(cells);
-
-    boost::json::object netnames;
-    for (const auto& [net, net_id] : net_to_id) {
-      boost::json::object n;
-      n["hide_name"] = 0;
-      n["bits"] = boost::json::array{net_id};
-      n["attributes"] = boost::json::object{};
-      netnames[net->getName()] = std::move(n);
-    }
-    top["netnames"] = std::move(netnames);
-
-    boost::json::object root;
-    root["modules"] = boost::json::object{{"top", std::move(top)}};
-    writePayload(resp, root);
+    writePayload(resp, buildSchematicNetlist(path_insts, network));
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
     const std::string err = std::string("server error: ") + e.what();
@@ -4376,7 +5072,8 @@ WebSocketResponse SelectHandler::handleSchematicFull(
         = gen_->getSta() ? gen_->getSta()->getDbNetwork() : nullptr;
     boost::json::object cells;
     for (odb::dbInst* inst : block->getInsts()) {
-      emitSchematicCell(cells, inst, network, net_to_id, next_net_id);
+      emitSchematicCell(
+          cells, inst, network, net_to_id, next_net_id, inst->getName());
     }
     top["cells"] = std::move(cells);
 
@@ -4401,6 +5098,103 @@ WebSocketResponse SelectHandler::handleSchematicFull(
   return resp;
 }
 
+namespace {
+
+// Drawn thickness of a die body in the 3D view.  A chip without an explicit
+// thickness still gets a visible body, and its bumps must sit on that body.
+constexpr int kDefault3DChipThickness = 10000;
+
+int displayThickness(const odb::dbChip* chip)
+{
+  const int thickness = chip->getThickness();
+  return thickness > 0 ? thickness : kDefault3DChipThickness;
+}
+
+// Keep footprints and net membership separate: dbChipNet does not describe
+// routed wire geometry. Resolve the live traversal, not the load-time unfolded
+// bump model, which is stale after interactive chip placement edits.
+void append3DInterconnects(const std::vector<ChipletNode>& nodes,
+                           const std::map<std::string, size_t>& chiplet_indices,
+                           boost::json::object& root)
+{
+  boost::json::array bumps;
+  std::map<std::pair<std::string, uint32_t>, size_t> bump_indices;
+  for (const ChipletNode& node : nodes) {
+    const auto chiplet = chiplet_indices.find(node.path);
+    if (node.inst == nullptr || chiplet == chiplet_indices.end()) {
+      continue;
+    }
+    // Faces of the body handleGet3DData draws.  Region cuboids are sized from
+    // getThickness() at creation, so on a zero-thickness chip they collapse
+    // onto the bottom face rather than the drawn top.
+    const int bottom_z = node.global_z;
+    const int top_z = bottom_z + displayThickness(node.chip);
+    for (odb::dbChipRegionInst* region_inst : node.inst->getRegions()) {
+      const odb::dbChipRegion* region = region_inst->getChipRegion();
+      const auto side = region->getSide();
+      int z = (bottom_z + top_z) / 2;
+      if (side == odb::dbChipRegion::Side::FRONT) {
+        z = node.isFlipped() ? bottom_z : top_z;
+      } else if (side == odb::dbChipRegion::Side::BACK) {
+        z = node.isFlipped() ? top_z : bottom_z;
+      }
+      for (odb::dbChipBumpInst* bump_inst : region_inst->getChipBumpInsts()) {
+        odb::dbInst* const inst = bump_inst->getChipBump()->getInst();
+        if (inst == nullptr || !inst->isPlaced()) {
+          continue;
+        }
+        odb::Rect footprint = inst->getBBox()->getBox();
+        node.world_xfm.apply(footprint);
+        bump_indices[{node.path, bump_inst->getId()}] = bumps.size();
+        bumps.emplace_back(boost::json::array{
+            chiplet->second,
+            footprint.xMin(),
+            footprint.yMin(),
+            footprint.xMax(),
+            footprint.yMax(),
+            z,
+        });
+      }
+    }
+  }
+
+  boost::json::array nets;
+  // A grouping chip can itself be instantiated more than once. Prefix every
+  // relative bump path with this occurrence, so repeated masters never alias.
+  for (const ChipletNode& node : nodes) {
+    for (odb::dbChipNet* net : node.chip->getChipNets()) {
+      boost::json::array endpoints;
+      std::set<size_t> seen;
+      for (uint32_t i = 0; i < net->getNumBumpInsts(); ++i) {
+        std::vector<odb::dbChipInst*> path;
+        const odb::dbChipBumpInst* bump = net->getBumpInst(i, path);
+        if (bump == nullptr) {
+          continue;
+        }
+        std::string chiplet_path = node.path;
+        for (const odb::dbChipInst* inst : path) {
+          chiplet_path += odb::kChipletPathDelimiter;
+          chiplet_path += inst->getName();
+        }
+        const auto found = bump_indices.find({chiplet_path, bump->getId()});
+        if (found != bump_indices.end() && seen.insert(found->second).second) {
+          endpoints.emplace_back(found->second);
+        }
+      }
+      if (endpoints.size() > 1) {
+        nets.emplace_back(boost::json::object{
+            {"name", node.path + odb::kChipletPathDelimiter + net->getName()},
+            {"bumps", std::move(endpoints)},
+        });
+      }
+    }
+  }
+  root["bumps"] = std::move(bumps);
+  root["nets"] = std::move(nets);
+}
+
+}  // namespace
+
 WebSocketResponse SelectHandler::handleGet3DData(const WebSocketRequest& req)
 {
   WebSocketResponse resp;
@@ -4420,6 +5214,10 @@ WebSocketResponse SelectHandler::handleGet3DData(const WebSocketRequest& req)
 
     boost::json::object root;
     boost::json::array chiplets;
+    std::map<std::string, size_t> chiplet_indices;
+    // A copy: the cached list is replaced when another thread notices a chip
+    // placement edit, and the bump and net walks below take a while.
+    const std::vector<ChipletNode> nodes = gen_->chiplets();
 
     // One box per leaf chiplet, placed by the same traversal the 2D viewer
     // uses.  chiplets() carries each node's composed world transform (from
@@ -4427,9 +5225,8 @@ WebSocketResponse SelectHandler::handleGet3DData(const WebSocketRequest& req)
     // belongs instead of at the sum of its ancestors' raw offsets.
     constexpr int kDefaultChipWidth = 100000;
     constexpr int kDefaultChipHeight = 100000;
-    constexpr int kDefaultChipThickness = 10000;
 
-    for (const ChipletNode& node : gen_->chiplets()) {
+    for (const ChipletNode& node : nodes) {
       // Leaves only: a chip that holds chip insts is a grouping node with no
       // geometry of its own, and the root has no dbChipInst at all.
       if (node.inst == nullptr || node.chip == nullptr
@@ -4439,7 +5236,6 @@ WebSocketResponse SelectHandler::handleGet3DData(const WebSocketRequest& req)
 
       int w = node.chip->getWidth();
       int h = node.chip->getHeight();
-      const int thickness = node.chip->getThickness();
       // Fallback: use block bbox if chip has no explicit dimensions
       if (w == 0 || h == 0) {
         if (odb::dbBlock* block = node.chip->getBlock()) {
@@ -4469,9 +5265,11 @@ WebSocketResponse SelectHandler::handleGet3DData(const WebSocketRequest& req)
       obj["z"] = node.global_z;
       obj["width"] = extent.dx();
       obj["height"] = extent.dy();
-      obj["thickness"] = thickness > 0 ? thickness : kDefaultChipThickness;
+      obj["thickness"] = displayThickness(node.chip);
+      chiplet_indices[node.path] = chiplets.size();
       chiplets.emplace_back(std::move(obj));
     }
+    append3DInterconnects(nodes, chiplet_indices, root);
     root["chiplets"] = std::move(chiplets);
     writePayload(resp, root);
   } catch (const std::exception& e) {
@@ -4494,15 +5292,17 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
     consumeStaleSelection(state);
     const std::string inst_name
         = std::string(req.json.at("inst_name").as_string());
-    odb::dbBlock* block = gen_->getBlock();
-    if (!block) {
+    const auto& chiplets = gen_->chiplets();
+    if (gen_->blocks().empty()) {
       throw std::runtime_error("No block loaded");
     }
 
-    odb::dbInst* inst = block->findInst(inst_name.c_str());
+    const auto [inst, chiplet] = findSchematicInst(chiplets, inst_name);
     if (!inst) {
       throw std::runtime_error("Instance not found: " + inst_name);
     }
+    // The named placement's, not the first placement sharing inst's block.
+    const odb::dbTransform world_xfm = chiplet->world_xfm;
 
     web::Selected sel = web::DescriptorRegistry::instance()->makeSelected(inst);
 
@@ -4518,9 +5318,9 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
       state.hover_rects.clear();
       state.timing_rects.clear();
       state.timing_lines.clear();
-      setSelectionHighlights(state, sel);
+      setSelectionHighlights(state, sel, world_xfm);
       runDeselectAction(state.current_inspected, sel);
-      state.current_inspected = sel;
+      setCurrentInspected(state, sel, world_xfm);
       state.navigation_history.clear();
       hl_group = highlightGroupOfLocked(state, sel);
     }
@@ -4533,7 +5333,8 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
                         /*can_navigate_back=*/false,
                         use_dbu,
                         gen_->getLogger(),
-                        hl_group);
+                        hl_group,
+                        world_xfm);
     {
       std::lock_guard<std::mutex> lock(state.selectables_mutex);
       state.selectables = std::move(new_selectables);
@@ -4694,6 +5495,23 @@ void TimingHandler::registerRequests(RequestDispatcher& d)
         });
 }
 
+// The report a request's options select.  A highlight reruns the report its
+// path came from, so both requests must read the options the same way.
+static std::vector<TimingPathSummary> requestedReport(
+    const TimingReport& report,
+    const boost::json::object& json,
+    const int max_paths)
+{
+  return report.getReport(
+      json.at("is_setup").as_bool(),
+      max_paths,
+      static_cast<float>(jsonOr<double>(
+          json, "slack_min", -std::numeric_limits<float>::max())),
+      static_cast<float>(
+          jsonOr<double>(json, "slack_max", std::numeric_limits<float>::max())),
+      jsonOr(json, "unconstrained", false));
+}
+
 WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)
 {
   WebSocketResponse resp;
@@ -4701,13 +5519,10 @@ WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)
   resp.type = WebSocketResponse::kJson;
   try {
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
-    auto paths = timing_report_->getReport(
-        req.json.at("is_setup").as_bool(),
-        static_cast<int>(req.json.at("max_paths").as_int64()),
-        static_cast<float>(jsonOr<double>(
-            req.json, "slack_min", -std::numeric_limits<float>::max())),
-        static_cast<float>(jsonOr<double>(
-            req.json, "slack_max", std::numeric_limits<float>::max())));
+    auto paths = requestedReport(
+        *timing_report_,
+        req.json,
+        static_cast<int>(req.json.at("max_paths").as_int64()));
     writePayload(resp, serializeTimingPaths(paths));
   } catch (const std::exception& e) {
     resp.type = WebSocketResponse::kError;
@@ -4715,6 +5530,25 @@ WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
+}
+
+// Match by pins so differing report options cannot select another path, and by
+// clocks too: a register two clocks capture has a path per clock with the same
+// pins.
+static const TimingPathSummary* findHighlightPath(
+    const std::vector<TimingPathSummary>& paths,
+    const std::string& start_pin,
+    const std::string& end_pin,
+    const std::string& start_clk,
+    const std::string& end_clk)
+{
+  for (const TimingPathSummary& path : paths) {
+    if (path.start_pin == start_pin && path.end_pin == end_pin
+        && path.start_clk == start_clk && path.end_clk == end_clk) {
+      return &path;
+    }
+  }
+  return nullptr;
 }
 
 WebSocketResponse TimingHandler::handleTimingHighlight(
@@ -4732,24 +5566,29 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
 
     // path_index < 0 is the clear-highlight signal (no other fields used).
     if (path_index >= 0) {
-      const bool is_setup = req.json.at("is_setup").as_bool();
       std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
-      auto paths = timing_report_->getReport(is_setup);
-      if (path_index < static_cast<int>(paths.size())) {
+      // The options only need to put the path back in the report.
+      auto paths = requestedReport(
+          *timing_report_, req.json, jsonOr(req.json, "max_paths", 100));
+      const TimingPathSummary* path
+          = findHighlightPath(paths,
+                              jsonOr<std::string>(req.json, "start_pin", ""),
+                              jsonOr<std::string>(req.json, "end_pin", ""),
+                              jsonOr<std::string>(req.json, "start_clk", ""),
+                              jsonOr<std::string>(req.json, "end_clk", ""));
+      if (path != nullptr) {
         // chiplets() covers both cases: for a single-die design its root node
         // carries the top block with an identity transform.
         const std::vector<ChipletNode>& chiplets = gen_->chiplets();
-        collectTimingPathShapes(
-            chiplets, paths[path_index], new_rects, new_lines);
+        collectTimingPathShapes(chiplets, *path, new_rects, new_lines);
 
         const std::string pin_name
             = jsonOr<std::string>(req.json, "pin_name", "");
         if (!pin_name.empty()) {
-          static const Color kStageColor{.r = 255, .g = 255, .b = 0, .a = 180};
           collectTimingStageShapes(chiplets,
-                                   paths[path_index],
+                                   *path,
                                    pin_name,
-                                   kStageColor,
+                                   kTimingStageColor,
                                    new_rects,
                                    new_lines);
         }
@@ -5208,11 +6047,26 @@ void TileHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState&) {
           return handleModuleHierarchy(req);
         });
-  d.add("set_module_colors",
-        WebSocketRequest::kSetModuleColors,
-        [this](const WebSocketRequest& req, SessionState& state) {
-          return handleSetModuleColors(req, state);
+  // Inline so two quick checkbox clicks land in the order they were sent.
+  d.add(
+      "set_module_colors",
+      WebSocketRequest::kSetModuleColors,
+      [this](const WebSocketRequest& req, SessionState& state) {
+        return handleSetOwnerColors(req, state, state.module_colors);
+      },
+      /*run_inline=*/true);
+  d.add("group_hierarchy",
+        WebSocketRequest::kGroupHierarchy,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleGroupHierarchy(req);
         });
+  d.add(
+      "set_group_colors",
+      WebSocketRequest::kSetGroupColors,
+      [this](const WebSocketRequest& req, SessionState& state) {
+        return handleSetOwnerColors(req, state, state.group_colors);
+      },
+      /*run_inline=*/true);
   d.add("heatmaps",
         WebSocketRequest::kHeatmaps,
         [this](const WebSocketRequest& req, SessionState& state) {
@@ -5371,15 +6225,40 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   TileVisibility vis;
   vis.parseFromJson(req.json);
 
-  // Snapshot module colors for _modules layer
-  std::map<uint32_t, Color> mod_colors;
-  {
-    std::lock_guard<std::mutex> lock(state.module_colors_mutex);
-    mod_colors = state.module_colors;
+  // Snapshot the color map this layer paints with, if any.  Only a
+  // color-overlay layer with its flag on reads one, so every other tile
+  // request skips the (mutexed) copy entirely — it runs per tile per layer.
+  const bool modules_layer = (layer == "_modules" && vis.module_view);
+  const bool clusters_layer = (layer == "_clusters" && vis.cluster_view);
+  TileGenerator::OwnerColorMap overlay_colors;
+  // True when the colors below are the design's own defaults rather than this
+  // session's: the tile then depends on nothing session-specific and caches.
+  bool default_colors = false;
+  if (modules_layer || clusters_layer) {
+    SessionState::OwnerColors& owner
+        = modules_layer ? state.module_colors : state.group_colors;
+    {
+      std::scoped_lock lock(owner.mutex);
+      overlay_colors = owner.colors;
+    }
+    // Nothing synced: paint the palette the panel starts from, so the checkbox
+    // draws with the Hierarchy tab closed and matches `save_image -web`.  A map
+    // that IS there but empty is the opposite instruction -- the user unchecked
+    // every row -- and must keep painting nothing.
+    if (!overlay_colors) {
+      overlay_colors = modules_layer ? gen_->defaultModuleColors()
+                                     : gen_->defaultGroupColors();
+      default_colors = overlay_colors != nullptr;
+    }
   }
+  // The snapshot outlives both the lock and the render: the panel sending new
+  // colors replaces the session's handle and drops its own reference, never the
+  // one this render holds.
+  const bool has_inst_colors = overlay_colors && !overlay_colors->empty();
   const std::map<uint32_t, Color>* mod_ptr
-      = mod_colors.empty() ? nullptr : &mod_colors;
-
+      = (modules_layer && has_inst_colors) ? overlay_colors.get() : nullptr;
+  const std::map<uint32_t, Color>* group_ptr
+      = (clusters_layer && has_inst_colors) ? overlay_colors.get() : nullptr;
   // Snapshot focus nets
   std::set<uint32_t> focus_nets;
   {
@@ -5403,9 +6282,13 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   // A tile is cacheable only when it depends solely on the static design +
   // visibility + dpr — i.e. no per-session overlays are active.  That keeps
   // the cache session-independent and correct; overlay tiles render fresh.
-  const bool cacheable = mod_ptr == nullptr && focus_ptr == nullptr
-                         && !vis.debug && !vis.debug_renderers
-                         && !vis.debug_live;
+  // The per-instance color maps are not part of the cache key, so a tile
+  // colored from a SESSION's map must never be cached — the default palette is
+  // derived from the design (and invalidated with it), so that one caches like
+  // any other tile, as does the same layer with its flag off.
+  const bool cacheable = (!has_inst_colors || default_colors)
+                         && focus_ptr == nullptr && !vis.debug
+                         && !vis.debug_renderers && !vis.debug_live;
 
   std::string cache_key;
   if (cacheable) {
@@ -5417,6 +6300,23 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     boost::json::object key_obj = req.json;
     key_obj.erase("id");
     key_obj.erase("selectable_layers");
+    // Two cacheable states share everything else: painting the design's
+    // default palette, and painting nothing because the session cleared every
+    // row.  Without this they collide on one key and the cleared view serves
+    // the painted tile.
+    if (modules_layer || clusters_layer) {
+      key_obj["owner_colors"] = default_colors ? "default" : "none";
+    }
+    // The color-overlay flags only change what THEIR layer draws.  Leaving them
+    // in every layer's key would make toggling one overlay a full cache miss
+    // for the whole screen — every metal layer re-rendered for a flag it
+    // ignores — and multiply the cache footprint per tile.
+    if (layer != "_modules") {
+      key_obj.erase("module_view");
+    }
+    if (layer != "_clusters") {
+      key_obj.erase("cluster_view");
+    }
     std::vector<std::string> sel_keys;
     for (const auto& kv : key_obj) {
       const std::string_view k = kv.key();
@@ -5426,6 +6326,17 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     }
     for (const std::string& k : sel_keys) {
       key_obj.erase(k);
+    }
+    // Only the tiles that filter by layer name read these; in every other key
+    // one layer toggle would miss the cache for all the rest.
+    if (!TileGenerator::readsLayerVisibility(layer, vis)) {
+      key_obj.erase("visible_layers");
+      key_obj.erase("chiplet_hidden_layers");
+    }
+    // A tile scoped to a die depends on that die being shown, not the others.
+    if (!vis.chiplet.empty()) {
+      key_obj.erase("visible_chiplets");
+      key_obj["chiplet_visible"] = vis.isChipletVisible(vis.chiplet);
     }
     key_obj["dpr"] = dpr;
     // Pinned like dpr: two clients on different displays ask for different
@@ -5446,10 +6357,11 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                  utl::WEB,
                  "tile",
                  1,
-                 "tile: id={} layer={} z/x/y={}/{}/{} dpr={} tile_px={} "
-                 "cache=hit bytes={}",
+                 "tile: id={} layer={} chiplet={} z/x/y={}/{}/{} dpr={} "
+                 "tile_px={} cache=hit bytes={}",
                  req.id,
                  layer,
+                 vis.chiplet,
                  z,
                  x,
                  y,
@@ -5472,6 +6384,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                                       no_colored,
                                       no_lines,
                                       mod_ptr,
+                                      group_ptr,
                                       focus_ptr,
                                       nullptr,
                                       dpr,
@@ -5490,17 +6403,18 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
              utl::WEB,
              "tile",
              1,
-             "tile: id={} layer={} z/x/y={}/{}/{} dpr={} tile_px={} cache={} "
-             "module_colors={} focus_nets={} detailed={} bytes={}",
+             "tile: id={} layer={} chiplet={} z/x/y={}/{}/{} dpr={} tile_px={} "
+             "cache={} owner_colors={} focus_nets={} detailed={} bytes={}",
              req.id,
              layer,
+             vis.chiplet,
              z,
              x,
              y,
              dpr,
              tile_px,
              cacheable ? "miss" : "off",
-             mod_ptr != nullptr ? mod_colors.size() : 0,
+             has_inst_colors ? overlay_colors->size() : 0,
              focus_ptr != nullptr ? focus_nets.size() : 0,
              vis.detailed,
              resp.payload.size());
@@ -5577,7 +6491,8 @@ WebSocketResponse TileHandler::handleOverlayTile(const WebSocketRequest& req,
             == SessionState::HighlightSource::kSelectionSet) {
           setSelectionSetHighlights(state);
         } else {
-          setSelectionHighlights(state, state.current_inspected);
+          setSelectionHighlights(
+              state, state.current_inspected, state.current_inspected_xfm);
         }
       }
       // Group shapes are derived the same way and go stale for the same two
@@ -5988,52 +6903,80 @@ WebSocketResponse TileHandler::handleModuleHierarchy(
   return resp;
 }
 
-WebSocketResponse TileHandler::handleSetModuleColors(
+// Parse the custom delimited color map used by set_module_colors and
+// set_group_colors: "<id>:<r>,<g>,<b>,<a>;<id>:...".  An empty string
+// yields an empty map (clear all).
+static std::map<uint32_t, Color> parseColorMap(const std::string& data)
+{
+  std::map<uint32_t, Color> colors;
+  size_t pos = 0;
+  while (pos < data.size()) {
+    size_t colon = data.find(':', pos);
+    if (colon == std::string::npos) {
+      break;
+    }
+    const uint32_t obj_id
+        = static_cast<uint32_t>(std::stoul(data.substr(pos, colon - pos)));
+    pos = colon + 1;
+
+    auto next_num = [&]() -> int {
+      size_t end = data.find_first_of(",;", pos);
+      if (end == std::string::npos) {
+        end = data.size();
+      }
+      const int val = std::stoi(data.substr(pos, end - pos));
+      pos = end + 1;
+      return val;
+    };
+
+    const uint8_t r = static_cast<uint8_t>(next_num());
+    const uint8_t g = static_cast<uint8_t>(next_num());
+    const uint8_t b = static_cast<uint8_t>(next_num());
+    const uint8_t a = static_cast<uint8_t>(next_num());
+    colors[obj_id] = Color{.r = r, .g = g, .b = b, .a = a};
+  }
+  return colors;
+}
+
+// Backs both set_module_colors and set_group_colors: the two differ only in
+// which overlay's colors they replace.
+WebSocketResponse TileHandler::handleSetOwnerColors(
     const WebSocketRequest& req,
-    SessionState& state)
+    SessionState& state,
+    SessionState::OwnerColors& owner)
 {
   WebSocketResponse resp;
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
-  std::map<uint32_t, Color> colors;
-  const std::string data = std::string(req.json.at("colors").as_string());
-  if (!data.empty()) {
-    size_t pos = 0;
-    while (pos < data.size()) {
-      size_t colon = data.find(':', pos);
-      if (colon == std::string::npos) {
-        break;
-      }
-      const uint32_t mod_id
-          = static_cast<uint32_t>(std::stoul(data.substr(pos, colon - pos)));
-      pos = colon + 1;
+  auto colors = std::make_shared<const std::map<uint32_t, Color>>(
+      parseColorMap(std::string(req.json.at("colors").as_string())));
 
-      auto next_num = [&]() -> int {
-        size_t end = data.find_first_of(",;", pos);
-        if (end == std::string::npos) {
-          end = data.size();
-        }
-        const int val = std::stoi(data.substr(pos, end - pos));
-        pos = end + 1;
-        return val;
-      };
-
-      const uint8_t r = static_cast<uint8_t>(next_num());
-      const uint8_t g = static_cast<uint8_t>(next_num());
-      const uint8_t b = static_cast<uint8_t>(next_num());
-      const uint8_t a = static_cast<uint8_t>(next_num());
-      colors[mod_id] = Color{.r = r, .g = g, .b = b, .a = a};
-    }
-  }
-
-  const int count = static_cast<int>(colors.size());
+  const int count = static_cast<int>(colors->size());
   {
-    std::lock_guard<std::mutex> lock(state.module_colors_mutex);
-    state.module_colors = std::move(colors);
+    std::scoped_lock lock(owner.mutex);
+    owner.colors = std::move(colors);
   }
 
   const std::string ok = R"({"ok":1,"count":)" + std::to_string(count) + "}";
   resp.payload.assign(ok.begin(), ok.end());
+  return resp;
+}
+
+// dbGroup tree for the Instance Groups panel: every group in the block,
+// whatever created it.
+WebSocketResponse TileHandler::handleGroupHierarchy(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  try {
+    GroupReport report(gen_->getBlock());
+    writePayload(resp, serializeGroupResult(report.getReport()));
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
   return resp;
 }
 
@@ -6886,6 +7829,7 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
   resp.type = WebSocketResponse::kJson;
 
   try {
+    consumeStaleSelection(state);
     const int marker_id = static_cast<int>(req.json.at("marker_id").as_int64());
     const bool open_inspector = req.json.contains("open_inspector")
                                     ? req.json.at("open_inspector").as_bool()
@@ -6923,7 +7867,7 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
           state.timing_lines.clear();
           setSelectionHighlights(state, sel);
           runDeselectAction(state.current_inspected, sel);
-          state.current_inspected = sel;
+          setCurrentInspected(state, sel);
           state.navigation_history.clear();
         } else {
           state.highlight_rects.push_back(bbox);

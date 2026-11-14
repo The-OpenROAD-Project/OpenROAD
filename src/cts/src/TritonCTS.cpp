@@ -1545,7 +1545,7 @@ bool TritonCTS::separateMacroRegSinks(
 
     if (iterm->isInputSignal() && inst->isPlaced()) {
       // Cells with insertion delay, macros, clock gaters and inverters that
-      // drive macros are put in the macro sinks.
+      // do not drive a single register are put in the macro sinks.
       odb::dbMTerm* mterm = iterm->getMTerm();
 
       bool nonSinkMacro = !isSink(iterm);
@@ -1555,11 +1555,32 @@ bool TritonCTS::separateMacroRegSinks(
         odb::dbITerm* invertedOutput = inst->getFirstOutput();
         odb::dbNet* invertedNet
             = invertedOutput ? invertedOutput->getNet() : nullptr;
-        odb::dbITerm* invertedTerm
-            = invertedNet ? invertedNet->get1stSignalInput(false) : nullptr;
-        if (invertedTerm) {
-          nonSinkMacro &= invertedTerm->getInst()->isBlock();
-        } else {
+        odb::dbITerm* invertedTerm = nullptr;
+        int invertedLoads = 0;
+        if (invertedNet) {
+          // Ports count as loads.
+          invertedLoads = invertedNet->getBTerms().size();
+          for (odb::dbITerm* loadTerm : invertedNet->getITerms()) {
+            if (invertedLoads > 1) {
+              break;  // already settles the classification
+            }
+            if (loadTerm->isInputSignal()) {
+              ++invertedLoads;
+              invertedTerm = loadTerm;
+            }
+          }
+        }
+        if (invertedLoads == 1) {
+          // Register sink only when the lone load is a register; a macro or
+          // a clock gater keeps the inverter on the macro side.
+          if (invertedTerm) {
+            nonSinkMacro
+                &= invertedTerm->getInst()->isBlock() || !isSink(invertedTerm);
+          } else {
+            // Single port load: leaf, no tree below.
+            nonSinkMacro = false;
+          }
+        } else if (invertedLoads == 0) {
           logger_->warn(CTS,
                         136,
                         "Inverter {} output net has no signal input; "
@@ -2784,6 +2805,47 @@ void TritonCTS::repairClockNets()
   }
 }
 
+int TritonCTS::runLatencyBalancers(double capPerDBU,
+                                   double resPerDBU,
+                                   bool useful_skew)
+{
+  int totalDelayBuff = 0;
+  for (auto& builder : std::ranges::reverse_view(builders_)) {
+    if (builder->getParent() == nullptr && !builder->getChildren().empty()) {
+      est::IncrementalParasiticsGuard parasitics_guard(estimate_parasitics_);
+      LatencyBalancer balancer = LatencyBalancer(builder.get(),
+                                                 options_,
+                                                 logger_,
+                                                 db_,
+                                                 network_,
+                                                 openSta_,
+                                                 techChar_.get(),
+                                                 capPerDBU,
+                                                 resPerDBU,
+                                                 useful_skew);
+      totalDelayBuff += balancer.run();
+    }
+  }
+  return totalDelayBuff;
+}
+
+double TritonCTS::getMaxDelayBufferDelay(double extra_out_cap)
+{
+  double max_delay = 0.0;
+  for (const std::string& buffer : options_->getDlyBufferList()) {
+    if (db_->findMaster(buffer.c_str()) == nullptr) {
+      continue;  // liberty-only cell, cannot be instantiated
+    }
+    const double delay
+        = techChar_->computeBufferDelay(buffer, buffer, extra_out_cap);
+    if (delay <= 0.0) {
+      continue;  // skip cells with no usable delay
+    }
+    max_delay = std::max(max_delay, delay);
+  }
+  return max_delay;
+}
+
 // Balance macro cell latencies with register latencies.
 // This is needed only if special insertion delay handling
 // is invoked.
@@ -2804,19 +2866,31 @@ void TritonCTS::balanceMacroRegisterLatencies()
   double resPerDBU = estimate_parasitics_->wireClkResistance(corner) * 1e-6
                      / block_->getDbUnitsPerMicron();
 
-  for (auto& builder : std::ranges::reverse_view(builders_)) {
-    if (builder->getParent() == nullptr && !builder->getChildren().empty()) {
-      est::IncrementalParasiticsGuard parasitics_guard(estimate_parasitics_);
-      LatencyBalancer balancer = LatencyBalancer(builder.get(),
-                                                 options_,
-                                                 logger_,
-                                                 db_,
-                                                 network_,
-                                                 openSta_,
-                                                 techChar_.get(),
-                                                 capPerDBU,
-                                                 resPerDBU);
-      totalDelayBuff += balancer.run();
+  const bool useful_skew = options_->applyUsefulSkew();
+
+  // Pass 1: classic latency balancing (always runs).
+  totalDelayBuff += runLatencyBalancers(capPerDBU, resPerDBU, false);
+
+  if (useful_skew) {
+    // Calculate useful skew for all registers on RSZ
+    const double max_buf_delay = getMaxDelayBufferDelay(0.0);
+    if (max_buf_delay <= 0.0) {
+      logger_->warn(CTS, 300, "No usable delay buffer; skipping useful skew.");
+    } else {
+      rsz::Resizer::SkewBudgetOptions budget_opts;
+      budget_opts.one_sided = true;
+      budget_opts.paths_per_endpoint = 200;
+      budget_opts.quantum = 0;
+      budget_opts.max_skew = 8.0f * max_buf_delay;
+      resizer_->computeSkewBudget(budget_opts);
+
+      // Pass 2: realize the useful-skew schedule.
+      const int useful_skew_buffers
+          = runLatencyBalancers(capPerDBU, resPerDBU, true);
+      totalDelayBuff += useful_skew_buffers;
+      if (useful_skew_buffers == 0) {
+        logger_->warn(CTS, 231, "No useful skew delay buffers were inserted.");
+      }
     }
   }
   if (totalDelayBuff) {

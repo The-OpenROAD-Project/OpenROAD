@@ -77,7 +77,6 @@ cc_library(
         ":ant",
         "//:ord",
         "//src/utl",
-        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
 )

@@ -187,8 +187,10 @@ set_nets_to_route
 ### Repair Antennas
 
 The `repair_antennas` command checks the global routing for antenna
-violations and repairs the violations by inserting diodes near the
-gates of the violating nets.  By default the command runs only one
+violations and repairs the violations by inserting jumpers and diodes
+near the gates of the violating nets. Both methods are applied unless
+`-jumper_only` or `-diode_only` restricts repair to one of them.
+By default the command runs only one
 iteration to repair antennas. Filler instances added by the
 `filler_placement` command should NOT be in the database when
 `repair_antennas` is called.
@@ -215,6 +217,8 @@ repair_antennas
     [diode_cell]
     [-iterations iterations]
     [-ratio_margin margin]
+    [-jumper_only]
+    [-diode_only]
 ```
 
 #### Options
@@ -224,6 +228,8 @@ repair_antennas
 | `diode_cell` | Diode cell to fix antenna violations. |
 | `-iterations` | Number of iterations. The default value is `1`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-ratio_margin` | Add a margin to the antenna ratios. The default value is `0`, and the allowed values are integers `[0, 100]`. |
+| `-jumper_only` | Fix antenna violations using jumper insertion only, without inserting diodes. Mutually exclusive with `-diode_only`. |
+| `-diode_only` | Fix antenna violations using diode insertion only, without inserting jumpers. Mutually exclusive with `-jumper_only`. |
 
 
 ### Draw Route Segments

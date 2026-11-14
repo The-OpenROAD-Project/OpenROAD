@@ -136,6 +136,18 @@ describe('HierarchyBrowser name-group mode', () => {
                   'depth-2 group should start collapsed');
     });
 
+    it('paints a collapsed group\'s subtree in that group\'s color', () => {
+        const colorReq = sent.find(r => r.type === 'set_module_colors');
+        const rgb = new Map(colorReq.colors.split(';').map((p) => {
+            const [id, color] = p.split(':');
+            return [id, color.split(',').slice(0, 3).join(',')];
+        }));
+        assert.equal(rgb.get('0'), '10,20,30', 'the top keeps its own color');
+        assert.equal(rgb.get('1'), '40,50,60');
+        assert.equal(rgb.get('2'), '40,50,60',
+                     'dp sits under the collapsed riscv');
+    });
+
     it('reports capping when the server truncated the tree', async () => {
         const capped = {
             ...NAME_GROUPED, name_groups_capped: true,
@@ -187,5 +199,23 @@ describe('HierarchyBrowser module mode is unchanged', () => {
         const keys = colorReq.colors.split(';').map(p => p.split(':')[0]);
         assert.deepEqual(keys.sort(), ['7', '8']);
         assert.equal(MODULE, 0);
+    });
+});
+
+describe('HierarchyBrowser columns', () => {
+    it('keeps a dragged column width when the tree is loaded again', async () => {
+        const { browser } = makeBrowser(NAME_GROUPED);
+        await browser.update();
+        const firstTh = () => browser._table.querySelector('thead th');
+        const grip = firstTh().querySelector('.col-resize-grip');
+        const { MouseEvent } = dom.window;
+        // a drag starts from the measured width
+        const width = parseFloat(firstTh().style.width) + 300 + 'px';
+        grip.dispatchEvent(new MouseEvent('mousedown', { clientX: 0, bubbles: true }));
+        document.dispatchEvent(new MouseEvent('mousemove', { clientX: 300 }));
+        document.dispatchEvent(new MouseEvent('mouseup', {}));
+        assert.equal(firstTh().style.width, width);
+        await browser.update();
+        assert.equal(firstTh().style.width, width);
     });
 });

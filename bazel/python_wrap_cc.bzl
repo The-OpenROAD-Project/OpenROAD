@@ -154,7 +154,6 @@ _PYTHON_WRAP_COMMON_DEPS = [
     "//:ord",
     "//src/odb/src/db",
     "//src/utl",
-    "@boost.stacktrace",
     "@rules_python//python/cc:current_py_cc_headers",
 ]
 

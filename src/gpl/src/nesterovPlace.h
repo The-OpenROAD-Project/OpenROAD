@@ -31,6 +31,7 @@ class Instance;
 class RouteBase;
 class TimingBase;
 class ClockBase;
+class PowerBase;
 
 class NesterovPlace
 {
@@ -44,12 +45,14 @@ class NesterovPlace
                 std::shared_ptr<RouteBase> rb,
                 std::shared_ptr<TimingBase> tb,
                 std::shared_ptr<ClockBase> cb,
+                std::shared_ptr<PowerBase> pwb,
                 std::unique_ptr<AbstractGraphics> graphics,
                 utl::Logger* log);
   ~NesterovPlace();
 
-  // return iteration count
-  int doNesterovPlace(int start_iter = 0);
+  // Runs the Nesterov loop from start_iter.  The result's hpwl is left 0;
+  // Replace fills it in once the placement is written back.
+  PlaceResult doNesterovPlace(int start_iter = 0);
 
   void updateWireLengthCoef(float overflow);
 
@@ -63,6 +66,8 @@ class NesterovPlace
   float getWireLengthCoefY() const { return wireLengthCoefY_; }
   NesterovPlaceVars& getNpVars() { return npVars_; }
   float getAverageOverflow() const { return average_overflow_unscaled_; }
+  // The top-level (unfenced/full-die) region is always nbVec_[0].
+  NesterovBase* getTopLevelNB() const;
 
   void setTargetOverflow(float overflow) { npVars_.targetOverflow = overflow; }
   void setMaxIters(int limit) { npVars_.maxNesterovIter = limit; }
@@ -75,17 +80,16 @@ class NesterovPlace
   // doNesterovPlace() call before it does any work.
   void clearDivergence();
   // When true, a divergence is reported as a warning and doNesterovPlace()
-  // returns normally (check divergedLastRun()) instead of logging an ERROR
-  // and throwing. Defaults to false, so a plain (non-incremental) placement
-  // run still fails loudly and immediately on divergence, as before. The
-  // caller is responsible for toggling this back off once the recoverable
+  // returns normally (check for PlaceStop::kDiverged) instead of logging an
+  // ERROR and throwing. Defaults to false, so a plain (non-incremental)
+  // placement run still fails loudly and immediately on divergence, as before.
+  // The caller is responsible for toggling this back off once the recoverable
   // window has passed (e.g. incremental placement's phase 2 has no further
   // fallback, so it should not set this).
   void setAllowDivergenceRecovery(bool allow)
   {
     allow_divergence_recovery_ = allow;
   }
-  bool divergedLastRun() const { return num_region_diverged_ > 0; }
 
   void npUpdatePrevGradient(const std::shared_ptr<NesterovBase>& nb);
   void npUpdateCurGradient(const std::shared_ptr<NesterovBase>& nb);
@@ -129,6 +133,8 @@ class NesterovPlace
   };
   DivergeAction isDiverged(float& curA);
   void revertToDivergeSnapshot();
+  // Unscaled overflow of the current placement, averaged over the regions.
+  float getFinalOverflow() const;
   void routabilitySnapshot(int iter,
                            float curA,
                            const std::string& routability_driven_dir,
@@ -147,6 +153,10 @@ class NesterovPlace
   // every region, i.e. the placement is close to where it is going.
   bool isPlacementSettled() const;
   float getWorstSettleRatio() const;
+  // True once the routability snapshot is saved, while overflow is above the
+  // routability end overflow or a routability pass is still pending. The
+  // latter keeps the wait for the placement to settle a routability iteration.
+  bool isRoutabilityGplIter() const;
 
   bool isConverged(int gpl_iter_count, int routability_gpl_iter_count);
   // Re-derives densityPenalty_ for every region via
@@ -163,8 +173,6 @@ class NesterovPlace
   void guardIncrementalDensityPenalty(float& current_factor,
                                       float& best_overflow,
                                       int& retries);
-  // The top-level (unfenced/full-die) region is always nbVec_[0].
-  NesterovBase* getTopLevelNB() const;
   std::string getReportsDir() const;
   void cleanReportsDirs(const std::string& timing_driven_dir,
                         const std::string& routability_driven_dir) const;
@@ -181,6 +189,7 @@ class NesterovPlace
   std::shared_ptr<RouteBase> rb_;
   std::shared_ptr<TimingBase> tb_;
   std::shared_ptr<ClockBase> cb_;
+  std::shared_ptr<PowerBase> pwb_;
   NesterovPlaceVars npVars_;
   std::unique_ptr<AbstractGraphics> graphics_;
 
@@ -189,6 +198,15 @@ class NesterovPlace
   // The average here is between regions (NB objects)
   float average_overflow_ = 0;
   float average_overflow_unscaled_ = 0;
+  // Set when average_overflow_unscaled_ does not describe the current
+  // placement: no update has run in this doNesterovPlace() call yet, or the
+  // placement was reverted to the snapshot since the last one.
+  bool overflow_update_is_stale_ = true;
+  // The iteration of the last overflow update, which sets its normalization.
+  int last_overflow_iter_ = 0;
+
+  // The iterations of the current doNesterovPlace() call.
+  std::vector<PlaceIteration> trace_;
 
   // Snapshot saving for revert if diverge
   float diverge_snapshot_average_overflow_unscaled_ = 0;

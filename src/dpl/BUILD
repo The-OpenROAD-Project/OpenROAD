@@ -92,6 +92,7 @@ cc_library(
     deps = [
         "//src/odb/src/db",
         "//src/utl",
+        "@boost.container_hash",
         "@boost.format",
         "@boost.geometry",
         "@boost.icl",
@@ -144,7 +145,6 @@ cc_library(
         "//src/web:core",
         "@boost.icl",
         "@boost.polygon",
-        "@boost.stacktrace",
         "@boost.utility",
         "@tcl_lang//:tcl",
     ],

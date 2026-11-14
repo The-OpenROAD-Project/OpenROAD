@@ -24,6 +24,7 @@ commands typed in the browser console run on the server.
 web_server
     [-port port]
     [-bind address]
+    [-token hex]
     [-browser]
     [-no_browser]
     [-stop]
@@ -35,17 +36,43 @@ web_server
 | ---------- | -------------------------------------------------- |
 | `-port` | TCP port to listen on. Default: `0`, which picks a free port. |
 | `-bind` | IP address to listen on. Default: `127.0.0.1` (loopback only). Accepts an IP literal, not a hostname. |
+| `-token` | Access token to use instead of minting one: 32 to 128 hexadecimal digits. For a caller that hands out the url itself, such as a proxy; no url carrying it is printed. |
 | `-no_browser` | Do not launch a browser; just report the viewer url. |
 | `-browser` | Launch a browser even where it is skipped by default (see below). |
 | `-stop` | Stop a running server and return from the blocked `web_server` call. |
 | `-dir` | Deprecated and ignored; the web assets are embedded in the binary. |
 
-```{warning}
-The browser console evaluates Tcl on the server, so anyone who can reach the
-port can run commands as the user who started `openroad`. The default loopback
-bind keeps that local. Only pass `-bind` (for example `-bind 0.0.0.0`) on a
-network you trust; the server has no authentication.
+#### Access token
+
+You never type the token. The browser `openroad` launches opens the viewer
+directly; when none is launched (ssh, batch jobs), open the url printed after
+`WEB-0001`, which already carries it:
+
 ```
+[INFO WEB-0001] Server started on http://localhost:39217/?token=<redacted>
+To reach it from another machine, forward the port: ssh -L 39217:localhost:39217 farm-42
+Viewer url, not logged: http://localhost:39217/?token=2f1c...
+```
+
+The token keeps other users of the machine out: they can all reach
+`127.0.0.1`, and the viewer's console runs Tcl as you. Without it the page, the
+image download and the WebSocket are refused, so a bookmark from an earlier
+session will not connect; every session mints a new one.
+
+- The launched browser gets a single-use *ticket* instead, so the token never
+  appears on a command line (`ps`). The ticket stops working once used, when
+  the launch fails or is skipped, or after five minutes.
+- If the viewer opens on `Unauthorized` right after a launch and `WEB-0129`
+  reports the ticket already used, someone else used it first: restart the
+  server, which mints a new token.
+- The url with the token goes to stdout only. The logger, and with it a `-log`
+  file and the browser console, gets it `<redacted>`; redirecting stdout to a
+  file others can read takes the token along. It travels in clear text over
+  HTTP, so it does not replace the loopback bind.
+
+The viewer also refuses to run inside another site's frame and runs no script
+that does not come from the server itself (a Content-Security-Policy with
+`script-src 'self'`), so markup that ends up in a design name cannot run code.
 
 #### Running on a remote machine
 
@@ -57,8 +84,9 @@ to reach it:
 
 ```shell
 $ ssh farm-42 "openroad -web design.tcl"
-[INFO WEB-0001] Server started on http://localhost:39217
+[INFO WEB-0001] Server started on http://localhost:39217/?token=<redacted>
 To reach it from another machine, forward the port: ssh -L 39217:localhost:39217 farm-42
+Viewer url, not logged: http://localhost:39217/?token=2f1c...
 [INFO WEB-0120] Not launching a browser here (this is an ssh session); open the url above.
 Pass -browser (-web_browser) to launch one anyway.
 ```
@@ -98,20 +126,26 @@ Inside a `tmux` or `screen` session that outlived the connection that started
 it, `SSH_CONNECTION` and `SSH_CLIENT` can be missing or point at the old
 connection. With no display, or a forwarded one, the launch is still skipped;
 with a stale local one it is attempted and usually fails: `WEB-0003` reports that, and the url and the
-tunnel are in `WEB-0001` as always. To settle it, set `OPENROAD_NO_BROWSER` in
+tunnel are printed with `WEB-0001` as always. To settle it, set `OPENROAD_NO_BROWSER` in
 the shell profile used on those hosts, or pass `-no_browser`.
+
+A tab left open across a restart on the same port says so and stops retrying,
+because the new server minted a new token. With the default `-port 0` the
+restarted server listens elsewhere, and the tab only sees a server that is
+gone.
 
 With `-bind` on a routable address the viewer is reachable without a tunnel,
 and `WEB-0001` says so instead of printing an `ssh -L` line that would point
 at a loopback port nobody is listening on.
 
 Binding past loopback is the other way to be reachable, and the one to avoid
-unless the network is trusted — the server has no authentication. With
-`--network host`, as ORFS's `docker_shell` runs, a container needs none of
-this: the default bind is reachable from the host. On its own network
-(Docker's default bridge) the loopback bind cannot be reached from the host —
-the connection is refused with no message from the server — and an ssh tunnel
-does not reach inside. Bind past loopback and publish the port:
+unless the network is trusted — the token is then the only thing between the
+port and a shell. With `--network host`, as ORFS's `docker_shell` runs, a
+container needs none of this: the default bind is reachable from the host. On
+its own network (Docker's default bridge) the loopback bind cannot be reached
+from the host — the connection is refused with no message from the server —
+and an ssh tunnel does not reach inside. Bind past loopback and publish the
+port:
 
 ```tcl
 web_server -port 8080 -bind 0.0.0.0
@@ -121,7 +155,8 @@ web_server -port 8080 -bind 0.0.0.0
 docker run -p 8080:8080 ...        # then browse to the url openroad printed
 ```
 
-The command-line entry point takes the same options as `-web_*`:
+The command-line entry point takes the same options as `-web_*`, except
+`-token`: other users of the machine can read a command line.
 
 ```shell
 openroad -web -web_port 8080 -web_bind 0.0.0.0
@@ -133,6 +168,7 @@ openroad -web -web_no_browser
 Save the layout to a PNG file. By default, the command uses the GUI (Qt)
 renderer. Pass `-web` to use the web tile renderer instead, which runs
 entirely server-side without a display and is suitable for headless CI.
+OpenROAD built without Qt always uses the web tile renderer.
 
 ```tcl
 save_image
@@ -148,7 +184,7 @@ save_image
 
 | Switch Name | Description |
 | -------------- | ---------------------------------------------- |
-| `-web` | Use the web tile renderer instead of the GUI renderer. Does not require a display or a running web server. |
+| `-web` | Use the web tile renderer instead of the GUI renderer. Does not require a display or a running web server. Implied when OpenROAD is built without Qt. |
 | `-area` | Bounding box in microns `{x0 y0 x1 y1}`. Default: the whole design -- the die area unioned with the block bounding box -- plus a 5% margin. |
 | `-width` | Output image width in pixels. Cannot be used with `-resolution`. |
 | `-resolution` | Resolution in microns per pixel. Minimum: 1 DBU per pixel. Cannot be used with `-width`. |
@@ -158,6 +194,10 @@ save_image
 When using `-web`, if neither `-width` nor `-resolution` is specified, the
 image defaults to 1024 pixels wide. The maximum image dimension is 16384
 pixels; larger requests are clamped automatically.
+
+The image is opaque: it is painted on the Background color of the browser that
+last synced its display state, and on black — the default of both GUIs — when
+none has, as with a plain headless run.
 
 #### Display option keys (web mode)
 
@@ -180,6 +220,31 @@ field and the value is `true` or `false`.
 | `rows` | false | Row outlines |
 | `tracks_pref` | false | Preferred-direction tracks |
 | `rudy` | false | Estimated congestion (RUDY) heatmap overlay |
+| `routing_congestion` | false | Global routing congestion heatmap overlay |
+| `module_view` | false | Color each instance by the `dbModule` it belongs to |
+| `cluster_view` | false | Color each instance by the `dbGroup` it belongs to |
+
+Group coloring reads the `dbGroup`s stored in the database, whatever put them
+there — power domains, regions, the clustering
+[`rtl_macro_placer -keep_clustering_data`](../mpl/README.md) writes, or any
+other command that creates groups. Each group gets its own palette color, and a
+group whose subtree is not expanded lends its color to all of its descendants —
+the same default the viewer's Instance Groups view shows. When the design has no
+groups the option warns and the image is rendered as if it were off.
+
+In the viewer both of the Hierarchy panel's views drive this coloring — Verilog
+Modules through `module_view`, Instance Groups through `cluster_view`. A row's
+checkbox decides whether that module or group paints, and in the Instance
+Groups view a double click takes the view to the group. The colors show only
+while the matching overlay is on, and the view's status line says so when it is
+off. One "Hierarchy view" checkbox in Display Controls turns on whichever
+overlay goes with the source the tab is showing; the two flags above are how the
+headless `save_image` path asks for either one directly.
+
+Turning that checkbox on loads the tree of the source the tab is showing, so it
+paints without anyone pressing Update. It is the one control a new session does
+not inherit: it always starts off, since a restored "on" would tick a box over a
+layout with nothing painted on it.
 
 #### Examples
 
@@ -206,6 +271,15 @@ save_image -web -display_option {routing false} \
 
 # Save with RUDY congestion heatmap overlay
 save_image -web -display_option {rudy true} layout_rudy.png
+
+# Plot the instance groups, here MPL's clustering (one color per group)
+rtl_macro_placer -keep_clustering_data
+save_image -web -width 1200 \
+                -display_option {cluster_view true} \
+                clusters.png
+
+# Save with global routing congestion heatmap overlay
+save_image -web -display_option {routing_congestion true} layout_congestion.png
 ```
 
 ### Save Animated GIF
@@ -455,7 +529,7 @@ create_toolbar_button
 | `-name` | Key used to remove the button later. The type is `string`. The default is a generated `buttonN`. Re-using a registered name is an error. |
 | `-text` | Label to put on the button. The type is `string`. Required. |
 | `-script` | Tcl script to evaluate when the button is clicked, or — with `-toggle` — when it is switched on. The type is `string`. Required. |
-| `-icon` | Icon to show before the label: either literal text (an emoji, say) or an image referenced by `data:` URI, `http(s):` URL or a path starting with `/` or `./`. The type is `string`. The default is no icon. |
+| `-icon` | Icon to show before the label: either literal text (an emoji, say) or an image referenced by a `data:` URI. An `http(s):` URL or a path starting with `/` or `./` is an error: the viewer's Content-Security-Policy blocks remote images and the server serves no image files. The type is `string`. The default is no icon. |
 | `-tooltip` | Hover text. The type is `string`. The default is no tooltip. |
 | `-toggle` | Make the button a two-state switch: clicking it runs `-script` when turning it on and `-script_off` when turning it off. |
 | `-script_off` | Tcl script to evaluate when a `-toggle` button is switched off. The type is `string`. Ignored without `-toggle`. |
@@ -581,7 +655,8 @@ them — something the single-window Qt GUI cannot do.
   paths, and view per-level statistics.
 - **Hierarchy browser** — Navigate the module tree with instance counts and area
   statistics. Toggle visibility and assign colors per module using a 31-color
-  palette.
+  palette. The same panel's Instance Groups view does this for the `dbGroup`s
+  in the database, whatever created them.
 - **Display controls** — Toggle visibility of cell types (stdcells, macros,
   pads), net types (signal, power, clock), and shapes (routing, pins, blockages,
   rows, tracks). The panel state can be saved to and restored from a file with
@@ -650,14 +725,7 @@ To add or upgrade a library:
 # edit the version in src/web/package.json, then
 bazelisk run -- @pnpm//:pnpm --dir $PWD/src/web install --lockfile-only
 bazelisk mod deps --lockfile_mode=update   # refresh MODULE.bazel.lock
-bazelisk run //src/web/dist:dist           # rebuild the checked-in bundle
 ```
-
-**Changing what the bundle is built from needs that last step too** (the
-JavaScript, CSS, HTML or skin under `src/web/src/`, or `esbuild.config.mjs`),
-then commit what it changed: the CMake build cannot run the bundler, and embeds
-the copy in [`dist/`](dist/README.md) as it stands. CI fails a PR whose copy is
-stale.
 
 ## Server API
 

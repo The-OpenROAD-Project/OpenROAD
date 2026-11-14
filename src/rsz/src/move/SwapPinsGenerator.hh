@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <cstddef>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -68,23 +67,6 @@ class SwapPinsGenerator : public MoveGenerator
                       sta::LibertyPort*& swap_port,
                       float& current_delay,
                       float& swap_delay) const;
-
-  // === Functional-equivalence helpers ======================================
-  void equivCellPins(const sta::LibertyCell* cell,
-                     sta::LibertyPort* input_port,
-                     LibertyPortVec& ports) const;
-  bool isPortEqiv(const sta::FuncExpr* expr,
-                  const sta::LibertyCell* cell,
-                  const sta::LibertyPort* port_a,
-                  const sta::LibertyPort* port_b) const;
-  bool simulateExpr(sta::FuncExpr* expr,
-                    std::unordered_map<const sta::LibertyPort*,
-                                       std::vector<bool>>& port_stimulus,
-                    size_t table_index) const;
-  std::vector<bool> simulateExpr(
-      sta::FuncExpr* expr,
-      std::unordered_map<const sta::LibertyPort*, std::vector<bool>>&
-          port_stimulus) const;
 
   // === Functional-equivalence cache ========================================
   mutable EquivPinMap equiv_pin_map_;

@@ -40,7 +40,7 @@
 
 // Plain-C++ PIMPL headers (no Kokkos) — included unconditionally so the
 // unique_ptr<DeviceState> / unique_ptr<NesterovDeviceContext> member
-// destructors see a complete type on CPU-only builds (ENABLE_GPU=OFF).
+// destructors see a complete type on CPU-only builds (without --config=gpu).
 #include "gpu/deviceState.h"
 #include "gpu/nesterovDeviceContext.h"
 #include "gpu/regionDensityField.h"
@@ -363,6 +363,11 @@ void GNet::setTimingWeight(float timingWeight)
 void GNet::setCustomWeight(float customWeight)
 {
   customWeight_ = customWeight;
+}
+
+void GNet::setPowerWeight(float powerWeight)
+{
+  powerWeight_ = powerWeight;
 }
 
 void GNet::addGPin(GPin* gPin)
@@ -1091,9 +1096,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
   // for nesterov use and FFT library
 #pragma omp parallel for num_threads(num_threads_) \
     reduction(+ : sumOverflowArea_, sumOverflowAreaUnscaled_)
-  for (auto it = bins_.begin(); it < bins_.end(); ++it) {
-    Bin& bin = *it;  // old-style loop for old OpenMP
-
+  for (Bin& bin : bins_) {
     // Copy unscaled to scaled
     bin.setInstPlacedArea(bin.getInstPlacedAreaUnscaled());
 
@@ -1331,9 +1334,7 @@ NesterovBaseCommon::NesterovBaseCommon(
 
   // gCellStor_'s pins_ fill
 #pragma omp parallel for num_threads(num_threads_)
-  for (auto it = gCellStor_.begin(); it < gCellStor_.end(); ++it) {
-    auto& gCell = *it;  // old-style loop for old OpenMP
-
+  for (auto& gCell : gCellStor_) {
     if (gCell.isFiller()) {
       continue;
     }
@@ -1347,18 +1348,14 @@ NesterovBaseCommon::NesterovBaseCommon(
 
   // gPinStor_' GNet and GCell fill
 #pragma omp parallel for num_threads(num_threads_)
-  for (auto it = gPinStor_.begin(); it < gPinStor_.end(); ++it) {
-    auto& gPin = *it;  // old-style loop for old OpenMP
-
+  for (auto& gPin : gPinStor_) {
     gPin.setGCell(pbToNb(gPin.getPbPin()->getInstance()));
     gPin.setGNet(pbToNb(gPin.getPbPin()->getNet()));
   }
 
   // gNetStor_'s GPin fill
 #pragma omp parallel for num_threads(num_threads_)
-  for (auto it = gNetStor_.begin(); it < gNetStor_.end(); ++it) {
-    auto& gNet = *it;  // old-style loop for old OpenMP
-
+  for (auto& gNet : gNetStor_) {
     for (auto& pin : gNet.getPbNet()->getPins()) {
       gNet.addGPin(pbToNb(pin));
     }
@@ -1451,21 +1448,18 @@ void NesterovBaseCommon::updateWireLengthForceWA_native(float wlCoeffX,
   assert(omp_get_thread_num() == 0);
   // clear all WA variables.
 #pragma omp parallel for num_threads(num_threads_)
-  for (auto gPin = gPinStor_.begin(); gPin < gPinStor_.end(); ++gPin) {
-    // old-style loop for old OpenMP
-    gPin->clearWaVars();
+  for (auto& gPin : gPinStor_) {
+    gPin.clearWaVars();
   }
 
   // If checks are very expensive, so short circuit them if debug is not enabled
   bool debug_enabled = log_->debugCheck(GPL, "wlUpdateWA", 1);
 #pragma omp parallel for num_threads(num_threads_)
-  for (auto gNet = gNetStor_.begin(); gNet < gNetStor_.end(); ++gNet) {
-    // old-style loop for old OpenMP
+  for (auto& gNet : gNetStor_) {
+    gNet.clearWaVars();
+    gNet.updateBox();
 
-    gNet->clearWaVars();
-    gNet->updateBox();
-
-    for (auto& gPin : gNet->getGPins()) {
+    for (auto& gPin : gNet.getGPins()) {
       // The WA terms are shift invariant:
       //
       //   Sum(x_i * exp(x_i))    Sum(x_i * exp(x_i - C))
@@ -1473,16 +1467,16 @@ void NesterovBaseCommon::updateWireLengthForceWA_native(float wlCoeffX,
       //   Sum(exp(x_i))          Sum(exp(x_i - C))
       //
       // So we shift to keep the exponential from overflowing
-      float expMinX = (gNet->lx() - gPin->cx()) * wlCoeffX;
-      float expMaxX = (gPin->cx() - gNet->ux()) * wlCoeffX;
-      float expMinY = (gNet->ly() - gPin->cy()) * wlCoeffY;
-      float expMaxY = (gPin->cy() - gNet->uy()) * wlCoeffY;
+      float expMinX = (gNet.lx() - gPin->cx()) * wlCoeffX;
+      float expMaxX = (gPin->cx() - gNet.ux()) * wlCoeffX;
+      float expMinY = (gNet.ly() - gPin->cy()) * wlCoeffY;
+      float expMaxY = (gPin->cy() - gNet.uy()) * wlCoeffY;
 
       // min x
       if (expMinX > nbVars_.minWireLengthForceBar) {
         gPin->setMinExpSumX(fastExp(expMinX));
-        gNet->addWaExpMinSumX(gPin->minExpSumX());
-        gNet->addWaXExpMinSumX(gPin->cx() * gPin->minExpSumX());
+        gNet.addWaExpMinSumX(gPin->minExpSumX());
+        gNet.addWaXExpMinSumX(gPin->cx() * gPin->minExpSumX());
         if (debug_enabled && gPin->getGCell()
             && gPin->getGCell()->isInstance()) {
           debugPrint(log_,
@@ -1498,8 +1492,8 @@ void NesterovBaseCommon::updateWireLengthForceWA_native(float wlCoeffX,
       // max x
       if (expMaxX > nbVars_.minWireLengthForceBar) {
         gPin->setMaxExpSumX(fastExp(expMaxX));
-        gNet->addWaExpMaxSumX(gPin->maxExpSumX());
-        gNet->addWaXExpMaxSumX(gPin->cx() * gPin->maxExpSumX());
+        gNet.addWaExpMaxSumX(gPin->maxExpSumX());
+        gNet.addWaXExpMaxSumX(gPin->cx() * gPin->maxExpSumX());
         if (debug_enabled && gPin->getGCell()
             && gPin->getGCell()->isInstance()) {
           debugPrint(log_,
@@ -1515,8 +1509,8 @@ void NesterovBaseCommon::updateWireLengthForceWA_native(float wlCoeffX,
       // min y
       if (expMinY > nbVars_.minWireLengthForceBar) {
         gPin->setMinExpSumY(fastExp(expMinY));
-        gNet->addWaExpMinSumY(gPin->minExpSumY());
-        gNet->addWaYExpMinSumY(gPin->cy() * gPin->minExpSumY());
+        gNet.addWaExpMinSumY(gPin->minExpSumY());
+        gNet.addWaYExpMinSumY(gPin->cy() * gPin->minExpSumY());
         if (debug_enabled && gPin->getGCell()
             && gPin->getGCell()->isInstance()) {
           debugPrint(log_,
@@ -1532,8 +1526,8 @@ void NesterovBaseCommon::updateWireLengthForceWA_native(float wlCoeffX,
       // max y
       if (expMaxY > nbVars_.minWireLengthForceBar) {
         gPin->setMaxExpSumY(fastExp(expMaxY));
-        gNet->addWaExpMaxSumY(gPin->maxExpSumY());
-        gNet->addWaYExpMaxSumY(gPin->cy() * gPin->maxExpSumY());
+        gNet.addWaExpMaxSumY(gPin->maxExpSumY());
+        gNet.addWaYExpMaxSumY(gPin->cy() * gPin->maxExpSumY());
         if (debug_enabled && gPin->getGCell()
             && gPin->getGCell()->isInstance()) {
           debugPrint(log_,
@@ -1830,6 +1824,22 @@ void NesterovBaseCommon::fixPointers()
         if (isValidSigType(iterm->getSigType())) {
           auto it = db_iterm_to_index_map_.find(iterm);
           if (it != db_iterm_to_index_map_.end()) {
+            // Like the initial netlist, a gcell only has pins on nets with
+            // a GNet. The resizer only buffers nets that gpl places, so a
+            // new pin on any other net breaks that agreement.
+            odb::dbNet* db_net = iterm->getNet();
+            if (db_net == nullptr) {
+              continue;
+            }
+            if (!db_net_to_index_map_.contains(db_net)) {
+              log_->error(GPL,
+                          335,
+                          "Pin {} is on net {} ({}), which global placement "
+                          "does not place.",
+                          iterm->getName(),
+                          db_net->getName(),
+                          db_net->getSigType().getString());
+            }
             size_t gpin_index = it->second;
             gCell.addGPin(&gPinStor_[gpin_index]);
           } else {
@@ -2635,9 +2645,8 @@ void NesterovBase::setTargetDensity(float density)
   targetDensity_ = density;
   bg_.setBinTargetDensity(density);
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (auto bin = getBins().begin(); bin < getBins().end(); ++bin) {
-    // old-style loop for old OpenMP
-    bin->setBinTargetDensity(density);
+  for (auto& bin : getBins()) {
+    bin.setBinTargetDensity(density);
   }
   // update nonPlaceArea's target denstiy
   bg_.updateBinsNonPlaceArea();
@@ -2908,8 +2917,7 @@ void NesterovBase::updateDensitySize()
 {
   assert(omp_get_thread_num() == 0);
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
-    auto& gCell = *it;  // old-style loop for old OpenMP
+  for (auto& gCell : nb_gcells_) {
     float scaleX = 0, scaleY = 0;
     float densitySizeX = 0, densitySizeY = 0;
     if (gCell->dx() < REPLACE_SQRT2 * bg_.getBinSizeX()) {
@@ -2987,7 +2995,7 @@ void NesterovBase::updateAreas()
   // stdInstsArea and macroInstsArea
   stdInstsArea_ = macroInstsArea_ = 0;
   for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
-    auto& gCell = *it;  // old-style loop for old OpenMP
+    auto& gCell = *it;
     if (!gCell) {
       continue;
     }
@@ -3108,8 +3116,7 @@ void NesterovBase::updateDensityFieldBin()
   assert(omp_get_thread_num() == 0);
   // copy density to utilize FFT
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (auto it = getBins().begin(); it < getBins().end(); ++it) {
-    auto& bin = *it;  // old-style loop for old OpenMP
+  for (auto& bin : getBins()) {
     fft_->updateDensity(bin.x(), bin.y(), bin.getDensity());
   }
 
@@ -3121,8 +3128,7 @@ void NesterovBase::updateDensityFieldBin()
   sumPhi_ = 0;
 #pragma omp parallel for num_threads(nbc_->getNumThreads()) \
     reduction(+ : sumPhi_)
-  for (auto it = getBins().begin(); it < getBins().end(); ++it) {
-    auto& bin = *it;  // old-style loop for old OpenMP
+  for (auto& bin : getBins()) {
     auto eFieldPair = fft_->getElectroField(bin.x(), bin.y());
     bin.setElectroField(eFieldPair.first, eFieldPair.second);
 
@@ -3165,10 +3171,10 @@ void NesterovBase::initDensity1()
   snapshotPrevSLPSumGrads_.resize(gCellSize, FloatPoint());
 
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
-    GCell* gCell = *it;  // old-style loop for old OpenMP
+  for (auto& gCell : nb_gcells_) {
     updateDensityCoordiLayoutInside(gCell);
-    int idx = it - nb_gcells_.begin();
+
+    size_t idx = &gCell - nb_gcells_.data();
     curSLPCoordi_[idx] = prevSLPCoordi_[idx] = curCoordi_[idx]
         = initCoordi_[idx] = FloatPoint(gCell->dCx(), gCell->dCy());
   }
@@ -3591,6 +3597,8 @@ void NesterovBase::resetMinSumOverflow()
   // reset the divergence detect conditions
   minSumOverflow_ = 1e30;
   hpwlWithMinSumOverflow_ = 1e30;
+  prev_reported_overflow_unscaled_ = 0;
+  prev_reported_hpwl_ = 0;
 }
 
 float NesterovBase::getPhiCoef(float scaledDiffHpwl) const
@@ -3604,6 +3612,24 @@ float NesterovBase::getPhiCoef(float scaledDiffHpwl) const
                             * pow(nbVars_.maxPhiCoef, scaledDiffHpwl * -1.0);
   retCoef = std::max(nbVars_.minPhiCoef, retCoef);
   return retCoef;
+}
+
+float NesterovBase::getOverflowDenominator(const int iter) const
+{
+  // In a macro dominated design like mock-array you may be placing
+  // very few std cells in a sea of fixed macros.  The overflow denominator
+  // may be quite small and prevent convergence.  This is mostly due
+  // to our limited ability to move instances off macros cleanly.  As that
+  // improves this should no longer be needed.
+  const float fractionOfMaxIters
+      = static_cast<float>(iter) / npVars_->maxNesterovIter;
+  return std::max(static_cast<float>(getNesterovInstsArea()),
+                  fractionOfMaxIters * pb_->nonPlaceInstsArea() * 0.05f);
+}
+
+float NesterovBase::getCurrentSumOverflowUnscaled(const int iter) const
+{
+  return getOverflowAreaUnscaled() / getOverflowDenominator(iter);
 }
 
 void NesterovBase::updateNextIter(const int iter)
@@ -3647,16 +3673,7 @@ void NesterovBase::updateNextIter(const int iter)
   }
 #endif
 
-  // In a macro dominated design like mock-array you may be placing
-  // very few std cells in a sea of fixed macros.  The overflow denominator
-  // may be quite small and prevent convergence.  This is mostly due
-  // to our limited ability to move instances off macros cleanly.  As that
-  // improves this should no longer be needed.
-  const float fractionOfMaxIters
-      = static_cast<float>(iter) / npVars_->maxNesterovIter;
-  const float overflowDenominator
-      = std::max(static_cast<float>(getNesterovInstsArea()),
-                 fractionOfMaxIters * pb_->nonPlaceInstsArea() * 0.05f);
+  const float overflowDenominator = getOverflowDenominator(iter);
 
   sum_overflow_ = getOverflowArea() / overflowDenominator;
   sum_overflow_unscaled_ = getOverflowAreaUnscaled() / overflowDenominator;
@@ -3751,6 +3768,12 @@ bool NesterovBase::nesterovUpdateStepLength()
       curSLPCoordi_, curSLPSumGrads_, nextSLPCoordi_, nextSLPSumGrads_);
 
   debugPrint(log_, GPL, "np", 1, "NewStepLength: {:g}", newStepLength);
+
+  if (gradDistance_ == 0.0f && coordiDistance_ > 0.0f) {
+    // A sub-DBU step can leave integer-truncated gradients unchanged; keep
+    // stepLength_ and accept the step instead of flagging 1/0 as divergence.
+    return false;
+  }
 
   if (std::isnan(newStepLength) || std::isinf(newStepLength)) {
     isDiverged_ = true;
@@ -3990,8 +4013,7 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
     }
 
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
-    for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
-      auto& gCell = *it;  // old-style loop for old OpenMP
+    for (auto& gCell : nb_gcells_) {
       if (!gCell->isInstance()) {
         continue;
       }
@@ -4250,6 +4272,7 @@ void NesterovBase::updateGCellState()
       updateDensityCoordiLayoutInside(gcell);
       curSLPCoordi_[gcells_index] = prevSLPCoordi_[gcells_index]
           = curCoordi_[gcells_index] = initCoordi_[gcells_index]
+          = snapshotCoordi_[gcells_index] = snapshotSLPCoordi_[gcells_index]
           = FloatPoint(gcell->dCx(), gcell->dCy());
 
       // Gradients are left to NesterovPlace::refreshCurGradients(), which
