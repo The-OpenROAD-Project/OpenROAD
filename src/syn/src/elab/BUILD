@@ -33,6 +33,7 @@ cc_library(
         "SLANG_MUX_LOWERING",
         "SLANG_NO_YOSYS",
     ],
+    features = ["-layering_check"],  # fixed after sv-lang bcr 12.1.0.bcr.1
     includes = ["."],
     visibility = [
         "//src/syn:__pkg__",
