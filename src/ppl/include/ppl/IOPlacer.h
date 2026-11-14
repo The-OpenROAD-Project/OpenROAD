@@ -278,11 +278,7 @@ class IOPlacer
   bool isPointInsidePolygon(odb::Point point, const odb::Polygon& polygon);
   void updateOrientationPolygon(IOPin& pin);
   void updatePinArea(IOPin& pin);
-  void movePinToTrack(odb::Point& pos,
-                      int layer,
-                      int width,
-                      int height,
-                      const odb::Rect& die_boundary);
+  void movePinToTrack(odb::Point& pos, int layer);
   Interval getIntervalFromPin(IOPin& io_pin, const odb::Rect& die_boundary);
   bool checkBlocked(Edge edge, odb::Line, const odb::Point& pos, int layer);
   std::vector<Interval> findBlockedIntervals(const odb::Rect& die_area,
@@ -351,6 +347,8 @@ class IOPlacer
   std::map<int, std::vector<odb::Rect>> layer_fixed_pins_keepouts_;
   // padded boundary shapes blocking polygon die slots, per layer
   std::map<int, std::vector<odb::Rect>> layer_blocked_shapes_;
+  // die edges for one place_pin call, which never runs initCore
+  std::vector<odb::Line> place_pin_die_edges_;
   // a pin size only depends on its layer, wrong way pins are rejected
   std::map<int, PinSize> pin_size_cache_;
   // dbTechLayer::getSpacing(w, l) copies the whole spacing table per call
