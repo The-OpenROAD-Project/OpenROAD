@@ -391,12 +391,14 @@ proc ram_sim::check { condition message } {
 #   zero_word           a word that reads 0 and drops writes, or -1
 #   latency             0, or 1 for a read one clock after its address
 #   priority            last (the last port writing a word wins) or or
+#   write_words         per write port, the words it writes (empty: every
+#                       word); the port addresses no other
 #   mem                 the words' contents to start from
 #   cycles              how many
 proc ram_sim::exercise { options } {
   set o [dict merge {writes {} reads {} banked_reads {} bank_word {}
                      zero_word -1 latency 0 priority last mem {}
-                     cycles 200} $options]
+                     write_words {} cycles 200} $options]
   set words [dict get $o words]
   set bits [dict get $o bits]
   set abits [expr { max(1, int(ceil(log($words) / log(2)))) }]
@@ -410,9 +412,15 @@ proc ram_sim::exercise { options } {
     # writes: a third of the time every port writes the same word
     set same [expr { int(rand() * $words) }]
     set written {}
+    set i 0
     foreach port [dict get $o writes] {
       lassign $port addr data we
       set a [expr { rand() < 0.33 ? $same : int(rand() * $words) }]
+      set reach [lindex [dict get $o write_words] $i]
+      incr i
+      if { $reach ne "" && $a ni $reach } {
+        set a [lindex $reach [expr { int(rand() * [llength $reach]) }]]
+      }
       set d [expr { int(rand() * (1 << $bits)) }]
       set e [expr { rand() < 0.7 }]
       set_bus $addr $abits $a
