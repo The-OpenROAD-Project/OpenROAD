@@ -517,6 +517,9 @@ class Rebuffer : public sta::dbStaState
   // Elmore factor for 20-80% slew thresholds.
   static constexpr float elmore_skew_factor_ = 1.39;
   static constexpr float relaxation_factor_ = 0.01;
+  // Fraction of the worst slack within which a failing net counts as
+  // critical in fullyRebuffer().
+  static constexpr float kCriticalSlackBand = 0.1;
 
   double long_wire_stepping_runtime_ = 0;
 

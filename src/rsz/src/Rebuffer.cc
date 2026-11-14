@@ -526,12 +526,12 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
       }
     }
     // slack_target is the timing tree's slack with the current driver less
-    // the relaxation allowed for area recovery (about 1% of the path delay
-    // on a failing path).  Anchored to the current driver, it lets a cheaper
-    // combination win over a resize that gains slack.  On a failing path,
-    // anchor it instead to the best slack any tree reaches with any allowed
-    // driver cell, less the same relaxation; the smallest area meeting it
-    // still wins.
+    // the relaxation allowed for area recovery, which is zero on a failing
+    // net near the worst slack.  Anchored to the current driver, it lets a
+    // cheaper combination win over a resize that gains slack.  When it is
+    // negative, anchor it instead to the best slack any tree reaches with any
+    // allowed driver cell, less the same relaxation; the smallest area meeting
+    // it still wins.
     const DriverChoices choices = driverChoices(current_cell, timing_tree);
     FixedDelay target = slack_target;
     if (slack_target < FixedDelay::ZERO) {
@@ -3343,6 +3343,13 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
     search_->findRequireds(drvr->level());
   };
 
+  // Worst slack before rebuffering, clamped to zero; failing nets near it
+  // get no area recovery relaxation.  The clamp keeps an unconstrained
+  // design's infinite slack out of FixedDelay.
+  const FixedDelay worst_slack(std::min<float>(sta_->worstSlack(max_), 0.0f),
+                               resizer_);
+  const FixedDelay critical_band(-kCriticalSlackBand * worst_slack.toSeconds(),
+                                 resizer_);
   for (auto iter = 0; iter < filtered_pins.size(); iter++) {
     printProgress(iter, false, false, filtered_pins.size() - iter);
 
@@ -3461,22 +3468,35 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
     //    computation of wire load, we are using pin position for the existing
     //    buffer, but instance position for the new buffer.)
     //
+    // A failing net whose slack before rebuffering is within
+    // `kCriticalSlackBand` of the worst slack gets no relaxation: any area
+    // recovered there costs WNS.  Other failing nets keep it, as recovering
+    // no area on every failing net grows the design too much.
+    //
 
     FixedDelay target_slack = -FixedDelay::INF;
 
     // Check the tree isn't fully unconstrained
     if (timing_tree->slackTransition() != nullptr) {
-      sta::Delay relaxation
-          = std::max<float>(
-                0.0f,
-                ((slackAtDriverPin(timing_tree).toSeconds())
-                 - std::min(float(original_tree_slack_error), 0.0f)))
-                / 4.0f
-            + (std::max(float(drvr_gate_delay), 0.0f)
-               + criticalPathDelay(logger_, timing_tree).toSeconds())
-                  * relaxation_factor_;
-      target_slack
-          = slackAtDriverPin(timing_tree) - FixedDelay(relaxation, resizer_);
+      const FixedDelay timing_slack = slackAtDriverPin(timing_tree);
+      const bool critical
+          = timing_slack < FixedDelay::ZERO && worst_slack < FixedDelay::ZERO
+            && sta_slack < sta::INF
+            && FixedDelay(sta_slack, resizer_) <= worst_slack + critical_band;
+      sta::Delay relaxation = 0.0;
+      if (!critical) {
+        relaxation
+            = std::max<float>(
+                  0.0f,
+                  (timing_slack.toSeconds()
+                   - std::min(static_cast<float>(original_tree_slack_error),
+                              0.0f)))
+                  / 4.0f
+              + (std::max(static_cast<float>(drvr_gate_delay), 0.0f)
+                 + criticalPathDelay(logger_, timing_tree).toSeconds())
+                    * relaxation_factor_;
+      }
+      target_slack = timing_slack - FixedDelay(relaxation, resizer_);
     }
 
     BnetPtr area_opt_tree = timing_tree;

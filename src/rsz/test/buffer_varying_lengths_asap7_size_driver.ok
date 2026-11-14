@@ -12,16 +12,16 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
           |           | Buffers | Buffers  | Remaining
 -------------------------------------------------------
         0 |     +0.0% |       0 |        0 |       100
-       10 |     -0.1% |      20 |       40 |        90
-       20 |     -2.3% |      37 |       67 |        80
-       30 |     +2.7% |      46 |       94 |        70
-       40 |     +4.7% |      55 |      114 |        60
-       50 |     +7.9% |      62 |      132 |        50
-       60 |    +15.0% |      62 |      144 |        40
-       70 |    +20.8% |      62 |      153 |        30
-       80 |    +24.8% |      62 |      158 |        20
-       90 |    +26.7% |      62 |      158 |        10
-    final |    +28.4% |      64 |      162 |         0
+       10 |     +0.4% |      20 |       40 |        90
+       20 |     -1.4% |      37 |       68 |        80
+       30 |     +3.7% |      46 |       95 |        70
+       40 |     +5.6% |      55 |      115 |        60
+       50 |     +8.8% |      62 |      133 |        50
+       60 |    +15.9% |      62 |      145 |        40
+       70 |    +21.7% |      62 |      154 |        30
+       80 |    +25.7% |      62 |      159 |        20
+       90 |    +27.6% |      62 |      159 |        10
+    final |    +29.3% |      64 |      163 |         0
 -------------------------------------------------------
 [INFO RSZ-2023] Resized 100 drivers while rebuffering.
 
@@ -35,7 +35,7 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-place107/A                            320.00   97.17  222.83 (MET)
+place204/A                            320.00   95.45  224.55 (MET)
 
 max capacitance
 
@@ -134,13 +134,13 @@ i1-3/Y                                 92.16    2.28   89.88 (MET)
     322.5 | BUFx6f_ASAP7_75t_R |  0.58 |    185.255 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
     326.2 | BUFx6f_ASAP7_75t_R |  0.58 |    187.695 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
     330.0 | BUFx6f_ASAP7_75t_R |  0.58 |    190.201 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
-    333.8 | BUFx6f_ASAP7_75t_R |  0.58 |    192.781 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
-    337.5 | BUFx4f_ASAP7_75t_R |  0.70 |    193.818 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
-    341.2 | BUFx4f_ASAP7_75t_R |  0.70 |    195.519 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
-    345.0 | BUFx4f_ASAP7_75t_R |  0.70 |    197.318 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
-    348.8 | BUFx4f_ASAP7_75t_R |  0.70 |    199.209 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
-    352.5 | BUFx4f_ASAP7_75t_R |  0.70 |    201.180 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
-    356.2 | BUFx4f_ASAP7_75t_R |  0.70 |    203.204 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    333.8 | BUFx6f_ASAP7_75t_R |  0.73 |    190.319 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    337.5 | BUFx6f_ASAP7_75t_R |  0.73 |    191.888 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    341.2 | BUFx6f_ASAP7_75t_R |  0.73 |    193.478 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    345.0 | BUFx6f_ASAP7_75t_R |  0.73 |    195.170 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    348.8 | BUFx6f_ASAP7_75t_R |  0.73 |    196.960 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    352.5 | BUFx6f_ASAP7_75t_R |  0.73 |    198.858 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    356.2 | BUFx6f_ASAP7_75t_R |  0.73 |    200.784 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
     360.0 | BUFx6f_ASAP7_75t_R |  0.73 |    202.691 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
     363.8 | BUFx6f_ASAP7_75t_R |  0.73 |    204.595 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
     367.5 | BUFx6f_ASAP7_75t_R |  0.73 |    206.576 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
@@ -151,18 +151,18 @@ i1-3/Y                                 92.16    2.28   89.88 (MET)
           |           | Buffers | Buffers  | Remaining
 -------------------------------------------------------
         0 |     +0.0% |       0 |        0 |       100
-       10 |    -10.7% |      40 |       16 |        90
-       20 |    -19.2% |      67 |       25 |        80
-       30 |    -27.8% |      94 |       34 |        70
-       40 |    -34.0% |     114 |       43 |        60
-       50 |    -39.7% |     132 |       52 |        50
-       60 |    -44.7% |     144 |       52 |        40
-       70 |    -49.2% |     153 |       52 |        30
-       80 |    -52.3% |     158 |       52 |        20
-       90 |    -53.8% |     158 |       52 |        10
-    final |    -56.2% |     162 |       54 |         0
+       10 |    -11.0% |      40 |       16 |        90
+       20 |    -19.7% |      68 |       25 |        80
+       30 |    -28.3% |      95 |       34 |        70
+       40 |    -34.5% |     115 |       43 |        60
+       50 |    -40.1% |     133 |       52 |        50
+       60 |    -45.1% |     145 |       52 |        40
+       70 |    -49.6% |     154 |       52 |        30
+       80 |    -52.7% |     159 |       52 |        20
+       90 |    -54.1% |     159 |       52 |        10
+    final |    -56.5% |     163 |       54 |         0
 -------------------------------------------------------
-[INFO RSZ-2023] Resized 99 drivers while rebuffering.
+[INFO RSZ-2023] Resized 98 drivers while rebuffering.
 
 Solution with relaxed timing:
 Group                                  Slack
@@ -174,7 +174,7 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-place239/A                            320.00  267.39   52.61 (MET)
+place240/A                            320.00  267.39   52.61 (MET)
 
 max capacitance
 
