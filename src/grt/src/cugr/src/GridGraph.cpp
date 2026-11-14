@@ -19,6 +19,7 @@
 #include "Design.h"
 #include "GRNet.h"
 #include "GRTree.h"
+#include "PinGeometry.h"
 #include "geo.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
@@ -699,6 +700,29 @@ AccessPoint GridGraph::selectAccessPoint(
   return best_ap;
 }
 
+// Keeps a pad or macro pin's APs closest to its edge; aps must not be empty.
+static void keepAccessPointsClosestToEdge(const GRNet* net,
+                                          const int pin_idx,
+                                          std::vector<AccessPoint>& aps)
+{
+  const auto it = net->getITermsByPinIndex().find(pin_idx);
+  if (it == net->getITermsByPinIndex().end()) {
+    return;
+  }
+  odb::dbITerm* iterm = it->second;
+  const odb::dbMaster* master = iterm->getInst()->getMaster();
+  if (!master->isPad() && !master->isBlock()) {
+    return;
+  }
+  const PinEdge edge = findITermEdge(iterm);
+  auto toward_edge = [edge](const AccessPoint& ap) {
+    return coordinateTowardEdge(edge, {ap.point.x(), ap.point.y()});
+  };
+  const int closest = toward_edge(std::ranges::max(aps, {}, toward_edge));
+  std::erase_if(
+      aps, [&](const AccessPoint& ap) { return toward_edge(ap) != closest; });
+}
+
 // The set is keyed by cell only; union the layer intervals of pins that
 // share a cell so the routing tree honors every pin's connection layers.
 std::vector<int> GridGraph::findODBAccessPoints(
@@ -711,13 +735,14 @@ std::vector<int> GridGraph::findODBAccessPoints(
   // Shared tail of the bterm/iterm loops: pick one cell from the gathered
   // ODB APs, union its layers into the map, and record the pin's own AP.
   auto select_pin_ap = [&](const int pin_idx, const odb::Point& location) {
-    const std::vector<AccessPoint> aps_on_grid
+    std::vector<AccessPoint> aps_on_grid
         = translateAccessPointsToGrid(access_points, location);
     access_points.clear();
     if (aps_on_grid.empty()) {
       pins_without_aps.push_back(pin_idx);
       return;
     }
+    keepAccessPointsClosestToEdge(net, pin_idx, aps_on_grid);
     const AccessPoint selected_ap = selectAccessPoint(aps_on_grid);
     IntervalT& layers = selected_access_points[selected_ap.point];
     layers = layers.unionWith(selected_ap.layers);
@@ -725,6 +750,10 @@ std::vector<int> GridGraph::findODBAccessPoints(
   };
 
   for (const auto& [pin_idx, bterm] : net->getBTermsByPinIndex()) {
+    // A port on a same-net pin's metal takes that pin's AP.
+    if (net->getCoveringPins().contains(pin_idx)) {
+      continue;
+    }
     for (const odb::dbBPin* bpin : bterm->getBPins()) {
       const std::vector<odb::dbAccessPoint*>& bpin_pas
           = bpin->getAccessPoints();
@@ -833,6 +862,7 @@ AccessPointMap GridGraph::selectAccessPoints(GRNet* net) const
   for (const int pin_idx : pins_without_aps) {
     selectShapeAccessPoint(net, pin_idx, selected_access_points);
   }
+  net->shareCoveringPinAccessPoints();
   return selected_access_points;
 }
 

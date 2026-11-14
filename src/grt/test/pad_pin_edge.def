@@ -1,0 +1,22 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN pad_pin_edge ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 2000000 2000000 ) ;
+COMPONENTS 4 ;
+- pad_s asig_pad + FIXED ( 0 775000 ) E ;
+- pad asig_pad + FIXED ( 0 925000 ) E ;
+- pad_n asig_pad + FIXED ( 0 1075000 ) E ;
+- buf gf180mcu_fd_sc_mcu7t5v0__buf_1 + PLACED ( 1000000 1000000 ) N ;
+END COMPONENTS
+PINS 1 ;
+- io + NET net1 + DIRECTION INOUT + USE SIGNAL
+  + PORT
+    + LAYER Metal5 ( -69500 -73000 ) ( 69500 73000 )
+    + FIXED ( 69500 1000000 ) N ;
+END PINS
+NETS 1 ;
+- net1 ( PIN io ) ( pad ASIG5V ) ( buf I ) + USE SIGNAL ;
+END NETS
+END DESIGN

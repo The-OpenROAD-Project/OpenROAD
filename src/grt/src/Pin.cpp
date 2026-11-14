@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "PinGeometry.h"
 #include "grt/GlobalRouter.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
@@ -54,7 +55,8 @@ Pin::Pin(odb::dbBTerm* bterm,
       position_(position),
       edge_(PinEdge::none),
       is_port_(true),
-      connected_to_pad_or_macro_(false)
+      connected_to_pad_or_macro_(false),
+      covering_iterm_(findCoveringITerm(bterm))
 {
   for (auto layer : layers) {
     layers_.push_back(layer->getRoutingLevel());
@@ -71,45 +73,25 @@ Pin::Pin(odb::dbBTerm* bterm,
 void Pin::determineEdge(const odb::Rect& bounds,
                         const std::vector<odb::dbTechLayer*>& layers)
 {
-  odb::Point lower_left;
-  odb::Point upper_right;
-  int n_count = 0;
-  int s_count = 0;
-  int e_count = 0;
-  int w_count = 0;
-  for (const auto& [layer, boxes] : boxes_per_layer_) {
-    for (const auto& box : boxes) {
-      lower_left = box.ll();
-      upper_right = box.ur();
-      // Determine which edge is closest to the pin box
-      const int n_dist = bounds.yMax() - upper_right.y();
-      const int s_dist = lower_left.y() - bounds.yMin();
-      const int e_dist = bounds.xMax() - upper_right.x();
-      const int w_dist = lower_left.x() - bounds.xMin();
-      const int min_dist = std::min({n_dist, s_dist, w_dist, e_dist});
-      if (n_dist == min_dist) {
-        n_count += 1;
-      } else if (s_dist == min_dist) {
-        s_count += 1;
-      } else if (e_dist == min_dist) {
-        e_count += 1;
-      } else {
-        w_count += 1;
-      }
+  std::vector<odb::Rect> boxes;
+  for (const auto& [layer, layer_boxes] : boxes_per_layer_) {
+    boxes.insert(boxes.end(), layer_boxes.begin(), layer_boxes.end());
+  }
+  edge_ = findPinEdge(bounds, boxes);
+
+  // Only layers with a shape at the edge connect from outside the cell.
+  std::vector<odb::dbTechLayer*> edge_layers;
+  for (odb::dbTechLayer* layer : layers) {
+    const std::vector<odb::Rect>& layer_boxes
+        = boxes_per_layer_.at(layer->getRoutingLevel());
+    if (std::ranges::any_of(layer_boxes, [&](const odb::Rect& box) {
+          return findClosestEdge(bounds, box) == edge_;
+        })) {
+      edge_layers.push_back(layer);
     }
   }
-
-  // voting system to determine the pin edge after checking all pin boxes
-  int edge_count = std::max({n_count, s_count, e_count, w_count});
-  if (edge_count == n_count) {
-    edge_ = PinEdge::north;
-  } else if (edge_count == s_count) {
-    edge_ = PinEdge::south;
-  } else if (edge_count == e_count) {
-    edge_ = PinEdge::east;
-  } else if (edge_count == w_count) {
-    edge_ = PinEdge::west;
-  }
+  const std::vector<odb::dbTechLayer*>& candidate_layers
+      = edge_layers.empty() ? layers : edge_layers;
 
   // Find the best connection layer as the top layer may not be in the
   // right direction (eg horizontal layer for a south pin).
@@ -117,7 +99,11 @@ void Pin::determineEdge(const odb::Rect& bounds,
                                 ? odb::dbTechLayerDir::VERTICAL
                                 : odb::dbTechLayerDir::HORIZONTAL;
   odb::dbTechLayer* best_layer = nullptr;
-  for (auto layer : layers) {
+  odb::dbTechLayer* top_layer = nullptr;
+  for (auto layer : candidate_layers) {
+    if (!top_layer || layer->getRoutingLevel() > top_layer->getRoutingLevel()) {
+      top_layer = layer;
+    }
     if (layer->getDirection() == dir) {
       if (!best_layer
           || layer->getRoutingLevel() > best_layer->getRoutingLevel()) {
@@ -128,7 +114,7 @@ void Pin::determineEdge(const odb::Rect& bounds,
   if (best_layer) {
     connection_layer_ = best_layer->getRoutingLevel();
   } else {
-    connection_layer_ = layers_.back();
+    connection_layer_ = top_layer->getRoutingLevel();
   }
 }
 
