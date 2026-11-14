@@ -26,7 +26,6 @@ cc_library(
         "src/Optdp.cpp",
         "src/Place.cpp",
         "src/PlacementDRC.cpp",
-        "src/PlacementDRC.h",
         "src/dbToOpendp.cpp",
         "src/infrastructure/DecapObjects.h",
         "src/infrastructure/Grid.cpp",
@@ -75,6 +74,7 @@ cc_library(
     hdrs = [
         "include/dpl/Opendp.h",
         "include/dpl/OptMirror.h",
+        "src/PlacementDRC.h",
         "src/graphics/DplObserver.h",
         "src/infrastructure/Coordinates.h",
         "src/infrastructure/Grid.h",

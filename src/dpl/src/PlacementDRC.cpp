@@ -72,19 +72,46 @@ class PlacementDRC::FixedSupplyVias
 {
  public:
   FixedSupplyVias(utl::Logger* logger, Grid* grid, odb::dbBlock* block)
-      : logger_(logger), grid_(grid)
+      : logger_(logger), grid_(grid), block_(block)
   {
     for (odb::dbNet* net : block->getNets()) {
       if (!net->isSpecial() || !net->getSigType().isSupply()) {
         continue;
       }
+      // Cells are built to abut their supply rails, so a via shape inside a
+      // same-net followpin adds no edge a cell could violate.
+      std::vector<std::pair<odb::Rect, odb::dbTechLayer*>> followpins;
+      for (odb::dbSWire* swire : net->getSWires()) {
+        for (odb::dbSBox* sbox : swire->getWires()) {
+          if (!sbox->isVia()
+              && sbox->getWireShapeType() == odb::dbWireShapeType::FOLLOWPIN) {
+            followpins.emplace_back(sbox->getBox(), sbox->getTechLayer());
+          }
+        }
+      }
+      const boost::geometry::index::rtree<
+          std::pair<odb::Rect, odb::dbTechLayer*>,
+          boost::geometry::index::quadratic<16>>
+          followpin_index(followpins.begin(), followpins.end());
+      auto inside_followpin = [&](const odb::dbShape& shape) {
+        const odb::Rect box = shape.getBox();
+        return std::any_of(
+            followpin_index.qbegin(boost::geometry::index::intersects(box)),
+            followpin_index.qend(),
+            [&](const auto& rail) {
+              return rail.second == shape.getTechLayer()
+                     && rail.first.contains(box);
+            });
+      };
       for (odb::dbSWire* swire : net->getSWires()) {
         for (odb::dbSBox* sbox : swire->getWires()) {
           if (sbox->isVia()) {
             std::vector<odb::dbShape> shapes;
             sbox->getViaBoxes(shapes);
             for (const odb::dbShape& shape : shapes) {
-              addFixedShape(shape.getTechLayer(), shape.getBox(), net);
+              if (!inside_followpin(shape)) {
+                addFixedShape(shape.getTechLayer(), shape.getBox(), net);
+              }
             }
           }
         }
@@ -132,15 +159,33 @@ class PlacementDRC::FixedSupplyVias
     int max_query_halo = 0;
     for (auto& [layer, data] : layers_) {
       const int max_spacing = maximumSpacing(layer, data);
-      data.fixed_dimensions.clear();
       data.query_halo = std::max(0, max_spacing - 1);
       max_query_halo = std::max(max_query_halo, data.query_halo);
+      debugPrint(logger_,
+                 DPL,
+                 "fixed_supply_via",
+                 1,
+                 "layer {}: spacing={} query halo={} for {} fixed shapes",
+                 layer->getName(),
+                 max_spacing,
+                 data.query_halo,
+                 data.shapes.size());
+      data.fixed_dimensions.clear();
+      if (max_spacing == 0) {
+        // No spacing rule this code understands resolved on a layer that both
+        // the PDN vias and the standard cells occupy.  Warn rather than imply
+        // the layer was verified beyond overlap.
+        logger_->warn(DPL,
+                      63,
+                      "No spacing rule found for layer {}; fixed supply via "
+                      "checks only reject overlap on it.",
+                      layer->getName());
+      }
       if (!has_right_angle_row
           && !hasPotentialVerticalConflict(data, cell_ranges.at(layer))) {
         vertically_safe_shape_count += data.shapes.size();
       }
     }
-    master_dimensions_.clear();
     if (vertically_safe_shape_count == fixedShapeCount()) {
       legal_sites_safe_ = true;
       debugPrint(logger_,
@@ -202,6 +247,7 @@ class PlacementDRC::FixedSupplyVias
     const PageRecipe& recipe = page_it->second;
     const uint64_t query_mask = uint64_t{1} << (x.v % page_size_);
     if (recipe.unconditional_mask & query_mask) {
+      reportConflicts(cell, x, y, orient, recipe, query_mask);
       return false;
     }
     // Skip terminal scans when no terminal shape conflicts at this site.
@@ -226,6 +272,7 @@ class PlacementDRC::FixedSupplyVias
                         entry.term->getName());
           warned_unconnected_supply_ = true;
         }
+        reportConflicts(cell, x, y, orient, recipe, query_mask);
         return false;
       }
     }
@@ -233,6 +280,52 @@ class PlacementDRC::FixedSupplyVias
   }
 
   bool empty() const { return layers_.empty(); }
+
+  // Where check() can reject a cell shape around the fixed shapes on |layer|
+  // that reach |region|, against every master shape size used on the layer.
+  // Drawing runs while placement is paused, so the lazy index build keeps the
+  // single-thread contract of check().
+  std::vector<FixedSupplyViaKeepout> keepouts(odb::dbTechLayer* layer,
+                                              const odb::Rect& region)
+  {
+    std::vector<FixedSupplyViaKeepout> result;
+    const auto layer_it = layers_.find(layer);
+    if (layer_it == layers_.end()) {
+      return result;
+    }
+    buildIndexes();
+    const LayerData& data = layer_it->second;
+    const std::set<DimensionClass>& cells = master_dimensions_.at(layer);
+    // Vias come in a handful of sizes, so resolve each size once at the origin.
+    std::map<DimensionClass, FixedSupplyViaKeepout> by_size;
+    const odb::Rect query = bloatClipped(region, data.query_halo + 1);
+    for (auto it
+         = data.index->qbegin(boost::geometry::index::intersects(query));
+         it != data.index->qend();
+         ++it) {
+      const odb::Rect& via = data.shapes[it->second].rect;
+      auto [size_it, inserted] = by_size.try_emplace({via.dx(), via.dy()});
+      if (inserted) {
+        FixedSupplyViaKeepout& keepout = size_it->second;
+        keepout.via = odb::Rect(0, 0, via.dx(), via.dy());
+        for (const DimensionClass& cell : cells) {
+          keepout.spacing
+              = std::max(keepout.spacing,
+                         spacing(layer,
+                                 keepout.via,
+                                 odb::Rect(0, 0, cell.first, cell.second)));
+        }
+        keepout.eol_zones = eolZones(layer, keepout.via, cells);
+      }
+      FixedSupplyViaKeepout keepout = size_it->second;
+      keepout.via.moveDelta(via.xMin(), via.yMin());
+      for (odb::Rect& zone : keepout.eol_zones) {
+        zone.moveDelta(via.xMin(), via.yMin());
+      }
+      result.push_back(std::move(keepout));
+    }
+    return result;
+  }
 
  private:
   struct Shape
@@ -255,12 +348,154 @@ class PlacementDRC::FixedSupplyVias
     uint64_t mask;
   };
 
+  // Provenance for one conflicting (cell shape, fixed via shape) pair, kept
+  // only when the fixed_supply_via debug level asks for per-conflict reports.
+  struct ConflictSource
+  {
+    uint64_t mask{0};
+    odb::dbTechLayer* layer{nullptr};
+    odb::dbMTerm* term{nullptr};
+    odb::dbNet* net{nullptr};
+    odb::Rect cell_rect;
+    odb::Rect fixed_rect;
+    int space{0};
+  };
+
+  // A cut pair DPL checks against the cut-class spacing tables exactly.
+  struct CutTable
+  {
+    std::string fixed_class;
+    std::string cell_class;
+    std::vector<odb::dbTechLayerCutSpacingTableDefRule*> rules;
+  };
+
+  // Where an end-of-line rule rejects a cell shape: every signed horizontal
+  // gap up to |keepout|, for |spacing| along the line end.
+  struct EolKeepout
+  {
+    int64_t keepout{0};
+    int spacing{0};
+    bool end_to_end{false};
+  };
+
+  // The spacing a cut pair violates and how it was measured.
+  struct CutViolation
+  {
+    int spacing{0};
+    bool center_to_center{false};
+  };
+
   struct PageRecipe
   {
     uint64_t unconditional_mask{0};
     uint64_t conditional_mask{0};
     std::vector<RecipeEntry> entries;
+    std::vector<ConflictSource> sources;
   };
+
+  // Name every (cell shape, fixed via shape) pair that rejects this site, in
+  // absolute DBU so the geometry can be inspected directly in the layout.
+  void reportConflicts(const Node* cell,
+                       const GridX x,
+                       const GridY y,
+                       const odb::dbOrientType& orient,
+                       const PageRecipe& recipe,
+                       const uint64_t query_mask) const
+  {
+    if (!report_conflicts_) {
+      return;
+    }
+    const odb::Rect core = grid_->getCore();
+    const int64_t origin_x
+        = static_cast<int64_t>(core.xMin())
+          + static_cast<int64_t>(x.v) * grid_->getSiteWidth().v;
+    const int64_t origin_y
+        = static_cast<int64_t>(core.yMin()) + grid_->gridYToDbu(y).v;
+    for (const ConflictSource& source : recipe.sources) {
+      if ((source.mask & query_mask) == 0) {
+        continue;
+      }
+      // A pin already on the via's net is exempt and did not cause a rejection.
+      if (source.term != nullptr
+          && cell->getDbInst()->getITerm(source.term)->getNet() == source.net) {
+        continue;
+      }
+      const odb::Rect placed(clipToInt(origin_x + source.cell_rect.xMin()),
+                             clipToInt(origin_y + source.cell_rect.yMin()),
+                             clipToInt(origin_x + source.cell_rect.xMax()),
+                             clipToInt(origin_y + source.cell_rect.yMax()));
+      const int64_t dx = std::max<int64_t>(
+          {0,
+           static_cast<int64_t>(source.fixed_rect.xMin()) - placed.xMax(),
+           static_cast<int64_t>(placed.xMin()) - source.fixed_rect.xMax()});
+      const int64_t dy = std::max<int64_t>(
+          {0,
+           static_cast<int64_t>(source.fixed_rect.yMin()) - placed.yMax(),
+           static_cast<int64_t>(placed.yMin()) - source.fixed_rect.yMax()});
+      // Cut tables and end-of-line rules pick the rule per position, so name
+      // the one that fired.
+      int space = source.space;
+      const char* measure = "edge-to-edge";
+      if (const std::optional<CutTable> cut_table
+          = exactCutTable(source.layer, source.fixed_rect, source.cell_rect)) {
+        if (const std::optional<CutViolation> violation = cutViolation(
+                source.layer, *cut_table, source.fixed_rect, placed)) {
+          space = violation->spacing;
+          measure = violation->center_to_center ? "center-to-center"
+                                                : "edge-to-edge";
+        }
+      }
+      const int64_t signed_dx = std::max(
+          static_cast<int64_t>(source.fixed_rect.xMin()) - placed.xMax(),
+          static_cast<int64_t>(placed.xMin()) - source.fixed_rect.xMax());
+      for (const EolKeepout& zone : eolKeepouts(
+               source.layer,
+               source.fixed_rect,
+               source.cell_rect,
+               verticalPrl(source.fixed_rect, source.cell_rect, origin_y))) {
+        if (signed_dx <= zone.keepout) {
+          space = zone.spacing;
+          measure = zone.end_to_end ? "end-to-end" : "end-of-line";
+          break;
+        }
+      }
+      // Touching or overlapping shapes conflict whatever the rule.
+      if (dx == 0 && dy == 0) {
+        space = 0;
+        measure = "overlap";
+      }
+      debugPrint(
+          logger_,
+          DPL,
+          "fixed_supply_via",
+          2,
+          "cell {} at ({:.3f}, {:.3f}) orient {}: {} {} on layer {} at "
+          "({:.3f} {:.3f} {:.3f} {:.3f}) is {:.3f} from supply net {} via "
+          "shape at ({:.3f} {:.3f} {:.3f} {:.3f}); spacing rule is {:.3f} {} "
+          "(gap dx={:.3f} dy={:.3f})",
+          cell->name(),
+          block_->dbuToMicrons(origin_x),
+          block_->dbuToMicrons(origin_y),
+          orient.getString(),
+          source.term == nullptr ? "obstruction" : "pin",
+          source.term == nullptr ? "" : source.term->getName(),
+          source.layer->getName(),
+          block_->dbuToMicrons(placed.xMin()),
+          block_->dbuToMicrons(placed.yMin()),
+          block_->dbuToMicrons(placed.xMax()),
+          block_->dbuToMicrons(placed.yMax()),
+          block_->dbuToMicrons(floorSqrt(dx * dx + dy * dy)),
+          source.net == nullptr ? "(none)" : source.net->getName(),
+          block_->dbuToMicrons(source.fixed_rect.xMin()),
+          block_->dbuToMicrons(source.fixed_rect.yMin()),
+          block_->dbuToMicrons(source.fixed_rect.xMax()),
+          block_->dbuToMicrons(source.fixed_rect.yMax()),
+          block_->dbuToMicrons(space),
+          measure,
+          block_->dbuToMicrons(dx),
+          block_->dbuToMicrons(dy));
+    }
+  }
 
   struct VerticalRange
   {
@@ -314,6 +549,9 @@ class PlacementDRC::FixedSupplyVias
       = std::unordered_map<odb::dbTechLayer*, std::vector<VerticalRange>>;
   using RowOrientations = std::vector<std::vector<odb::dbOrientType>>;
   static constexpr int page_size_ = 64;
+  // A keepout is the largest signed horizontal gap that still conflicts, with
+  // an overlap as a negative gap, so -1 means "must overlap".  This marks none.
+  static constexpr int64_t no_keepout_ = std::numeric_limits<int64_t>::min();
 
   size_t fixedShapeCount() const
   {
@@ -395,10 +633,20 @@ class PlacementDRC::FixedSupplyVias
     return 0;
   }
 
+  // Vertical parallel run length: how far the two shapes overlap in y, or
+  // minus their gap.
+  static int64_t verticalPrl(const odb::Rect& fixed,
+                             const odb::Rect& cell,
+                             const int64_t origin_y)
+  {
+    return std::min<int64_t>(fixed.yMax(), origin_y + cell.yMax())
+           - std::max<int64_t>(fixed.yMin(), origin_y + cell.yMin());
+  }
+
   static int64_t horizontalKeepout(const int space, const int64_t vertical_gap)
   {
     if (space <= 0 || vertical_gap >= space) {
-      return -1;
+      return no_keepout_;
     }
     const int64_t space_squared = static_cast<int64_t>(space) * space;
     const int64_t gap_squared = vertical_gap * vertical_gap;
@@ -472,8 +720,9 @@ class PlacementDRC::FixedSupplyVias
       const odb::Rect fixed_rect(0, 0, fixed.first, fixed.second);
       for (const DimensionClass& cell : dimensions_it->second) {
         const odb::Rect cell_rect(0, 0, cell.first, cell.second);
-        max_spacing
-            = std::max(max_spacing, spacing(layer, fixed_rect, cell_rect));
+        max_spacing = std::max({max_spacing,
+                                spacing(layer, fixed_rect, cell_rect),
+                                eolSpacing(layer, fixed_rect, cell_rect)});
       }
     }
     return max_spacing;
@@ -675,9 +924,14 @@ class PlacementDRC::FixedSupplyVias
 
     const int64_t origin_y
         = static_cast<int64_t>(core.yMin()) + grid_->gridYToDbu(GridY{row}).v;
+    const int64_t eol_keepout
+        = eolKeepout(cell_shape.layer,
+                     fixed.rect,
+                     cell_shape.rect,
+                     verticalPrl(fixed.rect, cell_shape.rect, origin_y));
     int low;
     int high;
-    if (space == 0) {
+    if (space == 0 && eol_keepout == no_keepout_) {
       // Zero spacing permits boundary contact, but not positive-area overlap.
       if (origin_y + cell_shape.rect.yMax() <= fixed.rect.yMin()
           || origin_y + cell_shape.rect.yMin() >= fixed.rect.yMax()) {
@@ -688,11 +942,13 @@ class PlacementDRC::FixedSupplyVias
       high = clipToInt(static_cast<int64_t>(fixed.rect.xMax())
                        - cell_shape.rect.xMin() - 1);
     } else {
-      // Routing and cut spacing use strict Euclidean distance in integer DBU.
+      // Routing and cut spacing use strict Euclidean distance in integer DBU;
+      // EOL spacing widens it at line ends.
       const int64_t vertical_gap
           = verticalDistance(fixed.rect, cell_shape.rect, origin_y);
-      const int64_t x_keepout = horizontalKeepout(space, vertical_gap);
-      if (x_keepout < 0) {
+      const int64_t x_keepout
+          = std::max(horizontalKeepout(space, vertical_gap), eol_keepout);
+      if (x_keepout == no_keepout_) {
         return false;
       }
       low = clipToInt(static_cast<int64_t>(fixed.rect.xMin()) - x_keepout
@@ -712,8 +968,29 @@ class PlacementDRC::FixedSupplyVias
     if (clipped_begin > clipped_end) {
       return false;
     }
-    mask |= bitRange(clipped_begin - first_site, clipped_end - first_site);
-    return true;
+    const std::optional<CutTable> cut_table
+        = exactCutTable(cell_shape.layer, fixed.rect, cell_shape.rect);
+    if (!cut_table) {
+      mask |= bitRange(clipped_begin - first_site, clipped_end - first_site);
+      return true;
+    }
+    // Cut-class tables are no circle around the via: an aligned neighbour may
+    // sit closer than a diagonal one.  The range above bounds them, so test
+    // each site in it.
+    bool conflict = false;
+    for (int site = clipped_begin; site <= clipped_end; ++site) {
+      const int64_t origin_x = static_cast<int64_t>(core.xMin())
+                               + static_cast<int64_t>(site) * site_width;
+      const odb::Rect placed(clipToInt(origin_x + cell_shape.rect.xMin()),
+                             clipToInt(origin_y + cell_shape.rect.yMin()),
+                             clipToInt(origin_x + cell_shape.rect.xMax()),
+                             clipToInt(origin_y + cell_shape.rect.yMax()));
+      if (cutViolation(cell_shape.layer, *cut_table, fixed.rect, placed)) {
+        mask |= uint64_t{1} << (site - first_site);
+        conflict = true;
+      }
+    }
+    return conflict;
   }
 
   PageRecipe generatePage(odb::dbMaster* master,
@@ -751,6 +1028,18 @@ class PlacementDRC::FixedSupplyVias
         } else {
           entries[{cell_shape.term, fixed.net}] |= fixed_mask;
         }
+        if (report_conflicts_) {
+          recipe.sources.push_back(
+              {fixed_mask,
+               cell_shape.layer,
+               cell_shape.term,
+               fixed.net,
+               cell_shape.rect,
+               fixed.rect,
+               std::max(
+                   spacing(cell_shape.layer, fixed.rect, cell_shape.rect),
+                   eolSpacing(cell_shape.layer, fixed.rect, cell_shape.rect))});
+        }
       }
     }
 
@@ -763,20 +1052,498 @@ class PlacementDRC::FixedSupplyVias
     return recipe;
   }
 
-  static int spacing(odb::dbTechLayer* layer,
-                     const odb::Rect& fixed,
-                     const odb::Rect& cell)
+  // Largest LEF58 spacing that can apply on a layer regardless of the two
+  // shapes involved.  Modern PDKs express spacing only through LEF58 rules and
+  // leave the LEF 5.4/5.5 SPACING and SPACINGTABLE values unset, which would
+  // otherwise make every check on those layers a silent no-op.  The exact
+  // LEF58 predicates are edge- and cut-class-dependent, so this deliberately
+  // takes a shape-independent upper bound: it can only over-constrain
+  // placement, never miss a conflict.  Detailed routing remains authoritative.
+  // Name of the LEF58 cut class a shape belongs to, matched on the class
+  // WIDTH/LENGTH dimensions.  Returns an empty string when the layer declares
+  // no classes or none matches, in which case callers fall back to the
+  // shape-independent bound.
+  static std::string cutClassOf(odb::dbTechLayer* layer, const odb::Rect& rect)
   {
-    // Scalar rules cover width/PRL routing spacing and default cut spacing.
+    const int width = std::min(rect.dx(), rect.dy());
+    const int length = std::max(rect.dx(), rect.dy());
+    for (auto rule : layer->getTechLayerCutClassRules()) {
+      const int rule_length
+          = rule->isLengthValid() ? rule->getLength() : rule->getWidth();
+      if (rule->getWidth() == width && rule_length == length) {
+        return rule->getName();
+      }
+    }
+    return {};
+  }
+
+  // Base cut-class name for a spacing-table key, which odb spells as
+  // "<class>/END" or "<class>/SIDE".
+  static std::string cutClassKeyBase(const std::string& key)
+  {
+    const size_t slash = key.find('/');
+    return slash == std::string::npos ? key : key.substr(0, slash);
+  }
+
+  // Upper bound on the LEF58 cut spacing for one shape pair, resolved through
+  // the cut-class table when both shapes map to a declared class.  Taking the
+  // worst entry over every class pair instead would inflate the keepout well
+  // past the rule that actually governs these two shapes.  The bound sizes the
+  // query halo and the candidate sites; cutViolation() decides the conflict.
+  static int cutClassSpacing(odb::dbTechLayer* layer,
+                             const odb::Rect& fixed,
+                             const odb::Rect& cell)
+  {
+    if (layer->getType() != odb::dbTechLayerType::CUT) {
+      return 0;
+    }
+    const std::string fixed_class = cutClassOf(layer, fixed);
+    const std::string cell_class = cutClassOf(layer, cell);
+    if (fixed_class.empty() || cell_class.empty()) {
+      return 0;
+    }
+    int max_spacing = 0;
+    bool resolved = false;
+    for (auto rule : layer->getTechLayerCutSpacingTableDefRules()) {
+      std::vector<std::vector<std::pair<int, int>>> table;
+      std::map<std::string, uint32_t> row_map;
+      std::map<std::string, uint32_t> col_map;
+      rule->getSpacingTable(table, row_map, col_map);
+      for (const auto& [row_key, row_idx] : row_map) {
+        const std::string row_class = cutClassKeyBase(row_key);
+        for (const auto& [col_key, col_idx] : col_map) {
+          // drt checks each cut against its neighbour, so either shape can be
+          // the row.
+          const std::string col_class = cutClassKeyBase(col_key);
+          if (!(row_class == fixed_class && col_class == cell_class)
+              && !(row_class == cell_class && col_class == fixed_class)) {
+            continue;
+          }
+          if (row_idx >= table.size() || col_idx >= table[row_idx].size()) {
+            continue;
+          }
+          // Spacing without and with parallel run length.
+          const auto& [no_prl, prl] = table[row_idx][col_idx];
+          max_spacing = std::max({max_spacing, no_prl, prl});
+          resolved = true;
+        }
+      }
+      max_spacing = std::max({max_spacing,
+                              rule->getExactAlignedSpacing(fixed_class),
+                              rule->getExactAlignedSpacing(cell_class)});
+      if (rule->isDefaultValid()) {
+        max_spacing = std::max(max_spacing, rule->getDefault());
+      }
+    }
+    return resolved ? max_spacing : 0;
+  }
+
+  // The cut-class spacing tables that govern a cut pair on different nets,
+  // for evaluating them exactly as drt does.  Nothing when either cut has no
+  // class or a rule needs data DPL does not have (PRLFORALIGNEDCUT looks at the
+  // metal above), so the caller keeps the conservative bound.
+  static std::optional<CutTable> exactCutTable(odb::dbTechLayer* layer,
+                                               const odb::Rect& fixed,
+                                               const odb::Rect& cell)
+  {
+    if (layer->getType() != odb::dbTechLayerType::CUT) {
+      return std::nullopt;
+    }
+    CutTable table{cutClassOf(layer, fixed), cutClassOf(layer, cell), {}};
+    if (table.fixed_class.empty() || table.cell_class.empty()) {
+      return std::nullopt;
+    }
+    for (auto rule : layer->getTechLayerCutSpacingTableDefRules()) {
+      // SAMENET and SAMEMETAL tables only govern cuts on one net, which are
+      // exempt here; LAYER tables pair this layer with another cut layer.
+      if (rule->isLayerValid() || rule->isSameNet() || rule->isSameMetal()) {
+        continue;
+      }
+      if (rule->isPrlForAlignedCut()) {
+        return std::nullopt;
+      }
+      table.rules.push_back(rule);
+    }
+    if (table.rules.empty()) {
+      return std::nullopt;
+    }
+    return table;
+  }
+
+  static int64_t squaredGap(const odb::Rect& a, const odb::Rect& b)
+  {
+    const int64_t dx
+        = std::max<int64_t>({0,
+                             static_cast<int64_t>(b.xMin()) - a.xMax(),
+                             static_cast<int64_t>(a.xMin()) - b.xMax()});
+    const int64_t dy
+        = std::max<int64_t>({0,
+                             static_cast<int64_t>(b.yMin()) - a.yMax(),
+                             static_cast<int64_t>(a.yMin()) - b.yMax()});
+    return dx * dx + dy * dy;
+  }
+
+  // One direction of drt's LEF58_SPACINGTABLE cut check
+  // (FlexGCWorker::Impl::checkLef58CutSpacingTbl_main and _helper): |first| is
+  // the cut being checked and |second| its neighbour.  The pair spacing is
+  // picked by parallel run length (PRL), and CENTERTOCENTER/CENTERANDEDGE
+  // measure it between cut centres instead of edges.
+  // ponytail: duplicates drt's logic; share it through odb if a third user
+  // appears.
+  static std::optional<CutViolation> cutTableViolation(
+      odb::dbTechLayerCutSpacingTableDefRule* rule,
+      const odb::Rect& first,
+      const std::string& first_class,
+      const odb::Rect& second,
+      const std::string& second_class)
+  {
+    using Lookup = odb::dbTechLayerCutSpacingTableDefRule::LOOKUP_STRATEGY;
+    const int64_t gap_x = std::max<int64_t>(
+        {0,
+         static_cast<int64_t>(second.xMin()) - first.xMax(),
+         static_cast<int64_t>(first.xMin()) - second.xMax()});
+    const int64_t gap_y = std::max<int64_t>(
+        {0,
+         static_cast<int64_t>(second.yMin()) - first.yMax(),
+         static_cast<int64_t>(first.yMin()) - second.yMax()});
+    const int64_t dist_squared = gap_x * gap_x + gap_y * gap_y;
+    // Doubled centre offsets keep the centre distance exact in integers.
+    const int64_t center_dx
+        = (static_cast<int64_t>(first.xMin()) + first.xMax())
+          - (static_cast<int64_t>(second.xMin()) + second.xMax());
+    const int64_t center_dy
+        = (static_cast<int64_t>(first.yMin()) + first.yMax())
+          - (static_cast<int64_t>(second.yMin()) + second.yMax());
+    const int64_t center_squared_x4
+        = center_dx * center_dx + center_dy * center_dy;
+    // PRL along an axis is the overlap of the two cuts, or minus their gap.
+    const int64_t prl_x
+        = gap_x > 0
+              ? -gap_x
+              : static_cast<int64_t>(std::min(first.xMax(), second.xMax()))
+                    - std::max(first.xMin(), second.xMin());
+    const int64_t prl_y
+        = gap_y > 0
+              ? -gap_y
+              : static_cast<int64_t>(std::min(first.yMax(), second.yMax()))
+                    - std::max(first.yMin(), second.yMin());
+    const int required_prl = rule->getPrlEntry(first_class, second_class);
+    const bool prl_valid = prl_x > required_prl || prl_y > required_prl;
+    const int64_t prl = prl_valid ? std::max(prl_x, prl_y) : -1;
+
+    auto check = [&](const bool vertical) -> std::optional<CutViolation> {
+      // A cut faces its neighbour with a SIDE when that is its long edge.
+      const bool first_side
+          = vertical ? first.dx() > first.dy() : first.dy() > first.dx();
+      const bool second_side
+          = vertical ? second.dx() > second.dy() : second.dy() > second.dx();
+      auto lookup = [&](const Lookup strategy) {
+        return rule->getSpacing(
+            first_class, first_side, second_class, second_side, strategy);
+      };
+      auto edge = [&](const int spacing) -> std::optional<CutViolation> {
+        if (dist_squared < static_cast<int64_t>(spacing) * spacing) {
+          return CutViolation{spacing, false};
+        }
+        return std::nullopt;
+      };
+      auto center = [&](const int spacing) -> std::optional<CutViolation> {
+        if (center_squared_x4 < 4 * static_cast<int64_t>(spacing) * spacing) {
+          return CutViolation{spacing, true};
+        }
+        return std::nullopt;
+      };
+      if (rule->isNoPrl() && rule->isCenterAndEdge(first_class, second_class)) {
+        if (auto violation = center(lookup(Lookup::MAX))) {
+          return violation;
+        }
+        return edge(lookup(Lookup::MIN));
+      }
+      if (first_class == second_class) {
+        const bool aligned = vertical
+                                 ? prl == first.dx() && !rule->isHorizontal()
+                                 : prl == first.dy() && !rule->isVertical();
+        const int aligned_spacing = rule->getExactAlignedSpacing(first_class);
+        if (aligned && aligned_spacing != -1) {
+          return edge(aligned_spacing);
+        }
+      }
+      const int spacing = lookup(prl_valid ? Lookup::SECOND : Lookup::FIRST);
+      const bool use_center
+          = rule->isCenterToCenter(first_class, second_class)
+            || (rule->isCenterAndEdge(first_class, second_class)
+                && spacing == lookup(Lookup::MAX));
+      return use_center ? center(spacing) : edge(spacing);
+    };
+    if (gap_y > 0) {
+      if (auto violation = check(true)) {
+        return violation;
+      }
+    }
+    if (gap_x > 0) {
+      return check(false);
+    }
+    return std::nullopt;
+  }
+
+  // The rule a placed cell cut violates against a fixed via cut, if any:
+  // touching, the legacy LEF SPACING, or a cut-class table checked from both
+  // cuts as drt does.
+  static std::optional<CutViolation> cutViolation(odb::dbTechLayer* layer,
+                                                  const CutTable& table,
+                                                  const odb::Rect& fixed,
+                                                  const odb::Rect& placed)
+  {
+    const int64_t dist_squared = squaredGap(fixed, placed);
+    if (dist_squared == 0) {
+      return CutViolation{0, false};
+    }
+    const int legacy = layer->getSpacing();
+    if (dist_squared < static_cast<int64_t>(legacy) * legacy) {
+      return CutViolation{legacy, false};
+    }
+    for (auto rule : table.rules) {
+      if (auto violation = cutTableViolation(
+              rule, fixed, table.fixed_class, placed, table.cell_class)) {
+        return violation;
+      }
+      if (auto violation = cutTableViolation(
+              rule, placed, table.cell_class, fixed, table.fixed_class)) {
+        return violation;
+      }
+    }
+    return std::nullopt;
+  }
+
+  static int lef58MaxSpacing(odb::dbTechLayer* layer)
+  {
+    int max_spacing = 0;
     if (layer->getType() == odb::dbTechLayerType::CUT) {
-      return layer->getSpacing();
+      for (auto rule : layer->getTechLayerCutSpacingRules()) {
+        max_spacing = std::max(max_spacing, rule->getCutSpacing());
+      }
+      for (auto rule : layer->getTechLayerCutSpacingTableDefRules()) {
+        if (rule->isDefaultValid()) {
+          max_spacing = std::max(max_spacing, rule->getDefault());
+        }
+        // The table is indexed by cut-class pair and holds the spacing
+        // without and with parallel run length; the worst entry bounds every
+        // pairing.
+        std::vector<std::vector<std::pair<int, int>>> table;
+        std::map<std::string, uint32_t> row_map;
+        std::map<std::string, uint32_t> col_map;
+        rule->getSpacingTable(table, row_map, col_map);
+        for (const auto& [row_class, row_idx] : row_map) {
+          for (const auto& [col_class, col_idx] : col_map) {
+            if (row_idx >= table.size() || col_idx >= table[row_idx].size()) {
+              continue;
+            }
+            const auto& [no_prl, prl] = table[row_idx][col_idx];
+            max_spacing = std::max({max_spacing, no_prl, prl});
+          }
+        }
+      }
+      for (auto rule : layer->getTechLayerCutSpacingTableOrthRules()) {
+        std::vector<std::pair<int, int>> orth_table;
+        rule->getSpacingTable(orth_table);
+        for (const auto& [within, orth_spacing] : orth_table) {
+          max_spacing = std::max(max_spacing, orth_spacing);
+        }
+      }
+      return max_spacing;
+    }
+    // End-of-line spacing is edge-width dependent, so it cannot contribute to
+    // a shape-independent bound; eolSpacing() resolves it per shape pair.
+    return max_spacing;
+  }
+
+  // LEF58 end-of-line spacing for one shape pair.  The rule only governs edges
+  // narrower than its EOLWIDTH, so applying it to every shape would invent
+  // keepouts around wide geometry and displace cells for a rule that does not
+  // apply to them.  A rectangle's end-of-line edges are its narrow ones, so the
+  // shape's minimum dimension is the edge width to test.  This is only the
+  // rule's reach, for the query halo; eolKeepout() decides the conflict.
+  static int eolSpacing(odb::dbTechLayer* layer,
+                        const odb::Rect& fixed,
+                        const odb::Rect& cell)
+  {
+    if (layer->getType() == odb::dbTechLayerType::CUT) {
+      return 0;
+    }
+    const int fixed_width = std::min(fixed.dx(), fixed.dy());
+    const int cell_width = std::min(cell.dx(), cell.dy());
+    int max_spacing = 0;
+    for (auto rule : layer->getTechLayerSpacingEolRules()) {
+      // An end-of-line violation needs a narrow edge on either shape.
+      const bool fixed_is_eol = fixed_width < rule->getEolWidth();
+      const bool cell_is_eol = cell_width < rule->getEolWidth();
+      if (!fixed_is_eol && !cell_is_eol) {
+        continue;
+      }
+      max_spacing
+          = std::max({max_spacing, rule->getEolSpace(), rule->getEolWithin()});
+      if (rule->isEndToEndValid()) {
+        max_spacing = std::max(max_spacing, rule->getEndToEndSpace());
+        if (rule->isExtensionValid()) {
+          max_spacing = std::max(max_spacing, 2 * rule->getExtension());
+        }
+      }
+    }
+    return max_spacing;
+  }
+
+  // End-of-line spacing only reaches past an edge narrower than EOLWIDTH: EOL
+  // space beyond it and WITHIN to either side, a rectangle rather than a
+  // circle.  When the facing edge is a line end too, drt
+  // (checkMetalEndOfLine_eol_hasEol_endToEndHelper) applies ENDTOEND space
+  // instead, and only where the two ends overlap once each is widened by
+  // EXTENSION.  Lists each zone that applies at this vertical PRL (y overlap,
+  // or minus the gap).
+  static std::vector<EolKeepout> eolKeepouts(odb::dbTechLayer* layer,
+                                             const odb::Rect& fixed,
+                                             const odb::Rect& cell,
+                                             const int64_t vertical_prl)
+  {
+    std::vector<EolKeepout> keepouts;
+    if (layer->getType() == odb::dbTechLayerType::CUT) {
+      return keepouts;
+    }
+    const int64_t vertical_gap = std::max<int64_t>(0, -vertical_prl);
+    for (auto rule : layer->getTechLayerSpacingEolRules()) {
+      const int width = rule->getEolWidth();
+      const int space = rule->getEolSpace();
+      const int within = rule->getEolWithin();
+      const bool end_to_end = rule->isEndToEndValid();
+      const int end_space = rule->getEndToEndSpace();
+      const int64_t extension
+          = rule->isExtensionValid() ? rule->getExtension() : 0;
+      for (const auto& [rect, other] :
+           {std::pair{fixed, cell}, std::pair{cell, fixed}}) {
+        // Narrow top and bottom edges: space vertically, within sideways.
+        if (rect.dx() < width) {
+          if (end_to_end && other.dx() < width) {
+            if (vertical_gap < end_space) {
+              keepouts.push_back({2 * extension - 1, end_space, true});
+            }
+          } else if (vertical_gap < space) {
+            keepouts.push_back({within - 1, space, false});
+          }
+        }
+        // Narrow left and right edges: space sideways, within vertically.
+        if (rect.dy() < width) {
+          if (end_to_end && other.dy() < width) {
+            if (vertical_prl > -2 * extension) {
+              keepouts.push_back({end_space - 1, end_space, true});
+            }
+          } else if (vertical_gap < within) {
+            keepouts.push_back({space - 1, space, false});
+          }
+        }
+      }
+    }
+    return keepouts;
+  }
+
+  static int64_t eolKeepout(odb::dbTechLayer* layer,
+                            const odb::Rect& fixed,
+                            const odb::Rect& cell,
+                            const int64_t vertical_prl)
+  {
+    int64_t keepout = no_keepout_;
+    for (const EolKeepout& zone :
+         eolKeepouts(layer, fixed, cell, vertical_prl)) {
+      keepout = std::max(keepout, zone.keepout);
+    }
+    return keepout;
+  }
+
+  // The zones eolKeepout() rejects a cell shape in around |fixed|, against the
+  // worst of |cells|.
+  static std::vector<odb::Rect> eolZones(odb::dbTechLayer* layer,
+                                         const odb::Rect& fixed,
+                                         const std::set<DimensionClass>& cells)
+  {
+    std::vector<odb::Rect> zones;
+    if (layer->getType() == odb::dbTechLayerType::CUT) {
+      return zones;
+    }
+    auto add_zone = [&](const int x, const int y) {
+      zones.emplace_back(fixed.xMin() - x,
+                         fixed.yMin() - y,
+                         fixed.xMax() + x,
+                         fixed.yMax() + y);
+    };
+    for (auto rule : layer->getTechLayerSpacingEolRules()) {
+      const int width = rule->getEolWidth();
+      const int space = rule->getEolSpace();
+      const int within = rule->getEolWithin();
+      // Two facing line ends: ENDTOEND space, overlapping once extended.
+      const int end_space
+          = rule->isEndToEndValid() ? rule->getEndToEndSpace() : 0;
+      const int end_reach = rule->isExtensionValid()
+                                ? std::max(0, 2 * rule->getExtension() - 1)
+                                : 0;
+      // Narrow top and bottom edges: space vertically, within sideways.
+      if (fixed.dx() < width
+          || std::ranges::any_of(cells, [&](const DimensionClass& cell) {
+               return cell.first < width;
+             })) {
+        add_zone(within, space);
+        if (end_space > 0) {
+          add_zone(end_reach, end_space);
+        }
+      }
+      // Narrow left and right edges: space sideways, within vertically.
+      if (fixed.dy() < width
+          || std::ranges::any_of(cells, [&](const DimensionClass& cell) {
+               return cell.second < width;
+             })) {
+        add_zone(space, within);
+        if (end_space > 0) {
+          add_zone(end_space, end_reach);
+        }
+      }
+    }
+    return zones;
+  }
+
+  int spacing(odb::dbTechLayer* layer,
+              const odb::Rect& fixed,
+              const odb::Rect& cell) const
+  {
+    // Width/PRL routing spacing, default and cut-class cut spacing, and the
+    // shape-independent LEF58 bound; EOL is resolved separately.
+    auto [lef58_it, inserted] = lef58_spacing_.try_emplace(layer, 0);
+    if (inserted) {
+      lef58_it->second = lef58MaxSpacing(layer);
+    }
+    const int lef58_spacing = lef58_it->second;
+    if (layer->getType() == odb::dbTechLayerType::CUT) {
+      // Prefer the entry for this shape pair's own cut classes; the
+      // shape-independent bound only stands in when neither shape maps to a
+      // declared class.
+      const int cut_class_spacing = cutClassSpacing(layer, fixed, cell);
+      if (cut_class_spacing > 0) {
+        return std::max(layer->getSpacing(), cut_class_spacing);
+      }
+      return std::max(layer->getSpacing(), lef58_spacing);
     }
     const int fixed_width = std::min(fixed.dx(), fixed.dy());
     const int cell_width = std::min(cell.dx(), cell.dy());
     const int length = std::max({fixed.dx(), fixed.dy(), cell.dx(), cell.dy()});
-    return std::max({layer->getSpacing(fixed_width, length),
-                     layer->getSpacing(cell_width, length),
-                     layer->findTwSpacing(fixed_width, cell_width, length)});
+    int max_spacing
+        = std::max({layer->getSpacing(fixed_width, length),
+                    layer->getSpacing(cell_width, length),
+                    layer->findTwSpacing(fixed_width, cell_width, length),
+                    lef58_spacing});
+    // The LEF58 PRL table supports an exact width/length query, so use it
+    // rather than the shape-independent bound above.
+    for (auto rule : layer->getTechLayerSpacingTablePrlRules()) {
+      max_spacing = std::max({max_spacing,
+                              rule->getSpacing(fixed_width, length),
+                              rule->getSpacing(cell_width, length)});
+    }
+    return max_spacing;
   }
 
   const std::vector<MasterShape>& masterShapes(odb::dbMaster* master,
@@ -809,6 +1576,13 @@ class PlacementDRC::FixedSupplyVias
 
   utl::Logger* logger_;
   Grid* grid_;
+  odb::dbBlock* block_;
+  // Recording per-conflict provenance costs memory on every page recipe, so it
+  // is enabled only when the debug level asks for those reports.
+  const bool report_conflicts_{logger_->debugCheck(DPL, "fixed_supply_via", 2)};
+  // Shape-independent LEF58 spacing bound per layer, resolved on first use.
+  mutable std::unordered_map<odb::dbTechLayer*, int> lef58_spacing_;
+  // Kept after construction: fixedSupplyViaKeepouts() needs it for drawing.
   std::unordered_map<odb::dbTechLayer*, std::set<DimensionClass>>
       master_dimensions_;
   std::unordered_map<odb::dbMaster*, std::vector<MasterShape>>
@@ -1016,6 +1790,16 @@ bool PlacementDRC::checkFixedSupplyVias(const Node* cell,
 {
   return fixed_supply_vias_ == nullptr
          || fixed_supply_vias_->check(cell, x, y, orient);
+}
+
+std::vector<FixedSupplyViaKeepout> PlacementDRC::fixedSupplyViaKeepouts(
+    odb::dbTechLayer* layer,
+    const odb::Rect& region) const
+{
+  if (fixed_supply_vias_ == nullptr) {
+    return {};
+  }
+  return fixed_supply_vias_->keepouts(layer, region);
 }
 
 bool PlacementDRC::checkDRC(const Node* cell) const

@@ -126,6 +126,8 @@ class Opendp
                          bool pdn_aware = false);
   // C++ equivalent of `detailed_placement -quiet`.
   void detailedPlacementQuiet();
+  // Return whether fixed supply via checks are enabled for the current block.
+  bool isPdnAwareForCurrentBlock();
   void reportLegalizationStats() const;
   void reportLegalizationSummary(double runtime);
 
@@ -238,9 +240,6 @@ class Opendp
   void updateDbInstLocations();
 
   void initGrid(bool check_fixed_supply_vias = false);
-
-  // Return whether fixed supply via checks are enabled for the current block.
-  bool isPdnAwareForCurrentBlock();
 
   void initPlacementDRC();
 

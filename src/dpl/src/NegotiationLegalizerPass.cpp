@@ -314,7 +314,10 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
 {
   if (debug_observer_) {
     debug_observer_->clearNegotiationSearchWindows();
-    debug_observer_->clearCurrentIterMovers();
+    // Only track movers when place() reports them, else all would grey out.
+    if (opendp_->iterative_debug_ || opendp_->deep_iterative_debug_) {
+      debug_observer_->clearCurrentIterMovers();
+    }
   }
 
   current_iter_ = iter;
@@ -657,6 +660,17 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
   using ScanRank = std::tuple<int, int, int>;
   ScanRank best_rank{-1, -1, -1};
 
+  // Why candidates were rejected, for the stuck-cell report below.
+  struct
+  {
+    int tried{0};
+    int die{0};
+    int row{0};
+    int fence{0};
+    int supply_via{0};
+    int blockage{0};
+  } rejects;
+
   auto tryLocation = [&](int target_x, int target_y, const ScanRank& rank) {
     // Lower-bound prune: the displacement term plus the congestion floor
     // already exceeds the incumbent cost, and the congestion and DRC terms
@@ -666,9 +680,17 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
         > best_cost) {
       return;
     }
-    if (!inDie(target_x, target_y, cell.width, cell.height)
-        || !isValidRow(target_y, cell, target_x)
-        || !respectsFence(cell_idx, target_x, target_y)) {
+    ++rejects.tried;
+    if (!inDie(target_x, target_y, cell.width, cell.height)) {
+      ++rejects.die;
+      return;
+    }
+    if (!isValidRow(target_y, cell, target_x)) {
+      ++rejects.row;
+      return;
+    }
+    if (!respectsFence(cell_idx, target_x, target_y)) {
+      ++rejects.fence;
       return;
     }
     odb::dbOrientType targetOrient = default_orient;
@@ -681,10 +703,14 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     if (node != nullptr
         && !opendp_->drc_engine_->checkFixedSupplyVias(
             node, GridX{target_x}, GridY{target_y}, targetOrient)) {
+      ++rejects.supply_via;
       return;
     }
 
     double cost = negotiationCost(cell_idx, target_x, target_y, best_cost);
+    if (cost >= kInfCost) {
+      ++rejects.blockage;
+    }
     if (cost > best_cost || (cost == best_cost && rank >= best_rank)) {
       // Already loses on displacement + congestion, or ties the incumbent
       // with a losing rank — the DRC term below only adds cost, so neither
@@ -903,11 +929,22 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
                  2,
                  "findBestLocation: no valid candidate found for cell '{}' "
                  "(iter {}, size {} rows x {} sites) — all candidates "
-                 "filtered, cell may be stuck.",
+                 "filtered, cell may be stuck. Of {} candidates (init window "
+                 "{} rows x dx [{}, {}]): {} off die, {} invalid row, {} "
+                 "outside fence, {} on fixed supply vias, {} on blockages.",
                  cell.db_inst->getName(),
                  iter,
                  cell.height,
-                 cell.width);
+                 cell.width,
+                 rejects.tried,
+                 init_window.rows.size(),
+                 init_window.dx_lo,
+                 init_window.dx_hi,
+                 rejects.die,
+                 rejects.row,
+                 rejects.fence,
+                 rejects.supply_via,
+                 rejects.blockage);
     }
 
     else if (best_x == cell.x && best_y == cell.y) {

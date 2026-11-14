@@ -933,7 +933,7 @@ TEST_F(FixedSupplyViaTest, RecreatedBlockStartsWithPdnDisabled)
   EXPECT_NO_THROW(dp_.checkPlacement(false));
 }
 
-TEST_F(FixedSupplyViaTest, PlacementWithoutPdnResetsMode)
+TEST_F(FixedSupplyViaTest, QuietWrapperKeepsPdnMode)
 {
   cut_->setSpacing(20);
   makeCell(cut_);
@@ -943,7 +943,7 @@ TEST_F(FixedSupplyViaTest, PlacementWithoutPdnResetsMode)
 
   inst_->setLocation(kCellX, 0);
   dp_.detailedPlacementQuiet();
-  EXPECT_EQ(inst_->getLocation(), odb::Point(kCellX, 0));
+  EXPECT_NE(inst_->getLocation(), odb::Point(kCellX, 0));
   EXPECT_NO_THROW(dp_.checkPlacement(false));
 }
 

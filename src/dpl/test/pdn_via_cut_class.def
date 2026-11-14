@@ -1,0 +1,24 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN pdn_via_cut_class ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 10000 400 ) ;
+
+ROW ROW_0 CLASS_SITE 0 0 N DO 50 BY 1 STEP 200 0 ;
+
+COMPONENTS 4 ;
+  - aligned_legal CLASS_CELL + PLACED ( 2000 0 ) N ;
+  - aligned_close CLASS_CELL + PLACED ( 4000 0 ) N ;
+  - diagonal_legal CLASS_CELL + PLACED ( 6000 0 ) N ;
+  - diagonal_close CLASS_CELL + PLACED ( 8000 0 ) N ;
+END COMPONENTS
+
+SPECIALNETS 1 ;
+  - VSS + USE GROUND
+    + ROUTED metal1 0 + SHAPE STRIPE ( 2100 350 ) class_via
+      NEW metal1 0 + SHAPE STRIPE ( 4100 310 ) class_via
+      NEW metal1 0 + SHAPE STRIPE ( 6260 330 ) class_via
+      NEW metal1 0 + SHAPE STRIPE ( 8240 310 ) class_via ;
+END SPECIALNETS
+END DESIGN

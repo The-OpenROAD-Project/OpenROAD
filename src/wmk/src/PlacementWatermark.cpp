@@ -222,7 +222,18 @@ void legalizePlacement(dpl::Opendp* opendp, dbBlock* block, int max_disp_um)
   const int max_disp = max_disp_um * block->getDbUnitsPerMicron();
   const int dx = site->getWidth() > 0 ? max_disp / site->getWidth() : 0;
   const int dy = site->getHeight() > 0 ? max_disp / site->getHeight() : 0;
-  opendp->detailedPlacement(std::max(1, dx), std::max(1, dy), "");
+  opendp->detailedPlacement(
+      std::max(1, dx),
+      std::max(1, dy),
+      /* report_file_name */ "",
+      /* incremental */ false,
+      /* use_diamond_legalizer */ false,
+      /* site_search_window */ -1,
+      /* row_search_window */ -1,
+      /* drc_penalty */ -1.0,
+      /* disable_window_extension */ false,
+      /* quiet */ false,
+      /* pdn_aware */ opendp->isPdnAwareForCurrentBlock());
 }
 
 // How far along the row to look for a partner, in candidates.  The distance
