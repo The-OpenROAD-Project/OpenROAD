@@ -5,6 +5,7 @@ import './setup-dom.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { TimingWidget, detailRows, fmtTime } from '../../src/timing-widget.js';
+import { beginSelection } from '../../src/ui-utils.js';
 
 // jsdom does not implement scrollIntoView; stub it so _selectPathRow runs.
 if (!window.HTMLElement.prototype.scrollIntoView) {
@@ -409,6 +410,113 @@ describe('TimingWidget path table sorting', () => {
         assert.equal(tip.style.display, 'none');
         move(1);
         assert.equal(tip.style.display, 'none');
+    });
+});
+
+describe('TimingWidget cone target', () => {
+    // As the server sends them: a port has no instance, and a 3DBlox chiplet's
+    // names carry its chip-inst prefix.
+    const nodes = [
+        { pin: 'in1', inst: '' },
+        { pin: '_12_/A', inst: '_12_' },
+        { pin: '_12_/Z', inst: '_12_' },
+        { pin: 'chip/in2', inst: '' },
+        { pin: 'chip/_13_/A', inst: 'chip/_13_' },
+    ];
+
+    // One setup path, selected, so its detail table lists `nodes`.
+    function makeWidget(app) {
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [makePath(-0.1, '_12_/Z', { data_nodes: nodes })]);
+        widget._selectPathRow(0);
+        return widget;
+    }
+
+    // Presses Cone with "Sync schematic" ticked.
+    async function applyCone(widget, app) {
+        const synced = [];
+        const onSync = (e) => synced.push(e.detail.inst_name);
+        document.addEventListener('openroad-cone-sync', onSync);
+        try {
+            app.requests.length = 0;
+            widget._coneSyncSchematic.checked = true;
+            await widget._applyCone();
+        } finally {
+            document.removeEventListener('openroad-cone-sync', onSync);
+        }
+        return { cone: app.requests.find(r => r.type === 'timing_cone'), synced };
+    }
+
+    it('targets the pin of the picked path row and syncs its instance', async () => {
+        const app = createMockApp();
+        const widget = makeWidget(app);
+        widget._selectDetailRow(2);
+        const { cone, synced } = await applyCone(widget, app);
+        assert.equal(cone.pin_name, '_12_/Z');
+        assert.equal(cone.inst_name, '_12_');
+        assert.deepEqual(synced, ['_12_']);
+    });
+
+    it('targets an instance selected after the row instead', async () => {
+        const app = createMockApp();
+        const widget = makeWidget(app);
+        widget._selectDetailRow(2);
+        beginSelection(app);
+        app.selectedInstanceName = 'u9';
+        const { cone, synced } = await applyCone(widget, app);
+        assert.equal(cone.pin_name, undefined);
+        assert.equal(cone.inst_name, 'u9');
+        assert.deepEqual(synced, ['u9']);
+    });
+
+    it('targets the instance when it is selected again after the row', async () => {
+        const app = createMockApp();
+        app.selectedInstanceName = 'u9';
+        const widget = makeWidget(app);
+        widget._selectDetailRow(2);
+        // Same name as before the row: only the selection token tells them apart.
+        beginSelection(app);
+        const { cone } = await applyCone(widget, app);
+        assert.equal(cone.pin_name, undefined);
+        assert.equal(cone.inst_name, 'u9');
+    });
+
+    it('cones a port row without syncing the schematic', async () => {
+        const app = createMockApp();
+        const widget = makeWidget(app);
+        widget._selectDetailRow(0);
+        const { cone, synced } = await applyCone(widget, app);
+        assert.equal(cone.pin_name, 'in1');
+        assert.equal(cone.inst_name, '');
+        assert.deepEqual(synced, []);
+    });
+
+    it('cones a chiplet port without syncing the schematic', async () => {
+        const app = createMockApp();
+        const widget = makeWidget(app);
+        widget._selectDetailRow(3);
+        const { cone, synced } = await applyCone(widget, app);
+        assert.equal(cone.pin_name, 'chip/in2');
+        assert.equal(cone.inst_name, '');
+        assert.deepEqual(synced, []);
+    });
+
+    it('syncs a chiplet pin\'s prefixed instance', async () => {
+        const app = createMockApp();
+        const widget = makeWidget(app);
+        widget._selectDetailRow(4);
+        const { cone, synced } = await applyCone(widget, app);
+        assert.equal(cone.pin_name, 'chip/_13_/A');
+        assert.deepEqual(synced, ['chip/_13_']);
+    });
+
+    it('asks for a target when there is none', async () => {
+        const app = createMockApp();
+        const widget = makeWidget(app);
+        const { cone, synced } = await applyCone(widget, app);
+        assert.equal(cone, undefined);
+        assert.deepEqual(synced, []);
+        assert.equal(widget._coneStatus.textContent, 'select an instance or a path pin first');
     });
 });
 

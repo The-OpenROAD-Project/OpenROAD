@@ -88,7 +88,6 @@ cc_library(
         ":par",
         "//:ord",
         "//src/utl",
-        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
 )

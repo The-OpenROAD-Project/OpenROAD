@@ -246,7 +246,6 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/utl",
         "//src/web:core",
-        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
 )

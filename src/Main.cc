@@ -23,7 +23,6 @@
 
 #include "absl/base/no_destructor.h"
 #include "bazel/tcl_library_init.h"
-#include "boost/stacktrace/stacktrace.hpp"
 #include "cut/abc_init.h"
 #include "gui/gui.h"
 #include "ord/Design.h"
@@ -36,6 +35,7 @@
 #include "tclDecls.h"
 #include "tcl_readline_setup.h"
 #include "utl/Logger.h"
+#include "utl/StackTrace.h"
 #include "web/web.h"
 
 using sta::findCmdLineFlag;
@@ -101,7 +101,7 @@ static void handler(int sig)
   std::cerr << "Signal " << sig << " received\n";
 
   std::cerr << "Stack trace:\n";
-  std::cerr << boost::stacktrace::stacktrace();
+  std::cerr << utl::stackTrace();
 
   signal(sig, SIG_DFL);
   raise(sig);
@@ -109,6 +109,7 @@ static void handler(int sig)
 
 int main(int argc, char* argv[])
 {
+  utl::initStackTrace(argv[0]);
   // Idle OpenMP workers sleep instead of spinning between parallel regions.
   // A user-set OMP_WAIT_POLICY takes precedence.
   setenv("OMP_WAIT_POLICY", "passive", 0);

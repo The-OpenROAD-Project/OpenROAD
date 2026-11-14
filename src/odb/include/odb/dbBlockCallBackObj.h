@@ -13,6 +13,7 @@ class dbBlock;
 class dbBlockage;
 class dbBox;
 class dbFill;
+class dbGroup;
 class dbITerm;
 class dbInst;
 class dbIoType;
@@ -149,6 +150,17 @@ class dbBlockCallBackObj
   virtual void inDbRegionAddBox(dbRegion*, dbBox*) {}
   virtual void inDbRegionDestroy(dbRegion*) {}
   // dbRegion End
+
+  // dbGroup Start
+  virtual void inDbGroupCreate(dbGroup*) {}
+  virtual void inDbGroupDestroy(dbGroup*) {}
+  virtual void inDbGroupAddInst(dbGroup*, dbInst*) {}
+  virtual void inDbGroupRemoveInst(dbGroup*, dbInst*) {}
+  virtual void inDbGroupAddModInst(dbGroup*, dbModInst*) {}
+  virtual void inDbGroupRemoveModInst(dbGroup*, dbModInst*) {}
+  virtual void inDbGroupAddGroup(dbGroup*, dbGroup* /* child */) {}
+  virtual void inDbGroupRemoveGroup(dbGroup*, dbGroup* /* child */) {}
+  // dbGroup End
 
   // dbRow Start
   virtual void inDbRowCreate(dbRow*) {}

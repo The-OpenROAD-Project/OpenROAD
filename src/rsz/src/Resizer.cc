@@ -660,8 +660,10 @@ void Resizer::balanceRowUsage()
     }
 
     const odb::Point origin = inst->getOrigin();
-    const int x_bin = (origin.x() - core_.xMin()) / x_step;
-    const int y_bin = (origin.y() - core_.yMin()) / y_step;
+    const int x_bin  // Clamp macros or edge cells placed outside core_ bounds.
+        = std::clamp((origin.x() - core_.xMin()) / x_step, 0, num_bins - 1);
+    const int y_bin
+        = std::clamp((origin.y() - core_.yMin()) / y_step, 0, num_bins - 1);
     grid[x_bin][y_bin].push_back(inst);
   }
 
@@ -1489,12 +1491,9 @@ std::vector<sta::LibertyPort*> Resizer::libraryOutputPins(
     sta::LibertyCell* cell) const
 {
   auto pins = libraryPins(cell);
-  for (auto it = pins.begin(); it != pins.end(); it++) {
-    if (!((*it)->direction()->isAnyOutput())) {
-      it = pins.erase(it);
-      it--;
-    }
-  }
+  std::erase_if(pins, [](const sta::LibertyPort* pin) {
+    return !pin->direction()->isAnyOutput();
+  });
   return pins;
 }
 
@@ -3637,6 +3636,7 @@ int Resizer::metersToDbu(double dist) const
 
 void Resizer::setMaxUtilization(double max_utilization)
 {
+  initBlock();  // Populate core_ when called from Tcl before resizer->init().
   max_area_ = coreArea() * max_utilization;
 }
 
@@ -7762,8 +7762,10 @@ bool Resizer::checkAndMarkVTSwappable(
 
 bool Resizer::isClockCellCandidate(sta::LibertyCell* cell)
 {
+  // Exclude Liberty-only cells (e.g. pad models) with no physical LEF master.
   return (!cell->dontUse() && !this->dontUse(cell) && !cell->alwaysOn()
-          && !cell->isIsolationCell() && !cell->isLevelShifter());
+          && !cell->isIsolationCell() && !cell->isLevelShifter()
+          && db_network_->staToDb(cell) != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////

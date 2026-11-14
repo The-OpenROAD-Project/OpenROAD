@@ -36,3 +36,4 @@ Skills are located in `.agents/skills/` (with `.claude/skills` symlink for Claud
 | `fix-bug` | Trace root cause, implement fix, create tests, prepare commit | `/fix-bug <issue#-or-error-code>` |
 | `add-test` | Add integration/unit tests registered in Bazel | `/add-test <module> [description]` |
 | `review-pr` | Draft local PR review notes (correctness > QoR > testing); human posts | `/review-pr <pr#-or-url>` |
+| `run-web-viewer` | Launch the web viewer on a design and drive it in headless Chrome; screenshots | `/run-web-viewer` |

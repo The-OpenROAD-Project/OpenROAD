@@ -94,7 +94,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       357 |   0.0999 |  2.595659e+03 |          |  9.78e-07 |      
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 357
-[INFO GPL-1017] Routability mode iteration count: 64
+[INFO GPL-1017] Routability mode iteration count: 65
 [INFO GPL-1005] Routability final weighted congestion: 0.2673
 [INFO GPL-1002] Placed Cell Area              619.7347
 [INFO GPL-1003] Available Free Area           953.8760

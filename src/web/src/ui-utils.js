@@ -12,6 +12,19 @@ export function isStaticMode(app) {
     return !!app?.websocketManager?.isStaticMode;
 }
 
+// Visibility keys that drive other keys here and never reach the wire, marked
+// by name the way selectability keys are marked with `s_`.  A list of them
+// would be a fourth place to remember a new one, and forgetting is silent:
+// the tile cache is keyed on the request JSON minus the flags the server
+// recognizes (request_handler.cpp), so a key it has never heard of survives
+// that subtraction and turns its own toggle into a full-screen cache miss.
+const CLIENT_ONLY_PREFIX = 'ui_';
+
+// The one message both hierarchy views show when their overlay is switched
+// off, so the two cannot drift apart on the name of the control to blame.
+export const HIERARCHY_OFF_HINT
+    = 'Hierarchy view is off — enable it in Display Controls';
+
 // The WebSocket for the page at `loc`, carrying the page's access token: the
 // server refuses the upgrade without it.
 export function websocketUrlFrom(loc) {
@@ -30,6 +43,7 @@ export function websocketUrlFrom(loc) {
 export function buildVisibilityFlags(visibility, selectability) {
     const vf = {};
     for (const [k, v] of Object.entries(visibility || {})) {
+        if (k.startsWith(CLIENT_ONLY_PREFIX)) continue;
         vf[k] = !!v;
     }
     for (const [k, v] of Object.entries(selectability || {})) {
@@ -205,6 +219,17 @@ export function onSelectionReset(app, fn) {
         app.selectionResetters = [];
     }
     app.selectionResetters.push(fn);
+}
+
+// Fit the map to a DBU rectangle [xMin, yMin, xMax, yMax].  Shared by the
+// Inspector's "Zoom to", the Clusters panel's double-click and the DRC widget.
+export function zoomToBBox(app, bbox, padding = 20) {
+    if (!bbox || !app || !app.map || !app.designScale) return;
+    const [x1, y1, x2, y2] = bbox;
+    app.map.fitBounds(
+        dbuRectToBounds(x1, y1, x2, y2, app.designScale, app.designMaxDXDY,
+                        app.designOriginX, app.designOriginY),
+        { padding: [padding, padding] });
 }
 
 // A busy cursor over the whole page while `fn` runs, as the Qt GUI sets a
@@ -817,7 +842,7 @@ export function installWheelPanning(map, wheelZoomEnabled) {
     map.getContainer().addEventListener('wheel', (e) => {
         e.preventDefault();
         if (wheelZoomEnabled() === e.ctrlKey) {
-            const [dx, dy] = wheelDeltaPx(e, map.getContainer());
+            const [dx, dy] = wheelDeltaPx(e, () => map.getContainer().clientHeight);
             map.panBy([dx, dy], { animate: false });
             return;
         }
@@ -830,14 +855,16 @@ export function installWheelPanning(map, wheelZoomEnabled) {
 // A wheel event's scroll amount in CSS pixels.  deltaMode is not always pixels:
 // Firefox reports lines, and a page-mode event (rare, but produced by some
 // remote-desktop stacks) means a viewport at a time.  Treating either as pixels
-// would make one notch pan by a couple of pixels.
-function wheelDeltaPx(e, container) {
+// would make one notch pan by a couple of pixels.  `pagePx()` gives the
+// viewport's size along the direction the caller scrolls; it is called only
+// for page-mode events, keeping the layout read off the common path.
+export function wheelDeltaPx(e, pagePx) {
     const kLineHeightPx = 16;
     let scale = 1;
     if (e.deltaMode === 1) {
         scale = kLineHeightPx;
     } else if (e.deltaMode === 2) {
-        scale = container.clientHeight || kLineHeightPx;
+        scale = pagePx() || kLineHeightPx;
     }
     return [e.deltaX * scale, e.deltaY * scale];
 }

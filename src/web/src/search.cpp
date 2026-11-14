@@ -350,6 +350,91 @@ void Search::clearInsts()
   announceModified(top_block_data_.insts_init);
 }
 
+void Search::noteOwnerColorsUsed()
+{
+  top_block_data_.overlay_owners_init = true;
+}
+
+// announceModified, not notifyModified: it moves revision() on every edit --
+// which the cached palettes poll -- but calls out only once per render of the
+// overlay, so a cluster tree written one addInst at a time does not broadcast
+// once per instance.
+void Search::ownerColorsModified()
+{
+  announceModified(top_block_data_.overlay_owners_init);
+}
+
+void Search::inDbInstCreate(odb::dbInst* inst)
+{
+  // Mirrors inDbInstDestroy: an instance created already placed belongs in the
+  // index.  It also joins a module, so the overlay palettes move with it.
+  if (inst->isPlaced()) {
+    clearInsts();
+  }
+  ownerColorsModified();
+}
+
+void Search::inDbPostInstParentChange(odb::dbInst* /* inst */)
+{
+  ownerColorsModified();
+}
+
+void Search::inDbModuleCreate(odb::dbModule* /* module */)
+{
+  ownerColorsModified();
+}
+
+void Search::inDbModuleDestroy(odb::dbModule* /* module */)
+{
+  ownerColorsModified();
+}
+
+void Search::inDbGroupCreate(odb::dbGroup* /* group */)
+{
+  ownerColorsModified();
+}
+
+void Search::inDbGroupDestroy(odb::dbGroup* /* group */)
+{
+  ownerColorsModified();
+}
+
+void Search::inDbGroupAddInst(odb::dbGroup* /* group */,
+                              odb::dbInst* /* inst */)
+{
+  ownerColorsModified();
+}
+
+void Search::inDbGroupRemoveInst(odb::dbGroup* /* group */,
+                                 odb::dbInst* /* inst */)
+{
+  ownerColorsModified();
+}
+
+void Search::inDbGroupAddModInst(odb::dbGroup* /* group */,
+                                 odb::dbModInst* /* modinst */)
+{
+  ownerColorsModified();
+}
+
+void Search::inDbGroupRemoveModInst(odb::dbGroup* /* group */,
+                                    odb::dbModInst* /* modinst */)
+{
+  ownerColorsModified();
+}
+
+void Search::inDbGroupAddGroup(odb::dbGroup* /* group */,
+                               odb::dbGroup* /* child */)
+{
+  ownerColorsModified();
+}
+
+void Search::inDbGroupRemoveGroup(odb::dbGroup* /* group */,
+                                  odb::dbGroup* /* child */)
+{
+  ownerColorsModified();
+}
+
 void Search::clearBlockages()
 {
   announceModified(top_block_data_.blockages_init);

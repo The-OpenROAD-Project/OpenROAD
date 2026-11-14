@@ -133,7 +133,6 @@ cc_library(
         ":geometry",
         "//:ord",
         "//src/utl",
-        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
 )
