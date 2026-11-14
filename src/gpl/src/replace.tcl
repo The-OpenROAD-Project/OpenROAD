@@ -231,12 +231,13 @@ sta::define_cmd_args "cluster_flops" {\
     [-max_split_size max_split_size]\
     [-num_paths num_paths]\
     [-clock_power_weight clock_power_weight]\
+    [-fill_weight fill_weight]\
 }
 
 proc cluster_flops { args } {
   sta::parse_key_args "cluster_flops" args \
     keys { -tray_weight -timing_weight -max_split_size -num_paths \
-      -clock_power_weight } \
+      -clock_power_weight -fill_weight } \
     flags {}
 
   if { [ord::get_db_block] == "NULL" } {
@@ -248,6 +249,7 @@ proc cluster_flops { args } {
   set max_split_size 500
   set num_paths 0
   set clock_power_weight 0.0
+  set fill_weight 0.0
 
   if { [info exists keys(-tray_weight)] } {
     set tray_weight $keys(-tray_weight)
@@ -271,8 +273,12 @@ proc cluster_flops { args } {
     set clock_power_weight $keys(-clock_power_weight)
   }
 
+  if { [info exists keys(-fill_weight)] } {
+    set fill_weight $keys(-fill_weight)
+  }
+
   gpl::replace_run_mbff_cmd $max_split_size $tray_weight $timing_weight \
-    $num_paths $clock_power_weight
+    $num_paths $clock_power_weight $fill_weight
 }
 
 sta::define_cmd_args "global_placement_debug" {

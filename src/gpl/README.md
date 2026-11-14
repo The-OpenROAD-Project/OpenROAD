@@ -269,7 +269,8 @@ cluster_flops
     [-timing_weight timing_weight]\
     [-max_split_size max_split_size]\
     [-num_paths num_paths]\
-    [-clock_power_weight clock_power_weight]
+    [-clock_power_weight clock_power_weight]\
+    [-fill_weight fill_weight]
 ```
 
 #### Options
@@ -281,6 +282,7 @@ cluster_flops
 | `-max_split_size` | Maximum split size, default value is 500 (-1 for no decomposition), type `int`.|
 | `-num_paths` | KIV, default value is 0, type `int`. |
 | `-clock_power_weight` | Credits clock-tree power saved by banking, promoting higher banking ratios. Models a per-sink clock-tree power equal to this weight times the single-bit flop power; an N-bit tray presents one clock sink instead of N. Default value is 0.0 (legacy cost model, no clock-tree credit), type `float` (must be non-negative). Any non-negative value is accepted, including fractional weights (e.g. 0.5, 1.5); sweep it continuously (typically around 1-3) to reach the desired banking on designs where reduced clock-tree routing is the goal. |
+| `-fill_weight` | Penalizes empty slots (wasted bits) in partially filled trays, steering the ILP toward fully packed trays. Each empty slot of a used N-bit tray costs this weight times the tray's per-slot cost, on top of the tray cost itself. This is a heuristic penalty, not a physical power term, and it is included in the reported ILP cost. The per-slot cost already reflects `-clock_power_weight`, so raising that knob also weakens this penalty. Default value is 0.0 (disabled), type `float` (must be finite and non-negative). |
 
 
 ### Placement Clusters
