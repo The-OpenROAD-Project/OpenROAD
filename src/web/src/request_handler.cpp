@@ -5762,13 +5762,15 @@ WebSocketResponse TimingHandler::handleSlackHistogram(
   resp.type = WebSocketResponse::kJson;
   try {
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
-    // `path_groups` (array) requests a stacked per-group breakdown; the scalar
-    // `path_group` remains for the single/unfiltered case.
-    const auto path_groups
+    // A scalar `path_group` is a one-group `path_groups`.
+    auto path_groups
         = jsonOr<std::vector<std::string>>(req.json, "path_groups", {});
+    const auto path_group = jsonOr<std::string>(req.json, "path_group", "");
+    if (path_groups.empty() && !path_group.empty()) {
+      path_groups.push_back(path_group);
+    }
     auto histogram = timing_report_->getSlackHistogram(
         req.json.at("is_setup").as_bool(),
-        jsonOr<std::string>(req.json, "path_group", ""),
         jsonOr<std::string>(req.json, "clock_name", ""),
         path_groups);
     writePayload(resp, serializeSlackHistogram(histogram));

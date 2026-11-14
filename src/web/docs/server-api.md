@@ -656,15 +656,22 @@ reports candidate completions plus the replacement range.
 
 Return the worst N timing paths.
 
-| Field           | Type       | Required | Default            | Description                                                                                                    |
-| --------------- | ---------- | :------: | ------------------ | -------------------------------------------------------------------------------------------------------------- |
-| `is_setup`      | `bool`     |    ✓     | —                  | `true` → setup paths, `false` → hold.                                                                          |
-| `max_paths`     | `int`      |    ✓     | —                  | Maximum number of paths to return.                                                                             |
-| `slack_min`     | `double`   |          | `-FLT_MAX`         | Lower slack bound (inclusive). Optional filter.                                                                |
-| `slack_max`     | `double`   |          | `+FLT_MAX`         | Upper slack bound (exclusive). Optional filter.                                                                |
-| `unconstrained` | `bool`     |          | `false`            | Include paths with no timing constraint.                                                                       |
-| `path_groups`   | `string[]` |          | `[]` (every group) | Path groups to report. Optional filter.                                                                        |
-| `clock_name`    | `string`   |          | `""` (every clock) | Keep the paths whose capturing clock has this name. A name that is no clock returns no paths. Optional filter. |
+| Field           | Type       | Required | Default    | Description                                                                                                                                                     |
+| --------------- | ---------- | :------: | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `is_setup`      | `bool`     |    ✓     | —          | `true` → setup paths, `false` → hold.                                                                                                                           |
+| `max_paths`     | `int`      |    ✓     | —          | Maximum number of paths to return.                                                                                                                              |
+| `slack_min`     | `double`   |          | `-FLT_MAX` | Lower edge (inclusive) of a slack histogram bar. See below.                                                                                                     |
+| `slack_max`     | `double`   |          | `+FLT_MAX` | Upper edge (exclusive) of a slack histogram bar. See below.                                                                                                     |
+| `unconstrained` | `bool`     |          | `false`    | Include paths with no timing constraint. Only in the per-group report.                                                                                          |
+| `path_groups`   | `string[]` |          | `[]`       | The slack histogram's path groups. See below.                                                                                                                   |
+| `clock_name`    | `string`   |          | `""`       | The slack histogram's clock: without `path_groups`, its path group; with them, the paths it captures in those groups. A name that is no clock returns no paths. |
+
+With none of `slack_min`, `slack_max`, `path_groups`, and `clock_name`, the
+report lists the worst `max_paths` paths of each path group. With any of
+them, it lists the endpoints a `slack_histogram` with the same
+`path_groups` and `clock_name` counts in `[slack_min, slack_max)`, the bar a
+client drills into: the worst path of each, by slack, `max_paths` at most.
+Those endpoints have a finite slack, so `unconstrained` does not apply.
 
 A design with no SDC constraints has no constrained path ends, so
 `unconstrained: false` returns an empty `paths` array. This mirrors the
@@ -717,8 +724,9 @@ single stage emphasized.
 The server re-runs the report with `unconstrained`, `max_paths`,
 `slack_min`, `slack_max`, `path_groups`, and `clock_name`, then picks the
 path whose pins and clocks all match: a register two clocks capture has a
-path per clock with the same pins. If the options differ from the `timing_report` the row came from, the worst
-case is no highlight rather than a different path.
+path per clock with the same pins. If the options differ from the
+`timing_report` the row came from, the worst case is no highlight rather
+than a different path.
 
 **Response (JSON):** `{"ok": true}`. The actual update is the layer
 overlay redraw on the next `tile` request.
@@ -727,11 +735,17 @@ overlay redraw on the next `tile` request.
 
 Histogram of endpoint slacks for one side of the timing report.
 
-| Field        | Type     | Required | Description                                                |
-| ------------ | -------- | :------: | ---------------------------------------------------------- |
-| `is_setup`   | `bool`   |    ✓     | Setup vs hold endpoints.                                    |
-| `path_group` | `string` |          | If non-empty, restrict to this path group. Default: all.    |
-| `clock_name` | `string` |          | If non-empty, restrict to this clock. Default: all.         |
+| Field         | Type       | Required | Description                                                                                                                                             |
+| ------------- | ---------- | :------: | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `is_setup`    | `bool`     |    ✓     | Setup vs hold endpoints.                                                                                                                                |
+| `path_group`  | `string`   |          | If non-empty, restrict to this path group. Default: all.                                                                                                |
+| `path_groups` | `string[]` |          | If non-empty, one stacked `series` per group; `bins` count their union. Takes precedence over `path_group`.                                             |
+| `clock_name`  | `string`   |          | If non-empty, restrict to the endpoints this clock captures, in its own path group when no group is given. A name that is no clock counts no endpoints. |
+
+Each endpoint counts once per group, with its worst slack, in the bin
+`[lower, upper)` that holds it. A `timing_report` with a bin's `lower` and
+`upper` as `slack_min` and `slack_max`, and the same `path_groups` and
+`clock_name`, lists that bin's endpoints.
 
 **Response (JSON):**
 ```json
@@ -739,9 +753,14 @@ Histogram of endpoint slacks for one side of the timing report.
   "bins": [{"lower": -1.0, "upper": 0.0, "count": 12, "negative": true}, ...],
   "unconstrained_count": 5,
   "total_endpoints":    1234,
-  "time_unit":          "ns"
+  "time_unit":          "ns",
+  "clocks": [{"name": "clk", "period": 1.0}],
+  "series": [{"name": "reg2reg", "counts": [7, ...]}, ...]
 }
 ```
+
+`series` is present only when `path_groups` has more than one group; each
+entry's `counts` parallels `bins`.
 
 ### `chart_filters`
 

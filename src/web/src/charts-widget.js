@@ -218,8 +218,11 @@ export class ChartsWidget {
         // Histogram kind: 'setup'|'hold' (endpoint slack), 'fanout', 'netlength'.
         this._currentTab = 'setup';
         this._histogramData = null;
-        // The filters _histogramData was fetched with, for a bar's drill-down.
-        this._histogramFilters = {};
+        // { tab, filters } _histogramData was fetched with, for a bar's
+        // drill-down; null until a histogram is drawn.
+        this._drawnHistogram = null;
+        // Bumped per histogram request; only the latest one's reply is drawn.
+        this._histogramGeneration = 0;
         this._bars = [];
         this._yMax = 0;
         this._yTicks = [];
@@ -465,11 +468,13 @@ export class ChartsWidget {
     }
 
     async _fetchHistogram() {
+        const requestedTab = this._currentTab;
+        const generation = ++this._histogramGeneration;
+        // A reply to an older request, or for a tab no longer shown, is
+        // dropped rather than drawn as the wrong histogram.
+        const stale = () => generation !== this._histogramGeneration
+            || this._currentTab !== requestedTab;
         try {
-            // Remember which tab issued this request so a response that arrives
-            // after the user switches tabs can be discarded instead of being
-            // rendered/interpreted as the wrong histogram type.
-            const requestedTab = this._currentTab;
             let req;
             let filters = {};
             if (requestedTab === 'fanout') {
@@ -486,12 +491,11 @@ export class ChartsWidget {
                 };
             }
             const data = await this._app.websocketManager.request(req);
-            // Stale response: the user switched tabs while this was in flight.
-            if (this._currentTab !== requestedTab) {
+            if (stale()) {
                 return;
             }
             this._histogramData = data;
-            this._histogramFilters = filters;
+            this._drawnHistogram = { tab: requestedTab, filters };
             this._syncView();
 
             if (requestedTab === 'fanout' || requestedTab === 'netlength') {
@@ -505,7 +509,9 @@ export class ChartsWidget {
                     (unconstrained > 0 ? `, ${unconstrained} unconstrained` : '');
             }
         } catch (err) {
-            this._statusLabel.textContent = 'Error: ' + err.message;
+            if (!stale()) {
+                this._statusLabel.textContent = 'Error: ' + err.message;
+            }
         }
     }
 
@@ -819,23 +825,20 @@ export class ChartsWidget {
 
     async _handleClick(e) {
         if (this._activeDebugChart >= 0) return;
-        // Only slack histograms drill down to timing paths.
-        if (this._currentTab === 'fanout' || this._currentTab === 'netlength') {
-            return;
-        }
+        // Only slack histograms drill down to timing paths, and the drawn
+        // bars may be another tab's until the current one's arrive.
+        const tab = this._drawnHistogram?.tab;
+        if (tab !== 'setup' && tab !== 'hold') return;
         const bar = this._hitTestBar(e);
         if (!bar || bar.count === 0) return;
 
-        const tab = this._currentTab;
         const reportOptions = {
             max_paths: 50,
             slack_min: bar.lower,
             slack_max: bar.upper,
             unconstrained: false,
-            // The filters the drawn histogram was fetched with, not the
-            // selects', which may have changed since, so a bar lists the
-            // paths it counted.
-            ...this._histogramFilters,
+            // The drawn histogram's filters; the selects may have changed.
+            ...this._drawnHistogram.filters,
         };
         try {
             const resp = await withBusyCursor(

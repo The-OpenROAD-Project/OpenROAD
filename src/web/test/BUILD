@@ -594,6 +594,7 @@ cc_test(
         "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
+        "//src/tst:db_fixture",
         "//src/tst:nangate45_fixture",
         "//src/web",
         "//src/web:core",
