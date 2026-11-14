@@ -1178,6 +1178,7 @@ void FlexDR::stubbornTilesFlow(const SearchRepairArgs& args,
             workers_batches[batch_id].emplace_back(
                 createWorker(0, 0, worker_args, route_box));
             workers_batches[batch_id].back()->setWorkerId(worker_id);
+            workers_batches[batch_id].back()->setStopOnMarkerGrowth(true);
             iter_prog.total_num_workers++;
           }
         }
@@ -2357,6 +2358,7 @@ void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
   (ar) & markers_;
   (ar) & bestMarkers_;
   (ar) & isCongested_;
+  (ar) & stopOnMarkerGrowth_;
   if (is_loading(ar)) {
     // boundaryPin_
     int sz = 0;
