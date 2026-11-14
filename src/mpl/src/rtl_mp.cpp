@@ -5,9 +5,11 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "MplObserver.h"
+#include "feasibilityChecker.h"
 #include "hardMacroFactory.h"
 #include "hier_rtlmp.h"
 #include "object.h"
@@ -43,14 +45,28 @@ bool MacroPlacer::run(int threads, const MacroPlacerOptions& options)
   hier_rtlmp_->configure(threads, options);
   hier_rtlmp_->setGuidanceRegions(guidance_regions_);
 
-  HardMacroFactory factory(db_->getChip()->getBlock(),
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  HardMacroFactory factory(block,
                            logger_,
                            hier_rtlmp_->floorplanShape(),
                            hier_rtlmp_->minChannel(),
                            options.pin_aware_channels);
+  InstToHardMap hard_macros = factory.create();
 
-  hier_rtlmp_->setHardMacros(factory.create());
-  hier_rtlmp_->run();
+  FeasibilityChecker checker(block,
+                             logger_,
+                             hard_macros,
+                             hier_rtlmp_->floorplanShape(),
+                             options.target_util);
+  checker.run();
+
+  if (checker.foundUnfixedMacros()) {
+    hier_rtlmp_->setHardMacros(std::move(hard_macros));
+    hier_rtlmp_->run();
+  } else {
+    logger_->info(
+        MPL, 13, "No unfixed macros found. Skipping macro placement.");
+  }
 
   logger_->info(MPL, 500, "Runtime: {:.2f}s", timer.elapsed());
   return true;

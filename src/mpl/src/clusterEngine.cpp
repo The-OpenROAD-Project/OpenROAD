@@ -16,8 +16,6 @@
 #include <vector>
 
 #include "MplObserver.h"
-#include "boost/polygon/polygon.hpp"
-#include "boost/polygon/polygon_90_set_data.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "mpl-util.h"
 #include "object.h"
@@ -49,10 +47,6 @@ ClusteringEngine::ClusteringEngine(odb::dbBlock* block,
 void ClusteringEngine::run()
 {
   init();
-
-  if (!tree_->has_unfixed_macros) {
-    return;
-  }
 
   createRoot();
   setBaseThresholds();
@@ -86,8 +80,7 @@ void ClusteringEngine::setTree(PhysicalHierarchy* tree)
   tree_ = tree;
 }
 
-// Check if macro placement is both needed and feasible.
-// Also report some design data relevant for the user and
+// Report some design data relevant for the user and
 // initialize the tree with data from the design.
 void ClusteringEngine::init()
 {
@@ -98,87 +91,12 @@ void ClusteringEngine::init()
     }
   }
 
-  // With no macro to place there is nothing to cluster or check: the
-  // checks below guard the placement, and a design whose macros are all
-  // fixed may legitimately hold fixed standard cells in the core.
   const std::vector<odb::dbInst*> unfixed_macros = getUnfixedMacros();
-  if (unfixed_macros.empty()) {
-    tree_->has_unfixed_macros = false;
-    logger_->info(MPL, 17, "No unfixed macros.");
-    return;
-  }
-
-  if (!movableCellsFitInMacroPlacementArea()) {
-    logger_->error(
-        MPL, 65, "The movable cells do not fit in the macro placement area.");
-  }
-
   design_metrics_ = computeModuleMetrics(block_->getTopModule());
-
   tree_->macro_with_halo_area = computeMacroWithHaloArea(unfixed_macros);
-  const float inst_area_with_halos
-      = tree_->macro_with_halo_area + design_metrics_->getStdCellArea();
-
-  if (inst_area_with_halos > tree_->floorplan_shape.area()) {
-    logger_->error(
-        MPL,
-        16,
-        "The instance area considering the macros' halos {:.2f}um^2 exceeds "
-        "the floorplan area {:.2f}um^2",
-        block_->dbuAreaToMicrons(static_cast<int64_t>(inst_area_with_halos)),
-        block_->dbuAreaToMicrons(tree_->floorplan_shape.area()));
-  }
-
   tree_->io_pads = getIOPads();
 
   reportDesignData(unfixed_macros.size());
-}
-
-bool ClusteringEngine::movableCellsFitInMacroPlacementArea() const
-{
-  const odb::Rect& macro_placement_area = tree_->floorplan_shape;
-
-  int64_t occupied_area = 0;
-  for (odb::dbInst* inst : block_->getInsts()) {
-    const odb::Rect bbox = inst->getBBox()->getBox();
-
-    if (inst->isFixed()) {
-      // Note that we can handle fixed cells outside the macro placement area.
-      // Also, it may exist macros such as physical markers that can be
-      // partially inside the core so we need to compute the intersection.
-      odb::Rect intersection;
-      bbox.intersection(macro_placement_area, intersection);
-      occupied_area += intersection.area();
-      continue;
-    }
-
-    if (inst->isBlock()) {
-      occupied_area += tree_->maps.inst_to_hard.at(inst)->getArea();
-    } else {
-      occupied_area += bbox.area();
-    }
-  }
-
-  namespace gtl = boost::polygon;
-  using gtl::operators::operator+=;
-  using PolygonSet = gtl::polygon_90_set_data<int>;
-
-  PolygonSet polygons;
-  for (odb::dbBlockage* blockage : block_->getBlockages()) {
-    const odb::Rect bbox = blockage->getBBox()->getBox();
-    odb::Rect intersection;
-    bbox.intersection(macro_placement_area, intersection);
-    polygons += intersection;
-  }
-
-  std::vector<odb::Rect> blockages_without_overlap;
-  polygons.get_rectangles(blockages_without_overlap);
-
-  for (const odb::Rect& blockage : blockages_without_overlap) {
-    occupied_area += blockage.area();
-  }
-
-  return occupied_area <= macro_placement_area.area();
 }
 
 int64_t ClusteringEngine::computeMacroWithHaloArea(

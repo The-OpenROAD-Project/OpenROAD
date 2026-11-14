@@ -14,6 +14,5 @@
 [INFO MPL-0062] Found fixed macro U7.
 [INFO MPL-0062] Found fixed macro U8.
 [INFO MPL-0062] Found fixed macro U9.
-[INFO MPL-0017] No unfixed macros.
-[INFO MPL-0013] Skipping macro placement.
+[INFO MPL-0013] No unfixed macros found. Skipping macro placement.
 No differences found.
