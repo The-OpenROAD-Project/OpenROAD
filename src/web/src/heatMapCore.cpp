@@ -414,35 +414,53 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
 {
   Renderer::setSetting<double>(settings, "DisplayMin", display_range_min_);
   Renderer::setSetting<double>(settings, "DisplayMax", display_range_max_);
-  Renderer::setSetting<double>(settings, "GridX", grid_x_size_);
-  Renderer::setSetting<double>(settings, "GridY", grid_y_size_);
+  // Locals, so setGridSizes() and setUseSelectedOnly() see the change.
+  double grid_x_size = grid_x_size_;
+  double grid_y_size = grid_y_size_;
+  Renderer::setSetting<double>(settings, "GridX", grid_x_size);
+  Renderer::setSetting<double>(settings, "GridY", grid_y_size);
   Renderer::setSetting<int>(settings, "Alpha", color_alpha_);
   Renderer::setSetting<bool>(settings, "LogScale", log_scale_);
   Renderer::setSetting<bool>(settings, "ReverseLog", reverse_log_);
   Renderer::setSetting<bool>(settings, "ShowNumbers", show_numbers_);
   Renderer::setSetting<bool>(settings, "ShowLegend", show_legend_);
-  Renderer::setSetting<bool>(settings, "UseSelectedOnly", use_selected_only_);
+  bool use_selected_only = use_selected_only_;
+  Renderer::setSetting<bool>(settings, "UseSelectedOnly", use_selected_only);
   Renderer::setSetting<bool>(
       settings, "ShowMin", draw_below_min_display_range_);
   Renderer::setSetting<bool>(
       settings, "ShowMax", draw_above_max_display_range_);
 
+  bool options_changed = false;
   for (const auto& setting : settings_) {
     if (std::holds_alternative<MapSettingBoolean>(setting)) {
       const auto& set = std::get<MapSettingBoolean>(setting);
-      bool temp_value = set.getter();
+      const bool old_value = set.getter();
+      bool temp_value = old_value;
       Renderer::setSetting<bool>(settings, set.name, temp_value);
-      set.setter(temp_value);
+      if (temp_value != old_value) {
+        set.setter(temp_value);
+        options_changed = true;
+      }
     } else if (std::holds_alternative<MapSettingMultiChoice>(setting)) {
       const auto& set = std::get<MapSettingMultiChoice>(setting);
-      std::string temp_value = set.getter();
+      const std::string old_value = set.getter();
+      std::string temp_value = old_value;
       Renderer::setSetting<std::string>(settings, set.name, temp_value);
-      set.setter(temp_value);
+      if (temp_value != old_value) {
+        set.setter(temp_value);
+        options_changed = true;
+      }
     }
   }
+  // Option setters only store the value; the data has to be rebuilt.
+  if (options_changed) {
+    destroyMap();
+  }
 
+  setUseSelectedOnly(use_selected_only);
   setDisplayRange(display_range_min_, display_range_max_);
-  setGridSizes(grid_x_size_, grid_y_size_);
+  setGridSizes(grid_x_size, grid_y_size);
   setColorAlpha(color_alpha_);
 }
 
