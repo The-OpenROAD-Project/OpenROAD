@@ -24,6 +24,8 @@ TESTS = [
     "buffer_ports8",
     "buffer_ports9",
     "buffer_varying_lengths",
+    "buffer_varying_lengths_asap7",
+    "buffer_varying_lengths_asap7_size_driver",
     "buffer_varying_lengths_size_driver",
     "clone_flat",
     "clone_hier",
@@ -360,6 +362,8 @@ filegroup(
 
 # Tests that reference other tests
 extra_deps = {
+    "buffer_varying_lengths_asap7": ["buffer_varying_lengths.tcl"],
+    "buffer_varying_lengths_asap7_size_driver": ["buffer_varying_lengths.tcl"],
     "buffer_varying_lengths_size_driver": ["buffer_varying_lengths.tcl"],
     "global_sizing_threads": ["global_sizing.tcl"],
     "repair_fanout6_multi": ["repair_fanout6.tcl"],

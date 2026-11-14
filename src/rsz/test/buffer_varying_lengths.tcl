@@ -1,27 +1,29 @@
 # Generate wires over a range of lengths to observe buffering trends.
 # buffer_varying_lengths_size_driver.tcl runs the same flow with driver
-# sizing enabled during rebuffering. rebuffer_reference/ sources it with
-# buffer_varying_lengths_tight_only set to stop after the tight-timing step.
+# sizing enabled during rebuffering, and the *_asap7* tests set
+# buffer_varying_lengths_pdk (see buffer_varying_lengths_pdk.tcl).
+# rebuffer_reference/ sources it with buffer_varying_lengths_tight_only set
+# to stop after the tight-timing step.
 source "helpers.tcl"
+source "buffer_varying_lengths_pdk.tcl"
 if { ![info exists buffer_varying_lengths_size_driver] } {
   set buffer_varying_lengths_size_driver 0
 }
 if { ![info exists buffer_varying_lengths_tight_only] } {
   set buffer_varying_lengths_tight_only 0
 }
-read_liberty Nangate45/Nangate45_typ.lib
-read_lef Nangate45/Nangate45.lef
+bvl_read_pdk
 
 set db [ord::get_db]
 set tech [$db getTech]
 set chip [odb::dbChip_create $db $tech]
 set block [odb::dbBlock_create $chip top]
-$block setDefUnits 2000
-# Tech dependent
-set m1 [$tech findLayer metal1]
-set buf [$db findMaster BUF_X1]
-set buf_in [$buf findMTerm A]
-set buf_out [$buf findMTerm Z]
+$block setDefUnits [$tech getDbUnitsPerMicron]
+set pin_layer [$tech findLayer $bvl_pin_layer]
+set buf [$db findMaster $bvl_buffer]
+set buf_in [$buf findMTerm $bvl_buffer_in]
+set buf_out [$buf findMTerm $bvl_buffer_out]
+set step [expr { round($bvl_step_um * [$tech getDbUnitsPerMicron]) }]
 for { set i 1 } { $i <= 100 } { incr i } {
   set n1 [odb::dbNet_create $block n1-$i]
   set n2 [odb::dbNet_create $block n2-$i]
@@ -32,11 +34,11 @@ for { set i 1 } { $i <= 100 } { incr i } {
   $bt3 setIoType OUTPUT
   $bt1 connect $n1
   $bt3 connect $n3
-  set pos [expr { $i * 10 * 5000 }]
+  set pos [expr { $i * $step }]
   set bp1 [odb::dbBPin_create $bt1]
   set bp3 [odb::dbBPin_create $bt3]
-  odb::dbBox_create $bp1 $m1 0 $pos 100 [expr { $pos + 100 }]
-  odb::dbBox_create $bp3 $m1 $pos $pos [expr { $pos + 100 }] [expr { $pos + 100 }]
+  odb::dbBox_create $bp1 $pin_layer 0 $pos 100 [expr { $pos + 100 }]
+  odb::dbBox_create $bp3 $pin_layer $pos $pos [expr { $pos + 100 }] [expr { $pos + 100 }]
   $bp1 setPlacementStatus LOCKED
   $bp3 setPlacementStatus LOCKED
   set i1 [odb::dbInst_create $block $buf i1-$i]
@@ -62,6 +64,7 @@ proc arrival { vertex } {
 # input external delay, so it includes the port driving cell delay into
 # the driver and the load delay that depends on the delivered slew.
 proc summarize_solution { input_delay } {
+  global bvl_buffer_in bvl_buffer_out
   estimate_parasitics -placement
   sta::find_timing
   puts "----------------------------------------------------------------------"
@@ -69,10 +72,9 @@ proc summarize_solution { input_delay } {
   puts "----------------------------------------------------------------------"
   set micron2 [expr [ord::microns_to_dbu 1]**2]
   for { set i 1 } { $i <= 100 } { incr i } {
-    set i1i [get_pin i1-$i/A]
-    set i1o [get_pin i1-$i/Z]
-    set i2i [get_pin i2-$i/A]
-    set i2o [get_pin i2-$i/Z]
+    set i1o [get_pin i1-$i/$bvl_buffer_out]
+    set i2i [get_pin i2-$i/$bvl_buffer_in]
+    set i2o [get_pin i2-$i/$bvl_buffer_out]
 
     set delay [expr [arrival [$i2o vertices]] - [sta::time_ui_sta $input_delay]]
 
@@ -105,12 +107,12 @@ proc summarize_solution { input_delay } {
   puts "----------------------------------------------------------------------"
 }
 
-create_clock -period 1 -name clk
-set_input_delay -clock clk 1.0 [all_inputs]
+create_clock -period $bvl_period -name clk
+set_input_delay -clock clk $bvl_period [all_inputs]
 set_output_delay -clock clk 0.0 [all_outputs]
-set_driving_cell -lib_cell BUF_X1 -pin Z [all_inputs]
+set_driving_cell -lib_cell $bvl_buffer -pin $bvl_buffer_out [all_inputs]
 
-set_wire_rc -layer metal2
+bvl_set_wire_rc
 estimate_parasitics -placement
 
 # first, repair design to normalize slews
@@ -146,7 +148,7 @@ check_drivers_unmoved
 # characterize solution
 puts "\nSolution under tight timing constraint:"
 report_check_types
-summarize_solution 1.0
+summarize_solution $bvl_period
 if { $buffer_varying_lengths_tight_only } {
   return
 }

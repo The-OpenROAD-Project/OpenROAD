@@ -1,7 +1,7 @@
 # Time evenly spaced chains of one buffer size for every length; the best
 # of these seed search.tcl.
 #
-# Environment: REF_SIZE_DRIVER (0 or 1), REF_OUT (output file).
+# Environment: REF_PDK, REF_SIZE_DRIVER (0 or 1), REF_OUT (output file).
 # Run from src/rsz/test.
 
 source "rebuffer_reference/common.tcl"
@@ -9,18 +9,18 @@ ref::init
 
 if { $::env(REF_SIZE_DRIVER) } {
   set bare_drivers $ref::cells
-  set chain_drivers {BUF_X1 BUF_X4 BUF_X8 BUF_X16}
+  set chain_drivers $bvl_ref_drivers
 } else {
-  set bare_drivers {BUF_X1}
-  set chain_drivers {BUF_X1}
+  set bare_drivers [list $bvl_buffer]
+  set chain_drivers [list $bvl_buffer]
 }
 
 for { set i 1 } { $i <= 100 } { incr i } {
   foreach driver $bare_drivers {
     ref::make_path $i $driver {} {}
   }
-  # Up to one buffer per 250 um plus two, at most nine.
-  set max_bufs [expr { min(9, int($i * 25 / 250.0) + 2) }]
+  # Up to one buffer per ten length steps plus two, at most nine.
+  set max_bufs [expr { min(9, int($i / 10.0) + 2) }]
   for { set k 1 } { $k <= $max_bufs } { incr k } {
     foreach cell $ref::cells {
       foreach driver $chain_drivers {
