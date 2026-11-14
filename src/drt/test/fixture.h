@@ -237,7 +237,8 @@ class Fixture : public ::testing::Test
       frCoord spacing,
       int adjacent_cuts,
       int two_cuts,
-      frCoord within);
+      frCoord within,
+      frCoord within2 = 0);
   void makeLef58WrongDirSpcConstraint(
       frLayerNum layer_num,
       odb::dbTechLayerWrongDirSpacingRule* dbRule);
