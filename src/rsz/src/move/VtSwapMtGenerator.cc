@@ -97,7 +97,7 @@ bool VtSwapMtGenerator::isApplicable(const Target& target) const
   sta::Instance* inst = target.inst(resizer_);
   sta::LibertyCell* current_cell = resizer_.network()->libertyCell(inst);
   if (inst == nullptr || current_cell == nullptr || resizer_.dontTouch(inst)
-      || !resizer_.isLogicStdCell(inst) || resizer_.vtCategoryCount() < 2) {
+      || !resizer_.isLogicStdCell(inst) || !resizer_.canVtSwap(current_cell)) {
     return false;
   }
 

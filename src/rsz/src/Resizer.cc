@@ -1077,7 +1077,8 @@ void Resizer::findBuffers()
 
 void Resizer::findBuffersNoPruning()
 {
-  if (!lib_data_) {
+  // A dont_use change clears buffer_cells_; the library data is stale then.
+  if (!lib_data_ || buffer_cells_.empty()) {
     sta::LibertyCellSeq buffer_list;
     getBufferList(buffer_list);
   }
@@ -1436,6 +1437,21 @@ float Resizer::bufferDriveResistance(const sta::LibertyCell* buffer) const
 int Resizer::vtCategoryCount() const
 {
   return static_cast<int>(lib_data_->sorted_vt_categories.size());
+}
+
+bool Resizer::canVtSwap(sta::LibertyCell* cell)
+{
+  if (vtCategoryCount() >= 2) {
+    return true;
+  }
+  // With one usable VT, only a cell mapped to a dont_use VT can move, to its
+  // equivalent in the usable VT.
+  return dontUse(cell) && getVTEquivCells(cell).size() > 1;
+}
+
+int Resizer::vtCategoryCountWithDontUse() const
+{
+  return lib_data_->vt_category_count_with_dont_use;
 }
 
 // This should be exported by STA
@@ -2023,6 +2039,8 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
     lib_data_->sorted_vt_categories.clear();
   }
 
+  // VT categories of the buffers, dont_use ones included
+  std::set<VTCategory> vt_categories_with_dont_use;
   sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
     sta::LibertyLibrary* lib = lib_iter->next();
@@ -2033,10 +2051,14 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
           continue;
         }
       }
-      if (!dontUse(buffer) && !buffer->alwaysOn() && !buffer->isIsolationCell()
+      if (!buffer->alwaysOn() && !buffer->isIsolationCell()
           && !buffer->isLevelShifter() && isLinkCell(buffer)) {
         odb::dbMaster* master = db_network_->staToDb(buffer);
         if (!master) {
+          continue;
+        }
+        vt_categories_with_dont_use.insert(cellVTType(master));
+        if (dontUse(buffer)) {
           continue;
         }
 
@@ -2061,6 +2083,8 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
     }
   }
   delete lib_iter;
+  lib_data_->vt_category_count_with_dont_use
+      = static_cast<int>(vt_categories_with_dont_use.size());
 
   if (!buffer_list.empty()) {
     // Sort buffer list by VT type, then by drive resistance
@@ -2265,14 +2289,19 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
     return cache_it->second;
   }
 
-  if (!lib_data_) {
+  // A dont_use change clears buffer_cells_; rebuild the library data when a
+  // caller asks before findBuffers() does.
+  if (!lib_data_ || buffer_cells_.empty()) {
     sta::LibertyCellSeq buffer_list;
     getBufferList(buffer_list);
     // We just need library data
     (void) buffer_list;
   }
 
-  if (lib_data_->sorted_vt_categories.size() < 2) {
+  // A dont_use cell keeps its equivalents in the one usable VT so that a VT
+  // swap can move it there (e.g. a latch mapped to a slower VT in a flow
+  // that uses only the fastest VT).
+  if (lib_data_->sorted_vt_categories.size() < 2 && !dontUse(source_cell)) {
     vt_equiv_cells_cache_[source_cell] = sta::LibertyCellSeq();
     return vt_equiv_cells_cache_[source_cell];
   }
@@ -2391,8 +2420,12 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
   vt_equiv_cells_cache_[source_cell] = std::move(vt_equiv_cells);
   const sta::LibertyCellSeq& vt_equiv_cells_new
       = vt_equiv_cells_cache_[source_cell];
-  for (sta::LibertyCell* equiv_cell : vt_equiv_cells_new) {
-    vt_equiv_cells_cache_[equiv_cell] = vt_equiv_cells_new;
+  // The list of a dont_use source cell holds that cell, so it is not shared:
+  // the other cells must not move to a dont_use cell.
+  if (!dontUse(source_cell)) {
+    for (sta::LibertyCell* equiv_cell : vt_equiv_cells_new) {
+      vt_equiv_cells_cache_[equiv_cell] = vt_equiv_cells_new;
+    }
   }
   return vt_equiv_cells_cache_[source_cell];
 }
@@ -3659,6 +3692,8 @@ void Resizer::setDontUse(sta::LibertyCell* cell, bool dont_use)
   buffer_lowest_drive_ = nullptr;
   port_buffer_ = nullptr;
   swappable_cells_cache_.clear();
+  // getVTEquivCells skips dont_use cells too.
+  vt_equiv_cells_cache_.clear();
   // findTargetLoads skips dont_use cells, so a cell re-enabled with
   // unset_dont_use would otherwise keep a target load of zero and be ranked
   // worst by findTargetCell.
@@ -3675,6 +3710,7 @@ void Resizer::resetDontUse()
   buffer_lowest_drive_ = nullptr;
   port_buffer_ = nullptr;
   swappable_cells_cache_.clear();
+  vt_equiv_cells_cache_.clear();
   target_load_map_ = nullptr;
 
   // recopy in liberty cell dont uses
