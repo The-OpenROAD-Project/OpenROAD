@@ -15,6 +15,7 @@ COMPULSORY_TESTS = [
 
 PASSFAIL_TESTS = [
     "ilp_fixed_vertices",
+    "partition_cut_delay",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -86,6 +87,18 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+cc_test(
+    name = "TestCutDelay",
+    srcs = ["cpp/TestCutDelay.cpp"],
+    features = ["-layering_check"],
+    deps = [
+        "//src/par",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
 
 cc_test(
     name = "TestILPFixedVertices",

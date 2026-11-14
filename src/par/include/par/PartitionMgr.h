@@ -197,7 +197,8 @@ class PartitionMgr
                         int max_num_vcycle,
                         int num_coarsen_solutions,
                         int num_vertices_threshold_ilp,
-                        int global_net_threshold);
+                        int global_net_threshold,
+                        bool extra_delay_specified = true);
 
   void evaluatePartDesignSolution(unsigned int num_parts_arg,
                                   float balance_constraint_arg,
@@ -225,7 +226,8 @@ class PartitionMgr
                                   bool guardband_flag,
                                   // weight parameters
                                   const std::vector<float>& e_wt_factors,
-                                  const std::vector<float>& v_wt_factors);
+                                  const std::vector<float>& v_wt_factors,
+                                  bool extra_delay_specified = true);
 
   // k-way partitioning used by Hier-RTLMP
   std::vector<int> PartitionKWaySimpleMode(

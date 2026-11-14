@@ -187,7 +187,12 @@ float Refiner::CalculatePathCost(int path_id,
     return cost;
   }
   // timing-related cost (basic path_cost * number of cut on the path)
-  cost = path_wt_factor_ * (path.size() - 1) * hgraph->PathTimingCost(path_id);
+  const int num_cuts = path.size() - 1;
+  const float timing_cost
+      = evaluator_->HasExtraCutDelay()
+            ? evaluator_->GetPathTimingScore(path_id, hgraph, num_cuts)
+            : hgraph->PathTimingCost(path_id);
+  cost = path_wt_factor_ * num_cuts * timing_cost;
   // get the snaking factor of the path (maximum repetition of block_id - 1)
   int snaking_factor = 0;
   for (auto [block_id, count] : block_counter) {
@@ -280,6 +285,16 @@ std::vector<int> Refiner::FindNeighbors(
       }
     }
   }
+  if (evaluator_->HasExtraCutDelay() && hgraph->HasTiming()) {
+    // Changing the number of cuts affects gains along the whole timing path.
+    for (const int path_id : hgraph->TimingPathsThrough(vertex_id)) {
+      for (const int v : hgraph->PathVertices(path_id)) {
+        if (!visited_vertices_flag[v]) {
+          neighbors.insert(v);
+        }
+      }
+    }
+  }
   return std::vector<int>(neighbors.begin(), neighbors.end());
 }
 
@@ -291,18 +306,13 @@ std::vector<int> Refiner::FindNeighbors(
     const std::vector<int>& solution,
     const std::pair<int, int>& partition_pair) const
 {
-  std::set<int> neighbors;
-  for (const int e : hgraph->Edges(vertex_id)) {
-    for (const int v : hgraph->Vertices(e)) {
-      if (!visited_vertices_flag[v]
-          && (solution[v] == partition_pair.first
-              || solution[v] == partition_pair.second)) {
-        // This vertex has not been visited yet
-        neighbors.insert(v);
-      }
-    }
-  }
-  return std::vector<int>(neighbors.begin(), neighbors.end());
+  std::vector<int> neighbors
+      = FindNeighbors(hgraph, vertex_id, visited_vertices_flag);
+  std::erase_if(neighbors, [&](int v) {
+    return solution[v] != partition_pair.first
+           && solution[v] != partition_pair.second;
+  });
+  return neighbors;
 }
 
 // Functions related to move a vertex
@@ -371,6 +381,10 @@ GainCell Refiner::CalculateVertexGain(int v,
   // check the timing path
   if (hgraph->GetNumTimingPaths() > 0) {
     for (const int path_id : hgraph->TimingPathsThrough(v)) {
+      // A coarsened path can visit the same vertex more than once.
+      if (evaluator_->HasExtraCutDelay() && delta_path_cost.contains(path_id)) {
+        continue;
+      }
       // Get updated path costs if vertex is moved to a different partition
       const float cost
           = CalculatePathCost(path_id, hgraph, solution, v, to_pid);
