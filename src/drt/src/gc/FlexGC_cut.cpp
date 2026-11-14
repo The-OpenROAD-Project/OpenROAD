@@ -344,7 +344,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
     frCoord llx = gtl::xl(*viaRect1);
     frCoord lly = gtl::yl(*viaRect1);
     frCoord urx = gtl::xh(*viaRect1);
-    frCoord ury = gtl::xh(*viaRect1);
+    frCoord ury = gtl::yh(*viaRect1);
 
     marker->addVictim(
         net1->getOwner(),
@@ -354,7 +354,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
     llx = gtl::xl(*viaRect2);
     lly = gtl::yl(*viaRect2);
     urx = gtl::xh(*viaRect2);
-    ury = gtl::xh(*viaRect2);
+    ury = gtl::yh(*viaRect2);
     marker->addAggressor(
         net2->getOwner(),
         std::make_tuple(
@@ -615,7 +615,7 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable_main(gcRect* rect)
     frCoord llx = gtl::xl(*above_rect);
     frCoord lly = gtl::yl(*above_rect);
     frCoord urx = gtl::xh(*above_rect);
-    frCoord ury = gtl::xh(*above_rect);
+    frCoord ury = gtl::yh(*above_rect);
     marker->addAggressor(net1->getOwner(),
                          std::make_tuple(above_rect->getLayerNum(),
                                          odb::Rect(llx, lly, urx, ury),
@@ -624,7 +624,7 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable_main(gcRect* rect)
     llx = gtl::xl(*below_rect);
     lly = gtl::yl(*below_rect);
     urx = gtl::xh(*below_rect);
-    ury = gtl::xh(*below_rect);
+    ury = gtl::yh(*below_rect);
     marker->addAggressor(net2->getOwner(),
                          std::make_tuple(below_rect->getLayerNum(),
                                          odb::Rect(llx, lly, urx, ury),
@@ -724,7 +724,7 @@ void FlexGCWorker::Impl::checkLef58Enclosure_main(
   frCoord llx = gtl::xl(*encRect);
   frCoord lly = gtl::yl(*encRect);
   frCoord urx = gtl::xh(*encRect);
-  frCoord ury = gtl::xh(*encRect);
+  frCoord ury = gtl::yh(*encRect);
   marker->addAggressor(net->getOwner(),
                        std::make_tuple(encRect->getLayerNum(),
                                        odb::Rect(llx, lly, urx, ury),
@@ -732,7 +732,7 @@ void FlexGCWorker::Impl::checkLef58Enclosure_main(
   llx = gtl::xl(*viaRect);
   lly = gtl::yl(*viaRect);
   urx = gtl::xh(*viaRect);
-  ury = gtl::xh(*viaRect);
+  ury = gtl::yh(*viaRect);
   marker->addVictim(net->getOwner(),
                     std::make_tuple(viaRect->getLayerNum(),
                                     odb::Rect(llx, lly, urx, ury),
@@ -884,7 +884,7 @@ void FlexGCWorker::Impl::checkCutSpacingTableOrthogonal_helper(
     frCoord llx = gtl::xl(*rect1);
     frCoord lly = gtl::yl(*rect1);
     frCoord urx = gtl::xh(*rect1);
-    frCoord ury = gtl::xh(*rect1);
+    frCoord ury = gtl::yh(*rect1);
     net = rect1->getNet();
     marker->addVictim(net->getOwner(),
                       std::make_tuple(rect1->getLayerNum(),
@@ -895,7 +895,7 @@ void FlexGCWorker::Impl::checkCutSpacingTableOrthogonal_helper(
     llx = gtl::xl(*rect2);
     lly = gtl::yl(*rect2);
     urx = gtl::xh(*rect2);
-    ury = gtl::xh(*rect2);
+    ury = gtl::yh(*rect2);
     net = rect2->getNet();
     marker->addVictim(net->getOwner(),
                       std::make_tuple(rect2->getLayerNum(),
