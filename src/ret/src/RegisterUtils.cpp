@@ -4,9 +4,9 @@
 #include "RegisterUtils.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <cstring>
 #include <optional>
-#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -14,8 +14,10 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sequential.hh"
 

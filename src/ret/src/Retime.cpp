@@ -16,15 +16,18 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Scene.hh"
 #include "sta/Sdc.hh"
 #include "sta/TableModel.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingRole.hh"
+#include "sta/Transition.hh"
 #include "utl/Logger.h"
 
 namespace ret {
@@ -53,8 +56,8 @@ Retime::Retime(RetimingGraph* graph,
 float Retime::pinArrival(odb::dbITerm* db_pin)
 {
   sta::Pin* pin = sta_->getDbNetwork()->dbToSta(db_pin);
-  sta::Vertex* vertex;
-  sta::Vertex* bidirect_drvr;
+  sta::Vertex* vertex = nullptr;
+  sta::Vertex* bidirect_drvr = nullptr;
   sta_->ensureGraph()->pinVertices(pin, vertex, bidirect_drvr);
   if (vertex == nullptr) {
     return 0.0f;
@@ -79,8 +82,8 @@ float Retime::getGateArc(odb::dbITerm* input_pin)
     return 0.0f;
   }
   sta::Graph* graph = sta_->ensureGraph();
-  sta::Vertex* vertex;
-  sta::Vertex* bidirect_drvr;
+  sta::Vertex* vertex = nullptr;
+  sta::Vertex* bidirect_drvr = nullptr;
   graph->pinVertices(pin, vertex, bidirect_drvr);
   if (vertex == nullptr) {
     return 0.0f;
@@ -103,8 +106,8 @@ float Retime::getGateArc(odb::dbITerm* input_pin)
 float Retime::getPinSlew(sta::Pin* pin)
 {
   sta::Graph* graph = sta_->ensureGraph();
-  sta::Vertex* vertex;
-  sta::Vertex* bidirect_drvr;
+  sta::Vertex* vertex = nullptr;
+  sta::Vertex* bidirect_drvr = nullptr;
   graph->pinVertices(pin, vertex, bidirect_drvr);
   if (vertex == nullptr) {
     return 0.0f;

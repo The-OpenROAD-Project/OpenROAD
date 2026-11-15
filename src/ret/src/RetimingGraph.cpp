@@ -11,6 +11,7 @@
 #include "RegisterUtils.h"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "sta/Clock.hh"
 #include "sta/Mode.hh"
 #include "sta/Sdc.hh"
@@ -37,10 +38,7 @@ void RetimingGraph::findClockPeriod()
     clock_period_ = clock->period();
   }
   if (clocks == 0) {
-    logger_->error(
-      utl::RET,
-      30,
-      "No clock defined.");
+    logger_->error(utl::RET, 30, "No clock defined.");
   }
   if (clocks > 1) {
     logger_->error(

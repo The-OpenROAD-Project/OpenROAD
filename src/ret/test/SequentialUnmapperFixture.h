@@ -35,7 +35,7 @@ namespace ret {
 class SequentialUnmapperFixture : public tst::Fixture
 {
  public:
-  using LibPair = std::pair<std::string, std::string>;  // (lef, lib)
+  using LibPair = std::pair<const char*, const char*>;  // (lef, lib)
   using LeafNets = std::map<std::string, odb::dbNet*>;  // liberty pin -> net
   // odb deletes std::less on dbObject*, hence the unordered map.
   using NetValues = std::unordered_map<odb::dbNet*, int>;
@@ -44,14 +44,13 @@ class SequentialUnmapperFixture : public tst::Fixture
 
   // Library pairs shared by the test files; the first LEF loaded creates
   // the tech, later LEFs are macros-only.
-  static inline const LibPair kBasic{"sequnmap_basic.lef",
-                                     "sequnmap_basic.lib"};
-  static inline const LibPair kTieMulti{"sequnmap_tie_multi.lef",
-                                        "sequnmap_tie_multi.lib"};
-  static inline const LibPair kTieSized{"sequnmap_tie_sized.lef",
-                                        "sequnmap_tie_sized.lib"};
-  static inline const LibPair kNegedge{"sequnmap_seq_active_low.lef",
-                                       "sequnmap_seq_active_low.lib"};
+  static constexpr LibPair kBasic{"sequnmap_basic.lef", "sequnmap_basic.lib"};
+  static constexpr LibPair kTieMulti{"sequnmap_tie_multi.lef",
+                                     "sequnmap_tie_multi.lib"};
+  static constexpr LibPair kTieSized{"sequnmap_tie_sized.lef",
+                                     "sequnmap_tie_sized.lib"};
+  static constexpr LibPair kNegedge{"sequnmap_seq_active_low.lef",
+                                    "sequnmap_seq_active_low.lib"};
 
  protected:
   // Load one or more (lef, lib) pairs, then create the chip and block.
@@ -62,8 +61,8 @@ class SequentialUnmapperFixture : public tst::Fixture
     const std::string dir = "openroad/src/ret/test/";
     odb::dbTech* tech = nullptr;
     for (const LibPair& lef_lib : libs) {
-      const std::string& lef = lef_lib.first;
-      const std::string& lib = lef_lib.second;
+      const std::string lef = lef_lib.first;
+      const std::string lib = lef_lib.second;
       const std::string name = lef.substr(0, lef.rfind('.'));
       odb::dbLib* db_lib = nullptr;
       if (tech == nullptr) {

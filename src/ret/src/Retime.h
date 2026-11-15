@@ -60,7 +60,7 @@ class Retime
   };
   static constexpr size_t kArcCharStages = 5;
 
-  float pinArrival(odb::dbITerm* pin);
+  float pinArrival(odb::dbITerm* db_pin);
   float getGateArc(odb::dbITerm* input_pin);
   float getPinSlew(sta::Pin* pin);
 
@@ -73,7 +73,7 @@ class Retime
                         odb::dbITerm* sink,
                         float load,
                         float fallback,
-                        ArcCharStage* stage);
+                        ArcCharStage* stage_out);
 
   bool outputRegistered(int v) const;
   bool isCombinational(int u, const Edge& e) const;

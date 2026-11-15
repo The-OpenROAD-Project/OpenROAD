@@ -83,22 +83,12 @@ Simply run the following script:
 
 ## Limitations
 
-- Forward moves only; a register never moves backward across a gate.
-- One clock domain.
-- Flat netlists only.
-- The path into an enable pin is not in the delay model.
-- Registers of different cells on the same enable net are different
-  classes and are unmapped when merged; so is an inverting register
-  crossing a gate that is not self-dual.
-- A register unmapped on demand stays unmapped even when the search then
-  finds no improving move.
-- The search restarts from the first gate after every accepted move.
-- The cone estimate that pre-filters candidates costs the fanin gates of a
-  slide with their pre-slide arcs, so it can skip a move the exact recompute
-  would accept.
-- Initial values of moved registers are not computed: the result is
-  equivalent from the reset state only when the moved registers have no
-  defined initial value. Verify with sequential equivalence checking.
+`retime` moves registers forward only, never backward across a gate, and
+works on flat netlists with one clock domain. The path into a register's
+enable pin is not in the delay model. Initial values of moved registers are
+not computed: the result is equivalent from the reset state only when the
+moved registers have no defined initial value, so verify the result with
+sequential equivalence checking.
 
 ## License
 

@@ -20,8 +20,10 @@
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "ret/SequentialUnmapper.h"
 #include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 
 namespace ret {
@@ -30,7 +32,7 @@ namespace {
 
 const RegisterClass& classOf(const RetimingGraph& graph, odb::dbInst* reg)
 {
-  static const RegisterClass kOther;
+  static const RegisterClass& kOther = *new RegisterClass;
   auto it = graph.reg_class_.find(reg);
   return it != graph.reg_class_.end() ? it->second : kOther;
 }
@@ -112,9 +114,7 @@ void Retimer::retime(int max_moves)
 {
   odb::dbBlock* block = getBlock();
   if (sta_->getDbNetwork()->hasHierarchy()) {
-    logger_->error(utl::RET,
-                   42,
-                   "Hierarchical netlists are not supported.");
+    logger_->error(utl::RET, 42, "Hierarchical netlists are not supported.");
   }
   if (!unmapper_->prepare()) {
     logger_->error(
