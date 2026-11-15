@@ -341,6 +341,22 @@ TEST_F(ExtractorTest, Commit)
   EXPECT_GT(stats.grounded_pairs, 0);
   EXPECT_GT(stats.coupled_pairs, 0);
   EXPECT_NEAR(stored(), total, 1e-6 * total);
+
+  // Coupling to ground grounds every pair whatever the thresholds, with
+  // the same totals and no coupling capacitors.
+  ExtractOptions grounded = none;
+  grounded.coupling_to_ground = true;
+  Extractor decoupled(block_, stack_, model_, getLogger(), grounded);
+  const ExtractStats ground_stats = decoupled.extract();
+  EXPECT_EQ(ground_stats.coupled_pairs, 0);
+  EXPECT_EQ(ground_stats.grounded_pairs,
+            stats.coupled_pairs + stats.grounded_pairs);
+  EXPECT_NEAR(stored(), total, 1e-6 * total);
+  for (odb::dbNet* net : block_->getNets()) {
+    for (odb::dbCapNode* node : net->getCapNodes()) {
+      EXPECT_EQ(node->getCCSegs().size(), 0) << net->getName();
+    }
+  }
 }
 
 // A model without tables for a layer that signal nets are routed on is an

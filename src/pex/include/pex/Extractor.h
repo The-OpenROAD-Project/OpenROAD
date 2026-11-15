@@ -41,6 +41,9 @@ struct ExtractOptions
   // total capacitance.
   double coupling_threshold = 0.1;
   double coupling_ratio = 0.03;
+  // Every net pair's coupling goes to ground on both nets, whatever the
+  // thresholds: each net keeps its total, with no coupling elements.
+  bool coupling_to_ground = false;
   // Worker threads; 0 runs everything on the calling thread.
   int threads = 0;
   EvaluatorOptions evaluator;

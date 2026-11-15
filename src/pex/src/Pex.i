@@ -54,12 +54,14 @@ void read_model_cmd(const char* itf, const char* model)
 
 void extract_cmd(double max_res,
                  double coupling_threshold,
-                 double coupling_ratio)
+                 double coupling_ratio,
+                 bool coupling_to_ground)
 {
   pex::ExtractOptions options;
   options.max_res = max_res;
   options.coupling_threshold = coupling_threshold;
   options.coupling_ratio = coupling_ratio;
+  options.coupling_to_ground = coupling_to_ground;
   options.threads = ord::OpenRoad::openRoad()->getThreadCount();
   getPex()->extract(options);
 }

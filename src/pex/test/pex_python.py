@@ -47,4 +47,11 @@ for kwargs in ({}, {"nets": "_042_", "sample": 2}, {"sample": 0}):
     else:
         raise AssertionError(f"compareFsv({kwargs}) accepted")
 extractor.extract(coupling_threshold=1, coupling_ratio=1)
+extractor.extract(coupling_to_ground=True)
+try:
+    extractor.extract(coupling_to_ground=1)
+except ValueError as e:
+    print(e)
+else:
+    raise AssertionError("coupling_to_ground=1 accepted")
 print("pass")

@@ -433,9 +433,10 @@ Extractor::Pairs Extractor::combine(ExtractStats& stats)
       sum += value;
     }
     const auto [low, high] = nets;
-    if (sum >= options_.coupling_threshold
-        || sum >= options_.coupling_ratio * totals[low]
-        || sum >= options_.coupling_ratio * totals[high]) {
+    if (!options_.coupling_to_ground
+        && (sum >= options_.coupling_threshold
+            || sum >= options_.coupling_ratio * totals[low]
+            || sum >= options_.coupling_ratio * totals[high])) {
       stats.coupled_pairs++;
       kept.emplace(nets, std::move(nodes));
       continue;

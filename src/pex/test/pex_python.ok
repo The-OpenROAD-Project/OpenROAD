@@ -8,7 +8,7 @@
 [INFO ODB-0133]     Created 150 nets and 254 connections.
 [INFO ODB-0134] Finished DEF file: ../../fsv/test/field_solver_gcd.def
 [INFO PEX-0015] Read model sky130_coarse.json of skywater130_nominal: 20 lateral, 20 end, 18 crossing and 18 diagonal tables.
-[INFO PEX-0018] Extracted 122 nets from 5281 boxes: 337 net pairs coupled, 489 grounded below the thresholds.
+[INFO PEX-0018] Extracted 122 nets from 5281 boxes: 337 net pairs coupled, 489 grounded.
 [WARNING PEX-0038] 28 pins are on no wire of their net and have no node in its parasitics.
 [WARNING PEX-0019] 61 pin or special-wire shapes are on no node of their net; their capacitance is on the net's first node.
 max_res must be a number of at least 0; got -1
@@ -21,7 +21,11 @@ max_res must be a number of at least 0; got '1'
 give nets or sample
 give nets or sample
 give nets or sample
-[INFO PEX-0018] Extracted 122 nets from 5281 boxes: 2 net pairs coupled, 824 grounded below the thresholds.
+[INFO PEX-0018] Extracted 122 nets from 5281 boxes: 2 net pairs coupled, 824 grounded.
 [WARNING PEX-0038] 28 pins are on no wire of their net and have no node in its parasitics.
 [WARNING PEX-0019] 61 pin or special-wire shapes are on no node of their net; their capacitance is on the net's first node.
+[INFO PEX-0018] Extracted 122 nets from 5281 boxes: 0 net pairs coupled, 826 grounded.
+[WARNING PEX-0038] 28 pins are on no wire of their net and have no node in its parasitics.
+[WARNING PEX-0019] 61 pin or special-wire shapes are on no node of their net; their capacitance is on the net's first node.
+coupling_to_ground must be True or False
 pass

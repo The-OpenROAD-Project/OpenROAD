@@ -214,7 +214,7 @@ void Pex::extract(const ExtractOptions& options)
   logger_->info(utl::PEX,
                 18,
                 "Extracted {} nets from {} boxes: {} net pairs coupled, {} "
-                "grounded below the thresholds.",
+                "grounded.",
                 stats.nets,
                 stats.boxes,
                 stats.coupled_pairs,

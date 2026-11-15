@@ -32,4 +32,7 @@ close $file
 check "-nets writes those nets" { set nets } 1
 extract_pex -coupling_threshold 1 -coupling_ratio 1
 
+# Every coupling to ground.
+extract_pex -coupling_to_ground
+
 exit_summary

@@ -48,12 +48,14 @@ class Pex
 
   void _extract(double max_res,
                 double coupling_threshold,
-                double coupling_ratio)
+                double coupling_ratio,
+                bool coupling_to_ground)
   {
     pex::ExtractOptions options;
     options.max_res = max_res;
     options.coupling_threshold = coupling_threshold;
     options.coupling_ratio = coupling_ratio;
+    options.coupling_to_ground = coupling_to_ground;
     options.threads = ord::OpenRoad::openRoad()->getThreadCount();
     $self->extract(options);
   }
@@ -80,7 +82,13 @@ class Pex
         _check_number("tol", tol, "greater than 0", lambda v: v > 0)
         self._buildModel(itf, out, _name_list(layers), tol)
 
-    def extract(self, max_res=50, coupling_threshold=0.1, coupling_ratio=0.03):
+    def extract(
+        self,
+        max_res=50,
+        coupling_threshold=0.1,
+        coupling_ratio=0.03,
+        coupling_to_ground=False,
+    ):
         """Extracts the design's signal nets into ODB, as extract_pex."""
         for name, value in (
             ("max_res", max_res),
@@ -88,7 +96,11 @@ class Pex
             ("coupling_ratio", coupling_ratio),
         ):
             _check_number(name, value, "of at least 0", lambda v: v >= 0)
-        self._extract(max_res, coupling_threshold, coupling_ratio)
+        if not isinstance(coupling_to_ground, bool):
+            raise ValueError("coupling_to_ground must be True or False")
+        self._extract(
+            max_res, coupling_threshold, coupling_ratio, coupling_to_ground
+        )
 
     def compareFsv(self, nets=(), sample=0, halo=10, tol=0.005):
         """Reports the extracted nets (a name or a list of names), or a

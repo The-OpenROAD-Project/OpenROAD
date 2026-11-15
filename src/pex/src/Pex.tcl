@@ -36,11 +36,13 @@ proc read_pex_model { args } {
 
 sta::define_cmd_args "extract_pex" {[-max_res resistance]\
                                      [-coupling_threshold capacitance]\
-                                     [-coupling_ratio ratio]}
+                                     [-coupling_ratio ratio]\
+                                     [-coupling_to_ground]}
 
 proc extract_pex { args } {
   sta::parse_key_args "extract_pex" args \
-    keys {-max_res -coupling_threshold -coupling_ratio} flags {}
+    keys {-max_res -coupling_threshold -coupling_ratio} \
+    flags {-coupling_to_ground}
   sta::check_argc_eq0 "extract_pex" $args
   set max_res 50
   set threshold 0.1
@@ -56,7 +58,8 @@ proc extract_pex { args } {
     set ratio [pex::check_not_negative -coupling_ratio \
       $keys(-coupling_ratio)]
   }
-  pex::extract_cmd $max_res $threshold $ratio
+  pex::extract_cmd $max_res $threshold $ratio \
+    [info exists flags(-coupling_to_ground)]
 }
 
 sta::define_cmd_args "write_pex_spef" {[-nets nets] filename}

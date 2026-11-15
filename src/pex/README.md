@@ -94,12 +94,14 @@ node of each net. Supply nets, obstructions and fill are neighbors only:
 coupling to them goes to ground. A net pair's coupling is kept only when
 its total reaches `-coupling_threshold` or `-coupling_ratio` of either
 net's total capacitance; otherwise it goes to ground on both nets.
+With `-coupling_to_ground` every pair's coupling goes to ground.
 
 ```tcl
 extract_pex
     [-max_res resistance]
     [-coupling_threshold capacitance]
     [-coupling_ratio ratio]
+    [-coupling_to_ground]
 ```
 
 #### Options
@@ -109,6 +111,7 @@ extract_pex
 | `-max_res` | Wire shapes join in series into one resistor up to this resistance, in ohms; 0 makes each shape its own resistor. The default value is `50`, and the allowed values are floats of at least 0. |
 | `-coupling_threshold` | The total coupling of a net pair, in fF, at or above which it is kept. The default value is `0.1`, and the allowed values are floats of at least 0. |
 | `-coupling_ratio` | The fraction of either net's total capacitance at or above which a net pair's coupling is kept. The default value is `0.03`, and the allowed values are floats of at least 0. |
+| `-coupling_to_ground` | Send every net pair's coupling to ground on both nets, whatever the thresholds: the coupling is still computed and each net keeps its total, but the parasitics have no coupling capacitors. |
 
 ### Compare Pex Fsv
 
@@ -132,7 +135,7 @@ compare_pex_fsv
 | Switch Name | Description |
 | ----- | ----- |
 | `-nets` | The extracted nets to compare. Give either `-nets` or `-sample`. |
-| `-sample` | Compare this many extracted nets, evenly spaced through the design's nets. The allowed values are integers greater than 0. |
+| `-sample` | Compare this many extracted nets: every (N/count)-th of the N extracted nets in the block's net order, or all of them when there are no more than count. The allowed values are integers greater than 0. |
 | `-halo` | The window's reach around a net, in µm. The default value is `10`, and the allowed values are floats of at least 0. |
 | `-tol` | The field solver's relative tolerance on a net's total, which its couplings also take as a fraction of the total. The default value is `0.005`, and the allowed values are floats greater than 0. |
 
@@ -160,7 +163,7 @@ write_pex_spef
 `Design.getPex()` returns the session the Tcl commands use, with the same
 names in camel case: `buildModel(itf, out, layers=(), tol=0.005)`,
 `readModel(itf, model)`, `extract(max_res=50, coupling_threshold=0.1,
-coupling_ratio=0.03)`, `compareFsv(nets=(), sample=0, halo=10,
+coupling_ratio=0.03, coupling_to_ground=False)`, `compareFsv(nets=(), sample=0, halo=10,
 tol=0.005)` and `writeSpef(path, nets=())`, where `layers` and `nets` take
 a name or a list of names. An option out of range raises
 `ValueError`.
