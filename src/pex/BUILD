@@ -133,6 +133,15 @@ cc_library(
     ],
 )
 
+# SPEF from ODB parasitics.
+cc_library(
+    name = "spef_writer",
+    srcs = ["src/SpefWriter.cpp"],
+    hdrs = ["include/pex/SpefWriter.h"],
+    includes = ["include"],
+    deps = ["//src/odb/src/db"],
+)
+
 # The model file.
 cc_library(
     name = "model_json",

@@ -139,6 +139,28 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "TestSpef",
+    size = "medium",
+    srcs = ["cpp/TestSpef.cpp"],
+    data = [
+        "sky130hd/sky130_fd_sc_hd_merged.lef",
+        "sky130hd/sky130hd.tlef",
+        "//src/fsv/test:field_solver_gcd.def",
+        "//src/fsv/test:sky130.itf",
+    ],
+    deps = [
+        "//src/fsv:stack",
+        "//src/odb/src/db",
+        "//src/pex:extractor",
+        "//src/pex:model",
+        "//src/pex:spef_writer",
+        "//src/tst:db_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 EXPERIMENT_DEPS = [
     "//src/pex:evaluator",
     "//src/fsv:net_window",
