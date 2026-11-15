@@ -98,6 +98,24 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "TestNetwork",
+    srcs = ["cpp/TestNetwork.cpp"],
+    data = [
+        "//src/fsv/test:sky130.itf",
+        "//test:sky130hd_data",
+    ],
+    deps = [
+        "//src/fsv:stack",
+        "//src/odb/src/db",
+        "//src/pex:network",
+        "//src/pex:resistance",
+        "//src/tst:db_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 EXPERIMENT_DEPS = [
     "//src/pex:evaluator",
     "//src/fsv:net_window",

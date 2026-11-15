@@ -87,6 +87,30 @@ cc_library(
     ],
 )
 
+# Resistance of wires and vias from the stack.
+cc_library(
+    name = "resistance",
+    srcs = ["src/Resistance.cpp"],
+    hdrs = ["include/pex/Resistance.h"],
+    includes = ["include"],
+    deps = [
+        "//src/fsv:stack",
+        "//src/odb/src/db",
+    ],
+)
+
+# A net's resistor network.
+cc_library(
+    name = "network",
+    srcs = ["src/Network.cpp"],
+    hdrs = ["include/pex/Network.h"],
+    includes = ["include"],
+    deps = [
+        ":resistance",
+        "//src/odb/src/db",
+    ],
+)
+
 # The model file.
 cc_library(
     name = "model_json",
