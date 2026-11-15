@@ -12,7 +12,8 @@
 
 namespace pex {
 
-inline constexpr int kModelFormatVersion = 2;
+// Version 3 added the stack fingerprint; version 2 files read without it.
+inline constexpr int kModelFormatVersion = 3;
 
 // What a model was built from: the technology name of its stack and the
 // file it came from.
@@ -21,6 +22,7 @@ struct ModelSource
   std::string technology;
   std::string file;
   std::string fingerprint;  // buildFingerprint of the stack and options
+  std::string stack;        // stackFingerprint; empty from version 2
 };
 
 // Writes the model with a header: the format version and its source.
@@ -35,8 +37,8 @@ void writeModelFile(const Model& model,
                     const std::string& path);
 
 // Reads a model written by writeModel, and its source when asked. Throws
-// std::runtime_error for a file that cannot be read or parsed, or of
-// another format version.
+// std::runtime_error for a file that cannot be read or parsed, or of a
+// format version other than this one or the one before.
 Model readModel(std::istream& in, ModelSource* source = nullptr);
 Model readModelFile(const std::string& path, ModelSource* source = nullptr);
 

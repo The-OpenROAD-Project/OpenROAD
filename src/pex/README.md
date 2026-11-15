@@ -83,7 +83,10 @@ open). Four kinds of table describe a layer:
 A point and its mirror share one solve, and each solve is seeded by its
 position, so a table does not depend on the thread count. A table the
 model already holds is not built again, so a build resumes from a saved
-model. The model file is JSON with a format version.
+model. The model file is JSON with a format version and fingerprints of
+the stack and of the build settings: a build resumes only a model with
+the same settings, and extraction refuses a model built from another
+stack.
 
 ## Experiments
 
@@ -132,6 +135,16 @@ bazel-bin/src/pex/test/Experiments --groups e9 --threads 64 --tol 0.003 \
 `--smoke` runs a short version of every group, which `Experiments_smoke`
 does as a test. The lateral tables for e6, e7 and e9 take most of the
 time; e2 and e3 solve in 3D and take minutes at 0.3%.
+
+`--coarse` builds the model on small grids (two widths, three spacings,
+one cover layer each side). The regressions' model,
+`test/sky130_coarse.json` (100 KB), takes two minutes at 64 threads:
+
+```
+bazel-bin/src/pex/test/Experiments --groups model --coarse --tol 0.03 \
+    --itf src/fsv/test/sky130.itf --layers li1,met1,met2,met3,met4,met5 \
+    --model src/pex/test/sky130_coarse.json --threads 64
+```
 
 ## Accuracy
 
