@@ -308,3 +308,11 @@ What remains, largest first:
 ```
 bazelisk test //src/pex/test/...
 ```
+
+The C++ tests check the model's tables, builder and file, the evaluator,
+the index against a brute-force scan, the resistor network on hand-made
+wires, extraction (the index's candidates against every box, identical
+ODB at any thread count, and every part of the capacitance in ODB) and
+the SPEF writer. `pex_extract` runs the commands on the gcd excerpt of the
+fsv tests with the small model, `test/sky130_coarse.json`, and reads the
+SPEF back with OpenSTA; `pex_errors` checks the commands' errors.

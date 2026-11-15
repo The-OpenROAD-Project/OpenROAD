@@ -3,6 +3,8 @@
 
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -207,4 +209,48 @@ cc_test(
     ],
     data = EXPERIMENT_DATA,
     deps = EXPERIMENT_DEPS,
+)
+
+TESTS = [
+    "pex_errors",
+    "pex_extract",
+]
+
+filegroup(
+    name = "test_resources",
+    srcs = [
+        "helpers.tcl",
+        "other_stack.json",
+        "sky130_coarse.json",
+        "sky130hd/sky130_fd_sc_hd_merged.lef",
+        "sky130hd/sky130hd.tlef",
+        "sky130hd/sky130hd_tt.lib",
+        "version_two.json",
+        "//src/fsv/test:field_solver_gcd.def",
+        "//src/fsv/test:sky130.itf",
+    ] + [test + ".ok" for test in TESTS],
+)
+
+[regression_test(
+    name = test_name,
+    data = [":test_resources"],
+) for test_name in TESTS]
+
+py_test(
+    name = "pex_man_tcl_check",
+    srcs = ["pex_man_tcl_check.py"],
+    data = ["//src/pex:doc_files"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "pex_readme_msgs_check",
+    data = [
+        "//src/pex:doc_files",
+        "//src/pex:messages_txt",
+    ],
 )

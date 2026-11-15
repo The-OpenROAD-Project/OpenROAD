@@ -1,0 +1,44 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 5 pins.
+[INFO ODB-0131]     Created 141 components and 538 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 282 connections.
+[INFO ODB-0133]     Created 150 nets and 254 connections.
+[INFO PEX-0015] Read model sky130_coarse.json of skywater130_nominal: 20 lateral, 20 end, 18 crossing and 18 diagonal tables.
+[INFO PEX-0018] Extracted 122 nets from 5281 boxes: 337 net pairs coupled, 489 grounded below the thresholds.
+[WARNING PEX-0038] 28 pins are on no wire of their net and have no node in its parasitics.
+[WARNING PEX-0019] 61 pin or special-wire shapes are on no node of their net; their capacitance is on the net's first node.
+Net _042_
+ Pin capacitance: 0.002-0.003
+ Wire capacitance: 0.002-0.002
+ Total capacitance: 0.004-0.004
+ Number of drivers: 1
+ Number of loads: 1
+ Number of pins: 2
+
+Driver pins
+ _127_/Y output (sky130_fd_sc_hd__mux2i_1) (6, 7)
+
+Load pins
+ _129_/A2 input (sky130_fd_sc_hd__o21ai_1) 0.002-0.003 (3, 7)
+
+Net req_msg[10]
+ Pin capacitance: 0.002-0.002
+ Wire capacitance: 0.001
+ Total capacitance: 0.003-0.003
+ Number of drivers: 1
+ Number of loads: 1
+ Number of pins: 2
+
+Driver pins
+ req_msg[10] input port (0, 63)
+
+Load pins
+ input4/A input (sky130_fd_sc_hd__clkdlybuf4s50_1) 0.002-0.002 (2, 61)
+
+[INFO PEX-0018] Extracted 122 nets from 5281 boxes: 2 net pairs coupled, 824 grounded below the thresholds.
+[WARNING PEX-0038] 28 pins are on no wire of their net and have no node in its parasitics.
+[WARNING PEX-0019] 61 pin or special-wire shapes are on no node of their net; their capacitance is on the net's first node.
+Summary 2 / 2 (100% pass)
+pass
