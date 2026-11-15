@@ -278,6 +278,12 @@ void NesterovPlace::reset()
   diverge_snapshot_wl_coef_x_ = 0;
   diverge_snapshot_wl_coef_y_ = 0;
   diverge_snapshot_hpwl_ = 0;
+  diverge_snapshot_average_overflow_unscaled_ = 0;
+  diverge_snapshot_iter_ = 0;
+  min_hpwl_ = std::numeric_limits<int64_t>::max();
+  min_hpwl_overflow_ = 0;
+  min_hpwl_iter_ = 0;
+  is_min_hpwl_ = false;
   is_routability_need_ = true;
   routability_settle_wait_start_iter_ = -1;
 
@@ -1354,7 +1360,13 @@ PlaceResult NesterovPlace::doNesterovPlace(int start_iter)
   diverge_snapshot_wl_coef_x_ = 0;
   diverge_snapshot_wl_coef_y_ = 0;
   diverge_snapshot_hpwl_ = 0;
+  diverge_snapshot_average_overflow_unscaled_ = 0;
+  diverge_snapshot_iter_ = 0;
   diverge_revert_count_ = 0;
+  min_hpwl_ = std::numeric_limits<int64_t>::max();
+  min_hpwl_overflow_ = 0;
+  min_hpwl_iter_ = 0;
+  is_min_hpwl_ = false;
 
   // backTracking variable.
   float curA = 1.0;
