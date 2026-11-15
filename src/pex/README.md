@@ -13,9 +13,9 @@ resistor network comes from its routed wire, with resistance from the
 ITF stack; its capacitance comes from the model, evaluated on the
 block's boxes around each wire. The model is built by the module itself,
 and the tables' accuracy against the field solver is measured in the
-experiments below. One corner is extracted. `compare_pex_fsv`, the check
-of extraction against the field solver on a design's nets, comes next,
-then several corners, performance, and the remaining accuracy work.
+experiments below and, on a design's nets, with `compare_pex_fsv`. One
+corner is extracted; several corners, performance, and the remaining
+accuracy work come next.
 
 ## Commands
 
@@ -110,6 +110,32 @@ extract_pex
 | `-coupling_threshold` | The total coupling of a net pair, in fF, at or above which it is kept. The default value is `0.1`, and the allowed values are floats of at least 0. |
 | `-coupling_ratio` | The fraction of either net's total capacitance at or above which a net pair's coupling is kept. The default value is `0.03`, and the allowed values are floats of at least 0. |
 
+### Compare Pex Fsv
+
+The `compare_pex_fsv` command checks extraction against the field solver:
+it solves each net's window (the net and the shapes within `-halo` of
+it) with fsv and reports the extracted total against fsv's, and how many
+of its couplings to other signal nets above 5% of its total are within
+20%, the accuracy target's measures. Run it after `extract_pex`; the
+field solver takes the model's ITF stack.
+
+```tcl
+compare_pex_fsv
+    [-nets nets]
+    [-sample count]
+    [-halo halo]
+    [-tol tolerance]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-nets` | The extracted nets to compare. Give either `-nets` or `-sample`. |
+| `-sample` | Compare this many extracted nets, evenly spaced through the design's nets. The allowed values are integers greater than 0. |
+| `-halo` | The window's reach around a net, in µm. The default value is `10`, and the allowed values are floats of at least 0. |
+| `-tol` | The field solver's relative tolerance on a net's total, which its couplings also take as a fraction of the total. The default value is `0.005`, and the allowed values are floats greater than 0. |
+
 ### Write Pex Spef
 
 The `write_pex_spef` command writes the parasitics in ODB as SPEF, in fF
@@ -134,8 +160,9 @@ write_pex_spef
 `Design.getPex()` returns the session the Tcl commands use, with the same
 names in camel case: `buildModel(itf, out, layers=(), tol=0.005)`,
 `readModel(itf, model)`, `extract(max_res=50, coupling_threshold=0.1,
-coupling_ratio=0.03)` and `writeSpef(path, nets=())`, where `layers` and
-`nets` take a name or a list of names. An option out of range raises
+coupling_ratio=0.03)`, `compareFsv(nets=(), sample=0, halo=10,
+tol=0.005)` and `writeSpef(path, nets=())`, where `layers` and `nets` take
+a name or a list of names. An option out of range raises
 `ValueError`.
 
 ```python
@@ -302,6 +329,24 @@ solves, about 3 hours at 64 threads, 2.3 MB):
 
 Building the same model again moves the share of totals within 5% by up
 to 6 points, so 50 nets do not resolve smaller changes.
+
+Extraction itself, checked with `compare_pex_fsv -sample 50 -halo 10 -tol
+0.003` on the routed designs with the same model:
+
+| extraction, 50 nets | gcd | aes |
+| --- | --- | --- |
+| totals within 5% | 66% | 66% |
+| total error, 90th percentile | 6.3% | 6.9% |
+| signal couplings above 5%, within 20% | 94% | 86% |
+| extraction, 1 thread | 6.7 s | 351 s |
+| extraction, 16 threads | 0.58 s | 25 s |
+
+These are the e9 measures on the whole block rather than on each net's
+window: crossings and neighbors reach farther than e9's halo, and
+couplings are averaged between the two nets and grounded below the
+thresholds. rcx takes about 2 s for aes on one thread, so extraction
+must become far faster; most of its time is in the crossing lookups,
+through string-keyed tables and logarithms per piece.
 
 What remains, largest first:
 

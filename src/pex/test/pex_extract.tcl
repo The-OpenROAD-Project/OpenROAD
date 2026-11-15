@@ -20,6 +20,9 @@ read_spef $spef
 report_net -digits 3 _042_
 report_net -digits 3 req_msg[10]
 
+# Two nets against the field solver, at a loose tolerance.
+compare_pex_fsv -nets {_042_ req_msg[10]} -halo 4 -tol 0.02
+
 # One net, and no coupling kept below 1 fF.
 set one [make_result_file pex_extract_one.spef]
 write_pex_spef -nets _042_ $one

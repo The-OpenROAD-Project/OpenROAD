@@ -64,6 +64,15 @@ class Pex
     $self->writeSpef(path, nets);
   }
 
+  void _compare(const std::vector<std::string>& nets,
+                int sample,
+                double halo,
+                double tol)
+  {
+    $self->compare(
+        nets, sample, halo, tol, ord::OpenRoad::openRoad()->getThreadCount());
+  }
+
 %pythoncode %{
     def buildModel(self, itf, out, layers=(), tol=0.005):
         """Builds a model of the ITF stack into out, as build_pex_model:
@@ -80,6 +89,21 @@ class Pex
         ):
             _check_number(name, value, "of at least 0", lambda v: v >= 0)
         self._extract(max_res, coupling_threshold, coupling_ratio)
+
+    def compareFsv(self, nets=(), sample=0, halo=10, tol=0.005):
+        """Reports the extracted nets (a name or a list of names), or a
+        sample of that many nets, against the field solver, as
+        compare_pex_fsv."""
+        nets = _name_list(nets)
+        if bool(nets) == bool(sample):
+            raise ValueError("give nets or sample")
+        if not nets and (
+            isinstance(sample, bool) or not isinstance(sample, int) or sample < 1
+        ):
+            raise ValueError(f"sample must be an integer above 0; got {sample!r}")
+        _check_number("halo", halo, "of at least 0", lambda v: v >= 0)
+        _check_number("tol", tol, "greater than 0", lambda v: v > 0)
+        self._compare(nets, sample, halo, tol)
 
     def writeSpef(self, path, nets=()):
         """Writes the parasitics as SPEF, as write_pex_spef: the nets (a

@@ -15,6 +15,12 @@ max_res must be a number of at least 0; got -1
 max_res must be a number of at least 0; got nan
 max_res must be a number of at least 0; got True
 max_res must be a number of at least 0; got '1'
+[INFO PEX-0028] Net _042_: 1.51 fF against the field solver's 1.579 +- 0.03 fF (-4.4%), 5 couplings above 5%.
+[INFO PEX-0029] Totals within 5% of the field solver: 1 of 1 nets; 90th percentile error 4.4%.
+[INFO PEX-0033] Couplings to signal nets above 5% of a net's total within 20%: 3 of 5.
+give nets or sample
+give nets or sample
+give nets or sample
 [INFO PEX-0018] Extracted 122 nets from 5281 boxes: 2 net pairs coupled, 824 grounded below the thresholds.
 [WARNING PEX-0038] 28 pins are on no wire of their net and have no node in its parasitics.
 [WARNING PEX-0019] 61 pin or special-wire shapes are on no node of their net; their capacitance is on the net's first node.

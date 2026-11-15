@@ -3,19 +3,23 @@
 
 #include "pex/Pex.h"
 
+#include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <exception>
 #include <filesystem>
 #include <fstream>
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "fsv/Itf.h"
 #include "fsv/Stack.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "pex/Compare.h"
 #include "pex/Extractor.h"
 #include "pex/Model.h"
 #include "pex/ModelBuilder.h"
@@ -273,6 +277,79 @@ void Pex::writeSpef(const std::string& path,
   if (!out) {
     logger_->error(utl::PEX, 23, "Writing {} failed.", path);
   }
+}
+
+void Pex::compare(const std::vector<std::string>& names,
+                  const int sample,
+                  const double halo,
+                  const double tol,
+                  const int threads)
+{
+  if (stack_ == nullptr) {
+    logger_->error(utl::PEX, 24, "Read a model with read_pex_model first.");
+  }
+  odb::dbBlock* design = block();
+  std::vector<odb::dbNet*> nets;
+  for (const std::string& name : names) {
+    odb::dbNet* net = design->findNet(name.c_str());
+    if (net == nullptr) {
+      logger_->error(utl::PEX, 25, "Net {} is not in the design.", name);
+    }
+    nets.push_back(net);
+  }
+  if (names.empty()) {
+    nets = sampleNets(design, sample);
+  }
+  if (nets.empty()) {
+    logger_->error(utl::PEX, 26, "No extracted nets to compare.");
+  }
+  std::vector<NetComparison> result;
+  try {
+    result = compareWithFsv(
+        design, *stack_, nets, {.halo = halo, .tol = tol, .threads = threads});
+  } catch (const std::exception& e) {
+    logger_->error(
+        utl::PEX, 27, "Comparing with the field solver failed: {}", e.what());
+  }
+  std::vector<double> errors;
+  int couplings = 0;
+  int close = 0;
+  for (const NetComparison& c : result) {
+    const double error = (c.pex_total - c.fsv_total) / c.fsv_total;
+    errors.push_back(std::abs(error));
+    logger_->info(utl::PEX,
+                  28,
+                  "Net {}: {:.4g} fF against the field solver's {:.4g} +- "
+                  "{:.2g} fF ({:+.1f}%), {} couplings above 5%.",
+                  c.net,
+                  c.pex_total,
+                  c.fsv_total,
+                  c.fsv_sigma,
+                  100 * error,
+                  c.couplings.size());
+    for (const NetComparison::Coupling& k : c.couplings) {
+      couplings++;
+      close += std::abs(k.pex - k.fsv) <= 0.2 * k.fsv ? 1 : 0;
+    }
+  }
+  std::ranges::sort(errors);
+  const int within = static_cast<int>(
+      std::ranges::count_if(errors, [](const double e) { return e <= 0.05; }));
+  const double p90 = errors[std::max(
+      0, static_cast<int>(std::ceil(0.9 * errors.size())) - 1)];
+  logger_->info(utl::PEX,
+                29,
+                "Totals within 5% of the field solver: {} of {} nets; 90th "
+                "percentile error {:.1f}%.",
+                within,
+                errors.size(),
+                100 * p90);
+  logger_->info(utl::PEX,
+                33,
+                "Couplings to signal nets above 5% of a net's total within "
+                "20%: {} of {}.",
+                close,
+                couplings);
 }
 
 }  // namespace pex

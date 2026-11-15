@@ -47,6 +47,13 @@ class Pex
   void extract(const ExtractOptions& options);
   // Writes the parasitics in ODB as SPEF: `nets`, or every extracted net.
   void writeSpef(const std::string& path, const std::vector<std::string>& nets);
+  // Reports the extracted totals and couplings of `names`, or of `sample`
+  // nets spread through the design, against the field solver's.
+  void compare(const std::vector<std::string>& names,
+               int sample,
+               double halo,
+               double tol,
+               int threads);
 
  private:
   odb::dbBlock* block() const;

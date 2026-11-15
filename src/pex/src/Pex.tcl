@@ -72,6 +72,41 @@ proc write_pex_spef { args } {
   pex::write_spef_cmd [file nativename [lindex $args 0]] $nets
 }
 
+sta::define_cmd_args "compare_pex_fsv" {[-nets nets]\
+                                         [-sample count]\
+                                         [-halo halo]\
+                                         [-tol tolerance]}
+
+proc compare_pex_fsv { args } {
+  sta::parse_key_args "compare_pex_fsv" args \
+    keys {-nets -sample -halo -tol} flags {}
+  sta::check_argc_eq0 "compare_pex_fsv" $args
+  set nets {}
+  set sample 0
+  if { [info exists keys(-nets)] } {
+    if { [info exists keys(-sample)] } {
+      utl::error PEX 34 "-nets and -sample cannot both be given."
+    }
+    set nets $keys(-nets)
+  } elseif { [info exists keys(-sample)] } {
+    set sample $keys(-sample)
+    if { !([string is integer -strict $sample] && $sample > 0) } {
+      utl::error PEX 35 "-sample must be an integer greater than 0."
+    }
+  } else {
+    utl::error PEX 36 "Give -nets or -sample."
+  }
+  set halo 10
+  if { [info exists keys(-halo)] } {
+    set halo [pex::check_not_negative -halo $keys(-halo)]
+  }
+  set tol 0.005
+  if { [info exists keys(-tol)] } {
+    set tol [pex::check_positive -tol $keys(-tol)]
+  }
+  pex::compare_cmd $nets $sample $halo $tol
+}
+
 namespace eval pex {
 proc required_key { key keys_list } {
   array set keys $keys_list

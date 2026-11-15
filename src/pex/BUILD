@@ -159,6 +159,20 @@ cc_library(
     ],
 )
 
+# Extraction checked against the field solver.
+cc_library(
+    name = "compare",
+    srcs = ["src/Compare.cpp"],
+    hdrs = ["include/pex/Compare.h"],
+    includes = ["include"],
+    deps = [
+        "//src/fsv",
+        "//src/fsv:net_window",
+        "//src/fsv:stack",
+        "//src/odb/src/db",
+    ],
+)
+
 # The state behind the commands.
 cc_library(
     name = "pex",
@@ -166,6 +180,7 @@ cc_library(
     hdrs = ["include/pex/Pex.h"],
     includes = ["include"],
     deps = [
+        ":compare",
         ":extractor",
         ":model",
         ":model_builder",

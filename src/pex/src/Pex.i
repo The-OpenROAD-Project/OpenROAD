@@ -69,6 +69,15 @@ void write_spef_cmd(const char* path, const std::vector<std::string>& nets)
   getPex()->writeSpef(path, nets);
 }
 
+void compare_cmd(const std::vector<std::string>& nets,
+                 int sample,
+                 double halo,
+                 double tol)
+{
+  getPex()->compare(
+      nets, sample, halo, tol, ord::OpenRoad::openRoad()->getThreadCount());
+}
+
 }  // namespace pex
 
 %}  // inline

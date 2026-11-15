@@ -1,4 +1,8 @@
 [ERROR PEX-0016] Read a model with read_pex_model first.
+[ERROR PEX-0024] Read a model with read_pex_model first.
+[ERROR PEX-0036] Give -nets or -sample.
+[ERROR PEX-0034] -nets and -sample cannot both be given.
+[ERROR PEX-0035] -sample must be an integer greater than 0.
 [ERROR PEX-0030] -itf is required.
 [ERROR PEX-0014] other_stack.json was built from another stack than ../../fsv/test/sky130.itf (other.itf).
 [ERROR PEX-0032] -max_res must be a number of at least 0.
@@ -21,5 +25,7 @@
 [WARNING PEX-0019] 61 pin or special-wire shapes are on no node of their net; their capacitance is on the net's first node.
 [ERROR PEX-0020] Net no_such_net is not in the design.
 [ERROR PEX-0021] Net VDD has no parasitics.
-Summary 10 / 10 (100% pass)
+[ERROR PEX-0025] Net no_such_net is not in the design.
+[ERROR PEX-0027] Comparing with the field solver failed: net VDD has no parasitics
+Summary 16 / 16 (100% pass)
 pass
