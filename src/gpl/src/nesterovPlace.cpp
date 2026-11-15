@@ -1330,6 +1330,10 @@ PlaceResult NesterovPlace::doNesterovPlace(int start_iter)
   if (npVars_.maxNesterovIter > start_iter) {
     trace_.reserve(npVars_.maxNesterovIter - start_iter);
   }
+  // The overflow of the placement this call starts from, which may be a
+  // snapshot an earlier call reverted to. Only the penalty guard uses it.
+  const float start_overflow
+      = incremental_penalty_guard_requested_ ? getFinalOverflow() : 0;
   // Until this call's first update, average_overflow_unscaled_ is from
   // init() or an earlier call, if it was set at all.
   overflow_update_is_stale_ = true;
@@ -1376,7 +1380,7 @@ PlaceResult NesterovPlace::doNesterovPlace(int start_iter)
                               && !npVars_.routability_driven_mode;
   incremental_penalty_guard_requested_ = false;
   float penalty_guard_factor = 1;
-  float penalty_guard_best_overflow = average_overflow_unscaled_;
+  float penalty_guard_best_overflow = start_overflow;
   int penalty_guard_retries = 0;
 
   if (penalty_guard_active) {
