@@ -568,6 +568,9 @@ class Wire
   std::vector<Lateral> left_;
   std::vector<Lateral> right_;
   std::map<int, std::vector<Run>> runs_;  // covers by layer
+  // By layer, the boxes beside the wire within the diagonal table's gaps
+  // on one side or the other, in the order of near_.
+  std::map<int, std::vector<int>> parallels_;
   // Spans along the wire that a longer box of the net counts.
   std::vector<std::pair<int, int>> inside_;
   std::set<int> cuts_;
@@ -711,6 +714,11 @@ void Wire::collect()
         continue;  // overlapping on the same layer: a junction
       }
     } else if (s.layer >= 0) {
+      if (std::abs(s.layer - shape_.layer) <= options_.diagonal_depth
+          && std::max(lo(s, p_) - p1_, p0_ - hi(s, p_))
+                 <= diagonal_reach_[s.layer]) {
+        parallels_[s.layer].push_back(i);
+      }
       const int overlap = std::min(p1_, hi(s, p_)) - std::max(p0_, lo(s, p_));
       if (overlap < options_.cover_overlap * w_) {
         // Beside the wire: a diagonal candidate on a nearby layer, within
@@ -1137,9 +1145,13 @@ std::pair<int, int> Wire::nearestParallel(const int k,
 {
   int best = -1;
   int best_gap = 0;
-  for (const int i : near_) {
+  const auto candidates = parallels_.find(k);
+  if (candidates == parallels_.end()) {
+    return {best, best_gap};
+  }
+  for (const int i : candidates->second) {
     const EvalBox& s = boxes_[i];
-    if (s.layer != k || lo(s, a_) > x0 || hi(s, a_) < x1) {
+    if (lo(s, a_) > x0 || hi(s, a_) < x1) {
       continue;
     }
     const int gap = right_side ? lo(s, p_) - p1_ : p0_ - hi(s, p_);
