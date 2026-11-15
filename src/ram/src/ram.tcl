@@ -26,6 +26,8 @@ sta::define_cmd_args "generate_ram_netlist" {[-mask_size bits]
                                              [-pin_layer layer]
                                              [-service_columns {every sites}]
                                              [-bank_column_layout interleaved|contiguous]
+                                             [-bit_read_segmentation 0|1]
+                                             [-bit_read_rows_per_segment rows]
                                              [-inv_cell name]
                                              [-rw_ports count]
                                              [-r_ports count]
@@ -41,7 +43,7 @@ proc generate_ram_netlist { args } {
       -write_behavioral_verilog -read_style -zero_word -reset_value
       -banks -bank_columns -bank_order -rb_ports -register_read_address -write_style -write_priority
       -periphery -pin_layer -cells -name -decoder -bit_folds -wrapper_verilog -service_columns
-      -bank_column_layout } flags {}
+      -bank_column_layout -bit_read_segmentation -bit_read_rows_per_segment } flags {}
 
   set column_mux_ratio 1
   if { [info exists keys(-column_mux_ratio)] } {
@@ -316,13 +318,31 @@ proc generate_ram_netlist { args } {
       may change."
   }
 
+  set segmentation -1
+  if { [info exists keys(-bit_read_segmentation)] } {
+    set segmentation $keys(-bit_read_segmentation)
+    if { $segmentation ni {0 1} } {
+      utl::error RAM 111 "-bit_read_segmentation must be 0 (off) or 1 (on), omit it for automatic."
+    }
+  }
+
+  set rows_per_segment 0
+  if { [info exists keys(-bit_read_rows_per_segment)] } {
+    sta::check_positive_integer "-bit_read_rows_per_segment" $keys(-bit_read_rows_per_segment)
+    set rows_per_segment $keys(-bit_read_rows_per_segment)
+    if { $segmentation == 0 } {
+      utl::error RAM 116 \
+        "-bit_read_rows_per_segment needs segmentation, but -bit_read_segmentation 0 turns it off."
+    }
+  }
+
   ram::generate_ram_netlist_cmd $mask_size $word_size $num_words $rw_ports $r_ports $w_ports \
     $column_mux_ratio $use_latch $storage_cell $tristate_cell $inv_cell $tapcell $max_tap_dist \
     $read_style $zero_word $reset_value $banks $bank_columns $bank_order \
     $rb_ports $register_read_address $write_style $write_priority $periphery $pin_layer \
     $cells $name \
     $decoder $bit_folds $wrapper_verilog $service_every $service_sites \
-    $bank_column_layout
+    $bank_column_layout $segmentation $rows_per_segment
 }
 
 sta::define_cmd_args "generate_ram" {[-mask_size bits]
@@ -364,6 +384,8 @@ sta::define_cmd_args "generate_ram" {[-mask_size bits]
                                      [-periphery placed|verilog]
                                      [-wrapper_verilog file]
                                      [-tracks file]
+                                     [-bit_read_segmentation 0|1]
+                                     [-bit_read_rows_per_segment rows]
                                      }
 
 # user arguments for generate ram arguments
@@ -378,7 +400,8 @@ proc generate_ram { args } {
            -banks -bank_columns -bank_order -rb_ports -register_read_address
            -write_style -write_priority
            -cells -name -decoder -bit_folds -service_columns
-           -bank_column_layout -periphery -wrapper_verilog -tracks } flags {}
+           -bank_column_layout -periphery -wrapper_verilog -tracks
+           -bit_read_segmentation -bit_read_rows_per_segment } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
 
@@ -439,7 +462,8 @@ proc generate_ram { args } {
   foreach key {-banks -bank_columns -bank_order -rb_ports -register_read_address
                -write_style -write_priority
                -cells -name -decoder -bit_folds -service_columns
-               -bank_column_layout -periphery -wrapper_verilog} {
+               -bank_column_layout -periphery -wrapper_verilog -bit_read_segmentation
+               -bit_read_rows_per_segment} {
     if { [info exists keys($key)] } {
       lappend ram_netlist_args $key $keys($key)
     }

@@ -129,7 +129,9 @@ class RamGen
                 const std::string& wrapper_verilog = "",
                 int service_every = 0,
                 int service_sites = 0,
-                const std::string& bank_column_layout = "interleaved");
+                const std::string& bank_column_layout = "interleaved",
+                int segmentation = -1,
+                int rows_per_segment = 0);
 
   void ramPdngen(const char* power_net_name,
                  const char* ground_net_name,
