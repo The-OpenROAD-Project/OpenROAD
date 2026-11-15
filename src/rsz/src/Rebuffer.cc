@@ -411,15 +411,15 @@ std::optional<FixedDelay> Rebuffer::slackWithDriverCell(const BnetPtr& bnet,
   return bnet->slack() + FixedDelay(correction, resizer_);
 }
 
-bool Rebuffer::upstreamSideLoadsOk(sta::LibertyCell* cell,
-                                   const FixedDelay slack_limit)
+FixedDelay Rebuffer::upstreamSideLoadSlack(sta::LibertyCell* cell)
 {
-  // False when slowing `net` by `delta` would push one of its loads other
-  // than `skip` below both its current slack and `slack_limit`.
-  auto loads_ok = [&](sta::Net* net,
-                      const sta::Pin* drvr_pin,
-                      const sta::Pin* skip,
-                      const float delta) {
+  FixedDelay worst = FixedDelay::INF;
+  // Lower `worst` to the slack each load of `net` other than `skip` keeps
+  // when `net` slows by `delta`.
+  auto slow_loads = [&](sta::Net* net,
+                        const sta::Pin* drvr_pin,
+                        const sta::Pin* skip,
+                        const float delta) {
     std::unique_ptr<sta::NetConnectedPinIterator> pin_iter(
         network_->connectedPinIterator(net));
     while (pin_iter->hasNext()) {
@@ -445,11 +445,10 @@ bool Rebuffer::upstreamSideLoadsOk(sta::LibertyCell* cell,
       }
       const FixedDelay before(slack, resizer_);
       const FixedDelay after = before - FixedDelay(delta, resizer_);
-      if (after < before && after < slack_limit) {
-        return false;
+      if (after < before) {
+        worst = std::min(worst, after);
       }
     }
-    return true;
   };
 
   // The input on the timed path: slackWithDriverCell() charges the path
@@ -484,13 +483,13 @@ bool Rebuffer::upstreamSideLoadsOk(sta::LibertyCell* cell,
     if (delta <= 0.0 || prev_net == nullptr) {
       continue;
     }
-    if (!loads_ok(prev_net, prev_drvr_pin, driver_input, delta)) {
-      return false;
-    }
+    slow_loads(prev_net, prev_drvr_pin, driver_input, delta);
   }
 
   // Every other input takes the new cell's input capacitance too, slowing
-  // the paths through it and its net's other loads.
+  // the paths through it and its net's other loads.  The input's own slack
+  // is from the tree before rebuffering, which keeps the check conservative;
+  // crediting the new tree there lets upsizes through that slow side paths.
   std::unique_ptr<sta::InstancePinIterator> input_iter(
       network_->pinIterator(network_->instance(pin_)));
   while (input_iter->hasNext()) {
@@ -513,11 +512,9 @@ bool Rebuffer::upstreamSideLoadsOk(sta::LibertyCell* cell,
     }
     const sta::Pin* drvr_pin = *drivers->begin();
     const float delta = resizer_->driveResistance(drvr_pin) * delta_cap;
-    if (!loads_ok(net, drvr_pin, nullptr, delta)) {
-      return false;
-    }
+    slow_loads(net, drvr_pin, nullptr, delta);
   }
-  return true;
+  return worst;
 }
 
 BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
@@ -583,7 +580,7 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
       }
       target = std::max(
           slack_target,
-          bestSlackWithDriver(trees, current_cell, choices, slack_target)
+          bestSlackWithDriver(trees, current_cell, choices, relaxation)
               - relaxation);
     }
     chosen = chooseTreeAndDriver(
@@ -751,13 +748,13 @@ bool Rebuffer::withinLeakageBudget(const DriverChoices& choices,
 FixedDelay Rebuffer::bestSlackWithDriver(const std::vector<BnetPtr>& trees,
                                          sta::LibertyCell* current_cell,
                                          const DriverChoices& choices,
-                                         const FixedDelay slack_limit)
+                                         const FixedDelay relaxation)
 {
   FixedDelay best_slack = -FixedDelay::INF;
   auto consider = [&](sta::LibertyCell* cell) {
-    std::optional<bool> side_loads_ok;
+    std::optional<FixedDelay> side_load_slack;
     if (cell == current_cell) {
-      side_loads_ok = true;
+      side_load_slack = FixedDelay::INF;
     }
     for (const BnetPtr& tree : trees) {
       if (!tree || !withinLeakageBudget(choices, cell, tree)) {
@@ -767,11 +764,13 @@ FixedDelay Rebuffer::bestSlackWithDriver(const std::vector<BnetPtr>& trees,
       if (!slack || *slack <= best_slack) {
         continue;
       }
-      if (!side_loads_ok) {
-        side_loads_ok = upstreamSideLoadsOk(cell, slack_limit);
+      // The target this slack sets for chooseTreeAndDriver(), which checks
+      // the side loads against it.
+      if (!side_load_slack) {
+        side_load_slack = upstreamSideLoadSlack(cell);
       }
-      if (!*side_loads_ok) {
-        return;
+      if (*side_load_slack < *slack - relaxation) {
+        continue;
       }
       best_slack = *slack;
     }
@@ -829,7 +828,7 @@ BnetPtr Rebuffer::chooseTreeAndDriver(const std::vector<BnetPtr>& trees,
       if (area < best_area
           || *slack > best_slack + FixedDelay(kEqualAreaMinGain, resizer_)) {
         if (!side_loads_ok) {
-          side_loads_ok = upstreamSideLoadsOk(cell, slack_target);
+          side_loads_ok = upstreamSideLoadSlack(cell) >= slack_target;
         }
         if (!*side_loads_ok) {
           return;

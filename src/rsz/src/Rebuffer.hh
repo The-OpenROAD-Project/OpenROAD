@@ -178,10 +178,10 @@ class Rebuffer : public sta::dbStaState
   // limits.
   std::optional<FixedDelay> slackWithDriverCell(const BufferedNetPtr& bnet,
                                                 sta::LibertyCell* cell);
-  // False when resizing the driver to `cell` would slow the nets on its
-  // inputs enough to push one of their other loads below both its current
-  // slack and `slack_limit`.
-  bool upstreamSideLoadsOk(sta::LibertyCell* cell, FixedDelay slack_limit);
+  // The worst slack left on a load that resizing the driver to `cell` slows
+  // through the larger capacitance on the nets of its inputs; INF when it
+  // slows none.
+  FixedDelay upstreamSideLoadSlack(sta::LibertyCell* cell);
   // `tree` with its first buffer removed and the driver wired straight to
   // the buffer's load, when only wires lie between the driver and that
   // buffer; nullptr otherwise.  An upsized driver can then take the
@@ -219,11 +219,11 @@ class Rebuffer : public sta::dbStaState
                            sta::LibertyCell* cell,
                            const BufferedNetPtr& tree);
   // The most slack any of `trees` reaches with the current driver or one of
-  // `choices` that upstreamSideLoadsOk() accepts for `slack_limit`.
+  // `choices` whose upstream side loads keep that slack less `relaxation`.
   FixedDelay bestSlackWithDriver(const std::vector<BufferedNetPtr>& trees,
                                  sta::LibertyCell* current_cell,
                                  const DriverChoices& choices,
-                                 FixedDelay slack_limit);
+                                 FixedDelay relaxation);
   // Pick the smallest (tree + driver) area among the candidate trees and the
   // driver `choices` whose slack meets `slack_target`.  Returns the chosen
   // tree and sets `chosen_cell`; returns nullptr when no combination meets
