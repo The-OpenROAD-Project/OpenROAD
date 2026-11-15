@@ -70,6 +70,21 @@ void addGround(const NetPlace& place,
   ground[r.target] += place.t * value;
 }
 
+// The id a BoxOrigin keeps for a net shape: see BoxOrigin.
+int originId(const fsv::BlockShape& shape)
+{
+  switch (shape.source) {
+    case fsv::BlockShape::Source::kWire:
+      return shape.shape_id;
+    case fsv::BlockShape::Source::kITermPin:
+      return static_cast<int>(shape.iterm->getId());
+    case fsv::BlockShape::Source::kBTermPin:
+      return static_cast<int>(shape.bterm->getId());
+    default:
+      return -1;
+  }
+}
+
 }  // namespace
 
 BlockBoxes readBlockBoxes(odb::dbBlock* block,
@@ -120,16 +135,7 @@ BlockBoxes readBlockBoxes(odb::dbBlock* block,
       result.net_boxes.back().push_back(static_cast<int>(result.boxes.size()));
       result.boxes.push_back(
           {.net = index, .layer = layer, .rect = shape.rect});
-      result.origins.push_back({
-          .source = shape.source,
-          .shape_id = shape.shape_id,
-          .iterm = shape.iterm != nullptr
-                       ? static_cast<int>(shape.iterm->getId())
-                       : -1,
-          .bterm = shape.bterm != nullptr
-                       ? static_cast<int>(shape.bterm->getId())
-                       : -1,
-      });
+      result.origins.push_back({.source = shape.source, .id = originId(shape)});
       if (layer >= 0) {
         net_boxes.push_back(toBox(shape.rect, layer));
       }
@@ -342,18 +348,25 @@ NetParasitics Extractor::evaluateNet(const NetIndex net,
                      const Network& on,
                      int* missed) {
     const BoxOrigin& o = boxes_.origins[box];
-    if (o.source == fsv::BlockShape::Source::kWire
-        && on.shapes.contains(o.shape_id)) {
-      return on.place(o.shape_id, point);
-    }
-    const auto& terms = o.source == fsv::BlockShape::Source::kITermPin
-                            ? on.iterms
-                            : on.bterms;
-    const int id
-        = o.source == fsv::BlockShape::Source::kITermPin ? o.iterm : o.bterm;
-    const auto it = terms.find(id);
-    if (id >= 0 && it != terms.end()) {
-      return NetPlace{.resistor = -1, .node = it->second, .t = 0};
+    switch (o.source) {
+      case fsv::BlockShape::Source::kWire:
+        if (on.shapes.contains(o.id)) {
+          return on.place(o.id, point);
+        }
+        break;
+      case fsv::BlockShape::Source::kITermPin:
+      case fsv::BlockShape::Source::kBTermPin: {
+        const auto& terms = o.source == fsv::BlockShape::Source::kITermPin
+                                ? on.iterms
+                                : on.bterms;
+        const auto it = terms.find(o.id);
+        if (it != terms.end()) {
+          return NetPlace{.resistor = -1, .node = it->second, .t = 0};
+        }
+        break;
+      }
+      default:
+        break;
     }
     if (missed != nullptr) {
       (*missed)++;

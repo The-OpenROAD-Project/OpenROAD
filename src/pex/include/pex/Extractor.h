@@ -50,14 +50,13 @@ struct ExtractOptions
   EvaluatorOptions evaluator;
 };
 
-// Where a box came from: the shape's source, and for a wire its dbWire
-// shape id, for a pin its terminal's id.
+// Where a box came from: the shape's source, and an id whose meaning the
+// source sets: the dbWire shape id for kWire, the dbITerm id for
+// kITermPin, the dbBTerm id for kBTermPin, and -1 otherwise.
 struct BoxOrigin
 {
   fsv::BlockShape::Source source;
-  int shape_id = -1;
-  int iterm = -1;
-  int bterm = -1;
+  int id = -1;
 };
 
 // The conductor boxes of a block as extraction sees them: every net's
