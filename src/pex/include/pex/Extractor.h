@@ -38,7 +38,8 @@ struct ExtractOptions
   double max_res = 50;
   // A net pair's coupling goes to ground on both nets when its total is
   // below coupling_threshold fF and below coupling_ratio of each net's
-  // total capacitance.
+  // total capacitance; either at 0 keeps every pair. A pair's coupling is
+  // part of each net's total, so a ratio above 1 never keeps one.
   double coupling_threshold = 0.1;
   double coupling_ratio = 0.03;
   // Every net pair's coupling goes to ground on both nets, whatever the

@@ -46,8 +46,8 @@ struct NetComparison
   std::vector<Coupling> couplings;
 };
 
-// `count` of the nets with parasitics, evenly spaced through the block's
-// nets; all of them when there are no more.
+// `count` of the N nets with parasitics: every (N/count)-th in the
+// block's net order, starting with the first; all N when count >= N.
 std::vector<odb::dbNet*> sampleNets(odb::dbBlock* block, int count);
 
 // Solves each net's window on the stack, design layers matched to the

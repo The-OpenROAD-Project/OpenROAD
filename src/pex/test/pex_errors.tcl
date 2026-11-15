@@ -13,6 +13,9 @@ check_error "a model of another stack" {
   read_pex_model -itf ../../fsv/test/sky130.itf other_stack.json
 } PEX-0014
 check_error "-max_res is not negative" { extract_pex -max_res -1 } PEX-0032
+check_error "-coupling_ratio is a fraction" {
+  extract_pex -coupling_ratio 1.5
+} PEX-0041
 check_error "-tol is positive" {
   build_pex_model -itf ../../fsv/test/sky130.itf -out x.json -tol 0
 } PEX-0031

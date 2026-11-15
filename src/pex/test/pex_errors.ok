@@ -6,6 +6,7 @@
 [ERROR PEX-0030] -itf is required.
 [ERROR PEX-0014] other_stack.json was built from another stack than ../../fsv/test/sky130.itf (other.itf).
 [ERROR PEX-0032] -max_res must be a number of at least 0.
+[ERROR PEX-0041] -coupling_ratio must be a number from 0 to 1.
 [ERROR PEX-0031] -tol must be a number greater than 0.
 [ERROR PEX-0004] ../../fsv/test/sky130.itf has no conductor layer met9.
 [ERROR PEX-0003] Give -layers, or read a technology LEF first.
@@ -27,5 +28,5 @@
 [ERROR PEX-0021] Net VDD has no parasitics.
 [ERROR PEX-0025] Net no_such_net is not in the design.
 [ERROR PEX-0027] Comparing with the field solver failed: net VDD has no parasitics
-Summary 16 / 16 (100% pass)
+Summary 17 / 17 (100% pass)
 pass

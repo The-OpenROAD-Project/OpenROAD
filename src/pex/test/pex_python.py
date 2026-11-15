@@ -38,6 +38,13 @@ for bad in (-1, float("nan"), True, "1"):
         print(e)
     else:
         raise AssertionError(f"max_res={bad!r} accepted")
+for bad in (-0.1, 1.5):
+    try:
+        extractor.extract(coupling_ratio=bad)
+    except ValueError as e:
+        print(e)
+    else:
+        raise AssertionError(f"coupling_ratio={bad!r} accepted")
 extractor.compareFsv("_042_", halo=4, tol=0.02)
 for kwargs in ({}, {"nets": "_042_", "sample": 2}, {"sample": 0}):
     try:

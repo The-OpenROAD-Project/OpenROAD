@@ -55,7 +55,7 @@ proc extract_pex { args } {
       $keys(-coupling_threshold)]
   }
   if { [info exists keys(-coupling_ratio)] } {
-    set ratio [pex::check_not_negative -coupling_ratio \
+    set ratio [pex::check_fraction -coupling_ratio \
       $keys(-coupling_ratio)]
   }
   pex::extract_cmd $max_res $threshold $ratio \
@@ -129,6 +129,13 @@ proc check_positive { key value } {
 proc check_not_negative { key value } {
   if { !([string is double -strict $value] && $value >= 0) } {
     utl::error PEX 32 "$key must be a number of at least 0."
+  }
+  return $value
+}
+
+proc check_fraction { key value } {
+  if { !([string is double -strict $value] && $value >= 0 && $value <= 1) } {
+    utl::error PEX 41 "$key must be a number from 0 to 1."
   }
   return $value
 }

@@ -93,9 +93,11 @@ class Pex
         for name, value in (
             ("max_res", max_res),
             ("coupling_threshold", coupling_threshold),
-            ("coupling_ratio", coupling_ratio),
         ):
             _check_number(name, value, "of at least 0", lambda v: v >= 0)
+        _check_number(
+            "coupling_ratio", coupling_ratio, "from 0 to 1", lambda v: 0 <= v <= 1
+        )
         if not isinstance(coupling_to_ground, bool):
             raise ValueError("coupling_to_ground must be True or False")
         self._extract(
