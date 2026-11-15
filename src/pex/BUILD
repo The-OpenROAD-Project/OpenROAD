@@ -111,6 +111,28 @@ cc_library(
     ],
 )
 
+# Extraction of a block into ODB parasitics.
+cc_library(
+    name = "extractor",
+    srcs = ["src/Extractor.cpp"],
+    hdrs = ["include/pex/Extractor.h"],
+    includes = ["include"],
+    deps = [
+        ":evaluator",
+        ":index",
+        ":model",
+        ":network",
+        ":patterns",
+        ":resistance",
+        "//src/fsv:geometry",
+        "//src/fsv:net_window",
+        "//src/fsv:stack",
+        "//src/odb/src/db",
+        "//src/odb/src/wireNormalizer",
+        "//src/utl",
+    ],
+)
+
 # The model file.
 cc_library(
     name = "model_json",

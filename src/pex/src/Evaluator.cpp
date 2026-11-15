@@ -1493,6 +1493,36 @@ Evaluator::Evaluator(const fsv::Stack& stack,
   }
 }
 
+void Evaluator::reach(const EvalBox& box, std::vector<odb::Rect>& rects) const
+{
+  const int l = box.layer;
+  const bool x_along = box.rect.dx() >= box.rect.dy();
+  // In 64 bits and clamped, so a box near the coordinate limits still
+  // finds its neighbors.
+  auto clamped = [](const int64_t v) {
+    return static_cast<int>(std::clamp<int64_t>(
+        v, std::numeric_limits<int>::min(), std::numeric_limits<int>::max()));
+  };
+  auto grow = [&](const int along, const int across) {
+    const int64_t dx = x_along ? along : across;
+    const int64_t dy = x_along ? across : along;
+    return odb::Rect(clamped(int64_t{box.rect.xMin()} - dx),
+                     clamped(int64_t{box.rect.yMin()} - dy),
+                     clamped(int64_t{box.rect.xMax()} + dx),
+                     clamped(int64_t{box.rect.yMax()} + dy));
+  };
+  rects.clear();
+  for (int k = 0; k < layerCount(); k++) {
+    if (k == l) {
+      rects.push_back(grow(facing_reach_[l], lateral_reach_[l]));
+    } else {
+      const bool beside = std::abs(k - l) <= options_.diagonal_depth;
+      rects.push_back(
+          grow(crossing_reach_[l], beside ? diagonal_reach_[l][k] : 0));
+    }
+  }
+}
+
 int Evaluator::layerOf(const fsv::Box& box) const
 {
   for (int i = 0; i < layerCount(); i++) {
