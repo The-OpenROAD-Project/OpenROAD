@@ -2,7 +2,6 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
-load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 
 package(features = ["layering_check"])
@@ -59,22 +58,6 @@ cc_test(
     ],
 )
 
-# The model applied to a geometry by brute force.
-cc_library(
-    name = "reference",
-    testonly = True,
-    srcs = ["cpp/Reference.cpp"],
-    hdrs = ["cpp/Reference.h"],
-    includes = ["cpp"],
-    deps = [
-        "//src/fsv:geometry",
-        "//src/fsv:stack",
-        "//src/pex:cover_map",
-        "//src/pex:model",
-        "//src/pex:patterns",
-    ],
-)
-
 cc_test(
     name = "TestCoverMap",
     srcs = ["cpp/TestCoverMap.cpp"],
@@ -90,20 +73,33 @@ cc_test(
 )
 
 cc_test(
-    name = "TestReference",
-    srcs = ["cpp/TestReference.cpp"],
+    name = "TestIndex",
+    srcs = ["cpp/TestIndex.cpp"],
     deps = [
-        ":reference",
+        "//src/odb/src/db",
+        "//src/pex:index",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestEvaluator",
+    srcs = ["cpp/TestEvaluator.cpp"],
+    deps = [
         "//src/fsv:geometry",
         "//src/fsv:stack",
+        "//src/odb/src/db",
+        "//src/pex:evaluator",
         "//src/pex:model",
+        "//src/pex:patterns",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
 )
 
 EXPERIMENT_DEPS = [
-    ":reference",
+    "//src/pex:evaluator",
     "//src/fsv:net_window",
     "//src/odb/src/db",
     "//src/odb/src/defin",
