@@ -422,6 +422,7 @@ class RamGen
     std::vector<odb::dbNet*> select_b;
   };
   std::map<std::pair<int, int>, WordWrite> word_write_;
+  std::vector<std::vector<odb::dbNet*>> wsel_slice_nets_;
   int sliceOffset(int slice) const
   {
     return bit_folds_ > 1 ? 0 : slice * slice_width_;
