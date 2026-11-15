@@ -8,5 +8,5 @@ from ord_py import *
 # getGlobalRouter(), ...) get their tool's Python class rather than a bare
 # SWIG pointer.
 import ant, cgt, cts, dpl, drt, exa, fin, fsv, gpl, grt  # noqa: E401, F401
-import ifp, odb, par, pdn, ppl, psm, rcx, rmp, rsz, stt  # noqa: E401, F401
-import tap, utl, wmk  # noqa: E401, F401
+import ifp, odb, par, pdn, pex, ppl, psm, rcx, rmp, rsz  # noqa: E401, F401
+import stt, tap, utl, wmk  # noqa: E401, F401

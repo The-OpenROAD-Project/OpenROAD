@@ -214,6 +214,7 @@ cc_test(
 TESTS = [
     "pex_errors",
     "pex_extract",
+    "pex_python",
 ]
 
 filegroup(

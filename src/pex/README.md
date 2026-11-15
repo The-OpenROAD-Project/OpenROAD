@@ -129,6 +129,31 @@ write_pex_spef
 | `-nets` | The nets to write. The default is every extracted net. |
 | `filename` | The SPEF file to write. |
 
+## Python
+
+`Design.getPex()` returns the session the Tcl commands use, with the same
+names in camel case: `buildModel(itf, out, layers=(), tol=0.005)`,
+`readModel(itf, model)`, `extract(max_res=50, coupling_threshold=0.1,
+coupling_ratio=0.03)` and `writeSpef(path, nets=())`, where `layers` and
+`nets` take a name or a list of names. An option out of range raises
+`ValueError`.
+
+```python
+from openroad import Design, Tech
+
+tech = Tech()
+tech.readLef("sky130hd.tlef")
+tech.readLef("sky130_fd_sc_hd_merged.lef")
+design = Design(tech)
+design.readDef("design.def")
+extractor = design.getPex()
+extractor.readModel("sky130.itf", "sky130.json")
+extractor.extract()
+extractor.writeSpef("design.spef")
+```
+
+See `./test/pex_python.py`.
+
 ## Model
 
 A wire is cut into pieces wherever its surroundings change. A piece's
@@ -315,4 +340,5 @@ wires, extraction (the index's candidates against every box, identical
 ODB at any thread count, and every part of the capacitance in ODB) and
 the SPEF writer. `pex_extract` runs the commands on the gcd excerpt of the
 fsv tests with the small model, `test/sky130_coarse.json`, and reads the
-SPEF back with OpenSTA; `pex_errors` checks the commands' errors.
+SPEF back with OpenSTA; `pex_python` does the same from Python, and
+`pex_errors` checks the commands' errors.
