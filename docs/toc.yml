@@ -111,6 +111,8 @@ entries:
       title: Calibration
   - file: main/src/fsv/README
     title: Capacitance Field Solver
+  - file: main/src/pex/README
+    title: Parasitic Extraction (pex)
   - file: main/src/ram/README
     title: RAM Generator
   - file: main/src/wmk/README

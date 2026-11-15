@@ -8,15 +8,126 @@ nets.
 
 ## Status
 
-The first step is in: the patterns built from a stack by layer name
-(`pex/Patterns.h`), the model tables with their lookups (`pex/Model.h`),
-the table builder (`pex/ModelBuilder.h`), the model file
-(`pex/ModelJson.h`), the evaluator that applies the model to conductor
-boxes (`pex/Evaluator.h`), which the experiments run by brute force on a
-field-solver geometry, and the modeling experiments below. There are no
-commands yet; the extractor
-itself (block index, segmentation, ODB and SPEF output) comes next, with
-the accuracy work below resumed once it runs end to end.
+pex extracts a routed block into ODB parasitics and writes SPEF. A net's
+resistor network comes from its routed wire, with resistance from the
+ITF stack; its capacitance comes from the model, evaluated on the
+block's boxes around each wire. The model is built by the module itself,
+and the tables' accuracy against the field solver is measured in the
+experiments below. One corner is extracted. `compare_pex_fsv`, the check
+of extraction against the field solver on a design's nets, comes next,
+then several corners, performance, and the remaining accuracy work.
+
+## Commands
+
+```{note}
+- Parameters in square brackets `[-param param]` are optional.
+- Parameters without square brackets `-param2 param2` are required.
+```
+
+A model is built once per ITF stack and read with that stack before
+extraction:
+
+```tcl
+build_pex_model -itf sky130.itf -out sky130.json
+read_pex_model -itf sky130.itf sky130.json
+extract_pex
+write_pex_spef gcd.spef
+```
+
+Threads come from `set_thread_count`; the result does not depend on the
+number of threads.
+
+### Build Pex Model
+
+The `build_pex_model` command builds the capacitance tables of a model
+by solving small wire patterns on the ITF stack with the field solver,
+and saves the model after each layer. A model already in the file that
+was built from the same stack with the same settings is finished rather
+than rebuilt, so a build that stopped resumes. A full model of sky130's
+six routing layers takes about three hours at 64 threads.
+
+```tcl
+build_pex_model
+    -itf itf
+    -out model
+    [-layers layers]
+    [-tol tolerance]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-itf` | The ITF file of the process stack. |
+| `-out` | The model file to write (JSON). |
+| `-layers` | The conductor layers to tabulate, by ITF name. The default is the routing layers of the technology LEF that the stack has. |
+| `-tol` | The relative tolerance of each field-solver solve. The default value is `0.005`, and the allowed values are floats greater than 0. |
+
+### Read Pex Model
+
+The `read_pex_model` command reads a model and the ITF stack it was built
+from, which gives the layer heights and the resistance data. A model
+records its stack, and one built from another stack is refused.
+
+```tcl
+read_pex_model
+    -itf itf
+    model
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-itf` | The ITF file the model was built from. |
+| `model` | The model file. |
+
+### Extract Pex
+
+The `extract_pex` command extracts the signal nets of the design that
+have routed wires into ODB, replacing any parasitics there. Each net gets
+a node at each terminal, at each junction a branch leaves from, and
+where its wire's paths start or end; its wire shapes become resistors in
+series between nodes. Ground capacitance is split between a resistor's
+two nodes by where it lies along it, and a coupling joins the nearer
+node of each net. Supply nets, obstructions and fill are neighbors only:
+coupling to them goes to ground. A net pair's coupling is kept only when
+its total reaches `-coupling_threshold` or `-coupling_ratio` of either
+net's total capacitance; otherwise it goes to ground on both nets.
+
+```tcl
+extract_pex
+    [-max_res resistance]
+    [-coupling_threshold capacitance]
+    [-coupling_ratio ratio]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-max_res` | Wire shapes join in series into one resistor up to this resistance, in ohms; 0 makes each shape its own resistor. The default value is `50`, and the allowed values are floats of at least 0. |
+| `-coupling_threshold` | The total coupling of a net pair, in fF, at or above which it is kept. The default value is `0.1`, and the allowed values are floats of at least 0. |
+| `-coupling_ratio` | The fraction of either net's total capacitance at or above which a net pair's coupling is kept. The default value is `0.03`, and the allowed values are floats of at least 0. |
+
+### Write Pex Spef
+
+The `write_pex_spef` command writes the parasitics in ODB as SPEF, in fF
+and ohms. Pins are named instance:pin, ports by name, and internal nodes
+net:junction.
+
+```tcl
+write_pex_spef
+    [-nets nets]
+    filename
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-nets` | The nets to write. The default is every extracted net. |
+| `filename` | The SPEF file to write. |
 
 ## Model
 

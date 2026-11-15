@@ -2,6 +2,9 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//bazel:tcl_encode_or.bzl", "tcl_encode")
+load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -155,4 +158,75 @@ cc_library(
     ],
 )
 
+# The state behind the commands.
+cc_library(
+    name = "pex",
+    srcs = ["src/Pex.cpp"],
+    hdrs = ["include/pex/Pex.h"],
+    includes = ["include"],
+    deps = [
+        ":extractor",
+        ":model",
+        ":model_builder",
+        ":model_json",
+        ":spef_writer",
+        "//src/fsv:stack",
+        "//src/odb/src/db",
+        "//src/utl",
+    ],
+)
+
+cc_library(
+    name = "ui",
+    srcs = [
+        "src/MakePex.cpp",
+        ":swig",
+        ":tcl",
+    ],
+    hdrs = ["include/pex/MakePex.h"],
+    includes = ["include"],
+    deps = [
+        ":extractor",
+        ":pex",
+        "//:ord",
+        "//src/utl",
+        "@tcl_lang//:tcl",
+    ],
+)
+
+tcl_encode(
+    name = "tcl",
+    srcs = ["src/Pex.tcl"],
+    char_array_name = "pex_tcl_inits",
+    namespace = "pex",
+)
+
+tcl_wrap_cc(
+    name = "swig",
+    srcs = [
+        "src/Pex.i",
+        "//:error_swig",
+    ],
+    module = "pex",
+    namespace_prefix = "pex",
+    root_swig_src = "src/Pex.i",
+    swig_includes = ["src/pex/src"],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/Pex.tcl",
+    ],
+    visibility = ["//src/pex/test:__pkg__"],
+)
+
 exports_files(["README.md"])
+
+messages_txt(
+    visibility = [
+        "//docs:__pkg__",
+        "//src/pex/test:__pkg__",
+    ],
+)
