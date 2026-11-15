@@ -321,10 +321,13 @@ field solver: the total within 5% for 90% of the nets, and 90% of the
 couplings to other signal nets above 5% of the net's total within 20%.
 Coupling to the supplies counts as ground, since they do not switch.
 
-With the model built from `sky130.itf` for li1 through met5 (46,787
-solves, about 3 hours at 64 threads, 2.3 MB):
+The model is built from `sky130.itf` for li1 through met5 (46,787
+solves, about 3 hours at 64 threads, 2.3 MB). First the model alone:
+each sampled net is solved by the field solver with every shape within
+10 µm of it, and the model is applied to the same shapes (the `e9`
+experiment group below):
 
-| e9, 50 nets | gcd | aes |
+| model alone, 50 nets | gcd | aes |
 | --- | --- | --- |
 | totals within 5% | 68% | 68% |
 | total error, 90th percentile | 7.5% | 7.3% |
@@ -346,29 +349,31 @@ Extraction itself, checked with `compare_pex_fsv -sample 50 -halo 10 -tol
 | extraction, 1 thread | 6.7 s | 351 s |
 | extraction, 16 threads | 0.58 s | 25 s |
 
-These are the e9 measures on the whole block rather than on each net's
-window: crossings and neighbors reach farther than e9's halo, and
-couplings are averaged between the two nets and grounded below the
-thresholds. rcx takes about 2 s for aes on one thread, so extraction
-must become far faster; most of its time is in the crossing lookups,
-through string-keyed tables and logarithms per piece.
+These are the same measures, but taken from the extracted block rather
+than from each net's 10 µm window: crossings and neighbors are not cut
+off at the window's edge, and couplings are averaged between the two
+nets and grounded below the thresholds. rcx takes about 2 s for aes on
+one thread, so extraction must become far faster; most of its time is
+in the crossing lookups, through string-keyed tables and logarithms per
+piece.
 
 What remains, largest first:
 
 - **Narrow straps.** A power strap two or three layers up gets 30–50%
-  too much (e18 with the power nets split by layer): the cover tables
-  are solved with full planes, and a strap narrower than a few heights
-  above the wire takes much less than a plane. Over the wire it is to be
+  too much (the `e18` experiment with the power nets split by layer):
+  the cover tables are solved with full planes, and a strap narrower
+  than a few heights above the wire takes much less than a plane. Over the wire it is to be
   looked up in the diagonal table at overlapping gaps.
 - **Shielding of parallel wires.** A strap beside the wire with rails
   between them is looked up as if the rails were absent, up to 28% high
-  (e17 at low rail coverage). The diagonal coupling is to be scaled by
-  the cover's share, as for straps over rails.
+  (the `e17` experiment at low rail coverage). The diagonal coupling is
+  to be scaled by the cover's share, as for straps over rails.
 - **Low signal couplings.** The largest coupling misses are 30–60% low,
   each 5–11% of its net's total; not yet traced.
 - **Crossing reach by side.** A crossing reaching past one side of the
   wire only is split evenly between the sides; with a neighbor on one
-  side the coupling to the crossing is off by −25% to +46% (e15).
+  side the coupling to the crossing is off by −25% to +46% (the `e15`
+  experiment).
 - **Opposite plane in the diagonal tables.** The plane on the wire's
   other side ends past the parallel wire, so it is wider in each sample
   solve than in the base solve without that wire; the plane's own edge
