@@ -19,6 +19,7 @@
 
 #include "AbstractGraphics.h"
 #include "clockBase.h"
+#include "gpl/Replace.h"
 #include "nesterovBase.h"
 #include "odb/db.h"
 #include "placerBase.h"
