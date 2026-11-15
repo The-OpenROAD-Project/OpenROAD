@@ -622,9 +622,8 @@ void NesterovPlace::runTimingDriven(int iter,
       int64_t hpwl = nbc_->getHpwl();
       if (average_overflow_unscaled_ <= 0.25) {
         min_hpwl_ = hpwl;
-        diverge_snapshot_average_overflow_unscaled_
-            = average_overflow_unscaled_;
-        diverge_snapshot_iter_ = iter + 1;
+        min_hpwl_overflow_ = average_overflow_unscaled_;
+        min_hpwl_iter_ = iter + 1;
         is_min_hpwl_ = true;
       } else {
         min_hpwl_ = std::numeric_limits<int64_t>::max();
@@ -817,6 +816,8 @@ NesterovPlace::DivergeAction NesterovPlace::isDiverged(float& curA)
     diverge_snapshot_wl_coef_x_ = wireLengthCoefX_;
     diverge_snapshot_wl_coef_y_ = wireLengthCoefY_;
     diverge_snapshot_hpwl_ = min_hpwl_;
+    diverge_snapshot_average_overflow_unscaled_ = min_hpwl_overflow_;
+    diverge_snapshot_iter_ = min_hpwl_iter_;
     for (auto& nb : nbVec_) {
       nb->saveSnapshot();
     }
@@ -1640,8 +1641,8 @@ void NesterovPlace::updateNextIter(int iter)
     hpwl_gauge_->Set(hpwl);
     if (hpwl < min_hpwl_ && average_overflow_unscaled_ <= 0.25) {
       min_hpwl_ = hpwl;
-      diverge_snapshot_average_overflow_unscaled_ = average_overflow_unscaled_;
-      diverge_snapshot_iter_ = iter + 1;
+      min_hpwl_overflow_ = average_overflow_unscaled_;
+      min_hpwl_iter_ = iter + 1;
       is_min_hpwl_ = true;
     } else {
       is_min_hpwl_ = false;
