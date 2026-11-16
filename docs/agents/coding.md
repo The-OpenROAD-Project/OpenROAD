@@ -42,7 +42,7 @@
   the class reads as an outline. A function's comment goes on its
   declaration.
   - A template used outside its class goes after the class in the
-    header; a private member template goes in the `.cpp`.
+    header; a private member template goes in the cpp file if only called from there.
   - A function may be defined in the header to be inlined only when
     profiling shows the benefit.
 
