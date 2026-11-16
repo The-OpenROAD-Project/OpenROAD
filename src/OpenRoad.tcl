@@ -534,8 +534,15 @@ proc place_inst { args } {
 ################################################################
 
 namespace eval ord {
-# -corner on OpenROAD commands selects a scene, the same as -scene. OpenSTA's
-# parse_scene procs read only -scene, so map it here.
+# -corner on OpenROAD commands selects a scene, the same as -scene, which is
+# misleading: a scene is a mode plus a corner, so one corner can back several
+# scenes. The name is historical. OpenSTA replaced its Corner class with Scene
+# and kept -corner as a synonym for the scene name, and OpenROAD's commands
+# inherited that. Upstream OpenSTA has now dropped -corner and its parse_scene
+# procs read only -scene, so the mapping lives here. Keeping the old meaning
+# avoids breaking scripts until -corner is redefined to select an analysis
+# corner (define_analysis_corner) and apply to every scene that uses it; -scene
+# will keep selecting a single scene.
 proc scene_from_corner_arg { keys_var } {
   upvar 1 $keys_var keys
   if { [info exists keys(-corner)] && ![info exists keys(-scene)] } {
