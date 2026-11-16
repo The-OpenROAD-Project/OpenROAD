@@ -5,20 +5,18 @@
 %{
 
 #include <cstdlib>
-#include <sstream>
 
-#include "boost/stacktrace/stacktrace.hpp"
 #include "utl/Logger.h"
+#include "utl/StackTrace.h"
 %}
 #else
 %{
   
 #include <cstdlib>
-#include <sstream>
 
-#include "boost/stacktrace/stacktrace.hpp"
 #include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
+#include "utl/StackTrace.h"
 %}
 #endif
 
@@ -33,20 +31,16 @@
     #ifdef BAZEL
     utl::Logger* logger = utl::Logger::defaultLogger();
     if (logger->debugCheck(utl::ORD, "trace", 1)) {
-      std::stringstream trace;
-      trace << boost::stacktrace::stacktrace();
       logger->report("Stack trace");
-      logger->report(trace.str());
+      logger->report(utl::stackTrace());
     }
     #else
     auto* openroad = ord::OpenRoad::openRoad();
     if (openroad != nullptr) {
       auto* logger = openroad->getLogger();
       if (logger->debugCheck(utl::ORD, "trace", 1)) {
-        std::stringstream trace;
-        trace << boost::stacktrace::stacktrace();
         logger->report("Stack trace");
-        logger->report(trace.str());
+        logger->report(utl::stackTrace());
       }
     }
     #endif
@@ -58,20 +52,16 @@
     #ifdef BAZEL
     utl::Logger* logger = utl::Logger::defaultLogger();
     if (logger->debugCheck(utl::ORD, "trace", 1)) {
-      std::stringstream trace;
-      trace << boost::stacktrace::stacktrace();
       logger->report("Stack trace");
-      logger->report(trace.str());
+      logger->report(utl::stackTrace());
     }
     #else
     auto* openroad = ord::OpenRoad::openRoad();
     if (openroad != nullptr) {
       auto* logger = openroad->getLogger();
       if (logger->debugCheck(utl::ORD, "trace", 1)) {
-        std::stringstream trace;
-        trace << boost::stacktrace::stacktrace();
         logger->report("Stack trace");
-        logger->report(trace.str());
+        logger->report(utl::stackTrace());
       }
     }
     #endif

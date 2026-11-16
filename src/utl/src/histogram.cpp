@@ -8,6 +8,7 @@
 #include <optional>
 #include <utility>
 
+#include "fmt/format.h"
 #include "utl/Logger.h"
 
 namespace utl {

@@ -205,7 +205,7 @@ std::vector<sta::Vertex*> LogicExtractorFactory::AddMissingVertices(
         continue;
       }
       // Don't want any non-inputs.
-      sta::PortDirection* direction = network->direction(pin);
+      const sta::PortDirection* direction = network->direction(pin);
       if (!direction->isInput()) {
         continue;
       }
@@ -253,7 +253,7 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryOutputs(
 
   for (sta::Vertex* vertex : cut_vertices) {
     sta::Pin* pin = vertex->pin();
-    sta::PortDirection* direction = network->direction(pin);
+    const sta::PortDirection* direction = network->direction(pin);
     if (!direction->isOutput()) {
       continue;
     }

@@ -1,9 +1,11 @@
 #include <cstdint>
 #include <functional>
+#include <string>
 #include <vector>
 
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "src/odb/test/cpp/helper/helper.h"
@@ -32,6 +34,26 @@ class JournalFixture : public SimpleDbFixture
   dbBlock* block;
   dbMaster* and2;
   dbMaster* or2;
+};
+
+// Records the transform an observer sees on each move callback, as
+// "<pre|post> <orient> <x> <y>".
+class MoveRecorder : public dbBlockCallBackObj
+{
+ public:
+  void inDbPreMoveInst(dbInst* inst) override { record("pre", inst); }
+  void inDbPostMoveInst(dbInst* inst) override { record("post", inst); }
+
+  std::vector<std::string> events;
+
+ private:
+  void record(const std::string& when, dbInst* inst)
+  {
+    const Point origin = inst->getOrigin();
+    events.push_back(when + " " + inst->getOrient().getString() + " "
+                     + std::to_string(origin.x()) + " "
+                     + std::to_string(origin.y()));
+  }
 };
 
 TEST_F(JournalFixture, test_undo_inst_create)
@@ -254,6 +276,92 @@ TEST_F(JournalFixture, test_undo_inst_flip)
 
   EXPECT_EQ(inst->getLocation(), point);
   EXPECT_EQ(inst->getBBox()->getBox(), bbox);
+}
+
+// Undoing a flip moves the instance's shapes, so observers that index them
+// by transform must be told, as they are for the flip itself.
+TEST_F(JournalFixture, test_undo_inst_flip_notifies_move)
+{
+  auto inst = dbInst::create(block, and2, "a");
+  inst->setPlacementStatus(dbPlacementStatus::PLACED);
+  inst->setOrigin(1000, 2000);
+  MoveRecorder recorder;
+  recorder.addOwner(block);
+
+  in_eco([&]() { inst->setOrient(dbOrientType::MX); });
+
+  const std::vector<std::string> expected = {
+      "pre R0 1000 2000",   // flip
+      "post MX 1000 2000",  // flip
+      "pre MX 1000 2000",   // undo flip
+      "post R0 1000 2000",  // undo flip
+  };
+  EXPECT_EQ(recorder.events, expected);
+}
+
+// Detailed placement flips a cell and then moves it. Every pre-move
+// callback must see the transform of the previous post-move callback, or an
+// observer removing the old shapes misses the ones it added.
+TEST_F(JournalFixture, test_undo_inst_flip_and_move_notifies_move)
+{
+  auto inst = dbInst::create(block, and2, "a");
+  inst->setPlacementStatus(dbPlacementStatus::PLACED);
+  inst->setOrigin(1000, 2000);
+  MoveRecorder recorder;
+  recorder.addOwner(block);
+
+  in_eco([&]() {
+    inst->setOrient(dbOrientType::MX);
+    inst->setOrigin(3000, 4000);
+  });
+
+  const std::vector<std::string> expected = {
+      "pre R0 1000 2000",   // flip
+      "post MX 1000 2000",  // flip
+      "pre MX 1000 2000",   // move
+      "post MX 3000 4000",  // move
+      "pre MX 3000 4000",   // undo move
+      "post MX 1000 2000",  // undo move
+      "pre MX 1000 2000",   // undo flip
+      "post R0 1000 2000",  // undo flip
+  };
+  EXPECT_EQ(recorder.events, expected);
+}
+
+// Changing only the placement status leaves the shapes in place.
+TEST_F(JournalFixture, test_undo_inst_place_does_not_notify_move)
+{
+  auto inst = dbInst::create(block, and2, "a");
+  MoveRecorder recorder;
+  recorder.addOwner(block);
+
+  in_eco([&]() { inst->setPlacementStatus(dbPlacementStatus::PLACED); });
+
+  EXPECT_TRUE(recorder.events.empty());
+}
+
+// Replaying an ECO that flips an instance notifies observers like the flip.
+TEST_F(JournalFixture, test_redo_inst_flip_notifies_move)
+{
+  auto inst = dbInst::create(block, and2, "a");
+  inst->setPlacementStatus(dbPlacementStatus::PLACED);
+  inst->setOrigin(1000, 2000);
+  const std::string eco_file = testing::TempDir() + "/redo_inst_flip.eco";
+  dbDatabase::beginEco(block);
+  inst->setOrient(dbOrientType::MX);
+  dbDatabase::writeEco(block, eco_file.c_str());
+  dbDatabase::undoEco(block);
+  MoveRecorder recorder;
+  recorder.addOwner(block);
+
+  dbDatabase::readEco(block, eco_file.c_str());
+
+  EXPECT_EQ(inst->getOrient(), dbOrientType::MX);
+  const std::vector<std::string> expected = {
+      "pre R0 1000 2000",
+      "post MX 1000 2000",
+  };
+  EXPECT_EQ(recorder.events, expected);
 }
 
 TEST_F(JournalFixture, test_undo_bterm_connect)

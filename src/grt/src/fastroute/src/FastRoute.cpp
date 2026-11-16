@@ -217,6 +217,30 @@ void FastRouteCore::reportRunMetrics(const RunTimings& timings,
                                      const int num_vias,
                                      const int final_length)
 {
+  if (verbose_) {
+    logger_->info(GRT, 111, "Final number of vias: {}", num_vias);
+    logger_->info(
+        GRT, 112, "Final usage 3D: {}", (final_length + 3 * num_vias));
+  }
+  if (snapshot_batch_count_ > 0) {
+    debugPrint(logger_,
+               GRT,
+               "timer",
+               1,
+               "Snapshot batch totals: sync {} route {} apply {} waves {} "
+               "batches {} nets {}.",
+               snapshot_batch_sync_time_,
+               snapshot_batch_route_time_,
+               snapshot_batch_apply_time_,
+               snapshot_batch_wave_count_,
+               snapshot_batch_count_,
+               snapshot_batch_net_count_);
+  }
+  // An incremental run reroutes only the dirty nets, so its numbers do not
+  // describe the design. The design via count is reported by GlobalRouter.
+  if (is_incremental_grt_) {
+    return;
+  }
   logger_->metric("global_route__fastroute__run_s", timings.total);
   logger_->metric("global_route__fastroute__initial_rsmt_s",
                   timings.initial_rsmt);
@@ -244,26 +268,6 @@ void FastRouteCore::reportRunMetrics(const RunTimings& timings,
                   snapshot_batch_net_count_);
   logger_->metric("global_route__fastroute__snapshot_batch_wave_count",
                   snapshot_batch_wave_count_);
-  if (snapshot_batch_count_ > 0) {
-    debugPrint(logger_,
-               GRT,
-               "timer",
-               1,
-               "Snapshot batch totals: sync {} route {} apply {} waves {} "
-               "batches {} nets {}.",
-               snapshot_batch_sync_time_,
-               snapshot_batch_route_time_,
-               snapshot_batch_apply_time_,
-               snapshot_batch_wave_count_,
-               snapshot_batch_count_,
-               snapshot_batch_net_count_);
-  }
-  logger_->metric("global_route__vias", num_vias);
-  if (verbose_) {
-    logger_->info(GRT, 111, "Final number of vias: {}", num_vias);
-    logger_->info(
-        GRT, 112, "Final usage 3D: {}", (final_length + 3 * num_vias));
-  }
 }
 
 bool FastRouteCore::checkSnapshotConvergence(

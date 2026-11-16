@@ -6,6 +6,7 @@
 // structured results.
 
 #include <string>
+#include <utility>
 
 #include "AntennaReport.hh"
 #include "ant/AntennaChecker.hh"
@@ -64,7 +65,7 @@ TEST_F(AntennaReportTest, Format)
   cut.violated = true;
   pin.layers.push_back(cut);
 
-  net_check.pins.push_back(pin);
+  net_check.pins.push_back(std::move(pin));
 
   // Unflagged ratios keep a trailing space after the rule name.
   const std::string expected

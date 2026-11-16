@@ -8,9 +8,13 @@
 #include <utility>
 #include <vector>
 
+#include "db/gcObj/gcNet.h"
 #include "db/obj/frMarker.h"
 #include "db/obj/frNet.h"
+#include "db/obj/frShape.h"
 #include "db/tech/frConstraint.h"
+#include "db/tech/frLayer.h"
+#include "db/tech/frLookupTbl.h"
 #include "db/tech/frViaDef.h"
 #include "fixture.h"
 #include "frBaseTypes.h"
@@ -66,6 +70,187 @@ class FixtureWithParam : public GCFixture,
                          public ::testing::WithParamInterface<T>
 {
 };
+
+class GCWorkerBoundaryFixture : public FixtureWithParam<std::tuple<bool, bool>>
+{
+ protected:
+  odb::Point point(int x, int y)
+  {
+    return std::get<0>(GetParam()) ? odb::Point(y, x) : odb::Point(x, y);
+  }
+
+  odb::Rect box(int xl, int yl, int xh, int yh)
+  {
+    return odb::Rect(point(xl, yl), point(xh, yh));
+  }
+
+  frLayerNum metalLayer() { return std::get<1>(GetParam()) ? 6 : 4; }
+
+  void makeBoundaryDesign(bool connected, int wire_y = 3300)
+  {
+    auto* tech = design->getTech();
+    tech->setDBUPerUU(2000);
+    addLayer(tech, "v1", dbTechLayerType::CUT);
+    addLayer(tech, "m2", dbTechLayerType::ROUTING);
+    addLayer(tech, "v2", dbTechLayerType::CUT);
+    addLayer(tech, "m3", dbTechLayerType::ROUTING);
+    fr2DLookupTbl<frCoord, frCoord, frCoord> spacing_table(
+        "WIDTH", {0}, "PARALLELRUNLENGTH", {0}, {{140}});
+    auto spacing = std::make_unique<frSpacingTablePrlConstraint>(spacing_table);
+    tech->getLayer(metalLayer())->setMinSpacing(spacing.get());
+    tech->addUConstraint(std::move(spacing));
+
+    auto* via = makeViaDef("v2", 5, point(-70, -140), point(70, 140));
+    static_cast<frRect*>(via->getCutFigs()[0].get())
+        ->setBBox(odb::Rect(-70, -70, 70, 70));
+    auto* narrow = std::get<1>(GetParam()) ? via->getLayer2Figs()[0].get()
+                                           : via->getLayer1Figs()[0].get();
+    auto* wide = std::get<1>(GetParam()) ? via->getLayer1Figs()[0].get()
+                                         : via->getLayer2Figs()[0].get();
+    static_cast<frRect*>(narrow)->setBBox(box(-70, -140, 70, 140));
+    static_cast<frRect*>(wide)->setBBox(box(-140, -70, 140, 70));
+
+    auto* net = makeNet("n1");
+    makeVia(via, net, point(27290, 3020));
+    makePathsegExt(
+        net, metalLayer(), point(27290, wire_y), point(27670, wire_y), 140);
+    if (connected) {
+      makePathsegExt(
+          net, metalLayer(), point(27290, 2740), point(27290, wire_y), 140);
+    }
+    initRegionQuery();
+  }
+
+  void runBoundaryGC(int ext_min)
+  {
+    worker.setExtBox(box(ext_min, -2000, 52000, 26000));
+    worker.setDrcBox(box(28900, -500, 50500, 24500));
+    worker.init(design.get());
+    worker.main();
+  }
+};
+
+TEST_P(GCWorkerBoundaryFixture, connected_metal_outside_context)
+{
+  makeBoundaryDesign(true);
+  // The wide landing reaches 27430, selecting the whole via. The narrow
+  // landing and its connecting wire end at 27360, outside this context.
+  runBoundaryGC(27400);
+  EXPECT_TRUE(worker.getMarkers().empty());
+}
+
+TEST_P(GCWorkerBoundaryFixture, connected_metal_touching_context)
+{
+  makeBoundaryDesign(true);
+  runBoundaryGC(27360);
+  EXPECT_TRUE(worker.getMarkers().empty());
+}
+
+TEST_P(GCWorkerBoundaryFixture, connected_metal_crossing_context)
+{
+  makeBoundaryDesign(true);
+  runBoundaryGC(27300);
+  EXPECT_TRUE(worker.getMarkers().empty());
+}
+
+TEST_P(GCWorkerBoundaryFixture, real_gap)
+{
+  makeBoundaryDesign(false);
+  worker.setExtBox(box(27000, 2500, 28000, 4000));
+  // The genuine marker straddles the checking-region boundary.
+  worker.setDrcBox(box(27290, 2700, 27900, 3900));
+  worker.init(design.get());
+  worker.main();
+  const auto& markers = worker.getMarkers();
+  ASSERT_EQ(markers.size(), 1);
+  testMarker(markers.front().get(),
+             metalLayer(),
+             frConstraintTypeEnum::frcSpacingTablePrlConstraint,
+             box(27220, 3160, 27360, 3230));
+}
+
+TEST_P(GCWorkerBoundaryFixture, legal_gap)
+{
+  makeBoundaryDesign(false, 3370);
+  runBoundaryGC(27000);
+  EXPECT_TRUE(worker.getMarkers().empty());
+}
+
+INSTANTIATE_TEST_SUITE_P(Boundary,
+                         GCWorkerBoundaryFixture,
+                         ::testing::Combine(::testing::Bool(),
+                                            ::testing::Bool()));
+
+class GCViaContextFixture : public FixtureWithParam<int>
+{
+};
+
+TEST_P(GCViaContextFixture, imports_intersecting_figures)
+{
+  const int index = GetParam();
+  const int layer = 2 + index % 3;
+  const int offsets[] = {-201, -100, -50, 100, 1101};
+  const int offset = offsets[(index / 3) % 5];
+  const bool transpose = index >= 15;
+  auto* tech = design->getTech();
+  addLayer(tech, "v1", dbTechLayerType::CUT);
+  addLayer(tech, "m2", dbTechLayerType::ROUTING);
+  auto* via = makeViaDef("V1", 3, {100, 100}, {200, 200});
+  odb::Rect local(offset, 100, offset + 100, 200);
+  if (transpose) {
+    local = odb::Rect(100, offset, 200, offset + 100);
+  }
+  auto* figure = layer == 2   ? via->getLayer1Figs()[0].get()
+                 : layer == 3 ? via->getCutFigs()[0].get()
+                              : via->getLayer2Figs()[0].get();
+  static_cast<frRect*>(figure)->setBBox(local);
+  auto outside = std::make_unique<frRect>();
+  outside->setLayerNum(layer);
+  outside->setBBox(odb::Rect(3000, 3000, 3100, 3100));
+  if (layer == 2) {
+    via->addLayer1Fig(std::move(outside));
+  } else if (layer == 3) {
+    via->addCutFig(std::move(outside));
+  } else {
+    via->addLayer2Fig(std::move(outside));
+  }
+  auto* net = makeNet("signal");
+  makeVia(via, net, {10000, 10000});
+  initRegionQuery();
+  worker.setExtBox(odb::Rect(10000, 10000, 11000, 11000));
+  worker.setDrcBox(odb::Rect(10200, 10200, 10800, 10800));
+  worker.init(design.get());
+  const auto* imported = worker.getNet(net);
+  ASSERT_NE(imported, nullptr);
+  const bool included = offset == -100 || offset == -50 || offset == 100;
+  odb::Rect translated = local;
+  odb::dbTransform(odb::Point(10000, 10000)).apply(translated);
+  const gtl::rectangle_data<frCoord> expected(translated.xMin(),
+                                              translated.yMin(),
+                                              translated.xMax(),
+                                              translated.yMax());
+  if (layer == 3) {
+    const auto& rectangles = imported->getRectangles(layer);
+    ASSERT_EQ(rectangles.size(), included ? 1 : 0);
+    if (included) {
+      EXPECT_EQ(rectangles.front(), expected);
+    }
+  } else {
+    using gtl::operators::operator+=;
+    using gtl::operators::operator^=;
+    auto difference = imported->getPolygons(layer);
+    gtl::polygon_90_set_data<frCoord> expected_set;
+    if (included) {
+      expected_set += expected;
+    }
+    difference ^= expected_set;
+    EXPECT_TRUE(difference.empty());
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(ViaContext,
+                         GCViaContextFixture,
+                         ::testing::Range(0, 30));
 
 // Two touching metal shape from different nets generate a short
 TEST_F(GCFixture, metal_short)

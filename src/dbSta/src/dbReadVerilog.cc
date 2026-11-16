@@ -156,7 +156,7 @@ class Verilog2db
   void makeModBTerms(Cell* cell, dbModule* module);
   void makeModITerms(Instance* inst, dbModInst* modinst);
   void registerHierModule(dbModule* module);
-  dbIoType staToDb(PortDirection* dir);
+  dbIoType staToDb(const PortDirection* dir);
   bool staToDb(dbModule* module,
                const Pin* pin,
                dbBTerm*& bterm,
@@ -187,6 +187,8 @@ class Verilog2db
   // We have to store dont_touch instances and apply the attribute after
   // creating iterms; as iterms can't be added to a dont_touch inst
   std::vector<dbInst*> dont_touch_insts_;
+  // Cache nets built by constructModNet.
+  std::map<std::pair<const Net*, const dbModule*>, dbModNet*> mod_nets_;
   bool hierarchy_ = false;
   bool omit_filename_prop_ = false;
   static const std::regex kLineInfoRe;
@@ -704,7 +706,7 @@ bool Verilog2db::staToDb(dbModule* module,
   return false;
 }
 
-dbIoType Verilog2db::staToDb(PortDirection* dir)
+dbIoType Verilog2db::staToDb(const PortDirection* dir)
 {
   if (dir == PortDirection::input()) {
     return dbIoType::INPUT;
@@ -934,6 +936,11 @@ void Verilog2db::makeModNetsForSubmodule(const Instance* inst,
 
 dbModNet* Verilog2db::constructModNet(Net* inst_pin_net, dbModule* module)
 {
+  auto [mod_net_it, inserted]
+      = mod_nets_.try_emplace({inst_pin_net, module}, nullptr);
+  if (!inserted) {
+    return mod_net_it->second;
+  }
   dbModNet* db_mod_net = nullptr;
 
   std::unique_ptr<sta::NetPinIterator> npi{network_->pinIterator(inst_pin_net)};
@@ -1033,6 +1040,7 @@ dbModNet* Verilog2db::constructModNet(Net* inst_pin_net, dbModule* module)
                  db_mod_net->getId());
     }
   }
+  mod_net_it->second = db_mod_net;
   return db_mod_net;
 }
 
@@ -1220,6 +1228,7 @@ void Verilog2db::makeUnusedBlock(const char* name)
 //
 void Verilog2db::makeUnusedDbNetlist()
 {
+  mod_nets_.clear();
   recordBusPortsOrder();
   Instance* inst = network_->topInstance();
   dbModule* module = block_->getTopModule();
