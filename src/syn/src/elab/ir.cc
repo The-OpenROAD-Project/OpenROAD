@@ -8,8 +8,10 @@
 #include "ir.h"
 
 #include <cstdint>
+#include <vector>
 
 #include "slang_frontend.h"
+#include "syn/ir/Net.h"
 
 namespace ir {
 
