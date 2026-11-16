@@ -480,9 +480,10 @@ void Retimer::removeRegister(odb::dbInst* inst)
       bterm->connect(d_net);
     }
   }
-  odb::dbInst::destroy(inst);
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  network->deleteInstance(network->dbToSta(inst));
   if (q_net != nullptr) {
-    odb::dbNet::destroy(q_net);
+    network->deleteNet(network->dbToSta(q_net));
   }
 }
 

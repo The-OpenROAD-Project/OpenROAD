@@ -508,9 +508,10 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
     return;
   }
 
+  sta::dbNetwork* network = sta_->getDbNetwork();
   odb::dbInst* flop = newInst("unmap_ff", base);
-  const RegPins pins = getRegPins(
-      flop, singleSequential(sta_->getDbNetwork()->libertyCell(flop)));
+  const RegPins pins
+      = getRegPins(flop, singleSequential(network->libertyCell(flop)));
   if (pins.d == nullptr || pins.q == nullptr || pins.clk == nullptr) {
     logger_->warn(utl::RET,
                   13,
@@ -518,7 +519,7 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
                   "clock pin.",
                   inst->getName(),
                   base->getName());
-    odb::dbInst::destroy(flop);
+    network->deleteInstance(network->dbToSta(flop));
     skipped_++;
     return;
   }
@@ -529,7 +530,7 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
   pins.d->connect(synth(seq->data()));
 
   const std::vector<OutputMove> moves = collectOutputMoves(inst, out_pins);
-  odb::dbInst::destroy(inst);
+  network->deleteInstance(network->dbToSta(inst));
   applyOutputMoves(moves);
   unmapped_++;
   traceDecompose(inst_name, inst_master, flop);
@@ -593,6 +594,7 @@ SequentialUnmapper::collectOutputMoves(
 
 void SequentialUnmapper::applyOutputMoves(const std::vector<OutputMove>& moves)
 {
+  sta::dbNetwork* network = sta_->getDbNetwork();
   std::unordered_set<odb::dbNet*> destroyed;
   for (const OutputMove& move : moves) {
     for (odb::dbITerm* load : move.loads) {
@@ -604,7 +606,7 @@ void SequentialUnmapper::applyOutputMoves(const std::vector<OutputMove>& moves)
       bterm->connect(move.new_net);
     }
     if (destroyed.insert(move.old_net).second) {
-      odb::dbNet::destroy(move.old_net);
+      network->deleteNet(network->dbToSta(move.old_net));
     }
   }
 }
