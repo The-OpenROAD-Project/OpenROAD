@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2026-2026, The OpenROAD Authors
+// Copyright (c) 2026, The OpenROAD Authors
 
 #pragma once
 
@@ -10,12 +10,17 @@
 
 namespace sta {
 class dbSta;
-}
+class LibertyCell;
+class Sequential;
+}  // namespace sta
 
 namespace ret {
 
 // Register classification shared by the graph, the search and the apply
 // step.
+
+// The cell's sequential when it has exactly one, else nullptr.
+const sta::Sequential* singleSequential(const sta::LibertyCell* cell);
 
 bool isDontTouchRegister(sta::dbSta* sta, odb::dbInst* inst);
 bool isRegisterDataPin(sta::dbSta* sta, odb::dbITerm* pin);

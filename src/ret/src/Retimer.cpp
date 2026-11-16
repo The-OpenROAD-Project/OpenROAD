@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2026-2026, The OpenROAD Authors
+// Copyright (c) 2026, The OpenROAD Authors
 
 #include "ret/Retimer.h"
 
@@ -32,7 +32,7 @@ namespace {
 
 const RegisterClass& classOf(const RetimingGraph& graph, odb::dbInst* reg)
 {
-  static const RegisterClass& kOther = *new RegisterClass;
+  static const RegisterClass kOther;
   auto it = graph.reg_class_.find(reg);
   return it != graph.reg_class_.end() ? it->second : kOther;
 }
@@ -486,6 +486,9 @@ void Retimer::connectRegister(odb::dbInst* ff,
                               odb::dbNet* clock_net)
 {
   for (odb::dbITerm* iterm : ff->getITerms()) {
+    if (iterm->getSigType().isSupply()) {
+      continue;
+    }
     if (iterm->getSigType() == odb::dbSigType::CLOCK) {
       iterm->connect(clock_net);
     } else if (cls == nullptr) {

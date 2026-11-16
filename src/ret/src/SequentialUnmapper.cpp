@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2026-2026, The OpenROAD Authors
+// Copyright (c) 2026, The OpenROAD Authors
 
 #include "ret/SequentialUnmapper.h"
 
@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "RegisterUtils.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
@@ -25,17 +26,6 @@
 namespace ret {
 
 namespace {
-
-const sta::Sequential* singleSequential(const sta::LibertyCell* cell)
-{
-  const sta::Sequential* seq = nullptr;
-  int count = 0;
-  for (const sta::Sequential& s : cell->sequentials()) {
-    seq = &s;
-    count++;
-  }
-  return count == 1 ? seq : nullptr;
-}
 
 bool isNegedge(const sta::Sequential* seq)
 {
@@ -603,6 +593,7 @@ SequentialUnmapper::collectOutputMoves(
 
 void SequentialUnmapper::applyOutputMoves(const std::vector<OutputMove>& moves)
 {
+  std::unordered_set<odb::dbNet*> destroyed;
   for (const OutputMove& move : moves) {
     for (odb::dbITerm* load : move.loads) {
       load->disconnect();
@@ -612,7 +603,9 @@ void SequentialUnmapper::applyOutputMoves(const std::vector<OutputMove>& moves)
       bterm->disconnect();
       bterm->connect(move.new_net);
     }
-    odb::dbNet::destroy(move.old_net);
+    if (destroyed.insert(move.old_net).second) {
+      odb::dbNet::destroy(move.old_net);
+    }
   }
 }
 
@@ -738,6 +731,9 @@ odb::dbNet* SequentialUnmapper::makeInverter(odb::dbNet* input)
   odb::dbInst* inv = newInst("unmap_inv", inv_master_);
   odb::dbNet* output = newNet("unmap_net");
   for (odb::dbITerm* iterm : inv->getITerms()) {
+    if (iterm->getSigType().isSupply()) {
+      continue;
+    }
     if (iterm->getIoType() == odb::dbIoType::INPUT) {
       iterm->connect(input);
     } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
@@ -756,6 +752,9 @@ odb::dbNet* SequentialUnmapper::makeTwoInputGate(bool is_and,
   odb::dbNet* output = newNet("unmap_net");
   bool first_input = true;
   for (odb::dbITerm* iterm : gate->getITerms()) {
+    if (iterm->getSigType().isSupply()) {
+      continue;
+    }
     if (iterm->getIoType() == odb::dbIoType::INPUT) {
       iterm->connect(first_input ? a : b);
       first_input = false;

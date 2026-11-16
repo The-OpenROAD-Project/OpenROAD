@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2026-2026, The OpenROAD Authors
+// Copyright (c) 2026, The OpenROAD Authors
 
 #include "RegisterUtils.h"
 
@@ -23,10 +23,6 @@
 
 namespace ret {
 
-namespace {
-
-constexpr size_t kMaxTruthTableInputs = 6;
-
 const sta::Sequential* singleSequential(const sta::LibertyCell* cell)
 {
   const sta::Sequential* seq = nullptr;
@@ -37,6 +33,10 @@ const sta::Sequential* singleSequential(const sta::LibertyCell* cell)
   }
   return count == 1 ? seq : nullptr;
 }
+
+namespace {
+
+constexpr size_t kMaxTruthTableInputs = 6;
 
 std::optional<bool> constNetValue(sta::dbSta* sta, odb::dbNet* net)
 {

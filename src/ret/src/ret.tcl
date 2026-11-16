@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2026-2026, The OpenROAD Authors
+# Copyright (c) 2026, The OpenROAD Authors
 
 sta::define_cmd_args "retime" {[-max_moves count]}
 
