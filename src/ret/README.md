@@ -65,7 +65,8 @@ New instances are named `ret_ff_N` and new nets `ret_net_N`. The log shows
 one line per accepted move. `retime` stops with an error on designs it
 cannot handle: libraries without a usable base register, inverter, AND2 or
 OR2 cell; more than one clock; negative-edge registers; no clock defined; a
-hierarchical netlist (`link_design -hier`).
+hierarchical netlist (`link_design -hier`). An error leaves the netlist
+unchanged.
 
 ## Example scripts
 

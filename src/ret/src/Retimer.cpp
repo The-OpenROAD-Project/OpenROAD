@@ -119,11 +119,19 @@ void Retimer::retime(int max_moves)
   const std::vector<int> r = search.getRetiming();
 
   const std::unordered_set<odb::dbInst*> movers = moversToUnmap(graph, r);
-  if (movers.empty()) {
-    applyRetiming(graph, r);
-  } else {
-    applyAfterUnmapping(graph, r, movers, max_moves, guard);
+  // An error while the netlist is being edited restores it.
+  odb::dbDatabase::beginEco(block);
+  try {
+    if (movers.empty()) {
+      applyRetiming(graph, r);
+    } else {
+      applyAfterUnmapping(graph, r, movers, max_moves, guard);
+    }
+  } catch (...) {
+    odb::dbDatabase::undoEco(block);
+    throw;
   }
+  odb::dbDatabase::commitEco(block);
 }
 
 void Retimer::applyAfterUnmapping(
@@ -193,8 +201,7 @@ void Retimer::applyAfterUnmapping(
   logger_->error(utl::RET,
                  37,
                  "Retiming did not settle after {} rounds of unmapping "
-                 "registers; the design is left with the registers unmapped so "
-                 "far and no register moved.",
+                 "registers; the retiming is not applied.",
                  kMaxRounds);
 }
 
@@ -448,8 +455,8 @@ void Retimer::removeRegister(odb::dbInst* inst)
   if (cls.kind == RegisterKind::other || d_net == nullptr) {
     logger_->error(utl::RET,
                    39,
-                   "Register {} cannot be bypassed; the retiming is only "
-                   "partly applied.",
+                   "Register {} cannot be bypassed; the retiming is not "
+                   "applied.",
                    inst->getName());
   }
   odb::dbITerm* q
