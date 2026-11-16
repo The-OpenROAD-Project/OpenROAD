@@ -867,7 +867,7 @@ class FastRouteCore
 
   using Tile = std::tuple<int, int, int>;
 
-  static const int BIG_INT = 1e9;  // big integer used as infinity
+  static constexpr int BIG_INT = 1e9;  // big integer used as infinity
   static const int HCOST = 5000;
   // Overflow an NDR net is charged, in its routing cost, per track it would
   // miss on an edge where it fits no single layer.

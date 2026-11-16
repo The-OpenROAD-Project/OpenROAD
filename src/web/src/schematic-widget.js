@@ -120,7 +120,7 @@ export class SchematicWidget {
         this.container.element.appendChild(this.element);
 
         // Button listeners
-        this.controls.querySelector('#schematic-refresh').addEventListener('click', () => this.refresh());
+        this.controls.querySelector('#schematic-refresh').addEventListener('click', () => this._onRefresh());
         this.controls.querySelector('#schematic-back').addEventListener('click', () => this._goBackSchematic());
         this.controls.querySelector('#schematic-fit').addEventListener('click', () => this.fitView());
         this.controls.querySelector('#schematic-zoom-in').addEventListener('click', () => this._zoomStep(1.5));
@@ -278,6 +278,8 @@ export class SchematicWidget {
         return {
             netlist: this._currentNetlist,
             selectedInstanceName: this.appState.selectedInstanceName || null,
+            // The instance Refresh redraws while this view is shown.
+            instName: this._instName,
         };
     }
 
@@ -332,6 +334,7 @@ export class SchematicWidget {
                 }
                 this._setBackButtonEnabled();
                 this._leaveTimingSchematic();
+                this._instName = snapshot.instName;
                 if (!snapshot.selectedInstanceName) {
                     return true;
                 }
@@ -466,7 +469,7 @@ export class SchematicWidget {
         if (load === 'path') {
             this._loadPathSchematic(++this._timingRequestId);
         } else if (load === 'refresh') {
-            this.refresh();
+            this._onRefresh();
         }
     }
 
@@ -971,22 +974,30 @@ export class SchematicWidget {
         };
         apply(faninEl, detail.fanin, detail.fanin_depth);
         apply(fanoutEl, detail.fanout, detail.fanout_depth);
-        this.refresh();
+        // The cone's instance, which a path pin picks without selecting it.
+        this.refresh(detail.inst_name);
+        // Applying with "sync schematic" asks to see it, past a maximized pane.
         if (this.appState.focusComponent) {
-            this.appState.focusComponent('SchematicWidget');
+            this.appState.focusComponent('SchematicWidget', { reveal: true });
         }
     }
 
     // ── Refresh ──────────────────────────────────────────────────────────────
 
+    // Redraws the instance last asked for, including one a timing cone picked
+    // without selecting it.
+    _onRefresh() {
+        return this.refresh(this._instName);
+    }
+
     // Resolve to whether a schematic was drawn so callers can sequence updates.
-    async refresh() {
+    async refresh(instName = this.appState.selectedInstanceName) {
+        this._instName = instName;
         if (!this._netlistsvgReady) {
             this.setStatus(this._unreadyStatus());
             return false;
         }
 
-        const instName = this.appState.selectedInstanceName;
         if (!instName) {
             this.setStatus(kIdleStatus);
             return false;
@@ -1084,6 +1095,7 @@ export class SchematicWidget {
             // Record Back history only after expansion renders.
             this._pushSchematicHistory(previousSnapshot);
             this._leaveTimingSchematic();
+            this._instName = instName;
             return true;
         } catch (err) {
             if (isCurrent()) this.setStatus(`Error: ${err}`);

@@ -47,6 +47,7 @@
 #include "dbDescriptors.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "group_report.h"
 #include "hierarchy_report.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
@@ -55,6 +56,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "request_dispatcher.h"
+#include "shape_collector.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
@@ -71,60 +73,6 @@
 #include "web_assets.h"
 
 namespace web {
-
-//------------------------------------------------------------------------------
-// ShapeCollector — a web::Painter that collects rectangles, polygons and
-// lines from descriptor->highlight() calls for use in tile rendering.
-// Lines matter for nets: an unrouted net's highlight (and the Qt GUI's
-// NetWithSink sink path) is drawn as flight lines, which used to be
-// silently dropped here.
-//------------------------------------------------------------------------------
-
-class ShapeCollector : public web::Painter
-{
- public:
-  ShapeCollector() : Painter(nullptr, odb::Rect(), 1.0) {}
-
-  std::vector<odb::Rect> rects;
-  std::vector<odb::Polygon> polys;
-  std::vector<FlightLine> lines;
-
-  void drawRect(const odb::Rect& rect, int, int) override
-  {
-    rects.push_back(rect);
-  }
-  void drawPolygon(const odb::Polygon& polygon) override
-  {
-    polys.push_back(polygon);
-  }
-  void drawOctagon(const odb::Oct& oct) override { polys.emplace_back(oct); }
-  void drawLine(const odb::Point& p1, const odb::Point& p2) override
-  {
-    // Selection-highlight yellow (matches the rect/poly highlight color).
-    lines.push_back(
-        {.p1 = p1, .p2 = p2, .color = {.r = 255, .g = 255, .b = 0, .a = 255}});
-  }
-
-  // No-ops
-  Color getPenColor() override { return {}; }
-  void setPen(odb::dbTechLayer*, bool) override {}
-  void setPen(const Color&, bool, int) override {}
-  void setPenWidth(int) override {}
-  void setBrush(odb::dbTechLayer*, int) override {}
-  void setBrush(const Color&, const Brush&) override {}
-  void setFont(const Font&) override {}
-  void saveState() override {}
-  void restoreState() override {}
-  void drawCircle(int, int, int) override {}
-  void drawX(int, int, int) override {}
-  void drawPolygon(const std::vector<odb::Point>&) override {}
-  void drawString(int, int, Anchor, const std::string&, bool) override {}
-  odb::Rect stringBoundaries(int, int, Anchor, const std::string&) override
-  {
-    return {};
-  }
-  void drawRuler(int, int, int, int, bool, const std::string&) override {}
-};
 
 namespace {
 
@@ -1310,11 +1258,16 @@ static void collectSpecialWireShapes(odb::dbNet* net,
 // toggle off, unrouted nets still get flywires (GUI fallback — the
 // descriptor emits them via painter.drawLine, which ShapeCollector
 // drops, so they are recomputed here).
+// `collector` comes from the caller so it can bound one object (see
+// kMaxHighlightShapes) and reuse the allocation.  Nothing is appended for an
+// object that overflowed: ask the collector and stand in for it with
+// standInBox().
 static void appendHighlightShapes(const web::Selected& sel,
                                   std::vector<odb::Rect>& rects,
                                   std::vector<odb::Polygon>& polys,
                                   std::vector<FlightLine>& lines,
-                                  const bool flywires_only)
+                                  const bool flywires_only,
+                                  ShapeCollector& collector)
 {
   if (!sel) {
     return;
@@ -1348,14 +1301,38 @@ static void appendHighlightShapes(const web::Selected& sel,
       own_flywires = true;
     }
   }
-  ShapeCollector collector;
   sel.highlight(collector);
+  if (collector.overflowed()) {
+    return;
+  }
   rects.insert(rects.end(), collector.rects.begin(), collector.rects.end());
   polys.insert(polys.end(), collector.polys.begin(), collector.polys.end());
   if (!own_flywires) {
     lines.insert(lines.end(), collector.lines.begin(), collector.lines.end());
   }
 }
+
+// The single box standing in for an object whose shapes did not fit: its own if
+// it has one (a dbGroup only reports a bbox when it has a region), else the
+// union of what it tried to draw.  Inverted when there is nothing to draw.
+// Shared so both highlight paths coarsen an oversized cluster the same way.
+static odb::Rect standInBox(const web::Selected& sel,
+                            const ShapeCollector& collector)
+{
+  odb::Rect box;
+  if (!sel.getBBox(box) || box.isInverted()) {
+    box = collector.unionBBox();
+  }
+  return box;
+}
+
+// Maximum highlight shapes one request may push onto the overlay, which the
+// renderer walks per tile.  Past this, objects are coarsened to one box each
+// and the response flags the truncation.
+constexpr size_t kMaxHighlightShapes = 20000;
+
+// Each hover rect becomes an SVG element in the browser.
+constexpr size_t kMaxHoverShapes = 1000;
 
 static void collectHighlightShapes(const web::Selected& sel,
                                    std::vector<odb::Rect>& rects,
@@ -1366,7 +1343,16 @@ static void collectHighlightShapes(const web::Selected& sel,
   rects.clear();
   polys.clear();
   lines.clear();
-  appendHighlightShapes(sel, rects, polys, lines, flywires_only);
+  // Capped like a selection set: one object can be a root cluster holding
+  // every instance, and then it is drawn as one box.
+  ShapeCollector collector(kMaxHighlightShapes);
+  appendHighlightShapes(sel, rects, polys, lines, flywires_only, collector);
+  if (collector.overflowed()) {
+    const odb::Rect stand_in = standInBox(sel, collector);
+    if (!stand_in.isInverted()) {
+      rects.push_back(stand_in);
+    }
+  }
 }
 
 // Return the 0-based position of the iterator within the selection set,
@@ -1381,7 +1367,8 @@ static int selectionIteratorPosition(const web::SelectionSet& set,
   return static_cast<int>(std::distance(set.begin(), itr));
 }
 
-// Accumulate highlight shapes from all items in a selection set.
+// Accumulate highlight shapes from all items in a selection set, degrading
+// gracefully on huge sets (see kMaxHighlightShapes).
 static void collectMultiHighlightShapes(const web::SelectionSet& selections,
                                         std::vector<odb::Rect>& rects,
                                         std::vector<odb::Polygon>& polys,
@@ -1391,8 +1378,30 @@ static void collectMultiHighlightShapes(const web::SelectionSet& selections,
   rects.clear();
   polys.clear();
   lines.clear();
+  // Reused across every selected object: a fresh collector per object is two
+  // vector allocations each, and a wide selection holds thousands.
+  ShapeCollector collector;
   for (const auto& sel : selections) {
-    appendHighlightShapes(sel, rects, polys, lines, flywires_only);
+    if (!sel) {
+      continue;
+    }
+    // `>=`, not `==`: the net paths write special-wire shapes into `rects` with
+    // no budget, so `used` can already be past the cap and the unsigned
+    // subtraction below would wrap.
+    const size_t used = rects.size() + polys.size();
+    if (used >= kMaxHighlightShapes) {
+      // Budget exhausted even for one box per object.
+      return;
+    }
+    collector.reset(kMaxHighlightShapes - used);
+    appendHighlightShapes(sel, rects, polys, lines, flywires_only, collector);
+    if (!collector.overflowed()) {
+      continue;
+    }
+    const odb::Rect stand_in = standInBox(sel, collector);
+    if (!stand_in.isInverted()) {
+      rects.push_back(stand_in);
+    }
   }
 }
 
@@ -1646,6 +1655,9 @@ static void rebuildHighlightGroupShapesLocked(SessionState& state)
   state.highlight_group_rects.clear();
   state.highlight_group_polys.clear();
   state.highlight_group_lines.clear();
+  // Reused across every member: a fresh collector per member is three vector
+  // allocations each, and a wide Find highlights thousands.
+  ShapeCollector collector;
   for (int group = 0; group < web::kNumHighlightSet; ++group) {
     if (state.highlight_groups[group].empty()) {
       continue;
@@ -1659,10 +1671,28 @@ static void rebuildHighlightGroupShapesLocked(SessionState& state)
       if (!sel) {
         continue;
       }
+      // Budget each member to the room left, and coarsen it to one box if it
+      // does not fit.  Checking the cap only *between* members would let a
+      // single root cluster push one rect per member instance.
+      const size_t used = state.highlight_group_rects.size()
+                          + state.highlight_group_polys.size();
+      if (used >= kMaxHighlightShapes) {
+        return;
+      }
       std::vector<odb::Rect> rects;
       std::vector<odb::Polygon> polys;
       std::vector<FlightLine> lines;
-      appendHighlightShapes(sel, rects, polys, lines, state.flywires_only);
+      collector.reset(kMaxHighlightShapes - used);
+      appendHighlightShapes(
+          sel, rects, polys, lines, state.flywires_only, collector);
+      if (collector.overflowed()) {
+        const odb::Rect stand_in = standInBox(sel, collector);
+        if (!stand_in.isInverted()) {
+          state.highlight_group_rects.push_back(
+              {.rect = stand_in, .color = color, .layer = "", .filled = true});
+        }
+        continue;
+      }
       for (const auto& rect : rects) {
         state.highlight_group_rects.push_back(
             {.rect = rect, .color = color, .layer = "", .filled = true});
@@ -2040,6 +2070,7 @@ WebSocketResponse TileHandler::renderTile(
     const std::vector<ColoredRect>& colored_rects,
     const std::vector<FlightLine>& flight_lines,
     const std::map<uint32_t, Color>* module_colors,
+    const std::map<uint32_t, Color>* group_colors,
     const std::set<uint32_t>* focus_net_ids,
     const std::set<uint32_t>* route_guide_net_ids,
     const double dpr,
@@ -2058,6 +2089,7 @@ WebSocketResponse TileHandler::renderTile(
                                   colored_rects,
                                   flight_lines,
                                   module_colors,
+                                  group_colors,
                                   focus_net_ids,
                                   route_guide_net_ids,
                                   dpr,
@@ -2182,6 +2214,11 @@ void SelectHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleSelectLayer(req, state);
         });
+  d.add("find",
+        WebSocketRequest::kFind,
+        [this](const WebSocketRequest& req, SessionState& state) {
+          return handleFind(req, state);
+        });
   d.add("set_focus_nets",
         WebSocketRequest::kSetFocusNets,
         [this](const WebSocketRequest& req, SessionState& state) {
@@ -2196,11 +2233,6 @@ void SelectHandler::registerRequests(RequestDispatcher& d)
         WebSocketRequest::kSelectNetLengthBin,
         [this](const WebSocketRequest& req, SessionState& state) {
           return handleSelectNetLengthBin(req, state);
-        });
-  d.add("find",
-        WebSocketRequest::kFind,
-        [this](const WebSocketRequest& req, SessionState& state) {
-          return handleFind(req, state);
         });
   d.add("set_route_guides",
         WebSocketRequest::kSetRouteGuides,
@@ -2350,7 +2382,8 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
             = static_cast<int64_t>(addConnectedNets(state.selection_set));
       }
 
-      // Highlight all items in the selection set.
+      // Highlight all items in the selection set (capped: a wide selection can
+      // hold thousands of objects).
       setSelectionSetHighlights(state);
       // Keep the current inspected object on an empty context click: the menu
       // has to keep describing what the user last inspected.
@@ -2539,6 +2572,8 @@ WebSocketResponse SelectHandler::handleContextAction(
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   try {
+    // Before the locks below: it takes selection_mutex itself.
+    consumeStaleSelection(state);
     const std::string action(req.json.at("action").as_string());
     const bool output = jsonOr(req.json, "output", false);
     const bool input = jsonOr(req.json, "input", false);
@@ -3677,6 +3712,7 @@ WebSocketResponse SelectHandler::handleSelectLayer(const WebSocketRequest& req,
   resp.type = WebSocketResponse::kJson;
 
   try {
+    consumeStaleSelection(state);
     const std::string layer_name
         = std::string(req.json.at("layer").as_string());
 
@@ -3790,9 +3826,14 @@ WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
           }
         }
         if (sel) {
-          ShapeCollector collector;
+          ShapeCollector collector(kMaxHoverShapes);
           sel.highlight(collector);
-          if (!collector.rects.empty()) {
+          if (collector.overflowed()) {
+            const odb::Rect stand_in = standInBox(sel, collector);
+            if (!stand_in.isInverted()) {
+              state.hover_rects.push_back(stand_in);
+            }
+          } else if (!collector.rects.empty()) {
             state.hover_rects = std::move(collector.rects);
           } else {
             odb::Rect bbox;
@@ -4044,6 +4085,7 @@ WebSocketResponse SelectHandler::handleFind(const WebSocketRequest& req,
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
   try {
+    consumeStaleSelection(state);
     const std::string obj_type(req.json.at("obj_type").as_string());
     const std::string pattern(req.json.at("pattern").as_string());
     const bool match_case = jsonOr(req.json, "match_case", false);
@@ -6005,11 +6047,26 @@ void TileHandler::registerRequests(RequestDispatcher& d)
         [this](const WebSocketRequest& req, SessionState&) {
           return handleModuleHierarchy(req);
         });
-  d.add("set_module_colors",
-        WebSocketRequest::kSetModuleColors,
-        [this](const WebSocketRequest& req, SessionState& state) {
-          return handleSetModuleColors(req, state);
+  // Inline so two quick checkbox clicks land in the order they were sent.
+  d.add(
+      "set_module_colors",
+      WebSocketRequest::kSetModuleColors,
+      [this](const WebSocketRequest& req, SessionState& state) {
+        return handleSetOwnerColors(req, state, state.module_colors);
+      },
+      /*run_inline=*/true);
+  d.add("group_hierarchy",
+        WebSocketRequest::kGroupHierarchy,
+        [this](const WebSocketRequest& req, SessionState&) {
+          return handleGroupHierarchy(req);
         });
+  d.add(
+      "set_group_colors",
+      WebSocketRequest::kSetGroupColors,
+      [this](const WebSocketRequest& req, SessionState& state) {
+        return handleSetOwnerColors(req, state, state.group_colors);
+      },
+      /*run_inline=*/true);
   d.add("heatmaps",
         WebSocketRequest::kHeatmaps,
         [this](const WebSocketRequest& req, SessionState& state) {
@@ -6168,15 +6225,40 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   TileVisibility vis;
   vis.parseFromJson(req.json);
 
-  // Snapshot module colors for _modules layer
-  std::map<uint32_t, Color> mod_colors;
-  {
-    std::lock_guard<std::mutex> lock(state.module_colors_mutex);
-    mod_colors = state.module_colors;
+  // Snapshot the color map this layer paints with, if any.  Only a
+  // color-overlay layer with its flag on reads one, so every other tile
+  // request skips the (mutexed) copy entirely — it runs per tile per layer.
+  const bool modules_layer = (layer == "_modules" && vis.module_view);
+  const bool clusters_layer = (layer == "_clusters" && vis.cluster_view);
+  TileGenerator::OwnerColorMap overlay_colors;
+  // True when the colors below are the design's own defaults rather than this
+  // session's: the tile then depends on nothing session-specific and caches.
+  bool default_colors = false;
+  if (modules_layer || clusters_layer) {
+    SessionState::OwnerColors& owner
+        = modules_layer ? state.module_colors : state.group_colors;
+    {
+      std::scoped_lock lock(owner.mutex);
+      overlay_colors = owner.colors;
+    }
+    // Nothing synced: paint the palette the panel starts from, so the checkbox
+    // draws with the Hierarchy tab closed and matches `save_image -web`.  A map
+    // that IS there but empty is the opposite instruction -- the user unchecked
+    // every row -- and must keep painting nothing.
+    if (!overlay_colors) {
+      overlay_colors = modules_layer ? gen_->defaultModuleColors()
+                                     : gen_->defaultGroupColors();
+      default_colors = overlay_colors != nullptr;
+    }
   }
+  // The snapshot outlives both the lock and the render: the panel sending new
+  // colors replaces the session's handle and drops its own reference, never the
+  // one this render holds.
+  const bool has_inst_colors = overlay_colors && !overlay_colors->empty();
   const std::map<uint32_t, Color>* mod_ptr
-      = mod_colors.empty() ? nullptr : &mod_colors;
-
+      = (modules_layer && has_inst_colors) ? overlay_colors.get() : nullptr;
+  const std::map<uint32_t, Color>* group_ptr
+      = (clusters_layer && has_inst_colors) ? overlay_colors.get() : nullptr;
   // Snapshot focus nets
   std::set<uint32_t> focus_nets;
   {
@@ -6200,9 +6282,13 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   // A tile is cacheable only when it depends solely on the static design +
   // visibility + dpr — i.e. no per-session overlays are active.  That keeps
   // the cache session-independent and correct; overlay tiles render fresh.
-  const bool cacheable = mod_ptr == nullptr && focus_ptr == nullptr
-                         && !vis.debug && !vis.debug_renderers
-                         && !vis.debug_live;
+  // The per-instance color maps are not part of the cache key, so a tile
+  // colored from a SESSION's map must never be cached — the default palette is
+  // derived from the design (and invalidated with it), so that one caches like
+  // any other tile, as does the same layer with its flag off.
+  const bool cacheable = (!has_inst_colors || default_colors)
+                         && focus_ptr == nullptr && !vis.debug
+                         && !vis.debug_renderers && !vis.debug_live;
 
   std::string cache_key;
   if (cacheable) {
@@ -6214,6 +6300,23 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     boost::json::object key_obj = req.json;
     key_obj.erase("id");
     key_obj.erase("selectable_layers");
+    // Two cacheable states share everything else: painting the design's
+    // default palette, and painting nothing because the session cleared every
+    // row.  Without this they collide on one key and the cleared view serves
+    // the painted tile.
+    if (modules_layer || clusters_layer) {
+      key_obj["owner_colors"] = default_colors ? "default" : "none";
+    }
+    // The color-overlay flags only change what THEIR layer draws.  Leaving them
+    // in every layer's key would make toggling one overlay a full cache miss
+    // for the whole screen — every metal layer re-rendered for a flag it
+    // ignores — and multiply the cache footprint per tile.
+    if (layer != "_modules") {
+      key_obj.erase("module_view");
+    }
+    if (layer != "_clusters") {
+      key_obj.erase("cluster_view");
+    }
     std::vector<std::string> sel_keys;
     for (const auto& kv : key_obj) {
       const std::string_view k = kv.key();
@@ -6281,6 +6384,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                                       no_colored,
                                       no_lines,
                                       mod_ptr,
+                                      group_ptr,
                                       focus_ptr,
                                       nullptr,
                                       dpr,
@@ -6300,7 +6404,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
              "tile",
              1,
              "tile: id={} layer={} chiplet={} z/x/y={}/{}/{} dpr={} tile_px={} "
-             "cache={} module_colors={} focus_nets={} detailed={} bytes={}",
+             "cache={} owner_colors={} focus_nets={} detailed={} bytes={}",
              req.id,
              layer,
              vis.chiplet,
@@ -6310,7 +6414,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
              dpr,
              tile_px,
              cacheable ? "miss" : "off",
-             mod_ptr != nullptr ? mod_colors.size() : 0,
+             has_inst_colors ? overlay_colors->size() : 0,
              focus_ptr != nullptr ? focus_nets.size() : 0,
              vis.detailed,
              resp.payload.size());
@@ -6799,52 +6903,80 @@ WebSocketResponse TileHandler::handleModuleHierarchy(
   return resp;
 }
 
-WebSocketResponse TileHandler::handleSetModuleColors(
+// Parse the custom delimited color map used by set_module_colors and
+// set_group_colors: "<id>:<r>,<g>,<b>,<a>;<id>:...".  An empty string
+// yields an empty map (clear all).
+static std::map<uint32_t, Color> parseColorMap(const std::string& data)
+{
+  std::map<uint32_t, Color> colors;
+  size_t pos = 0;
+  while (pos < data.size()) {
+    size_t colon = data.find(':', pos);
+    if (colon == std::string::npos) {
+      break;
+    }
+    const uint32_t obj_id
+        = static_cast<uint32_t>(std::stoul(data.substr(pos, colon - pos)));
+    pos = colon + 1;
+
+    auto next_num = [&]() -> int {
+      size_t end = data.find_first_of(",;", pos);
+      if (end == std::string::npos) {
+        end = data.size();
+      }
+      const int val = std::stoi(data.substr(pos, end - pos));
+      pos = end + 1;
+      return val;
+    };
+
+    const uint8_t r = static_cast<uint8_t>(next_num());
+    const uint8_t g = static_cast<uint8_t>(next_num());
+    const uint8_t b = static_cast<uint8_t>(next_num());
+    const uint8_t a = static_cast<uint8_t>(next_num());
+    colors[obj_id] = Color{.r = r, .g = g, .b = b, .a = a};
+  }
+  return colors;
+}
+
+// Backs both set_module_colors and set_group_colors: the two differ only in
+// which overlay's colors they replace.
+WebSocketResponse TileHandler::handleSetOwnerColors(
     const WebSocketRequest& req,
-    SessionState& state)
+    SessionState& state,
+    SessionState::OwnerColors& owner)
 {
   WebSocketResponse resp;
   resp.id = req.id;
   resp.type = WebSocketResponse::kJson;
-  std::map<uint32_t, Color> colors;
-  const std::string data = std::string(req.json.at("colors").as_string());
-  if (!data.empty()) {
-    size_t pos = 0;
-    while (pos < data.size()) {
-      size_t colon = data.find(':', pos);
-      if (colon == std::string::npos) {
-        break;
-      }
-      const uint32_t mod_id
-          = static_cast<uint32_t>(std::stoul(data.substr(pos, colon - pos)));
-      pos = colon + 1;
+  auto colors = std::make_shared<const std::map<uint32_t, Color>>(
+      parseColorMap(std::string(req.json.at("colors").as_string())));
 
-      auto next_num = [&]() -> int {
-        size_t end = data.find_first_of(",;", pos);
-        if (end == std::string::npos) {
-          end = data.size();
-        }
-        const int val = std::stoi(data.substr(pos, end - pos));
-        pos = end + 1;
-        return val;
-      };
-
-      const uint8_t r = static_cast<uint8_t>(next_num());
-      const uint8_t g = static_cast<uint8_t>(next_num());
-      const uint8_t b = static_cast<uint8_t>(next_num());
-      const uint8_t a = static_cast<uint8_t>(next_num());
-      colors[mod_id] = Color{.r = r, .g = g, .b = b, .a = a};
-    }
-  }
-
-  const int count = static_cast<int>(colors.size());
+  const int count = static_cast<int>(colors->size());
   {
-    std::lock_guard<std::mutex> lock(state.module_colors_mutex);
-    state.module_colors = std::move(colors);
+    std::scoped_lock lock(owner.mutex);
+    owner.colors = std::move(colors);
   }
 
   const std::string ok = R"({"ok":1,"count":)" + std::to_string(count) + "}";
   resp.payload.assign(ok.begin(), ok.end());
+  return resp;
+}
+
+// dbGroup tree for the Instance Groups panel: every group in the block,
+// whatever created it.
+WebSocketResponse TileHandler::handleGroupHierarchy(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = WebSocketResponse::kJson;
+  try {
+    GroupReport report(gen_->getBlock());
+    writePayload(resp, serializeGroupResult(report.getReport()));
+  } catch (const std::exception& e) {
+    resp.type = WebSocketResponse::kError;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
   return resp;
 }
 
@@ -7697,6 +7829,7 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
   resp.type = WebSocketResponse::kJson;
 
   try {
+    consumeStaleSelection(state);
     const int marker_id = static_cast<int>(req.json.at("marker_id").as_int64());
     const bool open_inspector = req.json.contains("open_inspector")
                                     ? req.json.at("open_inspector").as_bool()
