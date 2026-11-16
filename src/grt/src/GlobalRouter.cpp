@@ -7550,12 +7550,6 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
 
     updateDirtyNets(dirty_nets);
 
-    std::vector<odb::dbNet*> modified_nets;
-    modified_nets.reserve(dirty_nets.size());
-    for (const Net* net : dirty_nets) {
-      modified_nets.push_back(net->getDbNet());
-    }
-
     if (verbose_) {
       logger_->info(GRT, 9, "rerouting {} nets.", dirty_nets.size());
     }
@@ -7650,8 +7644,17 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
     }
     fastroute_->setCriticalNetsPercentage(old_critical_nets_percentage);
     fastroute_->setCongestionReportIterStep(congestion_report_iter_step_);
+    // dirty_nets now holds every net rerouted above, the congestion recovery's
+    // included. Keep all their guides in lockstep with routes_: an rsz journal
+    // restore recovers the routing only of nets whose guide edits it recorded,
+    // and restoring a subset puts them back on tracks the others now hold.
     if (save_guides) {
-      saveGuides(modified_nets);
+      std::vector<odb::dbNet*> rerouted;
+      rerouted.reserve(dirty_nets.size());
+      for (const Net* net : dirty_nets) {
+        rerouted.push_back(net->getDbNet());
+      }
+      saveGuides(rerouted);
     }
   }
 
