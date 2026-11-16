@@ -12,7 +12,6 @@
 #include "odb/lefin.h"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
-#include "sta/Network.hh"
 #include "sta/Scene.hh"
 #include "sta/Sta.hh"
 #include "tcl.h"  // IWYU pragma: keep (clang-tidy, you're drunk)
@@ -40,7 +39,7 @@ sta::LibertyLibrary* Fixture::readLiberty(const std::string& filename,
                                           const bool infer_latches)
 {
   const auto path = getFilePath(filename);
-  sta::LibertyLibrary* lib = sta_->readLiberty(path.c_str(), infer_latches);
+  sta::LibertyLibrary* lib = sta_->readLiberty(path, infer_latches);
   // Sta::readLiberty attaches the library (min and max) only to a command
   // scene named "default"; attach it to any other scene here.
   if (scene == nullptr) {

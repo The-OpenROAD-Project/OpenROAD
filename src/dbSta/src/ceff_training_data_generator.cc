@@ -38,7 +38,7 @@ int main(int argc, char** argv)
     lib_path = argv[1];
   }
   LibertyLibrary* library
-      = sta->readLiberty(lib_path.c_str(), /* infer_latches */ false);
+      = sta->readLiberty(lib_path, /* infer_latches */ false);
   if (!library) {
     std::cerr << "Error loading synthetic_linear.lib\n";
     return 1;
