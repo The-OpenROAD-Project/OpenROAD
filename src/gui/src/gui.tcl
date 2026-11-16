@@ -153,6 +153,7 @@ sta::define_cmd_args "save_clocktree_image" {
 proc save_clocktree_image { args } {
   sta::parse_key_args "save_clocktree_image" args \
     keys {-clock -width -height -scene -corner} flags {}
+  ord::deprecated_corner_arg save_clocktree_image keys
 
   sta::check_argc_eq1 "save_clocktree_image" $args
   set path [lindex $args 0]

@@ -534,6 +534,18 @@ proc place_inst { args } {
 ################################################################
 
 namespace eval ord {
+# -corner on OpenROAD commands is deprecated in favor of -scene; map it so
+# old scripts keep working until it is removed.
+proc deprecated_corner_arg { cmd keys_var } {
+  upvar 1 $keys_var keys
+  if { [info exists keys(-corner)] } {
+    utl::warn ORD 2058 "$cmd -corner is deprecated. Use -scene."
+    if { ![info exists keys(-scene)] } {
+      set keys(-scene) $keys(-corner)
+    }
+  }
+}
+
 proc ensure_units_initialized { } {
   if { ![units_initialized] } {
     utl::error "ORD" 13 "Command units uninitialized. Use the\

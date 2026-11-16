@@ -2,30 +2,41 @@
 set slew_margin 0
 set cap_margin 0
 set power_corner "default"
+# Scene names; each needs a liberty file in $liberty_files.
+set corners {}
 
 proc read_libraries { } {
   global tech_lef std_cell_lef extra_lef
-  global liberty_file liberty_files extra_liberty
+  global liberty_file liberty_files extra_liberty corners
 
   read_lef $tech_lef
   read_lef $std_cell_lef
   foreach file $extra_lef { read_lef $file }
-  set corners [sta::scenes]
   if { [llength $corners] > 1 } {
-    foreach corner $corners {
-      set corner_name [get_name $corner]
+    # Read every file once; define_scene resolves libraries by filename.
+    set corner_libs {}
+    foreach corner_name $corners {
       set corner_index [lsearch $liberty_files $corner_name]
       if { $corner_index == -1 } {
         error "No liberty file in \$liberty_files for corner $corner_name."
-      } else {
-        set liberty_file [lindex $liberty_files [expr $corner_index + 1]]
-        read_liberty -corner $corner_name $liberty_file
+      }
+      set liberty_file [lindex $liberty_files [expr $corner_index + 1]]
+      if { [lsearch -exact $corner_libs $liberty_file] == -1 } {
+        read_liberty $liberty_file
+        lappend corner_libs $liberty_file
       }
     }
+    foreach file $extra_liberty { read_liberty $file }
+    foreach corner_name $corners {
+      set corner_index [lsearch $liberty_files $corner_name]
+      set liberty_file [lindex $liberty_files [expr $corner_index + 1]]
+      define_scene $corner_name -liberty [list $liberty_file {*}$extra_liberty]
+    }
+    set_scene [lindex $corners 0]
   } else {
     read_liberty $liberty_file
+    foreach file $extra_liberty { read_liberty $file }
   }
-  foreach file $extra_liberty { read_liberty $file }
 }
 
 proc have_macros { } {
@@ -48,7 +59,7 @@ proc derate_layer_wire_rc { layer_name corner derate_factor } {
   set r_ui [expr $r * 1e-3 * 1e-6]
   # F/meter -> fF/micron
   set c_ui [expr $c * 1e+15 * 1e-6]
-  set_layer_rc -layer $layer_name -corner $corner \
+  set_layer_rc -layer $layer_name -scene $corner \
     -resistance [expr $r_ui * $derate_factor] \
     -capacitance [expr $c_ui * $derate_factor]
 }

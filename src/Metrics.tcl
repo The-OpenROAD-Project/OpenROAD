@@ -170,9 +170,10 @@ proc report_erc_metrics { } {
 }
 
 
-define_cmd_args "report_power_metric" {[-corner corner_name]}
+define_cmd_args "report_power_metric" {[-scene scene_name]}
 proc report_power_metric { args } {
-  parse_key_args "report_power_metric" args keys {-corner} flags {}
+  parse_key_args "report_power_metric" args keys {-scene -corner} flags {}
+  ord::deprecated_corner_arg report_power_metric keys
   set corner [sta::parse_scene keys]
   set power_result [design_power $corner]
   set totals [lrange $power_result 0 3]

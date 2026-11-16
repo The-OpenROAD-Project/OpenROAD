@@ -1358,11 +1358,12 @@ void TechChar::createStaInstance()
 
   // Create the same scenes in the same order, this will make liberty indices
   // line up and allow sharing the library between the two dbSta instances
-  sta::StringSeq scene_names;
-  for (auto scene : openSta_->scenes()) {
-    scene_names.push_back(scene->name().c_str());
+  for (const sta::Scene* scene : openSta_->scenes()) {
+    openStaChar_->makeScene(scene->name(), "default", {}, {}, "", "");
   }
-  openStaChar_->makeScenes(scene_names);
+  // makeScene leaves the last scene as the command scene; characterize
+  // with the first one as before.
+  openStaChar_->setCmdScene(openStaChar_->scenes().front());
 
   // Gets the corner and other analysis attributes from the new instance.
   charCorner_ = openStaChar_->cmdScene();

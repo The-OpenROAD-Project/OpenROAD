@@ -1,8 +1,10 @@
 # clock_gating with more than one corner defined
 include "helpers.tcl"
-define_corners fast slow
-read_liberty -corner fast Nangate45/Nangate45_fast.lib
-read_liberty -corner slow Nangate45/Nangate45_slow.lib
+read_liberty Nangate45/Nangate45_fast.lib
+read_liberty Nangate45/Nangate45_slow.lib
+define_scene fast -liberty Nangate45/Nangate45_fast.lib
+define_scene slow -liberty Nangate45/Nangate45_slow.lib
+set_scene fast
 read_lef Nangate45/Nangate45.lef
 read_lef Nangate45/Nangate45_stdcell.lef
 read_verilog enable_reg_nangate45.v

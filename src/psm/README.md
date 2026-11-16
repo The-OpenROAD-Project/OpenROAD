@@ -27,7 +27,7 @@ This command analyzes power grid for 2D and 3D chips.
 ```tcl
 analyze_power_grid
     -net net_name
-    [-corner corner]
+    [-scene scene]
     [-error_file error_file]
     [-voltage_file voltage_file]
     [-enable_em]
@@ -42,7 +42,7 @@ analyze_power_grid
 | Switch Name | Description |
 | ----- | ----- |
 | `-net` | Name of the net to analyze, power or ground net name. |
-| `-corner` | Corner to use for analysis. |
+| `-scene` | Scene to use for analysis. |
 | `-error_file` | File to write power grid errors to. For 3D ICs, errors are grouped by chiplet. |
 | `-vsrc` | File to set the location of the power C4 bumps/IO pins. [Vsrc_aes.loc file](test/Vsrc_aes_vdd.loc) for an example with a description specified [here](doc/Vsrc_description.md). For 3D ICs see the example [here](doc/vsrc_desciption_3d.md). |
 | `-enable_em` | Reports maximum and average power-grid segment currents. |
@@ -80,7 +80,7 @@ This command writes the `spice` file for power grid.
 write_pg_spice
     -net net_name
     [-vsrc vsrc_file]
-    [-corner corner]
+    [-scene scene]
     [-source_type FULL|BUMPS|STRAPS]
     spice_file
 ```
@@ -91,7 +91,7 @@ write_pg_spice
 | ----- | ----- |
 | `-net` | Name of the net to analyze. Must be a power or ground net name. |
 | `-vsrc` | File to set the location of the power C4 bumps/IO pins. See [Vsrc_aes.loc file](test/Vsrc_aes_vdd.loc) for an example and its [description](doc/Vsrc_description.md). |
-| `-corner` | Corner to use for analysis. |
+| `-scene` | Scene to use for analysis. |
 | `-source_type` | Indicate the type of voltage source grid to [model](#source-grid-options). FULL uses all the nodes on the top layer as voltage sources, BUMPS will model a bump grid array, and STRAPS will model power straps on the layer above the top layer. |
 | `spice_file` | File to write spice netlist to. |
 
@@ -103,7 +103,7 @@ This command sets PDNSim net voltage. For 3D analysis, define external sources w
 set_pdnsim_net_voltage
     -net net_name
     -voltage volt
-    [-corner corner]
+    [-scene scene]
 ```
 
 #### Options
@@ -112,7 +112,7 @@ set_pdnsim_net_voltage
 | ----- | ----- |
 | `-net` | Name of the net to analyze. It must be a power or ground net name. |
 | `-voltage` | Sets the voltage on a specific net. If this option is not given, the Liberty file's voltage value is obtained from operating conditions. |
-| `-corner` | Corner to use this voltage. If not specified, this voltage applies to all corners. |
+| `-scene` | Scene to use this voltage. If not specified, this voltage applies to all scenes. |
 
 ### Set PSM Inter-chip Resistance
 
@@ -138,7 +138,7 @@ This should only be used when needing to override the computed power.
 set_pdnsim_inst_power
     -inst inst_name
     -power power
-    [-corner corner]
+    [-scene scene]
 ```
 
 #### Options
@@ -147,7 +147,7 @@ set_pdnsim_inst_power
 | ----- | ----- |
 | `-inst` | Name of the instance to set the power dor. |
 | `-power` | Sets the power on a specific instance. |
-| `-corner` | Corner to use this power. If not specified, this power applies to all corners. |
+| `-scene` | Scene to use this power. If not specified, this power applies to all scenes. |
 
 ### Set PDNSim Power Source Settings
 

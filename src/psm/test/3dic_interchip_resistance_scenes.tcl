@@ -12,11 +12,11 @@ set_psm_interchip_resistance -scene high_resistance -resistance 1000.0
 
 check_power_grid -net VDD
 
-analyze_power_grid -net VDD -corner low_resistance \
+analyze_power_grid -net VDD -scene low_resistance \
   -vsrc 3dic_test_data/3dic_external_power_source.loc
 
-analyze_power_grid -net VDD -corner high_resistance \
+analyze_power_grid -net VDD -scene high_resistance \
   -vsrc 3dic_test_data/3dic_external_power_source.loc
 
-analyze_power_grid -net VDD -corner low_resistance \
+analyze_power_grid -net VDD -scene low_resistance \
   -vsrc 3dic_test_data/3dic_external_power_source.loc -allow_reuse

@@ -35,7 +35,7 @@ proc check_power_grid { args } {
 
 sta::define_cmd_args "analyze_power_grid" {
   -net net_name
-  [-corner corner]
+  [-scene scene]
   [-error_file error_file]
   [-voltage_file voltage_file]
   [-enable_em]
@@ -47,9 +47,10 @@ sta::define_cmd_args "analyze_power_grid" {
 
 proc analyze_power_grid { args } {
   sta::parse_key_args "analyze_power_grid" args \
-    keys {-net -corner -voltage_file -error_file -em_outfile -vsrc \
+    keys {-net -scene -corner -voltage_file -error_file -em_outfile -vsrc \
       -source_type} \
     flags {-enable_em -allow_reuse}
+  ord::deprecated_corner_arg analyze_power_grid keys
   if { ![info exists keys(-net)] } {
     utl::error PSM 58 "Argument -net not specified."
   }
@@ -164,15 +165,16 @@ proc insert_decap { args } {
 sta::define_cmd_args "write_pg_spice" {
   -net net_name
   [-vsrc vsrc_file]
-  [-corner corner]
+  [-scene scene]
   [-source_type FULL|BUMPS|STRAPS]
   spice_file
   }
 
 proc write_pg_spice { args } {
   sta::parse_key_args "write_pg_spice" args \
-    keys {-vsrc -net -corner -source_type} flags {}
+    keys {-vsrc -net -scene -corner -source_type} flags {}
   sta::check_argc_eq1 "write_pg_spice" $args
+  ord::deprecated_corner_arg write_pg_spice keys
 
   if { ![info exists keys(-net)] } {
     utl::error PSM 59 "Argument -net not specified."
@@ -199,12 +201,13 @@ proc write_pg_spice { args } {
 sta::define_cmd_args "set_pdnsim_net_voltage" {
   -net net_name
   [-voltage volt]
-  [-corner corner]
+  [-scene scene]
 }
 
 proc set_pdnsim_net_voltage { args } {
   sta::parse_key_args "set_pdnsim_net_voltage" args \
-    keys {-net -corner -voltage} flags {}
+    keys {-net -scene -corner -voltage} flags {}
+  ord::deprecated_corner_arg set_pdnsim_net_voltage keys
 
   if { [info exists keys(-net)] && [info exists keys(-voltage)] } {
     set net [psm::find_net $keys(-net)]
@@ -242,11 +245,12 @@ proc set_psm_interchip_resistance { args } {
 sta::define_cmd_args "set_pdnsim_inst_power" {
   -inst instance
   -power power
-  [-corner corner]}
+  [-scene scene]}
 
 proc set_pdnsim_inst_power { args } {
   sta::parse_key_args "set_pdnsim_inst_power" args \
-    keys {-inst -corner -power} flags {}
+    keys {-inst -scene -corner -power} flags {}
+  ord::deprecated_corner_arg set_pdnsim_inst_power keys
   if { [info exists keys(-inst)] && [info exists keys(-power)] } {
     set inst [psm::find_inst $keys(-inst)]
     set power $keys(-power)

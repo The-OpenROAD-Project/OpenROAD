@@ -57,14 +57,14 @@ Resynthesize parts of the design in an attempt to fix negative slack.
 
 ```tcl
 resynth
-    [-corner corner]
+    [-scene scene]
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-corner` | Process corner to use. |
+| `-scene` | Scene to use. |
 
 ### Resynth with simulated annealing
 
@@ -75,7 +75,7 @@ The optimization function is defined as the worst slack.
 
 ```tcl
 resynth_annealing
-    [-corner corner]
+    [-scene scene]
     [-slack_threshold slack_threshold]
     [-seed seed]
     [-temp temp]
@@ -88,7 +88,7 @@ resynth_annealing
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-corner` | Process corner to use. |
+| `-scene` | Scene to use. |
 | `-slack_threshold` | Specifies a (setup) timing slack value below which timing paths need to be analyzed for restructuring. The default value is `0`. |
 | `-seed` | Seed to use for randomness in simulated annealing. |
 | `-temp` | Initial temperature for simulated annealing. The default is the required arrival time on the worst slack endpoint. |
@@ -107,7 +107,7 @@ The optimization function is defined as the worst slack.
 
 ```tcl
 resynth_genetic
-    [-corner corner]
+    [-scene scene]
     [-slack_threshold slack_threshold]
     [-seed seed]
     [-population_size population_size]
@@ -123,7 +123,7 @@ resynth_genetic
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-corner` | Process corner to use. |
+| `-scene` | Scene to use. |
 | `-slack_threshold` | Specifies a (setup) timing slack value below which timing paths need to be analyzed for restructuring. The default value is `0`. |
 | `-seed` | Seed to use for randomness. |
 | `-population_size` | Population size. |
