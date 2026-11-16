@@ -9,6 +9,7 @@ TESTS = [
     "retime_basic",
     "retime_dont_touch",
     "retime_dsec_deep",
+    "retime_dsec_dont_touch_group",
     "retime_dsec_enable",
     "retime_dsec_enable_chain",
     "retime_dsec_enable_driver",

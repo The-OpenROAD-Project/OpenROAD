@@ -64,26 +64,6 @@ bool moveKeepsClass(const RetimingGraph& graph,
          || graph.self_dual_[v];
 }
 
-odb::dbNet* registerDataNet(const RetimingGraph& graph,
-                            sta::dbSta* sta,
-                            odb::dbInst* inst)
-{
-  const RegisterClass& cls = classOf(graph, inst);
-  odb::dbITerm* d = cls.data != nullptr ? inst->getITerm(cls.data)
-                                        : registerDataPin(sta, inst);
-  return d != nullptr ? d->getNet() : nullptr;
-}
-
-odb::dbNet* edgeDriverNet(const RetimingGraph& graph,
-                          sta::dbSta* sta,
-                          const EdgePhys& phys)
-{
-  if (phys.flops.empty()) {
-    return phys.driver->getNet();
-  }
-  return registerDataNet(graph, sta, phys.flops.front());
-}
-
 }  // namespace
 
 Retimer::Retimer(odb::dbDatabase* db,
@@ -314,7 +294,7 @@ std::vector<Retimer::Group> Retimer::collectGroups(
     const std::vector<EdgePhys>& handles = graph.phys_[u];
     const int edge_count = static_cast<int>(edges.size());
     for (int k = 0; k < edge_count; k++) {
-      odb::dbNet* driver_net = edgeDriverNet(graph, sta_, handles[k]);
+      odb::dbNet* driver_net = graph.chainNet(handles[k]);
       if (driver_net != nullptr) {
         const int w = edges[k].weight;
         const int wr = w + r[edges[k].target] - r[u];
@@ -715,9 +695,17 @@ void Retimer::applyRetiming(const RetimingGraph& graph,
   const FaninIndex fanin = faninIndex(graph);
   std::vector<std::vector<const RegisterClass*>> classes(groups.size());
   for (size_t i = 0; i < groups.size(); i++) {
-    if (groups[i].changed && !groups[i].dont_touch) {
-      classes[i] = chainClasses(graph, fanin, r, groups[i]);
+    if (!groups[i].changed) {
+      continue;
     }
+    if (groups[i].dont_touch) {
+      logger_->error(utl::RET,
+                     27,
+                     "The registers on net {} include a don't-touch register "
+                     "and cannot be rebuilt; the retiming is not applied.",
+                     groups[i].driver_net->getName());
+    }
+    classes[i] = chainClasses(graph, fanin, r, groups[i]);
   }
   checkMoves(graph, fanin, r);
 
@@ -725,9 +713,7 @@ void Retimer::applyRetiming(const RetimingGraph& graph,
   ApplyStats stats;
   for (size_t i = 0; i < groups.size(); i++) {
     const Group& group = groups[i];
-    if (group.changed && group.dont_touch) {
-      stats.groups_skipped++;
-    } else if (group.changed) {
+    if (group.changed) {
       stats.groups_changed++;
       rebuildGroup(group, classes[i], groupClockNet(group, gate_clock), stats);
     }
@@ -742,13 +728,6 @@ void Retimer::applyRetiming(const RetimingGraph& graph,
                 stats.removed,
                 stats.inserted,
                 stats.inserted_classed);
-  if (stats.groups_skipped > 0) {
-    logger_->warn(utl::RET,
-                  27,
-                  "Left {} changed register groups untouched because they hold "
-                  "a don't-touch register.",
-                  stats.groups_skipped);
-  }
 }
 
 }  // namespace ret

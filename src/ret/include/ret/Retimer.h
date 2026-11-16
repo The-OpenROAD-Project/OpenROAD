@@ -77,7 +77,6 @@ class Retimer
     int inserted = 0;
     int inserted_classed = 0;
     int groups_changed = 0;
-    int groups_skipped = 0;
   };
 
   odb::dbBlock* getBlock();

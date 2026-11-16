@@ -42,7 +42,9 @@ Registers move by class, read from the liberty `next_state` function:
 Registers with asynchronous set or reset, latches and scan cells never
 move, and neither does a register chain whose output reaches a primary
 output or a control pin of another register (those read the chain at its
-current depth), nor anything marked don't-touch. A gate fed through such a
+current depth), nor anything marked don't-touch. Registers fed by one net
+are rebuilt together, so a register that shares its input net with one of
+these stays as well. A gate fed through such a
 register, connected to a primary input or output, driving a control pin of
 a register, or reachable by registers on different clock nets is never
 crossed. The design must have one clock defined with `create_clock`; gated

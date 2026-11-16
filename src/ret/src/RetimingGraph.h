@@ -52,6 +52,9 @@ class RetimingGraph
   float clock_period_ = 0.0f;
 
   bool isDontTouch(odb::dbInst* reg) const;
+  // The net an edge's registers start on; the driver net when it has none.
+  // Registers that start on one net are rebuilt together.
+  odb::dbNet* chainNet(const EdgePhys& phys) const;
 
  private:
   bool continuesThrough(odb::dbInst* reg, odb::dbITerm* pin) const;

@@ -165,6 +165,19 @@ bool RetimingGraph::isDontTouch(odb::dbInst* reg) const
   return false;
 }
 
+odb::dbNet* RetimingGraph::chainNet(const EdgePhys& phys) const
+{
+  if (phys.flops.empty()) {
+    return phys.driver->getNet();
+  }
+  odb::dbInst* head = phys.flops.front();
+  auto it = reg_class_.find(head);
+  odb::dbITerm* d = it != reg_class_.end() && it->second.data != nullptr
+                        ? head->getITerm(it->second.data)
+                        : registerDataPin(sta_, head);
+  return d != nullptr ? d->getNet() : nullptr;
+}
+
 void RetimingGraph::build()
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
@@ -237,8 +250,21 @@ void RetimingGraph::markDontTouch(odb::dbInst* inst, int id)
 
 void RetimingGraph::fenceDontTouch()
 {
-  std::vector<std::unordered_set<odb::dbNet*>> fanin_clocks(nodes_.size());
   const int n = static_cast<int>(nodes_.size());
+  // Registers that start on one net are rebuilt together, so a don't-touch
+  // register keeps every register on its net in place.
+  std::unordered_set<odb::dbNet*> fixed_nets;
+  for (int u = 0; u < n; u++) {
+    for (const EdgePhys& phys : phys_[u]) {
+      if (std::ranges::any_of(phys.flops, [this](odb::dbInst* flop) {
+            return isDontTouch(flop);
+          })) {
+        fixed_nets.insert(chainNet(phys));
+      }
+    }
+  }
+
+  std::vector<std::unordered_set<odb::dbNet*>> fanin_clocks(nodes_.size());
   for (int u = 0; u < n; u++) {
     const int edge_count = static_cast<int>(adj_[u].size());
     for (int k = 0; k < edge_count; k++) {
@@ -246,12 +272,12 @@ void RetimingGraph::fenceDontTouch()
       if (pinned_[target]) {
         continue;
       }
-      for (odb::dbInst* flop : phys_[u][k].flops) {
+      const EdgePhys& phys = phys_[u][k];
+      for (odb::dbInst* flop : phys.flops) {
         fanin_clocks[target].insert(registerClockNet(flop));
-        if (isDontTouch(flop)) {
-          pinned_[target] = true;
-          break;
-        }
+      }
+      if (!phys.flops.empty() && fixed_nets.contains(chainNet(phys))) {
+        pinned_[target] = true;
       }
     }
   }
