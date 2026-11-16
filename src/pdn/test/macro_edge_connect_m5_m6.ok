@@ -1,0 +1,11 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: nangate_polygon/edge_pin_macros.lef, created 5 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0131]     Created 513 components and 2136 component-terminals.
+[INFO ODB-0133]     Created 385 nets and 1110 connections.
+[INFO PDN-0001] Inserting grid: Core
+[INFO PDN-0001] Inserting grid: edge_pins - macro_L
+[INFO PDN-0001] Inserting grid: edge_pins - macro_T
+[INFO PDN-0001] Inserting grid: edge_pins - macro_U
+[INFO PDN-0001] Inserting grid: edge_pins - macro_rect
+No differences found.

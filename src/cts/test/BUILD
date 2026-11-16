@@ -7,7 +7,6 @@ load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
-# From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "array",
     "array_ins_delay",
@@ -41,10 +40,12 @@ COMPULSORY_TESTS = [
     "gated_clock_ndr_root",
     "hier_insertion_delay",
     "insertion_delay",
+    "inverter_sinks",
     "inverters",
     "lvt_lib",
     "max_cap",
     "max_wl_two_sinks",
+    "multi_mode",
     "no_clocks",
     "no_sinks",
     "post_cts_opt",
@@ -53,14 +54,19 @@ COMPULSORY_TESTS = [
     "simple_test_clustered_max_cap",
     "simple_test_hier",
     "sink_clustering_collision",
+    "sink_clustering_single_sink",
     "skip_nets",
     "twice",
+    "useful_skew",
     "virtual_clock_latency",
 ]
 
-# From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
     "dangling_clock_inverter",
+    "dont_touch_sink",
+    "dont_touch_skipped_net",
+    "dont_touch_timing_buffer",
+    "hier_dummy_load",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -166,6 +172,15 @@ filegroup(
                 "ihp-sg13g2/sg13g2_stdcell.lef",
                 "check_max_fanout3.def",
             ],
+            "dont_touch_sink": [
+                "16sinks.def",
+            ],
+            "dont_touch_skipped_net": [
+                "16sinks.def",
+            ],
+            "dont_touch_timing_buffer": [
+                "16sinks.def",
+            ],
             "dummy_load": [
                 "check_buffers.def",
             ],
@@ -189,6 +204,10 @@ filegroup(
             "gated_clock_ndr_root": [
                 "cts-helpers.tcl",
                 "gated_clock2.def",
+            ],
+            "hier_dummy_load": [
+                "simple_test_hier.def",
+                "simple_test_hier.v",
             ],
             "hier_insertion_delay": [
                 "array_tile_ins_delay.lef",
@@ -239,6 +258,10 @@ filegroup(
             "twice": [
                 "16sinks.def",
             ],
+            "useful_skew": [
+                "array_tile_ins_delay.lef",
+                "array_tile_ins_delay.lib",
+            ],
             "virtual_clock_latency": [
                 "16sinks.def",
             ],
@@ -263,9 +286,26 @@ cc_test(
     name = "cts_unittest",
     srcs = ["cts_unittest.cc"],
     deps = [
-        "//src/cts",
-        "//src/cts:private_hdrs",
+        "//src/cts:cts_impl",
         "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestDelayBufList",
+    srcs = ["cpp/TestDelayBufList.cc"],
+    data = [
+        "clkdly_footprint.lib",
+        "clkdly_name.lib",
+        "ihp-sg13g2/sg13g2_stdcell_typ_1p20V_25C.lib",
+    ],
+    deps = [
+        "//src/cts:cts_impl",
+        "//src/dbSta:dbNetwork",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

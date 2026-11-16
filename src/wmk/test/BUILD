@@ -64,9 +64,8 @@ filegroup(
     name = "test_resources",
     srcs = glob(
         ["**/*"],
-        # Native build and test outputs must not become Bazel inputs.
+        # Local test outputs must not become Bazel inputs.
         exclude = [
-            "**/CMakeFiles/**",
             "**/__pycache__/**",
             "results/**",
         ] + [
@@ -189,8 +188,7 @@ cc_test(
     name = "TestRoutingStat",
     srcs = ["cpp/TestRoutingStat.cpp"],
     deps = [
-        "//src/wmk",
-        "//src/wmk:wmk_private_hdrs",
+        "//src/wmk:wmk_impl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

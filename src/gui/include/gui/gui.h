@@ -4,13 +4,14 @@
 #pragma once
 
 // The part of the gui API that only a Qt build provides.  Everything the
-// rest of OpenROAD draws through -- Painter, Renderer, Descriptor/Selected,
-// HeatMapDataSource, Gui itself -- is Qt-free and lives in gui/core.h.
-// Include this header only if you need to start the Qt gui.
+// rest of OpenROAD draws through -- web::Painter, web::Renderer,
+// web::Descriptor/web::Selected, web::HeatMapDataSource, web::Gui itself -- is
+// Qt-free and lives in gui/core.h. Include this header only if you need to
+// start the Qt gui.
 
 #include <string>
 
-#include "gui/core.h"
+#include "web/core.h"
 
 struct Tcl_Interp;
 

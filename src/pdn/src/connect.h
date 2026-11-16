@@ -99,6 +99,26 @@ class Connect
                     odb::dbNet* net);
   void recordFailedVias() const;
 
+ protected:
+  using ViaLayerRects = std::set<odb::Rect>;
+
+  // Per-layer rect generation for a via stack. Exposed at protected scope so
+  // unit tests can inspect the candidate rects each intermediate layer is
+  // offered -- in particular the min-width filtering driven by
+  // -min_width_layers -- without having to build a full grid, shapes and
+  // wire just to reach them through makeVia().
+  bool isComplexStackedVia(const odb::Rect& lower,
+                           const odb::Rect& upper) const;
+  std::vector<ViaLayerRects> generateViaRects(const odb::Rect& lower,
+                                              const odb::Rect& upper) const;
+  std::vector<ViaLayerRects> generateComplexStackedViaRects(
+      const odb::Rect& lower,
+      const odb::Rect& upper) const;
+  void generateMinEnclosureViaRects(std::vector<ViaLayerRects>& rects) const;
+
+  int getMinWidth(odb::dbTechLayer* layer) const;
+  int getMaxEnclosureFromCutLayer(odb::dbTechLayer* layer, int min_width) const;
+
  private:
   Grid* grid_;
   odb::dbTechLayer* layer0_;
@@ -159,19 +179,6 @@ class Connect
       odb::dbNet* net,
       const std::vector<std::shared_ptr<ViaGenerator>>& generators,
       odb::dbBlock* block) const;
-
-  using ViaLayerRects = std::set<odb::Rect>;
-  bool isComplexStackedVia(const odb::Rect& lower,
-                           const odb::Rect& upper) const;
-  std::vector<ViaLayerRects> generateViaRects(const odb::Rect& lower,
-                                              const odb::Rect& upper) const;
-  std::vector<ViaLayerRects> generateComplexStackedViaRects(
-      const odb::Rect& lower,
-      const odb::Rect& upper) const;
-  void generateMinEnclosureViaRects(std::vector<ViaLayerRects>& rects) const;
-
-  int getMinWidth(odb::dbTechLayer* layer) const;
-  int getMaxEnclosureFromCutLayer(odb::dbTechLayer* layer, int min_width) const;
 };
 
 }  // namespace pdn

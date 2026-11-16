@@ -17,8 +17,8 @@ filler_placement sky130_fd_sc_hs__fill_*
 
 set guide_file [make_result_file repair_antennas2.guide]
 write_guides $guide_file
-diff_file repair_antennas2.guideok $guide_file
+diff_files repair_antennas2.guideok $guide_file
 
 set def_file [make_result_file repair_antennas2.def]
 write_def $def_file
-diff_file repair_antennas2.defok $def_file
+diff_files repair_antennas2.defok $def_file

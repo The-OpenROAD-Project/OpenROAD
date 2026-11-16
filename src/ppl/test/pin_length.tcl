@@ -11,4 +11,4 @@ set def_file [make_result_file pin_length.def]
 
 write_def $def_file
 
-diff_file pin_length.defok $def_file
+diff_files pin_length.defok $def_file

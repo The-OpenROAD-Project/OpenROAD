@@ -18,4 +18,4 @@ repair_tie_fanout TIEHIx1_ASAP7_75t_R/H
 
 set verilog_out [make_result_file $test_name.v]
 write_verilog $verilog_out
-diff_file $test_name.vok $verilog_out
+diff_files $test_name.vok $verilog_out

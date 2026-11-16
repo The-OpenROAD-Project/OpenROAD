@@ -47,8 +47,7 @@ class LogicOptimizationStrategy
   virtual utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> Optimize(
       const abc::Abc_Ntk_t* ntk,
       cut::AbcLibrary& abc_library,
-      utl::Logger* logger)
-      = 0;
+      utl::Logger* logger) = 0;
 };
 
 }  // namespace rmp

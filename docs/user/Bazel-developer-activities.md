@@ -15,10 +15,9 @@ This document covers:
 
 For general Bazel usage (running tests, build configs, caching, ORFS details), see:
 
-- [Testing local changes with Bazel](Bazel.md)
+- [Building and testing with Bazel](Bazel.md)
 - [Bazel targets](Bazel-targets.md)
 - [Bazel Developer Guide: Caching](Bazel-caching.md)
-- [Handling breaking changes between OpenROAD and ORFS](Bazel-breaking-changes.md)
 
 ---
 
@@ -30,7 +29,7 @@ You will work mostly in:
 - `MODULE.bazel` and `MODULE.bazel.lock`: dependency/module management
 - `.bazelrc`: shared Bazel flags and configs
 - `bazel/*.bzl`: shared Starlark macros and helpers used across targets
-- `test/regression.bzl` and `test/orfs/**/*.bzl`: regression and ORFS-related Starlark logic
+- `test/regression.bzl`: regression test Starlark logic
 
 Treat `.bzl` files as code: keep changes small, reviewable, and tested.
 
@@ -78,10 +77,10 @@ Example validation steps:
     bazelisk test //src/<tool>/test:<new_test_target>
 
 The test target name is derived from the test file name with a suffix added
-based on type: Tcl tests get `_tcl` and Python tests get `_py`. For example,
-`src/grt/test/fastroute.tcl` becomes target `fastroute_tcl`, so you would run:
+based on type: Tcl tests get `-tcl_test` and Python tests get `-py_test`. For example,
+`src/grt/test/bus_route.tcl` becomes target `bus_route-tcl_test`, so you would run:
 
-    bazelisk test //src/grt/test:fastroute_tcl
+    bazelisk test //src/grt/test:bus_route-tcl_test
 
 Use the `bazelisk query` command above to list all test targets and find the
 exact name for any test in the subtree.
@@ -105,13 +104,14 @@ Suggested progression:
 - affected subtree tests
 - optional full `src/...` or `...` based on change scope
 
-## 4) Update ORFS/Bazel-ORFS coupling
+## 4) Changes that affect ORFS
 
-If your change touches integration boundaries:
+OpenROAD CI does not run ORFS flows. Flow-level integration is tested in
+ORFS and bazel-orfs, which build OpenROAD from source. If your change
+touches the ORFS interface (commands, variables, output files):
 
-- verify OpenROAD side and ORFS assumptions together
-- use the documented ORFS debug/issue-generation workflow in `test/orfs/README.md`
-- run at least affected ORFS smoke tests before PR
+- say so in the PR description and coordinate the ORFS/bazel-orfs update
+- add single-concern OpenROAD tests for the behavior ORFS relies on
 
 ## 5) Update Bazel module/dependency state
 

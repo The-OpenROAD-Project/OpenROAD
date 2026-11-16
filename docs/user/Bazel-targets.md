@@ -4,18 +4,14 @@ Bazel is a cross compilation system where `cfg=exec` is host and `cfg=target` is
 
 ## What is host and what is target in an OpenROAD context?
 
-Not surprisingly, the command below builds the `cfg=target` configuration:
+`cfg=exec` is reserved for tools that run during the build: swig, bison,
+the Tcl encoders, the man page generator. Everything that *is* OpenROAD,
+including the binary the tests run, is `cfg=target`.
 
-    bazelisk build -c opt :openroad
+So these share one build of OpenROAD:
 
-However, the tests run on the host:
-
-    bazelisk test ...
-
-This, means that if one where to run, the commands below, OpenROAD would be built twice, first for `cfg=exec` and then for `cfg=target`:
-
-    bazelisk build -c opt :openroad
-    bazelisk test ...
+    bazelisk build :openroad
+    bazelisk test src/...
 
 ## Visualizing configurations and dependencies
 

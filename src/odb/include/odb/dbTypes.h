@@ -1298,6 +1298,10 @@ inline constexpr int64_t MIN_INT64 = 0x8000000000000000LL;
 inline constexpr int MAX_INT = 0x7fffffff;
 inline constexpr int MIN_INT = 0x80000000;
 
+// Separates dbChipInst names in a chiplet hierarchy path, e.g.
+// "soc_inst/mem_inst".
+inline constexpr char kChipletPathDelimiter = '/';
+
 ///
 /// Defines the type of shapes.
 ///
@@ -1463,6 +1467,18 @@ class dbHierSearchDir
 
  private:
   Value _value = Value::FANOUT;
+};
+
+///
+/// Whether a cut enclosure/overhang row applies to the routing layer above
+/// the cut, below it, or both. Used by
+/// dbTechLayerCutEnclosureTableDefRule::DefaultRow/WidthRow.
+///
+enum class dbCutEnclosureAboveBelow
+{
+  kBoth = 0,
+  kAbove = 1,
+  kBelow = 2
 };
 
 }  // namespace odb

@@ -10,17 +10,17 @@
 
 #include "MplObserver.h"
 #include "clusterEngine.h"
-#include "gui/gui.h"
 #include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "web/core.h"
 
 namespace mpl {
 class SoftMacro;
 class HardMacro;
 
-class Graphics : public gui::Renderer, public MplObserver
+class Graphics : public web::Renderer, public MplObserver
 {
  public:
   Graphics(bool coarse, bool fine, odb::dbBlock* block, utl::Logger* logger);
@@ -51,7 +51,7 @@ class Graphics : public gui::Renderer, public MplObserver
   void setWirelengthPenalty(const PenaltyData& penalty) override;
   void penaltyCalculated(float norm_cost) override;
 
-  void drawObjects(gui::Painter& painter) override;
+  void drawObjects(web::Painter& painter) override;
 
   void setSoftBlockages(const std::vector<odb::Rect>& soft_blockages) override;
   void setNets(const BundledNetList& nets) override;
@@ -79,27 +79,27 @@ class Graphics : public gui::Renderer, public MplObserver
  private:
   void setXMarksSize();
   void resetPenalties();
-  void drawCluster(Cluster* cluster, gui::Painter& painter);
-  void drawBlockedRegionsIndication(gui::Painter& painter);
-  void drawSoftBlockages(gui::Painter& painter);
+  void drawCluster(Cluster* cluster, web::Painter& painter);
+  void drawBlockedRegionsIndication(web::Painter& painter);
+  void drawSoftBlockages(web::Painter& painter);
   void drawOffsetRect(const odb::Rect& rect,
                       const std::string& center_text,
-                      gui::Painter& painter);
-  void drawFences(gui::Painter& painter);
-  void drawGuides(gui::Painter& painter);
-  void drawNotches(gui::Painter& painter);
+                      web::Painter& painter);
+  void drawFences(web::Painter& painter);
+  void drawGuides(web::Painter& painter);
+  void drawNotches(web::Painter& painter);
   template <typename T>
-  void drawBundledNets(gui::Painter& painter, const std::vector<T>& macros);
+  void drawBundledNets(web::Painter& painter, const std::vector<T>& macros);
   template <typename T>
-  void drawBundledNet(gui::Painter& painter,
+  void drawBundledNet(web::Painter& painter,
                       const std::vector<T>& macros,
                       const BundledNet& net);
   template <typename T>
-  void drawDistToRegion(gui::Painter& painter, const T& macro, const T& io);
+  void drawDistToRegion(web::Painter& painter, const T& macro, const T& io);
   template <typename T>
   bool isOutsideTheOutline(const T& macro) const;
   void addOutlineOffsetToLine(odb::Point& from, odb::Point& to);
-  void setSoftMacroBrush(gui::Painter& painter, const SoftMacro& soft_macro);
+  void setSoftMacroBrush(web::Painter& painter, const SoftMacro& soft_macro);
   void fetchSoftAndHard(Cluster* parent,
                         std::vector<HardMacro>& hard,
                         std::vector<SoftMacro>& soft,
@@ -123,7 +123,7 @@ class Graphics : public gui::Renderer, public MplObserver
   std::vector<odb::Rect> blocked_regions_for_pins_;
   BoundaryRegionList available_regions_for_unconstrained_pins_;
   ClusterToBoundaryRegionMap io_cluster_to_constraint_;
-  gui::Chart* chart_{nullptr};
+  web::Chart* chart_{nullptr};
 
   // In Soft SA, we're shaping/placing the children of a certain parent,
   // so for this case, the current cluster is actually the current parent.

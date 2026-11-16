@@ -10,8 +10,8 @@ read_def "abstract_polygon.def"
 
 set lef_file [make_result_file abstract_polygon_no_overlap.lef]
 write_abstract_lef $lef_file
-diff_file $lef_file "abstract_polygon_no_overlap.lefok"
+diff_files $lef_file "abstract_polygon_no_overlap.lefok"
 
 set bloat_lef_file [make_result_file abstract_polygon_no_overlap_bloat.lef]
 write_abstract_lef -bloat_occupied_layers $bloat_lef_file
-diff_file $bloat_lef_file "abstract_polygon_no_overlap_bloat.lefok"
+diff_files $bloat_lef_file "abstract_polygon_no_overlap_bloat.lefok"

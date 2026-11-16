@@ -6,7 +6,6 @@ load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
-# From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "abutting_macros_step",
     "abutting_macros_step_no_corners",
@@ -36,6 +35,8 @@ COMPULSORY_TESTS = [
     "endcap_autoselection_error3",
     "endcap_autoselection_error4",
     "endcap_corners",
+    "endcap_hole_strip",
+    "endcap_row_fragments",
     "endcap_separate_edges",
     "gcd_asap7",
     "gcd_fakeram",
@@ -174,6 +175,8 @@ filegroup(
                 "disallow_one_site_gaps.def",
                 "disallow_one_site_gaps.defok",
             ],
+            "endcap_hole_strip": [],
+            "endcap_row_fragments": [],
             "endcap_separate_edges": ["endcap_corners.v"],
             "gcd_sky130_separate": ["gcd_sky130.defok"],
             "multiple_calls": ["gcd_ripup.def"],

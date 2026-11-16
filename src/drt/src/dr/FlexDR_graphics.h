@@ -9,8 +9,8 @@
 
 #include "dr/AbstractDRGraphics.h"
 #include "frBaseTypes.h"
-#include "gui/gui.h"
 #include "odb/db.h"
+#include "web/core.h"
 
 namespace odb {
 class dbDatabase;
@@ -28,7 +28,7 @@ class frBlockObject;
 struct RouterConfiguration;
 
 // This class draws debugging graphics on the layout
-class FlexDRGraphics : public gui::Renderer, public AbstractDRGraphics
+class FlexDRGraphics : public web::Renderer, public AbstractDRGraphics
 {
  public:
   // Debug detailed routing
@@ -56,8 +56,8 @@ class FlexDRGraphics : public gui::Renderer, public AbstractDRGraphics
   void status(const std::string& message);
 
   // From Renderer API
-  void drawObjects(gui::Painter& painter) override;
-  void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter) override;
+  void drawObjects(web::Painter& painter) override;
+  void drawLayer(odb::dbTechLayer* layer, web::Painter& painter) override;
   const char* getDisplayControlGroupName() override;
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
@@ -73,7 +73,7 @@ class FlexDRGraphics : public gui::Renderer, public AbstractDRGraphics
 
   void debugWholeDesign() override;
 
-  void drawObj(frBlockObject* fig, gui::Painter& painter, int layerNum);
+  void drawObj(frBlockObject* fig, web::Painter& painter, int layerNum);
 
  private:
   FlexDRWorker* worker_;
@@ -83,7 +83,7 @@ class FlexDRGraphics : public gui::Renderer, public AbstractDRGraphics
   frDebugSettings* settings_;
   int current_iter_;
   frLayerNum last_pt_layer_;
-  gui::Gui* gui_;
+  web::Gui* gui_;
   utl::Logger* logger_;
   int dbu_per_uu_;
   bool drawWholeDesign_ = false;
@@ -103,7 +103,7 @@ class FlexDRGraphics : public gui::Renderer, public AbstractDRGraphics
   static const char* maze_search_visible_;
   static const char* current_net_only_visible_;
 
-  void drawMarker(int xl, int yl, int xh, int yh, gui::Painter& painter);
+  void drawMarker(int xl, int yl, int xh, int yh, web::Painter& painter);
 };
 
 }  // namespace drt

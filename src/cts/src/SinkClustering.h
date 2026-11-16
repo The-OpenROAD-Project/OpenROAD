@@ -76,6 +76,18 @@ class SinkClustering
   double computeTheta(double x, double y) const;
   unsigned numVertex(unsigned x, unsigned y) const;
 
+  // Distance cost between two points identified by their indices, equivalent to
+  // HTree_->computeDist(points_[idxA], points_[idxB]) but using the precomputed
+  // pointsInsDelay_ array instead of per-call hash-map lookups. The
+  // floating-point evaluation order is preserved to keep results bit-identical.
+  double distCost(unsigned idxA,
+                  const Point<double>& a,
+                  unsigned idxB,
+                  const Point<double>& b) const
+  {
+    return a.computeDist(b) + pointsInsDelay_[idxA] + pointsInsDelay_[idxB];
+  }
+
   bool isLimitExceeded(unsigned size,
                        double cost,
                        double capCost,
@@ -88,6 +100,10 @@ class SinkClustering
   const TechChar* techChar_;
   std::vector<Point<double>> points_;
   std::vector<float> pointsCap_;
+  // Per-point sink insertion delay, precomputed once (same values as
+  // HTree_->getSinkInsertionDelay(points_[idx])). Used to avoid a hash-map
+  // lookup per distance evaluation in the matching inner loops.
+  std::vector<double> pointsInsDelay_;
   std::vector<std::pair<double, unsigned>> thetaIndexVector_;
   std::vector<Matching> matchings_;
   std::map<unsigned, std::vector<Point<double>>> sinkClusters_;

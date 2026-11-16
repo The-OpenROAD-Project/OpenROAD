@@ -21,7 +21,6 @@
 #include "RDLRouter.h"
 #include "Utilities.h"
 #include "boost/icl/interval_set.hpp"
-#include "gui/gui.h"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
@@ -29,6 +28,7 @@
 #include "odb/geom.h"
 #include "odb/isotropy.h"
 #include "utl/Logger.h"
+#include "web/core.h"
 
 namespace pad {
 
@@ -1591,10 +1591,10 @@ void ICeWall::routeRDLDebugGUI(bool enable)
         router_gui_->setRouter(router_.get());
       }
     }
-    gui::Gui::get()->registerRenderer(router_gui_.get());
+    web::Gui::get()->registerRenderer(router_gui_.get());
   } else {
     if (router_gui_ != nullptr) {
-      gui::Gui::get()->unregisterRenderer(router_gui_.get());
+      web::Gui::get()->unregisterRenderer(router_gui_.get());
       router_gui_ = nullptr;
     }
   }

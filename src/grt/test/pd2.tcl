@@ -24,4 +24,4 @@ global_route -verbose
 
 write_guides $guide_file
 
-diff_file pd2.guideok $guide_file
+diff_files pd2.guideok $guide_file

@@ -338,7 +338,7 @@ proc repair_antennas { args } {
     set diode_only [info exists flags(-diode_only)]
 
     if { $jumper_only && $diode_only } {
-      utl::error GRT 294 "Only use either -jumper_only or -diode_only flag"
+      utl::error GRT 294 "jumper_only and diode_only are mutually exclusive."
     }
 
     set ratio_margin 0
@@ -530,6 +530,72 @@ proc report_wire_length { args } {
   } else {
     utl::error GRT 238 "-net is required."
   }
+}
+
+sta::define_cmd_args "report_net_detours" { [-net net_list] \
+                                            [-file file] \
+                                            [-top_n count]
+}
+
+# Reports the routing detour metric: the ratio (and delta) of each net's final
+# routed wirelength to its initial Steiner-tree wirelength captured before
+# overflow-removal routing. This is a read-only analysis command and does not
+# change routing.
+proc report_net_detours { args } {
+  sta::parse_key_args "report_net_detours" args \
+    keys {-net -file -top_n} \
+    flags {}
+
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    utl::error GRT 335 "Missing dbBlock."
+  }
+
+  if { ![grt::have_initial_steiner_wirelengths] } {
+    utl::error GRT 336 "No detour data available. Run global_route first."
+  }
+
+  set file ""
+  if { [info exists keys(-file)] } {
+    set file $keys(-file)
+  }
+
+  if { [info exists keys(-net)] } {
+    foreach net [get_nets $keys(-net)] {
+      set db_net [sta::sta_to_db_net $net]
+      if {
+        $db_net != "NULL" &&
+        [$db_net getSigType] != "POWER" &&
+        [$db_net getSigType] != "GROUND" &&
+        ![$db_net isSpecial]
+      } {
+        grt::report_net_detour $db_net $file
+      }
+    }
+  } else {
+    set top_n 10
+    if { [info exists keys(-top_n)] } {
+      set top_n $keys(-top_n)
+      sta::check_positive_integer "-top_n" $top_n
+    }
+    grt::report_net_detours $top_n $file
+  }
+}
+
+sta::define_cmd_args "report_congestion" {}
+
+proc report_congestion { args } {
+  sta::parse_key_args "report_congestion" args keys {} flags {}
+  sta::check_argc_eq0 "report_congestion" $args
+  grt::report_congestion
+}
+
+sta::define_cmd_args "has_congestion" {}
+
+proc has_congestion { args } {
+  sta::parse_key_args "has_congestion" args keys {} flags {}
+  sta::check_argc_eq0 "has_congestion" $args
+  return [grt::has_congestion]
 }
 
 sta::define_cmd_args "estimate_path_resistance" { pin1_name pin2_name \

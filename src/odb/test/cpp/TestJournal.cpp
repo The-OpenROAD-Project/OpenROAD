@@ -1,10 +1,14 @@
+#include <cstdint>
 #include <functional>
+#include <string>
+#include <vector>
 
 #include "gtest/gtest.h"
-#include "helper.h"
 #include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "src/odb/test/cpp/helper/helper.h"
 
 namespace odb {
 namespace {
@@ -30,6 +34,26 @@ class JournalFixture : public SimpleDbFixture
   dbBlock* block;
   dbMaster* and2;
   dbMaster* or2;
+};
+
+// Records the transform an observer sees on each move callback, as
+// "<pre|post> <orient> <x> <y>".
+class MoveRecorder : public dbBlockCallBackObj
+{
+ public:
+  void inDbPreMoveInst(dbInst* inst) override { record("pre", inst); }
+  void inDbPostMoveInst(dbInst* inst) override { record("post", inst); }
+
+  std::vector<std::string> events;
+
+ private:
+  void record(const std::string& when, dbInst* inst)
+  {
+    const Point origin = inst->getOrigin();
+    events.push_back(when + " " + inst->getOrient().getString() + " "
+                     + std::to_string(origin.x()) + " "
+                     + std::to_string(origin.y()));
+  }
 };
 
 TEST_F(JournalFixture, test_undo_inst_create)
@@ -159,6 +183,66 @@ TEST_F(JournalFixture, test_undo_inst_swap)
   EXPECT_EQ(inst->getMaster(), and2);
 }
 
+TEST_F(JournalFixture, test_undo_inst_swap_restores_access_points)
+{
+  dbMPin* pin = dbMPin::create(and2->findMTerm("a"));
+  dbAccessPoint* ap = dbAccessPoint::create(block, pin, 0);
+  auto inst = dbInst::create(block, and2, "i1");
+  dbITerm* iterm = inst->findITerm("a");
+  inst->setPinAccessIdx(0);
+  iterm->setAccessPoint(pin, ap);
+
+  in_eco([&]() { inst->swapMaster(or2); });
+
+  EXPECT_EQ(inst->getMaster(), and2);
+  EXPECT_EQ(inst->getPinAccessIdx(), 0);
+  const std::vector<dbAccessPoint*> aps
+      = inst->findITerm("a")->getPrefAccessPoints();
+  ASSERT_EQ(aps.size(), 1);
+  EXPECT_EQ(aps[0], ap);
+}
+
+TEST_F(JournalFixture, test_undo_inst_destroy_restores_access_points)
+{
+  dbMPin* pin = dbMPin::create(and2->findMTerm("a"));
+  dbAccessPoint* ap = dbAccessPoint::create(block, pin, 0);
+  auto inst = dbInst::create(block, and2, "i1");
+  inst->setPinAccessIdx(0);
+  inst->findITerm("a")->setAccessPoint(pin, ap);
+
+  in_eco([&]() { dbInst::destroy(inst); });
+
+  dbInst* restored = block->findInst("i1");
+  ASSERT_NE(restored, nullptr);
+  EXPECT_EQ(restored->getPinAccessIdx(), 0);
+  const std::vector<dbAccessPoint*> aps
+      = restored->findITerm("a")->getPrefAccessPoints();
+  ASSERT_EQ(aps.size(), 1);
+  EXPECT_EQ(aps[0], ap);
+}
+
+TEST_F(JournalFixture, test_undo_inst_swap_skips_stale_access_points)
+{
+  dbMPin* pin_a = dbMPin::create(and2->findMTerm("a"));
+  dbMPin* pin_b = dbMPin::create(and2->findMTerm("b"));
+  dbAccessPoint* ap = dbAccessPoint::create(block, pin_a, 0);
+  auto inst = dbInst::create(block, and2, "i1");
+  inst->setPinAccessIdx(0);
+  inst->findITerm("a")->setAccessPoint(pin_a, ap);
+
+  // Regenerating pin access while the swap is pending can free the access
+  // point and reuse its id for another pin.
+  in_eco([&]() {
+    inst->swapMaster(or2);
+    dbAccessPoint::destroy(ap);
+    dbAccessPoint::create(block, pin_b, 0);
+  });
+
+  EXPECT_EQ(inst->getMaster(), and2);
+  EXPECT_EQ(inst->getPinAccessIdx(), static_cast<uint32_t>(-1));
+  EXPECT_TRUE(inst->findITerm("a")->getPrefAccessPoints().empty());
+}
+
 TEST_F(JournalFixture, test_undo_inst_place)
 {
   auto inst = dbInst::create(block, and2, "a");
@@ -192,6 +276,92 @@ TEST_F(JournalFixture, test_undo_inst_flip)
 
   EXPECT_EQ(inst->getLocation(), point);
   EXPECT_EQ(inst->getBBox()->getBox(), bbox);
+}
+
+// Undoing a flip moves the instance's shapes, so observers that index them
+// by transform must be told, as they are for the flip itself.
+TEST_F(JournalFixture, test_undo_inst_flip_notifies_move)
+{
+  auto inst = dbInst::create(block, and2, "a");
+  inst->setPlacementStatus(dbPlacementStatus::PLACED);
+  inst->setOrigin(1000, 2000);
+  MoveRecorder recorder;
+  recorder.addOwner(block);
+
+  in_eco([&]() { inst->setOrient(dbOrientType::MX); });
+
+  const std::vector<std::string> expected = {
+      "pre R0 1000 2000",   // flip
+      "post MX 1000 2000",  // flip
+      "pre MX 1000 2000",   // undo flip
+      "post R0 1000 2000",  // undo flip
+  };
+  EXPECT_EQ(recorder.events, expected);
+}
+
+// Detailed placement flips a cell and then moves it. Every pre-move
+// callback must see the transform of the previous post-move callback, or an
+// observer removing the old shapes misses the ones it added.
+TEST_F(JournalFixture, test_undo_inst_flip_and_move_notifies_move)
+{
+  auto inst = dbInst::create(block, and2, "a");
+  inst->setPlacementStatus(dbPlacementStatus::PLACED);
+  inst->setOrigin(1000, 2000);
+  MoveRecorder recorder;
+  recorder.addOwner(block);
+
+  in_eco([&]() {
+    inst->setOrient(dbOrientType::MX);
+    inst->setOrigin(3000, 4000);
+  });
+
+  const std::vector<std::string> expected = {
+      "pre R0 1000 2000",   // flip
+      "post MX 1000 2000",  // flip
+      "pre MX 1000 2000",   // move
+      "post MX 3000 4000",  // move
+      "pre MX 3000 4000",   // undo move
+      "post MX 1000 2000",  // undo move
+      "pre MX 1000 2000",   // undo flip
+      "post R0 1000 2000",  // undo flip
+  };
+  EXPECT_EQ(recorder.events, expected);
+}
+
+// Changing only the placement status leaves the shapes in place.
+TEST_F(JournalFixture, test_undo_inst_place_does_not_notify_move)
+{
+  auto inst = dbInst::create(block, and2, "a");
+  MoveRecorder recorder;
+  recorder.addOwner(block);
+
+  in_eco([&]() { inst->setPlacementStatus(dbPlacementStatus::PLACED); });
+
+  EXPECT_TRUE(recorder.events.empty());
+}
+
+// Replaying an ECO that flips an instance notifies observers like the flip.
+TEST_F(JournalFixture, test_redo_inst_flip_notifies_move)
+{
+  auto inst = dbInst::create(block, and2, "a");
+  inst->setPlacementStatus(dbPlacementStatus::PLACED);
+  inst->setOrigin(1000, 2000);
+  const std::string eco_file = testing::TempDir() + "/redo_inst_flip.eco";
+  dbDatabase::beginEco(block);
+  inst->setOrient(dbOrientType::MX);
+  dbDatabase::writeEco(block, eco_file.c_str());
+  dbDatabase::undoEco(block);
+  MoveRecorder recorder;
+  recorder.addOwner(block);
+
+  dbDatabase::readEco(block, eco_file.c_str());
+
+  EXPECT_EQ(inst->getOrient(), dbOrientType::MX);
+  const std::vector<std::string> expected = {
+      "pre R0 1000 2000",
+      "post MX 1000 2000",
+  };
+  EXPECT_EQ(recorder.events, expected);
 }
 
 TEST_F(JournalFixture, test_undo_bterm_connect)
@@ -284,6 +454,60 @@ TEST_F(JournalFixture, RenameModNet)
 
   dbModNet::destroy(mod_net);
   dbModule::destroy(module);
+}
+
+TEST_F(JournalFixture, NestedUndoThenEditIsUndoneByOuter)
+{
+  dbInst::create(block, and2, "a");
+
+  dbDatabase::beginEco(block);  // outer
+  dbDatabase::beginEco(block);  // inner
+  dbInst::destroy(block->findInst("a"));
+  dbDatabase::undoEco(block);  // inner undo recreates "a"
+  ASSERT_NE(block->findInst("a"), nullptr);
+
+  // The outer ECO must record edits made after the inner one ends.
+  dbInst::destroy(block->findInst("a"));
+  dbInst::create(block, or2, "b");
+  EXPECT_FALSE(dbDatabase::ecoEmpty(block));
+  dbDatabase::undoEco(block);  // outer undo
+
+  EXPECT_NE(block->findInst("a"), nullptr);
+  EXPECT_EQ(block->findInst("b"), nullptr);
+  EXPECT_TRUE(dbDatabase::ecoStackEmpty(block));
+}
+
+TEST_F(JournalFixture, NestedCommitThenEditIsUndoneByOuter)
+{
+  dbDatabase::beginEco(block);  // outer
+  dbDatabase::beginEco(block);  // inner
+  dbInst::create(block, and2, "a");
+  dbDatabase::commitEco(block);  // inner merges into outer
+
+  dbInst::create(block, or2, "b");
+  dbDatabase::undoEco(block);  // outer undo
+
+  EXPECT_EQ(block->findInst("a"), nullptr);
+  EXPECT_EQ(block->findInst("b"), nullptr);
+  EXPECT_TRUE(dbDatabase::ecoStackEmpty(block));
+}
+
+TEST_F(JournalFixture, EndedEcoStaysStoppedAfterNestedCommit)
+{
+  dbDatabase::beginEco(block);
+  dbDatabase::endEco(block);  // stop recording the first ECO
+  dbDatabase::beginEco(block);
+  dbInst::create(block, and2, "a");
+  dbDatabase::commitEco(block);  // merges into the stopped ECO
+
+  // The stopped ECO does not resume recording.
+  EXPECT_FALSE(dbDatabase::ecoStackEmpty(block));
+  dbInst::create(block, or2, "b");
+  dbDatabase::undoEco(block);
+
+  EXPECT_EQ(block->findInst("a"), nullptr);
+  EXPECT_NE(block->findInst("b"), nullptr);
+  EXPECT_TRUE(dbDatabase::ecoStackEmpty(block));
 }
 
 }  // namespace

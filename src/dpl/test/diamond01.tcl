@@ -9,4 +9,4 @@ check_placement
 
 set def_file [make_result_file diamond01.def]
 write_def $def_file
-diff_file diamond01.defok $def_file
+diff_files diamond01.defok $def_file

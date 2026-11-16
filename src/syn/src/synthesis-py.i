@@ -35,6 +35,7 @@ namespace utl { class Logger; }
 // graph() returns a Graph* whose header isn't wrapped; not needed from Python.
 %ignore syn::Synthesis::graph;
 %ignore syn::livenessOpt;
+%ignore syn::checkCombinationalLoops;
 %ignore syn::abcRoundtrip;
 // Free-function flow entry points reference Graph&, which is forward-declared
 // only -- not needed from Python anyway, so ignore them.

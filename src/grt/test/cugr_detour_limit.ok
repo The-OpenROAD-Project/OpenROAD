@@ -1,0 +1,7 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: cugr_detour_limit
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0133]     Created 1 nets and 0 connections.
+Route length: 42000 DBU (limit: 42000)
+Summary 4 / 4 (100% pass)
+pass

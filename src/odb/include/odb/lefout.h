@@ -80,6 +80,11 @@ class lefout
                                 dbBlock* block,
                                 dbSet<GenericBox>& boxes,
                                 const char* indent);
+  void writeGeomLayer(std::ostream& out,
+                      const char* indent,
+                      const std::string& layer_name,
+                      int min_spacing,
+                      int design_rule_width);
 
   void writeTechBody(std::ostream& out, dbTech* tech);
   void writeLayer(std::ostream& out, dbTechLayer* layer);

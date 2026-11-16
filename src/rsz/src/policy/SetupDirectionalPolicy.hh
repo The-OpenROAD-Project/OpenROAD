@@ -17,14 +17,15 @@ class SetupDirectionalPolicy : public SetupLegacyBase
                          MoveCommitter& committer,
                          RepairSetupContext& setup_context,
                          const OptimizerRunConfig& config,
-                         bool use_starts)
+                         bool use_startpoints)
       : SetupLegacyBase(resizer, committer, setup_context, config),
-        use_starts_(use_starts)
+        use_startpoints_(use_startpoints)
   {
   }
 
   const char* name() const override { return "SetupDirectionalPolicy"; }
   void iterate() override;
+  bool showStartpointMetrics() const override { return use_startpoints_; }
 
  private:
   void repairSetupDirectional(bool use_startpoints,
@@ -32,7 +33,7 @@ class SetupDirectionalPolicy : public SetupLegacyBase
                               int max_passes_per_point,
                               bool verbose);
 
-  bool use_starts_{false};
+  bool use_startpoints_{false};
 };
 
 }  // namespace rsz

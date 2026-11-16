@@ -9,9 +9,9 @@
 
 #include "db/obj/frBlock.h"
 #include "frBaseTypes.h"
-#include "gui/gui.h"
 #include "ta/AbstractTAGraphics.h"
 #include "ta/FlexTA.h"
+#include "web/core.h"
 
 namespace odb {
 class dbDatabase;
@@ -24,7 +24,7 @@ class frDesign;
 class frNet;
 
 // This class draws debugging graphics on the layout
-class FlexTAGraphics : public gui::Renderer, public AbstractTAGraphics
+class FlexTAGraphics : public web::Renderer, public AbstractTAGraphics
 {
  public:
   // Debug track allocation
@@ -38,10 +38,10 @@ class FlexTAGraphics : public gui::Renderer, public AbstractTAGraphics
   // Draw iroutes for one guide
   void drawIrouteGuide(frNet* net,
                        odb::dbTechLayer* layer,
-                       gui::Painter& painter);
+                       web::Painter& painter);
 
   // From Renderer API
-  void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter) override;
+  void drawLayer(odb::dbTechLayer* layer, web::Painter& painter) override;
 
   // Update status and optionally pause
   void endIter(int iter) override;
@@ -51,7 +51,7 @@ class FlexTAGraphics : public gui::Renderer, public AbstractTAGraphics
 
  private:
   frDebugSettings* settings_;
-  gui::Gui* gui_;
+  web::Gui* gui_;
   frBlock* top_block_;
   // maps odb layerIdx -> tr layerIdx, with -1 for no equivalent
   std::vector<frLayerNum> layer_map_;

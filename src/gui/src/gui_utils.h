@@ -15,7 +15,7 @@ class Logger;
 
 namespace gui {
 
-inline QColor toQColor(const Painter::Color& color)
+inline QColor toQColor(const web::Painter::Color& color)
 {
   return QColor(color.r, color.g, color.b, color.a);
 }

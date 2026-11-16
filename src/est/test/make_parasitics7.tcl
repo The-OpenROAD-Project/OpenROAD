@@ -24,4 +24,4 @@ estimate_parasitics -placement -spef_file $spef_file
 
 report_net r1/Q -corner ss
 
-diff_file make_parasitics7.spefok $spef_file
+diff_files make_parasitics7.spefok $spef_file

@@ -11,4 +11,4 @@ global_route
 
 write_guides $guide_file
 
-diff_file pin_track_not_aligned.guideok $guide_file
+diff_files pin_track_not_aligned.guideok $guide_file

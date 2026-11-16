@@ -1,9 +1,9 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
-# From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "add_double_global_connection",
     "add_pdn_connect_backside_err",
@@ -13,6 +13,10 @@ COMPULSORY_TESTS = [
     "asap7_no_via_generate",
     "asap7_no_via_generate_v1_snapped",
     "asap7_offcenter_via",
+    "asap7_repair_channel_blocked_extend",
+    "asap7_repair_channel_one_net_extend",
+    "asap7_repair_channel_macro_gap",
+    "asap7_repair_channel_extend",
     "asap7_taper",
     "asap7_vias",
     "asap7_vias_arrayspacing",
@@ -40,6 +44,7 @@ COMPULSORY_TESTS = [
     "core_grid_dual_followpins",
     "core_grid_dual_followpins_error",
     "core_grid_existing_ports",
+    "core_grid_extend_by",
     "core_grid_extend_to_boundary",
     "core_grid_extend_to_boundary_no_pins",
     "core_grid_failed_via_report",
@@ -51,6 +56,7 @@ COMPULSORY_TESTS = [
     "core_grid_no_trim",
     "core_grid_obstruction",
     "core_grid_offset_strap",
+    "core_grid_offset_type",
     "core_grid_ring_on_pin_layer",
     "core_grid_single_pin",
     "core_grid_snap",
@@ -70,6 +76,7 @@ COMPULSORY_TESTS = [
     "core_grid_with_fixed_pins",
     "core_grid_with_m2_straps",
     "core_grid_with_rings",
+    "core_grid_with_rings_asymmetric_widths",
     "core_grid_with_rings_connect",
     "core_grid_with_rings_different_offset",
     "core_grid_with_rings_different_width1",
@@ -85,11 +92,16 @@ COMPULSORY_TESTS = [
     "core_grid_with_single_layer_rings",
     "design_width",
     "existing",
+    "generated_via_default_edge",
     "gf180_hybrid_followpins",
     "gf180_hybrid_followpins_pitch",
     "gf180_hybrid_followpins_rowpattern",
     "global_connect_with_dont_touch",
     "global_connect_with_dont_touch_warning",
+    "macro_edge_connect",
+    "macro_edge_connect_blocked",
+    "macro_edge_connect_m5_m6",
+    "macro_edge_connect_no_via",
     "macros",
     "macros_add_twice",
     "macro_channel_with_secondary_repair",
@@ -109,6 +121,7 @@ COMPULSORY_TESTS = [
     "macros_flipped_halo_rings",
     "macros_flipped_narrow_channel",
     "macros_flipped_number_of_straps",
+    "macros_flipped_offset_type",
     "macros_flipped_right_angle",
     "macros_flipped_right_angle_180",
     "macros_flipped_right_angle_halo",
@@ -130,6 +143,7 @@ COMPULSORY_TESTS = [
     "names",
     "offgrid",
     "pads_black_parrot",
+    "pads_black_parrot_extend_to_pad_ring",
     "pads_black_parrot_flipchip",
     "pads_black_parrot_flipchip_connect_bumps",
     "pads_black_parrot_flipchip_connect_overpads",
@@ -140,11 +154,32 @@ COMPULSORY_TESTS = [
     "pads_black_parrot_no_connect",
     "pads_black_parrot_offset",
     "pads_black_parrot_straps",
+    "pads_connect_blanket_obstruction",
     "pads_connect_from_non_pref_edge",
     "pads_ihp_sg13g2_balance",
     "pads_placed_not_fixed",
     "pads_straps_through_pads",
     "pads_via_repair_through_pads",
+    "polygon_core_grid",
+    "polygon_core_grid_extend_to_boundary",
+    "polygon_core_grid_rings_asymmetric",
+    "polygon_core_grid_rings_outside_die",
+    "polygon_core_grid_rings_outside_die_corner",
+    "polygon_core_grid_single_layer_ring",
+    "polygon_core_grid_t_rings",
+    "polygon_core_grid_u_extend_to_boundary",
+    "polygon_core_grid_u_rings",
+    "polygon_core_grid_with_rings",
+    "polygon_cut_corners_pads",
+    "polygon_die_and_macro",
+    "polygon_macro_grid",
+    "polygon_macro_grid_halo",
+    "polygon_macro_grid_r90",
+    "polygon_macro_grid_r180",
+    "polygon_macro_grid_with_rings",
+    "polygon_macro_tall_straps",
+    "polygon_power_switch",
+    "polygon_two_macros",
     "power_switch",
     "power_switch_cut_rows",
     "power_switch_daisy",
@@ -209,10 +244,13 @@ filegroup(
         "Nangate45/fakeram45_64x96.lib",
         "Nangate45/work_around_yosys/cells.v",
         "Nangate45_vias/Nangate45_adjacentcuts.lef",
+        "asap7_data/asap7_tech_1x_201209.lef",
+        "asap7_data/element.lef",
         "asap7_data/fakeram7_256x32.lef",
         "asap7_data/fakeram7_256x32_covered.lef",
         "asap7_data/fakeram7_256x32_covered_partial.lef",
         "asap7_data/fakeram7_256x32_notcovered.lef",
+        "asap7_data/repair_channel_macro_gap_cells.lef",
         "asap7_vias/asap7_tech_1x.lef",
         "asap7_vias/asap7_tech_1x_arrayspacing.lef",
         "asap7_vias/asap7_tech_1x_arrayspacing_tightspacing.lef",
@@ -257,6 +295,23 @@ filegroup(
         "nangate_macros/floorplan_very_narrow.def",
         "nangate_macros/floorplan_with_jog.def",
         "nangate_mirrored_rows/floorplan.def",
+        "nangate_polygon/edge_pin_macros.lef",
+        "nangate_polygon/floorplan.def",
+        "nangate_polygon/floorplan_blocked_macro.def",
+        "nangate_polygon/floorplan_cut_corner_die.def",
+        "nangate_polygon/floorplan_cut_corners_pads.def",
+        "nangate_polygon/floorplan_edge_macros.def",
+        "nangate_polygon/floorplan_macro.def",
+        "nangate_polygon/floorplan_macro_halo.def",
+        "nangate_polygon/floorplan_macro_r180.def",
+        "nangate_polygon/floorplan_macro_r90.def",
+        "nangate_polygon/floorplan_macro_tall.def",
+        "nangate_polygon/floorplan_polygon_macro.def",
+        "nangate_polygon/floorplan_t.def",
+        "nangate_polygon/floorplan_two_macros.def",
+        "nangate_polygon/floorplan_u.def",
+        "nangate_polygon/polygon_macro.lef",
+        "nangate_polygon/polygon_macro_tall.lef",
         "pdn_aux.py",
         "repair_channel_inf_loop/floorplan.def",
         "repair_channel_inf_loop/tech_macro.lef",
@@ -275,6 +330,7 @@ filegroup(
         "sky130_pll/pll_openmiddle.lef",
         "sky130_power_switch/floorplan.def",
         "sky130_power_switch/floorplan_cut_rows.def",
+        "sky130_power_switch/floorplan_polygon.def",
         "sky130_power_switch/floorplan_regions.def",
         "sky130_power_switch/netlist.v",
         "sky130_power_switch/netlist_regions.v",
@@ -331,9 +387,16 @@ filegroup(
             "asap7_failed_macro_covered": ["asap7_failed_macro_grid.def"],
             "asap7_macro_covered_partial": ["asap7_failed_macro_grid.def"],
             "asap7_macro_notcovered": ["asap7_failed_macro_grid.def"],
+            "asap7_repair_channel_blocked_extend": ["asap7_repair_channel_pin_layer.def"],
+            "asap7_repair_channel_extend": ["asap7_repair_channel_pin_layer.def"],
+            "asap7_repair_channel_one_net_extend": ["asap7_repair_channel_pin_layer.def"],
             "core_grid_auto_domain": ["core_grid.defok"],
             "core_grid_with_M6_min_area_rule": ["core_grid_with_M6_min_area.defok"],
             "core_grid_with_rings_connect": ["core_grid_with_rings.defok"],
+            "generated_via_default_edge": [
+                "generated_via_enclosure/edge_macro.lef",
+                "generated_via_enclosure/floorplan.def",
+            ],
             "macros_channel_recursive_repair": [
                 "ihp_ethmac/tech.lef",
                 "ihp_ethmac/sg13g2.lef",
@@ -345,6 +408,9 @@ filegroup(
                 "ihp_ethmac/sg13g2.lef",
                 "ihp_ethmac/RM_IHPSG13_1P_256x48_c2_bm_bist.lef",
                 "ihp_ethmac/floorplan.def",
+            ],
+            "pads_connect_blanket_obstruction": [
+                "nangate_bsg_black_parrot/dummy_pads_blanket_obs.lef",
             ],
             "pads_ihp_sg13g2_balance": [
                 "ihp_ethmac/tech.lef",
@@ -397,4 +463,153 @@ doc_check_test(
         "//src/pdn:messages_txt",
     ],
     visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "pdn_via_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNVia.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # via.h is an internal header; disable layering_check for this test.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "pdn_connect_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNConnect.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # connect.h is an internal header; disable layering_check for this test.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@spdlog",
+    ],
+)
+
+cc_test(
+    name = "pdn_techlayer_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNTechLayer.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # techlayer.h is an internal header.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "pdn_shape_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNShape.cpp",
+        "cpp/stubs.cpp",
+    ],
+    data = ["cpp/wrong_direction_spacing.lef"],
+    # shape.h, grid.h, domain.h, grid_component.h are internal headers.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "pdn_domain_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNDomain.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # domain.h is an internal header.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "pdn_polygon_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNPolygon.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # polygon.h is an internal header.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "pdn_grid_component_unittest",
+    srcs = [
+        "cpp/PdnTest.h",
+        "cpp/TestPDNGridComponent.cpp",
+        "cpp/stubs.cpp",
+    ],
+    # grid_component.h is an internal header.
+    features = ["-layering_check"],
+    deps = [
+        "//:ord",
+        "//src/odb/src/db",
+        "//src/pdn",
+        "//src/tst",
+        "//src/tst:physical_builder",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
 )

@@ -11,14 +11,19 @@
 #include <utility>
 #include <vector>
 
+#include "boost/json/parse.hpp"
 #include "boost/json/serialize.hpp"
+#include "boost/json/value.hpp"
 #include "gtest/gtest.h"
+#include "hierarchy_report.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "report_html.h"
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "tst/nangate45_fixture.h"
 #include "web/web.h"
+#include "web_assets.h"
 
 namespace web {
 namespace {
@@ -108,6 +113,33 @@ class SaveReportTest : public tst::Nangate45Fixture
     return haystack.find(needle) != std::string::npos;
   }
 
+  // The licence comment's [begin, end) in a report, delimiters included; both
+  // npos when there is none.
+  static std::pair<size_t, size_t> licenceComment(const std::string& html)
+  {
+    const size_t begin = html.find("<!--");
+    const size_t end = html.find("-->", begin);
+    if (end == std::string::npos) {
+      return {std::string::npos, std::string::npos};
+    }
+    return {begin, end + 3};
+  }
+
+  // The bundle's inline module, or "" when the report has none.
+  static std::string moduleScript(const std::string& html)
+  {
+    const std::string open = "<script type=\"module\">";
+    const size_t begin = html.find(open);
+    if (begin == std::string::npos) {
+      return {};
+    }
+    const size_t end = html.find("</script>", begin);
+    if (end == std::string::npos) {
+      return {};
+    }
+    return html.substr(begin + open.size(), end - begin - open.size());
+  }
+
   std::vector<std::string> output_files_;
 };
 
@@ -134,8 +166,28 @@ TEST_F(SaveReportTest, ContainsRequiredHTMLElements)
   EXPECT_TRUE(contains(html, "id=\"gl-container\""));
   EXPECT_TRUE(contains(html, "id=\"menu-bar\""));
   EXPECT_TRUE(contains(html, "id=\"loading-overlay\""));
-  EXPECT_TRUE(contains(html, "leaflet.css"));
-  EXPECT_TRUE(contains(html, "goldenlayout-base.css"));
+  // The golden-layout themes theme.js switches between, by id.
+  EXPECT_TRUE(contains(html, "id=\"gl-theme-dark\""));
+  EXPECT_TRUE(contains(html, "id=\"gl-theme-light\""));
+  // leaflet's stylesheet, bundled into the report's own <style> block.
+  EXPECT_TRUE(contains(html, ".leaflet-pane"));
+}
+
+// The report copies the served page's stylesheets, so the two cascades cannot
+// drift apart.
+TEST_F(SaveReportTest, UsesTheServedPagesStylesheets)
+{
+  const std::string path = tempHtml("page_styles");
+  generateReport(path);
+  const std::string html = readFile(path);
+
+  const EmbeddedAsset* page = findEmbeddedAsset("/index.html");
+  ASSERT_NE(page, nullptr);
+  const std::string head = reportHead(assetText(*page));
+  ASSERT_TRUE(contains(head, "<style id=\"gl-theme-dark\">"));
+  EXPECT_TRUE(contains(html, head));
+  // golden-layout's base sheet, which the viewer needs as much as leaflet's.
+  EXPECT_TRUE(contains(html, ".lm_root"));
 }
 
 TEST_F(SaveReportTest, ContainsStaticCache)
@@ -147,32 +199,128 @@ TEST_F(SaveReportTest, ContainsStaticCache)
   EXPECT_TRUE(contains(html, "window.__STATIC_CACHE__"));
 }
 
+// Inline as a module: golden-layout will not lay out a page still being parsed,
+// and a classic <script> would run mid-parse and leave the report blank.
 TEST_F(SaveReportTest, ContainsInlinedJS)
 {
   const std::string path = tempHtml("inlined_js");
   generateReport(path);
-  const std::string html = readFile(path);
+  const std::string script = moduleScript(readFile(path));
 
-  EXPECT_TRUE(contains(html, "class WebSocketManager"));
-  EXPECT_TRUE(contains(html, "fromCache"));
-  EXPECT_TRUE(contains(html, "function buildTileRequestFor"));
-  EXPECT_TRUE(contains(html, "function createMergedTileLayer"));
-  EXPECT_TRUE(contains(html, "function computeGroupCount"));
-  EXPECT_TRUE(contains(html, "TimingWidget"));
-  EXPECT_TRUE(contains(html, "ChartsWidget"));
+  // Minifying renames identifiers but keeps strings and property names: the
+  // cone-sync channel, the static cache lookup and two widgets' names.
+  for (const char* marker :
+       {"openroad-cone-sync", "fromCache", "TimingWidget", "ChartsWidget"}) {
+    EXPECT_TRUE(contains(script, marker)) << marker;
+  }
 }
 
-TEST_F(SaveReportTest, GoldenLayoutFromCDN)
+// The report carries the libraries' licences in a comment after the charset,
+// which a browser only looks for in the first 1024 bytes.
+TEST_F(SaveReportTest, CarriesTheThirdPartyLicenses)
 {
-  const std::string path = tempHtml("gl_cdn");
+  const std::string path = tempHtml("licenses");
   generateReport(path);
   const std::string html = readFile(path);
 
-  // GoldenLayout loaded via ES module import from CDN.
-  EXPECT_TRUE(contains(html, "type=\"module\""));
-  EXPECT_TRUE(contains(html, "esm.sh/golden-layout"));
-  // No vendored golden-layout bundle in the HTML.
-  EXPECT_FALSE(contains(html, "goldenlayout.umd"));
+  const size_t charset = html.find("<meta charset=\"utf-8\">");
+  ASSERT_NE(charset, std::string::npos);
+  EXPECT_LT(charset, 1024u);
+  const auto [begin, end] = licenceComment(html);
+  ASSERT_NE(begin, std::string::npos);
+  EXPECT_LT(charset, begin);
+  const std::string comment = html.substr(begin, end - begin);
+  for (const char* package :
+       {"elkjs", "golden-layout", "leaflet", "netlistsvg", "three"}) {
+    EXPECT_TRUE(contains(comment, package)) << package;
+  }
+  EXPECT_TRUE(contains(comment, "Eclipse Public License"));
+}
+
+// A saved report opens with no server and no network; bundle_test scans its
+// script, and this checks what saveReport writes around it.
+TEST_F(SaveReportTest, IsSelfContained)
+{
+  const std::string path = tempHtml("self_contained");
+  generateReport(path);
+  const std::string html = readFile(path);
+
+  for (const char* cdn : {"unpkg.com",
+                          "cdn.jsdelivr.net",
+                          "esm.sh",
+                          "nturley.github.io",
+                          "neilturley.dev"}) {
+    EXPECT_FALSE(contains(html, cdn)) << cdn;
+  }
+  EXPECT_FALSE(contains(html, "<script src="));
+  EXPECT_FALSE(contains(html, "<link "));
+  EXPECT_FALSE(contains(html, "@import"));
+}
+
+// The schematic and 3D panels need a live server, so the report bundle leaves
+// their libraries out (see entry-report.js).
+TEST_F(SaveReportTest, LeavesTheLivePanelsLibrariesOut)
+{
+  const std::string path = tempHtml("no_live_panels");
+  generateReport(path);
+  // The script alone: the licence comment names these libraries too.
+  const std::string script = moduleScript(readFile(path));
+  ASSERT_FALSE(script.empty());
+
+  // Markers from the libraries themselves; the widgets' own code stays in.
+  EXPECT_FALSE(contains(script, "org.eclipse.elk"));
+  EXPECT_FALSE(contains(script, "onml"));
+  EXPECT_FALSE(contains(script, "__THREE__"));
+  EXPECT_FALSE(contains(script, "Three.js Authors"));
+}
+
+// Nothing inside a <script> the report writes may end it early.
+TEST_F(SaveReportTest, ScriptsAreBalanced)
+{
+  const std::string path = tempHtml("balanced_scripts");
+  generateReport(path);
+  std::string html = readFile(path);
+  // The licence comment quotes text, not markup.
+  const auto [begin, end] = licenceComment(html);
+  ASSERT_NE(begin, std::string::npos);
+  html.erase(begin, end - begin);
+
+  // The static cache and the report bundle.
+  EXPECT_GE(countOccurrences(html, "<script"), 2);
+  EXPECT_EQ(countOccurrences(html, "<script"),
+            countOccurrences(html, "</script>"));
+}
+
+// ─── Report HTML Helpers ────────────────────────────────────────────────────
+
+// What a saved report copies is exactly the marked block of the page.
+TEST(ReportHtml, ReportHeadIsTheMarkedBlock)
+{
+  const std::string html
+      = "<head><title>t</title><!-- saved-report:begin --><style>a{}</style>"
+        "<!-- saved-report:end --><link rel=\"icon\" href=\"i.png\"></head>";
+  EXPECT_EQ(reportHead(html), "<style>a{}</style>");
+}
+
+TEST(ReportHtml, ReportHeadNeedsBothMarkers)
+{
+  EXPECT_EQ(reportHead("<style>a{}</style></head>"), "");
+  EXPECT_EQ(reportHead("<!-- saved-report:begin --><style></style>"), "");
+  EXPECT_EQ(reportHead("<!-- saved-report:end --><!-- saved-report:begin -->"),
+            "");
+}
+
+TEST(ReportHtml, ScriptSafeJsonEscapesEveryLessThan)
+{
+  const std::string json = R"({"name":"</script><!--x"})";
+  const std::string safe = scriptSafeJson(json);
+  EXPECT_EQ(safe, "{\"name\":\"\\u003c/script>\\u003c!--x\"}");
+  EXPECT_EQ(boost::json::parse(safe), boost::json::parse(json));
+}
+
+TEST(ReportHtml, HtmlCommentSafeSplitsTheDelimiters)
+{
+  EXPECT_EQ(htmlCommentSafe("a-->b<!--c--!>d"), "a-- >b<! --c--! >d");
 }
 
 // ─── Cache JSON Responses ───────────────────────────────────────────────────
@@ -347,9 +495,12 @@ TEST_F(SaveReportTest, SerializeSlackHistogramRoundTrip)
   h.unconstrained_count = 5;
   h.total_endpoints = 35;
   h.time_unit = "ns";
+  h.clocks.push_back({"core_clock", 0.473f});
 
   const std::string json = boost::json::serialize(serializeSlackHistogram(h));
 
+  EXPECT_TRUE(contains(json, "\"clocks\":"));
+  EXPECT_TRUE(contains(json, "\"core_clock\""));
   EXPECT_TRUE(contains(json, "\"bins\":"));
   EXPECT_TRUE(contains(json, "\"unconstrained_count\":5"));
   EXPECT_TRUE(contains(json, "\"total_endpoints\":35"));
@@ -444,6 +595,95 @@ TEST_F(SaveReportTest, FanoutHistogramPoolsEveryBlock)
   const FanoutHistogramResult with_null
       = computeFanoutHistogram({block_, nullptr});
   EXPECT_EQ(with_null.total_nets, first.total_nets);
+}
+
+// ─── Effective owner colors ─────────────────────────────────────────────────
+//
+// The rule the saved report and the viewer must agree on: a collapsed node
+// paints its whole subtree, and where collapsed nodes nest the highest one
+// wins.  The viewer's copy lives in color-tree.js.
+
+constexpr Color kRed{255, 0, 0, 255};
+constexpr Color kGreen{0, 255, 0, 255};
+constexpr Color kBlue{0, 0, 255, 255};
+
+bool sameColor(const Color& a, const Color& b)
+{
+  return a.r == b.r && a.g == b.g && a.b == b.b;
+}
+
+TEST(OwnerColors, NothingCollapsedKeepsOwnColors)
+{
+  // A ── B ── C, all expanded.
+  const std::vector<OwnerColorNode> nodes = {
+      {.parent = -1,
+       .odb_id = 10,
+       .color = kRed,
+       .collapsed = false,
+       .has_color = true},
+      {.parent = 0,
+       .odb_id = 11,
+       .color = kGreen,
+       .collapsed = false,
+       .has_color = true},
+      {.parent = 1,
+       .odb_id = 12,
+       .color = kBlue,
+       .collapsed = false,
+       .has_color = true},
+  };
+  const auto colors = computeEffectiveOwnerColors(nodes);
+  EXPECT_TRUE(sameColor(colors.at(10), kRed));
+  EXPECT_TRUE(sameColor(colors.at(11), kGreen));
+  EXPECT_TRUE(sameColor(colors.at(12), kBlue));
+}
+
+TEST(OwnerColors, HighestCollapsedAncestorWinsThroughExpandedNode)
+{
+  // The case a nearest-ancestor rule gets wrong, and the regression a previous
+  // refactor of this helper actually shipped: B is expanded but sits inside a
+  // collapsed A, so C must paint A's color, not B's.
+  const std::vector<OwnerColorNode> nodes = {
+      {.parent = -1,
+       .odb_id = 10,
+       .color = kRed,
+       .collapsed = true,
+       .has_color = true},
+      {.parent = 0,
+       .odb_id = 11,
+       .color = kGreen,
+       .collapsed = false,
+       .has_color = true},
+      {.parent = 1,
+       .odb_id = 12,
+       .color = kBlue,
+       .collapsed = false,
+       .has_color = true},
+  };
+  const auto colors = computeEffectiveOwnerColors(nodes);
+  EXPECT_TRUE(sameColor(colors.at(11), kRed));
+  EXPECT_TRUE(sameColor(colors.at(12), kRed));
+}
+
+TEST(OwnerColors, CollapsedNodeWithoutColorDoesNotPaintItsSubtree)
+{
+  // The Hierarchy panel's structural rows ("Leaf instances", per-type folders)
+  // have no color, and must not hand a default-constructed one down.
+  const std::vector<OwnerColorNode> nodes = {
+      {.parent = -1,
+       .odb_id = 0,
+       .color = Color(),
+       .collapsed = true,
+       .has_color = false},
+      {.parent = 0,
+       .odb_id = 11,
+       .color = kGreen,
+       .collapsed = false,
+       .has_color = true},
+  };
+  const auto colors = computeEffectiveOwnerColors(nodes);
+  EXPECT_EQ(colors.count(0), 0u);  // no entry for the colorless folder
+  EXPECT_TRUE(sameColor(colors.at(11), kGreen));
 }
 
 }  // namespace

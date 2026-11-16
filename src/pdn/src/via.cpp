@@ -72,7 +72,7 @@ Enclosure::Enclosure(odb::dbTechLayerCutEnclosureRule* rule,
       break;
     case odb::dbTechLayerCutEnclosureRule::ENDSIDE:
       if (cut.dx() < cut.dy()) {
-        // SIDE is first overhang, END is second
+        // END is first overhang, SIDE is second
         x_ = rule->getSecondOverhang();
         y_ = rule->getFirstOverhang();
       } else {
@@ -156,8 +156,13 @@ bool Enclosure::isPreferredOver(const Enclosure* other, bool minimize_x) const
 
 void Enclosure::snap(odb::dbTech* tech)
 {
-  x_ = TechLayer::snapToManufacturingGrid(tech, x_);
-  y_ = TechLayer::snapToManufacturingGrid(tech, y_);
+  // Do not round an enclosure deficit up to an apparently legal zero.
+  auto snap = [tech](int value) {
+    return value < 0 ? -TechLayer::snapToManufacturingGrid(tech, -value, true)
+                     : TechLayer::snapToManufacturingGrid(tech, value);
+  };
+  x_ = snap(x_);
+  y_ = snap(y_);
 }
 
 void Enclosure::copy(const Enclosure* other)
@@ -817,7 +822,7 @@ ViaReport DbArrayVia::getViaReport() const
   addToViaReport(core_via_.get(), report);
   addToViaReport(end_of_row_column_.get(), report);
   addToViaReport(end_of_row_.get(), report);
-  addToViaReport(end_of_row_column_.get(), report);
+  addToViaReport(end_of_column_.get(), report);
 
   return report;
 }
@@ -1089,6 +1094,12 @@ ViaReport DbGenerateStackedVia::getViaReport() const
   return report;
 }
 
+bool DbGenerateStackedVia::canCache() const
+{
+  return std::ranges::all_of(vias_,
+                             [](const auto& via) { return via->canCache(); });
+}
+
 /////////////
 
 DbGenerateDummyVia::DbGenerateDummyVia(Connect* connect,
@@ -1164,7 +1175,7 @@ int ViaGenerator::getGeneratorWidth(bool bottom) const
   if (isCutArray()) {
     const int end_width = getCutsWidth(
         end_col_, cut.dx(), getCutPitchX() - cut.dx(), enc->getX());
-    return array_core_y_ * core_width + (array_core_x_ - 1) * array_spacing_x_
+    return array_core_x_ * core_width + (array_core_x_ - 1) * array_spacing_x_
            + end_width;
   }
   return core_width;
@@ -1783,10 +1794,12 @@ bool ViaGenerator::updateCutSpacing(int rows, int cols)
     }
 
     if (rule->getAdjacentCuts() <= adj_cuts) {
-      if (max_dim == rows) {
+      // every axis with more than one cut has adjacent cuts along it
+      if (rows > 1) {
         cut_pitch_y_ = cut.dy() + rule->getCutSpacing();
         changed = true;
-      } else {
+      }
+      if (cols > 1) {
         cut_pitch_x_ = cut.dx() + rule->getCutSpacing();
         changed = true;
       }
@@ -2093,28 +2106,30 @@ void ViaGenerator::determineRowsAndColumns(
                 + (last_rows > 0 ? array_spacing_y_ : 0);
           const int double_enc_y = height - via_width_y;
 
-          bottom_enclosure_->setX(
-              determine_enclosure(use_bottom_min_enclosure,
-                                  true,
-                                  bottom_min_enclosure.getX(),
-                                  double_enc_x / 2,
-                                  lower_constraint_));
-          bottom_enclosure_->setY(
-              determine_enclosure(use_bottom_min_enclosure,
-                                  false,
-                                  bottom_min_enclosure.getY(),
-                                  double_enc_y / 2,
-                                  lower_constraint_));
-          top_enclosure_->setX(determine_enclosure(use_top_min_enclosure,
-                                                   true,
-                                                   top_min_enclosure.getX(),
-                                                   double_enc_x / 2,
-                                                   upper_constraint_));
-          top_enclosure_->setY(determine_enclosure(use_top_min_enclosure,
-                                                   false,
-                                                   top_min_enclosure.getY(),
-                                                   double_enc_y / 2,
-                                                   upper_constraint_));
+          bottom_enclosure_->setX(determine_enclosure(
+              use_bottom_min_enclosure,
+              true,
+              bottom_min_enclosure.getX(),
+              static_cast<int>(std::floor(double_enc_x / 2.0)),
+              lower_constraint_));
+          bottom_enclosure_->setY(determine_enclosure(
+              use_bottom_min_enclosure,
+              false,
+              bottom_min_enclosure.getY(),
+              static_cast<int>(std::floor(double_enc_y / 2.0)),
+              lower_constraint_));
+          top_enclosure_->setX(determine_enclosure(
+              use_top_min_enclosure,
+              true,
+              top_min_enclosure.getX(),
+              static_cast<int>(std::floor(double_enc_x / 2.0)),
+              upper_constraint_));
+          top_enclosure_->setY(determine_enclosure(
+              use_top_min_enclosure,
+              false,
+              top_min_enclosure.getY(),
+              static_cast<int>(std::floor(double_enc_y / 2.0)),
+              upper_constraint_));
 
           max_cut_area = total_cut_area;
         }
@@ -2145,26 +2160,30 @@ void ViaGenerator::determineRowsAndColumns(
       top_enclosure_->setX(top_min_enclosure.getX());
       top_enclosure_->setY(top_min_enclosure.getY());
     } else {
-      bottom_enclosure_->setX(determine_enclosure(use_bottom_min_enclosure,
-                                                  true,
-                                                  bottom_min_enclosure.getX(),
-                                                  double_enc_x / 2,
-                                                  lower_constraint_));
-      bottom_enclosure_->setY(determine_enclosure(use_bottom_min_enclosure,
-                                                  false,
-                                                  bottom_min_enclosure.getY(),
-                                                  double_enc_y / 2,
-                                                  lower_constraint_));
-      top_enclosure_->setX(determine_enclosure(use_top_min_enclosure,
-                                               true,
-                                               top_min_enclosure.getX(),
-                                               double_enc_x / 2,
-                                               upper_constraint_));
-      top_enclosure_->setY(determine_enclosure(use_top_min_enclosure,
-                                               false,
-                                               top_min_enclosure.getY(),
-                                               double_enc_y / 2,
-                                               upper_constraint_));
+      bottom_enclosure_->setX(
+          determine_enclosure(use_bottom_min_enclosure,
+                              true,
+                              bottom_min_enclosure.getX(),
+                              static_cast<int>(std::floor(double_enc_x / 2.0)),
+                              lower_constraint_));
+      bottom_enclosure_->setY(
+          determine_enclosure(use_bottom_min_enclosure,
+                              false,
+                              bottom_min_enclosure.getY(),
+                              static_cast<int>(std::floor(double_enc_y / 2.0)),
+                              lower_constraint_));
+      top_enclosure_->setX(
+          determine_enclosure(use_top_min_enclosure,
+                              true,
+                              top_min_enclosure.getX(),
+                              static_cast<int>(std::floor(double_enc_x / 2.0)),
+                              upper_constraint_));
+      top_enclosure_->setY(
+          determine_enclosure(use_top_min_enclosure,
+                              false,
+                              top_min_enclosure.getY(),
+                              static_cast<int>(std::floor(double_enc_y / 2.0)),
+                              upper_constraint_));
     }
 
     if (isSplitCutArray()) {
@@ -2461,7 +2480,7 @@ void ViaGenerator::determineCutSpacing()
       int rule_pitch_y;
       if (cut.dx() == cut.dy()) {
         rule_pitch_x = rule->getMaxSpacing(
-            cut_class, cut_class, odb::dbTechLayerCutSpacingTableDefRule::MIN);
+            cut_class, cut_class, odb::dbTechLayerCutSpacingTableDefRule::MAX);
         rule_pitch_y = rule_pitch_x;
       } else {
         const bool x_is_side = cut.dx() > cut.dy();
@@ -2641,19 +2660,6 @@ bool GenerateViaGenerator::isLayerValidForWidth(odb::dbTechViaLayerRule* rule,
   return min <= width && width <= max;
 }
 
-bool GenerateViaGenerator::getLayerEnclosureRule(odb::dbTechViaLayerRule* rule,
-                                                 int& dx,
-                                                 int& dy) const
-{
-  if (rule->hasEnclosure()) {
-    rule->getEnclosure(dx, dy);
-  } else {
-    return false;
-  }
-
-  return true;
-}
-
 DbBaseVia* GenerateViaGenerator::makeBaseVia(int rows,
                                              int row_pitch,
                                              int cols,
@@ -2691,12 +2697,15 @@ void GenerateViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom,
 {
   ViaGenerator::getMinimumEnclosures(bottom, top, true);
 
-  if (rules_only) {
-    return;
+  // Applicable cut-layer enclosure rules override VIARULE defaults.  When
+  // validating a generated via, retain the default for a side with no such
+  // rule; otherwise a forced single cut can pass with insufficient enclosure.
+  if (!rules_only || bottom.empty()) {
+    bottom.emplace_back(getBottomLayerRule(), getBottomLayer());
   }
-
-  bottom.emplace_back(getBottomLayerRule(), getBottomLayer());
-  top.emplace_back(getTopLayerRule(), getTopLayer());
+  if (!rules_only || top.empty()) {
+    top.emplace_back(getTopLayerRule(), getTopLayer());
+  }
 }
 
 /////////

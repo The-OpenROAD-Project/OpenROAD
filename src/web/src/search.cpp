@@ -11,7 +11,9 @@
 #include <cstdint>
 #include <functional>
 #include <limits>
+#include <memory>
 #include <mutex>
+#include <optional>
 #include <set>
 #include <shared_mutex>
 #include <utility>
@@ -311,6 +313,28 @@ void Search::clear()
   clearRows();
 }
 
+void Search::setInstGroups(
+    odb::dbBlock* block,
+    std::shared_ptr<const std::vector<uint32_t>> inst_groups,
+    const uint64_t built_at_revision)
+{
+  BlockData& data = getData(block);
+  std::unique_lock lock(data.inst_groups_mutex);
+  data.inst_groups = std::move(inst_groups);
+  data.inst_groups_revision = built_at_revision;
+}
+
+std::shared_ptr<const std::vector<uint32_t>> Search::instGroups(
+    odb::dbBlock* block)
+{
+  BlockData& data = getData(block);
+  std::shared_lock lock(data.inst_groups_mutex);
+  if (data.inst_groups_revision != revision()) {
+    return nullptr;
+  }
+  return data.inst_groups;
+}
+
 void Search::clearShapes()
 {
   announceModified(top_block_data_.shapes_init);
@@ -324,6 +348,91 @@ void Search::clearFills()
 void Search::clearInsts()
 {
   announceModified(top_block_data_.insts_init);
+}
+
+void Search::noteOwnerColorsUsed()
+{
+  top_block_data_.overlay_owners_init = true;
+}
+
+// announceModified, not notifyModified: it moves revision() on every edit --
+// which the cached palettes poll -- but calls out only once per render of the
+// overlay, so a cluster tree written one addInst at a time does not broadcast
+// once per instance.
+void Search::ownerColorsModified()
+{
+  announceModified(top_block_data_.overlay_owners_init);
+}
+
+void Search::inDbInstCreate(odb::dbInst* inst)
+{
+  // Mirrors inDbInstDestroy: an instance created already placed belongs in the
+  // index.  It also joins a module, so the overlay palettes move with it.
+  if (inst->isPlaced()) {
+    clearInsts();
+  }
+  ownerColorsModified();
+}
+
+void Search::inDbPostInstParentChange(odb::dbInst* /* inst */)
+{
+  ownerColorsModified();
+}
+
+void Search::inDbModuleCreate(odb::dbModule* /* module */)
+{
+  ownerColorsModified();
+}
+
+void Search::inDbModuleDestroy(odb::dbModule* /* module */)
+{
+  ownerColorsModified();
+}
+
+void Search::inDbGroupCreate(odb::dbGroup* /* group */)
+{
+  ownerColorsModified();
+}
+
+void Search::inDbGroupDestroy(odb::dbGroup* /* group */)
+{
+  ownerColorsModified();
+}
+
+void Search::inDbGroupAddInst(odb::dbGroup* /* group */,
+                              odb::dbInst* /* inst */)
+{
+  ownerColorsModified();
+}
+
+void Search::inDbGroupRemoveInst(odb::dbGroup* /* group */,
+                                 odb::dbInst* /* inst */)
+{
+  ownerColorsModified();
+}
+
+void Search::inDbGroupAddModInst(odb::dbGroup* /* group */,
+                                 odb::dbModInst* /* modinst */)
+{
+  ownerColorsModified();
+}
+
+void Search::inDbGroupRemoveModInst(odb::dbGroup* /* group */,
+                                    odb::dbModInst* /* modinst */)
+{
+  ownerColorsModified();
+}
+
+void Search::inDbGroupAddGroup(odb::dbGroup* /* group */,
+                               odb::dbGroup* /* child */)
+{
+  ownerColorsModified();
+}
+
+void Search::inDbGroupRemoveGroup(odb::dbGroup* /* group */,
+                                  odb::dbGroup* /* child */)
+{
+  ownerColorsModified();
 }
 
 void Search::clearBlockages()
@@ -873,6 +982,108 @@ class Search::MinHeightPredicate
 // Eagerly collect shape search results under a shared_lock so we don't
 // hold a lazy iterator into an R-tree that another thread may rebuild.
 // Mirrors the pattern used by searchInsts / searchFills.
+
+// Grow `acc` by the bounds of `tree`.  An rtree keeps its bounds up to date as
+// it is built, so this is O(1) however many shapes it holds.
+template <typename Tree>
+static void mergeTreeBounds(const Tree& tree, std::optional<odb::Rect>& acc)
+{
+  if (tree.empty()) {
+    return;
+  }
+  const auto b = tree.bounds();
+  const odb::Rect r(boost::geometry::get<boost::geometry::min_corner, 0>(b),
+                    boost::geometry::get<boost::geometry::min_corner, 1>(b),
+                    boost::geometry::get<boost::geometry::max_corner, 0>(b),
+                    boost::geometry::get<boost::geometry::max_corner, 1>(b));
+  if (acc) {
+    acc->merge(r);
+  } else {
+    acc = r;
+  }
+}
+
+template <typename LayerTrees>
+static void mergeLayerTreeBounds(const LayerTrees& trees,
+                                 odb::dbTechLayer* layer,
+                                 std::optional<odb::Rect>& acc)
+{
+  const auto it = trees.find(layer);
+  if (it != trees.end()) {
+    mergeTreeBounds(it->second, acc);
+  }
+}
+
+std::optional<odb::Rect> Search::shapeBounds(odb::dbBlock* block,
+                                             odb::dbTechLayer* layer)
+{
+  BlockData& data = getData(block);
+  if (!data.shapes_init) {
+    updateShapes(block);
+  }
+
+  std::optional<odb::Rect> bounds;
+  std::shared_lock<std::shared_mutex> lock(data.shapes_init_mutex);
+  mergeLayerTreeBounds(data.box_shapes, layer, bounds);
+  mergeLayerTreeBounds(data.snet_shapes, layer, bounds);
+  mergeLayerTreeBounds(data.snet_via_shapes, layer, bounds);
+  return bounds;
+}
+
+std::optional<odb::Rect> Search::fillBounds(odb::dbBlock* block,
+                                            odb::dbTechLayer* layer)
+{
+  BlockData& data = getData(block);
+  if (!data.fills_init) {
+    updateFills(block);
+  }
+
+  std::optional<odb::Rect> bounds;
+  std::shared_lock<std::shared_mutex> lock(data.fills_init_mutex);
+  mergeLayerTreeBounds(data.fills, layer, bounds);
+  return bounds;
+}
+
+std::optional<odb::Rect> Search::obstructionBounds(odb::dbBlock* block,
+                                                   odb::dbTechLayer* layer)
+{
+  BlockData& data = getData(block);
+  if (!data.obstructions_init) {
+    updateObstructions(block);
+  }
+
+  std::optional<odb::Rect> bounds;
+  std::shared_lock<std::shared_mutex> lock(data.obstructions_init_mutex);
+  mergeLayerTreeBounds(data.obstructions, layer, bounds);
+  return bounds;
+}
+
+std::optional<odb::Rect> Search::snetViaBounds(odb::dbBlock* block,
+                                               odb::dbTechLayer* layer)
+{
+  BlockData& data = getData(block);
+  if (!data.shapes_init) {
+    updateShapes(block);
+  }
+
+  std::optional<odb::Rect> bounds;
+  std::shared_lock<std::shared_mutex> lock(data.shapes_init_mutex);
+  mergeLayerTreeBounds(data.snet_via_shapes, layer, bounds);
+  return bounds;
+}
+
+std::optional<odb::Rect> Search::instBounds(odb::dbBlock* block)
+{
+  BlockData& data = getData(block);
+  if (!data.insts_init) {
+    updateInsts(block);
+  }
+
+  std::optional<odb::Rect> bounds;
+  std::shared_lock<std::shared_mutex> lock(data.insts_init_mutex);
+  mergeTreeBounds(data.insts, bounds);
+  return bounds;
+}
 
 Search::RoutingRange Search::searchBoxShapes(odb::dbBlock* block,
                                              odb::dbTechLayer* layer,

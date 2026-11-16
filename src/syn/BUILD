@@ -28,6 +28,7 @@ cc_library(
         "src/flow/export.h",
         "src/flow/import.cc",
         "src/flow/liveness.cc",
+        "src/flow/loop_check.cc",
         "src/flow/opt_gatefusion.cc",
         "src/flow/opt_gatefusion.h",
         "src/flow/sequential_mapper.cc",
@@ -76,7 +77,6 @@ cc_library(
         ":syn",
         "//:ord",
         "//src/utl",
-        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
 )
@@ -133,6 +133,7 @@ messages_txt(
     extra_srcs = [
         "//src/syn/src/elab:message_srcs",
         "//src/syn/src/ir:message_srcs",
+        "//src/syn/src/lir:message_srcs",
     ],
     visibility = ["//docs:__pkg__"],
 )

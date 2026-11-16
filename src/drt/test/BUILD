@@ -1,26 +1,36 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
-# Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
-# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
-
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
+exports_files(
+    [
+        "sky130hs/sky130hs.tlef",
+        "sky130hs/sky130hs_std_cell.lef",
+        "top_level_term2.def",
+    ],
+    visibility = ["//src/dbSta/test:__pkg__"],
+)
+
 COMPULSORY_TESTS = [
     "down_access_term",
     "drc_test",
     "ispd18_sample",
     "ispd18_sample_incr",
+    "ispd18_sample_reroute",
+    "ispd18_sample_reroute_unrouted",
     "ndr_vias1",
     "ndr_vias2",
     "ndr_vias3",
     "ndr_no_auto_taper",
     "obstruction",
+    "pa_above_top_layer",
     "pa_single_pin",
+    "single_cut_minimumcut",
     "single_step",
     "ta_ap_aligned",
     "ta_pin_aligned",
@@ -29,7 +39,6 @@ COMPULSORY_TESTS = [
     "via_access_layer",
 ]
 
-# From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
 ]
 
@@ -113,6 +122,9 @@ filegroup(
             "ispd18_sample_incr",
             "single_step",
         ] else []) + ([
+            "ispd18_sample_reroute.drc.rpt",
+            "ispd18_sample_reroute.input.def",
+        ] if test_name == "ispd18_sample_reroute_unrouted" else []) + ([
             "gf180/gf180mcu_5LM_1TM_9K_9t_tech.lef",
         ] if test_name == "pa_single_pin" else []),
     )
@@ -167,15 +179,15 @@ cc_test(
         "fixture.cpp",
         "fixture.h",
         "gcTest.cpp",
+        "parserTest.cpp",
+        "pathSegTest.cpp",
     ],
     includes = [
         "../src",
     ],
     deps = [
-        "//src/drt",  # buildcleaner: keep for private headers
         "//src/drt:base_types",
-        "//src/drt:db_hdrs",
-        "//src/drt:drt_private_hdrs",
+        "//src/drt:drt_impl",
         "//src/odb/src/db",
         "//src/utl",
         "@googletest//:gtest",
@@ -199,11 +211,8 @@ cc_test(
         "../src",
     ],
     deps = [
-        # drt only exports header TritonRoute.h, but we need other symbols
-        "//src/drt",  # buildcleaner: keep
         "//src/drt:base_types",
-        "//src/drt:db_hdrs",
-        "//src/drt:drt_private_hdrs",
+        "//src/drt:drt_impl",
         "//src/odb/src/db",
         "//src/utl",
         "@googletest//:gtest",
@@ -245,10 +254,38 @@ regression_test(
 )
 
 cc_test(
+    name = "LookupTblTest",
+    srcs = ["LookupTblTest.cpp"],
+    deps = [
+        "//src/drt:base_types",
+        "//src/drt:drt_impl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "WatermarkCostTest",
     srcs = ["WatermarkCostTest.cpp"],
     deps = [
         "//src/drt:base_types",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "PinAccessTest",
+    srcs = ["PinAccessTest.cpp"],
+    data = ["Nangate45/Nangate45_tech.lef"],
+    includes = ["../src"],
+    deps = [
+        "//src/drt",
+        "//src/drt:drt_impl",
+        "//src/dst",
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

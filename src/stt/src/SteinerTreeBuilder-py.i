@@ -6,7 +6,7 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "stt/pd.h"
 #include "stt/flute.h"
-#include "gui/gui.h"
+#include "web/core.h"
 #include "ord/OpenRoad.hh"
 #include "odb/db.h"
 #include <vector>

@@ -16,7 +16,6 @@ cc_library(
     hdrs = [
         "helper.h",
     ],
-    includes = ["."],  # not needed after no cmake
     visibility = ["//visibility:public"],
     deps = [
         "//src/odb/src/db",

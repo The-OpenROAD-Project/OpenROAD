@@ -30,18 +30,15 @@ class AbstractPAGraphics
 
   virtual void startPin(frBPin* pin,
                         frInstTerm* inst_term,
-                        UniqueClass* inst_class)
-      = 0;
+                        UniqueClass* inst_class) = 0;
 
   virtual void startPin(frMPin* pin,
                         frInstTerm* inst_term,
-                        UniqueClass* inst_class)
-      = 0;
+                        UniqueClass* inst_class) = 0;
 
   virtual void setAPs(const std::vector<std::unique_ptr<frAccessPoint>>& aps,
                       frAccessPointEnum lower_type,
-                      frAccessPointEnum upper_type)
-      = 0;
+                      frAccessPointEnum upper_type) = 0;
 
   virtual void setViaAP(const frAccessPoint* ap,
                         const frVia* via,
@@ -51,14 +48,12 @@ class AbstractPAGraphics
   virtual void setPlanarAP(
       const frAccessPoint* ap,
       const frPathSeg* seg,
-      const std::vector<std::unique_ptr<frMarker>>& markers)
-      = 0;
+      const std::vector<std::unique_ptr<frMarker>>& markers) = 0;
 
   virtual void setObjsAndMakers(
       const std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
       const std::vector<std::unique_ptr<frMarker>>& markers,
-      FlexPA::PatternType type)
-      = 0;
+      FlexPA::PatternType type) = 0;
 };
 
 }  // namespace drt

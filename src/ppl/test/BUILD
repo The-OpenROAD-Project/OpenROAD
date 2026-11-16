@@ -1,3 +1,4 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 
 # SPDX-License-Identifier: BSD-3-Clause
@@ -6,7 +7,6 @@ load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
-# From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "add_constraint1",
     "add_constraint2",
@@ -106,6 +106,7 @@ COMPULSORY_TESTS = [
     "pdn_boundary_mirrored_pins",
     "pdn_boundary_pg_pins",
     "pdn_boundary_place_pin",
+    "pdn_boundary_place_pin_rules",
     "pdn_boundary_stripes",
     "pdn_boundary_stripes_length",
     "pdn_boundary_stripes_no_pins",
@@ -117,6 +118,7 @@ COMPULSORY_TESTS = [
     "pin_length",
     "pin_length_error",
     "pin_thick_multiplier",
+    "place_config",
     "place_pin1",
     "place_pin2",
     "place_pin3",
@@ -128,6 +130,11 @@ COMPULSORY_TESTS = [
     "place_pin_error1",
     "place_pin_error2",
     "place_pin_error3",
+    "place_pin_polygon_blocked",
+    "place_pin_polygon_l",
+    "place_pin_polygon_overlap",
+    "place_pin_polygon_t",
+    "place_pin_polygon_u",
     "random_deprecated1",
     "random_deprecated2",
     "top_layer1",
@@ -202,6 +209,24 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+cc_test(
+    name = "TestMinimizeDisplacement",
+    size = "small",
+    srcs = ["cpp/TestMinimizeDisplacement.cpp"],
+    data = [
+        "gcd.def",
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/ppl",
+        "//src/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
 
 py_test(
     name = "ppl_man_tcl_check",

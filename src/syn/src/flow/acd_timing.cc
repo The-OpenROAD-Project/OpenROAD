@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <limits>
@@ -325,6 +326,7 @@ void populateCutTiming(sta::dbNetwork* network,
     }
 
     const sta::Pin* pin = *pin_set->begin();
+    assert(cone.contains(network->instance(pin)));
     vertex_po_index[graph->pinDrvrVertex(pin)] = i;
 
     float load = graph_dcalc->loadCap(pin, scene, max);
@@ -341,6 +343,48 @@ void populateCutTiming(sta::dbNetwork* network,
     }
 
     problem.output(i).external_load = load;
+  }
+
+  // Up front, we build an index of out-edges contained in the cut.
+  // Using this index is notably faster than `sta::VertexOutEdgeIterator`
+  // combined with a `cone.contains(network->instance(edge->to(graph)))` query.
+  struct Edge
+  {
+    sta::Edge* sta_edge;
+    int po_index;  // -1 if edge->to() is not a root
+  };
+  // Iterate the cut's instances in a deterministic order so that the edge
+  // lists below are built the same way on every run.
+  std::vector<sta::Instance*> cone_insts(cone.begin(), cone.end());
+  std::ranges::sort(cone_insts, [&](sta::Instance* a, sta::Instance* b) {
+    return network->id(a) < network->id(b);
+  });
+
+  std::unordered_map<sta::Vertex*, std::vector<Edge>> vertex_out_edges;
+  for (sta::Instance* inst : cone_insts) {
+    std::unique_ptr<sta::InstancePinIterator> pin_iter(
+        network->pinIterator(inst));
+    while (pin_iter->hasNext()) {
+      sta::Pin* pin = pin_iter->next();
+      sta::Vertex* vertex;
+
+      // Cut can only contain unidirectional pins
+      if (network->direction(pin)->isOutput()) {
+        vertex = graph->pinDrvrVertex(pin);
+      } else {
+        vertex = graph->pinLoadVertex(pin);
+      }
+
+      auto po_it = vertex_po_index.find(vertex);
+      int po_index = po_it != vertex_po_index.end() ? po_it->second : -1;
+
+      sta::VertexInEdgeIterator iit(vertex, graph);
+      while (iit.hasNext()) {
+        sta::Edge* edge = iit.next();
+        vertex_out_edges[edge->from(graph)].push_back(
+            {.sta_edge = edge, .po_index = po_index});
+      }
+    }
   }
 
   assert(leaves.size() == problem.numInputs());
@@ -376,9 +420,14 @@ void populateCutTiming(sta::dbNetwork* network,
       while (!stack.empty()) {
         auto [v, tag, cur_rf] = stack.back();
         stack.pop_back();
-        sta::VertexOutEdgeIterator eit(v, graph);
-        while (eit.hasNext()) {
-          sta::Edge* edge = eit.next();
+
+        const auto out_edges_it = vertex_out_edges.find(v);
+        if (out_edges_it == vertex_out_edges.end()) {
+          continue;
+        }
+
+        for (const Edge& cut_edge : out_edges_it->second) {
+          sta::Edge* edge = cut_edge.sta_edge;
           sta::Vertex* w = edge->to(graph);
           for (sta::TimingArc* arc : edge->timingArcSet()->arcs()) {
             if (arc->fromEdge()->asRiseFall() != cur_rf) {
@@ -393,10 +442,9 @@ void populateCutTiming(sta::dbNetwork* network,
             if (!wp) {
               continue;
             }
-            auto po = vertex_po_index.find(w);
-            if (po != vertex_po_index.end()) {
+            if (cut_edge.po_index != -1) {
               const float m = a0 - poRequired(w, wp);
-              float& entry = slot.atExit(po->second, to_rf);
+              float& entry = slot.atExit(cut_edge.po_index, to_rf);
               entry = std::max(entry, m);
             }
             if (cone.contains(network->instance(w->pin()))

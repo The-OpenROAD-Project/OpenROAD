@@ -7,5 +7,5 @@ read_def reg6.def
 create_clock -name clk -period 10 clk
 set_input_delay -clock clk 0 in1
 set_output_delay -clock clk 0 out
-find_timing
+find_timing_paths
 report_path -format json r3/D r

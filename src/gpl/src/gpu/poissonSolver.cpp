@@ -80,7 +80,7 @@ KOKKOS_FUNCTION void divideByWSquare(const int wID,
     } else {
       float denom1 = (2.0 * float(FFT_PI) * wID) / binCntX;
       float denom2
-          = (2.0 * float(FFT_PI) * hID) / binCntY * binSizeY / binSizeX;
+          = (2.0 * float(FFT_PI) * hID) / binCntY * binSizeX / binSizeY;
 
       input[binID] /= (denom1 * denom1 + denom2 * denom2);
     }
@@ -198,7 +198,7 @@ void PoissonSolver::solveFieldFromAuv(Kokkos::View<float*> electroForceX,
         int binID = wID + hID * binCntX;
 
         float w_u = (2.0 * float(FFT_PI) * wID) / binCntX;
-        float w_v = (2.0 * float(FFT_PI) * hID) / binCntY * binSizeY / binSizeX;
+        float w_v = (2.0 * float(FFT_PI) * hID) / binCntY * binSizeX / binSizeY;
 
         d_inputForX[binID] = w_u * d_auv[binID];
         d_inputForY[binID] = w_v * d_auv[binID];

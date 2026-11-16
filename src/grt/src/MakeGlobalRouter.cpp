@@ -9,11 +9,11 @@
 #include "AbstractRoutingCongestionDataSource.h"
 #include "FastRoute.h"
 #include "grt/GlobalRouter.h"
-#include "gui/heatMap.h"
 #include "heatMap.h"
 #include "heatMapRudy.h"
 #include "tcl.h"
 #include "utl/decode.h"
+#include "web/heatMap.h"
 
 extern "C" {
 extern int Grt_Init(Tcl_Interp* interp);
@@ -24,12 +24,12 @@ namespace grt {
 // Tcl files encoded into strings.
 extern const char* grt_tcl_inits[];
 
-// Adapts a gui::HeatMapSourceHandle to the gui-free abstract interface
+// Adapts a web::HeatMapSourceHandle to the gui-free abstract interface
 // consumed by GlobalRouter. Defined in this TU so :grt does not see gui.
 class HeatMapHandleAdapter : public AbstractRoutingCongestionDataSource
 {
  public:
-  explicit HeatMapHandleAdapter(gui::HeatMapSourceHandle handle)
+  explicit HeatMapHandleAdapter(web::HeatMapSourceHandle handle)
       : handle_(std::move(handle))
   {
   }
@@ -42,7 +42,7 @@ class HeatMapHandleAdapter : public AbstractRoutingCongestionDataSource
   }
 
  private:
-  gui::HeatMapSourceHandle handle_;
+  web::HeatMapSourceHandle handle_;
 };
 
 void initGui(grt::GlobalRouter* grt, odb::dbDatabase* db, utl::Logger* logger)

@@ -7,7 +7,7 @@
 // embed a mark and check its own work in the same process.
 
 #ifdef BAZEL
-%module(package="src.wmk") wmk
+%module(package="src.wmk") wmk_py
 #else
 %module wmk_py
 #endif

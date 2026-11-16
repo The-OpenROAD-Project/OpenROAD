@@ -21,7 +21,6 @@
 #include "db/drObj/drMarker.h"
 #include "db/drObj/drNet.h"
 #include "db/infra/frBox.h"
-#include "db/infra/frPoint.h"
 #include "db/infra/frSegStyle.h"
 #include "db/infra/frTime.h"
 #include "db/obj/frBlockObject.h"
@@ -504,7 +503,10 @@ class FlexDRWorker
 
   void setSharedVolume(const std::string& vol) { dist_dir_ = vol; }
 
-  std::vector<Point3D> getSpecialAccessAPs() const { return specialAccessAPs_; }
+  std::vector<odb::Point3D> getSpecialAccessAPs() const
+  {
+    return specialAccessAPs_;
+  }
   frCoord getHalfViaEncArea(frMIdx z, bool isLayer1, frNonDefaultRule* ndr);
   bool isSkipRouting() const { return skipRouting_; }
 
@@ -581,7 +583,7 @@ class FlexDRWorker
   std::unique_ptr<FlexGCWorker> gcWorker_;
 
   // on-the-fly access points that require adding access edges in the grid graph
-  std::vector<Point3D> specialAccessAPs_;
+  std::vector<odb::Point3D> specialAccessAPs_;
 
   // distributed
   dst::Distributed* dist_{nullptr};
@@ -1134,7 +1136,7 @@ class FlexDRWorker
    * otherwise.
    */
   bool endAddNets_updateExtFigs_pathSeg(drNet* net,
-                                        const Point3D& update_pt,
+                                        const odb::Point3D& update_pt,
                                         frPathSeg* path_seg);
   /**
    * Applies update to external via.
@@ -1148,7 +1150,7 @@ class FlexDRWorker
    * @returns True if the updates apply to the passed via and False otherwise.
    */
   bool endAddNets_updateExtFigs_via(drNet* net,
-                                    const Point3D& update_pt,
+                                    const odb::Point3D& update_pt,
                                     frVia* via);
   void endRemoveMarkers(frDesign* design);
   void endAddMarkers(frDesign* design);

@@ -1,0 +1,8 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: top
+[WARNING ODB-0126] error: The DEF UNITS DISTANCE MICRONS convert factor (800) does not evenly divide the database units per micron (2000) value.
+[WARNING ODB-0003] ERROR (DEFPARS-6010): An error has been reported in callback. Error in file read_def_units_not_divisor.def at line 5, on token ;.
+Update the def file before parsing the file again.
+
+[ERROR ODB-0421] DEF parser returns an error!
+ODB-0421

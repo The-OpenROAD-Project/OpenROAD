@@ -52,7 +52,7 @@ class dbPagedVector;
 constexpr uint32_t kAllocBit = 0x80000000;
 constexpr uint32_t kOffsetMask = ~kAllocBit;
 
-using GetObjTbl_t = dbObjectTable* (dbObject::*) (dbObjectType);
+using GetObjTbl_t = dbObjectTable* (dbObject::*)(dbObjectType);
 
 struct MemInfo
 {

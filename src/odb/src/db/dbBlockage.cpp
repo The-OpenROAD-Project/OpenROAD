@@ -240,8 +240,11 @@ void dbBlockage::destroy(dbBlockage* blockage)
     callback->inDbBlockageDestroy(blockage);
   }
 
-  block->box_tbl_->destroy(block->box_tbl_->getPtr(bkg->bbox_));
+  _dbBox* box = block->box_tbl_->getPtr(bkg->bbox_);
+  dbProperty::destroyProperties(box);
+  block->box_tbl_->destroy(box);
 
+  dbProperty::destroyProperties(bkg);
   block->blockage_tbl_->destroy(bkg);
 }
 

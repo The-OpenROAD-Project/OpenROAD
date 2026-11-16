@@ -26,6 +26,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -881,8 +882,8 @@ template <typename T, typename T_impl>
 static void rebuildModuleHash(
     _dbBlock& block,
     dbTable<T_impl>* table,
-    dbId<_dbModule> T_impl::*module_field,
-    std::unordered_map<std::string, dbId<T_impl>> _dbModule::*hash_field)
+    dbId<_dbModule> T_impl::* module_field,
+    std::unordered_map<std::string, dbId<T_impl>> _dbModule::* hash_field)
 {
   dbSet<T> items((dbBlock*) &block, table);
   for (T* obj : items) {
@@ -2565,8 +2566,31 @@ int dbBlock::getGCellTileSize()
   const int upper_layer_for_gcell_size = 4;
   const int pitches_in_tile = 15;
 
-  if (block->max_routing_layer_ < upper_layer_for_gcell_size) {
-    return getAverageTrackSpacing(block->max_routing_layer_) * pitches_in_tile;
+  // layer_idx below is frontside-only (see isBackside() above), so count
+  // how many frontside layers are enabled up to max_routing_layer_ here
+  // instead of using that raw, backside-inclusive level directly. A
+  // non-positive max_routing_layer_ matches no raw level, leaving the
+  // count at 0.
+  dbTech* tech = getTech();
+  int enabled_frontside_layers = 0;
+  int raw_level = 0;
+  if (block->max_routing_layer_ > 0) {
+    for (auto* layer : tech->getLayers()) {
+      if (layer->getType() != dbTechLayerType::ROUTING) {
+        continue;
+      }
+      ++raw_level;
+      if (!layer->isBackside()) {
+        ++enabled_frontside_layers;
+      }
+      if (raw_level == block->max_routing_layer_) {
+        break;
+      }
+    }
+  }
+
+  if (enabled_frontside_layers < upper_layer_for_gcell_size) {
+    return getAverageTrackSpacing(enabled_frontside_layers) * pitches_in_tile;
   }
 
   // Use the middle track spacing between M2, M3 and M4
@@ -3042,27 +3066,6 @@ dbBlockSearch* dbBlock::getSearchDb()
 {
   _dbBlock* block = (_dbBlock*) this;
   return block->search_db_;
-}
-
-void dbBlock::getWireUpdatedNets(std::vector<dbNet*>& result)
-{
-  int tot = 0;
-  int upd = 0;
-  int enc = 0;
-  for (dbNet* net : getNets()) {
-    tot++;
-    _dbNet* n = (_dbNet*) net;
-
-    if (n->flags_.wire_altered != 1) {
-      continue;
-    }
-    upd++;
-    enc++;
-
-    result.push_back(net);
-  }
-  getImpl()->getLogger()->info(
-      utl::ODB, 10, "tot = {}, upd = {}, enc = {}", tot, upd, enc);
 }
 
 void dbBlock::destroyCCs(std::vector<dbNet*>& nets)
@@ -3838,6 +3841,7 @@ std::string _dbBlock::makeNewName(
                    parent->getHierarchicalName(),
                    block->getHierarchyDelimiter());
   }
+  assert(base_name != nullptr);
   buf.append(fmt::string_view(base_name));
   buf.push_back('\0');  // Null-terminate for find* functions
 
@@ -3981,6 +3985,7 @@ std::string dbBlock::makeNewInstName(dbModInst* parent,
 
 const char* dbBlock::getBaseName(const char* full_name) const
 {
+  assert(full_name != nullptr);
   const char hierarchy_delimiter = getHierarchyDelimiter();
   const char* base_name = full_name;
   size_t backslash_run = 0;
@@ -3992,6 +3997,32 @@ const char* dbBlock::getBaseName(const char* full_name) const
     backslash_run = *cursor == '\\' ? backslash_run + 1 : 0;
   }
   return base_name;
+}
+
+void dbBlock::getPathSegments(const char* full_name,
+                              std::vector<std::string_view>& segments) const
+{
+  segments.clear();
+  if (full_name == nullptr) {
+    return;
+  }
+
+  const char hierarchy_delimiter = getHierarchyDelimiter();
+  const char* segment_begin = full_name;
+  size_t backslash_run = 0;
+  const char* cursor = full_name;
+  for (; *cursor != '\0'; cursor++) {
+    // Escaped delimiters belong to the local Verilog identifier.  Same rule
+    // as getBaseName(), which keeps the last segment here equal to it.
+    if (*cursor == hierarchy_delimiter && backslash_run % 2 == 0) {
+      segments.emplace_back(segment_begin, cursor - segment_begin);
+      segment_begin = cursor + 1;
+    }
+    backslash_run = *cursor == '\\' ? backslash_run + 1 : 0;
+  }
+  // cursor is at the terminator, so the last segment's length is already
+  // known -- no second pass over it.
+  segments.emplace_back(segment_begin, cursor - segment_begin);
 }
 
 dbModITerm* dbBlock::findModITerm(const char* hierarchical_name)

@@ -1,16 +1,12 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
-# Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
-# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
-
-load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
-# From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "45_gcd",
     "dup_pattern_names",
@@ -21,10 +17,16 @@ COMPULSORY_TESTS = [
     "net_name_consistency",
     "coordinates",
     "no_merging",
+    "colinear_vertices_inside_bpin",
+    "perpendicular_route_touching_bterm",
+    "perpendicular_route_touching_iterm",
+    "rules_without_layer_data",
+    "rules_without_layer_resistance",
+    "rules_without_layer_resistance_lef_res",
+    "rules_without_unused_layer_data",
     "short_resover",
 ]
 
-# From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
     "test_dielectric_epsilon",
 ]
@@ -70,7 +72,6 @@ filegroup(
         "Nangate45/work_around_yosys/cells.v",
         "helpers.tcl",
         "patterns.rulesok",
-        "rcx_unit_test.tcl",
         "sky130hs/sky130_fd_sc_hs__tt_025C_1v80.lib",
         "sky130hs/sky130_fd_sc_hs_merged.lef",
         "sky130hs/sky130hs.pdn.tcl",
@@ -98,6 +99,16 @@ filegroup(
             "no_merging": [
                 "ext_pattern.rules",
                 "gcd.def",
+            ],
+            "rules_without_layer_data": ["gcd.def"],
+            "rules_without_layer_resistance": ["gcd.def"],
+            "rules_without_layer_resistance_lef_res": [
+                "met4_two_widths.def",
+                "rules_without_layer_resistance.rules",
+            ],
+            "rules_without_unused_layer_data": [
+                "perpendicular_route_touching_bterm.def",
+                "perpendicular_route_touching_bterm.spefok",
             ],
             "short_resover": ["gcd.def"],
             "test_dielectric_epsilon": [

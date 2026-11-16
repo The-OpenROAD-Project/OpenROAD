@@ -17,12 +17,6 @@ class dbOStream;
 class _dbDatabase;
 class _dbTechLayerCutClassRule;
 
-struct dbTechLayerCutEnclosureTableDefRuleFlags
-{
-  bool cut_class_valid : 1;
-  uint32_t spare_bits : 31;
-};
-
 class _dbTechLayerCutEnclosureTableDefRule : public _dbObject
 {
  public:
@@ -36,7 +30,6 @@ class _dbTechLayerCutEnclosureTableDefRule : public _dbObject
   bool operator<(const _dbTechLayerCutEnclosureTableDefRule& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  dbTechLayerCutEnclosureTableDefRuleFlags flags_;
   dbId<_dbTechLayerCutClassRule> cut_class_;
   dbVector<dbTechLayerCutEnclosureTableDefRule::DefaultRow> default_rows_;
   dbVector<dbTechLayerCutEnclosureTableDefRule::WidthRow> width_rows_;

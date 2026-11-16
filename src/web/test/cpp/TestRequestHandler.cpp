@@ -4,46 +4,111 @@
 #include <algorithm>
 #include <any>
 #include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <exception>
 #include <functional>
+#include <future>
 #include <iterator>
 #include <memory>
 #include <mutex>
 #include <set>
+#include <shared_mutex>
+#include <stdexcept>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <utility>
 #include <vector>
 
+#include "boost/asio/io_context.hpp"
 #include "boost/asio/ip/address.hpp"
+#include "boost/asio/post.hpp"
+#include "boost/beast/http/field.hpp"
+#include "boost/beast/http/message.hpp"
+#include "boost/beast/http/status.hpp"
+#include "boost/beast/http/string_body.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/parse.hpp"
 #include "boost/json/serialize.hpp"
+#include "db_sta/dbNetwork.hh"
 #include "gtest/gtest.h"
-#include "gui/descriptor_registry.h"
-#include "gui/gui.h"
-#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "request_handler.h"
+#include "shape_collector.h"
+#include "sta/FuncExpr.hh"
+#include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/SdcClass.hh"
+#include "sta/Sequential.hh"
 #include "tile_generator.h"
+#include "timing_report.h"
 #include "tst/nangate45_fixture.h"
 #include "utl/Logger.h"
+#include "web/core.h"
+#include "web/descriptor_registry.h"
+#include "web/heatMap.h"
 #include "web/web.h"
+#include "web_assets.h"
 #include "web_viewer_hook.h"
 
 namespace web {
 namespace {
+
+// Shared fixture helpers.  Three fixtures need a placed instance and two need
+// the shape MPL's -keep_clustering_data leaves behind; a copy per fixture means
+// a change in how those are modelled has to be made more than once.
+odb::dbInst* placeInstIn(odb::dbBlock* block,
+                         odb::dbLib* lib,
+                         const char* master_name,
+                         const char* inst_name,
+                         const int x,
+                         const int y)
+{
+  odb::dbMaster* master = lib->findMaster(master_name);
+  EXPECT_NE(master, nullptr) << master_name;
+  odb::dbInst* inst = odb::dbInst::create(block, master, inst_name);
+  inst->setLocation(x, y);
+  inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  return inst;
+}
+
+// A root cluster holding one instance, with a nested cluster holding more —
+// what MPL writes for a design with glue logic under the top module.
+struct ClusterTree
+{
+  odb::dbGroup* root = nullptr;
+  odb::dbGroup* child = nullptr;
+};
+
+ClusterTree makeClusterTreeIn(odb::dbBlock* block,
+                              odb::dbLib* lib,
+                              const int child_insts)
+{
+  ClusterTree tree;
+  tree.root = odb::dbGroup::create(block, "root");
+  tree.root->setType(odb::dbGroupType::VISUAL_DEBUG);
+  tree.root->addInst(placeInstIn(block, lib, "BUF_X16", "top_buf", 0, 0));
+
+  tree.child = odb::dbGroup::create(tree.root, "(root)_glue_logic");
+  tree.child->setType(odb::dbGroupType::VISUAL_DEBUG);
+  for (int i = 0; i < child_insts; ++i) {
+    const std::string name = "leaf_buf" + std::to_string(i);
+    tree.child->addInst(placeInstIn(
+        block, lib, "BUF_X16", name.c_str(), 20000 + 20000 * i, 20000));
+  }
+  return tree;
+}
 
 struct FakeInspectable
 {
   std::string name;
   std::string type;
   odb::Rect bbox;
-  gui::Descriptor::Properties properties;
+  web::Descriptor::Properties properties;
 };
 
-class FakeDescriptor : public gui::Descriptor
+class FakeDescriptor : public web::Descriptor
 {
  public:
   std::string getName(const std::any& object) const override
@@ -65,7 +130,7 @@ class FakeDescriptor : public gui::Descriptor
   }
 
   void visitAllObjects(
-      const std::function<void(const gui::Selected&)>&) const override
+      const std::function<void(const web::Selected&)>&) const override
   {
   }
 
@@ -74,9 +139,9 @@ class FakeDescriptor : public gui::Descriptor
     return std::any_cast<FakeInspectable*>(object)->properties;
   }
 
-  gui::Selected makeSelected(const std::any& object) const override
+  web::Selected makeSelected(const std::any& object) const override
   {
-    return gui::Selected(object, this);
+    return web::Selected(object, this);
   }
 
   bool lessThan(const std::any& l, const std::any& r) const override
@@ -85,7 +150,7 @@ class FakeDescriptor : public gui::Descriptor
            < std::any_cast<FakeInspectable*>(r);
   }
 
-  void highlight(const std::any& object, gui::Painter& painter) const override
+  void highlight(const std::any& object, web::Painter& painter) const override
   {
     painter.drawRect(std::any_cast<FakeInspectable*>(object)->bbox);
   }
@@ -96,17 +161,46 @@ class FakeDescriptor : public gui::Descriptor
 class LineFakeDescriptor : public FakeDescriptor
 {
  public:
-  void highlight(const std::any& object, gui::Painter& painter) const override
+  void highlight(const std::any& object, web::Painter& painter) const override
   {
     const odb::Rect& b = std::any_cast<FakeInspectable*>(object)->bbox;
     painter.drawLine(b.ll(), b.ur());
   }
 };
 
+// Highlights with `count` one-DBU rects (or lines) laid out from the bbox's
+// corner -- one object with as many shapes as a root cluster holding every
+// instance.
+class ManyShapesFakeDescriptor : public FakeDescriptor
+{
+ public:
+  ManyShapesFakeDescriptor(const int count, const bool lines)
+      : count_(count), lines_(lines)
+  {
+  }
+
+  void highlight(const std::any& object, web::Painter& painter) const override
+  {
+    const odb::Rect& b = std::any_cast<FakeInspectable*>(object)->bbox;
+    for (int i = 0; i < count_; ++i) {
+      const odb::Point p(b.xMin() + (i % b.dx()), b.yMin() + (i / b.dx()));
+      if (lines_) {
+        painter.drawLine(p, odb::Point(p.x() + 1, p.y() + 1));
+      } else {
+        painter.drawRect(odb::Rect(p.x(), p.y(), p.x() + 1, p.y() + 1));
+      }
+    }
+  }
+
+ private:
+  const int count_;
+  const bool lines_;
+};
+
 // Minimal odb descriptors so DescriptorRegistry::makeSelected() works on
 // real dbInst/dbNet objects inside the unit tests — the production set
 // lives in the full gui library, which the web test does not link.
-class TestInstDescriptor : public gui::Descriptor
+class TestInstDescriptor : public web::Descriptor
 {
  public:
   std::string getName(const std::any& object) const override
@@ -121,26 +215,26 @@ class TestInstDescriptor : public gui::Descriptor
   }
   bool isInst(const std::any&) const override { return true; }
   void visitAllObjects(
-      const std::function<void(const gui::Selected&)>&) const override
+      const std::function<void(const web::Selected&)>&) const override
   {
   }
   Properties getProperties(const std::any&) const override { return {}; }
-  gui::Selected makeSelected(const std::any& object) const override
+  web::Selected makeSelected(const std::any& object) const override
   {
-    return gui::Selected(std::any_cast<odb::dbInst*>(object), this);
+    return web::Selected(std::any_cast<odb::dbInst*>(object), this);
   }
   bool lessThan(const std::any& l, const std::any& r) const override
   {
     return std::any_cast<odb::dbInst*>(l)->getId()
            < std::any_cast<odb::dbInst*>(r)->getId();
   }
-  void highlight(const std::any& object, gui::Painter& painter) const override
+  void highlight(const std::any& object, web::Painter& painter) const override
   {
     painter.drawRect(std::any_cast<odb::dbInst*>(object)->getBBox()->getBox());
   }
 };
 
-class TestNetDescriptor : public gui::Descriptor
+class TestNetDescriptor : public web::Descriptor
 {
  public:
   std::string getName(const std::any& object) const override
@@ -151,26 +245,26 @@ class TestNetDescriptor : public gui::Descriptor
   bool getBBox(const std::any&, odb::Rect&) const override { return false; }
   bool isNet(const std::any&) const override { return true; }
   void visitAllObjects(
-      const std::function<void(const gui::Selected&)>&) const override
+      const std::function<void(const web::Selected&)>&) const override
   {
   }
   Properties getProperties(const std::any&) const override { return {}; }
-  gui::Selected makeSelected(const std::any& object) const override
+  web::Selected makeSelected(const std::any& object) const override
   {
-    return gui::Selected(std::any_cast<odb::dbNet*>(object), this);
+    return web::Selected(std::any_cast<odb::dbNet*>(object), this);
   }
   bool lessThan(const std::any& l, const std::any& r) const override
   {
     return std::any_cast<odb::dbNet*>(l)->getId()
            < std::any_cast<odb::dbNet*>(r)->getId();
   }
-  void highlight(const std::any&, gui::Painter&) const override {}
+  void highlight(const std::any&, web::Painter&) const override {}
 };
 
-// Minimal dbNet descriptor so tests can build a gui::Selected whose
+// Minimal dbNet descriptor so tests can build a web::Selected whose
 // isNet() is true; highlight() stands in for the wire-shape drawing of
 // the real NetDescriptor (a big rect the flywire mode must suppress).
-class FakeNetDescriptor : public gui::Descriptor
+class FakeNetDescriptor : public web::Descriptor
 {
  public:
   static constexpr int kWireRectSize = 90000;
@@ -193,15 +287,15 @@ class FakeNetDescriptor : public gui::Descriptor
   bool isNet(const std::any&) const override { return true; }
 
   void visitAllObjects(
-      const std::function<void(const gui::Selected&)>&) const override
+      const std::function<void(const web::Selected&)>&) const override
   {
   }
 
   Properties getProperties(const std::any&) const override { return {}; }
 
-  gui::Selected makeSelected(const std::any& object) const override
+  web::Selected makeSelected(const std::any& object) const override
   {
-    return gui::Selected(object, this);
+    return web::Selected(object, this);
   }
 
   bool lessThan(const std::any& l, const std::any& r) const override
@@ -209,17 +303,17 @@ class FakeNetDescriptor : public gui::Descriptor
     return std::any_cast<odb::dbNet*>(l) < std::any_cast<odb::dbNet*>(r);
   }
 
-  void highlight(const std::any&, gui::Painter& painter) const override
+  void highlight(const std::any&, web::Painter& painter) const override
   {
     painter.drawRect(odb::Rect(0, 0, kWireRectSize, kWireRectSize));
   }
 };
 
 // Minimal dbInst descriptor reporting the instance bbox in its OWN block's
-// coordinates, which is what every real gui::Descriptor does.  Registering it
+// coordinates, which is what every real web::Descriptor does.  Registering it
 // lets a select request reach writeInspectPayload without a dbSta (the real
 // DbInstDescriptor dereferences one in getProperties).
-class LocalBBoxInstDescriptor : public gui::Descriptor
+class LocalBBoxInstDescriptor : public web::Descriptor
 {
  public:
   std::string getName(const std::any& object) const override
@@ -240,15 +334,15 @@ class LocalBBoxInstDescriptor : public gui::Descriptor
   bool isInst(const std::any&) const override { return true; }
 
   void visitAllObjects(
-      const std::function<void(const gui::Selected&)>&) const override
+      const std::function<void(const web::Selected&)>&) const override
   {
   }
 
   Properties getProperties(const std::any&) const override { return {}; }
 
-  gui::Selected makeSelected(const std::any& object) const override
+  web::Selected makeSelected(const std::any& object) const override
   {
-    return gui::Selected(object, this);
+    return web::Selected(object, this);
   }
 
   bool lessThan(const std::any& l, const std::any& r) const override
@@ -256,17 +350,82 @@ class LocalBBoxInstDescriptor : public gui::Descriptor
     return std::any_cast<odb::dbInst*>(l) < std::any_cast<odb::dbInst*>(r);
   }
 
-  void highlight(const std::any& object, gui::Painter& painter) const override
+  void highlight(const std::any& object, web::Painter& painter) const override
   {
     painter.drawRect(std::any_cast<odb::dbInst*>(object)->getBBox()->getBox());
   }
 };
 
-class LazyMetadataHeatMap : public gui::HeatMapDataSource
+// Stand-in for web::DbGroupDescriptor, which lives in a library this test
+// binary does not link.  Mirrors what the handlers rely on: the type name
+// "Group", no bbox of its own, a highlight built from the member instances,
+// and visitAllObjects over the block's groups.
+class FakeGroupDescriptor : public web::Descriptor
+{
+ public:
+  explicit FakeGroupDescriptor(odb::dbBlock* block) : block_(block) {}
+
+  std::string getName(const std::any& object) const override
+  {
+    return std::any_cast<odb::dbGroup*>(object)->getName();
+  }
+
+  std::string getTypeName() const override { return "Group"; }
+
+  // Matching web::DbGroupDescriptor: a dbGroup only reports a box when it has a
+  // region, which MPL's clusters do not.
+  bool getBBox(const std::any& /* object */,
+               odb::Rect& /* bbox */) const override
+  {
+    return false;
+  }
+
+  void visitAllObjects(
+      const std::function<void(const web::Selected&)>& func) const override
+  {
+    if (block_ == nullptr) {
+      return;
+    }
+    for (odb::dbGroup* group : block_->getGroups()) {
+      func(makeSelected(group));
+    }
+  }
+
+  Properties getProperties(const std::any& /* object */) const override
+  {
+    return {};
+  }
+
+  web::Selected makeSelected(const std::any& object) const override
+  {
+    return web::Selected(object, this);
+  }
+
+  bool lessThan(const std::any& l, const std::any& r) const override
+  {
+    return std::any_cast<odb::dbGroup*>(l) < std::any_cast<odb::dbGroup*>(r);
+  }
+
+  void highlight(const std::any& object, web::Painter& painter) const override
+  {
+    auto* group = std::any_cast<odb::dbGroup*>(object);
+    for (odb::dbInst* inst : group->getInsts()) {
+      painter.drawRect(inst->getBBox()->getBox());
+    }
+    for (odb::dbGroup* child : group->getGroups()) {
+      highlight(child, painter);
+    }
+  }
+
+ private:
+  odb::dbBlock* block_;
+};
+
+class LazyMetadataHeatMap : public web::HeatMapDataSource
 {
  public:
   explicit LazyMetadataHeatMap(utl::Logger* logger, int* populate_calls)
-      : gui::HeatMapDataSource(logger,
+      : web::HeatMapDataSource(logger,
                                "Lazy Metadata Heat Map",
                                "LazyMeta",
                                "LazyMeta"),
@@ -330,6 +489,83 @@ TEST(JsonOrTest, WrongTypePresentValueThrows)
 }
 
 //------------------------------------------------------------------------------
+// TclEvaluator: when the debug renderers may draw
+//------------------------------------------------------------------------------
+
+// A command paused in the debugger stops where its state is stable, so the
+// renderers draw while it waits; it counts as running again once it resumes.
+TEST(TclEvaluatorTest, PausedCommandIsNotRunning)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.setRunning(true);
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+  tcl.setRunning(false);
+  EXPECT_FALSE(tcl.running);
+}
+
+// A startup script pauses with no command running.  One typed in the browser
+// during that pause can change the renderers, so it counts as running.
+TEST(TclEvaluatorTest, CommandDuringScriptPauseIsRunning)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.setRunning(true);
+  EXPECT_TRUE(tcl.running);
+  tcl.setRunning(false);
+  tcl.pauseEnd();
+  EXPECT_FALSE(tcl.running);
+}
+
+// That command can pause in turn; the script's pause ending after it does not
+// leave it counted as running.
+TEST(TclEvaluatorTest, CommandPausedDuringScriptPause)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.pauseBegin();
+  tcl.setRunning(true);
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+  tcl.setRunning(false);
+  tcl.pauseEnd();
+  EXPECT_FALSE(tcl.running);
+}
+
+// Two threads of one command paused at once: the command counts as running
+// again from the first resume.  That holds the draws back early, but never
+// lets one run under the command.
+TEST(TclEvaluatorTest, OverlappingPausesNeverDropTheCommand)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.setRunning(true);
+  tcl.pauseBegin();
+  tcl.pauseBegin();
+  EXPECT_FALSE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+  tcl.pauseEnd();
+  EXPECT_TRUE(tcl.running);
+}
+
+// A draw skipped while a command ran is reported once, when it is done.
+TEST(TclEvaluatorTest, SkippedDrawIsReportedOnce)
+{
+  TclEvaluator tcl(/*interp=*/nullptr, /*logger=*/nullptr);
+  tcl.setRunning(true);
+  {
+    const std::shared_lock<std::shared_mutex> draw(tcl.renderer_mutex);
+    tcl.draw_skipped = true;
+  }
+  EXPECT_TRUE(tcl.setRunning(false));
+  EXPECT_FALSE(tcl.setRunning(false));
+}
+
+//------------------------------------------------------------------------------
 // TileHandler tests
 //------------------------------------------------------------------------------
 
@@ -369,11 +605,22 @@ class TileHandlerTest : public tst::Nangate45Fixture
 
   // Prime the highlight state the way an inspect would, so an overlay request
   // can exercise a "Flywires only" flip against it.
-  void primeInspected(const gui::Selected& sel)
+  void primeInspected(const web::Selected& sel)
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
     state_.current_inspected = sel;
     state_.highlight_source = SessionState::HighlightSource::kInspected;
+  }
+
+  // Serves the tile request `json`; returns how many tiles are cached after.
+  size_t cachedAfterTile(const std::string& json)
+  {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kTile;
+    req.json = parseObj(json);
+    handler_->handleTile(req, state_);
+    return gen_->tileCacheSize();
   }
 
   // An overlay-tile request with the "Flywires only" toggle in a given
@@ -408,6 +655,22 @@ TEST_F(TileHandlerTest, BoundsReturnsJson)
   EXPECT_NE(json.find("\"bounds\""), std::string::npos);
 }
 
+TEST_F(TileHandlerTest, LayerExtentsReturnsJson)
+{
+  WebSocketRequest req;
+  req.id = 43;
+  req.type = WebSocketRequest::kLayerExtents;
+
+  auto resp = handler_->handleTile(req, state_);
+  EXPECT_EQ(resp.id, 43u);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+
+  const boost::json::object json
+      = boost::json::parse(payloadStr(resp)).as_object();
+  EXPECT_EQ(boost::json::serialize(json),
+            boost::json::serialize(serializeLayerExtentsResponse(*gen_)));
+}
+
 TEST_F(TileHandlerTest, TechReturnsJson)
 {
   WebSocketRequest req;
@@ -435,7 +698,7 @@ TEST_F(TileHandlerTest, TechIncludesHighlightPalette)
   auto root = parseObj(payloadStr(resp));
   ASSERT_TRUE(root.if_contains("highlight_colors"));
   const auto& colors = root.at("highlight_colors").as_array();
-  ASSERT_EQ(colors.size(), static_cast<size_t>(gui::kNumHighlightSet));
+  ASSERT_EQ(colors.size(), static_cast<size_t>(web::kNumHighlightSet));
   // Group 0 is kGreen with the Qt highlight alpha (100).
   const auto& first = colors[0].as_array();
   EXPECT_EQ(first[0].as_int64(), 0);
@@ -495,6 +758,122 @@ TEST(AssetPathFromTarget, LeavesAnOrdinaryPathAlone)
 {
   EXPECT_EQ(assetPathFromTarget("/style.css"), "/style.css");
   EXPECT_EQ(assetPathFromTarget("/tile-merge.js"), "/tile-merge.js");
+}
+
+// The embedded assets are stored gzipped, so this decides between handing the
+// stored bytes over as they are and inflating them first.
+TEST(AcceptsGzip, TakesThePlainAndTheListedForms)
+{
+  EXPECT_TRUE(acceptsGzip("gzip"));
+  EXPECT_TRUE(acceptsGzip("gzip, deflate, br"));
+  EXPECT_TRUE(acceptsGzip("deflate, gzip"));
+  EXPECT_TRUE(acceptsGzip("  gzip  "));
+  EXPECT_TRUE(acceptsGzip("x-gzip"));
+}
+
+TEST(AcceptsGzip, RefusesWhenGzipIsAbsent)
+{
+  // Silence is not permission: a client that sends no Accept-Encoding gets
+  // the inflated bytes.
+  EXPECT_FALSE(acceptsGzip(""));
+  EXPECT_FALSE(acceptsGzip("deflate"));
+  EXPECT_FALSE(acceptsGzip("identity"));
+  // "gzipped" is a different coding; a prefix match would accept it.
+  EXPECT_FALSE(acceptsGzip("gzipped"));
+}
+
+TEST(AcceptsGzip, HonoursQValues)
+{
+  EXPECT_TRUE(acceptsGzip("gzip;q=1"));
+  EXPECT_TRUE(acceptsGzip("gzip;q=0.5"));
+  EXPECT_TRUE(acceptsGzip("deflate;q=0, gzip;q=0.001"));
+  // q=0 means "not acceptable", in every spelling.
+  EXPECT_FALSE(acceptsGzip("gzip;q=0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0.0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0.000, deflate"));
+}
+
+TEST(AcceptsGzip, HandlesTheWildcard)
+{
+  EXPECT_TRUE(acceptsGzip("*"));
+  EXPECT_TRUE(acceptsGzip("deflate, *"));
+  EXPECT_FALSE(acceptsGzip("*;q=0"));
+  // An explicit gzip wins over the wildcard, whichever way it points.
+  EXPECT_FALSE(acceptsGzip("*, gzip;q=0"));
+  EXPECT_TRUE(acceptsGzip("*;q=0, gzip"));
+}
+
+// Codings and parameter names are case-insensitive.
+TEST(AcceptsGzip, IgnoresCase)
+{
+  EXPECT_TRUE(acceptsGzip("GZIP"));
+  EXPECT_TRUE(acceptsGzip("X-Gzip"));
+  EXPECT_FALSE(acceptsGzip("gzip;Q=0"));
+  EXPECT_FALSE(acceptsGzip("*;Q=0"));
+}
+
+// Only q counts, and only its own value: level=1 is not a nonzero q.
+TEST(AcceptsGzip, ReadsOnlyTheQParameter)
+{
+  EXPECT_FALSE(acceptsGzip("gzip;q=0;level=1"));
+  EXPECT_FALSE(acceptsGzip("gzip;level=1;q=0"));
+  EXPECT_TRUE(acceptsGzip("gzip;level=0"));
+  // Each coding keeps its own parameters, the last one included.
+  EXPECT_TRUE(acceptsGzip("br;q=0, gzip"));
+}
+
+TEST(AcceptsGzip, AllowsSpacesAndQuotedValues)
+{
+  EXPECT_FALSE(acceptsGzip("gzip ; q = 0"));
+  EXPECT_TRUE(acceptsGzip("deflate , gzip ; q=0.5"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=\"0\""));
+  EXPECT_TRUE(acceptsGzip("gzip;q=\"0.5\""));
+  EXPECT_FALSE(acceptsGzip("gzip;foo=\"a,b\";q=0"));
+}
+
+// x-gzip is an alias of gzip, so entries naming either are weighed together,
+// and an explicit refusal wins in either order.
+TEST(AcceptsGzip, ConflictingEntriesDoNotDependOnOrder)
+{
+  EXPECT_FALSE(acceptsGzip("x-gzip;q=1, gzip;q=0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0, x-gzip;q=1"));
+  EXPECT_FALSE(acceptsGzip("gzip, gzip;q=0"));
+  EXPECT_FALSE(acceptsGzip("gzip;q=0, gzip"));
+  EXPECT_FALSE(acceptsGzip("*, *;q=0"));
+  EXPECT_FALSE(acceptsGzip("*;q=0, *"));
+  EXPECT_TRUE(acceptsGzip("gzip, x-gzip;q=0.5"));
+}
+
+using StringResponse
+    = boost::beast::http::response<boost::beast::http::string_body>;
+
+// The response a browser actually receives for an embedded asset.
+TEST(ServeEmbeddedAsset, SendsTheStoredBytesWhenGzipIsAccepted)
+{
+  const EmbeddedAsset* asset = findEmbeddedAsset("/index.html");
+  ASSERT_NE(asset, nullptr);
+  ASSERT_TRUE(asset->gzipped);
+  StringResponse res{boost::beast::http::status::ok, 11};
+  serveEmbeddedAsset(*asset, "gzip, deflate, br", res);
+  EXPECT_EQ(res.result(), boost::beast::http::status::ok);
+  EXPECT_EQ(res[boost::beast::http::field::content_encoding], "gzip");
+  EXPECT_EQ(res[boost::beast::http::field::vary], "Accept-Encoding");
+  EXPECT_EQ(res.body(), asset->content());
+}
+
+TEST(ServeEmbeddedAsset, InflatesWhenGzipIsRefused)
+{
+  const EmbeddedAsset* asset = findEmbeddedAsset("/index.html");
+  ASSERT_NE(asset, nullptr);
+  for (const char* accept : {"", "identity", "x-gzip;q=1, gzip;q=0"}) {
+    SCOPED_TRACE(accept);
+    StringResponse res{boost::beast::http::status::ok, 11};
+    serveEmbeddedAsset(*asset, accept, res);
+    EXPECT_EQ(res.result(), boost::beast::http::status::ok);
+    EXPECT_EQ(res.count(boost::beast::http::field::content_encoding), 0u);
+    EXPECT_EQ(res[boost::beast::http::field::vary], "Accept-Encoding");
+    EXPECT_EQ(res.body(), assetText(*asset));
+  }
 }
 
 // The cache stores blank tiles as an empty entry, so a hit has to come back as
@@ -596,6 +975,37 @@ TEST(WebSocketOriginAllowed, OpaqueOriginIsRejected)
   EXPECT_FALSE(webSocketOriginAllowed("null", "localhost:8080"));
 }
 
+// Browsers before CSP Level 3 do not let 'self' match ws: or wss:.
+TEST(ContentSecurityPolicy, NamesTheSameHostWebSocket)
+{
+  for (const char* host : {"localhost:8080", "127.0.0.1:8080", "viewer-host"}) {
+    const std::string policy = contentSecurityPolicy(host);
+    EXPECT_NE(policy.find(std::string("connect-src 'self' ws://") + host
+                          + " wss://" + host + " data:;"),
+              std::string::npos)
+        << policy;
+  }
+}
+
+// A Host a host-source cannot spell must not reach the header: ';' or a
+// space would end the directive and let the client add its own sources.
+TEST(ContentSecurityPolicy, UnspellableHostGetsSelfOnly)
+{
+  for (const char* host : {"",
+                           "[::1]:8080",
+                           "a; script-src *",
+                           "a b",
+                           "localhost:",
+                           "localhost:80a",
+                           ":8080"}) {
+    const std::string policy = contentSecurityPolicy(host);
+    EXPECT_NE(policy.find("connect-src 'self' data:;"), std::string::npos)
+        << host << ": " << policy;
+    EXPECT_EQ(policy.find("ws:"), std::string::npos) << host << ": " << policy;
+    EXPECT_NE(policy.find("script-src 'self';"), std::string::npos) << policy;
+  }
+}
+
 // Bind-address classification for web_server -bind (issue #11167).
 TEST(ClassifyBindAddress, LoopbackIsRecognised)
 {
@@ -658,6 +1068,567 @@ TEST(BrowserHostForBind, RoutableAddressesKeepTheirLiteral)
 {
   EXPECT_EQ(browserHost("192.168.1.5"), "192.168.1.5");
   EXPECT_EQ(browserHost("fd00::1"), "[fd00::1]");  // URLs bracket v6
+}
+
+TEST(JoinUnlessSelf, JoinsFromAnotherThread)
+{
+  std::thread t([] {});
+  joinUnlessSelf(t);
+  EXPECT_FALSE(t.joinable());
+}
+
+TEST(JoinUnlessSelf, IsANoOpOnANonJoinableThread)
+{
+  std::thread t;
+  joinUnlessSelf(t);
+  EXPECT_FALSE(t.joinable());
+}
+
+TEST(JoinUnlessSelf, DetachesWhenCalledFromTheThreadItself)
+{
+  // A session's init thread can drop the last reference, and so run the
+  // destructor, and this call, on itself.
+  std::thread t;
+  std::promise<void> assigned;
+  // Shared: the thread may still be inside set_value() when the test returns.
+  auto detached = std::make_shared<std::promise<void>>();
+  auto assigned_done = assigned.get_future();
+  auto detached_done = detached->get_future();
+
+  t = std::thread([&t, &assigned_done, detached] {
+    // Touching `t` before the assignment completes would race the constructor.
+    assigned_done.wait();
+    joinUnlessSelf(t);
+    detached->set_value();
+  });
+  assigned.set_value();
+
+  detached_done.wait();
+  EXPECT_FALSE(t.joinable());
+}
+
+TEST(RunIoContext, LogsAThrowingHandlerAndKeepsRunning)
+{
+  boost::asio::io_context ioc;
+  utl::Logger logger;
+  bool ran_after = false;
+  boost::asio::post(ioc, [] { throw std::runtime_error("handler failed"); });
+  boost::asio::post(ioc, [&ran_after] { ran_after = true; });
+  runIoContext(ioc, &logger);
+  EXPECT_TRUE(ran_after);
+}
+
+// A local session: nothing says the browser lives elsewhere.
+static BrowserEnv localEnv()
+{
+  BrowserEnv env;
+  env.display = ":0";
+  env.host_name = "workstation";
+  return env;
+}
+
+TEST(DisplayIsRemote, LocalSpellingsStayLocal)
+{
+  EXPECT_FALSE(displayIsRemote(":0", "workstation"));
+  EXPECT_FALSE(displayIsRemote(":10.0", "workstation"));
+  EXPECT_FALSE(displayIsRemote("unix:0", "workstation"));
+  EXPECT_FALSE(displayIsRemote("localhost:0", "workstation"));
+  EXPECT_FALSE(displayIsRemote("", "workstation"));
+}
+
+TEST(DisplayIsRemote, SshForwardedDisplayIsRemote)
+{
+  // sshd numbers forwarded displays from 10, over TCP to this machine.
+  EXPECT_TRUE(displayIsRemote("localhost:10.0", "workstation"));
+  EXPECT_TRUE(displayIsRemote("127.0.0.1:10.0", "workstation"));
+  EXPECT_TRUE(displayIsRemote("[::1]:10", "workstation"));
+  // X11UseLocalhost no: this host's own name.
+  EXPECT_TRUE(displayIsRemote("farm-42:10.0", "farm-42"));
+}
+
+TEST(DisplayIsRemote, ThisMachineByEitherName)
+{
+  // $DISPLAY and gethostname() need not agree on short vs fully qualified.
+  EXPECT_FALSE(displayIsRemote("workstation:0", "workstation"));
+  EXPECT_FALSE(displayIsRemote("workstation:0", "workstation.example.com"));
+  EXPECT_FALSE(displayIsRemote("workstation.example.com:0", "workstation"));
+}
+
+TEST(DisplayIsRemote, AnotherMachineIsRemote)
+{
+  // The farm case (issue #11389): a scheduler copied the submitting shell's
+  // $DISPLAY onto a compute host.
+  EXPECT_TRUE(displayIsRemote("workstation:0", "farm-42"));
+  EXPECT_TRUE(displayIsRemote("workstation.example.com:0", "farm-42"));
+}
+
+TEST(DisplayIsRemote, HostNamesIgnoreCase)
+{
+  EXPECT_FALSE(displayIsRemote("LOCALHOST:0", "farm-42"));
+  EXPECT_FALSE(displayIsRemote("Workstation:0", "workstation.example.com"));
+}
+
+TEST(DisplayIsRemote, IpLiteralIsJudgedByAddress)
+{
+  const std::vector<boost::asio::ip::address> mine
+      = {boost::asio::ip::make_address("10.0.0.5")};
+  EXPECT_FALSE(displayIsRemote("10.0.0.5:0", "farm-42", mine));
+  EXPECT_TRUE(displayIsRemote("10.0.0.5:0", "farm-42"));
+  EXPECT_FALSE(displayIsRemote("127.0.0.2:0", "farm-42"));
+  // Never cut at the first dot as a name would be.
+  EXPECT_TRUE(displayIsRemote("10.0.0.5:0", "10"));
+}
+
+TEST(DisplayIsRemote, BracketedIpv6)
+{
+  EXPECT_FALSE(displayIsRemote("[::1]:0", "farm-42"));
+  EXPECT_TRUE(displayIsRemote("[fd00::5]:0", "farm-42"));
+}
+
+TEST(LocalDisplaySocket, ParsesBareDisplaysOnly)
+{
+  EXPECT_EQ(localDisplaySocket(":1"), "/tmp/.X11-unix/X1");
+  EXPECT_EQ(localDisplaySocket(":1.0"), "/tmp/.X11-unix/X1");
+  EXPECT_EQ(localDisplaySocket("unix:12"), "/tmp/.X11-unix/X12");
+  EXPECT_EQ(localDisplaySocket("localhost:10.0"), "");
+  EXPECT_EQ(localDisplaySocket("workstation:0"), "");
+  EXPECT_EQ(localDisplaySocket(":-1"), "");
+  EXPECT_EQ(localDisplaySocket(":"), "");
+  EXPECT_EQ(localDisplaySocket(""), "");
+}
+
+// A plain ssh session: no display forwarded.
+static BrowserEnv sshEnv()
+{
+  BrowserEnv env;
+  env.ssh_session = true;
+  env.host_name = "farm-42";
+  env.has_display = false;
+  return env;
+}
+
+// A VS Code terminal over ssh: the editor's IPC socket and $BROWSER helper.
+static BrowserEnv vsCodeEnv()
+{
+  BrowserEnv env = sshEnv();
+  env.vscode_ipc_hook = "/run/user/1000/vscode-ipc-1.sock";
+  env.browser = "/home/u/.vscode-server/bin/abc/bin/helpers/browser.sh";
+  return env;
+}
+
+static LaunchSkip autoSkip(const BrowserEnv& env)
+{
+  return browserLaunchSkipReason(BrowserLaunch::kAuto, env);
+}
+
+TEST(BrowserLaunchSkipReason, VsCodeTerminalOverSshLaunches)
+{
+  const BrowserEnv env = vsCodeEnv();
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kNone);
+  EXPECT_TRUE(launchesThroughBrowserEnv(env));
+}
+
+TEST(BrowserLaunchSkipReason, VsCodeNeedsBothVariables)
+{
+  BrowserEnv hook_only = vsCodeEnv();
+  hook_only.browser.clear();
+  EXPECT_EQ(autoSkip(hook_only), LaunchSkip::kSshSession);
+
+  // A $BROWSER from a shell profile is a browser on this host, not the
+  // editor's helper; with a shared home it is the one #11389 is about.
+  BrowserEnv browser_only = sshEnv();
+  browser_only.browser = "firefox";
+  EXPECT_EQ(autoSkip(browser_only), LaunchSkip::kSshSession);
+  EXPECT_FALSE(launchesThroughBrowserEnv(browser_only));
+
+  // Even in a VS Code terminal, a profile's $BROWSER is not the helper.
+  BrowserEnv profile_browser = vsCodeEnv();
+  profile_browser.browser = "firefox";
+  EXPECT_EQ(autoSkip(profile_browser), LaunchSkip::kSshSession);
+  EXPECT_FALSE(launchesThroughBrowserEnv(profile_browser));
+}
+
+TEST(BrowserLaunchSkipReason, WslDisplayIsTheUsersOwn)
+{
+  // VcXsrv or X410 on the Windows side of WSL: another IP, the same user.
+  BrowserEnv env = localEnv();
+  env.display = "172.20.0.1:0.0";
+  env.wsl = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kNone);
+}
+
+TEST(BrowserLaunchSkipReason, WslLaunchesWithoutAnXServer)
+{
+  // The Windows browser needs no display on the Linux side.
+  BrowserEnv env = localEnv();
+  env.display = "";
+  env.has_display = false;
+  env.wsl = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kNone);
+}
+
+TEST(BrowserLaunchSkipReason, BatchJobBeatsEveryException)
+{
+  BrowserEnv env = vsCodeEnv();
+  env.batch_job = true;
+  env.display = ":1";
+  env.own_local_display = true;
+  env.has_display = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kBatchJob);
+}
+
+TEST(BrowserLaunchSkipReason, OwnDesktopOverSshLaunches)
+{
+  // A VNC or x2go desktop started from an ssh shell: its X server is ours.
+  BrowserEnv env = sshEnv();
+  env.display = ":1";
+  env.has_display = true;
+  env.own_local_display = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kNone);
+}
+
+TEST(BrowserLaunchSkipReason, ForeignOrForwardedDisplayOverSshSkips)
+{
+  // Another user's X server would get our browser and the live ticket.
+  BrowserEnv foreign = sshEnv();
+  foreign.display = ":0";
+  foreign.has_display = true;
+  EXPECT_EQ(autoSkip(foreign), LaunchSkip::kSshSession);
+
+  BrowserEnv forwarded = sshEnv();
+  forwarded.display = "localhost:10.0";
+  forwarded.has_display = true;
+  EXPECT_EQ(autoSkip(forwarded), LaunchSkip::kSshSession);
+}
+
+TEST(BrowserLaunchSkipReason, ForwardedDisplayWithoutSshVariablesSkips)
+{
+  // docker_shell and sudo pass $DISPLAY on, but not SSH_CONNECTION.
+  BrowserEnv env = localEnv();
+  env.display = "localhost:10.0";
+  env.has_display = true;
+  EXPECT_EQ(autoSkip(env), LaunchSkip::kRemoteDisplay);
+}
+
+TEST(BrowserLaunchSkipReason, LocalSessionLaunches)
+{
+  EXPECT_EQ(autoSkip(localEnv()), LaunchSkip::kNone);
+}
+
+TEST(BrowserLaunchSkipReason, NamesTheClauseThatDecided)
+{
+  BrowserEnv ssh = localEnv();
+  ssh.ssh_session = true;
+  EXPECT_EQ(autoSkip(ssh), LaunchSkip::kSshSession);
+
+  // A batch job runs wherever the scheduler put it, and inherits the
+  // submitting shell's $DISPLAY.
+  BrowserEnv batch = localEnv();
+  batch.batch_job = true;
+  EXPECT_EQ(autoSkip(batch), LaunchSkip::kBatchJob);
+
+  BrowserEnv remote_display = localEnv();
+  remote_display.display = "workstation:0";
+  remote_display.host_name = "farm-42";
+  EXPECT_EQ(autoSkip(remote_display), LaunchSkip::kRemoteDisplay);
+
+  BrowserEnv headless = localEnv();
+  headless.has_display = false;
+  headless.display = "";
+  EXPECT_EQ(autoSkip(headless), LaunchSkip::kNoDisplay);
+
+  BrowserEnv opted_out = localEnv();
+  opted_out.no_browser = true;
+  EXPECT_EQ(autoSkip(opted_out), LaunchSkip::kOptOut);
+
+  EXPECT_EQ(browserLaunchSkipReason(BrowserLaunch::kNever, localEnv()),
+            LaunchSkip::kFlag);
+}
+
+TEST(BrowserLaunchSkipReason, AlwaysBeatsEveryClause)
+{
+  BrowserEnv hostile = localEnv();
+  hostile.ssh_session = true;
+  hostile.batch_job = true;
+  hostile.display = "workstation:0";
+  hostile.host_name = "farm-42";
+  hostile.no_browser = true;
+  hostile.has_display = false;
+  EXPECT_EQ(browserLaunchSkipReason(BrowserLaunch::kAlways, hostile),
+            LaunchSkip::kNone);
+}
+
+TEST(BrowserSkipReasonText, EveryReasonReadsInsideTheMessage)
+{
+  EXPECT_TRUE(browserSkipReasonText(LaunchSkip::kNone).empty());
+  for (const LaunchSkip reason : {LaunchSkip::kFlag,
+                                  LaunchSkip::kOptOut,
+                                  LaunchSkip::kSshSession,
+                                  LaunchSkip::kBatchJob,
+                                  LaunchSkip::kRemoteDisplay,
+                                  LaunchSkip::kNoDisplay}) {
+    EXPECT_FALSE(browserSkipReasonText(reason).empty());
+  }
+}
+
+TEST(BrowserLaunchFromString, KnownModesAndFallback)
+{
+  EXPECT_EQ(browserLaunchFromString("never"), BrowserLaunch::kNever);
+  EXPECT_EQ(browserLaunchFromString("always"), BrowserLaunch::kAlways);
+  EXPECT_EQ(browserLaunchFromString("auto"), BrowserLaunch::kAuto);
+  // Never a reason to fail starting the server.
+  EXPECT_EQ(browserLaunchFromString(""), BrowserLaunch::kAuto);
+  EXPECT_EQ(browserLaunchFromString("maybe"), BrowserLaunch::kAuto);
+}
+
+TEST(ReachabilityHint, LoopbackNamesTheHostAndBothEndsOfThePort)
+{
+  EXPECT_EQ(reachabilityHint(BindAddressKind::kLoopback,
+                             boost::asio::ip::make_address("127.0.0.1"),
+                             "farm-42",
+                             8080,
+                             "/?token=abc"),
+            "To reach it from another machine, forward the port: ssh -L "
+            "8080:localhost:8080 farm-42");
+}
+
+TEST(ReachabilityHint, LoopbackTunnelNamesTheAddressItListensOn)
+{
+  // 127.0.0.0/8 is all loopback: a tunnel to "localhost" would land on
+  // 127.0.0.1, where nothing is bound.  Its near end is localhost, though,
+  // so the url to open there is not the 127.0.0.2 one reported.
+  EXPECT_EQ(reachabilityHint(BindAddressKind::kLoopback,
+                             boost::asio::ip::make_address("127.0.0.2"),
+                             "farm-42",
+                             8080,
+                             "/?token=abc"),
+            "To reach it from another machine, forward the port: ssh -L "
+            "8080:127.0.0.2:8080 farm-42, then open "
+            "http://localhost:8080/?token=abc");
+}
+
+TEST(ReachabilityHint, WildcardNamesThisHostInsteadOfATunnel)
+{
+  // With -bind 0.0.0.0 the port is open to the network, but the reported url
+  // says "localhost", and a tunnel to it would be pointless.
+  const std::string hint
+      = reachabilityHint(BindAddressKind::kExposed,
+                         boost::asio::ip::make_address("0.0.0.0"),
+                         "farm-42",
+                         8080,
+                         "/?token=abc");
+  // The url the user is told to open elsewhere has to carry the token, or it
+  // is refused on arrival.
+  EXPECT_NE(hint.find("http://farm-42:8080/?token=abc"), std::string::npos);
+  EXPECT_EQ(hint.find("ssh -L"), std::string::npos);
+}
+
+TEST(ReachabilityHint, ConcreteAddressNeedsNeitherTunnelNorHostName)
+{
+  // -bind 10.0.0.5: the address is already in the url the user was given.
+  const std::string hint
+      = reachabilityHint(BindAddressKind::kExposed,
+                         boost::asio::ip::make_address("10.0.0.5"),
+                         "farm-42",
+                         8080,
+                         "/?token=abc");
+  EXPECT_EQ(hint.find("ssh -L"), std::string::npos);
+  EXPECT_EQ(hint.find("farm-42"), std::string::npos);
+}
+
+TEST(OtherMachineUrl, IsTheUrlTheHintNames)
+{
+  // serve() prints these with the token, and the hint only with it redacted.
+  EXPECT_EQ(otherMachineUrl(BindAddressKind::kLoopback,
+                            boost::asio::ip::make_address("127.0.0.2"),
+                            "farm-42",
+                            8080,
+                            "/?token=abc"),
+            "http://localhost:8080/?token=abc");
+  EXPECT_EQ(otherMachineUrl(BindAddressKind::kExposed,
+                            boost::asio::ip::make_address("0.0.0.0"),
+                            "farm-42",
+                            8080,
+                            "/?token=abc"),
+            "http://farm-42:8080/?token=abc");
+}
+
+TEST(OtherMachineUrl, IsEmptyWhenTheReportedUrlServes)
+{
+  // Through a tunnel to localhost, or at an address already in the url.
+  EXPECT_EQ(otherMachineUrl(BindAddressKind::kLoopback,
+                            boost::asio::ip::make_address("127.0.0.1"),
+                            "farm-42",
+                            8080,
+                            "/?token=abc"),
+            "");
+  EXPECT_EQ(otherMachineUrl(BindAddressKind::kExposed,
+                            boost::asio::ip::make_address("10.0.0.5"),
+                            "farm-42",
+                            8080,
+                            "/?token=abc"),
+            "");
+}
+
+TEST(GenerateAuthToken, IsHexAndUnpredictable)
+{
+  const std::string token = generateAuthToken();
+  EXPECT_EQ(token.size(), 32u);  // 128 bits
+  EXPECT_TRUE(std::all_of(token.begin(), token.end(), [](const char c) {
+    return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+  }));
+  // Not proof of entropy, but a token minted from a clock-free source must
+  // not repeat between two calls in the same process.
+  EXPECT_NE(token, generateAuthToken());
+}
+
+TEST(RequestTokenAllowed, AcceptsTheExactToken)
+{
+  EXPECT_TRUE(requestTokenAllowed("/ws?token=abc123", "abc123"));
+  EXPECT_TRUE(requestTokenAllowed("/?token=abc123", "abc123"));
+  // Other parameters may sit on either side of it.
+  EXPECT_TRUE(requestTokenAllowed("/?mergetiles=0&token=abc123&x=1", "abc123"));
+}
+
+TEST(RequestTokenAllowed, RejectsAnythingElse)
+{
+  EXPECT_FALSE(requestTokenAllowed("/ws", "abc123"));
+  EXPECT_FALSE(requestTokenAllowed("/ws?token=", "abc123"));
+  EXPECT_FALSE(requestTokenAllowed("/ws?token=wrong", "abc123"));
+  // A prefix and an extension of the real token are both wrong: a length
+  // check is part of the comparison, not an optimization skipped for it.
+  EXPECT_FALSE(requestTokenAllowed("/ws?token=abc12", "abc123"));
+  EXPECT_FALSE(requestTokenAllowed("/ws?token=abc1234", "abc123"));
+  // The parameter name is exact; "tokens" is not "token".
+  EXPECT_FALSE(requestTokenAllowed("/ws?tokens=abc123", "abc123"));
+}
+
+TEST(RequestTokenAllowed, DecodesThePercentEncodedValue)
+{
+  EXPECT_TRUE(requestTokenAllowed("/ws?token=a%2Bb", "a+b"));
+}
+
+TEST(RequestTokenAllowed, AnEmptyExpectedTokenMatchesNothing)
+{
+  // Fail closed: with no token minted there is nothing to present.
+  EXPECT_FALSE(requestTokenAllowed("/ws", ""));
+  EXPECT_FALSE(requestTokenAllowed("/ws?token=", ""));
+}
+
+TEST(AuthRedirectTarget, SwapsTheTicketForTheToken)
+{
+  EXPECT_EQ(authRedirectTarget("/?ticket=abc", "tok"), "/?token=tok");
+  EXPECT_EQ(authRedirectTarget("/index.html?ticket=abc", "tok"),
+            "/index.html?token=tok");
+}
+
+TEST(AuthRedirectTarget, KeepsTheViewerOptionsAroundIt)
+{
+  // ?mergetiles=0 and friends are how the viewer is A/B tested; losing them
+  // in the redirect would silently ignore what the user asked for.
+  EXPECT_EQ(authRedirectTarget("/?ticket=abc&mergetiles=0", "tok"),
+            "/?token=tok&mergetiles=0");
+  EXPECT_EQ(
+      authRedirectTarget("/?mergetiles=0&ticket=abc&tilebudget=500", "tok"),
+      "/?token=tok&mergetiles=0&tilebudget=500");
+}
+
+TEST(AuthRedirectTarget, PassesEncodedValuesThroughUntouched)
+{
+  // The query is copied byte for byte; decoding and re-encoding here would
+  // be a chance to mangle a value for no gain.
+  EXPECT_EQ(authRedirectTarget("/?ticket=abc&vis=%7B%22a%22%3A1%7D", "tok"),
+            "/?token=tok&vis=%7B%22a%22%3A1%7D");
+}
+
+TEST(AuthRedirectTarget, HandlesATargetWithNoQueryAtAll)
+{
+  EXPECT_EQ(authRedirectTarget("/", "tok"), "/?token=tok");
+}
+
+TEST(SessionAuth, RedeemsTheTicketExactlyOnce)
+{
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  EXPECT_EQ(auth.token(), "tok");
+  EXPECT_EQ(auth.ticket(), "tik");
+
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRedeemed);
+  // The whole point: what `ps` saw on the browser's command line stops
+  // working as soon as the browser has used it, and says it was used.
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kReused);
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kReused);
+  EXPECT_EQ(auth.token(), "tok");
+}
+
+TEST(SessionAuth, RejectsAWrongOrEmptyTicket)
+{
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  EXPECT_EQ(auth.redeemTicket("nope"), TicketUse::kRefused);
+  EXPECT_EQ(auth.redeemTicket(""), TicketUse::kRefused);
+  EXPECT_EQ(auth.redeemTicket("ti"), TicketUse::kRefused);
+  EXPECT_EQ(auth.redeemTicket("tikk"), TicketUse::kRefused);
+  // None of those consumed it.
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRedeemed);
+  // Nor does a wrong one pass for a reuse afterwards.
+  EXPECT_EQ(auth.redeemTicket("nope"), TicketUse::kRefused);
+}
+
+TEST(SessionAuth, RejectsAnExpiredTicket)
+{
+  SessionAuth auth("tok", "tik", std::chrono::seconds(0));
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRefused);
+}
+
+TEST(SessionAuth, RevokedTicketIsRefused)
+{
+  // Not kReused: a launch reported as failed may still have opened a browser,
+  // and that one is not someone else.
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  auth.revokeTicket();
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRefused);
+}
+
+TEST(SessionAuth, RevokingARedeemedTicketKeepsItRedeemed)
+{
+  // The browser can redeem it before launchBrowser() reports a failure.
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kRedeemed);
+  auth.revokeTicket();
+  EXPECT_EQ(auth.redeemTicket("tik"), TicketUse::kReused);
+}
+
+TEST(SessionAuth, ReportsOnlyTheFirstReuse)
+{
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  EXPECT_TRUE(auth.firstReuse());
+  EXPECT_FALSE(auth.firstReuse());
+  // Independent of the WebSocket rejections.
+  EXPECT_TRUE(auth.firstRejection());
+}
+
+TEST(SessionAuth, ReportsOnlyTheFirstRejection)
+{
+  SessionAuth auth("tok", "tik", std::chrono::seconds(300));
+  EXPECT_TRUE(auth.firstRejection());
+  EXPECT_FALSE(auth.firstRejection());
+  EXPECT_FALSE(auth.firstRejection());
+}
+
+TEST(ParseQuery, DecodesValuesAndIgnoresValuelessKeys)
+{
+  const auto params = parseQuery("/download/image?type=entire&filename=a%20b");
+  EXPECT_EQ(params.at("type"), "entire");
+  EXPECT_EQ(params.at("filename"), "a b");
+
+  EXPECT_TRUE(parseQuery("/index.html").empty());
+  EXPECT_TRUE(parseQuery("/ws?flag").empty());
+}
+
+TEST(UrlDecode, ASignIsNotAHexDigit)
+{
+  // Read as signed hex these would turn into a NUL byte and 0xff.
+  EXPECT_EQ(urlDecode("%-0"), "%-0");
+  EXPECT_EQ(urlDecode("%-1x"), "%-1x");
 }
 
 TEST_F(TileHandlerTest, HonoursTheClientReportedDpr)
@@ -765,7 +1736,7 @@ TEST_F(TileHandlerTest, PixelCountOverridesWhateverDprWouldHaveDerived)
 
 TEST_F(TileHandlerTest, ClampsThePixelCountIntoRange)
 {
-  // A render allocates (tile_px * supersample)^2 * 4 bytes, so a malformed or
+  // A render allocates about tile_px^2 * 4 bytes, so a malformed or
   // hostile count must not be taken at face value.  0 and negatives mean "not
   // specified" and fall back to 256*dpr.
   const std::vector<std::pair<std::string, uint32_t>> cases = {
@@ -810,6 +1781,47 @@ TEST_F(TileHandlerTest, PixelCountIsPartOfTheTileCacheKey)
   // ...and back, which must come from the cache at its own size, not the last
   // one rendered.
   EXPECT_EQ(render("400"), 400u);
+}
+
+// A tech-layer tile does not read visible_layers, so a toggle of another layer
+// must not cost it its cache entry; the tiles that do read it keep it keyed.
+TEST_F(TileHandlerTest, LayerTileCacheIgnoresVisibleLayers)
+{
+  const auto cached_after
+      = [&](const std::string& layer, const std::string& visible) {
+          return cachedAfterTile(R"({"layer":")" + layer
+                                 + R"(","z":0,"x":0,"y":0,"visible_layers":)"
+                                 + visible + "}");
+        };
+  const size_t after_metal1 = cached_after("metal1", R"(["metal1"])");
+  EXPECT_EQ(cached_after("metal1", R"(["metal1","metal2"])"), after_metal1)
+      << "a metal1 tile missed the cache because another layer was toggled";
+
+  const size_t after_pins = cached_after("_pins", R"(["metal1"])");
+  EXPECT_EQ(cached_after("_pins", R"(["metal1","metal2"])"), after_pins + 1)
+      << "_pins filters by visible_layers, so it must stay in its key";
+}
+
+// Two dies' rows of one layer name differ only in `chiplet`, so it keys the
+// cache; hiding another die must not cost a row its entry, hiding its own must.
+TEST_F(TileHandlerTest, ScopedTileCacheIgnoresOtherChiplets)
+{
+  // Only the key is under test, so the dies need not exist (the fixture's
+  // single chip has an empty path, which scopes nothing).
+  const auto cached_after = [&](const std::string& die,
+                                const std::string& visible_chiplets) {
+    return cachedAfterTile(R"({"layer":"metal1","chiplet":")" + die
+                           + R"(","z":0,"x":0,"y":0,"visible_layers":[],)"
+                           + R"("visible_chiplets":)" + visible_chiplets + "}");
+  };
+  const std::string both = R"(["top/die0","top/die1"])";
+  const size_t first = cached_after("top/die0", both);
+  EXPECT_EQ(cached_after("top/die1", both), first + 1)
+      << "one die's row was served the other die's tile";
+  EXPECT_EQ(cached_after("top/die0", R"(["top/die0"])"), first + 1)
+      << "another die's visibility moved this die's cache key";
+  EXPECT_EQ(cached_after("top/die0", R"(["top/die1"])"), first + 2)
+      << "the die's own visibility must stay in its key";
 }
 
 TEST_F(TileHandlerTest, TileReturnsPng)
@@ -1016,7 +2028,7 @@ TEST_F(TileHandlerTest, FlywiresOnlySuppressesWireShapes)
 class FlywireDrawingNetDescriptor : public FakeNetDescriptor
 {
  public:
-  void highlight(const std::any& object, gui::Painter& painter) const override
+  void highlight(const std::any& object, web::Painter& painter) const override
   {
     FakeNetDescriptor::highlight(object, painter);
     painter.drawLine(odb::Point(0, 0), odb::Point(1000, 1000));
@@ -1234,7 +2246,7 @@ TEST_F(TileHandlerTest, NonNetPayloadWithIsNetDoesNotThrow)
   {
    public:
     std::string getName(const std::any&) const override { return "nws"; }
-    void highlight(const std::any&, gui::Painter& painter) const override
+    void highlight(const std::any&, web::Painter& painter) const override
     {
       painter.drawRect(odb::Rect(0, 0, 1000, 1000));
     }
@@ -1693,9 +2705,17 @@ TEST_F(TileHandlerTest, HoverNotGatedByHighlightSelected)
       << "hover highlight is independent of the Highlight selected toggle";
 }
 
+// The heat map registry keeps the first registration for the whole process,
+// so the logger its factories capture has to live as long.
+utl::Logger* processLogger()
+{
+  static utl::Logger logger;
+  return &logger;
+}
+
 TEST_F(TileHandlerTest, HeatMapsReturnsMetadata)
 {
-  gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest req;
@@ -1712,7 +2732,7 @@ TEST_F(TileHandlerTest, HeatMapsReturnsMetadata)
 
 TEST_F(TileHandlerTest, HeatMapSettingsAreSessionLocal)
 {
-  gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   SessionState state1;
   SessionState state2;
   handler_->initializeHeatMaps(state1);
@@ -1748,7 +2768,7 @@ TEST_F(TileHandlerTest, HeatMapSettingsAreSessionLocal)
 
 TEST_F(TileHandlerTest, HeatMapShowNumbersCanBeUpdated)
 {
-  gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest set_req;
@@ -1766,12 +2786,59 @@ TEST_F(TileHandlerTest, HeatMapShowNumbersCanBeUpdated)
   }
 }
 
+// The placement density grid defaults to the bin size global placement
+// publishes, but stays adjustable: a grid the user picked is kept.
+TEST_F(TileHandlerTest, PlacementHeatMapGridDefaultsToGplBinSize)
+{
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  handler_->initializeHeatMaps(state_);
+  const int dbu = block_->getDbUnitsPerMicron();
+  odb::dbIntProperty::create(block_, "gpl_bin_size_x", 4 * dbu);
+  odb::dbIntProperty::create(block_, "gpl_bin_size_y", 5 * dbu);
+
+  std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+  auto& source = *state_.heatmaps.at("Placement");
+  EXPECT_TRUE(source.canAdjustGrid());
+  // A grid saved by an earlier session does not override the default.
+  source.restoreSettings({{"GridX", 31.0}, {"GridY", 25.0}});
+  source.ensureMap();
+  EXPECT_DOUBLE_EQ(source.getGridXSize(), 4.0);
+  EXPECT_DOUBLE_EQ(source.getGridYSize(), 5.0);
+
+  source.setGridSizes(20.0, 20.0);
+  source.ensureMap();
+  EXPECT_DOUBLE_EQ(source.getGridXSize(), 20.0);
+  EXPECT_DOUBLE_EQ(source.getGridYSize(), 20.0);
+}
+
+// Bins too fine for the core are coarsened by powers of two until the default
+// grid has at most 1024 bins per side.
+TEST_F(TileHandlerTest, PlacementHeatMapDefaultGridIsBounded)
+{
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  handler_->initializeHeatMaps(state_);
+  // 1000000 DBU core: 600 DBU bins would be 1667 per side, 1200 DBU gives 834.
+  block_->setDieArea(odb::Rect(0, 0, 1000000, 1000000));
+  block_->setCoreArea(odb::Rect(0, 0, 1000000, 1000000));
+  odb::dbIntProperty::create(block_, "gpl_bin_size_x", 600);
+  odb::dbIntProperty::create(block_, "gpl_bin_size_y", 600);
+
+  std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+  auto& source = *state_.heatmaps.at("Placement");
+  source.ensureMap();
+  const double expected = block_->dbuToMicrons(1200);
+  EXPECT_DOUBLE_EQ(source.getGridXSize(), expected);
+  EXPECT_DOUBLE_EQ(source.getGridYSize(), expected);
+  EXPECT_LE(source.getMap().shape()[0], 1024);
+  EXPECT_LE(source.getMap().shape()[1], 1024);
+}
+
 // Qt's HeatMapSetup ends with a "use selected only" checkbox for the sources
 // that name one.  It is not one of getSettings()' entries, so the handler has
 // to special-case it the way Qt's dialog wires the setter directly.
 TEST_F(TileHandlerTest, HeatMapUseSelectedOnlyIsExposedAndSettable)
 {
-  gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest meta_req;
@@ -1807,7 +2874,7 @@ TEST_F(TileHandlerTest, HeatMapUseSelectedOnlyIsExposedAndSettable)
 // Regression test for the click-to-select breakage's heatmap-side cousin.
 TEST_F(TileHandlerTest, HeatMapIntSettingAcceptsFractional)
 {
-  gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
   handler_->initializeHeatMaps(state_);
 
   WebSocketRequest set_req;
@@ -1825,14 +2892,36 @@ TEST_F(TileHandlerTest, HeatMapIntSettingAcceptsFractional)
   }
 }
 
+// The converse: JS serializes whole numbers without a decimal point, so a
+// double-typed setting like DisplayMin arrives as a JSON integer when the user
+// types 90.  The handler must accept it rather than failing as_double().
+TEST_F(TileHandlerTest, HeatMapDoubleSettingAcceptsInteger)
+{
+  web::registerBuiltinHeatMapSources(/*sta=*/nullptr, processLogger());
+  handler_->initializeHeatMaps(state_);
+
+  WebSocketRequest set_req;
+  set_req.id = 10;
+  set_req.type = WebSocketRequest::kSetHeatmap;
+  set_req.json = parseObj(R"({"name":"Pin","option":"DisplayMin","value":90})");
+
+  auto set_resp = handler_->handleSetHeatMap(set_req, state_);
+  EXPECT_EQ(set_resp.type, WebSocketResponse::kJson) << payloadStr(set_resp);
+  {
+    std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+    ASSERT_TRUE(state_.heatmaps.count("Pin"));
+    EXPECT_DOUBLE_EQ(state_.heatmaps.at("Pin")->getDisplayRangeMin(), 90.0);
+  }
+}
+
 TEST_F(TileHandlerTest, HeatMapsMetadataIsLazyForInactiveSources)
 {
   static int populate_calls = 0;
   populate_calls = 0;
 
-  gui::registerHeatMapSource(
-      "Lazy Metadata Heat Map", "LazyMeta", "LazyMeta", [this]() {
-        return std::make_shared<LazyMetadataHeatMap>(getLogger(),
+  web::registerHeatMapSource(
+      "Lazy Metadata Heat Map", "LazyMeta", "LazyMeta", []() {
+        return std::make_shared<LazyMetadataHeatMap>(processLogger(),
                                                      &populate_calls);
       });
 
@@ -1854,6 +2943,366 @@ TEST_F(TileHandlerTest, HeatMapsMetadataIsLazyForInactiveSources)
   auto active_resp = handler_->handleSetActiveHeatMap(active_req, state_);
   EXPECT_EQ(active_resp.type, WebSocketResponse::kJson);
   EXPECT_EQ(populate_calls, 1);
+}
+
+//------------------------------------------------------------------------------
+// Cluster (dbGroup) tests
+//------------------------------------------------------------------------------
+
+class GroupHandlerTest : public tst::Nangate45Fixture
+{
+ protected:
+  void SetUp() override
+  {
+    block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
+    block_->setCoreArea(odb::Rect(0, 0, 100000, 100000));
+    gen_ = std::make_shared<TileGenerator>(
+        getDb(), /*sta=*/nullptr, getLogger());
+    handler_ = std::make_unique<TileHandler>(gen_);
+  }
+
+  // Overlay slots by layer name, so these tests read like the wire messages.
+  SessionState::OwnerColors& slotOf(const char* layer)
+  {
+    return std::string_view(layer) == "_modules" ? state_.module_colors
+                                                 : state_.group_colors;
+  }
+
+  const std::map<uint32_t, Color>& ownerColors(const char* layer)
+  {
+    static const std::map<uint32_t, Color> kNone;
+    const auto& colors = slotOf(layer).colors;
+    return colors ? *colors : kNone;
+  }
+
+  void setOwnerColors(const char* layer, std::map<uint32_t, Color> colors)
+  {
+    slotOf(layer).colors
+        = std::make_shared<const std::map<uint32_t, Color>>(std::move(colors));
+  }
+
+  void makeClusterTree()
+  {
+    const ClusterTree tree = makeClusterTreeIn(block_, lib_, /*child_insts=*/2);
+    root_ = tree.root;
+    child_ = tree.child;
+  }
+
+  boost::json::object groupHierarchy()
+  {
+    WebSocketRequest req;
+    req.id = 1;
+    req.type = WebSocketRequest::kGroupHierarchy;
+    auto resp = handler_->handleGroupHierarchy(req);
+    EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+    return parseObj(payloadStr(resp));
+  }
+
+  std::shared_ptr<TileGenerator> gen_;
+  std::unique_ptr<TileHandler> handler_;
+  SessionState state_;
+  odb::dbGroup* root_ = nullptr;
+  odb::dbGroup* child_ = nullptr;
+};
+
+TEST_F(GroupHandlerTest, GroupHierarchyIsEmptyWithoutGroups)
+{
+  auto obj = groupHierarchy();
+  EXPECT_TRUE(obj.at("nodes").as_array().empty());
+}
+
+// dbBlock::getGroups() is a flat table that also lists child groups, so the
+// report must recurse from the roots only — otherwise every nested cluster
+// would appear twice, once as a root.
+TEST_F(GroupHandlerTest, GroupHierarchyNestsChildGroupsOnce)
+{
+  makeClusterTree();
+  auto obj = groupHierarchy();
+  const auto& nodes = obj.at("nodes").as_array();
+  ASSERT_EQ(nodes.size(), 2u);
+
+  const auto& root = nodes[0].as_object();
+  EXPECT_EQ(root.at("name").as_string(), "root");
+  EXPECT_EQ(root.at("type").as_string(), "VISUAL_DEBUG");
+  EXPECT_EQ(root.at("parent_id").as_int64(), -1);
+  EXPECT_EQ(root.at("odb_id").as_int64(), root_->getId());
+
+  const auto& child = nodes[1].as_object();
+  EXPECT_EQ(child.at("name").as_string(), "(root)_glue_logic");
+  EXPECT_EQ(child.at("parent_id").as_int64(), root.at("id").as_int64());
+}
+
+TEST_F(GroupHandlerTest, GroupHierarchyCountsHierarchically)
+{
+  makeClusterTree();
+  auto obj = groupHierarchy();
+  const auto& nodes = obj.at("nodes").as_array();
+  ASSERT_EQ(nodes.size(), 2u);
+
+  const auto& root = nodes[0].as_object();
+  // 1 of its own + 2 in the child cluster.
+  EXPECT_EQ(root.at("insts").as_int64(), 3);
+  EXPECT_EQ(root.at("local_insts").as_int64(), 1);
+  EXPECT_EQ(root.at("groups").as_int64(), 1);
+  EXPECT_EQ(root.at("local_groups").as_int64(), 1);
+  EXPECT_GT(root.at("area").as_double(), 0.0);
+
+  const auto& child = nodes[1].as_object();
+  EXPECT_EQ(child.at("insts").as_int64(), 2);
+  EXPECT_EQ(child.at("groups").as_int64(), 0);
+}
+
+// The bbox drives "double-click to zoom" in the Clusters panel and the
+// cluster outlines in the tile renderer, so it must cover the child clusters
+// too, not just the group's own instances.
+TEST_F(GroupHandlerTest, GroupBBoxCoversNestedInstances)
+{
+  makeClusterTree();
+  auto obj = groupHierarchy();
+  const auto& nodes = obj.at("nodes").as_array();
+  const auto& root_bbox = nodes[0].as_object().at("bbox").as_array();
+  const auto& child_bbox = nodes[1].as_object().at("bbox").as_array();
+
+  EXPECT_EQ(root_bbox[0].as_int64(), 0);
+  EXPECT_EQ(root_bbox[1].as_int64(), 0);
+  EXPECT_GE(root_bbox[2].as_int64(), child_bbox[2].as_int64());
+  EXPECT_GE(root_bbox[3].as_int64(), child_bbox[3].as_int64());
+  // The child holds no instance at the origin, so its box starts further in.
+  EXPECT_GT(child_bbox[0].as_int64(), 0);
+}
+
+// Right after rtl_macro_placer the standard cells are still unplaced, sitting
+// at the origin: counted, but kept out of the box the panel zooms to.
+TEST_F(GroupHandlerTest, UnplacedInstancesStayOutOfTheGroupBBox)
+{
+  makeClusterTree();
+  odb::dbMaster* master = lib_->findMaster("BUF_X16");
+  ASSERT_NE(master, nullptr);
+  child_->addInst(odb::dbInst::create(block_, master, "unplaced_a"));
+  odb::dbGroup* loose = odb::dbGroup::create(block_, "loose");
+  loose->addInst(odb::dbInst::create(block_, master, "unplaced_b"));
+
+  auto obj = groupHierarchy();
+  const auto& nodes = obj.at("nodes").as_array();
+  const boost::json::object* child = nullptr;
+  const boost::json::object* only_unplaced = nullptr;
+  for (const auto& node : nodes) {
+    const auto& o = node.as_object();
+    if (o.at("name").as_string() == child_->getName()) {
+      child = &o;
+    } else if (o.at("name").as_string() == "loose") {
+      only_unplaced = &o;
+    }
+  }
+  ASSERT_NE(child, nullptr);
+  ASSERT_NE(only_unplaced, nullptr);
+
+  EXPECT_EQ(child->at("insts").as_int64(), 3);
+  EXPECT_GT(child->at("bbox").as_array()[0].as_int64(), 0);
+  for (const auto& coord : only_unplaced->at("bbox").as_array()) {
+    EXPECT_EQ(coord.as_int64(), 0);
+  }
+}
+
+// Each cluster gets its own palette color, which the widget then shows in its
+// swatch and the `_clusters` layer paints with.
+TEST_F(GroupHandlerTest, GroupHierarchyAssignsDistinctColors)
+{
+  makeClusterTree();
+  auto obj = groupHierarchy();
+  const auto& nodes = obj.at("nodes").as_array();
+  const auto& c0 = nodes[0].as_object().at("color").as_array();
+  const auto& c1 = nodes[1].as_object().at("color").as_array();
+  ASSERT_EQ(c0.size(), 3u);
+  ASSERT_EQ(c1.size(), 3u);
+  const bool same = c0[0].as_int64() == c1[0].as_int64()
+                    && c0[1].as_int64() == c1[1].as_int64()
+                    && c0[2].as_int64() == c1[2].as_int64();
+  EXPECT_FALSE(same);
+}
+
+TEST_F(GroupHandlerTest, SetGroupColorsStoresTheMap)
+{
+  WebSocketRequest req;
+  req.id = 5;
+  req.type = WebSocketRequest::kSetGroupColors;
+  req.json = parseObj(R"({"colors":"7:255,0,0,100;9:0,255,0,100"})");
+
+  auto resp = handler_->handleSetOwnerColors(req, state_, slotOf("_clusters"));
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+  EXPECT_NE(payloadStr(resp).find("\"count\":2"), std::string::npos);
+
+  ASSERT_EQ(ownerColors("_clusters").size(), 2u);
+  EXPECT_EQ(ownerColors("_clusters").at(7).r, 255);
+  EXPECT_EQ(ownerColors("_clusters").at(9).g, 255);
+  EXPECT_EQ(ownerColors("_clusters").at(9).a, 100);
+  // Module colors are a separate map: the two overlays must not clobber each
+  // other.
+  EXPECT_TRUE(ownerColors("_modules").empty());
+}
+
+// Color maps are not part of the tile cache key, so a color-overlay tile that
+// is actually drawing must not be cached.  Only that one: caching is what keeps
+// the routing tiles, and the same layer with its flag off is always empty.
+TEST_F(GroupHandlerTest, OnlyADrawingColorOverlayBypassesTheTileCache)
+{
+  odb::dbGroup* group = odb::dbGroup::create(block_, "cluster_1");
+  group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  setOwnerColors("_clusters",
+                 {{group->getId(), Color{.r = 255, .g = 0, .b = 0, .a = 100}}});
+
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTile;
+  req.json = parseObj(
+      R"({"layer":"metal1","z":0,"x":0,"y":0,"visible_layers":["metal1"]})");
+  handler_->handleTile(req, state_);
+  const size_t after_metal = gen_->tileCacheSize();
+  EXPECT_GT(after_metal, 0u);
+
+  // Overlay off: the tile is empty no matter what colors the session holds, so
+  // it is cacheable like any other.
+  req.id = 2;
+  req.json = parseObj(
+      R"({"layer":"_clusters","z":0,"x":0,"y":0,"visible_layers":[]})");
+  handler_->handleTile(req, state_);
+  const size_t after_off = gen_->tileCacheSize();
+  EXPECT_EQ(after_off, after_metal + 1)
+      << "an inactive color-overlay tile is a constant and should cache";
+
+  // Overlay on: the content now depends on session state that the key does not
+  // carry, so it must not be cached.
+  req.id = 3;
+  req.json = parseObj(
+      R"({"layer":"_clusters","z":0,"x":0,"y":0,"visible_layers":[],)"
+      R"("cluster_view":true})");
+  handler_->handleTile(req, state_);
+  EXPECT_EQ(gen_->tileCacheSize(), after_off)
+      << "a drawing color-overlay tile must not enter the cache";
+}
+
+// The Hierarchy tab is not the only way to switch the overlay on: the Display
+// Controls checkbox works with the tab closed, and a reconnect starts a session
+// with no color map at all.  With nothing synced the layer paints the palette
+// the panel would have started from, which is also what `save_image -web`
+// produces -- otherwise the checkbox is on over an unpainted layout.
+TEST_F(GroupHandlerTest, ColorOverlayPaintsDefaultsWithNothingSynced)
+{
+  makeClusterTree();
+
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTile;
+  req.json = parseObj(
+      R"({"layer":"_clusters","z":0,"x":0,"y":0,"visible_layers":[],)"
+      R"("cluster_view":true})");
+
+  const size_t before = gen_->tileCacheSize();
+  const auto resp = handler_->handleTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kPng)
+      << "an overlay with no session colors must fall back to the defaults";
+  EXPECT_FALSE(resp.payload.empty());
+  // Unlike a session's map, the defaults are derived from the design and are
+  // invalidated with it, so this tile is as cacheable as any other.
+  EXPECT_EQ(gen_->tileCacheSize(), before + 1);
+}
+
+// Both cacheable states of one overlay layer -- the default palette and the
+// user having unchecked every row -- must not share a cache entry, or clearing
+// the view serves the painted tile back.
+TEST_F(GroupHandlerTest, ClearedColorsDoNotHitTheDefaultPaletteTile)
+{
+  makeClusterTree();
+
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTile;
+  req.json = parseObj(
+      R"({"layer":"_clusters","z":0,"x":0,"y":0,"visible_layers":[],)"
+      R"("cluster_view":true})");
+  ASSERT_EQ(handler_->handleTile(req, state_).type, WebSocketResponse::kPng);
+
+  WebSocketRequest clear;
+  clear.id = 2;
+  clear.type = WebSocketRequest::kSetGroupColors;
+  clear.json = parseObj(R"({"colors":""})");
+  handler_->handleSetOwnerColors(clear, state_, slotOf("_clusters"));
+
+  req.id = 3;
+  EXPECT_EQ(handler_->handleTile(req, state_).type, WebSocketResponse::kEmpty)
+      << "the cached default-palette tile must not answer a cleared view";
+}
+
+// A tile painted from the default palette is cacheable, so a group edit has to
+// reach the cache: otherwise `rtl_macro_placer -keep_clustering_data` writes a
+// new cluster tree and the viewer keeps serving the picture of the old one.
+// The instance is placed BEFORE the first tile, because placing one invalidates
+// the cache through inDbInstPlacementStatusBefore and would hide the bug.
+TEST_F(GroupHandlerTest, AGroupEditDropsTheCachedDefaultPaletteTile)
+{
+  makeClusterTree();
+  odb::dbInst* loose
+      = placeInstIn(block_, lib_, "BUF_X16", "loose_buf", 60000, 60000);
+
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTile;
+  req.json = parseObj(
+      R"({"layer":"_clusters","z":0,"x":0,"y":0,"visible_layers":[],)"
+      R"("cluster_view":true})");
+  const auto first = handler_->handleTile(req, state_);
+  ASSERT_EQ(first.type, WebSocketResponse::kPng);
+  ASSERT_GT(gen_->tileCacheSize(), 0u) << "the tile should have been cached";
+
+  // Only the group tree moves from here on.
+  odb::dbGroup* late = odb::dbGroup::create(block_, "cluster_late");
+  late->setType(odb::dbGroupType::VISUAL_DEBUG);
+  late->addInst(loose);
+
+  req.id = 2;
+  const auto second = handler_->handleTile(req, state_);
+  ASSERT_EQ(second.type, WebSocketResponse::kPng);
+  EXPECT_NE(second.payload, first.payload)
+      << "the cached tile outlived the group edit that changed it";
+}
+
+// The other side of that rule, and the one a careless fallback would break:
+// an empty map is not "nothing synced", it is the user unchecking every row.
+TEST_F(GroupHandlerTest, ColorOverlayStaysEmptyWhenTheUserClearsEveryRow)
+{
+  makeClusterTree();
+
+  WebSocketRequest clear;
+  clear.id = 1;
+  clear.type = WebSocketRequest::kSetGroupColors;
+  clear.json = parseObj(R"({"colors":""})");
+  handler_->handleSetOwnerColors(clear, state_, slotOf("_clusters"));
+
+  WebSocketRequest req;
+  req.id = 2;
+  req.type = WebSocketRequest::kTile;
+  req.json = parseObj(
+      R"({"layer":"_clusters","z":0,"x":0,"y":0,"visible_layers":[],)"
+      R"("cluster_view":true})");
+
+  const auto resp = handler_->handleTile(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kEmpty)
+      << "clearing every row must not be answered with the default palette";
+  EXPECT_TRUE(resp.payload.empty());
+}
+
+TEST_F(GroupHandlerTest, SetGroupColorsWithEmptyStringClears)
+{
+  setOwnerColors("_clusters", {{3, Color{.r = 1, .g = 2, .b = 3, .a = 4}}});
+
+  WebSocketRequest req;
+  req.id = 6;
+  req.type = WebSocketRequest::kSetGroupColors;
+  req.json = parseObj(R"({"colors":""})");
+
+  auto resp = handler_->handleSetOwnerColors(req, state_, slotOf("_clusters"));
+  EXPECT_NE(payloadStr(resp).find("\"count\":0"), std::string::npos);
+  EXPECT_TRUE(ownerColors("_clusters").empty());
 }
 
 //------------------------------------------------------------------------------
@@ -1881,22 +3330,22 @@ class SelectHandlerTest : public tst::Nangate45Fixture
     tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
     handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
     // The registry owns registered descriptors (unique_ptr) — heap-only.
-    auto* registry = gui::DescriptorRegistry::instance();
+    auto* registry = web::DescriptorRegistry::instance();
     registry->registerDescriptor<odb::dbInst*>(new TestInstDescriptor);
     registry->registerDescriptor<odb::dbNet*>(new TestNetDescriptor);
   }
 
   void TearDown() override
   {
-    auto* registry = gui::DescriptorRegistry::instance();
+    auto* registry = web::DescriptorRegistry::instance();
     registry->unregisterDescriptor<odb::dbInst*>();
     registry->unregisterDescriptor<odb::dbNet*>();
     tst::Nangate45Fixture::TearDown();
   }
 
-  gui::Selected makeFakeSelected(FakeInspectable* object)
+  web::Selected makeFakeSelected(FakeInspectable* object)
   {
-    return gui::Selected(object, &fake_descriptor_);
+    return web::Selected(object, &fake_descriptor_);
   }
 
   odb::dbInst* placeInst(const char* master_name,
@@ -1904,12 +3353,7 @@ class SelectHandlerTest : public tst::Nangate45Fixture
                          int x,
                          int y)
   {
-    odb::dbMaster* master = lib_->findMaster(master_name);
-    EXPECT_NE(master, nullptr);
-    odb::dbInst* inst = odb::dbInst::create(block_, master, inst_name);
-    inst->setLocation(x, y);
-    inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-    return inst;
+    return placeInstIn(block_, lib_, master_name, inst_name, x, y);
   }
 
   std::shared_ptr<TileGenerator> gen_;
@@ -1920,6 +3364,118 @@ class SelectHandlerTest : public tst::Nangate45Fixture
   FakeInspectable fake_current_;
   FakeInspectable fake_previous_;
 };
+
+// Tests that select a dbGroup.  They go through the descriptor registry, so the
+// fixture registers FakeGroupDescriptor for dbGroup* and removes it again
+// afterwards (the registry is a process-wide singleton).
+class GroupSelectTest : public tst::Nangate45Fixture
+{
+ protected:
+  void SetUp() override
+  {
+    block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
+    block_->setCoreArea(odb::Rect(0, 0, 100000, 100000));
+
+    root_ = makeClusterTreeIn(block_, lib_, /*child_insts=*/1).root;
+
+    gen_ = std::make_shared<TileGenerator>(
+        getDb(), /*sta=*/nullptr, getLogger());
+    tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
+    handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
+
+    web::DescriptorRegistry::instance()->registerDescriptor(
+        typeid(odb::dbGroup*), new FakeGroupDescriptor(block_));
+  }
+
+  void TearDown() override
+  {
+    web::DescriptorRegistry::instance()->unregisterDescriptor(
+        typeid(odb::dbGroup*));
+  }
+
+  std::shared_ptr<TileGenerator> gen_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
+  std::unique_ptr<SelectHandler> handler_;
+  SessionState state_;
+  odb::dbGroup* root_ = nullptr;
+};
+
+// A descriptor can emit one shape per leaf, so the budget has to bound what ONE
+// object accumulates, not only the total.  Driven on the collector: reaching
+// the real cap through a handler would need 20 000 instances.
+TEST(ShapeCollectorBudget, DroppedShapesStillCountTowardTheUnion)
+{
+  const odb::Rect kept1(0, 0, 10, 10);
+  const odb::Rect kept2(20, 20, 30, 30);
+  const odb::Rect dropped(100, 0, 110, 10);
+  const odb::Oct dropped_oct(odb::Point(200, 200), odb::Point(200, 260), 40);
+
+  ShapeCollector collector(/*budget=*/2);
+  collector.drawRect(kept1, 0, 0);
+  collector.drawRect(kept2, 0, 0);
+  EXPECT_FALSE(collector.overflowed());
+
+  // Third and fourth shapes exceed the budget: dropped, but not forgotten.
+  collector.drawRect(dropped, 0, 0);
+  collector.drawOctagon(dropped_oct);
+
+  EXPECT_EQ(collector.rects.size(), 2u) << "budget must bound what is stored";
+  EXPECT_TRUE(collector.polys.empty());
+  EXPECT_TRUE(collector.overflowed());
+
+  odb::Rect expected = kept1;
+  expected.merge(kept2);
+  expected.merge(dropped);
+  expected.merge(odb::Polygon(dropped_oct).getEnclosingRect());
+  EXPECT_EQ(collector.unionBBox(), expected)
+      << "the union must span every shape drawn, kept or dropped";
+}
+
+// reset() is what lets a caller reuse one collector across objects (two vector
+// allocations per object otherwise) without leaking the previous object's
+// overflow state into the next one's union.
+TEST(ShapeCollectorBudget, ResetClearsShapesAndOverflow)
+{
+  ShapeCollector collector(/*budget=*/1);
+  collector.drawRect(odb::Rect(0, 0, 10, 10), 0, 0);
+  collector.drawRect(odb::Rect(500, 500, 600, 600), 0, 0);
+  ASSERT_TRUE(collector.overflowed());
+
+  collector.reset(/*budget=*/8);
+  EXPECT_TRUE(collector.rects.empty());
+  EXPECT_FALSE(collector.overflowed());
+  collector.drawRect(odb::Rect(0, 0, 5, 5), 0, 0);
+  EXPECT_EQ(collector.unionBBox(), odb::Rect(0, 0, 5, 5));
+}
+
+// Clearing highlights leaves the selection alone: the two are separate state,
+// and the Find dialog's "Clear highlights" button is not a deselect.
+TEST_F(GroupSelectTest, ClearHighlightsKeepsTheSelection)
+{
+  const web::Selected sel
+      = web::DescriptorRegistry::instance()->makeSelected(root_);
+  state_.selection_set.insert(sel);
+  state_.current_inspected = sel;
+
+  WebSocketRequest highlight;
+  highlight.id = 11;
+  highlight.type = WebSocketRequest::kHighlight;
+  highlight.json = parseObj(R"({"group":1})");
+  ASSERT_EQ(handler_->handleHighlight(highlight, state_).type,
+            WebSocketResponse::kJson);
+  ASSERT_FALSE(state_.highlight_group_rects.empty());
+  ASSERT_FALSE(state_.selection_set.empty());
+
+  WebSocketRequest req;
+  req.id = 12;
+  req.type = WebSocketRequest::kClearHighlights;
+  req.json = parseObj("{}");
+  auto resp = handler_->handleClearHighlights(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+  EXPECT_TRUE(state_.highlight_group_rects.empty());
+  EXPECT_TRUE(state_.highlight_groups[1].empty());
+  EXPECT_FALSE(state_.selection_set.empty());
+}
 
 TEST_F(SelectHandlerTest, SelectAtOriginFindsInstance)
 {
@@ -2066,7 +3622,7 @@ TEST_F(SelectHandlerTest, InspectCollectsHighlightLines)
   LineFakeDescriptor line_descriptor;
   {
     std::lock_guard<std::mutex> lock(state_.selectables_mutex);
-    state_.selectables = {gui::Selected(&fake_current_, &line_descriptor)};
+    state_.selectables = {web::Selected(&fake_current_, &line_descriptor)};
   }
 
   WebSocketRequest req;
@@ -2139,6 +3695,117 @@ TEST_F(SelectHandlerTest, HoverInvalidIdReturnsOkZeroCount)
   EXPECT_NE(json.find("\"count\":0"), std::string::npos);
 }
 
+// Hovering an Inspector link to a root cluster sent one rect per instance,
+// each an SVG element in the browser.  Past the cap it is one box.
+TEST_F(SelectHandlerTest, HoverOverAHugeObjectSendsOneBox)
+{
+  ManyShapesFakeDescriptor many(100000, /*lines=*/false);
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {web::Selected(&fake_current_, &many)};
+  }
+
+  WebSocketRequest req;
+  req.id = 15;
+  req.type = WebSocketRequest::kHover;
+  req.json = parseObj(R"({"select_id":0})");
+  const auto root = parseObj(payloadStr(handler_->handleHover(req, state_)));
+
+  EXPECT_EQ(root.at("count").as_int64(), 1);
+  const auto& rect = root.at("rects").as_array().at(0).as_array();
+  EXPECT_EQ(rect.at(0).as_int64(), fake_current_.bbox.xMin());
+  EXPECT_EQ(rect.at(1).as_int64(), fake_current_.bbox.yMin());
+  EXPECT_EQ(rect.at(2).as_int64(), fake_current_.bbox.xMax());
+  EXPECT_EQ(rect.at(3).as_int64(), fake_current_.bbox.yMax());
+}
+
+// The inspected object is capped like a selection set: a root cluster put one
+// shape per instance on the overlay, which every tile render walks.
+TEST_F(SelectHandlerTest, InspectOfAHugeObjectIsCoarsened)
+{
+  ManyShapesFakeDescriptor many(100000, /*lines=*/false);
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {web::Selected(&fake_current_, &many)};
+  }
+
+  WebSocketRequest req;
+  req.id = 16;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":0})");
+  ASSERT_EQ(handler_->handleInspect(req, state_).type,
+            WebSocketResponse::kJson);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  ASSERT_EQ(state_.highlight_rects.size(), 1u);
+  EXPECT_EQ(state_.highlight_rects[0], fake_current_.bbox);
+}
+
+// Lines count against the same cap as rects.
+TEST_F(SelectHandlerTest, InspectOfAHugeLineObjectIsCoarsened)
+{
+  ManyShapesFakeDescriptor many(100000, /*lines=*/true);
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {web::Selected(&fake_current_, &many)};
+  }
+
+  WebSocketRequest req;
+  req.id = 17;
+  req.type = WebSocketRequest::kInspect;
+  req.json = parseObj(R"({"select_id":0})");
+  ASSERT_EQ(handler_->handleInspect(req, state_).type,
+            WebSocketResponse::kJson);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_lines.empty());
+  ASSERT_EQ(state_.highlight_rects.size(), 1u);
+  EXPECT_EQ(state_.highlight_rects[0], fake_current_.bbox);
+}
+
+// A pending staleness flag left set here wiped the fresh layer selection on
+// the next request, and kept dangling highlight-group members around.
+TEST_F(SelectHandlerTest, SelectLayerConsumesAStaleSelection)
+{
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_groups[3].insert(makeFakeSelected(&fake_current_));
+  }
+  state_.selection_stale = true;
+
+  WebSocketRequest req;
+  req.id = 52;
+  req.type = WebSocketRequest::kSelectLayer;
+  req.json = parseObj(R"({"layer":"metal1"})");
+  ASSERT_EQ(handler_->handleSelectLayer(req, state_).type,
+            WebSocketResponse::kJson);
+
+  EXPECT_FALSE(state_.selection_stale.load());
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_groups[3].empty());
+}
+
+// "Select connected" walks the current selection, so a stale one has to go
+// before the walk.
+TEST_F(SelectHandlerTest, ContextActionDropsAStaleSelection)
+{
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.selection_set.insert(makeFakeSelected(&fake_current_));
+  }
+  state_.selection_stale = true;
+
+  WebSocketRequest req;
+  req.id = 53;
+  req.type = WebSocketRequest::kContextAction;
+  req.json = parseObj(R"({"action":"clear_highlights"})");
+  const auto root
+      = parseObj(payloadStr(handler_->handleContextAction(req, state_)));
+
+  EXPECT_EQ(root.at("selection_count").as_int64(), 0);
+  EXPECT_FALSE(state_.selection_stale.load());
+}
+
 TEST_F(SelectHandlerTest, SelectClearsTimingState)
 {
   // Populate timing state
@@ -2170,7 +3837,8 @@ TEST_F(SelectHandlerTest, SelectClearsInspectorHistoryWhenNothingIsPicked)
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
     state_.current_inspected = makeFakeSelected(&fake_current_);
-    state_.navigation_history.push_back(makeFakeSelected(&fake_previous_));
+    state_.navigation_history.push_back(
+        {.sel = makeFakeSelected(&fake_previous_), .xfm = {}});
   }
 
   WebSocketRequest req;
@@ -2193,8 +3861,8 @@ TEST_F(SelectHandlerTest, SelectClearsInspectorHistoryWhenNothingIsPicked)
 
 TEST_F(SelectHandlerTest, InspectBackRestoresPreviousObject)
 {
-  const gui::Selected initial_selected = makeFakeSelected(&fake_current_);
-  const gui::Selected block_selected = makeFakeSelected(&fake_previous_);
+  const web::Selected initial_selected = makeFakeSelected(&fake_current_);
+  const web::Selected block_selected = makeFakeSelected(&fake_previous_);
   ASSERT_TRUE(initial_selected);
   ASSERT_TRUE(block_selected);
 
@@ -2222,7 +3890,7 @@ TEST_F(SelectHandlerTest, InspectBackRestoresPreviousObject)
     EXPECT_TRUE(state_.current_inspected);
     EXPECT_NE(state_.current_inspected, initial_selected);
     ASSERT_EQ(state_.navigation_history.size(), 1u);
-    EXPECT_EQ(state_.navigation_history.back(), initial_selected);
+    EXPECT_EQ(state_.navigation_history.back().sel, initial_selected);
   }
 
   WebSocketRequest back_req;
@@ -2245,7 +3913,7 @@ TEST_F(SelectHandlerTest, InspectBackRestoresPreviousObject)
 
 TEST_F(SelectHandlerTest, InspectBackWithoutHistoryKeepsCurrentObject)
 {
-  const gui::Selected initial_selected = makeFakeSelected(&fake_current_);
+  const web::Selected initial_selected = makeFakeSelected(&fake_current_);
   ASSERT_TRUE(initial_selected);
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
@@ -2273,7 +3941,7 @@ TEST_F(SelectHandlerTest, InspectBackWithoutHistoryKeepsCurrentObject)
 TEST_F(SelectHandlerTest, InspectRespectsDbuToggle)
 {
   fake_current_.bbox = odb::Rect(2000, 4000, 6000, 8000);
-  const gui::Selected block_selected = makeFakeSelected(&fake_current_);
+  const web::Selected block_selected = makeFakeSelected(&fake_current_);
 
   {
     std::lock_guard<std::mutex> lock(state_.selectables_mutex);
@@ -2341,7 +4009,7 @@ TEST_F(SelectHandlerTest, InspectConvertsToMicronsWithoutABlock)
 // "<unknown>".
 TEST_F(SelectHandlerTest, InspectSerializesPropertyTable)
 {
-  gui::PropertyTable table(/*rows=*/2, /*columns=*/2);
+  web::PropertyTable table(/*rows=*/2, /*columns=*/2);
   table.setColumnHeader(0, "0 \xC2\xB5m");
   table.setColumnHeader(1, "0.2 \xC2\xB5m\nPRL 0.1 \xC2\xB5m");
   table.setRowHeader(0, "0 \xC2\xB5m");
@@ -2569,8 +4237,8 @@ TEST_F(SelectHandlerTest, TileHandlerSnapshotsFocusNets)
 // Because SelectionSet is std::set, iteration order is by operator<
 // (FakeDescriptor::lessThan compares pointer addresses).
 void populateSelectionSet(SessionState& st,
-                          const gui::Selected& a,
-                          const gui::Selected& b,
+                          const web::Selected& a,
+                          const web::Selected& b,
                           int itr_pos)
 {
   std::lock_guard<std::mutex> lock(st.selection_mutex);
@@ -2781,7 +4449,8 @@ TEST_F(SelectHandlerTest, SelectNextClearsNavigationHistory)
                        0);
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
-    state_.navigation_history.push_back(makeFakeSelected(&fake_previous_));
+    state_.navigation_history.push_back(
+        {.sel = makeFakeSelected(&fake_previous_), .xfm = {}});
   }
 
   WebSocketRequest req;
@@ -2857,7 +4526,7 @@ TEST_F(SelectHandlerTest, SelectLayerUnknownChipletFallsBackToDefaultTech)
   WebSocketRequest req;
   req.id = 53;
   req.type = WebSocketRequest::kSelectLayer;
-  req.json = parseObj(R"({"layer":"metal1","chiplet":"top.nonexistent"})");
+  req.json = parseObj(R"({"layer":"metal1","chiplet":"top/nonexistent"})");
 
   auto resp = handler_->handleSelectLayer(req, state_);
   EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
@@ -2878,7 +4547,8 @@ TEST_F(SelectHandlerTest, SelectLayerReplacesPreviousSelection)
     state_.timing_rects.push_back(
         {odb::Rect(0, 0, 10, 10), {.r = 255, .g = 0, .b = 0, .a = 255}, ""});
     state_.highlight_rects.emplace_back(0, 0, 10, 10);
-    state_.navigation_history.push_back(makeFakeSelected(&fake_previous_));
+    state_.navigation_history.push_back(
+        {.sel = makeFakeSelected(&fake_previous_), .xfm = {}});
   }
 
   WebSocketRequest req;
@@ -2950,7 +4620,8 @@ TEST_F(SelectHandlerTest, InspectBackResponseIncludesSelectionMetadata)
                        1);
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
-    state_.navigation_history.push_back(makeFakeSelected(&fake_current_));
+    state_.navigation_history.push_back(
+        {.sel = makeFakeSelected(&fake_current_), .xfm = {}});
   }
 
   WebSocketRequest req;
@@ -3059,9 +4730,9 @@ class FindHandlerTest : public tst::Nangate45Fixture
     return parseObj(payloadStr(last_resp_)).at("count").as_int64();
   }
 
-  gui::Selected makeFakeSelected(FakeInspectable* object)
+  web::Selected makeFakeSelected(FakeInspectable* object)
   {
-    return gui::Selected(object, &fake_descriptor_);
+    return web::Selected(object, &fake_descriptor_);
   }
 
   std::shared_ptr<TileGenerator> gen_;
@@ -3138,6 +4809,27 @@ TEST_F(FindHandlerTest, FindAddsToTheExistingSelection)
       << "the pre-existing selection must survive a find";
 }
 
+// Unless a destroy has made it stale: a find adds to the selection and
+// highlights all of it, so the stale part has to go first.
+TEST_F(FindHandlerTest, FindDropsAStaleSelection)
+{
+  placeInst("BUF_X16", "u_buf0", 0, 0);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.selection_set.insert(makeFakeSelected(&fake_preselected_));
+  }
+  state_.selection_stale = true;
+
+  runFind("inst", "u_buf0");
+
+  const auto root = parseObj(payloadStr(last_resp_));
+  EXPECT_EQ(root.at("selection_count").as_int64(), 1);
+  EXPECT_FALSE(state_.selection_stale.load());
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_FALSE(
+      state_.selection_set.contains(makeFakeSelected(&fake_preselected_)));
+}
+
 // set_property tests (descriptor editors)
 //------------------------------------------------------------------------------
 
@@ -3182,22 +4874,22 @@ class EditableFakeDescriptor : public FakeDescriptor
   Actions getActions(const std::any& object) const override
   {
     Actions actions;
-    actions.push_back({std::string(gui::Descriptor::kDeselectAction),
-                       [this]() -> gui::Selected {
+    actions.push_back({std::string(web::Descriptor::kDeselectAction),
+                       [this]() -> web::Selected {
                          ++deselect_calls;
                          return {};
                        }});
-    actions.push_back({"Jump", [this]() -> gui::Selected {
-                         return gui::Selected(jump_target, this);
+    actions.push_back({"Jump", [this]() -> web::Selected {
+                         return web::Selected(jump_target, this);
                        }});
-    actions.push_back({"Refresh", [this, object]() -> gui::Selected {
-                         return gui::Selected(object, this);
+    actions.push_back({"Refresh", [this, object]() -> web::Selected {
+                         return web::Selected(object, this);
                        }});
-    actions.push_back({"Explode", []() -> gui::Selected {
+    actions.push_back({"Explode", []() -> web::Selected {
                          throw std::runtime_error("action exploded");
                        }});
-    actions.push_back({"Insert Buffer", []() -> gui::Selected { return {}; }});
-    actions.push_back({"Delete", [this]() -> gui::Selected {
+    actions.push_back({"Insert Buffer", []() -> web::Selected { return {}; }});
+    actions.push_back({"Delete", [this]() -> web::Selected {
                          if (stale_flag != nullptr) {
                            *stale_flag = true;
                          }
@@ -3228,7 +4920,7 @@ class EditableFakeDescriptor : public FakeDescriptor
     editors.emplace(
         "Location", makeEditor([this](const std::any& value) {
           return commit(value, [&] {
-            location_dbu = gui::Descriptor::Property::convert_string(
+            location_dbu = web::Descriptor::Property::convert_string(
                 std::any_cast<std::string>(value), &location_ok);
           });
         }));
@@ -3266,7 +4958,7 @@ class SetPropertyTest : public SelectHandlerTest
     editable_descriptor_.stale_flag = &state_.selection_stale;
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
     state_.current_inspected
-        = gui::Selected(&fake_current_, &editable_descriptor_);
+        = web::Selected(&fake_current_, &editable_descriptor_);
   }
 
   boost::json::object setProperty(const std::string& request_json)
@@ -3438,7 +5130,7 @@ TEST_F(SetPropertyTest, UnknownPropertyOrNothingInspected)
 
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
-    state_.current_inspected = gui::Selected();
+    state_.current_inspected = web::Selected();
   }
   root = setProperty(R"({"name":"Name","value":"x"})");
   EXPECT_EQ(root.at("ok").as_int64(), 0);
@@ -3471,7 +5163,7 @@ TEST_F(SetPropertyTest, ConvertStringInstalledDuringEdit)
 
   // Restored default after the handler: returns 0, never touches ok.
   bool ok = false;
-  EXPECT_EQ(gui::Descriptor::Property::convert_string("5", &ok), 0);
+  EXPECT_EQ(web::Descriptor::Property::convert_string("5", &ok), 0);
   EXPECT_FALSE(ok);
 }
 
@@ -3525,7 +5217,7 @@ TEST_F(TriggerActionTest, ActionChangingSelectionUpdatesStateAndHistory)
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
     EXPECT_TRUE(state_.current_inspected
-                == gui::Selected(&fake_previous_, &editable_descriptor_));
+                == web::Selected(&fake_previous_, &editable_descriptor_));
     ASSERT_EQ(state_.navigation_history.size(), 1u);
   }
   ASSERT_EQ(broadcasts_.size(), 1u);
@@ -3540,15 +5232,16 @@ TEST_F(TriggerActionTest, ActionKeepingSelectionRefreshesPayload)
   EXPECT_EQ(editable_descriptor_.deselect_calls, 0);
   std::lock_guard<std::mutex> lock(state_.selection_mutex);
   EXPECT_TRUE(state_.current_inspected
-              == gui::Selected(&fake_current_, &editable_descriptor_));
+              == web::Selected(&fake_current_, &editable_descriptor_));
 }
 
 TEST_F(TriggerActionTest, DeleteClearsSelectionStateAndReportsDeleted)
 {
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
-    state_.navigation_history.emplace_back(&fake_previous_,
-                                           &editable_descriptor_);
+    state_.navigation_history.push_back(
+        {.sel = web::Selected(&fake_previous_, &editable_descriptor_),
+         .xfm = {}});
     state_.selection_set.insert(state_.current_inspected);
     state_.selection_itr = state_.selection_set.begin();
     state_.highlight_rects.push_back(fake_current_.bbox);
@@ -3693,7 +5386,7 @@ TEST_F(HighlightGroupTest, HighlightCollectsGroupFlightLines)
   LineFakeDescriptor line_descriptor;
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
-    state_.current_inspected = gui::Selected(&fake_current_, &line_descriptor);
+    state_.current_inspected = web::Selected(&fake_current_, &line_descriptor);
   }
   auto root = send(WebSocketRequest::kHighlight, R"({"group":4})");
   EXPECT_EQ(root.at("ok").as_int64(), 1);
@@ -3747,7 +5440,7 @@ TEST_F(HighlightGroupTest, HighlightWithNothingInspectedFails)
 {
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
-    state_.current_inspected = gui::Selected();
+    state_.current_inspected = web::Selected();
   }
   auto root = send(WebSocketRequest::kHighlight, R"({"group":0})");
   EXPECT_EQ(root.at("ok").as_int64(), 0);
@@ -3843,13 +5536,13 @@ TEST_F(SelectionBrowserTest, ListEmptyState)
 {
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
-    state_.current_inspected = gui::Selected();
+    state_.current_inspected = web::Selected();
   }
   auto root = listSelection();
   EXPECT_EQ(root.at("ok").as_int64(), 1);
   EXPECT_EQ(root.at("selection").as_array().size(), 0u);
   ASSERT_EQ(root.at("groups").as_array().size(),
-            static_cast<size_t>(gui::kNumHighlightSet));
+            static_cast<size_t>(web::kNumHighlightSet));
   EXPECT_FALSE(root.at("truncated").as_bool());
 }
 
@@ -4246,6 +5939,32 @@ TEST_F(DRCHandlerTest, HighlightMarker)
   EXPECT_EQ(state_.highlight_rects.size(), 1u);
 }
 
+// Opening a marker in the Inspector runs the outgoing object's deselect
+// action, so a stale current_inspected has to be dropped first.
+TEST_F(DRCHandlerTest, HighlightDropsAStaleSelection)
+{
+  FakeDescriptor descriptor;
+  FakeInspectable stale{.name = "stale",
+                        .type = "FakeStale",
+                        .bbox = {0, 0, 10, 10},
+                        .properties = {}};
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = web::Selected(&stale, &descriptor);
+  }
+  state_.selection_stale = true;
+
+  WebSocketRequest req;
+  req.id = 109;
+  req.type = WebSocketRequest::kDrcHighlight;
+  req.json = parseObj(R"({"marker_id":-1})");
+  handler_->handleDRCHighlight(req, state_);
+
+  EXPECT_FALSE(state_.selection_stale.load());
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_FALSE(state_.current_inspected);
+}
+
 TEST_F(DRCHandlerTest, HighlightClear)
 {
   // Put some existing highlights
@@ -4381,6 +6100,69 @@ TEST_F(DRCHandlerTest, UpdateCategoryVisibilityBatch)
   }
 }
 
+// check_power_grid builds PSM/<net>/<check>, so the same subcategory name
+// appears under every net. Toggling one must address it by its full path.
+TEST_F(DRCHandlerTest, UpdateCategoryVisibilityByPath)
+{
+  auto* psm = odb::dbMarkerCategory::create(chip_, "PSM");
+  auto* vdd = odb::dbMarkerCategory::create(psm, "VDD");
+  auto* vdd_check = odb::dbMarkerCategory::create(vdd, "Unconnected shape");
+  auto* vss = odb::dbMarkerCategory::create(psm, "VSS");
+  auto* vss_check = odb::dbMarkerCategory::create(vss, "Unconnected shape");
+  for (int i = 0; i < 2; ++i) {
+    odb::dbMarker::create(vdd_check)->addShape(odb::Rect(0, i, 500, i + 500));
+    odb::dbMarker::create(vss_check)->addShape(odb::Rect(0, i, 500, i + 500));
+  }
+
+  // Selecting the top-level category starts every marker invisible.
+  {
+    WebSocketRequest req;
+    req.type = WebSocketRequest::kDrcMarkers;
+    req.json = parseObj(R"({"category":"PSM"})");
+    handler_->handleDRCMarkers(req, state_);
+  }
+
+  WebSocketRequest req;
+  req.id = 202;
+  req.type = WebSocketRequest::kDrcUpdateCategoryVisibility;
+  req.json = parseObj(
+      R"({"path":["PSM","VDD","Unconnected shape"],"visible":true})");
+
+  auto resp = handler_->handleDRCUpdateCategoryVisibility(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kJson);
+
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"ok\":1"), std::string::npos);
+  EXPECT_NE(json.find("\"count\":2"), std::string::npos);
+  EXPECT_NE(json.find("\"category\":\"Unconnected shape\""), std::string::npos);
+
+  // Only the VDD markers flipped; the same-named VSS subcategory is untouched.
+  for (odb::dbMarker* m : vdd_check->getAllMarkers()) {
+    EXPECT_TRUE(m->isVisible());
+  }
+  for (odb::dbMarker* m : vss_check->getAllMarkers()) {
+    EXPECT_FALSE(m->isVisible());
+  }
+
+  std::lock_guard<std::mutex> lock(state_.drc_mutex);
+  EXPECT_EQ(state_.drc_rects.size(), 2u);
+}
+
+TEST_F(DRCHandlerTest, UpdateCategoryVisibilityUnknownPathErrors)
+{
+  createTestCategory("DRC", 1);
+
+  WebSocketRequest req;
+  req.id = 203;
+  req.type = WebSocketRequest::kDrcUpdateCategoryVisibility;
+  req.json = parseObj(R"({"path":["DRC","NoSuchSubcat"],"visible":true})");
+
+  auto resp = handler_->handleDRCUpdateCategoryVisibility(req, state_);
+  EXPECT_EQ(resp.type, WebSocketResponse::kError);
+  EXPECT_NE(payloadStr(resp).find("Category not found: DRC/NoSuchSubcat"),
+            std::string::npos);
+}
+
 //------------------------------------------------------------------------------
 // Schematic handler tests — verify leaf cells are classified into standard
 // logic-gate schematic symbols (Yosys primitives understood by netlistsvg)
@@ -4415,6 +6197,17 @@ class SchematicHandlerTest : public tst::Nangate45Fixture
     makeInst(block_, master, inst_name, opts);
   }
 
+  // Returns modules.top from a schematic response.
+  static boost::json::object schematicTop(const WebSocketResponse& resp)
+  {
+    return boost::json::parse(payloadStr(resp))
+        .as_object()
+        .at("modules")
+        .as_object()
+        .at("top")
+        .as_object();
+  }
+
   // Returns modules.top.cells from a schematic_full response.
   boost::json::object fullCells()
   {
@@ -4424,14 +6217,7 @@ class SchematicHandlerTest : public tst::Nangate45Fixture
     req.json = parseObj("{}");
     auto resp = handler_->handleSchematicFull(req);
     EXPECT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
-    return boost::json::parse(payloadStr(resp))
-        .as_object()
-        .at("modules")
-        .as_object()
-        .at("top")
-        .as_object()
-        .at("cells")
-        .as_object();
+    return schematicTop(resp).at("cells").as_object();
   }
 
   std::shared_ptr<TileGenerator> gen_;
@@ -4517,6 +6303,943 @@ TEST_F(SchematicHandlerTest, GateKeepsMasterNameAndRealPins)
   auto& dirs = cell.at("port_directions").as_object();
   EXPECT_EQ(std::string(dirs.at("A1").as_string()), "input");
   EXPECT_EQ(std::string(dirs.at("ZN").as_string()), "output");
+}
+
+TEST_F(SchematicHandlerTest, RegistersGetKindAndGatePorts)
+{
+  makeGate(
+      "DFF_X1", "g_dff", {{"d", "D"}, {"clk", "CK"}, {"q", "Q"}, {"qn", "QN"}});
+  makeGate(
+      "DFF_X1", "g_dff_dangling", {{"d2", "D"}, {"clk2", "CK"}, {"q2", "Q"}});
+  makeGate(
+      "DFFR_X1",
+      "g_dffr",
+      {{"d", "D"}, {"clk", "CK"}, {"rst", "RN"}, {"q", "Q"}, {"qn", "QN"}});
+  makeGate(
+      "DFFS_X1",
+      "g_dffs",
+      {{"d", "D"}, {"clk", "CK"}, {"set", "SN"}, {"q", "Q"}, {"qn", "QN"}});
+  makeGate("DFFRS_X1",
+           "g_dffrs",
+           {{"d", "D"},
+            {"clk", "CK"},
+            {"rst", "RN"},
+            {"set", "SN"},
+            {"q", "Q"},
+            {"qn", "QN"}});
+
+  boost::json::object cells = fullCells();
+  auto check = [&](const char* inst, const char* kind, const char* control) {
+    auto& cell = cells.at(inst).as_object();
+    EXPECT_EQ(std::string(cell.at("gate_kind").as_string()), kind);
+    auto& ports = cell.at("gate_ports").as_object();
+    EXPECT_EQ(std::string(ports.at("D").as_string()), "D");
+    EXPECT_EQ(std::string(ports.at("CK").as_string()), "CK");
+    EXPECT_EQ(std::string(ports.at("Q").as_string()), "Q");
+    EXPECT_EQ(std::string(ports.at("QN").as_string()), "QN");
+    if (control != nullptr) {
+      EXPECT_EQ(std::string(ports.at(control).as_string()), control);
+    }
+  };
+  check("g_dff", "dff", nullptr);
+  check("g_dff_dangling", "dff", nullptr);
+  EXPECT_TRUE(cells.at("g_dff_dangling")
+                  .as_object()
+                  .at("connections")
+                  .as_object()
+                  .contains("QN"));
+  check("g_dffr", "dffr", "RN");
+  check("g_dffs", "dffs", "SN");
+  EXPECT_FALSE(cells.at("g_dffrs").as_object().contains("gate_kind"));
+}
+
+TEST_F(SchematicHandlerTest, RegistersWithBidirectionalSignalsStayBoxes)
+{
+  auto make_unsupported_register =
+      [&](const char* lib_name, const char* inst_name, odb::dbIoType io_type) {
+        odb::dbLib* test_lib
+            = odb::dbLib::create(getDb(), lib_name, getDb()->getTech());
+        odb::dbMaster* master = odb::dbMaster::create(test_lib, "DFF_X1");
+        master->setWidth(1000);
+        master->setHeight(1000);
+        master->setType(odb::dbMasterType::CORE);
+        odb::dbMTerm::create(
+            master, "D", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+        odb::dbMTerm::create(
+            master, "CK", odb::dbIoType::INPUT, odb::dbSigType::CLOCK);
+        odb::dbMTerm::create(
+            master, "Q", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
+        odb::dbMTerm::create(
+            master, "QN", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
+        odb::dbMTerm::create(master, "EXTRA", io_type, odb::dbSigType::SIGNAL);
+        master->setFrozen();
+
+        // Link this synthetic LEF master to Nangate45's DFF_X1 Liberty cell.
+        sta_->getDbNetwork()->readLefAfter(test_lib);
+        makeInst(block_, master, inst_name, {});
+      };
+
+  make_unsupported_register(
+      "dff_inout_lib", "g_dff_inout", odb::dbIoType::INOUT);
+  make_unsupported_register(
+      "dff_feedthru_lib", "g_dff_feedthru", odb::dbIoType::FEEDTHRU);
+
+  boost::json::object cells = fullCells();
+  for (const char* inst : {"g_dff_inout", "g_dff_feedthru"}) {
+    auto& cell = cells.at(inst).as_object();
+    EXPECT_FALSE(cell.contains("gate_kind")) << inst;
+    EXPECT_TRUE(cell.at("connections").as_object().contains("EXTRA")) << inst;
+  }
+}
+
+TEST_F(SchematicHandlerTest, RegistersMatchInvertedStateExpressions)
+{
+  makeGate(
+      "DFF_X1", "g_dff", {{"d", "D"}, {"clk", "CK"}, {"q", "Q"}, {"qn", "QN"}});
+  sta::LibertyCell* liberty_cell
+      = sta_->getDbNetwork()->libertyCell(block_->findInst("g_dff"));
+  ASSERT_NE(liberty_cell, nullptr);
+  ASSERT_EQ(liberty_cell->sequentials().size(), 1);
+  const sta::Sequential& sequential = liberty_cell->sequentials().front();
+
+  for (const bool invert_q : {false, true}) {
+    SCOPED_TRACE(invert_q);
+    delete liberty_cell->findLibertyPort("Q")->function();
+    liberty_cell->findLibertyPort("Q")->setFunction(
+        invert_q ? sta::FuncExpr::makeNot(
+                       sta::FuncExpr::makePort(sequential.outputInv()))
+                 : sta::FuncExpr::makePort(sequential.output()));
+    delete liberty_cell->findLibertyPort("QN")->function();
+    liberty_cell->findLibertyPort("QN")->setFunction(
+        invert_q ? sta::FuncExpr::makePort(sequential.outputInv())
+                 : sta::FuncExpr::makeNot(
+                       sta::FuncExpr::makePort(sequential.output())));
+
+    const auto cells = fullCells();
+    const auto& cell = cells.at("g_dff").as_object();
+    ASSERT_TRUE(cell.contains("gate_kind"));
+    EXPECT_EQ(cell.at("gate_kind").as_string(), "dff");
+    const auto& ports = cell.at("gate_ports").as_object();
+    EXPECT_EQ(ports.at("Q").as_string(), "Q");
+    EXPECT_EQ(ports.at("QN").as_string(), "QN");
+  }
+}
+
+TEST_F(SchematicHandlerTest, InvertingOnlyRegisterOutputUsesQnPort)
+{
+  odb::dbLib* test_lib
+      = odb::dbLib::create(getDb(), "qn_only_lib", getDb()->getTech());
+  odb::dbMaster* master = odb::dbMaster::create(test_lib, "DFF_X1");
+  master->setWidth(1000);
+  master->setHeight(1000);
+  master->setType(odb::dbMasterType::CORE);
+  odb::dbMTerm::create(
+      master, "D", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+  odb::dbMTerm::create(
+      master, "CK", odb::dbIoType::INPUT, odb::dbSigType::CLOCK);
+  odb::dbMTerm::create(
+      master, "QN", odb::dbIoType::OUTPUT, odb::dbSigType::SIGNAL);
+  master->setFrozen();
+  sta_->getDbNetwork()->readLefAfter(test_lib);
+  odb::dbInst* inst = makeInst(block_, master, "g_qn", {});
+  sta::LibertyCell* liberty_cell = sta_->getDbNetwork()->libertyCell(inst);
+  ASSERT_NE(liberty_cell, nullptr);
+  ASSERT_EQ(liberty_cell->sequentials().size(), 1);
+  delete liberty_cell->findLibertyPort("QN")->function();
+  liberty_cell->findLibertyPort("QN")->setFunction(sta::FuncExpr::makeNot(
+      sta::FuncExpr::makePort(liberty_cell->sequentials().front().output())));
+
+  const auto cells = fullCells();
+  const auto& cell = cells.at("g_qn").as_object();
+  ASSERT_TRUE(cell.contains("gate_kind"));
+  EXPECT_EQ(cell.at("gate_kind").as_string(), "dff");
+  const auto& ports = cell.at("gate_ports").as_object();
+  EXPECT_FALSE(ports.contains("Q"));
+  EXPECT_EQ(ports.at("QN").as_string(), "QN");
+}
+
+TEST_F(SchematicHandlerTest, RegistersWithCompoundStateOutputsStayBoxes)
+{
+  makeGate(
+      "DFF_X1", "g_dff", {{"d", "D"}, {"clk", "CK"}, {"q", "Q"}, {"qn", "QN"}});
+  sta::LibertyCell* liberty_cell
+      = sta_->getDbNetwork()->libertyCell(block_->findInst("g_dff"));
+  ASSERT_NE(liberty_cell, nullptr);
+  ASSERT_EQ(liberty_cell->sequentials().size(), 1);
+  delete liberty_cell->findLibertyPort("Q")->function();
+  liberty_cell->findLibertyPort("Q")->setFunction(sta::FuncExpr::makeAnd(
+      sta::FuncExpr::makePort(liberty_cell->sequentials().front().output()),
+      sta::FuncExpr::makePort(liberty_cell->findLibertyPort("D"))));
+
+  const auto cells = fullCells();
+  EXPECT_FALSE(cells.at("g_dff").as_object().contains("gate_kind"));
+  EXPECT_TRUE(cells.at("g_dff")
+                  .as_object()
+                  .at("connections")
+                  .as_object()
+                  .contains("Q"));
+}
+
+TEST_F(SchematicHandlerTest, SchematicPathUsesRequestedInstances)
+{
+  makeGate("BUF_X1", "g_buf", {{"i", "A"}, {"o", "Z"}});
+  makeGate("INV_X1", "g_inv", {{"i", "A"}, {"o", "ZN"}});
+
+  WebSocketRequest req;
+  req.id = 2;
+  req.type = WebSocketRequest::kSchematicPath;
+  req.json = parseObj(R"({"inst_names":["g_buf","missing"]})");
+  auto resp = handler_->handleSchematicPath(req);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+  const boost::json::object top = schematicTop(resp);
+  const auto& cells = top.at("cells").as_object();
+  EXPECT_EQ(cells.size(), 1);
+  EXPECT_TRUE(cells.contains("g_buf"));
+}
+
+// emitSchematicCell draws no supply pins, so cones and paths must not emit
+// their nets or ports either: they would show with nothing attached.
+TEST_F(SchematicHandlerTest, SupplyNetsStayOutOfConesAndPaths)
+{
+  makeGate("INV_X1",
+           "g_inv",
+           {{"in", "A"}, {"out", "ZN"}, {"VDD", "VDD"}, {"VSS", "VSS"}});
+  makeBTerm(block_, "VDD");
+  makeBTerm(block_, "VSS");
+
+  WebSocketRequest cone;
+  cone.id = 1;
+  cone.type = WebSocketRequest::kSchematicCone;
+  cone.json
+      = parseObj(R"({"inst_name":"g_inv","fanin_depth":0,"fanout_depth":0})");
+  WebSocketRequest path;
+  path.id = 2;
+  path.type = WebSocketRequest::kSchematicPath;
+  path.json = parseObj(R"({"inst_names":["g_inv"]})");
+  for (const WebSocketResponse& resp : {handler_->handleSchematicCone(cone),
+                                        handler_->handleSchematicPath(path)}) {
+    ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+    const boost::json::object top = schematicTop(resp);
+    const auto& nets = top.at("netnames").as_object();
+    EXPECT_EQ(nets.size(), 2);
+    EXPECT_TRUE(nets.contains("in"));
+    EXPECT_TRUE(nets.contains("out"));
+    EXPECT_TRUE(top.at("ports").as_object().empty());
+  }
+}
+
+class TimingHighlightHandlerTest : public SchematicHandlerTest
+{
+ protected:
+  void SetUp() override
+  {
+    SchematicHandlerTest::SetUp();
+    std::vector<odb::dbInst*> flops;
+    for (int path = 0; path < 3; ++path) {
+      const std::string prefix = "path" + std::to_string(path);
+      const std::string input = prefix + "_in";
+      std::string net = prefix + "_0";
+      tst::InstOptions options;
+      options.status = odb::dbPlacementStatus::PLACED;
+      options.location = odb::Point(1000, 10000 * (path + 1));
+      options.iterms
+          = {{input.c_str(), "D"}, {"clk", "CK"}, {net.c_str(), "Q"}};
+      flops.push_back(makeInst(block_,
+                               lib_->findMaster("DFF_X1"),
+                               (prefix + "_launch").c_str(),
+                               options));
+      // Independent chains have distinct slack and layout locations, so a
+      // wrong path index cannot accidentally produce the same overlay.
+      const int buffers = 1 + 2 * path;
+      for (int buffer = 0; buffer < buffers; ++buffer) {
+        const std::string output = prefix + "_" + std::to_string(buffer + 1);
+        options.location = odb::Point(5000 * (buffer + 1), 10000 * (path + 1));
+        options.iterms = {{net.c_str(), "A"}, {output.c_str(), "Z"}};
+        makeInst(block_,
+                 lib_->findMaster("BUF_X1"),
+                 (prefix + "_buf" + std::to_string(buffer)).c_str(),
+                 options);
+        net = output;
+      }
+      const std::string output = prefix + "_out";
+      options.location = odb::Point(5000 * (buffers + 1), 10000 * (path + 1));
+      options.iterms
+          = {{net.c_str(), "D"}, {"clk", "CK"}, {output.c_str(), "Q"}};
+      flops.push_back(makeInst(block_,
+                               lib_->findMaster("DFF_X1"),
+                               (prefix + "_capture").c_str(),
+                               options));
+    }
+    sta_->postReadDef(block_);
+    auto* network = sta_->getDbNetwork();
+    network->setBlock(block_);
+    sta::PinSet clock_pins(network);
+    for (odb::dbInst* flop : flops) {
+      clock_pins.insert(network->dbToSta(flop->findITerm("CK")));
+    }
+    sta::FloatSeq waveform{0.0f, 0.5e-9f};
+    sta_->makeClock(
+        "clk", clock_pins, false, 1.0e-9f, waveform, "", sta_->cmdMode());
+    timing_report_ = std::make_shared<TimingReport>(getSta());
+    timing_handler_
+        = std::make_unique<TimingHandler>(gen_, timing_report_, tcl_eval_);
+  }
+
+  // The pins and clocks a timing_highlight request names `path` by.
+  static void setHighlightKey(boost::json::object& json,
+                              const TimingPathSummary& path)
+  {
+    json["start_pin"] = path.start_pin;
+    json["end_pin"] = path.end_pin;
+    json["start_clk"] = path.start_clk;
+    json["end_clk"] = path.end_clk;
+  }
+
+  // handleTimingHighlight left exactly these shapes in `state`.
+  static void expectHighlight(const SessionState& state,
+                              const std::vector<ColoredRect>& rects,
+                              const std::vector<FlightLine>& lines)
+  {
+    ASSERT_EQ(state.timing_rects.size(), rects.size());
+    for (size_t i = 0; i < rects.size(); ++i) {
+      EXPECT_EQ(state.timing_rects[i].rect, rects[i].rect);
+      EXPECT_EQ(state.timing_rects[i].color, rects[i].color);
+      EXPECT_EQ(state.timing_rects[i].layer, rects[i].layer);
+      EXPECT_EQ(state.timing_rects[i].filled, rects[i].filled);
+    }
+    ASSERT_EQ(state.timing_lines.size(), lines.size());
+    for (size_t i = 0; i < lines.size(); ++i) {
+      EXPECT_EQ(state.timing_lines[i].p1, lines[i].p1);
+      EXPECT_EQ(state.timing_lines[i].p2, lines[i].p2);
+      EXPECT_EQ(state.timing_lines[i].color, lines[i].color);
+    }
+  }
+
+  std::shared_ptr<TimingReport> timing_report_;
+  std::unique_ptr<TimingHandler> timing_handler_;
+};
+
+TEST_F(TimingHighlightHandlerTest, HistogramWindowHighlightsTheReportedPath)
+{
+  const auto paths = timing_report_->getReport(true);
+  ASSERT_EQ(paths.size(), 3);
+  ASSERT_LT(paths[0].slack, paths[1].slack);
+  ASSERT_LT(paths[1].slack, paths[2].slack);
+  const float slack_min = (paths[0].slack + paths[1].slack) / 2;
+  const float slack_max = (paths[1].slack + paths[2].slack) / 2;
+  const auto filtered
+      = timing_report_->getReport(true, 1, slack_min, slack_max);
+  ASSERT_EQ(filtered.size(), 1);
+  ASSERT_EQ(filtered.front().end_pin, paths[1].end_pin);
+  ASSERT_NE(filtered.front().end_pin, paths.front().end_pin);
+
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTimingReport;
+  req.json = {{"is_setup", true},
+              {"max_paths", 1},
+              {"slack_min", slack_min},
+              {"slack_max", slack_max},
+              {"unconstrained", false}};
+  const auto report_response = timing_handler_->handleTimingReport(req);
+  ASSERT_EQ(report_response.type, WebSocketResponse::kJson)
+      << payloadStr(report_response);
+  const auto report_json = boost::json::parse(payloadStr(report_response));
+  const auto& reported_paths = report_json.as_object().at("paths").as_array();
+  ASSERT_EQ(reported_paths.size(), 1);
+  EXPECT_EQ(reported_paths.front().as_object().at("end_pin").as_string(),
+            filtered.front().end_pin);
+
+  req.type = WebSocketRequest::kTimingHighlight;
+  req.json["path_index"] = 0;
+  setHighlightKey(req.json, filtered.front());
+  for (const bool stage : {false, true}) {
+    SCOPED_TRACE(stage);
+    std::vector<ColoredRect> expected_rects;
+    std::vector<FlightLine> expected_lines;
+    collectTimingPathShapes(
+        gen_->chiplets(), filtered.front(), expected_rects, expected_lines);
+    ASSERT_FALSE(expected_lines.empty());
+    if (stage) {
+      req.json["pin_name"] = filtered.front().end_pin;
+      const size_t path_lines = expected_lines.size();
+      collectTimingStageShapes(gen_->chiplets(),
+                               filtered.front(),
+                               filtered.front().end_pin,
+                               kTimingStageColor,
+                               expected_rects,
+                               expected_lines);
+      ASSERT_GT(expected_lines.size(), path_lines);
+    }
+
+    SessionState state;
+    const auto response = timing_handler_->handleTimingHighlight(req, state);
+    ASSERT_EQ(response.type, WebSocketResponse::kJson) << payloadStr(response);
+    expectHighlight(state, expected_rects, expected_lines);
+  }
+}
+
+TEST_F(TimingHighlightHandlerTest, HighlightHonorsTheReportPathLimit)
+{
+  const auto paths = timing_report_->getReport(true);
+  ASSERT_EQ(paths.size(), 3);
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTimingHighlight;
+  req.json = {{"is_setup", true}, {"max_paths", 1}, {"path_index", 1}};
+  setHighlightKey(req.json, paths[1]);
+  SessionState state;
+  const auto response = timing_handler_->handleTimingHighlight(req, state);
+  ASSERT_EQ(response.type, WebSocketResponse::kJson) << payloadStr(response);
+  EXPECT_TRUE(state.timing_rects.empty());
+  EXPECT_TRUE(state.timing_lines.empty());
+}
+
+TEST_F(TimingHighlightHandlerTest, PinsSelectThePathWhenTheIndexIsStale)
+{
+  const auto paths = timing_report_->getReport(true);
+  ASSERT_EQ(paths.size(), 3);
+  std::vector<ColoredRect> expected_rects;
+  std::vector<FlightLine> expected_lines;
+  collectTimingPathShapes(
+      gen_->chiplets(), paths[1], expected_rects, expected_lines);
+  ASSERT_FALSE(expected_lines.empty());
+
+  // Index 0 is a different path in this report; the pins must win.
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTimingHighlight;
+  req.json = {{"is_setup", true}, {"path_index", 0}};
+  setHighlightKey(req.json, paths[1]);
+  SessionState state;
+  auto response = timing_handler_->handleTimingHighlight(req, state);
+  ASSERT_EQ(response.type, WebSocketResponse::kJson) << payloadStr(response);
+  expectHighlight(state, expected_rects, expected_lines);
+
+  // Pins that are not in the report highlight nothing rather than the index.
+  req.json["end_pin"] = "no_such_pin";
+  response = timing_handler_->handleTimingHighlight(req, state);
+  ASSERT_EQ(response.type, WebSocketResponse::kJson) << payloadStr(response);
+  EXPECT_TRUE(state.timing_rects.empty());
+  EXPECT_TRUE(state.timing_lines.empty());
+}
+
+// A register two clocks capture has a path per clock with the same pins, so the
+// pins alone must not pick a path: the clocks have to match too.
+TEST_F(TimingHighlightHandlerTest, ClocksMustMatchAsWellAsPins)
+{
+  const auto paths = timing_report_->getReport(true);
+  ASSERT_EQ(paths.size(), 3);
+  std::vector<ColoredRect> expected_rects;
+  std::vector<FlightLine> expected_lines;
+  collectTimingPathShapes(
+      gen_->chiplets(), paths[1], expected_rects, expected_lines);
+  ASSERT_FALSE(expected_lines.empty());
+
+  WebSocketRequest req;
+  req.id = 1;
+  req.type = WebSocketRequest::kTimingHighlight;
+  req.json = {{"is_setup", true}, {"path_index", 1}};
+  setHighlightKey(req.json, paths[1]);
+  SessionState state;
+  auto response = timing_handler_->handleTimingHighlight(req, state);
+  ASSERT_EQ(response.type, WebSocketResponse::kJson) << payloadStr(response);
+  expectHighlight(state, expected_rects, expected_lines);
+
+  for (const char* clock_key : {"start_clk", "end_clk"}) {
+    SCOPED_TRACE(clock_key);
+    setHighlightKey(req.json, paths[1]);
+    req.json[clock_key] = "other_clk";
+    response = timing_handler_->handleTimingHighlight(req, state);
+    ASSERT_EQ(response.type, WebSocketResponse::kJson) << payloadStr(response);
+    EXPECT_TRUE(state.timing_rects.empty());
+    EXPECT_TRUE(state.timing_lines.empty());
+  }
+}
+
+class ChipletSchematicHandlerTest : public SchematicHandlerTest
+{
+ protected:
+  void SetUp() override
+  {
+    SchematicHandlerTest::SetUp();
+    odb::dbMaster* buffer = lib_->findMaster("BUF_X1");
+    ASSERT_NE(buffer, nullptr);
+    tst::InstOptions options;
+    options.iterms = {{"in", "A"}, {"out", "Z"}};
+    makeInst(block_, buffer, "buf", options);
+    makeBTerm(block_, "in");
+    tst::BTermOptions output_options;
+    output_options.io_type = odb::dbIoType::OUTPUT;
+    makeBTerm(block_, "out", output_options);
+
+    odb::dbChip* other
+        = odb::dbChip::create(getDb(), getDb()->getTech(), "other");
+    odb::dbBlock* other_block = odb::dbBlock::create(other, "other_top");
+    other_block->setDieArea(odb::Rect(0, 0, 100000, 100000));
+    other_buffer_ = makeInst(other_block, buffer, "buf", options);
+    makeBTerm(other_block, "in");
+    makeBTerm(other_block, "out", output_options);
+
+    // A flattened local name must not claim a request for the other die,
+    // including when that die has no instance with the requested local name.
+    makeGate("INV_X1", "die1/buf", {{"decoy_in", "A"}, {"decoy_out", "ZN"}});
+    makeGate(
+        "INV_X1", "die1/missing", {{"decoy_in", "A"}, {"decoy_out", "ZN"}});
+
+    odb::dbChip* root = odb::dbChip::create(
+        getDb(), nullptr, "root", odb::dbChip::ChipType::HIER);
+    odb::dbChipInst::create(root, chip_, "die0");
+    odb::dbChipInst::create(root, other, "die1")
+        ->setLoc(odb::Point3D(kOtherOffsetX, kOtherOffsetY, 0));
+    // die2 places die0's chip again: the two share its block, and so its
+    // instances, nets and ports, which only the name tells apart.
+    odb::dbChipInst::create(root, chip_, "die2")
+        ->setLoc(odb::Point3D(kRepeatOffsetX, kRepeatOffsetY, 0));
+    getDb()->setTopChip(root);
+
+    gen_ = std::make_shared<TileGenerator>(getDb(), getSta(), getLogger());
+    handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
+    // An inspect resolves its instance through the process-global descriptor
+    // registry, which owns what it holds, so this is heap-allocated.
+    web::DescriptorRegistry::instance()->registerDescriptor<odb::dbInst*>(
+        new TestInstDescriptor);
+  }
+
+  void TearDown() override
+  {
+    web::DescriptorRegistry::instance()->unregisterDescriptor<odb::dbInst*>();
+    SchematicHandlerTest::TearDown();
+  }
+
+  // The "bbox" an inspect payload reports, or an empty Rect without one.
+  static odb::Rect responseBBox(const WebSocketResponse& resp)
+  {
+    const auto json = parseObj(payloadStr(resp));
+    if (!json.contains("bbox")) {
+      return {};
+    }
+    const auto& bbox = json.at("bbox").as_array();
+    return {bbox[0].to_number<int>(),
+            bbox[1].to_number<int>(),
+            bbox[2].to_number<int>(),
+            bbox[3].to_number<int>()};
+  }
+
+  // Where die1 places other_buffer_, which is what a highlight of it shows.
+  odb::Rect otherBufferWorldRect() const
+  {
+    odb::Rect rect = other_buffer_->getBBox()->getBox();
+    rect.moveDelta(kOtherOffsetX, kOtherOffsetY);
+    return rect;
+  }
+
+  // A schematic_path of each die's "buf" keeps the dies apart: every die gets
+  // its own cell, "in" and "out" nets and ports, none sharing a bit.
+  void expectPathKeepsDiesApart(const std::string& inst_names,
+                                const std::vector<std::string>& dies)
+  {
+    WebSocketRequest req;
+    req.id = 3;
+    req.type = WebSocketRequest::kSchematicPath;
+    req.json = parseObj(R"({"inst_names":)" + inst_names + "}");
+    const auto resp = handler_->handleSchematicPath(req);
+    ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+    const boost::json::object top = schematicTop(resp);
+    const auto& cells = top.at("cells").as_object();
+    ASSERT_EQ(cells.size(), dies.size());
+    const auto& ports = top.at("ports").as_object();
+    const auto& nets = top.at("netnames").as_object();
+    EXPECT_EQ(ports.size(), 2 * dies.size());
+    EXPECT_EQ(nets.size(), 2 * dies.size());
+
+    std::set<int> bits;
+    for (const std::string& die : dies) {
+      ASSERT_TRUE(cells.contains(die + "/buf"));
+      const auto& cell = cells.at(die + "/buf").as_object();
+      EXPECT_EQ(cell.at("type").as_string(), "BUF_X1");
+      const auto& connections = cell.at("connections").as_object();
+      for (const auto& [net, pin] :
+           {std::pair{"in", "A"}, std::pair{"out", "Z"}}) {
+        const int bit = connections.at(pin).as_array().front().to_number<int>();
+        EXPECT_TRUE(bits.insert(bit).second);
+        ASSERT_TRUE(ports.contains(die + "/" + net));
+        ASSERT_TRUE(nets.contains(die + "/" + net));
+        EXPECT_EQ(ports.at(die + "/" + net)
+                      .as_object()
+                      .at("bits")
+                      .as_array()
+                      .front()
+                      .to_number<int>(),
+                  bit);
+        EXPECT_EQ(nets.at(die + "/" + net)
+                      .as_object()
+                      .at("bits")
+                      .as_array()
+                      .front()
+                      .to_number<int>(),
+                  bit);
+      }
+    }
+  }
+
+  static constexpr int kOtherOffsetX = 400000;
+  static constexpr int kOtherOffsetY = 250000;
+  static constexpr int kRepeatOffsetX = 800000;
+  static constexpr int kRepeatOffsetY = 500000;
+  odb::dbInst* other_buffer_ = nullptr;
+};
+
+TEST_F(ChipletSchematicHandlerTest, PathKeepsSameNamedCellsAndNetsDistinct)
+{
+  ASSERT_EQ(gen_->getBlock(), nullptr);
+  expectPathKeepsDiesApart(
+      R"(["die0/buf","die1/buf","die1/missing","unknown/buf"])",
+      {"die0", "die1"});
+}
+
+// Two placements of one chip share its instances and nets, yet a path through
+// both draws each placement's own, as for two different chips.
+TEST_F(ChipletSchematicHandlerTest, PathKeepsBothPlacementsOfAChipApart)
+{
+  expectPathKeepsDiesApart(R"(["die0/buf","die2/buf"])", {"die0", "die2"});
+}
+
+TEST_F(ChipletSchematicHandlerTest, ConeResolvesTheQualifiedInstance)
+{
+  WebSocketRequest req;
+  req.id = 4;
+  req.type = WebSocketRequest::kSchematicCone;
+  req.json = parseObj(
+      R"({"inst_name":"die1/buf","fanin_depth":0,"fanout_depth":0})");
+  const auto resp = handler_->handleSchematicCone(req);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+  const boost::json::object top = schematicTop(resp);
+  const auto& cells = top.at("cells").as_object();
+  ASSERT_EQ(cells.size(), 1);
+  ASSERT_TRUE(cells.contains("die1/buf"));
+  EXPECT_EQ(cells.at("die1/buf").as_object().at("type").as_string(), "BUF_X1");
+}
+
+// Selecting an instance in the layout names it by its chip-inst's full path
+// from the root, which is what the schematic then requests.
+TEST_F(ChipletSchematicHandlerTest, ConeResolvesTheLayoutsFullPathName)
+{
+  const std::vector<ChipletNode>& chiplets = gen_->chiplets();
+  const auto die1 = std::ranges::find_if(
+      chiplets, [](const ChipletNode& node) { return node.name == "die1"; });
+  ASSERT_NE(die1, chiplets.end());
+  ASSERT_NE(die1->path, die1->name);
+
+  WebSocketRequest req;
+  req.id = 4;
+  req.type = WebSocketRequest::kSchematicCone;
+  req.json = parseObj(R"({"inst_name":")" + die1->path
+                      + R"(/buf","fanin_depth":0,"fanout_depth":0})");
+  const auto resp = handler_->handleSchematicCone(req);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+  const boost::json::object top = schematicTop(resp);
+  const auto& cells = top.at("cells").as_object();
+  ASSERT_EQ(cells.size(), 1);
+  EXPECT_TRUE(cells.contains("die1/buf"));
+}
+
+// A cone is named in the placement it was requested in, cells, nets and ports
+// alike, not after whichever placement of the chip comes first.
+TEST_F(ChipletSchematicHandlerTest, ConeNamesTheRequestedPlacementOfAChip)
+{
+  for (const std::string die : {"die0", "die2"}) {
+    WebSocketRequest req;
+    req.id = 14;
+    req.type = WebSocketRequest::kSchematicCone;
+    req.json = parseObj(R"({"inst_name":")" + die
+                        + R"(/buf","fanin_depth":0,"fanout_depth":0})");
+    const auto resp = handler_->handleSchematicCone(req);
+    ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+    const boost::json::object top = schematicTop(resp);
+    const auto& cells = top.at("cells").as_object();
+    ASSERT_EQ(cells.size(), 1) << die;
+    EXPECT_TRUE(cells.contains(die + "/buf")) << die;
+    for (const char* kind : {"ports", "netnames"}) {
+      const auto& names = top.at(kind).as_object();
+      EXPECT_EQ(names.size(), 2) << die << " " << kind;
+      EXPECT_TRUE(names.contains(die + "/in")) << die << " " << kind;
+      EXPECT_TRUE(names.contains(die + "/out")) << die << " " << kind;
+    }
+  }
+}
+
+TEST_F(ChipletSchematicHandlerTest, ConeRejectsAnUnqualifiedInstance)
+{
+  WebSocketRequest req;
+  req.id = 6;
+  req.type = WebSocketRequest::kSchematicCone;
+  req.json
+      = parseObj(R"({"inst_name":"buf","fanin_depth":0,"fanout_depth":0})");
+  const auto resp = handler_->handleSchematicCone(req);
+  EXPECT_EQ(resp.type, WebSocketResponse::kError);
+  EXPECT_NE(payloadStr(resp).find("Instance not found: buf"),
+            std::string::npos);
+}
+
+TEST_F(ChipletSchematicHandlerTest, InspectResolvesTheQualifiedInstance)
+{
+  SessionState state;
+  WebSocketRequest req;
+  req.id = 5;
+  req.type = WebSocketRequest::kSchematicInspect;
+  req.json = parseObj(R"({"inst_name":"die1/buf"})");
+  const auto resp = handler_->handleSchematicInspect(req, state);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+  ASSERT_TRUE(state.current_inspected);
+  EXPECT_EQ(std::any_cast<odb::dbInst*>(state.current_inspected.getObject()),
+            other_buffer_);
+
+  const odb::Rect expected = otherBufferWorldRect();
+  const auto json = parseObj(payloadStr(resp));
+  ASSERT_TRUE(json.contains("bbox")) << payloadStr(resp);
+  const auto& bbox = json.at("bbox").as_array();
+  ASSERT_EQ(bbox.size(), 4);
+  EXPECT_EQ(odb::Rect(bbox[0].to_number<int>(),
+                      bbox[1].to_number<int>(),
+                      bbox[2].to_number<int>(),
+                      bbox[3].to_number<int>()),
+            expected);
+  ASSERT_EQ(state.highlight_rects.size(), 1);
+  EXPECT_EQ(state.highlight_rects.front(), expected);
+}
+
+// The inspected highlight is rebuilt on a "Flywires only" flip, after an edit
+// marks the geometry stale, and by an inspector edit.  An instance inspected
+// from the schematic has to keep its chiplet's transform through each of them
+// rather than drop back to block-local coordinates.
+TEST_F(ChipletSchematicHandlerTest, InspectHighlightKeepsTheChipletTransform)
+{
+  class EditableInstDescriptor : public TestInstDescriptor
+  {
+   public:
+    Editors getEditors(const std::any&) const override
+    {
+      Editors editors;
+      editors.emplace("Dont Touch",
+                      makeEditor([](const std::any&) { return true; }));
+      return editors;
+    }
+  };
+  // Swap the fixture's descriptor for one with an editor; TearDown removes it.
+  auto* registry = web::DescriptorRegistry::instance();
+  registry->unregisterDescriptor<odb::dbInst*>();
+  registry->registerDescriptor<odb::dbInst*>(new EditableInstDescriptor);
+
+  SessionState state;
+  WebSocketRequest req;
+  req.id = 7;
+  req.type = WebSocketRequest::kSchematicInspect;
+  req.json = parseObj(R"({"inst_name":"die1/buf"})");
+  const auto resp = handler_->handleSchematicInspect(req, state);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+
+  const odb::Rect expected = otherBufferWorldRect();
+  const auto expect_world_highlight = [&](const char* after) {
+    std::lock_guard<std::mutex> lock(state.selection_mutex);
+    ASSERT_EQ(state.highlight_rects.size(), 1) << after;
+    EXPECT_EQ(state.highlight_rects.front(), expected) << after;
+  };
+  expect_world_highlight("the inspect");
+
+  TileHandler tiles(gen_);
+  WebSocketRequest overlay;
+  overlay.id = 8;
+  overlay.type = WebSocketRequest::kOverlayTile;
+  overlay.json = parseObj(R"({"z":0,"x":0,"y":0,"flywires_only":true})");
+  auto overlay_resp = tiles.handleOverlayTile(overlay, state);
+  ASSERT_NE(overlay_resp.type, WebSocketResponse::kError)
+      << payloadStr(overlay_resp);
+  expect_world_highlight("a Flywires only flip");
+
+  state.highlight_geometry_stale = true;
+  overlay_resp = tiles.handleOverlayTile(overlay, state);
+  ASSERT_NE(overlay_resp.type, WebSocketResponse::kError)
+      << payloadStr(overlay_resp);
+  EXPECT_FALSE(state.highlight_geometry_stale);
+  expect_world_highlight("a geometry-stale rebuild");
+
+  WebSocketRequest edit;
+  edit.id = 9;
+  edit.type = WebSocketRequest::kSetProperty;
+  edit.json = parseObj(R"({"name":"Dont Touch","value":true})");
+  const auto edit_resp = handler_->handleSetProperty(edit, state);
+  ASSERT_EQ(edit_resp.type, WebSocketResponse::kJson) << payloadStr(edit_resp);
+  EXPECT_EQ(parseObj(payloadStr(edit_resp)).at("ok").as_int64(), 1);
+  expect_world_highlight("an inspector edit");
+}
+
+// Re-inspecting an instance inspected from the schematic (a units toggle does)
+// and returning to it with the inspector's Back keep its chiplet's transform,
+// while a link target in between is inspected without it.
+TEST_F(ChipletSchematicHandlerTest, InspectorNavigationKeepsTheChipletTransform)
+{
+  // Declared before `state`, whose selections point at them.
+  FakeDescriptor link_descriptor;
+  FakeInspectable link_target{.name = "link",
+                              .type = "Fake",
+                              .bbox = {10, 20, 30, 40},
+                              .properties = {}};
+
+  SessionState state;
+  WebSocketRequest req;
+  req.id = 10;
+  req.type = WebSocketRequest::kSchematicInspect;
+  req.json = parseObj(R"({"inst_name":"die1/buf"})");
+  const auto resp = handler_->handleSchematicInspect(req, state);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+
+  const odb::Rect expected = otherBufferWorldRect();
+  const auto expect_highlight = [&](const odb::Rect& rect, const char* after) {
+    std::lock_guard<std::mutex> lock(state.selection_mutex);
+    ASSERT_EQ(state.highlight_rects.size(), 1) << after;
+    EXPECT_EQ(state.highlight_rects.front(), rect) << after;
+  };
+
+  WebSocketRequest inspect;
+  inspect.id = 11;
+  inspect.type = WebSocketRequest::kInspect;
+  inspect.json = parseObj(R"({"select_id":-1})");
+  auto inspect_resp = handler_->handleInspect(inspect, state);
+  ASSERT_EQ(inspect_resp.type, WebSocketResponse::kJson)
+      << payloadStr(inspect_resp);
+  expect_highlight(expected, "a re-inspect");
+  EXPECT_EQ(responseBBox(inspect_resp), expected) << "a re-inspect";
+
+  {
+    std::lock_guard<std::mutex> lock(state.selectables_mutex);
+    state.selectables = {web::Selected(&link_target, &link_descriptor)};
+  }
+  inspect.json = parseObj(R"({"select_id":0})");
+  inspect_resp = handler_->handleInspect(inspect, state);
+  ASSERT_EQ(inspect_resp.type, WebSocketResponse::kJson)
+      << payloadStr(inspect_resp);
+  expect_highlight(link_target.bbox, "a link to an unrelated object");
+
+  WebSocketRequest back;
+  back.id = 12;
+  back.type = WebSocketRequest::kInspectBack;
+  const auto back_resp = handler_->handleInspectBack(back, state);
+  ASSERT_EQ(back_resp.type, WebSocketResponse::kJson) << payloadStr(back_resp);
+  expect_highlight(expected, "the inspector's Back");
+  EXPECT_EQ(responseBBox(back_resp), expected) << "the inspector's Back";
+}
+
+// An inspector link from a chiplet instance to another object in its block
+// stays on that chiplet: the highlight, the hover outline, and the payload
+// bbox all carry the placement's transform.
+TEST_F(ChipletSchematicHandlerTest,
+       InspectorLinkInTheSameBlockKeepsTheTransform)
+{
+  odb::dbMaster* buffer = lib_->findMaster("BUF_X1");
+  ASSERT_NE(buffer, nullptr);
+  odb::dbInst* neighbor = makeInst(other_buffer_->getBlock(), buffer, "buf2");
+  neighbor->setLocation(20000, 30000);
+  neighbor->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  odb::Rect expected = neighbor->getBBox()->getBox();
+  expected.moveDelta(kOtherOffsetX, kOtherOffsetY);
+
+  SessionState state;
+  WebSocketRequest req;
+  req.id = 14;
+  req.type = WebSocketRequest::kSchematicInspect;
+  req.json = parseObj(R"({"inst_name":"die1/buf"})");
+  const auto resp = handler_->handleSchematicInspect(req, state);
+  ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+
+  {
+    std::lock_guard<std::mutex> lock(state.selectables_mutex);
+    state.selectables
+        = {web::DescriptorRegistry::instance()->makeSelected(neighbor)};
+  }
+  WebSocketRequest hover;
+  hover.id = 15;
+  hover.type = WebSocketRequest::kHover;
+  hover.json = parseObj(R"({"select_id":0})");
+  const auto hover_resp = handler_->handleHover(hover, state);
+  ASSERT_EQ(hover_resp.type, WebSocketResponse::kJson)
+      << payloadStr(hover_resp);
+  {
+    std::lock_guard<std::mutex> lock(state.selection_mutex);
+    ASSERT_EQ(state.hover_rects.size(), 1);
+    EXPECT_EQ(state.hover_rects.front(), expected);
+  }
+
+  WebSocketRequest inspect;
+  inspect.id = 16;
+  inspect.type = WebSocketRequest::kInspect;
+  inspect.json = parseObj(R"({"select_id":0})");
+  const auto inspect_resp = handler_->handleInspect(inspect, state);
+  ASSERT_EQ(inspect_resp.type, WebSocketResponse::kJson)
+      << payloadStr(inspect_resp);
+  EXPECT_EQ(responseBBox(inspect_resp), expected);
+  std::lock_guard<std::mutex> lock(state.selection_mutex);
+  ASSERT_EQ(state.highlight_rects.size(), 1);
+  EXPECT_EQ(state.highlight_rects.front(), expected);
+}
+
+// An instance clicked in the layout on a translated die keeps that die's
+// transform when it is highlighted again later (here, by a re-inspect).
+TEST_F(ChipletSchematicHandlerTest, LayoutClickRecordsTheChipletTransform)
+{
+  // The layout search only finds placed instances.
+  other_buffer_->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  const odb::Rect expected = otherBufferWorldRect();
+  SessionState state;
+  WebSocketRequest select;
+  select.id = 17;
+  select.type = WebSocketRequest::kSelect;
+  select.json = parseObj(R"({"dbu_x":)" + std::to_string(expected.xCenter())
+                         + R"(,"dbu_y":)" + std::to_string(expected.yCenter())
+                         + R"(,"zoom":10,"visible_layers":[]})");
+  const auto select_resp = handler_->handleSelect(select, state);
+  ASSERT_EQ(select_resp.type, WebSocketResponse::kJson)
+      << payloadStr(select_resp);
+  ASSERT_TRUE(state.current_inspected) << payloadStr(select_resp);
+  ASSERT_EQ(std::any_cast<odb::dbInst*>(state.current_inspected.getObject()),
+            other_buffer_);
+
+  WebSocketRequest inspect;
+  inspect.id = 18;
+  inspect.type = WebSocketRequest::kInspect;
+  inspect.json = parseObj(R"({"select_id":-1})");
+  const auto inspect_resp = handler_->handleInspect(inspect, state);
+  ASSERT_EQ(inspect_resp.type, WebSocketResponse::kJson)
+      << payloadStr(inspect_resp);
+  EXPECT_EQ(responseBBox(inspect_resp), expected);
+  std::lock_guard<std::mutex> lock(state.selection_mutex);
+  ASSERT_EQ(state.highlight_rects.size(), 1);
+  EXPECT_EQ(state.highlight_rects.front(), expected);
+}
+
+// Two placements of one chip share its block, and so its instances: only the
+// schematic name says which placement to highlight.
+TEST_F(ChipletSchematicHandlerTest, InspectHighlightsTheNamedPlacementOfAChip)
+{
+  odb::dbInst* buffer = block_->findInst("buf");
+  ASSERT_NE(buffer, nullptr);
+  const odb::Rect local = buffer->getBBox()->getBox();
+  const auto expect_highlight_at
+      = [&](const std::string& name, int offset_x, int offset_y) {
+          SessionState state;
+          WebSocketRequest req;
+          req.id = 13;
+          req.type = WebSocketRequest::kSchematicInspect;
+          req.json = parseObj(R"({"inst_name":")" + name + R"("})");
+          const auto resp = handler_->handleSchematicInspect(req, state);
+          ASSERT_EQ(resp.type, WebSocketResponse::kJson) << payloadStr(resp);
+          ASSERT_EQ(state.highlight_rects.size(), 1) << name;
+          odb::Rect expected = local;
+          expected.moveDelta(offset_x, offset_y);
+          EXPECT_EQ(state.highlight_rects.front(), expected) << name;
+        };
+  expect_highlight_at("die0/buf", 0, 0);  // die0 sits at the origin
+  expect_highlight_at("die2/buf", kRepeatOffsetX, kRepeatOffsetY);
 }
 
 TEST_F(SchematicHandlerTest, AoiOaiGatesGetKindAndTerms)
@@ -4698,7 +7421,7 @@ TEST_F(TileHandlerTest, CancelIdsArrayMarksAll)
 
 // Regression: the inspect payload's `bbox` must be in ROOT/world coordinates.
 //
-// A gui::Descriptor reports a bbox in the object's own block coordinates, while
+// A web::Descriptor reports a bbox in the object's own block coordinates, while
 // selectAt already transforms SelectionResult::bbox into world space.  The
 // client draws its selection outline from the payload's `bbox`, so if that one
 // stays block-local, every object inside a translated dbChipInst is outlined at
@@ -4711,12 +7434,12 @@ TEST_F(SelectHandlerTest, InspectBboxIsInWorldCoordinatesForAChiplet)
   // registry holds descriptors by unique_ptr, so this must be heap-allocated.
   struct ScopedInstDescriptor
   {
-    ScopedInstDescriptor() : registry(gui::DescriptorRegistry::instance())
+    ScopedInstDescriptor() : registry(web::DescriptorRegistry::instance())
     {
       registry->registerDescriptor<odb::dbInst*>(new LocalBBoxInstDescriptor);
     }
     ~ScopedInstDescriptor() { registry->unregisterDescriptor<odb::dbInst*>(); }
-    gui::DescriptorRegistry* registry;
+    web::DescriptorRegistry* registry;
   } scoped_inst_descriptor;
 
   // Re-root the design under a HIER chip holding one instance of the fixture's
@@ -4849,6 +7572,33 @@ TEST_F(CustomUiTest, ToggleButtonFieldsSerialized)
   EXPECT_EQ(std::string(b.at("tooltip").as_string()), "tip");
   EXPECT_TRUE(b.at("toggle").as_bool());
   EXPECT_EQ(std::string(b.at("script_off").as_string()), "off");
+}
+
+// The viewer's CSP blocks remote images and the server serves no image files.
+TEST_F(CustomUiTest, UnloadableIconErrors)
+{
+  WebViewerHook hook;
+  for (const char* icon : {"https://example.com/a.png",
+                           "http://example.com/a.png",
+                           "/a.png",
+                           "./a.png"}) {
+    EXPECT_THROW(hook.addToolbarButton(
+                     getLogger(), "", "A", "s", icon, "", false, "", false),
+                 std::runtime_error)
+        << icon;
+  }
+  EXPECT_EQ(registry(hook).at("toolbar").as_array().size(), 0u);
+
+  hook.addToolbarButton(getLogger(),
+                        "",
+                        "A",
+                        "s",
+                        "data:image/png;base64,AAAA",
+                        "",
+                        false,
+                        "",
+                        false);
+  EXPECT_EQ(registry(hook).at("toolbar").as_array().size(), 1u);
 }
 
 TEST_F(CustomUiTest, DuplicateNameErrors)

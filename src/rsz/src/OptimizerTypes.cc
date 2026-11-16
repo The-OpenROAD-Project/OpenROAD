@@ -3,9 +3,11 @@
 
 #include "OptimizerTypes.hh"
 
+#include <algorithm>
 #include <functional>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
@@ -15,8 +17,10 @@
 #include "sta/Network.hh"
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
+#include "sta/Scene.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingRole.hh"
+#include "sta/Transition.hh"
 
 namespace rsz {
 
@@ -56,6 +60,16 @@ const char* failReasonName(const FailReason reason)
       return "missing_candidate_port";
     case FailReason::kMissingCandidateTimingArc:
       return "missing_candidate_timing_arc";
+
+    // Buffer insertion timing context.
+    case FailReason::kInvalidBufferInsertion:
+      return "invalid_buffer_insertion";
+    case FailReason::kMissingBufferTimingArc:
+      return "missing_buffer_timing_arc";
+    case FailReason::kSideSlackFloorViolation:
+      return "side_slack_floor_violation";
+    case FailReason::kDualRfNonImproving:
+      return "dual_rf_non_improving";
   }
   return "unknown_fail_reason";
 }
@@ -197,6 +211,38 @@ const sta::TimingArc* findMatchingTimingArc(const sta::TimingArc* reference,
       reference, candidate, ArcMatchMode::kExact, nullptr);
 }
 
+std::vector<float> relativeCellCosts(const std::vector<float>& cost_ratios)
+{
+  // The cheapest option that costs more than the current cell is the
+  // reference; without one, no option pays.
+  float reference = 0.0f;
+  for (const float ratio : cost_ratios) {
+    if (ratio > 1.0f && (reference == 0.0f || ratio < reference)) {
+      reference = ratio;
+    }
+  }
+
+  // Clamp at 1 after taking the relative cost, so a cheaper option never
+  // scores above its cost-free score.
+  std::vector<float> divisors;
+  divisors.reserve(cost_ratios.size());
+  for (const float ratio : cost_ratios) {
+    divisors.push_back(reference > 0.0f ? std::max(1.0f, ratio / reference)
+                                        : 1.0f);
+  }
+  return divisors;
+}
+
+bool driveResNoHigherOnBothRf(const sta::LibertyPort* current,
+                              const sta::LibertyPort* candidate)
+{
+  const sta::MinMax* min_max = sta::MinMax::max();
+  return candidate->driveResistance(sta::RiseFall::rise(), min_max)
+             <= current->driveResistance(sta::RiseFall::rise(), min_max)
+         && candidate->driveResistance(sta::RiseFall::fall(), min_max)
+                <= current->driveResistance(sta::RiseFall::fall(), min_max);
+}
+
 const sta::Path* latchDataPath(const sta::PathExpanded& expanded)
 {
   const sta::Path* d_path = nullptr;
@@ -259,12 +305,20 @@ Target makePathDriverTarget(const sta::Path* endpoint_path,
                             const sta::PathExpanded& expanded,
                             const int path_index,
                             const sta::Slack slack,
-                            const Resizer& resizer)
+                            const Resizer& resizer,
+                            const sta::Pin* violated_endpoint_pin)
 {
   Target target;
   target.views = kPathDriverView;
   target.endpoint_path = endpoint_path;
+  target.endpoint_pin = endpoint_path != nullptr
+                            ? endpoint_path->pin(resizer.staState())
+                            : nullptr;
+  target.violated_endpoint_pin = violated_endpoint_pin;
   target.driver_path = expanded.path(path_index);
+  target.driver_rf = target.driver_path != nullptr
+                         ? target.driver_path->transition(resizer.staState())
+                         : nullptr;
   target.scene = endpoint_path != nullptr
                      ? endpoint_path->scene(resizer.staState())
                      : nullptr;
@@ -274,6 +328,12 @@ Target makePathDriverTarget(const sta::Path* endpoint_path,
   target.driver_pin = target.driver_path != nullptr
                           ? target.driver_path->pin(resizer.staState())
                           : nullptr;
+  const int load_index = path_index + 1;
+  const sta::Path* load_path = load_index < static_cast<int>(expanded.size())
+                                   ? expanded.path(load_index)
+                                   : nullptr;
+  target.load_pin
+      = load_path != nullptr ? load_path->pin(resizer.staState()) : nullptr;
   target.path_index = path_index;
   target.slack = slack;
   if (resizer.network()->instance(target.driver_pin) != nullptr) {
@@ -282,21 +342,19 @@ Target makePathDriverTarget(const sta::Path* endpoint_path,
   return target;
 }
 
-bool Target::isPrepared(const PrepareCacheMask mask) const
-{
-  if ((mask & ~kArcDelayStateCache) != 0) {
-    return false;
-  }
-  if ((mask & kArcDelayStateCache) == 0) {
-    return true;
-  }
-  return arc_delay.has_value();
-}
-
 const sta::Pin* Target::endpointPin(const Resizer& resizer) const
 {
+  if (endpoint_pin != nullptr) {
+    return endpoint_pin;
+  }
   return endpoint_path != nullptr ? endpoint_path->pin(resizer.staState())
                                   : nullptr;
+}
+
+const sta::Pin* Target::violatedEndpointPin(const Resizer& resizer) const
+{
+  return violated_endpoint_pin != nullptr ? violated_endpoint_pin
+                                          : endpointPin(resizer);
 }
 
 sta::Pin* Target::resolvedPin(const Resizer& resizer) const
@@ -329,6 +387,12 @@ const sta::Scene* Target::activeScene(const Resizer& resizer) const
   }
   return endpoint_path != nullptr ? endpoint_path->scene(resizer.staState())
                                   : nullptr;
+}
+
+const sta::Mode* Target::mode(const Resizer& resizer) const
+{
+  const sta::Scene* active_scene = activeScene(resizer);
+  return active_scene != nullptr ? active_scene->mode() : nullptr;
 }
 
 const sta::MinMax* Target::minMax(const Resizer& resizer) const

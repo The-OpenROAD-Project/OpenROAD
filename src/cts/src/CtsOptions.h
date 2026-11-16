@@ -57,6 +57,14 @@ class CtsOptions : public odb::dbBlockCallBackObj
     bufferList_ = buffers;
   }
   std::vector<std::string> getBufferList() const { return bufferList_; }
+  void setDlyBufferList(const std::vector<std::string>& buffers)
+  {
+    dlyBufferList_ = buffers;
+  }
+  const std::vector<std::string>& getDlyBufferList() const
+  {
+    return dlyBufferList_;
+  }
   std::string getBufferListToString() const
   {
     std::ostringstream buffer_names;
@@ -319,6 +327,9 @@ class CtsOptions : public odb::dbBlockCallBackObj
   void setRepairClockNets(bool value) { repairClockNets_ = value; }
   bool getRepairClockNets() { return repairClockNets_; }
 
+  bool applyUsefulSkew() const { return usefulSkew_; }
+  void setUsefulSkew(bool value) { usefulSkew_ = value; }
+
   // NDR strategies
   void setApplyNDR(NdrStrategy strategy) { ndrStrategy_ = strategy; }
   void resetApplyNDR() { ndrStrategy_ = NdrStrategy::HALF; }
@@ -384,6 +395,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
   unsigned sinkClusteringLevels_ = 0;
   unsigned numStaticLayers_ = 0;
   std::vector<std::string> bufferList_;
+  std::vector<std::string> dlyBufferList_;
   std::vector<odb::dbNet*> clockNetsObjs_;
   std::vector<odb::dbNet*> skipNets_;
   utl::Logger* logger_ = nullptr;
@@ -397,6 +409,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
   double sinkBufferMaxCapDerateDefault_ = 0.01;
   double sinkBufferMaxCapDerate_ = sinkBufferMaxCapDerateDefault_;
   bool dummyLoad_ = true;
+  bool usefulSkew_ = false;
   float delayBufferDerate_ = 1.0;  // no derate
   std::string ctsLibrary_;
   MasterCount buffer_count_;

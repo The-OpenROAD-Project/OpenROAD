@@ -37,4 +37,4 @@ global_route -verbose
 
 write_guides $guide_file
 
-diff_file ndr_2w_3s.guideok $guide_file
+diff_files ndr_2w_3s.guideok $guide_file

@@ -22,4 +22,4 @@ check_placement -verbose
 
 write_def $def_file
 
-diff_file endcap_separate_edges.defok $def_file
+diff_files endcap_separate_edges.defok $def_file

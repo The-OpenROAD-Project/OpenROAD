@@ -25,6 +25,8 @@
 #include "sta/NetworkClass.hh"
 #include "sta/NetworkCmp.hh"
 #include "sta/PortDirection.hh"
+#include "sta/Property.hh"
+#include "sta/StringUtil.hh"
 #include "sta/VerilogReader.hh"
 #include "utl/Logger.h"
 
@@ -154,7 +156,7 @@ class Verilog2db
   void makeModBTerms(Cell* cell, dbModule* module);
   void makeModITerms(Instance* inst, dbModInst* modinst);
   void registerHierModule(dbModule* module);
-  dbIoType staToDb(PortDirection* dir);
+  dbIoType staToDb(const PortDirection* dir);
   bool staToDb(dbModule* module,
                const Pin* pin,
                dbBTerm*& bterm,
@@ -185,6 +187,8 @@ class Verilog2db
   // We have to store dont_touch instances and apply the attribute after
   // creating iterms; as iterms can't be added to a dont_touch inst
   std::vector<dbInst*> dont_touch_insts_;
+  // Cache nets built by constructModNet.
+  std::map<std::pair<const Net*, const dbModule*>, dbModNet*> mod_nets_;
   bool hierarchy_ = false;
   bool omit_filename_prop_ = false;
   static const std::regex kLineInfoRe;
@@ -207,6 +211,10 @@ bool dbLinkDesign(const char* top_cell_name,
   bool success = verilog_network->linkNetwork(
       top_cell_name, link_make_black_boxes, verilog_network->report());
   if (success) {
+    if (verilog_network->properties()->isUserProperty("instance", "src")) {
+      verilog_network->properties()->defineProperty<Instance>(
+          "instance", "src", "string");
+    }
     Verilog2db v2db(verilog_network, db, logger, hierarchy, omit_filename_prop);
     v2db.makeBlock();
     v2db.makeDbNetlist();
@@ -316,6 +324,8 @@ void Verilog2db::storeLineInfo(const std::string& attribute, dbInst* db_inst)
     return;
   }
 
+  odb::dbStringProperty::create(db_inst, "src", attribute.c_str());
+
   std::smatch match;
 
   if (std::regex_match(attribute, match, kLineInfoRe)) {
@@ -398,7 +408,8 @@ void Verilog2db::makeDbModule(
     inst_pairs.emplace_back(inst, modinst);
 
     // Verilog attribute is on a cell not an instance
-    std::string impl_oper = network_->getAttribute(cell, "implements_operator");
+    std::string impl_oper
+        = network_->properties()->stringProperty(cell, "implements_operator");
     if (!impl_oper.empty()) {
       odb::dbStringProperty::create(
           modinst, "implements_operator", impl_oper.c_str());
@@ -572,12 +583,30 @@ void Verilog2db::makeChildInsts(Instance* inst,
       // Yosys writes a src attribute on sequential instances to give the
       // Verilog source info.
       if (!omit_filename_prop_) {
-        storeLineInfo(network_->getAttribute(child, "src"), db_inst);
+        storeLineInfo(network_->properties()->stringProperty(child, "src"),
+                      db_inst);
       }
 
-      const auto dont_touch = network_->getAttribute(child, "dont_touch");
+      const auto dont_touch
+          = network_->properties()->stringProperty(child, "dont_touch");
       if (!dont_touch.empty()) {
-        if (std::stoi(dont_touch)) {
+        bool set = sta::stringEqual(dont_touch, "true")
+                   || sta::stringEqual(dont_touch, "yes");
+        if (!set && !sta::stringEqual(dont_touch, "false")
+            && !sta::stringEqual(dont_touch, "no")) {
+          const auto [value, valid] = sta::stringLong(dont_touch);
+          if (valid) {
+            set = value != 0;
+          } else {
+            logger_->warn(ORD,
+                          2059,
+                          "Ignoring unrecognized dont_touch value \"{}\" on "
+                          "instance {}.",
+                          dont_touch,
+                          network_->pathName(child));
+          }
+        }
+        if (set) {
           dont_touch_insts_.push_back(db_inst);
         }
       }
@@ -677,7 +706,7 @@ bool Verilog2db::staToDb(dbModule* module,
   return false;
 }
 
-dbIoType Verilog2db::staToDb(PortDirection* dir)
+dbIoType Verilog2db::staToDb(const PortDirection* dir)
 {
   if (dir == PortDirection::input()) {
     return dbIoType::INPUT;
@@ -859,10 +888,12 @@ void Verilog2db::makeModNetsForSubmodule(const Instance* inst,
 
     // make sure any top level bterms are connected to this net too...
     if (parent_module == block_->getTopModule()) {
-      std::unique_ptr<NetConnectedPinIterator> pin_iter{
-          network_->connectedPinIterator(inst_pin_net)};
-      while (pin_iter->hasNext()) {
-        const Pin* pin = pin_iter->next();
+      // Only terminals on this local net belong to the top module.
+      // Traversing through child feedthroughs would reconnect unrelated ports.
+      std::unique_ptr<NetTermIterator> term_iter{
+          network_->termIterator(inst_pin_net)};
+      while (term_iter->hasNext()) {
+        const Pin* pin = network_->pin(term_iter->next());
         staToDb(parent_module, pin, bterm, iterm, mod_bterm, mod_iterm);
         if (bterm) {
           bterm->connect(upper_mod_net);
@@ -905,6 +936,11 @@ void Verilog2db::makeModNetsForSubmodule(const Instance* inst,
 
 dbModNet* Verilog2db::constructModNet(Net* inst_pin_net, dbModule* module)
 {
+  auto [mod_net_it, inserted]
+      = mod_nets_.try_emplace({inst_pin_net, module}, nullptr);
+  if (!inserted) {
+    return mod_net_it->second;
+  }
   dbModNet* db_mod_net = nullptr;
 
   std::unique_ptr<sta::NetPinIterator> npi{network_->pinIterator(inst_pin_net)};
@@ -1004,6 +1040,7 @@ dbModNet* Verilog2db::constructModNet(Net* inst_pin_net, dbModule* module)
                  db_mod_net->getId());
     }
   }
+  mod_net_it->second = db_mod_net;
   return db_mod_net;
 }
 
@@ -1113,7 +1150,8 @@ void Verilog2db::processUnusedCells(const char* top_cell_name,
         lib->cellIterator()};
     while (lib_cell_iter->hasNext()) {
       sta::ConcreteCell* curr_cell = lib_cell_iter->next();
-      std::string impl_oper = curr_cell->getAttribute("implements_operator");
+      std::string impl_oper = network_->properties()->stringProperty(
+          reinterpret_cast<const sta::Cell*>(curr_cell), "implements_operator");
       if (!impl_oper.empty() && !block_->findModule(curr_cell->name().c_str())
           && !verilog_network->isBlackBox(curr_cell)) {
         unused_cells_.emplace_back(curr_cell);
@@ -1190,6 +1228,7 @@ void Verilog2db::makeUnusedBlock(const char* name)
 //
 void Verilog2db::makeUnusedDbNetlist()
 {
+  mod_nets_.clear();
   recordBusPortsOrder();
   Instance* inst = network_->topInstance();
   dbModule* module = block_->getTopModule();

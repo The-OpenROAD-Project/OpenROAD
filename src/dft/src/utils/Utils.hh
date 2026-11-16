@@ -10,6 +10,7 @@
 
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "sta/Clock.hh"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
@@ -20,7 +21,9 @@ namespace dft::utils {
 // cell will be preserved by using the given port mapping from
 // <old_port_name, new_port_name>. Returns the new instance and deletes the old
 // one. The name of the new instance is going to be the same as the old one.
+// User/SAIF/VCD activity of the old pins is copied to the mapped new pins.
 odb::dbInst* ReplaceCell(
+    sta::dbSta* sta,
     odb::dbBlock* top_block,
     odb::dbInst* old_instance,
     odb::dbMaster* new_master,
@@ -42,10 +45,16 @@ std::optional<sta::Clock*> GetClock(sta::dbSta* sta, odb::dbITerm* iterm);
 bool IsScanCell(const sta::dbNetwork* db_network,
                 const sta::LibertyCell* liberty_cell);
 
-// Convenience method to create a new port
+// Returns the average location of iterm's pin shapes, or inst's origin when
+// iterm is null or has no shapes.
+odb::Point GetITermLocation(odb::dbITerm* iterm, odb::dbInst* inst);
+
+// Convenience method to create a new port. The port, and the net when one is
+// created, get sig_type.
 odb::dbBTerm* CreateNewPort(odb::dbBlock* block,
                             const std::string& port_name,
                             utl::Logger* logger,
-                            odb::dbNet* net = nullptr);
+                            odb::dbNet* net = nullptr,
+                            odb::dbSigType sig_type = odb::dbSigType::SCAN);
 
 }  // namespace dft::utils

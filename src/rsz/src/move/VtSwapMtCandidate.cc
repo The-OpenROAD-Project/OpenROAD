@@ -3,7 +3,9 @@
 
 #include "VtSwapMtCandidate.hh"
 
+#include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "DelayEstimator.hh"
@@ -21,59 +23,74 @@ using utl::RSZ;
 
 namespace {
 
-Estimate makeRejectedEstimate(const float score = 0.0f)
+Estimate makeRejectedEstimate(const std::string_view reason,
+                              const std::optional<float> raw_gain
+                              = std::nullopt)
 {
-  return {.legal = false, .score = score};
-}
-
-Estimate makeAcceptedEstimate(const float score)
-{
-  return {.legal = true, .score = score};
+  return {.legal = false,
+          .score = raw_gain.value_or(0.0f),
+          .raw_gain = raw_gain,
+          .reason = reason};
 }
 
 const char* applyLogFormat(const bool accepted)
 {
-  return accepted ? "ACCEPT vt_swap_mt1 {}: {} -> {}"
-                  : "REJECT vt_swap_mt1 {}: {} -> {} swap failed";
+  return accepted ? "ACCEPT vt_swap_mt {}: {} -> {}"
+                  : "REJECT vt_swap_mt {}: {} -> {} swap failed";
 }
 
 }  // namespace
 
 VtSwapMtCandidate::VtSwapMtCandidate(Resizer& resizer,
                                      const Target& target,
-                                     sta::Pin* driver_pin,
                                      sta::Instance* inst,
-                                     sta::LibertyCell* current_cell,
                                      sta::LibertyCell* candidate_cell,
-                                     const ArcDelayState& arc_delay)
+                                     const float cost_divisor)
     : MoveCandidate(resizer, target),
-      driver_pin_(driver_pin),
       inst_(inst),
-      current_cell_(current_cell),
+      current_cell_(resizer.network()->libertyCell(inst)),
       candidate_cell_(candidate_cell),
-      arc_delay_(arc_delay)
+      cost_divisor_(cost_divisor)
 {
 }
 
 Estimate VtSwapMtCandidate::estimate()
 {
   // Reuse the pre-built local delay context to score the candidate without
-  // mutating the design.
-  if (!resizer_.replacementPreservesMaxCap(inst_, candidate_cell_)) {
-    return makeRejectedEstimate();
-  }
-
-  const DelayEstimate delay_est
-      = DelayEstimator::estimate(arc_delay_, candidate_cell_);
+  // mutating the design.  The generator already applied the max-cap check.
+  const DelayEstimate delay_est = DelayEstimator::estimate(
+      target().estimator_context.value(), candidate_cell_);
   if (!delay_est.legal) {
     // Preserve the computed score for non-improving swaps so policy ranking can
     // still compare rejected candidates consistently.
     if (delay_est.reason == FailReason::kEstimateNonImproving) {
-      return makeRejectedEstimate(delay_est.arrival_impr);
+      Estimate rejected = makeRejectedEstimate(failReasonName(delay_est.reason),
+                                               delay_est.arrival_impr);
+      rejected.score = costScaled(rejected.score);
+      return rejected;
     }
-    return makeRejectedEstimate();
+    return makeRejectedEstimate(failReasonName(delay_est.reason));
   }
-  return makeAcceptedEstimate(delay_est.arrival_impr);
+
+  Estimate estimate{.legal = true,
+                    .raw_gain = delay_est.arrival_impr,
+                    .reason = failReasonName(FailReason::kEstimateLegal)};
+  estimate.score = delay_est.arrival_impr;
+
+  // The side costs come off the raw gain before the weight.
+  chargeCellSwapSideCosts(delay_est, candidate_cell_, estimate);
+  // Rank the gain per unit of cost, as SizeUpMt does, so a jump over more VTs
+  // must buy its extra leakage with extra slack.
+  estimate.score = costScaled(estimate.score);
+  return estimate;
+}
+
+float VtSwapMtCandidate::costScaled(const float score) const
+{
+  // Only a positive score pays the cost: dividing a negative score by a
+  // divisor of at least 1 would pull it toward zero and rank a costlier move
+  // higher.
+  return score > 0.0f ? score / cost_divisor_ : score;
 }
 
 MoveResult VtSwapMtCandidate::apply()
@@ -86,7 +103,7 @@ MoveResult VtSwapMtCandidate::apply()
              "opt_moves",
              1,
              applyLogFormat(accepted),
-             getDrvPinName(),
+             resizer_.network()->pathName(target().driver_pin),
              current_cell_->name(),
              candidate_cell_->name());
   return {
@@ -98,9 +115,9 @@ MoveResult VtSwapMtCandidate::apply()
   };
 }
 
-std::string VtSwapMtCandidate::getDrvPinName() const
+MoveImpact VtSwapMtCandidate::impact() const
 {
-  return resizer_.network()->pathName(driver_pin_);
+  return cellSwapImpact(inst_);
 }
 
 }  // namespace rsz

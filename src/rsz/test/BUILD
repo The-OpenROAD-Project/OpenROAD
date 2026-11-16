@@ -1,8 +1,5 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
-# Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
-# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
-
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -27,8 +24,10 @@ TESTS = [
     "buffer_ports8",
     "buffer_ports9",
     "buffer_varying_lengths",
+    "buffer_varying_lengths_size_driver",
     "clone_flat",
     "clone_hier",
+    "clone_hier_cross",
     "eliminate_dead_logic1",
     "eliminate_dead_logic2",
     "eqy_repair_setup2",
@@ -44,20 +43,27 @@ TESTS = [
     "liberty_dont_use",
     "pinswap_flat",
     "pinswap_hier",
+    "swap_pins_constant_output",
     "swap_pins_dont_touch",
     "pin_swap1",
     "rebuffer1",
     "rebuffer1_hier",
+    "rebuffer_size_driver",
+    "rebuffer_size_driver_guards",
     "recover_power_verbose",
     "remove_buffers_hier1",
     "remove_buffers1",
     "remove_buffers2",
     "remove_buffers3",
+    "remove_buffers_dont_touch_rejected",
+    "remove_buffers_disconnected_input_rejected",
     "remove_buffers4",
     "remove_buffers4_hier",
     "remove_buffers5",
     "remove_buffers5_hier",
     "remove_buffers6",
+    "remove_buffers_survivor_hier",
+    "remove_buffers_survivor_port_nets",
     "repair_cap1",
     "repair_cap2",
     "repair_cap3",
@@ -104,8 +110,26 @@ TESTS = [
     "repair_hold8",
     "repair_hold9",
     "repair_hold9_verbose",
+    "repair_hold_clock_as_data",
+    "repair_hold_clock_as_data_clk_tree",
     "repair_hold_multi_output_load",
     "repair_setup_max_iter",
+    "repair_setup_path1",
+    "repair_setup_path2",
+    "repair_setup_path3",
+    "repair_setup_path4",
+    "repair_setup_path5",
+    "repair_setup_path6",
+    "repair_setup_path7",
+    "repair_setup_path11",
+    "repair_setup_path12",
+    "repair_setup_path13",
+    "repair_setup_path14",
+    "repair_setup_path15",
+    "repair_setup_path16",
+    "repair_setup_path17",
+    "repair_setup_path18",
+    "repair_setup_path19",
     "repair_setup1",
     "repair_setup1_multi",
     "repair_setup2",
@@ -149,12 +173,15 @@ TESTS = [
     "repair_setup_size_down_fanout_only",
     "repair_setup_sizeup_match_only",
     "repair_setup_split_load_hier_only",
+    "repair_setup_startpoint_fanout_input_port",
     "repair_setup_startpoint_fanout_only",
     "repair_setup_swap_pins_dont_touch_sequence",
     "repair_setup_tns",
     "repair_setup_wns_guard",
     "repair_setup_wns_last_gasp_noop",
     "repair_setup_size_down_fanout",
+    "repair_setup_size_down_fanout_before_sizeup",
+    "repair_setup_size_down_fanout_hi",
     "repair_setup_size_down_fanout_legacy_basic",
     "repair_setup_sizeup_match",
     "repair_setup_sizeup_legacy_basic",
@@ -162,10 +189,19 @@ TESTS = [
     "repair_setup_sizeup_match_prev_fanout",
     "repair_setup_splitload_legacy_basic",
     "repair_setup_swappins_legacy_flat",
+    "repair_setup_buffer_to_inverters",
+    "repair_setup_buffer_to_inverters_hier",
     "repair_setup_unbuffer_legacy_bufx2",
     "repair_setup_unbuffer_legacy_bufx8",
     "repair_setup_undo1",
     "repair_setup_undo2",
+    "repair_timing_option_errors",
+    "repair_timing_path_group1",
+    "repair_timing_path_group2",
+    "repair_timing_path_group3",
+    "repair_timing_path_group4",
+    "repair_timing_path_group5",
+    "repair_timing_path_group6",
     "repair_slew1",
     "repair_slew10",
     "repair_slew11",
@@ -219,6 +255,13 @@ TESTS = [
     "report_buffers_sky130hd",
     "report_buffers_sky130hs",
     "report_buffers_no_lef",
+    "report_delay_estimator_rebuffer_driver_pin",
+    "report_delay_estimator_rebuffer_fanout8",
+    "report_delay_estimator_rebuffer_minimal",
+    "report_delay_estimator_rebuffer_prebuffered",
+    "report_delay_estimator_rebuffer_side_paths",
+    "report_delay_estimator_rebuffer_steiner",
+    "report_delay_estimator_sizing_accuracy",
     "report_design_area",
     "report_dont_touch",
     "report_dont_use",
@@ -229,7 +272,6 @@ TESTS = [
     "report_floating_nets2",
     "report_floating_nets3",
     "report_move_tracker",
-    "repair_setup_legacy_mt_tracker",
     "report_overdriven_nets1",
     "report_overdriven_nets2",
     "report_overdriven_nets3",
@@ -249,11 +291,23 @@ TESTS = [
     "split_load_hier",
     "repair_setup_vt_swap",
     "repair_setup_vtswap_legacy_asap7",
+    "repair_setup_parallel_eval",
+    "repair_setup_parallel_eval_vt_swap",
+    "repair_setup_parallel_eval_vt_swap_corners",
+    "repair_setup_parallel_eval_default_sequence",
+    "repair_setup_parallel_eval_all_moves",
+    "repair_setup_parallel_eval_effort",
+    "repair_setup_parallel_eval_threads",
+    "repair_setup_parallel_eval_max_util",
+    "repair_setup_parallel_eval_path_group",
+    "repair_setup_parallel_eval_reference_period",
+    "repair_setup_parallel_eval_reference_period_modes",
+    "repair_setup_parallel_eval_fanin_max_cap",
     "repair_setup_vt_swap2",
-    "measured_vt_swap",
     "global_sizing",
     "global_sizing_threads",
     "global_sizing_presize",
+    "repair_timing_crpr",
     "inferred_clock_gator_time_borrow",
     "inferred_clock_gator_time_borrow_covered",
     "inferred_clock_gator_time_borrow_repair_pin",
@@ -261,16 +315,21 @@ TESTS = [
     "latch_borrow_chain",
 ]
 
-# From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
-    # NOTE: cpp_tests excluded - it's a CMake-specific wrapper script that expects
-    # build directory structure not compatible with Bazel
-    # "cpp_tests",
-    "repair_setup_legacy_mt",
-    "repair_setup_mt1",
+    "repair_timing_fixed",
+    "repair_design_fixed_driver",
+    "repair_slew_corner",
+    "gain_buffering_top_port_hier",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
+
+# PASSFAIL tests that assert their own results and have no .ok to diff.
+SELF_CHECKING_TESTS = [
+    "repair_design_fixed_driver",
+    "repair_slew_corner",
+    "gain_buffering_top_port_hier",
+]
 
 # Hierarchical Verilog netlists reused as corpus input by
 # //src/dbSta/test:dbsta_hier_conformance. They stay owned by the tests here;
@@ -301,6 +360,7 @@ filegroup(
 
 # Tests that reference other tests
 extra_deps = {
+    "buffer_varying_lengths_size_driver": ["buffer_varying_lengths.tcl"],
     "global_sizing_threads": ["global_sizing.tcl"],
     "repair_fanout6_multi": ["repair_fanout6.tcl"],
     "repair_fanout7_multi": ["repair_fanout7.tcl"],
@@ -313,7 +373,7 @@ extra_deps = {
     "repair_setup4_sequence": ["repair_setup4.tcl"],
     "repair_setup6_multi": ["repair_setup6.tcl"],
     "repair_setup7_multi": ["repair_setup7.tcl"],
-    "repair_setup_legacy_mt_tracker": ["report_move_tracker.tcl"],
+    "repair_setup_parallel_eval_threads": ["repair_setup_parallel_eval.tcl"],
     "repair_setup_phase_endpoint_fanin": ["repair_setup1.tcl"],
     "repair_setup_phase_startpoint_fanout": ["repair_setup1.tcl"],
     "repair_setup_phase_tns": ["repair_setup1.tcl"],
@@ -330,6 +390,7 @@ BIG_TESTS = [
     regression_test(
         name = test_name,
         size = "large" if test_name in BIG_TESTS else "medium",
+        check_log = test_name not in SELF_CHECKING_TESTS,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":test_resources"] + extra_deps.get(test_name, []),
     )
@@ -341,6 +402,7 @@ test_suite(
     tests = [
         ":TestBufRem1",
         ":TestResizer",
+        ":TestSkewBudget",
     ],
 )
 
@@ -491,6 +553,26 @@ cc_test(
 )
 
 cc_test(
+    name = "TestPreChecks",
+    srcs = ["cpp/TestPreChecks.cc"],
+    copts = ["-Isrc/rsz/src"],
+    data = [
+        "Nangate45/Nangate45_fast.lib",
+        "Nangate45/Nangate45_slow.lib",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb/src/db",
+        "//src/rsz:rsz_impl",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestResizer",
     srcs = ["cpp/TestResizer.cc"],
     copts = ["-Isrc/rsz/src"],
@@ -501,22 +583,30 @@ cc_test(
         "cpp/TestBufferRemoval3_feedthrough.v",
         "inferred_clock_gator_time_borrow.def",
         "latch_borrow_chain.def",
+        "remove_buffers3.def",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
     deps = [
-        "//src/ant",
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/dpl",
         "//src/est",
-        "//src/grt",
         "//src/odb/src/db",
         "//src/odb/src/defin",
-        "//src/rsz",  # buildcleaner: keep provides the private headers
+        "//src/rsz:rsz_impl",
         "//src/sta:opensta_lib",
-        "//src/stt",
-        "//src/tst",
         "//src/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# Standalone unit tests for the LP-based useful-skew solver
+# (SkewLPSolver). No STA / dbSta deps; pure synthetic LP cases.
+cc_test(
+    name = "TestSkewBudget",
+    size = "small",
+    srcs = ["cpp/TestSkewBudget.cc"],
+    copts = ["-Isrc/rsz/src"],
+    features = ["-layering_check"],  # includes private SkewBudget.hh
+    deps = [
+        "//src/rsz",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
@@ -565,14 +655,11 @@ cc_test(
         "Nangate45/Nangate45_typ.lib",
         "cpp/TestBufferRemoval3_0.v",
     ],
-    features = ["-layering_check"],
     deps = [
         "//src/dbSta",
         "//src/odb/src/db",
-        "//src/rsz",
-        "//src/sta:opensta_lib",
+        "//src/rsz:rsz_impl",
         "//src/tst:integrated_fixture",
-        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -580,28 +667,33 @@ cc_test(
 
 cc_test(
     name = "TestResizerMt",
-    srcs = ["cpp/TestResizerMt.cc"],
-    args = ["--gtest_filter=TestResizerMtThreadPool.*"],
+    srcs = [
+        "cpp/TestCellSwapMt.cc",
+        "cpp/TestDelayEstimatorMt.cc",
+        "cpp/TestParallelEvalPolicy.cc",
+        "cpp/TestRepairSetupAnalysis.cc",
+        "cpp/TestRepairSetupProfiler.cc",
+        "cpp/TestRepairTargetCollector.cc",
+        "cpp/TestResizerMt.cc",
+        "cpp/TestResizerMtFixture.hh",
+        "cpp/TestSplitLoadMt.cc",
+        "cpp/TestUnbufferMt.cc",
+    ],
     data = [
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_lvt.lef",
         "Nangate45/Nangate45_lvt.lib",
         "Nangate45/Nangate45_typ.lib",
         "cpp/TestResizerMt_DelayEstimator.v",
+        "cpp/TestSplitLoadMt.v",
     ],
-    features = ["-layering_check"],
     deps = [
-        "//src/ant",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
-        "//src/dpl",
         "//src/est",
-        "//src/grt",
         "//src/odb/src/db",
-        "//src/rsz",
+        "//src/rsz:rsz_impl",
         "//src/sta:opensta_lib",
-        "//src/stt",
-        "//src/tst",
         "//src/tst:integrated_fixture",
         "//src/utl",
         "@googletest//:gtest",
@@ -618,7 +710,53 @@ cc_test(
         "Nangate45/Nangate45_typ.lib",
         "gcd_nangate45_placed.def",
     ],
-    features = ["-layering_check"],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestRepairHold",
+    srcs = ["cpp/TestRepairHold.cc"],
+    copts = ["-Isrc/rsz/src"],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "repair_hold_shared_driver.def",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/est",
+        "//src/odb/src/db",
+        "//src/odb/src/defin",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestSkewBudgetRestore",
+    size = "small",
+    srcs = ["cpp/TestSkewBudgetRestore.cc"],
+    copts = ["-Isrc/rsz/src"],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "repair_hold1.def",
+    ],
     deps = [
         "//src/dbSta",
         "//src/dbSta:dbNetwork",

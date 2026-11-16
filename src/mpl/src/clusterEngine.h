@@ -9,10 +9,7 @@
 #include <memory>
 #include <queue>
 #include <set>
-#include <string>
 #include <unordered_map>
-#include <unordered_set>
-#include <utility>
 #include <vector>
 
 #include "mpl-util.h"
@@ -36,7 +33,6 @@ class dbNetwork;
 namespace mpl {
 class MplObserver;
 
-using InstToHardMap = odb::PtrMap<odb::dbInst, std::unique_ptr<HardMacro>>;
 using ModuleToMetricsMap = odb::PtrMap<odb::dbModule, std::unique_ptr<Metrics>>;
 using PathInsts = std::vector<std::set<odb::dbInst*>>;
 
@@ -61,12 +57,16 @@ struct PhysicalHierarchy
 
   int64_t macro_with_halo_area{0};
 
-  // The constraint set by the user.
+  // The constraints set by the user.
   odb::Rect global_fence;
+  Channel min_channel;
 
   // The actual area used by MPL - computed using the dimensions
   // of the core versus the global fence set by the user.
   odb::Rect floorplan_shape;
+
+  // The annealer uses it to compute the wirelength to a cluster of
+  // unplaced IOs.
   odb::Rect die_area;
 
   bool has_io_clusters{true};
@@ -105,9 +105,6 @@ class ClusteringEngine
   void run();
 
   void setTree(PhysicalHierarchy* tree);
-  void setHalos(const HardMacro::Halo& base_halo,
-                bool use_full_halo,
-                const odb::PtrMap<odb::dbInst, HardMacro::Halo>& macro_to_halo);
 
   // Methods to update the tree as the hierarchical
   // macro placement runs.
@@ -117,8 +114,6 @@ class ClusteringEngine
                                   int cluster_id,
                                   bool include_macro);
 
-  std::string generateMacroAndCoreDimensionsTable(const HardMacro* hard_macro,
-                                                  const odb::Rect& core) const;
   void createTempMacroClusters(const std::vector<HardMacro*>& hard_macros,
                                std::vector<HardMacro>& sa_macros,
                                UniqueClusterVector& macro_clusters,
@@ -142,10 +137,6 @@ class ClusteringEngine
   void init();
   Metrics* computeModuleMetrics(odb::dbModule* module);
   std::vector<odb::dbInst*> getUnfixedMacros();
-  void addIgnorableMacro(odb::dbInst* inst);
-  void setDieArea();
-  void setFloorplanShape();
-  void createHardMacros();
   bool movableCellsFitInMacroPlacementArea() const;
   int64_t computeMacroWithHaloArea(
       const std::vector<odb::dbInst*>& unfixed_macros);
@@ -202,15 +193,15 @@ class ClusteringEngine
   void createOneClusterForEachMacro(Cluster* mixed_leaf_parent,
                                     const std::vector<HardMacro*>& hard_macros,
                                     std::vector<Cluster*>& macro_clusters);
-  void classifyMacrosBySize(const std::vector<HardMacro*>& hard_macros,
-                            std::vector<int>& size_class);
+  void classifyMacrosByMaster(const std::vector<HardMacro*>& hard_macros,
+                              std::vector<int>& master_class);
   void classifyMacrosByConnSignature(
       const std::vector<Cluster*>& macro_clusters,
       std::vector<int>& signature_class);
   void classifyMacrosByInterconn(const std::vector<Cluster*>& macro_clusters,
                                  std::vector<int>& interconn_class);
   void groupSingleMacroClusters(const std::vector<Cluster*>& macro_clusters,
-                                const std::vector<int>& size_class,
+                                const std::vector<int>& master_class,
                                 const std::vector<int>& signature_class,
                                 std::vector<int>& interconn_class,
                                 std::vector<int>& macro_class);
@@ -227,12 +218,6 @@ class ClusteringEngine
   int64_t computeArea(odb::dbInst* inst);
 
   bool isValidNet(odb::dbNet* net);
-
-  HardMacro::Halo buildMacroHalo(odb::dbInst* inst, int minimum_spacing) const;
-  int getMinimumSpacing() const;
-  bool isEquidistantDifferentDirections(
-      std::pair<int, Boundary> candidate,
-      std::pair<int, Boundary> second_candidate) const;
 
   odb::dbBlock* block_;
   utl::Logger* logger_;
@@ -258,12 +243,6 @@ class ClusteringEngine
 
   int first_io_bundle_id_{-1};
   IOBundleSpans io_bundle_spans_;
-
-  std::unordered_set<odb::dbInst*> ignorable_macros_;
-
-  HardMacro::Halo base_halo_;
-  bool use_full_halo_{false};
-  odb::PtrMap<odb::dbInst, HardMacro::Halo> macro_to_halo_;
 };
 
 }  // namespace mpl

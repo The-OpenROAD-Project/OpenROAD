@@ -1,10 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
-load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("@rules_python//python:defs.bzl", "py_library")
-load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc", "python_wrap_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -23,11 +21,13 @@ cc_library(
         "src/CFileUtils.cpp",
         "src/CommandLineProgress.cpp",
         "src/CommandLineProgress.h",
+        "src/CsvParser.cpp",
         "src/Logger.cpp",
         "src/Metrics.cpp",
         "src/Progress.cpp",
         "src/ScopedTemporaryFile.cpp",
         "src/ServiceRegistry.cpp",
+        "src/StackTrace.cpp",
         "src/SuppressStdout.cpp",
         "src/ThreadPool.cpp",
         "src/cpu_topology.cpp",
@@ -35,16 +35,19 @@ cc_library(
         "src/histogram.cpp",
         "src/mem_stats.cpp",
         "src/prometheus/metrics_server.cpp",
+        "src/random_bytes.cpp",
         "src/timer.cpp",
         "src/unionFind.cpp",
     ],
     hdrs = [
         "include/utl/CFileUtils.h",
+        "include/utl/CsvParser.h",
         "include/utl/Logger.h",
         "include/utl/Metrics.h",
         "include/utl/Progress.h",
         "include/utl/ScopedTemporaryFile.h",
         "include/utl/ServiceRegistry.h",
+        "include/utl/StackTrace.h",
         "include/utl/SuppressStdout.h",
         "include/utl/ThreadPool.h",
         "include/utl/algorithms.h",
@@ -75,6 +78,7 @@ cc_library(
         "include/utl/prometheus/summary.h",
         "include/utl/prometheus/text_serializer.h",
         "include/utl/prometheus/time_window_quantiles.h",
+        "include/utl/random_bytes.h",
         "include/utl/scope.h",
         "include/utl/spatialIndex.h",
         "include/utl/timer.h",
@@ -87,6 +91,8 @@ cc_library(
         "src",
     ],
     deps = [
+        "@abseil-cpp//absl/debugging:stacktrace",
+        "@abseil-cpp//absl/debugging:symbolize",
         "@abseil-cpp//absl/synchronization",
         "@boost.algorithm",
         "@boost.asio",
@@ -95,43 +101,17 @@ cc_library(
         "@boost.iostreams",
         "@boost.iterator",
         "@boost.random",
+        "@boost.tokenizer",
+        "@fmt",
         "@spdlog",
         "@tcl_lang//:tcl",
     ],
 )
 
-# This target compiles the SWIG C++ wrapper into a shared library (.so)
-# that Python can load dynamically.
-cc_binary(
-    name = "_utl.so",
-    srcs = [
-        "src/LoggerCommon.cpp",
-        "src/LoggerCommon.h",
-        ":swig-py",
-    ],
-    defines = [
-        "BAZEL=1",
-        PYTHON_STABLE_API_DEFINE,
-    ],
-    includes = ["src"],
-    linkopts = PYTHON_EXTENSION_LINKOPTS,
-    linkshared = True,
-    deps = [
-        "//src/utl",
-        "@boost.stacktrace",
-        "@rules_python//python/cc:current_py_cc_headers",
-    ],
-)
-
-# This packages the SWIG-generated Python wrapper (odb.py) and the
-# compiled C++ extension (_odb.so) together.
-py_library(
+# The utl module is part of //:openroad_py.
+alias(
     name = "utl_py",
-    srcs = [":swig-py"],  # Use the .py output from the swig-py rule
-    # The data attribute makes the .so file available at runtime.
-    data = [":_utl.so"],
-    # This allows imports relative to the workspace root.
-    imports = ["."],
+    actual = "//:openroad_py",
     visibility = ["//visibility:public"],
 )
 
@@ -154,7 +134,6 @@ cc_library(
     deps = [
         ":utl",
         "//:ord",
-        "@boost.stacktrace",
         "@rules_python//python/cc:current_py_cc_headers",
         "@tcl_lang//:tcl",
     ],
@@ -194,7 +173,7 @@ python_wrap_cc(
         "src/LoggerCommon.h",
         "//:error_swig-py",
     ],
-    module = "utl",
+    module = "utl_py",
     root_swig_src = "src/Logger-py.i",
     swig_includes = [
         "include",
@@ -217,4 +196,12 @@ messages_txt(
         "//docs:__pkg__",
         "//src/utl/test:__pkg__",
     ],
+)
+
+# LoggerCommon.cpp comes with the Tcl bindings that ord links.
+python_wrap_library(
+    name = "py_wrap",
+    srcs = ["src/LoggerCommon.h"],
+    includes = ["src"],
+    deps = [":utl"],
 )

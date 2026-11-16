@@ -10,6 +10,8 @@ globalThis.document = dom.window.document;
 globalThis.window = dom.window;
 globalThis.Event = dom.window.Event;
 globalThis.CustomEvent = dom.window.CustomEvent;
+globalThis.Node = dom.window.Node;
+globalThis.Element = dom.window.Element;
 globalThis.HTMLElement = dom.window.HTMLElement;
 globalThis.HTMLCanvasElement = dom.window.HTMLCanvasElement;
 globalThis.XMLSerializer = dom.window.XMLSerializer;
@@ -27,4 +29,24 @@ globalThis.ResizeObserver = globalThis.ResizeObserver || class {
     observe() {}
     disconnect() {}
 };
+// jsdom does not implement scrollIntoView, which row selection calls.
+if (!dom.window.HTMLElement.prototype.scrollIntoView) {
+    dom.window.HTMLElement.prototype.scrollIntoView = function () {};
+}
+globalThis.requestAnimationFrame = globalThis.requestAnimationFrame || ((cb) => setTimeout(cb, 0));
+globalThis.cancelAnimationFrame = globalThis.cancelAnimationFrame || ((id) => clearTimeout(id));
+if (dom.window.customElements) {
+    globalThis.customElements = dom.window.customElements;
+}
+if (dom.window.AbortController) {
+    globalThis.AbortController = dom.window.AbortController;
+    globalThis.AbortSignal = dom.window.AbortSignal;
+}
+
+// Let queued promise callbacks (a request's .then chain) run.  Every widget
+// test needs this; it lived as an inline `new Promise(r => setTimeout(r, 0))`
+// copied through the suites.
+export function waitForMicrotasks() {
+    return new Promise(resolve => setTimeout(resolve, 0));
+}
 export { dom };

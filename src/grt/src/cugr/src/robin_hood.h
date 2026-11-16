@@ -436,7 +436,7 @@ class BulkPoolAllocator
 
   BulkPoolAllocator&
   // NOLINTNEXTLINE(bugprone-unhandled-self-assignment,cert-oop54-cpp)
-  operator=(const BulkPoolAllocator & ROBIN_HOOD_UNUSED(o) /*unused*/) noexcept
+  operator=(const BulkPoolAllocator& ROBIN_HOOD_UNUSED(o) /*unused*/) noexcept
   {
     // does not do anything
     return *this;
@@ -550,8 +550,7 @@ class BulkPoolAllocator
 
     // last one points to 0
     *reinterpret_cast_no_cast_align_warning<T**>(
-        head + (numElements - 1) * ALIGNED_SIZE)
-        = mHead;
+        head + (numElements - 1) * ALIGNED_SIZE) = mHead;
     mHead = headT;
   }
 
@@ -573,7 +572,7 @@ class BulkPoolAllocator
   // enforce byte alignment of the T's
 #if ROBIN_HOOD(CXX) >= ROBIN_HOOD(CXX14)
   static constexpr size_t ALIGNMENT
-      = (std::max)(std::alignment_of_v<T>, std::alignment_of_v<T*>);
+      = (std::max) (std::alignment_of_v<T>, std::alignment_of_v<T*>);
 #else
   static const size_t ALIGNMENT
       = (ROBIN_HOOD_STD::alignment_of<T>::value
@@ -2460,7 +2459,7 @@ class Table
   {
     auto maxNumElementsAllowed = calcMaxNumElementsAllowed(numElements);
     return numElements
-           + (std::min)(maxNumElementsAllowed, (static_cast<size_t>(0xFF)));
+           + (std::min) (maxNumElementsAllowed, (static_cast<size_t>(0xFF)));
   }
 
   // calculation only allowed for 2^n values
@@ -2508,7 +2507,7 @@ class Table
   void reserve(size_t c, bool forceRehash)
   {
     ROBIN_HOOD_TRACE(this)
-    auto const minElementsAllowed = (std::max)(c, mNumElements);
+    auto const minElementsAllowed = (std::max) (c, mNumElements);
     auto newSize = InitialNumElements;
     while (calcMaxNumElementsAllowed(newSize) < minElementsAllowed
            && newSize != 0) {

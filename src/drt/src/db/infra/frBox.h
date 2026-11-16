@@ -3,22 +3,28 @@
 
 #pragma once
 
-#include "db/infra/frPoint.h"
+#include "frBaseTypes.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
 namespace drt {
 
-class frBox3D : public odb::Rect
+class frBox3D
 {
  public:
   frBox3D() = default;
   frBox3D(int llx, int lly, int urx, int ury, int zl, int zh)
-      : odb::Rect(llx, lly, urx, ury), zl_(zl), zh_(zh)
+      : rect_(odb::Rect(llx, lly, urx, ury)), zl_(zl), zh_(zh)
   {
   }
   frBox3D(const frBox3D& in) = default;
+
+  int xMin() const { return rect_.xMin(); }
+  int yMin() const { return rect_.yMin(); }
+  int xMax() const { return rect_.xMax(); }
+  int yMax() const { return rect_.yMax(); }
+
   bool contains(int x,
                 int y,
                 int z,
@@ -34,12 +40,13 @@ class frBox3D : public odb::Rect
   int zHigh() const { return zh_; }
 
  private:
+  odb::Rect rect_;
   int zl_{0};
   int zh_{0};
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
   {
-    (ar) & boost::serialization::base_object<odb::Rect>(*this);
+    (ar) & rect_;
     (ar) & zl_;
     (ar) & zh_;
   }

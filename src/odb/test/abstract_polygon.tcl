@@ -11,8 +11,8 @@ read_def "abstract_polygon.def"
 
 set lef_file [make_result_file abstract_polygon.lef]
 write_abstract_lef $lef_file
-diff_file $lef_file "abstract_polygon.lefok"
+diff_files $lef_file "abstract_polygon.lefok"
 
 set bloat_lef_file [make_result_file abstract_polygon_bloat.lef]
 write_abstract_lef -bloat_occupied_layers $bloat_lef_file
-diff_file $bloat_lef_file "abstract_polygon_bloat.lefok"
+diff_files $bloat_lef_file "abstract_polygon_bloat.lefok"

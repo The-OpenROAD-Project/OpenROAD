@@ -11,4 +11,4 @@ set segs_file [make_result_file write_segments2.segs]
 read_global_route_segments write_segments1.segsok
 
 write_global_route_segments $segs_file
-diff_file write_segments2.segsok $segs_file
+diff_files write_segments2.segsok $segs_file

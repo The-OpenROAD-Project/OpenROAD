@@ -1,0 +1,32 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 676 components and 2850 component-terminals.
+[INFO ODB-0133]     Created 579 nets and 1498 connections.
+[WARNING GRT-0309] Timing is not available, setting critical nets percentage to 0.
+Detour metric (final routed WL vs initial Steiner WL):
+  Nets analyzed: 490
+  Total initial Steiner WL: 6991.05um
+  Total final routed WL:    6988.20um
+  Total detour:             -2.85um (ratio 1.00)
+  Worst 3 nets by detour ratio:
+    initial_um    final_um    delta_um    ratio  net
+        290.70      290.70        0.00     1.00  clk
+         17.10       17.10        0.00     1.00  req_msg[31]
+          8.55        8.55        0.00     1.00  req_msg[30]
+[INFO GRT-0332] Net _285_ detour: initial 0.00um, final 0.00um, delta 0.00um, ratio 1.00
+[INFO GRT-0332] Net _286_ detour: initial 0.00um, final 0.00um, delta 0.00um, ratio 1.00
+[INFO GRT-0332] Net _284_ detour: initial 5.70um, final 5.70um, delta 0.00um, ratio 1.00
+[INFO GRT-0332] Net _285_ detour: initial 11.40um, final 11.40um, delta 0.00um, ratio 1.00
+[INFO GRT-0332] Net _286_ detour: initial 8.55um, final 8.55um, delta 0.00um, ratio 1.00
+[INFO GRT-0332] Net _284_ detour: initial 5.70um, final 5.70um, delta 0.00um, ratio 1.00
+Detour metric (final routed WL vs initial Steiner WL):
+  Nets analyzed: 492
+  Total initial Steiner WL: 7030.95um
+  Total final routed WL:    7028.10um
+  Total detour:             -2.85um (ratio 1.00)
+  Worst 3 nets by detour ratio:
+    initial_um    final_um    delta_um    ratio  net
+        290.70      290.70        0.00     1.00  clk
+         17.10       17.10        0.00     1.00  req_msg[31]
+          8.55        8.55        0.00     1.00  req_msg[30]

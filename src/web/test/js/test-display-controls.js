@@ -5,8 +5,10 @@ import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { dom } from './setup-dom.js';
 
-const { layerRangeSet, nonSolidPatterns, populateDisplayControls }
-    = await import('../../src/display-controls.js');
+const {
+    anyGroupOn, chipletLayerExceptions, layerRangeSet, nonSolidPatterns,
+    populateDisplayControls,
+} = await import('../../src/display-controls.js');
 const { beginSelection } = await import('../../src/ui-utils.js');
 
 // 10 layers: Metal1, Via1, Metal2, Via2, ... Metal5, Via5
@@ -81,6 +83,28 @@ describe('nonSolidPatterns', () => {
     });
 });
 
+// The overlays' `shown_by` / `layers_by`, as the server's anyGroupOn reads
+// them.
+describe('anyGroupOn', () => {
+    const LABELS = [['inst_names'], ['inst_pins', 'inst_pin_names']];
+
+    it('is on when every key of one group is', () => {
+        assert.ok(anyGroupOn(LABELS, { inst_names: true }));
+        assert.ok(anyGroupOn(LABELS, { inst_pins: true, inst_pin_names: true }));
+    });
+
+    it('is off when no group is complete', () => {
+        assert.ok(!anyGroupOn(LABELS, { inst_pins: false, inst_pin_names: true }));
+        assert.ok(!anyGroupOn(LABELS, {}), 'a missing key is off');
+    });
+
+    it('takes an empty group as always on and no groups as never', () => {
+        assert.ok(anyGroupOn([[]], {}));
+        assert.ok(!anyGroupOn([], { inst_names: true }));
+        assert.ok(!anyGroupOn(undefined, {}));
+    });
+});
+
 // Clicking a layer's name selects it and shows its properties in the
 // Inspector, mirroring the Qt GUI's DisplayControls row selection.  The
 // invariant that goes with it: a click anywhere in the row that is not on a
@@ -96,7 +120,7 @@ describe('layer row selection', () => {
             this.options = opts || {};
         }
         addTo() { return this; }
-        refreshTiles() {}
+        refreshTiles() { this.refreshes = (this.refreshes || 0) + 1; }
     }
     class FakeHeatMapLayer {
         constructor() {}
@@ -241,6 +265,58 @@ describe('layer row selection', () => {
         assert.equal(requests.length, 1);
         assert.equal(requests[0].layer, 'metal1');
     });
+
+    // Overlays as the tech response lists them.
+    const OVERLAYS = [
+        { name: '_access_points', z_index: 1000,
+          shown_by: [['access_points']], layers_by: [[]] },
+        { name: '_gcell_grid', z_index: 1002,
+          shown_by: [['gcell_grid']], layers_by: [] },
+        { name: '_inst_labels', z_index: 999,
+          shown_by: [['inst_names'], ['inst_pins', 'inst_pin_names']],
+          layers_by: [['inst_pins', 'inst_pin_names']] },
+    ];
+
+    it('builds a pane per listed overlay at its pane order', () => {
+        techData.overlays = OVERLAYS;
+        populateDisplayControls(app, {}, {}, FakeTileLayer, techData,
+                                () => {}, FakeHeatMapLayer);
+        assert.deepEqual(
+            app.overlayLayers.map(({ def, layer }) =>
+                [def.name, layer.name, layer.options.zIndex]),
+            [['_access_points', '_access_points', 1000],
+             ['_gcell_grid', '_gcell_grid', 1002],
+             ['_inst_labels', '_inst_labels', 999]]);
+    });
+
+    // A layer toggle refreshes the overlays that draw by the visible layers
+    // under the current visibility, and only those: always the access points,
+    // the names only while pin names are shown, never the gcell grid.
+    for (const [pinNames, want] of [
+        [false, { _access_points: 1, _gcell_grid: 0, _inst_labels: 0 }],
+        [true, { _access_points: 1, _gcell_grid: 0, _inst_labels: 1 }],
+    ]) {
+        it(`a layer toggle refreshes ${JSON.stringify(want)} `
+           + `with pin names ${pinNames ? 'on' : 'off'}`, () => {
+            techData.overlays = OVERLAYS;
+            populateDisplayControls(
+                app,
+                { inst_names: true, inst_pins: true, inst_pin_names: pinNames,
+                  access_points: true, gcell_grid: true },
+                {}, FakeTileLayer, techData, () => {}, FakeHeatMapLayer);
+            const overlays = app.overlayLayers.map(({ layer }) => layer);
+            app.map.hasLayer = (layer) => overlays.includes(layer);
+            const before = new Map(
+                overlays.map((layer) => [layer, layer.refreshes || 0]));
+            const cb = layerRow(app.displayControlsEl, 'metal1')
+                .querySelector('input.vis-cb');
+            cb.checked = false;
+            cb.dispatchEvent(new dom.window.Event('change'));
+            const got = Object.fromEntries(overlays.map((layer) =>
+                [layer.name, (layer.refreshes || 0) - before.get(layer)]));
+            assert.deepEqual(got, want);
+        });
+    }
 
     it('clicking the visibility checkbox still toggles', () => {
         const container = render();
@@ -420,6 +496,227 @@ describe('layer row selection', () => {
            assert.ok(m2.classList.contains('vis-row-selected'));
            assert.equal(m1.classList.contains('vis-row-selected'), false);
        });
+});
+
+// The color-by-owner overlays (`_modules`, `_clusters`) and the pin-marker layer
+// are mounted once and stay mounted: their visibility rides in the tile payload
+// and the renderer decides whether to draw.  Mounting/unmounting them instead
+// would make the map's layer set a second record of the flag, free to drift.
+describe('overlay layer toggles', () => {
+    let app, visibility, mapOps, redraws, techData;
+
+    class FakeTileLayer {
+        constructor(wm, name, opts) {
+            this.name = name;
+            this.options = opts || {};
+        }
+        addTo() { mapOps.push('add:' + this.name); return this; }
+        setZIndex(z) { this.options.zIndex = z; return this; }
+        refreshTiles() { mapOps.push('refresh:' + this.name); }
+    }
+    class FakeHeatMapLayer {
+        constructor() {}
+    }
+
+    beforeEach(() => {
+        mapOps = [];
+        redraws = 0;
+        visibility = {};
+        window.sessionStorage.clear();
+        app = {
+            displayControlsEl: document.createElement('div'),
+            allLayers: [],
+            visibleLayers: new Set(),
+            visibleLayerNames: new Set(),
+            selectableLayers: new Set(),
+            layerPatterns: {},
+            visibleChiplets: null,
+            hasLiberty: false,
+            showDbu: false,
+            map: {
+                hasLayer: () => true,
+                removeLayer(layer) { mapOps.push('remove:' + layer.name); },
+            },
+            websocketManager: { request: () => Promise.resolve({}) },
+            updateInspector() {},
+            focusComponent() {},
+            refreshOverlay() {},
+        };
+        techData = {
+            layers: ['metal1'],
+            sites: [],
+            chiplets: [{ path: 'top', name: 'top', parent: null, depth: 0 }],
+            overlays: [
+                { name: '_access_points', z_index: 1000,
+                  shown_by: [['access_points']], layers_by: [] },
+                { name: '_mfg_grid', z_index: 2,
+                  shown_by: [['mfg_grid']], layers_by: [] },
+                { name: '_gcell_grid', z_index: 1002,
+                  shown_by: [['gcell_grid']], layers_by: [] },
+                { name: '_inst_labels', z_index: 1003,
+                  shown_by: [['inst_names'], ['inst_pins', 'inst_pin_names']],
+                  layers_by: [] },
+            ],
+            layer_hierarchy: {
+                name: 'top',
+                type: 'block',
+                path: 'top',
+                layers: [{ name: 'metal1', color: [1, 2, 3] }],
+                instances: [],
+            },
+        };
+        populateDisplayControls(app, visibility, {}, FakeTileLayer, techData,
+                                () => { redraws++; }, FakeHeatMapLayer);
+    });
+
+    // Toggling goes through the checkbox the user actually clicks, found by the
+    // name attribute VisTree gives it.
+    function toggle(key, groupLabel) {
+        const id = groupLabel ? groupLabel + '/' + key : key;
+        const cb = app.displayControlsEl.querySelector(
+            `input.vis-cb[name="vis:${id}"]`);
+        assert.ok(cb, 'checkbox for ' + id);
+        cb.checked = !cb.checked;
+        cb.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+        return cb;
+    }
+
+    it('mounts the overlay layers once, up front', () => {
+        assert.ok(mapOps.includes('add:_modules'));
+        assert.ok(mapOps.includes('add:_clusters'));
+        assert.ok(mapOps.includes('add:_pins'));
+        assert.ok(mapOps.includes('add:_instances'));
+        // One mount each, not one per toggle.
+        assert.equal(mapOps.filter(op => op === 'add:_clusters').length, 1);
+    });
+
+    // A switchable pseudo layer needs a gate: without one it would request tiles
+    // forever, and gated on a flag that does not exist it would go blank.  The
+    // client-mounted ones carry a flag name; those the server lists carry its
+    // `shown_by` verbatim.
+    it('gates every switchable pseudo layer instead of unmounting it', () => {
+        const expected = {
+            _pins: 'pins',
+            _modules: 'module_view',
+            _clusters: 'cluster_view',
+        };
+        for (const [name, gate] of Object.entries(expected)) {
+            const layer = app.allLayers.find(l => l.name === name);
+            assert.ok(layer, name + ' is created');
+            assert.ok(mapOps.includes('add:' + name), name + ' is mounted');
+            assert.equal(layer.options.gate, gate, name + ' gate');
+            assert.ok(gate in visibility, gate + ' is a real visibility flag');
+        }
+        for (const def of techData.overlays) {
+            const layer = app.allLayers.find(l => l.name === def.name);
+            assert.ok(layer, def.name + ' is created');
+            assert.ok(mapOps.includes('add:' + def.name),
+                      def.name + ' is mounted');
+            assert.deepEqual(layer.options.gate, def.shown_by,
+                             def.name + ' gate');
+            for (const key of def.shown_by.flat()) {
+                assert.ok(key in visibility,
+                          key + ' is a real visibility flag');
+            }
+        }
+        // The instance layer has no toggle, so it carries no gate.
+        const instances = app.allLayers.find(l => l.name === '_instances');
+        assert.equal(instances.options.gate, null);
+    });
+
+    // techData.layers is deduplicated by name, but there is one routing pane per
+    // (chiplet, layer): counting the overlay's z-index off the list would bury it
+    // inside the routing stack on a multi-die design.
+    it('stacks the cluster overlay above every routing pane of a multi-die '
+       + 'design', () => {
+        // Four names shared by two dies: the deduplicated count (4) is well
+        // under the pane count (8), which is what the old formula got wrong.
+        const names = ['metal1', 'metal2', 'metal3', 'metal4'];
+        const dieLayers = names.map((name, i) => ({ name, color: [i, i, i] }));
+        const die = (name) => ({
+            name, type: 'block', path: 'top/' + name,
+            layers: dieLayers, instances: [],
+        });
+        populateDisplayControls(app, visibility, {}, FakeTileLayer, {
+            layers: names,
+            sites: [],
+            chiplets: [{ path: 'top', name: 'top', parent: null, depth: 0 }],
+            layer_hierarchy: {
+                name: 'top', type: 'block', path: 'top', layers: [],
+                instances: [die('die0'), die('die1')],
+            },
+        }, () => {}, FakeHeatMapLayer);
+
+        const routing = app.allLayers.filter(l => !l.name.startsWith('_'));
+        assert.equal(routing.length, 8);
+        const topRouting = Math.max(...routing.map(l => l.options.zIndex));
+        assert.ok(app.clustersLayer.options.zIndex > topRouting,
+                  `cluster overlay at ${app.clustersLayer.options.zIndex} must `
+                  + `sit above the routing panes (top ${topRouting})`);
+    });
+
+    it('keeps working over repeated hierarchy-view toggles', () => {
+        for (let i = 0; i < 4; i++) {
+            mapOps = [];
+            const before = visibility.ui_hierarchy_view;
+            toggle('ui_hierarchy_view');
+            assert.equal(visibility.ui_hierarchy_view, !before,
+                         'flag flips on toggle ' + i);
+            assert.equal(redraws, i + 1, 'redraw requested on toggle ' + i);
+            // The regression: no layer may be mounted or unmounted here.
+            assert.deepEqual(
+                mapOps.filter(op => op.startsWith('add:')
+                                    || op.startsWith('remove:')),
+                [], 'toggle must not touch the map layer set');
+        }
+        assert.equal(visibility.ui_hierarchy_view, false);
+    });
+
+    // One checkbox for two overlays, and which one it turns on depends on the
+    // Hierarchy tab's source.  This panel derives the flags, tells the tab to
+    // load what it is about to paint, and asks it to redo its status line --
+    // but must NOT repaint: redrawAllLayers runs right after and covers both
+    // overlay layers, and this callback fires for every checkbox in the tree,
+    // so repainting here would cancel and re-issue a screen of overlay tiles
+    // on each unrelated click.
+    it('derives the flags for the tab\'s source without repainting', () => {
+        const calls = [];
+        app.hierarchyPanel = {
+            activeView: () => 'clusters',
+            syncOverlay: () => calls.push('syncOverlay'),
+            ensureActiveLoaded: () => calls.push('ensureActiveLoaded'),
+            refreshActiveStatus: () => calls.push('refreshActiveStatus'),
+        };
+
+        toggle('ui_hierarchy_view');
+        assert.equal(visibility.cluster_view, true);
+        assert.equal(visibility.module_view, false,
+                     'the other source must not paint at the same time');
+        // Ticking the box is what asks for the tree: without the load the
+        // server has no colors and the checkbox would be on over a layout
+        // with nothing painted (review of #11122).
+        assert.deepEqual(calls, ['ensureActiveLoaded', 'refreshActiveStatus'],
+                         'the load and the status line, not a repaint');
+
+        toggle('ui_hierarchy_view');
+        assert.equal(visibility.cluster_view, false);
+        assert.equal(visibility.module_view, false);
+    });
+
+    // A saved layout can come back without the Hierarchy tab; the checkbox
+    // still has to reach the flags, or the overlay could never be turned on.
+    it('derives the flags itself when there is no panel', () => {
+        assert.equal(app.hierarchyPanel, undefined);
+
+        toggle('ui_hierarchy_view');
+        assert.equal(visibility.module_view, true,
+                     'falls back to the remembered source');
+        assert.equal(visibility.cluster_view, false);
+
+        toggle('ui_hierarchy_view');
+        assert.equal(visibility.module_view, false);
+        assert.equal(visibility.cluster_view, false);
+    });
 });
 
 describe('routing layer opacity', () => {
@@ -797,5 +1094,455 @@ describe('renderer display controls', () => {
                   'heat maps must come before the Background footer');
         assert.equal(bgIdx, children.length - 1,
                      'Background closes the panel');
+    });
+});
+
+// Issue #11329: a chiplet can sit face-down in the stack (3DBlox "MZ").  Its
+// layers then reach the viewer in reverse — the backside on top, M1 above
+// Mtop — so the draw order of everything under that chiplet has to turn over
+// with it.  The backend marks such a node `flipped` in layer_hierarchy.
+describe('flipped chiplet layer order', () => {
+    let app;
+
+    class FakeTileLayer {
+        constructor(wm, name, opts) {
+            this.name = name;
+            this.options = opts || {};
+        }
+        addTo() { return this; }
+        refreshTiles() {}
+    }
+    class FakeHeatMapLayer {
+        constructor() {}
+    }
+
+    beforeEach(() => {
+        window.sessionStorage.clear();
+        app = {
+            displayControlsEl: document.createElement('div'),
+            allLayers: [],
+            visibleLayers: new Set(),
+            visibleLayerNames: new Set(),
+            selectableLayers: new Set(),
+            layerPatterns: {},
+            visibleChiplets: null,
+            hasLiberty: false,
+            showDbu: false,
+            map: { hasLayer: () => false, removeLayer() {} },
+            websocketManager: { request: () => Promise.resolve({}) },
+            updateInspector() {},
+            focusComponent() {},
+            refreshOverlay() {},
+        };
+    });
+
+    // One die holding two routing layers plus a Backside folder, as the
+    // backend emits it.  `flipped` is what the test varies.
+    function techDataWith(flipped) {
+        return {
+            layers: ['metal1', 'metal2', 'bs1'],
+            sites: [],
+            chiplets: [
+                { path: 'top', name: 'top', parent: null, depth: 0 },
+                { path: 'top/die0', name: 'die0', parent: 'top', depth: 1 },
+            ],
+            layer_hierarchy: {
+                name: 'top', type: 'block', path: 'top', flipped: false,
+                layers: [],
+                instances: [{
+                    name: 'die0', type: 'instance', path: 'top/die0',
+                    flipped,
+                    layers: [
+                        { name: 'metal1', color: [1, 2, 3] },
+                        { name: 'metal2', color: [4, 5, 6] },
+                    ],
+                    instances: [{
+                        name: 'Backside', type: 'category', flipped,
+                        layers: [{ name: 'bs1', color: [7, 8, 9] }],
+                        instances: [],
+                    }],
+                }],
+            },
+        };
+    }
+
+    // The draw order: app.allLayers in the order the panes were created, which
+    // is also the order their z-indices ascend.
+    function drawOrder(flipped) {
+        populateDisplayControls(app, {}, {}, FakeTileLayer,
+                                techDataWith(flipped), () => {},
+                                FakeHeatMapLayer);
+        return app.allLayers
+            .filter(l => ['metal1', 'metal2', 'bs1'].includes(l.name))
+            .map(l => l.name);
+    }
+
+    it('paints an upright chiplet backside-first, then M1 up to Mtop', () => {
+        assert.deepEqual(drawOrder(false), ['bs1', 'metal1', 'metal2']);
+    });
+
+    it('reverses the whole stack of a face-down chiplet', () => {
+        // Mtop first (it is now furthest from the viewer) and the backside
+        // last, which puts it on top where a flipped die actually shows it.
+        assert.deepEqual(drawOrder(true), ['metal2', 'metal1', 'bs1']);
+    });
+
+    it('keeps z-indices ascending in draw order either way', () => {
+        for (const flipped of [false, true]) {
+            app.allLayers = [];
+            populateDisplayControls(app, {}, {}, FakeTileLayer,
+                                    techDataWith(flipped), () => {},
+                                    FakeHeatMapLayer);
+            const z = app.allLayers
+                .filter(l => ['metal1', 'metal2', 'bs1'].includes(l.name))
+                .map(l => l.options.zIndex);
+            assert.deepEqual(z, [...z].sort((a, b) => a - b),
+                             `z-indices out of order (flipped=${flipped})`);
+            assert.equal(new Set(z).size, z.length,
+                         `duplicate z-index (flipped=${flipped})`);
+        }
+    });
+
+    // A flipped HIER wrapper holding two dies. The backend already emits
+    // child chiplets ordered by WORLD z — collectChiplets sorts on global_z,
+    // which has the mirror applied — so the wrapper's own flip must not
+    // reorder them again. Reversing here too would paint the lower die on
+    // top of the upper one.
+    it('does not reorder child chiplets of a flipped wrapper', () => {
+        const techData = {
+            layers: ['m'],
+            sites: [],
+            chiplets: [
+                { path: 'top', name: 'top', parent: null, depth: 0 },
+                { path: 'top/w', name: 'w', parent: 'top', depth: 1 },
+            ],
+            layer_hierarchy: {
+                name: 'top', type: 'block', path: 'top', flipped: false,
+                layers: [],
+                instances: [{
+                    // The wrapper is face-down and owns no layers of its own.
+                    name: 'w', type: 'instance', path: 'top/w', flipped: true,
+                    layers: [],
+                    instances: [
+                        // Emitted lower-world-z first, as the backend sorts.
+                        { name: 'lower', type: 'instance', path: 'top/w/lower',
+                          flipped: true,
+                          layers: [{ name: 'lo', color: [1, 2, 3] }],
+                          instances: [] },
+                        { name: 'upper', type: 'instance', path: 'top/w/upper',
+                          flipped: true,
+                          layers: [{ name: 'up', color: [4, 5, 6] }],
+                          instances: [] },
+                    ],
+                }],
+            },
+        };
+        populateDisplayControls(app, {}, {}, FakeTileLayer, techData,
+                                () => {}, FakeHeatMapLayer);
+        const order = app.allLayers
+            .filter(l => ['lo', 'up'].includes(l.name))
+            .sort((a, b) => a.options.zIndex - b.options.zIndex)
+            .map(l => l.name);
+        assert.deepEqual(order, ['lo', 'up'],
+                         'the lower die must still be painted first');
+    });
+
+    // The palette slot is a fallback color index. It follows the tech's own
+    // layer order, so turning a die over must not recolor it.
+    it('does not recolor a chiplet when its draw order reverses', () => {
+        const colorIndexByName = (flipped) => {
+            app.allLayers = [];
+            app.displayControlsEl = document.createElement('div');
+            populateDisplayControls(app, {}, {}, FakeTileLayer,
+                                    techDataWith(flipped), () => {},
+                                    FakeHeatMapLayer);
+            const out = {};
+            for (const row of
+                     app.displayControlsEl.querySelectorAll('.vis-leaf')) {
+                const name = row.querySelector('.vis-name');
+                const swatch = row.querySelector('.layer-color');
+                if (name && swatch) {
+                    out[name.textContent] = swatch.style.backgroundColor;
+                }
+            }
+            return out;
+        };
+        assert.deepEqual(colorIndexByName(true), colorIndexByName(false));
+    });
+});
+
+describe('chipletLayerExceptions', () => {
+    it('lists only rows off on one die while another die shows the name',
+       () => {
+           const rows = [
+               { path: 'top/die0', name: 'metal1', on: false },
+               { path: 'top/die1', name: 'metal1', on: true },
+               { path: 'top/die0', name: 'metal2', on: true },
+               // No die: an older backend's row.
+               { path: undefined, name: 'metal2', on: false },
+               // No die shows metal3, so the name union already hides it.
+               { path: 'top/die0', name: 'metal3', on: false },
+               { path: 'top/die1', name: 'metal3', on: false },
+           ];
+           assert.deepEqual(
+               chipletLayerExceptions(rows, new Set(['metal1', 'metal2'])),
+               { 'top/die0': ['metal1'] });
+       });
+});
+
+// Issue #11886: two dies on one tech list the same layer names.  Each die's row
+// has to draw, hide, stack, pick and take a fill pattern on its own.
+describe('dies sharing a layer name', () => {
+    let app, created, mergedItems;
+
+    class FakeTileLayer {
+        constructor(wm, name, opts) {
+            this.name = name;
+            this.options = opts || {};
+            created.push(this);
+        }
+        addTo() {
+            this.onMap = true;
+            return this;
+        }
+        refreshTiles() { this.refreshes = (this.refreshes || 0) + 1; }
+    }
+    class RecordingMergedLayer {
+        constructor(wm, items, opts) {
+            mergedItems.push(...items);
+            this.options = opts || {};
+        }
+        addTo() { return this; }
+        refreshTiles() {}
+        setItems() {}
+    }
+    class FakeHeatMapLayer {
+        constructor() {}
+    }
+
+    beforeEach(() => {
+        created = [];
+        mergedItems = [];
+        window.sessionStorage.clear();
+        app = {
+            displayControlsEl: document.createElement('div'),
+            allLayers: [],
+            visibleLayers: new Set(),
+            visibleLayerNames: new Set(),
+            selectableLayers: new Set(),
+            layerPatterns: {},
+            visibleChiplets: null,
+            hasLiberty: false,
+            showDbu: false,
+            map: {
+                hasLayer: () => false,
+                removeLayer(layer) { layer.onMap = false; },
+                getContainer: () => document.createElement('div'),
+                on() {},
+            },
+            websocketManager: { request: () => Promise.resolve({}) },
+            updateInspector() {},
+            focusComponent() {},
+            refreshOverlay() {},
+            syncDisplayState() {},
+        };
+    });
+
+    // die0 upright and die1 face-down, both with metal1 and metal2.  With
+    // `backside`, die0 also holds a Backside folder, painted first.
+    function techData({ backside = false } = {}) {
+        const die = (name, flipped, instances = []) => ({
+            name, type: 'instance', path: `top/${name}`, flipped,
+            layers: [
+                { name: 'metal1', color: [1, 2, 3] },
+                { name: 'metal2', color: [4, 5, 6] },
+            ],
+            instances,
+        });
+        const folder = {
+            name: 'Backside', type: 'category', flipped: false,
+            layers: [{ name: 'bs1', color: [7, 8, 9] }],
+            instances: [],
+        };
+        return {
+            layers: ['metal1', 'metal2', ...(backside ? ['bs1'] : [])],
+            sites: [],
+            chiplets: [
+                { path: 'top', name: 'top', parent: null, depth: 0 },
+                { path: 'top/die0', name: 'die0', parent: 'top', depth: 1 },
+                { path: 'top/die1', name: 'die1', parent: 'top', depth: 1 },
+            ],
+            layer_hierarchy: {
+                name: 'top', type: 'block', path: 'top', flipped: false,
+                layers: [],
+                instances: [die('die0', false, backside ? [folder] : []),
+                            die('die1', true)],
+            },
+        };
+    }
+
+    const render = (visibility = {}, opts = {}) => populateDisplayControls(
+        app, visibility, {}, FakeTileLayer, techData(opts), () => {},
+        FakeHeatMapLayer);
+    const rowId = (die, name) => `layers_parent/${die}/${name}`;
+    // Pseudo-layer panes have no row.
+    const pane = (die, name) => created.find(
+        l => l.options.row && l.options.row.rowId === rowId(die, name));
+    const rowEl = (die, name) =>
+        app.layerModel.get(rowId(die, name)).cb.parentElement;
+
+    // Opens a row's context menu and clicks the item ending in `label`.
+    function clickMenu(die, name, label) {
+        rowEl(die, name).dispatchEvent(new dom.window.MouseEvent(
+            'contextmenu', { bubbles: true, cancelable: true }));
+        const menus = document.querySelectorAll('.context-menu');
+        Array.from(
+            menus[menus.length - 1].querySelectorAll('.context-menu-item'))
+            .find(el => el.textContent.endsWith(label))
+            .click();
+    }
+
+    it('binds each pane to its own die, in that die\'s order', () => {
+        render();
+        const panes = created.filter(l => l.name.startsWith('metal'));
+        assert.deepEqual(
+            panes.map(l => [l.options.row.chiplet, l.name]),
+            [['top/die0', 'metal1'], ['top/die0', 'metal2'],
+             ['top/die1', 'metal2'], ['top/die1', 'metal1']]);
+        const z = panes.map(l => l.options.zIndex);
+        assert.deepEqual(z, [...z].sort((a, b) => a - b));
+    });
+
+    it('binds each merged draw item to its own die', () => {
+        app.mergeTiles = true;
+        app.MergedTileLayer = RecordingMergedLayer;
+        render();
+        assert.deepEqual(
+            mergedItems.map(i => [i.chiplet, i.layer, i.rowId]),
+            [['top/die0', 'metal1', rowId('die0', 'metal1')],
+             ['top/die0', 'metal2', rowId('die0', 'metal2')],
+             ['top/die1', 'metal2', rowId('die1', 'metal2')],
+             ['top/die1', 'metal1', rowId('die1', 'metal1')]]);
+    });
+
+    it('hides one die\'s row and keeps the other die\'s', () => {
+        render();
+        app.layerModel.check(rowId('die0', 'metal1'), false);
+        assert.equal(pane('die0', 'metal1').onMap, false);
+        assert.equal(pane('die1', 'metal1').onMap, true);
+        assert.ok(app.visibleLayerNames.has('metal1'),
+                  'the name union still holds metal1 for die1');
+        assert.deepEqual(app.chipletHiddenLayers, { 'top/die0': ['metal1'] });
+
+        app.layerModel.check(rowId('die1', 'metal1'), false);
+        assert.ok(!app.visibleLayerNames.has('metal1'));
+        assert.deepEqual(app.chipletHiddenLayers, {},
+                         'a name no die shows needs no exception');
+    });
+
+    it('restores a die\'s hidden row from the session', () => {
+        window.sessionStorage.setItem(
+            'or_hidden_layers', JSON.stringify([rowId('die0', 'metal1')]));
+        render();
+        assert.deepEqual(app.chipletHiddenLayers, { 'top/die0': ['metal1'] });
+    });
+
+    it('makes a row unselectable on its own die only', () => {
+        render();
+        const sel = rowEl('die0', 'metal1').querySelector('.vis-sel-cb');
+        sel.checked = false;
+        sel.dispatchEvent(new dom.window.Event('change'));
+        assert.ok(app.selectableLayers.has('metal1'));
+        assert.deepEqual(app.chipletNonselectableLayers,
+                         { 'top/die0': ['metal1'] });
+        assert.deepEqual(
+            JSON.parse(window.sessionStorage.getItem('or_nonselectable_layers')),
+            [rowId('die0', 'metal1')]);
+    });
+
+    it('reads unselectable layers saved by name as every row of it', () => {
+        window.sessionStorage.setItem('or_nonselectable_layers', '["metal1"]');
+        render();
+        assert.ok(!app.selectableLayers.has('metal1'));
+        for (const die of ['die0', 'die1']) {
+            assert.equal(
+                rowEl(die, 'metal1').querySelector('.vis-sel-cb').checked,
+                false, die);
+        }
+    });
+
+    it('sets a fill pattern on one die\'s row only', () => {
+        render();
+        clickMenu('die0', 'metal1', 'Fill: Diagonal');
+        assert.deepEqual(app.layerPatterns, { [rowId('die0', 'metal1')]: 2 });
+        assert.equal(pane('die0', 'metal1').refreshes, 1);
+        assert.equal(pane('die1', 'metal1').refreshes, undefined);
+    });
+
+    it('moves fill patterns saved by name onto every row of it', () => {
+        window.sessionStorage.setItem('or_layer_patterns', '{"metal1":2}');
+        render();
+        const want = {
+            [rowId('die0', 'metal1')]: 2,
+            [rowId('die1', 'metal1')]: 2,
+        };
+        assert.deepEqual(app.layerPatterns, want);
+        assert.deepEqual(
+            JSON.parse(window.sessionStorage.getItem('or_layer_patterns')),
+            want);
+    });
+
+    // Renderers know nothing of dies, so their per-layer pass rides on one
+    // row per name, the first shown in paint order.
+    it('hosts the renderers\' layer pass on one row per name', () => {
+        render({ debug_renderers: true });
+        const host = (die, name) => pane(die, name).options.row.rendererHost;
+        assert.equal(host('die0', 'metal1'), true);
+        assert.equal(host('die1', 'metal1'), false);
+
+        app.layerModel.check(rowId('die0', 'metal1'), false);
+        assert.equal(host('die1', 'metal1'), true,
+                     'hiding the host must hand the pass on, not drop it');
+        assert.equal(pane('die1', 'metal1').refreshes, 1,
+                     'the new host repaints with the pass');
+
+        app.layerModel.check(rowId('die0', 'metal1'), true);
+        assert.equal(host('die0', 'metal1'), true);
+        assert.equal(host('die1', 'metal1'), false);
+        assert.equal(pane('die1', 'metal1').refreshes, 2,
+                     'the old host repaints without it');
+    });
+
+    // The layer menu picks neighbours in the tech, within the clicked row's die
+    // or category folder, as Qt's getLowerLayer/getUpperLayer do: a flip
+    // changes the paint order, not which layer is below.  Paint order with the
+    // Backside folder: die0 bs1, metal1, metal2, then die1 metal2, metal1.
+    const ROWS = ['die0/Backside/bs1', 'die0/metal1', 'die0/metal2',
+                  'die1/metal2', 'die1/metal1'];
+
+    function pick(die, name, label) {
+        clickMenu(die, name, label);
+        return ROWS.filter(
+            r => app.layerModel.get(`layers_parent/${r}`).checked);
+    }
+
+    it('"Show only this layer" shows the row clicked', () => {
+        render({}, { backside: true });
+        assert.deepEqual(pick('die0', 'metal1', 'Show only this layer'),
+                         ['die0/metal1']);
+        assert.deepEqual(pick('die1', 'metal1', 'Show only this layer'),
+                         ['die1/metal1']);
+    });
+
+    it('ranges follow the tech within the die', () => {
+        render({}, { backside: true });
+        assert.deepEqual(pick('die0', 'metal2', 'Show layer range ↕'),
+                         ['die0/metal1', 'die0/metal2']);
+        // die1 is flipped: metal1 is still the layer below metal2.
+        assert.deepEqual(pick('die1', 'metal2', 'Show layer range ↓'),
+                         ['die1/metal2', 'die1/metal1']);
+        // The Backside folder is not metal1's neighbour.
+        assert.deepEqual(pick('die0', 'metal1', 'Show layer range ↑'),
+                         ['die0/metal1', 'die0/metal2']);
     });
 });

@@ -4,7 +4,7 @@ read_lef Nangate45/Nangate45.lef
 #read_lef dummy_pads.lef
 read_liberty Nangate45/Nangate45_typ.lib
 read_verilog simple_test_hier.v
-link test_16_sinks -hier
+link_design test_16_sinks -hier
 read_def -floorplan_initialize simple_test_hier.def
 
 create_clock -period 5 clk

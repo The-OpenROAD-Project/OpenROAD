@@ -3,9 +3,12 @@
 
 #pragma once
 
+#include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <cstdint>
 #include <functional>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -68,6 +71,163 @@ BindAddressKind classifyBindAddress(std::string_view address);
 // nobody is bound to.  IPv6 literals come back bracketed, ready for a URL.
 std::string browserHostForBind(const boost::asio::ip::address& address);
 
+// Whether serve() launches a browser on the machine it runs on.  kAuto skips it
+// where that browser would not be the user's (issue #11389).
+enum class BrowserLaunch
+{
+  kAuto,
+  kAlways,
+  kNever
+};
+
+// What the launch policy looks at, read by serve() and passed in so the policy
+// stays testable.  Owned strings: a later getenv() may invalidate earlier ones.
+struct BrowserEnv
+{
+  bool ssh_session = false;     // $SSH_CONNECTION or $SSH_CLIENT set
+  bool batch_job = false;       // a scheduler's job id ($LSB_JOBID, ...) set
+  std::string display;          // $DISPLAY, X11 platforms only
+  std::string host_name;        // this machine, to read $DISPLAY against
+  std::string vscode_ipc_hook;  // $VSCODE_IPC_HOOK_CLI
+  std::string browser;          // $BROWSER
+  bool no_browser = false;      // $OPENROAD_NO_BROWSER
+  // $DISPLAY is a bare ":N" whose X socket this user owns (VNC, x2go).
+  bool own_local_display = false;
+  // $DISPLAY or $WAYLAND_DISPLAY set; always true off X11 platforms.
+  bool has_display = true;
+  // This machine's interface addresses, to read an IP in $DISPLAY against.
+  std::vector<boost::asio::ip::address> local_addresses;
+  bool wsl = false;  // $WSL_DISTRO_NAME: the browser is the Windows one
+};
+
+// True when $DISPLAY names an X server on another machine, or one ssh -X
+// forwards here (TCP, numbered from 10).  Otherwise socket displays (":N",
+// "unix:N"), loopback, and this machine's name or addresses are local.
+bool displayIsRemote(
+    std::string_view display,
+    std::string_view host_name,
+    const std::vector<boost::asio::ip::address>& local_addresses = {});
+
+// The X socket of a bare ":N" or "unix:N" display, or "" for any other form.
+std::string localDisplaySocket(std::string_view display);
+
+// True when $BROWSER is VS Code's helpers/browser.sh, which opens a URL where
+// the editor runs.
+bool launchesThroughBrowserEnv(const BrowserEnv& env);
+
+// Why serve() is not launching a browser, so the message can say it without
+// restating the policy.
+enum class LaunchSkip
+{
+  kNone,
+  kFlag,           // -no_browser / -web_no_browser
+  kOptOut,         // OPENROAD_NO_BROWSER
+  kSshSession,     // driven from another machine over ssh
+  kBatchJob,       // a scheduler put this process on a farm host
+  kRemoteDisplay,  // $DISPLAY belongs to another machine (issue #11389)
+  kNoDisplay       // nowhere to draw at all
+};
+
+// Apply the kAuto policy, and say which clause decided.  kNone means launch.
+LaunchSkip browserLaunchSkipReason(BrowserLaunch mode, const BrowserEnv& env);
+
+// The reason, as a clause that reads inside "Not launching a browser here
+// (...)".  Empty for kNone.
+std::string_view browserSkipReasonText(LaunchSkip reason);
+
+// Parse the mode name web_server_cmd passes.  Anything unrecognized is kAuto:
+// the mode never keeps the server from starting.
+BrowserLaunch browserLaunchFromString(std::string_view mode);
+
+// How to reach the viewer from another machine, printed with WEB-0001: a tunnel
+// for a loopback bind, and otherMachineUrl() when there is one.
+std::string reachabilityHint(BindAddressKind kind,
+                             const boost::asio::ip::address& address,
+                             std::string_view host,
+                             uint16_t port,
+                             std::string_view target);
+
+// The url another machine opens when it is not the one WEB-0001 prints: the
+// tunnel's end for a loopback bind other than localhost, this host for a
+// wildcard bind.  Ends in `target`; empty when there is none.
+std::string otherMachineUrl(BindAddressKind kind,
+                            const boost::asio::ip::address& address,
+                            std::string_view host,
+                            uint16_t port,
+                            std::string_view target);
+
+// A fresh 128-bit hex token, gating every request that can reach the Tcl
+// interpreter (issue #11389).  Empty when the entropy source cannot be read.
+std::string generateAuthToken();
+
+// True if the `token` of a parsed query matches `expected`, compared in
+// constant time.  An empty `expected` matches nothing.
+bool tokenAllowed(const std::map<std::string, std::string>& params,
+                  std::string_view expected);
+
+// The same check straight off a request target, for the callers that have no
+// parsed query of their own (the WebSocket upgrade).
+bool requestTokenAllowed(std::string_view target, std::string_view expected);
+
+// The redirect for a redeemed ticket: the request's raw query with `ticket`
+// swapped for `token`, so viewer options like ?mergetiles=0 survive.
+std::string authRedirectTarget(std::string_view target, std::string_view token);
+
+// What presenting a launch ticket got.  kReused is the right ticket after it
+// was redeemed: another client may have beaten the launched browser to it.
+enum class TicketUse
+{
+  kRedeemed,
+  kReused,
+  kRefused
+};
+
+// One server session's credentials: the token every gated request carries, and
+// a one-shot ticket that keeps the token off the browser's command line.
+class SessionAuth
+{
+ public:
+  SessionAuth(std::string token,
+              std::string ticket,
+              std::chrono::seconds ticket_ttl);
+
+  const std::string& token() const { return token_; }
+  const std::string& ticket() const { return ticket_; }
+
+  // kRedeemed for the first caller that presents the live ticket, and only
+  // then.  A ticket that expired or was revoked unredeemed is kRefused.
+  TicketUse redeemTicket(std::string_view candidate);
+
+  // Spend the ticket unredeemed: once its launch failed or was skipped, no
+  // browser of ours will ever present it.  A redeemed ticket stays redeemed.
+  void revokeTicket();
+
+  // True for the first refused WebSocket upgrade of this session only.
+  bool firstRejection() { return !rejected_.exchange(true); }
+
+  // True for the first kReused of this session only.
+  bool firstReuse() { return !reused_.exchange(true); }
+
+ private:
+  enum class TicketState
+  {
+    kLive,
+    kRedeemed,
+    kRevoked
+  };
+
+  const std::string token_;
+  const std::string ticket_;
+  std::atomic<TicketState> ticket_state_{TicketState::kLive};
+  std::atomic<bool> rejected_{false};
+  std::atomic<bool> reused_{false};
+  const std::chrono::steady_clock::time_point expiry_;
+};
+
+// How long a launch ticket stays redeemable.  Long enough for a cold browser
+// start, short enough that what `ps` saw stops working soon after.
+inline constexpr std::chrono::seconds kTicketTtl{300};
+
 // What serve() binds to when the caller passes no address.  Owned here so the
 // Tcl and command-line front ends cannot drift apart on the security default.
 inline constexpr const char* kDefaultBindAddress = "127.0.0.1";
@@ -95,11 +255,12 @@ ListenerHandle createAndRunListener(
     std::shared_ptr<ClockTreeReport> clock_report,
     utl::Logger* logger,
     WebViewerHook* viewer_hook,
-    int max_in_flight);
+    int max_in_flight,
+    std::shared_ptr<SessionAuth> auth);
 
 // A layout web server.  serve() starts the server in background I/O
 // threads; waitForStop() blocks the calling thread until requestStop()
-// is called, mirroring gui::show / gui::hide.
+// is called, mirroring web::show / web::hide.
 
 class WebServer
 {
@@ -125,8 +286,28 @@ class WebServer
   // Start the web server on the given port, listening on `bind_address` — an
   // IP literal, or empty for kDefaultBindAddress; see BindAddressKind.
   // Launches background I/O threads and returns immediately.  A second call is
-  // a no-op if the server is already running.
-  void serve(int port, const std::string& bind_address);
+  // a no-op if the server is already running.  Logs the reason and throws if
+  // the server cannot start.  An empty `token` has the server mint one and
+  // print the url carrying it; a caller's token is never printed.
+  void serve(int port,
+             const std::string& bind_address,
+             BrowserLaunch launch,
+             const std::string& token = {});
+
+  // For -web startup scripts, called on the main thread before they run.
+  // Calls serve(port, bind_address, launch), so the browser follows the
+  // scripts' log and the scripts see web::Gui::enabled() (e.g.
+  // global_placement_debug engages, as under -gui).  Until endStartupScripts(),
+  // browser requests (Tcl, tiles, selection, search indexing) run only while a
+  // script is paused, and are answered "busy" otherwise; see ScriptGate.
+  void serveDuringStartupScripts(int port,
+                                 const std::string& bind_address,
+                                 BrowserLaunch launch);
+
+  // Call on the main thread once the startup scripts are done: lets browser
+  // requests in, or, when `exiting`, turns them away so the exit can join
+  // the io threads.  Idempotent.
+  void endStartupScripts(bool exiting = false);
 
   // True after serve() returns and before stop/destructor.
   bool isRunning() const { return ioc_ != nullptr; }
@@ -169,6 +350,15 @@ class WebServer
   void deleteLabel(const std::string& name);
   void clearLabels();
 
+  // Load a heat map from a CSV file and attach it to one chiplet of the
+  // design; returns the short name clients use to reference it.
+  // CSV row 0 = (chiplet_name, heatmap_name); rows 1+ = x0,y0,x1,y1,value
+  // with the coordinates in the chiplet's local frame, in microns.  The
+  // chiplet is resolved against TileGenerator::chiplets(), so its world
+  // transform is applied and the data lands in the right place in a
+  // multi-die view.
+  std::string loadChipletHeatMap(const std::string& file_path);
+
   // Persist the connected client's current display-controls state (as
   // synced via the "set_display_state" request) to a JSON file.  The cache
   // holds a single snapshot: with several clients connected, the state of
@@ -187,7 +377,7 @@ class WebServer
 
   // Custom UI registered from Tcl (create_menu_item / create_toolbar_button).
   // These are thin facades over WebViewerHook (which owns the registry and
-  // broadcasts to clients), mirroring how gui::Gui delegates to MainWindow.
+  // broadcasts to clients), mirroring how web::Gui delegates to MainWindow.
   // initLogger() is called first so the hook exists even when the command
   // runs from a startup script before web_server.  Returns the item key.
   std::string addToolbarButton(const std::string& name,
@@ -237,11 +427,33 @@ class WebServer
   // Tcl-driven add/delete/clear changed what they should draw.
   void broadcastLabels();
 
+  // Tell every connected client the registered heat-map set changed, so it
+  // re-requests "heatmaps" and redraws its control panel.  Sessions build
+  // their heat-map instances from the registry, so a source registered after
+  // a client connected is invisible to it until this push arrives.
+  void broadcastHeatMapsChanged();
+
+  // Serial for the short names handed out by loadChipletHeatMap.  The
+  // registry keys on short name and keeps the first registration, so these
+  // must not collide across calls.
+  int chiplet_heat_map_count_ = 0;
+
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
   Tcl_Interp* interp_ = nullptr;
   int num_threads_ = 0;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
+
+  // Set by serveDuringStartupScripts(): the thread running the startup
+  // scripts, and whether they still hold the script gate (read on that thread
+  // only).
+  std::thread::id script_thread_;
+  bool script_holds_gate_ = false;
+  bool onScriptThread() const;
+  // Stops a paused command counting as running, so the renderers draw, and
+  // lets browser requests in while a startup script is paused.
+  void installPauseHooks();
   // Creates the tile generator on first use (the server need not be running)
   // and hands it the configured thread count.
   TileGenerator& ensureGenerator();

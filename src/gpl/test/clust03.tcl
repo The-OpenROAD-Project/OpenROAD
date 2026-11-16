@@ -4,12 +4,13 @@ set test_name clust02
 
 read_lef ./asap7/asap7_tech_1x_201209.lef
 read_lef ./SingleBit/asap7sc7p5t_28_L_1x_220121a.lef
-read_lib ./SingleBit/asap7sc7p5t_SEQ_LVT_TT_nldm_220123.lib
+read_liberty ./SingleBit/asap7sc7p5t_SEQ_LVT_TT_nldm_220123.lib
 
 set db [ord::get_db]
 set chip [odb::dbChip_create $db [$db getTech]]
 set block [odb::dbBlock_create $chip "top"]
 $block setDefUnits 1000
+set dbu [[$db getTech] getDbUnitsPerMicron]
 
 set clk [odb::dbNet_create $block "clk"]
 $clk setSigType CLOCK
@@ -25,8 +26,8 @@ set height 100
 
 expr { srand(17) }
 for { set i 0 } { $i < 100 } { incr i } {
-  set x [RandomInteger [expr $width * 1000]]
-  set y [RandomInteger [expr $height * 1000]]
+  set x [RandomInteger [expr $width * $dbu]]
+  set y [RandomInteger [expr $height * $dbu]]
 
   set inst [odb::dbInst_create $block $master "inst_${x}_${y}"]
   $inst setLocation $x $y

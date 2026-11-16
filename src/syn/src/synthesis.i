@@ -162,6 +162,13 @@ liveness_opt_cmd(bool replace_combinational = false)
 }
 
 void
+check_combinational_loops_cmd()
+{
+  syn::Synthesis* synthesis = ord::OpenRoad::openRoad()->getSynthesis();
+  synthesis->checkCombinationalLoops();
+}
+
+void
 export_to_odb_cmd()
 {
   syn::Synthesis* synthesis = ord::OpenRoad::openRoad()->getSynthesis();

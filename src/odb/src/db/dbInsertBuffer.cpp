@@ -104,8 +104,12 @@ dbInst* dbInsertBuffer::insertBufferSimple(dbObject* term_obj,
                        ? static_cast<dbITerm*>(term_obj)->getInst()->getModule()
                        : nullptr;
   buffer_master_ = buffer_master;
-  new_buf_base_name_ = new_buf_base_name;
-  new_net_base_name_ = new_net_base_name;
+  new_buf_base_name_ = (new_buf_base_name && new_buf_base_name[0] != '\0')
+                           ? new_buf_base_name
+                           : kDefaultBufBaseName;
+  new_net_base_name_ = (new_net_base_name && new_net_base_name[0] != '\0')
+                           ? new_net_base_name
+                           : kDefaultNetBaseName;
   uniquify_ = uniquify;
 
   // Store original driver pin before buffer insertion modifies net structure
@@ -161,12 +165,18 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoads(
   resetMembers();
 
   buffer_master_ = buffer_master;
-  new_buf_base_name_ = new_buf_base_name;
-  new_net_base_name_ = new_net_base_name;
+  new_buf_base_name_ = (new_buf_base_name && new_buf_base_name[0] != '\0')
+                           ? new_buf_base_name
+                           : kDefaultBufBaseName;
+  new_net_base_name_ = (new_net_base_name && new_net_base_name[0] != '\0')
+                           ? new_net_base_name
+                           : kDefaultNetBaseName;
   uniquify_ = uniquify;
 
-  // Store original driver pin before buffer insertion modifies net structure
-  orig_drvr_pin_ = net_->getFirstDriverTerm();
+  if (loc == nullptr) {
+    // Store original driver pin before buffer insertion modifies net structure
+    orig_drvr_pin_ = net_->getFirstDriverTerm();
+  }
 
   dlogBeforeLoadsParams(load_pins, loc, loads_on_diff_nets);
 
@@ -476,22 +486,29 @@ dbNet* dbInsertBuffer::createNewFlatNet(
           target_module_, new_net_name.c_str(), dbNameUniquifyType::ALWAYS);
     };
 
-    // Rename the original flat net and/or modnet if they have the same name as
-    // the port.
-    const bool flat_net_collides
-        = (bterm_name == block_->getBaseName(net_->getConstName()));
-    dbModNet* load_mnet = bterm->getModNet();
-    const bool mod_net_collides
-        = (load_mnet
-           && std::string_view{load_mnet->getConstName()} == bterm_name);
-
-    if (flat_net_collides || mod_net_collides) {
-      const std::string avoidance_name = make_avoidance_name();
-      if (flat_net_collides) {
-        net_->rename(avoidance_name.c_str());
+    // Rename the original flat net and/or modnets if they have the same name
+    // as any port moving to the new net.
+    for (dbObject* obj : connected_terms) {
+      if (obj->getObjectType() != dbBTermObj) {
+        continue;
       }
-      if (mod_net_collides) {
-        load_mnet->rename(avoidance_name.c_str());
+      auto* load_bterm = static_cast<dbBTerm*>(obj);
+      const std::string_view load_bterm_name{load_bterm->getConstName()};
+      const bool flat_net_collides
+          = (load_bterm_name == block_->getBaseName(net_->getConstName()));
+      dbModNet* load_mnet = load_bterm->getModNet();
+      const bool mod_net_collides
+          = (load_mnet
+             && std::string_view{load_mnet->getConstName()} == load_bterm_name);
+
+      if (flat_net_collides || mod_net_collides) {
+        const std::string avoidance_name = make_avoidance_name();
+        if (flat_net_collides) {
+          net_->rename(avoidance_name.c_str());
+        }
+        if (mod_net_collides) {
+          load_mnet->rename(avoidance_name.c_str());
+        }
       }
     }
 

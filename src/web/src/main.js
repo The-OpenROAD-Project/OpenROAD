@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
+import { GridLayoutManager } from './grid-layout.js';
 import { latLngToDbu, dbuToLatLng, dbuRectToBounds } from './coordinates.js';
 import { WebSocketManager } from './websocket-manager.js';
 import {
@@ -13,25 +13,27 @@ import {
 import { createMergedTileLayer } from './merged-tile-layer.js';
 import { installDeviceGridSnapping } from './device-pixels.js';
 import {
-    BLANK_TILE, tileSizeCss, useFittedTileSize, useStaticTileSize,
-    withDeviceExactTileSize, watchDevicePixelRatio, tileSizeFields,
+    BLANK_TILE, hasEntries, releaseTileBlob, setTileSrc, tileSizeCss,
+    useFittedTileSize, useStaticTileSize, withDeviceExactTileSize,
+    watchDevicePixelRatio, tileSizeFields,
 } from './tile-request.js';
 import { TimingWidget } from './timing-widget.js';
 import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
-import { HierarchyBrowser } from './hierarchy-browser.js';
+import { HierarchyPanel, resetHierarchyOverlay } from './hierarchy-panel.js';
 import { createInspectorPanel } from './inspector.js';
 import { SelectionBrowser } from './selection-browser.js';
 import { applyArrowStep, applySelectionFlags, beginSelection, boundsEqual,
          buildMapOptions, buildVisibilityFlags, clampArrowStep,
-         computeBoundsTransforms, computeScaleBar, decorateTabIcons,
+         computeBoundsTransforms, computeScaleBar,
          fittedTileSizeCss, formatDbu, formatDistance, installWheelPanning,
          isCurrentSelection, isStaticMode, maxUsefulZoom, parseDbu,
-         rafCoalesce, showToast, unitLabel }
+         rafCoalesce, showToast, unitLabel, websocketUrlFrom }
     from './ui-utils.js';
 import { clampFontScale, showAppFontDialog, showArrowStepDialog }
     from './options-dialogs.js';
-import { populateDisplayControls } from './display-controls.js';
+import { populateDisplayControls }
+    from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { createToolbar } from './toolbar.js';
 import { showGlobalConnectDialog, showInsertBufferDialog } from './edit-dialogs.js';
@@ -47,6 +49,7 @@ import { ThreeDViewerWidget } from './3d-viewer-widget.js';
 import { ContextMenu } from './context-menu.js';
 import { showFindDialog, showGotoDialog } from './search-nav.js';
 import { captureLayout } from './capture.js';
+import { LayerExtents } from './layer-extents.js';
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
 
@@ -63,6 +66,14 @@ function updateStatus() {
     const pendingCount = app.websocketManager ? app.websocketManager.pendingCount : 0;
     
     if (!isConnected) {
+        // Checked before _shutdown, which the manager also sets in this case.
+        if (app.websocketManager?._sessionEnded) {
+            statusDiv.innerHTML = '<div class="disconnected-banner">⚠ OpenROAD '
+                + 'restarted with a new access token — open the URL it '
+                + 'printed</div>';
+            statusDiv.style.display = 'block';
+            return;
+        }
         // After an intentional shutdown the "Server stopped" banner is
         // already showing — don't overwrite it with the generic message.
         if (app.websocketManager?._shutdown) {
@@ -71,7 +82,8 @@ function updateStatus() {
         // Only show banner after a delay to avoid flashing on page load
         if (!disconnectTimeout) {
             disconnectTimeout = setTimeout(() => {
-                if (!app.websocketManager?.isConnected) {
+                if (!app.websocketManager?.isConnected
+                        && !app.websocketManager?._shutdown) {
                     statusDiv.innerHTML = '<div class="disconnected-banner">⚠ OpenROAD disconnected — retrying…</div>';
                     statusDiv.style.display = 'block';
                 }
@@ -152,12 +164,10 @@ const app = {
     hoverHighlightLayer: null,
     hoverHighlightPane: 'hover-highlight-pane',
     modulesLayer: null,
+    clustersLayer: null,
     pinsLayer: null,
-    accessPointsLayer: null,
-    regionsLayer: null,
-    mfgGridLayer: null,
-    gcellGridLayer: null,
-    hierarchyBrowser: null,
+    // [{ def, layer }] per overlay the tech response lists.
+    overlayLayers: [],
     focusNets: new Set(),
     routeGuideNets: new Set(),
     visibleLayers: new Set(),
@@ -171,8 +181,13 @@ const app = {
     // display-controls.js once techData.chiplets arrives; null means
     // "render every chiplet" (single-chip designs).
     visibleChiplets: null,
-    // Per-layer fill pattern, keyed by raw tech-layer name → int matching the
-    // server's FillPattern enum (1 = solid). Populated/persisted by
+    // { chipletPath: [layer names] } a die hides (resp. makes unselectable)
+    // while another die still shows them; `visibleLayerNames` and
+    // `selectableLayers` are the unions.  Kept by display-controls.js.
+    chipletHiddenLayers: {},
+    chipletNonselectableLayers: {},
+    // Per-row fill pattern, keyed by the Display Controls row id → int matching
+    // the server's FillPattern enum (1 = solid). Populated/persisted by
     // display-controls.js and read lazily by websocket-tile-layer.js.
     layerPatterns: {},
     useTrueZ: getCookie('or_use_true_z') === '1',
@@ -269,7 +284,8 @@ const visibility = {
     // Instance sub-shapes
     inst_names: true,
     inst_pins: true,
-    inst_pin_names: true,
+    // Instance pin names — off by default, matching the Qt GUI
+    inst_pin_names: false,
     // Shapes
     routing: true,
     routing_segments: true,
@@ -301,8 +317,15 @@ const visibility = {
     // Tracks (off by default, matching GUI)
     tracks_pref: false,
     tracks_non_pref: false,
+    // Hierarchy coloring.  ui_hierarchy_view is the control the user sees; the
+    // other two are derived from it and the Hierarchy tab's active source,
+    // and are what the layers and the server actually read.  See
+    // syncHierarchyOverlay in hierarchy-panel.js.
+    ui_hierarchy_view: false,
     // Module view
     module_view: false,
+    // Cluster (dbGroup) view
+    cluster_view: false,
     // Misc
     detailed: false,
     rulers: true,
@@ -324,9 +347,19 @@ try {
         for (const [k, v] of Object.entries(parsed)) {
             visibility[k] = !!v;
         }
+        // Every flag comes back except the hierarchy overlay, which starts off
+        // whatever the cookie says -- see resetHierarchyOverlay.
+        resetHierarchyOverlay(visibility);
     }
 } catch (_) {
     // Ignore malformed cookie.
+}
+
+// Console handle: main.js is an ES module, so nothing here is reachable from
+// DevTools otherwise.  `app` carries the visibility and selectability maps
+// (see below), which is most of what there is to poke at.
+if (typeof window !== 'undefined') {
+    window.orApp = app;
 }
 
 // Selectability mirrors the Qt GUI's display-controls "selectable" column.
@@ -373,7 +406,8 @@ const selectability = {
 };
 
 // Expose the live visibility/selectability so the context menu "Save" can
-// serialize the same payload the tile requests use (visibility-aware export).
+// serialize the same payload the tile requests use (visibility-aware export),
+// and so the Clusters panel can tell whether its overlay is switched on.
 app.visibility = visibility;
 app.selectability = selectability;
 
@@ -453,15 +487,40 @@ const HeatMapTileLayer = L.GridLayer.extend({
             this, floorClampZoom(this, zoom));
     },
 
+    // Ask the server for one tile of the active heat map.  A null payload is
+    // an empty response -- no populated bin here, or the tile is off the grid
+    // -- and the 1x1 BLANK_TILE stands in, so nothing is decoded and onload
+    // still fires to complete the tile.
+    _requestTile: function(tile, coords) {
+        const active = this._appState.activeHeatMap;
+        if (!active) {
+            setTileSrc(tile, BLANK_TILE);
+            return;
+        }
+        this._websocketManager.request({
+            type: 'heatmap_tile',
+            name: active,
+            z: coords.z,
+            x: coords.x,
+            y: coords.y,
+            // Sized like the layer tiles beneath it; without this the heat map
+            // is a 256 px image stretched over crisp layers on any HiDPI
+            // display.
+            ...tileSizeFields(currentDpr(), this.getTileSize().x),
+        }).then(blob => {
+            setTileSrc(tile, blob ? URL.createObjectURL(blob) : BLANK_TILE);
+        }).catch(() => {
+            setTileSrc(tile, BLANK_TILE);
+        });
+    },
+
     createTile: function(coords, done) {
         const tile = document.createElement('img');
         tile.alt = '';
         tile.setAttribute('role', 'presentation');
         tile._tileDone = false;
         tile.onload = () => {
-            if (tile.src && tile.src.startsWith('blob:')) {
-                URL.revokeObjectURL(tile.src);
-            }
+            releaseTileBlob(tile);
             if (!tile._tileDone) {
                 tile._tileDone = true;
                 done(null, tile);
@@ -474,32 +533,7 @@ const HeatMapTileLayer = L.GridLayer.extend({
             }
         };
 
-        const active = this._appState.activeHeatMap;
-        if (!active) {
-            tile.src = BLANK_TILE;
-            return tile;
-        }
-
-        this._websocketManager.request({
-            type: 'heatmap_tile',
-            name: active,
-            z: coords.z,
-            x: coords.x,
-            y: coords.y,
-            // Sized like the layer tiles beneath it; without this the heat map
-            // is a 256 px image stretched over crisp layers on any HiDPI
-            // display.
-            ...tileSizeFields(currentDpr(), this.getTileSize().x),
-        }).then(blob => {
-            // A null payload is an empty response: the heat map has no
-            // populated bin in this tile, or the tile is off the grid.  The
-            // 1x1 BLANK_TILE stands in rather than an object URL, so nothing
-            // is decoded and onload still fires to complete the tile.
-            tile.src = blob ? URL.createObjectURL(blob) : BLANK_TILE;
-        }).catch(() => {
-            tile.src = BLANK_TILE;
-        });
-
+        this._requestTile(tile, coords);
         return tile;
     },
 
@@ -508,37 +542,7 @@ const HeatMapTileLayer = L.GridLayer.extend({
         for (const key in this._tiles) {
             const tileInfo = this._tiles[key];
             if (!tileInfo || !tileInfo.el) continue;
-            const tile = tileInfo.el;
-            const coords = tileInfo.coords;
-            const active = this._appState.activeHeatMap;
-            if (!active) {
-                // Release the decode before dropping it: turning the heat map
-                // off walks every tile on screen, so skipping this strands one
-                // object URL per tile.
-                if (tile.src && tile.src.startsWith('blob:')) {
-                    URL.revokeObjectURL(tile.src);
-                }
-                tile.src = BLANK_TILE;
-                continue;
-            }
-            this._websocketManager.request({
-                type: 'heatmap_tile',
-                name: active,
-                z: coords.z,
-                x: coords.x,
-                y: coords.y,
-                ...tileSizeFields(currentDpr(), this.getTileSize().x),
-            }).then(blob => {
-                if (tile.src && tile.src.startsWith('blob:')) {
-                    URL.revokeObjectURL(tile.src);
-                }
-                // Null means the tile is empty now; assigning BLANK_TILE also
-                // drops whatever image it was holding, which matters when a
-                // refresh follows an edit that emptied a bin.
-                tile.src = blob ? URL.createObjectURL(blob) : BLANK_TILE;
-            }).catch(() => {
-                tile.src = BLANK_TILE;
-            });
+            this._requestTile(tileInfo.el, tileInfo.coords);
         }
     },
 });
@@ -588,23 +592,8 @@ function redrawAllLayers() {
     // Keep the server's saved-state snapshot current for save_display_controls.
     scheduleSyncDisplayState();
 
-    // Show/hide the toggleable pseudo-layer tile layers.
-    const toggleableLayers = [
-        [app.modulesLayer, visibility.module_view],   // Module view
-        [app.pinsLayer, visibility.pins],             // Shapes > Pins
-        [app.accessPointsLayer, visibility.access_points],
-        [app.regionsLayer, visibility.regions],
-        [app.mfgGridLayer, visibility.mfg_grid],
-        [app.gcellGridLayer, visibility.gcell_grid],
-    ];
-    for (const [layer, visible] of toggleableLayers) {
-        if (!layer) continue;
-        if (visible && !app.map.hasLayer(layer)) {
-            layer.addTo(app.map);
-        } else if (!visible && app.map.hasLayer(layer)) {
-            app.map.removeLayer(layer);
-        }
-    }
+    // Pseudo layers included: they stay mounted and are gated on the visibility
+    // flag each request carries (`gate` in display-controls.js).
     for (const layer of app.allLayers) {
         layer.refreshTiles();
     }
@@ -904,6 +893,46 @@ function createDisplayControls(container) {
     app.displayControlsEl = el;
 }
 
+// The Tcl console's output, carried across a reload the page makes itself
+// (reloadKeepingConsole) so the log of a running script is not lost.
+const CONSOLE_RESTORE_KEY = 'or_restore_console';
+// sessionStorage allows a few MB per origin; keep the newest output within
+// this many characters.
+const CONSOLE_RESTORE_MAX_CHARS = 1 << 20;
+
+function reloadKeepingConsole() {
+    try {
+        if (app.tclOutputEl) {
+            const entries = [...app.tclOutputEl.children].map(
+                (el) => [el.textContent, el.className]);
+            let start = entries.length;
+            let chars = 0;
+            while (start > 0
+                   && chars + entries[start - 1][0].length
+                      <= CONSOLE_RESTORE_MAX_CHARS) {
+                chars += entries[--start][0].length;
+            }
+            const kept = entries.slice(start);
+            if (start > 0) {
+                kept.unshift(['[earlier output not kept across reload]\n', '']);
+            }
+            sessionStorage.setItem(CONSOLE_RESTORE_KEY, JSON.stringify(kept));
+        }
+    } catch (_) { /* ignore: the reload just starts an empty console */ }
+    window.location.reload();
+}
+
+function restoreConsole() {
+    try {
+        const raw = sessionStorage.getItem(CONSOLE_RESTORE_KEY);
+        if (!raw) return;
+        sessionStorage.removeItem(CONSOLE_RESTORE_KEY);
+        for (const [text, className] of JSON.parse(raw)) {
+            tclAppend(text, className);
+        }
+    } catch (_) { /* ignore */ }
+}
+
 function tclAppend(text, className) {
     if (!app.tclOutputEl) return;
     const span = document.createElement('span');
@@ -961,6 +990,7 @@ function createTclConsole(container) {
     container.element.appendChild(el);
 
     app.tclOutputEl = el.querySelector('.tcl-output');
+    restoreConsole();
 
     if (isStaticMode(app)) {
         el.querySelector('.tcl-input-row').style.display = 'none';
@@ -1025,7 +1055,7 @@ app.animateSelection = inspector.animateSelection;
 app.stopSelectionAnimation = inspector.stopSelectionAnimation;
 
 function createBrowser(container) {
-    new HierarchyBrowser(container, app, redrawAllLayers);
+    new HierarchyPanel(container, app, redrawAllLayers);
 }
 
 function createTimingWidget(container) {
@@ -1187,9 +1217,9 @@ const defaultLayoutConfig = {
     },
 };
 
-// ─── Golden Layout Init ─────────────────────────────────────────────────────
+// ─── Layout Manager Init ───────────────────────────────────────────────────
 
-app.goldenLayout = new GoldenLayout(document.getElementById('gl-container'));
+app.goldenLayout = new GridLayoutManager(document.getElementById('gl-container'));
 
 app.goldenLayout.registerComponentFactoryFunction('LayoutViewer', createLayoutViewer);
 app.goldenLayout.registerComponentFactoryFunction('DisplayControls', createDisplayControls);
@@ -1205,10 +1235,6 @@ app.goldenLayout.registerComponentFactoryFunction('3DViewer', create3DViewerWidg
 app.goldenLayout.registerComponentFactoryFunction('HelpWidget', createHelpWidget);
 app.goldenLayout.registerComponentFactoryFunction('SelectHighlight', createSelectHighlight);
 
-// Layout version — bump this to force a layout reset when components change.
-// v4: SelectHighlight (selection browser) added to the default layout.
-const LAYOUT_VERSION = 4;
-
 // ─── WebSocket Init ─────────────────────────────────────────────────────────
 // Must be created before loadLayout so that components (e.g. SchematicWidget)
 // constructed during layout initialisation can access app.websocketManager.
@@ -1220,109 +1246,53 @@ if (staticCache) {
     useStaticTileSize();
     app.websocketManager = WebSocketManager.fromCache(staticCache, updateStatus);
 } else {
-    const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
-    app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
+    const websocketUrl = websocketUrlFrom(window.location);
+    app.websocketManager = new WebSocketManager(
+        websocketUrl, updateStatus, { probeUrl: window.location.href });
+    // Where each tech layer has shapes, so tiles that would come back empty
+    // are never requested (see layer-extents.js).  Static reports have no
+    // server to ask and keep requesting everything.
+    app.layerExtents = new LayerExtents();
     // On reconnect the server may have been restarted (possibly with a
     // different design) — resync the coordinate transforms; a bounds
     // change here reloads through the boot path.
     app.websocketManager.onReconnected = () => {
+        refetchLayerExtents();
         resyncBounds(null, null, { reloadOnChange: true }).catch(() => {});
+        // Owner colors live in the server session, which the reconnect
+        // replaced: without this the overlay falls back to the default palette
+        // and the rows the user unchecked come back.
+        if (app.hierarchyPanel) app.hierarchyPanel.resendColors();
     };
 }
 
 // Check initial connection status
 updateStatus();
 
-// Restore saved layout or use default
-const savedLayout = localStorage.getItem('gl-layout');
-const savedVersion = parseInt(localStorage.getItem('gl-layout-version'), 10);
-if (savedLayout && savedVersion === LAYOUT_VERSION) {
-    try {
-        const resolved = JSON.parse(savedLayout);
-        const restored = LayoutConfig.fromResolved(resolved);
-        restored.dimensions = {
-            ...restored.dimensions, headerHeight: kHeaderHeight,
-        };
-        app.goldenLayout.loadLayout(restored);
-    } catch (e) {
-        app.goldenLayout.loadLayout(defaultLayoutConfig);
-    }
-} else {
-    app.goldenLayout.loadLayout(defaultLayoutConfig);
-}
-localStorage.setItem('gl-layout-version', LAYOUT_VERSION);
-addTabIcons();
+// Mount layout components
+app.goldenLayout.loadLayout(defaultLayoutConfig);
 
-// Add the per-panel tab icons and, if any were added, make Golden Layout
-// measure the headers again -- it chose which tabs fit before the icons
-// widened them, so without this the tabs that no longer fit overlap the
-// stack's controls instead of moving into the overflow dropdown.
-function addTabIcons() {
-    if (decorateTabIcons() > 0) {
-        app.goldenLayout.updateSize();
-    }
-}
-
-// Persist layout on changes (drag, resize, close, etc.)
-app.goldenLayout.on('stateChanged', () => {
-    localStorage.setItem('gl-layout', JSON.stringify(app.goldenLayout.saveLayout()));
-    addTabIcons();
-});
-
-// Resize GoldenLayout to the space #gl-container actually has.  The container
-// is flex-sized (see style.css), so its height also moves when the toolbar
-// appears or collapses -- and GoldenLayout does not track its container on its
-// own, so every cause has to come through here.  Measuring the element beats
-// subtracting the chrome's height from window.innerHeight: that arithmetic has
-// to be kept in step with the chrome, and missing the toolbar pushed the
-// bottom of the panels (the Tcl console's prompt) off screen.
+// Sync layout size on window resize
 function syncLayoutSize() {
-    const el = document.getElementById('gl-container');
-    app.goldenLayout.setSize(el.clientWidth, el.clientHeight);
+    app.goldenLayout.updateSize();
 }
 app.syncLayoutSize = syncLayoutSize;
 
 window.addEventListener('resize', syncLayoutSize);
 
-// componentType → display title (must match defaultLayoutConfig).
-const componentTitles = {
-    LayoutViewer: 'Layout',
-    DisplayControls: 'Display Controls',
-    TclConsole: 'Tcl Console',
-    Inspector: 'Inspector',
-    Browser: 'Hierarchy',
-    TimingWidget: 'Timing',
-    DRCWidget: 'DRC',
-    ClockWidget: 'Clock Tree',
-    ChartsWidget: 'Charts',
-    SchematicWidget: 'Schematic',
-    '3DViewer': '3D Viewer',
-    HelpWidget: 'Help',
-    SelectHighlight: 'Select Highlight',
-};
-
-// Focus a Golden Layout component tab, or re-create it if it was closed.
-function focusComponent(componentType) {
-    function find(item) {
-        if (item.isComponent && item.componentType === componentType) return item;
-        if (item.contentItems) {
-            for (const child of item.contentItems) {
-                const found = find(child);
-                if (found) return found;
-            }
-        }
-        return null;
-    }
-    const item = find(app.goldenLayout.rootItem);
-    if (item) {
-        item.focus();
-    } else {
-        const title = componentTitles[componentType] || componentType;
-        app.goldenLayout.addComponent(componentType, undefined, title);
-    }
+// Focus a component tab, or re-create it if it was closed.  `options.reveal`
+// also restores a maximized pane that hides it (see GridLayoutManager).
+function focusComponent(componentType, options) {
+    app.goldenLayout.focusComponent(componentType, options);
 }
 
 app.focusComponent = focusComponent;
+
+app.resetLayout = function() {
+    if (app.goldenLayout && typeof app.goldenLayout.resetLayout === 'function') {
+        app.goldenLayout.resetLayout();
+    }
+};
 
 app.toggleTheme = function() {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
@@ -1340,8 +1310,8 @@ app.toggleShowDbu = function() {
     setCookie('or_show_dbu', app.showDbu ? '1' : '0');
     // Re-render rulers so their labels update.
     if (app.rulerManager) app.rulerManager._rerenderAll();
-    // Re-render hierarchy browser if present.
-    if (app.hierarchyBrowser) app.hierarchyBrowser._render();
+    // Both views format area through fmtArea(app, ...), which reads showDbu.
+    if (app.hierarchyPanel) app.hierarchyPanel.refresh();
     // Update scale bar.
     if (app.updateScaleBar) app.updateScaleBar();
     // Re-request inspector properties with new formatting.
@@ -1479,8 +1449,8 @@ createToolbar(app);
 // Canvas right-click context menu ("Select →" connected objects).
 app.contextMenu = new ContextMenu(app);
 
-// Debug-graphics pause affordance: appended lazily when the first
-// debug_paused push arrives.  Clicking "Continue" tells the server to
+// Debug-graphics pause affordance: appended to the menu bar lazily when the
+// first debug_paused push arrives.  Clicking "Continue" tells the server to
 // release the placer thread.
 function ensureDebugContinueButton() {
     let btn = document.getElementById('debug-continue-btn');
@@ -1496,7 +1466,9 @@ function ensureDebugContinueButton() {
         app.websocketManager.request({ type: 'debug_continue' })
             .catch(() => {});
     });
-    document.body.appendChild(btn);
+    // In the menu bar rather than floating over the page, so no panel or
+    // menu can cover it.  Falls back to body if the menu bar is absent.
+    (document.getElementById('menu-bar') || document.body).appendChild(btn);
     return btn;
 }
 
@@ -1580,24 +1552,114 @@ async function resyncBounds(inlineBounds, inlineFitBounds,
     return true;
 }
 
+// Show the "Loading shapes…" overlay until the server reports the search
+// indices are built.  The "refresh" push normally hides it, but that push can
+// arrive before the initial tech/bounds/heatmaps requests all resolve, i.e.
+// before the overlay is shown, so also poll bounds until shapes are ready.
+function showLoadingOverlayUntilReady() {
+    const overlay = document.getElementById('loading-overlay');
+    overlay.style.display = 'flex';
+    const poll = () => {
+        if (overlay.style.display === 'none') {
+            return;
+        }
+        app.websocketManager.request({ type: 'bounds' })
+            .then((resp) => {
+                if (resp.shapes_ready) {
+                    overlay.style.display = 'none';
+                }
+            })
+            .catch(() => {})
+            .finally(() => {
+                if (overlay.style.display !== 'none') {
+                    setTimeout(poll, 1000);
+                }
+            });
+    };
+    setTimeout(poll, 1000);
+}
+
+// Discard the layer extents and fetch them again.  Until the reply lands every
+// tile is requested, so a caller that redraws right after this cannot skip a
+// layer on the strength of extents that predate an edit.
+function refetchLayerExtents() {
+    if (!app.layerExtents) return;
+    app.layerExtents.refetch((req) => app.websocketManager.request(req));
+}
+
+// The design changed (the "refresh" push).
+function applyDesignRefresh(msg) {
+    document.getElementById('loading-overlay').style.display = 'none';
+    // The design changed: drop the extents BEFORE the redraw below, so it
+    // cannot skip a layer on extents from before the edit.  It requests
+    // every layer until the fresh extents arrive.
+    refetchLayerExtents();
+    // An edit may have changed the design bounds (and with them the
+    // tile georeference); resync transforms before/along the redraw.
+    // resyncBounds already redraws when the bounds changed, so only
+    // redraw here when it didn't (same bounds, edited geometry).
+    resyncBounds(msg.bounds, msg.fit_bounds)
+        .then((redrew) => { if (!redrew) redrawAllLayers(); })
+        .catch(() => redrawAllLayers());
+    // The design may have been edited by another session's
+    // set_property; refresh the inspected object's properties.
+    if (app.refreshInspector) app.refreshInspector();
+    if (app.hierarchyPanel) app.hierarchyPanel.designChanged();
+}
+
+// "Script running" badge at the right end of the menu bar, shown while a
+// startup script runs and the server turns requests away as busy.
+function ensureScriptRunningBadge() {
+    let badge = document.getElementById('script-running-badge');
+    if (badge) return badge;
+    badge = document.createElement('span');
+    badge.id = 'script-running-badge';
+    badge.className = 'script-running-badge';
+    badge.textContent = 'Script running';
+    badge.title = 'The view updates when the script pauses or finishes';
+    (document.getElementById('menu-bar') || document.body).appendChild(badge);
+    return badge;
+}
+
+// A startup script started or stopped running (a debug pause, or the end of
+// the scripts).  While it runs every request is answered busy, so redraws
+// are held until it stops.
+function applyScriptRunning(running) {
+    app.scriptRunning = running;
+    ensureScriptRunningBadge().style.display = running ? 'block' : 'none';
+    if (running) return;
+    if (!app.booted || !app.designScale) {
+        // Boot was turned away, or found no design yet; run it now through
+        // the normal path, against whatever the script has loaded.
+        reloadKeepingConsole();
+        return;
+    }
+    if (app.refreshPending) {
+        app.refreshPending = false;
+        refetchLayerExtents();
+        if (app.refreshInspector) app.refreshInspector();
+    }
+    // Placement may have moved the bounds since the last redraw.
+    resyncBounds()
+        .then((redrew) => { if (!redrew) scheduleRedrawAllLayers(); })
+        .catch(() => scheduleRedrawAllLayers());
+}
+
 // Handle server-push notifications (e.g. search indices ready)
 app.websocketManager.onPush = (msg) => {
     if (msg.type === 'refresh') {
-        document.getElementById('loading-overlay').style.display = 'none';
-        // An edit may have changed the design bounds (and with them the
-        // tile georeference); resync transforms before/along the redraw.
-        // resyncBounds already redraws when the bounds changed, so only
-        // redraw here when it didn't (same bounds, edited geometry).
-        resyncBounds(msg.bounds, msg.fit_bounds)
-            .then((redrew) => { if (!redrew) redrawAllLayers(); })
-            .catch(() => redrawAllLayers());
-        // The design may have been edited by another session's
-        // set_property; refresh the inspected object's properties.
-        if (app.refreshInspector) app.refreshInspector();
+        if (app.scriptRunning) {
+            app.refreshPending = true;
+            return;
+        }
+        applyDesignRefresh(msg);
+    } else if (msg.type === 'script_running') {
+        applyScriptRunning(!!msg.running);
     } else if (msg.type === 'renderer_controls_changed') {
-        // A control was toggled — by this client or another one.  This is the
-        // single trigger for both halves, so the sender does not also
-        // re-read.  scheduleRedrawAllLayers, not redrawAllLayers: a group
+        // A control was toggled — by this client or another one — or a
+        // renderer came or went.  This is the single trigger for both
+        // halves, so the sender does not also re-read.
+        // scheduleRedrawAllLayers, not redrawAllLayers: a group
         // toggle sends one message per row and the echoes must coalesce.
         if (app.refreshRendererControls) app.refreshRendererControls();
         scheduleRedrawAllLayers();
@@ -1612,6 +1674,14 @@ app.websocketManager.onPush = (msg) => {
             app.highlightRect = null;
         }
         scheduleRefreshOverlay();
+    } else if (msg.type === 'heatmaps_changed') {
+        // A heat map was registered server-side after this client connected
+        // (web_load_chiplet_heatmap from Tcl).  The instance is per-session,
+        // so the push carries no data: re-request the set to have the server
+        // build ours and to redraw the control panel with the new entry.
+        app.websocketManager.request({ type: 'heatmaps' })
+            .then(updateHeatMaps)
+            .catch(err => console.error('Heat map refresh failed', err));
     } else if (msg.type === 'labels_changed') {
         // Labels live server-side and are shared, so another client's edit
         // (or a Tcl add_label) changes what this one should be drawing.
@@ -1650,6 +1720,8 @@ app.websocketManager.onPush = (msg) => {
         const btn = document.getElementById('debug-continue-btn');
         if (btn) btn.style.display = 'none';
     } else if (msg.type === 'debug_refresh') {
+        // Tiles would be turned away until the next pause, which redraws.
+        if (app.scriptRunning) return;
         // Instance positions changed — clear the stale Leaflet highlight
         // outline (the tile-based highlight updates automatically).
         if (app.highlightRect) {
@@ -1694,6 +1766,9 @@ app.websocketManager.readyPromise.then(async () => {
             app.websocketManager.request({ type: 'bounds' }),
             app.websocketManager.request({ type: 'heatmaps' }),
         ]);
+        // Not awaited: tiles requested before the extents arrive are simply
+        // not skipped.
+        refetchLayerExtents();
         app.hasLiberty = techData.has_liberty;
         app.techData = techData;
         updateDocumentTitle(techData.block_name);
@@ -1833,6 +1908,13 @@ app.websocketManager.readyPromise.then(async () => {
             }
             if (app.visibleChiplets instanceof Set) {
                 selectRequest.visible_chiplets = [...app.visibleChiplets];
+            }
+            if (hasEntries(app.chipletHiddenLayers)) {
+                selectRequest.chiplet_hidden_layers = app.chipletHiddenLayers;
+            }
+            if (hasEntries(app.chipletNonselectableLayers)) {
+                selectRequest.chiplet_nonselectable_layers
+                    = app.chipletNonselectableLayers;
             }
             const token = beginSelection(app);
             return app.websocketManager.request(selectRequest)
@@ -2017,15 +2099,21 @@ app.websocketManager.readyPromise.then(async () => {
         // aren't ready yet.  On browser reload (without server restart),
         // shapes are already built so we skip the overlay.
         if (hasDesign && !boundsData.shapes_ready) {
-            document.getElementById('loading-overlay').style.display = 'flex';
+            showLoadingOverlayUntilReady();
         }
 
         // Seed the server's display-state cache with the cookie-restored
         // state, so save_display_controls works before any interaction
         // (otherwise it would warn or write a previous session's state).
         scheduleSyncDisplayState();
+        app.booted = true;
     } catch (err) {
-        console.error('Failed to load initial data from server:', err);
+        // While a script runs this is expected: the server turned the
+        // requests away, and the script_running push that ends the run
+        // reloads the page.
+        if (!app.scriptRunning) {
+            console.error('Failed to load initial data from server:', err);
+        }
     }
 });
 
@@ -2044,6 +2132,18 @@ document.addEventListener('keydown', (e) => {
     if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return;
 
     const key = e.key.toLowerCase();
+    if (key === 'f' && (e.ctrlKey || e.metaKey)) {
+        // Find dialog.  Only swallow the key when there is a dialog to open in
+        // place of the browser's find-in-page bar: a saved static report has
+        // none, and would be left with neither.  preventDefault also keeps
+        // the "f" out of the dialog's first field, which it focuses
+        // synchronously.
+        if (app.designScale) {
+            e.preventDefault();
+            showFindDialog(app);
+        }
+        return;
+    }
     if (key === 'escape' && app.rulerManager && app.rulerManager.isActive()) {
         app.rulerManager.cancelRulerBuild();
     } else if (key === 'escape' && app.labelManager
@@ -2069,16 +2169,12 @@ document.addEventListener('keydown', (e) => {
         } else {
             app.map.zoomOut();
         }
-    } else if (key === 'f' && (e.ctrlKey || e.metaKey)) {
-        // Both dialog shortcuts must preventDefault.  The dialog focuses and
+    } else if (key === 'g' && e.shiftKey && !e.ctrlKey && !e.metaKey) {
+        // A dialog shortcut must preventDefault: the dialog focuses and
         // select()s its first field synchronously, so this keystroke's own
         // default action would then be delivered to that field and replace
-        // the prefilled value with the shortcut's own letter.  Ctrl/Cmd+F
-        // additionally has the browser's find bar to suppress.
+        // the prefilled value with the shortcut's own letter.
         e.preventDefault();
-        if (app.designScale) showFindDialog(app);
-    } else if (key === 'g' && e.shiftKey && !e.ctrlKey && !e.metaKey) {
-        e.preventDefault();  // see above
         if (app.designScale) showGotoDialog(app);
     } else if (key === 't' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
         app.toggleTheme();

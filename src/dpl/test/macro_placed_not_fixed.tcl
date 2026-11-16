@@ -15,4 +15,4 @@ detailed_placement
 
 set def_file [make_result_file macro_placed_not_fixed.def]
 write_def $def_file
-diff_file macro_placed_not_fixed.defok $def_file
+diff_files macro_placed_not_fixed.defok $def_file

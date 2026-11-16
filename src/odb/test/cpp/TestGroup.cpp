@@ -1,11 +1,12 @@
 #include <array>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "gtest/gtest.h"
-#include "helper.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
+#include "src/odb/test/cpp/helper/helper.h"
 
 namespace odb {
 namespace {
@@ -147,6 +148,45 @@ TEST_F(GroupFixture, test_group_net)
   EXPECT_EQ(power_nets.size(), 0);
   EXPECT_EQ(ground_nets.size(), 1);
   EXPECT_EQ(*ground_nets.begin(), n3);
+}
+TEST_F(GroupFixture, test_group_net_move_and_remove_at_begin)
+{
+  auto to_vec = [](dbSet<dbNet> nets) {
+    return std::vector<dbNet*>(nets.begin(), nets.end());
+  };
+
+  // Initial domain power_nets_ = {n1, n2, n3}, ground_nets_ = {}.
+  // Move leading power net (n1) to ground while trailing power nets remain.
+  domain->addGroundNet(n1);
+  EXPECT_EQ(to_vec(domain->getPowerNets()), (std::vector<dbNet*>{n2, n3}));
+  EXPECT_EQ(to_vec(domain->getGroundNets()), (std::vector<dbNet*>{n1}));
+
+  // Add second ground net so ground_nets_ = {n1, n2}, power_nets_ = {n3}.
+  domain->addGroundNet(n2);
+  EXPECT_EQ(to_vec(domain->getPowerNets()), (std::vector<dbNet*>{n3}));
+  EXPECT_EQ(to_vec(domain->getGroundNets()), (std::vector<dbNet*>{n1, n2}));
+
+  // Move leading ground net (n1) back to power while a trailing ground net
+  // remains.
+  domain->addPowerNet(n1);
+  EXPECT_EQ(to_vec(domain->getPowerNets()), (std::vector<dbNet*>{n3, n1}));
+  EXPECT_EQ(to_vec(domain->getGroundNets()), (std::vector<dbNet*>{n2}));
+
+  // Also add n1 to a second group so n1's group back-reference list has two
+  // entries ({domain, group}), then remove n1 from domain (erasing begin()).
+  group->addPowerNet(n1);
+  domain->removeNet(n2);
+  EXPECT_TRUE(to_vec(domain->getGroundNets()).empty());
+
+  domain->removeNet(n3);
+  EXPECT_EQ(to_vec(domain->getPowerNets()), (std::vector<dbNet*>{n1}));
+
+  domain->removeNet(n1);
+  EXPECT_TRUE(to_vec(domain->getPowerNets()).empty());
+  EXPECT_EQ(to_vec(group->getPowerNets()), (std::vector<dbNet*>{n1}));
+
+  dbNet::destroy(n1);
+  EXPECT_TRUE(to_vec(group->getPowerNets()).empty());
 }
 TEST_F(GroupFixture, test_group_group)
 {

@@ -5,11 +5,14 @@
 
 #include <cstddef>
 #include <memory>
+#include <optional>
+#include <utility>
 #include <vector>
 
 #include "MoveCandidate.hh"
 #include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
+#include "RepairSetupProfiler.hh"
 #include "VtSwapMtCandidate.hh"
 #include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
@@ -28,24 +31,56 @@ std::vector<std::unique_ptr<MoveCandidate>> VtSwapMtGenerator::generate(
     const Target& target)
 {
   std::vector<std::unique_ptr<MoveCandidate>> candidates;
-  if (!target.isPrepared(kArcDelayStateCache)) {
-    return candidates;
+  const EstimatorContext& estimator_context = target.estimator_context.value();
+  const SelectedArc& target_arc = estimator_context.target().arc;
+  // Reuse the VT alternatives cached for this target's link cell.
+  // The timing arc holds a scene cell, while the cache key uses the link cell
+  // captured before workers start.
+  sta::LibertyCell* current_cell
+      = resizer_.network()->libertyCell(target.inst(resizer_));
+  const CandidateCells& options = candidate_cells_cache_.at(current_cell);
+
+  // Fanin max-cap headroom is instance-level, captured once per target.
+  const std::vector<Resizer::InputCapBudget>& budgets = inputCapBudgets(target);
+  std::vector<sta::LibertyCell*> fitting;
+  std::vector<float> cost_ratios;
+  for (size_t i = 0; i < options.cells.size(); ++i) {
+    sta::LibertyCell* candidate_cell = options.cells[i];
+    if (policy_config_.dual_rf_drive_guard) {
+      sta::LibertyCell* candidate_scene
+          = candidate_cell->sceneCell(target_arc.scene, target_arc.min_max);
+      sta::LibertyPort* candidate_output
+          = candidate_scene != nullptr ? candidate_scene->findLibertyPort(
+                                             target_arc.outputPort()->name())
+                                       : nullptr;
+      if (candidate_output != nullptr
+          && !driveResNoHigherOnBothRf(target_arc.outputPort(),
+                                       candidate_output)) {
+        RepairSetupProfiler::event(
+            "dual_rf_drive_guard_rejects", 1, moveName(MoveType::kVtSwap));
+        continue;
+      }
+    }
+
+    // The same decision as replacementPreservesMaxCap(), from the captured
+    // headroom.
+    if (!resizer_.replacementFitsInputCapBudgets(budgets, candidate_cell)) {
+      RepairSetupProfiler::event(
+          "max_cap_rejects", 1, moveName(MoveType::kVtSwap));
+      continue;
+    }
+
+    fitting.push_back(candidate_cell);
+    cost_ratios.push_back(options.cost_ratios[i]);
   }
 
-  const ArcDelayState& arc_delay = target.arc_delay.value();
-  sta::LibertyCell* current_cell = arc_delay.target().arc.currentCell();
-  const std::vector<sta::LibertyCell*> candidate_cells
-      = selectCandidateCells(current_cell);
-  candidates.reserve(candidate_cells.size());
-  for (sta::LibertyCell* candidate_cell : candidate_cells) {
-    candidates.push_back(
-        std::make_unique<VtSwapMtCandidate>(resizer_,
-                                            target,
-                                            target.driver_pin,
-                                            target.inst(resizer_),
-                                            current_cell,
-                                            candidate_cell,
-                                            arc_delay));
+  // The cheapest faster VT keeps its full score; a jump over more VTs pays
+  // only its extra cost.
+  const std::vector<float> cost_divisors = relativeCellCosts(cost_ratios);
+  candidates.reserve(fitting.size());
+  for (size_t i = 0; i < fitting.size(); ++i) {
+    candidates.push_back(std::make_unique<VtSwapMtCandidate>(
+        resizer_, target, target.inst(resizer_), fitting[i], cost_divisors[i]));
   }
   return candidates;
 }
@@ -55,7 +90,7 @@ bool VtSwapMtGenerator::isApplicable(const Target& target) const
   // Screen out targets that cannot legally change VT in the current library
   // set.
   if (!MoveGenerator::isApplicable(target)
-      || !target.isPrepared(kArcDelayStateCache)) {
+      || !target.estimator_context.has_value()) {
     return false;
   }
 
@@ -66,36 +101,40 @@ bool VtSwapMtGenerator::isApplicable(const Target& target) const
     return false;
   }
 
-  if (resizer_.dbNetwork()->staToDb(current_cell) == nullptr
-      || resizer_.getVTEquivCells(current_cell).size() <= 1) {
+  if (resizer_.dbNetwork()->staToDb(current_cell) == nullptr) {
     return false;
   }
-  return true;
-}
 
-std::vector<sta::LibertyCell*> VtSwapMtGenerator::selectCandidateCells(
-    sta::LibertyCell* current_cell) const
-{
-  // Enumerate all VT-equivalent cells except the current implementation.
-  sta::LibertyCellSeq equiv_cells = resizer_.getVTEquivCells(current_cell);
-  std::vector<sta::LibertyCell*> candidates;
-  candidates.reserve(equiv_cells.size());
-  for (sta::LibertyCell* cell : equiv_cells) {
-    if (cell != nullptr && cell != current_cell) {
-      candidates.push_back(cell);
+  // Populate the candidate cache once for each current link cell.
+  const std::pair<std::map<sta::LibertyCell*, CandidateCells>::iterator, bool>
+      cached = candidate_cells_cache_.try_emplace(current_cell);
+  if (cached.second) {  // New cache entry.
+    const sta::LibertyCellSeq equiv_cells
+        = resizer_.getVTEquivCells(current_cell);
+    CandidateCells& entry = cached.first->second;  // Map iterator's value.
+    entry.cells.reserve(equiv_cells.size());
+    entry.cost_ratios.reserve(equiv_cells.size());
+    // The current cell's costs, shared by every swap below.
+    const CellCosts current_costs = cellCosts(current_cell);
+    // Enumerate all VT-equivalent cells except the current implementation.
+    for (sta::LibertyCell* cell : equiv_cells) {
+      if (cell == nullptr || cell == current_cell) {
+        continue;
+      }
+      // As for SizeUpMt, a cell without a cost on a metric both cells have is
+      // not a candidate.  cellLeakage() fills a cache, so the costs are found
+      // here on the main thread.
+      const std::optional<float> cost_ratio
+          = cellCostRatio(current_costs, cell);
+      if (!cost_ratio) {
+        continue;
+      }
+      entry.cells.push_back(cell);
+      entry.cost_ratios.push_back(*cost_ratio);
     }
+    entry.applicable = !entry.cells.empty();
   }
-
-  if (policy_config_.max_candidate_generation <= 0
-      || candidates.size()
-             <= static_cast<size_t>(policy_config_.max_candidate_generation)) {
-    return candidates;
-  }
-
-  // Keep the leakage-ascending order returned by getVTEquivCells() and trim
-  // only the suffix.
-  candidates.resize(policy_config_.max_candidate_generation);
-  return candidates;
+  return cached.first->second.applicable;  // Cached CandidateCells flag.
 }
 
 }  // namespace rsz

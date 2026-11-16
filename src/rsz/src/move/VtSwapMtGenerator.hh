@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <vector>
 
@@ -20,10 +21,9 @@ namespace rsz {
 // MT-safe generator that enumerates VT-equivalent cells and produces
 // multiple VtSwapMtCandidate instances for parallel evaluation.
 //
-// prepareRequirements() requests kArcDelayState so worker threads can read the
-// prepared timing snapshot without touching shared STA state. The number of
-// candidates produced is bounded by a positive max_candidate_generation in
-// OptimizationPolicyConfig.
+// prepareRequirements() asks for the estimator context and the flip-flop
+// input-side checks, and prepareInputs() captures the input-cap budgets, so
+// generate() runs on worker threads without live STA.
 class VtSwapMtGenerator : public MoveGenerator
 {
  public:
@@ -34,16 +34,31 @@ class VtSwapMtGenerator : public MoveGenerator
   MoveType type() const override { return MoveType::kVtSwap; }
   PrepareCacheMask prepareRequirements() const override
   {
-    return kArcDelayStateCache;
+    return kEstimatorContextCache | kSequentialEstimatorCache;
   }
   bool isApplicable(const Target& target) const override;
+  void prepareInputs(Target& target) const override
+  {
+    prepareInputCapBudgets(target);
+  }
   std::vector<std::unique_ptr<MoveCandidate>> generate(
       const Target& target) override;
 
  private:
   // === Candidate-cell selection ============================================
-  std::vector<sta::LibertyCell*> selectCandidateCells(
-      sta::LibertyCell* current_cell) const;
+  struct CandidateCells
+  {
+    bool applicable{false};
+    std::vector<sta::LibertyCell*> cells;
+    // New/old cell cost ratio of each cell in cells.
+    std::vector<float> cost_ratios;
+  };
+
+  // Reuse VT replacement cells across targets with the same current cell.
+  // Key: current Liberty cell. Value: applicability, alternative cells, and
+  // their cost ratios.
+  // Filled by isApplicable() on the main thread before generate() workers.
+  mutable std::map<sta::LibertyCell*, CandidateCells> candidate_cells_cache_;
 };
 
 }  // namespace rsz

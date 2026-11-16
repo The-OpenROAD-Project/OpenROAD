@@ -47,6 +47,7 @@ class GridTable;
 // members. -cherry 05/09/2021
 using CoupleOptions = std::array<int, 21>;
 using CoupleAndCompute = void (*)(CoupleOptions&, void*);
+using WidthsPerLevelMap = std::map<int, std::set<int>>;
 
 class extDistRC
 {
@@ -1752,7 +1753,6 @@ class extMain
 
   bool makeRCNetwork_v2();
   bool couplingExtEnd_v2();
-  void update_wireAltered_v2(std::vector<odb::dbNet*>& inets);
   void initSomeValues_v2();
   bool SetCornersAndReadModels_v2(const char* extRules);
   double getDbFactor_v2();
@@ -2281,6 +2281,8 @@ class extMain
   void makeCornerNameMap();
   void getExtractedCorners();
   bool checkLayerResistance();
+  WidthsPerLevelMap findWidthsPerLevel() const;
+  void checkRulesCoverRoutedLayers();
 
   uint32_t getNetBbox(odb::dbNet* net, odb::Rect& maxRect);
 

@@ -12,4 +12,4 @@ check_placement -verbose
 
 write_def $def_file
 
-diff_file region1.defok $def_file
+diff_files region1.defok $def_file

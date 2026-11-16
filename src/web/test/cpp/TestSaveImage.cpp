@@ -3,9 +3,12 @@
 
 #include <unistd.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstring>
+#include <exception>
 #include <filesystem>
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
@@ -13,13 +16,14 @@
 #include "boost/json/parse.hpp"
 #include "color.h"
 #include "gtest/gtest.h"
-#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "third-party/lodepng/lodepng.h"
 #include "tile_generator.h"
 #include "tst/nangate45_fixture.h"
+#include "web/heatMap.h"
+#include "web/web.h"
 
 namespace web {
 namespace {
@@ -115,10 +119,10 @@ class SaveImageTest : public tst::Nangate45Fixture
   // True if any visible pixel isn't part of the always-on die/core outline,
   // which getBounds() now guarantees is in every saved image.  Matches
   // TileGeneratorTest::hasNonOutlinePixel: the outline is kOutlineGray and
-  // alpha is NOT checked, because tiles are rasterized supersampled and
-  // decimated, so its edge pixels come back at partial coverage while the RGB
-  // stays put.  Testing by colour rather than by carving out a border keeps
-  // the die edge itself in scope — that is where pin markers are drawn.
+  // alpha is NOT checked, because its edge pixels can come back at partial
+  // coverage while the RGB stays put.  Testing by colour rather than by carving
+  // out a border keeps the die edge itself in scope — that is where pin markers
+  // are drawn.
   static bool hasNonOutlinePixel(const std::vector<unsigned char>& rgba)
   {
     for (size_t i = 0; i + 3 < rgba.size(); i += 4) {
@@ -145,6 +149,22 @@ class SaveImageTest : public tst::Nangate45Fixture
     return count;
   }
 
+  // Only _instances and the tech layers stacked: the pins and every overlay
+  // off, including `regions` and the instance names, which default ON.
+  static TileVisibility noOverlaysVis()
+  {
+    TileVisibility vis;
+    vis.pins = false;
+    vis.regions = false;
+    vis.mfg_grid = false;
+    vis.access_points = false;
+    vis.gcell_grid = false;
+    vis.rudy = false;
+    vis.routing_congestion = false;
+    vis.inst_names = false;
+    return vis;
+  }
+
   std::unique_ptr<TileGenerator> tile_gen_;
   std::vector<std::string> output_files_;
 };
@@ -163,6 +183,206 @@ TEST_F(SaveImageTest, DefaultProducesValidPng)
   EXPECT_GT(h, 0u);
   // Should contain visible content (placed instance).
   EXPECT_TRUE(hasNonTransparentPixel(pixels));
+  // No background named, so what the tiles did not draw stays transparent --
+  // which is what the GIF frames want.
+  EXPECT_EQ(pixels[3], 0) << "the corner is outside the die";
+}
+
+// A saved image is looked at on its own, not composited over something else,
+// so it carries a background the way the Qt save_image does (which passes
+// options_->background()).  Everything the tiles leave untouched must come out
+// in that color, opaque.
+TEST_F(SaveImageTest, BackgroundFillsWhatTheTilesDoNotDraw)
+{
+  const std::string path = tempPng("bg_blue");
+  const Color blue{.r = 0x12, .g = 0x34, .b = 0x56, .a = 255};
+  tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), 0, 0, {}, blue);
+
+  unsigned w = 0, h = 0;
+  const auto pixels = decodePngFile(path, w, h);
+  ASSERT_GT(w * h, 0u);
+  for (size_t i = 3; i < pixels.size(); i += 4) {
+    ASSERT_EQ(pixels[i], 255) << "transparent pixel at " << (i / 4);
+  }
+  // The corner is outside the die, so nothing composites over it.
+  EXPECT_EQ(pixels[0], blue.r);
+  EXPECT_EQ(pixels[1], blue.g);
+  EXPECT_EQ(pixels[2], blue.b);
+}
+
+// `save_image -web` goes through WebServer, which picks the background out of
+// the state the browser last synced -- that is what makes the file match what
+// the user is looking at.  Anything else, a plain headless run with no browser
+// included, falls back to black.
+TEST_F(SaveImageTest, BackgroundComesFromTheViewerState)
+{
+  constexpr Color kBlack{.r = 0, .g = 0, .b = 0, .a = 255};
+  struct Case
+  {
+    const char* label;
+    const char* state;  // nullptr: nothing ever synced
+    Color want;
+  };
+  const Case cases[] = {
+      {"nostate", nullptr, kBlack},
+      {"color",
+       R"({"version":1,"entries":{"or_bg_color":"#123456"}})",
+       Color{.r = 0x12, .g = 0x34, .b = 0x56, .a = 255}},
+      {"garbage",
+       R"({"version":1,"entries":{"or_bg_color":"nonsense"}})",
+       kBlack},
+  };
+
+  for (const Case& c : cases) {
+    WebServer server(getDb(), /*sta=*/nullptr, getLogger(), /*interp=*/nullptr);
+    if (c.state != nullptr) {
+      server.initLogger();  // creates the hook that holds the synced state
+      server.setDisplayState(c.state);
+    }
+    const std::string path = tempPng(c.label);
+    server.saveImage(path, 0, 0, 0, 0, /*width_px=*/0, /*dbu_per_pixel=*/0, "");
+
+    unsigned w = 0, h = 0;
+    const auto pixels = decodePngFile(path, w, h);
+    ASSERT_GE(pixels.size(), 4u) << c.label;
+    // The corner is outside the die: the background and nothing else.
+    EXPECT_EQ(pixels[0], c.want.r) << c.label;
+    EXPECT_EQ(pixels[1], c.want.g) << c.label;
+    EXPECT_EQ(pixels[2], c.want.b) << c.label;
+    EXPECT_EQ(pixels[3], c.want.a) << c.label;
+  }
+}
+
+// `save_image -web -display_option {cluster_view true}` is the headless path
+// to the per-cluster plot the MPL clustering data exists for: it must paint
+// the palette color of each instance's dbGroup on top of the base layers.
+TEST_F(SaveImageTest, ClusterViewColorsInstancesByGroup)
+{
+  odb::dbGroup* group = odb::dbGroup::create(block_, "cluster_1");
+  group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  group->addInst(block_->findInst("buf1"));
+
+  TileVisibility vis;
+  vis.cluster_view = true;
+  const std::string path = tempPng("cluster_view");
+  tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), 512, 0, vis);
+
+  ASSERT_TRUE(std::filesystem::exists(path));
+  unsigned w = 0, h = 0;
+  auto pixels = decodePngFile(path, w, h);
+  EXPECT_EQ(w, 512u);
+
+  // The first palette color is opaque red at alpha 100, blended over the
+  // instance's own dark fill, so look for a pixel whose red channel clearly
+  // dominates instead of an exact match.
+  bool reddish = false;
+  for (size_t i = 0; i + 3 < pixels.size(); i += 4) {
+    if (pixels[i + 3] > 0 && pixels[i] > 60 && pixels[i] > 2 * pixels[i + 1]
+        && pixels[i] > 2 * pixels[i + 2]) {
+      reddish = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(reddish) << "no cluster-colored pixel in the saved image";
+}
+
+// The sibling overlay: both save paths stack their layer from the same
+// visibility flag, so neither one can be wired up without the other.
+TEST_F(SaveImageTest, ModuleViewColorsInstancesByModule)
+{
+  // Needs a generator with STA: the module report — and so the default color
+  // map — is empty without one.  The fixture's instances already belong to the
+  // top module, which is what the overlay colors them by.
+  TileGenerator gen(getDb(), getSta(), getLogger());
+  gen.eagerInit();
+
+  const std::string plain_path = tempPng("module_off");
+  gen.saveImage(plain_path, odb::Rect(0, 0, 0, 0), 256, 0, {});
+
+  TileVisibility vis;
+  vis.module_view = true;
+  const std::string module_path = tempPng("module_on");
+  gen.saveImage(module_path, odb::Rect(0, 0, 0, 0), 256, 0, vis);
+
+  unsigned w1 = 0, h1 = 0, w2 = 0, h2 = 0;
+  auto plain = decodePngFile(plain_path, w1, h1);
+  auto with_option = decodePngFile(module_path, w2, h2);
+  ASSERT_EQ(w1, w2);
+  ASSERT_EQ(h1, h2);
+  EXPECT_NE(plain, with_option)
+      << "module_view produced the same image as no option at all";
+}
+
+// Without any group in the database the option must not change the output —
+// and must not error out either, just warn.
+TEST_F(SaveImageTest, ClusterViewWithoutGroupsMatchesTheDefaultImage)
+{
+  const std::string plain_path = tempPng("cluster_off");
+  tile_gen_->saveImage(plain_path, odb::Rect(0, 0, 0, 0), 256, 0, {});
+
+  TileVisibility vis;
+  vis.cluster_view = true;
+  const std::string cluster_path = tempPng("cluster_on_nogroups");
+  tile_gen_->saveImage(cluster_path, odb::Rect(0, 0, 0, 0), 256, 0, vis);
+
+  unsigned w1 = 0, h1 = 0, w2 = 0, h2 = 0;
+  auto plain = decodePngFile(plain_path, w1, h1);
+  auto with_option = decodePngFile(cluster_path, w2, h2);
+  EXPECT_EQ(w1, w2);
+  EXPECT_EQ(h1, h2);
+  EXPECT_EQ(plain, with_option);
+}
+
+// A file that cannot be written is an error, not a "Saved" message.
+TEST_F(SaveImageTest, UnwritableFileIsAnError)
+{
+  const std::filesystem::path missing
+      = std::filesystem::temp_directory_path()
+        / ("web_test_missing_" + std::to_string(::getpid()));
+  const std::string path = (missing / "image.png").string();
+  ASSERT_FALSE(std::filesystem::exists(missing));
+
+  EXPECT_THROW(tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), 0, 0, {}),
+               std::exception);
+  EXPECT_FALSE(std::filesystem::exists(path));
+}
+
+// Tiles are rasterized on transparency, so the pixels no layer covers come out
+// transparent by default.  A caller saving what a viewer shows passes that
+// viewer's background instead -- what WebServer::saveImage does, so that
+// `save_image -web` matches the Qt GUI's opaque background rather than writing
+// a transparent PNG.
+TEST_F(SaveImageTest, BackgroundFillsUncoveredPixels)
+{
+  const std::string default_path = tempPng("bg_default");
+  tile_gen_->saveImage(default_path, odb::Rect(0, 0, 0, 0), 256, 0, {});
+
+  // Deliberately not black: black would also be what a transparent pixel
+  // decodes to, and this has to show the fill color is the one honoured.
+  constexpr Color kMagenta{.r = 255, .g = 0, .b = 255, .a = 255};
+  const std::string filled_path = tempPng("bg_filled");
+  tile_gen_->saveImage(
+      filled_path, odb::Rect(0, 0, 0, 0), 256, 0, {}, kMagenta);
+
+  unsigned default_w = 0, default_h = 0;
+  const auto default_pixels = decodePngFile(default_path, default_w, default_h);
+  EXPECT_LT(countNonTransparentPixels(default_pixels),
+            default_pixels.size() / 4)
+      << "the default should leave the uncovered pixels transparent";
+
+  unsigned filled_w = 0, filled_h = 0;
+  const auto filled_pixels = decodePngFile(filled_path, filled_w, filled_h);
+  ASSERT_EQ(filled_w, default_w);
+  ASSERT_EQ(filled_h, default_h);
+  EXPECT_EQ(countNonTransparentPixels(filled_pixels), filled_pixels.size() / 4)
+      << "a background makes every pixel opaque";
+  // The margin corner is outside the die, so no layer draws there and the
+  // background is all that is left.
+  ASSERT_GE(filled_pixels.size(), 4u);
+  EXPECT_EQ(filled_pixels[0], kMagenta.r);
+  EXPECT_EQ(filled_pixels[1], kMagenta.g);
+  EXPECT_EQ(filled_pixels[2], kMagenta.b);
+  EXPECT_EQ(filled_pixels[3], kMagenta.a);
 }
 
 TEST_F(SaveImageTest, WidthOption)
@@ -189,6 +409,44 @@ TEST_F(SaveImageTest, ResolutionOption)
   // Allow some tolerance for rounding and bloat margin.
   EXPECT_GT(w, 500u);
   EXPECT_LT(w, 2000u);
+}
+
+// A zero-area request means the rect the viewer frames on -- the die area
+// unioned with the block bbox -- plus 5% of its smaller dimension.  That is
+// the rule Gui::saveImage gives the Qt path, so the two renderers frame a
+// default save_image identically; framing on the die alone (or bloating by the
+// LARGER dimension) put them a percent apart.
+TEST_F(SaveImageTest, ZeroAreaFramesDieUnionBBoxWithMargin)
+{
+  // Place an instance past the right die edge so the bbox is not contained in
+  // the die and the union is the only rect that covers both.
+  placeInst("BUF_X16", "overhang", 99000, 50000);
+  makeTileGen();
+
+  odb::Rect expected = block_->getBBox()->getBox();
+  expected.merge(block_->getDieArea());
+  ASSERT_GT(expected.xMax(), block_->getDieArea().xMax())
+      << "the overhanging instance should widen the union";
+  expected.bloat(
+      static_cast<int>(std::min(expected.dx(), expected.dy()) * 0.05),
+      expected);
+
+  const std::string zero_area_path = tempPng("frame_zero_area");
+  tile_gen_->saveImage(zero_area_path, odb::Rect(0, 0, 0, 0), 512, 0, {});
+
+  const std::string explicit_path = tempPng("frame_explicit");
+  tile_gen_->saveImage(explicit_path, expected, 512, 0, {});
+
+  unsigned zero_w = 0, zero_h = 0;
+  const auto zero_pixels = decodePngFile(zero_area_path, zero_w, zero_h);
+  unsigned explicit_w = 0, explicit_h = 0;
+  const auto explicit_pixels
+      = decodePngFile(explicit_path, explicit_w, explicit_h);
+
+  EXPECT_EQ(zero_w, explicit_w);
+  EXPECT_EQ(zero_h, explicit_h);
+  EXPECT_EQ(zero_pixels, explicit_pixels)
+      << "a zero-area save should render exactly that rect";
 }
 
 TEST_F(SaveImageTest, ExplicitAreaOption)
@@ -308,6 +566,152 @@ TEST_F(SaveImageTest, EmptyDesign)
       << "the die outline should still be drawn";
 }
 
+// A hairline is authored as one CSS pixel, and drawLine's brush has to cover
+// that many pixels: its radius came out (width-1)/2, so an EVEN width -- which
+// is what hairlineCss() returns at dpr 2 -- lost a pixel and the stroke went
+// down at half its width.  Measured on the GCell grid at dpr 2, where each
+// vertical grid line must be two device pixels wide.
+TEST_F(SaveImageTest, HairlineStrokesKeepTheirWidth)
+{
+  odb::dbGCellGrid* grid = odb::dbGCellGrid::create(block_);
+  ASSERT_NE(grid, nullptr);
+  grid->addGridPatternX(0, 11, 10000);
+  grid->addGridPatternY(0, 11, 10000);
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.gcell_grid = true;
+  const std::vector<unsigned char> png = tile_gen_->generateTile("_gcell_grid",
+                                                                 0,
+                                                                 0,
+                                                                 0,
+                                                                 vis,
+                                                                 {},
+                                                                 {},
+                                                                 {},
+                                                                 {},
+                                                                 nullptr,
+                                                                 nullptr,
+                                                                 nullptr,
+                                                                 nullptr,
+                                                                 /*dpr=*/2.0);
+  std::vector<unsigned char> pixels;
+  unsigned w = 0, h = 0;
+  ASSERT_EQ(lodepng::decode(pixels, w, h, png), 0u);
+  constexpr unsigned kTileDimension = 512;
+  ASSERT_EQ(w, kTileDimension);
+  ASSERT_EQ(h, kTileDimension);
+  ASSERT_EQ(pixels.size(),
+            static_cast<size_t>(kTileDimension) * kTileDimension * 4);
+  // Sampled on rows that hold only the vertical lines: a row ALONG a
+  // horizontal line is lit all the way across.
+  int runs = 0;
+  for (unsigned y = 0; y < kTileDimension; ++y) {
+    const size_t row = static_cast<size_t>(y) * kTileDimension * 4;
+    int lit = 0;
+    for (unsigned x = 0; x < kTileDimension; ++x) {
+      lit += pixels[row + static_cast<size_t>(x) * 4 + 3] > 0;
+    }
+    if (lit == 0 || lit > 60) {
+      continue;
+    }
+    int run = 0;
+    for (unsigned x = 0; x <= kTileDimension; ++x) {
+      const bool on = x < kTileDimension
+                      && pixels[row + static_cast<size_t>(x) * 4 + 3] > 0;
+      if (on) {
+        ++run;
+      } else if (run > 0) {
+        EXPECT_GE(run, 2) << "grid line at x=" << x - run << " y=" << y
+                          << " is thinner than the hairline width asked for";
+        ++runs;
+        run = 0;
+      }
+    }
+  }
+  EXPECT_GT(runs, 0) << "no vertical grid line was sampled";
+}
+
+// The die outline is a one-pixel stroke, and it has to survive the
+// mosaic-to-image resample a saved image goes through, which picked a single
+// nearest sample and so dropped whole edges at some widths.
+// Checked across widths because which edge fell in a skipped column depended on
+// the step between the two scales.
+TEST_F(SaveImageTest, DieOutlineSurvivesEveryWidth)
+{
+  odb::dbChip::destroy(chip_);
+  chip_ = odb::dbChip::create(getDb(), getDb()->getTech());
+  block_ = odb::dbBlock::create(chip_, "outline_only");
+  block_->setDefUnits(lib_->getTech()->getLefUnits());
+  block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
+  makeTileGen();
+
+  for (const int width : {300, 512, 700, 1024}) {
+    const std::string path = tempPng("die_outline_" + std::to_string(width));
+    tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), width, 0, {});
+
+    unsigned w = 0, h = 0;
+    const std::vector<unsigned char> pixels = decodePngFile(path, w, h);
+    const unsigned expected_dimension = static_cast<unsigned>(width);
+    ASSERT_EQ(w, expected_dimension);
+    ASSERT_EQ(h, expected_dimension);
+    ASSERT_EQ(pixels.size(),
+              static_cast<size_t>(expected_dimension) * expected_dimension * 4);
+
+    // The middle row crosses the left and right edges of the die and nothing
+    // else, so it must carry exactly two runs of outline.
+    int lit = 0;
+    const size_t mid_row
+        = static_cast<size_t>(expected_dimension / 2) * expected_dimension * 4;
+    for (unsigned x = 0; x < expected_dimension; ++x) {
+      if (pixels[mid_row + x * 4 + 3] > 0) {
+        ++lit;
+      }
+    }
+    EXPECT_GE(lit, 2) << "at width " << width
+                      << " the die outline lost an edge";
+  }
+}
+
+TEST_F(SaveImageTest, NothingToFrameRaisesAnError)
+{
+  // Neither a die area nor a shape to fall back on.
+  odb::dbChip::destroy(chip_);
+  chip_ = odb::dbChip::create(getDb(), getDb()->getTech());
+  block_ = odb::dbBlock::create(chip_, "bare");
+  makeTileGen();
+
+  EXPECT_ANY_THROW(
+      tile_gen_->renderImagePng(odb::Rect(0, 0, 0, 0), 256, 0, {}));
+}
+
+TEST_F(SaveImageTest, InfiniteResolutionRaisesAnError)
+{
+  // save_image -resolution Inf: the scale underflows to zero.
+  EXPECT_ANY_THROW(tile_gen_->renderImageBuffer(
+      odb::Rect(0, 0, 0, 0), 0, std::numeric_limits<double>::infinity(), {}));
+}
+
+TEST_F(SaveImageTest, ThinRegionAtHighScaleIsClamped)
+{
+  // 1 DBU wide at the default 1024 px: the height alone would overflow an int.
+  int w = 0;
+  int h = 0;
+  const std::vector<unsigned char> rgba = tile_gen_->renderImageBuffer(
+      odb::Rect(0, 0, 1, 3000000), 0, 0, {}, {}, &w, &h);
+  EXPECT_GE(w, 1);
+  EXPECT_LE(h, 16384);
+  EXPECT_EQ(rgba.size(), static_cast<std::size_t>(w) * h * 4);
+}
+
+TEST_F(SaveImageTest, UnwritablePathRaisesAnError)
+{
+  const std::string path = tempPng("no_dir") + "/out.png";
+  EXPECT_ANY_THROW(
+      tile_gen_->saveImage(path, odb::Rect(0, 0, 0, 0), 256, 0, {}));
+  EXPECT_FALSE(std::filesystem::exists(path));
+}
+
 TEST_F(SaveImageTest, LargeWidthClamped)
 {
   const std::string path = tempPng("clamped");
@@ -337,6 +741,73 @@ TEST_F(SaveImageTest, PinMarkersRendered)
   EXPECT_TRUE(hasNonTransparentPixel(pixels));
 }
 
+// The marker's size follows the region being drawn, as Qt's does
+// (RenderThread::setupIOPins takes min(die, bounds)).  A tile's own span is
+// that region only for a client showing a handful of tiles; saveImage
+// composites every tile of the level, so sizing off one tile shrank the
+// markers by 2^z -- a 2 px nub where Qt draws a 20 px arrow.
+//
+// Measured against the SAME image with the markers off, so only the arrows are
+// in the difference: the BTerm shapes and the die outline cancel out.
+TEST_F(SaveImageTest, PinMarkersSizedForTheImageNotTheTile)
+{
+  makeBTermAtEdge("in_pin", "metal1", 0, 40000, 200, 200, odb::dbIoType::INPUT);
+  makeBTermAtEdge(
+      "out_pin", "metal1", 99800, 60000, 200, 200, odb::dbIoType::OUTPUT);
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.stdcells = false;
+  const std::string with_markers = tempPng("markers_on");
+  tile_gen_->saveImage(with_markers, odb::Rect(0, 0, 0, 0), 512, 0, vis);
+
+  vis.pin_markers = false;
+  const std::string without_markers = tempPng("markers_off");
+  tile_gen_->saveImage(without_markers, odb::Rect(0, 0, 0, 0), 512, 0, vis);
+
+  unsigned on_w = 0, on_h = 0, off_w = 0, off_h = 0;
+  const auto on = decodePngFile(with_markers, on_w, on_h);
+  const auto off = decodePngFile(without_markers, off_w, off_h);
+  ASSERT_EQ(on_w, off_w);
+  ASSERT_EQ(on_h, off_h);
+
+  const size_t marker_px
+      = countNonTransparentPixels(on) - countNonTransparentPixels(off);
+
+  // Two markers, each an arrow of pin_max_size = 0.02 * 100000 DBU rendered at
+  // 512px / (die + 5%), i.e. ~9 px long and half that across: ~20 px of
+  // triangle apiece.  Sized off a tile instead it is ~6 px apiece, so the
+  // threshold below separates the two cases with room for rasterization.
+  EXPECT_GT(marker_px, 25u)
+      << "IO pin markers are too small for the image they are drawn in";
+}
+
+TEST_F(SaveImageTest, PinMarkersCanBeHidden)
+{
+  makeBTermAtEdge("in_pin", "metal1", 0, 40000, 200, 200, odb::dbIoType::INPUT);
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.stdcells = false;
+  const std::string shown = tempPng("markers_shown");
+  tile_gen_->saveImage(shown, odb::Rect(0, 0, 0, 0), 512, 0, vis);
+
+  // pin_markers gates the direction arrow alone -- the BTerm's own shape stays,
+  // because that is what vis.pins covers.
+  vis.pin_markers = false;
+  const std::string hidden = tempPng("markers_hidden");
+  tile_gen_->saveImage(hidden, odb::Rect(0, 0, 0, 0), 512, 0, vis);
+
+  unsigned w1 = 0, h1 = 0, w2 = 0, h2 = 0;
+  const auto shown_px = decodePngFile(shown, w1, h1);
+  const auto hidden_px = decodePngFile(hidden, w2, h2);
+  EXPECT_LT(countNonTransparentPixels(hidden_px),
+            countNonTransparentPixels(shown_px))
+      << "pin_markers=false should remove the direction arrows";
+  EXPECT_TRUE(hasNonTransparentPixel(hidden_px))
+      << "the BTerm shape and die outline should survive";
+}
+
 TEST_F(SaveImageTest, MultipleLayersComposited)
 {
   // Place instances to generate content on multiple layers.
@@ -353,6 +824,26 @@ TEST_F(SaveImageTest, MultipleLayersComposited)
 
 // ─── Composition order ───────────────────────────────────────────────────────
 
+// One die's rows, as paintOrderLayers() hands them to saveImageLayerOrder().
+std::vector<PaintLayer> rowsOf(const std::vector<std::string>& names,
+                               const std::string& chiplet = "top")
+{
+  std::vector<PaintLayer> rows;
+  for (const std::string& name : names) {
+    rows.push_back({.layer = name, .chiplet = chiplet});
+  }
+  return rows;
+}
+
+std::vector<std::string> namesOf(const std::vector<PaintLayer>& order)
+{
+  std::vector<std::string> names;
+  for (const PaintLayer& entry : order) {
+    names.push_back(entry.layer);
+  }
+  return names;
+}
+
 // saveImage must composite in the same z order Leaflet stacks the layers in on
 // screen (display-controls.js addPseudoLayer), otherwise the saved PNG is not
 // the view the user was looking at.  Before the fix every pseudo layer was
@@ -364,7 +855,7 @@ TEST_F(SaveImageTest, MultipleLayersComposited)
 // pixel test can tell the two orders apart reliably.
 TEST_F(SaveImageTest, LayerCompositionOrderMatchesClientZIndex)
 {
-  const std::vector<std::string> tech_layers = {"metal1", "metal2"};
+  const std::vector<PaintLayer> tech_layers = rowsOf({"metal1", "metal2"});
   TileVisibility vis;
   vis.pins = true;
   vis.mfg_grid = true;
@@ -372,35 +863,60 @@ TEST_F(SaveImageTest, LayerCompositionOrderMatchesClientZIndex)
   vis.regions = true;
   vis.gcell_grid = true;
   vis.rudy = true;
+  vis.routing_congestion = true;
 
   // zIndex on screen: _instances 0, _pins 1, _mfg_grid 2, tech layers 3.., then
-  // _access_points 1000, _regions 1001, _gcell_grid 1002, _rudy 1003.
+  // _inst_labels 999, _access_points 1000, _regions 1001, _gcell_grid 1002,
+  // _rudy 1003, _routing_congestion 1004.
   const std::vector<std::string> expected = {"_instances",
                                              "_pins",
                                              "_mfg_grid",
                                              "metal1",
                                              "metal2",
+                                             "_inst_labels",
                                              "_access_points",
                                              "_regions",
                                              "_gcell_grid",
-                                             "_rudy"};
-  EXPECT_EQ(TileGenerator::saveImageLayerOrder(vis, tech_layers), expected);
+                                             "_rudy",
+                                             "_routing_congestion"};
+  EXPECT_EQ(namesOf(TileGenerator::saveImageLayerOrder(vis, tech_layers)),
+            expected);
+}
+
+// _inst_labels is composited, above the tech layers, whenever either kind of
+// label is on; pin names only count while the pins are shown.
+TEST_F(SaveImageTest, InstLabelsLayerFollowsNamesAndPinNames)
+{
+  const std::vector<PaintLayer> tech_layers = rowsOf({"metal1"});
+  const auto has_labels
+      = [&](const bool names, const bool pins, const bool pin_names) {
+          TileVisibility vis;
+          vis.inst_names = names;
+          vis.inst_pins = pins;
+          vis.inst_pin_names = pin_names;
+          const auto order
+              = namesOf(TileGenerator::saveImageLayerOrder(vis, tech_layers));
+          const auto it = std::ranges::find(order, "_inst_labels");
+          if (it == order.end()) {
+            return false;
+          }
+          EXPECT_GT(it - std::ranges::find(order, "metal1"), 0)
+              << "labels must go over the tech layers";
+          return true;
+        };
+
+  EXPECT_TRUE(has_labels(true, false, false));
+  EXPECT_TRUE(has_labels(false, true, true));
+  EXPECT_FALSE(has_labels(false, false, true));
+  EXPECT_FALSE(has_labels(false, true, false));
 }
 
 TEST_F(SaveImageTest, LayerCompositionOrderHonorsVisibility)
 {
-  const std::vector<std::string> tech_layers = {"metal1"};
-  TileVisibility vis;
-  vis.pins = false;
-  // `regions` is the one overlay that defaults ON (Qt parity), so turn the
-  // whole set off explicitly rather than relying on the defaults.
-  vis.regions = false;
-  vis.mfg_grid = false;
-  vis.access_points = false;
-  vis.gcell_grid = false;
-  vis.rudy = false;
+  const std::vector<PaintLayer> tech_layers = rowsOf({"metal1"});
+  const TileVisibility vis = noOverlaysVis();
 
-  EXPECT_EQ(TileGenerator::saveImageLayerOrder(vis, tech_layers),
+  EXPECT_EQ(namesOf(TileGenerator::saveImageLayerOrder(vis, tech_layers)),
             (std::vector<std::string>{"_instances", "metal1"}))
       << "hidden overlays must not be composited at all";
 }
@@ -414,11 +930,11 @@ TEST_F(SaveImageTest, ParseFromJsonRudyOption)
   EXPECT_TRUE(vis.rudy);
 }
 
-class TestRUDYHeatMap : public gui::HeatMapDataSource
+class TestRUDYHeatMap : public web::HeatMapDataSource
 {
  public:
   explicit TestRUDYHeatMap(utl::Logger* logger)
-      : gui::HeatMapDataSource(logger,
+      : web::HeatMapDataSource(logger,
                                "Estimated Congestion (RUDY)",
                                "RUDY",
                                "RUDY")
@@ -452,7 +968,7 @@ class TestRUDYHeatMap : public gui::HeatMapDataSource
 TEST_F(SaveImageTest, RudyHeatmapRendersInSavedImage)
 {
   auto logger = getLogger();
-  gui::registerHeatMapSource(
+  web::registerHeatMapSource(
       "Estimated Congestion (RUDY)", "RUDY", "RUDY", [logger]() {
         return std::make_shared<TestRUDYHeatMap>(logger);
       });
@@ -482,22 +998,129 @@ TEST_F(SaveImageTest, RudyHeatmapRendersInSavedImage)
       << "Enabling rudy heatmap should render additional heatmap pixels";
 }
 
+class TestRoutingCongestionHeatMap : public web::HeatMapDataSource
+{
+ public:
+  explicit TestRoutingCongestionHeatMap(utl::Logger* logger)
+      : web::HeatMapDataSource(logger,
+                               "Routing Congestion",
+                               "Routing",
+                               "RoutingCongestion")
+  {
+  }
+
+  odb::Rect getBounds() const override
+  {
+    return getBlock() ? getBlock()->getDieArea()
+                      : odb::Rect(0, 0, 100000, 100000);
+  }
+
+ protected:
+  bool populateMap() override
+  {
+    addToMap(odb::Rect(20000, 20000, 80000, 80000), 10.0);
+    return true;
+  }
+
+  void combineMapData(bool /*base_has_value*/,
+                      double& base,
+                      double new_data,
+                      double /*data_area*/,
+                      double /*intersection_area*/,
+                      double /*rect_area*/) override
+  {
+    base = new_data;
+  }
+};
+
+TEST_F(SaveImageTest, RoutingCongestionHeatmapRendersInSavedImage)
+{
+  auto logger = getLogger();
+  web::registerHeatMapSource(
+      "Routing Congestion", "Routing", "RoutingCongestion", [logger]() {
+        return std::make_shared<TestRoutingCongestionHeatMap>(logger);
+      });
+
+  const std::string path_no_congestion = tempPng("no_routing_congestion");
+  TileVisibility vis_off;
+  EXPECT_FALSE(vis_off.routing_congestion);
+  tile_gen_->saveImage(
+      path_no_congestion, odb::Rect(0, 0, 0, 0), 512, 0, vis_off);
+
+  const std::string path_congestion = tempPng("with_routing_congestion");
+  TileVisibility vis_on;
+  vis_on.parseFromJson(
+      boost::json::parse("{\"routing_congestion\":true}").as_object());
+  EXPECT_TRUE(vis_on.routing_congestion);
+  tile_gen_->saveImage(path_congestion, odb::Rect(0, 0, 0, 0), 512, 0, vis_on);
+
+  ASSERT_TRUE(std::filesystem::exists(path_no_congestion));
+  ASSERT_TRUE(std::filesystem::exists(path_congestion));
+
+  unsigned w1 = 0, h1 = 0;
+  auto pixels_no_congestion = decodePngFile(path_no_congestion, w1, h1);
+  unsigned w2 = 0, h2 = 0;
+  auto pixels_congestion = decodePngFile(path_congestion, w2, h2);
+
+  EXPECT_EQ(w1, 512u);
+  EXPECT_EQ(w2, 512u);
+  EXPECT_GT(countNonTransparentPixels(pixels_congestion),
+            countNonTransparentPixels(pixels_no_congestion))
+      << "Enabling routing_congestion heatmap should render additional "
+         "heatmap pixels";
+}
+
 TEST_F(SaveImageTest, LayerCompositionOrderHonorsTechLayerVisibility)
 {
-  const std::vector<std::string> tech_layers = {"metal1", "metal2", "metal3"};
-  TileVisibility vis;
+  const std::vector<PaintLayer> tech_layers
+      = rowsOf({"metal1", "metal2", "metal3"});
+  TileVisibility vis = noOverlaysVis();
   vis.has_visible_layers = true;
   vis.visible_layers = {"metal2"};
-  vis.pins = false;
-  vis.regions = false;
-  vis.mfg_grid = false;
-  vis.access_points = false;
-  vis.gcell_grid = false;
-  vis.rudy = false;
 
-  EXPECT_EQ(TileGenerator::saveImageLayerOrder(vis, tech_layers),
+  EXPECT_EQ(namesOf(TileGenerator::saveImageLayerOrder(vis, tech_layers)),
             (std::vector<std::string>{"_instances", "metal2"}))
       << "tech layers hidden via visible_layers must not be composited";
+}
+
+// Two dies sharing a name: hiding it on one keeps the other's row, because
+// visible_layers is the union and the per-die exception names the die.
+TEST_F(SaveImageTest, LayerCompositionOrderHonorsPerDieHiddenLayers)
+{
+  std::vector<PaintLayer> tech_layers = rowsOf({"metal1"}, "top/die0");
+  tech_layers.push_back({.layer = "metal1", .chiplet = "top/die1"});
+  TileVisibility vis = noOverlaysVis();
+  vis.has_visible_layers = true;
+  vis.visible_layers = {"metal1"};
+  ASSERT_EQ(namesOf(TileGenerator::saveImageLayerOrder(vis, tech_layers)),
+            (std::vector<std::string>{"_instances", "metal1", "metal1"}))
+      << "with nothing hidden both dies' rows composite";
+
+  vis.chiplet_hidden_layers = {{"top/die0", {"metal1"}}};
+  const std::vector<PaintLayer> order
+      = TileGenerator::saveImageLayerOrder(vis, tech_layers);
+  ASSERT_EQ(namesOf(order), (std::vector<std::string>{"_instances", "metal1"}))
+      << "a layer hidden on one die must still composite on the other";
+  EXPECT_EQ(order[1].chiplet, "top/die1");
+}
+
+// However many rows the dies bring, they all stay under the overlays, as the
+// merged panes keep them on screen.
+TEST_F(SaveImageTest, LayerCompositionOrderKeepsOverlaysAboveManyRows)
+{
+  std::vector<std::string> names;
+  for (int i = 0; i < 1200; ++i) {
+    names.push_back("m" + std::to_string(i));
+  }
+  const TileVisibility vis;  // instance names on, so _inst_labels composites
+  const std::vector<std::string> order
+      = namesOf(TileGenerator::saveImageLayerOrder(vis, rowsOf(names)));
+  const auto labels = std::ranges::find(order, "_inst_labels");
+  const auto last_row = std::ranges::find(order, "m1199");
+  ASSERT_NE(labels, order.end());
+  ASSERT_NE(last_row, order.end());
+  EXPECT_LT(last_row - order.begin(), labels - order.begin())
+      << "the last rows were composited over the instance names";
 }
 
 TEST_F(SaveImageTest, HiddenTechLayerIsNotDrawn)

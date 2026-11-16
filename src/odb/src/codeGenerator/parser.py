@@ -56,19 +56,13 @@ class Parser:
     """Parses a file looking for the sections delimited by the code_tags."""
 
     def __init__(self, file_name: str):
-        """Read `file_name` into lines and default to // section comments."""
+        """Read `file_name` into lines; sections are tagged with // comments."""
         with open(file_name, "r", encoding="ascii") as file:
             self.lines = file.readlines()
         self.generator_code: dict[str, list[str]] = {}
         self.user_code: dict[str, list[str]] = {}
-        self.set_comment_str("//")
-
-    def set_comment_str(self, comment: str) -> None:
-        """Set the prefix for the code tags comments
-
-        For example, CMakeLists.txt uses # rather than //"""
-        self.user_code_tag = f"{comment}UserCodeBegin"
-        self.generator_code_tag = f"{comment}GeneratorCodeBegin"
+        self.user_code_tag = "//UserCodeBegin"
+        self.generator_code_tag = "//GeneratorCodeBegin"
 
     def parse_user_code(self) -> None:
         """Parse using the user_code_tag
