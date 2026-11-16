@@ -33,6 +33,7 @@ TESTS = [
     "retime_no_moves",
     "retime_two_clocks",
     "retime_unmap",
+    "retime_wire",
 ]
 
 filegroup(

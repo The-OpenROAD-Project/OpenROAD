@@ -180,6 +180,22 @@ void Retime::resolveFlopDCap()
   }
 }
 
+// The wire delay of an edge once no register is left on it: the wire into
+// each of its registers, then the wire from the last one to the sink.
+float Retime::wireDelay(const EdgePhys& phys)
+{
+  float wire = std::max(pinArrival(phys.sink) - pinArrival(phys.driver), 0.0f);
+  for (odb::dbInst* flop : phys.flops) {
+    odb::dbITerm* d = graph_->dataPin(flop);
+    odb::dbNet* net = d != nullptr ? d->getNet() : nullptr;
+    odb::dbITerm* source = net != nullptr ? net->getFirstOutput() : nullptr;
+    if (source != nullptr) {
+      wire += std::max(pinArrival(d) - pinArrival(source), 0.0f);
+    }
+  }
+  return wire;
+}
+
 void Retime::computeWireArcs()
 {
   const int n = static_cast<int>(graph_->nodes_.size());
@@ -189,8 +205,7 @@ void Retime::computeWireArcs()
     const int edge_count = static_cast<int>(edges.size());
     for (int k = 0; k < edge_count; k++) {
       odb::dbITerm* sink = handles[k].sink;
-      const float wire
-          = std::max(pinArrival(sink) - pinArrival(handles[k].driver), 0.0f);
+      const float wire = wireDelay(handles[k]);
       const float fallback = getGateArc(sink);
       fanin_[edges[k].target].push_back({
           .u = u,

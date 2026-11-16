@@ -165,16 +165,20 @@ bool RetimingGraph::isDontTouch(odb::dbInst* reg) const
   return false;
 }
 
+odb::dbITerm* RetimingGraph::dataPin(odb::dbInst* reg) const
+{
+  auto it = reg_class_.find(reg);
+  return it != reg_class_.end() && it->second.data != nullptr
+             ? reg->getITerm(it->second.data)
+             : registerDataPin(sta_, reg);
+}
+
 odb::dbNet* RetimingGraph::chainNet(const EdgePhys& phys) const
 {
   if (phys.flops.empty()) {
     return phys.driver->getNet();
   }
-  odb::dbInst* head = phys.flops.front();
-  auto it = reg_class_.find(head);
-  odb::dbITerm* d = it != reg_class_.end() && it->second.data != nullptr
-                        ? head->getITerm(it->second.data)
-                        : registerDataPin(sta_, head);
+  odb::dbITerm* d = dataPin(phys.flops.front());
   return d != nullptr ? d->getNet() : nullptr;
 }
 

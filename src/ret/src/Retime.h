@@ -63,6 +63,7 @@ class Retime
   float pinArrival(odb::dbITerm* db_pin);
   float getGateArc(odb::dbITerm* input_pin);
   float getPinSlew(sta::Pin* pin);
+  float wireDelay(const EdgePhys& phys);
 
   void computeArcDelays();
   void resolveFlopDCap();
