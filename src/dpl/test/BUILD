@@ -54,6 +54,7 @@ COMPULSORY_TESTS = [
     "gcd",
     "hybrid_cells",
     "hybrid_cells2",
+    "hybrid_cells_block",
     "ibex",
     "macro_placed_not_fixed",
     "max_disp1",
@@ -255,6 +256,10 @@ filegroup(
             "hybrid_cells2": [
                 "Nangate45/fake_macros.lef",
             ],
+            "hybrid_cells_block": [
+                "hybrid_cells.def",
+                "Nangate45/fake_macros.lef",
+            ],
             "ibex": [
                 "ibex_core_replace.def",
             ],
@@ -348,9 +353,13 @@ filegroup(
 cc_test(
     name = "dpl_unittest",
     srcs = ["dpl_test.cc"],
-    data = ["extra.lef"],
+    data = [
+        "extra.lef",
+        "gcd_replace.def",
+    ],
     deps = [
         "//src/dpl",
+        "//src/dpl:dpl_impl",
         "//src/odb/src/db",
         "//src/odb/src/lefin",
         "//src/tst",

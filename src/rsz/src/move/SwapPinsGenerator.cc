@@ -3,12 +3,7 @@
 
 #include "SwapPinsGenerator.hh"
 
-#include <algorithm>
-#include <cstddef>
 #include <memory>
-#include <optional>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -16,11 +11,11 @@
 #include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
 #include "SwapPinsCandidate.hh"
+#include "SwapPinsEquivalence.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
-#include "sta/FuncExpr.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
@@ -178,8 +173,8 @@ bool SwapPinsGenerator::selectSwapPort(sta::Instance* drvr,
   std::pair<EquivPinMap::iterator, bool> equiv_ports_entry
       = equiv_pin_map_.try_emplace(input_port);
   if (equiv_ports_entry.second) {
-    equivCellPins(
-        drvr_port->libertyCell(), input_port, equiv_ports_entry.first->second);
+    equiv_ports_entry.first->second = equivalentSwapInputs(
+        resizer_.logger(), drvr_port->libertyCell(), input_port);
   }
   const LibertyPortVec& equiv_ports = equiv_ports_entry.first->second;
   if (equiv_ports.empty()) {
@@ -204,162 +199,6 @@ bool SwapPinsGenerator::selectSwapPort(sta::Instance* drvr,
   swap_delay = swap_arc_delay;
   return swap_port != nullptr
          && !sta::LibertyPort::equiv(swap_port, input_port);
-}
-
-void SwapPinsGenerator::equivCellPins(const sta::LibertyCell* cell,
-                                      sta::LibertyPort* input_port,
-                                      LibertyPortVec& ports) const
-{
-  if (cell->isSequential() || cell->isIsolationCell()) {
-    ports.clear();
-    return;
-  }
-
-  sta::LibertyCellPortIterator port_iter(cell);
-  int outputs = 0;
-  int inputs = 0;
-  while (port_iter.hasNext()) {
-    sta::LibertyPort* port = port_iter.next();
-    sta::PortDirection* direction = port->direction();
-    if (direction->isOutput()) {
-      ++outputs;
-    } else if (direction->isInput()) {
-      ++inputs;
-    } else if (port->isPwrGnd()) {
-      continue;
-    } else {
-      ports.clear();
-      return;
-    }
-  }
-
-  if (outputs < 1 || inputs < 2) {
-    return;
-  }
-
-  sta::LibertyCellPortIterator port_iter2(cell);
-  std::unordered_set<sta::LibertyPort*> seen_ports;
-  while (port_iter2.hasNext()) {
-    sta::LibertyPort* candidate_port = port_iter2.next();
-    if (!candidate_port->direction()->isInput()) {
-      continue;
-    }
-
-    sta::LibertyCellPortIterator output_port_iter(cell);
-    std::optional<bool> is_equivalent;
-    while (output_port_iter.hasNext()) {
-      sta::LibertyPort* output_candidate_port = output_port_iter.next();
-      sta::FuncExpr* output_expr = output_candidate_port->function();
-      if (!output_candidate_port->direction()->isOutput()
-          || output_expr == nullptr || input_port == candidate_port) {
-        continue;
-      }
-
-      const bool is_equivalent_result
-          = isPortEqiv(output_expr, cell, input_port, candidate_port);
-      if (!is_equivalent.has_value()) {
-        is_equivalent = is_equivalent_result;
-      } else {
-        is_equivalent = is_equivalent.value() && is_equivalent_result;
-      }
-    }
-
-    if (is_equivalent.has_value() && is_equivalent.value()
-        && !seen_ports.contains(candidate_port)) {
-      seen_ports.insert(candidate_port);
-      ports.push_back(candidate_port);
-    }
-  }
-
-  if (!seen_ports.empty()) {
-    std::ranges::sort(ports, {}, [](auto* port) { return port->id(); });
-  }
-}
-
-bool SwapPinsGenerator::isPortEqiv(const sta::FuncExpr* expr,
-                                   const sta::LibertyCell* cell,
-                                   const sta::LibertyPort* port_a,
-                                   const sta::LibertyPort* port_b) const
-{
-  if (port_a->libertyCell() != cell || port_b->libertyCell() != cell) {
-    return false;
-  }
-
-  sta::LibertyCellPortIterator port_iter(cell);
-  std::unordered_map<const sta::LibertyPort*, std::vector<bool>> port_stimulus;
-  size_t input_port_count = 0;
-  while (port_iter.hasNext()) {
-    sta::LibertyPort* port = port_iter.next();
-    if (port->direction()->isInput()) {
-      ++input_port_count;
-      port_stimulus[port] = {};
-    }
-  }
-  if (input_port_count > 16) {
-    return false;
-  }
-
-  size_t var_index = 0;
-  for (auto& [port, stimulus] : port_stimulus) {
-    const size_t truth_table_length = 0x1 << input_port_count;
-    stimulus.resize(truth_table_length, false);
-    for (size_t i = 0; i < truth_table_length; ++i) {
-      stimulus[i] = static_cast<bool>((i >> var_index) & 0x1);
-    }
-    ++var_index;
-  }
-
-  std::vector<bool> result_no_swap
-      = simulateExpr(const_cast<sta::FuncExpr*>(expr), port_stimulus);
-  std::swap(port_stimulus.at(port_a), port_stimulus.at(port_b));
-  std::vector<bool> result_with_swap
-      = simulateExpr(const_cast<sta::FuncExpr*>(expr), port_stimulus);
-  return result_no_swap == result_with_swap;
-}
-
-bool SwapPinsGenerator::simulateExpr(
-    sta::FuncExpr* expr,
-    std::unordered_map<const sta::LibertyPort*, std::vector<bool>>&
-        port_stimulus,
-    const size_t table_index) const
-{
-  using Op = sta::FuncExpr::Op;
-  switch (expr->op()) {
-    case Op::not_:
-      return !simulateExpr(expr->left(), port_stimulus, table_index);
-    case Op::and_:
-      return simulateExpr(expr->left(), port_stimulus, table_index)
-             && simulateExpr(expr->right(), port_stimulus, table_index);
-    case Op::or_:
-      return simulateExpr(expr->left(), port_stimulus, table_index)
-             || simulateExpr(expr->right(), port_stimulus, table_index);
-    case Op::xor_:
-      return simulateExpr(expr->left(), port_stimulus, table_index)
-             ^ simulateExpr(expr->right(), port_stimulus, table_index);
-    case Op::one:
-      return true;
-    case Op::zero:
-      return false;
-    case Op::port:
-      return port_stimulus[expr->port()][table_index];
-  }
-
-  resizer_.logger()->error(
-      utl::RSZ, kMsgUnknownFuncExprOp, "unrecognized expr op from OpenSTA");
-  return false;
-}
-
-std::vector<bool> SwapPinsGenerator::simulateExpr(
-    sta::FuncExpr* expr,
-    std::unordered_map<const sta::LibertyPort*, std::vector<bool>>&
-        port_stimulus) const
-{
-  const size_t table_length = 0x1 << port_stimulus.size();
-  std::vector<bool> result(table_length, false);
-  for (size_t i = 0; i < table_length; ++i) {
-    result[i] = simulateExpr(expr, port_stimulus, i);
-  }
-  return result;
 }
 
 }  // namespace rsz

@@ -22,6 +22,7 @@ COMPULSORY_TESTS = [
     "ispd18_sample",
     "ispd18_sample_incr",
     "ispd18_sample_reroute",
+    "ispd18_sample_reroute_unrouted",
     "ndr_vias1",
     "ndr_vias2",
     "ndr_vias3",
@@ -121,6 +122,9 @@ filegroup(
             "ispd18_sample_incr",
             "single_step",
         ] else []) + ([
+            "ispd18_sample_reroute.drc.rpt",
+            "ispd18_sample_reroute.input.def",
+        ] if test_name == "ispd18_sample_reroute_unrouted" else []) + ([
             "gf180/gf180mcu_5LM_1TM_9K_9t_tech.lef",
         ] if test_name == "pa_single_pin" else []),
     )
@@ -175,6 +179,8 @@ cc_test(
         "fixture.cpp",
         "fixture.h",
         "gcTest.cpp",
+        "parserTest.cpp",
+        "pathSegTest.cpp",
     ],
     includes = [
         "../src",
@@ -248,10 +254,38 @@ regression_test(
 )
 
 cc_test(
+    name = "LookupTblTest",
+    srcs = ["LookupTblTest.cpp"],
+    deps = [
+        "//src/drt:base_types",
+        "//src/drt:drt_impl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "WatermarkCostTest",
     srcs = ["WatermarkCostTest.cpp"],
     deps = [
         "//src/drt:base_types",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "PinAccessTest",
+    srcs = ["PinAccessTest.cpp"],
+    data = ["Nangate45/Nangate45_tech.lef"],
+    includes = ["../src"],
+    deps = [
+        "//src/drt",
+        "//src/drt:drt_impl",
+        "//src/dst",
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
+        "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

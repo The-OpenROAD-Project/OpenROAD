@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "MplObserver.h"
+#include "hardMacroFactory.h"
 #include "hier_rtlmp.h"
 #include "object.h"
 #include "odb/db.h"
@@ -37,13 +38,21 @@ MacroPlacer::~MacroPlacer() = default;
 bool MacroPlacer::run(int threads, const MacroPlacerOptions& options)
 {
   utl::Timer timer;
+
   hier_rtlmp_->init();
   hier_rtlmp_->configure(threads, options);
   hier_rtlmp_->setGuidanceRegions(guidance_regions_);
 
-  hier_rtlmp_->run();
-  logger_->info(MPL, 500, "Runtime: {:.2f}s", timer.elapsed());
+  HardMacroFactory factory(db_->getChip()->getBlock(),
+                           logger_,
+                           hier_rtlmp_->floorplanShape(),
+                           hier_rtlmp_->minChannel(),
+                           options.pin_aware_channels);
 
+  hier_rtlmp_->setHardMacros(factory.create());
+  hier_rtlmp_->run();
+
+  logger_->info(MPL, 500, "Runtime: {:.2f}s", timer.elapsed());
   return true;
 }
 
@@ -52,7 +61,8 @@ void MacroPlacer::placeMacro(odb::dbInst* inst,
                              const float& y_origin,
                              const odb::dbOrientType& orientation,
                              const bool exact,
-                             const bool allow_overlap)
+                             const bool allow_overlap,
+                             const bool snap_to_site_grid)
 {
   odb::dbBlock* block = inst->getBlock();
 
@@ -96,6 +106,7 @@ void MacroPlacer::placeMacro(odb::dbInst* inst,
                   inst->getName());
   } else if (!exact) {
     Snapper snapper(logger_, inst);
+    snapper.setSnapToSiteGrid(snap_to_site_grid);
     snapper.snapMacro();
   }
 

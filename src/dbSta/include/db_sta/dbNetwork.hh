@@ -128,7 +128,7 @@ class dbNetwork : public ConcreteNetwork
                odb::dbMTerm*& mterm,
                odb::dbModBTerm*& modbterm) const;
 
-  void staToDb(PortDirection* dir,
+  void staToDb(const PortDirection* dir,
                odb::dbSigType& sig_type,
                odb::dbIoType& io_type) const;
 
@@ -155,8 +155,8 @@ class dbNetwork : public ConcreteNetwork
   Port* dbToSta(odb::dbModBTerm* modbterm) const;
   Term* dbToStaTerm(odb::dbModBTerm* modbterm) const;
 
-  PortDirection* dbToSta(const odb::dbSigType& sig_type,
-                         const odb::dbIoType& io_type) const;
+  const PortDirection* dbToSta(const odb::dbSigType& sig_type,
+                               const odb::dbIoType& io_type) const;
 
   bool isPGSupply(odb::dbITerm* iterm) const;
   bool isPGSupply(odb::dbBTerm* bterm) const;
@@ -350,7 +350,7 @@ class dbNetwork : public ConcreteNetwork
   bool isFlat(const Net* net) const;
 
   Term* term(const Pin* pin) const override;
-  PortDirection* direction(const Pin* pin) const override;
+  const PortDirection* direction(const Pin* pin) const override;
   VertexId vertexId(const Pin* pin) const override;
   void setVertexId(Pin* pin, VertexId id) override;
   // Find the connected odb::dbModITerm in the parent module of the input pin.
@@ -380,7 +380,7 @@ class dbNetwork : public ConcreteNetwork
   bool isLibertyPort(const Port*) const;
 
   LibertyPort* libertyPort(const Port* port) const override;
-  PortDirection* direction(const Port* port) const override;
+  const PortDirection* direction(const Port* port) const override;
 
   ////////////////////////////////////////////////////////////////
   // Net functions
@@ -599,6 +599,12 @@ class dbNetwork : public ConcreteNetwork
   // hierarchy separators.  Used to recover an in-module name from a
   // path-qualified one stored in ODB.
   static std::string stripParentPrefix(const std::string& name);
+  // Length of the path of `module`'s instance plus the divider after it
+  // when db_name starts with it, 0 for the top module, std::string::npos
+  // otherwise. Matches dbModInst::getHierarchicalName() without building
+  // it, as this runs for every name() of a dbInst or dbNet.
+  size_t modulePrefixLength(std::string_view db_name,
+                            const odb::dbModule* module) const;
 
   std::set<const Cell*> hier_modules_;
   std::set<const Port*> concrete_ports_;

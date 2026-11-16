@@ -28,6 +28,7 @@
 #include "boost/json/value_to.hpp"
 #include "color.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "odb/geom.h"
 #include "tcl.h"
 #include "tile_generator.h"
@@ -304,10 +305,12 @@ struct WebSocketRequest
     kNetLengthHistogram,
     kSelectFanoutBin,
     kSelectNetLengthBin,
-    kFind,
     kChartFilters,
     kModuleHierarchy,
     kSetModuleColors,
+    kGroupHierarchy,
+    kSetGroupColors,
+    kFind,
     kSetFocusNets,
     kSetRouteGuides,
     kHeatmaps,
@@ -318,6 +321,7 @@ struct WebSocketRequest
     kSnap,
     kSchematicCone,
     kSchematicFull,
+    kSchematicPath,
     kSchematicInspect,
     kDrcCategories,
     kDrcMarkers,
@@ -461,11 +465,37 @@ struct SessionState
   std::vector<web::Selected> selectables;
 
   web::Selected current_inspected;
-  std::vector<web::Selected> navigation_history;
+  // World transform of the chiplet placement current_inspected was inspected
+  // in; every highlight of it maps its shapes through this, or they land in
+  // die-local coordinates.  A layout click or schematic inspect sets it from
+  // the chiplet the object was found in; an inspector link to an object in
+  // the same block inherits it.  Change the two together through
+  // setCurrentInspected.
+  odb::dbTransform current_inspected_xfm;
+  // Where the inspector's Back returns to, each with its transform.
+  struct NavigationEntry
+  {
+    web::Selected sel;
+    odb::dbTransform xfm;
+  };
+  std::vector<NavigationEntry> navigation_history;
 
   // Multi-selection set and iterator position (mirrors Qt GUI's SelectionSet).
   web::SelectionSet selection_set;
   web::SelectionSet::const_iterator selection_itr = selection_set.end();
+
+  // Owner id (dbModule / dbGroup) → RGBA color, as last set by the panel, one
+  // per "color by owner" overlay.  By shared_ptr so a tile render can keep the
+  // map past the lock while the panel replaces it, without deep-copying every
+  // owner's color per tile, and so a null handle still means "never synced" —
+  // which the renderer answers with the design's default palette.
+  struct OwnerColors
+  {
+    std::mutex mutex;
+    std::shared_ptr<const std::map<uint32_t, Color>> colors;
+  };
+  OwnerColors module_colors;
+  OwnerColors group_colors;
 
   // Color-coded highlight groups (mirrors Qt GUI's HighlightSet: 16 fixed
   // groups colored by web::Painter::kHighlightColors).  An object lives in
@@ -482,9 +512,6 @@ struct SessionState
   // (e.g. unrouted nets), tinted with the group color.  Guarded by
   // selection_mutex, rebuilt with highlight_group_rects.
   std::vector<FlightLine> highlight_group_lines;
-
-  std::mutex module_colors_mutex;
-  std::map<uint32_t, Color> module_colors;  // odb module id → RGBA color
 
   std::mutex focus_nets_mutex;
   std::set<uint32_t> focus_net_ids;  // dbNet ODB IDs
@@ -545,6 +572,12 @@ bool parseIntExact(std::string_view s, T& out, int base = 10)
   return res.ec == std::errc{} && res.ptr == last;
 }
 
+// Percent-decode a URL query value (e.g. the JSON `vis` payload).
+std::string urlDecode(std::string_view s);
+
+// Parse the "k=v&k2=v2" query of a request target into a map (values decoded).
+std::map<std::string, std::string> parseQuery(std::string_view target);
+
 // True if the gzipped bytes may be sent as stored: gzip, x-gzip or * without
 // q=0, an explicit gzip deciding over *; an empty header does not count.  A
 // q=0 on any gzip or x-gzip entry refuses it, whatever the other entries say.
@@ -564,10 +597,18 @@ void serveEmbeddedAsset(
 // ws://localhost:<port> is rejected here before it can drive tcl_eval.
 //
 // An absent Origin is allowed: browsers always send it on a WS handshake, so
-// its absence marks a non-browser client (local tooling, tests), which a
-// loopback bind (F-02) is what keeps local.  A present Origin is accepted only
-// when its authority equals the Host header (strict same-origin).
+// its absence marks a non-browser client (local tooling, tests), which the
+// access token authenticates.  A present Origin is accepted only when its
+// authority equals the Host header (strict same-origin).
 bool webSocketOriginAllowed(std::string_view origin, std::string_view host);
+
+// The Content-Security-Policy for a response to a request with this Host
+// header.  connect-src names ws://host and wss://host as well as 'self':
+// browsers older than CSP Level 3 (Safari before 15.4, say) do not let
+// 'self' match a WebSocket scheme and would refuse the viewer's socket.  A
+// Host that a CSP host-source cannot spell (empty, an IPv6 literal, or
+// anything with other characters) gets 'self' alone.
+std::string contentSecurityPolicy(std::string_view host);
 
 // Optional-field accessor: returns the JSON value at `key` converted to T,
 // or `default_val` when the key is missing.  Throws
@@ -659,8 +700,6 @@ class SelectHandler
                                           SessionState& state);
   WebSocketResponse handleSelectNetLengthBin(const WebSocketRequest& req,
                                              SessionState& state);
-  WebSocketResponse handleFind(const WebSocketRequest& req,
-                               SessionState& state);
   WebSocketResponse handleSetRouteGuides(const WebSocketRequest& req,
                                          SessionState& state);
   WebSocketResponse handleSelectNext(const WebSocketRequest& req,
@@ -687,9 +726,12 @@ class SelectHandler
                                    SessionState& state);
   WebSocketResponse handleSelectLayer(const WebSocketRequest& req,
                                       SessionState& state);
+  WebSocketResponse handleFind(const WebSocketRequest& req,
+                               SessionState& state);
   WebSocketResponse handleSnap(const WebSocketRequest& req);
   WebSocketResponse handleSchematicCone(const WebSocketRequest& req);
   WebSocketResponse handleSchematicFull(const WebSocketRequest& req);
+  WebSocketResponse handleSchematicPath(const WebSocketRequest& req);
   WebSocketResponse handleSchematicInspect(const WebSocketRequest& req,
                                            SessionState& state);
   WebSocketResponse handleGet3DData(const WebSocketRequest& req);
@@ -821,6 +863,12 @@ class TileHandler
   WebSocketResponse handleOverlayTile(const WebSocketRequest& req,
                                       SessionState& state);
   WebSocketResponse handleModuleHierarchy(const WebSocketRequest& req);
+  WebSocketResponse handleGroupHierarchy(const WebSocketRequest& req);
+  // Backs set_module_colors and set_group_colors; `owner` is the overlay's
+  // slot in the session.
+  WebSocketResponse handleSetOwnerColors(const WebSocketRequest& req,
+                                         SessionState& state,
+                                         SessionState::OwnerColors& owner);
   // User text labels (2.12).  Labels live in the shared TileGenerator, so all
   // clients and save_image see them.
   WebSocketResponse handleAddLabel(const WebSocketRequest& req);
@@ -832,8 +880,6 @@ class TileHandler
   // entry points (add_label and friends) can announce their edits too:
   // labels sit outside ODB, so no design-change callback covers them.
   void broadcastLabelsChanged();
-  WebSocketResponse handleSetModuleColors(const WebSocketRequest& req,
-                                          SessionState& state);
   WebSocketResponse handleHeatMaps(const WebSocketRequest& req,
                                    SessionState& state);
   WebSocketResponse handleSetActiveHeatMap(const WebSocketRequest& req,
@@ -875,6 +921,7 @@ class TileHandler
       const std::vector<ColoredRect>& colored_rects,
       const std::vector<FlightLine>& flight_lines,
       const std::map<uint32_t, Color>* module_colors,
+      const std::map<uint32_t, Color>* group_colors,
       const std::set<uint32_t>* focus_net_ids,
       const std::set<uint32_t>* route_guide_net_ids,
       double dpr = 1.0,

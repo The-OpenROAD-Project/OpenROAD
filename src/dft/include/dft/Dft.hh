@@ -91,8 +91,16 @@ class Dft
   // Prints to stdout
   void reportDftConfig() const;
 
-  // Performs scan optimizations on the netlist
-  void scanOpt();
+  // Reorders the cells of each scan chain in odb to reduce scan wire length
+  // and rewires the chains to match. With rebalance_chains, first moves cells
+  // between chains of the same clock domain to make each chain compact.
+  void scanOpt(bool rebalance_chains);
+
+  // Reports order-independent spatial metrics per scan chain (HPWL, MST,
+  // sum of pairwise Manhattan distances).  Output is CSV-formatted to
+  // stdout for sweep collectors.  These metrics measure clustering
+  // quality without depending on intra-chain ordering.
+  void reportChainMetrics() const;
 
  private:
   // If we need to run pre_dft to create the internal state
@@ -100,6 +108,8 @@ class Dft
 
   // Resets the internal state
   void reset();
+
+  void writeToOdb();
 
   // Common function to perform scan replace and scan architect. Shared between
   // report_dft_plan and execute_dft_plan
@@ -114,6 +124,7 @@ class Dft
   // Internal state
   std::unique_ptr<ScanReplace> scan_replace_;
   std::unique_ptr<DftConfig> dft_config_;
+  std::vector<std::unique_ptr<ScanChain>> scan_chains_;
 };
 
 }  // namespace dft

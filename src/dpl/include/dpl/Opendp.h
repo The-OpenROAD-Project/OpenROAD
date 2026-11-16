@@ -216,6 +216,7 @@ class Opendp
   using YCoordToGap = std::map<DbuY, std::vector<std::unique_ptr<GapInfo>>>;
 
   friend class OpendpTest_IsPlaced_Test;
+  friend class CheckPlacementTest_LegalCellPosRebuildsReleasedGridOnce_Test;
   friend class Graphics;
   friend class CellPlaceOrderLess;
   friend class NegotiationLegalizer;

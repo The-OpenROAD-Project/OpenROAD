@@ -152,6 +152,7 @@ COMPULSORY_TESTS = [
     "get_core_die_areas",
     "ord_tclsh_completion",
     "place_inst",
+    "report_fmax_metric_virtual_clock",
     "upf_test",
     "write_db",
 ] + PASSFAIL_TESTS

@@ -7,8 +7,6 @@ description: >
   to add tests, improve test coverage, create regression tests, or write
   unit tests for any OpenROAD module (ant, cts, dpl, drt, gpl, grt, mpl,
   odb, pad, pdn, psm, rcx, rsz, sta, stt, tap, upf, utl, etc.).
-  Also triggers on: "add test", "write test", "test coverage",
-  "missing tests", "create regression test", "add unit test".
 argument-hint: "<module> [test-description]"
 ---
 
@@ -237,8 +235,8 @@ bazelisk query //src/MODULE/test:all | grep TEST_NAME
 ## 7. Format and commit
 
 ```bash
-# Format any C++ files (NEVER format src/sta/* or *.i files)
-clang-format -i <changed-cpp-files>
+# Format C++ with CI's pinned clang-format (skips src/sta and *.i)
+bazelisk run //:tidy_cc
 
 git add src/MODULE/test/TEST_NAME.tcl \
         src/MODULE/test/TEST_NAME.ok \
@@ -254,5 +252,5 @@ Test for DESCRIPTION."
 - [ ] Golden file generated and committed
 - [ ] Registered in Bazel `BUILD`
 - [ ] Test data is minimal (reuse existing files when possible)
-- [ ] C++ files formatted with clang-format
+- [ ] C++ files formatted with `bazelisk run //:tidy_cc`
 - [ ] Commit is signed off (`-s`)

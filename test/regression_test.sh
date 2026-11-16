@@ -29,10 +29,12 @@ esac
 
 echo "Command: $CMD"
 EXPECTED_EXIT_CODE="${TEST_EXPECTED_EXIT_CODE:-0}"
+# Capture the full output before printing it; tee can abort and truncate logs.
 set +e
-$CMD 2>&1 | tee $LOG_FILE
-CMD_EXIT=${PIPESTATUS[0]}
+$CMD > "$LOG_FILE" 2>&1
+CMD_EXIT=$?
 set -e
+cat "$LOG_FILE"
 
 case "$TEST_TYPE" in
 python | standalone_python)

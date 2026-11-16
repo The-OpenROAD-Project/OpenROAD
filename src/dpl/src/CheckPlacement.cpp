@@ -150,6 +150,8 @@ void Opendp::checkPlacement(const bool verbose,
     // Filler and decap placement reuse a populated network without
     // re-importing, so do not leave one without the movable cells behind.
     importClear();
+  } else {
+    grid_->releasePixels();
   }
 
   if (placed_failures.size() + in_rows_failures.size() + overlap_failures.size()

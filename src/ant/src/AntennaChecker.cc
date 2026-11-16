@@ -593,7 +593,7 @@ void AntennaChecker::Impl::calculateCAR(const PinAntennas& pins,
         node_info.diff_csr = sum.diff_psr;
       }
       chain_own = chain;
-      chain_any = chain;
+      chain_any = std::move(chain);
     }
   }
 }

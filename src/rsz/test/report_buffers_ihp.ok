@@ -9,6 +9,7 @@ Optimization config:
 -set_early_sizing_cap_ratio:        unset
 -set_early_buffer_sizing_cap_ratio: unset
 -disable_buffer_pruning:            false
+-rebuffer_size_driver:              false
 *******************************************
 ********************************************************************************
 Buffer Report:
@@ -78,6 +79,7 @@ Optimization config:
 -set_early_sizing_cap_ratio:        unset
 -set_early_buffer_sizing_cap_ratio: unset
 -disable_buffer_pruning:            true
+-rebuffer_size_driver:              false
 *******************************************
 ********************************************************************************
 Buffer Report:

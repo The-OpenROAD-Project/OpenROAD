@@ -14,7 +14,9 @@
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
+#include "sta/ClkNetwork.hh"
 #include "sta/Liberty.hh"
+#include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/SdcClass.hh"
 #include "utl/Logger.h"
@@ -158,13 +160,18 @@ std::vector<odb::dbITerm*> GetClockPin(odb::dbInst* inst)
 std::optional<sta::Clock*> GetClock(sta::dbSta* sta, odb::dbITerm* iterm)
 {
   const sta::dbNetwork* db_network = sta->getDbNetwork();
-  const sta::ClockSet clock_set
-      = sta->clocks(db_network->dbToSta(iterm), sta->cmdMode());
+  const sta::Pin* pin = db_network->dbToSta(iterm);
+  if (pin == nullptr) {
+    return std::nullopt;
+  }
+  const sta::Mode* mode = sta->cmdMode();
+  sta->ensureClkNetwork(mode);
+  const sta::ClockSet* clock_set = mode->clkNetwork()->clocks(pin);
 
-  if (!clock_set.empty()) {
+  if (clock_set != nullptr && !clock_set->empty()) {
     // Returns the first clock for the given iterm, TODO can we have more than
     // one clock driver?
-    return *clock_set.begin();
+    return *clock_set->begin();
   }
 
   return std::nullopt;
@@ -179,6 +186,17 @@ bool IsScanCell(const sta::dbNetwork* db_network,
            && db_network->getLibertyScanEnable(test_cell) != nullptr;
   }
   return false;
+}
+
+odb::Point GetITermLocation(odb::dbITerm* iterm, odb::dbInst* inst)
+{
+  if (iterm != nullptr) {
+    int x, y;
+    if (iterm->getAvgXY(&x, &y)) {
+      return odb::Point(x, y);
+    }
+  }
+  return inst->getOrigin();
 }
 
 odb::dbBTerm* CreateNewPort(odb::dbBlock* block,

@@ -141,6 +141,7 @@ class IRSolver
   std::optional<Voltage> getUserVoltage(sta::Scene* corner,
                                         odb::dbNet* net) const;
   std::optional<Voltage> getSolutionVoltage(sta::Scene* corner) const;
+  void clearSolution(sta::Scene* corner);
 
   odb::dbNet* getPowerNet() const;
 

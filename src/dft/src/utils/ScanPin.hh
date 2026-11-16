@@ -29,6 +29,7 @@ class ScanPin
   odb::dbNet* getNet() const;
   std::string_view getName() const;
   const std::variant<odb::dbBTerm*, odb::dbITerm*>& getValue() const;
+  bool getLocation(int& x, int& y) const;
 
  protected:
   std::variant<odb::dbBTerm*, odb::dbITerm*> value_;

@@ -10,6 +10,7 @@
 
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "sta/Clock.hh"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
@@ -43,6 +44,10 @@ std::optional<sta::Clock*> GetClock(sta::dbSta* sta, odb::dbITerm* iterm);
 // Scan Enable
 bool IsScanCell(const sta::dbNetwork* db_network,
                 const sta::LibertyCell* liberty_cell);
+
+// Returns the average location of iterm's pin shapes, or inst's origin when
+// iterm is null or has no shapes.
+odb::Point GetITermLocation(odb::dbITerm* iterm, odb::dbInst* inst);
 
 // Convenience method to create a new port. The port, and the net when one is
 // created, get sig_type.

@@ -1611,10 +1611,13 @@ void FastRouteCore::StNetOrder()
 
   for (size_t j = 0; j < net_ids_.size(); j++) {
     const int netID = net_ids_[j];
+    FrNet* net = nets_[netID];
 
     const StTree& stree = sttrees_[netID];
-    tree_order_cong_[j].xmin = 0;
     tree_order_cong_[j].treeIndex = netID;
+    // The tracks an NDR net misses on its route are overflow for it too.
+    // Accumulate as int, OrderTree::xmin is too narrow to hold every sum.
+    int overflow = 0;
 
     for (int ind = 0; ind < stree.num_edges(); ind++) {
       const TreeEdge& treeedge = stree.edges[ind];
@@ -1626,16 +1629,26 @@ void FastRouteCore::StNetOrder()
           const int cap = getEdgeCapacity(
               nets_[netID], grids[i].x, min_y, EdgeDirection::Vertical);
           const auto usageV = graph2d_.getUsageV(grids[i].x, min_y);
-          tree_order_cong_[j].xmin += std::max(0, usageV - cap);
+          overflow
+              += std::max(0, usageV - cap)
+                 + kNdrDeficitCost
+                       * graph2d_.getNDRDeficit(
+                           net, grids[i].x, min_y, EdgeDirection::Vertical);
         } else {  // a horizontal edge
           const int min_x = std::min(grids[i].x, grids[i + 1].x);
           const int cap = getEdgeCapacity(
               nets_[netID], min_x, grids[i].y, EdgeDirection::Horizontal);
           const auto usageH = graph2d_.getUsageH(min_x, grids[i].y);
-          tree_order_cong_[j].xmin += std::max(0, usageH - cap);
+          overflow
+              += std::max(0, usageH - cap)
+                 + kNdrDeficitCost
+                       * graph2d_.getNDRDeficit(
+                           net, min_x, grids[i].y, EdgeDirection::Horizontal);
         }
       }
     }
+    tree_order_cong_[j].xmin
+        = std::min<int>(overflow, std::numeric_limits<int16_t>::max());
   }
 
   std::ranges::stable_sort(tree_order_cong_, compareTEL);

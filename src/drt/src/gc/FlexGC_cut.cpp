@@ -344,7 +344,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
     frCoord llx = gtl::xl(*viaRect1);
     frCoord lly = gtl::yl(*viaRect1);
     frCoord urx = gtl::xh(*viaRect1);
-    frCoord ury = gtl::xh(*viaRect1);
+    frCoord ury = gtl::yh(*viaRect1);
 
     marker->addVictim(
         net1->getOwner(),
@@ -354,7 +354,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacingTbl_main(
     llx = gtl::xl(*viaRect2);
     lly = gtl::yl(*viaRect2);
     urx = gtl::xh(*viaRect2);
-    ury = gtl::xh(*viaRect2);
+    ury = gtl::yh(*viaRect2);
     marker->addAggressor(
         net2->getOwner(),
         std::make_tuple(
@@ -615,7 +615,7 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable_main(gcRect* rect)
     frCoord llx = gtl::xl(*above_rect);
     frCoord lly = gtl::yl(*above_rect);
     frCoord urx = gtl::xh(*above_rect);
-    frCoord ury = gtl::xh(*above_rect);
+    frCoord ury = gtl::yh(*above_rect);
     marker->addAggressor(net1->getOwner(),
                          std::make_tuple(above_rect->getLayerNum(),
                                          odb::Rect(llx, lly, urx, ury),
@@ -624,7 +624,7 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable_main(gcRect* rect)
     llx = gtl::xl(*below_rect);
     lly = gtl::yl(*below_rect);
     urx = gtl::xh(*below_rect);
-    ury = gtl::xh(*below_rect);
+    ury = gtl::yh(*below_rect);
     marker->addAggressor(net2->getOwner(),
                          std::make_tuple(below_rect->getLayerNum(),
                                          odb::Rect(llx, lly, urx, ury),
@@ -681,28 +681,34 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable()
   }
 }
 
-void FlexGCWorker::Impl::checkLef58Enclosure_main(gcRect* viaRect,
-                                                  gcRect* encRect)
+void FlexGCWorker::Impl::checkLef58Enclosure_main(
+    gcRect* viaRect,
+    gcRect* encRect,
+    const std::vector<gcRect*>& candidates)
 {
   auto layer = getTech()->getLayer(viaRect->getLayerNum());
   auto cutClassIdx = layer->getCutClassIdx(viaRect->width(), viaRect->length());
   bool above = encRect->getLayerNum() > viaRect->getLayerNum();
-  frCoord sideOverhang = 0;
-  frCoord endOverhang = 0;
-  sideOverhang = std::min(gtl::xh(*encRect) - gtl::xh(*viaRect),
-                          gtl::xl(*viaRect) - gtl::xl(*encRect));
-  endOverhang = std::min(gtl::yh(*encRect) - gtl::yh(*viaRect),
-                         gtl::yl(*viaRect) - gtl::yl(*encRect));
-  if (gtl::delta(*viaRect, gtl::orientation_2d_enum::HORIZONTAL)
-      > gtl::delta(*viaRect, gtl::orientation_2d_enum::VERTICAL)) {
-    std::swap(sideOverhang, endOverhang);
+  const auto& constraints = layer->getLef58EnclosureConstraints(
+      cutClassIdx, encRect->width(), above);
+  if (constraints.empty()) {
+    return;
   }
   frLef58EnclosureConstraint* lastCon = nullptr;
-  for (auto con : layer->getLef58EnclosureConstraints(
-           cutClassIdx, encRect->width(), above)) {
-    lastCon = con;
-    if (con->isValidOverhang(endOverhang, sideOverhang)) {
-      return;  // valid overhangs
+  for (auto* candidate : candidates) {
+    frCoord sideOverhang = std::min(gtl::xh(*candidate) - gtl::xh(*viaRect),
+                                    gtl::xl(*viaRect) - gtl::xl(*candidate));
+    frCoord endOverhang = std::min(gtl::yh(*candidate) - gtl::yh(*viaRect),
+                                   gtl::yl(*viaRect) - gtl::yl(*candidate));
+    if (gtl::delta(*viaRect, gtl::orientation_2d_enum::HORIZONTAL)
+        > gtl::delta(*viaRect, gtl::orientation_2d_enum::VERTICAL)) {
+      std::swap(sideOverhang, endOverhang);
+    }
+    for (auto con : constraints) {
+      lastCon = con;
+      if (con->isValidOverhang(endOverhang, sideOverhang)) {
+        return;  // valid overhangs
+      }
     }
   }
   odb::Rect markerBox(gtl::xl(*viaRect),
@@ -718,7 +724,7 @@ void FlexGCWorker::Impl::checkLef58Enclosure_main(gcRect* viaRect,
   frCoord llx = gtl::xl(*encRect);
   frCoord lly = gtl::yl(*encRect);
   frCoord urx = gtl::xh(*encRect);
-  frCoord ury = gtl::xh(*encRect);
+  frCoord ury = gtl::yh(*encRect);
   marker->addAggressor(net->getOwner(),
                        std::make_tuple(encRect->getLayerNum(),
                                        odb::Rect(llx, lly, urx, ury),
@@ -726,7 +732,7 @@ void FlexGCWorker::Impl::checkLef58Enclosure_main(gcRect* viaRect,
   llx = gtl::xl(*viaRect);
   lly = gtl::yl(*viaRect);
   urx = gtl::xh(*viaRect);
-  ury = gtl::xh(*viaRect);
+  ury = gtl::yh(*viaRect);
   marker->addVictim(net->getOwner(),
                     std::make_tuple(viaRect->getLayerNum(),
                                     odb::Rect(llx, lly, urx, ury),
@@ -748,7 +754,9 @@ void FlexGCWorker::Impl::checkLef58Enclosure_main(gcRect* rect)
   if (!hasAboveConstraints && !hasBelowConstraints) {
     return;
   }
-  auto getEnclosure = [this](gcRect* rect, frLayerNum layerNum) {
+  auto getEnclosure = [this](gcRect* rect,
+                             frLayerNum layerNum,
+                             std::vector<gcRect*>& candidates) {
     std::vector<rq_box_value_t<gcRect*>> results;
     auto& workerRegionQuery = getWorkerRegionQuery();
     workerRegionQuery.queryMaxRectangle(*rect, layerNum, results);
@@ -760,6 +768,7 @@ void FlexGCWorker::Impl::checkLef58Enclosure_main(gcRect* rect)
       if (!gtl::contains(*ptr, *rect)) {
         continue;
       }
+      candidates.push_back(ptr);
       if (encRect == nullptr) {
         encRect = ptr;
       } else if (ptr->width() > encRect->width()) {
@@ -769,12 +778,14 @@ void FlexGCWorker::Impl::checkLef58Enclosure_main(gcRect* rect)
     return encRect;
   };
   if (hasBelowConstraints) {
-    gcRect* belowEnc = getEnclosure(rect, layer->getLayerNum() - 1);
-    checkLef58Enclosure_main(rect, belowEnc);
+    std::vector<gcRect*> candidates;
+    gcRect* belowEnc = getEnclosure(rect, layer->getLayerNum() - 1, candidates);
+    checkLef58Enclosure_main(rect, belowEnc, candidates);
   }
   if (hasAboveConstraints) {
-    gcRect* aboveEnc = getEnclosure(rect, layer->getLayerNum() + 1);
-    checkLef58Enclosure_main(rect, aboveEnc);
+    std::vector<gcRect*> candidates;
+    gcRect* aboveEnc = getEnclosure(rect, layer->getLayerNum() + 1, candidates);
+    checkLef58Enclosure_main(rect, aboveEnc, candidates);
   }
 }
 
@@ -873,7 +884,7 @@ void FlexGCWorker::Impl::checkCutSpacingTableOrthogonal_helper(
     frCoord llx = gtl::xl(*rect1);
     frCoord lly = gtl::yl(*rect1);
     frCoord urx = gtl::xh(*rect1);
-    frCoord ury = gtl::xh(*rect1);
+    frCoord ury = gtl::yh(*rect1);
     net = rect1->getNet();
     marker->addVictim(net->getOwner(),
                       std::make_tuple(rect1->getLayerNum(),
@@ -884,7 +895,7 @@ void FlexGCWorker::Impl::checkCutSpacingTableOrthogonal_helper(
     llx = gtl::xl(*rect2);
     lly = gtl::yl(*rect2);
     urx = gtl::xh(*rect2);
-    ury = gtl::xh(*rect2);
+    ury = gtl::yh(*rect2);
     net = rect2->getNet();
     marker->addVictim(net->getOwner(),
                       std::make_tuple(rect2->getLayerNum(),

@@ -4870,6 +4870,23 @@ int GlobalRouter::computeNetWirelength(odb::dbNet* db_net)
   return net_wl;
 }
 
+// Number of cut layers crossed by the via segments of a net's route.
+int GlobalRouter::computeNetVias(odb::dbNet* db_net)
+{
+  auto iter = routes_.find(db_net);
+  if (iter == routes_.end()) {
+    return 0;
+  }
+  int net_vias = 0;
+  for (const GSegment& segment : iter->second) {
+    if (segment.isVia()) {
+      net_vias += std::abs(segment.final_layer - segment.init_layer);
+    }
+  }
+
+  return net_vias;
+}
+
 void GlobalRouter::computeWirelength()
 {
   std::vector<odb::dbNet*> routed_nets;
@@ -4879,13 +4896,16 @@ void GlobalRouter::computeWirelength()
   }
 
   int64_t total_wirelength = 0;
+  int64_t total_vias = 0;
 #pragma omp parallel for num_threads(num_threads_) \
-    reduction(+ : total_wirelength)
+    reduction(+ : total_wirelength, total_vias)
   for (int i = 0; i < static_cast<int>(routed_nets.size()); i++) {
     total_wirelength += computeNetWirelength(routed_nets[i]);
+    total_vias += computeNetVias(routed_nets[i]);
   }
   logger_->metric("global_route__wirelength",
                   total_wirelength / block_->getDefUnits());
+  logger_->metric("global_route__vias", total_vias);
   if (verbose_) {
     logger_->info(GRT,
                   18,
@@ -6397,8 +6417,13 @@ void GlobalRouter::applyNetObstruction(const odb::Rect& rect,
       }
     }
     applyObstructionAdjustment(obstruction_rect, tech_layer);
-    // Save position where the net's wires reduced resources
-    savePositionWithReducedResources(obstruction_rect, tech_layer, db_net);
+    // Save position where the net's wires reduced resources, for
+    // getCongestionNets to reroute the nets there. It never reroutes a
+    // supply net, and a power grid's rails and vias touch most GCells on
+    // their layers.
+    if (!db_net->getSigType().isSupply()) {
+      savePositionWithReducedResources(obstruction_rect, tech_layer, db_net);
+    }
   }
 }
 
@@ -7525,12 +7550,6 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
 
     updateDirtyNets(dirty_nets);
 
-    std::vector<odb::dbNet*> modified_nets;
-    modified_nets.reserve(dirty_nets.size());
-    for (const Net* net : dirty_nets) {
-      modified_nets.push_back(net->getDbNet());
-    }
-
     if (verbose_) {
       logger_->info(GRT, 9, "rerouting {} nets.", dirty_nets.size());
     }
@@ -7625,8 +7644,17 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
     }
     fastroute_->setCriticalNetsPercentage(old_critical_nets_percentage);
     fastroute_->setCongestionReportIterStep(congestion_report_iter_step_);
+    // dirty_nets now holds every net rerouted above, the congestion recovery's
+    // included. Keep all their guides in lockstep with routes_: an rsz journal
+    // restore recovers the routing only of nets whose guide edits it recorded,
+    // and restoring a subset puts them back on tracks the others now hold.
     if (save_guides) {
-      saveGuides(modified_nets);
+      std::vector<odb::dbNet*> rerouted;
+      rerouted.reserve(dirty_nets.size());
+      for (const Net* net : dirty_nets) {
+        rerouted.push_back(net->getDbNet());
+      }
+      saveGuides(rerouted);
     }
   }
 

@@ -85,7 +85,6 @@ MoveImpact MoveCandidate::cellSwapImpact(sta::Instance* inst) const
 
 void MoveCandidate::chargeCellSwapSideCosts(const DelayEstimate& delay_est,
                                             const sta::LibertyCell* replacement,
-                                            const float score_scale,
                                             Estimate& estimate) const
 {
   float adjusted_gain = delay_est.arrival_impr;
@@ -95,7 +94,7 @@ void MoveCandidate::chargeCellSwapSideCosts(const DelayEstimate& delay_est,
     estimate.sequential_penalty = side.weighted_side_slack_loss;
     estimate.sequential_side_loss = side.max_side_slack_loss;
     adjusted_gain -= *estimate.sequential_penalty;
-    estimate.score = adjusted_gain * score_scale;
+    estimate.score = adjusted_gain;
     if (!side.legal || adjusted_gain <= 0.0f) {
       estimate.legal = false;
       estimate.reason = side.legal ? "sequential_non_improving" : side.reason;
@@ -108,7 +107,7 @@ void MoveCandidate::chargeCellSwapSideCosts(const DelayEstimate& delay_est,
   if (delay_est.side_paths_evaluated > 0) {
     estimate.side_loss = delay_est.side_loss;
     adjusted_gain -= delay_est.side_loss;
-    estimate.score = adjusted_gain * score_scale;
+    estimate.score = adjusted_gain;
     if (adjusted_gain <= 0.0f) {
       estimate.legal = false;
       estimate.reason = "side_loss_non_improving";

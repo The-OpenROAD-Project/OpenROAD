@@ -65,6 +65,9 @@ struct UnbufferSelectionContext
   // the slack guard and the gain estimate.
   const sta::Scene* slack_scene{nullptr};
   const sta::MinMax* min_max{nullptr};
+  // Reuse the successful slack guard's delay terms for gain scoring.
+  float upstream_delay_delta{0.0f};
+  float buffer_delay_saved{0.0f};
 };
 
 bool resolveDriverContext(UnbufferSelectionContext& ctx)
@@ -195,17 +198,21 @@ bool passesCapGuard(const UnbufferSelectionContext& ctx,
   return false;
 }
 
-bool passesSlackGuard(const UnbufferSelectionContext& ctx)
+// Check removal legality and retain the delay terms for gain scoring.
+bool passesSlackGuard(UnbufferSelectionContext& ctx)
 {
-  SlackEstimatorParams params(ctx.setup_slack_margin, ctx.slack_scene);
-  params.driver_pin = ctx.drvr_pin;
-  params.prev_driver_pin = ctx.prev_drvr_pin;
-  params.driver_input_pin = ctx.drvr_input_pin;
-  params.driver = ctx.drvr;
-  params.driver_path = ctx.target.driverPath(ctx.resizer);
-  params.prev_driver_path = ctx.prev_drvr_path;
-  params.driver_cell = ctx.drvr_cell;
-  return ctx.resizer.estimatedSlackOK(params);
+  const UnbufferSlackParams params{
+      .buffer_output_pin = ctx.drvr_pin,
+      .upstream_driver_pin = ctx.prev_drvr_pin,
+      .buffer_input_pin = ctx.drvr_input_pin,
+      .buffer_instance = ctx.drvr,
+      .buffer_path = ctx.target.driverPath(ctx.resizer),
+      .upstream_path = ctx.prev_drvr_path,
+      .buffer_cell = ctx.drvr_cell,
+      .setup_slack_margin = ctx.setup_slack_margin,
+      .scene = ctx.slack_scene};
+  return ctx.resizer.estimatedUnbufferSlackOK(
+      params, &ctx.upstream_delay_delta, &ctx.buffer_delay_saved);
 }
 
 // The delay the removal saves: the buffer delay less the upstream driver's
@@ -214,35 +221,8 @@ bool passesSlackGuard(const UnbufferSelectionContext& ctx)
 float estimateRemovalGain(const UnbufferSelectionContext& ctx)
 {
   Resizer& resizer = ctx.resizer;
-  sta::ArcDelay old_delay[sta::RiseFall::index_count];
-  sta::ArcDelay new_delay[sta::RiseFall::index_count];
-  sta::Slew old_slew[sta::RiseFall::index_count];
-  sta::Slew new_slew[sta::RiseFall::index_count];
-  float old_cap;
-  float new_cap;
-  if (!resizer.computeNewDelaysSlews(ctx.prev_drvr_pin,
-                                     ctx.drvr,
-                                     ctx.slack_scene,
-                                     old_delay,
-                                     new_delay,
-                                     old_slew,
-                                     new_slew,
-                                     old_cap,
-                                     new_cap)) {
-    return 0.0f;
-  }
-
-  sta::Sta* sta = resizer.sta();
-  const int prev_rf = ctx.prev_drvr_path->transition(sta)->index();
-  const float slowdown = new_delay[prev_rf] - old_delay[prev_rf];
-  const sta::Path* drvr_path = ctx.target.driverPath(resizer);
-  const float saved = resizer.bufferDelay(
-      ctx.drvr_cell,
-      drvr_path->transition(sta),
-      sta->graphDelayCalc()->loadCap(
-          ctx.drvr_pin, ctx.slack_scene, sta::MinMax::max()),
-      ctx.slack_scene,
-      sta::MinMax::max());
+  const float slowdown = ctx.upstream_delay_delta;
+  const float saved = ctx.buffer_delay_saved;
 
   // The Elmore delay of the extra wire the upstream driver drives after the
   // merge, beyond its longest load today.
@@ -322,7 +302,7 @@ bool isEligible(UnbufferSelectionContext& ctx)
   }
   // The slack guard and the gain estimate read the scene of the upstream
   // driver's worst capacitance check.  Without a limit there is none, and
-  // estimatedSlackOK() would reject every removal on a null scene.
+  // estimatedUnbufferSlackOK() would reject every removal on a null scene.
   ctx.slack_scene = cap_corner != nullptr ? cap_corner : ctx.scene;
   if (!passesSlackGuard(ctx)) {
     debugPrint(ctx.resizer.logger(),
