@@ -332,6 +332,17 @@ cc_test(
 )
 
 cc_test(
+    name = "TestTechLayerSpacingTable",
+    srcs = ["TestTechLayerSpacingTable.cpp"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:db_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "Test3DBloxParser",
     srcs = [
         "Test3DBloxParser.cpp",

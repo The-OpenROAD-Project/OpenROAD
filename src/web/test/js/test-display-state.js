@@ -90,6 +90,7 @@ describe('applyDisplayStateEntries', () => {
             or_hidden_chiplets: '%5B%5D',
             or_bg_color: '#202020',
             or_show_dbu: '1',
+            or_hierarchy_source: 'clusters',
             or_theme: 'dark',
             or_use_true_z: '1',
             // Options-menu preferences (2.15).  The font family is stored
