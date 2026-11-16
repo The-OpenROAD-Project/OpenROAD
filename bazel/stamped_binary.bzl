@@ -6,9 +6,15 @@
 The version changes with every commit. Compiled in, it would change the link
 on every commit, so the link could never come from the remote cache, and a
 local link has to download every object file first. Instead the binary links
-against a placeholder version slot (bazel/version/version.cc), and under
---stamp one cheap action writes the version into a copy of the linked binary.
-Without --stamp the output is a symlink to the linked binary.
+against a placeholder version slot (bazel/version/version.cc), and one cheap
+action writes the version into a copy of the linked binary.
+
+A build in the OpenROAD repository always writes the version, so a plain
+`bazelisk build //:openroad` reports `git describe --dirty`. Tests run the
+unstamped binary, so their results stay cached across commits. When OpenROAD
+is an external module, the workspace status describes the main repository,
+not OpenROAD; there the version is written only under --stamp, and is
+otherwise a symlink to the linked binary.
 """
 
 def _stamped_binary_impl(ctx):
@@ -81,8 +87,7 @@ _stamped_binary = rule(
             default = False,
         ),
         "stamp": attr.bool(
-            doc = "Write the version. Set it from //bazel:stamp so it " +
-                  "follows --stamp.",
+            doc = "Write the version. stamped_binary() sets it.",
             default = False,
         ),
         "_stamp_version": attr.label(
@@ -94,7 +99,7 @@ _stamped_binary = rule(
 )
 
 def stamped_binary(name, binary, **kwargs):
-    """Declares `name`: `binary` with the version written in under --stamp.
+    """Declares `name`: `binary` with the version written in.
 
     Args:
       name: Target name, and the output file name.
@@ -105,7 +110,8 @@ def stamped_binary(name, binary, **kwargs):
     _stamped_binary(
         name = name,
         binary = binary,
-        stamp = select({
+        # "@" is the main repository; see the module docstring.
+        stamp = True if native.repository_name() == "@" else select({
             "//bazel:stamp": True,
             "//conditions:default": False,
         }),

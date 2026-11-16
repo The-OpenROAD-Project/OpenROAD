@@ -122,7 +122,7 @@ without the Bazel runfiles.
 
 Bazel builds `-c opt` by default, locally and in CI. To reproduce a
 failure that shows only in a Debug build, use `bazelisk test -c dbg ...`.
-`--config=release` only stamps the version and implies `opt`; it is not
+`--config=release` only adds `--stamp` and implies `opt`; it is not
 a Debug/Release switch.
 
 When a test passes in one mode and fails in the other, check for:

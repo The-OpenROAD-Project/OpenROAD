@@ -60,7 +60,7 @@ filegroup(
         check_log = False if test_name in PASSFAIL_TESTS else True,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":test_resources"],
-        openroad = "//:openroad-qt" if test_name in QT_TESTS else "//:openroad",
+        openroad = "//:openroad-qt_unstamped" if test_name in QT_TESTS else "//:openroad_unstamped",
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS

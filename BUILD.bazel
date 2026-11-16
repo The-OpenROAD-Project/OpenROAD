@@ -279,7 +279,8 @@ cc_library(
 )
 
 # Linked with a placeholder version; :openroad writes the version in after
-# the link (see bazel/stamped_binary.bzl).
+# the link (see bazel/stamped_binary.bzl). Tests run this binary, whose
+# output does not change with the commit.
 cc_binary(
     name = "openroad_unstamped",
     srcs = [
@@ -293,7 +294,7 @@ cc_binary(
         "@platforms//os:linux": "@tcmalloc//tcmalloc",
         "@platforms//os:macos": "@bazel_tools//tools/cpp:malloc",
     }),
-    visibility = ["//bazel:__pkg__"],
+    visibility = ["//:__subpackages__"],
     deps = OPENROAD_MAIN_DEPS + select(
         {
             ":platform_cli": [
@@ -332,6 +333,7 @@ cc_binary(
         "@platforms//os:linux": "@tcmalloc//tcmalloc",
         "@platforms//os:macos": "@bazel_tools//tools/cpp:malloc",
     }),
+    visibility = ["//openroad/gui/test:__pkg__"],
     deps = OPENROAD_MAIN_DEPS + [
         ":openroad_lib_qt",
         "//openroad/gui:gui_qt",
@@ -642,10 +644,11 @@ sh_test(
 
 # Make sure the Qt GUI variant keeps building. :openroad is exercised by
 # downstream rule libraries that pull it as a tool; :openroad-qt has no
-# such consumer in CI, so a build_test pins its compilability.
+# such consumer in CI, so a build_test pins its compilability. The
+# unstamped binary keeps the test cached across commits.
 build_test(
     name = "openroad_qt_build_test",
-    targets = [":openroad-qt"],
+    targets = [":openroad-qt_unstamped"],
 )
 
 # ---------------------------------------------------------------------------

@@ -356,7 +356,8 @@ build:explain --verbose_explanations
 build:cachelog --config=explain
 build:cachelog --execution_log_json_file=bazel-cachelog.json
 
-# Release builds embed real git version info; dev builds use cache-safe placeholders.
+# Release builds also stamp the OpenSTA commit and the man page dates. The
+# openroad version is written in every build (bazel/stamped_binary.bzl).
 # Usage: bazel build --config=release //...
 build:release --stamp
 # Tell the 'release' config to include 'opt'

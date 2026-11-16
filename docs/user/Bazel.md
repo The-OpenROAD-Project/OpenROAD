@@ -65,7 +65,7 @@ It does not add `-O3` or Link Time Optimization (LTO).
 `--config=opt` (`build:opt` in `.bazelrc`) adds `-O3` and ThinLTO.
 ThinLTO improves runtime at the cost of a longer link step, which Bazel
 splits into parallel, cached actions. `--config=release` includes
-`--config=opt` and also stamps the git version. Use `--config=opt` or
+`--config=opt` and stamps the OpenSTA commit and man page dates. Use `--config=opt` or
 `--config=release` for production binaries shipped to end users; keep the
 default for the local edit-rebuild loop.
 
@@ -216,37 +216,40 @@ Keep each `Tech` alive while its `Design` is in use.
 
 ## Version stamping
 
-By default, Bazel dev builds use a fixed placeholder version (`bazel-nostamp`) so that the build output is deterministic and fully cacheable across commits.
+Every build of `:openroad` in this repository embeds the git version (e.g. `26Q1-1486-g6fe48208e4`):
 
-To embed the real git version (e.g. `26Q1-1486-g6fe48208e4`), use `--config=release`:
-
-    bazelisk build --config=release :openroad
+    bazelisk build :openroad
     ./bazel-bin/openroad/openroad -version
 
-A release build reads the version with `git describe`, and gives `unknown` when
-the tree has no git metadata. Set `OPENROAD_VERSION` to supply the version
-directly:
+The version comes from `git describe --dirty`.
+A build with uncommitted changes, including a changed submodule, gets a `-dirty` suffix.
+Without git metadata the version is `unknown`.
+Set `OPENROAD_VERSION` to supply the version directly:
 
-    OPENROAD_VERSION=26Q1 bazelisk build --config=release :openroad
+    OPENROAD_VERSION=26Q1 bazelisk build :openroad
 
 The Docker build needs this, because `.dockerignore` keeps `.git` out of the
 build context. Pass the version with `--build-arg orVersion=<version>`.
-
-`etc/Build.sh` always passes `--config=release` and forwards `OPENROAD_VERSION`,
-so installs made through it (including ORFS `build_openroad.sh` and the Docker
-build) carry the real version.
+`etc/Build.sh` forwards `OPENROAD_VERSION`, so callers such as ORFS
+`build_openroad.sh` and the Docker build can set it.
 
 The version is written into the binary after it is linked
 (`bazel/stamped_binary.bzl`). The version therefore changes no compile or link
-action, and a release build gets them from the remote cache that CI fills; only
+action, and a build gets them from the remote cache that CI fills; only
 the copy of the binary that carries the version is built locally.
+Regression tests use binaries with the fixed placeholder version
+`bazel-nostamp`, so changes to the version do not invalidate test results.
+
+When OpenROAD is an external Bazel module, the workspace status describes the
+main repository, not OpenROAD. There the binary keeps the placeholder unless
+the build uses `--stamp`.
 
 ## Platforms
 
 https://bazel.build/extending/platforms
 
-`bazelisk build :openroad` and the tests use the same `cfg=target` binary, so
-building first and testing afterwards does not rebuild OpenROAD. See
+`bazelisk build :openroad` and the tests use the same linked `cfg=target` binary, so
+building first and testing afterwards does not relink OpenROAD. See
 [Bazel targets](Bazel-targets.md).
 
 ## Can I force a rebuild?

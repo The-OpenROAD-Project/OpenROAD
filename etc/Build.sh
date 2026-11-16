@@ -174,10 +174,10 @@ echo -e "${GREEN}All pre-compilation checks passed! Proceeding...${NC}\n"
 # ==============================================================================
 
 echo "[INFO] Using ${numThreads} threads."
-# Build.sh is the install path (ORFS, Docker, packaging). Plain
-# `bazel build` embeds the "bazel-nostamp" placeholder so dev builds stay
-# cacheable; --config=release turns on --stamp so `openroad -version`
-# reports the `git describe` string.
+# Build.sh is the install path (ORFS, Docker, packaging). Every build in
+# this repository writes the `git describe --dirty` string into openroad
+# (bazel/stamped_binary.bzl); --config=release adds --stamp for the OpenSTA
+# commit and the man page dates.
 # --config=release already includes --config=opt. Adding --config=opt
 # again repeats its flags (-O3 twice), which changes every compile
 # action key so no action hits the remote cache that CI fills.
