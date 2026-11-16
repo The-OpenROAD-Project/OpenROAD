@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <cmath>
 #include <iterator>
+#include <limits>
+#include <numeric>
 #include <optional>
 #include <set>
 #include <utility>
@@ -21,7 +23,6 @@ namespace mpl {
 namespace {
 
 constexpr int kTrackSearchAttemptsLimit = 100;
-constexpr int kSiteSearchAttemptsLimit = 20;
 
 // Offsets 0, +1, -1, +2, -2, ... so that the search spreads from the start.
 int alternatingOffset(const int attempt)
@@ -79,10 +80,16 @@ void Snapper::snapToSites()
   snapToSites(odb::dbTechLayerDir::HORIZONTAL);
 }
 
-// Snaps to the site position that aligns the largest number of pins. We first
-// snap the origin to its nearest site and then jump from site to site around
-// it looking for the optimal position. When no site position aligns any pin,
-// the track-grid snap takes over.
+// Snaps to the site position that aligns the largest number of pins. We
+// first snap the origin to its nearest site and then jump from site to site
+// around it looking for the optimal position. When no site position aligns
+// any pin, the track-grid snap takes over.
+// We compute a "search window" per direction whose size guarantees a position
+// where the lowest layer's pins are on track. If a layer has several patterns,
+// we use the pattern with the smallest period.
+// The period is defined as LCM(site pitch, track step of the lowest pin layer),
+// As the macro may lie on the edge of the die or close to another
+// macro/blockage, we search a full period on each side.
 void Snapper::snapToSites(const odb::dbTechLayerDir& target_direction)
 {
   const LayerDataList& layers_data_list = layerDataList(target_direction);
@@ -91,10 +98,11 @@ void Snapper::snapToSites(const odb::dbTechLayerDir& target_direction)
   const int pitch = sitePitch(target_direction);
   const int origin = getOrigin(target_direction);
   const int start = nearestSitePosition(target_direction);
+  const int window = computeSiteSearchWindow(target_direction);
 
   std::optional<int> best_position;
   int best_aligned_pins = 0;
-  for (int attempt = 0; attempt <= kSiteSearchAttemptsLimit; attempt++) {
+  for (int attempt = 0; attempt < window; attempt++) {
     const int position = start + alternatingOffset(attempt) * pitch;
     setOrigin(position, target_direction);
 
@@ -143,6 +151,31 @@ int Snapper::nearestSitePosition(const odb::dbTechLayerDir& direction)
       = (getOrigin(direction) - grid_origin) / static_cast<double>(pitch);
 
   return grid_origin + std::lround(sites) * pitch;
+}
+
+int Snapper::computeSiteSearchWindow(const odb::dbTechLayerDir& direction) const
+{
+  const LayerDataList& layers_data_list = layerDataList(direction);
+  const int pitch = sitePitch(direction);
+
+  int sites_per_period = 1;
+  if (!layers_data_list.empty()) {
+    odb::dbTrackGrid* track_grid = layers_data_list[0].track_grid;
+    const int pattern_count = direction == odb::dbTechLayerDir::VERTICAL
+                                  ? track_grid->getNumGridPatternsX()
+                                  : track_grid->getNumGridPatternsY();
+
+    sites_per_period = std::numeric_limits<int>::max();
+
+    for (int i = 0; i < pattern_count; i++) {
+      const int step = getTrackGridPattern(track_grid, i, direction).step;
+      sites_per_period
+          = std::min(sites_per_period, std::lcm(pitch, step) / pitch);
+    }
+  }
+
+  // One period on each side of the start, plus the start itself.
+  return 2 * sites_per_period + 1;
 }
 
 void Snapper::snapToTracks()
@@ -410,18 +443,20 @@ void Snapper::snapPinToPosition(odb::dbITerm* pin,
       direction);
 }
 
-void Snapper::getTrackGridPattern(odb::dbTrackGrid* track_grid,
-                                  int pattern_idx,
-                                  int& origin,
-                                  int& step,
-                                  const odb::dbTechLayerDir& target_direction)
+Snapper::GridPattern Snapper::getTrackGridPattern(
+    odb::dbTrackGrid* track_grid,
+    const int pattern_idx,
+    const odb::dbTechLayerDir& target_direction)
 {
-  int count;
+  GridPattern pattern;
   if (target_direction == odb::dbTechLayerDir::VERTICAL) {
-    track_grid->getGridPatternX(pattern_idx, origin, count, step);
+    track_grid->getGridPatternX(
+        pattern_idx, pattern.origin, pattern.count, pattern.step);
   } else {
-    track_grid->getGridPatternY(pattern_idx, origin, count, step);
+    track_grid->getGridPatternY(
+        pattern_idx, pattern.origin, pattern.count, pattern.step);
   }
+  return pattern;
 }
 
 void Snapper::attemptSnapToExtraPatterns(

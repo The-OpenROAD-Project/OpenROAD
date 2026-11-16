@@ -51,6 +51,13 @@ class Snapper
     odb::dbSite* site{nullptr};
   };
 
+  struct GridPattern
+  {
+    int origin{0};
+    int count{0};
+    int step{0};
+  };
+
   // ordered by TrackGrid layer number
   using LayerDataList = std::vector<LayerData>;
   using TrackGridToPinListMap
@@ -59,6 +66,7 @@ class Snapper
   void snapToSites();
   void snapToSites(const odb::dbTechLayerDir& target_direction);
   int nearestSitePosition(const odb::dbTechLayerDir& direction);
+  int computeSiteSearchWindow(const odb::dbTechLayerDir& direction) const;
 
   void snapToTracks();
   void snapToTracks(const odb::dbTechLayerDir& target_direction);
@@ -85,11 +93,10 @@ class Snapper
   LayerDataList computeLayerDataList(
       const odb::dbTechLayerDir& target_direction);
   odb::dbTechLayer* getPinLayer(odb::dbMPin* pin);
-  void getTrackGridPattern(odb::dbTrackGrid* track_grid,
-                           int pattern_idx,
-                           int& origin,
-                           int& step,
-                           const odb::dbTechLayerDir& target_direction);
+  static GridPattern getTrackGridPattern(
+      odb::dbTrackGrid* track_grid,
+      int pattern_idx,
+      const odb::dbTechLayerDir& target_direction);
   int getPinOffset(odb::dbITerm* pin, const odb::dbTechLayerDir& direction);
   void snapPinToPosition(odb::dbITerm* pin,
                          int position,
