@@ -33,11 +33,8 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                   float notch_h_threshold,
                   float notch_v_threshold,
                   // action prob
-                  float pos_swap_prob,
-                  float neg_swap_prob,
-                  float double_swap_prob,
-                  float exchange_prob,
-                  float resize_prob,
+                  const SACoreActionProbs& action_probs,
+                  const SASoftActionsProbs& soft_action_probs,
                   // Fast SA hyperparameter
                   float init_prob,
                   int max_num_step,

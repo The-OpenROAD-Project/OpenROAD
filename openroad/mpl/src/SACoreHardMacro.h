@@ -26,11 +26,7 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
                   const odb::Rect& outline,
                   const std::vector<HardMacro>& macros,
                   const SACoreWeights& core_weights,
-                  // probability of each action
-                  float pos_swap_prob,
-                  float neg_swap_prob,
-                  float double_swap_prob,
-                  float exchange_prob,
+                  const SACoreActionProbs& action_probs,
                   // Fast SA hyperparameter
                   float init_prob,
                   int max_num_step,

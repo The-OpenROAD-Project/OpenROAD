@@ -80,6 +80,19 @@ struct SASoftWeights
   float soft_blockage{0.0f};
 };
 
+struct SACoreActionProbs
+{
+  float pos_swap{0.0f};
+  float neg_swap{0.0f};
+  float double_swap{0.0f};
+  float exchange{0.0f};
+};
+
+struct SASoftActionsProbs
+{
+  float resize{0.0f};
+};
+
 // The cost of a certain penalty is:
 //   cost = weight * normalized_penalty
 //

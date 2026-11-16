@@ -35,11 +35,8 @@ SACoreSoftMacro::SACoreSoftMacro(PhysicalHierarchy* tree,
                                  float notch_h_threshold,
                                  float notch_v_threshold,
                                  // probability of each action
-                                 float pos_swap_prob,
-                                 float neg_swap_prob,
-                                 float double_swap_prob,
-                                 float exchange_prob,
-                                 float resize_prob,
+                                 const SACoreActionProbs& action_probs,
+                                 const SASoftActionsProbs& soft_action_probs,
                                  // Fast SA hyperparameter
                                  float init_prob,
                                  int max_num_step,
@@ -52,10 +49,7 @@ SACoreSoftMacro::SACoreSoftMacro(PhysicalHierarchy* tree,
                                         outline,
                                         macros,
                                         core_weights,
-                                        pos_swap_prob,
-                                        neg_swap_prob,
-                                        double_swap_prob,
-                                        exchange_prob,
+                                        action_probs,
                                         init_prob,
                                         max_num_step,
                                         num_perturb_per_step,
@@ -71,7 +65,7 @@ SACoreSoftMacro::SACoreSoftMacro(PhysicalHierarchy* tree,
   penalties_.push_back({.name = "Fixed Macros", .weight = 100.0f});
   penalties_.push_back({.name = "Notch", .weight = soft_weights.notch});
 
-  resize_prob_ = resize_prob;
+  resize_prob_ = soft_action_probs.resize;
   notch_h_th_ = notch_h_threshold;
   notch_v_th_ = notch_v_threshold;
   adjust_h_th_ = notch_h_th_;

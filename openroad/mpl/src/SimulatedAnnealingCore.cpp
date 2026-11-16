@@ -29,22 +29,20 @@ namespace mpl {
 using std::string;
 
 template <class T>
-SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
-                                                  const odb::Rect& outline,
-                                                  const std::vector<T>& macros,
-                                                  const SACoreWeights& weights,
-                                                  float pos_swap_prob,
-                                                  float neg_swap_prob,
-                                                  float double_swap_prob,
-                                                  float exchange_prob,
-                                                  // Fast SA hyperparameter
-                                                  float init_prob,
-                                                  int max_num_step,
-                                                  int num_perturb_per_step,
-                                                  unsigned seed,
-                                                  MplObserver* graphics,
-                                                  utl::Logger* logger,
-                                                  odb::dbBlock* block)
+SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
+    PhysicalHierarchy* tree,
+    const odb::Rect& outline,
+    const std::vector<T>& macros,
+    const SACoreWeights& weights,
+    const SACoreActionProbs& action_probs,
+    // Fast SA hyperparameter
+    float init_prob,
+    int max_num_step,
+    int num_perturb_per_step,
+    unsigned seed,
+    MplObserver* graphics,
+    utl::Logger* logger,
+    odb::dbBlock* block)
     : outline_(outline), graphics_(graphics), block_(block)
 {
   penalties_ = {
@@ -55,10 +53,10 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
       {.name = "Fence", .weight = weights.fence},
   };
 
-  pos_swap_prob_ = pos_swap_prob;
-  neg_swap_prob_ = neg_swap_prob;
-  double_swap_prob_ = double_swap_prob;
-  exchange_prob_ = exchange_prob;
+  pos_swap_prob_ = action_probs.pos_swap;
+  neg_swap_prob_ = action_probs.neg_swap;
+  double_swap_prob_ = action_probs.double_swap;
+  exchange_prob_ = action_probs.exchange;
 
   init_prob_ = init_prob;
   max_num_step_ = max_num_step;

@@ -45,10 +45,7 @@ class SimulatedAnnealingCore
                          const odb::Rect& outline,
                          const std::vector<T>& macros,
                          const SACoreWeights& weights,
-                         float pos_swap_prob,
-                         float neg_swap_prob,
-                         float double_swap_prob,
-                         float exchange_prob,
+                         const SACoreActionProbs& action_probs,
                          // Fast SA hyperparameter
                          float init_prob,
                          int max_num_step,
@@ -120,7 +117,7 @@ class SimulatedAnnealingCore
   virtual float calNormCost() const;
   virtual void calPenalty();
   virtual void calExtraPenalties() {}
-  
+
   void calAreaPenalty();
   void calOutlinePenalty();
   void calWirelength();
