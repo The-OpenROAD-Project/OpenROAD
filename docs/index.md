@@ -59,7 +59,9 @@ Legend:
 | Debian 13            | `Y` | `Y` | `Y` | `-` |
 | Ubuntu 24.04         | `Y` | `Y` | `Y` | `-` |
 | Ubuntu 26.04 (default) | `Y` | `Y` | `Y` | `-` |
-| RHEL / Rocky 8/9/10  | `Y` | `-` | `Y` | `-` |
+| RHEL / Rocky 8       | `Y` | `-` | `Y` | `-` |
+| RHEL / Rocky 9       | `Y` | `-` | `Y` | `-` |
+| RHEL / Rocky 10      | `Y` | `-` | `Y` | `-` |
 | macOS                | `Y` | `-` | `Y` | `-` |
 | Windows 10 and above | `-` | `-` | `Y` | `Y` |
 
