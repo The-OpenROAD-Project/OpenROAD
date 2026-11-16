@@ -93,8 +93,12 @@ void RetimingGraph::walkFanout(int source,
     if (net == nullptr) {
       continue;
     }
-    if (!flops.empty() && fencesChain(net)) {
-      fenced_.insert(flops.begin(), flops.end());
+    if (fencesChain(net)) {
+      if (flops.empty()) {
+        pinned_[source] = true;
+      } else {
+        fenced_.insert(flops.begin(), flops.end());
+      }
     }
     for (odb::dbITerm* sink : net->getITerms()) {
       if (sink->getIoType() != odb::dbIoType::INPUT) {
