@@ -64,6 +64,35 @@ bool moveKeepsClass(const RetimingGraph& graph,
          || graph.self_dual_[v];
 }
 
+bool isRouted(odb::dbBlock* block)
+{
+  for (odb::dbNet* net : block->getNets()) {
+    if (net->getWire() != nullptr || !net->getGuides().empty()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+struct PlacementCount
+{
+  int placed = 0;
+  int unplaced = 0;
+};
+
+PlacementCount countPlacement(odb::dbBlock* block)
+{
+  PlacementCount count;
+  for (odb::dbInst* inst : block->getInsts()) {
+    if (inst->isPlaced()) {
+      count.placed++;
+    } else {
+      count.unplaced++;
+    }
+  }
+  return count;
+}
+
 }  // namespace
 
 Retimer::Retimer(odb::dbDatabase* db,
@@ -96,6 +125,11 @@ void Retimer::retime(int max_moves)
   if (sta_->getDbNetwork()->hasHierarchy()) {
     logger_->error(utl::RET, 42, "Hierarchical netlists are not supported.");
   }
+  if (isRouted(block)) {
+    logger_->warn(utl::RET,
+                  44,
+                  "The design is routed; retime does not update the routing.");
+  }
   if (!unmapper_->prepare()) {
     logger_->error(
         utl::RET,
@@ -119,6 +153,7 @@ void Retimer::retime(int max_moves)
   const std::vector<int> r = search.getRetiming();
 
   const std::unordered_set<odb::dbInst*> movers = moversToUnmap(graph, r);
+  const int unplaced_before = countPlacement(block).unplaced;
   // An error while the netlist is being edited restores it.
   odb::dbDatabase::beginEco(block);
   try {
@@ -132,6 +167,15 @@ void Retimer::retime(int max_moves)
     throw;
   }
   odb::dbDatabase::commitEco(block);
+
+  const PlacementCount after = countPlacement(block);
+  if (after.placed > 0 && after.unplaced > unplaced_before) {
+    logger_->info(utl::RET,
+                  45,
+                  "New instances left unplaced: {}. Run global_placement "
+                  "-incremental to place them.",
+                  after.unplaced - unplaced_before);
+  }
 }
 
 void Retimer::applyAfterUnmapping(

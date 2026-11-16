@@ -31,6 +31,7 @@ TESTS = [
     "retime_no_base_cell",
     "retime_no_clock",
     "retime_no_moves",
+    "retime_routed",
     "retime_two_clocks",
     "retime_unmap",
     "retime_wire",

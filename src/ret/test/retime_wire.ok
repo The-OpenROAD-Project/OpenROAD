@@ -18,3 +18,4 @@
 --------------------------------------------------------------------------------
 [INFO RET-0023] Worst register-to-register arrival 0.031 after 1 slides.
 [INFO RET-0024] Rebuilt 2 of 6 register groups: 1 registers removed, 1 inserted, 0 of them keeping their class.
+[INFO RET-0045] New instances left unplaced: 1. Run global_placement -incremental to place them.

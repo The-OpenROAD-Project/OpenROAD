@@ -25,7 +25,9 @@ move that pushes one past the clock period is rejected.
 Only the register groups whose edge weights changed are rebuilt; every
 other cell keeps its placement. The new registers are left unplaced: run
 `global_placement -incremental` after `retime` to place them. Estimated
-parasitics of the nets that changed are refreshed.
+parasitics of the nets that changed are refreshed. Run `retime` before clock
+tree synthesis and routing: on a routed design it warns and leaves the
+routing as it is.
 
 Registers move by class, read from the liberty `next_state` function:
 
