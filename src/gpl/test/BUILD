@@ -13,7 +13,7 @@ TESTS = [
     "clust03",
     "cluster_place01",
     "convergence01",
-    "uniform_density_unplaced_macros",
+    "density_macro_area_in_denominator",
     "diverge01",
     "error01",
     "incremental01",

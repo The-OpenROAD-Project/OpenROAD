@@ -438,7 +438,7 @@ proc clear_place_prop { block type name } {
 sta::define_cmd_args "get_global_placement_uniform_density" {\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
-    [-unplaced_macros_as_fixed]
+    [-macro_area_in_denominator]
 }
 
 proc get_global_placement_uniform_density { args } {
@@ -448,7 +448,7 @@ proc get_global_placement_uniform_density { args } {
 
   sta::parse_key_args "get_global_placement_uniform_density" args \
     keys { -pad_left -pad_right } \
-    flags { -unplaced_macros_as_fixed }
+    flags { -macro_area_in_denominator }
 
   set uniform_density 0
   if { [ord::db_has_core_rows] } {

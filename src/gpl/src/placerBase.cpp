@@ -733,7 +733,7 @@ PlacerBaseVars::PlacerBaseVars(const PlaceOptions& options)
       skipIoMode(options.skipIoMode),
       placeIosMode(options.placeIosMode),
       disablePinDensityAdjust(options.disablePinDensityAdjust),
-      unplacedMacrosAsFixed(options.unplacedMacrosAsFixed)
+      macroAreaInDenominator(options.macroAreaInDenominator)
 {
 }
 
@@ -1140,8 +1140,8 @@ void PlacerBase::init(bool check_density)
       continue;
     }
 
-    if (pbCommon_->unplacedMacrosAsFixed() && inst->isMacro()
-        && !db_inst->isPlaced()) {
+    if (pbCommon_->macroAreaInDenominator() && inst->isMacro()
+        && !inst->isFixed()) {
       if (isInGroup(db_inst)) {
         odb::dbMaster* master = db_inst->getMaster();
         nonPlaceInstsArea_

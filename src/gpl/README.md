@@ -363,7 +363,7 @@ This command returns the lowest target density at which the movable instances fi
 get_global_placement_uniform_density
     [-pad_left pad_left]\
     [-pad_right pad_right]\
-    [-unplaced_macros_as_fixed]
+    [-macro_area_in_denominator]
 ```
 
 #### Options
@@ -372,7 +372,7 @@ get_global_placement_uniform_density
 | ----- | ----- |
 | `-pad_left` | Set left padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
 | `-pad_right` | Set right padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
-| `-unplaced_macros_as_fixed` | Count the area of unplaced macros as fixed, for a call before macro placement fixes them in the core. The default setting is disabled. |
+| `-macro_area_in_denominator` | Put the macro area in the denominator, with the fixed instances, instead of in the movable area. For a call before macro placement. The default setting is disabled. |
 
 ## Regression tests
 
