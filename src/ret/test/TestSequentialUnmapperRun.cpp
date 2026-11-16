@@ -237,4 +237,26 @@ TEST_F(SequentialUnmapperRunTest, FanoutPreserved)
   EXPECT_EQ(loads_on_out, 2);
 }
 
+// A register whose next state reads an unconnected input is left alone.
+TEST_F(SequentialUnmapperRunTest, UnconnectedInputIsSkipped)
+{
+  ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kBasic}));
+  makeInputPorts({"d1", "clk"});
+
+  tst::InstOptions op;
+  op.iterms = {{"d1", "D"}, {"clk", "CK"}, {"q1", "Q"}};
+  odb::dbInst* ff = makeInst(block_, getDb()->findMaster("DFFE_PP"), "ff1", op);
+  makeOutputPort("q1");
+  ASSERT_NE(ff, nullptr);
+
+  ret::SequentialUnmapper unmapper(getDb(), getSta(), getLogger());
+  ASSERT_TRUE(unmapper.prepare());
+  unmapper.run();
+
+  EXPECT_EQ(block_->findInst("ff1"), ff);
+  EXPECT_EQ(countMaster("DFFE_PP"), 1);
+  EXPECT_EQ(countMaster("DFF_P"), 0);
+  EXPECT_EQ(countMaster("AND2"), 0);
+}
+
 }  // namespace

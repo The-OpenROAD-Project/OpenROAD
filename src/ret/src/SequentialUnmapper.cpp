@@ -554,7 +554,7 @@ odb::dbNet* SequentialUnmapper::collectRegisterNets(
       sta::Pin* pin = network->dbToSta(iterm);
       sta::LibertyPort* port
           = pin != nullptr ? network->libertyPort(pin) : nullptr;
-      if (port != nullptr) {
+      if (port != nullptr && iterm->getNet() != nullptr) {
         in_port_net_[port] = iterm->getNet();
       }
     } else if (iterm->getIoType() == odb::dbIoType::OUTPUT
