@@ -22,6 +22,7 @@ TESTS = [
     "retime_dsec_port_tap",
     "retime_dsec_unmapped_neighbor",
     "retime_gated_clock",
+    "retime_gated_clock_deep",
     "retime_hierarchical",
     "retime_input_limit",
     "retime_input_path",

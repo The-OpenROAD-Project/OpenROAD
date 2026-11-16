@@ -48,7 +48,6 @@ class Retimer
  private:
   // Fanin edges of every gate as (source gate, index into adj_[source]).
   using FaninIndex = std::vector<std::vector<std::pair<int, int>>>;
-  using GateClocks = std::unordered_map<odb::dbInst*, odb::dbNet*>;
 
   struct Sink
   {
@@ -126,6 +125,13 @@ class Retimer
                            int max_moves,
                            est::IncrementalParasiticsGuard& guard);
   void applyRetiming(const RetimingGraph& graph, const std::vector<int>& r);
+  // The original registers standing for the p-th register of a sink's
+  // rebuilt chain, counted from the driver net.
+  static std::vector<odb::dbInst*> chainOrigins(const RetimingGraph& graph,
+                                                const FaninIndex& fanin,
+                                                const std::vector<int>& r,
+                                                const Sink& sink,
+                                                int p);
   // nullptr for the base cell.
   std::vector<const RegisterClass*> chainClasses(const RetimingGraph& graph,
                                                  const FaninIndex& fanin,
@@ -134,10 +140,10 @@ class Retimer
   void checkMoves(const RetimingGraph& graph,
                   const FaninIndex& fanin,
                   const std::vector<int>& r) const;
-  static GateClocks gateClocks(const RetimingGraph& graph,
-                               const std::vector<Group>& groups);
-  odb::dbNet* groupClockNet(const Group& group,
-                            const GateClocks& gate_clock) const;
+  odb::dbNet* groupClockNet(const RetimingGraph& graph,
+                            const FaninIndex& fanin,
+                            const std::vector<int>& r,
+                            const Group& group) const;
   void rebuildGroup(const Group& group,
                     const std::vector<const RegisterClass*>& classes,
                     odb::dbNet* clock_net,

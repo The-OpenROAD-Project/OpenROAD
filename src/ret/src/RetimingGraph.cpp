@@ -251,15 +251,20 @@ void RetimingGraph::markDontTouch(odb::dbInst* inst, int id)
 void RetimingGraph::fenceDontTouch()
 {
   const int n = static_cast<int>(nodes_.size());
-  // Registers that start on one net are rebuilt together, so a don't-touch
-  // register keeps every register on its net in place.
+  // Registers that start on one net are rebuilt together, as one chain on
+  // one clock net, so a don't-touch register or a second clock net keeps
+  // every register on that net in place.
   std::unordered_set<odb::dbNet*> fixed_nets;
+  std::unordered_map<odb::dbNet*, odb::dbNet*> net_clock;
   for (int u = 0; u < n; u++) {
     for (const EdgePhys& phys : phys_[u]) {
-      if (std::ranges::any_of(phys.flops, [this](odb::dbInst* flop) {
-            return isDontTouch(flop);
-          })) {
-        fixed_nets.insert(chainNet(phys));
+      for (odb::dbInst* flop : phys.flops) {
+        odb::dbNet* net = chainNet(phys);
+        odb::dbNet* clock = registerClockNet(flop);
+        if (isDontTouch(flop)
+            || net_clock.emplace(net, clock).first->second != clock) {
+          fixed_nets.insert(net);
+        }
       }
     }
   }

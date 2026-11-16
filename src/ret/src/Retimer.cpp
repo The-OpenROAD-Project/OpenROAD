@@ -544,6 +544,24 @@ std::vector<odb::dbNet*> Retimer::buildChain(
   return nets;
 }
 
+std::vector<odb::dbInst*> Retimer::chainOrigins(const RetimingGraph& graph,
+                                                const FaninIndex& fanin,
+                                                const std::vector<int>& r,
+                                                const Sink& sink,
+                                                int p)
+{
+  const int taken_by_sink_gate = -r[graph.adj_[sink.u][sink.k].target];
+  std::vector<odb::dbInst*> regs;
+  originRegistersOnEdge(graph,
+                        fanin,
+                        r,
+                        sink.u,
+                        sink.k,
+                        taken_by_sink_gate + sink.wr - p + 1,
+                        regs);
+  return regs;
+}
+
 std::vector<const RegisterClass*> Retimer::chainClasses(
     const RetimingGraph& graph,
     const FaninIndex& fanin,
@@ -568,12 +586,8 @@ std::vector<const RegisterClass*> Retimer::chainClasses(
   std::vector<const RegisterClass*> classes(max_depth, nullptr);
   std::vector<bool> plain_at(max_depth, false);
   for (const Sink& s : group.sinks) {
-    const int taken_by_sink_gate = -r[graph.adj_[s.u][s.k].target];
     for (int p = 1; p <= s.wr; p++) {
-      std::vector<odb::dbInst*> regs;
-      originRegistersOnEdge(
-          graph, fanin, r, s.u, s.k, taken_by_sink_gate + s.wr - p + 1, regs);
-      for (odb::dbInst* reg : regs) {
+      for (odb::dbInst* reg : chainOrigins(graph, fanin, r, s, p)) {
         const RegisterClass* cls
             = reg != nullptr ? &classOf(graph, reg) : nullptr;
         bool consistent = cls != nullptr;
@@ -651,33 +665,24 @@ void Retimer::rebuildGroup(const Group& group,
   }
 }
 
-Retimer::GateClocks Retimer::gateClocks(const RetimingGraph& graph,
-                                        const std::vector<Group>& groups)
+// The registers a group is rebuilt from share one clock net: the graph pins
+// the gates that registers on different clock nets could reach.
+odb::dbNet* Retimer::groupClockNet(const RetimingGraph& graph,
+                                   const FaninIndex& fanin,
+                                   const std::vector<int>& r,
+                                   const Group& group) const
 {
-  GateClocks gate_clock;
-  for (const Group& group : groups) {
-    for (const Sink& s : group.sinks) {
-      const std::vector<odb::dbInst*>& flops = graph.phys_[s.u][s.k].flops;
-      if (!flops.empty()) {
-        gate_clock.emplace(graph.nodes_[graph.adj_[s.u][s.k].target],
-                           registerClockNet(flops.front()));
+  for (const Sink& s : group.sinks) {
+    for (int p = 1; p <= s.wr; p++) {
+      for (odb::dbInst* reg : chainOrigins(graph, fanin, r, s, p)) {
+        odb::dbNet* clock = reg != nullptr ? registerClockNet(reg) : nullptr;
+        if (clock != nullptr) {
+          return clock;
+        }
       }
     }
   }
-  return gate_clock;
-}
-
-odb::dbNet* Retimer::groupClockNet(const Group& group,
-                                   const GateClocks& gate_clock) const
-{
-  for (odb::dbInst* f : group.flops) {
-    odb::dbNet* clock_net = registerClockNet(f);
-    if (clock_net != nullptr) {
-      return clock_net;
-    }
-  }
-  auto it = gate_clock.find(group.driver->getInst());
-  return it != gate_clock.end() ? it->second : clock_net_;
+  return clock_net_;
 }
 
 // Every check runs before the first edit, so a retiming that cannot be
@@ -709,13 +714,13 @@ void Retimer::applyRetiming(const RetimingGraph& graph,
   }
   checkMoves(graph, fanin, r);
 
-  const GateClocks gate_clock = gateClocks(graph, groups);
   ApplyStats stats;
   for (size_t i = 0; i < groups.size(); i++) {
     const Group& group = groups[i];
     if (group.changed) {
       stats.groups_changed++;
-      rebuildGroup(group, classes[i], groupClockNet(group, gate_clock), stats);
+      rebuildGroup(
+          group, classes[i], groupClockNet(graph, fanin, r, group), stats);
     }
   }
 
