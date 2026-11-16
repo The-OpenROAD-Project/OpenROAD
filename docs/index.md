@@ -34,8 +34,8 @@ recovered through improved flow predictability and enhanced optimization.
 For a technical description of the OpenROAD flow, please refer to our DAC-2019 paper:
 [Toward an Open-Source Digital Flow: First Learnings from the OpenROAD Project](https://vlsicad.ucsd.edu/Publications/Conferences/371/c371.pdf).
 The paper is also available from [ACM Digital Library](https://dl.acm.org/doi/10.1145/3316781.3326334).
-Other publications and presentations are
-linked [here](https://theopenroadproject.org/publications/).
+Other publications are linked [here](https://openroad.org/resources/publications),
+presentations can be found [here](https://openroad.org/resources/presentations).
 
 ## Documentation
 
