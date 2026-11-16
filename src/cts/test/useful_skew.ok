@@ -1,0 +1,110 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: array_tile_ins_delay.lef, created 1 library cells
+[INFO IFP-0001] Added 94 rows of 1052 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 200.000 132.000 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 199.880 131.600 ) um
+[INFO IFP-0102] Core area:                        26304.208 um^2
+[INFO IFP-0103] Total instances area:               310.672 um^2
+[INFO IFP-0104] Effective utilization:                0.012
+[INFO IFP-0105] Number of instances:                    153
+[INFO CTS-0050] Root buffer is CLKBUF_X3.
+[INFO CTS-0051] Sink buffer is CLKBUF_X3.
+[INFO CTS-0052] The following clock buffers will be used for CTS:
+                    CLKBUF_X3
+[INFO CTS-0049] Characterization buffer is CLKBUF_X3.
+[INFO CTS-0007] Net "clk" found for clock "clk".
+[INFO CTS-0011]  Clock net "clk" for macros has 1 sinks.
+[INFO CTS-0011]  Clock net "clk_regs" for registers has 24 sinks.
+[INFO CTS-0008] TritonCTS found 2 clock nets.
+[INFO CTS-0097] Characterization used 1 buffer(s) types.
+[INFO CTS-0201] 1 blockages from hard placement blockages and placed macros will be used.
+[INFO CTS-0027] Generating H-Tree topology for net clk.
+[INFO CTS-0028]  Total number of sinks: 1.
+[INFO CTS-0029]  Macro  sinks will be clustered in groups of up to 4 and with maximum cluster diameter of 50.0 um.
+[INFO CTS-0030]  Number of static layers: 0.
+[INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
+[INFO CTS-0023]  Original sink region: [(80000, 127999), (80000, 127999)].
+[INFO CTS-0024]  Normalized sink region: [(5.71429, 9.14279), (5.71429, 9.14279)].
+[INFO CTS-0025]     Width:  0.0000.
+[INFO CTS-0026]     Height: 0.0000.
+ Level 1
+    Direction: Vertical
+    Sinks per sub-region: 1
+    Sub-region size: 0.0000 X 0.0000
+[INFO CTS-0034]     Segment length (rounded): 1.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (692.813 um) and max number of sinks is 15.
+[INFO CTS-0035]  Number of sinks covered: 1.
+[INFO CTS-0201] 1 blockages from hard placement blockages and placed macros will be used.
+[INFO CTS-0027] Generating H-Tree topology for net clk_regs.
+[INFO CTS-0028]  Total number of sinks: 24.
+[INFO CTS-0029]  Register sinks will be clustered in groups of up to 8 and with maximum cluster diameter of 60.0 um.
+[INFO CTS-0030]  Number of static layers: 0.
+[INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
+[INFO CTS-0023]  Original sink region: [(23230, 5230), (387230, 89230)].
+[INFO CTS-0024]  Normalized sink region: [(1.65929, 0.373571), (27.6593, 6.37357)].
+[INFO CTS-0025]     Width:  26.0000.
+[INFO CTS-0026]     Height: 6.0000.
+ Level 1
+    Direction: Horizontal
+    Sinks per sub-region: 12
+    Sub-region size: 13.0000 X 6.0000
+[INFO CTS-0034]     Segment length (rounded): 6.
+[INFO CTS-0038]  Stop criterion found. Sink region hpwl is smaller than max wirelength (692.813 um) and max number of sinks is 15.
+[INFO CTS-0035]  Number of sinks covered: 24.
+[INFO CTS-0018]     Created 2 clock buffers.
+[INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
+[INFO CTS-0015]     Created 2 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 1:1..
+[INFO CTS-0017]     Max level of the clock tree: 1.
+[INFO CTS-0018]     Created 3 clock buffers.
+[INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
+[INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
+[INFO CTS-0015]     Created 3 clock nets.
+[INFO CTS-0016]     Fanout distribution for the current clock = 10:1, 14:1..
+[INFO CTS-0017]     Max level of the clock tree: 1.
+[INFO CTS-0124] Clock net "clk"
+[INFO CTS-0125]  Sinks 1
+[INFO CTS-0098] Clock net "clk_regs"
+[INFO CTS-0099]  Sinks 25
+[INFO CTS-0100]  Leaf buffers 0
+[INFO CTS-0101]  Average sink wire length 105.32 um
+[INFO CTS-0102]  Path depth 2 - 2
+[INFO CTS-0207]  Dummy loads inserted 1
+[INFO CTS-0033] Balancing latency for clock clk
+[INFO CTS-0036]  inserted 2 delay buffers
+compute_skew_budget cutting-plane:
+ iter | new edges | total edges |   LP WNS |   LP TNS |  STA WNS |  STA TNS
+------+-----------+-------------+----------+----------+----------+----------
+    0 |        32 |          32 |    -0.03 |    -0.19 |    -0.23 |    -1.79
+    1 |         0 |          32 |    -0.03 |    -0.19 |    -0.03 |    -0.19
+[INFO RSZ-0603] compute_skew_budget: closure infeasible by skew alone; achievable WNS = -0.026.
+[INFO RSZ-0605] compute_skew_budget: 24 registers, 16 annotated, WNS = -0.026, TNS = -0.188.
+[INFO RSZ-0606] compute_skew_budget: 32 edges in final LP, 432 path ends seen, 0 pruned by slack gate, across all iterations.
+[INFO RSZ-0607] compute_skew_budget: augmentation pass enumerated 24 path ends over 24 critical endpoints (cap 200 paths/endpoint).
+Skew target distribution (annotated registers only):
+[0.021, 0.030): ************************************************** (8)
+[0.030, 0.039):  (0)
+[0.039, 0.048):  (0)
+[0.048, 0.057):  (0)
+[0.057, 0.066):  (0)
+[0.066, 0.075):  (0)
+[0.075, 0.084):  (0)
+[0.084, 0.092):  (0)
+[0.092, 0.101):  (0)
+[0.101, 0.110):  (0)
+[0.110, 0.119):  (0)
+[0.119, 0.128):  (0)
+[0.128, 0.137):  (0)
+[0.137, 0.146):  (0)
+[0.146, 0.155):  (0)
+[0.155, 0.164):  (0)
+[0.164, 0.173):  (0)
+[0.173, 0.182):  (0)
+[0.182, 0.191):  (0)
+[0.191, 0.200]: ************************************************** (8)
+[INFO CTS-0544] Applying useful skew for clock clk
+[INFO CTS-0545] inserted 15 delay buffers for applying useful skew
+[INFO CTS-0037] Total number of delay buffers: 17
+Useful skew improves WNS: 1
+Useful skew improves TNS: 1

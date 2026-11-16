@@ -117,7 +117,6 @@ cc_library(
         "//src/odb/src/db",
         "//src/sta:opensta_lib",
         "//src/utl",
-        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
 )

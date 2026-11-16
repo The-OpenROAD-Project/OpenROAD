@@ -7,8 +7,6 @@ description: >
   notes for the human reviewer to inspect and post manually.
   Use when asked to review a PR, check a pull request, look at changes,
   or provide code review for any OpenROAD module.
-  Also triggers on: "review PR", "check this PR", "look at pull request",
-  "code review", "review changes", "review #NUMBER".
 argument-hint: <pr-number-or-url>
 ---
 
@@ -63,8 +61,9 @@ Check for:
   for objects that cannot be null
 - **Unreachable code** -- code after `error()` or `throw` should be removed
 - **Suppressed tests** -- if a test is disabled, ask whether it hides a bug
-- **`src/sta/` modifications** -- these files must NOT be modified
-  (OpenSTA is managed upstream)
+- **`src/sta/` changes** -- OpenSTA is a separate submodule, updated by
+  a PR in the OpenSTA repo and then a submodule bump; ask whether the
+  change is needed or could be made in OpenROAD code instead
 
 ### Priority 2: QoR Impact
 
@@ -76,7 +75,7 @@ Any change affecting placement, routing, timing, or physical design:
 ### Priority 3: Testing
 
 - Does every code change have an accompanying test?
-- Are tests registered in **Bazel** (`BUILD`)? CMake is deprecated; do not ask for CMake test registration. A new source file or tool still needs its CMake entry (the macOS CI job builds with CMake).
+- Are tests, new source files and new tools registered in **Bazel** (`BUILD`)?
 - Do golden files look reasonable?
 - Are test inputs minimal?
 
@@ -124,7 +123,7 @@ Modules: <list>
 - <file>:<line>  question: does this affect placement/routing/timing on real designs?
 
 == Priority 3 (testing) ==
-- <observation about test coverage, dual-registration, golden files>
+- <observation about test coverage, Bazel registration, golden files>
 
 == Priority 4-6 (architecture / style / process) ==
 - <only if material -- skip what clang-format/clang-tidy already covers>
@@ -138,11 +137,8 @@ Modules: <list>
 **Be concise.** One-word or one-sentence items when the issue is clear
 (e.g., "const", "unreachable after throw", "`int64_t` for area").
 
-**Ask probing questions** for non-obvious issues rather than prescribing
-fixes:
-- "Have you tested this on a real design?"
-- "Could this hide a bug?"
-- "What happens if this is null?"
+**Indicate complex issues** where fixes need careful consideration or
+  have alternative solutions worth considering.
 
 **Lead with severity**: `bug:`, `nit:`, `question:`, `suggestion:`.
 

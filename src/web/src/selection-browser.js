@@ -8,7 +8,8 @@
 // rows without mapToSource and mis-target under sorting).
 
 import { dbuRectToBounds } from './coordinates.js';
-import { isStaticMode, makeResizableHeaders } from './ui-utils.js';
+import { ColumnWidths, isStaticMode, makeResizableHeaders }
+    from './ui-utils.js';
 
 export class SelectionBrowser {
     constructor(container, app, refreshOverlay) {
@@ -16,6 +17,11 @@ export class SelectionBrowser {
         this._refreshOverlay = refreshOverlay || (() => {});
         this._data = { selection: [], groups: [], truncated: false };
         this._tab = 'selected';
+        // the tabs have different columns; each keeps its own widths
+        this._columns = {
+            selected: new ColumnWidths(),
+            highlighted: new ColumnWidths(),
+        };
         this._filter = '';
         this._sortKey = null;   // 'name' | 'type' | null (fetch order)
         this._sortAsc = true;
@@ -88,6 +94,7 @@ export class SelectionBrowser {
             .then((data) => {
                 if (data.ok) {
                     this._data = data;
+                    Object.values(this._columns).forEach((c) => c.reset());
                     this._render();
                 }
                 settle();
@@ -388,6 +395,6 @@ export class SelectionBrowser {
         }
         table.appendChild(tbody);
         this._tableWrap.appendChild(table);
-        makeResizableHeaders(table);
+        makeResizableHeaders(table, this._columns[this._tab]);
     }
 }

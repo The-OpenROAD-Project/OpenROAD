@@ -4,7 +4,9 @@
 #include "SizeUpGenerator.hh"
 
 #include <algorithm>
+#include <array>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -68,7 +70,8 @@ std::vector<std::unique_ptr<MoveCandidate>> SizeUpGenerator::generate(
   sta::LibertyCell* replacement = selectReplacement(
       in_port, in_rf, drvr_port, drvr_rf, load_cap, prev_drive, scene, min_max);
   if (replacement == nullptr
-      || !resizer_.replacementPreservesMaxCap(inst, replacement)) {
+      || !resizer_.replacementPreservesMaxCap(
+          inst, replacement, scene != nullptr ? scene->mode() : nullptr)) {
     return candidates;
   }
 
@@ -164,6 +167,13 @@ sta::LibertyCell* SizeUpGenerator::selectReplacement(
       in_port, in_rf, drvr_port, drvr_rf, load_cap, prev_drive, scene, min_max);
 }
 
+enum class CostType
+{
+  kLeakage,
+  kLefArea,
+  kLibArea
+};
+
 sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
                                               const sta::RiseFall* in_rf,
                                               sta::LibertyPort* drvr_port,
@@ -181,22 +191,67 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
   const int lib_ap = scene->libertyIndex(min_max);
   sta::LibertyCell* cell = drvr_port->libertyCell();
   sta::LibertyCellSeq swappable_cells = resizer_.getSwappableCells(cell);
+  debugPrint(resizer_.logger(),
+             utl::RSZ,
+             "size_up_move",
+             3,
+             "upsizeCell {}: {} swappable cells",
+             cell->name(),
+             swappable_cells.size());
   if (swappable_cells.empty()) {
     return nullptr;
   }
 
-  // Evaluate weaker equivalent cells first so the search stops on the smallest
-  // local size-up step.
+  // Cost of a nominal cell under one metric; nullopt if unavailable.
+  auto cost_of = [this](sta::LibertyCell* c,
+                        const CostType type) -> std::optional<float> {
+    switch (type) {
+      case CostType::kLeakage: {
+        const std::optional<float> leak = resizer_.cellLeakage(c);
+        return (leak && *leak > 0.0f) ? leak : std::nullopt;
+      }
+      case CostType::kLefArea: {
+        auto* db_network = resizer_.dbNetwork();
+        if (db_network != nullptr) {
+          const odb::dbMaster* master = db_network->staToDb(c);
+          if (master != nullptr && master->getArea() > 0) {
+            return static_cast<float>(master->getArea());
+          }
+        }
+        return std::nullopt;
+      }
+      case CostType::kLibArea:
+        return c->area() > 0.0f ? std::optional<float>(c->area())
+                                : std::nullopt;
+    }
+    return std::nullopt;
+  };
+
+  // Original cell costs under each metric, precomputed once: `cell` is constant
+  // across the candidate loop, so this avoids repeating the staToDb/cellLeakage
+  // lookups for the old cell on every swappable candidate.
+  const std::array<std::optional<float>, 3> cell_costs
+      = {cost_of(cell, CostType::kLeakage),
+         cost_of(cell, CostType::kLefArea),
+         cost_of(cell, CostType::kLibArea)};
+
+  // new/old cost on the first metric BOTH cells support (never mixes units).
+  auto cost_ratio = [&](sta::LibertyCell* new_cell) -> std::optional<float> {
+    for (const CostType type :
+         {CostType::kLeakage, CostType::kLefArea, CostType::kLibArea}) {
+      const std::optional<float>& old_cost = cell_costs[static_cast<int>(type)];
+      const std::optional<float> new_cost = cost_of(new_cell, type);
+      if (old_cost && new_cost) {
+        return *new_cost / *old_cost;
+      }
+    }
+    return std::nullopt;
+  };
+
+  // Evaluate weaker equivalent cells first so iteration favors the smallest
+  // adequate size-up step.
   const std::string& in_port_name = in_port->name();
   const std::string& drvr_port_name = drvr_port->name();
-  std::ranges::sort(
-      swappable_cells,
-      [this, &drvr_port_name, drvr_rf, min_max, lib_ap](
-          const sta::LibertyCell* cell1, const sta::LibertyCell* cell2) {
-        return weakerCellFirst(
-            cell1, cell2, drvr_port_name, lib_ap, drvr_rf, min_max);
-      });
-
   const sta::LibertyPort* scene_drvr_port
       = static_cast<const sta::LibertyPort*>(drvr_port)->scenePort(lib_ap);
   const sta::LibertyPort* scene_input_port
@@ -218,8 +273,12 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
              : resizer_.gateDelay(drvr_port, load_cap, scene, min_max))
         + prev_drive * in_cap;
 
-  // Accept the first cell that does not weaken drive resistance on either edge
-  // and improves estimated stage delay.
+  // Among cells that do not weaken drive resistance on either edge and improve
+  // stage delay (corner-robust eligibility that protects downstream max-slew/
+  // max-cap), pick the most cost-effective by delay-gain per unit power rather
+  // than the first adequate cell, to avoid over-sizing.
+  sta::LibertyCell* best_cell = nullptr;
+  float best_score = 0.0f;
   for (sta::LibertyCell* swappable : swappable_cells) {
     if (swappable == cell) {
       continue;
@@ -248,13 +307,24 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
                      swappable_drvr, drvr_rf, load_cap, scene, min_max)
                : resizer_.gateDelay(swappable_drvr, load_cap, scene, min_max))
           + prev_drive * swappable_in_cap;
-    if (swappable_drive_r_rise <= drive_r_rise
-        && swappable_drive_r_fall <= drive_r_fall && swappable_delay < delay) {
-      return swappable;
+    // Eligibility (upstream): stronger-or-equal drive on both edges and faster.
+    if (swappable_drive_r_rise > drive_r_rise
+        || swappable_drive_r_fall > drive_r_fall || swappable_delay >= delay) {
+      continue;
+    }
+    // Selection: best delay-gain per unit power among eligible candidates.
+    const std::optional<float> ratio = cost_ratio(swappable);
+    if (!ratio) {
+      continue;
+    }
+    const float score = (delay - swappable_delay) / std::max(1.0f, *ratio);
+    if (score > best_score) {
+      best_cell = swappable;
+      best_score = score;
     }
   }
 
-  return nullptr;
+  return best_cell;
 }
 
 }  // namespace rsz

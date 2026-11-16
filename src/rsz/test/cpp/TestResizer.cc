@@ -66,6 +66,7 @@ class TestSetupLegacyPolicy : public SetupLegacyPolicy
   using SetupLegacyBase::EndpointRepairState;
   using SetupLegacyBase::refreshEndpointSlacks;
   using SetupLegacyBase::repairBudget;
+  using SetupLegacyBase::terminateProgress;
   using SetupLegacyPolicy::MainRepairState;
   using SetupLegacyPolicy::repairEndpoint;
   using SetupLegacyPolicy::SetupLegacyPolicy;
@@ -884,6 +885,73 @@ TEST_F(TestResizer, SetupLegacyPolicyResetsForceSingleRepairAfterImprovingPass)
   EXPECT_FALSE(endpoint_state.force_single_repair);
 }
 
+// With a positive slack margin, repair can continue after TNS reaches 0. The
+// fix rate is TNS based, so it must not end that margin-only repair.
+TEST_F(TestResizer, TerminateProgressIgnoresFixRateWhenTnsIsZero)
+{
+  readVerilogAndSetup("TestResizer_SwapPinsFeedthroughModNet_pre.v",
+                      /*init_default_sdc=*/true,
+                      /*hierarchy=*/false);
+  resizer_.initBlock();
+  sta_->updateTiming(true);
+
+  const sta::MinMax* max = sta::MinMax::max();
+  sta::Pin* out1_pin = findTopPin("out1");
+  ASSERT_NE(out1_pin, nullptr);
+  sta::Sdc* sdc = sta_->cmdMode()->sdc();
+  sta::Clock* clk = sdc->findClock("clk");
+  ASSERT_NE(clk, nullptr);
+  const sta::Slack out1_base_slack
+      = sta_->slack(sta_->graph()->pinLoadVertex(out1_pin), max);
+  auto set_out1_slack = [&](const float slack) {
+    sta_->setOutputDelay(out1_pin,
+                         sta::RiseFallBoth::riseFall(),
+                         clk,
+                         sta::RiseFall::rise(),
+                         nullptr,
+                         false,
+                         false,
+                         sta::MinMaxAll::all(),
+                         /*add=*/false,
+                         out1_base_slack - staTime(slack),
+                         sdc);
+    sta_->updateTiming(true);
+  };
+
+  MoveCommitter committer(resizer_);
+  RepairSetupContext setup_context(resizer_);
+  OptimizerRunConfig run_config;
+  run_config.setup_slack_margin = staTime(0.10f);
+  TestSetupLegacyPolicy policy(resizer_, committer, setup_context, run_config);
+  ASSERT_TRUE(policy.start());
+
+  // Past iteration 1000, on a fix-rate check interval.
+  constexpr int kIteration = 1100;
+  float threshold = 0.0001f;
+
+  // TNS went from -0.20 to 0: no TNS progress left, but margin work remains.
+  set_out1_slack(0.05f);
+  ASSERT_EQ(sta_->totalNegativeSlack(max), 0.0f);
+  float prev_tns = 0.0f;
+  EXPECT_FALSE(policy.terminateProgress(
+      kIteration, staTime(-0.20f), prev_tns, threshold, 0, 1, "TEST", 'a'));
+
+  // Without a margin, TNS 0 leaves no work, so the fix rate still ends it.
+  run_config.setup_slack_margin = 0.0;
+  TestSetupLegacyPolicy no_margin_policy(
+      resizer_, committer, setup_context, run_config);
+  ASSERT_TRUE(no_margin_policy.start());
+  prev_tns = 0.0f;
+  EXPECT_TRUE(no_margin_policy.terminateProgress(
+      kIteration, staTime(-0.20f), prev_tns, threshold, 0, 1, "TEST", 'a'));
+
+  // A true violation that stopped improving still ends the repair.
+  set_out1_slack(-0.20f);
+  prev_tns = sta_->totalNegativeSlack(max);
+  EXPECT_TRUE(policy.terminateProgress(
+      kIteration, staTime(-0.20f), prev_tns, threshold, 0, 1, "TEST", 'a'));
+}
+
 TEST_F(TestResizer, GainBufferingBuffersOnlyNegativeSlackOutputPorts)
 {
   readVerilogAndSetup("TestResizer_SwapPinsFeedthroughModNet_pre.v",
@@ -1081,9 +1149,11 @@ TEST_F(TestResizer, SizeUpSelectsActiveTransitionSkewedCell)
   sta::LibertyCell* d1_rvt = skew_lib->findLibertyCell("SKEW_BUF_D1_RVT");
   sta::LibertyCell* skrd2_rvt = skew_lib->findLibertyCell("SKEW_BUF_SKRD2_RVT");
   sta::LibertyCell* d2_rvt = skew_lib->findLibertyCell("SKEW_BUF_D2_RVT");
+  sta::LibertyCell* d3_rvt = skew_lib->findLibertyCell("SKEW_BUF_D3_RVT");
   ASSERT_NE(d1_rvt, nullptr);
   ASSERT_NE(skrd2_rvt, nullptr);
   ASSERT_NE(d2_rvt, nullptr);
+  ASSERT_NE(d3_rvt, nullptr);
 
   sta::LibertyPort* in_port = d1_rvt->findLibertyPort("A");
   sta::LibertyPort* drvr_port = d1_rvt->findLibertyPort("Z");
@@ -1105,8 +1175,10 @@ TEST_F(TestResizer, SizeUpSelectsActiveTransitionSkewedCell)
 
   // SKEW_BUF_SKRD2_RVT has a faster rise delay than SKEW_BUF_D1_RVT, but its
   // fall delay exceeds SKEW_BUF_D1_RVT's worst-case delay. On a rising edge,
-  // transition-aware sizing should pick SKEW_BUF_SKRD2_RVT; on a falling edge,
-  // it should skip SKEW_BUF_SKRD2_RVT and pick SKEW_BUF_D2_RVT.
+  // transition-aware sizing picks SKEW_BUF_SKRD2_RVT. On a falling edge it must
+  // skip SKEW_BUF_SKRD2_RVT (which weakens the fall edge); among the remaining
+  // eligible cells the power-aware score picks SKEW_BUF_D3_RVT, whose larger
+  // delay gain per unit cost beats the smaller SKEW_BUF_D2_RVT.
   sta::LibertyCell* rise_replacement
       = generator.upsizeCell(in_port,
                              sta::RiseFall::rise(),
@@ -1129,7 +1201,7 @@ TEST_F(TestResizer, SizeUpSelectsActiveTransitionSkewedCell)
                              scene,
                              max);
   ASSERT_NE(fall_replacement, nullptr);
-  EXPECT_EQ(fall_replacement, d2_rvt);
+  EXPECT_EQ(fall_replacement, d3_rvt);
 
   odb::dbInst* db_inst = block_->findInst("enable_buf0");
   ASSERT_NE(db_inst, nullptr);
@@ -1359,6 +1431,107 @@ TEST_F(TestResizer, GetVtEquivCellsDeduplicatesNonAdjacentSameVtCells)
             resizer_.cellVTType(second_master));
   EXPECT_LE(resizer_.cellLeakage(vt_equiv[0]).value_or(0.0f),
             resizer_.cellLeakage(vt_equiv[1]).value_or(0.0f));
+}
+
+TEST_F(TestResizer, DisabledConditionalArcIgnoredInDriveResistance)
+{
+  readDefForTiming("remove_buffers3.def");
+  resizer_.initBlock();
+
+  odb::dbInst* gate
+      = odb::dbInst::create(block_, db_->findMaster("XNOR2_X1"), "g1");
+  sta::Instance* sta_gate = db_network_->dbToSta(gate);
+  sta_->connectPin(sta_gate,
+                   findLibertyPort(sta_gate, "A"),
+                   db_network_->dbToSta(block_->findNet("in1")));
+  sta_->connectPin(sta_gate,
+                   findLibertyPort(sta_gate, "B"),
+                   db_network_->dbToSta(block_->findNet("n1")));
+
+  sta::Pin* b_pin = db_network_->dbToSta(gate->findITerm("B"));
+  sta::Pin* zn_pin = db_network_->dbToSta(gate->findITerm("ZN"));
+  const float port_res = db_network_->libertyPort(zn_pin)->driveResistance();
+
+  sta_->updateTiming(false);
+  EXPECT_FLOAT_EQ(resizer_.driveResistance(zn_pin), port_res);
+
+  // B=1 disables B->ZN and the slower `when : "!B"` arc, leaving `when : "B"`.
+  sta_->setCaseAnalysis(b_pin, sta::LogicValue::one, sta_->cmdMode());
+  sta_->updateTiming(false);
+  EXPECT_GT(resizer_.driveResistance(zn_pin), 0.0f);
+  EXPECT_LT(resizer_.driveResistance(zn_pin), 0.6f * port_res);
+
+  // B=0 re-enables the slower `when : "!B"` A->ZN arc.
+  sta_->setCaseAnalysis(b_pin, sta::LogicValue::zero, sta_->cmdMode());
+  sta_->updateTiming(false);
+  EXPECT_GT(resizer_.driveResistance(zn_pin), 0.99f * port_res);
+}
+
+TEST_F(TestResizer, LibraryOutputPinsFiltersLeadingInputsAndInputOnlyCells)
+{
+  auto port_names = [](const std::vector<sta::LibertyPort*>& ports) {
+    std::vector<std::string> names;
+    names.reserve(ports.size());
+    for (const sta::LibertyPort* port : ports) {
+      names.emplace_back(port->name());
+    }
+    return names;
+  };
+
+  // BUF_X1 has leading input pin A followed by output pin Z.
+  sta::LibertyCell* buf_cell = sta_->network()->findLibertyCell("BUF_X1");
+  ASSERT_NE(buf_cell, nullptr);
+  EXPECT_EQ(port_names(resizer_.libraryOutputPins(buf_cell)),
+            (std::vector<std::string>{"Z"}));
+  EXPECT_TRUE(resizer_.isSingleOutputCombinational(buf_cell));
+
+  // FA_X1 has leading inputs (A, B, CI) followed by multiple outputs (CO, S).
+  sta::LibertyCell* fa_cell = sta_->network()->findLibertyCell("FA_X1");
+  ASSERT_NE(fa_cell, nullptr);
+  EXPECT_EQ(port_names(resizer_.libraryOutputPins(fa_cell)),
+            (std::vector<std::string>{"CO", "S"}));
+  EXPECT_FALSE(resizer_.isSingleOutputCombinational(fa_cell));
+
+  // ANTENNA_X1 has only an input pin (A); all pins are erased.
+  sta::LibertyCell* antenna_cell
+      = sta_->network()->findLibertyCell("ANTENNA_X1");
+  ASSERT_NE(antenna_cell, nullptr);
+  EXPECT_TRUE(resizer_.libraryOutputPins(antenna_cell).empty());
+  EXPECT_FALSE(resizer_.isSingleOutputCombinational(antenna_cell));
+
+  // FILLCELL_X1 has no signal pins.
+  sta::LibertyCell* fill_cell = sta_->network()->findLibertyCell("FILLCELL_X1");
+  ASSERT_NE(fill_cell, nullptr);
+  EXPECT_TRUE(resizer_.libraryOutputPins(fill_cell).empty());
+  EXPECT_FALSE(resizer_.isSingleOutputCombinational(fill_cell));
+}
+
+TEST_F(TestResizer, BalanceRowUsageClampsOutOfCoreInstances)
+{
+  readDefForTiming("remove_buffers3.def");
+  block_->setCoreArea(odb::Rect(200, 200, 300, 300));
+  resizer_.balanceRowUsage();
+  EXPECT_EQ(block_->getInsts().size(), 4u);
+}
+
+TEST_F(TestResizer, SetMaxUtilizationInitializesBlock)
+{
+  readDefForTiming("remove_buffers3.def");
+  block_->setCoreArea(odb::Rect(0, 0, 1000, 1000));
+  resizer_.setMaxUtilization(0.5);
+  EXPECT_GT(resizer_.maxArea(), 0.0);
+  EXPECT_DOUBLE_EQ(resizer_.maxArea(), resizer_.coreArea() * 0.5);
+}
+
+TEST_F(TestResizer, IsClockCellCandidateRequiresLefMaster)
+{
+  sta::LibertyLibrary* lib
+      = readLiberty(test_root_path_ + "cpp/TestResizerIntrinsic.lib");
+  ASSERT_NE(lib, nullptr);
+  EXPECT_FALSE(
+      resizer_.isClockCellCandidate(lib->findLibertyCell("INTRINSIC_FAST")));
+  EXPECT_TRUE(
+      resizer_.isClockCellCandidate(db_network_->findLibertyCell("CLKBUF_X1")));
 }
 
 }  // namespace rsz

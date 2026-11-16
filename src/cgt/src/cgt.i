@@ -3,6 +3,7 @@
 
 %{
 #include "cgt/ClockGating.h"
+#include "sta/Scene.hh"
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -16,9 +17,11 @@ getClockGating();
 using namespace cgt;
 using ord::getOpenRoad;
 using ord::getClockGating;
+using sta::Scene;
 %}
 
 %include "../../Exception.i"
+%include "tcl/StaTclTypes.i"
 
 %inline %{
 
@@ -37,11 +40,11 @@ set_max_cover_cmd(int max_cover)
 }
 
 void
-clock_gating_cmd(const char* dump_dir)
+clock_gating_cmd(Scene* scene, const char* dump_dir)
 {
   cgt::ClockGating* cgt = getClockGating();
   cgt->setDumpDir(dump_dir);
-  cgt->run();
+  cgt->run(scene);
 }
 
 %}

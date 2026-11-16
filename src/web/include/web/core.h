@@ -612,9 +612,7 @@ class Selected
   Descriptor::Actions getActions() const;
 
   // The descriptor's own actions, without the "Zoom to" entry that
-  // getActions() appends.  Unlike getActions() (defined in the full gui
-  // library because "Zoom to" needs Gui::get()), this is usable from
-  // code that only links the lightweight gui_descriptors library.
+  // getActions() appends, for front ends that zoom on their own.
   Descriptor::Actions getDescriptorActions() const
   {
     return descriptor_->getActions(object_);
@@ -1079,11 +1077,22 @@ class GuiBackend
   virtual void registerHeatMap(HeatMapDataSource* /* heatmap */) {}
   virtual void unregisterHeatMap(HeatMapDataSource* /* heatmap */) {}
 
-  // Drive the timing views.  A backend with no timing widgets ignores both.
+  // Drive the timing views.  A backend with no timing widgets ignores these.
   virtual void timingCone(Term /* term */, bool /* fanin */, bool /* fanout */)
   {
   }
   virtual void timingPathsThrough(const std::set<Term>& /* terms */) {}
+  virtual void showWorstTimingPath(bool /* setup */) {}
+  virtual void clearTimingPath() {}
+
+  // The DRC viewer's marker category, the clock tree viewer's clock, and
+  // widgets by name.  A backend with no such widgets ignores these.
+  virtual void selectMarkers(odb::dbMarkerCategory* /* markers */) {}
+  virtual void selectClockviewerClock(const std::string& /* clock_name */,
+                                      std::optional<int> /* depth */)
+  {
+  }
+  virtual void showWidget(const std::string& /* name */, bool /* show */) {}
 
   // Activate a named control -- a menu action or a button -- by its widget
   // path.  Scripted UI driving, so a backend with no widgets does nothing.

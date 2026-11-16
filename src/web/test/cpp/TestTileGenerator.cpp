@@ -995,6 +995,7 @@ TEST_F(TileGeneratorTest, OutOfRangeDprIsClampedNotHonored)
                                    nullptr,
                                    nullptr,
                                    nullptr,
+                                   nullptr,
                                    dpr);
   };
 
@@ -1428,15 +1429,19 @@ TEST_F(TileGeneratorTest, PaintOrderPutsCategoriesFirst)
                 lib_->getTech(), "IMP", odb::dbTechLayerType::IMPLANT),
             nullptr);
   makeTileGen();
-  const std::vector<std::string> layers = tile_gen_->paintOrderLayers();
+  const std::vector<PaintLayer> layers = tile_gen_->paintOrderLayers();
   ASSERT_EQ(layers.size(), 23);
-  EXPECT_EQ(layers[0], "IMP");
-  EXPECT_EQ(layers[1], "poly");
-  EXPECT_EQ(layers[2], "active");
-  EXPECT_EQ(layers[3], "OVERLAP");
-  EXPECT_EQ(layers[4], "metal1");
-  EXPECT_EQ(layers[5], "via1");
-  EXPECT_EQ(layers.back(), "metal10");
+  EXPECT_EQ(layers[0].layer, "IMP");
+  EXPECT_EQ(layers[1].layer, "poly");
+  EXPECT_EQ(layers[2].layer, "active");
+  EXPECT_EQ(layers[3].layer, "OVERLAP");
+  EXPECT_EQ(layers[4].layer, "metal1");
+  EXPECT_EQ(layers[5].layer, "via1");
+  EXPECT_EQ(layers.back().layer, "metal10");
+  // A single die owns every row.
+  for (const PaintLayer& entry : layers) {
+    EXPECT_EQ(entry.chiplet, tile_gen_->chiplets().front().path);
+  }
 }
 
 // save_image -web composites in that order: an OVERLAP obstruction over the
@@ -1979,6 +1984,14 @@ static size_t countPixelsOfColor(const std::vector<unsigned char>& rgba,
   return count;
 }
 
+// The display option that turns the overlay on; without it the pseudo-layer
+// draws nothing, whatever colors it is handed.
+const TileVisibility kModuleView = [] {
+  TileVisibility vis;
+  vis.module_view = true;
+  return vis;
+}();
+
 TEST_F(TileGeneratorTest, ModuleOverlayColorsByNameGroupMapping)
 {
   odb::dbInst* left = placeInst("BUF_X16", "grp_a/_1_", 0, 0);
@@ -2004,7 +2017,7 @@ TEST_F(TileGeneratorTest, ModuleOverlayColorsByNameGroupMapping)
   unsigned w = 0, h = 0;
   const auto pixels = decodePng(
       tile_gen_->generateTile(
-          "_modules", 0, 0, 0, TileVisibility{}, {}, {}, {}, {}, &colors),
+          "_modules", 0, 0, 0, kModuleView, {}, {}, {}, {}, &colors),
       w,
       h);
 
@@ -2012,6 +2025,34 @@ TEST_F(TileGeneratorTest, ModuleOverlayColorsByNameGroupMapping)
       << "the instance mapped to group " << kGroupA << " was not colored";
   EXPECT_GT(countPixelsOfColor(pixels, blue), 0u)
       << "the instance mapped to group " << kGroupB << " was not colored";
+}
+
+// The default palette of a flat design is keyed by name group, so building it
+// has to install the mapping too.  Without it -- `save_image -web` with
+// module_view, or the checkbox with the Hierarchy tab never opened -- every
+// instance resolved to the top module and the design came out in one color.
+TEST_F(TileGeneratorTest, DefaultModuleColorsColorAFlatDesignByNameGroup)
+{
+  placeInst("BUF_X16", "grp_a/_1_", 0, 0);
+  placeInst("BUF_X16", "grp_b/_2_", 50000, 50000);
+  // With STA: the hierarchy report, and so the palette, is empty without it.
+  TileGenerator gen(getDb(), getSta(), getLogger());
+  gen.eagerInit();
+
+  const TileGenerator::OwnerColorMap colors = gen.defaultModuleColors();
+  ASSERT_TRUE(colors);
+  unsigned w = 0, h = 0;
+  const auto pixels = decodePng(
+      gen.generateTile(
+          "_modules", 0, 0, 0, kModuleView, {}, {}, {}, {}, colors.get()),
+      w,
+      h);
+
+  int colors_drawn = 0;
+  for (const auto& [group, color] : *colors) {
+    colors_drawn += countPixelsOfColor(pixels, color) > 0 ? 1 : 0;
+  }
+  EXPECT_GE(colors_drawn, 2) << "both name groups should get their own color";
 }
 
 // Module colours are drawn as given, not through the coverage path, so the
@@ -2035,7 +2076,7 @@ TEST_F(TileGeneratorTest, TranslucentModuleColourIsNotQuantized)
   unsigned w = 0, h = 0;
   const auto pixels = decodePng(
       tile_gen_->generateTile(
-          "_modules", 0, 0, 0, TileVisibility{}, {}, {}, {}, {}, &colors),
+          "_modules", 0, 0, 0, kModuleView, {}, {}, {}, {}, &colors),
       w,
       h);
   size_t exact = 0;
@@ -2067,7 +2108,7 @@ TEST_F(TileGeneratorTest, NameGroupMappingIsDroppedAfterAnEdit)
     return countPixelsOfColor(
         decodePng(
             tile_gen_->generateTile(
-                "_modules", 0, 0, 0, TileVisibility{}, {}, {}, {}, {}, &colors),
+                "_modules", 0, 0, 0, kModuleView, {}, {}, {}, {}, &colors),
             w,
             h),
         red);
@@ -2717,36 +2758,412 @@ TEST_F(TileGeneratorTest, SaveImageOrderReversesAFlippedChiplet)
   getDb()->constructUnfoldedModel();
   makeTileGen();
 
-  const std::vector<std::string> upright = tile_gen_->paintOrderLayers();
+  const std::vector<PaintLayer> upright = tile_gen_->paintOrderLayers();
   ASSERT_GT(upright.size(), 1u) << "the fixture tech has to contribute layers";
 
   die0->setOrient(odb::dbOrientType3D("MZ"));
-  const std::vector<std::string> flipped = tile_gen_->paintOrderLayers();
+  const std::vector<PaintLayer> flipped = tile_gen_->paintOrderLayers();
 
   // With a single die, turning it over reverses its whole stack: the routing
   // layers come first and the category folders trail them, which is the exact
   // reverse of the upright walk.
-  std::vector<std::string> upright_reversed = upright;
+  std::vector<PaintLayer> upright_reversed = upright;
   std::ranges::reverse(upright_reversed);
   EXPECT_EQ(flipped, upright_reversed)
       << "a face-down die exports in the same order as it is drawn on screen";
 }
 
-// The limitation that goes with the above, pinned so it is not mistaken for a
-// regression: the paint unit is a layer NAME, so two dies on one tech share an
-// entry and no ordering can separate them — in the export or on screen.
-TEST_F(TileGeneratorTest, SaveImageOrderCollapsesDiesSharingATech)
+// Two dies on one tech list their rows apart, a face-down die's in reverse, so
+// the export can order them as the screen does (#11886).
+TEST_F(TileGeneratorTest, PaintOrderSeparatesDiesSharingATech)
 {
   odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/2);
-  auto insts = root->getChipInsts().begin();
-  (*++insts)->setOrient(odb::dbOrientType3D("MZ"));
+  root->findChipInst("die1")->setOrient(odb::dbOrientType3D("MZ"));
   getDb()->constructUnfoldedModel();
   makeTileGen();
 
-  const std::vector<std::string> order = tile_gen_->paintOrderLayers();
-  const std::set<std::string> unique(order.begin(), order.end());
-  EXPECT_EQ(order.size(), unique.size())
-      << "a layer name must appear once; two dies on one tech share the entry";
+  const std::vector<PaintLayer> order = tile_gen_->paintOrderLayers();
+  auto rows_of = [&order](const std::string& path) {
+    std::vector<std::string> names;
+    for (const PaintLayer& entry : order) {
+      if (entry.chiplet == path) {
+        names.push_back(entry.layer);
+      }
+    }
+    return names;
+  };
+  const std::vector<std::string> die0 = rows_of("root/die0");
+  std::vector<std::string> die1 = rows_of("root/die1");
+  ASSERT_GT(die0.size(), 1u) << "the fixture tech has to contribute layers";
+  EXPECT_EQ(die0.size() + die1.size(), order.size())
+      << "a row belongs to neither die";
+  std::ranges::reverse(die1);
+  EXPECT_EQ(die1, die0)
+      << "the face-down die must list the same layers, in reverse";
+}
+
+// Two instances of the fixture's chip side by side with a gap between them, so
+// a z=0 tile splits into a die0 part and a die1 part at splitPx().
+class SideBySideDiesTest : public TileGeneratorTest
+{
+ protected:
+  static constexpr int kDie1X = 200000;  // die0 spans x 0..100000
+  static constexpr int kGapMidX = 150000;
+
+  void makeDies()
+  {
+    odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, 2);
+    root->findChipInst("die1")->setLoc(odb::Point3D(kDie1X, 0, 0));
+    makeTileGen();
+    tile_gen_->eagerInit();
+  }
+
+  // The z=0 tile of `layer` under the visibility in `json`, decoded.
+  std::vector<unsigned char> tile(const std::string& layer,
+                                  std::string_view json,
+                                  unsigned& width)
+  {
+    TileVisibility vis;
+    vis.parseFromJson(parseObj(json));
+    unsigned height = 0;
+    return decodePng(
+        tile_gen_->generateTile(layer, 0, 0, 0, vis), width, height);
+  }
+
+  // A metal1 power stripe in the block both dies instantiate.
+  void addM1Stripe(const int x0, const int y0, const int x1, const int y1)
+  {
+    odb::dbTechLayer* m1 = getDb()->getTech()->findLayer("metal1");
+    ASSERT_NE(m1, nullptr);
+    odb::dbNet* vdd = odb::dbNet::create(block_, "VDD");
+    vdd->setSigType(odb::dbSigType::POWER);
+    odb::dbSWire* swire = odb::dbSWire::create(vdd, odb::dbWireType::ROUTED);
+    odb::dbSBox::create(
+        swire, m1, x0, y0, x1, y1, odb::dbWireShapeType::STRIPE);
+  }
+
+  // The tile column in the gap between the dies.
+  int splitPx(const unsigned width) const
+  {
+    return colOf(tile_gen_->getBounds(), width, kGapMidX);
+  }
+
+  // Columns [x0, x1) of a decoded tile, row by row.
+  static std::vector<unsigned char> columns(
+      const std::vector<unsigned char>& rgba,
+      const unsigned width,
+      const int x0,
+      const int x1)
+  {
+    std::vector<unsigned char> out;
+    const size_t row_bytes = 4UL * width;
+    for (size_t row = 0; row + row_bytes <= rgba.size(); row += row_bytes) {
+      out.insert(out.end(),
+                 rgba.begin() + static_cast<std::ptrdiff_t>(row + 4UL * x0),
+                 rgba.begin() + static_cast<std::ptrdiff_t>(row + 4UL * x1));
+    }
+    return out;
+  }
+};
+
+// Each Display Controls row asks for its own die.  A metal1 tile drawing both
+// dies is why hiding one die's row changed nothing, and why the topmost metal1
+// pane painted both dies in its own die's order (#11886).
+TEST_F(SideBySideDiesTest, ScopedTileDrawsOnlyItsOwnDie)
+{
+  addM1Stripe(10000, 40000, 90000, 60000);
+  makeDies();
+
+  unsigned w = 0;
+  const auto both = tile("metal1", "{}", w);
+  const auto die0 = tile("metal1", R"({"chiplet":"root/die0"})", w);
+  const auto die1 = tile("metal1", R"({"chiplet":"root/die1"})", w);
+  const int split = splitPx(w);
+  const int end = static_cast<int>(w);
+
+  ASSERT_TRUE(hasNonTransparentPixel(columns(both, w, 0, split)));
+  ASSERT_TRUE(hasNonTransparentPixel(columns(both, w, split, end)));
+  EXPECT_FALSE(hasNonTransparentPixel(columns(die0, w, split, end)))
+      << "a metal1 row of die0 drew die1's metal1";
+  EXPECT_FALSE(hasNonTransparentPixel(columns(die1, w, 0, split)))
+      << "a metal1 row of die1 drew die0's metal1";
+  EXPECT_TRUE(columns(die0, w, 0, split) == columns(both, w, 0, split))
+      << "die0's own metal1 changed when drawn alone";
+  EXPECT_TRUE(columns(die1, w, split, end) == columns(both, w, split, end))
+      << "die1's own metal1 changed when drawn alone";
+}
+
+TEST_F(TileGeneratorTest, TileVisibilityParsesChipletScopeAndExceptions)
+{
+  TileVisibility vis;
+  vis.parseFromJson(parseObj(R"({"chiplet":"top/die0",
+      "visible_layers":["metal1","metal2"],
+      "chiplet_hidden_layers":{"top/die0":["metal1"]},
+      "chiplet_nonselectable_layers":{"top/die1":["metal2"]}})"));
+  EXPECT_EQ(vis.chiplet, "top/die0");
+  EXPECT_TRUE(vis.isLayerHiddenOn("top/die0", "metal1"));
+  EXPECT_FALSE(vis.isLayerHiddenOn("top/die1", "metal1"));
+  EXPECT_FALSE(vis.isLayerSelectableOn("top/die1", "metal2"));
+  EXPECT_TRUE(vis.isLayerSelectableOn("top/die0", "metal2"));
+
+  // The die being drawn hides its own names on top of visible_layers, and
+  // still does when no visible_layers list was sent.
+  EXPECT_TRUE(vis.isLayerShown("metal1"));
+  vis.hidden_here = &vis.chiplet_hidden_layers.at("top/die0");
+  EXPECT_FALSE(vis.isLayerShown("metal1"));
+  EXPECT_TRUE(vis.isLayerShown("metal2"));
+  EXPECT_FALSE(vis.isLayerShown("metal3")) << "not in visible_layers";
+  vis.has_visible_layers = false;
+  EXPECT_FALSE(vis.isLayerShown("metal1"));
+  EXPECT_TRUE(vis.isLayerShown("metal3"));
+  vis.hidden_here = nullptr;
+
+  // The entry cap counts paths too, not only the names under them.
+  std::string many = R"({"chiplet_hidden_layers":{)";
+  for (int i = 0; i < 20000; ++i) {
+    many += (i ? ",\"p" : "\"p") + std::to_string(i) + "\":[]";
+  }
+  many += "}}";
+  TileVisibility capped;
+  capped.parseFromJson(parseObj(many));
+  EXPECT_LE(capped.chiplet_hidden_layers.size(), 10000u);
+
+  // A request without the fields leaves nothing behind from the last one.
+  vis.parseFromJson(parseObj("{}"));
+  EXPECT_TRUE(vis.chiplet.empty());
+  EXPECT_FALSE(vis.isLayerHiddenOn("top/die0", "metal1"));
+  EXPECT_TRUE(vis.isLayerSelectableOn("top/die1", "metal2"));
+}
+
+// visible_layers is the union over the dies, so hiding metal1 on die0 alone has
+// to reach the _pins pass through the per-die exception.
+TEST_F(SideBySideDiesTest, PinMarkersHideOnOneDieOnly)
+{
+  makeBTermAtEdge("pin_m1", "metal1", 0, 40000, 200, 200);
+  makeDies();
+
+  unsigned w = 0;
+  const auto shown
+      = tile("_pins", R"({"pins":true,"visible_layers":["metal1"]})", w);
+  const auto hidden = tile("_pins", R"({"pins":true,"visible_layers":[]})", w);
+  const auto mixed = tile("_pins",
+                          R"({"pins":true,"visible_layers":["metal1"],
+      "chiplet_hidden_layers":{"root/die0":["metal1"]}})",
+                          w);
+  const int split = splitPx(w);
+  const int end = static_cast<int>(w);
+
+  ASSERT_FALSE(columns(shown, w, 0, split) == columns(hidden, w, 0, split))
+      << "the fixture's pin marker does not show on die0";
+  EXPECT_TRUE(columns(mixed, w, 0, split) == columns(hidden, w, 0, split))
+      << "die0 still draws the pin of a layer it hides";
+  EXPECT_TRUE(columns(mixed, w, split, end) == columns(shown, w, split, end))
+      << "die1 lost the pin of a layer only die0 hides";
+
+  // With no visible_layers list (save_image -web), the exception still holds.
+  const auto unlisted = tile("_pins",
+                             R"({"pins":true,
+      "chiplet_hidden_layers":{"root/die0":["metal1"]}})",
+                             w);
+  EXPECT_TRUE(columns(unlisted, w, 0, split) == columns(hidden, w, 0, split))
+      << "die0 draws a hidden layer's pin when no visible_layers was sent";
+  EXPECT_TRUE(columns(unlisted, w, split, end)
+              == columns(shown, w, split, end));
+}
+
+TEST_F(SideBySideDiesTest, SelectAtHonoursPerDieHiddenAndUnselectableLayers)
+{
+  makeBTermAtEdge("pin_m1", "metal1", 1000, 40000, 2000, 2000);
+  makeDies();
+
+  // Inside the pin box on die0, and the same spot on die1.
+  constexpr int kX0 = 2000;
+  constexpr int kX1 = kX0 + kDie1X;
+  constexpr int kY = 41000;
+  auto picks = [&](const int x, std::string_view json) {
+    TileVisibility vis;
+    vis.parseFromJson(parseObj(json));
+    return tile_gen_->selectAt(x, kY, /*zoom=*/0, vis).size();
+  };
+  ASSERT_EQ(picks(kX0, "{}"), 1u);
+  ASSERT_EQ(picks(kX1, "{}"), 1u);
+
+  constexpr std::string_view kHidden
+      = R"({"chiplet_hidden_layers":{"root/die0":["metal1"]}})";
+  EXPECT_EQ(picks(kX0, kHidden), 0u) << "picked a layer die0 hides";
+  EXPECT_EQ(picks(kX1, kHidden), 1u);
+
+  constexpr std::string_view kUnselectable
+      = R"({"chiplet_nonselectable_layers":{"root/die0":["metal1"]}})";
+  EXPECT_EQ(picks(kX0, kUnselectable), 0u)
+      << "picked a layer die0 made unselectable";
+  EXPECT_EQ(picks(kX1, kUnselectable), 1u);
+}
+
+// Several dies get extents of their own, in world DBU, so a row's tiles can be
+// skipped outside its die.
+TEST_F(SideBySideDiesTest, LayerExtentsCoverEachDie)
+{
+  addM1Stripe(10000, 40000, 90000, 60000);
+  makeDies();
+
+  const auto extents = tile_gen_->layerExtents();
+  ASSERT_TRUE(extents->supported);
+  EXPECT_TRUE(extents->layers.empty())
+      << "the single-die extents must not stand in for several dies";
+  ASSERT_TRUE(extents->chiplets.contains("root/die0"));
+  ASSERT_TRUE(extents->chiplets.contains("root/die1"));
+  const auto& die0 = extents->chiplets.at("root/die0");
+  const auto& die1 = extents->chiplets.at("root/die1");
+
+  const std::optional<odb::Rect>& m1_die0 = die0.layers.at("metal1").shapes;
+  const std::optional<odb::Rect>& m1_die1 = die1.layers.at("metal1").shapes;
+  ASSERT_TRUE(m1_die0.has_value());
+  ASSERT_TRUE(m1_die1.has_value());
+  EXPECT_EQ(m1_die1->xMin(), m1_die0->xMin() + kDie1X)
+      << "die1's extent was left in its own frame";
+  EXPECT_EQ(m1_die1->yMin(), m1_die0->yMin());
+
+  // The outline edges, together, span the die where it sits in the world; a
+  // rectangle has four, with no point left over from the closed ring.
+  ASSERT_EQ(die1.outline.size(), 4u);
+  odb::Rect outline = die1.outline.front();
+  for (const odb::Rect& edge : die1.outline) {
+    outline.merge(edge);
+  }
+  EXPECT_EQ(outline, odb::Rect(kDie1X, 0, kDie1X + 100000, 100000));
+
+  // What the client reads: the same entries, per die.
+  const boost::json::object resp = serializeLayerExtentsResponse(*tile_gen_);
+  ASSERT_TRUE(resp.at("supported").as_bool());
+  EXPECT_TRUE(resp.at("layers").as_object().empty());
+  ASSERT_TRUE(resp.contains("chiplets"));
+  const auto& json_die1
+      = resp.at("chiplets").as_object().at("root/die1").as_object();
+  EXPECT_FALSE(json_die1.at("outline").as_array().empty());
+  EXPECT_TRUE(json_die1.at("layers").as_object().contains("metal1"));
+  EXPECT_TRUE(json_die1.at("gated").as_object().contains("inst_pins"));
+}
+
+// save_image and save_report skip a row's tile by the same test the client
+// makes before requesting it.
+TEST_F(SideBySideDiesTest, RowMayDrawFollowsTheDieExtents)
+{
+  addM1Stripe(40000, 40000, 60000, 60000);
+  makeDies();
+
+  const auto extents = tile_gen_->layerExtents();
+  const PaintLayer die0_m1{.layer = "metal1", .chiplet = "root/die0"};
+  const odb::Rect on_die0(45000, 45000, 55000, 55000);
+  const odb::Rect on_die1(45000 + kDie1X, 45000, 55000 + kDie1X, 55000);
+  const odb::Rect inside_die0_empty(20000, 20000, 30000, 30000);
+  TileVisibility vis;
+  EXPECT_TRUE(TileGenerator::rowMayDraw(*extents, die0_m1, on_die0, vis));
+  EXPECT_FALSE(TileGenerator::rowMayDraw(*extents, die0_m1, on_die1, vis))
+      << "die0's row would render over die1";
+  EXPECT_FALSE(
+      TileGenerator::rowMayDraw(*extents, die0_m1, inside_die0_empty, vis))
+      << "nothing of metal1 there, and the outline is far";
+
+  const PaintLayer pseudo{.layer = "_instances", .chiplet = ""};
+  EXPECT_TRUE(TileGenerator::rowMayDraw(*extents, pseudo, on_die1, vis));
+  vis.tracks_pref = true;
+  EXPECT_TRUE(TileGenerator::rowMayDraw(*extents, die0_m1, on_die1, vis))
+      << "tracks draw without being in the extents";
+}
+
+// A Tcl setLoc moves a die without any callback; the tcl_eval handler has to
+// turn it into the edit clients refresh on.
+TEST_F(SideBySideDiesTest, ChipletEditsCountAsDesignEdits)
+{
+  makeDies();
+  int refreshes = 0;
+  tile_gen_->setDesignChangedCallback([&refreshes] { ++refreshes; });
+  tile_gen_->tileCachePut("key", {1, 2, 3});
+
+  // eagerInit() took the loaded design as the baseline.
+  tile_gen_->noticeChipletEdits();
+  EXPECT_EQ(refreshes, 0);
+  EXPECT_EQ(tile_gen_->tileCacheSize(), 1u);
+
+  getDb()->getChip()->findChipInst("die1")->setLoc(
+      odb::Point3D(kDie1X + 50000, 0, 0));
+  tile_gen_->noticeChipletEdits();
+  EXPECT_EQ(refreshes, 1) << "a moved die did not reach the clients";
+  EXPECT_EQ(tile_gen_->tileCacheSize(), 0u)
+      << "tiles of the die's old position stayed cached";
+
+  tile_gen_->noticeChipletEdits();
+  EXPECT_EQ(refreshes, 1) << "an edit already announced was announced again";
+  tile_gen_->setDesignChangedCallback(nullptr);
+}
+
+// Records the tech layer of each Renderer::drawLayer pass while it lives.
+struct LayerPassRecorder
+{
+  std::vector<odb::dbTechLayer*> layers;
+
+  LayerPassRecorder()
+  {
+    TileGenerator::setRendererHooks({.draw = [this](std::vector<unsigned char>&,
+                                                    const TileFrame&,
+                                                    bool,
+                                                    odb::dbTechLayer* layer) {
+      if (layer != nullptr) {
+        layers.push_back(layer);
+      }
+    }});
+  }
+  LayerPassRecorder(const LayerPassRecorder&) = delete;
+  LayerPassRecorder& operator=(const LayerPassRecorder&) = delete;
+  ~LayerPassRecorder() { TileGenerator::setRendererHooks({}); }
+};
+
+// Renderers draw in world space and know nothing of dies: their per-layer pass
+// goes on the row the client names host, not once per die sharing the layer.
+TEST_F(SideBySideDiesTest, RendererLayerPassRunsOnTheHostRow)
+{
+  makeDies();
+  LayerPassRecorder recorder;
+  unsigned w = 0;
+  tile("metal1",
+       R"({"chiplet":"root/die0","debug_renderers":true,"debug_live":true})",
+       w);
+  EXPECT_TRUE(recorder.layers.empty())
+      << "a row that is not the host drew the pass";
+  tile("metal1",
+       R"({"chiplet":"root/die1","renderer_host":true,
+           "debug_renderers":true,"debug_live":true})",
+       w);
+  EXPECT_EQ(recorder.layers.size(), 1u)
+      << "the host row skipped the renderer's pass";
+}
+
+// Two techs can both have a "metal1"; a die's row hands the renderer its own.
+TEST_F(TileGeneratorTest, RendererLayerComesFromTheScopedDiesTech)
+{
+  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
+  odb::dbTech* tech2 = odb::dbTech::create(getDb(), "tech2");
+  odb::dbTechLayer* tech2_m1 = odb::dbTechLayer::create(
+      tech2, "metal1", odb::dbTechLayerType::ROUTING);
+  ASSERT_NE(tech2_m1, nullptr);
+  odb::dbChip* chip2 = odb::dbChip::create(getDb(), tech2, "chip2");
+  odb::dbBlock* block2 = odb::dbBlock::create(chip2, "block2");
+  block2->setDieArea(odb::Rect(0, 0, 100000, 100000));
+  odb::dbChipInst::create(root, chip2, "die_b")
+      ->setLoc(odb::Point3D(200000, 0, 0));
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  LayerPassRecorder recorder;
+  TileVisibility vis;
+  vis.parseFromJson(parseObj(R"({"chiplet":"root/die_b","renderer_host":true,
+      "debug_renderers":true,"debug_live":true})"));
+  tile_gen_->generateTile("metal1", 0, 0, 0, vis);
+
+  ASSERT_EQ(recorder.layers.size(), 1u);
+  EXPECT_EQ(recorder.layers[0], tech2_m1)
+      << "die_b's row was handed the metal1 of another tech";
 }
 
 // What the frontend reads to reverse a flipped chiplet's draw order.
@@ -3052,6 +3469,7 @@ TEST_F(TileGeneratorTest, TileContentRegistersWithIdealGrid)
                                               nullptr,
                                               nullptr,
                                               nullptr,
+                                              nullptr,
                                               dpr,
                                               dim),
                       w,
@@ -3131,6 +3549,7 @@ TEST_F(TileGeneratorTest, ExplicitTilePixelCountIsHonoured)
                                           {},
                                           {},
                                           {},
+                                          nullptr,
                                           nullptr,
                                           nullptr,
                                           nullptr,
@@ -3228,6 +3647,7 @@ TEST_F(TileGeneratorTest, ShapeCrossingTileSeamStaysWhole)
                                                         nullptr,
                                                         nullptr,
                                                         nullptr,
+                                                        nullptr,
                                                         dpr,
                                                         dim),
                                 w,
@@ -3278,6 +3698,7 @@ TEST_F(TileGeneratorTest, TilePixelCountIsExactAcrossDprMatrix)
                                             nullptr,
                                             nullptr,
                                             nullptr,
+                                            nullptr,
                                             dpr_case.dpr,
                                             expected_px),
                     w,
@@ -3308,6 +3729,7 @@ TEST_F(TileGeneratorTest, TilePixelCountFallsBackToDprWhenUnspecified)
                                       {},
                                       {},
                                       {},
+                                      nullptr,
                                       nullptr,
                                       nullptr,
                                       nullptr,
@@ -3343,6 +3765,7 @@ TEST_F(TileGeneratorTest, TilePixelCountAndDprAreIndependent)
                                       {},
                                       {},
                                       {},
+                                      nullptr,
                                       nullptr,
                                       nullptr,
                                       nullptr,
@@ -5045,6 +5468,40 @@ TEST_F(TileGeneratorTest, InvalidLayerProducesValidPng)
   auto pixels = decodePng(png, w, h);
   EXPECT_EQ(w, 256u);
   EXPECT_EQ(h, 256u);
+  // The tech has no such layer, so nothing of the design is on it: not even
+  // the master shapes of the layers it does have.
+  EXPECT_FALSE(hasNonTransparentPixel(pixels));
+}
+
+// "_modules" without module colors is still no tech layer: before any colors
+// arrive it must stay empty instead of falling into the tech-layer passes.
+TEST_F(TileGeneratorTest, ModulesTileWithoutColorsDrawsNothing)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  unsigned w = 0, h = 0;
+  EXPECT_FALSE(hasNonTransparentPixel(
+      decodePng(tile_gen_->generateTile("_modules", 0, 0, 0), w, h)));
+}
+
+// One answer to "does this tile read layer names", shared by the cache key
+// and the per-die view of the visibility.
+TEST_F(TileGeneratorTest, ReadsLayerVisibilityFollowsLayersBy)
+{
+  TileVisibility vis;
+  vis.inst_pins = true;
+  vis.inst_pin_names = false;
+  EXPECT_TRUE(TileGenerator::readsLayerVisibility("_pins", vis));
+  EXPECT_TRUE(TileGenerator::readsLayerVisibility("_access_points", vis));
+  EXPECT_FALSE(TileGenerator::readsLayerVisibility("_inst_labels", vis));
+  EXPECT_FALSE(TileGenerator::readsLayerVisibility("metal1", vis));
+  EXPECT_FALSE(TileGenerator::readsLayerVisibility("_instances", vis));
+  EXPECT_FALSE(TileGenerator::readsLayerVisibility("_regions", vis));
+
+  vis.inst_pin_names = true;
+  EXPECT_TRUE(TileGenerator::readsLayerVisibility("_inst_labels", vis))
+      << "pin names follow the layers their pins are on";
 }
 
 TEST_F(TileGeneratorTest, OutOfBoundsTileIsTransparent)
@@ -5109,6 +5566,7 @@ TEST_F(TileGeneratorTest, DebugBorderTracesFullHiDpiTile)
                                      /*colored_rects=*/{},
                                      /*flight_lines=*/{},
                                      /*module_colors=*/nullptr,
+                                     /*group_colors=*/nullptr,
                                      /*focus_net_ids=*/nullptr,
                                      /*route_guide_net_ids=*/nullptr,
                                      /*dpr=*/2.0);
@@ -5153,7 +5611,7 @@ TEST_F(TileGeneratorTest, FocusNetEmptySetSameAsNull)
   // Empty focus_net_ids should behave the same as nullptr (all nets visible).
   std::set<uint32_t> empty_set;
   auto png = tile_gen_->generateTile(
-      "metal1", 0, 0, 0, {}, {}, {}, {}, {}, nullptr, &empty_set);
+      "metal1", 0, 0, 0, {}, {}, {}, {}, {}, nullptr, nullptr, &empty_set);
   ASSERT_FALSE(png.empty());
 
   unsigned w = 0, h = 0;
@@ -5172,7 +5630,7 @@ TEST_F(TileGeneratorTest, FocusNetNonMatchingIdProducesValidTile)
   // filtered).
   std::set<uint32_t> focus_ids{99999};
   auto png = tile_gen_->generateTile(
-      "metal1", 0, 0, 0, {}, {}, {}, {}, {}, nullptr, &focus_ids);
+      "metal1", 0, 0, 0, {}, {}, {}, {}, {}, nullptr, nullptr, &focus_ids);
   ASSERT_FALSE(png.empty());
 
   unsigned w = 0, h = 0;
@@ -5191,7 +5649,7 @@ TEST_F(TileGeneratorTest, FocusNetWithRealNetId)
   // the tile should be generated without errors.
   std::set<uint32_t> focus_ids{net->getId()};
   auto png = tile_gen_->generateTile(
-      "metal1", 0, 0, 0, {}, {}, {}, {}, {}, nullptr, &focus_ids);
+      "metal1", 0, 0, 0, {}, {}, {}, {}, {}, nullptr, nullptr, &focus_ids);
   ASSERT_FALSE(png.empty());
 
   unsigned w = 0, h = 0;
@@ -6284,6 +6742,7 @@ TEST_F(TileGeneratorTest, HiDpiTileRendersAtDeviceResolution)
                                      /*colored_rects=*/{},
                                      /*flight_lines=*/{},
                                      /*module_colors=*/nullptr,
+                                     /*group_colors=*/nullptr,
                                      /*focus_net_ids=*/nullptr,
                                      /*route_guide_net_ids=*/nullptr,
                                      /*dpr=*/2.0);
@@ -6291,6 +6750,382 @@ TEST_F(TileGeneratorTest, HiDpiTileRendersAtDeviceResolution)
   EXPECT_EQ(w, 512u);
   EXPECT_EQ(h, 512u);
   EXPECT_TRUE(hasNonTransparentPixel(pixels));
+}
+
+// The `_clusters` layer colors each instance by the dbGroup it belongs to.
+// This is how MPL's clustering (rtl_macro_placer -keep_clustering_data, which
+// writes the cluster tree as nested dbGroups) becomes visible in the layout.
+TEST_F(TileGeneratorTest, ClustersLayerColorsInstancesByGroup)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 10000, 10000);
+  odb::dbGroup* group = odb::dbGroup::create(block_, "cluster_1");
+  group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  group->addInst(inst);
+  makeTileGen();
+
+  std::map<uint32_t, Color> group_colors;
+  group_colors[group->getId()] = Color{.r = 255, .g = 0, .b = 0, .a = 255};
+
+  TileVisibility vis;
+  vis.cluster_view = true;
+
+  auto png = tile_gen_->generateTile("_clusters",
+                                     0,
+                                     0,
+                                     0,
+                                     vis,
+                                     /*highlight_rects=*/{},
+                                     /*highlight_polys=*/{},
+                                     /*colored_rects=*/{},
+                                     /*flight_lines=*/{},
+                                     /*module_colors=*/nullptr,
+                                     &group_colors);
+  unsigned w = 0;
+  unsigned h = 0;
+  auto pixels = decodePng(png, w, h);
+  ASSERT_EQ(w, 256u);
+
+  bool found_red = false;
+  for (size_t i = 0; i + 3 < pixels.size(); i += 4) {
+    if (pixels[i] == 255 && pixels[i + 1] == 0 && pixels[i + 2] == 0
+        && pixels[i + 3] > 0) {
+      found_red = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(found_red) << "instance was not painted in its cluster color";
+}
+
+// Only the clusters named in the color map are painted — what lets the Clusters
+// panel isolate one by narrowing the map to its subtree.
+TEST_F(TileGeneratorTest, ClustersLayerPaintsOnlyTheGroupsInTheColorMap)
+{
+  odb::dbInst* red_inst = placeInst("BUF_X16", "buf1", 10000, 10000);
+  odb::dbInst* other_inst = placeInst("BUF_X16", "buf2", 30000, 10000);
+  odb::dbGroup* red_group = odb::dbGroup::create(block_, "cluster_1");
+  red_group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  red_group->addInst(red_inst);
+  odb::dbGroup* other_group = odb::dbGroup::create(block_, "cluster_2");
+  other_group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  other_group->addInst(other_inst);
+  makeTileGen();
+
+  // Only cluster_1 is in the map — cluster_2 is the "isolated away" one.
+  std::map<uint32_t, Color> group_colors;
+  group_colors[red_group->getId()] = Color{.r = 255, .g = 0, .b = 0, .a = 255};
+
+  TileVisibility vis;
+  vis.cluster_view = true;
+
+  auto png = tile_gen_->generateTile("_clusters",
+                                     0,
+                                     0,
+                                     0,
+                                     vis,
+                                     /*highlight_rects=*/{},
+                                     /*highlight_polys=*/{},
+                                     /*colored_rects=*/{},
+                                     /*flight_lines=*/{},
+                                     /*module_colors=*/nullptr,
+                                     &group_colors);
+  unsigned w = 0;
+  unsigned h = 0;
+  auto pixels = decodePng(png, w, h);
+  ASSERT_EQ(w, 256u);
+
+  // Every painted pixel is cluster_1's red: nothing was drawn for the cluster
+  // left out of the map.
+  size_t painted = 0;
+  for (size_t i = 0; i + 3 < pixels.size(); i += 4) {
+    if (pixels[i + 3] == 0) {
+      continue;
+    }
+    ++painted;
+    EXPECT_EQ(pixels[i], 255);
+    EXPECT_EQ(pixels[i + 1], 0);
+    EXPECT_EQ(pixels[i + 2], 0);
+  }
+  EXPECT_GT(painted, 0u) << "the cluster in the map was not painted at all";
+}
+
+// The overlay is switched by its visibility flag, not by mounting/unmounting
+// the layer: with colors in hand but the flag off, the tile must come out
+// empty.
+TEST_F(TileGeneratorTest, ColorOverlaysAreGatedOnTheirVisibilityFlag)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 10000, 10000);
+  odb::dbGroup* group = odb::dbGroup::create(block_, "cluster_1");
+  group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  group->addInst(inst);
+  makeTileGen();
+
+  std::map<uint32_t, Color> group_colors;
+  group_colors[group->getId()] = Color{.r = 255, .g = 0, .b = 0, .a = 255};
+  std::map<uint32_t, Color> module_colors;
+  odb::dbModule* module = inst->getModule();
+  ASSERT_NE(module, nullptr);
+  module_colors[module->getId()] = Color{.r = 0, .g = 0, .b = 255, .a = 255};
+
+  const auto render = [&](const char* layer, const TileVisibility& vis) {
+    auto png = tile_gen_->generateTile(layer,
+                                       0,
+                                       0,
+                                       0,
+                                       vis,
+                                       /*highlight_rects=*/{},
+                                       /*highlight_polys=*/{},
+                                       /*colored_rects=*/{},
+                                       /*flight_lines=*/{},
+                                       &module_colors,
+                                       &group_colors);
+    unsigned w = 0;
+    unsigned h = 0;
+    return decodePng(png, w, h);
+  };
+
+  // Flags off (the default): both overlays draw nothing.
+  EXPECT_FALSE(hasNonTransparentPixel(render("_clusters", {})));
+  EXPECT_FALSE(hasNonTransparentPixel(render("_modules", {})));
+
+  TileVisibility clusters_on;
+  clusters_on.cluster_view = true;
+  EXPECT_TRUE(hasNonTransparentPixel(render("_clusters", clusters_on)));
+  // One flag must not switch on the other overlay.
+  EXPECT_FALSE(hasNonTransparentPixel(render("_modules", clusters_on)));
+
+  TileVisibility modules_on;
+  modules_on.module_view = true;
+  EXPECT_TRUE(hasNonTransparentPixel(render("_modules", modules_on)));
+  EXPECT_FALSE(hasNonTransparentPixel(render("_clusters", modules_on)));
+}
+
+// Hiding a cell type in Display Controls hides its color as well: the overlay
+// fills the instance itself, so a colored cell the user switched off would
+// otherwise stay on screen with nothing under it.  Qt has the same behavior —
+// drawModuleView() iterates the list already filtered by isInstanceVisible().
+TEST_F(TileGeneratorTest, ColorOverlaysSkipHiddenInstances)
+{
+  odb::dbInst* inst = placeInst("BUF_X16", "buf1", 10000, 10000);
+  odb::dbGroup* group = odb::dbGroup::create(block_, "cluster_1");
+  group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  group->addInst(inst);
+  makeTileGen();
+
+  std::map<uint32_t, Color> group_colors;
+  group_colors[group->getId()] = Color{.r = 255, .g = 0, .b = 0, .a = 255};
+  std::map<uint32_t, Color> module_colors;
+  odb::dbModule* module = inst->getModule();
+  ASSERT_NE(module, nullptr);
+  module_colors[module->getId()] = Color{.r = 0, .g = 0, .b = 255, .a = 255};
+
+  const auto render = [&](const char* layer, const TileVisibility& vis) {
+    auto png = tile_gen_->generateTile(layer,
+                                       0,
+                                       0,
+                                       0,
+                                       vis,
+                                       /*highlight_rects=*/{},
+                                       /*highlight_polys=*/{},
+                                       /*colored_rects=*/{},
+                                       /*flight_lines=*/{},
+                                       &module_colors,
+                                       &group_colors);
+    unsigned w = 0;
+    unsigned h = 0;
+    return decodePng(png, w, h);
+  };
+
+  TileVisibility vis;
+  vis.cluster_view = true;
+  vis.module_view = true;
+  ASSERT_TRUE(hasNonTransparentPixel(render("_clusters", vis)));
+  ASSERT_TRUE(hasNonTransparentPixel(render("_modules", vis)));
+
+  // buf1 is a stdcell: unticking Std Cells must empty both overlays.
+  vis.stdcells = false;
+  EXPECT_FALSE(hasNonTransparentPixel(render("_clusters", vis)))
+      << "a hidden instance was still painted in its group color";
+  EXPECT_FALSE(hasNonTransparentPixel(render("_modules", vis)))
+      << "a hidden instance was still painted in its module color";
+
+  // Per category, not "any flag off blanks the tile": another cell type's flag
+  // leaves the stdcell painted.
+  TileVisibility macros_off;
+  macros_off.cluster_view = true;
+  macros_off.macros = false;
+  EXPECT_TRUE(hasNonTransparentPixel(render("_clusters", macros_off)));
+}
+
+// The map the tile path falls back to when a session has never sent one.
+// Walking the hierarchy per tile would be absurd, so it is computed once and
+// held until the design moves -- the same contract as the other design-derived
+// overlay caches.
+TEST_F(TileGeneratorTest, DefaultOwnerColorsAreCachedUntilTheDesignChanges)
+{
+  placeInst("BUF_X16", "buf1", 10000, 10000);
+  odb::dbGroup* group = odb::dbGroup::create(block_, "cluster_1");
+  group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  group->addInst(block_->findInst("buf1"));
+  makeTileGen();
+
+  const auto first = tile_gen_->defaultGroupColors();
+  ASSERT_NE(first, nullptr);
+  EXPECT_EQ(first->count(group->getId()), 1u)
+      << "the group the panel would color must be in the default map";
+  EXPECT_EQ(tile_gen_->defaultGroupColors(), first)
+      << "a second call must not rebuild the map";
+
+  tile_gen_->eagerInit();
+  EXPECT_NE(tile_gen_->defaultGroupColors(), first)
+      << "a design reload must drop it";
+}
+
+// A group created after the map was first built has to reach it.  ODB fires no
+// callback for a group edit unless dbGroup does (see dbBlockCallBackObj), and
+// without one the cache would hand back a palette that does not mention the new
+// cluster -- the overlay would leave it unpainted until a reload.
+//
+// Every instance is placed BEFORE the first read: placing one bumps
+// Search::revision() through inDbInstPlacementStatusBefore, which would drop
+// the cache for the wrong reason and hide the bug.
+TEST_F(TileGeneratorTest, DefaultGroupColorsFollowAGroupCreatedLater)
+{
+  placeInst("BUF_X16", "buf1", 10000, 10000);
+  placeInst("BUF_X16", "buf2", 30000, 30000);
+  odb::dbGroup* first_group = odb::dbGroup::create(block_, "cluster_1");
+  first_group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  first_group->addInst(block_->findInst("buf1"));
+  makeTileGen();
+
+  const auto before = tile_gen_->defaultGroupColors();
+  ASSERT_NE(before, nullptr);
+  ASSERT_EQ(before->count(first_group->getId()), 1u);
+
+  odb::dbGroup* late = odb::dbGroup::create(block_, "cluster_2");
+  late->setType(odb::dbGroupType::VISUAL_DEBUG);
+  late->addInst(block_->findInst("buf2"));
+
+  const auto after = tile_gen_->defaultGroupColors();
+  ASSERT_NE(after, nullptr);
+  EXPECT_NE(after, before) << "the group edit did not drop the cached map";
+  EXPECT_EQ(after->count(late->getId()), 1u)
+      << "the group created after the first build is missing from the map";
+}
+
+// The same for the module overlay: a module created after the first read has to
+// reach the map.  Search overrides inDbInstDestroy and inDbPostMoveInst but not
+// the module callbacks, so nothing told it the hierarchy grew.
+TEST_F(TileGeneratorTest, DefaultModuleColorsFollowAModuleCreatedLater)
+{
+  placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+
+  const auto before = tile_gen_->defaultModuleColors();
+  ASSERT_NE(before, nullptr);
+
+  odb::dbModule* late = odb::dbModule::create(block_, "late_module");
+  ASSERT_NE(late, nullptr);
+
+  EXPECT_NE(tile_gen_->defaultModuleColors(), before)
+      << "the module edit did not drop the cached map";
+}
+
+// A group edit has to reach the clients, but `rtl_macro_placer
+// -keep_clustering_data` adds every instance to a cluster one call at a time --
+// 158k of them on ariane133.  Announcing each would clear the tile cache and
+// broadcast that many times, so the latch (Search::overlay_owners_init) lets
+// only the first edit after a palette was built through.
+TEST_F(TileGeneratorTest, ABatchOfGroupEditsNotifiesOnce)
+{
+  for (int i = 0; i < 8; ++i) {
+    placeInst("BUF_X16", ("buf" + std::to_string(i)).c_str(), 10000 * i, 10000);
+  }
+  odb::dbGroup* group = odb::dbGroup::create(block_, "cluster_1");
+  group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  makeTileGen();
+
+  // The overlay has to have been drawn for the edit to be worth announcing,
+  // the same valid→invalid transition the instance index relies on.
+  TileVisibility vis;
+  vis.cluster_view = true;
+  const auto colors = tile_gen_->defaultGroupColors();
+  ASSERT_NE(colors, nullptr);
+  tile_gen_->generateTile("_clusters",
+                          0,
+                          0,
+                          0,
+                          vis,
+                          /*highlight_rects=*/{},
+                          /*highlight_polys=*/{},
+                          /*colored_rects=*/{},
+                          /*flight_lines=*/{},
+                          /*module_colors=*/nullptr,
+                          colors.get());
+
+  int refresh_calls = 0;
+  tile_gen_->setDesignChangedCallback([&refresh_calls] { ++refresh_calls; });
+
+  for (int i = 0; i < 8; ++i) {
+    group->addInst(block_->findInst(("buf" + std::to_string(i)).c_str()));
+  }
+
+  EXPECT_EQ(refresh_calls, 1) << "a batch of group edits announced itself "
+                              << refresh_calls << " times instead of once";
+  // Every one of them still moved the revision, so the next read rebuilds.
+  EXPECT_NE(tile_gen_->defaultGroupColors(), nullptr);
+}
+
+// Enabling the overlay before the Clusters/Hierarchy panel has pushed a color
+// map must leave the tile empty.  Falling through to the generic instance
+// drawing would stack a second copy of the instances layer over the design.
+TEST_F(TileGeneratorTest, ColorOverlayLayersRenderEmptyWithoutColors)
+{
+  placeInst("BUF_X16", "buf1", 10000, 10000);
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.cluster_view = true;
+  vis.module_view = true;
+  for (const char* layer : {"_clusters", "_modules"}) {
+    auto png = tile_gen_->generateTile(layer, 0, 0, 0, vis);
+    unsigned w = 0;
+    unsigned h = 0;
+    auto pixels = decodePng(png, w, h);
+    EXPECT_FALSE(hasNonTransparentPixel(pixels))
+        << layer << " drew something without a color map";
+  }
+}
+
+// An instance outside every colored group must stay transparent, otherwise the
+// overlay would claim a cluster membership the database does not have.
+TEST_F(TileGeneratorTest, ClustersLayerSkipsUngroupedInstances)
+{
+  placeInst("BUF_X16", "buf1", 10000, 10000);
+  odb::dbGroup* group = odb::dbGroup::create(block_, "empty_cluster");
+  group->setType(odb::dbGroupType::VISUAL_DEBUG);
+  makeTileGen();
+
+  std::map<uint32_t, Color> group_colors;
+  group_colors[group->getId()] = Color{.r = 255, .g = 0, .b = 0, .a = 255};
+
+  TileVisibility vis;
+  vis.cluster_view = true;
+
+  auto png = tile_gen_->generateTile("_clusters",
+                                     0,
+                                     0,
+                                     0,
+                                     vis,
+                                     /*highlight_rects=*/{},
+                                     /*highlight_polys=*/{},
+                                     /*colored_rects=*/{},
+                                     /*flight_lines=*/{},
+                                     /*module_colors=*/nullptr,
+                                     &group_colors);
+  unsigned w = 0;
+  unsigned h = 0;
+  auto pixels = decodePng(png, w, h);
+  EXPECT_FALSE(hasNonTransparentPixel(pixels));
 }
 
 TEST_F(TileGeneratorTest, TileCacheStoresEvictsAndPromotes)
@@ -6681,8 +7516,20 @@ TEST_F(TileGeneratorTest, BlankIsRecognizedAtEveryRenderedSize)
   // the overlay size it filters at, whose blank encodings are 102 and 125
   // bytes.  A single threshold cannot separate content from blank across both.
   for (const double dpr : {1.0, 2.0}) {
-    const std::vector<unsigned char> blank = tile_gen_->generateTile(
-        "metal1", 0, 0, 0, {}, {}, {}, {}, {}, nullptr, nullptr, nullptr, dpr);
+    const std::vector<unsigned char> blank = tile_gen_->generateTile("metal1",
+                                                                     0,
+                                                                     0,
+                                                                     0,
+                                                                     {},
+                                                                     {},
+                                                                     {},
+                                                                     {},
+                                                                     {},
+                                                                     nullptr,
+                                                                     nullptr,
+                                                                     nullptr,
+                                                                     nullptr,
+                                                                     dpr);
     ASSERT_FALSE(blank.empty()) << "dpr=" << dpr;
     unsigned width = 0;
     unsigned height = 0;
@@ -6701,6 +7548,7 @@ TEST_F(TileGeneratorTest, BlankIsRecognizedAtEveryRenderedSize)
                                   {},
                                   {},
                                   {},
+                                  nullptr,
                                   nullptr,
                                   nullptr,
                                   nullptr,

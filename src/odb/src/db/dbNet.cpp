@@ -14,6 +14,7 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "boost/container/small_vector.hpp"
@@ -1117,6 +1118,19 @@ dbObject* dbNet::getFirstDriverTerm() const
     return nullptr;
   }
 
+  // If a BTerm is present on the net, it is usually the driver (input port);
+  // check BTerms first before scanning all load ITerms.
+  for (dbBTerm* bterm : getBTerms()) {
+    if (bterm->getSigType().isSupply()) {
+      continue;
+    }
+
+    if (bterm->getIoType() == dbIoType::INPUT
+        || bterm->getIoType() == dbIoType::INOUT) {
+      return bterm;
+    }
+  }
+
   for (dbITerm* iterm : getITerms()) {
     if (iterm->getSigType().isSupply()) {
       continue;
@@ -1129,17 +1143,6 @@ dbObject* dbNet::getFirstDriverTerm() const
     if (iterm->getIoType() == dbIoType::OUTPUT
         || iterm->getIoType() == dbIoType::INOUT) {
       return iterm;
-    }
-  }
-
-  for (dbBTerm* bterm : getBTerms()) {
-    if (bterm->getSigType().isSupply()) {
-      continue;
-    }
-
-    if (bterm->getIoType() == dbIoType::INPUT
-        || bterm->getIoType() == dbIoType::INOUT) {
-      return bterm;
     }
   }
 
@@ -1361,7 +1364,8 @@ bool dbNet::isConnectedByAbutment()
   }
 
   bool first_mterm = true;
-  std::vector<Rect> first_pin_boxes;
+  boost::container::small_vector<std::pair<dbTechLayer*, Rect>, 8>
+      first_pin_boxes;
   for (dbITerm* iterm : getITerms()) {
     dbMTerm* mterm = iterm->getMTerm();
     dbMaster* master = mterm->getMaster();
@@ -1382,10 +1386,10 @@ bool dbNet::isConnectedByAbutment()
           odb::Rect rect = box->getBox();
           transform.apply(rect);
           if (first_mterm) {
-            first_pin_boxes.push_back(rect);
+            first_pin_boxes.emplace_back(tech_layer, rect);
           } else {
-            for (const Rect& first_pin_box : first_pin_boxes) {
-              if (rect.intersects(first_pin_box)) {
+            for (const auto& [first_layer, first_pin_box] : first_pin_boxes) {
+              if (tech_layer == first_layer && rect.intersects(first_pin_box)) {
                 return true;
               }
             }

@@ -432,26 +432,6 @@ cc_library(
 )
 ```
 
-### CMake (deprecated)
-
-CMake is deprecated and will be removed on Nov. 1, 2026.
-The `cmake` file for the tool must also be updated to include spdlog in
-the link libraries so it can find the header files if they are not in
-the normal system directories.
-
-:::{tip}
-At UCSD, dfm.ucsd.edu is an example of this problem; it has an ancient version of
-spdlog in '/usr/include/spdlog'. Use `module` to install
-spdlog 1.8.1 on dfm.ucsd.edu and check your build there.
-:::
-
-``` cmake
-target_link_libraries(<library_target>
-  PUBLIC
-    utl
-)
-```
-
 ## Useful Information
 As tool developers, we can also choose to include useful information to the end user - 
 be it in the form on debugging tips, or solutions to fix the errors/warnings. We compile

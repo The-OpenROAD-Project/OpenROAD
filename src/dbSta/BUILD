@@ -101,7 +101,7 @@ cc_library(
     includes = [
         "src",
     ],
-    visibility = ["//visibility:private"],
+    visibility = ["//src/dbSta/test:__pkg__"],
     deps = [
         "//src/sta:opensta_lib",
         "@spdlog",
@@ -175,7 +175,6 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.json",
-        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
 )

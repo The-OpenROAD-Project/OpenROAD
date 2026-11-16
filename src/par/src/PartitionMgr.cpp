@@ -64,7 +64,7 @@ struct PartitionPortRecord
 {
   Net* net;
   std::string port_name;
-  PortDirection* direction;
+  const PortDirection* direction;
 };
 
 }  // namespace
@@ -137,8 +137,8 @@ void PartitionMgr::tritonPartHypergraph(
   // Use TritonPart to partition a hypergraph
   // In this mode, TritonPart works as hMETIS.
   // Thus users can use this function to partition the input hypergraph
-  auto triton_part
-      = std::make_unique<TritonPart>(db_network_, db_, sta_, logger_);
+  auto triton_part = std::make_unique<TritonPart>(
+      db_network_, db_, sta_, logger_, num_threads_);
   // Convert the string e_wt_factors_str to vector
   triton_part->SetNetWeight(e_wt_factors);
   triton_part->SetVertexWeight(v_wt_factors);
@@ -200,8 +200,8 @@ void PartitionMgr::evaluateHypergraphSolution(
     const std::vector<float>& e_wt_factors,
     const std::vector<float>& v_wt_factors)
 {
-  auto triton_part
-      = std::make_unique<TritonPart>(db_network_, db_, sta_, logger_);
+  auto triton_part = std::make_unique<TritonPart>(
+      db_network_, db_, sta_, logger_, num_threads_);
   // Convert the string e_wt_factors_str to vector
   triton_part->SetNetWeight(e_wt_factors);
   triton_part->SetVertexWeight(v_wt_factors);
@@ -278,8 +278,8 @@ void PartitionMgr::tritonPartDesign(
     int num_vertices_threshold_ilp,
     int global_net_threshold)
 {
-  auto triton_part
-      = std::make_unique<TritonPart>(db_network_, db_, sta_, logger_);
+  auto triton_part = std::make_unique<TritonPart>(
+      db_network_, db_, sta_, logger_, num_threads_);
   // Convert the string e_wt_factors_str to vector
   triton_part->SetNetWeight(e_wt_factors);
   triton_part->SetVertexWeight(v_wt_factors);
@@ -369,8 +369,8 @@ void PartitionMgr::evaluatePartDesignSolution(
     const std::vector<float>& e_wt_factors,
     const std::vector<float>& v_wt_factors)
 {
-  auto triton_part
-      = std::make_unique<TritonPart>(db_network_, db_, sta_, logger_);
+  auto triton_part = std::make_unique<TritonPart>(
+      db_network_, db_, sta_, logger_, num_threads_);
   // Convert the string e_wt_factors_str to vector
   triton_part->SetNetWeight(e_wt_factors);
   triton_part->SetVertexWeight(v_wt_factors);
@@ -411,8 +411,8 @@ std::vector<int> PartitionMgr::PartitionKWaySimpleMode(
     const std::vector<float>& vertex_weights,
     const std::vector<float>& hyperedge_weights)
 {
-  auto triton_part
-      = std::make_unique<TritonPart>(db_network_, db_, sta_, logger_);
+  auto triton_part = std::make_unique<TritonPart>(
+      db_network_, db_, sta_, logger_, num_threads_);
   return triton_part->PartitionKWaySimpleMode(num_parts_arg,
                                               balance_constraint_arg,
                                               seed_arg,
@@ -422,7 +422,7 @@ std::vector<int> PartitionMgr::PartitionKWaySimpleMode(
 }
 
 // determine the required direction of a port.
-static PortDirection* determinePortDirection(
+static const PortDirection* determinePortDirection(
     const Net* net,
     const std::set<Instance*, CompareInstancePtr>* insts,
     const dbNetwork* db_network)
@@ -434,7 +434,7 @@ static PortDirection* determinePortDirection(
   NetTermIterator* term_iter = db_network->termIterator(net);
   while (term_iter->hasNext()) {
     Term* term = term_iter->next();
-    PortDirection* dir = db_network->direction(db_network->pin(term));
+    const PortDirection* dir = db_network->direction(db_network->pin(term));
     if (dir->isAnyInput()) {
       externally_driven = true;
     }
@@ -532,7 +532,7 @@ Instance* PartitionMgr::buildPartitionedInstance(
 
     if (add_port) {
       const std::string portname = db_network_->name(pin);
-      PortDirection* sub_module_dir
+      const PortDirection* sub_module_dir
           = determinePortDirection(net, insts, db_network_);
       global_ports.push_back({net,
                               portname,
@@ -568,7 +568,7 @@ Instance* PartitionMgr::buildPartitionedInstance(
         NetPinIterator* net_pin_iter = db_network_->pinIterator(net);
         while (net_pin_iter->hasNext()) {
           Net* net = db_network_->net(net_pin_iter->next());
-          PortDirection* port_dir
+          const PortDirection* port_dir
               = determinePortDirection(net, insts, db_network_);
           if (port_dir == nullptr) {
             local_nets.insert(net);
@@ -635,7 +635,7 @@ Instance* PartitionMgr::buildPartitionedInstance(
   }
   for (auto& [bus, ports] : port_buses) {
     std::set<int> port_idx;
-    std::set<PortDirection*> port_dirs;
+    std::set<const PortDirection*> port_dirs;
     for (Port* port : ports) {
       std::string bus_name;
       bool is_bus;
@@ -653,7 +653,7 @@ Instance* PartitionMgr::buildPartitionedInstance(
     }
 
     // determine real direction of port
-    PortDirection* overall_direction = nullptr;
+    const PortDirection* overall_direction = nullptr;
     if (port_dirs.size() == 1) {  // only one direction is used.
       overall_direction = *port_dirs.begin();
     } else {
@@ -734,7 +734,7 @@ Instance* PartitionMgr::buildPartitionedTopInstance(const char* name,
   Cell* cell = network->makeCell(library, name, false, "");
 
   // add global ports
-  std::vector<std::pair<std::string, PortDirection*>> ports;
+  std::vector<std::pair<std::string, const PortDirection*>> ports;
   auto pin_iter = db_network_->pinIterator(db_network_->topInstance());
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();

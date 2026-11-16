@@ -97,8 +97,23 @@ filegroup(
 filegroup(
     name = "asap7_data",
     srcs = [
+        "asap7/asap7.tracks.tcl",
         "asap7/asap7_tech_1x_201209.lef",
         "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# asap7's NLDM liberty, for the cells' functions: the ram module's asap7
+# tests find their cells by them.
+filegroup(
+    name = "asap7_nldm_data",
+    srcs = [
+        "asap7/asap7sc7p5t_AO_RVT_FF_nldm_211120.lib.gz",
+        "asap7/asap7sc7p5t_INVBUF_RVT_FF_nldm_220122.lib.gz",
+        "asap7/asap7sc7p5t_OA_RVT_FF_nldm_211120.lib.gz",
+        "asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib",
+        "asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz",
     ],
     visibility = ["//visibility:public"],
 )
@@ -123,7 +138,6 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-# From CMakeLists.txt or_integration_tests(TESTS
 PASSFAIL_TESTS = [
     "cmd_file_error",
     "commands_without_load",
@@ -138,6 +152,7 @@ COMPULSORY_TESTS = [
     "get_core_die_areas",
     "ord_tclsh_completion",
     "place_inst",
+    "report_fmax_metric_virtual_clock",
     "upf_test",
     "write_db",
 ] + PASSFAIL_TESTS
@@ -153,10 +168,7 @@ PYTHON_TESTS = [
 # The local Bazel OpenROAD workflow for a quick smoketest
 # is to run, in the relevant folder:
 #
-# "bazel test -c opt ..."
-#
-# Now, or_integration_tests() in CMakeLists.txt do not list
-# BIG_TESTS below.
+# "bazelisk test -c opt ..."
 #
 # By marking the tests tags=["manual"],
 # the tests are available, but have to be invoked

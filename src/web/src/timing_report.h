@@ -27,6 +27,9 @@ namespace web {
 struct TimingNode
 {
   std::string pin_name;
+  // Owning instance, chiplet-qualified in 3DBlox and empty for block ports;
+  // avoids parsing hierarchical pins.
+  std::string inst_name = "";
   int fanout = 0;
   bool is_rising = false;
   bool is_clock = false;
@@ -69,12 +72,22 @@ struct SlackHistogramSeries
   std::vector<int> counts;
 };
 
+// A clock the histogram's endpoints are timed against, for the axis title
+// (Qt's "Clocks: <name> <period>").
+struct SlackHistogramClock
+{
+  std::string name;
+  float period;  // in time_unit
+};
+
 struct SlackHistogramResult
 {
   std::vector<SlackHistogramBin> bins;
   int unconstrained_count = 0;
   int total_endpoints = 0;
   std::string time_unit;
+  // The filter's clock, or every clock when none is given.
+  std::vector<SlackHistogramClock> clocks;
   // Per-path-group breakdown over the same bin edges.  Empty for the single
   // aggregate histogram; populated when multiple path groups are requested.
   std::vector<SlackHistogramSeries> series;
@@ -148,11 +161,13 @@ class TimingReport
  public:
   explicit TimingReport(sta::dbSta* sta);
 
+  // Matches the Qt GUI's option to include unconstrained path ends.
   std::vector<TimingPathSummary> getReport(
       bool is_setup,
       int max_paths = 100,
       float slack_min = -std::numeric_limits<float>::max(),
-      float slack_max = std::numeric_limits<float>::max()) const;
+      float slack_max = std::numeric_limits<float>::max(),
+      bool include_unconstrained = false) const;
 
   // `path_groups` (optional) requests a per-group stacked breakdown: when it
   // has entries, `result.series` is populated over the shared bin edges and the

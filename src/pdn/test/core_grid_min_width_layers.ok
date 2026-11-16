@@ -3,6 +3,29 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 482 components and 2074 component-terminals.
 [INFO ODB-0133]     Created 385 nets and 1110 connections.
+Voltage domain: Core
+  Power net: VDD
+  Ground net: VSS
+Grid name: Core
+Type: Core
+Straps:
+  Type: Followpin
+    Layer: metal1
+    Width: 0.1700
+    Spacing: 0.0000
+    Pitch: 2.8000
+    Offset: 0.0000
+    Snap to grid: false
+  Type: Strap
+    Layer: metal4
+    Width: 1.0000
+    Spacing: 1.5000
+    Pitch: 5.0000
+    Offset: 2.5000
+    Snap to grid: true
+Connect:
+  Connect layers metal1 -> metal4
+    Minimum width layers: metal2 metal3 
 [INFO PDN-0001] Inserting grid: Core
 metal2: max enclosure width 0.140um (single-cut landing <= 0.140um): PASS
 metal3: max enclosure width 0.140um (single-cut landing <= 0.140um): PASS

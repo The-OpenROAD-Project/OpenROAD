@@ -179,10 +179,11 @@ bool Shape::isValid() const
 bool Shape::isWrongWay() const
 {
   if (isHorizontal()
-      && layer_->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+      && layer_->getDirection() == odb::dbTechLayerDir::VERTICAL) {
     return true;
   }
-  if (isVertical() && layer_->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+  if (isVertical()
+      && layer_->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
     return true;
   }
   return false;

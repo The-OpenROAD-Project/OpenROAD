@@ -13,12 +13,14 @@
 #include <iostream>
 #include <istream>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <stdexcept>
 #include <string>
 
 #include "boost/algorithm/string/predicate.hpp"
 #include "boost/iostreams/filter/gzip.hpp"
+#include "fmt/format.h"
 #include "utl/Logger.h"
 namespace fs = std::filesystem;
 

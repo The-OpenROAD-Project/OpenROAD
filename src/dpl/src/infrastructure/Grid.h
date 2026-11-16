@@ -164,6 +164,12 @@ class Grid
   void resize(GridY size) { pixels_.resize(size.v); }
   void resize(GridY y, GridX size) { pixels_[y.v].resize(size.v); }
   void clear();
+  // Frees the pixels and keeps the rows, which gridX() and the other
+  // coordinate conversions read; allocateGrid() makes them again.
+  void releasePixels();
+  bool hasPixels() const { return !pixels_.empty(); }
+  // The rows are there and the pixels were released.
+  bool pixelsReleased() const { return row_count_ > 0 && pixels_.empty(); }
 
   bool hasHybridRows() const { return has_hybrid_rows_; }
 
@@ -172,8 +178,11 @@ class Grid
   odb::Rect getCore() const { return core_; }
 
   // True if rect (core relative) is within min spacing of power via or
-  // patch metal outside the stripes on the given routing level
-  bool overlapsPinBlockage(int level, const odb::Rect& rect) const;
+  // patch metal outside the stripes on the given routing level that belongs
+  // to a net other than pin_net
+  bool overlapsPinBlockage(int level,
+                           const odb::Rect& rect,
+                           const odb::dbNet* pin_net) const;
 
   bool cellFitsInCore(Node* cell) const;
 
@@ -214,8 +223,9 @@ class Grid
                                                SitesCombiner>;
 
   using Pixels = std::vector<std::vector<Pixel>>;
-  using RectTree
-      = boost::geometry::index::rtree<odb::Rect,
+  using NetRect = std::pair<odb::Rect, odb::dbNet*>;
+  using NetRectTree
+      = boost::geometry::index::rtree<NetRect,
                                       boost::geometry::index::quadratic<16>>;
 
   void markHopeless(odb::dbBlock* block,
@@ -238,8 +248,9 @@ class Grid
   // Indexed by row (GridY)
   std::vector<RowSitesMap> row_sites_;
 
-  // Power via/patch metal outside the stripes (core relative), by level
-  std::array<RectTree, kMaxPinLevel + 1> pin_blockages_;
+  // Power via/patch metal outside the stripes (core relative) and its net,
+  // by level
+  std::array<NetRectTree, kMaxPinLevel + 1> pin_blockages_;
 
   bool has_hybrid_rows_ = false;
   odb::Rect core_;

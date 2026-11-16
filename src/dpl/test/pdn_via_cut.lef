@@ -1,0 +1,31 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+# The CUT box is the only sizable constituent; metal boxes are too small to
+# reach the routing spacing threshold in this fixture.
+VIA cut_case_via DEFAULT
+  LAYER via1 ;
+    RECT -0.02 -0.02 0.02 0.02 ;
+  LAYER metal1 ;
+    RECT -0.005 -0.005 0.005 0.005 ;
+  LAYER metal2 ;
+    RECT -0.005 -0.005 0.005 0.005 ;
+END cut_case_via
+
+SITE CUT_SITE
+  CLASS CORE ;
+  SIZE 0.1 BY 0.1 ;
+END CUT_SITE
+
+MACRO CUT_CELL
+  CLASS CORE ;
+  SIZE 0.1 BY 0.1 ;
+  SITE CUT_SITE ;
+  OBS
+    LAYER via1 ;
+      RECT 0.025 0.025 0.075 0.075 ;
+  END
+END CUT_CELL
+
+END LIBRARY

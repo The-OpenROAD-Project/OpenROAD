@@ -106,6 +106,7 @@ cc_library(
     ],
     deps = [
         "//src/odb/src/db",
+        "//src/odb/src/wireNormalizer",
         "//src/utl",
     ],
 )
@@ -128,7 +129,6 @@ cc_library(
         ":rcx",
         "//:ord",
         "//src/utl",
-        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
 )

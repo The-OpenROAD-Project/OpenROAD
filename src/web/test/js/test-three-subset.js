@@ -11,7 +11,9 @@ import * as subset from '../../src/three-subset.js';
 
 it('three-subset.js exports every three.js name the 3D viewer uses', () => {
     const widget = readFileSync(
-        new URL('../../src/3d-viewer-widget.js', import.meta.url), 'utf8');
+        new URL('../../src/3d-viewer-widget.js', import.meta.url), 'utf8') +
+        readFileSync(new URL('../../src/interconnect3d.js', import.meta.url),
+                     'utf8');
     const used = new Set(
         [...widget.matchAll(/\bTHREE\.([A-Za-z_$][\w$]*)/g)].map((m) => m[1]));
     assert.ok(used.size > 0);

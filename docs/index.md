@@ -34,8 +34,8 @@ recovered through improved flow predictability and enhanced optimization.
 For a technical description of the OpenROAD flow, please refer to our DAC-2019 paper:
 [Toward an Open-Source Digital Flow: First Learnings from the OpenROAD Project](https://vlsicad.ucsd.edu/Publications/Conferences/371/c371.pdf).
 The paper is also available from [ACM Digital Library](https://dl.acm.org/doi/10.1145/3316781.3326334).
-Other publications and presentations are
-linked [here](https://theopenroadproject.org/publications/).
+Other publications are linked [here](https://openroad.org/resources/publications),
+presentations can be found [here](https://openroad.org/resources/presentations).
 
 ## Documentation
 
@@ -57,12 +57,11 @@ Legend:
 | --- | --- | --- | --- | --- |
 | Debian 12            | `Y` | `Y` | `Y` | `-` |
 | Debian 13            | `Y` | `Y` | `Y` | `-` |
-| Ubuntu 22.04         | `Y` | `Y` | `Y` | `-` |
 | Ubuntu 24.04         | `Y` | `Y` | `Y` | `-` |
-| Ubuntu 26.04         | `Y` | `Y` | `Y` | `-` |
-| RHEL 8/9             | `Y` | `-` | `Y` | `-` |
-| Rocky 8              | `Y` | `-` | `Y` | `-` |
-| Rocky 9              | `Y` | `-` | `Y` | `-` |
+| Ubuntu 26.04 (default) | `Y` | `Y` | `Y` | `-` |
+| RHEL / Rocky 8       | `Y` | `-` | `Y` | `-` |
+| RHEL / Rocky 9       | `Y` | `-` | `Y` | `-` |
+| RHEL / Rocky 10      | `Y` | `-` | `Y` | `-` |
 | macOS                | `Y` | `-` | `Y` | `-` |
 | Windows 10 and above | `-` | `-` | `Y` | `Y` |
 

@@ -8,7 +8,11 @@
  *          http://creativecommons.org/licenses/by/3.0/deed.en_US
  */
 
-#if defined(_WIN32)
+#include "utl/mem_stats.h"
+
+#include <cstddef>
+
+#ifdef _WIN32
 #include <psapi.h>
 #include <windows.h>
 
@@ -28,8 +32,7 @@
 
 #elif defined(__linux__) || defined(__linux) || defined(linux) \
     || defined(__gnu_linux__)
-#include <cstdint>
-#include <cstdio>
+#include <fstream>
 #endif
 
 #else
@@ -45,11 +48,11 @@ namespace utl {
  */
 size_t getPeakRSS()
 {
-#if defined(_WIN32)
+#ifdef _WIN32
   /* Windows -------------------------------------------------- */
   PROCESS_MEMORY_COUNTERS info;
   GetProcessMemoryInfo(GetCurrentProcess(), &info, sizeof(info));
-  return (size_t) info.PeakWorkingSetSize;
+  return static_cast<size_t>(info.PeakWorkingSetSize);
 
 #elif (defined(_AIX) || defined(__TOS__AIX__)) \
     || (defined(__sun__) || defined(__sun)     \
@@ -58,14 +61,14 @@ size_t getPeakRSS()
   struct psinfo psinfo;
   int fd = -1;
   if ((fd = open("/proc/self/psinfo", O_RDONLY)) == -1) {
-    return (size_t) 0L; /* Can't open? */
+    return 0; /* Can't open? */
   }
   if (read(fd, &psinfo, sizeof(psinfo)) != sizeof(psinfo)) {
     close(fd);
-    return (size_t) 0L; /* Can't read? */
+    return 0; /* Can't read? */
   }
   close(fd);
-  return (size_t) (psinfo.pr_rssize * 1024L);
+  return static_cast<size_t>(psinfo.pr_rssize * 1024L);
 
 #elif defined(__unix__) || defined(__unix) || defined(unix) \
     || (defined(__APPLE__) && defined(__MACH__))
@@ -73,14 +76,14 @@ size_t getPeakRSS()
   struct rusage rusage;
   getrusage(RUSAGE_SELF, &rusage);
 #if defined(__APPLE__) && defined(__MACH__)
-  return (size_t) rusage.ru_maxrss;
+  return static_cast<size_t>(rusage.ru_maxrss);
 #else
-  return (size_t) (rusage.ru_maxrss * 1024L);
+  return static_cast<size_t>(rusage.ru_maxrss * 1024L);
 #endif
 
 #else
   /* Unknown OS ----------------------------------------------- */
-  return (size_t) 0L; /* Unsupported. */
+  return 0; /* Unsupported. */
 #endif
 }
 
@@ -90,11 +93,11 @@ size_t getPeakRSS()
  */
 size_t getCurrentRSS()
 {
-#if defined(_WIN32)
+#ifdef _WIN32
   /* Windows -------------------------------------------------- */
   PROCESS_MEMORY_COUNTERS info;
   GetProcessMemoryInfo(GetCurrentProcess(), &info, sizeof(info));
-  return (size_t) info.WorkingSetSize;
+  return static_cast<size_t>(info.WorkingSetSize);
 
 #elif defined(__APPLE__) && defined(__MACH__)
   /* OSX ------------------------------------------------------ */
@@ -102,31 +105,28 @@ size_t getCurrentRSS()
   mach_msg_type_number_t infoCount = MACH_TASK_BASIC_INFO_COUNT;
   if (task_info(mach_task_self(),
                 MACH_TASK_BASIC_INFO,
-                (task_info_t) &info,
+                reinterpret_cast<task_info_t>(&info),
                 &infoCount)
       != KERN_SUCCESS) {
-    return (size_t) 0L; /* Can't access? */
+    return 0; /* Can't access? */
   }
-  return (size_t) info.resident_size;
+  return static_cast<size_t>(info.resident_size);
 
 #elif defined(__linux__) || defined(__linux) || defined(linux) \
     || defined(__gnu_linux__)
   /* Linux ---------------------------------------------------- */
-  int64_t rss = 0L;
-  FILE* fp = fopen("/proc/self/statm", "r");
-  if (fp == nullptr) {
-    return (size_t) 0L; /* Can't open? */
+  /* statm fields are in pages: total program size, then resident size. */
+  std::ifstream statm("/proc/self/statm");
+  size_t size = 0;
+  size_t rss = 0;
+  if (!(statm >> size >> rss)) {
+    return 0; /* Can't open or read? */
   }
-  if (fscanf(fp, "%*s%ld", &rss) != 1) {
-    fclose(fp);
-    return (size_t) 0L; /* Can't read? */
-  }
-  fclose(fp);
-  return (size_t) rss * (size_t) sysconf(_SC_PAGESIZE);
+  return rss * static_cast<size_t>(sysconf(_SC_PAGESIZE));
 
 #else
   /* AIX, BSD, Solaris, and Unknown OS ------------------------ */
-  return (size_t) 0L; /* Unsupported. */
+  return 0; /* Unsupported. */
 #endif
 }
 

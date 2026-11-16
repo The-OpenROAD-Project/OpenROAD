@@ -40,6 +40,8 @@ class OneBitScanCell : public ScanCell
 
   odb::Point getOrigin() const override;
   bool isPlaced() const override;
+  odb::Point getScanInLocation() const override;
+  odb::Point getScanOutLocation() const override;
 
  private:
   odb::dbITerm* findITerm(sta::LibertyPort* liberty_port) const;

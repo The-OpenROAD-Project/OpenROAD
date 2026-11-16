@@ -86,6 +86,10 @@ namespace fin {
 class Finale;
 }
 
+namespace fsv {
+class FieldSolver;
+}
+
 namespace par {
 class PartitionMgr;
 }
@@ -175,6 +179,7 @@ class Design
   exa::Example* getExample();
   drt::TritonRoute* getTritonRoute();
   fin::Finale* getFinale();
+  fsv::FieldSolver* getFieldSolver();
   gpl::Replace* getReplace();
   grt::GlobalRouter* getGlobalRouter();
   ifp::InitFloorplan getFloorplan();

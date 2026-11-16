@@ -7,7 +7,6 @@ load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
-# From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "add_constraint1",
     "add_constraint2",
@@ -131,6 +130,11 @@ COMPULSORY_TESTS = [
     "place_pin_error1",
     "place_pin_error2",
     "place_pin_error3",
+    "place_pin_polygon_blocked",
+    "place_pin_polygon_l",
+    "place_pin_polygon_overlap",
+    "place_pin_polygon_t",
+    "place_pin_polygon_u",
     "random_deprecated1",
     "random_deprecated2",
     "top_layer1",

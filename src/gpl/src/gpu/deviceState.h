@@ -23,7 +23,7 @@
 // by Kokkos-aware translation units. This header is plain C++, so consumer
 // TUs (nesterovBase.cpp in particular) need not be compiled by nvcc.
 //
-// Compiled only when ENABLE_GPU=ON.
+// Compiled only in the GPU build (--config=gpu).
 
 #pragma once
 
@@ -162,7 +162,7 @@ class DeviceState
   bool coords_fresh_ = false;
   // Type-erased deleter: a plain function pointer instead of
   // std::default_delete<KokkosDeviceState>. This lets ~DeviceState() be
-  // synthesized in CPU-only TUs (Bazel, ENABLE_GPU=OFF) where
+  // synthesized in CPU-only TUs (builds without --config=gpu) where
   // KokkosDeviceState is incomplete — the unique_ptr destructor only ever
   // calls the deleter through the stored pointer, never through a typed
   // expression that requires the impl to be complete. The deleter is set

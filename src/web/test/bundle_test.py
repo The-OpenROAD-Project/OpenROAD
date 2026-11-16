@@ -106,9 +106,15 @@ class Page(unittest.TestCase):
         self.assertIn('<script type="module" src="app.min.js">', html)
         # The two golden-layout themes theme.js looks up by id.
         self.assertIn('id="gl-theme-dark"', html)
-        self.assertIn('id="gl-theme-light"', html)
+        self.assertIn('id="gl-theme-light" media="not all"', html)
         # The icons the third-party stylesheets reach through url(), inlined.
         self.assertIn("data:image/png;base64,", html)
+
+    def test_has_no_inline_script(self):
+        # The page's script-src 'self' would block one without saying so.
+        html = _read(_PAGE["index.html"])
+        for tag in re.findall(r"<script\b[^>]*>", html, re.I):
+            self.assertRegex(tag, r"\bsrc=", tag)
 
     def test_reaches_no_remote_resource(self):
         for name, path in [*_PAGE.items(), ("report.min.js", _REPORT_JS)]:

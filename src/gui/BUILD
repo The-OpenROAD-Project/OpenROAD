@@ -17,14 +17,17 @@ package(
     features = ["layering_check"],
 )
 
-# The gui as a binary with no Qt has it: the Qt-free core, plus the entry
-# points answering that there is no gui to open.  A Qt build links :gui_qt
-# instead, which carries Qt's own versions of those, so nothing reachable
-# from :openroad-qt depends on this target.
+# The gui as a binary with no Qt has it: the Qt-free core, the same gui::
+# Tcl commands as a Qt build, and the entry points answering that there is
+# no gui to open.  A Qt build links :gui_qt instead, which carries Qt's own
+# versions of those, so nothing reachable from :openroad-qt depends on this
+# target.
 cc_library(
     name = "gui",
     srcs = [
         "src/makeGui.cpp",
+        ":gui_swig",
+        ":tcl",
     ],
     hdrs = [
         "include/gui/MakeGui.h",
@@ -35,6 +38,7 @@ cc_library(
         "src",
     ],
     deps = [
+        "//:ord",
         "//src/dbSta",
         "//src/odb/src/db",
         "//src/utl",
@@ -97,7 +101,6 @@ QT_GUI_PLATFORMS = {
             "@boost.algorithm",
             "@boost.geometry",
             "@boost.multi_array",
-            "@boost.stacktrace",
             "@spdlog",
             "@tcl_lang//:tcl",
         ] + ([":uic_lib"] if platform == "headless" else []),
@@ -175,17 +178,16 @@ messages_txt(
     ],
 )
 
-# Desktop entry for GUI builds. Generated from the same template that the
-# CMake build configures (see src/gui/CMakeLists.txt). The install prefix is
-# not known at build time, so the icon path is left as a @OPENROAD_PREFIX@
-# placeholder that //bazel:install.sh substitutes at install time.
+# Desktop entry for GUI builds. The install prefix is not known at build
+# time, so the icon path is left as a @OPENROAD_PREFIX@ placeholder that
+# //bazel:install.sh substitutes at install time.
 expand_template(
     name = "desktop_entry",
     out = "openroad.desktop",
     substitutions = {
         "${OPENROAD_SHARE_GUI_DIR}": "@OPENROAD_PREFIX@/share/openroad/gui",
     },
-    template = "resources/openroad.desktop.cmake",
+    template = "resources/openroad.desktop.in",
 )
 
 # The desktop entry and its icon, laid out at the paths install.sh expects

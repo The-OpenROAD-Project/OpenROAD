@@ -48,8 +48,7 @@ class WirelengthGradientBackend
   virtual void getCellGradients(const std::vector<GCellHandle>& gCells,
                                 std::vector<FloatPoint>& out) = 0;
 
-  // Per-cell gradient (cold path: NesterovBase::updateSingleGradient via the
-  // db-callback hook). Backend may cache prior bulk results.
+  // Per-cell gradient (cold path). Backend may cache prior bulk results.
   virtual FloatPoint getCellGradient(const GCell* gCell) = 0;
 
   // Make the per-inst gradients available on the DEVICE without a host

@@ -1,4 +1,7 @@
-# Critical-path slice extracted from sky130hd.  Drives LEGACY repair_setup.
+# LEGACY repair_setup on a critical-path slice of sky130hd ibex_core with 851
+# violating endpoints. The golden log covers buffer removal, sizing up, pin
+# swaps, buffering and cloning, and its worst path runs from a flip-flop to a
+# reset recovery check.
 
 source "helpers.tcl"
 

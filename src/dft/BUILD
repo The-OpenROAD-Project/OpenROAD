@@ -28,6 +28,7 @@ cc_library(
         "//src/dft/src/cells",
         "//src/dft/src/clock_domain",
         "//src/dft/src/config",
+        "//src/dft/src/optimizer",
         "//src/dft/src/replace",
         "//src/dft/src/stitch",
         "//src/dft/src/utils",
@@ -59,7 +60,6 @@ cc_library(
         "//src/dft/src/clock_domain",
         "//src/dft/src/config",
         "//src/utl",
-        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
 )
@@ -105,6 +105,7 @@ messages_txt(
         "//src/dft/src/cells:message_srcs",
         "//src/dft/src/clock_domain:message_srcs",
         "//src/dft/src/config:message_srcs",
+        "//src/dft/src/optimizer:message_srcs",
         "//src/dft/src/replace:message_srcs",
         "//src/dft/src/stitch:message_srcs",
         "//src/dft/src/utils:message_srcs",

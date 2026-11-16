@@ -17,8 +17,8 @@ config_setting(
     visibility = ["//visibility:public"],
 )
 
-# The Bazel replacement for the CMake-generated ord/Version.hh. The version
-# is written into the linked binary by stamped_binary.bzl.
+# ord/Version.hh. The version is written into the linked binary by
+# stamped_binary.bzl.
 cc_library(
     name = "openroad_version",
     srcs = ["version/version.cc"],
@@ -63,6 +63,26 @@ py_test(
     ],
 )
 
+config_setting(
+    name = "_macos_aarch64",
+    constraint_values = [
+        "@platforms//os:macos",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+# pandoc for //docs:man_pages. man_pages.bzl takes it with cfg = "exec", so
+# this select() matches the platform that runs pandoc. The wheel's macOS
+# arm64 pandoc is an x86_64 binary; see pandoc_macos_arm64 in MODULE.bazel.
+filegroup(
+    name = "pandoc",
+    srcs = select({
+        ":_macos_aarch64": ["@pandoc_macos_arm64//:pandoc"],
+        "//conditions:default": ["@openroad-pip//pypandoc_binary:extracted_whl_files"],
+    }),
+    visibility = ["//visibility:public"],
+)
+
 # Driver script that orchestrates man page generation inside Bazel's sandbox.
 py_binary(
     name = "manpages_impl",
@@ -75,6 +95,9 @@ exports_files(
         "bzl_fmt_test.sh",
         "bzl_lint_test.sh",
         "bzl_tidy.sh",
+        "cc_fmt_test.sh",
+        "cc_ls_files.sh",
+        "cc_tidy.sh",
         "fix_lint.sh",
         "git_ls_files.sh",
         "install.sh",
@@ -89,11 +112,18 @@ exports_files(
     visibility = ["//visibility:public"],
 )
 
-# tclint / tclfmt / yamlfix / black binaries from pip — versions pinned in
+# tclint / tclfmt / yamlfix / black / clang-format binaries from pip — versions pinned in
 # requirements.in
 py_console_script_binary(
     name = "tclint",
     pkg = "@openroad-pip//tclint",
+    visibility = ["//visibility:public"],
+)
+
+py_console_script_binary(
+    name = "clang-format",
+    pkg = "@openroad-pip//clang_format",
+    script = "clang-format",
     visibility = ["//visibility:public"],
 )
 

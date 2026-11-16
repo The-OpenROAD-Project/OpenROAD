@@ -5,7 +5,7 @@ data_dir=$(top_dir)/data
 
 TOP_DIR=/home/dimitris-ic/z/v2_rcx/OpenROAD-OpenRCX-v2-fotakis/
 test_dir=$(TOP_DIR)/src/rcx/test/
-or_exec=$(TOP_DIR)/build/src/openroad
+or_exec=$(TOP_DIR)/bazel-bin/openroad
 run_rcx_corners=$(test_dir)/rcx_v2/flow/corners/scripts/run_rcx.bash
 
 .PHONY : gcd_3corners gcd_3corners_define_list gcd_3corners_undefined  gcd_corners_0  gcd_corners_0_2  gcd_corners_1  gcd_corners_2  gcd_corners_2_1

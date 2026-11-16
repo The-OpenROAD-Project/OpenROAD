@@ -79,7 +79,7 @@ class OptimizationPolicy
                      MoveCommitter& committer,
                      RepairSetupContext& setup_context,
                      const OptimizerRunConfig& config,
-                     OptimizationPolicyConfig policy_config = {});
+                     const OptimizationPolicyConfig& policy_config = {});
   virtual ~OptimizationPolicy();
 
   virtual const char* name() const = 0;
