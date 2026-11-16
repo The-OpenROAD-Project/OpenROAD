@@ -83,6 +83,7 @@ struct Value
   Value(Net bit) : nets_{bit.raw_} {}
   Value(std::initializer_list<Net> parts)
   {
+    nets_.reserve(parts.size());
     for (auto it = parts.end(); it != parts.begin();) {
       --it;
       nets_.push_back(it->raw_);
