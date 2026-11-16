@@ -144,10 +144,12 @@ void Graphics::report(const float norm_cost)
   for (const auto& [name, penalty] : penalties_) {
     report(penalty);
   }
-  report({.name = "Total",
-          .weight = 1.0f,
-          .value = norm_cost,
-          .normalization_factor = 1.0f});
+  report({
+      .name = "Total",
+      .weight = 1.0f,
+      .value = norm_cost,
+      .normalization_factor = 1.0f,
+  });
 }
 
 void Graphics::drawResult()
