@@ -22,10 +22,10 @@ cc_library(
         "src/RetimingGraph.cpp",
         "src/RetimingGraph.h",
         "src/SequentialUnmapper.cpp",
+        "src/SequentialUnmapper.h",
     ],
     hdrs = [
         "include/ret/Retimer.h",
-        "include/ret/SequentialUnmapper.h",
     ],
     includes = [
         "include",
@@ -38,6 +38,21 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/utl",
         "@spdlog",
+    ],
+)
+
+# The private register unmapper, for the unit tests in test.
+cc_library(
+    name = "ret_internal",
+    testonly = True,
+    hdrs = [
+        "src/SequentialUnmapper.h",
+    ],
+    strip_include_prefix = "src",
+    visibility = ["//src/ret/test:__pkg__"],
+    deps = [
+        ":ret",
+        "//src/odb/src/db",
     ],
 )
 

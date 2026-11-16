@@ -71,7 +71,7 @@ cc_test(
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
-        "//src/ret",
+        "//src/ret:ret_internal",
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/utl",
