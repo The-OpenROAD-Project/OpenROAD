@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstddef>
 #include <map>
+#include <numeric>
 #include <ranges>
 #include <set>
 #include <stdexcept>
@@ -87,6 +88,13 @@ int originId(const fsv::BlockShape& shape)
 
 }  // namespace
 
+std::vector<int> BlockBoxes::netBoxes(const NetIndex net) const
+{
+  std::vector<int> ids(net_first[net + 1] - net_first[net]);
+  std::iota(ids.begin(), ids.end(), net_first[net]);
+  return ids;
+}
+
 BlockBoxes readBlockBoxes(odb::dbBlock* block,
                           const fsv::Stack& stack,
                           const Evaluator& evaluator)
@@ -122,7 +130,7 @@ BlockBoxes readBlockBoxes(odb::dbBlock* block,
   for (odb::dbNet* net : block->getNets()) {
     const NetIndex index = static_cast<NetIndex>(result.nets.size());
     result.nets.push_back(net);
-    result.net_boxes.emplace_back();
+    result.net_first.push_back(static_cast<int>(result.boxes.size()));
     for (const fsv::BlockShape& shape : fsv::netShapes(net)) {
       const int layer = layerOf(shape.layer);
       if (layer < -1) {
@@ -132,7 +140,6 @@ BlockBoxes readBlockBoxes(odb::dbBlock* block,
       if (shape.rect.area() == 0) {
         continue;
       }
-      result.net_boxes.back().push_back(static_cast<int>(result.boxes.size()));
       result.boxes.push_back(
           {.net = index, .layer = layer, .rect = shape.rect});
       result.origins.push_back({.source = shape.source, .id = originId(shape)});
@@ -141,6 +148,7 @@ BlockBoxes readBlockBoxes(odb::dbBlock* block,
       }
     }
   }
+  result.net_first.push_back(static_cast<int>(result.boxes.size()));
   result.obstructions = static_cast<NetIndex>(result.nets.size());
   std::vector<fsv::Obstruction> obstructions;
   for (const fsv::BlockShape& shape : fsv::unconnectedShapes(block)) {
@@ -293,7 +301,7 @@ void Extractor::checkModel(const std::vector<NetIndex>& work) const
 {
   std::set<int> used;
   for (const NetIndex n : work) {
-    for (const int b : boxes_.net_boxes[n]) {
+    for (int b = boxes_.net_first[n]; b < boxes_.net_first[n + 1]; b++) {
       used.insert(boxes_.boxes[b].layer);
     }
   }
@@ -379,7 +387,7 @@ NetParasitics Extractor::evaluateNet(const NetIndex net,
   std::vector<int> ids;
   evaluator_.evaluate(
       boxes_.boxes,
-      boxes_.net_boxes[net],
+      boxes_.netBoxes(net),
       [&](const int box, std::vector<int>& out) {
         index.candidates(box, rects, ids, out);
       },

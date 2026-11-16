@@ -66,12 +66,17 @@ struct BlockBoxes
   std::vector<odb::dbNet*> nets;  // by NetIndex
   NetIndex obstructions;          // the grounded net, after the last
   std::vector<EvalBox> boxes;
-  std::vector<BoxOrigin> origins;           // per box
-  std::vector<std::vector<int>> net_boxes;  // per net, ascending
-  int trimmed = 0;                          // obstructions a net cut
+  std::vector<BoxOrigin> origins;  // per box
+  // Each net's boxes are contiguous: net n owns [net_first[n],
+  // net_first[n + 1]). One entry per net plus one; obstructions follow.
+  std::vector<int> net_first;
+  int trimmed = 0;  // obstructions a net cut
   int skipped = 0;  // shapes on layers neither conductor nor cut
   // The routing layers with shapes that the stack has no conductor for.
   std::vector<std::string> unknown_layers;
+
+  // The ids of net `net`'s boxes, ascending.
+  std::vector<int> netBoxes(NetIndex net) const;
 };
 
 // Reads every shape of `block` onto the evaluator's layers by name; a cut

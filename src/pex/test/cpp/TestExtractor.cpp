@@ -203,21 +203,22 @@ TEST_F(ExtractorTest, IndexEqualsEveryBox)
   std::vector<int> ids;
   int compared = 0;
   for (size_t n = 0; n < boxes.nets.size(); n++) {
-    if (boxes.nets[n]->getSigType().isSupply() || boxes.net_boxes[n].empty()) {
+    if (boxes.nets[n]->getSigType().isSupply()
+        || boxes.net_first[n] == boxes.net_first[n + 1]) {
       continue;
     }
     std::vector<Contribution> indexed;
     std::vector<Contribution> brute;
     evaluator.evaluate(
         boxes.boxes,
-        boxes.net_boxes[n],
+        boxes.netBoxes(n),
         [&](const int box, std::vector<int>& out) {
           index.candidates(box, rects, ids, out);
         },
         indexed);
     evaluator.evaluate(
         boxes.boxes,
-        boxes.net_boxes[n],
+        boxes.netBoxes(n),
         [&](int, std::vector<int>& out) {
           out.resize(count);
           std::iota(out.begin(), out.end(), 0);
