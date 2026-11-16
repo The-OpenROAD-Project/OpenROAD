@@ -132,6 +132,10 @@ class Rudy
     for (int x = min_x_index; x <= max_x_index; ++x) {
       for (int y = min_y_index; y <= max_y_index; ++y) {
         const auto tile_box = grid_[x][y].getRect();
+        // A line net on a tile boundary has no
+        // interior overlap with any tile. The index range above already gives
+        // the boundary to the tile above or to the right.
+        // if (!net_rect.intersects(tile_box)) {
         if (!net_rect.overlaps(tile_box)) {
           continue;
         }

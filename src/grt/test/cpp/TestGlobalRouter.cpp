@@ -3,7 +3,6 @@
 
 #include <stdexcept>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "db_sta/dbSta.hh"
@@ -43,6 +42,26 @@ class GlobalRouterTest : public tst::IntegratedFixture
 
     grt_.setMinRoutingLayer(2);
     grt_.setMaxRoutingLayer(10);
+  }
+
+  // Net with a placed top-level pin centered on each of a and b.
+  odb::dbNet* makeTwoPinNet(const std::string& name,
+                            const odb::Point& a,
+                            const odb::Point& b)
+  {
+    odb::dbTechLayer* metal3 = db_->getTech()->findLayer("metal3");
+    odb::dbNet* net = odb::dbNet::create(block_, name.c_str());
+    for (const odb::Point& p : {a, b}) {
+      const std::string pin_name
+          = name + "_" + std::to_string(p.x()) + "_" + std::to_string(p.y());
+      odb::dbBTerm* bterm = odb::dbBTerm::create(net, pin_name.c_str());
+      EXPECT_NE(bterm, nullptr);
+      odb::dbBPin* bpin = odb::dbBPin::create(bterm);
+      odb::dbBox::create(
+          bpin, metal3, p.x() - 100, p.y() - 100, p.x() + 100, p.y() + 100);
+      bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    }
+    return net;
   }
 };
 
@@ -143,8 +162,6 @@ TEST_F(GlobalRouterTest, RudyDepositsWireAreaPerTile)
   constexpr int kWireWidth = 100;
   grt::Rudy* rudy = grt_.getRudy();
   rudy->setWireWidth(kWireWidth);
-  odb::dbTechLayer* metal3 = db_->getTech()->findLayer("metal3");
-  ASSERT_NE(metal3, nullptr);
   const auto [grid_x, grid_y] = rudy->getGridSize();
   ASSERT_GE(grid_x, 8);
   ASSERT_GE(grid_y, 8);
@@ -153,20 +170,6 @@ TEST_F(GlobalRouterTest, RudyDepositsWireAreaPerTile)
   auto center = [&](int x, int y) {
     const odb::Rect tile = rudy->getTile(x, y).getRect();
     return odb::Point(tile.xCenter(), tile.yCenter());
-  };
-  auto make_net = [&](const std::string& name, odb::Point a, odb::Point b) {
-    odb::dbNet* net = odb::dbNet::create(block_, name.c_str());
-    for (const odb::Point& p : {a, b}) {
-      const std::string pin_name
-          = name + "_" + std::to_string(p.x()) + "_" + std::to_string(p.y());
-      odb::dbBTerm* bterm = odb::dbBTerm::create(net, pin_name.c_str());
-      EXPECT_NE(bterm, nullptr);
-      odb::dbBPin* bpin = odb::dbBPin::create(bterm);
-      odb::dbBox::create(
-          bpin, metal3, p.x() - 100, p.y() - 100, p.x() + 100, p.y() + 100);
-      bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-    }
-    return net;
   };
 
   // Interior tiles only: the last row and column absorb the die remainder, so
@@ -184,7 +187,7 @@ TEST_F(GlobalRouterTest, RudyDepositsWireAreaPerTile)
   const float tile_area = rudy->getTile(0, 0).getRect().area();
   for (const auto& [name, a, b] : cases) {
     SCOPED_TRACE(name);
-    odb::dbNet* net = make_net(name, a, b);
+    odb::dbNet* net = makeTwoPinNet(name, a, b);
     const odb::Rect net_box = net->getTermBBox();
     odb::PtrSet<odb::dbNet> selection{net};
     rudy->calculateRudy(&selection);
@@ -212,22 +215,12 @@ TEST_F(GlobalRouterTest, RudyDepositsWireAreaPerTile)
 TEST_F(GlobalRouterTest, RudyLineNetIsTheLimitOfAThinRectangle)
 {
   grt::Rudy* rudy = grt_.getRudy();
-  odb::dbTechLayer* metal3 = db_->getTech()->findLayer("metal3");
-  ASSERT_NE(metal3, nullptr);
 
   // Total RUDY demand of a two-pin net from (20000, 50000) to
   // (180000, 50000 + dy).
   auto total_demand = [&](const std::string& name, int dy) {
-    odb::dbNet* net = odb::dbNet::create(block_, name.c_str());
-    const std::pair<int, int> pins[] = {{20000, 50000}, {180000, 50000 + dy}};
-    for (const auto& [x, y] : pins) {
-      odb::dbBTerm* bterm
-          = odb::dbBTerm::create(net, (name + "_" + std::to_string(x)).c_str());
-      odb::dbBPin* bpin = odb::dbBPin::create(bterm);
-      odb::dbBox::create(bpin, metal3, x - 100, y - 100, x + 100, y + 100);
-      bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-    }
-    odb::PtrSet<odb::dbNet> selection{net};
+    odb::PtrSet<odb::dbNet> selection{
+        makeTwoPinNet(name, {20000, 50000}, {180000, 50000 + dy})};
     rudy->calculateRudy(&selection);
     const auto [grid_x, grid_y] = rudy->getGridSize();
     float demand = 0;
@@ -244,6 +237,61 @@ TEST_F(GlobalRouterTest, RudyLineNetIsTheLimitOfAThinRectangle)
   EXPECT_GT(aligned, 0);
   // A 1 DBU tall box over a 160000 DBU run is the line up to 1/160000.
   EXPECT_NEAR(aligned, almost_aligned, almost_aligned * 1e-4);
+}
+
+TEST_F(GlobalRouterTest, RudyLineNetOnTileBoundaryGoesToOneTile)
+{
+  grt::Rudy* rudy = grt_.getRudy();
+  const auto [grid_x, grid_y] = rudy->getGridSize();
+  ASSERT_GE(grid_x, 8);
+  ASSERT_GE(grid_y, 8);
+
+  // Per-tile demand of a single two-pin net.
+  auto demand_map = [&](const std::string& name, odb::Point a, odb::Point b) {
+    odb::PtrSet<odb::dbNet> selection{makeTwoPinNet(name, a, b)};
+    rudy->calculateRudy(&selection);
+    const auto [cnt_x, cnt_y] = rudy->getGridSize();
+    std::vector<float> demand;
+    for (int x = 0; x < cnt_x; x++) {
+      for (int y = 0; y < cnt_y; y++) {
+        demand.push_back(rudy->getTile(x, y).getDemand());
+      }
+    }
+    return demand;
+  };
+
+  // As in Grid::getPositionOnGrid, a tile boundary belongs to the tile above
+  // or to the right. So a line on a boundary must deposit exactly what it does
+  // 1 DBU into that tile.
+  const odb::Rect lo = rudy->getTile(1, 1).getRect();
+  const odb::Rect hi = rudy->getTile(6, 6).getRect();
+  const struct
+  {
+    const char* name;
+    odb::Point a;
+    odb::Point b;
+    int dx;  // Shift into the tile that owns the boundary.
+    int dy;
+  } cases[] = {
+      {"row_boundary",
+       {lo.xCenter(), lo.yMax()},
+       {hi.xCenter(), lo.yMax()},
+       0,
+       1},
+      {"column_boundary",
+       {lo.xMax(), lo.yCenter()},
+       {lo.xMax(), hi.yCenter()},
+       1,
+       0},
+  };
+  for (const auto& [name, a, b, dx, dy] : cases) {
+    SCOPED_TRACE(name);
+    const std::vector<float> on_boundary = demand_map(name, a, b);
+    const std::vector<float> inside = demand_map(std::string(name) + "_inside",
+                                                 {a.x() + dx, a.y() + dy},
+                                                 {b.x() + dx, b.y() + dy});
+    EXPECT_EQ(on_boundary, inside);
+  }
 }
 
 }  // namespace
