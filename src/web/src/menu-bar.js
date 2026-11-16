@@ -146,7 +146,7 @@ export function createMenuBar(app) {
             { label: 'Inspector', action: show('Inspector') },
             { label: 'Selection Browser', action: show('SelectHighlight') },
             { label: 'Tcl Console', action: show('TclConsole') },
-            { label: 'Hierarchy Browser', action: show('Browser') },
+            { label: 'Hierarchy', action: show('Browser') },
             { label: 'Timing', action: show('TimingWidget') },
             { label: 'DRC Viewer', action: show('DRCWidget') },
             { label: 'Clock Tree', action: show('ClockWidget') },

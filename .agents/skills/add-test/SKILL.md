@@ -7,8 +7,6 @@ description: >
   to add tests, improve test coverage, create regression tests, or write
   unit tests for any OpenROAD module (ant, cts, dpl, drt, gpl, grt, mpl,
   odb, pad, pdn, psm, rcx, rsz, sta, stt, tap, upf, utl, etc.).
-  Also triggers on: "add test", "write test", "test coverage",
-  "missing tests", "create regression test", "add unit test".
 argument-hint: "<module> [test-description]"
 ---
 

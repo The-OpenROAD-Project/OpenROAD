@@ -93,8 +93,14 @@ cc_library(
 # The state behind the Tcl commands.
 cc_library(
     name = "net_window",
-    srcs = ["src/NetWindow.cpp"],
-    hdrs = ["include/fsv/NetWindow.h"],
+    srcs = [
+        "src/BlockShapes.cpp",
+        "src/NetWindow.cpp",
+    ],
+    hdrs = [
+        "include/fsv/BlockShapes.h",
+        "include/fsv/NetWindow.h",
+    ],
     includes = ["include"],
     deps = [
         ":core",
@@ -133,7 +139,6 @@ cc_library(
         ":geometry",
         "//:ord",
         "//src/utl",
-        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
 )
