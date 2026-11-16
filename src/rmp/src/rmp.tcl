@@ -105,19 +105,19 @@ proc restructure { args } {
     $depth_threshold_value $workdir_name $abc_logfile
 }
 
-sta::define_cmd_args "resynth" {[-scene scene]}
+sta::define_cmd_args "resynth" {[-scene scene | -corner corner]}
 
 proc resynth { args } {
   sta::parse_key_args "resynth" args \
     keys {-scene -corner} \
     flags {}
-  ord::deprecated_corner_arg resynth keys
+  ord::scene_from_corner_arg keys
   set corner [sta::parse_scene keys]
   rmp::resynth_cmd $corner
 }
 
 sta::define_cmd_args "resynth_annealing" {
-                                            [-scene scene]
+                                            [-scene scene | -corner corner]
                                             [-slack_threshold slack_threshold]
                                             [-seed seed]
                                             [-temp temp]
@@ -131,7 +131,7 @@ proc resynth_annealing { args } {
     keys {-scene -corner -iters -revert_after -seed -temp -initial_ops -slack_threshold} \
     flags {}
 
-  ord::deprecated_corner_arg resynth_annealing keys
+  ord::scene_from_corner_arg keys
   set corner [sta::parse_scene keys]
   if { [info exists keys(-slack_threshold)] } {
     rmp::set_slack_threshold $keys(-slack_threshold)
@@ -156,7 +156,7 @@ proc resynth_annealing { args } {
 }
 
 sta::define_cmd_args "resynth_genetic" {
-                                            [-scene scene]
+                                            [-scene scene | -corner corner]
                                             [-slack_threshold slack_threshold]
                                             [-seed seed]
                                             [-population_size population_size]
@@ -175,7 +175,7 @@ proc resynth_genetic { args } {
               -initial_ops -slack_threshold} \
     flags {}
 
-  ord::deprecated_corner_arg resynth_genetic keys
+  ord::scene_from_corner_arg keys
   set corner [sta::parse_scene keys]
   if { [info exists keys(-slack_threshold)] } {
     rmp::set_slack_threshold $keys(-slack_threshold)

@@ -145,7 +145,7 @@ proc save_animated_gif { args } {
 sta::define_cmd_args "save_clocktree_image" {
   [-width width] \
   [-height height] \
-  [-scene scene] \
+  [-scene scene | -corner corner] \
   -clock clock \
   path
 }
@@ -153,7 +153,7 @@ sta::define_cmd_args "save_clocktree_image" {
 proc save_clocktree_image { args } {
   sta::parse_key_args "save_clocktree_image" args \
     keys {-clock -width -height -scene -corner} flags {}
-  ord::deprecated_corner_arg save_clocktree_image keys
+  ord::scene_from_corner_arg keys
 
   sta::check_argc_eq1 "save_clocktree_image" $args
   set path [lindex $args 0]

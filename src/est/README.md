@@ -32,7 +32,7 @@ set_wire_rc
     [-clock] 
     [-signal]
     [-data]
-    [-scene scene]
+    [-scene scene | -corner corner]
     [-layers layers_list]
     [-tech tech]
     [-redistribution_layer]
@@ -51,7 +51,7 @@ set_wire_rc
     [-clock] 
     [-signal]
     [-data]
-    [-scene scene]
+    [-scene scene | -corner corner]
     [-layer layer_name]
     [-tech tech]
     [-redistribution_layer]
@@ -97,7 +97,7 @@ set_layer_rc
     [-via via_layer]
     [-resistance res]
     [-capacitance cap]
-    [-scene scene]
+    [-scene scene | -corner corner]
 ```
 
 #### Options
@@ -108,7 +108,7 @@ set_layer_rc
 | `-via` | Select via layer name. Note that via resistance is per cut/via, not area-based. |
 | `-resistance` | Resistance per unit length, same convention as `set_wire_rc`. |
 | `-capacitance` | Capacitance per unit length, same convention as `set_wire_rc`. |
-| `-scene` | Scene to use. |
+| `-scene` | Scene to use. `-corner` is accepted as a synonym. |
 
 ### Report Layer RC
 
@@ -118,14 +118,14 @@ command or they originate from the LEF.
 
 ```tcl
 report_layer_rc
-    [-scene scene]
+    [-scene scene | -corner corner]
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-scene` | Scene to report. |
+| `-scene` | Scene to report. `-corner` is accepted as a synonym. |
 
 ### Estimate Parasitics
 

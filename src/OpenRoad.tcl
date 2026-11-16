@@ -534,15 +534,12 @@ proc place_inst { args } {
 ################################################################
 
 namespace eval ord {
-# -corner on OpenROAD commands is deprecated in favor of -scene; map it so
-# old scripts keep working until it is removed.
-proc deprecated_corner_arg { cmd keys_var } {
+# -corner on OpenROAD commands selects a scene, the same as -scene. OpenSTA's
+# parse_scene procs read only -scene, so map it here.
+proc scene_from_corner_arg { keys_var } {
   upvar 1 $keys_var keys
-  if { [info exists keys(-corner)] } {
-    utl::warn ORD 2058 "$cmd -corner is deprecated. Use -scene."
-    if { ![info exists keys(-scene)] } {
-      set keys(-scene) $keys(-corner)
-    }
+  if { [info exists keys(-corner)] && ![info exists keys(-scene)] } {
+    set keys(-scene) $keys(-corner)
   }
 }
 

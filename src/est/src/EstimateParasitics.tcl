@@ -37,7 +37,7 @@ sta::define_cmd_args "set_layer_rc" { [-layer layer]\
                                         [-via via_layer]\
                                         [-capacitance cap]\
                                         [-resistance res]\
-                                        [-scene scene]}
+                                        [-scene scene | -corner corner]}
 proc set_layer_rc { args } {
   sta::parse_key_args "set_layer_rc" args \
     keys {-layer -via -capacitance -resistance -scene -corner} \
@@ -47,7 +47,7 @@ proc set_layer_rc { args } {
     utl::error "EST" 201 "Use -layer or -via but not both."
   }
 
-  ord::deprecated_corner_arg set_layer_rc keys
+  ord::scene_from_corner_arg keys
   set corners [sta::parse_scene_or_null keys]
   set tech [est::get_db_tech_checked]
   if { [info exists keys(-layer)] } {
@@ -123,13 +123,13 @@ proc set_layer_rc { args } {
   }
 }
 
-sta::define_cmd_args "report_layer_rc" {[-scene scene]}
+sta::define_cmd_args "report_layer_rc" {[-scene scene | -corner corner]}
 
 proc report_layer_rc { args } {
   sta::parse_key_args "report_layer_rc" args \
     keys {-scene -corner} \
     flags {}
-  ord::deprecated_corner_arg report_layer_rc keys
+  ord::scene_from_corner_arg keys
   set corner [sta::parse_scene_or_null keys]
   set tech [est::get_db_tech_checked]
   set no_routing_layers [$tech getRoutingLayerCount]
@@ -187,7 +187,7 @@ sta::define_cmd_args "set_wire_rc" {[-clock] [-signal] [-data]\
                                       [-v_capacitance v_cap]\
                                       [-resistance res]\
                                       [-capacitance cap]\
-                                      [-scene scene]\
+                                      [-scene scene | -corner corner]\
                                       [-tech tech]\
                                       [-redistribution_layer]}
 
@@ -198,7 +198,7 @@ proc set_wire_rc { args } {
           -tech} \
     flags {-clock -signal -data -redistribution_layer}
 
-  ord::deprecated_corner_arg set_wire_rc keys
+  ord::scene_from_corner_arg keys
   set corner [sta::parse_scene_or_null keys]
 
   set target_techs [est::parse_wire_rc_techs keys flags has_selector]
