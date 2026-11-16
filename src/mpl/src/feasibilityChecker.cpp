@@ -37,8 +37,7 @@ void FeasibilityChecker::run()
 {
   checkUnfixedMacros();
 
-  // Nothing to place.
-  if (!found_unfixed_macros_) {
+  if (!found_macros_to_place_) {
     return;
   }
 
@@ -52,7 +51,7 @@ void FeasibilityChecker::checkUnfixedMacros()
 {
   for (const auto& [inst, hard_macro] : hard_macros_) {
     if (!hard_macro->isFixed()) {
-      found_unfixed_macros_ = true;
+      found_macros_to_place_ = true;
       return;
     }
   }

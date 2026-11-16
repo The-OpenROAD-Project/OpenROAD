@@ -52,7 +52,6 @@ bool MacroPlacer::run(int threads, const MacroPlacerOptions& options)
                            hier_rtlmp_->minChannel(),
                            options.pin_aware_channels);
   InstToHardMap hard_macros = factory.create();
-
   FeasibilityChecker checker(block,
                              logger_,
                              hard_macros,
@@ -60,7 +59,7 @@ bool MacroPlacer::run(int threads, const MacroPlacerOptions& options)
                              options.target_util);
   checker.run();
 
-  if (checker.foundUnfixedMacros()) {
+  if (checker.foundMacrosToPlace()) {
     hier_rtlmp_->setHardMacros(std::move(hard_macros));
     hier_rtlmp_->run();
   } else {

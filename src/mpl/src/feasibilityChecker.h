@@ -27,7 +27,7 @@ class FeasibilityChecker
 
   void run();
 
-  bool foundUnfixedMacros() const { return found_unfixed_macros_; }
+  bool foundMacrosToPlace() const { return found_macros_to_place_; }
 
  private:
   void checkUnfixedMacros();
@@ -56,7 +56,7 @@ class FeasibilityChecker
   odb::Rect floorplan_shape_;
   float target_utilization_{0.0f};
 
-  bool found_unfixed_macros_{false};
+  bool found_macros_to_place_{false};
 };
 
 }  // namespace mpl
