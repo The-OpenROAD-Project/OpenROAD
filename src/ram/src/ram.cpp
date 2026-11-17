@@ -7,6 +7,7 @@
 #include <array>
 #include <cctype>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <fstream>
 #include <functional>
@@ -24,6 +25,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "dpl/Opendp.h"
 #include "drt/TritonRoute.h"
+#include "fmt/format.h"
 #include "grt/GlobalRouter.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
@@ -2180,7 +2182,9 @@ void RamGen::generate(const int mask_size,
                       const std::string& wrapper_verilog,
                       const int service_every,
                       const int service_sites,
-                      const std::string& bank_column_layout)
+                      const std::string& bank_column_layout,
+                      const int segmentation,
+                      const int rows_per_segment_req)
 {
   if (banks < 1 || bank_columns < 1) {
     logger_->error(RAM,
@@ -2813,6 +2817,84 @@ void RamGen::generate(const int mask_size,
     }
   }
 
+  // Bit-line segmentation. The best segment length is about sqrt(num_rows):
+  // a longer segment loads the local line, a shorter one adds segments that
+  // load the global line. The segment is selected by an AND of the upper row
+  // address bits, so the length must be a power of two: take the power of two
+  // nearest to sqrt(num_rows) by ratio (a tie goes to the smaller one).
+  // Below kMinSegmentRows the extra tri-state row costs more than the shorter
+  // line saves.
+  constexpr int kMinSegmentRows = 32;
+  int rows_per_seg = 0;
+  if (rows_per_segment_req > 0) {
+    rows_per_seg = rows_per_segment_req;
+  } else if (num_rows >= kMinSegmentRows || segmentation == 1) {
+    int p = 1;  // largest power of two with p * p <= num_rows
+    while (4 * p * p <= num_rows) {
+      p *= 2;
+    }
+    rows_per_seg = (num_rows >= 2 * p * p) ? 2 * p : p;
+  }
+
+  auto ceil_log2 = [](int v) {
+    int b = 0;
+    for (int p = 1; p < v; p *= 2) {
+      b++;
+    }
+    return b;
+  };
+
+  const bool seg_supported = (column_mux_ratio == 1 || column_mux_ratio == 2)
+                             && !banked_ && !and_or_read_ && bit_folds_ == 1
+                             && rw_ports == 1 && r_ports_all == 0
+                             && w_ports == 0;
+  const bool forced_on
+      = segmentation != 0 && (segmentation == 1 || rows_per_segment_req > 0);
+  if (forced_on && !seg_supported) {
+    logger_->error(
+        RAM,
+        112,
+        "Bit-line segmentation is not supported for this configuration.");
+  }
+  if (forced_on && (rows_per_seg < 2 || rows_per_seg >= num_rows)) {
+    logger_->error(RAM,
+                   113,
+                   "rows per segment {} must be in [2, {}).",
+                   rows_per_seg,
+                   num_rows);
+  }
+  const bool segmented = segmentation != 0 && seg_supported && rows_per_seg >= 2
+                         && num_rows > rows_per_seg;
+
+  const int num_segs
+      = segmented ? (num_rows + rows_per_seg - 1) / rows_per_seg : 0;
+  const int rps_bits = segmented ? std::lround(std::log2(rows_per_seg)) : 0;
+
+  const int seg_bits = segmented ? ceil_log2(num_segs) : 0;
+  debugPrint(logger_,
+             utl::RAM,
+             "segmentation",
+             1,
+             "rows per segment {}: segmentation {}",
+             rows_per_seg,
+             segmented ? "ON" : "OFF");
+
+  // seg_q_nets[seg][word][bit] = local bit line of one segment
+  vector<vector<vector<dbNet*>>> seg_q_nets;
+  if (segmented) {
+    seg_q_nets.assign(
+        num_segs,
+        vector<vector<dbNet*>>(column_mux_ratio, vector<dbNet*>(word_size)));
+    for (int s = 0; s < num_segs; ++s) {
+      for (int w = 0; w < column_mux_ratio; ++w) {
+        for (int bit = 0; bit < word_size; ++bit) {
+          seg_q_nets[s][w][bit]
+              = makeNet("seg_q", fmt::format("s{}_w{}_b{}", s, w, bit));
+        }
+      }
+    }
+  }
+
   // Intermediate nets between tristate outputs and Q BTerms
   // When column_mux_ratio = 1: tristate drives Q directly, so reuse Q BTerm
   // nets When column_mux_ratio > 1: tristate drives intermediate net, AOI mux
@@ -2972,7 +3054,9 @@ void RamGen::generate(const int mask_size,
       vector<vector<dbNet*>> word_output_nets(r_total);
       for (int port = 0; port < r_total; ++port) {
         for (int bit = 0; bit < word_size; ++bit) {
-          word_output_nets[port].push_back(word_q_nets[word_idx][port][bit]);
+          word_output_nets[port].push_back(
+              segmented ? seg_q_nets[row / rows_per_seg][word_idx][bit]
+                        : word_q_nets[word_idx][port][bit]);
         }
       }
 
@@ -3333,11 +3417,144 @@ void RamGen::generate(const int mask_size,
       }
     }
   }
+
+  // Library variant of `base` with `factor` times its drive strength, found
+  // by name ("and2_1" -> "and2_2", "TBUF_X1" -> "TBUF_X4"). Returns `base`
+  // when the library has no such variant.
+  auto upsized = [&](dbMaster* base, int factor) -> dbMaster* {
+    if (!base) {
+      logger_->error(RAM, 114, "Required cell is missing for upsizing.");
+    }
+    const std::string name = base->getName();
+    size_t pos = name.size();
+    while (pos > 0 && std::isdigit(static_cast<unsigned char>(name[pos - 1]))) {
+      --pos;
+    }
+    if (pos == name.size() || pos == 0) {
+      return base;
+    }
+    const int drive = std::stoi(name.substr(pos));
+    dbMaster* up = db_->findMaster(
+        (name.substr(0, pos) + std::to_string(std::max(drive, 1) * factor))
+            .c_str());
+    return up ? up : base;
+  };
+
+  if (segmented) {
+    for (int s = 0; s < num_segs; ++s) {
+      const std::string sp = fmt::format("seg{}", s);
+      // ctl[slice][word] lives in that slice's select column of that word
+      vector<vector<std::unique_ptr<Cell>>> ctl(slices_per_word);
+      for (auto& v : ctl) {
+        v.resize(column_mux_ratio);
+        for (auto& c : v) {
+          c = std::make_unique<Cell>();
+        }
+      }
+
+      // Cells of the segment-select chain. The AND tree drives every slice and
+      // the second-stage tri-state drives the long global bit line, so both
+      // are stronger than the base cells.
+      dbMaster* seg_and = upsized(and2_cell_, 2);
+      dbMaster* seg_tri_cell = upsized(tristate_cell_, 4);
+      auto ap = buildPortMap(seg_and);
+      auto tp = buildPortMap(seg_tri_cell);
+
+      // segment select (active high): AND of the upper row-address bits
+      dbNet* seg_sel = nullptr;
+      for (int j = 0; j < seg_bits; ++j) {
+        const int a = num_word_bits + rps_bits + j;
+        dbNet* bit_net
+            = ((static_cast<unsigned>(s) >> static_cast<unsigned>(j)) & 1U)
+                  ? addr_true_[0][a]
+                  : inv_addr_nets[0][a];
+        if (!seg_sel) {
+          seg_sel = bit_net;
+          continue;
+        }
+        dbNet* out = makeNet(sp, fmt::format("sel_and{}", j));
+        makeInst(ctl[0][0].get(),
+                 sp,
+                 fmt::format("and{}", j),
+                 seg_and,
+                 {
+                     {ap[{.type = PortRoleType::DataIn, .index = 0}], seg_sel},
+                     {ap[{.type = PortRoleType::DataIn, .index = 1}], bit_net},
+                     {ap[{.type = PortRoleType::DataOut, .index = 0}], out},
+                 });
+        seg_sel = out;
+      }
+
+      // active-low enables: one inverter per slice per word (fanout =
+      // mask_size)
+      vector<vector<dbNet*>> seg_sel_b(slices_per_word,
+                                       vector<dbNet*>(column_mux_ratio));
+      for (int sl = 0; sl < slices_per_word; ++sl) {
+        for (int w = 0; w < column_mux_ratio; ++w) {
+          seg_sel_b[sl][w] = makeNet(sp, fmt::format("sel_b_s{}_w{}", sl, w));
+          makeInst(
+              ctl[sl][w].get(),
+              sp,
+              fmt::format("inv_s{}_w{}", sl, w),
+              inv_cell_,
+              {
+                  {
+                      inv_ports_[{.type = PortRoleType::DataIn, .index = 0}],
+                      seg_sel,
+                  },
+                  {
+                      inv_ports_[{.type = PortRoleType::DataOut, .index = 0}],
+                      seg_sel_b[sl][w],
+                  },
+              });
+        }
+      }
+
+      // the new grid row, one cell per column
+      vector<std::unique_ptr<Cell>> row_cells(ram_grid_.numLayouts());
+      for (int sl = 0; sl < slices_per_word; ++sl) {
+        for (int w = 0; w < column_mux_ratio; ++w) {
+          row_cells[selColumn(sl, w, mask_size)] = std::move(ctl[sl][w]);
+          for (int k = 0; k < mask_size; ++k) {
+            const int bit = sl * mask_size + k;
+            const int col = bitColumn(sl, k, w, mask_size);
+            row_cells[col] = std::make_unique<Cell>();
+            // second-stage tristate: segment line -> word's Q net
+            makeInst(row_cells[col].get(),
+                     sp,
+                     fmt::format("obuf_w{}_b{}", w, bit),
+                     seg_tri_cell,
+                     {
+                         {
+                             tp[{.type = PortRoleType::DataIn, .index = 0}],
+                             seg_q_nets[s][w][bit],
+                         },
+                         {
+                             tp[{.type = PortRoleType::TriEnable, .index = 0}],
+                             seg_sel_b[sl][w],
+                         },
+                         {
+                             tp[{.type = PortRoleType::DataOut, .index = 0}],
+                             word_q_nets[w][0][bit],
+                         },
+                     });
+          }
+        }
+      }
+
+      // new grid row after the last row of segment s, in every column
+      const int idx = std::min<int>((s + 1) * rows_per_seg, num_rows) + s;
+      for (int col = 0; col < ram_grid_.numLayouts(); ++col) {
+        ram_grid_.insertCell(std::move(row_cells[col]), col, idx);
+      }
+    }
+  }
+
   // // One extra row at the top for placing input buffers, one extra row for
   // // negative latches if use latch-based ram
   // the words' rows, then the input buffers' (a row, or one a fold)
-  const int num_rows_grid
-      = num_rows * bit_folds_ + bit_folds_ + (use_latch_ ? 1 : 0);
+  const int num_rows_grid = num_rows * bit_folds_ + bit_folds_
+                            + (use_latch_ ? 1 : 0) + (segmented ? num_segs : 0);
 
   // auto cell_inv_layout = std::make_unique<Layout>(odb::vertical);
   // // check for AND gate, specific case for 2 words

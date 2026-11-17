@@ -32,6 +32,9 @@ foreach {id options} {
   64 {-storage_cell DFFASRHQNx1_ASAP7_75t_R -reset_value -1}
   64 {-storage_cell DFFASRHQNx1_ASAP7_75t_R -reset_value 0x}
   100 {-storage_cell DFFASRHQNx1_ASAP7_75t_R -reset_value 0x1ff}
+  111 {-bit_read_segmentation 2}
+  116 {-bit_read_segmentation 0 -bit_read_rows_per_segment 8}
+  112 {-bit_read_segmentation 1}
 } {
   set args [dict merge $base $options]
   if { ![catch { generate_ram {*}$args } message] } {
