@@ -12,6 +12,7 @@
 #include "odb/lefin.h"
 
 namespace odb::lefTechLayerSpacingTablePrl {
+namespace {
 
 void addInfluence(boost::fusion::vector<double, double, double>& params,
                   odb::lefTechLayerSpacingTablePrlParser* parser,
@@ -139,6 +140,7 @@ bool parse(Iterator first,
   }
   return valid;
 }
+}  // namespace
 }  // namespace odb::lefTechLayerSpacingTablePrl
 
 namespace odb {
