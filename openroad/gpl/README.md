@@ -93,7 +93,7 @@ global_placement
     [-power_driven]\
     [-routability_driven]\
     [-incremental]\
-    [-incremental_phase2]\
+    [-skip_incremental_phase2]\
     [-incremental_phase2_overflow overflow]\
     [-skip_io]\
     [-place_ios]\
@@ -144,8 +144,8 @@ global_placement
 | `-skip_nesterov_place` | Skip the nesterov placement. | 
 | `-force_center_initial_place` | Initiate instances at the center of the core (or region) before initial placement, even if they already have a valid ODB location. By default, the placer will use the existing ODB locations if available. |
 | `-incremental` | Enable the incremental global placement. Users would need to tune other parameters (e.g., `init_density_penalty`) with pre-placed solutions. | 
-| `-incremental_phase2` | With `-incremental`, if the overflow is still above `-overflow` after placing the unplaced instances around the locked existing ones, unlock all instances and keep placing until it is met. The fillers are handed out again before phase 2 starts. By default the existing instances are not moved and the remaining overflow is left to detailed placement. |
-| `-incremental_phase2_overflow` | With `-incremental_phase2`, the overflow target for phase 2. The default is the `-overflow` value phase 1 used. Allowed values are floats `[0, 1]`. |
+| `-skip_incremental_phase2` | With `-incremental`, skip phase 2. By default, if the overflow is still above `-overflow` after placing the unplaced instances around the locked existing ones, all instances are unlocked and placement continues until it is met, with the fillers handed out again before phase 2 starts. With this flag the existing instances are not moved and the remaining overflow is left to detailed placement. |
+| `-incremental_phase2_overflow` | With `-incremental`, the overflow target for phase 2. The default is the `-overflow` value phase 1 used. Allowed values are floats `[0, 1]`. |
 | `-bin_grid_count` | Set bin grid's counts. The internal heuristic defines the default value. Allowed values are integers `[64,128,256,512,...]`. |
 | `-density` | Set target density. The default value is `0.7` (i.e., 70%). Allowed values are floats `[0, 1]`. |
 | `-init_density_penalty` | Set initial density penalty. The default value is `8e-5`. Allowed values are floats `[1e-6, 1e6]`. |

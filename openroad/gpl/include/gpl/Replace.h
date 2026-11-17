@@ -140,9 +140,8 @@ struct PlaceOptions
   bool disablePinDensityAdjust = false;
   // Incremental placement: after placing the new instances with the
   // existing ones locked, unlock all of them and keep placing until the
-  // overflow target is met (phase 2). Off by default, since moving the
-  // existing instances undoes their placement.
-  bool incrementalPhase2 = false;
+  // overflow target is met (phase 2).
+  bool incrementalPhase2 = true;
   // Overflow target for phase 2; negative means use `overflow`, the target
   // phase 1 was given.
   float incrementalPhase2Overflow = -1;

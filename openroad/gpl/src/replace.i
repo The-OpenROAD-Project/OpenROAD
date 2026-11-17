@@ -35,7 +35,8 @@ static gpl::PlaceOptions getOptions(
       flags, "-disable_revert_if_diverge", options.disableRevertIfDiverge);
   checkFlag(
       flags, "-disable_pin_density_adjust", options.disablePinDensityAdjust);
-  checkFlag(flags, "-incremental_phase2", options.incrementalPhase2);
+  checkFlag(
+      flags, "-skip_incremental_phase2", options.incrementalPhase2, false);
   checkFlag(
       flags, "-enable_routing_congestion", options.enable_routing_congestion);
   checkFlag(flags, "-force_center_initial_place", options.forceCenterInitialPlace);

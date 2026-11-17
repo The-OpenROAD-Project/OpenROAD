@@ -1,12 +1,12 @@
-# incremental02 with -incremental_phase2: phase 1 leaves the overflow above
-# the target, so all instances are unlocked and phase 2 brings it down.
+# incremental02 as a pass/fail test: phase 1 leaves the overflow above the
+# target, so all instances are unlocked and phase 2 brings it down.
 source helpers.tcl
 read_lef ./nangate45.lef
 read_def ./incremental02.def
 
-# -incremental_phase2 only applies to incremental placement.
-if { ![catch { global_placement -incremental_phase2 } msg] } {
-  error "Expected -incremental_phase2 without -incremental to be rejected"
+# -skip_incremental_phase2 only applies to incremental placement.
+if { ![catch { global_placement -skip_incremental_phase2 } msg] } {
+  error "Expected -skip_incremental_phase2 without -incremental to be rejected"
 }
 if { ![string match {*GPL-0198*} $msg] } {
   error "Expected GPL-0198, got: $msg"
@@ -16,8 +16,8 @@ set_thread_count 4
 set overflow 0.1
 # with_output_to_variable runs its body in its own scope: read the global.
 with_output_to_variable log_text {
-  global_placement -incremental -incremental_phase2 -density 0.3 \
-    -overflow $::overflow -pad_left 2 -pad_right 2
+  global_placement -incremental -density 0.3 -overflow $::overflow \
+    -pad_left 2 -pad_right 2
 }
 puts $log_text
 
@@ -25,7 +25,7 @@ if { ![string match {*\[INFO GPL-0191\]*} $log_text] } {
   error "Expected phase 2 to run (GPL-0191)"
 }
 if { [string match {*GPL-0197*} $log_text] } {
-  error "Expected no GPL-0197 with -incremental_phase2"
+  error "Expected no GPL-0197 when phase 2 runs"
 }
 
 # The last row of phase 2's progress table holds the final overflow. Only
