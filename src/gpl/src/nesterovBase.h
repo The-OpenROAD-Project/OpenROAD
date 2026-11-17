@@ -1006,6 +1006,10 @@ class NesterovBaseCommon
     float weight = 0;
   };
   void setVirtualNets(std::vector<VirtualNet> nets);
+  const std::vector<VirtualNet>& getVirtualNets() const
+  {
+    return virtual_nets_;
+  }
   void clearVirtualNets();
   bool hasVirtualNets() const { return !virtual_net_grads_.empty(); }
 

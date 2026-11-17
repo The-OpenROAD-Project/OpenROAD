@@ -540,5 +540,59 @@ TEST_F(PowerDrivenPlacement, ClockLeafNetsFollowTheirOverflows)
   EXPECT_EQ(count(td, "Clock leaf nets:"), 2) << td;
 }
 
+// - each clock leaf net is a group of clock sinks, each sink in one net
+// - its weight is 1 + net weight x clock toggles per cycle
+TEST_F(PowerDrivenPlacement, ClockLeafNetsCarryClockActivity)
+{
+  // CTS clusters more than 200 sinks; simple01-td has 34.
+  odb::dbNet* clk = block_->findBTerm("clk")->getNet();
+  odb::dbMaster* dff = db_->findMaster("DFF_X1");
+  const odb::Rect core = block_->getCoreArea();
+  for (int i = 0; i < 200; i++) {
+    const std::string name = "leaf_ff" + std::to_string(i);
+    odb::dbInst* inst = odb::dbInst::create(block_, dff, name.c_str());
+    inst->setLocation(core.xMin() + (i % 20) * core.dx() / 20,
+                      core.yMin() + (i / 20) * core.dy() / 10);
+    inst->findITerm("CK")->connect(clk);
+  }
+  cts::TritonCTS cts(&logger_,
+                     db_.get(),
+                     network_,
+                     sta_.get(),
+                     stt_builder_.get(),
+                     resizer_.get(),
+                     estimate_parasitics_.get());
+  PlaceOptions options;
+  const PlacerBaseVars pb_vars(options);
+  auto pbc = std::make_shared<PlacerBaseCommon>(db_.get(), pb_vars, &logger_);
+  const NesterovBaseVars nb_vars(options);
+  auto nbc = std::make_shared<NesterovBaseCommon>(
+      nb_vars, pbc, &logger_, /* num_threads = */ 1, Clusters{});
+  constexpr float kNetWeight = 0.5;
+  PowerBase power(nbc, sta_.get(), &cts, kNetWeight, &logger_);
+  power.setPowerNetWeights();
+  // CTS takes placed sinks only; runPowerDriven updates the DB first.
+  nbc->updateDbGCells();
+  power.updateClockLeafNets();
+
+  const std::vector<NesterovBaseCommon::VirtualNet>& leaf_nets
+      = nbc->getVirtualNets();
+  ASSERT_GT(leaf_nets.size(), 1);
+  // Clocks toggle twice per cycle.
+  const float weight = 1 + kNetWeight * 2;
+  std::set<std::string> sinks;
+  for (const NesterovBaseCommon::VirtualNet& leaf_net : leaf_nets) {
+    EXPECT_GE(leaf_net.pins.size(), 2);
+    EXPECT_NEAR(leaf_net.weight, weight, kTolerance);
+    for (const GPin* pin : leaf_net.pins) {
+      odb::dbITerm* sink = pin->getPbPin()->getDbITerm();
+      ASSERT_NE(sink, nullptr);
+      EXPECT_EQ(sink->getNet(), clk) << sink->getName();
+      EXPECT_EQ(sink->getMTerm()->getName(), "CK") << sink->getName();
+      EXPECT_TRUE(sinks.insert(sink->getName()).second) << sink->getName();
+    }
+  }
+}
+
 }  // namespace
 }  // namespace gpl
