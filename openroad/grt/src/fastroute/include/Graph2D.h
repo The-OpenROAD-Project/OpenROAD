@@ -1,0 +1,302 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
+
+#pragma once
+
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <functional>
+#include <map>
+#include <set>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
+#include "DataType.h"
+#include "Overflow.h"
+#include "boost/multi_array.hpp"
+#include "utl/Logger.h"
+
+namespace grt {
+
+using boost::multi_array;
+
+class Graph2D
+{
+ public:
+  struct Interval
+  {
+    const int lo;
+    const int hi;
+  };
+
+  struct NDRCongestion
+  {
+    int net_id;          // NDR net id
+    uint16_t num_edges;  // number of congested edges
+
+    NDRCongestion(int net_id, uint16_t num_edges)
+        : net_id(net_id), num_edges(num_edges)
+    {
+    }
+  };
+
+  struct NDRCongestionComparator
+  {
+    bool operator()(const NDRCongestion& a, const NDRCongestion& b) const
+    {
+      return a.num_edges > b.num_edges;
+    }
+  };
+
+  void init(int x_grid, int y_grid, int num_layers, utl::Logger* logger);
+  void InitEstUsage();
+  void InitLastUsage(int upType);
+  void copyRoutingStateFrom(const Graph2D& other, bool include_ndr_state);
+  void clear();
+  void clearUsed();
+  bool hasEdges() const;
+
+  uint16_t getUsageH(int x, int y) const;
+  uint16_t getUsageV(int x, int y) const;
+  int16_t getLastUsageH(int x, int y) const;
+  int16_t getLastUsageV(int x, int y) const;
+  double getEstUsageH(int x, int y) const;
+  double getEstUsageV(int x, int y) const;
+  uint16_t getUsageRedH(int x, int y) const;
+  uint16_t getUsageRedV(int x, int y) const;
+  double getEstUsageRedH(int x, int y) const;
+  double getEstUsageRedV(int x, int y) const;
+  int getOverflowH(int x, int y) const;
+  int getOverflowV(int x, int y) const;
+  uint16_t getCapH(int x, int y) const;
+  uint16_t getCapV(int x, int y) const;
+
+  const std::set<std::pair<int, int>>& getUsedGridsH() const;
+  const std::set<std::pair<int, int>>& getUsedGridsV() const;
+
+  void addCapH(int x, int y, int cap);
+  void addCapV(int x, int y, int cap);
+  void rebuildUsedGrids();
+  void prepareForIncrementalRun();
+  // Full-scan reference check, intended for tests and GRT usedgridcheck debug.
+  bool usedGridsMatchUsage() const;
+  bool isUsedGrid(int x, int y, EdgeDirection direction) const;
+  std::array<OverflowStatistics, 2> overflowStatistics(bool estimated);
+  int maxUsage(EdgeDirection direction);
+  bool needsEstimatedUsageScan();
+  // Observers belong to this graph's owner; copying routing state retains them.
+  void setUsedGridCallbacks(
+      std::function<void(int, int, EdgeDirection, bool)> changed,
+      std::function<void()> reset);
+  void addEstUsageToUsage();
+  void addRedH(int x, int y, int red);
+  void addRedV(int x, int y, int red);
+  void addUsageH(const Interval& xi, int y, int used);
+  void addUsageH(int x, int y, int used);
+  void addUsageV(int x, const Interval& yi, int used);
+  void addUsageV(int x, int y, int used);
+
+  void updateCongestionHistory(int up_type,
+                               int ahth,
+                               bool stop_decreasing,
+                               int& max_adj);
+  void str_accu(int rnd);
+  void saveResources(int x, int y, bool is_horizontal);
+  bool computeSuggestedAdjustment(int x,
+                                  int y,
+                                  bool is_horizontal,
+                                  int& adjustment);
+
+  void updateEstUsageH(const Interval& xi, int y, FrNet* net, double usage);
+  void updateEstUsageH(int x, int y, FrNet* net, double usage);
+  void updateEstUsageV(int x, const Interval& yi, FrNet* net, double usage);
+  void updateEstUsageV(int x, int y, FrNet* net, double usage);
+  void updateUsageH(const Interval& xi, int y, FrNet* net, int usage);
+  void updateUsageH(int x, int y, FrNet* net, int usage);
+  void updateUsageV(int x, const Interval& yi, FrNet* net, int usage);
+  void updateUsageV(int x, int y, FrNet* net, int usage);
+  void initCap3D();
+  void updateCap3D(int x,
+                   int y,
+                   int layer,
+                   EdgeDirection direction,
+                   double cap);
+  // Adds to a layer's capacity, keeping the NDR capacity reserved on it.
+  void addCap3D(int x, int y, int layer, EdgeDirection direction, int delta);
+
+  void clearNDRnets();
+  void clearCongestedNDRnets() { congested_ndrs_.clear(); };
+  void addCongestedNDRnet(int net_id, uint16_t num_edges);
+  void sortCongestedNDRnets();
+  std::vector<int> getCongestedNDRnetsByFraction(double fraction);
+
+  // An NDR net must fit in a single layer of each edge it uses. Where no
+  // layer has enough NDR capacity left, the tracks the net misses on its
+  // best layer are its NDR deficit on the edge. The deficits are kept apart
+  // from the edge usage, which only holds the tracks the nets take: the
+  // regular nets still see the room the edge has, the NDR nets pay for the
+  // deficits in their routing cost, and the 2D overflow counts them.
+
+  // Deficit of the net on the edge, zero when the net does not use it.
+  int getNDRDeficit(FrNet* net, int x, int y, EdgeDirection direction) const;
+  // Deficit of the NDR nets on the edge once `net` uses it: theirs plus,
+  // when `net` is not one of them yet, the tracks it would miss there. They
+  // compete for the same layers, so an NDR net that fits also sees the ones
+  // it leaves without room. Zero for nets without NDR.
+  int getNDRDeficitIfRouted(FrNet* net,
+                            int x,
+                            int y,
+                            EdgeDirection direction) const;
+  // True when an NDR net using the edge fits no single layer there.
+  bool hasNDRDeficit(int x, int y, EdgeDirection direction) const;
+  // Deficit of all the NDR nets using the edge.
+  int getEdgeNDRDeficit(int x, int y, EdgeDirection direction) const;
+  int getTotalNDRDeficit() const { return ndr_deficit_total_; }
+
+ private:
+  friend class Graph2DTestPeer;
+  friend class OverflowTestPeer;
+
+  int x_grid_ = 0;
+  int y_grid_ = 0;
+  int num_layers_ = 0;
+  std::set<std::string> congestion_nets_;
+
+  void updateCongList(const std::string& net_name, double edge_cost);
+  void printAllElements();
+  double getCostNDRAware(FrNet* net,
+                         int x,
+                         int y,
+                         double edge_cost,
+                         EdgeDirection direction);
+  int computeNDRDeficit(FrNet* net,
+                        int x,
+                        int y,
+                        EdgeDirection direction) const;
+  void printNDRCap(int x, int y);
+  void printEdgeCapPerLayer();
+  void initNDRnets();
+  void resetNDRCap();
+  // The capacity left for NDR nets on a layer of an edge: the layer's
+  // capacity less what NDR nets reserved there.
+  int getCapNDR(int x, int y, int layer, EdgeDirection direction) const;
+  void debitNDRCap(int x,
+                   int y,
+                   int layer,
+                   EdgeDirection direction,
+                   int amount);
+  // Keys of the sparse NDR state: an edge, and an edge on one layer.
+  int64_t edgeKey(int x, int y, EdgeDirection direction) const;
+  int64_t edgeLayerKey(int x, int y, int layer, EdgeDirection direction) const;
+
+  void foreachEdge(const std::function<void(Edge&)>& func);
+  void checkDirtyLists() const;
+  void markEstUsageDirty(int x, int y, EdgeDirection direction);
+  void markUsedGridDirty(int x, int y, EdgeDirection direction);
+  void insertUsedGrid(int x, int y, EdgeDirection direction);
+  void eraseUsedGrid(int x, int y, EdgeDirection direction);
+  static bool needsOrderedEstimateScan(double usage);
+  void invalidateOverflow2D();
+  void rebuildOverflow2D();
+  void updateEdgeStatistics(const Edge& edge,
+                            EdgeDirection direction,
+                            bool added);
+  // Keep each mutation's original arithmetic and conversion types.
+  template <typename Mutation>
+  void mutateEdge(int x, int y, EdgeDirection direction, Mutation mutate)
+  {
+    auto& edge = direction == EdgeDirection::Horizontal ? h_edges_[x][y]
+                                                        : v_edges_[x][y];
+    const auto old_usage = edge.usage;
+    const auto old_capacity = edge.cap;
+    const auto old_estimate = edge.est_usage;
+    mutate(edge);
+    if (overflow_2d_valid_ && isUsedGrid(x, y, direction)) {
+      auto& totals
+          = direction == EdgeDirection::Horizontal ? h_overflow_ : v_overflow_;
+      totals.usage.replace(old_usage, old_capacity, edge.usage, edge.cap);
+      totals.estimated.replace(static_cast<int>(old_estimate),
+                               old_capacity,
+                               static_cast<int>(edge.est_usage),
+                               edge.cap);
+      totals.usage_max.replace(old_usage, 0, edge.usage, 0);
+      totals.ordered_estimates += needsOrderedEstimateScan(edge.est_usage)
+                                  - needsOrderedEstimateScan(old_estimate);
+    }
+  }
+  std::array<OverflowStatistics, 2> scanOverflowStatistics(
+      bool estimated) const;
+
+  struct OverflowState
+  {
+    OverflowAccumulator usage;
+    OverflowAccumulator estimated;
+    OverflowAccumulator usage_max;
+    int ordered_estimates = 0;
+  };
+  bool overflow_2d_valid_ = false;
+  OverflowState h_overflow_;
+  OverflowState v_overflow_;
+
+  // What an NDR net consumes on one edge. The layer and the amount debited
+  // from it must be stored per net: the layer with free capacity at routing
+  // time is generally not the layer with used capacity at rip-up time, and
+  // the per-layer costs differ, so re-deriving them at rip-up time makes
+  // the NDR capacity drift (see reserveNDRCapLayer/releaseNDRCapLayer).
+  struct NDRUsage
+  {
+    int16_t layer = -1;  // layer whose NDR capacity was debited
+    int8_t amount = 0;   // amount debited from that layer
+    int8_t deficit = 0;  // tracks missing on the best layer (0 = fits)
+  };
+
+  NDRUsage reserveNDRCapLayer(int x, int y, FrNet* net, EdgeDirection dir);
+  void releaseNDRCapLayer(int x,
+                          int y,
+                          EdgeDirection dir,
+                          const NDRUsage& ndr_usage);
+  void refitNDRDeficitNets(int x, int y, EdgeDirection dir);
+  // NDR nets using an edge; nullptr when none does.
+  const std::map<FrNet*, NDRUsage>* findNDRnets(int x,
+                                                int y,
+                                                EdgeDirection direction) const;
+
+  multi_array<Edge, 2> v_edges_;  // The way it is indexed is (X, Y)
+  multi_array<Edge, 2> h_edges_;  // The way it is indexed is (X, Y)
+  // Each layer's capacity, indexed (Layer, X, Y).
+  multi_array<uint16_t, 3> v_cap_3D_;
+  multi_array<uint16_t, 3> h_cap_3D_;
+  // What NDR nets reserved on a layer of an edge (edgeLayerKey), kept only
+  // where it is not zero: most designs route few NDR nets, or none.
+  std::unordered_map<int64_t, int> ndr_debit_;
+  // NDR nets currently using an edge (edgeKey), mapped to the resources
+  // they took there, kept only for edges an NDR net uses. A rip-up must
+  // return exactly what the net reserved, otherwise the edge usage and the
+  // 3D NDR capacity drift (see getCostNDRAware).
+  std::unordered_map<int64_t, std::map<FrNet*, NDRUsage>> ndr_nets_;
+  std::vector<NDRCongestion> congested_ndrs_;
+  int ndr_deficit_total_ = 0;  // sum of Edge::ndr_deficit
+
+  utl::Logger* logger_ = nullptr;
+
+  std::set<std::pair<int, int>> h_used_ggrid_;
+  std::set<std::pair<int, int>> v_used_ggrid_;
+  // Keep zero-usage entries during a run: congestion history also visits them.
+  // Deduplicate with Edge::used_grid_dirty and reconcile only at the next run.
+  std::vector<std::pair<int, int>> h_dirty_used_grids_;
+  std::vector<std::pair<int, int>> v_dirty_used_grids_;
+  // Independent of used-grid membership: removed edges can still need a reset.
+  // Deduplicate until InitEstUsage, including estimates canceled back to zero.
+  std::vector<std::pair<int, int>> h_dirty_est_edges_;
+  std::vector<std::pair<int, int>> v_dirty_est_edges_;
+  // Linear edge indices remain queued until both history fields are reset.
+  std::vector<size_t> h_dirty_history_edges_;
+  std::vector<size_t> v_dirty_history_edges_;
+  std::function<void(int, int, EdgeDirection, bool)> used_grid_changed_;
+  std::function<void()> used_grids_reset_;
+};
+
+}  // namespace grt
