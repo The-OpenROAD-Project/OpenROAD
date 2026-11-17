@@ -38,6 +38,13 @@
 - Keep new functions under ~100 lines, and don't push an existing
   function past that. Don't split already-long functions as a side
   effect of a small change. Unit tests are exempt.
+- Define non-trivial member functions out of line in the `.cpp`, so
+  the class reads as an outline. A function's comment goes on its
+  declaration.
+  - A template used outside its class goes after the class in the
+    header; a private member template goes in the cpp file if only called from there.
+  - A function may be defined in the header to be inlined only when
+    profiling shows the benefit.
 
 ### Debugging
 - Trace bugs upstream: when a bug appears in output (e.g., Verilog),

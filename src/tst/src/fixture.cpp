@@ -12,6 +12,7 @@
 #include "odb/lefin.h"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/Scene.hh"
 #include "sta/Sta.hh"
 #include "tcl.h"  // IWYU pragma: keep (clang-tidy, you're drunk)
 
@@ -37,11 +38,23 @@ sta::LibertyLibrary* Fixture::readLiberty(const std::string& filename,
                                           const sta::MinMaxAll* min_max,
                                           const bool infer_latches)
 {
-  if (!scene) {
-    scene = sta_->findScene("default");
+  const auto path = getFilePath(filename);
+  sta::LibertyLibrary* lib = sta_->readLiberty(path, infer_latches);
+  // Sta::readLiberty attaches the library (min and max) only when the
+  // command scene is named "default"; attach it to any other scene here.
+  if (scene == nullptr) {
+    scene = sta_->cmdScene();
   }
-  auto path = getFilePath(filename);
-  return sta_->readLiberty(path.c_str(), scene, min_max, infer_latches);
+  const bool attached_by_sta
+      = scene == sta_->cmdScene() && scene->name() == "default";
+  if (lib && !attached_by_sta) {
+    sta::LibertyLibrary::makeSceneMap(
+        lib, scene, min_max, sta_->network(), sta_->report());
+    for (const sta::MinMax* mm : min_max->range()) {
+      scene->addLiberty(lib, mm);
+    }
+  }
+  return lib;
 }
 
 odb::dbLib* Fixture::loadLibaryLef(odb::dbTech* tech,

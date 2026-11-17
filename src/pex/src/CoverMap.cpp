@@ -44,7 +44,7 @@ CoverMap::CoverMap(const fsv::Stack& stack,
       }
       side.push_back({name,
                       distance(cover),
-                      model.crossing({wire.name, name}) != nullptr});
+                      model.crossing({wire.name, name, ""}) != nullptr});
     }
     std::sort(
         side.begin(), side.end(), [](const Tabulated& a, const Tabulated& b) {

@@ -150,7 +150,11 @@ sta::define_cmd_args "remove_buffers" { instances }
 
 proc remove_buffers { args } {
   sta::parse_key_args "remove_buffers" args keys {} flags {}
-  rsz::remove_buffers_cmd [get_cells $args]
+  set insts [get_cells $args]
+  if { [llength $args] > 0 && [llength $insts] == 0 } {
+    utl::error RSZ 3248 "No instances matched '[join $args {, }]'."
+  }
+  rsz::remove_buffers_cmd $insts
 }
 
 sta::define_cmd_args "balance_row_usage" {}

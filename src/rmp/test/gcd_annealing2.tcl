@@ -2,7 +2,6 @@ source "helpers.tcl"
 
 set test_name gcd_annealing2
 
-define_corners fast slow
 set lib_files_slow {\
   ./asap7/asap7sc7p5t_AO_RVT_SS_nldm_211120.lib.gz \
   ./asap7/asap7sc7p5t_INVBUF_RVT_SS_nldm_220122.lib.gz \
@@ -19,11 +18,14 @@ set lib_files_fast {\
 }
 
 foreach lib_file $lib_files_slow {
-  read_liberty -corner slow $lib_file
+  read_liberty $lib_file
 }
 foreach lib_file $lib_files_fast {
-  read_liberty -corner fast $lib_file
+  read_liberty $lib_file
 }
+define_scene fast -liberty $lib_files_fast
+define_scene slow -liberty $lib_files_slow
+set_scene fast
 
 read_lef ./asap7/asap7_tech_1x_201209.lef
 read_lef ./asap7/asap7sc7p5t_28_R_1x_220121a.lef

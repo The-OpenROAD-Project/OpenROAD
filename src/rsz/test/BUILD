@@ -24,8 +24,10 @@ TESTS = [
     "buffer_ports8",
     "buffer_ports9",
     "buffer_varying_lengths",
+    "buffer_varying_lengths_size_driver",
     "clone_flat",
     "clone_hier",
+    "clone_hier_cross",
     "eliminate_dead_logic1",
     "eliminate_dead_logic2",
     "eqy_repair_setup2",
@@ -300,6 +302,7 @@ TESTS = [
     "repair_setup_parallel_eval_path_group",
     "repair_setup_parallel_eval_reference_period",
     "repair_setup_parallel_eval_reference_period_modes",
+    "repair_setup_parallel_eval_fanin_max_cap",
     "repair_setup_vt_swap2",
     "global_sizing",
     "global_sizing_threads",
@@ -313,6 +316,7 @@ TESTS = [
 ]
 
 PASSFAIL_TESTS = [
+    "remove_buffers_nomatch",
     "repair_timing_fixed",
     "repair_design_fixed_driver",
     "repair_slew_corner",
@@ -357,6 +361,7 @@ filegroup(
 
 # Tests that reference other tests
 extra_deps = {
+    "buffer_varying_lengths_size_driver": ["buffer_varying_lengths.tcl"],
     "global_sizing_threads": ["global_sizing.tcl"],
     "repair_fanout6_multi": ["repair_fanout6.tcl"],
     "repair_fanout7_multi": ["repair_fanout7.tcl"],

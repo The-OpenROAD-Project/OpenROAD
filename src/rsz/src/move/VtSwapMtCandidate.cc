@@ -44,11 +44,13 @@ const char* applyLogFormat(const bool accepted)
 VtSwapMtCandidate::VtSwapMtCandidate(Resizer& resizer,
                                      const Target& target,
                                      sta::Instance* inst,
-                                     sta::LibertyCell* candidate_cell)
+                                     sta::LibertyCell* candidate_cell,
+                                     const float cost_divisor)
     : MoveCandidate(resizer, target),
       inst_(inst),
       current_cell_(resizer.network()->libertyCell(inst)),
-      candidate_cell_(candidate_cell)
+      candidate_cell_(candidate_cell),
+      cost_divisor_(cost_divisor)
 {
 }
 
@@ -62,8 +64,10 @@ Estimate VtSwapMtCandidate::estimate()
     // Preserve the computed score for non-improving swaps so policy ranking can
     // still compare rejected candidates consistently.
     if (delay_est.reason == FailReason::kEstimateNonImproving) {
-      return makeRejectedEstimate(failReasonName(delay_est.reason),
-                                  delay_est.arrival_impr);
+      Estimate rejected = makeRejectedEstimate(failReasonName(delay_est.reason),
+                                               delay_est.arrival_impr);
+      rejected.score = costScaled(rejected.score);
+      return rejected;
     }
     return makeRejectedEstimate(failReasonName(delay_est.reason));
   }
@@ -73,9 +77,20 @@ Estimate VtSwapMtCandidate::estimate()
                     .reason = failReasonName(FailReason::kEstimateLegal)};
   estimate.score = delay_est.arrival_impr;
 
-  // VtSwapMt keeps score scale 1; the side costs come off the raw gain.
-  chargeCellSwapSideCosts(delay_est, candidate_cell_, 1.0f, estimate);
+  // The side costs come off the raw gain before the weight.
+  chargeCellSwapSideCosts(delay_est, candidate_cell_, estimate);
+  // Rank the gain per unit of cost, as SizeUpMt does, so a jump over more VTs
+  // must buy its extra leakage with extra slack.
+  estimate.score = costScaled(estimate.score);
   return estimate;
+}
+
+float VtSwapMtCandidate::costScaled(const float score) const
+{
+  // Only a positive score pays the cost: dividing a negative score by a
+  // divisor of at least 1 would pull it toward zero and rank a costlier move
+  // higher.
+  return score > 0.0f ? score / cost_divisor_ : score;
 }
 
 MoveResult VtSwapMtCandidate::apply()

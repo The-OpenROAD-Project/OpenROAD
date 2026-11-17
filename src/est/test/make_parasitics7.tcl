@@ -1,7 +1,7 @@
 # 2 corners with set_layer_rc
 source "helpers.tcl"
-define_corners ss
-read_liberty -corner ss Nangate45/Nangate45_slow.lib
+read_liberty Nangate45/Nangate45_slow.lib
+define_scene ss -liberty Nangate45/Nangate45_slow.lib
 read_lef Nangate45/Nangate45.lef
 read_def reg6.def
 
@@ -22,6 +22,6 @@ set spef_file [make_result_file make_parasitics7.spef]
 
 estimate_parasitics -placement -spef_file $spef_file
 
-report_net r1/Q -corner ss
+report_net r1/Q -scene ss
 
 diff_files make_parasitics7.spefok $spef_file

@@ -286,7 +286,7 @@ sta::VertexSeq Resizer::orderedLoadPinVertices()
   sta::VertexIterator vertex_iter(graph_);
   while (vertex_iter.hasNext()) {
     sta::Vertex* vertex = vertex_iter.next();
-    sta::PortDirection* dir = network_->direction(vertex->pin());
+    const sta::PortDirection* dir = network_->direction(vertex->pin());
     bool top_level = network_->isTopLevelPort(vertex->pin());
     if (!top_level && dir->isAnyInput()) {
       loads.emplace_back(vertex);
@@ -660,8 +660,10 @@ void Resizer::balanceRowUsage()
     }
 
     const odb::Point origin = inst->getOrigin();
-    const int x_bin = (origin.x() - core_.xMin()) / x_step;
-    const int y_bin = (origin.y() - core_.yMin()) / y_step;
+    const int x_bin  // Clamp macros or edge cells placed outside core_ bounds.
+        = std::clamp((origin.x() - core_.xMin()) / x_step, 0, num_bins - 1);
+    const int y_bin
+        = std::clamp((origin.y() - core_.yMin()) / y_step, 0, num_bins - 1);
     grid[x_bin][y_bin].push_back(inst);
   }
 
@@ -1489,12 +1491,9 @@ std::vector<sta::LibertyPort*> Resizer::libraryOutputPins(
     sta::LibertyCell* cell) const
 {
   auto pins = libraryPins(cell);
-  for (auto it = pins.begin(); it != pins.end(); it++) {
-    if (!((*it)->direction()->isAnyOutput())) {
-      it = pins.erase(it);
-      it--;
-    }
-  }
+  std::erase_if(pins, [](const sta::LibertyPort* pin) {
+    return !pin->direction()->isAnyOutput();
+  });
   return pins;
 }
 
@@ -3637,6 +3636,7 @@ int Resizer::metersToDbu(double dist) const
 
 void Resizer::setMaxUtilization(double max_utilization)
 {
+  initBlock();  // Populate core_ when called from Tcl before resizer->init().
   max_area_ = coreArea() * max_utilization;
 }
 
@@ -4588,7 +4588,7 @@ sta::NetSeq* Resizer::findOverdrivenNets(bool include_parallel_driven)
               network_->pinIterator(inst));
           while (inst_pin_iter->hasNext()) {
             sta::Pin* inst_pin = inst_pin_iter->next();
-            sta::PortDirection* dir = network_->direction(inst_pin);
+            const sta::PortDirection* dir = network_->direction(inst_pin);
             if (dir->isAnyInput()) {
               input_nets.insert(network_->net(inst_pin));
             }
@@ -5013,12 +5013,13 @@ void Resizer::cellWireDelay(sta::LibertyPort* drvr_port,
   sta::ArcDelayCalc* arc_delay_calc = sta->arcDelayCalc();
 
   // Create the same scenes in the same order, this will make liberty indices
-  // line up and allow sharing the library between the two dbSta instances
-  sta::StringSeq scene_names;
-  for (auto scene : sta_->scenes()) {
-    scene_names.emplace_back(scene->name().c_str());
+  // line up and allow sharing the library between the two dbSta instances.
+  // The clone is reused across calls, so only create the scenes once.
+  for (const sta::Scene* scene : sta_->scenes()) {
+    if (sta->findScene(scene->name()) == nullptr) {
+      sta->makeScene(scene->name(), "default", {}, {}, "", "");
+    }
   }
-  sta->makeScenes(scene_names);
 
   sta::Instance* top_inst = network->topInstance();
   // Tmp net for parasitics to live on.
@@ -6688,7 +6689,7 @@ void Resizer::getBufferPins(sta::Instance* buffer, sta::Pin*& ip, sta::Pin*& op)
       network_->pinIterator(buffer));
   while (pin_iter->hasNext()) {
     sta::Pin* pin = pin_iter->next();
-    sta::PortDirection* dir = network_->direction(pin);
+    const sta::PortDirection* dir = network_->direction(pin);
     if (dir->isAnyOutput()) {
       op = pin;
     }
@@ -7762,8 +7763,10 @@ bool Resizer::checkAndMarkVTSwappable(
 
 bool Resizer::isClockCellCandidate(sta::LibertyCell* cell)
 {
+  // Exclude Liberty-only cells (e.g. pad models) with no physical LEF master.
   return (!cell->dontUse() && !this->dontUse(cell) && !cell->alwaysOn()
-          && !cell->isIsolationCell() && !cell->isLevelShifter());
+          && !cell->isIsolationCell() && !cell->isLevelShifter()
+          && db_network_->staToDb(cell) != nullptr);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -8484,25 +8487,8 @@ bool Resizer::replacementPreservesMaxCap(sta::Instance* inst,
       continue;
     }
 
-    // Skip the max-cap check on a register clock pin only when its clock is
-    // ideal: the clock net's capacitance is irrelevant to timing then.
-    if (network_->isRegClkPin(pin) && mode != nullptr
-        && mode->clkNetwork()->isIdealClock(pin)) {
+    if (skipsFaninMaxCap(pin, mode)) {
       continue;
-    }
-
-    // Skip the max-cap check on scan-enable/scan-in pins because they
-    // tend to be high fanout pins
-    if (db_network_ != nullptr) {
-      odb::dbITerm* iterm = nullptr;
-      odb::dbBTerm* bterm = nullptr;
-      odb::dbModITerm* moditerm = nullptr;
-      db_network_->staToDb(pin, iterm, bterm, moditerm);
-      if (iterm != nullptr
-          && (db_network_->isScanEnable(iterm)
-              || db_network_->isScanIn(iterm))) {
-        continue;
-      }
     }
 
     const float old_cap
@@ -8522,8 +8508,33 @@ bool Resizer::replacementPreservesMaxCap(sta::Instance* inst,
   return true;
 }
 
+bool Resizer::skipsFaninMaxCap(const sta::Pin* pin, const sta::Mode* mode)
+{
+  // Skip the max-cap check on a register clock pin only when its clock is
+  // ideal: the clock net's capacitance is irrelevant to timing then.
+  if (network_->isRegClkPin(pin) && mode != nullptr
+      && mode->clkNetwork()->isIdealClock(pin)) {
+    return true;
+  }
+
+  // Skip the max-cap check on scan-enable/scan-in pins because they
+  // tend to be high fanout pins
+  if (db_network_ != nullptr) {
+    odb::dbITerm* iterm = nullptr;
+    odb::dbBTerm* bterm = nullptr;
+    odb::dbModITerm* moditerm = nullptr;
+    db_network_->staToDb(pin, iterm, bterm, moditerm);
+    if (iterm != nullptr
+        && (db_network_->isScanEnable(iterm) || db_network_->isScanIn(iterm))) {
+      return true;
+    }
+  }
+  return false;
+}
+
 std::vector<Resizer::InputCapBudget> Resizer::inputCapBudgets(
-    sta::Instance* inst)
+    sta::Instance* inst,
+    const sta::Mode* mode)
 {
   std::vector<InputCapBudget> budgets;
   sta::LibertyCell* current_cell = network_->libertyCell(inst);
@@ -8543,6 +8554,11 @@ std::vector<Resizer::InputCapBudget> Resizer::inputCapBudgets(
     sta::PinSet* drivers = network_->drivers(pin);
     sta::LibertyPort* port = network_->libertyPort(pin);
     if (drivers == nullptr || port == nullptr) {
+      continue;
+    }
+    // Same exemptions as replacementPreservesMaxCap(), so generation screens
+    // like apply() checks.
+    if (skipsFaninMaxCap(pin, mode)) {
       continue;
     }
 

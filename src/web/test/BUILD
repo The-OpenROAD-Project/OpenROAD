@@ -13,6 +13,7 @@ package(features = ["layering_check"])
 npm_link_all_packages(name = "node_modules")
 
 TESTS = [
+    "save_image_cluster_view",
 ]
 
 filegroup(
@@ -35,6 +36,10 @@ filegroup(
 
 [regression_test(
     name = test_name,
+    # Passfail, like the CMake registration: the log carries absolute paths
+    # and image sizes, so there is no golden file to diff it against.
+    check_log = False,
+    check_passfail = True,
     data = [":test_resources"],
 ) for test_name in TESTS]
 
@@ -72,6 +77,7 @@ test_suite(
     tests = [
         ":gif_test",
         ":heat_map_test",
+        ":interconnect3d_test",
         ":request_handler_test",
         ":save_display_controls_test",
         ":session_lifetime_test",
@@ -88,9 +94,9 @@ js_test(
 )
 
 js_test(
-    name = "ui_utils_test",
-    data = JS_FILES,
-    entry_point = "js/test-ui-utils.js",
+    name = "table_columns_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-table-columns.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -180,8 +186,15 @@ js_test(
 
 js_test(
     name = "websocket_tile_layer_test",
-    data = JS_FILES,
+    data = DOM_TEST_DATA,
     entry_point = "js/test-websocket-tile-layer.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "color_tree_test",
+    data = JS_FILES,
+    entry_point = "js/test-color-tree.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -196,6 +209,27 @@ js_test(
     name = "display_controls_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-display-controls.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "clusters_widget_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-clusters-widget.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "hierarchy_panel_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-hierarchy-panel.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "ui_utils_test",
+    data = JS_FILES,
+    entry_point = "js/test-ui-utils.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -414,6 +448,27 @@ cc_test(
 )
 
 cc_test(
+    name = "interconnect3d_test",
+    srcs = ["cpp/Test3DInterconnects.cpp"],
+    data = ["//test:nangate45_data"],
+    deps = [
+        "//src/odb/src/db",
+        "//src/tst:nangate45_fixture",
+        "//src/web",
+        "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+js_test(
+    name = "interconnect3d_js_test",
+    data = DOM_TEST_DATA + ["//src/web:node_modules/three"],
+    entry_point = "js/test-interconnect3d.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+cc_test(
     name = "heat_map_test",
     srcs = ["cpp/TestHeatMap.cpp"],
     data = [
@@ -449,7 +504,10 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/odb/src/db",
+        "//src/sta:opensta_lib",
         "//src/tst:nangate45_fixture",
         "//src/utl",
         "//src/web",
@@ -545,6 +603,7 @@ cc_test(
         "//src/web",
         "//src/web:color",
         "//src/web:core",
+        "@boost.json",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

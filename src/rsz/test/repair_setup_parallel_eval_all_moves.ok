@@ -13,12 +13,12 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -66.849 |    -1781.2 |     46 | resp_msg[13]
-       1* |       0 |       6 |       10 |      0 |     4 |    +2.0% |  -62.391 |    -1504.6 |     45 | resp_msg[13]
-       2* |       0 |      15 |       16 |      0 |     8 |    +3.3% |  -45.303 |    -1111.2 |     45 | dpath.a_reg.out\[7\]$_DFFE_PP_/D
-       3* |       0 |      23 |       20 |      0 |    14 |    +4.3% |  -40.178 |     -938.9 |     44 | dpath.a_reg.out\[7\]$_DFFE_PP_/D
-    final |       0 |      31 |       24 |      0 |    20 |    +5.3% |  -31.242 |     -749.7 |     44 | dpath.a_reg.out\[7\]$_DFFE_PP_/D
+       1* |       0 |       6 |       10 |      0 |     4 |    +1.9% |  -62.391 |    -1504.5 |     45 | resp_msg[13]
+       2* |       0 |      15 |       16 |      0 |     8 |    +3.2% |  -45.377 |    -1102.2 |     45 | resp_msg[15]
+       3* |       0 |      23 |       21 |      0 |    14 |    +4.3% |  -40.242 |     -933.3 |     44 | dpath.a_reg.out\[7\]$_DFFE_PP_/D
+    final |       0 |      29 |       25 |      0 |    22 |    +5.2% |  -31.328 |     -744.0 |     44 | dpath.a_reg.out\[7\]$_DFFE_PP_/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0045] Inserted 24 buffers, 1 to split loads.
-[INFO RSZ-0051] Resized 31 instances: 25 up, 0 up match, 6 down, 0 VT
-[INFO RSZ-0043] Swapped pins on 20 instances.
+[INFO RSZ-0045] Inserted 25 buffers, 1 to split loads.
+[INFO RSZ-0051] Resized 29 instances: 22 up, 0 up match, 7 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 22 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.

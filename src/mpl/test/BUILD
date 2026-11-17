@@ -44,8 +44,10 @@ COMPULSORY_TESTS = [
     "orientation_improve3",
     "place_macro_already_placed_overlap",
     "place_macro_right_angle_rotation",
+    "place_macro_snap_to_site_grid",
     "placement_blockages1",
     "rerun1",
+    "snap_to_site_grid",
     "target_utilization_out_of_range",
     "unfixed_cells_dont_fit_in_core",
     "virtual_utilization_above_one",
@@ -250,12 +252,20 @@ filegroup(
                     "testcases/place_macro_right_angle_rotation.def",
                     "testcases/place_macro_right_angle_rotation.lef",
                 ],
+                "place_macro_snap_to_site_grid": [
+                    "testcases/macros_without_pins1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
                 "placement_blockages1": [
                     "testcases/macro_only.lef",
                     "testcases/placement_blockages1.def",
                 ],
                 "rerun1": [
                     "testcases/fixed_macros1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "snap_to_site_grid": [
+                    "testcases/macros_without_pins1.def",
                     "testcases/orientation_improve1.lef",
                 ],
                 "target_utilization_out_of_range": [
