@@ -13,7 +13,14 @@ Without --stamp the output is a symlink to the linked binary.
 
 def _stamped_binary_impl(ctx):
     binary = ctx.executable.binary
-    out = ctx.actions.declare_file(ctx.label.name)
+
+    # bazel-bin/openroad is the output directory of the //openroad/...
+    # packages, so the root //:openroad binary goes one level down, at
+    # bazel-bin/openroad/openroad.
+    out_name = ctx.label.name
+    if ctx.label.package == "" and ctx.label.name == "openroad":
+        out_name = "openroad/openroad"
+    out = ctx.actions.declare_file(out_name)
 
     if ctx.attr.stamp:
         args = ctx.actions.args()
