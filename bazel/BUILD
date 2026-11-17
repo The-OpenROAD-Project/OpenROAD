@@ -199,10 +199,10 @@ cc_library(
     deps = ["@tcl_lang//:tcl"],
 )
 
-# small build test to check if "bazel build //src/sta:StaTclInitVar" works
+# small build test to check if "bazel build //openroad/sta:StaTclInitVar" works
 # Run with "bazel test //bazel:sta_tcl_encode_test"
 # Tests the tcl_encode_sta.bzl rule
 build_test(
     name = "sta_tcl_encode_test",
-    targets = ["//src/sta:StaTclInitVar"],
+    targets = ["//openroad/sta:StaTclInitVar"],
 )
