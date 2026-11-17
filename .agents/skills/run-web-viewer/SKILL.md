@@ -123,9 +123,9 @@ node --test src/web/test/js/test-timing-widget.js
 bazelisk test //src/web/test/...      # all, including ones needing `three`
 ```
 
-`--no-package-lock` matters: `src/web/test/package-lock.json` is stale
-(Bazel installs from `src/web/pnpm-lock.yaml` and never reads it), so
-`npm ci` fails and a plain `npm install` rewrites a tracked file. An old
+Bazel installs these dependencies from `src/web/test/pnpm-lock.yaml`,
+which `npm` does not read; `--no-package-lock` keeps `npm` from writing
+a `package-lock.json` (gitignored) that nothing else uses. An old
 `node_modules` can hold an older jsdom than Bazel's; rerun the install
 when a test passes under `node` but fails under Bazel, or the reverse.
 
@@ -198,4 +198,3 @@ when a test passes under `node` but fails under Bazel, or the reverse.
 | `no openroad binary at ...` | `bazelisk build //:openroad`, or point `OPENROAD_EXE` at the binary. Nothing was created, so rerun with the same `$O`. |
 | `server did not start in 60 s` | Raise `WEB_TIMEOUT`; the server may still come up, so `stop.sh` it before relaunching. |
 | `token rejected` | The driver read another launch's `$O/token`; pass the `out_dir` you launched with. |
-| `npm ci` fails: `lock file's jsdom@26.1.0 does not satisfy jsdom@30...` | Use `npm install --no-package-lock` (see Unit tests). |

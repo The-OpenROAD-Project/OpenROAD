@@ -5013,12 +5013,13 @@ void Resizer::cellWireDelay(sta::LibertyPort* drvr_port,
   sta::ArcDelayCalc* arc_delay_calc = sta->arcDelayCalc();
 
   // Create the same scenes in the same order, this will make liberty indices
-  // line up and allow sharing the library between the two dbSta instances
-  sta::StringSeq scene_names;
-  for (auto scene : sta_->scenes()) {
-    scene_names.emplace_back(scene->name().c_str());
+  // line up and allow sharing the library between the two dbSta instances.
+  // The clone is reused across calls, so only create the scenes once.
+  for (const sta::Scene* scene : sta_->scenes()) {
+    if (sta->findScene(scene->name()) == nullptr) {
+      sta->makeScene(scene->name(), "default", {}, {}, "", "");
+    }
   }
-  sta->makeScenes(scene_names);
 
   sta::Instance* top_inst = network->topInstance();
   // Tmp net for parasitics to live on.

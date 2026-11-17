@@ -2,8 +2,8 @@
 
 source "helpers.tcl"
 source Nangate45/Nangate45.vars
-define_corners slow
-read_liberty -corner slow Nangate45/Nangate45_slow.lib
+read_liberty Nangate45/Nangate45_slow.lib
+define_scene slow -liberty Nangate45/Nangate45_slow.lib
 read_lef Nangate45/Nangate45.lef
 
 read_verilog replace_hier_mod1.v

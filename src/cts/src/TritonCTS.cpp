@@ -1545,7 +1545,7 @@ bool TritonCTS::separateMacroRegSinks(
 
     if (iterm->isInputSignal() && inst->isPlaced()) {
       // Cells with insertion delay, macros, clock gaters and inverters that
-      // drive macros are put in the macro sinks.
+      // do not drive a single register are put in the macro sinks.
       odb::dbMTerm* mterm = iterm->getMTerm();
 
       bool nonSinkMacro = !isSink(iterm);
@@ -1555,11 +1555,32 @@ bool TritonCTS::separateMacroRegSinks(
         odb::dbITerm* invertedOutput = inst->getFirstOutput();
         odb::dbNet* invertedNet
             = invertedOutput ? invertedOutput->getNet() : nullptr;
-        odb::dbITerm* invertedTerm
-            = invertedNet ? invertedNet->get1stSignalInput(false) : nullptr;
-        if (invertedTerm) {
-          nonSinkMacro &= invertedTerm->getInst()->isBlock();
-        } else {
+        odb::dbITerm* invertedTerm = nullptr;
+        int invertedLoads = 0;
+        if (invertedNet) {
+          // Ports count as loads.
+          invertedLoads = invertedNet->getBTerms().size();
+          for (odb::dbITerm* loadTerm : invertedNet->getITerms()) {
+            if (invertedLoads > 1) {
+              break;  // already settles the classification
+            }
+            if (loadTerm->isInputSignal()) {
+              ++invertedLoads;
+              invertedTerm = loadTerm;
+            }
+          }
+        }
+        if (invertedLoads == 1) {
+          // Register sink only when the lone load is a register; a macro or
+          // a clock gater keeps the inverter on the macro side.
+          if (invertedTerm) {
+            nonSinkMacro
+                &= invertedTerm->getInst()->isBlock() || !isSink(invertedTerm);
+          } else {
+            // Single port load: leaf, no tree below.
+            nonSinkMacro = false;
+          }
+        } else if (invertedLoads == 0) {
           logger_->warn(CTS,
                         136,
                         "Inverter {} output net has no signal input; "

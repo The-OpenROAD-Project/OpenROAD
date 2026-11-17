@@ -1,9 +1,12 @@
 # 3 corners with +/- 10% derating example
 source "helpers.tcl"
-define_corners ss tt ff
-read_liberty -corner ss example1_slow.lib
-read_liberty -corner tt example1_typ.lib
-read_liberty -corner ff example1_fast.lib
+read_liberty example1_slow.lib
+read_liberty example1_typ.lib
+read_liberty example1_fast.lib
+define_scene ss -liberty example1_slow.lib
+define_scene tt -liberty example1_typ.lib
+define_scene ff -liberty example1_fast.lib
+set_scene ss
 read_lef example1.lef
 read_def example1.def
 
@@ -14,4 +17,4 @@ set_input_delay -clock clk 0 {in1 in2}
 # report all corners
 report_checks -path_delay min_max
 # report typical corner
-report_checks -corner tt
+report_checks -scenes tt

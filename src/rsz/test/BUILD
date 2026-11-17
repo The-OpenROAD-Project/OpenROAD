@@ -24,6 +24,7 @@ TESTS = [
     "buffer_ports8",
     "buffer_ports9",
     "buffer_varying_lengths",
+    "buffer_varying_lengths_size_driver",
     "clone_flat",
     "clone_hier",
     "clone_hier_cross",
@@ -315,6 +316,7 @@ TESTS = [
 ]
 
 PASSFAIL_TESTS = [
+    "remove_buffers_nomatch",
     "repair_setup_capture_vt_parallel_eval",
     "repair_setup_crit_vt_capture",
     "repair_slew_clk_data_path_vt",
@@ -369,6 +371,7 @@ filegroup(
 
 # Tests that reference other tests
 extra_deps = {
+    "buffer_varying_lengths_size_driver": ["buffer_varying_lengths.tcl"],
     "global_sizing_threads": ["global_sizing.tcl"],
     "repair_fanout6_multi": ["repair_fanout6.tcl"],
     "repair_fanout7_multi": ["repair_fanout7.tcl"],

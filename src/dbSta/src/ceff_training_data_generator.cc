@@ -9,7 +9,6 @@
 
 #include "dcalc/DmpCeff.hh"
 #include "sta/Liberty.hh"
-#include "sta/MinMax.hh"
 #include "sta/Sta.hh"
 #include "sta/TableModel.hh"
 #include "sta/TimingArc.hh"
@@ -19,7 +18,6 @@ using sta::GateTableModel;
 using sta::initSta;
 using sta::LibertyCell;
 using sta::LibertyLibrary;
-using sta::MinMaxAll;
 using sta::Pvt;
 using sta::RiseFall;
 using sta::Sta;
@@ -39,10 +37,8 @@ int main(int argc, char** argv)
   if (argc > 1) {
     lib_path = argv[1];
   }
-  LibertyLibrary* library = sta->readLiberty(lib_path.c_str(),
-                                             sta->cmdScene(),
-                                             MinMaxAll::max(),
-                                             /* infer_latches */ false);
+  LibertyLibrary* library
+      = sta->readLiberty(lib_path, /* infer_latches */ false);
   if (!library) {
     std::cerr << "Error loading synthetic_linear.lib\n";
     return 1;

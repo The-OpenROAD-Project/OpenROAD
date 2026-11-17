@@ -10,13 +10,13 @@ submodules:
 
 # Set the OS, Python version and other tools you might need
 build:
-  os: ubuntu-22.04
+  os: ubuntu-26.04
   apt_packages:
-    - libasound2
+    - libasound2t64
     - graphviz
   tools:
     python: "3.10"
-    nodejs: "16"
+    nodejs: "22"
   jobs:
     post_install:
       - npm install -g @mermaid-js/mermaid-cli

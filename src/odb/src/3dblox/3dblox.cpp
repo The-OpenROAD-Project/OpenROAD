@@ -433,8 +433,7 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
   }
   if (sta_ != nullptr) {
     for (const auto& liberty_file : chiplet.external.lib_files) {
-      sta_->readLiberty(
-          liberty_file.c_str(), sta_->cmdScene(), sta::MinMaxAll::all(), true);
+      sta_->readLiberty(liberty_file, /*infer_latches=*/true);
     }
   }
   // Check if chiplet already exists
