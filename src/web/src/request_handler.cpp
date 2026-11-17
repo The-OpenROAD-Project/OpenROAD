@@ -6293,14 +6293,16 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     cache_epoch = gen_->tileCacheEpoch();
     // Key = what the render reads: the tile, its dpr and pixel count, the
     // design and chiplet revisions and the visibility this layer depends on.
-    boost::json::object tile_obj{{"layer", layer},
-                                 {"z", z},
-                                 {"x", x},
-                                 {"y", y},
-                                 {"dpr", dpr},
-                                 {"tile_px", tile_px},
-                                 {"rev", gen_->searchRevision()},
-                                 {"chiplets", gen_->chipletsGeneration()}};
+    boost::json::object tile_obj{
+        {"layer", layer},
+        {"z", z},
+        {"x", x},
+        {"y", y},
+        {"dpr", dpr},
+        {"tile_px", tile_px},
+        {"rev", gen_->searchRevision()},
+        {"chiplets", gen_->chipletsGeneration()},
+    };
     // Two cacheable states share everything else: painting the design's
     // default palette, and painting nothing because the session cleared every
     // row.  Without this they collide on one key and the cleared view serves

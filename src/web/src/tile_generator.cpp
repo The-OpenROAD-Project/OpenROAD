@@ -1698,7 +1698,7 @@ TileGenerator::~TileGenerator() = default;
 
 void TileGenerator::ensureInit(const bool fresh_cache)
 {
-  std::lock_guard lock(init_mutex_);
+  std::scoped_lock lock(init_mutex_);
   // Read first: a load landing during the init brings on the next one.
   const uint64_t loads = load_counter_.loads.load();
   // A chip made without a load hook (dbChip::create) counts as a load too.
@@ -1839,7 +1839,7 @@ bool TileGenerator::tileCacheGet(const std::string& key,
 
 uint64_t TileGenerator::tileCacheEpoch() const
 {
-  std::lock_guard lock(tile_cache_mutex_);
+  std::scoped_lock lock(tile_cache_mutex_);
   return tile_cache_epoch_;
 }
 
@@ -1878,7 +1878,7 @@ void TileGenerator::tileCachePut(std::string key,
 
 void TileGenerator::clearTileCache()
 {
-  std::lock_guard lock(tile_cache_mutex_);
+  std::scoped_lock lock(tile_cache_mutex_);
   tile_cache_lru_.clear();
   tile_cache_index_.clear();
   tile_cache_bytes_ = 0;
@@ -1893,7 +1893,7 @@ size_t TileGenerator::tileCacheSize() const
 
 size_t TileGenerator::tileCacheBytes() const
 {
-  std::lock_guard lock(tile_cache_mutex_);
+  std::scoped_lock lock(tile_cache_mutex_);
   return tile_cache_bytes_;
 }
 
@@ -1904,8 +1904,11 @@ std::string TileGenerator::tileCacheKey(const TileVisibility& vis,
   std::string flags;
   flags.reserve(std::size(kVisibilityFields));
   for (const BoolField& f : kVisibilityFields) {
-    const bool affects = f.owner == nullptr || layer == f.owner;
-    flags += !affects ? '-' : (vis.*(f.field) ? '1' : '0');
+    if (f.owner != nullptr && layer != f.owner) {
+      flags += '-';
+    } else {
+      flags += vis.*f.field ? '1' : '0';
+    }
   }
 
   boost::json::object key;
