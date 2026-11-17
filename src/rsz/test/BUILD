@@ -24,8 +24,10 @@ TESTS = [
     "buffer_ports8",
     "buffer_ports9",
     "buffer_varying_lengths",
+    "buffer_varying_lengths_size_driver",
     "clone_flat",
     "clone_hier",
+    "clone_hier_cross",
     "eliminate_dead_logic1",
     "eliminate_dead_logic2",
     "eqy_repair_setup2",
@@ -358,6 +360,7 @@ filegroup(
 
 # Tests that reference other tests
 extra_deps = {
+    "buffer_varying_lengths_size_driver": ["buffer_varying_lengths.tcl"],
     "global_sizing_threads": ["global_sizing.tcl"],
     "repair_fanout6_multi": ["repair_fanout6.tcl"],
     "repair_fanout7_multi": ["repair_fanout7.tcl"],

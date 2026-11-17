@@ -634,6 +634,11 @@ DiagonalCap Model::diagonal(const DiagonalKey& key,
     throw std::out_of_range("no diagonal table for layer " + key.layer
                             + " beside " + key.other);
   }
+  // Past the last gap the parallel wire adds nothing, so that what a
+  // piece sees ends at a known distance (Evaluator::radius).
+  if (gap > t->gaps().back()) {
+    return {};
+  }
   const Bracket w = bracketLog(t->widths(), width);
   const Bracket g = bracketLinear(t->gaps(), gap);
   const Bracket s = bracketSpacing(t->spacings(), spacing);
@@ -659,13 +664,6 @@ DiagonalCap Model::diagonal(const DiagonalKey& key,
         }
       }
     }
-  }
-  if (!t->gaps().empty() && gap > t->gaps().back() && t->gaps().back() > 0) {
-    const double fade = t->gaps().back() / gap;
-    out.coupling *= fade;
-    out.total_delta *= fade;
-    out.lateral_delta *= fade;
-    out.plane_delta *= fade;
   }
   return out;
 }

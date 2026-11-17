@@ -105,5 +105,46 @@ INSTANTIATE_TEST_SUITE_P(FlatAndHierarchical,
                                           testing::Bool(),
                                           testing::Bool()));
 
+TEST(TestInsertBufferNullName, HandlesNullBaseNamesWithoutCrash)
+{
+  tst::LoadedDesign design(
+      tst::Technology::kNangate45,
+      tst::getRunfilePath("_main/src/odb/test/cpp/insert_buffer_port_alias.v"),
+      "top",
+      false);
+  auto* block = design.getBlock();
+  auto* p = block->findBTerm("p");
+  ASSERT_NE(p, nullptr);
+  auto* original_net = p->getNet();
+  ASSERT_NE(original_net, nullptr);
+  auto* buffer_master = design.getDb()->findMaster("BUF_X1");
+  ASSERT_NE(buffer_master, nullptr);
+
+  const Point location{20000, 10000};
+  PtrSet<dbObject> loads{p};
+
+  // Exercises the fix for issue #12016: passing nullptr for base names
+  // must fall back to default names ("buf", "net") rather than crashing
+  // in _dbBlock::makeNewName.
+  auto* buffer = original_net->insertBufferBeforeLoads(
+      loads, buffer_master, &location, nullptr, nullptr);
+  ASSERT_NE(buffer, nullptr);
+  EXPECT_FALSE(buffer->getName().empty());
+
+  auto* ld = block->findInst("ld");
+  ASSERT_NE(ld, nullptr);
+  auto* load_pin = ld->findITerm("A");
+  ASSERT_NE(load_pin, nullptr);
+  auto* ld_net = load_pin->getNet();
+  ASSERT_NE(ld_net, nullptr);
+
+  // Exercises insertBufferBeforeLoad (single-load path) with nullptr base
+  // names.
+  auto* single_buffer = ld_net->insertBufferBeforeLoad(
+      load_pin, buffer_master, &location, nullptr, nullptr);
+  ASSERT_NE(single_buffer, nullptr);
+  EXPECT_FALSE(single_buffer->getName().empty());
+}
+
 }  // namespace
 }  // namespace odb

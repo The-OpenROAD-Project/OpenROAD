@@ -61,7 +61,8 @@ void MacroPlacer::placeMacro(odb::dbInst* inst,
                              const float& y_origin,
                              const odb::dbOrientType& orientation,
                              const bool exact,
-                             const bool allow_overlap)
+                             const bool allow_overlap,
+                             const bool snap_to_site_grid)
 {
   odb::dbBlock* block = inst->getBlock();
 
@@ -105,6 +106,7 @@ void MacroPlacer::placeMacro(odb::dbInst* inst,
                   inst->getName());
   } else if (!exact) {
     Snapper snapper(logger_, inst);
+    snapper.setSnapToSiteGrid(snap_to_site_grid);
     snapper.snapMacro();
   }
 

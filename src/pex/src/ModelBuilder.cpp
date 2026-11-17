@@ -1089,7 +1089,15 @@ void buildCrossings(const fsv::Stack& stack,
       length_cross[none] = fitted(none, true);
     }
     if (length_cross[none] <= 0 && table.opposite.valid()) {
-      continue;  // the table without the plane stands in
+      // The table without the plane stands in, held under this key too so
+      // that a resumed build finds it; its reach stays with that table.
+      // The planeless table comes first in `tables` or was held before.
+      const CrossingTable* plain
+          = model.crossing({table.key.layer, table.key.cover, ""});
+      model.addCrossing(
+          table.key,
+          CrossingTable(plain->gaps(), plain->values(), plain->spacings()));
+      continue;
     }
     if (length_cross[none] <= 0) {
       throw std::runtime_error("the crossing shares of " + table.key.layer
@@ -1138,7 +1146,7 @@ namespace {
 
 // The corners of wires of a width meeting, from a straight wire, a cross
 // and a bend of the corner pattern and the per-length reference. As the
-// reference evaluator adds them, a cross is the two wires with the
+// evaluator adds them, a cross is the two wires with the
 // overlap once and four inner corners; a bend is the two wires without
 // the ends at the turn, with the overlap once, an inner and an outer
 // corner.

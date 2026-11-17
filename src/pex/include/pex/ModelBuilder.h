@@ -91,7 +91,7 @@ struct BuildOptions
   std::vector<double> diagonal_gap_factors{-0.5, 0, 0.25, 0.5, 1, 2, 4, 8, 16};
   // Past the last gap, more gaps out to this multiple of the vertical
   // distance between the two layers, consecutive ones at most twice apart;
-  // a parallel wire farther out fades as one over its gap. 0 adds none; it
+  // a parallel wire farther out adds nothing. 0 adds none; it
   // must be finite and not negative.
   double diagonal_reach = 4;
   std::vector<double> diagonal_spacing_factors{1, 2, 4, 8};
@@ -226,7 +226,7 @@ void buildCrossing(const fsv::Stack& stack,
 // in one pool; for a cover under the wire with a plane on `plane_above`
 // too, and for one over it with a plane on `plane_below` (none when the
 // handle names no layer). A table with a plane whose shares fit no kept
-// amount is left out.
+// amount holds the values of the table without the plane, and no reach.
 void buildCrossings(const fsv::Stack& stack,
                     Layer layer,
                     const std::vector<Layer>& covers,

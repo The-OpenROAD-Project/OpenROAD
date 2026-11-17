@@ -8,8 +8,6 @@ description: >
   error code (e.g. GPL-0305, DRT-0001, RSZ-2007), or when asked to fix a
   bug in any OpenROAD module (ant, cts, dpl, drt, gpl, grt, mpl, odb,
   pad, pdn, psm, rcx, rsz, sta, stt, tap, upf, utl, etc.).
-  Also triggers on: "fix issue", "debug this error", "resolve crash",
-  "fix segfault", "repair", "patch bug".
 argument-hint: <issue-number-or-error-code>
 ---
 
@@ -39,26 +37,22 @@ grep -rn "ERROR_CODE" src/MODULE/src/
 ## 2. Trace the root cause
 
 Follow OpenROAD's "trace bugs upstream" principle: find where the bad
-data is **created**, not where it is **reported**.
+data is **created**, not where it is **reported**. The message ID
+(`grep -rn "ERROR_ID" src/`) marks where it is reported; the bug is
+often in a different function or file, wherever the offending value is
+set.
 
-1. Find the error message source:
-   ```bash
-   grep -rn "ERROR_ID" src/
-   ```
-2. Read the surrounding code to understand the condition that triggers it
-3. Trace the data flow backward -- who sets the offending value?
-4. Identify the actual bug location (often in a different function/file
-   from where the error is reported)
-
-**Critical constraint**: Never modify files under `src/sta/`. OpenSTA is
-managed upstream. If the root cause is in OpenSTA, report this finding
-instead of patching it.
+Prefer a fix in OpenROAD code (e.g., `src/dbSta/`, `src/rsz/`) over one
+in `src/sta/`. OpenSTA is a separate submodule: changing it takes a PR
+in the OpenSTA repo and then a submodule update here, so ask before
+modifying it, and do so only when the root cause is there and a fix on
+the OpenROAD side would be a workaround.
 
 ## 3. Implement the fix
 
-Follow the coding practices in `docs/agents/coding.md`. Pay special
-attention to `int64_t` for area calculations and removing unreachable
-code after `error()` or `throw`.
+Follow the coding practices in `docs/agents/coding.md`. Use `int64_t`
+for area calculations, and remove code made unreachable by `error()` or
+`throw`.
 
 ## 4. Create regression test
 
@@ -88,6 +82,6 @@ Fixes #ISSUE_NUMBER"
 - [ ] Test passes: `bazelisk test --test_output=errors //src/MODULE/test:TEST_NAME-tcl_test`
 - [ ] No unintended changes: `git diff HEAD`
 - [ ] Test registered in Bazel `BUILD`
-- [ ] No `src/sta/` files modified
+- [ ] No `src/sta/` changes, unless agreed with the user
 - [ ] C++ files formatted with `bazelisk run //:tidy_cc`
 - [ ] Commit is signed off (`-s`)

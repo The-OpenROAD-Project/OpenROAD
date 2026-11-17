@@ -307,6 +307,7 @@ class HierRTLMP
   bool skip_macro_placement_{false};
   bool keep_clustering_data_{false};
   bool pin_aware_channels_{false};
+  bool snap_to_site_grid_{false};
 
   std::unique_ptr<MplObserver> graphics_;
   bool is_debug_only_final_result_{false};

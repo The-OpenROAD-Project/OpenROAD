@@ -19,13 +19,13 @@ Path Type: min
 
   80.00   80.00   min_delay
    0.00   80.00   clock reconvergence pessimism
-   5.89   85.89   library hold time
-          85.89   data required time
+   5.48   85.48   library hold time
+          85.48   data required time
 ---------------------------------------------------------
-          85.89   data required time
+          85.48   data required time
          -57.22   data arrival time
 ---------------------------------------------------------
-         -28.67   slack (VIOLATED)
+         -28.26   slack (VIOLATED)
 
 
 Startpoint: u_launch (rising edge-triggered flip-flop clocked by clk)
@@ -56,8 +56,8 @@ Path Type: min
 [INFO RSZ-0046] Found 2 endpoints with hold violations.
 Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
 --------------------------------------------------------------------------------------
-        0 |       0 |       0 |            0 |    +0.0% | -28.673 | -31.830 | u_capture_con/D
-    final |       0 |       2 |            0 |   +18.9% |  16.516 |   0.000 | u_capture_con/D
+        0 |       0 |       0 |            0 |    +0.0% | -28.263 | -31.420 | u_capture_con/D
+    final |       0 |       2 |            0 |   +18.9% |  16.972 |   0.000 | u_capture_con/D
 --------------------------------------------------------------------------------------
 [INFO RSZ-0032] Inserted 2 hold buffers.
 Startpoint: u_launch (rising edge-triggered flip-flop clocked by clk)
@@ -70,9 +70,9 @@ Path Type: min
    0.00    0.00 ^ u_launch/CLK (DFFHQNx1_ASAP7_75t_R)
   38.23   38.23 ^ u_launch/QN (DFFHQNx1_ASAP7_75t_R)
   17.09   55.32 v u_fa/CON (FAx1_ASAP7_75t_R)
-  48.93  104.25 v hold1/Y (HB4xp67_ASAP7_75t_R)
-   0.06  104.30 v u_capture_con/D (DFFHQNx1_ASAP7_75t_R)
-         104.30   data arrival time
+  49.38  104.70 v hold1/Y (HB4xp67_ASAP7_75t_R)
+   0.06  104.76 v u_capture_con/D (DFFHQNx1_ASAP7_75t_R)
+         104.76   data arrival time
 
   80.00   80.00   min_delay
    0.00   80.00   clock reconvergence pessimism
@@ -80,8 +80,8 @@ Path Type: min
           87.79   data required time
 ---------------------------------------------------------
           87.79   data required time
-        -104.30   data arrival time
+        -104.76   data arrival time
 ---------------------------------------------------------
-          16.52   slack (MET)
+          16.97   slack (MET)
 
 

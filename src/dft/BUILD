@@ -60,7 +60,6 @@ cc_library(
         "//src/dft/src/clock_domain",
         "//src/dft/src/config",
         "//src/utl",
-        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ],
 )

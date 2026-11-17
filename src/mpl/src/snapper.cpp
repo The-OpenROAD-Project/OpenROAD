@@ -6,15 +6,37 @@
 #include <algorithm>
 #include <cmath>
 #include <iterator>
+#include <limits>
 #include <numeric>
+#include <optional>
+#include <set>
 #include <utility>
 #include <vector>
 
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace mpl {
+
+namespace {
+
+constexpr int kTrackSearchAttemptsLimit = 100;
+
+// Offsets 0, +1, -1, +2, -2, ... so that the search spreads from the start.
+int alternatingOffset(const int attempt)
+{
+  return (attempt % 2 == 1) ? (attempt + 1) / 2 : -(attempt / 2);
+}
+
+bool isCoreRow(odb::dbRow* row)
+{
+  return row->getDirection() == odb::dbRowDir::HORIZONTAL
+         && row->getSite()->getClass() == odb::dbSiteClass::CORE;
+}
+
+}  // namespace
 
 Snapper::Snapper(utl::Logger* logger) : logger_(logger), inst_(nullptr)
 {
@@ -27,21 +49,149 @@ Snapper::Snapper(utl::Logger* logger, odb::dbInst* inst)
 
 void Snapper::snapMacro()
 {
-  snap(odb::dbTechLayerDir::VERTICAL);
-  snap(odb::dbTechLayerDir::HORIZONTAL);
+  // Fetch layer data beforehand so we only have to do it once.
+  vertical_layers_ = computeLayerDataList(odb::dbTechLayerDir::VERTICAL);
+  horizontal_layers_ = computeLayerDataList(odb::dbTechLayerDir::HORIZONTAL);
+
+  if (snap_to_site_grid_ && hasMultiHeightRows()) {
+    logger_->warn(utl::MPL,
+                  84,
+                  "Could not snap {} to the site grid. Multi-height rows are "
+                  "not supported. Snapping it to the track-grid only.",
+                  inst_->getName());
+    snapToTracks();
+  } else if (snap_to_site_grid_) {
+    site_grid_ = findSiteGrid();
+    obstacles_ = findObstacles();
+    snapToSites();
+  } else {
+    snapToTracks();
+  }
 }
 
-void Snapper::snap(const odb::dbTechLayerDir& target_direction)
+void Snapper::setSnapToSiteGrid(const bool snap_to_site_grid)
 {
-  LayerDataList layers_data_list = computeLayerDataList(target_direction);
+  snap_to_site_grid_ = snap_to_site_grid;
+}
 
-  int origin = target_direction == odb::dbTechLayerDir::VERTICAL
-                   ? inst_->getOrigin().x()
-                   : inst_->getOrigin().y();
+void Snapper::snapToSites()
+{
+  snapToSites(odb::dbTechLayerDir::VERTICAL);
+  snapToSites(odb::dbTechLayerDir::HORIZONTAL);
+}
 
-  if (layers_data_list.empty()) {
-    alignWithManufacturingGrid(origin);
+// Snaps to the site position that aligns the largest number of pins. We
+// first snap the origin to its nearest site and then jump from site to site
+// around it looking for the optimal position. When no site position aligns
+// any pin, the track-grid snap takes over.
+// We compute a "search window" per direction whose size guarantees a position
+// where the lowest layer's pins are on track. If a layer has several patterns,
+// we use the pattern with the smallest period.
+// The period is defined as LCM(site pitch, track step of the lowest pin layer),
+// As the macro may lie on the edge of the die or close to another
+// macro/blockage, we search a full period on each side.
+void Snapper::snapToSites(const odb::dbTechLayerDir& target_direction)
+{
+  const LayerDataList& layers_data_list = layerDataList(target_direction);
+
+  const int total_pins = totalPins(layers_data_list);
+  const int pitch = sitePitch(target_direction);
+  const int origin = getOrigin(target_direction);
+  const int start = nearestSitePosition(target_direction);
+  const int window = computeSiteSearchWindow(target_direction);
+
+  std::optional<int> best_position;
+  int best_aligned_pins = 0;
+  for (int attempt = 0; attempt < window; attempt++) {
+    const int position = start + alternatingOffset(attempt) * pitch;
+    setOrigin(position, target_direction);
+
+    if (!isLegalPosition()) {
+      continue;
+    }
+
+    // A macro without pins takes the first legal site.
+    const int aligned_pins
+        = totalAlignedPins(layers_data_list, target_direction);
+    if (aligned_pins > best_aligned_pins || aligned_pins == total_pins) {
+      best_aligned_pins = aligned_pins;
+      best_position = position;
+      if (best_aligned_pins == total_pins) {
+        break;
+      }
+    }
+  }
+
+  if (best_position) {
+    setOrigin(*best_position, target_direction);
+    reportUnalignedPins(
+        layers_data_list, target_direction, best_aligned_pins, total_pins);
+  } else {
+    logger_->warn(
+        utl::MPL,
+        82,
+        "Could not snap {} to the site grid in {}. No site position around "
+        "it keeps it inside the core, off other macros and blockages, and "
+        "with pins on the track-grid. Snapping it to the track-grid only.",
+        inst_->getName(),
+        target_direction == odb::dbTechLayerDir::VERTICAL ? "x" : "y");
+
     setOrigin(origin, target_direction);
+    snapToTracks(target_direction);
+  }
+}
+
+int Snapper::nearestSitePosition(const odb::dbTechLayerDir& direction)
+{
+  const int grid_origin = direction == odb::dbTechLayerDir::VERTICAL
+                              ? site_grid_.origin.x()
+                              : site_grid_.origin.y();
+  const int pitch = sitePitch(direction);
+  const double sites
+      = (getOrigin(direction) - grid_origin) / static_cast<double>(pitch);
+
+  return grid_origin + std::lround(sites) * pitch;
+}
+
+int Snapper::computeSiteSearchWindow(const odb::dbTechLayerDir& direction) const
+{
+  const LayerDataList& layers_data_list = layerDataList(direction);
+  const int pitch = sitePitch(direction);
+
+  int sites_per_period = 1;
+  if (!layers_data_list.empty()) {
+    odb::dbTrackGrid* track_grid = layers_data_list[0].track_grid;
+    const int pattern_count = direction == odb::dbTechLayerDir::VERTICAL
+                                  ? track_grid->getNumGridPatternsX()
+                                  : track_grid->getNumGridPatternsY();
+
+    sites_per_period = std::numeric_limits<int>::max();
+
+    for (int i = 0; i < pattern_count; i++) {
+      const int step = getTrackGridPattern(track_grid, i, direction).step;
+      sites_per_period
+          = std::min(sites_per_period, std::lcm(pitch, step) / pitch);
+    }
+  }
+
+  // One period on each side of the start, plus the start itself.
+  return 2 * sites_per_period + 1;
+}
+
+void Snapper::snapToTracks()
+{
+  snapToTracks(odb::dbTechLayerDir::VERTICAL);
+  snapToTracks(odb::dbTechLayerDir::HORIZONTAL);
+}
+
+// Snaps to the location that aligns the largest number of pins. We first align
+// the lowest pin, which is closest to the origin, with its nearest track and
+// then jump from track to track around it looking for the optimal location.
+void Snapper::snapToTracks(const odb::dbTechLayerDir& target_direction)
+{
+  const LayerDataList& layers_data_list = layerDataList(target_direction);
+  if (layers_data_list.empty()) {
+    snapToManufacturingGrid(target_direction);
     return;
   }
 
@@ -50,7 +200,8 @@ void Snapper::snap(const odb::dbTechLayerDir& target_direction)
   odb::dbITerm* lowest_grid_pin = layers_data_list[0].pins[0];
 
   const int lowest_pin_center_pos
-      = origin + getPinOffset(lowest_grid_pin, target_direction);
+      = getOrigin(target_direction)
+        + getPinOffset(lowest_grid_pin, target_direction);
 
   auto closest_pos
       = std::ranges::lower_bound(lowest_grid_positions, lowest_pin_center_pos);
@@ -67,6 +218,111 @@ void Snapper::snap(const odb::dbTechLayerDir& target_direction)
 
   attemptSnapToExtraPatterns(
       starting_position_index, layers_data_list, target_direction);
+}
+
+void Snapper::snapToManufacturingGrid(const odb::dbTechLayerDir& direction)
+{
+  const int origin = getOrigin(direction);
+  const int snapped_origin = nearestManufacturingGridPosition(origin);
+
+  setOrigin(snapped_origin, direction);
+}
+
+int Snapper::nearestManufacturingGridPosition(const int position) const
+{
+  const int manufacturing_grid
+      = inst_->getDb()->getTech()->getManufacturingGrid();
+
+  return std::round(position / static_cast<double>(manufacturing_grid))
+         * manufacturing_grid;
+}
+
+// Site-grid snapping needs all core rows to have the same height, so that
+// rotation and row offset can be ignored.
+bool Snapper::hasMultiHeightRows() const
+{
+  std::set<int> heights;
+  for (odb::dbRow* row : inst_->getBlock()->getRows()) {
+    if (isCoreRow(row)) {
+      heights.insert(row->getSite()->getHeight());
+    }
+  }
+
+  return heights.size() > 1;
+}
+
+// The site grid of the core rows. The first core row defines it because
+// multi-height rows are ruled out beforehand.
+Snapper::SiteGrid Snapper::findSiteGrid()
+{
+  for (odb::dbRow* row : inst_->getBlock()->getRows()) {
+    if (isCoreRow(row)) {
+      return {.origin = row->getOrigin(), .site = row->getSite()};
+    }
+  }
+
+  logger_->error(utl::MPL,
+                 83,
+                 "Could not snap {} to the site grid. The block has no core "
+                 "rows.",
+                 inst_->getName());
+}
+
+int Snapper::sitePitch(const odb::dbTechLayerDir& direction) const
+{
+  return direction == odb::dbTechLayerDir::VERTICAL
+             ? site_grid_.site->getWidth()
+             : site_grid_.site->getHeight();
+}
+
+// The other placed macros and the hard placement blockages.
+std::vector<odb::Rect> Snapper::findObstacles() const
+{
+  std::vector<odb::Rect> obstacles;
+  odb::dbBlock* block = inst_->getBlock();
+
+  for (odb::dbInst* inst : block->getInsts()) {
+    if (inst != inst_ && inst->isBlock() && inst->isPlaced()) {
+      obstacles.push_back(inst->getBBox()->getBox());
+    }
+  }
+
+  for (odb::dbBlockage* blockage : block->getBlockages()) {
+    if (!blockage->isSoft()) {
+      obstacles.push_back(blockage->getBBox()->getBox());
+    }
+  }
+
+  return obstacles;
+}
+
+bool Snapper::isLegalPosition() const
+{
+  const odb::Rect bbox = inst_->getBBox()->getBox();
+  if (!inst_->getBlock()->getCoreArea().contains(bbox)) {
+    return false;
+  }
+
+  for (const odb::Rect& obstacle : obstacles_) {
+    if (bbox.overlaps(obstacle)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+const Snapper::LayerDataList& Snapper::layerDataList(
+    const odb::dbTechLayerDir& direction) const
+{
+  return direction == odb::dbTechLayerDir::VERTICAL ? vertical_layers_
+                                                    : horizontal_layers_;
+}
+
+int Snapper::getOrigin(const odb::dbTechLayerDir& direction)
+{
+  return direction == odb::dbTechLayerDir::VERTICAL ? inst_->getOrigin().x()
+                                                    : inst_->getOrigin().y();
 }
 
 void Snapper::setOrigin(const int origin,
@@ -182,23 +438,25 @@ void Snapper::snapPinToPosition(odb::dbITerm* pin,
                                 int position,
                                 const odb::dbTechLayerDir& direction)
 {
-  int origin = position - getPinOffset(pin, direction);
-  alignWithManufacturingGrid(origin);
-  setOrigin(origin, direction);
+  setOrigin(
+      nearestManufacturingGridPosition(position - getPinOffset(pin, direction)),
+      direction);
 }
 
-void Snapper::getTrackGridPattern(odb::dbTrackGrid* track_grid,
-                                  int pattern_idx,
-                                  int& origin,
-                                  int& step,
-                                  const odb::dbTechLayerDir& target_direction)
+Snapper::GridPattern Snapper::getTrackGridPattern(
+    odb::dbTrackGrid* track_grid,
+    const int pattern_idx,
+    const odb::dbTechLayerDir& target_direction)
 {
-  int count;
+  GridPattern pattern;
   if (target_direction == odb::dbTechLayerDir::VERTICAL) {
-    track_grid->getGridPatternX(pattern_idx, origin, count, step);
+    track_grid->getGridPatternX(
+        pattern_idx, pattern.origin, pattern.count, pattern.step);
   } else {
-    track_grid->getGridPatternY(pattern_idx, origin, count, step);
+    track_grid->getGridPatternY(
+        pattern_idx, pattern.origin, pattern.count, pattern.step);
   }
+  return pattern;
 }
 
 void Snapper::attemptSnapToExtraPatterns(
@@ -206,13 +464,7 @@ void Snapper::attemptSnapToExtraPatterns(
     const LayerDataList& layers_data_list,
     const odb::dbTechLayerDir& target_direction)
 {
-  const int total_attempts = 100;
-  const int total_pins = std::accumulate(layers_data_list.begin(),
-                                         layers_data_list.end(),
-                                         0,
-                                         [](int total, const LayerData& data) {
-                                           return total + data.pins.size();
-                                         });
+  const int total_pins = totalPins(layers_data_list);
 
   odb::dbITerm* snap_pin = layers_data_list[0].pins[0];
   const std::vector<int>& positions = layers_data_list[0].available_positions;
@@ -220,19 +472,15 @@ void Snapper::attemptSnapToExtraPatterns(
   int best_index = start_index;
   int best_snapped_pins = 0;
 
-  for (int i = 0; i <= total_attempts; i++) {
-    int steps = (i % 2 == 1) ? (i + 1) / 2 : -(i / 2);
-
-    int current_index = start_index + steps;
-
-    if (current_index < 0
-        || current_index >= layers_data_list[0].available_positions.size()) {
+  for (int i = 0; i <= kTrackSearchAttemptsLimit; i++) {
+    const int current_index = start_index + alternatingOffset(i);
+    if (current_index < 0 || current_index >= positions.size()) {
       continue;
     }
     snapPinToPosition(snap_pin, positions[current_index], target_direction);
 
-    int snapped_pins = totalAlignedPins(layers_data_list, target_direction);
-
+    const int snapped_pins
+        = totalAlignedPins(layers_data_list, target_direction);
     if (snapped_pins > best_snapped_pins) {
       best_snapped_pins = snapped_pins;
       best_index = current_index;
@@ -243,18 +491,17 @@ void Snapper::attemptSnapToExtraPatterns(
   }
 
   snapPinToPosition(snap_pin, positions[best_index], target_direction);
+  reportUnalignedPins(
+      layers_data_list, target_direction, best_snapped_pins, total_pins);
+}
 
-  if (best_snapped_pins != total_pins) {
-    totalAlignedPins(layers_data_list, target_direction, true);
-
-    logger_->warn(utl::MPL,
-                  2,
-                  "Could not align all pins of the macro {} to the track-grid. "
-                  "{} out of {} pins were aligned.",
-                  inst_->getName(),
-                  best_snapped_pins,
-                  total_pins);
+int Snapper::totalPins(const LayerDataList& layers_data_list)
+{
+  int total_pins = 0;
+  for (const LayerData& data : layers_data_list) {
+    total_pins += data.pins.size();
   }
+  return total_pins;
 }
 
 int Snapper::totalAlignedPins(const LayerDataList& layers_data_list,
@@ -298,13 +545,24 @@ int Snapper::totalAlignedPins(const LayerDataList& layers_data_list,
   return pins_aligned;
 }
 
-void Snapper::alignWithManufacturingGrid(int& origin)
+void Snapper::reportUnalignedPins(const LayerDataList& layers_data_list,
+                                  const odb::dbTechLayerDir& direction,
+                                  const int aligned_pins,
+                                  const int total_pins)
 {
-  const int manufacturing_grid
-      = inst_->getDb()->getTech()->getManufacturingGrid();
+  if (aligned_pins == total_pins) {
+    return;
+  }
 
-  origin = std::round(origin / static_cast<double>(manufacturing_grid))
-           * manufacturing_grid;
+  totalAlignedPins(layers_data_list, direction, true);
+
+  logger_->warn(utl::MPL,
+                2,
+                "Could not align all pins of the macro {} to the track-grid. "
+                "{} out of {} pins were aligned.",
+                inst_->getName(),
+                aligned_pins,
+                total_pins);
 }
 
 }  // namespace mpl

@@ -425,7 +425,7 @@ class Model
     return diagonals_;
   }
   // Interpolates the pair's table: in the logarithm of the width, linearly
-  // in the gap (past the last gap, falling as 1 / gap), and in the
+  // in the gap (past the last gap, nothing), and in the
   // logarithms of the two spacings, where a negative spacing, or one past
   // the last tabulated, means no neighbor on that side. Throws
   // std::out_of_range when the pair has no table.
