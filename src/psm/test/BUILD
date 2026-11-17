@@ -49,6 +49,7 @@ COMPULSORY_TESTS = [
     "gcd_no_vsrc",
     "gcd_no_vsrc_reuse",
     "gcd_no_vsrc_reuse_change_voltage",
+    "gcd_no_vsrc_set_after_solve",
     "gcd_sky130_vdd",
     "gcd_test_assign_power",
     "gcd_test_vdd",
