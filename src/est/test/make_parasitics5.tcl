@@ -1,8 +1,10 @@
 # 2 corners with set_wire_rc
 source "helpers.tcl"
-define_corners ss ff
-read_liberty -corner ss Nangate45/Nangate45_slow.lib
-read_liberty -corner ff Nangate45/Nangate45_fast.lib
+read_liberty Nangate45/Nangate45_slow.lib
+read_liberty Nangate45/Nangate45_fast.lib
+define_scene ss -liberty Nangate45/Nangate45_slow.lib
+define_scene ff -liberty Nangate45/Nangate45_fast.lib
+set_scene ss
 read_lef Nangate45/Nangate45.lef
 read_def reg6.def
 
@@ -20,5 +22,5 @@ set_wire_rc -corner ss -resistance [expr { $r * 1.2 }] \
   -capacitance [expr { $c * 1.2 }]
 estimate_parasitics -placement
 
-report_net r1/Q -corner ff
-report_net r1/Q -corner ss
+report_net r1/Q -scene ff
+report_net r1/Q -scene ss

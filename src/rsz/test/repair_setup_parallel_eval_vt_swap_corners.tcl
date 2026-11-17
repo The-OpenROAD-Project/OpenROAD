@@ -5,18 +5,21 @@ source "helpers.tcl"
 suppress_message STA 1140
 suppress_message STA 1212
 
-define_corners fast slow
-foreach corner {fast slow} {
-  foreach vt {RVT LVT SLVT} {
-    read_liberty -corner $corner asap7/asap7sc7p5t_AO_${vt}_FF_nldm_211120.lib.gz
-    read_liberty -corner $corner \
-      asap7/asap7sc7p5t_INVBUF_${vt}_FF_nldm_220122.lib.gz
-    read_liberty -corner $corner asap7/asap7sc7p5t_OA_${vt}_FF_nldm_211120.lib.gz
-    read_liberty -corner $corner \
-      asap7/asap7sc7p5t_SIMPLE_${vt}_FF_nldm_211120.lib.gz
-    read_liberty -corner $corner asap7/asap7sc7p5t_SEQ_${vt}_FF_nldm_220123.lib
+set libs {}
+foreach vt {RVT LVT SLVT} {
+  foreach lib [list \
+    asap7/asap7sc7p5t_AO_${vt}_FF_nldm_211120.lib.gz \
+    asap7/asap7sc7p5t_INVBUF_${vt}_FF_nldm_220122.lib.gz \
+    asap7/asap7sc7p5t_OA_${vt}_FF_nldm_211120.lib.gz \
+    asap7/asap7sc7p5t_SIMPLE_${vt}_FF_nldm_211120.lib.gz \
+    asap7/asap7sc7p5t_SEQ_${vt}_FF_nldm_220123.lib] {
+    read_liberty $lib
+    lappend libs $lib
   }
 }
+define_scene fast -liberty $libs
+define_scene slow -liberty $libs
+set_scene fast
 
 read_lef asap7/asap7_tech_1x_201209.lef
 read_lef asap7/asap7sc7p5t_28_R_1x_220121a.lef

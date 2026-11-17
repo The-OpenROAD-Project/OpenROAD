@@ -1,8 +1,10 @@
 # repair_timing -hold 2 corners
 source helpers.tcl
-define_corners fast slow
-read_liberty -corner slow Nangate45/Nangate45_slow.lib
-read_liberty -corner fast Nangate45/Nangate45_fast.lib
+read_liberty Nangate45/Nangate45_slow.lib
+read_liberty Nangate45/Nangate45_fast.lib
+define_scene fast -liberty Nangate45/Nangate45_fast.lib
+define_scene slow -liberty Nangate45/Nangate45_slow.lib
+set_scene fast
 read_lef Nangate45/Nangate45.lef
 read_def repair_hold1.def
 

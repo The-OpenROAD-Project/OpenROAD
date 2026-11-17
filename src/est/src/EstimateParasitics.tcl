@@ -47,6 +47,7 @@ proc set_layer_rc { args } {
     utl::error "EST" 201 "Use -layer or -via but not both."
   }
 
+  ord::scene_from_corner_arg keys
   set corners [sta::parse_scene_or_null keys]
   set tech [est::get_db_tech_checked]
   if { [info exists keys(-layer)] } {
@@ -128,6 +129,7 @@ proc report_layer_rc { args } {
   sta::parse_key_args "report_layer_rc" args \
     keys {-corner} \
     flags {}
+  ord::scene_from_corner_arg keys
   set corner [sta::parse_scene_or_null keys]
   set tech [est::get_db_tech_checked]
   set no_routing_layers [$tech getRoutingLayerCount]
@@ -196,6 +198,7 @@ proc set_wire_rc { args } {
           -tech} \
     flags {-clock -signal -data -redistribution_layer}
 
+  ord::scene_from_corner_arg keys
   set corner [sta::parse_scene_or_null keys]
 
   set target_techs [est::parse_wire_rc_techs keys flags has_selector]
