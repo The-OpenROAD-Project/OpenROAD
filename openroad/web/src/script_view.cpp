@@ -104,7 +104,7 @@ bool ScriptView::check(const std::string& name, const bool selectable)
   }
   if (matches.size() > 1) {
     logger_->warn(utl::WEB,
-                  128,
+                  140,
                   "Found {} controls matching {} at {}.",
                   matches.size(),
                   name,
@@ -187,11 +187,11 @@ void ScriptView::setDisplayControlColor(const std::string& name,
     }
   }
   if (!found) {
-    logger_->error(utl::WEB, 130, "Unable to find {} display control", name);
+    logger_->error(utl::WEB, 142, "Unable to find {} display control", name);
   }
   if (ignored) {
     logger_->warn(utl::WEB,
-                  129,
+                  141,
                   "Without the Qt GUI only the {} color is used; ignoring it "
                   "for {}.",
                   kBackground,
@@ -266,7 +266,7 @@ ScriptView::Frame ScriptView::frame(
         = matchLocked(tree, key, /*selectable=*/false);
     if (matches.empty()) {
       logger_->error(utl::WEB,
-                     131,
+                     143,
                      "{} is neither a display control nor a display option.",
                      key);
     }

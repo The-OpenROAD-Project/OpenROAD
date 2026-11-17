@@ -216,7 +216,7 @@ TEST_F(ScriptViewTest, ARendererControlsColorIsIgnored)
   Gui::get()->registerRenderer(&renderer);
   getLogger()->redirectStringBegin();
   view_.setDisplayControlColor("Test Group/A", Painter::kRed);
-  EXPECT_NE(getLogger()->redirectStringEnd().find("WEB-0129"),
+  EXPECT_NE(getLogger()->redirectStringEnd().find("WEB-0141"),
             std::string::npos);
   Gui::get()->unregisterRenderer(&renderer);
 }
