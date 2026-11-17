@@ -4,14 +4,17 @@
 #include "SetupCritVtSwapPolicy.hh"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
+#include <functional>
 #include <limits>
 #include <map>
 #include <memory>
 #include <optional>
 #include <queue>
 #include <set>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -56,11 +59,24 @@ static constexpr int kMaxCritInstancesPerEndpoint = 50;
 
 }  // namespace
 
+SetupCritVtSwapPolicy::SetupCritVtSwapPolicy(Resizer& resizer,
+                                             MoveCommitter& committer,
+                                             RepairSetupContext& setup_context,
+                                             const OptimizerRunConfig& config,
+                                             const bool capture_only)
+    : SetupLegacyBase(resizer, committer, setup_context, config),
+      capture_only_(capture_only)
+{
+}
+
 void SetupCritVtSwapPolicy::iterate()
 {
   int& num_viols = setup_context_.violation_count;
   // Critical VT swap runs as a separate phase because it is endpoint-agnostic.
-  if (config_.skip_crit_vt_swap || config_.skip_vt_swap || !hasVtSwapCells()) {
+  const bool skip = capture_only_
+                        ? config_.skip_vt_swap
+                        : config_.skip_crit_vt_swap || config_.skip_vt_swap;
+  if (skip || !hasVtSwapCells()) {
     RepairSetupProfiler::event("skip_crit_vt_swap");
     markRunComplete(true);
     return;
@@ -144,6 +160,8 @@ bool SetupCritVtSwapPolicy::swapVTCritCells(int& num_viols)
     const auto capture_cell = capture_cells.find(inst);
     if (capture_cell != capture_cells.end()) {
       best_cell = capture_cell->second;
+    } else if (capture_only_) {
+      continue;
     }
     sta::LibertyCell* current_cell = network_->libertyCell(inst);
 
@@ -369,10 +387,9 @@ sta::Slack SetupCritVtSwapPolicy::getInstanceSlack(sta::Instance* inst)
 
 sta::Slack SetupCritVtSwapPolicy::captureSlack(sta::Instance* inst)
 {
+  // Any timing-checked data input counts: the cell need not be classified
+  // as a register (a statetable MBFF may not be), only checked.
   sta::Slack worst_slack = std::numeric_limits<float>::max();
-  if (!isRegisterCell(network_->libertyCell(inst))) {
-    return worst_slack;
-  }
   std::unique_ptr<sta::InstancePinIterator> pin_iter(
       network_->pinIterator(inst));
   while (pin_iter->hasNext()) {
@@ -397,7 +414,24 @@ float SetupCritVtSwapPolicy::captureSetupGain(sta::Instance* inst,
     return 0.0f;
   }
 
-  float gain = 0.0f;
+  // Worst margin increase per checked pin, check type and data transition,
+  // over every scene and clock edge: the slack each check loses.
+  struct CheckKey
+  {
+    sta::Vertex* vertex;
+    bool setup;
+    bool operator==(const CheckKey&) const = default;
+  };
+  struct CheckKeyHash
+  {
+    size_t operator()(const CheckKey& key) const
+    {
+      return std::hash<sta::Vertex*>()(key.vertex) * 2 + key.setup;
+    }
+  };
+  using RfDelta = std::array<float, sta::RiseFall::index_count>;
+  std::unordered_map<CheckKey, RfDelta, CheckKeyHash> deltas;
+
   for (sta::TimingArcSet* arc_set : current->timingArcSets()) {
     const sta::TimingRole* role = arc_set->role()->genericRole();
     const bool setup = role == sta::TimingRole::setup();
@@ -420,7 +454,10 @@ float SetupCritVtSwapPolicy::captureSetupGain(sta::Instance* inst,
     }
     const sta::MinMax* min_max
         = setup ? sta::MinMax::max() : sta::MinMax::min();
-    const sta::Slack slack = sta_->slack(data_vertex, min_max);
+    auto [entry, inserted]
+        = deltas.try_emplace(CheckKey{data_vertex, setup},
+                             RfDelta{-std::numeric_limits<float>::infinity(),
+                                     -std::numeric_limits<float>::infinity()});
 
     for (const sta::Scene* scene : sta_->scenes()) {
       const sta::Pvt* pvt = sta_->pvt(inst, min_max, scene->sdc());
@@ -462,18 +499,41 @@ float SetupCritVtSwapPolicy::captureSetupGain(sta::Instance* inst,
             pvt, clk_slew, data_slew, 0.0f, min_max, sta::PocvMode::scalar));
         const float cand_margin = sta::delayAsFloat(cand_model->checkDelay(
             pvt, clk_slew, data_slew, 0.0f, min_max, sta::PocvMode::scalar));
-        if (setup) {
-          if (cand_margin > margin) {
-            return 0.0f;  // a longer setup time on any check
-          }
-          if (slack < 0.0) {
-            gain = std::max(gain, margin - cand_margin);
-          }
-        } else if (slack - (cand_margin - margin) < 0.0
-                   && cand_margin > margin) {
-          return 0.0f;  // the swap would create or worsen a hold violation
-        }
+        float& delta = entry->second[data_rf->index()];
+        delta = std::max(delta, cand_margin - margin);
       }
+    }
+  }
+
+  // Legal when no check is pushed into, or deeper into, violation: a longer
+  // margin on a check with slack to spare is fine (e.g. an SE fall setup).
+  // The gain is the summed setup TNS recovered at the violating pins.
+  float gain = 0.0f;
+  for (const auto& [key, rf_delta] : deltas) {
+    const sta::MinMax* min_max = key.setup ? max_ : sta::MinMax::min();
+    float before = std::numeric_limits<float>::infinity();
+    float after = std::numeric_limits<float>::infinity();
+    for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+      const float delta = rf_delta[rf->index()];
+      if (!std::isfinite(delta)) {
+        continue;
+      }
+      const float slack
+          = sta::delayAsFloat(sta_->slack(key.vertex, rf, min_max));
+      if (!std::isfinite(slack)) {
+        continue;
+      }
+      before = std::min(before, slack);
+      after = std::min(after, slack - delta);
+    }
+    if (!std::isfinite(before)) {
+      continue;
+    }
+    if (sta::fuzzyLess(after, std::min(before, 0.0f))) {
+      return 0.0f;
+    }
+    if (key.setup) {
+      gain += std::min(after, 0.0f) - std::min(before, 0.0f);
     }
   }
   return gain;

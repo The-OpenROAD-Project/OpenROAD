@@ -19,12 +19,22 @@ namespace rsz {
 class SetupCritVtSwapPolicy : public SetupLegacyBase
 {
  public:
-  using SetupLegacyBase::SetupLegacyBase;
+  // capture_only: the CAPTURE_VT_SWAP phase, which swaps only registers whose
+  // failing checks are at their data inputs, to the VT that shortens them.
+  SetupCritVtSwapPolicy(Resizer& resizer,
+                        MoveCommitter& committer,
+                        RepairSetupContext& setup_context,
+                        const OptimizerRunConfig& config,
+                        bool capture_only = false);
 
-  const char* name() const override { return "SetupCritVtSwapPolicy"; }
+  const char* name() const override
+  {
+    return capture_only_ ? "SetupCaptureVtSwapPolicy" : "SetupCritVtSwapPolicy";
+  }
   void iterate() override;
 
  private:
+  const bool capture_only_;
   bool swapVTCritCells(int& num_viols);
   sta::Pin* outputPin(sta::Instance* inst);
   // Vertices a path of the selected path group can pass through, found

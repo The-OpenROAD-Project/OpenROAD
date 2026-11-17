@@ -8,6 +8,7 @@
 
 namespace sta {
 class LibertyCell;
+class LibertyPort;
 class Statetable;
 }  // namespace sta
 
@@ -19,9 +20,17 @@ struct Target;
 // edge (R/F input), i.e. the table models registers rather than latches.
 bool statetableIsEdgeTriggered(const sta::Statetable& statetable);
 
-// True when cell is an edge-triggered register with a clk->Q arc: every
-// ff/ff_bank group is a register or, for a statetable-modelled cell such as
-// an MBFF, the statetable is edge triggered.
+// Null when output of cell is an edge-triggered register output: it has a
+// clk->Q arc, no latch arc, and no arc from a setup/hold-checked data input
+// (a transparent latch path); otherwise a static reason label.  Statetables
+// are not read: a cell may hold several and OpenSTA keeps only the last.
+const char* registerOutputRejectReason(const sta::LibertyCell* cell,
+                                       const sta::LibertyPort* output);
+bool isRegisterOutput(const sta::LibertyCell* cell,
+                      const sta::LibertyPort* output);
+
+// True when cell has a register output and every output with a clk->Q arc
+// is one (registerOutputRejectReason).
 bool isRegisterCell(const sta::LibertyCell* cell);
 
 // Estimates setup/hold impact at a flip-flop's data and clock inputs when

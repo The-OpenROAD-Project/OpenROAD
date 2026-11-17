@@ -15,6 +15,10 @@ drv_clk_prop_full/X                     0.13    0.14   -0.01 (VIOLATED)
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.859 |       -2.7 |      3 | q_prop
+[INFO RSZ-0100] Repair move sequence: SizeUpMove 
+[INFO RSZ-0094] Found 3 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 3 out of 3 (100.00%) violating endpoints...
+[INFO RSZ-0221] Using custom phase sequence: PARALLEL_EVAL
     final |       0 |       2 |        0 |      0 |     0 |    +4.3% |   -1.859 |       -2.2 |      3 | q_prop
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0051] Resized 2 instances: 2 up, 0 up match, 0 down, 0 VT

@@ -60,19 +60,39 @@ TEST_F(TestResizerMtStatetable, RegisterCellReadsStatetables)
   }
 
   // Without read_liberty -infer_latches a statetable latch's enable arc is
-  // regClkToQ like a flip-flop's, so only the table tells them apart.
+  // regClkToQ like a flip-flop's; its D->Q transparency arc tells it apart.
   const sta::LibertyCell* latch = cell("STDLH_X1");
   ASSERT_NE(latch, nullptr);
   ASSERT_NE(latch->statetable(), nullptr);
   EXPECT_TRUE(hasRole(latch, sta::TimingRole::regClkToQ()));
   EXPECT_FALSE(statetableIsEdgeTriggered(*latch->statetable()));
   EXPECT_FALSE(isRegisterCell(latch));
+  EXPECT_STREQ(registerOutputRejectReason(latch, latch->findLibertyPort("Q")),
+               "transparent_data_arc");
+
+  // An MBFF with a second statetable (a scan lockup latch) after its
+  // register table: OpenSTA keeps only the last, the latch, so a
+  // statetable-based test rejects the cell.  Its Q outputs are registers.
+  const sta::LibertyCell* lockup = cell("MB2STDFFLU_X1");
+  ASSERT_NE(lockup, nullptr);
+  ASSERT_NE(lockup->statetable(), nullptr);
+  EXPECT_FALSE(statetableIsEdgeTriggered(*lockup->statetable()));
+  EXPECT_TRUE(isRegisterOutput(lockup, lockup->findLibertyPort("Q0")));
+  EXPECT_TRUE(isRegisterOutput(lockup, lockup->findLibertyPort("Q1")));
+  EXPECT_TRUE(isRegisterCell(lockup));
+
+  // Async set/clear (recovery/removal checks, clear arcs) is not transparency.
+  EXPECT_TRUE(isRegisterOutput(cell("STDFFR_X1"),
+                               cell("STDFFR_X1")->findLibertyPort("Q")));
 
   // Nangate45's integrated clock gate is a statetable latch.
   const sta::LibertyCell* clock_gate = cell("CLKGATE_X1");
   ASSERT_NE(clock_gate, nullptr);
   ASSERT_NE(clock_gate->statetable(), nullptr);
   EXPECT_FALSE(isRegisterCell(clock_gate));
+  EXPECT_STREQ(registerOutputRejectReason(clock_gate,
+                                          clock_gate->findLibertyPort("GCK")),
+               "clock_gate");
 
   // ff/latch-group cells keep their classification.
   EXPECT_TRUE(isRegisterCell(cell("DFF_X1")));

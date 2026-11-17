@@ -27,6 +27,10 @@ Repair policy: PARALLEL_EVAL
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |      1 | r2/D
+[INFO RSZ-0100] Repair move sequence: SizeUpMove 
+[INFO RSZ-0094] Found 1 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
+[INFO RSZ-0221] Using custom phase sequence: PARALLEL_EVAL
     final |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.230 |       -0.2 |      1 | r2/D
 ------------------------------------------------------------------------------------------------------------------------------
 [WARNING RSZ-0062] Unable to repair all setup violations.
