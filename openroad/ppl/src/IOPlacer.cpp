@@ -1080,7 +1080,7 @@ int IOPlacer::getTechMinDistance(const int layer) const
   const std::vector<int>& min_dists = ver_layers_.contains(layer)
                                           ? core_->getMinDstPinsX().at(layer)
                                           : core_->getMinDstPinsY().at(layer);
-  return *(std::ranges::max_element(min_dists));
+  return *std::ranges::max_element(min_dists);
 }
 
 // The number of tracks between neighbor slots of a pin layer.
