@@ -658,9 +658,18 @@ void EstimateParasitics::updateParasitics()
     case ParasiticsSrc::kDetailedRouting: {
       // TODO: update detailed route for modified nets
       // Also re-estimate the nets the router moved beyond the edited ones.
-      for (odb::dbNet* db_net : incr_groute_->updateRoutes()) {
-        parasiticsInvalid(db_net);
+      // Without incremental routing the nets keep their routes.
+      if (incr_groute_ != nullptr) {
+        for (odb::dbNet* db_net : incr_groute_->updateRoutes()) {
+          parasiticsInvalid(db_net);
+        }
       }
+      // Each net is estimated on its own, so the threads give the same
+      // result as the serial loop, which the est_rc debug report keeps.
+      const int threads = sta_->threadCount();
+      const bool serial = threads <= 1 || logger_->debugCheck(EST, "est_rc", 1);
+      grt::NetRouteMap& routes = global_router_->getRoutes();
+      std::vector<std::pair<odb::dbNet*, grt::GRoute*>> work;
       for (const sta::Net* net : parasitics_invalid_) {
         if (isSkipNet(net)) {
           continue;
@@ -671,8 +680,17 @@ void EstimateParasitics::updateParasitics()
                    1,
                    "net {} para is estimated for GR or DR",
                    sdc_network_->pathName(net));
-        estimateGlobalRouteRC(db_network_->staToDb(net));
+        odb::dbNet* db_net = db_network_->staToDb(net);
+        if (serial) {
+          estimateGlobalRouteRC(db_net);
+          continue;
+        }
+        auto it = routes.find(db_net);
+        if (it != routes.end() && !it->second.empty()) {
+          work.emplace_back(db_net, &it->second);
+        }
       }
+      estimateRoutesInParallel(work, threads, false);
       break;
     }
     case ParasiticsSrc::kNone:
@@ -1749,7 +1767,8 @@ void EstimateParasitics::highlightSteiner(const sta::Pin* drvr)
 ////////////////////////////////////////////////////////////////
 
 IncrementalParasiticsGuard::IncrementalParasiticsGuard(
-    est::EstimateParasitics* estimate_parasitics)
+    est::EstimateParasitics* estimate_parasitics,
+    const bool reroute)
     : estimate_parasitics_(estimate_parasitics), need_unregister_(false)
 {
   // check to allow reentrancy
@@ -1768,6 +1787,9 @@ IncrementalParasiticsGuard::IncrementalParasiticsGuard(
         break;
       case ParasiticsSrc::kGlobalRouting:
       case ParasiticsSrc::kDetailedRouting:
+        if (!reroute) {
+          break;
+        }
         // TODO: add IncrementalDRoute
         estimate_parasitics_->setIncrementalGRT(
             new grt::IncrementalGRoute(estimate_parasitics_->getGlobalRouter(),
