@@ -94,6 +94,7 @@ ALL_TESTS = [
     "sta_to_db1_hier",
     "supply_port_graph",
     "tcl_unknown_handler",
+    "top_port_order_read_db",
     "write_sdc1",
     "write_spef_hier_inst_name",
     "write_verilog1",
@@ -333,6 +334,9 @@ _3DIC_CROSS_FIXTURES = [
             ],
             "tcl_unknown_handler": [
                 "hier1.def",
+            ],
+            "top_port_order_read_db": [
+                "top_port_order_read_db_reload.tcl",
             ],
             "write_sdc1": [
                 "hier1.sdc",

@@ -225,7 +225,7 @@ class dbNetwork : public ConcreteNetwork
   // iterms, not these ports.
   void makeTopCellForChip(odb::dbChip* chip);
 
-  // dbStaCbk::inDbBTermCreate
+  // makeTopCell, dbStaCbk::inDbBTermCreate
   Port* makeTopPort(odb::dbBTerm* bterm);
   odb::dbBTerm* isTopPort(const Port*) const;
   void setTopPortDirection(odb::dbBTerm* bterm, const odb::dbIoType& io_type);
