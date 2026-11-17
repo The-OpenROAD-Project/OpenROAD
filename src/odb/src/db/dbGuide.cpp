@@ -297,13 +297,13 @@ void dbGuide::setIsConnectedToTerm(bool is_connected)
 
 bool dbGuide::isFromDetailedRoute() const
 {
-  _dbGuide* guide = (_dbGuide*) this;
+  const _dbGuide* guide = reinterpret_cast<const _dbGuide*>(this);
   return guide->is_from_detailed_route_;
 }
 
-void dbGuide::setIsFromDetailedRoute(bool from_detailed_route)
+void dbGuide::setIsFromDetailedRoute(const bool from_detailed_route)
 {
-  _dbGuide* guide = (_dbGuide*) this;
+  _dbGuide* guide = reinterpret_cast<_dbGuide*>(this);
   guide->is_from_detailed_route_ = from_detailed_route;
 }
 
