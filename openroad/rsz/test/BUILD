@@ -321,6 +321,7 @@ PASSFAIL_TESTS = [
     "repair_design_fixed_driver",
     "repair_slew_corner",
     "gain_buffering_top_port_hier",
+    "report_vt_usage",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
@@ -330,6 +331,7 @@ SELF_CHECKING_TESTS = [
     "repair_design_fixed_driver",
     "repair_slew_corner",
     "gain_buffering_top_port_hier",
+    "report_vt_usage",
 ]
 
 # Hierarchical Verilog netlists reused as corpus input by
