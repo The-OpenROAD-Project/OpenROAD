@@ -59,7 +59,7 @@ proc derate_layer_wire_rc { layer_name corner derate_factor } {
   set r_ui [expr $r * 1e-3 * 1e-6]
   # F/meter -> fF/micron
   set c_ui [expr $c * 1e+15 * 1e-6]
-  set_layer_rc -layer $layer_name -scene $corner \
+  set_layer_rc -layer $layer_name -corner $corner \
     -resistance [expr $r_ui * $derate_factor] \
     -capacitance [expr $c_ui * $derate_factor]
 }

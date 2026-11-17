@@ -105,11 +105,11 @@ proc restructure { args } {
     $depth_threshold_value $workdir_name $abc_logfile
 }
 
-sta::define_cmd_args "resynth" {[-scene scene | -corner corner]}
+sta::define_cmd_args "resynth" {[-corner corner]}
 
 proc resynth { args } {
   sta::parse_key_args "resynth" args \
-    keys {-scene -corner} \
+    keys {-corner} \
     flags {}
   ord::scene_from_corner_arg keys
   set corner [sta::parse_scene keys]
@@ -117,7 +117,7 @@ proc resynth { args } {
 }
 
 sta::define_cmd_args "resynth_annealing" {
-                                            [-scene scene | -corner corner]
+                                            [-corner corner]
                                             [-slack_threshold slack_threshold]
                                             [-seed seed]
                                             [-temp temp]
@@ -128,7 +128,7 @@ sta::define_cmd_args "resynth_annealing" {
 
 proc resynth_annealing { args } {
   sta::parse_key_args "resynth_annealing" args \
-    keys {-scene -corner -iters -revert_after -seed -temp -initial_ops -slack_threshold} \
+    keys {-corner -iters -revert_after -seed -temp -initial_ops -slack_threshold} \
     flags {}
 
   ord::scene_from_corner_arg keys
@@ -156,7 +156,7 @@ proc resynth_annealing { args } {
 }
 
 sta::define_cmd_args "resynth_genetic" {
-                                            [-scene scene | -corner corner]
+                                            [-corner corner]
                                             [-slack_threshold slack_threshold]
                                             [-seed seed]
                                             [-population_size population_size]
@@ -170,9 +170,8 @@ sta::define_cmd_args "resynth_genetic" {
 
 proc resynth_genetic { args } {
   sta::parse_key_args "resynth_genetic" args \
-    keys {-scene -corner -iters -seed -population_size -mutation_probability \
-              -crossover_probability -tournament_size -tournament_probability \
-              -initial_ops -slack_threshold} \
+    keys {-corner -iters -seed -population_size -mutation_probability -crossover_probability \
+              -tournament_size -tournament_probability -initial_ops -slack_threshold} \
     flags {}
 
   ord::scene_from_corner_arg keys

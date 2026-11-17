@@ -11,6 +11,6 @@ read_sdc Nangate45_data/gcd.sdc
 
 source Nangate45_data/Nangate45_corners.rc
 
-analyze_power_grid -scene min -vsrc Vsrc_gcd_vdd.loc -net VDD
+analyze_power_grid -corner min -vsrc Vsrc_gcd_vdd.loc -net VDD
 
-analyze_power_grid -scene max -vsrc Vsrc_gcd_vdd.loc -net VDD
+analyze_power_grid -corner max -vsrc Vsrc_gcd_vdd.loc -net VDD

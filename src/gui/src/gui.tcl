@@ -145,7 +145,7 @@ proc save_animated_gif { args } {
 sta::define_cmd_args "save_clocktree_image" {
   [-width width] \
   [-height height] \
-  [-scene scene | -corner corner] \
+  [-scene scene] \
   -clock clock \
   path
 }

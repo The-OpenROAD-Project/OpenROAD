@@ -28,7 +28,7 @@ read_lef asap7/asap7sc7p5t_28_SL_1x_220121a.lef
 read_def gcd_asap7_placed.def
 read_sdc gcd.sdc
 source asap7/setRC.tcl
-set_wire_rc -scene slow -signal -resistance 6.46302E-02 -capacitance 3.46646E-01
+set_wire_rc -corner slow -signal -resistance 6.46302E-02 -capacitance 3.46646E-01
 estimate_parasitics -placement
 
 repair_timing -setup \

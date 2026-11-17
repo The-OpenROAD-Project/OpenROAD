@@ -17,18 +17,18 @@ set r 5.43e-3
 set c 6.013e-2
 
 source Nangate45/Nangate45.rc
-set_layer_rc -layer metal1 -scene ff \
+set_layer_rc -layer metal1 -corner ff \
   -resistance [expr { $r * 0.8 }] -capacitance [expr { $c * 0.8 }]
-set_layer_rc -layer metal1 -scene ss \
+set_layer_rc -layer metal1 -corner ss \
   -resistance [expr { $r * 1.2 }] -capacitance [expr { $c * 1.2 }]
-set_wire_rc -scene ff -layer metal1
-set_wire_rc -scene ss -layer metal1
+set_wire_rc -corner ff -layer metal1
+set_wire_rc -corner ss -layer metal1
 
 puts "Corner: ff"
-report_layer_rc -scene ff
+report_layer_rc -corner ff
 
 puts "Corner: ss"
-report_layer_rc -scene ss
+report_layer_rc -corner ss
 
 set spef_file [make_result_file make_parasitics6.spef]
 # writes corners with _ff and _ss suffixes in the

@@ -8,13 +8,13 @@ set_scene corner1
 read_def "gcd.def"
 read_guides "est_rc3.guide"
 
-set_layer_rc -scene corner0 -layer metal2 -resistance 2 -capacitance 1
-set_layer_rc -scene corner0 -layer metal3 -resistance 2 -capacitance 1
-set_layer_rc -scene corner0 -layer metal4 -resistance 2 -capacitance 1
+set_layer_rc -corner corner0 -layer metal2 -resistance 2 -capacitance 1
+set_layer_rc -corner corner0 -layer metal3 -resistance 2 -capacitance 1
+set_layer_rc -corner corner0 -layer metal4 -resistance 2 -capacitance 1
 
-set_layer_rc -scene corner1 -layer metal2 -resistance 4 -capacitance 2
-set_layer_rc -scene corner1 -layer metal3 -resistance 4 -capacitance 2
-set_layer_rc -scene corner1 -layer metal4 -resistance 4 -capacitance 2
+set_layer_rc -corner corner1 -layer metal2 -resistance 4 -capacitance 2
+set_layer_rc -corner corner1 -layer metal3 -resistance 4 -capacitance 2
+set_layer_rc -corner corner1 -layer metal4 -resistance 4 -capacitance 2
 
 set_routing_layers -signal metal2-metal10
 

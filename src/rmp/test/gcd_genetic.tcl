@@ -44,7 +44,7 @@ write_verilog_for_eqy $test_name before "None"
 
 puts "-- After --\n"
 resynth_genetic \
-  -scene slow \
+  -corner slow \
   -initial_ops 5 \
   -iters 15 \
   -population_size 100 \

@@ -40,7 +40,7 @@ report_tns
 
 puts "-- After --\n"
 resynth_genetic \
-  -scene slow \
+  -corner slow \
   -initial_ops 5 \
   -iters 15 \
   -population_size 50 \

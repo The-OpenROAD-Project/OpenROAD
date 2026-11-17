@@ -37,10 +37,10 @@ sta::define_cmd_args "set_layer_rc" { [-layer layer]\
                                         [-via via_layer]\
                                         [-capacitance cap]\
                                         [-resistance res]\
-                                        [-scene scene | -corner corner]}
+                                        [-corner corner]}
 proc set_layer_rc { args } {
   sta::parse_key_args "set_layer_rc" args \
-    keys {-layer -via -capacitance -resistance -scene -corner} \
+    keys {-layer -via -capacitance -resistance -corner} \
     flags {}
 
   if { [info exists keys(-layer)] && [info exists keys(-via)] } {
@@ -83,7 +83,7 @@ proc set_layer_rc { args } {
 
     if { $corners == "NULL" } {
       set corners [sta::scenes]
-      # Only update the db layers if -scene not specified.
+      # Only update the db layers if -corner not specified.
       est::set_dblayer_wire_rc $layer $res $cap
     }
 
@@ -108,7 +108,7 @@ proc set_layer_rc { args } {
 
       if { $corners == "NULL" } {
         set corners [sta::scenes]
-        # Only update the db layers if -scene not specified.
+        # Only update the db layers if -corner not specified.
         est::set_dbvia_wire_r $layer $res
       }
 
@@ -123,11 +123,11 @@ proc set_layer_rc { args } {
   }
 }
 
-sta::define_cmd_args "report_layer_rc" {[-scene scene | -corner corner]}
+sta::define_cmd_args "report_layer_rc" {[-corner corner]}
 
 proc report_layer_rc { args } {
   sta::parse_key_args "report_layer_rc" args \
-    keys {-scene -corner} \
+    keys {-corner} \
     flags {}
   ord::scene_from_corner_arg keys
   set corner [sta::parse_scene_or_null keys]
@@ -187,13 +187,13 @@ sta::define_cmd_args "set_wire_rc" {[-clock] [-signal] [-data]\
                                       [-v_capacitance v_cap]\
                                       [-resistance res]\
                                       [-capacitance cap]\
-                                      [-scene scene | -corner corner]\
+                                      [-corner corner]\
                                       [-tech tech]\
                                       [-redistribution_layer]}
 
 proc set_wire_rc { args } {
   sta::parse_key_args "set_wire_rc" args \
-    keys {-layer -layers -resistance -capacitance -scene -corner \
+    keys {-layer -layers -resistance -capacitance -corner \
           -h_resistance -h_capacitance -v_resistance -v_capacitance \
           -tech} \
     flags {-clock -signal -data -redistribution_layer}
