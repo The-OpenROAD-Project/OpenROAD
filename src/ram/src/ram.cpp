@@ -1679,6 +1679,17 @@ void RamGen::findMasters()
       /*required=*/true,
       buffer_cell_);
   buffer_ports_ = buildPortMap(buffer_cell_);
+  // the input buffers: -input_buffer_cell, else the buffer cell
+  if (in_buf_cell_) {
+    in_buf_cell_ = findMaster(
+        [](sta::LibertyPort* port) { return port->libertyCell()->isBuffer(); },
+        "input buffer",
+        /*required=*/true,
+        in_buf_cell_);
+  } else {
+    in_buf_cell_ = buffer_cell_;
+  }
+  in_buf_ports_ = buildPortMap(in_buf_cell_);
 
   // latch cells for latch-based ram: find neg/pos latch cell
   if (use_latch_ && !latch_cell_) {
@@ -2401,6 +2412,8 @@ void RamGen::generate(const int mask_size,
   and2_cell_ = nullptr;
   clock_gate_cell_ = nullptr;
   buffer_cell_ = nullptr;
+  in_buf_cell_ = nullptr;
+  input_buffers_ = true;
   aoi22_cell_ = nullptr;
   ao22_cell_ = nullptr;
   or2_cell_ = nullptr;
@@ -2418,6 +2431,7 @@ void RamGen::generate(const int mask_size,
         = {{"inv", &inv_cell_},
            {"and2", &and2_cell_},
            {"buffer", &buffer_cell_},
+           {"input_buffer", &in_buf_cell_},
            {"clock_gate", &clock_gate_cell_},
            {"aoi22", &aoi22_cell_},
            {"ao22", &ao22_cell_},
@@ -2445,6 +2459,10 @@ void RamGen::generate(const int mask_size,
                        "clock_gate, aoi22, ao22, or2, nand2, nor2, tie and "
                        "addr_flop.",
                        role);
+      }
+      if (role == "input_buffer" && master_name == "none") {
+        input_buffers_ = false;
+        continue;
       }
       dbMaster* master = db_->findMaster(master_name.c_str());
       if (master == nullptr) {
@@ -2790,8 +2808,10 @@ void RamGen::generate(const int mask_size,
       data_inputs[w].push_back(
           makeBTerm(fmt::format("{}[{}]", d, bit), dbIoType::INPUT));
       data_inputs_.push_back(data_inputs[w].back());
-      D_nets[w][bit] = makeNet(num_write == 1 ? "D_nets" : d + "_nets",
-                               fmt::format("b{}", bit));
+      D_nets[w][bit] = input_buffers_
+                           ? makeNet(num_write == 1 ? "D_nets" : d + "_nets",
+                                     fmt::format("b{}", bit))
+                           : data_inputs[w].back()->getNet();
     }
 
     // if total read ports == 1, only have Q outputs
@@ -3170,15 +3190,15 @@ void RamGen::generate(const int mask_size,
         buffer_grid_cell = std::make_unique<Cell>();
       }
       marking_periphery_ = true;  // the input buffers
-      for (int w = 0; w < num_write; ++w) {
+      for (int w = 0; input_buffers_ && w < num_write; ++w) {
         makeInst(
             buffer_grid_cell.get(),
             num_write == 1 ? "buffer" : fmt::format("buffer{}", w),
             fmt::format("in[{}]", bit_idx),
-            buffer_cell_,
-            {{buffer_ports_[{PortRoleType::DataIn, 0}],
+            in_buf_cell_,
+            {{in_buf_ports_[{PortRoleType::DataIn, 0}],
               data_inputs[w][bit_idx]->getNet()},
-             {buffer_ports_[{PortRoleType::DataOut, 0}], D_nets[w][bit_idx]}});
+             {in_buf_ports_[{PortRoleType::DataOut, 0}], D_nets[w][bit_idx]}});
       }
       marking_periphery_ = false;
     }
