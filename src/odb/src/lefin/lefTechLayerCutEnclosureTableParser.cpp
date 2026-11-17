@@ -8,6 +8,7 @@
 #include "boostParser.h"
 #include "lefLayerPropParser.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/lefin.h"
 
 namespace odb {
@@ -43,23 +44,26 @@ void lefTechLayerCutEnclosureTableRuleParser::setWidth(double val)
 void lefTechLayerCutEnclosureTableRuleParser::addDefaultRow(
     boost::fusion::vector<int, double, double, double, double>& params)
 {
-  curRule_->addDefaultRow(
-      {static_cast<dbCutEnclosureAboveBelow>(at_c<0>(params)),
-       lefin_->dbdist(at_c<1>(params)),
-       lefin_->dbdist(at_c<2>(params)),
-       lefin_->dbdist(at_c<3>(params)),
-       lefin_->dbdist(at_c<4>(params))});
+  curRule_->addDefaultRow({
+      .above_below = static_cast<dbCutEnclosureAboveBelow>(at_c<0>(params)),
+      .overhang1 = lefin_->dbdist(at_c<1>(params)),
+      .overhang2 = lefin_->dbdist(at_c<2>(params)),
+      .overhang3 = lefin_->dbdist(at_c<3>(params)),
+      .overhang4 = lefin_->dbdist(at_c<4>(params)),
+  });
 }
 
 void lefTechLayerCutEnclosureTableRuleParser::addWidthRow(
     boost::fusion::vector<int, double, double, double, double>& params)
 {
-  curRule_->addWidthRow({curWidth_,
-                         static_cast<dbCutEnclosureAboveBelow>(at_c<0>(params)),
-                         lefin_->dbdist(at_c<1>(params)),
-                         lefin_->dbdist(at_c<2>(params)),
-                         lefin_->dbdist(at_c<3>(params)),
-                         lefin_->dbdist(at_c<4>(params))});
+  curRule_->addWidthRow({
+      .width = curWidth_,
+      .above_below = static_cast<dbCutEnclosureAboveBelow>(at_c<0>(params)),
+      .overhang1 = lefin_->dbdist(at_c<1>(params)),
+      .overhang2 = lefin_->dbdist(at_c<2>(params)),
+      .overhang3 = lefin_->dbdist(at_c<3>(params)),
+      .overhang4 = lefin_->dbdist(at_c<4>(params)),
+  });
 }
 
 void lefTechLayerCutEnclosureTableRuleParser::parse(std::string_view s,
@@ -103,16 +107,14 @@ void lefTechLayerCutEnclosureTableRuleParser::parse(std::string_view s,
                              >> double_ >> -layer_overlap_rule);
 
   qi::rule<std::string::const_iterator, space_type> default_row_rule
-      = lit("DEFAULT") >> +(overhang_group_rule[boost::bind(
-            &lefTechLayerCutEnclosureTableRuleParser::addDefaultRow,
-            this,
-            _1)]);
+      = lit("DEFAULT") >> +overhang_group_rule[boost::bind(
+            &lefTechLayerCutEnclosureTableRuleParser::addDefaultRow, this, _1)];
 
   qi::rule<std::string::const_iterator, space_type> width_row_rule
       = lit("WIDTH") >> double_[boost::bind(
             &lefTechLayerCutEnclosureTableRuleParser::setWidth, this, _1)]
-        >> +(overhang_group_rule[boost::bind(
-            &lefTechLayerCutEnclosureTableRuleParser::addWidthRow, this, _1)]);
+        >> +overhang_group_rule[boost::bind(
+            &lefTechLayerCutEnclosureTableRuleParser::addWidthRow, this, _1)];
 
   qi::rule<std::string::const_iterator, space_type> enclosure_table_rule
       = (lit("ENCLOSURETABLE") >> -cut_class_rule >> *default_row_rule
