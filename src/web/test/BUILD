@@ -526,6 +526,7 @@ cc_test(
     srcs = ["cpp/TestSessionLifetime.cpp"],
     deps = [
         "//src/odb/src/db",
+        "//src/tst:physical_builder",
         "//src/utl",
         "//src/web",
         "@boost.asio",

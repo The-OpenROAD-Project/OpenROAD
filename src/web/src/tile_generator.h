@@ -502,6 +502,7 @@ struct TileVisibility
   std::unordered_map<std::string, std::set<std::string>>
       chiplet_nonselectable_layers;
 
+  // Leaves *this unchanged when a value in json has the wrong type.
   void parseFromJson(const boost::json::object& json);
 
   bool isNetVisible(odb::dbNet* net) const;
@@ -520,6 +521,9 @@ struct TileVisibility
   bool isLayerSelectable(const std::string& layer_name) const;
   bool isLayerSelectableOn(const std::string& path,
                            const std::string& layer_name) const;
+
+ private:
+  void assignFromJson(const boost::json::object& json);
 };
 
 class TileGenerator

@@ -60,6 +60,13 @@ foreach render { image gif } {
       expr { $odd eq $no_cells }
     } 1
   }
+
+  # visible_layers is no boolean, so WEB-0042 ignores the whole payload.
+  set wrong_type [$render wrong_type -display_option {visible_layers true} \
+    -display_option {stdcells false}]
+  check "$render: an option WEB-0042 ignored is not applied in part" {
+    expr { $wrong_type eq $plain }
+  } 1
 }
 
 # json_string writes exactly this literal: a wrong escape can still be valid

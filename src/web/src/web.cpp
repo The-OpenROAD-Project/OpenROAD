@@ -206,6 +206,7 @@ http::response<http::string_body> textResponse(
 // Render the layout image requested by /download/image into `res`.
 void handleImageDownload(const std::shared_ptr<TileGenerator>& generator,
                          const std::map<std::string, std::string>& params,
+                         utl::Logger* logger,
                          http::response<http::string_body>& res)
 {
   if (!generator || !generator->getBlock()) {
@@ -231,11 +232,11 @@ void handleImageDownload(const std::shared_ptr<TileGenerator>& generator,
   TileVisibility vis;
   const auto vis_it = params.find("vis");
   if (vis_it != params.end()) {
-    // Non-throwing parse: a malformed vis falls back to defaults (all visible).
-    std::error_code ec;
-    const boost::json::value parsed = boost::json::parse(vis_it->second, ec);
-    if (!ec && parsed.is_object()) {
-      vis.parseFromJson(parsed.as_object());
+    // A malformed or wrongly typed vis falls back to defaults (all visible).
+    try {
+      vis.parseFromJson(boost::json::parse(vis_it->second).as_object());
+    } catch (const std::exception& e) {
+      debugPrint(logger, utl::WEB, "http", 1, "ignoring vis: {}", e.what());
     }
   }
 
@@ -357,7 +358,7 @@ static http::response<http::string_body> dispatch_request(
     if (file_path == "/download/image") {
       const ScriptGateScope gate(script_gate);
       if (gate.entered()) {
-        handleImageDownload(generator, params, res);
+        handleImageDownload(generator, params, logger, res);
       } else {
         res.result(http::status::service_unavailable);
         res.body() = kScriptBusyMsg;
@@ -2261,13 +2262,10 @@ TileVisibility parseVis(const std::string& vis_json, utl::Logger* logger)
   TileVisibility vis;
   if (!vis_json.empty()) {
     try {
-      boost::json::value v = boost::json::parse(vis_json);
-      if (auto* obj = v.if_object()) {
-        vis.parseFromJson(*obj);
-      }
+      vis.parseFromJson(boost::json::parse(vis_json).as_object());
     } catch (const std::exception& e) {
       logger->warn(
-          utl::WEB, 42, "Ignoring malformed visibility JSON: {}", e.what());
+          utl::WEB, 42, "Ignoring invalid visibility JSON: {}", e.what());
     }
   }
   return vis;
