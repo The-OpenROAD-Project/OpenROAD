@@ -51,10 +51,52 @@ void addSpacing(double val,
   parser->spacing_tbl[parser->curWidthIdx].push_back(lefinReader->dbdist(val));
 }
 void setEolWidth(double val,
-                 odb::dbTechLayerSpacingTablePrlRule* rule,
+                 odb::lefTechLayerSpacingTablePrlParser* parser,
                  odb::lefinReader* lefinReader)
 {
-  rule->setEolWidth(lefinReader->dbdist(val));
+  parser->rules.back()->setEolWidth(lefinReader->dbdist(val));
+}
+void setWrongDirection(odb::lefTechLayerSpacingTablePrlParser* parser)
+{
+  parser->rules.back()->setWrongDirection(true);
+}
+void setSameMask(odb::lefTechLayerSpacingTablePrlParser* parser)
+{
+  parser->rules.back()->setSameMask(true);
+}
+void setExceptEol(odb::lefTechLayerSpacingTablePrlParser* parser)
+{
+  parser->rules.back()->setExceeptEol(true);
+}
+void createRule(odb::dbTechLayer* layer,
+                odb::lefTechLayerSpacingTablePrlParser* parser)
+{
+  parser->rules.push_back(odb::dbTechLayerSpacingTablePrlRule::create(layer));
+  parser->length_tbl.clear();
+  parser->width_tbl.clear();
+  parser->spacing_tbl.clear();
+  parser->within_map.clear();
+  parser->influence_tbl.clear();
+  parser->curWidthIdx = -1;
+}
+void finishRule(odb::lefTechLayerSpacingTablePrlParser* parser)
+{
+  bool valid = parser->spacing_tbl.size() == parser->width_tbl.size();
+  for (const auto& spacing : parser->spacing_tbl) {
+    if (spacing.size() != parser->length_tbl.size()) {
+      valid = false;
+    }
+  }
+  if (!valid) {
+    parser->tables_valid = false;
+    return;
+  }
+  odb::dbTechLayerSpacingTablePrlRule* rule = parser->rules.back();
+  rule->setTable(parser->width_tbl,
+                 parser->length_tbl,
+                 parser->spacing_tbl,
+                 parser->within_map);
+  rule->setSpacingTableInfluence(parser->influence_tbl);
 }
 template <typename Iterator>
 bool parse(Iterator first,
@@ -63,8 +105,6 @@ bool parse(Iterator first,
            odb::lefinReader* lefinReader,
            odb::lefTechLayerSpacingTablePrlParser* parser)
 {
-  odb::dbTechLayerSpacingTablePrlRule* rule
-      = odb::dbTechLayerSpacingTablePrlRule::create(layer);
   qi::rule<std::string::const_iterator, space_type> SPACINGTABLE
       = (lit("SPACINGTABLE") >> lit("INFLUENCE")
          >> +(lit("WIDTH") >> double_ >> lit("WITHIN") >> double_
@@ -73,47 +113,27 @@ bool parse(Iterator first,
          >> lit(";"));
 
   qi::rule<std::string::const_iterator, space_type> spacingTableRule
-      = (lit("SPACINGTABLE") >> lit("PARALLELRUNLENGTH")
-         >> -lit("WRONGDIRECTION")[boost::bind(
-             &odb::dbTechLayerSpacingTablePrlRule::setWrongDirection,
-             rule,
-             true)]
-         >> -lit("SAMEMASK")[boost::bind(
-             &odb::dbTechLayerSpacingTablePrlRule::setSameMask, rule, true)]
-         >> -(lit("EXCEPTEOL")[boost::bind(
-                  &odb::dbTechLayerSpacingTablePrlRule::setExceeptEol,
-                  rule,
-                  true)]
-              >> double_[boost::bind(&setEolWidth, _1, rule, lefinReader)])
+      = ((lit("SPACINGTABLE")
+          >> lit("PARALLELRUNLENGTH"))[boost::bind(&createRule, layer, parser)]
+         >> -lit("WRONGDIRECTION")[boost::bind(&setWrongDirection, parser)]
+         >> -lit("SAMEMASK")[boost::bind(&setSameMask, parser)]
+         >> -(lit("EXCEPTEOL")[boost::bind(&setExceptEol, parser)]
+              >> double_[boost::bind(&setEolWidth, _1, parser, lefinReader)])
          >> +double_[boost::bind(&addLength, _1, parser, lefinReader)] >> +(
              lit("WIDTH")
              >> double_[boost::bind(&addWidth, _1, parser, lefinReader)] >> -(
                  lit("EXCEPTWITHIN") >> double_
                  >> double_)[boost::bind(&addExcluded, _1, parser, lefinReader)]
              >> +double_[boost::bind(&addSpacing, _1, parser, lefinReader)])
-         >> -SPACINGTABLE >> lit(";"));
+         >> -SPACINGTABLE >> lit(";")[boost::bind(&finishRule, parser)]);
 
-  bool valid
-      = qi::phrase_parse(first, last, spacingTableRule, space) && first == last;
+  // A single property may hold several SPACINGTABLE statements, each
+  // becoming its own dbTechLayerSpacingTablePrlRule.
+  const bool valid = qi::phrase_parse(first, last, +spacingTableRule, space)
+                     && first == last && parser->tables_valid;
 
   if (!valid) {  // fail if we did not get a full match
-    odb::dbTechLayerSpacingTablePrlRule::destroy(rule);
-  } else {
-    if (parser->spacing_tbl.size() != parser->width_tbl.size()) {
-      valid = false;
-    }
-    for (const auto& spacing : parser->spacing_tbl) {
-      if (spacing.size() != parser->length_tbl.size()) {
-        valid = false;
-      }
-    }
-    if (valid) {
-      rule->setTable(parser->width_tbl,
-                     parser->length_tbl,
-                     parser->spacing_tbl,
-                     parser->within_map);
-      rule->setSpacingTableInfluence(parser->influence_tbl);
-    } else {
+    for (odb::dbTechLayerSpacingTablePrlRule* rule : parser->rules) {
       odb::dbTechLayerSpacingTablePrlRule::destroy(rule);
     }
   }

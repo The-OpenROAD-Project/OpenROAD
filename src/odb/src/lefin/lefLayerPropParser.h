@@ -75,6 +75,9 @@ class lefTechLayerSpacingTablePrlParser
   std::map<unsigned int, std::pair<int, int>> within_map;
   std::vector<std::tuple<int, int, int>> influence_tbl;
   int curWidthIdx = -1;
+  // One rule per SPACINGTABLE statement; the last one is being parsed.
+  std::vector<dbTechLayerSpacingTablePrlRule*> rules;
+  bool tables_valid = true;
   bool parse(const std::string&, dbTechLayer*, lefinReader*);
 };
 
