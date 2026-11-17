@@ -79,6 +79,27 @@ const NOTHING = Object.freeze({
     promise: Promise.resolve(null), cancel() {}, promote() {},
 });
 
+// Whether an item's `gate` lets it draw: a visibility flag name, or a
+// `shown_by` list of flag groups that shows when every flag of one group is
+// on, as the server's anyGroupOn.  An unknown name fails open, with a warning.
+const warnedGates = new Set();
+export function gateOpen(gate, visibility) {
+    if (gate == null) {
+        return true;
+    }
+    if (Array.isArray(gate)) {
+        return gate.some((group) => group.every((key) => !!visibility[key]));
+    }
+    if (!(gate in visibility)) {
+        if (!warnedGates.has(gate)) {
+            warnedGates.add(gate);
+            console.warn(`tile item: unknown gate '${gate}', drawing ungated`);
+        }
+        return true;
+    }
+    return !!visibility[gate];
+}
+
 // Issue one request through `wm`, tracking its id for cancel and promote.
 function tracked(wm, ids, msg, background) {
     const promise = wm.request(msg, { background });
@@ -108,9 +129,9 @@ function loadHandle(wm, ids, promise, onCancel) {
 }
 
 // The layout layers of a slot, composited into one image per tile in z-order
-// (`getItems()` returns [{layer, opacity, visible}], bottom-most first).  With
-// double buffering the tile is drawn once, complete; otherwise every layer that
-// lands is published as a partial composite.
+// (`getItems()` returns [{layer, opacity, visible, gate}], bottom-most
+// first).  With double buffering the tile is drawn once, complete; otherwise
+// every layer that lands is published as a partial composite.
 export function createCompositeSource({
     wm, ctx, getItems, dpr = nativeDpr, tileSize = tileSizeCss,
     isDoubleBuffer = () => true, decode = decodeTilePayload,
@@ -125,6 +146,7 @@ export function createCompositeSource({
             // layer-extents.js skips the empty ones.
             const items = all.filter(
                 (item) => item && item.visible !== false
+                          && gateOpen(item.gate, ctx.visibility || {})
                           && tileMayHaveContent(ctx, item.layer, { z, x, y },
                                                 item.chiplet));
             if (items.length === 0) {

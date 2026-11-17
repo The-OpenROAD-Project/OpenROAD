@@ -681,28 +681,34 @@ void FlexGCWorker::Impl::checkMetalWidthViaTable()
   }
 }
 
-void FlexGCWorker::Impl::checkLef58Enclosure_main(gcRect* viaRect,
-                                                  gcRect* encRect)
+void FlexGCWorker::Impl::checkLef58Enclosure_main(
+    gcRect* viaRect,
+    gcRect* encRect,
+    const std::vector<gcRect*>& candidates)
 {
   auto layer = getTech()->getLayer(viaRect->getLayerNum());
   auto cutClassIdx = layer->getCutClassIdx(viaRect->width(), viaRect->length());
   bool above = encRect->getLayerNum() > viaRect->getLayerNum();
-  frCoord sideOverhang = 0;
-  frCoord endOverhang = 0;
-  sideOverhang = std::min(gtl::xh(*encRect) - gtl::xh(*viaRect),
-                          gtl::xl(*viaRect) - gtl::xl(*encRect));
-  endOverhang = std::min(gtl::yh(*encRect) - gtl::yh(*viaRect),
-                         gtl::yl(*viaRect) - gtl::yl(*encRect));
-  if (gtl::delta(*viaRect, gtl::orientation_2d_enum::HORIZONTAL)
-      > gtl::delta(*viaRect, gtl::orientation_2d_enum::VERTICAL)) {
-    std::swap(sideOverhang, endOverhang);
+  const auto& constraints = layer->getLef58EnclosureConstraints(
+      cutClassIdx, encRect->width(), above);
+  if (constraints.empty()) {
+    return;
   }
   frLef58EnclosureConstraint* lastCon = nullptr;
-  for (auto con : layer->getLef58EnclosureConstraints(
-           cutClassIdx, encRect->width(), above)) {
-    lastCon = con;
-    if (con->isValidOverhang(endOverhang, sideOverhang)) {
-      return;  // valid overhangs
+  for (auto* candidate : candidates) {
+    frCoord sideOverhang = std::min(gtl::xh(*candidate) - gtl::xh(*viaRect),
+                                    gtl::xl(*viaRect) - gtl::xl(*candidate));
+    frCoord endOverhang = std::min(gtl::yh(*candidate) - gtl::yh(*viaRect),
+                                   gtl::yl(*viaRect) - gtl::yl(*candidate));
+    if (gtl::delta(*viaRect, gtl::orientation_2d_enum::HORIZONTAL)
+        > gtl::delta(*viaRect, gtl::orientation_2d_enum::VERTICAL)) {
+      std::swap(sideOverhang, endOverhang);
+    }
+    for (auto con : constraints) {
+      lastCon = con;
+      if (con->isValidOverhang(endOverhang, sideOverhang)) {
+        return;  // valid overhangs
+      }
     }
   }
   odb::Rect markerBox(gtl::xl(*viaRect),
@@ -748,7 +754,9 @@ void FlexGCWorker::Impl::checkLef58Enclosure_main(gcRect* rect)
   if (!hasAboveConstraints && !hasBelowConstraints) {
     return;
   }
-  auto getEnclosure = [this](gcRect* rect, frLayerNum layerNum) {
+  auto getEnclosure = [this](gcRect* rect,
+                             frLayerNum layerNum,
+                             std::vector<gcRect*>& candidates) {
     std::vector<rq_box_value_t<gcRect*>> results;
     auto& workerRegionQuery = getWorkerRegionQuery();
     workerRegionQuery.queryMaxRectangle(*rect, layerNum, results);
@@ -760,6 +768,7 @@ void FlexGCWorker::Impl::checkLef58Enclosure_main(gcRect* rect)
       if (!gtl::contains(*ptr, *rect)) {
         continue;
       }
+      candidates.push_back(ptr);
       if (encRect == nullptr) {
         encRect = ptr;
       } else if (ptr->width() > encRect->width()) {
@@ -769,12 +778,14 @@ void FlexGCWorker::Impl::checkLef58Enclosure_main(gcRect* rect)
     return encRect;
   };
   if (hasBelowConstraints) {
-    gcRect* belowEnc = getEnclosure(rect, layer->getLayerNum() - 1);
-    checkLef58Enclosure_main(rect, belowEnc);
+    std::vector<gcRect*> candidates;
+    gcRect* belowEnc = getEnclosure(rect, layer->getLayerNum() - 1, candidates);
+    checkLef58Enclosure_main(rect, belowEnc, candidates);
   }
   if (hasAboveConstraints) {
-    gcRect* aboveEnc = getEnclosure(rect, layer->getLayerNum() + 1);
-    checkLef58Enclosure_main(rect, aboveEnc);
+    std::vector<gcRect*> candidates;
+    gcRect* aboveEnc = getEnclosure(rect, layer->getLayerNum() + 1, candidates);
+    checkLef58Enclosure_main(rect, aboveEnc, candidates);
   }
 }
 

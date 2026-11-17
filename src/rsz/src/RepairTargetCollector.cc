@@ -1022,7 +1022,7 @@ void RepairTargetCollector::walkStartpoints(
       continue;
     }
 
-    sta::PortDirection* direction = network_->direction(pin);
+    const sta::PortDirection* direction = network_->direction(pin);
     if ((network_->isTopLevelPort(pin) && direction->isAnyInput())
         || (resizer_->isRegister(vertex) && direction->isAnyOutput())) {
       if (!path_group_filter.startpointInGroup(vertex)) {

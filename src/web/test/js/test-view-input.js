@@ -5,8 +5,8 @@ import './setup-dom.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-const { installViewInput, wheelDeltaPx, arrowPanOffset, isWheelNotch,
-        gestureSteps } = await import('../../src/view-input.js');
+const { installViewInput, arrowPanOffset, isWheelNotch, gestureSteps }
+    = await import('../../src/view-input.js');
 
 // A view that records calls; world = screen / 2 so results are checkable.
 function makeView() {
@@ -78,12 +78,14 @@ describe('wheel', () => {
         assert.equal(calls.length, 0);
     });
 
-    it('converts line and page deltas to pixels', () => {
-        const container = { clientHeight: 500 };
-        assert.deepEqual(wheelDeltaPx({ deltaX: 0, deltaY: 3, deltaMode: 1 },
-                                      container), [0, 48]);
-        assert.deepEqual(wheelDeltaPx({ deltaX: 0, deltaY: 1, deltaMode: 2 },
-                                      container), [0, 500]);
+    it('pans a line- or page-mode notch by whole lines or pages', () => {
+        const { view, container, calls } = makeView();
+        Object.defineProperty(container, 'clientHeight', { value: 500 });
+        installViewInput(view, { wheelZoom: () => false });
+        fire(container, 'wheel', { deltaY: 3, deltaMode: 1 });
+        fire(container, 'wheel', { deltaY: 1, deltaMode: 2 });
+        assert.deepEqual(calls.map((c) => [c[0], c[1], c[2]]),
+                         [['pan', 0, 48], ['pan', 0, 500]]);
     });
 });
 

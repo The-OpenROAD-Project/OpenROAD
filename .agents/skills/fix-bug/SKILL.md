@@ -73,8 +73,8 @@ registering in Bazel.
 ## 5. Format and commit
 
 ```bash
-# Format changed C++ files (NEVER format src/sta/* or *.i files)
-clang-format -i <changed-cpp-files>
+# Format C++ with CI's pinned clang-format (skips src/sta and *.i)
+bazelisk run //:tidy_cc
 
 # Stage and commit with DCO sign-off
 git add <changed-files>
@@ -89,5 +89,5 @@ Fixes #ISSUE_NUMBER"
 - [ ] No unintended changes: `git diff HEAD`
 - [ ] Test registered in Bazel `BUILD`
 - [ ] No `src/sta/` files modified
-- [ ] C++ files formatted with clang-format
+- [ ] C++ files formatted with `bazelisk run //:tidy_cc`
 - [ ] Commit is signed off (`-s`)

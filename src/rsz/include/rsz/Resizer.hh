@@ -55,7 +55,7 @@
 
 namespace rsz {
 class SetupLegacyBase;
-struct SlackEstimatorParams;
+struct UnbufferSlackParams;
 }  // namespace rsz
 
 namespace rsz {
@@ -702,7 +702,13 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool isCombinational(sta::LibertyCell* cell) const;
   std::vector<sta::LibertyPort*> libraryOutputPins(
       sta::LibertyCell* cell) const;
-  float maxLoad(sta::Cell* cell);
+  // Max capacitance limit of the first output of `cell` that has one (SDC
+  // design and cell limits, Liberty port limit or library default) in the
+  // command scene or `scene`; 0 when there is no limit.
+  float outputMaxCap(sta::Cell* cell);
+  float outputMaxCap(sta::Cell* cell, const sta::Scene* scene);
+  // The same limit for the output `port` of a cell with several outputs.
+  float outputMaxCap(const sta::LibertyPort* port, const sta::Scene* scene);
   //==============================
   float findTargetLoad(sta::LibertyCell* cell);
   float findTargetLoad(sta::LibertyCell* cell,
@@ -957,6 +963,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool replacementPreservesMaxCap(sta::Instance* inst,
                                   const sta::LibertyCell* replacement,
                                   const sta::Mode* mode = nullptr);
+  // An input pin whose fanin max-cap check a cell swap skips: a register
+  // clock pin of an ideal clock, or a scan-enable/scan-in pin.
+  bool skipsFaninMaxCap(const sta::Pin* pin, const sta::Mode* mode);
   // The load a driver can still take under its max-cap limit: none once the
   // limit is violated, and no bound without a limit.
   float maxCapIncrease(const sta::Pin* drvr_pin);
@@ -974,11 +983,15 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   };
 
   // Capture fanin max-cap state once before screening equivalent cells.
-  std::vector<InputCapBudget> inputCapBudgets(sta::Instance* inst);
+  // The pins that skipsFaninMaxCap() exempts get no budget.
+  std::vector<InputCapBudget> inputCapBudgets(sta::Instance* inst,
+                                              const sta::Mode* mode = nullptr);
   // Test a replacement using captured headroom without new STA queries.
   bool replacementFitsInputCapBudgets(
       const std::vector<InputCapBudget>& budgets,
       const sta::LibertyCell* replacement) const;
+
+  // === Buffer removal timing checks =======================================
   bool estimateInputSlewImpact(
       sta::Instance* instance,
       const sta::Scene* scene,
@@ -986,7 +999,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       const std::array<sta::Slew, sta::RiseFall::index_count>& old_in_slew,
       const std::array<sta::Slew, sta::RiseFall::index_count>& new_in_slew,
       float delay_adjust,
-      const rsz::SlackEstimatorParams& params,
+      const rsz::UnbufferSlackParams& params,
       bool accept_if_slack_improves);
   bool canRemoveBuffer(sta::Instance* buffer,
                        bool honor_dont_touch_fixed = true);
@@ -994,7 +1007,12 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Whether removeBuffer() keeps the output net of buffer and moves the pins
   // of its input net onto it, instead of the other way round.
   bool removeBufferKeepsOutputNet(sta::Instance* buffer) const;
-  bool estimatedSlackOK(const rsz::SlackEstimatorParams& params);
+  // Check removal legality and optionally return the measured delay terms.
+  bool estimatedUnbufferSlackOK(const rsz::UnbufferSlackParams& params,
+                                float* upstream_delay_delta_out = nullptr,
+                                float* buffer_delay_saved_out = nullptr);
+
+  // === Buffered-net construction ==========================================
   BufferedNetPtr makeBufferedNet(const sta::Pin* drvr_pin,
                                  const sta::Scene* scene);
   BufferedNetPtr makeBufferedNetSteiner(const sta::Pin* drvr_pin,

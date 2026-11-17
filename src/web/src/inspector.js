@@ -7,8 +7,10 @@
 import { dbuRectToWorldRect } from './coordinates.js';
 import { DRAW_ORDER, toRgba } from './layout-view.js';
 import { easeOutQuad } from './view-math.js';
-import { beginSelection, isCurrentSelection, isStaticMode,
-         prefersReducedMotion, showConfirmModal, showToast } from './ui-utils.js';
+import {
+    beginSelection, isCurrentSelection, isStaticMode, prefersReducedMotion,
+    showConfirmModal, showToast, zoomToBBox as sharedZoomToBBox,
+} from './ui-utils.js';
 
 // Delete: trash can (Material "delete")
 const DELETE_SVG =
@@ -996,8 +998,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
     }
 
     function zoomToBBox(bbox) {
-        if (!bbox || !app.view || !app.designScale) return;
-        app.view.fitWorldRect(worldRect(...bbox), { padding: [20, 20] });
+        sharedZoomToBBox(app, bbox);
     }
 
     function updateInspector(data) {

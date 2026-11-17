@@ -81,7 +81,7 @@ class RouteBaseTest : public tst::IntegratedFixture
 
   void SetUp() override
   {
-    block_ = readDef(getFilePath("_main/src/gpl/test/ar02.def"), {lib_});
+    block_ = readDef(getFilePath("_main/src/gpl/test/wide_core.def"), {lib_});
     ASSERT_NE(block_, nullptr);
     std::vector<odb::dbNet*> nets;
     for (auto* net : block_->getNets()) {

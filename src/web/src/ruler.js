@@ -12,7 +12,8 @@
 
 import { dbuToWorld, worldToDbu } from './coordinates.js';
 import { DRAW_ORDER, toRgba } from './layout-view.js';
-import { beginSelection, onSelectionReset } from './ui-utils.js';
+import { beginSelection, buildVisibilityFlags, onSelectionReset }
+    from './ui-utils.js';
 
 const RULER_COLOR = '#00ffff';
 const RULER_SELECTED_COLOR = '#ffff00';
@@ -212,10 +213,7 @@ export class RulerManager {
             }
         }
 
-        const vf = {};
-        for (const [k, v] of Object.entries(this._visibility)) {
-            vf[k] = !!v;
-        }
+        const vf = buildVisibilityFlags(this._visibility);
 
         try {
             const result = await app.websocketManager.request({

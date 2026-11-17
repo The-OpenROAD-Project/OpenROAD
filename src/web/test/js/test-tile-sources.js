@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 
 const {
     createCompositeSource, createImageSource, buildOverlayRequest,
-    buildHeatmapRequest, releaseDrawable,
+    buildHeatmapRequest, gateOpen, releaseDrawable,
 } = await import('../../src/tile-sources.js');
 const { LayerExtents } = await import('../../src/layer-extents.js');
 const { tileRequestBuilder } = await import('../../src/tile-request.js');
@@ -273,6 +273,54 @@ describe('createCompositeSource with layers shared by dies', () => {
 
 // The server's layer_extents bound where each layer has shapes; a tile outside
 // a layer's box is not asked for that layer (layer-extents.js).
+// A gated item stays in its slot while its flag is off, but asks for nothing.
+describe('createCompositeSource with gated items', () => {
+    const items = (gate) => [{ layer: '_clusters', opacity: 1, visible: true,
+                               gate }];
+
+    it('skips a gated-off item and asks for it once the flag is on', () => {
+        const visibility = { cluster_view: false };
+        const { wm, source } = composite({
+            ctx: { ...ctx, visibility }, getItems: () => items('cluster_view'),
+        });
+        source.load({ z: 1, x: 0, y: 0 });
+        assert.equal(wm.sent.length, 0);
+        visibility.cluster_view = true;
+        source.load({ z: 1, x: 0, y: 0 });
+        assert.deepEqual(wm.sent.map((s) => s.msg.layer), ['_clusters']);
+    });
+
+    // `shown_by` groups: shown when every flag of any one group is on.
+    it('reads a shown_by list as the server does', () => {
+        const visibility = { inst_names: false, inst_pins: true,
+                             inst_pin_names: true };
+        const gate = [['inst_names'], ['inst_pins', 'inst_pin_names']];
+        assert.equal(gateOpen(gate, visibility), true);
+        visibility.inst_pin_names = false;
+        assert.equal(gateOpen(gate, visibility), false);
+    });
+
+    // An unknown flag name would hide the item forever; fail open and warn.
+    it('draws and warns once when the gate names no known flag', () => {
+        const warnings = [];
+        const realWarn = console.warn;
+        console.warn = (msg) => warnings.push(msg);
+        try {
+            const { wm, source } = composite({
+                ctx: { ...ctx, visibility: {} },
+                getItems: () => items('clsuter_view'),
+            });
+            source.load({ z: 1, x: 0, y: 0 });
+            source.load({ z: 1, x: 1, y: 0 });
+            assert.equal(wm.sent.length, 2);
+        } finally {
+            console.warn = realWarn;
+        }
+        assert.equal(warnings.length, 1);
+        assert.match(warnings[0], /unknown gate 'clsuter_view'/);
+    });
+});
+
 describe('createCompositeSource with layer extents', () => {
     // metal1 lives in the top-left quarter of the zoom-0 grid only.
     function withExtents() {
@@ -405,6 +453,30 @@ describe('tile requests', () => {
             layerPatterns: { metal2: 3 },
         },
     };
+
+    // The server keys its tile cache on the visibility flags it recognizes; a
+    // client-only flag on the wire would make its own toggle a cache miss.
+    it('keeps client-only flags off the wire', () => {
+        const req = tileRequestBuilder(coords, {
+            ...tctx,
+            visibility: { ui_hierarchy_view: true, cluster_view: true },
+            selectability: { pins: true },
+        }, 1, 240)('metal1');
+        assert.equal('ui_hierarchy_view' in req, false);
+        assert.equal(req.cluster_view, true);
+        assert.equal(req.s_pins, true);
+    });
+
+    // The color-by-owner overlays stay in their slot and are switched by these
+    // flags, so they have to travel in the payload.
+    it('carries the module and cluster overlay flags', () => {
+        const req = tileRequestBuilder(coords, {
+            ...tctx, visibility: { module_view: false, cluster_view: true },
+        }, 1, 240)('_clusters');
+        assert.equal(req.layer, '_clusters');
+        assert.equal(req.module_view, false);
+        assert.equal(req.cluster_view, true);
+    });
 
     it('carries the fields a layer render reads', () => {
         const tile = tileRequestBuilder(coords, tctx, 2, 240)('metal1');

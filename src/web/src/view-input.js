@@ -5,7 +5,7 @@
 // API.  Drag-panning is left to the renderer; everything that zooms, selects
 // or draws a box is here.
 
-import { kArrowStepDefault } from './ui-utils.js';
+import { kArrowStepDefault, wheelDeltaPx } from './ui-utils.js';
 
 const kClickTolerancePx = 3;   // a press that moves less is a click
 const kBandMinPx = 4;          // a smaller right-drag is a click
@@ -35,20 +35,6 @@ export function isWheelNotch(e) {
 export function gestureSteps(d) {
     const a = Math.abs(d);
     return a < kGestureMinLevels ? 0 : Math.sign(d) * Math.max(1, Math.round(a));
-}
-
-// A wheel event's scroll amount in CSS pixels.  deltaMode is not always pixels:
-// Firefox reports lines, and a page-mode event (some remote-desktop stacks)
-// means a viewport at a time.
-export function wheelDeltaPx(e, container) {
-    const kLineHeightPx = 16;
-    let scale = 1;
-    if (e.deltaMode === 1) {
-        scale = kLineHeightPx;
-    } else if (e.deltaMode === 2) {
-        scale = container.clientHeight || kLineHeightPx;
-    }
-    return [e.deltaX * scale, e.deltaY * scale];
 }
 
 // Arrow key -> pan in screen px; Shift pans 3x.
@@ -154,7 +140,7 @@ export function installViewInput(view, opts = {}) {
             return;
         }
         if (wheelZoom() === e.ctrlKey) {
-            const [dx, dy] = wheelDeltaPx(e, container);
+            const [dx, dy] = wheelDeltaPx(e, () => container.clientHeight);
             hold(true);
             clearTimeout(panTimer);
             panTimer = setTimeout(() => !gesture && hold(false), gestureIdleMs);

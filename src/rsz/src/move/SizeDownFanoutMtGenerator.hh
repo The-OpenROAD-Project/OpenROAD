@@ -3,12 +3,15 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "MoveCandidate.hh"
 #include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
+#include "sta/Liberty.hh"
 
 namespace rsz {
 
@@ -36,6 +39,15 @@ class SizeDownFanoutMtGenerator : public MoveGenerator
   // The main-thread measurements behind the size-downs of one target.
   // Leaves target.size_down_fanout_loads empty when no load has a smaller cell.
   void prepareInputs(Target& target) const override;
+
+  // === Ranked-cell cache ===================================================
+ private:
+  // Cache ranked replacement cells for each load port and analysis point.
+  // Key: the current load's input Liberty port and Liberty analysis-point
+  // index. Value: swappable cells sorted by input capacitance and intrinsic
+  // delay.
+  mutable std::map<std::pair<const sta::LibertyPort*, int>, sta::LibertyCellSeq>
+      ranked_cells_cache_;
 };
 
 }  // namespace rsz

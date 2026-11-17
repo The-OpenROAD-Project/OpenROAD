@@ -17,11 +17,10 @@
 %{
 #include <cstdlib>
 #include <new>
-#include <sstream>
 
-#include "boost/stacktrace/stacktrace.hpp"
 #include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
+#include "utl/StackTrace.h"
 %}
 
 // Leave via SWIG_fail, not return, so %typemap(freearg) still runs. Returning
@@ -39,10 +38,8 @@
     if (openroad != nullptr) {
       auto* logger = openroad->getLogger();
       if (logger->debugCheck(utl::ORD, "trace", 1)) {
-        std::stringstream trace;
-        trace << boost::stacktrace::stacktrace();
         logger->report("Stack trace");
-        logger->report(trace.str());
+        logger->report(utl::stackTrace());
       }
     }
 

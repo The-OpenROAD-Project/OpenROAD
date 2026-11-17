@@ -324,7 +324,8 @@ describe('DrcWidget on the view', () => {
         // margin = min(10 um, 2 * max(w, h)) = min(10000, 4000) DBU.
         widget._zoomToBBox([0, 0, 1000, 2000]);
         assert.deepEqual(app.view.calls.at(-1),
-                         ['fitWorldRect', [-4000, -4000, 5000, 6000], undefined]);
+                         ['fitWorldRect', [-4000, -4000, 5000, 6000],
+                          { padding: [0, 0] }]);
     });
 
     it('flashes the tiles when a marker is made visible', () => {

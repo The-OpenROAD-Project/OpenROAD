@@ -3,8 +3,10 @@
 
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -148,6 +150,19 @@ class MoveGenerator
                        const sta::RiseFall* drvr_rf,
                        const sta::MinMax* min_max) const;
 
+  // === Shared cell-cost helpers ============================================
+  // Cell costs in the order SizeUpGenerator::upsizeCell tries them: leakage,
+  // then LEF area, then Liberty area.  An unavailable metric is nullopt.
+  // Main thread only: cellLeakage() fills a cache.
+  using CellCosts = std::array<std::optional<float>, 3>;
+  CellCosts cellCosts(sta::LibertyCell* cell) const;
+  // New/old cost of a swap from a cell with `from_costs` to `to`, on the
+  // first metric both cells have, so units never mix.  nullopt when the two
+  // cells share no metric.  A caller finds from_costs once for all the swaps
+  // of one cell.
+  std::optional<float> cellCostRatio(const CellCosts& from_costs,
+                                     sta::LibertyCell* to) const;
+
   // === Shared fanin max-cap helper =========================================
   // The cell-swap generators' fanin max-cap headroom, captured by their
   // prepareInputs(): the STA capacitance check behind it is main-thread only.
@@ -155,8 +170,8 @@ class MoveGenerator
   void prepareInputCapBudgets(Target& target) const
   {
     if (!target.input_cap_budgets.has_value()) {
-      target.input_cap_budgets
-          = resizer_.inputCapBudgets(target.inst(resizer_));
+      target.input_cap_budgets = resizer_.inputCapBudgets(
+          target.inst(resizer_), target.mode(resizer_));
     }
   }
   const std::vector<Resizer::InputCapBudget>& inputCapBudgets(

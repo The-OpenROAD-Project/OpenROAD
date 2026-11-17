@@ -16,7 +16,7 @@ import {
 import { TimingWidget } from './timing-widget.js';
 import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
-import { HierarchyBrowser } from './hierarchy-browser.js';
+import { HierarchyPanel, resetHierarchyOverlay } from './hierarchy-panel.js';
 import { createInspectorPanel } from './inspector.js';
 import { SelectionBrowser } from './selection-browser.js';
 import { applySelectionFlags, beginSelection, boundsEqual,
@@ -28,7 +28,7 @@ import { applySelectionFlags, beginSelection, boundsEqual,
     from './ui-utils.js';
 import { clampFontScale, showAppFontDialog, showArrowStepDialog }
     from './options-dialogs.js';
-import { anyGroupOn, populateDisplayControls }
+import { populateDisplayControls }
     from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { createToolbar } from './toolbar.js';
@@ -171,10 +171,10 @@ const app = {
     tclOutputEl: null,
     // Draw-list items of the pseudo layers (display-controls.js).
     modulesLayer: null,
+    clustersLayer: null,
     pinsLayer: null,
     // [{ def, layer }] per overlay the tech response lists.
     overlayLayers: [],
-    hierarchyBrowser: null,
     focusNets: new Set(),
     routeGuideNets: new Set(),
     visibleLayers: new Set(),
@@ -326,8 +326,15 @@ const visibility = {
     // Tracks (off by default, matching GUI)
     tracks_pref: false,
     tracks_non_pref: false,
+    // Hierarchy coloring.  ui_hierarchy_view is the control the user sees; the
+    // other two are derived from it and the Hierarchy tab's active source,
+    // and are what the layers and the server actually read.  See
+    // syncHierarchyOverlay in hierarchy-panel.js.
+    ui_hierarchy_view: false,
     // Module view
     module_view: false,
+    // Cluster (dbGroup) view
+    cluster_view: false,
     // Misc
     detailed: false,
     rulers: true,
@@ -349,9 +356,19 @@ try {
         for (const [k, v] of Object.entries(parsed)) {
             visibility[k] = !!v;
         }
+        // Every flag comes back except the hierarchy overlay, which starts off
+        // whatever the cookie says -- see resetHierarchyOverlay.
+        resetHierarchyOverlay(visibility);
     }
 } catch (_) {
     // Ignore malformed cookie.
+}
+
+// Console handle: main.js is an ES module, so nothing here is reachable from
+// DevTools otherwise.  `app` carries the visibility and selectability maps
+// (see below), which is most of what there is to poke at.
+if (typeof window !== 'undefined') {
+    window.orApp = app;
 }
 
 // Selectability mirrors the Qt GUI's display-controls "selectable" column.
@@ -398,7 +415,8 @@ const selectability = {
 };
 
 // Expose the live visibility/selectability so the context menu "Save" can
-// serialize the same payload the tile requests use (visibility-aware export).
+// serialize the same payload the tile requests use (visibility-aware export),
+// and so the Clusters panel can tell whether its overlay is switched on.
 app.visibility = visibility;
 app.selectability = selectability;
 
@@ -490,19 +508,8 @@ function redrawAllLayers() {
     // Keep the server's saved-state snapshot current for save_display_controls.
     scheduleSyncDisplayState();
 
-    // Show/hide the toggleable pseudo layers: entries in the composited slots'
-    // draw lists, refreshed with their slot below.
-    const toggleableLayers = [
-        [app.modulesLayer, visibility.module_view],   // Module view
-        [app.pinsLayer, visibility.pins],             // Shapes > Pins
-        ...app.overlayLayers.map(
-            ({ def, layer }) => [layer, anyGroupOn(def.shown_by, visibility)]),
-    ];
-    for (const [item, visible] of toggleableLayers) {
-        if (item) {
-            item.visible = !!visible;
-        }
-    }
+    // Pseudo layers included: they stay in their slots and are gated on the
+    // visibility flag each request reads (`gate` in display-controls.js).
     for (const slot of app.allLayers) {
         slot.refresh();
     }
@@ -1007,7 +1014,7 @@ app.animateSelection = inspector.animateSelection;
 app.stopSelectionAnimation = inspector.stopSelectionAnimation;
 
 function createBrowser(container) {
-    new HierarchyBrowser(container, app, redrawAllLayers);
+    new HierarchyPanel(container, app, redrawAllLayers);
 }
 
 function createTimingWidget(container) {
@@ -1213,6 +1220,10 @@ if (staticCache) {
     app.websocketManager.onReconnected = () => {
         refetchLayerExtents();
         resyncBounds(null, null, { reloadOnChange: true }).catch(() => {});
+        // Owner colors live in the server session, which the reconnect
+        // replaced: without this the overlay falls back to the default palette
+        // and the rows the user unchecked come back.
+        if (app.hierarchyPanel) app.hierarchyPanel.resendColors();
     };
 }
 
@@ -1230,9 +1241,10 @@ app.syncLayoutSize = syncLayoutSize;
 
 window.addEventListener('resize', syncLayoutSize);
 
-// Focus a component tab, or re-create it if it was closed.
-function focusComponent(componentType) {
-    app.goldenLayout.focusComponent(componentType);
+// Focus a component tab, or re-create it if it was closed.  `options.reveal`
+// also restores a maximized pane that hides it (see GridLayoutManager).
+function focusComponent(componentType, options) {
+    app.goldenLayout.focusComponent(componentType, options);
 }
 
 app.focusComponent = focusComponent;
@@ -1259,8 +1271,8 @@ app.toggleShowDbu = function() {
     setCookie('or_show_dbu', app.showDbu ? '1' : '0');
     // Re-render rulers so their labels update.
     if (app.rulerManager) app.rulerManager._renderAll();
-    // Re-render hierarchy browser if present.
-    if (app.hierarchyBrowser) app.hierarchyBrowser._render();
+    // Both views format area through fmtArea(app, ...), which reads showDbu.
+    if (app.hierarchyPanel) app.hierarchyPanel.refresh();
     // Update scale bar.
     if (app.updateScaleBar) app.updateScaleBar();
     // Re-request inspector properties with new formatting.
@@ -1571,6 +1583,7 @@ function applyDesignRefresh(msg) {
     // The design may have been edited by another session's
     // set_property; refresh the inspected object's properties.
     if (app.refreshInspector) app.refreshInspector();
+    if (app.hierarchyPanel) app.hierarchyPanel.designChanged();
 }
 
 // "Script running" badge at the right end of the menu bar, shown while a
@@ -2004,6 +2017,18 @@ document.addEventListener('keydown', (e) => {
     if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return;
 
     const key = e.key.toLowerCase();
+    if (key === 'f' && (e.ctrlKey || e.metaKey)) {
+        // Find dialog.  Only swallow the key when there is a dialog to open in
+        // place of the browser's find-in-page bar: a saved static report has
+        // none, and would be left with neither.  preventDefault also keeps
+        // the "f" out of the dialog's first field, which it focuses
+        // synchronously.
+        if (app.designScale) {
+            e.preventDefault();
+            showFindDialog(app);
+        }
+        return;
+    }
     if (key === 'escape' && app.rulerManager && app.rulerManager.isActive()) {
         app.rulerManager.cancelRulerBuild();
     } else if (key === 'escape' && app.labelManager
@@ -2022,16 +2047,12 @@ document.addEventListener('keydown', (e) => {
         const delta = e.shiftKey ? -1 : 1;
         app.view.zoomAround(app.lastMouseWorld
             ? app.view.project(app.lastMouseWorld) : null, delta);
-    } else if (key === 'f' && (e.ctrlKey || e.metaKey)) {
-        // Both dialog shortcuts must preventDefault.  The dialog focuses and
+    } else if (key === 'g' && e.shiftKey && !e.ctrlKey && !e.metaKey) {
+        // A dialog shortcut must preventDefault: the dialog focuses and
         // select()s its first field synchronously, so this keystroke's own
         // default action would then be delivered to that field and replace
-        // the prefilled value with the shortcut's own letter.  Ctrl/Cmd+F
-        // additionally has the browser's find bar to suppress.
+        // the prefilled value with the shortcut's own letter.
         e.preventDefault();
-        if (app.designScale) showFindDialog(app);
-    } else if (key === 'g' && e.shiftKey && !e.ctrlKey && !e.metaKey) {
-        e.preventDefault();  // see above
         if (app.designScale) showGotoDialog(app);
     } else if (key === 't' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
         app.toggleTheme();

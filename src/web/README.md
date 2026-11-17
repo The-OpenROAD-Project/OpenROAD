@@ -70,6 +70,10 @@ session will not connect; every session mints a new one.
   file others can read takes the token along. It travels in clear text over
   HTTP, so it does not replace the loopback bind.
 
+The viewer also refuses to run inside another site's frame and runs no script
+that does not come from the server itself (a Content-Security-Policy with
+`script-src 'self'`), so markup that ends up in a design name cannot run code.
+
 #### Running on a remote machine
 
 By default no browser is launched from an ssh session, from a batch job, or
@@ -191,6 +195,10 @@ When using `-web`, if neither `-width` nor `-resolution` is specified, the
 image defaults to 1024 pixels wide. The maximum image dimension is 16384
 pixels; larger requests are clamped automatically.
 
+The image is opaque: it is painted on the Background color of the browser that
+last synced its display state, and on black — the default of both GUIs — when
+none has, as with a plain headless run.
+
 #### Display option keys (web mode)
 
 Display options control which elements are rendered when using `-web`.
@@ -212,6 +220,31 @@ field and the value is `true` or `false`.
 | `rows` | false | Row outlines |
 | `tracks_pref` | false | Preferred-direction tracks |
 | `rudy` | false | Estimated congestion (RUDY) heatmap overlay |
+| `routing_congestion` | false | Global routing congestion heatmap overlay |
+| `module_view` | false | Color each instance by the `dbModule` it belongs to |
+| `cluster_view` | false | Color each instance by the `dbGroup` it belongs to |
+
+Group coloring reads the `dbGroup`s stored in the database, whatever put them
+there — power domains, regions, the clustering
+[`rtl_macro_placer -keep_clustering_data`](../mpl/README.md) writes, or any
+other command that creates groups. Each group gets its own palette color, and a
+group whose subtree is not expanded lends its color to all of its descendants —
+the same default the viewer's Instance Groups view shows. When the design has no
+groups the option warns and the image is rendered as if it were off.
+
+In the viewer both of the Hierarchy panel's views drive this coloring — Verilog
+Modules through `module_view`, Instance Groups through `cluster_view`. A row's
+checkbox decides whether that module or group paints, and in the Instance
+Groups view a double click takes the view to the group. The colors show only
+while the matching overlay is on, and the view's status line says so when it is
+off. One "Hierarchy view" checkbox in Display Controls turns on whichever
+overlay goes with the source the tab is showing; the two flags above are how the
+headless `save_image` path asks for either one directly.
+
+Turning that checkbox on loads the tree of the source the tab is showing, so it
+paints without anyone pressing Update. It is the one control a new session does
+not inherit: it always starts off, since a restored "on" would tick a box over a
+layout with nothing painted on it.
 
 #### Examples
 
@@ -238,6 +271,15 @@ save_image -web -display_option {routing false} \
 
 # Save with RUDY congestion heatmap overlay
 save_image -web -display_option {rudy true} layout_rudy.png
+
+# Plot the instance groups, here MPL's clustering (one color per group)
+rtl_macro_placer -keep_clustering_data
+save_image -web -width 1200 \
+                -display_option {cluster_view true} \
+                clusters.png
+
+# Save with global routing congestion heatmap overlay
+save_image -web -display_option {routing_congestion true} layout_congestion.png
 ```
 
 ### Save Animated GIF
@@ -487,7 +529,7 @@ create_toolbar_button
 | `-name` | Key used to remove the button later. The type is `string`. The default is a generated `buttonN`. Re-using a registered name is an error. |
 | `-text` | Label to put on the button. The type is `string`. Required. |
 | `-script` | Tcl script to evaluate when the button is clicked, or — with `-toggle` — when it is switched on. The type is `string`. Required. |
-| `-icon` | Icon to show before the label: either literal text (an emoji, say) or an image referenced by `data:` URI, `http(s):` URL or a path starting with `/` or `./`. The type is `string`. The default is no icon. |
+| `-icon` | Icon to show before the label: either literal text (an emoji, say) or an image referenced by a `data:` URI. An `http(s):` URL or a path starting with `/` or `./` is an error: the viewer's Content-Security-Policy blocks remote images and the server serves no image files. The type is `string`. The default is no icon. |
 | `-tooltip` | Hover text. The type is `string`. The default is no tooltip. |
 | `-toggle` | Make the button a two-state switch: clicking it runs `-script` when turning it on and `-script_off` when turning it off. |
 | `-script_off` | Tcl script to evaluate when a `-toggle` button is switched off. The type is `string`. Ignored without `-toggle`. |
@@ -613,7 +655,8 @@ them — something the single-window Qt GUI cannot do.
   paths, and view per-level statistics.
 - **Hierarchy browser** — Navigate the module tree with instance counts and area
   statistics. Toggle visibility and assign colors per module using a 31-color
-  palette.
+  palette. The same panel's Instance Groups view does this for the `dbGroup`s
+  in the database, whatever created them.
 - **Display controls** — Toggle visibility of cell types (stdcells, macros,
   pads), net types (signal, power, clock), and shapes (routing, pins, blockages,
   rows, tracks). The panel state can be saved to and restored from a file with

@@ -286,7 +286,7 @@ std::optional<FixedDelay> Rebuffer::slackWithDriverCell(const BnetPtr& bnet,
   }
   sta::Delay correction = sta::INF;
   sta::LibertyPort* out_port = nullptr;
-  for (auto rf : bnet->slackTransition()->range()) {
+  for (const sta::RiseFall* rf : bnet->slackTransition()->range()) {
     const sta::Path* arrival_path = arrival_paths_[rf->index()];
     if (arrival_path == nullptr) {
       return {};
@@ -330,15 +330,15 @@ std::optional<FixedDelay> Rebuffer::slackWithDriverCell(const BnetPtr& bnet,
                                           driver_edge,
                                           driver_path->scene(sta_),
                                           driver_path->minMax(sta_));
-    auto dcalc_result
-        = arc_delay_calc_->gateDelay(nullptr,
-                                     arc,
-                                     in_slew,
-                                     bnet->cap() + out_port->capacitance(),
-                                     nullptr,
-                                     load_pin_index_map,
-                                     driver_path->scene(sta_),
-                                     driver_path->minMax(sta_));
+    sta::ArcDcalcResult dcalc_result
+        = delayCalc()->gateDelay(nullptr,
+                                 arc,
+                                 in_slew,
+                                 bnet->cap() + out_port->capacitance(),
+                                 nullptr,
+                                 load_pin_index_map,
+                                 driver_path->scene(sta_),
+                                 driver_path->minMax(sta_));
     if (dcalc_result.drvrSlew() > drvr_pin_max_slew_) {
       return {};
     }
@@ -447,7 +447,11 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
   sta::Instance* drvr_inst = network_->instance(drvr_pin);
   sta::LibertyCell* current_cell
       = drvr_inst != nullptr ? network_->libertyCell(drvr_inst) : nullptr;
-  if (current_cell == nullptr || resizer_->dontTouch(drvr_inst)) {
+  // Only the output being rebuffered is timed, so cells with other outputs or
+  // sequential checks are left alone; fixed cells may not change footprint.
+  if (current_cell == nullptr || resizer_->dontTouch(drvr_inst)
+      || resizer_->isFixed(drvr_inst) || current_cell->isSequential()
+      || resizer_->hasMultipleOutputs(drvr_inst)) {
     return area_tree;
   }
   // Tree area is buffer area, so nothing is cheaper than a buffer-free
@@ -473,7 +477,11 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
     return area_tree;
   }
   if (chosen_cell != current_cell) {
-    resizer_->replaceCell(drvr_inst, chosen_cell);
+    // The chosen tree was timed with the new cell; keep the option-off
+    // result if replaceCell finds no master for it.
+    if (!resizer_->replaceCell(drvr_inst, chosen_cell)) {
+      return area_tree;
+    }
     driver_resize_count_++;
   }
   return chosen;
@@ -560,9 +568,9 @@ BnetPtr Rebuffer::chooseTreeAndDriver(const std::vector<BnetPtr>& trees,
 bool Rebuffer::loadSlewSatisfactory(sta::LibertyPort* driver,
                                     const BnetPtr& bnet)
 {
-  float r_drvr = (driver == drvr_port_ && pin_ != nullptr)
-                     ? resizer_->driveResistance(pin_)
-                     : driver->driveResistance();
+  const float r_drvr = (driver == drvr_port_ && pin_ != nullptr)
+                           ? resizer_->driveResistance(pin_)
+                           : driver->driveResistance();
   return r_drvr * bnet->cap() <= maxSlewMargined(bnet->maxLoadSlew());
 }
 

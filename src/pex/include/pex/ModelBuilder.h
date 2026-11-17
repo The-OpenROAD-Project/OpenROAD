@@ -28,6 +28,17 @@ struct BuildOptions
   // The lateral grid, as multiples of the layer's minimum width and spacing.
   std::vector<double> width_factors{1, 1.5, 2, 3, 5, 10};
   std::vector<double> spacing_factors{1, 1.25, 1.5, 2, 3, 5, 7, 10};
+  // Past the last spacing, more spacings out to a multiple of the distance
+  // from the wire to the nearest plane (the substrate, or the nearest
+  // cover below or above): `lateral_reach` with covers on both sides or
+  // none, `lateral_reach_one_sided` with a cover on one side only, whose
+  // open side lets the field spread further. Consecutive added spacings
+  // differ by at most the ratio `lateral_reach_step`, which must be above
+  // 1. A neighbor past the last spacing is looked up as none. 0 adds none;
+  // the reaches must be finite and not negative.
+  double lateral_reach = 6;
+  double lateral_reach_one_sided = 10;
+  double lateral_reach_step = 1.6;
   // Covering layers tabulated below the layer (plus the substrate alone)
   // and above it (plus none), nearest first. These and the far factors
   // below apply only when cover_tolerance is 0.
@@ -52,12 +63,25 @@ struct BuildOptions
   // layer's minimum width, coverage fractions, and the two wire lengths
   // whose difference cancels the ends.
   std::vector<double> crossing_width_factors{1, 2, 5};
+  // Spacings to neighbors of the wire under the crossings, as multiples of
+  // the layer's minimum spacing, with no neighbor besides.
+  std::vector<double> crossing_spacing_factors{1, 2, 4};
   std::vector<double> coverages{0.1, 0.25, 0.5, 0.75};
   double crossing_length = 10;
   double crossing_length_long = 30;
+  // The crossing reach: how far a single crossing of the cover's minimum
+  // width runs past the wire, and the wire past it, as multiples of the
+  // wider of the two layers' minimum widths; with a crossing running on
+  // as far as the planes (at least twice the last) besides.
+  std::vector<double> reach_factors{0, 2, 5, 12, 30};
   // The end patterns: a wire of this length, or five times its width if
   // longer.
   double end_length = 2;
+  // The end tables' spacings to neighbors running past the end on both
+  // sides, and gaps to a wire facing the end, as multiples of the layer's
+  // minimum spacing; with no neighbor and no facing wire besides.
+  std::vector<double> end_spacing_factors{1, 2, 4};
+  std::vector<double> facing_factors{1, 2, 4};
   // The diagonal patterns: the parallel wire's widths as multiples of its
   // layer's minimum width, its edge-to-edge gaps as multiples of the
   // wire's minimum width, the spacings to the wire's own neighbor on the
@@ -65,6 +89,11 @@ struct BuildOptions
   // spacing, and how many layers each way.
   std::vector<double> diagonal_width_factors{1, 3, 10};
   std::vector<double> diagonal_gap_factors{-0.5, 0, 0.25, 0.5, 1, 2, 4, 8, 16};
+  // Past the last gap, more gaps out to this multiple of the vertical
+  // distance between the two layers, consecutive ones at most twice apart;
+  // a parallel wire farther out fades as one over its gap. 0 adds none; it
+  // must be finite and not negative.
+  double diagonal_reach = 4;
   std::vector<double> diagonal_spacing_factors{1, 2, 4, 8};
   std::vector<double> diagonal_far_spacing_factors{1, 4};
   int diagonal_depth = 2;
@@ -161,25 +190,64 @@ void buildLateral(const fsv::Stack& stack,
                   const BuildOptions& options,
                   Model& model);
 
+// The crossing shares follow a kept amount over a gap g of
+// L (1 - exp(-g / L)): a share of 1 at no gap, falling as L / g. One length
+// L per spacing column, fitted to the solved shares, smooths their noise,
+// which the plane's small effect beside close neighbors amplifies.
+struct KeptFit
+{
+  double length = 0;    // L, µm
+  double residual = 0;  // rms of the kept amounts' misfit, µm
+};
+// A fit is good when its residual is within this fraction of its length.
+inline constexpr double kKeptFitTolerance = 0.15;
+double keptShare(double length, double gap);
+KeptFit fitKept(const std::vector<double>& gaps,
+                const std::vector<double>& shares);
+
 // Builds the crossing table of a layer and one covering layer: periodic
 // arrays of crossing wires on the cover, over a wire of minimum width, at
-// every crossing width and coverage of the options; each array gives the
-// share kept over the gap between its crossings.
+// every crossing width and coverage of the options, and with neighbors
+// at every crossing spacing; each array gives the share kept over the gap
+// between its crossings, and the table holds them fitted (fitKept). Throws
+// std::runtime_error when the coupling shares without neighbors fit no
+// kept amount. The table without a plane opposite also holds the pair's
+// reach (CrossingReach), from one crossing over a wire alone at every pair
+// of the reach factors, against one running on and none; a held table
+// without one gains it, and one with a reach on another grid is refused.
+// Throws std::invalid_argument for reach factors that do not ascend from
+// 0.
 void buildCrossing(const fsv::Stack& stack,
                    Layer layer,
                    Layer cover,
                    const BuildOptions& options,
                    Model& model);
+// The crossing tables of a layer and several covering layers, their solves
+// in one pool; for a cover under the wire with a plane on `plane_above`
+// too, and for one over it with a plane on `plane_below` (none when the
+// handle names no layer). A table with a plane whose shares fit no kept
+// amount holds the values of the table without the plane, and no reach.
+void buildCrossings(const fsv::Stack& stack,
+                    Layer layer,
+                    const std::vector<Layer>& covers,
+                    const BuildOptions& options,
+                    Model& model,
+                    Layer plane_below = Layer(),
+                    Layer plane_above = Layer());
 
 // Builds the diagonal table of a layer and a nearby layer: a wire of
 // minimum width with a neighbor at a spacing on each side, and a parallel
 // wire on the other layer beside it on the right, at every width, gap and
-// pair of spacings of the options.
+// pair of spacings of the options; with a plane on `opposite` when it
+// names a layer, which must lie on the wire's other side. Each layer's
+// build tabulates a parallel wire with no plane and with one on the
+// nearest cover on the other side.
 void buildDiagonal(const fsv::Stack& stack,
                    Layer layer,
                    Layer other,
                    const BuildOptions& options,
-                   Model& model);
+                   Model& model,
+                   Layer opposite = Layer());
 
 // The layers within the diagonal depth of a layer, below and above, that
 // do not sit on the ground plane.
@@ -188,7 +256,8 @@ std::vector<Layer> diagonalLayers(const fsv::Stack& stack,
                                   const BuildOptions& options);
 
 // Builds the end tables of a layer for the same contexts as its lateral
-// tables: what one line end adds, over the lateral grid's widths.
+// tables: what one line end adds, over the lateral grid's widths, the end
+// spacings and the facing gaps.
 void buildEnds(const fsv::Stack& stack,
                Layer layer,
                const BuildOptions& options,

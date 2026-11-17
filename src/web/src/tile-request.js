@@ -3,7 +3,11 @@
 
 // Wire format for tile requests, shared by every tile source so they cannot
 // drift on the wire — a divergence would give two paths different server-side
-// tile-cache keys, and one of them would miss the cache entirely.
+// tile-cache keys, and one of them would miss the cache entirely.  The flag
+// columns come from buildVisibilityFlags for the same reason, shared with
+// click-select and the Save export.
+
+import { buildVisibilityFlags } from './ui-utils.js';
 
 // Normalize the display's device pixel ratio into the value sent on the wire.
 //
@@ -164,22 +168,6 @@ export function tileSizeFields(dpr, tileSize = tileSizeCss()) {
         // a 400 px box.  Either way the browser resamples every tile.
         tile_px: tileDevicePx(tileSize, dpr),
     };
-}
-
-// Serialize the layer/selectability visibility flags the way the server
-// parses them: each visibility key as a boolean, each selectability key with
-// an `s_` prefix.  Callers add request-specific fields (visible_layers,
-// selectable_layers, visible_chiplets) on top.  Shared by the tile requests,
-// click-select, and the Save export so the columns can't drift.
-export function buildVisibilityFlags(visibility, selectability) {
-    const vf = {};
-    for (const [k, v] of Object.entries(visibility || {})) {
-        vf[k] = !!v;
-    }
-    for (const [k, v] of Object.entries(selectability || {})) {
-        vf['s_' + k] = !!v;
-    }
-    return vf;
 }
 
 // Whether an object map such as app.chipletHiddenLayers has any key.

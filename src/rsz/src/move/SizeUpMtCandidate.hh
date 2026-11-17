@@ -36,7 +36,7 @@ class SizeUpMtCandidate : public MoveCandidate
                     const Target& target,
                     sta::Instance* inst,
                     sta::LibertyCell* replacement,
-                    float score_scale);
+                    float cost_divisor);
 
   // === MoveCandidate API ====================================================
   Estimate estimate() override;
@@ -50,12 +50,16 @@ class SizeUpMtCandidate : public MoveCandidate
 
  private:
   std::string logName() const;
+  // A positive score per unit of the replacement's relative cost.
+  float costScaled(float score) const;
 
   // === Candidate state ======================================================
   sta::Instance* inst_{nullptr};
   sta::LibertyCell* current_cell_{nullptr};
   sta::LibertyCell* replacement_{nullptr};
-  const float score_scale_;
+  // Relative cell cost of the replacement among the target's sizes, at least
+  // 1 (relativeCellCosts()).
+  const float cost_divisor_;
 };
 
 }  // namespace rsz

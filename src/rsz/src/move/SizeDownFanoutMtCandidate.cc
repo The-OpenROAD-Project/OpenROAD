@@ -24,11 +24,8 @@ using utl::RSZ;
 SizeDownFanoutMtCandidate::SizeDownFanoutMtCandidate(
     Resizer& resizer,
     const Target& target,
-    std::shared_ptr<const SizeDownFanoutMtLoad> load,
-    const float score_scale)
-    : MoveCandidate(resizer, target),
-      load_(std::move(load)),
-      score_scale_(score_scale)
+    std::shared_ptr<const SizeDownFanoutMtLoad> load)
+    : MoveCandidate(resizer, target), load_(std::move(load))
 {
 }
 
@@ -43,7 +40,7 @@ Estimate SizeDownFanoutMtCandidate::estimate()
             ? std::optional<float>(delay_est.arrival_impr)
             : std::nullopt,
       .reason = failReasonName(delay_est.reason)};
-  estimate.score = delay_est.arrival_impr * score_scale_;
+  estimate.score = delay_est.arrival_impr;
   return estimate;
 }
 

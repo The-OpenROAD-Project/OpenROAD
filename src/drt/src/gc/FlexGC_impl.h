@@ -525,7 +525,9 @@ class FlexGCWorker::Impl
                                              frCoord spacing);
   // LEF58_ENCLOSURE
   void checkLef58Enclosure_main(gcRect* rect);
-  void checkLef58Enclosure_main(gcRect* via, gcRect* enc);
+  void checkLef58Enclosure_main(gcRect* via,
+                                gcRect* enc,
+                                const std::vector<gcRect*>& candidates);
   // LEF58_KEEPOUTZONE
   void checKeepOutZone_main(gcRect* rect, frLef58KeepOutZoneConstraint* con);
 

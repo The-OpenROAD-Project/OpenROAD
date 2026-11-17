@@ -334,6 +334,8 @@ struct TileVisibility
   bool mfg_grid = false;  // manufacturing-grid dots, off by default (Qt parity)
   bool gcell_grid = false;  // GCell grid lines, off by default (Qt parity)
   bool rudy = false;        // RUDY congestion heatmap, off by default
+  bool routing_congestion
+      = false;  // Routing congestion heatmap, off by default
 
   // Shapes — other per-layer geometry (not routing sub-types)
   bool blockages = true;  // master obstructions (LEF OBS)
@@ -373,6 +375,10 @@ struct TileVisibility
   // limit (mirroring LayoutViewer::instanceSizeLimit()/shapeSizeLimit()).
   bool detailed = false;
 
+  // "Color by owner" overlays.  Plain visibility flags: the client keeps the
+  // `_modules`/`_clusters` layers mounted and these decide whether they draw.
+  bool module_view = false;   // color instances by their dbModule
+  bool cluster_view = false;  // color instances by their dbGroup
   // Extent in DBU of the VIEW this tile belongs to, for the sizes Qt derives
   // from the region it is drawing rather than from the design: the IO pin
   // markers (RenderThread::setupIOPins takes min(die, bounds)).
@@ -536,6 +542,13 @@ class TileGenerator
   bool hasRegions() const;
   sta::dbSta* getSta() const { return sta_; }
   utl::Logger* getLogger() const { return logger_; }
+
+  // The palette the Hierarchy panel starts from, for an overlay no session has
+  // sent colors for.  The tile path and `save_image -web` share it, so the two
+  // cannot disagree about what "on" looks like.
+  using OwnerColorMap = std::shared_ptr<const std::map<uint32_t, Color>>;
+  OwnerColorMap defaultModuleColors() const;
+  OwnerColorMap defaultGroupColors() const;
 
   void setThreadCount(const int num_threads) { num_threads_ = num_threads; }
 
@@ -800,6 +813,7 @@ class TileGenerator
       const std::vector<ColoredRect>& colored_rects = {},
       const std::vector<FlightLine>& flight_lines = {},
       const std::map<uint32_t, Color>* module_colors = nullptr,
+      const std::map<uint32_t, Color>* group_colors = nullptr,
       const std::set<uint32_t>* focus_net_ids = nullptr,
       const std::set<uint32_t>* route_guide_net_ids = nullptr,
       double dpr = 1.0,
@@ -923,7 +937,7 @@ class TileGenerator
     // Whether this design gives the overlay anything to draw; null is always.
     bool (TileGenerator::*present)() const = nullptr;
   };
-  static const std::array<PseudoLayerDef, 6>& pseudoLayerDefs();
+  static const std::array<PseudoLayerDef, 7>& pseudoLayerDefs();
   static bool anyGroupOn(const std::vector<std::vector<const char*>>& groups,
                          const TileVisibility& vis);
   // Whether `layer`'s tiles read visible_layers and chiplet_hidden_layers:
@@ -1041,6 +1055,7 @@ class TileGenerator
       const std::vector<ColoredRect>& colored_rects = {},
       const std::vector<FlightLine>& flight_lines = {},
       const std::map<uint32_t, Color>* module_colors = nullptr,
+      const std::map<uint32_t, Color>* group_colors = nullptr,
       const std::set<uint32_t>* focus_net_ids = nullptr,
       const std::set<uint32_t>* route_guide_net_ids = nullptr,
       double dpr = 1.0,
@@ -1374,6 +1389,11 @@ class TileGenerator
                      const TileFrame& frame,
                      const TileVisibility& vis,
                      const TextSink& emit) const;
+  void drawRoutingCongestionLayer(std::vector<unsigned char>& image,
+                                  odb::dbBlock* block,
+                                  const TileFrame& frame,
+                                  const TileVisibility& vis,
+                                  const TextSink& emit) const;
   void drawInstLabelsLayer(std::vector<unsigned char>& image,
                            odb::dbBlock* block,
                            const TileFrame& frame,
@@ -1444,7 +1464,10 @@ class TileGenerator
   mutable odb::PtrMap<odb::dbBlock, BpinApList> bpin_ap_cache_;
   mutable odb::PtrMap<odb::dbBlock, GridList> gcell_x_cache_;
   mutable odb::PtrMap<odb::dbBlock, GridList> gcell_y_cache_;
-  // The Search::revision() the three caches above were built at; see
+  // Default color map per overlay, for the top block; see defaultModuleColors.
+  mutable OwnerColorMap default_module_colors_;
+  mutable OwnerColorMap default_group_colors_;
+  // The Search::revision() the caches above were built at; see
   // dropOverlayCachesIfStale.
   mutable uint64_t overlay_cache_revision_ = 0;
 
@@ -1457,6 +1480,15 @@ class TileGenerator
 };
 
 struct TimingPathSummary;
+
+// The chip-inst nodes whose name, or full path from the root, prefixes `name`
+// as a whole path component, each with the rest of `name` (pointing into it):
+// the name local to that node's block.  Several can match, so callers try them
+// in order, names before paths.  Any match means `name` is chiplet-qualified,
+// and an unqualified lookup must not claim it instead.
+std::vector<std::pair<const ChipletNode*, const char*>> chipletPrefixMatches(
+    const std::vector<ChipletNode>& chiplets,
+    const std::string& name);
 
 // Resolve a (possibly "<chip-inst>/"-prefixed) pin name against the chiplets,
 // returning the owning node so the caller can transform the pin's geometry.

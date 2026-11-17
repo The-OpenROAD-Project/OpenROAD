@@ -4,6 +4,8 @@
 // Display controls — layer checkboxes and visibility tree.
 
 import { CheckboxTreeModel } from './checkbox-tree-model.js';
+import { activeHierarchySource, syncHierarchyOverlay }
+    from './hierarchy-panel.js';
 import { VisTree, makeColumnHeader, makeNameSpan, makeSelSpacer }
     from './vis-tree.js';
 import { getCookie, setCookie, setBackgroundColor, resetBackgroundColor,
@@ -162,13 +164,33 @@ export function populateDisplayControls(app, visibility, selectability,
         }
     }
 
-    // A pseudo layer: a draw-list entry whose visibility redrawAllLayers sets
-    // from `visibility`.  `appProp` names the app.<prop> it is published as.
-    // The initial state must follow `visibility`, which was already restored
-    // from the or_visibility cookie, or the checkbox and the view disagree
-    // until the first toggle.
-    function pseudoItem(name, appProp, visible) {
-        const item = { layer: name, opacity: 1, visible: !!visible };
+    // One refresh per slot, however many of its layers ask in the same turn.
+    let flushQueued = false;
+    function refreshSlotOf(item) {
+        const slot = app.allLayers.find(
+            (s) => s.items && s.items.includes(item));
+        if (!slot) {
+            return;
+        }
+        dirtySlots.add(slot);
+        if (!flushQueued) {
+            flushQueued = true;
+            queueMicrotask(() => {
+                flushQueued = false;
+                flushDirtySlots();
+            });
+        }
+    }
+
+    // A pseudo layer: a draw-list entry that stays in its slot and is switched
+    // by `gate`, a visibility flag name or a `shown_by` list of flag groups
+    // (null = no toggle), read on every request (tile-sources.js).  `appProp`
+    // names the app.<prop> it is published as.
+    function pseudoItem(name, appProp, gate) {
+        const item = {
+            layer: name, opacity: 1, visible: true, gate,
+            refreshTiles() { refreshSlotOf(item); },
+        };
         if (appProp) {
             app[appProp] = item;
         }
@@ -176,22 +198,27 @@ export function populateDisplayControls(app, visibility, selectability,
     }
 
     // Under the routing layers: instance borders (no toggle), IO pins and
-    // module colouring.
+    // module coloring.
     const underItems = [
-        pseudoItem('_instances', null, true),
-        pseudoItem('_pins', 'pinsLayer', visibility.pins),
-        pseudoItem('_modules', 'modulesLayer', visibility.module_view),
+        pseudoItem('_instances', null, null),
+        pseudoItem('_pins', 'pinsLayer', 'pins'),
+        pseudoItem('_modules', 'modulesLayer', 'module_view'),
     ];
+    // Cluster coloring goes above the routing layers and below the heat map.
+    const clustersItem
+        = pseudoItem('_clusters', 'clustersLayer', 'cluster_view');
     // The self-painting overlays (access points, regions, grids, instance and
     // pin names), as the server lists them: name, paint order and when each
     // shows.  It leaves out those the design gives nothing to draw, such as
-    // regions in a design without any.  Those the server orders below the
-    // routing layers (the manufacturing grid) go under them; the rest go over
-    // the highlight overlay and the heat map, in the GUI paint order.
+    // regions in a design without any.  `shown_by` is the gate itself, so the
+    // server's rule for when an overlay shows is read in one place.  Those the
+    // server orders below the routing layers (the manufacturing grid) go under
+    // them; the rest go over the highlight overlay and the heat map, in the
+    // GUI paint order.
     const topItems = [];
     app.overlayLayers = ((techData && techData.overlays) || []).map((def) => ({
         def,
-        layer: pseudoItem(def.name, null, anyGroupOn(def.shown_by, visibility)),
+        layer: pseudoItem(def.name, null, def.shown_by),
         under: def.z_index < kTechLayerZBase,
     }));
     for (const { layer, under } of [...app.overlayLayers].sort(
@@ -466,7 +493,7 @@ export function populateDisplayControls(app, visibility, selectability,
     }
     app.baseSlot = compositeSlot(
         'base', DRAW_ORDER.base,
-        [...underItems, ...routingLayers]);
+        [...underItems, ...routingLayers, clustersItem]);
     app.topSlot = compositeSlot('top', DRAW_ORDER.top, topItems);
     // What redrawAllLayers() refreshes.
     app.allLayers = [app.baseSlot, app.topSlot];
@@ -1299,11 +1326,33 @@ export function populateDisplayControls(app, visibility, selectability,
     // --- Visibility tree (ordered to match Qt GUI display controls) ---
     // Subtrees that opt into a second "selectable" checkbox column mirror
     // the Qt GUI's selectability column (see displayControls.cpp).
+    // The Hierarchy view checkbox governs two flags, and which one it turns on
+    // depends on the tab's source.  Derive only: redrawAllLayers repaints the
+    // two overlay layers along with everything else (they are in allLayers),
+    // and this runs on every checkbox in the tree, not just that one.
+    const applyHierarchyOverlay = () => {
+        // Only when a flag actually moved: this runs for every checkbox in the
+        // tree, and the panel work below walks the whole tree of the view it
+        // is showing.
+        if (!syncHierarchyOverlay(visibility, activeHierarchySource(app))
+            || !app.hierarchyPanel) {
+            return;
+        }
+        // The overlay paints with the server's default palette on its own, so
+        // the load is about the table: it brings in the tree that matches what
+        // the layout is already showing.
+        app.hierarchyPanel.ensureActiveLoaded();
+        app.hierarchyPanel.refreshActiveStatus();
+    };
+
     // VisTree shares one onChange across every row of both models, so latch
     // the only value that changes the per-renderer answer instead of paying a
     // round trip for each of the ~100 unrelated toggles.
     let lastDebugRenderers = !!visibility.debug_renderers;
     const visTree = new VisTree(visibility, selectability, () => {
+        // Before the redraw: the tile requests it issues carry the two flags
+        // this derives from the single Hierarchy view checkbox.
+        applyHierarchyOverlay();
         redrawAllLayers();
         if (!!visibility.debug_renderers !== lastDebugRenderers) {
             lastDebugRenderers = !!visibility.debug_renderers;
@@ -1402,7 +1451,11 @@ export function populateDisplayControls(app, visibility, selectability,
         { key: 'focused_nets_guides', label: 'Focused nets guides' },
         { key: 'highlight_selected', label: 'Highlight selected' },
     ]});
-    visTree.add({ key: 'module_view', label: 'Module view' });
+    // One control for both hierarchy overlays -- module colors and instance
+    // group colors.  Which of the two paints comes from the Hierarchy tab's
+    // Source dropdown, so the two can never stack on the same instance; see
+    // syncHierarchyOverlay.
+    visTree.add({ key: 'ui_hierarchy_view', label: 'Hierarchy view' });
     // Developer overlays.  All three are plain leaves under a visKey-less
     // group: giving the group `visKey: 'debug_renderers'` would tie the
     // renderer overlay to the group's tri-state, so ticking the unrelated
@@ -1416,6 +1469,9 @@ export function populateDisplayControls(app, visibility, selectability,
         { key: 'debug', label: 'Tiles' },
     ]});
     visTree.render(app.displayControlsEl);
+    // render() syncs the DOM and the visibility map but does not run onChange,
+    // so the restored Hierarchy view checkbox needs its flags derived once here.
+    applyHierarchyOverlay();
 
     // ─── Per-renderer display controls ──────────────────────────────────────
     // The rows Qt's DisplayControls builds from Renderer::getDisplayControls()

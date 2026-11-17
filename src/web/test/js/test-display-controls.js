@@ -11,6 +11,7 @@ const {
 } = await import('../../src/display-controls.js');
 const { beginSelection } = await import('../../src/ui-utils.js');
 const { makeFakeView } = await import('./fake-view.js');
+const { gateOpen } = await import('../../src/tile-sources.js');
 
 // 10 layers: Metal1, Via1, Metal2, Via2, ... Metal5, Via5
 const COUNT = 10;
@@ -500,6 +501,201 @@ describe('layer row selection', () => {
        });
 });
 
+// The color-by-owner overlays (`_modules`, `_clusters`) and the pin-marker layer
+// stay in their slot: their visibility rides in the tile request and the
+// source decides whether to draw.  Adding and removing them instead would make
+// the draw lists a second record of the flag, free to drift.
+describe('overlay layer toggles', () => {
+    let app, visibility, redraws, techData;
+
+    // Every draw item of the two composited slots, bottom-most first.
+    const allItems = () => [...app.baseSlot.items, ...app.topSlot.items];
+    const item = (name) => allItems().find(i => i.layer === name);
+
+    beforeEach(() => {
+        redraws = 0;
+        visibility = {};
+        window.sessionStorage.clear();
+        app = {
+            displayControlsEl: document.createElement('div'),
+            allLayers: [],
+            visibleLayers: new Set(),
+            visibleLayerNames: new Set(),
+            selectableLayers: new Set(),
+            layerPatterns: {},
+            visibleChiplets: null,
+            hasLiberty: false,
+            showDbu: false,
+            view: makeFakeView(),
+            websocketManager: { request: () => Promise.resolve({}) },
+            updateInspector() {},
+            focusComponent() {},
+            refreshOverlay() {},
+        };
+        techData = {
+            layers: ['metal1'],
+            sites: [],
+            chiplets: [{ path: 'top', name: 'top', parent: null, depth: 0 }],
+            overlays: [
+                { name: '_access_points', z_index: 1000,
+                  shown_by: [['access_points']], layers_by: [] },
+                { name: '_mfg_grid', z_index: 2,
+                  shown_by: [['mfg_grid']], layers_by: [] },
+                { name: '_gcell_grid', z_index: 1002,
+                  shown_by: [['gcell_grid']], layers_by: [] },
+                { name: '_inst_labels', z_index: 1003,
+                  shown_by: [['inst_names'], ['inst_pins', 'inst_pin_names']],
+                  layers_by: [] },
+            ],
+            layer_hierarchy: {
+                name: 'top',
+                type: 'block',
+                path: 'top',
+                layers: [{ name: 'metal1', color: [1, 2, 3] }],
+                instances: [],
+            },
+        };
+        populateDisplayControls(app, visibility, {}, techData,
+                                () => { redraws++; }, null);
+    });
+
+    // Toggling goes through the checkbox the user actually clicks, found by the
+    // name attribute VisTree gives it.
+    function toggle(key, groupLabel) {
+        const id = groupLabel ? groupLabel + '/' + key : key;
+        const cb = app.displayControlsEl.querySelector(
+            `input.vis-cb[name="vis:${id}"]`);
+        assert.ok(cb, 'checkbox for ' + id);
+        cb.checked = !cb.checked;
+        cb.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+        return cb;
+    }
+
+    it('puts each pseudo layer in a slot once, up front', () => {
+        for (const name of ['_modules', '_clusters', '_pins', '_instances']) {
+            assert.equal(allItems().filter(i => i.layer === name).length, 1,
+                         name);
+        }
+    });
+
+    // A switchable pseudo layer needs a gate: without one it would request tiles
+    // forever, and gated on a flag that does not exist it would go blank.  The
+    // client-mounted ones carry a flag name; those the server lists carry its
+    // `shown_by` verbatim.
+    it('gates every switchable pseudo layer instead of unmounting it', () => {
+        const expected = {
+            _pins: 'pins',
+            _modules: 'module_view',
+            _clusters: 'cluster_view',
+        };
+        for (const [name, gate] of Object.entries(expected)) {
+            assert.ok(item(name), name + ' is in a slot');
+            assert.equal(item(name).gate, gate, name + ' gate');
+            assert.ok(gate in visibility, gate + ' is a real visibility flag');
+        }
+        for (const def of techData.overlays) {
+            assert.ok(item(def.name), def.name + ' is in a slot');
+            assert.deepEqual(item(def.name).gate, def.shown_by,
+                             def.name + ' gate');
+            for (const key of def.shown_by.flat()) {
+                assert.ok(key in visibility,
+                          key + ' is a real visibility flag');
+            }
+        }
+        // The instance layer has no toggle, so it carries no gate.
+        assert.equal(item('_instances').gate, null);
+    });
+
+    // There is one routing row per (chiplet, layer); the cluster overlay has
+    // to go above all of them, not above the deduplicated name list.
+    it('stacks the cluster overlay above every routing row of a multi-die '
+       + 'design', () => {
+        const names = ['metal1', 'metal2', 'metal3', 'metal4'];
+        const dieLayers = names.map((name, i) => ({ name, color: [i, i, i] }));
+        const die = (name) => ({
+            name, type: 'block', path: 'top/' + name,
+            layers: dieLayers, instances: [],
+        });
+        populateDisplayControls(app, visibility, {}, {
+            layers: names,
+            sites: [],
+            chiplets: [{ path: 'top', name: 'top', parent: null, depth: 0 }],
+            layer_hierarchy: {
+                name: 'top', type: 'block', path: 'top', layers: [],
+                instances: [die('die0'), die('die1')],
+            },
+        }, () => {}, null);
+
+        const items = app.baseSlot.items;
+        const routing = items.filter(i => i.rowId);
+        assert.equal(routing.length, 8);
+        const top = Math.max(...routing.map(i => items.indexOf(i)));
+        assert.ok(items.indexOf(app.clustersLayer) > top,
+                  'the cluster overlay sits above every routing row');
+    });
+
+    it('keeps working over repeated hierarchy-view toggles', () => {
+        const items = allItems();
+        for (let i = 0; i < 4; i++) {
+            const before = visibility.ui_hierarchy_view;
+            toggle('ui_hierarchy_view');
+            assert.equal(visibility.ui_hierarchy_view, !before,
+                         'flag flips on toggle ' + i);
+            assert.equal(redraws, i + 1, 'redraw requested on toggle ' + i);
+            // The regression: no draw item may come or go here.
+            assert.deepEqual(allItems(), items,
+                             'toggle must not touch the draw lists');
+        }
+        assert.equal(visibility.ui_hierarchy_view, false);
+    });
+
+    // One checkbox for two overlays, and which one it turns on depends on the
+    // Hierarchy tab's source.  This panel derives the flags, tells the tab to
+    // load what it is about to paint, and asks it to redo its status line --
+    // but must NOT repaint: redrawAllLayers runs right after and covers both
+    // overlay layers, and this callback fires for every checkbox in the tree,
+    // so repainting here would cancel and re-issue a screen of overlay tiles
+    // on each unrelated click.
+    it('derives the flags for the tab\'s source without repainting', () => {
+        const calls = [];
+        app.hierarchyPanel = {
+            activeView: () => 'clusters',
+            syncOverlay: () => calls.push('syncOverlay'),
+            ensureActiveLoaded: () => calls.push('ensureActiveLoaded'),
+            refreshActiveStatus: () => calls.push('refreshActiveStatus'),
+        };
+
+        toggle('ui_hierarchy_view');
+        assert.equal(visibility.cluster_view, true);
+        assert.equal(visibility.module_view, false,
+                     'the other source must not paint at the same time');
+        // Ticking the box is what asks for the tree: without the load the
+        // server has no colors and the checkbox would be on over a layout
+        // with nothing painted (review of #11122).
+        assert.deepEqual(calls, ['ensureActiveLoaded', 'refreshActiveStatus'],
+                         'the load and the status line, not a repaint');
+
+        toggle('ui_hierarchy_view');
+        assert.equal(visibility.cluster_view, false);
+        assert.equal(visibility.module_view, false);
+    });
+
+    // A saved layout can come back without the Hierarchy tab; the checkbox
+    // still has to reach the flags, or the overlay could never be turned on.
+    it('derives the flags itself when there is no panel', () => {
+        assert.equal(app.hierarchyPanel, undefined);
+
+        toggle('ui_hierarchy_view');
+        assert.equal(visibility.module_view, true,
+                     'falls back to the remembered source');
+        assert.equal(visibility.cluster_view, false);
+
+        toggle('ui_hierarchy_view');
+        assert.equal(visibility.module_view, false);
+        assert.equal(visibility.cluster_view, false);
+    });
+});
+
 describe('routing layer opacity', () => {
     // Layer transparency is baked into the tile pixels: the server paints
     // layer shapes at the palette alpha of 180/255, the same alpha the Qt GUI
@@ -572,21 +768,26 @@ describe('routing layer opacity', () => {
         render();
         assert.deepEqual(app.baseSlot.items.map((i) => i.layer),
                          ['_instances', '_pins', '_modules', '_mfg_grid',
-                          'metal1', 'metal2']);
+                          'metal1', 'metal2', '_clusters']);
         assert.deepEqual(app.topSlot.items.map((i) => i.layer),
                          ['_inst_labels', '_access_points', '_gcell_grid']);
         assert.ok(app.baseSlot.opts.order < app.topSlot.opts.order);
         assert.deepEqual(app.allLayers, [app.baseSlot, app.topSlot]);
     });
 
-    it('starts the pseudo layers from the restored visibility', () => {
-        render({ pins: true, module_view: false, gcell_grid: true });
-        assert.equal(app.pinsLayer.visible, true);
-        assert.equal(app.modulesLayer.visible, false);
+    // The restored visibility drives them from the first tile on: each item
+    // is gated on its flags, read on every request.
+    it('gates the pseudo layers on the restored visibility', () => {
+        const visibility = { pins: true, module_view: false,
+                             gcell_grid: true };
+        render(visibility);
+        const shown = (item) => gateOpen(item.gate, visibility);
+        assert.equal(shown(app.pinsLayer), true);
+        assert.equal(shown(app.modulesLayer), false);
         const overlay = (name) => app.overlayLayers.find(
             ({ def }) => def.name === name).layer;
-        assert.equal(overlay('_gcell_grid').visible, true);
-        assert.equal(overlay('_access_points').visible, false);
+        assert.equal(shown(overlay('_gcell_grid')), true);
+        assert.equal(shown(overlay('_access_points')), false);
     });
 
     it('replaces its slots when the panel is rebuilt', () => {

@@ -44,6 +44,7 @@
 #include "boost/json/value.hpp"
 #include "clock_tree_report.h"
 #include "color.h"
+#include "group_report.h"
 #include "hierarchy_report.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
@@ -131,6 +132,27 @@ std::string sanitizeFilename(std::string name)
   return name;
 }
 
+// "rrggbb", with or without a leading '#', to an opaque Color.  False for
+// anything else: the /image query parameter writes it bare, the viewer's
+// or_bg_color cookie carries the '#'.
+bool parseHexColor(std::string_view s, Color& out)
+{
+  if (!s.empty() && s.front() == '#') {
+    s.remove_prefix(1);
+  }
+  unsigned rgb = 0;
+  if (s.size() != 6 || !parseIntExact(s, rgb, 16)) {
+    return false;
+  }
+  out = Color{
+      .r = static_cast<unsigned char>((rgb >> 16) & 0xFF),
+      .g = static_cast<unsigned char>((rgb >> 8) & 0xFF),
+      .b = static_cast<unsigned char>(rgb & 0xFF),
+      .a = 255,
+  };
+  return true;
+}
+
 // Parse "x0,y0,x1,y1" (DBU) into a Rect.  Returns false on malformed input.
 bool parseBbox(const std::string& s, odb::Rect& out)
 {
@@ -162,14 +184,21 @@ bool parseBbox(const std::string& s, odb::Rect& out)
   return true;
 }
 
-// The plain-text response every HTTP answer starts from.
-http::response<http::string_body> textResponse(const http::status status,
-                                               const unsigned version,
-                                               const bool keep_alive)
+// The plain-text response every HTTP answer to `req` starts from, security
+// headers included.
+http::response<http::string_body> textResponse(
+    const http::status status,
+    const http::request<http::string_body>& req,
+    const bool keep_alive)
 {
-  http::response<http::string_body> res{status, version};
+  http::response<http::string_body> res{status, req.version()};
   res.set(http::field::server, "OpenROAD");
   res.set(http::field::content_type, "text/plain");
+  res.set(http::field::content_security_policy,
+          contentSecurityPolicy(req[http::field::host]));
+  res.set(http::field::x_content_type_options, "nosniff");
+  res.set(http::field::x_frame_options, "DENY");
+  res.set(http::field::referrer_policy, "no-referrer");
   res.keep_alive(keep_alive);
   return res;
 }
@@ -211,18 +240,12 @@ void handleImageDownload(const std::shared_ptr<TileGenerator>& generator,
   }
 
   // Background color (RRGGBB hex) so the saved image matches the viewer's
-  // background; absent => transparent.
+  // background; absent or malformed => transparent.
   Color bg{};  // {0,0,0,0}
   const auto bg_it = params.find("bg");
-  unsigned rgb = 0;
-  if (bg_it != params.end() && bg_it->second.size() == 6
-      && parseIntExact(bg_it->second, rgb, 16)) {
-    bg = Color{.r = static_cast<unsigned char>((rgb >> 16) & 0xFF),
-               .g = static_cast<unsigned char>((rgb >> 8) & 0xFF),
-               .b = static_cast<unsigned char>(rgb & 0xFF),
-               .a = 255};
+  if (bg_it != params.end()) {
+    parseHexColor(bg_it->second, bg);
   }
-  // Malformed/absent bg: keep transparent.
 
   const std::vector<unsigned char> png = generator->renderImagePng(
       region, /*width_px=*/0, /*dbu_per_pixel=*/0, vis, bg);
@@ -270,7 +293,7 @@ static http::response<http::string_body> dispatch_request(
     const std::shared_ptr<SessionAuth>& auth,
     utl::Logger* logger)
 {
-  auto res = textResponse(http::status::ok, req.version(), req.keep_alive());
+  auto res = textResponse(http::status::ok, req, req.keep_alive());
 
   if (req.method() == http::verb::get) {
     // The route match uses the path alone; the query carries the token, the
@@ -369,7 +392,7 @@ static http::response<http::string_body> handle_request(
   } catch (const std::exception& e) {
     logger->warn(utl::WEB, 126, "Request failed: {}", e.what());
     auto res = textResponse(
-        http::status::internal_server_error, req.version(), req.keep_alive());
+        http::status::internal_server_error, req, req.keep_alive());
     res.body() = "Request failed.";
     res.prepare_payload();
     return res;
@@ -515,11 +538,13 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>,
     state_.highlight_geometry_stale = true;
   }
 
+ public:
   void inDbInstDestroy(odb::dbInst*) override { invalidateSelection(); }
   void inDbNetDestroy(odb::dbNet*) override { invalidateSelection(); }
   void inDbITermDestroy(odb::dbITerm*) override { invalidateSelection(); }
   void inDbBTermDestroy(odb::dbBTerm*) override { invalidateSelection(); }
   void inDbBlockageDestroy(odb::dbBlockage*) override { invalidateSelection(); }
+  void inDbGroupDestroy(odb::dbGroup*) override { invalidateSelection(); }
   void inDbObstructionDestroy(odb::dbObstruction*) override
   {
     invalidateSelection();
@@ -1496,7 +1521,7 @@ void DetectSession::reject(const http::status status,
                            const std::string_view body)
 {
   auto res = std::make_shared<http::response<http::string_body>>(
-      textResponse(status, req_.version(), /*keep_alive=*/false));
+      textResponse(status, req_, /*keep_alive=*/false));
   res->set(http::field::server, "OpenROAD WebSocket Server");
   if (status == http::status::unauthorized) {
     res->set(http::field::www_authenticate, kTokenChallenge);
@@ -1924,6 +1949,13 @@ void WebServer::saveReport(const std::string& filename,
   const std::string hierarchy_json
       = boost::json::serialize(serializeHierarchyResult(hier_result));
 
+  // ── Serialize group (cluster) hierarchy ──
+
+  GroupReport group_report(block);
+  auto group_result = group_report.getReport();
+  const std::string groups_json
+      = boost::json::serialize(serializeGroupResult(group_result));
+
   // The tiles below are rendered in-process, so the module overlay baked into
   // them reads the same mapping the live viewer would.
   if (hier_result.name_grouped) {
@@ -1933,9 +1965,14 @@ void WebServer::saveReport(const std::string& filename,
                               search_revision);
   }
 
+  // Not via TileGenerator::defaultModuleColors(): both reports are already
+  // built above, and going through the generator would walk each tree again.
   auto module_colors = computeDefaultModuleColors(hier_result);
   const std::map<uint32_t, Color>* mod_colors_ptr
       = module_colors.empty() ? nullptr : &module_colors;
+  auto group_colors = computeDefaultGroupColors(group_result);
+  const std::map<uint32_t, Color>* group_colors_ptr
+      = group_colors.empty() ? nullptr : &group_colors;
 
   // ── Render tiles at a fixed zoom level ──
 
@@ -1946,6 +1983,11 @@ void WebServer::saveReport(const std::string& filename,
   const int num_tiles = 1 << kZ;
 
   TileVisibility vis;
+  // The renderer gates these overlays on the flags, so the pre-rendered tiles
+  // must be produced with them on or the saved HTML caches empty ones.
+  vis.module_view = true;
+  vis.cluster_view = true;
+
   // An image the renderer drew nothing into.  Asked of the encoding rather than
   // of its size: the tile entry points hand back one shared buffer per size for
   // a fully transparent image, so this is exact, where a byte threshold has to
@@ -1955,11 +1997,17 @@ void WebServer::saveReport(const std::string& filename,
     return png.empty() || TileGenerator::isBlankTilePng(png);
   };
 
-  // Every pane the viewer mounts by default, the same stack save_image draws,
-  // plus the module coloring.
+  // In the z order save_image composites them, derived from `vis`, so a new
+  // layer is cached here without this code learning about it.  Both overlays
+  // are in it already: the flags above are on.
   std::vector<PaintLayer> all_layers
       = TileGenerator::saveImageLayerOrder(vis, generator_->paintOrderLayers());
-  all_layers.push_back({.layer = "_modules", .chiplet = ""});
+  // An overlay with no colors renders nothing, so caching its tiles would only
+  // grow the HTML.
+  std::erase_if(all_layers, [&](const PaintLayer& e) {
+    return (e.layer == "_modules" && mod_colors_ptr == nullptr)
+           || (e.layer == "_clusters" && group_colors_ptr == nullptr);
+  });
 
   // Collect non-empty tiles as "[chiplet|]layer/z/x/y" -> base64.  Must match
   // the key WebSocketManager._cacheRequest builds.
@@ -1996,7 +2044,8 @@ void WebServer::saveReport(const std::string& filename,
                                             {},
                                             {},
                                             {},
-                                            mod_colors_ptr);
+                                            mod_colors_ptr,
+                                            group_colors_ptr);
         if (!is_blank(png)) {
           std::string key = prefix + "/" + std::to_string(kZ) + "/"
                             + std::to_string(tx) + "/" + std::to_string(ty);
@@ -2105,7 +2154,9 @@ window.__STATIC_CACHE__ = )";
     "chart_filters": )"
         << filters << R"(,
     "module_hierarchy": )"
-        << hierarchy_json << R"(
+        << hierarchy_json << R"(,
+    "group_hierarchy": )"
+        << groups_json << R"(
   },
   tiles: {)";
 
@@ -2241,38 +2292,18 @@ Color viewerBackground(const WebViewerHook* hook)
   if (hook == nullptr) {
     return kBlack;
   }
-  const std::string state = hook->getDisplayState();
-  if (state.empty()) {
-    return kBlack;
-  }
+  // The snapshot is {"version":1,"entries":{"or_bg_color":"#rrggbb",...}}.
   std::error_code ec;
-  const boost::json::value parsed = boost::json::parse(state, ec);
-  if (ec) {
-    return kBlack;
+  const boost::json::value state
+      = boost::json::parse(hook->getDisplayState(), ec);
+  const auto* color
+      = ec ? nullptr : state.find_pointer("/entries/or_bg_color", ec);
+  Color parsed{};
+  if (color != nullptr && color->is_string()
+      && parseHexColor(color->get_string(), parsed)) {
+    return parsed;
   }
-  const boost::json::object* obj = parsed.if_object();
-  if (obj == nullptr) {
-    return kBlack;
-  }
-  const boost::json::value* entries = obj->if_contains("entries");
-  if (entries == nullptr || !entries->is_object()) {
-    return kBlack;
-  }
-  const boost::json::value* color
-      = entries->get_object().if_contains("or_bg_color");
-  if (color == nullptr || !color->is_string()) {
-    return kBlack;
-  }
-  const std::string_view hex(color->get_string());
-  unsigned rgb = 0;
-  if (hex.size() != 7 || hex[0] != '#'
-      || !parseIntExact(hex.substr(1), rgb, 16)) {
-    return kBlack;
-  }
-  return Color{.r = static_cast<unsigned char>((rgb >> 16) & 0xFF),
-               .g = static_cast<unsigned char>((rgb >> 8) & 0xFF),
-               .b = static_cast<unsigned char>(rgb & 0xFF),
-               .a = 255};
+  return kBlack;
 }
 }  // namespace
 
