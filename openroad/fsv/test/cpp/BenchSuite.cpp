@@ -62,7 +62,8 @@ struct Options
   std::string csv;
   std::vector<std::string> lefs{
       "openroad/fsv/test/sky130hd/sky130hd.tlef",
-      "openroad/fsv/test/sky130hd/sky130_fd_sc_hd_merged.lef"};
+      "openroad/fsv/test/sky130hd/sky130_fd_sc_hd_merged.lef",
+  };
   std::string def = "openroad/fsv/test/field_solver_gcd.def";
   std::string itf = "openroad/fsv/test/sky130.itf";
   std::vector<std::string> nets{"_042_", "_119_/_067_", "req_msg[10]"};

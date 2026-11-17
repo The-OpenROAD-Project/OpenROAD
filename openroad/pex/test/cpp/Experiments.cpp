@@ -133,7 +133,8 @@ struct Options
   // e9
   std::vector<std::string> lefs{
       "openroad/pex/test/sky130hd/sky130hd.tlef",
-      "openroad/pex/test/sky130hd/sky130_fd_sc_hd_merged.lef"};
+      "openroad/pex/test/sky130hd/sky130_fd_sc_hd_merged.lef",
+  };
   std::string def = "openroad/fsv/test/field_solver_gcd.def";
   std::string odb;
   std::string model;
