@@ -66,6 +66,266 @@ bool create_logic_port(utl::Logger* logger,
   return true;
 }
 
+namespace {
+
+// Property-name prefixes used to persist supply-net constructs on the block.
+// OpenROAD's odb schema has no dedicated supply-net/supply-port object, so we
+// piggy-back on the generic dbProperty mechanism. This keeps the information
+// queryable and round-trippable through DB save/load without a schema bump.
+constexpr char kUpfVersionProp[] = "__upf_version";
+constexpr char kSupplyPortPrefix[] = "__upf_supply_port:";
+constexpr char kSupplyNetPrefix[] = "__upf_supply_net:";
+constexpr char kSupplyNetConnPrefix[] = "__upf_supply_net_conn:";
+constexpr char kDomainSupplyPrefix[] = "__upf_supply:";
+constexpr char kSupportedUpfVersion[] = "2.1";
+
+void setStringProperty(odb::dbBlock* block,
+                       const std::string& name,
+                       const std::string& value)
+{
+  odb::dbStringProperty* prop
+      = odb::dbStringProperty::find(block, name.c_str());
+  if (prop != nullptr) {
+    prop->setValue(value.c_str());
+  } else {
+    odb::dbStringProperty::create(block, name.c_str(), value.c_str());
+  }
+}
+
+// Returns true if `name` is a port that connect_supply_net -ports may refer
+// to. Per IEEE 1801-2013 the names are rooted (relative to the current scope)
+// and may be supply ports, design (HDL) ports or hierarchical port names:
+//   - a supply port declared with create_supply_port
+//   - a top-level design port (dbBTerm)
+//   - a pin of a leaf instance, e.g. u1/VPWR (dbITerm)
+//   - a port of a hierarchical module instance, e.g. u1/in1 (dbModITerm,
+//     only present when the design is linked hierarchically)
+bool isSupplyConnectablePort(odb::dbBlock* block, const std::string& name)
+{
+  const std::string port_prop = kSupplyPortPrefix + name;
+  if (odb::dbStringProperty::find(block, port_prop.c_str()) != nullptr) {
+    return true;
+  }
+  if (block->findBTerm(name.c_str()) != nullptr) {
+    return true;
+  }
+  if (block->findITerm(name.c_str()) != nullptr) {
+    return true;
+  }
+  // dbBlock::findModInst stops at the deepest instance it can resolve, so
+  // verify the full name to avoid matching a partial path.
+  odb::dbModITerm* mod_iterm = block->findModITerm(name.c_str());
+  if (mod_iterm == nullptr) {
+    return false;
+  }
+  const std::string full_name = mod_iterm->getParent()->getHierarchicalName()
+                                + block->getHierarchyDelimiter()
+                                + mod_iterm->getName();
+  return full_name == name;
+}
+
+}  // namespace
+
+bool set_upf_version(utl::Logger* logger,
+                     odb::dbBlock* block,
+                     const std::string& version)
+{
+  // OpenROAD implements IEEE 1801-2013 (UPF 2.1). Other versions are accepted
+  // and stored, but the user is warned that their semantics may differ.
+  if (version != kSupportedUpfVersion) {
+    logger->warn(utl::UPF,
+                 80,
+                 "UPF version {} is not supported. OpenROAD implements UPF {} "
+                 "(IEEE 1801-2013); commands are interpreted with UPF {} "
+                 "semantics.",
+                 version,
+                 kSupportedUpfVersion,
+                 kSupportedUpfVersion);
+  }
+  setStringProperty(block, kUpfVersionProp, version);
+  return true;
+}
+
+bool create_supply_port(utl::Logger* logger,
+                        odb::dbBlock* block,
+                        const std::string& name,
+                        const std::string& direction)
+{
+  if (direction != "in" && direction != "out" && direction != "inout") {
+    logger->warn(utl::UPF,
+                 81,
+                 "Invalid -direction '{}' for supply port {} (expected in, out "
+                 "or inout)",
+                 direction,
+                 name);
+    return false;
+  }
+
+  const std::string prop_name = kSupplyPortPrefix + name;
+  if (odb::dbStringProperty::find(block, prop_name.c_str()) != nullptr) {
+    logger->warn(utl::UPF, 82, "Supply port {} already exists", name);
+    return false;
+  }
+  odb::dbStringProperty::create(block, prop_name.c_str(), direction.c_str());
+  return true;
+}
+
+bool create_supply_net(utl::Logger* logger,
+                       odb::dbBlock* block,
+                       const std::string& name,
+                       const std::string& domain,
+                       bool reuse)
+{
+  if (reuse && domain.empty()) {
+    logger->error(
+        utl::UPF, 92, "-reuse requires -domain for supply net {}", name);
+  }
+
+  if (!domain.empty() && block->findPowerDomain(domain.c_str()) == nullptr) {
+    logger->warn(utl::UPF,
+                 83,
+                 "Couldn't retrieve power domain {} while creating supply net "
+                 "{}",
+                 domain,
+                 name);
+    return false;
+  }
+
+  // The property value is the space-separated list of domains in which the
+  // supply net is available: the domain it was created in first, followed by
+  // the domains it was extended to with -reuse.
+  const std::string prop_name = kSupplyNetPrefix + name;
+  odb::dbStringProperty* existing
+      = odb::dbStringProperty::find(block, prop_name.c_str());
+
+  if (!reuse) {
+    if (existing != nullptr) {
+      logger->warn(utl::UPF, 84, "Supply net {} already exists", name);
+      return false;
+    }
+    odb::dbStringProperty::create(block, prop_name.c_str(), domain.c_str());
+    return true;
+  }
+
+  // -reuse makes an existing supply net available in another domain; it does
+  // not create the net nor change the domain it was originally created in.
+  if (existing == nullptr) {
+    logger->error(utl::UPF,
+                  93,
+                  "-reuse was specified but supply net {} does not exist",
+                  name);
+  }
+  std::string domains = existing->getValue();
+  if (domains.empty()) {
+    logger->error(utl::UPF,
+                  94,
+                  "-reuse was specified but supply net {} was not created with "
+                  "-domain",
+                  name);
+  }
+  if ((" " + domains + " ").find(" " + domain + " ") == std::string::npos) {
+    domains += " " + domain;
+    existing->setValue(domains.c_str());
+  }
+  return true;
+}
+
+bool connect_supply_net(utl::Logger* logger,
+                        odb::dbBlock* block,
+                        const std::string& net,
+                        const std::string& port)
+{
+  const std::string net_prop = kSupplyNetPrefix + net;
+  if (odb::dbStringProperty::find(block, net_prop.c_str()) == nullptr) {
+    logger->warn(utl::UPF,
+                 85,
+                 "Couldn't retrieve supply net {} while connecting it",
+                 net);
+    return false;
+  }
+
+  if (!isSupplyConnectablePort(block, port)) {
+    logger->warn(utl::UPF,
+                 86,
+                 "Couldn't find port {} while connecting supply net {}",
+                 port,
+                 net);
+    return false;
+  }
+
+  // A supply net may be connected to multiple ports; keep the connections as
+  // a space-separated list instead of overwriting previous ones.
+  const std::string conn_prop = kSupplyNetConnPrefix + net;
+  odb::dbStringProperty* conn
+      = odb::dbStringProperty::find(block, conn_prop.c_str());
+  if (conn == nullptr) {
+    odb::dbStringProperty::create(block, conn_prop.c_str(), port.c_str());
+    return true;
+  }
+  std::string ports = conn->getValue();
+  if ((" " + ports + " ").find(" " + port + " ") == std::string::npos) {
+    if (!ports.empty()) {
+      ports += " ";
+    }
+    ports += port;
+    conn->setValue(ports.c_str());
+  }
+  return true;
+}
+
+bool set_power_domain_supply(utl::Logger* logger,
+                             odb::dbBlock* block,
+                             const std::string& domain,
+                             const std::string& handle,
+                             const std::string& ref)
+{
+  odb::dbPowerDomain* pd = block->findPowerDomain(domain.c_str());
+  if (pd == nullptr) {
+    logger->warn(utl::UPF,
+                 87,
+                 "Couldn't retrieve power domain {} while setting -supply",
+                 domain);
+    return false;
+  }
+  // One property per supply set handle; the value is the (optional) supply
+  // set reference. There is no supply-set object in odb to validate against.
+  const std::string prop_name = kDomainSupplyPrefix + handle;
+  odb::dbStringProperty* prop
+      = odb::dbStringProperty::find(pd, prop_name.c_str());
+  if (prop != nullptr) {
+    prop->setValue(ref.c_str());
+  } else {
+    odb::dbStringProperty::create(pd, prop_name.c_str(), ref.c_str());
+  }
+  return true;
+}
+
+bool set_isolation_supply(utl::Logger* logger,
+                          odb::dbBlock* block,
+                          const std::string& isolation,
+                          const std::string& key,
+                          const std::string& value)
+{
+  odb::dbIsolation* iso = block->findIsolation(isolation.c_str());
+  if (iso == nullptr) {
+    logger->warn(utl::UPF,
+                 88,
+                 "Couldn't retrieve isolation {} while setting -{}",
+                 isolation,
+                 key);
+    return false;
+  }
+  const std::string prop_name = "__upf_iso_" + key;
+  odb::dbStringProperty* prop
+      = odb::dbStringProperty::find(iso, prop_name.c_str());
+  if (prop != nullptr) {
+    prop->setValue(value.c_str());
+  } else {
+    odb::dbStringProperty::create(iso, prop_name.c_str(), value.c_str());
+  }
+  return true;
+}
+
 bool create_power_switch(utl::Logger* logger,
                          odb::dbBlock* block,
                          const std::string& name,

@@ -46,6 +46,8 @@ This command creates power domain for a group of modules.
 ```tcl
 create_power_domain
     [-elements elements]
+    [-include_scope]
+    [-supply supply]
     name 
 ```
 
@@ -54,6 +56,8 @@ create_power_domain
 | Switch Name | Description | 
 | ----- | ----- |
 | `-elements` | List of module paths that belong this this domain OR `.` for top domain. |
+| `-include_scope` | Deprecated in UPF 2.1, equivalent to `-elements {.}`. A warning is issued. |
+| `-supply` | `{supply_set_handle [supply_set_ref]}`. May be repeated. Stored on the domain only. |
 | `name` | Domain name. |
 
 ### Create Logic Port
@@ -73,6 +77,76 @@ create_logic_port
 | ----- | ----- |
 | `-direction` | Direction of the port (`in`, `out`, `inout`). |
 | `port_name` | Port name. |
+
+### UPF Version
+
+Declares the UPF version of the file. OpenROAD implements IEEE 1801-2013
+(UPF 2.1); any other version is accepted with a warning.
+
+```tcl
+upf_version version
+```
+
+#### Options
+
+| Switch Name | Description | 
+| ----- | ----- |
+| `version` | UPF version string, e.g. `2.1`. |
+
+### Create Supply Port
+
+This command creates a supply port.
+
+```tcl
+create_supply_port
+    [-direction direction]
+    [-domain domain]
+    port_name
+```
+
+#### Options
+
+| Switch Name | Description | 
+| ----- | ----- |
+| `-direction` | Direction of the port (`in`, `out`, `inout`), default value is `in`. |
+| `-domain` | Accepted for compatibility, not used by OpenROAD. |
+| `port_name` | Supply port name. |
+
+### Create Supply Net
+
+This command creates a supply net.
+
+```tcl
+create_supply_net
+    [-domain domain]
+    [-reuse]
+    net_name
+```
+
+#### Options
+
+| Switch Name | Description | 
+| ----- | ----- |
+| `-domain` | Power domain in which the supply net is created. |
+| `-reuse` | Makes an existing supply net available in `-domain`. Requires `-domain`, and the net must have been created with `-domain`. |
+| `net_name` | Supply net name. |
+
+### Connect Supply Net
+
+This command connects a supply net to one or more ports.
+
+```tcl
+connect_supply_net
+    -ports ports
+    net_name
+```
+
+#### Options
+
+| Switch Name | Description | 
+| ----- | ----- |
+| `-ports` | List of rooted port names: supply ports, design ports, or hierarchical pin/port names (e.g. `u1/VDD`). At least one is required. |
+| `net_name` | Supply net name. |
 
 ### Create Power Switch
 
@@ -110,6 +184,9 @@ set_isolation
     [-clamp_value clamp_value]
     [-isolation_signal isolation_signal]
     [-isolation_sense isolation_sense]
+    [-isolation_supply_set isolation_supply_set]
+    [-source source]
+    [-sink sink]
     [-location location]
     [-update]
     name
@@ -124,6 +201,9 @@ set_isolation
 | `-clamp_value` | Value the isolation can drive (`0`, `1`). |
 | `-isolation_signal` | The control signal for this strategy. |
 | `-isolation_sense` | The active level of isolation control signal (`high`, `low`), default value is `high`. |
+| `-isolation_supply_set` | Supply set of the isolation cells. Stored on the strategy only. |
+| `-source` | Source supply set. Stored on the strategy only. |
+| `-sink` | Sink supply set. Stored on the strategy only. |
 | `-location` | Domain in which isolation cells are placed (`parent`, `self`, `fanout`), default value is `self`. |
 | `-update` | Only available if using existing strategy, will error if the strategy doesn't exist. |
 | `name` | Isolation strategy name. |
