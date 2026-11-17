@@ -12,15 +12,13 @@ entries:
       title: Bazel Caching
     - file: user/Bazel-targets.md
       title: Bazel Targets
-    - file: user/Build-CMake.md
-      title: Building with CMake (deprecated)
   - url: https://openroad-flow-scripts.readthedocs.io/
     title: Getting Started with the OpenROAD Flow - OpenROAD-flow-scripts
   - file: tutorials/index
     title: Tutorials
   - file: contrib/GitGuide
     title: Git Quickstart
-  - file: main/src/utl/README
+  - file: main/openroad/utl/README
     title: Man pages
   - file: user/Bazel-developer-activities.md
     title: Bazel Developer Activities
@@ -28,92 +26,94 @@ entries:
 - file: main/README2
   title: OpenROAD User Guide
   entries:
-  - file: main/src/README
+  - file: main/openroad/README
     title: OpenROAD APIs
-  - file: main/src/odb/README
+  - file: main/openroad/odb/README
     title: Database
     entries:
-      - file: main/src/odb/src/codeGenerator/README
+      - file: main/openroad/odb/src/codeGenerator/README
         title: Code Generator
-      - file: main/src/odb/test/unitTestsPython/README
+      - file: main/openroad/odb/test/unitTestsPython/README
         title: Unit Tests (Python)
-      - file: main/src/odb/doc/OpenDB-AddFieldsInDbObjects
+      - file: main/openroad/odb/doc/OpenDB-AddFieldsInDbObjects
         title: Add Fields in DB Objects
-      - file: main/src/odb/doc/LEF_Grammar
+      - file: main/openroad/odb/doc/LEF_Grammar
         title: LEF Grammar Railroad Diagrams
-      - file: main/src/odb/doc/DEF_Grammar
+      - file: main/openroad/odb/doc/DEF_Grammar
         title: DEF Grammar Railroad Diagrams
-  - file: main/src/gui/README
+  - file: main/openroad/gui/README
     title: GUI
-  - file: main/src/web/README
+  - file: main/openroad/web/README
     title: Web Viewer
-  - file: main/src/syn/README
+  - file: main/openroad/syn/README
     title: Synthesis
-  - file: main/src/par/README
+  - file: main/openroad/par/README
     title: Partition Management
-  - file: main/src/rmp/README
+  - file: main/openroad/rmp/README
     title: Restructure
     entries:
-    - file: main/src/cut/README
+    - file: main/openroad/cut/README
       title: Logic Cut
-  - file: main/src/ifp/README
+  - file: main/openroad/ifp/README
     title: Floorplan Initialization
-  - file: main/src/ppl/README
+  - file: main/openroad/ppl/README
     title: Pin Placement
-  - file: main/src/dft/README
+  - file: main/openroad/dft/README
     title: Design for Test
-  - file: main/src/pad/README
+  - file: main/openroad/pad/README
     title: Chip-level Connections
-  - file: main/src/mpl/README
+  - file: main/openroad/mpl/README
     title: Macro Placement
-  - file: main/src/tap/README
+  - file: main/openroad/tap/README
     title: Tapcell Insertion
-  - file: main/src/pdn/README
+  - file: main/openroad/pdn/README
     title: PDN Generation
     entries:
-    - file: main/src/upf/README
+    - file: main/openroad/upf/README
       title: Read UPF Utility
-    - file: main/src/psm/README
+    - file: main/openroad/psm/README
       title: IR Drop Analysis
       entries:
-      - file: main/src/psm/doc/Vsrc_description
+      - file: main/openroad/psm/doc/Vsrc_description
         title: VSRC Description
-  - file: main/src/gpl/README
+  - file: main/openroad/gpl/README
     title: Global Placement
-  - file: main/src/sta/README
+  - file: main/openroad/sta/README
     title: Static Timing Analyzer (external)
-  - file: main/src/est/README
+  - file: main/openroad/est/README
     title: Parasitics Estimation
-  - file: main/src/rsz/README
+  - file: main/openroad/rsz/README
     title: Gate Resizing
-  - file: main/src/cgt/README
+  - file: main/openroad/cgt/README
     title: Clock gating
-  - file: main/src/dpl/README
+  - file: main/openroad/dpl/README
     title: Detailed Placement
-  - file: main/src/cts/README
+  - file: main/openroad/cts/README
     title: Clock Tree Synthesis
-  - file: main/src/grt/README
+  - file: main/openroad/grt/README
     title: Global Routing
     entries:
-    - file: main/src/stt/README
+    - file: main/openroad/stt/README
       title: Rectilinear Steiner Tree
       entries:
-      - file: main/src/stt/src/flt/README
+      - file: main/openroad/stt/src/flt/README
         title: Flute
-  - file: main/src/ant/README
+  - file: main/openroad/ant/README
     title: Antenna Checker
-  - file: main/src/drt/README
+  - file: main/openroad/drt/README
     title: Detailed Routing
-  - file: main/src/fin/README
+  - file: main/openroad/fin/README
     title: Metal Fill
-  - file: main/src/rcx/README
+  - file: main/openroad/rcx/README
     title: Parasitics Extraction
     entries:
-    - file: main/src/rcx/doc/calibration
+    - file: main/openroad/rcx/doc/calibration
       title: Calibration
-  - file: main/src/ram/README
+  - file: main/openroad/fsv/README
+    title: Capacitance Field Solver
+  - file: main/openroad/ram/README
     title: RAM Generator
-  - file: main/src/wmk/README
+  - file: main/openroad/wmk/README
     title: Watermarking
   - file: user/MessagesFinal.md
     title: Messages Glossary
@@ -123,9 +123,9 @@ entries:
   entries:
   - file: contrib/DeveloperGuide
     title: Developer's Guide
-  - file: main/src/exa/README
+  - file: main/openroad/exa/README
     title: Example Tool
-  - file: main/src/tst/README
+  - file: main/openroad/tst/README
     title: Unit Test Infrastructure
   - file: contrib/CodingPractices
     title: Coding Practices

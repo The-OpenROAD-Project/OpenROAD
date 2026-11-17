@@ -1,0 +1,52 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN polygon_l ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 0 0 ) ( 0 80000 ) ( 40000 80000 ) ( 40000 40000 ) ( 80000 40000 ) ( 80000 0 ) ;
+TRACKS X 190 DO 211 STEP 380 LAYER metal2 ;
+TRACKS Y 140 DO 286 STEP 280 LAYER metal2 ;
+TRACKS X 190 DO 211 STEP 380 LAYER metal3 ;
+TRACKS Y 140 DO 286 STEP 280 LAYER metal3 ;
+COMPONENTS 0 ;
+END COMPONENTS
+PINS 7 ;
+    - bottom + NET bottom + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + FIXED ( 40090 70 ) N ;
+    - corner + NET corner + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + FIXED ( 39930 40180 ) N ;
+    - inner_right + NET inner_right + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + FIXED ( 39930 60060 ) N ;
+    - inner_top + NET inner_top + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + FIXED ( 59850 39930 ) N ;
+    - left + NET left + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + FIXED ( 70 39900 ) N ;
+    - right + NET right + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal3 ( -70 -70 ) ( 70 70 )
+        + FIXED ( 79930 20020 ) N ;
+    - top + NET top + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + FIXED ( 19950 79930 ) N ;
+END PINS
+NETS 7 ;
+    - bottom ( PIN bottom ) + USE SIGNAL ;
+    - corner ( PIN corner ) + USE SIGNAL ;
+    - inner_right ( PIN inner_right ) + USE SIGNAL ;
+    - inner_top ( PIN inner_top ) + USE SIGNAL ;
+    - left ( PIN left ) + USE SIGNAL ;
+    - right ( PIN right ) + USE SIGNAL ;
+    - top ( PIN top ) + USE SIGNAL ;
+END NETS
+END DESIGN

@@ -1,0 +1,305 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2018-2025, The OpenROAD Authors
+
+#pragma once
+
+#include <cstdint>
+#include <filesystem>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "AbstractGraphics.h"
+#include "nesterovBase.h"
+#include "odb/dbBlockCallBackObj.h"
+#include "point.h"
+#include "utl/prometheus/gauge.h"
+
+namespace utl {
+class Logger;
+}
+
+namespace odb {
+class dbInst;
+}
+
+namespace gpl {
+
+class PlacerBase;
+class PlacerBaseCommon;
+class Instance;
+class RouteBase;
+class TimingBase;
+class ClockBase;
+class PowerBase;
+
+class NesterovPlace
+{
+ public:
+  NesterovPlace();
+  NesterovPlace(const NesterovPlaceVars& npVars,
+                const std::shared_ptr<PlacerBaseCommon>& pbc,
+                const std::shared_ptr<NesterovBaseCommon>& nbc,
+                std::vector<std::shared_ptr<PlacerBase>>& pbVec,
+                std::vector<std::shared_ptr<NesterovBase>>& nbVec,
+                std::shared_ptr<RouteBase> rb,
+                std::shared_ptr<TimingBase> tb,
+                std::shared_ptr<ClockBase> cb,
+                std::shared_ptr<PowerBase> pwb,
+                std::unique_ptr<AbstractGraphics> graphics,
+                utl::Logger* log);
+  ~NesterovPlace();
+
+  // Runs the Nesterov loop from start_iter.  The result's hpwl is left 0;
+  // Replace fills it in once the placement is written back.
+  PlaceResult doNesterovPlace(int start_iter = 0);
+
+  void updateWireLengthCoef(float overflow);
+
+  void updateNextIter(int iter);
+
+  void updateDb();
+
+  void checkInvalidValues(float wireLengthGradSum, float densityGradSum);
+
+  float getWireLengthCoefX() const { return wireLengthCoefX_; }
+  float getWireLengthCoefY() const { return wireLengthCoefY_; }
+  NesterovPlaceVars& getNpVars() { return npVars_; }
+  float getAverageOverflow() const { return average_overflow_unscaled_; }
+  // The top-level (unfenced/full-die) region is always nbVec_[0].
+  NesterovBase* getTopLevelNB() const;
+
+  void setTargetOverflow(float overflow) { npVars_.targetOverflow = overflow; }
+  void setMaxIters(int limit) { npVars_.maxNesterovIter = limit; }
+  // Enables the incremental density-penalty guard for the next
+  // doNesterovPlace() call; consumed (cleared) at the start of that call.
+  void enableIncrementalDensityPenaltyGuard();
+  // Clears a divergence left over from a previous doNesterovPlace() call
+  // (e.g. one the caller intends to retry from). Without this, the leftover
+  // state trips the divergence check at the very start of the next
+  // doNesterovPlace() call before it does any work.
+  void clearDivergence();
+  // When true, a divergence is reported as a warning and doNesterovPlace()
+  // returns normally (check for PlaceStop::kDiverged) instead of logging an
+  // ERROR and throwing. Defaults to false, so a plain (non-incremental)
+  // placement run still fails loudly and immediately on divergence, as before.
+  // The caller is responsible for toggling this back off once the recoverable
+  // window has passed (e.g. incremental placement's phase 2 has no further
+  // fallback, so it should not set this).
+  void setAllowDivergenceRecovery(bool allow)
+  {
+    allow_divergence_recovery_ = allow;
+  }
+
+  void npUpdatePrevGradient(const std::shared_ptr<NesterovBase>& nb);
+  void npUpdateCurGradient(const std::shared_ptr<NesterovBase>& nb);
+  void npUpdateNextGradient(const std::shared_ptr<NesterovBase>& nb);
+
+  void resizeGCell(odb::dbInst*);
+  void moveGCell(odb::dbInst*);
+
+  void createCbkGCell(odb::dbInst*);
+  void createGNet(odb::dbNet*);
+  void createCbkITerm(odb::dbITerm*);
+
+  void destroyCbkGCell(odb::dbInst*);
+  void destroyCbkGNet(odb::dbNet*);
+  void destroyCbkITerm(odb::dbITerm*);
+
+ private:
+  friend class TimingRepairIntegrationTest;
+
+  void updateIterGraphics(int iter,
+                          const std::string& reports_dir,
+                          const std::string& routability_driven_dir,
+                          int routability_driven_count,
+                          int timing_driven_count,
+                          bool& final_routability_image_saved);
+  void runTimingDriven(int iter,
+                       const std::string& timing_driven_dir,
+                       int routability_driven_count,
+                       int& timing_driven_count,
+                       int64_t& td_accumulated_delta_area,
+                       bool is_routability_gpl_iter,
+                       int& virtual_cts_count);
+  // Re-evaluate every GCell's current gradient at curSLP, so that the next
+  // step length estimate compares gradients of the same objective.
+  void refreshCurGradients();
+  enum class DivergeAction
+  {
+    kNone,
+    kResume,
+    kStop
+  };
+  DivergeAction isDiverged(float& curA);
+  void revertToDivergeSnapshot();
+  // Unscaled overflow of the current placement, averaged over the regions.
+  float getFinalOverflow() const;
+  void routabilitySnapshot(int iter,
+                           float curA,
+                           const std::string& routability_driven_dir,
+                           int routability_driven_count,
+                           int timing_driven_count);
+  void runRoutability(int iter,
+                      int timing_driven_count,
+                      const std::string& routability_driven_dir,
+                      int& routability_driven_count,
+                      float& curA);
+  // Recover from a divergence by rolling back to the routability snapshot with
+  // a different inflation in place. Returns false when no attempt is left or
+  // there is no routability snapshot to go to.
+  bool tryRoutabilityDivergeRecovery(float& curA);
+  // True when the per-iteration cell displacement has come off its peak in
+  // every region, i.e. the placement is close to where it is going.
+  bool isPlacementSettled() const;
+  float getWorstSettleRatio() const;
+  // True once the routability snapshot is saved, while overflow is above the
+  // routability end overflow or a routability pass is still pending. The
+  // latter keeps the wait for the placement to settle a routability iteration.
+  bool isRoutabilityGplIter() const;
+
+  bool isConverged(int gpl_iter_count, int routability_gpl_iter_count);
+  // Re-derives densityPenalty_ for every region via
+  // NesterovBase::updateDensityPenaltyFromRatio() - the same formula
+  // NesterovBase::initDensity2() uses at true init, just re-triggered
+  // mid-run. Leaves wireLengthCoefX_/Y_ untouched, unlike calling init()
+  // again.
+  void applyDensityPenaltyFactor(float factor);
+  // Checked once per outer iteration while the incremental density-penalty
+  // guard is enabled. On any regression past best_overflow, escalates
+  // current_factor in place (no revert - see the .cpp for why) and keeps
+  // running; otherwise a no-op. The escalation multiplier is fixed at the
+  // best value found by a guard-parameter sweep (see the .cpp).
+  void guardIncrementalDensityPenalty(float& current_factor,
+                                      float& best_overflow,
+                                      int& retries);
+  std::string getReportsDir() const;
+  void cleanReportsDirs(const std::string& timing_driven_dir,
+                        const std::string& routability_driven_dir) const;
+  void doBackTracking(float coeff);
+  void reportResults(int nesterov_iter,
+                     int64_t original_area,
+                     int64_t td_accumulated_delta_area);
+
+  std::shared_ptr<PlacerBaseCommon> pbc_;
+  std::shared_ptr<NesterovBaseCommon> nbc_;
+  std::vector<std::shared_ptr<PlacerBase>> pbVec_;
+  std::vector<std::shared_ptr<NesterovBase>> nbVec_;
+  utl::Logger* log_ = nullptr;
+  std::shared_ptr<RouteBase> rb_;
+  std::shared_ptr<TimingBase> tb_;
+  std::shared_ptr<ClockBase> cb_;
+  std::shared_ptr<PowerBase> pwb_;
+  NesterovPlaceVars npVars_;
+  std::unique_ptr<AbstractGraphics> graphics_;
+
+  float total_sum_overflow_ = 0;
+  float total_sum_overflow_unscaled_ = 0;
+  // The average here is between regions (NB objects)
+  float average_overflow_ = 0;
+  float average_overflow_unscaled_ = 0;
+  // Set when average_overflow_unscaled_ does not describe the current
+  // placement: no update has run in this doNesterovPlace() call yet, or the
+  // placement was reverted to the snapshot since the last one.
+  bool overflow_update_is_stale_ = true;
+  // The iteration of the last overflow update, which sets its normalization.
+  int last_overflow_iter_ = 0;
+
+  // The iterations of the current doNesterovPlace() call.
+  std::vector<PlaceIteration> trace_;
+
+  // Snapshot saving for revert if diverge
+  float diverge_snapshot_average_overflow_unscaled_ = 0;
+  int64_t min_hpwl_ = INT64_MAX;
+  int diverge_snapshot_iter_ = 0;
+  bool is_min_hpwl_ = false;
+  bool is_diverge_snapshot_saved_ = false;
+  float diverge_snapshot_wl_coef_x_ = 0;
+  float diverge_snapshot_wl_coef_y_ = 0;
+  // min_hpwl_ at save time; a routability pass clears min_hpwl_ but keeps
+  // the snapshot.
+  int64_t diverge_snapshot_hpwl_ = 0;
+
+  // Repeats only help while the resumed descent keeps finding a better
+  // snapshot. Bounded so a diverging run stops on its min hpwl snapshot, not
+  // at max iterations.
+  static constexpr int kMaxDivergeReverts = 3;
+  int diverge_revert_count_ = 0;
+
+  // Snapshot saving for routability
+  bool is_routability_snapshot_saved_ = false;
+  float route_snapshot_a_ = 0;
+  float route_snapshot_wl_coef_x_ = 0;
+  float route_snapshot_wl_coef_y_ = 0;
+
+  // Two attempts because there are two inflation states to try: min
+  // congestion with routability on, then the same with it off.
+  static constexpr int kMaxRoutabilityDivergeAttempts = 2;
+  int routability_diverge_attempt_count_ = 0;
+
+  // densityPenalty stor
+  std::vector<float> densityPenaltyStor_;
+
+  // base_wcof
+  float baseWireLengthCoef_ = 0;
+
+  // wlen_cof
+  float wireLengthCoefX_ = 0;
+  float wireLengthCoefY_ = 0;
+
+  // observability metrics
+  utl::Gauge<double>* hpwl_gauge_ = nullptr;
+
+  // half-parameter-wire-length
+  int64_t prevHpwl_ = 0;
+
+  int num_region_diverged_ = 0;
+  bool is_routability_need_ = true;
+  int routability_settle_wait_start_iter_ = -1;
+  bool allow_divergence_recovery_ = false;
+
+  // Request a FISTA momentum restart on the next Nesterov iteration. Set after
+  // a non-virtual timing-driven iteration replaces topology (repair_design),
+  // so the accelerated-gradient extrapolation does not carry the pre-repair
+  // trajectory into the changed objective and diverge the placement.
+  bool reset_nesterov_momentum_ = false;
+
+  std::string divergeMsg_;
+  int divergeCode_ = 0;
+
+  int recursionCntWlCoef_ = 0;
+  int recursionCntInitSLPCoef_ = 0;
+
+  int placement_gif_key_ = -1;
+  int routability_gif_key_ = -1;
+
+  bool incremental_penalty_guard_requested_ = false;
+
+  void init();
+  void reset();
+
+  std::unique_ptr<nesterovDbCbk> db_cbk_;
+};
+
+class nesterovDbCbk : public odb::dbBlockCallBackObj
+{
+ public:
+  nesterovDbCbk(NesterovPlace* nesterov_place_);
+
+  void inDbInstCreate(odb::dbInst*) override;
+  void inDbInstDestroy(odb::dbInst*) override;
+
+  void inDbITermCreate(odb::dbITerm*) override;
+  void inDbITermDestroy(odb::dbITerm*) override;
+
+  void inDbNetCreate(odb::dbNet*) override;
+  void inDbNetDestroy(odb::dbNet*) override;
+
+  void inDbInstSwapMasterAfter(odb::dbInst*) override;
+  void inDbPostMoveInst(odb::dbInst*) override;
+
+ private:
+  NesterovPlace* nesterov_place_;
+};
+
+}  // namespace gpl

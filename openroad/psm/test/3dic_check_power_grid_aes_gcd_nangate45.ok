@@ -1,0 +1,28 @@
+[INFO ODB-0227] LEF file: 3dic_test_data/../Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: 3dic_test_data/../Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0227] LEF file: 3dic_test_data/../Nangate45/fake_bumps.lef, created 1 library cells
+[INFO ODB-0128] Design: aes_cipher_top
+[INFO ODB-0130]     Created 388 pins.
+[INFO ODB-0131]     Created 19835 components and 101835 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 39670 connections.
+[INFO ODB-0133]     Created 18908 nets and 62165 connections.
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 624 components and 2752 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 1248 connections.
+[INFO ODB-0133]     Created 581 nets and 1504 connections.
+[INFO PSM-0154] The power grid for VDD is connected.
+[INFO PSM-0154] The power grid for VSS is connected.
+[INFO PSM-0154] The power grid for VDD is connected.
+[INFO PSM-0015] Reading location of sources from: 3dic_test_data/3dic_check_power_grid_aes_gcd_nangate45_vdd.loc.
+########## IR report #################
+Net              : VDD
+Corner           : default
+Total power      : 6.79e-03 W
+Supply voltage   : 1.10e+00 V
+Worstcase voltage: 1.01e+00 V
+Average voltage  : 1.02e+00 V
+Average IR drop  : 7.64e-02 V
+Worstcase IR drop: 9.08e-02 V
+Percentage drop  : 8.25 %
+######################################
