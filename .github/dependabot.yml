@@ -34,8 +34,8 @@ updates:
 
   - package-ecosystem: "npm"
     directories:
-      - "/src/web"
-      - "/src/web/test"
+      - "/openroad/web"
+      - "/openroad/web/test"
     schedule:
       interval: "daily"
     open-pull-requests-limit: 5
