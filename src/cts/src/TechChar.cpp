@@ -1023,11 +1023,10 @@ void TechChar::initSinkBufferInputCap()
   if (!libertySinkCell) {
     logger_->error(
         CTS, 76, "No Liberty cell found for {}.", options_->getSinkBuffer());
-  } else {
-    sta::LibertyPort *input, *output;
-    libertySinkCell->bufferPorts(input, output);
-    options_->setSinkBufferInputCap(input->capacitance());
   }
+  sta::LibertyPort *input, *output;
+  libertySinkCell->bufferPorts(input, output);
+  options_->setSinkBufferInputCap(input->capacitance());
 }
 
 float TechChar::getMaxCapLimit(const std::string& buf)
