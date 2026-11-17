@@ -220,6 +220,8 @@ class lefinReader
   int rounded_cnt_;
   std::string rounding_example_;
   std::vector<int> rounding_dbu_candidates_;
+  // Layers with LEF58_VOLTAGESPACING rules, which no tool consumes yet.
+  int voltage_spacing_cnt_;
   int dbu_per_micron_;
   bool override_lef_dbu_;
   bool master_modified_;

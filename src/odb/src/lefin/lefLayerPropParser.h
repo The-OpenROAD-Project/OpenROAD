@@ -404,7 +404,7 @@ class lefTechLayerVoltageSpacing
       : layer_(layer), lefin_(lefinReader)
   {
   }
-  void parse(const std::string&);
+  bool parse(const std::string&);
 
  private:
   dbTechLayer* layer_;

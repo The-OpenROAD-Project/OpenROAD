@@ -889,7 +889,8 @@ TEST_F(Fixture, TestLef58VoltageSpacingMultipleStatements)
   layer = tech->findLayer("M2");
   ASSERT_NE(layer, nullptr);
   EXPECT_EQ(layer->getTechLayerVoltageSpacings().size(), 0);
-  EXPECT_EQ(logger_.getWarningCount(), 1);
+  // ODB-0500 for the M2 mismatch, plus one ODB-1222 for the whole file.
+  EXPECT_EQ(logger_.getWarningCount(), 2);
 }
 
 }  // namespace odb
