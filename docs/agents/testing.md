@@ -12,23 +12,23 @@ OpenROAD has two types of tests: **integration tests** (Tcl) and **unit tests** 
 
 | Registration File         | Block/Macro            |
 | ------------------------- | ---------------------- |
-| `src/<module>/test/BUILD` | `regression_test(...)` |
+| `openroad/<module>/test/BUILD` | `regression_test(...)` |
 
 See "Adding a Tool, Source File or Test in Bazel" in `docs/contrib/DeveloperGuide.md` for the `BUILD` patterns.
 
 ## Integration Tests
 
-Integration tests are Tcl scripts located at `src/<module>/test` or `src/<module>/test/tcl`.
+Integration tests are Tcl scripts located at `openroad/<module>/test` or `openroad/<module>/test/tcl`.
 
 ### Running Integration Tests
 
-Each name in a test list of `src/<module>/test/BUILD` becomes a Bazel target `<name>-tcl_test`.
+Each name in a test list of `openroad/<module>/test/BUILD` becomes a Bazel target `<name>-tcl_test`.
 A Python test becomes `<name>-py_test`.
 
 ```bash
-bazelisk test --test_output=errors //src/rsz/test:buffer_ports1-tcl_test   # one test
-bazelisk test --test_output=errors //src/rsz/test/...                      # all rsz tests
-bazelisk query 'filter("repair.*hier", //src/rsz/test:all)'                # find tests by regex
+bazelisk test --test_output=errors //openroad/rsz/test:buffer_ports1-tcl_test   # one test
+bazelisk test --test_output=errors //openroad/rsz/test/...                      # all rsz tests
+bazelisk query 'filter("repair.*hier", //openroad/rsz/test:all)'                # find tests by regex
 ```
 
 Bazel has no regex filter for test targets.
@@ -37,7 +37,7 @@ Run `bazelisk query 'filter(...)'` to list the matching targets, then pass them 
 
 ### Creating a New Integration Test
 
-Best practice reference: `src/rsz/test/repair_tie12_hier.tcl`
+Best practice reference: `openroad/rsz/test/repair_tie12_hier.tcl`
 
 #### Issue Reproduction Tests
 
@@ -69,7 +69,7 @@ For issue reproductions, keep the test case minimal and focused on the failing t
 
 5. **Generate `<test_name>.ok` file**: Create golden test log by executing the script, redirecting stdout, and removing the openroad banner at the top.
 
-6. **Registration**: add `<test_name>` to the module's compulsory list (`COMPULSORY_TESTS` or `TESTS`) in `src/<module>/test/BUILD`. Another list (`PASSFAIL_TESTS`, `PY_TESTS`) also runs by default when the module's `ALL_TESTS` includes it, or its `test/BUILD` registers it, without a `manual` tag, so check the module's `test/BUILD`. Names tagged `manual` do not run in CI by default. Copy `data` and `tags` from a neighboring entry, so `<test_name>.ok` and the inputs are in the runfiles
+6. **Registration**: add `<test_name>` to the module's compulsory list (`COMPULSORY_TESTS` or `TESTS`) in `openroad/<module>/test/BUILD`. Another list (`PASSFAIL_TESTS`, `PY_TESTS`) also runs by default when the module's `ALL_TESTS` includes it, or its `test/BUILD` registers it, without a `manual` tag, so check the module's `test/BUILD`. Names tagged `manual` do not run in CI by default. Copy `data` and `tags` from a neighboring entry, so `<test_name>.ok` and the inputs are in the runfiles
 
 ### Test Framework Flags
 - `-no_splash -no_init -exit`
@@ -80,11 +80,11 @@ For issue reproductions, keep the test case minimal and focused on the failing t
 
 ## Unit Tests
 
-Unit tests are C++ files located at `src/<module>/test/cpp`.
+Unit tests are C++ files located at `openroad/<module>/test/cpp`.
 
 ### Test Registration
-- Bazel: `src/<module>/test/BUILD` or `src/<module>/test/cpp/BUILD`
-  - Run with `bazelisk test //src/<module>/test:<name>` or `//src/<module>/test/cpp:<name>`, where `<name>` is the `cc_test` name.
+- Bazel: `openroad/<module>/test/BUILD` or `openroad/<module>/test/cpp/BUILD`
+  - Run with `bazelisk test //openroad/<module>/test:<name>` or `//openroad/<module>/test/cpp:<name>`, where `<name>` is the `cc_test` name.
 
 ## Python Unit Tests
 
