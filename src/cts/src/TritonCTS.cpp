@@ -345,7 +345,9 @@ bool TritonCTS::setupSinkClustering(ClusteringContext& ctx)
   }
   ctx.bufferMasters.insert(rootMaster);
 
-  const int dbUnits = db_->getChip()->getBlock()->getDbUnitsPerMicron();
+  // computeInsertionDelay reads block_ before runTritonCts sets it.
+  block_ = db_->getChip()->getBlock();
+  const int dbUnits = block_->getDbUnitsPerMicron();
   ctx.options
       = std::make_unique<CtsOptions>(logger_, options_->getSttBuilder());
   CtsOptions& options = *ctx.options;
