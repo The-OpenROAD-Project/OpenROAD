@@ -387,7 +387,7 @@ add_pdn_connect
 | `[-max_rows]` | Maximum number of rows when adding arrays of vias. |
 | `[-min_width_layers]` | List of pass-through (intermediate) layers in a via stack to keep at their minimum width. The via array is restricted to a single row/column in the layer's width direction so it does not grow a wide metal patch that blocks adjacent routing tracks; the metal can still extend along the routing direction to meet min-area and to bridge to an on-grid neighbor. |
 | `[-ongrid]` | List of intermediate layers in a via stack to snap onto a routing grid. |
-| `[-split_cuts]` | Specifies layers to use split cuts on with an associated pitch, for example `{metal3 0.380 metal5 0.500}`. |
+| `[-split_cuts]` | Specifies layers to use split cuts on with an associated pitch, for example `{metal3 0.380 metal5 0.500}`. The pitch is the minimum distance between cuts and cannot be less than the layer pitch. On `-ongrid` layers, each cut is placed on the next routing track at least that distance away. |
 | `[-split_cuts_staggered]` | Specified if the split cuts should be staggered, ie. the ground vias will appear with an offset of pitch / 2. |
 
 ### Repairing power grid vias after detailed routing

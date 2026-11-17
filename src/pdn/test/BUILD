@@ -500,6 +500,7 @@ cc_test(
         "//src/odb/src/db",
         "//src/pdn",
         "//src/tst",
+        "//src/tst:db_fixture",
         "//src/tst:physical_builder",
         "//src/utl",
         "@googletest//:gtest",
