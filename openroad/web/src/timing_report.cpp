@@ -552,6 +552,7 @@ SlackHistogramResult TimingReport::getSlackHistogram(
       group_slacks.emplace_back(group, std::vector<float>());
     }
     std::vector<const EndpointSlacks*> groups;
+    groups.reserve(per_group.size());
     for (const EndpointSlacks& slacks : per_group) {
       groups.push_back(&slacks);
     }
