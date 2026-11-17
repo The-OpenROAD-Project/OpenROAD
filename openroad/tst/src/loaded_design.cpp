@@ -13,7 +13,6 @@
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "odb/lefin.h"
-#include "sta/MinMax.hh"
 #include "sta/Sta.hh"
 #include "sta/VerilogReader.hh"
 #include "sta/VerilogWriter.hh"
@@ -63,8 +62,6 @@ odb::dbLib* loadTechnology(Technology tech,
   const TechnologyFiles files = technologyFiles(tech);
 
   sta->readLiberty(getRunfilePath(files.liberty).c_str(),
-                   sta->findScene("default"),
-                   sta::MinMaxAll::all(),
                    /*infer_latches=*/false);
 
   odb::lefin lef_reader(db, logger, /*ignore_non_routing_layers=*/false);

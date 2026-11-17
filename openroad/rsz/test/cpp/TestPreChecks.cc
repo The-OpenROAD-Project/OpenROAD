@@ -33,7 +33,8 @@ class TestPreChecks : public tst::IntegratedFixture
 
   void SetUp() override
   {
-    sta_->makeScenes({"fast", "slow"});
+    sta_->makeScene("fast", "default", {}, {}, "", "");
+    sta_->makeScene("slow", "default", {}, {}, "", "");
     fast_ = sta_->findScene("fast");
     slow_ = sta_->findScene("slow");
     readLiberty("_main/openroad/rsz/test/Nangate45/Nangate45_fast.lib", fast_);

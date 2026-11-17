@@ -40,17 +40,19 @@ lassign [lrange $cases $offset [expr { $offset + 3 }]] \
 read_lef sky130hd/sky130hd.tlef
 read_lef sky130hd/sky130_fd_sc_hd_merged.lef
 read_lef ${test_name}.lef
-define_corners {*}$corners
 foreach corner $corners {
-  read_liberty -corner $corner [dict get $std_libs $corner]
+  set std_lib [dict get $std_libs $corner]
+  read_liberty $std_lib
   set limit [expr { $corner eq "tt" ? $tt_limit : $ss_limit }]
   set macro_file [make_result_file ${test_name}_${corner}.lib]
   set stream [open $macro_file w]
   puts $stream [string map [list macro_tt macro_$corner \
     {max_transition : 0.04} "max_transition : $limit"] $macro_template]
   close $stream
-  read_liberty -corner $corner $macro_file
+  read_liberty $macro_file
+  define_scene $corner -liberty [list $std_lib $macro_file]
 }
+set_scene [lindex $corners 0]
 read_def ${test_name}.def
 set_wire_rc -layer met2
 estimate_parasitics -placement

@@ -9,6 +9,7 @@
 #include <cstring>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -580,7 +581,7 @@ int AbcLibraryFactory::StaTimeUnitToAbcInt(sta::Unit* time_unit)
 }
 
 int AbcLibraryFactory::ScaleAbbreviationToExponent(
-    const std::string& scale_abbreviation)
+    const std::string_view scale_abbreviation)
 {
   if (scale_abbreviation == "m") {
     return 3;

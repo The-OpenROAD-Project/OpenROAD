@@ -111,6 +111,7 @@ proc resynth { args } {
   sta::parse_key_args "resynth" args \
     keys {-corner} \
     flags {}
+  ord::scene_from_corner_arg keys
   set corner [sta::parse_scene keys]
   rmp::resynth_cmd $corner
 }
@@ -130,6 +131,7 @@ proc resynth_annealing { args } {
     keys {-corner -iters -revert_after -seed -temp -initial_ops -slack_threshold} \
     flags {}
 
+  ord::scene_from_corner_arg keys
   set corner [sta::parse_scene keys]
   if { [info exists keys(-slack_threshold)] } {
     rmp::set_slack_threshold $keys(-slack_threshold)
@@ -172,6 +174,7 @@ proc resynth_genetic { args } {
               -tournament_size -tournament_probability -initial_ops -slack_threshold} \
     flags {}
 
+  ord::scene_from_corner_arg keys
   set corner [sta::parse_scene keys]
   if { [info exists keys(-slack_threshold)] } {
     rmp::set_slack_threshold $keys(-slack_threshold)

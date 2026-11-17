@@ -355,19 +355,24 @@ estimate_target_density
 | `-pad_left` | Set left padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
 | `-pad_right` | Set right padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
 
-## Useful Developer Commands
+### Uniform Target Density
 
-If you are a developer, you might find these useful. More details can be found in the [source file](./src/replace.cpp) or the [swig file](./src/replace.i).
+This command returns the lowest target density at which the movable instances fill the free area of the core: the movable area, with the cell padding, over the core area minus the fixed instances. The flow uses it as the lower bound of the placement density.
 
+```tcl
+get_global_placement_uniform_density
+    [-pad_left pad_left]\
+    [-pad_right pad_right]\
+    [-macro_area_in_denominator]
 ```
-# adds padding and gets global placement uniform target density
-get_global_placement_uniform_density -pad_left -pad_right 
-```
-Example scripts demonstrating how to run `gpl` on a sample design on `core01` as follows:
 
-```shell
-./test/core01.tcl
-```
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-pad_left` | Set left padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
+| `-pad_right` | Set right padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
+| `-macro_area_in_denominator` | Put the macro area in the denominator, with the fixed instances, instead of in the movable area. For a call before macro placement. The default setting is disabled. |
 
 ## Regression tests
 

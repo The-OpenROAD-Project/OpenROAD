@@ -316,6 +316,7 @@ TESTS = [
 ]
 
 PASSFAIL_TESTS = [
+    "remove_buffers_nomatch",
     "repair_timing_fixed",
     "repair_design_fixed_driver",
     "repair_slew_corner",
