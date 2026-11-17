@@ -13,7 +13,7 @@ package(default_visibility = ["//visibility:public"])
 # Unlike KokkosFFT's CMake, this does not link FFTW's OpenMP/threads library:
 # @fftw does not build one. A plan on Kokkos::DefaultHostExecutionSpace
 # (Kokkos::OpenMP here) calls fftw_init_threads and would fail to link, so
-# host FFTs must use Kokkos::Serial (see src/gpl/src/gpu/dct.cpp).
+# host FFTs must use Kokkos::Serial (see openroad/gpl/src/gpu/dct.cpp).
 kokkos_fft_config(name = "config")
 
 cc_library(

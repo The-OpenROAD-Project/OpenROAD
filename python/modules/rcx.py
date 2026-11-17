@@ -2,4 +2,4 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 import _openroad_loader  # noqa: F401  (must precede the wrapper import)
-from src.rcx.rcx_py import *
+from openroad.rcx.rcx_py import *

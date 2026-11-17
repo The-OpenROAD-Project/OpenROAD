@@ -29,14 +29,14 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         id: cache-tools
         with:
-          path: src/odb/doc/tools
+          path: openroad/odb/doc/tools
           key: railroad-tools-ebnf-v0.73-rr-2.6
 
       - name: Validate cached railroad tools
         id: validate-tools
         run: |
           set -euo pipefail
-          tools_dir="$GITHUB_WORKSPACE/src/odb/doc/tools"
+          tools_dir="$GITHUB_WORKSPACE/openroad/odb/doc/tools"
           ebnf_war="$tools_dir/ebnf-convert.war"
           rr_war="$tools_dir/rr.war"
 
@@ -62,19 +62,19 @@ jobs:
           git clone --depth 1 --branch v0.73 \
             https://github.com/GuntherRademacher/ebnf-convert.git /tmp/ebnf-convert
           cd /tmp/ebnf-convert && ./gradlew war
-          mkdir -p $GITHUB_WORKSPACE/src/odb/doc/tools
+          mkdir -p $GITHUB_WORKSPACE/openroad/odb/doc/tools
           cp build/libs/ebnf-convert.war \
-            $GITHUB_WORKSPACE/src/odb/doc/tools/ebnf-convert.war
-          curl -fsSL -o $GITHUB_WORKSPACE/src/odb/doc/tools/rr.war \
+            $GITHUB_WORKSPACE/openroad/odb/doc/tools/ebnf-convert.war
+          curl -fsSL -o $GITHUB_WORKSPACE/openroad/odb/doc/tools/rr.war \
             https://repo1.maven.org/maven2/de/bottlecaps/rr/rr-lib/2.6/rr-lib-2.6.jar
 
       - name: Regenerate railroad diagram SVGs
-        run: python3 src/odb/doc/generate_railroad_diagrams.py
+        run: python3 openroad/odb/doc/generate_railroad_diagrams.py
 
       - name: Detect diagram changes
         id: diagram-changes
         run: |
-          if [ -z "$(git status --porcelain src/odb/doc/images/)" ]; then
+          if [ -z "$(git status --porcelain openroad/odb/doc/images/)" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -94,4 +94,4 @@ jobs:
             Triggered by a change to `lef.y` or `def.y`.
           labels: automated
           add-paths: |
-            src/odb/doc/images/
+            openroad/odb/doc/images/
