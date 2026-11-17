@@ -190,14 +190,16 @@ void FeasibilityChecker::checkVirtualUtilization()
       = total_area / static_cast<double>(floorplan_area);
 
   if (total_area >= floorplan_area) {
-    const std::string table = areasTable(
-        {{fmt::format("Std cells at utilization {:.2f}", target_utilization_),
-          inflated_std_cell_area},
-         {"Macros with halos", unfixed_macros_area},
-         {"Fixed macros", fixed_macros_area},
-         {"Blockages", blockages_area},
-         {"Total", total_area},
-         {"Floorplan", floorplan_area}});
+    const std::string std_cells_label
+        = fmt::format("Std cells at utilization {:.2f}", target_utilization_);
+    const std::string table = areasTable({
+        {std_cells_label, inflated_std_cell_area},
+        {"Macros with halos", unfixed_macros_area},
+        {"Fixed macros", fixed_macros_area},
+        {"Blockages", blockages_area},
+        {"Total", total_area},
+        {"Floorplan", floorplan_area},
+    });
     logger_->warn(MPL,
                   7,
                   "The virtual utilization is {:.2f}: the total area exceeds "
@@ -230,7 +232,7 @@ std::string FeasibilityChecker::areasTable(
     table += fmt::format(
         "\n  {:<30} | {:>12.2f}", label, block_->dbuAreaToMicrons(area));
   }
-  table += "\n";
+  table += '\n';
 
   return table;
 }
