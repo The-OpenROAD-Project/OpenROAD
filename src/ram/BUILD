@@ -40,6 +40,7 @@ cc_library(
         "//src/ppl",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "@fmt",
         "@tcl_lang//:tcl",
     ],
 )
