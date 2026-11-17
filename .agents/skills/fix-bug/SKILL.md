@@ -31,19 +31,19 @@ Extract from the issue:
 
 If `$ARGUMENTS` is an error code, search for it directly:
 ```bash
-grep -rn "ERROR_CODE" src/MODULE/src/
+grep -rn "ERROR_CODE" openroad/MODULE/src/
 ```
 
 ## 2. Trace the root cause
 
 Follow OpenROAD's "trace bugs upstream" principle: find where the bad
 data is **created**, not where it is **reported**. The message ID
-(`grep -rn "ERROR_ID" src/`) marks where it is reported; the bug is
+(`grep -rn "ERROR_ID" openroad/`) marks where it is reported; the bug is
 often in a different function or file, wherever the offending value is
 set.
 
-Prefer a fix in OpenROAD code (e.g., `src/dbSta/`, `src/rsz/`) over one
-in `src/sta/`. OpenSTA is a separate submodule: changing it takes a PR
+Prefer a fix in OpenROAD code (e.g., `openroad/dbSta/`, `openroad/rsz/`) over one
+in `openroad/sta/`. OpenSTA is a separate submodule: changing it takes a PR
 in the OpenSTA repo and then a submodule update here, so ask before
 modifying it, and do so only when the root cause is there and a fix on
 the OpenROAD side would be a workaround.
@@ -67,7 +67,7 @@ registering in Bazel.
 ## 5. Format and commit
 
 ```bash
-# Format C++ with CI's pinned clang-format (skips src/sta and *.i)
+# Format C++ with CI's pinned clang-format (skips openroad/sta and *.i)
 bazelisk run //:tidy_cc
 
 # Stage and commit with DCO sign-off
@@ -79,9 +79,9 @@ Fixes #ISSUE_NUMBER"
 
 ## 6. Verify
 
-- [ ] Test passes: `bazelisk test --test_output=errors //src/MODULE/test:TEST_NAME-tcl_test`
+- [ ] Test passes: `bazelisk test --test_output=errors //openroad/MODULE/test:TEST_NAME-tcl_test`
 - [ ] No unintended changes: `git diff HEAD`
 - [ ] Test registered in Bazel `BUILD`
-- [ ] No `src/sta/` changes, unless agreed with the user
+- [ ] No `openroad/sta/` changes, unless agreed with the user
 - [ ] C++ files formatted with `bazelisk run //:tidy_cc`
 - [ ] Commit is signed off (`-s`)
