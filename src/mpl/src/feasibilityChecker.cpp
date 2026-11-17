@@ -41,10 +41,24 @@ void FeasibilityChecker::run()
     return;
   }
 
-  checkTargetUtilization();
   checkMacrosFitInCore();
   checkMovableCellsFit();
-  checkVirtualUtilization();
+
+  // Inflating the std cell area needs a valid target utilization.
+  if (validTargetUtilization()) {
+    checkVirtualUtilization();
+  } else {
+    logger_->warn(MPL,
+                  14,
+                  "The target utilization {:.2f} is outside (0, 1].",
+                  target_utilization_);
+
+    feasible_ = false;
+  }
+
+  if (!feasible_) {
+    logger_->error(MPL, 48, "The macro placement problem is infeasible.");
+  }
 }
 
 void FeasibilityChecker::checkUnfixedMacros()
@@ -57,17 +71,12 @@ void FeasibilityChecker::checkUnfixedMacros()
   }
 }
 
-void FeasibilityChecker::checkTargetUtilization() const
+bool FeasibilityChecker::validTargetUtilization() const
 {
-  if (target_utilization_ <= 0.0f || target_utilization_ > 1.0f) {
-    logger_->error(MPL,
-                   14,
-                   "The target utilization {:.2f} is outside (0, 1].",
-                   target_utilization_);
-  }
+  return target_utilization_ > 0.0f && target_utilization_ <= 1.0f;
 }
 
-void FeasibilityChecker::checkMacrosFitInCore() const
+void FeasibilityChecker::checkMacrosFitInCore()
 {
   const odb::Rect& core = block_->getCoreArea();
   for (const auto& [inst, hard_macro] : hard_macros_) {
@@ -77,11 +86,13 @@ void FeasibilityChecker::checkMacrosFitInCore() const
 
     if (hard_macro->getWidth() > core.dx()
         || hard_macro->getHeight() > core.dy()) {
-      logger_->error(MPL,
-                     6,
-                     "Found macro that does not fit in the core.\nName: {}\n{}",
-                     inst->getName(),
-                     macroAndCoreDimensionsTable(hard_macro.get(), core));
+      logger_->warn(MPL,
+                    6,
+                    "Found macro that does not fit in the core.\nName: {}\n{}",
+                    inst->getName(),
+                    macroAndCoreDimensionsTable(hard_macro.get(), core));
+
+      feasible_ = false;
     }
   }
 }
@@ -104,7 +115,7 @@ std::string FeasibilityChecker::macroAndCoreDimensionsTable(
   return table;
 }
 
-void FeasibilityChecker::checkMovableCellsFit() const
+void FeasibilityChecker::checkMovableCellsFit()
 {
   int64_t occupied_area = 0;
   for (odb::dbInst* inst : block_->getInsts()) {
@@ -130,8 +141,10 @@ void FeasibilityChecker::checkMovableCellsFit() const
   occupied_area += blockagesArea();
 
   if (occupied_area > floorplan_shape_.area()) {
-    logger_->error(
+    logger_->warn(
         MPL, 65, "The movable cells do not fit in the macro placement area.");
+
+    feasible_ = false;
   }
 }
 
@@ -161,7 +174,7 @@ int64_t FeasibilityChecker::blockagesArea() const
 
 // Mirrors the check the root cluster placement makes before each run, with
 // the macros' halo areas standing in for their tilings.
-void FeasibilityChecker::checkVirtualUtilization() const
+void FeasibilityChecker::checkVirtualUtilization()
 {
   const int64_t std_cell_area = stdCellArea();
   const int64_t hard_area
@@ -173,21 +186,22 @@ void FeasibilityChecker::checkVirtualUtilization() const
                                      / static_cast<double>(floorplan_area);
 
   if (hard_area + inflated_std_cell_area >= floorplan_area) {
-    logger_->error(MPL,
-                   7,
-                   "The virtual utilization is {:.2f}: the std cells at the "
-                   "target utilization {:.2f} ({:.2f}um^2) plus the macros "
-                   "with halos, the fixed macros and the blockages "
-                   "({:.2f}um^2) exceed the floorplan area ({:.2f}um^2).",
-                   virtual_utilization,
-                   target_utilization_,
-                   block_->dbuAreaToMicrons(inflated_std_cell_area),
-                   block_->dbuAreaToMicrons(hard_area),
-                   block_->dbuAreaToMicrons(floorplan_area));
-  }
+    logger_->warn(MPL,
+                  7,
+                  "The virtual utilization is {:.2f}: the std cells at the "
+                  "target utilization {:.2f} ({:.2f}um^2) plus the macros "
+                  "with halos, the fixed macros and the blockages "
+                  "({:.2f}um^2) exceed the floorplan area ({:.2f}um^2).",
+                  virtual_utilization,
+                  target_utilization_,
+                  block_->dbuAreaToMicrons(inflated_std_cell_area),
+                  block_->dbuAreaToMicrons(hard_area),
+                  block_->dbuAreaToMicrons(floorplan_area));
 
-  // Without std cells there is no density to adjust.
-  if (std_cell_area > 0 && virtual_utilization > kVirtualUtilWarnThreshold) {
+    feasible_ = false;
+  } else if (std_cell_area > 0
+             && virtual_utilization > kVirtualUtilWarnThreshold) {
+    // Without std cells there is no density to adjust.
     logger_->warn(MPL,
                   9,
                   "The virtual utilization {:.2f} is above {:.1f}. The "

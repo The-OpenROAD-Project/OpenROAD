@@ -32,16 +32,16 @@ class FeasibilityChecker
  private:
   void checkUnfixedMacros();
 
-  void checkTargetUtilization() const;
+  bool validTargetUtilization() const;
 
-  void checkMacrosFitInCore() const;
+  void checkMacrosFitInCore();
   std::string macroAndCoreDimensionsTable(const HardMacro* hard_macro,
                                           const odb::Rect& core) const;
 
-  void checkMovableCellsFit() const;
+  void checkMovableCellsFit();
   int64_t blockagesArea() const;
 
-  void checkVirtualUtilization() const;
+  void checkVirtualUtilization();
   int64_t stdCellArea() const;
   int64_t unfixedMacrosArea() const;
   int64_t fixedMacrosArea() const;
@@ -57,6 +57,7 @@ class FeasibilityChecker
   float target_utilization_{0.0f};
 
   bool found_macros_to_place_{false};
+  bool feasible_{true};
 };
 
 }  // namespace mpl
