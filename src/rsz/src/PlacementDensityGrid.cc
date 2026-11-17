@@ -129,10 +129,12 @@ PlacementDensityGrid::BinRange PlacementDensityGrid::binsCovering(
 {
   // The upper edges are exclusive: a rect ending on a bin boundary does not
   // reach into the next bin.
-  return {.x_lo = (rect.xMin() - bin_origin_.x()) / bin_width_,
-          .y_lo = (rect.yMin() - bin_origin_.y()) / bin_height_,
-          .x_hi = (rect.xMax() - 1 - bin_origin_.x()) / bin_width_,
-          .y_hi = (rect.yMax() - 1 - bin_origin_.y()) / bin_height_};
+  return {
+      .x_lo = (rect.xMin() - bin_origin_.x()) / bin_width_,
+      .y_lo = (rect.yMin() - bin_origin_.y()) / bin_height_,
+      .x_hi = (rect.xMax() - 1 - bin_origin_.x()) / bin_width_,
+      .y_hi = (rect.yMax() - 1 - bin_origin_.y()) / bin_height_,
+  };
 }
 
 void PlacementDensityGrid::build()

@@ -290,10 +290,12 @@ TEST_F(PlacementDensityGridTest, RegionQueries)
   PlacementDensityGrid grid(block_, core().ll(), kBinWidth, kBinHeight);
 
   // Regions made of whole bins are exact.
-  for (const Rect& region : {core(),
-                             Rect(siteX(0), rowY(0), siteX(10), rowY(1)),
-                             Rect(siteX(0), rowY(3), siteX(10), rowY(4)),
-                             Rect(siteX(10), rowY(2), siteX(50), rowY(8))}) {
+  for (const Rect& region : {
+           core(),
+           Rect(siteX(0), rowY(0), siteX(10), rowY(1)),
+           Rect(siteX(0), rowY(3), siteX(10), rowY(4)),
+           Rect(siteX(10), rowY(2), siteX(50), rowY(8)),
+       }) {
     const PlacementDensity density = grid.getDensity(region);
     EXPECT_EQ(density.region_area, region.area());
     EXPECT_DOUBLE_EQ(density.instance_area,
@@ -321,8 +323,10 @@ TEST_F(PlacementDensityGridTest, RegionQueries)
                    static_cast<double>(area(wide_cell_)));
 
   // Nothing outside the core, or in an empty region.
-  for (const Rect& region : {Rect(0, 0, kCoreLx, kCoreLy),
-                             Rect(siteX(5), rowY(5), siteX(5), rowY(6))}) {
+  for (const Rect& region : {
+           Rect(0, 0, kCoreLx, kCoreLy),
+           Rect(siteX(5), rowY(5), siteX(5), rowY(6)),
+       }) {
     const PlacementDensity density = grid.getDensity(region);
     EXPECT_EQ(density.region_area, 0);
     EXPECT_EQ(density.instance_area, 0);
@@ -332,7 +336,8 @@ TEST_F(PlacementDensityGridTest, RegionQueries)
 
 TEST_F(PlacementDensityGridTest, BinsMatchTheDbUnderRandomEdits)
 {
-  std::mt19937 rng(1);
+  // A fixed seed keeps the edit sequence reproducible.
+  std::mt19937 rng(1);  // NOLINT(bugprone-random-generator-seed)
   const auto pick = [&rng](const int lo, const int hi) {
     return std::uniform_int_distribution<int>(lo, hi)(rng);
   };
@@ -341,16 +346,20 @@ TEST_F(PlacementDensityGridTest, BinsMatchTheDbUnderRandomEdits)
   const auto random_y = [&] { return pick(0, kCoreUy); };
   const std::vector<dbMaster*> masters
       = {cell_, wide_cell_, tap_, endcap_, filler_, pad_, cover_, macro_};
-  const std::vector<dbPlacementStatus> statuses = {dbPlacementStatus::PLACED,
-                                                   dbPlacementStatus::UNPLACED,
-                                                   dbPlacementStatus::FIRM,
-                                                   dbPlacementStatus::LOCKED,
-                                                   dbPlacementStatus::COVER};
-  const std::vector<dbOrientType> orients = {dbOrientType::R0,
-                                             dbOrientType::R90,
-                                             dbOrientType::R180,
-                                             dbOrientType::MX,
-                                             dbOrientType::MYR90};
+  const std::vector<dbPlacementStatus> statuses = {
+      dbPlacementStatus::PLACED,
+      dbPlacementStatus::UNPLACED,
+      dbPlacementStatus::FIRM,
+      dbPlacementStatus::LOCKED,
+      dbPlacementStatus::COVER,
+  };
+  const std::vector<dbOrientType> orients = {
+      dbOrientType::R0,
+      dbOrientType::R90,
+      dbOrientType::R180,
+      dbOrientType::MX,
+      dbOrientType::MYR90,
+  };
 
   std::vector<dbInst*> insts;
   insts.reserve(60);
