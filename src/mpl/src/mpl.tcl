@@ -31,6 +31,7 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -write_macro_placement file_name \
                                           -keep_clustering_data \
                                           -pin_aware_channels \
+                                          -snap_to_site_grid \
                                         }
 proc rtl_macro_placer { args } {
   sta::parse_key_args "rtl_macro_placer" args \
@@ -46,7 +47,7 @@ proc rtl_macro_placer { args } {
          -min_ar \
          -report_directory \
          -write_macro_placement } \
-    flags {-keep_clustering_data -pin_aware_channels}
+    flags {-keep_clustering_data -pin_aware_channels -snap_to_site_grid}
 
   sta::check_argc_eq0 "rtl_macro_placer" $args
 
@@ -123,13 +124,14 @@ sta::define_cmd_args "place_macro" {-macro_name macro_name \
                                     -location location \
                                     [-orientation orientation] \
                                     [-exact] \
-                                    [-allow_overlap]
+                                    [-allow_overlap] \
+                                    [-snap_to_site_grid]
 }
 
 proc place_macro { args } {
   sta::parse_key_args "place_macro" args \
     keys {-macro_name -location -orientation} \
-    flags {-exact -allow_overlap}
+    flags {-exact -allow_overlap -snap_to_site_grid}
 
   if { [info exists keys(-macro_name)] } {
     set macro_name $keys(-macro_name)
@@ -159,8 +161,14 @@ proc place_macro { args } {
 
   set exact [info exists flags(-exact)]
   set allow_overlap [info exists flags(-allow_overlap)]
+  set snap_to_site_grid [info exists flags(-snap_to_site_grid)]
 
-  mpl::place_macro $macro $x_origin $y_origin $orientation $exact $allow_overlap
+  if { $exact && $snap_to_site_grid } {
+    utl::error MPL 81 "-exact and -snap_to_site_grid cannot be used together."
+  }
+
+  mpl::place_macro $macro $x_origin $y_origin $orientation $exact $allow_overlap \
+    $snap_to_site_grid
 }
 
 sta::define_cmd_args "set_macro_guidance_region" { -macro_name macro_name \

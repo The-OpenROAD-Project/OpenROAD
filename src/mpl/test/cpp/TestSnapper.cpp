@@ -23,6 +23,29 @@ class TestSnapper : public MplTest
     snapper_ = std::make_unique<Snapper>(&logger_);
   }
 
+  // One core row along the bottom of the die, starting at (x, y)
+  void createCoreRow(const int site_width,
+                     const int site_height,
+                     const int x,
+                     const int y)
+  {
+    odb::dbSite* site = odb::dbSite::create(db_->findLib("lib"), "core_site");
+    site->setWidth(site_width);
+    site->setHeight(site_height);
+    site->setClass(odb::dbSiteClass::CORE);
+    db_->getChip()->getBlock()->setCoreArea(
+        odb::Rect(x, y, die_width_, die_height_));
+    odb::dbRow::create(db_->getChip()->getBlock(),
+                       "row",
+                       site,
+                       x,
+                       y,
+                       odb::dbOrientType::R0,
+                       odb::dbRowDir::HORIZONTAL,
+                       die_width_ / site_width,
+                       site_width);
+  }
+
   std::unique_ptr<Snapper> snapper_;
 };
 
@@ -538,6 +561,210 @@ TEST_F(TestSnapper, SingleLayerWithUnalignablePinThrowsException)
     EXPECT_STREQ(e.what(), "MPL-0005");
   } catch (...) {
     FAIL() << "Unexpected exception (other than MPL-0005)";
+  }
+}
+
+// Snaps both directions to the rows' site grid, choosing the closest site
+TEST_F(TestSnapper, SiteGrid)
+{
+  db_->getTech()->setManufacturingGrid(1);
+  createCoreRow(100, 200, 10, 20);
+
+  odb::dbMaster* macro_master
+      = odb::dbMaster::create(db_->findLib("lib"), "macro_master");
+  macro_master->setFrozen();
+
+  odb::dbInst* macro
+      = odb::dbInst::create(db_->getChip()->getBlock(), macro_master, "macro");
+  macro->setOrigin(1014, 1019);
+  snapper_->setMacro(macro);
+  snapper_->setSnapToSiteGrid(true);
+  snapper_->snapMacro();
+  // 10 (row origin) + 10 sites of 100
+  EXPECT_EQ(macro->getOrigin().x(), 1010);
+  // 20 (row origin) + 5 sites of 200
+  EXPECT_EQ(macro->getOrigin().y(), 1020);
+}
+
+// Walks the sites until one aligns the pin with the track-grid
+TEST_F(TestSnapper, SiteGridAlignsPin)
+{
+  db_->getTech()->setManufacturingGrid(1);
+  createCoreRow(54, 270, 0, 0);
+
+  const int track_pitch = 36;
+  odb::dbTechLayer* horizontal_layer = odb::dbTechLayer::create(
+      db_->getTech(), "H1", odb::dbTechLayerType::DEFAULT);
+  horizontal_layer->setDirection(odb::dbTechLayerDir::HORIZONTAL);
+  odb::dbTrackGrid* track
+      = odb::dbTrackGrid::create(db_->getChip()->getBlock(), horizontal_layer);
+  track->addGridPatternY(0, die_height_ / track_pitch, track_pitch);
+
+  odb::dbMaster* macro_master
+      = odb::dbMaster::create(db_->findLib("lib"), "macro_master");
+  macro_master->setHeight(10000);
+  macro_master->setWidth(10000);
+  macro_master->setType(odb::dbMasterType::BLOCK);
+
+  // Pin center at 18 from the origin: on a track for odd sites only
+  odb::dbMTerm* mterm = odb::dbMTerm::create(
+      macro_master, "pin", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+  odb::dbBox::create(
+      odb::dbMPin::create(mterm), horizontal_layer, 0, 0, 20, 36);
+
+  macro_master->setFrozen();
+
+  odb::dbInst* macro
+      = odb::dbInst::create(db_->getChip()->getBlock(), macro_master, "macro");
+  macro->setOrigin(1500, 1500);
+
+  snapper_->setMacro(macro);
+  snapper_->setSnapToSiteGrid(true);
+  snapper_->snapMacro();
+
+  // Closest site to 1500
+  EXPECT_EQ(macro->getOrigin().x(), 1512);
+  // The closest site, 1620, leaves the pin off-track; 1890 (origin) + 18 (pin
+  // center) equals 1908, a multiple of 36
+  EXPECT_EQ(macro->getOrigin().y(), 1890);
+}
+
+// Falls back to the track-grid when no site position aligns the pin
+TEST_F(TestSnapper, SiteGridFallsBackToTracks)
+{
+  db_->getTech()->setManufacturingGrid(1);
+  createCoreRow(54, 200, 0, 0);
+
+  const int track_pitch = 36;
+  odb::dbTechLayer* horizontal_layer = odb::dbTechLayer::create(
+      db_->getTech(), "H1", odb::dbTechLayerType::DEFAULT);
+  horizontal_layer->setDirection(odb::dbTechLayerDir::HORIZONTAL);
+  odb::dbTrackGrid* track
+      = odb::dbTrackGrid::create(db_->getChip()->getBlock(), horizontal_layer);
+  track->addGridPatternY(0, die_height_ / track_pitch, track_pitch);
+
+  odb::dbMaster* macro_master
+      = odb::dbMaster::create(db_->findLib("lib"), "macro_master");
+  macro_master->setHeight(10000);
+  macro_master->setWidth(10000);
+  macro_master->setType(odb::dbMasterType::BLOCK);
+
+  // Pin center at 25 from the origin: never on a track from a site of 200
+  odb::dbMTerm* mterm = odb::dbMTerm::create(
+      macro_master, "pin", odb::dbIoType::INPUT, odb::dbSigType::SIGNAL);
+  odb::dbBox::create(
+      odb::dbMPin::create(mterm), horizontal_layer, 0, 0, 20, 50);
+
+  macro_master->setFrozen();
+
+  odb::dbInst* macro
+      = odb::dbInst::create(db_->getChip()->getBlock(), macro_master, "macro");
+  macro->setOrigin(1500, 1500);
+
+  snapper_->setMacro(macro);
+  snapper_->setSnapToSiteGrid(true);
+  snapper_->snapMacro();
+
+  // Closest site to 1500
+  EXPECT_EQ(macro->getOrigin().x(), 1512);
+  // Same result as the track-grid snap from 1500 (see SingleLayer)
+  EXPECT_EQ(macro->getOrigin().y(), 1523);
+}
+
+// Skips the nearest site when it would push the macro out of the core
+TEST_F(TestSnapper, SiteGridKeepsMacroInCore)
+{
+  db_->getTech()->setManufacturingGrid(1);
+  createCoreRow(100, 200, 0, 0);
+
+  odb::dbMaster* macro_master
+      = odb::dbMaster::create(db_->findLib("lib"), "macro_master");
+  macro_master->setHeight(10000);
+  macro_master->setWidth(10000);
+  macro_master->setType(odb::dbMasterType::BLOCK);
+  macro_master->setFrozen();
+
+  odb::dbInst* macro
+      = odb::dbInst::create(db_->getChip()->getBlock(), macro_master, "macro");
+  macro->setOrigin(1000, die_height_ - 10000 + 110);
+  snapper_->setMacro(macro);
+  snapper_->setSnapToSiteGrid(true);
+  snapper_->snapMacro();
+
+  // The nearest site, 490200, would leave the top 200 above the core
+  EXPECT_EQ(macro->getOrigin().y(), 490000);
+}
+
+// Skips the nearest site when the macro would overlap a placed macro there
+TEST_F(TestSnapper, SiteGridAvoidsOverlap)
+{
+  db_->getTech()->setManufacturingGrid(1);
+  createCoreRow(100, 200, 0, 0);
+
+  odb::dbMaster* macro_master
+      = odb::dbMaster::create(db_->findLib("lib"), "macro_master");
+  macro_master->setHeight(10000);
+  macro_master->setWidth(10000);
+  macro_master->setType(odb::dbMasterType::BLOCK);
+  macro_master->setFrozen();
+
+  odb::dbInst* placed
+      = odb::dbInst::create(db_->getChip()->getBlock(), macro_master, "placed");
+  placed->setOrigin(0, 0);
+  placed->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+
+  odb::dbInst* macro
+      = odb::dbInst::create(db_->getChip()->getBlock(), macro_master, "macro");
+  macro->setOrigin(9940, 0);
+  snapper_->setMacro(macro);
+  snapper_->setSnapToSiteGrid(true);
+  snapper_->snapMacro();
+
+  // The nearest site, 9900, overlaps the placed macro that ends at 10000
+  EXPECT_EQ(macro->getOrigin().x(), 10000);
+}
+
+// Skips the nearest site when the macro would overlap a hard blockage there
+TEST_F(TestSnapper, SiteGridAvoidsBlockage)
+{
+  db_->getTech()->setManufacturingGrid(1);
+  createCoreRow(100, 200, 0, 0);
+  odb::dbBlockage::create(db_->getChip()->getBlock(), 0, 0, 10000, 10000);
+
+  odb::dbMaster* macro_master
+      = odb::dbMaster::create(db_->findLib("lib"), "macro_master");
+  macro_master->setHeight(10000);
+  macro_master->setWidth(10000);
+  macro_master->setType(odb::dbMasterType::BLOCK);
+  macro_master->setFrozen();
+
+  odb::dbInst* macro
+      = odb::dbInst::create(db_->getChip()->getBlock(), macro_master, "macro");
+  macro->setOrigin(9940, 0);
+  snapper_->setMacro(macro);
+  snapper_->setSnapToSiteGrid(true);
+  snapper_->snapMacro();
+
+  // The nearest site, 9900, overlaps the blockage that ends at 10000
+  EXPECT_EQ(macro->getOrigin().x(), 10000);
+}
+
+TEST_F(TestSnapper, SiteGridWithoutCoreRows)
+{
+  odb::dbMaster* macro_master
+      = odb::dbMaster::create(db_->findLib("lib"), "macro_master");
+  macro_master->setFrozen();
+
+  odb::dbInst* macro
+      = odb::dbInst::create(db_->getChip()->getBlock(), macro_master, "macro");
+  snapper_->setMacro(macro);
+  snapper_->setSnapToSiteGrid(true);
+
+  try {
+    snapper_->snapMacro();
+    FAIL() << "Expected exception MPL-0083";
+  } catch (const std::exception& e) {
+    EXPECT_STREQ(e.what(), "MPL-0083");
   }
 }
 
