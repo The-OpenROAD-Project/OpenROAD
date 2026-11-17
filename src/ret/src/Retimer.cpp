@@ -20,6 +20,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
+#include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "sta/Liberty.hh"
@@ -122,9 +123,6 @@ odb::dbBlock* Retimer::getBlock()
 void Retimer::retime(int max_moves)
 {
   odb::dbBlock* block = getBlock();
-  if (sta_->getDbNetwork()->hasHierarchy()) {
-    logger_->error(utl::RET, 42, "Hierarchical netlists are not supported.");
-  }
   if (isRouted(block)) {
     logger_->warn(utl::RET,
                   44,
@@ -141,26 +139,29 @@ void Retimer::retime(int max_moves)
   dff_q_mterm_ = unmapper_->getBaseSequentialQMTerm();
   checkRegisters(block);
 
-  RetimingGraph graph(db_, sta_, logger_);
-  graph.build();
-  graph.report();
+  auto graph = std::make_unique<RetimingGraph>(db_, sta_, logger_);
+  graph->build();
+  graph->report();
   clock_net_ = findClockNet(block);
 
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
 
-  Retime search(&graph, sta_, logger_, dff_master_);
+  Retime search(graph.get(), sta_, logger_, dff_master_);
   search.run(max_moves);
-  const std::vector<int> r = search.getRetiming();
+  std::vector<int> r = search.getRetiming();
 
-  const std::unordered_set<odb::dbInst*> movers = moversToUnmap(graph, r);
+  std::unordered_set<odb::dbInst*> movers = moversToUnmap(*graph, r);
+  if (sta_->getDbNetwork()->hasHierarchy()) {
+    searchWithoutUnmapping(graph, r, movers, max_moves);
+  }
   const int unplaced_before = countPlacement(block).unplaced;
   // An error while the netlist is being edited restores it.
   odb::dbDatabase::beginEco(block);
   try {
     if (movers.empty()) {
-      applyRetiming(graph, r);
+      applyRetiming(*graph, r);
     } else {
-      applyAfterUnmapping(graph, r, movers, max_moves, guard);
+      applyAfterUnmapping(*graph, r, movers, max_moves, guard);
     }
   } catch (...) {
     odb::dbDatabase::undoEco(block);
@@ -175,6 +176,32 @@ void Retimer::retime(int max_moves)
                   "New instances left unplaced: {}. Run global_placement "
                   "-incremental to place them.",
                   after.unplaced - unplaced_before);
+  }
+}
+
+// A hierarchical netlist is not unmapped: the registers a slide would unmap
+// are held in place, and the search repeats until no slide needs one.
+void Retimer::searchWithoutUnmapping(std::unique_ptr<RetimingGraph>& graph,
+                                     std::vector<int>& r,
+                                     std::unordered_set<odb::dbInst*>& movers,
+                                     int max_moves)
+{
+  std::unordered_set<odb::dbInst*> held;
+  while (!movers.empty()) {
+    held.insert(movers.begin(), movers.end());
+    logger_->info(utl::RET,
+                  46,
+                  "Hierarchical netlist: {} registers that a slide would "
+                  "unmap stay in place; repeating the search.",
+                  movers.size());
+    graph = std::make_unique<RetimingGraph>(db_, sta_, logger_);
+    graph->hold(held);
+    graph->build();
+    graph->report();
+    Retime search(graph.get(), sta_, logger_, dff_master_);
+    search.run(max_moves);
+    r = search.getRetiming();
+    movers = moversToUnmap(*graph, r);
   }
 }
 
@@ -503,9 +530,13 @@ void Retimer::removeRegister(odb::dbInst* inst)
                    "applied.",
                    inst->getName());
   }
+  // In a hierarchical netlist the loads are in the register's module, so
+  // they take its D pin's module net along with the flat net.
+  odb::dbModNet* d_mod_net = d->getModNet();
   odb::dbITerm* q
       = cls.output != nullptr ? inst->getITerm(cls.output) : nullptr;
   odb::dbNet* q_net = q != nullptr ? q->getNet() : nullptr;
+  odb::dbModNet* q_mod_net = q != nullptr ? q->getModNet() : nullptr;
   if (q_net != nullptr) {
     std::vector<odb::dbITerm*> loads;
     for (odb::dbITerm* iterm : q_net->getITerms()) {
@@ -518,6 +549,9 @@ void Retimer::removeRegister(odb::dbInst* inst)
     for (odb::dbITerm* load : loads) {
       load->disconnect();
       load->connect(d_net);
+      if (d_mod_net != nullptr) {
+        load->connect(d_mod_net);
+      }
     }
     for (odb::dbBTerm* bterm : ports) {
       bterm->disconnect();
@@ -529,34 +563,86 @@ void Retimer::removeRegister(odb::dbInst* inst)
   if (q_net != nullptr) {
     network->deleteNet(network->dbToSta(q_net));
   }
+  if (q_mod_net != nullptr && q_mod_net->connectionCount() == 0) {
+    odb::dbModNet::destroy(q_mod_net);
+  }
+}
+
+// The module nets of the nets a group's new registers connect to, looked up
+// before the old registers go: they may hold the module's only pin on one.
+Retimer::ModNets Retimer::groupModNets(
+    const Group& group,
+    const std::vector<const RegisterClass*>& classes,
+    odb::dbNet* clock_net) const
+{
+  ModNets mod_nets;
+  odb::dbITerm* source = group.driver_net->getFirstOutput();
+  if (!sta_->getDbNetwork()->hasHierarchy() || source == nullptr) {
+    return mod_nets;
+  }
+  odb::dbModule* module = source->getInst()->getModule();
+  std::vector<odb::dbNet*> nets = {group.driver_net, clock_net};
+  for (const RegisterClass* cls : classes) {
+    if (cls != nullptr) {
+      for (const auto& [mterm, net] : cls->enables) {
+        nets.push_back(net);
+      }
+    }
+  }
+  for (odb::dbNet* net : nets) {
+    if (net == nullptr || mod_nets.contains(net)) {
+      continue;
+    }
+    odb::PtrSet<odb::dbModNet> related;
+    net->findRelatedModNets(related);
+    for (odb::dbModNet* mod_net : related) {
+      if (mod_net->getParent() == module) {
+        mod_nets[net] = mod_net;
+        break;
+      }
+    }
+  }
+  return mod_nets;
+}
+
+void Retimer::connectPin(odb::dbITerm* pin,
+                         odb::dbNet* net,
+                         const ModNets& mod_nets)
+{
+  pin->connect(net);
+  auto it = mod_nets.find(net);
+  if (it != mod_nets.end()) {
+    pin->connect(it->second);
+  }
 }
 
 void Retimer::connectRegister(odb::dbInst* ff,
                               const RegisterClass* cls,
                               odb::dbNet* in,
                               odb::dbNet* out,
-                              odb::dbNet* clock_net)
+                              odb::dbNet* clock_net,
+                              const ModNets& mod_nets)
 {
   for (odb::dbITerm* iterm : ff->getITerms()) {
     if (iterm->getSigType().isSupply()) {
       continue;
     }
     if (iterm->getSigType() == odb::dbSigType::CLOCK) {
-      iterm->connect(clock_net);
+      connectPin(iterm, clock_net, mod_nets);
     } else if (cls == nullptr) {
       if (iterm->getIoType() == odb::dbIoType::INPUT) {
-        iterm->connect(in);
+        connectPin(iterm, in, mod_nets);
       } else if (iterm->getMTerm() == dff_q_mterm_) {
         iterm->connect(out);
       }
     } else if (iterm->getMTerm() == cls->data) {
-      iterm->connect(in);
+      connectPin(iterm, in, mod_nets);
     } else if (iterm->getMTerm() == cls->output) {
       iterm->connect(out);
     } else {
       for (const auto& [mterm, net] : cls->enables) {
         if (iterm->getMTerm() == mterm) {
-          iterm->connect(net);
+          connectPin(iterm, net, mod_nets);
         }
       }
     }
@@ -567,7 +653,8 @@ void Retimer::connectRegister(odb::dbInst* ff,
 std::vector<odb::dbNet*> Retimer::buildChain(
     odb::dbNet* driver_net,
     odb::dbNet* clock_net,
-    const std::vector<const RegisterClass*>& classes)
+    const std::vector<const RegisterClass*>& classes,
+    const ModNets& mod_nets)
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   odb::dbITerm* source = driver_net->getFirstOutput();
@@ -593,7 +680,7 @@ std::vector<odb::dbNet*> Retimer::buildChain(
     ff->setSourceType(odb::dbSourceType::TIMING);
     odb::dbNet* out = network->staToDb(network->makeNet(
         "ret_net", parent, odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE));
-    connectRegister(ff, cls, nets[k - 1], out, clock_net);
+    connectRegister(ff, cls, nets[k - 1], out, clock_net, mod_nets);
     nets[k] = out;
   }
   return nets;
@@ -696,6 +783,7 @@ void Retimer::rebuildGroup(const Group& group,
                            odb::dbNet* clock_net,
                            ApplyStats& stats)
 {
+  const ModNets mod_nets = groupModNets(group, classes, clock_net);
   for (odb::dbInst* f : group.flops) {
     removeRegister(f);
     stats.removed++;
@@ -705,7 +793,7 @@ void Retimer::rebuildGroup(const Group& group,
     return;
   }
   const std::vector<odb::dbNet*> depth_net
-      = buildChain(group.driver_net, clock_net, classes);
+      = buildChain(group.driver_net, clock_net, classes, mod_nets);
   stats.inserted += max_depth;
   for (const RegisterClass* cls : classes) {
     if (cls != nullptr) {

@@ -39,6 +39,8 @@ class RetimingGraph
  public:
   RetimingGraph(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
 
+  // Registers to keep in place, like don't-touch ones.  Call before build().
+  void hold(const std::unordered_set<odb::dbInst*>& registers);
   void build();
   void report() const;
 
@@ -68,12 +70,14 @@ class RetimingGraph
   void markBoundary(odb::dbInst* inst, int id);
   void markDontTouch(odb::dbInst* inst, int id);
   void fenceDontTouch();
+  void fenceModules();
   void findClockPeriod();
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
   std::unordered_map<odb::dbInst*, int> index_;
+  std::unordered_set<odb::dbInst*> held_;
 };
 
 }  // namespace ret

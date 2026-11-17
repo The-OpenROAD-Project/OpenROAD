@@ -15,6 +15,8 @@ TESTS = [
     "retime_dsec_enable_driver",
     "retime_dsec_enable_gate",
     "retime_dsec_existing_names",
+    "retime_dsec_hier",
+    "retime_dsec_hier_hold",
     "retime_dsec_inverting",
     "retime_dsec_inverting_asap7",
     "retime_dsec_loop",

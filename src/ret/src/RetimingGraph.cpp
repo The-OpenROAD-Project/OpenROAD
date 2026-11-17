@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "RegisterUtils.h"
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
@@ -150,9 +151,14 @@ bool RetimingGraph::fencesChain(odb::dbNet* net) const
   return false;
 }
 
+void RetimingGraph::hold(const std::unordered_set<odb::dbInst*>& registers)
+{
+  held_ = registers;
+}
+
 bool RetimingGraph::isDontTouch(odb::dbInst* reg) const
 {
-  if (fenced_.contains(reg) || reg->isDoNotTouch()
+  if (fenced_.contains(reg) || held_.contains(reg) || reg->isDoNotTouch()
       || isDontTouchRegister(sta_, reg)) {
     return true;
   }
@@ -223,6 +229,48 @@ void RetimingGraph::build()
     walkFanout(i, nodes_[i], 0, flops, visited);
   }
   fenceDontTouch();
+  fenceModules();
+}
+
+// In a hierarchical netlist a register never crosses a module boundary.
+// The registers that start on one net are rebuilt together with the gate
+// that drives them and the gates that read them; when those are not all in
+// one module, the driving gate and the gates behind the registers are never
+// crossed.  A flat netlist has no boundaries to keep.
+void RetimingGraph::fenceModules()
+{
+  if (!sta_->getDbNetwork()->hasHierarchy()) {
+    return;
+  }
+  const int n = static_cast<int>(nodes_.size());
+  std::unordered_set<odb::dbNet*> crossing_nets;
+  for (int u = 0; u < n; u++) {
+    odb::dbModule* module = nodes_[u]->getModule();
+    const int edge_count = static_cast<int>(adj_[u].size());
+    for (int k = 0; k < edge_count; k++) {
+      const EdgePhys& phys = phys_[u][k];
+      bool one_module = nodes_[adj_[u][k].target]->getModule() == module;
+      for (odb::dbInst* flop : phys.flops) {
+        one_module = one_module && flop->getModule() == module;
+      }
+      odb::dbNet* net = chainNet(phys);
+      if (!one_module && net != nullptr) {
+        crossing_nets.insert(net);
+      }
+    }
+  }
+  for (int u = 0; u < n; u++) {
+    const int edge_count = static_cast<int>(adj_[u].size());
+    for (int k = 0; k < edge_count; k++) {
+      const EdgePhys& phys = phys_[u][k];
+      if (crossing_nets.contains(chainNet(phys))) {
+        pinned_[u] = true;
+        if (!phys.flops.empty()) {
+          pinned_[adj_[u][k].target] = true;
+        }
+      }
+    }
+  }
 }
 
 void RetimingGraph::markDontTouch(odb::dbInst* inst, int id)

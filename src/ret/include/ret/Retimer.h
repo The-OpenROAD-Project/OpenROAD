@@ -32,7 +32,8 @@ struct RegisterClass;
 // with minimal perturbation: only the register groups whose edge weights
 // changed are rebuilt.  Registers move by class (see RegisterUtils.h); a
 // register that cannot keep its class is first unmapped to the base cell
-// plus logic (SequentialUnmapper).
+// plus logic (SequentialUnmapper).  In a hierarchical netlist a register
+// stays inside its module and is never unmapped.
 class Retimer
 {
  public:
@@ -78,9 +79,17 @@ class Retimer
     int groups_changed = 0;
   };
 
+  // The module net of a flat net inside the module a group is rebuilt in;
+  // empty in a flat netlist.
+  using ModNets = std::unordered_map<odb::dbNet*, odb::dbModNet*>;
+
   odb::dbBlock* getBlock();
   odb::dbNet* findClockNet(odb::dbBlock* block);
   void checkRegisters(odb::dbBlock* block);
+  void searchWithoutUnmapping(std::unique_ptr<RetimingGraph>& graph,
+                              std::vector<int>& r,
+                              std::unordered_set<odb::dbInst*>& movers,
+                              int max_moves);
 
   std::vector<Group> collectGroups(const RetimingGraph& graph,
                                    const std::vector<int>& r) const;
@@ -149,15 +158,23 @@ class Retimer
                     odb::dbNet* clock_net,
                     ApplyStats& stats);
   void removeRegister(odb::dbInst* inst);
+  ModNets groupModNets(const Group& group,
+                       const std::vector<const RegisterClass*>& classes,
+                       odb::dbNet* clock_net) const;
+  static void connectPin(odb::dbITerm* pin,
+                         odb::dbNet* net,
+                         const ModNets& mod_nets);
   void connectRegister(odb::dbInst* ff,
                        const RegisterClass* cls,
                        odb::dbNet* in,
                        odb::dbNet* out,
-                       odb::dbNet* clock_net);
+                       odb::dbNet* clock_net,
+                       const ModNets& mod_nets);
   std::vector<odb::dbNet*> buildChain(
       odb::dbNet* driver_net,
       odb::dbNet* clock_net,
-      const std::vector<const RegisterClass*>& classes);
+      const std::vector<const RegisterClass*>& classes,
+      const ModNets& mod_nets);
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;

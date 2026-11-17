@@ -52,6 +52,12 @@ output, driving a control pin of a register, or reachable by registers on
 different clock nets is never crossed. The design must have one clock
 defined with `create_clock`; gated copies of it are fine.
 
+In a hierarchical netlist (`link_design -hier`) a register stays inside its
+module: a gate is crossed only when the gate that drives its registers, the
+registers, the gate itself and the gates it drives are all in one module.
+A hierarchical netlist is also not unmapped, so a register that a move
+would have to unmap stays in place. A flat netlist has neither limit.
+
 ```tcl
 retime
     [-max_moves count]
@@ -66,9 +72,8 @@ retime
 New instances are named `ret_ff_N` and new nets `ret_net_N`. The log shows
 one line per accepted move. `retime` stops with an error on designs it
 cannot handle: libraries without a usable base register, inverter, AND2 or
-OR2 cell; more than one clock; negative-edge registers; no clock defined; a
-hierarchical netlist (`link_design -hier`). An error leaves the netlist
-unchanged.
+OR2 cell; more than one clock; negative-edge registers; no clock defined. An
+error leaves the netlist unchanged.
 
 ## Example scripts
 
@@ -90,7 +95,8 @@ bazelisk test //src/ret/...
 ## Limitations
 
 `retime` moves registers forward only, never backward across a gate, and
-works on flat netlists with one clock domain. The path into a register's
+works on one clock domain. In a hierarchical netlist it does not move a
+register across a module boundary. The path into a register's
 enable pin is not in the delay model. Initial values of moved registers are
 not computed: the result is equivalent from the reset state only when the
 moved registers have no defined initial value, so verify the result with
