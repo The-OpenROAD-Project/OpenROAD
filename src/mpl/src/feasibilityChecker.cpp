@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
@@ -177,26 +178,32 @@ int64_t FeasibilityChecker::blockagesArea() const
 void FeasibilityChecker::checkVirtualUtilization()
 {
   const int64_t std_cell_area = stdCellArea();
-  const int64_t hard_area
-      = unfixedMacrosArea() + fixedMacrosArea() + blockagesArea();
   const auto inflated_std_cell_area = static_cast<int64_t>(
       std_cell_area / static_cast<double>(target_utilization_));
+  const int64_t unfixed_macros_area = unfixedMacrosArea();
+  const int64_t fixed_macros_area = fixedMacrosArea();
+  const int64_t blockages_area = blockagesArea();
+  const int64_t total_area = inflated_std_cell_area + unfixed_macros_area
+                             + fixed_macros_area + blockages_area;
   const int64_t floorplan_area = floorplan_shape_.area();
-  const double virtual_utilization = (hard_area + inflated_std_cell_area)
-                                     / static_cast<double>(floorplan_area);
+  const double virtual_utilization
+      = total_area / static_cast<double>(floorplan_area);
 
-  if (hard_area + inflated_std_cell_area >= floorplan_area) {
+  if (total_area >= floorplan_area) {
+    const std::string table = areasTable(
+        {{fmt::format("Std cells at utilization {:.2f}", target_utilization_),
+          inflated_std_cell_area},
+         {"Macros with halos", unfixed_macros_area},
+         {"Fixed macros", fixed_macros_area},
+         {"Blockages", blockages_area},
+         {"Total", total_area},
+         {"Floorplan", floorplan_area}});
     logger_->warn(MPL,
                   7,
-                  "The virtual utilization is {:.2f}: the std cells at the "
-                  "target utilization {:.2f} ({:.2f}um^2) plus the macros "
-                  "with halos, the fixed macros and the blockages "
-                  "({:.2f}um^2) exceed the floorplan area ({:.2f}um^2).",
+                  "The virtual utilization is {:.2f}: the total area exceeds "
+                  "the floorplan area.\n{}",
                   virtual_utilization,
-                  target_utilization_,
-                  block_->dbuAreaToMicrons(inflated_std_cell_area),
-                  block_->dbuAreaToMicrons(hard_area),
-                  block_->dbuAreaToMicrons(floorplan_area));
+                  table);
 
     feasible_ = false;
   } else if (std_cell_area > 0
@@ -210,6 +217,22 @@ void FeasibilityChecker::checkVirtualUtilization()
                   virtual_utilization,
                   kVirtualUtilWarnThreshold);
   }
+}
+
+std::string FeasibilityChecker::areasTable(
+    const std::vector<std::pair<std::string, int64_t>>& rows) const
+{
+  std::string table;
+
+  table += fmt::format("\n  {:<30} | {:>12}", "", "Area (um^2)");
+  table += fmt::format("\n-----------------------------------------------");
+  for (const auto& [label, area] : rows) {
+    table += fmt::format(
+        "\n  {:<30} | {:>12.2f}", label, block_->dbuAreaToMicrons(area));
+  }
+  table += "\n";
+
+  return table;
 }
 
 int64_t FeasibilityChecker::stdCellArea() const

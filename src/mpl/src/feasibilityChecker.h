@@ -5,6 +5,8 @@
 
 #include <cstdint>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "object.h"
 #include "odb/db.h"
@@ -42,6 +44,8 @@ class FeasibilityChecker
   int64_t blockagesArea() const;
 
   void checkVirtualUtilization();
+  std::string areasTable(
+      const std::vector<std::pair<std::string, int64_t>>& rows) const;
   int64_t stdCellArea() const;
   int64_t unfixedMacrosArea() const;
   int64_t fixedMacrosArea() const;
