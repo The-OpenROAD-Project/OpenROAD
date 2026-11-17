@@ -1,6 +1,6 @@
 ---
 name: run-web-viewer
-description: Run, launch, drive, or screenshot the OpenROAD web viewer (src/web) in headless Chrome against a real design. Use to check a src/web change in the actual browser UI (timing, hierarchy, inspector, selection, layout, Tcl console panels), not just the jsdom unit tests.
+description: Run, launch, drive, or screenshot the OpenROAD web viewer (openroad/web) in headless Chrome against a real design. Use to check a openroad/web change in the actual browser UI (timing, hierarchy, inspector, selection, layout, Tcl console panels), not just the jsdom unit tests.
 ---
 
 # Run the OpenROAD web viewer
@@ -27,7 +27,7 @@ npm install --prefix ~/.cache/openroad-web-driver --no-audit --no-fund --silent 
 ## Build
 
 The web assets are embedded in the binary: rebuild after every
-`src/web` edit, or the browser shows the old code.
+`openroad/web` edit, or the browser shows the old code.
 
 ```bash
 bazelisk build //:openroad
@@ -66,11 +66,11 @@ bash .agents/skills/run-web-viewer/stop.sh $O
 must be new, or an empty directory you own; it is made private (0700),
 since each launch writes a random token to `$O/token`, where the driver
 reads it. Use a fresh `$O` for each launch. The default design is the routed Nangate45 gcd from
-`src/odb/test/data/gcd/`. Then **Read the PNGs** in `$O`.
+`openroad/odb/test/data/gcd/`. Then **Read the PNGs** in `$O`.
 
 `launch.sh` takes `WEB_PORT` (8765), `WEB_TIMEOUT` (seconds to wait for
 the server, 60; raise it for a large design), and `OPENROAD_EXE` (the
-binary, `bazel-bin/openroad`).
+binary, `bazel-bin/openroad/openroad`).
 
 Driver commands (one argument each, run in order; the full list and
 syntax are in the header of `driver.mjs`): `tab <Title>`,
@@ -115,15 +115,15 @@ bash .agents/skills/run-web-viewer/stop.sh $O/other
 ## Unit tests
 
 jsdom tests for most widgets run directly with `node`, which is faster
-than Bazel, once `src/web/test/node_modules` (gitignored) exists:
+than Bazel, once `openroad/web/test/node_modules` (gitignored) exists:
 
 ```bash
-(cd src/web/test && npm install --no-package-lock --no-audit --no-fund)
-node --test src/web/test/js/test-timing-widget.js
-bazelisk test //src/web/test/...      # all, including ones needing `three`
+(cd openroad/web/test && npm install --no-package-lock --no-audit --no-fund)
+node --test openroad/web/test/js/test-timing-widget.js
+bazelisk test //openroad/web/test/...      # all, including ones needing `three`
 ```
 
-Bazel installs these dependencies from `src/web/test/pnpm-lock.yaml`,
+Bazel installs these dependencies from `openroad/web/test/pnpm-lock.yaml`,
 which `npm` does not read; `--no-package-lock` keeps `npm` from writing
 a `package-lock.json` (gitignored) that nothing else uses. An old
 `node_modules` can hold an older jsdom than Bazel's; rerun the install
