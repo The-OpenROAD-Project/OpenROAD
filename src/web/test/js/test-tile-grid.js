@@ -46,7 +46,7 @@ const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 const R = (x0, x1, y0, y1, z = 3) => ({ z, x0, x1, y0, y1 });
 
 describe('TileGrid.update', () => {
-    it('loads the on-screen tiles first, nearest the centre first', () => {
+    it('loads the on-screen tiles first, nearest the center first', () => {
         const { source, loads } = makeSource();
         const grid = new TileGrid({ source });
         const range = R(2, 4, 2, 4);
@@ -107,6 +107,21 @@ describe('TileGrid.update', () => {
         assert.deepEqual(released, [{ id: 'a' }]);
     });
 
+    // Panned right off the design: nothing to load, but what was loaded is
+    // there again when the view comes back.
+    it('keeps its loaded tiles while the view is off the grid', async () => {
+        const { source, loads, released } = makeSource();
+        const grid = new TileGrid({ source });
+        grid.update({ z: 3, range: R(0, 0, 0, 0) });
+        loads[0].resolve({ id: 'a' });
+        await tick();
+        grid.update({ z: 3, range: null });
+        assert.ok(grid.tiles.has('3/0/0'));
+        assert.deepEqual(released, []);
+        grid.update({ z: 3, range: R(0, 0, 0, 0) });
+        assert.equal(loads.length, 1, 'nothing asked for again');
+    });
+
     it('drops loads of another level but keeps its loaded tiles', async () => {
         const { source, loads } = makeSource();
         const grid = new TileGrid({ source });
@@ -152,6 +167,20 @@ describe('TileGrid loading results', () => {
         loads[0].reject(new Error('boom'));
         await tick();
         assert.ok(grid.isSettled());
+    });
+
+    it('marks a failed tile until a load of it lands', async () => {
+        const { source, loads } = makeSource();
+        const grid = new TileGrid({ source });
+        const range = R(0, 0, 0, 0);
+        grid.update({ z: 3, range, ring: range });
+        loads[0].reject(new Error('boom'));
+        await tick();
+        assert.ok(grid.tiles.get('3/0/0').failed);
+        grid.refresh();
+        loads[1].resolve(null);
+        await tick();
+        assert.ok(!grid.tiles.get('3/0/0').failed);
     });
 
     it('is settled while only ring tiles are loading', async () => {
@@ -376,6 +405,26 @@ describe('TileGrid.refresh off the ring', () => {
         assert.ok(kept.drawable, 'shown until the new one arrives');
     });
 
+    it('fetches the stale tiles of a returning level from its center out',
+       async () => {
+        const { source, loads } = makeSource();
+        const grid = new TileGrid({ source, keepBuffer: 2 });
+        const range3 = R(2, 4, 2, 4);
+        grid.update({ z: 3, range: range3, ring: growRange(range3) });
+        for (const l of loads) {
+            l.resolve({ key: l.key });
+        }
+        await tick();
+        grid.update({ z: 4, range: R(4, 8, 4, 8, 4) });
+        grid.refresh();   // level 3 goes stale
+        const before = loads.length;
+        const back = R(4, 6, 2, 4);
+        grid.update({ z: 3, range: back, ring: growRange(back) });
+        const again = loads.slice(before).filter((l) => l.z === 3);
+        assert.equal(again[0].key, '3/5/3');
+        assert.ok(!again[0].background);
+    });
+
     it('does not fetch stale tiles of a returning level off its ring',
        async () => {
         const { source, loads, released } = makeSource();
@@ -411,8 +460,10 @@ describe('TileGrid.prune', () => {
         assert.deepEqual(released, [{ id: 'old' }]);
         assert.ok(grid.tiles.has('4/0/0'));
     });
+});
 
-    it('clear() cancels everything', () => {
+describe('TileGrid.clear', () => {
+    it('cancels everything', () => {
         const { source, loads } = makeSource();
         const grid = new TileGrid({ source });
         grid.update({ z: 3, range: R(0, 1, 0, 1) });

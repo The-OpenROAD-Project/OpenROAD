@@ -21,7 +21,6 @@ function makeApp() {
         focusNets: new Set(),
         routeGuideNets: new Set(),
         inspectorEl: document.createElement('div'),
-        hoverRects: [],
         view: null,
         designScale: null,
         websocketManager: {
@@ -59,12 +58,14 @@ function instData(name) {
 }
 
 describe('Inspector focus nets', () => {
-    let app, panel, redraws;
+    let app, panel, redraws, overlays;
 
     beforeEach(() => {
         app = makeApp();
         redraws = 0;
-        panel = createInspectorPanel(app, () => { redraws++; });
+        overlays = 0;
+        panel = createInspectorPanel(app, () => { redraws++; },
+                                     () => { overlays++; });
     });
 
     describe('updateInspector toolbar buttons', () => {
@@ -261,7 +262,9 @@ describe('Inspector focus nets', () => {
             assert.equal(app._requests[0].type, 'select_next');
             assert.equal(app.selectedInstanceName, 'buf2');
             assert.equal(schematicRefreshes, 1);
-            assert.equal(redraws, 1);
+            // Only the selection moved, and it lives on the overlay.
+            assert.equal(redraws, 0);
+            assert.equal(overlays, 1);
         });
 
         it('label shows correct 1-indexed position', () => {
@@ -1008,6 +1011,34 @@ describe('selection outline and hover on the view', () => {
         assert.ok(near(rect(), [99.25, 200, 101.75, 260]), String(rect()));
         app.view.setZoomForTest(3);
         assert.ok(near(rect(), [99.875, 200, 101.125, 260]), String(rect()));
+    });
+
+    it('cancels a hover still on its way when the pointer leaves', async () => {
+        const cancelled = [];
+        const rejects = new Map();
+        app.websocketManager.request = (msg) => {
+            const id = app.websocketManager._nextId++;
+            const p = msg.type === 'hover' && msg.select_id !== -1
+                ? new Promise((_, reject) => rejects.set(id, reject))
+                : Promise.resolve({});
+            p.requestId = id;
+            return p;
+        };
+        app.websocketManager.cancel = (id) => {
+            cancelled.push(id);
+            rejects.get(id)?.(new Error('Request cancelled'));
+        };
+        panel.updateInspector({
+            type: 'Inst', name: 'i1', bbox: [0, 0, 10, 10],
+            properties: [{ name: 'Master', value: 'BUF_X1',
+                           value_select_id: 3 }],
+        });
+        const link = app.inspectorEl.querySelector('.inspector-link');
+        link.dispatchEvent(new dom.window.Event('mouseenter'));
+        link.dispatchEvent(new dom.window.Event('mouseleave'));
+        await new Promise((r) => setTimeout(r, 0));
+        assert.equal(cancelled.length, 1);
+        assert.equal(app.view.overlays.has('hover'), false);
     });
 });
 

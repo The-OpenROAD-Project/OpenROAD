@@ -13,7 +13,7 @@ import { closeAll, mergeOntoContext, renderMergedTile } from './tile-merge.js';
 import { tileMayHaveContent } from './layer-extents.js';
 
 // Decode a tile payload: a Blob from the server, or a data URI from a saved
-// report.  Straight alpha and no colour conversion, so the pixels reach the
+// report.  Straight alpha and no color conversion, so the pixels reach the
 // GPU as the server wrote them.
 function decodeTilePayload(payload) {
     if (payload == null) {
@@ -122,7 +122,7 @@ function loadHandle(wm, ids, promise, onCancel) {
         },
         promote() {
             for (const id of ids) {
-                wm.promote?.(id);
+                wm.promote(id);
             }
         },
     };
@@ -177,7 +177,7 @@ export function createCompositeSource({
                         g = canvas.getContext('2d');
                     }
                     const drawn = mergeOntoContext(g, sources, px);
-                    if (progressive && drawn > 0 && !cancelled) {
+                    if (progressive && drawn > 0) {
                         onPartial(snapshot(canvas));
                     }
                     return drawn;

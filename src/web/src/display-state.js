@@ -56,7 +56,7 @@ const DISPLAY_STATE_KEYS = [
     { key: 'or_defer_tile_updates', store: 'cookie' },
 ];
 
-// The rendering preferences (#11340) from their cookies.
+// The rendering preferences from their cookies.
 export function renderPrefs(getCookie) {
     return {
         // Animated zoom and pan, and drag inertia.  Off by default, so

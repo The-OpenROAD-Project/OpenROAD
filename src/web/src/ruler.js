@@ -83,6 +83,8 @@ export class RulerManager {
     }
 
     cancelRulerBuild() {
+        clearTimeout(this._snapTimer);
+        this._snapTimer = null;
         this._state = IDLE;
         this._pt0 = null;
         this._lastSnapResult = null;
@@ -187,7 +189,7 @@ export class RulerManager {
         const zoom = app.view.getZoom();
         const numTiles = Math.pow(2, Math.max(0, zoom));
         // designScale is CSS px per DBU at zoom 0, so it already carries the
-        // tile size the map was built with -- which is not a constant.
+        // tile size the view was built with -- which is not a constant.
         const dbuPerPixel = 1 / (app.designScale * numTiles);
         const pointThreshold = Math.max(Math.round(10 * dbuPerPixel), 10);
 
@@ -228,6 +230,10 @@ export class RulerManager {
                 ...vf,
             });
 
+            // Cancelled while the reply was on its way.
+            if (this._state === IDLE) {
+                return;
+            }
             this._lastSnapResult = result;
             this._updateSnapIndicator(result);
             this._updatePreview(dbuX, dbuY);
@@ -539,7 +545,7 @@ export class RulerManager {
                         break;
                 }
                 this._renderAll();
-                this._selectRuler(ruler.id);
+                this.refreshInspector();
             },
         };
 

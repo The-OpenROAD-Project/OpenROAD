@@ -119,9 +119,6 @@ export function populateDisplayControls(app, visibility, selectability,
     //
     // Two slots, the layout and the layers over the highlight overlay, each
     // composited into one image per tile: every drawn tile costs CPU a frame.
-    for (const slot of app.allLayers || []) {
-        slot.remove();
-    }
     app.allLayers = [];
     app.baseSlot = null;
     app.topSlot = null;
@@ -201,7 +198,7 @@ export function populateDisplayControls(app, visibility, selectability,
     // module coloring.
     const underItems = [
         pseudoItem('_instances', null, null),
-        pseudoItem('_pins', 'pinsLayer', 'pins'),
+        pseudoItem('_pins', null, 'pins'),
         pseudoItem('_modules', 'modulesLayer', 'module_view'),
     ];
     // Cluster coloring goes above the routing layers and below the heat map.
@@ -216,12 +213,12 @@ export function populateDisplayControls(app, visibility, selectability,
     // them; the rest go over the highlight overlay and the heat map, in the
     // GUI paint order.
     const topItems = [];
-    app.overlayLayers = ((techData && techData.overlays) || []).map((def) => ({
+    const overlayLayers = (techData?.overlays || []).map((def) => ({
         def,
         layer: pseudoItem(def.name, null, def.shown_by),
         under: def.z_index < kTechLayerZBase,
     }));
-    for (const { layer, under } of [...app.overlayLayers].sort(
+    for (const { layer, under } of [...overlayLayers].sort(
         (a, b) => a.def.z_index - b.def.z_index)) {
         (under ? underItems : topItems).push(layer);
     }
@@ -491,12 +488,6 @@ export function populateDisplayControls(app, visibility, selectability,
         slot.items = items;   // the draw list, bottom-most first
         return slot;
     }
-    app.baseSlot = compositeSlot(
-        'base', DRAW_ORDER.base,
-        [...underItems, ...routingLayers, clustersItem]);
-    app.topSlot = compositeSlot('top', DRAW_ORDER.top, topItems);
-    // What redrawAllLayers() refreshes.
-    app.allLayers = [app.baseSlot, app.topSlot];
 
     // Parallel selectability model with the same node ids as layerSpec so
     // syncLayerSelDom() and buildLayerDOM() can pair each visibility node
@@ -624,13 +615,19 @@ export function populateDisplayControls(app, visibility, selectability,
         // some routing entry flips, and so do the overlays that draw by them
         // under the current visibility.
         if (app.baseSlot && dirtySlots.has(app.baseSlot)) {
-            for (const { def, under } of app.overlayLayers) {
+            for (const { def, under } of overlayLayers) {
                 if (anyGroupOn(def.layers_by, visibility)) {
                     dirtySlots.add(under ? app.baseSlot : app.topSlot);
                 }
             }
         }
-        flushDirtySlots();
+        // A die leaving the visible chiplets: the chiplet mirror below redraws
+        // every slot.
+        if (visibilityChangedAny) {
+            dirtySlots.clear();
+        } else {
+            flushDirtySlots();
+        }
         // Visibility off ⇒ selectability disabled — refresh selectability DOM.
         syncLayerSelDom();
 
@@ -1144,7 +1141,7 @@ export function populateDisplayControls(app, visibility, selectability,
         // Sanity check (debug aid): the two trees are expected to
         // describe the same set of chiplet paths because they share
         // origin in tile_generator.cpp's serializeTechResponse.  If
-        // that invariant ever breaks, mirrorStates / mirrorChipletToLayers
+        // that invariant ever breaks, mirrorStates / checkChiplet
         // would silently drop the orphan paths — surfacing a warning
         // here makes the drift visible without breaking anything.
         if (typeof console !== 'undefined' && console.warn) {
@@ -1189,16 +1186,15 @@ export function populateDisplayControls(app, visibility, selectability,
             }
         });
 
-        // Cascade a chiplet toggle down into the layerModel so the
-        // Layers panel checkboxes (and the tiles, and the
-        // or_hidden_layers cookie) follow.  cascadeQuiet skips the
-        // layerModel's onChange; we fire it ourselves so the standard
-        // sync path runs exactly once.  No loop with the chipletModel
-        // mirror logic — the layerModel callback observes that the
-        // chipletModel state already matches and emits nothing back.
-        function mirrorChipletToLayers(chipletPath, checked) {
-            const ln = layerNodeByChipletPath.get(chipletPath);
-            if (!ln) return;
+        // A chiplet toggle goes through the Layers tree, whose onChange
+        // mirrors it back here and redraws once.  A chiplet with no node
+        // there is checked directly.
+        function checkChiplet(id, chipletPath, checked) {
+            const ln = chipletPath && layerNodeByChipletPath.get(chipletPath);
+            if (!ln) {
+                chipletModel.check(id, checked);
+                return;
+            }
             layerModel.cascadeQuiet(ln.id, checked);
             layerModel.onChange();
         }
@@ -1265,11 +1261,8 @@ export function populateDisplayControls(app, visibility, selectability,
             rootNode.cb = parentCb;
             parentCb.addEventListener('change', (e) => {
                 e.stopPropagation();
-                chipletModel.check(rootId, parentCb.checked);
-                if (rootNode.data && rootNode.data.path) {
-                    mirrorChipletToLayers(rootNode.data.path,
-                                          parentCb.checked);
-                }
+                checkChiplet(rootId, rootNode.data && rootNode.data.path,
+                             parentCb.checked);
             });
             chipletHeader.appendChild(parentCb);
         }
@@ -1298,8 +1291,7 @@ export function populateDisplayControls(app, visibility, selectability,
                 checkbox.indeterminate = node.indeterminate;
                 node.cb = checkbox;
                 checkbox.addEventListener('change', () => {
-                    chipletModel.check(node.id, checkbox.checked);
-                    mirrorChipletToLayers(c.path, checkbox.checked);
+                    checkChiplet(node.id, c.path, checkbox.checked);
                 });
                 label.appendChild(checkbox);
                 label.appendChild(makeSelSpacer());
@@ -1328,8 +1320,7 @@ export function populateDisplayControls(app, visibility, selectability,
     // the Qt GUI's selectability column (see displayControls.cpp).
     // The Hierarchy view checkbox governs two flags, and which one it turns on
     // depends on the tab's source.  Derive only: redrawAllLayers repaints the
-    // two overlay layers along with everything else (they are in allLayers),
-    // and this runs on every checkbox in the tree, not just that one.
+    // base slot, which draws both overlays.
     const applyHierarchyOverlay = () => {
         // Only when a flag actually moved: this runs for every checkbox in the
         // tree, and the panel work below walks the whole tree of the view it
@@ -1472,6 +1463,15 @@ export function populateDisplayControls(app, visibility, selectability,
     // render() syncs the DOM and the visibility map but does not run onChange,
     // so the restored Hierarchy view checkbox needs its flags derived once here.
     applyHierarchyOverlay();
+
+    // A new slot requests its tiles at once, so it comes after every saved
+    // state that shapes them.
+    app.baseSlot = compositeSlot(
+        'base', DRAW_ORDER.base,
+        [...underItems, ...routingLayers, clustersItem]);
+    app.topSlot = compositeSlot('top', DRAW_ORDER.top, topItems);
+    // What redrawAllLayers() refreshes.
+    app.allLayers = [app.baseSlot, app.topSlot];
 
     // ─── Per-renderer display controls ──────────────────────────────────────
     // The rows Qt's DisplayControls builds from Renderer::getDisplayControls()

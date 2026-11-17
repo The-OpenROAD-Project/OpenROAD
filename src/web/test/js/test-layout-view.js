@@ -27,9 +27,13 @@ function makeSource() {
         loads,
         load(c, { background }) {
             let resolve;
-            const promise = new Promise((res) => { resolve = res; });
+            let reject;
+            const promise = new Promise((res, rej) => {
+                resolve = res;
+                reject = rej;
+            });
             const key = `${c.z}/${c.x}/${c.y}`;
-            loads.set(key, { ...c, background, resolve });
+            loads.set(key, { ...c, background, resolve, reject });
             return { promise, cancel() { loads.delete(key); }, promote() {} };
         },
         release() {},
@@ -72,7 +76,7 @@ describe('LayoutView view state', () => {
     it('drives the deck view state and reports the move', () => {
         const { view, deck, frames } = setup();
         const events = [];
-        for (const e of ['movestart', 'moveend', 'zoomstart', 'zoom', 'zoomend']) {
+        for (const e of ['movestart', 'moveend', 'zoom', 'zoomend']) {
             view.on(e, () => events.push(e));
         }
         view.setView([120, 120], 2);
@@ -81,8 +85,7 @@ describe('LayoutView view state', () => {
         assert.deepEqual(deck.decks[0].props.viewState.target.slice(0, 2),
                          view.getCenter());
         assert.equal(deck.decks[0].props.viewState.zoom, 2);
-        assert.deepEqual(events, ['movestart', 'zoomstart', 'zoom', 'moveend',
-                                  'zoomend']);
+        assert.deepEqual(events, ['movestart', 'zoom', 'moveend', 'zoomend']);
     });
 
     it('uses an orthographic view with y up and no wheel zoom of its own', () => {
@@ -91,6 +94,8 @@ describe('LayoutView view state', () => {
         assert.equal(viewProps.flipY, false);
         assert.equal(viewProps.controller.scrollZoom, false);
         assert.equal(viewProps.controller.dragPan, true);
+        // deck's inertia only runs if its transition props come back through
+        // the controlled viewState; left on, a release never ended the move.
         assert.equal(viewProps.controller.inertia, false);
     });
 
@@ -113,6 +118,26 @@ describe('LayoutView view state', () => {
         assert.equal(view.getZoom(), 2);
         assert.ok(Math.abs(before[0] - after[0]) < 1e-9);
         assert.ok(Math.abs(before[1] - after[1]) < 1e-9);
+    });
+
+    // The pointer moved since the zoom under way began.
+    it('keeps the point under the cursor through a zoom mid-animation', () => {
+        const { view, frames } = setup({ smooth: true });
+        view.setView([120, 120], 1, { animate: false });
+        view.zoomAround([700, 100], 1);
+        frames.flush(100);
+        const pt = [100, 500];
+        const before = view.unproject(pt);
+        view.zoomAround(pt, 1);
+        frames.flush(100);
+        const mid = view.unproject(pt);
+        frames.flush(400);
+        assert.equal(view.getZoom(), 3);
+        // Within a pixel: the view rests on whole device pixels.
+        for (const p of [mid, view.unproject(pt)]) {
+            assert.ok(Math.abs(p[0] - before[0]) < 1 / 8);
+            assert.ok(Math.abs(p[1] - before[1]) < 1 / 8);
+        }
     });
 
     it('animates over 250 ms with smoothing and rests on the target', () => {
@@ -151,7 +176,7 @@ describe('LayoutView view state', () => {
         assert.deepEqual(view.getCenter(), [130, 140]);
     });
 
-    it('honours the zoom limits', () => {
+    it('honors the zoom limits', () => {
         const { view, frames } = setup();
         view.setLimits({ minZoom: 0, maxZoom: 3 });
         view.setView([0, 0], 9);
@@ -252,7 +277,7 @@ describe('LayoutView tiles', () => {
         assert.deepEqual(tileIds(deck), ['base:0/0/0', 'top:0/0/0']);
     });
 
-    // Double buffering across the whole view (#11340).
+    // Double buffering across the whole view.
     it('keeps the old level until the new one is complete', async () => {
         const { view, deck, frames } = setup();
         const source = makeSource();
@@ -300,6 +325,32 @@ describe('LayoutView tiles', () => {
         frames.flush();
         assert.ok(!deck.layers().some((l) => l.id.includes(':under:')
                                       || l.id === 'base:mask'));
+    });
+
+    // A tile that failed has nothing to hide the loading level with.
+    it('leaves a failed tile of the old level unmasked', async () => {
+        const { view, deck, frames } = setup();
+        const source = makeSource();
+        view.setView([120, 120], 2);
+        view.addTileSlot('base', { order: DRAW_ORDER.base, source });
+        const [failedKey, failed] = [...source.loads].find(([, l]) => l.z === 2);
+        source.loads.delete(failedKey);
+        failed.reject(new Error('Tile requests failed'));
+        source.settle(2);
+        await tick();
+        view.setView([120, 120], 1);
+        const [key, first] = [...source.loads].find(([, l]) => l.z === 1);
+        source.loads.delete(key);
+        first.resolve({ image: { key }, width: 480, height: 480 });
+        await tick();
+        frames.flush();
+        const mask = deck.layers().find((l) => l.id === 'base:mask');
+        const [x0, y0, x1, y1] = tileWorldBounds(2, failed.x, failed.y, T);
+        const center = [(x0 + x1) / 2, (y0 + y1) / 2];
+        assert.ok(mask.props.data.length > 0);
+        assert.ok(!mask.props.data.some(
+            (p) => p[0][0] < center[0] && center[0] < p[2][0]
+                   && p[0][1] < center[1] && center[1] < p[2][1]));
     });
 
     it('fades the new level in when smoothing is on', async () => {
@@ -759,7 +810,7 @@ describe('LayoutView flights', () => {
         assert.equal(view.getZoom(), 5);
     });
 
-    // A jump at the same level used to drop what was on screen while waiting.
+    // A jump at the same level keeps what is on screen while it waits.
     it('keeps the view drawn while it waits to set off', async () => {
         const { view, source, frames } = flying();
         source.settle(5);
@@ -810,6 +861,31 @@ describe('LayoutView flights', () => {
         frames.flush(500);
         assert.ok(!deck.layers().some((l) => l.id.startsWith(`base:under:${apexZ}/`)),
                   'gone once the destination shows');
+    });
+
+    // A zoom out of more than kMaxAnimatedZoomDelta that flies can pull out
+    // to the level the prefetch wants once it lands.
+    it('leaves the level above to a landed flight that pulled out to it',
+       async () => {
+        const { view, source, requested, frames } = flying();
+        view.setView([40, 40], 10, { animate: false });
+        source.settle(10);
+        await tick();
+        frames.flush();
+        view.setView([60, 40], 5);
+        assert.ok(requested.some((r) => r.z === 4 && !r.background),
+                  'the flight pulls out to level 4');
+        source.settle(4);
+        await tick();
+        frames.flush(16);
+        frames.flush(2000);
+        frames.flush(16);
+        assert.ok(!view.debugSnapshot().animating, 'landed');
+        const before = requested.length;
+        source.settle(5);
+        await tick();
+        await tick();
+        assert.deepEqual(requested.slice(before).filter((r) => r.z === 4), []);
     });
 
     it('sets off anyway when the pulled-out level is slow', () => {
@@ -863,13 +939,6 @@ describe('LayoutView drag and inertia', () => {
         view.on('movestart moveend', () => events.push(view.debugSnapshot().moving));
         return events;
     }
-
-    // deck's inertia only runs if its transition props come back through the
-    // controlled viewState; left on, a release never ended the move.
-    it("keeps deck's own inertia off even with smoothing", () => {
-        const { deck } = setup({ smooth: true });
-        assert.equal(deck.decks[0].props.views.props.controller.inertia, false);
-    });
 
     it('glides on after a fast release with smoothing, then ends the move', async () => {
         const { view, deck, frames } = setup({ smooth: true });
@@ -950,6 +1019,29 @@ describe('LayoutView shapes, markers and capture', () => {
         assert.equal(deck.layers().length, 0);
     });
 
+    // What the ruler draws: a solid line and a snap circle.
+    it('draws path overlays as solid strokes and circles as points', () => {
+        const { view, deck, frames } = setup();
+        view.setOverlay('ruler', [
+            { kind: 'path', points: [[0, 0], [10, 0]],
+              stroke: toRgba('#0ff'), width: 2 },
+            { kind: 'circle', center: [5, 5], radius: 4,
+              stroke: toRgba('#fff'), width: 1 },
+        ]);
+        frames.flush();
+        const layers = deck.layers();
+        const line = layers.find((l) => l instanceof deck.PathLayer);
+        const dot = layers.find((l) => l instanceof deck.ScatterplotLayer);
+        assert.ok(line && dot);
+        assert.equal(line.props.extensions, undefined, 'solid, not dashed');
+        assert.deepEqual(line.props.getPath(line.props.data[0]),
+                         [[0, 0], [10, 0]]);
+        assert.deepEqual(dot.props.getPosition(dot.props.data[0]), [5, 5]);
+        assert.equal(dot.props.getRadius(dot.props.data[0]), 4);
+        assert.deepEqual(dot.props.getFillColor(dot.props.data[0]),
+                         [0, 0, 0, 0]);
+    });
+
     it('positions markers at their world point', () => {
         const { view, frames } = setup();
         view.setView([120, 120], 1);
@@ -964,7 +1056,7 @@ describe('LayoutView shapes, markers and capture', () => {
         assert.equal(el.parentNode, null);
     });
 
-    it('converts colours to RGBA', () => {
+    it('converts colors to RGBA', () => {
         assert.deepEqual(toRgba('#ff0'), [255, 255, 0, 255]);
         assert.deepEqual(toRgba('#00ffff', 0.5), [0, 255, 255, 128]);
         assert.deepEqual(toRgba([1, 2, 3]), [1, 2, 3, 255]);
@@ -1045,7 +1137,6 @@ describe('LayoutView shapes, markers and capture', () => {
         assert.ok(settled);
     });
 
-    // A page whose CDN script failed still has a working view object.
     it('rebuilds the deck when the WebGL context is lost', async () => {
         const { view, deck, frames } = setup();
         const source = makeSource();
@@ -1076,6 +1167,7 @@ describe('LayoutView shapes, markers and capture', () => {
         assert.equal(deck.decks.length, 3);
     });
 
+    // A page without the deck namespace still has a working view object.
     it('keeps working without deck', async () => {
         const frames = makeFrames();
         const view = createLayoutView(makeContainer(), {

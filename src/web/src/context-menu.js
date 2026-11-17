@@ -235,15 +235,11 @@ export class ContextMenu {
     }
 
     // Bring the client back in step with the selection/highlight state the
-    // action just changed server-side.
-    //
-    // redrawAllLayers is not enough on its own: focus nets and route guides
-    // feed the BASE tiles, so clearing them needs the full redraw, but that
-    // path calls the bare overlay refresh.  The Selection Highlight panel and
-    // the Inspector are driven by app.refreshOverlay / app.refreshInspector —
-    // the same hooks the menu bar's "Clear Highlights" and the panel's own
-    // toolbar use — so without them the panel keeps listing objects the
-    // server no longer has selected or highlighted.
+    // action just changed server-side.  Focus nets feed the base tiles and
+    // need the full redraw; the rest, route guides included, is overlay only.
+    // The Selection Highlight panel and the Inspector follow
+    // app.refreshOverlay / app.refreshInspector, the hooks the menu bar's
+    // "Clear Highlights" uses too.
     _syncAfterAction(action) {
         const app = this._app;
         // The Inspector's Focus and Route Guides buttons read these
@@ -254,11 +250,11 @@ export class ContextMenu {
         if (action === 'clear_route_guides' || action === 'clear_all') {
             app.routeGuideNets?.clear();
         }
-        // Base tiles only carry focus nets and route guides; every other
-        // action lives entirely in the overlay.
-        if ((action === 'clear_focus_nets' || action === 'clear_route_guides'
-             || action === 'clear_all')
-            && typeof app.redrawAllLayers === 'function') {
+        // Of these, only focus nets reach the base tiles; route guides and
+        // every other action live entirely in the overlay.
+        const redrawn = (action === 'clear_focus_nets' || action === 'clear_all')
+                        && typeof app.redrawAllLayers === 'function';
+        if (redrawn) {
             app.redrawAllLayers();
         }
         // The selection itself is gone: reset the client-side pieces of it
@@ -268,14 +264,17 @@ export class ContextMenu {
             app.updateInspector?.(null);
             app.stopSelectionAnimation?.();
             app.clearSelectionOutline?.();
-            app.lastSelectionBounds = null;
         } else {
             // Selection count/index and the highlight-group badge changed.
             app.refreshInspector?.();
         }
-        // Refreshes the overlay tiles AND schedules the Selection Highlight
-        // panel refresh; must run last so it sees the cleanup above.
-        app.refreshOverlay?.();
+        // Last, so it sees the cleanup above: the overlay hook also refreshes
+        // the Selection Highlight panel, and a full redraw already did the tiles.
+        if (redrawn) {
+            app.selectionBrowser?.scheduleRefresh();
+        } else {
+            app.refreshOverlay?.();
+        }
     }
 
 }

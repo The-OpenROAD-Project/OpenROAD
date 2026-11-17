@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// Which tile levels the layout view draws while the zoom changes (#11340).
+// Which tile levels the layout view draws while the zoom changes.
 //
 // Shared by every tile slot so they all change level together.  With double
 // buffering the new level stays hidden, under the old one scaled, until every
@@ -26,15 +26,14 @@ export class ZoomSwap {
         setTimer = (fn, ms) => setTimeout(fn, ms),
         clearTimer = (id) => clearTimeout(id),
         timeoutMs = ATOMIC_ZOOM_TIMEOUT_MS,
-        fadeMs = ZOOM_FADE_MS,
         onChange = () => {},
     } = {}) {
         Object.assign(this, { isEnabled, isSmooth, reducedMotion, now, setTimer,
-                              clearTimer, timeoutMs, fadeMs, onChange });
+                              clearTimer, timeoutMs, onChange });
         this.shownZ = null;    // level drawn as complete
         this.pendingZ = null;  // level loading behind it (double buffering)
         this.under = [];       // old levels kept under a progressive one
-        this.fade = null;      // { fromZ, toZ, start, ms }
+        this.fade = null;      // { fromZ, toZ, start }
         this._timer = null;
     }
 
@@ -112,9 +111,9 @@ export class ZoomSwap {
             this.under = [...this.under.filter(
                 (u) => u !== from && u !== this.shownZ), from].slice(-kMaxUnder);
         }
-        const ms = this.isSmooth() && !this.reducedMotion() ? this.fadeMs : 0;
-        this.fade = (ms > 0 && from !== null)
-            ? { fromZ: from, toZ: this.shownZ, start: this.now(), ms }
+        const fades = this.isSmooth() && !this.reducedMotion();
+        this.fade = (fades && from !== null)
+            ? { fromZ: from, toZ: this.shownZ, start: this.now() }
             : null;
         this.onChange();
     }
@@ -129,7 +128,7 @@ export class ZoomSwap {
     // What to draw now, bottom first.
     plan(now = this.now()) {
         if (this.fade) {
-            const t = (now - this.fade.start) / this.fade.ms;
+            const t = (now - this.fade.start) / ZOOM_FADE_MS;
             if (t < 1) {
                 return {
                     draw: [{ z: this.fade.fromZ, opacity: 1 },
@@ -151,9 +150,9 @@ export class ZoomSwap {
     }
 
     // Nothing is waiting to be shown or fading in.
-    isIdle(now = this.now()) {
+    isIdle() {
         return this.pendingZ === null && this.under.length === 0
-            && !this.plan(now).fading;
+            && !this.plan(this.now()).fading;
     }
 
     _clearTimer() {

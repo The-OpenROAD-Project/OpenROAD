@@ -5,7 +5,7 @@ import { GridLayoutManager } from './grid-layout.js';
 import { dbuToWorld, dbuRectToWorldRect, worldToDbu } from './coordinates.js';
 import { WebSocketManager } from './websocket-manager.js';
 import { createLayoutView, DRAW_ORDER } from './layout-view.js';
-import { installViewInput } from './view-input.js';
+import { installViewInput, placementClicks } from './view-input.js';
 import {
     buildHeatmapRequest, buildOverlayRequest, createImageSource,
 } from './tile-sources.js';
@@ -21,7 +21,7 @@ import { createInspectorPanel } from './inspector.js';
 import { SelectionBrowser } from './selection-browser.js';
 import { applySelectionFlags, beginSelection, boundsEqual,
          buildVisibilityFlags, clampArrowStep, computeBoundsTransforms,
-         computeScaleBar, decorateTabIcons, fittedTileSizeCss, formatDbu,
+         computeScaleBar, fittedTileSizeCss, formatDbu,
          formatDistance, isCurrentSelection, isStaticMode, maxUsefulZoom,
          parseDbu, rafCoalesce, renderingWarning, showCornerWarning,
          showToast, unitLabel, websocketUrlFrom }
@@ -155,7 +155,6 @@ const app = {
     // added (computeBoundsTransforms).  Anything wanting the design's own
     // extent has to work from the DBU rects, not from this.
     fitRect: null,
-    lastSelectionBounds: null,  // DBU rect of the last selected object
     selHasInst: false,          // selection contains any instance
     selHasNet: false,           // selection contains any net
     displayControlsEl: null,
@@ -172,9 +171,6 @@ const app = {
     // Draw-list items of the pseudo layers (display-controls.js).
     modulesLayer: null,
     clustersLayer: null,
-    pinsLayer: null,
-    // [{ def, layer }] per overlay the tech response lists.
-    overlayLayers: [],
     focusNets: new Set(),
     routeGuideNets: new Set(),
     visibleLayers: new Set(),
@@ -208,7 +204,7 @@ const app = {
     wheelZoom: getCookie('or_wheel_zoom') !== '0',
     // Qt's "Arrow keys scroll step", in CSS px.
     arrowStep: clampArrowStep(getCookie('or_arrow_step')),
-    // Rendering preferences (#11340): smoothing, double buffering, defer.
+    // Rendering preferences: smoothing, double buffering, defer.
     ...renderPrefs(getCookie),
     // Qt's "Application font", split into the CSS family and a percentage
     // scale over the stylesheet's authored sizes.  Empty family = the
@@ -564,7 +560,7 @@ function applyDisplayState(state) {
     const entries = state.entries;
     if (!entries || typeof entries !== 'object') return;
     applyDisplayStateEntries(entries);
-    // Preserve the current view so restoring controls doesn't move the map.
+    // Preserve the current view so restoring controls doesn't move the view.
     // Kept in DBU: the world scale follows the tile size, which may change.
     try {
         if (app.view && app.designScale && typeof sessionStorage !== 'undefined') {
@@ -734,16 +730,7 @@ function createLayoutViewer(container) {
         isStatic: () => isStaticMode(app),
         wheelZoom: () => app.wheelZoom,
         arrowStep: () => app.arrowStep,
-        contextEnabled: () => !(app.rulerManager && app.rulerManager.isActive()),
-        onClick: (world, e) => {
-            if (app.rulerManager && app.rulerManager.isActive()) {
-                app.rulerManager.handleMapClick(world, e);
-            } else if (app.rulerManager?.handleRulerClick(world)) {
-                // A ruler line took the click.
-            } else if (app.onMapClick) {
-                app.onMapClick(world, e);
-            }
-        },
+        ...placementClicks(app),
         onContextClick: (world, e) => {
             if (app.onMapContextClick) {
                 app.onMapContextClick(world, e);
@@ -834,8 +821,7 @@ function createLayoutViewer(container) {
 
     // Coalesce updates during continuous zoom gestures so the bar tracks
     // the animation instead of only snapping at gesture end.  Pan doesn't
-    // change the bar (geometry depends only on zoom and container width),
-    // so 'move'/'moveend' are deliberately not listened to.
+    // change the bar (geometry depends only on zoom and container width).
     const scheduleUpdateScaleBar = rafCoalesce(updateScaleBar);
     app.view.on('zoom zoomend resize', scheduleUpdateScaleBar);
     app.updateScaleBar = updateScaleBar;
@@ -1200,8 +1186,8 @@ app.goldenLayout.registerComponentFactoryFunction('SelectHighlight', createSelec
 
 const staticCache = window.__STATIC_CACHE__ || null;
 if (staticCache) {
-    // Before any layer or the map scale is built: a report's tiles are baked at
-    // a fixed size and cannot be re-rendered to fit a different box.
+    // Before any layer or the view scale is built: a report's tiles are baked
+    // at a fixed size and cannot be re-rendered to fit a different box.
     useStaticTileSize();
     app.websocketManager = WebSocketManager.fromCache(staticCache,
                                                       scheduleUpdateStatus);
@@ -1298,7 +1284,7 @@ app.toggleWheelZoom = function() {
     scheduleSyncDisplayState();
 };
 
-// ── Rendering preferences (#11340) ──
+// ── Rendering preferences ──
 //
 // The view reads all three live; double buffering and defer also re-plan the
 // tiles at once, so a level held back by them is not left waiting.
@@ -1467,7 +1453,7 @@ function ensureDebugContinueButton() {
 // `designBounds` georeferences the tile grid; `fitRect` is what Fit frames.
 // They differ by the pin-label margin the server adds to the former.
 function applyBounds(designBounds, fitRect) {
-    // The map's whole coordinate system is defined in units of one tile, so
+    // The view's whole coordinate system is defined in units of one tile, so
     // this must be the size the layers actually use.
     const t = computeBoundsTransforms(designBounds, tileSizeCss(), fitRect);
     if (!t) return false;
@@ -1763,7 +1749,7 @@ app.websocketManager.readyPromise.then(async () => {
         const fitRect = boundsData.fit_bounds;
 
         // Size the tiles so the fit below lands on an integer zoom level.
-        // Must precede applyBounds, which derives the map's coordinate scale
+        // Must precede applyBounds, which derives the view's coordinate scale
         // from the tile size, and populateDisplayControls, which builds the
         // layers with it.  Static reports are pre-rasterized at a fixed size
         // (useStaticTileSize above), so they are not free to choose.
@@ -1830,14 +1816,14 @@ app.websocketManager.readyPromise.then(async () => {
             document.getElementById('loading-overlay').style.display = 'none';
         }
         // Shared select-at-point logic used by left-click and right-click.
-        // Returns the server response (or null).  `focusInspector` switches the
+        // Resolves once the reply is handled.  `focusInspector` switches the
         // panel to the Inspector (left-click); right-click keeps the current
         // panel and only updates the selection so the context menu can reflect
         // the object under the cursor.
         function selectAtWorld(world, opts = {}) {
             const { addToSelection = false, focusInspector = true,
                     context = false, showConnectivity = false } = opts;
-            if (!app.designScale) return Promise.resolve(null);
+            if (!app.designScale) return Promise.resolve();
             const { dbuX: dbu_x, dbuY: dbu_y } = worldToDbu(
                 world[0], world[1], app.designScale,
                 app.designOriginX, app.designOriginY);
@@ -1846,7 +1832,7 @@ app.websocketManager.readyPromise.then(async () => {
             // instead of selecting (2.12).
             if (app.labelManager && app.labelManager.isActive()) {
                 app.labelManager.handleMapClick(dbu_x, dbu_y);
-                return Promise.resolve(null);
+                return Promise.resolve();
             }
 
             const vf = buildVisibilityFlags(visibility, selectability);
@@ -1889,7 +1875,6 @@ app.websocketManager.readyPromise.then(async () => {
                     // this response describes a selection that no longer
                     // exists, so it must not drive the Inspector.
                     if (!isCurrentSelection(app, token)) return;
-                    console.log('Select response:', data, 'at dbu', dbu_x, dbu_y);
                     // Type flags so the context menu can enable items by type.
                     applySelectionFlags(app, data);
                     if (data.selected && data.selected.length > 0) {
@@ -1918,8 +1903,6 @@ app.websocketManager.readyPromise.then(async () => {
                             highlightBBox(data.bbox[0], data.bbox[1],
                                           data.bbox[2], data.bbox[3], data.type);
                             pulseHighlight(data.bbox, data.type);
-                            // Remember bounds for "Zoom to Selection".
-                            app.lastSelectionBounds = data.bbox.slice(0, 4);
                         }
                         if (selectRequest.show_connectivity
                             && data.connected_added > 0) {
@@ -1932,17 +1915,13 @@ app.websocketManager.readyPromise.then(async () => {
                         // right-click (context) keeps the current selection.
                         updateInspector(null);
                         if (app.clearSelectionOutline) app.clearSelectionOutline();
-                        app.lastSelectionBounds = null;
                     }
                     scheduleRefreshOverlay();
-                    return data;
                 })
                 .catch(err => {
                     console.error('Select failed:', err);
-                    return null;
                 });
         }
-        app.selectAtWorld = selectAtWorld;
 
         if (!staticCache) {
             app.onMapClick = (world, e) => selectAtWorld(world, {
@@ -2043,7 +2022,7 @@ document.addEventListener('keydown', (e) => {
     } else if (key === 'f' && !e.ctrlKey && !e.metaKey && app.fitRect) {
         app.view.fitWorldRect(app.fitRect);
     } else if (key === 'z' && !e.ctrlKey && app.view) {
-        // Around the pointer when it is over the layout, else the centre.
+        // Around the pointer when it is over the layout, else the center.
         const delta = e.shiftKey ? -1 : 1;
         app.view.zoomAround(app.lastMouseWorld
             ? app.view.project(app.lastMouseWorld) : null, delta);

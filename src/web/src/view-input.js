@@ -56,6 +56,25 @@ export function arrowPanOffset(key, step, shift) {
 //   onClick(world, event), onContextClick(world, event)
 //   onMove(world, event), onLeave(event)
 //   contextEnabled() false while a ruler is being placed
+//   gestureIdleMs   the pause that ends a trackpad gesture (tests)
+// installViewInput's click options for the app: a ruler or a label being
+// placed takes left clicks and turns off the context menu.
+export function placementClicks(app) {
+    return {
+        contextEnabled: () => !(app.rulerManager?.isActive()
+                                || app.labelManager?.isActive()),
+        onClick(world, e) {
+            if (app.rulerManager?.isActive()) {
+                app.rulerManager.handleMapClick(world, e);
+            } else if (app.labelManager?.isActive()
+                       || !app.rulerManager?.handleRulerClick(world)) {
+                // In label mode this places the label.
+                app.onMapClick?.(world, e);
+            }
+        },
+    };
+}
+
 export function installViewInput(view, opts = {}) {
     const container = view.getContainer();
     const isStatic = opts.isStatic || (() => false);

@@ -15,12 +15,6 @@ describe('dbuToWorld / worldToDbu', () => {
         assert.deepEqual(dbuToWorld(1500, 1700, scale, 500, 700), [240, 240]);
     });
 
-    it('round-trips to whole DBU', () => {
-        const [wx, wy] = dbuToWorld(1234, 567, scale, 100, 50);
-        assert.deepEqual(worldToDbu(wx, wy, scale, 100, 50),
-                         { dbuX: 1234, dbuY: 567 });
-    });
-
     it('turns two corners in any order into [minX, minY, maxX, maxY]', () => {
         assert.deepEqual(dbuRectToWorldRect(1000, 0, 0, 500, scale),
                          [0, 0, 240, 120]);

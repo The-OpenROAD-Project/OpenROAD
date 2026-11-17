@@ -473,7 +473,7 @@ async function saturated() {
     return { mgr, first };
 }
 
-// Tiles prefetched around the view (#11340) must never delay one on screen.
+// Tiles prefetched around the view must never delay one on screen.
 describe('WebSocketManager background requests', () => {
     it('go out only once the foreground queue is empty', async () => {
         const { mgr, first } = await saturated();
@@ -514,7 +514,10 @@ describe('WebSocketManager background requests', () => {
         await mgr.readyPromise;
         const bg = mgr.request({ type: 'tile', n: 0 }, { background: true });
         bg.catch(() => {});
+        assert.ok(mgr._bgSent.has(bg.requestId), 'on the wire');
         mgr.cancel(bg.requestId);
+        assert.ok(!mgr.pending.has(bg.requestId));
+        assert.ok(!mgr._bgSent.has(bg.requestId));
         assert.equal(mgr.pendingCount, 0);
     });
 
@@ -865,12 +868,12 @@ describe('WebSocketManager.fromCache', () => {
         assert.ok(result.startsWith('data:image/png;base64,'));
     });
 
-    it('rejects uncached tile', async () => {
+    it('answers an uncached tile as empty', async () => {
         const mgr = WebSocketManager.fromCache(makeCache());
-        await assert.rejects(
-            mgr.request({ type: 'tile', layer: 'M1', z: 1, x: 9, y: 9 }),
-            { message: /Tile not cached/ }
-        );
+        const result = await mgr.request({
+            type: 'tile', layer: 'M1', z: 1, x: 9, y: 9
+        });
+        assert.equal(result, null);
     });
 
     // Two dies can share a layer name; each row's tile is saved per die.
@@ -882,12 +885,9 @@ describe('WebSocketManager.fromCache', () => {
             type: 'tile', layer: 'M1', chiplet: 'top/die0', z: 1, x: 0, y: 0
         });
         assert.equal(result, 'data:image/png;base64,aGk=');
-        await assert.rejects(
-            mgr.request({
-                type: 'tile', layer: 'M1', chiplet: 'top/die1', z: 1, x: 0,
-                y: 0,
-            }),
-            { message: /Tile not cached/ });
+        assert.equal(await mgr.request({
+            type: 'tile', layer: 'M1', chiplet: 'top/die1', z: 1, x: 0, y: 0,
+        }), null);
     });
 
     it('timing_highlight calls setPathOverlay with data URI', async () => {

@@ -136,6 +136,17 @@ describe('createCompositeSource', () => {
         assert.equal(await handle.promise, null);
     });
 
+    // A saved report keeps only tiles with content.
+    it('is blank in a saved report when no shown layer was saved', async () => {
+        const { WebSocketManager } = await import('../../src/websocket-manager.js');
+        const wm = WebSocketManager.fromCache({ tiles: { 'metal2/3/0/0': 'aGk=' } });
+        const source = createCompositeSource({
+            wm, ctx, getItems: () => ITEMS, dpr: () => 2, tileSize: () => 240,
+            decode,
+        });
+        assert.equal(await source.load({ z: 3, x: 0, y: 0 }).promise, null);
+    });
+
     it('sends a ring tile at background priority and can promote it', () => {
         const { wm, source } = composite();
         const handle = source.load({ z: 3, x: 0, y: 0 }, { background: true });
@@ -172,14 +183,6 @@ describe('createCompositeSource', () => {
         assert.equal(await handle.promise, undefined,
                      'the last partial is the final image');
         assert.equal(partials.length, 2);
-    });
-
-    it('resolves an all-empty tile to null', async () => {
-        const { wm, source } = composite();
-        const handle = source.load({ z: 3, x: 0, y: 0 });
-        wm.reply('_instances', null);
-        wm.reply('metal1', null);
-        assert.equal(await handle.promise, null);
     });
 
     it('allocates a canvas only once a layer has an image', async () => {
@@ -271,8 +274,6 @@ describe('createCompositeSource with layers shared by dies', () => {
     });
 });
 
-// The server's layer_extents bound where each layer has shapes; a tile outside
-// a layer's box is not asked for that layer (layer-extents.js).
 // A gated item stays in its slot while its flag is off, but asks for nothing.
 describe('createCompositeSource with gated items', () => {
     const items = (gate) => [{ layer: '_clusters', opacity: 1, visible: true,
@@ -321,6 +322,8 @@ describe('createCompositeSource with gated items', () => {
     });
 });
 
+// The server's layer_extents bound where each layer has shapes; a tile outside
+// a layer's box is not asked for that layer (layer-extents.js).
 describe('createCompositeSource with layer extents', () => {
     // metal1 lives in the top-left quarter of the zoom-0 grid only.
     function withExtents() {
@@ -503,7 +506,7 @@ describe('tile requests', () => {
         assert.equal(build('metal1').pattern, undefined);
     });
 
-    // Two dies can share a layer name (#11886); a row's tiles draw its die.
+    // Two dies can share a layer name; a row's tiles draw its die.
     it('scopes a row to its die and keys its pattern by row', () => {
         const rowCtx = {
             ...tctx,

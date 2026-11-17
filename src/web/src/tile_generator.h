@@ -218,19 +218,12 @@ struct PaintLayer
 // Walk the chiplet hierarchy and return a flat list with each chiplet's
 // accumulated world transform.
 //
-// Leaves come from ODB's unfolded model (dbUnfoldedChipInst), which already
-// composes the dbChipInst transforms top-down — the web does not redo that
-// arithmetic.  The unfolded model holds leaves only: dbUnfoldedBuilder skips
-// ChipType::HIER chips, which own no dbBlock and so have no geometry.  Those
-// intermediate nodes still group the UI trees, so they are synthesized here
-// from the prefixes of each leaf's getChipInstPath(), as is the root (the
-// unfolded model has no entry for the top chip).
-//
-// With use_unfolded_model=false, or when the model is empty (single-chip
-// designs, load paths that never build it), the hierarchy is walked instead
-// and the transforms composed here.  Both routes produce the same nodes; the
-// walk is what a caller uses when the model may be out of date, since ODB
-// does not refresh it on edits and refreshing it from a read path is not safe.
+// With use_unfolded_model=false, or when the model is empty, the hierarchy is
+// walked and the transforms composed here; TileGenerator::chiplets() always
+// walks, since ODB builds the unfolded model at load and never refreshes it.
+// Otherwise leaves come from the model (dbUnfoldedChipInst), which holds leaves
+// only, and the HIER nodes and the root are synthesized from the prefixes of
+// each leaf's getChipInstPath().  Both routes produce the same nodes.
 //
 // Related Qt code: `LayoutViewer::getChips()` returns a flat
 // (dbChipInst → dbChip) PtrMap with no transform composition — this
@@ -506,7 +499,7 @@ struct TileVisibility
   // TileGenerator::tileCacheKey().
   void parseFromJson(const boost::json::object& json);
 
-  // JSON keys of every visibility flag parseFromJson reads.
+  // JSON keys of every visibility flag parseFromJson reads; for tests.
   static std::vector<std::string_view> flagKeys();
 
   bool isNetVisible(odb::dbNet* net) const;
@@ -534,8 +527,9 @@ class TileGenerator
   ~TileGenerator();
 
   void eagerInit();
-  // eagerInit() after a design load; otherwise only an empty tile cache.
-  void ensureInit();
+  // eagerInit() after a design load; otherwise the pin-label margin check, and
+  // with `fresh_cache` an empty tile cache.
+  void ensureInit(bool fresh_cache = false);
   bool shapesReady() const;
 
   bool hasSta() const { return sta_ != nullptr; }
@@ -573,9 +567,9 @@ class TileGenerator
 
   std::vector<std::string> getSites() const;
 
-  // Per-layer colors matching web::DisplayControls layer palette.  Computed
-  // lazily and cached; the cache is rebuilt only if the tech changes.  Shared,
-  // so eagerInit() can't free a map a renderer is still reading.
+  // Per-layer colors matching web::DisplayControls layer palette, built per
+  // tech on first use and dropped by eagerInit().  Shared, so that reset can't
+  // free a map a renderer is still reading.
   std::shared_ptr<const odb::PtrMap<odb::dbTechLayer, Color>> getLayerColorMap(
       odb::dbTech* tech = nullptr) const;
 
@@ -916,11 +910,11 @@ class TileGenerator
   // -> painter -> paint order.  Single source of truth for the
   // renderTileBuffer dispatch, the pseudo-layer guard, saveImage's
   // layers_to_render and the overlays the tech response publishes, from which
-  // the client builds its panes.
+  // the client builds its draw lists.
   //
   // `shown_by` and `layers_by` are TileVisibility JSON keys in groups, read by
   // anyGroupOn(): on when every key of any one group is.  `z_index` is the
-  // client's pane order, which saveImageLayerOrder() composites in.
+  // client's draw order, which saveImageLayerOrder() composites in.
   struct PseudoLayerDef
   {
     const char* name;
@@ -1012,8 +1006,8 @@ class TileGenerator
   // 256*dpr*S is expensive, so pan/zoom-back and visibility toggles reuse
   // the cached bytes.  LRU eviction at kTileCacheCap entries or
   // kTileCacheBytesCap bytes, whichever comes first; cleared on design
-  // reload via eagerInit() and on edits via onDesignChanged().  Thread-safe
-  // (mirrors chiplets_mutex_).
+  // reload via eagerInit(), on edits via onDesignChanged() and for a new
+  // session by ensureInit(true).  Thread-safe (mirrors chiplets_mutex_).
   bool tileCacheGet(const std::string& key,
                     std::vector<unsigned char>& out) const;
   // `epoch` is tileCacheEpoch() from before the render: a tile rendered
@@ -1244,7 +1238,8 @@ class TileGenerator
   utl::Logger* logger_;
   int num_threads_ = 0;
   std::unique_ptr<Search> search_;
-  // Cached by computePinLabelMargin(), which eagerInit() runs under readers.
+  // Cached by computePinLabelMargin(), which eagerInit() and ensureInit() run
+  // under readers.
   std::atomic<int> pin_label_margin_dbu_{0};
 
   // Cached layer-color map keyed by tech (see getLayerColorMap).  Each tech is

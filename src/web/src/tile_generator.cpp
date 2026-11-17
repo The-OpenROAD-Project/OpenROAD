@@ -1696,7 +1696,7 @@ TileGenerator::TileGenerator(odb::dbDatabase* db,
 
 TileGenerator::~TileGenerator() = default;
 
-void TileGenerator::ensureInit()
+void TileGenerator::ensureInit(const bool fresh_cache)
 {
   std::lock_guard lock(init_mutex_);
   // Read first: a load landing during the init brings on the next one.
@@ -1708,13 +1708,13 @@ void TileGenerator::ensureInit()
     init_chip_ = db_->getChip();
     return;
   }
-  // No reindex, but nothing cached from before: an edit ODB does not report
-  // leaves no stale tile behind.
   const int margin = pin_label_margin_dbu_;
   computePinLabelMargin();
   if (pin_label_margin_dbu_ != margin) {
     onDesignChanged();  // a new margin moves every tile
-  } else {
+  } else if (fresh_cache) {
+    // A new session starts clean: an edit ODB does not report leaves no
+    // stale tile behind.
     clearTileCache();
   }
 }
@@ -1993,11 +1993,8 @@ std::shared_ptr<const std::vector<ChipletNode>> TileGenerator::chiplets() const
 
 void TileGenerator::refreshChipletsLocked() const
 {
-  // ODB itself is not thread-safe, so callers serialize web requests
-  // against design mutations.  The fingerprint check (root pointer +
-  // chiplet placement hash) only needs to detect *sequential* Tcl mutations
-  // — taking the lock before reading root/hash keeps the fingerprint
-  // and the cached values consistent with each other.
+  // ODB itself is not thread-safe, so callers serialize web requests against
+  // design mutations.
   odb::dbChip* root = db_->getChip();
   const size_t inst_hash = hashChipInsts(root);
   if (!chiplets_cache_ || chiplets_cache_root_ != root
@@ -4580,17 +4577,9 @@ std::vector<PaintLayer> TileGenerator::saveImageLayerOrder(
     const TileVisibility& vis,
     const std::vector<PaintLayer>& tech_layers)
 {
-  // Bottom to top, by the SAME z order the client stacks the layers in on
-  // screen (the draw lists in display-controls.js): the view paints in
-  // that order, so a PNG composited in any other order is not the view
-  // the user saw.  Compositing in registry order — every pseudo layer last —
-  // put the manufacturing grid over the routing and the pin markers over the
-  // tech layers.  These three mirror the client's non-pseudo values;
-  // PseudoLayerDef::z_index carries the overlays'.
-  //
-  // `tech_layers` arrives already in the client's paint order — see
-  // paintOrderLayers(), which is where a face-down die's reversal happens.
-  // This function only interleaves the pseudo layers with it.
+  // Bottom to top in the client's draw order (display-controls.js), so the
+  // PNG is the view.  `tech_layers` is already in it (paintOrderLayers()).
+  // The client's z values; PseudoLayerDef::z_index has the overlays'.
   constexpr int kInstancesZ = 0;
   constexpr int kPinsZ = 1;
   constexpr int kTechLayerZBase = 3;
@@ -4603,7 +4592,7 @@ std::vector<PaintLayer> TileGenerator::saveImageLayerOrder(
     ordered.emplace_back(kPinsZ, PaintLayer{.layer = "_pins", .chiplet = ""});
   }
   // One z for every row, which the stable sort keeps in order: however many
-  // rows there are, they stay under the overlays, as the merged panes do.
+  // rows there are, they stay under the overlays, as in the client's draw list.
   for (const PaintLayer& entry : tech_layers) {
     if (!vis.isLayerShown(entry.layer)
         || vis.isLayerHiddenOn(entry.chiplet, entry.layer)) {
@@ -4618,8 +4607,8 @@ std::vector<PaintLayer> TileGenerator::saveImageLayerOrder(
     }
   }
   // The "color by owner" overlays stack by the same rule; saveImage() drops the
-  // ones whose color map comes out empty.  _modules goes under the routing,
-  // like the client's zIndex 2; _clusters over it, so metal does not cover the
+  // ones whose color map comes out empty.  _modules goes under the routing, as
+  // in the client's base slot; _clusters over it, so metal does not cover the
   // partition, but below the Misc overlays, which start at 1000.
   if (vis.module_view) {
     ordered.emplace_back(2, PaintLayer{.layer = "_modules", .chiplet = ""});
@@ -4641,10 +4630,9 @@ const std::array<TileGenerator::PseudoLayerDef, 7>&
 TileGenerator::pseudoLayerDefs()
 {
   // z_index mirrors the client's draw lists in display-controls.js (see
-  // saveImageLayerOrder); that order in turn follows the GUI's paint order
-  // (renderThread.cpp:1201-1298), where the manufacturing grid goes down before
-  // the routing layers, the instance names right after them, and access
-  // points, regions and the gcell grid on top.
+  // saveImageLayerOrder), which follow the GUI's paint order: the
+  // manufacturing grid before the routing layers, the instance names right
+  // after them, and access points, regions and the gcell grid on top.
   static const std::array<PseudoLayerDef, 7> defs = {{
       {.name = "_access_points",
        .shown_by = {{"access_points"}},
@@ -8911,7 +8899,7 @@ boost::json::object serializeTechResponse(const TileGenerator& gen)
 
   out["has_liberty"] = gen.hasSta();
   // The self-painting overlays this design can draw, from which the client
-  // builds its panes: name, pane order and when each shows.
+  // builds its draw lists: name, draw order and when each shows.
   const auto groups_json = [](const auto& groups) {
     boost::json::array arr;
     for (const auto& group : groups) {

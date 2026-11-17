@@ -1123,18 +1123,18 @@ void WebSocketSession::on_accept(beast::error_code ec)
     queue_response(cfg);
   }
 
-  // Build search indices in the background; tiles render without shapes
-  // until ready, then a "refresh" push notification triggers a redraw.
+  // In the background: index a newly loaded design and empty the tile cache;
+  // a "refresh" push then redraws.
   init_thread_ = std::thread([self = shared_from_this()]() {
     {
       const ScriptGateScope gate(self->tcl_eval_->script_gate, /*wait=*/true);
       if (!gate.entered()) {
         return;
       }
-      self->generator_->ensureInit();
+      self->generator_->ensureInit(/*fresh_cache=*/true);
     }
-    // Refresh only when there is a design to draw.  The gate is the dbChip,
-    // not the dbBlock: a 3DBlox top chip is HIER and has no block.
+    // Refresh only when there is a design to draw.  The check is on the
+    // dbChip, not the dbBlock: a 3DBlox top chip is HIER and has no block.
     if (!self->generator_->getChip()) {
       return;
     }
@@ -2737,8 +2737,8 @@ void WebServer::gifAddFrame(std::optional<int> key,
     return;
   }
 
-  // Create generator on demand (server may not be running), and init it on the
-  // first frame only: ensureInit() empties the tile cache the browsers share.
+  // Create generator on demand (server may not be running); the design is
+  // static across a GIF's frames, so init it on the first one only.
   ensureGenerator();
   if (gif->frame_count == 0) {
     generator_->ensureInit();

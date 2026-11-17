@@ -303,10 +303,10 @@ function optionsApp(overrides = {}) {
         rulerStyle: 'euclidian',
         wheelZoom: true,
         polyDecomp: false,
-        // Rendering preferences (#11340), at their Qt-like defaults.
+        // Rendering preferences, at their Qt-like defaults.
         controlSmoothing: false,
         doubleBuffer: true,
-        deferTileUpdates: true,
+        deferTileUpdates: false,
         calls: [],
         toggleShowDbu() { this.calls.push('showDbu'); },
         toggleRulerStyle() { this.calls.push('rulerStyle'); },
@@ -413,7 +413,7 @@ describe('Options menu', () => {
         assert.ok(row.classList.contains('disabled'));
     });
 
-    // Rendering preferences (#11340).  Web-only: Qt has no smoothing to switch
+    // Rendering preferences.  Web-only: Qt has no smoothing to switch
     // off and already draws off-screen.
     it('offers the three rendering preferences, ticked from the app', () => {
         document.body.innerHTML = '<div id="menu-bar"></div>';
@@ -424,7 +424,8 @@ describe('Options menu', () => {
             rowByLabel(rows, label).querySelector('.menu-check').textContent;
         assert.equal(tick('Smooth zoom and pan'), '', 'off by default');
         assert.equal(tick('Double buffering'), '✓');
-        assert.equal(tick('Defer tile updates while panning'), '✓');
+        assert.equal(tick('Defer tile updates while panning'), '',
+                     'off by default');
 
         rowByLabel(openMenu('Options'), 'Smooth zoom and pan').click();
         rowByLabel(openMenu('Options'), 'Double buffering').click();

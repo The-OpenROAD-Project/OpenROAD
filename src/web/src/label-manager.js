@@ -92,12 +92,15 @@ export class LabelManager {
     // selection if the label it pointed at is gone, or the Inspector would go
     // on showing a label that no longer exists.
     applyRemoteLabels(labels) {
-        this._applyLabels(labels);
-        if (this._selectedName
-            && !this._labels.some(l => l.name === this._selectedName)) {
+        // Dropped before the repaint, so the handles are drawn once.
+        const gone = this._selectedName
+            && !(labels || []).some(l => l.name === this._selectedName);
+        if (gone) {
             this._selectedName = null;
+        }
+        this._applyLabels(labels);
+        if (gone) {
             this._updateInspector(null);
-            this._renderHandles();
         }
         this._app.refreshOverlay();
     }
@@ -305,7 +308,10 @@ export class LabelManager {
                 anchor: patch.anchor, color: label.color,
             });
             this._refresh(res);
-            this._select(label.name);
+            // Something else may have taken the selection while it was sent.
+            if (this._selectedName === label.name) {
+                this.refreshInspector(label.name);
+            }
         } catch (err) {
             console.error('edit label failed:', err);
         }

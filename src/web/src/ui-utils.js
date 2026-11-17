@@ -215,7 +215,7 @@ function bloatRect([[yMin, xMin], [yMax, xMax]], fraction) {
 // ([[yMin, xMin], [yMax, xMax]], the tile-grid georeference).  Pure so it
 // can be unit-tested; returns null when the design is empty.
 //
-// `fitRect`, in the same wire order, is what the map zooms to fit: the design
+// `fitRect`, in the same wire order, is what the view zooms to fit: the design
 // without the pin-label margin the georeference rect carries.  Framing on the
 // georeference rect instead leaves that margin as dead space around the design
 // (issue #11338).  Omitted, the georeference rect is fitted, as before.
@@ -231,7 +231,6 @@ export function computeBoundsTransforms(designBounds, tileSize = 256,
     const [[fitYMin, fitXMin], [fitYMax, fitXMax]] = bloatRect(fit, kZoomMargin);
     return {
         scale,
-        maxDXDY,
         originX: minX,
         originY: minY,
         // World rect [minX, minY, maxX, maxY] (layout-view.js).
@@ -397,7 +396,7 @@ export function attachGroupCollapse(header, arrow, children, collapsed) {
 // Left unbounded the zoom keeps climbing past any useful magnification until
 // the arithmetic gives out:
 // the server's tile span (maxDXDY / 2^z) underflows to zero, so tiles come back
-// empty and the design appears to vanish, and the map's own 2^z factors reach
+// empty and the design appears to vanish, and the view's own 2^z factors reach
 // Infinity, which JSON.stringify writes as `null` in the tile request.
 //
 // The cap is where one DBU already covers `maxPxPerDbu` screen pixels: a DBU is
@@ -455,7 +454,7 @@ export function maxUsefulZoom(designScale, maxPxPerDbu = 8) {
 // window resize detunes it until the next reload, which costs at worst the
 // level the fit loses today.
 export function fittedTileSizeCss({ designBounds, fitRect, viewW, viewH }) {
-    // The framed box, margin and fit-rect fallback included, in the map units
+    // The framed box, margin and fit-rect fallback included, in the view's units
     // TILE_SIZE_CSS defines -- so this cannot drift from what the fit sees.
     const t = computeBoundsTransforms(designBounds, TILE_SIZE_CSS, fitRect);
     const finitePositive = (v) => Number.isFinite(v) && v > 0;

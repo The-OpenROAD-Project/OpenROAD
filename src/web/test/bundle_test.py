@@ -39,10 +39,6 @@ _IDENTIFIER_URLS = {
     "https://discourse.threejs.org/t/updates-to-lighting-in-three-js-r155/53733",
     # The namespace netlistsvg stamps into the SVG it produces.
     "https://github.com/nturley/netlistsvg",
-    # Links in the comments of luma.gl's shader sources.
-    "https://en.wikipedia.org/wiki/find_first_set",
-    "https://en.wikipedia.org/wiki/single-precision_floating-point_format",
-    "https://en.wikipedia.org/wiki/double-precision_floating-point_format",
     # The bare schemes loaders.gl tests a path against.
     "http://",
     "https://",
@@ -160,6 +156,10 @@ class Page(unittest.TestCase):
         # EPL-1.0 asks where elkjs's source can be obtained; every entry says.
         self.assertEqual(text.count("\nSource: https://"), text.count("=" * 78) // 2)
         self.assertIn("\nSource: https://github.com/OpenKieler/elkjs\n", text)
+        # gl-matrix ships its license as LICENSE.md, which rules_js strips
+        # unless MODULE.bazel keeps it.
+        body = text.split("\ngl-matrix ", 1)[1].split("=" * 78)[1]
+        self.assertIn("Permission is hereby granted", body)
 
 
 class FoundryNames(unittest.TestCase):

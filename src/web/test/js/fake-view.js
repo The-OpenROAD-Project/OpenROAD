@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// A stand-in for layout-view.js: the same API, no renderer.  Records what the
-// modules under test ask of the view.  Needs a DOM (setup-dom.js).
+// A stand-in for layout-view.js: the part of its API the modules under test
+// use, with no renderer.  Records what they ask of the view.  Needs a DOM
+// (setup-dom.js).
 
 import { project, unproject } from '../../src/view-math.js';
 
@@ -11,22 +12,16 @@ export function makeFakeView({ width = 1000, height = 800, zoom = 0,
     const container = document.createElement('div');
     const listeners = new Map();
     const vs = { width, height, zoom, target: [...target] };
-    const limits = { minZoom: 0, maxZoom: 20 };
 
     const view = {
-        vs,
-        calls: [],             // [name, ...args] of every navigation call
-        overlays: new Map(),   // id -> { shapes, order }
-        images: new Map(),
+        calls: [],             // [name, ...args] of every recorded call
+        overlays: new Map(),   // id -> shapes
         markers: new Map(),    // group -> { visible, items: Map id -> m }
         cursorModes: new Set(),
-        slots: [],
         flashes: 0,
 
         getContainer: () => container,
-        getSize: () => ({ width: vs.width, height: vs.height }),
         getZoom: () => vs.zoom,
-        getTargetZoom: () => vs.zoom,
         getCenter: () => [...vs.target],
         project: (w) => project(w, vs),
         unproject: (p) => unproject(p, vs),
@@ -52,11 +47,6 @@ export function makeFakeView({ width = 1000, height = 800, zoom = 0,
             }
         },
 
-        setLimits(l) {
-            Object.assign(limits, l);
-            view.calls.push(['setLimits', { ...l }]);
-        },
-        getLimits: () => ({ ...limits }),
         setView(center, z = vs.zoom, opts) {
             view.calls.push(['setView', [...center], z, opts]);
             vs.target = [...center];
@@ -64,13 +54,9 @@ export function makeFakeView({ width = 1000, height = 800, zoom = 0,
                 vs.zoom = z;
                 view.emit('zoom');
             }
-            view.emit('move');
         },
         fitWorldRect(rect, opts) {
             view.calls.push(['fitWorldRect', [...rect], opts]);
-        },
-        zoomAround(pt, delta, opts) {
-            view.calls.push(['zoomAround', pt, delta, opts]);
         },
         zoomIn() {
             view.calls.push(['zoomIn']);
@@ -78,47 +64,28 @@ export function makeFakeView({ width = 1000, height = 800, zoom = 0,
         zoomOut() {
             view.calls.push(['zoomOut']);
         },
-        panByPx(dx, dy, opts) {
-            view.calls.push(['panByPx', dx, dy, opts]);
-        },
         // Change the zoom as a user would, firing the view's events.
         setZoomForTest(z) {
             vs.zoom = z;
             view.emit('zoom');
         },
-        invalidateSize() {},
-        applyPrefs() {},
-        setGesture(on) {
-            view.gesture = !!on;
-        },
 
         addTileSlot(id, opts = {}) {
             const slot = {
-                id, opts, visible: opts.visible !== false, refreshes: 0,
-                setVisible(v) { slot.visible = !!v; },
-                isVisible: () => slot.visible,
+                opts, refreshes: 0,
                 refresh() { slot.refreshes++; },
-                remove() { slot.removed = true; },
             };
-            view.slots.push(slot);
             return slot;
         },
 
-        setOverlay(id, shapes, { order = 0 } = {}) {
+        setOverlay(id, shapes) {
             if (!shapes || shapes.length === 0) {
                 view.overlays.delete(id);
             } else {
-                view.overlays.set(id, { shapes, order });
+                view.overlays.set(id, shapes);
             }
         },
-        shapes: (id) => view.overlays.get(id)?.shapes || [],
-        setImageOverlay(id, img, { order = 0 } = {}) {
-            if (!img) {
-                view.images.delete(id);
-            } else {
-                view.images.set(id, { ...img, order });
-            }
-        },
+        shapes: (id) => view.overlays.get(id) || [],
 
         addMarker(group, id, world, el, { center = false } = {}) {
             const g = markerGroup(group);
@@ -164,7 +131,6 @@ export function makeFakeView({ width = 1000, height = 800, zoom = 0,
         captureCanvas: async () => (view.canvas
             ? { image: view.canvas, rect: view.canvas.getBoundingClientRect() }
             : null),
-        debugSnapshot: () => ({ zoom: vs.zoom, target: [...vs.target] }),
     };
 
     function markerGroup(group) {

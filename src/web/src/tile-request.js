@@ -110,7 +110,7 @@ export function isDeviceExactTileSize(size, dpr) {
 
 // Adopt a tile size picked to make zoom-to-fit land on an integer zoom level
 // (see fittedTileSizeCss).  Like the two setters above this must run before any
-// layer is built: the map's coordinate scale is derived from it.
+// layer is built: the view's coordinate scale is derived from it.
 //
 // Safe because the tile grid is indexed by zoom alone — tile (z,x,y) covers
 // maxDXDY/2^z DBU whatever its pixel size — so this changes the resolution the
@@ -155,7 +155,7 @@ export function nativeDpr() {
 // browser, so all three have to be rendered at the same pixel count and land on
 // the same grid; an overlay half a pixel off, or an image the browser has to
 // rescale, shows up as a blurred or misregistered highlight.
-export function tileSizeFields(dpr, tileSize = tileSizeCss()) {
+export function tileSizeFields(dpr, tileSize) {
     return {
         // Rounded here and nowhere else: this field feeds the server's cache
         // key and its CSS-authored sizes (fonts, pen widths), both of which
@@ -188,7 +188,7 @@ export function hasEntries(map) {
 // `row` is the Display Controls row asking: `chiplet` is the die it draws (two
 // dies can share a layer name), `rowId` keys its fill pattern and
 // `rendererHost` marks the row that carries the renderers' layer pass.
-export function tileRequestBuilder(coords, ctx, dpr, tileSize = tileSizeCss()) {
+export function tileRequestBuilder(coords, ctx, dpr, tileSize) {
     const { visibility, selectability, visibleLayers, selectableLayers, app }
         = ctx;
     const shared = {
@@ -203,14 +203,16 @@ export function tileRequestBuilder(coords, ctx, dpr, tileSize = tileSizeCss()) {
     if (app && app.visibleChiplets instanceof Set) {
         shared.visible_chiplets = [...app.visibleChiplets];
     }
+    const hiddenPerDie = app && hasEntries(app.chipletHiddenLayers)
+        ? app.chipletHiddenLayers : null;
     return (layerName, row = {}) => {
         const req = { type: 'tile', layer: layerName, ...shared };
         // A row is only requested while it is checked, so a die's exceptions
         // cannot change its pixels; leaving them out keeps its cache key stable.
         if (row.chiplet) {
             req.chiplet = row.chiplet;
-        } else if (app && hasEntries(app.chipletHiddenLayers)) {
-            req.chiplet_hidden_layers = app.chipletHiddenLayers;
+        } else if (hiddenPerDie) {
+            req.chiplet_hidden_layers = hiddenPerDie;
         }
         // Debug tiles skip the cache, so this flag cannot fragment it.
         if (row.rendererHost && shared.debug_renderers) {

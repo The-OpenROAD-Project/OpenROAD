@@ -5216,9 +5216,6 @@ WebSocketResponse SelectHandler::handleGet3DData(const WebSocketRequest& req)
     boost::json::object root;
     boost::json::array chiplets;
     std::map<std::string, size_t> chiplet_indices;
-    // Held, not borrowed: the cached list is replaced when another thread
-    // notices a chip placement edit, and the bump and net walks below take a
-    // while.
     const auto node_list = gen_->chiplets();
     const std::vector<ChipletNode>& nodes = *node_list;
 

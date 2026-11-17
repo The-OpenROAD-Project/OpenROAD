@@ -40,7 +40,7 @@ export function clampZoom(zoom, { minZoom = -Infinity, maxZoom = Infinity } = {}
 
 // The view that fits world `rect` with `padding` px on every side: the zoom is
 // floored to a whole level after rounding to 1/100 of a level, and the rect is
-// centred.
+// centered.
 export function fitView(rect, vs, { padding = [0, 0], minZoom, maxZoom } = {}) {
     const w = Math.max(1, vs.width - 2 * padding[0]);
     const h = Math.max(1, vs.height - 2 * padding[1]);
@@ -109,7 +109,7 @@ export function inRange(range, x, y) {
         && y >= range.y0 && y <= range.y1;
 }
 
-// Tiles of `range`, nearest the range centre first.
+// Tiles of `range`, nearest the range center first.
 export function rangeTiles(range) {
     if (!range) {
         return [];
@@ -200,7 +200,6 @@ export function easeOutQuad(t) {
     return 1 - (1 - t) * (1 - t);
 }
 
-// Close to cubic-bezier(0, 0, 0.25, 1).
 export function easeOutCubic(t) {
     return 1 - Math.pow(1 - t, 3);
 }

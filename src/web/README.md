@@ -687,9 +687,9 @@ The module has two parts:
   Tiles are rendered from ODB geometry and encoded as PNG using lodepng.
 
 - **JavaScript frontend** (`src/main.js`, `src/index.html`, `src/style.css`) —
-  A single-page application using deck.gl (WebGL) for the layout view and
-  GoldenLayout for resizable panels. Communicates with the server over a binary WebSocket
-  protocol.
+  A single-page application using deck.gl (WebGL) for the layout view and lit
+  components for the panels. Communicates with the server over a binary
+  WebSocket protocol.
 
 ## Browser libraries
 

@@ -33,7 +33,8 @@ export const DRAW_ORDER = Object.freeze({
 const noDepth = { depthCompare: 'always', depthWriteEnabled: false };
 
 const ANIMATION_MS = 250;           // zoom and pan duration
-const kMaxAnimatedZoomDelta = 4;           // larger jumps are not animated
+const kSettleTimeoutMs = 6000;      // whenTilesSettled gives up after
+const kMaxAnimatedZoomDelta = 4;           // larger jumps cut, or fly (curve)
 const kInertiaMs = 300;
 // The level above is kept loaded this many views around the view, so a zoom
 // out around any point finds its tiles there.
@@ -100,7 +101,8 @@ function deviceInfo(d) {
 //   prefs      { smooth(), doubleBuffer(), defer() }, read live
 //   tileSize() CSS px of a tile; dpr() the device pixel ratio
 //   isStatic   a saved report: no touch zoom
-//   raf, now   injectable for tests
+//   preserveDrawingBuffer  keep the canvas readable between frames (probes)
+//   raf, now, copyCanvas   injectable for tests
 export function createLayoutView(container, opts = {}) {
     const deckApi = opts.deckApi !== undefined ? opts.deckApi : globalThis.deck;
     const copyCanvas = opts.copyCanvas || copyToCanvas2d;
@@ -116,7 +118,7 @@ export function createLayoutView(container, opts = {}) {
 
     const vs = { target: [0, 0], zoom: 0, width: 1, height: 1 };
     const limits = { minZoom: -Infinity, maxZoom: MAX_TILE_ZOOM };
-    let anim = null;          // { from, to, anchor, start, ms }
+    let anim = null;          // the move in progress, see animateTo()
     let interacting = false;  // a drag or pinch from the controller
     let gesturing = false;    // a wheel or trackpad gesture (setGesture)
     let afterFrame = [];      // called once deck has drawn its next frame
@@ -327,7 +329,6 @@ export function createLayoutView(container, opts = {}) {
         if (zoomChanged) {
             events.emit('zoom');
         }
-        events.emit('move');
         if (tiles) {
             updateTiles();
         }
@@ -411,9 +412,6 @@ export function createLayoutView(container, opts = {}) {
             ms = flight ? flight.ms : animationMs(to);
         }
         startMove();
-        if (to.zoom !== vs.zoom) {
-            events.emit('zoomstart');
-        }
         if (ms <= 0) {
             anim = null;
             // settleView updates the tiles once, at rest: an update while
@@ -544,15 +542,16 @@ export function createLayoutView(container, opts = {}) {
         // At rest only: it is background work and must not compete with the
         // view while it moves.
         const extra = [];
+        const apex = flightApex();
         if (!anim && !interacting && !moving && swap.pendingZ === null) {
             prefetchZ = z > 0 ? z - 1 : null;
-            if (prefetchZ !== null) {
+            // A landed flight's level already covers the view.
+            if (prefetchZ !== null && prefetchZ !== apex?.z) {
                 extra.push({ z: prefetchZ, range: tileRange(
                     growRect(viewWorldRect(dest), kPrefetchMargin), prefetchZ,
                     tileSize()) });
             }
         }
-        const apex = flightApex();
         if (apex) {
             extra.push({ ...apex, background: false });
         }
@@ -653,7 +652,6 @@ export function createLayoutView(container, opts = {}) {
         slots.set(id, slot);
         updateTiles();
         return {
-            id,
             setVisible(v) {
                 if (slot.visible === !!v) {
                     return;
@@ -670,11 +668,6 @@ export function createLayoutView(container, opts = {}) {
                     slot.grid.refresh();
                     scheduleRender();
                 }
-            },
-            remove() {
-                slot.grid.clear();
-                slots.delete(id);
-                scheduleRender();
             },
         };
     }
@@ -788,7 +781,7 @@ export function createLayoutView(container, opts = {}) {
 
     // While hidden levels load, their tiles fill what the shown levels do not
     // cover, such as the new edges of a zoom out.  A mask in the background
-    // colour keeps them from showing through the shown tiles' clear pixels.
+    // color keeps them from showing through the shown tiles' clear pixels.
     function underlay(slot, zs, levels, view, flash) {
         const out = [];
         for (const z of zs) {
@@ -818,8 +811,10 @@ export function createLayoutView(container, opts = {}) {
         const pad = 1 / Math.pow(2, vs.zoom);
         const masks = [];
         for (const tile of slot.grid.tiles.values()) {
+            // A tile that failed with no image hides nothing under it.
             if (!zs.includes(tile.z)
-                || (tile.loading && (settledOnly || !tile.drawable))) {
+                || (tile.loading && (settledOnly || !tile.drawable))
+                || (tile.failed && !tile.drawable)) {
                 continue;
             }
             const bounds = boundsOf(tile);
@@ -864,7 +859,7 @@ export function createLayoutView(container, opts = {}) {
                 fills.push({ polygon: pts, color: s.fill });
             }
             if (s.stroke) {
-                const closed = s.kind === 'rect' || s.closed;
+                const closed = s.kind === 'rect';
                 strokes.push({ path: closed ? [...pts, pts[0]] : pts,
                                color: s.stroke, width: s.width || 1,
                                dash: s.dash || null });
@@ -952,12 +947,13 @@ export function createLayoutView(container, opts = {}) {
         if (tiles.animate) {
             scheduleRender();
         }
-        events.emit('render');
     }
 
     // Share of the view inside the tile grid that shows a settled base tile
     // of a level being drawn: the browser probes' blank metric.
-    function coverage(nx = 32, ny = 20) {
+    function coverage() {
+        const nx = 32;
+        const ny = 20;
         const slot = slots.get('base');
         if (!slot) {
             return null;
@@ -1061,12 +1057,13 @@ export function createLayoutView(container, opts = {}) {
         },
 
         // Zoom by `delta` levels from the level an animation is heading to,
-        // keeping the point under `screenPt` still (the centre when null).
+        // keeping the point under `screenPt` still (the center when null).
         // `settle: false` (with `animate: false`) keeps a fractional zoom for
         // a gesture still under way; a later call settles it.
         zoomAround(screenPt, delta, { animate, settle = true } = {}) {
             const zoom = clampZoom(view.getTargetZoom() + delta, limits);
-            const base = tileView();
+            // An anchor holds what is under it now, as stepAnimation does.
+            const base = screenPt ? vs : tileView();
             const pt = screenPt || [vs.width / 2, vs.height / 2];
             const target = zoomAroundTarget(base, pt, zoom);
             animateTo({ target, zoom },
@@ -1126,7 +1123,7 @@ export function createLayoutView(container, opts = {}) {
         },
 
         // A DOM element pinned to a world point: its top-left corner, or its
-        // centre with `center`.
+        // center with `center`.
         addMarker(group, id, world, el, { center = false } = {}) {
             const g = markerGroup(group);
             const old = g.items.get(id);
@@ -1184,9 +1181,10 @@ export function createLayoutView(container, opts = {}) {
         },
 
         // Resolves once every visible slot has loaded what is on screen and
-        // no level change or animation is in progress.
-        whenTilesSettled({ timeoutMs = 6000 } = {}) {
-            const deadline = now() + timeoutMs;
+        // no level change or animation is in progress, or after
+        // kSettleTimeoutMs.
+        whenTilesSettled() {
+            const deadline = now() + kSettleTimeoutMs;
             return new Promise((resolve) => {
                 const poll = () => {
                     if ((allSettled() && swap.isIdle() && !anim && !moving)

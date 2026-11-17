@@ -228,6 +228,19 @@ describe('LabelManager', () => {
         assert.equal(inspected, null);
     });
 
+    it('applyRemoteLabels draws the handles once when the selection goes',
+       () => {
+        const { mgr } = makeManager();
+        mgr._applyLabels([{ name: 'L0', x: 1, y: 2, text: 'a' }]);
+        mgr._select('L0');
+        let renders = 0;
+        const render = mgr._renderHandles.bind(mgr);
+        mgr._renderHandles = () => { renders++; render(); };
+        mgr.applyRemoteLabels([]);
+        assert.equal(mgr._selectedName, null);
+        assert.equal(renders, 1);
+    });
+
     it('applyRemoteLabels keeps a selection that survived the push',
        async () => {
         const { mgr } = makeManager();
@@ -271,6 +284,39 @@ describe('LabelManager', () => {
         assert.equal(requests.filter(r => r.type === 'add_label').length, 0);
     });
 
+    // An edit made in the Inspector redraws the handles once and shows the
+    // label again, without taking the selection back.
+    it('_edit keeps the selection and draws once', async () => {
+        const labels = [{ name: 'L0', x: 5, y: 6, text: 'new' }];
+        const { mgr, app } = makeManager({ update_label: { labels } });
+        mgr._applyLabels([{ name: 'L0', x: 5, y: 6, text: 'old' }]);
+        mgr._select('L0');
+        const token = app.selectionToken;
+        let renders = 0;
+        const render = mgr._renderHandles.bind(mgr);
+        mgr._renderHandles = () => { renders++; render(); };
+        await mgr._edit(mgr._labels[0], { text: 'new', size: 0,
+                                          anchor: 'center' });
+        assert.equal(renders, 1);
+        assert.equal(app.selectionToken, token);
+        assert.equal(mgr._selectedName, 'L0');
+    });
+
+    it('_edit leaves the Inspector to a selection made while it was sent',
+       async () => {
+        const labels = [{ name: 'L0', x: 5, y: 6, text: 'new' }];
+        const { mgr, app } = makeManager({ update_label: { labels } });
+        mgr._applyLabels([{ name: 'L0', x: 5, y: 6, text: 'old' }]);
+        mgr._select('L0');
+        let shown = 0;
+        mgr._updateInspector = () => { shown++; };
+        const edit = mgr._edit(mgr._labels[0], { text: 'new', size: 0,
+                                                 anchor: 'center' });
+        beginSelection(app);
+        await edit;
+        assert.equal(shown, 0);
+    });
+
     it('_edit sends a single atomic update_label with the patched fields',
        async () => {
         const { mgr, requests } = makeManager();
@@ -309,7 +355,7 @@ async function makeHandleManager(labels) {
 }
 
 describe('LabelManager handles', () => {
-    it('pins a centred handle at each label position', async () => {
+    it('pins a centered handle at each label position', async () => {
         const { app } = await makeHandleManager([
             { name: 'L0', x: 500000, y: 250000, text: 'a' }]);
         const [h] = app.view.markersIn('label-handles');

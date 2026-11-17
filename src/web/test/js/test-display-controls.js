@@ -11,7 +11,6 @@ const {
 } = await import('../../src/display-controls.js');
 const { beginSelection } = await import('../../src/ui-utils.js');
 const { makeFakeView } = await import('./fake-view.js');
-const { gateOpen } = await import('../../src/tile-sources.js');
 
 // 10 layers: Metal1, Via1, Metal2, Via2, ... Metal5, Via5
 const COUNT = 10;
@@ -122,7 +121,6 @@ describe('layer row selection', () => {
         window.sessionStorage.clear();
         app = {
             displayControlsEl: document.createElement('div'),
-            allLayers: [],
             visibleLayers: new Set(),
             visibleLayerNames: new Set(),
             selectableLayers: new Set(),
@@ -280,20 +278,6 @@ describe('layer row selection', () => {
           shown_by: [['inst_names'], ['inst_pins', 'inst_pin_names']],
           layers_by: [['inst_pins', 'inst_pin_names']] },
     ];
-
-    it('puts each listed overlay in the slot its paint order picks', () => {
-        techData.overlays = [
-            ...OVERLAYS,
-            { name: '_mfg_grid', z_index: 2,
-              shown_by: [['mfg_grid']], layers_by: [] },
-        ];
-        render();
-        // Under every routing layer, which follow it.
-        assert.deepEqual(app.baseSlot.items.slice(0, 4).map((i) => i.layer),
-                         ['_instances', '_pins', '_modules', '_mfg_grid']);
-        assert.deepEqual(app.topSlot.items.map((i) => i.layer),
-                         ['_inst_labels', '_access_points', '_gcell_grid']);
-    });
 
     // A layer toggle refreshes the top slot when an overlay in it draws by the
     // visible layers under the current visibility: always the access points,
@@ -518,7 +502,6 @@ describe('overlay layer toggles', () => {
         window.sessionStorage.clear();
         app = {
             displayControlsEl: document.createElement('div'),
-            allLayers: [],
             visibleLayers: new Set(),
             visibleLayerNames: new Set(),
             selectableLayers: new Set(),
@@ -571,18 +554,11 @@ describe('overlay layer toggles', () => {
         return cb;
     }
 
-    it('puts each pseudo layer in a slot once, up front', () => {
-        for (const name of ['_modules', '_clusters', '_pins', '_instances']) {
-            assert.equal(allItems().filter(i => i.layer === name).length, 1,
-                         name);
-        }
-    });
-
     // A switchable pseudo layer needs a gate: without one it would request tiles
     // forever, and gated on a flag that does not exist it would go blank.  The
-    // client-mounted ones carry a flag name; those the server lists carry its
+    // client's own ones carry a flag name; those the server lists carry its
     // `shown_by` verbatim.
-    it('gates every switchable pseudo layer instead of unmounting it', () => {
+    it('gates every switchable pseudo layer instead of removing it', () => {
         const expected = {
             _pins: 'pins',
             _modules: 'module_view',
@@ -642,7 +618,7 @@ describe('overlay layer toggles', () => {
             assert.equal(visibility.ui_hierarchy_view, !before,
                          'flag flips on toggle ' + i);
             assert.equal(redraws, i + 1, 'redraw requested on toggle ' + i);
-            // The regression: no draw item may come or go here.
+            // No draw item may come or go here.
             assert.deepEqual(allItems(), items,
                              'toggle must not touch the draw lists');
         }
@@ -708,7 +684,6 @@ describe('routing layer opacity', () => {
         window.sessionStorage.clear();
         app = {
             displayControlsEl: document.createElement('div'),
-            allLayers: [],
             visibleLayers: new Set(),
             visibleLayerNames: new Set(),
             selectableLayers: new Set(),
@@ -758,7 +733,7 @@ describe('routing layer opacity', () => {
         render();
         const routing = app.baseSlot.items.filter(
             (i) => i.layer.startsWith('metal'));
-        assert.equal(routing.length, 2, 'metal layers should reach the merge');
+        assert.equal(routing.length, 2, 'metal layers should reach the draw list');
         for (const item of routing) {
             assert.equal(item.opacity, 1, item.layer);
         }
@@ -773,29 +748,6 @@ describe('routing layer opacity', () => {
                          ['_inst_labels', '_access_points', '_gcell_grid']);
         assert.ok(app.baseSlot.opts.order < app.topSlot.opts.order);
         assert.deepEqual(app.allLayers, [app.baseSlot, app.topSlot]);
-    });
-
-    // The restored visibility drives them from the first tile on: each item
-    // is gated on its flags, read on every request.
-    it('gates the pseudo layers on the restored visibility', () => {
-        const visibility = { pins: true, module_view: false,
-                             gcell_grid: true };
-        render(visibility);
-        const shown = (item) => gateOpen(item.gate, visibility);
-        assert.equal(shown(app.pinsLayer), true);
-        assert.equal(shown(app.modulesLayer), false);
-        const overlay = (name) => app.overlayLayers.find(
-            ({ def }) => def.name === name).layer;
-        assert.equal(shown(overlay('_gcell_grid')), true);
-        assert.equal(shown(overlay('_access_points')), false);
-    });
-
-    it('replaces its slots when the panel is rebuilt', () => {
-        render();
-        const first = app.baseSlot;
-        render();
-        assert.equal(first.removed, true);
-        assert.notEqual(app.baseSlot, first);
     });
 });
 
@@ -823,7 +775,6 @@ describe('renderer display controls', () => {
         const requests = [];
         const app = {
             displayControlsEl: document.createElement('div'),
-            allLayers: [],
             visibleLayers: new Set(),
             visibleLayerNames: new Set(),
             selectableLayers: new Set(),
@@ -1078,7 +1029,6 @@ describe('flipped chiplet layer order', () => {
         window.sessionStorage.clear();
         app = {
             displayControlsEl: document.createElement('div'),
-            allLayers: [],
             visibleLayers: new Set(),
             visibleLayerNames: new Set(),
             selectableLayers: new Set(),
@@ -1241,7 +1191,6 @@ describe('dies sharing a layer name', () => {
         window.sessionStorage.clear();
         app = {
             displayControlsEl: document.createElement('div'),
-            allLayers: [],
             visibleLayers: new Set(),
             visibleLayerNames: new Set(),
             selectableLayers: new Set(),
@@ -1337,12 +1286,67 @@ describe('dies sharing a layer name', () => {
                          'a name no die shows needs no exception');
     });
 
+    // Hiding a whole die also takes it out of the visible chiplets, which
+    // redraws every slot; the row changes must not refresh the slot before.
+    it('refreshes the base slot once when a die is hidden', () => {
+        populateDisplayControls(app, {}, {}, techData(), () => {
+            for (const slot of app.allLayers) {
+                slot.refresh();
+            }
+        }, null);
+        const before = app.baseSlot.refreshes;
+        app.layerModel.check('layers_parent/die0', false);
+        assert.equal(item('die0', 'metal1').visible, false);
+        assert.equal(app.baseSlot.refreshes, before + 1);
+    });
+
+    it('refreshes the base slot once for a die hidden in Chiplets', () => {
+        populateDisplayControls(app, {}, {}, techData(), () => {
+            for (const slot of app.allLayers) {
+                slot.refresh();
+            }
+        }, null);
+        const before = app.baseSlot.refreshes;
+        const cb = [...app.displayControlsEl.querySelectorAll('.vis-leaf')]
+            .find((el) => el.title === 'top/die0')
+            .querySelector('.vis-cb');
+        cb.checked = false;
+        cb.dispatchEvent(new dom.window.Event('change'));
+        assert.equal(item('die0', 'metal1').visible, false);
+        assert.ok(!app.visibleChiplets.has('top/die0'));
+        assert.equal(app.baseSlot.refreshes, before + 1);
+    });
+
     it('restores a die\'s hidden row from the session', () => {
         window.sessionStorage.setItem(
             'or_hidden_layers', JSON.stringify([rowId('die0', 'metal1')]));
         render();
         assert.equal(item('die0', 'metal1').visible, false);
         assert.deepEqual(app.chipletHiddenLayers, { 'top/die0': ['metal1'] });
+    });
+
+    it('restores the dies before the slots ask for tiles', () => {
+        window.sessionStorage.setItem(
+            'or_hidden_layers', JSON.stringify([rowId('die0', 'metal1')]));
+        document.cookie = 'or_hidden_chiplets=' + encodeURIComponent(
+            JSON.stringify({ blk: ['top/die1'] })) + '; path=/';
+        const seen = [];
+        const addTileSlot = app.view.addTileSlot;
+        app.view.addTileSlot = (id, opts) => {
+            seen.push([[...app.visibleChiplets], app.chipletHiddenLayers]);
+            return addTileSlot(id, opts);
+        };
+        try {
+            populateDisplayControls(app, {}, {},
+                                    { ...techData(), block_name: 'blk' },
+                                    () => {}, null);
+        } finally {
+            document.cookie = 'or_hidden_chiplets=; path=/; max-age=0';
+        }
+        assert.ok(!app.visibleChiplets.has('top/die1'));
+        assert.deepEqual(app.chipletHiddenLayers['top/die0'], ['metal1']);
+        const now = [[...app.visibleChiplets], app.chipletHiddenLayers];
+        assert.deepEqual(seen, [now, now]);
     });
 
     it('makes a row unselectable on its own die only', () => {

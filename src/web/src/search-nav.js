@@ -6,9 +6,9 @@
 //  - Go to position: jump the view to x,y in microns (mirrors Qt GotoDialog).
 // Both reuse the .modal-overlay/.modal-dialog pattern from menu-bar.js.
 
-import { dbuRectToWorldRect, dbuToWorld, worldToDbu } from './coordinates.js';
-import { applySelectionFlags, beginSelection, buildModal, isCurrentSelection }
-    from './ui-utils.js';
+import { dbuToWorld, worldToDbu } from './coordinates.js';
+import { applySelectionFlags, beginSelection, buildModal, isCurrentSelection,
+         zoomToBBox } from './ui-utils.js';
 
 // The .search-nav-dialog rules size these two dialogs' rows; every caller here
 // passes it so buildModal itself stays dialog-agnostic.
@@ -79,22 +79,20 @@ export function showFindDialog(app) {
                     return;
                 }
                 beginSelection(app);
+                // The outline is the last clicked object's; Find replaced it.
+                app.clearSelectionOutline?.();
                 applySelectionFlags(app, resp);
                 // Auto-zoom to the matched objects — an improvement over the Qt
                 // Find dialog, which only selects without centering.
                 if (Array.isArray(resp.bbox)) {
-                    app.lastSelectionBounds = resp.bbox.slice(0, 4);
-                    app.view.fitWorldRect(dbuRectToWorldRect(
-                        ...app.lastSelectionBounds, app.designScale,
-                        app.designOriginX, app.designOriginY));
+                    zoomToBBox(app, resp.bbox, 0);
                 }
                 if (typeof app.updateInspector === 'function') {
                     app.updateInspector(resp);
                 }
-                if (typeof app.redrawAllLayers === 'function') {
-                    app.redrawAllLayers();
-                }
-                app.selectionBrowser?.scheduleRefresh();
+                // The selection is drawn on the overlay only; this also
+                // refreshes the Select Highlight panel.
+                app.refreshOverlay?.();
                 const shown = resp.selection_count || count;
                 showError(resp.truncated
                     ? `${count} found (showing first ${shown}).`
@@ -157,9 +155,8 @@ export function showGotoDialog(app) {
         const sizeDbu = sizeVal ? parse(sizeVal) : null;
         if (sizeDbu !== null && sizeDbu > 0) {
             const half = sizeDbu / 2;
-            app.view.fitWorldRect(dbuRectToWorldRect(
-                dbuX - half, dbuY - half, dbuX + half, dbuY + half,
-                app.designScale, app.designOriginX, app.designOriginY));
+            zoomToBBox(app, [dbuX - half, dbuY - half, dbuX + half, dbuY + half],
+                       0);
         } else {
             app.view.setView(dbuToWorld(dbuX, dbuY, app.designScale,
                                         app.designOriginX, app.designOriginY),

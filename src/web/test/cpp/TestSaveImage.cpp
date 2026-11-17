@@ -853,7 +853,7 @@ std::vector<std::string> namesOf(const std::vector<PaintLayer>& order)
 // Asserted on the layer list rather than on pixels: every layer here is
 // semi-transparent, so a dot drawn over the routing still blends with it and no
 // pixel test can tell the two orders apart reliably.
-TEST_F(SaveImageTest, LayerCompositionOrderMatchesClientZIndex)
+TEST_F(SaveImageTest, LayerCompositionOrderMatchesClientDrawOrder)
 {
   const std::vector<PaintLayer> tech_layers = rowsOf({"metal1", "metal2"});
   TileVisibility vis;
@@ -865,7 +865,7 @@ TEST_F(SaveImageTest, LayerCompositionOrderMatchesClientZIndex)
   vis.rudy = true;
   vis.routing_congestion = true;
 
-  // zIndex on screen: _instances 0, _pins 1, _mfg_grid 2, tech layers 3.., then
+  // z on screen: _instances 0, _pins 1, _mfg_grid 2, tech layers 3.., then
   // _inst_labels 999, _access_points 1000, _regions 1001, _gcell_grid 1002,
   // _rudy 1003, _routing_congestion 1004.
   const std::vector<std::string> expected = {"_instances",
@@ -1105,7 +1105,7 @@ TEST_F(SaveImageTest, LayerCompositionOrderHonorsPerDieHiddenLayers)
 }
 
 // However many rows the dies bring, they all stay under the overlays, as the
-// merged panes keep them on screen.
+// client keeps them on screen.
 TEST_F(SaveImageTest, LayerCompositionOrderKeepsOverlaysAboveManyRows)
 {
   std::vector<std::string> names;

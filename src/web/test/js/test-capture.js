@@ -108,7 +108,7 @@ describe('captureLayout includes the HTML ruler labels', () => {
         const label = document.createElement('div');
         label.className = 'ruler-label';
         label.textContent = text;
-        // 30px right and 40px down from the map's top-left corner.
+        // 30px right and 40px down from the view's top-left corner.
         stubRect(label, 30, 40, 70, 16);
         pane.appendChild(label);
         return app;
@@ -128,7 +128,7 @@ describe('captureLayout includes the HTML ruler labels', () => {
         assert.equal(text[0][3], 48);
 
         // And a box behind it, so the text stays readable over the layout.
-        // The first fillRect is the map background; the label's is the second.
+        // The first fillRect is the view background; the label's is the second.
         const rects = ops.filter((o) => o[0] === 'fillRect');
         assert.equal(rects.length, 2, 'background + one label box');
         assert.deepEqual(rects[1].slice(1), [30, 40, 70, 16]);
@@ -140,6 +140,6 @@ describe('captureLayout includes the HTML ruler labels', () => {
             () => captureLayout(appWithLabel(''), { entire: false }), ops);
         assert.equal(ops.filter((o) => o[0] === 'fillText').length, 0);
         assert.equal(ops.filter((o) => o[0] === 'fillRect').length, 1,
-                     'only the map background');
+                     'only the view background');
     });
 });

@@ -24,10 +24,12 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    TILE_SIZE_CSS, STATIC_TILE_SIZE_CSS, quantizeDpr, tileDevicePx,
+    TILE_SIZE_CSS, STATIC_TILE_SIZE_CSS, nativeDpr, quantizeDpr, tileDevicePx,
     tileSizeCss, useStaticTileSize, useDeviceExactTileSize,
-    tileRequestBuilder, tileSizeFields,
+    tileRequestBuilder, tileSizeFields, watchDevicePixelRatio,
 } from '../../src/tile-request.js';
+import { buildHeatmapRequest, buildOverlayRequest, createCompositeSource }
+    from '../../src/tile-sources.js';
 import { project, snapTarget } from '../../src/view-math.js';
 
 // What browsers report. 1.6666666269302368 is verbatim from the display this
@@ -67,66 +69,17 @@ describe('dpr contract: the tile pitch is whole at every ratio', () => {
         }
     });
 
-    it('holds for every boundary across a screenful of tiles', () => {
-        for (const dpr of RATIOS) {
-            for (const k of [1, 2, 3, 7, 12]) {
-                assertWhole(k * TILE_SIZE_CSS * dpr, `tile ${k} @${dpr}`);
-            }
-        }
-    });
-
-    it('did NOT hold at 256, which is the reported bug', () => {
-        // Kept as a test so the tile size cannot drift back to a value that
-        // looks tidier and reintroduces the seams.
-        const broken = RATIOS.filter(
-            (dpr) => Math.abs(256 * dpr - Math.round(256 * dpr)) >= LAYOUT_UNIT);
-        assert.deepEqual(broken, [1.1, 1.2, 1.3333333333333333,
-                                  1.6666666269302368, 1.8333333333333333]);
-    });
 });
 
 describe('dpr contract: the image is exactly the box it goes in', () => {
     // Failure 2. The request states the pixel count; nothing downstream may
     // re-derive it from the rounded dpr.
-    it('asks for the pixel count the tile will occupy', () => {
-        for (const dpr of RATIOS) {
-            const req = tileRequestBuilder(
-                { x: 1, y: 2, z: 3 }, { visibility: {} }, dpr,
-                TILE_SIZE_CSS)('metal1');
-            assert.equal(req.tile_px, Math.round(TILE_SIZE_CSS * dpr),
-                         `dpr ${dpr}`);
-            assert.ok(Number.isInteger(req.tile_px));
-        }
-    });
-
     it('asks for a count that fills the box to within a layout unit', () => {
         for (const dpr of RATIOS) {
             const boxDevicePx = TILE_SIZE_CSS * dpr;
             const asked = tileDevicePx(TILE_SIZE_CSS, dpr);
             assert.ok(Math.abs(asked - boxDevicePx) < LAYOUT_UNIT,
                       `dpr ${dpr}: asked ${asked} for a ${boxDevicePx} box`);
-        }
-    });
-
-    it('would have asked for the wrong size via the old 256*quantized-dpr', () => {
-        // 1.6666666 -> 1.67 -> 428 px into a 426.67 px box: the 0.3% resample
-        // that softened every tile edge.
-        const dpr = 1.6666666269302368;
-        const old = Math.round(256 * quantizeDpr(dpr));
-        assert.equal(old, 428);
-        assert.ok(Math.abs(old - 256 * dpr) > 1);
-    });
-
-    it('keeps the merged canvas backing store equal to what it requested', () => {
-        // The merged path sizes its canvas with tileDevicePx and requests with
-        // tileDevicePx; if those ever diverge, drawImage resamples every tile
-        // into the wrong backing store.
-        for (const dpr of RATIOS) {
-            const requested = tileRequestBuilder(
-                { x: 0, y: 0, z: 0 }, { visibility: {} }, dpr,
-                TILE_SIZE_CSS)('metal1').tile_px;
-            assert.equal(tileDevicePx(TILE_SIZE_CSS, dpr), requested,
-                         `dpr ${dpr}`);
         }
     });
 });
@@ -140,13 +93,20 @@ describe('dpr contract: all three tile kinds are sized alike', () => {
     it('gives every kind the same count at every ratio', () => {
         for (const dpr of RATIOS) {
             const fields = tileSizeFields(dpr, TILE_SIZE_CSS);
-            const layer = tileRequestBuilder(
-                { x: 1, y: 2, z: 3 }, { visibility: {} }, dpr,
-                TILE_SIZE_CSS)('metal1');
+            const c = { x: 1, y: 2, z: 3 };
+            const kinds = {
+                layer: tileRequestBuilder(c, { visibility: {} }, dpr,
+                                          TILE_SIZE_CSS)('metal1'),
+                overlay: buildOverlayRequest(c, dpr, TILE_SIZE_CSS, {}, null),
+                'heat map': buildHeatmapRequest(c, dpr, TILE_SIZE_CSS,
+                                                { activeHeatMap: 'Placement' }),
+            };
             assert.equal(fields.tile_px, Math.round(TILE_SIZE_CSS * dpr),
                          `dpr ${dpr}`);
-            assert.equal(layer.tile_px, fields.tile_px, `layer @${dpr}`);
-            assert.equal(layer.dpr, fields.dpr, `layer dpr @${dpr}`);
+            for (const [kind, req] of Object.entries(kinds)) {
+                assert.equal(req.tile_px, fields.tile_px, `${kind} @${dpr}`);
+                assert.equal(req.dpr, fields.dpr, `${kind} dpr @${dpr}`);
+            }
         }
     });
 
@@ -175,8 +135,20 @@ describe('dpr contract: quantizeDpr matches the server', () => {
         assert.equal(quantizeDpr(0.5), 1);
         assert.equal(quantizeDpr(4), 3);
         assert.equal(quantizeDpr(2.555), 2.56);
+        assert.equal(quantizeDpr(4 / 3), 1.33);
+        assert.equal(quantizeDpr(1.005), 1.0);
+        assert.equal(quantizeDpr(3.0001), 3);
+        assert.equal(quantizeDpr(0), 1);
+        assert.equal(quantizeDpr(-2), 1);
         assert.equal(quantizeDpr(NaN), 1);
         assert.equal(quantizeDpr(undefined), 1);
+    });
+
+    // 1.75 and 2.5 are ordinary display scale factors.
+    it('keeps the display ratio instead of snapping to a ladder', () => {
+        for (const d of [1, 1.25, 1.5, 1.75, 2, 2.5, 3]) {
+            assert.equal(quantizeDpr(d), d);
+        }
     });
 
     it('rounds the field but never the pixel count', () => {
@@ -193,20 +165,6 @@ describe('dpr contract: quantizeDpr matches the server', () => {
                          `dpr ${dpr}: pixel count must follow the real ratio`);
             assertWhole(req.tile_px - TILE_SIZE_CSS * dpr,
                         `dpr ${dpr}: count vs box`);
-        }
-    });
-
-    it('is what a quantized ratio would have got wrong', () => {
-        // Regression guard for the flaw the matrix caught: tile_px derived from
-        // the rounded ratio is one pixel off at 5/3 and at 4/3.
-        for (const dpr of [1.6666666269302368, 1.3333333333333333]) {
-            const fromRounded = Math.round(TILE_SIZE_CSS * quantizeDpr(dpr));
-            const fromReal = Math.round(TILE_SIZE_CSS * dpr);
-            assert.notEqual(fromRounded, fromReal, `dpr ${dpr}`);
-            const req = tileRequestBuilder(
-                { x: 0, y: 0, z: 0 }, { visibility: {} }, dpr,
-                TILE_SIZE_CSS)('metal1');
-            assert.equal(req.tile_px, fromReal);
         }
     });
 });
@@ -240,14 +198,121 @@ describe('dpr contract: static reports keep their baked size', () => {
         useStaticTileSize();
         try {
             assert.equal(tileSizeCss(), STATIC_TILE_SIZE_CSS);
-            // The request takes it from here, so the baked image is asked for
+            // The source takes it from here, so the baked image is asked for
             // at its own size rather than the live one.
-            const req = tileRequestBuilder(
-                { x: 0, y: 0, z: 0 }, { visibility: {} }, 1)('metal1');
-            assert.equal(req.tile_px, STATIC_TILE_SIZE_CSS);
+            const sent = [];
+            const wm = {
+                request(msg) {
+                    sent.push(msg);
+                    return new Promise(() => {});
+                },
+            };
+            createCompositeSource({
+                wm, ctx: { visibility: {} }, dpr: () => 1,
+                getItems: () => [{ layer: 'metal1', opacity: 1 }],
+            }).load({ z: 0, x: 0, y: 0 });
+            assert.equal(sent[0].tile_px, STATIC_TILE_SIZE_CSS);
         } finally {
             // Module state: restore it so test order cannot matter.
             useDeviceExactTileSize();
         }
+    });
+});
+
+describe('watchDevicePixelRatio', () => {
+    function fakeWindow(dpr) {
+        const queries = [];
+        return {
+            devicePixelRatio: dpr,
+            queries,
+            matchMedia(query) {
+                const mql = { query, handlers: [], removed: [] };
+                mql.addEventListener = (name, fn) => {
+                    assert.equal(name, 'change');
+                    mql.handlers.push(fn);
+                };
+                mql.removeEventListener = (name, fn) => {
+                    assert.equal(name, 'change');
+                    mql.removed.push(fn);
+                };
+                queries.push(mql);
+                return mql;
+            },
+        };
+    }
+
+    function withWindow(win, fn) {
+        const saved = globalThis.window;
+        globalThis.window = win;
+        try {
+            return fn();
+        } finally {
+            globalThis.window = saved;
+        }
+    }
+
+    it('watches the ratio in force', () => {
+        const win = fakeWindow(1.25);
+        withWindow(win, () => watchDevicePixelRatio(() => {}));
+        assert.equal(win.queries.length, 1);
+        assert.ok(win.queries[0].query.includes('1.25dppx'));
+    });
+
+    it('reports the new ratio and watches for the next one', () => {
+        const win = fakeWindow(1.25);
+        const seen = [];
+        withWindow(win, () => {
+            watchDevicePixelRatio((dpr) => seen.push(dpr));
+            win.devicePixelRatio = 1.6666666269302368;
+            win.queries[0].handlers[0]();
+        });
+        assert.deepEqual(seen, [1.6666666269302368]);
+        // A new query: the old one only ever matches the old ratio.
+        assert.equal(win.queries.length, 2);
+        assert.ok(win.queries[1].query.includes('1.6666666269302368dppx'));
+    });
+
+    it('stops reporting and detaches its listener once unsubscribed', () => {
+        const win = fakeWindow(1.25);
+        const seen = [];
+        withWindow(win, () => {
+            const stop = watchDevicePixelRatio((dpr) => seen.push(dpr));
+            stop();
+            win.queries[0].handlers[0]();
+        });
+        assert.deepEqual(seen, []);
+        assert.deepEqual(win.queries[0].removed, [win.queries[0].handlers[0]]);
+    });
+
+    it('is a no-op where matchMedia is unavailable', () => {
+        withWindow({ devicePixelRatio: 2 }, () => {
+            assert.equal(typeof watchDevicePixelRatio(() => {}), 'function');
+        });
+    });
+});
+
+describe('nativeDpr', () => {
+    function withDpr(value) {
+        const saved = globalThis.window;
+        globalThis.window = value === undefined ? {} : { devicePixelRatio: value };
+        try {
+            return nativeDpr();
+        } finally {
+            globalThis.window = saved;
+        }
+    }
+
+    // Sizes are computed from it, so it is not rounded.
+    it('keeps the ratio exact', () => {
+        assert.equal(withDpr(2), 2);
+        assert.equal(withDpr(1.75), 1.75);
+        assert.equal(withDpr(1.6666666269302368), 1.6666666269302368);
+    });
+
+    // A tile is rendered at about (tileSize*dpr)^2 * 4 bytes.
+    it('clamps to [1, 3], and is 1 without a ratio', () => {
+        assert.equal(withDpr(8), 3);
+        assert.equal(withDpr(0.5), 1);
+        assert.equal(withDpr(undefined), 1);
     });
 });

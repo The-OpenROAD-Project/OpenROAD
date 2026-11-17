@@ -45,7 +45,6 @@ function createMockApp() {
             },
         },
         designScale: 1,
-        designMaxDXDY: 1000,
         designOriginX: 0,
         designOriginY: 0,
         showDbu: false,

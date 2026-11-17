@@ -5,8 +5,8 @@ import './setup-dom.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-const { installViewInput, arrowPanOffset, isWheelNotch, gestureSteps }
-    = await import('../../src/view-input.js');
+const { installViewInput, placementClicks, arrowPanOffset, isWheelNotch,
+        gestureSteps } = await import('../../src/view-input.js');
 
 // A view that records calls; world = screen / 2 so results are checkable.
 function makeView() {
@@ -231,7 +231,7 @@ describe('keyboard', () => {
         assert.equal(calls.length, 0);
     });
 
-    it('zooms on + and - about the centre, not in a saved report', () => {
+    it('zooms on + and - about the center, not in a saved report', () => {
         const { view, container, calls } = makeView();
         let isStatic = false;
         installViewInput(view, { isStatic: () => isStatic });
@@ -466,5 +466,44 @@ describe('pointer tracking', () => {
         input.dispose();
         fire(container, 'dblclick', {});
         assert.equal(calls.length, 0);
+    });
+});
+
+describe('placementClicks', () => {
+    function makeApp({ ruler = false, label = false, onLine = false } = {}) {
+        const calls = [];
+        return {
+            calls,
+            rulerManager: {
+                isActive: () => ruler,
+                handleMapClick: () => calls.push('ruler'),
+                handleRulerClick: () => { calls.push('line?'); return onLine; },
+            },
+            labelManager: { isActive: () => label },
+            onMapClick: () => calls.push('map'),
+        };
+    }
+
+    it('selects a ruler line before the object under it', () => {
+        const app = makeApp({ onLine: true });
+        placementClicks(app).onClick([0, 0], {});
+        assert.deepEqual(app.calls, ['line?']);
+        assert.ok(placementClicks(app).contextEnabled());
+    });
+
+    it('gives a ruler being placed the click and no context menu', () => {
+        const app = makeApp({ ruler: true });
+        const clicks = placementClicks(app);
+        clicks.onClick([0, 0], {});
+        assert.deepEqual(app.calls, ['ruler']);
+        assert.ok(!clicks.contextEnabled());
+    });
+
+    it('places a label over a ruler line, with no context menu', () => {
+        const app = makeApp({ label: true, onLine: true });
+        const clicks = placementClicks(app);
+        clicks.onClick([0, 0], {});
+        assert.deepEqual(app.calls, ['map']);
+        assert.ok(!clicks.contextEnabled());
     });
 });

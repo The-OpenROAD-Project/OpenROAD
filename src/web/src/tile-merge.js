@@ -3,21 +3,11 @@
 
 // Client-side tile merging: composite the visible layout layers of one tile
 // into a single image, so the view holds and draws one texture per tile
-// instead of one per layer.
+// instead of one per layer.  The server keeps one cached tile per layer, which
+// a layer toggle reuses.
 //
-// WHY THE MERGE IS ON THE CLIENT
-//
-// The client already knows the exact stacking order and per-layer opacity, so
-// merging here is one rasterization instead of K live layers, and the server
-// keeps one cached tile per layer, which a layer toggle reuses.
-//
-// The mechanism that makes it work is `ImageBitmap.close()`: an <img> gives no
-// control over when its decoded bitmap is released, which is the whole problem.
-// createImageBitmap + close() makes the lifetime explicit — decode K sources,
-// draw them, release them immediately, and keep only the merged result.
-//
-// What it does NOT buy: bandwidth.  The same K images are still fetched per
-// tile.
+// The sources are ImageBitmaps, closed as soon as the tile is complete: an
+// <img> gives no control over when its decoded bitmap is released.
 
 // Set a draw item's visibility, returning whether it actually changed.
 //
@@ -46,25 +36,17 @@ export function setItemVisible(item, visible) {
 // Draw `sources` onto a 2D context in order, each at its own opacity.
 //
 // Straight src-over at the given alpha, which is what stacking the layers
-// would do. Not bit-identical to GPU compositing — colour-space and rounding
+// would do. Not bit-identical to GPU compositing — color-space and rounding
 // details differ — so assert on visual equivalence, never on byte equality.
 //
 // `sources` is [{ image, opacity }], bottom-most first. A null image is skipped
 // rather than throwing: one layer failing to decode must not lose the whole
 // group, which would turn a single missing layer into a blank tile.
 export function mergeOntoContext(ctx, sources, size) {
-    if (!ctx || !(size > 0)) {
-        return 0;
-    }
     ctx.clearRect(0, 0, size, size);
     let drawn = 0;
-    for (const source of sources || []) {
-        const image = source ? source.image : null;
-        if (!image) {
-            continue;
-        }
-        const opacity = source.opacity === undefined ? 1 : source.opacity;
-        if (!(opacity > 0)) {
+    for (const { image, opacity = 1 } of sources) {
+        if (!image || !(opacity > 0)) {
             continue;
         }
         ctx.globalAlpha = Math.min(1, opacity);
@@ -129,58 +111,30 @@ export function closeAll(images) {
 
 // ─── Rendering one merged tile ──────────────────────────────────────────────
 //
-// The orchestration, with every browser dependency injected so it can be tested
-// without a DOM: `request` fetches one item's tile, `decode` turns a payload
-// into something drawable, `draw` composites, `release` frees the decodes.
+// Every browser dependency is injected: `request` fetches one item's tile,
+// `decode` turns a payload into something drawable and `draw` composites.
+// `items` is never empty; the source skips such a tile.
 //
-// Ordering: the K requests go out together, because they are independent and
-// serialising them would multiply latency by K.  The canvas is recomposited
-// from scratch on every arrival, always walking the item list in order, so the
-// stacking cannot depend on the order responses happen to land in.
+// The requests go out together, and every arrival recomposites the list in
+// order, so the stacking does not depend on the order the replies land in.
 //
-// Incremental (the default): the tile paints as soon as anything arrives rather
-// than waiting for the slowest of its K layers, and keeps repainting as the rest
-// land.  A request that never settles therefore costs one missing layer instead
-// of a blank tile; waiting for the whole group would blank the whole tile.
+// Incremental (the default) paints as soon as anything arrives, so a request
+// that never settles costs one layer, not the tile.  `incremental: false`
+// (Options > "Double buffering") paints once, after every request settled.
 //
-// `incremental: false` (Options > "Double buffering") paints once, after every
-// request has settled, so a refreshed tile swaps whole, not layer by layer.
-//
-// Lifetime: every decoded image is released in a finally, including on a draw
-// failure or a stale abort.  Explicit release is the entire reason for
-// ImageBitmap over <img>; leaking here would reintroduce exactly the unbounded
-// decoded-image growth this exists to bound.  That rests on `request` always
-// settling: a cancelled request has to reject rather than stay pending, or the
-// finally never runs and the group's decodes are stranded (see
-// WebSocketManager.cancel, which rejects both the queued and the sent case).
-//
-// Partial failure is survivable by design: one item that fails to arrive or
-// decode is skipped and the rest of the group still paints.  Blanking the whole
-// tile because one layer failed would turn a single dropped request into the
-// symptom being fixed.
+// Every decode is closed in a finally, so `request` must always settle: a
+// cancelled request rejects (WebSocketManager.cancel).  An item that fails to
+// arrive or decode is skipped and the rest still paints.
 export async function renderMergedTile({
     items,
     request,
     decode,
     draw,
-    release = closeAll,
     isStale = () => false,
     incremental = true,
-} = {}) {
-    const list = Array.isArray(items) ? items : [];
-    const stats = { requested: list.length, arrived: 0, decoded: 0, drawn: 0,
-                    paints: 0, failed: 0, stale: false };
-    if (list.length === 0) {
-        // An empty group still has to paint: the canvas is reused across
-        // refreshes, so skipping the draw would leave the previous content.
-        // Guarded only so a no-argument call is harmless — a real caller that
-        // forgets `draw` with a non-empty group still fails loudly below,
-        // which is what you want for a missing required dependency.
-        if (typeof draw === 'function') {
-            draw([]);
-        }
-        return stats;
-    }
+}) {
+    const stats = { requested: items.length, arrived: 0, decoded: 0, drawn: 0,
+                    failed: 0, stale: false };
 
     // A slot that has not arrived yet is drawn as nothing.  That is exact, not
     // an approximation: transparent is the identity for src-over, so
@@ -189,24 +143,21 @@ export async function renderMergedTile({
     // what lets the tile paint before every layer is in without any risk of
     // getting the stacking wrong — the list is still walked in order every
     // time, so there is no prefix pointer or gap handling to get wrong.
-    const images = new Array(list.length).fill(null);
-    let painted = false;
+    const images = new Array(items.length).fill(null);
 
     function paint() {
         if (isStale()) {
             stats.stale = true;
             return;
         }
-        stats.drawn = draw(list.map((item, i) => ({
+        stats.drawn = draw(items.map((item, i) => ({
             image: images[i],
             opacity: item.opacity,
         }))) || 0;
-        stats.paints++;
-        painted = true;
     }
 
     try {
-        await Promise.all(list.map(async (item, i) => {
+        await Promise.all(items.map(async (item, i) => {
             let payload = null;
             try {
                 payload = await request(item);
@@ -236,10 +187,8 @@ export async function renderMergedTile({
             }
         }));
 
-        // The only paint when buffering; otherwise the case where nothing
-        // arrived at all, so the tile resolves as blank rather than staying
-        // invisible forever.
-        if (!painted) {
+        // Buffered: the one paint, once every request settled.
+        if (!incremental) {
             paint();
         }
     } finally {
@@ -247,7 +196,7 @@ export async function renderMergedTile({
         // later arrival belongs UNDERNEATH layers already drawn, so the canvas
         // is recomposited from scratch each time and every source has to still
         // be available.
-        release(images);
+        closeAll(images);
     }
     return stats;
 }

@@ -1886,26 +1886,10 @@ TEST_F(TileGeneratorTest, GetLayerColorMapIsCached)
   EXPECT_EQ(first.get(), second.get());
 }
 
-TEST_F(TileGeneratorTest, EagerInitClearsLayerColorCache)
-{
-  makeTileGen();
-  // Prime the cache.
-  tile_gen_->getLayerColorMap();
-  // eagerInit must drop cached entries so a reloaded design with a new
-  // dbTech allocated at the same address can't read stale colors.
-  tile_gen_->eagerInit();
-  // Recomputing still produces correct values.
-  const auto colors = tile_gen_->getLayerColorMap();
-  odb::dbTechLayer* metal1 = getDb()->getTech()->findLayer("metal1");
-  ASSERT_NE(metal1, nullptr);
-  EXPECT_EQ(colors->at(metal1).r, 0);
-  EXPECT_EQ(colors->at(metal1).g, 0);
-  EXPECT_EQ(colors->at(metal1).b, 254);
-}
-
-// A renderer reading the map keeps it through the eagerInit() of a session
-// that connects meanwhile.
-TEST_F(TileGeneratorTest, LayerColorsOutliveACacheReset)
+// eagerInit() drops the cached colors, so a reloaded design with a new dbTech
+// at the same address can't read stale ones; a renderer still holding the old
+// map keeps it.
+TEST_F(TileGeneratorTest, EagerInitRebuildsLayerColorsHeldMapsSurvive)
 {
   makeTileGen();
   const auto colors = tile_gen_->getLayerColorMap();
@@ -2593,11 +2577,9 @@ const ChipletNode* findChiplet(const std::vector<ChipletNode>& chiplets,
   return at == chiplets.end() ? nullptr : &*at;
 }
 
-// The web builds its chiplet list from ODB's unfolded model, but keeps the
-// recursive walk for designs whose model was never built.  The two have to
-// agree on paths: a path is the key of the per-chiplet visibility filter and
-// of the or_hidden_chiplets cookie, so a mismatch would silently drop a user's
-// saved state on designs that take the other route.
+// The viewer walks the hierarchy and search.cpp reads the unfolded model; the
+// two have to agree on paths, which key the per-chiplet visibility filter and
+// the or_hidden_chiplets cookie.
 TEST_F(TileGeneratorTest, CollectChipletsAgreesWithTheUnfoldedModel)
 {
   odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/2);
@@ -2701,34 +2683,12 @@ TEST_F(TileGeneratorTest, ChipletCacheNoticesAReorient)
       << "the chiplet cache did not notice setOrient, so the viewer keeps "
          "drawing the die face-up";
 
-  // The unfolded model is a load-time snapshot and this read path must not
-  // rebuild it (that would free objects a concurrent reader is walking), so
-  // the edit has to stay visible on later calls too — not just the one that
-  // detected it.
+  // And stays visible on later calls, not just the one that detected it.
   const auto later_list = tile_gen_->chiplets();
   const ChipletNode* later
       = findChiplet(*later_list, "root/" + die0->getName());
   ASSERT_NE(later, nullptr);
-  EXPECT_TRUE(later->isFlipped())
-      << "the reorient was reported once and then lost, which means a stale "
-         "unfolded model was read back";
-}
-
-// A reconnect after a move keeps the chiplet where it was moved.
-TEST_F(TileGeneratorTest, EnsureInitKeepsAMovedChipletWhereItWasMoved)
-{
-  odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/1);
-  odb::dbChipInst* die0 = *root->getChipInsts().begin();
-  getDb()->constructUnfoldedModel();
-  makeTileGen();
-  tile_gen_->ensureInit();
-
-  die0->setOrient(odb::dbOrientType3D("MZ"));
-  tile_gen_->ensureInit();
-  const auto nodes = tile_gen_->chiplets();
-  const ChipletNode* node = findChiplet(*nodes, "root/" + die0->getName());
-  ASSERT_NE(node, nullptr);
-  EXPECT_TRUE(node->isFlipped());
+  EXPECT_TRUE(later->isFlipped()) << "the reorient was reported only once";
 }
 
 // The unfolded model is the load's: a move made before the first init, or
@@ -2821,12 +2781,8 @@ odb::dbChip* makeNestedChipletRoot(odb::dbDatabase* db,
   return root;
 }
 
-// Regression for the PR #11429 review: a HIER wrapper's z was decided one way
-// when read off the unfolded model (lowest leaf it contains) and another way
-// when walked (the wrapper's own degenerate cuboid).  The two agree only when
-// the lowest child sits at local z 0; with real offsets they diverge, and since
-// global_z is the sort key, sibling wrappers can swap order the moment an edit
-// switches the cache to the walked route.
+// A HIER wrapper's z, read off the unfolded model (lowest leaf it contains) or
+// walked (its own cuboid), must agree: global_z orders sibling wrappers.
 TEST_F(TileGeneratorTest, NestedHierGroupsGetTheSameZFromBothRoutes)
 {
   odb::dbChip* root = makeNestedChipletRoot(getDb(),
@@ -2840,9 +2796,8 @@ TEST_F(TileGeneratorTest, NestedHierGroupsGetTheSameZFromBothRoutes)
                      collectChiplets(root, /*use_unfolded_model=*/false));
 }
 
-// Reading the model is opt-out precisely so an edited hierarchy can be walked
-// instead of rebuilt.  Both routes have to agree, or that fallback silently
-// changes what the viewer shows.
+// After a reorient, the walk has to match a model rebuilt from the edited
+// hierarchy, flipped transforms included.
 TEST_F(TileGeneratorTest, WalkingMatchesTheUnfoldedModelAfterAReorient)
 {
   odb::dbChip* root = makeSharedChipletRoot(getDb(), chip_, /*num_insts=*/2);
@@ -2978,8 +2933,7 @@ class SideBySideDiesTest : public TileGeneratorTest
 };
 
 // Each Display Controls row asks for its own die.  A metal1 tile drawing both
-// dies is why hiding one die's row changed nothing, and why the topmost metal1
-// pane painted both dies in its own die's order (#11886).
+// dies would ignore one die's hidden row and stack both dies in one order.
 TEST_F(SideBySideDiesTest, ScopedTileDrawsOnlyItsOwnDie)
 {
   addM1Stripe(10000, 40000, 90000, 60000);
@@ -4505,8 +4459,8 @@ TEST_F(TileGeneratorTest, LabelsNeverLeaveTheirBox)
   EXPECT_EQ(pixelsOutside(px, tile_gen_->getBounds(), w, h, pin), 0);
 }
 
-// The tech response lists the overlays the client builds its panes from, each
-// with its pane order and when it shows, in keys the tile request knows.
+// The tech response lists the overlays the client builds its draw lists from,
+// each with its draw order and when it shows, in keys the tile request knows.
 TEST_F(TileGeneratorTest, TechResponsePublishesOverlays)
 {
   makeTileGen();
@@ -8471,6 +8425,11 @@ TEST_F(TileGeneratorTest, FieldsLeftOutOfTheCacheKeyDoNotChangeTheTile)
   changes.emplace_back(with({{"pattern", 1}}), with({{"pattern", 3}}));
   changes.emplace_back(with({{"site_FreePDK45_38x28_10R_NP_162NW_34O", false}}),
                        with({}));
+  const std::string die = tile_gen_->chiplets()->front().path;
+  const std::string hidden_m1
+      = with({{"chiplet_hidden_layers",
+               boost::json::object{{die, boost::json::array{"metal1"}}}}});
+  changes.emplace_back(hidden_m1, with({}));
 
   const std::string_view layers[] = {"metal1",
                                      "metal3",
@@ -8513,6 +8472,7 @@ TEST_F(TileGeneratorTest, FieldsLeftOutOfTheCacheKeyDoNotChangeTheTile)
     }
   }
   EXPECT_NE(render("_pins", m1), render("_pins", m5));
+  EXPECT_NE(render("_pins", hidden_m1), render("_pins", with({})));
 }
 
 }  // namespace

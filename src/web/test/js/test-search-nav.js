@@ -167,7 +167,6 @@ describe('Find dialog', () => {
         const { app, calls } = makeApp({
             websocketManager: { request(m) { sent.push(m); return Promise.resolve(response); } },
             updateInspector() {},
-            redrawAllLayers() {},
         });
         return { app, calls, sent };
     }
@@ -185,20 +184,22 @@ describe('Find dialog', () => {
             pattern: '_4*', match_case: false }]);
         const expected = dbuRectToWorldRect(0, 0, 3000, 4000, 1, 0, 0);
         assert.deepEqual(calls, [['fitWorldRect', expected]]);
-        assert.deepEqual(app.lastSelectionBounds, [0, 0, 3000, 4000]);
         assert.match(errorText(), /2 found/);
     });
 
-    it('takes the selection from other panels', async () => {
+    it('takes the selection from other panels and the outline', async () => {
         document.body.innerHTML = '';
         const { app } = findApp({ count: 1, selection_count: 1 });
         let resets = 0;
+        let outlines = 0;
         onSelectionReset(app, () => resets++);
+        app.clearSelectionOutline = () => outlines++;
         showFindDialog(app);
         setInput('.sn-pattern', 'u1');
         clickOk();
         await wait();
         assert.equal(resets, 1);
+        assert.equal(outlines, 1);
         assert.match(errorText(), /1 found/);
     });
 
@@ -212,7 +213,6 @@ describe('Find dialog', () => {
         beginSelection(app);   // a click on the layout before the reply
         await wait();
         assert.deepEqual(calls, []);
-        assert.equal(app.lastSelectionBounds, undefined);
         assert.match(errorText(), /2 found/);
     });
 
@@ -230,16 +230,21 @@ describe('Find dialog', () => {
         assert.equal(app.selectionToken, token);
     });
 
-    it('brings the Select Highlight panel up to date', async () => {
+    // Only the selection changed, and it lives on the overlay; that hook also
+    // brings the Select Highlight panel up to date.
+    it('refreshes the overlay, not every layer', async () => {
         document.body.innerHTML = '';
         const { app } = findApp({ count: 1, selection_count: 1 });
-        let refreshes = 0;
-        app.selectionBrowser = { scheduleRefresh: () => refreshes++ };
+        let overlays = 0;
+        let redraws = 0;
+        app.refreshOverlay = () => overlays++;
+        app.redrawAllLayers = () => redraws++;
         showFindDialog(app);
         setInput('.sn-pattern', 'u1');
         clickOk();
         await wait();
-        assert.equal(refreshes, 1);
+        assert.equal(overlays, 1);
+        assert.equal(redraws, 0);
     });
 
     it('reports when nothing is found and does not zoom', async () => {

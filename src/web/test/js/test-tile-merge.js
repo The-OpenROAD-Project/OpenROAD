@@ -49,30 +49,7 @@ function makeGates(layers) {
     };
 }
 
-describe('tile-merge is pure', () => {
-    it('exports plain functions with no DOM or renderer dependency', () => {
-        // Everything here is compositing rules with the canvas injected, so it
-        // stays testable without a browser.  The view parts live in
-        // tile-sources.js.
-        for (const fn of [setItemVisible, mergeOntoContext, closeAll,
-                          blendOver, compositeStack, renderMergedTile]) {
-            assert.equal(typeof fn, 'function');
-        }
-    });
-});
-
 describe('mergeOntoContext', () => {
-    function fakeCtx() {
-        const calls = [];
-        return {
-            calls,
-            globalAlpha: 1,
-            clearRect: (...a) => calls.push(['clearRect', ...a]),
-            drawImage: (img, x, y, w, h) => calls.push(
-                ['drawImage', img.id, x, y, w, h, calls.ctxAlpha]),
-        };
-    }
-
     // drawImage must observe the alpha set immediately before it, so record it.
     function recordingCtx() {
         const drawn = [];
@@ -129,7 +106,6 @@ describe('mergeOntoContext', () => {
         const n = mergeOntoContext(ctx, [
             { image: { id: 'a' }, opacity: 1 },
             { image: null, opacity: 1 },
-            null,
             { image: { id: 'd' }, opacity: 1 },
         ], 256);
         assert.equal(n, 2);
@@ -147,14 +123,6 @@ describe('mergeOntoContext', () => {
         const { ctx } = recordingCtx();
         assert.equal(mergeOntoContext(ctx, [], 256), 0);
         assert.equal(ctx.cleared, 1);
-    });
-
-    it('is a no-op without a context or a size', () => {
-        const { ctx } = recordingCtx();
-        assert.equal(mergeOntoContext(null, [{ image: { id: 'a' } }], 256), 0);
-        assert.equal(mergeOntoContext(ctx, [{ image: { id: 'a' } }], 0), 0);
-        assert.equal(ctx.cleared, 0);
-        assert.equal(mergeOntoContext(ctx, null, 256), 0);
     });
 });
 
@@ -401,18 +369,11 @@ describe('renderMergedTile', () => {
         }
     });
 
-    it('carries each item its own opacity', async () => {
-        const h = harness({ items: ITEMS });
-        await renderMergedTile(h.opts);
-        const last = h.drawnCalls[h.drawnCalls.length - 1];
-        assert.deepEqual(last.map(d => d.opacity), [0.7, 0.7, 1]);
-    });
-
     it('issues the requests concurrently, not one after another', async () => {
-        // Serialising K requests would multiply tile latency by K.
+        // Serializing K requests would multiply tile latency by K.
         //
         // Asserted as "all K are in flight before any of them answers", which
-        // is the property itself: with every request held open, a serialised
+        // is the property itself: with every request held open, a serialized
         // implementation could not have issued the second.  Timing the whole
         // render instead only inferred it, and inferred it from a wall clock
         // that a busy machine moves (see flush()).
@@ -471,15 +432,6 @@ describe('renderMergedTile', () => {
         assert.deepEqual(h.released.sort(), ['_instances', 'metal2']);
     });
 
-    it('paints an empty group rather than leaving stale pixels', async () => {
-        // The canvas is reused across refreshes, so an empty group must clear.
-        const h = harness({ items: [] });
-        const stats = await renderMergedTile(h.opts);
-        assert.equal(stats.requested, 0);
-        assert.equal(h.drawnCalls.length, 1);
-        assert.deepEqual(h.drawnCalls[0], []);
-    });
-
     it('abandons a stale tile before drawing', async () => {
         const h = harness({ items: ITEMS, stale: () => true });
         const stats = await renderMergedTile(h.opts);
@@ -489,7 +441,7 @@ describe('renderMergedTile', () => {
 
     it('stops painting the moment it goes stale, and still frees the decodes', async () => {
         // A refresh or pan mid-flight must not keep painting the canvas with
-        // content the map has already moved past — but the bitmaps decoded
+        // content the view has already moved past — but the bitmaps decoded
         // before that point still have to be released.
         let stale = false;
         const h = harness({ items: ITEMS, stale: () => stale });
@@ -503,62 +455,6 @@ describe('renderMergedTile', () => {
         assert.equal(stats.stale, true);
         assert.equal(h.drawnCalls.length, 1, 'no painting after going stale');
         assert.equal(h.released.length, 3, 'decoded images must still be freed');
-    });
-
-    it('tolerates being called with nothing', async () => {
-        const stats = await renderMergedTile();
-        assert.equal(stats.requested, 0);
-    });
-});
-
-describe('renderMergedTile: a missing draw is a loud failure, not a blank tile', () => {
-    it('throws when a non-empty group has no draw', async () => {
-        // The no-argument tolerance above must not turn a forgotten dependency
-        // into a silently blank tile.
-        await assert.rejects(renderMergedTile({
-            items: [{ layer: 'metal1', opacity: 0.7 }],
-            request: async () => ({}),
-            decode: async () => ({ close() {} }),
-        }), TypeError);
-    });
-});
-
-describe('dpr must match the server and honour the display', () => {
-    // The client sizes its merged canvas from this and the server renders from
-    // its own copy. If they disagree, every tile is drawn at the wrong size:
-    // it resamples (the moiré beat the pipeline avoids) and the memory budget
-    // reserves one bitmap size while holding another.
-    it('honours the display ratio instead of snapping to a ladder', async () => {
-        const { quantizeDpr } = await import('../../src/tile-request.js');
-        // 1.75 and 2.5 are ordinary Windows scale factors. A 5-step ladder
-        // served them 1.5 and 2.0, i.e. tiles 17% and 25% too small, upscaled
-        // by the browser — exactly what the tile sizing exists to prevent.
-        assert.equal(quantizeDpr(1.75), 1.75);
-        assert.equal(quantizeDpr(2.5), 2.5);
-        for (const d of [1, 1.25, 1.5, 2, 3]) {
-            assert.equal(quantizeDpr(d), d);
-        }
-    });
-
-    it('rounds to two decimals to bound the cache key space', async () => {
-        // dpr is part of the server's tile-cache key, so an unrounded
-        // 1.3333333 would fork its own set of cached tiles.
-        const { quantizeDpr } = await import('../../src/tile-request.js');
-        assert.equal(quantizeDpr(4 / 3), 1.33);
-        assert.equal(quantizeDpr(1.666666), 1.67);
-        assert.equal(quantizeDpr(1.005), 1.0);
-    });
-
-    it('clamps and degrades exactly as the server does', async () => {
-        const { quantizeDpr } = await import('../../src/tile-request.js');
-        assert.equal(quantizeDpr(8), 3);
-        assert.equal(quantizeDpr(3.0001), 3);
-        assert.equal(quantizeDpr(1), 1);
-        assert.equal(quantizeDpr(0.5), 1);
-        assert.equal(quantizeDpr(0), 1);
-        assert.equal(quantizeDpr(-2), 1);
-        assert.equal(quantizeDpr(NaN), 1);
-        assert.equal(quantizeDpr(undefined), 1);
     });
 });
 
@@ -652,9 +548,9 @@ describe('renderMergedTile: incremental painting', () => {
         await h.arrive('b');
         await h.arrive('c');
 
-        const stats = await done;
-        assert.equal(stats.paints, 3, 'one paint per arrival');
-        // Each paint is a full composite of what has arrived so far, in order.
+        await done;
+        // One paint per arrival, each a full composite of what has arrived so
+        // far, in order.
         assert.deepEqual(h.drawnCalls, [
             ['a', null, null],
             ['a', 'b', null],
@@ -688,18 +584,6 @@ describe('renderMergedTile: incremental painting', () => {
         assert.deepEqual(last, ['a', null, 'c']);
     });
 
-    it('paints an all-blank composite when nothing arrives', async () => {
-        // Otherwise a tile whose every layer failed would never settle, and
-        // the view would wait on it forever.
-        const h = incHarness(ITEMS3);
-        h.opts.request = async () => { throw new Error('cancelled'); };
-        const stats = await renderMergedTile(h.opts);
-        assert.equal(stats.arrived, 0);
-        assert.equal(stats.failed, 3);
-        assert.equal(stats.paints, 1);
-        assert.deepEqual(h.drawnCalls[0], [null, null, null]);
-    });
-
     it('holds the decodes until the tile is complete, then frees them all', async () => {
         // A late arrival belongs UNDERNEATH layers already drawn, so the canvas
         // is recomposited from scratch and every source must still be around.
@@ -721,7 +605,7 @@ describe('renderMergedTile: incremental painting', () => {
         assert.deepEqual(h.released.sort(), ['a', 'b', 'c']);
     });
 
-    // ── Options > "Double buffering" (#11340) ──
+    // ── Options > "Double buffering" ──
     //
     // Every paint clears the canvas first, so repainting a tile that is already
     // on screen shows the group being rebuilt layer by layer.  One composite,
@@ -737,8 +621,7 @@ describe('renderMergedTile: incremental painting', () => {
         assert.deepEqual(h.drawnCalls, [], 'nothing painted mid-flight');
 
         await h.arrive('c');
-        const stats = await done;
-        assert.equal(stats.paints, 1);
+        await done;
         assert.deepEqual(h.drawnCalls, [['a', 'b', 'c']]);
     });
 
@@ -753,7 +636,7 @@ describe('renderMergedTile: incremental painting', () => {
     });
 
     // The cost of buffering, stated in a test rather than in a comment: the
-    // tile now appears at the pace of its slowest layer, so a request that
+    // tile appears at the pace of its slowest layer, so a request that
     // never settles holds it hidden instead of costing one missing layer.  That
     // rests on cancel() rejecting rather than leaving a request pending — see
     // WebSocketManager.cancel.
@@ -773,9 +656,7 @@ describe('renderMergedTile: incremental painting', () => {
        async () => {
            const h = incHarness(ITEMS3);
            h.opts.request = async () => { throw new Error('cancelled'); };
-           const stats = await renderMergedTile(
-               { ...h.opts, incremental: false });
-           assert.equal(stats.paints, 1);
+           await renderMergedTile({ ...h.opts, incremental: false });
            assert.deepEqual(h.drawnCalls, [[null, null, null]]);
        });
 

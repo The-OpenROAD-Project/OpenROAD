@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-import { describe, it, beforeEach } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { beginSelection, formatDbu, formatDistance, onSelectionReset, parseDbu }
     from '../../src/ui-utils.js';
@@ -23,7 +23,7 @@ function makeApp() {
         designScale: 1e-6,
         techData: { dbu_per_micron: 1000 },
         showDbu: false,
-        visibleLayers: new Set(['metal1']),
+        visibleLayerNames: new Set(['metal1']),
         websocketManager: {
             request(msg) {
                 requests.push(msg);
@@ -491,6 +491,26 @@ describe('Ruler inspector data', () => {
     });
 });
 
+// An edit made in the Inspector redraws the ruler once and shows it again,
+// without taking the selection back from whoever holds it.
+describe('Ruler edited in the Inspector', () => {
+    it('draws once and keeps the selection', () => {
+        const { mgr, app, inspectorData, focusCalls } = makeManager();
+        mgr._createRuler({ x: 0, y: 0 }, { x: 100, y: 100 });
+        mgr._selectRuler(0);
+        const token = app.selectionToken;
+        const focused = focusCalls.length;
+        let renders = 0;
+        const render = mgr._renderAll.bind(mgr);
+        mgr._renderAll = () => { renders++; render(); };
+        inspectorData.at(-1).onPropertyChange('Point 1 - x', '0.2');
+        assert.equal(renders, 1);
+        assert.equal(app.selectionToken, token);
+        assert.equal(focusCalls.length, focused);
+        assert.equal(mgr._rulers[0].pt1.x, 200);
+    });
+});
+
 // ─── Ruler naming ────────────────────────────────────────────────────────────
 
 describe('Ruler naming', () => {
@@ -528,7 +548,7 @@ describe('Ruler drawing', () => {
         assert.equal(shapes[0].width, 2);
     });
 
-    it('colours the selected ruler yellow and the others cyan', () => {
+    it('colors the selected ruler yellow and the others cyan', () => {
         const { mgr, app } = makeDrawingManager();
         mgr._createRuler({ x: 0, y: 0 }, { x: 100000, y: 0 });
         mgr._createRuler({ x: 0, y: 200000 }, { x: 100000, y: 200000 });
@@ -644,6 +664,33 @@ describe('Ruler placement from view clicks', () => {
         mgr.cancelRulerBuild();
         assert.equal(app.view.overlays.has('ruler-preview'), false);
         assert.equal(app.view.markersIn('ruler-preview').length, 0);
+    });
+
+    // Escape while a snap is pending must not bring the indicator back.
+    it('drops a snap that arrives after the build was cancelled', async () => {
+        let reply;
+        const { mgr, app } = makeDrawingManager({
+            websocketManager: {
+                request: () => new Promise((resolve) => { reply = resolve; }),
+            },
+        });
+        mgr.toggleRulerMode();
+        const pending = mgr._requestSnap(0, 0);
+        mgr.cancelRulerBuild();
+        reply({ found: true, is_point: true, edge: [[0, 0], [0, 0]] });
+        await pending;
+        assert.equal(app.view.overlays.has('ruler-snap'), false);
+        assert.equal(mgr._lastSnapResult, null);
+    });
+
+    it('sends no snap request once the build was cancelled', () => {
+        const { mgr } = makeDrawingManager();
+        mgr.toggleRulerMode();
+        mgr.handleMouseMove([0, 0], { ctrlKey: false, metaKey: false,
+                                      shiftKey: false });
+        assert.notEqual(mgr._snapTimer, null, 'a snap request is scheduled');
+        mgr.cancelRulerBuild();
+        assert.equal(mgr._snapTimer, null);
     });
 
     it('draws the snap indicator as a circle for a point snap', () => {

@@ -60,10 +60,6 @@ export class TileGrid {
                 }
                 continue;
             }
-            // Kept from before a refresh: fetch again once it is in the ring.
-            if (this._stale(tile) && inRange(ring, tile.x, tile.y)) {
-                this._load(tile, !inRange(range, tile.x, tile.y));
-            }
             if (inRange(ring, tile.x, tile.y)) {
                 if (tile.loading && tile.background
                     && inRange(range, tile.x, tile.y)) {
@@ -72,19 +68,23 @@ export class TileGrid {
                 }
                 continue;
             }
-            if (tile.loading || !(this._inKeepBuffer(tile)
+            // A view off the grid keeps what it had, for when it pans back.
+            if (tile.loading || !(range === null || this._inKeepBuffer(tile)
                                   || (hold && inRange(hold, tile.x, tile.y)))) {
                 this._drop(tile);
             }
         }
-        // On-screen tiles go out first, nearest the centre first.
+        // On-screen tiles go out first, nearest the center first.
         const wanted = [...rangeTiles(range),
                         ...rangeTiles(ring).filter(
                             (t) => !inRange(range, t.x, t.y))];
         for (const { x, y } of wanted) {
-            if (!this.tiles.has(tileKey(z, x, y))) {
-                this._load(this._newTile(z, x, y),
-                           !inRange(range, x, y));
+            const tile = this.tiles.get(tileKey(z, x, y));
+            if (!tile) {
+                this._load(this._newTile(z, x, y), !inRange(range, x, y));
+            } else if (this._stale(tile)) {
+                // Kept from before a refresh.
+                this._load(tile, !inRange(range, x, y));
             }
         }
         for (const e of this.extra) {
@@ -200,8 +200,8 @@ export class TileGrid {
 
     _newTile(z, x, y) {
         const tile = { z, x, y, key: tileKey(z, x, y), drawable: null,
-                       loading: false, background: false, handle: null,
-                       generation: -1 };
+                       loading: false, failed: false, background: false,
+                       handle: null, generation: -1 };
         this.tiles.set(tile.key, tile);
         return tile;
     }
@@ -238,6 +238,7 @@ export class TileGrid {
                 this._setDrawable(tile, drawable);
             }
             tile.loading = false;
+            tile.failed = false;
             tile.handle = null;
             this.onChange(tile);
         }, () => {
@@ -246,6 +247,7 @@ export class TileGrid {
                 return;
             }
             tile.loading = false;
+            tile.failed = true;
             tile.handle = null;
             this.onChange(tile);
         });

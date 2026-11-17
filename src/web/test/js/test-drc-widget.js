@@ -2,7 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 import './setup-dom.js';
-import { describe, it, beforeEach } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { DrcWidget } from '../../src/drc-widget.js';
 import { makeFakeView } from './fake-view.js';

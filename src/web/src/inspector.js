@@ -89,7 +89,6 @@ const BUFFER_SVG =
     '</svg>';
 
 export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
-    refreshOverlay = refreshOverlay || redrawAllLayers;
     let lastInspectData = null;
     let pendingInspectId = null;
     let pendingHoverId = null;
@@ -369,7 +368,7 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
     }
 
     // Run `draw(t)` every frame for `cycles` of `cycleMs`, then `done()`.
-    // Reduced motion jumps to the end, as the stylesheet's rule did.
+    // Reduced motion skips straight to the end.
     function runKeyframes(cycleMs, cycles, draw, done) {
         if (prefersReducedMotion()
             || typeof requestAnimationFrame !== 'function') {
@@ -487,6 +486,11 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
             });
         });
         el.addEventListener('mouseleave', () => {
+            // A reply still on its way would draw the hover after the leave.
+            if (pendingHoverId !== null) {
+                app.websocketManager.cancel(pendingHoverId);
+                pendingHoverId = null;
+            }
             clearHoverHighlight();
             refreshOverlay();
         });
@@ -535,8 +539,8 @@ export function createInspectorPanel(app, redrawAllLayers, refreshOverlay) {
                         pulseHighlight(data.bbox, data.type);
                     }
                 }
-                // Redraw tiles to restore selection-set highlights.
-                redrawAllLayers();
+                // The selection-set highlights are drawn on the overlay.
+                refreshOverlay();
             })
             .catch(err => {
                 pendingInspectId = null;

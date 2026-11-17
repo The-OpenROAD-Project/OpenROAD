@@ -34,7 +34,6 @@ describe('computeBoundsTransforms', () => {
                                            [544908, 544908]]);
         assert.equal(t.originX, -63538);
         assert.equal(t.originY, -63538);
-        assert.equal(t.maxDXDY, 608446);
         assert.equal(t.scale, 256 / 608446);
         // With no fit rect the georeference rect is fitted, plus the margin,
         // as a world rect [minX, minY, maxX, maxY] with the origin at (0, 0).
@@ -44,7 +43,6 @@ describe('computeBoundsTransforms', () => {
 
     it('uses the larger dimension for non-square designs', () => {
         const t = computeBoundsTransforms([[0, 0], [100, 400]]);
-        assert.equal(t.maxDXDY, 400);
         // The fit rect's top edge reflects the smaller height.
         const scale = 256 / 400;
         const padX = 400 * kZoomMargin * scale;
@@ -59,7 +57,6 @@ describe('computeBoundsTransforms', () => {
         const fit = [[0, 0], [1000, 1000]];
         const t = computeBoundsTransforms(geo, 256, fit);
         // The transforms still come from the georeference rect.
-        assert.equal(t.maxDXDY, 1200);
         assert.equal(t.originX, -100);
 
         const withFit = t.fitRect[2] - t.fitRect[0];
@@ -195,7 +192,7 @@ describe('fittedTileSizeCss', () => {
             { ...wide, designBounds: [[0, 0], [0, 0]] },
             { ...wide, viewW: 0 },
             { ...wide, viewH: NaN },
-            // A viewport too small to reach zoom 0: the map is pinned at its
+            // A viewport too small to reach zoom 0: the view is pinned at its
             // minZoom and a bigger tile would only overflow it.
             { ...wide, viewW: 10, viewH: 10 },
         ];

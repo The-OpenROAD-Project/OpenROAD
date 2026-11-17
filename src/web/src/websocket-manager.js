@@ -18,9 +18,8 @@
 // send rate to the server's actual response rate.
 //
 // The effective limit is announced by the server on connect (a {type:"config",
-// max_in_flight} push, scaled to the machine size) so it isn't a magic client
-// constant and can grow if the server becomes multi-threaded. This is only the
-// fallback used until that message arrives.
+// max_in_flight} push, scaled to the server's threads) so it isn't a magic
+// client constant. This is only the fallback used until that message arrives.
 const DEFAULT_MAX_IN_FLIGHT = 48;
 // Hard backpressure cap: don't push more while this much is still unsent. With
 // the in-flight cap this should rarely bind.
@@ -194,7 +193,7 @@ export class WebSocketManager {
         this.pending.clear();
         this._bgSent.clear();
         // Drop anything still queued — it never reached the wire. Reject so
-        // callers settle; tile callers .catch() and re-request on reconnect.
+        // callers settle; the server's refresh push redraws on reconnect.
         for (const queue of [this._queue, this._bgQueue]) {
             for (const [id, entry] of queue) {
                 entry.reject(new Error('WebSocket closed'));
@@ -295,7 +294,7 @@ export class WebSocketManager {
                 console.error('Failed to parse server push JSON:', e);
                 return;
             }
-            // The server announces the in-flight window sized to its machine.
+            // The server announces the in-flight window, from its thread count.
             // Consume it here rather than forwarding to onPush.
             if (msg && msg.type === 'config') {
                 if (Number.isFinite(msg.max_in_flight)) {
@@ -348,7 +347,7 @@ export class WebSocketManager {
             // tile consumer already treats a null payload as "draw nothing".
             handler.resolve(null);
         } else {
-            // An unrecognised payload type must still settle the promise, or
+            // An unrecognized payload type must still settle the promise, or
             // the tile it belongs to hangs unresolved forever and the view
             // never reveals it. A server newer than this client lands here.
             //
@@ -457,18 +456,10 @@ export class WebSocketManager {
             return;
         }
 
-        // Already sent: stop tracking the reply, but do NOT free the wire slot
-        // or pump — the server still has to process those bytes, and the slot
-        // frees only when its (now stale) reply arrives. Freeing it here would
-        // let cancellation churn re-flood the socket.
-        //
-        // The promise is rejected as well, for the same reason as the queued
-        // branch: dropping the handler without settling leaves the caller
-        // awaiting forever, and a caller with a `finally` never runs it.
-        // renderMergedTile frees its decoded ImageBitmaps there, so a silent
-        // drop here means every pruned or refreshed tile keeps its decodes
-        // alive — the unbounded decoded-image growth the merge exists to bound.
-        // The stale reply is still ignored: the handler is gone from `pending`.
+        // Already sent: stop tracking the reply, but keep the wire slot until
+        // the stale reply arrives, or cancellation churn would re-flood the
+        // socket.  The promise is rejected, so a caller's `finally` (where
+        // renderMergedTile frees its decodes) still runs.
         const sent = this.pending.get(id);
         const had = this.pending.delete(id);
         this._bgSent.delete(id);
@@ -577,10 +568,8 @@ export class WebSocketManager {
             const key = (msg.chiplet ? msg.chiplet + '|' : '') + msg.layer
                         + '/' + msg.z + '/' + msg.x + '/' + msg.y;
             const b64 = this._cache.tiles && this._cache.tiles[key];
-            if (b64) {
-                return Promise.resolve('data:image/png;base64,' + b64);
-            }
-            return Promise.reject(new Error('Tile not cached: ' + key));
+            // The report saves only tiles with content: a missing one is empty.
+            return Promise.resolve(b64 ? 'data:image/png;base64,' + b64 : null);
         }
 
         // Timing highlight — drive the overlay image.

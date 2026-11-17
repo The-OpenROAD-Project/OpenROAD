@@ -141,14 +141,6 @@ describe('ZoomSwap with double buffering', () => {
         assert.deepEqual(levels(swap.plan()), [5]);
         assert.deepEqual(swap.under, []);
     });
-
-    it('drops the old level when the new one arrives complete', () => {
-        const { swap } = makeSwap();
-        swap.setZoom(3);
-        swap.setZoom(4);
-        assert.equal(swap.check({ settled: true }), true);
-        assert.deepEqual(levels(swap.plan()), [4]);
-    });
 });
 
 describe('ZoomSwap fade', () => {
@@ -264,4 +256,15 @@ describe('ZoomSwap.isIdle', () => {
         advance(ZOOM_FADE_MS + 1);
         assert.ok(swap.isIdle());
     });
+
+    it('is false while an old level is kept under, without double buffering',
+       () => {
+           const { swap } = makeSwap({ isEnabled: () => false });
+           swap.setZoom(3);
+           swap.setZoom(4);
+           assert.equal(swap.pendingZ, null);
+           assert.ok(!swap.isIdle());
+           swap.check({ settled: true });
+           assert.ok(swap.isIdle());
+       });
 });

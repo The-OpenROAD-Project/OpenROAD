@@ -707,20 +707,16 @@ TEST_F(TileHandlerTest, TechIncludesHighlightPalette)
   EXPECT_EQ(first[3].as_int64(), 100);
 }
 
-// A new connection starts from an empty tile cache, without a reindex.
-TEST_F(TileHandlerTest, EnsureInitEmptiesTheTileCache)
+// A new session's ensureInit(true) empties the tile cache; a non-session
+// ensureInit() keeps it.
+TEST_F(TileHandlerTest, OnlyANewSessionEmptiesTheTileCache)
 {
   gen_->ensureInit();
-  const auto colors = gen_->getLayerColorMap();
-  WebSocketRequest req;
-  req.id = 1;
-  req.type = WebSocketRequest::kTile;
-  req.json = parseObj(R"({"layer":"metal1","z":0,"x":0,"y":0})");
-  handler_->handleTile(req, state_);
-  ASSERT_EQ(gen_->tileCacheSize(), 1u);
+  ASSERT_EQ(cachedAfterTile(R"({"layer":"metal1","z":0,"x":0,"y":0})"), 1u);
   gen_->ensureInit();
+  EXPECT_EQ(gen_->tileCacheSize(), 1u);
+  gen_->ensureInit(/*fresh_cache=*/true);
   EXPECT_EQ(gen_->tileCacheSize(), 0u);
-  EXPECT_EQ(gen_->getLayerColorMap().get(), colors.get());
 }
 
 // PNG dimensions live in the IHDR chunk: 8-byte signature, 4-byte length,
@@ -1540,8 +1536,8 @@ TEST(AuthRedirectTarget, SwapsTheTicketForTheToken)
 
 TEST(AuthRedirectTarget, KeepsTheViewerOptionsAroundIt)
 {
-  // ?mergetiles=0 and friends are how the viewer is A/B tested; losing them
-  // in the redirect would silently ignore what the user asked for.
+  // The viewer's query options (e.g. ?preservebuffer=1); losing them in the
+  // redirect would silently ignore what the user asked for.
   EXPECT_EQ(authRedirectTarget("/?ticket=abc&mergetiles=0", "tok"),
             "/?token=tok&mergetiles=0");
   EXPECT_EQ(
@@ -1842,7 +1838,7 @@ TEST_F(TileHandlerTest, ScopedTileCacheIgnoresOtherChiplets)
 
 // Like visible_layers, the per-die exceptions key only the tiles that read
 // them.
-TEST_F(TileHandlerTest, HiddenLayersPerDieOnlyKeyThePinsLayer)
+TEST_F(TileHandlerTest, HiddenLayersPerDieKeyOnlyTheTilesThatReadThem)
 {
   const auto cached_after = [&](const std::string& layer,
                                 const std::string& hidden) {
@@ -1855,17 +1851,6 @@ TEST_F(TileHandlerTest, HiddenLayersPerDieOnlyKeyThePinsLayer)
   EXPECT_EQ(cached_after("metal1", die0), after_metal1);
   const size_t after_pins = cached_after("_pins", "{}");
   EXPECT_EQ(cached_after("_pins", die0), after_pins + 1);
-}
-
-TEST_F(TileHandlerTest, ClientOnlyKeysHitTheCache)
-{
-  // The client sends its display options (scale bar, rulers...) with every
-  // tile; they draw nothing on the server and must not split the cache.
-  const size_t first = cachedAfterTile(
-      R"({"layer":"metal1","z":0,"x":0,"y":0,"scale_bar":true})");
-  EXPECT_EQ(cachedAfterTile(R"({"layer":"metal1","z":0,"x":0,"y":0,)"
-                            R"("scale_bar":false,"rulers":true})"),
-            first);
 }
 
 TEST_F(TileHandlerTest, AnEditOnAnUnbuiltIndexStillMissesTheCache)

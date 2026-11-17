@@ -14,8 +14,6 @@ function makeApp(overrides = {}) {
     const app = {
         view,
         fitRect: [0, 0, 10, 10],
-        lastSelectionBounds: [1, 1, 2, 2],
-        hasSelection: true,
         selHasInst: true,
         selHasNet: true,
         ...overrides,
@@ -143,7 +141,7 @@ describe('ContextMenu Clear submenu', () => {
 // app.refreshOverlay is the hook that also refreshes the Selection Highlight
 // panel (main.js pairs it with selectionBrowser.scheduleRefresh).  Calling
 // only redrawAllLayers leaves the panel listing objects the server has
-// already dropped, so every context action has to go through it.
+// already dropped, so an action that redraws refreshes the panel itself.
 describe('ContextMenu refreshes the panels after a server action', () => {
     function appWithHooks(overrides = {}) {
         const hooks = [];
@@ -153,6 +151,9 @@ describe('ContextMenu refreshes the panels after a server action', () => {
             refreshOverlay: () => hooks.push('refreshOverlay'),
             refreshInspector: () => hooks.push('refreshInspector'),
             redrawAllLayers: () => hooks.push('redrawAllLayers'),
+            selectionBrowser: {
+                scheduleRefresh: () => hooks.push('panelRefresh'),
+            },
             updateInspector: (d) => hooks.push(['updateInspector', d]),
             stopSelectionAnimation: () => hooks.push('stopSelectionAnimation'),
             ...overrides,
@@ -186,7 +187,6 @@ describe('ContextMenu refreshes the panels after a server action', () => {
         assert.ok(hooks.includes('stopSelectionAnimation'));
         assert.ok(hooks.includes('refreshOverlay'));
         assert.equal(cleared, 1, 'selection outline removed');
-        assert.equal(app.lastSelectionBounds, null);
     });
 
     it('Focus nets redraws the base tiles it feeds', async () => {
@@ -195,7 +195,29 @@ describe('ContextMenu refreshes the panels after a server action', () => {
         clickItem('Focus nets');
         await settle();
         assert.ok(hooks.includes('redrawAllLayers'), 'base tiles redrawn');
+        assert.ok(hooks.includes('panelRefresh'));
+        assert.ok(!hooks.includes('refreshOverlay'),
+                  'the redraw already refreshed the overlay');
+    });
+
+    it('All redraws, resets the inspector and refreshes the panel once',
+       async () => {
+        const { app, hooks } = appWithHooks();
+        openMenu(app);
+        clickItem('All');
+        await settle();
+        assert.deepEqual(hooks, ['redrawAllLayers', ['updateInspector', null],
+                                 'stopSelectionAnimation', 'panelRefresh']);
+    });
+
+    // Route guides are drawn on the overlay tiles only.
+    it('Route Guides refreshes the overlay, not the base tiles', async () => {
+        const { app, hooks } = appWithHooks();
+        openMenu(app);
+        clickItem('Route Guides');
+        await settle();
         assert.ok(hooks.includes('refreshOverlay'));
+        assert.ok(!hooks.includes('redrawAllLayers'));
     });
 
     it('clearing focus nets or route guides empties their client copies',

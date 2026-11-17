@@ -16,7 +16,7 @@ const vs = (over = {}) => ({ target: [120, 120], zoom: 0, width: 800,
 const close = (a, b, eps = 1e-9) => Math.abs(a - b) <= eps;
 
 describe('project / unproject', () => {
-    it('puts the target at the centre of the view', () => {
+    it('puts the target at the center of the view', () => {
         assert.deepEqual(project([120, 120], vs()), [400, 300]);
     });
 
@@ -43,7 +43,7 @@ describe('project / unproject', () => {
 
 describe('fitView', () => {
     // The view rests on whole levels, so the fitted zoom is floored.
-    it('floors to a whole zoom level and centres the rect', () => {
+    it('floors to a whole zoom level and centers the rect', () => {
         const fit = fitView([0, 0, 100, 100], vs());
         assert.equal(fit.zoom, 2);     // 600/100 = 6 -> log2 = 2.58 -> 2
         assert.deepEqual(fit.target, [50, 50]);
@@ -64,7 +64,7 @@ describe('fitView', () => {
         assert.equal(fitView(rect, vs({ height: 1e6 })).zoom, 2);
     });
 
-    it('honours the zoom limits', () => {
+    it('honors the zoom limits', () => {
         assert.equal(fitView([0, 0, 1e-3, 1e-3], vs(), { maxZoom: 12 }).zoom, 12);
         assert.equal(fitView([0, 0, 1e6, 1e6], vs(), { minZoom: -2 }).zoom, -2);
     });
@@ -150,7 +150,7 @@ describe('growRange / inRange / rangeTiles', () => {
         assert.ok(!inRange(null, 1, 1));
     });
 
-    it('lists the range nearest the centre first', () => {
+    it('lists the range nearest the center first', () => {
         const tiles = rangeTiles({ z: 3, x0: 0, x1: 2, y0: 0, y1: 2 });
         assert.equal(tiles.length, 9);
         assert.deepEqual(tiles[0], { z: 3, x: 1, y: 1 });
@@ -228,7 +228,7 @@ describe('flyPath', () => {
         assert.ok(near(p.S, 4 * Math.LN2 / Math.SQRT2, 1e-9));
     });
 
-    // A view zoomed in by its centre ends a sub-pixel away from the fit once
+    // A view zoomed in by its center ends a sub-pixel away from the fit once
     // snapTarget has run; the flight back must still be a number everywhere.
     it('stays finite for a tiny shift between far-apart zooms', () => {
         const view = { width: 1600, height: 1000 };
@@ -237,10 +237,10 @@ describe('flyPath', () => {
              { ...view, target: [120, 120], zoom: 2 }],
         ];
         for (let k = 0; k < 20; k++) {
-            const centre = [100 + k * 3.7171, 80 + k * 2.3131];
-            const zoomed = { ...view, target: centre, zoom: 10 };
+            const center = [100 + k * 3.7171, 80 + k * 2.3131];
+            const zoomed = { ...view, target: center, zoom: 10 };
             cases.push([{ ...zoomed, target: snapTarget(zoomed, 1.5) },
-                        { ...view, target: centre, zoom: 1 }]);
+                        { ...view, target: center, zoom: 1 }]);
         }
         for (const [from, to] of cases) {
             const p = flyPath(from, to);

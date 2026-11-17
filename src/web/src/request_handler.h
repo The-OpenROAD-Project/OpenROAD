@@ -551,9 +551,9 @@ struct SessionState
 // Map an HTTP request target onto an embedded asset path.
 //
 // Strips the query string and fragment, which the asset lookup must not see:
-// the viewer's options are passed as query parameters (?mergetiles=0 and
-// friends), and matching "/?mergetiles=0" against the asset table simply fails,
-// so the whole page 404s.  Also maps "/" onto the index document.
+// the viewer's options are passed as query parameters (?preservebuffer=1 and
+// friends), and matching "/?preservebuffer=1" against the asset table simply
+// fails, so the whole page 404s.  Also maps "/" onto the index document.
 std::string assetPathFromTarget(std::string_view target);
 
 // Join `t`, or detach it when called from `t` itself, where a join throws

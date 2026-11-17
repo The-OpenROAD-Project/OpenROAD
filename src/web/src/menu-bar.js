@@ -133,7 +133,7 @@ export function createMenuBar(app) {
             { label: 'Application font...',
               action: () => app.showAppFontDialog() },
             { type: 'separator' },
-            // Rendering preferences (#11340).  Web-only: Qt has no smoothing
+            // Rendering preferences.  Web-only: Qt has no smoothing
             // to turn off and already draws off-screen.
             { label: 'Smooth zoom and pan',
               action: () => app.toggleControlSmoothing(),
