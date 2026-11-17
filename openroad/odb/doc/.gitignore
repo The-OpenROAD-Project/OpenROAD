@@ -1,0 +1,5 @@
+# Intermediate conversion files
+*.ebnf
+*.zip
+tools/*.war
+tools/*.jar
