@@ -54,8 +54,10 @@ class ConcreteSwapArithModules : public SwapArithModules
                             const std::string& target) override;
 
   // Removes ports of inst's module that new_master lacks when each of them
-  // only carries a buffered copy of a signal already entering through a
-  // port new_master has (e.g. ports punched by hierarchical buffering).
+  // only carries a buffered copy of a signal already crossing a port
+  // new_master has: one entering through an input, or one of the module's
+  // own outputs brought back in (e.g. ports punched by hierarchical
+  // buffering).
   // Returns the number of ports removed, or -1 if any such port carries a
   // different signal or the remaining ports would not match new_master's,
   // in which case nothing is changed. The names of the buffers that drove

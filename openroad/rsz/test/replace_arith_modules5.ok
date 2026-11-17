@@ -1,0 +1,29 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+replace_arith_modules -path_count 10 -target setup -slack_threshold 0.0
+[INFO RSZ-0151] Starting arithmetic module replacement to optimize 'setup' target
+[INFO RSZ-0152] Analyzing 10 critical paths with slack < 0.00
+[INFO RSZ-0153] Identified 5 violating endpoints
+[INFO RSZ-0154] Identified 2 critical arithmetic instances
+[INFO RSZ-0171] Removed 2 duplicate ports from u_alu before swapping
+[INFO ODB-0496] swapMaster sanity check passed (0 failures)
+[WARNING ODB-0453] The modules cannot be swapped because module ALU_2_1_2_1_2_unused_CO_X_HAN_CARLSON has 13 ports but module ALU_2_1_2_1_2_unused_CO_X_KOGGE_STONE has 11 ports.
+[INFO RSZ-0172] Removed 1 buffers left without loads
+[INFO RSZ-0160] 1 arithmetic instances have swapped to improve 'setup' target
+swapped: 1
+loopbuf_x1: removed
+loopbuf_g0: kept
+module u_alu: {ALU_2_0_2_0_2_unused_CO_KOGGE_STONE u_alu}
+module u_alu_out: {ALU_2_1_2_1_2_unused_CO_X_HAN_CARLSON u_alu_out}
+loopX0: absent from netlist
+loopX1: absent from netlist
+x1_buf: absent from netlist
+.g0in(: present in netlist
+rx0/D: x[0]
+max_delay/setup group clk
+
+                                     Required  Actual
+Endpoint                               Delay   Delay   Slack
+------------------------------------------------------------
+rx0/D (DFF_X1)                         -0.03    0.15   -0.18 (VIOLATED)
+

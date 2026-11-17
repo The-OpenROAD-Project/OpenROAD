@@ -446,11 +446,13 @@ int ConcreteSwapArithModules::foldDuplicatePorts(
   };
 
   std::vector<dbModBTerm*> extra_ports;
+  // Outputs count too: an extra input can bring one of the module's own
+  // outputs back in, e.g. to drive cells inside it.
   odb::PtrSet<dbNet> port_roots;
   for (dbModBTerm* bterm : old_master->getModBTerms()) {
     if (new_master->findModBTerm(bterm->getName()) == nullptr) {
       extra_ports.push_back(bterm);
-    } else if (bterm->getIoType() == odb::dbIoType::INPUT) {
+    } else {
       dbNet* net = outside_net(bterm);
       if (net != nullptr) {
         port_roots.insert(bufferRoot(net));
