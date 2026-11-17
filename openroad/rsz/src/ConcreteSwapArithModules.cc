@@ -36,7 +36,6 @@ using odb::dbITerm;
 using odb::dbModBTerm;
 using odb::dbModInst;
 using odb::dbModITerm;
-using odb::dbModNet;
 using odb::dbModule;
 using odb::dbNet;
 using odb::dbStringProperty;

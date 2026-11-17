@@ -1032,8 +1032,7 @@ void BinGrid::scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
 
 static void updateBinDensity(Bin& bin)
 {
-  const float scaledBinArea
-      = static_cast<float>(bin.getBinArea() * bin.getTargetDensity());
+  const float scaledBinArea = bin.getBinArea() * bin.getTargetDensity();
   bin.setDensity((static_cast<float>(bin.instPlacedArea())
                   + static_cast<float>(bin.getFillerArea())
                   + static_cast<float>(bin.getNonPlaceArea()))
@@ -4975,7 +4974,7 @@ bool NesterovBase::redistributeFillerCells(bool spread_new_cells)
   }
   std::vector<GCellHandle> kept;
   for (const GCellHandle& gcell : nb_gcells_) {
-    if (gcell->isInstance() && !(spread_new_cells && !gcell->isLocked())) {
+    if (gcell->isInstance() && (!spread_new_cells || gcell->isLocked())) {
       kept.push_back(gcell);
     }
   }
@@ -5008,8 +5007,10 @@ bool NesterovBase::redistributeFillerCells(bool spread_new_cells)
     const double step_x = bg_.getBinSizeX() / kSub;
     const double step_y = bg_.getBinSizeY() / kSub;
     auto point = [&](int p) {
-      return std::pair{bg_.lx() + (p % px_cnt + 0.5) * step_x,
-                       bg_.ly() + (p / px_cnt + 0.5) * step_y};
+      const int pxi = p % px_cnt;
+      const int pyi = p / px_cnt;
+      return std::pair{bg_.lx() + (pxi + 0.5) * step_x,
+                       bg_.ly() + (pyi + 0.5) * step_y};
     };
     // Whether the bin holding (x, y) has room for the cell. A cell larger
     // than a bin's capacity needs that bin empty, and the bins its density
@@ -5059,7 +5060,7 @@ bool NesterovBase::redistributeFillerCells(bool spread_new_cells)
       const double gy = sy / idx.size();
 
       // Place the cells from the module's centroid outwards.
-      std::sort(idx.begin(), idx.end(), [&](size_t a, size_t b) {
+      std::ranges::sort(idx, [&](size_t a, size_t b) {
         const double da
             = std::abs(curCoordi_[a].x - gx) + std::abs(curCoordi_[a].y - gy);
         const double db
@@ -5101,10 +5102,12 @@ bool NesterovBase::redistributeFillerCells(bool spread_new_cells)
           }
           const int pxi = p % px_cnt;
           const int pyi = p / px_cnt;
-          for (const auto [xx, yy] : {std::pair{pxi - 1, pyi},
-                                      std::pair{pxi + 1, pyi},
-                                      std::pair{pxi, pyi - 1},
-                                      std::pair{pxi, pyi + 1}}) {
+          for (const auto [xx, yy] : {
+                   std::pair{pxi - 1, pyi},
+                   std::pair{pxi + 1, pyi},
+                   std::pair{pxi, pyi - 1},
+                   std::pair{pxi, pyi + 1},
+               }) {
             if (xx < 0 || xx >= px_cnt || yy < 0 || yy >= py_cnt) {
               continue;
             }
@@ -5150,7 +5153,7 @@ bool NesterovBase::redistributeFillerCells(bool spread_new_cells)
   };
   using Entry = std::pair<float, int>;
   std::priority_queue<Entry, std::vector<Entry>, std::greater<>> heap;
-  for (int b = 0; b < static_cast<int>(bins.size()); ++b) {
+  for (int b = 0; std::cmp_less(b, bins.size()); ++b) {
     if (has_room(b)) {
       heap.emplace(bins[b].getDensity(), b);
     }
