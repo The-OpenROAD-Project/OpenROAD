@@ -40,7 +40,7 @@ void expectError(const std::string& text, const std::string_view fragment)
 // z ranges in µm, measured from the ground plane at the top of PSUB.
 TEST(Itf, Sky130Stack)
 {
-  const Stack stack = readItfFile("src/fsv/test/sky130.itf");
+  const Stack stack = readItfFile("openroad/fsv/test/sky130.itf");
   EXPECT_EQ(stack.technology(), "skywater130_nominal");
   EXPECT_EQ(stack.backgroundEps(), 1.0);
 
@@ -435,7 +435,7 @@ TEST(Itf, Errors)
 // The sky130 file's resistance, etch and temperature values.
 TEST(Itf, Sky130Resistance)
 {
-  const Stack stack = readItfFile("src/fsv/test/sky130.itf");
+  const Stack stack = readItfFile("openroad/fsv/test/sky130.itf");
   EXPECT_EQ(stack.globalTemperature(), 25);
   EXPECT_EQ(stack.halfNodeScaleFactor(), 1);
   EXPECT_EQ(stack.referenceDirection(), Stack::ReferenceDirection::kNone);
@@ -461,7 +461,7 @@ TEST(Itf, Sky130Resistance)
 // The GT2 file reads, with its layer types and via resistances.
 TEST(Itf, Gt2Stack)
 {
-  const Stack stack = readItfFile("src/fsv/test/GT2.itf");
+  const Stack stack = readItfFile("openroad/fsv/test/GT2.itf");
   EXPECT_EQ(stack.technology(), "GT2");
   EXPECT_EQ(stack.conductors().size(), 24u);
   EXPECT_EQ(stack.vias().size(), 22u);

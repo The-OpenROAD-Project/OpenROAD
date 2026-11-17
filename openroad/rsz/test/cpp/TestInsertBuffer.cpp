@@ -22,7 +22,7 @@ class TestInsertBuffer : public tst::IntegratedFixture
  public:
   TestInsertBuffer()
       : tst::IntegratedFixture(tst::IntegratedFixture::Technology::kNangate45,
-                               "_main/src/rsz/test/")
+                               "_main/openroad/rsz/test/")
   {
     if (debug_) {
       logger_.setDebugLevel(utl::ODB, "DB_EDIT", 3);

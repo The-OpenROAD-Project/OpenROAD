@@ -31,15 +31,15 @@ cc_library(
     ],
     deps = [
         "//:ord",
-        "//src/dbSta:dbNetwork",
-        "//src/dpl",
-        "//src/drt",
-        "//src/grt",
-        "//src/odb/src/db",
-        "//src/pdn",
-        "//src/ppl",
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/dpl",
+        "//openroad/drt",
+        "//openroad/grt",
+        "//openroad/odb/src/db",
+        "//openroad/pdn",
+        "//openroad/ppl",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
         "@tcl_lang//:tcl",
     ],
 )
@@ -63,10 +63,10 @@ tcl_wrap_cc(
     namespace_prefix = "ram",
     root_swig_src = "src/ram.i",
     swig_includes = [
-        "src/ram/src",
+        "src",
     ],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
     ],
 )
 
@@ -83,7 +83,7 @@ python_wrap_cc(
         "include",
     ],
     deps = [
-        "//src/odb:swig-py",
+        "//openroad/odb:swig-py",
     ],
 )
 

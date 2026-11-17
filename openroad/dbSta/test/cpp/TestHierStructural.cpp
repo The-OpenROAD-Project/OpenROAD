@@ -909,7 +909,7 @@ std::map<std::string, int> cellCensus(const FileView& view,
 //     TestHierConformance.cpp also runs. inherited/ holds symlinks to fixtures
 //     owned by other suites, so membership is a folder listing rather than a
 //     manifest, and a case's top module comes from HIER_TOP_OVERRIDES in
-//     src/dbSta/test/BUILD when it is not the default "top".
+//     openroad/dbSta/test/BUILD when it is not the default "top".
 //   * hier_cases/structural/*.v -- cases the LEC suite deliberately does not
 //     load, because a LEC cannot adjudicate them: the netlist is rejected
 //     outright, or the defect is a naming/shape property that leaves the
@@ -974,7 +974,7 @@ std::string fileStem(const std::string& name)
   return stem;
 }
 
-const char* kCasesDir = "_main/src/dbSta/test/cpp/hier_cases/";
+const char* kCasesDir = "_main/openroad/dbSta/test/cpp/hier_cases/";
 
 // The corpus subdirectory holding the cases only this suite runs.
 const char* kStructuralSubdir = "structural";
@@ -1009,8 +1009,8 @@ std::vector<CorpusEntry> corpusLoadError(const std::string& message)
 }
 
 // The netlists whose top module is not "top", as `<file>=<top>,...`. The build
-// rule supplies it (HIER_TOP_OVERRIDES in src/dbSta/test/BUILD), keeping the
-// corpus metadata with the build rules instead of inside each netlist.
+// rule supplies it (HIER_TOP_OVERRIDES in openroad/dbSta/test/BUILD), keeping
+// the corpus metadata with the build rules instead of inside each netlist.
 std::map<std::string, std::string> topOverrides()
 {
   std::map<std::string, std::string> overrides;
@@ -1194,11 +1194,11 @@ std::string issuePrefix(const std::optional<std::string>& issue)
 }
 
 // Parses the XFAIL manifest, which the build rule generates from
-// STRUCTURAL_EXPECTED_FAIL in src/dbSta/test/hier_expected_fail.bzl -- that is
-// where entries are edited. Grouping the netlists under one entry per failure
-// mode keeps 1100 rows readable as the ~50 defects they actually are, and
-// Starlark rejects an unknown check or path when the package loads instead of
-// leaving a typo to be silently dropped here.
+// STRUCTURAL_EXPECTED_FAIL in openroad/dbSta/test/hier_expected_fail.bzl --
+// that is where entries are edited. Grouping the netlists under one entry per
+// failure mode keeps 1100 rows readable as the ~50 defects they actually are,
+// and Starlark rejects an unknown check or path when the package loads instead
+// of leaving a typo to be silently dropped here.
 const std::vector<ExpectedFailure>& expectedFailures()
 {
   static const std::vector<ExpectedFailure> all = []() {
@@ -1270,7 +1270,7 @@ void expectOrXfail(const CorpusEntry& entry,
         << failure->symptom << "). It now PASSES -- delete '"
         << failure->as_authored
         << "' from STRUCTURAL_EXPECTED_FAIL in "
-           "src/dbSta/test/hier_expected_fail.bzl.";
+           "openroad/dbSta/test/hier_expected_fail.bzl.";
     return;
   }
   std::string detail;

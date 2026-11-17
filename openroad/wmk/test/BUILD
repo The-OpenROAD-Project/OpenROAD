@@ -89,7 +89,7 @@ filegroup(
 py_test(
     name = "wmk_man_tcl_check",
     srcs = ["wmk_man_tcl_check.py"],
-    data = ["//src/wmk:doc_files"],
+    data = ["//openroad/wmk:doc_files"],
     tags = ["doc_check"],
     deps = ["//docs/src/scripts:extract_utils"],
 )
@@ -97,8 +97,8 @@ py_test(
 doc_check_test(
     name = "wmk_readme_msgs_check",
     data = [
-        "//src/wmk:doc_files",
-        "//src/wmk:messages_txt",
+        "//openroad/wmk:doc_files",
+        "//openroad/wmk:messages_txt",
     ],
     visibility = ["//visibility:public"],
 )
@@ -107,7 +107,7 @@ cc_test(
     name = "TestHmacSha256",
     srcs = ["cpp/TestHmacSha256.cpp"],
     deps = [
-        "//src/wmk:hmac_sha256",
+        "//openroad/wmk:hmac_sha256",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -117,7 +117,7 @@ cc_test(
     name = "TestMarks",
     srcs = ["cpp/TestMarks.cpp"],
     deps = [
-        "//src/wmk:marks",
+        "//openroad/wmk:marks",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -127,7 +127,7 @@ cc_test(
     name = "TestClaims",
     srcs = ["cpp/TestClaims.cpp"],
     deps = [
-        "//src/wmk:claims",
+        "//openroad/wmk:claims",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -137,8 +137,8 @@ cc_test(
     name = "TestTiming",
     srcs = ["cpp/TestTiming.cpp"],
     deps = [
-        "//src/sta:opensta_lib",
-        "//src/wmk:timing",
+        "//openroad/sta:opensta_lib",
+        "//openroad/wmk:timing",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -148,12 +148,12 @@ cc_test(
     name = "TestDriverHeadroom",
     srcs = ["cpp/TestDriverHeadroom.cpp"],
     deps = [
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/tst:nangate45_fixture",
-        "//src/wmk:timing",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst:nangate45_fixture",
+        "//openroad/wmk:timing",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -163,12 +163,12 @@ cc_test(
     name = "TestClockTree",
     srcs = ["cpp/TestClockTree.cpp"],
     deps = [
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/tst:nangate45_fixture",
-        "//src/wmk:clock_tree",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst:nangate45_fixture",
+        "//openroad/wmk:clock_tree",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -178,7 +178,7 @@ cc_test(
     name = "TestClaimFile",
     srcs = ["cpp/TestClaimFile.cpp"],
     deps = [
-        "//src/wmk:claim_file",
+        "//openroad/wmk:claim_file",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -188,7 +188,7 @@ cc_test(
     name = "TestRoutingStat",
     srcs = ["cpp/TestRoutingStat.cpp"],
     deps = [
-        "//src/wmk:wmk_impl",
+        "//openroad/wmk:wmk_impl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -198,7 +198,7 @@ cc_test(
     name = "TestVerifyResult",
     srcs = ["cpp/TestVerifyResult.cpp"],
     deps = [
-        "//src/wmk:verify_result",
+        "//openroad/wmk:verify_result",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

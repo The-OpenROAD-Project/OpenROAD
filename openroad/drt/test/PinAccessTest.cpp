@@ -68,7 +68,7 @@ class BumpPinAccessTest : public tst::DbFixture,
   void SetUp() override
   {
     tech_ = loadTechLef("ng45",
-                        "_main/src/drt/test/Nangate45/Nangate45_tech.lef");
+                        "_main/openroad/drt/test/Nangate45/Nangate45_tech.lef");
     ASSERT_NE(tech_, nullptr);
     lib_ = odb::dbLib::create(db_.get(), "bumps", tech_, ',');
     odb::dbChip* chip = odb::dbChip::create(db_.get(), tech_);

@@ -38,7 +38,7 @@ constexpr double kHpwlTolerance = 0.002;
 class MetamorphicTest : public tst::Fixture
 {
  protected:
-  static constexpr const char* kLef = "_main/src/gpl/test/nangate45.lef";
+  static constexpr const char* kLef = "_main/openroad/gpl/test/nangate45.lef";
 
   // Loads gcd into the fixture's database.
   void loadGcd()
@@ -74,7 +74,7 @@ class MetamorphicTest : public tst::Fixture
 
   std::string gcdPath() const
   {
-    return getFilePath("_main/src/gpl/test/gcd.def");
+    return getFilePath("_main/openroad/gpl/test/gcd.def");
   }
 
   PlaceResult place(odb::dbDatabase* db = nullptr)

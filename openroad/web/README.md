@@ -697,7 +697,7 @@ The viewer's JavaScript libraries come from npm, pinned in `package.json` and
 `pnpm-lock.yaml`, instead of from CDNs
 ([#11065](https://github.com/The-OpenROAD-Project/OpenROAD/issues/11065)).
 `bazelisk build //:openroad` bundles them with the viewer's sources using esbuild
-(`//src/web:app_bundle`), inlines the stylesheets into `index.html`, and embeds
+(`//openroad/web:app_bundle`), inlines the stylesheets into `index.html`, and embeds
 the result, so the browser only talks to the OpenROAD process.
 
 | Package | Used for |
@@ -711,7 +711,7 @@ The bundled packages' licences, with those of their dependencies, are gathered
 into `THIRD_PARTY_LICENSES.txt`, which the server serves at
 `/THIRD_PARTY_LICENSES.txt` and every saved report carries in a comment.
 
-A saved report inlines a second bundle, `//src/web:report_bundle`, built from
+A saved report inlines a second bundle, `//openroad/web:report_bundle`, built from
 `src/entry-report.js`. It leaves out `vendor-globals.js`, which is the only way
 `netlistsvg` and `three` reach the page.
 
@@ -722,8 +722,8 @@ browser bundle. `package.json` drops its command-line dependencies through
 To add or upgrade a library:
 
 ```sh
-# edit the version in src/web/package.json, then
-bazelisk run -- @pnpm//:pnpm --dir $PWD/src/web install --lockfile-only
+# edit the version in openroad/web/package.json, then
+bazelisk run -- @pnpm//:pnpm --dir $PWD/openroad/web install --lockfile-only
 bazelisk mod deps --lockfile_mode=update   # refresh MODULE.bazel.lock
 ```
 
@@ -748,7 +748,7 @@ web_server -port 8080
 There are a set of regression tests in `./test`.
 
 ```shell
-bazelisk test //src/web/test/...
+bazelisk test //openroad/web/test/...
 ```
 
 ## License

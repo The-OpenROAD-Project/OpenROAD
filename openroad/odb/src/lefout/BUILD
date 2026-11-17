@@ -12,18 +12,18 @@ package(
 cc_library(
     name = "lefout",
     srcs = glob(["*.cpp"]),
-    hdrs = ["//src/odb:include/odb/lefout.h"],
+    hdrs = ["//openroad/odb:include/odb/lefout.h"],
     includes = [
         "../../include",
     ],
     deps = [
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
         "@boost.polygon",
         "@spdlog",
     ],
 )
 
 message_srcs(
-    visibility = ["//src/odb:__pkg__"],
+    visibility = ["//openroad/odb:__pkg__"],
 )

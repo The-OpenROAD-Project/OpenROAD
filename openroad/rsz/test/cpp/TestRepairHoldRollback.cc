@@ -51,7 +51,7 @@ class RepairHoldRollbackTest : public tst::IntegratedFixture
  protected:
   RepairHoldRollbackTest()
       : tst::IntegratedFixture(tst::IntegratedFixture::Technology::kNangate45,
-                               "_main/src/rsz/test/")
+                               "_main/openroad/rsz/test/")
   {
   }
 
@@ -67,7 +67,7 @@ class RepairHoldRollbackTest : public tst::IntegratedFixture
     }
     def_reader.readChip(
         search_libs,
-        getFilePath("_main/src/rsz/test/gcd_nangate45_placed.def").c_str(),
+        getFilePath("_main/openroad/rsz/test/gcd_nangate45_placed.def").c_str(),
         chip);
     block_ = db_->getChip()->getBlock();
     sta_->postReadDef(block_);

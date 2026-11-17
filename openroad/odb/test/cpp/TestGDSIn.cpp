@@ -18,7 +18,7 @@
 namespace odb::gds {
 namespace {
 
-static const std::string prefix("_main/src/odb/test/");
+static const std::string prefix("_main/openroad/odb/test/");
 
 using tst::DbFixture;
 

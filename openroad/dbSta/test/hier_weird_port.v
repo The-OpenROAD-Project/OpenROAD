@@ -1,7 +1,7 @@
 // Reproducer: Verilog escaped identifier containing '/' on a sub-module port.
 // After read_verilog + link_design -hier, the modbterm on the sub master is
 // stored with '/' as literal characters (backslash-escape preserved).  Before
-// the fix in src/odb/src/db/dbModule.cpp, dbModule::findModBTerm truncated
+// the fix in openroad/odb/src/db/dbModule.cpp, dbModule::findModBTerm truncated
 // names at the last '/' before hashing, so lookups of such modbterms missed.
 // That miss crashed dbNetwork::direction in downstream graph construction.
 // With the fix, pin-direction resolution succeeds.

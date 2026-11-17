@@ -27,7 +27,7 @@ class TestPreChecks : public tst::IntegratedFixture
 {
  protected:
   TestPreChecks()
-      : IntegratedFixture(Technology::kNangate45, "_main/src/rsz/test/")
+      : IntegratedFixture(Technology::kNangate45, "_main/openroad/rsz/test/")
   {
   }
 
@@ -36,8 +36,8 @@ class TestPreChecks : public tst::IntegratedFixture
     sta_->makeScenes({"fast", "slow"});
     fast_ = sta_->findScene("fast");
     slow_ = sta_->findScene("slow");
-    readLiberty("_main/src/rsz/test/Nangate45/Nangate45_fast.lib", fast_);
-    readLiberty("_main/src/rsz/test/Nangate45/Nangate45_slow.lib", slow_);
+    readLiberty("_main/openroad/rsz/test/Nangate45/Nangate45_fast.lib", fast_);
+    readLiberty("_main/openroad/rsz/test/Nangate45/Nangate45_slow.lib", slow_);
     auto* chip = odb::dbChip::create(db_.get(), db_->getTech());
     block_ = odb::dbBlock::create(chip, "top");
     sta_->postReadDef(block_);

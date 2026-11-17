@@ -34,7 +34,7 @@ else
 	egrep  D_NET ../$test_name.GOLD/$test_name.spef > y2.spef
 	diff -y y1.spef y2.spef > y.diff
 	# diff -y $test_name.spef ../$test_name.GOLD/$test_name.spef > y.diff
-	python3 ~/z/v2_rcx/OpenROAD-OpenRCX-v2-fotakis/src/rcx/test/rcx_v2/flow/scripts/diff_netcap_spef.py
+	python3 ~/z/v2_rcx/OpenROAD-OpenRCX-v2-fotakis/openroad/rcx/test/rcx_v2/flow/scripts/diff_netcap_spef.py
 	echo "$test_name  $run_dir"
 fi
 

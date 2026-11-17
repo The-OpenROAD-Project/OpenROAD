@@ -576,7 +576,7 @@ this [section](../../README.md#regression-tests).
 Simply run the following command:
 
 ```shell
-bazelisk test //src/wmk/...
+bazelisk test //openroad/wmk/...
 ```
 
 ## Limitations

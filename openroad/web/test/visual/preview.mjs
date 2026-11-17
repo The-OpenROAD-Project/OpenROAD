@@ -9,7 +9,7 @@
 // inspected) instead of guessed at.
 //
 // Usage:
-//   cd src/web/test/visual && npm i puppeteer-core   # one-time
+//   cd openroad/web/test/visual && npm i puppeteer-core   # one-time
 //   node preview.mjs [outDir]
 //
 // Requires google-chrome (or set CHROME=/path/to/chrome) and network access for

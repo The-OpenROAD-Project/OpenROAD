@@ -29,7 +29,7 @@
 
 namespace rsz {
 
-static const std::string prefix("_main/src/rsz/test/");
+static const std::string prefix("_main/openroad/rsz/test/");
 
 class BufRemTest : public tst::Nangate45Fixture
 {

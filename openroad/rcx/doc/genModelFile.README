@@ -6,7 +6,7 @@
 # Date: 11/12/2024
 
 
-cd src/rcx/calibration/fasterCap
+cd openroad/rcx/calibration/fasterCap
 # follow Makefile steps below
 
 # Prerequisites: FasterCap executable and related system libraries installed

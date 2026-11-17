@@ -96,7 +96,7 @@ cc_test(
     name = "utl_cfile_unittest",
     srcs = ["cpp/TestCFileUtils.cpp"],
     deps = [
-        "//src/utl",
+        "//openroad/utl",
         "@boost.asio",
         "@boost.beast",
         "@googletest//:gtest",
@@ -108,7 +108,7 @@ cc_test(
     name = "TestCFileUtils",
     srcs = ["cpp/TestCFileUtils.cpp"],
     deps = [
-        "//src/utl",
+        "//openroad/utl",
         "@boost.asio",
         "@boost.beast",
         "@googletest//:gtest",
@@ -122,7 +122,7 @@ cc_test(
         "cpp/TestMetrics.cpp",
     ],
     deps = [
-        "//src/utl",
+        "//openroad/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -132,7 +132,7 @@ cc_test(
     name = "TestCsvParser",
     srcs = ["cpp/TestCsvParser.cpp"],
     deps = [
-        "//src/utl",
+        "//openroad/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -144,7 +144,7 @@ cc_test(
         "cpp/TestAlgorithms.cpp",
     ],
     deps = [
-        "//src/utl",
+        "//openroad/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -154,7 +154,7 @@ cc_test(
     name = "TestSuppressStdout",
     srcs = ["cpp/TestSuppressStdout.cpp"],
     deps = [
-        "//src/utl",
+        "//openroad/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -164,7 +164,7 @@ cc_test(
     name = "TestServiceRegistry",
     srcs = ["cpp/TestServiceRegistry.cpp"],
     deps = [
-        "//src/utl",
+        "//openroad/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -173,7 +173,7 @@ cc_test(
 py_test(
     name = "utl_man_tcl_check",
     srcs = ["utl_man_tcl_check.py"],
-    data = ["//src/utl:doc_files"],
+    data = ["//openroad/utl:doc_files"],
     tags = [
         "doc_check",
         "py",
@@ -184,8 +184,8 @@ py_test(
 doc_check_test(
     name = "utl_readme_msgs_check",
     data = [
-        "//src/utl:doc_files",
-        "//src/utl:messages_txt",
+        "//openroad/utl:doc_files",
+        "//openroad/utl:messages_txt",
     ],
     visibility = ["//visibility:public"],
 )
@@ -194,7 +194,7 @@ cc_test(
     name = "TestCpuTopology",
     srcs = ["cpp/TestCpuTopology.cpp"],
     deps = [
-        "//src/utl",
+        "//openroad/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -204,7 +204,7 @@ cc_test(
     name = "TestRandomBytes",
     srcs = ["cpp/TestRandomBytes.cpp"],
     deps = [
-        "//src/utl",
+        "//openroad/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -214,7 +214,7 @@ cc_test(
     name = "TestStackTrace",
     srcs = ["cpp/TestStackTrace.cpp"],
     deps = [
-        "//src/utl",
+        "//openroad/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -226,7 +226,7 @@ cc_binary(
     deps = [
         "//:libcxx_abort",
         "//:ord",
-        "//src/utl",
+        "//openroad/utl",
     ],
 )
 

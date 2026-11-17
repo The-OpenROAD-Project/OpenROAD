@@ -298,10 +298,10 @@ cc_test(
         "cpp/TestSnapper.cpp",
     ],
     deps = [
-        "//src/mpl:snapper",
-        "//src/odb/src/db",
-        "//src/tst",
-        "//src/utl",
+        "//openroad/mpl:snapper",
+        "//openroad/odb/src/db",
+        "//openroad/tst",
+        "//openroad/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -314,10 +314,10 @@ cc_test(
         "cpp/TestBlockMacroChannels.cpp",
     ],
     deps = [
-        "//src/mpl",
-        "//src/odb/src/db",
-        "//src/tst",
-        "//src/utl",
+        "//openroad/mpl",
+        "//openroad/odb/src/db",
+        "//openroad/tst",
+        "//openroad/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -330,10 +330,10 @@ cc_test(
         "cpp/TestPusher.cpp",
     ],
     deps = [
-        "//src/mpl:pusher",
-        "//src/odb/src/db",
-        "//src/tst",
-        "//src/utl",
+        "//openroad/mpl:pusher",
+        "//openroad/odb/src/db",
+        "//openroad/tst",
+        "//openroad/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -342,7 +342,7 @@ cc_test(
 py_test(
     name = "mpl_man_tcl_check",
     srcs = ["mpl_man_tcl_check.py"],
-    data = ["//src/mpl:doc_files"],
+    data = ["//openroad/mpl:doc_files"],
     tags = [
         "doc_check",
         "py",
@@ -353,8 +353,8 @@ py_test(
 doc_check_test(
     name = "mpl_readme_msgs_check",
     data = [
-        "//src/mpl:doc_files",
-        "//src/mpl:messages_txt",
+        "//openroad/mpl:doc_files",
+        "//openroad/mpl:messages_txt",
     ],
     visibility = ["//visibility:public"],
 )

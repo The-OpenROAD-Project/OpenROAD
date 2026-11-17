@@ -319,7 +319,7 @@ class Sky130ScanReplaceTest : public tst::Fixture
   void SetUp() override
   {
     library_ = readLiberty(
-        "_main/src/dft/test/sky130hd/"
+        "_main/openroad/dft/test/sky130hd/"
         "sky130_fd_sc_hd__tt_025C_1v80.lib");
     ASSERT_NE(library_, nullptr);
   }
@@ -417,9 +417,9 @@ class Asap7ScanReplaceTest : public tst::Fixture
   void SetUp() override
   {
     rvt_library_ = readLiberty(
-        "_main/src/dft/test/asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib");
+        "_main/openroad/dft/test/asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib");
     lvt_library_ = readLiberty(
-        "_main/src/dft/test/asap7/asap7sc7p5t_SEQ_LVT_FF_nldm_220123.lib");
+        "_main/openroad/dft/test/asap7/asap7sc7p5t_SEQ_LVT_FF_nldm_220123.lib");
     ASSERT_NE(rvt_library_, nullptr);
     ASSERT_NE(lvt_library_, nullptr);
   }

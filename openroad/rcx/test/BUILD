@@ -112,8 +112,8 @@ filegroup(
             ],
             "short_resover": ["gcd.def"],
             "test_dielectric_epsilon": [
-                "//src/rcx:rule_scripts/UniversalFormat2FasterCap_923.py",
-                "//src/rcx:calibration/fasterCap/scripts/UniversalFormat2FasterCap_923.py",
+                "//openroad/rcx:rule_scripts/UniversalFormat2FasterCap_923.py",
+                "//openroad/rcx:calibration/fasterCap/scripts/UniversalFormat2FasterCap_923.py",
                 "rcx_v2/FasterCapModel/scripts/UniversalFormat2FasterCap_923.py",
             ],
         }.get(test_name, []),
@@ -144,9 +144,9 @@ cc_test(
         "ext2dBoxTest.cpp",
     ],
     deps = [
-        "//src/odb/src/db",
-        "//src/rcx",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/rcx",
+        "//openroad/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -155,7 +155,7 @@ cc_test(
 py_test(
     name = "rcx_man_tcl_check",
     srcs = ["rcx_man_tcl_check.py"],
-    data = ["//src/rcx:doc_files"],
+    data = ["//openroad/rcx:doc_files"],
     tags = [
         "doc_check",
         "py",
@@ -166,8 +166,8 @@ py_test(
 doc_check_test(
     name = "rcx_readme_msgs_check",
     data = [
-        "//src/rcx:doc_files",
-        "//src/rcx:messages_txt",
+        "//openroad/rcx:doc_files",
+        "//openroad/rcx:messages_txt",
     ],
     visibility = ["//visibility:public"],
 )

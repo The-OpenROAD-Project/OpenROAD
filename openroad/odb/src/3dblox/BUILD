@@ -15,23 +15,23 @@ cc_library(
         "*.cpp",
         "*.h",
     ]),
-    hdrs = ["//src/odb:include/odb/3dblox.h"],
+    hdrs = ["//openroad/odb:include/odb/3dblox.h"],
     includes = [
         "../../include",
     ],
     deps = [
-        "//src/odb/src/db",
-        "//src/odb/src/defin",
-        "//src/odb/src/defout",
-        "//src/odb/src/lefin",
-        "//src/odb/src/lefout",
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/defin",
+        "//openroad/odb/src/defout",
+        "//openroad/odb/src/lefin",
+        "//openroad/odb/src/lefout",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
         "@spdlog",
         "@yaml-cpp",
     ],
 )
 
 message_srcs(
-    visibility = ["//src/odb:__pkg__"],
+    visibility = ["//openroad/odb:__pkg__"],
 )

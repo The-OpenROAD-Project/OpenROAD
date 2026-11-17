@@ -42,16 +42,16 @@ cc_library(
         "include",
         "src",
     ],
-    visibility = ["//src/cts:__subpackages__"],
+    visibility = ["//openroad/cts:__subpackages__"],
     deps = [
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/est",
-        "//src/odb/src/db",
-        "//src/rsz",
-        "//src/sta:opensta_lib",
-        "//src/stt",
-        "//src/utl",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/est",
+        "//openroad/odb/src/db",
+        "//openroad/rsz",
+        "//openroad/sta:opensta_lib",
+        "//openroad/stt",
+        "//openroad/utl",
         "@boost.container_hash",
         "@boost.polygon",
         "@boost.unordered",
@@ -70,8 +70,8 @@ cc_library(
     ],
     deps = [
         ":cts_impl",
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
     ],
 )
 
@@ -94,9 +94,9 @@ cc_library(
     deps = [
         ":cts_impl",
         "//:ord",
-        "//src/odb/src/db",
-        "//src/utl",
-        "//src/web:core",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "//openroad/web:core",
         "@tcl_lang//:tcl",
     ],
 )
@@ -120,7 +120,7 @@ tcl_wrap_cc(
     namespace_prefix = "cts",
     root_swig_src = "src/TritonCTS.i",
     swig_includes = [
-        "src/cts/src",
+        "src",
     ],
 )
 
@@ -145,13 +145,13 @@ filegroup(
         "README.md",
         "src/TritonCTS.tcl",
     ],
-    visibility = ["//src/cts/test:__pkg__"],
+    visibility = ["//openroad/cts/test:__pkg__"],
 )
 
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/cts/test:__pkg__",
+        "//openroad/cts/test:__pkg__",
     ],
 )
 

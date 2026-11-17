@@ -4,17 +4,18 @@
 // GPU wirelength-kernel correctness test.
 //
 // Exercises the wlop K1 (per-net bbox) and K3 (per-net WA B/C sums) kernels
-// in src/gpl/src/gpu/wirelengthOp.cpp against host references, on a synthetic
-// net→pin CSR that includes nets on both sides of kHighFanoutThreshold. The
-// point is the high-fanout team-parallel pass: integration tests and the
-// regression designs almost exclusively contain small nets, so without this
-// test the team path would only ever be exercised by manual benchmark runs
-// on designs with clock/reset-class fanout (e.g. large01's 67k-pin net).
+// in openroad/gpl/src/gpu/wirelengthOp.cpp against host references, on a
+// synthetic net→pin CSR that includes nets on both sides of
+// kHighFanoutThreshold. The point is the high-fanout team-parallel pass:
+// integration tests and the regression designs almost exclusively contain small
+// nets, so without this test the team path would only ever be exercised by
+// manual benchmark runs on designs with clock/reset-class fanout (e.g.
+// large01's 67k-pin net).
 //
 // Unlike fft_gpu_test (which goes through the Kokkos-free gpl::FFT facade),
 // the wlop launchers take a KokkosDeviceState directly, so this TU includes
 // Kokkos-laden headers and is compiled as CUDA (see CUDA_COPTS on
-// wl_gpu_test in src/gpl/test/BUILD). Building the
+// wl_gpu_test in openroad/gpl/test/BUILD). Building the
 // KokkosDeviceState views by hand — rather than through DeviceState — keeps
 // the test free of GNet/GPin/odb scaffolding; the view-filling code below
 // mirrors DeviceState::buildTopology's CSR layout and its
@@ -37,9 +38,9 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "src/gpl/src/gpu/deviceState_kokkos.h"
-#include "src/gpl/src/gpu/gpuRuntime.h"
-#include "src/gpl/src/gpu/wirelengthOp.h"
+#include "openroad/gpl/src/gpu/deviceState_kokkos.h"
+#include "openroad/gpl/src/gpu/gpuRuntime.h"
+#include "openroad/gpl/src/gpu/wirelengthOp.h"
 
 namespace {
 

@@ -89,11 +89,11 @@ cc_library(
     target_compatible_with = GPU_ONLY,
     # Package-private except for the GPU unit tests, which link the
     # kernel launchers directly.
-    visibility = ["//src/gpl/test:__pkg__"],
+    visibility = ["//openroad/gpl/test:__pkg__"],
     deps = [
         #":gpl_impl",  # Needed, but causes cyclic dependencies.
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
         "@boost.random",
         "@boost.unordered",
         "@kokkos",
@@ -178,17 +178,17 @@ cc_library(
         "//conditions:default": [],
     }),
     visibility = [
-        "//src/gpl:__subpackages__",
+        "//openroad/gpl:__subpackages__",
     ],
     deps = [
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/grt",
-        "//src/odb/src/db",
-        "//src/ppl",
-        "//src/rsz",
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/grt",
+        "//openroad/odb/src/db",
+        "//openroad/ppl",
+        "//openroad/rsz",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
         "@abseil-cpp//absl/container:inlined_vector",
         "@boost.polygon",
         "@boost.random",
@@ -242,10 +242,10 @@ cc_library(
     deps = [
         ":gpl_impl",
         "//:ord",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
-        "//src/web:core",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
+        "//openroad/web:core",
         "@tcl_lang//:tcl",
     ],
 )
@@ -271,11 +271,11 @@ tcl_wrap_cc(
     namespace_prefix = "gpl",
     root_swig_src = "src/replace.i",
     swig_includes = [
-        "src/gpl/src",
+        "src",
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
     ],
 )
 
@@ -301,13 +301,13 @@ filegroup(
         "README.md",
         "src/replace.tcl",
     ],
-    visibility = ["//src/gpl/test:__pkg__"],
+    visibility = ["//openroad/gpl/test:__pkg__"],
 )
 
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/gpl/test:__pkg__",
+        "//openroad/gpl/test:__pkg__",
     ],
 )
 

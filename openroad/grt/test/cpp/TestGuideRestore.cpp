@@ -78,7 +78,7 @@ class GuideRestoreFixture : public tst::Fixture
     odb::dbChip* chip = odb::dbChip::create(db_.get(), lib->getTech());
     std::vector<odb::dbLib*> libs{lib};
     odb::defin reader(db_.get(), &logger_);
-    const std::string def = getFilePath("_main/src/grt/test/" + def_name);
+    const std::string def = getFilePath("_main/openroad/grt/test/" + def_name);
     ASSERT_TRUE(reader.readChip(libs, def.c_str(), chip));
     block_ = chip->getBlock();
     sta_->postReadDef(block_);

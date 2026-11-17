@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include "src/odb/test/cpp/helper/helper.h"
+#include "openroad/odb/test/cpp/helper/helper.h"
 
 #include <cstdint>
 

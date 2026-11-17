@@ -4,8 +4,8 @@ top_dir=$(top_dir1)
 data_dir=$(top_dir)/data
 
 TOP_DIR=/home/dimitris-ic/z/v2_rcx/OpenROAD-OpenRCX-v2-fotakis/
-test_dir=$(TOP_DIR)/src/rcx/test/
-or_exec=$(TOP_DIR)/bazel-bin/openroad
+test_dir=$(TOP_DIR)/openroad/rcx/test/
+or_exec=$(TOP_DIR)/bazel-bin/openroad/openroad
 run_rcx=./scripts/run_rcx.bash
 gen_model_rcx=./scripts/run_rcx_gen_model.bash
 

@@ -15,15 +15,15 @@ cc_library(
         "*.cpp",
         "*.h",
     ]),
-    hdrs = ["//src/odb:include/odb/defin.h"],
+    hdrs = ["//openroad/odb:include/odb/defin.h"],
     includes = [
         "../../include",
     ],
     deps = [
-        "//src/odb/src/db",
-        "//src/odb/src/def",
-        "//src/odb/src/def:defzlib",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/def",
+        "//openroad/odb/src/def:defzlib",
+        "//openroad/utl",
         "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/synchronization",
         "@boost.algorithm",
@@ -31,5 +31,5 @@ cc_library(
 )
 
 message_srcs(
-    visibility = ["//src/odb:__pkg__"],
+    visibility = ["//openroad/odb:__pkg__"],
 )

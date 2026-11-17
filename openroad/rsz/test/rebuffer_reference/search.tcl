@@ -8,7 +8,7 @@
 #
 # Environment: REF_SIZE_DRIVER (0 or 1), REF_RSZ (rsz_solution.tcl output),
 # REF_SWEEP (sweep.tcl output), REF_OUT (best solution per length).
-# Run from src/rsz/test.
+# Run from openroad/rsz/test.
 
 source "rebuffer_reference/common.tcl"
 ref::init

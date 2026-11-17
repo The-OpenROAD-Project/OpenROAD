@@ -2,7 +2,7 @@
 
 ## Problem
 
-`cluster_flops` (gpl module, `src/gpl/src/mbff.cpp`) clusters single-bit
+`cluster_flops` (gpl module, `openroad/gpl/src/mbff.cpp`) clusters single-bit
 flip-flops into multi-bit tray cells. Before these changes, the
 clustering pass made several assumptions that held only for flat
 netlists. Applied to a hierarchical netlist (`link_design -hier`, or
@@ -70,7 +70,7 @@ After the changes:
 
 ## Implementation
 
-All changes live in `src/gpl/src/mbff.cpp`. The header was not
+All changes live in `openroad/gpl/src/mbff.cpp`. The header was not
 touched.
 
 ### Fix 1. Partition by `(parent dbModule*, Mask)`
@@ -222,7 +222,7 @@ could opt back into the old behavior if desired.
 
 ## Regression Test
 
-`src/gpl/test/mbff_hier.{v,tcl,ok}`, registered in
+`openroad/gpl/test/mbff_hier.{v,tcl,ok}`, registered in
 `BUILD`.
 
 The Verilog defines a 3-level hierarchy (`top → mid → leaf`) with
@@ -271,9 +271,9 @@ identical output.
 ## Files Changed
 
 ```
-src/gpl/src/mbff.cpp                  fix (5 changes + 1 shared helper)
-src/gpl/test/mbff_hier.v              regression (new hier design)
-src/gpl/test/mbff_hier.tcl            regression driver
-src/gpl/test/mbff_hier.ok             regression golden
-src/gpl/test/BUILD                    register mbff_hier
+openroad/gpl/src/mbff.cpp                  fix (5 changes + 1 shared helper)
+openroad/gpl/test/mbff_hier.v              regression (new hier design)
+openroad/gpl/test/mbff_hier.tcl            regression driver
+openroad/gpl/test/mbff_hier.ok             regression golden
+openroad/gpl/test/BUILD                    register mbff_hier
 ```

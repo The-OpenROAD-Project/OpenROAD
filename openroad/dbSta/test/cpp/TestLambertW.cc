@@ -24,7 +24,7 @@ class TestLambertW : public tst::IntegratedFixture
  protected:
   TestLambertW()
       : tst::IntegratedFixture(tst::IntegratedFixture::Technology::kNangate45,
-                               "_main/src/dbSta/test/")
+                               "_main/openroad/dbSta/test/")
   {
   }
 };

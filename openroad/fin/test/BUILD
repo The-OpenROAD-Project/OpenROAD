@@ -71,7 +71,7 @@ filegroup(
 py_test(
     name = "fin_man_tcl_check",
     srcs = ["fin_man_tcl_check.py"],
-    data = ["//src/fin:doc_files"],
+    data = ["//openroad/fin:doc_files"],
     tags = [
         "doc_check",
         "py",
@@ -82,8 +82,8 @@ py_test(
 doc_check_test(
     name = "fin_readme_msgs_check",
     data = [
-        "//src/fin:doc_files",
-        "//src/fin:messages_txt",
+        "//openroad/fin:doc_files",
+        "//openroad/fin:messages_txt",
     ],
     visibility = ["//visibility:public"],
 )

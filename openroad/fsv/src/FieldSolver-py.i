@@ -7,7 +7,7 @@
 // dicts keyed like the Tcl results.
 
 #ifdef BAZEL
-%module(package="src.fsv") fsv_py
+%module(package="openroad.fsv") fsv_py
 #else
 %module fsv_py
 #endif

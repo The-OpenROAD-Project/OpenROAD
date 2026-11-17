@@ -39,7 +39,7 @@ class ElabDiagTest : public tst::DbFixture
                                       const std::string& expected_id)
   {
     std::vector<std::string> args = options;
-    args.push_back(getFilePath("_main/src/syn/test/" + file));
+    args.push_back(getFilePath("_main/openroad/syn/test/" + file));
 
     std::string thrown;
 

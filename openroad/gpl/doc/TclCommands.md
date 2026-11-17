@@ -41,6 +41,6 @@ raising density or restarting routability.
 * __perturb_dist__ [float] : Set the perturbation distance (radius) in nanometers. Under a 2D circular Gaussian distribution, 99.5% of the cell perturbations will fall within this radius. If not provided (or <= 0), it defaults to 0.5 microns or one standard cell height (row height), whichever is smaller.
 
 Note that all of the TCL commands are defined in the
-[../src/replace.tcl](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/gpl/src/replace.tcl)
+[../src/replace.tcl](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/openroad/gpl/src/replace.tcl)
 and
-[../src/replace.i](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/gpl/src/replace.i).
+[../src/replace.i](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/openroad/gpl/src/replace.i).

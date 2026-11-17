@@ -5,7 +5,7 @@
 #include <cstddef>
 
 #include "gtest/gtest.h"
-#include "src/gpl/src/timingBase.h"
+#include "openroad/gpl/src/timingBase.h"
 
 namespace gpl {
 namespace {

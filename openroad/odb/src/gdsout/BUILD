@@ -12,17 +12,17 @@ package(
 cc_library(
     name = "gdsout",
     srcs = glob(["*.cpp"]),
-    hdrs = ["//src/odb:include/odb/gdsout.h"],
+    hdrs = ["//openroad/odb:include/odb/gdsout.h"],
     includes = [
         "../../include",
     ],
     deps = [
-        "//src/odb/src/db",
-        "//src/odb/src/gdsin",  # for gdsUtil.h
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/gdsin",  # for gdsUtil.h
+        "//openroad/utl",
     ],
 )
 
 message_srcs(
-    visibility = ["//src/odb:__pkg__"],
+    visibility = ["//openroad/odb:__pkg__"],
 )

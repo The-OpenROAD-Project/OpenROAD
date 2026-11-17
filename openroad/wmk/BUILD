@@ -56,8 +56,8 @@ cc_library(
     hdrs = ["src/Timing.h"],
     includes = ["src"],
     deps = [
-        "//src/dbSta",
-        "//src/sta:opensta_lib",
+        "//openroad/dbSta",
+        "//openroad/sta:opensta_lib",
     ],
 )
 
@@ -67,9 +67,9 @@ cc_library(
     hdrs = ["src/ClockTree.h"],
     includes = ["src"],
     deps = [
-        "//src/dbSta:dbNetwork",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
     ],
 )
 
@@ -97,7 +97,7 @@ cc_library(
         "src",
     ],
     visibility = [
-        "//src/wmk:__subpackages__",
+        "//openroad/wmk:__subpackages__",
     ],
     deps = [
         ":hmac_sha256",
@@ -110,13 +110,13 @@ cc_library(
         # Slack screens the placement candidates and skew screens the clock
         # tree ones, and moving a cell needs its parasitics re-estimated before
         # either means anything.
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/dpl",
-        "//src/est",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/dpl",
+        "//openroad/est",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
     ],
 )
 
@@ -131,8 +131,8 @@ cc_library(
     deps = [
         ":verify_result",
         ":wmk_impl",
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
     ],
 )
 
@@ -155,8 +155,8 @@ cc_library(
         ":marks",
         ":wmk_impl",
         "//:ord",
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
         "@tcl_lang//:tcl",
     ],
 )
@@ -180,10 +180,10 @@ tcl_wrap_cc(
     namespace_prefix = "wmk",
     root_swig_src = "src/watermark.i",
     swig_includes = [
-        "src/wmk/src",
+        "src",
     ],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
     ],
 )
 
@@ -209,13 +209,13 @@ filegroup(
         "README.md",
         "src/watermark.tcl",
     ],
-    visibility = ["//src/wmk/test:__pkg__"],
+    visibility = ["//openroad/wmk/test:__pkg__"],
 )
 
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/wmk/test:__pkg__",
+        "//openroad/wmk/test:__pkg__",
     ],
 )
 

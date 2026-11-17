@@ -41,8 +41,8 @@ cc_test(
     name = "TestNeighbors",
     srcs = ["cpp/TestNeighbors.cpp"],
     deps = [
-        "//src/odb/src/db",
-        "//src/stt:pdr_neighbors",
+        "//openroad/odb/src/db",
+        "//openroad/stt:pdr_neighbors",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -52,8 +52,8 @@ cc_test(
     name = "TestSteinerTreeBuilder",
     srcs = ["cpp/TestSteinerTreeBuilder.cpp"],
     deps = [
-        "//src/stt",
-        "//src/utl",
+        "//openroad/stt",
+        "//openroad/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -62,7 +62,7 @@ cc_test(
 py_test(
     name = "stt_man_tcl_check",
     srcs = ["stt_man_tcl_check.py"],
-    data = ["//src/stt:doc_files"],
+    data = ["//openroad/stt:doc_files"],
     tags = [
         "doc_check",
         "py",
@@ -73,8 +73,8 @@ py_test(
 doc_check_test(
     name = "stt_readme_msgs_check",
     data = [
-        "//src/stt:doc_files",
-        "//src/stt:messages_txt",
+        "//openroad/stt:doc_files",
+        "//openroad/stt:messages_txt",
     ],
     visibility = ["//visibility:public"],
 )

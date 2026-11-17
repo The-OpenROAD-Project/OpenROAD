@@ -227,7 +227,7 @@ filegroup(
                 "Nangate45/Nangate45_lvt.lib",
             ],
             "max_cap": [
-                "//src/rsz/test:hi_fanout.tcl",
+                "//openroad/rsz/test:hi_fanout.tcl",
                 "sky130hs/sky130hs.rc",
                 "sky130hs/sky130hs.tlef",
                 "sky130hs/sky130hs_std_cell.lef",
@@ -286,8 +286,8 @@ cc_test(
     name = "cts_unittest",
     srcs = ["cts_unittest.cc"],
     deps = [
-        "//src/cts:cts_impl",
-        "//src/utl",
+        "//openroad/cts:cts_impl",
+        "//openroad/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -302,10 +302,10 @@ cc_test(
         "ihp-sg13g2/sg13g2_stdcell_typ_1p20V_25C.lib",
     ],
     deps = [
-        "//src/cts:cts_impl",
-        "//src/dbSta:dbNetwork",
-        "//src/sta:opensta_lib",
-        "//src/tst:integrated_fixture",
+        "//openroad/cts:cts_impl",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -314,7 +314,7 @@ cc_test(
 py_test(
     name = "cts_man_tcl_check",
     srcs = ["cts_man_tcl_check.py"],
-    data = ["//src/cts:doc_files"],
+    data = ["//openroad/cts:doc_files"],
     tags = [
         "doc_check",
         "py",
@@ -325,8 +325,8 @@ py_test(
 doc_check_test(
     name = "cts_readme_msgs_check",
     data = [
-        "//src/cts:doc_files",
-        "//src/cts:messages_txt",
+        "//openroad/cts:doc_files",
+        "//openroad/cts:messages_txt",
     ],
     visibility = ["//visibility:public"],
 )

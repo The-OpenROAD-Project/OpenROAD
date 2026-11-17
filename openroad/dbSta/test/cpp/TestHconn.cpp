@@ -28,7 +28,7 @@
 
 namespace odb {
 
-static const std::string prefix("_main/src/dbSta/test/");
+static const std::string prefix("_main/openroad/dbSta/test/");
 static constexpr bool kDebugMsgs = false;
 
 /*

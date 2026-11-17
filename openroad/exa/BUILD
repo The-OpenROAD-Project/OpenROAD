@@ -26,11 +26,11 @@ cc_library(
         "src",
     ],
     visibility = [
-        "//src/exa:__subpackages__",
+        "//openroad/exa:__subpackages__",
     ],
     deps = [
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
     ],
 )
 
@@ -44,8 +44,8 @@ cc_library(
     ],
     deps = [
         ":exa_impl",
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
     ],
 )
 
@@ -68,9 +68,9 @@ cc_library(
     deps = [
         ":exa_impl",
         "//:ord",
-        "//src/odb/src/db",
-        "//src/utl",
-        "//src/web:core",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "//openroad/web:core",
         "@tcl_lang//:tcl",
     ],
 )
@@ -94,10 +94,10 @@ tcl_wrap_cc(
     namespace_prefix = "exa",
     root_swig_src = "src/example.i",
     swig_includes = [
-        "src/exa/src",
+        "src",
     ],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
     ],
 )
 

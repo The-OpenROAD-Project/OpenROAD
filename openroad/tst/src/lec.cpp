@@ -28,7 +28,8 @@ namespace {
 
 const char* kInstallHint
     = "kepler-formal was not found. Under bazel it comes from the test's\n"
-      "runfiles (//src/tst:kepler_formal_bin, a data dep of //src/tst:lec);\n"
+      "runfiles (//openroad/tst:kepler_formal_bin, a data dep of "
+      "//openroad/tst:lec);\n"
       "otherwise it is resolved from $KEPLER_FORMAL (an explicit path to the\n"
       "binary) or from `kepler-formal` on $PATH.\n"
       "Build it from https://github.com/keplertech/kepler-formal and put it "
@@ -149,7 +150,7 @@ const char* toString(LecResult result)
 }
 
 // The binary as a bazel runfile. Empty outside a bazel test, or when the test
-// did not declare //src/tst:kepler_formal_bin in its data.
+// did not declare //openroad/tst:kepler_formal_bin in its data.
 std::filesystem::path keplerFormalRunfile()
 {
   using bazel::tools::cpp::runfiles::Runfiles;

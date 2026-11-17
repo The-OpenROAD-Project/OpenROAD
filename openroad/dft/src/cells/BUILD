@@ -25,16 +25,16 @@ cc_library(
         ".",
     ],
     deps = [
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/dft/src/clock_domain",
-        "//src/dft/src/utils",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/dft/src/clock_domain",
+        "//openroad/dft/src/utils",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
     ],
 )
 
 message_srcs(
-    visibility = ["//src/dft:__pkg__"],
+    visibility = ["//openroad/dft:__pkg__"],
 )

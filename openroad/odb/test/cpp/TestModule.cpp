@@ -10,7 +10,7 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"
 #include "odb/util.h"
-#include "src/odb/test/cpp/helper/helper.h"
+#include "openroad/odb/test/cpp/helper/helper.h"
 
 namespace odb {
 namespace {

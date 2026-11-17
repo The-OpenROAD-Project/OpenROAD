@@ -3,7 +3,7 @@
 
 // Compares fsv with reference capacitances on structures with planar
 // dielectric stacks. The structures and the references live in
-// src/fsv/test/golden:
+// openroad/fsv/test/golden:
 // - cross sections, with planar and conformal dielectrics, against a 2D
 //   finite-volume solution (cross_section.txt, from fv2d_golden.py),
 //   accurate to about 1e-3: in the 2D mode, and some as long lines in 3D;

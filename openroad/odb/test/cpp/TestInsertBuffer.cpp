@@ -58,7 +58,7 @@ TEST_P(InsertBufferPortNamesTest, PreservesConnectivityThroughVerilog)
     tst::LoadedDesign design(
         tst::Technology::kNangate45,
         tst::getRunfilePath(
-            "_main/src/odb/test/cpp/insert_buffer_port_alias.v"),
+            "_main/openroad/odb/test/cpp/insert_buffer_port_alias.v"),
         "top",
         hierarchy);
     auto* block = design.getBlock();
@@ -109,7 +109,8 @@ TEST(TestInsertBufferNullName, HandlesNullBaseNamesWithoutCrash)
 {
   tst::LoadedDesign design(
       tst::Technology::kNangate45,
-      tst::getRunfilePath("_main/src/odb/test/cpp/insert_buffer_port_alias.v"),
+      tst::getRunfilePath(
+          "_main/openroad/odb/test/cpp/insert_buffer_port_alias.v"),
       "top",
       false);
   auto* block = design.getBlock();

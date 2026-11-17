@@ -25,11 +25,11 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
     ],
 )
 
@@ -49,8 +49,8 @@ cc_library(
     deps = [
         ":upf",
         "//:ord",
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
         "@tcl_lang//:tcl",
     ],
 )
@@ -74,10 +74,10 @@ tcl_wrap_cc(
     namespace_prefix = "upf",
     root_swig_src = "src/upf.i",
     swig_includes = [
-        "src/upf/src",
+        "src",
     ],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
     ],
 )
 
@@ -87,12 +87,12 @@ filegroup(
         "README.md",
         "src/upf.tcl",
     ],
-    visibility = ["//src/upf/test:__pkg__"],
+    visibility = ["//openroad/upf/test:__pkg__"],
 )
 
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/upf/test:__pkg__",
+        "//openroad/upf/test:__pkg__",
     ],
 )

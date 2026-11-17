@@ -177,11 +177,11 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
         "//third-party/gif-h:gif_h",
         "@abseil-cpp//absl/synchronization",
         "@boost.algorithm",
@@ -194,7 +194,7 @@ cc_library(
     srcs = ["src/color.cpp"],
     hdrs = ["src/color.h"],
     includes = ["src"],
-    visibility = ["//src/web/test:__pkg__"],
+    visibility = ["//openroad/web/test:__pkg__"],
 )
 
 cc_library(
@@ -233,7 +233,7 @@ cc_library(
         # to properly depend on this library and see the includes.
         # If these are meant to be used in tests with specific dependencies,
         # these should be put (together with their *.cpp files) into separate
-        # libraries, with visibility for the //src/web/test path (see :color).
+        # libraries, with visibility for the //openroad/web/test path (see :color).
         "src/glyph_cache.h",
         "src/tile_generator.h",
         "src/timing_report.h",
@@ -259,11 +259,11 @@ cc_library(
         ":color",
         ":core",
         "//:cli_completer",
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
         "//third-party/gif-h:gif_h",
         "//third-party/lodepng",
         "//third-party/stb_truetype",
@@ -297,7 +297,7 @@ cc_library(
     deps = [
         ":web",
         "//:ord",
-        "//src/utl",
+        "//openroad/utl",
         "@tcl_lang//:tcl",
     ],
 )
@@ -326,10 +326,10 @@ tcl_wrap_cc(
     namespace_prefix = "web",
     root_swig_src = "src/web.i",
     swig_includes = [
-        "src/web/src",
+        "src",
     ],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
     ],
 )
 
@@ -342,7 +342,7 @@ exports_files(
         "pnpm-lock.yaml",
         "src/openroad_skin.svg",
     ],
-    visibility = ["//src/web/test:__pkg__"],
+    visibility = ["//openroad/web/test:__pkg__"],
 )
 
 messages_txt(

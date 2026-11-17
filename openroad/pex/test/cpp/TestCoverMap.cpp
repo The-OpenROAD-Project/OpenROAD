@@ -18,7 +18,8 @@ namespace {
 
 const fsv::Stack& sky130()
 {
-  static const fsv::Stack stack = fsv::readItfFile("src/fsv/test/sky130.itf");
+  static const fsv::Stack stack
+      = fsv::readItfFile("openroad/fsv/test/sky130.itf");
   return stack;
 }
 

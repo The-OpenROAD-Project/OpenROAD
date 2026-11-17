@@ -12,13 +12,13 @@ package(
 )
 
 # Abstract service interface published through utl::ServiceRegistry.
-# Consumers depend only on this target, not on //src/est, which keeps
+# Consumers depend only on this target, not on //openroad/est, which keeps
 # them free of the full est implementation surface.
 cc_library(
     name = "parasitics_service",
     hdrs = ["include/est/ParasiticsService.h"],
     includes = ["include"],
-    deps = ["//src/grt:groute"],
+    deps = ["//openroad/grt:groute"],
 )
 
 cc_library(
@@ -44,20 +44,20 @@ cc_library(
         "src",
     ],
     visibility = [
-        "//src/est:__subpackages__",
+        "//openroad/est:__subpackages__",
     ],
     deps = [
         ":parasitics_service",
-        "//src/dbSta",
-        "//src/dbSta:SpefWriter",
-        "//src/dbSta:dbNetwork",
-        "//src/grt",
-        "//src/grt:groute",
-        "//src/grt:route_pt",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/stt",
-        "//src/utl",
+        "//openroad/dbSta",
+        "//openroad/dbSta:SpefWriter",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/grt",
+        "//openroad/grt:groute",
+        "//openroad/grt:route_pt",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/stt",
+        "//openroad/utl",
         "@openmp",
     ],
 )
@@ -74,15 +74,15 @@ cc_library(
     deps = [
         ":est_impl",
         ":parasitics_service",
-        "//src/dbSta",
-        "//src/dbSta:SpefWriter",
-        "//src/dbSta:dbNetwork",
-        "//src/grt",
-        "//src/grt:groute",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/stt",
-        "//src/utl",
+        "//openroad/dbSta",
+        "//openroad/dbSta:SpefWriter",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/grt",
+        "//openroad/grt:groute",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/stt",
+        "//openroad/utl",
     ],
 )
 
@@ -109,11 +109,11 @@ cc_library(
     deps = [
         ":est_impl",
         "//:ord",
-        "//src/dbSta:dbNetwork",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
-        "//src/web:core",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
+        "//openroad/web:core",
         "@tcl_lang//:tcl",
     ],
 )
@@ -132,7 +132,7 @@ tcl_wrap_cc(
     srcs = [
         "src/EstimateParasitics.i",
         "//:error_swig",
-        "//src/sta:sta_swig_files",
+        "//openroad/sta:sta_swig_files",
     ],
     module = "est",
     namespace_prefix = "est",

@@ -51,7 +51,7 @@ class RoutingCongestionTest : public tst::IntegratedFixture
 
   RoutingCongestionTest()
       : tst::IntegratedFixture(tst::IntegratedFixture::Technology::kNangate45,
-                               "_main/src/grt/test/")
+                               "_main/openroad/grt/test/")
   {
   }
 
@@ -63,8 +63,9 @@ class RoutingCongestionTest : public tst::IntegratedFixture
     for (odb::dbLib* lib : db_->getLibs()) {
       search_libs.push_back(lib);
     }
-    def_reader.readChip(
-        search_libs, getFilePath("_main/src/grt/test/gcd.def").c_str(), chip);
+    def_reader.readChip(search_libs,
+                        getFilePath("_main/openroad/grt/test/gcd.def").c_str(),
+                        chip);
     block_ = db_->getChip()->getBlock();
     sta_->postReadDef(block_);
 

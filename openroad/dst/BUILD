@@ -37,10 +37,10 @@ cc_library(
         "src",
     ],
     visibility = [
-        "//src/dst:__subpackages__",
+        "//openroad/dst:__subpackages__",
     ],
     deps = [
-        "//src/utl",
+        "//openroad/utl",
         "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/synchronization",
         "@boost.asio",
@@ -89,7 +89,7 @@ cc_library(
     deps = [
         ":dst_impl",
         "//:ord",
-        "//src/utl",
+        "//openroad/utl",
         "@tcl_lang//:tcl",
     ],
 )
@@ -113,10 +113,10 @@ tcl_wrap_cc(
     namespace_prefix = "dst",
     root_swig_src = "src/Distributed.i",
     swig_includes = [
-        "src/dst/src",
+        "src",
     ],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
     ],
 )
 

@@ -2,7 +2,7 @@ from openroad import Design, Tech
 import pdn_aux
 import helpers
 
-bazel_working_dir = "/_main/src/pdn/test/"
+bazel_working_dir = "/_main/openroad/pdn/test/"
 helpers.if_bazel_change_working_dir_to(bazel_working_dir)
 
 tech = Tech()

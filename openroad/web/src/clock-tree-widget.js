@@ -25,7 +25,7 @@ export const kLeftMargin = 70;     // room for time-axis labels
 export const kRightMargin = 20;
 
 // Node type → outline colour (fill is a lighter shade). Matches
-// the GUI palette in src/gui/src/clockWidget.h.
+// the GUI palette in openroad/gui/src/clockWidget.h.
 const kTypeColors = {
     root:       '#ff4444',
     buffer:     '#4488ff',

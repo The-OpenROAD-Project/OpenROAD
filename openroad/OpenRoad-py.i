@@ -63,8 +63,8 @@ get_db_block();
 %template(TimingPathInfos) std::vector<ord::TimingPathInfo>;
 
 #ifdef BAZEL
-%import "src/odb/src/swig/common/odb.i"
-%import "src/utl/src/Logger-py.i"
+%import "openroad/odb/src/swig/common/odb.i"
+%import "openroad/utl/src/Logger-py.i"
 #endif
 
 %newobject Design::getFloorplan();

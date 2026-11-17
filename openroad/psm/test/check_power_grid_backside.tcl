@@ -2,10 +2,10 @@
 #
 # Regression test for:
 #   * isBackside()-aware ITerm base-layer selection in
-#     src/psm/src/ir_network.cpp (without this fix every ITerm reports
+#     openroad/psm/src/ir_network.cpp (without this fix every ITerm reports
 #     PSM-0039 "Unconnected instance" on a BSPDN PDK because the
 #     virtual base node lands on a backside layer that has no shapes).
-#   * Multi-seed connectivity BFS in src/psm/src/ir_solver.cpp (without
+#   * Multi-seed connectivity BFS in openroad/psm/src/ir_solver.cpp (without
 #     this fix the BFS misses subgraphs that only touch the top layer
 #     through bridge cells, flagging thousands of spurious PSM-0038
 #     "Unconnected shape" warnings).

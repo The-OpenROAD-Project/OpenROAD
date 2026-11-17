@@ -3,14 +3,14 @@
 # Copyright (c) 2026, The OpenROAD Authors
 """Generate SVG railroad diagrams from the LEF and DEF Bison grammar files.
 
-Requires the ebnf-convert.war and rr.war tools vendored in src/odb/doc/tools/.
+Requires the ebnf-convert.war and rr.war tools vendored in openroad/odb/doc/tools/.
 Requires Java 11 or later on PATH.
 
 Usage:
-    python3 src/odb/doc/generate_railroad_diagrams.py         # both (default)
-    python3 src/odb/doc/generate_railroad_diagrams.py lef     # LEF only
-    python3 src/odb/doc/generate_railroad_diagrams.py def     # DEF only
-    python3 src/odb/doc/generate_railroad_diagrams.py all     # both (explicit)
+    python3 openroad/odb/doc/generate_railroad_diagrams.py         # both (default)
+    python3 openroad/odb/doc/generate_railroad_diagrams.py lef     # LEF only
+    python3 openroad/odb/doc/generate_railroad_diagrams.py def     # DEF only
+    python3 openroad/odb/doc/generate_railroad_diagrams.py all     # both (explicit)
 """
 
 import argparse
@@ -25,7 +25,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
-REPO_ROOT = SCRIPT_DIR.parent.parent.parent  # doc/ -> odb/ -> src/ -> repo root
+REPO_ROOT = SCRIPT_DIR.parent.parent.parent  # doc/ -> odb/ -> openroad/ -> repo root
 
 TOOLS_DIR = SCRIPT_DIR / "tools"
 
@@ -34,11 +34,11 @@ RR_WAR = TOOLS_DIR / "rr.war"
 
 GRAMMARS = {
     "lef": {
-        "y_file": REPO_ROOT / "src" / "odb" / "src" / "lef" / "lef" / "lef.y",
+        "y_file": REPO_ROOT / "openroad" / "odb" / "src" / "lef" / "lef" / "lef.y",
         "out_dir": SCRIPT_DIR / "images" / "lef",
     },
     "def": {
-        "y_file": REPO_ROOT / "src" / "odb" / "src" / "def" / "def" / "def.y",
+        "y_file": REPO_ROOT / "openroad" / "odb" / "src" / "def" / "def" / "def.y",
         "out_dir": SCRIPT_DIR / "images" / "def",
     },
 }
@@ -133,10 +133,15 @@ def ensure_tools() -> None:
             "  rr.war            (download lib from Maven Central: de.bottlecaps.rr:rr-lib:2.6)"
         )
     if missing:
-        print("Error: Missing required tool(s) in src/odb/doc/tools/:", file=sys.stderr)
+        print(
+            "Error: Missing required tool(s) in openroad/odb/doc/tools/:",
+            file=sys.stderr,
+        )
         for m in missing:
             print(m, file=sys.stderr)
-        print("\nSee src/odb/doc/README.md for setup instructions.", file=sys.stderr)
+        print(
+            "\nSee openroad/odb/doc/README.md for setup instructions.", file=sys.stderr
+        )
         sys.exit(1)
 
 

@@ -521,7 +521,7 @@ is shown below.
 
 Example scripts demonstrating how to run the
 Extraction Rules file generation can be found in this
-[directory](https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/src/rcx/calibration/script).
+[directory](https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/openroad/rcx/calibration/script).
 
 ```
 ./calibration/script/generate_patterns.tcl     # generate patterns
@@ -536,7 +536,7 @@ There are a set of regression tests in `./test`. For more information, refer to 
 Simply run the following command:
 
 ```shell
-bazelisk test //src/rcx/...
+bazelisk test //openroad/rcx/...
 ```
 
 ## Extraction Rules File Generation

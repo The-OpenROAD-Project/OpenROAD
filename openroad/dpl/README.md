@@ -225,7 +225,7 @@ There are a set of regression tests in `./test`. Refer to this [section](../../R
 Simply run the following command:
 
 ```shell
-bazelisk test //src/dpl/...
+bazelisk test //openroad/dpl/...
 ```
 
 ## Limitations

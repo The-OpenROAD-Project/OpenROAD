@@ -10,9 +10,9 @@ package(
 )
 
 # TODO: This can probably be broken into smaller, more specific parts.
-# TODO: once we establish src/odb as package, make aliases so that we
+# TODO: once we establish openroad/odb as package, make aliases so that we
 #  don't need the awkward long path with double src
-#  //src/odb/src/lef:lef but can say //src/odb:lef
+#  //openroad/odb/src/lef:lef but can say //openroad/odb:lef
 cc_library(
     name = "lef",
     srcs = [

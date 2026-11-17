@@ -20,12 +20,12 @@ cc_library(
     includes = ["src"],
     visibility = ["//visibility:private"],
     deps = [
-        "//src/cut",
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/rsz",
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/cut",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/rsz",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
         "@abc",
     ],
 )
@@ -44,15 +44,15 @@ cc_library(
     ],
     defines = ["ABC_NAMESPACE=abc"],
     includes = ["src"],
-    visibility = ["//src/rmp/test:__pkg__"],
+    visibility = ["//openroad/rmp/test:__pkg__"],
     deps = [
         ":utils",
-        "//src/cut",
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/rsz",
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/cut",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/rsz",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
         "@abc",
         "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/synchronization",
@@ -83,13 +83,13 @@ cc_library(
     deps = [
         ":optimization_strategies",
         ":utils",
-        "//src/cut",
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/odb/src/db",
-        "//src/rsz",
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/cut",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/odb/src/db",
+        "//openroad/rsz",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
         "@abc",
         "@abseil-cpp//absl/hash",
         "@abseil-cpp//absl/random:distributions",
@@ -113,10 +113,10 @@ cc_library(
     deps = [
         ":rmp",
         "//:ord",
-        "//src/cut",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/cut",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
         "@tcl_lang//:tcl",
     ],
 )
@@ -142,7 +142,7 @@ tcl_wrap_cc(
     srcs = [
         "src/rmp.i",
         "//:error_swig",
-        "//src/sta:sta_swig_files",
+        "//openroad/sta:sta_swig_files",
     ],
     module = "rmp",
     namespace_prefix = "rmp",
@@ -152,7 +152,7 @@ tcl_wrap_cc(
         "src",
     ],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
     ],
 )
 
@@ -173,7 +173,7 @@ python_wrap_cc(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//src/odb:swig-py",
+        "//openroad/odb:swig-py",
     ],
 )
 
@@ -183,13 +183,13 @@ filegroup(
         "README.md",
         "src/rmp.tcl",
     ],
-    visibility = ["//src/rmp/test:__pkg__"],
+    visibility = ["//openroad/rmp/test:__pkg__"],
 )
 
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/rmp/test:__pkg__",
+        "//openroad/rmp/test:__pkg__",
     ],
 )
 
@@ -198,8 +198,8 @@ python_wrap_library(
     includes = ["src"],
     deps = [
         ":rmp",
-        "//src/cut",
-        "//src/dbSta",
-        "//src/sta:opensta_lib",
+        "//openroad/cut",
+        "//openroad/dbSta",
+        "//openroad/sta:opensta_lib",
     ],
 )

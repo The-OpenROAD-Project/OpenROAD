@@ -26,7 +26,7 @@ namespace gpl {
 // the legacy CPU Ooura backend produces. Both fix-ups apply at the point
 // the solver output is consumed by gpl — the host unpack in
 // GpuFftBackend::solve and the on-device gather in densityOp.cpp. Pinned by
-// GpuFFTTest in src/gpl/test/fft_gpu_test.cc.
+// GpuFFTTest in openroad/gpl/test/fft_gpu_test.cc.
 inline constexpr float kSolverToGplFieldScale = 0.5f;
 
 // Result of solverToGplField — kept Kokkos-free POD so the helper is usable

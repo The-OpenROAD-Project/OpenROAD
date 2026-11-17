@@ -150,7 +150,7 @@ tcl_wrap_cc(
     namespace_prefix = "utl",
     root_swig_src = "src/Logger.i",
     swig_includes = [
-        "src/utl/src",
+        "src",
     ],
     visibility = ["//visibility:public"],
 )
@@ -188,13 +188,13 @@ filegroup(
         "README.md",
         "src/Utl.tcl",
     ],
-    visibility = ["//src/utl/test:__pkg__"],
+    visibility = ["//openroad/utl/test:__pkg__"],
 )
 
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/utl/test:__pkg__",
+        "//openroad/utl/test:__pkg__",
     ],
 )
 

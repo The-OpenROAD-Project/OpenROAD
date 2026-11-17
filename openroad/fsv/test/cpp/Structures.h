@@ -14,7 +14,7 @@
 namespace fsv {
 
 // The directory of the structures, relative to the runfiles root.
-inline constexpr std::string_view kGoldenDir = "src/fsv/test/golden/";
+inline constexpr std::string_view kGoldenDir = "openroad/fsv/test/golden/";
 
 struct Structure
 {

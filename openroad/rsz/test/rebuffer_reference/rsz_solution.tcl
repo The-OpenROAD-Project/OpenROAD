@@ -2,7 +2,7 @@
 # solution for every length in the solution file format of common.tcl.
 #
 # Environment: REF_SIZE_DRIVER (0 or 1), REF_OUT (output file).
-# Run from src/rsz/test.
+# Run from openroad/rsz/test.
 
 source "helpers.tcl"
 set buffer_varying_lengths_size_driver $::env(REF_SIZE_DRIVER)

@@ -219,10 +219,10 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/odb/src/db",
-        "//src/odb/src/defin",
-        "//src/ppl",
-        "//src/tst",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/defin",
+        "//openroad/ppl",
+        "//openroad/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -231,7 +231,7 @@ cc_test(
 py_test(
     name = "ppl_man_tcl_check",
     srcs = ["ppl_man_tcl_check.py"],
-    data = ["//src/ppl:doc_files"],
+    data = ["//openroad/ppl:doc_files"],
     tags = [
         "doc_check",
         "py",
@@ -242,8 +242,8 @@ py_test(
 doc_check_test(
     name = "ppl_readme_msgs_check",
     data = [
-        "//src/ppl:doc_files",
-        "//src/ppl:messages_txt",
+        "//openroad/ppl:doc_files",
+        "//openroad/ppl:messages_txt",
     ],
     visibility = ["//visibility:public"],
 )

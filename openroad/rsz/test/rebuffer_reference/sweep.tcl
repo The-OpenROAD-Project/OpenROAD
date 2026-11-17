@@ -2,7 +2,7 @@
 # of these seed search.tcl.
 #
 # Environment: REF_SIZE_DRIVER (0 or 1), REF_OUT (output file).
-# Run from src/rsz/test.
+# Run from openroad/rsz/test.
 
 source "rebuffer_reference/common.tcl"
 ref::init

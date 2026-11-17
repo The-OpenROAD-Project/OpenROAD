@@ -37,8 +37,8 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
         "@boost.container_hash",
         "@boost.graph",
         "@boost.polygon",
@@ -55,10 +55,10 @@ cc_library(
         "src/AntennaRules.hh",
     ],
     strip_include_prefix = "src",
-    visibility = ["//src/ant/test:__pkg__"],
+    visibility = ["//openroad/ant/test:__pkg__"],
     deps = [
         ":ant",
-        "//src/odb/src/db",
+        "//openroad/odb/src/db",
     ],
 )
 
@@ -76,7 +76,7 @@ cc_library(
     deps = [
         ":ant",
         "//:ord",
-        "//src/utl",
+        "//openroad/utl",
         "@tcl_lang//:tcl",
     ],
 )
@@ -118,7 +118,7 @@ python_wrap_cc(
         "src",
     ],
     deps = [
-        "//src/odb:swig-py",
+        "//openroad/odb:swig-py",
     ],
 )
 
@@ -128,13 +128,13 @@ filegroup(
         "README.md",
         "src/AntennaChecker.tcl",
     ],
-    visibility = ["//src/ant/test:__pkg__"],
+    visibility = ["//openroad/ant/test:__pkg__"],
 )
 
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/ant/test:__pkg__",
+        "//openroad/ant/test:__pkg__",
     ],
 )
 

@@ -229,7 +229,7 @@ filegroup(
 py_test(
     name = "pad_man_tcl_check",
     srcs = ["pad_man_tcl_check.py"],
-    data = ["//src/pad:doc_files"],
+    data = ["//openroad/pad:doc_files"],
     tags = [
         "doc_check",
         "py",
@@ -240,8 +240,8 @@ py_test(
 doc_check_test(
     name = "pad_readme_msgs_check",
     data = [
-        "//src/pad:doc_files",
-        "//src/pad:messages_txt",
+        "//openroad/pad:doc_files",
+        "//openroad/pad:messages_txt",
     ],
     visibility = ["//visibility:public"],
 )

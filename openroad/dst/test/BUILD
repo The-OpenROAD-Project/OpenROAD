@@ -14,7 +14,7 @@ cc_library(
     includes = [
         "cpp",
     ],
-    deps = ["//src/dst"],
+    deps = ["//openroad/dst"],
 )
 
 cc_test(
@@ -29,8 +29,8 @@ cc_test(
     deps = [
         ":test_helpers",
         "//:ord",
-        "//src/dst:dst_impl",
-        "//src/utl",
+        "//openroad/dst:dst_impl",
+        "//openroad/utl",
         "@boost.asio",
         "@boost.bind",
         "@boost.scope_exit",
@@ -43,7 +43,7 @@ cc_test(
 )
 
 # TestDistributed is still race-prone, so it is a buildable binary rather than
-# a test and is not part of `bazelisk test //src/...`.
+# a test and is not part of `bazelisk test //openroad/...`.
 cc_binary(
     name = "dst_distributed_test",
     testonly = True,
@@ -57,8 +57,8 @@ cc_binary(
     deps = [
         ":test_helpers",
         "//:ord",
-        "//src/dst",
-        "//src/utl",
+        "//openroad/dst",
+        "//openroad/utl",
         "@boost.asio",
         "@boost.bind",
         "@googletest//:gtest",
@@ -81,8 +81,8 @@ cc_test(
     deps = [
         ":test_helpers",
         "//:ord",
-        "//src/dst:dst_impl",
-        "//src/utl",
+        "//openroad/dst:dst_impl",
+        "//openroad/utl",
         "@boost.asio",
         "@boost.bind",
         "@boost.system",

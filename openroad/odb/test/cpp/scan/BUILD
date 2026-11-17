@@ -13,8 +13,8 @@ cc_test(
         "TestScanChain.cpp",
     ],
     deps = [
-        "//src/odb/src/db",
-        "//src/odb/test/cpp/helper",
+        "//openroad/odb/src/db",
+        "//openroad/odb/test/cpp/helper",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

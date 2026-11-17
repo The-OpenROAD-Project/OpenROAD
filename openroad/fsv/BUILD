@@ -69,7 +69,7 @@ cc_library(
         "src/SquareGreens.h",
     ],
     includes = ["src"],
-    visibility = ["//src/fsv:__subpackages__"],
+    visibility = ["//openroad/fsv:__subpackages__"],
     deps = [
         ":geometry",
         ":stack",
@@ -105,7 +105,7 @@ cc_library(
     deps = [
         ":core",
         ":geometry",
-        "//src/odb/src/db",
+        "//openroad/odb/src/db",
     ],
 )
 
@@ -119,8 +119,8 @@ cc_library(
         ":geometry",
         ":net_window",
         ":stack",
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
     ],
 )
 
@@ -138,7 +138,7 @@ cc_library(
         ":fsv",
         ":geometry",
         "//:ord",
-        "//src/utl",
+        "//openroad/utl",
         "@tcl_lang//:tcl",
     ],
 )
@@ -159,7 +159,7 @@ tcl_wrap_cc(
     module = "fsv",
     namespace_prefix = "fsv",
     root_swig_src = "src/FieldSolver.i",
-    swig_includes = ["src/fsv/src"],
+    swig_includes = ["src"],
 )
 
 python_wrap_cc(
@@ -170,7 +170,7 @@ python_wrap_cc(
     ],
     module = "fsv_py",
     root_swig_src = "src/FieldSolver-py.i",
-    swig_includes = ["src/fsv/src"],
+    swig_includes = ["src"],
 )
 
 # Compiled into //:_openroad.so with the other Python modules, so that it
@@ -191,7 +191,7 @@ filegroup(
         "README.md",
         "src/FieldSolver.tcl",
     ],
-    visibility = ["//src/fsv/test:__pkg__"],
+    visibility = ["//openroad/fsv/test:__pkg__"],
 )
 
 exports_files(["README.md"])
@@ -199,6 +199,6 @@ exports_files(["README.md"])
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/fsv/test:__pkg__",
+        "//openroad/fsv/test:__pkg__",
     ],
 )

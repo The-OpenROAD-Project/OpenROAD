@@ -38,12 +38,12 @@ cc_library(
     ],
     deps = [
         "//:ord",
-        "//src/cut",
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/cut",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
         "@abc",
         "@tcl_lang//:tcl",
     ],
@@ -63,7 +63,7 @@ tcl_wrap_cc(
     srcs = [
         "src/cgt.i",
         "//:error_swig",
-        "//src/sta:sta_swig_files",
+        "//openroad/sta:sta_swig_files",
     ],
     module = "cgt",
     namespace_prefix = "cgt",
@@ -86,7 +86,7 @@ python_wrap_cc(
         "include",
     ],
     deps = [
-        "//src/odb:swig-py",
+        "//openroad/odb:swig-py",
     ],
 )
 

@@ -11,7 +11,7 @@
 // basis function has a closed-form answer for phi, Ex and Ey.  Every other
 // density is a sum of basis functions, which the linearity test covers.
 
-#include "src/gpl/src/fft.h"
+#include "openroad/gpl/src/fft.h"
 
 #include <cmath>
 #include <cstddef>

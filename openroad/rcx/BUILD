@@ -105,9 +105,9 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/odb/src/db",
-        "//src/odb/src/wireNormalizer",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/wireNormalizer",
+        "//openroad/utl",
     ],
 )
 
@@ -128,7 +128,7 @@ cc_library(
     deps = [
         ":rcx",
         "//:ord",
-        "//src/utl",
+        "//openroad/utl",
         "@tcl_lang//:tcl",
     ],
 )
@@ -152,10 +152,10 @@ tcl_wrap_cc(
     namespace_prefix = "rcx",
     root_swig_src = "src/ext.i",
     swig_includes = [
-        "src/rcx/src",
+        "src",
     ],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
     ],
 )
 
@@ -173,7 +173,7 @@ python_wrap_cc(
         "include",
     ],
     deps = [
-        "//src/odb:swig-py",
+        "//openroad/odb:swig-py",
     ],
 )
 
@@ -184,13 +184,13 @@ filegroup(
         "src/OpenRCX.tcl",
         "src/OpenRCX_process.tcl",
     ],
-    visibility = ["//src/rcx/test:__pkg__"],
+    visibility = ["//openroad/rcx/test:__pkg__"],
 )
 
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/rcx/test:__pkg__",
+        "//openroad/rcx/test:__pkg__",
     ],
 )
 

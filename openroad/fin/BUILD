@@ -34,9 +34,9 @@ cc_library(
     ],
     deps = [
         "//:ord",
-        "//src/odb/src/db",
-        "//src/utl",
-        "//src/web:core",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "//openroad/web:core",
         "@boost.lexical_cast",
         "@boost.polygon",
         "@boost.property_tree",
@@ -63,10 +63,10 @@ tcl_wrap_cc(
     namespace_prefix = "fin",
     root_swig_src = "src/finale.i",
     swig_includes = [
-        "src/fin/src",
+        "src",
     ],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
     ],
 )
 
@@ -83,7 +83,7 @@ python_wrap_cc(
         "include",
     ],
     deps = [
-        "//src/odb:swig-py",
+        "//openroad/odb:swig-py",
     ],
 )
 
@@ -93,13 +93,13 @@ filegroup(
         "README.md",
         "src/finale.tcl",
     ],
-    visibility = ["//src/fin/test:__pkg__"],
+    visibility = ["//openroad/fin/test:__pkg__"],
 )
 
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/fin/test:__pkg__",
+        "//openroad/fin/test:__pkg__",
     ],
 )
 

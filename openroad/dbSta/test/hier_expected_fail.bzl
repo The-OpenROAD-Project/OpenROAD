@@ -23,7 +23,7 @@ everyone to write a placeholder, which is worse than an empty one: the reader
 cannot tell a defect nobody has filed from one whose number was never
 backfilled.
 
-src/dbSta/test/BUILD renders these into the manifests the two suites read.
+openroad/dbSta/test/BUILD renders these into the manifests the two suites read.
 """
 
 _PATHS = ["hier", "flat"]

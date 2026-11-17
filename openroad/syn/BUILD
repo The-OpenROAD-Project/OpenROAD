@@ -48,14 +48,14 @@ cc_library(
         "src",
     ],
     deps = [
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/odb/src/db",
-        "//src/rsz",
-        "//src/sta:opensta_lib",
-        "//src/syn/src/elab",
-        "//src/syn/src/ir",
-        "//src/utl",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/odb/src/db",
+        "//openroad/rsz",
+        "//openroad/sta:opensta_lib",
+        "//openroad/syn/src/elab",
+        "//openroad/syn/src/ir",
+        "//openroad/utl",
         "@abc",
     ],
 )
@@ -76,7 +76,7 @@ cc_library(
     deps = [
         ":syn",
         "//:ord",
-        "//src/utl",
+        "//openroad/utl",
         "@tcl_lang//:tcl",
     ],
 )
@@ -100,10 +100,10 @@ tcl_wrap_cc(
     namespace_prefix = "syn",
     root_swig_src = "src/synthesis.i",
     swig_includes = [
-        "src/syn/src",
+        "src",
     ],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
     ],
 )
 
@@ -121,7 +121,7 @@ python_wrap_cc(
         "src",
     ],
     deps = [
-        "//src/odb:swig-py",
+        "//openroad/odb:swig-py",
     ],
 )
 
@@ -131,9 +131,9 @@ exports_files(["README.md"])
 # macro's recursive glob, elab/ and ir/ are their own packages.
 messages_txt(
     extra_srcs = [
-        "//src/syn/src/elab:message_srcs",
-        "//src/syn/src/ir:message_srcs",
-        "//src/syn/src/lir:message_srcs",
+        "//openroad/syn/src/elab:message_srcs",
+        "//openroad/syn/src/ir:message_srcs",
+        "//openroad/syn/src/lir:message_srcs",
     ],
     visibility = ["//docs:__pkg__"],
 )

@@ -87,11 +87,11 @@ cc_library(
         "src",
     ],
     visibility = [
-        "//src/dpl:__subpackages__",
+        "//openroad/dpl:__subpackages__",
     ],
     deps = [
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
         "@boost.container_hash",
         "@boost.format",
         "@boost.geometry",
@@ -115,8 +115,8 @@ cc_library(
     ],
     deps = [
         ":dpl_impl",
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
         "@boost.geometry",
     ],
 )
@@ -140,9 +140,9 @@ cc_library(
     deps = [
         ":dpl_impl",
         "//:ord",
-        "//src/odb/src/db",
-        "//src/utl",
-        "//src/web:core",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "//openroad/web:core",
         "@boost.icl",
         "@boost.polygon",
         "@boost.utility",
@@ -169,10 +169,10 @@ tcl_wrap_cc(
     namespace_prefix = "dpl",
     root_swig_src = "src/Opendp.i",
     swig_includes = [
-        "src/dpl/src",
+        "src",
     ],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
     ],
 )
 
@@ -190,7 +190,7 @@ python_wrap_cc(
         "src",
     ],
     deps = [
-        "//src/odb:swig-py",
+        "//openroad/odb:swig-py",
     ],
 )
 
@@ -200,13 +200,13 @@ filegroup(
         "README.md",
         "src/Opendp.tcl",
     ],
-    visibility = ["//src/dpl/test:__pkg__"],
+    visibility = ["//openroad/dpl/test:__pkg__"],
 )
 
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/dpl/test:__pkg__",
+        "//openroad/dpl/test:__pkg__",
     ],
 )
 

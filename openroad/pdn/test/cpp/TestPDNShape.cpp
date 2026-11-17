@@ -1636,7 +1636,7 @@ class TestShapeWrongDirection : public tst::DbFixture
     odb::lefin reader(db_.get(), getLogger(), false);
     odb::dbTech* tech = reader.createTech(
         "tech",
-        getFilePath("_main/src/pdn/test/cpp/wrong_direction_spacing.lef")
+        getFilePath("_main/openroad/pdn/test/cpp/wrong_direction_spacing.lef")
             .c_str());
     tst::makeBlock(db_.get(), tech);
     net_ = odb::dbNet::create(db_->getChip()->getBlock(), "VDD");

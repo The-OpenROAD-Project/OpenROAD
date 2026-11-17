@@ -33,8 +33,8 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
+        "//openroad/odb:odb_py",
         "//python/openroad:openroadpy",
-        "//src/odb:odb_py",
     ],
 )
 
@@ -47,8 +47,8 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
+        "//openroad/odb:odb_py",
         "//python/openroad:openroadpy",
-        "//src/odb:odb_py",
     ],
 )
 
@@ -61,8 +61,8 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
+        "//openroad/odb:odb_py",
         "//python/openroad:openroadpy",
-        "//src/odb:odb_py",
     ],
 )
 
@@ -75,8 +75,8 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
+        "//openroad/odb:odb_py",
         "//python/openroad:openroadpy",
-        "//src/odb:odb_py",
     ],
 )
 
@@ -89,8 +89,8 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
+        "//openroad/odb:odb_py",
         "//python/openroad:openroadpy",
-        "//src/odb:odb_py",
     ],
 )
 
@@ -103,8 +103,8 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
+        "//openroad/odb:odb_py",
         "//python/openroad:openroadpy",
-        "//src/odb:odb_py",
     ],
 )
 
@@ -117,8 +117,8 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
+        "//openroad/odb:odb_py",
         "//python/openroad:openroadpy",
-        "//src/odb:odb_py",
     ],
 )
 
@@ -131,8 +131,8 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
+        "//openroad/odb:odb_py",
         "//python/openroad:openroadpy",
-        "//src/odb:odb_py",
     ],
 )
 
@@ -145,8 +145,8 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
+        "//openroad/odb:odb_py",
         "//python/openroad:openroadpy",
-        "//src/odb:odb_py",
     ],
 )
 
@@ -363,7 +363,7 @@ filegroup(
 )
 
 # Hierarchical Verilog reused as corpus input by
-# //src/dbSta/test:dbsta_hier_conformance.
+# //openroad/dbSta/test:dbsta_hier_conformance.
 filegroup(
     name = "hier_corpus_netlists",
     srcs = ["replace_hier_mod1.v"],
@@ -381,7 +381,7 @@ filegroup(
         name = test_name + "_resources",
         srcs = [
             ":regression_resources",
-            "//src/odb/test/data/sky130hd:lef-test-data",
+            "//openroad/odb/test/data/sky130hd:lef-test-data",
         ] + glob(
             [
                 test_name + ".*",
@@ -437,7 +437,7 @@ filegroup(
 py_test(
     name = "odb_man_tcl_check",
     srcs = ["odb_man_tcl_check.py"],
-    data = ["//src/odb:doc_files"],
+    data = ["//openroad/odb:doc_files"],
     tags = [
         "doc_check",
         "py",
@@ -448,8 +448,8 @@ py_test(
 doc_check_test(
     name = "odb_readme_msgs_check",
     data = [
-        "//src/odb:doc_files",
-        "//src/odb:messages_txt",
+        "//openroad/odb:doc_files",
+        "//openroad/odb:messages_txt",
     ],
     visibility = ["//visibility:public"],
 )
@@ -457,37 +457,37 @@ doc_check_test(
 test_suite(
     name = "cpp_tests",
     tests = [
-        "//src/odb/test/cpp:Test3DBloxChecker",
-        "//src/odb/test/cpp:Test3DBloxParser",
-        "//src/odb/test/cpp:Test3DBloxVerilogWriter",
-        "//src/odb/test/cpp:TestAbstractLef",
-        "//src/odb/test/cpp:TestAccessPoint",
-        "//src/odb/test/cpp:TestCallBacks",
-        "//src/odb/test/cpp:TestChips",
-        "//src/odb/test/cpp:TestDbStream",
-        "//src/odb/test/cpp:TestDbWire",
-        "//src/odb/test/cpp:TestGCellGrid",
-        "//src/odb/test/cpp:TestGDSIn",
-        "//src/odb/test/cpp:TestGeom",
-        "//src/odb/test/cpp:TestGroup",
-        "//src/odb/test/cpp:TestGuide",
-        "//src/odb/test/cpp:TestJournal",
-        "//src/odb/test/cpp:TestLef58Properties",
-        "//src/odb/test/cpp:TestLefIn",
-        "//src/odb/test/cpp:TestMaster",
-        "//src/odb/test/cpp:TestModule",
-        "//src/odb/test/cpp:TestNetTrack",
-        "//src/odb/test/cpp:TestObjectType",
-        "//src/odb/test/cpp:TestPolygonalFloorplan",
-        "//src/odb/test/cpp:TestShapeDestroy",
-        "//src/odb/test/cpp:TestSwapMaster",
-        "//src/odb/test/cpp:TestSwapMasterLeaf",
-        "//src/odb/test/cpp:TestSwapMasterUnusedPort",
-        "//src/odb/test/cpp:TestWriteReadDbHier",
+        "//openroad/odb/test/cpp:Test3DBloxChecker",
+        "//openroad/odb/test/cpp:Test3DBloxParser",
+        "//openroad/odb/test/cpp:Test3DBloxVerilogWriter",
+        "//openroad/odb/test/cpp:TestAbstractLef",
+        "//openroad/odb/test/cpp:TestAccessPoint",
+        "//openroad/odb/test/cpp:TestCallBacks",
+        "//openroad/odb/test/cpp:TestChips",
+        "//openroad/odb/test/cpp:TestDbStream",
+        "//openroad/odb/test/cpp:TestDbWire",
+        "//openroad/odb/test/cpp:TestGCellGrid",
+        "//openroad/odb/test/cpp:TestGDSIn",
+        "//openroad/odb/test/cpp:TestGeom",
+        "//openroad/odb/test/cpp:TestGroup",
+        "//openroad/odb/test/cpp:TestGuide",
+        "//openroad/odb/test/cpp:TestJournal",
+        "//openroad/odb/test/cpp:TestLef58Properties",
+        "//openroad/odb/test/cpp:TestLefIn",
+        "//openroad/odb/test/cpp:TestMaster",
+        "//openroad/odb/test/cpp:TestModule",
+        "//openroad/odb/test/cpp:TestNetTrack",
+        "//openroad/odb/test/cpp:TestObjectType",
+        "//openroad/odb/test/cpp:TestPolygonalFloorplan",
+        "//openroad/odb/test/cpp:TestShapeDestroy",
+        "//openroad/odb/test/cpp:TestSwapMaster",
+        "//openroad/odb/test/cpp:TestSwapMasterLeaf",
+        "//openroad/odb/test/cpp:TestSwapMasterUnusedPort",
+        "//openroad/odb/test/cpp:TestWriteReadDbHier",
     ],
 )
 
-# Standalone odbtcl shell (//src/odb/src/swig:odbtcl). Runs the scripts from
+# Standalone odbtcl shell (//openroad/odb/src/swig:odbtcl). Runs the scripts from
 # the old test/regression-tcl.sh that still pass; the others use an old
 # read_def signature or data that is no longer in the tree.
 ODBTCL_SCRIPTS = [
@@ -502,11 +502,11 @@ sh_test(
     name = "odbtcl_test",
     size = "small",
     srcs = ["odbtcl_test.sh"],
-    args = ["$(rootpath //src/odb/src/swig:odbtcl)"] +
+    args = ["$(rootpath //openroad/odb/src/swig:odbtcl)"] +
            ["$(rootpath %s)" % script for script in ODBTCL_SCRIPTS],
     data = ODBTCL_SCRIPTS + [
         "data/gscl45nm.lef",
         "tcl/test_helpers.tcl",
-        "//src/odb/src/swig:odbtcl",
+        "//openroad/odb/src/swig:odbtcl",
     ],
 )

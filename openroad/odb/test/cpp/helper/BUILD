@@ -18,7 +18,7 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//src/odb/src/db",
-        "//src/tst:db_fixture",
+        "//openroad/odb/src/db",
+        "//openroad/tst:db_fixture",
     ],
 )

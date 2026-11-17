@@ -3,7 +3,7 @@ import pdn_aux
 import helpers
 from collections import defaultdict
 
-bazel_working_dir = "/_main/src/pdn/test/"
+bazel_working_dir = "/_main/openroad/pdn/test/"
 helpers.if_bazel_change_working_dir_to(bazel_working_dir)
 
 tech = Tech()

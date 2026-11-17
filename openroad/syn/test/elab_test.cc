@@ -298,7 +298,7 @@ class ElabWithMacrosTest : public tst::Fixture
   void SetUp() override
   {
     Fixture::SetUp();
-    readLiberty(getFilePath("_main/src/syn/test/macro_test_cells.lib"));
+    readLiberty(getFilePath("_main/openroad/syn/test/macro_test_cells.lib"));
   }
 };
 

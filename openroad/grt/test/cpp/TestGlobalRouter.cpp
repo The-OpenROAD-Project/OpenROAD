@@ -22,7 +22,7 @@ class GlobalRouterTest : public tst::IntegratedFixture
  protected:
   GlobalRouterTest()
       : tst::IntegratedFixture(tst::IntegratedFixture::Technology::kNangate45,
-                               "_main/src/grt/test/")
+                               "_main/openroad/grt/test/")
   {
   }
 
@@ -34,7 +34,7 @@ class GlobalRouterTest : public tst::IntegratedFixture
     for (odb::dbLib* lib : db_->getLibs()) {
       search_libs.push_back(lib);
     }
-    const std::string def = getFilePath("_main/src/grt/test/gcd.def");
+    const std::string def = getFilePath("_main/openroad/grt/test/gcd.def");
     def_reader.readChip(search_libs, def.c_str(), chip);
     block_ = db_->getChip()->getBlock();
     sta_->postReadDef(block_);

@@ -138,7 +138,7 @@ filegroup(
 # 3dic_cross itself omits the .3dbx because its own test_name + ".*" glob
 # already picks it up.
 _3DIC_CROSS_FIXTURES = [
-    "//src/odb/test:regression_resources",
+    "//openroad/odb/test:regression_resources",
     "3dic_cross.3dbx",
     "3dic_cross_flop.3dbv",
     "3dic_cross_flop_a.bmap",
@@ -157,7 +157,7 @@ _3DIC_CROSS_FIXTURES = [
             ],
         ) + {
             "3dic_cross": [
-                "//src/odb/test:regression_resources",
+                "//openroad/odb/test:regression_resources",
                 "3dic_cross_flop.3dbv",
                 "3dic_cross_flop_a.bmap",
                 "3dic_cross_flop_a.def",
@@ -166,7 +166,7 @@ _3DIC_CROSS_FIXTURES = [
                 "3dic_cross_top.v",
             ],
             "3dic_get_cells": [
-                "//src/odb/test:regression_resources",
+                "//openroad/odb/test:regression_resources",
             ],
             "3dic_read_db": _3DIC_CROSS_FIXTURES + [
                 "3dic_read_db_reload.tcl",
@@ -363,12 +363,12 @@ _3DIC_CROSS_FIXTURES = [
                 "write_verilog9.v",
             ],
             "write_verilog_def_alias": [
-                "//src/grt/test:upper_layer_net.def",
+                "//openroad/grt/test:upper_layer_net.def",
             ],
             "write_verilog_def_shared_inputs": [
-                "//src/drt/test:sky130hs/sky130hs.tlef",
-                "//src/drt/test:sky130hs/sky130hs_std_cell.lef",
-                "//src/drt/test:top_level_term2.def",
+                "//openroad/drt/test:sky130hs/sky130hs.tlef",
+                "//openroad/drt/test:sky130hs/sky130hs_std_cell.lef",
+                "//openroad/drt/test:top_level_term2.def",
             ],
         }.get(test_name, []),
     )
@@ -390,11 +390,11 @@ cc_test(
     name = "bterm_direction_unittest",
     srcs = ["cpp/TestBTermDirection.cpp"],
     deps = [
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/tst",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -408,13 +408,13 @@ cc_test(
         "Nangate45/Nangate45_typ.lib",
     ],
     deps = [
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/odb/src/db",
-        "//src/odb/src/lefin",
-        "//src/sta:opensta_lib",
-        "//src/tst",
-        "//src/utl",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/lefin",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst",
+        "//openroad/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -459,8 +459,8 @@ HIER_INHERITED_NETLISTS = glob(
 )
 
 HIER_INHERITED_FIXTURES = [
-    "//src/odb/test:hier_corpus_netlists",
-    "//src/rsz/test:hier_corpus_netlists",
+    "//openroad/odb/test:hier_corpus_netlists",
+    "//openroad/rsz/test:hier_corpus_netlists",
 ]
 
 # Cases only the structural suite runs: a LEC cannot adjudicate them (several
@@ -524,7 +524,7 @@ write_file(
 # Hierarchy conformance: both link modes LEC'd against the input netlist.
 #
 # Needs the external kepler-formal binary at run time (resolved from
-# $KEPLER_FORMAL or the test's runfiles -- see src/tst/include/tst/lec.h);
+# $KEPLER_FORMAL or the test's runfiles -- see openroad/tst/include/tst/lec.h);
 # without it the tests fail with an actionable message rather than skipping. The
 # binary rides along in the runner's runfiles, so every case target gets it.
 cc_binary(
@@ -532,9 +532,9 @@ cc_binary(
     testonly = 1,
     srcs = ["cpp/TestHierConformance.cpp"],
     deps = [
-        "//src/tst:db_fixture",
-        "//src/tst:lec",
-        "//src/tst:loaded_design",
+        "//openroad/tst:db_fixture",
+        "//openroad/tst:lec",
+        "//openroad/tst:loaded_design",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -582,8 +582,8 @@ cc_binary(
     testonly = 1,
     srcs = ["cpp/TestHierStructural.cpp"],
     deps = [
-        "//src/tst:db_fixture",
-        "//src/tst:loaded_design",
+        "//openroad/tst:db_fixture",
+        "//openroad/tst:loaded_design",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -639,11 +639,11 @@ cc_test(
         "cpp/TestDbSta_DriverInputPortAcrossNetlistEdits.v",
     ],
     deps = [
-        "//src/dbSta:dbNetwork",
-        "//src/dbSta:dbSdcNetwork",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/tst:integrated_fixture",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/dbSta:dbSdcNetwork",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -654,8 +654,8 @@ cc_test(
     srcs = ["cpp/TestReadVerilog.cpp"],
     data = glob(["cpp/TestReadVerilog*.v"]),
     deps = [
-        "//src/odb/src/db",
-        "//src/tst:integrated_fixture",
+        "//openroad/odb/src/db",
+        "//openroad/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -666,8 +666,8 @@ cc_test(
     srcs = ["cpp/TestWriteVerilog.cpp"],
     data = glob(["cpp/TestWriteVerilog*.v"]),
     deps = [
-        "//src/sta:opensta_lib",
-        "//src/tst:integrated_fixture",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -682,12 +682,12 @@ cc_test(
         "cpp/TestDbSta_0.v",
     ],
     deps = [
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/dbSta:lambertw_delay_calc",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/tst:integrated_fixture",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/dbSta:lambertw_delay_calc",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

@@ -21,7 +21,7 @@ namespace odb {
 
 using Fixture = tst::Fixture;
 
-static const std::string prefix("_main/src/odb/test/");
+static const std::string prefix("_main/openroad/odb/test/");
 
 TEST_F(Fixture, lef58_class)
 {

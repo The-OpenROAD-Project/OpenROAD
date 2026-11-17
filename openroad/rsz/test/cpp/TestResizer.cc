@@ -107,7 +107,7 @@ class TestResizer : public tst::IntegratedFixture
  public:
   TestResizer()
       : tst::IntegratedFixture(tst::IntegratedFixture::Technology::kNangate45,
-                               "_main/src/rsz/test/")
+                               "_main/openroad/rsz/test/")
   {
   }
 

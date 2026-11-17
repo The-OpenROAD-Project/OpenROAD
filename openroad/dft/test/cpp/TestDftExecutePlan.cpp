@@ -41,7 +41,7 @@ class TestDftExecutePlan : public tst::Fixture
     db_network_ = sta_->getDbNetwork();
   }
 
-  static inline const std::string kTestRoot = "_main/src/dft/test/";
+  static inline const std::string kTestRoot = "_main/openroad/dft/test/";
 
   // Reads the design and defines a clock on its "clock" port
   void readDesign(const std::string& verilog_file, const char* top)

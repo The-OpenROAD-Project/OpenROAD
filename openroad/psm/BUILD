@@ -46,14 +46,14 @@ cc_library(
     ],
     deps = [
         "//:ord",
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/dpl",
-        "//src/est",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
-        "//src/web:core",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/dpl",
+        "//openroad/est",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
+        "//openroad/web:core",
         "@boost.geometry",
         "@boost.polygon",
         "@eigen",
@@ -75,17 +75,17 @@ tcl_wrap_cc(
     srcs = [
         "src/pdnsim.i",
         "//:error_swig",
-        "//src/sta:sta_swig_files",
+        "//openroad/sta:sta_swig_files",
     ],
     module = "psm",
     namespace_prefix = "psm",
     root_swig_src = "src/pdnsim.i",
     swig_includes = [
         "../sta",
-        "src/psm/src",
+        "src",
     ],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
     ],
 )
 
@@ -102,7 +102,7 @@ python_wrap_cc(
         "include",
     ],
     deps = [
-        "//src/odb:swig-py",
+        "//openroad/odb:swig-py",
     ],
 )
 
@@ -112,13 +112,13 @@ filegroup(
         "README.md",
         "src/pdnsim.tcl",
     ],
-    visibility = ["//src/psm/test:__pkg__"],
+    visibility = ["//openroad/psm/test:__pkg__"],
 )
 
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/psm/test:__pkg__",
+        "//openroad/psm/test:__pkg__",
     ],
 )
 

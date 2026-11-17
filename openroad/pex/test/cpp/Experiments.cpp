@@ -39,7 +39,7 @@
 //   conductor off the ground plane) into --model, timing each layer.
 //
 // bazelisk run starts it in its runfiles, where the default files are:
-//   bazelisk run //src/pex/test:Experiments -- [--groups e1,e2,...]
+//   bazelisk run //openroad/pex/test:Experiments -- [--groups e1,e2,...]
 //       [--itf FILE] [--layer NAME] [--threads N] [--tol X] [--csv FILE]
 //       [--smoke]
 // and for e9 and e14 the design and the model, built and saved when the
@@ -120,7 +120,7 @@ struct Options
                                   "e16",
                                   "e17",
                                   "e19"};
-  std::string itf = "src/fsv/test/sky130.itf";
+  std::string itf = "openroad/fsv/test/sky130.itf";
   std::string layer = "met2";
   int threads = 1;
   double tol = 0.003;
@@ -132,9 +132,9 @@ struct Options
   bool smoke = false;
   // e9
   std::vector<std::string> lefs{
-      "src/pex/test/sky130hd/sky130hd.tlef",
-      "src/pex/test/sky130hd/sky130_fd_sc_hd_merged.lef"};
-  std::string def = "src/fsv/test/field_solver_gcd.def";
+      "openroad/pex/test/sky130hd/sky130hd.tlef",
+      "openroad/pex/test/sky130hd/sky130_fd_sc_hd_merged.lef"};
+  std::string def = "openroad/fsv/test/field_solver_gcd.def";
   std::string odb;
   std::string model;
   std::vector<std::string> nets;

@@ -2,7 +2,7 @@ from openroad import Tech
 import helpers
 import rsz_aux
 
-helpers.if_bazel_change_working_dir_to("/_main/src/rsz/test/")
+helpers.if_bazel_change_working_dir_to("/_main/openroad/rsz/test/")
 
 tech = Tech()
 tech.readLiberty("Nangate45/Nangate45_typ.lib")

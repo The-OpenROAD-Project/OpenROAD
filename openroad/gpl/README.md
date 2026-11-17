@@ -376,7 +376,7 @@ There are a set of regression tests in `./test`. For more information, refer to 
 Simply run the following command:
 
 ```shell
-bazelisk test //src/gpl/...
+bazelisk test //openroad/gpl/...
 ```
 
 ## Limitations

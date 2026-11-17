@@ -23,8 +23,8 @@ cc_library(
         "src",
     ],
     deps = [
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
     ],
 )
 
@@ -45,8 +45,8 @@ cc_library(
         "src",
     ],
     deps = [
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
         "@boost.random",
     ],
 )
@@ -77,16 +77,16 @@ cc_library(
         "src",
     ],
     visibility = [
-        "//src/mpl:__subpackages__",
+        "//openroad/mpl:__subpackages__",
     ],
     deps = [
         ":pusher",
         ":snapper",
-        "//src/dbSta:dbNetwork",
-        "//src/odb/src/db",
-        "//src/par",
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/odb/src/db",
+        "//openroad/par",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
         "@boost.polygon",
         "@boost.random",
     ],
@@ -102,8 +102,8 @@ cc_library(
     ],
     deps = [
         ":mpl_impl",
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
     ],
 )
 
@@ -127,9 +127,9 @@ cc_library(
         ":mpl_impl",
         ":pusher",
         "//:ord",
-        "//src/odb/src/db",
-        "//src/utl",
-        "//src/web:core",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "//openroad/web:core",
         "@tcl_lang//:tcl",
     ],
 )
@@ -154,10 +154,10 @@ tcl_wrap_cc(
     namespace_prefix = "mpl",
     root_swig_src = "src/mpl.i",
     swig_includes = [
-        "src/mpl/src",
+        "src",
     ],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
     ],
 )
 
@@ -167,12 +167,12 @@ filegroup(
         "README.md",
         "src/mpl.tcl",
     ],
-    visibility = ["//src/mpl/test:__pkg__"],
+    visibility = ["//openroad/mpl/test:__pkg__"],
 )
 
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/mpl/test:__pkg__",
+        "//openroad/mpl/test:__pkg__",
     ],
 )

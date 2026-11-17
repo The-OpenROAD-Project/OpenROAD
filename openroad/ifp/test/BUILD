@@ -141,7 +141,7 @@ filegroup(
 py_test(
     name = "ifp_man_tcl_check",
     srcs = ["ifp_man_tcl_check.py"],
-    data = ["//src/ifp:doc_files"],
+    data = ["//openroad/ifp:doc_files"],
     tags = [
         "doc_check",
         "py",
@@ -152,8 +152,8 @@ py_test(
 doc_check_test(
     name = "ifp_readme_msgs_check",
     data = [
-        "//src/ifp:doc_files",
-        "//src/ifp:messages_txt",
+        "//openroad/ifp:doc_files",
+        "//openroad/ifp:messages_txt",
     ],
     visibility = ["//visibility:public"],
 )

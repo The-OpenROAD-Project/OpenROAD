@@ -30,15 +30,15 @@ cc_library(
         "TritModel.h",
     ],
     include_prefix = "syn/ir",
-    strip_include_prefix = "//src/syn/src/ir",
+    strip_include_prefix = "//openroad/syn/src/ir",
     visibility = ["//visibility:public"],
     deps = [
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
         "@abc",
     ],
 )
 
 message_srcs(
-    visibility = ["//src/syn:__pkg__"],
+    visibility = ["//openroad/syn:__pkg__"],
 )

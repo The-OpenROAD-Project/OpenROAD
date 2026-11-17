@@ -40,14 +40,14 @@ regression_test(
     ],
 )
 
-# No gtest_main on ir/graph/opt tests: ABC (via //src/syn/src/ir →
+# No gtest_main on ir/graph/opt tests: ABC (via //openroad/syn/src/ir →
 # TritModel) ships its own main() that wins over gtest_main; each TU
 # defines its own.
 cc_test(
     name = "ir_test",
     srcs = ["ir_test.cc"],
     deps = [
-        "//src/syn/src/ir",
+        "//openroad/syn/src/ir",
         "@googletest//:gtest",
     ],
 )
@@ -56,7 +56,7 @@ cc_test(
     name = "graph_test",
     srcs = ["graph_test.cc"],
     deps = [
-        "//src/syn/src/ir",
+        "//openroad/syn/src/ir",
         "@googletest//:gtest",
     ],
 )
@@ -68,8 +68,8 @@ cc_test(
         "opt_test.cc",
     ],
     deps = [
-        "//src/syn",
-        "//src/syn/src/ir",
+        "//openroad/syn",
+        "//openroad/syn/src/ir",
         "@googletest//:gtest",
     ],
 )
@@ -80,9 +80,9 @@ cc_test(
     # No gtest_main: ABC ships its own main() that wins over gtest_main;
     # the TU defines its own.
     deps = [
-        "//src/syn",  # buildcleaner: keep: needs fixing syn layering first.
-        "//src/syn/src/ir",
-        "//src/utl",
+        "//openroad/syn",  # buildcleaner: keep: needs fixing syn layering first.
+        "//openroad/syn/src/ir",
+        "//openroad/utl",
         "@googletest//:gtest",
     ],
 )
@@ -93,7 +93,7 @@ cc_test(
     # No gtest_main: ABC ships its own main() that wins over gtest_main;
     # the TU defines its own.
     deps = [
-        "//src/syn",
+        "//openroad/syn",
         "@googletest//:gtest",
     ],
 )
@@ -101,10 +101,10 @@ cc_test(
 cc_test(
     name = "parse_test",
     srcs = ["parse_test.cc"],
-    # No gtest_main: ABC (via //src/syn/src/ir → TritModel) ships its own
+    # No gtest_main: ABC (via //openroad/syn/src/ir → TritModel) ships its own
     # main() that wins over gtest_main; parse_test.cc defines its own.
     deps = [
-        "//src/syn/src/ir",
+        "//openroad/syn/src/ir",
         "@googletest//:gtest",
     ],
 )
@@ -114,9 +114,9 @@ cc_test(
     srcs = ["sm_test.cc"],
     data = ["sm_test_cells.lib"],
     deps = [
-        "//src/syn",
-        "//src/syn/src/ir",
-        "//src/tst",
+        "//openroad/syn",
+        "//openroad/syn/src/ir",
+        "//openroad/tst",
         "@googletest//:gtest",
     ],
 )
@@ -129,9 +129,9 @@ cc_test(
     ],
     data = ["cm_test_cells.lib"],
     deps = [
-        "//src/syn",
-        "//src/syn/src/ir",
-        "//src/tst",
+        "//openroad/syn",
+        "//openroad/syn/src/ir",
+        "//openroad/tst",
         "@googletest//:gtest",
     ],
 )
@@ -140,9 +140,9 @@ cc_test(
     name = "abc_test",
     srcs = ["abc_test.cc"],
     deps = [
-        "//src/syn",
-        "//src/syn/src/ir",
-        "//src/tst",
+        "//openroad/syn",
+        "//openroad/syn/src/ir",
+        "//openroad/tst",
         "@googletest//:gtest",
     ],
 )
@@ -152,10 +152,10 @@ cc_test(
     srcs = ["acd_test.cc"],
     data = ["cm_test_cells.lib"],
     deps = [
-        "//src/dbSta",
-        "//src/sta:opensta_lib",
-        "//src/syn",
-        "//src/tst",
+        "//openroad/dbSta",
+        "//openroad/sta:opensta_lib",
+        "//openroad/syn",
+        "//openroad/tst",
         "@googletest//:gtest",
     ],
 )
@@ -164,8 +164,8 @@ cc_test(
     name = "bitblast_test",
     srcs = ["bitblast_test.cc"],
     deps = [
-        "//src/syn",
-        "//src/syn/src/ir",
+        "//openroad/syn",
+        "//openroad/syn/src/ir",
         "@googletest//:gtest",
     ],
 )
@@ -180,9 +180,9 @@ cc_test(
         "elab_diag_tops.sv",
     ],
     deps = [
-        "//src/syn/src/elab",
-        "//src/tst:db_fixture",
-        "//src/utl",
+        "//openroad/syn/src/elab",
+        "//openroad/tst:db_fixture",
+        "//openroad/utl",
         "@googletest//:gtest",
     ],
 )
@@ -196,10 +196,10 @@ cc_test(
     ],
     data = ["macro_test_cells.lib"],
     deps = [
-        "//src/syn",
-        "//src/syn/src/elab",
-        "//src/syn/src/ir",
-        "//src/tst",
+        "//openroad/syn",
+        "//openroad/syn/src/elab",
+        "//openroad/syn/src/ir",
+        "//openroad/tst",
         "@googletest//:gtest",
     ],
 )

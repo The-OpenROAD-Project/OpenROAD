@@ -41,7 +41,7 @@ class RepairHoldSharedDriverTest : public tst::IntegratedFixture
  protected:
   RepairHoldSharedDriverTest()
       : tst::IntegratedFixture(tst::IntegratedFixture::Technology::kNangate45,
-                               "_main/src/rsz/test/")
+                               "_main/openroad/rsz/test/")
   {
   }
 
@@ -55,7 +55,8 @@ class RepairHoldSharedDriverTest : public tst::IntegratedFixture
     }
     def_reader.readChip(
         search_libs,
-        getFilePath("_main/src/rsz/test/repair_hold_shared_driver.def").c_str(),
+        getFilePath("_main/openroad/rsz/test/repair_hold_shared_driver.def")
+            .c_str(),
         chip);
     block_ = db_->getChip()->getBlock();
     sta_->postReadDef(block_);

@@ -78,7 +78,7 @@ class NestedJournalTest : public tst::IntegratedFixture
  protected:
   NestedJournalTest()
       : tst::IntegratedFixture(tst::IntegratedFixture::Technology::kNangate45,
-                               "_main/src/rsz/test/")
+                               "_main/openroad/rsz/test/")
   {
   }
 

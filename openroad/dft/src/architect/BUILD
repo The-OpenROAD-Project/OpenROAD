@@ -27,15 +27,15 @@ cc_library(
         ".",
     ],
     deps = [
-        "//src/dft/src/cells",
-        "//src/dft/src/clock_domain",
-        "//src/dft/src/config",
-        "//src/dft/src/utils",
-        "//src/utl",
+        "//openroad/dft/src/cells",
+        "//openroad/dft/src/clock_domain",
+        "//openroad/dft/src/config",
+        "//openroad/dft/src/utils",
+        "//openroad/utl",
         "@boost.geometry",
     ],
 )
 
 message_srcs(
-    visibility = ["//src/dft:__pkg__"],
+    visibility = ["//openroad/dft:__pkg__"],
 )

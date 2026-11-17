@@ -62,9 +62,9 @@ cc_library(
 )
 
 # TODO: This can probably be broken into smaller, more specific parts.
-# TODO: once we establish src/odb as package, make aliases so that we
+# TODO: once we establish openroad/odb as package, make aliases so that we
 #  don't need the awkward long path with double src
-#  //src/odb/src/def:def but can say //src/odb:def
+#  //openroad/odb/src/def:def but can say //openroad/odb:def
 cc_library(
     name = "def",
     srcs = [

@@ -26,7 +26,7 @@ class TestEstimateParasitics : public tst::IntegratedFixture
  protected:
   TestEstimateParasitics()
       : tst::IntegratedFixture(tst::IntegratedFixture::Technology::kNangate45,
-                               "_main/src/est/test/")
+                               "_main/openroad/est/test/")
   {
   }
 

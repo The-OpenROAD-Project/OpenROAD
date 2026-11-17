@@ -6,10 +6,10 @@
 
 #include "cts/TritonCTS.h"
 #include "gtest/gtest.h"
-#include "src/cts/src/Clock.h"
-#include "src/cts/src/Clustering.h"
-#include "src/cts/src/HTreeBuilder.h"
-#include "src/cts/src/SinkClustering.h"
+#include "openroad/cts/src/Clock.h"
+#include "openroad/cts/src/Clustering.h"
+#include "openroad/cts/src/HTreeBuilder.h"
+#include "openroad/cts/src/SinkClustering.h"
 #include "utl/Logger.h"
 
 namespace cts {

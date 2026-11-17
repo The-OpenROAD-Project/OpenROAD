@@ -496,22 +496,22 @@ report_3dic_summary
 ## Example scripts
 
 After building successfully with `bazelisk build //:openroad`, run the
-OpenROAD shell from the repository root using `bazel-bin/openroad`.
+OpenROAD shell from the repository root using `bazel-bin/openroad/openroad`.
 An example usage:
 
 ```
 set db [odb::dbDatabase_create]
-set lib [odb::read_lef $db ./src/odb/test/data/gscl45nm.lef]
+set lib [odb::read_lef $db ./openroad/odb/test/data/gscl45nm.lef]
 ```
 
 You can find examples on using the API from Tcl under `test/tcl/` directory.
 
-For a Tcl shell with only the odb module loaded, build the standalone `odbtcl` binary with `bazelisk build //src/odb/src/swig:odbtcl`.
-Run it as `bazel-bin/src/odb/src/swig/odbtcl [script.tcl]`.
-The test `bazelisk test //src/odb/test:odbtcl_test` runs some of the `test/tcl/` scripts with this binary.
+For a Tcl shell with only the odb module loaded, build the standalone `odbtcl` binary with `bazelisk build //openroad/odb/src/swig:odbtcl`.
+Run it as `bazel-bin/openroad/odb/src/swig/odbtcl [script.tcl]`.
+The test `bazelisk test //openroad/odb/test:odbtcl_test` runs some of the `test/tcl/` scripts with this binary.
 
 The full set of the Tcl commands exposed is defined by the SWIG interface files
-`src/odb/src/swig/common/odb.i` and `src/odb/src/swig/tcl/*.i`.
+`openroad/odb/src/swig/common/odb.i` and `openroad/odb/src/swig/tcl/*.i`.
 
 ### All pin placed
 
@@ -553,7 +553,7 @@ There are a set of regression tests in `./test`. For more information, refer to 
 Simply run the following command:
 
 ```shell
-bazelisk test //src/odb/...
+bazelisk test //openroad/odb/...
 ```
 
 ## Database Internals

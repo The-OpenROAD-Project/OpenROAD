@@ -5,9 +5,9 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "src/par/src/Evaluator.h"
-#include "src/par/src/Hypergraph.h"
-#include "src/par/src/Partitioner.h"
+#include "openroad/par/src/Evaluator.h"
+#include "openroad/par/src/Hypergraph.h"
+#include "openroad/par/src/Partitioner.h"
 #include "utl/Logger.h"
 
 namespace par {

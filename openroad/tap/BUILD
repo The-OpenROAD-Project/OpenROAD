@@ -24,8 +24,8 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
         "@boost.geometry",
         "@boost.polygon",
     ],
@@ -47,8 +47,8 @@ cc_library(
     deps = [
         ":tap",
         "//:ord",
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
         "@tcl_lang//:tcl",
     ],
 )
@@ -72,10 +72,10 @@ tcl_wrap_cc(
     namespace_prefix = "tap",
     root_swig_src = "src/tapcell.i",
     swig_includes = [
-        "src/tap/src",
+        "src",
     ],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
     ],
 )
 
@@ -100,13 +100,13 @@ filegroup(
         "README.md",
         "src/tapcell.tcl",
     ],
-    visibility = ["//src/tap/test:__pkg__"],
+    visibility = ["//openroad/tap/test:__pkg__"],
 )
 
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/tap/test:__pkg__",
+        "//openroad/tap/test:__pkg__",
     ],
 )
 

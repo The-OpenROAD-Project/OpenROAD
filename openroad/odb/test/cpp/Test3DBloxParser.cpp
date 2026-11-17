@@ -7,13 +7,13 @@
 #include "odb/3dblox.h"
 #include "odb/db.h"
 #include "odb/geom.h"
-#include "src/odb/test/cpp/helper/helper.h"
+#include "openroad/odb/test/cpp/helper/helper.h"
 #include "tst/db_fixture.h"
 
 namespace odb {
 namespace {
 
-static const std::string prefix("_main/src/odb/test/");
+static const std::string prefix("_main/openroad/odb/test/");
 
 class DbvFixture : public tst::DbFixture
 {

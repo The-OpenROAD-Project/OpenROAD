@@ -13,7 +13,7 @@ exports_files(
         "sky130hs/sky130hs_std_cell.lef",
         "top_level_term2.def",
     ],
-    visibility = ["//src/dbSta/test:__pkg__"],
+    visibility = ["//openroad/dbSta/test:__pkg__"],
 )
 
 COMPULSORY_TESTS = [
@@ -186,10 +186,10 @@ cc_test(
         "../src",
     ],
     deps = [
-        "//src/drt:base_types",
-        "//src/drt:drt_impl",
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/drt:base_types",
+        "//openroad/drt:drt_impl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -211,10 +211,10 @@ cc_test(
         "../src",
     ],
     deps = [
-        "//src/drt:base_types",
-        "//src/drt:drt_impl",
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/drt:base_types",
+        "//openroad/drt:drt_impl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -223,7 +223,7 @@ cc_test(
 py_test(
     name = "drt_man_tcl_check",
     srcs = ["drt_man_tcl_check.py"],
-    data = ["//src/drt:doc_files"],
+    data = ["//openroad/drt:doc_files"],
     tags = [
         "doc_check",
         "py",
@@ -234,8 +234,8 @@ py_test(
 doc_check_test(
     name = "drt_readme_msgs_check",
     data = [
-        "//src/drt:doc_files",
-        "//src/drt:messages_txt",
+        "//openroad/drt:doc_files",
+        "//openroad/drt:messages_txt",
     ],
     visibility = ["//visibility:public"],
 )
@@ -257,8 +257,8 @@ cc_test(
     name = "LookupTblTest",
     srcs = ["LookupTblTest.cpp"],
     deps = [
-        "//src/drt:base_types",
-        "//src/drt:drt_impl",
+        "//openroad/drt:base_types",
+        "//openroad/drt:drt_impl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -268,7 +268,7 @@ cc_test(
     name = "WatermarkCostTest",
     srcs = ["WatermarkCostTest.cpp"],
     deps = [
-        "//src/drt:base_types",
+        "//openroad/drt:base_types",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -280,12 +280,12 @@ cc_test(
     data = ["Nangate45/Nangate45_tech.lef"],
     includes = ["../src"],
     deps = [
-        "//src/drt",
-        "//src/drt:drt_impl",
-        "//src/dst",
-        "//src/odb/src/db",
-        "//src/tst:db_fixture",
-        "//src/utl",
+        "//openroad/drt",
+        "//openroad/drt:drt_impl",
+        "//openroad/dst",
+        "//openroad/odb/src/db",
+        "//openroad/tst:db_fixture",
+        "//openroad/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

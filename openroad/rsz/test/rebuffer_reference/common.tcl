@@ -5,7 +5,7 @@
 # load -> output port, with the load placed 25 um * i from the driver.
 # Paths are stacked vertically so many candidates are timed in one STA run.
 #
-# Run from src/rsz/test so the Nangate45 paths resolve.
+# Run from openroad/rsz/test so the Nangate45 paths resolve.
 
 namespace eval ref {
 variable cells {BUF_X1 BUF_X2 BUF_X4 BUF_X8 BUF_X16 BUF_X32}

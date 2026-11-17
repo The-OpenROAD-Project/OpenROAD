@@ -57,7 +57,7 @@ filegroup(
 py_test(
     name = "gui_man_tcl_check",
     srcs = ["gui_man_tcl_check.py"],
-    data = ["//src/gui:doc_files"],
+    data = ["//openroad/gui:doc_files"],
     tags = [
         "doc_check",
         "py",
@@ -68,8 +68,8 @@ py_test(
 doc_check_test(
     name = "gui_readme_msgs_check",
     data = [
-        "//src/gui:doc_files",
-        "//src/gui:messages_txt",
+        "//openroad/gui:doc_files",
+        "//openroad/gui:messages_txt",
     ],
     visibility = ["//visibility:public"],
 )

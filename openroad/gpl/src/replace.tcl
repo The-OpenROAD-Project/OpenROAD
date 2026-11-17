@@ -267,7 +267,7 @@ proc cluster_flops { args } {
 
   if { [info exists keys(-clock_power_weight)] } {
     # Non-negativity is enforced in MBFF::Run so that non-Tcl callers
-    # (Python, direct C++) are validated too; see src/gpl/src/mbff.cpp.
+    # (Python, direct C++) are validated too; see openroad/gpl/src/mbff.cpp.
     set clock_power_weight $keys(-clock_power_weight)
   }
 

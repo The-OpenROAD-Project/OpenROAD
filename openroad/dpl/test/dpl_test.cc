@@ -188,7 +188,7 @@ TEST_F(GcdPlacementTest, RotatedMacroKeepsPlacementLegal)
 {
   auto* lib
       = loadTechAndLib("ng45", "ng45", "_main/test/Nangate45/Nangate45.lef");
-  auto* block = readDef("_main/src/dpl/test/gcd_replace.def", {lib});
+  auto* block = readDef("_main/openroad/dpl/test/gcd_replace.def", {lib});
   block->setCoreArea(block->computeCoreArea());
   const odb::Rect core = block->getCoreArea();
   auto* site = lib->findSite("FreePDK45_38x28_10R_NP_162NW_34O");
@@ -234,7 +234,7 @@ class CheckPlacementTest : public tst::Nangate45Fixture
 
   void SetUp() override
   {
-    ASSERT_TRUE(updateLib(lib_, "_main/src/dpl/test/extra.lef"));
+    ASSERT_TRUE(updateLib(lib_, "_main/openroad/dpl/test/extra.lef"));
     block_->setDieArea(odb::Rect(0, 0, 20000, 20000));
     site_ = lib_->findSite("FreePDK45_38x28_10R_NP_162NW_34O");
     ASSERT_NE(site_, nullptr);

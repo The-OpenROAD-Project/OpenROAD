@@ -55,12 +55,12 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/dbSta:dbReadVerilog",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/dbSta:dbReadVerilog",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
         "@boost.range",
         "@openmp",
         "@or-tools//ortools/linear_solver",
@@ -87,7 +87,7 @@ cc_library(
     deps = [
         ":par",
         "//:ord",
-        "//src/utl",
+        "//openroad/utl",
         "@tcl_lang//:tcl",
     ],
 )
@@ -111,10 +111,10 @@ tcl_wrap_cc(
     namespace_prefix = "par",
     root_swig_src = "src/partitionmgr.i",
     swig_includes = [
-        "src/par/src",
+        "src",
     ],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
     ],
 )
 
@@ -131,7 +131,7 @@ python_wrap_cc(
         "include",
     ],
     deps = [
-        "//src/odb:swig-py",
+        "//openroad/odb:swig-py",
     ],
 )
 
@@ -141,13 +141,13 @@ filegroup(
         "README.md",
         "src/partitionmgr.tcl",
     ],
-    visibility = ["//src/par/test:__pkg__"],
+    visibility = ["//openroad/par/test:__pkg__"],
 )
 
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/par/test:__pkg__",
+        "//openroad/par/test:__pkg__",
     ],
 )
 

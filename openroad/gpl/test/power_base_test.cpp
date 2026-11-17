@@ -22,12 +22,12 @@
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/defin.h"
+#include "openroad/gpl/src/nesterovBase.h"
+#include "openroad/gpl/src/placerBase.h"
+#include "openroad/gpl/src/powerBase.h"
 #include "power/Power.hh"
 #include "power/SaifReader.hh"
 #include "rsz/Resizer.hh"
-#include "src/gpl/src/nesterovBase.h"
-#include "src/gpl/src/placerBase.h"
-#include "src/gpl/src/powerBase.h"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PowerClass.hh"
@@ -48,16 +48,17 @@ class PowerDriven : public tst::Fixture
  protected:
   void SetUp() override
   {
-    odb::dbLib* lib
-        = loadTechAndLib("ng45", "ng45", "_main/src/gpl/test/nangate45.lef");
+    odb::dbLib* lib = loadTechAndLib(
+        "ng45", "ng45", "_main/openroad/gpl/test/nangate45.lef");
     ASSERT_NE(lib, nullptr);
     readLiberty(
-        getFilePath("_main/src/gpl/test/library/nangate45/"
+        getFilePath("_main/openroad/gpl/test/library/nangate45/"
                     "NangateOpenCellLibrary_typical.lib"));
     odb::dbChip* chip = odb::dbChip::create(db_.get(), lib->getTech());
     std::vector<odb::dbLib*> libs{lib};
     odb::defin reader(db_.get(), &logger_);
-    const std::string def = getFilePath("_main/src/gpl/test/simple01-td.def");
+    const std::string def
+        = getFilePath("_main/openroad/gpl/test/simple01-td.def");
     ASSERT_TRUE(reader.readChip(libs, def.c_str(), chip));
     block_ = chip->getBlock();
     sta_->postReadDef(block_);

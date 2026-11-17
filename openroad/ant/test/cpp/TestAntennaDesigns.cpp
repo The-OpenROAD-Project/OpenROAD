@@ -222,7 +222,7 @@ const std::vector<ExpectedPin> kOutputPinBridgePins = {
      }},
 };
 
-constexpr const char* kTestDir = "_main/src/ant/test/";
+constexpr const char* kTestDir = "_main/openroad/ant/test/";
 
 std::string testFile(const char* name)
 {

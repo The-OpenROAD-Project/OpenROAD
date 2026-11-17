@@ -27,9 +27,9 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "src/gpl/src/nesterovBase.h"
-#include "src/gpl/src/placerBase.h"
-#include "src/gpl/src/point.h"
+#include "openroad/gpl/src/nesterovBase.h"
+#include "openroad/gpl/src/placerBase.h"
+#include "openroad/gpl/src/point.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 

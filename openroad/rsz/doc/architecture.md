@@ -824,7 +824,7 @@ The default member initializers are the base values. `OptimizationPolicyConfig::
 
 ## Source Map
 
-| Area | Files (`src/rsz/src/`) |
+| Area | Files (`openroad/rsz/src/`) |
 |---|---|
 | Driver | `Optimizer.*`, `RepairSetupContext.hh`, `OptimizerTypes.*` |
 | Configuration | `OptimizationPolicyConfig.*` |
@@ -838,7 +838,7 @@ The default member initializers are the base values. `OptimizationPolicyConfig::
 | Estimation | `DelayEstimator.*`, `DelayEstimatorBufferTree.cc`, `DelayEstimatorInternal.hh`, `SequentialTimingEstimator.*`, `Rebuffer.*`, `BufferedNet.*` |
 | Estimator reports | `DelayEstimatorReporter.*` |
 | Profiler | `RepairSetupProfiler.*`, `RepairSetupMoveSampler.*`, `RepairSetupMoveSnapshot.*`, `RepairSetupAnalysisReport.*`, `RepairSetupAnalysisTarget.*` |
-| Thread pool | `src/utl/include/utl/ThreadPool.h`, `src/utl/src/ThreadPool.cpp` |
+| Thread pool | `openroad/utl/include/utl/ThreadPool.h`, `openroad/utl/src/ThreadPool.cpp` |
 
 ## Future Work
 

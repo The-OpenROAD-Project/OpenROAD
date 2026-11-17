@@ -15,13 +15,14 @@ namespace tst {
 //
 // Never linked: kepler-formal is GPL-3.0 and OpenROAD is BSD-3-Clause, so
 // linking would pull the combined work under GPL. In-tree precedent for
-// shelling out: popen in src/rcx/src/parse.cpp, std::system in
-// src/web/src/web_serve.cpp.
+// shelling out: popen in openroad/rcx/src/parse.cpp, std::system in
+// openroad/web/src/web_serve.cpp.
 //
 // Under bazel the binary is built from the pinned @kepler-formal module and
-// arrives in the test's runfiles (//src/tst:kepler_formal_bin is a data dep of
-// //src/tst:lec), so no locally installed copy is needed. Outside bazel it is
-// resolved at run time from $KEPLER_FORMAL or $PATH; see findKeplerFormal.
+// arrives in the test's runfiles (//openroad/tst:kepler_formal_bin is a data
+// dep of
+// //openroad/tst:lec), so no locally installed copy is needed. Outside bazel it
+// is resolved at run time from $KEPLER_FORMAL or $PATH; see findKeplerFormal.
 //
 // Building it needs one accommodation: kepler-formal's @onetbb dependency is a
 // rules_foreign_cc cmake() target, and rules_foreign_cc bakes bazel's cxxopts
@@ -85,7 +86,7 @@ struct LecOutcome
 
 // Locates the kepler-formal binary. Resolution order:
 //   1. $KEPLER_FORMAL, if set (an explicit path; must be executable)
-//   2. the runfile from //src/tst:kepler_formal_bin
+//   2. the runfile from //openroad/tst:kepler_formal_bin
 //   3. `kepler-formal` on $PATH
 // Returns an empty string when not found.
 //
@@ -100,7 +101,7 @@ struct LecOutcome
 // override has to be forwarded into the test sandbox explicitly:
 //
 //   bazel test --test_env=KEPLER_FORMAL=/path/to/kepler-formal
-//   //src/tst:TestLec
+//   //openroad/tst:TestLec
 //
 // which is deliberately not set repo-wide: the pinned runfile is what CI and a
 // normal developer run should use, and forwarding it by default would let a

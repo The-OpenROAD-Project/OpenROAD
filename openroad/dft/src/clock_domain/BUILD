@@ -23,11 +23,11 @@ cc_library(
         ".",
     ],
     deps = [
-        "//src/dft/src/config",
-        "//src/utl",
+        "//openroad/dft/src/config",
+        "//openroad/utl",
     ],
 )
 
 message_srcs(
-    visibility = ["//src/dft:__pkg__"],
+    visibility = ["//openroad/dft:__pkg__"],
 )

@@ -13,19 +13,19 @@ cc_library(
     name = "gdsin",
     srcs = glob(["*.cpp"]),
     hdrs = [
-        "//src/odb:include/odb/gdsUtil.h",
-        "//src/odb:include/odb/gdsin.h",
+        "//openroad/odb:include/odb/gdsUtil.h",
+        "//openroad/odb:include/odb/gdsin.h",
     ],
     includes = [
         "../../include",
     ],
     deps = [
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
         "@boost.property_tree",
     ],
 )
 
 message_srcs(
-    visibility = ["//src/odb:__pkg__"],
+    visibility = ["//openroad/odb:__pkg__"],
 )

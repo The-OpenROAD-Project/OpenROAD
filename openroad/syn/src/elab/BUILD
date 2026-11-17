@@ -35,14 +35,14 @@ cc_library(
     ],
     includes = ["."],
     visibility = [
-        "//src/syn:__pkg__",
-        "//src/syn/test:__pkg__",
+        "//openroad/syn:__pkg__",
+        "//openroad/syn/test:__pkg__",
     ],
     deps = [
-        "//src/dbSta",
-        "//src/sta:opensta_lib",
-        "//src/syn/src/ir",
-        "//src/utl",
+        "//openroad/dbSta",
+        "//openroad/sta:opensta_lib",
+        "//openroad/syn/src/ir",
+        "//openroad/utl",
         "@fmt",
         "@sv-elab//:frontend_hdrs",
         "@sv-elab//:hashlib",
@@ -53,5 +53,5 @@ cc_library(
 )
 
 message_srcs(
-    visibility = ["//src/syn:__pkg__"],
+    visibility = ["//openroad/syn:__pkg__"],
 )

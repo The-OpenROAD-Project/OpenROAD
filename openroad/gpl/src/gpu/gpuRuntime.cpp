@@ -7,7 +7,7 @@
 // its own — it only calls getenv and the Kokkos lifecycle API — but it includes
 // <Kokkos_Core.hpp>, which (when Kokkos was built with the CUDA/HIP backend)
 // bakes KOKKOS_ENABLE_CUDA into its config and requires __CUDACC__. It is
-// therefore compiled as CUDA in :gpl_kokkos; see src/gpl/BUILD.
+// therefore compiled as CUDA in :gpl_kokkos; see openroad/gpl/BUILD.
 
 #include "gpuRuntime.h"
 

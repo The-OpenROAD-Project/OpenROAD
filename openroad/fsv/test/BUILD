@@ -13,8 +13,8 @@ cc_test(
     name = "TestCubeGreens",
     srcs = ["cpp/TestCubeGreens.cpp"],
     deps = [
-        "//src/fsv:core",
-        "//src/fsv:geometry",
+        "//openroad/fsv:core",
+        "//openroad/fsv:geometry",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -24,9 +24,9 @@ cc_test(
     name = "TestDielectric",
     srcs = ["cpp/TestDielectric.cpp"],
     deps = [
-        "//src/fsv:core",
-        "//src/fsv:geometry",
-        "//src/fsv:stack",
+        "//openroad/fsv:core",
+        "//openroad/fsv:geometry",
+        "//openroad/fsv:stack",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -36,8 +36,8 @@ cc_test(
     name = "TestSquareGreens",
     srcs = ["cpp/TestSquareGreens.cpp"],
     deps = [
-        "//src/fsv:core",
-        "//src/fsv:geometry",
+        "//openroad/fsv:core",
+        "//openroad/fsv:geometry",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -47,8 +47,8 @@ cc_test(
     name = "TestLayeredCubeGreens",
     srcs = ["cpp/TestLayeredCubeGreens.cpp"],
     deps = [
-        "//src/fsv:core",
-        "//src/fsv:geometry",
+        "//openroad/fsv:core",
+        "//openroad/fsv:geometry",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -58,9 +58,9 @@ cc_test(
     name = "TestGaussianSurface",
     srcs = ["cpp/TestGaussianSurface.cpp"],
     deps = [
-        "//src/fsv:core",
-        "//src/fsv:geometry",
-        "//src/fsv:stack",
+        "//openroad/fsv:core",
+        "//openroad/fsv:geometry",
+        "//openroad/fsv:stack",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -70,8 +70,8 @@ cc_test(
     name = "TestSpatialIndex",
     srcs = ["cpp/TestSpatialIndex.cpp"],
     deps = [
-        "//src/fsv:core",
-        "//src/fsv:geometry",
+        "//openroad/fsv:core",
+        "//openroad/fsv:geometry",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -85,8 +85,8 @@ cc_library(
     hdrs = ["cpp/Structures.h"],
     includes = ["cpp"],
     deps = [
-        "//src/fsv:geometry",
-        "//src/fsv:stack",
+        "//openroad/fsv:geometry",
+        "//openroad/fsv:stack",
     ],
 )
 
@@ -98,9 +98,9 @@ cc_test(
     shard_count = 4,
     deps = [
         ":structures",
-        "//src/fsv",
-        "//src/fsv:geometry",
-        "//src/fsv:stack",
+        "//openroad/fsv",
+        "//openroad/fsv:geometry",
+        "//openroad/fsv:stack",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -114,7 +114,7 @@ cc_test(
         "sky130.itf",
     ],
     deps = [
-        "//src/fsv:stack",
+        "//openroad/fsv:stack",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -127,10 +127,10 @@ cc_test(
     data = glob(["golden/*.txt"]),
     deps = [
         ":structures",
-        "//src/fsv",
-        "//src/fsv:core",
-        "//src/fsv:geometry",
-        "//src/fsv:stack",
+        "//openroad/fsv",
+        "//openroad/fsv:core",
+        "//openroad/fsv:geometry",
+        "//openroad/fsv:stack",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -140,8 +140,8 @@ cc_binary(
     name = "BenchCube",
     srcs = ["cpp/BenchCube.cpp"],
     deps = [
-        "//src/fsv",
-        "//src/fsv:geometry",
+        "//openroad/fsv",
+        "//openroad/fsv:geometry",
     ],
 )
 
@@ -158,14 +158,14 @@ cc_binary(
     ],
     deps = [
         ":structures",
-        "//src/fsv",
-        "//src/fsv:geometry",
-        "//src/fsv:net_window",
-        "//src/fsv:stack",
-        "//src/odb/src/db",
-        "//src/odb/src/defin",
-        "//src/odb/src/lefin",
-        "//src/utl",
+        "//openroad/fsv",
+        "//openroad/fsv:geometry",
+        "//openroad/fsv:net_window",
+        "//openroad/fsv:stack",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/defin",
+        "//openroad/odb/src/lefin",
+        "//openroad/utl",
     ],
 )
 
@@ -183,14 +183,14 @@ cc_test(
     data = glob(["golden/*.txt"]),
     deps = [
         ":structures",
-        "//src/fsv",
-        "//src/fsv:geometry",
-        "//src/fsv:net_window",
-        "//src/fsv:stack",
-        "//src/odb/src/db",
-        "//src/odb/src/defin",
-        "//src/odb/src/lefin",
-        "//src/utl",
+        "//openroad/fsv",
+        "//openroad/fsv:geometry",
+        "//openroad/fsv:net_window",
+        "//openroad/fsv:stack",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/defin",
+        "//openroad/odb/src/lefin",
+        "//openroad/utl",
     ],
 )
 
@@ -198,8 +198,8 @@ cc_binary(
     name = "BenchGrid",
     srcs = ["cpp/BenchGrid.cpp"],
     deps = [
-        "//src/fsv",
-        "//src/fsv:geometry",
+        "//openroad/fsv",
+        "//openroad/fsv:geometry",
     ],
 )
 
@@ -245,7 +245,7 @@ exports_files([
 py_test(
     name = "fsv_man_tcl_check",
     srcs = ["fsv_man_tcl_check.py"],
-    data = ["//src/fsv:doc_files"],
+    data = ["//openroad/fsv:doc_files"],
     tags = [
         "doc_check",
         "py",
@@ -256,7 +256,7 @@ py_test(
 doc_check_test(
     name = "fsv_readme_msgs_check",
     data = [
-        "//src/fsv:doc_files",
-        "//src/fsv:messages_txt",
+        "//openroad/fsv:doc_files",
+        "//openroad/fsv:messages_txt",
     ],
 )

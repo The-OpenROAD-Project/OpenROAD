@@ -15,8 +15,8 @@ cc_library(
     hdrs = ["include/pex/Patterns.h"],
     includes = ["include"],
     deps = [
-        "//src/fsv:geometry",
-        "//src/fsv:stack",
+        "//openroad/fsv:geometry",
+        "//openroad/fsv:stack",
     ],
 )
 
@@ -37,7 +37,7 @@ cc_library(
     deps = [
         ":model",
         ":patterns",
-        "//src/fsv:stack",
+        "//openroad/fsv:stack",
     ],
 )
 
@@ -50,10 +50,10 @@ cc_library(
     deps = [
         ":model",
         ":patterns",
-        "//src/fsv",
-        "//src/fsv:geometry",
-        "//src/fsv:stack",
-        "//src/utl",
+        "//openroad/fsv",
+        "//openroad/fsv:geometry",
+        "//openroad/fsv:stack",
+        "//openroad/utl",
     ],
 )
 
@@ -67,9 +67,9 @@ cc_library(
         ":cover_map",
         ":model",
         ":patterns",
-        "//src/fsv:geometry",
-        "//src/fsv:stack",
-        "//src/odb/src/db",
+        "//openroad/fsv:geometry",
+        "//openroad/fsv:stack",
+        "//openroad/odb/src/db",
     ],
 )
 
@@ -80,8 +80,8 @@ cc_library(
     hdrs = ["include/pex/Index.h"],
     includes = ["include"],
     deps = [
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
         "@boost.geometry",
         "@boost.iterator",
     ],

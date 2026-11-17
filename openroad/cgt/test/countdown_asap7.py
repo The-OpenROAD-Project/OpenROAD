@@ -1,7 +1,7 @@
 from openroad import Tech
 import helpers
 
-helpers.if_bazel_change_working_dir_to("/_main/src/cgt/test/")
+helpers.if_bazel_change_working_dir_to("/_main/openroad/cgt/test/")
 
 tech = Tech()
 

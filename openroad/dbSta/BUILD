@@ -20,7 +20,7 @@ cc_library(
     # OpenSTA keeps dcalc/DmpCeff.hh private to its own target.
     features = ["-layering_check"],
     deps = [
-        "//src/sta:opensta_lib",
+        "//openroad/sta:opensta_lib",
         "@boost.math",
     ],
 )
@@ -41,9 +41,9 @@ cc_library(
         ":dbNetwork",
         ":dbSdcNetwork",
         ":lambertw_delay_calc",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
         "@boost.json",
         "@spdlog",
         "@tcl_lang//:tcl",
@@ -64,9 +64,9 @@ cc_library(
     deps = [
         ":dbNetwork",
         ":dbSta",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
     ],
 )
 
@@ -84,9 +84,9 @@ cc_library(
     deps = [
         ":dbNetwork",
         ":dbSta",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
     ],
 )
 
@@ -101,9 +101,9 @@ cc_library(
     includes = [
         "src",
     ],
-    visibility = ["//src/dbSta/test:__pkg__"],
+    visibility = ["//openroad/dbSta/test:__pkg__"],
     deps = [
-        "//src/sta:opensta_lib",
+        "//openroad/sta:opensta_lib",
         "@spdlog",
     ],
 )
@@ -122,9 +122,9 @@ cc_library(
     deps = [
         ":dbNetwork",
         ":dbSta",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
     ],
 )
 
@@ -142,9 +142,9 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
     ],
 )
 
@@ -170,10 +170,10 @@ cc_library(
         ":dbNetwork",
         ":dbSta",
         "//:ord",
-        "//src/odb/src/db",
-        "//src/sta:config",
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/sta:config",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
         "@boost.json",
         "@tcl_lang//:tcl",
     ],
@@ -183,7 +183,7 @@ tcl_encode(
     name = "tcl",
     # Encode sta:tcl_scripts before dbSta.tcl, as dbSta.tcl will
     # override sta_error and sta_warn.
-    srcs = ["//src/sta:tcl_scripts"] + [
+    srcs = ["//openroad/sta:tcl_scripts"] + [
         "src/dbReadVerilog.tcl",
         "src/dbSta.tcl",
     ],
@@ -196,20 +196,20 @@ tcl_wrap_cc(
     srcs = [
         "src/dbSta.i",
         "//:error_swig",
-        "//src/sta:sta_swig_files",
+        "//openroad/sta:sta_swig_files",
     ],
     module = "dbSta",
     namespace_prefix = "sta",
     root_swig_src = "src/dbSta.i",
     swig_includes = [
-        "../../src/sta",
+        "../../openroad/sta",
         "src",
     ],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
         # The OpenSTA submodule declares its own swig options (the fork's
         # STA_OPENROAD_FORK define; stock OpenSTA would declare none).
-        "//src/sta:sta_swig_defs",
+        "//openroad/sta:sta_swig_defs",
     ],
 )
 
@@ -221,12 +221,12 @@ cc_binary(
     name = "ceff_training_data_generator",
     srcs = ["src/ceff_training_data_generator.cc"],
     data = [
-        "//src/dbSta/test:synthetic_linear.lib",
+        "//openroad/dbSta/test:synthetic_linear.lib",
     ],
     # OpenSTA keeps dcalc/DmpCeff.hh private to its own target.
     features = ["-layering_check"],
     deps = [
-        "//src/sta:opensta_lib",
+        "//openroad/sta:opensta_lib",
     ],
 )
 
@@ -242,9 +242,9 @@ py_binary(
 
 genrule(
     name = "generate_training_data",
-    srcs = ["//src/dbSta/test:synthetic_linear.lib"],
+    srcs = ["//openroad/dbSta/test:synthetic_linear.lib"],
     outs = ["dmp_training_data.csv"],
-    cmd = "$(location :ceff_training_data_generator) $(location //src/dbSta/test:synthetic_linear.lib) > $@",
+    cmd = "$(location :ceff_training_data_generator) $(location //openroad/dbSta/test:synthetic_linear.lib) > $@",
     tools = [":ceff_training_data_generator"],
 )
 

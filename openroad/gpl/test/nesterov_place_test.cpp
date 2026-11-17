@@ -73,7 +73,7 @@ class NesterovPlaceTest : public tst::Fixture
  protected:
   void load(const Design& design)
   {
-    const std::string dir = "_main/src/gpl/test/";
+    const std::string dir = "_main/openroad/gpl/test/";
     odb::dbLib* lib = nullptr;
     if (design.lib_lef) {
       odb::dbTech* tech = loadTechLef("tech", dir + design.tech_lef);

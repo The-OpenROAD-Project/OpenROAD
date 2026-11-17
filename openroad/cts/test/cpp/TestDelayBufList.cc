@@ -30,7 +30,7 @@ class DelayBufListTest : public tst::IntegratedFixture
  protected:
   DelayBufListTest()
       : tst::IntegratedFixture(tst::Technology::kNangate45,
-                               "_main/src/cts/test/")
+                               "_main/openroad/cts/test/")
   {
   }
 
@@ -192,7 +192,7 @@ class DelayBufListDlyCellTest : public DelayBufListTest
   DelayBufListDlyCellTest()
   {
     readLiberty(
-        "_main/src/cts/test/ihp-sg13g2/"
+        "_main/openroad/cts/test/ihp-sg13g2/"
         "sg13g2_stdcell_typ_1p20V_25C.lib");
   }
 };
@@ -222,7 +222,7 @@ class DelayBufListClkDlyFootprintTest : public DelayBufListTest
  protected:
   DelayBufListClkDlyFootprintTest()
   {
-    readLiberty("_main/src/cts/test/clkdly_footprint.lib");
+    readLiberty("_main/openroad/cts/test/clkdly_footprint.lib");
   }
 };
 
@@ -267,7 +267,7 @@ class DelayBufListClkDlyNameTest : public DelayBufListTest
  protected:
   DelayBufListClkDlyNameTest()
   {
-    readLiberty("_main/src/cts/test/clkdly_name.lib");
+    readLiberty("_main/openroad/cts/test/clkdly_name.lib");
   }
 };
 

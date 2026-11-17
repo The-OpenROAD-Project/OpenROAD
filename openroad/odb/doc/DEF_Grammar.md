@@ -3,7 +3,7 @@
 The DEF (Design Exchange Format) grammar defines the syntax for the
 design description files read and written by OpenROAD's ODB module.  The grammar is
 implemented as a Bison parser in
-[`src/odb/src/def/def/def.y`](../src/def/def/def.y).
+[`openroad/odb/src/def/def/def.y`](../src/def/def/def.y).
 
 Railroad diagrams (also called syntax diagrams) give an at-a-glance visual
 summary of each grammar rule.  The SVGs below are generated directly from
@@ -1198,8 +1198,8 @@ and are regenerated automatically via CI whenever `def.y` changes.
 After editing `def.y`, re-run:
 
 ```shell
-python3 src/odb/doc/generate_railroad_diagrams.py def
+python3 openroad/odb/doc/generate_railroad_diagrams.py def
 ```
 
 Java 11 or later must be on `PATH`.  The WAR tools are vendored in
-`src/odb/doc/tools/` and are not downloaded at runtime.
+`openroad/odb/doc/tools/` and are not downloaded at runtime.

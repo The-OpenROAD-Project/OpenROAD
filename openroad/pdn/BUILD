@@ -61,9 +61,9 @@ cc_library(
     ],
     deps = [
         "//:ord",
-        "//src/odb/src/db",
-        "//src/utl",
-        "//src/web:core",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "//openroad/web:core",
         "@boost.geometry",
         "@boost.polygon",
         "@tcl_lang//:tcl",
@@ -89,10 +89,10 @@ tcl_wrap_cc(
     namespace_prefix = "pdn",
     root_swig_src = "src/PdnGen.i",
     swig_includes = [
-        "src/pdn/src",
+        "src",
     ],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
     ],
 )
 
@@ -109,7 +109,7 @@ python_wrap_cc(
         "include",
     ],
     deps = [
-        "//src/odb:swig-py",
+        "//openroad/odb:swig-py",
     ],
 )
 
@@ -119,13 +119,13 @@ filegroup(
         "README.md",
         "src/pdn.tcl",
     ],
-    visibility = ["//src/pdn/test:__pkg__"],
+    visibility = ["//openroad/pdn/test:__pkg__"],
 )
 
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/pdn/test:__pkg__",
+        "//openroad/pdn/test:__pkg__",
     ],
 )
 

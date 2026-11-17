@@ -39,10 +39,10 @@ cc_library(
     ],
     deps = [
         "//:ord",
-        "//src/dbSta",
-        "//src/odb/src/db",
-        "//src/utl",
-        "//src/web:core",
+        "//openroad/dbSta",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "//openroad/web:core",
         "@tcl_lang//:tcl",
     ],
 )
@@ -90,13 +90,13 @@ QT_GUI_PLATFORMS = {
         deps = [
             ":qt_resources",
             "//:ord",
-            "//src/dbSta",
-            "//src/dbSta:dbNetwork",
-            "//src/odb/src/db",
-            "//src/odb/src/defout",
-            "//src/sta:opensta_lib",
-            "//src/utl",
-            "//src/web:core",
+            "//openroad/dbSta",
+            "//openroad/dbSta:dbNetwork",
+            "//openroad/odb/src/db",
+            "//openroad/odb/src/defout",
+            "//openroad/sta:opensta_lib",
+            "//openroad/utl",
+            "//openroad/web:core",
             "@abseil-cpp//absl/synchronization",
             "@boost.algorithm",
             "@boost.geometry",
@@ -168,13 +168,13 @@ filegroup(
         "README.md",
         "src/gui.tcl",
     ],
-    visibility = ["//src/gui/test:__pkg__"],
+    visibility = ["//openroad/gui/test:__pkg__"],
 )
 
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/gui/test:__pkg__",
+        "//openroad/gui/test:__pkg__",
     ],
 )
 

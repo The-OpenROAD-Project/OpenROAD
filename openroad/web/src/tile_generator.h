@@ -65,8 +65,8 @@ struct FlightLine
 };
 
 // The nine canonical anchor names, in web::Painter::anchors() order.  That
-// table (src/gui/src/painter.cpp) is the source of truth for the spelling and
-// is duplicated rather than shared because libweb has no link dependency on
+// table (openroad/gui/src/painter.cpp) is the source of truth for the spelling
+// and is duplicated rather than shared because libweb has no link dependency on
 // the Qt GUI — the same trade-off spectrumColor() makes in color.h.  Keep the
 // two in sync: add_label is one user-facing command, so -anchor has to mean
 // the same thing whichever GUI runs it.

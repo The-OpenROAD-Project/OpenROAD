@@ -358,13 +358,13 @@ cc_test(
         "gcd_replace.def",
     ],
     deps = [
-        "//src/dpl",
-        "//src/dpl:dpl_impl",
-        "//src/odb/src/db",
-        "//src/odb/src/lefin",
-        "//src/tst",
-        "//src/tst:nangate45_fixture",
-        "//src/utl",
+        "//openroad/dpl",
+        "//openroad/dpl:dpl_impl",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/lefin",
+        "//openroad/tst",
+        "//openroad/tst:nangate45_fixture",
+        "//openroad/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -373,7 +373,7 @@ cc_test(
 py_test(
     name = "dpl_man_tcl_check",
     srcs = ["dpl_man_tcl_check.py"],
-    data = ["//src/dpl:doc_files"],
+    data = ["//openroad/dpl:doc_files"],
     tags = [
         "doc_check",
         "py",
@@ -384,8 +384,8 @@ py_test(
 doc_check_test(
     name = "dpl_readme_msgs_check",
     data = [
-        "//src/dpl:doc_files",
-        "//src/dpl:messages_txt",
+        "//openroad/dpl:doc_files",
+        "//openroad/dpl:messages_txt",
     ],
     visibility = ["//visibility:public"],
 )

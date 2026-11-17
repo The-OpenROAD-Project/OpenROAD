@@ -18,7 +18,7 @@ from npm instead (see `../../README.md`), so the two renders can differ.
 ## Setup (one-time)
 
 ```sh
-cd src/web/test/visual
+cd openroad/web/test/visual
 npm install puppeteer-core
 ```
 

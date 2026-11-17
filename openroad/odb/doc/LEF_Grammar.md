@@ -3,7 +3,7 @@
 The LEF (Library Exchange Format) grammar defines the syntax for the
 library description files read and written by OpenROAD's ODB module.  The grammar is
 implemented as a Bison parser in
-[`src/odb/src/lef/lef/lef.y`](../src/lef/lef/lef.y).
+[`openroad/odb/src/lef/lef/lef.y`](../src/lef/lef/lef.y).
 
 Railroad diagrams (also called syntax diagrams) give an at-a-glance visual
 summary of each grammar rule.  The SVGs below are generated directly from
@@ -1044,8 +1044,8 @@ and are regenerated automatically via CI whenever `lef.y` changes.
 After editing `lef.y`, re-run:
 
 ```shell
-python3 src/odb/doc/generate_railroad_diagrams.py lef
+python3 openroad/odb/doc/generate_railroad_diagrams.py lef
 ```
 
 Java 11 or later must be on `PATH`.  The WAR tools are vendored in
-`src/odb/doc/tools/` and are not downloaded at runtime.
+`openroad/odb/doc/tools/` and are not downloaded at runtime.

@@ -18,7 +18,7 @@ if os.environ.get("TEST_SRCDIR", ""):
 from openroad import Design, Tech, set_thread_count
 import gpl
 
-bazel_working_dir = "/_main/src/gpl/test/"
+bazel_working_dir = "/_main/openroad/gpl/test/"
 helpers.if_bazel_change_working_dir_to(bazel_working_dir)
 
 tech = Tech()

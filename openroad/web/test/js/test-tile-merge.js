@@ -30,7 +30,7 @@ const TILE_BYTES = 256 * 256 * BYTES_PER_PIXEL;
 // The renderMergedTile tests below are about the ORDER requests arrive in and
 // about all of them being in flight at once, never about how long any of it
 // takes.  Staging that with setTimeout delays made them depend on wall-clock
-// time even so, and under a loaded machine -- `bazel test //src/web/...` runs
+// time even so, and under a loaded machine -- `bazel test //openroad/web/...` runs
 // 46 test binaries at once -- timers do not keep their spacing: three 40 ms
 // requests measured 105 ms against a 100 ms bound, and two arrivals 5 ms apart
 // can land in either order.  Gating each request on a promise the test opens by

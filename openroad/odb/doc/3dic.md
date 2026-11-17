@@ -327,7 +327,7 @@ The Tcl commands:
 | `check_3dblox` | run the 3D design checks |
 | `add_3dblox_alignment_marker_rule` | declare an alignment-marker rule |
 
-The implementation lives in `src/odb/src/3dblox/` (`ThreeDBlox` is the
+The implementation lives in `openroad/odb/src/3dblox/` (`ThreeDBlox` is the
 entry point; per-format parsers and writers sit next to it).
 
 Reading 3DBlox is not required: the same model can be built directly
@@ -341,7 +341,7 @@ rebuilt after load.
 ## Design checks
 
 `check_3dblox` runs the 3D linter (`Checker` in
-`src/odb/src/3dblox/checker.h`) over the unfolded model. Current
+`openroad/odb/src/3dblox/checker.h`) over the unfolded model. Current
 checks include:
 
 - logical connectivity (chip paths are honored)
@@ -384,11 +384,11 @@ direction, not shipped functionality.
 
 | What | Where |
 |---|---|
-| Public API | `src/odb/include/odb/db.h` (`dbChip*`, `dbUnfoldedChip*` classes) |
-| Implementation | `src/odb/src/db/dbChip*.{h,cpp}`, `dbUnfoldedChip*.{h,cpp}` |
-| Unfolded builder | `src/odb/src/db/dbUnfoldedBuilder.{h,cpp}` |
-| Schema definitions | `src/odb/src/codeGenerator/schema/chip/*.json` |
-| 3DBlox parsers/writers | `src/odb/src/3dblox/` |
-| 3D checks | `src/odb/src/3dblox/checker.{h,cpp}` |
-| Tcl commands | `src/OpenRoad.tcl` (`read_3dbv`, `read_3dbx`, `check_3dblox`, ...) |
-| Tests | `src/odb/test/` (`check_3dblox.tcl`, ...) |
+| Public API | `openroad/odb/include/odb/db.h` (`dbChip*`, `dbUnfoldedChip*` classes) |
+| Implementation | `openroad/odb/src/db/dbChip*.{h,cpp}`, `dbUnfoldedChip*.{h,cpp}` |
+| Unfolded builder | `openroad/odb/src/db/dbUnfoldedBuilder.{h,cpp}` |
+| Schema definitions | `openroad/odb/src/codeGenerator/schema/chip/*.json` |
+| 3DBlox parsers/writers | `openroad/odb/src/3dblox/` |
+| 3D checks | `openroad/odb/src/3dblox/checker.{h,cpp}` |
+| Tcl commands | `openroad/OpenRoad.tcl` (`read_3dbv`, `read_3dbx`, `check_3dblox`, ...) |
+| Tests | `openroad/odb/test/` (`check_3dblox.tcl`, ...) |

@@ -11,7 +11,7 @@ namespace web {
 // order by HierarchyReport::getReport().
 //
 // The same palette is duplicated in the Qt GUI's ColorGenerator
-// (src/gui/src/colorGenerator.cpp).  Keep them in sync.
+// (openroad/gui/src/colorGenerator.cpp).  Keep them in sync.
 constexpr int kModuleColorPaletteSize = 31;
 
 // NOLINTBEGIN(modernize-use-designated-initializers)

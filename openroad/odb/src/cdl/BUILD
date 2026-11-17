@@ -12,16 +12,16 @@ package(
 cc_library(
     name = "cdl",
     srcs = glob(["*.cpp"]),
-    hdrs = ["//src/odb:include/odb/cdl.h"],
+    hdrs = ["//openroad/odb:include/odb/cdl.h"],
     includes = [
         "../../include",
     ],
     deps = [
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
     ],
 )
 
 message_srcs(
-    visibility = ["//src/odb:__pkg__"],
+    visibility = ["//openroad/odb:__pkg__"],
 )

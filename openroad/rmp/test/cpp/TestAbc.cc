@@ -51,7 +51,7 @@ using cut::AbcLibraryFactory;
 using cut::LogicCut;
 using cut::LogicExtractorFactory;
 
-static const std::string kPrefix("_main/src/rmp/test/");
+static const std::string kPrefix("_main/openroad/rmp/test/");
 
 std::once_flag init_abc_flag;
 

@@ -35,12 +35,12 @@ cc_library(
         "common",
     ],
     deps = [
-        "//src/odb/src/db",
-        "//src/odb/src/defin",
-        "//src/odb/src/defout",
-        "//src/odb/src/lefin",
-        "//src/odb/src/lefout",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/defin",
+        "//openroad/odb/src/defout",
+        "//openroad/odb/src/lefin",
+        "//openroad/odb/src/lefout",
+        "//openroad/utl",
         "@boost.polygon",
     ],
 )
@@ -48,9 +48,9 @@ cc_library(
 tcl_wrap_cc(
     name = "swig",
     srcs = [
-        "//:src/Design.i",
-        "//:src/Exception.i",
-        "//src/odb:odb_public_headers",
+        "//:openroad/Design.i",
+        "//:openroad/Exception.i",
+        "//openroad/odb:odb_public_headers",
     ] + glob([
         "tcl/*.i",
         "common/*.i",
@@ -74,7 +74,7 @@ tcl_encode(
 )
 
 message_srcs(
-    visibility = ["//src/odb:__pkg__"],
+    visibility = ["//openroad/odb:__pkg__"],
 )
 
 cc_library(
@@ -83,9 +83,9 @@ cc_library(
         "tcl/MakeOdb.cpp",
         ":swig",
         ":tcl",
-        "//src/odb:include/odb/geom.h",
+        "//openroad/odb:include/odb/geom.h",
     ],
-    hdrs = ["//src/odb:include/odb/MakeOdb.h"],
+    hdrs = ["//openroad/odb:include/odb/MakeOdb.h"],
     copts = [
         "-Wno-missing-braces",  # from TCL swigging
     ],
@@ -96,8 +96,8 @@ cc_library(
     deps = [
         ":swig_common",
         "//:ord",
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
         "@tcl_lang//:tcl",
     ],
 )

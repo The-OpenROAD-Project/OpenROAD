@@ -13,7 +13,7 @@ package(
 )
 
 # Abstract service interface published through utl::ServiceRegistry.
-# Consumers depend only on this target, not on //src/drt, which keeps
+# Consumers depend only on this target, not on //openroad/drt, which keeps
 # them free of the full drt implementation surface.
 cc_library(
     name = "pin_access_service",
@@ -31,8 +31,8 @@ cc_library(
     ],
     includes = ["src"],
     deps = [
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
         "@boost.geometry",
         "@boost.serialization",
     ],
@@ -194,15 +194,15 @@ cc_library(
         "src",
     ],
     visibility = [
-        "//src/drt:__subpackages__",
+        "//openroad/drt:__subpackages__",
     ],
     deps = [
         ":base_types",
         ":pin_access_service",
-        "//src/dst",
-        "//src/odb/src/db",
-        "//src/stt",
-        "//src/utl",
+        "//openroad/dst",
+        "//openroad/odb/src/db",
+        "//openroad/stt",
+        "//openroad/utl",
         "@abseil-cpp//absl/synchronization",
         "@boost.asio",
         "@boost.bind",
@@ -228,7 +228,7 @@ cc_library(
     deps = [
         ":drt_impl",
         ":pin_access_service",
-        "//src/odb/src/db",
+        "//openroad/odb/src/db",
         "@abseil-cpp//absl/synchronization",
         "@boost.asio",
     ],
@@ -263,9 +263,9 @@ cc_library(
         ":base_types",
         ":drt_impl",
         "//:ord",
-        "//src/odb/src/db",
-        "//src/utl",
-        "//src/web:core",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "//openroad/web:core",
         "@tcl_lang//:tcl",
     ],
 )
@@ -289,10 +289,10 @@ tcl_wrap_cc(
     namespace_prefix = "drt",
     root_swig_src = "src/TritonRoute.i",
     swig_includes = [
-        "src/drt/src",
+        "src",
     ],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
     ],
 )
 
@@ -309,7 +309,7 @@ python_wrap_cc(
         "include",
     ],
     deps = [
-        "//src/odb:swig-py",
+        "//openroad/odb:swig-py",
     ],
 )
 
@@ -319,13 +319,13 @@ filegroup(
         "README.md",
         "src/TritonRoute.tcl",
     ],
-    visibility = ["//src/drt/test:__pkg__"],
+    visibility = ["//openroad/drt/test:__pkg__"],
 )
 
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/drt/test:__pkg__",
+        "//openroad/drt/test:__pkg__",
     ],
 )
 

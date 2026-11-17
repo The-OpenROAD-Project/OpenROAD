@@ -17,7 +17,7 @@
 #include "syn/ir/Instance.h"
 #include "syn/ir/Net.h"
 
-// ABC (pulled in transitively via //src/syn/src/ir → TritModel) ships its
+// ABC (pulled in transitively via //openroad/syn/src/ir → TritModel) ships its
 // own main() that wins over gtest_main. Provide our own to force the gtest
 // entry point.
 int main(int argc, char** argv)

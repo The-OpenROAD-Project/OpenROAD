@@ -1,7 +1,7 @@
 from openroad import Design, Tech
 import helpers
 
-bazel_working_dir = "/_main/src/gpl/test/"
+bazel_working_dir = "/_main/openroad/gpl/test/"
 helpers.if_bazel_change_working_dir_to(bazel_working_dir)
 
 

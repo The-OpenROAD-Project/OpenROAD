@@ -118,7 +118,7 @@ accurate parsing of man pages.
 Simply run the following command:
 
 ```shell
-bazelisk test //src/utl/...
+bazelisk test //openroad/utl/...
 ```
 
 ## Limitations

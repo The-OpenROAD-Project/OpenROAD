@@ -4,7 +4,7 @@
 # Test script for IP Checker (check_ip command)
 # Tests all LEF checks LEF-CHK-001 through LEF-CHK-010 in ascending order
 # Run from OpenROAD build directory:
-#   ./bin/openroad -no_init ../src/dbSta/test/check_ip_test.tcl
+#   ./bin/openroad -no_init ../openroad/dbSta/test/check_ip_test.tcl
 
 puts "=============================================="
 puts "IP Checker Test Suite"

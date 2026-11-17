@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// Shared esbuild settings for the viewer's bundles.  See //src/web:BUILD.
+// Shared esbuild settings for the viewer's bundles.  See //openroad/web:BUILD.
 
 import { readFile } from 'node:fs/promises';
 

@@ -45,9 +45,9 @@ cc_library(
     deps = [
         ":munkres",
         "//:ord",
-        "//src/odb/src/db",
-        "//src/utl",
-        "//src/web:core",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "//openroad/web:core",
         "@boost.container_hash",
         "@boost.random",
         "@tcl_lang//:tcl",
@@ -87,10 +87,10 @@ tcl_wrap_cc(
     namespace_prefix = "ppl",
     root_swig_src = "src/IOPlacer.i",
     swig_includes = [
-        "src/ppl/src",
+        "src",
     ],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
     ],
 )
 
@@ -109,7 +109,7 @@ python_wrap_cc(
         "src",
     ],
     deps = [
-        "//src/odb:swig-py",
+        "//openroad/odb:swig-py",
     ],
 )
 
@@ -119,13 +119,13 @@ filegroup(
         "README.md",
         "src/IOPlacer.tcl",
     ],
-    visibility = ["//src/ppl/test:__pkg__"],
+    visibility = ["//openroad/ppl/test:__pkg__"],
 )
 
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/ppl/test:__pkg__",
+        "//openroad/ppl/test:__pkg__",
     ],
 )
 

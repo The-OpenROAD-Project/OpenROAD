@@ -46,7 +46,7 @@ D. Benchmarking - test the accuracy of OpenRCX on the patterns layout.
 
 ## How to run:
 
-1. Go to OpenRCX home directory (`./OpenROAD/src/rcx`).
+1. Go to OpenRCX home directory (`./OpenROAD/openroad/rcx`).
 
 2. Navigate to calibration folder `cd calibration`
 

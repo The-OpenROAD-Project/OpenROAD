@@ -21,8 +21,8 @@ cc_library(
     includes = ["src/fastroute/include"],
     visibility = ["//visibility:private"],
     deps = [
-        "//src/stt",
-        "//src/utl",
+        "//openroad/stt",
+        "//openroad/utl",
     ],
 )
 
@@ -35,7 +35,7 @@ cc_library(
     visibility = ["//visibility:private"],
     deps = [
         ":groute",
-        "//src/odb/src/db",
+        "//openroad/odb/src/db",
     ],
 )
 
@@ -45,7 +45,7 @@ cc_library(
     includes = [
         "include",
     ],
-    deps = ["//src/odb/src/db"],
+    deps = ["//openroad/odb/src/db"],
 )
 
 cc_library(
@@ -83,13 +83,13 @@ cc_library(
     deps = [
         ":abstract-fastroute",
         ":groute",
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/est:parasitics_service",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/stt",
-        "//src/utl",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/est:parasitics_service",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/stt",
+        "//openroad/utl",
         "@boost.container_hash",
         "@boost.icl",
         "@boost.multi_array",
@@ -133,13 +133,13 @@ cc_library(
     deps = [
         ":abstract-cugr",
         ":groute",
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/est:parasitics_service",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/stt",
-        "//src/utl",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/est:parasitics_service",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/stt",
+        "//openroad/utl",
     ],
 )
 
@@ -175,7 +175,7 @@ cc_library(
         "src",
     ],
     visibility = [
-        "//src/grt:__subpackages__",
+        "//openroad/grt:__subpackages__",
     ],
     deps = [
         ":abstract-fastroute",
@@ -183,15 +183,15 @@ cc_library(
         ":fastroute",
         ":groute",
         ":route_pt",
-        "//src/ant",
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/dpl",
-        "//src/drt:pin_access_service",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/stt",
-        "//src/utl",
+        "//openroad/ant",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/dpl",
+        "//openroad/drt:pin_access_service",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/stt",
+        "//openroad/utl",
         "@boost.geometry",
         "@boost.graph",
         "@boost.icl",
@@ -216,8 +216,8 @@ cc_library(
         ":groute",
         ":grt_impl",
         ":route_pt",
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
     ],
 )
 
@@ -259,11 +259,11 @@ cc_library(
         ":groute",
         ":grt_impl",
         "//:ord",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/stt",
-        "//src/utl",
-        "//src/web:core",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/stt",
+        "//openroad/utl",
+        "//openroad/web:core",
         "@tcl_lang//:tcl",
     ],
 )
@@ -290,7 +290,7 @@ tcl_wrap_cc(
         "src",
     ],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
     ],
 )
 
@@ -315,13 +315,13 @@ filegroup(
         "README.md",
         "src/GlobalRouter.tcl",
     ],
-    visibility = ["//src/grt/test:__pkg__"],
+    visibility = ["//openroad/grt/test:__pkg__"],
 )
 
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/grt/test:__pkg__",
+        "//openroad/grt/test:__pkg__",
     ],
 )
 

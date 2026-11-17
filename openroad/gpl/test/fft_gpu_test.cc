@@ -3,12 +3,13 @@
 //
 // GPU FFT correctness test.
 //
-// This test exercises the GPU FFT backend (src/gpl/src/gpu/gpuFftBackend.cpp,
-// the Kokkos/KokkosFFT PoissonSolver) through the gpl::FFT public API -- it is
-// only built in the GPU build (--config=gpu; see src/gpl/test/BUILD). With the
-// default environment gpl::gpuEnabled() is true, so gpl::FFT's makeFftBackend()
-// selects GpuFftBackend. It runs the GPU FFT on a fixed 16x16 Gaussian density
-// input and checks the resulting electroPhi / electroField against a baked-in
+// This test exercises the GPU FFT backend
+// (openroad/gpl/src/gpu/gpuFftBackend.cpp, the Kokkos/KokkosFFT PoissonSolver)
+// through the gpl::FFT public API -- it is only built in the GPU build
+// (--config=gpu; see openroad/gpl/test/BUILD). With the default environment
+// gpl::gpuEnabled() is true, so gpl::FFT's makeFftBackend() selects
+// GpuFftBackend. It runs the GPU FFT on a fixed 16x16 Gaussian density input
+// and checks the resulting electroPhi / electroField against a baked-in
 // reference computed once from the CPU Ooura backend.
 //
 // The GPU FFT is NOT bit-identical to the CPU Ooura FFT: the FFT spike (Q1)
@@ -35,7 +36,7 @@
 #include <utility>
 
 #include "gtest/gtest.h"
-#include "src/gpl/src/fft.h"
+#include "openroad/gpl/src/fft.h"
 
 namespace {
 
@@ -603,9 +604,9 @@ TEST(GpuFFTTest, RectangularBins)
 // ENABLE_GPU=0 forces gpl::FFT to use CpuFftBackend (the bake source). On a
 // GPU-less host, the standalone /tmp recipe in this comment also works:
 //
-//   clang++ -std=c++20 -I src/gpl/src \
-//       a_bake_main.cpp src/gpl/src/fft.cpp \
-//       src/gpl/src/fftsg.cpp src/gpl/src/fftsg2d.cpp -o bake
+//   clang++ -std=c++20 -I openroad/gpl/src \
+//       a_bake_main.cpp openroad/gpl/src/fft.cpp \
+//       openroad/gpl/src/fftsg.cpp openroad/gpl/src/fftsg2d.cpp -o bake
 //
 // where a_bake_main.cpp wraps this test body in main(). Paste the output
 // over the constexpr arrays above.

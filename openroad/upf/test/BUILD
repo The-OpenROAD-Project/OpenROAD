@@ -71,9 +71,9 @@ cc_test(
     size = "small",
     srcs = ["cpp/TestPowerSwitch.cc"],
     deps = [
-        "//src/odb/src/db",
-        "//src/tst:db_fixture",
-        "//src/upf",
+        "//openroad/odb/src/db",
+        "//openroad/tst:db_fixture",
+        "//openroad/upf",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -84,11 +84,11 @@ cc_test(
     size = "small",
     srcs = ["cpp/TestPowerDomainRegions.cc"],
     deps = [
-        "//src/dbSta",
-        "//src/odb/src/db",
-        "//src/tst",
-        "//src/tst:nangate45_fixture",
-        "//src/upf",
+        "//openroad/dbSta",
+        "//openroad/odb/src/db",
+        "//openroad/tst",
+        "//openroad/tst:nangate45_fixture",
+        "//openroad/upf",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -97,7 +97,7 @@ cc_test(
 py_test(
     name = "upf_man_tcl_check",
     srcs = ["upf_man_tcl_check.py"],
-    data = ["//src/upf:doc_files"],
+    data = ["//openroad/upf:doc_files"],
     tags = [
         "doc_check",
         "py",
@@ -108,8 +108,8 @@ py_test(
 doc_check_test(
     name = "upf_readme_msgs_check",
     data = [
-        "//src/upf:doc_files",
-        "//src/upf:messages_txt",
+        "//openroad/upf:doc_files",
+        "//openroad/upf:messages_txt",
     ],
     visibility = ["//visibility:public"],
 )

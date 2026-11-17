@@ -19,7 +19,7 @@
 //
 // bazelisk run starts it in its runfiles, where the default files are; give
 // other files as absolute paths:
-//   bazelisk run //src/fsv/test:BenchSuite -- [--threads N]
+//   bazelisk run //openroad/fsv/test:BenchSuite -- [--threads N]
 //       [--groups 3d,2d,nets] [--csv FILE]
 //       [--lef FILE]... [--def FILE] [--itf FILE] [--nets a,b,...]
 //       [--halo UM] [--margin UM]
@@ -61,10 +61,10 @@ struct Options
   std::vector<std::string> groups{"3d", "2d", "nets"};
   std::string csv;
   std::vector<std::string> lefs{
-      "src/fsv/test/sky130hd/sky130hd.tlef",
-      "src/fsv/test/sky130hd/sky130_fd_sc_hd_merged.lef"};
-  std::string def = "src/fsv/test/field_solver_gcd.def";
-  std::string itf = "src/fsv/test/sky130.itf";
+      "openroad/fsv/test/sky130hd/sky130hd.tlef",
+      "openroad/fsv/test/sky130hd/sky130_fd_sc_hd_merged.lef"};
+  std::string def = "openroad/fsv/test/field_solver_gcd.def";
+  std::string itf = "openroad/fsv/test/sky130.itf";
   std::vector<std::string> nets{"_042_", "_119_/_067_", "req_msg[10]"};
   double halo = 4;
   double margin = 1;

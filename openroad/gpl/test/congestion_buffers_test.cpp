@@ -16,10 +16,10 @@
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "src/gpl/src/nesterovBase.h"
-#include "src/gpl/src/nesterovPlace.h"
-#include "src/gpl/src/placerBase.h"
-#include "src/gpl/src/routeBase.h"
+#include "openroad/gpl/src/nesterovBase.h"
+#include "openroad/gpl/src/nesterovPlace.h"
+#include "openroad/gpl/src/placerBase.h"
+#include "openroad/gpl/src/routeBase.h"
 #include "tst/IntegratedFixture.h"
 #include "utl/Logger.h"
 
@@ -119,7 +119,7 @@ class CongestionBuffersTest : public tst::IntegratedFixture
 
   void SetUp() override
   {
-    block_ = readDef(getFilePath("_main/src/gpl/test/gcd.def"), {lib_});
+    block_ = readDef(getFilePath("_main/openroad/gpl/test/gcd.def"), {lib_});
     ASSERT_NE(block_, nullptr);
     std::vector<odb::dbNet*> nets;
     for (auto* net : block_->getNets()) {

@@ -5,14 +5,14 @@ that the PDN rejection report and supply-connectivity checks work together.
 
 ## Native enclosure tests
 
-`src/pdn/test/cpp/TestPDNVia.cpp` uses the in-memory PDN fixture to check
+`openroad/pdn/test/cpp/TestPDNVia.cpp` uses the in-memory PDN fixture to check
 defaults on both landings, one-sided overrides, width applicability, valid
 enclosure alternatives, signed rounding, and rejection of cuts with inadequate
 enclosure. Run the existing target with:
 
 ```bash
 bazelisk test --test_output=errors --runs_per_test=3 --cache_test_results=no \
-  //src/pdn/test:pdn_via_unittest
+  //openroad/pdn/test:pdn_via_unittest
 ```
 
 On upstream `6f3f28cc85407d71ba64a550cca194d8a6a01c1c`, six new defect tests
@@ -30,7 +30,7 @@ On the same upstream revision, the three rejection tests fail while all
 
 ```bash
 bazelisk test --test_output=errors --runs_per_test=3 --cache_test_results=no \
-  //src/pdn/test:pdn_connect_unittest //src/pdn/test:pdn_via_unittest
+  //openroad/pdn/test:pdn_connect_unittest //openroad/pdn/test:pdn_via_unittest
 ```
 
 ## Integration coverage
@@ -59,7 +59,7 @@ It requires no external design, netlist, checkpoint or database.
 
 ```bash
 bazelisk test --test_output=errors --runs_per_test=3 --cache_test_results=no \
-  //src/pdn/test:generated_via_default_edge-tcl_test
+  //openroad/pdn/test:generated_via_default_edge-tcl_test
 ```
 
 Passing this fixture does not mean that every rejected connection can be

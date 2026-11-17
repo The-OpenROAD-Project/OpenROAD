@@ -13,7 +13,7 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "src/gpl/src/placerBase.h"
+#include "openroad/gpl/src/placerBase.h"
 #include "tst/db_fixture.h"
 
 namespace gpl {

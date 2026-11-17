@@ -24,7 +24,7 @@ namespace gpl {
 // The solver→gpl axis swap + 0.5× field scale go through
 // poissonSolver.h::solverToGplField (shared with the device density gather
 // in densityOp.cpp) — single source of truth. Pinned by GpuFFTTest in
-// src/gpl/test/fft_gpu_test.cc.
+// openroad/gpl/test/fft_gpu_test.cc.
 
 struct GpuFftBackend::Impl
 {

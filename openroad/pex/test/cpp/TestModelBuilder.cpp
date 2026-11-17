@@ -24,7 +24,8 @@ namespace {
 
 const fsv::Stack& sky130()
 {
-  static const fsv::Stack stack = fsv::readItfFile("src/fsv/test/sky130.itf");
+  static const fsv::Stack stack
+      = fsv::readItfFile("openroad/fsv/test/sky130.itf");
   return stack;
 }
 
@@ -770,7 +771,7 @@ TEST(ModelBuilder, RejectsUnknownLayer)
                std::invalid_argument);
 }
 
-// The golden cross section three_wires of src/fsv/test/golden, built by
+// The golden cross section three_wires of openroad/fsv/test/golden, built by
 // layer, solves to its reference (cross_section.txt, from fv2d_golden.py).
 TEST(ModelBuilder, SectionMatchesTheGolden)
 {

@@ -24,11 +24,11 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/dbSta:dbNetwork",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/upf",
-        "//src/utl",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/upf",
+        "//openroad/utl",
     ],
 )
 
@@ -49,9 +49,9 @@ cc_library(
     deps = [
         ":ifp",
         "//:ord",
-        "//src/dbSta",
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/dbSta",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
         "@tcl_lang//:tcl",
     ],
 )
@@ -75,10 +75,10 @@ tcl_wrap_cc(
     namespace_prefix = "ifp",
     root_swig_src = "src/InitFloorplan.i",
     swig_includes = [
-        "src/ifp/src",
+        "src",
     ],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
     ],
 )
 
@@ -96,7 +96,7 @@ python_wrap_cc(
         "src",
     ],
     deps = [
-        "//src/odb:swig-py",
+        "//openroad/odb:swig-py",
     ],
 )
 
@@ -106,13 +106,13 @@ filegroup(
         "README.md",
         "src/InitFloorplan.tcl",
     ],
-    visibility = ["//src/ifp/test:__pkg__"],
+    visibility = ["//openroad/ifp/test:__pkg__"],
 )
 
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/ifp/test:__pkg__",
+        "//openroad/ifp/test:__pkg__",
     ],
 )
 

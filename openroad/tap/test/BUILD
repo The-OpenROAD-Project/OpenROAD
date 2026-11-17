@@ -204,7 +204,7 @@ filegroup(
 py_test(
     name = "tap_man_tcl_check",
     srcs = ["tap_man_tcl_check.py"],
-    data = ["//src/tap:doc_files"],
+    data = ["//openroad/tap:doc_files"],
     tags = [
         "doc_check",
         "py",
@@ -215,8 +215,8 @@ py_test(
 doc_check_test(
     name = "tap_readme_msgs_check",
     data = [
-        "//src/tap:doc_files",
-        "//src/tap:messages_txt",
+        "//openroad/tap:doc_files",
+        "//openroad/tap:messages_txt",
     ],
     visibility = ["//visibility:public"],
 )

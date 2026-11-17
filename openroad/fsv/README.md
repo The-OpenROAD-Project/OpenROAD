@@ -362,9 +362,9 @@ There are a set of regression tests in `./test`, registered in the tool's
 Bazel `test/BUILD` file.
 
 ```shell
-bazelisk test //src/fsv/test/...
-bazelisk run //src/fsv/test:BenchCube   # accuracy and thread scaling
-bazelisk run //src/fsv/test:BenchGrid   # throughput on a two-layer wire grid
+bazelisk test //openroad/fsv/test/...
+bazelisk run //openroad/fsv/test:BenchCube   # accuracy and thread scaling
+bazelisk run //openroad/fsv/test:BenchGrid   # throughput on a two-layer wire grid
 ```
 
 `TestGolden` compares fsv with reference values for the structures in

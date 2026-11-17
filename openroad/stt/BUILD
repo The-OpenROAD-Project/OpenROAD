@@ -53,8 +53,8 @@ cc_library(
     ],
     deps = [
         ":pdr_neighbors",
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
         "@boost.heap",
         "@boost.multi_array",
         "@coin-or-lemon//:lemon",
@@ -66,7 +66,7 @@ cc_library(
     srcs = ["src/pdr/src/neighbors.cpp"],
     hdrs = ["src/pdr/src/neighbors.h"],
     includes = ["src/pdr/src"],
-    deps = ["//src/odb/src/db"],
+    deps = ["//openroad/odb/src/db"],
 )
 
 cc_library(
@@ -91,9 +91,9 @@ cc_library(
     deps = [
         ":stt",
         "//:ord",
-        "//src/odb/src/db",
-        "//src/utl",
-        "//src/web:core",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "//openroad/web:core",
         "@tcl_lang//:tcl",
     ],
 )
@@ -143,13 +143,13 @@ filegroup(
         "README.md",
         "src/SteinerTreeBuilder.tcl",
     ],
-    visibility = ["//src/stt/test:__pkg__"],
+    visibility = ["//openroad/stt/test:__pkg__"],
 )
 
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/stt/test:__pkg__",
+        "//openroad/stt/test:__pkg__",
     ],
 )
 
@@ -158,6 +158,6 @@ python_wrap_library(
     includes = ["src"],
     deps = [
         ":stt",
-        "//src/web:core",
+        "//openroad/web:core",
     ],
 )

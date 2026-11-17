@@ -3,7 +3,7 @@
 Run them all with:
 
 ```shell
-bazelisk test //src/fsv/test/...
+bazelisk test //openroad/fsv/test/...
 ```
 
 | Kind | Tests | What they check |
@@ -61,10 +61,10 @@ regenerate `field_solver_gcd.ok` with it. To regenerate the design:
 ```shell
 cd flow
 make DESIGN_CONFIG=./designs/sky130hd/gcd/config.mk
-python3 ../tools/OpenROAD/src/fsv/test/gcd/trim_def.py \
+python3 ../tools/OpenROAD/openroad/fsv/test/gcd/trim_def.py \
   results/sky130hd/gcd/base/6_final.def \
   ../tools/OpenROAD/test/sky130hd/sky130_fd_sc_hd_merged.lef \
-  ../tools/OpenROAD/src/fsv/test/field_solver_gcd.def 9 \
+  ../tools/OpenROAD/openroad/fsv/test/field_solver_gcd.def 9 \
   _042_ _119_/_067_ "req_msg[10]"
 ```
 
@@ -101,16 +101,16 @@ every net first builds the tables it needs, so the times are warm.
 `BenchSuite_smoke`, a test, runs the cross sections on two threads.
 
 ```shell
-bazelisk run //src/fsv/test:BenchSuite -- --threads 64 [--groups 3d,2d,nets] [--csv FILE]
+bazelisk run //openroad/fsv/test:BenchSuite -- --threads 64 [--groups 3d,2d,nets] [--csv FILE]
 ```
 
 `bench_split.py` groups a perf profile into the stages of a walk:
 
 ```shell
-cd bazel-bin/src/fsv/test/BenchSuite.runfiles/_main
+cd bazel-bin/openroad/fsv/test/BenchSuite.runfiles/_main
 perf record -o perf.data ../../BenchSuite --threads 64 --groups nets
 perf report -i perf.data --no-children --sort symbol --stdio \
-  | python3 <workspace>/src/fsv/test/bench_split.py
+  | python3 <workspace>/openroad/fsv/test/bench_split.py
 ```
 
 ### Baseline

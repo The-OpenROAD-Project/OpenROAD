@@ -2,7 +2,7 @@
 
 pex is a 2.5D RC extractor under development. Its capacitance model is a
 set of tables that the module builds itself by solving small wire patterns
-with the field solver (`src/fsv`) on an ITF process stack, so no external
+with the field solver (`openroad/fsv`) on an ITF process stack, so no external
 reference extractor is needed. The same solver checks the model on routed
 nets.
 
@@ -93,9 +93,9 @@ its standard error, the value the simplification gives, and the relative
 error. They run on one conductor layer of a stack:
 
 ```
-bazelisk build //src/pex/test:Experiments
-bazel-bin/src/pex/test/Experiments --threads 64 --tol 0.003 \
-    --itf src/fsv/test/sky130.itf --layer met2 --csv met2.csv
+bazelisk build //openroad/pex/test:Experiments
+bazel-bin/openroad/pex/test/Experiments --threads 64 --tol 0.003 \
+    --itf openroad/fsv/test/sky130.itf --layer met2 --csv met2.csv
 ```
 
 | Group | Measures | Simplification tested | Decides |
@@ -125,7 +125,7 @@ has, saves it to `--model` after each layer, and reads it back on later
 runs, finishing a build that stopped:
 
 ```
-bazel-bin/src/pex/test/Experiments --groups e9 --threads 64 --tol 0.003 \
+bazel-bin/openroad/pex/test/Experiments --groups e9 --threads 64 --tol 0.003 \
     --odb 6_final.odb --model sky130.json --sample 50 --halo 10
 ```
 
@@ -182,5 +182,5 @@ What remains, largest first:
 ## Regression tests
 
 ```
-bazelisk test //src/pex/test/...
+bazelisk test //openroad/pex/test/...
 ```

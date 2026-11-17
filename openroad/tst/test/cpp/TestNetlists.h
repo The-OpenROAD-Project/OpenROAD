@@ -2,10 +2,10 @@
 // Copyright (c) 2026, The OpenROAD Authors
 #pragma once
 
-// Netlists for the src/tst tests, written to the test's temp dir rather than
-// checked in as .v files: OpenROAD's security pre-commit hook blocks *.v
-// outside an allowlist of test directories, and src/tst/test is not on it (no
-// .v file had ever lived there). They are small enough that inlining costs
+// Netlists for the openroad/tst tests, written to the test's temp dir rather
+// than checked in as .v files: OpenROAD's security pre-commit hook blocks *.v
+// outside an allowlist of test directories, and openroad/tst/test is not on it
+// (no .v file had ever lived there). They are small enough that inlining costs
 // nothing, and it buys something -- the two defective variants are DERIVED from
 // the good netlist by a named edit, so the single difference each one is
 // testing is visible in the code instead of being a comment on a copy that can

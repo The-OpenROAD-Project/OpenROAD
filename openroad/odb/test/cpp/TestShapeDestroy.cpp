@@ -7,7 +7,7 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "src/odb/test/cpp/helper/helper.h"
+#include "openroad/odb/test/cpp/helper/helper.h"
 
 namespace odb {
 namespace {

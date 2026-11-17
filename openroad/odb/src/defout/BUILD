@@ -15,16 +15,16 @@ cc_library(
         "*.cpp",
         "*.h",
     ]),
-    hdrs = ["//src/odb:include/odb/defout.h"],
+    hdrs = ["//openroad/odb:include/odb/defout.h"],
     includes = [
         "../../include",
     ],
     deps = [
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
     ],
 )
 
 message_srcs(
-    visibility = ["//src/odb:__pkg__"],
+    visibility = ["//openroad/odb:__pkg__"],
 )

@@ -195,21 +195,21 @@ cc_library(
     ],
     linkopts = ["-pthread"],
     visibility = [
-        "//src/rsz:__subpackages__",
+        "//openroad/rsz:__subpackages__",
     ],
     deps = [
-        "//src/dbSta",
-        "//src/dbSta:SpefWriter",
-        "//src/dbSta:dbNetwork",
-        "//src/dpl",
-        "//src/est",
-        "//src/grt",
-        "//src/grt:groute",
-        "//src/grt:route_pt",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/stt",
-        "//src/utl",
+        "//openroad/dbSta",
+        "//openroad/dbSta:SpefWriter",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/dpl",
+        "//openroad/est",
+        "//openroad/grt",
+        "//openroad/grt:groute",
+        "//openroad/grt:route_pt",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/stt",
+        "//openroad/utl",
         "@abseil-cpp//absl/container:flat_hash_map",
         "@boost.container_hash",
         "@boost.multi_array",
@@ -231,16 +231,16 @@ cc_library(
     ],
     deps = [
         ":rsz_impl",
-        "//src/dbSta",
-        "//src/dbSta:SpefWriter",
-        "//src/dbSta:dbNetwork",
-        "//src/dpl",
-        "//src/est",
-        "//src/grt",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/stt",
-        "//src/utl",
+        "//openroad/dbSta",
+        "//openroad/dbSta:SpefWriter",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/dpl",
+        "//openroad/est",
+        "//openroad/grt",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/stt",
+        "//openroad/utl",
     ],
 )
 
@@ -263,11 +263,11 @@ cc_library(
     deps = [
         ":rsz_impl",
         "//:ord",
-        "//src/dbSta:dbNetwork",
-        "//src/odb/src/db",
-        "//src/sta:opensta_lib",
-        "//src/utl",
-        "//src/web:core",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
+        "//openroad/web:core",
         "@spdlog",
         "@tcl_lang//:tcl",
     ],
@@ -287,7 +287,7 @@ tcl_wrap_cc(
     srcs = [
         "src/Resizer.i",
         "//:error_swig",
-        "//src/sta:sta_swig_files",
+        "//openroad/sta:sta_swig_files",
     ],
     module = "rsz",
     namespace_prefix = "rsz",
@@ -313,7 +313,7 @@ python_wrap_cc(
         "src",
     ],
     deps = [
-        "//src/odb:swig-py",
+        "//openroad/odb:swig-py",
     ],
 )
 
@@ -323,13 +323,13 @@ filegroup(
         "README.md",
         "src/Resizer.tcl",
     ],
-    visibility = ["//src/rsz/test:__pkg__"],
+    visibility = ["//openroad/rsz/test:__pkg__"],
 )
 
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/rsz/test:__pkg__",
+        "//openroad/rsz/test:__pkg__",
     ],
 )
 

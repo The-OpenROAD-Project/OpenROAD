@@ -18,12 +18,12 @@
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "src/gpl/src/graphicsNone.h"
-#include "src/gpl/src/nesterovBase.h"
-#include "src/gpl/src/nesterovPlace.h"
-#include "src/gpl/src/placerBase.h"
-#include "src/gpl/src/routeBase.h"
-#include "src/gpl/src/timingBase.h"
+#include "openroad/gpl/src/graphicsNone.h"
+#include "openroad/gpl/src/nesterovBase.h"
+#include "openroad/gpl/src/nesterovPlace.h"
+#include "openroad/gpl/src/placerBase.h"
+#include "openroad/gpl/src/routeBase.h"
+#include "openroad/gpl/src/timingBase.h"
 #include "sta/MinMax.hh"
 #include "sta/Mode.hh"
 #include "sta/Network.hh"
@@ -43,8 +43,8 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
 
   void SetUp() override
   {
-    block_ = readDef(getFilePath("_main/src/gpl/test/simple01-td-repair.def"),
-                     {lib_});
+    block_ = readDef(
+        getFilePath("_main/openroad/gpl/test/simple01-td-repair.def"), {lib_});
     ASSERT_NE(block_, nullptr);
     int index = 0;
     const auto core = block_->getCoreArea();

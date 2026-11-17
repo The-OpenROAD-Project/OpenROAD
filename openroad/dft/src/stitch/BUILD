@@ -21,16 +21,16 @@ cc_library(
         ".",
     ],
     deps = [
-        "//src/dft/src/architect",
-        "//src/dft/src/cells",
-        "//src/dft/src/config",
-        "//src/dft/src/utils",
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/dft/src/architect",
+        "//openroad/dft/src/cells",
+        "//openroad/dft/src/config",
+        "//openroad/dft/src/utils",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
         "@boost.algorithm",
     ],
 )
 
 message_srcs(
-    visibility = ["//src/dft:__pkg__"],
+    visibility = ["//openroad/dft:__pkg__"],
 )

@@ -1,6 +1,6 @@
 # Cross section of two minimum-width met1 wires at minimum spacing in the
 # SkyWater 130 stack, with the sidewall conformal dielectric NILD3_C. Layer
-# heights are those of src/fsv/test/sky130.itf (see TestItf.cpp). Wires run
+# heights are those of openroad/fsv/test/sky130.itf (see TestItf.cpp). Wires run
 # along y; their y extents are ignored.
 background 1.0
 layer 0.9361 3.9

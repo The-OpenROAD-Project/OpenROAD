@@ -24,7 +24,7 @@ class DeviceState;
 // PIMPL: the persistent device-side Kokkos state lives in Impl, hidden in
 // gpuHpwlBackend.cpp. This header stays Kokkos-free so it can be included by
 // the plain-CXX makeHpwlBackend() factory in ../hpwl.cpp without forcing
-// that TU to be compiled as CUDA (see src/gpl/BUILD — hpwl.cpp is
+// that TU to be compiled as CUDA (see openroad/gpl/BUILD — hpwl.cpp is
 // intentionally left as a CXX TU in :gpl).
 //
 // The backend reads pin coordinates from a DeviceState shared with the

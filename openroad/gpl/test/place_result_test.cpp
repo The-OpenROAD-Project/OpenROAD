@@ -25,13 +25,13 @@ class PlaceResultTest : public tst::Fixture
  protected:
   void SetUp() override
   {
-    odb::dbLib* lib
-        = loadTechAndLib("ng45", "ng45", "_main/src/gpl/test/nangate45.lef");
+    odb::dbLib* lib = loadTechAndLib(
+        "ng45", "ng45", "_main/openroad/gpl/test/nangate45.lef");
     ASSERT_NE(lib, nullptr);
     odb::dbChip* chip = odb::dbChip::create(db_.get(), lib->getTech());
     std::vector<odb::dbLib*> libs{lib};
     odb::defin reader(db_.get(), &logger_);
-    const std::string def = getFilePath("_main/src/gpl/test/gcd.def");
+    const std::string def = getFilePath("_main/openroad/gpl/test/gcd.def");
     ASSERT_TRUE(reader.readChip(libs, def.c_str(), chip));
     block_ = chip->getBlock();
   }

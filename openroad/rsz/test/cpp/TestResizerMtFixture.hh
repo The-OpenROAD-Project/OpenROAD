@@ -292,7 +292,7 @@ class TestResizerMt : public tst::IntegratedFixture
  protected:
   TestResizerMt()
       : tst::IntegratedFixture(tst::IntegratedFixture::Technology::kNangate45,
-                               "_main/src/rsz/test/")
+                               "_main/openroad/rsz/test/")
   {
     readLiberty(getFilePath("_main/test/Nangate45/Nangate45_lvt.lib"));
     if (!updateLib(lib_, "_main/test/Nangate45/Nangate45_lvt.lef")) {

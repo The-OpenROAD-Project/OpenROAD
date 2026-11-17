@@ -21,7 +21,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":tst",
-        "//src/odb/src/db",
+        "//openroad/odb/src/db",
     ],
 )
 
@@ -36,7 +36,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":tst",
-        "//src/odb/src/db",
+        "//openroad/odb/src/db",
     ],
 )
 
@@ -56,10 +56,10 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//src/odb/src/db",
-        "//src/odb/src/defin",
-        "//src/odb/src/lefin",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/defin",
+        "//openroad/odb/src/lefin",
+        "//openroad/utl",
         "@bazel_tools//tools/cpp/runfiles",
         "@googletest//:gtest",
     ],
@@ -74,7 +74,7 @@ cc_library(
     hdrs = ["include/tst/physical_builder.h"],
     includes = ["include"],
     visibility = ["//visibility:public"],
-    deps = ["//src/odb/src/db"],
+    deps = ["//openroad/odb/src/db"],
 )
 
 cc_library(
@@ -91,11 +91,11 @@ cc_library(
     ],
     deps = [
         ":db_fixture",
-        "//src/dbSta",
-        "//src/odb/src/db",
-        "//src/odb/src/lefin",
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/dbSta",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/lefin",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
         "@tcl_lang//:tcl",
     ],
 )
@@ -116,13 +116,13 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":db_fixture",
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/dbSta:dbReadVerilog",
-        "//src/odb/src/db",
-        "//src/odb/src/lefin",
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/dbSta:dbReadVerilog",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/lefin",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
         "@tcl_lang//:tcl",
     ],
 )
@@ -141,18 +141,18 @@ cc_library(
     deps = [
         ":loaded_design",
         ":tst",
-        "//src/ant",
-        "//src/dbSta",
-        "//src/dbSta:dbNetwork",
-        "//src/dbSta:dbReadVerilog",
-        "//src/dpl",
-        "//src/est",
-        "//src/grt",
-        "//src/odb/src/db",
-        "//src/rsz",
-        "//src/sta:opensta_lib",
-        "//src/stt",
-        "//src/utl",
+        "//openroad/ant",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/dbSta:dbReadVerilog",
+        "//openroad/dpl",
+        "//openroad/est",
+        "//openroad/grt",
+        "//openroad/odb/src/db",
+        "//openroad/rsz",
+        "//openroad/sta:opensta_lib",
+        "//openroad/stt",
+        "//openroad/utl",
         "@googletest//:gtest",
     ],
 )
@@ -195,7 +195,7 @@ cc_library(
     ],
 )
 
-# Test Parity Note: registered in bazel only. See src/dbSta/test/BUILD for the
+# Test Parity Note: registered in bazel only. See openroad/dbSta/test/BUILD for the
 # rationale behind bazel-only C++ test registration in this area.
 cc_test(
     name = "TestLoadedDesign",
@@ -234,8 +234,8 @@ cc_test(
     deps = [
         ":db_fixture",
         ":physical_builder",
-        "//src/odb/src/db",
-        "//src/utl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

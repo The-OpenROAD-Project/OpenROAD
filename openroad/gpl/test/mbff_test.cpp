@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-, The OpenROAD Authors
 
-#include "src/gpl/src/mbff.h"
+#include "openroad/gpl/src/mbff.h"
 
 #include <cmath>
 #include <cstdint>
@@ -19,8 +19,8 @@
 #include "grt/GlobalRouter.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "openroad/gpl/src/graphicsNone.h"
 #include "rsz/Resizer.hh"
-#include "src/gpl/src/graphicsNone.h"
 #include "stt/SteinerTreeBuilder.h"
 #include "tst/fixture.h"
 #include "utl/ServiceRegistry.h"
@@ -114,10 +114,12 @@ class MBFFTestFixture : public tst::Fixture
                                               opendp_.get(),
                                               estimate_parasitics_.get());
 
-    loadTechAndLib("test0",
-                   "test0",
-                   getFilePath("openroad/src/gpl/test/library/test/test0.lef"));
-    readLiberty(getFilePath("openroad/src/gpl/test/library/test/test0.lib"));
+    loadTechAndLib(
+        "test0",
+        "test0",
+        getFilePath("openroad/openroad/gpl/test/library/test/test0.lef"));
+    readLiberty(
+        getFilePath("openroad/openroad/gpl/test/library/test/test0.lib"));
 
     chip_ = odb::dbChip::create(db_.get(), db_->getTech());
     block_ = odb::dbBlock::create(chip_, "top");

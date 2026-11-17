@@ -22,7 +22,7 @@ class SmTest : public tst::Fixture
   void SetUp() override
   {
     Fixture::SetUp();
-    readLiberty(getFilePath("_main/src/syn/test/sm_test_cells.lib"));
+    readLiberty(getFilePath("_main/openroad/syn/test/sm_test_cells.lib"));
     synthesis_ = std::make_unique<Synthesis>(getDb(),
                                              getSta(),
                                              /*resizer=*/nullptr,

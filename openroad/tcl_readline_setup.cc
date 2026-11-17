@@ -4,7 +4,7 @@
 // Linenoise-backed implementation of the legacy tcl_readline_setup
 // interface.  The file, header, and function name (SetupTclReadlineLibrary)
 // are preserved so that OpenSTA's standalone `sta` binary
-// (src/sta/app/Main.cc) — which depends on this target — continues to
+// (openroad/sta/app/Main.cc) — which depends on this target — continues to
 // build unchanged.
 //
 // What this used to do: load the real `tclreadline` Tcl package, which
@@ -153,7 +153,7 @@ int completeCmd(ClientData /*cd*/,
 int SetupTclReadlineLibrary(Tcl_Interp* interp)
 {
   // Create the namespace and version variable that downstream Tcl code
-  // (e.g. src/sta/tcl/Init.tcl) probes to decide whether interactive
+  // (e.g. openroad/sta/tcl/Init.tcl) probes to decide whether interactive
   // line editing is available.
   if (Tcl_Eval(interp,
                "namespace eval ::tclreadline { variable version "

@@ -66,7 +66,7 @@ using ::testing::Contains;
 
 static std::once_flag init_abc_flag;
 
-static const std::string kPrefix("_main/src/cut/test/");
+static const std::string kPrefix("_main/openroad/cut/test/");
 
 class AbcTest : public tst::Fixture
 {

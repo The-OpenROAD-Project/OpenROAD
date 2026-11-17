@@ -5,13 +5,13 @@
 You can run all the Python unit tests with Bazel:
 
 ``` shell
-bazelisk test --test_tag_filters=py //src/odb/test/...
+bazelisk test --test_tag_filters=py //openroad/odb/test/...
 ```
 
 or run one test, for example:
 
 ``` shell
-bazelisk test //src/odb/test:test_block
+bazelisk test //openroad/odb/test:test_block
 ```
 
 --------------------------------------------------------------------------

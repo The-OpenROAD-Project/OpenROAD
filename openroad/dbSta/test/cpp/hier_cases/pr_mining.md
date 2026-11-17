@@ -40,9 +40,9 @@ Measured over `--since=2025-01-01`, non-merge:
 
 | file | commits |
 | --- | --- |
-| `src/dbSta/src/dbNetwork.cc` | 208 |
-| `src/dbSta/src/dbReadVerilog.cc` | 53 |
-| `src/sta/verilog/VerilogWriter.cc` | **0** |
+| `openroad/dbSta/src/dbNetwork.cc` | 208 |
+| `openroad/dbSta/src/dbReadVerilog.cc` | 53 |
+| `openroad/sta/verilog/VerilogWriter.cc` | **0** |
 
 The writer has not been touched at all. Whatever goes wrong on the way out
 therefore originates in the `dbModule`/`dbModNet` overlay the writer walks, not

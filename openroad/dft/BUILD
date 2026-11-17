@@ -23,18 +23,18 @@ cc_library(
         "include",
     ],
     deps = [
-        "//src/dbSta",
-        "//src/dft/src/architect",
-        "//src/dft/src/cells",
-        "//src/dft/src/clock_domain",
-        "//src/dft/src/config",
-        "//src/dft/src/optimizer",
-        "//src/dft/src/replace",
-        "//src/dft/src/stitch",
-        "//src/dft/src/utils",
-        "//src/odb/src/db",
-        "//src/rsz",
-        "//src/utl",
+        "//openroad/dbSta",
+        "//openroad/dft/src/architect",
+        "//openroad/dft/src/cells",
+        "//openroad/dft/src/clock_domain",
+        "//openroad/dft/src/config",
+        "//openroad/dft/src/optimizer",
+        "//openroad/dft/src/replace",
+        "//openroad/dft/src/stitch",
+        "//openroad/dft/src/utils",
+        "//openroad/odb/src/db",
+        "//openroad/rsz",
+        "//openroad/utl",
         "@boost.property_tree",
     ],
 )
@@ -56,10 +56,10 @@ cc_library(
     deps = [
         ":dft",
         "//:ord",
-        "//src/dft/src/architect",
-        "//src/dft/src/clock_domain",
-        "//src/dft/src/config",
-        "//src/utl",
+        "//openroad/dft/src/architect",
+        "//openroad/dft/src/clock_domain",
+        "//openroad/dft/src/config",
+        "//openroad/utl",
         "@tcl_lang//:tcl",
     ],
 )
@@ -83,10 +83,10 @@ tcl_wrap_cc(
     namespace_prefix = "dft",
     root_swig_src = "src/dft.i",
     swig_includes = [
-        "src/dft/src",
+        "src",
     ],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
     ],
 )
 
@@ -96,22 +96,22 @@ filegroup(
         "README.md",
         "src/dft.tcl",
     ],
-    visibility = ["//src/dft/test:__pkg__"],
+    visibility = ["//openroad/dft/test:__pkg__"],
 )
 
 messages_txt(
     extra_srcs = [
-        "//src/dft/src/architect:message_srcs",
-        "//src/dft/src/cells:message_srcs",
-        "//src/dft/src/clock_domain:message_srcs",
-        "//src/dft/src/config:message_srcs",
-        "//src/dft/src/optimizer:message_srcs",
-        "//src/dft/src/replace:message_srcs",
-        "//src/dft/src/stitch:message_srcs",
-        "//src/dft/src/utils:message_srcs",
+        "//openroad/dft/src/architect:message_srcs",
+        "//openroad/dft/src/cells:message_srcs",
+        "//openroad/dft/src/clock_domain:message_srcs",
+        "//openroad/dft/src/config:message_srcs",
+        "//openroad/dft/src/optimizer:message_srcs",
+        "//openroad/dft/src/replace:message_srcs",
+        "//openroad/dft/src/stitch:message_srcs",
+        "//openroad/dft/src/utils:message_srcs",
     ],
     visibility = [
         "//docs:__pkg__",
-        "//src/dft/test:__pkg__",
+        "//openroad/dft/test:__pkg__",
     ],
 )

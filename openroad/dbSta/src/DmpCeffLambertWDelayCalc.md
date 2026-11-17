@@ -402,7 +402,7 @@ The calculator seamlessly supports POCV. After computing the deterministic $C_{\
 
 ## 6. Verification & Accuracy Benchmarks
 
-The accuracy of `DmpCeffLambertWDelayCalc` was validated against OpenSTA's golden iterative `DmpCeffTwoPoleDelayCalc` using a Monte Carlo testbench of **10,000 random, physically realistic $\Pi$-models** on the Nangate45 technology library (`src/dbSta/test/cpp/TestLambertW.cc`).
+The accuracy of `DmpCeffLambertWDelayCalc` was validated against OpenSTA's golden iterative `DmpCeffTwoPoleDelayCalc` using a Monte Carlo testbench of **10,000 random, physically realistic $\Pi$-models** on the Nangate45 technology library (`openroad/dbSta/test/cpp/TestLambertW.cc`).
 
 ### Statistical Error Distribution (10,000 Pi-Models)
 
@@ -433,12 +433,12 @@ The following table summarizes the files comprising this implementation:
 
 | File | Purpose |
 | :--- | :--- |
-| [DmpCeffLambertWDelayCalc.hh](file:///usr/local/google/home/ethanmoon/OpenROAD/src/dbSta/src/DmpCeffLambertWDelayCalc.hh) | Header declaring `DmpCeffLambertWDelayCalc` and `CeffResult`. |
-| [DmpCeffLambertWDelayCalc.cc](file:///usr/local/google/home/ethanmoon/OpenROAD/src/dbSta/src/DmpCeffLambertWDelayCalc.cc) | Implementation of the Padé $C_{\text{eff}}$ evaluator and Lambert $W$ load delay calculator. |
-| [ceff_training_data_generator.cc](file:///usr/local/google/home/ethanmoon/OpenROAD/src/dbSta/src/ceff_training_data_generator.cc) | C++ utility sweeping dimensionless space $(x, y, z)$ against golden `DmpPi` to produce training data. |
-| [fit_pade.py](file:///usr/local/google/home/ethanmoon/OpenROAD/src/dbSta/src/fit_pade.py) | Python script using SciPy non-linear optimization (`curve_fit`, `L-BFGS-B`, `Powell`) to fit Padé coefficients. |
-| [TestLambertW.cc](file:///usr/local/google/home/ethanmoon/OpenROAD/src/dbSta/test/cpp/TestLambertW.cc) | GTest unit test evaluating 10,000 random $\Pi$-models comparing delay/slew accuracy. |
-| [synthetic_linear.lib](file:///usr/local/google/home/ethanmoon/OpenROAD/src/dbSta/test/synthetic_linear.lib) | Normalized linear Liberty model used for training data generation. |
+| [DmpCeffLambertWDelayCalc.hh](DmpCeffLambertWDelayCalc.hh) | Header declaring `DmpCeffLambertWDelayCalc` and `CeffResult`. |
+| [DmpCeffLambertWDelayCalc.cc](DmpCeffLambertWDelayCalc.cc) | Implementation of the Padé $C_{\text{eff}}$ evaluator and Lambert $W$ load delay calculator. |
+| [ceff_training_data_generator.cc](ceff_training_data_generator.cc) | C++ utility sweeping dimensionless space $(x, y, z)$ against golden `DmpPi` to produce training data. |
+| [fit_pade.py](fit_pade.py) | Python script using SciPy non-linear optimization (`curve_fit`, `L-BFGS-B`, `Powell`) to fit Padé coefficients. |
+| [TestLambertW.cc](../test/cpp/TestLambertW.cc) | GTest unit test evaluating 10,000 random $\Pi$-models comparing delay/slew accuracy. |
+| [synthetic_linear.lib](../test/synthetic_linear.lib) | Normalized linear Liberty model used for training data generation. |
 
 ### Regenerating Coefficients (Build Targets)
 
@@ -446,13 +446,13 @@ To regenerate training data and refit Padé coefficients via Bazel:
 
 ```bash
 # 1. Generate training dataset (dmp_training_data.csv)
-bazelisk build //src/dbSta:generate_training_data
+bazelisk build //openroad/dbSta:generate_training_data
 
 # 2. Fit Padé coefficients (outputs PadeCoefficients.h)
-bazelisk build //src/dbSta:generate_pade_coefficients
+bazelisk build //openroad/dbSta:generate_pade_coefficients
 
 # 3. Run regression unit tests
-bazelisk test //src/dbSta/test:dbsta_lambertw_test
+bazelisk test //openroad/dbSta/test:dbsta_lambertw_test
 ```
 
 ---

@@ -17,7 +17,8 @@ namespace {
 
 const fsv::Stack& sky130()
 {
-  static const fsv::Stack stack = fsv::readItfFile("src/fsv/test/sky130.itf");
+  static const fsv::Stack stack
+      = fsv::readItfFile("openroad/fsv/test/sky130.itf");
   return stack;
 }
 
@@ -117,7 +118,7 @@ TEST(Patterns, BuilderAddsBoxesWithTheLayerExtent)
   EXPECT_EQ(s.rects()[0].hi[1], layerExtent(stack, stack.layer("met3")).top);
 }
 
-// The golden structure three_wires of src/fsv/test/golden, built by layer.
+// The golden structure three_wires of openroad/fsv/test/golden, built by layer.
 TEST(Patterns, BuildsTheGoldenThreeWires)
 {
   fsv::Stack stack;

@@ -1,7 +1,7 @@
 # Regression test for the dbReadVerilog deep-descendant modBTerm
 # false-attach bug. See modnet_port_alias.v for the trigger pattern.
 #
-# With the fix in src/dbSta/src/dbReadVerilog.cc, Verilog2db::staToDb
+# With the fix in openroad/dbSta/src/dbReadVerilog.cc, Verilog2db::staToDb
 # must resolve the escaped child instance pin to a dbModITerm. link_design
 # must NOT abort from a cross-aliased flat net caused by false modBTerm
 # attachment.

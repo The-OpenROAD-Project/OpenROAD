@@ -40,9 +40,9 @@ cc_library(
     ],
     deps = [
         "//:ord",
-        "//src/odb/src/db",
-        "//src/utl",
-        "//src/web:core",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "//openroad/web:core",
         "@boost.geometry",
         "@boost.graph",
         "@boost.icl",
@@ -70,10 +70,10 @@ tcl_wrap_cc(
     namespace_prefix = "pad",
     root_swig_src = "src/pad.i",
     swig_includes = [
-        "src/pad/src",
+        "src",
     ],
     deps = [
-        "//src/odb:swig",
+        "//openroad/odb:swig",
     ],
 )
 
@@ -83,12 +83,12 @@ filegroup(
         "README.md",
         "src/pad.tcl",
     ],
-    visibility = ["//src/pad/test:__pkg__"],
+    visibility = ["//openroad/pad/test:__pkg__"],
 )
 
 messages_txt(
     visibility = [
         "//docs:__pkg__",
-        "//src/pad/test:__pkg__",
+        "//openroad/pad/test:__pkg__",
     ],
 )

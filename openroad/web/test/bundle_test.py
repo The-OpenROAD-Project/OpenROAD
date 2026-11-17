@@ -8,13 +8,13 @@ import re
 import unittest
 
 _PAGE = {
-    "index.html": "src/web/bundle/index.html",
-    "app.min.js": "src/web/bundle/app.min.js",
+    "index.html": "openroad/web/bundle/index.html",
+    "app.min.js": "openroad/web/bundle/app.min.js",
 }
 # Inlined into every saved report, which opens with no server at all.
-_REPORT_JS = "src/web/bundle/report.min.js"
-_LICENSES = "src/web/bundle/THIRD_PARTY_LICENSES.txt"
-_ENTRIES = ("src/web/src/entry-app.js", "src/web/src/entry-report.js")
+_REPORT_JS = "openroad/web/bundle/report.min.js"
+_LICENSES = "openroad/web/bundle/THIRD_PARTY_LICENSES.txt"
+_ENTRIES = ("openroad/web/src/entry-app.js", "openroad/web/src/entry-report.js")
 
 # Absolute URLs the bundle quotes as names rather than fetches, each matched
 # whole and in lower case: XML namespaces, ELK's model URIs, links in comments

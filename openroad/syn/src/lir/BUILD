@@ -7,7 +7,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//test:regression.bzl", "message_srcs")
 
 package(
-    default_visibility = ["//src/syn:__subpackages__"],
+    default_visibility = ["//openroad/syn:__subpackages__"],
     features = ["layering_check"],
 )
 
@@ -46,10 +46,10 @@ cc_library(
         "//conditions:default": [],
     }),
     include_prefix = "syn/lir",
-    strip_include_prefix = "//src/syn/src/lir",
+    strip_include_prefix = "//openroad/syn/src/lir",
     deps = [
-        "//src/sta:opensta_lib",
-        "//src/utl",
+        "//openroad/sta:opensta_lib",
+        "//openroad/utl",
         "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/container:flat_hash_map",
         "@abseil-cpp//absl/container:flat_hash_set",
@@ -64,5 +64,5 @@ cc_library(
 )
 
 message_srcs(
-    visibility = ["//src/syn:__pkg__"],
+    visibility = ["//openroad/syn:__pkg__"],
 )

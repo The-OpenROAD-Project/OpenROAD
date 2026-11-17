@@ -110,4 +110,4 @@ The detailed router uses a four-state machine to manage the routing optimization
 
 ### Key Code Locations
 
-- State machine implementation: `src/drt/src/dr/FlexDRFlow.cpp`
+- State machine implementation: `openroad/drt/src/dr/FlexDRFlow.cpp`

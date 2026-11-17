@@ -22,7 +22,7 @@ class OdbMultiPatternedTest : public tst::Fixture
     lib_ = loadTechAndLib(
         "multipatterned",
         "multipatterned",
-        "_main/src/odb/test/data/sky130hd/sky130hd_multi_patterned.tlef");
+        "_main/openroad/odb/test/data/sky130hd/sky130hd_multi_patterned.tlef");
 
     chip_ = odb::dbChip::create(db_.get(), db_->getTech());
     block_ = odb::dbBlock::create(chip_, "top");

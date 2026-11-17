@@ -1,7 +1,7 @@
 # Inherited fixtures
 
-`inherited/` symlinks netlists owned by other test suites (src/odb/test,
-src/rsz/test) into this corpus, so the corpus is a set of folders rather than
+`inherited/` symlinks netlists owned by other test suites (openroad/odb/test,
+openroad/rsz/test) into this corpus, so the corpus is a set of folders rather than
 a manifest to maintain. A symlink is picked up automatically; nothing else
 needs editing unless the netlist's top module is not `top`, in which case name
 it in `HIER_TOP_OVERRIDES` in ../../BUILD.
