@@ -31,7 +31,7 @@ class SlotGrid : public tst::Fixture
   {
     loadTechAndLib(
         "nangate45", "nangate45", "_main/test/Nangate45/Nangate45.lef");
-    block_ = readDef("_main/src/ppl/test/gcd.def");
+    block_ = readDef("_main/openroad/ppl/test/gcd.def");
   }
 
   odb::dbTechLayer* layer(const char* name) const

@@ -237,9 +237,9 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
-        "//src/odb/src/db",
-        "//src/ppl",
-        "//src/tst",
+        "//openroad/odb/src/db",
+        "//openroad/ppl",
+        "//openroad/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
