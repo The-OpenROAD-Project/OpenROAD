@@ -14,15 +14,16 @@ moved bterm req_msg[0] from met3 to met4
     default via: M3M4_PR
   Layer via4
     default via: M4M5_PR
-[INFO ANT-0002] Found 3 net violations.
-[INFO ANT-0001] Found 3 pin violations.
+[INFO ANT-0002] Found 4 net violations.
+[INFO ANT-0001] Found 4 pin violations.
 [DEBUG GRT-repair_antennas] Demand adoption: 410 nets from wires, 1 from guides, 0 failed
 [DEBUG GRT-repair_antennas] antenna violations clk
 [DEBUG GRT-repair_antennas] antenna violations req_msg[11]
 [DEBUG GRT-repair_antennas] antenna violations req_msg[23]
-[INFO GRT-0012] Found 3 antenna violations.
+[DEBUG GRT-repair_antennas] antenna violations req_msg[25]
+[INFO GRT-0012] Found 4 antenna violations.
 [INFO DPL-0009] Utilization: 8.0%
 [INFO DPL-0501] Legalized with 0 moves: displacement total 0.0 u, max 0.0 u; HPWL 19603.4 -> 19603.4 u (+0.0 %).
-[INFO GRT-0015] Inserted 3 diodes.
+[INFO GRT-0015] Inserted 4 diodes.
 [INFO ANT-0002] Found 0 net violations.
 [INFO ANT-0001] Found 0 pin violations.

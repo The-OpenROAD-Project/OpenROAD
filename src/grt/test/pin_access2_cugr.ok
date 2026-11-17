@@ -74,22 +74,22 @@ Stage 1: Pattern routing.
 Stage 3: Pattern routing with detours.
 Stage 4: Maze routing on sparsified graph.
 Routing statistics
-Wire length:           61669
-Total via count:       3071
-Total congestion:      0.32
-Min resource:          -0.32
+Wire length:           61332
+Total via count:       2931
+Total congestion:      0.31
+Min resource:          -0.31
 Bottleneck:            (1, 20, 16)
 [INFO GRT-0130] CUGR congestion report:
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)   Wire Ovf    Via Ovf  Max Edge Ovf
 --------------------------------------------------------------------------------------------------------------
 li1       V         0.00         0.00         0.00         0.00       0.00       0.00       0.00          0.00
-met1      H      5155.45       416.00       106.63       522.63      10.14       0.27       0.05          0.32
-met2      V      7407.91      1277.00       121.63      1398.63      18.88       0.00       0.00          0.00
-met3      H      7992.04      1166.00        76.25      1242.25      15.54       0.00       0.00          0.00
-met4      V      5848.53       299.00         8.56       307.56       5.26       0.00       0.00          0.00
+met1      H      5155.45       409.00       107.02       516.02      10.01       0.27       0.05          0.31
+met2      V      7407.91      1286.00       116.52      1402.52      18.93       0.00       0.00          0.00
+met3      H      7992.04      1153.00        67.71      1220.71      15.27       0.00       0.00          0.00
+met4      V      5848.53       293.00         7.28       300.28       5.13       0.00       0.00          0.00
 met5      H      1800.00         0.00         0.00         0.00       0.00       0.00       0.00          0.00
 --------------------------------------------------------------------------------------------------------------
-Total           28203.94      3158.00       313.07      3471.07      12.31       0.27       0.05          0.32
-[INFO GRT-0018] Total wirelength: 30924 um
+Total           28203.94      3141.00       298.52      3439.52      12.20       0.27       0.05          0.31
+[INFO GRT-0018] Total wirelength: 30715 um
 [INFO GRT-0014] Routed nets: 411
 No differences found.
