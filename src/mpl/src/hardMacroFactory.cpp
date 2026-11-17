@@ -36,7 +36,6 @@ HardMacroFactory::HardMacroFactory(odb::dbBlock* block,
 InstToHardMap HardMacroFactory::create() const
 {
   InstToHardMap inst_to_hard;
-  const odb::Rect& core = block_->getCoreArea();
   const int minimum_spacing = getMinimumSpacing();
 
   for (odb::dbInst* inst : block_->getInsts()) {
@@ -58,19 +57,7 @@ InstToHardMap HardMacroFactory::create() const
       }
 
       HardMacro::Halo halo = buildHalo(inst, minimum_spacing);
-
-      auto macro = std::make_unique<HardMacro>(inst, halo);
-
-      if (macro->getWidth() > core.dx() || macro->getHeight() > core.dy()) {
-        logger_->error(
-            MPL,
-            6,
-            "Found macro that does not fit in the core.\nName: {}\n{}",
-            inst->getName(),
-            generateMacroAndCoreDimensionsTable(macro.get(), core));
-      }
-
-      inst_to_hard[inst] = std::move(macro);
+      inst_to_hard[inst] = std::make_unique<HardMacro>(inst, halo);
     }
   }
 
@@ -211,23 +198,4 @@ bool HardMacroFactory::isEquidistantDifferentDirections(
              || (!isVertical(candidate.second)
                  && isVertical(second_candidate.second)));
 }
-
-std::string HardMacroFactory::generateMacroAndCoreDimensionsTable(
-    const HardMacro* hard_macro,
-    const odb::Rect& core) const
-{
-  std::string table;
-
-  table += fmt::format("\n          |   Macro + Halos   |   Core   ");
-  table += fmt::format("\n-----------------------------------------");
-  table += fmt::format("\n   Width  | {:>17.2f} | {:>8.2f}",
-                       block_->dbuToMicrons(hard_macro->getWidth()),
-                       block_->dbuToMicrons(core.dx()));
-  table += fmt::format("\n  Height  | {:>17.2f} | {:>8.2f}\n",
-                       block_->dbuToMicrons(hard_macro->getHeight()),
-                       block_->dbuToMicrons(core.dy()));
-
-  return table;
-}
-
 }  // namespace mpl

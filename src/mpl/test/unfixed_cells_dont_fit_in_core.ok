@@ -3,4 +3,16 @@
 [INFO ODB-0128] Design: unfixed_cells_dont_fit_in_core
 [INFO ODB-0130]     Created 3 pins.
 [INFO ODB-0131]     Created 151 components and 902 component-terminals.
-[ERROR MPL-0065] The movable cells do not fit in the macro placement area.
+[WARNING MPL-0065] The movable cells do not fit in the macro placement area.
+[WARNING MPL-0007] The virtual utilization is 1.20: the total area exceeds the floorplan area.
+
+                                 |  Area (um^2)
+-----------------------------------------------
+  Std cells at utilization 0.25  |      2713.20
+  Macros with halos              |     10028.02
+  Fixed macros                   |         0.00
+  Blockages                      |         0.00
+  Total                          |     12741.22
+  Floorplan                      |     10649.04
+
+[ERROR MPL-0048] The macro placement problem is infeasible.

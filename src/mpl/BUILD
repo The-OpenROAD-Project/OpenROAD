@@ -61,6 +61,8 @@ cc_library(
         "src/SimulatedAnnealingCore.cpp",
         "src/SimulatedAnnealingCore.h",
         "src/clusterEngine.cpp",
+        "src/feasibilityChecker.cpp",
+        "src/feasibilityChecker.h",
         "src/hardMacroFactory.cpp",
         "src/hardMacroFactory.h",
         "src/hier_rtlmp.cpp",
@@ -89,6 +91,7 @@ cc_library(
         "//src/utl",
         "@boost.polygon",
         "@boost.random",
+        "@fmt",
     ],
 )
 

@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <string>
 #include <utility>
 
 #include "mpl-util.h"
@@ -36,8 +35,6 @@ class HardMacroFactory
   bool isEquidistantDifferentDirections(
       std::pair<int, Boundary> candidate,
       std::pair<int, Boundary> second_candidate) const;
-  std::string generateMacroAndCoreDimensionsTable(const HardMacro* hard_macro,
-                                                  const odb::Rect& core) const;
 
   odb::dbBlock* block_;
   utl::Logger* logger_;
