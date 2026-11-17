@@ -72,7 +72,6 @@ struct PhysicalHierarchy
   bool has_io_clusters{true};
   bool has_only_macros{false};
   bool has_std_cells{true};
-  bool has_unfixed_macros{true};
   bool has_fixed_macros{false};
 
   int base_max_macro{0};
@@ -137,7 +136,6 @@ class ClusteringEngine
   void init();
   Metrics* computeModuleMetrics(odb::dbModule* module);
   std::vector<odb::dbInst*> getUnfixedMacros();
-  bool movableCellsFitInMacroPlacementArea() const;
   int64_t computeMacroWithHaloArea(
       const std::vector<odb::dbInst*>& unfixed_macros);
   std::vector<odb::dbInst*> getIOPads() const;

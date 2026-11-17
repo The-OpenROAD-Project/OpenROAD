@@ -48,7 +48,10 @@ COMPULSORY_TESTS = [
     "placement_blockages1",
     "rerun1",
     "snap_to_site_grid",
+    "target_utilization_out_of_range",
     "unfixed_cells_dont_fit_in_core",
+    "virtual_utilization_above_one",
+    "virtual_utilization_warning",
     "write_macro_placement",
 ]
 
@@ -265,9 +268,21 @@ filegroup(
                     "testcases/macros_without_pins1.def",
                     "testcases/orientation_improve1.lef",
                 ],
+                "target_utilization_out_of_range": [
+                    "testcases/io_constraints1.def",
+                    "testcases/macro_only.lef",
+                ],
                 "unfixed_cells_dont_fit_in_core": [
                     "testcases/macro_only.lef",
                     "testcases/unfixed_cells_dont_fit_in_core.def",
+                ],
+                "virtual_utilization_above_one": [
+                    "testcases/io_constraints4.def",
+                    "testcases/macro_only.lef",
+                ],
+                "virtual_utilization_warning": [
+                    "testcases/io_constraints4.def",
+                    "testcases/macro_only.lef",
                 ],
                 "write_macro_placement": [
                     "testcases/io_constraints1.def",
