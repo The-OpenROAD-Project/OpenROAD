@@ -13,6 +13,7 @@ package(features = ["layering_check"])
 npm_link_all_packages(name = "node_modules")
 
 TESTS = [
+    "display_option_keys",
     "save_image_cluster_view",
 ]
 

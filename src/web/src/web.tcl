@@ -149,7 +149,7 @@ proc save_image { args } {
         } else {
           set val "false"
         }
-        lappend pairs "\"$key\":$val"
+        lappend pairs "[web::json_string $key]:$val"
       }
       set vis_json "\{[join $pairs ,]\}"
     }
@@ -233,6 +233,22 @@ proc warn_qt_unsupported { cmd unsupported } {
     return
   }
   utl::warn WEB 76 "$cmd: the Qt GUI does not support [join $unsupported {, }]; ignored."
+}
+
+# Backslash, quote, and each control character, mapped to its JSON escape.
+variable json_escapes [list \\ \\\\ \" \\\"]
+for { set code 0 } { $code < 0x20 } { incr code } {
+  lappend json_escapes [format %c $code] [format {\u%04x} $code]
+}
+unset code
+
+# A JSON string literal for `text`, so a display option's key stays one key:
+# quotes, backslashes, and control characters escaped, lone surrogates U+FFFD.
+proc json_string { text } {
+  variable json_escapes
+  # A lone surrogate reaches C++ as 3 bytes that are not valid UTF-8.
+  set text [regsub -all {[\ud800-\udfff]} $text [format %c 0xfffd]]
+  return "\"[string map $json_escapes $text]\""
 }
 }
 
@@ -448,7 +464,7 @@ proc save_animated_gif { args } {
       } else {
         set oval "false"
       }
-      lappend pairs "\"$okey\":$oval"
+      lappend pairs "[web::json_string $okey]:$oval"
     }
     set vis_json "\{[join $pairs ,]\}"
   }
