@@ -2370,7 +2370,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
     std::unique_ptr<frConstraint> uCon
         = std::make_unique<frLef58EnclosureTableConstraint>(rule);
     auto rptr = static_cast<frLef58EnclosureTableConstraint*>(uCon.get());
-    if (rule->isCutClassValid() && rule->getCutClass() != nullptr) {
+    if (rule->getCutClass() != nullptr) {
       auto cutClassIdx
           = tmpLayer->getCutClassIdx(rule->getCutClass()->getName());
       if (cutClassIdx != -1) {
