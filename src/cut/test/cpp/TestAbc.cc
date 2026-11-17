@@ -85,10 +85,36 @@ class AbcTest : public tst::Fixture
     power_unit_ = units->powerUnit();
   }
 
+  void CreateClock(const std::string& clk_net_name,
+                   const std::string& sta_clk_name,
+                   double period_ns)
+  {
+    sta::dbNetwork* network = sta_->getDbNetwork();
+
+    sta::Cell* top_cell = network->cell(network->topInstance());
+    sta::Port* clk_port = network->findPort(top_cell, clk_net_name);
+    sta::Pin* clk_pin = network->findPin(network->topInstance(), clk_port);
+
+    sta::PinSet pinset(network);
+    pinset.insert(clk_pin);
+
+    double period = sta_->units()->timeUnit()->userToSta(period_ns);
+    sta::FloatSeq waveform;
+    waveform.push_back(0);
+    waveform.push_back(period / 2.0);
+
+    sta_->makeClock(sta_clk_name,
+                    pinset,
+                    /*add_to_pins=*/false,
+                    /*period=*/period,
+                    waveform,
+                    /*comment=*/"",
+                    /*mode=*/sta_->cmdMode());
+  }
+
   void LoadVerilog(const std::string& file_name, const std::string& top = "top")
   {
     // Assumes module name is "top" and clock name is "clk"
-    sta::dbNetwork* network = sta_->getDbNetwork();
     ord::dbVerilogNetwork verilog_network(sta_.get());
 
     sta::VerilogReader verilog_reader(&verilog_network);
@@ -102,26 +128,7 @@ class AbcTest : public tst::Fixture
 
     sta_->postReadDb(db_.get());
 
-    sta::Cell* top_cell = network->cell(network->topInstance());
-    sta::Port* clk_port = network->findPort(top_cell, "clk");
-    sta::Pin* clk_pin = network->findPin(network->topInstance(), clk_port);
-
-    sta::PinSet pinset(network);
-    pinset.insert(clk_pin);
-
-    // 0.5ns
-    double period = sta_->units()->timeUnit()->userToSta(0.5);
-    sta::FloatSeq waveform;
-    waveform.push_back(0);
-    waveform.push_back(period / 2.0);
-
-    sta_->makeClock("core_clock",
-                    pinset,
-                    /*add_to_pins=*/false,
-                    /*period=*/period,
-                    waveform,
-                    /*comment=*/"",
-                    /*mode=*/sta_->cmdMode());
+    CreateClock("clk", "core_clock", 0.5);
 
     sta_->ensureGraph();
     sta_->ensureLevelized();
@@ -377,6 +384,51 @@ TEST_F(AbcTest, ExtractsAndGateCorrectly)
 
   EXPECT_EQ(cut.cut_instances().size(), 1);
   EXPECT_EQ(std::string(network->name(*cut.cut_instances().begin())), "_403_");
+}
+
+TEST_F(AbcTest, ExtractsCutWithCombinationalEndpointCorrectly)
+{
+  AbcLibraryFactory factory(&logger_);
+  factory.AddDbSta(sta_.get());
+  AbcLibrary abc_library = factory.Build();
+  LoadVerilog(kPrefix + "combinational_endpoint.v");
+  CreateClock("clk2", "clock2", 0.5);
+  sta_->searchPreamble();
+  sta_->ensureClkNetwork(sta_->cmdMode());
+
+  sta::dbNetwork* network = sta_->getDbNetwork();
+
+  LogicExtractorFactory extractor(sta_.get(), &logger_);
+  for (auto vtx : sta_->endpoints()) {
+    extractor.AppendEndpoint(vtx);
+  }
+  LogicCut cut = extractor.BuildLogicCut(abc_library);
+
+  std::set<std::string> instances;
+  for (const sta::Instance* inst : cut.cut_instances()) {
+    instances.insert(network->name(inst));
+  }
+  EXPECT_EQ(instances,
+            (std::set<std::string>{"clock_gate",
+                                   "clock_gate2",
+                                   "clock_gate3",
+                                   "clock_gate4",
+                                   "gated_clk2_buf",
+                                   "gated_clk3_buf"}));
+  std::set<std::string> inputs;
+  for (sta::Net* net : cut.primary_inputs()) {
+    inputs.insert(network->name(net));
+  }
+  EXPECT_EQ(inputs,
+            (std::set<std::string>{
+                "clk", "clk2", "enable", "enable2", "enable3", "enable4"}));
+  std::set<std::string> outputs;
+  for (sta::Net* net : cut.primary_outputs()) {
+    outputs.insert(network->name(net));
+  }
+  EXPECT_EQ(
+      outputs,
+      (std::set<std::string>{"gated_clk", "gated_clk4", "gclk2", "gclk3"}));
 }
 
 TEST_F(AbcTest, ExtractsEmptyCutSetCorrectly)
