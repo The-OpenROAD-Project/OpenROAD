@@ -27,8 +27,8 @@ class Fixture : public DbFixture
 
   sta::dbSta* getSta() const { return sta_.get(); }
 
-  // If scene == nullptr the command scene is used. A scene named "default"
-  // always gets the library for min and max; min_max applies to other scenes.
+  // If scene == nullptr the command scene is used. A command scene named
+  // "default" gets the library for min and max; min_max applies otherwise.
   sta::LibertyLibrary* readLiberty(const std::string& filename,
                                    sta::Scene* scene = nullptr,
                                    const sta::MinMaxAll* min_max

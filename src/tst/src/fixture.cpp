@@ -40,12 +40,14 @@ sta::LibertyLibrary* Fixture::readLiberty(const std::string& filename,
 {
   const auto path = getFilePath(filename);
   sta::LibertyLibrary* lib = sta_->readLiberty(path, infer_latches);
-  // Sta::readLiberty attaches the library (min and max) only to a command
-  // scene named "default"; attach it to any other scene here.
+  // Sta::readLiberty attaches the library (min and max) only when the
+  // command scene is named "default"; attach it to any other scene here.
   if (scene == nullptr) {
     scene = sta_->cmdScene();
   }
-  if (lib && scene->name() != "default") {
+  const bool attached_by_sta
+      = scene == sta_->cmdScene() && scene->name() == "default";
+  if (lib && !attached_by_sta) {
     sta::LibertyLibrary::makeSceneMap(
         lib, scene, min_max, sta_->network(), sta_->report());
     for (const sta::MinMax* mm : min_max->range()) {
