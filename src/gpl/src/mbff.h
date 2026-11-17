@@ -78,7 +78,11 @@ class MBFF
        std::unique_ptr<AbstractGraphics> graphics);
 
   ~MBFF();
-  void Run(int mx_sz, float alpha, float beta, float clock_power_weight);
+  void Run(int mx_sz,
+           float alpha,
+           float beta,
+           float clock_power_weight,
+           float fill_weight);
   bool IsValidTray(odb::dbInst* tray);
 
  private:
@@ -270,6 +274,9 @@ class MBFF
   // Per-sink clock-tree power expressed as a multiple of single_bit_power_.
   // 0 reproduces the legacy cost model (clock-tree savings not credited).
   float clock_power_weight_;
+  // Weight on the empty-slot (wasted-bit) penalty in the ILP objective; 0
+  // disables it and reproduces the legacy cost model. Set in Run().
+  float fill_weight_;
   odb::dbMaster* single_bit_master_;
 
   // launch-capture FF-pair vars

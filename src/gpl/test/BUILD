@@ -21,6 +21,8 @@ TESTS = [
     "mbff_orig_name",
     "mbff_clock_power_off",
     "mbff_clock_power_on",
+    "mbff_fill_weight_off",
+    "mbff_fill_weight_on",
     "simple01-rd",
     "simple01-td",
     "simple01-td-net-percentage",

@@ -328,7 +328,8 @@ void Replace::runMBFF(const int max_sz,
                       const float beta,
                       const int threads,
                       const int num_paths,
-                      const float clock_power_weight)
+                      const float clock_power_weight,
+                      const float fill_weight)
 {
   MBFF pntset(db_,
               sta_,
@@ -339,7 +340,7 @@ void Replace::runMBFF(const int max_sz,
               num_paths,
               gui_debug_,
               graphics_->MakeNew(log_));
-  pntset.Run(max_sz, alpha, beta, clock_power_weight);
+  pntset.Run(max_sz, alpha, beta, clock_power_weight, fill_weight);
 }
 
 void Replace::initIoPinPlace()

@@ -235,7 +235,8 @@ class Replace
                float beta,
                int threads,
                int num_paths,
-               float clock_power_weight);
+               float clock_power_weight,
+               float fill_weight = 0.0f);
 
   void addPlacementCluster(const Cluster& cluster);
 

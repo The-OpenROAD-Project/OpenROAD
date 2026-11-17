@@ -867,6 +867,19 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
     }
   }
 
+  // Empty-slot (wasted-bit) penalty: an activated multi-bit tray pays
+  // per_slot for each of its capacity slots, refunded per filled slot, so
+  // fully packed trays pay nothing extra. Zero when fill_weight_ == 0.
+  std::vector<double> per_slot(num_trays, 0.0);
+  if (fill_weight_ > 0) {
+    for (int i = 0; i < num_trays; i++) {
+      const size_t capacity = trays[i].slots.size();
+      if (capacity > 1) {
+        per_slot[i] = fill_weight_ * alpha * tray_cost[i] / capacity;
+      }
+    }
+  }
+
   /*
     DoubleLinearExpr supports float/double coefficients
     can only be used for the objective function
@@ -874,11 +887,14 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
 
   sat::DoubleLinearExpr obj;
 
-  // add the sum of all distances
+  // add the sum of all distances, and the per-filled-slot refund
   for (int i = 0; i < num_flops; i++) {
     for (size_t j = 0; j < cand_tray[i].size(); j++) {
       obj.AddTerm(disp_x[i][j], (1 / multiplier_));
       obj.AddTerm(disp_y[i][j], (1 / multiplier_));
+      if (per_slot[cand_tray[i][j]] > 0) {
+        obj.AddTerm(mapped[i][j], -per_slot[cand_tray[i][j]]);
+      }
     }
   }
 
@@ -889,7 +905,9 @@ double MBFF::RunILP(const std::vector<Flop>& flops,
 
   // add the tray usage constraints
   for (int i = 0; i < num_trays; i++) {
-    obj.AddTerm(tray_used[i], alpha * tray_cost[i]);
+    obj.AddTerm(tray_used[i],
+                alpha * tray_cost[i]
+                    + per_slot[i] * static_cast<double>(trays[i].slots.size()));
   }
 
   cp_model.Minimize(obj);
@@ -2150,7 +2168,8 @@ void MBFF::SetTrayNames()
 void MBFF::Run(const int mx_sz,
                const float alpha,
                const float beta,
-               const float clock_power_weight)
+               const float clock_power_weight,
+               const float fill_weight)
 {
   // Validate here (the common entry for Tcl, Python and direct C++ callers) so
   // no caller can feed a negative weight, which would make the SetRatios
@@ -2159,7 +2178,13 @@ void MBFF::Run(const int mx_sz,
   if (clock_power_weight < 0) {
     log_->error(GPL, 115, "-clock_power_weight must be non-negative.");
   }
+  // A negative fill weight would reward empty slots; NaN would silently
+  // disable the penalty and inf would make the CP-SAT objective invalid.
+  if (!std::isfinite(fill_weight) || fill_weight < 0) {
+    log_->error(GPL, 124, "-fill_weight must be a finite non-negative value.");
+  }
   clock_power_weight_ = clock_power_weight;
+  fill_weight_ = fill_weight;
   std::srand(1);
   omp_set_num_threads(num_threads_);
 
@@ -2566,6 +2591,7 @@ MBFF::MBFF(odb::dbDatabase* db,
       single_bit_power_(0.0),
       clock_period_(0.0),
       clock_power_weight_(0.0),
+      fill_weight_(0.0),
       single_bit_master_(nullptr),
       test_idx_(-1)
 {
