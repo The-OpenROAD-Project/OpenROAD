@@ -1,5 +1,6 @@
-# Each -display_option key reaches the web renderer as one JSON key, whatever
-# characters it holds, in save_image -web and in save_animated_gif.
+# In save_image -web and in save_animated_gif, each -display_option key reaches
+# the web renderer as itself, whatever characters it holds, and each value is
+# read as a Tcl boolean.
 source "helpers.tcl"
 
 proc read_file_bytes { path } {
@@ -52,7 +53,7 @@ foreach render { image gif } {
     expr { $injected eq $plain }
   } 1
 
-  # A key that broke the JSON would drop every option given with it.
+  # An odd key names no option, and the others still apply.
   foreach { label key } $odd_keys {
     set odd [$render $label -display_option [list $key true] \
       -display_option {stdcells false}]
@@ -67,12 +68,16 @@ foreach render { image gif } {
   check "$render: an option WEB-0042 ignored is not applied in part" {
     expr { $wrong_type eq $plain }
   } 1
-}
 
-# json_string writes exactly this literal: a wrong escape can still be valid
-# JSON, and then a site_<name> key no longer names its site.
-check "json_string writes the exact literal" {
-  web::json_string "x\"y\\z\nw\x00\ud800$wide"
-} [format {"x\"y\\z\u000aw\u0000%c%s"} 0xfffd $wide]
+  # Values read as Qt reads them; the later of two settings wins.
+  set off [$render off -display_option {stdcells off}]
+  check "$render: off is false" { expr { $off eq $no_cells } } 1
+  set yes [$render yes -display_option {stdcells off} \
+    -display_option {stdcells yes}]
+  check "$render: yes is true" { expr { $yes eq $plain } } 1
+  check_error "$render: a value that is no boolean" {
+    $render typo -display_option {stdcells typo}
+  } WEB-0139
+}
 
 exit_summary

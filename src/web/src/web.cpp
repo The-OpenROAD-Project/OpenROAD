@@ -2255,18 +2255,25 @@ std::vector<unsigned char> resampleRgba(const std::vector<unsigned char>& src,
   return dst;
 }
 
-// Parse the visibility JSON produced by the Tcl layer (shared by saveImage
-// and gifAddFrame).
-TileVisibility parseVis(const std::string& vis_json, utl::Logger* logger)
+// The visibility the -display_option settings of saveImage and gifAddFrame
+// ask for.
+TileVisibility visibilityFrom(
+    const std::map<std::string, bool>& display_settings,
+    utl::Logger* logger)
 {
+  boost::json::object options;
+  for (const auto& [key, value] : display_settings) {
+    options[key] = value;
+  }
   TileVisibility vis;
-  if (!vis_json.empty()) {
-    try {
-      vis.parseFromJson(boost::json::parse(vis_json).as_object());
-    } catch (const std::exception& e) {
-      logger->warn(
-          utl::WEB, 42, "Ignoring invalid visibility JSON: {}", e.what());
-    }
+  try {
+    vis.parseFromJson(options);
+  } catch (const std::exception& e) {
+    logger->warn(
+        utl::WEB,
+        42,
+        "Ignoring the display options, one is not an on/off setting: {}",
+        e.what());
   }
   return vis;
 }
@@ -2310,13 +2317,13 @@ void WebServer::saveImage(const std::string& filename,
                           const int y1,
                           const int width_px,
                           const double dbu_per_pixel,
-                          const std::string& vis_json)
+                          const std::map<std::string, bool>& display_settings)
 {
   // Create generator on demand (server may not be running).
   ensureGenerator().eagerInit();
 
   const odb::Rect region(x0, y0, x1, y1);
-  const TileVisibility vis = parseVis(vis_json, logger_);
+  const TileVisibility vis = visibilityFrom(display_settings, logger_);
   generator_->saveImage(filename,
                         region,
                         width_px,
@@ -2723,7 +2730,7 @@ void WebServer::gifAddFrame(std::optional<int> key,
                             const int width_px,
                             const double dbu_per_pixel,
                             std::optional<int> delay,
-                            const std::string& vis_json)
+                            const std::map<std::string, bool>& display_settings)
 {
   int idx = 0;
   WebGif* gif = resolveGif(gifs_, key, &idx);
@@ -2740,7 +2747,7 @@ void WebServer::gifAddFrame(std::optional<int> key,
     generator_->eagerInit();
   }
 
-  const TileVisibility vis = parseVis(vis_json, logger_);
+  const TileVisibility vis = visibilityFrom(display_settings, logger_);
   int w = 0;
   int h = 0;
   std::vector<unsigned char> rgba
