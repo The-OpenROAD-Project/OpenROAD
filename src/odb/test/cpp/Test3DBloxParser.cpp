@@ -407,6 +407,8 @@ TEST_F(SimpleDbFixture, test_bterm_get_chip_bump)
   dbLib* lib = db_->findLib("lib1");
   dbMaster* bump_master = dbMaster::create(lib, "BUMP_CELL");
   bump_master->setType(dbMasterType::COVER_BUMP);
+  // Bump cells are required to expose exactly one pin.
+  dbMTerm::create(bump_master, "pin", dbIoType::INOUT, dbSigType::SIGNAL);
   bump_master->setFrozen();
   dbInst* bump_inst = dbInst::create(block, bump_master, "bump1");
   ASSERT_NE(bump_inst, nullptr);

@@ -23,6 +23,7 @@ class dbChipRegion;
 class dbBlock;
 class dbBTerm;
 class dbInst;
+class dbMaster;
 class dbTech;
 class dbLib;
 
@@ -58,6 +59,7 @@ class ThreeDBlox
   void createBump(const BumpMapEntry& entry, dbChipRegion* chip_region);
   std::pair<dbInst*, dbBTerm*> createBump(const BumpMapEntry& entry,
                                           dbBlock* block);
+  void errorIfMultiPinBumpMaster(dbMaster* master);
   dbChipRegionInst* resolvePath(const std::string& path,
                                 std::vector<dbChipInst*>& path_insts);
   void readHeaderIncludes(const std::vector<std::string>& includes);
