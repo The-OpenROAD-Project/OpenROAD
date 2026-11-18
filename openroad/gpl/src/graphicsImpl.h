@@ -1,0 +1,210 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
+
+#pragma once
+
+#include <cstddef>
+#include <limits>
+#include <memory>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
+
+#include "AbstractGraphics.h"
+#include "odb/db.h"
+#include "odb/geom.h"
+#include "routeBase.h"
+#include "web/core.h"
+#include "web/heatMap.h"
+
+namespace utl {
+class Logger;
+}
+
+namespace gpl {
+
+class InitialPlace;
+class NesterovBaseCommon;
+class NesterovBase;
+class NesterovPlace;
+class PlacerBaseCommon;
+class PlacerBase;
+class GCell;
+class IoPinBase;
+class GCellHandle;
+
+// This class draws debugging graphics on the layout
+class GraphicsImpl : public gpl::AbstractGraphics,
+                     public web::Renderer,
+                     public web::HeatMapDataSource
+{
+ public:
+  using LineSeg = std::pair<odb::Point, odb::Point>;
+  using LineSegs = std::vector<LineSeg>;
+
+  GraphicsImpl(utl::Logger* logger);
+  ~GraphicsImpl() override;
+
+  std::unique_ptr<AbstractGraphics> MakeNew(utl::Logger* logger) const override;
+
+  void debugForMbff() override;
+  void debugForInitialPlace(
+      std::shared_ptr<PlacerBaseCommon> pbc,
+      std::vector<std::shared_ptr<PlacerBase>>& pbVec) override;
+  void debugForNesterovPlace(NesterovPlace* np,
+                             std::shared_ptr<PlacerBaseCommon> pbc,
+                             std::shared_ptr<NesterovBaseCommon> nbc,
+                             std::shared_ptr<RouteBase> rb,
+                             std::vector<std::shared_ptr<PlacerBase>>& pbVec,
+                             std::vector<std::shared_ptr<NesterovBase>>& nbVec,
+                             bool draw_bins,
+                             odb::dbInst* inst,
+                             odb::dbBTerm* pin) override;
+
+  void addIter(int iter, double overflow) override;
+  void addTimingDrivenIter(int iter) override;
+  void addRoutabilitySnapshot(int iter) override;
+  void addRoutabilityIter(int iter, bool revert) override;
+
+  void mbffMapping(const LineSegs& segs) override;
+  void mbffFlopClusters(const std::vector<odb::dbInst*>& ffs) override;
+
+  void status(std::string_view message) override;
+
+  bool enabled() override;
+
+  void setDebugOn(bool set_on) override { debug_on_ = set_on; }
+
+  void setDisplayControl(std::string_view name, bool value) override;
+  const char* getDisplayControlGroupName() override { return "GPL"; }
+
+  int gifStart(std::string_view path) override;
+  void deleteLabel(std::string_view label_name) override;
+  void gifEnd(int key) override;
+  void instDestroyed(odb::dbInst* db_inst) override;
+
+ protected:
+  void cellPlotImpl(bool pause) override;
+
+  void addFrameLabelImpl(const odb::Rect& bbox,
+                         std::string_view label,
+                         std::string_view label_name,
+                         int image_width_px) override;
+  void saveLabeledImageImpl(std::string_view path,
+                            std::string_view label,
+                            std::string_view heatmap_control,
+                            int image_width_px) override;
+  void gifAddFrameImpl(int key,
+                       const odb::Rect& region,
+                       int width_px,
+                       double dbu_per_pixel,
+                       std::optional<int> delay) override;
+
+ private:
+  // From Renderer API
+  void drawObjects(web::Painter& painter) override;
+  web::SelectionSet select(odb::dbTechLayer* layer,
+                           const odb::Rect& region) override;
+
+  // From HeatMapDataSource
+  bool canAdjustGrid() const override { return false; }
+  double getGridXSize() const override;
+  double getGridYSize() const override;
+  odb::Rect getBounds() const override;
+  bool populateMap() override;
+  void combineMapData(bool base_has_value,
+                      double& base,
+                      double new_data,
+                      double data_area,
+                      double intersection_area,
+                      double rect_area) override;
+  void populateXYGrid() override;
+
+  enum HeatMapType
+  {
+    Density,
+    Overflow,
+    OverflowMinMax
+  };
+
+  enum Mode
+  {
+    Mbff,
+    Initial,
+    Nesterov
+  };
+
+  // These are used for coloring each instance based on its group
+  std::vector<web::Painter::Color> instances_colors_ = {
+      web::Painter::kDarkGreen,
+      web::Painter::kDarkBlue,
+      web::Painter::kBrown,
+      web::Painter::kDarkYellow,
+  };
+
+  // These are used for bin field, fillers, and dummies (lighter) for each
+  // region.
+  std::vector<web::Painter::Color> region_colors_ = {
+      web::Painter::kDarkMagenta,
+      web::Painter::kYellow,
+      web::Painter::kBlue,
+      web::Painter::kCyan,
+
+  };
+
+  void drawField(web::Painter& painter);
+  void drawCells(const std::vector<GCell*>& cells, web::Painter& painter);
+  void drawCells(const std::vector<GCellHandle>& cells,
+                 web::Painter& painter,
+                 size_t nb_index);
+  void drawSingleGCell(const GCell* gCell,
+                       web::Painter& painter,
+                       size_t nb_index = 0);
+  void drawIoPins(web::Painter& painter);
+  void drawSelectedIoPin(web::Painter& painter);
+  const IoPinBase* ioPins() const;
+  std::optional<size_t> findSelectedPin() const;
+
+  std::shared_ptr<PlacerBaseCommon> pbc_;
+  std::shared_ptr<NesterovBaseCommon> nbc_;
+  std::shared_ptr<RouteBase> rb_;
+  std::vector<std::shared_ptr<PlacerBase>> pbVec_;
+  std::vector<std::shared_ptr<NesterovBase>> nbVec_;
+  NesterovPlace* np_ = nullptr;
+  static constexpr size_t kInvalidIndex = std::numeric_limits<size_t>::max();
+  static constexpr const char* kDrawInstances = "Draw GPL Cells";
+  static constexpr const char* kDrawTimingNets = "Draw Timing Nets";
+  static constexpr const char* kDrawIoPins = "Draw IO Pins";
+  size_t selected_ = kInvalidIndex;
+  size_t nb_selected_index_ = kInvalidIndex;
+  odb::dbBTerm* selected_pin_ = nullptr;
+  // Selected instance by identity; selected_ indexes GCell storage, which
+  // timing-driven repairs reorder.
+  odb::dbInst* selected_inst_ = nullptr;
+  bool draw_bins_ = false;
+  utl::Logger* logger_ = nullptr;
+  HeatMapType heatmap_type_ = Density;
+  LineSegs mbff_edges_;
+  std::vector<odb::dbInst*> mbff_cluster_;
+  Mode mode_;
+  static web::Chart* main_chart_;
+  static web::Chart* density_chart_;
+  static web::Chart* stepLength_chart_;
+  static web::Chart* routing_chart_;
+  bool debug_on_{false};
+
+  void registerWithGui();
+  void initCharts();
+  void initDebugHeatmap();
+  void drawNesterov(web::Painter& painter);
+  void drawTimingNets(web::Painter& painter);
+  void drawInitial(web::Painter& painter);
+  void drawMBFF(web::Painter& painter);
+  void drawBounds(web::Painter& painter);
+  void resyncSelection();
+  void reportSelected();
+};
+
+}  // namespace gpl

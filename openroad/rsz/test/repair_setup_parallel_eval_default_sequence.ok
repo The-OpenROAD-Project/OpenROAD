@@ -1,0 +1,55 @@
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_L_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_L_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_SL_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_SL_1x_220121a.lef, created 212 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 470 components and 2159 component-terminals.
+[INFO ODB-0133]     Created 416 nets and 1216 connections.
+[WARNING RSZ-2024] Experimental repair setup policy 'SetupParallelEvalPolicy' selected. Do not use this for production.
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -66.849 |    -1781.2 |     46 | resp_msg[13]
+       1* |       0 |      29 |        0 |      0 |     0 |    +0.0% |  -57.301 |    -1421.2 |     43 | resp_msg[13]
+       2* |       0 |      49 |        0 |      0 |     0 |    +0.0% |  -44.737 |     -872.5 |     43 | resp_msg[15]
+       3* |       0 |      65 |        4 |      0 |     0 |    +0.8% |  -34.747 |     -574.9 |     42 | resp_msg[13]
+       4* |       0 |      79 |        6 |      0 |     0 |    +1.3% |  -34.225 |     -449.0 |     36 | resp_msg[13]
+       5* |       0 |      91 |       14 |      0 |     0 |    +3.2% |  -24.344 |     -147.3 |     22 | resp_msg[13]
+       6* |       0 |     103 |       20 |      0 |     0 |    +4.7% |  -22.242 |      -89.2 |     20 | resp_msg[13]
+       7* |       0 |     118 |       21 |      0 |     0 |    +5.1% |  -18.095 |     -132.4 |     18 | resp_msg[13]
+       8* |       0 |     127 |       21 |      0 |     0 |    +5.2% |  -16.897 |      -59.3 |     13 | resp_msg[13]
+       9* |       0 |     131 |       22 |      0 |     0 |    +5.5% |  -16.189 |      -49.9 |     12 | resp_msg[13]
+      10* |       0 |     139 |       22 |      0 |     0 |    +5.5% |  -15.277 |      -39.6 |     11 | resp_msg[13]
+      11* |       0 |     145 |       22 |      0 |     0 |    +5.6% |  -14.387 |      -27.9 |      9 | resp_msg[13]
+      12* |       0 |     149 |       23 |      0 |     0 |    +5.8% |  -14.234 |      -20.4 |      7 | resp_msg[13]
+      13* |       0 |     154 |       24 |      0 |     0 |    +6.0% |  -14.073 |      -17.0 |      3 | resp_msg[13]
+      14* |       0 |     155 |       25 |      0 |     0 |    +6.2% |  -13.074 |      -15.7 |      3 | resp_msg[13]
+      15* |       0 |     160 |       26 |      0 |     0 |    +6.5% |  -12.611 |      -13.0 |      3 | resp_msg[13]
+      16* |       0 |     161 |       27 |      0 |     0 |    +6.7% |  -11.118 |      -11.1 |      1 | resp_msg[13]
+      17* |       0 |     162 |       27 |      0 |     0 |    +6.7% |  -11.015 |      -11.0 |      1 | resp_msg[13]
+      18* |       0 |     163 |       27 |      0 |     0 |    +6.7% |  -10.701 |      -10.7 |      1 | resp_msg[13]
+      19* |       0 |     165 |       27 |      0 |     0 |    +6.7% |  -10.637 |      -10.6 |      1 | resp_msg[13]
+      20* |       0 |     165 |       28 |      0 |     0 |    +6.9% |  -10.113 |      -10.1 |      1 | resp_msg[13]
+      21* |       0 |     165 |       28 |      0 |     0 |    +6.9% |  -10.113 |      -10.1 |      1 | resp_msg[13]
+      22* |       0 |     165 |       28 |      0 |     1 |    +6.9% |   -9.301 |       -9.3 |      1 | resp_msg[13]
+      23* |       0 |     165 |       30 |      0 |     1 |    +7.2% |   -6.917 |      -11.0 |      2 | resp_msg[13]
+      24* |       0 |     168 |       30 |      0 |     1 |    +7.2% |   -6.780 |       -9.4 |      2 | resp_msg[13]
+      25* |       0 |     170 |       30 |      0 |     3 |    +7.2% |   -6.047 |       -7.9 |      2 | resp_msg[13]
+      26* |       0 |     170 |       32 |      0 |     3 |    +7.6% |   -5.376 |       -6.5 |      2 | resp_msg[13]
+      27* |       0 |     171 |       33 |      0 |     3 |    +7.8% |   -4.658 |       -5.1 |      2 | resp_msg[13]
+      28* |       0 |     173 |       33 |      0 |     3 |    +7.8% |   -4.056 |       -4.1 |      2 | resp_msg[13]
+      29* |       0 |     173 |       33 |      0 |     4 |    +7.8% |   -3.316 |       -3.6 |      2 | resp_msg[13]
+      30* |       0 |     173 |       33 |      0 |     4 |    +7.8% |   -3.316 |       -3.6 |      2 | resp_msg[13]
+      31* |       0 |     174 |       33 |      0 |     4 |    +7.8% |   -3.256 |       -3.5 |      2 | resp_msg[13]
+      32* |       0 |     174 |       33 |      0 |     5 |    +7.8% |   -2.847 |       -2.8 |      1 | resp_msg[13]
+      33* |       0 |     174 |       33 |      0 |     5 |    +7.8% |   -2.847 |       -2.8 |      1 | resp_msg[13]
+      34* |       0 |     174 |       33 |      0 |     5 |    +7.8% |   -2.847 |       -2.8 |      1 | resp_msg[13]
+    final |       0 |     174 |       33 |      0 |     5 |    +7.8% |   -2.847 |       -2.8 |      1 | resp_msg[13]
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0045] Inserted 33 buffers, 1 to split loads.
+[INFO RSZ-0051] Resized 174 instances: 28 up, 0 up match, 8 down, 138 VT
+[INFO RSZ-0043] Swapped pins on 5 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.

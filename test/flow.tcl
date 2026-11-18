@@ -277,7 +277,7 @@ report_worst_slack -max -digits 3
 report_tns -digits 3
 report_check_types -max_slew -max_capacitance -max_fanout -violators -digits 3
 report_clock_skew -digits 3
-report_power -corner $power_corner
+report_power -scene $power_corner
 
 report_floating_nets -verbose
 report_design_area

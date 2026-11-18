@@ -1,0 +1,330 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
+
+#include "techlayer.h"
+
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <optional>
+#include <string>
+#include <vector>
+
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "utl/Logger.h"
+
+namespace pdn {
+
+TechLayer::TechLayer(odb::dbTechLayer* layer) : layer_(layer), grid_({})
+{
+}
+
+int TechLayer::getSpacing(int width, int length) const
+{
+  // get the spacing the DB would use
+  const int db_spacing = layer_->getSpacing(width, length);
+
+  // Check the two widths table for spacing assuming same width metal
+  const int two_widths_spacing = layer_->findTwSpacing(width, width, length);
+
+  return std::max(db_spacing, two_widths_spacing);
+}
+
+double TechLayer::dbuToMicron(int value) const
+{
+  return value / static_cast<double>(getLefUnits());
+}
+
+void TechLayer::populateGrid(odb::dbBlock* block, odb::dbTechLayerDir dir)
+{
+  grid_.clear();
+
+  if (dir == odb::dbTechLayerDir::NONE) {
+    dir = layer_->getDirection();
+  }
+
+  auto* tracks = block->findTrackGrid(layer_);
+  if (tracks == nullptr) {
+    return;
+  }
+
+  if (dir == odb::dbTechLayerDir::HORIZONTAL) {
+    grid_ = tracks->getGridY();
+  } else if (dir == odb::dbTechLayerDir::VERTICAL) {
+    grid_ = tracks->getGridX();
+  } else {
+    grid_ = tracks->getGridY();
+  }
+}
+
+int TechLayer::snapToGrid(int pos, int greater_than, int less_than) const
+{
+  if (grid_.empty()) {
+    return pos;
+  }
+
+  // the grid is sorted, so the tracks inside [greater_than, less_than] form a
+  // contiguous range and the track closest to pos is one of the two that
+  // straddle pos in that range.
+  const auto range_begin
+      = std::lower_bound(grid_.begin(), grid_.end(), greater_than);
+  const auto range_end = std::upper_bound(range_begin, grid_.end(), less_than);
+  if (range_begin == range_end) {
+    // no track is within the limits
+    return pos;
+  }
+
+  const auto next = std::lower_bound(range_begin, range_end, pos);
+  if (next == range_end) {
+    // pos is above every track in range
+    return *std::prev(range_end);
+  }
+  if (next == range_begin) {
+    // pos is at or below every track in range
+    return *range_begin;
+  }
+
+  // look for the smallest delta, favoring the lower track when tied
+  const auto prev = std::prev(next);
+  const int64_t prev_delta = static_cast<int64_t>(pos) - *prev;
+  const int64_t next_delta = static_cast<int64_t>(*next) - pos;
+  return prev_delta <= next_delta ? *prev : *next;
+}
+
+int TechLayer::snapToGridInterval(odb::dbBlock* block, int dist) const
+{
+  odb::dbTechLayerDir dir = layer_->getDirection();
+
+  int origin = 0;
+  int num = 0;
+  int step = 0;
+  for (auto* grid : block->getTrackGrids()) {
+    if (grid->getTechLayer() != layer_) {
+      continue;
+    }
+
+    if (dir == odb::dbTechLayerDir::VERTICAL) {
+      if (grid->getNumGridPatternsX() < 1) {
+        continue;
+      }
+
+      grid->getGridPatternX(0, origin, num, step);
+    } else {
+      if (grid->getNumGridPatternsY() < 1) {
+        continue;
+      }
+
+      grid->getGridPatternY(0, origin, num, step);
+    }
+  }
+
+  if (num == 0 || step == 0) {
+    return dist;
+  }
+
+  const int count = std::max(1, dist / step);
+  return count * step;
+}
+
+int TechLayer::snapToManufacturingGrid(odb::dbTech* tech,
+                                       int pos,
+                                       bool round_up,
+                                       int grid_multiplier)
+{
+  if (!tech->hasManufacturingGrid()) {
+    return pos;
+  }
+
+  const int grid = grid_multiplier * tech->getManufacturingGrid();
+
+  if (pos % grid != 0) {
+    int round_pos = pos / grid;
+    if (round_up) {
+      round_pos += 1;
+    }
+    pos = round_pos * grid;
+  }
+
+  return pos;
+}
+
+bool TechLayer::checkIfManufacturingGrid(odb::dbTech* tech, int value)
+{
+  if (!tech->hasManufacturingGrid()) {
+    return true;
+  }
+
+  const int grid = tech->getManufacturingGrid();
+
+  return value % grid == 0;
+}
+
+bool TechLayer::checkIfManufacturingGrid(int value,
+                                         utl::Logger* logger,
+                                         const std::string& type) const
+{
+  auto* tech = layer_->getTech();
+  if (!checkIfManufacturingGrid(tech, value)) {
+    logger->error(
+        utl::PDN,
+        191,
+        "{} of {:.4f} um does not fit the manufacturing grid of {:.4f} um.",
+        type,
+        dbuToMicron(value),
+        dbuToMicron(tech->getManufacturingGrid()));
+    return false;
+  }
+
+  return true;
+}
+
+int TechLayer::snapToManufacturingGrid(int pos,
+                                       bool round_up,
+                                       int grid_multiplier) const
+{
+  return snapToManufacturingGrid(
+      layer_->getTech(), pos, round_up, grid_multiplier);
+}
+
+std::vector<TechLayer::MinCutRule> TechLayer::getMinCutRules() const
+{
+  std::vector<MinCutRule> rules;
+
+  // LEF names the side a via connects to this layer from, while MinCutRule
+  // names the side of the via this layer is on.  A via from below has this
+  // layer above it, so FROMBELOW (isBelowOnly in LEF 5.4) sets above and
+  // FROMABOVE (isAboveOnly) sets below.
+
+  // get all the LEF55 rules
+  for (auto* min_cut_rule : layer_->getMinCutRules()) {
+    uint32_t numcuts;
+    uint32_t rule_width;
+    min_cut_rule->getMinimumCuts(numcuts, rule_width);
+
+    rules.push_back(MinCutRule{.cut_class = nullptr,
+                               .above = min_cut_rule->isBelowOnly(),
+                               .below = min_cut_rule->isAboveOnly(),
+                               .width = static_cast<int>(rule_width),
+                               .cuts = static_cast<int>(numcuts)});
+  }
+
+  for (auto* rule : layer_->getTechLayerMinCutRules()) {
+    if (rule->getCutClassCutsMap().empty()) {
+      rules.push_back(MinCutRule{.cut_class = nullptr,
+                                 .above = rule->isFromBelow(),
+                                 .below = rule->isFromAbove(),
+                                 .width = rule->getWidth(),
+                                 .cuts = rule->getNumCuts()});
+    }
+    for (const auto& [cut_class_name, cuts] : rule->getCutClassCutsMap()) {
+      // a class name can be defined on the cut layers both below and above,
+      // but a FROMBELOW or FROMABOVE rule only covers the one on its side
+      odb::dbTechLayer* below
+          = rule->isFromAbove() ? nullptr : layer_->getLowerLayer();
+      odb::dbTechLayer* above
+          = rule->isFromBelow() ? nullptr : layer_->getUpperLayer();
+      for (auto* cut_layer : {below, above}) {
+        if (cut_layer == nullptr) {
+          continue;
+        }
+        auto* cut_class
+            = cut_layer->findTechLayerCutClassRule(cut_class_name.c_str());
+        if (cut_class == nullptr) {
+          continue;
+        }
+
+        rules.push_back(MinCutRule{.cut_class = cut_class,
+                                   .above = rule->isFromBelow(),
+                                   .below = rule->isFromAbove(),
+                                   .width = rule->getWidth(),
+                                   .cuts = cuts});
+      }
+    }
+  }
+
+  return rules;
+}
+
+int TechLayer::getMinIncrementStep() const
+{
+  if (layer_->getTech()->hasManufacturingGrid()) {
+    const int grid = layer_->getTech()->getManufacturingGrid();
+    return grid;
+  }
+  return 1;
+}
+
+odb::Rect TechLayer::adjustToMinArea(
+    const odb::Rect& rect,
+    const std::optional<odb::dbTechLayerDir>& dir) const
+{
+  const bool has_rules = !layer_->getTechLayerAreaRules().empty();
+  if (!has_rules && !layer_->hasArea()) {
+    return rect;
+  }
+
+  // the LEF58 rules add to the layer's own AREA, they do not replace it
+  int64_t min_area = layer_->hasArea() ? layer_->getArea() : 0;
+  if (has_rules) {
+    for (auto* rule : layer_->getTechLayerAreaRules()) {
+      const int64_t layer_min_area = rule->getArea();
+      if (layer_min_area == 0) {
+        continue;
+      }
+      // TODO: Check width rules
+      // TODO: Check length rules
+      // TODO: Check except rules
+      min_area = std::max(min_area, layer_min_area);
+    }
+  }
+
+  if (min_area == 0) {
+    return rect;
+  }
+
+  // Shape::getMinimumRect() returns the mergeInit() sentinel when a shape has
+  // no bterm, iterm or via to merge, and dx()/dy()/area() overflow on it. The
+  // caller already skips an inverted rect when correcting the adjusted shape,
+  // so there is nothing to adjust here either.
+  if (rect.isInverted()) {
+    return rect;
+  }
+
+  // make sure minimum area is honored
+  const double area = min_area;
+
+  odb::Rect new_rect = rect;
+
+  const int width = new_rect.dx();
+  const int height = new_rect.dy();
+  if (new_rect.area() < area) {
+    if (dir.value_or(layer_->getDirection())
+        == odb::dbTechLayerDir::HORIZONTAL) {
+      const int required_width = std::ceil(area / height);
+      const double added_width = required_width - width;
+      const int adjust_min = std::ceil(added_width / 2.0);
+      const int new_x0
+          = snapToManufacturingGrid(rect.xMin() - adjust_min, false);
+      const int new_x1
+          = snapToManufacturingGrid(rect.xMax() + adjust_min, true);
+      new_rect.set_xlo(new_x0);
+      new_rect.set_xhi(new_x1);
+    } else {
+      const int required_height = std::ceil(area / width);
+      const double added_height = required_height - height;
+      const int adjust_min = std::ceil(added_height / 2.0);
+      const int new_y0
+          = snapToManufacturingGrid(rect.yMin() - adjust_min, false);
+      const int new_y1
+          = snapToManufacturingGrid(rect.yMax() + adjust_min, true);
+      new_rect.set_ylo(new_y0);
+      new_rect.set_yhi(new_y1);
+    }
+  }
+
+  return new_rect;
+}
+
+}  // namespace pdn

@@ -7,8 +7,7 @@ from gpl import PlaceOptions
 
 
 def get_runfiles_path_to(path):
-    # If we're not in bazel mode assume Ctest deals
-    # with our CWD and return "".
+    # Outside a bazel test the CWD is already the test directory, so return "".
     runfiles_path = os.environ.get("TEST_SRCDIR", "")
     if runfiles_path:
         runfiles_path = runfiles_path + path
