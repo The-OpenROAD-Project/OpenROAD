@@ -1,0 +1,22 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+# One-site cell with a centered supply pin.  The small pin is clear of a via
+# one site away, so each repeated supply via blocks only its own site.
+MACRO SUPPLY_CACHE_CELL
+  CLASS CORE ;
+  SIZE 0.19 BY 1.4 ;
+  SYMMETRY X Y ;
+  SITE FreePDK45_38x28_10R_NP_162NW_34O ;
+  PIN VSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.06 0.665 0.13 0.735 ;
+    END
+  END VSS
+END SUPPLY_CACHE_CELL
+
+END LIBRARY
