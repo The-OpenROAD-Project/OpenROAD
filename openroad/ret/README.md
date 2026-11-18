@@ -60,11 +60,12 @@ output, driving a control pin of a register, or reachable by registers on
 different clock nets is never crossed. The design must have one clock
 defined with `create_clock`; gated copies of it are fine.
 
-In a hierarchical netlist (`link_design -hier`) a register stays inside its
-module: a gate is crossed only when the gate that drives its registers, the
-registers, the gate itself and the gates it drives are all in one module.
-The cells that replace an unmapped register are created in its module. A
-flat netlist has no boundaries to keep.
+Hierarchical netlists (`link_design -hier`) have initial support: retiming is
+local to a module. A register stays inside its module: a gate is crossed
+only when the gate that drives its registers, the registers, the gate itself
+and the gates it drives are all in one module. The cells that replace an
+unmapped register are created in its module. A flat netlist has no
+boundaries to keep.
 
 ```tcl
 retime
@@ -103,12 +104,16 @@ bazelisk test //openroad/ret/...
 ## Limitations
 
 `retime` moves registers forward only, never backward across a gate, and
-works on one clock domain. In a hierarchical netlist it does not move a
-register across a module boundary. The path into a register's
-enable pin is not in the delay model. Initial values of moved registers are
-not computed: the result is equivalent from the reset state only when the
-moved registers have no defined initial value, so verify the result with
-sequential equivalence checking.
+works on one clock domain. The path into a register's enable pin is not in
+the delay model. Initial values of moved registers are not computed: the
+result is equivalent from the reset state only when the moved registers have
+no defined initial value, so verify the result with sequential equivalence
+checking.
+
+In a hierarchical netlist a register does not cross a module boundary, so a
+path that runs through another module, such as an arithmetic operator kept
+as its own module, is not shortened. A tie cell in another module than the
+register it held is left in place when that register is removed.
 
 ## License
 
