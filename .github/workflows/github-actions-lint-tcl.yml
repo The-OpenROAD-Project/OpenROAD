@@ -10,12 +10,17 @@ on:
 
 jobs:
   Tclint:
-    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted-ubuntu-26.04' || 'ubuntu-26.04' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           submodules: 'recursive'
+      # Self-hosted runners keep their workspace between jobs, and checkout
+      # leaves a submodule that is not in this commit (such as one at another
+      # path) as an untracked directory, which tclint would lint.
+      - name: Remove untracked files
+        run: git clean -ffdx
       - name: Install Dependencies
         run: |
           python3 -m venv venv

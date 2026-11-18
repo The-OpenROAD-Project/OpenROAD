@@ -1,0 +1,549 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("//bazel/gpu:copts.bzl", "CUDA_COPTS")
+load("//bazel/gpu:defs.bzl", "GPU_ENV_OFF", "GPU_ONLY")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
+
+package(features = ["layering_check"])
+
+TESTS = [
+    "clust01",
+    "clust02",
+    "clust03",
+    "cluster_place01",
+    "convergence01",
+    "density_macro_area_in_denominator",
+    "diverge01",
+    "error01",
+    "incremental01",
+    "mbff_activity",
+    "mbff_hier",
+    "mbff_orig_name",
+    "mbff_clock_power_off",
+    "mbff_clock_power_on",
+    "simple01-rd",
+    "simple01-td",
+    "simple01-td-net-percentage",
+    "simple01-td-tune",
+    "simple01-td-repair",
+    "simple01-td-restart",
+    "simple01-td-scan-net",
+    "simple01-vcts",
+    "simple01-vcts-clamp",
+    "simple01-vcts-noclk",
+    "simple01-vcts-userlat",
+    "simple02-rd",
+    "simple03-rd",
+    "simple04-rd",
+    "region01",
+]
+
+PASSFAIL_TESTS = [
+    "congestion_inflation_default",
+    "incremental02",
+    "incremental03",
+    "options01",
+    "place_ios_rd",
+    "place_ios_td",
+]
+
+# Longer-running regression tests. These are
+# tagged "manual" so they are excluded from the default `bazel test //...`
+# wildcard and must be requested explicitly, e.g. via the :large_tests suite.
+LARGE_TESTS = [
+    "macro01",
+    "macro02",
+    "macro03",
+    "medium01",
+    "medium02",
+    "medium03",
+    "medium04",
+    "medium05",
+    "medium06",
+    "large01",
+    "large02",
+]
+
+# GPU-only PASSFAIL regressions, pinned to the GPU code path (ENABLE_GPU=1).
+GPU_TESTS = [
+    "region01_gpu",
+    "region01_gpu_asym",
+]
+
+ALL_TESTS = TESTS + PASSFAIL_TESTS
+
+py_library(
+    name = "helpers",
+    srcs = ["helpers.py"],
+    imports = ["."],
+    deps = [
+        "//python/openroad:openroadpy",
+    ],
+)
+
+filegroup(
+    name = "asap7pdk",
+    srcs = glob([
+        "asap7/*.lib.gz",
+        "asap7/*.lib",
+        "asap7/*.lef",
+        "asap7/*.tcl",
+    ]),
+)
+
+filegroup(
+    name = "test_resources",
+    # overly broad glob, could be refined later, but
+    # symlinks are cheap and OpenROAD binary changes, the common
+    # use case is that all tests have to be re-run.
+    srcs = glob(
+        ["**/*"],
+        exclude = [
+            test + "." + ext
+            for test in ALL_TESTS + LARGE_TESTS + GPU_TESTS
+            for ext in [
+                "tcl",
+                "py",
+            ]
+        ],
+    ),
+)
+
+[regression_test(
+    name = test_name,
+    check_log = False if test_name in PASSFAIL_TESTS else True,
+    check_passfail = True if test_name in PASSFAIL_TESTS else False,
+    data = [":test_resources"],
+) for test_name in ALL_TESTS]
+
+[regression_test(
+    name = test_name,
+    size = "enormous",
+    data = [":test_resources"],
+    tags = ["manual"],
+) for test_name in LARGE_TESTS]
+
+# Convenience suite to run all long-running tests explicitly:
+#   bazel test //openroad/gpl/test:large_tests
+test_suite(
+    name = "large_tests",
+    tags = ["manual"],
+    tests = [":" + test_name + "-tcl_test" for test_name in LARGE_TESTS],
+)
+
+# ENABLE_GPU=1 overrides the GPU_ENV_OFF default that regression_test()
+# applies to every other test here.
+[regression_test(
+    name = test_name,
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+    env = {"ENABLE_GPU": "1"},
+    tags = ["gpu"],
+    target_compatible_with = GPU_ONLY,
+) for test_name in GPU_TESTS]
+
+PY_TESTS = [
+    "convergence01",
+    "error01",
+    "incremental01",
+    "simple01-td",
+    "simple01-td-net-percentage",
+    "simple01-td-tune",
+    "simple01-td-repair",
+]
+
+[
+    py_test(
+        name = test_name,
+        srcs = [test_name + ".py"],
+        data = [
+            ":test_resources",
+        ],
+        env = GPU_ENV_OFF,
+        tags = ["py"],
+        deps = [
+            ":helpers",
+            "//python/openroad:openroadpy",
+        ],
+    )
+    for test_name in PY_TESTS
+]
+
+cc_test(
+    name = "gpl_fft_unittest",
+    srcs = ["fft_test.cc"],
+    env = GPU_ENV_OFF,
+    linkstatic = True,  # TODO: remove once deps define all symbols
+    deps = [
+        "//openroad/gpl:gpl_impl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# GPU FFT backend unit test (plain C++ TU; the GPU code arrives through
+# //openroad/gpl's :gpl_kokkos dependency under --config=gpu).
+cc_test(
+    name = "fft_gpu_test",
+    srcs = ["fft_gpu_test.cc"],
+    env = {"ENABLE_GPU": "1"},
+    linkstatic = True,
+    tags = ["gpu"],
+    target_compatible_with = GPU_ONLY,
+    deps = [
+        "//openroad/gpl:gpl_impl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# GPU wirelength-kernel correctness test. Includes Kokkos-laden headers
+# directly, so the TU itself is compiled as CUDA.
+cc_test(
+    name = "wl_gpu_test",
+    srcs = ["wl_gpu_test.cc"],
+    additional_compiler_inputs = [
+        "//bazel/gpu:cuda_placement_new.h",
+        "@cuda_local//:compiler_inputs",
+    ],
+    copts = CUDA_COPTS,
+    env = {"ENABLE_GPU": "1"},
+    features = [
+        "-layering_check",
+        "-parse_headers",
+    ],
+    linkstatic = True,
+    tags = ["gpu"],
+    target_compatible_with = GPU_ONLY,
+    deps = [
+        "//openroad/gpl:gpl_kokkos",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "place_ios_test",
+    srcs = ["place_ios_test.cc"],
+    data = [
+        "gcd.def",
+        "nangate45.lef",
+        "//test:nangate45_data",
+    ],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//openroad/gpl:gpl_impl",
+        "//openroad/ifp",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/defin",
+        "//openroad/ppl",
+        "//openroad/tst",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "mbff_test",
+    srcs = ["mbff_test.cpp"],
+    data = [
+        "library/test/test0.lef",
+        "library/test/test0.lib",
+    ],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//openroad/ant",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/dbSta:dbReadVerilog",
+        "//openroad/dpl",
+        "//openroad/est",
+        "//openroad/gpl:gpl_impl",
+        "//openroad/grt",
+        "//openroad/odb/src/db",
+        "//openroad/rsz",
+        "//openroad/stt",
+        "//openroad/tst",
+        "//openroad/utl",
+        "@abseil-cpp//absl/strings",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "power_base_test",
+    srcs = ["power_base_test.cpp"],
+    data = [
+        "library/nangate45/NangateOpenCellLibrary_typical.lib",
+        "nangate45.lef",
+        "simple01-td.def",
+    ],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//openroad/ant",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/dpl",
+        "//openroad/est",
+        "//openroad/gpl:gpl_impl",
+        "//openroad/grt",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/defin",
+        "//openroad/rsz",
+        "//openroad/sta:opensta_lib",
+        "//openroad/stt",
+        "//openroad/tst",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "placer_base_test",
+    srcs = ["placer_base_test.cpp"],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//openroad/gpl:gpl_impl",
+        "//openroad/odb/src/db",
+        "//openroad/tst:db_fixture",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "route_base_test",
+    srcs = ["route_base_test.cpp"],
+    data = ["wide_core.def"],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/est",
+        "//openroad/gpl:gpl_impl",
+        "//openroad/grt",
+        "//openroad/odb/src/db",
+        "//openroad/rsz",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst:integrated_fixture",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "timing_base_test",
+    srcs = ["timing_base_test.cpp"],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//openroad/gpl:gpl_impl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "estimate_target_density_test",
+    srcs = ["estimate_target_density_test.cpp"],
+    deps = [
+        "//openroad/gpl:gpl_impl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "nesterov_divergence_test",
+    srcs = ["nesterov_divergence_test.cpp"],
+    deps = [
+        "//openroad/gpl:gpl_impl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "congestion_buffers_test",
+    srcs = [
+        "congestion_buffers_test.cpp",
+        "congestion_buffers_timing_test.cpp",
+    ],
+    data = [
+        "gcd.def",
+        "simple01-td-repair.def",
+    ],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/est",
+        "//openroad/gpl:gpl_impl",
+        "//openroad/grt",
+        "//openroad/odb/src/db",
+        "//openroad/rsz",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst:integrated_fixture",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "overflow_test",
+    srcs = ["overflow_test.cpp"],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//openroad/gpl:gpl_impl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "nesterov_place_test",
+    srcs = ["nesterov_place_test.cpp"],
+    data = [
+        "asap7/asap7_tech_1x_201209.lef",
+        "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
+        "blockages.def",
+        "density_below_utilization.def",
+        "gcd.def",
+        "inset_core.def",
+        "moved_ios.def",
+        "nangate45.lef",
+        "nets_without_gradient.def",
+        "one_cell_huge_die.def",
+        "one_movable_cell.def",
+        "single_cell_high_penalty.def",
+        "single_cell_small_core.def",
+        "sky130hd.lef",
+        "tall_core.def",
+        "wide_core.def",
+        "//test:nangate45_data",
+    ],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//openroad/gpl",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/defin",
+        "//openroad/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "place_result_test",
+    srcs = ["place_result_test.cpp"],
+    data = [
+        "gcd.def",
+        "nangate45.lef",
+        "//test:nangate45_data",
+    ],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//openroad/gpl",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/defin",
+        "//openroad/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "wirelength_gradient_test",
+    srcs = ["wirelength_gradient_test.cpp"],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//openroad/gpl:gpl_impl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+py_test(
+    name = "gpl_man_tcl_check",
+    srcs = ["gpl_man_tcl_check.py"],
+    data = ["//openroad/gpl:doc_files"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "gpl_readme_msgs_check",
+    data = [
+        "//openroad/gpl:doc_files",
+        "//openroad/gpl:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+doc_check_test(
+    name = "gpl_messages_txt_check",
+    check_log = False,
+    data = ["//openroad/gpl:messages_txt"],
+)
+
+cc_library(
+    name = "gpl_design_builder",
+    testonly = True,
+    srcs = ["gpl_design_builder.cpp"],
+    hdrs = ["gpl_design_builder.h"],
+    deps = [
+        "//openroad/odb/src/db",
+        "//openroad/tst:physical_builder",
+    ],
+)
+
+cc_test(
+    name = "known_answer_test",
+    srcs = ["known_answer_test.cpp"],
+    env = GPU_ENV_OFF,
+    deps = [
+        ":gpl_design_builder",
+        "//openroad/gpl",
+        "//openroad/odb/src/db",
+        "//openroad/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "metamorphic_test",
+    srcs = ["metamorphic_test.cpp"],
+    data = [
+        "gcd.def",
+        "nangate45.lef",
+    ],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//openroad/gpl",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/defin",
+        "//openroad/odb/src/lefin",
+        "//openroad/tst",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

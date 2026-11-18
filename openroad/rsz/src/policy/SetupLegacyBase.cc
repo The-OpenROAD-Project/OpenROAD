@@ -1,0 +1,1021 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2026-2026, The OpenROAD Authors
+
+#include "SetupLegacyBase.hh"
+
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
+#include <limits>
+#include <memory>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
+
+#include "MoveCandidate.hh"
+#include "MoveCommitter.hh"
+#include "MoveGenerator.hh"
+#include "OptimizationPolicy.hh"
+#include "OptimizerTypes.hh"
+#include "Rebuffer.hh"
+#include "RepairSetupAnalysisTarget.hh"
+#include "RepairSetupProfiler.hh"
+#include "RepairTargetCollector.hh"
+#include "SizeUpGenerator.hh"
+#include "SizeUpMatchGenerator.hh"
+#include "SwapPinsGenerator.hh"
+#include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
+#include "rsz/Resizer.hh"
+#include "sta/Delay.hh"
+#include "sta/Graph.hh"
+#include "sta/GraphClass.hh"
+#include "sta/Liberty.hh"
+#include "sta/Network.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
+#include "sta/PathExpanded.hh"
+#include "sta/Sdc.hh"
+#include "sta/Search.hh"
+#include "sta/SearchClass.hh"
+#include "sta/Sta.hh"
+#include "sta/TimingArc.hh"
+#include "utl/Logger.h"
+#include "utl/mem_stats.h"
+#include "utl/timer.h"
+
+namespace rsz {
+
+using std::pair;
+using std::string;
+using std::vector;
+
+using utl::RSZ;
+
+SetupLegacyBase::SetupLegacyBase(Resizer& resizer,
+                                 MoveCommitter& committer,
+                                 RepairSetupContext& setup_context,
+                                 const OptimizerRunConfig& config)
+    : OptimizationPolicy(resizer, committer, setup_context, config)
+{
+}
+
+bool SetupLegacyBase::start()
+{
+  OptimizationPolicy::start();
+  setup_context_.max_repairs_per_pass = config_.max_repairs_per_pass;
+  if (!setup_context_.phase_pipeline_active) {
+    return true;
+  }
+  if (!setup_context_.legacy_preamble_done) {
+    setup_context_.legacy_preamble_done = true;
+    setup_context_.legacy_preamble_has_violations = prepareForPhasePipeline();
+  }
+  return setup_context_.legacy_preamble_has_violations;
+}
+
+void SetupLegacyBase::iterate()
+{
+  // Used as the shared prepare/report policy; phases run via derived classes.
+  markRunComplete(true);
+}
+
+bool SetupLegacyBase::repairSetupPin(const sta::Pin* end_pin)
+{
+  if (end_pin == nullptr) {
+    return false;
+  }
+
+  initializeSetupServices();
+  target_collector_->init(config_.setup_slack_margin);
+  setup_context_.max_repairs_per_pass = 1;
+
+  sta::Vertex* end_vertex = graph_->pinLoadVertex(end_pin);
+  if (end_vertex == nullptr) {
+    return false;
+  }
+
+  const sta::Slack end_slack = sta_->slack(end_vertex, max_);
+  sta::Path* end_path = target_collector_->findWorstSlackPath(end_vertex);
+  if (end_path == nullptr) {
+    return false;
+  }
+  buildMainMoveSequence(/*log_sequence=*/true);
+
+  est::IncrementalParasiticsGuard guard(estimate_parasitics_);
+  return repairPath(end_path, end_slack, /*force_single_repair=*/false);
+}
+
+void SetupLegacyBase::initializeSetupServices()
+{
+  const ProfileScope profile("init_onetime");
+  resizer_.rebuffer_->init();
+  resizer_.rebuffer_->initOnCorner(sta_->cmdScene());
+}
+
+bool SetupLegacyBase::hasVtSwapCells() const
+{
+  return resizer_.lib_data_->sorted_vt_categories.size() > 1;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Setup sequence helpers
+///////////////////////////////////////////////////////////////////////////////
+
+void SetupLegacyBase::pushMoveIfEnabled(const bool enabled, const MoveType type)
+{
+  if (enabled) {
+    move_sequence_.push_back(type);
+  }
+}
+
+void SetupLegacyBase::logMoveSequence() const
+{
+  const ProfileScope profile("reporting");
+  string repair_moves = "Repair move sequence: ";
+  for (const MoveType type : move_sequence_) {
+    if (type == MoveType::kCount) {
+      continue;
+    }
+    repair_moves += moveName(type);
+    repair_moves += ' ';
+  }
+  logger_->info(utl::RSZ, 100, "{}", repair_moves);
+}
+
+void SetupLegacyBase::activateMoveSequence(const bool log_sequence)
+{
+  buildMoveGenerators(move_sequence_, makeGeneratorContext());
+  if (log_sequence) {
+    logMoveSequence();
+  }
+}
+
+void SetupLegacyBase::buildMainMoveSequence(const bool log_sequence)
+{
+  move_sequence_.clear();
+
+  if (!config_.sequence.empty()) {
+    for (const MoveType move : config_.sequence) {
+      switch (move) {
+        case MoveType::kBuffer:
+          pushMoveIfEnabled(!config_.skip_buffering, MoveType::kBuffer);
+          break;
+        case MoveType::kUnbuffer:
+          pushMoveIfEnabled(!config_.skip_buffer_removal, MoveType::kUnbuffer);
+          break;
+        case MoveType::kSwapPins:
+          pushMoveIfEnabled(!config_.skip_pin_swap, MoveType::kSwapPins);
+          break;
+        case MoveType::kSizeUp:
+          move_sequence_.push_back(MoveType::kSizeUp);
+          break;
+        case MoveType::kSizeDownFanout:
+          pushMoveIfEnabled(!config_.skip_size_down_fanout,
+                            MoveType::kSizeDownFanout);
+          break;
+        case MoveType::kClone:
+          pushMoveIfEnabled(!config_.skip_gate_cloning, MoveType::kClone);
+          break;
+        case MoveType::kSplitLoad:
+          pushMoveIfEnabled(!config_.skip_buffering, MoveType::kSplitLoad);
+          break;
+        case MoveType::kVtSwap:
+          pushMoveIfEnabled(!config_.skip_vt_swap && hasVtSwapCells(),
+                            MoveType::kVtSwap);
+          break;
+        case MoveType::kSizeUpMatch:
+          move_sequence_.push_back(MoveType::kSizeUpMatch);
+          break;
+        case MoveType::kReroute:
+          move_sequence_.push_back(MoveType::kReroute);
+          break;
+        case MoveType::kBufferToInverters:
+          pushMoveIfEnabled(!config_.skip_buffer_to_inverters,
+                            MoveType::kBufferToInverters);
+          break;
+        case MoveType::kCount:
+          break;
+      }
+    }
+  } else {
+    pushMoveIfEnabled(!config_.skip_buffer_removal, MoveType::kUnbuffer);
+    pushMoveIfEnabled(!config_.skip_vt_swap && hasVtSwapCells(),
+                      MoveType::kVtSwap);
+    move_sequence_.push_back(MoveType::kSizeUp);
+    if (!config_.skip_size_down_fanout) {
+      // Disabled by default for legacy parity.
+    }
+    pushMoveIfEnabled(!config_.skip_pin_swap, MoveType::kSwapPins);
+    pushMoveIfEnabled(!config_.skip_buffering, MoveType::kBuffer);
+    pushMoveIfEnabled(!config_.skip_gate_cloning, MoveType::kClone);
+    pushMoveIfEnabled(!config_.skip_buffering, MoveType::kSplitLoad);
+  }
+
+  activateMoveSequence(log_sequence);
+}
+
+SetupLegacyBase::ViolatingEnds SetupLegacyBase::collectViolatingEndpoints(
+    const float setup_slack_margin) const
+{
+  target_collector_->init(setup_slack_margin);
+  ViolatingEnds violating_ends;
+  const auto& endpoint_pins = target_collector_->getViolatingEndpoints();
+  violating_ends.reserve(endpoint_pins.size());
+  for (const auto& [endpoint_pin, endpoint_slack] : endpoint_pins) {
+    sta::Vertex* endpoint_vertex = graph_->pinLoadVertex(endpoint_pin);
+    if (endpoint_vertex != nullptr) {
+      violating_ends.emplace_back(endpoint_vertex, endpoint_slack);
+    }
+  }
+
+  RepairSetupProfiler::event("endpoints_collected", violating_ends.size());
+  return violating_ends;
+}
+
+bool SetupLegacyBase::beginJournaledEndpointSearch(
+    const pair<sta::Vertex*, sta::Slack>& end_original_slack,
+    const int max_end_count,
+    int& end_index,
+    SetupLegacyBase::EndpointRepairState& endpoint_state)
+{
+  endpoint_state.end = end_original_slack.first;
+  refreshEndpointSlacks(endpoint_state);
+  target_collector_->useWorstEndpoint(endpoint_state.end);
+  committer_.setCurrentEndpoint(endpoint_state.end->pin());
+  ++end_index;
+  if (end_index > max_end_count) {
+    RepairSetupProfiler::stop("max_endpoints");
+    return false;
+  }
+
+  endpoint_state.pass = 1;
+  endpoint_state.decreasing_slack_passes = 0;
+  endpoint_state.force_single_repair = false;
+  committer_.beginJournal();
+  endpoint_state.journal_open = true;
+  return true;
+}
+
+void SetupLegacyBase::recordTermination(bool& prev_termination,
+                                        bool& two_cons_terminations)
+{
+  if (prev_termination) {
+    two_cons_terminations = true;
+  } else {
+    prev_termination = true;
+  }
+}
+
+void SetupLegacyBase::acceptEndpointState(
+    SetupLegacyBase::EndpointRepairState& endpoint_state)
+{
+  if (!endpoint_state.journal_open) {
+    return;
+  }
+  committer_.commitJournal();
+  endpoint_state.journal_open = false;
+}
+
+void SetupLegacyBase::restoreEndpointState(
+    SetupLegacyBase::EndpointRepairState& endpoint_state)
+{
+  if (!endpoint_state.journal_open) {
+    return;
+  }
+
+  RepairSetupProfiler::event("checkpoints_restored");
+  committer_.restoreJournal();
+  endpoint_state.journal_open = false;
+}
+
+void SetupLegacyBase::finishEndpointSearch(
+    SetupLegacyBase::EndpointRepairState& endpoint_state)
+{
+  if (endpoint_state.pass == 1) {
+    acceptEndpointState(endpoint_state);
+  } else {
+    restoreEndpointState(endpoint_state);
+  }
+}
+
+void SetupLegacyBase::saveImprovedCheckpoint(
+    SetupLegacyBase::EndpointRepairState& endpoint_state)
+{
+  RepairSetupProfiler::event("checkpoints_saved");
+  acceptEndpointState(endpoint_state);
+  committer_.beginJournal();
+  endpoint_state.journal_open = true;
+}
+
+void SetupLegacyBase::refreshEndpointSlacks(
+    SetupLegacyBase::EndpointRepairState& endpoint_state)
+{
+  const ProfileScope profile("qor_collection");
+  endpoint_state.end_slack
+      = target_collector_->endpointSlack(endpoint_state.end);
+  target_collector_->worstSlack(endpoint_state.worst_slack,
+                                endpoint_state.worst_vertex);
+}
+
+bool SetupLegacyBase::reachedIterationLimit(const int iteration,
+                                            const int max_iterations) const
+{
+  return max_iterations > 0 && iteration >= max_iterations;
+}
+
+bool SetupLegacyBase::prepareForPhasePipeline()
+{
+  initializeSetupServices();
+
+  const float setup_slack_margin = config_.setup_slack_margin;
+  const double repair_tns_end_percent = config_.repair_tns_end_percent;
+  const int max_repairs_per_pass = config_.max_repairs_per_pass;
+
+  setup_context_.max_repairs_per_pass = max_repairs_per_pass;
+
+  target_collector_->init(setup_slack_margin);
+
+  // Move sequence is logged before the violation summary so the move-sequence
+  // line precedes "Found/Repairing" in the output.
+  buildMainMoveSequence(/*log_sequence=*/true);
+
+  const int total_violations = target_collector_->getTotalViolations();
+  const sta::VertexSet& endpoints = sta_->endpoints();
+  if (total_violations > 0) {
+    debugPrint(logger_,
+               RSZ,
+               "repair_setup",
+               1,
+               "Violating endpoints {}/{} {}%",
+               total_violations,
+               endpoints.size(),
+               int(total_violations / double(endpoints.size()) * 100));
+  }
+  if (total_violations == 0) {
+    RepairSetupProfiler::stop("no_setup_violations");
+    logger_->metric("design__instance__count__setup_buffer", 0);
+    logger_->info(utl::RSZ, 98, "No setup violations found");
+    return false;
+  }
+  logger_->info(utl::RSZ,
+                94,
+                "Found {} endpoints with setup violations.",
+                total_violations);
+  setup_context_.max_end_repairs
+      = std::max(static_cast<int>(target_collector_->getMaxEndpointCount()
+                                  * repair_tns_end_percent),
+                 1);
+  logger_->info(utl::RSZ,
+                99,
+                "Repairing {} out of {} ({:0.2f}%) violating endpoints...",
+                setup_context_.max_end_repairs,
+                total_violations,
+                repair_tns_end_percent * 100.0);
+
+  {
+    const ProfileScope profile("init_onetime");
+    sta_->checkCapacitancesPreamble(sta_->scenes());
+    sta_->checkSlewsPreamble();
+    sta_->checkFanoutPreamble();
+  }
+
+  if (committer_.moveTrackerEnabled()) {
+    committer_.tracker().captureInitialSlackDistribution();
+    committer_.tracker().captureOriginalEndpointSlack();
+  }
+  if (!config_.phases.empty()) {
+    reportCustomPhaseSetup();
+  }
+  return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Path repair
+///////////////////////////////////////////////////////////////////////////////
+
+int SetupLegacyBase::fanout(sta::Vertex* vertex) const
+{
+  int fanout_count = 0;
+  sta::VertexOutEdgeIterator edge_iter(vertex, graph_);
+  while (edge_iter.hasNext()) {
+    sta::Edge* edge = edge_iter.next();
+    if (edge->isWire()) {
+      fanout_count++;
+    }
+  }
+  return fanout_count;
+}
+
+std::vector<std::pair<int, sta::Delay>> SetupLegacyBase::rankPathDrivers(
+    sta::PathExpanded& expanded,
+    const sta::Scene* corner,
+    const int lib_ap) const
+{
+  vector<pair<int, sta::Delay>> load_delays;
+  const int start_index = expanded.startIndex();
+  const int path_length = expanded.size();
+
+  // Rank driver stages by load-dependent delay so the noisiest points on the
+  // expanded path get first crack at the repair budget.
+  for (int i = start_index; i < path_length; i++) {
+    const sta::Path* path_vertex_path = expanded.path(i);
+    sta::Vertex* path_vertex = path_vertex_path->vertex(sta_);
+    const sta::Pin* path_pin = path_vertex_path->pin(sta_);
+    if (i > 0 && path_vertex->isDriver(network_)
+        && !network_->isTopLevelPort(path_pin)) {
+      const sta::TimingArc* prev_arc = path_vertex_path->prevArc(sta_);
+      const sta::TimingArc* corner_arc = prev_arc->sceneArc(lib_ap);
+      sta::Edge* prev_edge = path_vertex_path->prevEdge(sta_);
+      const sta::Delay load_delay
+          = graph_->arcDelay(
+                prev_edge, prev_arc, corner->dcalcAnalysisPtIndex(max_))
+            - corner_arc->intrinsicDelay();
+      load_delays.emplace_back(i, load_delay);
+    }
+  }
+
+  std::ranges::sort(
+      load_delays, [](pair<int, sta::Delay> lhs, pair<int, sta::Delay> rhs) {
+        return lhs.second > rhs.second
+               || (lhs.second == rhs.second && lhs.first > rhs.first);
+      });
+  return load_delays;
+}
+
+int SetupLegacyBase::repairBudget(const sta::Slack path_slack,
+                                  const bool force_single_repair) const
+{
+  if (setup_context_.max_repairs_per_pass <= 0) {
+    return 0;
+  }
+
+  int repairs_per_pass = 1;
+  if (setup_context_.max_viol - setup_context_.min_viol != 0.0) {
+    repairs_per_pass
+        += std::round((setup_context_.max_repairs_per_pass - 1)
+                      * (-path_slack - setup_context_.min_viol)
+                      / (setup_context_.max_viol - setup_context_.min_viol));
+    repairs_per_pass
+        = std::clamp(repairs_per_pass, 1, setup_context_.max_repairs_per_pass);
+  }
+  return force_single_repair ? 1 : repairs_per_pass;
+}
+
+bool SetupLegacyBase::makePinTargetOnPath(const sta::Pin* pin,
+                                          const sta::Path* path,
+                                          const sta::Slack focus_slack,
+                                          Target& target) const
+{
+  const ProfileScope profile("target_collection");
+  if (path == nullptr) {
+    return false;
+  }
+
+  sta::Vertex* vertex = graph_->pinDrvrVertex(pin);
+  if (vertex == nullptr) {
+    return false;
+  }
+
+  // Search the main path first, then the latch D fanin path of a
+  // latch-through path.
+  sta::PathExpanded expanded(path, sta_);
+  return visitPathSegments(
+      path,
+      expanded,
+      sta_,
+      [&](const sta::Path* seg_path, sta::PathExpanded& seg_expanded) {
+        return makePinTargetInExpandedPath(
+            pin, vertex, seg_path, seg_expanded, focus_slack, target);
+      });
+}
+
+bool SetupLegacyBase::makePinTargetInExpandedPath(const sta::Pin* pin,
+                                                  sta::Vertex* vertex,
+                                                  const sta::Path* path,
+                                                  sta::PathExpanded& expanded,
+                                                  const sta::Slack focus_slack,
+                                                  Target& target) const
+{
+  const int start_index = static_cast<int>(expanded.startIndex());
+  const int path_count = static_cast<int>(expanded.size());
+  for (int index = start_index; index < path_count; index++) {
+    const sta::Path* driver_path = expanded.path(index);
+    sta::Vertex* path_vertex = driver_path->vertex(sta_);
+    const sta::Pin* path_pin = driver_path->pin(sta_);
+    if (path_vertex != vertex || path_pin != pin) {
+      continue;
+    }
+    if (!path_vertex->isDriver(network_)
+        || network_->isTopLevelPort(path_pin)) {
+      return false;
+    }
+
+    makePathDriverTarget(path, expanded, index, focus_slack, target);
+    return true;
+  }
+
+  return false;
+}
+
+bool SetupLegacyBase::makePinTarget(const sta::Pin* pin,
+                                    const sta::Slack focus_slack,
+                                    Target& target) const
+{
+  const ProfileScope profile("target_collection");
+  sta::Vertex* vertex = graph_->pinDrvrVertex(pin);
+  if (vertex == nullptr) {
+    return false;
+  }
+
+  sta::Path* path = sta_->vertexWorstSlackPath(vertex, max_);
+  return makePinTargetOnPath(pin, path, focus_slack, target);
+}
+
+bool SetupLegacyBase::repairPins(
+    const std::vector<const sta::Pin*>& pins,
+    const sta::Path* focus_path,
+    const std::unordered_map<const sta::Pin*, std::unordered_set<MoveType>>*
+        rejected_moves,
+    std::vector<std::pair<const sta::Pin*, MoveType>>* chosen_moves,
+    const bool force_single_repair)
+{
+  int changed = 0;
+
+  if (pins.empty()) {
+    return false;
+  }
+
+  int repairs_per_pass
+      = target_collector_->repairsPerPass(setup_context_.max_repairs_per_pass);
+  if (force_single_repair) {
+    repairs_per_pass = 1;
+  }
+
+  const sta::Slack focus_slack = target_collector_->getCurrentEndpointSlack();
+
+  // A target holds raw STA paths. Every accepted move invalidates the paths
+  // through the logic it touched, so a pass that repairs many pins has to
+  // bring timing up to date before it builds the next target from them.
+  // The update invalidates focus_path as well, so it is looked up again
+  // from its endpoint.
+  sta::Vertex* focus_vertex
+      = focus_path != nullptr ? focus_path->vertex(sta_) : nullptr;
+  bool timing_stale = false;
+  for (const sta::Pin* driver_pin : pins) {
+    if (changed >= repairs_per_pass) {
+      break;
+    }
+
+    if (timing_stale) {
+      estimate_parasitics_->updateParasitics();
+      sta_->findRequireds();
+      timing_stale = false;
+      if (focus_vertex != nullptr) {
+        focus_path = target_collector_->findWorstSlackPath(focus_vertex);
+      }
+    }
+
+    const int changed_before = changed;
+    Target target;
+    const bool has_target
+        = focus_path != nullptr
+              ? makePinTargetOnPath(driver_pin, focus_path, focus_slack, target)
+              : makePinTarget(driver_pin, focus_slack, target);
+    if (!has_target) {
+      RepairSetupProfiler::event("skip_missing_target");
+      continue;
+    }
+
+    committer_.trackViolatorWithTimingInfo(target.driver_pin,
+                                           target.vertex(resizer_),
+                                           focus_slack,
+                                           *target_collector_);
+
+    const std::unordered_set<MoveType>* rejected_types = nullptr;
+    auto rejected_itr = rejected_moves->find(driver_pin);
+    if (rejected_itr != rejected_moves->end()) {
+      rejected_types = &rejected_itr->second;
+    }
+
+    std::optional<MoveType> accepted_type;
+    logRepairTarget(target);
+    if (tryRepairTarget(
+            target, repairs_per_pass, changed, rejected_types, accepted_type)
+        && accepted_type.has_value()) {
+      chosen_moves->emplace_back(driver_pin, *accepted_type);
+    }
+    timing_stale = changed != changed_before;
+  }
+
+  return changed > 0;
+}
+
+void SetupLegacyBase::makePathDriverTarget(const sta::Path* path,
+                                           sta::PathExpanded& expanded,
+                                           const int drvr_index,
+                                           const sta::Slack path_slack,
+                                           Target& target) const
+{
+  const sta::Path* drvr_path = expanded.path(drvr_index);
+  sta::Vertex* drvr_vertex = drvr_path->vertex(sta_);
+
+  target = rsz::makePathDriverTarget(
+      path, expanded, drvr_index, path_slack, resizer_);
+  target.fanout = fanout(drvr_vertex);
+}
+
+void SetupLegacyBase::logRepairTarget(const Target& target) const
+{
+  const ProfileScope profile("reporting");
+  sta::LibertyPort* drvr_port = network_->libertyPort(target.driver_pin);
+  sta::LibertyCell* drvr_cell
+      = drvr_port != nullptr ? drvr_port->libertyCell() : nullptr;
+  debugPrint(logger_,
+             RSZ,
+             "repair_setup",
+             3,
+             "{} {} fanout = {} drvr_index = {}",
+             network_->pathName(target.driver_pin),
+             drvr_cell != nullptr ? drvr_cell->name() : "none",
+             target.fanout,
+             target.path_index);
+}
+
+int SetupLegacyBase::repairProgressIncrement(const MoveType type,
+                                             const int repairs_per_pass)
+{
+  switch (type) {
+    case MoveType::kUnbuffer:
+    case MoveType::kBufferToInverters:
+      return repairs_per_pass;
+    default:
+      return 1;
+  }
+}
+
+bool SetupLegacyBase::allowsBatchRepair(const MoveType type)
+{
+  return type == MoveType::kSizeDownFanout;
+}
+
+bool SetupLegacyBase::tryCandidateSequence(
+    MoveGenerator& generator,
+    const Target& target,
+    const int repairs_per_pass,
+    int& changed,
+    std::optional<MoveType>& accepted_type)
+{
+  // Mode 3 observes each move on a copy of the target refreshed from current
+  // STA.  The repair keeps the target it was given, as in the other modes.
+  RepairSetupAnalysisTarget analysis_target(resizer_, target);
+
+  CandidateVector candidates;
+
+  {
+    const ProfileScope profile("candidate_generation");
+    candidates = generator.generate(target);
+    // Generation can return candidates that the serial pass never estimates.
+    RepairSetupProfiler::movesGenerated(generator.type(), candidates);
+  }
+  for (auto& candidate : candidates) {
+    Estimate estimate;
+
+    {
+      const ProfileScope profile("candidate_estimation");
+      estimate = candidate->estimate();
+      RepairSetupProfiler::moveEstimated(*candidate, estimate);
+    }
+    if (!estimate.legal) {
+      continue;
+    }
+
+    // Profile mode 3 refreshes the target from current timing.
+    if (RepairSetupProfiler::analysis()) {
+      committer_.updateTimingForObserver();
+    }
+
+    // A failed refresh skips the observation of the move, not the move.
+    const Target* observed_target
+        = analysis_target.refresh() ? &analysis_target.target() : nullptr;
+    {
+      const ProfileScope profile("batch_selection");
+      RepairSetupProfiler::event("winners", 1, moveName(candidate->type()));
+      RepairSetupProfiler::moveSelected(
+          *candidate, observed_target, analysis_target.originalEndpoint());
+    }
+    committer_.trackMoveAttempt(target.driver_pin, generator.type());
+    const MoveResult result = committer_.commit(*candidate);
+    if (!result.accepted) {
+      continue;
+    }
+
+    changed += repairProgressIncrement(result.type, repairs_per_pass);
+    accepted_type = result.type;
+    return true;
+  }
+  return false;
+}
+
+bool SetupLegacyBase::trySizeDownFanoutBatch(
+    MoveGenerator& generator,
+    const Target& target,
+    const int repairs_per_pass,
+    int& changed,
+    std::optional<MoveType>& accepted_type)
+{
+  bool accepted_batch = false;
+  while (tryCandidateSequence(
+      generator, target, repairs_per_pass, changed, accepted_type)) {
+    accepted_batch = true;
+  }
+  return accepted_batch;
+}
+
+bool SetupLegacyBase::tryRepairTarget(
+    const Target& target,
+    const int repairs_per_pass,
+    int& changed,
+    const std::unordered_set<MoveType>* rejected_types)
+{
+  std::optional<MoveType> accepted_type;
+  return tryRepairTarget(
+      target, repairs_per_pass, changed, rejected_types, accepted_type);
+}
+
+bool SetupLegacyBase::tryRepairTarget(
+    const Target& target,
+    const int repairs_per_pass,
+    int& changed,
+    const std::unordered_set<MoveType>* rejected_types,
+    std::optional<MoveType>& accepted_type)
+{
+  Target live_target = target;
+  sta::Vertex* live_vertex = live_target.vertex(resizer_);
+  if (live_vertex != nullptr) {
+    live_target.fanout = fanout(live_vertex);
+  }
+
+  for (const std::unique_ptr<MoveGenerator>& generator_ptr : move_generators_) {
+    MoveGenerator& generator = *generator_ptr;
+    const MoveType type = generator.type();
+    if (rejected_types != nullptr && rejected_types->contains(type)) {
+      RepairSetupProfiler::event("skip_rejected_move", 1, moveName(type));
+      continue;
+    }
+    if (!generator.isApplicable(live_target)) {
+      RepairSetupProfiler::event("skip_not_applicable", 1, moveName(type));
+      continue;
+    }
+
+    debugPrint(logger_,
+               RSZ,
+               "repair_setup",
+               1,
+               "Considering {} for {}",
+               generator.name(),
+               network_->pathName(live_target.driver_pin));
+
+    if (allowsBatchRepair(type)) {
+      if (trySizeDownFanoutBatch(generator,
+                                 live_target,
+                                 repairs_per_pass,
+                                 changed,
+                                 accepted_type)) {
+        return true;
+      }
+      continue;
+    }
+    if (tryCandidateSequence(
+            generator, live_target, repairs_per_pass, changed, accepted_type)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool SetupLegacyBase::tryRepairPathTarget(const Target& target,
+                                          const sta::Slack path_slack,
+                                          const int repairs_per_pass,
+                                          int& changed)
+{
+  committer_.trackViolatorWithTimingInfo(target.driver_pin,
+                                         target.vertex(resizer_),
+                                         path_slack,
+                                         *target_collector_);
+  logRepairTarget(target);
+  return tryRepairTarget(target, repairs_per_pass, changed, nullptr);
+}
+
+bool SetupLegacyBase::repairPath(sta::Path* path,
+                                 const sta::Slack path_slack,
+                                 const bool force_single_repair)
+{
+  sta::PathExpanded expanded(path, sta_);
+  int changed = 0;
+
+  if (expanded.size() <= 1) {
+    RepairSetupProfiler::event("skip_short_path");
+    return false;
+  }
+
+  if (path->minMax(sta_) != resizer_.max_) {
+    logger_->error(utl::RSZ,
+                   kMsgRepairSetupExpectedMaxPath,
+                   "repairSetup expects max delay path");
+    return false;
+  }
+
+  const int repairs_per_pass = repairBudget(path_slack, force_single_repair);
+
+  // Rank drivers on the main path and, for latch-through paths, on the latch
+  // D fanin path, then merge both segments into a single ranking.
+  std::vector<Target> targets;
+
+  {
+    const ProfileScope profile("target_collection");
+    std::vector<std::pair<Target, sta::Delay>> ranked_targets;
+    visitPathSegments(
+        path,
+        expanded,
+        sta_,
+        [&](const sta::Path* seg_path, sta::PathExpanded& seg_expanded) {
+          const sta::Scene* seg_corner = seg_path->scene(sta_);
+          const std::vector<std::pair<int, sta::Delay>> load_delays
+              = rankPathDrivers(seg_expanded,
+                                seg_corner,
+                                seg_corner->libertyIndex(resizer_.max_));
+          ranked_targets.reserve(ranked_targets.size() + load_delays.size());
+          for (const std::pair<int, sta::Delay>& load_delay : load_delays) {
+            Target target;
+            makePathDriverTarget(
+                seg_path, seg_expanded, load_delay.first, path_slack, target);
+            ranked_targets.emplace_back(std::move(target), load_delay.second);
+          }
+          return false;
+        });
+
+    debugPrint(logger_,
+               RSZ,
+               "repair_setup",
+               3,
+               "Path slack: {}, repairs: {}, ranked_targets: {}",
+               delayAsString(path_slack, 3, sta_),
+               repairs_per_pass,
+               ranked_targets.size());
+
+    std::ranges::stable_sort(ranked_targets,
+                             [](const std::pair<Target, sta::Delay>& lhs,
+                                const std::pair<Target, sta::Delay>& rhs) {
+                               return lhs.second > rhs.second;
+                             });
+
+    targets.reserve(ranked_targets.size());
+    for (std::pair<Target, sta::Delay>& ranked_target : ranked_targets) {
+      targets.push_back(std::move(ranked_target.first));
+    }
+
+    RepairSetupProfiler::event("targets_collected", targets.size());
+  }
+
+  // Drive ranked targets through the configured generator list until this
+  // pass reaches its repair budget.
+  for (const Target& target : targets) {
+    if (changed >= repairs_per_pass) {
+      break;
+    }
+    tryRepairPathTarget(target, path_slack, repairs_per_pass, changed);
+  }
+
+  return changed > 0;
+}
+
+int SetupLegacyBase::committedMoves(const MoveType type) const
+{
+  return committer_.committedMoves(type);
+}
+
+void SetupLegacyBase::reportPhaseComplete(const char* phase_name,
+                                          const char phase_marker) const
+{
+  // The sample costs a TNS pass, so only the profiler or the log pays it.
+  const bool log = logger_->debugCheck(RSZ, "repair_setup", 1);
+  if (!log && !RepairSetupProfiler::enabled()) {
+    return;
+  }
+
+  const ProfileScope profile("reporting");
+  sta::Slack final_wns;
+  sta::Vertex* final_worst;
+  float final_tns;
+  {
+    const ProfileScope collection("qor_collection");
+    target_collector_->worstSlack(final_wns, final_worst);
+    final_tns = target_collector_->totalNegativeSlack();
+  }
+  RepairSetupProfiler::qor("phase_after", final_wns, final_tns);
+  if (log) {
+    debugPrint(logger_,
+               RSZ,
+               "repair_setup",
+               1,
+               "{}{} Phase complete. WNS: {}, TNS: {}",
+               phase_name,
+               phase_marker,
+               delayAsString(final_wns, 3, sta_),
+               delayAsString(final_tns, 1, sta_));
+  }
+}
+
+sta::Path* SetupLegacyBase::endpointWorstPath(sta::Vertex* endpoint) const
+{
+  const ProfileScope profile("target_collection");
+  return target_collector_->findWorstSlackPath(endpoint);
+}
+
+void SetupLegacyBase::printProgress(const int iteration,
+                                    const bool force,
+                                    const char phase_marker) const
+{
+  const bool show_startpoint_metrics = showStartpointMetrics();
+  const bool start = iteration == 0;
+  const bool metrics_changed
+      = setup_context_.progress_header_printed
+        && setup_context_.progress_header_show_startpoint_metrics
+               != show_startpoint_metrics;
+
+  if (start || metrics_changed) {
+    progress_.printHeader(show_startpoint_metrics);
+  }
+  if (iteration % print_interval_ != 0 && !force) {
+    return;
+  }
+
+  // Re-run the group query so the reported numbers reflect the edits made
+  // since the endpoints were collected.
+  target_collector_->refreshGroupSlacks();
+  // StTNS is collected only for the startpoint layout and only when a row is
+  // actually emitted.
+  progress_.printRow(fmt::format("{}{}", iteration, phase_marker),
+                     *target_collector_,
+                     start ? "initial_progress" : "progress",
+                     show_startpoint_metrics,
+                     /*worst_by_startpoint=*/show_startpoint_metrics);
+}
+
+bool SetupLegacyBase::terminateProgress(const int iteration,
+                                        const float initial_tns,
+                                        float& prev_tns,
+                                        float& fix_rate_threshold,
+                                        const int endpt_index,
+                                        const int num_endpts,
+                                        const std::string_view phase_name,
+                                        const char phase_marker)
+{
+  if (iteration % opto_large_interval_ == 0) {
+    fix_rate_threshold *= 2.0;
+  }
+  if (iteration % opto_small_interval_ == 0) {
+    const float curr_tns = totalNegativeSlack();
+    // TNS only sees true violations. Once it is 0, any remaining work targets
+    // the setup slack margin, which the fix rate cannot measure.
+    if (config_.setup_slack_margin > 0.0f
+        && (initial_tns >= 0.0f || curr_tns >= 0.0f)) {
+      prev_tns = curr_tns;
+      return false;
+    }
+    float inc_fix_rate = (prev_tns - curr_tns) / initial_tns;
+    prev_tns = curr_tns;
+    if (iteration > 1000 && inc_fix_rate < fix_rate_threshold) {
+      RepairSetupProfiler::stop("low_incremental_fix_rate");
+      debugPrint(logger_,
+                 RSZ,
+                 "repair_setup",
+                 1,
+                 "{}{} Phase: Exiting at iteration {} because incr fix rate "
+                 "{:0.2f}% is < {:0.2f}% [endpt {}/{}]",
+                 phase_name,
+                 phase_marker,
+                 iteration,
+                 inc_fix_rate * 100,
+                 fix_rate_threshold * 100,
+                 endpt_index,
+                 num_endpts);
+      return true;
+    }
+  }
+  return false;
+}
+
+void SetupLegacyBase::reportCustomPhaseSetup() const
+{
+  const ProfileScope profile("reporting");
+  logger_->info(
+      utl::RSZ, 221, "Using custom phase sequence: {}", config_.phases);
+}
+
+}  // namespace rsz

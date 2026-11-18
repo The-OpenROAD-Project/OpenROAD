@@ -3,7 +3,6 @@ source "helpers.tcl"
 
 set skip {
   exit_summary
-  run_unit_test_and_exit
   vwait
   web_server
   exit

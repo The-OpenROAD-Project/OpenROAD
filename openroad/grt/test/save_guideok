@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2024-2026, The OpenROAD Authors
+
+# Usage: save_guideok <test_name>...
+# Copies each test's .guide from bazel-testlogs to <test_name>.guideok.
+
+set -e
+
+script_dir="$(dirname "$(readlink -f "$0")")/../../../test/shared"
+exec "${script_dir}/bazel_save.sh" guideok guide "$@"

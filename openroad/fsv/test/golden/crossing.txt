@@ -1,0 +1,6 @@
+# Two crossing wires: M1 along x in low-k, M2 along y above an etch stop.
+background 3.9
+layer 0.8 2.7
+layer 0.9 7.0
+box m1 0 0.9 0.4 3 1.1 0.6
+box m2 1.4 0 1.2 1.6 2 1.4
