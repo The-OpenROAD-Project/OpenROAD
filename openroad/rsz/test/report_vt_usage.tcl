@@ -40,12 +40,12 @@ link_design top -hier
 
 check "report_vt_usage" { catch { report_vt_usage } } 0
 check "report_vt_usage -verbose" { catch { report_vt_usage -verbose } } 0
-check "report_vt_usage -leakage -vt_order" \
-  { catch { report_vt_usage -leakage -vt_order {SL L R} } } 0
+check "report_vt_usage -vt_order" \
+  { catch { report_vt_usage -vt_order {SL L R} } } 0
 check "report_vt_usage -vt_order with an unknown name" \
   { catch { report_vt_usage -vt_order {SLVT L} } } 0
 check "report_vt_usage u_sub" { catch { report_vt_usage u_sub } } 0
 check "report_vt_usage -verbose u_sub/u_inner" \
-  { catch { report_vt_usage -verbose -leakage u_sub/u_inner } } 0
+  { catch { report_vt_usage -verbose u_sub/u_inner } } 0
 check_error "unknown module instance" { report_vt_usage no_such_inst } RSZ-3280
 exit_summary

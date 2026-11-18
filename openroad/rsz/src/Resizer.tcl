@@ -1148,20 +1148,19 @@ proc report_buffers { args } {
   rsz::report_buffers_cmd $filtered
 }
 
-sta::define_cmd_args "report_vt_usage" {[-verbose] [-leakage] \
-                                          [-vt_order vt_names] [module_inst]}
+sta::define_cmd_args "report_vt_usage" {[-verbose] [-vt_order vt_names] \
+                                          [module_inst]}
 
 proc report_vt_usage { args } {
   sta::parse_key_args "report_vt_usage" args keys {-vt_order} \
-    flags {-verbose -leakage}
+    flags {-verbose}
   sta::check_argc_eq0or1 "report_vt_usage" $args
   set modinst_name [lindex $args 0]
   set vt_order {}
   if { [info exists keys(-vt_order)] } {
     set vt_order $keys(-vt_order)
   }
-  rsz::report_vt_usage_cmd $modinst_name $vt_order \
-    [info exists flags(-leakage)] [info exists flags(-verbose)]
+  rsz::report_vt_usage_cmd $modinst_name $vt_order [info exists flags(-verbose)]
 }
 
 sta::define_cmd_args "report_delay_estimator_accuracy" {\

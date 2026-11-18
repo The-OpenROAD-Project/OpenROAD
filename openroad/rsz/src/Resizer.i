@@ -636,7 +636,6 @@ void report_buffers_cmd(bool filtered)
 
 void report_vt_usage_cmd(const char* modinst_name,
                          StringSeq vt_order,
-                         bool leakage,
                          bool verbose)
 {
   ensureLinked();
@@ -651,7 +650,7 @@ void report_vt_usage_cmd(const char* modinst_name,
     }
     module = modinst->getMaster();
   }
-  getResizer()->reportVTUsage(module, vt_order, leakage, verbose);
+  getResizer()->reportVTUsage(module, vt_order, verbose);
 }
 
 void report_delay_estimator_accuracy_cmd(Instance* inst,

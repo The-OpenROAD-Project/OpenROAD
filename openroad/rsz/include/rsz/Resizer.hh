@@ -171,16 +171,16 @@ struct VTLeakageStats
 struct VTMasterUsage
 {
   int count = 0;
-  double leakage = 0;  // Watts, filled only when requested
+  double leakage = 0;  // Watts, libertyLeakage times count
 };
 
-// Instance count and area (DBU^2) of the cells in one VT category
+// Instance count, area (DBU^2) and leakage of the cells in one VT category
 struct VTUsage
 {
   std::string vt_name;
   int count = 0;
   int64_t area = 0;
-  double leakage = 0;  // Watts, filled only when requested
+  double leakage = 0;  // Watts
   odb::PtrMap<odb::dbMaster, VTMasterUsage> masters;
 };
 
@@ -619,12 +619,12 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // CORE leaf instances of module by VT. VTs in vt_order come first, in that
   // order, then the rest by name; "-" (no VT implant layer) is last unless
   // vt_order names it.
+  // Leakage (W) of one instance of cell, from liberty only.
+  static double libertyLeakage(sta::LibertyCell* cell);
   std::vector<VTUsage> vtUsage(odb::dbModule* module,
-                               const std::vector<std::string>& vt_order = {},
-                               bool leakage = false);
+                               const std::vector<std::string>& vt_order = {});
   void reportVTUsage(odb::dbModule* module,
                      const std::vector<std::string>& vt_order,
-                     bool leakage,
                      bool verbose);
   void reportDelayEstimatorAccuracyForRebufferTree(sta::Instance* inst,
                                                    sta::Pin* driver_pin,

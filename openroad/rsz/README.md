@@ -643,18 +643,20 @@ report_buffers
 
 ### Reporting VT Usage
 
-The `report_vt_usage` command reports the instance count and area of each
-threshold voltage (VT) type, and their share of the total. The VT type of a
+The `report_vt_usage` command reports the instance count, area, and leakage
+power of each threshold voltage (VT) type, and their share of the total. The VT type of a
 cell comes from the implant layers in its LEF obstructions, as in
 `report_buffers`. Cells without an implant layer are reported in a `-` row,
 listed last. Only `CORE` standard cells are counted, so fillers, tap and endcap
-cells, tie cells, and macros are left out. VT types are listed by name unless
-`-vt_order` sets the order.
+cells, tie cells, and macros are left out. Leakage is the liberty leakage of each cell
+times its instance count: per primary power pin, the average of the
+state-dependent `leakage_power` values, which `report_power` instead weighs by
+state duty. It needs no activity, so it is fast, and it can differ from
+`report_power`. VT types are listed by name unless `-vt_order` sets the order.
 
 ```tcl
 report_vt_usage
     [-verbose]
-    [-leakage]
     [-vt_order vt_names]
     [module_inst]
 ```
@@ -664,7 +666,6 @@ report_vt_usage
 | Switch Name | Description |
 | ----- | ----- |
 | `-verbose` | Also report each cell master under its VT type. |
-| `-leakage` | Also report the leakage power of each VT type, the sum of the instance leakage that `report_power` uses. |
 | `-vt_order` | List of VT type names to report first, in this order, such as `{SL L R}`. VT types not in the list follow by name. A name with no cells gets a warning. |
 | `module_inst` | Report only the cells under this hierarchical module instance. The default is the whole design. |
 
@@ -674,15 +675,15 @@ Count%, Area%, and Leak% are shares of the total over the CORE cells. Area is
 in square microns, leakage in watts.
 
 ```tcl
-report_vt_usage -leakage -vt_order {SL L R}
+report_vt_usage -vt_order {SL L R}
 ```
 
 ```text
 VT type report:    Count   Count%         Area    Area%   Leakage(W)    Leak%
-  SL                 125   34.15%        20.53   48.60%    1.018e-06   96.27%
-  L                   61   16.67%         4.69   11.11%    2.617e-08    2.47%
-  R                  180   49.18%        17.01   40.28%    1.329e-08    1.26%
-  Total              366  100.00%        42.24  100.00%    1.058e-06  100.00%
+  SL                 125   34.15%        20.53   48.60%    1.335e-06   94.94%
+  L                   61   16.67%         4.69   11.11%    4.773e-08    3.39%
+  R                  180   49.18%        17.01   40.28%    2.344e-08    1.67%
+  Total              366  100.00%        42.24  100.00%    1.407e-06  100.00%
 ```
 
 ### Reporting Delay Estimator Accuracy

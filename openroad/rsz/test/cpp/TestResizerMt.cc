@@ -12,7 +12,8 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "rsz/Resizer.hh"
-#include "sta/PowerClass.hh"
+#include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
 
 namespace rsz {
 
@@ -111,7 +112,7 @@ static std::string capacitanceSignature(sta::dbSta* sta, const sta::Pin* pin)
   return oss.str();
 }
 
-TEST_F(TestResizerMt, VTUsageSumsInstanceLeakageByVT)
+TEST_F(TestResizerMt, VTUsageSumsLibertyLeakageByVT)
 {
   odb::dbTechLayer* lvt_implant = odb::dbTechLayer::create(
       db_->getTech(), "LVT_IMPLANT", odb::dbTechLayerType::IMPLANT);
@@ -144,7 +145,9 @@ TEST_F(TestResizerMt, VTUsageSumsInstanceLeakageByVT)
 
   const sta::Scene* scene = sta_->cmdScene();
   auto inst_leakage = [&](odb::dbInst* inst) -> double {
-    return sta_->power(db_network_->dbToSta(inst), scene).leakage();
+    sta::LibertyCell* cell
+        = db_network_->libertyCell(db_network_->dbToSta(inst->getMaster()));
+    return Resizer::libertyLeakage(cell->sceneCell(scene, sta::MinMax::max()));
   };
   double core_leakage = 0;
   for (odb::dbInst* inst : block_->getInsts()) {
@@ -152,10 +155,11 @@ TEST_F(TestResizerMt, VTUsageSumsInstanceLeakageByVT)
       core_leakage += inst_leakage(inst);
     }
   }
+  ASSERT_GT(inst_leakage(target), 0);
 
   const std::string lvt = resizer_.cellVTType(buf_lvt_master).vt_name;
   const std::vector<VTUsage> usage
-      = resizer_.vtUsage(block_->getTopModule(), {lvt}, true);
+      = resizer_.vtUsage(block_->getTopModule(), {lvt});
   ASSERT_EQ(usage.size(), 2u);
   const VTUsage& lvt_usage = usage[0];
   const VTUsage& rvt_usage = usage[1];
@@ -168,14 +172,6 @@ TEST_F(TestResizerMt, VTUsageSumsInstanceLeakageByVT)
       lvt_usage.leakage + rvt_usage.leakage, core_leakage, 1e-9 * core_leakage);
   // The same buffer leaks more in LVT.
   EXPECT_GT(lvt_usage.leakage, inst_leakage(rvt_buf));
-
-  for (const VTUsage& vt_usage :
-       resizer_.vtUsage(block_->getTopModule(), {}, false)) {
-    EXPECT_EQ(vt_usage.leakage, 0);
-    for (const auto& [master, master_usage] : vt_usage.masters) {
-      EXPECT_EQ(master_usage.leakage, 0);
-    }
-  }
 }
 
 TEST_F(TestResizerMt, BuildEstimatorContextAndEstimateLvtCandidate)
