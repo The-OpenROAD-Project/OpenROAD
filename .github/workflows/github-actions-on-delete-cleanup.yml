@@ -12,7 +12,7 @@ jobs:
   Delete-From-Staging:
     name: Delete branch from staging
 
-    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted-ubuntu-26.04' || 'ubuntu-26.04' }}
 
     permissions:
       # Read-only access so we don't accidentally try to push to *this* repository.

@@ -13,7 +13,7 @@ concurrency:
 jobs:
   create-tag:
     name: Create quarterly tag
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     # Only create the tag on the canonical repo; mirrors pick it up via
     # github-actions-cron-sync-fork-from-upstream*.yml instead of minting
     # their own independent tag object for the same commit.

@@ -1,16 +1,19 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2025, The OpenROAD Authors
 
+load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
-load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_library")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
-load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "python_wrap_cc", "python_wrap_library")
+load("//bazel:stamped_binary.bzl", "stamped_binary")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//bazel/gpu:archs.bzl", "CUDA_ARCHS")
 load("//test:regression.bzl", "messages_txt")
 
 package(
@@ -28,9 +31,9 @@ exports_files([
     "LICENSE",
     "MODULE.bazel",
     "README.md",
-    "src/Design.i",
-    "src/Exception.i",
-    "src/options.i",
+    "openroad/Design.i",
+    "openroad/Exception.i",
+    "openroad/options.i",
 ])
 
 string_flag(
@@ -56,9 +59,38 @@ config_setting(
     },
 )
 
+# Set by --config=profile (see .bazelrc).
+bool_flag(
+    name = "profile",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "profile_enabled",
+    flag_values = {
+        ":profile": "true",
+    },
+)
+
+selects.config_setting_group(
+    name = "profile_linux",
+    match_all = [
+        ":profile_enabled",
+        "@platforms//os:linux",
+    ],
+)
+
+# LLD gives rodata and code different vaddr-offset deltas; profilers that
+# assume a single load bias (e.g. VTune) then misresolve every symbol.
+# --no-rosegment merges the two into one segment. ELF-only, so Linux only.
+OPENROAD_LINKOPTS = select({
+    ":profile_linux": ["-Wl,--no-rosegment"],
+    "//conditions:default": [],
+})
+
 # Opt-in GPU build (see build:gpu in .bazelrc and bazel/gpu/system_gpu.bzl).
-# A string flag rather than a bool leaves room for a "hip" value, mirroring
-# the backend branches in cmake/KokkosBackend.cmake.
+# A string flag rather than a bool leaves room for other backends such as
+# "hip".
 string_flag(
     name = "gpu",
     build_setting_default = "none",
@@ -77,71 +109,92 @@ config_setting(
     visibility = ["//visibility:public"],
 )
 
+# CUDA code generation and the Kokkos configuration must use the same target.
+# "none" makes plain --config=gpu fail with an actionable message instead of
+# silently producing kernels for the wrong device.
+string_flag(
+    name = "cuda_arch",
+    build_setting_default = "none",
+    values = ["none"] + CUDA_ARCHS,
+    visibility = ["//visibility:public"],
+)
+
+[
+    config_setting(
+        name = "cuda_arch_" + arch,
+        flag_values = {":cuda_arch": arch},
+        visibility = ["//visibility:public"],
+    )
+    for arch in CUDA_ARCHS
+]
+
 OPENROAD_LIBRARY_DEPS = [
-    ":openroad_version",
-    "//src/ant",
-    "//src/ant:ui",
-    "//src/cgt",
-    "//src/cts",
-    "//src/cts:ui",
-    "//src/dbSta",
-    "//src/dbSta:dbNetwork",
-    "//src/dbSta:dbReadVerilog",
-    "//src/dbSta:ui",
-    "//src/dft",
-    "//src/dft:ui",
-    "//src/dpl",
-    "//src/dpl:ui",
-    "//src/drt",
-    "//src/drt:ui",
-    "//src/dst",
-    "//src/dst:ui",
-    "//src/est",
-    "//src/est:ui",
-    "//src/exa",
-    "//src/exa:ui",
-    "//src/fin",
-    "//src/gpl",
-    "//src/gpl:ui",
-    "//src/grt",
-    "//src/grt:ui",
-    "//src/ifp",
-    "//src/ifp:ui",
-    "//src/mpl",
-    "//src/mpl:ui",
-    "//src/odb/src/3dblox",
-    "//src/odb/src/cdl",
-    "//src/odb/src/db",
-    "//src/odb/src/defin",
-    "//src/odb/src/defout",
-    "//src/odb/src/lefin",
-    "//src/odb/src/lefout",
-    "//src/odb:ui",
-    "//src/pad",
-    "//src/par",
-    "//src/par:ui",
-    "//src/pdn",
-    "//src/ppl",
-    "//src/psm",
-    "//src/ram",
-    "//src/rcx",
-    "//src/rcx:ui",
-    "//src/rmp",
-    "//src/rmp:ui",
-    "//src/rsz",
-    "//src/rsz:ui",
-    "//src/stt:ui",
-    "//src/syn",
-    "//src/syn:ui",
-    "//src/tap",
-    "//src/tap:ui",
-    "//src/upf:ui",
-    "//src/utl",
-    "//src/utl:ui",
-    "//src/web",
-    "//src/web:ui",
-    "//src/wmk",
-    "//src/wmk:ui",
+    "//bazel:openroad_version",
+    "//openroad/ant",
+    "//openroad/ant:ui",
+    "//openroad/cgt",
+    "//openroad/cts",
+    "//openroad/cts:ui",
+    "//openroad/dbSta",
+    "//openroad/dbSta:dbNetwork",
+    "//openroad/dbSta:dbReadVerilog",
+    "//openroad/dbSta:ui",
+    "//openroad/dft",
+    "//openroad/dft:ui",
+    "//openroad/dpl",
+    "//openroad/dpl:ui",
+    "//openroad/drt",
+    "//openroad/drt:ui",
+    "//openroad/dst",
+    "//openroad/dst:ui",
+    "//openroad/est",
+    "//openroad/est:ui",
+    "//openroad/exa",
+    "//openroad/exa:ui",
+    "//openroad/fin",
+    "//openroad/fsv:field_solver",
+    "//openroad/fsv:ui",
+    "//openroad/gpl",
+    "//openroad/gpl:ui",
+    "//openroad/grt",
+    "//openroad/grt:ui",
+    "//openroad/ifp",
+    "//openroad/ifp:ui",
+    "//openroad/mpl",
+    "//openroad/mpl:ui",
+    "//openroad/odb/src/3dblox",
+    "//openroad/odb/src/cdl",
+    "//openroad/odb/src/db",
+    "//openroad/odb/src/defin",
+    "//openroad/odb/src/defout",
+    "//openroad/odb/src/lefin",
+    "//openroad/odb/src/lefout",
+    "//openroad/odb:ui",
+    "//openroad/pad",
+    "//openroad/par",
+    "//openroad/par:ui",
+    "//openroad/pdn",
+    "//openroad/ppl",
+    "//openroad/psm",
+    "//openroad/ram",
+    "//openroad/rcx",
+    "//openroad/rcx:ui",
+    "//openroad/rmp",
+    "//openroad/rmp:ui",
+    "//openroad/rsz",
+    "//openroad/rsz:ui",
+    "//openroad/stt:ui",
+    "//openroad/syn",
+    "//openroad/syn:ui",
+    "//openroad/tap",
+    "//openroad/tap:ui",
+    "//openroad/upf:ui",
+    "//openroad/utl",
+    "//openroad/utl:ui",
+    "//openroad/web",
+    "//openroad/web:ui",
+    "//openroad/wmk",
+    "//openroad/wmk:ui",
     ":ord",
 ]
 
@@ -161,17 +214,18 @@ OPENROAD_COPTS = [
 
 OPENROAD_DEFINES = [
     "BUILD_TYPE=\\\"$(COMPILATION_MODE)\\\"",
-    "BAZEL_BUILD",
-    "GPU=false",
-    "BUILD_PYTHON=false",
     "ABC_NAMESPACE=abc",
-]
+] + select({
+    # Reported by the startup banner (+GPU/-GPU).
+    ":gpu_cuda": ["GPU=true"],
+    "//conditions:default": ["GPU=false"],
+})
 
 cc_library(
     name = "cli_completer",
-    srcs = ["src/cli_completer.cc"],
-    hdrs = ["src/cli_completer.h"],
-    includes = ["src"],
+    srcs = ["openroad/cli_completer.cc"],
+    hdrs = ["openroad/cli_completer.h"],
+    includes = ["openroad"],
     visibility = ["//visibility:public"],
     deps = [
         "@tcl_lang//:tcl",
@@ -180,10 +234,10 @@ cc_library(
 
 cc_library(
     name = "tcl_readline_setup",
-    srcs = ["src/tcl_readline_setup.cc"],
-    hdrs = ["src/tcl_readline_setup.h"],
-    includes = ["src"],
-    visibility = ["//src/sta:__pkg__"],
+    srcs = ["openroad/tcl_readline_setup.cc"],
+    hdrs = ["openroad/tcl_readline_setup.h"],
+    includes = ["openroad"],
+    visibility = ["//openroad/sta:__pkg__"],
     deps = [
         ":cli_completer",
         "//third-party/linenoise",
@@ -197,43 +251,65 @@ cc_library(
 # headers to consumers, so direct binary deps are what each Main.cc
 # include needs to see.
 OPENROAD_MAIN_DEPS = [
+    ":libcxx_abort",
     ":ord",
     ":tcl_readline_setup",
     "//bazel:tcl_library_init",
-    "//src/cut",
-    "//src/sta:opensta_lib",
-    "//src/utl",
-    "//src/web",
+    "//openroad/cut",
+    "//openroad/sta:opensta_lib",
+    "//openroad/utl",
+    "//openroad/web",
     "@abseil-cpp//absl/base:no_destructor",
-    "@boost.stacktrace",
     "@tcl_lang//:tcl",
 ]
 
+cc_library(
+    name = "libcxx_abort",
+    srcs = ["openroad/LibcxxAbort.cc"],
+    hdrs = ["openroad/LibcxxAbort.h"],
+    includes = ["openroad"],
+    visibility = ["//openroad/utl/test:__pkg__"],
+    deps = [
+        ":ord",
+        "//openroad/utl",
+    ],
+    alwayslink = True,
+)
+
+# Linked with a placeholder version; :openroad writes the version in after
+# the link (see bazel/stamped_binary.bzl).
 cc_binary(
-    name = "openroad",
+    name = "openroad_unstamped",
     srcs = [
-        "src/Main.cc",
+        "openroad/Main.cc",
     ],
     copts = OPENROAD_COPTS,
     defines = OPENROAD_DEFINES,
     features = ["-use_header_modules"],
+    linkopts = OPENROAD_LINKOPTS,
     malloc = select({
         "@platforms//os:linux": "@tcmalloc//tcmalloc",
         "@platforms//os:macos": "@bazel_tools//tools/cpp:malloc",
     }),
-    visibility = ["//visibility:public"],
+    visibility = ["//bazel:__pkg__"],
     deps = OPENROAD_MAIN_DEPS + select(
         {
             ":platform_cli": [
                 ":openroad_lib",
-                "//src/gui",
+                "//openroad/gui",
             ],
             ":platform_gui": [
                 ":openroad_lib_qt",
-                "//src/gui:gui_qt",
+                "//openroad/gui:gui_qt",
             ],
         },
     ),
+)
+
+stamped_binary(
+    name = "openroad",
+    binary = ":openroad_unstamped",
+    visibility = ["//visibility:public"],
 )
 
 # Qt GUI variant. Build explicitly when the interactive GUI is wanted:
@@ -242,22 +318,28 @@ cc_binary(
 # this target is preferable for ad-hoc GUI builds because it does not
 # invalidate `:openroad`'s cache the way flipping the flag does.
 cc_binary(
-    name = "openroad-qt",
+    name = "openroad-qt_unstamped",
     srcs = [
-        "src/Main.cc",
+        "openroad/Main.cc",
     ],
     copts = OPENROAD_COPTS,
     defines = OPENROAD_DEFINES,
     features = ["-use_header_modules"],
+    linkopts = OPENROAD_LINKOPTS,
     malloc = select({
         "@platforms//os:linux": "@tcmalloc//tcmalloc",
         "@platforms//os:macos": "@bazel_tools//tools/cpp:malloc",
     }),
-    visibility = ["//visibility:public"],
     deps = OPENROAD_MAIN_DEPS + [
         ":openroad_lib_qt",
-        "//src/gui:gui_qt",
+        "//openroad/gui:gui_qt",
     ],
+)
+
+stamped_binary(
+    name = "openroad-qt",
+    binary = ":openroad-qt_unstamped",
+    visibility = ["//visibility:public"],
 )
 
 # CLI variant: the default. What downstream rule libraries pull as a
@@ -265,10 +347,10 @@ cc_binary(
 cc_library(
     name = "openroad_lib",
     srcs = [
-        "src/Design.cc",
-        "src/OpenRoad.cc",
-        "src/Tech.cc",
-        "src/Timing.cc",
+        "openroad/Design.cc",
+        "openroad/OpenRoad.cc",
+        "openroad/Tech.cc",
+        "openroad/Timing.cc",
         ":openroad_swig",
         ":openroad_tcl",
     ],
@@ -280,11 +362,10 @@ cc_library(
     ],
     visibility = ["//:__subpackages__"],
     deps = [
-        "//src/gui",
-        "//src/sta:opensta_lib",
+        "//openroad/gui",
+        "//openroad/sta:opensta_lib",
         "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/synchronization",
-        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ] + OPENROAD_LIBRARY_DEPS,
 )
@@ -295,10 +376,10 @@ cc_library(
 cc_library(
     name = "openroad_lib_qt",
     srcs = [
-        "src/Design.cc",
-        "src/OpenRoad.cc",
-        "src/Tech.cc",
-        "src/Timing.cc",
+        "openroad/Design.cc",
+        "openroad/OpenRoad.cc",
+        "openroad/Tech.cc",
+        "openroad/Timing.cc",
         ":openroad_swig",
         ":openroad_tcl",
     ],
@@ -310,11 +391,10 @@ cc_library(
     ],
     visibility = ["//:__subpackages__"],
     deps = [
-        "//src/gui:gui_qt",
-        "//src/sta:opensta_lib",
+        "//openroad/gui:gui_qt",
+        "//openroad/sta:opensta_lib",
         "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/synchronization",
-        "@boost.stacktrace",
         "@tcl_lang//:tcl",
     ] + OPENROAD_LIBRARY_DEPS,
 )
@@ -333,48 +413,17 @@ cc_library(
     ],
     visibility = ["//:__subpackages__"],
     deps = [
-        "//src/sta:opensta_lib",
+        "//openroad/sta:opensta_lib",
         "@abseil-cpp//absl/synchronization",
         "@tcl_lang//:tcl",
     ],
 )
 
-cc_library(
-    name = "openroad_version",
-    hdrs = [
-        ":OpenRoadVersion",
-    ],
-    includes = [
-        "include",
-    ],
-)
-
-genrule(
-    name = "OpenRoadVersion",
-    srcs = [],
-    outs = ["include/ord/Version.hh"],
-    cmd = """
-        VERSION=""
-        if [ -f bazel-out/stable-status.txt ]; then
-            VERSION=$$(grep '^STABLE_GIT_VERSION ' bazel-out/stable-status.txt \
-                        | cut -d' ' -f2-) || true
-        fi
-        [ -z "$$VERSION" ] && VERSION="bazel-nostamp"
-        printf '#define OPENROAD_VERSION "%s"\\n' "$$VERSION" > $@
-        printf '#define OPENROAD_GIT_DESCRIBE ""\\n' >> $@
-    """,
-    # stamp = -1 means "stamp when --stamp is set" (via --config=release).
-    # Without --stamp (the default), STABLE_GIT_VERSION is empty and
-    # the output is deterministic, so the Bazel cache is not invalidated
-    # on every commit.
-    stamp = -1,
-)
-
 tcl_encode(
     name = "openroad_tcl",
-    srcs = ["//src/sta:tcl_util"] + [
-        "src/Metrics.tcl",
-        "src/OpenRoad.tcl",
+    srcs = ["//openroad/sta:tcl_util"] + [
+        "openroad/Metrics.tcl",
+        "openroad/OpenRoad.tcl",
     ],
     char_array_name = "ord_tcl_inits",
     namespace = "ord",
@@ -383,112 +432,126 @@ tcl_encode(
 tcl_wrap_cc(
     name = "openroad_swig",
     srcs = [
-        "src/OpenRoad.i",
+        "openroad/OpenRoad.i",
         ":error_swig",
     ],
     module = "ord",
     namespace_prefix = "ord",
-    root_swig_src = "src/OpenRoad.i",
+    root_swig_src = "openroad/OpenRoad.i",
     swig_includes = [
-        "src",
+        "openroad",
     ],
 )
 
-cc_binary(
-    name = "_openroadpy.so",
-    srcs = [":openroad_swig-py"],
-    defines = [PYTHON_STABLE_API_DEFINE],
-    linkopts = PYTHON_EXTENSION_LINKOPTS,
-    linkshared = True,
-    deps = [
-        ":openroad_lib",
-        ":ord",
-        "//src/ant",
-        "//src/cgt",
-        "//src/cts",
-        "//src/dpl",
-        "//src/drt",
-        "//src/exa",
-        "//src/fin",
-        "//src/gpl",
-        "//src/grt",
-        "//src/gui",
-        "//src/ifp",
-        "//src/odb/src/db",
-        "//src/par",
-        "//src/pdn",
-        "//src/ppl",
-        "//src/psm",
-        "//src/rcx",
-        "//src/rsz",
-        "//src/stt",
-        "//src/tap",
-        "//src/utl",
-        "//src/web:core",
-        "//src/wmk",
-        "//src/wmk:hmac_sha256",
-        "@boost.stacktrace",
-        "@rules_python//python/cc:current_py_cc_headers",
-    ],
-)
-
-py_library(
-    name = "openroad_py",
-    srcs = [":openroad_swig-py"],
-    data = [":_openroadpy.so"],
-    imports = ["."],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//src/gpl:gpl_py",
-        "//src/odb:odb_py",
-        "//src/utl:utl_py",
-    ],
-)
-
+# The Python bindings: every module (ord_py, odb, utl, ant_py, cts_py, ...)
+# keeps its own namespace, and all of them are linked
+# into one library, _openroad.so, so they share a single copy of the C++
+# state. python/modules/_openroad_loader.py loads each module's init
+# function from that library.
 python_wrap_cc(
     name = "openroad_swig-py",
     srcs = [
         "include/ord/Design.h",
         "include/ord/Tech.h",
         "include/ord/Timing.h",
-        "src/OpenRoad-py.i",
+        "openroad/OpenRoad-py.i",
         ":error_swig-py",
     ],
-    module = "openroadpy",
-    root_swig_src = "src/OpenRoad-py.i",
+    module = "ord_py",
+    root_swig_src = "openroad/OpenRoad-py.i",
     swig_includes = [
         "include",
-        "src",
+        "openroad",
     ],
     deps = [
-        "//src/ant:swig-py",
-        "//src/cgt:swig-py",
-        "//src/cts:swig-py",
-        "//src/dpl:swig-py",
-        "//src/drt:swig-py",
-        "//src/exa:swig-py",
-        "//src/fin:swig-py",
-        "//src/gpl:swig-py",
-        "//src/grt:swig-py",
-        "//src/ifp:swig-py",
-        "//src/odb:swig-py",
-        "//src/par:swig-py",
-        "//src/pdn:swig-py",
-        "//src/ppl:swig-py",
-        "//src/psm:swig-py",
-        "//src/rcx:swig-py",
-        "//src/rsz:swig-py",
-        "//src/stt:swig-py",
-        "//src/tap:swig-py",
-        "//src/utl:swig-py",
-        "//src/wmk:swig-py",
+        "//openroad/odb:swig-py",
+        "//openroad/utl:swig-py",
+    ],
+)
+
+python_wrap_library(
+    name = "ord_py_wrap",
+    local_defines = [],
+    wrapper = ":openroad_swig-py",
+    deps = [
+        ":openroad_lib",
+        ":ord",
+        "//openroad/ifp",
+    ],
+)
+
+cc_binary(
+    name = "_openroad.so",
+    linkopts = PYTHON_EXTENSION_LINKOPTS,
+    linkshared = True,
+    deps = [
+        ":ord_py_wrap",
+        "//openroad/ant:py_wrap",
+        "//openroad/cgt:py_wrap",
+        "//openroad/cts:py_wrap",
+        "//openroad/dpl:py_wrap",
+        "//openroad/drt:py_wrap",
+        "//openroad/exa:py_wrap",
+        "//openroad/fin:py_wrap",
+        "//openroad/fsv:py_wrap",
+        "//openroad/gpl:py_wrap",
+        "//openroad/grt:py_wrap",
+        "//openroad/ifp:py_wrap",
+        "//openroad/odb:py_wrap",
+        "//openroad/par:py_wrap",
+        "//openroad/pdn:py_wrap",
+        "//openroad/ppl:py_wrap",
+        "//openroad/psm:py_wrap",
+        "//openroad/rcx:py_wrap",
+        "//openroad/rmp:py_wrap",
+        "//openroad/rsz:py_wrap",
+        "//openroad/stt:py_wrap",
+        "//openroad/tap:py_wrap",
+        "//openroad/utl:py_wrap",
+        "//openroad/wmk:py_wrap",
+    ],
+)
+
+py_library(
+    name = "openroad_py",
+    srcs = [":openroad_swig-py"] + [
+        "//openroad/ant:swig-py",
+        "//openroad/cgt:swig-py",
+        "//openroad/cts:swig-py",
+        "//openroad/dpl:swig-py",
+        "//openroad/drt:swig-py",
+        "//openroad/exa:swig-py",
+        "//openroad/fin:swig-py",
+        "//openroad/fsv:swig-py",
+        "//openroad/gpl:swig-py",
+        "//openroad/grt:swig-py",
+        "//openroad/ifp:swig-py",
+        "//openroad/odb:swig-py",
+        "//openroad/par:swig-py",
+        "//openroad/pdn:swig-py",
+        "//openroad/ppl:swig-py",
+        "//openroad/psm:swig-py",
+        "//openroad/rcx:swig-py",
+        "//openroad/rmp:swig-py",
+        "//openroad/rsz:swig-py",
+        "//openroad/stt:swig-py",
+        "//openroad/tap:swig-py",
+        "//openroad/utl:swig-py",
+        "//openroad/wmk:swig-py",
+    ],
+    data = [":_openroad.so"],
+    imports = ["."],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//python/modules",
+        "//python/openroad:package",
     ],
 )
 
 filegroup(
     name = "error_swig",
     srcs = [
-        "src/Exception.i",
+        "openroad/Exception.i",
     ],
     visibility = ["//:__subpackages__"],
 )
@@ -496,7 +559,7 @@ filegroup(
 filegroup(
     name = "error_swig-py",
     srcs = [
-        "src/Exception-py.i",
+        "openroad/Exception-py.i",
     ],
     visibility = ["//:__subpackages__"],
 )
@@ -504,14 +567,14 @@ filegroup(
 filegroup(
     name = "design_swig",
     srcs = [
-        "src/Design.i",
+        "openroad/Design.i",
     ],
 )
 
 filegroup(
     name = "options_swig",
     srcs = [
-        "src/options.i",
+        "openroad/options.i",
     ],
     visibility = ["//:__subpackages__"],
 )
@@ -535,16 +598,17 @@ alias(
     visibility = ["//visibility:public"],
 )
 
-# The ORD messages, which live in src/ itself rather than in a module
+# The ORD messages, which live in openroad/ itself rather than in a module
 # subdirectory.
 messages_txt(
     recursive = False,
+    src_dir = "openroad",
     visibility = ["//visibility:public"],
 )
 
 # Lightweight test suites that run without building OpenROAD.
 # Usage:
-#   bazelisk test --test_tag_filters=doc_check //src/... # all documentation checks
+#   bazelisk test --test_tag_filters=doc_check //openroad/... # all documentation checks
 #   bazelisk test //:dup_id_test                         # duplicate message ID check
 
 # buildifier: disable=native-sh-test
@@ -808,12 +872,56 @@ sh_binary(
     visibility = ["//visibility:public"],
 )
 
+# --- C/C++ formatting check (clang-format --dry-run) ----------------------
+
+# buildifier: disable=native-sh-test
+sh_test(
+    name = "fmt_cc_test",
+    srcs = ["//bazel:cc_fmt_test.sh"],
+    args = [
+        "$(rootpath //bazel:clang-format)",
+        "$(rootpath @git)",
+    ],
+    data = [
+        "MODULE.bazel",
+        "//bazel:cc_ls_files.sh",
+        "//bazel:clang-format",
+        "//bazel:git_ls_files.sh",
+        "@git",
+    ],
+    tags = [
+        "external",
+        "local",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# --- C/C++ auto-format only (clang-format -i) -----------------------------
+
+# buildifier: disable=native-sh-binary
+sh_binary(
+    name = "tidy_cc",
+    srcs = ["//bazel:cc_tidy.sh"],
+    args = [
+        "$(rootpath //bazel:clang-format)",
+        "$(rootpath @git)",
+    ],
+    data = [
+        "//bazel:cc_ls_files.sh",
+        "//bazel:clang-format",
+        "//bazel:git_ls_files.sh",
+        "@git",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 # --- Umbrella targets ------------------------------------------------------
 
 test_suite(
     name = "lint_test",
     tests = [
         ":fmt_bzl_test",
+        ":fmt_cc_test",
         ":fmt_py_test",
         ":fmt_tcl_test",
         ":fmt_yaml_test",
@@ -845,6 +953,8 @@ sh_binary(
         "$(rootpath //bazel:yamlfix)",
         "$(rootpath //bazel:py_tidy.sh)",
         "$(rootpath //bazel:black)",
+        "$(rootpath //bazel:cc_tidy.sh)",
+        "$(rootpath //bazel:clang-format)",
     ],
     data = [
         "MODULE.bazel",
@@ -854,6 +964,9 @@ sh_binary(
         "//bazel:black",
         "//bazel:bzl_lint_test.sh",
         "//bazel:bzl_tidy.sh",
+        "//bazel:cc_ls_files.sh",
+        "//bazel:cc_tidy.sh",
+        "//bazel:clang-format",
         "//bazel:git_ls_files.sh",
         "//bazel:py_tidy.sh",
         "//bazel:tcl_lint_test.sh",

@@ -15,35 +15,39 @@ minimizes the overhead of invoking each tool in the flow.
 
 ## Tool File Organization
 
+:::{Note}
+Bazel is the only build system for OpenROAD. Register new source files, tools
+and tests in Bazel `BUILD` files.
+:::
+
 Every tool follows the following file structure, grouping sources, tests
 and headers together.
 
-- `src/`
+- `openroad/`
    This folder contains the source files for individual tools.
 
-| `src`           | Purpose |
+| `openroad`      | Purpose |
 |-----------------|--------------|
-| `CMakeLists.txt`  | `add_subdirectory` for each tool|
+| `tool/BUILD`    | Bazel targets of the tool: `cc_library`, `tcl_encode`, `tcl_wrap_cc` |
+| `tool/test/BUILD` | Bazel tests of the tool: `regression_test`, `cc_test` |
 | `tool/src`       | sources and private headers |
-| `tool/src/CMakeLists.txt` | tool specific CMake file |
 | `tool/include/tool` | exported headers |
 | `tool/test`       | tool tests |
-| `tool/regression` | tool unit tests|
 
 - OpenROAD repository:
   This folder contains the top-level files for overall compilation. OpenROAD uses [swig](https://swig.org/) that acts as a wrapper for C/C++ programs to be callable in higher-level languages, such as Python and Tcl.
 
 | `OpenROAD`      | Purpose |
 |-----------------|--------------|
-| `CMakeLists.txt` | top-level CMake file |
-| `src/Main.cc`   | main file  |
-| `src/OpenROAD.cc` | OpenROAD class functions |
-| `src/OpenROAD.i`  | top-level swig, includes, tool swig files |
-| `src/OpenROAD.tcl` | basic read/write lef/def/db commands |
-| `include/ord/OpenROAD.hh` | OpenROAD top-level class, has instances of tools |
+| `BUILD.bazel`, `MODULE.bazel`, `.bazelrc` | top-level Bazel targets, dependencies and shared flags |
+| `openroad/Main.cc`   | main file  |
+| `openroad/OpenRoad.cc` | OpenROAD class functions |
+| `openroad/OpenRoad.i`  | top-level swig, includes, tool swig files |
+| `openroad/OpenRoad.tcl` | basic read/write lef/def/db commands |
+| `include/ord/OpenRoad.hh` | OpenROAD top-level class, has instances of tools |
 
 Some tools such as OpenSTA are submodules, which are simply
-subdirectories in `src/` that are pointers to the git submodule. They are
+subdirectories in `openroad/` that are pointers to the git submodule. They are
 intentionally not segregated into a separate module.
 
 The use of submodules for new code integrated into OpenROAD is strongly
@@ -57,25 +61,16 @@ depends on the nature of the dependency.
 -   Libraries - code packaged as a linkable library. Examples are `tcl`,
     `boost`, `zlib`, `eigen`, `lemon`, `spdlog`.
 
-These should be installed in the build environment and linked by
-OpenROAD. Document these dependencies in the top-level `README.md` file.
-The `Dockerfile` should be updated to illustrate where to find the library
-and how to install it. Adding libraries to the build environment requires
-coordination with system administrators, so that continuous integration hosts ensure
-that environments include the dependency. Advance notification
-should also be given to the development team so that their private build
-environments can be updated.
+Add each library as a `bazel_dep` in `MODULE.bazel` and list it in the
+`deps` of the tool target that uses it. Document these dependencies in the
+top-level `README.md` file.
 
-Each tool CMake file builds a library that is linked by the OpenROAD
-application. The tools should not define a `main()` function. If the
-tool is Tcl only and has no C++ code, it does not need to have a CMake
-file. Tool CMake files should **not** include the following:
-
-- `cmake_minimum_required`
-- `GCC_COVERAGE_COMPILE_FLAGS`
-- `GCC_COVERAGE_LINK_FLAGS`
-- `CMAKE_CXX_FLAGS`
-- `CMAKE_EXE_LINKER_FLAGS`
+Each tool `BUILD` file defines a `cc_library` that is linked by the OpenROAD
+application. The tools should not define a `main()` function.
+Global compiler flags live in `.bazelrc`, so a tool `BUILD` file should not
+repeat them. `OPENROAD_COPTS` in the top-level `BUILD.bazel` applies to the
+top-level targets only. A tool may add per-target `copts` for a local need,
+for example `-Wno-missing-braces` for SWIG-generated code in `openroad/pdn/BUILD`.
 
 None of the tools have commands to read or write LEF, DEF, Verilog or
 database files. For consistency, these functions are all provided by the OpenROAD
@@ -131,8 +126,11 @@ OpenSTA has Tcl utilities to parse keyword arguments
 (`sta::parse_keyword_args`). See `OpenSTA/tcl/*.tcl` for
 examples. Use swig to define internal functions to C++ functionality.
 
-Tcl files can be included by encoding them in CMake into a string that
-is evaluated at run time (See [`Resizer::init()`](../main/src/rsz/src/Resizer.cc)).
+Tcl files can be included by encoding them into a string that
+is evaluated at run time. Bazel does this with the `tcl_encode` rule
+(for example, the `tcl` target in `openroad/rsz/BUILD`), and the tool evaluates
+the string with `utl::evalTclInit` (see
+[`initResizer()`](../main/openroad/rsz/src/MakeResizer.cc)).
 
 :::{Note}
 Please refer to the top-level Tcl formatting [guide](TclFormat.md).
@@ -181,34 +179,26 @@ Completing the flow allows autotuners to collect final metrics and extract actio
 
 ## Test
 
-Each "tool" has a `/test` directory containing a script named
-`regression` to run "unit" tests. With no arguments it should run
-default unit tests.
+Each "tool" has a `/test` directory with its tests. Tests are registered
+in `openroad/<tool>/test/BUILD` and run with Bazel (see
+[Adding a Tool, Source File or Test in Bazel](#adding-a-tool-source-file-or-test-in-bazel)).
+
+``` shell
+# all tests of one tool
+bazelisk test //openroad/<tool>/test/...
+
+# one Tcl test; the target is <test name>-tcl_test
+bazelisk test --test_output=errors //openroad/<tool>/test:<test name>-tcl_test
+```
 
 No database files should be in tests. Read LEF/DEF/Verilog to make a
 database.
-
-The regression script should not depend on the current working
-directory. It should be able to be run from any directory. Use filenames
-relative to the script name rather the current working directory.
-
-Regression scripts should print a concise summary of test failures. The
-regression script should return an exit code of 0 if there are no
-errors and 1 if there are errors. The script should **not** print
-thousands of lines of internal tool information.
-
-Regression scripts should pass the `-no_init` option to `openroad` so that
-a user's `init` file is not sourced before the tests runs.
-
-Regression scripts should add output files or directories to
-`.gitignore` so that running does not leave the source repository
-"dirty".
 
 The Nangate45 open-source library data used by many tests is in
 `test/Nangate45`. Use the following command to add a link in the tool command:
 
 ``` shell
-cd src/<tool>/test
+cd openroad/<tool>/test
 ln -s ../../../test/Nangate45
 ```
 
@@ -222,10 +212,135 @@ read_liberty Nangate45/Nangate45_typ.lib
 ## Building
 
 Instructions for building are available [here](../user/Build.md).
+The Bazel binary is `bazel-bin/openroad/openroad`.
+
+## Adding a Tool, Source File or Test in Bazel
+
+Tools, source files and tests are registered in Bazel `BUILD` files. A test
+that is missing from a `BUILD` file does not run in CI. Copy a nearby target
+and keep visibility minimal.
+
+### Add a test
+
+Each tool lists its Tcl and Python tests by name in `openroad/<tool>/test/BUILD`.
+Most modules keep them in a `COMPULSORY_TESTS` list (some use `TESTS`), and
+some add `PASSFAIL_TESTS` or `BIG_TESTS`. Add the file
+`openroad/<tool>/test/<name>.tcl` (or `.py`) and its golden `<name>.ok`, then add
+`<name>` to the module's compulsory list (`COMPULSORY_TESTS` or `TESTS`).
+Another list, such as `PASSFAIL_TESTS` or `PY_TESTS`, also runs by default
+when the module's `ALL_TESTS` includes it, or its `test/BUILD` registers it,
+without a `manual` tag. Check the module's `test/BUILD`. Names tagged
+`manual` do not run in CI by default.
+
+The `regression_test` macro from `//test:regression.bzl` creates the target
+`<name>-tcl_test` for `<name>.tcl` and `<name>-py_test` for `<name>.py`, and
+tags it `tcl` or `py`. It adds the test file, `//test:regression_resources`,
+the OpenROAD binary and the `data` you pass to the test runfiles. It does not
+add `<name>.ok` or the input files of the test. The `data` argument must carry
+them, so each module defines a filegroup and passes it as `data`.
+
+For example, `openroad/exa/test/BUILD` registers the `basic` test with:
+
+```starlark
+load("//test:regression.bzl", "regression_test")
+
+package(features = ["layering_check"])
+
+TESTS = [
+    "basic",
+]
+
+filegroup(
+    name = "test_resources",
+    # All files in the package except the test scripts themselves, so the
+    # .ok file and the inputs are in the runfiles.
+    srcs = glob(
+        ["**/*"],
+        exclude = [
+            test + "." + ext
+            for test in TESTS
+            for ext in [
+                "tcl",
+                "py",
+            ]
+        ],
+    ),
+)
+
+[regression_test(
+    name = test_name,
+    data = [":test_resources"],
+) for test_name in TESTS]
+```
+
+Other modules build the filegroup per test, for example `openroad/ant/test/BUILD`
+has a `<name>_resources` filegroup with `glob([test_name + ".*"])` plus the
+input files. When you add a test to a module, copy `data` and `tags` from a
+neighbouring entry and add your input files to its resources.
+
+This gives `//openroad/exa/test:basic-tcl_test` and
+`//openroad/exa/test:basic-py_test`. A C++ unit test is a `cc_test` in the same
+`BUILD` file (for example `//openroad/rsz/test:TestBufRem1`) or in
+`openroad/<tool>/test/cpp/BUILD` (for example `openroad/odb/test/cpp/BUILD`).
+List the `srcs` and `deps` explicitly, including `@googletest//:gtest` and
+`@googletest//:gtest_main`.
+
+Check that Bazel sees the test, then run it:
+
+``` shell
+bazelisk query 'kind(test, //openroad/exa/test/...)'
+bazelisk test --test_output=errors //openroad/exa/test:basic-tcl_test
+```
+
+### Add a source file
+
+Add the file to the `srcs` of the tool `cc_library` in `openroad/<tool>/BUILD`.
+Add a header that other tools include to `hdrs`. For example, `openroad/pdn/BUILD`
+lists `src/via_repair.cpp` and `src/via_repair.h` in `srcs` of the `pdn`
+target, and `include/pdn/PdnGen.hh` in `hdrs`. Add a new Tcl file to the `srcs`
+of the tool `tcl_encode` target (`src/pdn.tcl` in the `tcl` target of
+`openroad/pdn/BUILD`). Then build:
+
+``` shell
+bazelisk build //:openroad
+```
+
+### Add a tool
+
+Use `openroad/exa` as the model; the walkthrough
+[below](#example-of-adding-a-tool-to-openroad) describes it. In Bazel, copy the
+structure of `openroad/exa/BUILD` or `openroad/pdn/BUILD`: a `cc_library` for the sources,
+a `tcl_encode` target for the Tcl commands, a `tcl_wrap_cc` target for the swig
+interface, a `python_wrap_cc` and `python_wrap_library` pair for the Python
+binding (`swig-py` and `py_wrap`), and a `messages_txt` target for the message
+list. Then wire the tool into the build and the binary:
+
+1. Add the tool targets to `OPENROAD_LIBRARY_DEPS` in the top-level
+   `BUILD.bazel` (`//openroad/exa` and `//openroad/exa:ui` are an example).
+2. Add `//openroad/<tool>:py_wrap` to the `deps` of `_openroad.so`, and
+   `//openroad/<tool>:swig-py` to the `srcs` of `openroad_py`, in `BUILD.bazel`.
+3. Add `//openroad/<tool>:messages_txt` to `messages` and `//openroad/<tool>:README.md`
+   to `readmes` in `docs/BUILD.bazel`, and export the README from the tool
+   `BUILD` with `exports_files(["README.md"])`.
+4. Add `X(<tool>)` to `FOREACH_TOOL_WITHOUT_OPENROAD` in `openroad/Main.cc` so the
+   Python module `_<tool>_py` is initialized.
+5. In `include/ord/OpenRoad.hh`, forward declare the tool class, add a getter
+   and a member pointer. In `openroad/OpenRoad.cc`, include the `Make<Tool>.h`
+   header and the tool class header (for exa: `exa/MakeExample.h` and
+   `exa/example.h`), create the object in `OpenRoad::init`, delete it in the
+   destructor, and call the tool `init` function with the Tcl interpreter (for
+   exa: `exa::initExample`). Add a getter to `openroad/OpenRoad.i` only when other
+   swig interfaces need it (`getPdnGen` is an example). The exa swig file calls
+   `ord::OpenRoad::openRoad()->getExample()` itself.
+6. For a tool with Python bindings, add `python/modules/<tool>.py` (copy
+   `python/modules/exa.py`), add the tool name to `_TOOLS` in
+   `python/modules/_openroad_loader.py`, and import it in
+   `python/openroad/__init__.py`.
+7. Add the tool README to `docs/toc.yml` (see the `main/openroad/exa/README` entry).
 
 ## Example of Adding a Tool to OpenROAD
 
-The directory [src/exa](../main/src/exa/README.md)
+The directory [openroad/exa](../main/openroad/exa/README.md)
 illustrates a tool named "Example" that uses the file structure described above.
 It defines a command to run the tool as illustrated below:
 
@@ -237,7 +352,7 @@ It defines a command to run the tool as illustrated below:
 example_instance [-name name] 
 ```
 
-The example include TCL & Python APIs with unit tests.  Also demonstrated is how to create debug graphics for algorithm visualization.  Running `openroad -gui basic.tcl` in `src/exa/test` will demonstrate the capability.
+The example include TCL & Python APIs with unit tests.  Also demonstrated is how to create debug graphics for algorithm visualization.  Running `openroad -gui basic.tcl` in `openroad/exa/test` will demonstrate the capability.
 
 ## Documentation
 
@@ -256,30 +371,30 @@ manpages.
 Tool namespaces are usually three-lettered lowercase letters.
 
 - Verilog to DB (dbSTA)
-- OpenDB: Open Database ([odb](../main/src/odb/README.md))
-- TritonPart: constraints-driven paritioner ([par](../main/src/par/README.md))
-- Floorplan Initialization ([ifp](../main/src/ifp/README.md))
-- ICeWall chip-level connections ([pad](../main/src/pad/README.md))
-- I/O Placement ([ppl](../main/src/ppl/README.md))
-- PDN Generation ([pdn](../main/src/pdn/README.md))
-- Tapcell and Welltie Insertion ([tap](../main/src/tap/README.md))
-- Macro Placer ([mpl](../main/src/mpl/README.md))
-- RePlAce Global Placer ([gpl](../main/src/gpl/README.md))
-- Gate resizing and buffering ([rsz](../main/src/rsz/README.md))
-- Parasitics estimation ([est](../main/src/est/README.md))
-- Detailed placement ([dpl](../main/src/dpl/README.md))
-- Clock tree synthesis ([cts](../main/src/cts/README.md))
-- FastRoute Global routing ([grt](../main/src/grt/README.md))
-- Antenna check and diode insertion ([ant](../main/src/ant/README.md))
-- TritonRoute Detailed routing ([drt](../main/src/drt/README.md))
-- Metal fill insertion ([fin](../main/src/fin/README.md))
-- Design for Test ([dft](../main/src/dft/README.md))
-- OpenRCX Parasitic Extraction ([rcx](../main/src/rcx/README.md))
+- OpenDB: Open Database ([odb](../main/openroad/odb/README.md))
+- TritonPart: constraints-driven paritioner ([par](../main/openroad/par/README.md))
+- Floorplan Initialization ([ifp](../main/openroad/ifp/README.md))
+- ICeWall chip-level connections ([pad](../main/openroad/pad/README.md))
+- I/O Placement ([ppl](../main/openroad/ppl/README.md))
+- PDN Generation ([pdn](../main/openroad/pdn/README.md))
+- Tapcell and Welltie Insertion ([tap](../main/openroad/tap/README.md))
+- Macro Placer ([mpl](../main/openroad/mpl/README.md))
+- RePlAce Global Placer ([gpl](../main/openroad/gpl/README.md))
+- Gate resizing and buffering ([rsz](../main/openroad/rsz/README.md))
+- Parasitics estimation ([est](../main/openroad/est/README.md))
+- Detailed placement ([dpl](../main/openroad/dpl/README.md))
+- Clock tree synthesis ([cts](../main/openroad/cts/README.md))
+- FastRoute Global routing ([grt](../main/openroad/grt/README.md))
+- Antenna check and diode insertion ([ant](../main/openroad/ant/README.md))
+- TritonRoute Detailed routing ([drt](../main/openroad/drt/README.md))
+- Metal fill insertion ([fin](../main/openroad/fin/README.md))
+- Design for Test ([dft](../main/openroad/dft/README.md))
+- OpenRCX Parasitic Extraction ([rcx](../main/openroad/rcx/README.md))
 - OpenSTA timing/power analyzer ([sta](https://github.com/The-OpenROAD-Project/OpenSTA/blob/master/README.md))
-- Graphical User Interface ([gui](../main/src/gui/README.md))
-- Static IR analyzer ([psm](../main/src/psm/README.md))
-- Example tool ([exa](../main/src/exa/README.md))
-- Physical design watermarking ([wmk](../main/src/wmk/README.md))
+- Graphical User Interface ([gui](../main/openroad/gui/README.md))
+- Static IR analyzer ([psm](../main/openroad/psm/README.md))
+- Example tool ([exa](../main/openroad/exa/README.md))
+- Physical design watermarking ([wmk](../main/openroad/wmk/README.md))
 
 ## Tool Checklist
 
@@ -290,10 +405,8 @@ portable to many different compiler/operating system versions and
 dependencies make this vastly more complicated.
 
 1. OpenROAD submodules reference tool `openroad` branch head. No git `develop`, `openroad_app`, or `openroad_build` branches.
-1. Submodules used by more than one tool belong in `src/`, not duplicated in each tool repo.
-1. `CMakeLists.txt` does not use add_compile_options include_directories link_directories link_libraries. Use target\_ versions instead. See tips [here](https://gist.github.com/mbinna/c61dbb39bca0e4fb7d1f73b0d66a4fd1).
-1. `CMakeLists.txt` does not use glob. Use explicit lists of source files and headers instead.
-1. `CMakeLists.txt` does not define `CFLAGS` `CMAKE_CXX_FLAGS` `CMAKE_CXX_FLAGS_DEBUG` `CMAKE_CXX_FLAGS_RELEASE`. Let the top level and defaults control these.
+1. Submodules used by more than one tool belong in `openroad/`, not duplicated in each tool repo.
+1. Tool `BUILD` files do not set global compiler flags. Global flags live in `.bazelrc`; `OPENROAD_COPTS` in the top-level `BUILD.bazel` covers only the top-level targets. A tool may add per-target `copts` for a local need (for example, SWIG warnings).
 1. No `main.cpp` or main procedure.
 1. No compiler warnings for GCC or Clang with optimization enabled.
 1. Does not call `flute::readLUT` (called once by `openroad`).
@@ -303,63 +416,63 @@ dependencies make this vastly more complicated.
 1. Does not read configuration files. Use command arguments or support commands.
 1. `.clang-format` at tool root directory to aid foreign programmers.
 1. No `jenkins/`, `Jenkinsfile`, `Dockerfile` in tool directory.
-1. `regression` script named `test/regression` with no arguments that runs tests. Not `tests/regression-tcl.sh`, not `test/run_tests.py` etc.
-1. `regression` script should run independent of current directory. For example, `../test/regression` should work.
-1. `regression` should only print test results or summary, not belch 1000s of lines of output.
+1. Tests registered in `openroad/<tool>/test/BUILD` and run with `bazelisk test //openroad/<tool>/test/...`.
 1. Test scripts use OpenROAD tcl commands (not `itcl`, not internal accessors).
-1. `regression` script should only write files in a directory that is in the tool's `.gitignore` so the hierarchy does not have modified files in it as a result or running the regressions.
 1. Regressions report no memory errors with `valgrind` (stretch goal).
 1. Regressions report no memory leaks with `valgrind` (difficult).
 1. Ensure the top-level README and Tcl format are compliant.
 
 ## Code Linting and Formatting
 
-OpenROAD uses both `clang-tidy` and `clang-format` to perform automatic linting and formatting whenever a pull request is submitted. To run these locally, please first setup Clang Tooling using this [guide](https://clang.llvm.org/docs/HowToSetupToolingForLLVM.html). Thereafter, you may run these commands:
+OpenROAD uses both `clang-tidy` and `clang-format` to perform automatic linting and formatting whenever a pull request is submitted.
 
-```shell
-cmake . -B build  # generate build files
-# typically only run these commands on files you changed.
-clang-tidy -p ./build source_file.cpp
-clang-format -i -style=file:.clang-format source_file.cpp
-```
-
-To run `clang-tidy` on all files, you can use the following script that runs
-`clang-tidy` in parallel and also caches the results, so subsequent runs
-only have to operate on changed files.
-
-```shell
-cmake . -B build  # generate build files
-ln -sf build/compile_commands.json .  # make compilation db visible
-/bin/sh etc/run-clang-tidy-cached.cc
-```
-
-Alternatively, you can run `clang-tidy` hermetically through Bazel — no
-cmake configuration or Clang Tooling setup is required, and the toolchain
-matches what CI will use:
+Run `clang-tidy` hermetically through Bazel. No Clang Tooling setup is
+required, and the toolchain matches what CI will use:
 
 ```shell
 # Single module:
-bazel build --config=lint //src/<module>/...
+bazelisk build --config=lint //openroad/<module>/...
 
-# Full lint scope (excludes upstream submodules):
-bazel build --config=lint -- //src/... //third-party/... \
-    -//src/sta/... -//third-party/abc/...
+# Full lint scope (excludes the upstream OpenSTA submodule):
+bazelisk build --config=lint -- //openroad/... //third-party/... -//openroad/sta/...
 ```
 
 Reports land under `bazel-bin/<pkg>/<target>_rules_lint/` as
 `*.AspectRulesLintClangTidy.out` files. Generated files (SWIG, bison, flex)
 and targets tagged `no-lint` are skipped automatically.
 
+To run `clang-tidy` on all files, or on a subset with `--filter=REGEX`, use
+`etc/run-clang-tidy.sh`. It runs `clang-tidy` in parallel and caches the
+results, so subsequent runs only have to operate on changed files. It uses the
+`clang-tidy` of the Bazel toolchain.
+
+```shell
+etc/run-clang-tidy.sh --filter='openroad/odb/'
+```
+
+Use the existing Bazel LLVM formatter to match CI's clang-format 23.1.2, even when the system formatter has a different version.
+From the repository root, check its version:
+
+```shell
+bazelisk run @llvm//tools:clang-format -- --version
+```
+
+Use absolute file paths because Bazel can change the working directory:
+
+```shell
+bazelisk run @llvm//tools:clang-format -- -i "$PWD/source_file.cpp"
+```
+
 ## Doxygen
 
 OpenROAD uses Doxygen style comments to generate documentation.
 See the generated documentation <a href="../doxygen_output/html/index.html">here</a>.
 Our preferred syntax for Doxygen comments can be found in this
-[file](../main/src/odb/include/odb/db.h). Also, do refer to the official Doxygen
+[file](../main/openroad/odb/include/odb/db.h). Also, do refer to the official Doxygen
 documentation for more information on what you can include in your Doxygen
 comments [here](https://www.doxygen.nl/manual/docblocks.html).
 
-Below shows an example snippet taken from `./src/odb/include/odb/db.h`:
+Below shows an example snippet taken from `./openroad/odb/include/odb/db.h`:
 
 ```cpp
 ///

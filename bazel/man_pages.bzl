@@ -30,9 +30,10 @@ def _man_pages_impl(ctx):
     cat_dir = ctx.actions.declare_directory("cat")
     html_dir = ctx.actions.declare_directory("html")
 
-    # The pypandoc-binary wheel (pinned in bazel/requirements.in) ships a
-    # statically linked pandoc; its other files are Python bindings the
-    # driver does not use, so only the binary becomes an action input.
+    # //bazel:pandoc is the pypandoc-binary wheel (pinned in
+    # bazel/requirements.in), or the upstream pandoc release on macOS arm64.
+    # The wheel's other files are Python bindings the driver does not use,
+    # so only the binary becomes an action input.
     pandoc = None
     for f in ctx.files._pandoc:
         if f.basename == "pandoc":
@@ -57,13 +58,13 @@ def _man_pages_impl(ctx):
             args.add("--script", f)
 
     for readme in ctx.files.readmes:
-        # Derive module name: src/ant/README.md  →  ant
+        # Derive module name: openroad/ant/README.md  →  ant
         parts = readme.short_path.split("/")
         module = parts[-2] if len(parts) >= 2 else readme.basename
         args.add("--readme", "{}:{}".format(module, readme.path))
 
     for msg in ctx.files.messages:
-        # Derive module name: src/ant/messages.txt  →  ant.  The ORD
+        # Derive module name: openroad/ant/messages.txt  →  ant.  The ORD
         # messages at the repository root (messages.txt) get an empty name.
         parts = msg.short_path.split("/")
         module = parts[-2] if len(parts) >= 2 else ""
@@ -110,7 +111,7 @@ man_pages = rule(
             allow_files = [".txt"],
         ),
         "readmes": attr.label_list(
-            doc = "Module README.md files (src/*/README.md).",
+            doc = "Module README.md files (openroad/*/README.md).",
             allow_files = [".md"],
         ),
         "scripts": attr.label_list(
@@ -128,9 +129,9 @@ man_pages = rule(
             cfg = "exec",
         ),
         "_pandoc": attr.label(
-            default = "@openroad-pip//pypandoc_binary:extracted_whl_files",
+            default = "//bazel:pandoc",
             allow_files = True,
-            # pandoc runs during the build, so take the wheel for the
+            # pandoc runs during the build, so take the pandoc for the
             # execution platform, not the target platform.
             cfg = "exec",
         ),

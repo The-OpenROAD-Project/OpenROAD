@@ -1,0 +1,1581 @@
+#include "GridGraph.h"
+
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstddef>
+#include <cstdio>
+#include <fstream>
+#include <iostream>
+#include <limits>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
+
+#include "CUGR.h"
+#include "Design.h"
+#include "GRNet.h"
+#include "GRTree.h"
+#include "geo.h"
+#include "odb/db.h"
+#include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "robin_hood.h"
+#include "utl/Logger.h"
+#include "utl/algorithms.h"
+
+namespace grt {
+
+namespace {
+
+// Per-layer NDR factor; layers beyond `net_costs` (or empty = no NDR) get 1.
+double layerFactor(const std::vector<double>& net_costs, const int layer)
+{
+  return std::cmp_less(layer, net_costs.size()) ? net_costs[layer] : 1.0;
+}
+
+}  // namespace
+
+GridGraph::GridGraph(const Design* design,
+                     const Constants& constants,
+                     utl::Logger* logger)
+    : logger_(logger),
+      gridlines_(design->getGridlines()),
+      lib_dbu_(design->getLibDBU()),
+      m2_pitch_(design->getLayer(1).getPitch()),
+      num_layers_(design->getNumLayers()),
+      x_size_(gridlines_[0].size() - 1),
+      y_size_(gridlines_[1].size() - 1),
+      design_(design),
+      constants_(constants)
+{
+  grid_centers_.resize(2);
+  for (int dimension = 0; dimension <= 1; dimension++) {
+    grid_centers_[dimension].resize(gridlines_[dimension].size() - 1);
+    for (int grid_index = 0; grid_index < gridlines_[dimension].size() - 1;
+         grid_index++) {
+      grid_centers_[dimension][grid_index]
+          = (gridlines_[dimension][grid_index]
+             + gridlines_[dimension][grid_index + 1])
+            / 2;
+    }
+  }
+
+  layer_names_.resize(num_layers_);
+  layer_directions_.resize(num_layers_);
+  for (int layer_index = 0; layer_index < num_layers_; layer_index++) {
+    const auto& layer = design->getLayer(layer_index);
+    layer_names_[layer_index] = layer.getName();
+    layer_directions_[layer_index] = layer.getDirection();
+    // First non-zero sheet/via resistance is the res-aware cost reference.
+    if (ref_resistance_ <= 0.0 && layer.getResistance() > 0.0) {
+      ref_resistance_ = layer.getResistance();
+    }
+    if (ref_via_resistance_ <= 0.0 && layer.getViaResistance() > 0.0) {
+      ref_via_resistance_ = layer.getViaResistance();
+    }
+  }
+
+  unit_length_wire_cost_ = design->getUnitLengthWireCost();
+  unit_via_cost_ = design->getUnitViaCost();
+  unit_length_short_costs_.resize(num_layers_);
+  for (int layer_index = 0; layer_index < num_layers_; layer_index++) {
+    unit_length_short_costs_[layer_index]
+        = design->getUnitLengthShortCost(layer_index);
+  }
+
+  // Init grid graph edges
+  grid_tracks_.assign(num_layers_, std::vector<int>());
+  graph_edges_.assign(num_layers_,
+                      std::vector<std::vector<GraphEdge>>(
+                          x_size_, std::vector<GraphEdge>(y_size_)));
+  for (int layer_index = 0; layer_index < num_layers_; layer_index++) {
+    const MetalLayer& layer = design->getLayer(layer_index);
+    const int direction = layer.getDirection();
+
+    const int n_grids = gridlines_[1 - direction].size() - 1;
+    grid_tracks_[layer_index].assign(n_grids, 0);
+    for (size_t grid_index = 0; grid_index < n_grids; grid_index++) {
+      IntervalT loc_range(gridlines_[1 - direction][grid_index],
+                          gridlines_[1 - direction][grid_index + 1]);
+      auto track_range = layer.rangeSearchTracks(loc_range);
+      if (track_range.isValid()) {
+        grid_tracks_[layer_index][grid_index] = track_range.range() + 1;
+        // exclude the track on the higher gridline
+        if (grid_index != n_grids - 1
+            && layer.getTrackLocation(track_range.high()) == loc_range.high()) {
+          grid_tracks_[layer_index][grid_index]--;
+        }
+      } else {
+        grid_tracks_[layer_index][grid_index] = 0;
+      }
+    }
+
+    // Layers below min_routing_layer are not routable; leave capacity 0.
+    if (layer_index < constants_.min_routing_layer) {
+      continue;
+    }
+
+    // Initialize edges' capacity to the number of tracks
+    if (direction == MetalLayer::V) {
+      for (size_t x = 0; x < x_size_; x++) {
+        const CapacityT n_tracks = grid_tracks_[layer_index][x];
+        for (size_t y = 0; y + 1 < y_size_; y++) {
+          graph_edges_[layer_index][x][y].capacity = n_tracks;
+        }
+      }
+    } else {
+      for (size_t y = 0; y < y_size_; y++) {
+        const CapacityT n_tracks = grid_tracks_[layer_index][y];
+        for (size_t x = 0; x + 1 < x_size_; x++) {
+          graph_edges_[layer_index][x][y].capacity = n_tracks;
+        }
+      }
+    }
+  }
+
+  // Deduct obstacles usage for routable layers (skip any layer below
+  // min_routing_layer, whose capacity is held at 0).
+  std::vector<std::vector<BoxT>> obstacles(num_layers_);
+  design->getAllObstacles(obstacles, true);
+  for (int layer_index = std::max(1, constants_.min_routing_layer);
+       layer_index < num_layers_;
+       layer_index++) {
+    const MetalLayer& layer = design->getLayer(layer_index);
+    const int direction = layer.getDirection();
+    const int n_grids = gridlines_[1 - direction].size() - 1;
+    const int n_edges = gridlines_[direction].size() - 2;
+    int min_edge_length = std::numeric_limits<int>::max();
+    for (int edge_index = 0; edge_index < n_edges; edge_index++) {
+      min_edge_length = std::min(min_edge_length,
+                                 grid_centers_[direction][edge_index + 1]
+                                     - grid_centers_[direction][edge_index]);
+    }
+    std::vector<std::vector<std::shared_ptr<std::pair<BoxT, IntervalT>>>>
+        obstacles_in_grid(n_grids);  // obstacle indices sorted in track grids
+    // Sort obstacles in track grids
+    for (auto& obs : obstacles[layer_index]) {
+      const int width = std::min(obs.x().range(), obs.y().range());
+      const int spacing
+          = layer.getParallelSpacing(
+                width, std::min(min_edge_length, obs[direction].range()))
+            + layer.getWidth() / 2 - 1;
+      PointT margin(0, 0);
+      margin[1 - direction] = spacing;
+      const BoxT obs_box(obs.lx() - margin.x(),
+                         obs.ly() - margin.y(),
+                         obs.hx() + margin.x(),
+                         obs.hy() + margin.y());  // enlarged obstacle box
+      const IntervalT track_range
+          = layer.rangeSearchTracks(obs_box[1 - direction]);
+      const std::shared_ptr<std::pair<BoxT, IntervalT>> obstacle
+          = std::make_shared<std::pair<BoxT, IntervalT>>(obs_box, track_range);
+      // Get grid range
+      const IntervalT grid_range
+          = rangeSearchRows(1 - direction, obs_box[1 - direction]);
+      for (int grid_index = grid_range.low(); grid_index <= grid_range.high();
+           grid_index++) {
+        obstacles_in_grid[grid_index].push_back(obstacle);
+      }
+    }
+    // Handle each track grid
+    IntervalT grid_track_range;
+    for (int grid_index = 0; grid_index < n_grids; grid_index++) {
+      if (grid_index == 0) {
+        grid_track_range.set(0, grid_tracks_[layer_index][grid_index] - 1);
+      } else {
+        grid_track_range.setLow(grid_track_range.high() + 1);
+        grid_track_range.addToHigh(grid_tracks_[layer_index][grid_index]);
+      }
+      if (!grid_track_range.isValid()) {
+        continue;
+      }
+      if (obstacles_in_grid[grid_index].empty()) {
+        continue;
+      }
+      std::vector<std::vector<std::shared_ptr<std::pair<BoxT, IntervalT>>>>
+          obstacles_at_edge(n_edges);
+      for (auto& obstacle : obstacles_in_grid[grid_index]) {
+        const IntervalT gridline_range
+            = rangeSearchGridlines(direction, obstacle->first[direction]);
+        const IntervalT edge_range(
+            std::max(gridline_range.low() - 2, 0),
+            std::min(gridline_range.high(), n_edges - 1));
+        for (int edge_index = edge_range.low(); edge_index <= edge_range.high();
+             edge_index++) {
+          obstacles_at_edge[edge_index].emplace_back(obstacle);
+        }
+      }
+      for (int edge_index = 0; edge_index < n_edges; edge_index++) {
+        if (obstacles_at_edge[edge_index].empty()) {
+          continue;
+        }
+        const int gridline = gridlines_[direction][edge_index + 1];
+        const IntervalT edge_interval(grid_centers_[direction][edge_index],
+                                      grid_centers_[direction][edge_index + 1]);
+        // Update cpacity
+        std::vector<IntervalT> usable_intervals(grid_track_range.range() + 1,
+                                                edge_interval);
+        for (auto& obstacle : obstacles_at_edge[edge_index]) {
+          const IntervalT affected_track_range
+              = grid_track_range.intersectWith(obstacle->second);
+          if (!affected_track_range.isValid()) {
+            continue;
+          }
+          for (int track_index = affected_track_range.low();
+               track_index <= affected_track_range.high();
+               track_index++) {
+            const int t_idx = track_index - grid_track_range.low();
+            if (obstacle->first[direction].low() <= gridline
+                && obstacle->first[direction].high() >= gridline) {
+              // Completely blocked
+              usable_intervals[t_idx] = {gridline, gridline};
+            } else if (obstacle->first[direction].high() < gridline) {
+              usable_intervals[t_idx].setLow(
+                  std::max(usable_intervals[t_idx].low(),
+                           obstacle->first[direction].high()));
+            } else if (obstacle->first[direction].low() > gridline) {
+              usable_intervals[t_idx].setHigh(
+                  std::min(usable_intervals[t_idx].high(),
+                           obstacle->first[direction].low()));
+            }
+          }
+        }
+        CapacityT capacity = 0;
+        for (IntervalT& usable_interval : usable_intervals) {
+          capacity
+              += (CapacityT) usable_interval.range() / edge_interval.range();
+        }
+        if (direction == MetalLayer::V) {
+          graph_edges_[layer_index][grid_index][edge_index].capacity = capacity;
+        } else {
+          graph_edges_[layer_index][edge_index][grid_index].capacity = capacity;
+        }
+      }
+    }
+  }
+
+  original_resources_per_layer_.assign(num_layers_, 0);
+  for (int layer_index = 0; layer_index < num_layers_; layer_index++) {
+    const int direction = layer_directions_[layer_index];
+    CapacityT sum = 0;
+    if (direction == MetalLayer::H) {
+      for (int y = 0; y < y_size_; y++) {
+        for (int x = 0; x + 1 < x_size_; x++) {
+          sum += graph_edges_[layer_index][x][y].capacity;
+        }
+      }
+    } else {
+      for (int x = 0; x < x_size_; x++) {
+        for (int y = 0; y + 1 < y_size_; y++) {
+          sum += graph_edges_[layer_index][x][y].capacity;
+        }
+      }
+    }
+    original_resources_per_layer_[layer_index]
+        = static_cast<int>(std::round(sum));
+  }
+
+  // Apply user-defined capacity adjustment.
+  //
+  // Mirrors the floor-to-1 rule FastRoute applies in
+  // GlobalRouter::computeUserLayerAdjustments: if the edge had any
+  // capacity before the adjustment and the user did not explicitly
+  // ask for full removal (adjustment == 1.0), keep at least one
+  // usable track.
+  for (int layer_index = 0; layer_index < num_layers_; layer_index++) {
+    const float adjustment = design->getLayer(layer_index).getAdjustment();
+    if (adjustment == 0.0) {
+      continue;
+    }
+    for (size_t x = 0; x < x_size_; x++) {
+      for (size_t y = 0; y < y_size_; y++) {
+        auto& edge = graph_edges_[layer_index][x][y];
+        const CapacityT orig_cap = edge.capacity;
+        edge.capacity *= (1.0 - adjustment);
+        if (orig_cap > 0.0 && adjustment != 1.0f) {
+          edge.capacity = std::max<CapacityT>(edge.capacity, 1.0);
+        }
+      }
+    }
+  }
+  default_view_context_ = makeWireCostViewContext({});
+}
+
+double GridGraph::stackPadLength(const int layer,
+                                 const int low,
+                                 const int high) const
+{
+  const double upper
+      = layer > low ? design_->getViaDemandLengthUpper(layer - 1) : 0.0;
+  const double lower
+      = layer < high ? design_->getViaDemandLengthLower(layer) : 0.0;
+  return std::max(upper, lower);
+}
+
+CostT GridGraph::getStackPadCost(const int layer,
+                                 const int low,
+                                 const int high,
+                                 const PointT loc,
+                                 const std::vector<double>& net_costs) const
+{
+  CostT cost = 0;
+  forEachPadFlankEdge(
+      layer,
+      low,
+      high,
+      loc,
+      net_costs,
+      [&](PointT edge_loc, CapacityT demand, double layer_factor) {
+        cost += getWireCost(layer, edge_loc, demand, layer_factor);
+      });
+  return cost;
+}
+
+void GridGraph::computeCongestionInformation()
+{
+  if (!congestion_info_dirty_) {
+    return;
+  }
+  congestion_info_dirty_ = false;
+
+  cap_per_layer_.assign(num_layers_, 0);
+  usage_per_layer_.assign(num_layers_, 0);
+  overflow_per_layer_.assign(num_layers_, 0);
+  max_h_overflow_.assign(num_layers_, 0);
+  max_v_overflow_.assign(num_layers_, 0);
+
+  for (int layer_index = 0; layer_index < num_layers_; layer_index++) {
+    const int direction = layer_directions_[layer_index];
+    CapacityT cap_sum = 0;
+    CapacityT usage_sum = 0;
+    CapacityT overflow_sum = 0;
+    CapacityT max_overflow = 0;
+
+    // Sub-min layers hold no routing wire, only pin-access via demand on
+    // 0-capacity edges.
+    if (layer_index < constants_.min_routing_layer) {
+      continue;
+    }
+
+    auto accumulate = [&](int x, int y) {
+      const auto& edge = graph_edges_[layer_index][x][y];
+      cap_sum += edge.capacity;
+      usage_sum += edge.demand;
+      const CapacityT overflow = edge.demand - edge.capacity;
+      if (overflow > 0) {
+        overflow_sum += overflow;
+        max_overflow = std::max(max_overflow, overflow);
+      }
+    };
+
+    if (direction == MetalLayer::H) {
+      for (int y = 0; y < y_size_; y++) {
+        for (int x = 0; x + 1 < x_size_; x++) {
+          accumulate(x, y);
+        }
+      }
+    } else {
+      for (int x = 0; x < x_size_; x++) {
+        for (int y = 0; y + 1 < y_size_; y++) {
+          accumulate(x, y);
+        }
+      }
+    }
+
+    cap_per_layer_[layer_index] = static_cast<int>(std::round(cap_sum));
+    usage_per_layer_[layer_index] = static_cast<int>(std::round(usage_sum));
+    overflow_per_layer_[layer_index]
+        = static_cast<int>(std::round(overflow_sum));
+    const int max_overflow_int = static_cast<int>(std::round(max_overflow));
+    if (direction == MetalLayer::H) {
+      max_h_overflow_[layer_index] = max_overflow_int;
+    } else {
+      max_v_overflow_[layer_index] = max_overflow_int;
+    }
+  }
+}
+
+IntervalT GridGraph::rangeSearchGridlines(const int dimension,
+                                          const IntervalT& loc_interval) const
+{
+  IntervalT range;
+  range.set(lower_bound(gridlines_[dimension].begin(),
+                        gridlines_[dimension].end(),
+                        loc_interval.low())
+                - gridlines_[dimension].begin(),
+            lower_bound(gridlines_[dimension].begin(),
+                        gridlines_[dimension].end(),
+                        loc_interval.high())
+                - gridlines_[dimension].begin());
+  if (range.high() >= gridlines_[dimension].size()) {
+    range.setHigh(gridlines_[dimension].size() - 1);
+  } else if (gridlines_[dimension][range.high()] > loc_interval.high()) {
+    range.addToHigh(-1);
+  }
+  return range;
+}
+
+IntervalT GridGraph::rangeSearchRows(const int dimension,
+                                     const IntervalT& loc_interval) const
+{
+  const auto& line_range = rangeSearchGridlines(dimension, loc_interval);
+  return {gridlines_[dimension][line_range.low()] == loc_interval.low()
+              ? line_range.low()
+              : std::max(line_range.low() - 1, 0),
+          gridlines_[dimension][line_range.high()] == loc_interval.high()
+              ? line_range.high() - 1
+              : std::min(line_range.high(), getSize(dimension) - 1)};
+}
+
+BoxT GridGraph::getCellBox(PointT point) const
+{
+  return {getGridline(0, point.x()),
+          getGridline(1, point.y()),
+          getGridline(0, point.x() + 1),
+          getGridline(1, point.y() + 1)};
+}
+
+BoxT GridGraph::rangeSearchCells(const BoxT& box) const
+{
+  return {rangeSearchRows(0, box[0]), rangeSearchRows(1, box[1])};
+}
+
+int GridGraph::getEdgeLength(int direction, int edge_index) const
+{
+  return grid_centers_[direction][edge_index + 1]
+         - grid_centers_[direction][edge_index];
+}
+
+double GridGraph::logistic(const CapacityT& input, const double slope) const
+{
+  return 1.0 / (1.0 + exp(input * slope));
+}
+
+CostT GridGraph::congestionCost(const CostT base,
+                                const CapacityT capacity,
+                                const CapacityT resource,
+                                const double slope) const
+{
+  // The RRR multiplier scales the congestion cost height, not only its slope.
+  return base * cost_multiplier_
+         * (capacity < 1.0 ? 1.0
+                           : logistic(resource, slope * cost_multiplier_));
+}
+
+CostT GridGraph::getWireCost(const int layer_index,
+                             const PointT lower,
+                             const CapacityT demand,
+                             const double net_factor) const
+{
+  const int direction = layer_directions_[layer_index];
+  const int edge_length = getEdgeLength(direction, lower[direction]);
+  const CapacityT demand_length = demand * net_factor * edge_length;
+  const auto& edge = graph_edges_[layer_index][lower.x()][lower.y()];
+  CostT cost = demand_length * unit_length_wire_cost_;
+  cost += congestionCost(demand_length * unit_length_short_costs_[layer_index],
+                         edge.capacity,
+                         edge.capacity - edge.demand,
+                         constants_.cost_logistic_slope);
+  // Resource gate (like FastRoute assignEdge): penalise wires that don't fit an
+  // edge so the router climbs via. Wire segments only (demand >= 1.0); finite,
+  // so a full layer range still falls back to min-via.
+  if (constants_.congestion_gate_penalty > 0.0 && demand >= 1.0
+      && edge.capacity >= 1.0
+      && edge.capacity - edge.demand < demand * net_factor) {
+    cost += demand_length * unit_length_wire_cost_
+            * constants_.congestion_gate_penalty;
+  }
+  return cost;
+}
+
+CostT GridGraph::getWireCost(const int layer_index,
+                             const PointT u,
+                             const PointT v,
+                             const double net_factor) const
+{
+  const int direction = layer_directions_[layer_index];
+  if (u[1 - direction] != v[1 - direction]) {
+    logger_->error(
+        utl::GRT,
+        1249,
+        "Wire endpoint coordinates are not aligned for direction {}: {} != {}.",
+        direction,
+        u[1 - direction],
+        v[1 - direction]);
+  }
+  CostT cost = 0;
+  if (direction == MetalLayer::H) {
+    const auto [l, h] = std::minmax({u.x(), v.x()});
+    for (int x = l; x < h; x++) {
+      cost += getWireCost(layer_index, {x, u.y()}, 1.0, net_factor);
+    }
+  } else {
+    const auto [l, h] = std::minmax({u.y(), v.y()});
+    for (int y = l; y < h; y++) {
+      cost += getWireCost(layer_index, {u.x(), y}, 1.0, net_factor);
+    }
+  }
+  return cost;
+}
+
+CostT GridGraph::getUnitViaCost(const int layer_index,
+                                const std::vector<double>& net_costs) const
+{
+  if (layer_index + 1 >= num_layers_) {
+    logger_->error(utl::GRT,
+                   1250,
+                   "Via layer index {} exceeds number of layers {}.",
+                   layer_index,
+                   num_layers_);
+  }
+  // Scale the unit via cost by the max NDR factor across the two
+  // adjacent layers, approximating the wider NDR via without access
+  // to the per-NDR via shapes.
+  return unit_via_cost_
+         * std::max(layerFactor(net_costs, layer_index),
+                    layerFactor(net_costs, layer_index + 1));
+}
+
+CostT GridGraph::getWireResistanceCost(const int layer_index,
+                                       const PointT u,
+                                       const PointT v,
+                                       const int wire_width) const
+{
+  const MetalLayer& layer = design_->getLayer(layer_index);
+  // NDR nets carry wider, lower-resistance wires; fall back to the layer
+  // default when the net sets no NDR width on this layer (wire_width == 0).
+  const double width = wire_width > 0 ? wire_width : layer.getWidth();
+  // First non-zero routing-layer sheet resistance is the reference; 0 if none.
+  const double ref = ref_resistance_;
+  if (width <= 0.0 || ref <= 0.0 || layer.getResistance() <= 0.0) {
+    return 0;
+  }
+  const int direction = layer_directions_[layer_index];
+  int length = 0;  // total wire length in DBU
+  if (direction == MetalLayer::H) {
+    const auto [lo, hi] = std::minmax({u.x(), v.x()});
+    for (int x = lo; x < hi; x++) {
+      length += getEdgeLength(direction, x);
+    }
+  } else {
+    const auto [lo, hi] = std::minmax({u.y(), v.y()});
+    for (int y = lo; y < hi; y++) {
+      length += getEdgeLength(direction, y);
+    }
+  }
+  // R = sheet_resistance * length / width, normalised by layer 0;
+  // resistance_weight rescales the ~O(1) result to CUGR's cost magnitude.
+  const double resistance = layer.getResistance() * length / width;
+  return constants_.resistance_weight * resistance / ref;
+}
+
+CostT GridGraph::getViaResistanceCost(const int lower_layer) const
+{
+  // First non-zero via resistance is the reference (normally layer 0; robust
+  // if the bottom via leaves its resistance undefined).
+  const double ref = ref_via_resistance_;
+  const double via_r = design_->getLayer(lower_layer).getViaResistance();
+  // Techs that leave cut-layer resistance unpopulated make this 0
+  if (ref <= 0.0 || via_r <= 0.0) {
+    return 0;
+  }
+  return constants_.resistance_weight * via_r / ref;
+}
+
+double GridGraph::getNetResistance(const std::shared_ptr<GRTreeNode>& tree,
+                                   const std::vector<int>& ndr_widths) const
+{
+  if (!tree) {
+    return 0.0;
+  }
+  double total_resistance = 0.0;
+  GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
+    for (const auto& child : node->getChildren()) {
+      if (node->getLayerIdx() == child->getLayerIdx()) {
+        // Wire segment on a single layer.
+        const int layer = node->getLayerIdx();
+        if (layer < 0) {
+          continue;
+        }
+        const MetalLayer& metal_layer = design_->getLayer(layer);
+        // NDR width if set on this layer, else the layer default; matches the
+        // width getWireResistanceCost uses.
+        const int ndr_width
+            = std::cmp_less(layer, ndr_widths.size()) ? ndr_widths[layer] : 0;
+        const double width = ndr_width > 0 ? ndr_width : metal_layer.getWidth();
+        if (width <= 0.0) {
+          continue;
+        }
+        const int direction = layer_directions_[layer];
+        const auto [lo, hi]
+            = std::minmax({(*node)[direction], (*child)[direction]});
+        int length = 0;
+        for (int c = lo; c < hi; c++) {
+          length += getEdgeLength(direction, c);
+        }
+        total_resistance += metal_layer.getResistance() * length / width;
+      } else {
+        // Via stack between the two nodes' layers.
+        const auto [lo, hi]
+            = std::minmax({node->getLayerIdx(), child->getLayerIdx()});
+        for (int l = lo; l < hi; l++) {
+          total_resistance += design_->getLayer(l).getViaResistance();
+        }
+      }
+    }
+  });
+  return total_resistance;
+}
+
+int GridGraph::getTreeLength(const std::shared_ptr<GRTreeNode>& tree) const
+{
+  if (!tree) {
+    return 0;
+  }
+  int length = 0;
+  GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
+    for (const auto& child : node->getChildren()) {
+      // Planar wirelength in gcells (vias contribute 0).
+      length += std::abs(node->x() - child->x())
+                + std::abs(node->y() - child->y());
+    }
+  });
+  return length;
+}
+
+std::vector<AccessPoint> GridGraph::translateAccessPointsToGrid(
+    const std::vector<odb::dbAccessPoint*>& aps,
+    const odb::Point& inst_location) const
+{
+  std::vector<AccessPoint> aps_on_grid;
+  for (const auto& ap : aps) {
+    odb::Point ap_position = ap->getPoint();
+    odb::dbTechLayer* layer = ap->getLayer();
+
+    // Transform AP position according to instance location and orientation.
+    odb::dbTransform xform;
+    xform.setOffset({inst_location.getX(), inst_location.getY()});
+    xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
+    xform.apply(ap_position);
+
+    // Map to the gcell containing the point with the same gridline search as
+    // every other dbu->gcell conversion (a fixed die/size pitch drifts off the
+    // real gridlines and lands boundary pins one gcell off). A point exactly
+    // on a gridline degenerates the interval; low() picks the upper cell.
+    const BoxT cells = rangeSearchCells(BoxT(ap_position.getX(),
+                                             ap_position.getY(),
+                                             ap_position.getX(),
+                                             ap_position.getY()));
+    const int ap_x = std::clamp(cells[0].low(), 0, x_size_ - 1);
+    const int ap_y = std::clamp(cells[1].low(), 0, y_size_ - 1);
+    const PointT selected_point = PointT(ap_x, ap_y);
+    const int num_layer
+        = std::clamp(layer->getRoutingLevel() - 1, 0, getNumLayers() - 1);
+    const IntervalT selected_layer = IntervalT(num_layer);
+    aps_on_grid.emplace_back(selected_point, selected_layer);
+  }
+
+  return aps_on_grid;
+}
+
+AccessPoint GridGraph::selectAccessPoint(
+    const std::vector<AccessPoint>& access_points) const
+{
+  AccessPoint best_ap;
+  int votes = -1;
+
+  for (const AccessPoint& ap : access_points) {
+    int equals = std::count(access_points.begin(), access_points.end(), ap);
+    if (equals > votes) {
+      votes = equals;
+      best_ap = ap;
+    }
+  }
+  return best_ap;
+}
+
+// The set is keyed by cell only; union the layer intervals of pins that
+// share a cell so the routing tree honors every pin's connection layers.
+std::vector<int> GridGraph::findODBAccessPoints(
+    GRNet* net,
+    AccessPointMap& selected_access_points) const
+{
+  std::vector<int> pins_without_aps;
+  std::vector<odb::dbAccessPoint*> access_points;
+
+  // Shared tail of the bterm/iterm loops: pick one cell from the gathered
+  // ODB APs, union its layers into the map, and record the pin's own AP.
+  auto select_pin_ap = [&](const int pin_idx, const odb::Point& location) {
+    const std::vector<AccessPoint> aps_on_grid
+        = translateAccessPointsToGrid(access_points, location);
+    access_points.clear();
+    if (aps_on_grid.empty()) {
+      pins_without_aps.push_back(pin_idx);
+      return;
+    }
+    const AccessPoint selected_ap = selectAccessPoint(aps_on_grid);
+    IntervalT& layers = selected_access_points[selected_ap.point];
+    layers = layers.unionWith(selected_ap.layers);
+    net->addPreferredAccessPoint(pin_idx, selected_ap);
+  };
+
+  for (const auto& [pin_idx, bterm] : net->getBTermsByPinIndex()) {
+    for (const odb::dbBPin* bpin : bterm->getBPins()) {
+      const std::vector<odb::dbAccessPoint*>& bpin_pas
+          = bpin->getAccessPoints();
+      access_points.insert(
+          access_points.end(), bpin_pas.begin(), bpin_pas.end());
+    }
+    select_pin_ap(pin_idx, odb::Point(0, 0));
+  }
+
+  for (const auto& [pin_idx, iterm] : net->getITermsByPinIndex()) {
+    const auto& pref_access_points = iterm->getPrefAccessPoints();
+    if (!pref_access_points.empty()) {
+      access_points.insert(access_points.end(),
+                           pref_access_points.begin(),
+                           pref_access_points.end());
+    } else if (!iterm->getInst()->isCore()) {
+      // For non-core cells, DRT does not assign preferred APs.
+      // Use all APs to ensure the guides covering at least one AP.
+      for (const auto& [pin, aps] : iterm->getAccessPoints()) {
+        access_points.insert(access_points.end(), aps.begin(), aps.end());
+      }
+    }
+
+    int x, y;
+    iterm->getInst()->getLocation(x, y);
+    select_pin_ap(pin_idx, odb::Point(x, y));
+  }
+  return pins_without_aps;
+}
+
+void GridGraph::selectShapeAccessPoint(
+    GRNet* net,
+    const int pin_idx,
+    AccessPointMap& selected_access_points) const
+{
+  const auto& bounding_box = net->getBoundingBox();
+  const PointT net_center(bounding_box.cx(), bounding_box.cy());
+  const std::vector<GRPoint>& access_points
+      = net->getPinAccessPoints()[pin_idx];
+  std::pair<int, int> best_access_dist = {0, std::numeric_limits<int>::max()};
+  int best_index = -1;
+  for (int index = 0; index < access_points.size(); index++) {
+    const GRPoint& point = access_points[index];
+    int accessibility = 0;
+    if (point.getLayerIdx() >= constants_.min_routing_layer) {
+      const int direction = getLayerDirection(point.getLayerIdx());
+      accessibility
+          += getEdge(point.getLayerIdx(), point.x(), point.y()).capacity >= 1;
+      if (point[direction] > 0) {
+        auto lower = point;
+        lower[direction] -= 1;
+        accessibility
+            += getEdge(lower.getLayerIdx(), lower.x(), lower.y()).capacity >= 1;
+      }
+    } else {
+      accessibility = 1;
+    }
+    const int distance
+        = abs(net_center.x() - point.x()) + abs(net_center.y() - point.y());
+    if (accessibility > best_access_dist.first
+        || (accessibility == best_access_dist.first
+            && distance < best_access_dist.second)) {
+      best_index = index;
+      best_access_dist = {accessibility, distance};
+    }
+  }
+  if (best_access_dist.first == 0) {
+    logger_->warn(utl::GRT,
+                  274,
+                  "Pin {} of net {} is hard to access.",
+                  pin_idx,
+                  net->getName());
+  }
+
+  if (best_index == -1) {
+    logger_->error(utl::GRT,
+                   283,
+                   "No preferred access point found for pin on net {}.",
+                   net->getName());
+  }
+
+  const PointT selected_point = access_points[best_index];
+  IntervalT fixed_layer_interval;
+  for (const auto& point : access_points) {
+    if (point.x() == selected_point.x() && point.y() == selected_point.y()) {
+      fixed_layer_interval.update(point.getLayerIdx());
+    }
+  }
+
+  // Union goes into the routing-tree map; the terminal keeps its own
+  // layers so downstream consumers see the pin's real connection layer.
+  IntervalT& layers = selected_access_points[selected_point];
+  layers = layers.unionWith(fixed_layer_interval);
+  net->addPreferredAccessPoint(
+      pin_idx, {.point = selected_point, .layers = fixed_layer_interval});
+}
+
+AccessPointMap GridGraph::selectAccessPoints(GRNet* net) const
+{
+  AccessPointMap selected_access_points;
+  selected_access_points.reserve(net->getNumPins());
+  // Prefer DRT-created ODB access points; pins without them fall back to
+  // shape-derived cells so they are never dropped from the routing tree.
+  const std::vector<int> pins_without_aps
+      = findODBAccessPoints(net, selected_access_points);
+  for (const int pin_idx : pins_without_aps) {
+    selectShapeAccessPoint(net, pin_idx, selected_access_points);
+  }
+  return selected_access_points;
+}
+
+void GridGraph::commit(const int layer_index,
+                       const PointT lower,
+                       const CapacityT demand,
+                       const double net_factor)
+{
+  graph_edges_[layer_index][lower.x()][lower.y()].demand += demand * net_factor;
+  congestion_info_dirty_ = true;
+  markCongestionTile(layer_index, lower.x(), lower.y());
+}
+
+// Every demand change funnels through commit(), so marking the tile here
+// catches rerouting, rip-up and net removal alike -- anything that moves an
+// edge, whether or not it leaves a route behind to infer it from.
+void GridGraph::markCongestionTile(const int layer_index,
+                                   const int x,
+                                   const int y)
+{
+  const int x_size = getXSize();
+  const int y_size = getYSize();
+  if (x < 0 || y < 0 || x >= x_size || y >= y_size) {
+    return;
+  }
+  if (congestion_tile_marked_.size() != static_cast<size_t>(x_size) * y_size) {
+    congestion_tile_marked_.assign(static_cast<size_t>(x_size) * y_size, false);
+    congestion_dirty_tiles_.clear();
+  }
+  const size_t index = static_cast<size_t>(x) * y_size + y;
+  if (!congestion_tile_marked_[index]) {
+    congestion_tile_marked_[index] = true;
+    congestion_dirty_tiles_.emplace_back(x, y);
+  }
+  // The last cell along the layer's preferred direction has no edge of its
+  // own and reports its predecessor's, so this edge is also its source.
+  const bool is_h = getLayerDirection(layer_index) == MetalLayer::H;
+  if (is_h && x == x_size - 2) {
+    markCongestionTile(layer_index, x_size - 1, y);
+  } else if (!is_h && y == y_size - 2) {
+    markCongestionTile(layer_index, x, y_size - 1);
+  }
+}
+
+void GridGraph::markAllCongestionTiles()
+{
+  const int x_size = getXSize();
+  const int y_size = getYSize();
+  congestion_tile_marked_.assign(static_cast<size_t>(x_size) * y_size, true);
+  congestion_dirty_tiles_.clear();
+  congestion_dirty_tiles_.reserve(static_cast<size_t>(x_size) * y_size);
+  for (int x = 0; x < x_size; x++) {
+    for (int y = 0; y < y_size; y++) {
+      congestion_dirty_tiles_.emplace_back(x, y);
+    }
+  }
+}
+
+void GridGraph::clearCongestionDirtyTiles()
+{
+  congestion_tile_marked_.assign(congestion_tile_marked_.size(), false);
+  congestion_dirty_tiles_.clear();
+}
+
+// Enumerate the preferred-direction edges flanking `loc` on `layer`;
+// fn(edge_loc, edge_sum) runs per existing edge with their summed span.
+template <typename F>
+void GridGraph::forEachFlankEdge(const int layer,
+                                 const PointT loc,
+                                 F&& fn) const
+{
+  const int direction = layer_directions_[layer];
+  PointT lower_loc = loc;
+  lower_loc[direction] -= 1;
+  const int lower_edge_length
+      = loc[direction] > 0 ? getEdgeLength(direction, lower_loc[direction]) : 0;
+  const int higher_edge_length = loc[direction] < getSize(direction) - 1
+                                     ? getEdgeLength(direction, loc[direction])
+                                     : 0;
+  // Prevent division by zero
+  const int edge_sum = lower_edge_length + higher_edge_length;
+  if (edge_sum == 0) {
+    return;
+  }
+  if (lower_edge_length > 0) {
+    fn(lower_loc, edge_sum);
+  }
+  if (higher_edge_length > 0) {
+    fn(loc, edge_sum);
+  }
+}
+
+template <typename F>
+void GridGraph::forEachPadFlankEdge(const int layer,
+                                    const int low,
+                                    const int high,
+                                    const PointT loc,
+                                    const std::vector<double>& net_costs,
+                                    F&& fn) const
+{
+  // Use the same model for via costs, commit/rip-up, and demand reporting.
+  if (!constants_.via_demand_enabled) {
+    return;
+  }
+  // Spread the pad over the layer's two flanking edges, with the per-layer
+  // NDR factor for `layer`, not a net-wide value.
+  const double pad_length = stackPadLength(layer, low, high);
+  const double layer_factor = layerFactor(net_costs, layer);
+  forEachFlankEdge(layer, loc, [&](PointT edge_loc, int edge_sum) {
+    fn(edge_loc, (CapacityT) pad_length / edge_sum, layer_factor);
+  });
+}
+
+template <typename F>
+void GridGraph::forEachStackFlankEdgeImpl(const int low,
+                                          const int high,
+                                          const PointT loc,
+                                          const std::vector<double>& net_costs,
+                                          F&& fn) const
+{
+  for (int l = low; l <= high && l < num_layers_; l++) {
+    forEachPadFlankEdge(
+        l,
+        low,
+        high,
+        loc,
+        net_costs,
+        [&](PointT edge_loc, CapacityT demand, double layer_factor) {
+          fn(l, edge_loc, demand, layer_factor);
+        });
+  }
+}
+
+void GridGraph::forEachStackFlankEdge(
+    const int low,
+    const int high,
+    const PointT loc,
+    const std::vector<double>& net_costs,
+    const std::function<void(int, PointT, CapacityT, double)>& fn) const
+{
+  forEachStackFlankEdgeImpl(low, high, loc, net_costs, fn);
+}
+
+template <typename F>
+void GridGraph::forEachViaColumnImpl(const std::shared_ptr<GRTreeNode>& tree,
+                                     F&& fn) const
+{
+  // Pattern routing splits a stack wherever a child attaches, and adopted
+  // routes keep one tree edge per via; both must merge back into one stack.
+  std::vector<std::array<int, 4>> spans;  // x, y, low, high
+  GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
+    for (const auto& child : node->getChildren()) {
+      if (node->getLayerIdx() != child->getLayerIdx()) {
+        const auto [low, high]
+            = std::minmax({node->getLayerIdx(), child->getLayerIdx()});
+        spans.push_back({node->x(), node->y(), low, high});
+      }
+    }
+  });
+  std::ranges::sort(spans);
+  for (size_t i = 0; i < spans.size();) {
+    const auto [x, y, low, first_high] = spans[i];
+    int high = first_high;
+    for (i++; i < spans.size() && spans[i][0] == x && spans[i][1] == y
+              && spans[i][2] <= high;
+         i++) {
+      high = std::max(high, spans[i][3]);
+    }
+    fn(PointT(x, y), low, high);
+  }
+}
+
+template <typename F>
+void GridGraph::forEachWireEdgeImpl(const int layer_index,
+                                    const PointT u,
+                                    const PointT v,
+                                    F&& fn) const
+{
+  const int direction = layer_directions_[layer_index];
+  const auto [lo, hi] = std::minmax(u[direction], v[direction]);
+  for (int c = lo; c < hi; c++) {
+    PointT lower;
+    lower[direction] = c;
+    lower[1 - direction] = u[1 - direction];
+    fn(lower);
+  }
+}
+
+void GridGraph::forEachWireEdge(const int layer_index,
+                                const PointT u,
+                                const PointT v,
+                                const std::function<void(PointT)>& fn) const
+{
+  forEachWireEdgeImpl(layer_index, u, v, fn);
+}
+
+template <typename F>
+void GridGraph::forEachWrongWayFlankEdgeImpl(const int layer_index,
+                                             const PointT cell,
+                                             F&& fn) const
+{
+  forEachFlankEdge(layer_index, cell, [&](PointT edge_loc, int edge_sum) {
+    fn(edge_loc, design_->getWrongWayDemandLength(layer_index) / edge_sum);
+  });
+}
+
+void GridGraph::addTreeUsage(const GRNet& net)
+{
+  addTreeUsage(net.getRoutingTree(), net.getNdrCosts(), net.isAdopted());
+}
+
+void GridGraph::removeTreeUsage(const GRNet& net)
+{
+  removeTreeUsage(net.getRoutingTree(), net.getNdrCosts(), net.isAdopted());
+}
+
+std::vector<std::vector<std::vector<CapacityT>>> GridGraph::snapshotDemand()
+    const
+{
+  std::vector<std::vector<std::vector<CapacityT>>> snap(graph_edges_.size());
+  for (size_t l = 0; l < graph_edges_.size(); l++) {
+    snap[l].resize(graph_edges_[l].size());
+    for (size_t x = 0; x < graph_edges_[l].size(); x++) {
+      snap[l][x].reserve(graph_edges_[l][x].size());
+      for (const GraphEdge& edge : graph_edges_[l][x]) {
+        snap[l][x].push_back(edge.demand);
+      }
+    }
+  }
+  return snap;
+}
+
+void GridGraph::restoreDemand(
+    const std::vector<std::vector<std::vector<CapacityT>>>& snap)
+{
+  for (size_t l = 0; l < graph_edges_.size(); l++) {
+    for (size_t x = 0; x < graph_edges_[l].size(); x++) {
+      for (size_t y = 0; y < graph_edges_[l][x].size(); y++) {
+        graph_edges_[l][x][y].demand = snap[l][x][y];
+      }
+    }
+  }
+  markAllCongestionTiles();
+}
+
+template <typename F>
+void GridGraph::forEachTreeWireEdgeImpl(const std::shared_ptr<GRTreeNode>& tree,
+                                        const bool adopted,
+                                        F&& fn) const
+{
+  // A net occupies a wire edge or a wrong-way cell once even where its tree
+  // crosses it twice, as the union of two merged nets can (CUGR::mergeNet).
+  std::vector<std::array<int, 3>> wires;      // layer, lower cell x, y
+  std::vector<std::array<int, 3>> wrong_way;  // layer, crossed cell x, y
+  GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
+    for (const auto& child : node->getChildren()) {
+      if (node->getLayerIdx() == child->getLayerIdx()) {
+        const int layer = node->getLayerIdx();
+        // Detailed routes may dip below min_routing_layer for pin access;
+        // those layers hold no capacity, so adopted spans commit no demand.
+        // Native trees fall through to the GRT-0307 tripwire in commitTree.
+        if (adopted && layer < constants_.min_routing_layer) {
+          continue;
+        }
+        const int direction = layer_directions_[layer];
+        const int perp = 1 - direction;
+        if ((*node)[perp] != (*child)[perp]) {
+          // Native trees are direction-legal by construction; only routes
+          // adopted from detailed wires may carry wrong-way spans. Diagonal
+          // edges are always malformed.
+          const bool is_diagonal = (*node)[direction] != (*child)[direction];
+          if (!adopted || is_diagonal) {
+            if (direction == MetalLayer::H) {
+              logger_->error(utl::GRT,
+                             1252,
+                             "Horizontal wire endpoints have different y "
+                             "coordinates: {} != {}.",
+                             node->y(),
+                             child->y());
+            } else {
+              logger_->error(utl::GRT,
+                             1253,
+                             "Vertical wire endpoints have different x "
+                             "coordinates: {} != {}.",
+                             node->x(),
+                             child->x());
+            }
+          }
+          const auto [l, h] = std::minmax({(*node)[perp], (*child)[perp]});
+          for (int c = l; c < h; c++) {
+            PointT cell;
+            cell[direction] = (*node)[direction];
+            cell[perp] = c;
+            wrong_way.push_back({layer, cell.x(), cell.y()});
+          }
+        } else {
+          forEachWireEdgeImpl(layer, *node, *child, [&](PointT lower) {
+            wires.push_back({layer, lower.x(), lower.y()});
+          });
+        }
+      }
+    }
+  });
+  for (auto* cells : {&wires, &wrong_way}) {
+    std::ranges::sort(*cells);
+    cells->erase(std::ranges::unique(*cells).begin(), cells->end());
+  }
+  for (const auto& [layer, x, y] : wires) {
+    fn(layer, PointT(x, y), false);
+  }
+  for (const auto& [layer, x, y] : wrong_way) {
+    fn(layer, PointT(x, y), true);
+  }
+}
+
+template <typename F>
+void GridGraph::forEachTreeDemandImpl(const std::shared_ptr<GRTreeNode>& tree,
+                                      const bool adopted,
+                                      const std::vector<double>& net_costs,
+                                      F&& fn) const
+{
+  forEachTreeWireEdgeImpl(
+      tree, adopted, [&](const int layer, const PointT cell, bool wrong_way) {
+        const double factor = layerFactor(net_costs, layer);
+        if (!wrong_way) {
+          fn(TreeDemand{layer, cell, 1, factor, DemandKind::kWire, cell});
+          return;
+        }
+        forEachWrongWayFlankEdgeImpl(
+            layer, cell, [&](const PointT edge, const CapacityT demand) {
+              fn(TreeDemand{
+                  layer, edge, demand, factor, DemandKind::kWrongWay, cell});
+            });
+      });
+  forEachViaColumnImpl(
+      tree, [&](const PointT loc, const int low, const int high) {
+        if (high >= num_layers_) {
+          logger_->error(utl::GRT,
+                         1251,
+                         "Via layer index {} exceeds number of layers {}.",
+                         high - 1,
+                         num_layers_);
+        }
+        forEachStackFlankEdgeImpl(
+            low,
+            high,
+            loc,
+            net_costs,
+            [&](int layer, PointT edge, CapacityT demand, double factor) {
+              fn(TreeDemand{
+                  layer, edge, demand, factor, DemandKind::kViaPad, loc});
+            });
+      });
+}
+
+void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
+                           const bool rip_up,
+                           const std::vector<double>& net_costs,
+                           const bool adopted)
+{
+  forEachTreeDemandImpl(
+      tree, adopted, net_costs, [&](const TreeDemand& charge) {
+        // Wire must never land below min_routing_layer.
+        if (charge.kind == DemandKind::kWire
+            && charge.layer < constants_.min_routing_layer) {
+          logger_->error(
+              utl::GRT,
+              307,
+              "Wire committed on layer {} below min routing layer {}.",
+              layer_names_[charge.layer],
+              layer_names_[constants_.min_routing_layer]);
+        }
+        commit(charge.layer,
+               charge.edge,
+               rip_up ? -charge.demand : charge.demand,
+               charge.factor);
+      });
+}
+
+std::vector<GridGraph::PinAccessTop> GridGraph::pinAccessTops(
+    const GRNet& net) const
+{
+  const int net_min_layer
+      = std::max(constants_.min_routing_layer, net.getLayerRange().min_layer);
+  std::vector<PinAccessTop> tops;
+  tops.reserve(net.getPreferredAccessPoints().size());
+  for (const auto& [index, ap] : net.getPreferredAccessPoints()) {
+    tops.push_back({.gcell = {ap.point.x(), ap.point.y()},
+                    .top = std::max(ap.layers.high(), net_min_layer)});
+  }
+  // One entry per gcell, at its highest top: sort it first, keep the first.
+  std::ranges::sort(tops, [](const PinAccessTop& a, const PinAccessTop& b) {
+    return std::tie(a.gcell, b.top) < std::tie(b.gcell, a.top);
+  });
+  const auto duplicates = std::ranges::unique(tops, {}, &PinAccessTop::gcell);
+  tops.erase(duplicates.begin(), duplicates.end());
+  return tops;
+}
+
+int GridGraph::pinAccessTop(const std::vector<PinAccessTop>& tops,
+                            const PointT loc)
+{
+  const std::pair<int, int> gcell(loc.x(), loc.y());
+  const auto it
+      = std::ranges::lower_bound(tops, gcell, {}, &PinAccessTop::gcell);
+  return (it != tops.end() && it->gcell == gcell) ? it->top : -1;
+}
+
+double GridGraph::reliefScore(const GRNet& net, const double threshold) const
+{
+  const auto& tree = net.getRoutingTree();
+  if (!tree) {
+    return 0.0;
+  }
+  const auto pin_tops = pinAccessTops(net);
+  double score = 0.0;
+  forEachTreeDemandImpl(
+      tree, net.isAdopted(), net.getNdrCosts(), [&](const TreeDemand& charge) {
+        // No reroute moves pin-access pads; lower layers hold no capacity.
+        if (charge.layer < constants_.min_routing_layer
+            || (charge.kind == DemandKind::kViaPad
+                && charge.layer <= pinAccessTop(pin_tops, charge.source))) {
+          return;
+        }
+        const GraphEdge& edge
+            = graph_edges_[charge.layer][charge.edge.x()][charge.edge.y()];
+        const double overflow = edge.demand - edge.capacity * threshold;
+        if (overflow > 0.0) {
+          score += std::min(charge.demand * charge.factor, overflow);
+        }
+      });
+  return score;
+}
+
+void GridGraph::accumulateViaDemand(const std::shared_ptr<GRTreeNode>& tree,
+                                    const std::vector<double>& net_costs,
+                                    std::vector<CapacityT>& via_demand) const
+{
+  if (!tree) {
+    return;
+  }
+  forEachViaColumnImpl(
+      tree, [&](const PointT loc, const int low, const int high) {
+        forEachStackFlankEdgeImpl(
+            low,
+            high,
+            loc,
+            net_costs,
+            [&](int l, PointT edge_loc, CapacityT demand, double layer_factor) {
+              via_demand[edgeFlatIndex(l, edge_loc.x(), edge_loc.y())]
+                  += demand * layer_factor;
+            });
+      });
+}
+
+std::string GridGraph::getPythonString(
+    const std::shared_ptr<GRTreeNode>& routing_tree) const
+{
+  std::vector<std::tuple<PointT, PointT, bool>> edges;
+  GRTreeNode::preorder(
+      routing_tree, [&](const std::shared_ptr<GRTreeNode>& node) {
+        for (const auto& child : node->getChildren()) {
+          if (node->getLayerIdx() == child->getLayerIdx()) {
+            const int direction = getLayerDirection(node->getLayerIdx());
+            const int r = (*node)[1 - direction];
+            const int l = std::min((*node)[direction], (*child)[direction]);
+            const int h = std::max((*node)[direction], (*child)[direction]);
+            if (l == h) {
+              continue;
+            }
+            PointT lpoint
+                = (direction == MetalLayer::H ? PointT(l, r) : PointT(r, l));
+            const PointT hpoint
+                = (direction == MetalLayer::H ? PointT(h, r) : PointT(r, h));
+            bool congested = false;
+            for (int c = l; c < h; c++) {
+              const PointT cpoint
+                  = (direction == MetalLayer::H ? PointT(c, r) : PointT(r, c));
+              if (checkOverflow(node->getLayerIdx(), cpoint.x(), cpoint.y())
+                  != congested) {
+                if (lpoint != cpoint) {
+                  edges.emplace_back(lpoint, cpoint, congested);
+                  lpoint = cpoint;
+                }
+                congested = !congested;
+              }
+            }
+            if (lpoint != hpoint) {
+              edges.emplace_back(lpoint, hpoint, congested);
+            }
+          }
+        }
+      });
+  std::stringstream ss;
+  ss << "[";
+  for (int i = 0; i < edges.size(); i++) {
+    const auto& edge = edges[i];
+    ss << "[" << std::get<0>(edge) << ", " << std::get<1>(edge) << ", "
+       << (std::get<2>(edge) ? 1 : 0) << "]";
+    ss << (i < edges.size() - 1 ? ", " : "]");
+  }
+  return ss.str();
+}
+
+void GridGraph::extractBlockageView(GridGraphView<bool>& view) const
+{
+  view.assign(2,
+              std::vector<std::vector<bool>>(x_size_,
+                                             std::vector<bool>(y_size_, true)));
+  for (int layer_index = constants_.min_routing_layer;
+       layer_index < num_layers_;
+       layer_index++) {
+    const int direction = getLayerDirection(layer_index);
+    for (int x = 0; x < x_size_; x++) {
+      for (int y = 0; y < y_size_; y++) {
+        if (getEdge(layer_index, x, y).capacity >= 1.0) {
+          view[direction][x][y] = false;
+        }
+      }
+    }
+  }
+}
+
+void GridGraph::extractCongestionView(GridGraphView<bool>& view) const
+{
+  view.assign(2,
+              std::vector<std::vector<bool>>(
+                  x_size_, std::vector<bool>(y_size_, false)));
+  for (int layer_index = constants_.min_routing_layer;
+       layer_index < num_layers_;
+       layer_index++) {
+    const int direction = getLayerDirection(layer_index);
+    for (int x = 0; x < x_size_; x++) {
+      for (int y = 0; y < y_size_; y++) {
+        if (checkOverflow(layer_index, x, y)) {
+          view[direction][x][y] = true;
+        }
+      }
+    }
+  }
+}
+
+void GridGraph::extractWireCostView(GridGraphView<CostT>& view) const
+{
+  extractWireCostView(view, {});
+}
+
+GridGraph::WireCostViewContext GridGraph::makeWireCostViewContext(
+    const std::vector<double>& net_costs) const
+{
+  WireCostViewContext context;
+  context.unit_length_short_cost.fill(std::numeric_limits<CostT>::max());
+  // `net_factor` aggregates per-direction NDR via max.
+  context.net_factor.fill(1.0);
+  for (int layer_index = constants_.min_routing_layer;
+       layer_index < getNumLayers();
+       layer_index++) {
+    const int direction = getLayerDirection(layer_index);
+    context.layers[direction].push_back(layer_index);
+    context.unit_length_short_cost[direction]
+        = std::min(context.unit_length_short_cost[direction],
+                   getUnitLengthShortCost(layer_index));
+    context.net_factor[direction] = std::max(
+        context.net_factor[direction], layerFactor(net_costs, layer_index));
+  }
+  return context;
+}
+
+CostT GridGraph::wireCostViewCell(const WireCostViewContext& context,
+                                  const int direction,
+                                  const int x,
+                                  const int y) const
+{
+  const double net_factor = context.net_factor[direction];
+  CapacityT capacity = 0;
+  CapacityT effective_resource;
+  if (net_factor > 1.0) {
+    // An NDR wire can't span 3D layers: gate on best-single-layer headroom
+    // so an edge whose summed slack hides "spread thin" per-layer capacity
+    // reads as unusable.
+    CapacityT max_per_layer_resource = std::numeric_limits<CapacityT>::lowest();
+    for (const int layer_index : context.layers[direction]) {
+      const auto& edge = getEdge(layer_index, x, y);
+      capacity += edge.capacity;
+      max_per_layer_resource
+          = std::max(max_per_layer_resource, edge.capacity - edge.demand);
+    }
+    effective_resource = max_per_layer_resource - (net_factor - 1.0);
+  } else {
+    CapacityT demand = 0;
+    for (const int layer_index : context.layers[direction]) {
+      const auto& edge = getEdge(layer_index, x, y);
+      capacity += edge.capacity;
+      demand += edge.demand;
+    }
+    effective_resource = capacity - demand;
+  }
+  const int edge_index = direction == MetalLayer::H ? x : y;
+  const int length = getEdgeLength(direction, edge_index);
+  return length
+         * (unit_length_wire_cost_
+            + congestionCost(context.unit_length_short_cost[direction],
+                             capacity,
+                             effective_resource,
+                             constants_.maze_logistic_slope));
+}
+
+void GridGraph::extractWireCostView(GridGraphView<CostT>& view,
+                                    const std::vector<double>& net_costs) const
+{
+  // Reuse existing storage when the caller has already sized `view`
+  // correctly.
+  const bool already_sized
+      = view.size() == 2 && view[0].size() == static_cast<size_t>(x_size_)
+        && (x_size_ == 0 || view[0][0].size() == static_cast<size_t>(y_size_));
+  if (!already_sized) {
+    view.assign(
+        2,
+        std::vector<std::vector<CostT>>(
+            x_size_,
+            std::vector<CostT>(y_size_, std::numeric_limits<CostT>::max())));
+  }
+  const WireCostViewContext context = makeWireCostViewContext(net_costs);
+  for (int direction = 0; direction < 2; direction++) {
+    for (int x = 0; x < x_size_; x++) {
+      for (int y = 0; y < y_size_; y++) {
+        const int edge_index = direction == MetalLayer::H ? x : y;
+        if (edge_index >= getSize(direction) - 1) {
+          continue;
+        }
+        view[direction][x][y] = wireCostViewCell(context, direction, x, y);
+      }
+    }
+  }
+}
+
+void GridGraph::updateWireCostView(GridGraphView<CostT>& view,
+                                   const GRNet& net) const
+{
+  // The shared view is NDR-blind, like the full extraction without costs.
+  const auto& tree = net.getRoutingTree();
+  forEachTreeDemandImpl(
+      tree, net.isAdopted(), net.getNdrCosts(), [&](const TreeDemand& charge) {
+        // Layers below the minimum routing layer are not part of the view.
+        if (charge.layer < constants_.min_routing_layer) {
+          return;
+        }
+        const int direction = getLayerDirection(charge.layer);
+        const int x = charge.edge.x();
+        const int y = charge.edge.y();
+        view[direction][x][y]
+            = wireCostViewCell(default_view_context_, direction, x, y);
+      });
+}
+
+void GridGraph::collectTreeEdges(const GRNet& net,
+                                 std::vector<std::array<int, 3>>& edges) const
+{
+  edges.clear();
+  const auto& tree = net.getRoutingTree();
+  if (!tree) {
+    return;
+  }
+  forEachTreeDemandImpl(
+      tree, net.isAdopted(), net.getNdrCosts(), [&](const TreeDemand& charge) {
+        if (charge.layer >= constants_.min_routing_layer) {
+          edges.push_back({charge.layer, charge.edge.x(), charge.edge.y()});
+        }
+      });
+  utl::sort_and_unique(edges);
+}
+
+CapacityT GridGraph::edgeOverflow(const std::array<int, 3>& edge) const
+{
+  const GraphEdge& graph_edge = graph_edges_[edge[0]][edge[1]][edge[2]];
+  return std::max<CapacityT>(0.0, graph_edge.demand - graph_edge.capacity);
+}
+
+double GridGraph::sumOverflow(
+    const std::vector<std::array<int, 3>>& edges) const
+{
+  double overflow = 0.0;
+  for (const auto& edge : edges) {
+    overflow += edgeOverflow(edge);
+  }
+  return overflow;
+}
+
+std::vector<std::pair<std::array<int, 3>, CapacityT>>
+GridGraph::overflowedEdges() const
+{
+  std::vector<std::pair<std::array<int, 3>, CapacityT>> edges;
+  for (int layer = constants_.min_routing_layer; layer < num_layers_; layer++) {
+    for (int x = 0; x < x_size_; x++) {
+      for (int y = 0; y < y_size_; y++) {
+        const std::array<int, 3> edge{layer, x, y};
+        if (const CapacityT overflow = edgeOverflow(edge); overflow > 0.0) {
+          edges.emplace_back(edge, overflow);
+        }
+      }
+    }
+  }
+  return edges;
+}
+
+void GridGraph::write(const std::string& heatmap_file) const
+{
+  logger_->report("Writing congestion heatmap to file {}.", heatmap_file);
+  std::stringstream ss;
+
+  ss << num_layers_ << " " << x_size_ << " " << y_size_ << '\n';
+  for (int layer_index = 0; layer_index < num_layers_; layer_index++) {
+    ss << layer_names_[layer_index] << '\n';
+    for (int y = 0; y < y_size_; y++) {
+      for (int x = 0; x < x_size_; x++) {
+        ss << (graph_edges_[layer_index][x][y].capacity
+               - graph_edges_[layer_index][x][y].demand)
+           << (x == x_size_ - 1 ? "" : " ");
+      }
+      ss << '\n';
+    }
+  }
+  std::ofstream fout(heatmap_file);
+  fout << ss.str();
+  fout.close();
+}
+
+void GridGraph::addTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
+                             const std::vector<double>& net_costs,
+                             const bool adopted)
+{
+  if (tree) {
+    commitTree(tree, false, net_costs, adopted);
+  }
+}
+
+void GridGraph::removeTreeUsage(const std::shared_ptr<GRTreeNode>& tree,
+                                const std::vector<double>& net_costs,
+                                const bool adopted)
+{
+  if (tree) {
+    commitTree(tree, true, net_costs, adopted);
+  }
+}
+
+}  // namespace grt

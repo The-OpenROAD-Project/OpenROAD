@@ -316,7 +316,7 @@ instance is owned by the OpenROAD instance. Each tool should retrieve
 the logger instance in the tool init function called after the tool make
 function by the OpenROAD application.
 
-Every tool swig file must include src/Exception.i so that errors thrown
+Every tool swig file must include openroad/Exception.i so that errors thrown
 by `utl::error` are caught at the Tcl command level. Use the following
 swig command before `%inline`.
 
@@ -419,20 +419,16 @@ Regression tests should not have any `UKN-0000` messages in their ok
 files. A simple grep should indicate that you still have pending calls
 to pre-logger error/warn functions.
 
-The `cmake` file for the tool must also be updated to include spdlog in
-the link libraries so it can find the header files if they are not in
-the normal system directories.
+The tool `BUILD` file must also list `//openroad/utl` in the `deps` of the
+tool library so it can find the logger header files.
 
-:::{tip}
-At UCSD, dfm.ucsd.edu is an example of this problem; it has an ancient version of
-spdlog in '/usr/include/spdlog'. Use `module` to install
-spdlog 1.8.1 on dfm.ucsd.edu and check your build there.
-:::
-
-``` cmake
-target_link_libraries(<library_target>
-  PUBLIC
-    utl
+``` starlark
+cc_library(
+    name = "<library_target>",
+    ...
+    deps = [
+        "//openroad/utl",
+    ],
 )
 ```
 
@@ -443,12 +439,12 @@ a list of such errors in this [table](https://openroad.readthedocs.io/en/latest/
 this page is the ability to encode rich formatting using Markdown, enabling you
 to convey more information than what can be said from the limited messages in code.
 
-To format the information, refer to this [sample GRT information file](../../src/grt/doc/messages/0118.md).
+To format the information, refer to this [sample GRT information file](../../openroad/grt/doc/messages/0118.md).
 In addition, make sure you create the corresponding `docs/messages` folder under the `tool` folder, 
 before creating your Markdown file with the corresponding `NUM`. 
 
 ```shell
-cd src/<tool> && mkdir -p doc/messages
+cd openroad/<tool> && mkdir -p doc/messages
 cd doc/messages && touch <NUM>.md
 ```
 

@@ -29,7 +29,7 @@ jobs:
     # check), but the artifact is uploaded *before* that fail step, so the
     # findings are still posted as review comments. Only skip on cancelled.
     if: ${{ github.event.workflow_run.conclusion != 'cancelled' }}
-    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted-ubuntu-26.04' || 'ubuntu-26.04' }}
     steps:
       # Reviewdog's github-pr-review reporter resolves the local git root
       # before flushing comments and silently no-ops if .git is missing.
@@ -46,7 +46,7 @@ jobs:
           # match the PR head.
 
       - name: Download clang-tidy artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           name: clang-tidy-bazel
           run-id: ${{ github.event.workflow_run.id }}

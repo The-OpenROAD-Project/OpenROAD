@@ -1,0 +1,32 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: ir_45
+[INFO ODB-0131]     Created 2 components and 8 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 2 connections.
+[INFO PSM-0040] All shapes on net VDD_STRAIGHT are connected.
+[INFO PSM-0040] All shapes on net VDD_STRAIGHT are connected.
+[INFO PSM-0015] Reading location of sources from: analyze_power_grid_45.straight.loc.
+########## IR report #################
+Net              : VDD_STRAIGHT
+Corner           : default
+Total power      : 1.00e-03 W
+Supply voltage   : 1.10e+00 V
+Worstcase voltage: 9.59e-01 V
+Average voltage  : 1.03e+00 V
+Average IR drop  : 6.85e-02 V
+Worstcase IR drop: 1.41e-01 V
+Percentage drop  : 12.81 %
+######################################
+[INFO PSM-0040] All shapes on net VDD_45 are connected.
+[INFO PSM-0040] All shapes on net VDD_45 are connected.
+[INFO PSM-0015] Reading location of sources from: analyze_power_grid_45.45.loc.
+########## IR report #################
+Net              : VDD_45
+Corner           : default
+Total power      : 1.00e-03 W
+Supply voltage   : 1.10e+00 V
+Worstcase voltage: 9.58e-01 V
+Average voltage  : 1.03e+00 V
+Average IR drop  : 7.01e-02 V
+Worstcase IR drop: 1.42e-01 V
+Percentage drop  : 12.94 %
+######################################

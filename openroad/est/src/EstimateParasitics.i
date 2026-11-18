@@ -1,0 +1,348 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
+
+// clang-format off
+
+%{
+
+#include <cstdint>
+#include <fstream>
+
+#include "sta/Liberty.hh"
+#include "sta/Parasitics.hh"
+#include "sta/Network.hh"
+#include "sta/Scene.hh"
+#include "est/EstimateParasitics.h"
+#include "sta/Delay.hh"
+#include "db_sta/dbNetwork.hh"
+#include "ord/OpenRoad.hh"
+
+#if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
+  typedef int Tcl_Size;
+#endif
+
+namespace ord {
+// Defined in OpenRoad.i
+est::EstimateParasitics* getEstimateParasitics();
+utl::Logger* getLogger();
+void ensureLinked();
+}
+
+namespace sta {
+
+// The aliases are created to attach different conversion rules:
+// TmpNetSeq, TmpPinSet pointers are freed when crossing into Tcl,
+// NetSeq, PinSet pointers are not
+using TmpNetSeq = NetSeq;
+using TmpPinSet = PinSet;
+
+} // namespace
+
+using ord::getEstimateParasitics;
+using ord::ensureLinked;
+
+using sta::Scene;
+using sta::LibertyCellSeq;
+using sta::LibertyCell;
+using sta::Instance;
+using sta::InstanceSeq;
+using sta::InstanceSet;
+using sta::Net;
+using sta::NetSeq;
+using sta::Pin;
+using sta::PinSet;
+using sta::TmpPinSet;
+using sta::RiseFall;
+using sta::TmpNetSeq;
+using sta::LibertyPort;
+using sta::Delay;
+using sta::Slew;
+using sta::dbNetwork;
+using sta::Network;
+using sta::stringEq;
+
+using est::EstimateParasitics;
+using est::ParasiticsSrc;
+%}
+
+// OpenSTA swig files
+%include "tcl/StaTclTypes.i"
+
+////////////////////////////////////////////////////////////////
+//
+// SWIG type definitions.
+//
+////////////////////////////////////////////////////////////////
+
+%typemap(out) TmpNetSeq* {
+  NetSeq *nets = $1;
+  seqPtrTclList<NetSeq, Net>(nets, SWIGTYPE_p_Net, interp);
+  delete nets;
+}
+
+%typemap(out) TmpPinSet* {
+  PinSet *pins = $1;
+  setPtrTclList<PinSet, Pin>(pins, SWIGTYPE_p_Pin, interp);
+  delete pins;
+}
+
+%typemap(in) ParasiticsSrc {
+  Tcl_Size length;
+  const char *arg = Tcl_GetStringFromObj($input, &length);
+  if (stringEq(arg, "placement"))
+    $1 = ParasiticsSrc::kPlacement;
+  else if (stringEq(arg, "global_routing"))
+    $1 = ParasiticsSrc::kGlobalRouting;
+  else if (stringEq(arg, "detailed_routing"))
+    $1 = ParasiticsSrc::kDetailedRouting;
+  else {
+    utl::Logger* logger = ord::getLogger();
+    try {
+      logger->error(utl::EST, 19, "Unknown parasitics source '{}'.", arg);
+    } catch (const std::exception &e) {
+      Tcl_SetResult(interp, const_cast<char*>(e.what()), TCL_STATIC);
+      return TCL_ERROR;
+    }
+  }
+}
+
+////////////////////////////////////////////////////////////////
+//
+// C++ functions visible as TCL functions.
+//
+////////////////////////////////////////////////////////////////
+
+%include "../../Exception.i"
+%include "std_string.i"
+
+%inline %{
+
+namespace est {
+
+void
+set_layer_rc_cmd(odb::dbTechLayer *layer,
+                 const Scene *corner,
+                 float res,
+                 float cap)
+{
+  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  estimate_parasitics->setLayerRC(layer, corner, res, cap);
+}
+
+void
+add_clk_layer_cmd(odb::dbTech *tech,
+                  odb::dbTechLayer *layer)
+{
+  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  estimate_parasitics->addClkLayer(tech, layer);
+}
+
+void
+add_signal_layer_cmd(odb::dbTech *tech,
+                     odb::dbTechLayer *layer)
+{
+  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  estimate_parasitics->addSignalLayer(tech, layer);
+}
+
+double
+layer_resistance(odb::dbTechLayer *layer,
+                 const Scene *corner)
+{
+  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  double res, cap;
+  estimate_parasitics->layerRC(layer, corner, res, cap);
+  return res;
+}
+
+double
+layer_capacitance(odb::dbTechLayer *layer,
+                  const Scene *corner)
+{
+  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  double res, cap;
+  estimate_parasitics->layerRC(layer, corner, res, cap);
+  return cap;
+}
+
+void
+set_h_wire_signal_rc_cmd(odb::dbTech *tech,
+                         const Scene *corner,
+                         float res,
+                         float cap)
+{
+  ensureLinked();
+  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  estimate_parasitics->setHWireSignalRC(tech, corner, res, cap);
+}
+
+void
+set_v_wire_signal_rc_cmd(odb::dbTech *tech,
+                         const Scene *corner,
+                         float res,
+                         float cap)
+{
+  ensureLinked();
+  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  estimate_parasitics->setVWireSignalRC(tech, corner, res, cap);
+}
+
+void
+set_h_wire_clk_rc_cmd(odb::dbTech *tech,
+                      const Scene *corner,
+                      float res,
+                      float cap)
+{
+  ensureLinked();
+  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  estimate_parasitics->setHWireClkRC(tech, corner, res, cap);
+}
+
+void
+set_v_wire_clk_rc_cmd(odb::dbTech *tech,
+                      const Scene *corner,
+                      float res,
+                      float cap)
+{
+  ensureLinked();
+  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  estimate_parasitics->setVWireClkRC(tech, corner, res, cap);
+}
+
+// ohms/meter
+double
+wire_signal_resistance(const Scene *corner)
+{
+  ensureLinked();
+  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  return estimate_parasitics->wireSignalResistance(corner);
+}
+
+double
+wire_clk_resistance(const Scene *corner)
+{
+  ensureLinked();
+  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  return estimate_parasitics->wireClkResistance(corner);
+}
+
+// farads/meter
+double
+wire_signal_capacitance(const Scene *corner)
+{
+  ensureLinked();
+  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  return estimate_parasitics->wireSignalCapacitance(corner);
+}
+
+double
+wire_clk_capacitance(const Scene *corner)
+{
+  ensureLinked();
+  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  return estimate_parasitics->wireClkCapacitance(corner);
+}
+
+
+void
+estimate_parasitics_cmd(ParasiticsSrc src, const char* path)
+{
+  ensureLinked();
+  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  std::map<Scene*, std::ostream*> spef_files;
+  if (path != nullptr && std::strlen(path) > 0) {
+    std::string file_path(path);
+    if (!file_path.empty()) {
+      for (Scene* corner : estimate_parasitics->getDbNetwork()->scenes()) {
+        file_path = path;
+        if (estimate_parasitics->getDbNetwork()->scenes().size() > 1) {
+          std::string suffix("_");
+          suffix.append(corner->name());
+          if (file_path.find(".spef") != std::string::npos
+              || file_path.find(".SPEF") != std::string::npos) {
+            file_path.insert(file_path.size() - 5, suffix);
+          } else {
+            file_path.append(suffix);
+          }
+        }
+
+        std::ofstream* file = new std::ofstream(file_path);
+
+        if (file->is_open()) {
+          spef_files[corner] = std::move(file);
+        } else {
+          utl::Logger* logger = ord::getLogger();
+          logger->error(utl::EST,
+                        7,
+                        "Can't open file " + file_path);
+        }
+      }
+    }
+  }
+
+  estimate_parasitics->estimateParasitics(src, spef_files);
+
+  for (auto [_, file] : spef_files) {
+    file->flush();
+    delete file;
+  }
+  spef_files.clear();
+}
+
+void
+ensure_parasitics_cmd(const char* path)
+{
+  ensureLinked();
+  ParasiticsSrc src = getEstimateParasitics()->designParasiticsSrc();
+  if (src != ParasiticsSrc::kNone) {
+    estimate_parasitics_cmd(src, path);
+  }
+}
+
+const char*
+parasitics_source()
+{
+  ensureLinked();
+  return getEstimateParasitics()->parasiticsSource();
+}
+
+void
+spef_read()
+{
+  ensureLinked();
+  getEstimateParasitics()->spefRead();
+}
+
+// For debugging. Does not protect against annotating power/gnd.
+void
+estimate_parasitic_net(const Net *net)
+{
+  ensureLinked();
+  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  estimate_parasitics->estimateWireParasitic(net);
+}
+
+bool
+have_estimated_parasitics()
+{
+  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  return estimate_parasitics->haveEstimatedParasitics();
+}
+
+void
+set_parasitics_src(ParasiticsSrc src)
+{
+  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  estimate_parasitics->setParasiticsSrc(src);
+}
+
+void
+highlight_steiner_tree(const Pin *drvr_pin)
+{
+  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  estimate_parasitics->highlightSteiner(drvr_pin);
+}
+
+} // namespace
+
+%} // inline
