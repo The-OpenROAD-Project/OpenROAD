@@ -2128,19 +2128,17 @@ void IRSolver::solve(sta::Scene* corner,
     network_->construct();
   }
 
+  // Reset; the previous solution voltage must not feed the source voltage
+  clearSolution(corner);
+
   if (!network_->hasNodes()) {
-    clearSolution(corner);
     return;
   }
 
   assertResistanceMap(corner);
 
-  // Reset
   auto& voltages = voltages_[corner];
   auto& currents = currents_[corner];
-
-  voltages.clear();
-  currents.clear();
 
   // Build source map
   SourceNodes real_src_nodes;
