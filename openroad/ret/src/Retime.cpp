@@ -48,8 +48,8 @@ constexpr const char* kSlideTableRule
 Retime::Retime(const RetimingGraph* graph,
                sta::dbSta* sta,
                utl::Logger* logger,
-               odb::dbMaster* flop_master)
-    : graph_(graph), sta_(sta), logger_(logger), flop_master_(flop_master)
+               odb::dbMTerm* flop_d_mterm)
+    : graph_(graph), sta_(sta), logger_(logger), flop_d_mterm_(flop_d_mterm)
 {
 }
 
@@ -160,12 +160,13 @@ void Retime::resolveFlopDCap()
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   flop_d_cap_ = 0.0f;
-  if (flop_master_ != nullptr) {
-    sta::Cell* cell = network->dbToSta(flop_master_);
+  if (flop_d_mterm_ != nullptr) {
+    sta::Cell* cell = network->dbToSta(flop_d_mterm_->getMaster());
     sta::LibertyCell* liberty_cell
         = cell != nullptr ? network->libertyCell(cell) : nullptr;
     if (liberty_cell != nullptr) {
-      sta::LibertyPort* d = liberty_cell->findLibertyPort("D");
+      sta::LibertyPort* d
+          = liberty_cell->findLibertyPort(flop_d_mterm_->getConstName());
       if (d != nullptr) {
         flop_d_cap_ = d->capacitance();
       }

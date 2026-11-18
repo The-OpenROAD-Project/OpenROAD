@@ -142,7 +142,7 @@ void Retimer::retime(int max_moves)
 
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
 
-  Retime search(&graph, sta_, logger_, dff_master_);
+  Retime search(&graph, sta_, logger_, dff_d_mterm_);
   search.run(max_moves);
   const std::vector<int>& r = search.getRetiming();
 
@@ -227,7 +227,7 @@ void Retimer::applyAfterUnmapping(
                   round + 2);
     RetimingGraph g(db_, sta_, logger_);
     g.build();
-    Retime s(&g, sta_, logger_, dff_master_);
+    Retime s(&g, sta_, logger_, dff_d_mterm_);
     s.run(max_moves);
     const std::vector<int>& rr = s.getRetiming();
     const std::unordered_set<odb::dbInst*> more = moversToUnmap(g, rr);

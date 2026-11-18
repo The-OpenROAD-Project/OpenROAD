@@ -30,10 +30,11 @@ namespace ret {
 class Retime
 {
  public:
+  // flop_d_mterm is the data pin of the cell new registers are built from.
   Retime(const RetimingGraph* graph,
          sta::dbSta* sta,
          utl::Logger* logger,
-         odb::dbMaster* flop_master);
+         odb::dbMTerm* flop_d_mterm);
 
   void run(int max_moves);  // <= 0: unlimited
   const std::vector<int>& getRetiming() const { return r_; }
@@ -144,7 +145,7 @@ class Retime
   };
   Scratch scratch_;
 
-  odb::dbMaster* flop_master_ = nullptr;
+  odb::dbMTerm* flop_d_mterm_ = nullptr;
   float flop_d_cap_ = 0.0f;
   double critical_threshold_ = 0.0;
   double worst_pi_ = 0.0;  // worst pinned-rooted arrival of the last sweep
