@@ -47,7 +47,7 @@ Typical flow:
 
 Examples:
 
-    bazelisk test //src/<tool>/...
+    bazelisk test //openroad/<tool>/...
 
 When broad integration confidence is needed:
 
@@ -73,14 +73,14 @@ Recommended process:
 
 Example validation steps:
 
-    bazelisk query 'kind(test, //src/<tool>/...)'
-    bazelisk test //src/<tool>/test:<new_test_target>
+    bazelisk query 'kind(test, //openroad/<tool>/...)'
+    bazelisk test //openroad/<tool>/test:<new_test_target>
 
 The test target name is derived from the test file name with a suffix added
 based on type: Tcl tests get `-tcl_test` and Python tests get `-py_test`. For example,
-`src/grt/test/bus_route.tcl` becomes target `bus_route-tcl_test`, so you would run:
+`openroad/grt/test/bus_route.tcl` becomes target `bus_route-tcl_test`, so you would run:
 
-    bazelisk test //src/grt/test:bus_route-tcl_test
+    bazelisk test //openroad/grt/test:bus_route-tcl_test
 
 Use the `bazelisk query` command above to list all test targets and find the
 exact name for any test in the subtree.
@@ -102,7 +102,7 @@ Suggested progression:
 - one directly affected target
 - one unrelated consumer (sanity against regressions)
 - affected subtree tests
-- optional full `src/...` or `...` based on change scope
+- optional full `openroad/...` or `...` based on change scope
 
 ## 4) Changes that affect ORFS
 
@@ -202,7 +202,7 @@ For larger `.bzl` changes, include a short “impact summary” in PR descriptio
   Always test more than one consumer.
 
 - **Overusing broad target patterns too early**  
-  Start narrow (`//src/<tool>/...`), then widen.
+  Start narrow (`//openroad/<tool>/...`), then widen.
 
 - **Conflating host/target configs when debugging**  
   Use guidance in [Bazel targets](Bazel-targets.md) and [Bazel.md](Bazel.md).
@@ -235,9 +235,9 @@ Use and adapt this in your PR description:
     - <what changed>
 
     Validation:
-    - bazelisk test //src/<tool>/test:<specific_target>
-    - bazelisk test //src/<tool>/...
-    - bazelisk test //src/...
+    - bazelisk test //openroad/<tool>/test:<specific_target>
+    - bazelisk test //openroad/<tool>/...
+    - bazelisk test //openroad/...
 
     Notes:
     - <any known limitations or follow-up work>
