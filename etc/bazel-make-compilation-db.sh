@@ -22,12 +22,12 @@ BAZEL_OPTS="${BAZEL_OPTS:--c opt ${BAZEL_REMOTE_MATERIALIZE}}"
 
 # Tickle some build targets to fetch all dependencies and generate files,
 # so that they can be seen by the users of the compilation db.
-# (Note, we need to limit targets to everything below //src, otherwise
+# (Note, we need to limit targets to everything below //openroad, otherwise
 # it requires docker)
-"${BAZEL}" fetch "${BAZEL_REMOTE_MATERIALIZE}" //src/...
+"${BAZEL}" fetch "${BAZEL_REMOTE_MATERIALIZE}" //openroad/...
 "${BAZEL}" build -k ${BAZEL_OPTS} \
   @openmp//:omp_header \
-  $("${BANT}" list-targets ... -g "genrule|tcl_encode|tcl_wrap_cc" -g "//src" -c3)
+  $("${BANT}" list-targets ... -g "genrule|tcl_encode|tcl_wrap_cc" -g "//openroad" -c3)
 
 # Create compilation DB. Command 'compilation-db' would create a huge *.json file,
 # but compile_flags.txt is perfectly sufficient and easier for tools to use as

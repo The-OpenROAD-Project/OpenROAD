@@ -78,8 +78,8 @@ trap 'rm -rf "$DEST_DIR" "$WORK_DIR" "$RF" "$WS" "$PREFIX" "$FAKE_HOME"' EXIT
 # apparent module name "openroad" to it. A copy of the real runfiles.bash lets
 # install.sh's own runfiles initialization succeed.
 mkdir -p "$RF/bazel_tools/tools/bash/runfiles" \
-         "$RF/_main/packaging" "$RF/_main/src/gui" \
-         "$WS/src/gui/resources"
+         "$RF/_main/packaging" "$RF/_main/openroad/gui" \
+         "$WS/openroad/gui/resources"
 cp "$RUNFILES_BASH_SRC" "$RF/bazel_tools/tools/bash/runfiles/runfiles.bash"
 printf ',openroad,_main\n' > "$RF/_repo_mapping"
 
@@ -90,11 +90,11 @@ echo "dummy" > "$TAR_SRC/openroad"
 tar -cf "$RF/_main/packaging/openroad.tar" -C "$TAR_SRC" .
 rm -rf "$TAR_SRC"
 
-# Synthetic icon + desktop template mirroring //src/gui:desktop_entry: the
+# Synthetic icon + desktop template mirroring //openroad/gui:desktop_entry: the
 # template carries the @OPENROAD_PREFIX@ placeholder and an "Exec=openroad ..."
 # line, both rewritten by install.sh at install time.
-echo "icon-v1" > "$WS/src/gui/resources/icon.png"
-cat > "$RF/_main/src/gui/openroad.desktop" <<'EOF'
+echo "icon-v1" > "$WS/openroad/gui/resources/icon.png"
+cat > "$RF/_main/openroad/gui/openroad.desktop" <<'EOF'
 [Desktop Entry]
 Type=Application
 Name=OpenROAD
@@ -147,7 +147,7 @@ fi
 echo "PASS: re-install removes stale binary runfiles"
 
 # 3. GUI re-install with changed sources: files are refreshed in place.
-echo "icon-v2" > "$WS/src/gui/resources/icon.png"
+echo "icon-v2" > "$WS/openroad/gui/resources/icon.png"
 run_install 1
 if ! grep -q "icon-v2" "$INSTALLED_ICON"; then
     echo "FAIL: GUI re-install did not update the installed icon"

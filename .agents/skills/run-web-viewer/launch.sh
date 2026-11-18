@@ -15,7 +15,7 @@
 # <out_dir>/or.log, and prints the viewer URL once the server listens.
 #
 # Env: WEB_PORT (8765), WEB_TIMEOUT (seconds to wait for the server, 60),
-# OPENROAD_EXE (the binary, <repo>/bazel-bin/openroad).
+# OPENROAD_EXE (the binary, <repo>/bazel-bin/openroad/openroad).
 set -euo pipefail
 # web.tcl and token hold the token: keep every file private to this user, and
 # never write through a file or symlink that is already there
@@ -27,7 +27,7 @@ load=${2:-}
 repo=$(cd "$(dirname "$0")/../../.." && pwd)
 port=${WEB_PORT:-8765}
 timeout=${WEB_TIMEOUT:-60}
-openroad=${OPENROAD_EXE:-$repo/bazel-bin/openroad}
+openroad=${OPENROAD_EXE:-$repo/bazel-bin/openroad/openroad}
 
 # Check every input before creating <out_dir>: a failed launch leaves it
 # non-empty, and a non-empty one is refused next time.
@@ -76,7 +76,7 @@ set repo $::env(WEB_REPO)
 source $repo/test/flow_helpers.tcl
 read_lef $repo/test/Nangate45/Nangate45.lef
 read_liberty $repo/test/Nangate45/Nangate45_typ.lib
-read_def $repo/src/odb/test/data/gcd/gcd_nangate45_route.def
+read_def $repo/openroad/odb/test/data/gcd/gcd_nangate45_route.def
 read_sdc $repo/test/gcd_nangate45.sdc
 EOF
 fi
@@ -88,7 +88,7 @@ echo 'set f [open $::env(WEB_PID_FILE) w]; puts $f [pid]; close $f' \
 cat "$load" >> "$script"
 echo "web_server -port $port -no_browser -token $token" >> "$script"
 
-# The web assets are compiled into the binary: rebuild after editing src/web.
+# The web assets are compiled into the binary: rebuild after editing openroad/web.
 # exec: the background subshell becomes openroad, so no shell lingers holding
 # this script's stdout open (a pipe from launch.sh would never close).
 (exec nohup "$openroad" "$script" > "$out/or.log" 2>&1 < /dev/null) &
