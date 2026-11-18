@@ -977,7 +977,8 @@ std::vector<int> dbSta::levelsOfLogic(bool exclude_buffers,
       if (!network_->isTopLevelPort(pin) && inst != prev_inst) {
         prev_inst = inst;
         LibertyCell* lib_cell = db_network_->libertyCell(inst);
-        if (lib_cell && (!exclude_buffers || !lib_cell->isBuffer())
+        if (lib_cell && !lib_cell->isSequential()
+            && (!exclude_buffers || !lib_cell->isBuffer())
             && (!exclude_inverters || !lib_cell->isInverter())) {
           path_length++;
         }
