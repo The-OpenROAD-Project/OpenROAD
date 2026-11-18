@@ -139,23 +139,6 @@ bool bufferRemovalKeepsOutputNet(const sta::dbNetwork* network,
          && network->hasPort(network->dbToSta(network->flatNet(output_pin)));
 }
 
-template <typename Object>
-bool hasSdcConstraint(const sta::dbSta* sta, const Object* object)
-{
-  for (const sta::Mode* mode : sta->modes()) {
-    if (mode->sdc()->isConstrained(object)) {
-      return true;
-    }
-    for (const std::pair<const sta::AnalysisCorner* const, sta::Sdc*>&
-             corner_sdc : mode->cornerSdcs()) {
-      if (corner_sdc.second->isConstrained(object)) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 float inputPinCapacitance(sta::Network* network,
                           sta::Pin* pin,
                           const sta::LibertyCell* cell,
@@ -2833,6 +2816,24 @@ bool Resizer::removeBufferKeepsOutputNet(sta::Instance* buffer) const
                                      db_network_->findPin(buffer, output_port));
 }
 
+bool Resizer::hasSdcRemovalConstraint(sta::Instance* inst)
+{
+  sta::LibertyPort* input_port = nullptr;
+  sta::LibertyPort* output_port = nullptr;
+  network_->libertyCell(inst)->bufferPorts(input_port, output_port);
+  sta::Pin* input_pin = db_network_->findPin(inst, input_port);
+  sta::Pin* output_pin = db_network_->findPin(inst, output_port);
+  sta::Net* removed_net
+      = bufferRemovalKeepsOutputNet(db_network_, input_pin, output_pin)
+            ? db_network_->net(input_pin)
+            : db_network_->net(output_pin);
+
+  sta::Sdc* sdc = sta_->cmdMode()->sdc();
+  return sdc->isConstrained(input_pin) || sdc->isConstrained(output_pin)
+         || (removed_net != nullptr && sdc->isConstrained(removed_net))
+         || sdc->isConstrained(inst);
+}
+
 bool Resizer::canRemoveBuffer(sta::Instance* buffer,
                               const bool honor_dont_touch_fixed)
 {
@@ -2859,8 +2860,6 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   lib_cell->bufferPorts(input_port, output_port);
   sta::Pin* input_pin = db_network_->findPin(buffer, input_port);
   sta::Pin* output_pin = db_network_->findPin(buffer, output_port);
-  sta::Net* input_net = db_network_->net(input_pin);
-  sta::Net* output_net = db_network_->net(output_pin);
   // Inspect the same flat nets that removeBuffer() will merge.
   odb::dbNet* input_db_net = db_network_->flatNet(input_pin);
   odb::dbNet* output_db_net = db_network_->flatNet(output_pin);
@@ -2875,14 +2874,10 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   }
   const bool keep_output_net
       = bufferRemovalKeepsOutputNet(db_network_, input_pin, output_pin);
-  sta::Net* removed = keep_output_net ? input_net : output_net;
   odb::dbNet* db_net_survivor = keep_output_net ? output_db_net : input_db_net;
   odb::dbNet* db_net_removed = keep_output_net ? input_db_net : output_db_net;
 
-  sta::Sdc* sdc = sta_->cmdMode()->sdc();
-  if (sdc->isConstrained(input_pin) || sdc->isConstrained(output_pin)
-      || (removed != nullptr && sdc->isConstrained(removed))
-      || sdc->isConstrained(buffer)) {
+  if (hasSdcRemovalConstraint(buffer)) {
     return false;
   }
 
@@ -5359,59 +5354,6 @@ sta::InstanceSeq Resizer::findClkInverters()
   return clk_inverters;
 }
 
-std::optional<std::string> Resizer::constrainedClockInverterObject(
-    sta::Instance* inv,
-    sta::Pin* in_pin,
-    sta::Pin* out_pin)
-{
-  std::set<std::string> constrained_objects;
-  if (hasSdcConstraint(sta_, inv)) {
-    constrained_objects.insert("instance " + network_->pathName(inv));
-  }
-  if (hasSdcConstraint(sta_, in_pin)) {
-    constrained_objects.insert("pin " + network_->pathName(in_pin));
-  }
-  if (hasSdcConstraint(sta_, out_pin)) {
-    constrained_objects.insert("pin " + network_->pathName(out_pin));
-  }
-
-  sta::NetSet connected_nets(network_);
-  network_->connectedNets(out_pin, &connected_nets);
-  // Removing the inverter changes polarity on its output nets and module ports.
-  for (const sta::Net* net : connected_nets) {
-    if (hasSdcConstraint(sta_, net)) {
-      constrained_objects.insert("net " + network_->pathName(net));
-    }
-    odb::dbNet* flat_net = nullptr;
-    odb::dbModNet* mod_net = nullptr;
-    db_network_->staToDb(net, flat_net, mod_net);
-    if (mod_net == nullptr) {
-      continue;
-    }
-    sta::NetConnectedPinIterator* pin_iter = network_->pinIterator(net);
-    while (pin_iter->hasNext()) {
-      const sta::Pin* pin = pin_iter->next();
-      if (network_->isHierarchical(pin) && hasSdcConstraint(sta_, pin)) {
-        constrained_objects.insert("pin " + network_->pathName(pin));
-      }
-    }
-    delete pin_iter;
-    sta::NetTermIterator* term_iter = network_->termIterator(net);
-    while (term_iter->hasNext()) {
-      const sta::Pin* pin = network_->pin(term_iter->next());
-      if (pin != nullptr && network_->isHierarchical(pin)
-          && hasSdcConstraint(sta_, pin)) {
-        constrained_objects.insert("pin " + network_->pathName(pin));
-      }
-    }
-    delete term_iter;
-  }
-  if (constrained_objects.empty()) {
-    return std::nullopt;
-  }
-  return *constrained_objects.begin();
-}
-
 void Resizer::cloneClkInverter(sta::Instance* inv)
 {
   sta::LibertyCell* inv_cell = network_->libertyCell(inv);
@@ -5426,15 +5368,13 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
   if (in_net && out_net && !dontTouch(out_net) && !dontTouch(in_net)) {
     // Check constraints before inserting clones so a skip leaves the netlist
     // intact.
-    const std::optional<std::string> constrained_object
-        = constrainedClockInverterObject(inv, in_pin, out_pin);
-    if (constrained_object.has_value()) {
+    if (hasSdcRemovalConstraint(inv)) {
       logger_->warn(RSZ,
                     3250,
-                    "repair_clock_inverters left inverter {} in the clock tree "
-                    "because {} is referenced by an SDC constraint.",
-                    network_->pathName(inv),
-                    *constrained_object);
+                    "repair_clock_inverters kept inverter {} because SDC "
+                    "constrains the inverter, one of its pins, or the net "
+                    "selected for removal.",
+                    network_->pathName(inv));
       return;
     }
     std::string inv_name = network_->name(inv);

@@ -1,7 +1,7 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
-Constrained hierarchical pins: 1
-[WARNING RSZ-3250] repair_clock_inverters left inverter m1/c1 in the clock tree because pin m1/u_regs/clk_n is referenced by an SDC constraint.
+Constrained inverter pins: 1
+[WARNING RSZ-3250] repair_clock_inverters kept inverter m1/c1 because SDC constrains the inverter, one of its pins, or the net selected for removal.
 Net clk
  Pin capacitance: 1.55-1.70
  Wire capacitance: 0.00
