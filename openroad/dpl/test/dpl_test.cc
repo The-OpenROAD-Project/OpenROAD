@@ -589,7 +589,7 @@ class IncrementalWindowSupplyTest : public WindowSupplyTest
 
   void SetUp() override
   {
-    ASSERT_TRUE(updateLib(lib_, "_main/src/dpl/test/extra.lef"));
+    ASSERT_TRUE(updateLib(lib_, "_main/openroad/dpl/test/extra.lef"));
     block_->setDieArea(odb::Rect(0, 0, 20000, 20000));
     site_ = lib_->findSite("FreePDK45_38x28_10R_NP_162NW_34O");
     ASSERT_NE(site_, nullptr);
