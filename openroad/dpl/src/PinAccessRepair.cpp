@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <exception>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include "dpl/Opendp.h"
@@ -13,6 +14,7 @@
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/network.h"
+#include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -178,7 +180,12 @@ class PinAccessRepair
     const auto orient = cell->getOrient();
     const auto candidates = candidateSites(cell);
     // Record the active trial so query errors restore the entire batch.
-    moves.push_back({cell, old, inst->getLocation(), orient});
+    moves.push_back({
+        .cell = cell,
+        .old = old,
+        .location = inst->getLocation(),
+        .orient = orient,
+    });
     dp_.unplaceCell(cell);
     for (const auto& candidate : candidates) {
       const GridX gx{std::get<2>(candidate)};

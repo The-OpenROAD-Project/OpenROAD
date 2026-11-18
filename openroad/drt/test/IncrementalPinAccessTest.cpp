@@ -52,13 +52,14 @@ class IncrementalPinAccessTest : public tst::DbFixture
   void SetUp() override
   {
     auto tech = loadTechLef(
-        "test", "_main/src/drt/test/incremental_pin_access_tech.lef");
+        "test", "_main/openroad/drt/test/incremental_pin_access_tech.lef");
     ASSERT_NE(tech, nullptr);
     auto lib = loadLibLef(
-        tech, "test", "_main/src/drt/test/incremental_pin_access.lef");
+        tech, "test", "_main/openroad/drt/test/incremental_pin_access.lef");
     ASSERT_NE(lib, nullptr);
-    ASSERT_NE(readDef("_main/src/drt/test/incremental_pin_access.def", {lib}),
-              nullptr);
+    ASSERT_NE(
+        readDef("_main/openroad/drt/test/incremental_pin_access.def", {lib}),
+        nullptr);
     router_.initGraphics(std::make_unique<NoGraphics>());
     ParamStruct params;
     params.viaAccessLayer = "M1";
@@ -430,7 +431,7 @@ TEST_F(IncrementalPinAccessTest, BlockClearDiscardsDesign)
   odb::defin def(db_.get(), &logger_, odb::defin::FLOORPLAN);
   ASSERT_TRUE(def.readChip(
       libs,
-      getFilePath("_main/src/drt/test/incremental_pin_access.def").c_str(),
+      getFilePath("_main/openroad/drt/test/incremental_pin_access.def").c_str(),
       db_->getChip()));
   ASSERT_EQ(router_.getDesign()->getTopBlock(), nullptr);
   ASSERT_NO_THROW(router_.pinAccess());

@@ -15,6 +15,7 @@
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frInstBlockage.h"
 #include "db/obj/frInstTerm.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
@@ -24,6 +25,7 @@
 #include "frProfileTask.h"
 #include "frRegionQuery.h"
 #include "gc/FlexGC.h"
+#include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -1539,7 +1541,7 @@ bool FlexPA::signalPinsOverlapSupply(frInst* candidate)
     }
     for (const auto& pin : term->getTerm()->getPins()) {
       auto shapes = mergePinShapes(pin.get(), term.get());
-      for (int layer = 0; layer < static_cast<int>(shapes.size()); ++layer) {
+      for (int layer = 0; std::cmp_less(layer, shapes.size()); ++layer) {
         if (!getTech()->getLayer(layer)->isRoutable()) {
           continue;
         }

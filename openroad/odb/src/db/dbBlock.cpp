@@ -127,6 +127,7 @@
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbExtControl.h"
+#include "odb/dbId.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
@@ -528,7 +529,8 @@ void dbBlock::clear()
     if (master->mpin_tbl_->validId(ap->mpin_)) {
       auto& pin_aps = master->mpin_tbl_->getPtr(ap->mpin_)->aps_;
       for (auto& aps : pin_aps) {
-        const auto pos = std::find(aps.begin(), aps.end(), ap->getOID());
+        const auto pos
+            = std::ranges::find(aps, dbId<_dbAccessPoint>(ap->getOID()));
         if (pos != aps.end()) {
           aps.erase(pos);
           break;

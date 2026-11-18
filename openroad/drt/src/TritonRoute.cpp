@@ -4,6 +4,7 @@
 #include "drt/TritonRoute.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -127,6 +128,7 @@ std::vector<odb::dbInst*> TritonRoute::findPinAccessFailures(
   const int num_threads = std::min<size_t>(
       std::max(1, router_cfg_->MAX_THREADS), instances.size());
   std::vector<std::unique_ptr<FlexPA>> workers;
+  workers.reserve(num_threads);
   for (int i = 0; i < num_threads; ++i) {
     workers.push_back(pa_->makeQueryWorker());
   }
