@@ -1,0 +1,21 @@
+# bumpInstanceName  bumpCellType  x      y      portName  netName
+# x and y are the bump footprint centre in microns, not the PAD centre.
+# fake_bumps.lef defines a 29 x 29 um BUMP with a metal5 PAD.
+# With this BUMP, the PAD centre is (x - 14.5, y - 14.5).
+
+# Power PADs overlap the existing metal5 parts of the PDN via stacks.
+bump_vdd BUMP 84.57 35.50 VDD VDD
+bump_vss BUMP 44.57 34.10 VSS VSS
+
+# Signal sites leave room for the footprint and its PAD on the 130 x 130 um die.
+# Matching chip-to-chip bumps use the same coordinates on both chiplets.
+# The assembly Verilog connects A.clk to B.clk and A.q to B.d.
+bump_clk BUMP 25.00 75.00 clk clk
+bump_q   BUMP 60.00 75.00 q   q
+
+# A.d is the external input (in_top), not the chip-to-chip data link.
+# This bump has no partner on Chip B; external/package wiring is not modeled.
+bump_d   BUMP 95.00 70.00 d   d
+
+# These rows place and name signal bumps; signal wires inside the chip
+# must still be routed from the standard cells to these PADs.

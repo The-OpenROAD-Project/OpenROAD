@@ -1,0 +1,8 @@
+# bumpInstanceName  bumpCellType  x      y       portName  netName
+# Coordinates place each metal5 bump PAD on the GCD power grid.
+bump_vdd_1 BUMP 26.57 27.615 VDD_1 VDD
+bump_vdd_2 BUMP 26.57 67.615 VDD_2 VDD
+bump_vdd_3 BUMP 82.57 27.615 VDD_3 VDD
+bump_vdd_4 BUMP 82.57 67.615 VDD_4 VDD
+bump_vss_1 BUMP 54.57 47.615 VSS_1 VSS
+bump_vss_2 BUMP 54.57 86.3 VSS_2 VSS

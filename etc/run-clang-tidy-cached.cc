@@ -31,7 +31,7 @@ B=${0%%.cc}; [ "$B" -nt "$0" ] || c++ -std=c++17 -o"$B" "$0" && exec "$B" "$@";
 // arguments. The regex is matched (regex_search) against each candidate path;
 // any match keeps the file. Filter args are not forwarded to clang-tidy and
 // do not affect the cache key, e.g.
-//   run-clang-tidy-cached.cc --filter='src/odb/' --filter='src/cts/'
+//   run-clang-tidy-cached.cc --filter='openroad/odb/' --filter='openroad/cts/'
 //
 // To print the files that would be checked (one per line on stdout) and exit
 // without running clang-tidy, pass --list-files.
@@ -41,8 +41,10 @@ B=${0%%.cc}; [ "$B" -nt "$0" ] || c++ -std=c++17 -o"$B" "$0" && exec "$B" "$@";
 //  CLANG_TIDY_CONFIG  = override configuration file in kConfig.clang_tidy_file
 //  CACHE_DIR          = where to put the cached content; default ~/.cache
 //  CLANG_TIDY_JOBS    = Number of tasks to run in parallel.
-//  COMPILE_JSON       = where to find cmake compile commands;
-//                       default build/compile_commands.json
+//  COMPILE_JSON       = where to find the compilation database;
+//                       default build/compile_commands.json, falling back
+//                       to compile_flags.txt from
+//                       etc/bazel-make-compilation-db.sh
 
 // This file shall be c++17 self-contained; not using any re2 or absl niceties.
 #include <unistd.h>
@@ -83,7 +85,7 @@ struct ConfigValues
   std::string_view cache_prefix;
 
   // Directory to start recurse for sources createing a file list.
-  // Some projects e.g. start at "src/".
+  // Some projects e.g. start at "openroad/".
   std::string_view start_dir;
 
   // Regular expression matching files that should be included in file list.
@@ -94,8 +96,8 @@ struct ConfigValues
   std::string_view file_exclude_re = "^(\\.git|\\.github|build)/";
 
   // A file in the toplevel of the project that should exist, typically
-  // something used to set up the build environment, such as MODULE.bazel,
-  // CMakeLists.txt or similar.
+  // something used to set up the build environment, such as MODULE.bazel
+  // or similar.
   // It is used two-fold:
   //   - As validation if this script is started in the correct directory.
   //   - To take changes there into account as that build file might provide
@@ -138,9 +140,9 @@ struct ConfigValues
 static constexpr ConfigValues kConfig = {
     // Configuration for your project goes here. Makes it simple to switch to an
     // updated run-clang-tidy-cached.cc: only need to transfer this block.
-    .start_dir = "src/",
+    .start_dir = "openroad/",
     .file_exclude_re
-    = "src/sta/"  // Don't check 3rd-party submodule
+    = "openroad/sta/"  // Don't check 3rd-party submodule
       "|codeGenerator/templates/"
       "|build/"                             // Don't check generated code
       "|def/(cdef|defrw|defwrite|defdiff)"  // unused code
