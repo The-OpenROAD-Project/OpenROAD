@@ -39,7 +39,6 @@ COMPULSORY_TESTS = [
     "inverters",
     "lvt_lib",
     "max_cap",
-    "max_wl_two_sinks",
     "multi_mode",
     "no_clocks",
     "no_sinks",
@@ -67,6 +66,7 @@ PASSFAIL_TESTS = [
     "dont_touch_skipped_net",
     "dont_touch_timing_buffer",
     "hier_dummy_load",
+    "max_wl_two_sinks",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
