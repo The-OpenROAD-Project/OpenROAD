@@ -205,7 +205,7 @@ BIG_TESTS = [
         check_log = False if test_name in PASSFAIL_TESTS + BIG_TESTS else True,
         check_metrics = True if test_name in BIG_TESTS else False,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
-        data = ["//src/odb/test:design_odb_data"] if test_name == "two_designs" else [],
+        data = ["//openroad/odb/test:design_odb_data"] if test_name == "two_designs" else [],
         tags = ["manual"] if test_name in BIG_TESTS else [],
     )
     for test_name in COMPULSORY_TESTS + PYTHON_TESTS + BIG_TESTS

@@ -5,10 +5,10 @@ on:
     branches:
       - master
     paths:
-      - src/web/package.json
-      - src/web/pnpm-lock.yaml
-      - src/web/test/npm_lock_test.py
-      - src/web/test/BUILD
+      - openroad/web/package.json
+      - openroad/web/pnpm-lock.yaml
+      - openroad/web/test/npm_lock_test.py
+      - openroad/web/test/BUILD
       - MODULE.bazel
       - MODULE.bazel.lock
       - .github/workflows/github-actions-are-web-bundles-generated.yml
@@ -16,10 +16,10 @@ on:
     branches:
       - master
     paths:
-      - src/web/package.json
-      - src/web/pnpm-lock.yaml
-      - src/web/test/npm_lock_test.py
-      - src/web/test/BUILD
+      - openroad/web/package.json
+      - openroad/web/pnpm-lock.yaml
+      - openroad/web/test/npm_lock_test.py
+      - openroad/web/test/BUILD
       - MODULE.bazel
       - MODULE.bazel.lock
       - .github/workflows/github-actions-are-web-bundles-generated.yml
@@ -41,4 +41,4 @@ jobs:
 
       # setup-bazel installs bazelisk on the PATH as `bazel`.
       - name: Check the npm lock against package.json
-        run: bazel test //src/web/test:npm_lock_test
+        run: bazel test //openroad/web/test:npm_lock_test
