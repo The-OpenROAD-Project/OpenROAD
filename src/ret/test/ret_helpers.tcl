@@ -63,6 +63,8 @@ proc run_dsec_test { test args } {
     puts $out "flatten"
     puts $out "async2sync"
     puts $out "sim -clock $keys(-clock) $reset_arg -rstlen $settle -n $settle -zinit -w"
+    # async2sync leaves synchronous-reset flops, which aigmap does not take.
+    puts $out "dffunmap"
     puts $out "aigmap"
     puts $out "write_aiger $aig"
     close $out

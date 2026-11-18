@@ -342,6 +342,109 @@ TEST_F(SequentialUnmapperCellTest, SkipsAsyncReset)
   EXPECT_NE(block_->findInst("ff1"), nullptr);
 }
 
+// ---- asynchronous controls tied inactive -----------------------------------
+
+// A reset held high by a tie cell never fires: the register is unmapped
+// like a plain one, and the tie cell that only it read goes with it.
+TEST_F(SequentialUnmapperCellTest, UnmapsTiedAsyncReset)
+{
+  ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kBasic}));
+  makeInputPorts({"d1", "clk"});
+  tst::InstOptions tie_op;
+  tie_op.iterms = {{"hi", "Y"}};
+  makeInst(block_, getDb()->findMaster("TIE1"), "t1", tie_op);
+  tst::InstOptions op;
+  op.iterms = {{"d1", "D"}, {"hi", "RN"}, {"clk", "CK"}, {"q1", "Q"}};
+  makeInst(block_, getDb()->findMaster("DFF_PN0"), "ff1", op);
+  makeOutputPort("q1");
+
+  ret::SequentialUnmapper unmapper(getDb(), getSta(), getLogger());
+  ASSERT_TRUE(unmapper.prepare());
+  unmapper.run();
+  expectSane();
+  EXPECT_EQ(countMaster("DFF_PN0"), 0);
+  EXPECT_EQ(countMaster("DFF_P"), 1);
+  EXPECT_EQ(countMaster("TIE1"), 0) << "the idle tie cell must be removed";
+  EXPECT_EQ(block_->findNet("hi"), nullptr);
+}
+
+// The base cell is the register that costs the least area once its
+// asynchronous controls are tied: DFF_PN0 (5.0 + one tie), not the smaller
+// DFFSR_PNN (4.5 + two ties), not the synchronous-reset SDFF_PP0 or the
+// enable DFFE_PP, and not DFF_PN0_HC with its heavier D pin.
+TEST_F(SequentialUnmapperCellTest, PicksTiedBase)
+{
+  ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kAsyncOnly}));
+  ret::SequentialUnmapper unmapper(getDb(), getSta(), getLogger());
+  ASSERT_TRUE(unmapper.prepare());
+  ASSERT_NE(unmapper.getBaseSequentialMaster(), nullptr);
+  EXPECT_EQ(unmapper.getBaseSequentialMaster()->getName(),
+            std::string("DFF_PN0"));
+  ASSERT_NE(unmapper.getNegedgeSequentialMaster(), nullptr);
+  EXPECT_EQ(unmapper.getNegedgeSequentialMaster()->getName(),
+            std::string("DFF_NP0"));
+}
+
+// An enable flop unmaps to DFF_PN0 with its active-low reset tied high.
+TEST_F(SequentialUnmapperCellTest, TiedBaseGetsTieHigh)
+{
+  ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kAsyncOnly}));
+  makeInputPorts({"d1", "e1", "clk"});
+  tst::InstOptions op;
+  op.iterms = {{"d1", "D"}, {"e1", "EN"}, {"clk", "CK"}, {"q1", "Q"}};
+  makeInst(block_, getDb()->findMaster("DFFE_PP"), "ff1", op);
+  makeOutputPort("q1");
+  const sta::Sequential* seq = sequentialOf("DFFE_PP");
+  ASSERT_NE(seq, nullptr);
+  const LeafNets leaf
+      = {{"D", block_->findNet("d1")}, {"EN", block_->findNet("e1")}};
+
+  ret::SequentialUnmapper unmapper(getDb(), getSta(), getLogger());
+  ASSERT_TRUE(unmapper.prepare());
+  unmapper.run();
+  expectSane();
+  EXPECT_EQ(countMaster("DFFE_PP"), 0);
+  EXPECT_EQ(countMaster("TIE1"), 1);
+  EXPECT_EQ(countMaster("TIE0"), 0);
+
+  odb::dbInst* base = getInstByMasterName("DFF_PN0");
+  ASSERT_NE(base, nullptr);
+  EXPECT_TRUE(isMaster(driverOf(base->findITerm("RN")->getNet()), "TIE1"))
+      << "the reset of the base cell must be tied high";
+  odb::dbNet* state = base->findITerm("Q")->getNet();
+  expectSameFunction(base->findITerm("D")->getNet(), seq, leaf, state);
+}
+
+// The negedge base cell DFF_NP0 has an active-high reset: tied low.  The
+// register unmapped here already is one, so its old tie cell is replaced.
+TEST_F(SequentialUnmapperCellTest, TiedBaseGetsTieLow)
+{
+  ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kAsyncOnly}));
+  makeInputPorts({"d1", "clk"});
+  tst::InstOptions tie_op;
+  tie_op.iterms = {{"lo", "Y"}};
+  makeInst(block_, getDb()->findMaster("TIE0"), "t0", tie_op);
+  tst::InstOptions op;
+  op.iterms = {{"d1", "D"}, {"lo", "R"}, {"clk", "CK"}, {"q1", "Q"}};
+  makeInst(block_, getDb()->findMaster("DFF_NP0"), "ff1", op);
+  makeOutputPort("q1");
+
+  ret::SequentialUnmapper unmapper(getDb(), getSta(), getLogger());
+  ASSERT_TRUE(unmapper.prepare());
+  unmapper.run();
+  expectSane();
+  EXPECT_EQ(block_->findInst("ff1"), nullptr);
+  EXPECT_EQ(block_->findInst("t0"), nullptr);
+  EXPECT_EQ(countMaster("TIE0"), 1);
+  EXPECT_EQ(countMaster("TIE1"), 0);
+
+  odb::dbInst* base = getInstByMasterName("DFF_NP0");
+  ASSERT_NE(base, nullptr);
+  EXPECT_TRUE(isMaster(driverOf(base->findITerm("R")->getNet()), "TIE0"))
+      << "the reset of the base cell must be tied low";
+  EXPECT_EQ(base->findITerm("D")->getNet(), block_->findNet("d1"));
+}
+
 // ---- tie cells -------------------------------------------------------------
 
 // DFF_P_TIE0: next_state "(D + 0)" needs a tie-low; the sized library has

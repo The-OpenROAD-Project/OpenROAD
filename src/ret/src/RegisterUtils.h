@@ -11,6 +11,7 @@
 namespace sta {
 class dbSta;
 class LibertyCell;
+class LibertyPort;
 class Sequential;
 }  // namespace sta
 
@@ -23,6 +24,25 @@ namespace ret {
 const sta::Sequential* singleSequential(const sta::LibertyCell* cell);
 
 bool isDontTouchRegister(sta::dbSta* sta, odb::dbInst* inst);
+
+// An asynchronous set or reset that is not tied to its inactive value.
+bool hasLiveAsyncControl(sta::dbSta* sta,
+                         odb::dbInst* inst,
+                         const sta::Sequential* seq);
+
+// The constants that hold every asynchronous control of a register cell
+// inactive, as (pin, tied high).  False when the cell has no such control,
+// when no constants hold them inactive, or when it has an input that is
+// neither one of them, a data pin nor the clock.
+using PinConstants = std::vector<std::pair<const sta::LibertyPort*, bool>>;
+bool inactiveAsyncControls(const sta::LibertyCell* cell,
+                           const sta::Sequential* seq,
+                           PinConstants& constants);
+
+// Deletes a register and the tie cells that held only its asynchronous
+// controls.  In a hierarchical netlist a tie cell in another module stays.
+void deleteRegister(sta::dbSta* sta, odb::dbInst* inst);
+
 bool isRegisterDataPin(sta::dbSta* sta, odb::dbITerm* pin);
 odb::dbITerm* registerDataPin(sta::dbSta* sta, odb::dbInst* inst);
 bool isNegedgeRegister(sta::dbSta* sta, odb::dbInst* inst);
@@ -35,6 +55,8 @@ odb::dbNet* registerClockNet(odb::dbInst* inst);
 //   inverting  the loads see the complement of D one cycle later; moves as
 //              the same cell across a self-dual gate only.
 //   other      never keeps its class; unmapped to a plain register first.
+//              An enable or inverting register whose cell has asynchronous
+//              controls is one of these.
 enum class RegisterKind
 {
   plain,

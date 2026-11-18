@@ -1,0 +1,36 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+worst slack max 0.7868
+[INFO RET-0014] Retiming graph: 29 gates, 23 edges, 7 registers, 14 pinned gates, 0 fenced registers.
+[INFO RET-0020] Worst register-to-register arrival 0.098 before retiming, clock period 1.000.
+
+ Slide |  Worst arr | Flops | Sinks | Max wr | gate                 | fanout net
+--------------------------------------------------------------------------------
+     1 |      0.084 |     2 |     1 |      1 | g2                   | n1
+     2 |      0.082 |     1 |     1 |      1 | g11                  | m1
+     3 |      0.069 |     0 |     1 |      1 | g3                   | n2
+     4 |      0.069 |     0 |     1 |      1 | g12                  | m2
+     5 |      0.057 |     0 |     1 |      1 | g4                   | n3
+     6 |      0.057 |     0 |     1 |      1 | g13                  | m3
+     7 |      0.046 |     0 |     1 |      1 | g5                   | n4
+--------------------------------------------------------------------------------
+[INFO RET-0023] Worst register-to-register arrival 0.046 after 7 slides.
+[INFO RET-0008] Unmapped 3 registers.
+[INFO RET-0043] Iteration 2: repeating the search on the netlist with the unmapped registers.
+[INFO RET-0020] Worst register-to-register arrival 0.098 before retiming, clock period 1.000.
+
+ Slide |  Worst arr | Flops | Sinks | Max wr | gate                 | fanout net
+--------------------------------------------------------------------------------
+     1 |      0.093 |     2 |     1 |      1 | g2                   | n1
+     2 |      0.081 |     1 |     1 |      1 | unmap_inv_4          | unmap_net_4
+     3 |      0.080 |     0 |     1 |      1 | g3                   | n2
+     4 |      0.069 |     0 |     1 |      1 | g11                  | m1
+     5 |      0.068 |     0 |     1 |      1 | g4                   | n3
+     6 |      0.057 |     0 |     1 |      1 | g12                  | m2
+     7 |      0.057 |     0 |     1 |      1 | g5                   | n4
+     8 |      0.046 |     0 |     1 |      1 | g13                  | m3
+--------------------------------------------------------------------------------
+[INFO RET-0023] Worst register-to-register arrival 0.046 after 8 slides.
+[INFO RET-0024] Rebuilt 5 of 24 register groups: 3 registers removed, 2 inserted, 0 of them keeping their class.
+worst slack max 0.7977
+Retime output passed/skipped sequential equivalence test
+No differences found.

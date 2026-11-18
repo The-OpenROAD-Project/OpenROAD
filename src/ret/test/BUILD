@@ -8,6 +8,7 @@ package(features = ["layering_check"])
 TESTS = [
     "retime_basic",
     "retime_dont_touch",
+    "retime_dsec_async_tied",
     "retime_dsec_class_groups",
     "retime_dsec_deep",
     "retime_dsec_dont_touch_group",
@@ -17,6 +18,7 @@ TESTS = [
     "retime_dsec_enable_gate",
     "retime_dsec_existing_names",
     "retime_dsec_hier",
+    "retime_dsec_hier_tied_base",
     "retime_dsec_hier_unmap",
     "retime_dsec_hier_unmap_nested",
     "retime_dsec_hier_unmap_top",
@@ -25,6 +27,7 @@ TESTS = [
     "retime_dsec_loop",
     "retime_dsec_plain",
     "retime_dsec_port_tap",
+    "retime_dsec_tied_base",
     "retime_dsec_unmapped_neighbor",
     "retime_gated_clock",
     "retime_gated_clock_deep",

@@ -1,0 +1,81 @@
+module top (a,
+    b,
+    clk,
+    rst_n,
+    y);
+ input a;
+ input b;
+ input clk;
+ input rst_n;
+ output y;
+
+
+ core u_core (.a(a),
+    .b(b),
+    .rn(rst_n),
+    .ck(clk),
+    .y(y));
+endmodule
+module core (a,
+    b,
+    rn,
+    ck,
+    y);
+ input a;
+ input b;
+ input rn;
+ input ck;
+ output y;
+
+ wire d1;
+ wire d2;
+ wire d3;
+ wire ret_net_5;
+ wire hi3;
+ wire n1;
+ wire n2;
+ wire n3;
+ wire n4;
+ wire n5;
+ wire n6;
+ wire ret_net_4;
+ wire q3;
+ wire unmap_net_3;
+
+ sg13g2_and2_1 g0 (.A(a),
+    .B(rn),
+    .X(d1));
+ sg13g2_and2_1 g1 (.A(b),
+    .B(rn),
+    .X(d2));
+ sg13g2_nand2_1 g2 (.Y(n1),
+    .A(unmap_net_3),
+    .B(d2));
+ sg13g2_inv_1 g3 (.Y(n2),
+    .A(n1));
+ sg13g2_inv_1 g4 (.Y(n3),
+    .A(n2));
+ sg13g2_inv_1 g5 (.Y(n4),
+    .A(n3));
+ sg13g2_inv_1 g6 (.Y(n5),
+    .A(n4));
+ sg13g2_inv_1 g7 (.Y(n6),
+    .A(n5));
+ sg13g2_and2_1 g8 (.A(ret_net_4),
+    .B(rn),
+    .X(d3));
+ sg13g2_buf_1 g9 (.A(q3),
+    .X(y));
+ sg13g2_dfrbp_1 r3 (.CLK(ck),
+    .RESET_B(hi3),
+    .D(d3),
+    .Q(q3));
+ sg13g2_dfrbp_1 ret_ff_4 (.CLK(ck),
+    .RESET_B(ret_net_5),
+    .D(n6),
+    .Q(ret_net_4));
+ sg13g2_tiehi ret_tie_5 (.L_HI(ret_net_5));
+ sg13g2_tiehi t3 (.L_HI(hi3));
+ sg13g2_inv_1 unmap_inv_3 (.Y(unmap_net_3),
+    .A(d1));
+endmodule

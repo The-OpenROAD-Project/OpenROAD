@@ -136,6 +136,7 @@ void Retimer::retime(int max_moves)
         "AND or 2-input OR cell (see the warnings above).");
   }
   dff_master_ = unmapper_->getBaseSequentialMaster();
+  dff_d_mterm_ = unmapper_->getBaseSequentialDMTerm();
   dff_q_mterm_ = unmapper_->getBaseSequentialQMTerm();
   checkRegisters(block);
 
@@ -197,10 +198,12 @@ void Retimer::applyAfterUnmapping(
                mover->getMaster()->getName());
   }
 
-  std::unordered_map<odb::dbInst*, int> lag;
+  // Keyed by name: unmapping deletes instances, and a new instance can
+  // take the address of a deleted one.
+  std::unordered_map<std::string, int> lag;
   const int n = static_cast<int>(graph.nodes_.size());
   for (int i = 0; i < n; i++) {
-    lag[graph.nodes_[i]] = r[i];
+    lag[graph.nodes_[i]->getName()] = r[i];
   }
   unmapper_->run(&movers);
   guard.update();
@@ -464,12 +467,12 @@ std::unordered_set<odb::dbInst*> Retimer::moversToUnmap(
 }
 
 int Retimer::lagOfNewGate(odb::dbInst* gate,
-                          const std::unordered_map<odb::dbInst*, int>& lag,
+                          const std::unordered_map<std::string, int>& lag,
                           bool& ok) const
 {
   constexpr int kMaxDepth = 64;
   for (int depth = 0; depth <= kMaxDepth; depth++) {
-    auto it = lag.find(gate);
+    auto it = lag.find(gate->getName());
     if (it != lag.end()) {
       return it->second;
     }
@@ -493,6 +496,9 @@ int Retimer::lagOfNewGate(odb::dbInst* gate,
         }
       }
     }
+    if (inputs == 0) {
+      return 0;  // a new tie cell
+    }
     if (inputs != 1 || driver == nullptr) {
       ok = false;
       return 0;
@@ -505,7 +511,7 @@ int Retimer::lagOfNewGate(odb::dbInst* gate,
 
 std::vector<int> Retimer::remapLag(
     const RetimingGraph& graph,
-    const std::unordered_map<odb::dbInst*, int>& lag,
+    const std::unordered_map<std::string, int>& lag,
     bool& ok) const
 {
   ok = true;
@@ -557,9 +563,9 @@ void Retimer::removeRegister(odb::dbInst* inst)
       bterm->connect(d_net);
     }
   }
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  network->deleteInstance(network->dbToSta(inst));
+  deleteRegister(sta_, inst);
   if (q_net != nullptr) {
+    sta::dbNetwork* network = sta_->getDbNetwork();
     network->deleteNet(network->dbToSta(q_net));
   }
   if (q_mod_net != nullptr && q_mod_net->connectionCount() == 0) {
@@ -629,7 +635,7 @@ void Retimer::connectRegister(odb::dbInst* ff,
     if (iterm->getSigType() == odb::dbSigType::CLOCK) {
       connectPin(iterm, clock_net, mod_nets);
     } else if (cls == nullptr) {
-      if (iterm->getIoType() == odb::dbIoType::INPUT) {
+      if (iterm->getMTerm() == dff_d_mterm_) {
         connectPin(iterm, in, mod_nets);
       } else if (iterm->getMTerm() == dff_q_mterm_) {
         iterm->connect(out);
@@ -645,6 +651,30 @@ void Retimer::connectRegister(odb::dbInst* ff,
         }
       }
     }
+  }
+}
+
+// A base cell with asynchronous controls gets a tie cell on each of them,
+// holding it inactive.
+void Retimer::tieBaseControls(odb::dbInst* ff,
+                              sta::Instance* parent,
+                              odb::dbModInst* parent_mod_inst)
+{
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  for (const auto& [mterm, high] : unmapper_->getBaseSequentialTies()) {
+    odb::dbMaster* master = unmapper_->getTieMaster(high);
+    sta::LibertyCell* cell = network->libertyCell(network->dbToSta(master));
+    const std::string name = getBlock()->makeNewInstName(
+        parent_mod_inst,
+        "ret_tie",
+        odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
+    odb::dbInst* tie
+        = network->staToDb(network->makeInstance(cell, name, parent));
+    tie->setSourceType(odb::dbSourceType::TIMING);
+    odb::dbNet* net = network->staToDb(network->makeNet(
+        "ret_net", parent, odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE));
+    tie->getITerm(unmapper_->getTieOutputMTerm(high))->connect(net);
+    ff->getITerm(mterm)->connect(net);
   }
 }
 
@@ -680,6 +710,9 @@ std::vector<odb::dbNet*> Retimer::buildChain(
     odb::dbNet* out = network->staToDb(network->makeNet(
         "ret_net", parent, odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE));
     connectRegister(ff, cls, nets[k - 1], out, clock_net, mod_nets);
+    if (cls == nullptr) {
+      tieBaseControls(ff, parent, parent_mod_inst);
+    }
     nets[k] = out;
   }
   return nets;

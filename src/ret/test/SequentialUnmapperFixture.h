@@ -51,6 +51,9 @@ class SequentialUnmapperFixture : public tst::Fixture
                                      "sequnmap_tie_sized.lib"};
   static constexpr LibPair kNegedge{"sequnmap_seq_active_low.lef",
                                     "sequnmap_seq_active_low.lib"};
+  // No plain flip-flop; self-contained, so it is loaded alone.
+  static constexpr LibPair kAsyncOnly{"sequnmap_async_only.lef",
+                                      "sequnmap_async_only.lib"};
 
  protected:
   // Load one or more (lef, lib) pairs, then create the chip and block.

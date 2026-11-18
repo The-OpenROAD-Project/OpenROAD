@@ -16,6 +16,7 @@ namespace sta {
 class dbSta;
 class FuncExpr;
 class Instance;
+class LibertyCell;
 class LibertyPort;
 class Sequential;
 }  // namespace sta
@@ -28,29 +29,55 @@ namespace ret {
 
 // Rewrites synchronous registers as a plain D flip-flop plus logic
 // (inverters, 2-input ANDs and ORs, tie cells) computing the cell's liberty
-// `next_state`.  Registers with asynchronous controls, latches, scan cells
-// and multi-bit cells are left untouched.
+// `next_state`.  Registers with an asynchronous control that is not tied
+// inactive, latches, scan cells and multi-bit cells are left untouched.
+//
+// A library without a plain D flip-flop gets a base cell with asynchronous
+// controls instead; every new instance of it has them tied inactive.
 //
 // In a hierarchical netlist the cells that replace a register are created
 // in the register's module.
 class SequentialUnmapper
 {
  public:
+  // Pins held at a constant, as (pin, tied high).
+  using PinTies = std::vector<std::pair<odb::dbMTerm*, bool>>;
+
   SequentialUnmapper(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
 
   bool prepare();
 
   void run(const std::unordered_set<odb::dbInst*>* candidates = nullptr);
 
-  odb::dbMaster* getBaseSequentialMaster() const { return seq_master_; }
-  odb::dbMTerm* getBaseSequentialQMTerm() const { return seq_q_mterm_; }
+  odb::dbMaster* getBaseSequentialMaster() const { return seq_.master; }
+  odb::dbMTerm* getBaseSequentialDMTerm() const { return seq_.d; }
+  odb::dbMTerm* getBaseSequentialQMTerm() const { return seq_.q; }
+  // The asynchronous controls a new base register needs tied inactive; none
+  // on a plain flip-flop.
+  const PinTies& getBaseSequentialTies() const { return seq_.ties; }
   odb::dbMaster* getNegedgeSequentialMaster() const
   {
-    return negedge_seq_master_;
+    return negedge_seq_.master;
+  }
+  odb::dbMaster* getTieMaster(bool one) const
+  {
+    return one ? tie1_master_ : tie0_master_;
+  }
+  odb::dbMTerm* getTieOutputMTerm(bool one) const
+  {
+    return one ? tie1_out_mterm_ : tie0_out_mterm_;
   }
 
  private:
   using Register = std::pair<odb::dbInst*, const sta::Sequential*>;
+
+  struct BaseRegister
+  {
+    odb::dbMaster* master = nullptr;
+    odb::dbMTerm* d = nullptr;
+    odb::dbMTerm* q = nullptr;
+    PinTies ties;
+  };
 
   struct RegPins
   {
@@ -76,9 +103,16 @@ class SequentialUnmapper
     std::vector<odb::dbBTerm*> ports;
   };
 
-  bool findBaseSequentialCell(bool negedge,
-                              odb::dbMaster*& master,
-                              odb::dbMTerm*& q_mterm);
+  bool findBaseSequentialCell(bool negedge, BaseRegister& base);
+  bool findTiedBaseSequentialCell(bool negedge, BaseRegister& base);
+  bool tiedBaseRegister(sta::LibertyCell* cell,
+                        bool negedge,
+                        BaseRegister& base,
+                        float& area) const;
+  BaseRegister makeBaseRegister(const sta::LibertyCell* cell,
+                                const sta::LibertyPort* data,
+                                const sta::LibertyPort* output) const;
+  void reportTiedBase() const;
   bool findInverterCell();
   bool findTwoInputGate(bool is_and, odb::dbMaster*& master);
   bool findTieCell(bool one);
@@ -117,17 +151,17 @@ class SequentialUnmapper
   utl::Logger* logger_ = nullptr;
   odb::dbBlock* block_ = nullptr;
 
-  odb::dbMaster* seq_master_ = nullptr;
-  odb::dbMTerm* seq_q_mterm_ = nullptr;
-  odb::dbMaster* negedge_seq_master_ = nullptr;
-  odb::dbMTerm* negedge_seq_q_mterm_ = nullptr;
+  BaseRegister seq_;
+  BaseRegister negedge_seq_;
   odb::dbMaster* inv_master_ = nullptr;
   odb::dbMaster* and2_master_ = nullptr;
   odb::dbMaster* or2_master_ = nullptr;
   odb::dbMaster* tie1_master_ = nullptr;
   odb::dbMTerm* tie1_out_mterm_ = nullptr;
+  float tie1_area_ = 0.0f;
   odb::dbMaster* tie0_master_ = nullptr;
   odb::dbMTerm* tie0_out_mterm_ = nullptr;
+  float tie0_area_ = 0.0f;
 
   std::unordered_map<const sta::LibertyPort*, odb::dbNet*> in_port_net_;
   // Module net of each net the register reads; empty in a flat netlist.

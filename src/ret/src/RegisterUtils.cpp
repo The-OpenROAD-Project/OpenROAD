@@ -397,7 +397,44 @@ bool loadedOutput(sta::dbSta* sta,
   return true;
 }
 
+// The output pin of a tie cell that nothing reads any more.
+odb::dbITerm* idleTieOutput(sta::dbSta* sta, odb::dbNet* net)
+{
+  if (net->getSigType().isSupply() || net->isDoNotTouch()
+      || !net->getBTerms().empty() || net->getITerms().size() != 1
+      || !constNetValue(sta, net).has_value()) {
+    return nullptr;
+  }
+  odb::dbITerm* output = net->getFirstOutput();
+  if (output == nullptr || output->getInst()->isDoNotTouch()) {
+    return nullptr;
+  }
+  for (odb::dbITerm* iterm : output->getInst()->getITerms()) {
+    if (iterm != output && !iterm->getSigType().isSupply()
+        && iterm->getNet() != nullptr) {
+      return nullptr;
+    }
+  }
+  return output;
+}
+
 }  // namespace
+
+bool hasLiveAsyncControl(sta::dbSta* sta,
+                         odb::dbInst* inst,
+                         const sta::Sequential* seq)
+{
+  for (const sta::FuncExpr* control : {seq->clear(), seq->preset()}) {
+    if (control == nullptr) {
+      continue;
+    }
+    const std::optional<bool> active = evalConstExpr(sta, inst, control);
+    if (!active.has_value() || *active) {
+      return true;
+    }
+  }
+  return false;
+}
 
 bool isDontTouchRegister(sta::dbSta* sta, odb::dbInst* inst)
 {
@@ -414,16 +451,90 @@ bool isDontTouchRegister(sta::dbSta* sta, odb::dbInst* inst)
   if (seq == nullptr || !seq->isRegister()) {
     return true;
   }
-  for (const sta::FuncExpr* control : {seq->clear(), seq->preset()}) {
-    if (control == nullptr) {
-      continue;
+  return hasLiveAsyncControl(sta, inst, seq);
+}
+
+bool inactiveAsyncControls(const sta::LibertyCell* cell,
+                           const sta::Sequential* seq,
+                           PinConstants& constants)
+{
+  std::vector<const sta::LibertyPort*> controls;
+  collectPorts(seq->clear(), controls);
+  collectPorts(seq->preset(), controls);
+  if (controls.empty() || controls.size() > kMaxTruthTableInputs) {
+    return false;
+  }
+  std::vector<const sta::LibertyPort*> known = controls;
+  collectPorts(seq->data(), known);
+  collectPorts(seq->clock(), known);
+  sta::LibertyCellPortIterator port_iter(cell);
+  while (port_iter.hasNext()) {
+    const sta::LibertyPort* port = port_iter.next();
+    if (port->direction()->isInput()
+        && std::ranges::find(known, port) == known.end()) {
+      return false;
     }
-    const std::optional<bool> active = evalConstExpr(sta, inst, control);
-    if (!active.has_value() || *active) {
+  }
+
+  const unsigned rows = 1u << controls.size();
+  for (unsigned row = 0; row < rows; row++) {
+    Assignment values;
+    for (size_t i = 0; i < controls.size(); i++) {
+      values[controls[i]] = ((row >> i) & 1u) != 0;
+    }
+    bool active = false;
+    for (const sta::FuncExpr* control : {seq->clear(), seq->preset()}) {
+      active = active
+               || (control != nullptr
+                   && evalExpr(control, values, nullptr, nullptr));
+    }
+    if (!active) {
+      constants.clear();
+      for (const sta::LibertyPort* port : controls) {
+        constants.emplace_back(port, values.at(port));
+      }
       return true;
     }
   }
   return false;
+}
+
+void deleteRegister(sta::dbSta* sta, odb::dbInst* inst)
+{
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::LibertyCell* cell = network->libertyCell(inst);
+  const sta::Sequential* seq
+      = cell != nullptr ? singleSequential(cell) : nullptr;
+  std::vector<const sta::LibertyPort*> controls;
+  if (seq != nullptr) {
+    collectPorts(seq->clear(), controls);
+    collectPorts(seq->preset(), controls);
+  }
+  std::vector<odb::dbNet*> control_nets;
+  for (const sta::LibertyPort* port : controls) {
+    odb::dbITerm* iterm = findITerm(inst, port);
+    odb::dbNet* net = iterm != nullptr ? iterm->getNet() : nullptr;
+    if (net != nullptr
+        && std::ranges::find(control_nets, net) == control_nets.end()) {
+      control_nets.push_back(net);
+    }
+  }
+  odb::dbModule* module = network->hasHierarchy() ? inst->getModule() : nullptr;
+  network->deleteInstance(network->dbToSta(inst));
+  for (odb::dbNet* net : control_nets) {
+    odb::dbITerm* tie_output = idleTieOutput(sta, net);
+    if (tie_output == nullptr
+        || (module != nullptr
+            && tie_output->getInst()->getModule() != module)) {
+      continue;
+    }
+    odb::dbModNet* mod_net = tie_output->getModNet();
+    network->deleteInstance(network->dbToSta(tie_output->getInst()));
+    network->deleteNet(network->dbToSta(net));
+    if (mod_net != nullptr && mod_net->connectionCount() == 0) {
+      odb::dbModNet::destroy(mod_net);
+    }
+  }
 }
 
 bool isRegisterDataPin(sta::dbSta* sta, odb::dbITerm* pin)
@@ -557,17 +668,20 @@ RegisterClass registerClass(sta::dbSta* sta, odb::dbInst* inst)
     return cls;
   }
   cls.output = out_pin != nullptr ? out_pin->getMTerm() : nullptr;
+  // A cell with asynchronous controls is never the cell of a new register,
+  // so it does not keep its class.
+  const bool has_async = seq->clear() != nullptr || seq->preset() != nullptr;
   if (shape.kind == RegisterKind::plain) {
     const bool loads_see_complement = shape.data_inverted != out_inverted;
     if (!loads_see_complement) {
       cls.kind = RegisterKind::plain;
-    } else if (cls.output != nullptr && cls.clock != nullptr) {
+    } else if (!has_async && cls.output != nullptr && cls.clock != nullptr) {
       cls.kind = RegisterKind::inverting;
       cls.master = inst->getMaster();
     }
     return cls;
   }
-  if (!out_inverted) {
+  if (!out_inverted && !has_async) {
     classifyEnableRegister(inst, shape, cls);
   }
   return cls;

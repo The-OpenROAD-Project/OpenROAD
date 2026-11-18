@@ -42,7 +42,14 @@ Registers move by class, read from the liberty `next_state` function:
   base flip-flop plus logic (inverters, 2-input ANDs and ORs, tie cells)
   computing its `next_state`, named `unmap_*`.
 
-Registers with asynchronous set or reset, latches and scan cells never
+A register whose asynchronous set or reset is tied to its inactive value
+moves like one without it: it is rebuilt as the base flip-flop, and a tie
+cell that only it read is removed with it. When the libraries have no
+flip-flop without asynchronous controls, the base cell is the register that
+takes the least area once tie cells hold its controls inactive, and every
+new register gets its own tie cells.
+
+Registers with a live asynchronous set or reset, latches and scan cells never
 move, and neither does a register chain whose output reaches a primary
 output or a control pin of another register (those read the chain at its
 current depth), nor anything marked don't-touch. Registers fed by one net
@@ -70,11 +77,11 @@ retime
 | ----- | ----- |
 | `-max_moves` | Stop after this many accepted register moves. Default unlimited. |
 
-New instances are named `ret_ff_N` and new nets `ret_net_N`. The log shows
-one line per accepted move. `retime` stops with an error on designs it
-cannot handle: libraries without a usable base register, inverter, AND2 or
-OR2 cell; more than one clock; negative-edge registers; no clock defined. An
-error leaves the netlist unchanged.
+New registers are named `ret_ff_N`, their tie cells `ret_tie_N` and new nets
+`ret_net_N`. The log shows one line per accepted move. `retime` stops with
+an error on designs it cannot handle: libraries without a usable base
+register, inverter, AND2 or OR2 cell; more than one clock; negative-edge
+registers; no clock defined. An error leaves the netlist unchanged.
 
 ## Example scripts
 

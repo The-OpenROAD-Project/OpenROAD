@@ -1,0 +1,132 @@
+module top (a,
+    b,
+    c,
+    clk,
+    e,
+    rst_n,
+    w,
+    y,
+    z);
+ input a;
+ input b;
+ input c;
+ input clk;
+ input e;
+ input rst_n;
+ output w;
+ output y;
+ output z;
+
+ wire d1;
+ wire d2;
+ wire d3;
+ wire d4;
+ wire d5;
+ wire d6;
+ wire d7;
+ wire unmap_net_4;
+ wire m1;
+ wire m2;
+ wire m3;
+ wire m4;
+ wire m5;
+ wire n1;
+ wire n2;
+ wire n3;
+ wire n4;
+ wire n5;
+ wire n6;
+ wire p1;
+ wire p2;
+ wire p3;
+ wire p4;
+ wire p5;
+ wire ret_net_6;
+ wire ret_net_5;
+ wire q3;
+ wire q5;
+ wire q6;
+ wire q7;
+
+ AND2_X1 g0 (.A1(a),
+    .A2(rst_n),
+    .ZN(d1));
+ AND2_X1 g1 (.A1(b),
+    .A2(rst_n),
+    .ZN(d2));
+ AND2_X1 g10 (.A1(c),
+    .A2(rst_n),
+    .ZN(d4));
+ INV_X1 g11 (.A(unmap_net_4),
+    .ZN(m1));
+ INV_X1 g12 (.A(m1),
+    .ZN(m2));
+ INV_X1 g13 (.A(m2),
+    .ZN(m3));
+ INV_X1 g14 (.A(ret_net_5),
+    .ZN(m4));
+ INV_X1 g15 (.A(m4),
+    .ZN(m5));
+ AND2_X1 g16 (.A1(m5),
+    .A2(rst_n),
+    .ZN(d5));
+ BUF_X1 g17 (.A(q5),
+    .Z(z));
+ NAND2_X1 g2 (.A1(d1),
+    .A2(d2),
+    .ZN(n1));
+ AND2_X1 g20 (.A1(e),
+    .A2(rst_n),
+    .ZN(d6));
+ INV_X1 g21 (.A(q6),
+    .ZN(p1));
+ INV_X1 g22 (.A(p1),
+    .ZN(p2));
+ INV_X1 g23 (.A(p2),
+    .ZN(p3));
+ INV_X1 g24 (.A(p3),
+    .ZN(p4));
+ INV_X1 g25 (.A(p4),
+    .ZN(p5));
+ AND2_X1 g26 (.A1(p5),
+    .A2(rst_n),
+    .ZN(d7));
+ BUF_X1 g27 (.A(q7),
+    .Z(w));
+ INV_X1 g3 (.A(n1),
+    .ZN(n2));
+ INV_X1 g4 (.A(n2),
+    .ZN(n3));
+ INV_X1 g5 (.A(n3),
+    .ZN(n4));
+ INV_X1 g6 (.A(ret_net_6),
+    .ZN(n5));
+ INV_X1 g7 (.A(n5),
+    .ZN(n6));
+ AND2_X1 g8 (.A1(n6),
+    .A2(rst_n),
+    .ZN(d3));
+ BUF_X1 g9 (.A(q3),
+    .Z(y));
+ DFF_X1 r3 (.D(d3),
+    .CK(clk),
+    .Q(q3));
+ DFF_X1 r5 (.D(d5),
+    .CK(clk),
+    .Q(q5));
+ DFFR_X1 r6 (.D(d6),
+    .RN(rst_n),
+    .CK(clk),
+    .Q(q6));
+ DFF_X1 r7 (.D(d7),
+    .CK(clk),
+    .Q(q7));
+ DFF_X1 ret_ff_5 (.D(m3),
+    .CK(clk),
+    .Q(ret_net_5));
+ DFF_X1 ret_ff_6 (.D(n4),
+    .CK(clk),
+    .Q(ret_net_6));
+ INV_X1 unmap_inv_4 (.A(d4),
+    .ZN(unmap_net_4));
+endmodule

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -13,7 +14,8 @@
 
 namespace sta {
 class dbSta;
-}
+class Instance;
+}  // namespace sta
 namespace est {
 class EstimateParasitics;
 class IncrementalParasiticsGuard;
@@ -120,10 +122,10 @@ class Retimer
                               std::vector<odb::dbInst*>& out);
 
   std::vector<int> remapLag(const RetimingGraph& graph,
-                            const std::unordered_map<odb::dbInst*, int>& lag,
+                            const std::unordered_map<std::string, int>& lag,
                             bool& ok) const;
   int lagOfNewGate(odb::dbInst* gate,
-                   const std::unordered_map<odb::dbInst*, int>& lag,
+                   const std::unordered_map<std::string, int>& lag,
                    bool& ok) const;
 
   void applyAfterUnmapping(const RetimingGraph& graph,
@@ -168,6 +170,9 @@ class Retimer
                        odb::dbNet* out,
                        odb::dbNet* clock_net,
                        const ModNets& mod_nets);
+  void tieBaseControls(odb::dbInst* ff,
+                       sta::Instance* parent,
+                       odb::dbModInst* parent_mod_inst);
   std::vector<odb::dbNet*> buildChain(
       odb::dbNet* driver_net,
       odb::dbNet* clock_net,
@@ -181,6 +186,7 @@ class Retimer
   std::unique_ptr<SequentialUnmapper> unmapper_;
 
   odb::dbMaster* dff_master_ = nullptr;
+  odb::dbMTerm* dff_d_mterm_ = nullptr;
   odb::dbMTerm* dff_q_mterm_ = nullptr;
   odb::dbNet* clock_net_ = nullptr;
 };
