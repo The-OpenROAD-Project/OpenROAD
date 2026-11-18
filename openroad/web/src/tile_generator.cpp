@@ -1173,6 +1173,15 @@ std::vector<std::string_view> TileVisibility::flagKeys()
 
 void TileVisibility::parseFromJson(const boost::json::object& json)
 {
+  // A copy of *this, not a default: view_extent_dbu and hidden_here are not
+  // in json.
+  TileVisibility parsed = *this;
+  parsed.assignFromJson(json);
+  *this = std::move(parsed);
+}
+
+void TileVisibility::assignFromJson(const boost::json::object& json)
+{
   // Visibility flags are nominally always sent by the web frontend, but
   // tests and the saveImage Tcl entry point can pass partial payloads;
   // fall back to the per-field default when a flag is omitted.

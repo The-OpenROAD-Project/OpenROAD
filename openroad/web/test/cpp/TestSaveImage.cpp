@@ -240,7 +240,7 @@ TEST_F(SaveImageTest, BackgroundComesFromTheViewerState)
       server.setDisplayState(c.state);
     }
     const std::string path = tempPng(c.label);
-    server.saveImage(path, 0, 0, 0, 0, /*width_px=*/0, /*dbu_per_pixel=*/0, "");
+    server.saveImage(path, 0, 0, 0, 0, /*width_px=*/0, /*dbu_per_pixel=*/0, {});
 
     unsigned w = 0, h = 0;
     const auto pixels = decodePngFile(path, w, h);

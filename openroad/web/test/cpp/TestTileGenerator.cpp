@@ -1661,6 +1661,18 @@ TEST_F(TileGeneratorTest, FillPatternParsingClampsToEnum)
   EXPECT_EQ(vis_neg.fill_pattern, FillPattern::kSolid);
 }
 
+// The bool fields are read before visible_layers, so a payload rejected there
+// must not leave them applied.
+TEST(TileVisibilityTest, RejectedPayloadLeavesItUnchanged)
+{
+  TileVisibility vis;
+  vis.stdcells = false;
+  EXPECT_ANY_THROW(vis.parseFromJson(
+      parseObj(R"({"stdcells":true,"visible_layers":true})")));
+  EXPECT_FALSE(vis.stdcells);
+  EXPECT_FALSE(vis.has_visible_layers);
+}
+
 // A non-solid fill pattern thins a layer's own shapes (fewer painted pixels
 // than solid, but still some), and kNone paints nothing.  Uses a large metal1
 // BTerm as the only content so the pixel counts reflect just the pattern.
