@@ -1,0 +1,6 @@
+[INFO ODB-0227] LEF file: ./Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: ./testcases/orientation_improve1.lef, created 10 library cells
+[INFO ODB-0128] Design: boundary_push1
+[INFO ODB-0131]     Created 402 components and 2402 component-terminals.
+[INFO MPL-0035] Macro MACRO_2 placed. Bounding box (100.130um, 100.800um), (200.130um, 200.800um). Orientation R0
+No differences found.
