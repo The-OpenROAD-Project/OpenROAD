@@ -8,6 +8,7 @@ package(features = ["layering_check"])
 TESTS = [
     "retime_basic",
     "retime_dont_touch",
+    "retime_dsec_class_groups",
     "retime_dsec_deep",
     "retime_dsec_dont_touch_group",
     "retime_dsec_enable",

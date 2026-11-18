@@ -1,0 +1,125 @@
+module top (clk,
+    d,
+    en1_i,
+    en2_i,
+    rst_n,
+    v,
+    w,
+    y,
+    z);
+ input clk;
+ input d;
+ input en1_i;
+ input en2_i;
+ input rst_n;
+ output v;
+ output w;
+ output y;
+ output z;
+
+ wire d5;
+ wire d6;
+ wire d7;
+ wire d8;
+ wire en1;
+ wire en2;
+ wire k0;
+ wire m0;
+ wire n0;
+ wire n1;
+ wire n2;
+ wire n3;
+ wire n4;
+ wire n5;
+ wire p0;
+ wire p1;
+ wire q5;
+ wire q6;
+ wire q7;
+ wire q8;
+ wire rst;
+ wire wd;
+ wire ret_net_1;
+ wire ret_net_2;
+ wire ret_net_3;
+ wire ret_net_4;
+
+ sky130_fd_sc_hd__buf_1 b1 (.A(wd),
+    .X(n0));
+ sky130_fd_sc_hd__buf_1 b2 (.A(wd),
+    .X(m0));
+ sky130_fd_sc_hd__and2_1 g0 (.A(d),
+    .B(rst_n),
+    .X(wd));
+ sky130_fd_sc_hd__and2_1 g18 (.A(ret_net_2),
+    .B(rst_n),
+    .X(d6));
+ sky130_fd_sc_hd__buf_1 g19 (.A(q6),
+    .X(z));
+ sky130_fd_sc_hd__inv_1 g21 (.A(wd),
+    .Y(k0));
+ sky130_fd_sc_hd__and2_1 g28 (.A(ret_net_1),
+    .B(rst_n),
+    .X(d7));
+ sky130_fd_sc_hd__buf_1 g29 (.A(q7),
+    .X(w));
+ sky130_fd_sc_hd__inv_1 g3 (.A(n0),
+    .Y(n1));
+ sky130_fd_sc_hd__inv_1 g31 (.A(wd),
+    .Y(p0));
+ sky130_fd_sc_hd__inv_1 g32 (.A(p0),
+    .Y(p1));
+ sky130_fd_sc_hd__and2_1 g38 (.A(ret_net_4),
+    .B(rst_n),
+    .X(d8));
+ sky130_fd_sc_hd__buf_1 g39 (.A(q8),
+    .X(v));
+ sky130_fd_sc_hd__inv_1 g4 (.A(n1),
+    .Y(n2));
+ sky130_fd_sc_hd__inv_1 g5 (.A(n2),
+    .Y(n3));
+ sky130_fd_sc_hd__inv_1 g6 (.A(n3),
+    .Y(n4));
+ sky130_fd_sc_hd__inv_1 g7 (.A(n4),
+    .Y(n5));
+ sky130_fd_sc_hd__and2_1 g8 (.A(ret_net_3),
+    .B(rst_n),
+    .X(d5));
+ sky130_fd_sc_hd__buf_1 g9 (.A(q5),
+    .X(y));
+ sky130_fd_sc_hd__or2_1 g_e1 (.A(en1_i),
+    .B(rst),
+    .X(en1));
+ sky130_fd_sc_hd__or2_1 g_e2 (.A(en2_i),
+    .B(rst),
+    .X(en2));
+ sky130_fd_sc_hd__inv_1 g_r (.A(rst_n),
+    .Y(rst));
+ sky130_fd_sc_hd__dfxtp_1 r5 (.D(d5),
+    .Q(q5),
+    .CLK(clk));
+ sky130_fd_sc_hd__dfxtp_1 r6 (.D(d6),
+    .Q(q6),
+    .CLK(clk));
+ sky130_fd_sc_hd__dfxtp_1 r7 (.D(d7),
+    .Q(q7),
+    .CLK(clk));
+ sky130_fd_sc_hd__dfxtp_1 r8 (.D(d8),
+    .Q(q8),
+    .CLK(clk));
+ sky130_fd_sc_hd__edfxtp_1 ret_ff_1 (.D(k0),
+    .DE(en1),
+    .Q(ret_net_1),
+    .CLK(clk));
+ sky130_fd_sc_hd__edfxtp_1 ret_ff_2 (.D(m0),
+    .DE(en2),
+    .Q(ret_net_2),
+    .CLK(clk));
+ sky130_fd_sc_hd__edfxtp_1 ret_ff_3 (.D(n5),
+    .DE(en1),
+    .Q(ret_net_3),
+    .CLK(clk));
+ sky130_fd_sc_hd__dfxtp_1 ret_ff_4 (.D(p1),
+    .Q(ret_net_4),
+    .CLK(clk));
+endmodule

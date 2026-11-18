@@ -58,12 +58,11 @@ class Retimer
     int k;
   };
 
-  // Edges whose register chains start on one driver net; rebuilt as one
-  // shared chain when any edge changed weight.
+  // Edges whose register chains start on one driver net with one class of
+  // first register; rebuilt as one shared chain when any edge changed weight.
   struct Group
   {
     odb::dbNet* driver_net = nullptr;
-    odb::dbITerm* driver = nullptr;  // gate output or last register output
     std::vector<Sink> sinks;
     std::vector<const std::vector<odb::dbInst*>*> chains;
     std::unordered_set<odb::dbInst*> flops;
@@ -89,6 +88,9 @@ class Retimer
 
   std::vector<Group> collectGroups(const RetimingGraph& graph,
                                    const std::vector<int>& r) const;
+  static int classBranch(const RetimingGraph& graph,
+                         const std::vector<odb::dbInst*>& flops,
+                         std::vector<odb::dbInst*>& heads);
 
   std::unordered_set<odb::dbInst*> moversToUnmap(
       const RetimingGraph& graph,

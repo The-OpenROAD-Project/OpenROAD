@@ -332,11 +332,38 @@ void Retimer::originRegisters(const RetimingGraph& graph,
   }
 }
 
+// Which of a net's class groups a chain belongs to: the one whose first
+// register is the same class as this chain's.  A chain without a register
+// goes with the first group.
+int Retimer::classBranch(const RetimingGraph& graph,
+                         const std::vector<odb::dbInst*>& flops,
+                         std::vector<odb::dbInst*>& heads)
+{
+  if (flops.empty()) {
+    return 0;
+  }
+  odb::dbInst* first = flops.front();
+  const int count = static_cast<int>(heads.size());
+  for (int i = 0; i < count; i++) {
+    if (heads[i] == first
+        || sameRegisterClass(classOf(graph, heads[i]), classOf(graph, first))) {
+      return i;
+    }
+  }
+  heads.push_back(first);
+  return count;
+}
+
+// Registers that start on one net at the same depth hold the same value
+// only when they are one class, so each class of first register is a group
+// of its own.
 std::vector<Retimer::Group> Retimer::collectGroups(
     const RetimingGraph& graph,
     const std::vector<int>& r) const
 {
-  std::map<unsigned, Group> by_net;  // deterministic new-cell names
+  // Ordered by net and class group: deterministic new-cell names.
+  std::map<std::pair<unsigned, int>, Group> by_net;
+  std::unordered_map<odb::dbNet*, std::vector<odb::dbInst*>> heads;
   const int n = static_cast<int>(graph.nodes_.size());
   for (int u = 0; u < n; u++) {
     const std::vector<Edge>& edges = graph.adj_[u];
@@ -347,9 +374,10 @@ std::vector<Retimer::Group> Retimer::collectGroups(
       if (driver_net != nullptr) {
         const int w = edges[k].weight;
         const int wr = w + r[edges[k].target] - r[u];
-        Group& group = by_net[driver_net->getId()];
+        const int branch
+            = classBranch(graph, handles[k].flops, heads[driver_net]);
+        Group& group = by_net[{driver_net->getId(), branch}];
         group.driver_net = driver_net;
-        group.driver = handles[k].driver;
         group.sinks.push_back(
             {.pin = handles[k].sink, .wr = wr, .u = u, .k = k});
         group.changed = group.changed || wr != w;

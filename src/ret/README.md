@@ -23,7 +23,8 @@ cannot be shortened by a forward move; they are constraints instead, and a
 move that pushes one past the clock period is rejected.
 
 Only the register groups whose edge weights changed are rebuilt; every
-other cell keeps its placement. The new registers are left unplaced: run
+other cell keeps its placement. A group is the registers of one class that
+start on one net. The new registers are left unplaced: run
 `global_placement -incremental` after `retime` to place them. Estimated
 parasitics of the nets that changed are refreshed. Run `retime` before clock
 tree synthesis and routing: on a routed design it warns and leaves the

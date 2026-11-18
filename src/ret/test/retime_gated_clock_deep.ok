@@ -9,5 +9,5 @@
      3 |      0.009 |     0 |     1 |      1 | h3                   | m3
 --------------------------------------------------------------------------------
 [INFO RET-0023] Worst register-to-register arrival 0.009 after 3 slides.
-[INFO RET-0024] Rebuilt 2 of 8 register groups: 1 registers removed, 1 inserted, 0 of them keeping their class.
+[INFO RET-0024] Rebuilt 2 of 9 register groups: 1 registers removed, 1 inserted, 0 of them keeping their class.
 No differences found.
