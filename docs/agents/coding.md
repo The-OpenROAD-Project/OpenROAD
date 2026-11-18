@@ -19,7 +19,7 @@
   the interface and look up the provider in `utl::ServiceRegistry`
   instead of having an instance passed in: `find<I>()` returns null
   when no provider is registered, `require<I>()` errors. See
-  `src/utl/include/utl/ServiceRegistry.h` for conventions.
+  `openroad/utl/include/utl/ServiceRegistry.h` for conventions.
 
 ### Comments and Prose
 - Keep existing comments unless they're clearly outdated or wrong.
