@@ -970,7 +970,7 @@ std::vector<int> dbSta::levelsOfLogic(bool exclude_buffers,
     Path* path = sta_->vertexWorstSlackPath(vertex, MinMax::max());
     odb::dbInst* prev_inst
         = nullptr;  // Used to count only unique OR instances.
-    while (path) {
+    while (path && !path->isClock(sta_)) {
       Pin* pin = path->vertex(sta_)->pin();
       Instance* sta_inst = sta_->cmdNetwork()->instance(pin);
       odb::dbInst* inst = db_network_->staToDb(sta_inst);
