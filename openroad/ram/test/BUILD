@@ -32,6 +32,7 @@ PASSFAIL_TESTS = [
     "option_errors_asap7",
     "pins_corner_asap7",
     "routed_short_edge_asap7",
+    "read_drive_asap7",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
