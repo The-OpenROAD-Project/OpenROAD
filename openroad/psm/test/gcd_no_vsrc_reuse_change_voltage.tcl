@@ -1,0 +1,19 @@
+# Check that analyze_power_grid doesn't reuse the solution once the voltage is modified
+source helpers.tcl
+
+read_lef Nangate45/Nangate45.lef
+read_def Nangate45_data/gcd.def
+read_liberty Nangate45/Nangate45_typ.lib
+read_sdc Nangate45_data/gcd.sdc
+set_pdnsim_net_voltage -net VDD -voltage 1.1
+analyze_power_grid -net VDD -allow_reuse
+analyze_power_grid -net VSS -allow_reuse
+
+# No change, same solution
+set_pdnsim_net_voltage -net VDD -voltage 1.1
+analyze_power_grid -net VDD -allow_reuse
+analyze_power_grid -net VSS -allow_reuse
+
+set_pdnsim_net_voltage -net VDD -voltage 1.5
+analyze_power_grid -net VDD -allow_reuse
+analyze_power_grid -net VSS -allow_reuse

@@ -209,37 +209,6 @@ proc require_snapshot_batched_activity { test_name } {
   }
 }
 
-proc run_unit_test_and_exit { relative_path } {
-  set test_dir [pwd]
-  set openroad_dir [file dirname [file dirname [file dirname $test_dir]]]
-  set test_path [file join $openroad_dir {*}$relative_path]
-
-  set test_status [catch { exec sh -c "BASE_DIR=$test_dir $test_path" } output option]
-
-  puts $test_status
-  puts $output
-  if { $test_status != 0 } {
-    set test_err_info [lassign [dict get $option -errorcode] err_type]
-    switch -exact -- $err_type {
-      NONE {
-        #passed
-      }
-      CHILDSTATUS {
-        # non-zero exit status
-        set exit_status [lindex $test_err_info 1]
-        puts "ERROR: test returned exit code $exit_status"
-        exit 1
-      }
-      default {
-        puts "ERROR: $option"
-        exit 1
-      }
-    }
-  }
-  puts "pass"
-  exit 0
-}
-
 # Note: required e.g. in CentOS 7 environment.
 if { [package vcompare [package present Tcl] 8.6] == -1 } {
   # tclint-disable-next-line redefined-builtin
@@ -269,6 +238,20 @@ proc check { description test expected_value } {
   }
 }
 
+# Expects script to fail with the given message id (e.g. ANT-0012), which
+# utl::error reports as the Tcl error result.
+proc check_error { description script error_id } {
+  if { ![catch { uplevel 1 $script } msg] } {
+    incr ::failing_checks
+    error "FAIL: $description: Expected error $error_id from \{$script\}"
+  } elseif { [string first $error_id $msg] == -1 } {
+    incr ::failing_checks
+    error "FAIL: $description: Expected error $error_id, got: $msg"
+  } else {
+    incr ::passing_checks
+  }
+}
+
 proc exit_summary { } {
   set total_checks [expr { $::passing_checks + $::failing_checks }]
   if { $total_checks > 0 } {
@@ -281,7 +264,8 @@ proc exit_summary { } {
   } else {
     puts "Summary 0 checks run"
   }
-  exit $::failing_checks
+  # A count could wrap to 0 as an exit status.
+  exit [expr { $::failing_checks > 0 }]
 }
 
 # Reading DEF file
