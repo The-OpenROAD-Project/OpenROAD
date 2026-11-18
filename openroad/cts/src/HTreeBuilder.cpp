@@ -1412,7 +1412,11 @@ std::string HTreeBuilder::plotHTree()
             = leafTopology.getBranchSinksLocations(idx);
 
         for (const Point<double>& loc : sinkLocs) {
-          auto name2 = mapLocationToSink_[loc].front()->getName();
+          const auto sinks = mapLocationToSink_.find(loc);
+          if (sinks == mapLocationToSink_.end() || sinks->second.empty()) {
+            logger_->error(CTS, 139, "No sink at leaf location {}.", loc);
+          }
+          auto name2 = sinks->second.front()->getName();
 
           file << numSinks << " " << loc.getX() << " " << loc.getY();
           file << " " << px << " " << py << " leafbuffer " << name2;
@@ -1871,7 +1875,11 @@ void HTreeBuilder::initSecondLevelSinks(
     const Point<double> bufPos(buf.first, buf.second);
     // A sink buffer's location is unique: legalizeOneBuffer resolves
     // collisions with every location in the map.
-    sinkInsts.emplace_back(mapLocationToSink_[bufPos].front());
+    const auto sinks = mapLocationToSink_.find(bufPos);
+    if (sinks == mapLocationToSink_.end() || sinks->second.empty()) {
+      logger_->error(CTS, 79, "No sink at clustered location {}.", bufPos);
+    }
+    sinkInsts.emplace_back(sinks->second.front());
   }
 }
 
