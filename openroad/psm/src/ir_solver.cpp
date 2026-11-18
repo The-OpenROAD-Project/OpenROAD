@@ -47,7 +47,12 @@ namespace psm {
 
 namespace {
 
-using ConductanceMatrix = Eigen::SparseMatrix<Connection::Conductance>;
+// Eigen symbols come from ir_solver.h's "Eigen/Sparse"; Eigen has no
+// IWYU-mappable headers for misc-include-cleaner.
+// NOLINTBEGIN(misc-include-cleaner)
+using ConductanceTriplet
+    = Eigen::Triplet<Connection::Conductance, ConductanceMatrix::StorageIndex>;
+// NOLINTEND(misc-include-cleaner)
 using Current = IRSolver::Current;
 using CurrentVector = Eigen::VectorXd;
 using Power = IRSolver::Power;
@@ -1752,7 +1757,7 @@ void IRSolver::buildCondMatrixAndVoltages(
     const ValueNodeMap<Current>& currents,
     const Connection::ConnectionMap<Connection::Conductance>& conductance,
     const std::map<Node*, std::size_t>& node_index,
-    Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
+    ConductanceMatrix& g_matrix,
     Eigen::VectorXd& j_vector) const
 {
   const utl::DebugScopedTimer timer(
@@ -1760,7 +1765,7 @@ void IRSolver::buildCondMatrixAndVoltages(
 
   const bool print_progress = logger_->debugCheck(utl::PSM, "progress", 1);
   std::size_t count = 0;
-  std::vector<Eigen::Triplet<Connection::Conductance>> cond_values;
+  std::vector<ConductanceTriplet> cond_values;
   for (const auto& [node, connections] : node_connections) {
     const std::size_t node_idx = node_index.at(node);
 
@@ -1801,7 +1806,7 @@ void IRSolver::addSourcesToMatrixAndVoltages(
     Voltage src_voltage,
     const SourceNodes& sources,
     const std::map<Node*, std::size_t>& node_index,
-    Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
+    ConductanceMatrix& g_matrix,
     Eigen::VectorXd& j_vector) const
 {
   // Attach sources as current sources through a 1 ohm resistor
@@ -1859,21 +1864,20 @@ void IRSolver::addAssemblyLoads(odb::dbNet* net,
 
 namespace {
 
-void buildCondMatrixAndVoltages(
-    bool negate_currents,
-    const NodeConductances& node_connections,
-    const ValueNodeMap<Current>& currents,
-    const std::map<Node*, std::size_t>& node_index,
-    Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
-    Eigen::VectorXd& j_vector,
-    utl::Logger* logger)
+void buildCondMatrixAndVoltages(bool negate_currents,
+                                const NodeConductances& node_connections,
+                                const ValueNodeMap<Current>& currents,
+                                const std::map<Node*, std::size_t>& node_index,
+                                ConductanceMatrix& g_matrix,
+                                Eigen::VectorXd& j_vector,
+                                utl::Logger* logger)
 {
   const utl::DebugScopedTimer timer(
       logger, utl::PSM, "timer", 1, "Build G and J: {}");
 
   const bool print_progress = logger->debugCheck(utl::PSM, "progress", 1);
   std::size_t count = 0;
-  std::vector<Eigen::Triplet<Connection::Conductance>> cond_values;
+  std::vector<ConductanceTriplet> cond_values;
   for (const auto& [node, connections] : node_connections) {
     const std::size_t node_idx = node_index.at(node);
 
@@ -1976,10 +1980,7 @@ void dumpMatrix(const ConductanceMatrix& matrix,
     return;
   }
   for (int k = 0; k < matrix.outerSize(); k++) {
-    for (Eigen::SparseMatrix<Connection::Conductance>::InnerIterator it(matrix,
-                                                                        k);
-         it;
-         ++it) {
+    for (ConductanceMatrix::InnerIterator it(matrix, k); it; ++it) {
       report << fmt::format(
           "{}[{}, {}] = {:.15e}", name, it.col(), it.row(), it.value())
              << '\n';
@@ -1991,13 +1992,14 @@ void dumpMatrix(const ConductanceMatrix& matrix,
 
 namespace {
 
-VoltageVector solve(Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
+VoltageVector solve(ConductanceMatrix& g_matrix,
                     const Eigen::VectorXd& j_vector,
                     utl::Logger* logger,
                     const std::map<Node*, std::size_t>& node_index,
                     IRNetwork* debug_network)
 {
-  Eigen::SparseLU<Eigen::SparseMatrix<Connection::Conductance>> eigen_solver;
+  // NOLINTNEXTLINE(misc-include-cleaner)
+  Eigen::SparseLU<ConductanceMatrix> eigen_solver;
 
   debugPrint(logger, utl::PSM, "solve", 1, "Factorizing the G matrix");
   eigen_solver.compute(g_matrix);
@@ -2052,11 +2054,10 @@ VoltageVector solve(Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
 
 namespace {
 
-void addSourcesToMatrixAndVoltages(
-    const std::vector<MatrixSource>& sources,
-    Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
-    Eigen::VectorXd& j_vector,
-    utl::Logger* logger)
+void addSourcesToMatrixAndVoltages(const std::vector<MatrixSource>& sources,
+                                   ConductanceMatrix& g_matrix,
+                                   Eigen::VectorXd& j_vector,
+                                   utl::Logger* logger)
 {
   // Add an auxiliary current unknown and a fixed-voltage equation per source.
   const Connection::Resistance src_res = 1.0;
@@ -2223,7 +2224,7 @@ void IRSolver::solve(sta::Scene* corner,
   debugPrint(logger_, utl::PSM, "stats", 1, "Nodes in matrix: {}", num_nodes);
 
   // create sparse matrix and vector
-  Eigen::SparseMatrix<Connection::Conductance> g_matrix(num_nodes, num_nodes);
+  ConductanceMatrix g_matrix(num_nodes, num_nodes);
   Eigen::VectorXd j_vector(num_nodes);
 
   // Build G and J
@@ -2237,7 +2238,8 @@ void IRSolver::solve(sta::Scene* corner,
   addSourcesToMatrixAndVoltages(
       src_voltage, src_nodes, node_index, g_matrix, j_vector);
 
-  Eigen::SparseLU<Eigen::SparseMatrix<Connection::Conductance>> eigen_solver;
+  // NOLINTNEXTLINE(misc-include-cleaner)
+  Eigen::SparseLU<ConductanceMatrix> eigen_solver;
 
   debugPrint(logger_, utl::PSM, "solve", 1, "Factorizing the G matrix");
   eigen_solver.compute(g_matrix);
@@ -3066,9 +3068,8 @@ void IRSolver::dumpVector(const Eigen::VectorXd& vector,
   }
 }
 
-void IRSolver::dumpMatrix(
-    const Eigen::SparseMatrix<Connection::Conductance>& matrix,
-    const std::string& name) const
+void IRSolver::dumpMatrix(const ConductanceMatrix& matrix,
+                          const std::string& name) const
 {
   const std::string report_file = fmt::format("psm_{}.txt", name);
   std::ofstream report(report_file);
@@ -3077,10 +3078,7 @@ void IRSolver::dumpMatrix(
     return;
   }
   for (int k = 0; k < matrix.outerSize(); k++) {
-    for (Eigen::SparseMatrix<Connection::Conductance>::InnerIterator it(matrix,
-                                                                        k);
-         it;
-         ++it) {
+    for (ConductanceMatrix::InnerIterator it(matrix, k); it; ++it) {
       report << fmt::format(
           "{}[{}, {}] = {:.15e}", name, it.col(), it.row(), it.value())
              << '\n';
