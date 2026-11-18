@@ -166,7 +166,6 @@ class MoveCommitter
   static size_t typeIndex(MoveType type) { return static_cast<size_t>(type); }
 
   static constexpr size_t kTypeCount = static_cast<size_t>(MoveType::kCount);
-  inline static std::array<int, kTypeCount> persisted_summary_by_type_{};
 
   // === Shared services ======================================================
   Resizer& resizer_;
@@ -180,7 +179,6 @@ class MoveCommitter
   std::array<int, kTypeCount> pending_by_type_{};
   int netlist_edits_ = 0;
   std::array<int, kTypeCount> committed_by_type_{};
-  std::array<int, kTypeCount> summary_carried_by_type_{};
   std::array<std::unordered_multiset<sta::Instance*>, kTypeCount>
       pending_instances_by_type_{};
   std::array<std::unordered_set<sta::Instance*>, kTypeCount>
