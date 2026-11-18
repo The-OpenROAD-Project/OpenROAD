@@ -26,7 +26,7 @@
 
 const fs = require('fs');
 
-// Labels without a /src/<module>/ directory, mapped to a path whose
+// Labels without a /openroad/<module>/ directory, mapped to a path whose
 // CODEOWNERS entry owns that area.
 const kLabelPaths = {
   'bazel': '/MODULE.bazel',
@@ -91,12 +91,12 @@ function ownersForPath(rules, path) {
   return match ? match.teams : [];
 }
 
-// Returns {label: {path, module}} where module is the src/ directory name
+// Returns {label: {path, module}} where module is the openroad/ directory name
 // (with the CODEOWNERS spelling) or null.
 function resolveLabels(rules, labels) {
   const modules = new Map();
   for (const rule of rules) {
-    const m = rule.pattern.match(/^\/src\/([^/*]+)\/$/);
+    const m = rule.pattern.match(/^\/openroad\/([^/*]+)\/$/);
     if (m) {
       modules.set(m[1].toLowerCase(), m[1]);
     }
@@ -105,7 +105,7 @@ function resolveLabels(rules, labels) {
   for (const label of labels) {
     const module = modules.get(label.toLowerCase());
     if (module) {
-      resolved[label] = {path: `/src/${module}/x`, module};
+      resolved[label] = {path: `/openroad/${module}/x`, module};
     } else if (kLabelPaths[label.toLowerCase()]) {
       resolved[label] = {path: kLabelPaths[label.toLowerCase()], module: null};
     }
@@ -202,7 +202,7 @@ async function recentCommitCounts(github, context, module, candidates) {
   const {data: commits} = await github.rest.repos.listCommits({
     owner: context.repo.owner,
     repo: context.repo.repo,
-    path: `src/${module}`,
+    path: `openroad/${module}`,
     since: since.toISOString(),
     per_page: kCommitSampleSize,
   });

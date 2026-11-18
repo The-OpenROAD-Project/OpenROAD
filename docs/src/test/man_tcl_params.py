@@ -15,13 +15,13 @@ help_dict, proc_dict, readme_dict = {}, {}, {}
 
 # Directories to exclude (according to md_roff_compat)
 exclude = ["sta"]
-include = ["./src/odb/src/swig/tcl/odb.tcl"]
+include = ["./openroad/odb/src/swig/tcl/odb.tcl"]
 
-for path in glob.glob("./src/*/src/*tcl") + include:
+for path in glob.glob("./openroad/*/src/*tcl") + include:
     # exclude these dirs which are not compiled in man (do not have readmes).
     tool_dir = os.path.dirname(os.path.dirname(path))
     if "odb" in tool_dir:
-        tool_dir = "./src/odb"
+        tool_dir = "./openroad/odb"
     if not os.path.exists(f"{tool_dir}/README.md"):
         continue
     if re.search(f".*{'|'.join(e for e in exclude)}.*", path):
@@ -50,7 +50,7 @@ for path in glob.glob("./src/*/src/*tcl") + include:
             rest = clean_parse_syntax(rest)
             proc_dict[cmd] = rest
 
-for path in glob.glob("./src/*/README.md"):
+for path in glob.glob("./openroad/*/README.md"):
     if re.search(f".*{'|'.join(e for e in exclude)}.*", path):
         continue
     tool_dir = os.path.dirname(path)
