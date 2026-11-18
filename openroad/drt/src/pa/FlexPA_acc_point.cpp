@@ -1607,6 +1607,31 @@ void FlexPA::genAllAccessPoints()
     logger_->info(DRT, 78, "  Complete {} pins.", pin_count);
   }
 }
+
+namespace {
+
+void translateAccessPoint(frAccessPoint& access_point,
+                          const odb::dbTransform& revertXform)
+{
+  odb::Point unique_AP_point(access_point.getPoint());
+  revertXform.apply(unique_AP_point);
+  access_point.setPoint(unique_AP_point);
+  for (auto& ps : access_point.getPathSegs()) {
+    odb::Point begin = ps.getBeginPoint();
+    odb::Point end = ps.getEndPoint();
+    revertXform.apply(begin);
+    revertXform.apply(end);
+    if (end < begin) {
+      odb::Point tmp = begin;
+      begin = end;
+      end = tmp;
+    }
+    ps.setPoints(begin, end);
+  }
+}
+
+}  // namespace
+
 void FlexPA::revertAccessPoints(frInst* inst)
 {
   const odb::dbTransform xform = inst->getTransform();
@@ -1618,21 +1643,7 @@ void FlexPA::revertAccessPoints(frInst* inst)
     for (auto& pin : inst_term->getTerm()->getPins()) {
       auto pin_access = pin->getPinAccess(pin_access_idx);
       for (auto& access_point : pin_access->getAccessPoints()) {
-        odb::Point unique_AP_point(access_point->getPoint());
-        revertXform.apply(unique_AP_point);
-        access_point->setPoint(unique_AP_point);
-        for (auto& ps : access_point->getPathSegs()) {
-          odb::Point begin = ps.getBeginPoint();
-          odb::Point end = ps.getEndPoint();
-          revertXform.apply(begin);
-          revertXform.apply(end);
-          if (end < begin) {
-            odb::Point tmp = begin;
-            begin = end;
-            end = tmp;
-          }
-          ps.setPoints(begin, end);
-        }
+        translateAccessPoint(*access_point, revertXform);
       }
     }
   }
