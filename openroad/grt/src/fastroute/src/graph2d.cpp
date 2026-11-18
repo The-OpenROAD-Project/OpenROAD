@@ -1,0 +1,1356 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2019-2025, The OpenROAD Authors
+
+#include "Graph2D.h"
+
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <functional>
+#include <limits>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "DataType.h"
+#include "FastRoute.h"
+#include "odb/db.h"
+
+namespace grt {
+
+// Initializes the 2D graph with grid dimensions, capacities, and layers.
+void Graph2D::init(const int x_grid,
+                   const int y_grid,
+                   const int num_layers,
+                   utl::Logger* logger)
+{
+  x_grid_ = x_grid;
+  y_grid_ = y_grid;
+  num_layers_ = num_layers;
+  logger_ = logger;
+
+  if (used_grids_reset_) {
+    used_grids_reset_();
+  }
+  invalidateOverflow2D();
+  h_used_ggrid_.clear();
+  v_used_ggrid_.clear();
+  h_dirty_used_grids_.clear();
+  v_dirty_used_grids_.clear();
+  h_dirty_est_edges_.clear();
+  v_dirty_est_edges_.clear();
+  h_dirty_history_edges_.clear();
+  v_dirty_history_edges_.clear();
+
+  h_edges_.resize(boost::extents[x_grid - 1][y_grid]);
+  v_edges_.resize(boost::extents[x_grid][y_grid - 1]);
+
+  for (int x = 0; x < x_grid - 1; x++) {
+    for (int y = 0; y < y_grid; y++) {
+      // Edge initialization
+      h_edges_[x][y].cap = 0;
+      h_edges_[x][y].usage = 0;
+      h_edges_[x][y].est_usage = 0;
+      h_edges_[x][y].red = 0;
+      h_edges_[x][y].last_usage = 0;
+      h_edges_[x][y].congCNT = 0;
+      h_edges_[x][y].ndr_deficit = 0;
+      h_edges_[x][y].used_grid_dirty = false;
+      h_edges_[x][y].est_usage_dirty = false;
+      h_edges_[x][y].history_dirty = false;
+    }
+  }
+  for (int x = 0; x < x_grid; x++) {
+    for (int y = 0; y < y_grid - 1; y++) {
+      // Edge initialization
+      v_edges_[x][y].cap = 0;
+      v_edges_[x][y].usage = 0;
+      v_edges_[x][y].est_usage = 0;
+      v_edges_[x][y].red = 0;
+      v_edges_[x][y].last_usage = 0;
+      v_edges_[x][y].congCNT = 0;
+      v_edges_[x][y].ndr_deficit = 0;
+      v_edges_[x][y].used_grid_dirty = false;
+      v_edges_[x][y].est_usage_dirty = false;
+      v_edges_[x][y].history_dirty = false;
+    }
+  }
+}
+
+// Resets queued estimates; unqueued estimates are already zero.
+void Graph2D::InitEstUsage()
+{
+  checkDirtyLists();
+  const auto reset = [](auto& edges, auto& dirty) {
+    for (const auto& [x, y] : dirty) {
+      auto& edge = edges[x][y];
+      edge.est_usage = 0;
+      edge.est_usage_dirty = false;
+    }
+    dirty.clear();
+  };
+  reset(h_edges_, h_dirty_est_edges_);
+  reset(v_edges_, v_dirty_est_edges_);
+  h_overflow_.estimated.resetUsage();
+  v_overflow_.estimated.resetUsage();
+  h_overflow_.ordered_estimates = 0;
+  v_overflow_.ordered_estimates = 0;
+}
+
+// Resets queued history; type 1 also clears congestion counts and the queue.
+void Graph2D::InitLastUsage(const int upType)
+{
+  if (upType == 1) {
+    checkDirtyLists();
+  }
+  const auto reset = [upType](auto& edges, auto& dirty) {
+    for (const size_t index : dirty) {
+      auto& edge = edges.data()[index];
+      edge.last_usage = 0;
+      if (upType == 1) {
+        edge.congCNT = 0;
+        edge.history_dirty = false;
+      }
+    }
+    // Other update types retain congCNT, which a later type-1 reset must clear.
+    // Type 2 previously scaled last_usage only after setting it to zero.
+    if (upType == 1) {
+      dirty.clear();
+    }
+  };
+  reset(h_edges_, h_dirty_history_edges_);
+  reset(v_edges_, v_dirty_history_edges_);
+}
+
+void Graph2D::checkDirtyLists() const
+{
+  if (!logger_->debugCheck(utl::GRT, "dirtylistcheck", 1)) {
+    return;
+  }
+  const auto validate = [](const auto& edges,
+                           const auto& estimates,
+                           const auto& history) -> const char* {
+    const size_t count = edges.num_elements();
+    std::vector<bool> estimated(count, false);
+    std::vector<bool> historical(count, false);
+    for (const auto& [x, y] : estimates) {
+      if (x < 0 || y < 0 || x >= static_cast<int>(edges.shape()[0])
+          || y >= static_cast<int>(edges.shape()[1])) {
+        return "estimate coordinate out of bounds";
+      }
+      const size_t index
+          = static_cast<size_t>(x) * edges.shape()[1] + static_cast<size_t>(y);
+      if (estimated[index]) {
+        return "duplicate estimate entry";
+      }
+      estimated[index] = true;
+    }
+    for (const size_t index : history) {
+      if (index >= count) {
+        return "history index out of bounds";
+      }
+      if (historical[index]) {
+        return "duplicate history entry";
+      }
+      historical[index] = true;
+    }
+    for (size_t i = 0; i < count; ++i) {
+      const auto& edge = edges.data()[i];
+      if (edge.est_usage_dirty != estimated[i]
+          || (edge.est_usage != 0 && !estimated[i])) {
+        return "estimate flags or values disagree with the list";
+      }
+      if (edge.history_dirty != historical[i]
+          || ((edge.last_usage != 0 || edge.congCNT != 0) && !historical[i])) {
+        return "history flags or values disagree with the list";
+      }
+    }
+    return nullptr;
+  };
+  for (const auto direction :
+       {EdgeDirection::Horizontal, EdgeDirection::Vertical}) {
+    const bool horizontal = direction == EdgeDirection::Horizontal;
+    const char* error = validate(
+        horizontal ? h_edges_ : v_edges_,
+        horizontal ? h_dirty_est_edges_ : v_dirty_est_edges_,
+        horizontal ? h_dirty_history_edges_ : v_dirty_history_edges_);
+    if (error != nullptr) {
+      logger_->error(utl::GRT,
+                     906,
+                     "Invalid {} dirty routing edge lists: {}.",
+                     horizontal ? "horizontal" : "vertical",
+                     error);
+    }
+  }
+}
+
+void Graph2D::copyRoutingStateFrom(const Graph2D& other,
+                                   const bool include_ndr_state)
+{
+  const bool needs_init = x_grid_ != other.x_grid_ || y_grid_ != other.y_grid_
+                          || num_layers_ != other.num_layers_ || !hasEdges();
+  if (needs_init) {
+    init(other.x_grid_, other.y_grid_, other.num_layers_, other.logger_);
+    initCap3D();
+  }
+
+  h_edges_ = other.h_edges_;
+  v_edges_ = other.v_edges_;
+  h_cap_3D_ = other.h_cap_3D_;
+  v_cap_3D_ = other.v_cap_3D_;
+  h_used_ggrid_ = other.h_used_ggrid_;
+  v_used_ggrid_ = other.v_used_ggrid_;
+  if (used_grids_reset_) {
+    used_grids_reset_();
+  }
+  h_dirty_used_grids_ = other.h_dirty_used_grids_;
+  v_dirty_used_grids_ = other.v_dirty_used_grids_;
+  h_dirty_est_edges_ = other.h_dirty_est_edges_;
+  v_dirty_est_edges_ = other.v_dirty_est_edges_;
+  h_dirty_history_edges_ = other.h_dirty_history_edges_;
+  v_dirty_history_edges_ = other.v_dirty_history_edges_;
+  overflow_2d_valid_ = other.overflow_2d_valid_;
+  h_overflow_ = other.h_overflow_;
+  v_overflow_ = other.v_overflow_;
+
+  if (include_ndr_state) {
+    ndr_nets_ = other.ndr_nets_;
+    ndr_debit_ = other.ndr_debit_;
+    congested_ndrs_ = other.congested_ndrs_;
+    congestion_nets_ = other.congestion_nets_;
+    ndr_deficit_total_ = other.ndr_deficit_total_;
+  } else {
+    // The per net records, the NDR capacity taken from each layer and the
+    // per edge NDR deficits are a single piece of bookkeeping: dropping the
+    // records alone would leave reservations that can never be released and
+    // deficits that can never return to zero, keeping the edges congested
+    // for NDR nets for the rest of the run.
+    clearNDRnets();
+    resetNDRCap();
+    clearCongestedNDRnets();
+    congestion_nets_.clear();
+  }
+}
+
+// Clears all horizontal and vertical edges from the graph.
+void Graph2D::clear()
+{
+  if (used_grids_reset_) {
+    used_grids_reset_();
+  }
+  invalidateOverflow2D();
+  h_used_ggrid_.clear();
+  v_used_ggrid_.clear();
+  h_dirty_used_grids_.clear();
+  v_dirty_used_grids_.clear();
+  h_edges_.resize(boost::extents[0][0]);
+  v_edges_.resize(boost::extents[0][0]);
+  h_dirty_est_edges_.clear();
+  v_dirty_est_edges_.clear();
+  h_dirty_history_edges_.clear();
+  v_dirty_history_edges_.clear();
+}
+
+// Clears the sets of used horizontal and vertical grid cells.
+void Graph2D::clearUsed()
+{
+  // Discard cached totals once instead of removing every edge on every layer.
+  if (used_grids_reset_) {
+    used_grids_reset_();
+  }
+  // A full route still starts with empty sets. Remember removed entries so a
+  // subsequent incremental run can recover committed usage without a scan.
+  for (const auto& [x, y] : h_used_ggrid_) {
+    markUsedGridDirty(x, y, EdgeDirection::Horizontal);
+  }
+  for (const auto& [x, y] : v_used_ggrid_) {
+    markUsedGridDirty(x, y, EdgeDirection::Vertical);
+  }
+  invalidateOverflow2D();
+  v_used_ggrid_.clear();
+  h_used_ggrid_.clear();
+}
+
+void Graph2D::rebuildUsedGrids()
+{
+  for (int x = 0; x < x_grid_ - 1; x++) {
+    for (int y = 0; y < y_grid_; y++) {
+      if (h_edges_[x][y].usage > 0) {
+        insertUsedGrid(x, y, EdgeDirection::Horizontal);
+      }
+    }
+  }
+  for (int x = 0; x < x_grid_; x++) {
+    for (int y = 0; y < y_grid_ - 1; y++) {
+      if (v_edges_[x][y].usage > 0) {
+        insertUsedGrid(x, y, EdgeDirection::Vertical);
+      }
+    }
+  }
+}
+
+bool Graph2D::needsOrderedEstimateScan(double usage)
+{
+  // Routing adds integer or half-integer costs. Other fractions can round up
+  // when added to the scan's integer subtotal, even when they are positive.
+  return usage < 0 || usage * 2 != std::trunc(usage * 2);
+}
+
+void Graph2D::invalidateOverflow2D()
+{
+  overflow_2d_valid_ = false;
+  h_overflow_ = {};
+  v_overflow_ = {};
+}
+
+void Graph2D::rebuildOverflow2D()
+{
+  h_overflow_ = {};
+  v_overflow_ = {};
+  overflow_2d_valid_ = true;
+  for (const auto& [x, y] : h_used_ggrid_) {
+    updateEdgeStatistics(h_edges_[x][y], EdgeDirection::Horizontal, true);
+  }
+  for (const auto& [x, y] : v_used_ggrid_) {
+    updateEdgeStatistics(v_edges_[x][y], EdgeDirection::Vertical, true);
+  }
+}
+
+void Graph2D::updateEdgeStatistics(const Edge& edge,
+                                   EdgeDirection direction,
+                                   bool added)
+{
+  if (!overflow_2d_valid_) {
+    return;
+  }
+  auto& totals
+      = direction == EdgeDirection::Horizontal ? h_overflow_ : v_overflow_;
+  // Nonnegative half-integer estimates have additive integer contributions.
+  // Other estimates use the original ordered scan in getOverflow2D.
+  const int estimated = static_cast<int>(edge.est_usage);
+  if (added) {
+    totals.usage.add(edge.usage, edge.cap);
+    totals.estimated.add(estimated, edge.cap);
+    totals.usage_max.add(edge.usage, 0);
+    totals.ordered_estimates += needsOrderedEstimateScan(edge.est_usage);
+  } else {
+    totals.usage.remove(edge.usage, edge.cap);
+    totals.estimated.remove(estimated, edge.cap);
+    totals.usage_max.remove(edge.usage, 0);
+    totals.ordered_estimates -= needsOrderedEstimateScan(edge.est_usage);
+  }
+}
+
+std::array<OverflowStatistics, 2> Graph2D::scanOverflowStatistics(
+    bool estimated) const
+{
+  const auto scan = [estimated](const auto& edges, const auto& used) {
+    OverflowStatistics result;
+    for (const auto& [x, y] : used) {
+      const auto& edge = edges[x][y];
+      const int usage
+          = estimated ? static_cast<int>(edge.est_usage) : edge.usage;
+      const int overflow = std::max(0, usage - edge.cap);
+      result.usage += usage;
+      result.capacity += edge.cap;
+      result.overflow += overflow;
+      result.congested_edges += overflow > 0;
+      result.max_overflow = std::max(result.max_overflow, overflow);
+    }
+    return result;
+  };
+  return {scan(h_edges_, h_used_ggrid_), scan(v_edges_, v_used_ggrid_)};
+}
+
+std::array<OverflowStatistics, 2> Graph2D::overflowStatistics(bool estimated)
+{
+  if (!overflow_2d_valid_) {
+    rebuildOverflow2D();
+  }
+  const std::array result{estimated ? h_overflow_.estimated.statistics()
+                                    : h_overflow_.usage.statistics(),
+                          estimated ? v_overflow_.estimated.statistics()
+                                    : v_overflow_.usage.statistics()};
+  if (logger_->debugCheck(utl::GRT, "overflowcheck", 1)
+      && result != scanOverflowStatistics(estimated)) {
+    logger_->error(
+        utl::GRT,
+        903,
+        "Incremental 2D overflow differs from the full-scan reference.");
+  }
+  return result;
+}
+
+int Graph2D::maxUsage(EdgeDirection direction)
+{
+  if (!overflow_2d_valid_) {
+    rebuildOverflow2D();
+  }
+  const auto& totals
+      = direction == EdgeDirection::Horizontal ? h_overflow_ : v_overflow_;
+  return totals.usage_max.statistics().max_overflow;
+}
+
+bool Graph2D::needsEstimatedUsageScan()
+{
+  if (!overflow_2d_valid_) {
+    rebuildOverflow2D();
+  }
+  return h_overflow_.ordered_estimates > 0 || v_overflow_.ordered_estimates > 0;
+}
+
+void Graph2D::setUsedGridCallbacks(
+    std::function<void(int, int, EdgeDirection, bool)> changed,
+    std::function<void()> reset)
+{
+  used_grid_changed_ = std::move(changed);
+  used_grids_reset_ = std::move(reset);
+}
+
+bool Graph2D::isUsedGrid(int x, int y, EdgeDirection direction) const
+{
+  const auto& used
+      = direction == EdgeDirection::Horizontal ? h_used_ggrid_ : v_used_ggrid_;
+  return used.contains({x, y});
+}
+
+void Graph2D::insertUsedGrid(int x, int y, EdgeDirection direction)
+{
+  auto& used
+      = direction == EdgeDirection::Horizontal ? h_used_ggrid_ : v_used_ggrid_;
+  if (used.insert({x, y}).second) {
+    const auto& edge = direction == EdgeDirection::Horizontal ? h_edges_[x][y]
+                                                              : v_edges_[x][y];
+    updateEdgeStatistics(edge, direction, true);
+    if (used_grid_changed_) {
+      used_grid_changed_(x, y, direction, true);
+    }
+  }
+}
+
+void Graph2D::eraseUsedGrid(int x, int y, EdgeDirection direction)
+{
+  auto& used
+      = direction == EdgeDirection::Horizontal ? h_used_ggrid_ : v_used_ggrid_;
+  if (used.erase({x, y}) != 0) {
+    const auto& edge = direction == EdgeDirection::Horizontal ? h_edges_[x][y]
+                                                              : v_edges_[x][y];
+    updateEdgeStatistics(edge, direction, false);
+    if (used_grid_changed_) {
+      used_grid_changed_(x, y, direction, false);
+    }
+  }
+}
+
+void Graph2D::markUsedGridDirty(const int x,
+                                const int y,
+                                const EdgeDirection direction)
+{
+  const bool horizontal = direction == EdgeDirection::Horizontal;
+  auto& edge = horizontal ? h_edges_[x][y] : v_edges_[x][y];
+  if (!edge.used_grid_dirty) {
+    auto& dirty = horizontal ? h_dirty_used_grids_ : v_dirty_used_grids_;
+    dirty.emplace_back(x, y);
+    edge.used_grid_dirty = true;
+  }
+}
+
+void Graph2D::prepareForIncrementalRun()
+{
+  // Match clearUsed/rebuildUsedGrids at the run boundary, including changes
+  // made between runs by net removal, merge, or rollback.
+  const auto reconcile
+      = [this](auto& dirty, auto& edges, EdgeDirection direction) {
+          for (const auto& [x, y] : dirty) {
+            auto& edge = edges[x][y];
+            if (edge.usage > 0) {
+              insertUsedGrid(x, y, direction);
+            } else {
+              eraseUsedGrid(x, y, direction);
+            }
+            edge.used_grid_dirty = false;
+          }
+          dirty.clear();
+        };
+  reconcile(h_dirty_used_grids_, h_edges_, EdgeDirection::Horizontal);
+  reconcile(v_dirty_used_grids_, v_edges_, EdgeDirection::Vertical);
+
+  if (logger_->debugCheck(utl::GRT, "usedgridcheck", 1)
+      && !usedGridsMatchUsage()) {
+    logger_->error(
+        utl::GRT,
+        901,
+        "Incremental used grids differ from the full-scan reference.");
+  }
+}
+
+bool Graph2D::usedGridsMatchUsage() const
+{
+  // Deliberately independent of the dirty lists, using the original rebuild's
+  // population and ordering. This also detects missing positive-usage edges.
+  const auto matches = [](const auto& edges, const auto& used) {
+    std::set<std::pair<int, int>> reference;
+    const int x_count = static_cast<int>(edges.shape()[0]);
+    const int y_count = static_cast<int>(edges.shape()[1]);
+    for (int x = 0; x < x_count; x++) {
+      for (int y = 0; y < y_count; y++) {
+        if (edges[x][y].usage > 0) {
+          reference.insert({x, y});
+        }
+      }
+    }
+    return used == reference;
+  };
+  return matches(h_edges_, h_used_ggrid_) && matches(v_edges_, v_used_ggrid_);
+}
+
+// Clears the NDR lists. The per edge NDR deficits are the sum of the deficits
+// recorded in these lists, so they are cleared with them and with their total.
+void Graph2D::clearNDRnets()
+{
+  ndr_nets_.clear();
+  foreachEdge([](Edge& edge) { edge.ndr_deficit = 0; });
+  ndr_deficit_total_ = 0;
+}
+
+// Checks if the graph has any horizontal or vertical edges.
+bool Graph2D::hasEdges() const
+{
+  return !h_edges_.empty() && !v_edges_.empty();
+}
+
+uint16_t Graph2D::getUsageH(const int x, const int y) const
+{
+  return h_edges_[x][y].usage;
+}
+
+uint16_t Graph2D::getUsageV(const int x, const int y) const
+{
+  return v_edges_[x][y].usage;
+}
+
+int16_t Graph2D::getLastUsageH(int x, int y) const
+{
+  return h_edges_[x][y].last_usage;
+}
+
+int16_t Graph2D::getLastUsageV(int x, int y) const
+{
+  return v_edges_[x][y].last_usage;
+}
+
+double Graph2D::getEstUsageH(const int x, const int y) const
+{
+  return h_edges_[x][y].est_usage;
+}
+
+double Graph2D::getEstUsageV(const int x, const int y) const
+{
+  return v_edges_[x][y].est_usage;
+}
+
+uint16_t Graph2D::getUsageRedH(const int x, const int y) const
+{
+  return h_edges_[x][y].usage_red();
+}
+
+uint16_t Graph2D::getUsageRedV(const int x, const int y) const
+{
+  return v_edges_[x][y].usage_red();
+}
+
+double Graph2D::getEstUsageRedH(const int x, const int y) const
+{
+  return h_edges_[x][y].est_usage_red();
+}
+
+double Graph2D::getEstUsageRedV(const int x, const int y) const
+{
+  return v_edges_[x][y].est_usage_red();
+}
+
+int Graph2D::getOverflowH(const int x, const int y) const
+{
+  const auto& edge = h_edges_[x][y];
+  return edge.usage - edge.cap;
+}
+
+int Graph2D::getOverflowV(const int x, const int y) const
+{
+  const auto& edge = v_edges_[x][y];
+  return edge.usage - edge.cap;
+}
+
+uint16_t Graph2D::getCapH(int x, int y) const
+{
+  return h_edges_[x][y].cap;
+}
+
+uint16_t Graph2D::getCapV(int x, int y) const
+{
+  return v_edges_[x][y].cap;
+}
+
+const std::set<std::pair<int, int>>& Graph2D::getUsedGridsH() const
+{
+  return h_used_ggrid_;
+}
+
+const std::set<std::pair<int, int>>& Graph2D::getUsedGridsV() const
+{
+  return v_used_ggrid_;
+}
+
+// Adds capacity to a horizontal edge.
+void Graph2D::addCapH(const int x, const int y, const int cap)
+{
+  mutateEdge(
+      x, y, EdgeDirection::Horizontal, [cap](Edge& edge) { edge.cap += cap; });
+}
+
+// Adds capacity to a vertical edge.
+void Graph2D::addCapV(const int x, const int y, const int cap)
+{
+  mutateEdge(
+      x, y, EdgeDirection::Vertical, [cap](Edge& edge) { edge.cap += cap; });
+}
+
+// Remember estimates even when an edge leaves the used-grid sets.
+void Graph2D::markEstUsageDirty(const int x,
+                                const int y,
+                                const EdgeDirection direction)
+{
+  const bool horizontal = direction == EdgeDirection::Horizontal;
+  auto& edge = horizontal ? h_edges_[x][y] : v_edges_[x][y];
+  if (!edge.est_usage_dirty && edge.est_usage != 0) {
+    auto& dirty = horizontal ? h_dirty_est_edges_ : v_dirty_est_edges_;
+    dirty.emplace_back(x, y);
+    edge.est_usage_dirty = true;
+  }
+}
+
+// Updates estimated usage for a horizontal edge segment, considering NDRs.
+void Graph2D::updateEstUsageH(const Interval& xi,
+                              const int y,
+                              FrNet* net,
+                              const double usage)
+{
+  for (int x = xi.lo; x < xi.hi; x++) {
+    updateEstUsageH(x, y, net, usage);
+  }
+}
+
+// Updates estimated usage for a horizontal edge, considering NDRs.
+void Graph2D::updateEstUsageH(const int x,
+                              const int y,
+                              FrNet* net,
+                              const double usage)
+{
+  const double cost
+      = getCostNDRAware(net, x, y, usage, EdgeDirection::Horizontal);
+  mutateEdge(x, y, EdgeDirection::Horizontal, [cost](Edge& edge) {
+    edge.est_usage += cost;
+  });
+  markEstUsageDirty(x, y, EdgeDirection::Horizontal);
+  markUsedGridDirty(x, y, EdgeDirection::Horizontal);
+
+  if (usage > 0) {
+    insertUsedGrid(x, y, EdgeDirection::Horizontal);
+  }
+}
+
+// Adds queued nonzero estimates to usage without clearing the estimates.
+void Graph2D::addEstUsageToUsage()
+{
+  const auto add
+      = [this](auto& edges, const auto& dirty, const EdgeDirection direction) {
+          for (const auto& [x, y] : dirty) {
+            if (edges[x][y].est_usage != 0) {
+              mutateEdge(x, y, direction, [](Edge& edge) {
+                edge.usage += edge.est_usage;
+              });
+              markUsedGridDirty(x, y, direction);
+            }
+          }
+        };
+  add(h_edges_, h_dirty_est_edges_, EdgeDirection::Horizontal);
+  add(v_edges_, v_dirty_est_edges_, EdgeDirection::Vertical);
+}
+
+// Updates estimated usage for a vertical edge segment, considering NDRs.
+void Graph2D::updateEstUsageV(const int x,
+                              const Interval& yi,
+                              FrNet* net,
+                              const double usage)
+{
+  for (int y = yi.lo; y < yi.hi; y++) {
+    updateEstUsageV(x, y, net, usage);
+  }
+}
+
+// Updates estimated usage for a vertical edge, considering NDRs.
+void Graph2D::updateEstUsageV(const int x,
+                              const int y,
+                              FrNet* net,
+                              const double usage)
+{
+  const double cost
+      = getCostNDRAware(net, x, y, usage, EdgeDirection::Vertical);
+  mutateEdge(x, y, EdgeDirection::Vertical, [cost](Edge& edge) {
+    edge.est_usage += cost;
+  });
+  markEstUsageDirty(x, y, EdgeDirection::Vertical);
+  markUsedGridDirty(x, y, EdgeDirection::Vertical);
+
+  if (usage > 0) {
+    insertUsedGrid(x, y, EdgeDirection::Vertical);
+  }
+}
+
+// Adds reduction to a horizontal edge.
+void Graph2D::addRedH(const int x, const int y, const int red)
+{
+  auto& val = h_edges_[x][y].red;
+  val = std::max(val + red, 0);
+}
+
+// Adds reduction to a vertical edge.
+void Graph2D::addRedV(const int x, const int y, const int red)
+{
+  auto& val = v_edges_[x][y].red;
+  val = std::max(val + red, 0);
+}
+
+// Adds usage to a horizontal edge segment.
+void Graph2D::addUsageH(const Interval& xi, const int y, const int used)
+{
+  for (int x = xi.lo; x < xi.hi; x++) {
+    addUsageH(x, y, used);
+  }
+}
+
+// Adds usage to a horizontal edge.
+void Graph2D::addUsageH(const int x, const int y, const int used)
+{
+  mutateEdge(x, y, EdgeDirection::Horizontal, [used](Edge& edge) {
+    edge.usage += used;
+  });
+  markUsedGridDirty(x, y, EdgeDirection::Horizontal);
+  if (used > 0) {
+    insertUsedGrid(x, y, EdgeDirection::Horizontal);
+  }
+}
+
+// Adds usage to a vertical edge segment.
+void Graph2D::addUsageV(const int x, const Interval& yi, const int used)
+{
+  for (int y = yi.lo; y < yi.hi; y++) {
+    addUsageV(x, y, used);
+  }
+}
+
+// Adds usage to a vertical edge.
+void Graph2D::addUsageV(const int x, const int y, const int used)
+{
+  mutateEdge(x, y, EdgeDirection::Vertical, [used](Edge& edge) {
+    edge.usage += used;
+  });
+  markUsedGridDirty(x, y, EdgeDirection::Vertical);
+  if (used > 0) {
+    insertUsedGrid(x, y, EdgeDirection::Vertical);
+  }
+}
+
+// Updates the list of congested nets.
+void Graph2D::updateCongList(const std::string& net_name,
+                             const double edge_cost)
+{
+  if (edge_cost > 0) {
+    congestion_nets_.insert(net_name);
+  } else {
+    congestion_nets_.erase(net_name);
+  }
+}
+
+// Prints all congested nets (debug).
+void Graph2D::printAllElements()
+{
+  if (congestion_nets_.empty()) {
+    logger_->report("No congestion nets.");
+    return;
+  }
+
+  logger_->reportLiteral(
+      fmt::format("Congestion nets ({}): ", congestion_nets_.size()));
+  for (auto it = congestion_nets_.begin(); it != congestion_nets_.end(); ++it) {
+    if (it != congestion_nets_.begin()) {
+      logger_->reportLiteral(", ");
+    }
+    logger_->reportLiteral(fmt::format("\"{}\"", *it));
+  }
+  logger_->reportLiteral("\n");
+}
+
+// Updates usage for a horizontal edge, considering NDRs.
+void Graph2D::updateUsageH(const int x,
+                           const int y,
+                           FrNet* net,
+                           const int usage)
+{
+  const double cost
+      = getCostNDRAware(net, x, y, usage, EdgeDirection::Horizontal);
+  mutateEdge(x, y, EdgeDirection::Horizontal, [cost](Edge& edge) {
+    edge.usage += cost;
+  });
+  markUsedGridDirty(x, y, EdgeDirection::Horizontal);
+
+  if (usage > 0) {
+    insertUsedGrid(x, y, EdgeDirection::Horizontal);
+  }
+}
+
+// Updates usage for a horizontal edge segment.
+void Graph2D::updateUsageH(const Interval& xi,
+                           const int y,
+                           FrNet* net,
+                           const int usage)
+{
+  for (int x = xi.lo; x < xi.hi; x++) {
+    updateUsageH(x, y, net, usage);
+  }
+}
+
+// Updates usage for a vertical edge, considering NDRs.
+void Graph2D::updateUsageV(const int x,
+                           const int y,
+                           FrNet* net,
+                           const int usage)
+{
+  const double cost
+      = getCostNDRAware(net, x, y, usage, EdgeDirection::Vertical);
+  mutateEdge(x, y, EdgeDirection::Vertical, [cost](Edge& edge) {
+    edge.usage += cost;
+  });
+  markUsedGridDirty(x, y, EdgeDirection::Vertical);
+
+  if (usage > 0) {
+    insertUsedGrid(x, y, EdgeDirection::Vertical);
+  }
+}
+
+// Updates usage for a vertical edge segment.
+void Graph2D::updateUsageV(const int x,
+                           const Interval& yi,
+                           FrNet* net,
+                           const int usage)
+{
+  for (int y = yi.lo; y < yi.hi; y++) {
+    updateUsageV(x, y, net, usage);
+  }
+}
+
+/*
+ * num_iteration : the total number of iterations for maze route to run
+ * round : the number of maze route stages runned
+ */
+
+// Updates the congestion history of edges.
+void Graph2D::updateCongestionHistory(const int up_type,
+                                      const int ahth,
+                                      bool stop_decreasing,
+                                      int& max_adj)
+{
+  int maxlimit = 0;
+
+  if (up_type == 2) {
+    stop_decreasing = max_adj < ahth;
+  }
+
+  auto updateEdges = [&](const auto& grid, auto& edges, auto& dirty) {
+    for (const auto& [x, y] : grid) {
+      const int overflow = edges[x][y].usage - edges[x][y].cap;
+      if (overflow > 0) {
+        edges[x][y].congCNT++;
+        edges[x][y].last_usage += overflow;
+      } else if (!stop_decreasing) {
+        if (up_type != 1) {
+          edges[x][y].congCNT = std::max<int>(0, edges[x][y].congCNT - 1);
+        }
+        if (up_type != 3) {
+          edges[x][y].last_usage *= 0.9;
+        } else {
+          edges[x][y].last_usage
+              = std::max<int>(edges[x][y].last_usage + overflow, 0);
+        }
+      }
+      auto& edge = edges[x][y];
+      if (!edge.history_dirty && (edge.last_usage != 0 || edge.congCNT != 0)) {
+        dirty.push_back(static_cast<size_t>(&edge - edges.data()));
+        edge.history_dirty = true;
+      }
+      maxlimit = std::max<int>(maxlimit, edges[x][y].last_usage);
+    }
+  };
+
+  updateEdges(h_used_ggrid_, h_edges_, h_dirty_history_edges_);
+  updateEdges(v_used_ggrid_, v_edges_, v_dirty_history_edges_);
+
+  max_adj = maxlimit;
+}
+
+// Accumulates stress on edges based on congestion.
+void Graph2D::str_accu(const int rnd)
+{
+  const auto accumulate = [rnd](auto& edges, const auto& dirty) {
+    // Every edge with nonzero congCNT is already queued.
+    for (const size_t i : dirty) {
+      auto& edge = edges.data()[i];
+      const int overflow = edge.usage - edge.cap;
+      if (overflow > 0 || edge.congCNT > rnd) {
+        edge.last_usage += edge.congCNT * overflow / 2;
+      }
+    }
+  };
+  accumulate(h_edges_, h_dirty_history_edges_);
+  accumulate(v_edges_, v_dirty_history_edges_);
+}
+
+// Applies a function to each edge in the graph.
+void Graph2D::foreachEdge(const std::function<void(Edge&)>& func)
+{
+  auto inner = [&](auto& edges) {
+    Edge* edges_data = edges.data();
+
+    const size_t num_edges = edges.num_elements();
+
+    for (size_t i = 0; i < num_edges; ++i) {
+      func(edges_data[i]);
+    }
+  };
+  inner(h_edges_);
+  inner(v_edges_);
+}
+
+void Graph2D::saveResources(const int x, const int y, bool is_horizontal)
+{
+  if (is_horizontal) {
+    h_edges_[x][y].real_cap = h_edges_[x][y].cap;
+  } else {
+    v_edges_[x][y].real_cap = v_edges_[x][y].cap;
+  }
+}
+
+bool Graph2D::computeSuggestedAdjustment(const int x,
+                                         const int y,
+                                         bool is_horizontal,
+                                         int& adjustment)
+{
+  float real_capacity, usage;
+  if (is_horizontal) {
+    real_capacity = h_edges_[x][y].real_cap;
+    usage = h_edges_[x][y].usage;
+  } else {
+    real_capacity = v_edges_[x][y].real_cap;
+    usage = v_edges_[x][y].usage;
+  }
+  if (real_capacity >= usage) {
+    adjustment = (1.0 - (usage / real_capacity)) * 100;
+    return true;
+  }
+  return false;
+}
+
+// Starts with no NDR net on any edge. The records of a previous run must
+// go: its nets are deleted by then, and a new net allocated at the same
+// address would be taken for one already using the edge.
+void Graph2D::initNDRnets()
+{
+  clearNDRnets();
+  ndr_debit_.clear();
+}
+
+int64_t Graph2D::edgeKey(const int x,
+                         const int y,
+                         const EdgeDirection direction) const
+{
+  const int64_t cell = static_cast<int64_t>(x) * y_grid_ + y;
+  return cell * 2 + (direction == EdgeDirection::Horizontal ? 1 : 0);
+}
+
+int64_t Graph2D::edgeLayerKey(const int x,
+                              const int y,
+                              const int layer,
+                              const EdgeDirection direction) const
+{
+  return edgeKey(x, y, direction) * num_layers_ + layer;
+}
+
+int Graph2D::getCapNDR(const int x,
+                       const int y,
+                       const int layer,
+                       const EdgeDirection direction) const
+{
+  const int cap = (direction == EdgeDirection::Horizontal)
+                      ? h_cap_3D_[layer][x][y]
+                      : v_cap_3D_[layer][x][y];
+  const auto it = ndr_debit_.find(edgeLayerKey(x, y, layer, direction));
+  return it == ndr_debit_.end() ? cap : cap - it->second;
+}
+
+// Reserves (amount > 0) or releases (amount < 0) NDR capacity on a layer.
+void Graph2D::debitNDRCap(const int x,
+                          const int y,
+                          const int layer,
+                          const EdgeDirection direction,
+                          const int amount)
+{
+  if (amount == 0) {
+    return;
+  }
+  const auto [it, inserted]
+      = ndr_debit_.try_emplace(edgeLayerKey(x, y, layer, direction), amount);
+  if (!inserted) {
+    it->second += amount;
+    if (it->second == 0) {
+      ndr_debit_.erase(it);
+    }
+  }
+}
+
+const std::map<FrNet*, Graph2D::NDRUsage>* Graph2D::findNDRnets(
+    const int x,
+    const int y,
+    const EdgeDirection direction) const
+{
+  const auto it = ndr_nets_.find(edgeKey(x, y, direction));
+  return it == ndr_nets_.end() ? nullptr : &it->second;
+}
+
+void Graph2D::addCongestedNDRnet(const int net_id, const uint16_t num_edges)
+{
+  congested_ndrs_.emplace_back(net_id, num_edges);
+}
+
+void Graph2D::sortCongestedNDRnets()
+{
+  std::ranges::sort(congested_ndrs_, NDRCongestionComparator());
+}
+
+// Get the given fraction (0.0-1.0) of the NDR nets most involved in
+// congestion. congested_ndrs_ is kept sorted most-congested-first by
+// sortCongestedNDRnets(), so this returns the worst offenders. A fraction of
+// 1.0 returns every congested NDR net.
+std::vector<int> Graph2D::getCongestedNDRnetsByFraction(const double fraction)
+{
+  std::vector<int> net_ids;
+  const double clamped_fraction = std::clamp(fraction, 0.0, 1.0);
+  const size_t count
+      = std::min<size_t>(std::ceil(congested_ndrs_.size() * clamped_fraction),
+                         congested_ndrs_.size());
+  net_ids.reserve(count);
+  for (size_t i = 0; i < count; i++) {
+    net_ids.push_back(congested_ndrs_[i].net_id);
+  }
+  return net_ids;
+}
+
+// Initializes the 3D capacity of the graph.
+void Graph2D::initCap3D()
+{
+  v_cap_3D_.resize(boost::extents[num_layers_][x_grid_][y_grid_]);
+  h_cap_3D_.resize(boost::extents[num_layers_][x_grid_][y_grid_]);
+  initNDRnets();
+}
+
+// Updates the 3D capacity of a specific edge.
+void Graph2D::updateCap3D(int x,
+                          int y,
+                          int layer,
+                          EdgeDirection direction,
+                          const double cap)
+{
+  auto& cap3D = (EdgeDirection::Horizontal == direction)
+                    ? h_cap_3D_[layer][x][y]
+                    : v_cap_3D_[layer][x][y];
+  cap3D = cap;
+  ndr_debit_.erase(edgeLayerKey(x, y, layer, direction));
+}
+
+void Graph2D::addCap3D(const int x,
+                       const int y,
+                       const int layer,
+                       const EdgeDirection direction,
+                       const int delta)
+{
+  auto& cap3D = (EdgeDirection::Horizontal == direction)
+                    ? h_cap_3D_[layer][x][y]
+                    : v_cap_3D_[layer][x][y];
+  // What NDR nets reserved stays reserved: the debit is unchanged.
+  cap3D += delta;
+}
+
+// Prints the capacity of each edge per layer.
+void Graph2D::printEdgeCapPerLayer()
+{
+  logger_->report("=== printEdgeCapPerLayer ===");
+  for (int y = 0; y < y_grid_; y++) {
+    for (int x = 0; x < x_grid_; x++) {
+      for (int l = 0; l < num_layers_; l++) {
+        if (x < x_grid_ - 1) {
+          logger_->report("\tH x{} y{} l{}: {}", x, y, l, h_cap_3D_[l][x][y]);
+        }
+        if (y < y_grid_ - 1) {
+          logger_->report("\tV x{} y{} l{}: {}", x, y, l, v_cap_3D_[l][x][y]);
+        }
+      }
+    }
+  }
+}
+
+// Tracks the net would miss on its best layer if it used the edge now: zero
+// when one layer has enough NDR capacity left. A layer already
+// oversubscribed by other NDR nets is short of the net's whole width.
+int Graph2D::computeNDRDeficit(FrNet* net,
+                               const int x,
+                               const int y,
+                               const EdgeDirection direction) const
+{
+  int deficit = std::numeric_limits<int>::max();
+  for (int l = net->getMinLayer(); l <= net->getMaxLayer() && deficit > 0;
+       l++) {
+    const int layer_edge_cost = net->getLayerEdgeCost(l);
+    const int free_tracks = std::max(0, getCapNDR(x, y, l, direction));
+    deficit = std::min(deficit, std::max(0, layer_edge_cost - free_tracks));
+  }
+  // No layer in range: nothing can host the net.
+  return deficit == std::numeric_limits<int>::max() ? net->getEdgeCost()
+                                                    : deficit;
+}
+
+int Graph2D::getNDRDeficit(FrNet* net,
+                           const int x,
+                           const int y,
+                           const EdgeDirection direction) const
+{
+  if (net->getEdgeCost() == 1) {
+    return 0;
+  }
+  const auto* ndr_nets = findNDRnets(x, y, direction);
+  if (ndr_nets == nullptr) {
+    return 0;
+  }
+  const auto it = ndr_nets->find(net);
+  return it != ndr_nets->end() ? it->second.deficit : 0;
+}
+
+int Graph2D::getNDRDeficitIfRouted(FrNet* net,
+                                   const int x,
+                                   const int y,
+                                   const EdgeDirection direction) const
+{
+  if (net->getEdgeCost() == 1) {
+    return 0;
+  }
+  const bool horizontal = direction == EdgeDirection::Horizontal;
+  const Edge& edge = horizontal ? h_edges_[x][y] : v_edges_[x][y];
+  const auto* ndr_nets = findNDRnets(x, y, direction);
+  if (ndr_nets != nullptr && ndr_nets->contains(net)) {
+    return edge.ndr_deficit;
+  }
+  return edge.ndr_deficit + computeNDRDeficit(net, x, y, direction);
+}
+
+bool Graph2D::hasNDRDeficit(const int x,
+                            const int y,
+                            const EdgeDirection direction) const
+{
+  return getEdgeNDRDeficit(x, y, direction) > 0;
+}
+
+int Graph2D::getEdgeNDRDeficit(const int x,
+                               const int y,
+                               const EdgeDirection direction) const
+{
+  const Edge& edge = (direction == EdgeDirection::Horizontal) ? h_edges_[x][y]
+                                                              : v_edges_[x][y];
+  return edge.ndr_deficit;
+}
+
+// Calculates the cost of an edge, considering NDRs. The usage gets the
+// tracks the NDR net takes even when no layer of the edge can host it: the
+// tracks it misses are recorded as its NDR deficit instead, which only the
+// NDR nets pay for (see getNDRDeficitIfRouted).
+double Graph2D::getCostNDRAware(FrNet* net,
+                                int x,
+                                int y,
+                                const double edge_cost,
+                                EdgeDirection direction)
+{
+  const int8_t edgeCost = net->getEdgeCost();
+
+  // No processing needed for nets with 1 edge cost
+  if (edgeCost == 1) {
+    return edge_cost;
+  }
+
+  // Get references to the appropriate edge data based on direction
+  auto& edge = (direction == EdgeDirection::Horizontal) ? h_edges_[x][y]
+                                                        : v_edges_[x][y];
+  const int64_t edge_key = edgeKey(x, y, direction);
+  const auto edge_it = ndr_nets_.find(edge_key);
+  const bool is_net_present
+      = edge_it != ndr_nets_.end() && edge_it->second.contains(net);
+  double final_edge_cost = 0;
+
+  if (edge_cost < 0) {  // Rip-up: remove resource
+    // If the net is in the list, remove it and compute the edge cost.
+    // If the net is not in the list, it probably means that we are removing
+    // half the edge cost a second time in the initial routing steps. But we
+    // only need to count once to avoid problems when managing 3D capacity
+    if (is_net_present) {
+      // The resources to remove are the ones that were added for this net.
+      // They cannot be derived from the current state of the edge, since the
+      // nets are not ripped up in the same order they were routed: releasing
+      // resources the net never took makes the edge usage and the NDR
+      // capacity drift.
+      auto& ndr_nets = edge_it->second;
+      const auto net_it = ndr_nets.find(net);
+      const NDRUsage ndr_usage = net_it->second;
+      ndr_nets.erase(net_it);
+      if (ndr_nets.empty()) {
+        ndr_nets_.erase(edge_it);
+      }
+      edge.ndr_deficit -= ndr_usage.deficit;
+      ndr_deficit_total_ -= ndr_usage.deficit;
+      releaseNDRCapLayer(x, y, direction, ndr_usage);
+      if (edge.ndr_deficit > 0) {
+        refitNDRDeficitNets(x, y, direction);
+      }
+      final_edge_cost = -edgeCost;
+    }
+  } else {  // Routing: add resource
+    // If the net is not in the list, add it and compute the edge cost.
+    // If the net is in the list, it probably means that we are in the
+    // initial routing steps adding two times half the edge cost. But we
+    // only need to count once to avoid problems when managing 3D capacity
+    if (!is_net_present) {
+      const NDRUsage ndr_usage = reserveNDRCapLayer(x, y, net, direction);
+      edge.ndr_deficit += ndr_usage.deficit;
+      ndr_deficit_total_ += ndr_usage.deficit;
+      // reserveNDRCapLayer leaves ndr_nets_ alone, so edge_it is valid.
+      if (edge_it != ndr_nets_.end()) {
+        edge_it->second.emplace(net, ndr_usage);
+      } else {
+        ndr_nets_[edge_key].emplace(net, ndr_usage);
+      }
+      final_edge_cost = edgeCost;
+    }
+  }
+
+  return final_edge_cost;
+}
+
+// Prints the NDR capacity of a specific grid cell.
+void Graph2D::printNDRCap(const int x, const int y)
+{
+  logger_->report("=== PrintNDRCap (x{} y{}) ===", x, y);
+  for (int l = 0; l < num_layers_; l++) {
+    logger_->report("\tL{} - H Cap: {} NDR Cap: {} - V Cap: {} NDR Cap: {}",
+                    l,
+                    h_cap_3D_[l][x][y],
+                    getCapNDR(x, y, l, EdgeDirection::Horizontal),
+                    v_cap_3D_[l][x][y],
+                    getCapNDR(x, y, l, EdgeDirection::Vertical));
+  }
+}
+
+// Reserves the NDR capacity of a layer for a given net, returning the layer
+// that was debited and by how much, so that the rip-up can release exactly
+// the same resources, and the tracks the net misses when no layer fits it.
+Graph2D::NDRUsage Graph2D::reserveNDRCapLayer(const int x,
+                                              const int y,
+                                              FrNet* net,
+                                              EdgeDirection dir)
+{
+  for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
+    const int8_t layer_edge_cost = net->getLayerEdgeCost(l);
+    // If there is NDR capacity available, reduce the capacity value
+    if (getCapNDR(x, y, l, dir) >= layer_edge_cost) {
+      debitNDRCap(x, y, l, dir, layer_edge_cost);
+      return {.layer = static_cast<int16_t>(l), .amount = layer_edge_cost};
+    }
+  }
+
+  // If the edge is already with congestion and there is no capacity available
+  // in any layer, reduce the capacity available of the first layer. The
+  // capacity goes negative to represent the oversubscription, and the rip-up
+  // of this net restores it.
+  const int min_layer = net->getMinLayer();
+  const int8_t layer_edge_cost = net->getLayerEdgeCost(min_layer);
+  const auto deficit = static_cast<int8_t>(computeNDRDeficit(net, x, y, dir));
+  debitNDRCap(x, y, min_layer, dir, layer_edge_cost);
+  return {.layer = static_cast<int16_t>(min_layer),
+          .amount = layer_edge_cost,
+          .deficit = deficit};
+}
+
+// Releases the NDR capacity that a net reserved on an edge.
+void Graph2D::releaseNDRCapLayer(const int x,
+                                 const int y,
+                                 EdgeDirection dir,
+                                 const NDRUsage& ndr_usage)
+{
+  if (ndr_usage.layer < 0) {
+    return;
+  }
+
+  debitNDRCap(x, y, ndr_usage.layer, dir, -ndr_usage.amount);
+}
+
+// The tracks a net releases on an edge can host the NDR nets that miss
+// tracks there, so their deficit must not outlive the net that caused it.
+// Their layers are reserved again in net id order: the map is ordered by
+// address, which changes from run to run.
+void Graph2D::refitNDRDeficitNets(const int x,
+                                  const int y,
+                                  const EdgeDirection dir)
+{
+  auto& edge
+      = (dir == EdgeDirection::Horizontal) ? h_edges_[x][y] : v_edges_[x][y];
+  const auto edge_it = ndr_nets_.find(edgeKey(x, y, dir));
+  if (edge_it == ndr_nets_.end()) {
+    return;
+  }
+  auto& ndr_nets = edge_it->second;
+
+  std::vector<FrNet*> deficit_nets;
+  for (const auto& [net, ndr_usage] : ndr_nets) {
+    if (ndr_usage.deficit > 0) {
+      deficit_nets.push_back(net);
+    }
+  }
+  std::ranges::sort(deficit_nets, {}, [](const FrNet* net) {
+    return net->getDbNet()->getId();
+  });
+
+  for (FrNet* net : deficit_nets) {
+    NDRUsage& ndr_usage = ndr_nets.at(net);
+    releaseNDRCapLayer(x, y, dir, ndr_usage);
+    const NDRUsage refit = reserveNDRCapLayer(x, y, net, dir);
+    edge.ndr_deficit += refit.deficit - ndr_usage.deficit;
+    ndr_deficit_total_ += refit.deficit - ndr_usage.deficit;
+    ndr_usage = refit;
+  }
+}
+
+// Resets the NDR capacity of every layer to the full edge capacity. Used when
+// the list of NDR nets per edge is dropped, since the reservations recorded
+// in it can only be released through it.
+void Graph2D::resetNDRCap()
+{
+  ndr_debit_.clear();
+}
+
+}  // namespace grt

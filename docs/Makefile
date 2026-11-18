@@ -48,12 +48,12 @@ MAN1 = man1
 MAN2 = man2
 MAN3 = man3
 
-# link_readmes.sh symlinks every src/<module>/README.md into md/man2/ so
+# link_readmes.sh symlinks every openroad/<module>/README.md into md/man2/ so
 # md_roff_compat.py can read it. Those are whole-module documents, not command
-# pages, so keep them out of the man2 lists. Derive the set from src/ rather
+# pages, so keep them out of the man2 lists. Derive the set from openroad/ rather
 # than hard-coding it, so a new module cannot silently start emitting a
 # module-wide man page.
-EXCLUDE_MODULES := $(notdir $(patsubst %/,%,$(dir $(wildcard ../src/*/README.md))))
+EXCLUDE_MODULES := $(notdir $(patsubst %/,%,$(dir $(wildcard ../openroad/*/README.md))))
 EXCLUDE_FILES := $(addprefix $(SRC_DIR)/$(MAN2)/,$(addsuffix .md,$(EXCLUDE_MODULES)))
 
 MAN1_DIR = $(MAN_ROOT_DIR)/$(MAN1)
@@ -166,13 +166,8 @@ $(CAT2_DIR)/%.2: $(CAT2_DIR)/%.md
 $(CAT3_DIR)/%.3: $(CAT3_DIR)/%.md
 	mv $< $@
 
-# Single-invocation target used by //docs:man_pages (Bazel). Chains the
-# preprocessing step (README symlinks + roff-compat conversion) with the
-# cat and web outputs that the Bazel rule copies into its declared outputs.
-bazel-manpages: preprocess cat web
-
 # Phony targets
-.PHONY: all bazel-manpages preprocess
+.PHONY: all preprocess
 
 #   _____ _____  _    _ _____ _   ___   __
 #  / ____|  __ \| |  | |_   _| \ | \ \ / /

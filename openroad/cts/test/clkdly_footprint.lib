@@ -1,0 +1,166 @@
+/* Clock delay cells tagged with a clkdly cell_footprint, for */
+/* TechChar::createDelayBufList() inference tests. */
+library (tst_clkdly_fp) {
+  delay_model : table_lookup;
+  time_unit : "1ns";
+  voltage_unit : "1V";
+  current_unit : "1mA";
+  pulling_resistance_unit : "1kohm";
+  capacitive_load_unit (1, pf);
+
+  input_threshold_pct_rise : 50.0;
+  input_threshold_pct_fall : 50.0;
+  output_threshold_pct_rise : 50.0;
+  output_threshold_pct_fall : 50.0;
+  slew_lower_threshold_pct_rise : 20.0;
+  slew_lower_threshold_pct_fall : 20.0;
+  slew_upper_threshold_pct_rise : 80.0;
+  slew_upper_threshold_pct_fall : 80.0;
+
+  lu_table_template (output_slew) {
+    variable_1 : total_output_net_capacitance;
+    index_1 ("1.0, 2.0");
+  }
+
+  cell (TSTFP_CLKDLYBUF_X1) {
+    area : 1.0;
+    cell_footprint : clkdly;
+
+    pin (A) {
+      direction : input;
+      capacitance : 0.1;
+    }
+
+    pin (Z) {
+      direction : output;
+      function : "A";
+      max_capacitance : 2.0;
+
+      timing () {
+        related_pin : "A";
+        timing_sense : positive_unate;
+        cell_rise (scalar) {
+          values ("0.3");
+        }
+        cell_fall (scalar) {
+          values ("0.3");
+        }
+        rise_transition (output_slew) {
+          index_1 ("1.0, 2.0");
+          values ("1.0, 2.0");
+        }
+        fall_transition (output_slew) {
+          index_1 ("1.0, 2.0");
+          values ("1.0, 2.0");
+        }
+      }
+    }
+  }
+
+  cell (TSTFP_CLKDLYBUF_X2) {
+    area : 2.0;
+    cell_footprint : clkdly;
+
+    pin (A) {
+      direction : input;
+      capacitance : 0.2;
+    }
+
+    pin (Z) {
+      direction : output;
+      function : "A";
+      max_capacitance : 4.0;
+
+      timing () {
+        related_pin : "A";
+        timing_sense : positive_unate;
+        cell_rise (scalar) {
+          values ("0.5");
+        }
+        cell_fall (scalar) {
+          values ("0.5");
+        }
+        rise_transition (output_slew) {
+          index_1 ("1.0, 2.0");
+          values ("1.0, 2.0");
+        }
+        fall_transition (output_slew) {
+          index_1 ("1.0, 2.0");
+          values ("1.0, 2.0");
+        }
+      }
+    }
+  }
+
+  /* Generic delay cell: not a clock delay cell, must not be inferred. */
+  cell (TSTFP_DLYBUF_X1) {
+    area : 1.0;
+    cell_footprint : DLY1;
+
+    pin (A) {
+      direction : input;
+      capacitance : 0.1;
+    }
+
+    pin (Z) {
+      direction : output;
+      function : "A";
+      max_capacitance : 2.0;
+
+      timing () {
+        related_pin : "A";
+        timing_sense : positive_unate;
+        cell_rise (scalar) {
+          values ("0.4");
+        }
+        cell_fall (scalar) {
+          values ("0.4");
+        }
+        rise_transition (output_slew) {
+          index_1 ("1.0, 2.0");
+          values ("1.0, 2.0");
+        }
+        fall_transition (output_slew) {
+          index_1 ("1.0, 2.0");
+          values ("1.0, 2.0");
+        }
+      }
+    }
+  }
+
+  /* Plain buffer, must not be inferred. */
+  cell (TSTFP_BUF_X1) {
+    area : 1.0;
+    cell_footprint : BU;
+
+    pin (A) {
+      direction : input;
+      capacitance : 0.1;
+    }
+
+    pin (Z) {
+      direction : output;
+      function : "A";
+      max_capacitance : 2.0;
+
+      timing () {
+        related_pin : "A";
+        timing_sense : positive_unate;
+        cell_rise (scalar) {
+          values ("0.1");
+        }
+        cell_fall (scalar) {
+          values ("0.1");
+        }
+        rise_transition (output_slew) {
+          index_1 ("1.0, 2.0");
+          values ("1.0, 2.0");
+        }
+        fall_transition (output_slew) {
+          index_1 ("1.0, 2.0");
+          values ("1.0, 2.0");
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+[INFO ODB-0227] LEF file: 3dic_test_data/../Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[INFO ODB-0227] LEF file: 3dic_test_data/../Nangate45/Nangate45_stdcell.lef, created 135 library cells
+[INFO ODB-0227] LEF file: 3dic_test_data/../Nangate45/fake_bumps.lef, created 1 library cells
+[INFO ODB-0128] Design: flop_chip_a
+[INFO ODB-0252]     Updated 5 pins.
+[INFO ODB-0131]     Created 3 components and 14 component-terminals.
+[INFO ODB-0253]     Updated 5 components.
+[INFO ODB-0132]     Created 2 special nets and 6 connections.
+[INFO ODB-0133]     Created 7 nets and 12 connections.
+[INFO ODB-0128] Design: flop_chip_b
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0252]     Updated 4 pins.
+[INFO ODB-0131]     Created 4 components and 15 component-terminals.
+[INFO ODB-0253]     Updated 4 components.
+[INFO ODB-0132]     Created 2 special nets and 6 connections.
+[INFO ODB-0133]     Created 7 nets and 12 connections.
+[ERROR PSM-0103] Power grid VDD has 1 chiplet power grids and 0 inter-chip bonds.
+PSM-0103

@@ -15,10 +15,9 @@ This document covers:
 
 For general Bazel usage (running tests, build configs, caching, ORFS details), see:
 
-- [Testing local changes with Bazel](Bazel.md)
+- [Building and testing with Bazel](Bazel.md)
 - [Bazel targets](Bazel-targets.md)
 - [Bazel Developer Guide: Caching](Bazel-caching.md)
-- [Handling breaking changes between OpenROAD and ORFS](Bazel-breaking-changes.md)
 
 ---
 
@@ -30,7 +29,7 @@ You will work mostly in:
 - `MODULE.bazel` and `MODULE.bazel.lock`: dependency/module management
 - `.bazelrc`: shared Bazel flags and configs
 - `bazel/*.bzl`: shared Starlark macros and helpers used across targets
-- `test/regression.bzl` and `test/orfs/**/*.bzl`: regression and ORFS-related Starlark logic
+- `test/regression.bzl`: regression test Starlark logic
 
 Treat `.bzl` files as code: keep changes small, reviewable, and tested.
 
@@ -48,7 +47,7 @@ Typical flow:
 
 Examples:
 
-    bazelisk test //src/<tool>/...
+    bazelisk test //openroad/<tool>/...
 
 When broad integration confidence is needed:
 
@@ -74,14 +73,14 @@ Recommended process:
 
 Example validation steps:
 
-    bazelisk query 'kind(test, //src/<tool>/...)'
-    bazelisk test //src/<tool>/test:<new_test_target>
+    bazelisk query 'kind(test, //openroad/<tool>/...)'
+    bazelisk test //openroad/<tool>/test:<new_test_target>
 
 The test target name is derived from the test file name with a suffix added
-based on type: Tcl tests get `_tcl` and Python tests get `_py`. For example,
-`src/grt/test/fastroute.tcl` becomes target `fastroute_tcl`, so you would run:
+based on type: Tcl tests get `-tcl_test` and Python tests get `-py_test`. For example,
+`openroad/grt/test/bus_route.tcl` becomes target `bus_route-tcl_test`, so you would run:
 
-    bazelisk test //src/grt/test:fastroute_tcl
+    bazelisk test //openroad/grt/test:bus_route-tcl_test
 
 Use the `bazelisk query` command above to list all test targets and find the
 exact name for any test in the subtree.
@@ -103,15 +102,16 @@ Suggested progression:
 - one directly affected target
 - one unrelated consumer (sanity against regressions)
 - affected subtree tests
-- optional full `src/...` or `...` based on change scope
+- optional full `openroad/...` or `...` based on change scope
 
-## 4) Update ORFS/Bazel-ORFS coupling
+## 4) Changes that affect ORFS
 
-If your change touches integration boundaries:
+OpenROAD CI does not run ORFS flows. Flow-level integration is tested in
+ORFS and bazel-orfs, which build OpenROAD from source. If your change
+touches the ORFS interface (commands, variables, output files):
 
-- verify OpenROAD side and ORFS assumptions together
-- use the documented ORFS debug/issue-generation workflow in `test/orfs/README.md`
-- run at least affected ORFS smoke tests before PR
+- say so in the PR description and coordinate the ORFS/bazel-orfs update
+- add single-concern OpenROAD tests for the behavior ORFS relies on
 
 ## 5) Update Bazel module/dependency state
 
@@ -202,7 +202,7 @@ For larger `.bzl` changes, include a short “impact summary” in PR descriptio
   Always test more than one consumer.
 
 - **Overusing broad target patterns too early**  
-  Start narrow (`//src/<tool>/...`), then widen.
+  Start narrow (`//openroad/<tool>/...`), then widen.
 
 - **Conflating host/target configs when debugging**  
   Use guidance in [Bazel targets](Bazel-targets.md) and [Bazel.md](Bazel.md).
@@ -235,9 +235,9 @@ Use and adapt this in your PR description:
     - <what changed>
 
     Validation:
-    - bazelisk test //src/<tool>/test:<specific_target>
-    - bazelisk test //src/<tool>/...
-    - bazelisk test //src/...
+    - bazelisk test //openroad/<tool>/test:<specific_target>
+    - bazelisk test //openroad/<tool>/...
+    - bazelisk test //openroad/...
 
     Notes:
     - <any known limitations or follow-up work>

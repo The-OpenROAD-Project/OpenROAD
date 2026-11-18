@@ -1,0 +1,6 @@
+[INFO ODB-0227] LEF file: asap7_vias/asap7_tech_1x.lef, created 25 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7_vias/asap7sc7p5t_27_R_1x.lef, created 212 library cells
+[INFO ODB-0128] Design: repair_channel_pin_layer
+[INFO ODB-0131]     Created 14 components and 28 component-terminals.
+[INFO PDN-0001] Inserting grid: top
+No differences found.

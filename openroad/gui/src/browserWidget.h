@@ -1,0 +1,180 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2025, The OpenROAD Authors
+
+#pragma once
+
+#include <QCheckBox>
+#include <QColor>
+#include <QDockWidget>
+#include <QMenu>
+#include <QPushButton>
+#include <QSettings>
+#include <QStandardItemModel>
+#include <QTreeView>
+#include <QWidget>
+#include <array>
+#include <map>
+#include <memory>
+#include <set>
+#include <string>
+#include <vector>
+
+#include "db_sta/dbNetwork.hh"
+#include "gui/gui.h"
+#include "layoutViewer.h"
+#include "odb/PtrSetMap.h"
+#include "odb/db.h"
+#include "odb/dbBlockCallBackObj.h"
+
+namespace sta {
+class dbSta;
+}
+
+namespace web {
+class DbInstDescriptor;
+}
+
+namespace gui {
+class DisplayControls;
+
+class BrowserWidget : public QDockWidget,
+                      public odb::dbBlockCallBackObj,
+                      public sta::dbNetworkObserver
+{
+  Q_OBJECT
+
+ public:
+  BrowserWidget(const odb::PtrMap<odb::dbModule, LayoutViewer::ModuleSettings>&
+                    modulesettings,
+                DisplayControls* controls,
+                QWidget* parent = nullptr);
+
+  void setSTA(sta::dbSta* sta);
+  void setDBInstDescriptor(web::DbInstDescriptor* desciptor);
+
+  void readSettings(QSettings* settings);
+  void writeSettings(QSettings* settings);
+
+  bool eventFilter(QObject* obj, QEvent* event) override;
+
+  // dbBlockCallBackObj
+  void inDbInstCreate(odb::dbInst*) override;
+  void inDbInstDestroy(odb::dbInst*) override;
+  void inDbInstSwapMasterAfter(odb::dbInst*) override;
+
+  // API from dbNetworkObserver
+  void postReadLiberty() override;
+  void postReadDb() override;
+
+  // from QT
+  void paintEvent(QPaintEvent* event) override;
+
+ signals:
+  void select(const web::SelectionSet& selected);
+  void removeSelect(const web::Selected& selected);
+  void highlight(const web::SelectionSet& selected);
+  void removeHighlight(const web::Selected& selected);
+
+  void updateModuleVisibility(odb::dbModule* module, bool visible);
+  void updateModuleColor(odb::dbModule* module,
+                         const QColor& color,
+                         bool user_selected);
+
+ public slots:
+  void setBlock(odb::dbBlock* block);
+  void clicked(const QModelIndex& index);
+  void selectionChanged(const QItemSelection& selected,
+                        const QItemSelection& deselected);
+  void displayControlsUpdated();
+
+ protected:
+  void showEvent(QShowEvent* event) override;
+  void hideEvent(QHideEvent* event) override;
+
+ private slots:
+  void itemContextMenu(const QPoint& point);
+  void itemChanged(QStandardItem* item);
+
+  void itemCollapsed(const QModelIndex& index);
+  void itemExpanded(const QModelIndex& index);
+  void updateModuleColorIcon(odb::dbModule* module, const QColor& color);
+  void enableModuleView();
+  void markModelModified();
+
+ private:
+  void updateModel();
+  void clearModel();
+
+  void makeMenu();
+
+  web::Selected getSelectedFromIndex(const QModelIndex& index);
+
+  void toggleParent(QStandardItem* item);
+
+  odb::dbBlock* block_;
+  sta::dbSta* sta_;
+  web::DbInstDescriptor* inst_descriptor_;
+  DisplayControls* display_controls_;
+  QPushButton* display_controls_warning_;
+  QCheckBox* include_physical_cells_;
+
+  const odb::PtrMap<odb::dbModule, LayoutViewer::ModuleSettings>&
+      modulesettings_;
+
+  QTreeView* view_;
+  QStandardItemModel* model_;
+  bool model_modified_;
+  bool initial_load_;
+
+  bool ignore_selection_;
+
+  QMenu* menu_;
+  web::Selected menu_item_;
+  static const int kSortRole;
+
+  odb::PtrSet<odb::dbModule> getChildren(odb::dbModule* parent);
+  odb::PtrSet<odb::dbModule> getAllChildren(odb::dbModule* parent);
+  web::SelectionSet getMenuItemChildren();
+
+  void updateChildren(odb::dbModule* module, const QColor& color);
+  void resetChildren(odb::dbModule* module);
+
+  odb::PtrMap<odb::dbModule, QStandardItem*> modulesmap_;
+
+  struct ModuleStats;
+
+  ModuleStats populateModule(odb::dbModule* module, QStandardItem* parent);
+
+  ModuleStats addInstanceItem(odb::dbInst* inst,
+                              QStandardItem* parent,
+                              bool create_row);
+  ModuleStats addInstanceItems(const std::vector<odb::dbInst*>& insts,
+                               const std::string& title,
+                               QStandardItem* parent);
+  ModuleStats addModuleItem(odb::dbModule* module,
+                            QStandardItem* parent,
+                            bool expand);
+
+  QIcon makeModuleIcon(const QColor& color);
+
+  void makeRowItems(QStandardItem* item,
+                    const std::string& master,
+                    const ModuleStats& stats,
+                    QStandardItem* parent,
+                    bool is_leaf) const;
+
+  enum Columns
+  {
+    kInstance,
+    kMaster,
+    kInstances,
+    kMacros,
+    kModules,
+    kArea
+  };
+
+  // Limit number of visible physical instances
+  static constexpr int kMaxVisibleLeafs = 1000;
+};
+
+}  // namespace gui

@@ -1,0 +1,63 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 571 components and 2554 component-terminals.
+[INFO ODB-0132]     Created 5 special nets and 1142 connections.
+[INFO ODB-0133]     Created 528 nets and 1412 connections.
+[INFO RSZ-0026] Removed 151 buffers.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |       377
+    final |     +0.2% |       0 |       1 |             1 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0036] Found 1 capacitance violations.
+[INFO RSZ-0038] Inserted 1 buffers in 1 nets.
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
+-------------------------------------------------------
+        0 |     +0.0% |       0 |        0 |       341
+       34 |     +0.0% |       0 |        0 |       307
+       68 |     +0.0% |       0 |        0 |       273
+      102 |     -0.2% |       1 |        0 |       239
+      136 |     -0.2% |       1 |        0 |       205
+      170 |     -0.2% |       1 |        0 |       171
+      204 |     -0.2% |       1 |        0 |       137
+      238 |     -0.2% |       1 |        0 |       103
+      272 |     -0.2% |       1 |        0 |        69
+      306 |     -0.2% |       1 |        0 |        35
+      340 |     -0.2% |       1 |        0 |         1
+    final |     -0.2% |       1 |        0 |         0
+-------------------------------------------------------
+_240_ 1.287
+_335_ 1.287
+_344_ 1.287
+_346_ 1.287
+_081_ 1.287
+_183_ 1.287
+_184_ 1.287
+_185_ 1.287
+_190_ 1.287
+_193_ 1.287
+_239_ 1.287
+dpath.a_lt_b$in1[12] 1.287
+_080_ 1.287
+_338_ 1.287
+_336_ 1.287
+_182_ 1.288
+dpath.a_lt_b$in1[13] 1.288
+_181_ 1.288
+dpath.a_lt_b$in0[13] 1.290
+_349_ 1.291
+_352_ 1.291
+_082_ 1.291
+_165_ 1.292
+_167_ 1.292
+_170_ 1.292
+dpath.a_lt_b$in1[11] 1.292
+dpath.a_lt_b$in0[12] 1.294
+_180_ 1.302
+_179_ 1.302
+dpath.a_lt_b$in1[15] 1.302
+_166_ 1.304
+dpath.a_lt_b$in1[10] 1.304
+_178_ 1.307

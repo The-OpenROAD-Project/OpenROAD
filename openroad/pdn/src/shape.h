@@ -1,0 +1,323 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2022-2025, The OpenROAD Authors
+
+#pragma once
+
+#include <functional>
+#include <map>
+#include <memory>
+#include <set>
+#include <string>
+#include <vector>
+
+#include "boost/geometry/geometry.hpp"
+#include "boost/geometry/index/rtree.hpp"
+#include "odb/PtrSetMap.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
+#include "odb/geom_boost.h"
+
+namespace utl {
+class Logger;
+}  // namespace utl
+
+namespace pdn {
+
+namespace bgi = boost::geometry::index;
+
+class Shape;
+class Via;
+
+using ShapePtr = std::shared_ptr<Shape>;
+using ViaPtr = std::shared_ptr<Via>;
+
+using ShapeVectorMap = odb::PtrMap<odb::dbTechLayer, std::vector<ShapePtr>>;
+
+class Grid;
+class GridComponent;
+class VoltageDomain;
+
+// Basic class that contains a single shape for the power grid, keeping track of
+// via connections, iterm connections, and bterm connections.
+class Shape
+{
+ public:
+  struct ObstructionHalo
+  {
+    int left;
+    int top;
+    int right;
+    int bottom;
+  };
+  enum ShapeType
+  {
+    kShape,
+    kGridObs,
+    kBlockObs,
+    // obstruction of a pad cell, which the pad's own net may overlap
+    kPadObs,
+    kMacroObs,
+    kObs,
+    kFixed
+  };
+  struct RectIndexableGetter
+  {
+    using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
+    odb::Rect operator()(const ShapePtr& t) const { return t->getRect(); }
+  };
+  struct ObstructionIndexableGetter
+  {
+    using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
+    odb::Rect operator()(const ShapePtr& t) const
+    {
+      return t->getObstruction();
+    }
+  };
+
+  using ShapeTree
+      = bgi::rtree<ShapePtr, bgi::quadratic<16>, Shape::RectIndexableGetter>;
+  using ObstructionTree = bgi::
+      rtree<ShapePtr, bgi::quadratic<16>, Shape::ObstructionIndexableGetter>;
+
+  using ShapeTreeMap = odb::PtrMap<odb::dbTechLayer, ShapeTree>;
+  using ObstructionTreeMap = odb::PtrMap<odb::dbTechLayer, ObstructionTree>;
+
+  Shape(odb::dbTechLayer* layer,
+        odb::dbNet* net,
+        const odb::Rect& rect,
+        const odb::dbWireShapeType& type = odb::dbWireShapeType::NONE);
+  Shape(odb::dbTechLayer* layer, const odb::Rect& rect, ShapeType shape_type);
+  virtual ~Shape();
+
+  odb::dbTechLayer* getLayer() const { return layer_; }
+  odb::dbNet* getNet() const { return net_; }
+  void setNet(odb::dbNet* net) { net_ = net; }
+  void setRect(const odb::Rect& rect) { rect_ = rect; }
+  const odb::Rect& getRect() const { return rect_; }
+  odb::dbWireShapeType getType() const { return type_; }
+
+  utl::Logger* getLogger() const;
+
+  ShapeType shapeType() const { return shape_type_; }
+  void setShapeType(ShapeType type) { shape_type_ = type; }
+
+  void setLocked() { is_locked_ = true; }
+  void clearLocked() { is_locked_ = false; }
+  bool isLocked() const { return is_locked_; }
+
+  int getLength() const { return rect_.maxDXDY(); }
+  int getWidth() const { return rect_.minDXDY(); }
+  // true if the shape is aligned against the preferred direction of the layer
+  bool isWrongWay() const;
+
+  // check if shape is valid for the given layer
+  bool isValid() const;
+  virtual bool isFloating() const
+  {
+    return getNumberOfConnections() == 0 || !hasInternalConnections();
+  }
+
+  const odb::Rect& getObstruction() const { return obs_; }
+  // generates the obstruction box needed to avoid DRC violations with
+  // surrounding shapes
+  void generateObstruction();
+  void setObstruction(const odb::Rect& rect) { obs_ = rect; }
+  ObstructionHalo getObstructionHalo() const;
+  odb::Rect getRectWithLargestObstructionHalo(
+      const ObstructionHalo& halo) const;
+
+  // True when this obstruction stands for an absence of die rather than for
+  // metal.  odb creates one over every part of its bounding box that a polygon
+  // die does not cover, and marks it system-reserved.
+  //
+  // Nothing keeps a spacing from one: there is no neighbouring metal to be
+  // clear of, and metal may abut a die edge -- on a rectangular die it does,
+  // because no obstruction is created there at all.  Applying a spacing here
+  // would stop a shape short of the wall of a notch, which is the same edge.
+  void setIsDieAbsence() { die_absence_ = true; }
+
+  bool isHorizontal() const { return rect_.dx() > rect_.dy(); }
+  bool isSquare() const { return rect_.dx() == rect_.dy(); }
+  bool isVertical() const { return rect_.dx() < rect_.dy(); }
+
+  virtual odb::dbTechLayerDir getLayerDirection() const;
+
+  // true if shape can be removed by trimming
+  virtual bool isRemovable(bool assume_bterm) const;
+  // true if shape can be modified (cut or shortened) by trimming
+  virtual bool isModifiable() const;
+
+  void clearVias();
+  void addVia(const ViaPtr& via);
+  // Drop the given vias from this shape.
+  void removeVias(const std::set<Via*>& vias);
+  const std::vector<ViaPtr>& getVias() const { return vias_; }
+
+  void addITermConnection(const odb::Rect& iterm)
+  {
+    iterm_connections_.insert(iterm);
+  }
+  void removeITermConnection(const odb::Rect& iterm)
+  {
+    iterm_connections_.erase(iterm);
+  }
+  void clearITermConnections() { iterm_connections_.clear(); }
+  const std::set<odb::Rect>& getItermConnections() const
+  {
+    return iterm_connections_;
+  }
+  void addBTermConnection(const odb::Rect& bterm)
+  {
+    bterm_connections_.insert(bterm);
+  }
+  void removeBTermConnection(const odb::Rect& bterm)
+  {
+    bterm_connections_.erase(bterm);
+  }
+  const std::set<odb::Rect>& getBtermConnections() const
+  {
+    return bterm_connections_;
+  }
+  // after shape is modified, remove any term connections that are no longer
+  // connected
+  virtual void updateTermConnections();
+  bool hasTermConnections() const;
+  bool hasITermConnections() const { return !iterm_connections_.empty(); }
+  bool hasBTermConnections() const { return !bterm_connections_.empty(); };
+  bool hasInternalConnections() const;
+
+  // returns the smallest shape possible when attempting to trim
+  virtual odb::Rect getMinimumRect() const;
+  int getNumberOfConnections() const;
+  int getNumberOfConnectionsBelow() const;
+  int getNumberOfConnectionsAbove() const;
+
+  std::unique_ptr<Shape> extendTo(
+      const odb::Rect& rect,
+      const Shape::ShapeTree& shapes,
+      const Shape::ObstructionTree& obstructions,
+      Shape* orig_shape,
+      const std::function<bool(const ShapePtr&)>& obs_filter
+      = [](const ShapePtr&) { return true; }) const;
+
+  virtual bool cut(const ObstructionTree& obstructions,
+                   const Grid* ignore_grid,
+                   std::vector<std::unique_ptr<Shape>>& replacements) const;
+  // cut against only the obstructions obs_filter accepts
+  bool cut(const ObstructionTree& obstructions,
+           std::vector<std::unique_ptr<Shape>>& replacements,
+           const std::function<bool(const ShapePtr&)>& obs_filter) const;
+
+  // return a copy of the shape
+  virtual std::unique_ptr<Shape> copy() const;
+  // merge this shape with another
+  virtual void merge(Shape* shape);
+
+  void setGridComponent(GridComponent* component)
+  {
+    grid_component_ = component;
+  }
+  GridComponent* getGridComponent() const { return grid_component_; }
+
+  // returns the text used by the renderer to identify the shape
+  std::string getDisplayText() const;
+
+  std::string getReportText() const;
+  static std::string getRectText(const odb::Rect& rect, double dbu_to_micron);
+
+  std::vector<odb::dbBox*> writeToDb(odb::dbSWire* swire,
+                                     odb::dbBTerm* bterm,
+                                     bool make_rect_as_pin) const;
+
+  // copy existing shapes into the map
+  static void populateMapFromDb(odb::dbNet* net, ShapeVectorMap& map);
+
+  bool allowsNonPreferredDirectionChange() const
+  {
+    return allow_non_preferred_change_;
+  }
+  virtual void setAllowsNonPreferredDirectionChange()
+  {
+    allow_non_preferred_change_ = true;
+  }
+
+  static ShapeTreeMap convertVectorToTree(ShapeVectorMap& vec);
+  static ObstructionTreeMap convertVectorToObstructionTree(ShapeVectorMap& vec);
+
+ private:
+  odb::dbTechLayer* layer_;
+  odb::dbNet* net_;
+  odb::Rect rect_;
+  odb::dbWireShapeType type_;
+  ShapeType shape_type_;
+  bool allow_non_preferred_change_;
+  bool is_locked_;
+  bool die_absence_{false};
+
+  odb::Rect obs_;
+
+  GridComponent* grid_component_;
+
+  std::vector<ViaPtr> vias_;
+  // Kept in step with vias_ by addVia()/removeVias()/clearVias(); a via's
+  // layers are fixed by its Connect, so the counts never go stale.
+  int connections_above_ = 0;
+  int connections_below_ = 0;
+  std::set<odb::Rect> iterm_connections_;
+  std::set<odb::Rect> bterm_connections_;
+
+  // add rect as bterm to database
+  odb::dbBox* addBPinToDb(odb::dbBTerm* bterm, const odb::Rect& rect) const;
+
+  void updateIBTermConnections(std::set<odb::Rect>& terms);
+
+  bool hasDBConnectivity() const;
+};
+
+class FollowPinShape : public Shape
+{
+ public:
+  FollowPinShape(odb::dbTechLayer* layer,
+                 odb::dbNet* net,
+                 const odb::Rect& rect);
+
+  void addRow(odb::dbRow* row) { rows_.insert(row); }
+
+  odb::Rect getMinimumRect() const override;
+  std::unique_ptr<Shape> copy() const override;
+  void merge(Shape* shape) override;
+  void updateTermConnections() override;
+
+  // followpins cannot be removed
+  bool isRemovable(bool assume_bterm) const override { return false; }
+  bool isFloating() const override { return false; }
+
+  void setAllowsNonPreferredDirectionChange() override {}
+
+  odb::dbTechLayerDir getLayerDirection() const override;
+
+  bool cut(const ObstructionTree& obstructions,
+           const Grid* ignore_grid,
+           std::vector<std::unique_ptr<Shape>>& replacements) const override;
+
+ private:
+  odb::PtrSet<odb::dbRow> rows_;
+};
+
+class GridObsShape : public Shape
+{
+ public:
+  GridObsShape(odb::dbTechLayer* layer,
+               const odb::Rect& rect,
+               const Grid* grid);
+  ~GridObsShape() override = default;
+
+  bool belongsTo(const Grid* grid) const { return grid == grid_; }
+  const Grid* getGrid() const { return grid_; }
+
+ private:
+  const Grid* grid_;
+};
+
+}  // namespace pdn

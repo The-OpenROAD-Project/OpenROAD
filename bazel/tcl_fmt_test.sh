@@ -6,8 +6,10 @@
 
 set -euo pipefail
 
-TOOL="$(realpath "$1")"
-GIT="$(realpath "$2")"
+# Keep the paths Bazel handed us: resolving the runfiles symlinks (realpath)
+# stops a py_console_script_binary from finding its runfiles once we cd away.
+TOOL="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+GIT="$(cd "$(dirname "$2")" && pwd)/$(basename "$2")"
 GIT_LS_FILES="$(realpath "bazel/git_ls_files.sh")"
 
 WORKSPACE="$(dirname "$(readlink -f tclint.toml)")"

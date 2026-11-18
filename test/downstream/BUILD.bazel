@@ -27,8 +27,8 @@ cc_library(
 )
 
 genrule(
-    name = "openroadpy_so_consumer",
-    srcs = ["@openroad//:_openroadpy.so"],
+    name = "openroad_so_consumer",
+    srcs = ["@openroad//:_openroad.so"],
     outs = ["so_consumer.txt"],
     cmd = "echo ok > $@",
 )
