@@ -2409,13 +2409,16 @@ float TritonCTS::getInputPinCap(odb::dbITerm* iterm)
 // ---- clock gate sinks ----
 
 // The register clock pins a placed clock gate drives; empty when it drives
-// anything else or CTS must leave its output net alone.
+// anything else, or CTS cannot size the gate or must leave it or its output
+// net alone.
 TritonCTS::ClockPins TritonCTS::registerClockPins(odb::dbITerm* gateClockPin)
 {
   odb::dbInst* gate = gateClockPin->getInst();
   sta::LibertyCell* cell
       = network_->libertyCell(network_->dbToSta(gate->getMaster()));
-  if (!gate->isPlaced() || cell == nullptr || !cell->isClockGate()) {
+  if (!gate->isPlaced() || gate->isFixed() || gate->isDoNotTouch()
+      || cell == nullptr || !cell->isClockGate()
+      || clockGateCells(gate).empty()) {
     return {};
   }
   sta::LibertyPort* port
@@ -2424,7 +2427,7 @@ TritonCTS::ClockPins TritonCTS::registerClockPins(odb::dbITerm* gateClockPin)
   odb::dbNet* net = out ? out->getNet() : nullptr;
   if (port == nullptr || !port->isClockGateClock() || net == nullptr
       || !net->getBTerms().empty() || clockRootNets_.contains(net)
-      || isFrozenClockNet(net)) {
+      || isFrozenClockNet(net) || isClockSource(out)) {
     return {};
   }
   ClockPins clockPins;
@@ -2482,6 +2485,15 @@ bool TritonCTS::isFrozenClockNet(odb::dbNet* net)
          || std::ranges::find(skipNets, net) != skipNets.end();
 }
 
+// Like initOneClockTree, stops at a pin that an SDC clock is defined on.
+bool TritonCTS::isClockSource(odb::dbITerm* pin)
+{
+  const sta::Pin* staPin = network_->dbToSta(pin);
+  return std::ranges::any_of(openSta_->modes(), [staPin](sta::Mode* mode) {
+    return mode->sdc()->isLeafPinClock(staPin);
+  });
+}
+
 void TritonCTS::splitClockGatesToClusters(
     odb::dbNet* clkNet,
     std::set<odb::Point>& occupiedPositions,
@@ -2509,7 +2521,7 @@ void TritonCTS::splitClockGatesToClusters(
       continue;
     }
     odb::dbITerm* out = getSingleOutput(iterm->getInst(), iterm);
-    if (out && out->getNet()) {
+    if (out && out->getNet() && !isClockSource(out)) {
       splitClockGatesToClusters(out->getNet(), occupiedPositions, visitedNets);
     }
   }
@@ -2524,9 +2536,6 @@ void TritonCTS::splitClockGateToClusters(
     std::set<odb::Point>& occupiedPositions)
 {
   odb::dbInst* gate = gateClockPin->getInst();
-  if (gate->isFixed() || gate->isDoNotTouch()) {
-    return;
-  }
   ClockPins clockPins = registerClockPins(gateClockPin);
   if (clockPins.empty()) {
     return;
@@ -2555,9 +2564,13 @@ void TritonCTS::splitClockGateToClusters(
     const auto [lo, hi] = todo.back();
     todo.pop_back();
     const odb::Rect bbox = boundingBox(clockPins, lo, hi);
-    if (hi - lo == 1 || fitsSinkCluster(hi - lo, bbox)) {
+    if (fitsSinkCluster(hi - lo, bbox)) {
       parts.push_back({.begin = lo, .end = hi, .box = bbox});
       continue;
+    }
+    // Only a cluster size of 0 rejects a single pin.
+    if (hi - lo == 1) {
+      return;
     }
     const bool byX = bbox.dx() >= bbox.dy();
     const size_t mid = lo + (hi - lo) / 2;
@@ -2617,6 +2630,30 @@ void TritonCTS::splitClockGateToClusters(
   splitGateCloneCount_ += parts.size() - 1;
 }
 
+// Cells equivalent to the gate's that CTS may put in its place, regardless of
+// the rsz sizing limits.
+std::vector<sta::LibertyCell*> TritonCTS::clockGateCells(odb::dbInst* gate)
+{
+  std::vector<sta::LibertyCell*> cells;
+  sta::LibertyCell* cell = network_->libertyCell(network_->dbToSta(gate));
+  sta::LibertyCellSeq* equivs = cell ? resizer_->equivCells(cell) : nullptr;
+  if (equivs == nullptr) {
+    return cells;
+  }
+  for (sta::LibertyCell* equiv : *equivs) {
+    odb::dbMaster* master = network_->staToDb(equiv);
+    if (master != nullptr && !resizer_->dontUse(equiv)
+        && master->getSite() == gate->getMaster()->getSite()
+        && (!resizer_->matchCellFootprint()
+            || equiv->footprint() == cell->footprint())
+        && (cell->userFunctionClass().empty()
+            || equiv->userFunctionClass() == cell->userFunctionClass())) {
+      cells.push_back(equiv);
+    }
+  }
+  return cells;
+}
+
 // Sizes each clock gate sink to the smallest equivalent cell whose drive
 // resistance on its cluster matches the sink buffer's on a full cluster, in
 // the sink buffer's VT when available.
@@ -2667,24 +2704,8 @@ void TritonCTS::resizeClockGateSinks()
                            + wireCapPerDbu * fullSpan;
     const double targetRes = sinkRes * fullCap / loadCap;
 
-    // Like clock buffers, gate sinks take the tree's VT regardless of the
-    // rsz sizing limits.
-    sta::LibertyCellSeq* equivs = resizer_->equivCells(cell);
-    if (equivs == nullptr) {
-      continue;
-    }
-    sta::LibertyCellSeq candidates;
-    for (sta::LibertyCell* equiv : *equivs) {
-      odb::dbMaster* master = network_->staToDb(equiv);
-      if (master != nullptr && !resizer_->dontUse(equiv)
-          && master->getSite() == gate->getMaster()->getSite()
-          && (!resizer_->matchCellFootprint()
-              || equiv->footprint() == cell->footprint())
-          && (cell->userFunctionClass().empty()
-              || equiv->userFunctionClass() == cell->userFunctionClass())) {
-        candidates.push_back(equiv);
-      }
-    }
+    // Like clock buffers, gate sinks take the tree's VT.
+    const std::vector<sta::LibertyCell*> candidates = clockGateCells(gate);
     const bool hasSinkVt = std::ranges::any_of(
         candidates, [&](sta::LibertyCell* c) { return vtOf(c) == sinkVt; });
     const int vt = hasSinkVt ? sinkVt : vtOf(cell);

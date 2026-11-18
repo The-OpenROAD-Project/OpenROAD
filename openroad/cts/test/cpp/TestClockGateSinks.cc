@@ -11,6 +11,9 @@
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "sta/NetworkClass.hh"
+#include "sta/Sdc.hh"
+#include "sta/SdcClass.hh"
 #include "tst/IntegratedFixture.h"
 
 namespace cts {
@@ -162,6 +165,26 @@ class ClockGateSinkVariantTest : public ClockGateSinkTest
 
   odb::dbInst* inst(const char* name) { return block_->findInst(name); }
 
+  void makeGeneratedClock(const char* gate)
+  {
+    sta::PinSet pins(db_network_);
+    pins.insert(db_network_->dbToSta(inst(gate)->findITerm("GCK")));
+    sta_->makeGeneratedClock("gclk",
+                             pins,
+                             /*add_to_pins=*/false,
+                             db_network_->dbToSta(inst(gate)->findITerm("CK")),
+                             sta_->cmdSdc()->findClock("clk"),
+                             /*divide_by=*/1,
+                             /*multiply_by=*/0,
+                             /*duty_cycle=*/0,
+                             /*invert=*/false,
+                             /*combinational=*/false,
+                             sta::IntSeq{},
+                             sta::FloatSeq{},
+                             /*comment=*/"",
+                             sta_->cmdMode());
+  }
+
   // The error CTS stops with, or "" when it completes.
   std::string buildError(const std::function<void(TritonCTS&)>& edit)
   {
@@ -203,6 +226,39 @@ TEST_F(ClockGateSinkTest, GateWithTooManyFlopsIsSplitIntoSinks)
   }
 }
 
+// CTS can neither size nor clone a gate whose cells are all dont_use.
+TEST_F(ClockGateSinkVariantTest, GateWithoutUsableCellKeepsItsTree)
+{
+  build(0, [this](TritonCTS&) {
+    for (const char* name :
+         {"CLKGATE_X1", "CLKGATE_X2", "CLKGATE_X4", "CLKGATE_X8"}) {
+      resizer_.setDontUse(sta_->network()->findLibertyCell(name), true);
+    }
+  });
+  EXPECT_FALSE(isSinkOfFlopTree(inst("icg_close")));
+  EXPECT_EQ(copiesOf("icg_many").size(), 1);
+}
+
+TEST_F(ClockGateSinkVariantTest, GateWithGeneratedClockKeepsItsTree)
+{
+  build(0, [this](TritonCTS&) { makeGeneratedClock("icg_many"); });
+  const std::vector<odb::dbInst*> copies = copiesOf("icg_many");
+  ASSERT_EQ(copies.size(), 1);
+  EXPECT_FALSE(isSinkOfFlopTree(copies[0]));
+}
+
+// The generated clock is not a clock root here, so CTS leaves it alone.
+TEST_F(ClockGateSinkVariantTest, GateWithGeneratedClockOffTheClockNetsIsKept)
+{
+  build(0, [this](TritonCTS& cts) {
+    cts.setClockNets("clk");
+    makeGeneratedClock("icg_many");
+  });
+  const std::vector<odb::dbInst*> copies = copiesOf("icg_many");
+  ASSERT_EQ(copies.size(), 1);
+  EXPECT_EQ(copies[0]->getMaster()->getName(), "CLKGATE_X1");
+}
+
 TEST_F(ClockGateSinkTest, GateDrivingABufferKeepsItsTree)
 {
   const std::vector<odb::dbInst*> copies = copiesOf("icg_buf");
@@ -237,7 +293,7 @@ TEST_F(ClockGateSinkVariantTest, GateFarFromItsFlopMovesToIt)
   EXPECT_LT(std::abs(x - um(342)) + std::abs(y - um(102)), um(50));
 }
 
-// Gate cloning moves a movable gate to its flops; a fixed one stays put.
+// CTS may neither move nor size a fixed gate.
 TEST_F(ClockGateSinkVariantTest, FixedGateFarFromItsFlopsKeepsItsTree)
 {
   build(0, [this](TritonCTS&) {
@@ -281,6 +337,26 @@ TEST_F(ClockGateSinkVariantTest, SinkClusteringOffKeepsGates)
   build(0, [](TritonCTS& cts) { cts.getParms()->setSinkClustering(false); });
   EXPECT_EQ(copiesOf("icg_spread").size(), 1);
   EXPECT_EQ(copiesOf("icg_many").size(), 1);
+}
+
+// A cluster size of 0 fits no flop, so no gate is split or becomes a sink.
+TEST_F(ClockGateSinkVariantTest, ClusterSizeZeroKeepsGates)
+{
+  build(0, [](TritonCTS& cts) { cts.getParms()->setSinkClusteringSize(0); });
+  EXPECT_EQ(copiesOf("icg_spread").size(), 1);
+  EXPECT_EQ(copiesOf("icg_many").size(), 1);
+  EXPECT_FALSE(isSinkOfFlopTree(inst("icg_many")));
+}
+
+TEST_F(ClockGateSinkVariantTest, GateDrivingASkippedNetIsKept)
+{
+  build(0, [this](TritonCTS& cts) {
+    cts.getParms()->setSkipNets(block_->findNet("gck_many"));
+  });
+  const std::vector<odb::dbInst*> copies = copiesOf("icg_many");
+  ASSERT_EQ(copies.size(), 1);
+  EXPECT_EQ(copies[0]->getMaster()->getName(), "CLKGATE_X1");
+  EXPECT_EQ(clockDriver("many0", "CK"), "icg_many");
 }
 
 TEST_F(ClockGateSinkVariantTest, GateDrivingAClockRootKeepsItsTree)

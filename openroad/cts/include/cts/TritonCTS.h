@@ -242,8 +242,10 @@ class TritonCTS
                                size_t begin,
                                size_t end);
   bool fitsSinkCluster(size_t count, const odb::Rect& bbox) const;
+  std::vector<sta::LibertyCell*> clockGateCells(odb::dbInst* gate);
   bool isClockGateSink(odb::dbITerm* gateClockPin);
   bool isFrozenClockNet(odb::dbNet* net);
+  bool isClockSource(odb::dbITerm* pin);
   void splitClockGatesToClusters(odb::dbNet* clkNet,
                                  std::set<odb::Point>& occupiedPositions,
                                  std::unordered_set<odb::dbNet*>& visitedNets);

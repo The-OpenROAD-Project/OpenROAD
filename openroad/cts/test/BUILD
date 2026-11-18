@@ -300,6 +300,7 @@ cc_test(
     deps = [
         "//openroad/cts:cts_impl",
         "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
         "//openroad/tst:integrated_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
