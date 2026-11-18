@@ -24,6 +24,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "dpl/Opendp.h"
 #include "drt/TritonRoute.h"
+#include "fmt/format.h"
 #include "grt/GlobalRouter.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
