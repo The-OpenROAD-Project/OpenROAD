@@ -21,4 +21,5 @@ exports_files([
     "manpage.py",
     "link_readmes.sh",
     "extract_utils.py",
+    "readme_msgs_check.py",
 ])

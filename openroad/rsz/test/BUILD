@@ -1,6 +1,7 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
-load("//test:regression.bzl", "doc_check_test", "regression_test")
+load("//bazel:readme_msgs_checker.bzl", "readme_msgs_check_test")
+load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -816,7 +817,7 @@ py_test(
     deps = ["//docs/src/scripts:extract_utils"],
 )
 
-doc_check_test(
+readme_msgs_check_test(
     name = "rsz_readme_msgs_check",
     data = [
         "//openroad/rsz:doc_files",
