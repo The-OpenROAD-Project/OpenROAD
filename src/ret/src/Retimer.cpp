@@ -784,7 +784,13 @@ void Retimer::rebuildGroup(const Group& group,
                            ApplyStats& stats)
 {
   const ModNets mod_nets = groupModNets(group, classes, clock_net);
-  for (odb::dbInst* f : group.flops) {
+  // In id order: odb gives a new instance the slot of a deleted one, so the
+  // order of removal decides the ids of the new registers.
+  std::vector<odb::dbInst*> flops(group.flops.begin(), group.flops.end());
+  std::ranges::sort(flops, [](odb::dbInst* a, odb::dbInst* b) {
+    return a->getId() < b->getId();
+  });
+  for (odb::dbInst* f : flops) {
     removeRegister(f);
     stats.removed++;
   }

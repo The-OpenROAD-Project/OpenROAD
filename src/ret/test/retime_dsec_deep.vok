@@ -24,8 +24,8 @@ module top (a,
  wire n7;
  wire n8;
  wire q3;
- wire ret_net_1;
  wire ret_net_2;
+ wire ret_net_1;
  wire rst;
 
  sky130_fd_sc_hd__and2_1 g0 (.A(a),
