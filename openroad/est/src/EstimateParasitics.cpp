@@ -1568,7 +1568,9 @@ bool EstimateParasitics::isSkipNet(const sta::Net* net) const
 void EstimateParasitics::parasiticsInvalid(const sta::Net* net)
 {
   odb::dbNet* db_net = db_network_->findFlatDbNet(net);
-  if (haveEstimatedParasitics() && db_net) {
+  // A supply net carries no estimated parasitics, and every cell's power pin
+  // is on it: invalidating its delays from fanin visits them all.
+  if (haveEstimatedParasitics() && db_net && !db_net->getSigType().isSupply()) {
     debugPrint(logger_,
                EST,
                "estimate_parasitics",
