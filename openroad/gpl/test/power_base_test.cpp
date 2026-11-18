@@ -332,8 +332,8 @@ TEST_F(PowerDriven, SaifActivityOverridesPropagation)
   EXPECT_NEAR(powerWeights(1).at("reset"), 0.8, kTolerance);
 }
 
-// A virtual net pulls its pins like a real net of the same weight.
-TEST_F(PowerDriven, VirtualNetGradientMatchesRealNet)
+// A clock leaf net pulls its pins like a real net of the same weight.
+TEST_F(PowerDriven, VirtualClockLeafNetGradientMatchesRealNet)
 {
   PlaceOptions options;
   const PlacerBaseVars pb_vars(options);
@@ -372,7 +372,7 @@ TEST_F(PowerDriven, VirtualNetGradientMatchesRealNet)
   const std::vector<FloatPoint> real = gradients();
   const float weight = net->getTotalWeight();
   net->setCustomWeight(0);
-  nbc->setVirtualNets({{net->getGPins(), weight}});
+  nbc->setVirtualClockLeafNets({{net->getGPins(), weight}});
   const std::vector<FloatPoint> virt = gradients();
 
   ASSERT_EQ(real.size(), virt.size());
@@ -576,13 +576,13 @@ TEST_F(PowerDrivenPlacement, ClockLeafNetsCarryClockActivity)
   nbc->updateDbGCells();
   power.updateClockLeafNets();
 
-  const std::vector<NesterovBaseCommon::VirtualNet>& leaf_nets
-      = nbc->getVirtualNets();
+  const std::vector<NesterovBaseCommon::VirtualClockLeafNet>& leaf_nets
+      = nbc->getVirtualClockLeafNets();
   ASSERT_GT(leaf_nets.size(), 1);
   // Clocks toggle twice per cycle.
   const float weight = 1 + kNetWeight * 2;
   std::set<std::string> sinks;
-  for (const NesterovBaseCommon::VirtualNet& leaf_net : leaf_nets) {
+  for (const NesterovBaseCommon::VirtualClockLeafNet& leaf_net : leaf_nets) {
     EXPECT_GE(leaf_net.pins.size(), 2);
     EXPECT_NEAR(leaf_net.weight, weight, kTolerance);
     for (const GPin* pin : leaf_net.pins) {

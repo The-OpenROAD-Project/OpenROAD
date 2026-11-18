@@ -477,7 +477,7 @@ void NesterovPlace::runTimingDriven(int iter,
     // CPU backend, whose computeHpwl maintains them eagerly).
     nbc_->mirrorNetBoxesToHost();
 
-    nbc_->clearVirtualNets();
+    nbc_->clearVirtualClockLeafNets();
     bool shouldTdProceed
         = tb_->executeTimingDriven(virtual_td_iter, enable_repair_timing);
     // fixPointers() may have moved the GPins the IO pins point at.
@@ -655,7 +655,7 @@ void NesterovPlace::runPowerDriven()
       [overflow](const int threshold) { return threshold > overflow; });
   const bool next = reached > npVars_.powerDrivenIterCounter;
   const bool dropped
-      = npVars_.powerDrivenIterCounter > 0 && !nbc_->hasVirtualNets();
+      = npVars_.powerDrivenIterCounter > 0 && !nbc_->hasVirtualClockLeafNets();
   if (!next && !dropped) {
     return;
   }
@@ -1572,7 +1572,7 @@ PlaceResult NesterovPlace::doNesterovPlace(int start_iter)
   if (cb_) {
     cb_->removeVirtualCts();
   }
-  nbc_->clearVirtualNets();
+  nbc_->clearVirtualClockLeafNets();
 
   // The GPU HPWL backend keeps per-net boxes device-resident during the
   // loop (no host reader exists there — see hpwlBackend.h). Materialize

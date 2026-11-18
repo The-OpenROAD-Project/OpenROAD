@@ -1544,19 +1544,20 @@ void NesterovBaseCommon::updateWireLengthForceWA_native(float wlCoeffX,
   }
 
   // For power-driven virtual clock leaf nets
-  updateVirtualNetForceWA(wlCoeffX, wlCoeffY);
+  updateVirtualClockLeafNetForceWA(wlCoeffX, wlCoeffY);
 }
 
-void NesterovBaseCommon::setVirtualNets(std::vector<VirtualNet> nets)
+void NesterovBaseCommon::setVirtualClockLeafNets(
+    std::vector<VirtualClockLeafNet> nets)
 {
-  virtual_nets_ = std::move(nets);
-  virtual_net_grads_.assign(gCellStor_.size(), FloatPoint());
+  virtual_clock_leaf_nets_ = std::move(nets);
+  virtual_clock_leaf_net_grads_.assign(gCellStor_.size(), FloatPoint());
 }
 
-void NesterovBaseCommon::clearVirtualNets()
+void NesterovBaseCommon::clearVirtualClockLeafNets()
 {
-  virtual_nets_.clear();
-  virtual_net_grads_.clear();
+  virtual_clock_leaf_nets_.clear();
+  virtual_clock_leaf_net_grads_.clear();
 }
 
 static void waAxisGradients(const std::vector<float>& pos,
@@ -1604,15 +1605,16 @@ static void waAxisGradients(const std::vector<float>& pos,
   }
 }
 
-void NesterovBaseCommon::updateVirtualNetForceWA(float wlCoeffX, float wlCoeffY)
+void NesterovBaseCommon::updateVirtualClockLeafNetForceWA(float wlCoeffX,
+                                                          float wlCoeffY)
 {
-  if (virtual_nets_.empty()) {
+  if (virtual_clock_leaf_nets_.empty()) {
     return;
   }
-  std::ranges::fill(virtual_net_grads_, FloatPoint());
+  std::ranges::fill(virtual_clock_leaf_net_grads_, FloatPoint());
   const float bar = NesterovBaseVars::minWireLengthForceBar;
   std::vector<float> xs, ys, grad_x, grad_y, min_exp, max_exp;
-  for (const VirtualNet& net : virtual_nets_) {
+  for (const VirtualClockLeafNet& net : virtual_clock_leaf_nets_) {
     xs.clear();
     ys.clear();
     for (const GPin* gPin : net.pins) {
@@ -1622,8 +1624,8 @@ void NesterovBaseCommon::updateVirtualNetForceWA(float wlCoeffX, float wlCoeffY)
     waAxisGradients(xs, wlCoeffX, bar, min_exp, max_exp, grad_x);
     waAxisGradients(ys, wlCoeffY, bar, min_exp, max_exp, grad_y);
     for (size_t i = 0; i < net.pins.size(); i++) {
-      FloatPoint& grad
-          = virtual_net_grads_[getGCellIndex(net.pins[i]->getGCell())];
+      FloatPoint& grad = virtual_clock_leaf_net_grads_[getGCellIndex(
+          net.pins[i]->getGCell())];
       grad.x += net.weight * grad_x[i];
       grad.y += net.weight * grad_y[i];
     }
@@ -1673,8 +1675,9 @@ FloatPoint NesterovBaseCommon::getWireLengthGradientWA(const GCell* gCell,
     gradientPair.y += tmpPair.y;
   }
 
-  if (!virtual_net_grads_.empty() && gCell->isInstance()) {
-    const FloatPoint& grad = virtual_net_grads_[getGCellIndex(gCell)];
+  if (!virtual_clock_leaf_net_grads_.empty() && gCell->isInstance()) {
+    const FloatPoint& grad
+        = virtual_clock_leaf_net_grads_[getGCellIndex(gCell)];
     gradientPair.x += grad.x;
     gradientPair.y += grad.y;
   }

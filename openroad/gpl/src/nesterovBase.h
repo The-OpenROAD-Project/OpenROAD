@@ -999,19 +999,22 @@ class NesterovBaseCommon
   void updateMinRcCellSize();
   void revertGCellSizeToMinRc();
 
-  // Power-driven clock leaf nets, WA gradient only.
-  struct VirtualNet
+  // Virtual power-driven clock leaf nets, WA gradient only.
+  struct VirtualClockLeafNet
   {
     std::vector<GPin*> pins;
     float weight = 0;
   };
-  void setVirtualNets(std::vector<VirtualNet> nets);
-  const std::vector<VirtualNet>& getVirtualNets() const
+  void setVirtualClockLeafNets(std::vector<VirtualClockLeafNet> nets);
+  const std::vector<VirtualClockLeafNet>& getVirtualClockLeafNets() const
   {
-    return virtual_nets_;
+    return virtual_clock_leaf_nets_;
   }
-  void clearVirtualNets();
-  bool hasVirtualNets() const { return !virtual_net_grads_.empty(); }
+  void clearVirtualClockLeafNets();
+  bool hasVirtualClockLeafNets() const
+  {
+    return !virtual_clock_leaf_net_grads_.empty();
+  }
 
   GCell& getGCell(size_t index);
   size_t getGCellIndex(const GCell* gCell) const;
@@ -1087,9 +1090,9 @@ class NesterovBaseCommon
   nesterovDbCbk* db_cbk_{nullptr};
 
   // For power-driven clock leaf nets, grads parallel to gCellStor_
-  void updateVirtualNetForceWA(float wlCoeffX, float wlCoeffY);
-  std::vector<VirtualNet> virtual_nets_;
-  std::vector<FloatPoint> virtual_net_grads_;
+  void updateVirtualClockLeafNetForceWA(float wlCoeffX, float wlCoeffY);
+  std::vector<VirtualClockLeafNet> virtual_clock_leaf_nets_;
+  std::vector<FloatPoint> virtual_clock_leaf_net_grads_;
 };
 
 // Stores instances belonging to a specific power domain

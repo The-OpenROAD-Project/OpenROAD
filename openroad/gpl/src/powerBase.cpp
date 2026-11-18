@@ -194,10 +194,10 @@ void PowerBase::inDbITermDestroy(odb::dbITerm* iterm)
 
 void PowerBase::updateClockLeafNets()
 {
-  std::vector<NesterovBaseCommon::VirtualNet> leaf_nets;
+  std::vector<NesterovBaseCommon::VirtualClockLeafNet> leaf_nets;
   for (const std::vector<odb::dbITerm*>& sinks :
        cts_->predictSinkClusters(clock_nets_)) {
-    NesterovBaseCommon::VirtualNet leaf_net;
+    NesterovBaseCommon::VirtualClockLeafNet leaf_net;
     for (odb::dbITerm* sink : sinks) {
       GPin* gPin = nbc_->dbToNb(sink);
       if (gPin != nullptr && gPin->getGCell() != nullptr) {
@@ -216,7 +216,7 @@ void PowerBase::updateClockLeafNets()
              "   Clock leaf nets: {} on {} clock nets.",
              leaf_nets.size(),
              clock_nets_.size());
-  nbc_->setVirtualNets(std::move(leaf_nets));
+  nbc_->setVirtualClockLeafNets(std::move(leaf_nets));
 }
 
 const sta::Pin* PowerBase::clockDriver(odb::dbNet* net) const
