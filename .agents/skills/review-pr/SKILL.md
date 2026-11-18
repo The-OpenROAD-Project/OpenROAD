@@ -38,7 +38,7 @@ gh pr diff "$PR" --repo "$REPO"
 ```
 
 Identify:
-- **Modules affected** -- from file paths (e.g., `src/rsz/` = resizer)
+- **Modules affected** -- from file paths (e.g., `openroad/rsz/` = resizer)
 - **Change type** -- bug fix, feature, refactor, test, docs
 - **Scope** -- number of files and lines changed
 
@@ -61,7 +61,7 @@ Check for:
   for objects that cannot be null
 - **Unreachable code** -- code after `error()` or `throw` should be removed
 - **Suppressed tests** -- if a test is disabled, ask whether it hides a bug
-- **`src/sta/` changes** -- OpenSTA is a separate submodule, updated by
+- **`openroad/sta/` changes** -- OpenSTA is a separate submodule, updated by
   a PR in the OpenSTA repo and then a submodule bump; ask whether the
   change is needed or could be made in OpenROAD code instead
 
