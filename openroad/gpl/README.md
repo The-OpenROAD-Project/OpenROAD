@@ -57,7 +57,8 @@ it directly. For a clock net, `gpl` predicts the sink clusters that
 `clock_tree_synthesis -sink_clustering_enable` would build at the current
 placement with the `set_cts_config` settings, and adds a virtual leaf net over
 each cluster, weighted by the activity of the clock. The leaf nets are
-predicted at each overflow of `-power_driven_clock_leaf_overflow`.
+predicted at each overflow of `-power_driven_clock_leaf_overflow`, and again
+right after each timing-driven iteration.
 
 When the routability-driven option is enabled, each of its iterations will 
 execute RUDY to provide an estimation of routing congestion. Congested tiles 
