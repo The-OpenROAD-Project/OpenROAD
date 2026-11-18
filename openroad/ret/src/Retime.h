@@ -11,7 +11,6 @@
 
 namespace sta {
 class dbSta;
-class Graph;
 class Pin;
 }  // namespace sta
 namespace utl {
@@ -31,7 +30,7 @@ namespace ret {
 class Retime
 {
  public:
-  Retime(RetimingGraph* graph,
+  Retime(const RetimingGraph* graph,
          sta::dbSta* sta,
          utl::Logger* logger,
          odb::dbMaster* flop_master);
@@ -52,17 +51,19 @@ class Retime
 
   enum class ArcCharStage
   {
-    ok,
-    no_cell,
-    no_from_port,
-    no_pvt,
-    no_table_model
+    kOk,
+    kNoCell,
+    kNoFromPort,
+    kNoPvt,
+    kNoTableModel
   };
   static constexpr size_t kArcCharStages = 5;
 
   float pinArrival(odb::dbITerm* db_pin);
   float getGateArc(odb::dbITerm* input_pin);
   float getPinSlew(sta::Pin* pin);
+  // The wire delay of an edge once no register is left on it: the wire into
+  // each of its registers, then the wire from the last one to the sink.
   float wireDelay(const EdgePhys& phys);
 
   void computeArcDelays();
@@ -79,8 +80,15 @@ class Retime
   bool outputRegistered(int v) const;
   bool isCombinational(int u, const Edge& e) const;
   bool isCombinational(int t, const FaninEdge& fe) const;
+  // Arrival of t from the fanins it reads without a register in between; a
+  // gate without any is a path root.
   void setArrival(int t);
   void computeArrivals();
+  // A slide across v changes the arrivals of v, of its fanins (their output
+  // may stop being registered), of its fanouts (they may become roots), and
+  // of everything downstream of those without a register in between.  Only
+  // that set is recomputed, in topological order, and saved for undoSlide.
+  // Returns the worst arrival after the slide.
   double slide(int v);
   void undoSlide(int v);
   double worstArrival();
@@ -94,7 +102,7 @@ class Retime
   void reportSlide(int v, double worst, int moves);
   void reportResult(double worst, int moves, int pi_rejects);
 
-  RetimingGraph* graph_ = nullptr;
+  const RetimingGraph* graph_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
 

@@ -59,15 +59,15 @@ odb::dbNet* registerClockNet(odb::dbInst* inst);
 //              controls is one of these.
 enum class RegisterKind
 {
-  plain,
-  enable,
-  inverting,
-  other
+  kPlain,
+  kEnable,
+  kInverting,
+  kOther
 };
 
 struct RegisterClass
 {
-  RegisterKind kind = RegisterKind::other;
+  RegisterKind kind = RegisterKind::kOther;
   odb::dbMaster* master = nullptr;
   odb::dbMTerm* data = nullptr;
   odb::dbMTerm* output = nullptr;  // the output pin the loads read

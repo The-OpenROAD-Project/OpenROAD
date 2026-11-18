@@ -88,8 +88,14 @@ class Retimer
   odb::dbNet* findClockNet(odb::dbBlock* block);
   void checkRegisters(odb::dbBlock* block);
 
+  // Registers that start on one net at the same depth hold the same value
+  // only when they are one class, so each class of first register is a group
+  // of its own.
   std::vector<Group> collectGroups(const RetimingGraph& graph,
                                    const std::vector<int>& r) const;
+  // Which of a net's class groups a chain belongs to: the one whose first
+  // register is the same class as this chain's.  A chain without a register
+  // goes with the first group.
   static int classBranch(const RetimingGraph& graph,
                          const std::vector<odb::dbInst*>& flops,
                          std::vector<odb::dbInst*>& heads);
@@ -104,9 +110,11 @@ class Retimer
                                const std::vector<odb::dbInst*>& regs,
                                std::unordered_set<odb::dbInst*>& movers);
 
-  // The original registers standing for the j-th register upstream of a
-  // gate under retiming r; nullptr marks a position never filled.
   static FaninIndex faninIndex(const RetimingGraph& graph);
+  // The original registers standing for the j-th register upstream of a
+  // gate under retiming r; nullptr marks a position never filled.  An edge
+  // that held registers only loses them from the sink end, so the j-th
+  // register upstream of the sink is the j-th from the end of its chain.
   static void originRegistersOnEdge(const RetimingGraph& graph,
                                     const FaninIndex& fanin,
                                     const std::vector<int>& r,
@@ -133,6 +141,10 @@ class Retimer
                            const std::unordered_set<odb::dbInst*>& movers,
                            int max_moves,
                            est::IncrementalParasiticsGuard& guard);
+  // Every check runs before the first edit, so a retiming that cannot be
+  // rebuilt leaves the netlist untouched.  So does every lookup of an
+  // original register: rebuilding one group deletes registers another group
+  // came from.
   void applyRetiming(const RetimingGraph& graph, const std::vector<int>& r);
   // The original registers standing for the p-th register of a sink's
   // rebuilt chain, counted from the driver net.
@@ -149,6 +161,8 @@ class Retimer
   void checkMoves(const RetimingGraph& graph,
                   const FaninIndex& fanin,
                   const std::vector<int>& r) const;
+  // The registers a group is rebuilt from share one clock net: the graph
+  // pins the gates that registers on different clock nets could reach.
   odb::dbNet* groupClockNet(const RetimingGraph& graph,
                             const FaninIndex& fanin,
                             const std::vector<int>& r,
@@ -158,6 +172,9 @@ class Retimer
                     odb::dbNet* clock_net,
                     ApplyStats& stats);
   void removeRegister(odb::dbInst* inst);
+  // The module nets of the nets a group's new registers connect to, looked
+  // up before the old registers go: they may hold the module's only pin on
+  // one.
   ModNets groupModNets(const Group& group,
                        const std::vector<const RegisterClass*>& classes,
                        odb::dbNet* clock_net) const;
@@ -170,9 +187,12 @@ class Retimer
                        odb::dbNet* out,
                        odb::dbNet* clock_net,
                        const ModNets& mod_nets);
+  // A base cell with asynchronous controls gets a tie cell on each of them,
+  // holding it inactive.
   void tieBaseControls(odb::dbInst* ff,
                        sta::Instance* parent,
                        odb::dbModInst* parent_mod_inst);
+  // The new registers are left unplaced for global placement.
   std::vector<odb::dbNet*> buildChain(
       odb::dbNet* driver_net,
       odb::dbNet* clock_net,

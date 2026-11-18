@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <string>
@@ -31,23 +32,16 @@ namespace ret {
 
 namespace {
 
-const RegisterClass& classOf(const RetimingGraph& graph, odb::dbInst* reg)
-{
-  static const RegisterClass kOther;
-  auto it = graph.reg_class_.find(reg);
-  return it != graph.reg_class_.end() ? it->second : kOther;
-}
-
 bool keepsClass(const RegisterClass& cls)
 {
-  return cls.kind == RegisterKind::enable
-         || cls.kind == RegisterKind::inverting;
+  return cls.kind == RegisterKind::kEnable
+         || cls.kind == RegisterKind::kInverting;
 }
 
 bool oneClass(const RetimingGraph& graph, const std::vector<odb::dbInst*>& regs)
 {
-  for (size_t i = 1; i < regs.size(); i++) {
-    if (!sameRegisterClass(classOf(graph, regs[0]), classOf(graph, regs[i]))) {
+  for (size_t i = 1; i < regs.size(); ++i) {
+    if (!sameRegisterClass(graph.regClass(regs[0]), graph.regClass(regs[i]))) {
       return false;
     }
   }
@@ -61,8 +55,9 @@ bool moveKeepsClass(const RetimingGraph& graph,
   if (!oneClass(graph, regs)) {
     return false;
   }
-  return regs.empty() || classOf(graph, regs[0]).kind != RegisterKind::inverting
-         || graph.self_dual_[v];
+  return regs.empty()
+         || graph.regClass(regs[0]).kind != RegisterKind::kInverting
+         || graph.selfDual()[v];
 }
 
 bool isRouted(odb::dbBlock* block)
@@ -86,9 +81,9 @@ PlacementCount countPlacement(odb::dbBlock* block)
   PlacementCount count;
   for (odb::dbInst* inst : block->getInsts()) {
     if (inst->isPlaced()) {
-      count.placed++;
+      ++count.placed;
     } else {
-      count.unplaced++;
+      ++count.unplaced;
     }
   }
   return count;
@@ -184,7 +179,7 @@ void Retimer::applyAfterUnmapping(
     int max_moves,
     est::IncrementalParasiticsGuard& guard)
 {
-  std::map<unsigned, odb::dbInst*> ordered_movers;
+  std::map<uint32_t, odb::dbInst*> ordered_movers;
   for (odb::dbInst* mover : movers) {
     ordered_movers[mover->getId()] = mover;
   }
@@ -201,9 +196,9 @@ void Retimer::applyAfterUnmapping(
   // Keyed by name: unmapping deletes instances, and a new instance can
   // take the address of a deleted one.
   std::unordered_map<std::string, int> lag;
-  const int n = static_cast<int>(graph.nodes_.size());
-  for (int i = 0; i < n; i++) {
-    lag[graph.nodes_[i]->getName()] = r[i];
+  const int n = static_cast<int>(graph.nodes().size());
+  for (int i = 0; i < n; ++i) {
+    lag[graph.nodes()[i]->getName()] = r[i];
   }
   unmapper_->run(&movers);
   guard.update();
@@ -224,7 +219,7 @@ void Retimer::applyAfterUnmapping(
              "lag remap is ambiguous after unmapping; re-solving on the new "
              "netlist");
   constexpr int kMaxRounds = 20;
-  for (int round = 0; round < kMaxRounds; round++) {
+  for (int round = 0; round < kMaxRounds; ++round) {
     logger_->info(utl::RET,
                   43,
                   "Iteration {}: repeating the search on the netlist with the "
@@ -269,7 +264,7 @@ void Retimer::checkRegisters(odb::dbBlock* block)
   int negedge = 0;
   for (odb::dbInst* inst : block->getInsts()) {
     if (inst->getMaster()->isSequential() && isNegedgeRegister(sta_, inst)) {
-      negedge++;
+      ++negedge;
     }
   }
   if (negedge > 0) {
@@ -283,19 +278,17 @@ void Retimer::checkRegisters(odb::dbBlock* block)
 
 Retimer::FaninIndex Retimer::faninIndex(const RetimingGraph& graph)
 {
-  const int n = static_cast<int>(graph.nodes_.size());
+  const int n = static_cast<int>(graph.nodes().size());
   FaninIndex fanin(n);
-  for (int u = 0; u < n; u++) {
-    const int edge_count = static_cast<int>(graph.adj_[u].size());
-    for (int k = 0; k < edge_count; k++) {
-      fanin[graph.adj_[u][k].target].emplace_back(u, k);
+  for (int u = 0; u < n; ++u) {
+    const int edge_count = static_cast<int>(graph.adj()[u].size());
+    for (int k = 0; k < edge_count; ++k) {
+      fanin[graph.adj()[u][k].target].emplace_back(u, k);
     }
   }
   return fanin;
 }
 
-// An edge that held registers only loses them from the sink end, so the
-// j-th register upstream of the sink is the j-th from the end of its chain.
 void Retimer::originRegistersOnEdge(const RetimingGraph& graph,
                                     const FaninIndex& fanin,
                                     const std::vector<int>& r,
@@ -304,9 +297,9 @@ void Retimer::originRegistersOnEdge(const RetimingGraph& graph,
                                     int j,
                                     std::vector<odb::dbInst*>& out)
 {
-  const int w = graph.adj_[u][k].weight;
+  const int w = graph.adj()[u][k].weight;
   if (w > 0) {
-    const std::vector<odb::dbInst*>& flops = graph.phys_[u][k].flops;
+    const std::vector<odb::dbInst*>& flops = graph.phys()[u][k].flops;
     const int index = w - j;
     const int count = static_cast<int>(flops.size());
     out.push_back(index >= 0 && index < count ? flops[index] : nullptr);
@@ -335,9 +328,6 @@ void Retimer::originRegisters(const RetimingGraph& graph,
   }
 }
 
-// Which of a net's class groups a chain belongs to: the one whose first
-// register is the same class as this chain's.  A chain without a register
-// goes with the first group.
 int Retimer::classBranch(const RetimingGraph& graph,
                          const std::vector<odb::dbInst*>& flops,
                          std::vector<odb::dbInst*>& heads)
@@ -347,9 +337,9 @@ int Retimer::classBranch(const RetimingGraph& graph,
   }
   odb::dbInst* first = flops.front();
   const int count = static_cast<int>(heads.size());
-  for (int i = 0; i < count; i++) {
+  for (int i = 0; i < count; ++i) {
     if (heads[i] == first
-        || sameRegisterClass(classOf(graph, heads[i]), classOf(graph, first))) {
+        || sameRegisterClass(graph.regClass(heads[i]), graph.regClass(first))) {
       return i;
     }
   }
@@ -357,22 +347,19 @@ int Retimer::classBranch(const RetimingGraph& graph,
   return count;
 }
 
-// Registers that start on one net at the same depth hold the same value
-// only when they are one class, so each class of first register is a group
-// of its own.
 std::vector<Retimer::Group> Retimer::collectGroups(
     const RetimingGraph& graph,
     const std::vector<int>& r) const
 {
   // Ordered by net and class group: deterministic new-cell names.
-  std::map<std::pair<unsigned, int>, Group> by_net;
+  std::map<std::pair<uint32_t, int>, Group> by_net;
   std::unordered_map<odb::dbNet*, std::vector<odb::dbInst*>> heads;
-  const int n = static_cast<int>(graph.nodes_.size());
-  for (int u = 0; u < n; u++) {
-    const std::vector<Edge>& edges = graph.adj_[u];
-    const std::vector<EdgePhys>& handles = graph.phys_[u];
+  const int n = static_cast<int>(graph.nodes().size());
+  for (int u = 0; u < n; ++u) {
+    const std::vector<Edge>& edges = graph.adj()[u];
+    const std::vector<EdgePhys>& handles = graph.phys()[u];
     const int edge_count = static_cast<int>(edges.size());
-    for (int k = 0; k < edge_count; k++) {
+    for (int k = 0; k < edge_count; ++k) {
       odb::dbNet* driver_net = graph.chainNet(handles[k]);
       if (driver_net != nullptr) {
         const int w = edges[k].weight;
@@ -407,7 +394,7 @@ void Retimer::addClassedMovers(const RetimingGraph& graph,
                                std::unordered_set<odb::dbInst*>& movers)
 {
   for (odb::dbInst* reg : regs) {
-    if (reg != nullptr && keepsClass(classOf(graph, reg))) {
+    if (reg != nullptr && keepsClass(graph.regClass(reg))) {
       movers.insert(reg);
     }
   }
@@ -418,9 +405,10 @@ void Retimer::addGroupMovers(const RetimingGraph& graph,
                              std::unordered_set<odb::dbInst*>& movers) const
 {
   for (odb::dbInst* f : group.flops) {
-    const RegisterClass& cls = classOf(graph, f);
-    if (cls.kind == RegisterKind::other
-        || (cls.kind == RegisterKind::plain && f->getMaster() != dff_master_)) {
+    const RegisterClass& cls = graph.regClass(f);
+    if (cls.kind == RegisterKind::kOther
+        || (cls.kind == RegisterKind::kPlain
+            && f->getMaster() != dff_master_)) {
       movers.insert(f);
     }
   }
@@ -428,7 +416,7 @@ void Retimer::addGroupMovers(const RetimingGraph& graph,
   for (const std::vector<odb::dbInst*>* chain : group.chains) {
     longest = std::max(longest, chain->size());
   }
-  for (size_t i = 0; i < longest; i++) {
+  for (size_t i = 0; i < longest; ++i) {
     std::vector<odb::dbInst*> at_position;
     for (const std::vector<odb::dbInst*>* chain : group.chains) {
       if (i < chain->size()) {
@@ -452,9 +440,9 @@ std::unordered_set<odb::dbInst*> Retimer::moversToUnmap(
     }
   }
   const FaninIndex fanin = faninIndex(graph);
-  const int n = static_cast<int>(graph.nodes_.size());
-  for (int v = 0; v < n; v++) {
-    for (int j = 1; j <= -r[v]; j++) {
+  const int n = static_cast<int>(graph.nodes().size());
+  for (int v = 0; v < n; ++v) {
+    for (int j = 1; j <= -r[v]; ++j) {
       std::vector<odb::dbInst*> regs;
       originRegisters(graph, fanin, r, v, j, regs);
       if (std::find(regs.begin(), regs.end(), nullptr) == regs.end()
@@ -471,7 +459,7 @@ int Retimer::lagOfNewGate(odb::dbInst* gate,
                           bool& ok) const
 {
   constexpr int kMaxDepth = 64;
-  for (int depth = 0; depth <= kMaxDepth; depth++) {
+  for (int depth = 0; depth <= kMaxDepth; ++depth) {
     auto it = lag.find(gate->getName());
     if (it != lag.end()) {
       return it->second;
@@ -485,7 +473,7 @@ int Retimer::lagOfNewGate(odb::dbInst* gate,
     for (odb::dbITerm* pin : gate->getITerms()) {
       if (pin->getIoType() == odb::dbIoType::INPUT
           && pin->getSigType() != odb::dbSigType::CLOCK) {
-        inputs++;
+        ++inputs;
         odb::dbNet* net = pin->getNet();
         if (net != nullptr) {
           for (odb::dbITerm* t : net->getITerms()) {
@@ -515,10 +503,10 @@ std::vector<int> Retimer::remapLag(
     bool& ok) const
 {
   ok = true;
-  const int n = static_cast<int>(graph.nodes_.size());
+  const int n = static_cast<int>(graph.nodes().size());
   std::vector<int> r(n, 0);
-  for (int i = 0; i < n && ok; i++) {
-    r[i] = lagOfNewGate(graph.nodes_[i], lag, ok);
+  for (int i = 0; i < n && ok; ++i) {
+    r[i] = lagOfNewGate(graph.nodes()[i], lag, ok);
   }
   return r;
 }
@@ -528,7 +516,7 @@ void Retimer::removeRegister(odb::dbInst* inst)
   const RegisterClass cls = registerClass(sta_, inst);
   odb::dbITerm* d = cls.data != nullptr ? inst->getITerm(cls.data) : nullptr;
   odb::dbNet* d_net = d != nullptr ? d->getNet() : nullptr;
-  if (cls.kind == RegisterKind::other || d_net == nullptr) {
+  if (cls.kind == RegisterKind::kOther || d_net == nullptr) {
     logger_->error(utl::RET,
                    39,
                    "Register {} cannot be bypassed; the retiming is not "
@@ -573,8 +561,6 @@ void Retimer::removeRegister(odb::dbInst* inst)
   }
 }
 
-// The module nets of the nets a group's new registers connect to, looked up
-// before the old registers go: they may hold the module's only pin on one.
 Retimer::ModNets Retimer::groupModNets(
     const Group& group,
     const std::vector<const RegisterClass*>& classes,
@@ -654,8 +640,6 @@ void Retimer::connectRegister(odb::dbInst* ff,
   }
 }
 
-// A base cell with asynchronous controls gets a tie cell on each of them,
-// holding it inactive.
 void Retimer::tieBaseControls(odb::dbInst* ff,
                               sta::Instance* parent,
                               odb::dbModInst* parent_mod_inst)
@@ -678,7 +662,6 @@ void Retimer::tieBaseControls(odb::dbInst* ff,
   }
 }
 
-// The new registers are left unplaced for global placement.
 std::vector<odb::dbNet*> Retimer::buildChain(
     odb::dbNet* driver_net,
     odb::dbNet* clock_net,
@@ -696,7 +679,7 @@ std::vector<odb::dbNet*> Retimer::buildChain(
   const int depth = static_cast<int>(classes.size());
   std::vector<odb::dbNet*> nets(depth + 1);
   nets[0] = driver_net;
-  for (int k = 1; k <= depth; k++) {
+  for (int k = 1; k <= depth; ++k) {
     const RegisterClass* cls = classes[k - 1];
     odb::dbMaster* master = cls != nullptr ? cls->master : dff_master_;
     sta::LibertyCell* cell = network->libertyCell(network->dbToSta(master));
@@ -724,7 +707,7 @@ std::vector<odb::dbInst*> Retimer::chainOrigins(const RetimingGraph& graph,
                                                 const Sink& sink,
                                                 int p)
 {
-  const int taken_by_sink_gate = -r[graph.adj_[sink.u][sink.k].target];
+  const int taken_by_sink_gate = -r[graph.adj()[sink.u][sink.k].target];
   std::vector<odb::dbInst*> regs;
   originRegistersOnEdge(graph,
                         fanin,
@@ -743,8 +726,8 @@ std::vector<const RegisterClass*> Retimer::chainClasses(
     const Group& group) const
 {
   for (odb::dbInst* f : group.flops) {
-    const RegisterClass& cls = classOf(graph, f);
-    if (cls.kind == RegisterKind::other || cls.data == nullptr) {
+    const RegisterClass& cls = graph.regClass(f);
+    if (cls.kind == RegisterKind::kOther || cls.data == nullptr) {
       logger_->error(utl::RET,
                      40,
                      "Register {} on net {} cannot be rebuilt; the retiming "
@@ -760,12 +743,12 @@ std::vector<const RegisterClass*> Retimer::chainClasses(
   std::vector<const RegisterClass*> classes(max_depth, nullptr);
   std::vector<bool> plain_at(max_depth, false);
   for (const Sink& s : group.sinks) {
-    for (int p = 1; p <= s.wr; p++) {
+    for (int p = 1; p <= s.wr; ++p) {
       for (odb::dbInst* reg : chainOrigins(graph, fanin, r, s, p)) {
         const RegisterClass* cls
-            = reg != nullptr ? &classOf(graph, reg) : nullptr;
+            = reg != nullptr ? &graph.regClass(reg) : nullptr;
         bool consistent = cls != nullptr;
-        if (consistent && cls->kind == RegisterKind::plain) {
+        if (consistent && cls->kind == RegisterKind::kPlain) {
           consistent = classes[p - 1] == nullptr;
           plain_at[p - 1] = true;
         } else if (consistent && keepsClass(*cls)) {
@@ -793,9 +776,9 @@ void Retimer::checkMoves(const RetimingGraph& graph,
                          const FaninIndex& fanin,
                          const std::vector<int>& r) const
 {
-  const int n = static_cast<int>(graph.nodes_.size());
-  for (int v = 0; v < n; v++) {
-    for (int j = 1; j <= -r[v]; j++) {
+  const int n = static_cast<int>(graph.nodes().size());
+  for (int v = 0; v < n; ++v) {
+    for (int j = 1; j <= -r[v]; ++j) {
       std::vector<odb::dbInst*> regs;
       originRegisters(graph, fanin, r, v, j, regs);
       if (std::find(regs.begin(), regs.end(), nullptr) != regs.end()
@@ -804,7 +787,7 @@ void Retimer::checkMoves(const RetimingGraph& graph,
                        41,
                        "The registers moved across {} are not one class that "
                        "can cross it; the retiming is not applied.",
-                       graph.nodes_[v]->getName());
+                       graph.nodes()[v]->getName());
       }
     }
   }
@@ -824,7 +807,7 @@ void Retimer::rebuildGroup(const Group& group,
   });
   for (odb::dbInst* f : flops) {
     removeRegister(f);
-    stats.removed++;
+    ++stats.removed;
   }
   const int max_depth = static_cast<int>(classes.size());
   if (max_depth == 0) {
@@ -835,7 +818,7 @@ void Retimer::rebuildGroup(const Group& group,
   stats.inserted += max_depth;
   for (const RegisterClass* cls : classes) {
     if (cls != nullptr) {
-      stats.inserted_classed++;
+      ++stats.inserted_classed;
     }
   }
   for (const Sink& s : group.sinks) {
@@ -846,15 +829,13 @@ void Retimer::rebuildGroup(const Group& group,
   }
 }
 
-// The registers a group is rebuilt from share one clock net: the graph pins
-// the gates that registers on different clock nets could reach.
 odb::dbNet* Retimer::groupClockNet(const RetimingGraph& graph,
                                    const FaninIndex& fanin,
                                    const std::vector<int>& r,
                                    const Group& group) const
 {
   for (const Sink& s : group.sinks) {
-    for (int p = 1; p <= s.wr; p++) {
+    for (int p = 1; p <= s.wr; ++p) {
       for (odb::dbInst* reg : chainOrigins(graph, fanin, r, s, p)) {
         odb::dbNet* clock = reg != nullptr ? registerClockNet(reg) : nullptr;
         if (clock != nullptr) {
@@ -866,9 +847,6 @@ odb::dbNet* Retimer::groupClockNet(const RetimingGraph& graph,
   return clock_net_;
 }
 
-// Every check runs before the first edit, so a retiming that cannot be
-// rebuilt leaves the netlist untouched.  So does every lookup of an original
-// register: rebuilding one group deletes registers another group came from.
 void Retimer::applyRetiming(const RetimingGraph& graph,
                             const std::vector<int>& r)
 {
@@ -882,7 +860,7 @@ void Retimer::applyRetiming(const RetimingGraph& graph,
   const FaninIndex fanin = faninIndex(graph);
   std::vector<std::vector<const RegisterClass*>> classes(groups.size());
   std::vector<odb::dbNet*> clock_nets(groups.size(), nullptr);
-  for (size_t i = 0; i < groups.size(); i++) {
+  for (size_t i = 0; i < groups.size(); ++i) {
     if (!groups[i].changed) {
       continue;
     }
@@ -899,10 +877,10 @@ void Retimer::applyRetiming(const RetimingGraph& graph,
   checkMoves(graph, fanin, r);
 
   ApplyStats stats;
-  for (size_t i = 0; i < groups.size(); i++) {
+  for (size_t i = 0; i < groups.size(); ++i) {
     const Group& group = groups[i];
     if (group.changed) {
-      stats.groups_changed++;
+      ++stats.groups_changed;
       rebuildGroup(group, classes[i], clock_nets[i], stats);
     }
   }

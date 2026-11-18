@@ -35,7 +35,7 @@ void RetimingGraph::findClockPeriod()
     if (clock->isVirtual()) {
       continue;
     }
-    clocks++;
+    ++clocks;
     clock_period_ = clock->period();
   }
   if (clocks == 0) {
@@ -70,11 +70,10 @@ void RetimingGraph::markBoundary(odb::dbInst* inst, int id)
   }
 }
 
-// An enable pin travels with its register's class; it is not a data edge.
 bool RetimingGraph::continuesThrough(odb::dbInst* reg, odb::dbITerm* pin) const
 {
   auto it = reg_class_.find(reg);
-  if (it != reg_class_.end() && it->second.kind != RegisterKind::other) {
+  if (it != reg_class_.end() && it->second.kind != RegisterKind::kOther) {
     return pin->getMTerm() == it->second.data;
   }
   return isRegisterDataPin(sta_, pin);
@@ -166,6 +165,12 @@ bool RetimingGraph::isDontTouch(odb::dbInst* reg) const
   return false;
 }
 
+const RegisterClass& RetimingGraph::regClass(odb::dbInst* reg) const
+{
+  auto it = reg_class_.find(reg);
+  return it != reg_class_.end() ? it->second : other_class_;
+}
+
 odb::dbITerm* RetimingGraph::dataPin(odb::dbInst* reg) const
 {
   auto it = reg_class_.find(reg);
@@ -206,7 +211,7 @@ void RetimingGraph::build()
   pinned_.assign(n, false);
   self_dual_.assign(n, false);
   std::unordered_map<odb::dbMaster*, bool> self_dual_master;
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < n; ++i) {
     odb::dbMaster* master = nodes_[i]->getMaster();
     auto it = self_dual_master.find(master);
     if (it == self_dual_master.end()) {
@@ -216,7 +221,7 @@ void RetimingGraph::build()
     self_dual_[i] = it->second;
   }
 
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < n; ++i) {
     markBoundary(nodes_[i], i);
     markDontTouch(nodes_[i], i);
     std::vector<odb::dbInst*> flops;
@@ -227,11 +232,6 @@ void RetimingGraph::build()
   fenceModules();
 }
 
-// In a hierarchical netlist a register never crosses a module boundary.
-// The registers that start on one net stay in the module of the gate that
-// drives them and the gates that read them; when those are not all in one
-// module, the driving gate and the gates behind the registers are never
-// crossed.  A flat netlist has no boundaries to keep.
 void RetimingGraph::fenceModules()
 {
   if (!sta_->getDbNetwork()->hasHierarchy()) {
@@ -239,10 +239,10 @@ void RetimingGraph::fenceModules()
   }
   const int n = static_cast<int>(nodes_.size());
   std::unordered_set<odb::dbNet*> crossing_nets;
-  for (int u = 0; u < n; u++) {
+  for (int u = 0; u < n; ++u) {
     odb::dbModule* module = nodes_[u]->getModule();
     const int edge_count = static_cast<int>(adj_[u].size());
-    for (int k = 0; k < edge_count; k++) {
+    for (int k = 0; k < edge_count; ++k) {
       const EdgePhys& phys = phys_[u][k];
       bool one_module = nodes_[adj_[u][k].target]->getModule() == module;
       for (odb::dbInst* flop : phys.flops) {
@@ -254,9 +254,9 @@ void RetimingGraph::fenceModules()
       }
     }
   }
-  for (int u = 0; u < n; u++) {
+  for (int u = 0; u < n; ++u) {
     const int edge_count = static_cast<int>(adj_[u].size());
-    for (int k = 0; k < edge_count; k++) {
+    for (int k = 0; k < edge_count; ++k) {
       const EdgePhys& phys = phys_[u][k];
       if (crossing_nets.contains(chainNet(phys))) {
         pinned_[u] = true;
@@ -302,7 +302,7 @@ void RetimingGraph::fenceDontTouch()
   // starts on the same net in place.
   std::unordered_set<odb::dbNet*> fixed_nets;
   std::unordered_map<odb::dbNet*, odb::dbNet*> net_clock;
-  for (int u = 0; u < n; u++) {
+  for (int u = 0; u < n; ++u) {
     for (const EdgePhys& phys : phys_[u]) {
       for (odb::dbInst* flop : phys.flops) {
         odb::dbNet* net = chainNet(phys);
@@ -316,9 +316,9 @@ void RetimingGraph::fenceDontTouch()
   }
 
   std::vector<std::unordered_set<odb::dbNet*>> fanin_clocks(nodes_.size());
-  for (int u = 0; u < n; u++) {
+  for (int u = 0; u < n; ++u) {
     const int edge_count = static_cast<int>(adj_[u].size());
-    for (int k = 0; k < edge_count; k++) {
+    for (int k = 0; k < edge_count; ++k) {
       const int target = adj_[u][k].target;
       if (pinned_[target]) {
         continue;
@@ -335,7 +335,7 @@ void RetimingGraph::fenceDontTouch()
   bool grew = true;
   while (grew) {
     grew = false;
-    for (int u = 0; u < n; u++) {
+    for (int u = 0; u < n; ++u) {
       if (fanin_clocks[u].empty()) {
         continue;
       }
@@ -351,7 +351,7 @@ void RetimingGraph::fenceDontTouch()
       }
     }
   }
-  for (int v = 0; v < n; v++) {
+  for (int v = 0; v < n; ++v) {
     if (fanin_clocks[v].size() > 1) {
       pinned_[v] = true;
     }

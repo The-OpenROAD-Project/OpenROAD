@@ -104,7 +104,11 @@ class SequentialUnmapper
   };
 
   bool findBaseSequentialCell(bool negedge, BaseRegister& base);
+  // Without a plain flip-flop, the base cell is the tied register that costs
+  // the least area, then the one with the smallest data pin capacitance.
   bool findTiedBaseSequentialCell(bool negedge, BaseRegister& base);
+  // A register cell that is a plain D flip-flop once tie cells hold its
+  // asynchronous controls inactive; `area` includes those tie cells.
   bool tiedBaseRegister(sta::LibertyCell* cell,
                         bool negedge,
                         BaseRegister& base,
@@ -138,7 +142,11 @@ class SequentialUnmapper
   bool isInverted(const sta::FuncExpr* func) const;
   RegPins getRegPins(odb::dbInst* inst, const sta::Sequential* seq) const;
 
+  // The new cells and nets of a register go into the module it is in; a
+  // flat netlist has only the top one.
   void setParent(odb::dbInst* inst);
+  // A net the register read keeps its module net on the pin that reads it
+  // now.
   void connectInput(odb::dbITerm* pin, odb::dbNet* net);
   odb::dbNet* newNet(const char* base_name);
   odb::dbInst* newInst(const char* base_name, odb::dbMaster* master);

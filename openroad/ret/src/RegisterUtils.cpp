@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <optional>
 #include <unordered_map>
@@ -29,7 +30,7 @@ const sta::Sequential* singleSequential(const sta::LibertyCell* cell)
   int count = 0;
   for (const sta::Sequential& s : cell->sequentials()) {
     seq = &s;
-    count++;
+    ++count;
   }
   return count == 1 ? seq : nullptr;
 }
@@ -176,7 +177,7 @@ using EnableLevels = std::vector<std::pair<const sta::LibertyPort*, bool>>;
 
 struct NextStateShape
 {
-  RegisterKind kind = RegisterKind::other;
+  RegisterKind kind = RegisterKind::kOther;
   const sta::LibertyPort* data = nullptr;
   bool data_inverted = false;
   EnableLevels enables_inactive_at;
@@ -199,7 +200,7 @@ class NextStateTable
 
   bool holdsStateWhen(size_t i, bool v) const
   {
-    for (unsigned row = 0; row < rows_; row++) {
+    for (uint32_t row = 0; row < rows_; ++row) {
       if (bit(row, i) == v && value(row) != stateBit(row)) {
         return false;
       }
@@ -209,7 +210,7 @@ class NextStateTable
 
   bool passesWhenEnabled(size_t d, const EnableLevels& enables) const
   {
-    for (unsigned row = 0; row < rows_; row++) {
+    for (uint32_t row = 0; row < rows_; ++row) {
       if (enablesActive(row, enables) && value(row) != bit(row, d)) {
         return false;
       }
@@ -218,12 +219,12 @@ class NextStateTable
   }
 
  private:
-  static bool bit(unsigned row, size_t i) { return ((row >> i) & 1u) != 0; }
-  bool stateBit(unsigned row) const { return bit(row, inputs_.size()); }
+  static bool bit(uint32_t row, size_t i) { return ((row >> i) & 1u) != 0; }
+  bool stateBit(uint32_t row) const { return bit(row, inputs_.size()); }
 
-  bool enablesActive(unsigned row, const EnableLevels& enables) const
+  bool enablesActive(uint32_t row, const EnableLevels& enables) const
   {
-    for (size_t i = 0; i < inputs_.size(); i++) {
+    for (size_t i = 0; i < inputs_.size(); ++i) {
       for (const auto& [port, inactive] : enables) {
         if (port == inputs_[i] && bit(row, i) == inactive) {
           return false;
@@ -233,10 +234,10 @@ class NextStateTable
     return true;
   }
 
-  bool value(unsigned row) const
+  bool value(uint32_t row) const
   {
     Assignment values;
-    for (size_t i = 0; i < inputs_.size(); i++) {
+    for (size_t i = 0; i < inputs_.size(); ++i) {
       values[inputs_[i]] = bit(row, i);
     }
     values[state_] = stateBit(row);
@@ -247,7 +248,7 @@ class NextStateTable
   const sta::LibertyPort* state_;
   const sta::LibertyPort* state_inv_;
   std::vector<const sta::LibertyPort*> inputs_;
-  unsigned rows_;
+  uint32_t rows_;
 };
 
 bool nextStateInputs(const sta::FuncExpr* next,
@@ -276,13 +277,13 @@ NextStateShape nextStateShape(const sta::Sequential* seq)
     return shape;
   }
   if (next->op() == sta::FuncExpr::Op::port) {
-    shape.kind = RegisterKind::plain;
+    shape.kind = RegisterKind::kPlain;
     shape.data = next->port();
     return shape;
   }
   if (next->op() == sta::FuncExpr::Op::not_ && next->left() != nullptr
       && next->left()->op() == sta::FuncExpr::Op::port) {
-    shape.kind = RegisterKind::plain;
+    shape.kind = RegisterKind::kPlain;
     shape.data = next->left()->port();
     shape.data_inverted = true;
     return shape;
@@ -296,7 +297,7 @@ NextStateShape nextStateShape(const sta::Sequential* seq)
 
   const NextStateTable table(next, state, state_inv, inputs);
   std::vector<bool> is_enable(inputs.size(), false);
-  for (size_t i = 0; i < inputs.size(); i++) {
+  for (size_t i = 0; i < inputs.size(); ++i) {
     for (bool v : {false, true}) {
       if (!is_enable[i] && table.holdsStateWhen(i, v)) {
         is_enable[i] = true;
@@ -307,7 +308,7 @@ NextStateShape nextStateShape(const sta::Sequential* seq)
   if (shape.enables_inactive_at.empty()) {
     return shape;
   }
-  for (size_t i = 0; i < inputs.size(); i++) {
+  for (size_t i = 0; i < inputs.size(); ++i) {
     if (!is_enable[i]) {
       if (shape.data != nullptr
           || !table.passesWhenEnabled(i, shape.enables_inactive_at)) {
@@ -319,7 +320,7 @@ NextStateShape nextStateShape(const sta::Sequential* seq)
   if (shape.data == nullptr) {
     return NextStateShape();
   }
-  shape.kind = RegisterKind::enable;
+  shape.kind = RegisterKind::kEnable;
   return shape;
 }
 
@@ -380,7 +381,7 @@ bool loadedOutput(sta::dbSta* sta,
         || (net->getITerms().size() <= 1 && net->getBTerms().empty())) {
       continue;
     }
-    loaded++;
+    ++loaded;
     if (!pin_inverted.has_value()) {
       return false;
     }
@@ -476,10 +477,10 @@ bool inactiveAsyncControls(const sta::LibertyCell* cell,
     }
   }
 
-  const unsigned rows = 1u << controls.size();
-  for (unsigned row = 0; row < rows; row++) {
+  const uint32_t rows = 1u << controls.size();
+  for (uint32_t row = 0; row < rows; ++row) {
     Assignment values;
-    for (size_t i = 0; i < controls.size(); i++) {
+    for (size_t i = 0; i < controls.size(); ++i) {
       values[controls[i]] = ((row >> i) & 1u) != 0;
     }
     bool active = false;
@@ -639,7 +640,7 @@ void classifyEnableRegister(odb::dbInst* inst,
   if (cls.output == nullptr || cls.clock == nullptr) {
     return;
   }
-  cls.kind = RegisterKind::enable;
+  cls.kind = RegisterKind::kEnable;
   cls.master = inst->getMaster();
 }
 
@@ -657,7 +658,7 @@ RegisterClass registerClass(sta::dbSta* sta, odb::dbInst* inst)
   }
   const NextStateShape shape = nextStateShape(seq);
   odb::dbITerm* data = findITerm(inst, shape.data);
-  if (shape.kind == RegisterKind::other || data == nullptr) {
+  if (shape.kind == RegisterKind::kOther || data == nullptr) {
     return cls;
   }
   cls.data = data->getMTerm();
@@ -671,12 +672,12 @@ RegisterClass registerClass(sta::dbSta* sta, odb::dbInst* inst)
   // A cell with asynchronous controls is never the cell of a new register,
   // so it does not keep its class.
   const bool has_async = seq->clear() != nullptr || seq->preset() != nullptr;
-  if (shape.kind == RegisterKind::plain) {
+  if (shape.kind == RegisterKind::kPlain) {
     const bool loads_see_complement = shape.data_inverted != out_inverted;
     if (!loads_see_complement) {
-      cls.kind = RegisterKind::plain;
+      cls.kind = RegisterKind::kPlain;
     } else if (!has_async && cls.output != nullptr && cls.clock != nullptr) {
-      cls.kind = RegisterKind::inverting;
+      cls.kind = RegisterKind::kInverting;
       cls.master = inst->getMaster();
     }
     return cls;
@@ -693,14 +694,14 @@ bool sameRegisterClass(const RegisterClass& a, const RegisterClass& b)
     return false;
   }
   switch (a.kind) {
-    case RegisterKind::plain:
+    case RegisterKind::kPlain:
       return a.clock == b.clock;
-    case RegisterKind::enable:
+    case RegisterKind::kEnable:
       return a.master == b.master && a.clock == b.clock && a.output == b.output
              && a.enables == b.enables;
-    case RegisterKind::inverting:
+    case RegisterKind::kInverting:
       return a.master == b.master && a.clock == b.clock && a.output == b.output;
-    case RegisterKind::other:
+    case RegisterKind::kOther:
       return false;
   }
   return false;
@@ -728,11 +729,11 @@ bool isSelfDualGate(sta::dbSta* sta, odb::dbInst* inst)
     if (inputs.empty() || inputs.size() > kMaxTruthTableInputs) {
       return false;
     }
-    const unsigned rows = 1u << inputs.size();
-    for (unsigned row = 0; row < rows; row++) {
+    const uint32_t rows = 1u << inputs.size();
+    for (uint32_t row = 0; row < rows; ++row) {
       Assignment values;
       Assignment complemented;
-      for (size_t i = 0; i < inputs.size(); i++) {
+      for (size_t i = 0; i < inputs.size(); ++i) {
         const bool bit = ((row >> i) & 1u) != 0;
         values[inputs[i]] = bit;
         complemented[inputs[i]] = !bit;
@@ -742,7 +743,7 @@ bool isSelfDualGate(sta::dbSta* sta, odb::dbInst* inst)
         return false;
       }
     }
-    outputs++;
+    ++outputs;
   }
   return outputs > 0;
 }

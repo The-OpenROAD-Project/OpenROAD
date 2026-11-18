@@ -70,7 +70,7 @@ sta::LibertyPort* statePort(sta::LibertyCell* cell,
     if (!port->direction()->isOutput()) {
       continue;
     }
-    outputs++;
+    ++outputs;
     const sta::FuncExpr* func = port->function();
     if (q_port == nullptr && func != nullptr
         && func->op() == sta::FuncExpr::Op::port
@@ -226,8 +226,6 @@ bool SequentialUnmapper::findBaseSequentialCell(bool negedge,
   return base.master != nullptr;
 }
 
-// A register cell that is a plain D flip-flop once tie cells hold its
-// asynchronous controls inactive; `area` includes those tie cells.
 bool SequentialUnmapper::tiedBaseRegister(sta::LibertyCell* cell,
                                           bool negedge,
                                           BaseRegister& base,
@@ -267,8 +265,6 @@ bool SequentialUnmapper::tiedBaseRegister(sta::LibertyCell* cell,
   return true;
 }
 
-// Without a plain flip-flop, the base cell is the tied register that costs
-// the least area, then the one with the smallest data pin capacitance.
 bool SequentialUnmapper::findTiedBaseSequentialCell(bool negedge,
                                                     BaseRegister& base)
 {
@@ -326,10 +322,10 @@ bool SequentialUnmapper::findInverterCell()
           continue;
         }
         if (!port->direction()->isOutput()) {
-          inputs++;
+          ++inputs;
           continue;
         }
-        outputs++;
+        ++outputs;
         const sta::FuncExpr* func = port->function();
         inverting = func != nullptr && func->op() == sta::FuncExpr::Op::not_
                     && func->left() != nullptr
@@ -380,9 +376,9 @@ bool SequentialUnmapper::findTwoInputGate(bool is_and, odb::dbMaster*& master)
         }
         if (port->direction()->isOutput()) {
           out_port = port;
-          outputs++;
+          ++outputs;
         } else {
-          inputs++;
+          ++inputs;
         }
       }
       if (inputs != 2 || outputs != 1) {
@@ -474,7 +470,7 @@ void SequentialUnmapper::run(const std::unordered_set<odb::dbInst*>* candidates)
     const int before = unmapped_;
     decompose(inst, seq);
     if (unmapped_ > before) {
-      per_cell[master_name]++;
+      ++per_cell[master_name];
     }
   }
   reportRun(per_cell, untouched);
@@ -497,13 +493,13 @@ std::vector<SequentialUnmapper::Register> SequentialUnmapper::collectRegisters(
     const sta::Sequential* seq
         = cell != nullptr ? singleSequential(cell) : nullptr;
     if (seq == nullptr) {
-      untouched.other++;
+      ++untouched.other;
     } else if (!seq->isRegister()) {
-      untouched.latches++;
+      ++untouched.latches;
     } else if (hasLiveAsyncControl(sta_, inst, seq)) {
-      untouched.async++;
+      ++untouched.async;
     } else if (hasScanPin(inst)) {
-      untouched.scan++;
+      ++untouched.scan;
     } else {
       registers.emplace_back(inst, seq);
     }
@@ -618,7 +614,7 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
                "and gates found",
                inst_name,
                inst_master);
-    skipped_++;
+    ++skipped_;
     return;
   }
 
@@ -634,7 +630,7 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
                   inst->getName(),
                   base.master->getName());
     network->deleteInstance(network->dbToSta(flop));
-    skipped_++;
+    ++skipped_;
     return;
   }
 
@@ -649,7 +645,7 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
   const std::vector<OutputMove> moves = collectOutputMoves(inst, out_pins);
   deleteRegister(sta_, inst);
   applyOutputMoves(moves);
-  unmapped_++;
+  ++unmapped_;
   traceDecompose(inst_name, inst_master, flop);
 }
 
@@ -743,7 +739,7 @@ void SequentialUnmapper::traceDecompose(const std::string& inst_name,
   std::map<std::string, int> gates;
   for (odb::dbInst* created : created_) {
     if (created->getMaster() != flop->getMaster()) {
-      gates[created->getMaster()->getName()]++;
+      ++gates[created->getMaster()->getName()];
     }
   }
   std::string gate_list;
@@ -830,8 +826,6 @@ SequentialUnmapper::RegPins SequentialUnmapper::getRegPins(
   return pins;
 }
 
-// The new cells and nets of a register go into the module it is in; a flat
-// netlist has only the top one.
 void SequentialUnmapper::setParent(odb::dbInst* inst)
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
@@ -841,7 +835,6 @@ void SequentialUnmapper::setParent(odb::dbInst* inst)
                                         : network->topInstance();
 }
 
-// A net the register read keeps its module net on the pin that reads it now.
 void SequentialUnmapper::connectInput(odb::dbITerm* pin, odb::dbNet* net)
 {
   pin->connect(net);
