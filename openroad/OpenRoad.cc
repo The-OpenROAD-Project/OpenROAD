@@ -120,44 +120,42 @@ OpenRoad::OpenRoad()
 
 OpenRoad::~OpenRoad()
 {
-  delete verilog_network_;
-  // Temporarily removed until a crash can be resolved
-  // deleteDbSta(sta_);
-  // sta::deleteAllMemory();
-  delete ioPlacer_;
-  delete resizer_;
-  delete synthesis_;
-  delete opendp_;
-  delete global_router_;
-  delete restructure_;
-  delete clock_gating_;
-  delete tritonCts_;
-  delete tapcell_;
-  delete macro_placer_;
-  delete example_;
-  delete field_solver_;
-  delete extractor_;
-  delete detailed_router_;
-  // Stop the web server first — its I/O threads access the database
-  // for tile rendering, so it must be torn down before the DB.
-  delete web_server_;
-  delete replace_;
-  delete pdnsim_;
-  delete finale_;
-  delete ram_gen_;
-  delete antenna_checker_;
-  odb::dbDatabase::destroy(db_);
-  delete partitionMgr_;
-  delete pdngen_;
-  delete icewall_;
-  delete distributer_;
-  delete stt_builder_;
-  delete dft_;
-  delete estimate_parasitics_;
   delete watermark_;
-  delete logger_;
+  // Stop the web server before tearing down STA or the database — its I/O
+  // threads access the database for tile rendering.
+  delete web_server_;
+  delete field_solver_;
+  delete example_;
+  delete dft_;
+  delete icewall_;
+  delete ram_gen_;
+  delete pdngen_;
+  delete pdnsim_;
+  delete replace_;
+  delete detailed_router_;
+  delete distributer_;
+  delete extractor_;
+  delete macro_placer_;
+  delete partitionMgr_;
+  delete tapcell_;
+  delete tritonCts_;
+  delete clock_gating_;
+  delete restructure_;
+  delete finale_;
+  delete synthesis_;
+  delete resizer_;
+  delete estimate_parasitics_;
+  delete global_router_;
+  delete opendp_;
+  delete antenna_checker_;
+  delete stt_builder_;
+  delete ioPlacer_;
   delete verilog_reader_;
+  delete verilog_network_;
+  delete sta_;
+  odb::dbDatabase::destroy(db_);
   delete service_registry_;
+  delete logger_;
 }
 
 sta::dbNetwork* OpenRoad::getDbNetwork()
