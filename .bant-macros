@@ -6,10 +6,10 @@
 #
 # To print a rule and apply the macro transformations, use the `-m` option
 # to bant. e.g.
-# bant print //src/gui:gui_qt -m
+# bant print //openroad/gui:gui_qt -m
 #
 # If bant is not installed locally, use
-# $(etc/get-bant-path.sh) //src/gui:gui_qt -m
+# $(etc/get-bant-path.sh) //openroad/gui:gui_qt -m
 #
 # File can be formatted using regular buildifier.
 
