@@ -114,6 +114,36 @@ TEST_F(TestSACorePenalties, GivingAZeroedWeightAPositiveValueMovesCostOffZero)
   EXPECT_GT(core->getNormCost(), 0.0f);
 }
 
+// The two macros pack either side by side or stacked, so the bounding box
+// is 40000 x 20000 in every perturbation and the area ratio is 0.08 in
+// every sample. The normalization factor is then equal to the value and
+// the normalized area term is equal to its weight.
+TEST_F(TestSACorePenalties, AreaTermIsNormalizedByItsAverage)
+{
+  const std::unique_ptr<SACoreHardMacro> core
+      = makeCore(SACoreWeights{.area = 1.0f});
+  core->initialize();
+
+  // The factor is a float average of ten samples, so it can sit an ULP
+  // away from the value.
+  EXPECT_FLOAT_EQ(core->getNormCost(), 1.0f);
+}
+
+// The macros (a 40000 x 20000 footprint either way they pack) always fit
+// comfortably inside the 100000 x 100000 outline, so the outline penalty's
+// raw value is exactly 0 in every sample, not just on average. Outline is
+// never weight-gated like wirelength/guidance/fence, so giving it a positive
+// weight actively exercises this: without flooring near-zero normalization
+// factors to 1.0, 0 value / 0 factor would be NaN and poison the whole cost.
+TEST_F(TestSACorePenalties, OutlineTermZeroAverageFloorsToOneInsteadOfNaN)
+{
+  const std::unique_ptr<SACoreHardMacro> core
+      = makeCore(SACoreWeights{.outline = 1.0f});
+  core->initialize();
+
+  EXPECT_EQ(core->getNormCost(), 0.0f);
+}
+
 // Whatever footprint the core settles on, it must consider itself as fitting
 // in an outline of exactly that size.
 TEST_F(TestSACorePenalties, FitsWithinItsOwnReportedDimensions)
