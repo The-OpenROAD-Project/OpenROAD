@@ -1,0 +1,346 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
+
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022-2025, The OpenROAD Authors
+load("//test:regression.bzl", "doc_check_test", "regression_test")
+
+package(features = ["layering_check"])
+
+COMPULSORY_TESTS = [
+    "array",
+    "array_ins_delay",
+    "array_max_wl",
+    "array_no_blockages",
+    "array_repair_clock_nets",
+    "buffer_no_max_cap",
+    "buffer_ports",
+    "check_buffers",
+    "check_buffers_blockages",
+    "check_buffers_blockages_merge",
+    "check_buffer_inference1",
+    "check_buffer_inference2",
+    "check_buffer_inference3",
+    "check_charBuf",
+    "check_max_fanout1",
+    "check_max_fanout2",
+    "check_max_fanout3",
+    "check_wire_rc_cts",
+    "clock_buffer_footprint",
+    "colocated_sinks",
+    "dummy_load",
+    "find_clock",
+    "find_clock_pad",
+    "gated_clock1",
+    "gated_clock2",
+    "gated_clock3",
+    "gated_clock4",
+    "gated_clock5",
+    "gated_clock_ndr_full",
+    "gated_clock_ndr_root",
+    "hier_insertion_delay",
+    "insertion_delay",
+    "inverter_sinks",
+    "inverters",
+    "lvt_lib",
+    "max_cap",
+    "max_wl_two_sinks",
+    "multi_mode",
+    "no_clocks",
+    "no_sinks",
+    "post_cts_opt",
+    "simple_test",
+    "simple_test_clustered",
+    "simple_test_clustered_max_cap",
+    "simple_test_hier",
+    "sink_clustering_collision",
+    "sink_clustering_single_sink",
+    "skip_nets",
+    "twice",
+    "useful_skew",
+    "virtual_clock_latency",
+]
+
+PASSFAIL_TESTS = [
+    "dangling_clock_inverter",
+    "dont_touch_sink",
+    "dont_touch_skipped_net",
+    "dont_touch_timing_buffer",
+    "hier_dummy_load",
+]
+
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
+
+filegroup(
+    name = "regression_resources",
+    # Dependencies could be specified more narrowly per test case,
+    # but at least it is not a glob of everything and there are
+    # per test glob patterns below.
+    srcs = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45.rc",
+        "Nangate45/Nangate45.tracks",
+        "Nangate45/Nangate45.vars",
+        "Nangate45/Nangate45_stdcell.lef",
+        "Nangate45/Nangate45_tech.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "helpers.tcl",
+        "ihp-sg13g2/setRC.tcl",
+        "ihp-sg13g2/sg13g2_stdcell.lef",
+        "ihp-sg13g2/sg13g2_stdcell_typ_1p20V_25C.lib",
+        "ihp-sg13g2/sg13g2_tech.lef",
+    ],
+)
+
+[
+    filegroup(
+        name = test_name + "_resources",
+        srcs = [":regression_resources"] + glob(
+            [
+                test_name + ".*",
+            ],
+        ) + {
+            "array": [
+                "array_tile.lef",
+                "array_tile.lib",
+            ],
+            "array_dummy": [
+                "array_tile.lef",
+                "array_tile.lib",
+            ],
+            "array_full_flow": [
+                "array_tile.lef",
+                "array_tile.lib",
+            ],
+            "array_ins_delay": [
+                "array_tile.lef",
+                "array_tile_ins_delay.lib",
+            ],
+            "array_max_wl": [
+                "array_tile.lef",
+                "array_tile.lib",
+            ],
+            "array_no_blockages": [
+                "array_tile.lef",
+                "array_tile.lib",
+            ],
+            "array_repair_clock_nets": [
+                "array_tile.lef",
+                "array_tile.lib",
+                "array_max_wl.defok",
+            ],
+            "buffer_no_max_cap": [
+                "16sinks.def",
+                "Nangate45/Nangate45_typ_no_max_cap.lib",
+            ],
+            "check_buffer_inference1": [
+                "ModNangate45/ModNangate45_typ.lib",
+                "check_buffers.def",
+            ],
+            "check_buffer_inference2": [
+                "ModNangate45/ModNangate45.lef",
+                "check_buffers.def",
+            ],
+            "check_buffer_inference3": [
+                "check_buffers.def",
+            ],
+            "check_charBuf": [
+                "16sinks.def",
+            ],
+            "check_max_fanout1": [
+                "ihp-sg13g2/setRC.tcl",
+                "ihp-sg13g2/sg13g2_stdcell.lef",
+                "ihp-sg13g2/sg13g2_stdcell_typ_1p20V_25C.lib",
+                "ihp-sg13g2/sg13g2_tech.lef",
+            ],
+            "check_max_fanout2": [
+                "check_buffers.def",
+            ],
+            "check_max_fanout3": [
+                "ihp-sg13g2/setRC.tcl",
+                "ihp-sg13g2/sg13g2_stdcell.lef",
+                "ihp-sg13g2/sg13g2_stdcell_typ_1p20V_25C.lib",
+                "ihp-sg13g2/sg13g2_tech.lef",
+            ],
+            "check_wire_rc_cts": [
+                "check_buffers.def",
+            ],
+            "clock_buffer_footprint": [
+                "ihp-sg13g2/setRC.tcl",
+                "ihp-sg13g2/sg13g2_stdcell_typ_1p20V_25C.lib",
+                "ihp-sg13g2/sg13g2_tech.lef",
+                "ihp-sg13g2/sg13g2_stdcell.lef",
+                "check_max_fanout3.def",
+            ],
+            "dont_touch_sink": [
+                "16sinks.def",
+            ],
+            "dont_touch_skipped_net": [
+                "16sinks.def",
+            ],
+            "dont_touch_timing_buffer": [
+                "16sinks.def",
+            ],
+            "dummy_load": [
+                "check_buffers.def",
+            ],
+            "find_clock": [
+                "16sinks.def",
+            ],
+            "find_clock_pad": [
+                "Nangate45/Nangate45.lef",
+                "pad.lef",
+                "Nangate45/Nangate45_typ.lib",
+                "pad.lib",
+            ],
+            "gated_clock5": [
+                "array_tile_ins_delay.lef",
+                "array_tile_ins_delay.lib",
+            ],
+            "gated_clock_ndr_full": [
+                "cts-helpers.tcl",
+                "gated_clock2.def",
+            ],
+            "gated_clock_ndr_root": [
+                "cts-helpers.tcl",
+                "gated_clock2.def",
+            ],
+            "hier_dummy_load": [
+                "simple_test_hier.def",
+                "simple_test_hier.v",
+            ],
+            "hier_insertion_delay": [
+                "array_tile_ins_delay.lef",
+                "array_tile_ins_delay.lib",
+            ],
+            "insertion_delay": [
+                "array_tile_ins_delay.lef",
+                "array_tile_ins_delay.lib",
+            ],
+            "inverters": [
+                "array_tile_ins_delay.lef",
+                "array_tile_ins_delay.lib",
+            ],
+            "lvt_lib": [
+                "cts-helpers.tcl",
+                "Nangate45/Nangate45_lvt.lef",
+                "Nangate45/Nangate45_lvt.lib",
+            ],
+            "max_cap": [
+                "//openroad/rsz/test:hi_fanout.tcl",
+                "sky130hs/sky130hs.rc",
+                "sky130hs/sky130hs.tlef",
+                "sky130hs/sky130hs_std_cell.lef",
+                "sky130hs/sky130hs_tt.lib",
+            ],
+            "no_clocks": [
+                "no_clock.def",
+            ],
+            "post_cts_opt": [
+                "cts-helpers.tcl",
+            ],
+            "simple_test": [
+                "16sinks.def",
+                "simple_test_out.defok",
+            ],
+            "simple_test_clustered": [
+                "cts-helpers.tcl",
+            ],
+            "simple_test_clustered_max_cap": [
+                "cts-helpers.tcl",
+            ],
+            "simple_test_hier": [
+                "simple_test_hier_out.vok",
+            ],
+            "skip_nets": [
+                "gated_clock2.def",
+            ],
+            "twice": [
+                "16sinks.def",
+            ],
+            "useful_skew": [
+                "array_tile_ins_delay.lef",
+                "array_tile_ins_delay.lib",
+            ],
+            "virtual_clock_latency": [
+                "16sinks.def",
+            ],
+        }.get(test_name, []),
+    )
+    for test_name in ALL_TESTS
+]
+
+[
+    regression_test(
+        name = test_name,
+        check_log = False if test_name in PASSFAIL_TESTS else True,
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
+        data = [":" + test_name + "_resources"],
+        tags = [],
+        visibility = ["//visibility:public"],
+    )
+    for test_name in ALL_TESTS
+]
+
+cc_test(
+    name = "cts_unittest",
+    srcs = ["cts_unittest.cc"],
+    deps = [
+        "//openroad/cts:cts_impl",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestClockGateSinks",
+    srcs = ["cpp/TestClockGateSinks.cc"],
+    data = ["cpp/clock_gate_sinks.v"],
+    deps = [
+        "//openroad/cts:cts_impl",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestDelayBufList",
+    srcs = ["cpp/TestDelayBufList.cc"],
+    data = [
+        "clkdly_footprint.lib",
+        "clkdly_name.lib",
+        "ihp-sg13g2/sg13g2_stdcell_typ_1p20V_25C.lib",
+    ],
+    deps = [
+        "//openroad/cts:cts_impl",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+py_test(
+    name = "cts_man_tcl_check",
+    srcs = ["cts_man_tcl_check.py"],
+    data = ["//openroad/cts:doc_files"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "cts_readme_msgs_check",
+    data = [
+        "//openroad/cts:doc_files",
+        "//openroad/cts:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)

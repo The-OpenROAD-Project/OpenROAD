@@ -4,7 +4,7 @@ Source: <https://github.com/antirez/linenoise> at tag `2.0`.
 License: BSD-2-Clause (see `LICENSE`).
 
 Used by OpenROAD's interactive CLI Tcl REPL
-(`src/tcl_readline_setup.cc`) — replaces the previous tclreadline + GNU
+(`openroad/tcl_readline_setup.cc`) — replaces the previous tclreadline + GNU
 readline stack (the latter was GPL).
 
 ## Local divergence from upstream
