@@ -151,14 +151,9 @@ bool RetimingGraph::fencesChain(odb::dbNet* net) const
   return false;
 }
 
-void RetimingGraph::hold(const std::unordered_set<odb::dbInst*>& registers)
-{
-  held_ = registers;
-}
-
 bool RetimingGraph::isDontTouch(odb::dbInst* reg) const
 {
-  if (fenced_.contains(reg) || held_.contains(reg) || reg->isDoNotTouch()
+  if (fenced_.contains(reg) || reg->isDoNotTouch()
       || isDontTouchRegister(sta_, reg)) {
     return true;
   }

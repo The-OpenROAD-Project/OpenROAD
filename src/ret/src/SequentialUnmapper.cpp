@@ -484,7 +484,9 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
                                    const sta::Sequential* seq)
 {
   in_port_net_.clear();
+  mod_net_.clear();
   created_.clear();
+  setParent(inst);
   out_port_ = seq->output();
   out_inv_port_ = seq->outputInv();
   const std::string inst_name = inst->getName();
@@ -525,8 +527,8 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
 
   state_net_ = newNet("unmap_state");
   pins.q->connect(state_net_);
-  pins.clk->connect(clock_net);
-  pins.d->connect(synth(seq->data()));
+  connectInput(pins.clk, clock_net);
+  connectInput(pins.d, synth(seq->data()));
 
   const std::vector<OutputMove> moves = collectOutputMoves(inst, out_pins);
   network->deleteInstance(network->dbToSta(inst));
@@ -556,6 +558,9 @@ odb::dbNet* SequentialUnmapper::collectRegisterNets(
           = pin != nullptr ? network->libertyPort(pin) : nullptr;
       if (port != nullptr && iterm->getNet() != nullptr) {
         in_port_net_[port] = iterm->getNet();
+        if (iterm->getModNet() != nullptr) {
+          mod_net_[iterm->getNet()] = iterm->getModNet();
+        }
       }
     } else if (iterm->getIoType() == odb::dbIoType::OUTPUT
                && iterm->getNet() != nullptr) {
@@ -577,6 +582,7 @@ SequentialUnmapper::collectOutputMoves(
     const bool inverted = port != nullptr && isInverted(port->function());
     OutputMove move;
     move.old_net = out_pin->getNet();
+    move.old_mod_net = out_pin->getModNet();
     move.new_net = inverted ? makeInverter(state_net_) : state_net_;
     for (odb::dbITerm* load : move.old_net->getITerms()) {
       if (load->getInst() != inst) {
@@ -606,6 +612,10 @@ void SequentialUnmapper::applyOutputMoves(const std::vector<OutputMove>& moves)
     }
     if (destroyed.insert(move.old_net).second) {
       network->deleteNet(network->dbToSta(move.old_net));
+      if (move.old_mod_net != nullptr
+          && move.old_mod_net->connectionCount() == 0) {
+        odb::dbModNet::destroy(move.old_mod_net);
+      }
     }
   }
 }
@@ -704,13 +714,32 @@ SequentialUnmapper::RegPins SequentialUnmapper::getRegPins(
   return pins;
 }
 
+// The new cells and nets of a register go into the module it is in; a flat
+// netlist has only the top one.
+void SequentialUnmapper::setParent(odb::dbInst* inst)
+{
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  parent_mod_inst_
+      = network->hasHierarchy() ? inst->getModule()->getModInst() : nullptr;
+  parent_ = parent_mod_inst_ != nullptr ? network->dbToSta(parent_mod_inst_)
+                                        : network->topInstance();
+}
+
+// A net the register read keeps its module net on the pin that reads it now.
+void SequentialUnmapper::connectInput(odb::dbITerm* pin, odb::dbNet* net)
+{
+  pin->connect(net);
+  auto it = mod_net_.find(net);
+  if (it != mod_net_.end()) {
+    pin->connect(it->second);
+  }
+}
+
 odb::dbNet* SequentialUnmapper::newNet(const char* base_name)
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
-  return network->staToDb(
-      network->makeNet(base_name,
-                       network->topInstance(),
-                       odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE));
+  return network->staToDb(network->makeNet(
+      base_name, parent_, odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE));
 }
 
 odb::dbInst* SequentialUnmapper::newInst(const char* base_name,
@@ -718,10 +747,12 @@ odb::dbInst* SequentialUnmapper::newInst(const char* base_name,
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   const std::string name = block_->makeNewInstName(
-      nullptr, base_name, odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
+      parent_mod_inst_,
+      base_name,
+      odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
   sta::LibertyCell* cell = network->libertyCell(network->dbToSta(master));
-  odb::dbInst* inst = network->staToDb(
-      network->makeInstance(cell, name, network->topInstance()));
+  odb::dbInst* inst
+      = network->staToDb(network->makeInstance(cell, name, parent_));
   inst->setSourceType(odb::dbSourceType::TIMING);
   created_.push_back(inst);
   return inst;
@@ -736,7 +767,7 @@ odb::dbNet* SequentialUnmapper::makeInverter(odb::dbNet* input)
       continue;
     }
     if (iterm->getIoType() == odb::dbIoType::INPUT) {
-      iterm->connect(input);
+      connectInput(iterm, input);
     } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
       iterm->connect(output);
     }
@@ -757,7 +788,7 @@ odb::dbNet* SequentialUnmapper::makeTwoInputGate(bool is_and,
       continue;
     }
     if (iterm->getIoType() == odb::dbIoType::INPUT) {
-      iterm->connect(first_input ? a : b);
+      connectInput(iterm, first_input ? a : b);
       first_input = false;
     } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
       iterm->connect(output);

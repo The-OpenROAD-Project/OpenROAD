@@ -1,0 +1,170 @@
+module top (a,
+    b,
+    c,
+    clk,
+    d,
+    rst_n,
+    y,
+    z);
+ input a;
+ input b;
+ input c;
+ input clk;
+ input d;
+ input rst_n;
+ output y;
+ output z;
+
+
+ mid u_mid (.a(a),
+    .b(b),
+    .c(c),
+    .d(d),
+    .rn(rst_n),
+    .ck(clk),
+    .y(y),
+    .z(z));
+endmodule
+module leaf_a (a,
+    b,
+    rn,
+    ck,
+    y);
+ input a;
+ input b;
+ input rn;
+ input ck;
+ output y;
+
+ wire d1;
+ wire d2;
+ wire d3;
+ wire n1;
+ wire n2;
+ wire n3;
+ wire n4;
+ wire n5;
+ wire n6;
+ wire ret_net_9;
+ wire q3;
+ wire unmap_net_2;
+ wire unmap_net_4;
+
+ AND2_X1 g0 (.A1(a),
+    .A2(rn),
+    .ZN(d1));
+ AND2_X1 g1 (.A1(b),
+    .A2(rn),
+    .ZN(d2));
+ NAND2_X1 g2 (.A1(unmap_net_2),
+    .A2(unmap_net_4),
+    .ZN(n1));
+ INV_X1 g3 (.A(n1),
+    .ZN(n2));
+ INV_X1 g4 (.A(n2),
+    .ZN(n3));
+ INV_X1 g5 (.A(n3),
+    .ZN(n4));
+ INV_X1 g6 (.A(n4),
+    .ZN(n5));
+ INV_X1 g7 (.A(n5),
+    .ZN(n6));
+ AND2_X1 g8 (.A1(ret_net_9),
+    .A2(rn),
+    .ZN(d3));
+ BUF_X1 g9 (.A(q3),
+    .Z(y));
+ DFF_X1 r3 (.D(d3),
+    .CK(ck),
+    .Q(q3));
+ DFF_X1 ret_ff_9 (.D(n6),
+    .CK(ck),
+    .Q(ret_net_9));
+ INV_X1 unmap_inv_2 (.A(d1),
+    .ZN(unmap_net_2));
+ INV_X1 unmap_inv_4 (.A(d2),
+    .ZN(unmap_net_4));
+endmodule
+module leaf_b (a,
+    b,
+    rn,
+    ck,
+    y);
+ input a;
+ input b;
+ input rn;
+ input ck;
+ output y;
+
+ wire d1;
+ wire d2;
+ wire d3;
+ wire n1;
+ wire n2;
+ wire n3;
+ wire n4;
+ wire ret_net_10;
+ wire q3;
+ wire unmap_net_6;
+ wire unmap_net_8;
+
+ AND2_X1 g0 (.A1(a),
+    .A2(rn),
+    .ZN(d1));
+ AND2_X1 g1 (.A1(b),
+    .A2(rn),
+    .ZN(d2));
+ NAND2_X1 g2 (.A1(unmap_net_6),
+    .A2(unmap_net_8),
+    .ZN(n1));
+ INV_X1 g3 (.A(n1),
+    .ZN(n2));
+ INV_X1 g4 (.A(n2),
+    .ZN(n3));
+ INV_X1 g5 (.A(n3),
+    .ZN(n4));
+ AND2_X1 g8 (.A1(ret_net_10),
+    .A2(rn),
+    .ZN(d3));
+ BUF_X1 g9 (.A(q3),
+    .Z(y));
+ DFF_X1 r3 (.D(d3),
+    .CK(ck),
+    .Q(q3));
+ DFF_X1 ret_ff_10 (.D(n4),
+    .CK(ck),
+    .Q(ret_net_10));
+ INV_X1 unmap_inv_6 (.A(d1),
+    .ZN(unmap_net_6));
+ INV_X1 unmap_inv_8 (.A(d2),
+    .ZN(unmap_net_8));
+endmodule
+module mid (a,
+    b,
+    c,
+    d,
+    rn,
+    ck,
+    y,
+    z);
+ input a;
+ input b;
+ input c;
+ input d;
+ input rn;
+ input ck;
+ output y;
+ output z;
+
+
+ leaf_a u_a (.a(a),
+    .b(b),
+    .rn(rn),
+    .ck(ck),
+    .y(y));
+ leaf_b u_b (.a(c),
+    .b(d),
+    .rn(rn),
+    .ck(ck),
+    .y(z));
+endmodule

@@ -259,4 +259,58 @@ TEST_F(SequentialUnmapperRunTest, UnconnectedInputIsSkipped)
   EXPECT_EQ(countMaster("AND2"), 0);
 }
 
+// In a hierarchical netlist the cells that replace a register are created
+// in the register's module: ff1 is in `child` (instance u1), ff2 in the top
+// module, and each one's base flop and gates stay where it was.
+TEST_F(SequentialUnmapperRunTest, CellsStayInTheRegistersModule)
+{
+  ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kBasic}));
+  getDb()->setHierarchy(true);
+  odb::dbModule* top = block_->getTopModule();
+  odb::dbModule* child = odb::dbModule::create(block_, "child");
+  ASSERT_NE(child, nullptr);
+  ASSERT_NE(odb::dbModInst::create(top, child, "u1"), nullptr);
+  makeInputPorts({"d1", "e1", "d2", "e2", "clk"});
+
+  tst::InstOptions in_child;
+  in_child.parent_module = child;
+  in_child.iterms = {{"d1", "D"}, {"e1", "EN"}, {"clk", "CK"}, {"q1", "Q"}};
+  makeInst(block_, getDb()->findMaster("DFFE_PP"), "u1/ff1", in_child);
+  makeOutputPort("q1");
+
+  tst::InstOptions in_top;
+  in_top.iterms = {{"d2", "D"}, {"e2", "EN"}, {"clk", "CK"}, {"q2", "Q"}};
+  makeInst(block_, getDb()->findMaster("DFFE_PP"), "ff2", in_top);
+  makeOutputPort("q2");
+
+  ret::SequentialUnmapper unmapper(getDb(), getSta(), getLogger());
+  ASSERT_TRUE(unmapper.prepare());
+  unmapper.run();
+
+  EXPECT_EQ(countMaster("DFFE_PP"), 0);
+  EXPECT_EQ(countMaster("DFF_P"), 2);
+  int in_child_count = 0;
+  int in_top_count = 0;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->getModule() == child) {
+      in_child_count++;
+      EXPECT_EQ(inst->getName().rfind("u1/", 0), 0u)
+          << inst->getName() << " is in `child` without its instance path";
+    } else {
+      in_top_count++;
+      EXPECT_EQ(inst->getModule(), top);
+    }
+  }
+  // One enable flop becomes DFF_P + INV + 2 AND2 + OR2.
+  EXPECT_EQ(in_child_count, 5);
+  EXPECT_EQ(in_top_count, 5);
+
+  odb::dbBTerm* port = block_->findBTerm("q1");
+  ASSERT_NE(port, nullptr);
+  odb::dbInst* base = driverOf(port->getNet());
+  ASSERT_TRUE(isMaster(base, "DFF_P"));
+  EXPECT_EQ(base->getModule(), child);
+  EXPECT_EQ(base->findITerm("CK")->getNet(), block_->findNet("clk"));
+}
+
 }  // namespace

@@ -33,7 +33,7 @@ struct RegisterClass;
 // changed are rebuilt.  Registers move by class (see RegisterUtils.h); a
 // register that cannot keep its class is first unmapped to the base cell
 // plus logic (SequentialUnmapper).  In a hierarchical netlist a register
-// stays inside its module and is never unmapped.
+// stays inside its module.
 class Retimer
 {
  public:
@@ -86,10 +86,6 @@ class Retimer
   odb::dbBlock* getBlock();
   odb::dbNet* findClockNet(odb::dbBlock* block);
   void checkRegisters(odb::dbBlock* block);
-  void searchWithoutUnmapping(std::unique_ptr<RetimingGraph>& graph,
-                              std::vector<int>& r,
-                              std::unordered_set<odb::dbInst*>& movers,
-                              int max_moves);
 
   std::vector<Group> collectGroups(const RetimingGraph& graph,
                                    const std::vector<int>& r) const;

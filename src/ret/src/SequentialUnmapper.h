@@ -15,6 +15,7 @@
 namespace sta {
 class dbSta;
 class FuncExpr;
+class Instance;
 class LibertyPort;
 class Sequential;
 }  // namespace sta
@@ -29,6 +30,9 @@ namespace ret {
 // (inverters, 2-input ANDs and ORs, tie cells) computing the cell's liberty
 // `next_state`.  Registers with asynchronous controls, latches, scan cells
 // and multi-bit cells are left untouched.
+//
+// In a hierarchical netlist the cells that replace a register are created
+// in the register's module.
 class SequentialUnmapper
 {
  public:
@@ -66,6 +70,7 @@ class SequentialUnmapper
   struct OutputMove
   {
     odb::dbNet* old_net = nullptr;
+    odb::dbModNet* old_mod_net = nullptr;
     odb::dbNet* new_net = nullptr;
     std::vector<odb::dbITerm*> loads;
     std::vector<odb::dbBTerm*> ports;
@@ -99,6 +104,8 @@ class SequentialUnmapper
   bool isInverted(const sta::FuncExpr* func) const;
   RegPins getRegPins(odb::dbInst* inst, const sta::Sequential* seq) const;
 
+  void setParent(odb::dbInst* inst);
+  void connectInput(odb::dbITerm* pin, odb::dbNet* net);
   odb::dbNet* newNet(const char* base_name);
   odb::dbInst* newInst(const char* base_name, odb::dbMaster* master);
   odb::dbNet* makeInverter(odb::dbNet* input);
@@ -123,6 +130,10 @@ class SequentialUnmapper
   odb::dbMTerm* tie0_out_mterm_ = nullptr;
 
   std::unordered_map<const sta::LibertyPort*, odb::dbNet*> in_port_net_;
+  // Module net of each net the register reads; empty in a flat netlist.
+  std::unordered_map<odb::dbNet*, odb::dbModNet*> mod_net_;
+  sta::Instance* parent_ = nullptr;
+  odb::dbModInst* parent_mod_inst_ = nullptr;
   const sta::LibertyPort* out_port_ = nullptr;
   const sta::LibertyPort* out_inv_port_ = nullptr;
   odb::dbNet* state_net_ = nullptr;

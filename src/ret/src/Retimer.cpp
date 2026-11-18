@@ -150,10 +150,7 @@ void Retimer::retime(int max_moves)
   search.run(max_moves);
   std::vector<int> r = search.getRetiming();
 
-  std::unordered_set<odb::dbInst*> movers = moversToUnmap(*graph, r);
-  if (sta_->getDbNetwork()->hasHierarchy()) {
-    searchWithoutUnmapping(graph, r, movers, max_moves);
-  }
+  const std::unordered_set<odb::dbInst*> movers = moversToUnmap(*graph, r);
   const int unplaced_before = countPlacement(block).unplaced;
   // An error while the netlist is being edited restores it.
   odb::dbDatabase::beginEco(block);
@@ -176,32 +173,6 @@ void Retimer::retime(int max_moves)
                   "New instances left unplaced: {}. Run global_placement "
                   "-incremental to place them.",
                   after.unplaced - unplaced_before);
-  }
-}
-
-// A hierarchical netlist is not unmapped: the registers a slide would unmap
-// are held in place, and the search repeats until no slide needs one.
-void Retimer::searchWithoutUnmapping(std::unique_ptr<RetimingGraph>& graph,
-                                     std::vector<int>& r,
-                                     std::unordered_set<odb::dbInst*>& movers,
-                                     int max_moves)
-{
-  std::unordered_set<odb::dbInst*> held;
-  while (!movers.empty()) {
-    held.insert(movers.begin(), movers.end());
-    logger_->info(utl::RET,
-                  46,
-                  "Hierarchical netlist: {} registers that a slide would "
-                  "unmap stay in place; repeating the search.",
-                  movers.size());
-    graph = std::make_unique<RetimingGraph>(db_, sta_, logger_);
-    graph->hold(held);
-    graph->build();
-    graph->report();
-    Retime search(graph.get(), sta_, logger_, dff_master_);
-    search.run(max_moves);
-    r = search.getRetiming();
-    movers = moversToUnmap(*graph, r);
   }
 }
 

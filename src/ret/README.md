@@ -55,8 +55,8 @@ defined with `create_clock`; gated copies of it are fine.
 In a hierarchical netlist (`link_design -hier`) a register stays inside its
 module: a gate is crossed only when the gate that drives its registers, the
 registers, the gate itself and the gates it drives are all in one module.
-A hierarchical netlist is also not unmapped, so a register that a move
-would have to unmap stays in place. A flat netlist has neither limit.
+The cells that replace an unmapped register are created in its module. A
+flat netlist has no boundaries to keep.
 
 ```tcl
 retime
