@@ -204,7 +204,7 @@ size_t NameInterner::size() const
 
 size_t NameInterner::memoryBytes() const
 {
-  absl::MutexLock lock(&mutex_);
+  absl::MutexLock lock(mutex_);
   return chunk_bytes_ + strings_.capacity() * sizeof(const char*)
          + hashes_.capacity() * sizeof(uint32_t)
          + chunks_.capacity() * sizeof(std::unique_ptr<char[]>)

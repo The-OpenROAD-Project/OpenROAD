@@ -81,7 +81,7 @@ TEST(NameInternerTest, ManyNamesStayValid)
   }
   const absl::flat_hash_set<NameId> unique(ids.begin(), ids.end());
   EXPECT_EQ(unique.size(), ids.size());
-  EXPECT_GT(names.memoryBytes(), kNames * 10);
+  EXPECT_GT(names.memoryBytes(), size_t{kNames} * 10);
 }
 
 TEST(NameInternerTest, ReadOnlyModeAllowsLookupsOnly)
@@ -105,8 +105,9 @@ TEST(NameInternerTest, IdsAreDenseInInsertionOrder)
 {
   NameInterner names;
   names.setMode(TableMode::kSingleWrite);
-  for (uint32_t i = 0; i < 1000; ++i) {
-    ASSERT_EQ(names.intern(absl::StrCat("n", i)), NameId(i));
+  for (int i = 0; i < 1000; ++i) {
+    ASSERT_EQ(names.intern(absl::StrCat("n", i)),
+              NameId(static_cast<uint32_t>(i)));
   }
   EXPECT_EQ(names.intern("n500"), NameId(500));  // repeats get no new id
   EXPECT_EQ(names.intern("new"), NameId(1000));
@@ -130,9 +131,10 @@ TEST(NameInternerTest, LengthPrefixesAndChunkBoundaries)
   NameInterner names;
   names.setMode(TableMode::kSingleWrite);
   std::vector<std::string> texts;
-  for (const size_t length :
+  for (const int length :
        {0, 1, 127, 128, 129, 1000, 16383, 16384, 16385, 300000}) {
-    texts.emplace_back(length, static_cast<char>('a' + length % 26));
+    texts.emplace_back(static_cast<size_t>(length),
+                       static_cast<char>('a' + length % 26));
     texts.push_back(absl::StrCat("small", length));
   }
   std::vector<NameId> ids;
@@ -140,7 +142,8 @@ TEST(NameInternerTest, LengthPrefixesAndChunkBoundaries)
   for (const std::string& text : texts) {
     ids.push_back(names.intern(text));
   }
-  for (size_t i = 0; i < texts.size(); ++i) {
+  const int num_texts = static_cast<int>(texts.size());
+  for (int i = 0; i < num_texts; ++i) {
     ASSERT_EQ(names.name(ids[i]), texts[i]) << i;
     ASSERT_EQ(names.find(texts[i]), ids[i]) << i;
   }
@@ -167,7 +170,7 @@ TEST(NameInternerTest, InternPrefixedJoinsPrefixAndLeaf)
 TEST(NameInternerTest, SmallFootprint)
 {
   NameInterner empty;
-  EXPECT_LT(empty.memoryBytes(), 1024);  // no chunk until the first name
+  EXPECT_LT(empty.memoryBytes(), 1024u);  // no chunk until the first name
 
   NameInterner names;
   names.setMode(TableMode::kSingleWrite);
@@ -181,7 +184,7 @@ TEST(NameInternerTest, SmallFootprint)
   // About 21 B per name plus the string and its length byte; allow for the
   // table's load factor and the chunk slack.
   const size_t overhead = names.memoryBytes() - text_bytes;
-  EXPECT_LT(overhead / kNames, 40) << names.memoryBytes();
+  EXPECT_LT(overhead / kNames, 40u) << names.memoryBytes();
 }
 
 }  // namespace
