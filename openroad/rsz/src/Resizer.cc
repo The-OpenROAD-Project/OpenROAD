@@ -875,6 +875,10 @@ void Resizer::findBuffers()
     return;
   }
 
+  // Hold repair restores the buffer list without restoring library data.
+  if (lib_data_exclude_clock_buffers_ != exclude_clock_buffers_) {
+    buffer_cells_.clear();
+  }
   if (!buffer_cells_.empty()) {
     return;
   }
@@ -1077,8 +1081,9 @@ void Resizer::findBuffers()
 
 void Resizer::findBuffersNoPruning()
 {
-  // A dont_use change clears buffer_cells_; the library data is stale then.
-  if (!lib_data_ || buffer_cells_.empty()) {
+  // A populated buffer list may belong to the previous hold buffer filter.
+  if (lib_data_exclude_clock_buffers_ != exclude_clock_buffers_) {
+    buffer_cells_.clear();
     sta::LibertyCellSeq buffer_list;
     getBufferList(buffer_list);
   }
@@ -2030,6 +2035,10 @@ std::string Resizer::delayEstimatorNames()
 
 void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
 {
+  if (lib_data_exclude_clock_buffers_ != exclude_clock_buffers_) {
+    buffer_fast_sizes_.clear();
+    vt_equiv_cells_cache_.clear();
+  }
   if (!lib_data_) {
     lib_data_ = std::make_unique<LibraryAnalysisData>();
   } else {
@@ -2039,7 +2048,7 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
     lib_data_->sorted_vt_categories.clear();
   }
 
-  // VT categories of the buffers, dont_use ones included
+  // Count only identified VT categories, including dont_use buffers.
   std::set<VTCategory> vt_categories_with_dont_use;
   sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
@@ -2057,7 +2066,10 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
         if (!master) {
           continue;
         }
-        vt_categories_with_dont_use.insert(cellVTType(master));
+        const VTCategory vt_category = cellVTType(master);
+        if (vt_category.vt_index != 0) {
+          vt_categories_with_dont_use.insert(vt_category);
+        }
         if (dontUse(buffer)) {
           continue;
         }
@@ -2071,8 +2083,6 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
         }
 
         // Track VT category leakage data
-        VTCategory vt_category = cellVTType(master);
-
         // Get or create VT leakage stats for this category
         VTLeakageStats& vt_stats
             = lib_data_->vt_leakage_by_category[vt_category];
@@ -2105,6 +2115,7 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
     // Sort VT categories by average leakage
     lib_data_->sort_vt_categories();
   }
+  lib_data_exclude_clock_buffers_ = exclude_clock_buffers_;
 }
 
 // Filter equivalent cells based on the following liberty attributes:
@@ -2284,18 +2295,14 @@ static size_t getCommonLength(const std::string& string1,
 // keep only one cell that most closely matches the source cell name
 sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
 {
+  // Rebuild stale library data before consulting cached VT equivalents.
+  if (lib_data_exclude_clock_buffers_ != exclude_clock_buffers_) {
+    sta::LibertyCellSeq buffer_list;
+    getBufferList(buffer_list);
+  }
   auto cache_it = vt_equiv_cells_cache_.find(source_cell);
   if (cache_it != vt_equiv_cells_cache_.end()) {
     return cache_it->second;
-  }
-
-  // A dont_use change clears buffer_cells_; rebuild the library data when a
-  // caller asks before findBuffers() does.
-  if (!lib_data_ || buffer_cells_.empty()) {
-    sta::LibertyCellSeq buffer_list;
-    getBufferList(buffer_list);
-    // We just need library data
-    (void) buffer_list;
   }
 
   // A dont_use cell keeps its equivalents in the one usable VT so that a VT
@@ -3688,6 +3695,7 @@ void Resizer::setDontUse(sta::LibertyCell* cell, bool dont_use)
 
   // Reset buffer set and swappable cells cache to ensure they honor dont_use_
   buffer_cells_.clear();
+  lib_data_exclude_clock_buffers_.reset();
   buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
   port_buffer_ = nullptr;
@@ -3706,6 +3714,7 @@ void Resizer::resetDontUse()
 
   // Reset buffer set and swappable cells cache to ensure they honor dont_use_
   buffer_cells_.clear();
+  lib_data_exclude_clock_buffers_.reset();
   buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
   port_buffer_ = nullptr;
