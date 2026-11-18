@@ -1,0 +1,404 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022-2025, The OpenROAD Authors
+
+load("//test:regression.bzl", "doc_check_test", "regression_test")
+
+package(features = ["layering_check"])
+
+COMPULSORY_TESTS = [
+    "aes",
+    "blockage01",
+    "blocked_via_layers",
+    "blocked_via_pins",
+    "cell_on_block1",
+    "cell_on_block2",
+    "centered_floorplan",
+    "check1",
+    "check2",
+    "check3",
+    "check4",
+    "check5",
+    "check6",
+    "check7",
+    "check8",
+    "check9",
+    "check_fixed_only",
+    "check_placeable_only",
+    "diamond01",
+    "diamond_multi_height",
+    "diamond_one_site_gap",
+    "diamond_regions",
+    "fence01",
+    "fence02",
+    "fence03",
+    "fillers1",
+    "fillers2",
+    "fillers2_verbose",
+    "fillers3",
+    "fillers4",
+    "fillers5",
+    "fillers6",
+    "fillers7",
+    "fillers8",
+    "fillers9",
+    "fillers9_verbose",
+    "fillers10",
+    "fillers11",
+    "fillers12",
+    "fragmented_row01",
+    "fragmented_row02",
+    "fragmented_row03",
+    "fragmented_row04",
+    "gcd",
+    "hybrid_cells",
+    "hybrid_cells2",
+    "hybrid_cells_block",
+    "ibex",
+    "macro_placed_not_fixed",
+    "max_disp1",
+    "mirror1",
+    "mirror2",
+    "mirror3",
+    "mirror_edge_spacing",
+    "multi_height_one_site_gap_disallow",
+    "multi_height_power_align",
+    "multi_height_rows",
+    "obstruction1",
+    "obstruction2",
+    "one_site_gap_disallow",
+    "pad01",
+    "pad02",
+    "pad03",
+    "pad04",
+    "pad05",
+    "pad06",
+    "pad07",
+    "pad08",
+    "pad09",
+    "regions1",
+    "regions2",
+    "regions3",
+    "report_failures",
+    "row_boundary_filter",
+    "simple01",
+    "simple02",
+    "simple03",
+    "simple04",
+    "simple05",
+    "simple07",
+    "simple08",
+    "simple09",
+    "simple10",
+    "edge_spacing",
+    "aes-opt",
+    "blockage1-opt",
+    "gcd-opt",
+    "gcd_no_one_site_gaps-opt",
+    "gcd_no_one_site_sanity",
+    "ibex-opt",
+    "multi_height1-opt",
+    "edge_spacing-opt",
+    "regions1-opt",
+    "regions2-opt",
+]
+
+PASSFAIL_TESTS = [
+    "pdn_via",
+    "pdn_via_array",
+    "pdn_via_cut",
+    "pdn_via_euclidean",
+    "pdn_via_mirror",
+    "repair_pin_access",
+    "repair_pin_access_failure",
+    "repair_pin_access_phase",
+]
+
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
+
+filegroup(
+    name = "regression_resources",
+    srcs = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "helpers.tcl",
+    ],
+)
+
+[
+    filegroup(
+        name = test_name + "_resources",
+        srcs = [":regression_resources"] + glob(
+            [
+                test_name + ".*",
+            ],
+        ) + {
+            "aes": [
+                "aes_cipher_top_replace.def",
+            ],
+            "blockage1-opt": [
+                "sky130hd/sky130hd.tlef",
+                "sky130hd/sky130hd_std_cell.lef",
+            ],
+            "blocked_via_layers": [
+                "asap7/asap7_tech_1x_201209.lef",
+                "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
+            ],
+            "blocked_via_pins": [
+                "asap7/asap7_tech_1x_201209.lef",
+                "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
+            ],
+            "cell_on_block1": [
+                "block2.lef",
+            ],
+            "cell_on_block2": [
+                "block2.lef",
+                "sky130hd/sky130hd.tlef",
+                "sky130hd/sky130hd_std_cell.lef",
+            ],
+            "check1": [
+                "simple01.def",
+            ],
+            "check5": [
+                "extra.lef",
+            ],
+            "check6": [
+                "extra.lef",
+            ],
+            "check7": [
+                "check6.def",
+                "extra.lef",
+            ],
+            "check8": [
+                "extra.lef",
+            ],
+            "check9": [
+                "extra.lef",
+            ],
+            "check_fixed_only": [
+                "extra.lef",
+            ],
+            "check_placeable_only": [
+                "check_fixed_only.def",
+                "extra.lef",
+            ],
+            "diamond01": [
+                "gcd_replace.def",
+            ],
+            "diamond_multi_height": [
+                "Nangate45/fake_macros.lef",
+                "multi_height_rows.def",
+            ],
+            "diamond_one_site_gap": [
+                "one_site_gap_disallow.def",
+            ],
+            "diamond_regions": [
+                "regions1.def",
+            ],
+            "edge_spacing": [
+                "multi_height_rows.def",
+                "Nangate45/fake_macros.lef",
+            ],
+            "edge_spacing-opt": [
+                "edge_spacing.lef",
+                "multi_height_rows.def",
+                "Nangate45/fake_macros.lef",
+            ],
+            "fillers1": [
+                "simple01.def",
+            ],
+            "fillers10": [
+                "simple09.def",
+                "Nangate45/fakeram45_64x7.lef",
+            ],
+            "fillers11": [
+                "simple09.def",
+                "Nangate45/fakeram45_64x7.lef",
+            ],
+            "fillers2": [
+                "simple01.def",
+            ],
+            "fillers2_verbose": [
+                "simple01.def",
+            ],
+            "fillers3": [
+                "simple01.def",
+            ],
+            "fillers4": [
+                "fill3.lef",
+            ],
+            "fillers5": [
+                "fragmented_row04.def",
+            ],
+            "fillers6": [
+                "fill3.lef",
+            ],
+            "fillers7": [
+                "simple01.def",
+            ],
+            "fillers9_verbose": [
+                "fillers9.lef",
+                "fillers9.def",
+            ],
+            "gcd": [
+                "gcd_replace.def",
+            ],
+            "gcd_nangate45": [
+                "gcd_replace.def",
+            ],
+            "gcd_no_one_site_gaps-opt": [
+                "Nangate45_data/Nangate45-opt.lef",
+            ],
+            "gcd_no_one_site_sanity": [
+                "Nangate45_data/Nangate45-opt.lef",
+            ],
+            "hybrid_cells": [
+                "Nangate45/fake_macros.lef",
+            ],
+            "hybrid_cells2": [
+                "Nangate45/fake_macros.lef",
+            ],
+            "hybrid_cells_block": [
+                "hybrid_cells.def",
+                "Nangate45/fake_macros.lef",
+            ],
+            "ibex": [
+                "ibex_core_replace.def",
+            ],
+            "low_util01": [
+                "gcd_replace.def",
+            ],
+            "low_util02": [
+                "aes_cipher_top_replace.def",
+            ],
+            "low_util03": [
+                "ibex_core_replace.def",
+            ],
+            "macro_placed_not_fixed": [
+                "block2.lef",
+                "cell_on_block1.def",
+            ],
+            "max_disp1": [
+                "Nangate45/fakeram45_1024x32.lef",
+            ],
+            "mirror1": [
+                "gcd_replace.def",
+            ],
+            "mirror2": [
+                "extra.lef",
+            ],
+            "mirror3": [
+                "gcd_replace.def",
+            ],
+            "multi_height1-opt": [
+                "Nangate45/fake_macros.lef",
+            ],
+            "multi_height_one_site_gap_disallow": [
+                "Nangate45/fake_macros.lef",
+                "Nangate45_data/Nangate45.lef",
+                "Nangate45_data/fake_macros.lef",
+            ],
+            "multi_height_rows": [
+                "Nangate45/fake_macros.lef",
+            ],
+            "obstruction2": [
+                "Nangate45/fakeram45_64x7.lib",
+                "Nangate45/fakeram45_64x7.lef",
+            ],
+            "pad01": [
+                "simple01.def",
+            ],
+            "pad02": [
+                "simple01.def",
+            ],
+            "pad03": [
+                "simple03.def",
+            ],
+            "pad05": [
+                "extra.lef",
+                "check6.def",
+            ],
+            "pad06": [
+                "extra.lef",
+                "check6.def",
+            ],
+            "pad07": [
+                "simple01.def",
+            ],
+            "pad08": [
+                "simple01.def",
+            ],
+            "pad09": [
+                "sky130hs/sky130hs.tlef",
+                "sky130hs/sky130hs_std_cell.lef",
+            ],
+            "regions3": [
+                "Nangate45/fake_macros.lef",
+            ],
+            "repair_pin_access": ["repair_pin_access_tech.lef"],
+            "repair_pin_access_failure": ["repair_pin_access_tech.lef"],
+            "repair_pin_access_phase": [
+                "repair_pin_access_tech.lef",
+                "repair_pin_access_failure.def",
+            ],
+        }.get(test_name, []),
+    )
+    for test_name in ALL_TESTS
+]
+
+[
+    regression_test(
+        name = test_name,
+        check_log = False if test_name in PASSFAIL_TESTS else True,
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
+        data = [":" + test_name + "_resources"],
+        tags = [],
+        visibility = ["//visibility:public"],
+    )
+    for test_name in ALL_TESTS
+]
+
+cc_test(
+    name = "dpl_unittest",
+    srcs = [
+        "PinAccessRepairTest.cc",
+        "dpl_test.cc",
+    ],
+    data = [
+        "extra.lef",
+        "gcd_replace.def",
+    ],
+    deps = [
+        "//openroad/dpl",
+        "//openroad/dpl:dpl_impl",
+        "//openroad/drt:pin_access_service",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/lefin",
+        "//openroad/tst",
+        "//openroad/tst:nangate45_fixture",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+py_test(
+    name = "dpl_man_tcl_check",
+    srcs = ["dpl_man_tcl_check.py"],
+    data = ["//openroad/dpl:doc_files"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "dpl_readme_msgs_check",
+    data = [
+        "//openroad/dpl:doc_files",
+        "//openroad/dpl:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)
