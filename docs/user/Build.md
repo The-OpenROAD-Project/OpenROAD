@@ -23,7 +23,7 @@ git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git
 cd OpenROAD
 ```
 
-OpenROAD git submodules (cloned by the `--recursive` flag) are located in `src/`.
+OpenROAD git submodules (cloned by the `--recursive` flag) are located in `openroad/`.
 
 ```{note}
 There are several methods for obtaining OpenROAD (in order of recommendation):
@@ -90,7 +90,7 @@ To only build the binary, without installing it:
 
     bazelisk build :openroad
 
-The binary is `bazel-bin/openroad`.
+The binary is `bazel-bin/openroad/openroad`.
 For a GUI build, add `--//:platform=gui` to the command.
 
 ### Build options
@@ -157,7 +157,7 @@ See [Bazel](Bazel.md#lto) for details.
 
 Run the tests with the `asan` config:
 
-    bazelisk test --config=asan --test_tag_filters=-py src/...
+    bazelisk test --config=asan --test_tag_filters=-py openroad/...
 
 Address Sanitizer adds instrumentation for detecting memory errors.
 OpenROAD runs slower and uses more RAM with it.

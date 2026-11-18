@@ -38,7 +38,7 @@ check_placement
 
 # Region semantics -- fence type, group membership, domain hierarchy -- are
 # checked directly and far more thoroughly in
-# src/upf/test/cpp/TestPowerDomainRegions.cc. What is left here is the part
+# openroad/upf/test/cpp/TestPowerDomainRegions.cc. What is left here is the part
 # only a real design can show: that set_domain_area's micron arguments reach
 # the database as the right DBU rectangle, and that placement honours the
 # resulting fences, which check_placement above asserts (it errors on

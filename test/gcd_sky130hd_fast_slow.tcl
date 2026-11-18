@@ -15,6 +15,6 @@ set max_drv_count 1
 set setup_slack_limit -7.0
 set hold_slack_limit 0.0
 
-define_corners fast slow
+set corners {fast slow}
 set power_corner "fast"
 include -echo flow.tcl

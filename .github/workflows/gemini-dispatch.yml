@@ -30,15 +30,16 @@ jobs:
     # For issues: only on open. A reopened issue keeps the labels and
     # assignee it already has.
     # For comments: only if user types @gemini-cli and is OWNER/MEMBER/COLLABORATOR
+    # Gemini triage runs only in the public repository.
     if: |-
-      (
+      github.repository == 'The-OpenROAD-Project/OpenROAD' && ((
         github.event_name == 'issues' &&
         github.event.action == 'opened'
       ) || (
         github.event.sender.type == 'User' &&
         startsWith(github.event.comment.body || github.event.issue.body, '@gemini-cli') &&
         contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association || github.event.issue.author_association)
-      )
+      ))
     runs-on: ubuntu-latest
     permissions:
       contents: read
