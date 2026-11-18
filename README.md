@@ -315,34 +315,35 @@ The rule of thumb: if Bazel can get it from BCR or directly from the
 upstream repo, do not add a submodule for it.
 
 There is a third source, for browser code only: the web viewer's
-JavaScript libraries come from **npm**, pinned in `src/web/package.json`
-and `src/web/pnpm-lock.yaml`, and are bundled by esbuild into the assets
-embedded in the binary (see `src/web/README.md`). Do not add a submodule
+JavaScript libraries come from **npm**, pinned in `openroad/web/package.json`
+and `openroad/web/pnpm-lock.yaml`, and are bundled by esbuild into the assets
+embedded in the binary (see `openroad/web/README.md`). Do not add a submodule
 or a BCR module for one of these, and do not add an npm dependency for
 anything that is not browser code.
 
 ## Regression Tests
 
 The regression tests are registered in the `BUILD` files.
-The test files are in `./test/` and in `src/<tool>/test/`.
+The test files are in `./test/` and in `openroad/<tool>/test/`.
 Run them with Bazel:
 
 ``` shell
 # run tests for all tools
-bazelisk test //src/...
+bazelisk test //openroad/...
 
 # run <tool> tests
-bazelisk test //src/<tool>/...
+bazelisk test //openroad/<tool>/...
 
 # run only <TEST_NAME> for <tool>
-bazelisk test //src/<tool>/test:<TEST_NAME>-tcl_test
+bazelisk test //openroad/<tool>/test:<TEST_NAME>-tcl_test
 
 # run all flow tests
 bazelisk test //test:flow_tests
 ```
 
 Tcl tests end in `-tcl_test` and Python tests end in `-py_test`.
-Use `bazelisk query 'kind(test, //src/<tool>/...)'` to list the test targets of a tool.
+Use `bazelisk query 'kind(test, //openroad/<tool>/...)'` to list the test
+targets of a tool.
 
 The flow tests check results such as worst slack against reference values.
 
@@ -355,10 +356,10 @@ Set `OPENROAD_EXE` to the binary to test:
 bazelisk build //:openroad
 
 # run all flow tests
-OPENROAD_EXE=$PWD/bazel-bin/openroad ./test/regression flow
+OPENROAD_EXE=$PWD/bazel-bin/openroad/openroad ./test/regression flow
 
 # run only <TEST_NAME>
-OPENROAD_EXE=$PWD/bazel-bin/openroad ./test/regression <TEST_NAME>
+OPENROAD_EXE=$PWD/bazel-bin/openroad/openroad ./test/regression <TEST_NAME>
 ```
 
 Use `report_flow_metrics [test]...` to see all of the flow test metrics.
