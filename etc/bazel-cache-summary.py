@@ -11,7 +11,7 @@ compiles alike.  Build with --config=cachelog and run this script for the
 breakdown, including which actions were built for real and why they were not
 up to date:
 
-    bazelisk build --config=cachelog //src/dpl:dpl
+    bazelisk build --config=cachelog //openroad/dpl:dpl
     etc/bazel-cache-summary.py
 """
 
