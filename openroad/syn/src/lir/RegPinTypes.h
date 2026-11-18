@@ -6,6 +6,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string_view>
 
 namespace syn::lir {
 
@@ -58,12 +59,12 @@ static_assert(kNumRegPinTypes <= 16, "RegPinMask is too narrow");
 
 constexpr RegPinMask regPinBit(RegPinType type)
 {
-  return static_cast<RegPinMask>(1u << static_cast<unsigned>(type));
+  return static_cast<RegPinMask>(1u << static_cast<uint32_t>(type));
 }
 
 // Returns the lower-case name used by the .lir format ("data", "arst", ...),
 // or "?" for out-of-range values.
-const char* regPinTypeName(RegPinType type);
+std::string_view regPinTypeName(RegPinType type);
 
 // Outputs of a generic register (width W). kQ is the state, carried by the
 // kRegOut itself; the others are width-W kFans of the kRegOut with Fan.data =
@@ -81,6 +82,6 @@ enum class RegOutput : uint8_t
 inline constexpr int kNumRegOutputs = static_cast<int>(RegOutput::kNumOutputs);
 
 // Returns "q", "qn" or "so"; "?" for out-of-range values.
-const char* regOutputName(RegOutput output);
+std::string_view regOutputName(RegOutput output);
 
 }  // namespace syn::lir
