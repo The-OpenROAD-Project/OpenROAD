@@ -26,6 +26,7 @@
 #include "request_handler.h"
 #include "tile_generator.h"
 #include "timing_report.h"
+#include "tst/physical_builder.h"
 #include "utl/Logger.h"
 #include "web/web.h"
 #include "web_viewer_hook.h"
@@ -301,6 +302,16 @@ class DegenerateDesignFixture : public ListenerFixture
   }
 };
 
+// A die and nothing in it: enough for the image to render.
+class DieOnlyDesignFixture : public ListenerFixture
+{
+ protected:
+  void buildDesign(odb::dbDatabase* db) override
+  {
+    tst::makeBlock(db, tst::makeTech(db));
+  }
+};
+
 // The init thread can drop the last reference and so run ~WebSocketSession on
 // itself.  Which thread does is a race; the loop makes it near certain.
 TEST_F(ListenerFixture, ClientThatDropsTheSocketDoesNotAbortTheServer)
@@ -451,6 +462,16 @@ TEST_F(DegenerateDesignFixture, FailedRenderAnswers500AndKeepsServing)
   EXPECT_EQ(head.find("Access-Control-Allow-Origin"), std::string::npos)
       << head;
   EXPECT_EQ(statusOf(httpGet(withToken("/"))), 200);
+}
+
+// A vis that parseFromJson rejects, here {"stdcells":1}, falls back to the
+// defaults instead of failing the request.
+TEST_F(DieOnlyDesignFixture, WronglyTypedVisStillAnswers200)
+{
+  EXPECT_EQ(statusOf(httpGet(withToken("/download/image?type=entire"))), 200);
+  EXPECT_EQ(statusOf(httpGet(withToken(
+                "/download/image?type=entire&vis=%7B%22stdcells%22%3A1%7D"))),
+            200);
 }
 
 TEST_F(ListenerFixture, RedirectKeepsTheViewerOptions)
