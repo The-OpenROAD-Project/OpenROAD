@@ -28,7 +28,7 @@ else
         echo "If problem persists, file a github issue with the re-producible test case."
     fi
     echo "Git commit: ${currentGitCommit}"
-    echo "OpenSTA commit: $(git -C src/sta rev-parse HEAD 2>/dev/null || echo unknown)"
+    echo "OpenSTA commit: $(git -C openroad/sta rev-parse HEAD 2>/dev/null || echo unknown)"
     # The commit pins the toolchain and all dependencies (MODULE.bazel.lock),
     # so local modifications are what remains to report.
     localChanges="$(git status --short --ignore-submodules=none)"

@@ -31,8 +31,8 @@ PSM fails with `PSM-0021`, "Resistance map contains invalid values".
 
 ## Consumers
 
-* `src/psm/test/gcd_gt2n_backside` -- IR drop analysis on a backside power
-  grid. Design data in `src/psm/test/gt2n_gcd_data`.
+* `openroad/psm/test/gcd_gt2n_backside` -- IR drop analysis on a backside power
+  grid. Design data in `openroad/psm/test/gt2n_gcd_data`.
 
 ## License
 
