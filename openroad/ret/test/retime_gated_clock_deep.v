@@ -1,8 +1,8 @@
 // The first register of the netlist, r0, is on clk; the chain
 // r1 -> h1..h4 -> r2 is on the gated clock.  Its register moves more than one
 // gate deep and must stay on the gated net.
-// g1 feeds ra on clk and rb on gclk.  Registers that start on one net are
-// rebuilt as one chain on one clock, so p1 and p2 are pinned.
+// g1 feeds ra on clk and rb on gclk.  Registers on two clock nets that
+// start on one net stay in place, so p1 and p2 are pinned.
 module top (a, b, en, clk, y, z, v, w);
   input a;
   input b;

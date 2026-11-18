@@ -228,9 +228,9 @@ void RetimingGraph::build()
 }
 
 // In a hierarchical netlist a register never crosses a module boundary.
-// The registers that start on one net are rebuilt together with the gate
-// that drives them and the gates that read them; when those are not all in
-// one module, the driving gate and the gates behind the registers are never
+// The registers that start on one net stay in the module of the gate that
+// drives them and the gates that read them; when those are not all in one
+// module, the driving gate and the gates behind the registers are never
 // crossed.  A flat netlist has no boundaries to keep.
 void RetimingGraph::fenceModules()
 {
@@ -298,9 +298,8 @@ void RetimingGraph::markDontTouch(odb::dbInst* inst, int id)
 void RetimingGraph::fenceDontTouch()
 {
   const int n = static_cast<int>(nodes_.size());
-  // Registers that start on one net are rebuilt together, as one chain on
-  // one clock net, so a don't-touch register or a second clock net keeps
-  // every register on that net in place.
+  // A don't-touch register or a second clock net keeps every register that
+  // starts on the same net in place.
   std::unordered_set<odb::dbNet*> fixed_nets;
   std::unordered_map<odb::dbNet*, odb::dbNet*> net_clock;
   for (int u = 0; u < n; u++) {

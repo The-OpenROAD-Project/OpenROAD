@@ -140,26 +140,26 @@ void Retimer::retime(int max_moves)
   dff_q_mterm_ = unmapper_->getBaseSequentialQMTerm();
   checkRegisters(block);
 
-  auto graph = std::make_unique<RetimingGraph>(db_, sta_, logger_);
-  graph->build();
-  graph->report();
+  RetimingGraph graph(db_, sta_, logger_);
+  graph.build();
+  graph.report();
   clock_net_ = findClockNet(block);
 
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
 
-  Retime search(graph.get(), sta_, logger_, dff_master_);
+  Retime search(&graph, sta_, logger_, dff_master_);
   search.run(max_moves);
-  std::vector<int> r = search.getRetiming();
+  const std::vector<int>& r = search.getRetiming();
 
-  const std::unordered_set<odb::dbInst*> movers = moversToUnmap(*graph, r);
+  const std::unordered_set<odb::dbInst*> movers = moversToUnmap(graph, r);
   const int unplaced_before = countPlacement(block).unplaced;
   // An error while the netlist is being edited restores it.
   odb::dbDatabase::beginEco(block);
   try {
     if (movers.empty()) {
-      applyRetiming(*graph, r);
+      applyRetiming(graph, r);
     } else {
-      applyAfterUnmapping(*graph, r, movers, max_moves, guard);
+      applyAfterUnmapping(graph, r, movers, max_moves, guard);
     }
   } catch (...) {
     odb::dbDatabase::undoEco(block);
