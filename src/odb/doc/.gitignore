@@ -1,5 +1,0 @@
-# Intermediate conversion files
-*.ebnf
-*.zip
-src/odb/doc/tools/*.war
-src/odb/doc/tools/*.jar
