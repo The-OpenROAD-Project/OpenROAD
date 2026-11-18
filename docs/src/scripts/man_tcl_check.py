@@ -1,6 +1,8 @@
+import argparse
 import glob
 import os
 import re
+import sys
 import unittest
 
 from extract_utils import extract_help, extract_proc, extract_tcl_code
@@ -9,11 +11,18 @@ from extract_utils import extract_help, extract_proc, extract_tcl_code
 class TestManTclCheck(unittest.TestCase):
     """Test that command counts match across help, proc, and readme."""
 
+    module: str
+
     def test_command_counts_match(self):
-        module = os.path.basename(__file__).replace("_man_tcl_check.py", "")
+        module = self.module
         script_dir = os.path.dirname(os.path.abspath(__file__))
         or_home = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
         os.chdir(or_home)
+
+        self.assertTrue(
+            os.path.isfile(f"./openroad/{module}/README.md"),
+            f"No README found for module {module}",
+        )
 
         help_dict, proc_dict, readme_dict = {}, {}, {}
 
@@ -59,6 +68,7 @@ class TestManTclCheck(unittest.TestCase):
                 ]
             readme_dict[tool_dir] = len(results)
 
+        self.assertTrue(help_dict, f"No Tcl sources found for module {module}")
         for tool_dir in help_dict:
             h = help_dict[tool_dir]
             p = proc_dict[tool_dir]
@@ -76,4 +86,10 @@ class TestManTclCheck(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    parser = argparse.ArgumentParser(description="Check a module's Tcl command counts.")
+    parser.add_argument(
+        "--module", required=True, help="OpenROAD module directory name"
+    )
+    args, unittest_args = parser.parse_known_args()
+    TestManTclCheck.module = args.module
+    unittest.main(argv=[sys.argv[0]] + unittest_args)

@@ -1,5 +1,5 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("@rules_python//python:defs.bzl", "py_test")
+load("//bazel:man_tcl_checker.bzl", "man_tcl_check_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -445,15 +445,9 @@ filegroup(
     for test_name in ALL_TESTS
 ]
 
-py_test(
+man_tcl_check_test(
     name = "pdn_man_tcl_check",
-    srcs = ["pdn_man_tcl_check.py"],
-    data = ["//openroad/pdn:doc_files"],
-    tags = [
-        "doc_check",
-        "py",
-    ],
-    deps = ["//docs/src/scripts:extract_utils"],
+    module = "pdn",
 )
 
 doc_check_test(
