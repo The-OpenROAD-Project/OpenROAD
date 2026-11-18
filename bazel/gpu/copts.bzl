@@ -61,6 +61,6 @@ CUDA_COPTS = CUDA_TOOLKIT_COPTS + CUDA_ARCH_COPTS + [
     # Required by Kokkos's OpenMP backend headers in every TU that includes
     # Kokkos (see BUILD.kokkos.bazel); gpl's sources also use OpenMP pragmas
     # on the host side. Same flag (and @openmp dependency) as
-    # //src/gpl:gpl_impl.
+    # //openroad/gpl:gpl_impl.
     "-fopenmp",
 ]
