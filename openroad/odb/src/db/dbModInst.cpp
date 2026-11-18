@@ -8,6 +8,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 // Generator Code Begin Cpp
@@ -521,11 +522,12 @@ void dbModInst::removeUnusedPortsAndPins()
   debugPrint(logger, utl::ODB, "replace_design", 2, format_str, ##__VA_ARGS__)
 
 // Swap one hierarchical module with another one.
-// New module is not allowed to have multiple levels of hierarchy for now.
+// Either module may have child module instances; they are copied along.
 // Newly instantiated modules are uniquified.
 dbModInst* dbModInst::swapMaster(dbModule* new_module)
 {
   dbModule* old_module = getMaster();
+  const std::string old_module_name = old_module->getName();
   utl::Logger* logger = getImpl()->getLogger();
 
   // Helper to remove dangling nets from a block
@@ -656,10 +658,28 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
     }
   }
 
-  // 5. Delete current mod inst
+  // 5. Backup old dbModule to child block
+  // - Before its mod inst is deleted, so the nets copied keep their names
+  //   relative to it.
+  _dbModule::copyToChildBlock(old_module);
+  debugRDPrint1("Copied old module {} to a child block", old_module->getName());
+
+  // Collect the modules below old_module, parents first, to delete them
+  // with it.
+  std::vector<dbModule*> old_child_modules;
+  for (dbModInst* child : old_module->getModInsts()) {
+    old_child_modules.push_back(child->getMaster());
+  }
+  for (size_t i = 0; i < old_child_modules.size(); ++i) {
+    for (dbModInst* child : old_child_modules[i]->getModInsts()) {
+      old_child_modules.push_back(child->getMaster());
+    }
+  }
+
+  // 6. Delete current mod inst
   dbModInst::destroy(this);
 
-  // 6. Create a new mod inst of new_module_copy
+  // 7. Create a new mod inst of new_module_copy
   dbModInst* new_mod_inst
       = dbModInst::create(parent, new_module_copy, new_name.c_str());
   if (!new_mod_inst) {
@@ -667,7 +687,7 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
     return nullptr;
   }
 
-  // 7. Create mod iterms and connect to old mod nets
+  // 8. Create mod iterms and connect to old mod nets
   for (const auto& [name, old_mod_net] : name_mod_net_map) {
     // Find the corresponding ModBTerm in the new master module
     dbModBTerm* new_mod_bterm = new_module_copy->findModBTerm(name.c_str());
@@ -681,13 +701,16 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
   debugRDPrint1("New mod inst has {} mod iterms",
                 new_mod_inst->getModITerms().size());
 
-  // 8. Backup old dbModule to child block
-  _dbModule::copyToChildBlock(old_module);
-  debugRDPrint1("Copied to child block and deleted old module {} ",
-                old_module->getName());
-
-  // 9. Delete the old dbModule
+  // 9. Delete the old dbModule and the modules below it
+  // - Deleting a module deletes its child mod insts, so each child module
+  //   is free to be deleted after its parent.
   dbModule::destroy(old_module);
+  for (dbModule* module : old_child_modules) {
+    dbModule::destroy(module);
+  }
+  debugRDPrint1("Deleted old module {} and {} modules below it",
+                old_module_name,
+                old_child_modules.size());
 
   // 10. Remove dangling internal nets of the old module
   // - Note that internal nets of old module belongs to parent block.
@@ -714,6 +737,8 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
   }
 
   // 12. Connect nets crossing the hierarchical boundary
+  // - Through the mod nets of child modules, down to every iterm the port
+  //   reaches.
   debugRDPrint1("Connecting nets that span module boundary");
   for (const auto& [bterm_name, flat_net] : modbterm_name_flat_net_map) {
     debugRDPrint1("  map_entry[modBTermName '{}'] = flat net '{}'",
@@ -738,19 +763,31 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
       continue;
     }
 
-    // Connect flat net to new mod net iterms
+    // Connect flat net to the iterms of new mod net and of the mod nets
+    // of child modules it reaches.
     // Copy to a vector because disconnect/connect can change the dbSet
     // while iterating.
-    dbSet<dbITerm> new_iterm_set = new_mod_net->getITerms();
-    if (new_iterm_set.empty()) {
+    std::vector<std::pair<dbITerm*, dbModNet*>> new_iterms;
+    std::vector<dbModNet*> mod_nets{new_mod_net};
+    for (size_t i = 0; i < mod_nets.size(); ++i) {
+      dbModNet* mod_net = mod_nets[i];
+      for (dbITerm* new_iterm : mod_net->getITerms()) {
+        new_iterms.emplace_back(new_iterm, mod_net);
+      }
+      for (dbModITerm* mod_iterm : mod_net->getModITerms()) {
+        dbModBTerm* child_bterm = mod_iterm->getChildModBTerm();
+        if (child_bterm && child_bterm->getModNet()) {
+          mod_nets.push_back(child_bterm->getModNet());
+        }
+      }
+    }
+    if (new_iterms.empty()) {
       debugRDPrint1("    new modnet '{}' has no iterms",
                     new_mod_net->getName());
       continue;
     }
 
-    std::vector<dbITerm*> new_iterms(new_iterm_set.begin(),
-                                     new_iterm_set.end());
-    for (dbITerm* new_iterm : new_iterms) {
+    for (const auto& [new_iterm, mod_net] : new_iterms) {
       // Disconnect the old connection
       // - e.g., the new_iterm on the new module might be connected to new
       // modnet that is created when the new module is cloned.
@@ -759,12 +796,12 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
                     new_iterm->getName());
 
       // Connect the flat and hier nets
-      new_iterm->connect(flat_net, new_mod_net);
+      new_iterm->connect(flat_net, mod_net);
       debugRDPrint1(
           "    connected iterm '{}' to flat net '{}' and hier net '{}'",
           new_iterm->getName(),
           flat_net->getName(),
-          new_mod_net->getName());
+          mod_net->getName());
     }
   }
 
