@@ -41,8 +41,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-repository-cache-
 
-      - name: Install Bazelisk
-        run: brew install bazelisk
+      - name: Install dependencies
+        run: ./etc/DependencyInstaller.sh
 
       - name: Build OpenROAD
         env:

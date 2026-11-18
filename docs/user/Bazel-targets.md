@@ -11,7 +11,7 @@ including the binary the tests run, is `cfg=target`.
 So these share one build of OpenROAD:
 
     bazelisk build :openroad
-    bazelisk test src/...
+    bazelisk test openroad/...
 
 ## Visualizing configurations and dependencies
 

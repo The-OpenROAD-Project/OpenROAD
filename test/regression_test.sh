@@ -14,15 +14,8 @@ echo "Directory: ${PWD}"
 echo "Results Directory: ${RESULTS_DIR}"
 
 case "$TEST_TYPE" in
-standalone_python)
+python | standalone_python)
     CMD="python3 -u $TEST_NAME.$TEST_EXT"
-    ;;
-python)
-    if "$OPENROAD_EXE" -help 2>&1 | grep -q -- "-python"; then
-        CMD="$OPENROAD_EXE -python -no_splash -no_init -exit -threads 1 $TEST_NAME.$TEST_EXT"
-    else
-        CMD="python3 -u $TEST_NAME.$TEST_EXT"
-    fi
     ;;
 *)
     # -metrics makes openroad write the json the limits are compared against.
@@ -36,10 +29,12 @@ esac
 
 echo "Command: $CMD"
 EXPECTED_EXIT_CODE="${TEST_EXPECTED_EXIT_CODE:-0}"
+# Capture the full output before printing it; tee can abort and truncate logs.
 set +e
-$CMD 2>&1 | tee $LOG_FILE
-CMD_EXIT=${PIPESTATUS[0]}
+$CMD > "$LOG_FILE" 2>&1
+CMD_EXIT=$?
 set -e
+cat "$LOG_FILE"
 
 case "$TEST_TYPE" in
 python | standalone_python)

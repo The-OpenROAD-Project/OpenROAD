@@ -3,6 +3,15 @@ common --enable_bzlmod
 # abc is driven programmatically by OpenROAD, so skip the interactive
 # readline dependency exposed by abc@0.64-yosyshq.bcr.2.
 common --@abc//:use_readline=false
+
+# protoc from protobuf's release binaries (pinned by sha256 in protobuf's
+# MODULE.bazel), not compiled from source: or-tools generates its .pb.cc
+# with it, the generated code is the same, and a cold build skips
+# protoc's own 191 C++ compiles. Platforms without a release binary fall
+# back to building it. The canonical name is needed because protobuf
+# reaches OpenROAD through or-tools, not as a direct dependency.
+common --@@protobuf+//bazel/toolchains:prefer_prebuilt_protoc
+
 build --workspace_status_command=tools/workspace_status.sh
 
 # suppress distracting warning about newer module
@@ -21,6 +30,23 @@ common --incompatible_default_to_explicit_init_py
 build --cxxopt "-std=c++20"        --host_cxxopt "-std=c++20"
 build --cxxopt "-xc++"             --host_cxxopt "-xc++"
 build --cxxopt "-DBAZEL_BUILD"     --host_cxxopt "-DBAZEL_BUILD"
+# BOOST_ASIO_NO_DEPRECATED changes the return type of inline Asio members
+# (e.g. socket close/shutdown return void, not error_code), so every
+# translation unit must agree on it or the ODR is violated.
+build --cxxopt "-DBOOST_ASIO_NO_DEPRECATED" --host_cxxopt "-DBOOST_ASIO_NO_DEPRECATED"
+# libc++ "fast" hardening: cheap bounds and precondition checks (operator[],
+# front/back on empty, span/string_view/optional access) that trap instead of
+# continuing with undefined behavior. The mode does not affect the ABI, so it
+# is safe to set per translation unit.
+build --cxxopt "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST"
+build --host_cxxopt "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST"
+# Report a failed hardening check through std::__libcpp_verbose_abort (which
+# openroad/Main.cc overrides to log it) instead of a bare trap. Choosing the
+# assertion semantic is gated behind libc++'s experimental-library switch.
+build --cxxopt "-D_LIBCPP_ENABLE_EXPERIMENTAL"
+build --host_cxxopt "-D_LIBCPP_ENABLE_EXPERIMENTAL"
+build --cxxopt "-D_LIBCPP_ASSERTION_SEMANTIC=_LIBCPP_ASSERTION_SEMANTIC_ENFORCE"
+build --host_cxxopt "-D_LIBCPP_ASSERTION_SEMANTIC=_LIBCPP_ASSERTION_SEMANTIC_ENFORCE"
 
 # Default to optimized build (-c opt)
 build -c opt
@@ -49,15 +75,16 @@ build  --cxxopt=-fexceptions    --host_cxxopt=-fexceptions
 build --copt "-Wall"               --host_copt "-Wall"
 build --copt "-Wextra"             --host_copt "-Wextra"
 
-# Treat specific warnings as errors
-build --copt "-Werror=array-bounds"               --host_copt "-Werror=array-bounds"
-build --copt "-Werror=dangling"                   --host_copt "-Werror=dangling"
-build --copt "-Werror=dangling-assignment"        --host_copt "-Werror=dangling-assignment"
-build --copt "-Werror=dangling-assignment-gsl"    --host_copt "-Werror=dangling-assignment-gsl"
-build --copt "-Werror=dangling-field"             --host_copt "-Werror=dangling-field"
-build --copt "-Werror=dangling-gsl"               --host_copt "-Werror=dangling-gsl"
-build --copt "-Werror=fortify-source"             --host_copt "-Werror=fortify-source"
-build --copt "-Werror=return-stack-address"       --host_copt "-Werror=return-stack-address"
+# Fail on any compiler warning in our own sources, including the sources
+# generated from them (SWIG wrappers etc.). Vendored third-party/ code and
+# external repos stay exempt.
+build --per_file_copt=^(bazel-out/[^/]+/bin/)?openroad/.*@-Werror
+build --host_per_file_copt=^(bazel-out/[^/]+/bin/)?openroad/.*@-Werror
+# Opt out locally while iterating: bazelisk build --config=no-werror ...
+# A plain --copt=-Wno-error cannot do it, as per_file_copt lands after copt.
+# Compile actions then differ from CI's, so openroad/ misses the remote cache.
+build:no-werror --per_file_copt=^(bazel-out/[^/]+/bin/)?openroad/.*@-Wno-error
+build:no-werror --host_per_file_copt=^(bazel-out/[^/]+/bin/)?openroad/.*@-Wno-error
 
 # ... and disable the warnings we're not interested in.
 build --copt "-Wno-sign-compare"          --host_copt "-Wno-sign-compare"
@@ -73,11 +100,11 @@ build --copt "-Wno-deprecated-declarations" --host_copt "-Wno-deprecated-declara
 build --copt "-Wno-unused-local-typedef" --host_copt "-Wno-unused-local-typedef"
 build --cxxopt "-Wno-c++20-designator"   --host_cxxopt "-Wno-c++20-designator"
 
-# The warning acceptance bar in CI for PRs is set by -Werror (see build:ci)
+# The warning acceptance bar is set by -Werror on openroad/ (see per_file_copt above)
 # with the hermetic clang. Disable warnings from other compilers until
-# they are fixed and under CI -Werror acceptance critera as there is nothing the
-# developers can(they can't be reproduced locally or in CI) or should do about
-# these warnings in code they are not working on.
+# they are fixed and under the -Werror acceptance criteria, as there is nothing
+# the developers can (they can't be reproduced locally or in CI) or should do
+# about these warnings in code they are not working on.
 build --copt "-Wno-cast-function-type-mismatch"  --host_copt "-Wno-cast-function-type-mismatch"
 build --copt "-Wno-unused-but-set-variable"  --host_copt "-Wno-unused-but-set-variable"
 build --cxxopt "-Wno-deprecated-copy"  --host_cxxopt "-Wno-deprecated-copy"
@@ -119,7 +146,7 @@ common --enable_platform_specific_config
 build:macos --copt=-DBOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
 build:macos --host_copt=-DBOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
 # Floating-point std::to_chars (behind std::format, used by OpenSTA)
-# needs macOS 13.3; std::filesystem (src/tcl_readline_setup.cc) needs
+# needs macOS 13.3; std::filesystem (openroad/tcl_readline_setup.cc) needs
 # 10.15; abseil's aligned allocation needs 10.13. The historical 10.13
 # floor was never enforced: toolchains_llvm ignored it and compiled
 # against the host SDK's default. hermetic-llvm honors it.
@@ -199,19 +226,18 @@ build:ubsan --per_file_copt=.*external/.*@-fno-sanitize=all
 # UBSan does not replace the allocator, so unlike asan/tsan this config keeps
 # TCMalloc.
 
-# Opt-in GPU build: compiles the Kokkos-based gpl GPU backends with clang's
-# native CUDA support against system-installed Kokkos/KokkosFFT/CUDA
-# (non-hermetic; see bazel/gpu/system_gpu.bzl and docs/user/Bazel.md,
-# "GPU build"). Install prefixes are read from the shell environment:
-#   KOKKOS_ROOT         (default /usr/local/kokkos-libcxx)
-#   KOKKOS_FFT_ROOT     (default /usr/local/kokkos-fft-libcxx)
-#   OPENROAD_CUDA_PATH  (default /usr/local/cuda-12.8)
-#   OPENROAD_CUDA_ARCH  (normally unset: taken from the Kokkos install)
-# Kokkos and KokkosFFT must be built with the hermetic LLVM toolchain
-# (clang, libc++, its glibc-2.28 headers); a nvcc/libstdc++ build from
-# the CMake flow does not link. A missing or unusable install only fails
-# --config=gpu builds, at analysis time, with the reason.
+# Opt-in GPU build: Kokkos and KokkosFFT are built from pinned sources with
+# the hermetic LLVM toolchain. The CUDA toolkit remains system-provided via
+# OPENROAD_CUDA_PATH (default /usr/local/cuda-12.8). Select the device compute
+# capability explicitly so Kokkos and OpenROAD compile for the same target;
+# Kokkos warns at runtime if that target differs from the selected device.
 build:gpu --//:gpu=cuda
+# Convenience configs for the two architectures the GPU tests are run on;
+# any value in bazel/gpu/archs.bzl works via --config=gpu --//:cuda_arch=sm_XX.
+build:gpu-sm120 --config=gpu
+build:gpu-sm120 --//:cuda_arch=sm_120
+build:gpu-sm121 --config=gpu
+build:gpu-sm121 --//:cuda_arch=sm_121
 
 # Flags with enough debug symbols to get useful outputs with Linux `perf`
 build:profile --strip=never
@@ -221,6 +247,9 @@ build:profile --copt -fno-omit-frame-pointer --host_copt -fno-omit-frame-pointer
 # Compress the DWARF debug sections (transparent to gdb/perf/addr2line).
 build:profile --copt=-gz=zlib --host_copt=-gz=zlib
 build:profile --linkopt=-gz=zlib
+# Links //:openroad with --no-rosegment on Linux so VTune resolves symbols
+# (see OPENROAD_LINKOPTS in BUILD.bazel).
+build:profile --//:profile
 
 # Settings for --config=coverage C++ coverage build (LLVM source-based).
 # Usage: bazel coverage --config=coverage //...
@@ -228,16 +257,15 @@ build:profile --linkopt=-gz=zlib
 # only adds the coverage-specific bits. --combined_report=lcov merges every
 # test's per-target lcov into one file at
 # bazel-out/_coverage/_coverage_report.dat, which CI renders with genhtml
-# (lcov is installed in bazel/Dockerfile). The instrumentation_filter mirrors
-# the exclusions of the retired cmake/lcov flow (etc/CodeCoverage.sh _lcov):
-# instrument OpenROAD's own //src/... code, minus OpenSTA (src/sta, which has
+# (lcov is installed in bazel/Dockerfile). The instrumentation_filter
+# instruments OpenROAD's own //openroad/... code, minus OpenSTA (openroad/sta, which has
 # its own private test suite) and drt's unused global-routing code. Third-party
 # deps live under external repos / //third-party and are simply never matched
-# by //src, so they need no explicit exclusion.
+# by //openroad, so they need no explicit exclusion.
 # Instrumentation and the coverage tools come from the toolchain; requires
 # llvm >= 0.8.14 (see the bazel_dep note in MODULE.bazel).
 coverage:coverage --combined_report=lcov
-coverage:coverage --instrumentation_filter=//src[/:],-//src/sta[/:],-//src/drt/src/gr[/:],-//src/drt/src/db/grObj[/:]
+coverage:coverage --instrumentation_filter=//openroad[/:],-//openroad/sta[/:],-//openroad/drt/src/gr[/:],-//openroad/drt/src/db/grObj[/:]
 coverage:coverage --experimental_generate_llvm_lcov
 coverage:coverage --experimental_use_llvm_covmap
 # Skip the raw per-test coverage outputs: rules_cc leaves a dangling `gcov`
@@ -258,6 +286,12 @@ test --build_tests_only
 # Use a high number of jobs and let the scheduler manage concurrency
 build --jobs=200
 
+# CopyToDirectory staging (e.g. the hermetic toolchain's libc++ header tree,
+# ~1,700 files) is a sub-second local copy, but a cache hit has to check every
+# file in the tree. On a cold or busy disk cache that takes minutes, and every
+# C++ compile waits on it. Run it locally instead.
+build --modify_execution_info=CopyToDirectory=+no-cache
+
 # Enable local disk caching to supplement the remote cache.
 build --disk_cache=~/.cache/bazel-disk-cache
 build --repository_cache=~/.cache/bazel-repository-cache
@@ -273,11 +307,6 @@ build:ci --remote_upload_local_results=true
 build:ci --disk_cache=
 # Tell the 'ci' config to include 'opt'
 build:ci --config=opt
-# CI fails on any compiler warning in our own sources, including the sources
-# generated from them (SWIG wrappers etc.). Vendored third-party/ code and
-# external repos stay exempt. Local builds keep warnings as warnings.
-build:ci --per_file_copt=^(bazel-out/[^/]+/bin/)?src/.*@-Werror
-build:ci --host_per_file_copt=^(bazel-out/[^/]+/bin/)?src/.*@-Werror
 
 # Launch py_binary via a shell stub instead of rules_python's legacy python
 # stub, whose '#!/usr/bin/env python3' shebang needs a host python3 before
@@ -294,9 +323,9 @@ build:ci --remote_cache=grpcs://bazel.precisioninno.com:443
 build:ci --experimental_remote_downloader=grpcs://bazel.precisioninno.com:443
 
 # clang-tidy via aspect_rules_lint, using clang-tidy from the LLVM toolchain.
-# Usage: bazel build --config=lint //src/utl/...
+# Usage: bazel build --config=lint //openroad/utl/...
 build:lint --aspects=//tools/lint:linters.bzl%clang_tidy
-build:lint --output_groups=rules_lint_report
+build:lint --output_groups=rules_lint_human
 build:lint --remote_download_outputs=all
 
 # Telling real work from cache hits.
@@ -314,7 +343,7 @@ build:lint --remote_download_outputs=all
 #
 # --config=explain adds, per action that was not served from the action cache,
 # the reason Bazel considered it out of date.
-# Usage: bazelisk build --config=explain //src/dpl:dpl
+# Usage: bazelisk build --config=explain //openroad/dpl:dpl
 build:explain --explain=bazel-cachelog-explain.txt
 build:explain --verbose_explanations
 
@@ -322,7 +351,7 @@ build:explain --verbose_explanations
 # along with the runner that served it, for etc/bazel-cache-summary.py. Each
 # record carries the spawn's full input list, a few MB per executed action, so
 # this is meant for incremental builds rather than for building everything.
-# Usage: bazelisk build --config=cachelog //src/dpl:dpl
+# Usage: bazelisk build --config=cachelog //openroad/dpl:dpl
 #        etc/bazel-cache-summary.py
 build:cachelog --config=explain
 build:cachelog --execution_log_json_file=bazel-cachelog.json
