@@ -4,7 +4,7 @@
 ## Copyright (c) 2021-2026, The OpenROAD Authors
 
 # Usage:
-# cd src/<tool>
+# cd openroad/<tool>
 # ../../etc/FindMessages.py > messages.txt
 
 import argparse

@@ -6,7 +6,7 @@ import subprocess
 # Decode the message list as UTF-8 rather than in whatever encoding the
 # ambient locale selects; find_messages.py writes it as UTF-8. stderr is left
 # alone so its duplicate-id diagnostics stay visible.
-command = ["python", "../etc/find_messages.py", "-d", "../src"]
+command = ["python", "../etc/find_messages.py", "-d", "../openroad"]
 output = subprocess.run(command, stdout=subprocess.PIPE, encoding="utf-8").stdout
 
 with open("user/MessagesFinal.md", "w", encoding="utf-8") as f:
@@ -31,7 +31,7 @@ with open("user/MessagesFinal.md", "w", encoding="utf-8") as f:
         try:
             # aim is to match all level1 header and their corresponding text.
             message = open(
-                f"../src/{tool}/doc/messages/{num}.md", encoding="utf-8"
+                f"../openroad/{tool}/doc/messages/{num}.md", encoding="utf-8"
             ).read()
             pattern = re.compile(
                 r"#\s*(?P<header1>[^\n]+)\n*(?P<body_text>.*?)(?=\n#|$)", re.DOTALL
