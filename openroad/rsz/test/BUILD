@@ -70,6 +70,7 @@ TESTS = [
     "repair_clk_inverters1",
     "repair_clk_inverters10_floating",
     "repair_clk_inverters11_hier_sdc",
+    "repair_clk_inverters12_hier_pin_sdc",
     "repair_clk_inverters2_hier",
     "repair_clk_inverters3_hier",
     "repair_clk_inverters4_hier",

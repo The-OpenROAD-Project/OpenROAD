@@ -5359,52 +5359,57 @@ sta::InstanceSeq Resizer::findClkInverters()
   return clk_inverters;
 }
 
-void Resizer::warnClockPolarityChanges(sta::Pin* out_pin)
+std::optional<std::string> Resizer::constrainedClockInverterObject(
+    sta::Instance* inv,
+    sta::Pin* in_pin,
+    sta::Pin* out_pin)
 {
+  std::set<std::string> constrained_objects;
+  if (hasSdcConstraint(sta_, inv)) {
+    constrained_objects.insert("instance " + network_->pathName(inv));
+  }
+  if (hasSdcConstraint(sta_, in_pin)) {
+    constrained_objects.insert("pin " + network_->pathName(in_pin));
+  }
+  if (hasSdcConstraint(sta_, out_pin)) {
+    constrained_objects.insert("pin " + network_->pathName(out_pin));
+  }
+
   sta::NetSet connected_nets(network_);
   network_->connectedNets(out_pin, &connected_nets);
-  std::map<std::string, bool> changed_objects;
-
-  // Capture names and constraints before removal merges the output hierarchy.
+  // Removing the inverter changes polarity on its output nets and module ports.
   for (const sta::Net* net : connected_nets) {
+    if (hasSdcConstraint(sta_, net)) {
+      constrained_objects.insert("net " + network_->pathName(net));
+    }
     odb::dbNet* flat_net = nullptr;
     odb::dbModNet* mod_net = nullptr;
     db_network_->staToDb(net, flat_net, mod_net);
     if (mod_net == nullptr) {
       continue;
     }
-    changed_objects["net " + network_->pathName(net)]
-        |= hasSdcConstraint(sta_, net);
-
     sta::NetConnectedPinIterator* pin_iter = network_->pinIterator(net);
     while (pin_iter->hasNext()) {
       const sta::Pin* pin = pin_iter->next();
-      if (network_->isHierarchical(pin)) {
-        changed_objects["pin " + network_->pathName(pin)]
-            |= hasSdcConstraint(sta_, pin);
+      if (network_->isHierarchical(pin) && hasSdcConstraint(sta_, pin)) {
+        constrained_objects.insert("pin " + network_->pathName(pin));
       }
     }
     delete pin_iter;
     sta::NetTermIterator* term_iter = network_->termIterator(net);
     while (term_iter->hasNext()) {
       const sta::Pin* pin = network_->pin(term_iter->next());
-      if (pin != nullptr && network_->isHierarchical(pin)) {
-        changed_objects["pin " + network_->pathName(pin)]
-            |= hasSdcConstraint(sta_, pin);
+      if (pin != nullptr && network_->isHierarchical(pin)
+          && hasSdcConstraint(sta_, pin)) {
+        constrained_objects.insert("pin " + network_->pathName(pin));
       }
     }
     delete term_iter;
   }
-
-  for (const std::pair<const std::string, bool>& changed : changed_objects) {
-    logger_->warn(RSZ,
-                  3250,
-                  "Removing clock inverter {} changes polarity at {} (SDC "
-                  "attached: {}).",
-                  network_->pathName(network_->instance(out_pin)),
-                  changed.first,
-                  changed.second ? "yes" : "no");
+  if (constrained_objects.empty()) {
+    return std::nullopt;
   }
+  return *constrained_objects.begin();
 }
 
 void Resizer::cloneClkInverter(sta::Instance* inv)
@@ -5419,6 +5424,19 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
   // The flat net includes loads beyond the inverter's module segment.
   sta::Net* out_net = db_network_->findFlatNet(out_pin);
   if (in_net && out_net && !dontTouch(out_net) && !dontTouch(in_net)) {
+    // Check constraints before inserting clones so a skip leaves the netlist
+    // intact.
+    const std::optional<std::string> constrained_object
+        = constrainedClockInverterObject(inv, in_pin, out_pin);
+    if (constrained_object.has_value()) {
+      logger_->warn(RSZ,
+                    3250,
+                    "repair_clock_inverters left inverter {} in the clock tree "
+                    "because {} is referenced by an SDC constraint.",
+                    network_->pathName(inv),
+                    *constrained_object);
+      return;
+    }
     std::string inv_name = network_->name(inv);
     odb::dbInst* db_inv = db_network_->staToDb(inv);
     // A flat link can retain module scopes while STA reports the full path.
@@ -5472,8 +5490,6 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
           = db_network_->flatNet(network_->findPin(clone, out_port));
       clone_out_net_db->setSigType(in_net_db->getSigType());
     }
-
-    warnClockPolarityChanges(out_pin);
 
     // Merge the original inverter's output hierarchy into its input net.
     if (!removeBuffer(inv)) {

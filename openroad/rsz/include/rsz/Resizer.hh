@@ -908,7 +908,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   odb::Point tieLocation(const sta::Pin* load, int separation);
   sta::InstanceSeq findClkInverters();
   void cloneClkInverter(sta::Instance* inv);
-  void warnClockPolarityChanges(sta::Pin* out_pin);
+  std::optional<std::string> constrainedClockInverterObject(sta::Instance* inv,
+                                                            sta::Pin* in_pin,
+                                                            sta::Pin* out_pin);
 
   void makePadParasitic(const sta::Net* net, sta::SpefWriter* spef_writer);
   bool isPadNet(const sta::Net* net) const;
