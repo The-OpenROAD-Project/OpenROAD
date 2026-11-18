@@ -11,7 +11,6 @@
 #include <memory>
 #include <stack>
 #include <string>
-#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -76,8 +75,6 @@ void MoveCommitter::init()
     pending_instances_by_type_[index].clear();
     committed_instances_by_type_[index].clear();
   }
-  rebuffer_driver_of_.clear();
-  unbuffered_rebuffer_drivers_.clear();
 
   const bool report_enabled
       = resizer_.logger()->debugCheck(RSZ, "move_tracker", 1);
@@ -373,33 +370,6 @@ void MoveCommitter::recordAcceptedResult(const MoveResult& result)
     // FIXME: This should be removed after policies start using the nested
     // journaling capability.
     committed_instances_by_type_[index].insert(inst);
-  }
-  recordRebufferInteraction(result);
-}
-
-void MoveCommitter::recordRebufferInteraction(const MoveResult& result)
-{
-  if (result.type == MoveType::kBuffer) {
-    // Only BufferMove reports inserted buffers, with its driver as the touched
-    // instance; other buffer moves record nothing here.
-    if (result.inserted_buffers.empty()) {
-      return;
-    }
-    sta::Instance* driver = result.touched_instances.front();
-    for (sta::Instance* buffer : result.inserted_buffers) {
-      rebuffer_driver_of_[buffer] = driver;
-    }
-  } else if (result.type == MoveType::kUnbuffer) {
-    for (sta::Instance* buffer : result.touched_instances) {
-      auto it = rebuffer_driver_of_.find(buffer);
-      if (it == rebuffer_driver_of_.end()) {
-        continue;
-      }
-      unbuffered_rebuffer_drivers_.insert(it->second);
-      // The removed buffer is deleted, so forget it before its address can
-      // be reused by a new instance.
-      rebuffer_driver_of_.erase(it);
-    }
   }
 }
 
@@ -740,10 +710,6 @@ bool MoveCommitter::hasBlockingBufferRemovalMove(sta::Instance* inst,
     reason = "it was from split load buffering";
   } else if (hasMoves(MoveType::kBuffer, inst)) {
     reason = "it was from rebuffering";
-  } else if (auto it = rebuffer_driver_of_.find(inst);
-             it != rebuffer_driver_of_.end()
-             && unbuffered_rebuffer_drivers_.contains(it->second)) {
-    reason = "removal already undid rebuffering of its driver";
   } else if (hasMoves(MoveType::kSizeUp, inst)) {
     reason = "it has been resized";
   }
