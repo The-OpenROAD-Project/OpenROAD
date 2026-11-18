@@ -1,6 +1,6 @@
 # Tool Name
 
-The top-level READMEs in each tool folder (`~/OpenROAD/src/<tool>/README.md`)
+The top-level READMEs in each tool folder (`~/OpenROAD/openroad/<tool>/README.md`)
 has to be formatted in this particular manner. For most part, you can copy 
 the format and replace the contents where necessary.
 
@@ -104,7 +104,7 @@ There are a set of regression tests in `./test`, registered in the tool's Bazel 
 Simply run the following command:
 
 ```shell
-bazelisk test //src/<tool>/...
+bazelisk test //openroad/<tool>/...
 ```
 
 ## Limitations
