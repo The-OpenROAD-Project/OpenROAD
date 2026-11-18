@@ -203,7 +203,8 @@ none has, as with a plain headless run.
 
 Display options control which elements are rendered when using `-web`.
 Each option is a `{key value}` pair where the key matches a visibility
-field and the value is `true` or `false`.
+field and the value is a Tcl boolean (`true`/`false`, `1`/`0`, `yes`/`no`,
+`on`/`off`); any other value is an error.
 
 | Key | Default | Description |
 | --- | ------- | ----------- |
