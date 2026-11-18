@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <iterator>
 #include <memory>
 #include <string>
@@ -795,9 +796,9 @@ FlexGCWorker::Impl::FixedEnclosureLayerCache::FixedEnclosureLayerCache(
   values.reserve(rects.size());
   for (size_t i = 0; i < rects.size(); ++i) {
     const auto& rect = rects[i];
-    values.push_back(
-        {odb::Rect(gtl::xl(rect), gtl::yl(rect), gtl::xh(rect), gtl::yh(rect)),
-         i});
+    values.emplace_back(
+        odb::Rect(gtl::xl(rect), gtl::yl(rect), gtl::xh(rect), gtl::yh(rect)),
+        i);
   }
   index = RTree<size_t>(values);
 }
@@ -872,23 +873,19 @@ bool FlexGCWorker::Impl::getRoutedEnclosureDelta(
   }
   std::vector<gtl::rectangle_data<frCoord>> pieces;
   gtl::get_rectangles(pieces, delta);
-  pieces.erase(std::remove_if(pieces.begin(),
-                              pieces.end(),
-                              [](const auto& rect) {
-                                return gtl::xh(rect) <= gtl::xl(rect)
-                                       || gtl::yh(rect) <= gtl::yl(rect);
-                              }),
-               pieces.end());
+  std::erase_if(pieces, [](const auto& rect) {
+    return gtl::xh(rect) <= gtl::xl(rect) || gtl::yh(rect) <= gtl::yl(rect);
+  });
   if (pieces.empty()) {
     return false;
   }
-  delta_piece = *std::min_element(
-      pieces.begin(), pieces.end(), [](const auto& lhs, const auto& rhs) {
-        return std::make_tuple(
-                   gtl::xl(lhs), gtl::yl(lhs), gtl::xh(lhs), gtl::yh(lhs))
-               < std::make_tuple(
-                   gtl::xl(rhs), gtl::yl(rhs), gtl::xh(rhs), gtl::yh(rhs));
-      });
+  delta_piece
+      = *std::ranges::min_element(pieces, [](const auto& lhs, const auto& rhs) {
+          return std::make_tuple(
+                     gtl::xl(lhs), gtl::yl(lhs), gtl::xh(lhs), gtl::yh(lhs))
+                 < std::make_tuple(
+                     gtl::xl(rhs), gtl::yl(rhs), gtl::xh(rhs), gtl::yh(rhs));
+        });
   return true;
 }
 
