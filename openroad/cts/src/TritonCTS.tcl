@@ -610,10 +610,12 @@ proc report_cts { args } {
 
   sta::check_argc_eq0 "report_cts" $args
 
+  # Reset the output file so an earlier -out_file does not stick.
+  set outFile ""
   if { [info exists keys(-out_file)] } {
     set outFile $keys(-out_file)
-    cts::set_metric_output $outFile
   }
+  cts::set_metric_output $outFile
 
   cts::report_cts_metrics
 }
