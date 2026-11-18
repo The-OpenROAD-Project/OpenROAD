@@ -87,7 +87,7 @@ void PDNSim::setNetVoltage(odb::dbNet* net, sta::Scene* corner, double voltage)
 {
   auto& voltages = user_voltages_[net];
   auto it = voltages.find(corner);
-  if (it != voltages.end() && it->second != voltage) {
+  if (it == voltages.end() || it->second != voltage) {
     clearSolutions(corner);
   }
   voltages[corner] = voltage;
@@ -97,7 +97,7 @@ void PDNSim::setInstPower(odb::dbInst* inst, sta::Scene* corner, float power)
 {
   auto& powers = user_powers_[inst];
   auto it = powers.find(corner);
-  if (it != powers.end() && it->second != power) {
+  if (it == powers.end() || it->second != power) {
     clearSolutions(corner);
   }
   powers[corner] = power;
