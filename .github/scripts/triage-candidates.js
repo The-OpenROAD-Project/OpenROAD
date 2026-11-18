@@ -12,18 +12,21 @@
 //  - open_assigned: their open assigned issues across the repository;
 //  - recent_commits: their commits among the module's last 100 commits in
 //    the past year.
+// and `suggested`, the member the assignment rule picks (suggestAssignee).
 //
 // Used from actions/github-script in the job that runs Gemini:
 //   const run = require('./.github/scripts/triage-candidates.js');
 //   await run({github, context, core});
 //
 // Exports the masked table as the environment variable ASSIGNEE_CANDIDATES
-// (empty on failure).  A masked value cannot be passed between jobs, so the
-// job that applies the assignment calls allowedAssignees() itself.
+// (empty on failure) and sets the step output `built` to 'true' or 'false'.
+// A masked value cannot be passed between jobs, so the job that applies the
+// assignment calls allowedAssignees() itself, and assigns only when `built`
+// is 'true'.
 
 const fs = require('fs');
 
-// Labels without a /src/<module>/ directory, mapped to a path whose
+// Labels without a /openroad/<module>/ directory, mapped to a path whose
 // CODEOWNERS entry owns that area.
 const kLabelPaths = {
   'bazel': '/MODULE.bazel',
@@ -88,12 +91,12 @@ function ownersForPath(rules, path) {
   return match ? match.teams : [];
 }
 
-// Returns {label: {path, module}} where module is the src/ directory name
+// Returns {label: {path, module}} where module is the openroad/ directory name
 // (with the CODEOWNERS spelling) or null.
 function resolveLabels(rules, labels) {
   const modules = new Map();
   for (const rule of rules) {
-    const m = rule.pattern.match(/^\/src\/([^/*]+)\/$/);
+    const m = rule.pattern.match(/^\/openroad\/([^/*]+)\/$/);
     if (m) {
       modules.set(m[1].toLowerCase(), m[1]);
     }
@@ -102,7 +105,7 @@ function resolveLabels(rules, labels) {
   for (const label of labels) {
     const module = modules.get(label.toLowerCase());
     if (module) {
-      resolved[label] = {path: `/src/${module}/x`, module};
+      resolved[label] = {path: `/openroad/${module}/x`, module};
     } else if (kLabelPaths[label.toLowerCase()]) {
       resolved[label] = {path: kLabelPaths[label.toLowerCase()], module: null};
     }
@@ -199,7 +202,7 @@ async function recentCommitCounts(github, context, module, candidates) {
   const {data: commits} = await github.rest.repos.listCommits({
     owner: context.repo.owner,
     repo: context.repo.repo,
-    path: `src/${module}`,
+    path: `openroad/${module}`,
     since: since.toISOString(),
     per_page: kCommitSampleSize,
   });
@@ -215,6 +218,27 @@ async function recentCommitCounts(github, context, module, candidates) {
     }
   }
   return counts;
+}
+
+// The assignment rule spreads work among the people who handle an area.
+// The pool is the members with area_assigned above 0, else those with
+// recent_commits above 0, else all of them. From the pool, the member with
+// the fewest open_assigned wins; ties go to the higher area_assigned, then
+// the higher recent_commits, then the login, so the pick is deterministic.
+function suggestAssignee(members) {
+  let pool = members.filter((m) => m.area_assigned > 0);
+  if (pool.length === 0) {
+    pool = members.filter((m) => m.recent_commits > 0);
+  }
+  if (pool.length === 0) {
+    pool = members;
+  }
+  const best = [...pool].sort((a, b) =>
+    a.open_assigned - b.open_assigned ||
+    b.area_assigned - a.area_assigned ||
+    b.recent_commits - a.recent_commits ||
+    a.login.localeCompare(b.login))[0];
+  return best ? best.login : '';
 }
 
 async function buildCandidates({github, context, core, labels, codeowners}) {
@@ -245,14 +269,16 @@ async function buildCandidates({github, context, core, labels, codeowners}) {
       {} : await areaAssignedCounts(github, context, entry.label);
     const commits = entry.module ? await recentCommitCounts(
       github, context, entry.module, new Set(entry.logins)) : {};
+    const rowMembers = entry.logins.map((login) => ({
+      login,
+      area_assigned: assigned[login] || 0,
+      open_assigned: workload[login] || 0,
+      recent_commits: commits[login] || 0,
+    }));
     return {
       teams: entry.teams.map((team) => team.split('/')[1]),
-      members: entry.logins.map((login) => ({
-        login,
-        area_assigned: assigned[login] || 0,
-        open_assigned: workload[login] || 0,
-        recent_commits: commits[login] || 0,
-      })),
+      suggested: suggestAssignee(rowMembers),
+      members: rowMembers,
     };
   });
   const table = {};
@@ -301,6 +327,8 @@ module.exports = async ({github, context, core}) => {
     core.setSecret(json);
   }
   core.exportVariable('ASSIGNEE_CANDIDATES', json);
+  // Unlike the table, a plain flag can pass to the job that assigns.
+  core.setOutput('built', json ? 'true' : 'false');
 };
 
 module.exports.parseCodeowners = parseCodeowners;
@@ -308,3 +336,4 @@ module.exports.ownersForPath = ownersForPath;
 module.exports.resolveLabels = resolveLabels;
 module.exports.buildCandidates = buildCandidates;
 module.exports.allowedAssignees = allowedAssignees;
+module.exports.suggestAssignee = suggestAssignee;

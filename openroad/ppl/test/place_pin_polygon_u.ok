@@ -1,0 +1,13 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: polygon_u
+[INFO ODB-0130]     Created 8 pins.
+[INFO ODB-0133]     Created 8 nets and 0 connections.
+[INFO PPL-0070] Pin bottom placed at (29.93um, 0.04um) instead of (30.00um, 0.00um). Pin was snapped to a routing track, to the manufacturing grid or moved away from blocked region.
+[INFO PPL-0070] Pin right placed at (59.97um, 19.95um) instead of (60.00um, 20.00um). Pin was snapped to a routing track, to the manufacturing grid or moved away from blocked region.
+[INFO PPL-0070] Pin right_arm_top placed at (50.06um, 39.97um) instead of (50.00um, 40.00um). Pin was snapped to a routing track, to the manufacturing grid or moved away from blocked region.
+[INFO PPL-0070] Pin notch_right placed at (40.03um, 27.51um) instead of (40.00um, 27.50um). Pin was snapped to a routing track, to the manufacturing grid or moved away from blocked region.
+[INFO PPL-0070] Pin notch_floor placed at (29.93um, 14.96um) instead of (30.00um, 15.00um). Pin was snapped to a routing track, to the manufacturing grid or moved away from blocked region.
+[INFO PPL-0070] Pin notch_left placed at (19.96um, 27.51um) instead of (20.00um, 27.50um). Pin was snapped to a routing track, to the manufacturing grid or moved away from blocked region.
+[INFO PPL-0070] Pin left_arm_top placed at (9.97um, 39.97um) instead of (10.00um, 40.00um). Pin was snapped to a routing track, to the manufacturing grid or moved away from blocked region.
+[INFO PPL-0070] Pin left placed at (0.04um, 19.95um) instead of (0.00um, 20.00um). Pin was snapped to a routing track, to the manufacturing grid or moved away from blocked region.
+No differences found.

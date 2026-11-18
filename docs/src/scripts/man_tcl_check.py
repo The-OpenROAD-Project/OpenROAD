@@ -18,16 +18,16 @@ class TestManTclCheck(unittest.TestCase):
         help_dict, proc_dict, readme_dict = {}, {}, {}
 
         exclude = ["sta"]
-        include = ["./src/odb/src/swig/tcl/odb.tcl"]
+        include = ["./openroad/odb/src/swig/tcl/odb.tcl"]
 
-        for path in sorted(glob.glob("./src/*/src/*tcl")) + include:
+        for path in sorted(glob.glob("./openroad/*/src/*tcl")) + include:
             if module not in path:
                 continue
             tool_dir = os.path.dirname(os.path.dirname(path))
             if module not in tool_dir:
                 continue
             if "odb" in tool_dir:
-                tool_dir = "./src/odb"
+                tool_dir = "./openroad/odb"
             if not os.path.exists(f"{tool_dir}/README.md"):
                 continue
             if re.search(f".*{'|'.join(e for e in exclude)}.*", path):
@@ -45,7 +45,7 @@ class TestManTclCheck(unittest.TestCase):
                     extract_proc(content)
                 )
 
-        for path in glob.glob("./src/*/README.md"):
+        for path in glob.glob("./openroad/*/README.md"):
             if module not in path:
                 continue
             if re.search(f".*{'|'.join(e for e in exclude)}.*", path):
