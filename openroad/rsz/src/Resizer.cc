@@ -2038,7 +2038,7 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
     lib_data_->sorted_vt_categories.clear();
   }
 
-  // VT categories of the buffers, dont_use ones included
+  // Identified VT categories of the buffers, dont_use ones included
   std::set<VTCategory> vt_categories_with_dont_use;
   sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
@@ -2056,7 +2056,11 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
         if (!master) {
           continue;
         }
-        vt_categories_with_dont_use.insert(cellVTType(master));
+        // A buffer without an identified VT forms no VT category.
+        const VTCategory vt_category = cellVTType(master);
+        if (vt_category.isClassified()) {
+          vt_categories_with_dont_use.insert(vt_category);
+        }
         if (dontUse(buffer)) {
           continue;
         }
@@ -2070,12 +2074,12 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
         }
 
         // Track VT category leakage data
-        VTCategory vt_category = cellVTType(master);
-
-        // Get or create VT leakage stats for this category
-        VTLeakageStats& vt_stats
-            = lib_data_->vt_leakage_by_category[vt_category];
-        vt_stats.add_cell_leakage(cellLeakage(buffer));
+        if (vt_category.isClassified()) {
+          // Get or create VT leakage stats for this category
+          VTLeakageStats& vt_stats
+              = lib_data_->vt_leakage_by_category[vt_category];
+          vt_stats.add_cell_leakage(cellLeakage(buffer));
+        }
 
         buffer_list.emplace_back(buffer);
       }
@@ -2310,6 +2314,12 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
     return vt_equiv_cells_cache_[source_cell];
   }
 
+  // A cell without an identified VT has no VT to swap from.
+  if (!cellVTType(source_cell_master).isClassified()) {
+    vt_equiv_cells_cache_[source_cell] = sta::LibertyCellSeq();
+    return vt_equiv_cells_cache_[source_cell];
+  }
+
   sta::LibertyCellSeq vt_equiv_cells;
   int64_t source_cell_area = source_cell_master->getArea();
 
@@ -2327,6 +2337,11 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
 
     dbMaster* equiv_cell_master = db_network_->staToDb(equiv_cell);
     if (!equiv_cell_master) {
+      continue;
+    }
+
+    // A cell without an identified VT is no VT alternative.
+    if (!cellVTType(equiv_cell_master).isClassified()) {
       continue;
     }
 
@@ -2619,7 +2634,8 @@ VTCategory Resizer::cellVTType(dbMaster* master)
 
   dbSet<dbBox> obs = master->getObstructions();
   if (obs.empty()) {
-    VTCategory vt_cat{.vt_index = 0, .vt_name = "-"};
+    VTCategory vt_cat{.vt_index = VTCategory::kUnclassifiedVtIndex,
+                      .vt_name = "-"};
     auto [new_it, _] = vt_map_.emplace(master, vt_cat);
     return new_it->second;
   }
@@ -2658,7 +2674,8 @@ VTCategory Resizer::cellVTType(dbMaster* master)
   }
 
   if (hash1 == 0) {
-    VTCategory vt_cat{.vt_index = 0, .vt_name = "-"};
+    VTCategory vt_cat{.vt_index = VTCategory::kUnclassifiedVtIndex,
+                      .vt_name = "-"};
     auto [new_it, _] = vt_map_.emplace(master, vt_cat);
     return new_it->second;
   }

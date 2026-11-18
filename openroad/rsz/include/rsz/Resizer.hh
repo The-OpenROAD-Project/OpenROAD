@@ -130,8 +130,14 @@ enum class RepairEffort : uint8_t
 // Voltage Threshold (VT) category identifier
 struct VTCategory
 {
+  // vt_index of a cell without IMPLANT obstructions.  Such a cell has no
+  // identified VT: it forms no VT category and is no VT swap candidate.
+  static constexpr int kUnclassifiedVtIndex = 0;
+
   int vt_index;
   std::string vt_name;
+
+  bool isClassified() const { return vt_index != kUnclassifiedVtIndex; }
 
   // Enable use as map key
   bool operator<(const VTCategory& other) const
