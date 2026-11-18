@@ -102,7 +102,6 @@ bazel_dep(name = "boost.serialization", version = BOOST_VERSION)
 bazel_dep(name = "boost.smart_ptr", version = BOOST_VERSION)
 bazel_dep(name = "boost.scope_exit", version = BOOST_VERSION)
 bazel_dep(name = "boost.spirit", version = BOOST_VERSION)
-bazel_dep(name = "boost.stacktrace", version = BOOST_VERSION)
 bazel_dep(name = "boost.system", version = BOOST_VERSION)
 bazel_dep(name = "boost.thread", version = BOOST_VERSION)
 bazel_dep(name = "boost.tokenizer", version = BOOST_VERSION)
@@ -181,7 +180,7 @@ bazel_dep(name = "or-tools", version = "9.15")
 # from @rules_cc.
 bazel_dep(name = "spdlog", version = "1.17.0")
 
-# sv-elab: the SystemVerilog frontend whose sources src/syn/src/elab
+# sv-elab: the SystemVerilog frontend whose sources openroad/syn/src/elab
 # compiles, from the BCR like every dependency that is not a fork.
 bazel_dep(name = "sv-elab", version = "2026-10-29")
 
@@ -420,22 +419,22 @@ node.toolchain(node_version = "22.14.0")
 npm_web = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm")
 npm_web.npm_translate_lock(
     name = "npm_web",
-    npmrc = "//src/web:.npmrc",
-    # Only the lock is read; //src/web/test:npm_lock_test keeps it in step
-    # with src/web/package.json.
-    pnpm_lock = "//src/web:pnpm-lock.yaml",
+    npmrc = "//openroad/web:.npmrc",
+    # Only the lock is read; //openroad/web/test:npm_lock_test keeps it in step
+    # with openroad/web/package.json.
+    pnpm_lock = "//openroad/web:pnpm-lock.yaml",
 )
 
 # sax ships its licence as LICENSE.md, which the default "basic" preset strips
-# with every other *.md; //src/web:third_party_licenses needs it.
+# with every other *.md; //openroad/web:third_party_licenses needs it.
 npm_web.npm_exclude_package_contents(
     package = "sax",
     presets = [],
 )
 use_repo(npm_web, "npm_web")
 
-# Regenerate //src/web:pnpm-lock.yaml after editing //src/web:package.json:
-#   bazelisk run -- @pnpm//:pnpm --dir $PWD/src/web install --lockfile-only
+# Regenerate //openroad/web:pnpm-lock.yaml after editing //openroad/web:package.json:
+#   bazelisk run -- @pnpm//:pnpm --dir $PWD/openroad/web install --lockfile-only
 pnpm = use_extension(
     "@aspect_rules_js//npm:extensions.bzl",
     "pnpm",
@@ -450,7 +449,7 @@ npm = use_extension(
 )
 npm.npm_translate_lock(
     name = "npm",
-    pnpm_lock = "//src/web/test:pnpm-lock.yaml",
+    pnpm_lock = "//openroad/web/test:pnpm-lock.yaml",
 )
 use_repo(npm, "npm")
 

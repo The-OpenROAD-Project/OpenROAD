@@ -1,5 +1,5 @@
 exclude = [
-    "src/sta/",
+    "openroad/sta/",
     "tmp/",
     "third-party/",
 ]

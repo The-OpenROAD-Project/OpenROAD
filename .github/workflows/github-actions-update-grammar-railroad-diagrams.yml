@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
       - name: Set up Java
-        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad  # v6.1.0
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78  # v6.2.0
         with:
           distribution: temurin
           java-version: "21"
@@ -29,14 +29,14 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         id: cache-tools
         with:
-          path: src/odb/doc/tools
+          path: openroad/odb/doc/tools
           key: railroad-tools-ebnf-v0.73-rr-2.6
 
       - name: Validate cached railroad tools
         id: validate-tools
         run: |
           set -euo pipefail
-          tools_dir="$GITHUB_WORKSPACE/src/odb/doc/tools"
+          tools_dir="$GITHUB_WORKSPACE/openroad/odb/doc/tools"
           ebnf_war="$tools_dir/ebnf-convert.war"
           rr_war="$tools_dir/rr.war"
 
@@ -62,19 +62,19 @@ jobs:
           git clone --depth 1 --branch v0.73 \
             https://github.com/GuntherRademacher/ebnf-convert.git /tmp/ebnf-convert
           cd /tmp/ebnf-convert && ./gradlew war
-          mkdir -p $GITHUB_WORKSPACE/src/odb/doc/tools
+          mkdir -p $GITHUB_WORKSPACE/openroad/odb/doc/tools
           cp build/libs/ebnf-convert.war \
-            $GITHUB_WORKSPACE/src/odb/doc/tools/ebnf-convert.war
-          curl -fsSL -o $GITHUB_WORKSPACE/src/odb/doc/tools/rr.war \
+            $GITHUB_WORKSPACE/openroad/odb/doc/tools/ebnf-convert.war
+          curl -fsSL -o $GITHUB_WORKSPACE/openroad/odb/doc/tools/rr.war \
             https://repo1.maven.org/maven2/de/bottlecaps/rr/rr-lib/2.6/rr-lib-2.6.jar
 
       - name: Regenerate railroad diagram SVGs
-        run: python3 src/odb/doc/generate_railroad_diagrams.py
+        run: python3 openroad/odb/doc/generate_railroad_diagrams.py
 
       - name: Detect diagram changes
         id: diagram-changes
         run: |
-          if [ -z "$(git status --porcelain src/odb/doc/images/)" ]; then
+          if [ -z "$(git status --porcelain openroad/odb/doc/images/)" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -82,7 +82,7 @@ jobs:
 
       - name: Open PR if diagrams changed
         if: steps.diagram-changes.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # v8.1.1
+        uses: peter-evans/create-pull-request@15733dbdfeedb4f7fdb73d13c6f5ac83b710fab8  # v8.1.2
         with:
           commit-message: "odb: regenerate LEF/DEF railroad diagram SVGs"
           branch: auto/grammar-railroad-diagrams
@@ -94,4 +94,4 @@ jobs:
             Triggered by a change to `lef.y` or `def.y`.
           labels: automated
           add-paths: |
-            src/odb/doc/images/
+            openroad/odb/doc/images/
