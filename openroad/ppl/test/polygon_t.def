@@ -1,0 +1,31 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN polygon_t ;
+UNITS DISTANCE MICRONS 2000 ;
+DIEAREA ( 40000 0 ) ( 80000 0 ) ( 80000 60000 ) ( 120000 60000 ) ( 120000 90000 ) ( 0 90000 ) ( 0 60000 ) ( 40000 60000 ) ;
+TRACKS X 190 DO 316 STEP 380 LAYER metal2 ;
+TRACKS Y 140 DO 321 STEP 280 LAYER metal2 ;
+TRACKS X 190 DO 316 STEP 380 LAYER metal3 ;
+TRACKS Y 140 DO 321 STEP 280 LAYER metal3 ;
+PINS 8 ;
+    - stem_bottom + NET stem_bottom + DIRECTION INPUT + USE SIGNAL ;
+    - stem_right + NET stem_right + DIRECTION INPUT + USE SIGNAL ;
+    - bar_bottom_right + NET bar_bottom_right + DIRECTION INPUT + USE SIGNAL ;
+    - bar_right + NET bar_right + DIRECTION INPUT + USE SIGNAL ;
+    - bar_top + NET bar_top + DIRECTION INPUT + USE SIGNAL ;
+    - bar_left + NET bar_left + DIRECTION INPUT + USE SIGNAL ;
+    - bar_bottom_left + NET bar_bottom_left + DIRECTION INPUT + USE SIGNAL ;
+    - stem_left + NET stem_left + DIRECTION INPUT + USE SIGNAL ;
+END PINS
+NETS 8 ;
+    - stem_bottom ( PIN stem_bottom ) ;
+    - stem_right ( PIN stem_right ) ;
+    - bar_bottom_right ( PIN bar_bottom_right ) ;
+    - bar_right ( PIN bar_right ) ;
+    - bar_top ( PIN bar_top ) ;
+    - bar_left ( PIN bar_left ) ;
+    - bar_bottom_left ( PIN bar_bottom_left ) ;
+    - stem_left ( PIN stem_left ) ;
+END NETS
+END DESIGN
