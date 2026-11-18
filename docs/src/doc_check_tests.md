@@ -10,7 +10,7 @@ Python and run in seconds without building the OpenROAD binary.
 
 ```shell
 # All documentation checks (~48 tests, seconds)
-bazelisk test --test_tag_filters=doc_check //src/...
+bazelisk test --test_tag_filters=doc_check //openroad/...
 
 # Duplicate message ID check
 bazelisk test //:dup_id_test
@@ -54,7 +54,7 @@ as stages in the PR pipeline. These Bazel tests cover the same checks.
 Once this is validated in CI, the corresponding Jenkins stages can be
 removed:
 
-- Jenkins "Documentation Checks" stage → `bazelisk test --test_tag_filters=doc_check //src/...`
+- Jenkins "Documentation Checks" stage → `bazelisk test --test_tag_filters=doc_check //openroad/...`
 - Jenkins "Find Duplicated Message IDs" stage → `bazelisk test //:dup_id_test`
 
 ## Adding a new module
@@ -62,9 +62,9 @@ removed:
 When adding documentation tests for a new module:
 
 1. Add `filegroup(name = "doc_files")` and `messages_txt()` macro call
-   to `src/{module}/BUILD` (load `messages_txt` from
+   to `openroad/{module}/BUILD` (load `messages_txt` from
    `//test:regression.bzl`)
-2. Add `doc_check_test` entries to `src/{module}/test/BUILD`
+2. Add `doc_check_test` entries to `openroad/{module}/test/BUILD`
 
 The `doc_check` tag is automatically added by the macro, so
 `--test_tag_filters=doc_check` picks up new tests without any changes
