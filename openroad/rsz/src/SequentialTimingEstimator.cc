@@ -74,9 +74,11 @@ void expandStateRow(const sta::StatetableRow& row,
         || std::ranges::any_of(row.currentValues(), is_pair_internal)
         || std::ranges::any_of(row.nextValues(), is_pair_internal);
   if (!shorthand) {
-    rows.push_back({.inputs = row.inputValues(),
-                    .currents = row.currentValues(),
-                    .nexts = row.nextValues()});
+    rows.push_back({
+        .inputs = row.inputValues(),
+        .currents = row.currentValues(),
+        .nexts = row.nextValues(),
+    });
     return;
   }
 

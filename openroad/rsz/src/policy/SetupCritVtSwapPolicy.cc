@@ -22,6 +22,7 @@
 #include "MoveCommitter.hh"
 #include "OptimizerTypes.hh"
 #include "PathGroupFilter.hh"
+#include "RepairSetupContext.hh"
 #include "RepairSetupProfiler.hh"
 #include "RepairTargetCollector.hh"
 #include "SequentialTimingEstimator.hh"
@@ -39,6 +40,7 @@
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
+#include "sta/PocvMode.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Scene.hh"
 #include "sta/TimingArc.hh"
@@ -455,9 +457,11 @@ float SetupCritVtSwapPolicy::captureSetupGain(sta::Instance* inst,
     const sta::MinMax* min_max
         = setup ? sta::MinMax::max() : sta::MinMax::min();
     auto [entry, inserted]
-        = deltas.try_emplace(CheckKey{data_vertex, setup},
-                             RfDelta{-std::numeric_limits<float>::infinity(),
-                                     -std::numeric_limits<float>::infinity()});
+        = deltas.try_emplace(CheckKey{.vertex = data_vertex, .setup = setup},
+                             RfDelta{
+                                 -std::numeric_limits<float>::infinity(),
+                                 -std::numeric_limits<float>::infinity(),
+                             });
 
     for (const sta::Scene* scene : sta_->scenes()) {
       const sta::Pvt* pvt = sta_->pvt(inst, min_max, scene->sdc());

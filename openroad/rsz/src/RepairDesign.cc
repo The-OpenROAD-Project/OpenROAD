@@ -1002,7 +1002,11 @@ bool RepairDesign::repairDriverSlew(const sta::Scene* corner,
           }
         }
 
-        sizes.push_back({violation, size_cell, vt_change});
+        sizes.push_back({
+            .violation = violation,
+            .cell = size_cell,
+            .vt_change = vt_change,
+        });
       }
 
       if (sizes.empty()) {

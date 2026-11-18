@@ -1669,12 +1669,13 @@ void collectFaninSideLoads(Resizer& resizer,
         continue;
       }
 
-      side_net.loads.push_back(
-          {.pin = pin,
-           .slack = sta::delayAsFloat(slack),
-           .weight = sideLoadWeight(
-               pin, options.critical_load_pins, options.off_path_weight),
-           .on_target = network->instance(pin) == target_inst});
+      side_net.loads.push_back({
+          .pin = pin,
+          .slack = sta::delayAsFloat(slack),
+          .weight = sideLoadWeight(
+              pin, options.critical_load_pins, options.off_path_weight),
+          .on_target = network->instance(pin) == target_inst,
+      });
     }
 
     if (side_net.loads.empty()) {
