@@ -22,5 +22,5 @@ echo "STABLE_GIT_VERSION ${GIT_VERSION}"
 GIT_COMMIT_TIME=$(git log -1 --format=%ct 2>/dev/null || echo "")
 echo "STABLE_GIT_COMMIT_TIME ${GIT_COMMIT_TIME}"
 
-STA_GIT_SHA1=$(git -C src/sta rev-parse HEAD 2>/dev/null || echo "unknown")
+STA_GIT_SHA1=$(git -C openroad/sta rev-parse HEAD 2>/dev/null || echo "unknown")
 echo "STABLE_STA_GIT_SHA1 ${STA_GIT_SHA1}"
