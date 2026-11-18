@@ -6,7 +6,7 @@ set -euo pipefail
 RUNFILES="${BASH_SOURCE[0]}.runfiles/_main"
 
 if [[ -z "${OPENROAD_EXE:-}" ]]; then
-    OPENROAD_EXE="$RUNFILES/openroad"
+    OPENROAD_EXE="$RUNFILES/openroad/openroad"
 fi
 export OPENROAD_EXE
 export PATH="$(dirname "$(realpath "$OPENROAD_EXE")"):$PATH"

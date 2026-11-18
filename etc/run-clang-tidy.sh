@@ -8,12 +8,12 @@
 #
 # To restrict processing to a subset of paths, pass one or more --filter=REGEX
 # args (matched with regex_search against each candidate path), e.g.
-#   run-clang-tidy.sh --filter='src/odb/'
-#   run-clang-tidy.sh --filter='src/odb/' --filter='src/cts/'
+#   run-clang-tidy.sh --filter='openroad/odb/'
+#   run-clang-tidy.sh --filter='openroad/odb/' --filter='openroad/cts/'
 #
 # To list the files that would be checked (one per line on stdout) and exit
 # without running clang-tidy, pass --list-files, e.g.
-#   run-clang-tidy.sh --filter='src/odb/' --list-files
+#   run-clang-tidy.sh --filter='openroad/odb/' --list-files
 
 set -eu
 

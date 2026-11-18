@@ -23,6 +23,7 @@ WORKSPACE="$(dirname "$(readlink MODULE.bazel)")"
 cd "$WORKSPACE"
 
 # --fallback-style=none leaves files without a .clang-format alone.
+PARALLEL=$(getconf _NPROCESSORS_ONLN || nproc || echo 1)
 "${CC_LS_FILES}" "${GIT_LS_FILES}" "${GIT}" \
-    | xargs -0 -r -n 50 -P "$(getconf _NPROCESSORS_ONLN)" \
+    | xargs -0 -r -n 50 -P "${PARALLEL}" \
         "${TOOL}" --fallback-style=none --dry-run --Werror
