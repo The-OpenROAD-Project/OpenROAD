@@ -171,7 +171,7 @@ struct VTLeakageStats
 struct VTMasterUsage
 {
   int count = 0;
-  double leakage = 0;  // Watts, libertyLeakage times count
+  double leakage = 0;  // Watts
 };
 
 // Instance count, area (DBU^2) and leakage of the cells in one VT category
@@ -622,9 +622,11 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Leakage (W) of one instance of cell, from liberty only.
   static double libertyLeakage(sta::LibertyCell* cell);
   std::vector<VTUsage> vtUsage(odb::dbModule* module,
-                               const std::vector<std::string>& vt_order = {});
+                               const std::vector<std::string>& vt_order = {},
+                               bool activity_weighted = false);
   void reportVTUsage(odb::dbModule* module,
                      const std::vector<std::string>& vt_order,
+                     bool activity_weighted,
                      bool verbose);
   void reportDelayEstimatorAccuracyForRebufferTree(sta::Instance* inst,
                                                    sta::Pin* driver_pin,

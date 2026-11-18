@@ -648,15 +648,17 @@ power of each threshold voltage (VT) type, and their share of the total. The VT 
 cell comes from the implant layers in its LEF obstructions, as in
 `report_buffers`. Cells without an implant layer are reported in a `-` row,
 listed last. Only `CORE` standard cells are counted, so fillers, tap and endcap
-cells, tie cells, and macros are left out. Leakage is the liberty leakage of each cell
-times its instance count: per primary power pin, the average of the
-state-dependent `leakage_power` values, which `report_power` instead weighs by
-state duty. It needs no activity, so it is fast, and it can differ from
-`report_power`. VT types are listed by name unless `-vt_order` sets the order.
+cells, tie cells, and macros are left out. By default, leakage is the liberty
+leakage of each cell times its instance count: per primary power pin, the
+average of the state-dependent `leakage_power` values. It needs no activity, so
+it is fast, and it can differ from `report_power`, which weighs the states by
+duty (`-activity_weighted`). VT types are listed by name unless `-vt_order`
+sets the order.
 
 ```tcl
 report_vt_usage
     [-verbose]
+    [-activity_weighted]
     [-vt_order vt_names]
     [module_inst]
 ```
@@ -666,6 +668,7 @@ report_vt_usage
 | Switch Name | Description |
 | ----- | ----- |
 | `-verbose` | Also report each cell master under its VT type. |
+| `-activity_weighted` | Weight state-dependent leakage by state duty from activity, as `report_power` does. The first call propagates activity over the whole design. |
 | `-vt_order` | List of VT type names to report first, in this order, such as `{SL L R}`. VT types not in the list follow by name. A name with no cells gets a warning. |
 | `module_inst` | Report only the cells under this hierarchical module instance. The default is the whole design. |
 

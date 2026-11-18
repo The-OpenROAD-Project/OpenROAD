@@ -14,6 +14,7 @@
 #include "rsz/Resizer.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/PowerClass.hh"
 
 namespace rsz {
 
@@ -172,6 +173,25 @@ TEST_F(TestResizerMt, VTUsageSumsLibertyLeakageByVT)
       lvt_usage.leakage + rvt_usage.leakage, core_leakage, 1e-9 * core_leakage);
   // The same buffer leaks more in LVT.
   EXPECT_GT(lvt_usage.leakage, inst_leakage(rvt_buf));
+
+  auto sta_leakage = [&](odb::dbInst* inst) -> double {
+    return sta_->power(db_network_->dbToSta(inst), scene).leakage();
+  };
+  double core_sta_leakage = 0;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->getMaster()->getType() == odb::dbMasterType::CORE) {
+      core_sta_leakage += sta_leakage(inst);
+    }
+  }
+  const std::vector<VTUsage> weighted
+      = resizer_.vtUsage(block_->getTopModule(), {lvt}, true);
+  ASSERT_EQ(weighted.size(), 2u);
+  EXPECT_DOUBLE_EQ(weighted[0].leakage, sta_leakage(target));
+  EXPECT_DOUBLE_EQ(weighted[0].masters.at(buf_lvt_master).leakage,
+                   sta_leakage(target));
+  EXPECT_NEAR(weighted[0].leakage + weighted[1].leakage,
+              core_sta_leakage,
+              1e-9 * core_sta_leakage);
 }
 
 TEST_F(TestResizerMt, BuildEstimatorContextAndEstimateLvtCandidate)

@@ -636,6 +636,7 @@ void report_buffers_cmd(bool filtered)
 
 void report_vt_usage_cmd(const char* modinst_name,
                          StringSeq vt_order,
+                         bool activity_weighted,
                          bool verbose)
 {
   ensureLinked();
@@ -650,7 +651,7 @@ void report_vt_usage_cmd(const char* modinst_name,
     }
     module = modinst->getMaster();
   }
-  getResizer()->reportVTUsage(module, vt_order, verbose);
+  getResizer()->reportVTUsage(module, vt_order, activity_weighted, verbose);
 }
 
 void report_delay_estimator_accuracy_cmd(Instance* inst,

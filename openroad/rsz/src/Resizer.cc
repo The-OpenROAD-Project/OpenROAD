@@ -86,6 +86,7 @@
 #include "sta/Path.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PortDirection.hh"
+#include "sta/PowerClass.hh"
 #include "sta/Scene.hh"
 #include "sta/Sdc.hh"
 #include "sta/SdcClass.hh"
@@ -2018,8 +2019,10 @@ double Resizer::libertyLeakage(sta::LibertyCell* cell)
 }
 
 std::vector<VTUsage> Resizer::vtUsage(odb::dbModule* module,
-                                      const std::vector<std::string>& vt_order)
+                                      const std::vector<std::string>& vt_order,
+                                      const bool activity_weighted)
 {
+  const sta::Scene* scene = sta_->cmdScene();
   std::map<std::string, VTUsage> usage_by_name;
   for (odb::dbInst* inst : module->getLeafInsts()) {
     odb::dbMaster* master = inst->getMaster();
@@ -2032,20 +2035,23 @@ std::vector<VTUsage> Resizer::vtUsage(odb::dbModule* module,
     vt_usage.count++;
     vt_usage.area += master->getArea();
     master_usage.count++;
+    if (activity_weighted) {
+      master_usage.leakage
+          += sta_->power(db_network_->dbToSta(inst), scene).leakage();
+    }
   }
 
-  const sta::Scene* scene = sta_->cmdScene();
   std::vector<VTUsage> usage;
   for (auto& [vt_name, vt_usage] : usage_by_name) {
     for (auto& [master, master_usage] : vt_usage.masters) {
       sta::LibertyCell* cell
           = db_network_->libertyCell(db_network_->dbToSta(master));
-      if (cell != nullptr) {
+      if (!activity_weighted && cell != nullptr) {
         master_usage.leakage
             = master_usage.count
               * libertyLeakage(cell->sceneCell(scene, sta::MinMax::max()));
-        vt_usage.leakage += master_usage.leakage;
       }
+      vt_usage.leakage += master_usage.leakage;
     }
     vt_usage.vt_name = vt_name;
     usage.push_back(std::move(vt_usage));
@@ -2060,9 +2066,11 @@ std::vector<VTUsage> Resizer::vtUsage(odb::dbModule* module,
 
 void Resizer::reportVTUsage(odb::dbModule* module,
                             const std::vector<std::string>& vt_order,
+                            const bool activity_weighted,
                             const bool verbose)
 {
-  const std::vector<VTUsage> usage = vtUsage(module, vt_order);
+  const std::vector<VTUsage> usage
+      = vtUsage(module, vt_order, activity_weighted);
   for (const std::string& vt_name : vt_order) {
     if (std::ranges::find(usage, vt_name, &VTUsage::vt_name) == usage.end()) {
       logger_->warn(

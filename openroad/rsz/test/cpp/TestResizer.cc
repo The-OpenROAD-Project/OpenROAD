@@ -1604,7 +1604,7 @@ TEST_F(TestResizer, VTUsageOfModuleWithoutCoreCellsIsEmpty)
             nullptr);
 
   EXPECT_TRUE(resizer_.vtUsage(empty).empty());
-  EXPECT_NO_THROW(resizer_.reportVTUsage(empty, {}, true));
+  EXPECT_NO_THROW(resizer_.reportVTUsage(empty, {}, true, true));
 }
 
 TEST_F(TestResizer, DisabledConditionalArcIgnoredInDriveResistance)

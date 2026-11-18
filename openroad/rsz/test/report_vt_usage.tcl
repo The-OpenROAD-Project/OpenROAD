@@ -44,6 +44,8 @@ check "report_vt_usage -vt_order" \
   { catch { report_vt_usage -vt_order {SL L R} } } 0
 check "report_vt_usage -vt_order with an unknown name" \
   { catch { report_vt_usage -vt_order {SLVT L} } } 0
+check "report_vt_usage -activity_weighted" \
+  { catch { report_vt_usage -activity_weighted } } 0
 check "report_vt_usage u_sub" { catch { report_vt_usage u_sub } } 0
 check "report_vt_usage -verbose u_sub/u_inner" \
   { catch { report_vt_usage -verbose u_sub/u_inner } } 0
