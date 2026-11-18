@@ -1,0 +1,224 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022-2025, The OpenROAD Authors
+
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
+
+package(features = ["layering_check"])
+
+COMPULSORY_TESTS = [
+    "max_chain_count_sky130",
+    "one_cell_sky130",
+    "place_sort_sky130",
+    "scan_architect_clock_mix_sky130",
+    "scan_architect_no_mix_sky130",
+    "scan_architect_register_bank_no_clock_mix_sky130",
+    "scan_opt_edges_sky130",
+    "scan_opt_rebalance_cap_sky130",
+    "scan_opt_rebalance_sky130",
+    "scan_opt_skip_sky130",
+    "scan_opt_sky130",
+    "scan_replace_activity_sky130",
+    "scan_replace_clock_mismatch_sky130",
+    "scan_replace_dont_use_sky130",
+    "scan_replace_inverted_data_sky130",
+    "scan_replace_state_binding_sky130",
+    "scandef_core_sky130",
+    "scandef_sky130",
+    "sub_modules_sky130",
+]
+
+ALL_TESTS = COMPULSORY_TESTS
+
+filegroup(
+    name = "regression_resources",
+    srcs = [
+        "asap7/asap7sc7p5t_SEQ_LVT_FF_nldm_220123.lib",
+        "asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib",
+        "helpers.tcl",
+        "sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib",
+        "sky130hd/sky130_fd_sc_hd_merged.lef",
+        "sky130hd/sky130hd.tlef",
+    ],
+)
+
+[
+    filegroup(
+        name = test_name + "_resources",
+        srcs = [":regression_resources"] + glob(
+            [
+                test_name + ".*",
+            ],
+        ) + {
+            "scan_architect_clock_mix_sky130": [
+                "scan_architect_sky130.v",
+            ],
+            "scan_architect_no_mix_sky130": [
+                "scan_architect_sky130.v",
+            ],
+            "scan_architect_register_bank_no_clock_mix_sky130": [
+                "register_bank_top.v",
+            ],
+            "scan_opt_edges_sky130": [
+                "scan_architect_sky130.v",
+                "scan_opt_helpers.tcl",
+            ],
+            "scan_opt_rebalance_cap_sky130": [
+                "scan_architect_sky130.v",
+                "scan_opt_helpers.tcl",
+            ],
+            "scan_opt_rebalance_sky130": [
+                "scan_architect_sky130.v",
+                "scan_opt_helpers.tcl",
+                "scan_opt_rebalance_sky130_reload.tcl",
+            ],
+            "scan_opt_skip_sky130": [
+                "scan_architect_sky130.v",
+                "scan_opt_helpers.tcl",
+            ],
+            "scan_opt_sky130": [
+                "place_sort_sky130.v",
+            ],
+            "scan_replace_activity_sky130": [
+                "one_cell_sky130.def",
+            ],
+            "scan_replace_clock_mismatch_sky130": [
+                "one_cell_reset_sky130.def",
+            ],
+            "scan_replace_dont_use_sky130": [
+                "one_cell_sky130.def",
+            ],
+            "scan_replace_state_binding_sky130": [
+                "one_cell_reset_sky130.def",
+            ],
+            "scandef_core_sky130": [
+                "register_bank_cores.lef",
+                "scan_inserted_register_bank.v",
+            ],
+            "scandef_sky130": [
+                "scan_inserted_design_sky130.scandef",
+                "scan_inserted_design_sky130.v",
+            ],
+        }.get(test_name, []),
+    )
+    for test_name in ALL_TESTS
+]
+
+[
+    regression_test(
+        name = test_name,
+        data = [":" + test_name + "_resources"],
+        tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
+        visibility = ["//visibility:public"],
+    )
+    for test_name in ALL_TESTS
+]
+
+cc_test(
+    name = "dft_scan_architect_unittest",
+    srcs = ["cpp/TestScanArchitect.cpp"],
+    data = [":regression_resources"],
+    deps = [
+        "//openroad/dft/src/architect",
+        "//openroad/dft/src/config",
+        "//openroad/dft/src/replace",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestScanArchitect",
+    srcs = ["cpp/TestScanArchitect.cpp"],
+    data = [":regression_resources"],
+    deps = [
+        "//openroad/dft/src/architect",
+        "//openroad/dft/src/config",
+        "//openroad/dft/src/replace",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "dft_scan_architect_heuristic_unittest",
+    srcs = [
+        "cpp/ScanCellMock.cpp",
+        "cpp/ScanCellMock.hh",
+        "cpp/TestScanArchitectHeuristic.cpp",
+        "cpp/TestScanArchitectMaxChains.cpp",
+    ],
+    deps = [
+        "//openroad/dft/src/architect",
+        "//openroad/dft/src/cells",
+        "//openroad/dft/src/clock_domain",
+        "//openroad/dft/src/config",
+        "//openroad/dft/src/utils",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "dft_execute_plan_unittest",
+    srcs = ["cpp/TestDftExecutePlan.cpp"],
+    data = [
+        "max_chain_count_sky130.v",
+        ":regression_resources",
+    ],
+    deps = [
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/dft",
+        "//openroad/dft/src/config",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst",
+        "//openroad/tst:loaded_design",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "dft_scan_optimizer_unittest",
+    srcs = ["cpp/TestScanOptimizer.cpp"],
+    deps = [
+        "//openroad/dft",
+        "//openroad/dft/src/cells",
+        "//openroad/dft/src/clock_domain",
+        "//openroad/dft/src/optimizer",
+        "//openroad/dft/src/utils",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+py_test(
+    name = "dft_man_tcl_check",
+    srcs = ["dft_man_tcl_check.py"],
+    data = ["//openroad/dft:doc_files"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "dft_readme_msgs_check",
+    data = [
+        "//openroad/dft:doc_files",
+        "//openroad/dft:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)

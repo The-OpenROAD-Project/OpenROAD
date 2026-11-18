@@ -7,16 +7,24 @@ load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
 
+# The openroad package. //:openroad_py, the public Python target, includes it,
+# so it cannot depend on //:openroad_py itself.
 py_library(
-    name = "openroadpy",
+    name = "package",
     srcs = [
         "__init__.py",
         "odb.py",
         "utl.py",
     ],
     imports = [".."],
+    visibility = ["//:__pkg__"],
+    deps = ["//python/modules"],
+)
+
+alias(
+    name = "openroadpy",
+    actual = "//:openroad_py",
     visibility = ["//visibility:public"],
-    deps = ["//:openroad_py"],
 )
 
 regression_test(
@@ -40,7 +48,7 @@ py_wheel(
     python_requires = ">=3.10",
     python_tag = "cp310",
     # Install the openroad package and the per-tool modules at the top
-    # level. The extension modules keep their src/<tool> paths, which the
+    # level. The extension modules keep their openroad/<tool> paths, which the
     # generated wrappers import from.
     strip_path_prefixes = [
         "python/modules/",
@@ -74,8 +82,8 @@ py_test(
     size = "small",
     srcs = ["modules_test.py"],
     data = [
-        "//src/ant/test:ant_check.def",
-        "//src/ant/test:ant_check.lef",
+        "//openroad/ant/test:ant_check.def",
+        "//openroad/ant/test:ant_check.lef",
     ],
     deps = [":openroadpy"],
 )
