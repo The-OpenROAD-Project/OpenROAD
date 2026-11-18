@@ -94,11 +94,8 @@ void RetimingGraph::walkFanout(int source,
       continue;
     }
     if (fencesChain(net)) {
-      if (flops.empty()) {
-        pinned_[source] = true;
-      } else {
-        fenced_.insert(flops.begin(), flops.end());
-      }
+      pinned_[source] = true;
+      fenced_.insert(flops.begin(), flops.end());
     }
     for (odb::dbITerm* sink : net->getITerms()) {
       if (sink->getIoType() != odb::dbIoType::INPUT) {
@@ -228,8 +225,29 @@ void RetimingGraph::build()
     std::unordered_set<odb::dbInst*> visited;
     walkFanout(i, nodes_[i], 0, flops, visited);
   }
+  pinUnmodeledInputs();
   fenceDontTouch();
   fenceModules();
+}
+
+void RetimingGraph::pinUnmodeledInputs()
+{
+  std::unordered_set<odb::dbITerm*> modeled;
+  for (const std::vector<EdgePhys>& edges : phys_) {
+    for (const EdgePhys& phys : edges) {
+      modeled.insert(phys.sink);
+    }
+  }
+  const int n = static_cast<int>(nodes_.size());
+  for (int v = 0; v < n; ++v) {
+    for (odb::dbITerm* pin : nodes_[v]->getITerms()) {
+      odb::dbNet* net = pin->getNet();
+      if (pin->getIoType() == odb::dbIoType::INPUT && net != nullptr
+          && !net->getSigType().isSupply() && !modeled.contains(pin)) {
+        pinned_[v] = true;
+      }
+    }
+  }
 }
 
 void RetimingGraph::fenceModules()

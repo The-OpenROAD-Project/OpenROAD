@@ -54,10 +54,12 @@ move, and neither does a register chain whose output reaches a primary
 output or a control pin of another register (those read the chain at its
 current depth), nor anything marked don't-touch. A register also stays when
 it shares its input net with one of these or with a register on another
-clock net. A gate fed through such a register, connected to a primary input or
-output, driving a control pin of a register, or reachable by registers on
-different clock nets is never crossed. The design must have one clock
-defined with `create_clock`; gated copies of it are fine.
+clock net. A gate fed through such a register or driving such a chain,
+connected to a primary input or output, reading a register that no gate
+drives (one fed straight from a primary input), driving a control pin of a
+register, or reachable by registers on different clock nets is never crossed.
+The design must have one clock defined with `create_clock`; gated copies of
+it are fine.
 
 Hierarchical netlists (`link_design -hier`) have initial support: retiming is
 local to a module. A register stays inside its module: a gate is crossed

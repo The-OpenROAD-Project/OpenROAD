@@ -62,6 +62,8 @@ class RetimingGraph
  private:
   // An enable pin travels with its register's class; it is not a data edge.
   bool continuesThrough(odb::dbInst* reg, odb::dbITerm* pin) const;
+  // A net read by a port or a control pin: the registers in front of it
+  // keep their depth, and the gate that drives them is never crossed.
   bool fencesChain(odb::dbNet* net) const;
   void walkFanout(int source,
                   odb::dbInst* current,
@@ -70,6 +72,10 @@ class RetimingGraph
                   std::unordered_set<odb::dbInst*>& visited);
   void markBoundary(odb::dbInst* inst, int id);
   void markDontTouch(odb::dbInst* inst, int id);
+  // A gate input no edge ends on is read from outside the graph (a port, or
+  // a register no gate drives), so no register can be taken from it: the
+  // gate is never crossed.
+  void pinUnmodeledInputs();
   void fenceDontTouch();
   // In a hierarchical netlist a register never crosses a module boundary.
   // The registers that start on one net stay in the module of the gate that
