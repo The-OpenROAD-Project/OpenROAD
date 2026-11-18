@@ -106,7 +106,7 @@ class Rudy
   // the deposit model; both the accumulated grid and the per-net query go
   // through it.
   template <typename Visitor>
-  void visitNetTiles(const odb::Rect& net_rect, Visitor&& visit) const
+  void visitNetTiles(odb::Rect net_rect, Visitor&& visit) const
   {
     if (net_rect.isInverted()) {
       return;
@@ -116,9 +116,12 @@ class Rudy
       // All terminals on one point: no wire to route.
       return;
     }
-    const auto net_area = net_rect.area();
-    const bool is_line = net_area == 0;
-    const auto net_congestion = is_line ? 0 : (hpwl * wire_width_) / net_area;
+    // A line net is one wire_width_ wide wire. Grow it up/right so a line on
+    // a tile boundary goes to the tile above or to the right. hpwl must be
+    // taken before this, or the line's demand is inflated.
+    net_rect.set_xhi(std::max(net_rect.xMax(), net_rect.xMin() + wire_width_));
+    net_rect.set_yhi(std::max(net_rect.yMax(), net_rect.yMin() + wire_width_));
+    const auto net_congestion = (hpwl * wire_width_) / net_rect.area();
 
     const int min_x_index
         = std::max(0, (net_rect.xMin() - grid_block_.xMin()) / tile_size_);
@@ -132,20 +135,11 @@ class Rudy
     for (int x = min_x_index; x <= max_x_index; ++x) {
       for (int y = min_y_index; y <= max_y_index; ++y) {
         const auto tile_box = grid_[x][y].getRect();
-        // A line net on a tile boundary has no interior overlap with any
-        // tile, so use intersects. The index range above already gives the
-        // boundary to the tile above or to the right.
         if (!net_rect.intersects(tile_box)) {
           continue;
         }
         const odb::Rect intersect = net_rect.intersect(tile_box);
         const auto tile_area = static_cast<float>(tile_box.area());
-        if (is_line) {
-          const auto intersect_length
-              = static_cast<float>(intersect.dx() + intersect.dy());
-          visit(x, y, intersect_length * wire_width_ / tile_area * 100);
-          continue;
-        }
         const auto tile_net_box_ratio
             = static_cast<float>(intersect.area()) / tile_area;
         visit(x, y, net_congestion * tile_net_box_ratio * 100);
