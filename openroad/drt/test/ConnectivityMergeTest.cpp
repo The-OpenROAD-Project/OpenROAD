@@ -58,7 +58,7 @@ class ConnectivityMergeTest : public tst::DbFixture
   void SetUp() override
   {
     tech_ = loadTechLef("ng45",
-                        "_main/src/drt/test/Nangate45/Nangate45_tech.lef");
+                        "_main/openroad/drt/test/Nangate45/Nangate45_tech.lef");
     ASSERT_NE(tech_, nullptr);
     odb::dbChip* chip = odb::dbChip::create(db_.get(), tech_);
     block_ = odb::dbBlock::create(chip, "top");
