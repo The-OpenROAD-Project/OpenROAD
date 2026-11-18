@@ -38,16 +38,6 @@ bool usableCell(const sta::LibertyCell* cell)
          && !cell->alwaysOn() && !cell->isPad() && !cell->isMacro();
 }
 
-bool hasScanPin(odb::dbInst* inst)
-{
-  for (odb::dbITerm* iterm : inst->getITerms()) {
-    if (iterm->getSigType() == odb::dbSigType::SCAN) {
-      return true;
-    }
-  }
-  return false;
-}
-
 bool hasScanPin(odb::dbMaster* master)
 {
   for (odb::dbMTerm* mterm : master->getMTerms()) {
@@ -498,7 +488,7 @@ std::vector<SequentialUnmapper::Register> SequentialUnmapper::collectRegisters(
       ++untouched.latches;
     } else if (hasLiveAsyncControl(sta_, inst, seq)) {
       ++untouched.async;
-    } else if (hasScanPin(inst)) {
+    } else if (isScanCell(sta_, inst)) {
       ++untouched.scan;
     } else {
       registers.emplace_back(inst, seq);

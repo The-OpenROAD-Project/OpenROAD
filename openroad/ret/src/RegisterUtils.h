@@ -23,6 +23,9 @@ namespace ret {
 // The cell's sequential when it has exactly one, else nullptr.
 const sta::Sequential* singleSequential(const sta::LibertyCell* cell);
 
+// A cell with a scan pin in LEF or a liberty test_cell.
+bool isScanCell(sta::dbSta* sta, odb::dbInst* inst);
+
 bool isDontTouchRegister(sta::dbSta* sta, odb::dbInst* inst);
 
 // An asynchronous set or reset that is not tied to its inactive value.

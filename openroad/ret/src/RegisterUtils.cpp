@@ -437,12 +437,20 @@ bool hasLiveAsyncControl(sta::dbSta* sta,
   return false;
 }
 
-bool isDontTouchRegister(sta::dbSta* sta, odb::dbInst* inst)
+bool isScanCell(sta::dbSta* sta, odb::dbInst* inst)
 {
   for (odb::dbITerm* iterm : inst->getITerms()) {
     if (iterm->getSigType() == odb::dbSigType::SCAN) {
       return true;
     }
+  }
+  return sta->getDbNetwork()->isScanCell(inst);
+}
+
+bool isDontTouchRegister(sta::dbSta* sta, odb::dbInst* inst)
+{
+  if (isScanCell(sta, inst)) {
+    return true;
   }
   sta::LibertyCell* cell = sta->getDbNetwork()->libertyCell(inst);
   if (cell == nullptr) {
