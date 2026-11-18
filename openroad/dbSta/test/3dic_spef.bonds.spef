@@ -1,0 +1,25 @@
+// The die-to-die bond itself, at top scope: one resistor between the two bump
+// pad pins, named <chip_inst>/<bump_inst>:<mterm> the way the 3D RCX writer
+// names them.
+*SPEF "IEEE 1481-1999"
+*DESIGN "top"
+*DATE "Tue Aug 19 00:00:00 2026"
+*VENDOR "The OpenROAD Project"
+*PROGRAM "OpenROAD"
+*VERSION "test"
+*DESIGN_FLOW "NAME_SCOPE LOCAL" "PIN_CAP NONE"
+*DIVIDER /
+*DELIMITER :
+*BUS_DELIMITER []
+*T_UNIT 1 NS
+*C_UNIT 1 FF
+*R_UNIT 1 OHM
+*L_UNIT 1 HENRY
+
+*D_NET bridge 0
+*CONN
+*I chipA/bump_q:PAD B
+*I chipB/bump_d:PAD B
+*RES
+1 chipA/bump_q:PAD chipB/bump_d:PAD 2000
+*END
