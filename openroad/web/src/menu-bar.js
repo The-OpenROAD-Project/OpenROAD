@@ -2,7 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 import { showFindDialog, showGotoDialog } from './search-nav.js';
-import { runTclScript } from './ui-utils.js';
+import { runTclScript, tclQuote } from './ui-utils.js';
 
 // The menu bar in #menu-bar: static menus merged with the custom items
 // registered from Tcl (`create_menu_item`, delivered in app.customMenu).
@@ -566,7 +566,7 @@ function showPathDialog(app, title, tclCmd) {
         try {
             const resp = await app.websocketManager.request({
                 type: 'tcl_eval',
-                cmd: `${tclCmd} ${path}`,
+                cmd: `${tclCmd} ${tclQuote(path)}`,
             });
 
             if (resp.is_error) {

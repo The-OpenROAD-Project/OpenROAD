@@ -10,56 +10,62 @@ import {
     eventShortcut,
 } from '../../src/menu-bar.js';
 
-describe('MenuBar', () => {
-    it('keeps the file dialog open when tcl_eval returns is_error', async () => {
-        document.body.innerHTML = '<div id="menu-bar"></div>';
-        const requests = [];
-        const app = {
-            designScale: null,
-            websocketManager: {
-                request(msg) {
-                    requests.push(msg);
-                    if (msg.type === 'list_dir') {
-                        return Promise.resolve({
-                            path: '/work',
-                            entries: [{ name: 'bad.odb', is_dir: false, size: 10 }],
-                        });
-                    }
-                    if (msg.type === 'tcl_eval') {
-                        return Promise.resolve({
-                            output: 'cannot read db',
-                            result: 'failed',
-                            is_error: true,
-                        });
-                    }
-                    return Promise.resolve({});
-                },
+const kDir = '/work/proj[0]';
+const kFile = 'chip $x;y.odb';
+const kQuotedPath = String.raw`"/work/proj\[0\]/chip \$x;y.odb"`;
+
+// Opens File > `label` on directory `dir`, picks `file` from its listing,
+// presses OK, and returns the tcl_eval command.  Open DB is enabled only
+// without a design, Save DB only with one.
+async function fileDialogCommand(label, dir, file) {
+    document.body.innerHTML = '<div id="menu-bar"></div>';
+    const requests = [];
+    const app = {
+        designScale: label === 'Save DB' ? 1 : null,
+        websocketManager: {
+            request(msg) {
+                requests.push(msg);
+                if (msg.type === 'list_dir') {
+                    return Promise.resolve({
+                        path: dir,
+                        entries: [{ name: file, is_dir: false, size: 10 }],
+                    });
+                }
+                // An error keeps the dialog open and skips the page reload.
+                return Promise.resolve({ result: 'cannot read db', is_error: true });
             },
-            focusComponent() {},
-        };
+        },
+        focusComponent() {},
+    };
+    createMenuBar(app);
+    rowByLabel(openMenu('File'), label).click();
+    await waitForMicrotasks();
+    document.querySelector('.fb-entry').click();
+    document.querySelector('.modal-buttons .ok').click();
+    await waitForMicrotasks();
+    return requests.find(req => req.type === 'tcl_eval').cmd;
+}
 
-        createMenuBar(app);
+describe('MenuBar', () => {
+    it('quotes the path Open DB passes to Tcl', async () => {
+        assert.equal(await fileDialogCommand('Open DB', kDir, kFile),
+                     `read_db ${kQuotedPath}`);
+    });
 
-        const fileMenu = document.querySelector('.menu-label');
-        fileMenu.click();
-        const openItem = document.querySelector('.menu-item');
-        openItem.click();
-        await waitForMicrotasks();
+    it('quotes the path Save DB passes to Tcl', async () => {
+        assert.equal(await fileDialogCommand('Save DB', kDir, kFile),
+                     `write_db ${kQuotedPath}`);
+    });
 
-        const input = document.querySelector('.fb-path-input');
-        const ok = document.querySelector('.modal-buttons .ok');
-        input.value = '/work/bad.odb';
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        ok.click();
-        await waitForMicrotasks();
-
-        const evalReq = requests.find(req => req.type === 'tcl_eval');
-        assert.equal(evalReq.cmd, 'read_db /work/bad.odb');
+    it('keeps the file dialog open when tcl_eval returns is_error', async () => {
+        assert.equal(await fileDialogCommand('Open DB', '/work', 'bad.odb'),
+                     'read_db "/work/bad.odb"');
         assert.ok(document.querySelector('.modal-overlay'),
                   'dialog remains open after Tcl error');
         const error = document.querySelector('.modal-error');
         assert.equal(error.style.display, '');
         assert.equal(error.textContent, 'cannot read db');
+        const ok = document.querySelector('.modal-buttons .ok');
         assert.equal(ok.disabled, false);
         assert.equal(ok.textContent, 'Open');
     });
