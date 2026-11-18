@@ -441,6 +441,56 @@ TEST_F(PlaceIos, PinsUseTheSlotsOfEveryLayer)
   }
 }
 
+// set_place_config -io_pin_min_distance 1 -io_pin_layer_min_distance
+//   {metal3 3 metal4 3} -io_pin_min_distance_in_tracks
+// The solve and the legalization use the same slots, which keep the min
+// distance of their layer.
+TEST_F(PlaceIos, PinsKeepTheMinDistanceOfTheirLayer)
+{
+  unplacePorts();
+  setPinLayers({"metal3", "metal5"}, {"metal4", "metal6"});
+  odb::dbIntProperty::create(block_, "place_config_io_pin_min_distance", 1);
+  odb::dbBoolProperty::create(
+      block_, "place_config_io_pin_min_distance_in_tracks", true);
+  odb::dbStringProperty::create(
+      block_, "place_config_io_pin_layer_min_distance", "metal3 3 metal4 3");
+  odb::dbBoolProperty::create(
+      block_, "place_config_io_pin_layer_min_distance_in_tracks", true);
+
+  EXPECT_EQ(placeAndCountMoved(), 0);
+
+  // The track steps are 280 on metal3 and 560 on the others.
+  const std::map<std::string, int> pitch{{"metal3", 3 * 280},
+                                         {"metal4", 3 * 560},
+                                         {"metal5", 560},
+                                         {"metal6", 560}};
+  std::map<std::pair<std::string, char>, std::vector<int>> along;
+  for (odb::dbBTerm* bterm : block_->getBTerms()) {
+    expectOnTrack(bterm);
+    odb::dbBox* box = pinBox(bterm);
+    const char edge = edgeOf(box->getBox());
+    ASSERT_NE(edge, 0) << bterm->getName() << " is off the die perimeter";
+    along[{box->getTechLayer()->getName(), edge}].push_back(
+        alongEdge(box->getBox(), edge));
+  }
+  std::map<std::string, size_t> most_on_an_edge;
+  for (auto& [layer_edge, coords] : along) {
+    const auto& [layer_name, edge] = layer_edge;
+    most_on_an_edge[layer_name]
+        = std::max(most_on_an_edge[layer_name], coords.size());
+    std::ranges::sort(coords);
+    for (size_t i = 1; i < coords.size(); ++i) {
+      const int distance = coords[i] - coords[i - 1];
+      EXPECT_GT(distance, 0) << layer_name << " on edge " << edge;
+      EXPECT_EQ(distance % pitch.at(layer_name), 0)
+          << layer_name << " on edge " << edge;
+    }
+  }
+  // The layers with their own min distance hold pins side by side.
+  EXPECT_GE(most_on_an_edge["metal3"], 2);
+  EXPECT_GE(most_on_an_edge["metal4"], 2);
+}
+
 // A follower is a reflection of its master, so it lands among pins the
 // spacing never saw together with it.
 TEST_F(PlaceIos, MirroredFollowersKeepTheSlotPitch)
