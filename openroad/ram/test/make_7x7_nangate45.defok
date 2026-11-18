@@ -271,7 +271,7 @@ PINS 21 ;
     - D[0] + NET D[0] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal4 ( -7 -7 ) ( 7 7 )
-        + PLACED ( 9 1113 ) N ;
+        + PLACED ( 65 1113 ) N ;
     - D[1] + NET D[1] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER metal4 ( -7 -7 ) ( 7 7 )
@@ -562,9 +562,9 @@ SPECIALNETS 2 ;
 END SPECIALNETS
 NETS 120 ;
     - D[0] ( PIN D[0] ) ( buffer.in[0] A ) + USE SIGNAL
-      + ROUTED metal4 ( 9 1057 ) ( * 1113 0 )
-      NEW metal3 ( 9 1057 ) ( 28 * )
-      NEW metal3 ( 9 1057 ) via3_2
+      + ROUTED metal4 ( 65 1057 ) ( * 1113 0 )
+      NEW metal3 ( 28 1057 ) ( 65 * )
+      NEW metal3 ( 65 1057 ) via3_2
       NEW metal1 ( 28 1057 ) via1_4
       NEW metal2 ( 28 1057 ) via2_5 ;
     - D[1] ( PIN D[1] ) ( buffer.in[1] A ) + USE SIGNAL

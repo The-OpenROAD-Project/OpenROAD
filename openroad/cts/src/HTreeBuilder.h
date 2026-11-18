@@ -352,6 +352,9 @@ class HTreeBuilder : public TreeBuilder
                     float maxDiameter,
                     unsigned clusterSize,
                     bool secondLevel,
+                    std::vector<std::pair<float, float>>& points,
+                    std::vector<const ClockInst*>& pointInsts,
+                    std::vector<std::pair<float, float>>& gatePoints,
                     SinkClustering& matching,
                     unsigned& bestClusterSize,
                     float& bestDiameter);
