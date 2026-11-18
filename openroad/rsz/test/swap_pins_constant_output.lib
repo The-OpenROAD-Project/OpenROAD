@@ -1,0 +1,74 @@
+/* Cells whose pins report_swappable_pins must not call interchangeable:
+   block timing models, where an output tied to a constant is written with
+   that constant as its function and the other outputs have none. */
+library (swap_pins_constant_output) {
+  delay_model : table_lookup;
+  capacitive_load_unit (1,pf);
+  time_unit : "1ns";
+  voltage_unit : "1V";
+  current_unit : "1mA";
+  leakage_power_unit : "1nW";
+  pulling_resistance_unit : "1kohm";
+  input_threshold_pct_rise : 50;
+  input_threshold_pct_fall : 50;
+  output_threshold_pct_rise : 50;
+  output_threshold_pct_fall : 50;
+  slew_lower_threshold_pct_rise : 20;
+  slew_lower_threshold_pct_fall : 20;
+  slew_upper_threshold_pct_rise : 80;
+  slew_upper_threshold_pct_fall : 80;
+
+  type (bus_1_0) {
+    base_type : array;
+    data_type : bit;
+    bit_width : 2;
+    bit_from : 1;
+    bit_to : 0;
+  }
+
+  /* A buffer, which the resizer requires; named for the Nangate45 LEF. */
+  cell (BUF_X1) {
+    area : 1;
+    pin (A) { direction : input; capacitance : 0.001; }
+    pin (Z) { direction : output; function : "A"; }
+  }
+
+  /* Reference: A and B are interchangeable. */
+  cell (and2) {
+    area : 1;
+    pin (A) { direction : input; capacitance : 0.001; }
+    pin (B) { direction : input; capacitance : 0.001; }
+    pin (Z) { direction : output; function : "A & B"; }
+  }
+
+  /* Every output constant: no output depends on an input. */
+  cell (tied) {
+    area : 1;
+    pin (A) { direction : input; capacitance : 0.001; }
+    pin (B) { direction : input; capacitance : 0.001; }
+    pin (Z) { direction : output; function : "0"; }
+  }
+
+  /* A block: one tied-off output, one opaque output, a bus input. */
+  cell (block) {
+    area : 100;
+    pin (A) { direction : input; capacitance : 0.001; }
+    pin (B) { direction : input; capacitance : 0.001; }
+    bus (D) {
+      bus_type : bus_1_0;
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (Y) {
+      direction : output;
+      timing () {
+        related_pin : "A";
+        cell_rise (scalar) { values ("0.1"); }
+        cell_fall (scalar) { values ("0.1"); }
+        rise_transition (scalar) { values ("0.1"); }
+        fall_transition (scalar) { values ("0.1"); }
+      }
+    }
+    pin (Z) { direction : output; function : "0"; }
+  }
+}

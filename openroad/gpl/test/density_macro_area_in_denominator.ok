@@ -1,0 +1,8 @@
+[INFO ODB-0227] LEF file: ./nangate45.lef, created 22 layers, 27 vias, 134 library cells
+[INFO ODB-0227] LEF file: ./bp_be_top_macro.lef, created 3 library cells
+[INFO ODB-0128] Design: bp_be_top
+[INFO ODB-0130]     Created 3029 pins.
+[INFO ODB-0131]     Created 76015 components and 403534 component-terminals.
+[INFO ODB-0133]     Created 86445 nets and 251504 connections.
+[INFO GPL-0022] Initialize gpl and calculate uniform density.
+density -> 0.080
