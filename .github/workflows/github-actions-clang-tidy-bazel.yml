@@ -70,7 +70,7 @@ jobs:
           bazel build \
             "${REMOTE_FLAGS[@]}" \
             --config=lint \
-            -- //src/... //third-party/... -//src/sta/...
+            -- //openroad/... //third-party/... -//openroad/sta/...
 
       - name: Collect clang-tidy diagnostics
         run: |
