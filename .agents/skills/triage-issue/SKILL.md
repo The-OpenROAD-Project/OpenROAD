@@ -57,10 +57,10 @@ cd <path-to>/OpenROAD
 bazelisk build :openroad
 ```
 
-The binary is at `bazel-bin/openroad`. Export it:
+The binary is at `bazel-bin/openroad/openroad`. Export it:
 
 ```bash
-export OPENROAD_EXE=$(pwd)/bazel-bin/openroad
+export OPENROAD_EXE=$(pwd)/bazel-bin/openroad/openroad
 ```
 
 ## 5. Reproduce the bug
