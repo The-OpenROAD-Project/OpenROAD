@@ -579,10 +579,7 @@ cc_test(
 
 cc_test(
     name = "TestResizer",
-    srcs = [
-        "cpp/TestResizer.cc",
-        "cpp/TestVtLibraryData.cc",
-    ],
+    srcs = ["cpp/TestResizer.cc"],
     copts = ["-Iopenroad/rsz/src"],
     data = glob([
         "cpp/TestResizer*.lib",

@@ -629,8 +629,6 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   // Library analysis data
   std::unique_ptr<LibraryAnalysisData> lib_data_;
-  // Filter used for lib_data_; missing value means it needs rebuilding.
-  std::optional<bool> lib_data_exclude_clock_buffers_;
 
   // Compute slew RC factor based on library slew thresholds
   float getSlewRCFactor() const { return slew_shape_factor_; }
