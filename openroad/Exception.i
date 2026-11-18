@@ -1,0 +1,50 @@
+// Copied from OpenSTA/tcl/Exception.i
+// Copyright (c) 2021, Parallax Software, Inc.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+%{
+#include <cstdlib>
+#include <new>
+
+#include "ord/OpenRoad.hh"
+#include "utl/Logger.h"
+#include "utl/StackTrace.h"
+%}
+
+// Leave via SWIG_fail, not return, so %typemap(freearg) still runs. Returning
+// straight out of the wrapper skips the generated fail: label, which is where
+// SWIG puts the argument cleanup.
+%exception {
+  try { $action }
+  catch (std::bad_alloc &) {
+    fprintf(stderr, "Error: out of memory.");
+    abort();
+  }
+  // This catches std::runtime_error (utl::error) and sta::Exception.
+  catch (std::exception &excp) {
+    auto* openroad = ord::OpenRoad::openRoad();
+    if (openroad != nullptr) {
+      auto* logger = openroad->getLogger();
+      if (logger->debugCheck(utl::ORD, "trace", 1)) {
+        logger->report("Stack trace");
+        logger->report(utl::stackTrace());
+      }
+    }
+
+    Tcl_ResetResult(interp);
+    Tcl_AppendResult(interp, excp.what(), nullptr);
+    SWIG_fail;
+  }
+}

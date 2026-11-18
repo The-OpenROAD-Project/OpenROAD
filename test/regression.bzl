@@ -134,7 +134,7 @@ regression_rule_test = rule(
             mandatory = True,
         ),
         "test_type": attr.string(
-            doc = "Test type: 'tcl', 'python' (via openroad), or 'standalone_python'. Auto-detected if not specified.",
+            doc = "Test type: 'tcl', 'python' or 'standalone_python' (both run under python3). Auto-detected if not specified.",
             default = "",
         ),
     },
@@ -301,7 +301,7 @@ def message_srcs(name = "message_srcs", visibility = None):
         visibility = visibility,
     )
 
-def messages_txt(name = "messages_txt", src_patterns = None, recursive = True, extra_srcs = None, visibility = None):
+def messages_txt(name = "messages_txt", src_patterns = None, src_dir = "src", recursive = True, extra_srcs = None, visibility = None):
     """Generate messages.txt from source files using find_messages.py.
 
     Replaces per-module genrule boilerplate with a single macro call.
@@ -309,9 +309,11 @@ def messages_txt(name = "messages_txt", src_patterns = None, recursive = True, e
     Args:
         name: Target name (default: "messages_txt").
         src_patterns: Glob patterns for source files. Defaults to every
-            scanned extension under src/. Override for modules that keep
+            scanned extension under src_dir. Override for modules that keep
             messages elsewhere, e.g. odb's public headers.
-        recursive: Whether the default patterns descend into src/
+        src_dir: Package-relative directory the default patterns scan: a
+            module's src/, or openroad/ for the top-level ORD messages.
+        recursive: Whether the default patterns descend into src_dir
             subdirectories. Several modules keep logger calls there, so this
             is on by default; the top-level ORD messages turn it off to avoid
             swallowing the modules, which have their own messages_txt.
@@ -320,7 +322,7 @@ def messages_txt(name = "messages_txt", src_patterns = None, recursive = True, e
         visibility: Bazel visibility.
     """
     if src_patterns == None:
-        prefix = "src/**/*." if recursive else "src/*."
+        prefix = src_dir + ("/**/*." if recursive else "/*.")
         src_patterns = [prefix + ext for ext in _MESSAGE_SRC_EXTENSIONS]
 
     srcs = native.glob(src_patterns, allow_empty = True)
