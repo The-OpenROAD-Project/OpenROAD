@@ -1,0 +1,179 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN scan_architect ;
+UNITS DISTANCE MICRONS 1000 ;
+COMPONENTS 20 ;
+    - ff10_clk2_falling sky130_fd_sc_hd__sdfbbn_1 + PLACED ( 1732 12412 ) N ;
+    - ff10_clk2_rising sky130_fd_sc_hd__sdfstp_1 + PLACED ( 2542 5122 ) N ;
+    - ff1_clk1_falling sky130_fd_sc_hd__sdfbbn_1 + PLACED ( 11271 2561 ) N ;
+    - ff1_clk1_rising sky130_fd_sc_hd__sdfstp_1 + PLACED ( 10461 9851 ) N ;
+    - ff2_clk2_falling sky130_fd_sc_hd__sdfbbn_1 + PLACED ( 19190 7290 ) N ;
+    - ff2_clk2_rising sky130_fd_sc_hd__sdfstp_1 + PLACED ( 18380 14580 ) N ;
+    - ff3_clk1_falling sky130_fd_sc_hd__sdfbbn_1 + PLACED ( 7109 12019 ) N ;
+    - ff3_clk1_rising sky130_fd_sc_hd__sdfstp_1 + PLACED ( 6299 19309 ) N ;
+    - ff4_clk2_falling sky130_fd_sc_hd__sdfbbn_1 + PLACED ( 15028 16748 ) N ;
+    - ff4_clk2_rising sky130_fd_sc_hd__sdfstp_1 + PLACED ( 14218 4038 ) N ;
+    - ff5_clk1_falling sky130_fd_sc_hd__sdfbbn_1 + PLACED ( 2947 1477 ) N ;
+    - ff5_clk1_rising sky130_fd_sc_hd__sdfstp_1 + PLACED ( 2137 8767 ) N ;
+    - ff6_clk2_falling sky130_fd_sc_hd__sdfbbn_1 + PLACED ( 10866 6206 ) N ;
+    - ff6_clk2_rising sky130_fd_sc_hd__sdfstp_1 + PLACED ( 10056 13496 ) N ;
+    - ff7_clk1_falling sky130_fd_sc_hd__sdfbbn_1 + PLACED ( 18785 10935 ) N ;
+    - ff7_clk1_rising sky130_fd_sc_hd__sdfstp_1 + PLACED ( 17975 18225 ) N ;
+    - ff8_clk2_falling sky130_fd_sc_hd__sdfbbn_1 + PLACED ( 6704 15664 ) N ;
+    - ff8_clk2_rising sky130_fd_sc_hd__sdfstp_1 + PLACED ( 5894 2954 ) N ;
+    - ff9_clk1_falling sky130_fd_sc_hd__sdfbbn_1 + PLACED ( 14623 393 ) N ;
+    - ff9_clk1_rising sky130_fd_sc_hd__sdfstp_1 + PLACED ( 13813 7683 ) N ;
+END COMPONENTS
+PINS 33 ;
+    - clock1 + NET clock1 + DIRECTION INPUT + USE SIGNAL ;
+    - clock2 + NET clock2 + DIRECTION INPUT + USE SIGNAL ;
+    - output1 + NET output1 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output10 + NET output10 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output11 + NET output11 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output12 + NET output12 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output13 + NET output13 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output14 + NET output14 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output15 + NET output15 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output16 + NET output16 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output17 + NET output17 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output18 + NET output18 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output19 + NET output19 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output2 + NET output2 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output20 + NET output20 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output3 + NET output3 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output4 + NET output4 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output5 + NET output5 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output6 + NET output6 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output7 + NET output7 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output8 + NET output8 + DIRECTION OUTPUT + USE SIGNAL ;
+    - output9 + NET output9 + DIRECTION OUTPUT + USE SIGNAL ;
+    - port1 + NET port1 + DIRECTION INPUT + USE SIGNAL ;
+    - scan_enable_0 + NET scan_enable_0 + DIRECTION INPUT + USE SIGNAL ;
+    - scan_in_0 + NET scan_in_0 + DIRECTION INPUT + USE SCAN ;
+    - scan_in_1 + NET scan_in_1 + DIRECTION INPUT + USE SCAN ;
+    - scan_in_2 + NET scan_in_2 + DIRECTION INPUT + USE SCAN ;
+    - scan_in_3 + NET scan_in_3 + DIRECTION INPUT + USE SCAN ;
+    - scan_in_4 + NET scan_in_4 + DIRECTION INPUT + USE SCAN ;
+    - scan_in_5 + NET scan_in_5 + DIRECTION INPUT + USE SCAN ;
+    - scan_in_6 + NET scan_in_6 + DIRECTION INPUT + USE SCAN ;
+    - scan_in_7 + NET scan_in_7 + DIRECTION INPUT + USE SCAN ;
+    - set_b + NET set_b + DIRECTION INPUT + USE SIGNAL ;
+END PINS
+NETS 33 ;
+    - clock1 ( PIN clock1 ) ( ff9_clk1_rising CLK ) ( ff9_clk1_falling CLK_N ) ( ff7_clk1_rising CLK ) ( ff7_clk1_falling CLK_N ) ( ff5_clk1_rising CLK ) ( ff5_clk1_falling CLK_N )
+      ( ff3_clk1_rising CLK ) ( ff3_clk1_falling CLK_N ) ( ff1_clk1_rising CLK ) ( ff1_clk1_falling CLK_N ) + USE SIGNAL ;
+    - clock2 ( PIN clock2 ) ( ff8_clk2_rising CLK ) ( ff8_clk2_falling CLK_N ) ( ff6_clk2_rising CLK ) ( ff6_clk2_falling CLK_N ) ( ff4_clk2_rising CLK ) ( ff4_clk2_falling CLK_N )
+      ( ff2_clk2_rising CLK ) ( ff2_clk2_falling CLK_N ) ( ff10_clk2_rising CLK ) ( ff10_clk2_falling CLK_N ) + USE SIGNAL ;
+    - output1 ( PIN output1 ) ( ff3_clk1_rising SCD ) ( ff1_clk1_rising Q ) + USE SIGNAL ;
+    - output10 ( PIN output10 ) ( ff2_clk2_rising SCD ) ( ff10_clk2_rising Q ) + USE SIGNAL ;
+    - output11 ( PIN output11 ) ( ff5_clk1_falling SCD ) ( ff1_clk1_falling Q ) + USE SIGNAL ;
+    - output12 ( PIN output12 ) ( ff6_clk2_falling SCD ) ( ff2_clk2_falling Q ) + USE SIGNAL ;
+    - output13 ( PIN output13 ) ( ff3_clk1_falling Q ) + USE SIGNAL ;
+    - output14 ( PIN output14 ) ( ff10_clk2_falling SCD ) ( ff4_clk2_falling Q ) + USE SIGNAL ;
+    - output15 ( PIN output15 ) ( ff5_clk1_falling Q ) + USE SIGNAL ;
+    - output16 ( PIN output16 ) ( ff6_clk2_falling Q ) + USE SIGNAL ;
+    - output17 ( PIN output17 ) ( ff3_clk1_falling SCD ) ( ff7_clk1_falling Q ) + USE SIGNAL ;
+    - output18 ( PIN output18 ) ( ff4_clk2_falling SCD ) ( ff8_clk2_falling Q ) + USE SIGNAL ;
+    - output19 ( PIN output19 ) ( ff7_clk1_falling SCD ) ( ff9_clk1_falling Q ) + USE SIGNAL ;
+    - output2 ( PIN output2 ) ( ff2_clk2_rising Q ) + USE SIGNAL ;
+    - output20 ( PIN output20 ) ( ff10_clk2_falling Q ) + USE SIGNAL ;
+    - output3 ( PIN output3 ) ( ff3_clk1_rising Q ) + USE SIGNAL ;
+    - output4 ( PIN output4 ) ( ff6_clk2_rising SCD ) ( ff4_clk2_rising Q ) + USE SIGNAL ;
+    - output5 ( PIN output5 ) ( ff9_clk1_rising SCD ) ( ff5_clk1_rising Q ) + USE SIGNAL ;
+    - output6 ( PIN output6 ) ( ff6_clk2_rising Q ) + USE SIGNAL ;
+    - output7 ( PIN output7 ) ( ff7_clk1_rising Q ) + USE SIGNAL ;
+    - output8 ( PIN output8 ) ( ff4_clk2_rising SCD ) ( ff8_clk2_rising Q ) + USE SIGNAL ;
+    - output9 ( PIN output9 ) ( ff7_clk1_rising SCD ) ( ff9_clk1_rising Q ) + USE SIGNAL ;
+    - port1 ( PIN port1 ) ( ff9_clk1_rising D ) ( ff9_clk1_falling D ) ( ff8_clk2_rising D ) ( ff8_clk2_falling D ) ( ff7_clk1_rising D ) ( ff7_clk1_falling D )
+      ( ff6_clk2_rising D ) ( ff6_clk2_falling D ) ( ff5_clk1_rising D ) ( ff5_clk1_falling D ) ( ff4_clk2_rising D ) ( ff4_clk2_falling D ) ( ff3_clk1_rising D ) ( ff3_clk1_falling D )
+      ( ff2_clk2_rising D ) ( ff2_clk2_falling D ) ( ff1_clk1_rising D ) ( ff1_clk1_falling D ) ( ff10_clk2_rising D ) ( ff10_clk2_falling D ) + USE SIGNAL ;
+    - scan_enable_0 ( PIN scan_enable_0 ) ( ff3_clk1_rising SCE ) ( ff1_clk1_rising SCE ) ( ff7_clk1_rising SCE ) ( ff5_clk1_rising SCE ) ( ff9_clk1_rising SCE ) ( ff2_clk2_rising SCE )
+      ( ff10_clk2_rising SCE ) ( ff6_clk2_rising SCE ) ( ff8_clk2_rising SCE ) ( ff4_clk2_rising SCE ) ( ff10_clk2_falling SCE ) ( ff2_clk2_falling SCE ) ( ff6_clk2_falling SCE ) ( ff8_clk2_falling SCE )
+      ( ff4_clk2_falling SCE ) ( ff3_clk1_falling SCE ) ( ff1_clk1_falling SCE ) ( ff5_clk1_falling SCE ) ( ff9_clk1_falling SCE ) ( ff7_clk1_falling SCE ) + USE SIGNAL ;
+    - scan_in_0 ( PIN scan_in_0 ) ( ff1_clk1_falling SCD ) + USE SCAN ;
+    - scan_in_1 ( PIN scan_in_1 ) ( ff9_clk1_falling SCD ) + USE SCAN ;
+    - scan_in_2 ( PIN scan_in_2 ) ( ff2_clk2_falling SCD ) + USE SCAN ;
+    - scan_in_3 ( PIN scan_in_3 ) ( ff8_clk2_falling SCD ) + USE SCAN ;
+    - scan_in_4 ( PIN scan_in_4 ) ( ff8_clk2_rising SCD ) + USE SCAN ;
+    - scan_in_5 ( PIN scan_in_5 ) ( ff10_clk2_rising SCD ) + USE SCAN ;
+    - scan_in_6 ( PIN scan_in_6 ) ( ff5_clk1_rising SCD ) + USE SCAN ;
+    - scan_in_7 ( PIN scan_in_7 ) ( ff1_clk1_rising SCD ) + USE SCAN ;
+    - set_b ( PIN set_b ) ( ff9_clk1_rising SET_B ) ( ff9_clk1_falling SET_B ) ( ff8_clk2_rising SET_B ) ( ff8_clk2_falling SET_B ) ( ff7_clk1_rising SET_B ) ( ff7_clk1_falling SET_B )
+      ( ff6_clk2_rising SET_B ) ( ff6_clk2_falling SET_B ) ( ff5_clk1_rising SET_B ) ( ff5_clk1_falling SET_B ) ( ff4_clk2_rising SET_B ) ( ff4_clk2_falling SET_B ) ( ff3_clk1_rising SET_B ) ( ff3_clk1_falling SET_B )
+      ( ff2_clk2_rising SET_B ) ( ff2_clk2_falling SET_B ) ( ff1_clk1_rising SET_B ) ( ff1_clk1_falling SET_B ) ( ff10_clk2_rising SET_B ) ( ff10_clk2_falling SET_B ) + USE SIGNAL ;
+END NETS
+
+SCANCHAINS 8 ;
+
+- chain_0
++ START PIN scan_in_0
++ ORDERED
+  ff1_clk1_falling ( IN SCD ) ( OUT Q )
+  ff5_clk1_falling ( IN SCD ) ( OUT Q )
++ PARTITION default
++ STOP PIN output15 ;
+
+- chain_1
++ START PIN scan_in_1
++ ORDERED
+  ff9_clk1_falling ( IN SCD ) ( OUT Q )
+  ff7_clk1_falling ( IN SCD ) ( OUT Q )
+  ff3_clk1_falling ( IN SCD ) ( OUT Q )
++ PARTITION default
++ STOP PIN output13 ;
+
+- chain_2
++ START PIN scan_in_2
++ ORDERED
+  ff2_clk2_falling ( IN SCD ) ( OUT Q )
+  ff6_clk2_falling ( IN SCD ) ( OUT Q )
++ PARTITION default
++ STOP PIN output16 ;
+
+- chain_3
++ START PIN scan_in_3
++ ORDERED
+  ff8_clk2_falling ( IN SCD ) ( OUT Q )
+  ff4_clk2_falling ( IN SCD ) ( OUT Q )
+  ff10_clk2_falling ( IN SCD ) ( OUT Q )
++ PARTITION default
++ STOP PIN output20 ;
+
+- chain_4
++ START PIN scan_in_4
++ ORDERED
+  ff8_clk2_rising ( IN SCD ) ( OUT Q )
+  ff4_clk2_rising ( IN SCD ) ( OUT Q )
+  ff6_clk2_rising ( IN SCD ) ( OUT Q )
++ PARTITION default
++ STOP PIN output6 ;
+
+- chain_5
++ START PIN scan_in_5
++ ORDERED
+  ff10_clk2_rising ( IN SCD ) ( OUT Q )
+  ff2_clk2_rising ( IN SCD ) ( OUT Q )
++ PARTITION default
++ STOP PIN output2 ;
+
+- chain_6
++ START PIN scan_in_6
++ ORDERED
+  ff5_clk1_rising ( IN SCD ) ( OUT Q )
+  ff9_clk1_rising ( IN SCD ) ( OUT Q )
+  ff7_clk1_rising ( IN SCD ) ( OUT Q )
++ PARTITION default
++ STOP PIN output7 ;
+
+- chain_7
++ START PIN scan_in_7
++ ORDERED
+  ff1_clk1_rising ( IN SCD ) ( OUT Q )
+  ff3_clk1_rising ( IN SCD ) ( OUT Q )
++ PARTITION default
++ STOP PIN output3 ;
+
+END SCANCHAINS
+
+END DESIGN

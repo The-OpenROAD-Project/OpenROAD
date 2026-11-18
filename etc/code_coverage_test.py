@@ -26,6 +26,10 @@ class CodeCoverageTest(unittest.TestCase):
                 self.assertIn(
                     "cov-build --dir cov-int --bazel bazelisk build", commands
                 )
+                self.assertRegex(
+                    commands,
+                    r"--inject_repository=rules_coverity=\S*/bazel/rules_coverity ",
+                )
                 self.assertIn("--spawn_strategy=local", commands)
                 self.assertIn("--remote_cache= --disk_cache=", commands)
                 self.assertIn("--noremote_accept_cached", commands)
@@ -56,6 +60,14 @@ class CodeCoverageTest(unittest.TestCase):
         self.assertFalse(archive_exists)
         self.assertIsNone(version)
         self.assertIn("Only got 0%", result.stdout)
+
+    def test_static_fails_when_coverity_bazel_rules_are_missing(self):
+        result, archive_exists, _, commands = self._run("static", cov_rules=False)
+
+        self.assertEqual(result.returncode, 1)
+        self.assertFalse(archive_exists)
+        self.assertIn("Coverity Bazel rules not found", result.stderr)
+        self.assertNotIn("cov-build", commands)
 
     def test_static_fails_when_capture_percentage_is_low(self):
         result, archive_exists, version, _ = self._run(
@@ -152,6 +164,7 @@ class CodeCoverageTest(unittest.TestCase):
         version_arg=None,
         skip_upload=True,
         hide_jq=False,
+        cov_rules=True,
         init_response='{"url":"https://upload.example/build","build_id":825340}\n',
     ):
         with tempfile.TemporaryDirectory() as tmp:
@@ -160,6 +173,8 @@ class CodeCoverageTest(unittest.TestCase):
             fake_bin = root / "bin"
             etc.mkdir(parents=True)
             fake_bin.mkdir()
+            if cov_rules:
+                (root / "bazel" / "rules_coverity").mkdir(parents=True)
 
             script = etc / "CodeCoverage.sh"
             shutil.copy2(Path(__file__).with_name("CodeCoverage.sh"), script)

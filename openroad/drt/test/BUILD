@@ -1,0 +1,317 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022-2025, The OpenROAD Authors
+
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
+
+package(features = ["layering_check"])
+
+exports_files(
+    [
+        "sky130hs/sky130hs.tlef",
+        "sky130hs/sky130hs_std_cell.lef",
+        "top_level_term2.def",
+    ],
+    visibility = ["//openroad/dbSta/test:__pkg__"],
+)
+
+COMPULSORY_TESTS = [
+    "down_access_term",
+    "drc_test",
+    "ispd18_sample",
+    "ispd18_sample_incr",
+    "ispd18_sample_reroute",
+    "ispd18_sample_reroute_unrouted",
+    "ndr_vias1",
+    "ndr_vias2",
+    "ndr_vias3",
+    "ndr_no_auto_taper",
+    "obstruction",
+    "pa_above_top_layer",
+    "pa_single_pin",
+    "single_cut_minimumcut",
+    "single_step",
+    "ta_ap_aligned",
+    "ta_pin_aligned",
+    "top_level_term",
+    "top_level_term2",
+    "via_access_layer",
+]
+
+PASSFAIL_TESTS = [
+]
+
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
+
+BIG_TESTS = [
+    "ndr_vias1",
+    "ndr_vias2",
+    "ndr_no_auto_taper",
+]
+
+PY_TESTS = [
+    "ispd18_sample",
+    "single_step",
+    "top_level_term",
+    "top_level_term2",
+]
+
+filegroup(
+    name = "regression_resources",
+    # Dependencies could be specified more narrowly per test case,
+    # but at least it is not a glob of everything and there are
+    # per test glob patterns below.
+    srcs = [
+        "Nangate45/Nangate45_stdcell.lef",
+        "Nangate45/Nangate45_tech.lef",
+        "drt_aux.py",
+        "gcd_nangate45.route_guide",
+        "gcd_nangate45.tcl",
+        "gcd_nangate45_distributed.tcl",
+        "gcd_nangate45_dump_worker.tcl",
+        "gcd_nangate45_preroute.def",
+        "gcd_nangate45_test_worker.tcl",
+        "gcd_sky130hd.def",
+        "gcd_sky130hd.guide",
+        "helpers.py",
+        "helpers.tcl",
+        "sky130hd/sky130_fd_sc_hd__ff_n40C_1v95.lib",
+        "sky130hd/sky130_fd_sc_hd__ss_n40C_1v40.lib",
+        "sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib",
+        "sky130hd/sky130_fd_sc_hd_merged.lef",
+        "sky130hd/sky130hd.pdn.tcl",
+        "sky130hd/sky130hd.rc",
+        "sky130hd/sky130hd.rcx_rules",
+        "sky130hd/sky130hd.tlef",
+        "sky130hd/sky130hd.tracks",
+        "sky130hd/sky130hd.vars",
+        "sky130hd/sky130hd_multi_patterned.tlef",
+        "sky130hd/sky130hd_std_cell.lef",
+        "sky130hd/sky130hd_std_cell_vt.lef",
+        "sky130hd/sky130hd_tt.lib",
+        "sky130hd/sky130hd_vt.tlef",
+        "sky130hd/work_around_yosys/formal_pdk.v",
+        "sky130hs/sky130_fd_sc_hs__tt_025C_1v80.lib",
+        "sky130hs/sky130_fd_sc_hs_merged.lef",
+        "sky130hs/sky130hs.pdn.tcl",
+        "sky130hs/sky130hs.rc",
+        "sky130hs/sky130hs.rcx_rules",
+        "sky130hs/sky130hs.tlef",
+        "sky130hs/sky130hs.tracks",
+        "sky130hs/sky130hs.vars",
+        "sky130hs/sky130hs_ip_global.cfg",
+        "sky130hs/sky130hs_std_cell.lef",
+        "sky130hs/sky130hs_tt.lib",
+        "testcase/ispd18_sample/ispd18_sample.input.def",
+        "testcase/ispd18_sample/ispd18_sample.input.guide",
+        "testcase/ispd18_sample/ispd18_sample.input.lef",
+    ],
+)
+
+[
+    filegroup(
+        name = test_name + "_resources",
+        srcs = [":regression_resources"] + glob(
+            [
+                test_name + ".*",
+            ],
+        ) + ([
+            "ispd18_sample.defok",
+        ] if test_name in [
+            "ispd18_sample_incr",
+            "single_step",
+        ] else []) + ([
+            "ispd18_sample_reroute.drc.rpt",
+            "ispd18_sample_reroute.input.def",
+        ] if test_name == "ispd18_sample_reroute_unrouted" else []) + ([
+            "gf180/gf180mcu_5LM_1TM_9K_9t_tech.lef",
+        ] if test_name == "pa_single_pin" else []),
+    )
+    for test_name in ALL_TESTS
+]
+
+[
+    regression_test(
+        name = test_name,
+        size = "large" if test_name in BIG_TESTS else "small",
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
+        data = [":" + test_name + "_resources"],
+        visibility = ["//visibility:public"],
+    )
+    for test_name in ALL_TESTS
+]
+
+py_library(
+    name = "helpers",
+    srcs = [
+        "drt_aux.py",
+        "helpers.py",
+    ],
+    imports = ["."],
+    deps = [
+        "//python/openroad:openroadpy",
+    ],
+)
+
+[
+    py_test(
+        name = test_name,
+        srcs = [test_name + ".py"],
+        data = [":" + test_name + "_resources"],
+        tags = ["py"],
+        deps = [
+            ":helpers",
+            "//python/openroad:openroadpy",
+        ],
+    )
+    for test_name in PY_TESTS
+]
+
+test_suite(
+    name = "gc_test",
+    tests = [":gc_unittest"],
+)
+
+cc_test(
+    name = "gc_unittest",
+    srcs = [
+        "fixture.cpp",
+        "fixture.h",
+        "gcTest.cpp",
+        "parserTest.cpp",
+        "pathSegTest.cpp",
+    ],
+    includes = [
+        "../src",
+    ],
+    deps = [
+        "//openroad/drt:base_types",
+        "//openroad/drt:drt_impl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+test_suite(
+    name = "io_test",
+    tests = [":io_unittest"],
+)
+
+cc_test(
+    name = "io_unittest",
+    srcs = [
+        "fixture.cpp",
+        "fixture.h",
+        "ioWriterTest.cpp",
+    ],
+    includes = [
+        "../src",
+    ],
+    deps = [
+        "//openroad/drt:base_types",
+        "//openroad/drt:drt_impl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+test_suite(
+    name = "ta_test",
+    tests = [":ta_unittest"],
+)
+
+cc_test(
+    name = "ta_unittest",
+    srcs = [
+        "fixture.cpp",
+        "fixture.h",
+        "taTest.cpp",
+    ],
+    includes = [
+        "../src",
+    ],
+    deps = [
+        "//openroad/drt:base_types",
+        "//openroad/drt:drt_impl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+py_test(
+    name = "drt_man_tcl_check",
+    srcs = ["drt_man_tcl_check.py"],
+    data = ["//openroad/drt:doc_files"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "drt_readme_msgs_check",
+    data = [
+        "//openroad/drt:doc_files",
+        "//openroad/drt:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+regression_test(
+    name = "aes_nangate45",
+    timeout = "long",
+    check_log = False,
+    data = [
+        "aes_nangate45.route_guide",
+        "aes_nangate45_preroute.def",
+        ":regression_resources",
+    ],
+    tags = ["manual"],
+    visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "LookupTblTest",
+    srcs = ["LookupTblTest.cpp"],
+    deps = [
+        "//openroad/drt:base_types",
+        "//openroad/drt:drt_impl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "WatermarkCostTest",
+    srcs = ["WatermarkCostTest.cpp"],
+    deps = [
+        "//openroad/drt:base_types",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "PinAccessTest",
+    srcs = ["PinAccessTest.cpp"],
+    data = ["Nangate45/Nangate45_tech.lef"],
+    includes = ["../src"],
+    deps = [
+        "//openroad/drt",
+        "//openroad/drt:drt_impl",
+        "//openroad/dst",
+        "//openroad/odb/src/db",
+        "//openroad/tst:db_fixture",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
