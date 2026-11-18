@@ -8,7 +8,6 @@ load("//test:regression.bzl", "doc_check_test", "regression_test")
 package(features = ["layering_check"])
 
 COMPULSORY_TESTS = [
-    "array_max_wl",
     "buffer_no_max_cap",
     "buffer_ports",
     "check_buffers",
@@ -60,6 +59,7 @@ COMPULSORY_TESTS = [
 PASSFAIL_TESTS = [
     "array",
     "array_ins_delay",
+    "array_max_wl",
     "array_no_blockages",
     "array_repair_clock_nets",
     "dangling_clock_inverter",
@@ -128,7 +128,6 @@ filegroup(
             "array_repair_clock_nets": [
                 "array_tile.lef",
                 "array_tile.lib",
-                "array_max_wl.defok",
             ],
             "buffer_no_max_cap": [
                 "16sinks.def",
