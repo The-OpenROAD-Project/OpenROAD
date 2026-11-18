@@ -1,0 +1,172 @@
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13178, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13211, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13244, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13277, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13310, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13343, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13376, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14772, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14805, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14838, timing group from output port.
+[INFO ODB-0227] LEF file: ./asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: ./asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0128] Design: Element
+[INFO ODB-0130]     Created 65 pins.
+[INFO ODB-0131]     Created 145 components and 452 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 290 connections.
+[INFO ODB-0133]     Created 98 nets and 162 connections.
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
+[INFO GPL-0002] DBU: 4000
+[INFO GPL-0003] SiteSize: (  0.054  0.270 ) um
+[INFO GPL-0004] CoreBBox: (  0.486  0.540 ) ( 11.502 11.340 ) um
+[INFO GPL-0016] Core area:                     118.973 um^2
+[INFO GPL-0036] Movable instances area:         15.528 um^2
+[INFO GPL-0037] Total instances area:           17.860 um^2
+[INFO GPL-0035] Pin density area adjust:        -1.093 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
+[INFO GPL-0006] Number of instances:               145
+[INFO GPL-0007] Movable instances:                  65
+[INFO GPL-0008] Fixed instances:                    80
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                     98
+[INFO GPL-0011] Number of pins:                    227
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 12.000 12.000 ) um
+[INFO GPL-0013] Placement BBox: (  0.486  0.540 ) ( 11.502 11.340 ) um
+[INFO GPL-0014] Region name: top-level.
+[INFO GPL-0015] Region area:                   118.973 um^2
+[INFO GPL-0017] Fixed instances area:            2.333 um^2
+[INFO GPL-0018] Movable instances area:         14.434 um^2
+[INFO GPL-0019] Utilization:                    12.375 %
+[INFO GPL-0020] Standard cells area:            14.434 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 65	Core center = 0	Region center = 0
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000007 HPWL: 2429388
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000011 HPWL: 1896737
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000010 HPWL: 1885176
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000012 HPWL: 1883679
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000007 HPWL: 1882336
+[INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
+[INFO GPL-0023] Placement target density:       0.5000
+[INFO GPL-0024] Movable insts average area:      0.222 um^2
+[INFO GPL-0025] Ideal bin area:                  0.444 um^2
+[INFO GPL-0026] Ideal bin count:                   267
+[INFO GPL-0027] Total bin area:                118.973 um^2
+[INFO GPL-0028] Bin count (X, Y):          16 ,     16
+[INFO GPL-0029] Bin size (W * H):       0.689 *  0.675 um
+[INFO GPL-0030] Number of bins:                    256
+[INFO GPL-0084] ---- Execute Nesterov Global Placement.
+[INFO GPL-0031] HPWL: Half-Perimeter Wirelength
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+        0 |   0.3190 |  3.954153e+02 |   +0.00% |  5.28e-12 |      
+[INFO GPL-0100] Timing-driven iteration 1/2, virtual: false.
+[INFO GPL-0101]    Iter: 1, overflow: 0.319, keep resizer changes at: 1, HPWL: 1581661
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |        98
+    final |     +0.0% |       0 |       0 |             0 |         0
+---------------------------------------------------------------------
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
+-------------------------------------------------------
+        0 |     +0.0% |       0 |        0 |        64
+        6 |     +0.0% |       0 |        0 |        58
+       12 |     +0.0% |       0 |        0 |        52
+       18 |     +0.0% |       0 |        0 |        46
+       24 |     +0.0% |       0 |        0 |        40
+       30 |     +0.0% |       0 |        0 |        34
+       36 |     +0.0% |       0 |        0 |        28
+       42 |     +0.0% |       0 |        0 |        22
+       48 |     +0.0% |       0 |        0 |        16
+       54 |     +0.0% |       0 |        0 |        10
+       60 |     +0.0% |       0 |        0 |         4
+    final |     +0.0% |       0 |        0 |         0
+-------------------------------------------------------
+[INFO GPL-0106] Timing-driven: worst slack 6.3502696e-09
+[INFO GPL-0107] Timing-driven: repair_design delta area: 0.000 um^2 (+0.00%)
+[INFO GPL-0108] Timing-driven: repair_design, gpl delta gcells: 0 (+0.00%)
+[INFO GPL-0109] Timing-driven: repair_design, gcells created: 0, deleted: 0
+[INFO GPL-0110] Timing-driven: new target density: 0.5
+[INFO GPL-0111] Timing-driven: restarting Nesterov momentum.
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+       10 |   0.3412 |  4.016597e+02 |   +0.00% |  7.85e-12 |      
+       20 |   0.3820 |  4.006103e+02 |   -0.26% |  1.16e-11 |      
+       30 |   0.3790 |  4.006497e+02 |   +0.01% |  1.70e-11 |      
+       40 |   0.3743 |  4.004980e+02 |   -0.04% |  2.51e-11 |      
+       50 |   0.3440 |  4.004980e+02 |   +0.00% |  3.70e-11 |      
+       60 |   0.3450 |  4.004600e+02 |   -0.01% |  5.45e-11 |      
+       70 |   0.3550 |  4.004787e+02 |   +0.00% |  8.03e-11 |      
+       80 |   0.2904 |  4.008302e+02 |   +0.09% |  1.18e-10 |      
+       90 |   0.2934 |  4.006140e+02 |   -0.05% |  1.74e-10 |      
+      100 |   0.3326 |  4.001963e+02 |   -0.10% |  2.57e-10 |      
+      110 |   0.3220 |  4.007482e+02 |   +0.14% |  3.78e-10 |      
+      120 |   0.3226 |  4.006015e+02 |   -0.04% |  5.57e-10 |      
+      130 |   0.3190 |  4.004815e+02 |   -0.03% |  8.20e-10 |      
+      140 |   0.3237 |  4.004590e+02 |   -0.01% |  1.21e-09 |      
+      150 |   0.3160 |  4.004675e+02 |   +0.00% |  1.78e-09 |      
+      160 |   0.3247 |  4.003655e+02 |   -0.03% |  2.62e-09 |      
+      170 |   0.3197 |  4.005428e+02 |   +0.04% |  3.86e-09 |      
+      180 |   0.3291 |  4.004323e+02 |   -0.03% |  5.69e-09 |      
+      190 |   0.3245 |  4.003915e+02 |   -0.01% |  8.38e-09 |      
+      200 |   0.3002 |  4.004368e+02 |   +0.01% |  1.24e-08 |      
+      210 |   0.2981 |  4.002117e+02 |   -0.06% |  1.82e-08 |      
+      220 |   0.2808 |  4.001610e+02 |   -0.01% |  2.68e-08 |      
+      230 |   0.2602 |  4.001053e+02 |   -0.01% |  3.95e-08 |      
+      240 |   0.2373 |  4.000960e+02 |   -0.00% |  5.82e-08 |      
+      250 |   0.2577 |  3.999853e+02 |   -0.03% |  8.57e-08 |      
+      260 |   0.2400 |  4.001920e+02 |   +0.05% |  1.26e-07 |      
+      270 |   0.2099 |  4.001343e+02 |   -0.01% |  1.86e-07 |      
+      280 |   0.2028 |  4.002222e+02 |   +0.02% |  2.74e-07 |      
+[INFO GPL-0100] Timing-driven iteration 2/2, virtual: false.
+[INFO GPL-0101]    Iter: 284, overflow: 0.190, keep resizer changes at: 1, HPWL: 1600731
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |        98
+    final |     +0.0% |       0 |       0 |             0 |         0
+---------------------------------------------------------------------
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
+-------------------------------------------------------
+        0 |     +0.0% |       0 |        0 |        64
+        6 |     +0.0% |       0 |        0 |        58
+       12 |     +0.0% |       0 |        0 |        52
+       18 |     +0.0% |       0 |        0 |        46
+       24 |     +0.0% |       0 |        0 |        40
+       30 |     +0.0% |       0 |        0 |        34
+       36 |     +0.0% |       0 |        0 |        28
+       42 |     +0.0% |       0 |        0 |        22
+       48 |     +0.0% |       0 |        0 |        16
+       54 |     +0.0% |       0 |        0 |        10
+       60 |     +0.0% |       0 |        0 |         4
+    final |     +0.0% |       0 |        0 |         0
+-------------------------------------------------------
+[INFO GPL-0106] Timing-driven: worst slack 6.3521326e-09
+[INFO GPL-0107] Timing-driven: repair_design delta area: 0.000 um^2 (+0.00%)
+[INFO GPL-0108] Timing-driven: repair_design, gpl delta gcells: 0 (+0.00%)
+[INFO GPL-0109] Timing-driven: repair_design, gcells created: 0, deleted: 0
+[INFO GPL-0110] Timing-driven: new target density: 0.5
+[INFO GPL-0111] Timing-driven: restarting Nesterov momentum.
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+      290 |   0.1738 |  3.998955e+02 |   +0.00% |  4.04e-07 |      
+      300 |   0.1494 |  4.003690e+02 |   +0.12% |  5.95e-07 |      
+      310 |   0.1265 |  4.003288e+02 |   -0.01% |  8.76e-07 |      
+      320 |   0.1044 |  4.004420e+02 |   +0.03% |  1.29e-06 |      
+      321 |   0.0980 |  4.005480e+02 |          |  1.39e-06 |      
+---------------------------------------------------------------
+[INFO GPL-1001] Global placement finished at iteration 321
+[INFO GPL-1002] Placed Cell Area               14.4343
+[INFO GPL-1003] Available Free Area           116.6400
+[INFO GPL-1004] Minimum Feasible Density        0.1300 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.1375
+[INFO GPL-1008]     - For 80% usage of free space: 0.1547
+[INFO GPL-1009]     - For 50% usage of free space: 0.2475
+[INFO GPL-1011] Original area (um^2): 14.43
+[INFO GPL-1013] Total timing-driven delta area: 0.00 (+0.00%)
+[INFO GPL-1014] Final placement area: 14.43 (+0.00%)
+[INFO GPL-1018] Final HPWL (um): 400.35
+No differences found.

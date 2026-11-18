@@ -76,9 +76,9 @@ exclude_patterns = [
     "**/LICENSE",
     "**/LICENSE.md",
     "README.md",
-    "main/src/odb/src/def/README.md",
-    "main/src/odb/src/def/doc/README.md",
-    "main/src/odb/src/lef/README.md",
+    "main/openroad/odb/src/def/README.md",
+    "main/openroad/odb/src/def/doc/README.md",
+    "main/openroad/odb/src/lef/README.md",
     # Load-bearing: `setup()` symlinks `docs/main` -> the repo root, so
     # `docs/main/docs` *is* this directory. Without this entry Sphinx
     # discovers every page twice. Do not remove.

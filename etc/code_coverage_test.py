@@ -14,31 +14,42 @@ requires_jq = unittest.skipUnless(shutil.which("jq"), "jq is not installed")
 
 
 class CodeCoverageTest(unittest.TestCase):
-    def test_static_bazel_uses_uncached_local_capture(self):
-        result, archive_exists, version, commands = self._run("static-bazel")
+    def test_static_uses_uncached_local_bazel_capture(self):
+        for mode in ("static", "static-bazel"):
+            with self.subTest(mode=mode):
+                result, archive_exists, version, commands = self._run(mode)
 
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertTrue(archive_exists)
-        self.assertEqual(version, "0123456789abcdef\n")
-        self.assertIn("bazelisk clean", commands)
-        self.assertIn("cov-build --dir cov-int --bazel bazelisk build", commands)
-        self.assertIn("--spawn_strategy=local", commands)
-        self.assertIn("--remote_cache= --disk_cache=", commands)
-        self.assertIn("--noremote_accept_cached", commands)
-        self.assertIn("--noremote_upload_local_results", commands)
-        self.assertIn("--//:platform=cli -- //:openroad", commands)
-        self.assertNotIn("cmake ", commands)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertTrue(archive_exists)
+                self.assertEqual(version, "0123456789abcdef\n")
+                self.assertIn("bazelisk clean", commands)
+                self.assertIn(
+                    "cov-build --dir cov-int --bazel bazelisk build", commands
+                )
+                self.assertRegex(
+                    commands,
+                    r"--inject_repository=rules_coverity=\S*/bazel/rules_coverity ",
+                )
+                self.assertIn("--spawn_strategy=local", commands)
+                self.assertIn("--remote_cache= --disk_cache=", commands)
+                self.assertIn("--noremote_accept_cached", commands)
+                self.assertIn("--noremote_upload_local_results", commands)
+                self.assertIn("--//:platform=cli -- //:openroad", commands)
 
-    def test_static_keeps_the_cmake_capture(self):
-        result, archive_exists, version, commands = self._run("static")
+    def test_no_argument_shows_usage(self):
+        result, archive_exists, _, commands = self._run(None)
 
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertTrue(archive_exists)
-        self.assertEqual(version, "0123456789abcdef\n")
-        self.assertIn("cmake -B build .", commands)
-        self.assertIn("cmake --build build", commands)
-        self.assertIn("cov-build --dir cov-int cmake --build build", commands)
-        self.assertNotIn("bazelisk", commands)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("usage:", result.stdout)
+        self.assertFalse(archive_exists)
+        self.assertEqual(commands, "")
+
+    def test_removed_dynamic_target_is_rejected(self):
+        result, _, _, commands = self._run("dynamic")
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("invalid argument: dynamic", result.stderr)
+        self.assertEqual(commands, "")
 
     def test_static_fails_when_capture_percentage_is_missing(self):
         result, archive_exists, version, _ = self._run(
@@ -49,6 +60,14 @@ class CodeCoverageTest(unittest.TestCase):
         self.assertFalse(archive_exists)
         self.assertIsNone(version)
         self.assertIn("Only got 0%", result.stdout)
+
+    def test_static_fails_when_coverity_bazel_rules_are_missing(self):
+        result, archive_exists, _, commands = self._run("static", cov_rules=False)
+
+        self.assertEqual(result.returncode, 1)
+        self.assertFalse(archive_exists)
+        self.assertIn("Coverity Bazel rules not found", result.stderr)
+        self.assertNotIn("cov-build", commands)
 
     def test_static_fails_when_capture_percentage_is_low(self):
         result, archive_exists, version, _ = self._run(
@@ -72,7 +91,6 @@ class CodeCoverageTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue(archive_exists)
         self.assertEqual(version, "fedcba9876543210\n")
-        self.assertNotIn("cmake", commands)
         self.assertNotIn("cov-build", commands)
         self.assertIn("version=fedcba9876543210", commands)
         self.assertIn("--upload-file openroad.tgz", commands)
@@ -146,6 +164,7 @@ class CodeCoverageTest(unittest.TestCase):
         version_arg=None,
         skip_upload=True,
         hide_jq=False,
+        cov_rules=True,
         init_response='{"url":"https://upload.example/build","build_id":825340}\n',
     ):
         with tempfile.TemporaryDirectory() as tmp:
@@ -154,6 +173,8 @@ class CodeCoverageTest(unittest.TestCase):
             fake_bin = root / "bin"
             etc.mkdir(parents=True)
             fake_bin.mkdir()
+            if cov_rules:
+                (root / "bazel" / "rules_coverity").mkdir(parents=True)
 
             script = etc / "CodeCoverage.sh"
             shutil.copy2(Path(__file__).with_name("CodeCoverage.sh"), script)
@@ -162,10 +183,6 @@ class CodeCoverageTest(unittest.TestCase):
             self._write_executable(
                 fake_bin / "bazelisk",
                 '#!/bin/sh\nprintf "bazelisk %s\\n" "$*" >> "$COMMAND_LOG"\n',
-            )
-            self._write_executable(
-                fake_bin / "cmake",
-                '#!/bin/sh\nprintf "cmake %s\\n" "$*" >> "$COMMAND_LOG"\n',
             )
             self._write_executable(
                 fake_bin / "cov-build",
@@ -215,7 +232,7 @@ esac
             else:
                 env.pop("SKIP_COVERITY_UPLOAD", None)
 
-            args = [script, mode, "unused-test-token"]
+            args = [script] if mode is None else [script, mode, "unused-test-token"]
             if version_arg is not None:
                 args.append(version_arg)
 

@@ -3,47 +3,46 @@
 # Order matters: later rules override earlier ones for the same path.
 # The '*' fallback applies to anything not matched by a more specific rule.
 #
-# Fallback owner for everything (docs, CI, bazel, top-level files, src/ root files)
+# Fallback owner for everything (docs, CI, bazel, top-level files, openroad/ root files)
 #  and a few misc modules commented below
 *               @The-OpenROAD-Project/openroad-maintainers
 
 # Per-module owners
-/src/ant/       @The-OpenROAD-Project/openroad-ant
-/src/cgt/       @The-OpenROAD-Project/openroad-cgt
-/src/cmake/     @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
-/src/cts/       @The-OpenROAD-Project/openroad-cts
-/src/cut/       @The-OpenROAD-Project/openroad-cut
-/src/dbSta/     @The-OpenROAD-Project/openroad-dbsta
-/src/dft/       @The-OpenROAD-Project/openroad-dft
-/src/dpl/       @The-OpenROAD-Project/openroad-dpl
-/src/drt/       @The-OpenROAD-Project/openroad-drt
-/src/dst/       @The-OpenROAD-Project/openroad-dst
-/src/est/       @The-OpenROAD-Project/openroad-est
-#/src/exa/
-#/src/fin/
-/src/gpl/       @The-OpenROAD-Project/openroad-gpl
-/src/grt/       @The-OpenROAD-Project/openroad-grt
-/src/gui/       @The-OpenROAD-Project/openroad-gui
-/src/ifp/       @The-OpenROAD-Project/openroad-ifp
-/src/mpl/       @The-OpenROAD-Project/openroad-mpl
-/src/odb/       @The-OpenROAD-Project/openroad-odb
-/src/pad/       @The-OpenROAD-Project/openroad-pad
-/src/par/       @The-OpenROAD-Project/openroad-par
-/src/pdn/       @The-OpenROAD-Project/openroad-pdn
-/src/ppl/       @The-OpenROAD-Project/openroad-ppl
-/src/psm/       @The-OpenROAD-Project/openroad-psm
-#/src/ram/
-/src/rcx/       @The-OpenROAD-Project/openroad-rcx
-/src/rmp/       @The-OpenROAD-Project/openroad-rmp
-/src/rsz/       @The-OpenROAD-Project/openroad-rsz
-/src/sta/       @The-OpenROAD-Project/openroad-sta
-/src/stt/       @The-OpenROAD-Project/openroad-stt
-/src/syn/       @The-OpenROAD-Project/openroad-syn
-/src/tap/       @The-OpenROAD-Project/openroad-tap
-/src/tst/       @The-OpenROAD-Project/openroad-tst
-/src/upf/       @The-OpenROAD-Project/openroad-upf
-/src/utl/       @The-OpenROAD-Project/openroad-utl
-/src/web/       @The-OpenROAD-Project/openroad-web
+/openroad/ant/       @The-OpenROAD-Project/openroad-ant
+/openroad/cgt/       @The-OpenROAD-Project/openroad-cgt
+/openroad/cts/       @The-OpenROAD-Project/openroad-cts
+/openroad/cut/       @The-OpenROAD-Project/openroad-cut
+/openroad/dbSta/     @The-OpenROAD-Project/openroad-dbsta
+/openroad/dft/       @The-OpenROAD-Project/openroad-dft
+/openroad/dpl/       @The-OpenROAD-Project/openroad-dpl
+/openroad/drt/       @The-OpenROAD-Project/openroad-drt
+/openroad/dst/       @The-OpenROAD-Project/openroad-dst
+/openroad/est/       @The-OpenROAD-Project/openroad-est
+#/openroad/exa/
+#/openroad/fin/
+/openroad/gpl/       @The-OpenROAD-Project/openroad-gpl
+/openroad/grt/       @The-OpenROAD-Project/openroad-grt
+/openroad/gui/       @The-OpenROAD-Project/openroad-gui
+/openroad/ifp/       @The-OpenROAD-Project/openroad-ifp
+/openroad/mpl/       @The-OpenROAD-Project/openroad-mpl
+/openroad/odb/       @The-OpenROAD-Project/openroad-odb
+/openroad/pad/       @The-OpenROAD-Project/openroad-pad
+/openroad/par/       @The-OpenROAD-Project/openroad-par
+/openroad/pdn/       @The-OpenROAD-Project/openroad-pdn
+/openroad/ppl/       @The-OpenROAD-Project/openroad-ppl
+/openroad/psm/       @The-OpenROAD-Project/openroad-psm
+#/openroad/ram/
+/openroad/rcx/       @The-OpenROAD-Project/openroad-rcx
+/openroad/rmp/       @The-OpenROAD-Project/openroad-rmp
+/openroad/rsz/       @The-OpenROAD-Project/openroad-rsz
+/openroad/sta/       @The-OpenROAD-Project/openroad-sta
+/openroad/stt/       @The-OpenROAD-Project/openroad-stt
+/openroad/syn/       @The-OpenROAD-Project/openroad-syn
+/openroad/tap/       @The-OpenROAD-Project/openroad-tap
+/openroad/tst/       @The-OpenROAD-Project/openroad-tst
+/openroad/upf/       @The-OpenROAD-Project/openroad-upf
+/openroad/utl/       @The-OpenROAD-Project/openroad-utl
+/openroad/web/       @The-OpenROAD-Project/openroad-web
 
 # GitHub automation
 /.github/                         @The-OpenROAD-Project/openroad-devops
@@ -68,18 +67,12 @@
 /bazel/                           @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
 /tools/                           @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
 
-# CMake build system, shared with the build maintainers
+# Vestigial CMakeLists.txt that points to the Bazel build
 /CMakeLists.txt                   @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
-/CMakeGraphVizOptions.cmake       @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
-/cmake/                           @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
-/src/CMakeLists.txt               @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
 
 # Dependency pins and vendored code
 /.gitmodules                      @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
 /third-party/                     @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
-/flake.nix                        @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
-/flake.lock                       @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
-/default.nix                      @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
 /pyproject.toml                   @The-OpenROAD-Project/openroad-devops @The-OpenROAD-Project/openroad-maintainers
 
 # Documentation build
