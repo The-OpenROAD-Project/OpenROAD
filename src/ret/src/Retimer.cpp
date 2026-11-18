@@ -829,7 +829,8 @@ odb::dbNet* Retimer::groupClockNet(const RetimingGraph& graph,
 }
 
 // Every check runs before the first edit, so a retiming that cannot be
-// rebuilt leaves the netlist untouched.
+// rebuilt leaves the netlist untouched.  So does every lookup of an original
+// register: rebuilding one group deletes registers another group came from.
 void Retimer::applyRetiming(const RetimingGraph& graph,
                             const std::vector<int>& r)
 {
@@ -842,6 +843,7 @@ void Retimer::applyRetiming(const RetimingGraph& graph,
 
   const FaninIndex fanin = faninIndex(graph);
   std::vector<std::vector<const RegisterClass*>> classes(groups.size());
+  std::vector<odb::dbNet*> clock_nets(groups.size(), nullptr);
   for (size_t i = 0; i < groups.size(); i++) {
     if (!groups[i].changed) {
       continue;
@@ -854,6 +856,7 @@ void Retimer::applyRetiming(const RetimingGraph& graph,
                      groups[i].driver_net->getName());
     }
     classes[i] = chainClasses(graph, fanin, r, groups[i]);
+    clock_nets[i] = groupClockNet(graph, fanin, r, groups[i]);
   }
   checkMoves(graph, fanin, r);
 
@@ -862,8 +865,7 @@ void Retimer::applyRetiming(const RetimingGraph& graph,
     const Group& group = groups[i];
     if (group.changed) {
       stats.groups_changed++;
-      rebuildGroup(
-          group, classes[i], groupClockNet(graph, fanin, r, group), stats);
+      rebuildGroup(group, classes[i], clock_nets[i], stats);
     }
   }
 
