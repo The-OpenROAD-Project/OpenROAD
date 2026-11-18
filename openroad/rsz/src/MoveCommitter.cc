@@ -380,6 +380,11 @@ void MoveCommitter::recordAcceptedResult(const MoveResult& result)
 void MoveCommitter::recordRebufferInteraction(const MoveResult& result)
 {
   if (result.type == MoveType::kBuffer) {
+    // Only BufferMove reports inserted buffers, with its driver as the touched
+    // instance; other buffer moves record nothing here.
+    if (result.inserted_buffers.empty()) {
+      return;
+    }
     sta::Instance* driver = result.touched_instances.front();
     for (sta::Instance* buffer : result.inserted_buffers) {
       rebuffer_driver_of_[buffer] = driver;
