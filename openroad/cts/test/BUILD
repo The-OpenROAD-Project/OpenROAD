@@ -66,6 +66,7 @@ PASSFAIL_TESTS = [
     "dont_touch_skipped_net",
     "dont_touch_timing_buffer",
     "hier_dummy_load",
+    "htree_stop_no_improvement",
     "max_wl_two_sinks",
 ]
 

@@ -23,7 +23,11 @@ report_cts
 # splits vertically, which leaves sink regions of zero height, and the
 # H-tree must stop there on one of its stop criteria (the regions stopped
 # getting shorter, CTS-0054, or are shorter than the max wire length,
-# CTS-0038) instead of subdividing to its maximum depth.
+# CTS-0038) instead of subdividing to its maximum depth. Which one is not
+# pinned here: the sink region has zero height, so each level-2 branch's
+# two children sit on the same point and the clustering's assignment of
+# ff0 and ff1 to them is a tie. htree_stop_no_improvement requires
+# CTS-0054 and array_max_wl CTS-0038.
 check "the H-tree stops on a stop criterion" \
   { regexp {CTS-00(54|38)\]\s+Stop criterion found} $cts_log } 1
 check "the H-tree stops at level 2" \
