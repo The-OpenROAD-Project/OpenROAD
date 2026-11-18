@@ -15,7 +15,6 @@
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "spdlog/fmt/fmt.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
@@ -623,8 +622,8 @@ void SequentialUnmapper::traceDecompose(const std::string& inst_name,
   }
   std::string gate_list;
   for (const auto& [name, count] : gates) {
-    gate_list
-        += fmt::format("{}{} x {}", gate_list.empty() ? "" : ", ", count, name);
+    gate_list += gate_list.empty() ? "" : ", ";
+    gate_list += std::to_string(count) + " x " + name;
   }
   debugPrint(logger_,
              utl::RET,
