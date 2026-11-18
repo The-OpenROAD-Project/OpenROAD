@@ -1,0 +1,109 @@
+[INFO ODB-0227] LEF file: ./nangate45.lef, created 22 layers, 27 vias, 134 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 294 components and 1656 component-terminals.
+[INFO ODB-0133]     Created 364 nets and 1068 connections.
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
+[INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0016] Core area:                     953.876 um^2
+[INFO GPL-0036] Movable instances area:        569.772 um^2
+[INFO GPL-0037] Total instances area:          569.772 um^2
+[INFO GPL-0035] Pin density area adjust:        49.963 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
+[INFO GPL-0006] Number of instances:               294
+[INFO GPL-0007] Movable instances:                 294
+[INFO GPL-0008] Fixed instances:                     0
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                    364
+[INFO GPL-0011] Number of pins:                   1122
+[INFO GPL-0012] Die BBox:       (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0013] Placement BBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
+[INFO GPL-0014] Region name: top-level.
+[INFO GPL-0015] Region area:                   953.876 um^2
+[INFO GPL-0017] Fixed instances area:            0.000 um^2
+[INFO GPL-0018] Movable instances area:        619.735 um^2
+[INFO GPL-0019] Utilization:                    64.970 %
+[INFO GPL-0020] Standard cells area:           619.735 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 0	Core center = 294	Region center = 0
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000009 HPWL: 5668660
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000004 HPWL: 5065828
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000002 HPWL: 5052664
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000007 HPWL: 5056873
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000008 HPWL: 5056105
+[INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
+[INFO GPL-0023] Placement target density:       0.7000
+[INFO GPL-0024] Movable insts average area:      2.108 um^2
+[INFO GPL-0025] Ideal bin area:                  3.011 um^2
+[INFO GPL-0026] Ideal bin count:                   316
+[INFO GPL-0027] Total bin area:                953.876 um^2
+[INFO GPL-0028] Bin count (X, Y):          16 ,     16
+[INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
+[INFO GPL-0030] Number of bins:                    256
+[INFO GPL-0084] ---- Execute Nesterov Global Placement.
+[INFO GPL-0031] HPWL: Half-Perimeter Wirelength
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+        0 |   0.8534 |  1.829661e+03 |   +0.00% |  6.02e-14 |      
+       10 |   0.7555 |  2.106509e+03 |  +15.13% |  9.81e-14 |      
+       20 |   0.7588 |  2.099005e+03 |   -0.36% |  1.60e-13 |      
+       30 |   0.7601 |  2.099352e+03 |   +0.02% |  2.60e-13 |      
+       40 |   0.7595 |  2.099483e+03 |   +0.01% |  4.24e-13 |      
+       50 |   0.7593 |  2.099394e+03 |   -0.00% |  6.91e-13 |      
+       60 |   0.7594 |  2.099558e+03 |   +0.01% |  1.13e-12 |      
+       70 |   0.7594 |  2.099680e+03 |   +0.01% |  1.83e-12 |      
+       80 |   0.7592 |  2.099985e+03 |   +0.01% |  2.99e-12 |      
+       90 |   0.7589 |  2.100425e+03 |   +0.02% |  4.86e-12 |      
+      100 |   0.7586 |  2.101154e+03 |   +0.03% |  7.92e-12 |      
+      110 |   0.7580 |  2.102279e+03 |   +0.05% |  1.29e-11 |      
+      120 |   0.7569 |  2.104111e+03 |   +0.09% |  2.10e-11 |      
+      130 |   0.7553 |  2.107015e+03 |   +0.14% |  3.42e-11 |      
+      140 |   0.7529 |  2.111583e+03 |   +0.22% |  5.58e-11 |      
+      150 |   0.7494 |  2.118695e+03 |   +0.34% |  9.08e-11 |      
+      160 |   0.7440 |  2.129915e+03 |   +0.53% |  1.48e-10 |      
+      170 |   0.7339 |  2.145718e+03 |   +0.74% |  2.41e-10 |      
+      180 |   0.7187 |  2.167446e+03 |   +1.01% |  3.93e-10 |      
+      190 |   0.6999 |  2.196454e+03 |   +1.34% |  6.39e-10 |      
+      200 |   0.6808 |  2.237778e+03 |   +1.88% |  1.04e-09 |      
+      210 |   0.6489 |  2.280831e+03 |   +1.92% |  1.70e-09 |      
+      220 |   0.6117 |  2.327240e+03 |   +2.03% |  2.76e-09 |      
+[INFO GPL-0038] Routability snapshot saved at iter = 224
+      223 |   0.5996 |  2.341805e+03 |          |           |      
+      230 |   0.5719 |  2.376223e+03 |   +2.10% |  4.50e-09 |      
+      240 |   0.5210 |  2.403962e+03 |   +1.17% |  7.33e-09 |      
+      250 |   0.4666 |  2.417438e+03 |   +0.56% |  1.19e-08 |      
+      260 |   0.4059 |  2.406919e+03 |   -0.44% |  1.95e-08 |      
+      270 |   0.3522 |  2.421896e+03 |   +0.62% |  3.17e-08 |      
+      280 |   0.3187 |  2.437206e+03 |   +0.63% |  4.76e-08 |      
+[INFO GPL-0040] Routability pass 1: weighted congestion 0.2972 (target 0.6700), 0 of 73 actionable tiles overflowed (0.0%).
+[INFO GPL-0050] Weighted routing congestion is lower than target routing congestion(0.6700), end routability optimization.
+[INFO GPL-0090] Routability finished. Target routing congestion achieved succesfully.
+Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
+---------------------------------------------------------------
+      290 |   0.2930 |  2.463697e+03 |   +1.09% |  7.02e-08 |      
+      300 |   0.2616 |  2.490937e+03 |   +1.11% |  1.03e-07 |      
+      310 |   0.2250 |  2.509156e+03 |   +0.73% |  1.52e-07 |      
+      320 |   0.1957 |  2.534109e+03 |   +0.99% |  2.24e-07 |      
+      330 |   0.1670 |  2.551704e+03 |   +0.69% |  3.30e-07 |      
+      340 |   0.1398 |  2.572427e+03 |   +0.81% |  4.87e-07 |      
+      350 |   0.1161 |  2.584759e+03 |   +0.48% |  7.17e-07 |      
+      357 |   0.0999 |  2.595659e+03 |          |  9.78e-07 |      
+---------------------------------------------------------------
+[INFO GPL-1001] Global placement finished at iteration 357
+[INFO GPL-1017] Routability mode iteration count: 65
+[INFO GPL-1005] Routability final weighted congestion: 0.2673
+[INFO GPL-1002] Placed Cell Area              619.7347
+[INFO GPL-1003] Available Free Area           953.8760
+[INFO GPL-1004] Minimum Feasible Density        0.6500 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.7219
+[INFO GPL-1008]     - For 80% usage of free space: 0.8121
+[INFO GPL-1011] Original area (um^2): 619.73
+[INFO GPL-1012] Total routability artificial inflation: 0.00 (+0.00%)
+[INFO GPL-1014] Final placement area: 619.73 (+0.00%)
+[INFO GPL-1018] Final HPWL (um): 2600.32
+No differences found.
