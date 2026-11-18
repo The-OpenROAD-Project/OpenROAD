@@ -2,12 +2,16 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -37,6 +41,86 @@ using odb::dbTechLayerDir;
 using utl::ThreadException;
 
 namespace drt {
+namespace {
+
+// Origins fitting the lower landing in pin and both landings in cell.
+std::optional<odb::Rect> viaAccessOriginWindow(const odb::Rect& source,
+                                               const odb::Rect& lower,
+                                               const odb::Rect& upper,
+                                               const odb::Rect& boundary)
+{
+  using I = int64_t;
+  const I xl = std::max({I(source.xMin()),
+                         I(source.xMin()) - lower.xMin(),
+                         I(boundary.xMin()) - lower.xMin(),
+                         I(boundary.xMin()) - upper.xMin()});
+  const I xh = std::min({I(source.xMax()),
+                         I(source.xMax()) - lower.xMax(),
+                         I(boundary.xMax()) - lower.xMax(),
+                         I(boundary.xMax()) - upper.xMax()});
+  const I yl = std::max({I(source.yMin()),
+                         I(source.yMin()) - lower.yMin(),
+                         I(boundary.yMin()) - lower.yMin(),
+                         I(boundary.yMin()) - upper.yMin()});
+  const I yh = std::min({I(source.yMax()),
+                         I(source.yMax()) - lower.yMax(),
+                         I(boundary.yMax()) - lower.yMax(),
+                         I(boundary.yMax()) - upper.yMax()});
+  if (xl > xh || yl > yh) {
+    return std::nullopt;
+  }
+  return odb::Rect(static_cast<int>(xl),
+                   static_cast<int>(yl),
+                   static_cast<int>(xh),
+                   static_cast<int>(yh));
+}
+
+std::vector<int> sampleViaAccessOrigins(const int low,
+                                        const int high,
+                                        const int grid)
+{
+  constexpr int kDenseSampleLimit = 16;
+  if (grid <= 0 || low > high) {
+    return {};
+  }
+  const auto floor_grid = [grid](const int64_t value) {
+    const int64_t rem = value % grid;
+    return value - rem - (rem < 0 ? grid : 0);
+  };
+  const auto ceil_grid = [&](const int64_t value) {
+    const int64_t floor = floor_grid(value);
+    return floor == value ? floor : floor + grid;
+  };
+  const int64_t first = ceil_grid(low);
+  const int64_t last = floor_grid(high);
+  if (first > last) {
+    return {};
+  }
+  std::vector<int> result;
+  if ((last - first) / grid + 1 <= kDenseSampleLimit) {
+    for (int64_t position = first; position <= last; position += grid) {
+      result.push_back(static_cast<int>(position));
+    }
+  } else {
+    const int64_t sum = int64_t(low) + high;
+    // floor(sum/2), rather than C++ division toward zero.
+    const int64_t midpoint_low = sum / 2 - (sum < 0 && sum % 2 != 0);
+    const int64_t midpoint_high = sum / 2 + (sum > 0 && sum % 2 != 0);
+    std::vector<int64_t> positions{first, last};
+    positions.push_back(floor_grid(midpoint_low));
+    positions.push_back(ceil_grid(midpoint_high));
+    for (const int64_t position : positions) {
+      if (position >= first && position <= last) {
+        result.push_back(static_cast<int>(position));
+      }
+    }
+    std::ranges::sort(result);
+    result.erase(std::unique(result.begin(), result.end()), result.end());
+  }
+  return result;
+}
+
+}  // namespace
 
 /**
  * @details Some functions only use a subset of the vias to test if access
@@ -1293,6 +1377,221 @@ bool FlexPA::EnoughAccessPoints(
   return !aps.empty();
 }
 
+struct FlexPA::SparseViaSearch
+{
+  struct Footprint
+  {
+    const frViaDef* via;
+    std::vector<frCoord> positions;
+  };
+  using Group = std::tuple<frLayerNum, size_t, frCoord>;
+  using PointKey = std::tuple<frCoord, frCoord, frLayerNum>;
+  using TrialKey = std::tuple<frCoord, frCoord, frLayerNum, const frViaDef*>;
+
+  FlexPA& pa;
+  std::vector<std::unique_ptr<frAccessPoint>>& aps;
+  const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes;
+  const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>& layer_polys;
+  frMPin* pin;
+  frInstTerm* inst_term;
+  pa_requirements_met& reqs;
+  std::map<Group, std::vector<Footprint>> groups;
+  std::set<TrialKey> tried;
+  std::map<PointKey, std::vector<const frViaDef*>> mapped_vias;
+  size_t max_vias = 0;
+  size_t max_samples = 0;
+
+  SparseViaSearch(
+      FlexPA& pa,
+      std::vector<std::unique_ptr<frAccessPoint>>& aps,
+      const std::vector<gtl::polygon_90_set_data<frCoord>>& pin_shapes,
+      const std::vector<std::vector<gtl::polygon_90_data<frCoord>>>&
+          layer_polys,
+      frMPin* pin,
+      frInstTerm* inst_term,
+      pa_requirements_met& reqs)
+      : pa(pa),
+        aps(aps),
+        pin_shapes(pin_shapes),
+        layer_polys(layer_polys),
+        pin(pin),
+        inst_term(inst_term),
+        reqs(reqs)
+  {
+  }
+
+  std::vector<const frViaDef*> catalogue(const frLayerNum layer)
+  {
+    std::map<std::pair<ViaRawPriorityTuple, std::string>, const frViaDef*>
+        ranked;
+    for (const auto* via : pa.getTech()->getLayer(layer + 1)->getViaDefs()) {
+      if (via->getCutFigs().size() != 1 || via->getLayer1Figs().empty()
+          || via->getLayer2Figs().empty() || via->getLayer1Num() != layer
+          || via->getCutLayerNum() != layer + 1
+          || via->getLayer2Num() != layer + 2
+          || (inst_term->isStubborn() && pa.avoid_via_defs_.contains(via))) {
+        continue;
+      }
+      ranked.emplace(std::make_pair(pa.getViaRawPriority(via), via->getName()),
+                     via);
+    }
+    std::vector<const frViaDef*> vias;
+    for (const auto& [priority, via] : ranked) {
+      vias.push_back(via);
+    }
+    return vias;
+  }
+
+  void gather()
+  {
+    const frCoord grid = pa.getTech()->getManufacturingGrid();
+    const odb::Rect boundary = inst_term->getInst()->getBoundaryBBox();
+    for (frLayerNum layer = 0; layer + 2 < static_cast<int>(pin_shapes.size());
+         ++layer) {
+      const auto* source_layer = pa.getTech()->getLayer(layer);
+      const auto* upper = pa.getTech()->getLayer(layer + 2);
+      if (pin_shapes[layer].empty()
+          || source_layer->getType() != odb::dbTechLayerType::ROUTING
+          || !pa.hasRoutableLayerAbove(layer)
+          || layer + 2 > pa.router_cfg_->TOP_ROUTING_LAYER
+          || pa.getTech()->getLayer(layer + 1)->getType()
+                 != odb::dbTechLayerType::CUT
+          || upper->getType() != odb::dbTechLayerType::ROUTING
+          || (!upper->isHorizontal() && !upper->isVertical())) {
+        continue;
+      }
+      const bool horizontal = upper->isHorizontal();
+      const auto vias = catalogue(layer);
+      std::vector<gtl::rectangle_data<frCoord>> rectangles;
+      gtl::get_max_rectangles(rectangles, pin_shapes[layer]);
+      for (size_t index = 0; index < rectangles.size(); ++index) {
+        const auto& rect = rectangles[index];
+        const odb::Rect source(
+            gtl::xl(rect), gtl::yl(rect), gtl::xh(rect), gtl::yh(rect));
+        if (std::min(source.dx(), source.dy()) < source_layer->getMinWidth()) {
+          continue;
+        }
+        for (const auto* via : vias) {
+          const auto window = viaAccessOriginWindow(source,
+                                                    via->getLayer1ShapeBox(),
+                                                    via->getLayer2ShapeBox(),
+                                                    boundary);
+          if (!window) {
+            continue;
+          }
+          const auto positions = sampleViaAccessOrigins(
+              horizontal ? window->xMin() : window->yMin(),
+              horizontal ? window->xMax() : window->yMax(),
+              grid);
+          if (positions.empty()) {
+            continue;
+          }
+          const auto& tracks = pa.track_coords_[layer + 2];
+          const frCoord low = horizontal ? window->yMin() : window->xMin();
+          const frCoord high = horizontal ? window->yMax() : window->xMax();
+          for (auto it = tracks.lower_bound(low);
+               it != tracks.end() && it->first <= high;
+               ++it) {
+            if (it->second != frAccessPointEnum::OnGrid || it->first % grid) {
+              continue;
+            }
+            auto& footprints = groups[{layer, index, it->first}];
+            footprints.push_back({via, positions});
+            max_vias = std::max(max_vias, footprints.size());
+            max_samples = std::max(max_samples, positions.size());
+          }
+        }
+      }
+    }
+  }
+
+  bool admit(const odb::Point& point,
+             const frLayerNum layer,
+             const frViaDef* via_def)
+  {
+    auto ap = std::make_unique<frAccessPoint>(point, layer);
+    ap->setAllowVia(true);
+    const bool horizontal = pa.getTech()->getLayer(layer)->isHorizontal();
+    const auto& tracks = pa.track_coords_[layer];
+    const auto found = tracks.find(horizontal ? point.y() : point.x());
+    ap->setType(found != tracks.end()
+                        && (found->second == frAccessPointEnum::OnGrid
+                            || found->second == frAccessPointEnum::HalfGrid)
+                    ? found->second
+                    : frAccessPointEnum::EncOpt,
+                true);
+    ap->setType(frAccessPointEnum::OnGrid, false);
+    frVia via(via_def, point);
+    const bool upper_horizontal
+        = pa.getTech()->getLayer(layer + 2)->isHorizontal();
+    for (const auto dir : upper_horizontal
+                              ? std::array{frDirEnum::W, frDirEnum::E}
+                              : std::array{frDirEnum::S, frDirEnum::N}) {
+      if (pa.checkDirectionalViaAccess(
+              ap.get(), &via, pin, inst_term, layer_polys[layer], dir)) {
+        ap->addViaDef(via_def);
+        ap->setAccess(frDirEnum::U);
+        aps.push_back(std::move(ap));
+        return pa.EnoughAccessPoints(aps, inst_term, reqs);
+      }
+    }
+    return false;
+  }
+
+  bool run()
+  {
+    gather();
+    size_t trials = 0;
+    // Visit every rectangle/track group before advancing via and sample rounds.
+    for (size_t sample = 0; sample < max_samples; ++sample) {
+      for (size_t via_index = 0; via_index < max_vias; ++via_index) {
+        for (const auto& [group, footprints] : groups) {
+          if (via_index >= footprints.size()
+              || sample >= footprints[via_index].positions.size()) {
+            continue;
+          }
+          const auto layer = std::get<0>(group);
+          const auto track = std::get<2>(group);
+          const auto& footprint = footprints[via_index];
+          const bool horizontal
+              = pa.getTech()->getLayer(layer + 2)->isHorizontal();
+          const frCoord position = footprint.positions[sample];
+          const odb::Point point(horizontal ? position : track,
+                                 horizontal ? track : position);
+          if (std::ranges::any_of(aps, [&](const auto& ap) {
+                return ap->getLayerNum() == layer && ap->getPoint() == point;
+              })) {
+            continue;
+          }
+          const auto [mapped, inserted]
+              = mapped_vias.try_emplace(PointKey(point.x(), point.y(), layer));
+          if (inserted) {
+            pa.getViasFromMetalWidthMap(
+                point, layer, pin_shapes[layer], mapped->second);
+          }
+          if (!mapped->second.empty()
+              && std::ranges::find(mapped->second, footprint.via)
+                     == mapped->second.end()) {
+            continue;
+          }
+          if (!tried.emplace(point.x(), point.y(), layer, footprint.via)
+                   .second) {
+            continue;
+          }
+          if (trials == 128) {
+            return false;
+          }
+          ++trials;
+          if (admit(point, layer, footprint.via)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+};
+
 template <typename T>
 bool FlexPA::genPinAccessCostBounded(
     std::vector<std::unique_ptr<frAccessPoint>>& aps,
@@ -1472,6 +1771,15 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
                                                      lower,
                                                      upper,
                                                      reqs);
+    }
+  }
+
+  if constexpr (std::is_same_v<T, frMPin>) {
+    if (!enough_access_points && isStdCellTerm(inst_term)
+        && (!inst_term->hasNet() || !inst_term->getNet()->hasNDR())) {
+      SparseViaSearch search{
+          *this, aps, pin_shapes, layer_polys, pin, inst_term, reqs};
+      enough_access_points = search.run();
     }
   }
 

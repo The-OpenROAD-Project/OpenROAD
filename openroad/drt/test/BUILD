@@ -276,11 +276,17 @@ cc_test(
 
 cc_test(
     name = "PinAccessTest",
-    srcs = ["PinAccessTest.cpp"],
+    srcs = [
+        "PinAccessTest.cpp",
+        "SparseViaAccessTest.cpp",
+        "fixture.cpp",
+        "fixture.h",
+    ],
     data = ["Nangate45/Nangate45_tech.lef"],
     includes = ["../src"],
     deps = [
         "//openroad/drt",
+        "//openroad/drt:base_types",
         "//openroad/drt:drt_impl",
         "//openroad/dst",
         "//openroad/odb/src/db",
