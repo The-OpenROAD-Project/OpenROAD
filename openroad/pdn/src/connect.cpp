@@ -131,6 +131,27 @@ void Connect::setSplitCuts(
   // remove top and bottom layers of the stack
   split_cuts_.erase(layer0_);
   split_cuts_.erase(layer1_);
+
+  // split cuts are placed on separate routing tracks, so the pitch must cover
+  // at least one track
+  for (const auto& [layer, cut_def] : split_cuts_) {
+    // same axis as TechLayer's track grid, which reads Y unless vertical
+    const int layer_pitch
+        = layer->getDirection() == odb::dbTechLayerDir::VERTICAL
+              ? layer->getPitchX()
+              : layer->getPitchY();
+    if (cut_def.pitch < layer_pitch) {
+      const TechLayer tech_layer(layer);
+      grid_->getLogger()->error(
+          utl::PDN,
+          243,
+          "Split cut pitch {:.4f} um on {} is less than the layer pitch {:.4f} "
+          "um.",
+          tech_layer.dbuToMicron(cut_def.pitch),
+          layer->getName(),
+          tech_layer.dbuToMicron(layer_pitch));
+    }
+  }
 }
 
 int Connect::getSplitCutPitch(odb::dbTechLayer* layer) const
@@ -762,13 +783,28 @@ DbVia* Connect::generateDbVia(
     const auto upper_split = getSplitCut(via->getTopLayer());
     if (lower_split.pitch != 0 || upper_split.pitch != 0) {
       const int pitch = std::max(lower_split.pitch, upper_split.pitch);
+      // split cuts on an ongrid layer sit on its tracks, so round the pitch up
+      // to whole tracks of the layer that sets that coordinate
+      odb::dbTechLayer* horizontal = via->getBottomLayer();
+      odb::dbTechLayer* vertical = via->getTopLayer();
+      if (horizontal->getDirection() != odb::dbTechLayerDir::HORIZONTAL) {
+        std::swap(horizontal, vertical);
+      }
+      const int pitch_x
+          = ongrid_.contains(vertical)
+                ? TechLayer(vertical).snapToGridInterval(block, pitch, true)
+                : pitch;
+      const int pitch_y
+          = ongrid_.contains(horizontal)
+                ? TechLayer(horizontal).snapToGridInterval(block, pitch, true)
+                : pitch;
       via->setSplitCutArray(lower_split.pitch != 0, upper_split.pitch != 0);
-      via->setCutPitchX(pitch);
-      via->setCutPitchY(pitch);
+      via->setCutPitchX(pitch_x);
+      via->setCutPitchY(pitch_y);
       if (lower_split.stagger || upper_split.stagger) {
         if (net->getSigType() == odb::dbSigType::GROUND) {
-          via->setCutOffsetX(pitch / 2);
-          via->setCutOffsetY(pitch / 2);
+          via->setCutOffsetX(pitch_x / 2);
+          via->setCutOffsetY(pitch_y / 2);
         }
       }
     }

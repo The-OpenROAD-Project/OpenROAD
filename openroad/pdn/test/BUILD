@@ -500,6 +500,7 @@ cc_test(
         "//openroad/odb/src/db",
         "//openroad/pdn",
         "//openroad/tst",
+        "//openroad/tst:db_fixture",
         "//openroad/tst:physical_builder",
         "//openroad/utl",
         "@googletest//:gtest",
