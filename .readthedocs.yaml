@@ -6,7 +6,7 @@ version: 2
 
 submodules:
     include:
-      - src/sta
+      - openroad/sta
 
 # Set the OS, Python version and other tools you might need
 build:
