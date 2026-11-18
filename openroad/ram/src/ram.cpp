@@ -316,9 +316,10 @@ RamGen::TreeEnd RamGen::planReadTree(const std::string& prefix,
 // read path is handled by the AOI mux in the buffer row, so all tristates in
 // a row can share the same row-select enable signal.
 
-// The most pins a select the array makes drives: a word's write enable
-// and hold, a write port's take. More take a copy a group, each from its
-// own buffer or inverter.
+// The bits a buffered copy of a word's write enable, its hold or a write
+// port's take selects: a group. A group's enable drives its bits' hold
+// muxes and the inverter making its hold, kDriveGroup + 1 pins; its hold
+// and each take, kDriveGroup.
 constexpr int kDriveGroup = 8;
 
 void RamGen::makeSlice(const int slice_idx,
@@ -513,8 +514,65 @@ void RamGen::makeSlice(const int slice_idx,
   }
 
   if (!shared) {
-    word_write = {we_net, hold, gclock_net, reset_off, take, select_b_nets};
+    word_write = {
+        .we = we_net,
+        .gclock = gclock_net,
+        .reset_off = reset_off,
+        .take = take,
+        .select_b = select_b_nets,
+    };
   }
+
+  // the bits one enable writes: the word with -bit_folds, else the slice
+  const int span = bit_folds_ > 1 ? word_bits_ : mask_size;
+  // an enable of one group drives no more than a group's pins already,
+  // and a buffer would only add a level
+  const bool one_group = span <= kDriveGroup;
+  // the group buffers an enable drives, numbered across the word's folds
+  // as they are built: each fold's groups after the earlier folds', the
+  // last, short fold's maybe fewer
+  const int fold_groups = (mask_size + kDriveGroup - 1) / kDriveGroup;
+  int span_groups = fold_groups;
+  if (bit_folds_ > 1) {
+    const int last_bits = word_bits_ - (bit_folds_ - 1) * mask_size;
+    span_groups = (bit_folds_ - 1) * fold_groups
+                  + (last_bits + kDriveGroup - 1) / kDriveGroup;
+  }
+  const int first_group = bit_folds_ > 1 ? slice_idx * fold_groups : 0;
+  auto make_buffer = [&](Cell* cell,
+                         const std::string& inst,
+                         dbNet* in,
+                         dbNet* out) {
+    makeInst(
+        cell,
+        prefix,
+        inst,
+        buffer_cell_,
+        {
+            {buffer_ports_[{.type = PortRoleType::DataIn, .index = 0}], in},
+            {buffer_ports_[{.type = PortRoleType::DataOut, .index = 0}], out},
+        });
+  };
+  // more than kDriveGroup groups: the enable or a take reaches the group
+  // buffers through a buffer per kDriveGroup of them, so it drives no
+  // more than kDriveGroup buffers either. The folds of a word share
+  // these; an unfolded slice has its own, from its own enable.
+  auto group_source
+      = [&](Cell* cell, dbNet* root, const int port, const int group) {
+          if (span_groups <= kDriveGroup) {
+            return root;
+          }
+          const int super = (first_group + group) / kDriveGroup;
+          const int slice = bit_folds_ > 1 ? 0 : slice_idx;
+          dbNet*& net = super_nets_[{row_idx, word_idx, slice, port, super}];
+          if (net == nullptr) {
+            const std::string what
+                = port < 0 ? "we" : fmt::format("take{}", port);
+            net = makeNet(prefix, fmt::format("{}_s{}", what, super));
+            make_buffer(cell, fmt::format("{}_sbuf{}", what, super), root, net);
+          }
+          return net;
+        };
 
   for (int local_bit = 0; local_bit < mask_size; ++local_bit) {
     if (start_bit_idx + local_bit >= word_bits_) {
@@ -553,103 +611,49 @@ void RamGen::makeSlice(const int slice_idx,
                             storage,
                             reset_bit,
                             reset_off);
-    // a word of one group: its nets drive no more than a group's pins
-    // already, and a buffer would only add a level
-    const bool one_group = word_bits_ <= kDriveGroup;
-    // a word of more than kDriveGroup groups: its group buffers take the
-    // enable or take through a buffer per kDriveGroup groups, so the
-    // enable drives no more than kDriveGroup buffers either
-    const int word_groups = (word_bits_ + kDriveGroup - 1) / kDriveGroup;
-    const int word_group = (start_bit_idx + local_bit) / kDriveGroup;
-    auto group_source = [&](dbNet* root, const int port) {
-      if (word_groups <= kDriveGroup) {
-        return root;
-      }
-      const int super = word_group / kDriveGroup;
-      dbNet*& net = super_nets_[{row_idx, word_idx, port, super}];
-      if (net == nullptr) {
-        const std::string what = port < 0 ? "we" : fmt::format("take{}", port);
-        net = makeNet(prefix, fmt::format("{}_s{}", what, super));
-        makeInst(
-            bit_cell.get(),
-            prefix,
-            fmt::format("{}_sbuf{}", what, super),
-            buffer_cell_,
-            {
-                {
-                    buffer_ports_[{.type = PortRoleType::DataIn, .index = 0}],
-                    root,
-                },
-                {
-                    buffer_ports_[{.type = PortRoleType::DataOut, .index = 0}],
-                    net,
-                },
-            });
-      }
-      return net;
-    };
-    if (num_write > 1 && one_group && take_group.empty()) {
-      take_group = take;
-    } else if (num_write > 1
-               && (local_bit % kDriveGroup == 0 || take_group.empty())) {
+    // a group's enable and hold, and each port's take, in its first
+    // bit's cell; local bit 0 is never a pad, a fold is never empty
+    if (local_bit % kDriveGroup == 0) {
       const int group = local_bit / kDriveGroup;
-      take_group.assign(num_write, nullptr);
-      for (int i = 0; i < num_write; ++i) {
-        take_group[i] = makeNet(prefix, fmt::format("take{}_g{}", i, group));
-        makeInst(
-            bit_cell.get(),
-            prefix,
-            fmt::format("take_buf{}_g{}", i, group),
-            buffer_cell_,
-            {
-                {
-                    buffer_ports_[{.type = PortRoleType::DataIn, .index = 0}],
-                    group_source(take[i], i),
-                },
-                {
-                    buffer_ports_[{.type = PortRoleType::DataOut, .index = 0}],
-                    take_group[i],
-                },
-            });
+      if (num_write > 1) {
+        if (one_group) {
+          take_group = take;
+        } else {
+          take_group.assign(num_write, nullptr);
+          for (int i = 0; i < num_write; ++i) {
+            take_group[i]
+                = makeNet(prefix, fmt::format("take{}_g{}", i, group));
+            make_buffer(bit_cell.get(),
+                        fmt::format("take_buf{}_g{}", i, group),
+                        group_source(bit_cell.get(), take[i], i, group),
+                        take_group[i]);
+          }
+        }
       }
-    }
-    if (write_mux_ && (local_bit % kDriveGroup == 0 || we_group == nullptr)) {
-      // a group's enable and hold, in its first bit's cell; a word of one
-      // group takes the word's enable itself
-      const int group = local_bit / kDriveGroup;
-      hold = makeNet(prefix, fmt::format("hold_g{}", group));
-      if (one_group) {
-        we_group = we_net;
-      } else {
-        we_group = makeNet(prefix, fmt::format("we_g{}", group));
+      if (write_mux_) {
+        hold = makeNet(prefix, fmt::format("hold_g{}", group));
+        if (one_group) {
+          we_group = we_net;
+        } else {
+          we_group = makeNet(prefix, fmt::format("we_g{}", group));
+          make_buffer(bit_cell.get(),
+                      fmt::format("we_buf{}", group),
+                      group_source(bit_cell.get(), we_net, -1, group),
+                      we_group);
+        }
         makeInst(
             bit_cell.get(),
             prefix,
-            fmt::format("we_buf{}", group),
-            buffer_cell_,
+            fmt::format("hold_inv{}", group),
+            inv_cell_,
             {
                 {
-                    buffer_ports_[{.type = PortRoleType::DataIn, .index = 0}],
-                    group_source(we_net, -1),
-                },
-                {
-                    buffer_ports_[{.type = PortRoleType::DataOut, .index = 0}],
+                    inv_ports_[{.type = PortRoleType::DataIn, .index = 0}],
                     we_group,
                 },
+                {inv_ports_[{.type = PortRoleType::DataOut, .index = 0}], hold},
             });
       }
-      makeInst(
-          bit_cell.get(),
-          prefix,
-          fmt::format("hold_inv{}", group),
-          inv_cell_,
-          {
-              {
-                  inv_ports_[{.type = PortRoleType::DataIn, .index = 0}],
-                  we_group,
-              },
-              {inv_ports_[{.type = PortRoleType::DataOut, .index = 0}], hold},
-          });
     }
     if (write_mux_) {
       // the word's own value back where it is not written: the flop's

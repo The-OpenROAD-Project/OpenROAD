@@ -13,24 +13,7 @@ generate_ram_netlist -mask_size 16 -word_size 128 -num_words 4 -r_ports 2 \
   -w_ports 2 -storage_cell DFFHQNx1_ASAP7_75t_R -write_style mux \
   -write_priority or -decoder word -bit_folds 8
 
-# the most sinks a net driven inside a word has
-set worst 0
-set worst_net ""
-foreach net [[ord::get_db_block] getNets] {
-  set driver ""
-  set sinks 0
-  foreach iterm [$net getITerms] {
-    if { [$iterm isOutputSignal] } {
-      set driver [[$iterm getInst] getName]
-    } elseif { [$iterm isInputSignal] } {
-      incr sinks
-    }
-  }
-  if { [string match "storage_*" $driver] && $sinks > $worst } {
-    set worst $sinks
-    set worst_net [$net getName]
-  }
-}
+lassign [ram_sim::worst_fanout] worst_net worst
 ram_sim::check { $worst <= 9 } \
   "$worst_net, driven in a word, has $worst sinks; a group's is 9"
 

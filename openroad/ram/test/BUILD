@@ -36,6 +36,10 @@ PASSFAIL_TESTS = [
     "write_ports_fanout_asap7",
     "one_group_asap7",
     "wide_word_asap7",
+    "write_mask_wide_asap7",
+    "write_mask_groups_asap7",
+    "fold_ten_groups_asap7",
+    "fold_odd_groups_asap7",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
