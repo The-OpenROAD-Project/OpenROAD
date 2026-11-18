@@ -28,7 +28,7 @@ _help() {
 usage: $0 [OPTIONS]
 
 Build and install OpenROAD with Bazel. The binary is built in
-bazel-bin/openroad.
+bazel-bin/openroad/openroad.
 
 OPTIONS:
   -no-gui                   Disable GUI support

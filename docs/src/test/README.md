@@ -18,7 +18,7 @@ Bazel-level view.
 bazelisk test //docs/src/test/...
 
 # The per-module checks
-bazelisk test --test_tag_filters=doc_check //src/...
+bazelisk test --test_tag_filters=doc_check //openroad/...
 ```
 
 ## Static tests
@@ -60,7 +60,7 @@ time you make a change to the `README.md`, update messages, or
 make a change to the top-level `Tcl` code.
 
 Each documented module gets two tests, declared in its own
-`src/{module}/test/BUILD` and tagged `doc_check`:
+`openroad/{module}/test/BUILD` and tagged `doc_check`:
 
 #### README-messages check
 
