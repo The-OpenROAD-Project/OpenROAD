@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <cassert>
 #include <optional>
 #include <set>
@@ -121,14 +122,23 @@ class Rudy
     // taken before this, or the line's demand is inflated.
     net_rect.set_xhi(std::max(net_rect.xMax(), net_rect.xMin() + wire_width_));
     net_rect.set_yhi(std::max(net_rect.yMax(), net_rect.yMin() + wire_width_));
+    // A line on the top/right die edge grows outside the grid; keep it inside.
+    net_rect.moveDelta(std::min(0, grid_block_.xMax() - net_rect.xMax()),
+                       std::min(0, grid_block_.yMax() - net_rect.yMax()));
     const auto net_congestion = (hpwl * wire_width_) / net_rect.area();
 
+    // The last column/row also covers the die remainder, so an index past it
+    // belongs to it, as in Grid::getPositionOnGrid.
     const int min_x_index
-        = std::max(0, (net_rect.xMin() - grid_block_.xMin()) / tile_size_);
+        = std::clamp((net_rect.xMin() - grid_block_.xMin()) / tile_size_,
+                     0,
+                     tile_cnt_x_ - 1);
     const int max_x_index = std::min(
         tile_cnt_x_ - 1, (net_rect.xMax() - grid_block_.xMin()) / tile_size_);
     const int min_y_index
-        = std::max(0, (net_rect.yMin() - grid_block_.yMin()) / tile_size_);
+        = std::clamp((net_rect.yMin() - grid_block_.yMin()) / tile_size_,
+                     0,
+                     tile_cnt_y_ - 1);
     const int max_y_index = std::min(
         tile_cnt_y_ - 1, (net_rect.yMax() - grid_block_.yMin()) / tile_size_);
 

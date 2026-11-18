@@ -294,5 +294,65 @@ TEST_F(GlobalRouterTest, RudyLineNetOnTileBoundaryGoesToOneTile)
   }
 }
 
+TEST_F(GlobalRouterTest, RudyNetsOnTheDieRemainderAndEdgeKeepTheirWire)
+{
+  constexpr int kWireWidth = 100;
+  grt::Rudy* rudy = grt_.getRudy();
+  rudy->setWireWidth(kWireWidth);
+  const auto [grid_x, grid_y] = rudy->getGridSize();
+  ASSERT_GE(grid_x, 8);
+  ASSERT_GE(grid_y, 8);
+
+  // The die does not divide into whole tiles: the last column/row also covers
+  // the remainder strip [strip_x, die.xMax()) / [strip_y, die.yMax()).
+  const odb::Rect die = block_->getDieArea();
+  const int strip_x = die.xMin() + grid_x * rudy->getTileSize();
+  const int strip_y = die.yMin() + grid_y * rudy->getTileSize();
+  ASSERT_GT(die.xMax() - strip_x, kWireWidth);
+  ASSERT_GT(die.yMax() - strip_y, kWireWidth);
+  const int mid_x = (strip_x + die.xMax()) / 2;
+  const int mid_y = (strip_y + die.yMax()) / 2;
+  const odb::Rect tile = rudy->getTile(1, 1).getRect();
+  const int lo_x = tile.xCenter();
+  const int lo_y = tile.yCenter();
+
+  const struct
+  {
+    const char* name;
+    odb::Point a;
+    odb::Point b;
+  } cases[] = {
+      // The net box starts in the remainder strip, past the last whole tile.
+      {"line_in_right_strip", {mid_x, lo_y}, {mid_x, mid_y}},
+      {"line_in_top_strip", {lo_x, mid_y}, {mid_x, mid_y}},
+      {"rect_in_right_strip", {strip_x + 10, lo_y}, {mid_x, mid_y}},
+      // The line, grown wire_width up/right, sticks out of the die.
+      {"line_on_right_edge", {die.xMax(), lo_y}, {die.xMax(), mid_y}},
+      {"line_on_top_edge", {lo_x, die.yMax()}, {mid_x, die.yMax()}},
+      {"line_near_right_edge",
+       {die.xMax() - kWireWidth / 2, lo_y},
+       {die.xMax() - kWireWidth / 2, mid_y}},
+  };
+  for (const auto& [name, a, b] : cases) {
+    SCOPED_TRACE(name);
+    odb::dbNet* net = makeTwoPinNet(name, a, b);
+    const odb::Rect net_box = net->getTermBBox();
+    odb::PtrSet<odb::dbNet> selection{net};
+    rudy->calculateRudy(&selection);
+
+    // Demand is relative to each tile's own area, and the last column/row is
+    // wider, so add up wire area rather than demand.
+    float wire_area = 0;
+    for (int x = 0; x < grid_x; x++) {
+      for (int y = 0; y < grid_y; y++) {
+        const grt::Rudy::Tile& t = rudy->getTile(x, y);
+        wire_area += t.getDemand() / 100 * t.getRect().area();
+      }
+    }
+    const float hpwl = net_box.dx() + net_box.dy();
+    EXPECT_NEAR(wire_area, hpwl * kWireWidth, hpwl * kWireWidth * 1e-4);
+  }
+}
+
 }  // namespace
 }  // namespace grt
