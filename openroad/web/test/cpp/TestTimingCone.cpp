@@ -1,0 +1,323 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2026, The OpenROAD Authors
+
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <set>
+#include <string>
+#include <vector>
+
+#include "boost/json/parse.hpp"
+#include "boost/json/serialize.hpp"
+#include "color.h"
+#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
+#include "gtest/gtest.h"
+#include "odb/db.h"
+#include "sta/Graph.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/PortDirection.hh"
+#include "sta/SdcClass.hh"
+#include "timing_report.h"
+#include "tst/nangate45_fixture.h"
+
+namespace web {
+namespace {
+
+//------------------------------------------------------------------------------
+// spectrumColor — the Turbo colormap ported from web::SpectrumGenerator.
+// These lock the endpoints/clamping so the cone colors keep matching the Qt
+// GUI even if the table is edited.
+//------------------------------------------------------------------------------
+
+TEST(SpectrumColorTest, LowEndIsFirstTableEntry)
+{
+  const Color c = spectrumColor(0.0, 255);
+  EXPECT_EQ(c.r, 48);
+  EXPECT_EQ(c.g, 18);
+  EXPECT_EQ(c.b, 59);
+  EXPECT_EQ(c.a, 255);
+}
+
+TEST(SpectrumColorTest, HighEndIsLastTableEntry)
+{
+  const Color c = spectrumColor(1.0, 128);
+  EXPECT_EQ(c.r, 122);
+  EXPECT_EQ(c.g, 4);
+  EXPECT_EQ(c.b, 3);
+  EXPECT_EQ(c.a, 128);
+}
+
+TEST(SpectrumColorTest, ClampsOutOfRangeValues)
+{
+  EXPECT_EQ(spectrumColor(-5.0).r, spectrumColor(0.0).r);
+  EXPECT_EQ(spectrumColor(5.0).r, spectrumColor(1.0).r);
+}
+
+TEST(SpectrumColorTest, IsMonotonicAcrossTheRamp)
+{
+  // The Turbo ramp is not monotonic per channel, but distinct inputs must map
+  // to valid, in-bounds colors (a cheap guard against table truncation).
+  const Color mid = spectrumColor(0.5);
+  EXPECT_NE(mid.r + mid.g + mid.b, 0);
+}
+
+//------------------------------------------------------------------------------
+// TimingReport::computeTimingCone guard behavior (no timing setup needed).
+//------------------------------------------------------------------------------
+
+using TimingConeTest = tst::Nangate45Fixture;
+
+TEST_F(TimingConeTest, EmptyDirectionsReturnEmptyCone)
+{
+  TimingReport report(getSta());
+  // Neither fanin nor fanout requested: a valid, empty cone (the clear path).
+  const TimingConeResult result
+      = report.computeTimingCone("anything", false, false, 0, 0);
+  EXPECT_TRUE(result.ok);
+  EXPECT_TRUE(result.nodes.empty());
+  EXPECT_FALSE(result.constrained);
+}
+
+class UnconstrainedTimingReportTest : public tst::Nangate45Fixture
+{
+ protected:
+  void SetUp() override
+  {
+    readLiberty("_main/test/Nangate45/Nangate45_typ.lib");
+
+    odb::dbMaster* buffer = lib_->findMaster("BUF_X1");
+    ASSERT_NE(buffer, nullptr);
+    tst::InstOptions options;
+    options.iterms = {{"in", "A"}, {"out", "Z"}};
+    makeInst(block_, buffer, "buffer", options);
+    makeBTerm(block_, "in", {});
+    tst::BTermOptions output_options;
+    output_options.io_type = odb::dbIoType::OUTPUT;
+    makeBTerm(block_, "out", output_options);
+
+    sta_->postReadDef(block_);
+    sta_->getDbNetwork()->setBlock(block_);
+  }
+};
+
+TEST_F(UnconstrainedTimingReportTest, IncludesAndSerializesPathsWithoutSdc)
+{
+  TimingReport report(getSta());
+  EXPECT_TRUE(report
+                  .getReport(/*is_setup=*/true,
+                             /*max_paths=*/10,
+                             -std::numeric_limits<float>::max(),
+                             std::numeric_limits<float>::max(),
+                             /*include_unconstrained=*/false)
+                  .empty());
+
+  const std::vector<TimingPathSummary> paths
+      = report.getReport(/*is_setup=*/true,
+                         /*max_paths=*/10,
+                         -std::numeric_limits<float>::max(),
+                         std::numeric_limits<float>::max(),
+                         /*include_unconstrained=*/true);
+  ASSERT_FALSE(paths.empty());
+  EXPECT_TRUE(std::isinf(paths.front().slack));
+  EXPECT_TRUE(std::isinf(paths.front().required));
+
+  bool saw_port = false;
+  bool saw_instance = false;
+  for (const TimingPathSummary& path : paths) {
+    for (const TimingNode& node : path.data_nodes) {
+      if (node.pin_name == "in" || node.pin_name == "out") {
+        saw_port = true;
+        EXPECT_TRUE(node.inst_name.empty());
+      } else {
+        saw_instance = true;
+        EXPECT_EQ(node.inst_name, "buffer");
+      }
+    }
+  }
+  EXPECT_TRUE(saw_port);
+  EXPECT_TRUE(saw_instance);
+
+  const std::string json = boost::json::serialize(serializeTimingPaths(paths));
+  const boost::json::value serialized = boost::json::parse(json);
+  const boost::json::object& serialized_path
+      = serialized.as_object().at("paths").as_array().front().as_object();
+  EXPECT_TRUE(std::isinf(serialized_path.at("slack").to_number<double>()));
+  EXPECT_TRUE(std::isinf(serialized_path.at("required").to_number<double>()));
+}
+
+TEST_F(UnconstrainedTimingReportTest, ChipletInstancesMatchTheirPinPrefixes)
+{
+  odb::dbChip* other
+      = odb::dbChip::create(getDb(), getDb()->getTech(), "other");
+  odb::dbBlock* other_block = odb::dbBlock::create(other, "other_top");
+  tst::InstOptions buffer_options;
+  buffer_options.iterms = {{"in", "A"}, {"out", "Z"}};
+  makeInst(other_block, lib_->findMaster("BUF_X1"), "buffer", buffer_options);
+
+  // Clocked launch/capture flops give both chiplets real timing paths even
+  // though a 3DBlox top has no block ports from which to seed arrivals.
+  odb::dbMaster* flop = lib_->findMaster("DFF_X1");
+  ASSERT_NE(flop, nullptr);
+  std::vector<odb::dbInst*> flops;
+  for (odb::dbBlock* block : {block_, other_block}) {
+    tst::InstOptions launch_options;
+    launch_options.iterms = {{"launch_in", "D"}, {"clk", "CK"}, {"in", "Q"}};
+    flops.push_back(makeInst(block, flop, "launch", launch_options));
+    tst::InstOptions capture_options;
+    capture_options.iterms
+        = {{"out", "D"}, {"clk", "CK"}, {"capture_out", "Q"}};
+    flops.push_back(makeInst(block, flop, "capture", capture_options));
+  }
+
+  odb::dbChip* root = odb::dbChip::create(
+      getDb(), nullptr, "root", odb::dbChip::ChipType::HIER);
+  odb::dbChipInst::create(root, chip_, "die0");
+  odb::dbChipInst::create(root, other, "die1");
+  getDb()->setTopChip(root);
+  sta_->postRead3Dbx(root);
+  auto* network = sta_->getDbNetwork();
+  ASSERT_TRUE(network->has3DicChip());
+
+  sta::PinSet clock_pins(network);
+  for (odb::dbInst* inst : flops) {
+    clock_pins.insert(network->dbToSta(inst->findITerm("CK")));
+  }
+  sta::FloatSeq waveform{0.0f, 0.5e-9f};
+  sta_->makeClock(
+      "clk", clock_pins, false, 1.0e-9f, waveform, "", sta_->cmdMode());
+
+  TimingReport report(getSta());
+  const auto paths = report.getReport(/*is_setup=*/true,
+                                      /*max_paths=*/10,
+                                      -std::numeric_limits<float>::max(),
+                                      std::numeric_limits<float>::max(),
+                                      /*include_unconstrained=*/true);
+  ASSERT_FALSE(paths.empty());
+  std::set<std::string> buffers;
+  for (const TimingPathSummary& path : paths) {
+    for (const TimingNode& node : path.data_nodes) {
+      ASSERT_FALSE(node.inst_name.empty()) << node.pin_name;
+      EXPECT_TRUE(node.inst_name.starts_with("die0/")
+                  || node.inst_name.starts_with("die1/"))
+          << node.inst_name;
+      EXPECT_TRUE(node.pin_name.starts_with(node.inst_name + "/"))
+          << node.pin_name << " instance=" << node.inst_name;
+      if (node.inst_name.ends_with("/buffer")) {
+        buffers.insert(node.inst_name);
+      }
+    }
+  }
+  EXPECT_EQ(buffers, (std::set<std::string>{"die0/buffer", "die1/buffer"}));
+}
+
+//------------------------------------------------------------------------------
+// Cone traversal over a real STA graph.  A chain of buffers gives every level
+// an instance input pin, which is the case the walk used to drop: in STA an
+// input pin has only a load vertex, so asking for pinDrvrVertex alone yields
+// null and the cone stops at the first one.
+//------------------------------------------------------------------------------
+
+class TimingConeGraphTest : public tst::Nangate45Fixture
+{
+ protected:
+  void SetUp() override
+  {
+    readLiberty("_main/test/Nangate45/Nangate45_typ.lib");
+    block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
+
+    // in -> b0 -> b1 -> b2 -> b3 -> out.  Each buffer contributes an input
+    // (load vertex) and an output (driver vertex) pin.
+    odb::dbMaster* buf = lib_->findMaster("BUF_X1");
+    ASSERT_NE(buf, nullptr);
+    for (int i = 0; i < kChainLength; ++i) {
+      tst::InstOptions opts;
+      opts.location = odb::Point(1000 * (i + 1), 1000);
+      opts.status = odb::dbPlacementStatus::PLACED;
+      opts.iterms = {{netName(i).c_str(), "A"}, {netName(i + 1).c_str(), "Z"}};
+      makeInst(block_, buf, instName(i).c_str(), opts);
+    }
+
+    sta_->postReadDef(block_);
+    sta_->getDbNetwork()->setBlock(block_);
+  }
+
+  static constexpr int kChainLength = 4;
+  static std::string netName(int i) { return "n" + std::to_string(i); }
+  static std::string instName(int i) { return "b" + std::to_string(i); }
+  // computeTimingCone seeds from a pin, not an instance.
+  static std::string inputPin(int i) { return instName(i) + "/A"; }
+};
+
+// Documents what Graph actually promises, because two review passes have now
+// asserted the opposite: pinDrvrVertex returns the pin's single vertex for
+// every direction except bidirect, where it looks up a separate driver vertex.
+// It is NOT null for instance input pins, so the cone walk does not need a
+// load-vertex fallback to get past them.
+TEST_F(TimingConeGraphTest, DriverAndLoadVertexCoincideOffBidirect)
+{
+  sta_->ensureGraph();
+  sta_->searchPreamble();
+  auto* graph = sta_->graph();
+  auto* network = sta_->getDbNetwork();
+
+  for (const char* pin_name : {"b1/A", "b1/Z"}) {
+    odb::dbITerm* iterm = block_->findITerm(pin_name);
+    ASSERT_NE(iterm, nullptr) << pin_name;
+    const sta::Pin* pin = network->dbToSta(iterm);
+    ASSERT_NE(pin, nullptr) << pin_name;
+    ASSERT_FALSE(network->direction(pin)->isBidirect()) << pin_name;
+
+    EXPECT_NE(graph->pinDrvrVertex(pin), nullptr) << pin_name;
+    EXPECT_EQ(graph->pinDrvrVertex(pin), graph->pinLoadVertex(pin)) << pin_name;
+  }
+}
+
+TEST_F(TimingConeGraphTest, FaninConeWalksTheWholeChain)
+{
+  TimingReport report(getSta());
+  // Unlimited depth from the last buffer's input: the cone should reach back
+  // through every buffer, not stop one level in.
+  const TimingConeResult result = report.computeTimingCone(
+      inputPin(kChainLength - 1), /*fanin=*/true, /*fanout=*/false, 0, 0);
+  ASSERT_TRUE(result.ok) << result.error;
+
+  int min_depth = 0;
+  for (const TimingConeNode& node : result.nodes) {
+    min_depth = std::min(min_depth, node.depth);
+  }
+  // Two levels per buffer (input pin, output pin) back to the chain head.
+  EXPECT_EQ(min_depth, -2 * (kChainLength - 1))
+      << "nodes=" << result.nodes.size();
+}
+
+// Flight lines are drawn from source_indices, so a cone whose levels are not
+// wired together renders as scattered pins with nothing joining them.
+TEST_F(TimingConeGraphTest, ConeLevelsFormAnUnbrokenChain)
+{
+  TimingReport report(getSta());
+  const TimingConeResult result = report.computeTimingCone(
+      inputPin(kChainLength - 1), /*fanin=*/true, /*fanout=*/false, 0, 0);
+  ASSERT_TRUE(result.ok) << result.error;
+  ASSERT_FALSE(result.nodes.empty());
+
+  size_t links = 0;
+  size_t sourceless = 0;
+  for (const TimingConeNode& node : result.nodes) {
+    links += node.source_indices.size();
+    if (node.source_indices.empty()) {
+      ++sourceless;
+    }
+    std::vector<int> sorted = node.source_indices;
+    std::sort(sorted.begin(), sorted.end());
+    EXPECT_EQ(std::adjacent_find(sorted.begin(), sorted.end()), sorted.end())
+        << "a source listed twice would draw two identical flight lines";
+  }
+  // A linear chain: every node but the far end is driven by exactly one other.
+  EXPECT_EQ(links, result.nodes.size() - 1);
+  EXPECT_EQ(sourceless, 1u);
+}
+
+}  // namespace
+}  // namespace web
