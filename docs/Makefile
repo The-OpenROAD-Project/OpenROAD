@@ -48,12 +48,12 @@ MAN1 = man1
 MAN2 = man2
 MAN3 = man3
 
-# link_readmes.sh symlinks every src/<module>/README.md into md/man2/ so
+# link_readmes.sh symlinks every openroad/<module>/README.md into md/man2/ so
 # md_roff_compat.py can read it. Those are whole-module documents, not command
-# pages, so keep them out of the man2 lists. Derive the set from src/ rather
+# pages, so keep them out of the man2 lists. Derive the set from openroad/ rather
 # than hard-coding it, so a new module cannot silently start emitting a
 # module-wide man page.
-EXCLUDE_MODULES := $(notdir $(patsubst %/,%,$(dir $(wildcard ../src/*/README.md))))
+EXCLUDE_MODULES := $(notdir $(patsubst %/,%,$(dir $(wildcard ../openroad/*/README.md))))
 EXCLUDE_FILES := $(addprefix $(SRC_DIR)/$(MAN2)/,$(addsuffix .md,$(EXCLUDE_MODULES)))
 
 MAN1_DIR = $(MAN_ROOT_DIR)/$(MAN1)
