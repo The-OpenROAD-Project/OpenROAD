@@ -525,12 +525,11 @@ configuration headers that Kokkos's and KokkosFFT's CMake builds generate
   golden logs (`test/regression.bzl`); the GPU-only tests
   (`region01_gpu`, `region01_gpu_asym`, `fft_gpu_test`, `wl_gpu_test`) pin it
   to 1, are tagged `gpu`, and are reported as SKIPPED by plain CPU wildcard runs.
-- When the GPU path first initializes Kokkos, its OpenMP backend prints
-  `Kokkos::OpenMP::initialize WARNING: OMP_PROC_BIND environment variable not
-  set` on stderr unless `OMP_PROC_BIND` is set (for example to `false`). It
-  never reaches the golden logs: those tests pin `ENABLE_GPU=0`, so Kokkos is
-  not initialized, and the GPU-only tests are pass/fail. A Kokkos warning about
-  a CUDA architecture mismatch, by contrast, is worth acting on.
+- A `--config=gpu` binary needs a usable CUDA device even with `ENABLE_GPU=0`.
+  `global_placement` and `cluster_flops` always initialize Kokkos for their
+  host loops, and Kokkos starts every compiled backend, CUDA included. Without
+  a device they stop with `GPL-0335`. The `simple01-gpu-off` and
+  `mbff_clock_power_on-gpu-off` tests check this with `CUDA_VISIBLE_DEVICES=""`.
 - Host-side FFTs on the GPU path run on `Kokkos::Serial`. The Bazel `@fftw`
   has no threads library, so FFTW's threaded planner is unavailable.
 - `--config=gpu` binaries link libcudart/libcufft by absolute path with an

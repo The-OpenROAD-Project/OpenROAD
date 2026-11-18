@@ -1,0 +1,18 @@
+[INFO ODB-0227] LEF file: ./asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: ./SingleBit/asap7sc7p5t_28_L_1x_220121a.lef, created 212 library cells
+[INFO ODB-0227] LEF file: ./2BitTrayH2/asap7sc7p5t_DFFHQNV2X.lef, created 9 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t_pg in asap7sc7p5t_DFFHQNV4X already seen in asap7sc7p5t_DFFHQNV2X
+[INFO ODB-0227] LEF file: ./4BitTrayH4/asap7sc7p5t_DFFHQNV4X.lef, created 9 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+[ERROR GPL-0335] OpenROAD was built with GPU support (--config=gpu) and needs a usable CUDA device, even with ENABLE_GPU=0: no CUDA-capable device is detected.
+GPL-0335
+    while executing
+"gpl::replace_run_mbff_cmd $max_split_size $tray_weight $timing_weight  $num_paths $clock_power_weight"
+    (procedure "cluster_flops" line 36)
+    invoked from within
+"cluster_flops -tray_weight 8.0 -timing_weight 0.0 \
+  -max_split_size -1 -num_paths 0 -clock_power_weight 3.0"
+    (file "mbff_clock_power_on.tcl" line 30)
+    invoked from within
+"source mbff_clock_power_on.tcl"
+    (file "mbff_clock_power_on-gpu-off.tcl" line 3)

@@ -1266,7 +1266,7 @@ NesterovBaseCommon::NesterovBaseCommon(
     const Clusters& clusters)
     : nbVars_(nbVars),
       kokkos_context_(
-          std::make_unique<KokkosContext>(hostExecutionSpace(num_threads)))
+          std::make_unique<KokkosContext>(hostExecutionSpace(log, num_threads)))
 {
   // hpwl_backend_ and device_state_ are constructed at the end of this ctor
   // body, after gCellStor_ / gPinStor_ / gNetStor_ are populated — the GPU

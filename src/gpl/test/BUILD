@@ -87,6 +87,14 @@ GPU_TESTS = [
     "region01_gpu_asym",
 ]
 
+# ENABLE_GPU=0 on a --config=gpu build with CUDA hidden. Each <name>-gpu-off.tcl
+# sources <name>.tcl, which must stop with GPL-0335 (a GPU build needs a CUDA
+# device even with ENABLE_GPU=0) rather than a raw Kokkos/CUDA error.
+GPU_OFF_TESTS = [
+    "simple01",
+    "mbff_clock_power_on",
+]
+
 ALL_TESTS = TESTS + PASSFAIL_TESTS
 
 py_library(
@@ -117,7 +125,10 @@ filegroup(
         ["**/*"],
         exclude = [
             test + "." + ext
-            for test in ALL_TESTS + LARGE_TESTS + GPU_TESTS
+            for test in ALL_TESTS + LARGE_TESTS + GPU_TESTS + [
+                t + "-gpu-off"
+                for t in GPU_OFF_TESTS
+            ]
             for ext in [
                 "tcl",
                 "py",
@@ -139,6 +150,21 @@ filegroup(
     data = [":test_resources"],
     tags = ["manual"],
 ) for test_name in LARGE_TESTS]
+
+[regression_test(
+    name = test_name + "-gpu-off",
+    # <test_name>.tcl is excluded from :test_resources, so list it explicitly.
+    data = [
+        ":test_resources",
+        test_name + ".tcl",
+    ],
+    env = {
+        "CUDA_VISIBLE_DEVICES": "",
+        "ENABLE_GPU": "0",
+    },
+    expected_exit_code = 1,
+    target_compatible_with = GPU_ONLY,
+) for test_name in GPU_OFF_TESTS]
 
 # Convenience suite to run all long-running tests explicitly:
 #   bazel test //src/gpl/test:large_tests

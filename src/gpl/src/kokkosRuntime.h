@@ -7,6 +7,10 @@
 #include <cstddef>
 #include <optional>
 
+namespace utl {
+class Logger;
+}
+
 namespace gpl {
 
 using HostRange = Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace,
@@ -16,8 +20,11 @@ using HostRange = Kokkos::RangePolicy<Kokkos::DefaultHostExecutionSpace,
 void ensureKokkosInitialized(std::optional<int> num_threads = {});
 
 // OpenMP supports per-instance sizing. Threads uses its initialization-time
-// pool.
-Kokkos::DefaultHostExecutionSpace hostExecutionSpace(int num_threads);
+// pool. When Kokkos is built with CUDA (--config=gpu), initializing it needs a
+// usable CUDA device even with ENABLE_GPU=0; without one this reports GPL-0335
+// through logger.
+Kokkos::DefaultHostExecutionSpace hostExecutionSpace(utl::Logger* logger,
+                                                     int num_threads);
 
 // The minimal header with fwd decl of Kokkos::DefaultHostExecutionSpace
 // is Kokkos_Core_fwd.hpp and even this pulls cuda headers transitively.

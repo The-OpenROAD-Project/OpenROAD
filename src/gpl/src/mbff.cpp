@@ -2570,7 +2570,7 @@ MBFF::MBFF(odb::dbDatabase* db,
       log_(log),
       resizer_(resizer),
       kokkos_context_(
-          std::make_unique<KokkosContext>(hostExecutionSpace(threads))),
+          std::make_unique<KokkosContext>(hostExecutionSpace(log, threads))),
       multistart_(multistart),
       num_paths_(num_paths),
       multiplier_(block_->getDbUnitsPerMicron()),
