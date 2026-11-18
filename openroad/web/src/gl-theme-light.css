@@ -1,0 +1,6 @@
+/* SPDX-License-Identifier: BSD-3-Clause */
+/* Copyright (c) 2026, The OpenROAD Authors */
+
+/* Its own bundle, for the reason gl-theme-dark.css gives. */
+
+@import 'golden-layout/dist/css/themes/goldenlayout-light-theme.css';

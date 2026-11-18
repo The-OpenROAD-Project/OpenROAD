@@ -1,0 +1,35 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO DFT-0025] Kept 2 chains on clock clock1 (rising edge) as they are; rebalancing does not shorten their scan wiring (57.01 um vs 57.01 um).
+[INFO DFT-0019] Rebalanced 3 cells across 2 chains (bit cap = 2).
+[INFO DFT-0025] Kept 2 chains on clock clock2 (rising edge) as they are; rebalancing does not shorten their scan wiring (45.34 um vs 47.50 um).
+[INFO DFT-0019] Rebalanced 3 cells across 2 chains (bit cap = 2).
+[INFO DFT-0016] Reordered 4 of 8 scan chain(s); scan wire length 195.70 um -> 172.62 um.
+chain_0: bits 2 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+chain_1: bits 3 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+chain_2: bits 2 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+chain_3: bits 3 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+chain_4: bits 3 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+chain_5: bits 2 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+chain_6: bits 3 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+chain_7: bits 2 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+chain_name,num_cells,hpwl,mst,sum_pairwise
+chain_0,2,9408,9408,9408
+chain_1,3,24112,24112,48224
+chain_2,2,12760,12760,12760
+chain_3,3,16012,19264,32024
+chain_4,3,26380,27464,52760
+chain_5,2,13620,13620,13620
+chain_6,3,18866,23028,37732
+chain_7,2,14704,14704,14704
+[INFO DFT-0021] Chain metrics: chains=8, cells=20, sum_hpwl=135862, sum_mst=144360, sum_pairwise=221232
+[INFO DFT-0016] Reordered 3 of 8 scan chain(s); scan wire length 246.96 um -> 212.30 um.
+chain_0: bits 2 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+chain_1: bits 3 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+chain_2: bits 2 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+chain_3: bits 3 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+chain_4: bits 3 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+chain_5: bits 2 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+chain_6: bits 3 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+chain_7: bits 2 edges_ok 1 scan_in_ok 1 stitch_ok 1 last_ok 1
+No differences found.
