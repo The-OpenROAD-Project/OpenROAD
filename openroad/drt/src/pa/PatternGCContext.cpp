@@ -4,8 +4,15 @@
 #include "pa/PatternGCContext.h"
 
 #include <algorithm>
+#include <cstddef>
+#include <memory>
 #include <utility>
 #include <vector>
+
+#include "db/obj/frBlockObject.h"
+#include "db/obj/frFig.h"
+#include "gc/FlexGC.h"
+#include "odb/geom.h"
 
 namespace drt {
 namespace {

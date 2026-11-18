@@ -142,7 +142,12 @@ void FlexGCWorker::Impl::initObj(const odb::Rect& box,
   auto currNet = getNet(obj);
   if (recordingPAInputs_) {
     if (isFixed) {
-      paFixedGeometry_.push_back({obj, currNet->getOwner(), layerNum, box});
+      paFixedGeometry_.push_back({
+          .source = obj,
+          .owner = currNet->getOwner(),
+          .layer = layerNum,
+          .box = box,
+      });
     } else {
       paHasDBRoutes_ = true;
     }
@@ -1098,7 +1103,7 @@ bool FlexGCWorker::Impl::replacePAObjects(
   }
   // Retain net order when rebuilding both current and former candidate owners.
   for (const auto& net : nets_) {
-    if (touched.find(net.get()) != touched.end()) {
+    if (touched.contains(net.get())) {
       initNet(net.get());
     }
   }
