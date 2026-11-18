@@ -5,9 +5,9 @@ import odb
 
 helpers.if_bazel_change_working_dir_to("/_main/test/")
 
-design_odb = helpers.get_runfiles_path_to("/_main/src/odb/test/data/design.odb")
+design_odb = helpers.get_runfiles_path_to("/_main/openroad/odb/test/data/design.odb")
 if not design_odb:
-    design_odb = "../src/odb/test/data/design.odb"
+    design_odb = "../openroad/odb/test/data/design.odb"
 
 ord_tech1 = Tech()
 design1 = Design(ord_tech1)
