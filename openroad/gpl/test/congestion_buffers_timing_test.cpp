@@ -301,6 +301,15 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
     }
   }
 
+  // Sets only the regions' overflow, leaving their average: with several
+  // regions, one can be above the target when the average is at it.
+  void setRegionOverflow(float overflow)
+  {
+    for (const auto& nb : nb_vec_) {
+      nb->sum_overflow_unscaled_ = overflow;
+    }
+  }
+
   // Cells moving at the given fraction of their peak displacement.
   void setDisplacementRatio(float ratio)
   {
@@ -319,6 +328,10 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
     ASSERT_TRUE(np_->is_routability_snapshot_saved_);
   }
 
+  bool routabilitySnapshotSaved() const
+  {
+    return np_->is_routability_snapshot_saved_;
+  }
   bool placementSettled() const { return np_->isPlacementSettled(); }
   // True when the last RUDY average, computed by a pass or at convergence, is
   // below the congestion target. A pass that finds it so does not revert.
@@ -586,6 +599,79 @@ TEST_F(TimingRepairIntegrationTest,
       << "the second pass must finish without a revert";
   EXPECT_TRUE(converged)
       << "a measured placement at the target overflow must converge";
+}
+
+// The settle wait holds the routability pass back while the cells are still
+// moving. Reaching the target overflow must not cancel the pass: a wait still
+// open on the iteration the placement would converge ends there, and the pass
+// runs on that placement.
+TEST_F(TimingRepairIntegrationTest,
+       OpenSettleWaitStillRunsRoutabilityAtTargetOverflow)
+{
+  makePlacer();
+  float current_a = 1.0f;
+  ASSERT_NO_FATAL_FAILURE(saveRoutabilitySnapshot(current_a));
+
+  // Through the routability gate with the cells at their peak displacement:
+  // the pass waits.
+  setDisplacementRatio(1.0f);
+  setOverflow(options_.routabilityCheckOverflow);
+  ASSERT_FALSE(placementSettled());
+  ASSERT_FALSE(runRoutabilityThenConvergence(1, current_a));
+  ASSERT_EQ(ordinary_iterations_, 0);
+  ASSERT_EQ(settleWaitStart(), 1);
+
+  // The average at the target with a region still above it is not
+  // convergence, which takes every region: the wait stays open. The fixture's
+  // one region stands in for the region above the target.
+  setOverflow(options_.overflow);
+  setRegionOverflow(1.5f * options_.overflow);
+  ASSERT_FALSE(runRoutabilityThenConvergence(2, current_a));
+  ASSERT_EQ(ordinary_iterations_, 0)
+      << "the wait must not end before every region is at the target";
+  ASSERT_EQ(settleWaitStart(), 1);
+
+  // Still moving when every region reaches the target: the iteration the main
+  // loop would end the placement on.
+  setOverflow(options_.overflow);
+  ASSERT_FALSE(placementSettled());
+  const bool converged = runRoutabilityThenConvergence(3, current_a);
+  ASSERT_EQ(ordinary_iterations_, 1)
+      << "reaching the target overflow must not cancel the waiting pass";
+  EXPECT_EQ(settleWaitStart(), -1);
+  // The fixture's wire width makes a pass find congestion, so this one
+  // inflated cells and went back to the snapshot, which has yet to be placed.
+  ASSERT_TRUE(routabilityNeeded());
+  ASSERT_GT(rb_->getTotalInflation(), 0);
+  EXPECT_FALSE(converged)
+      << "the placement must not end on the iteration of a pass that reverted";
+}
+
+// A pass that finds congestion goes back to the routability snapshot, so a
+// wait is only ended at the target overflow when there is one. Without a
+// snapshot the wait stays open and the placement converges with no pass.
+TEST_F(TimingRepairIntegrationTest,
+       OpenSettleWaitWithoutSnapshotDoesNotRunRoutability)
+{
+  // A snapshot overflow below the target overflow: no snapshot is taken.
+  options_.routabilitySnapshotOverflow = 0.5f * options_.overflow;
+  makePlacer();
+  float current_a = 1.0f;
+
+  setDisplacementRatio(1.0f);
+  setOverflow(options_.routabilityCheckOverflow);
+  ASSERT_FALSE(runRoutabilityThenConvergence(1, current_a));
+  ASSERT_EQ(ordinary_iterations_, 0);
+  ASSERT_EQ(settleWaitStart(), 1);
+
+  setOverflow(options_.overflow);
+  ASSERT_FALSE(placementSettled());
+  const bool converged = runRoutabilityThenConvergence(2, current_a);
+  ASSERT_FALSE(routabilitySnapshotSaved());
+  EXPECT_EQ(ordinary_iterations_, 0)
+      << "a pass with no snapshot to go back to must not run";
+  EXPECT_EQ(settleWaitStart(), 1);
+  EXPECT_TRUE(converged);
 }
 
 TEST_F(TimingRepairIntegrationTest,

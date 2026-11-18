@@ -159,6 +159,9 @@ class NesterovPlace
   bool isRoutabilityGplIter() const;
 
   bool isConverged(int gpl_iter_count, int routability_gpl_iter_count);
+  // True when isConverged() would end the placement on this iteration; no
+  // side effects.
+  bool isConvergenceDue() const;
   // Re-derives densityPenalty_ for every region via
   // NesterovBase::updateDensityPenaltyFromRatio() - the same formula
   // NesterovBase::initDensity2() uses at true init, just re-triggered
