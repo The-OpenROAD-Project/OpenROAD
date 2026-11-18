@@ -43,6 +43,7 @@ TESTS = [
     "liberty_dont_use",
     "pinswap_flat",
     "pinswap_hier",
+    "remove_buffers_duplicate",
     "swap_pins_constant_output",
     "swap_pins_dont_touch",
     "pin_swap1",
