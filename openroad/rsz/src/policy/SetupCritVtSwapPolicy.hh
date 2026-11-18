@@ -37,6 +37,7 @@ class SetupCritVtSwapPolicy : public SetupLegacyBase
   const bool capture_only_;
   bool swapVTCritCells(int& num_viols);
   sta::Pin* outputPin(sta::Instance* inst);
+  bool drivesClock(sta::Instance* inst);
   // Vertices a path of the selected path group can pass through, found
   // forward from the group's startpoints; nullopt when no group is selected.
   std::optional<std::unordered_set<sta::Vertex*>> findGroupFanout();

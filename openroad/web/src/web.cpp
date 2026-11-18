@@ -206,6 +206,7 @@ http::response<http::string_body> textResponse(
 // Render the layout image requested by /download/image into `res`.
 void handleImageDownload(const std::shared_ptr<TileGenerator>& generator,
                          const std::map<std::string, std::string>& params,
+                         utl::Logger* logger,
                          http::response<http::string_body>& res)
 {
   if (!generator || !generator->getBlock()) {
@@ -231,11 +232,11 @@ void handleImageDownload(const std::shared_ptr<TileGenerator>& generator,
   TileVisibility vis;
   const auto vis_it = params.find("vis");
   if (vis_it != params.end()) {
-    // Non-throwing parse: a malformed vis falls back to defaults (all visible).
-    std::error_code ec;
-    const boost::json::value parsed = boost::json::parse(vis_it->second, ec);
-    if (!ec && parsed.is_object()) {
-      vis.parseFromJson(parsed.as_object());
+    // A malformed or wrongly typed vis falls back to defaults (all visible).
+    try {
+      vis.parseFromJson(boost::json::parse(vis_it->second).as_object());
+    } catch (const std::exception& e) {
+      debugPrint(logger, utl::WEB, "http", 1, "ignoring vis: {}", e.what());
     }
   }
 
@@ -357,7 +358,7 @@ static http::response<http::string_body> dispatch_request(
     if (file_path == "/download/image") {
       const ScriptGateScope gate(script_gate);
       if (gate.entered()) {
-        handleImageDownload(generator, params, res);
+        handleImageDownload(generator, params, logger, res);
       } else {
         res.result(http::status::service_unavailable);
         res.body() = kScriptBusyMsg;
@@ -2254,21 +2255,25 @@ std::vector<unsigned char> resampleRgba(const std::vector<unsigned char>& src,
   return dst;
 }
 
-// Parse the visibility JSON produced by the Tcl layer (shared by saveImage
-// and gifAddFrame).
-TileVisibility parseVis(const std::string& vis_json, utl::Logger* logger)
+// The visibility the -display_option settings of saveImage and gifAddFrame
+// ask for.
+TileVisibility visibilityFrom(
+    const std::map<std::string, bool>& display_settings,
+    utl::Logger* logger)
 {
+  boost::json::object options;
+  for (const auto& [key, value] : display_settings) {
+    options[key] = value;
+  }
   TileVisibility vis;
-  if (!vis_json.empty()) {
-    try {
-      boost::json::value v = boost::json::parse(vis_json);
-      if (auto* obj = v.if_object()) {
-        vis.parseFromJson(*obj);
-      }
-    } catch (const std::exception& e) {
-      logger->warn(
-          utl::WEB, 42, "Ignoring malformed visibility JSON: {}", e.what());
-    }
+  try {
+    vis.parseFromJson(options);
+  } catch (const std::exception& e) {
+    logger->warn(
+        utl::WEB,
+        42,
+        "Ignoring the display options, one is not an on/off setting: {}",
+        e.what());
   }
   return vis;
 }
@@ -2312,13 +2317,13 @@ void WebServer::saveImage(const std::string& filename,
                           const int y1,
                           const int width_px,
                           const double dbu_per_pixel,
-                          const std::string& vis_json)
+                          const std::map<std::string, bool>& display_settings)
 {
   // Create generator on demand (server may not be running).
   ensureGenerator().eagerInit();
 
   const odb::Rect region(x0, y0, x1, y1);
-  const TileVisibility vis = parseVis(vis_json, logger_);
+  const TileVisibility vis = visibilityFrom(display_settings, logger_);
   generator_->saveImage(filename,
                         region,
                         width_px,
@@ -2725,7 +2730,7 @@ void WebServer::gifAddFrame(std::optional<int> key,
                             const int width_px,
                             const double dbu_per_pixel,
                             std::optional<int> delay,
-                            const std::string& vis_json)
+                            const std::map<std::string, bool>& display_settings)
 {
   int idx = 0;
   WebGif* gif = resolveGif(gifs_, key, &idx);
@@ -2742,7 +2747,7 @@ void WebServer::gifAddFrame(std::optional<int> key,
     generator_->eagerInit();
   }
 
-  const TileVisibility vis = parseVis(vis_json, logger_);
+  const TileVisibility vis = visibilityFrom(display_settings, logger_);
   int w = 0;
   int h = 0;
   std::vector<unsigned char> rgba
