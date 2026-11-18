@@ -24,6 +24,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "dpl/Opendp.h"
 #include "drt/TritonRoute.h"
+#include "fmt/format.h"
 #include "grt/GlobalRouter.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
@@ -315,6 +316,12 @@ RamGen::TreeEnd RamGen::planReadTree(const std::string& prefix,
 // read path is handled by the AOI mux in the buffer row, so all tristates in
 // a row can share the same row-select enable signal.
 
+// The bits a buffered copy of a word's write enable, its hold or a write
+// port's take selects: a group. A group's enable drives its bits' hold
+// muxes and the inverter making its hold, kDriveGroup + 1 pins; its hold
+// and each take, kDriveGroup.
+constexpr int kDriveGroup = 8;
+
 void RamGen::makeSlice(const int slice_idx,
                        const int mask_size,
                        const int row_idx,
@@ -387,17 +394,17 @@ void RamGen::makeSlice(const int slice_idx,
   auto we_net = shared ? word_write.we : makeNet(prefix, "we");
   auto sel_cell = std::make_unique<Cell>();
   periphery_cell_ = sel_cell.get();  // each word's select cell
-  // -write_style mux: the word's hold, where it is not written
-  dbNet* hold = shared ? word_write.hold : nullptr;
-  if (write_mux_ && !shared) {
-    hold = makeNet(prefix, "hold");
-    makeInst(sel_cell.get(),
-             prefix,
-             "hold_inv",
-             inv_cell_,
-             {{inv_ports_[{PortRoleType::DataIn, 0}], we_net},
-              {inv_ports_[{PortRoleType::DataOut, 0}], hold}});
-  }
+  // -write_style mux: the word's write enable and its complement, the
+  // hold, select every bit's hold mux. They are made per group of
+  // kDriveGroup bits in the bit loop, a buffer and an inverter a group, so
+  // no net drives a whole word: the word's enable drives a buffer a
+  // group.
+  dbNet* hold = nullptr;
+  dbNet* we_group = nullptr;
+  // more than one write port: each port's take, its data's select in
+  // every bit's data mux, reaches the bits a group of kDriveGroup at a
+  // time, a buffer a port a group
+  vector<dbNet*> take_group;
   // (sel0 & a) | (sel1 & b): an AO22, or the AOI22 and an inverter where
   // the library has no AO22
   auto ao22 = [&](Cell* cell,
@@ -507,8 +514,65 @@ void RamGen::makeSlice(const int slice_idx,
   }
 
   if (!shared) {
-    word_write = {we_net, hold, gclock_net, reset_off, take, select_b_nets};
+    word_write = {
+        .we = we_net,
+        .gclock = gclock_net,
+        .reset_off = reset_off,
+        .take = take,
+        .select_b = select_b_nets,
+    };
   }
+
+  // the bits one enable writes: the word with -bit_folds, else the slice
+  const int span = bit_folds_ > 1 ? word_bits_ : mask_size;
+  // an enable of one group drives no more than a group's pins already,
+  // and a buffer would only add a level
+  const bool one_group = span <= kDriveGroup;
+  // the group buffers an enable drives, numbered across the word's folds
+  // as they are built: each fold's groups after the earlier folds', the
+  // last, short fold's maybe fewer
+  const int fold_groups = (mask_size + kDriveGroup - 1) / kDriveGroup;
+  int span_groups = fold_groups;
+  if (bit_folds_ > 1) {
+    const int last_bits = word_bits_ - (bit_folds_ - 1) * mask_size;
+    span_groups = (bit_folds_ - 1) * fold_groups
+                  + (last_bits + kDriveGroup - 1) / kDriveGroup;
+  }
+  const int first_group = bit_folds_ > 1 ? slice_idx * fold_groups : 0;
+  auto make_buffer = [&](Cell* cell,
+                         const std::string& inst,
+                         dbNet* in,
+                         dbNet* out) {
+    makeInst(
+        cell,
+        prefix,
+        inst,
+        buffer_cell_,
+        {
+            {buffer_ports_[{.type = PortRoleType::DataIn, .index = 0}], in},
+            {buffer_ports_[{.type = PortRoleType::DataOut, .index = 0}], out},
+        });
+  };
+  // more than kDriveGroup groups: the enable or a take reaches the group
+  // buffers through a buffer per kDriveGroup of them, so it drives no
+  // more than kDriveGroup buffers either. The folds of a word share
+  // these; an unfolded slice has its own, from its own enable.
+  auto group_source
+      = [&](Cell* cell, dbNet* root, const int port, const int group) {
+          if (span_groups <= kDriveGroup) {
+            return root;
+          }
+          const int super = (first_group + group) / kDriveGroup;
+          const int slice = bit_folds_ > 1 ? 0 : slice_idx;
+          dbNet*& net = super_nets_[{row_idx, word_idx, slice, port, super}];
+          if (net == nullptr) {
+            const std::string what
+                = port < 0 ? "we" : fmt::format("take{}", port);
+            net = makeNet(prefix, fmt::format("{}_s{}", what, super));
+            make_buffer(cell, fmt::format("{}_sbuf{}", what, super), root, net);
+          }
+          return net;
+        };
 
   for (int local_bit = 0; local_bit < mask_size; ++local_bit) {
     if (start_bit_idx + local_bit >= word_bits_) {
@@ -547,6 +611,50 @@ void RamGen::makeSlice(const int slice_idx,
                             storage,
                             reset_bit,
                             reset_off);
+    // a group's enable and hold, and each port's take, in its first
+    // bit's cell; local bit 0 is never a pad, a fold is never empty
+    if (local_bit % kDriveGroup == 0) {
+      const int group = local_bit / kDriveGroup;
+      if (num_write > 1) {
+        if (one_group) {
+          take_group = take;
+        } else {
+          take_group.assign(num_write, nullptr);
+          for (int i = 0; i < num_write; ++i) {
+            take_group[i]
+                = makeNet(prefix, fmt::format("take{}_g{}", i, group));
+            make_buffer(bit_cell.get(),
+                        fmt::format("take_buf{}_g{}", i, group),
+                        group_source(bit_cell.get(), take[i], i, group),
+                        take_group[i]);
+          }
+        }
+      }
+      if (write_mux_) {
+        hold = makeNet(prefix, fmt::format("hold_g{}", group));
+        if (one_group) {
+          we_group = we_net;
+        } else {
+          we_group = makeNet(prefix, fmt::format("we_g{}", group));
+          make_buffer(bit_cell.get(),
+                      fmt::format("we_buf{}", group),
+                      group_source(bit_cell.get(), we_net, -1, group),
+                      we_group);
+        }
+        makeInst(
+            bit_cell.get(),
+            prefix,
+            fmt::format("hold_inv{}", group),
+            inv_cell_,
+            {
+                {
+                    inv_ports_[{.type = PortRoleType::DataIn, .index = 0}],
+                    we_group,
+                },
+                {inv_ports_[{.type = PortRoleType::DataOut, .index = 0}], hold},
+            });
+      }
+    }
     if (write_mux_) {
       // the word's own value back where it is not written: the flop's
       // output, through an inverter where that output is inverted
@@ -560,7 +668,7 @@ void RamGen::makeSlice(const int slice_idx,
                  {{inv_ports_[{PortRoleType::DataIn, 0}], storage},
                   {inv_ports_[{PortRoleType::DataOut, 0}], old}});
       }
-      ao22(bit_cell.get(), name, "hold_mux", we_net, d_data, hold, old, d);
+      ao22(bit_cell.get(), name, "hold_mux", we_group, d_data, hold, old, d);
     }
     if (and_or_read_) {
       for (const auto& node : tree_nodes_[{row_idx, word_idx, bit}]) {
@@ -583,9 +691,9 @@ void RamGen::makeSlice(const int slice_idx,
                    name,
                    fmt::format("dmux{}", w / 2),
                    aoi22_cell_,
-                   {{aoi22_in_a1_, take[w]},
+                   {{aoi22_in_a1_, take_group[w]},
                     {aoi22_in_a2_, data_input[w][local_bit]},
-                    {aoi22_in_b1_, take[w + 1]},
+                    {aoi22_in_b1_, take_group[w + 1]},
                     {aoi22_in_b2_, data_input[w + 1][local_bit]},
                     {aoi22_out_, out_b}});
           makeInst(bit_cell.get(),
@@ -599,9 +707,9 @@ void RamGen::makeSlice(const int slice_idx,
                    name,
                    fmt::format("dmux{}", w / 2),
                    ao22_cell_,
-                   {{ao22_in_[0], take[w]},
+                   {{ao22_in_[0], take_group[w]},
                     {ao22_in_[1], data_input[w][local_bit]},
-                    {ao22_in_[2], take[w + 1]},
+                    {ao22_in_[2], take_group[w + 1]},
                     {ao22_in_[3], data_input[w + 1][local_bit]},
                     {ao22_out_, out}});
         } else {
@@ -609,7 +717,10 @@ void RamGen::makeSlice(const int slice_idx,
                    name,
                    fmt::format("dmux{}", w / 2),
                    and2_cell_,
-                   {{and2_ports_[{PortRoleType::DataIn, 0}], take[w]},
+                   {{
+                        and2_ports_[{.type = PortRoleType::DataIn, .index = 0}],
+                        take_group[w],
+                    },
                     {and2_ports_[{PortRoleType::DataIn, 1}],
                      data_input[w][local_bit]},
                     {and2_ports_[{PortRoleType::DataOut, 0}], out}});
@@ -2455,6 +2566,7 @@ void RamGen::generate(const int mask_size,
   storage_nets_.clear();
   tree_nodes_.clear();
   word_write_.clear();
+  super_nets_.clear();
   storage_cell_ = storage_cell;
   tristate_cell_ = tristate_cell;
   inv_cell_ = inv_cell;
