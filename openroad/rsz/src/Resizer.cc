@@ -2816,7 +2816,7 @@ bool Resizer::removeBufferKeepsOutputNet(sta::Instance* buffer) const
                                      db_network_->findPin(buffer, output_port));
 }
 
-bool Resizer::hasSdcRemovalConstraint(sta::Instance* inst)
+bool Resizer::hasSdcConstraintBlockingRemoval(sta::Instance* inst)
 {
   sta::LibertyPort* input_port = nullptr;
   sta::LibertyPort* output_port = nullptr;
@@ -2877,7 +2877,7 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   odb::dbNet* db_net_survivor = keep_output_net ? output_db_net : input_db_net;
   odb::dbNet* db_net_removed = keep_output_net ? input_db_net : output_db_net;
 
-  if (hasSdcRemovalConstraint(buffer)) {
+  if (hasSdcConstraintBlockingRemoval(buffer)) {
     return false;
   }
 
@@ -5368,7 +5368,7 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
   if (in_net && out_net && !dontTouch(out_net) && !dontTouch(in_net)) {
     // Check constraints before inserting clones so a skip leaves the netlist
     // intact.
-    if (hasSdcRemovalConstraint(inv)) {
+    if (hasSdcConstraintBlockingRemoval(inv)) {
       logger_->warn(RSZ,
                     3250,
                     "repair_clock_inverters kept inverter {} because SDC "
