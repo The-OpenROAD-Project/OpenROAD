@@ -31,7 +31,7 @@ TARFILE="$(rlocation openroad/packaging/openroad.tar)"
 # The desktop entry is built only for GUI builds (--//:platform=gui); for CLI
 # builds it is absent from the runfiles, so resolve it lazily below. The icon
 # is a source file, independent of build configuration.
-ICON_SRC="$BUILD_WORKSPACE_DIRECTORY/src/gui/resources/icon.png"
+ICON_SRC="$BUILD_WORKSPACE_DIRECTORY/openroad/gui/resources/icon.png"
 
 INSTALL_DESKTOP=0
 if [ "${OPENROAD_INSTALL_GUI:-0}" = "1" ]; then
@@ -92,7 +92,7 @@ rm -f "$APPS_DIR/openroad.desktop"
 # Install the desktop entry (menu launcher + icon) if Bazel built it, i.e.
 # this is a GUI build. The generated entry is a data dep only for GUI builds,
 # so rlocation may not find it; tolerate that and fall back to skipping.
-DESKTOP_SRC="$(rlocation openroad/src/gui/openroad.desktop 2>/dev/null || true)"
+DESKTOP_SRC="$(rlocation openroad/openroad/gui/openroad.desktop 2>/dev/null || true)"
 if [ "$INSTALL_DESKTOP" = "1" ] && [ -n "$DESKTOP_SRC" ] && [ -f "$DESKTOP_SRC" ]; then
     GUI_SHARE="$ABS_DEST/share/openroad/gui"
     mkdir -p "$GUI_SHARE"

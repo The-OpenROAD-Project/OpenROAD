@@ -1,0 +1,21 @@
+[INFO ODB-0227] LEF file: ./Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: ./testcases/macro_only.lef, created 9 library cells
+[INFO ODB-0128] Design: io_constraints1
+[INFO ODB-0130]     Created 3 pins.
+[INFO ODB-0131]     Created 401 components and 2402 component-terminals.
+[WARNING MPL-0009] The virtual utilization 0.92 is above 0.9. The annealer will probably struggle to find a valid result and may increase the std cell density to converge.
+Die Area: (0.00, 0.00) (150.00, 125.00),  Floorplan Area: (0.00, 0.00) (149.91, 124.60)
+	Number of std cell instances: 400
+	Area of std cell instances: 1808.80
+	Number of macros: 1
+	Macros to be placed: 1
+	Area of macros: 10000.00
+	Minimum channel (Width, Height): (0.00, 0.00)
+	Area of macros with halos: 10028.02
+	Area of std cell instances + Area of macros: 11808.80
+	Floorplan area: 18678.79
+	Design Utilization: 0.63
+	Floorplan Utilization: 0.21
+	Manufacturing Grid: 10
+
+[WARNING MPL-0055] Couldn't find a solution for the specified utilization. The utilization was adjusted to 0.3401975.
