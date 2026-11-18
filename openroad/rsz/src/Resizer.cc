@@ -2634,8 +2634,10 @@ VTCategory Resizer::cellVTType(dbMaster* master)
 
   dbSet<dbBox> obs = master->getObstructions();
   if (obs.empty()) {
-    VTCategory vt_cat{.vt_index = VTCategory::kUnclassifiedVtIndex,
-                      .vt_name = "-"};
+    VTCategory vt_cat{
+        .vt_index = VTCategory::kUnclassifiedVtIndex,
+        .vt_name = "-",
+    };
     auto [new_it, _] = vt_map_.emplace(master, vt_cat);
     return new_it->second;
   }
@@ -2674,8 +2676,10 @@ VTCategory Resizer::cellVTType(dbMaster* master)
   }
 
   if (hash1 == 0) {
-    VTCategory vt_cat{.vt_index = VTCategory::kUnclassifiedVtIndex,
-                      .vt_name = "-"};
+    VTCategory vt_cat{
+        .vt_index = VTCategory::kUnclassifiedVtIndex,
+        .vt_name = "-",
+    };
     auto [new_it, _] = vt_map_.emplace(master, vt_cat);
     return new_it->second;
   }
