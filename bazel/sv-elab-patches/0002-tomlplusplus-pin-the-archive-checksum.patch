@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: OpenROAD <openroad@openroad.tools>
+Date: Wed, 11 Nov 2026 00:00:00 +0000
+Subject: [PATCH] tomlplusplus: pin the archive's checksum
+
+tomlplusplus_ext declares the tomlplusplus http_archive without a
+checksum, so nothing verifies the download, and neither Bazel's
+repository cache nor a remote downloader can serve it by hash. A build
+that routes downloads through a remote cache's Remote Asset API
+(--experimental_remote_downloader) then makes the cache download the
+archive again on every fetch.
+
+Pin the integrity of the v3.4.0 tag archive. It is the value Bazel
+reports for the unpinned download ("indicated that a canonical
+reproducible form can be obtained by modifying arguments integrity =
+..."), and the archive from GitHub and from the BCR's Cloudflare mirror
+both hash to it.
+---
+diff --git a/dependency_support/tomlplusplus_ext.bzl b/dependency_support/tomlplusplus_ext.bzl
+--- a/dependency_support/tomlplusplus_ext.bzl
++++ b/dependency_support/tomlplusplus_ext.bzl
+@@ -4,6 +4,7 @@
+     http_archive(
+         name = "tomlplusplus",
+         urls = ["https://github.com/marzer/tomlplusplus/archive/refs/tags/v3.4.0.tar.gz"],
++        integrity = "sha256-hRf2WTik+q6cz467NmMaOMHK37XvqF2acuFbnpfSUVU=",
+         strip_prefix = "tomlplusplus-3.4.0",
+         build_file = "//:dependency_support/tomlplusplus.BUILD.bazel",
+     )

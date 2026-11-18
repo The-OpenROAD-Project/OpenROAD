@@ -67,6 +67,11 @@ proc regression_main { } {
 proc regression_body { cmd_argv } {
   setup
   parse_args $cmd_argv
+  global app_options
+  # Tests run single threaded for determinism unless -threads is given.
+  if { ![info exists app_options] || [lsearch $app_options "-threads"] == -1 } {
+    lappend app_options "-threads" 1
+  }
   run_tests
   show_summary
   return [found_errors]
@@ -346,7 +351,6 @@ proc run_test_plain { test cmd_file log_file lang } {
     # tclint-disable command-args
     if {
       [catch [concat exec $app_path $test_opts \
-        [lang_flag $lang] \
         -metrics [test_metrics_result_file $test $lang] \
         [file tail $cmd_file] >& $log_file]]
     } {
@@ -389,7 +393,7 @@ proc run_test_valgrind { test cmd_file log_file lang } {
   }
 
   set cmd [concat exec valgrind $valgrind_options \
-    $app_path [lang_flag $lang] $test_opts \
+    $app_path $test_opts \
     $vg_cmd_file >& $log_file]
   set error_msg ""
   if { [catch { $cmd }] } {
@@ -659,13 +663,6 @@ proc test_log_file { test lang } {
 proc test_def_result_file { test lang } {
   global result_dir
   return [file join $result_dir "$test-$lang.def"]
-}
-
-proc lang_flag { lang } {
-  if { $lang == "py" } {
-    return "-python"
-  }
-  return ""
 }
 
 proc test_tmp_file { test } {

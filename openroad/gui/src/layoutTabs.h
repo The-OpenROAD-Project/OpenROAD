@@ -1,0 +1,154 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
+
+#pragma once
+
+#include <QColor>
+#include <QTabWidget>
+#include <QWidget>
+#include <functional>
+#include <map>
+#include <memory>
+#include <set>
+#include <string>
+#include <vector>
+
+#include "gui/gui.h"
+#include "layoutViewer.h"
+#include "odb/PtrSetMap.h"
+#include "odb/db.h"
+#include "odb/geom.h"
+#include "options.h"
+
+namespace web {
+class Options;
+}
+
+namespace gui {
+
+class LayoutScroll;
+class LayoutViewer;
+class Ruler;
+class Label;
+class ScriptWidget;
+
+class LayoutTabs : public QTabWidget
+{
+  Q_OBJECT
+
+ public:
+  LayoutTabs(QtOptions* options,
+             ScriptWidget* output_widget,
+             const web::SelectionSet& selected,
+             const web::HighlightSet& highlighted,
+             const std::vector<std::unique_ptr<Ruler>>& rulers,
+             const std::vector<std::unique_ptr<Label>>& labels,
+             web::Gui* gui,
+             std::function<bool()> using_dbu,
+             std::function<bool()> using_poly_decomp_view,
+             std::function<bool()> show_ruler_as_euclidian,
+             std::function<bool()> default_mouse_wheel_zoom,
+             std::function<int()> arrow_keys_scroll_step,
+             QWidget* parent = nullptr);
+
+  LayoutViewer* getCurrent() const { return current_viewer_; }
+
+  void setLogger(utl::Logger* logger);
+
+  const odb::PtrMap<odb::dbModule, LayoutViewer::ModuleSettings>&
+  getModuleSettings()
+  {
+    return modules_;
+  }
+
+  const odb::PtrSet<odb::dbNet>& getFocusNets() { return focus_nets_; }
+  const odb::PtrSet<odb::dbNet>& getRouteGuides() { return route_guides_; }
+  const odb::PtrSet<odb::dbNet>& getNetTracks() { return net_tracks_; }
+
+  void addFocusNet(odb::dbNet* net);
+  void removeFocusNet(odb::dbNet* net);
+  void addRouteGuides(odb::dbNet* net);
+  void removeRouteGuides(odb::dbNet* net);
+  void addNetTracks(odb::dbNet* net);
+  void removeNetTracks(odb::dbNet* net);
+  void clearFocusNets();
+  void clearRouteGuides();
+  void clearNetTracks();
+
+ signals:
+  void setCurrentChip(odb::dbChip* chip);
+  void newViewer(LayoutViewer* viewer);
+
+  // These are just forwarding from the LayoutViewer(s).  Only the
+  // active viewer should be emitting signals, but all are connected
+  // as signal-to-signal connections.
+  void location(int x, int y);
+  void selected(const web::Selected& selected, bool show_connectivity = false);
+  void addSelected(const web::Selected& selected);
+  void addSelected(const web::SelectionSet& selected);
+  void addRuler(int x0, int y0, int x1, int y1);
+  void focusNetsChanged();
+  void routeGuidesChanged();
+  void netTracksChanged();
+  void viewUpdated();
+
+ public slots:
+  void tabChange(int index);
+  void updateBackgroundColors();
+  void updateBackgroundColor(LayoutViewer* viewer);
+
+  // These are just forwarding to the current LayoutViewer
+  void zoomIn();
+  void zoomOut();
+  void zoomTo(const odb::Rect& rect_dbu);
+  void zoomTo(const odb::Point& focus, int diameter);
+  void chipLoaded(odb::dbChip* chip);
+  void fit();
+  void fullRepaint();
+  void startRulerBuild();
+  void cancelRulerBuild();
+  void selection(const web::Selected& selection);
+  void selectionFocus(const web::Selected& focus);
+  void updateModuleVisibility(odb::dbModule* module, bool visible);
+  void updateModuleColor(odb::dbModule* module,
+                         const QColor& color,
+                         bool user_selected);
+  void populateModuleColors(odb::dbBlock* block);
+  void exit();
+  void commandAboutToExecute();
+  void commandFinishedExecuting();
+  void resetCache();
+
+  // Method forwarding
+  void restoreTclCommands(std::vector<std::string>& cmds);
+  void executionPaused();
+
+ private:
+  LayoutViewer* current_viewer_ = nullptr;
+  std::vector<LayoutViewer*> viewers_;
+
+  QtOptions* options_;
+  ScriptWidget* output_widget_;
+  const web::SelectionSet& selected_;
+  const web::HighlightSet& highlighted_;
+  const std::vector<std::unique_ptr<Ruler>>& rulers_;
+  const std::vector<std::unique_ptr<Label>>& labels_;
+  odb::PtrMap<odb::dbModule, LayoutViewer::ModuleSettings> modules_;
+  web::Gui* gui_;
+  std::function<bool()> using_dbu_;
+  std::function<bool()> using_poly_decomp_view_;
+  std::function<bool()> show_ruler_as_euclidian_;
+  std::function<bool()> default_mouse_wheel_zoom_;
+  std::function<int()> arrow_keys_scroll_step_;
+  utl::Logger* logger_;
+  bool command_executing_ = false;
+
+  // Set of nets to focus drawing on, if empty draw everything
+  odb::PtrSet<odb::dbNet> focus_nets_;
+  // Set of nets to draw route guides for, if empty draw nothing
+  odb::PtrSet<odb::dbNet> route_guides_;
+  // Set of nets to draw assigned tracks for, if empty draw nothing
+  odb::PtrSet<odb::dbNet> net_tracks_;
+};
+
+}  // namespace gui

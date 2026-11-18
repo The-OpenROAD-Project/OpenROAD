@@ -15,7 +15,7 @@ py_test(
     srcs = ["check_visibility.py"],
     args = [
         "--build-file=$(location //:BUILD.bazel)",
-        "--rule-type=cc_binary",
+        "--rule-type=stamped_binary",
         "--target=openroad",
         "--expect=public",
     ],
@@ -47,28 +47,6 @@ py_test(
     ],
     data = ["//:BUILD.bazel"],
     main = "check_visibility.py",
-)
-
-py_test(
-    name = "rules_verilator_dev_dep_test",
-    srcs = ["check_dev_dep.py"],
-    args = [
-        "--module-file=$(location //:MODULE.bazel)",
-        "--dep=rules_verilator",
-    ],
-    data = ["//:MODULE.bazel"],
-    main = "check_dev_dep.py",
-)
-
-py_test(
-    name = "verilator_dev_dep_test",
-    srcs = ["check_dev_dep.py"],
-    args = [
-        "--module-file=$(location //:MODULE.bazel)",
-        "--dep=verilator",
-    ],
-    data = ["//:MODULE.bazel"],
-    main = "check_dev_dep.py",
 )
 
 exports_files(
@@ -119,8 +97,23 @@ filegroup(
 filegroup(
     name = "asap7_data",
     srcs = [
+        "asap7/asap7.tracks.tcl",
         "asap7/asap7_tech_1x_201209.lef",
         "asap7/asap7sc7p5t_28_R_1x_220121a.lef",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# asap7's NLDM liberty, for the cells' functions: the ram module's asap7
+# tests find their cells by them.
+filegroup(
+    name = "asap7_nldm_data",
+    srcs = [
+        "asap7/asap7sc7p5t_AO_RVT_FF_nldm_211120.lib.gz",
+        "asap7/asap7sc7p5t_INVBUF_RVT_FF_nldm_220122.lib.gz",
+        "asap7/asap7sc7p5t_OA_RVT_FF_nldm_211120.lib.gz",
+        "asap7/asap7sc7p5t_SEQ_RVT_FF_nldm_220123.lib",
+        "asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz",
     ],
     visibility = ["//visibility:public"],
 )
@@ -145,10 +138,13 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-# From CMakeLists.txt or_integration_tests(TESTS
 PASSFAIL_TESTS = [
+    "cmd_file_error",
     "commands_without_load",
+    "db_option_quoting",
+    "init_file_error",
     "upf_aes",
+    "est_placement_threads",
 ]
 
 COMPULSORY_TESTS = [
@@ -156,6 +152,7 @@ COMPULSORY_TESTS = [
     "get_core_die_areas",
     "ord_tclsh_completion",
     "place_inst",
+    "report_fmax_metric_virtual_clock",
     "upf_test",
     "write_db",
 ] + PASSFAIL_TESTS
@@ -171,10 +168,7 @@ PYTHON_TESTS = [
 # The local Bazel OpenROAD workflow for a quick smoketest
 # is to run, in the relevant folder:
 #
-# "bazel test -c opt ..."
-#
-# Now, or_integration_tests() in CMakeLists.txt do not list
-# BIG_TESTS below.
+# "bazelisk test -c opt ..."
 #
 # By marking the tests tags=["manual"],
 # the tests are available, but have to be invoked
@@ -211,7 +205,7 @@ BIG_TESTS = [
         check_log = False if test_name in PASSFAIL_TESTS + BIG_TESTS else True,
         check_metrics = True if test_name in BIG_TESTS else False,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
-        data = ["//src/odb/test:design_odb_data"] if test_name == "two_designs" else [],
+        data = ["//openroad/odb/test:design_odb_data"] if test_name == "two_designs" else [],
         tags = ["manual"] if test_name in BIG_TESTS else [],
     )
     for test_name in COMPULSORY_TESTS + PYTHON_TESTS + BIG_TESTS

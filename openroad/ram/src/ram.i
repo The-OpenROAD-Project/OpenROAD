@@ -1,0 +1,162 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2024-2025, The OpenROAD Authors
+
+%{
+
+#include <vector>
+#include <string>
+
+#include "ord/OpenRoad.hh"
+#include "ram/ram.h"
+#include "utl/Logger.h"
+
+namespace ord {
+// Defined in OpenRoad.i
+odb::dbDatabase* getDb();
+ram::RamGen* getRamGen();
+utl::Logger* getLogger();
+} // namespace ord
+
+%}
+
+%include <std_vector.i>
+%include <std_string.i>
+%template(vector_str) std::vector<std::string>;
+%include "../../Exception.i"
+
+%inline %{
+
+namespace ram {
+
+void
+generate_ram_netlist_cmd(int mask_size,
+                         int word_size,
+                         int num_words,
+                         int rw_ports,
+                         int r_ports,
+                         int w_ports,
+                         int column_mux_ratio,
+                         bool use_latch,
+                         const char* storage_cell_name,
+                         const char* tristate_cell_name,
+                         const char* inv_cell_name,
+                         const char* tapcell_name,
+                         const int max_tap_dist,
+                         const char* read_style,
+                         const int zero_word,
+                         const char* reset_value,
+                         const int banks,
+                         const int bank_columns,
+                         const char* bank_order,
+                         const int rb_ports,
+                         const int register_read_address,
+                         const char* write_style,
+                         const char* write_priority,
+                         const char* periphery,
+                         const char* pin_layer,
+                         const char* cells,
+                         const char* name,
+                         const char* decoder,
+                         const int bit_folds,
+                         const char* wrapper_verilog,
+                         const int service_every,
+                         const int service_sites,
+                         const char* bank_column_layout)
+{
+  RamGen* ram_gen = ord::getRamGen();
+  odb::dbDatabase* db = ord::getDb();
+  utl::Logger* logger = ord::getLogger();
+
+  odb::dbMaster* storage_cell = nullptr;
+  if (storage_cell_name[0] != '\0') {
+    storage_cell = db->findMaster(storage_cell_name);
+    if (!storage_cell) {
+      logger->error(utl::RAM,
+                    4,
+                    "Storage cell {} can't be found",
+                    storage_cell_name);
+    }
+  }
+
+  odb::dbMaster* tristate_cell = nullptr;
+  if (tristate_cell_name[0] != '\0') {
+    tristate_cell = db->findMaster(tristate_cell_name);
+    if (!tristate_cell) {
+      logger->error(utl::RAM,
+                    7,
+                    "Tristate cell {} can't be found",
+                    tristate_cell_name);
+    }
+  }
+
+  odb::dbMaster* inv_cell = nullptr;
+  if (inv_cell_name[0] != '\0') {
+    inv_cell = db->findMaster(inv_cell_name);
+    if (!inv_cell) {
+      logger->error(utl::RAM,
+                    8,
+                    "Inv cell {} can't be found",
+                    inv_cell_name);
+    }
+  }
+
+  odb::dbMaster* tapcell = nullptr;
+  if (tapcell_name[0] != '\0') {
+    tapcell = db->findMaster(tapcell_name);
+    if (!tapcell) {
+      logger->error(utl::RAM,
+                    19,
+                    "Tapcell {} can't be found",
+                    tapcell_name);
+    }
+  }
+
+  ram_gen->generate(mask_size, word_size, num_words, rw_ports, r_ports, w_ports,
+                    column_mux_ratio, use_latch, storage_cell, tristate_cell, inv_cell, 
+                    tapcell, max_tap_dist, read_style, zero_word,
+                    reset_value, banks, bank_columns, bank_order, rb_ports,
+                    register_read_address, write_style, write_priority, periphery, pin_layer, cells,
+                    name, decoder, bit_folds, wrapper_verilog,
+                    service_every, service_sites, bank_column_layout);
+}
+
+void ram_pdngen(const char* power_net_name, const char* ground_net_name,
+                const char* route_name, int route_width, 
+                const char* ver_name, int ver_width, int ver_pitch,
+                const char* hor_name, int hor_width, int hor_pitch)
+{
+  RamGen* ram_gen = ord::getRamGen();
+  ram_gen->ramPdngen(power_net_name, ground_net_name,
+                     route_name, route_width,
+                     ver_name, ver_width, ver_pitch, 
+                     hor_name, hor_width, hor_pitch);
+}
+
+void ram_pinplacer(const char* ver_name, const char* hor_name)
+{
+  RamGen* ram_gen = ord::getRamGen();
+  ram_gen->ramPinplacer(ver_name, hor_name);
+}
+
+void ram_filler(const std::vector<std::string>& filler_cells)
+{
+  RamGen* ram_gen = ord::getRamGen();
+  ram_gen->ramFiller(filler_cells);
+}
+
+void ram_routing()
+{
+  const int thread_count = ord::OpenRoad::openRoad()->getThreadCount();
+  RamGen* ram_gen = ord::getRamGen();
+  ram_gen->ramRouting(thread_count);
+}
+
+void set_behavioral_verilog_filename(const char* filename)
+{
+  RamGen* ram_gen = ord::getRamGen();
+  ram_gen->setBehavioralVerilogFilename(filename);
+}
+
+} //namespace_ram
+
+%} // inline
