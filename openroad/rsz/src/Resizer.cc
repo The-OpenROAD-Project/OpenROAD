@@ -1088,12 +1088,9 @@ void Resizer::findBuffersNoPruning()
       sta::LibertyLibrary* lib = lib_iter->next();
 
       for (sta::LibertyCell* buffer : *lib->buffers()) {
-        if (exclude_clock_buffers_) {
-          BufferUse buffer_use = getBufferUse(buffer);
-
-          if (buffer_use == BufferUse::CLOCK) {
-            continue;
-          }
+        // Clock buffers are reserved for the clock network.
+        if (getBufferUse(buffer) == BufferUse::CLOCK) {
+          continue;
         }
 
         if (!dontUse(buffer) && isLinkCell(buffer)) {
@@ -1858,9 +1855,8 @@ void Resizer::reportBuffers(bool filtered)
   logger_->report("Buffer Report:");
   logger_->report(
       "There are {} buffers that are not marked as dont-use, multi-voltage\n"
-      "special cells{}",
-      buffer_list.size(),
-      (exclude_clock_buffers_ ? " or clock buffers" : ""));
+      "special cells or clock buffers",
+      buffer_list.size());
 
   logger_->report("\nThere are {} VT types:",
                   lib_data_->vt_leakage_by_category.size());
@@ -2027,11 +2023,9 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
   while (lib_iter->hasNext()) {
     sta::LibertyLibrary* lib = lib_iter->next();
     for (sta::LibertyCell* buffer : *lib->buffers()) {
-      if (exclude_clock_buffers_) {
-        BufferUse buffer_use = getBufferUse(buffer);
-        if (buffer_use == BufferUse::CLOCK) {
-          continue;
-        }
+      // Clock buffers are reserved for the clock network.
+      if (getBufferUse(buffer) == BufferUse::CLOCK) {
+        continue;
       }
       if (!dontUse(buffer) && !buffer->alwaysOn() && !buffer->isIsolationCell()
           && !buffer->isLevelShifter() && isLinkCell(buffer)) {
@@ -5552,15 +5546,6 @@ bool Resizer::repairHold(
   // Scoped so a -path_group restriction never leaks past this command.
   utl::SetAndRestore<std::string> path_group_override(
       path_group_, path_group != nullptr ? path_group : "");
-  // Some technologies such as nangate45 don't have delay cells. Hence,
-  // until we have a better approach, it's better to consider clock buffers
-  // for hold violation repairing as these buffers' delay may be slighty
-  // higher and we'll need fewer insertions.
-  // Obs: We need to clear the buffer list for the preamble to select
-  // buffers again excluding the clock ones.
-  utl::SetAndRestore set_exclude_clk_buffers(exclude_clock_buffers_, false);
-  utl::SetAndRestore set_buffers(buffer_cells_, sta::LibertyCellSeq());
-
   resizePreamble();
   if (estimate_parasitics_->getParasiticsSrc()
           == est::ParasiticsSrc::kGlobalRouting
@@ -5586,10 +5571,6 @@ void Resizer::repairHold(const sta::Pin* end_pin,
                          float max_buffer_percent,
                          int max_passes)
 {
-  // See comment on the method above.
-  utl::SetAndRestore set_exclude_clk_buffers(exclude_clock_buffers_, false);
-  utl::SetAndRestore set_buffers(buffer_cells_, sta::LibertyCellSeq());
-
   resizePreamble();
   repair_hold_->repairHold(end_pin,
                            setup_margin,

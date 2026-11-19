@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <limits>
 #include <map>
+#include <memory>
 #include <optional>
 #include <queue>
 #include <set>
@@ -260,7 +261,11 @@ void SetupCritVtSwapPolicy::traverseFaninCone(
     // paths into the endpoint, where its own delay lies on them; the
     // endpoint's register is reached through its data pin, not its delay.
     if (inst && (group_fanout == nullptr || current->isDriver(network_))) {
-      if (resizer_.checkAndMarkVTSwappable(inst, notSwappable, best_lib_cell)) {
+      // A clock gate ends its enable check, but its delay is on the clock of
+      // every register it gates.
+      if (!drivesClock(inst)
+          && resizer_.checkAndMarkVTSwappable(
+              inst, notSwappable, best_lib_cell)) {
         const sta::Slack inst_slack = getInstanceSlack(inst);
         if (sta::fuzzyLess(inst_slack, config_.setup_slack_margin)) {
           if (crit_inst_set.insert(inst).second) {
@@ -282,7 +287,9 @@ void SetupCritVtSwapPolicy::traverseFaninCone(
     while (edge_iter.hasNext()) {
       sta::Edge* edge = edge_iter.next();
       sta::Vertex* fanin_vertex = edge->from(graph_);
-      if (fanin_vertex->isRegClk()) {
+      // A clock gate's clock pin is not a register clock.
+      if (fanin_vertex->isRegClk()
+          || sta_->isClock(fanin_vertex->pin(), sta_->cmdMode())) {
         continue;
       }
 
@@ -333,6 +340,23 @@ sta::Slack SetupCritVtSwapPolicy::getInstanceSlack(sta::Instance* inst)
   delete pin_iter;
 
   return worst_slack;
+}
+
+bool SetupCritVtSwapPolicy::drivesClock(sta::Instance* inst)
+{
+  if (network_->isTopInstance(inst)) {
+    return false;
+  }
+  std::unique_ptr<sta::InstancePinIterator> pin_iter(
+      network_->pinIterator(inst));
+  while (pin_iter->hasNext()) {
+    const sta::Pin* pin = pin_iter->next();
+    if (network_->direction(pin)->isAnyOutput()
+        && sta_->isClock(pin, sta_->cmdMode())) {
+      return true;
+    }
+  }
+  return false;
 }
 
 sta::Pin* SetupCritVtSwapPolicy::outputPin(sta::Instance* inst)

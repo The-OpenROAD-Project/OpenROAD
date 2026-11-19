@@ -126,19 +126,24 @@ sta::define_cmd_args "set_place_config" {[-io_pin_hor_layers h_layers]\
                                          [-io_pin_ver_layers v_layers]\
                                          [-io_pin_corner_avoidance distance]\
                                          [-io_pin_min_distance min_dist]\
-                                         [-io_pin_min_distance_in_tracks]}
+                                         [-io_pin_min_distance_in_tracks]\
+                                         [-io_pin_layer_min_distance layer_min_dists]}
 
 proc set_place_config { args } {
   sta::parse_key_args "set_place_config" args \
-    keys {-io_pin_hor_layers -io_pin_ver_layers -io_pin_corner_avoidance -io_pin_min_distance} \
+    keys {-io_pin_hor_layers -io_pin_ver_layers -io_pin_corner_avoidance -io_pin_min_distance \
+      -io_pin_layer_min_distance} \
     flags {-io_pin_min_distance_in_tracks}
   sta::check_argc_eq0 "set_place_config" $args
 
   set block [gpl::place_config_block]
   set in_tracks [info exists flags(-io_pin_min_distance_in_tracks)]
-  if { $in_tracks && ![info exists keys(-io_pin_min_distance)] } {
-    utl::error GPL 192 \
-      "-io_pin_min_distance_in_tracks requires -io_pin_min_distance."
+  if {
+    $in_tracks && ![info exists keys(-io_pin_min_distance)]
+    && ![info exists keys(-io_pin_layer_min_distance)]
+  } {
+    utl::error GPL 192 "-io_pin_min_distance_in_tracks requires\
+      -io_pin_min_distance or -io_pin_layer_min_distance."
   }
 
   set hor_layers {}
@@ -150,6 +155,14 @@ proc set_place_config { args } {
     set ver_layers $keys(-io_pin_ver_layers)
   }
   ppl::check_io_pin_layers $hor_layers $ver_layers
+  if { [info exists keys(-io_pin_min_distance)] } {
+    set min_dist [ppl::parse_min_distance -io_pin_min_distance \
+      $keys(-io_pin_min_distance) $in_tracks]
+  }
+  if { [info exists keys(-io_pin_layer_min_distance)] } {
+    set layer_min_dist [ppl::parse_layer_min_distance -io_pin_layer_min_distance \
+      $keys(-io_pin_layer_min_distance) $in_tracks]
+  }
   if { [info exists keys(-io_pin_hor_layers)] } {
     gpl::set_place_prop $block String io_pin_hor_layers $hor_layers
   }
@@ -161,25 +174,26 @@ proc set_place_config { args } {
       [ord::microns_to_dbu $keys(-io_pin_corner_avoidance)]
   }
   if { [info exists keys(-io_pin_min_distance)] } {
-    set min_dist $keys(-io_pin_min_distance)
-    if { !$in_tracks } {
-      set min_dist [ord::microns_to_dbu $min_dist]
-    }
     gpl::set_place_prop $block Int io_pin_min_distance $min_dist
     gpl::set_place_prop $block Bool io_pin_min_distance_in_tracks $in_tracks
+  }
+  if { [info exists keys(-io_pin_layer_min_distance)] } {
+    gpl::set_place_prop $block String io_pin_layer_min_distance $layer_min_dist
+    gpl::set_place_prop $block Bool io_pin_layer_min_distance_in_tracks $in_tracks
   }
 }
 
 sta::define_cmd_args "reset_place_config" {[-io_pin_hor_layers]\
                                            [-io_pin_ver_layers]\
                                            [-io_pin_corner_avoidance]\
-                                           [-io_pin_min_distance]}
+                                           [-io_pin_min_distance]\
+                                           [-io_pin_layer_min_distance]}
 
 proc reset_place_config { args } {
   sta::parse_key_args "reset_place_config" args \
     keys {} \
     flags {-io_pin_hor_layers -io_pin_ver_layers -io_pin_corner_avoidance \
-      -io_pin_min_distance}
+      -io_pin_min_distance -io_pin_layer_min_distance}
   sta::check_argc_eq0 "reset_place_config" $args
 
   set block [gpl::place_config_block]
@@ -189,6 +203,8 @@ proc reset_place_config { args } {
     -io_pin_ver_layers {String io_pin_ver_layers}
     -io_pin_corner_avoidance {Int io_pin_corner_avoidance}
     -io_pin_min_distance {Int io_pin_min_distance Bool io_pin_min_distance_in_tracks}
+    -io_pin_layer_min_distance {String io_pin_layer_min_distance
+      Bool io_pin_layer_min_distance_in_tracks}
   } {
     if { $reset_all || [info exists flags($flag)] } {
       foreach { type name } $props {
@@ -218,10 +234,40 @@ proc report_place_config { args } {
   set min_dist [gpl::get_place_prop $block Int io_pin_min_distance]
   if { $min_dist eq {} } {
     utl::report "io_pin_min_distance: unset"
-  } elseif { [gpl::get_place_prop $block Bool io_pin_min_distance_in_tracks] } {
-    utl::report "io_pin_min_distance: $min_dist tracks"
   } else {
-    utl::report "io_pin_min_distance: [ord::dbu_to_microns $min_dist] um"
+    set in_tracks [gpl::get_place_prop $block Bool io_pin_min_distance_in_tracks]
+    utl::report "io_pin_min_distance: [gpl::format_min_distance $min_dist $in_tracks]"
+  }
+  set layer_min_dist [gpl::get_place_prop $block String io_pin_layer_min_distance]
+  if { $layer_min_dist eq {} } {
+    utl::report "io_pin_layer_min_distance: unset"
+  } else {
+    set in_tracks [gpl::get_place_prop $block Bool io_pin_layer_min_distance_in_tracks]
+    set values {}
+    foreach { name dist } $layer_min_dist {
+      lappend values "$name [gpl::format_min_distance $dist $in_tracks]"
+    }
+    utl::report "io_pin_layer_min_distance: [join $values {, }]"
+    if { $min_dist eq {} } {
+      utl::report "  Other layers use the default of 2 tracks."
+    } else {
+      utl::report "  Other layers use io_pin_min_distance."
+    }
+    foreach name [dict keys $layer_min_dist] {
+      set layer [[ord::get_db_tech] findLayer $name]
+      if { $layer == "NULL" } {
+        continue
+      }
+      if { [$layer getDirection] == "HORIZONTAL" } {
+        set option io_pin_hor_layers
+      } else {
+        set option io_pin_ver_layers
+      }
+      set pin_layers [gpl::get_place_prop $block String $option]
+      if { $pin_layers ne {} && [lsearch -exact $pin_layers $name] == -1 } {
+        utl::report "  $name is not in $option."
+      }
+    }
   }
 }
 
@@ -402,6 +448,14 @@ proc estimate_target_density { args } {
 }
 
 namespace eval gpl {
+# A min distance as report_place_config shows it.
+proc format_min_distance { dist in_tracks } {
+  if { !$in_tracks } {
+    return "[ord::dbu_to_microns $dist] um"
+  }
+  return [expr { $dist == 1 ? "1 track" : "$dist tracks" }]
+}
+
 proc place_config_block { } {
   set block [ord::get_db_block]
   if { $block == "NULL" } {

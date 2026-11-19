@@ -868,6 +868,12 @@ DbVia::ViaLayerShape DbSplitCutVia::generate(
     const odb::PtrSet<odb::dbTechLayer>& ongrid,
     utl::Logger* logger)
 {
+  for (const auto& layer : {bottom_.get(), top_.get()}) {
+    if (ongrid.contains(layer->getLayer()) && !layer->hasGrid()) {
+      layer->populateGrid(block);
+    }
+  }
+
   TechLayer* horizontal = nullptr;
   TechLayer* vertical = nullptr;
   if (bottom_->getLayer()->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
@@ -886,13 +892,14 @@ DbVia::ViaLayerShape DbSplitCutVia::generate(
   const int row_offset = rows_ > 1 ? row_offset_ : 0;
   const int col_offset = cols_ > 1 ? col_offset_ : 0;
 
+  // after the first cut, each cut takes the next track at least a pitch away
   int row = via_rect.yMin() + row_offset;
   for (int r = 0; r < rows_; r++) {
-    const int row_pos = horizontal->snapToGrid(row);
+    const int row_pos = horizontal->snapToGrid(row, r == 0 ? 0 : row);
 
     int col = via_rect.xMin() + col_offset;
     for (int c = 0; c < cols_; c++) {
-      const int col_pos = vertical->snapToGrid(col);
+      const int col_pos = vertical->snapToGrid(col, c == 0 ? 0 : col);
 
       auto shapes
           = via_->generate(block, wire, type, col_pos, row_pos, ongrid, logger);
