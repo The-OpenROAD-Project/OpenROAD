@@ -3950,5 +3950,24 @@ TEST_F(TestPDNViaTech, TechViaFitsShapesAcceptsBothEndpointsBridging)
   EXPECT_TRUE(gen.callFitsShapes());
 }
 
+// Conditional LEF58 cut-enclosure rules (EXTRACUT, REDUNDANTCUT, PARALLEL,
+// and CONCAVECORNERS) depend on extra cuts or neighboring wires and are
+// ignored when sizing a standalone power-grid via.
+TEST_F(TestPDNViaTech, ViaGeneratorSkipsConditionalCutEnclosureRules)
+{
+  ViaStack s = makeBasicViaStack();
+  addCutEnclosureRule(s.cut, 50, 50)->setExtraCutValid(true);
+  addCutEnclosureRule(s.cut, 50, 50)->setRedundantCutValid(true);
+  addCutEnclosureRule(s.cut, 50, 50)->setParallelValid(true);
+  addCutEnclosureRule(s.cut, 50, 50)->setConcaveCornersValid(true);
+
+  const odb::Rect r(0, 0, 2000, 2000);
+  TechViaGenerator gen(getLogger(), s.via, r, loose(), r, loose());
+  ASSERT_TRUE(gen.build(false, false));
+  // The tech via's own 10, not the 50 the conditional rules ask for.
+  EXPECT_EQ(*gen.getBottomEnclosure(), Enclosure(10, 10));
+  EXPECT_EQ(*gen.getTopEnclosure(), Enclosure(10, 10));
+}
+
 }  // namespace
 }  // namespace pdn
