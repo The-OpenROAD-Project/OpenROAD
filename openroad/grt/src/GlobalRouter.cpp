@@ -213,6 +213,8 @@ std::vector<Net*> GlobalRouter::initCUGR(int min_routing_layer,
   reportNetDegree(nets);
 
   cugr_->setCongestionIterations(congestion_iterations_);
+  cugr_->setSkipLargeFanoutNets(skip_large_fanout_);
+  cugr_->setSelectedNets(nets_to_route_);
   if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
     if (cugr_->getCriticalNetsPercentage() != 0) {
       logger_->warn(
