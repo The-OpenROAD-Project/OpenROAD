@@ -1953,20 +1953,7 @@ void GlobalRouter::findPins(Net* net)
     computePinPositionOnGrid(
         pin_positions_on_grid, pin, pos_on_grid, has_access_points);
   }
-
-  // A port on a same-net pin's metal connects through that pin.
-  for (Pin& port : net->getPins()) {
-    if (port.getCoveringITerm() == nullptr) {
-      continue;
-    }
-    for (const Pin& pin : net->getPins()) {
-      if (pin.getITerm() == port.getCoveringITerm()) {
-        port.setOnGridPosition(pin.getOnGridPosition());
-        port.setConnectionLayer(pin.getConnectionLayer());
-        break;
-      }
-    }
-  }
+  net->shareCoveringPinPositions();
 }
 
 void GlobalRouter::computePinPositionOnGrid(
@@ -3421,6 +3408,10 @@ void GlobalRouter::ensurePinsPositions(odb::dbNet* db_net)
   if (!netIsCovered(db_net, pins_not_covered)) {
     Net* net = db_net_map_[db_net];
     for (Pin& pin : net->getPins()) {
+      // A port on a same-net pin's metal takes that pin's position below.
+      if (pin.getCoveringITerm() != nullptr) {
+        continue;
+      }
       if (pins_not_covered.find(pin.getName()) != std::string::npos
           && !findCoveredAccessPoint(net, pin)) {
         bool has_aps;
@@ -3431,6 +3422,7 @@ void GlobalRouter::ensurePinsPositions(odb::dbNet* db_net)
             pin_positions_on_grid, pin, pos_on_grid, has_aps);
       }
     }
+    net->shareCoveringPinPositions();
   }
 }
 
@@ -3468,6 +3460,10 @@ bool GlobalRouter::updateUncoveredPinsPositions(odb::dbNet* db_net,
   pins_not_covered = "";
 
   for (Pin& pin : net->getPins()) {
+    // A port on a same-net pin's metal takes that pin's position below.
+    if (pin.getCoveringITerm() != nullptr) {
+      continue;
+    }
     bool pin_is_covered = false;
     for (const GSegment& seg : segments) {
       if (segmentCoversPin(seg, pin)) {
@@ -3480,6 +3476,7 @@ bool GlobalRouter::updateUncoveredPinsPositions(odb::dbNet* db_net,
       all_covered = false;
     }
   }
+  net->shareCoveringPinPositions();
 
   return all_covered;
 }

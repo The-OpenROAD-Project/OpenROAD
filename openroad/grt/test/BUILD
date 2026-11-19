@@ -72,6 +72,7 @@ TESTS = [
     "overlapping_edges",
     "pad_pin_edge",
     "pad_pin_edge_cugr",
+    "pad_pin_edge_odb_roundtrip",
     "pd1",
     "pd2",
     "pd3",
