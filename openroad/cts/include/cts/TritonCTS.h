@@ -76,6 +76,8 @@ class TritonCTS
   std::string getRootBufferToString();
   void resetRootBuffer() { rootBuffers_.clear(); }
   void setSinkBuffer(const char* buffers);
+  // Register clock pins of each leaf net CTS would build. A leaf net driven by
+  // a clock gate sink lists the gate output first.
   std::vector<std::vector<odb::dbITerm*>> predictSinkClusters(
       const std::vector<odb::dbNet*>& nets);
 
@@ -255,7 +257,18 @@ class TritonCTS
   static odb::Rect boundingBox(const ClockPins& clockPins,
                                size_t begin,
                                size_t end);
-  bool fitsSinkCluster(size_t count, const odb::Rect& bbox) const;
+  bool fitsSinkCluster(const CtsOptions& options,
+                       size_t count,
+                       const odb::Rect& bbox) const;
+  struct ClockPinPart
+  {
+    size_t begin;
+    size_t end;
+    odb::Rect box;
+  };
+  std::vector<ClockPinPart> partitionClockPins(ClockPins& clockPins,
+                                               const CtsOptions& options) const;
+  void markClockGateSinks(Clock& clockNet);
   std::vector<sta::LibertyCell*> clockGateCells(odb::dbInst* gate);
   bool isClockGateSink(odb::dbITerm* gateClockPin);
   bool isFrozenClockNet(odb::dbNet* net);
