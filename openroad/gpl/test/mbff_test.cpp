@@ -176,7 +176,7 @@ TEST_F(MBFFTestFixture, FlopsCanBeIdentifiedAsATrayAndNot)
 {
   // Retreive masters, create a test cell, and assert that they are correctly
   // identified as either a tray or not a tray.
-  EXPECT_EQ(db_->findLib("test0")->getMasters().size(), 7);
+  EXPECT_EQ(db_->findLib("test0")->getMasters().size(), 8);
 
   EXPECT_FALSE(MBFFTestPeer::IsValidTray(
       mbff_.get(), CreateTmpCell("test_tray", "test0", "INV")));
@@ -188,6 +188,8 @@ TEST_F(MBFFTestFixture, FlopsCanBeIdentifiedAsATrayAndNot)
       mbff_.get(), CreateTmpCell("test_tray", "test0", "MBFF2SE")));
   EXPECT_TRUE(MBFFTestPeer::IsValidTray(
       mbff_.get(), CreateTmpCell("test_tray", "test0", "MBFF2CLPS")));
+  EXPECT_TRUE(MBFFTestPeer::IsValidTray(
+      mbff_.get(), CreateTmpCell("test_tray", "test0", "MBFF2CLPSN")));
   EXPECT_TRUE(MBFFTestPeer::IsValidTray(
       mbff_.get(), CreateTmpCell("test_tray", "test0", "MBFF2SECLPS")));
   EXPECT_TRUE(MBFFTestPeer::IsValidTray(
@@ -203,6 +205,22 @@ TEST_F(MBFFTestFixture, RegisterAndLatchTraysUseDifferentMasks)
   // Then their sequential behavior must keep them in separate candidate pools.
   EXPECT_FALSE(
       MBFFTestPeer::HaveSameMask(mbff_.get(), register_tray, latch_tray));
+}
+
+TEST_F(MBFFTestFixture, OppositeResetPolarityTraysUseDifferentMasks)
+{
+  // Given two trays that differ only in clear/preset polarity:
+  // MBFF2CLPS clears on CLEAR=1 and presets on PRESET=0, while
+  // MBFF2CLPSN clears on CLEAR=0 and presets on PRESET=1.
+  odb::dbInst* clps = CreateTmpCell("clps", "test0", "MBFF2CLPS");
+  odb::dbInst* clps_n = CreateTmpCell("clps_n", "test0", "MBFF2CLPSN");
+  odb::dbInst* clps_copy = CreateTmpCell("clps_copy", "test0", "MBFF2CLPS");
+
+  // Then they must not be interchangeable: wiring a reset net straight into
+  // a tray of the opposite polarity changes the circuit's function.
+  EXPECT_FALSE(MBFFTestPeer::HaveSameMask(mbff_.get(), clps, clps_n));
+  // And identical cells still share a mask.
+  EXPECT_TRUE(MBFFTestPeer::HaveSameMask(mbff_.get(), clps, clps_copy));
 }
 
 TEST_F(MBFFTestFixture, ReadLibsSuccessfullyProcessesTestCells)

@@ -6406,6 +6406,38 @@ bool dbNetwork::isPresetPin(odb::dbITerm* iterm) const
   return portInSequentialFunc(lib_cell, lib_port, &Sequential::preset);
 }
 
+// A clear/preset expression of the form "!PIN" is asserted when the pin is
+// low; any other form (e.g. "PIN") is treated as asserted when it is high.
+static bool sequentialFuncActiveHigh(const LibertyCell* lib_cell,
+                                     FuncExpr* (Sequential::*get)() const)
+{
+  for (const Sequential& seq : lib_cell->sequentials()) {
+    const FuncExpr* expr = (seq.*get)();
+    if (expr) {
+      return expr->op() != FuncExpr::Op::not_;
+    }
+  }
+  return false;
+}
+
+bool dbNetwork::isClearActiveHigh(odb::dbInst* inst) const
+{
+  const LibertyCell* lib_cell = testCell(dbToSta(inst->getMaster()));
+  if (!lib_cell) {
+    return false;
+  }
+  return sequentialFuncActiveHigh(lib_cell, &Sequential::clear);
+}
+
+bool dbNetwork::isPresetActiveHigh(odb::dbInst* inst) const
+{
+  const LibertyCell* lib_cell = testCell(dbToSta(inst->getMaster()));
+  if (!lib_cell) {
+    return false;
+  }
+  return sequentialFuncActiveHigh(lib_cell, &Sequential::preset);
+}
+
 bool dbNetwork::isScanCell(odb::dbInst* inst) const
 {
   const Cell* cell = dbToSta(inst->getMaster());
