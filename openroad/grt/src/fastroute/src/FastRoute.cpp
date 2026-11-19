@@ -1003,6 +1003,11 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
       addAdjustment(x, y, x + 1, y, layer, edge_cap, true);
     }
   }
+
+  // The intervals are applied as the adjustments above and read nowhere
+  // else; on a large die they hold an interval set per blocked edge.
+  decltype(vertical_blocked_intervals_)().swap(vertical_blocked_intervals_);
+  decltype(horizontal_blocked_intervals_)().swap(horizontal_blocked_intervals_);
 }
 
 int FastRouteCore::getAvailableResources(int x1,
