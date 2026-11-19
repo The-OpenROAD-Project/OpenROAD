@@ -25,6 +25,7 @@
 #include "sta/SdcClass.hh"
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
+#include "sta/StringUtil.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
 
