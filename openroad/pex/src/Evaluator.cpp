@@ -568,6 +568,9 @@ class Wire
   std::vector<Lateral> left_;
   std::vector<Lateral> right_;
   std::map<int, std::vector<Run>> runs_;  // covers by layer
+  // By layer, the boxes beside the wire within the diagonal table's gaps
+  // on one side or the other, in the order of near_.
+  std::map<int, std::vector<int>> parallels_;
   // Spans along the wire that a longer box of the net counts.
   std::vector<std::pair<int, int>> inside_;
   std::set<int> cuts_;
@@ -711,6 +714,11 @@ void Wire::collect()
         continue;  // overlapping on the same layer: a junction
       }
     } else if (s.layer >= 0) {
+      if (std::abs(s.layer - shape_.layer) <= options_.diagonal_depth
+          && std::max(lo(s, p_) - p1_, p0_ - hi(s, p_))
+                 <= diagonal_reach_[s.layer]) {
+        parallels_[s.layer].push_back(i);
+      }
       const int overlap = std::min(p1_, hi(s, p_)) - std::max(p0_, lo(s, p_));
       if (overlap < options_.cover_overlap * w_) {
         // Beside the wire: a diagonal candidate on a nearby layer, within
@@ -1137,9 +1145,13 @@ std::pair<int, int> Wire::nearestParallel(const int k,
 {
   int best = -1;
   int best_gap = 0;
-  for (const int i : near_) {
+  const auto candidates = parallels_.find(k);
+  if (candidates == parallels_.end()) {
+    return {best, best_gap};
+  }
+  for (const int i : candidates->second) {
     const EvalBox& s = boxes_[i];
-    if (s.layer != k || lo(s, a_) > x0 || hi(s, a_) < x1) {
+    if (lo(s, a_) > x0 || hi(s, a_) < x1) {
       continue;
     }
     const int gap = right_side ? lo(s, p_) - p1_ : p0_ - hi(s, p_);
@@ -1478,6 +1490,36 @@ Evaluator::Evaluator(const fsv::Stack& stack,
         facing_reach_[i],
         *std::ranges::max_element(diagonal_reach_[i]),
     });
+  }
+}
+
+void Evaluator::reach(const EvalBox& box, std::vector<odb::Rect>& rects) const
+{
+  const int l = box.layer;
+  const bool x_along = box.rect.dx() >= box.rect.dy();
+  // In 64 bits and clamped, so a box near the coordinate limits still
+  // finds its neighbors.
+  auto clamped = [](const int64_t v) {
+    return static_cast<int>(std::clamp<int64_t>(
+        v, std::numeric_limits<int>::min(), std::numeric_limits<int>::max()));
+  };
+  auto grow = [&](const int along, const int across) {
+    const int64_t dx = x_along ? along : across;
+    const int64_t dy = x_along ? across : along;
+    return odb::Rect(clamped(int64_t{box.rect.xMin()} - dx),
+                     clamped(int64_t{box.rect.yMin()} - dy),
+                     clamped(int64_t{box.rect.xMax()} + dx),
+                     clamped(int64_t{box.rect.yMax()} + dy));
+  };
+  rects.clear();
+  for (int k = 0; k < layerCount(); k++) {
+    if (k == l) {
+      rects.push_back(grow(facing_reach_[l], lateral_reach_[l]));
+    } else {
+      const bool beside = std::abs(k - l) <= options_.diagonal_depth;
+      rects.push_back(
+          grow(crossing_reach_[l], beside ? diagonal_reach_[l][k] : 0));
+    }
   }
 }
 

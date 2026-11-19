@@ -32,6 +32,14 @@ PASSFAIL_TESTS = [
     "option_errors_asap7",
     "pins_corner_asap7",
     "routed_short_edge_asap7",
+    "write_mux_fanout_asap7",
+    "write_ports_fanout_asap7",
+    "one_group_asap7",
+    "wide_word_asap7",
+    "write_mask_wide_asap7",
+    "write_mask_groups_asap7",
+    "fold_ten_groups_asap7",
+    "fold_odd_groups_asap7",
     "read_drive_asap7",
 ]
 

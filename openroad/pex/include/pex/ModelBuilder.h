@@ -117,6 +117,11 @@ struct BuildOptions
 std::string buildFingerprint(const fsv::Stack& stack,
                              const BuildOptions& options);
 
+// A fingerprint of the stack alone (its layers, dielectrics and vias with
+// their numbers), which a model records so that it is never used with a
+// stack it was not built from.
+std::string stackFingerprint(const fsv::Stack& stack);
+
 // The covering contexts of a layer on each side: no layer first (the
 // substrate below, open above), then the tabulated covers nearest first.
 // A conductor sitting on the ground plane is the ground and does not

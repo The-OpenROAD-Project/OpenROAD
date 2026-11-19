@@ -2,6 +2,10 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc", "python_wrap_library")
+load("//bazel:tcl_encode_or.bzl", "tcl_encode")
+load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -87,6 +91,61 @@ cc_library(
     ],
 )
 
+# Resistance of wires and vias from the stack.
+cc_library(
+    name = "resistance",
+    srcs = ["src/Resistance.cpp"],
+    hdrs = ["include/pex/Resistance.h"],
+    includes = ["include"],
+    deps = [
+        "//openroad/fsv:stack",
+        "//openroad/odb/src/db",
+    ],
+)
+
+# A net's resistor network.
+cc_library(
+    name = "network",
+    srcs = ["src/Network.cpp"],
+    hdrs = ["include/pex/Network.h"],
+    includes = ["include"],
+    deps = [
+        ":resistance",
+        "//openroad/odb/src/db",
+    ],
+)
+
+# Extraction of a block into ODB parasitics.
+cc_library(
+    name = "extractor",
+    srcs = ["src/Extractor.cpp"],
+    hdrs = ["include/pex/Extractor.h"],
+    includes = ["include"],
+    deps = [
+        ":evaluator",
+        ":index",
+        ":model",
+        ":network",
+        ":patterns",
+        ":resistance",
+        "//openroad/fsv:geometry",
+        "//openroad/fsv:net_window",
+        "//openroad/fsv:stack",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/wireNormalizer",
+        "//openroad/utl",
+    ],
+)
+
+# SPEF from ODB parasitics.
+cc_library(
+    name = "spef_writer",
+    srcs = ["src/SpefWriter.cpp"],
+    hdrs = ["include/pex/SpefWriter.h"],
+    includes = ["include"],
+    deps = ["//openroad/odb/src/db"],
+)
+
 # The model file.
 cc_library(
     name = "model_json",
@@ -100,4 +159,111 @@ cc_library(
     ],
 )
 
+# Extraction checked against the field solver.
+cc_library(
+    name = "compare",
+    srcs = ["src/Compare.cpp"],
+    hdrs = ["include/pex/Compare.h"],
+    includes = ["include"],
+    deps = [
+        "//openroad/fsv",
+        "//openroad/fsv:net_window",
+        "//openroad/fsv:stack",
+        "//openroad/odb/src/db",
+    ],
+)
+
+# The state behind the commands.
+cc_library(
+    name = "pex",
+    srcs = ["src/Pex.cpp"],
+    hdrs = ["include/pex/Pex.h"],
+    includes = ["include"],
+    deps = [
+        ":compare",
+        ":extractor",
+        ":model",
+        ":model_builder",
+        ":model_json",
+        ":spef_writer",
+        "//openroad/fsv:stack",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+    ],
+)
+
+cc_library(
+    name = "ui",
+    srcs = [
+        "src/MakePex.cpp",
+        ":swig",
+        ":tcl",
+    ],
+    hdrs = ["include/pex/MakePex.h"],
+    includes = ["include"],
+    deps = [
+        ":extractor",
+        ":pex",
+        "//:ord",
+        "//openroad/utl",
+        "@tcl_lang//:tcl",
+    ],
+)
+
+tcl_encode(
+    name = "tcl",
+    srcs = ["src/Pex.tcl"],
+    char_array_name = "pex_tcl_inits",
+    namespace = "pex",
+)
+
+tcl_wrap_cc(
+    name = "swig",
+    srcs = [
+        "src/Pex.i",
+        "//:error_swig",
+    ],
+    module = "pex",
+    namespace_prefix = "pex",
+    root_swig_src = "src/Pex.i",
+    swig_includes = ["src"],
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "src/Pex-py.i",
+        "//:error_swig-py",
+    ],
+    module = "pex_py",
+    root_swig_src = "src/Pex-py.i",
+    swig_includes = ["src"],
+)
+
+# Compiled into //:_openroad.so with the other Python modules, so that it
+# shares the session the Tcl commands use.
+python_wrap_library(
+    name = "py_wrap",
+    deps = [
+        ":extractor",
+        ":pex",
+    ],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/Pex.tcl",
+    ],
+    visibility = ["//openroad/pex/test:__pkg__"],
+)
+
 exports_files(["README.md"])
+
+messages_txt(
+    visibility = [
+        "//docs:__pkg__",
+        "//openroad/pex/test:__pkg__",
+    ],
+)

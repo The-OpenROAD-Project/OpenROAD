@@ -382,21 +382,27 @@ proc ram_sim::check { condition message } {
 # Random writes and reads against a model of what the RAM is meant to
 # hold. Options (a dict):
 #   words, bits         the RAM's shape
-#   writes              ports: {addr data we}, `we` the enable pins, every
-#                       mask slice's, set together: a whole word written
+#   writes              ports: {addr data we}, `we` the enable pins, one
+#                       a mask slice, in slice order
+#   slices              together (every `we` pin of a port set together: a
+#                       whole word written) or independent (each drawn on
+#                       its own: of n pins, pin i writes bits
+#                       [i*bits/n, (i+1)*bits/n))
 #   reads               ports: {addr data}
 #   banked_reads        ports: {addr data bank}, the word that address in
 #                       that bank holds given by `bank_word`
 #   bank_word           a command: <bank_word> bank index -> word
 #   zero_word           a word that reads 0 and drops writes, or -1
 #   latency             0, or 1 for a read one clock after its address
-#   priority            last (the last port writing a word wins) or or
+#   priority            last (the last port writing a slice wins) or or
+#                       (the slice gets the OR of every port writing it)
 #   mem                 the words' contents to start from
 #   cycles              how many
 proc ram_sim::exercise { options } {
   set o [dict merge {writes {} reads {} banked_reads {} bank_word {}
                      zero_word -1 latency 0 priority last mem {}
-                     cycles 200} $options]
+                     slices together cycles 200} $options]
+  set independent [expr { [dict get $o slices] eq "independent" }]
   set words [dict get $o words]
   set bits [dict get $o bits]
   set abits [expr { max(1, int(ceil(log($words) / log(2)))) }]
@@ -413,15 +419,26 @@ proc ram_sim::exercise { options } {
     foreach port [dict get $o writes] {
       lassign $port addr data we
       set a [expr { rand() < 0.33 ? $same : int(rand() * $words) }]
-      set d [expr { int(rand() * (1 << $bits)) }]
+      set d [random_bits $bits]
       set e [expr { rand() < 0.7 }]
       set_bus $addr $abits $a
       set_bus $data $bits $d
+      # the bits this port writes
+      set mask 0
+      set n [llength $we]
+      set i 0
       foreach pin $we {
-        set_port $pin $e
+        set pin_e [expr { $independent ? rand() < 0.7 : $e }]
+        set_port $pin $pin_e
+        if { $pin_e } {
+          set lo [expr { $i * $bits / $n }]
+          set hi [expr { ($i + 1) * $bits / $n }]
+          set mask [expr { $mask | ((1 << $hi) - (1 << $lo)) }]
+        }
+        incr i
       }
-      if { $e } {
-        lappend written $a $d
+      if { $mask } {
+        lappend written $a $d $mask
       }
     }
     cycle clk
@@ -432,16 +449,20 @@ proc ram_sim::exercise { options } {
     }
     set next $mem
     set hit [dict create]
-    foreach {a d} $written {
+    # hit: the bits of each word written so far this cycle
+    foreach {a d mask} $written {
       if { $a == $zero } {
         continue
       }
-      if { [dict get $o priority] eq "or" && [dict exists $hit $a] } {
-        lset next $a [expr { [lindex $next $a] | $d }]
-      } else {
-        lset next $a $d
+      set before [expr { [dict exists $hit $a] ? [dict get $hit $a] : 0 }]
+      # the bits this port's data replaces: all it writes, or with
+      # -write_priority or those no earlier port wrote, the rest ORed in
+      set replaced $mask
+      if { [dict get $o priority] eq "or" } {
+        set replaced [expr { $mask & ~$before }]
       }
-      dict set hit $a 1
+      lset next $a [expr { ([lindex $next $a] & ~$replaced) | ($d & $mask) }]
+      dict set hit $a [expr { $before | $mask }]
     }
     set mem $next
     # reads
@@ -472,6 +493,53 @@ proc ram_sim::exercise { options } {
     }
   }
   return $mem
+}
+
+# A random value of `bits` bits. rand() has 31 bits: a wider value is
+# drawn 16 bits at a time, or its low bits would all be 0.
+proc ram_sim::random_bits { bits } {
+  if { $bits <= 32 } {
+    return [expr { int(rand() * (1 << $bits)) }]
+  }
+  set v 0
+  for { set b 0 } { $b < $bits } { incr b 16 } {
+    set v [expr { $v | (int(rand() * 65536) << $b) }]
+  }
+  return [expr { $v & ((1 << $bits) - 1) }]
+}
+
+# The sinks of each net driven inside a word, by an instance named
+# storage_*: a dict, net name -> sinks.
+proc ram_sim::word_fanouts { } {
+  set out [dict create]
+  foreach net [[ord::get_db_block] getNets] {
+    set driver ""
+    set sinks 0
+    foreach iterm [$net getITerms] {
+      if { [$iterm isOutputSignal] } {
+        set driver [[$iterm getInst] getName]
+      } elseif { [$iterm isInputSignal] } {
+        incr sinks
+      }
+    }
+    if { [string match "storage_*" $driver] } {
+      dict set out [$net getName] $sinks
+    }
+  }
+  return $out
+}
+
+# The net driven inside a word with the most sinks: {net sinks}.
+proc ram_sim::worst_fanout { } {
+  set worst 0
+  set worst_net ""
+  dict for {net sinks} [word_fanouts] {
+    if { $sinks > $worst } {
+      set worst $sinks
+      set worst_net $net
+    }
+  }
+  return [list $worst_net $worst]
 }
 
 # Instances whose master is `pattern` (glob).

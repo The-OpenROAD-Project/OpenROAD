@@ -441,18 +441,22 @@ class RamGen
   int word_bits_{0};    // the word's bits, short of the folds' pads
   int slice_width_{0};  // a slice's columns: its bits, and its select
   // with -bit_folds a word is written whole: its write logic (enables,
-  // priority, hold, clock gate, reset tie, select inverters) built in its
-  // first fold and shared by the others, keyed (row, word in the row)
+  // priority, clock gate, reset tie, select inverters) built in its first
+  // fold and shared by the others, keyed (row, word in the row)
   struct WordWrite
   {
     odb::dbNet* we{nullptr};
-    odb::dbNet* hold{nullptr};
     odb::dbNet* gclock{nullptr};
     odb::dbNet* reset_off{nullptr};
     std::vector<odb::dbNet*> take;
     std::vector<odb::dbNet*> select_b;
   };
   std::map<std::pair<int, int>, WordWrite> word_write_;
+  // An enable of more than kDriveGroup groups: a buffer between it (or a
+  // port's take, -1 for the enable) and each kDriveGroup of its group
+  // buffers, shared by a word's folds. Keyed by row, word, the slice (0
+  // with -bit_folds), the port or -1, and the group of groups.
+  std::map<std::tuple<int, int, int, int, int>, odb::dbNet*> super_nets_;
   int sliceOffset(int slice) const
   {
     return bit_folds_ > 1 ? 0 : slice * slice_width_;
