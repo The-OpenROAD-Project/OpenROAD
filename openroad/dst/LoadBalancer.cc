@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "LoadBalancer.h"
+#include "openroad/dst/LoadBalancer.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -12,11 +12,11 @@
 #include <string>
 #include <vector>
 
-#include "BalancerConnection.h"
 #include "absl/synchronization/mutex.h"
 #include "boost/asio.hpp"
 #include "boost/bind/bind.hpp"
 #include "boost/thread/thread.hpp"
+#include "openroad/dst/BalancerConnection.h"
 #include "utl/Logger.h"
 
 using boost::asio::ip::udp;

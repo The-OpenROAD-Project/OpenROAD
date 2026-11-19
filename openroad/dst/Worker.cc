@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "Worker.h"
+#include "openroad/dst/Worker.h"
 
-#include "WorkerConnection.h"
 #include "boost/asio.hpp"
 #include "boost/bind/bind.hpp"
 #include "boost/thread/thread.hpp"
+#include "openroad/dst/WorkerConnection.h"
 #include "utl/Logger.h"
 
 namespace dst {

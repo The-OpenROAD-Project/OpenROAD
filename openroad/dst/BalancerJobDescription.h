@@ -7,7 +7,7 @@
 #include <string>
 
 #include "boost/serialization/base_object.hpp"
-#include "dst/JobMessage.h"
+#include "openroad/dst/JobMessage.h"
 
 namespace boost::serialization {
 class access;

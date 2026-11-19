@@ -3,15 +3,15 @@
 #include <string>
 
 #include "HelperCallBack.h"
-#include "Worker.h"
 #include "boost/asio.hpp"
 #include "boost/asio/ip/tcp.hpp"
 #include "boost/bind/bind.hpp"
 #include "boost/system/system_error.hpp"
 #include "boost/thread/thread.hpp"
-#include "dst/Distributed.h"
-#include "dst/JobMessage.h"
 #include "gtest/gtest.h"
+#include "openroad/dst/Distributed.h"
+#include "openroad/dst/JobMessage.h"
+#include "openroad/dst/Worker.h"
 #include "utl/Logger.h"
 
 namespace dst {

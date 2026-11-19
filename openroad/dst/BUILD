@@ -14,27 +14,23 @@ package(
 cc_library(
     name = "dst_impl",
     srcs = [
-        "src/BalancerConnection.cc",
-        "src/Distributed.cc",
-        "src/JobMessage.cc",
-        "src/LoadBalancer.cc",
-        "src/Worker.cc",
-        "src/WorkerConnection.cc",
+        "BalancerConnection.cc",
+        "Distributed.cc",
+        "JobMessage.cc",
+        "LoadBalancer.cc",
+        "Worker.cc",
+        "WorkerConnection.cc",
     ],
     hdrs = [
-        "include/dst/BalancerJobDescription.h",
-        "include/dst/BroadcastJobDescription.h",
-        "include/dst/Distributed.h",
-        "include/dst/JobCallBack.h",
-        "include/dst/JobMessage.h",
-        "src/BalancerConnection.h",
-        "src/LoadBalancer.h",
-        "src/Worker.h",
-        "src/WorkerConnection.h",
-    ],
-    includes = [
-        "include",
-        "src",
+        "BalancerConnection.h",
+        "BalancerJobDescription.h",
+        "BroadcastJobDescription.h",
+        "Distributed.h",
+        "JobCallBack.h",
+        "JobMessage.h",
+        "LoadBalancer.h",
+        "Worker.h",
+        "WorkerConnection.h",
     ],
     visibility = [
         "//openroad/dst:__subpackages__",
@@ -57,14 +53,11 @@ cc_library(
 cc_library(
     name = "dst",
     hdrs = [
-        "include/dst/BalancerJobDescription.h",
-        "include/dst/BroadcastJobDescription.h",
-        "include/dst/Distributed.h",
-        "include/dst/JobCallBack.h",
-        "include/dst/JobMessage.h",
-    ],
-    includes = [
-        "include",
+        "BalancerJobDescription.h",
+        "BroadcastJobDescription.h",
+        "Distributed.h",
+        "JobCallBack.h",
+        "JobMessage.h",
     ],
     deps = [
         ":dst_impl",
@@ -76,15 +69,12 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "src/MakeDistributed.cc",
+        "MakeDistributed.cc",
         ":swig",
         ":tcl",
     ],
     hdrs = [
-        "include/dst/MakeDistributed.h",
-    ],
-    includes = [
-        "include",
+        "MakeDistributed.h",
     ],
     deps = [
         ":dst_impl",
@@ -97,7 +87,7 @@ cc_library(
 tcl_encode(
     name = "tcl",
     srcs = [
-        "src/Distributed.tcl",
+        "Distributed.tcl",
     ],
     char_array_name = "dst_tcl_inits",
     namespace = "dst",
@@ -106,20 +96,18 @@ tcl_encode(
 tcl_wrap_cc(
     name = "swig",
     srcs = [
-        "src/Distributed.i",
+        "Distributed.i",
         "//:error_swig",
     ],
     module = "dst",
     namespace_prefix = "dst",
-    root_swig_src = "src/Distributed.i",
-    swig_includes = [
-        "src",
-    ],
+    root_swig_src = "Distributed.i",
     deps = [
         "//openroad/odb:swig",
     ],
 )
 
 messages_txt(
+    src_dir = ".",
     visibility = ["//docs:__pkg__"],
 )

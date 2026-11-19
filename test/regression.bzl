@@ -322,10 +322,17 @@ def messages_txt(name = "messages_txt", src_patterns = None, src_dir = "src", re
         visibility: Bazel visibility.
     """
     if src_patterns == None:
-        prefix = src_dir + ("/**/*." if recursive else "/*.")
+        if src_dir in ("", "."):
+            prefix = "**/*." if recursive else "*."
+        else:
+            prefix = src_dir + ("/**/*." if recursive else "/*.")
         src_patterns = [prefix + ext for ext in _MESSAGE_SRC_EXTENSIONS]
 
-    srcs = native.glob(src_patterns, allow_empty = True)
+    srcs = native.glob(
+        src_patterns,
+        exclude = ["test/**"] if src_dir in ("", ".") else [],
+        allow_empty = True,
+    )
     if extra_srcs:
         srcs = srcs + extra_srcs
 
