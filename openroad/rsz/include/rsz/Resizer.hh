@@ -35,6 +35,7 @@
 #include "odb/geom.h"
 #include "rsz/GlobalSizingConfig.hh"
 #include "rsz/OdbCallBack.hh"
+#include "rsz/PlacementDensityGrid.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
@@ -217,6 +218,16 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   double utilization();
   // Maximum utilizable area (core area * utilization)
   double maxArea() const;
+  // Placement density of region, given in block (DBU) coordinates, counted
+  // as the GUI's placement density heat map counts it; see
+  // PlacementDensityGrid.  The bins are the global router's gcells, so the
+  // density of a gcell is exact; they need the routing layers set.  The first
+  // call builds the grid, which odb callbacks then keep current, so later
+  // calls cost a walk over the bins the region covers.
+  PlacementDensity placementDensity(const odb::Rect& region);
+  // Reports the placement density of region, as placementDensity() counts
+  // it.  Backs report_placement_density.
+  void reportPlacementDensity(const odb::Rect& region);
   sta::dbSta* sta() const { return sta_; }
   const sta::MinMax* maxAnalysisMode() const { return max_; }
   const sta::StaState* staState() const { return this; }
@@ -1179,6 +1190,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   std::unordered_map<sta::LibertyPort*, InputSlews> input_slew_map_;
 
   std::unique_ptr<OdbCallBack> db_cbk_;
+  // Made by the first placementDensity() call on a block.
+  std::unique_ptr<PlacementDensityGrid> density_grid_;
 
   // Restrict default sizing such that one sizing move cannot increase area or
   // leakage by more than 4X.  Subsequent sizing moves can exceed the 4X limit.

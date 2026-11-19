@@ -500,6 +500,42 @@ proc report_design_area { args } {
   utl::report "Design area ${area} um^2 ${util}% utilization."
 }
 
+sta::define_cmd_args "report_placement_density" {[-region {x1 y1 x2 y2}]}
+
+proc report_placement_density { args } {
+  sta::parse_key_args "report_placement_density" args keys {-region} flags {}
+  sta::check_argc_eq0 "report_placement_density" $args
+
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    utl::error RSZ 3214 "No design block found."
+  }
+
+  if { [info exists keys(-region)] } {
+    set region $keys(-region)
+    if { [llength $region] != 4 } {
+      utl::error RSZ 3215 "-region requires 4 values: x1 y1 x2 y2."
+    }
+    lassign $region x1 y1 x2 y2
+    foreach { name value } [list x1 $x1 y1 $y1 x2 $x2 y2 $y2] {
+      sta::check_float $name $value
+    }
+    set x1 [ord::microns_to_dbu $x1]
+    set y1 [ord::microns_to_dbu $y1]
+    set x2 [ord::microns_to_dbu $x2]
+    set y2 [ord::microns_to_dbu $y2]
+  } else {
+    # The core, since that is the only place a cell can go.
+    set core [$block getCoreArea]
+    set x1 [$core xMin]
+    set y1 [$core yMin]
+    set x2 [$core xMax]
+    set y2 [$core yMax]
+  }
+
+  rsz::report_placement_density_cmd $x1 $y1 $x2 $y2
+}
+
 sta::define_cmd_args "report_floating_nets" {[-verbose] [> filename] [>> filename]}
 
 sta::proc_redirect report_floating_nets {

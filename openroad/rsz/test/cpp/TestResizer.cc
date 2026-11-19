@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -19,8 +20,11 @@
 #include "move/SizeUpGenerator.hh"
 #include "move/VtSwapGenerator.hh"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/defin.h"
+#include "odb/geom.h"
 #include "policy/SetupLegacyPolicy.hh"
+#include "rsz/PlacementDensityGrid.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
@@ -1532,6 +1536,81 @@ TEST_F(TestResizer, IsClockCellCandidateRequiresLefMaster)
       resizer_.isClockCellCandidate(lib->findLibertyCell("INTRINSIC_FAST")));
   EXPECT_TRUE(
       resizer_.isClockCellCandidate(db_network_->findLibertyCell("CLKBUF_X1")));
+}
+
+TEST_F(TestResizer, PlacementDensityTracksPlacedInstances)
+{
+  odb::dbSite* site = nullptr;
+  for (odb::dbSite* lib_site : lib_->getSites()) {
+    if (lib_site->getClass() == odb::dbSiteClass::CORE) {
+      site = lib_site;
+      break;
+    }
+  }
+  ASSERT_NE(site, nullptr);
+  const int site_width = site->getWidth();
+  const int row_height = site->getHeight();
+
+  // Ten rows of 100 sites, 19 x 14 microns.
+  odb::dbChip* chip = odb::dbChip::create(db_.get(), db_->getTech());
+  block_ = odb::dbBlock::create(chip, "top");
+  block_->setDieArea(odb::Rect(0, 0, 100 * site_width, 10 * row_height));
+  for (int row = 0; row < 10; row++) {
+    odb::dbRow::create(block_,
+                       ("row" + std::to_string(row)).c_str(),
+                       site,
+                       0,
+                       row * row_height,
+                       odb::dbOrientType::R0,
+                       odb::dbRowDir::HORIZONTAL,
+                       100,
+                       site_width);
+  }
+  block_->setCoreArea(block_->computeCoreArea());
+  const odb::Rect core = block_->getCoreArea();
+
+  // The bins are the router's gcells, which need the routing layers, and
+  // tracks on metal2 to metal4.
+  EXPECT_THROW(resizer_.placementDensity(core), std::runtime_error);
+  for (const char* name : {"metal2", "metal3", "metal4"}) {
+    odb::dbTechLayer* layer = db_->getTech()->findLayer(name);
+    odb::dbTrackGrid* tracks = odb::dbTrackGrid::create(block_, layer);
+    tracks->addGridPatternX(0, 100, layer->getPitch());
+    tracks->addGridPatternY(0, 100, layer->getPitch());
+  }
+  block_->setMaxRoutingLayer(4);
+  const int gcell = block_->getGCellTileSize();
+
+  // A buffer counts and the filler beside it does not.
+  odb::dbMaster* buffer = db_->findMaster("BUF_X1");
+  odb::dbMaster* filler = db_->findMaster("FILLCELL_X1");
+  ASSERT_NE(buffer, nullptr);
+  ASSERT_NE(filler, nullptr);
+  odb::dbInst* placed = odb::dbInst::create(block_, buffer, "placed");
+  placed->setLocation(core.xMin(), core.yMin());
+  placed->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  odb::dbInst* fill = odb::dbInst::create(block_, filler, "fill");
+  fill->setLocation(core.xMin() + buffer->getWidth(), core.yMin());
+  fill->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  const auto buffer_area
+      = static_cast<double>(placed->getBBox()->getBox().area());
+
+  const PlacementDensity density = resizer_.placementDensity(core);
+  EXPECT_EQ(density.region_area, core.area());
+  EXPECT_DOUBLE_EQ(density.instance_area, buffer_area);
+
+  // The grid follows the buffer to the far corner of the core, into the
+  // last gcell, which the router stretches to the edge of the die.
+  placed->setLocation(core.xMax() - buffer->getWidth(),
+                      core.yMax() - buffer->getHeight());
+  const odb::Rect die = block_->getDieArea();
+  const odb::Rect last_gcell(die.xMin() + (((die.dx() / gcell) - 1) * gcell),
+                             die.yMin() + (((die.dy() / gcell) - 1) * gcell),
+                             die.xMax(),
+                             die.yMax());
+  EXPECT_DOUBLE_EQ(resizer_.placementDensity(last_gcell).instance_area,
+                   buffer_area);
+  EXPECT_DOUBLE_EQ(resizer_.placementDensity(core).instance_area, buffer_area);
 }
 
 }  // namespace rsz

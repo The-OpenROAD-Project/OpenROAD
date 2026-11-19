@@ -1,0 +1,62 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 571 components and 2554 component-terminals.
+[INFO ODB-0132]     Created 5 special nets and 1142 connections.
+[INFO ODB-0133]     Created 528 nets and 1412 connections.
+[ERROR RSZ-3217] Placement density is counted per GCell, which needs the routing layers. Set them with set_routing_layers.
+RSZ-3217
+Region (10.070, 11.200) (90.250, 91.000)
+  GCell size:           2.850 x 2.850 um
+  Area inside the core:     6398.364 um^2
+  Instance area:             669.788 um^2
+  Placement density:           0.105
+Region (22.800, 22.800) (45.600, 45.600)
+  GCell size:           2.850 x 2.850 um
+  Area inside the core:      519.840 um^2
+  Instance area:             136.430 um^2
+  Placement density:           0.262
+Region (20.000, 20.000) (40.000, 40.000)
+  GCell size:           2.850 x 2.850 um
+  Area inside the core:      400.000 um^2
+  Instance area:              79.210 um^2
+  Placement density:           0.198
+Region (20.000, 20.000) (40.000, 40.000)
+  GCell size:           2.850 x 2.850 um
+  Area inside the core:      400.000 um^2
+  Instance area:              79.210 um^2
+  Placement density:           0.198
+Region (88.350, 88.350) (90.250, 91.000)
+  GCell size:           2.850 x 2.850 um
+  Area inside the core:        5.035 um^2
+  Instance area:               0.000 um^2
+  Placement density:           0.000
+Region (88.350, 88.350) (90.250, 91.000)
+  GCell size:           2.850 x 2.850 um
+  Area inside the core:        5.035 um^2
+  Instance area:               0.798 um^2
+  Placement density:           0.158
+Region (88.350, 88.350) (90.250, 91.000)
+  GCell size:           2.850 x 2.850 um
+  Area inside the core:        5.035 um^2
+  Instance area:               0.798 um^2
+  Placement density:           0.158
+Region (88.350, 88.350) (90.250, 91.000)
+  GCell size:           2.850 x 2.850 um
+  Area inside the core:        5.035 um^2
+  Instance area:               0.000 um^2
+  Placement density:           0.000
+Region (0.000, 0.000) (20.000, 20.000)
+  GCell size:           2.850 x 2.850 um
+  Area inside the core:       87.384 um^2
+  Instance area:               0.895 um^2
+  Placement density:           0.010
+Region (0.000, 0.000) (5.000, 5.000) is outside the core.
+[ERROR RSZ-3216] Region (20.000, 20.000) (20.000, 40.000) is empty.
+RSZ-3216
+[ERROR RSZ-3215] -region requires 4 values: x1 y1 x2 y2.
+RSZ-3215
+[ERROR STA-0571] y2 'abc' is not a float.
+STA-0571
+[ERROR STA-0564] report_placement_density positional arguments not supported.
+STA-0564
