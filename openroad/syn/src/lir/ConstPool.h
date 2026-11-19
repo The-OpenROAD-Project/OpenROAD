@@ -41,13 +41,13 @@ class ConstPool
   // hold constNumWords(width) words each using the ConstView.h encoding
   // (0 = (0, 0), 1 = (1, 0), x = (0, 1)); bits above `width` are ignored, and
   // (1, 1) bits are normalized to x = (0, 1).
-  ConstId intern(uint32_t width,
+  ConstId intern(int width,
                  std::span<const uint64_t> bits,
                  std::span<const uint64_t> x_mask);
   // A two-state value, zero-extended or truncated to `width`.
-  ConstId internUint(uint32_t width, uint64_t value);
+  ConstId internUint(int width, uint64_t value);
   // Every bit set to `value`.
-  ConstId internFill(uint32_t width, LogicValue value);
+  ConstId internFill(int width, LogicValue value);
   // MSB-first digits 0, 1, x/X (z is not a constant; see ConstView.h); the
   // width is the number of digits. FailedPrecondition for a new constant in
   // read-only mode.
@@ -84,21 +84,22 @@ class ConstPool
   // stored in the pool or, for lookups, in the caller's buffer.
   struct Key
   {
-    uint32_t width = 0;
+    int width = 0;
     const uint64_t* words = nullptr;
 
     bool operator==(const Key& other) const;
     template <typename H>
     friend H AbslHashValue(H h, const Key& key)
     {
-      return H::combine_contiguous(H::combine(std::move(h), key.width),
-                                   key.words,
-                                   2 * size_t{constNumWords(key.width)});
+      return H::combine_contiguous(
+          H::combine(std::move(h), key.width),
+          key.words,
+          2 * static_cast<size_t>(constNumWords(key.width)));
     }
   };
 
   // `words` must be normalized (bits above the width cleared).
-  ConstId internNormalized(uint32_t width, const uint64_t* words);
+  ConstId internNormalized(int width, const uint64_t* words);
   absl::Mutex* lockIfParallel() const
   {
     return isParallelWrite() ? &mutex_ : nullptr;
@@ -124,7 +125,7 @@ class ConstPool
   mutable absl::Mutex mutex_;
   std::vector<Key> entries_ ABSL_GUARDED_BY(mutex_);  // by ConstId
   // Keys point into `chunks_`.
-  absl::flat_hash_map<Key, uint32_t> index_ ABSL_GUARDED_BY(mutex_);
+  absl::flat_hash_map<Key, ConstId> index_ ABSL_GUARDED_BY(mutex_);
   std::vector<std::unique_ptr<uint64_t[]>> chunks_ ABSL_GUARDED_BY(mutex_);
   size_t chunk_used_ ABSL_GUARDED_BY(mutex_) = kChunkWords;
   size_t chunk_words_ ABSL_GUARDED_BY(mutex_) = 0;

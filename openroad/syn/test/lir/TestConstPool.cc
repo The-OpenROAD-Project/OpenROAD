@@ -2,6 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <string>
 
@@ -125,13 +126,13 @@ TEST(ConstPoolTest, ViewsStayValidAsThePoolGrows)
   const ConstView small = pool.get(pool.internUint(16, 0xBEEF));
   // A constant larger than a chunk gets its own storage.
   const ConstView huge = pool.get(pool.internFill(40000, LogicValue::kX));
-  for (uint64_t i = 0; i < 20000; ++i) {
-    pool.internUint(64, i);
+  for (int i = 0; i < 20000; ++i) {
+    pool.internUint(64, static_cast<uint64_t>(i));
   }
   EXPECT_EQ(small.toUint64(), 0xBEEF);
   EXPECT_TRUE(huge.isFill(LogicValue::kX));
   EXPECT_EQ(pool.size(), 20002u);
-  EXPECT_GT(pool.memoryBytes(), 20000 * 16);
+  EXPECT_GT(pool.memoryBytes(), size_t{20000} * 16);
 }
 
 TEST(ConstViewTest, SmallViewsHoldTheirValue)

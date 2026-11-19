@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <iterator>
 #include <set>
 #include <string>
+#include <string_view>
 
 #include "gtest/gtest.h"
 #include "syn/lir/Op.h"
@@ -26,18 +28,18 @@ TEST(OpTest, EveryOpHasAUniqueName)
 {
   std::set<std::string> names;
   for (int i = 0; i < kNumOps; ++i) {
-    const char* name = opName(static_cast<Op>(i));
-    ASSERT_NE(name, nullptr) << "op " << i;
-    EXPECT_STRNE(name, "?") << "op " << i;
-    names.insert(name);
+    const std::string_view name = opName(static_cast<Op>(i));
+    ASSERT_FALSE(name.empty()) << "op " << i;
+    EXPECT_NE(name, "?") << "op " << i;
+    names.insert(std::string(name));
   }
-  EXPECT_EQ(names.size(), kNumOps);
-  EXPECT_STREQ(opName(Op::kNumOps), "?");
-  EXPECT_STREQ(opName(Op::kAnd), "and");
-  EXPECT_STREQ(opName(Op::kRegOut), "reg_out");
-  EXPECT_STREQ(opName(Op::kCell), "cell");
-  EXPECT_STREQ(opName(Op::kTribuf), "tribuf");
-  EXPECT_STREQ(opName(Op::kTriJoin), "tri_join");
+  EXPECT_EQ(std::ssize(names), kNumOps);
+  EXPECT_EQ(opName(Op::kNumOps), "?");
+  EXPECT_EQ(opName(Op::kAnd), "and");
+  EXPECT_EQ(opName(Op::kRegOut), "reg_out");
+  EXPECT_EQ(opName(Op::kCell), "cell");
+  EXPECT_EQ(opName(Op::kTribuf), "tribuf");
+  EXPECT_EQ(opName(Op::kTriJoin), "tri_join");
 }
 
 TEST(OpTest, StateClassification)

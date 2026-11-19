@@ -10,6 +10,8 @@
 #pragma once
 
 #include <array>
+#include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <span>
@@ -31,20 +33,23 @@ enum class LogicValue : uint8_t
 // Returns '0', '1' or 'x'.
 char logicValueChar(LogicValue value);
 
-constexpr uint32_t constNumWords(uint32_t width)
+constexpr int constNumWords(int width)
 {
-  return (width + 63) / 64;
+  assert(width >= 0);
+  return width == 0 ? 0 : (width - 1) / 64 + 1;
 }
 
 // Mask of the valid bits in the last word of a `width`-bit plane.
-constexpr uint64_t constLastWordMask(uint32_t width)
+constexpr uint64_t constLastWordMask(int width)
 {
-  return width % 64 == 0 ? ~uint64_t{0} : (uint64_t{1} << (width % 64)) - 1;
+  assert(width >= 0);
+  const uint32_t rem = static_cast<uint32_t>(width % 64);
+  return rem == 0 ? ~uint64_t{0} : (uint64_t{1} << rem) - 1;
 }
 
 // kConst objects of at most this width hold their value in the object record
 // instead of the ConstPool (Module.h, ObjFlags::inline_const).
-inline constexpr uint32_t kMaxInlineConstWidth = 32;
+inline constexpr int kMaxInlineConstWidth = 32;
 
 // A read-only view of a constant. A small (inline) constant is copied into
 // the view, so keep the view alive while using its bits() and xMask() spans.
@@ -54,26 +59,26 @@ class ConstView
   ConstView() = default;
   // `words` holds constNumWords(width) `bits` words followed by as many
   // `x_mask` words, normalized.
-  ConstView(uint32_t width, const uint64_t* words)
-      : width_(width), words_(words)
+  ConstView(int width, const uint64_t* words) : width_(width), words_(words)
   {
+    assert(width >= 0);
   }
   // A constant of at most kMaxInlineConstWidth bits, held by value. Bits
   // above the width are ignored.
-  static ConstView fromInline(uint32_t width, uint32_t bits, uint32_t x_mask);
+  static ConstView fromInline(int width, uint32_t bits, uint32_t x_mask);
 
-  uint32_t width() const { return width_; }
-  uint32_t numWords() const { return constNumWords(width_); }
+  int width() const { return width_; }
+  int numWords() const { return constNumWords(width_); }
   std::span<const uint64_t> bits() const ABSL_ATTRIBUTE_LIFETIME_BOUND
   {
-    return {words(), numWords()};
+    return {words(), static_cast<size_t>(numWords())};
   }
   std::span<const uint64_t> xMask() const ABSL_ATTRIBUTE_LIFETIME_BOUND
   {
-    return {words() + numWords(), numWords()};
+    return {words() + numWords(), static_cast<size_t>(numWords())};
   }
 
-  LogicValue bit(uint32_t index) const;
+  LogicValue bit(int index) const;
   // True if no bit is X.
   bool isTwoState() const;
   // True if every bit equals `value` (e.g. all-0 or all-1 reset values).
@@ -92,7 +97,7 @@ class ConstView
     return words_ != nullptr ? words_ : small_.data();
   }
 
-  uint32_t width_ = 0;
+  int width_ = 0;
   const uint64_t* words_ = nullptr;         // null for a small constant
   std::array<uint64_t, 2> small_ = {0, 0};  // bits, x_mask of a small constant
 };
