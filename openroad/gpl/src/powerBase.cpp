@@ -208,7 +208,9 @@ void PowerBase::updateClockLeafNets()
       continue;
     }
     const float toggles = sourceToggles(clockDriver(sinks.front()->getNet()));
-    leaf_net.weight = 1 + net_weight_ * toggles;
+    // A clock gate sink's net is placed already; only its power is new.
+    const float wire = sinks.front()->isOutputSignal() ? 0 : 1;
+    leaf_net.weight = wire + net_weight_ * toggles;
     leaf_nets.push_back(std::move(leaf_net));
   }
   log_->info(GPL,
