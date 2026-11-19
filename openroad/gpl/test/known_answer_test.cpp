@@ -272,5 +272,21 @@ TEST_F(KnownAnswerTest, UnplacedUnconnectedCellsSpread)
   expectEvenlySpread(cells, builder.core());
 }
 
+TEST_F(KnownAnswerTest, UnanchoredInitialPlaceDoesNotDiverge)
+{
+  DesignBuilder builder(db_.get());
+  const std::vector<odb::dbInst*> chain = makeChain(builder, 11);
+
+  PlaceOptions options;
+  options.skipIoMode = true;
+  Replace replace{db_.get(), sta_.get(), nullptr, nullptr, nullptr, &logger_};
+  replace.doInitialPlace(1, options);
+
+  EXPECT_NEAR(center(chain[5]).x(), builder.core().xCenter(), 1);
+  for (std::size_t i = 1; i < chain.size(); ++i) {
+    EXPECT_LT(center(chain[i - 1]).x(), center(chain[i]).x());
+  }
+}
+
 }  // namespace
 }  // namespace gpl
