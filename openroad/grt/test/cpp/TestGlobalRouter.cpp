@@ -294,6 +294,23 @@ TEST_F(GlobalRouterTest, RudyLineNetOnTileBoundaryGoesToOneTile)
   }
 }
 
+TEST_F(GlobalRouterTest, RudyGridCoversADieNotAtTheOrigin)
+{
+  // Grow the die down/left so the design stays inside it.
+  const odb::Rect gcd_die = block_->getDieArea();
+  const odb::Rect die(-20000, -20000, gcd_die.xMax(), gcd_die.yMax());
+  block_->setDieArea(die);
+
+  grt::Rudy* rudy = grt_.getRudy();
+  const auto [grid_x, grid_y] = rudy->getGridSize();
+  ASSERT_GT(grid_x, 0);
+  ASSERT_GT(grid_y, 0);
+
+  // The tiles cover the die exactly: the last column/row ends on its edge.
+  EXPECT_EQ(rudy->getTile(0, 0).getRect().ll(), die.ll());
+  EXPECT_EQ(rudy->getTile(grid_x - 1, grid_y - 1).getRect().ur(), die.ur());
+}
+
 TEST_F(GlobalRouterTest, RudyNetsOnTheDieRemainderAndEdgeKeepTheirWire)
 {
   constexpr int kWireWidth = 100;
