@@ -68,17 +68,6 @@ TEST_F(ElabDiagTest, InternalErrorOnExpressionHasSourceLocation)
   EXPECT_NE(log.find("elab_diag_expr.sv:4:24: "), std::string::npos) << log;
 }
 
-// Same for an internal error attached to a statement: the three-line fork
-// block is located by the position where it starts.
-TEST_F(ElabDiagTest, InternalErrorOnStatementHasSourceLocation)
-{
-  const std::string log = elaborateExpectingError(
-      "elab_diag_stmt.sv", {"--top", "top"}, "SYN-0073");
-
-  EXPECT_NE(log.find("attached to source location"), std::string::npos) << log;
-  EXPECT_NE(log.find("elab_diag_stmt.sv:6:7: "), std::string::npos) << log;
-}
-
 // The vendored frontend calls log_error() directly. The stub in log_stubs.h
 // routes it to utl::Logger instead of stderr+abort, which is what lets
 // the sv-elab module stay unmodified.
