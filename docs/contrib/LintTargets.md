@@ -92,7 +92,7 @@ hub because `tclint` pins `pathspec==0.11.2`, which black >= 26 cannot use.
 
 C/C++ formatting is controlled by the `.clang-format` files in the tree.
 `bazel/cc_ls_files.sh` lists the files it covers: submodules such as
-`src/sta`, `src/odb/src/codeGenerator/` templates and `third-party/` are
+`openroad/sta`, `openroad/odb/src/codeGenerator/` templates and `third-party/` are
 excluded, as in the clang-format GitHub workflows. Files with no
 `.clang-format` above them are left alone (`--fallback-style=none`), so a
 downstream workspace running `//:fix_lint` keeps its own C/C++ style. The

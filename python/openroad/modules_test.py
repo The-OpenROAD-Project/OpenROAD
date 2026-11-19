@@ -17,7 +17,9 @@ from openroad import Design, Tech
 
 import _openroad_loader
 
-TEST_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "src", "ant", "test")
+TEST_DIR = os.path.join(
+    os.path.dirname(__file__), "..", "..", "openroad", "ant", "test"
+)
 
 
 class ModulesTest(unittest.TestCase):
@@ -44,7 +46,7 @@ class ModulesTest(unittest.TestCase):
 
     def test_finder_only_claims_openroad_modules(self):
         finder = next(f for f in sys.meta_path if type(f).__name__ == "_OpenRoadFinder")
-        self.assertIsNotNone(finder.find_spec("src.ant._ant_py", None))
+        self.assertIsNotNone(finder.find_spec("openroad.ant._ant_py", None))
         self.assertIsNotNone(finder.find_spec("_ord_py", None))
         # Same final name in another package, or at the top level.
         self.assertIsNone(finder.find_spec("other._ant_py", None))

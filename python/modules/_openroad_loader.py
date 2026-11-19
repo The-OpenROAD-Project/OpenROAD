@@ -15,15 +15,15 @@ import importlib.util
 import os
 import sys
 
-# The tool modules in _openroad.so. Each SWIG wrapper src/<tool>/<tool>_py.py
-# imports its extension as src.<tool>._<tool>_py; ord_py.py, at the top
+# The tool modules in _openroad.so. Each SWIG wrapper openroad/<tool>/<tool>_py.py
+# imports its extension as openroad.<tool>._<tool>_py; ord_py.py, at the top
 # level, imports _ord_py. Only these exact names are loaded from the library,
 # so a module of the same name in another package is left alone.
 _TOOLS = """
     ant cgt cts dpl drt exa fin fsv gpl grt ifp odb
     par pdn pex ppl psm rcx rmp rsz stt tap utl wmk
 """.split()
-EXTENSIONS = frozenset(["_ord_py"] + [f"src.{tool}._{tool}_py" for tool in _TOOLS])
+EXTENSIONS = frozenset(["_ord_py"] + [f"openroad.{tool}._{tool}_py" for tool in _TOOLS])
 
 
 def _find_library():
