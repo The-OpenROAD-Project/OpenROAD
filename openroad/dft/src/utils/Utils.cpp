@@ -123,22 +123,27 @@ odb::dbInst* ReplaceCell(
     }
   }
 
-  // Keep the activity annotations of the old pins on the new pins
+  // Connect the new cell to the old instance's nets, so the constraints on
+  // the wire edges of the old pins can move to the new pins
+  ConnectPinsToNets(new_instance, port_name_to_net, port_mapping);
+
+  // Keep the activity annotations and SDC constraints of the old pins and
+  // instance on the new ones
   for (odb::dbITerm* old_iterm : old_instance->getITerms()) {
     auto mapped = port_mapping.find(old_iterm->getMTerm()->getName());
     if (mapped != port_mapping.end()) {
       odb::dbITerm* new_iterm = new_instance->findITerm(mapped->second.c_str());
       if (new_iterm) {
         sta->copyUserActivity(old_iterm, new_iterm);
+        sta->moveConstraints(old_iterm, new_iterm);
       }
     }
   }
+  // Instance constraints map ports by name.
+  sta->moveConstraints(old_instance, new_instance);
 
   // Delete the old cell
   odb::dbInst::destroy(old_instance);
-
-  // Connect the new cell to the old instance's nets
-  ConnectPinsToNets(new_instance, port_name_to_net, port_mapping);
 
   // Rename as the old cell
   new_instance->rename(cell_name.c_str());
