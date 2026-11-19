@@ -658,6 +658,14 @@ void OpenRoad::linkDesign(const char* design_name,
   db_->triggerPostReadDb();
 }
 
+void OpenRoad::linkModule(const char* module_name)
+{
+  if (!dbLinkModule(module_name, verilog_network_, db_, logger_)) {
+    logger_->error(
+        ORD, 2028, "link_hier_module: module {} did not link.", module_name);
+  }
+}
+
 void OpenRoad::designCreated()
 {
   db_->triggerPostReadDb();

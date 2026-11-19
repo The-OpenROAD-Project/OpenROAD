@@ -237,6 +237,9 @@ class OpenRoad
   void linkDesign(const char* design_name,
                   bool hierarchy,
                   bool omit_filename_prop = false);
+  // Add a module of the Verilog read since to the loaded design, as a
+  // module a hierarchical instance can be switched to.
+  void linkModule(const char* module_name);
   // Used if a design is created programmatically rather than loaded
   // to notify the tools (eg dbSta, gui).
   void designCreated();
