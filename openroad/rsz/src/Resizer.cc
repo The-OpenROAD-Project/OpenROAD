@@ -507,8 +507,13 @@ void Resizer::removeBuffers(const sta::InstanceSeq& insts)
       }
     }
   } else {
-    // remove only select buffers specified by user
+    // Ignore repeated instance names; the same instance would otherwise be
+    // checked after it was already removed.
+    std::set<const sta::Instance*> seen;
     for (const sta::Instance* buffer : insts) {
+      if (!seen.insert(buffer).second) {
+        continue;
+      }
       if (removeBufferIfPossible(const_cast<sta::Instance*>(buffer),
                                  /* don't honor dont touch */ false)) {
         removed_buffer_count++;
