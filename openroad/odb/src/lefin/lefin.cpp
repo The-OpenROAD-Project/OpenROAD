@@ -70,7 +70,6 @@ lefinReader::lefinReader(dbDatabase* db,
       dist_factor_(1000.0),
       area_factor_(1000000.0),
       rounded_cnt_(0),
-      voltage_spacing_cnt_(0),
       dbu_per_micron_(1000),
       override_lef_dbu_(false),
       master_modified_(false),
@@ -95,7 +94,6 @@ void lefinReader::init()
   rounded_cnt_ = 0;
   rounding_example_.clear();
   rounding_dbu_candidates_.clear();
-  voltage_spacing_cnt_ = 0;
 
   if (!override_lef_dbu_) {
     lef_units_ = 0;
@@ -757,11 +755,8 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
         AntennaGatePlusDiffParser parser(l, this);
         parser.parse(layer->propValue(iii));
       } else if (!strcmp(layer->propName(iii), "LEF58_VOLTAGESPACING")) {
-        const bool first_on_layer = l->getTechLayerVoltageSpacings().empty();
         lefTechLayerVoltageSpacing parser(l, this);
-        if (parser.parse(layer->propValue(iii)) && first_on_layer) {
-          voltage_spacing_cnt_++;
-        }
+        parser.parse(layer->propValue(iii));
       } else {
         supported = false;
       }
@@ -2545,14 +2540,6 @@ bool lefinReader::readLefInner(const char* lef_file)
                   dbu_per_micron_,
                   rounding_example_,
                   hint);
-  }
-  if (voltage_spacing_cnt_ > 0) {
-    logger_->warn(utl::ODB,
-                  1222,
-                  "LEF file: {}, LEF58_VOLTAGESPACING rules on {} layer(s) "
-                  "are stored but not used by routing or DRC.",
-                  lef_file,
-                  voltage_spacing_cnt_);
   }
   return r;
 }

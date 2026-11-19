@@ -79,7 +79,7 @@ bool parseRule(Iterator first,
 }
 }  // namespace
 
-bool lefTechLayerVoltageSpacing::parse(const std::string& s)
+void lefTechLayerVoltageSpacing::parse(const std::string& s)
 {
   if (!parseRule(s.begin(), s.end(), layer_, lefin_)) {
     lefin_->warning(500,
@@ -87,9 +87,7 @@ bool lefTechLayerVoltageSpacing::parse(const std::string& s)
                     "layer {} :\"{}\"",
                     layer_->getName(),
                     s);
-    return false;
   }
-  return true;
 }
 
 }  // namespace odb
