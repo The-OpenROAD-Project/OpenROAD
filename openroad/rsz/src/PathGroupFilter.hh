@@ -38,7 +38,10 @@ enum class PathGroupType
   kIn2Reg,
   kReg2Out,
   kIn2Out,
-  kGatedClock
+  kGatedClock,
+  // A group the SDC defines (group_path), by its name: a path is in it when
+  // OpenSTA puts it there, whatever its ends.
+  kUser
 };
 
 // What a path ends at.  A clock gate enable is neither a register data pin nor
@@ -153,12 +156,15 @@ class PathGroupFilter
   bool isPrimaryOutput(const sta::Pin* pin) const;
   bool isGatedClockEnable(const sta::Vertex* vertex) const;
   EndpointKind endpointKind(const sta::Vertex* endpoint) const;
+  // The name OpenSTA knows the selected group by.
+  std::string_view groupName() const;
 
   sta::Sta* sta_;
   sta::Network* network_;
   sta::Sdc* sdc_;
   utl::Logger* logger_;
   PathGroupType type_;
+  std::string name_;
 };
 
 }  // namespace rsz
