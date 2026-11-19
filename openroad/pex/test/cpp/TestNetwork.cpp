@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 
+#include "Network.h"
+#include "Resistance.h"
 #include "fsv/Itf.h"
 #include "fsv/Stack.h"
 #include "gtest/gtest.h"
@@ -17,8 +19,6 @@
 #include "odb/dbTypes.h"
 #include "odb/dbWireCodec.h"
 #include "odb/geom.h"
-#include "pex/Network.h"
-#include "pex/Resistance.h"
 #include "tst/db_fixture.h"
 
 namespace pex {

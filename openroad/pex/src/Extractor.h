@@ -13,12 +13,13 @@
 #include <utility>
 #include <vector>
 
+#include "Evaluator.h"
+#include "Index.h"
+#include "Model.h"
+#include "Network.h"
 #include "fsv/BlockShapes.h"
 #include "fsv/Stack.h"
-#include "pex/Evaluator.h"
-#include "pex/Index.h"
-#include "pex/Model.h"
-#include "pex/Network.h"
+#include "pex/ExtractOptions.h"
 
 namespace odb {
 class dbBlock;
@@ -30,25 +31,6 @@ class Logger;
 }  // namespace utl
 
 namespace pex {
-
-struct ExtractOptions
-{
-  // A run of wire shapes joins into one resistor up to this, ohms; 0 makes
-  // every shape its own.
-  double max_res = 50;
-  // A net pair's coupling goes to ground on both nets when its total is
-  // below coupling_threshold fF and below coupling_ratio of each net's
-  // total capacitance; either at 0 keeps every pair. A pair's coupling is
-  // part of each net's total, so a ratio above 1 never keeps one.
-  double coupling_threshold = 0.1;
-  double coupling_ratio = 0.03;
-  // Every net pair's coupling goes to ground on both nets, whatever the
-  // thresholds: each net keeps its total, with no coupling elements.
-  bool coupling_to_ground = false;
-  // Worker threads; 0 runs everything on the calling thread.
-  int threads = 0;
-  EvaluatorOptions evaluator;
-};
 
 // Where a box came from: the shape's source, and an id whose meaning the
 // source sets: the dbWire shape id for kWire, the dbITerm id for

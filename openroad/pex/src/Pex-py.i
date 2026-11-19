@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "ord/OpenRoad.hh"
-#include "pex/Extractor.h"
 #include "pex/Pex.h"
 %}
 

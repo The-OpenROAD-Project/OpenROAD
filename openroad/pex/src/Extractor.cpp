@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "pex/Extractor.h"
+#include "Extractor.h"
 
 #include <algorithm>
 #include <cmath>
@@ -16,6 +16,12 @@
 #include <utility>
 #include <vector>
 
+#include "Evaluator.h"
+#include "Index.h"
+#include "Model.h"
+#include "Network.h"
+#include "Patterns.h"
+#include "Resistance.h"
 #include "fsv/BlockShapes.h"
 #include "fsv/Geometry.h"
 #include "fsv/Stack.h"
@@ -24,12 +30,6 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/normalizeWireConnectivity.h"
-#include "pex/Evaluator.h"
-#include "pex/Index.h"
-#include "pex/Model.h"
-#include "pex/Network.h"
-#include "pex/Patterns.h"
-#include "pex/Resistance.h"
 #include "utl/ThreadPool.h"
 
 namespace pex {

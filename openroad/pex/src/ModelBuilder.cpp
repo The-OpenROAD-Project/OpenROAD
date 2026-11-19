@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "pex/ModelBuilder.h"
+#include "ModelBuilder.h"
 
 #include <algorithm>
 #include <cmath>
@@ -19,12 +19,12 @@
 #include <utility>
 #include <vector>
 
+#include "Model.h"
+#include "Patterns.h"
 #include "fsv/Geometry.h"
 #include "fsv/Scene.h"
 #include "fsv/Solver.h"
 #include "fsv/Stack.h"
-#include "pex/Model.h"
-#include "pex/Patterns.h"
 #include "utl/ThreadPool.h"
 
 namespace pex {

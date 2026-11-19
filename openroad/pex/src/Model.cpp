@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "pex/Model.h"
+#include "Model.h"
 
 #include <algorithm>
 #include <cmath>

@@ -8,7 +8,7 @@
 #include <iosfwd>
 #include <string>
 
-#include "pex/Model.h"
+#include "Model.h"
 
 namespace pex {
 
