@@ -321,12 +321,8 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   y_grid_ = y;
   num_layers_ = nLayers;
   layer_directions_.resize(num_layers_);
-  if (std::max(x_grid_, y_grid_) >= 1000) {
-    x_range_ = std::max(x_grid_, y_grid_);
-  } else {
-    x_range_ = 1000;
-  }
-  y_range_ = x_range_;
+  x_range_ = x_grid_;
+  y_range_ = y_grid_;
 
   v_capacity_3D_.resize(num_layers_);
   h_capacity_3D_.resize(num_layers_);
@@ -354,7 +350,7 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   cost_lr_.resize(y_range_);   // Left and right boundary cost
   cost_tb_.resize(x_range_);   // Top and bottom boundary cost
 
-  cost_hvh_test_.resize(y_range_);  // Vertical first Z
+  cost_hvh_test_.resize(x_range_);  // Horizontal first Z
   cost_v_test_.resize(x_range_);    // Vertical segment cost
   cost_tb_test_.resize(x_range_);   // Top and bottom boundary cost
 
