@@ -36,12 +36,13 @@
 // - e19 lateral reach: neighbors at spacings in multiples of the distance
 //   to the nearest plane, against the wire alone.
 // - model, only when named: build the model for --layers (or every
-//   conductor off the ground plane) into --model, timing each layer.
+//   conductor off the ground plane) into --model, timing each layer; with
+//   --coarse, on the small grids of the regressions' model.
 //
 // bazelisk run starts it in its runfiles, where the default files are:
 //   bazelisk run //openroad/pex/test:Experiments -- [--groups e1,e2,...]
 //       [--itf FILE] [--layer NAME] [--threads N] [--tol X] [--csv FILE]
-//       [--smoke]
+//       [--smoke] [--coarse]
 // and for e9 and e14 the design and the model, built and saved when the
 // file does not exist:
 //       [--lef FILE]... [--def FILE | --odb FILE] [--model FILE]
@@ -130,6 +131,8 @@ struct Options
   pex::EvaluatorOptions reference;
   double extent = 10;
   bool smoke = false;
+  // The model group's coarse grids: the small model of the regressions.
+  bool coarse = false;
   // e9
   std::vector<std::string> lefs{
       "openroad/pex/test/sky130hd/sky130hd.tlef",
@@ -198,6 +201,8 @@ Options parse(const int argc, char** argv)
       o.extent = std::stod(value());
     } else if (arg == "--smoke") {
       o.smoke = true;
+    } else if (arg == "--coarse") {
+      o.coarse = true;
     } else if (arg == "--lef") {
       if (!lefs_given) {
         o.lefs.clear();
@@ -1300,12 +1305,34 @@ pex::Model buildModel(const Lab& lab, const std::vector<std::string>& layers)
     b.lateral_reach = b.lateral_reach_one_sided = 0;
     b.diagonal_reach = 0;
   }
+  if (o.coarse) {
+    b.width_factors = {1, 3};
+    b.spacing_factors = {1, 2, 5};
+    b.below_depth = b.above_depth = 1;
+    b.far_cover_factors = {};
+    b.cover_tolerance = 0;
+    b.crossing_width_factors = {1};
+    b.crossing_spacing_factors = {1};
+    b.coverages = {0.25, 0.75};
+    b.reach_factors = {0, 5};
+    b.end_spacing_factors = {1};
+    b.facing_factors = {1};
+    b.diagonal_width_factors = {1};
+    b.diagonal_gap_factors = {0, 1, 4};
+    b.diagonal_spacing_factors = {1};
+    b.diagonal_far_spacing_factors = {1};
+    b.diagonal_depth = 1;
+  }
   b.tol = o.model_tol > 0 ? o.model_tol : o.tol;
   b.threads = o.threads;
   b.extent = o.extent;
   b.layers = layers;
   const pex::ModelSource expected{
-      lab.stack().technology(), o.itf, pex::buildFingerprint(lab.stack(), b)};
+      .technology = lab.stack().technology(),
+      .file = o.itf,
+      .fingerprint = pex::buildFingerprint(lab.stack(), b),
+      .stack = pex::stackFingerprint(lab.stack()),
+  };
   pex::Model model;
   if (!o.model.empty()) {
     std::ifstream in(o.model);

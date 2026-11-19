@@ -110,6 +110,45 @@ CrossingTable::CrossingTable(std::vector<double> gaps,
     requireFinite("crossing", s.total);
     requireFinite("crossing", s.cross);
   }
+  for (int c = 0; c < spacingCount(); c++) {
+    double g0 = 0;
+    CrossingShare k0{.total = 0, .cross = 0};
+    CrossingShare sum{.total = 0, .cross = 0};
+    for (size_t i = 0; i < gaps_.size(); i++) {
+      const double g1 = gaps_[i];
+      const CrossingShare& v = at(c, static_cast<int>(i));
+      const CrossingShare k1{.total = g1 * v.total, .cross = g1 * v.cross};
+      const CrossingShare rate{
+          .total = std::clamp((k1.total - k0.total) / (g1 - g0), 0.0, 1.0),
+          .cross = std::clamp((k1.cross - k0.cross) / (g1 - g0), 0.0, 1.0),
+      };
+      sum.total += rate.total * (g1 - g0);
+      sum.cross += rate.cross * (g1 - g0);
+      rates_.push_back(rate);
+      sums_.push_back(sum);
+      g0 = g1;
+      k0 = k1;
+    }
+  }
+}
+
+CrossingShare CrossingTable::kept(const int spacing, const double d) const
+{
+  // The gaps at or below d count whole; the next one in part.
+  const size_t n = gaps_.size();
+  const size_t i = std::ranges::upper_bound(gaps_, d) - gaps_.begin();
+  const size_t base = spacing * n;
+  CrossingShare sum{.total = 0, .cross = 0};
+  if (i > 0) {
+    sum = sums_[base + i - 1];
+  }
+  const double g0 = i > 0 ? gaps_[i - 1] : 0;
+  if (i < n && g0 < d) {
+    const CrossingShare& rate = rates_[base + i];
+    sum.total += rate.total * (d - g0);
+    sum.cross += rate.cross * (d - g0);
+  }
+  return sum;
 }
 
 void CrossingTable::setReach(CrossingReach reach)
@@ -469,22 +508,6 @@ Segment segmentAt(const CrossingTable& t,
   return {g0, std::numeric_limits<double>::infinity(), 0};
 }
 
-double kept(const CrossingTable& t,
-            const int column,
-            const double d,
-            const bool cross)
-{
-  double sum = 0;
-  double g0 = 0;
-  while (g0 < d) {
-    const Segment s = segmentAt(t, column, std::nextafter(g0, d), cross);
-    const double g1 = std::min(s.g1, d);
-    sum += s.rate * (g1 - g0);
-    g0 = g1;
-  }
-  return sum;
-}
-
 // A per-column value over the two sides' spacings: each side half, from
 // its spacing's column, interpolated in the spacing's logarithm.
 template <class F>
@@ -516,9 +539,7 @@ CrossingShare Model::crossingKept(const CrossingKey& key,
   if (d <= 0) {
     return {0, 0};
   }
-  return overSides(t, left, right, [&](const int c) {
-    return CrossingShare{kept(t, c, d, false), kept(t, c, d, true)};
-  });
+  return overSides(t, left, right, [&](const int c) { return t.kept(c, d); });
 }
 
 CrossingShare Model::crossing(const CrossingKey& key,

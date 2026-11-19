@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstdint>
 #include <functional>
+#include <ios>
 #include <map>
 #include <mutex>
 #include <optional>
@@ -283,16 +284,11 @@ LateralCap solveSection(const fsv::Stack& stack,
 
 }  // namespace
 
-std::string buildFingerprint(const fsv::Stack& stack,
-                             const BuildOptions& options)
+namespace {
+
+// The stack's dielectrics, conductors and vias as fingerprint text.
+void stackLayers(const fsv::Stack& stack, std::ostringstream& text)
 {
-  // A canonical text of the inputs, hashed.
-  std::ostringstream text;
-  text.precision(17);
-  text << stack.technology() << '|' << stack.backgroundEps() << '|';
-  for (const std::string& name : options.layers) {
-    text << 'l' << name << '|';
-  }
   for (const fsv::Stack::Dielectric& d : stack.dielectrics()) {
     text << 'd' << d.name << ' ' << d.bottom << ' ' << d.top << ' ' << d.eps
          << '|';
@@ -310,6 +306,43 @@ std::string buildFingerprint(const fsv::Stack& stack,
     text << 'v' << v.name << ' ' << stack.name(v.upper) << ' '
          << (v.lower.valid() ? stack.name(v.lower) : "SUBSTRATE") << '|';
   }
+}
+
+// FNV-1a, so the fingerprint is the same on every platform and standard
+// library; std::hash is not.
+std::string hashText(const std::string& text)
+{
+  uint64_t hash = 0xcbf29ce484222325ull;
+  for (const unsigned char c : text) {
+    hash = (hash ^ c) * 0x100000001b3ull;
+  }
+  std::ostringstream hex;
+  hex << std::hex << hash;
+  return hex.str();
+}
+
+}  // namespace
+
+std::string stackFingerprint(const fsv::Stack& stack)
+{
+  std::ostringstream text;
+  text.precision(17);
+  text << stack.technology() << '|' << stack.backgroundEps() << '|';
+  stackLayers(stack, text);
+  return hashText(text.str());
+}
+
+std::string buildFingerprint(const fsv::Stack& stack,
+                             const BuildOptions& options)
+{
+  // A canonical text of the inputs, hashed.
+  std::ostringstream text;
+  text.precision(17);
+  text << stack.technology() << '|' << stack.backgroundEps() << '|';
+  for (const std::string& name : options.layers) {
+    text << 'l' << name << '|';
+  }
+  stackLayers(stack, text);
   auto list = [&](const char* name, const std::vector<double>& values) {
     text << name;
     for (const double v : values) {
@@ -343,15 +376,7 @@ std::string buildFingerprint(const fsv::Stack& stack,
   text << options.diagonal_depth << ' ' << options.crossing_length << ' '
        << options.crossing_length_long << ' ' << options.end_length << ' '
        << options.tol << ' ' << options.seed << ' ' << options.extent;
-  // FNV-1a, so the fingerprint is the same on every platform and standard
-  // library; std::hash is not.
-  uint64_t hash = 0xcbf29ce484222325ull;
-  for (const unsigned char c : text.str()) {
-    hash = (hash ^ c) * 0x100000001b3ull;
-  }
-  std::ostringstream hex;
-  hex << std::hex << hash;
-  return hex.str();
+  return hashText(text.str());
 }
 
 std::vector<int> pickCovers(const std::vector<double>& distances,
