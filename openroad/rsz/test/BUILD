@@ -323,6 +323,7 @@ PASSFAIL_TESTS = [
     "repair_slew_corner",
     "gain_buffering_top_port_hier",
     "repair_setup_crit_vt_clock_gate",
+    "report_vt_usage",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
@@ -333,6 +334,7 @@ SELF_CHECKING_TESTS = [
     "repair_slew_corner",
     "gain_buffering_top_port_hier",
     "repair_setup_crit_vt_clock_gate",
+    "report_vt_usage",
 ]
 
 # Hierarchical Verilog netlists reused as corpus input by

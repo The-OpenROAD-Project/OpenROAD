@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <map>
 #include <memory>
 #include <string>
 #include <unordered_set>
@@ -1431,6 +1432,179 @@ TEST_F(TestResizer, GetVtEquivCellsDeduplicatesNonAdjacentSameVtCells)
             resizer_.cellVTType(second_master));
   EXPECT_LE(resizer_.cellLeakage(vt_equiv[0]).value_or(0.0f),
             resizer_.cellLeakage(vt_equiv[1]).value_or(0.0f));
+}
+
+// Keyed by VT name for checks that do not depend on the row order.
+static std::map<std::string, VTUsage> vtUsageByName(
+    const std::vector<VTUsage>& usage)
+{
+  std::map<std::string, VTUsage> by_name;
+  for (const VTUsage& vt_usage : usage) {
+    by_name.emplace(vt_usage.vt_name, vt_usage);
+  }
+  return by_name;
+}
+
+// Puts an obstruction on the IMPLANT layer layer_name, made if missing, into
+// master_name, which gives the master that VT type.
+static odb::dbMaster* addImplant(odb::dbDatabase* db,
+                                 const char* master_name,
+                                 const char* layer_name)
+{
+  odb::dbTech* tech = db->getTech();
+  odb::dbTechLayer* layer = tech->findLayer(layer_name);
+  if (layer == nullptr) {
+    layer = odb::dbTechLayer::create(
+        tech, layer_name, odb::dbTechLayerType::IMPLANT);
+  }
+  odb::dbMaster* master = db->findMaster(master_name);
+  if (layer == nullptr || master == nullptr) {
+    ADD_FAILURE() << "cannot add " << layer_name << " to " << master_name;
+    return nullptr;
+  }
+  odb::dbBox::create(master, layer, 0, 0, 10, 10);
+  return master;
+}
+
+TEST_F(TestResizer, VTUsageCountsCoreCellsByVT)
+{
+  odb::dbMaster* buf_x1_master = addImplant(db_.get(), "BUF_X1", "LVT_IMPLANT");
+  odb::dbMaster* buf_x16_master
+      = addImplant(db_.get(), "BUF_X16", "HVT_IMPLANT");
+  odb::dbMaster* fill_master
+      = addImplant(db_.get(), "FILLCELL_X1", "LVT_IMPLANT");
+  odb::dbMaster* nand_master = db_->findMaster("NAND2_X1");
+  ASSERT_NE(buf_x1_master, nullptr);
+  ASSERT_NE(buf_x16_master, nullptr);
+  ASSERT_NE(fill_master, nullptr);
+  ASSERT_NE(nand_master, nullptr);
+
+  // 2 BUF_X1, 6 BUF_X16, and 1 NAND2_X1.
+  readVerilogAndSetup("TestResizerMt_DelayEstimator.v");
+  ASSERT_NE(odb::dbInst::create(block_, fill_master, "fill"), nullptr);
+
+  const std::map<std::string, VTUsage> usage
+      = vtUsageByName(resizer_.vtUsage(block_->getTopModule()));
+  const std::string lvt = resizer_.cellVTType(buf_x1_master).vt_name;
+  const std::string hvt = resizer_.cellVTType(buf_x16_master).vt_name;
+  ASSERT_NE(lvt, hvt);
+  ASSERT_EQ(usage.size(), 3u);
+
+  // The LVT filler is not a CORE cell, so LVT holds the two BUF_X1 only.
+  const VTUsage& lvt_usage = usage.at(lvt);
+  EXPECT_EQ(lvt_usage.count, 2);
+  EXPECT_EQ(lvt_usage.area, 2 * buf_x1_master->getArea());
+  EXPECT_EQ(lvt_usage.masters.size(), 1u);
+  EXPECT_EQ(lvt_usage.masters.at(buf_x1_master).count, 2);
+
+  const VTUsage& hvt_usage = usage.at(hvt);
+  EXPECT_EQ(hvt_usage.count, 6);
+  EXPECT_EQ(hvt_usage.area, 6 * buf_x16_master->getArea());
+
+  const VTUsage& no_vt_usage = usage.at("-");
+  EXPECT_EQ(no_vt_usage.count, 1);
+  EXPECT_EQ(no_vt_usage.area, nand_master->getArea());
+  EXPECT_EQ(no_vt_usage.masters.at(nand_master).count, 1);
+}
+
+TEST_F(TestResizer, VTUsageOrdersByVtOrderThenName)
+{
+  odb::dbMaster* buf_x1_master = addImplant(db_.get(), "BUF_X1", "LVT_IMPLANT");
+  odb::dbMaster* buf_x16_master
+      = addImplant(db_.get(), "BUF_X16", "HVT_IMPLANT");
+  ASSERT_NE(buf_x1_master, nullptr);
+  ASSERT_NE(buf_x16_master, nullptr);
+
+  // BUF_X1 is LVT, BUF_X16 is HVT, and NAND2_X1 has no VT.
+  readVerilogAndSetup("TestResizerMt_DelayEstimator.v");
+  odb::dbModule* top = block_->getTopModule();
+  const std::string lvt = resizer_.cellVTType(buf_x1_master).vt_name;
+  const std::string hvt = resizer_.cellVTType(buf_x16_master).vt_name;
+  ASSERT_LT(hvt, lvt);
+
+  auto names = [](const std::vector<VTUsage>& usage) {
+    std::vector<std::string> vt_names;
+    vt_names.reserve(usage.size());
+    for (const VTUsage& vt_usage : usage) {
+      vt_names.push_back(vt_usage.vt_name);
+    }
+    return vt_names;
+  };
+  using Names = std::vector<std::string>;
+  EXPECT_EQ(names(resizer_.vtUsage(top)), (Names{hvt, lvt, "-"}));
+  EXPECT_EQ(names(resizer_.vtUsage(top, {lvt})), (Names{lvt, hvt, "-"}));
+  // Unused and repeated names are skipped; "-" moves when named.
+  EXPECT_EQ(names(resizer_.vtUsage(top, {"-", "UNUSED", lvt, "-"})),
+            (Names{"-", lvt, hvt}));
+}
+
+TEST_F(TestResizer, VTUsageCountsOnlyCellsUnderModule)
+{
+  odb::dbMaster* buf_x1_master = addImplant(db_.get(), "BUF_X1", "LVT_IMPLANT");
+  odb::dbMaster* nand_master = addImplant(db_.get(), "NAND2_X1", "LVT_IMPLANT");
+  odb::dbMaster* buf_x16_master
+      = addImplant(db_.get(), "BUF_X16", "HVT_IMPLANT");
+  odb::dbMaster* inv_master = db_->findMaster("INV_X1");
+  ASSERT_NE(buf_x1_master, nullptr);
+  ASSERT_NE(nand_master, nullptr);
+  ASSERT_NE(buf_x16_master, nullptr);
+  ASSERT_NE(inv_master, nullptr);
+
+  // top: BUF_X1, INV_X1, u_sub
+  // u_sub: BUF_X1, NAND2_X1, u_inner
+  // u_sub/u_inner: BUF_X16, INV_X1
+  readVerilogAndSetup("TestResizer_VTUsageHier.v");
+  odb::dbModInst* sub = block_->findModInst("u_sub");
+  odb::dbModInst* inner = block_->findModInst("u_sub/u_inner");
+  ASSERT_NE(sub, nullptr);
+  ASSERT_NE(inner, nullptr);
+
+  const std::string lvt = resizer_.cellVTType(buf_x1_master).vt_name;
+  const std::string hvt = resizer_.cellVTType(buf_x16_master).vt_name;
+  ASSERT_EQ(lvt, resizer_.cellVTType(nand_master).vt_name);
+
+  const std::map<std::string, VTUsage> top_usage
+      = vtUsageByName(resizer_.vtUsage(block_->getTopModule()));
+  ASSERT_EQ(top_usage.size(), 3u);
+  EXPECT_EQ(top_usage.at(lvt).count, 3);
+  EXPECT_EQ(top_usage.at(lvt).area,
+            2 * buf_x1_master->getArea() + nand_master->getArea());
+  EXPECT_EQ(top_usage.at(lvt).masters.size(), 2u);
+  EXPECT_EQ(top_usage.at(lvt).masters.at(buf_x1_master).count, 2);
+  EXPECT_EQ(top_usage.at(lvt).masters.at(nand_master).count, 1);
+  EXPECT_EQ(top_usage.at(hvt).count, 1);
+  EXPECT_EQ(top_usage.at("-").count, 2);
+  EXPECT_EQ(top_usage.at("-").masters.at(inv_master).count, 2);
+
+  // A module counts its own cells and those of its children.
+  const std::map<std::string, VTUsage> sub_usage
+      = vtUsageByName(resizer_.vtUsage(sub->getMaster()));
+  ASSERT_EQ(sub_usage.size(), 3u);
+  EXPECT_EQ(sub_usage.at(lvt).count, 2);
+  EXPECT_EQ(sub_usage.at(lvt).masters.at(buf_x1_master).count, 1);
+  EXPECT_EQ(sub_usage.at(lvt).masters.at(nand_master).count, 1);
+  EXPECT_EQ(sub_usage.at(hvt).count, 1);
+  EXPECT_EQ(sub_usage.at("-").count, 1);
+
+  const std::map<std::string, VTUsage> inner_usage
+      = vtUsageByName(resizer_.vtUsage(inner->getMaster()));
+  ASSERT_EQ(inner_usage.size(), 2u);
+  EXPECT_FALSE(inner_usage.contains(lvt));
+  EXPECT_EQ(inner_usage.at(hvt).count, 1);
+  EXPECT_EQ(inner_usage.at(hvt).area, buf_x16_master->getArea());
+  EXPECT_EQ(inner_usage.at("-").count, 1);
+}
+
+TEST_F(TestResizer, VTUsageOfModuleWithoutCoreCellsIsEmpty)
+{
+  readVerilogAndSetup("TestResizerMt_DelayEstimator.v");
+  odb::dbModule* empty = odb::dbModule::create(block_, "empty");
+  ASSERT_NE(empty, nullptr);
+  ASSERT_NE(odb::dbModInst::create(block_->getTopModule(), empty, "u_empty"),
+            nullptr);
+
+  EXPECT_TRUE(resizer_.vtUsage(empty).empty());
+  EXPECT_NO_THROW(resizer_.reportVTUsage(empty, {}, true, true));
 }
 
 TEST_F(TestResizer, DisabledConditionalArcIgnoredInDriveResistance)
