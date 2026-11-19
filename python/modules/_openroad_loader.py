@@ -21,7 +21,7 @@ import sys
 # so a module of the same name in another package is left alone.
 _TOOLS = """
     ant cgt cts dpl drt exa fin fsv gpl grt ifp odb
-    par pdn ppl psm rcx rmp rsz stt tap utl wmk
+    par pdn pex ppl psm rcx rmp rsz stt tap utl wmk
 """.split()
 EXTENSIONS = frozenset(["_ord_py"] + [f"openroad.{tool}._{tool}_py" for tool in _TOOLS])
 

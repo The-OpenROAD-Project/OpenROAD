@@ -308,6 +308,42 @@ TEST_F(TestEstimateParasitics, IdealClockNetSkipsStaInvalidation)
   ep_.setIncrementalParasiticsEnabled(false);
 }
 
+// A supply net is never pending: removing or inserting a buffer touches its
+// power pins, and updateParasitics() would then invalidate delays from the
+// fanin of every power pin in the design, once per edit.
+TEST_F(TestEstimateParasitics, SupplyNetIsNotInvalidated)
+{
+  readVerilogAndSetup("TestEstimateParasitics.v");
+
+  odb::dbNet* vdd = odb::dbNet::create(block_, "VDD");
+  vdd->setSpecial();
+  vdd->setSigType(odb::dbSigType::POWER);
+  int power_pins = 0;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    for (odb::dbITerm* iterm : inst->getITerms()) {
+      if (iterm->getSigType() == odb::dbSigType::POWER) {
+        iterm->connect(vdd);
+        power_pins++;
+      }
+    }
+  }
+  ASSERT_GT(power_pins, 0);
+  sta::Net* vdd_net = db_network_->dbToSta(vdd);
+  ASSERT_NE(vdd_net, nullptr);
+
+  ep_.setParasiticsSrc(ParasiticsSrc::kPlacement);
+  ep_.setIncrementalParasiticsEnabled(true);
+  ep_.parasiticsInvalid(vdd_net);
+  EXPECT_FALSE(ep_.hasParasiticsInvalid());
+
+  // A signal net is still pending.
+  sta::Net* d_net = flatNet(findTopPin("d"));
+  ASSERT_NE(d_net, nullptr);
+  ep_.parasiticsInvalid(d_net);
+  EXPECT_TRUE(ep_.hasParasiticsInvalid());
+  ep_.setIncrementalParasiticsEnabled(false);
+}
+
 // Verifies multi-mode ideal-clock classification for scan clocks.
 //
 // The original implementation rejected a pin if isIdealClock(pin, mode) was

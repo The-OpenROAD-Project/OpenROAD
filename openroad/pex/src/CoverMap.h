@@ -6,9 +6,9 @@
 #include <string>
 #include <vector>
 
+#include "Model.h"
+#include "Patterns.h"
 #include "fsv/Stack.h"
-#include "pex/Model.h"
-#include "pex/Patterns.h"
 
 namespace pex {
 

@@ -151,10 +151,22 @@ class CrossingTable
   const CrossingReach& reach() const { return reach_; }
   void setReach(CrossingReach reach);
 
+  // The amount of the plane's effect a spacing column keeps over a gap d
+  // (µm, positive), gap × share: linear between the tabulated gaps (from 0
+  // at a gap of 0) and constant past the last. Its slope on each segment
+  // is the one-sided share there, held within [0, 1], so a table whose
+  // kept amount dips from one gap to the next (solver noise at a saturated
+  // gap) keeps the last amount instead of taking any away.
+  CrossingShare kept(int spacing, double d) const;
+
  private:
   std::vector<double> gaps_;      // µm, ascending, all positive
   std::vector<double> spacings_;  // µm, ascending
   std::vector<CrossingShare> values_;
+  // Per [spacing][gap]: each segment's slope, ending at that gap, and the
+  // amount kept up to that gap.
+  std::vector<CrossingShare> rates_;
+  std::vector<CrossingShare> sums_;
   CrossingReach reach_;  // empty if not held
 };
 

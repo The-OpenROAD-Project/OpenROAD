@@ -43,6 +43,7 @@ PASSFAIL_TESTS = [
     "write_mask_groups_asap7",
     "fold_ten_groups_asap7",
     "fold_odd_groups_asap7",
+    "read_drive_asap7",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
