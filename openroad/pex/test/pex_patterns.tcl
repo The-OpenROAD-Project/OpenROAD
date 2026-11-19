@@ -14,10 +14,8 @@ proc net_total { name } {
   return [expr { [$net getTotalCapacitance] + [$net getTotalCouplingCap] }]
 }
 
-# The nets whose rotated copy extracts differently, beyond the order in
-# which values are summed. In e8 the via stack's two met3 pads overlap:
-# drawn, both run along x; rotated, the square M2M3 pad still runs along
-# x but the M3M4 pad runs along y, and the square pad's line ends count.
+# Every net extracts as its rotated copy does, beyond the order in which
+# values are summed.
 set differ {}
 set pairs 0
 foreach net [[ord::get_db_block] getNets] {
@@ -33,7 +31,7 @@ foreach net [[ord::get_db_block] getNets] {
   }
 }
 check "every net has a rotated copy" { set pairs } 46
-check "rotated copies extract the same" { lsort $differ } {e8_n e8_v}
+check "rotated copies extract the same" { set differ } {}
 
 compare_pex_fsv -nets {e1_v e2a_v e3_l1_v e4_v e6_v e8_v jog_v} \
   -halo 4 -tol 0.02

@@ -14,6 +14,7 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -287,7 +288,8 @@ class Wire
        const Context& context,
        const CoverMap& map,
        std::vector<Contribution>& out,
-       EvalCounts& counts)
+       EvalCounts& counts,
+       const int axis)
       : self_(self),
         shape_(boxes[self]),
         net_(shape_.net),
@@ -307,7 +309,7 @@ class Wire
         diagonal_reach_(context.diagonal_reach[shape_.layer]),
         out_(out),
         counts_(counts),
-        a_(shape_.rect.dx() >= shape_.rect.dy() ? 0 : 1),
+        a_(axis),
         p_(1 - a_),
         a0_(lo(shape_, a_)),
         a1_(hi(shape_, a_)),
@@ -348,11 +350,21 @@ class Wire
                 std::map<int, int>& past_end) const;
 
   // Whether a box of the net counts an overlap with this wire rather than
-  // this wire: the longer one, or the first of two as long.
+  // this wire: between two wires the longer one, or the first of two as
+  // long; when either is a pad (not twice as long as wide), the wider one,
+  // then the longer, then the first.
   bool dominates(const int i) const
   {
-    const int ls = boxes_[i].rect.maxDXDY();
-    const int lw = shape_.rect.maxDXDY();
+    const odb::Rect& s = boxes_[i].rect;
+    const odb::Rect& w = shape_.rect;
+    auto pad = [](const odb::Rect& r) {
+      return r.maxDXDY() < 2 * int64_t{r.minDXDY()};
+    };
+    if ((pad(s) || pad(w)) && s.minDXDY() != w.minDXDY()) {
+      return s.minDXDY() > w.minDXDY();
+    }
+    const int ls = s.maxDXDY();
+    const int lw = w.maxDXDY();
     return ls > lw || (ls == lw && i < self_);
   }
 
@@ -707,8 +719,8 @@ void Wire::collect()
         });
       } else if (s.net == shape_.net && lo(s, p_) <= p0_ && hi(s, p_) >= p1_
                  && dominates(i)) {
-        // A longer box of the net across the wire's whole width: that
-        // box counts the overlap.
+        // A box of the net across the wire's whole width that counts the
+        // overlap.
         inside_.emplace_back(o0, o1);
       } else {
         continue;  // overlapping on the same layer: a junction
@@ -1503,9 +1515,12 @@ void Evaluator::reach(const EvalBox& box, std::vector<odb::Rect>& rects) const
     return static_cast<int>(std::clamp<int64_t>(
         v, std::numeric_limits<int>::min(), std::numeric_limits<int>::max()));
   };
+  // A square is estimated along both axes, so it reaches both ways.
+  const bool square = box.rect.dx() == box.rect.dy();
   auto grow = [&](const int along, const int across) {
-    const int64_t dx = x_along ? along : across;
-    const int64_t dy = x_along ? across : along;
+    const int64_t both = std::max(along, across);
+    const int64_t dx = square ? both : x_along ? along : across;
+    const int64_t dy = square ? both : x_along ? across : along;
     return odb::Rect(clamped(int64_t{box.rect.xMin()} - dx),
                      clamped(int64_t{box.rect.yMin()} - dy),
                      clamped(int64_t{box.rect.xMax()} + dx),
@@ -1630,7 +1645,37 @@ void Evaluator::evaluate(const std::vector<EvalBox>& boxes,
     count.wires++;
     near.clear();
     candidates(i, near);
-    Wire wire(i, boxes, near, context, maps_[boxes[i].layer], out, count);
+    const odb::Rect& r = boxes[i].rect;
+    if (r.dx() == r.dy()) {
+      // A square has no long axis: the mean of it estimated along each,
+      // placed at its center.
+      for (const int a : {0, 1}) {
+        const size_t start = out.size();
+        EvalCounts once;
+        Wire wire(i,
+                  boxes,
+                  near,
+                  context,
+                  maps_[boxes[i].layer],
+                  out,
+                  a == 0 ? count : once,
+                  a);
+        wire.estimate();
+        for (size_t k = start; k < out.size(); k++) {
+          out[k].value /= 2;
+          out[k].at = r.xCenter();
+        }
+      }
+      continue;
+    }
+    Wire wire(i,
+              boxes,
+              near,
+              context,
+              maps_[boxes[i].layer],
+              out,
+              count,
+              axis(boxes[i]));
     wire.estimate();
     const auto found = junctions.find(i);
     if (found != junctions.end()) {
@@ -1639,6 +1684,65 @@ void Evaluator::evaluate(const std::vector<EvalBox>& boxes,
       }
     }
   }
+}
+
+std::vector<int> mergePads(std::vector<EvalBox>& boxes, const size_t first)
+{
+  auto pad = [](const EvalBox& b) {
+    return b.layer >= 0 && b.rect.maxDXDY() < 2 * int64_t{b.rect.minDXDY()};
+  };
+  // The pads by net, layer and left edge; each absorbs the pads after it
+  // that start before it ends.
+  std::vector<size_t> pads;
+  for (size_t i = first; i < boxes.size(); i++) {
+    if (pad(boxes[i])) {
+      pads.push_back(i);
+    }
+  }
+  std::ranges::sort(pads, [&](const size_t x, const size_t y) {
+    const EvalBox& a = boxes[x];
+    const EvalBox& b = boxes[y];
+    return std::tuple(a.net, a.layer, a.rect.xMin(), x)
+           < std::tuple(b.net, b.layer, b.rect.xMin(), y);
+  });
+  std::vector<bool> gone(boxes.size() - first, false);
+  for (size_t pi = 0; pi < pads.size(); pi++) {
+    const size_t i = pads[pi];
+    if (gone[i - first]) {
+      continue;
+    }
+    EvalBox& a = boxes[i];
+    for (size_t pj = pi + 1; pj < pads.size(); pj++) {
+      const EvalBox& b = boxes[pads[pj]];
+      if (b.net != a.net || b.layer != a.layer
+          || b.rect.xMin() > a.rect.xMax()) {
+        break;
+      }
+      if (gone[pads[pj] - first] || !a.rect.overlaps(b.rect)) {
+        continue;
+      }
+      odb::Rect bound = a.rect;
+      bound.merge(b.rect);
+      const double filled
+          = static_cast<double>(a.rect.area())
+            + static_cast<double>(b.rect.area())
+            - static_cast<double>(a.rect.intersect(b.rect).area());
+      if (filled >= kPadFill * static_cast<double>(bound.area())) {
+        a.rect = bound;
+        gone[pads[pj] - first] = true;
+      }
+    }
+  }
+  std::vector<int> from;
+  size_t out = first;
+  for (size_t i = first; i < boxes.size(); i++) {
+    if (!gone[i - first]) {
+      from.push_back(static_cast<int>(i));
+      boxes[out++] = boxes[i];
+    }
+  }
+  boxes.resize(out);
+  return from;
 }
 
 NetEstimate estimate(const fsv::Geometry& geometry,
@@ -1694,7 +1798,10 @@ NetEstimate estimate(const fsv::Geometry& geometry,
                           units(box.hi[0]),
                           units(box.hi[1])),
     });
-    if (net == target) {
+  }
+  mergePads(boxes);
+  for (int b = 0; std::cmp_less(b, boxes.size()); b++) {
+    if (boxes[b].net == target) {
       mine.push_back(b);
     }
   }

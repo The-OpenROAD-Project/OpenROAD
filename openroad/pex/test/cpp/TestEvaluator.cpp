@@ -610,5 +610,28 @@ TEST(Evaluator, RadiusAndAttribution)
   EXPECT_FALSE(by_box.contains(kE));
 }
 
+// A via stack's overlapping pads become their bounding box; a wire, a pad
+// of another net or layer, and a pad that would leave much of the box
+// empty stay as they are.
+TEST(Evaluator, MergePads)
+{
+  std::vector<EvalBox> boxes{
+      {.net = 0, .layer = 0, .rect = odb::Rect(0, 0, 1000, 140)},  // wire
+      {.net = 0, .layer = 1, .rect = odb::Rect(0, 0, 330, 330)},
+      {.net = 0, .layer = 1, .rect = odb::Rect(5, -25, 325, 355)},
+      {.net = 1, .layer = 1, .rect = odb::Rect(0, 0, 330, 330)},
+      {.net = 0, .layer = 2, .rect = odb::Rect(0, 0, 330, 330)},
+      {.net = 0, .layer = 2, .rect = odb::Rect(300, 300, 630, 630)},
+  };
+  const std::vector<int> from = mergePads(boxes, 1);
+  EXPECT_EQ(from, (std::vector<int>{1, 3, 4, 5}));
+  ASSERT_EQ(boxes.size(), 5);
+  EXPECT_EQ(boxes[0].rect, odb::Rect(0, 0, 1000, 140));
+  EXPECT_EQ(boxes[1].rect, odb::Rect(0, -25, 330, 355));
+  EXPECT_EQ(boxes[2].rect, odb::Rect(0, 0, 330, 330));
+  EXPECT_EQ(boxes[3].rect, odb::Rect(0, 0, 330, 330));
+  EXPECT_EQ(boxes[4].rect, odb::Rect(300, 300, 630, 630));
+}
+
 }  // namespace
 }  // namespace pex

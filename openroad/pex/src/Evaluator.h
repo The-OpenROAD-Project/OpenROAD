@@ -180,9 +180,19 @@ struct NetEstimate : EvalCounts
 // of range.
 constexpr int kEstimateDbu = 100000;
 
+// Merges overlapping pads of [first, end) of `boxes`: two boxes of one net
+// on one conductor layer, neither at least twice as long as wide, whose
+// union fills at least kPadFill of their bounding box become that bounding
+// box, so that a via stack's pads count as one shape with two ends.
+// Returns, for each box left in [first, end), the index of the first box it
+// came from.
+constexpr double kPadFill = 0.9;
+std::vector<int> mergePads(std::vector<EvalBox>& boxes, size_t first = 0);
+
 // Estimates a target net of a geometry whose boxes lie on the stack's
 // layers, with every box of the geometry as candidates, its x-y rounded to
-// `dbu` units per µm. Boxes between layers are vias. Throws
+// `dbu` units per µm. Boxes between layers are vias; pads merge as
+// mergePads does. Throws
 // std::invalid_argument for a box on no layer or out of range, and
 // std::out_of_range as Evaluator::evaluate does.
 NetEstimate estimate(const fsv::Geometry& geometry,

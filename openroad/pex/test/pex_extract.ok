@@ -6,12 +6,12 @@
 [INFO ODB-0132]     Created 2 special nets and 282 connections.
 [INFO ODB-0133]     Created 150 nets and 254 connections.
 [INFO PEX-0015] Read model sky130_coarse.json of skywater130_nominal: 20 lateral, 20 end, 18 crossing and 18 diagonal tables.
-[INFO PEX-0018] Extracted 122 nets from 5281 boxes: 337 net pairs coupled, 489 grounded.
+[INFO PEX-0018] Extracted 122 nets from 5116 boxes: 335 net pairs coupled, 491 grounded.
 [WARNING PEX-0038] 28 pins are on no wire of their net and have no node in its parasitics.
 [WARNING PEX-0019] 61 pin or special-wire shapes are on no node of their net; their capacitance is on the net's first node.
 Net _042_
  Pin capacitance: 0.002-0.003
- Wire capacitance: 0.002-0.002
+ Wire capacitance: 0.001-0.001
  Total capacitance: 0.004-0.004
  Number of drivers: 1
  Number of loads: 1
@@ -37,14 +37,14 @@ Driver pins
 Load pins
  input4/A input (sky130_fd_sc_hd__clkdlybuf4s50_1) 0.002-0.002 (2, 61)
 
-[INFO PEX-0028] Net _042_: 1.51 fF against the field solver's 1.579 +- 0.03 fF (-4.4%), 5 couplings above 5%.
-[INFO PEX-0028] Net req_msg[10]: 0.9868 fF against the field solver's 0.8456 +- 0.016 fF (+16.7%), 1 couplings above 5%.
-[INFO PEX-0029] Totals within 5% of the field solver: 1 of 2 nets; 90th percentile error 16.7%.
-[INFO PEX-0033] Couplings to signal nets above 5% of a net's total within 20%: 4 of 6.
-[INFO PEX-0018] Extracted 122 nets from 5281 boxes: 2 net pairs coupled, 824 grounded.
+[INFO PEX-0028] Net _042_: 1.438 fF against the field solver's 1.579 +- 0.03 fF (-8.9%), 5 couplings above 5%.
+[INFO PEX-0028] Net req_msg[10]: 0.9323 fF against the field solver's 0.8456 +- 0.016 fF (+10.3%), 1 couplings above 5%.
+[INFO PEX-0029] Totals within 5% of the field solver: 0 of 2 nets; 90th percentile error 10.3%.
+[INFO PEX-0033] Couplings to signal nets above 5% of a net's total within 20%: 3 of 6.
+[INFO PEX-0018] Extracted 122 nets from 5116 boxes: 2 net pairs coupled, 824 grounded.
 [WARNING PEX-0038] 28 pins are on no wire of their net and have no node in its parasitics.
 [WARNING PEX-0019] 61 pin or special-wire shapes are on no node of their net; their capacitance is on the net's first node.
-[INFO PEX-0018] Extracted 122 nets from 5281 boxes: 0 net pairs coupled, 826 grounded.
+[INFO PEX-0018] Extracted 122 nets from 5116 boxes: 0 net pairs coupled, 826 grounded.
 [WARNING PEX-0038] 28 pins are on no wire of their net and have no node in its parasitics.
 [WARNING PEX-0019] 61 pin or special-wire shapes are on no node of their net; their capacitance is on the net's first node.
 Summary 2 / 2 (100% pass)

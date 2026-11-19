@@ -147,6 +147,18 @@ BlockBoxes readBlockBoxes(odb::dbBlock* block,
         net_boxes.push_back(toBox(shape.rect, layer));
       }
     }
+    const size_t first = result.net_first.back();
+    const std::vector<int> from = mergePads(result.boxes, first);
+    if (from.size() < result.origins.size() - first) {
+      std::vector<BoxOrigin> origins;
+      origins.reserve(from.size());
+      for (const int i : from) {
+        origins.push_back(result.origins[i]);
+      }
+      result.origins.resize(first);
+      result.origins.insert(
+          result.origins.end(), origins.begin(), origins.end());
+    }
   }
   result.net_first.push_back(static_cast<int>(result.boxes.size()));
   result.obstructions = static_cast<NetIndex>(result.nets.size());
