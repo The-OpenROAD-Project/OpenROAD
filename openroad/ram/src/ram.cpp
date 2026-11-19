@@ -935,35 +935,43 @@ vector<dbNet*> RamGen::buildDecoder(const std::string& prefix,
       = is_final ? 2 : std::clamp((width + 1) / 2, 2, max_and_inputs_);
 
   vector<vector<dbNet*>> group_lines;
-  vector<int> group_shift;
-  vector<int> group_mask;
+  vector<unsigned> group_shift;
+  vector<unsigned> group_mask;
   int bit = lo;
   for (int g = 0; g < num_groups; ++g) {
     const int size = width / num_groups + (g < width % num_groups ? 1 : 0);
-    const int shift = bit - lo;
+    const unsigned shift = static_cast<unsigned>(bit - lo);
+    const unsigned span = 1U << static_cast<unsigned>(size);
     // only decode values some output actually uses (non-power-of-2 counts)
-    const int sub_count = std::min(1 << size, ((count - 1) >> shift) + 1);
+    const unsigned used = (static_cast<unsigned>(count - 1) >> shift) + 1;
+    const int sub_count = static_cast<int>(std::min(span, used));
     group_lines.push_back(buildDecoder(
         prefix, bit, size, sub_count, addr_nets, inv_addr_nets, {}, gates));
     group_shift.push_back(shift);
-    group_mask.push_back((1 << size) - 1);
+    group_mask.push_back(span - 1);
     bit += size;
   }
 
   vector<dbNet*> lines(count);
   for (int value = 0; value < count; ++value) {
     vector<dbNet*> inputs;
+    inputs.reserve(num_groups);
     for (int g = 0; g < num_groups; ++g) {
-      inputs.push_back(
-          group_lines[g][(value >> group_shift[g]) & group_mask[g]]);
+      const unsigned line
+          = (static_cast<unsigned>(value) >> group_shift[g]) & group_mask[g];
+      inputs.push_back(group_lines[g][line]);
     }
     // gate names get an and_ prefix so they never collide with net names
     const std::string net_name
         = is_final ? fmt::format("word{}", value)
                    : fmt::format("pre_a{}_{}_{}", lo + width - 1, lo, value);
     lines[value] = is_final ? out_nets[value] : makeNet(prefix, net_name);
-    gates.push_back(
-        {"and_" + net_name, inputs, lines[value], is_final ? value : -1});
+    gates.push_back({
+        .name = "and_" + net_name,
+        .inputs = inputs,
+        .output = lines[value],
+        .row = is_final ? value : -1,
+    });
   }
   return lines;
 }
@@ -986,13 +994,21 @@ void RamGen::makeDecoderColumn(const std::string& prefix,
     // 2-row RAM: the address bit drives each word line through a buffer
     const vector<dbNet*> lines = {inv_addr_nets[0], addr_nets[0]};
     for (int row = 0; row < num_rows; ++row) {
-      makeInst(row_cells[row].get(),
-               prefix,
-               fmt::format("buf_word{}", row),
-               buffer_cell_,
-               {{buffer_ports_[{PortRoleType::DataIn, 0}], lines[row]},
-                {buffer_ports_[{PortRoleType::DataOut, 0}],
-                 decoder_output_nets[row]}});
+      makeInst(
+          row_cells[row].get(),
+          prefix,
+          fmt::format("buf_word{}", row),
+          buffer_cell_,
+          {
+              {
+                  buffer_ports_[{.type = PortRoleType::DataIn, .index = 0}],
+                  lines[row],
+              },
+              {
+                  buffer_ports_[{.type = PortRoleType::DataOut, .index = 0}],
+                  decoder_output_nets[row],
+              },
+          });
     }
   } else {
     vector<DecoderGate> gates;
@@ -1059,10 +1075,13 @@ void RamGen::makeAnd(Cell* cell,
   }
 
   vector<std::pair<std::string, dbNet*>> connections;
-  for (int i = 0; i < static_cast<int>(inputs.size()); ++i) {
-    connections.emplace_back((*ports)[{PortRoleType::DataIn, i}], inputs[i]);
+  connections.reserve(inputs.size() + 1);
+  for (int i = 0; std::cmp_less(i, inputs.size()); ++i) {
+    connections.emplace_back(
+        (*ports)[{.type = PortRoleType::DataIn, .index = i}], inputs[i]);
   }
-  connections.emplace_back((*ports)[{PortRoleType::DataOut, 0}], output);
+  connections.emplace_back(
+      (*ports)[{.type = PortRoleType::DataOut, .index = 0}], output);
   makeInst(cell, prefix, name, master, connections);
 }
 
