@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "pex/ModelJson.h"
+#include "ModelJson.h"
 
-#include <charconv>
+#include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <istream>
@@ -12,12 +13,11 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <system_error>
 #include <utility>
 #include <vector>
 
+#include "Model.h"
 #include "boost/json.hpp"
-#include "pex/Model.h"
 
 namespace pex {
 
@@ -30,15 +30,11 @@ namespace json = boost::json;
 // would more than double the file.
 double rounded(const double v)
 {
+  // snprintf and strtod rather than charconv, whose floating-point parse
+  // older macOS lacks; the two share the locale's decimal point.
   char text[32];
-  const auto [end, error] = std::to_chars(
-      text, text + sizeof text, v, std::chars_format::general, 7);
-  if (error != std::errc{}) {
-    return v;
-  }
-  double out = v;
-  std::from_chars(text, end, out);
-  return out;
+  std::snprintf(text, sizeof text, "%.7g", v);
+  return std::strtod(text, nullptr);
 }
 
 json::array numbers(const std::vector<double>& values)
@@ -402,6 +398,7 @@ void writeModel(const Model& model,
   root["technology"] = source.technology;
   root["source"] = source.file;
   root["fingerprint"] = source.fingerprint;
+  root["stack"] = source.stack;
   json::array laterals;
   for (const auto& [key, table] : model.laterals()) {
     laterals.push_back(lateral(key, table));
@@ -465,7 +462,7 @@ Model readModel(std::istream& in, ModelSource* source)
       throw std::runtime_error("not a pex model");
     }
     const int version = o.at("version").to_number<int>();
-    if (version != kModelFormatVersion) {
+    if (version != kModelFormatVersion && version != kModelFormatVersion - 1) {
       throw std::runtime_error("model format version " + std::to_string(version)
                                + "; this build reads "
                                + std::to_string(kModelFormatVersion));
@@ -474,6 +471,8 @@ Model readModel(std::istream& in, ModelSource* source)
       source->technology = std::string(o.at("technology").as_string());
       source->file = std::string(o.at("source").as_string());
       source->fingerprint = std::string(o.at("fingerprint").as_string());
+      const json::value* stack = o.if_contains("stack");
+      source->stack = stack == nullptr ? "" : std::string(stack->as_string());
     }
     // A kind of table the file does not have is simply absent.
     auto tables = [&](const char* kind) -> const json::array& {
