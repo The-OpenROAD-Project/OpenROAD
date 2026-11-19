@@ -387,7 +387,7 @@ node = use_extension(
     "@rules_nodejs//nodejs:extensions.bzl",
     "node",
 )
-node.toolchain(node_version = "22.14.0")
+node.toolchain(node_version = "22.22.0")
 
 # The viewer's browser libraries, bundled into the assets embedded in the
 # binary.  Not a dev dependency: //:openroad does not build without it.
