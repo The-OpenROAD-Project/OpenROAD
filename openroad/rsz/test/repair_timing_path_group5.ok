@@ -20,13 +20,13 @@ req_msg[0] (input)                   _881_/D (DFF_X1)                       -0.0
 Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
 --------------------------------------------------------------------------------------
         0 |       0 |       0 |            0 |    +0.0% |   0.145 |   0.000 | _863_/D
-    final |       0 |      83 |            0 |    +9.9% |   0.201 |   0.000 | _883_/D
+    final |       0 |      97 |            0 |   +11.6% |   0.200 |   0.000 | _862_/D
 --------------------------------------------------------------------------------------
-[INFO RSZ-0032] Inserted 83 hold buffers.
+[INFO RSZ-0032] Inserted 97 hold buffers.
 -- reg2reg after
 Startpoint                           Endpoint                                 Slack
 ----------------------------------------------------------------------------------
-_883_/Q (DFF_X1)                     _883_/D (DFF_X1)                        0.2012
+_863_/QN (DFF_X1)                    _862_/D (DFF_X1)                        0.2003
 
 -- in2reg after
 Startpoint                           Endpoint                                 Slack
