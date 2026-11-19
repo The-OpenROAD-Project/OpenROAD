@@ -85,7 +85,7 @@ void Pin::determineEdge(const odb::Rect& bounds,
     const std::vector<odb::Rect>& layer_boxes
         = boxes_per_layer_.at(layer->getRoutingLevel());
     if (std::ranges::any_of(layer_boxes, [&](const odb::Rect& box) {
-          return findClosestEdge(bounds, box) == edge_;
+          return isClosestEdge(bounds, box, edge_);
         })) {
       edge_layers.push_back(layer);
     }

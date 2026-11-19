@@ -26,8 +26,8 @@ enum class PinEdge
   none
 };
 
-// Returns the edge of bounds closest to box.
-PinEdge findClosestEdge(const odb::Rect& bounds, const odb::Rect& box);
+// Returns whether edge is one of the edges of bounds closest to box.
+bool isClosestEdge(const odb::Rect& bounds, const odb::Rect& box, PinEdge edge);
 
 // Returns the edge of bounds that most of the boxes are closest to.
 PinEdge findPinEdge(const odb::Rect& bounds,

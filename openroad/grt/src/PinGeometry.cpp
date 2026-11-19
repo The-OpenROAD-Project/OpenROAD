@@ -4,6 +4,7 @@
 #include "PinGeometry.h"
 
 #include <algorithm>
+#include <limits>
 #include <utility>
 #include <vector>
 
@@ -14,20 +15,49 @@
 
 namespace grt {
 
-PinEdge findClosestEdge(const odb::Rect& bounds, const odb::Rect& box)
+// Returns the distance from box to edge of bounds.
+static int distanceToEdge(const odb::Rect& bounds,
+                          const odb::Rect& box,
+                          const PinEdge edge)
 {
-  const int n_dist = bounds.yMax() - box.yMax();
-  const int s_dist = box.yMin() - bounds.yMin();
-  const int e_dist = bounds.xMax() - box.xMax();
-  const int w_dist = box.xMin() - bounds.xMin();
-  const int min_dist = std::min({n_dist, s_dist, w_dist, e_dist});
-  if (n_dist == min_dist) {
+  switch (edge) {
+    case PinEdge::north:
+      return bounds.yMax() - box.yMax();
+    case PinEdge::south:
+      return box.yMin() - bounds.yMin();
+    case PinEdge::east:
+      return bounds.xMax() - box.xMax();
+    case PinEdge::west:
+      return box.xMin() - bounds.xMin();
+    case PinEdge::none:
+      break;
+  }
+  return std::numeric_limits<int>::max();
+}
+
+bool isClosestEdge(const odb::Rect& bounds,
+                   const odb::Rect& box,
+                   const PinEdge edge)
+{
+  const int min_dist = std::min({
+      distanceToEdge(bounds, box, PinEdge::north),
+      distanceToEdge(bounds, box, PinEdge::south),
+      distanceToEdge(bounds, box, PinEdge::east),
+      distanceToEdge(bounds, box, PinEdge::west),
+  });
+  return distanceToEdge(bounds, box, edge) == min_dist;
+}
+
+// Returns the edge of bounds closest to box; ties favor north, south, east.
+static PinEdge findClosestEdge(const odb::Rect& bounds, const odb::Rect& box)
+{
+  if (isClosestEdge(bounds, box, PinEdge::north)) {
     return PinEdge::north;
   }
-  if (s_dist == min_dist) {
+  if (isClosestEdge(bounds, box, PinEdge::south)) {
     return PinEdge::south;
   }
-  if (e_dist == min_dist) {
+  if (isClosestEdge(bounds, box, PinEdge::east)) {
     return PinEdge::east;
   }
   return PinEdge::west;
