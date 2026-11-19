@@ -122,11 +122,14 @@ void Opendp::diamondDPL()
 // against.
 //
 // A movable cell counts whether or not it is placed already: with
-// -incremental the legal cells are painted before the check, and with
-// fence regions prePlace() moves cells off the fences, but rip-up can move
-// either kind again, so their sites are supply and the cells are demand at
-// their starts. Cells in a group, and the sites of groups, are left out on
-// both sides; rip-up only moves cells of the target's own kind.
+// -incremental the legal cells are painted before the check, but rip-up can
+// move them again, so their sites are supply and the cells are demand at
+// their starts. The exception is a cell already placed outside its window:
+// with fence regions prePlace() moves a cell off a fence by searching from
+// the fence's edge, not from the cell's start, and the cell may stay where
+// that put it, so it is not demand. Cells in a group, and the sites of
+// groups, are left out on both sides; rip-up only moves cells of the
+// target's own kind.
 //
 // The negotiation legalizer also searches around a cell's current
 // position, so it can move a cell further than max_displacement from its
@@ -201,6 +204,15 @@ void Opendp::checkWindowSupply(const bool fatal)
     // is first moved to the nearest pixel off it (legalPt), however far,
     // and the window is centred there.
     const GridPt start = legalGridPt(cell, false);
+    // A cell some earlier step has already placed outside its window
+    // (prePlace() searches from the fence's edge, not from the cell's
+    // start) can stay where it is, and the window says nothing about it.
+    if (cell->isPlaced()
+        && (std::abs(grid_->gridX(cell).v - start.x.v) > max_displacement_x_
+            || std::abs(grid_->gridSnapDownY(cell).v - start.y.v)
+                   > max_displacement_y_)) {
+      continue;
+    }
     const int bx = std::clamp(start.x.v, 0, site_count.v - 1) / box_w;
     const int by = std::clamp(start.y.v, 0, row_count.v - 1) / box_h;
     const int width = grid_->gridWidth(cell).v;
