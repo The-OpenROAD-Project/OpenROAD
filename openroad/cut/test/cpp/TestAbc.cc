@@ -391,12 +391,28 @@ TEST_F(AbcTest, ExtractsCutWithCombinationalEndpointCorrectly)
   AbcLibraryFactory factory(&logger_);
   factory.AddDbSta(sta_.get());
   AbcLibrary abc_library = factory.Build();
+  sta::dbNetwork* network = sta_->getDbNetwork();
+
   LoadVerilog(kPrefix + "combinational_endpoint.v");
   CreateClock("clk2", "clock2", 0.5);
+  sta_->setDataCheck(network->findPin("and_gate/ZN"),
+                     sta::RiseFallBoth::riseFall(),
+                     network->findPin("or_gate/A1"),
+                     sta::RiseFallBoth::riseFall(),
+                     nullptr,
+                     sta::MinMaxAll::max(),
+                     0.1e-9,
+                     sta_->cmdSdc());
+  sta_->setDataCheck(network->findPin("d"),
+                     sta::RiseFallBoth::riseFall(),
+                     network->findPin("or_gate2/A1"),
+                     sta::RiseFallBoth::riseFall(),
+                     nullptr,
+                     sta::MinMaxAll::max(),
+                     0.1e-9,
+                     sta_->cmdSdc());
   sta_->searchPreamble();
   sta_->ensureClkNetwork(sta_->cmdMode());
-
-  sta::dbNetwork* network = sta_->getDbNetwork();
 
   LogicExtractorFactory extractor(sta_.get(), &logger_);
   for (auto vtx : sta_->endpoints()) {
@@ -409,26 +425,24 @@ TEST_F(AbcTest, ExtractsCutWithCombinationalEndpointCorrectly)
     instances.insert(network->name(inst));
   }
   EXPECT_EQ(instances,
-            (std::set<std::string>{"clock_gate",
-                                   "clock_gate2",
-                                   "clock_gate3",
-                                   "clock_gate4",
-                                   "gated_clk2_buf",
-                                   "gated_clk3_buf"}));
+            (std::set<std::string>{"gated_clk2_buf",
+                                   "gated_clk3_buf",
+                                   "and_gate",
+                                   "const0_gate",
+                                   "or_gate2_buf"}));
   std::set<std::string> inputs;
   for (sta::Net* net : cut.primary_inputs()) {
     inputs.insert(network->name(net));
   }
-  EXPECT_EQ(inputs,
-            (std::set<std::string>{
-                "clk", "clk2", "enable", "enable2", "enable3", "enable4"}));
+  EXPECT_EQ(
+      inputs,
+      (std::set<std::string>{"gated_clk2", "gated_clk3", "d", "d2", "w3"}));
   std::set<std::string> outputs;
   for (sta::Net* net : cut.primary_outputs()) {
     outputs.insert(network->name(net));
   }
-  EXPECT_EQ(
-      outputs,
-      (std::set<std::string>{"gated_clk", "gated_clk4", "gclk2", "gclk3"}));
+  EXPECT_EQ(outputs,
+            (std::set<std::string>{"gclk2", "gclk3", "w", "const0", "w4"}));
 }
 
 TEST_F(AbcTest, ExtractsEmptyCutSetCorrectly)
