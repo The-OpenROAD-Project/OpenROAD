@@ -156,14 +156,10 @@ class CUGR
   {
     congestion_iterations_ = iterations;
   }
-  // Nets with more terminals than this are left out of the netlist. Applied
-  // at the next init().
   void setSkipLargeFanoutNets(int skip_large_fanout)
   {
     skip_large_fanout_ = skip_large_fanout;
   }
-  // Restricts the netlist to these nets; empty keeps every net. Applied at
-  // the next init().
   void setSelectedNets(const std::vector<odb::dbNet*>& nets)
   {
     selected_nets_ = odb::PtrSet<odb::dbNet>(nets.begin(), nets.end());
