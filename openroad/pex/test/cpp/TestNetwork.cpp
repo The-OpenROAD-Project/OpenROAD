@@ -39,7 +39,8 @@ class NetworkTest : public tst::DbFixture
     loadLibLef(tech_, "cells", "_main/test/sky130hd/sky130hd_std_cell.lef");
     odb::dbChip* chip = odb::dbChip::create(getDb(), tech_);
     block_ = odb::dbBlock::create(chip, "top");
-    stack_ = fsv::readItfFile(getFilePath("_main/openroad/fsv/test/sky130.itf"));
+    stack_
+        = fsv::readItfFile(getFilePath("_main/openroad/fsv/test/sky130.itf"));
     met1_ = tech_->findLayer("met1");
     met2_ = tech_->findLayer("met2");
   }

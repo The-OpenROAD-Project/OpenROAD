@@ -124,13 +124,14 @@ class SpefTest : public tst::DbFixture
  protected:
   void SetUp() override
   {
-    odb::dbTech* tech
-        = loadTechLef("sky130", "_main/openroad/pex/test/sky130hd/sky130hd.tlef");
+    odb::dbTech* tech = loadTechLef(
+        "sky130", "_main/openroad/pex/test/sky130hd/sky130hd.tlef");
     loadLibLef(tech,
                "cells",
                "_main/openroad/pex/test/sky130hd/sky130_fd_sc_hd_merged.lef");
     block_ = readDef("_main/openroad/fsv/test/field_solver_gcd.def");
-    stack_ = fsv::readItfFile(getFilePath("_main/openroad/fsv/test/sky130.itf"));
+    stack_
+        = fsv::readItfFile(getFilePath("_main/openroad/fsv/test/sky130.itf"));
     model_ = openContexts();
   }
 
