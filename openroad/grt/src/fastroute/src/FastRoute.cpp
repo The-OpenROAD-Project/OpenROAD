@@ -358,9 +358,10 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   int64 total_size = static_cast<int64>(y_grid_) * x_range_;
   pop_heap2_2D_.resize(total_size, false);
 
-  total_size = static_cast<int64>(y_grid_) * x_grid_;
-  src_heap_2D_.resize(total_size);
-  dest_heap_2D_.resize(total_size);
+  // The heaps hold the search frontier only: setupHeap() clears them and
+  // they grow as the maze needs, rather than to a GCell each up front.
+  src_heap_2D_.clear();
+  dest_heap_2D_.clear();
 
   d1_2D_.resize(boost::extents[y_range_][x_range_]);
   d2_2D_.resize(boost::extents[y_range_][x_range_]);
@@ -374,9 +375,10 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   total_size = static_cast<int64>(y_grid_) * x_grid_ * num_layers_;
   pop_heap2_3D_.assign(total_size, 0);
 
-  // allocate memory for priority queue
+  // The 3D maze's position table is indexed by GCell and layer; its
+  // entries and the destination list grow to the frontier.
   src_heap_3D_.resize(total_size);
-  dest_heap_3D_.resize(total_size);
+  dest_heap_3D_.clear();
 
   d1_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
   path_len_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
