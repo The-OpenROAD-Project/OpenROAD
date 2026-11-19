@@ -135,6 +135,16 @@ void Opendp::diamondDPL()
 // groups, are left out on both sides; rip-up only moves cells of the
 // target's own kind.
 //
+// What keeps the check a proof is that it errs one way only: the area
+// within reach may be overestimated (a site counts for every cell,
+// whatever its site type or orientation; the reach is taken from the
+// widest and tallest cell and the lowest row), the area needed never. A
+// cell the model cannot place in a window, or cannot size, is left out of
+// the demand rather than guessed at; fewer cells against the same sites
+// is still a set Hall's condition holds for. A step added to the search
+// that moves a cell from anywhere but its start has to be left out here
+// the same way.
+//
 // The negotiation legalizer also searches around a cell's current
 // position, so it can move a cell further than max_displacement from its
 // start, and the proof does not hold for it: with fatal false the windows
