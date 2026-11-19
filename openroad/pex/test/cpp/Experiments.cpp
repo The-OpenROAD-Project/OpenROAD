@@ -83,6 +83,12 @@
 #include <utility>
 #include <vector>
 
+#include "CoverMap.h"
+#include "Evaluator.h"
+#include "Model.h"
+#include "ModelBuilder.h"
+#include "ModelJson.h"
+#include "Patterns.h"
 #include "fsv/Geometry.h"
 #include "fsv/Itf.h"
 #include "fsv/NetWindow.h"
@@ -92,12 +98,6 @@
 #include "odb/db.h"
 #include "odb/defin.h"
 #include "odb/lefin.h"
-#include "pex/CoverMap.h"
-#include "pex/Evaluator.h"
-#include "pex/Model.h"
-#include "pex/ModelBuilder.h"
-#include "pex/ModelJson.h"
-#include "pex/Patterns.h"
 #include "utl/Logger.h"
 
 namespace {

@@ -7,9 +7,9 @@
 #include <stdexcept>
 #include <string>
 
+#include "Model.h"
+#include "ModelJson.h"
 #include "gtest/gtest.h"
-#include "pex/Model.h"
-#include "pex/ModelJson.h"
 
 namespace pex {
 namespace {

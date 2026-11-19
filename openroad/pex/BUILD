@@ -8,7 +8,7 @@ load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
 
 package(
-    default_visibility = ["//:__subpackages__"],
+    default_visibility = ["//openroad/pex:__subpackages__"],
     features = ["layering_check"],
 )
 
@@ -16,8 +16,8 @@ package(
 cc_library(
     name = "patterns",
     srcs = ["src/Patterns.cpp"],
-    hdrs = ["include/pex/Patterns.h"],
-    includes = ["include"],
+    hdrs = ["src/Patterns.h"],
+    includes = ["src"],
     deps = [
         "//openroad/fsv:geometry",
         "//openroad/fsv:stack",
@@ -28,16 +28,16 @@ cc_library(
 cc_library(
     name = "model",
     srcs = ["src/Model.cpp"],
-    hdrs = ["include/pex/Model.h"],
-    includes = ["include"],
+    hdrs = ["src/Model.h"],
+    includes = ["src"],
 )
 
 # How a piece's covers map onto the model's contexts.
 cc_library(
     name = "cover_map",
     srcs = ["src/CoverMap.cpp"],
-    hdrs = ["include/pex/CoverMap.h"],
-    includes = ["include"],
+    hdrs = ["src/CoverMap.h"],
+    includes = ["src"],
     deps = [
         ":model",
         ":patterns",
@@ -49,8 +49,8 @@ cc_library(
 cc_library(
     name = "model_builder",
     srcs = ["src/ModelBuilder.cpp"],
-    hdrs = ["include/pex/ModelBuilder.h"],
-    includes = ["include"],
+    hdrs = ["src/ModelBuilder.h"],
+    includes = ["src"],
     deps = [
         ":model",
         ":patterns",
@@ -61,15 +61,24 @@ cc_library(
     ],
 )
 
+# The settings of an extraction, public for the commands.
+cc_library(
+    name = "options",
+    hdrs = ["include/pex/ExtractOptions.h"],
+    includes = ["include"],
+    visibility = ["//:__subpackages__"],
+)
+
 # The model applied to conductor boxes.
 cc_library(
     name = "evaluator",
     srcs = ["src/Evaluator.cpp"],
-    hdrs = ["include/pex/Evaluator.h"],
-    includes = ["include"],
+    hdrs = ["src/Evaluator.h"],
+    includes = ["src"],
     deps = [
         ":cover_map",
         ":model",
+        ":options",
         ":patterns",
         "//openroad/fsv:geometry",
         "//openroad/fsv:stack",
@@ -81,8 +90,8 @@ cc_library(
 cc_library(
     name = "index",
     srcs = ["src/Index.cpp"],
-    hdrs = ["include/pex/Index.h"],
-    includes = ["include"],
+    hdrs = ["src/Index.h"],
+    includes = ["src"],
     deps = [
         "//openroad/odb/src/db",
         "//openroad/utl",
@@ -95,8 +104,8 @@ cc_library(
 cc_library(
     name = "resistance",
     srcs = ["src/Resistance.cpp"],
-    hdrs = ["include/pex/Resistance.h"],
-    includes = ["include"],
+    hdrs = ["src/Resistance.h"],
+    includes = ["src"],
     deps = [
         "//openroad/fsv:stack",
         "//openroad/odb/src/db",
@@ -107,8 +116,8 @@ cc_library(
 cc_library(
     name = "network",
     srcs = ["src/Network.cpp"],
-    hdrs = ["include/pex/Network.h"],
-    includes = ["include"],
+    hdrs = ["src/Network.h"],
+    includes = ["src"],
     deps = [
         ":resistance",
         "//openroad/odb/src/db",
@@ -119,13 +128,14 @@ cc_library(
 cc_library(
     name = "extractor",
     srcs = ["src/Extractor.cpp"],
-    hdrs = ["include/pex/Extractor.h"],
-    includes = ["include"],
+    hdrs = ["src/Extractor.h"],
+    includes = ["src"],
     deps = [
         ":evaluator",
         ":index",
         ":model",
         ":network",
+        ":options",
         ":patterns",
         ":resistance",
         "//openroad/fsv:geometry",
@@ -141,8 +151,8 @@ cc_library(
 cc_library(
     name = "spef_writer",
     srcs = ["src/SpefWriter.cpp"],
-    hdrs = ["include/pex/SpefWriter.h"],
-    includes = ["include"],
+    hdrs = ["src/SpefWriter.h"],
+    includes = ["src"],
     deps = ["//openroad/odb/src/db"],
 )
 
@@ -150,9 +160,9 @@ cc_library(
 cc_library(
     name = "model_json",
     srcs = ["src/ModelJson.cpp"],
-    hdrs = ["include/pex/ModelJson.h"],
+    hdrs = ["src/ModelJson.h"],
     copts = ["-DBOOST_JSON_HEADER_ONLY"],
-    includes = ["include"],
+    includes = ["src"],
     deps = [
         ":model",
         "@boost.json",
@@ -163,8 +173,8 @@ cc_library(
 cc_library(
     name = "compare",
     srcs = ["src/Compare.cpp"],
-    hdrs = ["include/pex/Compare.h"],
-    includes = ["include"],
+    hdrs = ["src/Compare.h"],
+    includes = ["src"],
     deps = [
         "//openroad/fsv",
         "//openroad/fsv:net_window",
@@ -173,13 +183,12 @@ cc_library(
     ],
 )
 
-# The state behind the commands.
+# The state behind the commands, the library the rest of OpenROAD uses.
 cc_library(
     name = "pex",
     srcs = ["src/Pex.cpp"],
     hdrs = ["include/pex/Pex.h"],
-    includes = ["include"],
-    deps = [
+    implementation_deps = [
         ":compare",
         ":extractor",
         ":model",
@@ -190,6 +199,9 @@ cc_library(
         "//openroad/odb/src/db",
         "//openroad/utl",
     ],
+    includes = ["include"],
+    visibility = ["//:__subpackages__"],
+    deps = [":options"],
 )
 
 cc_library(
@@ -201,8 +213,8 @@ cc_library(
     ],
     hdrs = ["include/pex/MakePex.h"],
     includes = ["include"],
+    visibility = ["//:__subpackages__"],
     deps = [
-        ":extractor",
         ":pex",
         "//:ord",
         "//openroad/utl",
@@ -238,16 +250,14 @@ python_wrap_cc(
     module = "pex_py",
     root_swig_src = "src/Pex-py.i",
     swig_includes = ["src"],
+    visibility = ["//:__subpackages__"],
 )
 
 # Compiled into //:_openroad.so with the other Python modules, so that it
 # shares the session the Tcl commands use.
 python_wrap_library(
     name = "py_wrap",
-    deps = [
-        ":extractor",
-        ":pex",
-    ],
+    deps = [":pex"],
 )
 
 filegroup(
@@ -259,7 +269,10 @@ filegroup(
     visibility = ["//openroad/pex/test:__pkg__"],
 )
 
-exports_files(["README.md"])
+exports_files(
+    ["README.md"],
+    visibility = ["//docs:__pkg__"],
+)
 
 messages_txt(
     visibility = [

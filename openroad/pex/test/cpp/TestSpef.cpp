@@ -10,13 +10,13 @@
 #include <string>
 #include <vector>
 
+#include "Extractor.h"
+#include "Model.h"
+#include "SpefWriter.h"
 #include "fsv/Itf.h"
 #include "fsv/Stack.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
-#include "pex/Extractor.h"
-#include "pex/Model.h"
-#include "pex/SpefWriter.h"
 #include "tst/db_fixture.h"
 
 namespace pex {

@@ -7,9 +7,11 @@
 #include <string>
 #include <vector>
 
-#include "fsv/Stack.h"
-#include "pex/Extractor.h"
-#include "pex/Model.h"
+#include "pex/ExtractOptions.h"
+
+namespace fsv {
+class Stack;
+}  // namespace fsv
 
 namespace odb {
 class dbBlock;
@@ -21,6 +23,8 @@ class Logger;
 }  // namespace utl
 
 namespace pex {
+
+class Model;
 
 // The state behind the pex commands: a model with the ITF stack it was
 // built from, and the extraction of the design into ODB. Errors are

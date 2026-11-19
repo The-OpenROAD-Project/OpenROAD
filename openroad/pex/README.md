@@ -204,7 +204,7 @@ open). Four kinds of table describe a layer:
   each covering layer. The contexts reach a set depth each way; past it
   only a few far layers at spaced distances get contexts, and a cover
   between two of them takes both, weighted in the logarithm of its
-  distance (`pex/CoverMap.h`; e12 measures what that costs), so the table
+  distance (`src/CoverMap.h`; e12 measures what that costs), so the table
   count grows with the depth and the far factors, not with the square of
   the layer count. By default the builder chooses the covers itself
   instead: it probes each usable layer with a few 2D solves and keeps the

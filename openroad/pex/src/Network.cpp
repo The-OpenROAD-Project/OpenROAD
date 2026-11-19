@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "pex/Network.h"
+#include "Network.h"
 
 #include <algorithm>
 #include <cstdlib>
@@ -12,10 +12,10 @@
 #include <utility>
 #include <vector>
 
+#include "Resistance.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/geom.h"
-#include "pex/Resistance.h"
 
 namespace pex {
 
