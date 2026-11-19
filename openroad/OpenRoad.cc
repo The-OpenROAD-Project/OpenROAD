@@ -662,7 +662,7 @@ void OpenRoad::linkModule(const char* module_name)
 {
   if (!dbLinkModule(module_name, verilog_network_, db_, logger_)) {
     logger_->error(
-        ORD, 2028, "link_hier_module: module {} did not link.", module_name);
+        ORD, 2063, "link_hier_module: module {} did not link.", module_name);
   }
 }
 

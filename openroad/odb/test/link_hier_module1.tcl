@@ -40,7 +40,7 @@ if { [cells_of bc2] ne $before } {
   error "bc2 changed: [cells_of bc2]"
 }
 
-expect_error "linked twice" { link_hier_module buffer_pair } "*ORD-2026*"
-expect_error "a module the design has" { link_hier_module inv_chain } "*ORD-2026*"
+expect_error "linked twice" { link_hier_module buffer_pair } "*ORD-2061*"
+expect_error "a module the design has" { link_hier_module inv_chain } "*ORD-2061*"
 expect_error "a module nothing read" { link_hier_module no_such_module } "*STA-1390*"
 puts "pass"

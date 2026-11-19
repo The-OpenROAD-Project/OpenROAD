@@ -1221,19 +1221,19 @@ bool Verilog2db::linkModule(const char* module_name,
 {
   dbChip* chip = db_->getChip();
   if (chip == nullptr || chip->getBlock() == nullptr) {
-    logger_->error(ORD, 2025, "link_hier_module: no design is loaded.");
+    logger_->error(ORD, 2060, "link_hier_module: no design is loaded.");
   }
   dbBlock* top = chip->getBlock();
   if (top->findModule(module_name) != nullptr) {
     logger_->error(ORD,
-                   2026,
+                   2061,
                    "link_hier_module: the design already has a module {}.",
                    module_name);
   }
   for (dbBlock* child : top->getChildren()) {
     if (child->getName() == module_name) {
       logger_->error(ORD,
-                     2027,
+                     2062,
                      "link_hier_module: module {} is already linked.",
                      module_name);
     }

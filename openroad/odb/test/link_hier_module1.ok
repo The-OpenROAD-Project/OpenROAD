@@ -2,10 +2,10 @@
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
 [ERROR STA-0201] module buffer_pair cannot be found.
 not linked yet: STA-0201
-[ERROR ORD-2026] link_hier_module: the design already has a module buffer_pair.
-linked twice: ORD-2026
-[ERROR ORD-2026] link_hier_module: the design already has a module inv_chain.
-a module the design has: ORD-2026
+[ERROR ORD-2061] link_hier_module: the design already has a module buffer_pair.
+linked twice: ORD-2061
+[ERROR ORD-2061] link_hier_module: the design already has a module inv_chain.
+a module the design has: ORD-2061
 [ERROR STA-1390] no_such_module is not a verilog module.
 a module nothing read: STA-1390
 pass
