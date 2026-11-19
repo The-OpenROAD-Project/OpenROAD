@@ -2,20 +2,19 @@
 [INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
 worst slack max 4.1621
 [INFO RET-0014] Retiming graph: 14 gates, 12 edges, 5 registers, 6 pinned gates, 0 fenced registers.
-[INFO RET-0020] Worst register-to-register arrival 0.462 before retiming, clock period 5.000.
 
- Slide |  Worst arr | Flops | Sinks | Max wr | gate                 | fanout net
---------------------------------------------------------------------------------
-     1 |      0.389 |     4 |     1 |      1 | g2                   | n1
-     2 |      0.345 |     0 |     1 |      1 | g3                   | n2
-     3 |      0.305 |     0 |     1 |      1 | g4                   | n3
-     4 |      0.265 |     0 |     1 |      1 | g5                   | n4
-     5 |      0.227 |     0 |     1 |      1 | g6                   | n5
-     6 |      0.225 |     4 |     1 |      1 | g2                   | n1
-     7 |      0.195 |     0 |     1 |      1 | g7                   | n6
-     8 |      0.185 |     0 |     1 |      1 | g3                   | n2
---------------------------------------------------------------------------------
-[INFO RET-0023] Worst register-to-register arrival 0.185 after 8 slides.
+ Slide | Flops | Sinks | Max wr | gate                 | fanout net
+-------------------------------------------------------------------
+     1 |     4 |     1 |      1 | g2                   | n1
+     2 |     0 |     1 |      1 | g3                   | n2
+     3 |     0 |     1 |      1 | g4                   | n3
+     4 |     0 |     1 |      1 | g5                   | n4
+     5 |     0 |     1 |      1 | g6                   | n5
+     6 |     4 |     1 |      1 | g2                   | n1
+     7 |     0 |     1 |      1 | g7                   | n6
+     8 |     0 |     1 |      1 | g3                   | n2
+-------------------------------------------------------------------
+[INFO RET-0023] Retime found 8 slides.
 [INFO RET-0024] Rebuilt 4 of 12 register groups: 4 registers removed, 2 inserted, 1 of them keeping their class.
 worst slack max 4.3550
 Retime output passed/skipped sequential equivalence test

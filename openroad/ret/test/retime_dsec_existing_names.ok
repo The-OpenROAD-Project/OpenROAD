@@ -1,38 +1,36 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 worst slack max 0.8051
 [INFO RET-0014] Retiming graph: 18 gates, 16 edges, 6 registers, 8 pinned gates, 0 fenced registers.
-[INFO RET-0020] Worst register-to-register arrival 0.090 before retiming, clock period 1.000.
 
- Slide |  Worst arr | Flops | Sinks | Max wr | gate                 | fanout net
---------------------------------------------------------------------------------
-     1 |      0.087 |     2 |     1 |      1 | g12                  | m1
-     2 |      0.070 |     2 |     1 |      1 | g2                   | n1
-     3 |      0.070 |     0 |     1 |      1 | g13                  | m2
-     4 |      0.057 |     0 |     1 |      1 | g3                   | n2
-     5 |      0.057 |     0 |     1 |      1 | g14                  | m3
-     6 |      0.046 |     0 |     1 |      1 | g4                   | n3
-     7 |      0.046 |     0 |     1 |      1 | g15                  | m4
-     8 |      0.035 |     0 |     1 |      1 | g5                   | n4
---------------------------------------------------------------------------------
-[INFO RET-0023] Worst register-to-register arrival 0.035 after 8 slides.
+ Slide | Flops | Sinks | Max wr | gate                 | fanout net
+-------------------------------------------------------------------
+     1 |     2 |     1 |      1 | g12                  | m1
+     2 |     2 |     1 |      1 | g2                   | n1
+     3 |     0 |     1 |      1 | g13                  | m2
+     4 |     0 |     1 |      1 | g3                   | n2
+     5 |     0 |     1 |      1 | g14                  | m3
+     6 |     0 |     1 |      1 | g4                   | n3
+     7 |     0 |     1 |      1 | g15                  | m4
+     8 |     0 |     1 |      1 | g5                   | n4
+-------------------------------------------------------------------
+[INFO RET-0023] Retime found 8 slides.
 [INFO RET-0008] Unmapped 2 registers.
 [INFO RET-0043] Iteration 2: repeating the search on the netlist with the unmapped registers.
-[INFO RET-0020] Worst register-to-register arrival 0.098 before retiming, clock period 1.000.
 
- Slide |  Worst arr | Flops | Sinks | Max wr | gate                 | fanout net
---------------------------------------------------------------------------------
-     1 |      0.096 |     1 |     1 |      1 | unmap_inv_5          | unmap_net_6
-     2 |      0.087 |     1 |     1 |      1 | unmap_inv_3          | unmap_net_4
-     3 |      0.085 |     2 |     1 |      1 | g2                   | n1
-     4 |      0.070 |     0 |     1 |      1 | g12                  | m1
-     5 |      0.070 |     0 |     1 |      1 | g3                   | n2
-     6 |      0.057 |     0 |     1 |      1 | g13                  | m2
-     7 |      0.057 |     0 |     1 |      1 | g4                   | n3
-     8 |      0.046 |     0 |     1 |      1 | g14                  | m3
-     9 |      0.046 |     0 |     1 |      1 | g5                   | n4
-    10 |      0.035 |     0 |     1 |      1 | g15                  | m4
---------------------------------------------------------------------------------
-[INFO RET-0023] Worst register-to-register arrival 0.035 after 10 slides.
+ Slide | Flops | Sinks | Max wr | gate                 | fanout net
+-------------------------------------------------------------------
+     1 |     1 |     1 |      1 | unmap_inv_5          | unmap_net_6
+     2 |     1 |     1 |      1 | unmap_inv_3          | unmap_net_4
+     3 |     2 |     1 |      1 | g2                   | n1
+     4 |     0 |     1 |      1 | g12                  | m1
+     5 |     0 |     1 |      1 | g3                   | n2
+     6 |     0 |     1 |      1 | g13                  | m2
+     7 |     0 |     1 |      1 | g4                   | n3
+     8 |     0 |     1 |      1 | g14                  | m3
+     9 |     0 |     1 |      1 | g5                   | n4
+    10 |     0 |     1 |      1 | g15                  | m4
+-------------------------------------------------------------------
+[INFO RET-0023] Retime found 10 slides.
 [INFO RET-0024] Rebuilt 6 of 18 register groups: 4 registers removed, 2 inserted, 0 of them keeping their class.
 worst slack max 0.8455
 Retime output passed/skipped sequential equivalence test

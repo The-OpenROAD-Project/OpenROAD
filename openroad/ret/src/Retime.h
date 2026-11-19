@@ -100,8 +100,8 @@ class Retime
   void sweepSlideCone(int v);
   double estimateSlideDelta(int v);
   bool forwardMovable(int v) const;
-  void reportSlide(int v, double worst, int moves);
-  void reportResult(double worst, int moves, int pi_rejects);
+  void reportSlide(int v, int moves);
+  void reportResult(int moves, int pi_rejects);
 
   const RetimingGraph* graph_ = nullptr;
   sta::dbSta* sta_ = nullptr;

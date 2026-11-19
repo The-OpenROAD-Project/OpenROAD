@@ -3,18 +3,17 @@
 worst slack max 1.4531
 [INFO RET-0047] The libraries have no plain D flip-flop; new registers are sg13g2_dfrbp_1 with RESET_B tied high.
 [INFO RET-0014] Retiming graph: 13 gates, 9 edges, 3 registers, 7 pinned gates, 0 fenced registers.
-[INFO RET-0020] Worst register-to-register arrival 0.249 before retiming, clock period 2.000.
 
- Slide |  Worst arr | Flops | Sinks | Max wr | gate                 | fanout net
---------------------------------------------------------------------------------
-     1 |      0.204 |     2 |     1 |      1 | g2                   | n1
-     2 |      0.173 |     0 |     1 |      1 | g3                   | n2
-     3 |      0.146 |     0 |     1 |      1 | g4                   | n3
-     4 |      0.120 |     0 |     1 |      1 | g5                   | n4
-     5 |      0.093 |     0 |     1 |      1 | g6                   | n5
-     6 |      0.000 |     0 |     1 |      1 | g7                   | n6
---------------------------------------------------------------------------------
-[INFO RET-0023] Worst register-to-register arrival 0.000 after 6 slides.
+ Slide | Flops | Sinks | Max wr | gate                 | fanout net
+-------------------------------------------------------------------
+     1 |     2 |     1 |      1 | g2                   | n1
+     2 |     0 |     1 |      1 | g3                   | n2
+     3 |     0 |     1 |      1 | g4                   | n3
+     4 |     0 |     1 |      1 | g5                   | n4
+     5 |     0 |     1 |      1 | g6                   | n5
+     6 |     0 |     1 |      1 | g7                   | n6
+-------------------------------------------------------------------
+[INFO RET-0023] Retime found 6 slides.
 [INFO RET-0024] Rebuilt 3 of 9 register groups: 2 registers removed, 1 inserted, 0 of them keeping their class.
 worst slack max 1.6255
 Retime output passed/skipped sequential equivalence test

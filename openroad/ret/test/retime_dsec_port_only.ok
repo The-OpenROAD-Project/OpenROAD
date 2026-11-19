@@ -1,15 +1,14 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 worst slack max 0.8497
 [INFO RET-0014] Retiming graph: 5 gates, 4 edges, 1 registers, 2 pinned gates, 1 fenced registers.
-[INFO RET-0020] Worst register-to-register arrival 0.041 before retiming, clock period 1.000.
 
- Slide |  Worst arr | Flops | Sinks | Max wr | gate                 | fanout net
---------------------------------------------------------------------------------
-     1 |      0.028 |     1 |     1 |      1 | i1                   | n1
-     2 |      0.017 |     0 |     1 |      1 | i2                   | n2
-     3 |      0.000 |     0 |     1 |      1 | i3                   | n3
---------------------------------------------------------------------------------
-[INFO RET-0023] Worst register-to-register arrival 0.000 after 3 slides.
+ Slide | Flops | Sinks | Max wr | gate                 | fanout net
+-------------------------------------------------------------------
+     1 |     1 |     1 |      1 | i1                   | n1
+     2 |     0 |     1 |      1 | i2                   | n2
+     3 |     0 |     1 |      1 | i3                   | n3
+-------------------------------------------------------------------
+[INFO RET-0023] Retime found 3 slides.
 [INFO RET-0024] Rebuilt 2 of 4 register groups: 1 registers removed, 1 inserted, 0 of them keeping their class.
 worst slack max 0.8703
 Retime output passed/skipped sequential equivalence test

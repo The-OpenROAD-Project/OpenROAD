@@ -12,26 +12,25 @@
 [INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
 worst slack max 395.13
 [INFO RET-0014] Retiming graph: 29 gates, 26 edges, 9 registers, 12 pinned gates, 0 fenced registers.
-[INFO RET-0020] Worst register-to-register arrival 57.653 before retiming, clock period 500.000.
 
- Slide |  Worst arr | Flops | Sinks | Max wr | gate                 | fanout net
---------------------------------------------------------------------------------
-     1 |     50.743 |     3 |     1 |      1 | g23                  | j1
-     2 |     49.382 |     1 |     1 |      1 | g1                   | n1
-     3 |     43.353 |     2 |     1 |      1 | g12                  | m1
-     4 |     38.485 |     0 |     1 |      1 | g2                   | n2
-     5 |     37.879 |     0 |     1 |      1 | g13                  | m2
-     6 |     31.926 |     0 |     1 |      1 | g3                   | n3
-     7 |     31.480 |     0 |     1 |      1 | g24                  | j2
-     8 |     25.699 |     0 |     1 |      1 | g14                  | m3
-     9 |     25.668 |     0 |     1 |      1 | g25                  | j3
-    10 |     25.423 |     0 |     1 |      1 | g15                  | m4
-    11 |     20.194 |     0 |     1 |      1 | g4                   | n4
-    12 |     20.167 |     0 |     1 |      1 | g26                  | j4
-    13 |     20.068 |     0 |     1 |      1 | g16                  | m5
-    14 |     18.707 |     0 |     1 |      1 | g5                   | n5
---------------------------------------------------------------------------------
-[INFO RET-0023] Worst register-to-register arrival 18.707 after 14 slides.
+ Slide | Flops | Sinks | Max wr | gate                 | fanout net
+-------------------------------------------------------------------
+     1 |     3 |     1 |      1 | g23                  | j1
+     2 |     1 |     1 |      1 | g1                   | n1
+     3 |     2 |     1 |      1 | g12                  | m1
+     4 |     0 |     1 |      1 | g2                   | n2
+     5 |     0 |     1 |      1 | g13                  | m2
+     6 |     0 |     1 |      1 | g3                   | n3
+     7 |     0 |     1 |      1 | g24                  | j2
+     8 |     0 |     1 |      1 | g14                  | m3
+     9 |     0 |     1 |      1 | g25                  | j3
+    10 |     0 |     1 |      1 | g15                  | m4
+    11 |     0 |     1 |      1 | g4                   | n4
+    12 |     0 |     1 |      1 | g26                  | j4
+    13 |     0 |     1 |      1 | g16                  | m5
+    14 |     0 |     1 |      1 | g5                   | n5
+-------------------------------------------------------------------
+[INFO RET-0023] Retime found 14 slides.
 [INFO RET-0008] Unmapped 2 registers.
 [INFO RET-0024] Rebuilt 9 of 28 register groups: 6 registers removed, 3 inserted, 2 of them keeping their class.
 worst slack max 424.39

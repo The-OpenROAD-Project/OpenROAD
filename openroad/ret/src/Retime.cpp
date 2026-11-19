@@ -42,7 +42,7 @@ constexpr double kEps = 1e-15;
 
 constexpr const char* kSlideTableRule
     = "----------------------------------------"
-      "----------------------------------------";
+      "---------------------------";
 }  // namespace
 
 Retime::Retime(const RetimingGraph* graph,
@@ -667,12 +667,6 @@ void Retime::run(int max_moves)
   double worst = worstArrival();
   markCriticalCone(worst);
   pi_limit_ = std::max(static_cast<double>(graph_->clockPeriod()), worst_pi_);
-  logger_->info(utl::RET,
-                20,
-                "Worst register-to-register arrival {} before retiming, "
-                "clock period {}.",
-                sta::delayAsString(worst, 3, sta_),
-                sta::delayAsString(graph_->clockPeriod(), 3, sta_));
   if (worst <= 0.0) {
     logger_->info(utl::RET, 21, "No register-to-register path to optimize.");
     return;
@@ -695,7 +689,7 @@ void Retime::run(int max_moves)
         if (pi_ok && trial < worst - kEps) {
           worst = trial;
           ++moves;
-          reportSlide(v, worst, moves);
+          reportSlide(v, moves);
           markCriticalCone(worst);
           accepted = true;
         } else {
@@ -704,10 +698,10 @@ void Retime::run(int max_moves)
       }
     }
   }
-  reportResult(worst, moves, pi_rejects);
+  reportResult(moves, pi_rejects);
 }
 
-void Retime::reportSlide(int v, double worst, int moves)
+void Retime::reportSlide(int v, int moves)
 {
   std::string net_name = "?";
   for (odb::dbITerm* iterm : graph_->nodes()[v]->getITerms()) {
@@ -735,14 +729,12 @@ void Retime::reportSlide(int v, double worst, int moves)
   }
   if (moves == 1) {
     logger_->report("");
-    logger_->report(
-        " Slide |  Worst arr | Flops | Sinks | Max wr | {:<20} | fanout net",
-        "gate");
+    logger_->report(" Slide | Flops | Sinks | Max wr | {:<20} | fanout net",
+                    "gate");
     logger_->report(kSlideTableRule);
   }
-  logger_->report("{:>6} | {:>10} | {:>5} | {:>5} | {:>6} | {:<20} | {}",
+  logger_->report("{:>6} | {:>5} | {:>5} | {:>6} | {:<20} | {}",
                   moves,
-                  sta::delayAsString(worst, 3, sta_),
                   moved_flops.size(),
                   graph_->adj()[v].size(),
                   max_wr,
@@ -750,17 +742,13 @@ void Retime::reportSlide(int v, double worst, int moves)
                   net_name);
 }
 
-void Retime::reportResult(double worst, int moves, int pi_rejects)
+void Retime::reportResult(int moves, int pi_rejects)
 {
   if (moves == 0) {
     logger_->info(utl::RET, 16, "Retime found no slides.");
   } else {
     logger_->report(kSlideTableRule);
-    logger_->info(utl::RET,
-                  23,
-                  "Worst register-to-register arrival {} after {} slides.",
-                  sta::delayAsString(worst, 3, sta_),
-                  moves);
+    logger_->info(utl::RET, 23, "Retime found {} slides.", moves);
   }
   if (pi_rejects > 0) {
     logger_->info(utl::RET,

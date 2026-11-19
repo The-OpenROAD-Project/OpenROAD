@@ -2,18 +2,17 @@
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
 worst slack max 0.8014
 [INFO RET-0014] Retiming graph: 17 gates, 15 edges, 5 registers, 9 pinned gates, 0 fenced registers.
-[INFO RET-0020] Worst register-to-register arrival 0.098 before retiming, clock period 1.000.
 
- Slide |  Worst arr | Flops | Sinks | Max wr | gate                 | fanout net
---------------------------------------------------------------------------------
-     1 |      0.081 |     2 |     1 |      1 | u_core/g2            | u_core/n1
-     2 |      0.069 |     0 |     1 |      1 | u_core/g3            | u_core/n2
-     3 |      0.057 |     0 |     1 |      1 | u_core/g4            | u_core/n3
-     4 |      0.046 |     0 |     1 |      1 | u_core/g5            | u_core/n4
-     5 |      0.035 |     0 |     1 |      1 | u_core/g6            | u_core/n5
-     6 |      0.000 |     0 |     1 |      1 | u_core/g7            | u_core/n6
---------------------------------------------------------------------------------
-[INFO RET-0023] Worst register-to-register arrival 0.000 after 6 slides.
+ Slide | Flops | Sinks | Max wr | gate                 | fanout net
+-------------------------------------------------------------------
+     1 |     2 |     1 |      1 | u_core/g2            | u_core/n1
+     2 |     0 |     1 |      1 | u_core/g3            | u_core/n2
+     3 |     0 |     1 |      1 | u_core/g4            | u_core/n3
+     4 |     0 |     1 |      1 | u_core/g5            | u_core/n4
+     5 |     0 |     1 |      1 | u_core/g6            | u_core/n5
+     6 |     0 |     1 |      1 | u_core/g7            | u_core/n6
+-------------------------------------------------------------------
+[INFO RET-0023] Retime found 6 slides.
 [INFO RET-0024] Rebuilt 3 of 15 register groups: 2 registers removed, 1 inserted, 0 of them keeping their class.
 worst slack max 0.8249
 Retime output passed/skipped sequential equivalence test
