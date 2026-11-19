@@ -44,10 +44,13 @@ class TestManTclEntryPoint(unittest.TestCase):
 
     def run_check(self, *args, main_module=False):
         entry = ["-m", "man_tcl_check"] if main_module else [str(self.checker)]
+        pythonpath = str(self.checker.parent)
+        if "PYTHONPATH" in os.environ:
+            pythonpath = os.pathsep.join([pythonpath, os.environ["PYTHONPATH"]])
         return subprocess.run(
             [sys.executable, *entry, *args],
             cwd=self.cwd,
-            env={**os.environ, "PYTHONPATH": str(self.checker.parent)},
+            env={**os.environ, "PYTHONPATH": pythonpath},
             capture_output=True,
             text=True,
             timeout=10,
