@@ -108,6 +108,7 @@ class NesterovPlace
 
  private:
   friend class TimingRepairIntegrationTest;
+  friend class RoutabilityMinimumTest;
 
   void updateIterGraphics(int iter,
                           const std::string& reports_dir,
