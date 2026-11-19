@@ -225,8 +225,11 @@ class dbNetwork : public ConcreteNetwork
   // iterms, not these ports.
   void makeTopCellForChip(odb::dbChip* chip);
 
-  // dbStaCbk::inDbBTermCreate
+  // makeTopCell
   Port* makeTopPort(odb::dbBTerm* bterm);
+  // Port for a bterm created after linking, placed ahead of the bus ports as
+  // groupBusPorts places scalar ports. dbStaCbk::inDbBTermCreate
+  Port* makeTopPortBeforeBusPorts(odb::dbBTerm* bterm);
   odb::dbBTerm* isTopPort(const Port*) const;
   void setTopPortDirection(odb::dbBTerm* bterm, const odb::dbIoType& io_type);
   ObjectId id(const Port* port) const override;
