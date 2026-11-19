@@ -13,7 +13,7 @@ jobs:
     runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted-ubuntu-26.04' || 'ubuntu-26.04' }}
     env:
       # Keep the version aligned with auto-format and generated ODB checks.
-      CLANG_FORMAT_VERSION: "23.1.2"
+      CLANG_FORMAT_VERSION: "23.1.5"
     steps:
       - name: Check out repository code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
