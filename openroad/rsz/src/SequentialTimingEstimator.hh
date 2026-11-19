@@ -8,11 +8,30 @@
 
 namespace sta {
 class LibertyCell;
-}
+class LibertyPort;
+class Statetable;
+}  // namespace sta
 
 namespace rsz {
 class Resizer;
 struct Target;
+
+// True when every internal node of statetable loads data only on a clock
+// edge (R/F input), i.e. the table models registers rather than latches.
+bool statetableIsEdgeTriggered(const sta::Statetable& statetable);
+
+// Null when output of cell is an edge-triggered register output: it has a
+// clk->Q arc, no latch arc, and no arc from a setup/hold-checked data input
+// (a transparent latch path); otherwise a static reason label.  Statetables
+// are not read: a cell may hold several and OpenSTA keeps only the last.
+const char* registerOutputRejectReason(const sta::LibertyCell* cell,
+                                       const sta::LibertyPort* output);
+bool isRegisterOutput(const sta::LibertyCell* cell,
+                      const sta::LibertyPort* output);
+
+// True when cell has a register output and every output with a clk->Q arc
+// is one (registerOutputRejectReason).
+bool isRegisterCell(const sta::LibertyCell* cell);
 
 // Estimates setup/hold impact at a flip-flop's data and clock inputs when
 // scoring a Q-path size or VT swap. Uses local load and Liberty-check deltas

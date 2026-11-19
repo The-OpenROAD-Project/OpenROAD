@@ -31,6 +31,7 @@
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PocvMode.hh"
+#include "sta/PortDirection.hh"
 #include "sta/Scene.hh"
 #include "sta/Sdc.hh"
 #include "sta/Sequential.hh"
@@ -38,8 +39,236 @@
 #include "sta/TimingModel.hh"
 #include "sta/TimingRole.hh"
 #include "sta/VisitPathEnds.hh"
+#include "utl/Logger.h"
 
 namespace rsz {
+
+namespace {
+
+// One statetable row with the Liberty "H/L" and "L/H" shorthand resolved.
+struct ConcreteStateRow
+{
+  sta::StateInputValues inputs;
+  sta::StateInternalValues currents;
+  sta::StateInternalValues nexts;
+};
+
+// Expand a row's H/L and L/H entries into the two rows they stand for.  All
+// such entries in one row vary together: the first row takes every entry's
+// first value (H/L -> H, L/H -> L), the second row every entry's second.
+// OpenSTA stores the shorthand as single high_low/low_high rows.
+void expandStateRow(const sta::StatetableRow& row,
+                    std::vector<ConcreteStateRow>& rows)
+{
+  using InputValue = sta::StateInputValue;
+  using InternalValue = sta::StateInternalValue;
+
+  const auto is_pair_input = [](const InputValue value) {
+    return value == InputValue::high_low || value == InputValue::low_high;
+  };
+  const auto is_pair_internal = [](const InternalValue value) {
+    return value == InternalValue::high_low || value == InternalValue::low_high;
+  };
+  const bool shorthand
+      = std::ranges::any_of(row.inputValues(), is_pair_input)
+        || std::ranges::any_of(row.currentValues(), is_pair_internal)
+        || std::ranges::any_of(row.nextValues(), is_pair_internal);
+  if (!shorthand) {
+    rows.push_back({
+        .inputs = row.inputValues(),
+        .currents = row.currentValues(),
+        .nexts = row.nextValues(),
+    });
+    return;
+  }
+
+  for (const bool first : {true, false}) {
+    ConcreteStateRow concrete;
+    for (const InputValue value : row.inputValues()) {
+      if (value == InputValue::high_low) {
+        concrete.inputs.push_back(first ? InputValue::high : InputValue::low);
+      } else if (value == InputValue::low_high) {
+        concrete.inputs.push_back(first ? InputValue::low : InputValue::high);
+      } else {
+        concrete.inputs.push_back(value);
+      }
+    }
+    const auto resolve = [first](const sta::StateInternalValues& values) {
+      sta::StateInternalValues resolved;
+      for (const InternalValue value : values) {
+        if (value == InternalValue::high_low) {
+          resolved.push_back(first ? InternalValue::high : InternalValue::low);
+        } else if (value == InternalValue::low_high) {
+          resolved.push_back(first ? InternalValue::low : InternalValue::high);
+        } else {
+          resolved.push_back(value);
+        }
+      }
+      return resolved;
+    };
+    concrete.currents = resolve(row.currentValues());
+    concrete.nexts = resolve(row.nextValues());
+    rows.push_back(std::move(concrete));
+  }
+}
+
+}  // namespace
+
+bool statetableIsEdgeTriggered(const sta::Statetable& statetable)
+{
+  using InputValue = sta::StateInputValue;
+  using InternalValue = sta::StateInternalValue;
+
+  const size_t node_count = statetable.internalPorts().size();
+  std::vector<ConcreteStateRow> rows;
+  for (const sta::StatetableRow& row : statetable.table()) {
+    expandStateRow(row, rows);
+  }
+  if (node_count == 0 || rows.empty()) {
+    return false;
+  }
+
+  const auto loads = [](const InternalValue value) {
+    return value == InternalValue::low || value == InternalValue::high;
+  };
+  const auto has_edge = [](const ConcreteStateRow& row) {
+    return std::ranges::any_of(row.inputs, [](const InputValue value) {
+      return value == InputValue::rise || value == InputValue::fall;
+    });
+  };
+
+  for (size_t node = 0; node < node_count; ++node) {
+    // A data load is a pair of rows that differ only in one input flipping
+    // L<->H and load opposite values: the node follows that input.  Rows
+    // that load a constant whatever the data (async set/clear) never pair.
+    // A "H/L R : - : H/L" row expands into exactly such a pair.
+    bool data_load = false;
+    for (size_t i = 0; i < rows.size(); ++i) {
+      if (rows[i].nexts.size() <= node) {
+        return false;
+      }
+      const InternalValue next_i = rows[i].nexts[node];
+      if (!loads(next_i)) {
+        continue;
+      }
+      for (size_t j = i + 1; j < rows.size(); ++j) {
+        if (rows[j].nexts.size() <= node) {
+          return false;
+        }
+        const InternalValue next_j = rows[j].nexts[node];
+        if (!loads(next_j) || next_i == next_j
+            || rows[i].currents != rows[j].currents) {
+          continue;
+        }
+
+        const sta::StateInputValues& inputs_i = rows[i].inputs;
+        const sta::StateInputValues& inputs_j = rows[j].inputs;
+        int differing = 0;
+        bool level_flip = false;
+        for (size_t k = 0; k < inputs_i.size() && k < inputs_j.size(); ++k) {
+          if (inputs_i[k] != inputs_j[k]) {
+            ++differing;
+            level_flip = (inputs_i[k] == InputValue::low
+                          && inputs_j[k] == InputValue::high)
+                         || (inputs_i[k] == InputValue::high
+                             && inputs_j[k] == InputValue::low);
+          }
+        }
+        if (differing != 1 || !level_flip) {
+          continue;
+        }
+
+        data_load = true;
+        // Loading data at a level, not an edge, is a transparent latch.
+        if (!has_edge(rows[i]) || !has_edge(rows[j])) {
+          return false;
+        }
+      }
+    }
+    if (!data_load) {
+      return false;
+    }
+  }
+  return true;
+}
+
+const char* registerOutputRejectReason(const sta::LibertyCell* cell,
+                                       const sta::LibertyPort* output)
+{
+  if (cell == nullptr || output == nullptr) {
+    return "no_cell_or_output";
+  }
+  if (cell->isClockGate()) {
+    return "clock_gate";
+  }
+  if (std::ranges::any_of(cell->sequentials(),
+                          [](const sta::Sequential& sequential) {
+                            return !sequential.isRegister();
+                          })) {
+    return "latch_group";
+  }
+
+  // Constrained data inputs: the inputs a setup/hold check lands on.  Not
+  // the generic role: recovery/removal (async set/clear) map to setup/hold.
+  std::set<const sta::LibertyPort*> data_ports;
+  for (const sta::TimingArcSet* arc_set : cell->timingArcSets()) {
+    const sta::TimingRole* role = arc_set->role();
+    if (role == sta::TimingRole::setup() || role == sta::TimingRole::hold()) {
+      data_ports.insert(arc_set->to());
+    }
+  }
+
+  // Decide from the arcs into this output, not from the statetable: a cell
+  // may hold several statetables (OpenSTA keeps the last), and a statetable
+  // latch's enable arc is regClkToQ without -infer_latches.  A register
+  // output has a clk->Q arc and no arc from a checked data input; a latch is
+  // transparent, so its data input also has an arc to the output.
+  bool has_clock_to_q = false;
+  for (const sta::TimingArcSet* arc_set : cell->timingArcSetsTo(output)) {
+    const sta::TimingRole* role = arc_set->role()->genericRole();
+    if (role == sta::TimingRole::latchEnToQ()
+        || role == sta::TimingRole::latchDtoQ()) {
+      return "latch_arc";
+    }
+    if (role == sta::TimingRole::regClkToQ()) {
+      has_clock_to_q = true;
+    } else if (!role->isTimingCheck() && role != sta::TimingRole::regSetClr()
+               && data_ports.contains(arc_set->from())) {
+      return "transparent_data_arc";
+    }
+  }
+  return has_clock_to_q ? nullptr : "no_clk_to_q";
+}
+
+bool isRegisterOutput(const sta::LibertyCell* cell,
+                      const sta::LibertyPort* output)
+{
+  return registerOutputRejectReason(cell, output) == nullptr;
+}
+
+bool isRegisterCell(const sta::LibertyCell* cell)
+{
+  if (cell == nullptr) {
+    return false;
+  }
+  // Every output with a clk->Q arc must be a register output.
+  bool any_register_output = false;
+  sta::LibertyCellPortIterator port_iter(cell);
+  while (port_iter.hasNext()) {
+    const sta::LibertyPort* port = port_iter.next();
+    if (!port->direction()->isAnyOutput()) {
+      continue;
+    }
+    const char* reason = registerOutputRejectReason(cell, port);
+    if (reason == nullptr) {
+      any_register_output = true;
+    } else if (std::string_view(reason) != "no_clk_to_q") {
+      return false;
+    }
+  }
+  return any_register_output;
+}
+
 namespace {
 
 // A side check's slack loss counts fully at or below zero slack and fades out
@@ -47,6 +276,9 @@ namespace {
 constexpr double kSideSlackWeightCutoff = 10.0e-12;
 // Rounding allowance before a side check counts as a new violation.
 constexpr double kSideSlackViolationTolerance = 0.001e-12;
+// A check the estimator cannot model is skipped when its slack is at least
+// this; a cell swap moves a check margin by a few ps at most.
+constexpr float kUnscoredCheckSlackGuard = 25.0e-12f;
 
 struct PreparedInputTiming
 {
@@ -87,15 +319,6 @@ std::optional<sta::Pvt> copyPvt(const sta::Pvt* pvt)
 const sta::Pvt* pvtValue(const std::optional<sta::Pvt>& pvt)
 {
   return pvt ? &*pvt : nullptr;
-}
-
-bool isFlipFlop(const sta::LibertyCell* cell)
-{
-  return cell != nullptr && !cell->sequentials().empty()
-         && std::ranges::all_of(cell->sequentials(),
-                                [](const sta::Sequential& sequential) {
-                                  return sequential.isRegister();
-                                });
 }
 
 const sta::TimingArc* matchingArc(const sta::TimingArc* reference,
@@ -501,6 +724,14 @@ class SetupHoldCheckCollector : public sta::PathEndVisitor
 
     PreparedSetupHoldCheck check;
     if (!prepareSetupHoldCheck(resizer_, inst_, end, candidates_, check)) {
+      // One check this estimator cannot model (a port- or tie-driven pin, an
+      // unusual timing model) used to make every candidate of the register
+      // unscorable.  Skip it while its slack covers any VT/size change.
+      const float slack = sta::delayAsFloat(end->slack(resizer_.staState()));
+      if (std::isfinite(slack) && slack >= kUnscoredCheckSlackGuard) {
+        RepairSetupProfiler::event("sequential_unscored_check_skipped");
+        return;
+      }
       failure_reason_ = "sequential_missing_check_context";
       return;
     }
@@ -602,36 +833,45 @@ SequentialTimingEstimator::prepare(Resizer& resizer, const Target& target)
   sta::Instance* inst = target.inst(resizer);
   sta::LibertyCell* cell
       = inst != nullptr ? resizer.network()->libertyCell(inst) : nullptr;
-  if (!isFlipFlop(cell)) {
+  const sta::Pin* target_pin = target.resolvedPin(resizer);
+  const sta::LibertyPort* output
+      = target_pin != nullptr ? resizer.network()->libertyPort(target_pin)
+                              : nullptr;
+  const char* reject_reason = registerOutputRejectReason(cell, output);
+  if (reject_reason != nullptr) {
+    // A cell with a timing-checked input that is not classified as a
+    // register is the case to look at: set_debug_level RSZ sequential 1.
+    debugPrint(resizer.logger(),
+               utl::RSZ,
+               "sequential",
+               1,
+               "no sequential estimator for {} ({}): {}",
+               target_pin ? resizer.network()->pathName(target_pin) : "?",
+               cell ? cell->name() : "?",
+               reject_reason);
     return nullptr;
   }
 
   const ProfileScope profile("prepare_sequential");
   std::shared_ptr<PreparedFlipFlopTiming> prepared_timing
       = std::make_shared<PreparedFlipFlopTiming>();
-  const sta::LibertyPort* output
-      = resizer.network()->libertyPort(target.resolvedPin(resizer));
 
-  bool has_clock_to_q = false;
-  for (const sta::TimingArcSet* set : cell->timingArcSetsTo(output)) {
-    has_clock_to_q |= set->role() == sta::TimingRole::regClkToQ();
-  }
-
-  if (!has_clock_to_q || resizer.sta()->pocvMode() != sta::PocvMode::scalar) {
-    prepared_timing->prepare_failure_reason
-        = "sequential_unsupported_target_context";
-  } else {
+  {
+    // POCV/LVF runs are scored on mean delays and nominal check margins,
+    // like the rest of the estimator; post-ECO STA has the final word.
     std::set<sta::LibertyCell*> candidates{cell};
-    for (sta::LibertyCell* candidate : resizer.getSwappableCells(cell)) {
-      if (isFlipFlop(candidate)) {
+    const auto add_candidate = [&](sta::LibertyCell* candidate) {
+      if (isRegisterOutput(candidate,
+                           candidate->findLibertyPort(output->name()))) {
         candidates.insert(candidate);
       }
+    };
+    for (sta::LibertyCell* candidate : resizer.getSwappableCells(cell)) {
+      add_candidate(candidate);
     }
 
     for (sta::LibertyCell* candidate : resizer.getVTEquivCells(cell)) {
-      if (isFlipFlop(candidate)) {
-        candidates.insert(candidate);
-      }
+      add_candidate(candidate);
     }
 
     prepared_timing->candidates.assign(candidates.begin(), candidates.end());
@@ -673,6 +913,16 @@ SequentialTimingEstimator::prepare(Resizer& resizer, const Target& target)
     }
   }
 
+  debugPrint(resizer.logger(),
+             utl::RSZ,
+             "sequential",
+             1,
+             "sequential estimator for {}: {} checks, {} candidates{}{}",
+             resizer.network()->pathName(target_pin),
+             prepared_timing->checks.size(),
+             prepared_timing->candidates.size(),
+             prepared_timing->prepare_failure_reason.empty() ? "" : ", ",
+             prepared_timing->prepare_failure_reason);
   RepairSetupProfiler::event("sequential_active_checks",
                              prepared_timing->checks.size());
   RepairSetupProfiler::event("sequential_candidate_cells_prepared",

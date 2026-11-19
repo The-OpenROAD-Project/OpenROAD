@@ -11,6 +11,11 @@
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.212 |       -7.0 |     45 | _869_/D
 [DEBUG RSZ-repair_setup] PARALLEL_EVAL WNS tail after no_committed_moves at batch 20 (WNS -1.146e-10)
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[DEBUG RSZ-repair_setup] Violating endpoints 44/69 63%
+[INFO RSZ-0094] Found 44 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 44 out of 44 (100.00%) violating endpoints...
+[INFO RSZ-0221] Using custom phase sequence: PARALLEL_EVAL
     final |      60 |     112 |       34 |      0 |     2 |    +8.6% |   -0.111 |       -3.5 |     44 | resp_msg[15]
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 60 buffers.

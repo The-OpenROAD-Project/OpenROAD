@@ -1029,6 +1029,18 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                    const sta::MinMax* min_max);
   float maxInputSlew(const sta::LibertyPort* input,
                      const sta::Scene* scene) const;
+  // maxInputSlew(port) tightened by the set_max_transition
+  // -clock_path/-data_path limits of the clocks whose paths reach pin.
+  float maxInputSlew(const sta::Pin* pin, const sta::Scene* scene) const;
+  // Tightest clock -clock_path/-data_path slew limit at pin, INF when none.
+  // Uses the paths already found at pin (no arrival search), so a pin
+  // created since the last arrival update has none.
+  float clockSlewLimit(const sta::Pin* pin, const sta::Scene* scene) const;
+  // True when any scene constrains clock slew (set_max_transition with
+  // -clock_path/-data_path or a [get_clocks] object).  When false, the
+  // slew checks skip the per-pin clock-domain lookup (check_clks = false),
+  // so repair_design runtime is unchanged from before clock slew support.
+  bool haveClkSlewLimits() const;
   void checkLoadSlews(const sta::Pin* drvr_pin,
                       double slew_margin,
                       // Return values.

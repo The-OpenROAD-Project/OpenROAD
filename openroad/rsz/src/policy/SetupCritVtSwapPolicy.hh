@@ -4,6 +4,7 @@
 #pragma once
 
 #include <optional>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -18,12 +19,22 @@ namespace rsz {
 class SetupCritVtSwapPolicy : public SetupLegacyBase
 {
  public:
-  using SetupLegacyBase::SetupLegacyBase;
+  // capture_only: the CAPTURE_VT_SWAP phase, which swaps only registers whose
+  // failing checks are at their data inputs, to the VT that shortens them.
+  SetupCritVtSwapPolicy(Resizer& resizer,
+                        MoveCommitter& committer,
+                        RepairSetupContext& setup_context,
+                        const OptimizerRunConfig& config,
+                        bool capture_only = false);
 
-  const char* name() const override { return "SetupCritVtSwapPolicy"; }
+  const char* name() const override
+  {
+    return capture_only_ ? "SetupCaptureVtSwapPolicy" : "SetupCritVtSwapPolicy";
+  }
   void iterate() override;
 
  private:
+  const bool capture_only_;
   bool swapVTCritCells(int& num_viols);
   sta::Pin* outputPin(sta::Instance* inst);
   bool drivesClock(sta::Instance* inst);
@@ -36,8 +47,20 @@ class SetupCritVtSwapPolicy : public SetupLegacyBase
       std::vector<std::pair<sta::Instance*, float>>& crit_insts,
       std::unordered_set<sta::Instance*>& crit_inst_set,
       std::unordered_set<sta::Vertex*>& visited,
-      std::unordered_set<sta::Instance*>& notSwappable);
+      std::unordered_set<sta::Instance*>& notSwappable,
+      std::unordered_map<sta::Instance*, sta::LibertyCell*>& capture_cells);
   sta::Slack getInstanceSlack(sta::Instance* inst);
+  // Worst setup slack over the timing-checked data inputs of a register,
+  // INF for other cells.  A capture-only register's outputs show none of it.
+  sta::Slack captureSlack(sta::Instance* inst);
+  // Largest Liberty setup-margin decrease at a violating data input of
+  // register inst when swapped to cell; 0 or less when the swap raises any
+  // setup margin or pushes a hold check below zero.
+  float captureSetupGain(sta::Instance* inst, sta::LibertyCell* cell);
+  // The VT equivalent of register inst with the largest captureSetupGain,
+  // null when none gains.  The crit sweep otherwise picks VT by drive
+  // strength, and a faster VT can have the larger setup time.
+  sta::LibertyCell* bestCaptureVtCell(sta::Instance* inst);
 };
 
 }  // namespace rsz
