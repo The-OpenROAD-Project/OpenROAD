@@ -55,13 +55,14 @@ for test_name in "$@"; do
         # is expected (mismatched .ok is why we're here). Build errors
         # and target-not-found stay visible on stderr.
         bazel test "$target" --test_summary=terse >/dev/null || true
-        # Bazel-testlogs files are read-only and `cp` preserves mode,
-        # so force-replace and chmod so the next iteration can overwrite.
+        # Bazel-testlogs files are read-only and executable, and `cp`
+        # preserves mode, so force-replace and reset the mode to a plain
+        # writable file.
         dst="${test_name}.${dest_ext}"
         if [ -f "${out_dir}/${artifact}" ]; then
             rm -f "$dst"
             cp "${out_dir}/${artifact}" "$dst"
-            chmod u+w "$dst"
+            chmod 644 "$dst"
             echo "${test_name}"
             saved=1
             break
@@ -73,7 +74,7 @@ for test_name in "$@"; do
                     && [ -s "$tmp" ]; then
                 rm -f "$dst"
                 mv "$tmp" "$dst"
-                chmod u+w "$dst"
+                chmod 644 "$dst"
                 echo "${test_name}"
                 saved=1
                 break

@@ -1,0 +1,22 @@
+# repair_timing -setup 2 corners
+source "helpers.tcl"
+read_liberty Nangate45/Nangate45_slow.lib
+read_liberty Nangate45/Nangate45_fast.lib
+define_scene fast -liberty Nangate45/Nangate45_fast.lib
+define_scene slow -liberty Nangate45/Nangate45_slow.lib
+set_scene fast
+read_lef Nangate45/Nangate45.lef
+read_def repair_setup1.def
+create_clock -period 0.3 clk
+
+source Nangate45/Nangate45.rc
+set_wire_rc -layer metal3
+estimate_parasitics -placement
+
+report_worst_slack -max -digits 3
+write_verilog_for_eqy repair_setup4_verbose before "None"
+repair_timing -verbose -setup
+run_equivalence_test repair_setup4_verbose \
+  -lib_dir ./Nangate45/work_around_yosys/ \
+  -remove_cells "None"
+report_worst_slack -max -digits 3
