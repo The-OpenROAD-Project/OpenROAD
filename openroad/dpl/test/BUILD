@@ -112,6 +112,8 @@ PASSFAIL_TESTS = [
     "pdn_via_mirror",
     "window_supply_fence",
     "window_supply_fence_full",
+    "window_supply_mixed_rows",
+    "window_supply_mixed_rows_full",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -337,6 +339,9 @@ filegroup(
             ],
             "window_supply_fence_full": [
                 "window_supply_fence.lef",
+            ],
+            "window_supply_mixed_rows_full": [
+                "window_supply_mixed_rows.lef",
             ],
         }.get(test_name, []),
     )

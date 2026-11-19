@@ -116,7 +116,11 @@ void Opendp::diamondDPL()
 // sites in the box grown by one window on every side, and on the high
 // sides by the widest and tallest cell beyond that, which contains every
 // site they can cover. A cell covers its own sites only; padding may hang
-// over a site no cell can use, so it is not counted. Passing proves
+// over a site no cell can use, so it is not counted. Both sides are areas,
+// a site as the height of its row and a cell as its own height, both times
+// a site's width: rows of different heights share one grid, and a cell
+// covers as many of its rows as its height takes, not a fixed number.
+// Passing proves
 // nothing; some other set may still fail. The override is the option the
 // search already has: a wider -max_displacement, which this check re-runs
 // against.
@@ -154,9 +158,10 @@ void Opendp::checkWindowSupply(const bool fatal)
   auto box_index = [&](const int bx, const int by) {
     return (static_cast<int64_t>(by) * boxes_x) + bx;
   };
-  // Free sites as a summed-area table: entry (bx + 1, by + 1) holds the
-  // free sites of every box at or below and left of (bx, by), so the sites
-  // of any rectangle of boxes take four lookups.
+  // Free area as a summed-area table: entry (bx + 1, by + 1) holds the
+  // free area of every box at or below and left of (bx, by), so the area
+  // of any rectangle of boxes takes four lookups. Areas are in site widths
+  // times DBU of height.
   const int stride = boxes_x + 1;
   std::vector<int64_t> supply_sum(static_cast<int64_t>(stride) * (boxes_y + 1),
                                   0);
@@ -165,13 +170,17 @@ void Opendp::checkWindowSupply(const bool fatal)
   };
 
   // Sites a movable cell outside any group can end up on.
+  int min_row_height = std::numeric_limits<int>::max();
   for (GridY y{0}; y < row_count; y++) {
+    const int row_height = (grid_->gridYToDbu(y + 1) - grid_->gridYToDbu(y)).v;
+    min_row_height = std::min(min_row_height, row_height);
     for (GridX x{0}; x < site_count; x++) {
       const Pixel* pixel = grid_->gridPixel(x, y);
       if (pixel && pixel->is_valid && !pixel->group
           && (!pixel->cell
               || (!pixel->cell->isFixed() && !pixel->cell->inGroup()))) {
-        supply_sum[sum_index((x.v / box_w) + 1, (y.v / box_h) + 1)]++;
+        supply_sum[sum_index((x.v / box_w) + 1, (y.v / box_h) + 1)]
+            += row_height;
       }
     }
   }
@@ -182,14 +191,14 @@ void Opendp::checkWindowSupply(const bool fatal)
                                        - supply_sum[sum_index(bx - 1, by - 1)];
     }
   }
-  // Free sites in boxes x0..x1 by y0..y1, inclusive.
+  // Free area in boxes x0..x1 by y0..y1, inclusive.
   auto supply_in = [&](const int x0, const int y0, const int x1, const int y1) {
     return supply_sum[sum_index(x1 + 1, y1 + 1)]
            - supply_sum[sum_index(x0, y1 + 1)]
            - supply_sum[sum_index(x1 + 1, y0)] + supply_sum[sum_index(x0, y0)];
   };
 
-  // Sites the cells cover, counted at the box the search starts each cell
+  // Area the cells cover, counted at the box the search starts each cell
   // from.
   int64_t cells = 0;
   int max_width = 1;
@@ -216,9 +225,8 @@ void Opendp::checkWindowSupply(const bool fatal)
     const int bx = std::clamp(start.x.v, 0, site_count.v - 1) / box_w;
     const int by = std::clamp(start.y.v, 0, row_count.v - 1) / box_h;
     const int width = grid_->gridWidth(cell).v;
-    const int height = grid_->gridHeight(cell).v;
-    demand[box_index(bx, by)]
-        += static_cast<int64_t>(width) * static_cast<int64_t>(height);
+    const int height = cell->getHeight().v;
+    demand[box_index(bx, by)] += static_cast<int64_t>(width) * height;
     max_width = std::max(max_width, width);
     max_height = std::max(max_height, height);
     cells++;
@@ -232,7 +240,10 @@ void Opendp::checkWindowSupply(const bool fatal)
   // whose origin is at the window's far edge can reach past it: the
   // region every cell in the box can cover.
   const int reach_x = 1 + (max_width - 1 + box_w - 1) / box_w;
-  const int reach_y = 1 + (max_height - 1 + box_h - 1) / box_h;
+  // The tallest cell covers at most this many rows, were they all as low
+  // as the lowest.
+  const int max_rows = (max_height + min_row_height - 1) / min_row_height;
+  const int reach_y = 1 + (max_rows - 1 + box_h - 1) / box_h;
   std::vector<WindowShortfall> shortfalls;
   for (int by = 0; by < boxes_y; by++) {
     for (int bx = 0; bx < boxes_x; bx++) {
@@ -276,6 +287,10 @@ void Opendp::reportWindowShortfalls(std::vector<WindowShortfall>& shortfalls,
     return block_->dbuToMicrons(core_.yMin()
                                 + grid_->gridYToDbu(GridY{by * box_h}).v);
   };
+  // Demand and supply are in site widths times DBU of height.
+  auto area_um2 = [&](const int64_t area) {
+    return block_->dbuAreaToMicrons(area * site_width.v);
+  };
   if (!quiet_) {
     // A window is no larger than the core it tiles.
     const double box_w_um = block_->dbuToMicrons(
@@ -286,8 +301,8 @@ void Opendp::reportWindowShortfalls(std::vector<WindowShortfall>& shortfalls,
                   1106,
                   "{} of {} windows of {:.1f} x {:.1f} um hold more cells "
                   "than the free sites within +/- {} sites and +/- {} rows "
-                  "of them can take (sites of cells needed / free sites "
-                  "reachable):",
+                  "of them can take (area of cells / free area reachable, "
+                  "um^2):",
                   shortfalls.size(),
                   total_boxes,
                   box_w_um,
@@ -299,11 +314,11 @@ void Opendp::reportWindowShortfalls(std::vector<WindowShortfall>& shortfalls,
       const WindowShortfall& s = shortfalls[i];
       logger_->info(DPL,
                     1109,
-                    "  window at ({:.1f}, {:.1f}) um: {} / {}",
+                    "  window at ({:.1f}, {:.1f}) um: {:.2f} / {:.2f}",
                     box_x_um(s.bx),
                     box_y_um(s.by),
-                    s.demand,
-                    s.supply);
+                    area_um2(s.demand),
+                    area_um2(s.supply));
     }
   }
   // No site at all within reach is a different message from too few.
