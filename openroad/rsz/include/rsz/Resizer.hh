@@ -1143,7 +1143,6 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   int cloned_gate_count_ = 0;
   int swap_pin_count_ = 0;
   int removed_buffer_count_ = 0;
-  bool exclude_clock_buffers_ = true;
   bool match_cell_footprint_ = false;
   std::string path_group_;
 

@@ -205,10 +205,11 @@ set_min_distance_in_tracks(bool in_tracks)
   getIOPlacer()->getParameters()->setMinDistanceInTracks(in_tracks);
 }
 
-int
-get_default_min_distance()
+void
+set_layer_min_distance(odb::dbTechLayer* layer, int min_dist, bool in_tracks)
 {
-  return getIOPlacer()->getSettings().min_distance;
+  getIOPlacer()->getParameters()->setLayerMinDistance(
+      layer->getRoutingLevel(), min_dist, in_tracks);
 }
 
 bool

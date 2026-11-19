@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "pex/CoverMap.h"
+#include "CoverMap.h"
 
 #include <algorithm>
 #include <cmath>
@@ -9,9 +9,9 @@
 #include <string>
 #include <vector>
 
+#include "Model.h"
+#include "Patterns.h"
 #include "fsv/Stack.h"
-#include "pex/Model.h"
-#include "pex/Patterns.h"
 
 namespace pex {
 
