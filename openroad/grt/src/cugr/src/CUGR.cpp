@@ -288,6 +288,8 @@ void CUGR::init(const int min_routing_layer,
                                      min_routing_layer,
                                      max_routing_layer,
                                      clock_nets,
+                                     selected_nets_,
+                                     skip_large_fanout_,
                                      verbose_);
   grid_graph_ = std::make_unique<GridGraph>(design_.get(), constants_, logger_);
   debugPrint(logger_,
