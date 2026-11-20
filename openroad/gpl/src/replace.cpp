@@ -150,7 +150,7 @@ void Replace::checkPlaceIosSupported(const PlaceOptions& options)
                 174,
                 "-place_ios: pin layers are not set. Set both "
                 "-io_pin_hor_layers and -io_pin_ver_layers with "
-                "set_place_config.");
+                "set_placer_config.");
   }
 }
 

@@ -2,9 +2,13 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc", "python_wrap_library")
+load("//bazel:tcl_encode_or.bzl", "tcl_encode")
+load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
-    default_visibility = ["//:__subpackages__"],
+    default_visibility = ["//openroad/pex:__subpackages__"],
     features = ["layering_check"],
 )
 
@@ -12,8 +16,8 @@ package(
 cc_library(
     name = "patterns",
     srcs = ["src/Patterns.cpp"],
-    hdrs = ["include/pex/Patterns.h"],
-    includes = ["include"],
+    hdrs = ["src/Patterns.h"],
+    includes = ["src"],
     deps = [
         "//openroad/fsv:geometry",
         "//openroad/fsv:stack",
@@ -24,16 +28,16 @@ cc_library(
 cc_library(
     name = "model",
     srcs = ["src/Model.cpp"],
-    hdrs = ["include/pex/Model.h"],
-    includes = ["include"],
+    hdrs = ["src/Model.h"],
+    includes = ["src"],
 )
 
 # How a piece's covers map onto the model's contexts.
 cc_library(
     name = "cover_map",
     srcs = ["src/CoverMap.cpp"],
-    hdrs = ["include/pex/CoverMap.h"],
-    includes = ["include"],
+    hdrs = ["src/CoverMap.h"],
+    includes = ["src"],
     deps = [
         ":model",
         ":patterns",
@@ -45,8 +49,8 @@ cc_library(
 cc_library(
     name = "model_builder",
     srcs = ["src/ModelBuilder.cpp"],
-    hdrs = ["include/pex/ModelBuilder.h"],
-    includes = ["include"],
+    hdrs = ["src/ModelBuilder.h"],
+    includes = ["src"],
     deps = [
         ":model",
         ":patterns",
@@ -57,15 +61,24 @@ cc_library(
     ],
 )
 
+# The settings of an extraction, public for the commands.
+cc_library(
+    name = "options",
+    hdrs = ["include/pex/ExtractOptions.h"],
+    includes = ["include"],
+    visibility = ["//:__subpackages__"],
+)
+
 # The model applied to conductor boxes.
 cc_library(
     name = "evaluator",
     srcs = ["src/Evaluator.cpp"],
-    hdrs = ["include/pex/Evaluator.h"],
-    includes = ["include"],
+    hdrs = ["src/Evaluator.h"],
+    includes = ["src"],
     deps = [
         ":cover_map",
         ":model",
+        ":options",
         ":patterns",
         "//openroad/fsv:geometry",
         "//openroad/fsv:stack",
@@ -77,8 +90,8 @@ cc_library(
 cc_library(
     name = "index",
     srcs = ["src/Index.cpp"],
-    hdrs = ["include/pex/Index.h"],
-    includes = ["include"],
+    hdrs = ["src/Index.h"],
+    includes = ["src"],
     deps = [
         "//openroad/odb/src/db",
         "//openroad/utl",
@@ -87,17 +100,183 @@ cc_library(
     ],
 )
 
+# Resistance of wires and vias from the stack.
+cc_library(
+    name = "resistance",
+    srcs = ["src/Resistance.cpp"],
+    hdrs = ["src/Resistance.h"],
+    includes = ["src"],
+    deps = [
+        "//openroad/fsv:stack",
+        "//openroad/odb/src/db",
+    ],
+)
+
+# A net's resistor network.
+cc_library(
+    name = "network",
+    srcs = ["src/Network.cpp"],
+    hdrs = ["src/Network.h"],
+    includes = ["src"],
+    deps = [
+        ":resistance",
+        "//openroad/odb/src/db",
+    ],
+)
+
+# Extraction of a block into ODB parasitics.
+cc_library(
+    name = "extractor",
+    srcs = ["src/Extractor.cpp"],
+    hdrs = ["src/Extractor.h"],
+    includes = ["src"],
+    deps = [
+        ":evaluator",
+        ":index",
+        ":model",
+        ":network",
+        ":options",
+        ":patterns",
+        ":resistance",
+        "//openroad/fsv:geometry",
+        "//openroad/fsv:net_window",
+        "//openroad/fsv:stack",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/wireNormalizer",
+        "//openroad/utl",
+    ],
+)
+
+# SPEF from ODB parasitics.
+cc_library(
+    name = "spef_writer",
+    srcs = ["src/SpefWriter.cpp"],
+    hdrs = ["src/SpefWriter.h"],
+    includes = ["src"],
+    deps = ["//openroad/odb/src/db"],
+)
+
 # The model file.
 cc_library(
     name = "model_json",
     srcs = ["src/ModelJson.cpp"],
-    hdrs = ["include/pex/ModelJson.h"],
+    hdrs = ["src/ModelJson.h"],
     copts = ["-DBOOST_JSON_HEADER_ONLY"],
-    includes = ["include"],
+    includes = ["src"],
     deps = [
         ":model",
         "@boost.json",
     ],
 )
 
-exports_files(["README.md"])
+# Extraction checked against the field solver.
+cc_library(
+    name = "compare",
+    srcs = ["src/Compare.cpp"],
+    hdrs = ["src/Compare.h"],
+    includes = ["src"],
+    deps = [
+        "//openroad/fsv",
+        "//openroad/fsv:net_window",
+        "//openroad/fsv:stack",
+        "//openroad/odb/src/db",
+    ],
+)
+
+# The state behind the commands, the library the rest of OpenROAD uses.
+cc_library(
+    name = "pex",
+    srcs = ["src/Pex.cpp"],
+    hdrs = ["include/pex/Pex.h"],
+    implementation_deps = [
+        ":compare",
+        ":extractor",
+        ":model",
+        ":model_builder",
+        ":model_json",
+        ":spef_writer",
+        "//openroad/fsv:stack",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+    ],
+    includes = ["include"],
+    visibility = ["//:__subpackages__"],
+    deps = [":options"],
+)
+
+cc_library(
+    name = "ui",
+    srcs = [
+        "src/MakePex.cpp",
+        ":swig",
+        ":tcl",
+    ],
+    hdrs = ["include/pex/MakePex.h"],
+    includes = ["include"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        ":pex",
+        "//:ord",
+        "//openroad/utl",
+        "@tcl_lang//:tcl",
+    ],
+)
+
+tcl_encode(
+    name = "tcl",
+    srcs = ["src/Pex.tcl"],
+    char_array_name = "pex_tcl_inits",
+    namespace = "pex",
+)
+
+tcl_wrap_cc(
+    name = "swig",
+    srcs = [
+        "src/Pex.i",
+        "//:error_swig",
+    ],
+    module = "pex",
+    namespace_prefix = "pex",
+    root_swig_src = "src/Pex.i",
+    swig_includes = ["src"],
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "src/Pex-py.i",
+        "//:error_swig-py",
+    ],
+    module = "pex_py",
+    root_swig_src = "src/Pex-py.i",
+    swig_includes = ["src"],
+    visibility = ["//:__subpackages__"],
+)
+
+# Compiled into //:_openroad.so with the other Python modules, so that it
+# shares the session the Tcl commands use.
+python_wrap_library(
+    name = "py_wrap",
+    deps = [":pex"],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/Pex.tcl",
+    ],
+    visibility = ["//openroad/pex/test:__pkg__"],
+)
+
+exports_files(
+    ["README.md"],
+    visibility = ["//docs:__pkg__"],
+)
+
+messages_txt(
+    visibility = [
+        "//docs:__pkg__",
+        "//openroad/pex/test:__pkg__",
+    ],
+)

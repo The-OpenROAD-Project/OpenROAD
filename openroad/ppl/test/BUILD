@@ -118,7 +118,6 @@ COMPULSORY_TESTS = [
     "pin_length",
     "pin_length_error",
     "pin_thick_multiplier",
-    "place_config",
     "place_pin1",
     "place_pin2",
     "place_pin3",
@@ -135,6 +134,7 @@ COMPULSORY_TESTS = [
     "place_pin_polygon_overlap",
     "place_pin_polygon_t",
     "place_pin_polygon_u",
+    "placer_config",
     "random_deprecated1",
     "random_deprecated2",
     "top_layer1",
@@ -221,6 +221,23 @@ cc_test(
     deps = [
         "//openroad/odb/src/db",
         "//openroad/odb/src/defin",
+        "//openroad/ppl",
+        "//openroad/tst",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestSlotGrid",
+    size = "small",
+    srcs = ["cpp/TestSlotGrid.cpp"],
+    data = [
+        "gcd.def",
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//openroad/odb/src/db",
         "//openroad/ppl",
         "//openroad/tst",
         "@googletest//:gtest",

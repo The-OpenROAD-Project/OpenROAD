@@ -41,6 +41,7 @@ cc_library(
         "//openroad/ppl",
         "//openroad/sta:opensta_lib",
         "//openroad/utl",
+        "@fmt",
         "@tcl_lang//:tcl",
     ],
 )
