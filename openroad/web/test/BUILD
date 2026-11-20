@@ -13,6 +13,7 @@ package(features = ["layering_check"])
 npm_link_all_packages(name = "node_modules")
 
 TESTS = [
+    "display_option_keys",
     "save_image_cluster_view",
 ]
 
@@ -525,6 +526,7 @@ cc_test(
     srcs = ["cpp/TestSessionLifetime.cpp"],
     deps = [
         "//openroad/odb/src/db",
+        "//openroad/tst:physical_builder",
         "//openroad/utl",
         "//openroad/web",
         "@boost.asio",

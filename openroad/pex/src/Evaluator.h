@@ -18,23 +18,15 @@
 #include <string>
 #include <vector>
 
+#include "CoverMap.h"
+#include "Model.h"
+#include "Patterns.h"
 #include "fsv/Geometry.h"
 #include "fsv/Stack.h"
 #include "odb/geom.h"
-#include "pex/CoverMap.h"
-#include "pex/Model.h"
-#include "pex/Patterns.h"
+#include "pex/ExtractOptions.h"
 
 namespace pex {
-
-struct EvaluatorOptions
-{
-  // A box on another layer covers a piece when it overlaps at least this
-  // fraction of the wire's width.
-  double cover_overlap = 0.5;
-  // Layers each way whose parallel wires beside a piece count.
-  int diagonal_depth = 2;
-};
 
 // Where a coupling comes from: a piece's lateral neighbor, its cover (a
 // crossing's share included), a farther cover behind crossings, a parallel
@@ -127,8 +119,16 @@ class Evaluator
   // ignored.
   int radius(int layer) const { return radius_[layer]; }
 
-  // Gives, for box `box`, ascending indices of the boxes within
-  // radius(layer of box) of it in x-y on every layer; it may give more.
+  // The rectangle on each layer (by index) within which a box can change
+  // the lookups of `box`, a box on a conductor layer, edges touching
+  // included: on its own layer, its lateral reach across it and its facing
+  // reach along it; on any other, the crossing reach along it and, within
+  // the diagonal depth, the diagonal reach across it. All lie within
+  // radius() of it.
+  void reach(const EvalBox& box, std::vector<odb::Rect>& rects) const;
+
+  // Gives, for box `box`, ascending indices of the boxes that overlap its
+  // reach() on their layer; it may give more.
   using Candidates = std::function<void(int box, std::vector<int>& out)>;
 
   // Adds the contributions of the net whose boxes are `target` (indices

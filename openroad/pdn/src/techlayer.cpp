@@ -93,7 +93,9 @@ int TechLayer::snapToGrid(int pos, int greater_than, int less_than) const
   return prev_delta <= next_delta ? *prev : *next;
 }
 
-int TechLayer::snapToGridInterval(odb::dbBlock* block, int dist) const
+int TechLayer::snapToGridInterval(odb::dbBlock* block,
+                                  const int dist,
+                                  const bool round_up) const
 {
   odb::dbTechLayerDir dir = layer_->getDirection();
 
@@ -124,7 +126,8 @@ int TechLayer::snapToGridInterval(odb::dbBlock* block, int dist) const
     return dist;
   }
 
-  const int count = std::max(1, dist / step);
+  const int count
+      = std::max(1, round_up ? (dist + step - 1) / step : dist / step);
   return count * step;
 }
 

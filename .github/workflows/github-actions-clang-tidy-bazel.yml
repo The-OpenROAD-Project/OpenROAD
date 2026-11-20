@@ -30,13 +30,14 @@ jobs:
         # runners do not. Install it explicitly so the workflow works on
         # both runner types. bazel-contrib/setup-bazel's default uses a
         # pre-installed bazelisk; passing bazelisk-version forces install.
-        uses: bazel-contrib/setup-bazel@104e3eea9447cdaa4b00d0fb46191a3985d26ab3  # 0.19.1
+        uses: bazel-contrib/setup-bazel@f34d6a05eae3c24acab7fa54587492daeaeffdab  # 0.19.2
         with:
           bazelisk-version: 1.x
           bazelisk-cache: true
 
       - name: Run bazel clang-tidy
         env:
+          BAZEL_CACHE_LOGIN: ${{ secrets.BAZEL_CACHE_LOGIN }}
           BAZEL_CACHE_PASSWORD: ${{ secrets.BAZEL_CACHE_PASSWORD }}
         run: |
           # Same auth pattern as github-actions-macos-bazel.yml: when the
@@ -44,9 +45,14 @@ jobs:
           # add authed gRPC + Remote Asset API on top of the .bazelrc anon
           # HTTPS read-only cache. Fork PRs have no secret and just read
           # the anon cache.
+          # BAZEL_CACHE_LOGIN is "user:password"; the cache accepts two
+          # write users so the login can rotate without a 401 window.
+          # BAZEL_CACHE_PASSWORD (user `ci`) is the old secret, used until
+          # BAZEL_CACHE_LOGIN is set.
+          LOGIN="${BAZEL_CACHE_LOGIN:-${BAZEL_CACHE_PASSWORD:+ci:${BAZEL_CACHE_PASSWORD}}}"
           REMOTE_FLAGS=()
-          if [ -n "${BAZEL_CACHE_PASSWORD}" ]; then
-            TOKEN_B64=$(printf 'ci:%s' "${BAZEL_CACHE_PASSWORD}" | base64 | tr -d '\n')
+          if [ -n "${LOGIN}" ]; then
+            TOKEN_B64=$(printf '%s' "${LOGIN}" | base64 | tr -d '\n')
             echo "::add-mask::${TOKEN_B64}"
             REMOTE_FLAGS=(
               --remote_cache=grpcs://bazel.precisioninno.com:443

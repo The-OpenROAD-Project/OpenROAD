@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <cassert>
 #include <cstdint>
 #include <type_traits>
 #include <utility>
@@ -22,13 +23,14 @@ class SourceLoc
  public:
   constexpr SourceLoc() = default;
   // An invalid `file` gives the empty location SourceLoc{} (line 0).
-  explicit constexpr SourceLoc(NameId file, uint32_t line = 0)
+  explicit constexpr SourceLoc(NameId file, int line = 0)
       : file_(file), line_(file.isValid() ? line : 0)
   {
+    assert(line >= 0);
   }
 
   constexpr NameId file() const { return file_; }
-  constexpr uint32_t line() const { return line_; }
+  constexpr int line() const { return line_; }
   constexpr bool isValid() const { return file_.isValid(); }
 
   // Deterministic checksum (0 if invalid); `file()` is read from `names`.
@@ -37,7 +39,7 @@ class SourceLoc
     if (!isValid()) {
       return 0;
     }
-    return checksumCombine(names.checksum(file_), line_);
+    return checksumCombine(names.checksum(file_), static_cast<uint32_t>(line_));
   }
 
   constexpr bool operator==(const SourceLoc&) const = default;
@@ -50,7 +52,7 @@ class SourceLoc
 
  private:
   NameId file_;
-  uint32_t line_ = 0;
+  int line_ = 0;
 };
 
 static_assert(sizeof(SourceLoc) == 8, "SourceLoc must stay 8 bytes");

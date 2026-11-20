@@ -336,7 +336,7 @@ class WebServer
                  int y1,
                  int width_px,
                  double dbu_per_pixel,
-                 const std::string& vis_json);
+                 const std::map<std::string, bool>& display_settings);
 
   // User text labels (2.12), Tcl-driven (add_label/delete_label/clear_labels).
   // Delegate to the shared TileGenerator store; returns the label name.
@@ -408,7 +408,7 @@ class WebServer
                    int width_px,
                    double dbu_per_pixel,
                    std::optional<int> delay,
-                   const std::string& vis_json);
+                   const std::map<std::string, bool>& display_settings);
   void gifEnd(std::optional<int> key);
 
   // Tears down the I/O threads and cleans up hooks.  Safe to call multiple
