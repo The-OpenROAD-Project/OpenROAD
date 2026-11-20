@@ -2,4 +2,4 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 import _openroad_loader  # noqa: F401  (must precede the wrapper import)
-from src.rmp.rmp_py import *
+from openroad.rmp.rmp_py import *
