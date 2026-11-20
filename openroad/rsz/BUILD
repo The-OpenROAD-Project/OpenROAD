@@ -213,6 +213,7 @@ cc_library(
         "@abseil-cpp//absl/container:flat_hash_map",
         "@boost.container_hash",
         "@boost.multi_array",
+        "@fmt",
         "@or-tools//ortools/linear_solver",
         "@or-tools//ortools/linear_solver:linear_solver_base",
         "@spdlog",

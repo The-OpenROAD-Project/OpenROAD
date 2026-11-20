@@ -8,15 +8,183 @@ nets.
 
 ## Status
 
-The first step is in: the patterns built from a stack by layer name
-(`pex/Patterns.h`), the model tables with their lookups (`pex/Model.h`),
-the table builder (`pex/ModelBuilder.h`), the model file
-(`pex/ModelJson.h`), the evaluator that applies the model to conductor
-boxes (`pex/Evaluator.h`), which the experiments run by brute force on a
-field-solver geometry, and the modeling experiments below. There are no
-commands yet; the extractor
-itself (block index, segmentation, ODB and SPEF output) comes next, with
-the accuracy work below resumed once it runs end to end.
+pex extracts a routed block into ODB parasitics and writes SPEF. A net's
+resistor network comes from its routed wire, with resistance from the
+ITF stack; its capacitance comes from the model, evaluated on the
+block's boxes around each wire. The model is built by the module itself,
+and the tables' accuracy against the field solver is measured in the
+experiments below and, on a design's nets, with `compare_pex_fsv`. One
+corner is extracted; several corners, performance, and the remaining
+accuracy work come next.
+
+## Commands
+
+```{note}
+- Parameters in square brackets `[-param param]` are optional.
+- Parameters without square brackets `-param2 param2` are required.
+```
+
+A model is built once per ITF stack and read with that stack before
+extraction:
+
+```tcl
+build_pex_model -itf sky130.itf -out sky130.json
+read_pex_model -itf sky130.itf sky130.json
+extract_pex
+write_pex_spef gcd.spef
+```
+
+Threads come from `set_thread_count`; the result does not depend on the
+number of threads.
+
+### Build Pex Model
+
+The `build_pex_model` command builds the capacitance tables of a model
+by solving small wire patterns on the ITF stack with the field solver,
+and saves the model after each layer. A model already in the file that
+was built from the same stack with the same settings is finished rather
+than rebuilt, so a build that stopped resumes. A full model of sky130's
+six routing layers takes about three hours at 64 threads.
+
+```tcl
+build_pex_model
+    -itf itf
+    -out model
+    [-layers layers]
+    [-tol tolerance]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-itf` | The ITF file of the process stack. |
+| `-out` | The model file to write (JSON). |
+| `-layers` | The conductor layers to tabulate, by ITF name. The default is the routing layers of the technology LEF that the stack has. |
+| `-tol` | The relative tolerance of each field-solver solve. The default value is `0.005`, and the allowed values are floats greater than 0. |
+
+### Read Pex Model
+
+The `read_pex_model` command reads a model and the ITF stack it was built
+from, which gives the layer heights and the resistance data. A model
+records its stack, and one built from another stack is refused.
+
+```tcl
+read_pex_model
+    -itf itf
+    model
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-itf` | The ITF file the model was built from. |
+| `model` | The model file. |
+
+### Extract Pex
+
+The `extract_pex` command extracts the signal nets of the design that
+have routed wires into ODB, replacing any parasitics there. Each net gets
+a node at each terminal, at each junction a branch leaves from, and
+where its wire's paths start or end; its wire shapes become resistors in
+series between nodes. Ground capacitance is split between a resistor's
+two nodes by where it lies along it, and a coupling joins the nearer
+node of each net. Supply nets, obstructions and fill are neighbors only:
+coupling to them goes to ground. A net pair's coupling is kept only when
+its total reaches `-coupling_threshold` or `-coupling_ratio` of either
+net's total capacitance; otherwise it goes to ground on both nets. Either
+test alone keeps a pair, so setting either option to 0 keeps every
+coupling.
+With `-coupling_to_ground` every pair's coupling goes to ground.
+
+```tcl
+extract_pex
+    [-max_res resistance]
+    [-coupling_threshold capacitance]
+    [-coupling_ratio ratio]
+    [-coupling_to_ground]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-max_res` | Wire shapes join in series into one resistor up to this resistance, in ohms; 0 makes each shape its own resistor. The default value is `50`, and the allowed values are floats of at least 0. |
+| `-coupling_threshold` | The total coupling of a net pair, in fF, at or above which it is kept; 0 keeps every pair. The default value is `0.1`, and the allowed values are floats of at least 0. |
+| `-coupling_ratio` | The fraction of either net's total capacitance at or above which a net pair's coupling is kept; 0 keeps every pair. The default value is `0.03`, and the allowed values are floats from 0 to 1. |
+| `-coupling_to_ground` | Send every net pair's coupling to ground on both nets, whatever the thresholds: the coupling is still computed and each net keeps its total, but the parasitics have no coupling capacitors. |
+
+### Compare Pex Fsv
+
+The `compare_pex_fsv` command checks extraction against the field solver:
+it solves each net's window (the net and the shapes within `-halo` of
+it) with fsv and reports the extracted total against fsv's, and how many
+of its couplings to other signal nets above 5% of its total are within
+20%, the accuracy target's measures. Run it after `extract_pex`; the
+field solver takes the model's ITF stack.
+
+```tcl
+compare_pex_fsv
+    [-nets nets]
+    [-sample count]
+    [-halo halo]
+    [-tol tolerance]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-nets` | The extracted nets to compare. Give either `-nets` or `-sample`. |
+| `-sample` | Compare this many extracted nets: every (N/count)-th of the N extracted nets in the block's net order, or all of them when there are no more than count. The allowed values are integers greater than 0. |
+| `-halo` | The window's reach around a net, in µm. The default value is `10`, and the allowed values are floats of at least 0. |
+| `-tol` | The field solver's relative tolerance on a net's total, which its couplings also take as a fraction of the total. The default value is `0.005`, and the allowed values are floats greater than 0. |
+
+### Write Pex Spef
+
+The `write_pex_spef` command writes the parasitics in ODB as SPEF, in fF
+and ohms. Pins are named instance:pin, ports by name, and internal nodes
+net:junction.
+
+```tcl
+write_pex_spef
+    [-nets nets]
+    filename
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-nets` | The nets to write. The default is every extracted net. |
+| `filename` | The SPEF file to write. |
+
+## Python
+
+`Design.getPex()` returns the session the Tcl commands use, with the same
+names in camel case: `buildModel(itf, out, layers=(), tol=0.005)`,
+`readModel(itf, model)`, `extract(max_res=50, coupling_threshold=0.1,
+coupling_ratio=0.03, coupling_to_ground=False)`, `compareFsv(nets=(), sample=0, halo=10,
+tol=0.005)` and `writeSpef(path, nets=())`, where `layers` and `nets` take
+a name or a list of names. An option out of range raises
+`ValueError`.
+
+```python
+from openroad import Design, Tech
+
+tech = Tech()
+tech.readLef("sky130hd.tlef")
+tech.readLef("sky130_fd_sc_hd_merged.lef")
+design = Design(tech)
+design.readDef("design.def")
+extractor = design.getPex()
+extractor.readModel("sky130.itf", "sky130.json")
+extractor.extract()
+extractor.writeSpef("design.spef")
+```
+
+See `./test/pex_python.py`.
 
 ## Model
 
@@ -36,7 +204,7 @@ open). Four kinds of table describe a layer:
   each covering layer. The contexts reach a set depth each way; past it
   only a few far layers at spaced distances get contexts, and a cover
   between two of them takes both, weighted in the logarithm of its
-  distance (`pex/CoverMap.h`; e12 measures what that costs), so the table
+  distance (`src/CoverMap.h`; e12 measures what that costs), so the table
   count grows with the depth and the far factors, not with the square of
   the layer count. By default the builder chooses the covers itself
   instead: it probes each usable layer with a few 2D solves and keeps the
@@ -83,7 +251,10 @@ open). Four kinds of table describe a layer:
 A point and its mirror share one solve, and each solve is seeded by its
 position, so a table does not depend on the thread count. A table the
 model already holds is not built again, so a build resumes from a saved
-model. The model file is JSON with a format version.
+model. The model file is JSON with a format version and fingerprints of
+the stack and of the build settings: a build resumes only a model with
+the same settings, and extraction refuses a model built from another
+stack.
 
 ## Experiments
 
@@ -133,6 +304,16 @@ bazel-bin/openroad/pex/test/Experiments --groups e9 --threads 64 --tol 0.003 \
 does as a test. The lateral tables for e6, e7 and e9 take most of the
 time; e2 and e3 solve in 3D and take minutes at 0.3%.
 
+`--coarse` builds the model on small grids (two widths, three spacings,
+one cover layer each side). The regressions' model,
+`test/sky130_coarse.json` (100 KB), takes two minutes at 64 threads:
+
+```
+bazel-bin/openroad/pex/test/Experiments --groups model --coarse --tol 0.03 \
+    --itf openroad/fsv/test/sky130.itf --layers li1,met1,met2,met3,met4,met5 \
+    --model openroad/pex/test/sky130_coarse.json --threads 64
+```
+
 ## Accuracy
 
 The target, on 50 sampled nets each of sky130hd gcd and aes against the
@@ -140,10 +321,13 @@ field solver: the total within 5% for 90% of the nets, and 90% of the
 couplings to other signal nets above 5% of the net's total within 20%.
 Coupling to the supplies counts as ground, since they do not switch.
 
-With the model built from `sky130.itf` for li1 through met5 (46,787
-solves, about 3 hours at 64 threads, 2.3 MB):
+The model is built from `sky130.itf` for li1 through met5 (46,787
+solves, about 3 hours at 64 threads, 2.3 MB). First the model alone:
+each sampled net is solved by the field solver with every shape within
+10 µm of it, and the model is applied to the same shapes (the `e9`
+experiment group below):
 
-| e9, 50 nets | gcd | aes |
+| model alone, 50 nets | gcd | aes |
 | --- | --- | --- |
 | totals within 5% | 68% | 68% |
 | total error, 90th percentile | 7.5% | 7.3% |
@@ -154,22 +338,42 @@ solves, about 3 hours at 64 threads, 2.3 MB):
 Building the same model again moves the share of totals within 5% by up
 to 6 points, so 50 nets do not resolve smaller changes.
 
+Extraction itself, checked with `compare_pex_fsv -sample 50 -halo 10 -tol
+0.003` on the routed designs with the same model:
+
+| extraction, 50 nets | gcd | aes |
+| --- | --- | --- |
+| totals within 5% | 66% | 66% |
+| total error, 90th percentile | 6.3% | 6.9% |
+| signal couplings above 5%, within 20% | 94% | 86% |
+| extraction, 1 thread | 6.7 s | 351 s |
+| extraction, 16 threads | 0.58 s | 25 s |
+
+These are the same measures, but taken from the extracted block rather
+than from each net's 10 µm window: crossings and neighbors are not cut
+off at the window's edge, and couplings are averaged between the two
+nets and grounded below the thresholds. rcx takes about 2 s for aes on
+one thread, so extraction must become far faster; most of its time is
+in the crossing lookups, through string-keyed tables and logarithms per
+piece.
+
 What remains, largest first:
 
 - **Narrow straps.** A power strap two or three layers up gets 30–50%
-  too much (e18 with the power nets split by layer): the cover tables
-  are solved with full planes, and a strap narrower than a few heights
-  above the wire takes much less than a plane. Over the wire it is to be
+  too much (the `e18` experiment with the power nets split by layer):
+  the cover tables are solved with full planes, and a strap narrower
+  than a few heights above the wire takes much less than a plane. Over the wire it is to be
   looked up in the diagonal table at overlapping gaps.
 - **Shielding of parallel wires.** A strap beside the wire with rails
   between them is looked up as if the rails were absent, up to 28% high
-  (e17 at low rail coverage). The diagonal coupling is to be scaled by
-  the cover's share, as for straps over rails.
+  (the `e17` experiment at low rail coverage). The diagonal coupling is
+  to be scaled by the cover's share, as for straps over rails.
 - **Low signal couplings.** The largest coupling misses are 30–60% low,
   each 5–11% of its net's total; not yet traced.
 - **Crossing reach by side.** A crossing reaching past one side of the
   wire only is split evenly between the sides; with a neighbor on one
-  side the coupling to the crossing is off by −25% to +46% (e15).
+  side the coupling to the crossing is off by −25% to +46% (the `e15`
+  experiment).
 - **Opposite plane in the diagonal tables.** The plane on the wire's
   other side ends past the parallel wire, so it is wider in each sample
   solve than in the base solve without that wire; the plane's own edge
@@ -184,3 +388,12 @@ What remains, largest first:
 ```
 bazelisk test //openroad/pex/test/...
 ```
+
+The C++ tests check the model's tables, builder and file, the evaluator,
+the index against a brute-force scan, the resistor network on hand-made
+wires, extraction (the index's candidates against every box, identical
+ODB at any thread count, and every part of the capacitance in ODB) and
+the SPEF writer. `pex_extract` runs the commands on the gcd excerpt of the
+fsv tests with the small model, `test/sky130_coarse.json`, and reads the
+SPEF back with OpenSTA; `pex_python` does the same from Python, and
+`pex_errors` checks the commands' errors.

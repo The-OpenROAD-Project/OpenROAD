@@ -62,6 +62,8 @@
 #include "par/PartitionMgr.h"
 #include "pdn/MakePdnGen.hh"
 #include "pdn/PdnGen.hh"
+#include "pex/MakePex.h"
+#include "pex/Pex.h"
 #include "ppl/IOPlacer.h"
 #include "ppl/MakeIoplacer.h"
 #include "psm/MakePDNSim.hh"
@@ -136,6 +138,7 @@ OpenRoad::~OpenRoad()
   delete macro_placer_;
   delete example_;
   delete field_solver_;
+  delete pex_;
   delete extractor_;
   delete detailed_router_;
   // Stop the web server first — its I/O threads access the database
@@ -276,6 +279,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   dft_ = new dft::Dft(db_, sta_, resizer_, logger_);
   example_ = new exa::Example(db_, logger_);
   field_solver_ = new fsv::FieldSolver(db_, logger_);
+  pex_ = new pex::Pex(db_, logger_);
   web_server_ = new web::WebServer(db_, sta_, logger_, tcl_interp);
   watermark_
       = new wmk::Watermark(db_, sta_, opendp_, estimate_parasitics_, logger_);
@@ -307,6 +311,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   mpl::initMacroPlacer(tcl_interp);
   exa::initExample(tcl_interp);
   fsv::initFieldSolver(tcl_interp);
+  pex::initPex(tcl_interp);
   rcx::initOpenRCX(tcl_interp);
   pad::initICeWall(tcl_interp);
   rmp::initRestructure(tcl_interp);
