@@ -46,6 +46,7 @@ TESTS = [
     "pinswap_hier",
     "remove_buffers_duplicate",
     "repair_timing_deprecated_libraries",
+    "report_long_wires_limit",
     "swap_pins_constant_output",
     "swap_pins_dont_touch",
     "pin_swap1",
