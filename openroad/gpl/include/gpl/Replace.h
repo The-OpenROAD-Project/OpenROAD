@@ -138,6 +138,13 @@ struct PlaceOptions
   bool routabilityUseRudy = true;
   bool disableRevertIfDiverge = false;
   bool disablePinDensityAdjust = false;
+  // Incremental placement: after placing the new instances with the
+  // existing ones locked, unlock all of them and keep placing until the
+  // overflow target is met (phase 2).
+  bool incrementalPhase2 = true;
+  // Overflow target for phase 2; negative means use `overflow`, the target
+  // phase 1 was given.
+  float incrementalPhase2Overflow = -1;
   bool enable_routing_congestion = false;
   bool virtualCtsMode = false;
   // Maximum clock insertion delay as a fraction of the clock period.

@@ -230,6 +230,24 @@ void NesterovDeviceContext::refreshCellDensityParams(
   Kokkos::deep_copy(s.d_cell_kind, HostIntUM(h_kind.data(), n));
 }
 
+void NesterovDeviceContext::refreshLocked(
+    const std::vector<GCellHandle>& nb_gcells)
+{
+  assert(static_cast<int>(nb_gcells.size()) == num_cells_);
+  auto& s = *kokkos_;
+  const size_t n = static_cast<size_t>(num_cells_);
+
+  std::vector<int> h_locked(num_cells_);
+  for (int i = 0; i < num_cells_; ++i) {
+    const GCell* gc = nb_gcells[i];
+    h_locked[i] = gc->isLocked() ? 1 : 0;
+  }
+
+  using HostIntUM
+      = Kokkos::View<int*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>;
+  Kokkos::deep_copy(s.d_locked, HostIntUM(h_locked.data(), n));
+}
+
 void NesterovDeviceContext::initDensityDeviceState(const BinGrid& bg)
 {
   auto& s = *kokkos_;

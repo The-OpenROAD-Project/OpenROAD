@@ -151,6 +151,10 @@ class NesterovDeviceContext
   // after updateDensitySize / routability inflation changed them.
   void refreshCellDensityParams(const std::vector<GCellHandle>& nb_gcells);
 
+  // Re-upload the per-cell locked flags after instances are locked or
+  // unlocked; the coordinate update skips the cells flagged locked.
+  void refreshLocked(const std::vector<GCellHandle>& nb_gcells);
+
   // Pull current-slot coords to host (curSLP + cur). Used to refresh the
   // host vectors lazily when the hot loop no longer syncs every iteration.
   void syncCurCoordsToHost(std::vector<FloatPoint>& curSLP,

@@ -248,6 +248,8 @@ TESTS = [
     "replace_arith_modules1",
     "replace_arith_modules2",
     "replace_arith_modules3",
+    "replace_arith_modules4",
+    "replace_arith_modules5",
     "report_buffers_asap7",
     "report_buffers_asap7_augmented",
     "report_buffers_gf180",

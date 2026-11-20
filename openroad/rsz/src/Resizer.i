@@ -712,12 +712,12 @@ void set_debug_cmd(const char* net_name,
   resizer->setDebugGraphics(std::move(graphics));
 }
 
-void swap_arith_modules_cmd(int path_count,
+bool swap_arith_modules_cmd(int path_count,
                             const std::string& target,
                             float slack_margin)
 {
   Resizer* resizer = getResizer();
-  resizer->swapArithModules(path_count, target, slack_margin);
+  return resizer->swapArithModules(path_count, target, slack_margin);
 }
 
 // Test stub

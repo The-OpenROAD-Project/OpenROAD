@@ -74,6 +74,10 @@ class NesterovPlace
   // Enables the incremental density-penalty guard for the next
   // doNesterovPlace() call; consumed (cleared) at the start of that call.
   void enableIncrementalDensityPenaltyGuard();
+  // Re-runs init() from the cells' current positions (e.g. after the fillers
+  // were moved): positions, gradients, step length and density penalty
+  // start fresh.
+  void reinit();
   // Clears a divergence left over from a previous doNesterovPlace() call
   // (e.g. one the caller intends to retry from). Without this, the leftover
   // state trips the divergence check at the very start of the next
@@ -90,6 +94,9 @@ class NesterovPlace
   {
     allow_divergence_recovery_ = allow;
   }
+  // Recomputes the overflow from the current placement, e.g. after cells
+  // are unlocked, so the next doNesterovPlace() starts from it.
+  void refreshOverflow();
 
   void npUpdatePrevGradient(const std::shared_ptr<NesterovBase>& nb);
   void npUpdateCurGradient(const std::shared_ptr<NesterovBase>& nb);

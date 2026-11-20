@@ -437,7 +437,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                     bool verbose);
 
   ////////////////////////////////////////////////////////////////
-  void swapArithModules(int path_count,
+  // Returns true if any arithmetic module was swapped.
+  bool swapArithModules(int path_count,
                         const std::string& target,
                         float slack_margin);
 
