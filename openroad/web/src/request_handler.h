@@ -1,0 +1,974 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2026, The OpenROAD Authors
+
+#pragma once
+
+#include <array>
+#include <atomic>
+#include <charconv>
+#include <condition_variable>
+#include <cstdint>
+#include <functional>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <set>
+#include <shared_mutex>
+#include <string>
+#include <string_view>
+#include <system_error>
+#include <thread>
+#include <utility>
+#include <vector>
+
+#include "boost/beast/http/message.hpp"
+#include "boost/beast/http/string_body.hpp"
+#include "boost/json/object.hpp"
+#include "boost/json/value.hpp"
+#include "boost/json/value_to.hpp"
+#include "color.h"
+#include "odb/db.h"
+#include "odb/dbTransform.h"
+#include "odb/geom.h"
+#include "tcl.h"
+#include "tile_generator.h"
+#include "utl/Logger.h"
+#include "web/core.h"
+
+namespace boost::asio {
+class io_context;
+}
+
+namespace web {
+
+class HeatMapDataSource;
+class HeatMapSourceRegistration;
+class RequestDispatcher;
+class TimingReport;
+class ClockTreeReport;
+struct EmbeddedAsset;
+
+// Sentinel string set as the Tcl result by WebServer::tclExitHandler
+// when the browser-side Tcl `exit`/`quit` is invoked.  TclHandler
+// detects this in handleTclEval and converts the response to a clean
+// shutdown signal for the browser.
+inline constexpr const char* kExitResultMsg = "_WEB_EXITING_";
+
+// Error text for a request turned away while a script runs (see ScriptGate).
+inline constexpr const char* kScriptBusyMsg
+    = "The script is running; try again when it pauses or finishes.";
+
+// Server push announcing that the script started or stopped running, i.e.
+// that the ScriptGate closed or opened.
+inline std::string scriptRunningJson(bool running)
+{
+  return std::string(R"({"type":"script_running","running":)")
+         + (running ? "true" : "false") + "}";
+}
+
+// Keeps browser requests off the db while a -web startup script runs (see
+// WebServer::serveDuringStartupScripts).  Requests hold it shared and run
+// concurrently; the script thread closes it except inside debug pauses.
+// Requests on the io threads use tryEnter() and are answered with
+// kScriptBusyMsg while it is closed, so those threads stay free to stream logs
+// and pushes.  close() refuses new requests at once and waits out the
+// in-flight ones.
+class ScriptGate
+{
+ public:
+  // Gets the new state, under the gate's lock, whenever open()/close()
+  // change it.
+  using ChangeFn = std::function<void(bool closed)>;
+
+  // False, without waiting, while closed or shut down: skip the request.
+  bool tryEnter()
+  {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    if (closed_ || shutdown_) {
+      return false;
+    }
+    ++active_;
+    return true;
+  }
+
+  // Blocks while closed.  False once shut down: skip the work.  Only for
+  // threads of their own, never the io threads.
+  bool enter()
+  {
+    std::unique_lock<std::mutex> lock(mutex_);
+    cv_.wait(lock, [this] { return !closed_ || shutdown_; });
+    if (shutdown_) {
+      return false;
+    }
+    ++active_;
+    return true;
+  }
+
+  void leave()
+  {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    if (--active_ == 0) {
+      cv_.notify_all();
+    }
+  }
+
+  void close()
+  {
+    std::unique_lock<std::mutex> lock(mutex_);
+    setClosed(true);
+    cv_.wait(lock, [this] { return active_ == 0; });
+  }
+
+  void open()
+  {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    setClosed(false);
+    cv_.notify_all();
+  }
+
+  // Refuse every waiting and future request, so the io threads can be
+  // joined when the process exits; undone by setShutdown(false).
+  void setShutdown(bool shutdown)
+  {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    shutdown_ = shutdown;
+    cv_.notify_all();
+  }
+
+  void setOnChange(ChangeFn on_change)
+  {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    on_change_ = std::move(on_change);
+  }
+
+  // Calls fn with the current state under the gate's lock, so every later
+  // change reaches the on-change callback after fn has run.
+  void withState(const ChangeFn& fn)
+  {
+    const std::lock_guard<std::mutex> lock(mutex_);
+    fn(closed_);
+  }
+
+ private:
+  void setClosed(bool closed)
+  {
+    if (closed_ == closed) {
+      return;
+    }
+    closed_ = closed;
+    if (on_change_) {
+      on_change_(closed);
+    }
+  }
+
+  std::mutex mutex_;
+  std::condition_variable cv_;
+  int active_ = 0;
+  bool closed_ = false;
+  bool shutdown_ = false;
+  ChangeFn on_change_;
+};
+
+// Thread-safe Tcl command evaluation.  Log output emitted while the
+// command runs is captured by WebLogSink (registered on the logger via
+// addSink) and pushed to clients as {"type":"log",...} messages — do
+// NOT redirect the logger to a string here.  redirectStringBegin clears
+// the entire sink list, which would unhook WebLogSink (and any other
+// sink) for the duration of the command and break log streaming.  After
+// each eval the optional drain_output hook is invoked so any buffered
+// log output reaches clients before the eval response is sent.
+struct TclEvaluator
+{
+  Tcl_Interp* interp;
+  utl::Logger* logger;
+  std::mutex mutex;
+  // Shared by every request path; lives here because the evaluator is the
+  // one server object that outlives each serve()/stop() cycle.
+  ScriptGate script_gate;
+  std::function<void()> drain_output;
+
+  // Debug renderers are drawn between commands and while one is paused, when
+  // the tools' state is stable (see the renderer hooks in web_serve.cpp).
+  // Such a draw holds renderer_mutex shared, so draws run side by side, and
+  // `running` and `paused_command` only change under it held exclusively, so
+  // a command cannot start, or resume from a pause, while one is in progress.
+  // After every command, command_done is told whether a draw was skipped
+  // because it was running, so the clients can be sent to pick the renderers
+  // up.
+  std::shared_mutex renderer_mutex;
+  bool running = false;
+  bool paused_command = false;
+  std::atomic<bool> draw_skipped{false};
+  std::function<void(bool draw_skipped)> command_done;
+
+  struct Result
+  {
+    std::string result;
+    bool is_error;
+  };
+
+  TclEvaluator(Tcl_Interp* interp, utl::Logger* logger)
+      : interp(interp), logger(logger)
+  {
+  }
+
+  Result eval(const std::string& cmd)
+  {
+    std::lock_guard<std::mutex> lock(mutex);
+    setRunning(true);
+    int rc;
+    try {
+      rc = Tcl_Eval(interp, cmd.c_str());
+    } catch (...) {
+      setRunning(false);
+      throw;
+    }
+    const bool skipped = setRunning(false);
+    Result r;
+    r.result = Tcl_GetStringResult(interp);
+    r.is_error = (rc != TCL_OK);
+    // Flush Tcl stdout/stderr so `puts` output — which sta::ReportTcl
+    // encapsulates into utl::Logger — reaches WebLogSink and the browser
+    // console.  The web eval path has no Tcl event loop to flush the channel
+    // buffer like the CLI/GUI do, so a `puts` would otherwise never surface.
+    if (Tcl_Channel out = Tcl_GetStdChannel(TCL_STDOUT)) {
+      Tcl_Flush(out);
+    }
+    if (Tcl_Channel err = Tcl_GetStdChannel(TCL_STDERR)) {
+      Tcl_Flush(err);
+    }
+    if (drain_output) {
+      drain_output();
+    }
+    if (command_done) {
+      command_done(skipped);
+    }
+    return r;
+  }
+
+  // Returns whether a renderer draw was skipped since the last call.
+  bool setRunning(const bool value)
+  {
+    const std::lock_guard<std::shared_mutex> lock(renderer_mutex);
+    running = value;
+    return draw_skipped.exchange(false);
+  }
+
+  // Run on the pausing thread as a debugger pause begins and ends.  A paused
+  // command is stopped where its state is stable, so it does not count as
+  // running until it resumes.  Whatever is running when a pause begins is
+  // the command pausing: a startup script does not run through eval(), and
+  // the script gate keeps every eval out until the script pauses.  A command
+  // typed in the browser during a script's pause does count, so the paused
+  // draws stand aside until it is done.
+  void pauseBegin()
+  {
+    const std::lock_guard<std::shared_mutex> lock(renderer_mutex);
+    if (running) {
+      running = false;
+      paused_command = true;
+    }
+  }
+
+  // Taking the lock also waits out a draw in progress, so the command does
+  // not resume under it.
+  void pauseEnd()
+  {
+    const std::lock_guard<std::shared_mutex> lock(renderer_mutex);
+    if (std::exchange(paused_command, false)) {
+      running = true;
+    }
+  }
+};
+
+struct WebSocketRequest
+{
+  enum Type
+  {
+    kTile,
+    kBounds,
+    kLayerExtents,
+    kTech,
+    kSelect,
+    kInspect,
+    kInspectBack,
+    kHover,
+    kTclEval,
+    kTclComplete,
+    kTimingReport,
+    kTimingHighlight,
+    kTimingCone,
+    kClockTree,
+    kClockTreeHighlight,
+    kSlackHistogram,
+    kFanoutHistogram,
+    kNetLengthHistogram,
+    kSelectFanoutBin,
+    kSelectNetLengthBin,
+    kChartFilters,
+    kModuleHierarchy,
+    kSetModuleColors,
+    kGroupHierarchy,
+    kSetGroupColors,
+    kFind,
+    kSetFocusNets,
+    kSetRouteGuides,
+    kHeatmaps,
+    kSetActiveHeatmap,
+    kSetHeatmap,
+    kHeatmapTile,
+    kListDir,
+    kSnap,
+    kSchematicCone,
+    kSchematicFull,
+    kSchematicPath,
+    kSchematicInspect,
+    kDrcCategories,
+    kDrcMarkers,
+    kDrcLoadReport,
+    kDrcUpdateMarker,
+    kDrcUpdateCategoryVisibility,
+    kDrcHighlight,
+    kSelectNext,
+    kSelectPrev,
+    kSetProperty,
+    kTriggerAction,
+    kHighlight,
+    kUnhighlight,
+    kClearHighlights,
+    kListSelection,
+    kInspectSelection,
+    kInspectGroup,
+    kDeselect,
+    kSelectLayer,
+    kDebugContinue,
+    kDebugCharts,
+    kSetDisplayState,
+    kGet3DData,
+    kOverlayTile,
+    kAddLabel,
+    kDeleteLabel,
+    kUpdateLabel,
+    kClearLabels,
+    kListLabels,
+    kContextAction,
+    kCancel,
+    kCustomUi,
+    kGlobalConnectInfo,
+    kGlobalConnectDelete,
+    kGlobalConnectApply,
+    kBufferInfo,
+    kInsertBuffer,
+    kPolyDecomp,
+    kRendererControls,
+    kSetRendererControl,
+    kUnknown
+  };
+
+  uint32_t id = 0;
+  Type type = kUnknown;
+  boost::json::object json;  // parsed payload; empty on parse failure
+  // Original `"type"` string from the JSON, even when not registered.
+  // Used by the kUnknown error path for diagnosability.  Empty when
+  // the message was malformed (parse threw) or had no `type` field.
+  std::string raw_type;
+  // Set to the boost::json exception message when JSON parsing or one
+  // of the required envelope reads (id/type) failed.  Surfaced in the
+  // kUnknown error payload so WEB-0043 names the actual parse error.
+  std::string parse_error;
+};
+
+struct WebSocketResponse
+{
+  enum PayloadType : uint8_t
+  {
+    kJson = 0,
+    kPng = 1,
+    kError = 2,
+    // A tile the renderer drew nothing into.  Carries no payload: sending the
+    // transparent PNG instead would make the client decode it and hold a
+    // full-size bitmap for an image with nothing in it, and most of the tiles
+    // in a viewport are this one.
+    kEmpty = 3
+  };
+
+  uint32_t id = 0;
+  PayloadType type = kJson;
+  std::vector<unsigned char> payload;
+  // Original `"type"` string from the request, used by the kError
+  // logging path for diagnosability.  Annotated by WebSocketSession::on_read
+  // after the handler returns; handlers do not need to set it.
+  std::string request_type;
+};
+
+// Shared mutable state for a WebSocket session.
+// Handlers receive a reference; WebSocketSession owns the instance.
+struct SessionState
+{
+  // Raised by the session's odb destroy callbacks when any selectable
+  // object type is destroyed (by trigger_action or a Tcl command).  The
+  // Selected wrappers below hold raw odb pointers, so the whole selection
+  // state must be dropped before the next dereference; handlers consume
+  // the flag via consumeStaleSelection() before touching any Selected.
+  std::atomic<bool> selection_stale{false};
+
+  // Raised by the session's odb geometry callbacks when a placement or
+  // master swap moves an object (a set_property X/Y edit, or a Tcl command).
+  // The highlight groups hold shapes derived from the old geometry, and the
+  // edit can come from ANOTHER session -- whose broadcast only asks this
+  // client to redraw, which would re-send the stale rectangles.  The overlay
+  // handler rebuilds them when it sees this set.  Not folded into
+  // selection_stale: nothing here dangles, so the selection itself must
+  // survive.
+  std::atomic<bool> highlight_geometry_stale{false};
+
+  std::mutex selection_mutex;
+  std::vector<odb::Rect> highlight_rects;
+  std::vector<odb::Polygon> highlight_polys;
+  // Flight lines emitted by selection highlights (unrouted nets draw
+  // driver→sink lines); rendered in the overlay next to timing lines.
+  std::vector<FlightLine> highlight_lines;
+  std::vector<odb::Rect> hover_rects;
+  std::vector<ColoredRect> timing_rects;
+  std::vector<FlightLine> timing_lines;
+  // Misc > Flywires only: highlight selected nets with straight
+  // driver->sink lines instead of their routed wire/guides (GUI
+  // isFlywireHighlightOnly() parity).
+  bool flywires_only = false;
+  // Last Options > "Show polygon decomposition" value this session derived
+  // its highlight shapes under.  The setting itself is server-global (it
+  // lives in web::Gui, where the ITerm/MTerm descriptors read it); this copy
+  // exists only so the overlay handler can spot that the shapes it holds
+  // predate a change and re-derive them, exactly as it does for
+  // flywires_only.
+  bool poly_decomp = false;
+  // Which selection the highlight_* vectors were derived from, or kNone while
+  // they hold nothing.  A flywires_only flip has to re-derive them from the
+  // SAME source: the multi-selection normally, but a single object when the
+  // user followed an inspector link out of the selection set (handleInspect
+  // deliberately narrows the highlight to the link target).  kNone doubles as
+  // the "dismissed" state, so a flip cannot resurrect highlights the user
+  // cleared.
+  //
+  // Tracking the source is a shim over the fact that selection_set and
+  // current_inspected are two overlapping answers to "what is selected"; the
+  // Qt GUI keeps only the set and narrows it on a link follow.
+  enum class HighlightSource : uint8_t
+  {
+    kNone,
+    kInspected,
+    kSelectionSet
+  };
+  HighlightSource highlight_source = HighlightSource::kNone;
+
+  std::mutex selectables_mutex;
+  std::vector<web::Selected> selectables;
+
+  web::Selected current_inspected;
+  // World transform of the chiplet placement current_inspected was inspected
+  // in; every highlight of it maps its shapes through this, or they land in
+  // die-local coordinates.  A layout click or schematic inspect sets it from
+  // the chiplet the object was found in; an inspector link to an object in
+  // the same block inherits it.  Change the two together through
+  // setCurrentInspected.
+  odb::dbTransform current_inspected_xfm;
+  // Where the inspector's Back returns to, each with its transform.
+  struct NavigationEntry
+  {
+    web::Selected sel;
+    odb::dbTransform xfm;
+  };
+  std::vector<NavigationEntry> navigation_history;
+
+  // Multi-selection set and iterator position (mirrors Qt GUI's SelectionSet).
+  web::SelectionSet selection_set;
+  web::SelectionSet::const_iterator selection_itr = selection_set.end();
+
+  // Owner id (dbModule / dbGroup) → RGBA color, as last set by the panel, one
+  // per "color by owner" overlay.  By shared_ptr so a tile render can keep the
+  // map past the lock while the panel replaces it, without deep-copying every
+  // owner's color per tile, and so a null handle still means "never synced" —
+  // which the renderer answers with the design's default palette.
+  struct OwnerColors
+  {
+    std::mutex mutex;
+    std::shared_ptr<const std::map<uint32_t, Color>> colors;
+  };
+  OwnerColors module_colors;
+  OwnerColors group_colors;
+
+  // Color-coded highlight groups (mirrors Qt GUI's HighlightSet: 16 fixed
+  // groups colored by web::Painter::kHighlightColors).  An object lives in
+  // at most one group.  highlight_group_rects is the derived overlay
+  // snapshot, rebuilt on every mutation (not per tile).  Both guarded by
+  // selection_mutex.
+  std::array<web::SelectionSet, web::kNumHighlightSet> highlight_groups;
+  std::vector<ColoredRect> highlight_group_rects;
+  // Octilinear group members (special-wire shapes) keep their outline rather
+  // than collapsing to a bounding rect.  Guarded by selection_mutex, rebuilt
+  // with highlight_group_rects.
+  std::vector<ColoredPolygon> highlight_group_polys;
+  // Flight lines emitted by group members whose highlight() draws lines
+  // (e.g. unrouted nets), tinted with the group color.  Guarded by
+  // selection_mutex, rebuilt with highlight_group_rects.
+  std::vector<FlightLine> highlight_group_lines;
+
+  std::mutex focus_nets_mutex;
+  std::set<uint32_t> focus_net_ids;  // dbNet ODB IDs
+
+  std::mutex route_guides_mutex;
+  std::set<uint32_t> route_guide_net_ids;  // dbNet ODB IDs
+
+  std::mutex drc_mutex;
+  std::string active_drc_category;     // name of active top-level category
+  std::vector<ColoredRect> drc_rects;  // filled rect shapes for overlay
+  std::vector<FlightLine> drc_lines;   // line/X shapes for overlay
+
+  // Timing-cone overlay (fanin/fanout).  cone_rects highlights instances,
+  // cone_lines are the slack-colored flight lines and cone_labels are the
+  // per-pin logic-depth annotations.  Populated by handleTimingCone and merged
+  // into the overlay by handleOverlayTile.
+  std::mutex cone_mutex;
+  std::vector<ColoredRect> cone_rects;
+  std::vector<FlightLine> cone_lines;
+  std::vector<TextLabel> cone_labels;
+
+  std::mutex heatmap_mutex;
+  std::map<std::string, std::shared_ptr<web::HeatMapDataSource>> heatmaps;
+  std::string active_heatmap;
+
+  // Tile-request ids the client has abandoned (pan/zoom away).  Populated by
+  // the inline `cancel` handler and consumed at the top of handleTile so a
+  // still-queued render is skipped.  Best-effort (a render already running on
+  // a worker thread is not interrupted).
+  std::mutex cancelled_mutex;
+  std::set<uint32_t> cancelled_ids;
+};
+
+// Map an HTTP request target onto an embedded asset path.
+//
+// Strips the query string and fragment, which the asset lookup must not see:
+// the viewer's options are passed as query parameters (?mergetiles=0 and
+// friends), and matching "/?mergetiles=0" against the asset table simply fails,
+// so the whole page 404s.  Also maps "/" onto the index document.
+std::string assetPathFromTarget(std::string_view target);
+
+// Join `t`, or detach it when called from `t` itself, where a join throws
+// EDEADLK.  A non-joinable thread is left alone.
+void joinUnlessSelf(std::thread& t);
+
+// Run `ioc` until it stops.  A handler that throws is logged, not fatal, but
+// whatever it would have re-armed (a read, a timer) stays stopped.
+void runIoContext(boost::asio::io_context& ioc, utl::Logger* logger);
+
+// Parse an integer that must span the whole string_view (no trailing garbage),
+// exception-free.  Returns false on any malformed/partial input.
+template <typename T>
+bool parseIntExact(std::string_view s, T& out, int base = 10)
+{
+  const char* const first = s.data();
+  const char* const last = first + s.size();
+  const auto res = std::from_chars(first, last, out, base);
+  return res.ec == std::errc{} && res.ptr == last;
+}
+
+// Percent-decode a URL query value (e.g. the JSON `vis` payload).
+std::string urlDecode(std::string_view s);
+
+// Parse the "k=v&k2=v2" query of a request target into a map (values decoded).
+std::map<std::string, std::string> parseQuery(std::string_view target);
+
+// True if the gzipped bytes may be sent as stored: gzip, x-gzip or * without
+// q=0, an explicit gzip deciding over *; an empty header does not count.  A
+// q=0 on any gzip or x-gzip entry refuses it, whatever the other entries say.
+bool acceptsGzip(std::string_view accept_encoding);
+
+// Fills in res for an embedded asset: the stored gzip bytes with
+// Content-Encoding: gzip when accept_encoding allows them, else the inflated
+// bytes (or a 500 if the asset cannot be inflated).
+void serveEmbeddedAsset(
+    const EmbeddedAsset& asset,
+    std::string_view accept_encoding,
+    boost::beast::http::response<boost::beast::http::string_body>& res);
+
+// True if a WebSocket handshake carrying this Origin/Host may be accepted.
+// Blocks Cross-Site WebSocket Hijacking (issue #11167): a browser sets the
+// Origin header and JavaScript cannot forge it, so a cross-site page opening
+// ws://localhost:<port> is rejected here before it can drive tcl_eval.
+//
+// An absent Origin is allowed: browsers always send it on a WS handshake, so
+// its absence marks a non-browser client (local tooling, tests), which the
+// access token authenticates.  A present Origin is accepted only when its
+// authority equals the Host header (strict same-origin).
+bool webSocketOriginAllowed(std::string_view origin, std::string_view host);
+
+// The Content-Security-Policy for a response to a request with this Host
+// header.  connect-src names ws://host and wss://host as well as 'self':
+// browsers older than CSP Level 3 (Safari before 15.4, say) do not let
+// 'self' match a WebSocket scheme and would refuse the viewer's socket.  A
+// Host that a CSP host-source cannot spell (empty, an IPv6 literal, or
+// anything with other characters) gets 'self' alone.
+std::string contentSecurityPolicy(std::string_view host);
+
+// Optional-field accessor: returns the JSON value at `key` converted to T,
+// or `default_val` when the key is missing.  Throws
+// (boost::system::system_error) when the key is present but the JSON type
+// doesn't convert to T — that's a frontend/backend contract violation, surface
+// it.
+//
+// For required fields, prefer the bare boost::json idiom
+// `obj.at(key).as_int64()` / `as_string()` / `as_bool()` / `as_double()`,
+// which throws on either missing or wrong-typed input.
+//
+// Throwing is safe here: WebSocketSession dispatches every handler through
+// invoke_handler(), which turns an escaped exception into an error response
+// for that one request.  It was not always so — the handlers ran with no
+// try/catch above them and out of io_context::run(), so a wrong-typed field
+// terminated the process.
+template <class T>
+T jsonOr(const boost::json::object& obj, std::string_view key, T default_val)
+{
+  if (auto* v = obj.if_contains(key)) {
+    return boost::json::value_to<T>(*v);
+  }
+  return default_val;
+}
+
+// Drops the entire selection state (selectables, inspected object,
+// history, selection set, highlight/hover shapes) when a destroy callback
+// flagged it stale.  Must be called before dereferencing any stored
+// web::Selected.  Returns true when the state was cleared.
+bool consumeStaleSelection(SessionState& state);
+
+// Build a kError response carrying `message`.  The three-line
+// type/string/assign dance is easy to get subtly wrong (the payload is bytes,
+// not a string), so it lives in one place.
+WebSocketResponse errorResponse(uint32_t id, std::string_view message);
+
+// Deepest tile zoom the server will address.  2^kMaxTileZoom must stay inside
+// an int, since the grid size is computed as an int in several renderers.
+// The client mirrors this ceiling in maxUsefulZoom() (ui-utils.js).
+constexpr int kMaxTileZoom = 30;
+
+// Read the z/x/y grid coordinates of a tile request into `z`/`x`/`y`.
+// Returns false, with `error` describing the offending field, when a
+// coordinate is missing, is not an integer, or the zoom is outside
+// [0, kMaxTileZoom].  x and y are not bounded to the grid: Leaflet asks for
+// off-grid tiles as a matter of course and the renderers answer with a
+// transparent tile.
+//
+// The type check is not paranoia about hand-written clients: JSON.stringify
+// serializes NaN and Infinity as `null`, so any client-side arithmetic that
+// goes non-finite -- an unbounded zoom being the one we hit -- reaches the
+// server as a null where a number belongs.  Reporting that as an error beats
+// rendering the transparent tiles that a degenerate zoom would otherwise
+// produce, which look to the user like the design vanished.
+bool parseTileCoords(const boost::json::object& json,
+                     int& z,
+                     int& x,
+                     int& y,
+                     std::string& error);
+
+// Handles SELECT, INSPECT, and HOVER requests.
+class SelectHandler
+{
+ public:
+  SelectHandler(std::shared_ptr<TileGenerator> gen,
+                std::shared_ptr<TclEvaluator> tcl_eval);
+  void registerRequests(RequestDispatcher& dispatcher);
+
+  // Called after a request mutates the database (e.g. an accepted
+  // set_property) so every connected client re-renders.  The session
+  // wires this to SessionRegistry::broadcast; invoked with the STA lock
+  // released.
+  void setBroadcastFn(std::function<void(const std::string&)> fn)
+  {
+    broadcast_fn_ = std::move(fn);
+  }
+
+  WebSocketResponse handleSelect(const WebSocketRequest& req,
+                                 SessionState& state);
+  WebSocketResponse handleInspect(const WebSocketRequest& req,
+                                  SessionState& state);
+  WebSocketResponse handleInspectBack(const WebSocketRequest& req,
+                                      SessionState& state);
+  WebSocketResponse handleHover(const WebSocketRequest& req,
+                                SessionState& state);
+  WebSocketResponse handleSetFocusNets(const WebSocketRequest& req,
+                                       SessionState& state);
+  WebSocketResponse handleSelectFanoutBin(const WebSocketRequest& req,
+                                          SessionState& state);
+  WebSocketResponse handleSelectNetLengthBin(const WebSocketRequest& req,
+                                             SessionState& state);
+  WebSocketResponse handleSetRouteGuides(const WebSocketRequest& req,
+                                         SessionState& state);
+  WebSocketResponse handleSelectNext(const WebSocketRequest& req,
+                                     SessionState& state);
+  WebSocketResponse handleSelectPrev(const WebSocketRequest& req,
+                                     SessionState& state);
+  WebSocketResponse handleSetProperty(const WebSocketRequest& req,
+                                      SessionState& state);
+  WebSocketResponse handleTriggerAction(const WebSocketRequest& req,
+                                        SessionState& state);
+  WebSocketResponse handleHighlight(const WebSocketRequest& req,
+                                    SessionState& state);
+  WebSocketResponse handleUnhighlight(const WebSocketRequest& req,
+                                      SessionState& state);
+  WebSocketResponse handleClearHighlights(const WebSocketRequest& req,
+                                          SessionState& state);
+  WebSocketResponse handleListSelection(const WebSocketRequest& req,
+                                        SessionState& state);
+  WebSocketResponse handleInspectSelection(const WebSocketRequest& req,
+                                           SessionState& state);
+  WebSocketResponse handleInspectGroup(const WebSocketRequest& req,
+                                       SessionState& state);
+  WebSocketResponse handleDeselect(const WebSocketRequest& req,
+                                   SessionState& state);
+  WebSocketResponse handleSelectLayer(const WebSocketRequest& req,
+                                      SessionState& state);
+  WebSocketResponse handleFind(const WebSocketRequest& req,
+                               SessionState& state);
+  WebSocketResponse handleSnap(const WebSocketRequest& req);
+  WebSocketResponse handleSchematicCone(const WebSocketRequest& req);
+  WebSocketResponse handleSchematicFull(const WebSocketRequest& req);
+  WebSocketResponse handleSchematicPath(const WebSocketRequest& req);
+  WebSocketResponse handleSchematicInspect(const WebSocketRequest& req,
+                                           SessionState& state);
+  WebSocketResponse handleGet3DData(const WebSocketRequest& req);
+  WebSocketResponse handleContextAction(const WebSocketRequest& req,
+                                        SessionState& state);
+
+ private:
+  // Build a multi-selection from `matched` nets: caps the count, writes count/
+  // truncated/selection_* into `root`, and updates `state` (selection set,
+  // highlights, inspector).  Shared by handleSelectFanoutBin and
+  // handleSelectNetLengthBin.  Caller must hold tcl_eval_->mutex.
+  void selectMatchedNets(std::vector<odb::dbNet*>& matched,
+                         SessionState& state,
+                         boost::json::object& root,
+                         bool use_dbu);
+
+  std::shared_ptr<TileGenerator> gen_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
+  std::function<void(const std::string&)> broadcast_fn_;
+};
+
+// Handles TCL_EVAL requests.
+class TclHandler
+{
+ public:
+  explicit TclHandler(std::shared_ptr<TclEvaluator> tcl_eval);
+  void registerRequests(RequestDispatcher& dispatcher);
+
+  WebSocketResponse handleTclEval(const WebSocketRequest& req);
+  WebSocketResponse handleTclComplete(const WebSocketRequest& req);
+
+ private:
+  std::shared_ptr<TclEvaluator> tcl_eval_;
+};
+
+// Handles DB-editing utilities: Global Connect (list/delete rules; add/apply/
+// clear go through existing Tcl commands via TCL_EVAL) and Insert Buffer
+// (list pins/masters + perform the insertion through the odb API).
+class EditHandler
+{
+ public:
+  EditHandler(std::shared_ptr<TileGenerator> gen,
+              std::shared_ptr<TclEvaluator> tcl_eval);
+  void registerRequests(RequestDispatcher& dispatcher);
+
+  // Global Connect
+  WebSocketResponse handleGlobalConnectInfo(const WebSocketRequest& req);
+  WebSocketResponse handleGlobalConnectDelete(const WebSocketRequest& req);
+  WebSocketResponse handleGlobalConnectApply(const WebSocketRequest& req);
+  // Insert Buffer
+  WebSocketResponse handleBufferInfo(const WebSocketRequest& req);
+  WebSocketResponse handleInsertBuffer(const WebSocketRequest& req);
+
+ private:
+  std::shared_ptr<TileGenerator> gen_;
+  // Serializes DB access against the Tcl write path (and other edits); the
+  // same mutex TclEvaluator holds while running commands that mutate odb.
+  std::shared_ptr<TclEvaluator> tcl_eval_;
+};
+
+// Handles TIMING_REPORT and TIMING_HIGHLIGHT requests.
+class TimingHandler
+{
+ public:
+  TimingHandler(std::shared_ptr<TileGenerator> gen,
+                std::shared_ptr<TimingReport> timing_report,
+                std::shared_ptr<TclEvaluator> tcl_eval);
+  void registerRequests(RequestDispatcher& dispatcher);
+
+  WebSocketResponse handleTimingReport(const WebSocketRequest& req);
+  WebSocketResponse handleTimingHighlight(const WebSocketRequest& req,
+                                          SessionState& state);
+  WebSocketResponse handleTimingCone(const WebSocketRequest& req,
+                                     SessionState& state);
+  WebSocketResponse handleSlackHistogram(const WebSocketRequest& req);
+  WebSocketResponse handleFanoutHistogram(const WebSocketRequest& req);
+  WebSocketResponse handleNetLengthHistogram(const WebSocketRequest& req);
+  WebSocketResponse handleChartFilters(const WebSocketRequest& req);
+
+ private:
+  std::shared_ptr<TileGenerator> gen_;
+  std::shared_ptr<TimingReport> timing_report_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
+};
+
+// Handles CLOCK_TREE and CLOCK_TREE_HIGHLIGHT requests.
+class ClockTreeHandler
+{
+ public:
+  ClockTreeHandler(std::shared_ptr<TileGenerator> gen,
+                   std::shared_ptr<ClockTreeReport> clock_report,
+                   std::shared_ptr<TclEvaluator> tcl_eval);
+  void registerRequests(RequestDispatcher& dispatcher);
+
+  WebSocketResponse handleClockTree(const WebSocketRequest& req);
+  WebSocketResponse handleClockTreeHighlight(const WebSocketRequest& req,
+                                             SessionState& state);
+
+ private:
+  std::shared_ptr<TileGenerator> gen_;
+  std::shared_ptr<ClockTreeReport> clock_report_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
+};
+
+// Handles TILE/BOUNDS/TECH requests.
+class TileHandler
+{
+ public:
+  explicit TileHandler(std::shared_ptr<TileGenerator> gen);
+  void registerRequests(RequestDispatcher& dispatcher);
+
+  // Push a message to every connected client after a label mutation.  Labels
+  // live in the shared TileGenerator, so one client's edit changes what all
+  // of them should be drawing; without this the others keep stale handles and
+  // a stale overlay until something unrelated makes them reload.  The session
+  // wires this to SessionRegistry::broadcast, as it does for SelectHandler.
+  void setBroadcastFn(std::function<void(const std::string&)> fn)
+  {
+    broadcast_fn_ = std::move(fn);
+  }
+
+  void initializeHeatMaps(SessionState& state);
+  // Add any sources registered since initializeHeatMaps ran, leaving the
+  // instances already present (and their session-local settings) untouched.
+  // Caller holds state.heatmap_mutex.
+  void syncHeatMapsLocked(SessionState& state);
+  WebSocketResponse handleTile(const WebSocketRequest& req,
+                               SessionState& state);
+  WebSocketResponse handleOverlayTile(const WebSocketRequest& req,
+                                      SessionState& state);
+  WebSocketResponse handleModuleHierarchy(const WebSocketRequest& req);
+  WebSocketResponse handleGroupHierarchy(const WebSocketRequest& req);
+  // Backs set_module_colors and set_group_colors; `owner` is the overlay's
+  // slot in the session.
+  WebSocketResponse handleSetOwnerColors(const WebSocketRequest& req,
+                                         SessionState& state,
+                                         SessionState::OwnerColors& owner);
+  // User text labels (2.12).  Labels live in the shared TileGenerator, so all
+  // clients and save_image see them.
+  WebSocketResponse handleAddLabel(const WebSocketRequest& req);
+  WebSocketResponse handleDeleteLabel(const WebSocketRequest& req);
+  WebSocketResponse handleUpdateLabel(const WebSocketRequest& req);
+  WebSocketResponse handleClearLabels(const WebSocketRequest& req);
+  WebSocketResponse handleListLabels(const WebSocketRequest& req);
+  // Tell every client the label set changed.  Public so the Tcl-driven
+  // entry points (add_label and friends) can announce their edits too:
+  // labels sit outside ODB, so no design-change callback covers them.
+  void broadcastLabelsChanged();
+  WebSocketResponse handleHeatMaps(const WebSocketRequest& req,
+                                   SessionState& state);
+  WebSocketResponse handleSetActiveHeatMap(const WebSocketRequest& req,
+                                           SessionState& state);
+  WebSocketResponse handleSetHeatMap(const WebSocketRequest& req,
+                                     SessionState& state);
+  WebSocketResponse handleHeatMapTile(const WebSocketRequest& req,
+                                      SessionState& state);
+  // Marks a tile-request id as cancelled so a still-queued render is skipped.
+  // Registered run_inline so it executes on the read thread, ahead of the
+  // posted render it cancels.
+  WebSocketResponse handleCancel(const WebSocketRequest& req,
+                                 SessionState& state);
+
+ private:
+  // Build one session's instance of a registered source.  Defaults the chip
+  // to the root only when the factory left it unset, so a source bound to a
+  // specific chiplet keeps its binding.  Returns nullptr for an unbound
+  // (built-in) source when the root chip has no block: there is nothing for
+  // it to read, so it is left out rather than bound to an invalid chip.
+  std::shared_ptr<web::HeatMapDataSource> createHeatMapInstance(
+      const web::HeatMapSourceRegistration& registration) const;
+
+  static WebSocketResponse serializeBounds(uint32_t id,
+                                           const TileGenerator& gen);
+  static WebSocketResponse serializeTech(uint32_t id, const TileGenerator& gen);
+  static WebSocketResponse serializeLayerExtents(uint32_t id,
+                                                 const TileGenerator& gen);
+  static WebSocketResponse renderTile(
+      uint32_t id,
+      const std::string& layer,
+      int z,
+      int x,
+      int y,
+      const TileVisibility& vis,
+      const TileGenerator& gen,
+      const std::vector<odb::Rect>& highlight_rects,
+      const std::vector<odb::Polygon>& highlight_polys,
+      const std::vector<ColoredRect>& colored_rects,
+      const std::vector<FlightLine>& flight_lines,
+      const std::map<uint32_t, Color>* module_colors,
+      const std::map<uint32_t, Color>* group_colors,
+      const std::set<uint32_t>* focus_net_ids,
+      const std::set<uint32_t>* route_guide_net_ids,
+      double dpr = 1.0,
+      int tile_px = 0);
+
+  std::shared_ptr<TileGenerator> gen_;
+  std::function<void(const std::string&)> broadcast_fn_;
+};
+
+// Handles DRC_CATEGORIES, DRC_MARKERS, DRC_LOAD_REPORT,
+// DRC_UPDATE_MARKER, and DRC_HIGHLIGHT requests.
+class DRCHandler
+{
+ public:
+  explicit DRCHandler(std::shared_ptr<TileGenerator> gen);
+  void registerRequests(RequestDispatcher& dispatcher);
+
+  WebSocketResponse handleDRCCategories(const WebSocketRequest& req);
+  WebSocketResponse handleDRCMarkers(const WebSocketRequest& req,
+                                     SessionState& state);
+  WebSocketResponse handleDRCLoadReport(const WebSocketRequest& req,
+                                        SessionState& state);
+  WebSocketResponse handleDRCUpdateMarker(const WebSocketRequest& req,
+                                          SessionState& state);
+  WebSocketResponse handleDRCUpdateCategoryVisibility(
+      const WebSocketRequest& req,
+      SessionState& state);
+  WebSocketResponse handleDRCHighlight(const WebSocketRequest& req,
+                                       SessionState& state);
+
+ private:
+  std::shared_ptr<TileGenerator> gen_;
+  int min_box_ = -1;  // cached tech pitch for marker rendering threshold
+
+  // Returns block and chip, throwing if either is null.
+  std::pair<odb::dbBlock*, odb::dbChip*> getBlockAndChip();
+
+  // Find a marker by ID in the active category. Returns nullptr if not found.
+  odb::dbMarker* findMarkerById(SessionState& state,
+                                odb::dbChip* chip,
+                                int marker_id);
+
+  // Recompute DRC overlay rects from the active category's visible markers.
+  void refreshDRCOverlay(SessionState& state);
+};
+
+// Handles LIST_DIR requests (server-side file browsing).
+WebSocketResponse handleListDir(const WebSocketRequest& req);
+
+}  // namespace web

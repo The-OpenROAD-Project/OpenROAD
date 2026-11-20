@@ -64,7 +64,7 @@ CUDA_COPTS = CUDA_TOOLKIT_COPTS + CUDA_ARCH_COPTS + [
 ] + select({
     # Required by Kokkos's OpenMP backend headers in every TU that includes
     # Kokkos (the registry module adds it to its own copts). Only with the
-    # OpenMP host backend (--@kokkos//:backend), matching //src/gpl:gpl_impl.
+    # OpenMP host backend (--@kokkos//:backend), matching //openroad/gpl:gpl_impl.
     "@kokkos//:openmp": ["-fopenmp"],
     "//conditions:default": [],
 })

@@ -1,0 +1,722 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2026, The OpenROAD Authors
+
+#include <array>
+#include <cmath>
+#include <cstdint>
+#include <memory>
+#include <random>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "FastRoute.h"
+#include "Graph2D.h"
+#include "Overflow.h"
+#include "gtest/gtest.h"
+#include "odb/db.h"
+#include "stt/SteinerTreeBuilder.h"
+#include "tst/db_fixture.h"
+#include "utl/Logger.h"
+#include "utl/ServiceRegistry.h"
+
+namespace grt {
+
+class OverflowTestPeer
+{
+ public:
+  struct Result2D
+  {
+    int overflow;
+    int maximum;
+    int usage;
+    int threshold;
+    bool operator==(const Result2D&) const = default;
+  };
+  static void setUsageLimits(FastRouteCore& router, int capacity)
+  {
+    router.h_capacity_ = capacity;
+    router.v_capacity_ = capacity;
+  }
+  static Result2D query2D(FastRouteCore& router, bool estimated, bool reference)
+  {
+    int maximum;
+    int usage = 0;
+    int overflow;
+    if (estimated) {
+      overflow = reference ? router.scanOverflow2D(&maximum)
+                           : router.getOverflow2D(&maximum);
+    } else {
+      overflow = reference ? router.scanOverflow2Dmaze(&maximum, &usage)
+                           : router.getOverflow2Dmaze(&maximum, &usage);
+    }
+    return {overflow, maximum, usage, router.ahth_};
+  }
+  static Graph2D& graph(FastRouteCore& router) { return router.graph2d_; }
+  static bool cacheValid(const FastRouteCore& router)
+  {
+    return router.overflow_3d_valid_;
+  }
+  static void clearNetRoute(FastRouteCore& router) { router.clearNetRoute(0); }
+  static int overflow3D(FastRouteCore& router)
+  {
+    return router.getOverflow3D();
+  }
+  static std::array<OverflowStatistics, 2> totals(FastRouteCore& router)
+  {
+    router.getOverflow3D();
+    return {router.h_overflow_3d_.statistics(),
+            router.v_overflow_3d_.statistics()};
+  }
+  static auto reference(const FastRouteCore& router)
+  {
+    return router.scanOverflow3D();
+  }
+  static void corrupt(FastRouteCore& router)
+  {
+    router.h_overflow_3d_.add(1, 0);
+  }
+  static void add3D(FastRouteCore& router,
+                    int x,
+                    int y,
+                    int layer,
+                    EdgeDirection direction,
+                    int delta)
+  {
+    router.updateEdge3DUsage(x, y, layer, direction, delta);
+  }
+  static double usageNDRAware(const FastRouteCore& router,
+                              FrNet* net,
+                              int x,
+                              int y,
+                              EdgeDirection direction,
+                              double usage)
+  {
+    return router.getUsageNDRAware(net, x, y, direction, usage);
+  }
+  static bool canRunMaze3D(const FastRouteCore& router, int overflow_2d)
+  {
+    return router.canRunMaze3D(overflow_2d);
+  }
+  static void corruptNDRDeficitTotal(FastRouteCore& router)
+  {
+    router.graph2d_.ndr_deficit_total_++;
+  }
+  static void setTree(FastRouteCore& router, int net_id, StTree tree)
+  {
+    router.sttrees_[net_id] = std::move(tree);
+  }
+  static const StTree& tree(const FastRouteCore& router, int net_id)
+  {
+    return router.sttrees_[net_id];
+  }
+  static void routeLInMaze(FastRouteCore& router, int net_id)
+  {
+    router.newrouteLInMaze(net_id);
+  }
+  static constexpr int kNdrDeficitCost = FastRouteCore::kNdrDeficitCost;
+};
+
+namespace {
+
+class OverflowTest : public tst::DbFixture
+{
+ protected:
+  static constexpr int kSize = 5;
+  void SetUp() override
+  {
+    logger_.setDebugLevel(utl::GRT, "overflowcheck", 1);
+    logger_.setDebugLevel(utl::GRT, "usedgridcheck", 1);
+    auto* tech = odb::dbTech::create(db_.get(), "tech");
+    auto* chip = odb::dbChip::create(db_.get(), tech);
+    block_ = odb::dbBlock::create(chip, "top");
+    router_ = std::make_unique<FastRouteCore>(
+        db_.get(), &logger_, &registry_, &stt_, nullptr);
+    router_->setGridsAndLayers(kSize, kSize, 2);
+    router_->initEdges();
+    net_ = odb::dbNet::create(block_, "net");
+    fr_net_ = router_->addNet(net_, false, false, 0, 1, 0, 1, 0, nullptr);
+    OverflowTestPeer::setUsageLimits(*router_, 1000);
+    // Prime the cache before exercising mutations, as in subsequent ECO runs.
+    EXPECT_EQ(OverflowTestPeer::overflow3D(*router_), 0);
+  }
+
+  void expectReference()
+  {
+    const auto actual = OverflowTestPeer::totals(*router_);
+    EXPECT_EQ(actual, OverflowTestPeer::reference(*router_));
+    EXPECT_EQ(router_->totalOverflow(),
+              actual[0].overflow + actual[1].overflow);
+  }
+
+  odb::dbBlock* block_ = nullptr;
+  odb::dbNet* net_ = nullptr;
+  FrNet* fr_net_ = nullptr;
+  utl::ServiceRegistry registry_{&logger_};
+  stt::SteinerTreeBuilder stt_{&logger_};
+  std::unique_ptr<FastRouteCore> router_;
+};
+
+TEST_F(OverflowTest, TracksUsageCapacitiesAndDecreasingMaximum)
+{
+  router_->addTreeEdge(0, 1, 3, 1, 1, net_);
+  router_->addTreeEdge(2, 0, 2, 3, 2, net_);
+  router_->updateEdge2DAnd3DUsage(0, 1, 1, 1, 1, 8, net_);
+  router_->updateEdge2DAnd3DUsage(1, 1, 2, 1, 1, 4, net_);
+  auto totals = OverflowTestPeer::totals(*router_);
+  EXPECT_EQ(totals[0].usage, 15);
+  EXPECT_EQ(totals[0].max_overflow, 9);
+  EXPECT_EQ(totals[1].usage, 3);
+  router_->setEdgeCapacity(0, 1, 1, 1, 1, 7);
+  totals = OverflowTestPeer::totals(*router_);
+  EXPECT_EQ(totals[0].max_overflow, 5);
+  router_->addAdjustment(1, 1, 2, 1, 1, 5, false);
+  router_->addAdjustment(2, 0, 2, 1, 2, 3, false);
+  totals = OverflowTestPeer::totals(*router_);
+  EXPECT_EQ(totals[0].max_overflow, 2);
+  router_->updateEdge2DAnd3DUsage(0, 1, 1, 1, 1, -8, net_);
+  router_->updateEdge2DAnd3DUsage(1, 1, 2, 1, 1, -4, net_);
+  expectReference();
+  OverflowTestPeer::clearNetRoute(*router_);
+  expectReference();
+  OverflowTestPeer::graph(*router_).prepareForIncrementalRun();
+  EXPECT_EQ(OverflowTestPeer::overflow3D(*router_), 0);
+  EXPECT_EQ(router_->totalOverflow(), 0);
+}
+
+TEST_F(OverflowTest, CountsOnlyUsedPlanarEdgesAcrossAllLayers)
+{
+  router_->incrementEdge3DUsage(1, 1, 2, 1, 1);
+  router_->incrementEdge3DUsage(1, 1, 2, 1, 2);
+  // 3D usage alone must not add this edge to the counted population.
+  EXPECT_EQ(OverflowTestPeer::overflow3D(*router_), 0);
+  auto& graph = OverflowTestPeer::graph(*router_);
+  graph.addUsageH(1, 1, 1);
+  EXPECT_EQ(OverflowTestPeer::overflow3D(*router_), 2);
+  graph.addUsageH(1, 1, -1);
+  EXPECT_EQ(OverflowTestPeer::overflow3D(*router_), 2);
+  graph.prepareForIncrementalRun();
+  EXPECT_EQ(OverflowTestPeer::overflow3D(*router_), 0);
+  graph.addUsageH(1, 1, 1);
+  EXPECT_EQ(OverflowTestPeer::overflow3D(*router_), 2);
+  graph.clearUsed();
+  EXPECT_EQ(OverflowTestPeer::overflow3D(*router_), 0);
+  graph.rebuildUsedGrids();
+  EXPECT_EQ(OverflowTestPeer::overflow3D(*router_), 2);
+  expectReference();
+}
+
+TEST_F(OverflowTest, ClearUsedDefersRebuildThroughMutationsAndReconciliation)
+{
+  router_->addTreeEdge(0, 1, 1, 1, 1, net_);
+  router_->addTreeEdge(2, 0, 2, 1, 2, net_);
+  auto& graph = OverflowTestPeer::graph(*router_);
+  // Drain pending changes so recovery depends on clearUsed marking old entries.
+  graph.prepareForIncrementalRun();
+  expectReference();
+  ASSERT_TRUE(OverflowTestPeer::cacheValid(*router_));
+
+  graph.clearUsed();
+  EXPECT_FALSE(OverflowTestPeer::cacheValid(*router_));
+  graph.clearUsed();
+
+  // Change both directions and layers before any query rebuilds the cache.
+  OverflowTestPeer::add3D(*router_, 0, 1, 0, EdgeDirection::Horizontal, 4);
+  OverflowTestPeer::add3D(*router_, 0, 1, 1, EdgeDirection::Horizontal, 3);
+  OverflowTestPeer::add3D(*router_, 2, 0, 1, EdgeDirection::Vertical, 2);
+  router_->setEdgeCapacity(0, 1, 1, 1, 1, 2);
+  router_->setEdgeCapacity(2, 0, 2, 1, 2, 1);
+  // New membership must also be included when the cache is rebuilt.
+  OverflowTestPeer::add3D(*router_, 3, 3, 0, EdgeDirection::Horizontal, 4);
+  graph.addUsageH(3, 3, 1);
+  graph.prepareForIncrementalRun();
+  EXPECT_TRUE(graph.usedGridsMatchUsage());
+  EXPECT_FALSE(OverflowTestPeer::cacheValid(*router_));
+
+  const auto totals = OverflowTestPeer::totals(*router_);
+  EXPECT_TRUE(OverflowTestPeer::cacheValid(*router_));
+  EXPECT_EQ(totals[0].usage, 12);
+  EXPECT_EQ(totals[0].capacity, 2);
+  EXPECT_EQ(totals[0].overflow, 10);
+  EXPECT_EQ(totals[0].max_overflow, 4);
+  EXPECT_EQ(totals[1].usage, 3);
+  EXPECT_EQ(totals[1].capacity, 1);
+  EXPECT_EQ(totals[1].overflow, 2);
+  expectReference();
+}
+
+TEST_F(OverflowTest, ResetAndCopyInvalidateTheOwnersCache)
+{
+  router_->addTreeEdge(0, 1, 2, 1, 1, net_);
+  auto& graph = OverflowTestPeer::graph(*router_);
+  graph.initCap3D();
+  Graph2D empty;
+  empty.init(kSize, kSize, 2, &logger_);
+  empty.initCap3D();
+  graph.copyRoutingStateFrom(empty, false);
+  EXPECT_EQ(OverflowTestPeer::overflow3D(*router_), 0);
+  // The destination keeps its callback, rather than copying the source's.
+  graph.addUsageH(0, 1, 1);
+  EXPECT_EQ(OverflowTestPeer::overflow3D(*router_), 1);
+  router_->init3DEdges();
+  EXPECT_EQ(OverflowTestPeer::overflow3D(*router_), 0);
+  router_->incrementEdge3DUsage(0, 1, 1, 1, 1);
+  EXPECT_EQ(OverflowTestPeer::overflow3D(*router_), 1);
+  router_->initEdges();
+  EXPECT_EQ(OverflowTestPeer::overflow3D(*router_), 0);
+  expectReference();
+}
+
+TEST_F(OverflowTest, RepeatedMutationsMatchIndependentScan)
+{
+  std::mt19937 random(9876);
+  auto& graph = OverflowTestPeer::graph(*router_);
+  for (int i = 0; i < 2000; i++) {
+    const int x = random() % (kSize - 1);
+    const int y = random() % (kSize - 1);
+    const int layer = random() % 2;
+    const bool horizontal = random() % 2;
+    const auto direction
+        = horizontal ? EdgeDirection::Horizontal : EdgeDirection::Vertical;
+    const auto& edges = horizontal ? router_->getHorizontalEdges3D()
+                                   : router_->getVerticalEdges3D();
+    const int delta = edges[layer][y][x].usage > 0 && random() % 2 ? -1 : 1;
+    OverflowTestPeer::add3D(*router_, x, y, layer, direction, delta);
+    if (horizontal) {
+      graph.addUsageH(x, y, 1);
+    } else {
+      graph.addUsageV(x, y, 1);
+    }
+    router_->setEdgeCapacity(
+        x, y, x + horizontal, y + !horizontal, layer + 1, random() % 5);
+    if (i % 29 == 0) {
+      graph.clearUsed();
+    }
+    if (i % 7 == 0) {
+      graph.prepareForIncrementalRun();
+    }
+    expectReference();
+  }
+}
+
+TEST_F(OverflowTest, DebugCheckDetectsCounterDriftInRelease)
+{
+  OverflowTestPeer::corrupt(*router_);
+  EXPECT_THROW(OverflowTestPeer::overflow3D(*router_), std::runtime_error);
+}
+
+TEST_F(OverflowTest, TwoDimensionalCountersMatchLegacyScans)
+{
+  auto& graph = OverflowTestPeer::graph(*router_);
+  std::mt19937 random(2345);
+  for (int i = 0; i < 1000; i++) {
+    const int x = random() % (kSize - 1);
+    const int y = random() % (kSize - 1);
+    graph.addUsageH(x, y, 2);
+    graph.addUsageV(x, y, 3);
+    graph.updateEstUsageH(x, y, fr_net_, 0.5);
+    graph.updateEstUsageV(x, y, fr_net_, 1.5);
+    graph.addCapH(x, y, 1);
+    graph.addCapV(x, y, 1);
+    for (bool estimated : {false, true}) {
+      EXPECT_EQ(OverflowTestPeer::query2D(*router_, estimated, false),
+                OverflowTestPeer::query2D(*router_, estimated, true));
+    }
+    if (i % 3 == 0) {
+      graph.addEstUsageToUsage();
+      graph.InitEstUsage();
+    }
+    if (i % 5 == 0) {
+      graph.addUsageH(x, y, -graph.getUsageH(x, y));
+      graph.addUsageV(x, y, -graph.getUsageV(x, y));
+      graph.prepareForIncrementalRun();
+    }
+    for (bool estimated : {false, true}) {
+      EXPECT_EQ(OverflowTestPeer::query2D(*router_, estimated, false),
+                OverflowTestPeer::query2D(*router_, estimated, true));
+    }
+  }
+}
+
+TEST_F(OverflowTest, EstimatedUsageTruncationAndNegativeFallback)
+{
+  auto& graph = OverflowTestPeer::graph(*router_);
+  graph.updateEstUsageH(0, 0, fr_net_, 0.5);
+  graph.updateEstUsageH(1, 0, fr_net_, 0.5);
+  EXPECT_EQ(graph.overflowStatistics(true)[0].usage, 0);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, true, false).overflow, 0);
+  graph.InitEstUsage();
+  graph.updateEstUsageH(0, 0, fr_net_, 800001.5);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, true, false).threshold, 30);
+  graph.updateEstUsageV(0, 0, fr_net_, 0.5);
+  graph.updateEstUsageV(0, 0, fr_net_, -1);
+  ASSERT_TRUE(graph.needsEstimatedUsageScan());
+  // 800001 + (-0.5) truncates to 800000 in the original ordered scan.
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, true, false).threshold, 20);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, true, false),
+            OverflowTestPeer::query2D(*router_, true, true));
+  graph.InitEstUsage();
+  ASSERT_FALSE(graph.needsEstimatedUsageScan());
+  graph.updateEstUsageH(0, 0, fr_net_, -0.5);
+  graph.updateEstUsageV(0, 0, fr_net_, 800001.5);
+  // Reversing the signs changes the ordered result: trunc(0 - 0.5) is zero.
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, true, false).threshold, 30);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, true, false),
+            OverflowTestPeer::query2D(*router_, true, true));
+}
+
+TEST_F(OverflowTest, PreservesUsageLimitErrorsWithoutDebugScans)
+{
+  logger_.setDebugLevel(utl::GRT, "overflowcheck", 0);
+  auto& graph = OverflowTestPeer::graph(*router_);
+  OverflowTestPeer::setUsageLimits(*router_, 0);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, false, false).overflow, 0);
+  graph.addUsageH(1, 1, 1);
+  try {
+    OverflowTestPeer::query2D(*router_, false, false);
+    FAIL() << "Expected the original horizontal usage error";
+  } catch (const std::runtime_error& error) {
+    EXPECT_STREQ(error.what(), "GRT-0228");
+  }
+  graph.addUsageH(1, 1, -1);
+  graph.addUsageV(1, 1, 1);
+  try {
+    OverflowTestPeer::query2D(*router_, true, false);
+    FAIL() << "Expected the original vertical usage error";
+  } catch (const std::runtime_error& error) {
+    EXPECT_STREQ(error.what(), "GRT-0229");
+  }
+  graph.addUsageV(1, 1, -1);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, false, false).usage, 0);
+}
+
+TEST_F(OverflowTest, PreservesRoundingOfPositiveNonHalfEstimates)
+{
+  auto& graph = OverflowTestPeer::graph(*router_);
+  graph.updateEstUsageH(0, 0, fr_net_, 800000);
+  graph.updateEstUsageH(1, 0, fr_net_, std::nextafter(1.0, 0.0));
+  ASSERT_TRUE(graph.needsEstimatedUsageScan());
+  // The legacy double addition rounds up to 800001 before conversion to int.
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, true, false).threshold, 30);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, true, false),
+            OverflowTestPeer::query2D(*router_, true, true));
+}
+
+TEST_F(OverflowTest, AccountsForNDRDeficitsAndCancellation)
+{
+  auto& graph = OverflowTestPeer::graph(*router_);
+  router_->initEdgesCapacityPerLayer();
+  fr_net_->setEdgeCost(2);
+  graph.overflowStatistics(true);
+  // Without capacity on any layer, the NDR net adds its two tracks once, and
+  // the track it misses on its best layer is 2D overflow apart from usage.
+  graph.updateEstUsageH(0, 0, fr_net_, 0.5);
+  graph.updateEstUsageH(0, 0, fr_net_, 0.5);
+  EXPECT_EQ(graph.overflowStatistics(true)[0].usage, 2);
+  EXPECT_EQ(graph.getTotalNDRDeficit(), 1);
+  const auto estimated = OverflowTestPeer::query2D(*router_, true, false);
+  EXPECT_EQ(estimated.overflow, 3);
+  EXPECT_EQ(estimated, OverflowTestPeer::query2D(*router_, true, true));
+  graph.updateEstUsageH(0, 0, fr_net_, -0.5);
+  EXPECT_EQ(graph.getTotalNDRDeficit(), 0);
+  graph.InitEstUsage();
+  graph.updateUsageH(0, 0, fr_net_, 1);
+  EXPECT_EQ(graph.overflowStatistics(false)[0].usage, 2);
+  const auto committed = OverflowTestPeer::query2D(*router_, false, false);
+  EXPECT_EQ(committed.overflow, 3);
+  EXPECT_EQ(committed, OverflowTestPeer::query2D(*router_, false, true));
+  graph.updateUsageH(0, 0, fr_net_, -1);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, false, false).usage, 0);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, false, false).overflow, 0);
+  graph.prepareForIncrementalRun();
+  EXPECT_EQ(graph.overflowStatistics(false)[0].capacity, 0);
+}
+
+// Horizontal edges with three layers, and NDR nets three tracks wide.
+class NDRDeficitTest : public tst::DbFixture
+{
+ protected:
+  static constexpr int kSize = 3;
+  static constexpr int kLayers = 3;
+  static constexpr int kNdrWidth = 3;
+  static constexpr auto kH = EdgeDirection::Horizontal;
+
+  void SetUp() override
+  {
+    logger_.setDebugLevel(utl::GRT, "overflowcheck", 1);
+    auto* tech = odb::dbTech::create(db_.get(), "tech");
+    auto* chip = odb::dbChip::create(db_.get(), tech);
+    block_ = odb::dbBlock::create(chip, "top");
+    router_ = std::make_unique<FastRouteCore>(
+        db_.get(), &logger_, &registry_, &stt_, nullptr);
+    router_->setGridsAndLayers(kSize, kSize, kLayers);
+    router_->initEdges();
+    ndr_net_ = addNet("ndr", kNdrWidth);
+    for (int i = 0; i < 3; i++) {
+      regular_nets_.push_back(addNet("net" + std::to_string(i), 1));
+    }
+  }
+
+  FrNet* addNet(const std::string& name, const int8_t edge_cost)
+  {
+    auto* db_net = odb::dbNet::create(block_, name.c_str());
+    auto* layer_costs = edge_cost == 1
+                            ? nullptr
+                            : new std::vector<int8_t>(kLayers, edge_cost);
+    return router_->addNet(
+        db_net, false, false, 0, edge_cost, 0, kLayers - 1, 0, layer_costs);
+  }
+
+  // Sets the tracks of each layer on the edge (x, 0)-(x + 1, 0).
+  void setTracks(const int x, const std::array<int, kLayers>& tracks)
+  {
+    int capacity = 0;
+    for (int layer = 0; layer < kLayers; layer++) {
+      router_->setEdgeCapacity(x, 0, x + 1, 0, layer + 1, tracks[layer]);
+      capacity += tracks[layer];
+    }
+    router_->initEdgesCapacityPerLayer();
+    OverflowTestPeer::setUsageLimits(*router_, capacity);
+  }
+
+  double usageSeenBy(FrNet* net, const int x, const double usage)
+  {
+    return OverflowTestPeer::usageNDRAware(*router_, net, x, 0, kH, usage);
+  }
+
+  odb::dbBlock* block_ = nullptr;
+  FrNet* ndr_net_ = nullptr;
+  std::vector<FrNet*> regular_nets_;
+  utl::ServiceRegistry registry_{&logger_};
+  stt::SteinerTreeBuilder stt_{&logger_};
+  std::unique_ptr<FastRouteCore> router_;
+};
+
+// Three layers of two tracks cannot host an NDR net three tracks wide, but
+// the edge still has room for three regular nets.
+TEST_F(NDRDeficitTest, WideNDRNetLeavesRoomForRegularNets)
+{
+  auto& graph = OverflowTestPeer::graph(*router_);
+  setTracks(0, {2, 2, 2});
+  const int capacity = kLayers * 2;
+
+  // The NDR net would miss one track on its best layer: it prices the edge
+  // as overflowed, while a regular net sees the edge as it is.
+  EXPECT_EQ(graph.getNDRDeficitIfRouted(ndr_net_, 0, 0, kH), 1);
+  EXPECT_DOUBLE_EQ(usageSeenBy(ndr_net_, 0, 0),
+                   capacity - 1 + OverflowTestPeer::kNdrDeficitCost);
+  EXPECT_DOUBLE_EQ(usageSeenBy(regular_nets_[0], 0, 0), 0);
+
+  // Routed anyway, it takes its three tracks of the edge usage only, and the
+  // missing track is recorded apart.
+  graph.updateUsageH(0, 0, ndr_net_, kNdrWidth);
+  EXPECT_EQ(graph.getUsageH(0, 0), kNdrWidth);
+  EXPECT_EQ(graph.getNDRDeficit(ndr_net_, 0, 0, kH), 1);
+  EXPECT_TRUE(graph.hasNDRDeficit(0, 0, kH));
+  EXPECT_EQ(graph.getTotalNDRDeficit(), 1);
+
+  // The regular nets see the true usage and fill the edge without overflow.
+  for (FrNet* net : regular_nets_) {
+    const int usage = graph.getUsageRedH(0, 0);
+    EXPECT_DOUBLE_EQ(usageSeenBy(net, 0, usage), usage);
+    graph.updateUsageH(0, 0, net, 1);
+  }
+  EXPECT_EQ(graph.getUsageH(0, 0), capacity);
+  EXPECT_EQ(graph.getOverflowH(0, 0), 0);
+
+  // The 2D overflow still reports the missing track, which no layer
+  // assignment can avoid.
+  const auto overflow = OverflowTestPeer::query2D(*router_, false, false);
+  EXPECT_EQ(overflow.overflow, 1);
+  EXPECT_EQ(overflow.maximum, 0);
+  EXPECT_EQ(overflow, OverflowTestPeer::query2D(*router_, false, true));
+
+  // The rip-up returns what the NDR net took and its deficit.
+  graph.updateUsageH(0, 0, ndr_net_, -kNdrWidth);
+  EXPECT_EQ(graph.getUsageH(0, 0), 3);
+  EXPECT_FALSE(graph.hasNDRDeficit(0, 0, kH));
+  EXPECT_EQ(graph.getTotalNDRDeficit(), 0);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, false, false).overflow, 0);
+}
+
+// The NDR nets compete for the same layers: one that fits also pays for the
+// ones it leaves without room, so that either of them can move away.
+TEST_F(NDRDeficitTest, NDRNetsSeeTheDeficitOfTheEdge)
+{
+  auto& graph = OverflowTestPeer::graph(*router_);
+  setTracks(1, {2, 2, 3});
+  FrNet* other_ndr_net = addNet("other_ndr", kNdrWidth);
+
+  // The top layer hosts the first NDR net, which pays nothing for the edge.
+  graph.updateUsageH(1, 0, ndr_net_, kNdrWidth);
+  EXPECT_EQ(graph.getNDRDeficit(ndr_net_, 1, 0, kH), 0);
+  EXPECT_FALSE(graph.hasNDRDeficit(1, 0, kH));
+  EXPECT_DOUBLE_EQ(usageSeenBy(ndr_net_, 1, kNdrWidth), kNdrWidth);
+
+  // No layer is left for the second one.
+  EXPECT_EQ(graph.getNDRDeficitIfRouted(other_ndr_net, 1, 0, kH), 1);
+  graph.updateUsageH(1, 0, other_ndr_net, kNdrWidth);
+  EXPECT_EQ(graph.getUsageH(1, 0), 2 * kNdrWidth);
+  EXPECT_EQ(graph.getNDRDeficit(ndr_net_, 1, 0, kH), 0);
+  EXPECT_EQ(graph.getNDRDeficit(other_ndr_net, 1, 0, kH), 1);
+  EXPECT_TRUE(graph.hasNDRDeficit(1, 0, kH));
+  EXPECT_EQ(graph.getNDRDeficitIfRouted(ndr_net_, 1, 0, kH), 1);
+  EXPECT_EQ(graph.getNDRDeficitIfRouted(other_ndr_net, 1, 0, kH), 1);
+  EXPECT_EQ(graph.getNDRDeficitIfRouted(regular_nets_[0], 1, 0, kH), 0);
+
+  graph.updateUsageH(1, 0, other_ndr_net, -kNdrWidth);
+  EXPECT_FALSE(graph.hasNDRDeficit(1, 0, kH));
+  EXPECT_EQ(graph.getNDRDeficitIfRouted(ndr_net_, 1, 0, kH), 0);
+  EXPECT_EQ(graph.getTotalNDRDeficit(), 0);
+}
+
+// An NDR net prices a reduced edge against the capacity the edge has left,
+// not against the nominal capacity.
+TEST_F(NDRDeficitTest, ReducedEdgeIsPricedAgainstItsOwnCapacity)
+{
+  auto& graph = OverflowTestPeer::graph(*router_);
+  setTracks(0, {2, 2, 3});
+
+  // Reducing the top layer to two tracks leaves no layer for the NDR net.
+  router_->addAdjustment(0, 0, 1, 0, kLayers, 2, true);
+  router_->initEdgesCapacityPerLayer();
+  const int capacity = graph.getCapH(0, 0);
+  EXPECT_EQ(capacity, 6);
+  const int usage = graph.getUsageRedH(0, 0);
+  EXPECT_EQ(usage, 1);
+
+  EXPECT_EQ(graph.getNDRDeficitIfRouted(ndr_net_, 0, 0, kH), 1);
+  EXPECT_DOUBLE_EQ(usageSeenBy(ndr_net_, 0, usage),
+                   capacity - 1 + OverflowTestPeer::kNdrDeficitCost);
+  EXPECT_DOUBLE_EQ(usageSeenBy(regular_nets_[0], 0, usage), usage);
+}
+
+// The tracks a net releases go to the NDR nets that missed tracks on the
+// edge, so that their deficit does not outlive the net that caused it.
+TEST_F(NDRDeficitTest, ReleasedTracksLetDeficitNetsFit)
+{
+  auto& graph = OverflowTestPeer::graph(*router_);
+  setTracks(1, {2, 2, 3});
+  FrNet* second_ndr_net = addNet("second_ndr", kNdrWidth);
+  FrNet* third_ndr_net = addNet("third_ndr", kNdrWidth);
+
+  // The first NDR net takes the top layer, the other two miss a track each.
+  graph.updateUsageH(1, 0, ndr_net_, kNdrWidth);
+  graph.updateUsageH(1, 0, second_ndr_net, kNdrWidth);
+  graph.updateUsageH(1, 0, third_ndr_net, kNdrWidth);
+  EXPECT_EQ(graph.getTotalNDRDeficit(), 2);
+
+  // Once it leaves, the top layer goes to the remaining net with the lowest
+  // id, and the 2D overflow only counts the net still left without room.
+  graph.updateUsageH(1, 0, ndr_net_, -kNdrWidth);
+  EXPECT_EQ(graph.getNDRDeficit(second_ndr_net, 1, 0, kH), 0);
+  EXPECT_EQ(graph.getNDRDeficit(third_ndr_net, 1, 0, kH), 1);
+  EXPECT_EQ(graph.getTotalNDRDeficit(), 1);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, false, false).overflow, 1);
+
+  graph.updateUsageH(1, 0, second_ndr_net, -kNdrWidth);
+  EXPECT_EQ(graph.getNDRDeficit(third_ndr_net, 1, 0, kH), 0);
+  EXPECT_FALSE(graph.hasNDRDeficit(1, 0, kH));
+  EXPECT_EQ(graph.getTotalNDRDeficit(), 0);
+
+  // The last rip-up returns all the NDR capacity of the edge.
+  graph.updateUsageH(1, 0, third_ndr_net, -kNdrWidth);
+  EXPECT_EQ(graph.getNDRDeficitIfRouted(ndr_net_, 1, 0, kH), 0);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, false, false).overflow, 0);
+}
+
+// The 2D deficit comes from first-fit layer reservations. Here the narrow net,
+// reserved first, takes the bottom layer and leaves the wide net a track short,
+// although the narrow net on the middle layer and the wide one on the bottom
+// layer would both fit. Layer assignment can find that, so a deficit alone
+// does not keep the 3D maze routing from running.
+TEST_F(NDRDeficitTest, DeficitAloneDoesNotBlockMaze3D)
+{
+  auto& graph = OverflowTestPeer::graph(*router_);
+  setTracks(0, {3, 2, 0});
+  FrNet* narrow_ndr_net = addNet("narrow_ndr", 2);
+  graph.updateUsageH(0, 0, narrow_ndr_net, 2);
+  graph.updateUsageH(0, 0, ndr_net_, kNdrWidth);
+  EXPECT_EQ(graph.getNDRDeficit(ndr_net_, 0, 0, kH), 1);
+
+  const int overflow
+      = OverflowTestPeer::query2D(*router_, false, false).overflow;
+  EXPECT_EQ(overflow, 1);
+  EXPECT_TRUE(OverflowTestPeer::canRunMaze3D(*router_, overflow));
+
+  // Usage overflow still blocks it.
+  graph.updateUsageH(0, 0, regular_nets_[0], 1);
+  const int congested
+      = OverflowTestPeer::query2D(*router_, false, false).overflow;
+  EXPECT_EQ(congested, 2);
+  EXPECT_FALSE(OverflowTestPeer::canRunMaze3D(*router_, congested));
+}
+
+// The full-scan reference sums the deficits of the edges, so the overflow
+// checks catch a running total that drifts from them.
+TEST_F(NDRDeficitTest, DebugCheckDetectsNDRDeficitDrift)
+{
+  auto& graph = OverflowTestPeer::graph(*router_);
+  setTracks(0, {2, 2, 2});
+  graph.updateUsageH(0, 0, ndr_net_, kNdrWidth);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, false, false).overflow, 1);
+
+  OverflowTestPeer::corruptNDRDeficitTotal(*router_);
+  EXPECT_EQ(OverflowTestPeer::query2D(*router_, false, true).overflow, 1);
+  EXPECT_THROW(OverflowTestPeer::query2D(*router_, false, false),
+               std::runtime_error);
+  EXPECT_THROW(OverflowTestPeer::query2D(*router_, true, false),
+               std::runtime_error);
+}
+
+// The L-shapes the maze routing falls back to when it rebuilds the tree of a
+// net keep the NDR nets out of the edges where they fit no layer, as the
+// L-shapes of the initial routing do.
+TEST_F(NDRDeficitTest, MazeFallbackLShapeAvoidsTheNDRDeficit)
+{
+  auto& graph = OverflowTestPeer::graph(*router_);
+  // Both L-shapes from (0, 0) to (1, 1) have a layer for the NDR net on
+  // every edge but the bottom horizontal one.
+  const std::array<int, kLayers> fit{2, 2, 3};
+  const std::array<int, kLayers> no_fit{2, 2, 2};
+  for (int layer = 0; layer < kLayers; layer++) {
+    router_->setEdgeCapacity(0, 0, 1, 0, layer + 1, no_fit[layer]);
+    router_->setEdgeCapacity(0, 1, 1, 1, layer + 1, fit[layer]);
+    router_->setEdgeCapacity(0, 0, 0, 1, layer + 1, fit[layer]);
+    router_->setEdgeCapacity(1, 0, 1, 1, layer + 1, fit[layer]);
+  }
+  router_->initEdgesCapacityPerLayer();
+  OverflowTestPeer::setUsageLimits(*router_, 7);
+
+  int net_id;
+  bool exists;
+  router_->getNetId(ndr_net_->getDbNet(), net_id, exists);
+  ASSERT_TRUE(exists);
+  StTree tree;
+  tree.num_terminals = 2;
+  for (const auto [x, y] : {std::pair{0, 0}, std::pair{1, 1}}) {
+    TreeNode node{};
+    node.x = x;
+    node.y = y;
+    tree.nodes.push_back(node);
+  }
+  TreeEdge edge;
+  edge.n1 = edge.n1a = 0;
+  edge.n2 = edge.n2a = 1;
+  edge.len = 2;
+  tree.edges.push_back(edge);
+  OverflowTestPeer::setTree(*router_, net_id, tree);
+
+  // Without the deficit both L-shapes cost the same, and the tie goes to the
+  // one through the bottom horizontal edge.
+  OverflowTestPeer::routeLInMaze(*router_, net_id);
+  const Route& route = OverflowTestPeer::tree(*router_, net_id).edges[0].route;
+  EXPECT_EQ(route.type, RouteType::LRoute);
+  EXPECT_FALSE(route.xFirst);
+  EXPECT_FALSE(graph.hasNDRDeficit(0, 0, kH));
+  EXPECT_EQ(graph.getTotalNDRDeficit(), 0);
+}
+
+}  // namespace
+}  // namespace grt

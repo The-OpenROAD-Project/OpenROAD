@@ -25,7 +25,7 @@ load(":configure.bzl", "kokkos_fft_config")
 # @fftw does not build FFTW's OpenMP/threads library. A plan on
 # Kokkos::DefaultHostExecutionSpace (Kokkos::OpenMP here) calls
 # fftw_init_threads and would fail to link, so host FFTs must use
-# Kokkos::Serial (see src/gpl/src/gpu/dct.cpp).
+# Kokkos::Serial (see openroad/gpl/src/gpu/dct.cpp).
 kokkos_fft_config(name = "kokkos_fft_config_hdr")
 
 # Target for --@kokkos_fft//:config (set under --config=gpu in .bazelrc):
