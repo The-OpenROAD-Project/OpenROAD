@@ -348,8 +348,6 @@ experiment group below):
 | totals within 5% | 86% | 88% |
 | total error, median | +1.0% | +0.4% |
 | total error, 90th percentile | 6.6% | 5.6% |
-| ground plus supply coupling, median | +8.9% | +4.9% |
-| signal coupling summed per net, median | −2.6% | −1.0% |
 | signal couplings above 5%, within 20% | 92% | 90% |
 
 The instance pins are context here as in extraction (see
