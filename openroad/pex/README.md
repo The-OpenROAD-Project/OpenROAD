@@ -258,6 +258,10 @@ open). Four kinds of table describe a layer:
   neighbor is higher still (`e20`). The end measured on a 2 µm wire is
   settled with a cover or a neighbor near; alone with no cover either
   side it still grows with the length, by 15–25% from 2 to 10 µm.
+  A wire running past a neighbor's end couples to that end as the end
+  does to it, the same part of the neighbor's end, taken off the wire's
+  ground: a short pad beside a wire couples at both its ends, and both
+  nets see the same coupling.
 
 A point and its mirror share one solve, and each solve is seeded by its
 position, so a table does not depend on the thread count. A table the
@@ -343,10 +347,10 @@ experiment group below):
 | --- | --- | --- |
 | totals within 5% | 86% | 88% |
 | total error, median | +1.0% | +0.4% |
-| total error, 90th percentile | 6.4% | 5.4% |
-| ground plus supply coupling, median | +25.0% | +24.5% |
-| signal coupling summed per net, median | −5.9% | −3.9% |
-| signal couplings above 5%, within 20% | 81% | 82% |
+| total error, 90th percentile | 6.6% | 5.6% |
+| ground plus supply coupling, median | +8.9% | +4.9% |
+| signal coupling summed per net, median | −2.6% | −1.0% |
+| signal couplings above 5%, within 20% | 92% | 90% |
 
 The instance pins are context here as in extraction (see
 `compare_pex_fsv`). Counting them in their nets instead puts the
@@ -362,10 +366,10 @@ Extraction itself, checked with `compare_pex_fsv -sample 200 -halo 10
 
 | extraction, 200 nets | gcd | aes |
 | --- | --- | --- |
-| totals within 5% | 88% | 90% |
-| total error, median | +0.4% | −0.2% |
-| total error, 90th percentile | 5.3% | 4.9% |
-| signal couplings above 5%, within 20% | 81% | 83% |
+| totals within 5% | 94% | 90% |
+| total error, median | +0.8% | +0.5% |
+| total error, 90th percentile | 4.4% | 5.3% |
+| signal couplings above 5%, within 20% | 94% | 92% |
 | extraction, 1 thread | 6.7 s | 351 s |
 | extraction, 16 threads | 0.58 s | 25 s |
 
@@ -388,8 +392,6 @@ What remains, largest first:
   between them is looked up as if the rails were absent, up to 28% high
   (the `e17` experiment at low rail coverage). The diagonal coupling is
   to be scaled by the cover's share, as for straps over rails.
-- **Low signal couplings.** The largest coupling misses are 30–60% low,
-  each 5–11% of its net's total; not yet traced.
 - **Crossing reach by side.** A crossing reaching past one side of the
   wire only is split evenly between the sides; with a neighbor on one
   side the coupling to the crossing is off by −25% to +46% (the `e15`
@@ -400,9 +402,10 @@ What remains, largest first:
   effect goes into the deltas, `plane_delta` included. The plane is to
   have one extent across a table, which needs the diagonal tables
   rebuilt.
-- **Ground against coupling.** The ground, a tenth to a fifth of the total, is
-  about 23% high summed over the nets, and the signal couplings 1–5%
-  low, so the totals hold while the split between them does not.
+- **Supply coupling.** The coupling to the supplies is 11–16% high
+  summed over the nets, mostly through covers (see narrow straps); the
+  ground itself is within 10%, and the substrate takes 3–5 times what
+  the field solver gives it, at the expense of the shapes over it.
 
 ## Regression tests
 

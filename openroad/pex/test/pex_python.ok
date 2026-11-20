@@ -8,7 +8,7 @@
 [INFO ODB-0133]     Created 150 nets and 254 connections.
 [INFO ODB-0134] Finished DEF file: ../../fsv/test/field_solver_gcd.def
 [INFO PEX-0015] Read model sky130_coarse.json of skywater130_nominal: 20 lateral, 20 end, 18 crossing and 18 diagonal tables.
-[INFO PEX-0018] Extracted 122 nets from 5214 boxes: 274 net pairs coupled, 434 grounded.
+[INFO PEX-0018] Extracted 122 nets from 5214 boxes: 276 net pairs coupled, 432 grounded.
 [WARNING PEX-0038] 28 pins are on no wire of their net and have no node in its parasitics.
 max_res must be a number of at least 0; got -1
 max_res must be a number of at least 0; got nan
@@ -16,8 +16,8 @@ max_res must be a number of at least 0; got True
 max_res must be a number of at least 0; got '1'
 coupling_ratio must be a number from 0 to 1; got -0.1
 coupling_ratio must be a number from 0 to 1; got 1.5
-[INFO PEX-0028] Net _042_: 0.9126 fF against the field solver's 0.9333 +- 0.018 fF (-2.2%), 5 couplings above 5%.
-[INFO PEX-0029] Totals within 5% of the field solver: 1 of 1 nets; 90th percentile error 2.2%.
+[INFO PEX-0028] Net _042_: 0.9031 fF against the field solver's 0.9333 +- 0.018 fF (-3.2%), 5 couplings above 5%.
+[INFO PEX-0029] Totals within 5% of the field solver: 1 of 1 nets; 90th percentile error 3.2%.
 [INFO PEX-0033] Couplings to signal nets above 5% of a net's total within 20%: 2 of 5.
 give nets or sample
 give nets or sample

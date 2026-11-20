@@ -481,7 +481,19 @@ class Wire
   // a wire continuing, or a shape flush against a side over the end's last
   // width [e0, e1], which makes the end the outer corner of a bend. A pin
   // joins nothing: the end on it stays, as if the pin stood a spacing off.
-  bool endJoined(int x, int e0, int e1) const;
+  // The same for the end at x of box `box` on this layer, along this wire.
+  bool endJoined(int x, int e0, int e1) const
+  {
+    return endJoined(self_, x, e0, e1);
+  }
+  bool endJoined(int box, int x, int e0, int e1) const;
+
+  // The ends of the lateral neighbors of other nets that this wire runs
+  // past. The end tables give such an end's coupling to the wire running
+  // past it; from the wire's side that coupling is the same, by
+  // reciprocity, and it comes off the wire's ground. The neighbor's end
+  // takes the wire's covers there and an open side away from the wire.
+  void addNeighborEnds() const;
 
   // The nearest shape on the layer beyond the end face at x, over the part
   // of the face it overlaps: its box (or -1) and gap.
@@ -604,6 +616,7 @@ void Wire::estimate()
   addEnd(a0_, start_below, start_above);
   const auto [end_below, end_above] = coversOn(a1_ - d, a1_);
   addEnd(a1_, end_below, end_above);
+  addNeighborEnds();
 }
 
 void Wire::addCorners(const int x0,
@@ -1273,14 +1286,20 @@ void Wire::addEnd(const int x, const Cover& below, const Cover& above) const
   coupleNets(above.nets, Source::kEndCover, to_above);
 }
 
-bool Wire::endJoined(const int x, const int e0, const int e1) const
+bool Wire::endJoined(const int box,
+                     const int x,
+                     const int e0,
+                     const int e1) const
 {
+  const EvalBox& b = boxes_[box];
+  const int b0 = lo(b, p_);
+  const int b1 = hi(b, p_);
   for (const int i : near_) {
     const EvalBox& s = boxes_[i];
-    if (i == self_ || s.net != net_ || s.layer != shape_.layer || s.pin) {
+    if (i == box || s.net != b.net || s.layer != b.layer || s.pin) {
       continue;
     }
-    const bool overlaps_p = std::min(p1_, hi(s, p_)) > std::max(p0_, lo(s, p_));
+    const bool overlaps_p = std::min(b1, hi(s, p_)) > std::max(b0, lo(s, p_));
     const bool reaches = lo(s, a_) <= x && hi(s, a_) >= x;
     if (overlaps_p && reaches) {
       return true;
@@ -1288,16 +1307,79 @@ bool Wire::endJoined(const int x, const int e0, const int e1) const
   }
   for (const int i : near_) {
     const EvalBox& s = boxes_[i];
-    if (i == self_ || s.net != net_ || s.layer != shape_.layer || s.pin) {
+    if (i == box || s.net != b.net || s.layer != b.layer || s.pin) {
       continue;
     }
-    const bool flush = hi(s, p_) == p0_ || lo(s, p_) == p1_;
+    const bool flush = hi(s, p_) == b0 || lo(s, p_) == b1;
     if (flush && std::min(e1, hi(s, a_)) > std::max(e0, lo(s, a_))) {
-      counts_.corners++;
+      if (box == self_) {
+        counts_.corners++;
+      }
       return true;
     }
   }
   return false;
+}
+
+void Wire::addNeighborEnds() const
+{
+  const int d = endSpan();
+  for (const bool on_left : {true, false}) {
+    const std::vector<Lateral>& side = on_left ? left_ : right_;
+    for (const Lateral& n : side) {
+      const EvalBox& s = boxes_[n.box];
+      if (s.net == net_) {
+        continue;
+      }
+      // The neighbor's ends lie along this wire only where its long axis
+      // does; a square's are half along each.
+      const odb::Rect& r = s.rect;
+      const bool along = (r.dx() >= r.dy() ? 0 : 1) == a_;
+      const double weight = r.dx() == r.dy() ? 0.5 : (along ? 1.0 : 0.0);
+      if (weight == 0) {
+        continue;
+      }
+      const int n0 = lo(s, a_);
+      const int n1 = hi(s, a_);
+      const int wn = std::min(hi(s, p_) - lo(s, p_), n1 - n0);
+      for (const bool at_lo : {true, false}) {
+        const int x = at_lo ? n0 : n1;
+        // This wire runs on past the end by more than its own end's span,
+        // which would otherwise take the neighbor at its end.
+        if (at_lo ? (x - d < a0_ || x >= a1_) : (x + d > a1_ || x <= a0_)) {
+          continue;
+        }
+        const int t0 = at_lo ? x : x - d;
+        if (nearest(side, t0, t0 + d) != &n
+            || endJoined(n.box, x, at_lo ? x : x - wn, at_lo ? x + wn : x)) {
+          continue;
+        }
+        at_ = x;
+        const double gap = n.gap / dbu_;
+        const double width = (hi(s, p_) - lo(s, p_)) / dbu_;
+        const auto [below, above] = coversOn(t0, t0 + d);
+        double value = 0;
+        forStates(below,
+                  above,
+                  [&](LateralKey& key,
+                      const double share,
+                      const bool /* b */,
+                      const bool /* t */) {
+                    fallback(model_, key);
+                    if (model_.end(key) == nullptr) {
+                      key = {.layer = name_, .below = "", .above = ""};
+                    }
+                    // This wire is on the neighbor's other side from it.
+                    const EndCap e = on_left ? model_.end(key, width, -1, gap)
+                                             : model_.end(key, width, gap, -1);
+                    value += share * (on_left ? e.right : e.left);
+                  });
+        // The field the end draws comes off this wire's ground beside it.
+        couple(n.box, Source::kEndLateral, weight * value);
+        ground(Ground::kEnd, -weight * value);
+      }
+    }
+  }
 }
 
 std::pair<int, int> Wire::facingAt(const int x) const

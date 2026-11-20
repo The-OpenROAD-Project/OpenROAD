@@ -4,14 +4,14 @@
 [INFO ODB-0133]     Created 92 nets and 0 connections.
 [INFO PEX-0015] Read model sky130_coarse.json of skywater130_nominal: 20 lateral, 20 end, 18 crossing and 18 diagonal tables.
 [INFO PEX-0018] Extracted 92 nets from 112 boxes: 100 net pairs coupled, 0 grounded.
-[INFO PEX-0028] Net e1_v: 1.409 fF against the field solver's 1.444 +- 0.028 fF (-2.4%), 1 couplings above 5%.
+[INFO PEX-0028] Net e1_v: 1.399 fF against the field solver's 1.444 +- 0.028 fF (-3.1%), 1 couplings above 5%.
 [INFO PEX-0028] Net e2a_v: 0.9338 fF against the field solver's 1.117 +- 0.022 fF (-16.4%), 7 couplings above 5%.
 [INFO PEX-0028] Net e3_l1_v: 0.1789 fF against the field solver's 0.1604 +- 0.0031 fF (+11.5%), 0 couplings above 5%.
 [INFO PEX-0028] Net e4_v: 3.02 fF against the field solver's 2.857 +- 0.043 fF (+5.7%), 2 couplings above 5%.
 [INFO PEX-0028] Net e6_v: 2.191 fF against the field solver's 2.241 +- 0.04 fF (-2.2%), 2 couplings above 5%.
 [INFO PEX-0028] Net e8_v: 1.738 fF against the field solver's 1.582 +- 0.03 fF (+9.9%), 1 couplings above 5%.
-[INFO PEX-0028] Net jog_v: 1.104 fF against the field solver's 1.154 +- 0.022 fF (-4.4%), 1 couplings above 5%.
-[INFO PEX-0029] Totals within 5% of the field solver: 3 of 7 nets; 90th percentile error 16.4%.
+[INFO PEX-0028] Net jog_v: 1.094 fF against the field solver's 1.154 +- 0.022 fF (-5.3%), 1 couplings above 5%.
+[INFO PEX-0029] Totals within 5% of the field solver: 2 of 7 nets; 90th percentile error 16.4%.
 [INFO PEX-0033] Couplings to signal nets above 5% of a net's total within 20%: 7 of 14.
 Summary 2 / 2 (100% pass)
 pass

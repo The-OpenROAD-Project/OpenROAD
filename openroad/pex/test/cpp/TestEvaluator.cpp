@@ -142,9 +142,10 @@ TEST(Evaluator, PiecesEndsAndCovers)
   EXPECT_EQ(est.vias, 0);
   // Pieces: [0,2] [2,5] [5,7] [7,8] [8,10].
   EXPECT_EQ(est.pieces, 5);
-  // b is on a's right (larger y): coupling 2 per µm over 3 µm.
+  // b is on a's right (larger y): coupling 2 per µm over 3 µm, and 0.3
+  // from each of b's ends.
   ASSERT_TRUE(est.couplings.contains(b));
-  EXPECT_DOUBLE_EQ(est.couplings.at(b), 6);
+  EXPECT_NEAR(est.couplings.at(b), 6 + (2 * 0.3), 1e-9);
   // Under c, the covered piece couples 4 per µm to it; the pieces beside
   // it take a share through the crossing table: over [5, 7] the distance
   // to c runs 2 down to 0, so gap × share integrates 0.8 x 1 + the
@@ -345,6 +346,32 @@ TEST(Evaluator, NeighborAtTheEnd)
   }
 }
 
+// A wire running past a neighbor's ends couples to them as the neighbor's
+// ends do to it: each end's lateral part, the same seen from either net.
+TEST(Evaluator, NeighborEndsBeside)
+{
+  const fsv::Stack stack = twoLayers();
+  const Model model = constantModel();
+  fsv::Geometry g;
+  const int a = g.addNet("a");
+  const int b = g.addNet("b");
+  g.addBox(a, {.lo = {0, 0, 1}, .hi = {10, 0.2, 2}});
+  g.addBox(b, {.lo = {4, 0.5, 1}, .hi = {6, 0.7, 2}});
+  const EvaluatorOptions options{.diagonal_depth = 0};
+  // Per end, half of the 0.6 the neighbors at 0.3 take.
+  const NetEstimate from_a = estimate(g, stack, model, a, options);
+  EXPECT_EQ(from_a.ends, 2);
+  EXPECT_NEAR(from_a.couplings.at(b), (2 * 2) + (2 * 0.3), 1e-9);
+  // The ends' coupling comes off a's ground.
+  EXPECT_NEAR(from_a.ground, 100 + 1 - (2 * 0.3), 1e-9);
+  const NetEstimate from_b = estimate(g, stack, model, b, options);
+  EXPECT_NEAR(from_b.couplings.at(a), from_a.couplings.at(b), 1e-9);
+  // A neighbor's end joined by its own net is no end.
+  g.addBox(b, {.lo = {5.8, 0.5, 1}, .hi = {6, 3, 2}});
+  const NetEstimate joined = estimate(g, stack, model, a, options);
+  EXPECT_NEAR(joined.couplings.at(b), (2 * 2) + 0.3, 1e-9);
+}
+
 // A crossing between the wire and a farther plane keeps its coupling: the
 // plane stands for the uncovered rest of the pieces beside it.
 TEST(Evaluator, CrossingInFrontOfAPlane)
@@ -476,7 +503,8 @@ TEST(Evaluator, CrossingCouplingSplitsByNet)
       est.couplings.at(x), 1.6 + 4 + 1.4 + 2.2 * 0.2 / 1.1 + 0.05 * 0.5, 1e-9);
   EXPECT_NEAR(
       est.couplings.at(y), 2.2 * 0.9 / 1.1 + 4 + 1.4 + 0.35 * 0.5, 1e-9);
-  EXPECT_DOUBLE_EQ(est.couplings.at(b), 2);  // on the right: 2 per µm
+  // On the right: 2 per µm, and 0.3 from each of b's ends.
+  EXPECT_NEAR(est.couplings.at(b), 2 + (2 * 0.3), 1e-9);
 }
 
 TEST(Evaluator, DiagonalWires)
