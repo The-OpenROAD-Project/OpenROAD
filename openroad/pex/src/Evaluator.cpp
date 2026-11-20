@@ -129,8 +129,6 @@ struct Lateral
   int gap;
   int a0;  // over the wire
   int a1;
-  int e0;  // the whole box
-  int e1;
 };
 
 // The share of a layer's crossings over a piece [x0, x1] that no run
@@ -485,25 +483,21 @@ class Wire
   // of the face it overlaps: its box (or -1) and gap.
   std::pair<int, int> facingAt(int x) const;
 
-  // How far a neighbor runs past the end at x against its spacing, from
-  // 0 to 1: the tables' neighbors run on.
-  double runsOn(const Lateral* n, int x) const;
-
   EndCaps endCaps(const Cover& below,
                   const Cover& above,
                   const Lateral* l,
                   const Lateral* r,
-                  double on_left,
-                  double on_right,
                   double faced,
                   int gap) const;
 
-  // The end blended over its neighbors' and facing wire's presence.
+  // The end with the neighbors at it, blended over the facing wire's
+  // presence. The tables' neighbors run past the end; one that ends
+  // where the wire does or a little past takes their end too, which the
+  // field solver puts 15-18% above its own but below the end with no
+  // neighbor.
   EndCap endCap(const LateralKey& key,
                 const Lateral* l,
                 const Lateral* r,
-                double on_left,
-                double on_right,
                 double faced,
                 int gap) const;
 
@@ -702,8 +696,6 @@ void Wire::collect()
             .gap = p0_ - hi(s, p_),
             .a0 = o0,
             .a1 = o1,
-            .e0 = lo(s, a_),
-            .e1 = hi(s, a_),
         });
       } else if (lo(s, p_) >= p1_) {
         if (lo(s, p_) - p1_ > lateral_reach_) {
@@ -714,8 +706,6 @@ void Wire::collect()
             .gap = lo(s, p_) - p1_,
             .a0 = o0,
             .a1 = o1,
-            .e0 = lo(s, a_),
-            .e1 = hi(s, a_),
         });
       } else if (s.net == shape_.net && lo(s, p_) <= p0_ && hi(s, p_) >= p1_
                  && dominates(i)) {
@@ -1244,8 +1234,7 @@ void Wire::addEnd(const int x, const Cover& below, const Cover& above) const
   const int t0 = x == a0_ ? a0_ : a1_ - d;
   const Lateral* l = nearest(left_, t0, t0 + d);
   const Lateral* r = nearest(right_, t0, t0 + d);
-  const EndCaps caps
-      = endCaps(below, above, l, r, runsOn(l, x), runsOn(r, x), faced, gap);
+  const EndCaps caps = endCaps(below, above, l, r, faced, gap);
   if (l != nullptr && boxes_[l->box].net != net_) {
     couple(l->box, Source::kEndLateral, caps.left);
   }
@@ -1326,16 +1315,6 @@ std::pair<int, int> Wire::facingAt(const int x) const
   return {facing, gap};
 }
 
-double Wire::runsOn(const Lateral* n, const int x) const
-{
-  if (n == nullptr) {
-    return 0.0;
-  }
-  const int past = x == a0_ ? x - n->e0 : n->e1 - x;
-  return n->gap <= 0 ? 1.0
-                     : std::clamp(static_cast<double>(past) / n->gap, 0.0, 1.0);
-}
-
 // The parts to the planes go to the nets covering the end as the pieces'
 // plane couplings do (per covered state, scaled by the cover's kept
 // coupling), nothing to the net's own.
@@ -1343,8 +1322,6 @@ EndCaps Wire::endCaps(const Cover& below,
                       const Cover& above,
                       const Lateral* l,
                       const Lateral* r,
-                      const double on_left,
-                      const double on_right,
                       const double faced,
                       const int gap) const
 {
@@ -1357,7 +1334,7 @@ EndCaps Wire::endCaps(const Cover& below,
         if (model_.end(key) == nullptr) {
           key = {.layer = name_, .below = "", .above = ""};
         }
-        const EndCap c = endCap(key, l, r, on_left, on_right, faced, gap);
+        const EndCap c = endCap(key, l, r, faced, gap);
         caps.total += weight * c.total;
         caps.facing += weight * c.facing;
         caps.left += weight * c.left;
@@ -1383,34 +1360,24 @@ EndCaps Wire::endCaps(const Cover& below,
 EndCap Wire::endCap(const LateralKey& key,
                     const Lateral* l,
                     const Lateral* r,
-                    const double on_left,
-                    const double on_right,
                     const double faced,
                     const int gap) const
 {
+  const double left = l != nullptr ? l->gap / dbu_ : -1;
+  const double right = r != nullptr ? r->gap / dbu_ : -1;
   EndCap c;
-  for (const bool hl : {false, true}) {
-    for (const bool hr : {false, true}) {
-      for (const bool hf : {false, true}) {
-        const double weight = (hl ? on_left : 1 - on_left)
-                              * (hr ? on_right : 1 - on_right)
-                              * (hf ? faced : 1 - faced);
-        if (weight == 0) {
-          continue;
-        }
-        const EndCap e = model_.end(key,
-                                    w_um_,
-                                    hl ? l->gap / dbu_ : -1,
-                                    hr ? r->gap / dbu_ : -1,
-                                    hf ? gap / dbu_ : -1);
-        c.total += weight * e.total;
-        c.below += weight * e.below;
-        c.above += weight * e.above;
-        c.left += weight * e.left;
-        c.right += weight * e.right;
-        c.facing += weight * e.facing;
-      }
+  for (const bool hf : {false, true}) {
+    const double weight = hf ? faced : 1 - faced;
+    if (weight == 0) {
+      continue;
     }
+    const EndCap e = model_.end(key, w_um_, left, right, hf ? gap / dbu_ : -1);
+    c.total += weight * e.total;
+    c.below += weight * e.below;
+    c.above += weight * e.above;
+    c.left += weight * e.left;
+    c.right += weight * e.right;
+    c.facing += weight * e.facing;
   }
   return c;
 }

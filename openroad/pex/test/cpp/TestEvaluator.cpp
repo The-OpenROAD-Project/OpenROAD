@@ -304,15 +304,14 @@ TEST(Evaluator, FacingEnd)
   EXPECT_NEAR(est.ground, 100 + 1, 1e-9);
 }
 
-// A neighbor running past a line end takes part of the end, as far as it
-// runs past against its spacing.
-TEST(Evaluator, NeighborRunsPastTheEnd)
+// A neighbor at a line end takes the end with that neighbor, however far
+// it runs past: the end with a neighbor ending there is nearer that than
+// the end with none.
+TEST(Evaluator, NeighborAtTheEnd)
 {
   const fsv::Stack stack = twoLayers();
   const Model model = constantModel();
-  // Past by 1 (all), 0.15 (half of the 0.3 spacing) and 0 (none).
-  for (const auto& [past, share] :
-       {std::pair{1.0, 1.0}, std::pair{0.15, 0.5}, std::pair{0.0, 0.0}}) {
+  for (const double past : {1.0, 0.15, 0.0}) {
     fsv::Geometry g;
     const int a = g.addNet("a");
     const int b = g.addNet("b");
@@ -321,8 +320,8 @@ TEST(Evaluator, NeighborRunsPastTheEnd)
     const NetEstimate est = estimate(g, stack, model, a, {.diagonal_depth = 0});
     // 2 per µm on the right, and per end half of the 0.6 the neighbors
     // take, of half of the 0.4 they add.
-    EXPECT_NEAR(est.couplings.at(b), 20 + (2 * share * 0.3), 1e-9);
-    EXPECT_NEAR(est.ground, 100 + (2 * (0.5 + (share * (0.2 - 0.3)))), 1e-9);
+    EXPECT_NEAR(est.couplings.at(b), 20 + (2 * 0.3), 1e-9);
+    EXPECT_NEAR(est.ground, 100 + (2 * (0.5 + 0.2 - 0.3)), 1e-9);
   }
 }
 
@@ -478,9 +477,10 @@ TEST(Evaluator, DiagonalWires)
   // d couples 7 per µm over its 2 µm, and takes 1 per µm from b there.
   ASSERT_TRUE(est.couplings.contains(d));
   EXPECT_DOUBLE_EQ(est.couplings.at(d), 14);
-  EXPECT_DOUBLE_EQ(est.couplings.at(b), 2 * 4 - 2);
+  // b at both ends: each adds 0.2 and gives b 0.3.
+  EXPECT_NEAR(est.couplings.at(b), 2 * 4 - 2 + 2 * 0.3, 1e-12);
   // The rest of d's total delta (8 - 7 + 1 = 2 per µm) lands on the ground.
-  EXPECT_DOUBLE_EQ(est.ground, 10 * 4 + 2 * 2 + 2 * 0.5);
+  EXPECT_NEAR(est.ground, 10 * 4 + 2 * 2 + 2 * (0.5 + 0.2 - 0.3), 1e-12);
 
   // The same wire of the net's own on m2 shields like any other but adds
   // no coupling: the m1 wire's 40 + 4 of shielding + 1 of ends, plus the

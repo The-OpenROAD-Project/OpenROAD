@@ -246,7 +246,12 @@ open). Four kinds of table describe a layer:
   capacitance, over the width, the spacing to a neighbor on each side
   running past the end and the gap to a wire facing the end, split into
   parts to the planes, the neighbors and the facing wire, from a short
-  wire solved in 3D less its per-unit-length value times its length.
+  wire solved in 3D less its per-unit-length value times its length. A
+  neighbor that ends where the wire does takes the end of one running
+  past: the field solver puts that end 15–18% lower, but the end with no
+  neighbor is higher still (`e20`). The end measured on a 2 µm wire is
+  settled with a cover or a neighbor near; alone with no cover either
+  side it still grows with the length, by 15–25% from 2 to 10 µm.
 
 A point and its mirror share one solve, and each solve is seeded by its
 position, so a table does not depend on the thread count. A table the
@@ -289,6 +294,7 @@ bazel-bin/openroad/pex/test/Experiments --threads 64 --tol 0.003 \
 | e17 dense context | a wire among rails, a strap, crossings and neighbors, built up part by part; rails at several coverages | the evaluator | how the tables combine in dense layout |
 | e18 power grid | e9's nets with the power nets alone, merged, split by layer, and with groups of signal wires added back | the evaluator | where the coupling to the power grid goes wrong |
 | e19 lateral reach | neighbors at spacings in multiples of the height to the nearest plane | the wire alone | how far the lateral table reaches |
+| e20 end length | wires from 0.5 to 40 µm, alone, between neighbors running past the ends or ending with the wire, and with one neighbor | per-unit-length × length | the length the end is measured at, and the neighbors' end states |
 
 e9 reads LEF and DEF (by default the gcd window of the fsv tests) or an
 ODB file, builds the model for every routing layer of the design the stack

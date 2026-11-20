@@ -35,6 +35,9 @@
 //   nets alone, merged, and with groups of signal wires added back.
 // - e19 lateral reach: neighbors at spacings in multiples of the distance
 //   to the nearest plane, against the wire alone.
+// - e20 end length: the ends' excess against the wire's length, alone and
+//   with neighbors that run past the ends, end with the wire, or sit on
+//   one side.
 // - model, only when named: build the model for --layers (or every
 //   conductor off the ground plane) into --model, timing each layer; with
 //   --coarse, on the small grids of the regressions' model.
@@ -67,6 +70,7 @@
 #include <array>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <fstream>
 #include <functional>
@@ -120,7 +124,8 @@ struct Options
                                   "e15",
                                   "e16",
                                   "e17",
-                                  "e19"};
+                                  "e19",
+                                  "e20"};
   std::string itf = "openroad/fsv/test/sky130.itf";
   std::string layer = "met2";
   int threads = 1;
@@ -2281,6 +2286,92 @@ void lateralReach(Lab& lab)
   }
 }
 
+// e20 end length: what a wire's two ends add over its per-length value, at
+// lengths from well under to well over the distance to the nearest plane,
+// in each context: alone, between neighbors at minimum spacing that run
+// past the ends, between neighbors that end where the wire does, and with
+// one neighbor running past. The builder measures the excess at one
+// length; this shows how far from settled it is there. The slope of the
+// two longest checks the 2D per-length value the excess is taken against.
+void endLength(Lab& lab)
+{
+  const Options& o = lab.options();
+  const fsv::Stack& stack = lab.stack();
+  const double w = lab.wmin();
+  const double s = lab.smin();
+  const std::vector<double> lengths
+      = o.smoke ? std::vector<double>{1, 4}
+                : std::vector<double>{0.5, 1, 2, 3, 5, 10, 20, 40};
+  enum class Neighbors : std::uint8_t
+  {
+    kNone,
+    kPast,
+    kFlush,
+    kOneSide
+  };
+  const std::vector<std::pair<Neighbors, std::string>> kinds{
+      {Neighbors::kNone, "alone"},
+      {Neighbors::kPast, "past"},
+      {Neighbors::kFlush, "flush"},
+      {Neighbors::kOneSide, "one side"}};
+  for (const Context& ctx : trim(contexts(lab, true), o.smoke)) {
+    for (const auto& [kind, kind_name] : trim(kinds, o.smoke)) {
+      const bool left = kind != Neighbors::kNone;
+      const bool right = kind == Neighbors::kPast || kind == Neighbors::kFlush;
+      pex::LateralPattern section;
+      section.layer = lab.layer();
+      section.width = w;
+      section.left = left ? s : -1;
+      section.right = right ? s : -1;
+      section.below = lab.layer(ctx.below);
+      section.above = lab.layer(ctx.above);
+      section.extent = o.extent;
+      const pex::LateralPattern::Section sec = section.build(stack);
+      const double per_length
+          = lab.solve(sec.geometry, sec.wire, o.tol / 3).total();
+      std::vector<double> totals;
+      for (const double length : lengths) {
+        pex::EndPattern pattern;
+        pattern.layer = lab.layer();
+        pattern.width = w;
+        pattern.length = length;
+        pattern.below = lab.layer(ctx.below);
+        pattern.above = lab.layer(ctx.above);
+        pattern.extent = o.extent;
+        pattern.margin = o.extent;
+        const bool past
+            = kind == Neighbors::kPast || kind == Neighbors::kOneSide;
+        pattern.left_spacing = past ? s : -1;
+        pattern.right_spacing = kind == Neighbors::kPast ? s : -1;
+        pex::EndPattern::Wire wire = pattern.build(stack);
+        pex::PatternBuilder builder(stack, std::move(wire.geometry));
+        if (kind == Neighbors::kFlush) {
+          const double x = w / 2 + s;
+          builder.add(lab.layer(), builder.net("left"), -x - w, 0, -x, length);
+          builder.add(lab.layer(), builder.net("right"), x, 0, x + w, length);
+        }
+        const fsv::CapRow row = lab.solve(builder.geometry(), wire.wire, o.tol);
+        totals.push_back(row.total());
+        lab.row("e20",
+                ctx.name() + " " + kind_name + " L=" + fmt(length),
+                "end_excess",
+                (row.total() - per_length * length) / 2,
+                row.sigma[wire.wire] / 2);
+      }
+      if (totals.size() >= 2) {
+        const size_t n = totals.size();
+        lab.row(
+            "e20",
+            ctx.name() + " " + kind_name,
+            "slope",
+            (totals[n - 1] - totals[n - 2]) / (lengths[n - 1] - lengths[n - 2]),
+            0,
+            per_length);
+      }
+    }
+  }
+}
+
 // The via between two conductors, or "" when the stack has none.
 std::string viaBetween(const Lab& lab,
                        const std::string& lower,
@@ -2996,6 +3087,9 @@ int main(int argc, char** argv)
     }
     if (wanted(o, "e19")) {
       lateralReach(lab);
+    }
+    if (wanted(o, "e20")) {
+      endLength(lab);
     }
     if (wanted(o, "model")) {  // not among the default groups
       modelOnly(lab);
