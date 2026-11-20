@@ -91,6 +91,10 @@ class PathGroupFilter
 
   bool enabled() const { return type_ != PathGroupType::kNone; }
 
+  // True when the selected group is one the SDC defines (group_path), whose
+  // paths are not described by where they start and end.
+  bool isSdcGroup() const { return type_ == PathGroupType::kUser; }
+
   // True when `endpoint` has any path in the selected group for `min_max`.
   // Always true when no group is selected.
   bool endpointInGroup(sta::Vertex* endpoint, const sta::MinMax* min_max) const;

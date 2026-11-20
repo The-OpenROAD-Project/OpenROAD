@@ -38,6 +38,11 @@ proc group_violations { } {
   foreach end $ends { set wns [expr { min($wns, [get_property $end slack]) }] }
   return [list [llength $ends] [format %.3f $wns]]
 }
+# Masters before repair, to find the VT swaps it makes.
+set masters_before [dict create]
+foreach inst [[ord::get_db_block] getInsts] {
+  dict set masters_before [$inst getName] [[$inst getMaster] getName]
+}
 lassign [group_violations] n_before wns_before
 set all_before [llength [find_timing_paths -path_delay max -group_path_count 1000 \
   -endpoint_path_count 1 -unique_paths_to_endpoint -slack_max 0]]
@@ -46,6 +51,34 @@ repair_timing -setup -path_group thru
 lassign [group_violations] n_after wns_after
 set improved [expr { $wns_after > $wns_before }]
 puts "group after: $n_after violating, wns $wns_after, improved: $improved"
+
+# A VT swap changes a master's threshold voltage only. Each one lies on a
+# path of the group: the fanin cone of the group's endpoints also feeds
+# their paths outside it, which repair must leave alone.
+set vt_swaps 0
+set vt_swaps_off_group 0
+foreach inst [[ord::get_db_block] getInsts] {
+  set name [$inst getName]
+  if { ![dict exists $masters_before $name] } {
+    continue
+  }
+  set before [dict get $masters_before $name]
+  set after [[$inst getMaster] getName]
+  regsub {_ASAP7_75t_(R|L|SL)$} $before "" base_before
+  regsub {_ASAP7_75t_(R|L|SL)$} $after "" base_after
+  if { $before eq $after || $base_before ne $base_after } {
+    continue
+  }
+  incr vt_swaps
+  set outs [get_pins -of_objects [sta::find_instance $name] -filter "direction==output"]
+  if {
+    [llength [find_timing_paths -path_group thru -path_delay max \
+      -through $outs -group_path_count 1]] == 0
+  } {
+    incr vt_swaps_off_group
+  }
+}
+puts "vt swaps: [expr { $vt_swaps > 0 }], off the group's paths: $vt_swaps_off_group"
 
 # A net a group runs -through is deleted, as a resizer move deletes one
 # (through OpenDB's net destroy): the group no longer names it.

@@ -15,6 +15,8 @@
 
 namespace rsz {
 
+class PathGroupFilter;
+
 class SetupCritVtSwapPolicy : public SetupLegacyBase
 {
  public:
@@ -36,6 +38,14 @@ class SetupCritVtSwapPolicy : public SetupLegacyBase
       std::vector<std::pair<sta::Instance*, float>>& crit_insts,
       std::unordered_set<sta::Instance*>& crit_inst_set,
       std::unordered_set<sta::Vertex*>& visited,
+      std::unordered_set<sta::Instance*>& notSwappable);
+  // The cells on the group's worst path to `endpoint`, for a group the SDC
+  // defines: its fanin cone also feeds the endpoint's paths outside it.
+  void collectGroupPathInsts(
+      sta::Vertex* endpoint,
+      const PathGroupFilter& path_group_filter,
+      std::vector<std::pair<sta::Instance*, float>>& crit_insts,
+      std::unordered_set<sta::Instance*>& crit_inst_set,
       std::unordered_set<sta::Instance*>& notSwappable);
   sta::Slack getInstanceSlack(sta::Instance* inst);
 };
