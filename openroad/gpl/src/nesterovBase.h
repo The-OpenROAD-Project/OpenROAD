@@ -131,13 +131,13 @@ class GCell
   void setDensityCenterLocation(int dCx, int dCy);
   void setDensitySize(int dDx, int dDy);
 
-  void setDensityScale(float densityScale);
+  void setDensitySmoothing(float densitySmoothing);
   void setGradientX(float gradientX);
   void setGradientY(float gradientY);
 
   float getGradientX() const { return gradientX_; }
   float getGradientY() const { return gradientY_; }
-  float getDensityScale() const { return densityScale_; }
+  float getDensitySmoothing() const { return densitySmoothing_; }
 
   bool isInstance() const;
   bool isFiller() const;
@@ -161,7 +161,7 @@ class GCell
   int dUx_ = 0;
   int dUy_ = 0;
 
-  float densityScale_ = 0;
+  float densitySmoothing_ = 0;
   float gradientX_ = 0;
   float gradientY_ = 0;
 
@@ -597,10 +597,10 @@ class Bin
   void atomicAddInstPlacedAreaUnscaled(int64_t area);
 
   int64_t getBinArea() const;
-  int64_t getNonPlaceArea() const { return nonPlaceArea_; }
-  int64_t instPlacedArea() const { return instPlacedArea_; }
-  int64_t getNonPlaceAreaUnscaled() const { return nonPlaceAreaUnscaled_; }
-  int64_t getInstPlacedAreaUnscaled() const { return instPlacedAreaUnscaled_; }
+  int64_t getNonPlaceAreaBinormal() const { return nonPlaceArea_; }
+  int64_t instPlacedAreaBinormal() const { return instPlacedArea_; }
+  int64_t getNonPlaceArea() const { return nonPlaceAreaUnscaled_; }
+  int64_t getInstPlacedArea() const { return instPlacedAreaUnscaled_; }
 
   int64_t getFillerArea() const { return fillerArea_; }
 
@@ -765,8 +765,8 @@ class BinGrid
   // sums are stored here for the updateNextIter consumers.
   void setOverflowAreas(int64_t overflow_area, int64_t overflow_area_unscaled)
   {
-    sumOverflowArea_ = overflow_area;
-    sumOverflowAreaUnscaled_ = overflow_area_unscaled;
+    sum_overflow_area_binormal_ = overflow_area;
+    sum_overflow_area_ = overflow_area_unscaled;
   }
 
   // return bins_ index with given gcell
@@ -794,8 +794,8 @@ class BinGrid
   double binSizeX_ = 0;
   double binSizeY_ = 0;
   float targetDensity_ = 0;
-  int64_t sumOverflowArea_ = 0;
-  int64_t sumOverflowAreaUnscaled_ = 0;
+  int64_t sum_overflow_area_binormal_ = 0;
+  int64_t sum_overflow_area_ = 0;
   bool isSetBinCnt_ = false;
   int num_threads_ = 1;
 };
@@ -1158,7 +1158,7 @@ class NesterovBase
   int64_t getNesterovInstsArea() const;
   int64_t getInflationArea() const;
   int64_t getStdInstArea() const { return this->stdInstsArea_; }
-  int64_t getMacroInstArea() const { return this->macroInstsArea_; }
+  int64_t getLargeInstArea() const { return this->large_insts_area_; }
 
   // sum phi and target density
   // used in NesterovPlace
@@ -1414,7 +1414,7 @@ class NesterovBase
   int64_t initial_filler_area_ = 0;
 
   int64_t stdInstsArea_ = 0;
-  int64_t macroInstsArea_ = 0;
+  int64_t large_insts_area_ = 0;
 
   std::vector<GCell> fillerStor_;
   std::vector<GCellHandle> nb_gcells_;

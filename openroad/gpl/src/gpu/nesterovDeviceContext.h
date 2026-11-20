@@ -147,7 +147,7 @@ class NesterovDeviceContext
   // corresponds to these coords). updateGradients gathers from it.
   SlpSlot lastDensitySlot() const { return last_density_slot_; }
 
-  // Re-upload per-cell density params (dDx/2, dDy/2, densityScale, kind)
+  // Re-upload per-cell density params (dDx/2, dDy/2, densitySmoothing, kind)
   // after updateDensitySize / routability inflation changed them.
   void refreshCellDensityParams(const std::vector<GCellHandle>& nb_gcells);
 

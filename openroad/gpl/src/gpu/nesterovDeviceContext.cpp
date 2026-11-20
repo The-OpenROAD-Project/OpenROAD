@@ -203,7 +203,7 @@ void NesterovDeviceContext::refreshCellDensityParams(
     const GCell* gc = nb_gcells[i];
     h_half_ddx[i] = gc->dDx() / 2;
     h_half_ddy[i] = gc->dDy() / 2;
-    h_scale[i] = gc->getDensityScale();
+    h_scale[i] = gc->getDensitySmoothing();
     // Same dispatch as the BinGrid scatter loop: macro and std instances
     // accumulate inst area (macro additionally target-density scaled),
     // fillers accumulate filler area, anything else is skipped.
@@ -271,8 +271,8 @@ void NesterovDeviceContext::initDensityDeviceState(const BinGrid& bg)
       h_target[k] = b.getTargetDensity();
       // Same expression (and float rounding) as the CPU overflow loop.
       h_scaled[k] = static_cast<float>(b.getBinArea() * b.getTargetDensity());
-      h_np[k] = b.getNonPlaceArea();
-      h_np_u[k] = b.getNonPlaceAreaUnscaled();
+      h_np[k] = b.getNonPlaceAreaBinormal();
+      h_np_u[k] = b.getNonPlaceArea();
     }
   }
 

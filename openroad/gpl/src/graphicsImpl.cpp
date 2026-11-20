@@ -962,8 +962,8 @@ bool GraphicsImpl::populateMap()
 
       double value
           = std::max(0.0f,
-                     static_cast<float>(bin.getInstPlacedAreaUnscaled())
-                         + static_cast<float>(bin.getNonPlaceAreaUnscaled())
+                     static_cast<float>(bin.getInstPlacedArea())
+                         + static_cast<float>(bin.getNonPlaceArea())
                          - scaledBinArea);
       value = block->dbuAreaToMicrons(value);
 
@@ -985,8 +985,8 @@ bool GraphicsImpl::populateMap()
 
       double raw_value
           = std::max(0.0f,
-                     static_cast<float>(bin.getInstPlacedAreaUnscaled())
-                         + static_cast<float>(bin.getNonPlaceAreaUnscaled())
+                     static_cast<float>(bin.getInstPlacedArea())
+                         + static_cast<float>(bin.getNonPlaceArea())
                          - scaledBinArea);
       raw_value = block->dbuAreaToMicrons(raw_value);
 

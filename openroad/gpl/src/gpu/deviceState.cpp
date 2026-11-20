@@ -289,7 +289,7 @@ void DeviceState::rebuildInstDensityViews(const std::vector<GCell>& gCellStor)
   for (int i = 0; i < num_insts_; ++i) {
     h_half_dx[i] = gCellStor[i].dDx() / 2;
     h_half_dy[i] = gCellStor[i].dDy() / 2;
-    h_scale[i] = gCellStor[i].getDensityScale();
+    h_scale[i] = gCellStor[i].getDensitySmoothing();
   }
   Kokkos::View<int*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> hv_dx(
       h_half_dx.data(), num_insts_);
@@ -367,7 +367,7 @@ void DeviceState::refreshDensityParams(const std::vector<GCell>& gCellStor)
   for (int i = 0; i < num_insts_; ++i) {
     h_half_dx[i] = gCellStor[i].dDx() / 2;
     h_half_dy[i] = gCellStor[i].dDy() / 2;
-    h_scale[i] = gCellStor[i].getDensityScale();
+    h_scale[i] = gCellStor[i].getDensitySmoothing();
   }
   Kokkos::View<int*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> hv_dx(
       h_half_dx.data(), num_insts_);

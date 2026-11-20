@@ -65,7 +65,7 @@ class NesterovPlace
   float getWireLengthCoefX() const { return wireLengthCoefX_; }
   float getWireLengthCoefY() const { return wireLengthCoefY_; }
   NesterovPlaceVars& getNpVars() { return npVars_; }
-  float getAverageOverflow() const { return average_overflow_unscaled_; }
+  float getAverageOverflow() const { return average_overflow_; }
   // The top-level (unfenced/full-die) region is always nbVec_[0].
   NesterovBase* getTopLevelNB() const;
 
@@ -196,9 +196,9 @@ class NesterovPlace
   float total_sum_overflow_ = 0;
   float total_sum_overflow_unscaled_ = 0;
   // The average here is between regions (NB objects)
+  float average_overflow_binormal_ = 0;
   float average_overflow_ = 0;
-  float average_overflow_unscaled_ = 0;
-  // Set when average_overflow_unscaled_ does not describe the current
+  // Set when average_overflow_ does not describe the current
   // placement: no update has run in this doNesterovPlace() call yet, or the
   // placement was reverted to the snapshot since the last one.
   bool overflow_update_is_stale_ = true;
@@ -209,7 +209,7 @@ class NesterovPlace
   std::vector<PlaceIteration> trace_;
 
   // Snapshot saving for revert if diverge
-  float diverge_snapshot_average_overflow_unscaled_ = 0;
+  float diverge_snapshot_average_overflow_ = 0;
   int64_t min_hpwl_ = INT64_MAX;
   int diverge_snapshot_iter_ = 0;
   bool is_min_hpwl_ = false;

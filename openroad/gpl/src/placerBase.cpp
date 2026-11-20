@@ -69,9 +69,9 @@ Instance::Instance(odb::dbInst* db_inst,
   dbBox* bbox = db_inst->getBBox();
 
   if (db_inst->getMaster()->getType().isBlock()) {
-    is_macro_ = true;
+    is_large_instance_ = true;
   } else if (bbox->getDY() > row_limit * pbc->siteSizeY()) {
-    is_macro_ = true;
+    is_large_instance_ = true;
     logger->warn(GPL,
                  134,
                  "Master {} is not marked as a BLOCK in LEF but is more "
@@ -248,9 +248,9 @@ void Instance::setExtId(int extId)
   extId_ = extId;
 }
 
-bool Instance::isMacro() const
+bool Instance::isLargeInstance() const
 {
-  return is_macro_;
+  return is_large_instance_;
 }
 
 bool Instance::isLocked() const
@@ -841,7 +841,7 @@ void PlacerBaseCommon::init()
     instStor_.push_back(temp_inst);
 
     if (temp_inst.dy() > siteSizeY_ * 6) {
-      macroInstsArea_ += temp_inst.getArea();
+      large_insts_area_ += temp_inst.getArea();
     }
   }
 
@@ -1140,7 +1140,7 @@ void PlacerBase::init(bool check_density)
       continue;
     }
 
-    if (pbCommon_->macroAreaInDenominator() && inst->isMacro()
+    if (pbCommon_->macroAreaInDenominator() && inst->isLargeInstance()
         && !inst->isFixed()) {
       if (isInGroup(db_inst)) {
         odb::dbMaster* master = db_inst->getMaster();
@@ -1181,9 +1181,9 @@ void PlacerBase::init(bool check_density)
       int64_t instArea = inst->getArea();
       placeInstsArea_ += instArea;
       // macro cells should be
-      // macroInstsArea_
+      // large_insts_area_
       if (inst->dy() > siteSizeY_ * 6) {
-        macroInstsArea_ += instArea;
+        large_insts_area_ += instArea;
       }
       // smaller or equal height cells should be
       // stdInstArea_
@@ -1407,7 +1407,7 @@ void PlacerBase::initInstsForUnusableSites()
       }
     }
 
-    if (inst->isMacro() && inst->dbInst()->getHalo() != nullptr) {
+    if (inst->isLargeInstance() && inst->dbInst()->getHalo() != nullptr) {
       Rect halo = inst->dbInst()->getTransformedHalo();
       Rect box = inst->dbInst()->getBBox()->getBox();
 
@@ -1574,7 +1574,7 @@ void PlacerBase::printInfo(bool check_density) const
   log_->info(GPL,
              21,
              "Large instances area:       {:10.3f} um^2",
-             block->dbuAreaToMicrons(macroInstsArea_));
+             block->dbuAreaToMicrons(large_insts_area_));
 
   if (check_density && util >= 100.1) {
     log_->error(GPL, 301, "Utilization {:.3f} % exceeds 100%.", util);
@@ -1588,9 +1588,9 @@ void PlacerBase::unlockAll()
   }
 }
 
-int64_t PlacerBase::macroInstsArea() const
+int64_t PlacerBase::largeInstsArea() const
 {
-  return macroInstsArea_;
+  return large_insts_area_;
 }
 
 // https://stackoverflow.com/questions/33333363/built-in-mod-vs-custom-mod-function-improve-the-performance-of-modulus-op

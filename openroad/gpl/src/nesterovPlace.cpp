@@ -200,9 +200,9 @@ void NesterovPlace::init()
   auto& hpwl_gauge = hpwl_gauge_family.Add({});
   hpwl_gauge_ = &hpwl_gauge;
 
-  average_overflow_ = total_sum_overflow_ / nbVec_.size();
+  average_overflow_binormal_ = total_sum_overflow_ / nbVec_.size();
   baseWireLengthCoef_ = totalBaseWireLengthCoeff / nbVec_.size();
-  updateWireLengthCoef(average_overflow_);
+  updateWireLengthCoef(average_overflow_binormal_);
 
   nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
@@ -300,7 +300,7 @@ void NesterovPlace::updateIterGraphics(
     return;
   }
 
-  graphics_->addIter(iter, average_overflow_unscaled_);
+  graphics_->addIter(iter, average_overflow_);
 
   // For JPEG Saving
   updateDb();
@@ -346,7 +346,7 @@ void NesterovPlace::updateIterGraphics(
 
   // Save image once if routability not needed and below routability overflow
   if (npVars_.routability_driven_mode && !is_routability_need_
-      && average_overflow_unscaled_ <= npVars_.routability_end_overflow
+      && average_overflow_ <= npVars_.routability_end_overflow
       && !final_routability_image_saved) {
     if (npVars_.debug_generate_images) {
       const std::string label = fmt::format("Iter {} |R: {} |T: {}",
@@ -401,7 +401,7 @@ void NesterovPlace::runTimingDriven(int iter,
   if (npVars_.timingDrivenMode
       && (!is_routability_gpl_iter || !npVars_.routability_driven_mode)
       // isTimingNetWeightOverflow() is stateful: keep it last.
-      && tb_->isTimingNetWeightOverflow(average_overflow_unscaled_)) {
+      && tb_->isTimingNetWeightOverflow(average_overflow_)) {
     // update db's instance location from current density coordinates
     updateDb();
 
@@ -410,7 +410,7 @@ void NesterovPlace::runTimingDriven(int iter,
                  164,
                  "Virtual CTS iteration {}, overflow: {:.3f}.",
                  ++virtual_cts_count,
-                 average_overflow_unscaled_);
+                 average_overflow_);
     }
 
     if (graphics_ && graphics_->enabled()) {
@@ -432,7 +432,7 @@ void NesterovPlace::runTimingDriven(int iter,
     //
     // See timingBase.cpp in detail
     bool virtual_td_iter
-        = (average_overflow_unscaled_ > npVars_.keepResizeBelowOverflow);
+        = (average_overflow_ > npVars_.keepResizeBelowOverflow);
 
     log_->info(GPL,
                100,
@@ -446,7 +446,7 @@ void NesterovPlace::runTimingDriven(int iter,
                "   Iter: {}, overflow: {:.3f}, keep resizer changes at: {}, "
                "HPWL: {}",
                iter + 1,
-               average_overflow_unscaled_,
+               average_overflow_,
                npVars_.keepResizeBelowOverflow,
                nbc_->getHpwl());
 
@@ -621,10 +621,10 @@ void NesterovPlace::runTimingDriven(int iter,
 
       // update snapshot after non-virtual TD
       int64_t hpwl = nbc_->getHpwl();
-      if (average_overflow_unscaled_ <= 0.25) {
+      if (average_overflow_ <= 0.25) {
         min_hpwl_ = hpwl;
-        diverge_snapshot_average_overflow_unscaled_
-            = average_overflow_unscaled_;
+        diverge_snapshot_average_overflow_
+            = average_overflow_;
         diverge_snapshot_iter_ = iter + 1;
         is_min_hpwl_ = true;
       } else {
@@ -691,12 +691,12 @@ void NesterovPlace::guardIncrementalDensityPenalty(float& current_factor,
   constexpr float kGrowthRatio = 2.0f;
   constexpr int kMaxRetries = 10;
 
-  if (average_overflow_unscaled_ < best_overflow - kOverflowTolerance) {
-    best_overflow = average_overflow_unscaled_;
+  if (average_overflow_ < best_overflow - kOverflowTolerance) {
+    best_overflow = average_overflow_;
     return;
   }
 
-  if (average_overflow_unscaled_ <= best_overflow + kOverflowTolerance) {
+  if (average_overflow_ <= best_overflow + kOverflowTolerance) {
     return;
   }
 
@@ -783,7 +783,7 @@ void NesterovPlace::revertToDivergeSnapshot()
              999,
              "Revert to iter: {:4d} overflow: {:.3f} HPWL: {}",
              diverge_snapshot_iter_,
-             diverge_snapshot_average_overflow_unscaled_,
+             diverge_snapshot_average_overflow_,
              diverge_snapshot_hpwl_);
   wireLengthCoefX_ = diverge_snapshot_wl_coef_x_;
   wireLengthCoefY_ = diverge_snapshot_wl_coef_y_;
@@ -886,7 +886,7 @@ void NesterovPlace::routabilitySnapshot(
     int timing_driven_count)
 {
   if (!is_routability_snapshot_saved_ && npVars_.routability_driven_mode
-      && npVars_.routability_snapshot_overflow >= average_overflow_unscaled_) {
+      && npVars_.routability_snapshot_overflow >= average_overflow_) {
     route_snapshot_wl_coef_x_ = wireLengthCoefX_;
     route_snapshot_wl_coef_y_ = wireLengthCoefY_;
     route_snapshot_a_ = curA;
@@ -901,7 +901,7 @@ void NesterovPlace::routabilitySnapshot(
     const int64_t hpwl = nbc_->getHpwl();
     log_->report("{:9d} | {:8.4f} | {:13.6e} | {:8} | {:9} | {:>5}",
                  iter,
-                 average_overflow_unscaled_,
+                 average_overflow_,
                  block->dbuToMicrons(hpwl),
                  " ",
                  " ",
@@ -945,7 +945,7 @@ void NesterovPlace::runRoutability(int iter,
   // overflow gate is unaffected.
   const bool is_routability_active
       = npVars_.routability_driven_mode && is_routability_need_
-        && average_overflow_unscaled_ <= npVars_.routability_end_overflow;
+        && average_overflow_ <= npVars_.routability_end_overflow;
   const bool is_routability_settled
       = is_routability_active && isPlacementSettled();
 
@@ -958,7 +958,7 @@ void NesterovPlace::runRoutability(int iter,
                "reached {:.4f}, but cells are still moving at {:.0f}% of "
                "peak displacement (waiting for {:.0f}%).",
                iter + 1,
-               average_overflow_unscaled_,
+               average_overflow_,
                npVars_.routability_end_overflow,
                getWorstSettleRatio() * 100.0f,
                NesterovBase::getSettleFraction() * 100.0f);
@@ -973,7 +973,7 @@ void NesterovPlace::runRoutability(int iter,
                  "of peak displacement.",
                  iter + 1,
                  iter - routability_settle_wait_start_iter_,
-                 average_overflow_unscaled_,
+                 average_overflow_,
                  getWorstSettleRatio() * 100.0f);
       routability_settle_wait_start_iter_ = -1;
     }
@@ -1124,7 +1124,7 @@ bool NesterovPlace::isRoutabilityGplIter() const
 {
   return is_routability_snapshot_saved_
          && (is_routability_need_
-             || average_overflow_unscaled_ > npVars_.routability_end_overflow);
+             || average_overflow_ > npVars_.routability_end_overflow);
 }
 
 bool NesterovPlace::isConverged(int gpl_iter_count,
@@ -1254,7 +1254,7 @@ void NesterovPlace::reportResults(int nesterov_iter,
 
   if (graphics_ && graphics_->enabled()) {
     // Final plot point
-    graphics_->addIter(nesterov_iter, average_overflow_unscaled_);
+    graphics_->addIter(nesterov_iter, average_overflow_);
 
     if (npVars_.debug_generate_images) {
       updateDb();
@@ -1331,7 +1331,7 @@ PlaceResult NesterovPlace::doNesterovPlace(int start_iter)
   if (npVars_.maxNesterovIter > start_iter) {
     trace_.reserve(npVars_.maxNesterovIter - start_iter);
   }
-  // Until this call's first update, average_overflow_unscaled_ is from
+  // Until this call's first update, average_overflow_ is from
   // init() or an earlier call, if it was set at all.
   overflow_update_is_stale_ = true;
   last_overflow_iter_ = start_iter;
@@ -1371,7 +1371,7 @@ PlaceResult NesterovPlace::doNesterovPlace(int start_iter)
                               && !npVars_.routability_driven_mode;
   incremental_penalty_guard_requested_ = false;
   float penalty_guard_factor = 1;
-  float penalty_guard_best_overflow = average_overflow_unscaled_;
+  float penalty_guard_best_overflow = average_overflow_;
   int penalty_guard_retries = 0;
 
   if (penalty_guard_active) {
@@ -1525,8 +1525,8 @@ PlaceResult NesterovPlace::doNesterovPlace(int start_iter)
   if (nesterov_iter >= npVars_.maxNesterovIter
       && !npVars_.disableRevertIfDiverge
       && (is_diverge_snapshot_saved_ || diverge_revert_count_ > 0)
-      && diverge_snapshot_average_overflow_unscaled_
-             <= average_overflow_unscaled_
+      && diverge_snapshot_average_overflow_
+             <= average_overflow_
       && diverge_snapshot_hpwl_ < nbc_->getHpwl()) {
     log_->warn(GPL,
                121,
@@ -1626,27 +1626,27 @@ void NesterovPlace::updateNextIter(int iter)
     total_sum_overflow_unscaled_ += nb->getSumOverflowUnscaled();
   }
 
-  average_overflow_ = total_sum_overflow_ / nbVec_.size();
-  average_overflow_unscaled_ = total_sum_overflow_unscaled_ / nbVec_.size();
+  average_overflow_binormal_ = total_sum_overflow_ / nbVec_.size();
+  average_overflow_ = total_sum_overflow_unscaled_ / nbVec_.size();
 
   // For coefficient, using average regions' overflow
-  updateWireLengthCoef(average_overflow_);
+  updateWireLengthCoef(average_overflow_binormal_);
 
   overflow_update_is_stale_ = false;
   last_overflow_iter_ = iter;
 
   const int64_t hpwl = updated_hpwl ? *updated_hpwl : nbc_->getHpwl();
   trace_.push_back({.iteration = iter,
-                    .overflow = average_overflow_unscaled_,
+                    .overflow = average_overflow_,
                     .hpwl = hpwl,
                     .density_penalty = density_penalty});
 
   // Update divergence snapshot
   if (!npVars_.disableRevertIfDiverge) {
     hpwl_gauge_->Set(hpwl);
-    if (hpwl < min_hpwl_ && average_overflow_unscaled_ <= 0.25) {
+    if (hpwl < min_hpwl_ && average_overflow_ <= 0.25) {
       min_hpwl_ = hpwl;
-      diverge_snapshot_average_overflow_unscaled_ = average_overflow_unscaled_;
+      diverge_snapshot_average_overflow_ = average_overflow_;
       diverge_snapshot_iter_ = iter + 1;
       is_min_hpwl_ = true;
     } else {
@@ -1658,7 +1658,7 @@ void NesterovPlace::updateNextIter(int iter)
 float NesterovPlace::getFinalOverflow() const
 {
   if (!overflow_update_is_stale_) {
-    return average_overflow_unscaled_;
+    return average_overflow_;
   }
   // The bins hold the placement as it is now, including any regions a
   // revert left alone because they had converged.

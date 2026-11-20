@@ -65,7 +65,7 @@ struct KokkosNesterovState
   // NesterovDeviceContext::refreshCellDensityParams after updateDensitySize.
   Kokkos::View<int*> d_half_ddx;         // GCell::dDx()/2
   Kokkos::View<int*> d_half_ddy;         // GCell::dDy()/2
-  Kokkos::View<float*> d_density_scale;  // GCell::getDensityScale()
+  Kokkos::View<float*> d_density_smoothing;  // GCell::getDensitySmoothing()
   // 0 = neither (skipped by the scatter, like the CPU loop), 1 = std inst,
   // 2 = macro inst (target-density scaled), 3 = filler.
   Kokkos::View<int*> d_cell_kind;
