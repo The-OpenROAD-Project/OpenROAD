@@ -90,14 +90,14 @@ class SlotGrid : public tst::Fixture
         layer(name)->getRoutingLevel(), min_dist, in_tracks);
   }
 
-  // set_place_config -io_pin_layer_min_distance layer_min_dists
+  // set_placer_config -io_pin_layer_min_distance layer_min_dists
   //   -io_pin_min_distance_in_tracks
   void saveLayerMinDistance(const char* layer_min_dists)
   {
     odb::dbStringProperty::create(
-        block_, "place_config_io_pin_layer_min_distance", layer_min_dists);
+        block_, "placer_config_io_pin_layer_min_distance", layer_min_dists);
     odb::dbBoolProperty::create(
-        block_, "place_config_io_pin_layer_min_distance_in_tracks", true);
+        block_, "placer_config_io_pin_layer_min_distance_in_tracks", true);
   }
 
   odb::dbBlock* block_ = nullptr;

@@ -268,7 +268,7 @@ proc place_pins { args } {
       utl::error PPL 37 "-min_distance_in_tracks requires -min_distance or\
         -layer_min_distance."
     }
-    # 0 means unset: the run uses set_place_config's value or the default
+    # 0 means unset: the run uses set_placer_config's value or the default
     set min_dist 0
     if { [info exists keys(-min_distance)] } {
       set min_dist [ppl::parse_min_distance -min_distance \
@@ -286,7 +286,7 @@ proc place_pins { args } {
       utl::error PPL 19 "Design without pins."
     }
 
-    # Switches override set_place_config for this run only.
+    # Switches override set_placer_config for this run only.
     set hor_layers {}
     set ver_layers {}
     if { [info exists keys(-hor_layers)] } {
@@ -298,11 +298,11 @@ proc place_pins { args } {
     set has_hor [expr { $hor_layers != {} || [ppl::has_default_layers true] }]
     set has_ver [expr { $ver_layers != {} || [ppl::has_default_layers false] }]
     if { !$has_hor } {
-      utl::error PPL 17 "-hor_layers or set_place_config -io_pin_hor_layers\
+      utl::error PPL 17 "-hor_layers or set_placer_config -io_pin_hor_layers\
         is required."
     }
     if { !$has_ver } {
-      utl::error PPL 18 "-ver_layers or set_place_config -io_pin_ver_layers\
+      utl::error PPL 18 "-ver_layers or set_placer_config -io_pin_ver_layers\
         is required."
     }
     set pin_layers [ppl::check_io_pin_layers $hor_layers $ver_layers]
