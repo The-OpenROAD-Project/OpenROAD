@@ -7,7 +7,6 @@
 #include <cmath>
 #include <cstddef>
 #include <map>
-#include <numeric>
 #include <ranges>
 #include <set>
 #include <stdexcept>
@@ -90,9 +89,18 @@ int originId(const fsv::BlockShape& shape)
 
 std::vector<int> BlockBoxes::netBoxes(const NetIndex net) const
 {
-  std::vector<int> ids(net_first[net + 1] - net_first[net]);
-  std::iota(ids.begin(), ids.end(), net_first[net]);
+  std::vector<int> ids;
+  for (int b = net_first[net]; b < net_first[net + 1]; b++) {
+    if (!pin(b)) {
+      ids.push_back(b);
+    }
+  }
   return ids;
+}
+
+bool BlockBoxes::pin(const int box) const
+{
+  return boxes[box].pin;
 }
 
 BlockBoxes readBlockBoxes(odb::dbBlock* block,
@@ -131,7 +139,21 @@ BlockBoxes readBlockBoxes(odb::dbBlock* block,
     const NetIndex index = static_cast<NetIndex>(result.nets.size());
     result.nets.push_back(net);
     result.net_first.push_back(static_cast<int>(result.boxes.size()));
-    for (const fsv::BlockShape& shape : fsv::netShapes(net)) {
+    // The instance pins follow the net's other boxes, unmerged with them.
+    std::vector<const fsv::BlockShape*> pins;
+    const std::vector<fsv::BlockShape> shapes = fsv::netShapes(net);
+    auto add = [&](const fsv::BlockShape& shape, const int layer) {
+      result.boxes.push_back(
+          {.net = index,
+           .layer = layer,
+           .rect = shape.rect,
+           .pin = shape.source == fsv::BlockShape::Source::kITermPin});
+      result.origins.push_back({.source = shape.source, .id = originId(shape)});
+      if (layer >= 0) {
+        net_boxes.push_back(toBox(shape.rect, layer));
+      }
+    };
+    for (const fsv::BlockShape& shape : shapes) {
       const int layer = layerOf(shape.layer);
       if (layer < -1) {
         result.skipped++;
@@ -140,12 +162,11 @@ BlockBoxes readBlockBoxes(odb::dbBlock* block,
       if (shape.rect.area() == 0) {
         continue;
       }
-      result.boxes.push_back(
-          {.net = index, .layer = layer, .rect = shape.rect});
-      result.origins.push_back({.source = shape.source, .id = originId(shape)});
-      if (layer >= 0) {
-        net_boxes.push_back(toBox(shape.rect, layer));
+      if (shape.source == fsv::BlockShape::Source::kITermPin) {
+        pins.push_back(&shape);
+        continue;
       }
+      add(shape, layer);
     }
     const size_t first = result.net_first.back();
     const std::vector<int> from = mergePads(result.boxes, first);
@@ -158,6 +179,9 @@ BlockBoxes readBlockBoxes(odb::dbBlock* block,
       result.origins.resize(first);
       result.origins.insert(
           result.origins.end(), origins.begin(), origins.end());
+    }
+    for (const fsv::BlockShape* pin : pins) {
+      add(*pin, layerOf(pin->layer));
     }
   }
   result.net_first.push_back(static_cast<int>(result.boxes.size()));
@@ -416,7 +440,7 @@ NetParasitics Extractor::evaluateNet(const NetIndex net,
     }
     const NetIndex other
         = c.other < 0 ? kNullNetIndex : boxes_.boxes[c.other].net;
-    if (other == kNullNetIndex || !extracted_[other]) {
+    if (other == kNullNetIndex || !extracted_[other] || boxes_.pin(c.other)) {
       addGround(own, c.value, network, result.ground);
       continue;
     }

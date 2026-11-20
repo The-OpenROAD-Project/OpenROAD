@@ -57,12 +57,14 @@ enum class Ground
 
 // A conductor box: its net, its layer (an index into Evaluator's layers,
 // which ascend by height; -1 for a via) and its x-y extent in database
-// units.
+// units. A pin is an instance pin: of its net, but not measured, so it
+// never takes the overlap of a wire of the net.
 struct EvalBox
 {
   NetIndex net;
   int layer;
   odb::Rect rect;
+  bool pin = false;
 };
 
 // One part of a target box's capacitance, in fF: to ground when `other` is
@@ -194,12 +196,15 @@ std::vector<int> mergePads(std::vector<EvalBox>& boxes, size_t first = 0);
 // `dbu` units per µm. Boxes between layers are vias; pads merge as
 // mergePads does. Throws
 // std::invalid_argument for a box on no layer or out of range, and
-// std::out_of_range as Evaluator::evaluate does.
+// std::out_of_range as Evaluator::evaluate does. The boxes of net `pins`,
+// when given, are the target's instance pins: of its net, but context, as
+// extraction treats them.
 NetEstimate estimate(const fsv::Geometry& geometry,
                      const fsv::Stack& stack,
                      const Model& model,
                      NetIndex target,
                      const EvaluatorOptions& options = {},
-                     int dbu = kEstimateDbu);
+                     int dbu = kEstimateDbu,
+                     NetIndex pins = kNullNetIndex);
 
 }  // namespace pex

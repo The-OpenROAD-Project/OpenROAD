@@ -1665,7 +1665,11 @@ fsv::NetWindow netWindow(const Lab& lab, odb::dbBlock* block, odb::dbNet* net)
         = pex::layerExtent(lab.stack(), lab.layer(std::string(layer)));
     return std::make_pair(z.bottom, z.top);
   };
-  return fsv::readNetWindow(block, {net}, extent, {o.halo, o.margin});
+  return fsv::readNetWindow(
+      block,
+      {net},
+      extent,
+      {.halo = o.halo, .margin = o.margin, .pins_as_context = true});
 }
 
 // The pex::Source names, in order.
@@ -1707,8 +1711,15 @@ void compareNet(Lab& lab,
                 const bool couplings)
 {
   const Options& o = lab.options();
-  const pex::NetEstimate est
-      = pex::estimate(g, lab.stack(), model, target, o.reference);
+  // The target's instance pins, context at its potential.
+  pex::NetIndex pins = pex::kNullNetIndex;
+  for (pex::NetIndex n = 0; n < g.netCount(); n++) {
+    if (g.netName(n) == fsv::pinsNetName(g.netName(target))) {
+      pins = n;
+    }
+  }
+  const pex::NetEstimate est = pex::estimate(
+      g, lab.stack(), model, target, o.reference, pex::kEstimateDbu, pins);
   // The estimate's coupling to a net by source, as a comment.
   auto printSources = [&](const pex::NetIndex n) { printSourcesOf(est, n); };
   // The net's ground and its couplings to signal nets, summed by source.
@@ -1780,7 +1791,7 @@ void compareNet(Lab& lab,
     }
     for (pex::NetIndex n = 0; couplings && n < g.netCount(); n++) {
       const auto it = earlier.find({name, "c:" + g.netName(n)});
-      if (n == target || g.grounded(n) || it == earlier.end()) {
+      if (n == target || n == pins || g.grounded(n) || it == earlier.end()) {
         continue;
       }
       const auto e = est.couplings.find(n);
@@ -1808,13 +1819,15 @@ void compareNet(Lab& lab,
     return;
   }
   const fsv::CapRow row = lab.solve(g, target, o.tol);
-  lab.row(
-      experiment, name, "total", row.total(), row.sigma[target], est.total());
+  // What couples to the pins is not the routing's.
+  const double total
+      = row.total() - (pins == pex::kNullNetIndex ? 0 : row.coupling(pins));
+  lab.row(experiment, name, "total", total, row.sigma[target], est.total());
   double grounded = est.ground;
   double est_coupled = 0;
   double coupled = 0;
   for (pex::NetIndex n = 0; n < g.netCount(); n++) {
-    if (n == target) {
+    if (n == target || n == pins) {
       continue;
     }
     const auto it = est.couplings.find(n);
@@ -1825,7 +1838,7 @@ void compareNet(Lab& lab,
     }
     coupled += row.coupling(n);
     est_coupled += e;
-    if (couplings && row.coupling(n) > 0.01 * row.total()) {
+    if (couplings && row.coupling(n) > 0.01 * total) {
       lab.row(experiment,
               name,
               "c:" + g.netName(n),

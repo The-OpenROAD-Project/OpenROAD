@@ -50,15 +50,21 @@ struct BlockBoxes
   std::vector<EvalBox> boxes;
   std::vector<BoxOrigin> origins;  // per box
   // Each net's boxes are contiguous: net n owns [net_first[n],
-  // net_first[n + 1]). One entry per net plus one; obstructions follow.
+  // net_first[n + 1]), its instance pins last. One entry per net plus one;
+  // obstructions follow.
   std::vector<int> net_first;
   int trimmed = 0;  // obstructions a net cut
   int skipped = 0;  // shapes on layers neither conductor nor cut
   // The routing layers with shapes that the stack has no conductor for.
   std::vector<std::string> unknown_layers;
 
-  // The ids of net `net`'s boxes, ascending.
+  // The ids of net `net`'s boxes that extraction measures, ascending: all
+  // but its instance pins, whose capacitance the cells' timing models hold.
+  // The pins stay context, and what couples to another net's pins goes to
+  // ground.
   std::vector<int> netBoxes(NetIndex net) const;
+  // Whether box `box` is an instance pin.
+  bool pin(int box) const;
 };
 
 // Reads every shape of `block` onto the evaluator's layers by name; a cut

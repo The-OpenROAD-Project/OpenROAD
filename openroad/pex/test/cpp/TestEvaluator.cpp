@@ -219,6 +219,26 @@ TEST(Evaluator, OwnCoverTakesNothing)
   EXPECT_NEAR(est.ground, 10 * 20 + 2 * 0.5 + 12 * 30 + 2 * 1.5, 1e-6);
 }
 
+// An instance pin is of the net but not measured: a wire ending on one
+// counts its whole length, though the pin is the wider, and keeps its end
+// there.
+TEST(Evaluator, PinIsContext)
+{
+  const fsv::Stack stack = twoLayers();
+  const Model model = constantModel();
+  fsv::Geometry g;
+  const int a = g.addNet("a");
+  const int pins = g.addNet("a pins");
+  g.addBox(a, {.lo = {0, 0, 1}, .hi = {10, 0.2, 2}});
+  g.addBox(pins, {.lo = {9.5, -0.4, 1}, .hi = {10.5, 0.6, 2}});
+  const NetEstimate est = estimate(g, stack, model, a, {}, kEstimateDbu, pins);
+  EXPECT_EQ(est.wires, 1);
+  EXPECT_EQ(est.ends, 2);
+  EXPECT_TRUE(est.couplings.empty());
+  // 10 per µm over 10 µm and 0.5 per end.
+  EXPECT_NEAR(est.ground, 10 * 10 + 1, 1e-9);
+}
+
 // At a bend the boxes overlap in a corner square, which the longer box
 // counts; the corner has no line end.
 TEST(Evaluator, BendCountsTheCornerOnce)

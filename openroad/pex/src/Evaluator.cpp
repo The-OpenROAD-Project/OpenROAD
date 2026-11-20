@@ -348,11 +348,14 @@ class Wire
                 std::map<int, int>& past_end) const;
 
   // Whether a box of the net counts an overlap with this wire rather than
-  // this wire: between two wires the longer one, or the first of two as
-  // long; when either is a pad (not twice as long as wide), the wider one,
-  // then the longer, then the first.
+  // this wire: never a pin; between two wires the longer one, or the first
+  // of two as long; when either is a pad (not twice as long as wide), the
+  // wider one, then the longer, then the first.
   bool dominates(const int i) const
   {
+    if (boxes_[i].pin) {
+      return false;
+    }
     const odb::Rect& s = boxes_[i].rect;
     const odb::Rect& w = shape_.rect;
     auto pad = [](const odb::Rect& r) {
@@ -475,8 +478,9 @@ class Wire
   void addEnd(int x, const Cover& below, const Cover& above) const;
 
   // Whether something of the net on this layer touches the end face at x:
-  // a wire continuing, or a shape flush against a side over the end's
-  // last width [e0, e1], which makes the end the outer corner of a bend.
+  // a wire continuing, or a shape flush against a side over the end's last
+  // width [e0, e1], which makes the end the outer corner of a bend. A pin
+  // joins nothing: the end on it stays, as if the pin stood a spacing off.
   bool endJoined(int x, int e0, int e1) const;
 
   // The nearest shape on the layer beyond the end face at x, over the part
@@ -1273,7 +1277,7 @@ bool Wire::endJoined(const int x, const int e0, const int e1) const
 {
   for (const int i : near_) {
     const EvalBox& s = boxes_[i];
-    if (i == self_ || s.net != net_ || s.layer != shape_.layer) {
+    if (i == self_ || s.net != net_ || s.layer != shape_.layer || s.pin) {
       continue;
     }
     const bool overlaps_p = std::min(p1_, hi(s, p_)) > std::max(p0_, lo(s, p_));
@@ -1284,7 +1288,7 @@ bool Wire::endJoined(const int x, const int e0, const int e1) const
   }
   for (const int i : near_) {
     const EvalBox& s = boxes_[i];
-    if (i == self_ || s.net != net_ || s.layer != shape_.layer) {
+    if (i == self_ || s.net != net_ || s.layer != shape_.layer || s.pin) {
       continue;
     }
     const bool flush = hi(s, p_) == p0_ || lo(s, p_) == p1_;
@@ -1717,7 +1721,8 @@ NetEstimate estimate(const fsv::Geometry& geometry,
                      const Model& model,
                      const NetIndex target,
                      const EvaluatorOptions& options,
-                     const int dbu)
+                     const int dbu,
+                     const NetIndex pins)
 {
   const Evaluator evaluator(stack, model, dbu, options);
   NetEstimate est;
@@ -1770,6 +1775,9 @@ NetEstimate estimate(const fsv::Geometry& geometry,
   for (int b = 0; std::cmp_less(b, boxes.size()); b++) {
     if (boxes[b].net == target) {
       mine.push_back(b);
+    } else if (pins != kNullNetIndex && boxes[b].net == pins) {
+      boxes[b].net = target;
+      boxes[b].pin = true;
     }
   }
   const int n = static_cast<int>(boxes.size());

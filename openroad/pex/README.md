@@ -91,8 +91,11 @@ where its wire's paths start or end; its wire shapes become resistors in
 series between nodes. Ground capacitance is split between a resistor's
 two nodes by where it lies along it, and a coupling joins the nearer
 node of each net. Supply nets, obstructions and fill are neighbors only:
-coupling to them goes to ground. A net pair's coupling is kept only when
-its total reaches `-coupling_threshold` or `-coupling_ratio` of either
+coupling to them goes to ground. The cells' instance pins are neighbors
+only as well, since the cells' timing models count their capacitance: a
+net's routing ends at its pins without counting them, and what couples
+to another net's pins goes to ground. A net pair's coupling is kept only
+when its total reaches `-coupling_threshold` or `-coupling_ratio` of either
 net's total capacitance; otherwise it goes to ground on both nets. Either
 test alone keeps a pair, so setting either option to 0 keeps every
 coupling.
@@ -121,8 +124,11 @@ The `compare_pex_fsv` command checks extraction against the field solver:
 it solves each net's window (the net and the shapes within `-halo` of
 it) with fsv and reports the extracted total against fsv's, and how many
 of its couplings to other signal nets above 5% of its total are within
-20%, the accuracy target's measures. Run it after `extract_pex`; the
-field solver takes the model's ITF stack.
+20%, the accuracy target's measures. The net's instance pins stay in the
+window as a conductor of their own, trimmed clear of its routing by the
+layer's spacing, and its total leaves out their coupling to the routing;
+the other nets' pins are grounded, as the extraction has them. Run it
+after `extract_pex`; the field solver takes the model's ITF stack.
 
 ```tcl
 compare_pex_fsv
@@ -333,25 +339,33 @@ each sampled net is solved by the field solver with every shape within
 10 µm of it, and the model is applied to the same shapes (the `e9`
 experiment group below):
 
-| model alone, 50 nets | gcd | aes |
+| model alone, 200 nets | gcd | aes |
 | --- | --- | --- |
-| totals within 5% | 68% | 68% |
-| total error, 90th percentile | 7.5% | 7.3% |
-| ground plus supply coupling, median | +10.1% | +10.2% |
-| signal coupling summed per net, median | −1.9% | −0.6% |
-| signal couplings above 5%, within 20% | 84% | 81% |
+| totals within 5% | 86% | 88% |
+| total error, median | +1.0% | +0.4% |
+| total error, 90th percentile | 6.4% | 5.4% |
+| ground plus supply coupling, median | +25.0% | +24.5% |
+| signal coupling summed per net, median | −5.9% | −3.9% |
+| signal couplings above 5%, within 20% | 81% | 82% |
+
+The instance pins are context here as in extraction (see
+`compare_pex_fsv`). Counting them in their nets instead puts the
+median total at −1.6% (gcd) and −2.5% (aes) and 72% of totals within
+5%: the model takes too little from the irregular li1 shapes inside the
+cells, which the cells' timing models count anyway.
 
 Building the same model again moves the share of totals within 5% by up
 to 6 points, so 50 nets do not resolve smaller changes.
 
-Extraction itself, checked with `compare_pex_fsv -sample 50 -halo 10 -tol
-0.003` on the routed designs with the same model:
+Extraction itself, checked with `compare_pex_fsv -sample 200 -halo 10
+-tol 0.003` on the routed designs with the same model:
 
-| extraction, 50 nets | gcd | aes |
+| extraction, 200 nets | gcd | aes |
 | --- | --- | --- |
-| totals within 5% | 66% | 66% |
-| total error, 90th percentile | 6.3% | 6.9% |
-| signal couplings above 5%, within 20% | 94% | 86% |
+| totals within 5% | 88% | 90% |
+| total error, median | +0.4% | −0.2% |
+| total error, 90th percentile | 5.3% | 4.9% |
+| signal couplings above 5%, within 20% | 81% | 83% |
 | extraction, 1 thread | 6.7 s | 351 s |
 | extraction, 16 threads | 0.58 s | 25 s |
 
@@ -386,8 +400,9 @@ What remains, largest first:
   effect goes into the deltas, `plane_delta` included. The plane is to
   have one extent across a table, which needs the diagonal tables
   rebuilt.
-- **Sample size.** 200 nets per design, so that a 2-point change is
-  measurable.
+- **Ground against coupling.** The ground, a tenth to a fifth of the total, is
+  about 23% high summed over the nets, and the signal couplings 1–5%
+  low, so the totals hold while the split between them does not.
 
 ## Regression tests
 

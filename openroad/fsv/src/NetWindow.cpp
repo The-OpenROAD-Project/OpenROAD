@@ -10,6 +10,7 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -56,6 +57,11 @@ void checkShorts(const Geometry& geometry)
 
 }  // namespace
 
+std::string pinsNetName(const std::string_view net)
+{
+  return std::string(net) + " pins";
+}
+
 NetWindow readNetWindow(odb::dbBlock* block,
                         const std::vector<odb::dbNet*>& targets,
                         const LayerExtent& layer_extent,
@@ -89,20 +95,32 @@ NetWindow readNetWindow(odb::dbBlock* block,
       .hi={std::numeric_limits<double>::lowest(),
        std::numeric_limits<double>::lowest(),},};
   std::set<int> target_ids;
+  // Per target, its instance pins when they are context.
+  std::vector<std::vector<Obstruction>> own_pins;
+  auto context = [&](const BlockShape& shape) {
+    return options.pins_as_context
+           && shape.source == BlockShape::Source::kITermPin;
+  };
   for (odb::dbNet* net : targets) {
     if (!target_ids.insert(net->getId()).second) {
       continue;  // named twice
     }
     const std::vector<BlockShape> shapes = netShapes(net);
-    if (shapes.empty()) {
+    if (std::ranges::all_of(shapes, context)) {
       throw std::invalid_argument("fsv: net " + net->getName()
-                                  + " has no shapes on conductor layers");
+                                  + " has no shapes on conductor layers"
+                                  + (shapes.empty() ? "" : " but its pins"));
     }
     const int index = geometry.addNet(net->getName());
     result.targets.push_back(index);
+    own_pins.emplace_back();
     for (const BlockShape& shape : shapes) {
       const Box box = toBox(shape);
-      geometry.addBox(index, box);
+      if (context(shape)) {
+        own_pins.back().push_back(obstruction(shape, box, dbu));
+      } else {
+        geometry.addBox(index, box);
+      }
       for (int k = 0; k < 2; k++) {
         bounds.lo[k] = std::min(bounds.lo[k], box.lo[k]);
         bounds.hi[k] = std::max(bounds.hi[k], box.hi[k]);
@@ -147,6 +165,8 @@ NetWindow readNetWindow(odb::dbBlock* block,
     result.clipped += cut ? 1 : 0;
     return true;
   };
+  // The neighbours' instance pins when they are context.
+  std::vector<Obstruction> pin_obstructions;
   for (odb::dbNet* net : block->getNets()) {
     if (target_ids.contains(net->getId())) {
       continue;
@@ -157,6 +177,10 @@ NetWindow readNetWindow(odb::dbBlock* block,
       if (!clipToWindow(shape, box)) {
         continue;
       }
+      if (context(shape)) {
+        pin_obstructions.push_back(obstruction(shape, box, dbu));
+        continue;
+      }
       if (index < 0) {
         index = geometry.addNet(net->getName());
         result.neighbours++;
@@ -164,7 +188,46 @@ NetWindow readNetWindow(odb::dbBlock* block,
       geometry.addBox(index, box);
     }
   }
-  std::vector<Obstruction> obstructions;
+  // The targets' own pins, trimmed clear of every net's shapes, then the
+  // obstructions clear of those as well.
+  std::vector<Box> net_boxes = geometry.boxes();
+  for (size_t t = 0; t < own_pins.size(); t++) {
+    // A via landing on a pin touches it from above or below: it trims the
+    // pin as if on the pin's layer.
+    std::set<std::pair<double, double>> pin_layers;
+    for (const Obstruction& pin : own_pins[t]) {
+      pin_layers.emplace(pin.box.lo[2], pin.box.hi[2]);
+    }
+    std::vector<Box> cutting = geometry.boxes();
+    for (int b = 0; std::cmp_less(b, geometry.boxes().size()); b++) {
+      if (geometry.boxNet(b) != result.targets[t]) {
+        continue;
+      }
+      const Box& box = geometry.boxes()[b];
+      for (const auto& [lo, hi] : pin_layers) {
+        if (box.lo[2] == hi || box.hi[2] == lo) {
+          Box flat = box;
+          flat.lo[2] = lo;
+          flat.hi[2] = hi;
+          cutting.push_back(flat);
+        }
+      }
+    }
+    const std::vector<Box> pins
+        = trimObstructions(cutting, own_pins[t], result.trimmed);
+    if (pins.empty()) {
+      result.pins.push_back(-1);
+      continue;
+    }
+    const int index
+        = geometry.addNet(pinsNetName(geometry.netName(result.targets[t])));
+    result.pins.push_back(index);
+    for (const Box& pin : pins) {
+      geometry.addBox(index, pin);
+      net_boxes.push_back(pin);
+    }
+  }
+  std::vector<Obstruction> obstructions = std::move(pin_obstructions);
   for (const BlockShape& shape : unconnectedShapes(block)) {
     Box box;
     if (clipToWindow(shape, box)) {
@@ -172,7 +235,7 @@ NetWindow readNetWindow(odb::dbBlock* block,
     }
   }
   const std::vector<Box> pieces
-      = trimObstructions(geometry.boxes(), obstructions, result.trimmed);
+      = trimObstructions(net_boxes, obstructions, result.trimmed);
   if (!pieces.empty()) {
     const int index = geometry.addNet(kObstructionNet);
     geometry.setGrounded(index);
