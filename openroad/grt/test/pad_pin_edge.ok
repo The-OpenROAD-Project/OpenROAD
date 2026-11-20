@@ -8,9 +8,9 @@
 [INFO ODB-0227] LEF file: gf180/gf180mcu_fd_sc_mcu7t5v0.lef, created 229 library cells
 [INFO ODB-0227] LEF file: pad_pin_edge.lef, created 1 library cells
 [INFO ODB-0128] Design: pad_pin_edge
-[INFO ODB-0130]     Created 1 pins.
-[INFO ODB-0131]     Created 4 components and 7 component-terminals.
-[INFO ODB-0133]     Created 1 nets and 2 connections.
+[INFO ODB-0130]     Created 4 pins.
+[INFO ODB-0131]     Created 10 components and 22 component-terminals.
+[INFO ODB-0133]     Created 4 nets and 8 connections.
 [WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
 [INFO GRT-0020] Min routing layer: Metal2
 [INFO GRT-0021] Max routing layer: Metal5
@@ -22,7 +22,7 @@
 [INFO GRT-0088] Layer Metal4  Track-Pitch = 0.5600  line-2-Via Pitch: 0.5600
 [INFO GRT-0088] Layer Metal5  Track-Pitch = 0.5600  line-2-Via Pitch: 0.5600
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 27
+[INFO GRT-0004] Blockages: 54
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 3
 [INFO GRT-0002] Maximum degree: 3
@@ -32,31 +32,31 @@
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 Metal1     Horizontal          0             0          0.00%
-Metal2     Vertical       194434        194435          -0.00%
-Metal3     Horizontal     194435        194435          0.00%
-Metal4     Vertical       195702        195702          0.00%
-Metal5     Horizontal     194600        194600          0.00%
+Metal2     Vertical       178472        178476          -0.00%
+Metal3     Horizontal     179063        179063          0.00%
+Metal4     Vertical       179894        179894          0.00%
+Metal5     Horizontal     179294        179294          0.00%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 3
+[INFO GRT-0197] Via related to pin nodes: 11
 [INFO GRT-0198] Via related Steiner nodes: 0
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 5
-[INFO GRT-0112] Final usage 3D: 36
+[INFO GRT-0111] Final number of vias: 13
+[INFO GRT-0112] Final usage 3D: 85
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
 Metal1               0             0            0.00%             0 /  0 /  0
-Metal2          194435             3            0.00%             0 /  0 /  0
-Metal3          194435            18            0.01%             0 /  0 /  0
-Metal4          195702             0            0.00%             0 /  0 /  0
-Metal5          194600             0            0.00%             0 /  0 /  0
+Metal2          178476            20            0.01%             0 /  0 /  0
+Metal3          179063            26            0.01%             0 /  0 /  0
+Metal4          179894             0            0.00%             0 /  0 /  0
+Metal5          179294             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           779172            21            0.00%             0 /  0 /  0
+Total           716727            46            0.01%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 193 um
-[INFO GRT-0014] Routed nets: 1
+[INFO GRT-0018] Total wirelength: 428 um
+[INFO GRT-0014] Routed nets: 4
 [WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer Via1
 [WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer Via1
 [WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer Via2
@@ -79,15 +79,15 @@ Total           779172            21            0.00%             0 /  0 /  0
 [INFO DRT-0168] Init region query.
 [INFO DRT-0033] Poly2 shape region query size = 0.
 [INFO DRT-0033] CON shape region query size = 0.
-[INFO DRT-0033] Metal1 shape region query size = 15.
+[INFO DRT-0033] Metal1 shape region query size = 54.
 [INFO DRT-0033] Via1 shape region query size = 0.
-[INFO DRT-0033] Metal2 shape region query size = 30.
+[INFO DRT-0033] Metal2 shape region query size = 60.
 [INFO DRT-0033] Via2 shape region query size = 0.
-[INFO DRT-0033] Metal3 shape region query size = 3.
+[INFO DRT-0033] Metal3 shape region query size = 6.
 [INFO DRT-0033] Via3 shape region query size = 0.
-[INFO DRT-0033] Metal4 shape region query size = 3.
+[INFO DRT-0033] Metal4 shape region query size = 6.
 [INFO DRT-0033] Via4 shape region query size = 0.
-[INFO DRT-0033] Metal5 shape region query size = 7.
+[INFO DRT-0033] Metal5 shape region query size = 16.
 [INFO DRT-0033] Via5 shape region query size = 0.
 [INFO DRT-0033] MetalTop shape region query size = 0.
 [WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
@@ -101,7 +101,7 @@ Total           779172            21            0.00%             0 /  0 /  0
 [INFO GRT-0088] Layer Metal4  Track-Pitch = 0.5600  line-2-Via Pitch: 0.5600
 [INFO GRT-0088] Layer Metal5  Track-Pitch = 0.5600  line-2-Via Pitch: 0.5600
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 27
+[INFO GRT-0004] Blockages: 54
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 3
 [INFO GRT-0002] Maximum degree: 3
@@ -111,30 +111,30 @@ Total           779172            21            0.00%             0 /  0 /  0
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 Metal1     Horizontal          0             0          0.00%
-Metal2     Vertical       194434        194435          -0.00%
-Metal3     Horizontal     194435        194435          0.00%
-Metal4     Vertical       195702        195702          0.00%
-Metal5     Horizontal     194600        194600          0.00%
+Metal2     Vertical       178472        178476          -0.00%
+Metal3     Horizontal     179063        179063          0.00%
+Metal4     Vertical       179894        179894          0.00%
+Metal5     Horizontal     179294        179294          0.00%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 3
+[INFO GRT-0197] Via related to pin nodes: 10
 [INFO GRT-0198] Via related Steiner nodes: 0
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 5
-[INFO GRT-0112] Final usage 3D: 34
+[INFO GRT-0111] Final number of vias: 16
+[INFO GRT-0112] Final usage 3D: 96
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
 Metal1               0             0            0.00%             0 /  0 /  0
-Metal2          194435             1            0.00%             0 /  0 /  0
-Metal3          194435            18            0.01%             0 /  0 /  0
-Metal4          195702             0            0.00%             0 /  0 /  0
-Metal5          194600             0            0.00%             0 /  0 /  0
+Metal2          178476            19            0.01%             0 /  0 /  0
+Metal3          179063            29            0.02%             0 /  0 /  0
+Metal4          179894             0            0.00%             0 /  0 /  0
+Metal5          179294             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           779172            19            0.00%             0 /  0 /  0
+Total           716727            48            0.01%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 176 um
-[INFO GRT-0014] Routed nets: 1
+[INFO GRT-0018] Total wirelength: 478 um
+[INFO GRT-0014] Routed nets: 4
 No differences found.
 No differences found.

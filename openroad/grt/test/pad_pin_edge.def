@@ -4,19 +4,41 @@ BUSBITCHARS "[]" ;
 DESIGN pad_pin_edge ;
 UNITS DISTANCE MICRONS 2000 ;
 DIEAREA ( 0 0 ) ( 2000000 2000000 ) ;
-COMPONENTS 4 ;
+# pad faces east, pad2 north, pad3 south, and pad4 west.
+COMPONENTS 10 ;
 - pad_s asig_pad + FIXED ( 0 775000 ) E ;
 - pad asig_pad + FIXED ( 0 925000 ) E ;
 - pad_n asig_pad + FIXED ( 0 1075000 ) E ;
+- pad2 asig_pad + FIXED ( 925000 0 ) N ;
+- pad3 asig_pad + FIXED ( 925000 1300000 ) S ;
+- pad4 asig_pad + FIXED ( 1300000 925000 ) W ;
 - buf gf180mcu_fd_sc_mcu7t5v0__buf_1 + PLACED ( 1000000 1000000 ) N ;
+- buf2 gf180mcu_fd_sc_mcu7t5v0__buf_1 + PLACED ( 960000 840000 ) N ;
+- buf3 gf180mcu_fd_sc_mcu7t5v0__buf_1 + PLACED ( 1040000 1160000 ) N ;
+- buf4 gf180mcu_fd_sc_mcu7t5v0__buf_1 + PLACED ( 1160000 960000 ) N ;
 END COMPONENTS
-PINS 1 ;
+PINS 4 ;
 - io + NET net1 + DIRECTION INOUT + USE SIGNAL
   + PORT
     + LAYER Metal5 ( -69500 -73000 ) ( 69500 73000 )
     + FIXED ( 69500 1000000 ) N ;
+- io2 + NET net2 + DIRECTION INOUT + USE SIGNAL
+  + PORT
+    + LAYER Metal5 ( -73000 -69500 ) ( 73000 69500 )
+    + FIXED ( 1000000 69500 ) N ;
+- io3 + NET net3 + DIRECTION INOUT + USE SIGNAL
+  + PORT
+    + LAYER Metal5 ( -73000 -69500 ) ( 73000 69500 )
+    + FIXED ( 1000000 1930500 ) N ;
+- io4 + NET net4 + DIRECTION INOUT + USE SIGNAL
+  + PORT
+    + LAYER Metal5 ( -69500 -73000 ) ( 69500 73000 )
+    + FIXED ( 1930500 1000000 ) N ;
 END PINS
-NETS 1 ;
+NETS 4 ;
 - net1 ( PIN io ) ( pad ASIG5V ) ( buf I ) + USE SIGNAL ;
+- net2 ( PIN io2 ) ( pad2 ASIG5V ) ( buf2 I ) + USE SIGNAL ;
+- net3 ( PIN io3 ) ( pad3 ASIG5V ) ( buf3 I ) + USE SIGNAL ;
+- net4 ( PIN io4 ) ( pad4 ASIG5V ) ( buf4 I ) + USE SIGNAL ;
 END NETS
 END DESIGN
