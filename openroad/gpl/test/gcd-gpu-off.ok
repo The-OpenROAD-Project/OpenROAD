@@ -30,8 +30,8 @@
 [INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
 [INFO GPL-0051] Source of initial instance position counters:
 	Odb location = 0	Core center = 294	Region center = 0
-[ERROR GPL-0335] OpenROAD was built with GPU support (--config=gpu) and needs a usable CUDA device, even with ENABLE_GPU=0: no CUDA-capable device is detected.
-GPL-0335
+[ERROR GPL-0336] OpenROAD was built with GPU support (--config=gpu) and needs a usable CUDA device, even with ENABLE_GPU=0: no CUDA-capable device is detected.
+GPL-0336
     while executing
 "gpl::replace_nesterov_place_cmd [array get keys] [array get flags]"
     (procedure "global_placement" line 24)

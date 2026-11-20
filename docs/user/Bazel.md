@@ -565,7 +565,7 @@ hermetic OpenROAD binary. The `kokkos` module writes its configuration headers
 - A `--config=gpu` binary needs a usable CUDA device even with `ENABLE_GPU=0`.
   `global_placement` and `cluster_flops` always initialize Kokkos for their
   host loops, and Kokkos starts every compiled backend, CUDA included. Without
-  a device they stop with `GPL-0335`. The `gcd-gpu-off` and
+  a device they stop with `GPL-0336`. The `gcd-gpu-off` and
   `mbff_clock_power_on-gpu-off` tests check this with `CUDA_VISIBLE_DEVICES=""`.
 - Host-side FFTs on the GPU path run on `Kokkos::Serial`. The Bazel `@fftw`
   has no threads library, so FFTW's threaded planner is unavailable.

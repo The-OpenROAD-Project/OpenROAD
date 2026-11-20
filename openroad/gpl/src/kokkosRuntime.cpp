@@ -32,7 +32,7 @@ void checkKokkosDevice(utl::Logger* logger)
   if (err != cudaSuccess || count == 0) {
     logger->error(
         utl::GPL,
-        335,
+        336,
         "OpenROAD was built with GPU support (--config=gpu) and "
         "needs a usable CUDA device, even with ENABLE_GPU=0: {}.",
         err != cudaSuccess ? cudaGetErrorString(err) : "no CUDA device found");

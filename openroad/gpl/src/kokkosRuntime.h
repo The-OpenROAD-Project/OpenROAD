@@ -21,7 +21,7 @@ void ensureKokkosInitialized(std::optional<int> num_threads = {});
 
 // OpenMP supports per-instance sizing. Threads uses its initialization-time
 // pool. When Kokkos is built with CUDA (--config=gpu), initializing it needs a
-// usable CUDA device even with ENABLE_GPU=0; without one this reports GPL-0335
+// usable CUDA device even with ENABLE_GPU=0; without one this reports GPL-0336
 // through logger.
 Kokkos::DefaultHostExecutionSpace hostExecutionSpace(utl::Logger* logger,
                                                      int num_threads);

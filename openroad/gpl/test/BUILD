@@ -73,7 +73,7 @@ GPU_TESTS = [
 ]
 
 # ENABLE_GPU=0 on a --config=gpu build with CUDA hidden. Each <name>-gpu-off.tcl
-# must stop with GPL-0335 (a GPU build needs a CUDA device even with
+# must stop with GPL-0336 (a GPU build needs a CUDA device even with
 # ENABLE_GPU=0) rather than a raw Kokkos/CUDA error. Maps each test to the
 # Tcl scripts it sources, which :test_resources excludes.
 GPU_OFF_TESTS = {
