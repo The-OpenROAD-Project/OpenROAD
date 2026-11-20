@@ -5,14 +5,14 @@
 
 #include <limits>
 
-#include "Eigen/Core"
-#include "Eigen/IterativeLinearSolvers"
-#include "Eigen/SparseCore"
 #include "omp.h"
 
 namespace gpl {
 namespace {
 
+// Eigen symbols come from solver.h's "Eigen/*" headers; Eigen has no
+// IWYU-mappable headers for misc-include-cleaner.
+// NOLINTBEGIN(misc-include-cleaner)
 float solveAxis(int maxSolverIter,
                 const SMatrix& placeInstForceMatrix,
                 const Eigen::VectorXf& fixedInstForceVec,
@@ -44,6 +44,7 @@ float solveAxis(int maxSolverIter,
   instLocVec = (x + dx).cast<float>();
   return cg.error() * (rhs.norm() / b.norm());
 }
+// NOLINTEND(misc-include-cleaner)
 
 }  // namespace
 
@@ -59,13 +60,15 @@ ResidualError cpuSparseSolve(int maxSolverIter,
                              int threads)
 {
   omp_set_num_threads(threads);
-  return {solveAxis(maxSolverIter,
-                    placeInstForceMatrixX,
-                    fixedInstForceVecX,
-                    instLocVecX),
-          solveAxis(maxSolverIter,
-                    placeInstForceMatrixY,
-                    fixedInstForceVecY,
-                    instLocVecY)};
+  return {
+      .x = solveAxis(maxSolverIter,
+                     placeInstForceMatrixX,
+                     fixedInstForceVecX,
+                     instLocVecX),
+      .y = solveAxis(maxSolverIter,
+                     placeInstForceMatrixY,
+                     fixedInstForceVecY,
+                     instLocVecY),
+  };
 }
 }  // namespace gpl
