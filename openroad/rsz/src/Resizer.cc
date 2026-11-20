@@ -86,6 +86,7 @@
 #include "sta/Path.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PortDirection.hh"
+#include "sta/PowerClass.hh"
 #include "sta/Scene.hh"
 #include "sta/Sdc.hh"
 #include "sta/SdcClass.hh"
@@ -507,8 +508,13 @@ void Resizer::removeBuffers(const sta::InstanceSeq& insts)
       }
     }
   } else {
-    // remove only select buffers specified by user
+    // Ignore repeated instance names; the same instance would otherwise be
+    // checked after it was already removed.
+    std::set<const sta::Instance*> seen;
     for (const sta::Instance* buffer : insts) {
+      if (!seen.insert(buffer).second) {
+        continue;
+      }
       if (removeBufferIfPossible(const_cast<sta::Instance*>(buffer),
                                  /* don't honor dont touch */ false)) {
         removed_buffer_count++;
@@ -1972,6 +1978,179 @@ void Resizer::reportBuffers(bool filtered)
   logger_->report("{:*>80}", "");
 }
 
+// report_power without activity: per primary power pin, the state-dependent
+// values weigh equally instead of by state duty. That skips the design-wide
+// activity propagation of the first power query.
+double Resizer::libertyLeakage(sta::LibertyCell* cell)
+{
+  struct PgLeakage
+  {
+    double cond_sum = 0;
+    int cond_count = 0;
+    double uncond = 0;
+  };
+  std::map<const sta::LibertyPort*, PgLeakage> pg_leakages;
+  for (const sta::LeakagePower& pwr : cell->leakagePowers()) {
+    const sta::LibertyPort* pg_port = pwr.relatedPgPort();
+    if (pg_port != nullptr
+        && pg_port->pwrGndType() != sta::PwrGndType::primary_power) {
+      continue;
+    }
+    PgLeakage& pg_leakage = pg_leakages[pg_port];
+    if (pwr.when() != nullptr) {
+      pg_leakage.cond_sum += pwr.power();
+      pg_leakage.cond_count++;
+    } else {
+      pg_leakage.uncond = pwr.power();
+    }
+  }
+  if (pg_leakages.empty()) {
+    float leakage = 0;
+    bool exists = false;
+    cell->leakagePower(leakage, exists);
+    return exists ? leakage : 0.0;
+  }
+  double leakage = 0;
+  for (const auto& [pg_port, pg_leakage] : pg_leakages) {
+    leakage += pg_leakage.cond_count > 0
+                   ? pg_leakage.cond_sum / pg_leakage.cond_count
+                   : pg_leakage.uncond;
+  }
+  return leakage;
+}
+
+std::vector<VTUsage> Resizer::vtUsage(odb::dbModule* module,
+                                      const std::vector<std::string>& vt_order,
+                                      const bool activity_weighted)
+{
+  const sta::Scene* scene = sta_->cmdScene();
+  std::map<std::string, VTUsage> usage_by_name;
+  for (odb::dbInst* inst : module->getLeafInsts()) {
+    odb::dbMaster* master = inst->getMaster();
+    // Fillers, taps, endcaps, tie cells, and macros would skew the ratio.
+    if (master->getType() != odb::dbMasterType::CORE) {
+      continue;
+    }
+    VTUsage& vt_usage = usage_by_name[cellVTType(master).vt_name];
+    VTMasterUsage& master_usage = vt_usage.masters[master];
+    vt_usage.count++;
+    vt_usage.area += master->getArea();
+    master_usage.count++;
+    if (activity_weighted) {
+      master_usage.leakage
+          += sta_->power(db_network_->dbToSta(inst), scene).leakage();
+    }
+  }
+
+  std::vector<VTUsage> usage;
+  for (auto& [vt_name, vt_usage] : usage_by_name) {
+    for (auto& [master, master_usage] : vt_usage.masters) {
+      sta::LibertyCell* cell
+          = db_network_->libertyCell(db_network_->dbToSta(master));
+      if (!activity_weighted && cell != nullptr) {
+        master_usage.leakage
+            = master_usage.count
+              * libertyLeakage(cell->sceneCell(scene, sta::MinMax::max()));
+      }
+      vt_usage.leakage += master_usage.leakage;
+    }
+    vt_usage.vt_name = vt_name;
+    usage.push_back(std::move(vt_usage));
+  }
+  // The map is in name order, which the stable sort keeps for the rest.
+  std::ranges::stable_sort(usage, {}, [&](const VTUsage& vt_usage) {
+    return std::pair(std::ranges::find(vt_order, vt_usage.vt_name),
+                     vt_usage.vt_name == "-");
+  });
+  return usage;
+}
+
+void Resizer::reportVTUsage(odb::dbModule* module,
+                            const std::vector<std::string>& vt_order,
+                            const bool activity_weighted,
+                            const bool verbose)
+{
+  const std::vector<VTUsage> usage
+      = vtUsage(module, vt_order, activity_weighted);
+  for (const std::string& vt_name : vt_order) {
+    if (std::ranges::find(usage, vt_name, &VTUsage::vt_name) == usage.end()) {
+      logger_->warn(
+          RSZ, 3281, "No cells of VT type {} from -vt_order.", vt_name);
+    }
+  }
+  odb::dbBlock* block = module->getOwner();
+  const std::string title = "VT type report:";
+
+  int total_count = 0;
+  int64_t total_area = 0;
+  double total_leakage = 0;
+  size_t name_width = title.size();
+  for (const VTUsage& vt_usage : usage) {
+    total_count += vt_usage.count;
+    total_area += vt_usage.area;
+    total_leakage += vt_usage.leakage;
+    name_width = std::max(name_width, vt_usage.vt_name.size() + 2);
+    if (verbose) {
+      for (const auto& [master, master_usage] : vt_usage.masters) {
+        name_width = std::max(name_width, master->getName().size() + 4);
+      }
+    }
+  }
+
+  auto percent = [](const double part, const double total) {
+    return total > 0 ? 100.0 * part / total : 0.0;
+  };
+  auto report_row = [&](const std::string& indent,
+                        const std::string& name,
+                        const int count,
+                        const int64_t area,
+                        const double leak) {
+    logger_->report(
+        "{}{:<{}} {:>8} {:>7.2f}% {:>12.2f} {:>7.2f}% {:>12.3e} {:>7.2f}%",
+        indent,
+        name,
+        name_width - indent.size(),
+        count,
+        percent(count, total_count),
+        block->dbuAreaToMicrons(area),
+        percent(area, total_area),
+        leak,
+        percent(leak, total_leakage));
+  };
+
+  if (block->getTopModule() != module) {
+    logger_->report("VT type report for {} ({})",
+                    module->getModInst()->getHierarchicalName(),
+                    module->getName());
+  }
+  logger_->report("{:<{}} {:>8} {:>8} {:>12} {:>8} {:>12} {:>8}",
+                  title,
+                  name_width,
+                  "Count",
+                  "Count%",
+                  "Area",
+                  "Area%",
+                  "Leakage(W)",
+                  "Leak%");
+  for (const VTUsage& vt_usage : usage) {
+    report_row("  ",
+               vt_usage.vt_name,
+               vt_usage.count,
+               vt_usage.area,
+               vt_usage.leakage);
+    if (verbose) {
+      for (const auto& [master, master_usage] : vt_usage.masters) {
+        report_row("    ",
+                   master->getName(),
+                   master_usage.count,
+                   master_usage.count * master->getArea(),
+                   master_usage.leakage);
+      }
+    }
+  }
+  report_row("  ", "Total", total_count, total_area, total_leakage);
+}
+
 void Resizer::reportDelayEstimatorAccuracy(sta::Instance* inst,
                                            sta::LibertyCell* replacement,
                                            const std::string& estimator,
@@ -2182,6 +2361,12 @@ sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
             != cellVTType(equiv_cell_master).vt_index) {
           continue;
         }
+      }
+
+      // Keep data and clock buffers disjoint during gate sizing.
+      if (source_cell->isBuffer() && equiv_cell->isBuffer()
+          && getBufferUse(source_cell) != getBufferUse(equiv_cell)) {
+        continue;
       }
 
       if (match_cell_footprint_) {
@@ -7767,6 +7952,7 @@ void Resizer::setClockBufferString(const std::string& clk_str)
 {
   clock_buffer_string_ = clk_str;
   clock_buffer_footprint_.clear();
+  swappable_cells_cache_.clear();
   logger_->info(RSZ, 205, "Clock buffer string set to '{}'", clk_str);
 }
 
@@ -7774,6 +7960,7 @@ void Resizer::setClockBufferFootprint(const std::string& footprint)
 {
   clock_buffer_footprint_ = footprint;
   clock_buffer_string_.clear();
+  swappable_cells_cache_.clear();
   logger_->info(RSZ, 206, "Clock buffer footprint set to '{}'", footprint);
 }
 
@@ -7781,6 +7968,7 @@ void Resizer::resetClockBufferPattern()
 {
   clock_buffer_string_.clear();
   clock_buffer_footprint_.clear();
+  swappable_cells_cache_.clear();
   logger_->info(RSZ, 207, "Clock buffer string and footprint have been reset");
 }
 
