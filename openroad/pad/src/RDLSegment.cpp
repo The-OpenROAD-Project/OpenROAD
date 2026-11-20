@@ -14,7 +14,7 @@
 #include "RDLNet.h"
 #include "RDLRouter.h"
 #include "boost/geometry/geometry.hpp"
-#include "boost/polygon/polygon_90_set_data.hpp"
+#include "boost/polygon/polygon.hpp"
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
