@@ -183,9 +183,9 @@ struct NetEstimate : EvalCounts
 constexpr int kEstimateDbu = 100000;
 
 // Merges overlapping pads of [first, end) of `boxes`: two boxes of one net
-// on one conductor layer, neither at least twice as long as wide, whose
-// union fills at least kPadFill of their bounding box become that bounding
-// box, so that a via stack's pads count as one shape with two ends.
+// on one conductor layer, neither a pin nor at least twice as long as wide,
+// whose union fills at least kPadFill of their bounding box become that
+// bounding box, so that a via stack's pads count as one shape with two ends.
 // Returns, for each box left in [first, end), the index of the first box it
 // came from.
 constexpr double kPadFill = 0.9;

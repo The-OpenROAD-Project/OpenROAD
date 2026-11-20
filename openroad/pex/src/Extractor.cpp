@@ -338,7 +338,9 @@ void Extractor::checkModel(const std::vector<NetIndex>& work) const
   std::set<int> used;
   for (const NetIndex n : work) {
     for (int b = boxes_.net_first[n]; b < boxes_.net_first[n + 1]; b++) {
-      used.insert(boxes_.boxes[b].layer);
+      if (!boxes_.pin(b)) {
+        used.insert(boxes_.boxes[b].layer);
+      }
     }
   }
   std::string missing;

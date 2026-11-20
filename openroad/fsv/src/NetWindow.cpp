@@ -165,7 +165,7 @@ NetWindow readNetWindow(odb::dbBlock* block,
     result.clipped += cut ? 1 : 0;
     return true;
   };
-  // The neighbours' instance pins when they are context.
+  // The neighbors' instance pins when they are context.
   std::vector<Obstruction> pin_obstructions;
   for (odb::dbNet* net : block->getNets()) {
     if (target_ids.contains(net->getId())) {
@@ -192,6 +192,10 @@ NetWindow readNetWindow(odb::dbBlock* block,
   // obstructions clear of those as well.
   std::vector<Box> net_boxes = geometry.boxes();
   for (size_t t = 0; t < own_pins.size(); t++) {
+    if (own_pins[t].empty()) {
+      result.pins.push_back(-1);
+      continue;
+    }
     // A via landing on a pin touches it from above or below: it trims the
     // pin as if on the pin's layer.
     std::set<std::pair<double, double>> pin_layers;

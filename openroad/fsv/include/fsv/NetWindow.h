@@ -35,7 +35,7 @@ struct NetWindowOptions
   // the targets' height.
   double margin = -1;
   // Instance pins as context: a cell's pins are counted in its library
-  // timing model, not in the net. Every neighbour's instance pins join the
+  // timing model, not in the net. Every neighbor's instance pins join the
   // grounded obstructions, and each target's own form a net of their own
   // (named by pinsNetName), trimmed clear of the nets' shapes as
   // obstructions are. The target's routing then has the total of its

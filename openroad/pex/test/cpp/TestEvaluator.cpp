@@ -372,6 +372,26 @@ TEST(Evaluator, NeighborEndsBeside)
   EXPECT_NEAR(joined.couplings.at(b), (2 * 2) + 0.3, 1e-9);
 }
 
+// Neighbor ends take no more than the wire's ground: a short wire between
+// many of them keeps a ground of zero.
+TEST(Evaluator, NeighborEndsKeepGroundPositive)
+{
+  const fsv::Stack stack = twoLayers();
+  const Model model = constantModel();
+  fsv::Geometry g;
+  const int a = g.addNet("a");
+  const int b = g.addNet("b");
+  g.addBox(a, {.lo = {0, 0, 1}, .hi = {0.1, 0.05, 2}});
+  for (const double x : {0.01, 0.04, 0.07}) {
+    g.addBox(b, {.lo = {x, 0.35, 1}, .hi = {x + 0.02, 0.36, 2}});
+    g.addBox(b, {.lo = {x, -0.31, 1}, .hi = {x + 0.02, -0.3, 2}});
+  }
+  const NetEstimate est = estimate(g, stack, model, a, {.diagonal_depth = 0});
+  // 10 per µm over 0.1 µm and 0.5 per end, against twelve ends of 0.3.
+  EXPECT_NEAR(est.ground, 0, 1e-9);
+  EXPECT_GT(est.couplings.at(b), 12 * 0.3);
+}
+
 // A crossing between the wire and a farther plane keeps its coupling: the
 // plane stands for the uncovered rest of the pieces beside it.
 TEST(Evaluator, CrossingInFrontOfAPlane)

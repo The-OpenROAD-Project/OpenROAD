@@ -491,9 +491,10 @@ class Wire
   // The ends of the lateral neighbors of other nets that this wire runs
   // past. The end tables give such an end's coupling to the wire running
   // past it; from the wire's side that coupling is the same, by
-  // reciprocity, and it comes off the wire's ground. The neighbor's end
-  // takes the wire's covers there and an open side away from the wire.
-  void addNeighborEnds() const;
+  // reciprocity, and it comes off the wire's ground, as far as the ground
+  // added from `start` in out_ goes. The neighbor's end takes the wire's
+  // covers there and an open side away from the wire.
+  void addNeighborEnds(size_t start) const;
 
   // The nearest shape on the layer beyond the end face at x, over the part
   // of the face it overlaps: its box (or -1) and gap.
@@ -600,6 +601,7 @@ class Wire
 
 void Wire::estimate()
 {
+  const size_t start = out_.size();
   const std::vector<int> edges(cuts_.begin(), cuts_.end());
   for (size_t i = 0; i + 1 < edges.size(); i++) {
     if (insideOther(edges[i], edges[i + 1])) {
@@ -616,7 +618,7 @@ void Wire::estimate()
   addEnd(a0_, start_below, start_above);
   const auto [end_below, end_above] = coversOn(a1_ - d, a1_);
   addEnd(a1_, end_below, end_above);
-  addNeighborEnds();
+  addNeighborEnds(start);
 }
 
 void Wire::addCorners(const int x0,
@@ -1321,8 +1323,14 @@ bool Wire::endJoined(const int box,
   return false;
 }
 
-void Wire::addNeighborEnds() const
+void Wire::addNeighborEnds(const size_t start) const
 {
+  double ground_left = 0;
+  for (size_t k = start; k < out_.size(); k++) {
+    if (out_[k].other < 0) {
+      ground_left += out_[k].value;
+    }
+  }
   const int d = endSpan();
   for (const bool on_left : {true, false}) {
     const std::vector<Lateral>& side = on_left ? left_ : right_;
@@ -1346,11 +1354,12 @@ void Wire::addNeighborEnds() const
         const int x = at_lo ? n0 : n1;
         // This wire runs on past the end by more than its own end's span,
         // which would otherwise take the neighbor at its end.
-        if (at_lo ? (x - d < a0_ || x >= a1_) : (x + d > a1_ || x <= a0_)) {
+        if (x - d < a0_ || x + d > a1_) {
           continue;
         }
         const int t0 = at_lo ? x : x - d;
-        if (nearest(side, t0, t0 + d) != &n
+        // A longer box of the net counts this wire there.
+        if (insideOther(t0, t0 + d) || nearest(side, t0, t0 + d) != &n
             || endJoined(n.box, x, at_lo ? x : x - wn, at_lo ? x + wn : x)) {
           continue;
         }
@@ -1376,7 +1385,9 @@ void Wire::addNeighborEnds() const
                   });
         // The field the end draws comes off this wire's ground beside it.
         couple(n.box, Source::kEndLateral, weight * value);
-        ground(Ground::kEnd, -weight * value);
+        const double taken = std::clamp(weight * value, 0.0, ground_left);
+        ground_left -= taken;
+        ground(Ground::kEnd, -taken);
       }
     }
   }
@@ -1742,7 +1753,8 @@ void Evaluator::evaluate(const std::vector<EvalBox>& boxes,
 std::vector<int> mergePads(std::vector<EvalBox>& boxes, const size_t first)
 {
   auto pad = [](const EvalBox& b) {
-    return b.layer >= 0 && b.rect.maxDXDY() < 2 * int64_t{b.rect.minDXDY()};
+    return b.layer >= 0 && !b.pin
+           && b.rect.maxDXDY() < 2 * int64_t{b.rect.minDXDY()};
   };
   // The pads by net, layer and left edge; each absorbs the pads after it
   // that start before it ends.
@@ -1853,13 +1865,19 @@ NetEstimate estimate(const fsv::Geometry& geometry,
                           units(box.hi[1])),
     });
   }
+  // Pins are marked before the merge, which leaves them as they are.
+  if (pins != kNullNetIndex) {
+    for (EvalBox& b : boxes) {
+      if (b.net == pins) {
+        b.net = target;
+        b.pin = true;
+      }
+    }
+  }
   mergePads(boxes);
   for (int b = 0; std::cmp_less(b, boxes.size()); b++) {
-    if (boxes[b].net == target) {
+    if (boxes[b].net == target && !boxes[b].pin) {
       mine.push_back(b);
-    } else if (pins != kNullNetIndex && boxes[b].net == pins) {
-      boxes[b].net = target;
-      boxes[b].pin = true;
     }
   }
   const int n = static_cast<int>(boxes.size());
