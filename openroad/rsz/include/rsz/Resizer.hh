@@ -759,11 +759,13 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   int findMaxSteinerDist(sta::Vertex* drvr, const sta::Scene* corner);
   float driveResistance(const sta::Pin* drvr_pin) const;
   float bufferDriveResistance(const sta::LibertyCell* buffer) const;
+  // Number of VT categories among the usable (non-dont_use) buffers.
   int vtCategoryCount() const;
   // True when a VT swap can apply to cell: more than one usable VT, or the
   // cell itself is dont_use and has an equivalent in a usable VT.
   bool canVtSwap(sta::LibertyCell* cell);
-  // Number of VT categories in the library, dont_use ones included.
+  // Number of identified VT categories among all buffers, dont_use ones
+  // included.
   int vtCategoryCountWithDontUse() const;
   float cellDriveResistance(const sta::LibertyCell* cell) const;
 
