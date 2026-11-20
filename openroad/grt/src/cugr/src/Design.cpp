@@ -30,6 +30,8 @@ Design::Design(odb::dbDatabase* db,
                const int min_routing_layer,
                const int max_routing_layer,
                const odb::PtrSet<odb::dbNet>& clock_nets,
+               const odb::PtrSet<odb::dbNet>& selected_nets,
+               const int skip_large_fanout,
                const bool verbose)
     : block_(db->getChip()->getBlock()),
       tech_(db->getTech()),
@@ -38,6 +40,8 @@ Design::Design(odb::dbDatabase* db,
       min_routing_layer_(min_routing_layer),
       max_routing_layer_(max_routing_layer),
       clock_nets_(clock_nets),
+      selected_nets_(selected_nets),
+      skip_large_fanout_(skip_large_fanout),
       verbose_(verbose)
 {
   read();
@@ -92,6 +96,15 @@ void Design::readNetlist()
   for (odb::dbNet* db_net : block_->getNets()) {
     if (db_net->isSpecial() || db_net->getSigType().isSupply()
         || !db_net->getSWires().empty() || db_net->isConnectedByAbutment()) {
+      continue;
+    }
+    // Same selection as GlobalRouter::findNets: the timing update estimates
+    // parasitics for every routed net, so a net the global router dropped
+    // must not be routed here either.
+    if (!selected_nets_.empty() && !selected_nets_.contains(db_net)) {
+      continue;
+    }
+    if (std::cmp_greater(db_net->getTermCount(), skip_large_fanout_)) {
       continue;
     }
 

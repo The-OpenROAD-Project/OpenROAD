@@ -5,8 +5,8 @@
 #include <limits>
 #include <stdexcept>
 
+#include "Model.h"
 #include "gtest/gtest.h"
-#include "pex/Model.h"
 
 namespace pex {
 namespace {

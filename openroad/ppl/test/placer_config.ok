@@ -4,7 +4,7 @@
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 88 connections.
 Found 0 macro blocks.
-[ERROR PPL-0018] -ver_layers or set_place_config -io_pin_ver_layers is required.
+[ERROR PPL-0018] -ver_layers or set_placer_config -io_pin_ver_layers is required.
 PPL-0018
 [ERROR GPL-0192] -io_pin_min_distance_in_tracks requires -io_pin_min_distance or -io_pin_layer_min_distance.
 GPL-0192
@@ -195,5 +195,5 @@ io_pin_corner_avoidance: unset
 io_pin_min_distance: unset
 io_pin_layer_min_distance: unset
 Found 0 macro blocks.
-[ERROR PPL-0017] -hor_layers or set_place_config -io_pin_hor_layers is required.
+[ERROR PPL-0017] -hor_layers or set_placer_config -io_pin_hor_layers is required.
 PPL-0017

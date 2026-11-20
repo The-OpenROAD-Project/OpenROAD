@@ -8,13 +8,13 @@
 #include <utility>
 #include <vector>
 
+#include "Evaluator.h"
+#include "Model.h"
+#include "Patterns.h"
 #include "fsv/Geometry.h"
 #include "fsv/Stack.h"
 #include "gtest/gtest.h"
 #include "odb/geom.h"
-#include "pex/Evaluator.h"
-#include "pex/Model.h"
-#include "pex/Patterns.h"
 
 namespace pex {
 namespace {
