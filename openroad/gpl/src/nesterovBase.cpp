@@ -26,6 +26,7 @@
 #include "boost/random/normal_distribution.hpp"
 #include "boost/random/uniform_int_distribution.hpp"
 #include "densityGradientBackend.h"
+#include "erff.h"
 #include "fft.h"
 #include "gpl/Replace.h"
 #include "hpwlBackend.h"
@@ -5358,9 +5359,13 @@ static float calculateBiVariateNormalCDF(biNormalParameters i)
   const float y1 = (i.meanY - i.ly) / (std::sqrt(2) * i.sigmaY);
   const float y2 = (i.meanY - i.uy) / (std::sqrt(2) * i.sigmaY);
 
-  return 0.25
-         * (std::erf(x1) * std::erf(y1) + std::erf(x2) * std::erf(y2)
-            - std::erf(x1) * std::erf(y2) - std::erf(x2) * std::erf(y1));
+  // cr_erff rather than std::erf: libm's last bit varies with the host's
+  // glibc version, which would make placement depend on the host.
+  const float ex1 = cr_erff(x1);
+  const float ex2 = cr_erff(x2);
+  const float ey1 = cr_erff(y1);
+  const float ey2 = cr_erff(y2);
+  return 0.25 * (ex1 * ey1 + ex2 * ey2 - ex1 * ey2 - ex2 * ey1);
 }
 //
 // https://codingforspeed.com/using-faster-exponential-approximation/
