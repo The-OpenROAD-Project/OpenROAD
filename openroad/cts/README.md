@@ -77,8 +77,8 @@ clock_tree_synthesis
 | Switch Name | Description |
 | ----- | ----- |
 | `-buf_list` | Tcl list of master cells (buffers) that will be considered when making the wire segments (e.g. `{BUFXX, BUFYY}`). |
-| `-root_buffer` | The master cell of the buffer that serves as root for the clock tree. If this parameter is omitted, the first master cell from `-buf_list` is taken. |
-| `-wire_unit` | Minimum unit distance between buffers for a specific wire. If this parameter is omitted, the code gets the value from ten times the height of `-root_buffer`. |
+| `-root_buf` | The master cell of the buffer that serves as root for the clock tree. If this parameter is omitted, the first master cell from `-buf_list` is taken. |
+| `-wire_unit` | Minimum unit distance between buffers for a specific wire. If this parameter is omitted, the code gets the value from ten times the height of `-root_buf`. |
 | `-distance_between_buffers` | Distance (in microns) between buffers that `cts` should use when creating the tree. When using this parameter, the clock tree algorithm is simplified and only uses a fraction of the segments from the LUT. |
 | `-branching_point_buffers_distance` | Distance (in microns) that a branch has to have in order for a buffer to be inserted on a branch end-point. This requires the `-distance_between_buffers` value to be set. |
 | `-clustering_exponent` | Value that determines the power used on the difference between sink and means on the CKMeans clustering algorithm. The default value is `4`, and the allowed values are integers `[0, MAX_INT]`. |
@@ -177,14 +177,14 @@ set_cts_config
 | `-macro_clustering_max_diameter` | Specifies maximum diameter (in microns) of sink cluster for the macro tree. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-macro_clustering_size` | Specifies the maximum number of sinks per cluster for the macro tree. The default value is `4`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-num_static_layers` | Set the number of static layers. The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
-| `-root_buffer` | The master cell of the buffer that serves as root for the clock tree. If this parameter is omitted, the first master cell from `-buf_list` is taken. |
+| `-root_buf` | The master cell of the buffer that serves as root for the clock tree. If this parameter is omitted, the first master cell from `-buf_list` is taken. |
 | `-sink_buffer_max_cap_derate` | Use this option to control automatic buffer selection. To favor strong(weak) drive strength buffers use a small(large) value.  The default value is `0.01`, meaning that buffers are selected by derating max cap limit by 0.01. The value of 1.0 means no derating of max cap limit.  |
 | `-sink_clustering_levels` | ... |
 | `-sink_clustering_max_diameter` | Specifies maximum diameter (in microns) of sink cluster for the register tree. The allowed values are integers `[0, MAX_INT]`. If this is not specified, the diameter is not used as a hard limit; clusters are grown subject to the same capacitance limit and the resulting maximum cluster diameter is selected automatically. The auto-selected value is data dependent and is not restricted to a fixed set of values such as 50/100/200. |
 | `-sink_clustering_size` | Specifies the maximum number of sinks per cluster for the register tree. The allowed values are integers `[0, MAX_INT]`. If this is not specified, the size is not used as a hard limit; instead clusters are grown subject to a capacitance limit (the sink buffer input capacitance times an internal factor of 10), and the resulting maximum cluster size is selected automatically. The auto-selected value can be any positive integer and is data dependent (it is not restricted to a fixed set of values such as 10/20/30); it is bounded above by an internal cap (default 30, or the sink buffer max fanout when that is smaller). |
 | `-sink_clustering_levels` | ... |
 | `-skip_nets` | Tcl list containing the clock nets to be skipped (e.g. `{net1, net2}`). If the net is a root clock net, the whole clock is skipped, otherwise only the subnet specified is skipped. |
-| `-wire_unit` | Minimum unit distance between buffers for a specific wire. If this parameter is omitted, the code gets the value from ten times the height of `-root_buffer`. |
+| `-wire_unit` | Minimum unit distance between buffers for a specific wire. If this parameter is omitted, the code gets the value from ten times the height of `-root_buf`. |
 
 ### Report CTS configuration
 

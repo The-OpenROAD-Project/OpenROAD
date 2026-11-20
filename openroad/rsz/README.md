@@ -230,7 +230,7 @@ repair_timing
     [-path_group path_group]
     [-skip_pin_swap]
     [-skip_gate_cloning]
-    [-skip_size_down_fanout]
+    [-skip_size_down]
     [-skip_buffering]
     [-skip_buffer_removal]
     [-skip_buffer_to_inverters]
@@ -266,7 +266,7 @@ repair_timing
 | `-path_group` | Restrict setup and hold repair to one path group: `reg2reg`, `in2reg`, `reg2out`, `in2out` or `gated_clock`. Any other name warns and repairs every path group, which is the default. A supported group that the SDC has no `group_path` for is created, so timing reports group paths the same way `repair_timing` optimizes them. |
 | `-skip_pin_swap` | Flag to skip pin swap. The default is to perform pin swap transform during setup fixing. |
 | `-skip_gate_cloning` | Flag to skip gate cloning. The default is to perform gate cloning transform during setup fixing. |
-| `-skip_size_down_fanout` | Flag to skip fanout gate down sizing. The default is to perform non-critical fanout gate down sizing transform during setup fixing. |
+| `-skip_size_down` | Flag to skip fanout gate down sizing. The default is to perform non-critical fanout gate down sizing transform during setup fixing. |
 | `-skip_buffering` | Flag to skip rebuffering and load splitting. The default is to perform rebuffering and load splitting transforms during setup fixing. |
 | `-skip_buffer_removal` | Flag to skip buffer removal.  The default is to perform buffer removal transform during setup fixing. |
 | `-skip_buffer_to_inverters` | Flag to skip buffer-inverters swap.  The default is to perform buffer-to-double inverter replacement transform during setup fixing. |
@@ -437,12 +437,6 @@ The `eliminate_dead_logic` command eliminates dead logic, i.e. it removes standa
 ```tcl
 eliminate_dead_logic
 ```
-
-#### Options
-
-| Switch Name | Description |
-| ----- | ----- |
-| `-verbose` | Print the net names. |
 
 ## Useful Developer Commands
 
