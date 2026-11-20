@@ -28,9 +28,9 @@ float solveAxis(int maxSolverIter,
   if (rhs.squaredNorm() == 0) {
     return 0;
   }
-  Eigen::SparseMatrix<double> reg(a.rows(), a.cols());
-  reg.setIdentity();
-  a += 1e-6 * reg;
+  for (int i = 0; i < a.rows(); ++i) {
+    a.coeffRef(i, i) += 1e-6;
+  }
   Eigen::ConjugateGradient<Eigen::SparseMatrix<double>,
                            Eigen::Lower | Eigen::Upper>
       cg(a);

@@ -484,9 +484,8 @@ void InitialPlace::createSparseMatrix()
 
 void InitialPlace::updateCoordi()
 {
-  const auto clamp = [](double v, int lo, int hi, int cur) {
-    return std::isfinite(v) ? static_cast<int>(std::clamp<double>(v, lo, hi))
-                            : cur;
+  const auto clamp = [](double v, double lo, double hi, int cur) {
+    return std::isfinite(v) ? static_cast<int>(std::clamp(v, lo, hi)) : cur;
   };
   for (auto& inst : pbc_->placeInsts()) {
     int idx = inst->getExtId();
