@@ -2797,7 +2797,8 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
                                sta::Net* net,  // Original Driver Net (flat)
                                int level,
                                sta::Instance* parent_in,
-                               const char* instance_base_name)
+                               const char* instance_base_name,
+                               std::vector<sta::Instance*>* inserted_buffers)
 {
   // Algorithm: Bottom-Up Buffer Tree Insertion
   //
@@ -2897,7 +2898,9 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
 
         if (buf_inst) {
           count++;
-          last_inserted_buffers_.push_back(db_network_->dbToSta(buf_inst));
+          if (inserted_buffers != nullptr) {
+            inserted_buffers->push_back(db_network_->dbToSta(buf_inst));
+          }
 
           sta::LibertyPort *input, *output;
           buffer_cell->bufferPorts(input, output);
@@ -3716,9 +3719,9 @@ int Rebuffer::applyRebufferTreePlan(const RebufferTreePlan& plan,
       plan.tree, plan.flat_net, 1, plan.parent, instance_base_name);
 }
 
-int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
+int Rebuffer::rebufferPin(const sta::Pin* drvr_pin,
+                          std::vector<sta::Instance*>* inserted_buffers)
 {
-  last_inserted_buffers_.clear();
   const ProfileScope profile("buffer_tree_generation");
   RepairSetupProfiler::event("buffer_tree_plan_requests");
   BufferedNetPtr bnet = makeBufferedNet(drvr_pin);
@@ -3785,8 +3788,12 @@ int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
   {
     const ProfileScope apply_profile("apply_buffer_tree");
     RepairSetupProfiler::event("buffer_tree_apply_requests");
-    inserted_count = exportBufferTree(
-        bnet, db_network_->dbToSta(db_net), 1, parent, "rebuffer");
+    inserted_count = exportBufferTree(bnet,
+                                      db_network_->dbToSta(db_net),
+                                      1,
+                                      parent,
+                                      "rebuffer",
+                                      inserted_buffers);
   }
 
   debugPrint(logger_, RSZ, "rebuffer", 2, "-------------------------------");

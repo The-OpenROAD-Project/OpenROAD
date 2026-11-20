@@ -753,16 +753,21 @@ TEST_F(TestResizer, BufferMoveMarksInsertedBuffers)
   MoveCommitter committer(resizer_);
   const Target target;
   MoveResult result;
+  sta::Pin* buffered_pin = nullptr;
   for (sta::Pin* driver_pin : driver_pins) {
     BufferCandidate candidate(resizer_, target, driver_pin);
     result = committer.commit(candidate);
     if (result.accepted) {
+      buffered_pin = driver_pin;
       break;
     }
   }
   ASSERT_TRUE(result.accepted) << "no BufferMove inserted a buffer";
   // The driver comes first, followed by the inserted buffers.
-  ASSERT_GT(result.touched_instances.size(), 1);
+  ASSERT_EQ(result.touched_instances.size(),
+            static_cast<size_t>(result.move_count) + 1);
+  EXPECT_EQ(result.touched_instances.front(),
+            db_network_->instance(buffered_pin));
 
   for (size_t i = 1; i < result.touched_instances.size(); i++) {
     sta::Instance* buffer = result.touched_instances[i];

@@ -110,11 +110,6 @@ class Rebuffer : public sta::dbStaState
   ~Rebuffer() override;
   void fullyRebuffer(sta::Pin* user_pin = nullptr);
   void rebufferNet(const sta::Pin* drvr_pin);
-  // Buffers inserted by the most recent rebufferPin() call.
-  const std::vector<sta::Instance*>& lastInsertedBuffers() const
-  {
-    return last_inserted_buffers_;
-  }
   // Prepare makeRebufferTreePlans() on `corner`.  A worker planner gets its own
   // delay calculator, because OpenSTA's keeps per-call scratch state.
   void initForPlanning(sta::Scene* corner, bool worker = false);
@@ -377,11 +372,13 @@ class Rebuffer : public sta::dbStaState
   std::vector<sta::Instance*> collectImportedTreeBufferInstances(
       sta::Pin* drvr_pin,
       const BufferedNetPtr& imported_tree);
+  // Appends each inserted buffer to `inserted_buffers` when it is given.
   int exportBufferTree(const BufferedNetPtr& choice,
                        sta::Net* net,  // output of buffer.
                        int level,
                        sta::Instance* parent_in,
-                       const char* instance_base_name);
+                       const char* instance_base_name,
+                       std::vector<sta::Instance*>* inserted_buffers = nullptr);
 
   void printProgress(int iteration, bool force, bool end, int remaining) const;
 
@@ -425,7 +422,8 @@ class Rebuffer : public sta::dbStaState
                               int extra_wire_length = 0);
 
   bool hasTopLevelOutputPort(sta::Net* net);
-  int rebufferPin(const sta::Pin* drvr_pin);
+  int rebufferPin(const sta::Pin* drvr_pin,
+                  std::vector<sta::Instance*>* inserted_buffers = nullptr);
 
   utl::Logger* logger_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;
@@ -495,7 +493,6 @@ class Rebuffer : public sta::dbStaState
   static constexpr float relaxation_factor_ = 0.01;
 
   double long_wire_stepping_runtime_ = 0;
-  std::vector<sta::Instance*> last_inserted_buffers_;
 
   // Choose the driver size together with the buffer tree in fullyRebuffer
   // (set_opt_config -rebuffer_size_driver).
