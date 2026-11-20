@@ -51,6 +51,12 @@ build --host_cxxopt "-D_LIBCPP_ASSERTION_SEMANTIC=_LIBCPP_ASSERTION_SEMANTIC_ENF
 # Default to optimized build (-c opt)
 build -c opt
 
+# Compile all C++ objects as PIC once for both static binaries (//:openroad)
+# and shared libraries (Python SWIG bindings) instead of compiling every
+# translation unit twice (.o and .pic.o), so etc/Build.sh, Docker, CI, and
+# developer builds share the same compile action keys in the remote cache.
+build --force_pic
+
 # Settings for --config=opt build: -O3 plus ThinLTO via the toolchain's thin_lto
 # feature. Bazel splits the LTO work into per-object actions that run in parallel
 # and are cached individually, instead of one monolithic link that is redone

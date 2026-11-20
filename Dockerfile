@@ -51,7 +51,13 @@ USER user
 WORKDIR /OpenROAD
 COPY --chown=user:user . .
 # Keep Bazel's build cache out of the published builder image.
-RUN --mount=type=cache,target=/home/user/.cache,uid=9000,gid=9000 <<EOF
+# Callers may pass `--secret id=bazelrc,src=<file>` to inject a temporary
+# user.bazelrc (loaded via `try-import %workspace%/user.bazelrc` in .bazelrc)
+# for remote execution or authenticated remote caching without baking endpoints
+# or credentials into image layers; omitting `--secret` is a no-op.
+RUN --mount=type=cache,target=/home/user/.cache,uid=9000,gid=9000 \
+    --mount=type=secret,id=bazelrc,target=/OpenROAD/user.bazelrc,mode=0444 \
+    <<EOF
 set -e
 OPENROAD_VERSION="${orVersion}" \
     bash ./etc/Build.sh -prefix=/OpenROAD/install -threads=${numThreads}
