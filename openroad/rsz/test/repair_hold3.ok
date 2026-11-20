@@ -9,9 +9,9 @@ worst slack max 1.95
 Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
 --------------------------------------------------------------------------------------
         0 |       0 |       0 |            0 |    +0.0% |  -0.034 |  -0.048 | r2/D
-    final |       0 |       2 |            0 |    +6.3% |   0.010 |   0.000 | r3/D
+    final |       0 |       2 |            0 |    +6.3% |   0.004 |   0.000 | r3/D
 --------------------------------------------------------------------------------------
 [INFO RSZ-0032] Inserted 2 hold buffers.
 Repair timing output passed/skipped equivalence test
-worst slack min 0.01
+worst slack min 0.00
 worst slack max 1.93

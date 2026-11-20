@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <cassert>
 #include <cstdio>
 #include <string>
@@ -8,15 +9,18 @@
 
 #include "dbSdcNetwork.hh"
 #include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbTypes.h"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
+#include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PatternMatch.hh"
+#include "sta/Sdc.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Sta.hh"
 #include "sta/TimingArc.hh"
@@ -526,6 +530,36 @@ TEST_F(TestDbSta, DriverInputPortAcrossNetlistEdits)
 
   EXPECT_EQ(drvr_in_port_name(nd1_drvr_path()), "A2");
   db_network_->checkAxioms();
+}
+
+TEST_F(TestDbSta, LevelsOfLogicExcludesClockTree)
+{
+  readVerilogAndSetup("TestDbSta_LevelsOfLogic.v");
+
+  Clock* clk = sta_->cmdMode()->sdc()->findClock("clk");
+  ASSERT_NE(clk, nullptr);
+
+  auto sorted_depths = [&](bool exclude_buffers, bool exclude_inverters) {
+    std::vector<int> depths
+        = sta_->levelsOfLogic(exclude_buffers, exclude_inverters);
+    std::sort(depths.begin(), depths.end());
+    return depths;
+  };
+
+  // Endpoints: r1/CK (0), r2/CK (0), out (0: r2 excluded),
+  // r1/D (1: in_buf, r1 excluded), r2/D (2: buf1, inv1; r1/r2 excluded).
+  // Propagating the clock tree (clk_buf1 -> clk_buf2) must not add clock
+  // buffers to any path depth, sequential cells are excluded on both ends,
+  // and input-port-launched paths remain unaffected.
+  const std::vector<int> ideal_all = sorted_depths(false, false);
+  EXPECT_EQ(ideal_all, (std::vector<int>{0, 0, 0, 1, 2}));
+
+  sta_->setPropagatedClock(clk, sta_->cmdMode());
+
+  EXPECT_EQ(sorted_depths(false, false), ideal_all);
+  EXPECT_EQ(sorted_depths(true, false), (std::vector<int>{0, 0, 0, 0, 1}));
+  EXPECT_EQ(sorted_depths(false, true), (std::vector<int>{0, 0, 0, 1, 1}));
+  EXPECT_EQ(sorted_depths(true, true), (std::vector<int>{0, 0, 0, 0, 0}));
 }
 
 }  // namespace sta

@@ -4,7 +4,17 @@
 // Estimator basics, cell-swap candidates, thread pool and STA warm-up
 // concurrency.
 
+#include <string>
+#include <vector>
+
 #include "TestResizerMtFixture.hh"
+#include "gtest/gtest.h"
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "rsz/Resizer.hh"
+#include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
+#include "sta/PowerClass.hh"
 
 namespace rsz {
 
@@ -101,6 +111,87 @@ static std::string capacitanceSignature(sta::dbSta* sta, const sta::Pin* pin)
       << cap_slack << ':' << (tr != nullptr ? tr->name() : "null") << ':'
       << (corner != nullptr ? "corner" : "null");
   return oss.str();
+}
+
+TEST_F(TestResizerMt, VTUsageSumsLibertyLeakageByVT)
+{
+  odb::dbTechLayer* lvt_implant = odb::dbTechLayer::create(
+      db_->getTech(), "LVT_IMPLANT", odb::dbTechLayerType::IMPLANT);
+  odb::dbTechLayer* rvt_implant = odb::dbTechLayer::create(
+      db_->getTech(), "RVT_IMPLANT", odb::dbTechLayerType::IMPLANT);
+  ASSERT_NE(lvt_implant, nullptr);
+  ASSERT_NE(rvt_implant, nullptr);
+  for (odb::dbLib* lib : db_->getLibs()) {
+    for (odb::dbMaster* master : lib->getMasters()) {
+      if (master->getType() == odb::dbMasterType::CORE) {
+        odb::dbBox::create(
+            master,
+            master->getName().ends_with("_L") ? lvt_implant : rvt_implant,
+            0,
+            0,
+            10,
+            10);
+      }
+    }
+  }
+
+  // target and path_side_buf are both BUF_X1; make target the only LVT cell.
+  odb::dbMaster* buf_lvt_master = db_->findMaster("BUF_X1_L");
+  ASSERT_NE(buf_lvt_master, nullptr);
+  odb::dbInst* target = block_->findInst("target");
+  odb::dbInst* rvt_buf = block_->findInst("path_side_buf");
+  ASSERT_NE(target, nullptr);
+  ASSERT_NE(rvt_buf, nullptr);
+  ASSERT_TRUE(target->swapMaster(buf_lvt_master));
+
+  const sta::Scene* scene = sta_->cmdScene();
+  auto inst_leakage = [&](odb::dbInst* inst) -> double {
+    sta::LibertyCell* cell
+        = db_network_->libertyCell(db_network_->dbToSta(inst->getMaster()));
+    return Resizer::libertyLeakage(cell->sceneCell(scene, sta::MinMax::max()));
+  };
+  double core_leakage = 0;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->getMaster()->getType() == odb::dbMasterType::CORE) {
+      core_leakage += inst_leakage(inst);
+    }
+  }
+  ASSERT_GT(inst_leakage(target), 0);
+
+  const std::string lvt = resizer_.cellVTType(buf_lvt_master).vt_name;
+  const std::vector<VTUsage> usage
+      = resizer_.vtUsage(block_->getTopModule(), {lvt});
+  ASSERT_EQ(usage.size(), 2u);
+  const VTUsage& lvt_usage = usage[0];
+  const VTUsage& rvt_usage = usage[1];
+  ASSERT_EQ(lvt_usage.vt_name, lvt);
+
+  EXPECT_DOUBLE_EQ(lvt_usage.leakage, inst_leakage(target));
+  EXPECT_DOUBLE_EQ(lvt_usage.masters.at(buf_lvt_master).leakage,
+                   inst_leakage(target));
+  EXPECT_NEAR(
+      lvt_usage.leakage + rvt_usage.leakage, core_leakage, 1e-9 * core_leakage);
+  // The same buffer leaks more in LVT.
+  EXPECT_GT(lvt_usage.leakage, inst_leakage(rvt_buf));
+
+  auto sta_leakage = [&](odb::dbInst* inst) -> double {
+    return sta_->power(db_network_->dbToSta(inst), scene).leakage();
+  };
+  double core_sta_leakage = 0;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->getMaster()->getType() == odb::dbMasterType::CORE) {
+      core_sta_leakage += sta_leakage(inst);
+    }
+  }
+  const std::vector<VTUsage> weighted
+      = resizer_.vtUsage(block_->getTopModule(), {lvt}, true);
+  ASSERT_EQ(weighted.size(), 2u);
+  EXPECT_DOUBLE_EQ(weighted[0].leakage, sta_leakage(target));
+  EXPECT_DOUBLE_EQ(weighted[0].masters.at(buf_lvt_master).leakage,
+                   sta_leakage(target));
+  EXPECT_NEAR(weighted[0].leakage + weighted[1].leakage,
+              core_sta_leakage,
+              1e-9 * core_sta_leakage);
 }
 
 TEST_F(TestResizerMt, BuildEstimatorContextAndEstimateLvtCandidate)

@@ -174,6 +174,22 @@ struct VTLeakageStats
   }
 };
 
+struct VTMasterUsage
+{
+  int count = 0;
+  double leakage = 0;  // Watts
+};
+
+// Instance count, area (DBU^2) and leakage of the cells in one VT category
+struct VTUsage
+{
+  std::string vt_name;
+  int count = 0;
+  int64_t area = 0;
+  double leakage = 0;  // Watts
+  odb::PtrMap<odb::dbMaster, VTMasterUsage> masters;
+};
+
 // Complete analysis data for a library
 struct LibraryAnalysisData
 {
@@ -608,6 +624,18 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                              bool report_all_cells,
                              bool report_vt_equiv);
   void reportBuffers(bool filtered);
+  // CORE leaf instances of module by VT. VTs in vt_order come first, in that
+  // order, then the rest by name; "-" (no VT implant layer) is last unless
+  // vt_order names it.
+  // Leakage (W) of one instance of cell, from liberty only.
+  static double libertyLeakage(sta::LibertyCell* cell);
+  std::vector<VTUsage> vtUsage(odb::dbModule* module,
+                               const std::vector<std::string>& vt_order = {},
+                               bool activity_weighted = false);
+  void reportVTUsage(odb::dbModule* module,
+                     const std::vector<std::string>& vt_order,
+                     bool activity_weighted,
+                     bool verbose);
   void reportDelayEstimatorAccuracyForRebufferTree(sta::Instance* inst,
                                                    sta::Pin* driver_pin,
                                                    int delay_levels);
@@ -1158,7 +1186,6 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   int cloned_gate_count_ = 0;
   int swap_pin_count_ = 0;
   int removed_buffer_count_ = 0;
-  bool exclude_clock_buffers_ = true;
   bool match_cell_footprint_ = false;
   std::string path_group_;
 
