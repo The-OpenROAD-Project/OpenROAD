@@ -67,8 +67,8 @@ TEST_F(TestResizerMtStatetable, RegisterCellReadsStatetables)
   EXPECT_TRUE(hasRole(latch, sta::TimingRole::regClkToQ()));
   EXPECT_FALSE(statetableIsEdgeTriggered(*latch->statetable()));
   EXPECT_FALSE(isRegisterCell(latch));
-  EXPECT_STREQ(registerOutputRejectReason(latch, latch->findLibertyPort("Q")),
-               "transparent_data_arc");
+  EXPECT_EQ(registerOutputRejectReason(latch, latch->findLibertyPort("Q")),
+            RegisterOutputReject::kTransparentDataArc);
 
   // An MBFF with a second statetable (a scan lockup latch) after its
   // register table: OpenSTA keeps only the last, the latch, so a
@@ -90,9 +90,9 @@ TEST_F(TestResizerMtStatetable, RegisterCellReadsStatetables)
   ASSERT_NE(clock_gate, nullptr);
   ASSERT_NE(clock_gate->statetable(), nullptr);
   EXPECT_FALSE(isRegisterCell(clock_gate));
-  EXPECT_STREQ(registerOutputRejectReason(clock_gate,
-                                          clock_gate->findLibertyPort("GCK")),
-               "clock_gate");
+  EXPECT_EQ(registerOutputRejectReason(clock_gate,
+                                       clock_gate->findLibertyPort("GCK")),
+            RegisterOutputReject::kClockGate);
 
   // ff/latch-group cells keep their classification.
   EXPECT_TRUE(isRegisterCell(cell("DFF_X1")));

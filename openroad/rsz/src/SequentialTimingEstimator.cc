@@ -192,20 +192,20 @@ bool statetableIsEdgeTriggered(const sta::Statetable& statetable)
   return true;
 }
 
-const char* registerOutputRejectReason(const sta::LibertyCell* cell,
-                                       const sta::LibertyPort* output)
+RegisterOutputReject registerOutputRejectReason(const sta::LibertyCell* cell,
+                                                const sta::LibertyPort* output)
 {
   if (cell == nullptr || output == nullptr) {
-    return "no_cell_or_output";
+    return RegisterOutputReject::kNoCellOrOutput;
   }
   if (cell->isClockGate()) {
-    return "clock_gate";
+    return RegisterOutputReject::kClockGate;
   }
   if (std::ranges::any_of(cell->sequentials(),
                           [](const sta::Sequential& sequential) {
                             return !sequential.isRegister();
                           })) {
-    return "latch_group";
+    return RegisterOutputReject::kLatchGroup;
   }
 
   // Constrained data inputs: the inputs a setup/hold check lands on.  Not
@@ -228,22 +228,45 @@ const char* registerOutputRejectReason(const sta::LibertyCell* cell,
     const sta::TimingRole* role = arc_set->role()->genericRole();
     if (role == sta::TimingRole::latchEnToQ()
         || role == sta::TimingRole::latchDtoQ()) {
-      return "latch_arc";
+      return RegisterOutputReject::kLatchArc;
     }
     if (role == sta::TimingRole::regClkToQ()) {
       has_clock_to_q = true;
     } else if (!role->isTimingCheck() && role != sta::TimingRole::regSetClr()
                && data_ports.contains(arc_set->from())) {
-      return "transparent_data_arc";
+      return RegisterOutputReject::kTransparentDataArc;
     }
   }
-  return has_clock_to_q ? nullptr : "no_clk_to_q";
+  return has_clock_to_q ? RegisterOutputReject::kNone
+                        : RegisterOutputReject::kNoClkToQ;
+}
+
+const char* registerOutputRejectName(const RegisterOutputReject reason)
+{
+  switch (reason) {
+    case RegisterOutputReject::kNone:
+      return "none";
+    case RegisterOutputReject::kNoCellOrOutput:
+      return "no_cell_or_output";
+    case RegisterOutputReject::kClockGate:
+      return "clock_gate";
+    case RegisterOutputReject::kLatchGroup:
+      return "latch_group";
+    case RegisterOutputReject::kLatchArc:
+      return "latch_arc";
+    case RegisterOutputReject::kTransparentDataArc:
+      return "transparent_data_arc";
+    case RegisterOutputReject::kNoClkToQ:
+      return "no_clk_to_q";
+  }
+  return "unknown";
 }
 
 bool isRegisterOutput(const sta::LibertyCell* cell,
                       const sta::LibertyPort* output)
 {
-  return registerOutputRejectReason(cell, output) == nullptr;
+  return registerOutputRejectReason(cell, output)
+         == RegisterOutputReject::kNone;
 }
 
 bool isRegisterCell(const sta::LibertyCell* cell)
@@ -259,10 +282,10 @@ bool isRegisterCell(const sta::LibertyCell* cell)
     if (!port->direction()->isAnyOutput()) {
       continue;
     }
-    const char* reason = registerOutputRejectReason(cell, port);
-    if (reason == nullptr) {
+    const RegisterOutputReject reason = registerOutputRejectReason(cell, port);
+    if (reason == RegisterOutputReject::kNone) {
       any_register_output = true;
-    } else if (std::string_view(reason) != "no_clk_to_q") {
+    } else if (reason != RegisterOutputReject::kNoClkToQ) {
       return false;
     }
   }
@@ -837,8 +860,9 @@ SequentialTimingEstimator::prepare(Resizer& resizer, const Target& target)
   const sta::LibertyPort* output
       = target_pin != nullptr ? resizer.network()->libertyPort(target_pin)
                               : nullptr;
-  const char* reject_reason = registerOutputRejectReason(cell, output);
-  if (reject_reason != nullptr) {
+  const RegisterOutputReject reject_reason
+      = registerOutputRejectReason(cell, output);
+  if (reject_reason != RegisterOutputReject::kNone) {
     // A cell with a timing-checked input that is not classified as a
     // register is the case to look at: set_debug_level RSZ sequential 1.
     debugPrint(resizer.logger(),
@@ -848,7 +872,7 @@ SequentialTimingEstimator::prepare(Resizer& resizer, const Target& target)
                "no sequential estimator for {} ({}): {}",
                target_pin ? resizer.network()->pathName(target_pin) : "?",
                cell ? cell->name() : "?",
-               reject_reason);
+               registerOutputRejectName(reject_reason));
     return nullptr;
   }
 
