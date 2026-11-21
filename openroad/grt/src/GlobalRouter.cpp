@@ -35,6 +35,7 @@
 #include "Grid.h"
 #include "Net.h"
 #include "Pin.h"
+#include "PinGeometry.h"
 #include "RepairAntennas.h"
 #include "RoutingTracks.h"
 #include "boost/icl/interval.hpp"
@@ -1861,6 +1862,26 @@ bool GlobalRouter::findPinAccessPointPositions(
   return true;
 }
 
+// Keeps the access points whose grid positions are closest to edge.
+static void keepAccessPointsClosestToEdge(
+    const PinEdge edge,
+    std::map<int, std::vector<PointPair>>& ap_positions)
+{
+  int closest = std::numeric_limits<int>::min();
+  for (const auto& [layer, positions] : ap_positions) {
+    for (const PointPair& position : positions) {
+      closest = std::max(closest, coordinateTowardEdge(edge, position.second));
+    }
+  }
+  for (auto& [layer, positions] : ap_positions) {
+    std::erase_if(positions, [&](const PointPair& position) {
+      return coordinateTowardEdge(edge, position.second) != closest;
+    });
+  }
+  std::erase_if(ap_positions,
+                [](const auto& entry) { return entry.second.empty(); });
+}
+
 std::vector<RoutePt> GlobalRouter::findOnGridPositions(
     const Pin& pin,
     bool& has_access_points,
@@ -1876,6 +1897,10 @@ std::vector<RoutePt> GlobalRouter::findOnGridPositions(
   std::vector<RoutePt> positions_on_grid;
 
   if (has_access_points && !ignore_db_access_points) {
+    // Pad and macro pins are reached from outside the cell, at their edge.
+    if (pin.isConnectedToPadOrMacro()) {
+      keepAccessPointsClosestToEdge(pin.getEdge(), ap_positions);
+    }
     for (const auto& [layer, positions] : ap_positions) {
       for (const PointPair& position : positions) {
         pos_on_grid = position.second;
@@ -1930,6 +1955,7 @@ void GlobalRouter::findPins(Net* net)
     computePinPositionOnGrid(
         pin_positions_on_grid, pin, pos_on_grid, has_access_points);
   }
+  net->shareCoveringPinPositions();
 }
 
 void GlobalRouter::computePinPositionOnGrid(
@@ -3384,6 +3410,10 @@ void GlobalRouter::ensurePinsPositions(odb::dbNet* db_net)
   if (!netIsCovered(db_net, pins_not_covered)) {
     Net* net = db_net_map_[db_net];
     for (Pin& pin : net->getPins()) {
+      // A port on a same-net pin's metal takes that pin's position below.
+      if (pin.getCoveringITerm() != nullptr) {
+        continue;
+      }
       if (pins_not_covered.find(pin.getName()) != std::string::npos
           && !findCoveredAccessPoint(net, pin)) {
         bool has_aps;
@@ -3394,6 +3424,7 @@ void GlobalRouter::ensurePinsPositions(odb::dbNet* db_net)
             pin_positions_on_grid, pin, pos_on_grid, has_aps);
       }
     }
+    net->shareCoveringPinPositions();
   }
 }
 
@@ -3431,6 +3462,10 @@ bool GlobalRouter::updateUncoveredPinsPositions(odb::dbNet* db_net,
   pins_not_covered = "";
 
   for (Pin& pin : net->getPins()) {
+    // A port on a same-net pin's metal takes that pin's position below.
+    if (pin.getCoveringITerm() != nullptr) {
+      continue;
+    }
     bool pin_is_covered = false;
     for (const GSegment& seg : segments) {
       if (segmentCoversPin(seg, pin)) {
@@ -3443,6 +3478,7 @@ bool GlobalRouter::updateUncoveredPinsPositions(odb::dbNet* db_net,
       all_covered = false;
     }
   }
+  net->shareCoveringPinPositions();
 
   return all_covered;
 }
