@@ -290,3 +290,20 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "ConnectivityMergeTest",
+    srcs = ["ConnectivityMergeTest.cpp"],
+    data = ["Nangate45/Nangate45_tech.lef"],
+    includes = ["../src"],
+    deps = [
+        "//openroad/drt",
+        "//openroad/drt:drt_impl",
+        "//openroad/dst",
+        "//openroad/odb/src/db",
+        "//openroad/tst:db_fixture",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
