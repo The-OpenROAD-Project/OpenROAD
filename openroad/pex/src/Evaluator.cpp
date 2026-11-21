@@ -14,6 +14,7 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -128,8 +129,6 @@ struct Lateral
   int gap;
   int a0;  // over the wire
   int a1;
-  int e0;  // the whole box
-  int e1;
 };
 
 // The share of a layer's crossings over a piece [x0, x1] that no run
@@ -287,7 +286,8 @@ class Wire
        const Context& context,
        const CoverMap& map,
        std::vector<Contribution>& out,
-       EvalCounts& counts)
+       EvalCounts& counts,
+       const int axis)
       : self_(self),
         shape_(boxes[self]),
         net_(shape_.net),
@@ -307,7 +307,7 @@ class Wire
         diagonal_reach_(context.diagonal_reach[shape_.layer]),
         out_(out),
         counts_(counts),
-        a_(shape_.rect.dx() >= shape_.rect.dy() ? 0 : 1),
+        a_(axis),
         p_(1 - a_),
         a0_(lo(shape_, a_)),
         a1_(hi(shape_, a_)),
@@ -348,11 +348,24 @@ class Wire
                 std::map<int, int>& past_end) const;
 
   // Whether a box of the net counts an overlap with this wire rather than
-  // this wire: the longer one, or the first of two as long.
+  // this wire: never a pin; between two wires the longer one, or the first
+  // of two as long; when either is a pad (not twice as long as wide), the
+  // wider one, then the longer, then the first.
   bool dominates(const int i) const
   {
-    const int ls = boxes_[i].rect.maxDXDY();
-    const int lw = shape_.rect.maxDXDY();
+    if (boxes_[i].pin) {
+      return false;
+    }
+    const odb::Rect& s = boxes_[i].rect;
+    const odb::Rect& w = shape_.rect;
+    auto pad = [](const odb::Rect& r) {
+      return r.maxDXDY() < 2 * int64_t{r.minDXDY()};
+    };
+    if ((pad(s) || pad(w)) && s.minDXDY() != w.minDXDY()) {
+      return s.minDXDY() > w.minDXDY();
+    }
+    const int ls = s.maxDXDY();
+    const int lw = w.maxDXDY();
     return ls > lw || (ls == lw && i < self_);
   }
 
@@ -465,33 +478,43 @@ class Wire
   void addEnd(int x, const Cover& below, const Cover& above) const;
 
   // Whether something of the net on this layer touches the end face at x:
-  // a wire continuing, or a shape flush against a side over the end's
-  // last width [e0, e1], which makes the end the outer corner of a bend.
-  bool endJoined(int x, int e0, int e1) const;
+  // a wire continuing, or a shape flush against a side over the end's last
+  // width [e0, e1], which makes the end the outer corner of a bend. A pin
+  // joins nothing: the end on it stays, as if the pin stood a spacing off.
+  // The same for the end at x of box `box` on this layer, along this wire.
+  bool endJoined(int x, int e0, int e1) const
+  {
+    return endJoined(self_, x, e0, e1);
+  }
+  bool endJoined(int box, int x, int e0, int e1) const;
+
+  // The ends of the lateral neighbors of other nets that this wire runs
+  // past. The end tables give such an end's coupling to the wire running
+  // past it; from the wire's side that coupling is the same, by
+  // reciprocity, and it comes off the wire's ground, as far as the ground
+  // added from `start` in out_ goes. The neighbor's end takes the wire's
+  // covers there and an open side away from the wire.
+  void addNeighborEnds(size_t start) const;
 
   // The nearest shape on the layer beyond the end face at x, over the part
   // of the face it overlaps: its box (or -1) and gap.
   std::pair<int, int> facingAt(int x) const;
 
-  // How far a neighbor runs past the end at x against its spacing, from
-  // 0 to 1: the tables' neighbors run on.
-  double runsOn(const Lateral* n, int x) const;
-
   EndCaps endCaps(const Cover& below,
                   const Cover& above,
                   const Lateral* l,
                   const Lateral* r,
-                  double on_left,
-                  double on_right,
                   double faced,
                   int gap) const;
 
-  // The end blended over its neighbors' and facing wire's presence.
+  // The end with the neighbors at it, blended over the facing wire's
+  // presence. The tables' neighbors run past the end; one that ends
+  // where the wire does or a little past takes their end too, which the
+  // field solver puts 15-18% above its own but below the end with no
+  // neighbor.
   EndCap endCap(const LateralKey& key,
                 const Lateral* l,
                 const Lateral* r,
-                double on_left,
-                double on_right,
                 double faced,
                 int gap) const;
 
@@ -578,6 +601,7 @@ class Wire
 
 void Wire::estimate()
 {
+  const size_t start = out_.size();
   const std::vector<int> edges(cuts_.begin(), cuts_.end());
   for (size_t i = 0; i + 1 < edges.size(); i++) {
     if (insideOther(edges[i], edges[i + 1])) {
@@ -594,6 +618,7 @@ void Wire::estimate()
   addEnd(a0_, start_below, start_above);
   const auto [end_below, end_above] = coversOn(a1_ - d, a1_);
   addEnd(a1_, end_below, end_above);
+  addNeighborEnds(start);
 }
 
 void Wire::addCorners(const int x0,
@@ -690,8 +715,6 @@ void Wire::collect()
             .gap = p0_ - hi(s, p_),
             .a0 = o0,
             .a1 = o1,
-            .e0 = lo(s, a_),
-            .e1 = hi(s, a_),
         });
       } else if (lo(s, p_) >= p1_) {
         if (lo(s, p_) - p1_ > lateral_reach_) {
@@ -702,13 +725,11 @@ void Wire::collect()
             .gap = lo(s, p_) - p1_,
             .a0 = o0,
             .a1 = o1,
-            .e0 = lo(s, a_),
-            .e1 = hi(s, a_),
         });
       } else if (s.net == shape_.net && lo(s, p_) <= p0_ && hi(s, p_) >= p1_
                  && dominates(i)) {
-        // A longer box of the net across the wire's whole width: that
-        // box counts the overlap.
+        // A box of the net across the wire's whole width that counts the
+        // overlap.
         inside_.emplace_back(o0, o1);
       } else {
         continue;  // overlapping on the same layer: a junction
@@ -1232,8 +1253,7 @@ void Wire::addEnd(const int x, const Cover& below, const Cover& above) const
   const int t0 = x == a0_ ? a0_ : a1_ - d;
   const Lateral* l = nearest(left_, t0, t0 + d);
   const Lateral* r = nearest(right_, t0, t0 + d);
-  const EndCaps caps
-      = endCaps(below, above, l, r, runsOn(l, x), runsOn(r, x), faced, gap);
+  const EndCaps caps = endCaps(below, above, l, r, faced, gap);
   if (l != nullptr && boxes_[l->box].net != net_) {
     couple(l->box, Source::kEndLateral, caps.left);
   }
@@ -1268,14 +1288,20 @@ void Wire::addEnd(const int x, const Cover& below, const Cover& above) const
   coupleNets(above.nets, Source::kEndCover, to_above);
 }
 
-bool Wire::endJoined(const int x, const int e0, const int e1) const
+bool Wire::endJoined(const int box,
+                     const int x,
+                     const int e0,
+                     const int e1) const
 {
+  const EvalBox& b = boxes_[box];
+  const int b0 = lo(b, p_);
+  const int b1 = hi(b, p_);
   for (const int i : near_) {
     const EvalBox& s = boxes_[i];
-    if (i == self_ || s.net != net_ || s.layer != shape_.layer) {
+    if (i == box || s.net != b.net || s.layer != b.layer || s.pin) {
       continue;
     }
-    const bool overlaps_p = std::min(p1_, hi(s, p_)) > std::max(p0_, lo(s, p_));
+    const bool overlaps_p = std::min(b1, hi(s, p_)) > std::max(b0, lo(s, p_));
     const bool reaches = lo(s, a_) <= x && hi(s, a_) >= x;
     if (overlaps_p && reaches) {
       return true;
@@ -1283,16 +1309,88 @@ bool Wire::endJoined(const int x, const int e0, const int e1) const
   }
   for (const int i : near_) {
     const EvalBox& s = boxes_[i];
-    if (i == self_ || s.net != net_ || s.layer != shape_.layer) {
+    if (i == box || s.net != b.net || s.layer != b.layer || s.pin) {
       continue;
     }
-    const bool flush = hi(s, p_) == p0_ || lo(s, p_) == p1_;
+    const bool flush = hi(s, p_) == b0 || lo(s, p_) == b1;
     if (flush && std::min(e1, hi(s, a_)) > std::max(e0, lo(s, a_))) {
-      counts_.corners++;
+      if (box == self_) {
+        counts_.corners++;
+      }
       return true;
     }
   }
   return false;
+}
+
+void Wire::addNeighborEnds(const size_t start) const
+{
+  double ground_left = 0;
+  for (size_t k = start; k < out_.size(); k++) {
+    if (out_[k].other < 0) {
+      ground_left += out_[k].value;
+    }
+  }
+  const int d = endSpan();
+  for (const bool on_left : {true, false}) {
+    const std::vector<Lateral>& side = on_left ? left_ : right_;
+    for (const Lateral& n : side) {
+      const EvalBox& s = boxes_[n.box];
+      if (s.net == net_) {
+        continue;
+      }
+      // The neighbor's ends lie along this wire only where its long axis
+      // does; a square's are half along each.
+      const odb::Rect& r = s.rect;
+      const bool along = (r.dx() >= r.dy() ? 0 : 1) == a_;
+      if (r.dx() != r.dy() && !along) {
+        continue;
+      }
+      const double weight = r.dx() == r.dy() ? 0.5 : 1.0;
+      const int n0 = lo(s, a_);
+      const int n1 = hi(s, a_);
+      const int wn = std::min(hi(s, p_) - lo(s, p_), n1 - n0);
+      for (const bool at_lo : {true, false}) {
+        const int x = at_lo ? n0 : n1;
+        // This wire runs on past the end by more than its own end's span,
+        // which would otherwise take the neighbor at its end.
+        if (x - d < a0_ || x + d > a1_) {
+          continue;
+        }
+        const int t0 = at_lo ? x : x - d;
+        // A longer box of the net counts this wire there.
+        if (insideOther(t0, t0 + d) || nearest(side, t0, t0 + d) != &n
+            || endJoined(n.box, x, at_lo ? x : x - wn, at_lo ? x + wn : x)) {
+          continue;
+        }
+        at_ = x;
+        const double gap = n.gap / dbu_;
+        const double width = (hi(s, p_) - lo(s, p_)) / dbu_;
+        const auto [below, above] = coversOn(t0, t0 + d);
+        double value = 0;
+        forStates(below,
+                  above,
+                  [&](LateralKey& key,
+                      const double share,
+                      const bool /* b */,
+                      const bool /* t */) {
+                    fallback(model_, key);
+                    if (model_.end(key) == nullptr) {
+                      key = {.layer = name_, .below = "", .above = ""};
+                    }
+                    // This wire is on the neighbor's other side from it.
+                    const EndCap e = on_left ? model_.end(key, width, -1, gap)
+                                             : model_.end(key, width, gap, -1);
+                    value += share * (on_left ? e.right : e.left);
+                  });
+        // The field the end draws comes off this wire's ground beside it.
+        couple(n.box, Source::kEndLateral, weight * value);
+        const double taken = std::clamp(weight * value, 0.0, ground_left);
+        ground_left -= taken;
+        ground(Ground::kEnd, -taken);
+      }
+    }
+  }
 }
 
 std::pair<int, int> Wire::facingAt(const int x) const
@@ -1314,16 +1412,6 @@ std::pair<int, int> Wire::facingAt(const int x) const
   return {facing, gap};
 }
 
-double Wire::runsOn(const Lateral* n, const int x) const
-{
-  if (n == nullptr) {
-    return 0.0;
-  }
-  const int past = x == a0_ ? x - n->e0 : n->e1 - x;
-  return n->gap <= 0 ? 1.0
-                     : std::clamp(static_cast<double>(past) / n->gap, 0.0, 1.0);
-}
-
 // The parts to the planes go to the nets covering the end as the pieces'
 // plane couplings do (per covered state, scaled by the cover's kept
 // coupling), nothing to the net's own.
@@ -1331,8 +1419,6 @@ EndCaps Wire::endCaps(const Cover& below,
                       const Cover& above,
                       const Lateral* l,
                       const Lateral* r,
-                      const double on_left,
-                      const double on_right,
                       const double faced,
                       const int gap) const
 {
@@ -1345,7 +1431,7 @@ EndCaps Wire::endCaps(const Cover& below,
         if (model_.end(key) == nullptr) {
           key = {.layer = name_, .below = "", .above = ""};
         }
-        const EndCap c = endCap(key, l, r, on_left, on_right, faced, gap);
+        const EndCap c = endCap(key, l, r, faced, gap);
         caps.total += weight * c.total;
         caps.facing += weight * c.facing;
         caps.left += weight * c.left;
@@ -1371,34 +1457,24 @@ EndCaps Wire::endCaps(const Cover& below,
 EndCap Wire::endCap(const LateralKey& key,
                     const Lateral* l,
                     const Lateral* r,
-                    const double on_left,
-                    const double on_right,
                     const double faced,
                     const int gap) const
 {
+  const double left = l != nullptr ? l->gap / dbu_ : -1;
+  const double right = r != nullptr ? r->gap / dbu_ : -1;
   EndCap c;
-  for (const bool hl : {false, true}) {
-    for (const bool hr : {false, true}) {
-      for (const bool hf : {false, true}) {
-        const double weight = (hl ? on_left : 1 - on_left)
-                              * (hr ? on_right : 1 - on_right)
-                              * (hf ? faced : 1 - faced);
-        if (weight == 0) {
-          continue;
-        }
-        const EndCap e = model_.end(key,
-                                    w_um_,
-                                    hl ? l->gap / dbu_ : -1,
-                                    hr ? r->gap / dbu_ : -1,
-                                    hf ? gap / dbu_ : -1);
-        c.total += weight * e.total;
-        c.below += weight * e.below;
-        c.above += weight * e.above;
-        c.left += weight * e.left;
-        c.right += weight * e.right;
-        c.facing += weight * e.facing;
-      }
+  for (const bool hf : {false, true}) {
+    const double weight = hf ? faced : 1 - faced;
+    if (weight == 0) {
+      continue;
     }
+    const EndCap e = model_.end(key, w_um_, left, right, hf ? gap / dbu_ : -1);
+    c.total += weight * e.total;
+    c.below += weight * e.below;
+    c.above += weight * e.above;
+    c.left += weight * e.left;
+    c.right += weight * e.right;
+    c.facing += weight * e.facing;
   }
   return c;
 }
@@ -1503,9 +1579,14 @@ void Evaluator::reach(const EvalBox& box, std::vector<odb::Rect>& rects) const
     return static_cast<int>(std::clamp<int64_t>(
         v, std::numeric_limits<int>::min(), std::numeric_limits<int>::max()));
   };
+  // A square is estimated along both axes, so it reaches both ways.
+  const bool square = box.rect.dx() == box.rect.dy();
   auto grow = [&](const int along, const int across) {
-    const int64_t dx = x_along ? along : across;
-    const int64_t dy = x_along ? across : along;
+    int64_t dx = x_along ? along : across;
+    int64_t dy = x_along ? across : along;
+    if (square) {
+      dx = dy = std::max(along, across);
+    }
     return odb::Rect(clamped(int64_t{box.rect.xMin()} - dx),
                      clamped(int64_t{box.rect.yMin()} - dy),
                      clamped(int64_t{box.rect.xMax()} + dx),
@@ -1630,7 +1711,38 @@ void Evaluator::evaluate(const std::vector<EvalBox>& boxes,
     count.wires++;
     near.clear();
     candidates(i, near);
-    Wire wire(i, boxes, near, context, maps_[boxes[i].layer], out, count);
+    const odb::Rect& r = boxes[i].rect;
+    if (r.dx() == r.dy()) {
+      // A square has no long axis: the mean of it estimated along each,
+      // placed at its center. `at` is along x for either estimate, the
+      // axis a Contribution takes as a square's long one (dx >= dy).
+      for (const int a : {0, 1}) {
+        const size_t start = out.size();
+        EvalCounts once;
+        Wire wire(i,
+                  boxes,
+                  near,
+                  context,
+                  maps_[boxes[i].layer],
+                  out,
+                  a == 0 ? count : once,
+                  a);
+        wire.estimate();
+        for (size_t k = start; k < out.size(); k++) {
+          out[k].value /= 2;
+          out[k].at = r.xCenter();
+        }
+      }
+      continue;
+    }
+    Wire wire(i,
+              boxes,
+              near,
+              context,
+              maps_[boxes[i].layer],
+              out,
+              count,
+              axis(boxes[i]));
     wire.estimate();
     const auto found = junctions.find(i);
     if (found != junctions.end()) {
@@ -1641,12 +1753,73 @@ void Evaluator::evaluate(const std::vector<EvalBox>& boxes,
   }
 }
 
+std::vector<int> mergePads(std::vector<EvalBox>& boxes, const size_t first)
+{
+  auto pad = [](const EvalBox& b) {
+    return b.layer >= 0 && !b.pin
+           && b.rect.maxDXDY() < 2 * int64_t{b.rect.minDXDY()};
+  };
+  // The pads by net, layer and left edge; each absorbs the pads after it
+  // that start before it ends.
+  std::vector<size_t> pads;
+  for (size_t i = first; i < boxes.size(); i++) {
+    if (pad(boxes[i])) {
+      pads.push_back(i);
+    }
+  }
+  std::ranges::sort(pads, [&](const size_t x, const size_t y) {
+    const EvalBox& a = boxes[x];
+    const EvalBox& b = boxes[y];
+    return std::tuple(a.net, a.layer, a.rect.xMin(), x)
+           < std::tuple(b.net, b.layer, b.rect.xMin(), y);
+  });
+  std::vector<bool> gone(boxes.size() - first, false);
+  for (size_t pi = 0; pi < pads.size(); pi++) {
+    const size_t i = pads[pi];
+    if (gone[i - first]) {
+      continue;
+    }
+    EvalBox& a = boxes[i];
+    for (size_t pj = pi + 1; pj < pads.size(); pj++) {
+      const EvalBox& b = boxes[pads[pj]];
+      if (b.net != a.net || b.layer != a.layer
+          || b.rect.xMin() > a.rect.xMax()) {
+        break;
+      }
+      if (gone[pads[pj] - first] || !a.rect.overlaps(b.rect)) {
+        continue;
+      }
+      odb::Rect bound = a.rect;
+      bound.merge(b.rect);
+      const double filled
+          = static_cast<double>(a.rect.area())
+            + static_cast<double>(b.rect.area())
+            - static_cast<double>(a.rect.intersect(b.rect).area());
+      if (filled >= kPadFill * static_cast<double>(bound.area())) {
+        a.rect = bound;
+        gone[pads[pj] - first] = true;
+      }
+    }
+  }
+  std::vector<int> from;
+  size_t out = first;
+  for (size_t i = first; i < boxes.size(); i++) {
+    if (!gone[i - first]) {
+      from.push_back(static_cast<int>(i));
+      boxes[out++] = boxes[i];
+    }
+  }
+  boxes.resize(out);
+  return from;
+}
+
 NetEstimate estimate(const fsv::Geometry& geometry,
                      const fsv::Stack& stack,
                      const Model& model,
                      const NetIndex target,
                      const EvaluatorOptions& options,
-                     const int dbu)
+                     const int dbu,
+                     const NetIndex pins)
 {
   const Evaluator evaluator(stack, model, dbu, options);
   NetEstimate est;
@@ -1694,7 +1867,19 @@ NetEstimate estimate(const fsv::Geometry& geometry,
                           units(box.hi[0]),
                           units(box.hi[1])),
     });
-    if (net == target) {
+  }
+  // Pins are marked before the merge, which leaves them as they are.
+  if (pins != kNullNetIndex) {
+    for (EvalBox& b : boxes) {
+      if (b.net == pins) {
+        b.net = target;
+        b.pin = true;
+      }
+    }
+  }
+  mergePads(boxes);
+  for (int b = 0; std::cmp_less(b, boxes.size()); b++) {
+    if (boxes[b].net == target && !boxes[b].pin) {
       mine.push_back(b);
     }
   }

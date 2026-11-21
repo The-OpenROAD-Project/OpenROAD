@@ -91,8 +91,11 @@ where its wire's paths start or end; its wire shapes become resistors in
 series between nodes. Ground capacitance is split between a resistor's
 two nodes by where it lies along it, and a coupling joins the nearer
 node of each net. Supply nets, obstructions and fill are neighbors only:
-coupling to them goes to ground. A net pair's coupling is kept only when
-its total reaches `-coupling_threshold` or `-coupling_ratio` of either
+coupling to them goes to ground. The cells' instance pins are neighbors
+only as well, since the cells' timing models count their capacitance: a
+net's routing ends at its pins without counting them, and what couples
+to another net's pins goes to ground. A net pair's coupling is kept only
+when its total reaches `-coupling_threshold` or `-coupling_ratio` of either
 net's total capacitance; otherwise it goes to ground on both nets. Either
 test alone keeps a pair, so setting either option to 0 keeps every
 coupling.
@@ -121,8 +124,11 @@ The `compare_pex_fsv` command checks extraction against the field solver:
 it solves each net's window (the net and the shapes within `-halo` of
 it) with fsv and reports the extracted total against fsv's, and how many
 of its couplings to other signal nets above 5% of its total are within
-20%, the accuracy target's measures. Run it after `extract_pex`; the
-field solver takes the model's ITF stack.
+20%, the accuracy target's measures. The net's instance pins stay in the
+window as a conductor of their own, trimmed clear of its routing by the
+layer's spacing, and its total leaves out their coupling to the routing;
+the other nets' pins are grounded, as the extraction has them. Run it
+after `extract_pex`; the field solver takes the model's ITF stack.
 
 ```tcl
 compare_pex_fsv
@@ -246,7 +252,16 @@ open). Four kinds of table describe a layer:
   capacitance, over the width, the spacing to a neighbor on each side
   running past the end and the gap to a wire facing the end, split into
   parts to the planes, the neighbors and the facing wire, from a short
-  wire solved in 3D less its per-unit-length value times its length.
+  wire solved in 3D less its per-unit-length value times its length. A
+  neighbor that ends where the wire does takes the end of one running
+  past: the field solver puts that end 15–18% lower, but the end with no
+  neighbor is higher still (`e20`). The end measured on a 2 µm wire is
+  settled with a cover or a neighbor near; alone with no cover either
+  side it still grows with the length, by 15–25% from 2 to 10 µm.
+  A wire running past a neighbor's end couples to that end as the end
+  does to it, the same part of the neighbor's end, taken off the wire's
+  ground: a short pad beside a wire couples at both its ends, and both
+  nets see the same coupling.
 
 A point and its mirror share one solve, and each solve is seeded by its
 position, so a table does not depend on the thread count. A table the
@@ -289,6 +304,7 @@ bazel-bin/openroad/pex/test/Experiments --threads 64 --tol 0.003 \
 | e17 dense context | a wire among rails, a strap, crossings and neighbors, built up part by part; rails at several coverages | the evaluator | how the tables combine in dense layout |
 | e18 power grid | e9's nets with the power nets alone, merged, split by layer, and with groups of signal wires added back | the evaluator | where the coupling to the power grid goes wrong |
 | e19 lateral reach | neighbors at spacings in multiples of the height to the nearest plane | the wire alone | how far the lateral table reaches |
+| e20 end length | wires from 0.5 to 40 µm, alone, between neighbors running past the ends or ending with the wire, and with one neighbor | per-unit-length × length | the length the end is measured at, and the neighbors' end states |
 
 e9 reads LEF and DEF (by default the gcd window of the fsv tests) or an
 ODB file, builds the model for every routing layer of the design the stack
@@ -327,25 +343,31 @@ each sampled net is solved by the field solver with every shape within
 10 µm of it, and the model is applied to the same shapes (the `e9`
 experiment group below):
 
-| model alone, 50 nets | gcd | aes |
+| model alone, 200 nets | gcd | aes |
 | --- | --- | --- |
-| totals within 5% | 68% | 68% |
-| total error, 90th percentile | 7.5% | 7.3% |
-| ground plus supply coupling, median | +10.1% | +10.2% |
-| signal coupling summed per net, median | −1.9% | −0.6% |
-| signal couplings above 5%, within 20% | 84% | 81% |
+| totals within 5% | 86% | 88% |
+| total error, median | +1.0% | +0.4% |
+| total error, 90th percentile | 6.6% | 5.6% |
+| signal couplings above 5%, within 20% | 92% | 90% |
+
+The instance pins are context here as in extraction (see
+`compare_pex_fsv`). Counting them in their nets instead puts the
+median total at −1.6% (gcd) and −2.5% (aes) and 72% of totals within
+5%: the model takes too little from the irregular li1 shapes inside the
+cells, which the cells' timing models count anyway.
 
 Building the same model again moves the share of totals within 5% by up
 to 6 points, so 50 nets do not resolve smaller changes.
 
-Extraction itself, checked with `compare_pex_fsv -sample 50 -halo 10 -tol
-0.003` on the routed designs with the same model:
+Extraction itself, checked with `compare_pex_fsv -sample 200 -halo 10
+-tol 0.003` on the routed designs with the same model:
 
-| extraction, 50 nets | gcd | aes |
+| extraction, 200 nets | gcd | aes |
 | --- | --- | --- |
-| totals within 5% | 66% | 66% |
-| total error, 90th percentile | 6.3% | 6.9% |
-| signal couplings above 5%, within 20% | 94% | 86% |
+| totals within 5% | 94% | 90% |
+| total error, median | +0.8% | +0.5% |
+| total error, 90th percentile | 4.4% | 5.3% |
+| signal couplings above 5%, within 20% | 94% | 92% |
 | extraction, 1 thread | 6.7 s | 351 s |
 | extraction, 16 threads | 0.58 s | 25 s |
 
@@ -356,6 +378,12 @@ nets and grounded below the thresholds. rcx takes about 2 s for aes on
 one thread, so extraction must become far faster; most of its time is
 in the crossing lookups, through string-keyed tables and logarithms per
 piece.
+
+Resistance agrees with rcx on gcd: over the 485 nets above 1 Ω, pex's
+total resistance per net is 0.995 of rcx's at the median (0.989 to
+1.001 from the 10th to the 90th percentile). pex takes each wire's
+silicon width from `sky130.itf`'s resistive etch, which narrows every
+layer but li1.
 
 What remains, largest first:
 
@@ -368,8 +396,6 @@ What remains, largest first:
   between them is looked up as if the rails were absent, up to 28% high
   (the `e17` experiment at low rail coverage). The diagonal coupling is
   to be scaled by the cover's share, as for straps over rails.
-- **Low signal couplings.** The largest coupling misses are 30–60% low,
-  each 5–11% of its net's total; not yet traced.
 - **Crossing reach by side.** A crossing reaching past one side of the
   wire only is split evenly between the sides; with a neighbor on one
   side the coupling to the crossing is off by −25% to +46% (the `e15`
@@ -380,8 +406,10 @@ What remains, largest first:
   effect goes into the deltas, `plane_delta` included. The plane is to
   have one extent across a table, which needs the diagonal tables
   rebuilt.
-- **Sample size.** 200 nets per design, so that a 2-point change is
-  measurable.
+- **Supply coupling.** The coupling to the supplies is 11–16% high
+  summed over the nets, mostly through covers (see narrow straps); the
+  ground itself is within 10%, and the substrate takes 3–5 times what
+  the field solver gives it, at the expense of the shapes over it.
 
 ## Regression tests
 

@@ -90,19 +90,25 @@ std::vector<NetComparison> compareWithFsv(odb::dbBlock* block,
                                   + " has no parasitics");
     }
     const fsv::NetWindow window = fsv::readNetWindow(
-        block, {net}, extent, {.halo = options.halo, .margin = -1});
+        block,
+        {net},
+        extent,
+        {.halo = options.halo, .margin = -1, .pins_as_context = true});
     const fsv::Scene scene(window.geometry, stack);
     const int master = window.targets.front();
+    const int pins = window.pins.front();
     const fsv::CapRow row = solver.solve(scene, master, solve_options);
     const Extracted pex = extracted(net);
     NetComparison c;
     c.net = net->getName();
-    c.fsv_total = row.total();
+    // The pins are at the net's potential: what couples to them is not
+    // the routing's.
+    c.fsv_total = row.total() - (pins < 0 ? 0 : row.coupling(pins));
     c.fsv_sigma = row.sigma[master];
     c.pex_total = pex.total;
     for (int n = 0; n < window.geometry.netCount(); n++) {
-      if (n == master || window.geometry.grounded(n)
-          || row.coupling(n) < 0.05 * row.total()) {
+      if (n == master || n == pins || window.geometry.grounded(n)
+          || row.coupling(n) < 0.05 * c.fsv_total) {
         continue;
       }
       const std::string& name = window.geometry.netName(n);

@@ -3,7 +3,7 @@
 
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -211,9 +211,23 @@ cc_test(
     deps = EXPERIMENT_DEPS,
 )
 
+py_binary(
+    name = "make_patterns",
+    srcs = ["make_patterns.py"],
+)
+
+# The experiments' patterns as a design, for pex_patterns.
+genrule(
+    name = "patterns_def",
+    outs = ["patterns.def"],
+    cmd = "$(execpath :make_patterns) > $@",
+    tools = [":make_patterns"],
+)
+
 TESTS = [
     "pex_errors",
     "pex_extract",
+    "pex_patterns",
     "pex_python",
 ]
 
@@ -227,6 +241,7 @@ filegroup(
         "sky130hd/sky130hd.tlef",
         "sky130hd/sky130hd_tt.lib",
         "version_two.json",
+        ":patterns_def",
         "//openroad/fsv/test:field_solver_gcd.def",
         "//openroad/fsv/test:sky130.itf",
     ] + [test + ".ok" for test in TESTS],

@@ -142,9 +142,10 @@ TEST(Evaluator, PiecesEndsAndCovers)
   EXPECT_EQ(est.vias, 0);
   // Pieces: [0,2] [2,5] [5,7] [7,8] [8,10].
   EXPECT_EQ(est.pieces, 5);
-  // b is on a's right (larger y): coupling 2 per µm over 3 µm.
+  // b is on a's right (larger y): coupling 2 per µm over 3 µm, and 0.3
+  // from each of b's ends.
   ASSERT_TRUE(est.couplings.contains(b));
-  EXPECT_DOUBLE_EQ(est.couplings.at(b), 6);
+  EXPECT_NEAR(est.couplings.at(b), 6 + (2 * 0.3), 1e-9);
   // Under c, the covered piece couples 4 per µm to it; the pieces beside
   // it take a share through the crossing table: over [5, 7] the distance
   // to c runs 2 down to 0, so gap × share integrates 0.8 x 1 + the
@@ -217,6 +218,26 @@ TEST(Evaluator, OwnCoverTakesNothing)
   // m1: a ground of 30 per µm over 12 µm and 1.5 per end.
   EXPECT_EQ(est.ends, 4);
   EXPECT_NEAR(est.ground, 10 * 20 + 2 * 0.5 + 12 * 30 + 2 * 1.5, 1e-6);
+}
+
+// An instance pin is of the net but not measured: a wire ending on one
+// counts its whole length, though the pin is the wider, and keeps its end
+// there.
+TEST(Evaluator, PinIsContext)
+{
+  const fsv::Stack stack = twoLayers();
+  const Model model = constantModel();
+  fsv::Geometry g;
+  const int a = g.addNet("a");
+  const int pins = g.addNet("a pins");
+  g.addBox(a, {.lo = {0, 0, 1}, .hi = {10, 0.2, 2}});
+  g.addBox(pins, {.lo = {9.5, -0.4, 1}, .hi = {10.5, 0.6, 2}});
+  const NetEstimate est = estimate(g, stack, model, a, {}, kEstimateDbu, pins);
+  EXPECT_EQ(est.wires, 1);
+  EXPECT_EQ(est.ends, 2);
+  EXPECT_TRUE(est.couplings.empty());
+  // 10 per µm over 10 µm and 0.5 per end.
+  EXPECT_NEAR(est.ground, 10 * 10 + 1, 1e-9);
 }
 
 // At a bend the boxes overlap in a corner square, which the longer box
@@ -304,15 +325,14 @@ TEST(Evaluator, FacingEnd)
   EXPECT_NEAR(est.ground, 100 + 1, 1e-9);
 }
 
-// A neighbor running past a line end takes part of the end, as far as it
-// runs past against its spacing.
-TEST(Evaluator, NeighborRunsPastTheEnd)
+// A neighbor at a line end takes the end with that neighbor, however far
+// it runs past: the end with a neighbor ending there is nearer that than
+// the end with none.
+TEST(Evaluator, NeighborAtTheEnd)
 {
   const fsv::Stack stack = twoLayers();
   const Model model = constantModel();
-  // Past by 1 (all), 0.15 (half of the 0.3 spacing) and 0 (none).
-  for (const auto& [past, share] :
-       {std::pair{1.0, 1.0}, std::pair{0.15, 0.5}, std::pair{0.0, 0.0}}) {
+  for (const double past : {1.0, 0.15, 0.0}) {
     fsv::Geometry g;
     const int a = g.addNet("a");
     const int b = g.addNet("b");
@@ -321,9 +341,55 @@ TEST(Evaluator, NeighborRunsPastTheEnd)
     const NetEstimate est = estimate(g, stack, model, a, {.diagonal_depth = 0});
     // 2 per µm on the right, and per end half of the 0.6 the neighbors
     // take, of half of the 0.4 they add.
-    EXPECT_NEAR(est.couplings.at(b), 20 + (2 * share * 0.3), 1e-9);
-    EXPECT_NEAR(est.ground, 100 + (2 * (0.5 + (share * (0.2 - 0.3)))), 1e-9);
+    EXPECT_NEAR(est.couplings.at(b), 20 + (2 * 0.3), 1e-9);
+    EXPECT_NEAR(est.ground, 100 + (2 * (0.5 + 0.2 - 0.3)), 1e-9);
   }
+}
+
+// A wire running past a neighbor's ends couples to them as the neighbor's
+// ends do to it: each end's lateral part, the same seen from either net.
+TEST(Evaluator, NeighborEndsBeside)
+{
+  const fsv::Stack stack = twoLayers();
+  const Model model = constantModel();
+  fsv::Geometry g;
+  const int a = g.addNet("a");
+  const int b = g.addNet("b");
+  g.addBox(a, {.lo = {0, 0, 1}, .hi = {10, 0.2, 2}});
+  g.addBox(b, {.lo = {4, 0.5, 1}, .hi = {6, 0.7, 2}});
+  const EvaluatorOptions options{.diagonal_depth = 0};
+  // Per end, half of the 0.6 the neighbors at 0.3 take.
+  const NetEstimate from_a = estimate(g, stack, model, a, options);
+  EXPECT_EQ(from_a.ends, 2);
+  EXPECT_NEAR(from_a.couplings.at(b), (2 * 2) + (2 * 0.3), 1e-9);
+  // The ends' coupling comes off a's ground.
+  EXPECT_NEAR(from_a.ground, 100 + 1 - (2 * 0.3), 1e-9);
+  const NetEstimate from_b = estimate(g, stack, model, b, options);
+  EXPECT_NEAR(from_b.couplings.at(a), from_a.couplings.at(b), 1e-9);
+  // A neighbor's end joined by its own net is no end.
+  g.addBox(b, {.lo = {5.8, 0.5, 1}, .hi = {6, 3, 2}});
+  const NetEstimate joined = estimate(g, stack, model, a, options);
+  EXPECT_NEAR(joined.couplings.at(b), (2 * 2) + 0.3, 1e-9);
+}
+
+// Neighbor ends take no more than the wire's ground: a short wire between
+// many of them keeps a ground of zero.
+TEST(Evaluator, NeighborEndsKeepGroundPositive)
+{
+  const fsv::Stack stack = twoLayers();
+  const Model model = constantModel();
+  fsv::Geometry g;
+  const int a = g.addNet("a");
+  const int b = g.addNet("b");
+  g.addBox(a, {.lo = {0, 0, 1}, .hi = {0.1, 0.05, 2}});
+  for (const double x : {0.01, 0.04, 0.07}) {
+    g.addBox(b, {.lo = {x, 0.35, 1}, .hi = {x + 0.02, 0.36, 2}});
+    g.addBox(b, {.lo = {x, -0.31, 1}, .hi = {x + 0.02, -0.3, 2}});
+  }
+  const NetEstimate est = estimate(g, stack, model, a, {.diagonal_depth = 0});
+  // 10 per µm over 0.1 µm and 0.5 per end, against twelve ends of 0.3.
+  EXPECT_NEAR(est.ground, 0, 1e-9);
+  EXPECT_GT(est.couplings.at(b), 12 * 0.3);
 }
 
 // A crossing between the wire and a farther plane keeps its coupling: the
@@ -457,7 +523,8 @@ TEST(Evaluator, CrossingCouplingSplitsByNet)
       est.couplings.at(x), 1.6 + 4 + 1.4 + 2.2 * 0.2 / 1.1 + 0.05 * 0.5, 1e-9);
   EXPECT_NEAR(
       est.couplings.at(y), 2.2 * 0.9 / 1.1 + 4 + 1.4 + 0.35 * 0.5, 1e-9);
-  EXPECT_DOUBLE_EQ(est.couplings.at(b), 2);  // on the right: 2 per µm
+  // On the right: 2 per µm, and 0.3 from each of b's ends.
+  EXPECT_NEAR(est.couplings.at(b), 2 + (2 * 0.3), 1e-9);
 }
 
 TEST(Evaluator, DiagonalWires)
@@ -478,9 +545,10 @@ TEST(Evaluator, DiagonalWires)
   // d couples 7 per µm over its 2 µm, and takes 1 per µm from b there.
   ASSERT_TRUE(est.couplings.contains(d));
   EXPECT_DOUBLE_EQ(est.couplings.at(d), 14);
-  EXPECT_DOUBLE_EQ(est.couplings.at(b), 2 * 4 - 2);
+  // b at both ends: each adds 0.2 and gives b 0.3.
+  EXPECT_NEAR(est.couplings.at(b), 2 * 4 - 2 + 2 * 0.3, 1e-12);
   // The rest of d's total delta (8 - 7 + 1 = 2 per µm) lands on the ground.
-  EXPECT_DOUBLE_EQ(est.ground, 10 * 4 + 2 * 2 + 2 * 0.5);
+  EXPECT_NEAR(est.ground, 10 * 4 + 2 * 2 + 2 * (0.5 + 0.2 - 0.3), 1e-12);
 
   // The same wire of the net's own on m2 shields like any other but adds
   // no coupling: the m1 wire's 40 + 4 of shielding + 1 of ends, plus the
@@ -608,6 +676,29 @@ TEST(Evaluator, RadiusAndAttribution)
   EXPECT_FALSE(by_box.contains(kC));
   EXPECT_FALSE(by_box.contains(kZ));
   EXPECT_FALSE(by_box.contains(kE));
+}
+
+// A via stack's overlapping pads become their bounding box; a wire, a pad
+// of another net or layer, and a pad that would leave much of the box
+// empty stay as they are.
+TEST(Evaluator, MergePads)
+{
+  std::vector<EvalBox> boxes{
+      {.net = 0, .layer = 0, .rect = odb::Rect(0, 0, 1000, 140)},  // wire
+      {.net = 0, .layer = 1, .rect = odb::Rect(0, 0, 330, 330)},
+      {.net = 0, .layer = 1, .rect = odb::Rect(5, -25, 325, 355)},
+      {.net = 1, .layer = 1, .rect = odb::Rect(0, 0, 330, 330)},
+      {.net = 0, .layer = 2, .rect = odb::Rect(0, 0, 330, 330)},
+      {.net = 0, .layer = 2, .rect = odb::Rect(300, 300, 630, 630)},
+  };
+  const std::vector<int> from = mergePads(boxes, 1);
+  EXPECT_EQ(from, (std::vector<int>{1, 3, 4, 5}));
+  ASSERT_EQ(boxes.size(), 5);
+  EXPECT_EQ(boxes[0].rect, odb::Rect(0, 0, 1000, 140));
+  EXPECT_EQ(boxes[1].rect, odb::Rect(0, -25, 330, 355));
+  EXPECT_EQ(boxes[2].rect, odb::Rect(0, 0, 330, 330));
+  EXPECT_EQ(boxes[3].rect, odb::Rect(0, 0, 330, 330));
+  EXPECT_EQ(boxes[4].rect, odb::Rect(300, 300, 630, 630));
 }
 
 }  // namespace
