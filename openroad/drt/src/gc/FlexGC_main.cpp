@@ -2406,7 +2406,7 @@ void FlexGCWorker::Impl::checkMetalShape_patchOwner_helper(
     drPatchWire* patch,
     const std::vector<drNet*>* dr_nets)
 {
-  odb::Rect patch_box = patch->getOffsetBox();
+  odb::Rect patch_box = patch->getBBox();
   for (drNet* dr_net : *dr_nets) {
     // check if patch overlaps with some rect of dr_net
     if (patch_box.overlaps(dr_net->getPinBox())) {
