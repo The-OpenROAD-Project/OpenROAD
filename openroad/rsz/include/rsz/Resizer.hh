@@ -760,6 +760,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void resizePreamble();
   void runRepairSetupPreamble();
   sta::LibertyCellSeq getSwappableCells(sta::LibertyCell* source_cell);
+  // getSwappableCells() without the sizing leakage limit, for callers that
+  // limit the leakage of a whole net instead of a single cell.
+  sta::LibertyCellSeq getSwappableCellsAnyLeakage(
+      sta::LibertyCell* source_cell);
   sta::LibertyCellSeq getFastBufferSizes(sta::LibertyCell* source_cell) const;
   sta::LibertyCellSeq getVTEquivCells(sta::LibertyCell* source_cell);
 
@@ -1149,9 +1153,16 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // exact same buffers when reparing clock nets.
   sta::LibertyCellSeq clk_buffers_;
 
-  // Cache results of getSwappableCells() as this is expensive for large PDKs.
-  std::unordered_map<sta::LibertyCell*, sta::LibertyCellSeq>
-      swappable_cells_cache_;
+  struct SwappableCells
+  {
+    sta::LibertyCellSeq cells;
+    // Also the cells only the sizing leakage limit excludes.
+    sta::LibertyCellSeq any_leakage;
+  };
+  const SwappableCells& findSwappableCells(sta::LibertyCell* source_cell);
+  // Cache results of findSwappableCells() as this is expensive for large
+  // PDKs.
+  std::unordered_map<sta::LibertyCell*, SwappableCells> swappable_cells_cache_;
   // Cache VT equivalent cells for each cell, equivalent cells are sorted in
   // increasing order of leakage
   // BUF_X1_RVT : { BUF_X1_RVT, BUF_X1_LVT, BUF_X1_SLVT }
