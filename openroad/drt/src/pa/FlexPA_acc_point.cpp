@@ -88,7 +88,9 @@ void FlexPA::genAPOnTrack(
       break;
     }
     if (use_nearby_grid) {
-      coords.insert({coord, frAccessPointEnum::NearbyGrid});
+      if (cost == frAccessPointEnum::OnGrid) {
+        coords.insert({coord, frAccessPointEnum::NearbyGrid});
+      }
     } else {
       coords.insert(*it);
     }
@@ -198,7 +200,8 @@ void FlexPA::genAPCosted(
 {
   auto layer = getDesign()->getTech()->getLayer(layer_num);
   const bool is_curr_layer_horz = layer->isHorizontal();
-  const auto min_width_layer = layer->getMinWidth();
+  const frCoord nearby_dist
+      = std::max<frCoord>(layer->getMinWidth(), 2 * layer->getPitch());
   const int rect_min = is_curr_layer_horz ? gtl::yl(rect) : gtl::xl(rect);
   const int rect_max = is_curr_layer_horz ? gtl::yh(rect) : gtl::xh(rect);
 
@@ -220,9 +223,9 @@ void FlexPA::genAPCosted(
 
     case (frAccessPointEnum::NearbyGrid):
       genAPOnTrack(
-          coords, track_coords, rect_min - min_width_layer, rect_min, true);
+          coords, track_coords, rect_min - nearby_dist, rect_min, true);
       genAPOnTrack(
-          coords, track_coords, rect_max, rect_max + min_width_layer, true);
+          coords, track_coords, rect_max, rect_max + nearby_dist, true);
       break;
 
     default:
@@ -397,7 +400,8 @@ void FlexPA::genAPsFromRect(const gtl::rectangle_data<frCoord>& rect,
                             const bool is_macro_cell_pin)
 {
   if (OnlyAllowOnGridAccess(layer_num, is_macro_cell_pin)
-      && upper_type != frAccessPointEnum::OnGrid) {
+      && upper_type != frAccessPointEnum::OnGrid
+      && upper_type != frAccessPointEnum::NearbyGrid) {
     return;
   }
   frLayer* layer = getDesign()->getTech()->getLayer(layer_num);
@@ -718,6 +722,7 @@ bool FlexPA::isPlanarViolationFree(frAccessPoint* ap,
   // Runs the DRC Engine to check for any violations
   FlexGCWorker design_rule_checker(getTech(), logger_, router_cfg_);
   design_rule_checker.setIgnoreMinArea();
+  design_rule_checker.setIgnoreMinStep();
   design_rule_checker.setIgnoreCornerSpacing();
   const auto pitch = layer->getPitch();
   const auto extension = 5 * pitch;
@@ -817,7 +822,9 @@ void FlexPA::getViasFromMetalWidthMap(
       continue;
     }
 
-    via_defs.push_back(tech->getVia(entry->getViaName()));
+    if (tech->hasVia(entry->getViaName())) {
+      via_defs.push_back(tech->getVia(entry->getViaName()));
+    }
   }
 }
 
@@ -894,7 +901,8 @@ void FlexPA::filterViaAccess(
   const auto lower_type = ap->getType(true);
   const auto upper_type = ap->getType(false);
   if (layer_num >= router_cfg_->VIAINPIN_BOTTOMLAYERNUM
-      && layer_num <= router_cfg_->VIAINPIN_TOPLAYERNUM) {
+      && layer_num <= router_cfg_->VIAINPIN_TOPLAYERNUM
+      && upper_type != frAccessPointEnum::NearbyGrid) {
     via_must_be_in_pin = true;
   } else if ((lower_type == frAccessPointEnum::EncOpt
               && upper_type != frAccessPointEnum::NearbyGrid)
@@ -1069,6 +1077,7 @@ bool FlexPA::isViaViolationFree(frAccessPoint* ap,
   // Runs the DRC Engine to check for any violations
   FlexGCWorker design_rule_checker(getTech(), logger_, router_cfg_);
   design_rule_checker.setIgnoreMinArea();
+  design_rule_checker.setIgnoreMinStep();
   design_rule_checker.setIgnoreLongSideEOL();
   design_rule_checker.setIgnoreCornerSpacing();
   const auto pitch = getTech()->getLayer(ap->getLayerNum())->getPitch();

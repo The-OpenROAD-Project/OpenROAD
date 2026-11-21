@@ -30,7 +30,6 @@
 #include "frDesign.h"
 #include "odb/db.h"
 #include "pa/FlexPA_unique.h"
-namespace gtl = boost::polygon;
 
 namespace odb {
 class dbDatabase;
@@ -45,6 +44,7 @@ class access;
 }
 
 namespace drt {
+namespace gtl = boost::polygon;
 // not default via, upperWidth, lowerWidth, not align upper, upperArea,
 // lowerArea, not align lower
 using ViaRawPriorityTuple

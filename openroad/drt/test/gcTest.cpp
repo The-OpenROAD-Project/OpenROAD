@@ -8,6 +8,8 @@
 #include <utility>
 #include <vector>
 
+#include "db/drObj/drNet.h"
+#include "db/drObj/drShape.h"
 #include "db/gcObj/gcNet.h"
 #include "db/obj/frMarker.h"
 #include "db/obj/frNet.h"
@@ -16,6 +18,7 @@
 #include "db/tech/frLayer.h"
 #include "db/tech/frLookupTbl.h"
 #include "db/tech/frViaDef.h"
+#include "dr/FlexDR.h"
 #include "fixture.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
@@ -2079,5 +2082,59 @@ TEST_P(ShortObsMinSpacingFixture, short_obs_min_spacing)
 INSTANTIATE_TEST_SUITE_P(ShortObsMinSpacingSuite,
                          ShortObsMinSpacingFixture,
                          testing::Bool());
+
+TEST_F(GCFixture, metal_width_via_map_cut_class)
+{
+  addLayer(design->getTech(), "v2", dbTechLayerType::CUT);
+  addLayer(design->getTech(), "m2", dbTechLayerType::ROUTING);
+  frViaDef* vd = makeViaDef("V2_BAR", 3, {0, 0}, {100, 100});
+  auto* rule = odb::dbMetalWidthViaMap::create(db_tech);
+  rule->setCutLayer(db_tech->findLayer("v2"));
+  rule->setViaName("CUTCLASS_SINGLE");
+  rule->setViaCutClass(true);
+  makeMetalWidthViaMap(3, rule);
+  frNet* n1 = makeNet("n1");
+  makeVia(vd, n1, {100, 0});
+  runGC();
+  EXPECT_TRUE(worker.getMarkers().empty());
+}
+
+TEST_F(Fixture, null_constraint_marker)
+{
+  initRegionQuery();
+  auto marker = std::make_unique<frMarker>();
+  marker->setBBox(odb::Rect(0, 0, 100, 100));
+  marker->setLayerNum(2);
+  design->getRegionQuery()->addMarker(marker.get());
+  design->getTopBlock()->addMarker(std::move(marker));
+  frDebugSettings debug;
+  FlexDRWorker dr(nullptr, design.get(), logger.get(), router_cfg.get());
+  dr.setDebugSettings(&debug);
+  dr.setDRIter(2);
+  dr.setDrcBox(odb::Rect(0, 0, 1000, 1000));
+  dr.main(design.get());
+  EXPECT_EQ(dr.getInitNumMarkers(), 1);
+}
+
+TEST_F(Fixture, boundary_merge_resets_ap_pathseg)
+{
+  frNet* n1 = makeNet("n1");
+  makePathseg(n1, 2, {0, 0}, {1500, 0});
+  auto* seg = static_cast<frPathSeg*>(n1->getShapes().front().get());
+  auto dps = std::make_unique<drPathSeg>(*seg);
+  dps->setPoints({0, 0}, {1000, 0});
+  dps->setApPathSeg({0, 0});
+  initRegionQuery();
+  FlexDRWorker w(nullptr, design.get(), logger.get(), router_cfg.get());
+  w.setRouteBox({0, -500, 1000, 500});
+  auto dnet = std::make_unique<drNet>(n1, router_cfg.get());
+  dnet->clear();
+  dnet->addRoute(std::move(dps));
+  dnet->setBestRouteConnFigs();
+  w.getNets().push_back(std::move(dnet));
+  w.end(design.get());
+  seg = static_cast<frPathSeg*>(n1->getShapes().front().get());
+  EXPECT_FALSE(seg->isApPathSeg());
+}
 
 }  // namespace drt

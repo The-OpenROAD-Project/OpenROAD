@@ -598,6 +598,13 @@ class FlexDRWorker
   // hellpers
   bool isRoutePatchWire(const frPatchWire* pwire) const;
   bool isRouteVia(const frVia* via) const;
+  template <typename T>
+  bool isRouteApPathSeg(const T* ps) const
+  {
+    return ps->isApPathSeg()
+           && (isInitDR() ? getRouteBox().overlaps(ps->getApLoc())
+                          : getRouteBox().intersects(ps->getApLoc()));
+  }
   // init
   void init(const frDesign* design);
   void initNets(const frDesign* design);

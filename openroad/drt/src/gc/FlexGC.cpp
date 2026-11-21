@@ -100,6 +100,7 @@ FlexGCWorker::Impl::Impl(frTechObject* techIn,
       maxLayerNum_(std::numeric_limits<frLayerNum>::max()),
       ignoreDB_(false),
       ignoreMinArea_(false),
+      ignoreMinStep_(false),
       ignoreLongSideEOL_(false),
       ignoreCornerSpacing_(false),
       surgicalFixEnabled_(false)
@@ -273,6 +274,11 @@ void FlexGCWorker::setIgnoreDB()
 void FlexGCWorker::setIgnoreMinArea()
 {
   impl_->ignoreMinArea_ = true;
+}
+
+void FlexGCWorker::setIgnoreMinStep()
+{
+  impl_->ignoreMinStep_ = true;
 }
 
 void FlexGCWorker::setIgnoreCornerSpacing()
