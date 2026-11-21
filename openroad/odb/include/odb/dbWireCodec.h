@@ -471,6 +471,7 @@ class dbWireEncoder
   bool prev_extended_colinear_pnt_;
   unsigned char wire_type_;
   unsigned char rule_opcode_;
+  bool color_set_{false};
 };
 
 ///
