@@ -201,6 +201,8 @@ class dbBlockCallBackObj
   virtual void inDbBlockStreamOutBefore(dbBlock*) {}
   virtual void inDbBlockStreamOutAfter(dbBlock*) {}
   virtual void inDbBlockReadNetsBefore(dbBlock*) {}
+  // Called before clearing contents, with callback registration retained.
+  virtual void inDbBlockClear(dbBlock*) {}
   virtual void inDbBlockSetDieArea(dbBlock*) {}
   virtual void inDbBlockSetCoreArea(dbBlock*) {}
 
