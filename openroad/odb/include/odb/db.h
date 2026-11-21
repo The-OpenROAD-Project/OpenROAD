@@ -171,6 +171,7 @@ class dbTechLayerCutSpacingTableOrthRule;
 class dbTechLayerEolExtensionRule;
 class dbTechLayerEolKeepOutRule;
 class dbTechLayerForbiddenSpacingRule;
+class dbTechLayerImplantWidthRule;
 class dbTechLayerKeepOutZoneRule;
 class dbTechLayerMaxSpacingRule;
 class dbTechLayerMinCutRule;
@@ -9402,6 +9403,8 @@ class dbTechLayer : public dbObject
 
   dbSet<dbTechLayerVoltageSpacing> getTechLayerVoltageSpacings() const;
 
+  dbSet<dbTechLayerImplantWidthRule> getTechLayerImplantWidthRules() const;
+
   void setRectOnly(bool rect_only);
 
   bool isRectOnly() const;
@@ -10823,6 +10826,51 @@ class dbTechLayerForbiddenSpacingRule : public dbObject
   static void destroy(dbTechLayerForbiddenSpacingRule* rule);
 
   // User Code End dbTechLayerForbiddenSpacingRule
+};
+
+class dbTechLayerImplantWidthRule : public dbObject
+{
+ public:
+  void setMinWidth(int min_width);
+
+  int getMinWidth() const;
+
+  void setMaxWidth(int max_width);
+
+  int getMaxWidth() const;
+
+  void setLength(int length);
+
+  int getLength() const;
+
+  void setCellHeight(int cell_height);
+
+  int getCellHeight() const;
+
+  void setCheckImplantGroup(const std::string& check_implant_group);
+
+  const std::string& getCheckImplantGroup() const;
+
+  void setLayerAny(bool layer_any);
+
+  bool isLayerAny() const;
+
+  void setZeroPrl(bool zero_prl);
+
+  bool isZeroPrl() const;
+
+  void setExceptCornerTouch(bool except_corner_touch);
+
+  bool isExceptCornerTouch() const;
+
+  static dbTechLayerImplantWidthRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerImplantWidthRule* obj);
+  // User Code Begin dbTechLayerImplantWidthRule
+  void setSecondLayer(dbTechLayer* second_layer);
+  dbTechLayer* getSecondLayer() const;
+  void addWithinLayer(dbTechLayer* layer);
+  std::vector<dbTechLayer*> getWithinLayers() const;
+  // User Code End dbTechLayerImplantWidthRule
 };
 
 class dbTechLayerKeepOutZoneRule : public dbObject

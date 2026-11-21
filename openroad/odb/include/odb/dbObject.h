@@ -120,6 +120,7 @@ enum dbObjectType
   dbTechLayerEolExtensionRuleObj,
   dbTechLayerEolKeepOutRuleObj,
   dbTechLayerForbiddenSpacingRuleObj,
+  dbTechLayerImplantWidthRuleObj,
   dbTechLayerKeepOutZoneRuleObj,
   dbTechLayerMaxSpacingRuleObj,
   dbTechLayerMinCutRuleObj,

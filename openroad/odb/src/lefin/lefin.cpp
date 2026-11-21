@@ -826,6 +826,9 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
       } else if (!strcmp(layer->propName(iii), "LEF58_MINSTEP")) {
         lefTechLayerMinStepParser minStepParser;
         valid = minStepParser.parse(layer->propValue(iii), l, this);
+      } else if (!strcmp(layer->propName(iii), "LEF58_WIDTH")) {
+        valid = lefTechLayerImplantWidthParser::parse(
+            layer->propValue(iii), l, this, pending_layer_refs_);
       } else {
         supported = false;
       }

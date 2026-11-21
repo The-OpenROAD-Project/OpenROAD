@@ -715,6 +715,13 @@ struct less<odb::dbTechLayerForbiddenSpacingRule*>
 };
 
 template <>
+struct less<odb::dbTechLayerImplantWidthRule*>
+{
+  bool operator()(const odb::dbTechLayerImplantWidthRule* lhs,
+                  const odb::dbTechLayerImplantWidthRule* rhs) const = delete;
+};
+
+template <>
 struct less<odb::dbTechLayerKeepOutZoneRule*>
 {
   bool operator()(const odb::dbTechLayerKeepOutZoneRule* lhs,

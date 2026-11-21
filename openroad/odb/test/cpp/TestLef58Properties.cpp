@@ -1008,4 +1008,64 @@ TEST_F(Fixture, TestLef58MinEnclosedAreaImplant)
   }
 }
 
+TEST_F(Fixture, TestLef58ImplantWidth)
+{
+  loadTechAndLib("tech",
+                 "lef58_implant_rules.lef",
+                 prefix + "data/lef58_implant_rules.lef");
+  EXPECT_EQ(logger_.getWarningCount(), 0);
+
+  dbTechLayer* layer = db_->getTech()->findLayer("IMP1");
+  ASSERT_NE(layer, nullptr);
+
+  auto width_rules = layer->getTechLayerImplantWidthRules();
+  ASSERT_EQ(width_rules.size(), 5);
+  auto w_it = width_rules.begin();
+  {
+    dbTechLayerImplantWidthRule* r = *w_it++;
+    EXPECT_EQ(r->getMinWidth(), 3.6 * 1000);
+    ASSERT_NE(r->getSecondLayer(), nullptr);
+    EXPECT_EQ(r->getSecondLayer()->getName(), "IMP2");
+    EXPECT_FALSE(r->isLayerAny());
+    EXPECT_TRUE(r->isZeroPrl());
+    EXPECT_EQ(r->getCheckImplantGroup(), "GRP1");
+  }
+  {
+    dbTechLayerImplantWidthRule* r = *w_it++;
+    EXPECT_EQ(r->getMinWidth(), 2.7 * 1000);
+    std::vector<dbTechLayer*> within = r->getWithinLayers();
+    ASSERT_EQ(within.size(), 1);
+    ASSERT_NE(within[0], nullptr);
+    EXPECT_EQ(within[0]->getName(), "SUB_A");
+  }
+  {
+    dbTechLayerImplantWidthRule* r = *w_it++;
+    EXPECT_EQ(r->getMinWidth(), 4.4 * 1000);
+    EXPECT_EQ(r->getCellHeight(), 8.8 * 1000);
+    ASSERT_NE(r->getSecondLayer(), nullptr);
+    EXPECT_EQ(r->getSecondLayer()->getName(), "SUB_B");
+    EXPECT_FALSE(r->isLayerAny());
+  }
+  {
+    dbTechLayerImplantWidthRule* r = *w_it++;
+    EXPECT_EQ(r->getMinWidth(), 1.9 * 1000);
+    EXPECT_EQ(r->getSecondLayer(), nullptr);
+    EXPECT_FALSE(r->isLayerAny());
+    EXPECT_TRUE(r->isZeroPrl());
+    EXPECT_EQ(r->getMaxWidth(), 7.2 * 1000);
+    EXPECT_TRUE(r->isExceptCornerTouch());
+    EXPECT_EQ(r->getLength(), 5.1 * 1000);
+  }
+  {
+    dbTechLayerImplantWidthRule* r = *w_it++;
+    EXPECT_EQ(r->getMinWidth(), 2.1 * 1000);
+    EXPECT_EQ(r->getSecondLayer(), nullptr);
+    EXPECT_TRUE(r->isLayerAny());
+    EXPECT_FALSE(r->isZeroPrl());
+    EXPECT_EQ(r->getMaxWidth(), 6.4 * 1000);
+    EXPECT_FALSE(r->isExceptCornerTouch());
+    EXPECT_EQ(r->getLength(), 4.3 * 1000);
+  }
+}
+
 }  // namespace odb
