@@ -1,0 +1,31 @@
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_L_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_L_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_SL_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_SL_1x_220121a.lef, created 212 library cells
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 470 components and 2159 component-terminals.
+[INFO ODB-0133]     Created 416 nets and 1216 connections.
+group through _015_
+violating endpoints: 83 in all, 36 in the group (wns -93.530)
+[INFO RSZ-0100] Repair move sequence: UnbufferMove VtSwapMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 36 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 36 out of 36 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -93.530 |    -2475.5 |     36 | dpath.a_reg.out\[7\]$_DFFE_PP_/D
+     221* |       0 |      35 |        9 |      2 |     4 |    +3.1% |  -10.165 |     -193.2 |     36 | dpath.a_reg.out\[3\]$_DFFE_PP_/D
+    final |       0 |      49 |        9 |      2 |     7 |    +3.2% |  -10.750 |     -163.0 |     28 | dpath.a_reg.out\[3\]$_DFFE_PP_/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0040] Inserted 9 buffers.
+[INFO RSZ-0051] Resized 49 instances: 11 up, 0 up match, 0 down, 38 VT
+[INFO RSZ-0043] Swapped pins on 7 instances.
+[INFO RSZ-0049] Cloned 2 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+group after: 28 violating, wns -10.750, improved: 1
+vt swaps: 1, off the group's paths: 0
+net still there: 0
+doomed_group names a net: 0
