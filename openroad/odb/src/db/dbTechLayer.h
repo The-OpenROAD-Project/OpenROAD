@@ -45,6 +45,7 @@ class _dbTechLayerWrongDirSpacingRule;
 class _dbTechLayerTwoWiresForbiddenSpcRule;
 class _dbTechLayerVoltageSpacing;
 class _dbTechLayerImplantWidthRule;
+class _dbTechLayerImplantSpacingRule;
 // User Code Begin Classes
 class _dbTechLayerSpacingRule;
 class _dbTechMinCutRule;
@@ -124,6 +125,7 @@ class _dbTechLayer : public _dbObject
       two_wires_forbidden_spc_rules_tbl_;
   dbTable<_dbTechLayerVoltageSpacing>* voltage_spacing_rules_tbl_;
   dbTable<_dbTechLayerImplantWidthRule>* implant_width_rules_tbl_;
+  dbTable<_dbTechLayerImplantSpacingRule>* implant_spacing_rules_tbl_;
 
   // User Code Begin Fields
 

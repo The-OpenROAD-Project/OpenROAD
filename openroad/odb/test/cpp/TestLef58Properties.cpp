@@ -1068,4 +1068,60 @@ TEST_F(Fixture, TestLef58ImplantWidth)
   }
 }
 
+TEST_F(Fixture, TestLef58ImplantSpacing)
+{
+  loadTechAndLib("tech",
+                 "lef58_implant_rules.lef",
+                 prefix + "data/lef58_implant_rules.lef");
+  EXPECT_EQ(logger_.getWarningCount(), 0);
+
+  dbTechLayer* layer = db_->getTech()->findLayer("IMP1");
+  ASSERT_NE(layer, nullptr);
+
+  auto spc_rules = layer->getTechLayerImplantSpacingRules();
+  ASSERT_EQ(spc_rules.size(), 3);
+  auto spc_it = spc_rules.begin();
+  {
+    dbTechLayerImplantSpacingRule* r = *spc_it++;
+    EXPECT_EQ(r->getMinSpacing(), 1.2 * 1000);
+    EXPECT_EQ(r->getSecondLayer(), nullptr);
+    EXPECT_TRUE(r->isVertical());
+    EXPECT_FALSE(r->isHorizontal());
+    EXPECT_TRUE(r->isPrlValid());
+    EXPECT_EQ(r->getPrl(), -0.8 * 1000);
+    std::vector<dbTechLayer*> ilayers = r->getIntersectLayers();
+    ASSERT_EQ(ilayers.size(), 2);
+    ASSERT_NE(ilayers[0], nullptr);
+    ASSERT_NE(ilayers[1], nullptr);
+    EXPECT_EQ(ilayers[0]->getName(), "IMP2");
+    EXPECT_EQ(ilayers[1]->getName(), "IMP3");
+  }
+  {
+    dbTechLayerImplantSpacingRule* r = *spc_it++;
+    EXPECT_EQ(r->getMinSpacing(), 2.3 * 1000);
+    EXPECT_EQ(r->getSecondLayer(), nullptr);
+    EXPECT_TRUE(r->isHorizontal());
+    EXPECT_FALSE(r->isVertical());
+    EXPECT_FALSE(r->isPrlValid());
+    std::vector<dbTechLayer*> ilayers = r->getIntersectLayers();
+    ASSERT_EQ(ilayers.size(), 2);
+    ASSERT_NE(ilayers[0], nullptr);
+    ASSERT_NE(ilayers[1], nullptr);
+    EXPECT_EQ(ilayers[0]->getName(), "IMP2");
+    EXPECT_EQ(ilayers[1]->getName(), "IMP3");
+  }
+  {
+    dbTechLayerImplantSpacingRule* r = *spc_it++;
+    EXPECT_EQ(r->getMinSpacing(), 3.4 * 1000);
+    ASSERT_NE(r->getSecondLayer(), nullptr);
+    EXPECT_EQ(r->getSecondLayer()->getName(), "IMP2");
+    EXPECT_TRUE(r->isHorizontal());
+    EXPECT_TRUE(r->isPrlValid());
+    EXPECT_EQ(r->getPrl(), 0.7 * 1000);
+    EXPECT_TRUE(r->isExceptAbutted());
+    EXPECT_TRUE(r->isExceptCornerTouch());
+    EXPECT_EQ(r->getLength(), 5.6 * 1000);
+  }
+}
+
 }  // namespace odb

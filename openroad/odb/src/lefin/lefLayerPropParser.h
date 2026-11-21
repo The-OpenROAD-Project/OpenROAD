@@ -462,6 +462,15 @@ class lefTechLayerImplantWidthParser
                     std::vector<lefinReader::PendingLayerRef>&);
 };
 
+class lefTechLayerImplantSpacingParser
+{
+ public:
+  static bool parse(const std::string&,
+                    dbTechLayer*,
+                    lefinReader*,
+                    std::vector<lefinReader::PendingLayerRef>&);
+};
+
 template <typename Rule>
 void deferLayer(std::vector<lefinReader::PendingLayerRef>& pending,
                 Rule* rule,

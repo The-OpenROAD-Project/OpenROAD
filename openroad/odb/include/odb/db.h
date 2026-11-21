@@ -171,6 +171,7 @@ class dbTechLayerCutSpacingTableOrthRule;
 class dbTechLayerEolExtensionRule;
 class dbTechLayerEolKeepOutRule;
 class dbTechLayerForbiddenSpacingRule;
+class dbTechLayerImplantSpacingRule;
 class dbTechLayerImplantWidthRule;
 class dbTechLayerKeepOutZoneRule;
 class dbTechLayerMaxSpacingRule;
@@ -9405,6 +9406,8 @@ class dbTechLayer : public dbObject
 
   dbSet<dbTechLayerImplantWidthRule> getTechLayerImplantWidthRules() const;
 
+  dbSet<dbTechLayerImplantSpacingRule> getTechLayerImplantSpacingRules() const;
+
   void setRectOnly(bool rect_only);
 
   bool isRectOnly() const;
@@ -10826,6 +10829,51 @@ class dbTechLayerForbiddenSpacingRule : public dbObject
   static void destroy(dbTechLayerForbiddenSpacingRule* rule);
 
   // User Code End dbTechLayerForbiddenSpacingRule
+};
+
+class dbTechLayerImplantSpacingRule : public dbObject
+{
+ public:
+  void setMinSpacing(int min_spacing);
+
+  int getMinSpacing() const;
+
+  void setPrl(int prl);
+
+  int getPrl() const;
+
+  void setLength(int length);
+
+  int getLength() const;
+
+  void setHorizontal(bool horizontal);
+
+  bool isHorizontal() const;
+
+  void setVertical(bool vertical);
+
+  bool isVertical() const;
+
+  void setPrlValid(bool prl_valid);
+
+  bool isPrlValid() const;
+
+  void setExceptAbutted(bool except_abutted);
+
+  bool isExceptAbutted() const;
+
+  void setExceptCornerTouch(bool except_corner_touch);
+
+  bool isExceptCornerTouch() const;
+
+  static dbTechLayerImplantSpacingRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerImplantSpacingRule* obj);
+  // User Code Begin dbTechLayerImplantSpacingRule
+  void setSecondLayer(dbTechLayer* second_layer);
+  dbTechLayer* getSecondLayer() const;
+  void addIntersectLayer(dbTechLayer* layer);
+  std::vector<dbTechLayer*> getIntersectLayers() const;
+  // User Code End dbTechLayerImplantSpacingRule
 };
 
 class dbTechLayerImplantWidthRule : public dbObject
