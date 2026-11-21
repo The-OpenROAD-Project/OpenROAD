@@ -3546,10 +3546,11 @@ void FlexGCWorker::Impl::checkCutSpacing()
       if (currLayer->getType() != dbTechLayerType::CUT) {
         continue;
       }
+      FixedEnclosureCaches caches;
       for (auto& pin : targetNet_->getPins(i)) {
         for (auto& maxrect : pin->getMaxRectangles()) {
           checkCutSpacing_main(maxrect.get());
-          checkLef58Enclosure_main(maxrect.get());
+          checkLef58Enclosure_main(maxrect.get(), caches);
         }
       }
     }
@@ -3563,10 +3564,11 @@ void FlexGCWorker::Impl::checkCutSpacing()
         continue;
       }
       for (auto& net : getNets()) {
+        FixedEnclosureCaches caches;
         for (auto& pin : net->getPins(i)) {
           for (auto& maxrect : pin->getMaxRectangles()) {
             checkCutSpacing_main(maxrect.get());
-            checkLef58Enclosure_main(maxrect.get());
+            checkLef58Enclosure_main(maxrect.get(), caches);
           }
         }
       }

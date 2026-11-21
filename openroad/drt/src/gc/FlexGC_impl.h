@@ -4,6 +4,7 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <map>
 #include <memory>
 #include <set>
@@ -24,6 +25,7 @@
 #include "drt-global.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "frRTree.h"
 #include "gc/FlexGC.h"
 #include "odb/db.h"
 
@@ -524,7 +526,36 @@ class FlexGCWorker::Impl
                                              gcRect* rect2,
                                              frCoord spacing);
   // LEF58_ENCLOSURE
-  void checkLef58Enclosure_main(gcRect* rect);
+  struct FixedEnclosureLayerCache
+  {
+    FixedEnclosureLayerCache(const gcNet* net, frLayerNum layer_num);
+    std::vector<gtl::rectangle_data<frCoord>> rects;
+    RTree<size_t> index;
+  };
+  using FixedEnclosureCaches
+      = std::array<std::unique_ptr<FixedEnclosureLayerCache>, 2>;
+  void checkLef58Enclosure_main(gcRect* rect, FixedEnclosureCaches& caches);
+  gcRect* getLef58Enclosure(gcRect* rect,
+                            frLayerNum layerNum,
+                            std::vector<gcRect*>& candidates);
+  template <typename Rect>
+  frLef58EnclosureConstraint* findLef58EnclosureViolation(
+      gcRect* via,
+      const std::vector<Rect*>& candidates,
+      frCoord width,
+      bool above);
+  void checkFixedLef58Enclosure(
+      gcRect* via,
+      frLayerNum layer_num,
+      std::unique_ptr<FixedEnclosureLayerCache>& cache);
+  bool getRoutedEnclosureDelta(const gtl::rectangle_data<frCoord>& witness,
+                               const FixedEnclosureLayerCache& cache,
+                               gtl::rectangle_data<frCoord>& delta_piece);
+  void addFixedLef58EnclosureMarker(
+      gcRect* via,
+      frLayerNum layer_num,
+      frLef58EnclosureConstraint* constraint,
+      const gtl::rectangle_data<frCoord>& delta_piece);
   void checkLef58Enclosure_main(gcRect* via,
                                 gcRect* enc,
                                 const std::vector<gcRect*>& candidates);
