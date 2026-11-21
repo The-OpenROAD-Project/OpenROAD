@@ -808,7 +808,10 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
         supported = false;
       }
     } else if (type.getValue() == dbTechLayerType::IMPLANT) {
-      if (!strcmp(layer->propName(iii), "LEF58_AREA")) {
+      if (!strcmp(layer->propName(iii), "LEF58_MINENCLOSEDAREA")) {
+        valid = lefTechLayerMinEnclosedAreaParser::parse(
+            layer->propValue(iii), l, this);
+      } else if (!strcmp(layer->propName(iii), "LEF58_AREA")) {
         lefTechLayerAreaRuleParser parser(this);
         parser.parse(layer->propValue(iii), l, incomplete_props_);
       } else if (!strcmp(layer->propName(iii), "LEF58_CORNERSPACING")) {

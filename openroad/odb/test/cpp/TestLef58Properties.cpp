@@ -976,4 +976,36 @@ TEST_F(Fixture, TestLef58MaxSpacingImplant)
   EXPECT_EQ(r->getLength(), 3.1 * 1000);
 }
 
+TEST_F(Fixture, TestLef58MinEnclosedAreaImplant)
+{
+  loadTechAndLib("tech",
+                 "lef58_implant_rules.lef",
+                 prefix + "data/lef58_implant_rules.lef");
+  EXPECT_EQ(logger_.getWarningCount(), 0);
+
+  dbTechLayer* layer = db_->getTech()->findLayer("IMP1");
+  ASSERT_NE(layer, nullptr);
+
+  auto min_enc_rules = layer->getMinEncRules();
+  ASSERT_EQ(min_enc_rules.size(), 2);
+  auto me_it = min_enc_rules.begin();
+  {
+    dbTechMinEncRule* r = *me_it++;
+    int64_t area = 0;
+    EXPECT_TRUE(r->getEnclosure(area));
+    EXPECT_EQ(area, 18.0 * 1000 * 1000);
+    uint32_t width = 0;
+    EXPECT_FALSE(r->getEnclosureWidth(width));
+  }
+  {
+    dbTechMinEncRule* r = *me_it++;
+    int64_t area = 0;
+    EXPECT_TRUE(r->getEnclosure(area));
+    EXPECT_EQ(area, 14.5 * 1000 * 1000);
+    uint32_t width = 0;
+    EXPECT_TRUE(r->getEnclosureWidth(width));
+    EXPECT_EQ(width, 2.8 * 1000);
+  }
+}
+
 }  // namespace odb

@@ -447,4 +447,10 @@ auto dbdistSetter(Setter setter, Rule* rule, lefinReader* lefin)
   };
 }
 
+class lefTechLayerMinEnclosedAreaParser
+{
+ public:
+  static bool parse(const std::string&, dbTechLayer*, lefinReader*);
+};
+
 }  // namespace odb

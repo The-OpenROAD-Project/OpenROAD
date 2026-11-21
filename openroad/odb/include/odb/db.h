@@ -6636,6 +6636,7 @@ class dbTechMinEncRule : public dbObject
   void setEnclosureWidth(uint32_t width);
 
   static dbTechMinEncRule* create(dbTechLayer* inly);
+  static void destroy(dbTechMinEncRule* rule);
   static dbTechMinEncRule* getMinEncRule(dbTechLayer* inly, uint32_t dbid);
 };
 
