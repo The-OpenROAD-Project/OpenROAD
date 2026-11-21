@@ -1,0 +1,19 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: multi_height_power_offset.lef, created 2 library cells
+[INFO IFP-0005] Added 6 die polygon vertices to the list.
+[INFO IFP-0106] Initializing floorplan in polygon mode.
+[INFO IFP-0066] Offsetting rows for site DoubleExtSite by 1.400um to align power rails with site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-1002] Added 4 polygon-aware rows for site DoubleExtSite.
+[INFO IFP-1002] Added 10 polygon-aware rows for site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO ODB-0303] The initial 14 rows (1150 sites) were cut with 1 shapes for a total of 14 rows (1100 sites).
+[INFO IFP-0997] Completed polygon-aware row generation using 6 vertices
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 19.000 14.000 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 19.000 14.000 ) um
+[INFO IFP-0102] Core area:                          266.000 um^2
+[INFO IFP-0103] Total instances area:                15.428 um^2
+[INFO IFP-0104] Effective utilization:                0.058
+[INFO IFP-0105] Number of instances:                      5
+Polygon DoubleExtSite row: ROW_0 y=1.400..4.200 x=0.000..19.000
+Polygon DoubleExtSite row: ROW_1 y=4.200..7.000 x=0.000..19.000
+Polygon DoubleExtSite row: ROW_3 y=9.800..12.600 x=0.000..9.500
+Polygon DoubleExtSite row: ROW_2_1 y=7.000..9.800 x=0.000..9.500
