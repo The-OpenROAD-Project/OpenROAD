@@ -728,7 +728,11 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     auto& treeedges = sttrees_[netID].edges;
     auto& treenodes = sttrees_[netID].nodes;
     const int origEng = enlarge;
-    const int min_layer = net->getMinLayer();
+    const int promoted_min = net->getPromotedMinLayer();
+    const int min_layer
+        = (!has_2D_overflow_ && promoted_min > net->getMinLayer())
+              ? std::min(promoted_min, net->getMaxLayer())
+              : net->getMinLayer();
     const int max_layer = net->getMaxLayer();
 
     // First pass processes all edges; subsequent passes retry only the edges

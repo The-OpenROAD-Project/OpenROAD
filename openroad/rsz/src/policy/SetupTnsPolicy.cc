@@ -222,6 +222,7 @@ void SetupTnsPolicy::repairSetupTns(const float setup_slack_margin,
       } else {
         force_single_repair = true;
         decreasing_slack_passes++;
+        committer_.markSpeculativePass();
         if (decreasing_slack_passes > current_limit) {
           committer_.restoreJournal();
           journal_open = false;

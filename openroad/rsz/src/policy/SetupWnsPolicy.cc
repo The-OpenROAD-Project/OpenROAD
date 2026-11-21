@@ -347,6 +347,7 @@ void SetupWnsPolicy::repairSetupWns(const float setup_slack_margin,
         target_tns_local = prev_tns_local;
       }
       total_decreasing_slack_passes++;
+      committer_.markSpeculativePass();
       decreasing_slack_endpoints.insert(endpoint_pin);
       decreasing_slack_counts[endpoint_pin]++;
 

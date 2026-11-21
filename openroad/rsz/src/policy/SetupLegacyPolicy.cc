@@ -291,8 +291,9 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
       RepairSetupProfiler::event("checkpoint_misses");
       endpoint_state.force_single_repair = true;
       ++endpoint_state.decreasing_slack_passes;
-      if (endpoint_state.decreasing_slack_passes
-          > decreasing_slack_max_passes_) {
+      committer_.markSpeculativePass();
+      const int max_decreasing_passes = maxDecreasingSlackPasses();
+      if (endpoint_state.decreasing_slack_passes > max_decreasing_passes) {
         RepairSetupProfiler::stop("max_decreasing_slack_passes");
         debugPrint(logger_,
                    RSZ,
@@ -304,7 +305,7 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
                    main_state.phase_marker,
                    network_->pathName(endpoint_state.end->pin()),
                    endpoint_state.decreasing_slack_passes,
-                   decreasing_slack_max_passes_);
+                   max_decreasing_passes);
         debugPrint(
             logger_,
             RSZ,
@@ -327,7 +328,7 @@ void SetupLegacyPolicy::repairEndpoint(EndpointRepairState& endpoint_state,
                  phaseName(),
                  main_state.phase_marker,
                  endpoint_state.decreasing_slack_passes,
-                 decreasing_slack_max_passes_);
+                 max_decreasing_passes);
     }
 
     // Global guards stop searching and let post-loop cleanup finalize the

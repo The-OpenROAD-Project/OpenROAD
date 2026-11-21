@@ -101,11 +101,24 @@ float FastRouteCore::getResAwareScore(FrNet* net)
   const float kFanoutWeight = 3.0f;
   const float kNetLengthWeight = 2.0f;
 
-  return net->getResistance() / worst_net_resistance_ * kResistanceWeight
-         + net->getSlack() / worst_slack_ * kSlackWeight
-         + static_cast<float>(net->getNumPins()) / worst_fanout_ * kFanoutWeight
-         + static_cast<float>(net->getNetLength()) / worst_net_length_
-               * kNetLengthWeight;
+  float score = 0.0f;
+  if (worst_net_resistance_ > 0.0f) {
+    score += net->getResistance() / worst_net_resistance_ * kResistanceWeight;
+  }
+  if (worst_slack_ != 0.0f && std::isfinite(worst_slack_)
+      && std::abs(worst_slack_) < sta::INF && std::isfinite(net->getSlack())
+      && std::abs(net->getSlack()) < sta::INF) {
+    score += net->getSlack() / worst_slack_ * kSlackWeight;
+  }
+  if (worst_fanout_ > 0) {
+    score += static_cast<float>(net->getNumPins()) / worst_fanout_
+             * kFanoutWeight;
+  }
+  if (worst_net_length_ > 0) {
+    score += static_cast<float>(net->getNetLength()) / worst_net_length_
+             * kNetLengthWeight;
+  }
+  return score;
 }
 
 static bool compareNetPins(const OrderNetPin& a, const OrderNetPin& b)
@@ -738,12 +751,14 @@ void FastRouteCore::updateSlacks()
     }
     net->setNetLength(net_size);
 
+    const bool is_promoted = net->getPromotedMinLayer() >= 0;
     bool is_short_net = net_size <= kShortNetThreshold;
     bool is_unconstrained_net = slack == sta::INF && !net->isClock();
     bool is_pos_slack = !is_incremental_grt_ && slack > 0 && !net->isClock();
 
-    // Dont apply res-aware to unconstrained and short nets
-    if (is_unconstrained_net || is_short_net || is_pos_slack) {
+    // Don't apply res-aware to unconstrained and short nets unless promoted.
+    if (!is_promoted
+        && (is_unconstrained_net || is_short_net || is_pos_slack)) {
       continue;
     }
 
@@ -753,8 +768,8 @@ void FastRouteCore::updateSlacks()
 
     updateWorstMetrics(net);
 
-    // Enable res-aware for clock and NDR nets by default
-    if (net->getDbNet()->getNonDefaultRule() || net->isClock()) {
+    // Enable res-aware for promoted, clock, and NDR nets by default
+    if (is_promoted || net->getDbNet()->getNonDefaultRule() || net->isClock()) {
       net->setIsResAware(true);
     }
 
@@ -872,12 +887,19 @@ void FastRouteCore::assignEdge(const int netID,
   // Enable resistance aware layer assignment only if the net needs it
   resistance_aware_ = enable_resistance_aware_ && net->isResAware();
 
+  int eff_min_layer = net->getMinLayer();
+  const bool has_promoted
+      = net->getPromotedMinLayer() > eff_min_layer && !has_2D_overflow_;
+  if (has_promoted) {
+    eff_min_layer = std::min(net->getPromotedMinLayer(), net->getMaxLayer());
+  }
+
   for (k = 0; k < routelen; k++) {
     int best_cost = std::numeric_limits<int>::min();
     bool has_available_resources = false;
     if (grids[k].x == grids[k + 1].x) {
       const int min_y = std::min(grids[k].y, grids[k + 1].y);
-      for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
+      for (int l = eff_min_layer; l <= net->getMaxLayer(); l++) {
         // check if the current layer is vertical to match the edge orientation
         bool is_vertical
             = layer_directions_[l] == odb::dbTechLayerDir::VERTICAL;
@@ -899,8 +921,8 @@ void FastRouteCore::assignEdge(const int netID,
       // assign the edge to the closest layer below the min routing layer.
       // if design has 2D overflow, accept the congestion in layer assignment
       if (!has_available_resources && !has_2D_overflow_) {
-        int min_layer = net->getMinLayer();
-        for (int l = net->getMinLayer() - 1; l >= 0; l--) {
+        int min_layer = eff_min_layer;
+        for (int l = eff_min_layer - 1; l >= 0; l--) {
           fixEdgeAssignment(min_layer,
                             v_edges_3D_,
                             grids[k].x,
@@ -912,7 +934,15 @@ void FastRouteCore::assignEdge(const int netID,
                             layer_grid,
                             net_cost);
         }
-        net->setMinLayer(min_layer);
+        if (min_layer < net->getMinLayer()) {
+          net->setMinLayer(min_layer);
+        }
+        if (min_layer < eff_min_layer) {
+          eff_min_layer = min_layer;
+          if (has_promoted) {
+            net->setPromotedMinLayer(min_layer);
+          }
+        }
         // try to assign the edge to the closest layer above the max routing
         // layer
         int max_layer = net->getMaxLayer();
@@ -931,14 +961,14 @@ void FastRouteCore::assignEdge(const int netID,
         net->setMaxLayer(max_layer);
       } else {  // the edge was assigned to a layer without causing overflow
         for (int l = 0; l < num_layers_; l++) {
-          if (l < net->getMinLayer() || l > net->getMaxLayer()) {
+          if (l < eff_min_layer || l > net->getMaxLayer()) {
             layer_grid[l][k] = std::numeric_limits<int>::min();
           }
         }
       }
     } else {
       const int min_x = std::min(grids[k].x, grids[k + 1].x);
-      for (int l = net->getMinLayer(); l <= net->getMaxLayer(); l++) {
+      for (int l = eff_min_layer; l <= net->getMaxLayer(); l++) {
         // check if the current layer is horizontal to match the edge
         // orientation
         bool is_horizontal
@@ -961,8 +991,8 @@ void FastRouteCore::assignEdge(const int netID,
       // assign the edge to the closest layer below the min routing layer.
       // if design has 2D overflow, accept the congestion in layer assignment
       if (!has_available_resources && !has_2D_overflow_) {
-        int min_layer = net->getMinLayer();
-        for (int l = net->getMinLayer() - 1; l >= 0; l--) {
+        int min_layer = eff_min_layer;
+        for (int l = eff_min_layer - 1; l >= 0; l--) {
           fixEdgeAssignment(min_layer,
                             h_edges_3D_,
                             min_x,
@@ -974,7 +1004,15 @@ void FastRouteCore::assignEdge(const int netID,
                             layer_grid,
                             net_cost);
         }
-        net->setMinLayer(min_layer);
+        if (min_layer < net->getMinLayer()) {
+          net->setMinLayer(min_layer);
+        }
+        if (min_layer < eff_min_layer) {
+          eff_min_layer = min_layer;
+          if (has_promoted) {
+            net->setPromotedMinLayer(min_layer);
+          }
+        }
         // try to assign the edge to the closest layer above the max routing
         // layer
         int max_layer = net->getMaxLayer();
@@ -993,7 +1031,7 @@ void FastRouteCore::assignEdge(const int netID,
         net->setMaxLayer(max_layer);
       } else {  // the edge was assigned to a layer without causing overflow
         for (int l = 0; l < num_layers_; l++) {
-          if (l < net->getMinLayer() || l > net->getMaxLayer()) {
+          if (l < eff_min_layer || l > net->getMaxLayer()) {
             layer_grid[l][k] = std::numeric_limits<int>::min();
           }
         }
@@ -1076,7 +1114,7 @@ void FastRouteCore::assignEdge(const int netID,
         if (layer_grid[l][k] >= net->getLayerEdgeCost(l)) {
           gridD[l][k + 1] = gridD[l][k] + 1 + getWireCost(l, tile_size_, net);
         } else if (layer_grid[l][k] == std::numeric_limits<int>::min()
-                   || l < net->getMinLayer() || l > net->getMaxLayer()) {
+                   || l < eff_min_layer || l > net->getMaxLayer()) {
           // when the layer orientation doesn't match the edge orientation,
           // set a larger weight to avoid assigning to this layer when the
           // routing has 3D overflow
@@ -1154,7 +1192,7 @@ void FastRouteCore::assignEdge(const int netID,
         if (layer_grid[l][k - 1] >= net->getLayerEdgeCost(l)) {
           gridD[l][k - 1] = gridD[l][k] + 1 + getWireCost(l, tile_size_, net);
         } else if (layer_grid[l][k] == std::numeric_limits<int>::min()
-                   || l < net->getMinLayer() || l > net->getMaxLayer()) {
+                   || l < eff_min_layer || l > net->getMaxLayer()) {
           // when the layer orientation doesn't match the edge orientation,
           // set a larger weight to avoid assigning to this layer when the
           // routing has 3D overflow

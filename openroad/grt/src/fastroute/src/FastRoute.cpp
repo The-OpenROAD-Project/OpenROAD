@@ -3461,12 +3461,16 @@ void FrNet::reset(odb::dbNet* db_net,
 {
   db_net_ = db_net;
   is_critical_ = false;
+  is_res_aware_ = false;
   is_clock_ = is_clock;
   driver_idx_ = driver_idx;
   edge_cost_ = edge_cost;
   min_layer_ = min_layer;
   max_layer_ = max_layer;
+  promoted_min_layer_ = -1;
   slack_ = slack;
+  resistance_ = 0.0f;
+  net_length_ = 0;
   edge_cost_per_layer_.reset(edge_cost_per_layer);
   pin_x_.clear();
   pin_y_.clear();

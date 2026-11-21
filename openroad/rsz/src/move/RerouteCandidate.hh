@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <functional>
+#include <unordered_set>
+
 #include "MoveCandidate.hh"
 #include "OptimizerTypes.hh"
 #include "rsz/Resizer.hh"
@@ -18,7 +21,8 @@ class Pin;
 
 namespace rsz {
 
-// Marks one driver net for resistance-aware incremental global reroute.
+// Marks one driver net for resistance-aware incremental global reroute,
+// optionally promoting its minimum routing layer onto lower-resistance layers.
 class RerouteCandidate : public MoveCandidate
 {
  public:
@@ -28,7 +32,10 @@ class RerouteCandidate : public MoveCandidate
                    sta::Instance* driver_inst,
                    odb::dbNet* db_net,
                    float current_resistance,
-                   float estimated_resistance);
+                   float estimated_resistance,
+                   int promoted_min_layer = 0,
+                   std::unordered_set<odb::dbNet*>* attempted_nets = nullptr,
+                   std::function<void(odb::dbNet*)> on_applied = {});
 
   Estimate estimate() override;
   MoveResult apply() override;
@@ -40,6 +47,9 @@ class RerouteCandidate : public MoveCandidate
   odb::dbNet* db_net_;
   float current_resistance_;
   float estimated_resistance_;
+  int promoted_min_layer_;
+  std::unordered_set<odb::dbNet*>* attempted_nets_;
+  std::function<void(odb::dbNet*)> on_applied_;
 };
 
 }  // namespace rsz

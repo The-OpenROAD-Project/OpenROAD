@@ -1,10 +1,16 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <algorithm>
+
 #include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
+#include "grt/GRoute.h"
+#include "grt/GlobalRouter.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
@@ -489,6 +495,137 @@ TEST_F(TestEstimateParasitics, WireRcPerTech)
   ep_.initChip(chip1);
   EXPECT_DOUBLE_EQ(ep_.wireSignalHResistance(scene), 1.0e3);
   EXPECT_DOUBLE_EQ(ep_.wireSignalVResistance(scene), 2.0e3);
+}
+
+// Verifies that restoring routing guides during ECO rollback (undoEco ->
+// inDbNetPostGuideRestore) invalidates the net in EstimateParasitics so
+// updateParasitics() re-extracts STA parasitics for the restored route rather
+// than leaving stale parasitics from the rolled-back reroute.
+TEST_F(TestEstimateParasitics, GuideRestoreUndoEcoUpdatesParasitics)
+{
+  readVerilogAndSetup("TestEstimateParasitics.v");
+
+  odb::dbTech* tech = block_->getTech();
+  const int dbu = tech->getDbUnitsPerMicron();
+  const int die_w = 60 * dbu;
+  const int die_h = 60 * dbu;
+  block_->setDieArea(odb::Rect(0, 0, die_w, die_h));
+
+  // Place instances far apart so routes have substantial wire resistance.
+  auto placeInst = [&](const char* name, int x_um, int y_um) {
+    odb::dbInst* inst = block_->findInst(name);
+    ASSERT_NE(inst, nullptr);
+    inst->setLocation(x_um * dbu, y_um * dbu);
+    inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  };
+  placeInst("reg0", 5, 5);
+  placeInst("reg1", 45, 45);
+  placeInst("scan_reg", 45, 5);
+
+  odb::dbTechLayer* m1 = tech->findRoutingLayer(1);
+  ASSERT_NE(m1, nullptr);
+  auto placePort = [&](const char* name, int x_um, int y_um) {
+    odb::dbBTerm* bterm = block_->findBTerm(name);
+    ASSERT_NE(bterm, nullptr);
+    odb::dbBPin* bpin = odb::dbBPin::create(bterm);
+    odb::dbBox::create(
+        bpin, m1, x_um * dbu, y_um * dbu, x_um * dbu + 200, y_um * dbu + 200);
+    bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  };
+  placePort("d", 5, 45);
+  placePort("q0", 50, 5);
+  placePort("q1", 50, 45);
+  placePort("qs", 50, 25);
+  placePort("clk", 25, 5);
+  placePort("scan_clk", 25, 45);
+
+  // Create routing tracks on metal1..metal6 so global_route can run.
+  for (int l = 1; l <= 6; ++l) {
+    odb::dbTechLayer* layer = tech->findRoutingLayer(l);
+    ASSERT_NE(layer, nullptr);
+    const int pitch = std::max(layer->getPitch(), 280);
+    odb::dbTrackGrid* grid = odb::dbTrackGrid::create(block_, layer);
+    grid->addGridPatternX(pitch / 2, die_w / pitch, pitch);
+    grid->addGridPatternY(pitch / 2, die_h / pitch, pitch);
+  }
+
+  // Give lower layers 10x higher wire resistance than upper layers so
+  // promoting a net produces an unambiguous change in STA pi-Elmore rpi.
+  sta::Scene* scene = sta_->scenes().front();
+  for (int l = 1; l <= 6; ++l) {
+    odb::dbTechLayer* layer = tech->findRoutingLayer(l);
+    ASSERT_NE(layer, nullptr);
+    const double res = (l <= 4) ? 1.0e8 : 1.0e7;  // Ohm/m
+    ep_.setLayerRC(layer, scene, res, 1.0e-10);
+    if (odb::dbTechLayer* cut = layer->getUpperLayer()) {
+      ep_.setLayerRC(cut, scene, 1.0, 0.0);
+    }
+  }
+
+  grt_.setMinRoutingLayer(2);
+  grt_.setMaxRoutingLayer(6);
+  grt_.globalRoute(/*save_guides=*/true);
+  ep_.estimateParasitics(ParasiticsSrc::kGlobalRouting);
+
+  odb::dbNet* q0_db_net = block_->findNet("q0");
+  ASSERT_NE(q0_db_net, nullptr);
+  sta::Net* q0_sta_net = db_network_->dbToSta(q0_db_net);
+  ASSERT_NE(q0_sta_net, nullptr);
+  sta::PinSet* drivers = db_network_->drivers(q0_sta_net);
+  ASSERT_TRUE(drivers != nullptr && !drivers->empty());
+  const sta::Pin* drvr_pin = *drivers->begin();
+  const sta::Pin* load_pin = findTopPin("q0");
+  ASSERT_NE(load_pin, nullptr);
+
+  auto getElmore = [&]() -> float {
+    sta::Parasitics* par = scene->parasitics(sta::MinMax::max());
+    sta::Parasitic* pi = par->findPiElmore(
+        drvr_pin, sta::RiseFall::rise(), sta::MinMax::max());
+    EXPECT_NE(pi, nullptr);
+    if (pi == nullptr) {
+      return 0.0f;
+    }
+    float elmore = 0.0f;
+    bool exists = false;
+    par->findElmore(pi, load_pin, elmore, exists);
+    EXPECT_TRUE(exists);
+    return elmore;
+  };
+
+  const float elmore_orig = getElmore();
+  ASSERT_GT(elmore_orig, 0.0f);
+
+  {
+    IncrementalParasiticsGuard guard(&ep_);
+    odb::dbDatabase::beginEco(block_);
+
+    // Promote q0 to upper low-resistance layers and incrementally reroute.
+    grt_.setNetPromotedMinLayer(q0_db_net, 5);
+    grt_.setResistanceAware(true);
+    grt_.addDirtyNet(q0_db_net);
+    grt_.setNetIsResAware(q0_db_net, true);
+    ep_.parasiticsInvalid(q0_db_net);
+    ep_.updateParasitics();
+
+    const float elmore_promoted = getElmore();
+    ASSERT_GT(elmore_promoted, 0.0f);
+    EXPECT_LT(elmore_promoted, elmore_orig * 0.3f);
+
+    // Roll back the reroute via undoEco. The guide-restore callback must mark
+    // the net invalid in EstimateParasitics and clear its promoted min-layer.
+    odb::dbDatabase::undoEco(block_);
+    EXPECT_TRUE(ep_.hasParasiticsInvalid());
+    EXPECT_EQ(grt_.getNetPromotedMinLayer(q0_db_net), 0);
+
+    // Re-extract parasitics from the restored guides and verify STA Elmore
+    // delay matches the pre-ECO route rather than staying at elmore_promoted.
+    ep_.updateParasitics();
+    EXPECT_FALSE(ep_.hasParasiticsInvalid());
+
+    const float elmore_restored = getElmore();
+    EXPECT_GT(elmore_restored, elmore_promoted * 3.0f);
+    EXPECT_NEAR(elmore_restored, elmore_orig, elmore_orig * 0.10f);
+  }
 }
 
 }  // namespace est

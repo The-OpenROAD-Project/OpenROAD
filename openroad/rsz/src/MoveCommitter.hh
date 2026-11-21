@@ -117,10 +117,34 @@ class MoveCommitter
   void clearTrackedMoves();
 
   // === ECO journal lifecycle ===============================================
+  class JournalObserver
+  {
+   public:
+    virtual ~JournalObserver() = default;
+    virtual void onBeginJournal() = 0;
+    virtual void onCommitJournal(bool nested) = 0;
+    virtual void onRestoreJournal() = 0;
+  };
+
   // ECO journal lifecycle for setup-repair endpoint loops.
   void beginJournal();
   void commitJournal(bool update_timing = true);
   void restoreJournal();
+  void addJournalObserver(JournalObserver* observer);
+  void removeJournalObserver(JournalObserver* observer);
+  // Marks passes 2..N inside an open journal after a non-improving pass so
+  // observers can distinguish speculative follow-up moves from pass-1 moves.
+  void markSpeculativePass()
+  {
+    if (!speculative_pass_stack_.empty()) {
+      speculative_pass_stack_.back() = true;
+    }
+  }
+  bool inSpeculativePass() const
+  {
+    return !speculative_pass_stack_.empty() && speculative_pass_stack_.back();
+  }
+  size_t journalDepth() const { return pending_move_results_.size(); }
 
   // === Move accounting ======================================================
   // In-memory accounting for native optimizer moves that were tentatively
@@ -176,6 +200,8 @@ class MoveCommitter
   // unrecord just its own moves and a nested commit can merge its results into
   // the parent's vector (mirroring odb's commitEco append-to-parent semantics).
   std::stack<std::vector<MoveResult>> pending_move_results_;
+  std::vector<JournalObserver*> journal_observers_;
+  std::vector<bool> speculative_pass_stack_;
   std::array<int, kTypeCount> pending_by_type_{};
   int netlist_edits_ = 0;
   std::array<int, kTypeCount> committed_by_type_{};

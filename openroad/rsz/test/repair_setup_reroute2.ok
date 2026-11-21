@@ -18,10 +18,10 @@ tns max -134060.438
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -3599.661 |  -134060.4 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
-      44* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -2170.262 |   -90598.9 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
-    final |       0 |       0 |        0 |      0 |     0 |    +0.0% | -2170.262 |   -90598.9 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
+      60* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -2056.594 |   -87840.0 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
+    final |       0 |       0 |        0 |      0 |     0 |    +0.0% | -2056.594 |   -87840.0 |     53 | dpath.b_reg.out\[5\]$_DFFE_PP_/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0053] Rerouted 39 nets resistance-aware.
+[INFO RSZ-0053] Rerouted 52 nets resistance-aware.
 [WARNING RSZ-0062] Unable to repair all setup violations.
-worst slack max -2170.26
-tns max -90598.914
+worst slack max -2056.59
+tns max -87840.008

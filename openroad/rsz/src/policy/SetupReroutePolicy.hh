@@ -32,6 +32,10 @@ class SetupReroutePolicy : public SetupLegacyPolicy
   {
     return "REROUTE Phase Endpoint Profiler";
   }
+  int maxDecreasingSlackPasses() const override
+  {
+    return initial_decreasing_slack_max_passes_;
+  }
 };
 
 }  // namespace rsz

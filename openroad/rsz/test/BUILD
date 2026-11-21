@@ -732,6 +732,34 @@ cc_test(
 )
 
 cc_test(
+    name = "TestReroutePromotion",
+    srcs = ["cpp/TestReroutePromotion.cc"],
+    copts = [
+        "-Iopenroad/rsz/src",
+        "-Iopenroad/rsz/src/move",
+    ],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "gcd_nangate45_placed.def",
+    ],
+    deps = [
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/est",
+        "//openroad/grt",
+        "//openroad/grt:groute",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/defin",
+        "//openroad/rsz:rsz_impl",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestRepairHold",
     srcs = ["cpp/TestRepairHold.cc"],
     copts = ["-Iopenroad/rsz/src"],

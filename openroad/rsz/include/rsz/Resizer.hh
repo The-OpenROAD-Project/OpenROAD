@@ -894,7 +894,6 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                      // Return values.
                      sta::Delay& delay,
                      sta::Slew& slew);
-  float getRerouteResistanceReduction();
 
  protected:
   void makeWireParasitic(sta::Net* net,

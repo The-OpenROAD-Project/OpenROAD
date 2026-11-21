@@ -5339,11 +5339,6 @@ int Resizer::repairDesignBufferCount() const
   return repair_design_->insertedBufferCount();
 }
 
-float Resizer::getRerouteResistanceReduction()
-{
-  return kMinResistanceReduction;
-}
-
 bool Resizer::tryRerouteNet(const sta::Pin* drvr_pin)
 {
   // Res-aware rerouting only makes sense with global-routing parasitics.

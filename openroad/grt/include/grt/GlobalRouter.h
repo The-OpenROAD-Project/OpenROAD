@@ -165,6 +165,13 @@ class GlobalRouter
   bool isResistanceAware() { return resistance_aware_; };
   void setNetIsResAware(odb::dbNet* db_net, bool res_aware);
   bool isNetResAware(odb::dbNet* db_net);
+  void setNetPromotedMinLayer(odb::dbNet* db_net, int min_layer);
+  void clearNetPromotedMinLayer(odb::dbNet* db_net);
+  void clearPromotedMinLayers();
+  int getNetPromotedMinLayer(odb::dbNet* db_net) const;
+  void requestNetReroute(odb::dbNet* db_net);
+  void cancelNetReroute(odb::dbNet* db_net);
+  std::vector<float> getLayerUsageRatios();
   void setMacroExtension(int macro_extension);
   void setUseCUGR(bool use_cugr)
   {
@@ -693,7 +700,9 @@ class GlobalRouter
   odb::dbBlock* block_;
 
   odb::PtrSet<odb::dbNet> dirty_nets_;
+  odb::PtrSet<odb::dbNet> reroute_nets_;
   std::vector<odb::dbNet*> nets_to_route_;
+  odb::PtrMap<odb::dbNet, int> promoted_min_layers_;
 
   RepairAntennas* repair_antennas_;
   Rudy* rudy_;

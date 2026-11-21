@@ -100,6 +100,8 @@ struct FrNet  // A Net is a set of connected MazePoints
              std::vector<int8_t>* edge_cost_per_layer);
   void setMaxLayer(int max_layer) { max_layer_ = max_layer; }
   void setMinLayer(int min_layer) { min_layer_ = min_layer; }
+  void setPromotedMinLayer(int min_layer) { promoted_min_layer_ = min_layer; }
+  int getPromotedMinLayer() const { return promoted_min_layer_; }
   void setSlack(float slack) { slack_ = slack; }
   void setIsCritical(bool is_critical) { is_critical_ = is_critical; }
   void setIsSoftNDR(bool is_soft) { is_soft_ndr_ = is_soft; }
@@ -122,11 +124,12 @@ struct FrNet  // A Net is a set of connected MazePoints
   int8_t edge_cost_;
   int min_layer_;
   int max_layer_;
-  float slack_;
+  int promoted_min_layer_ = -1;
+  float slack_ = 0.0f;
   bool is_soft_ndr_ = false;
   bool is_res_aware_ = false;
-  float resistance_;
-  int net_length_;
+  float resistance_ = 0.0f;
+  int net_length_ = 0;
   // Non-null when an NDR has been applied to the net.
   std::unique_ptr<std::vector<int8_t>> edge_cost_per_layer_;
 };

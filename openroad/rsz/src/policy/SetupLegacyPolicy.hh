@@ -56,6 +56,10 @@ class SetupLegacyPolicy : public SetupLegacyBase
   {
     return "LEGACY Phase Endpoint Profiler";
   }
+  virtual int maxDecreasingSlackPasses() const
+  {
+    return decreasing_slack_max_passes_;
+  }
   bool pathImproved(sta::Slack end_slack,
                     sta::Slack worst_slack,
                     sta::Slack prev_end_slack,

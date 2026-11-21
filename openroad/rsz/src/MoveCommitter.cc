@@ -66,6 +66,7 @@ MoveCommitter::MoveCommitter(Resizer& resizer)
 void MoveCommitter::init()
 {
   pending_move_results_ = std::stack<std::vector<MoveResult>>{};
+  speculative_pass_stack_.clear();
   std::ranges::fill(pending_by_type_, 0);
   std::ranges::fill(committed_by_type_, 0);
   for (size_t index = 0; index < pending_instances_by_type_.size(); ++index) {
@@ -469,6 +470,20 @@ void MoveCommitter::logCommittedTotals() const
       committedMoves(MoveType::kReroute));
 }
 
+void MoveCommitter::addJournalObserver(JournalObserver* observer)
+{
+  if (observer != nullptr
+      && std::ranges::find(journal_observers_, observer)
+             == journal_observers_.end()) {
+    journal_observers_.push_back(observer);
+  }
+}
+
+void MoveCommitter::removeJournalObserver(JournalObserver* observer)
+{
+  std::erase(journal_observers_, observer);
+}
+
 void MoveCommitter::beginJournal()
 {
   if (!canManageJournal()) {
@@ -479,9 +494,13 @@ void MoveCommitter::beginJournal()
   // that with a fresh per-level result vector here.
   beginEcoJournal();
   pending_move_results_.emplace();
+  speculative_pass_stack_.push_back(false);
   // Mirror the journal level in the tracker so a nested restore rejects only
   // its own moves.
   move_tracker_->beginJournal();
+  for (JournalObserver* observer : journal_observers_) {
+    observer->onBeginJournal();
+  }
 }
 
 void MoveCommitter::commitJournal(const bool update_timing)
@@ -502,8 +521,12 @@ void MoveCommitter::commitJournal(const bool update_timing)
 
   std::vector<MoveResult> top = std::move(pending_move_results_.top());
   pending_move_results_.pop();
+  if (!speculative_pass_stack_.empty()) {
+    speculative_pass_stack_.pop_back();
+  }
 
-  if (pending_move_results_.empty()) {
+  const bool nested = !pending_move_results_.empty();
+  if (!nested) {
     // Outermost commit: fold the accumulated pending counters into the
     // committed totals and flush the tracker.
     acceptPendingMoves();
@@ -522,6 +545,9 @@ void MoveCommitter::commitJournal(const bool update_timing)
     for (MoveResult& result : top) {
       parent.push_back(std::move(result));
     }
+  }
+  for (JournalObserver* observer : journal_observers_) {
+    observer->onCommitJournal(nested);
   }
 }
 
@@ -545,6 +571,9 @@ void MoveCommitter::restoreJournal()
   // pending state (if any) must survive.
   std::vector<MoveResult> top = std::move(pending_move_results_.top());
   pending_move_results_.pop();
+  if (!speculative_pass_stack_.empty()) {
+    speculative_pass_stack_.pop_back();
+  }
   int reverted_moves = 0;
   for (const MoveResult& result : top) {
     reverted_moves += result.move_count;
@@ -564,6 +593,9 @@ void MoveCommitter::restoreJournal()
   }
   for (const MoveResult& result : top) {
     unrecordAcceptedResult(result);
+  }
+  for (JournalObserver* observer : journal_observers_) {
+    observer->onRestoreJournal();
   }
 
   if (had_eco_changes) {
