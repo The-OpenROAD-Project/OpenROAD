@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <utility>
 #include <vector>
 
@@ -70,6 +71,42 @@ TEST(Cluster, BranchingPointIsDisabledIfNoBranchesAreProvided)
                                               means_with_branching);
 
   EXPECT_NE(means_without_branching[0].first, means_with_branching[0].first);
+}
+
+// Three sinks next to each mean and room for three in each cluster: each
+// sink joins the mean it is next to. A sink's cost to a mean is the
+// distance to the fourth power, up to INT_MAX: up to 2.1e9 to the far mean
+// here. LEMON's network simplex starts node potentials at half the cost
+// type's range, 2^30 for int; with int costs a reduced cost fell outside
+// int and wrapped, the simplex took arcs that raise the cost, and sinks 3
+// and 4 swapped means. On a large design it never returned.
+TEST(Cluster, CostsNearIntMaxDoNotWrap)
+{
+  utl::Logger logger;
+  CKMeans::Clustering clustering(/*sinks=*/{{6.0, -10.1},
+                                            {201.8, -25.1},
+                                            {-7.9, -18.5},
+                                            {22.5, -1.5},
+                                            {198.3, 4.3},
+                                            {202.4, 2.2}},
+                                 &logger);
+  std::vector<std::pair<float, float>> means = {{0, 0}, {188.4, 0}};
+  // One assignment to these means, no further iterations.
+  clustering.iterKmeans(/*iter=*/1,
+                        /*n=*/2,
+                        /*cap=*/3,
+                        /*max=*/0,
+                        /*power=*/4,
+                        means);
+
+  std::vector<std::vector<unsigned>> clusters;
+  clustering.getClusters(clusters);
+  ASSERT_EQ(clusters.size(), 2);
+  for (auto& cluster : clusters) {
+    std::sort(cluster.begin(), cluster.end());
+  }
+  EXPECT_EQ(clusters[0], (std::vector<unsigned>{0, 2, 3}));
+  EXPECT_EQ(clusters[1], (std::vector<unsigned>{1, 4, 5}));
 }
 
 // Check that we avoid a divide-by-zero error when the region has

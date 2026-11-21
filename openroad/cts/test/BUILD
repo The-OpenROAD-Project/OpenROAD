@@ -8,11 +8,6 @@ load("//test:regression.bzl", "doc_check_test", "regression_test")
 package(features = ["layering_check"])
 
 COMPULSORY_TESTS = [
-    "array",
-    "array_ins_delay",
-    "array_max_wl",
-    "array_no_blockages",
-    "array_repair_clock_nets",
     "buffer_no_max_cap",
     "buffer_ports",
     "check_buffers",
@@ -44,7 +39,6 @@ COMPULSORY_TESTS = [
     "inverters",
     "lvt_lib",
     "max_cap",
-    "max_wl_two_sinks",
     "multi_mode",
     "no_clocks",
     "no_sinks",
@@ -62,11 +56,18 @@ COMPULSORY_TESTS = [
 ]
 
 PASSFAIL_TESTS = [
+    "array",
+    "array_ins_delay",
+    "array_max_wl",
+    "array_no_blockages",
+    "array_repair_clock_nets",
     "dangling_clock_inverter",
     "dont_touch_sink",
     "dont_touch_skipped_net",
     "dont_touch_timing_buffer",
     "hier_dummy_load",
+    "htree_stop_no_improvement",
+    "max_wl_two_sinks",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -84,6 +85,7 @@ filegroup(
         "Nangate45/Nangate45_stdcell.lef",
         "Nangate45/Nangate45_tech.lef",
         "Nangate45/Nangate45_typ.lib",
+        "clock_tree_checks.tcl",
         "helpers.tcl",
         "ihp-sg13g2/setRC.tcl",
         "ihp-sg13g2/sg13g2_stdcell.lef",
@@ -127,7 +129,6 @@ filegroup(
             "array_repair_clock_nets": [
                 "array_tile.lef",
                 "array_tile.lib",
-                "array_max_wl.defok",
             ],
             "buffer_no_max_cap": [
                 "16sinks.def",

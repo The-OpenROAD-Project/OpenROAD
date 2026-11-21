@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
@@ -332,7 +333,12 @@ void Clustering::minCostFlow(const std::vector<std::pair<float, float>>& means,
              countArcs(graph));
 
   // formulate min-cost flow
-  ListDigraph::ArcMap<int> edge_cost(graph), edge_capacity(graph);
+  // The costs are int64_t: an arc costs up to INT_MAX, and the network
+  // simplex starts node potentials at half the cost type's range. With int
+  // costs a reduced cost could fall outside int and wrap; the simplex then
+  // took arcs that raise the cost, and could cycle forever.
+  ListDigraph::ArcMap<int64_t> edge_cost(graph);
+  ListDigraph::ArcMap<int> edge_capacity(graph);
   for (auto& edge : src_sink_edges) {
     edge_capacity[edge] = 1;
   }
@@ -363,7 +369,7 @@ void Clustering::minCostFlow(const std::vector<std::pair<float, float>>& means,
     debugPrint(logger_, CTS, "clustering", 2, " cap = ", edge_capacity[it]);
   }
 
-  NetworkSimplex<ListDigraph, int, int> flow(graph);
+  NetworkSimplex<ListDigraph, int, int64_t> flow(graph);
   flow.costMap(edge_cost);
   flow.upperMap(edge_capacity);
   flow.stSupply(src, target, means.size() * cap + remaining);
