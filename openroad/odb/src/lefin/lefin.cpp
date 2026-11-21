@@ -848,7 +848,8 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
   if (l->getMinWidth() == 0) {
     if (layer->hasMinwidth()) {
       l->setMinWidth(dbdist(layer->minwidth()));
-    } else if (type == dbTechLayerType::ROUTING) {
+    } else if (type == dbTechLayerType::ROUTING
+               || type == dbTechLayerType::IMPLANT) {
       l->setMinWidth(l->getWidth());
     }
   }

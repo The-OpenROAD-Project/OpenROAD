@@ -892,4 +892,19 @@ TEST_F(Fixture, TestLef58VoltageSpacingMultipleStatements)
   EXPECT_EQ(logger_.getWarningCount(), 1);
 }
 
+TEST_F(Fixture, TestImplantMinWidthFromWidth)
+{
+  loadTechAndLib("tech",
+                 "lef58_implant_rules.lef",
+                 prefix + "data/lef58_implant_rules.lef");
+  EXPECT_EQ(logger_.getWarningCount(), 0);
+
+  dbTechLayer* layer = db_->getTech()->findLayer("IMP1");
+  ASSERT_NE(layer, nullptr);
+  EXPECT_EQ(layer->getType(), dbTechLayerType::IMPLANT);
+  EXPECT_EQ(layer->getWidth(), 3.5 * 1000);
+  EXPECT_EQ(layer->getMinWidth(), 3.5 * 1000);
+  EXPECT_EQ(layer->getSpacing(), 1.5 * 1000);
+}
+
 }  // namespace odb
