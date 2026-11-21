@@ -17,6 +17,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -3145,20 +3146,37 @@ void NesterovBase::updateDensityFieldBin()
 
 void NesterovBase::spreadStackedGCells()
 {
-  std::map<std::pair<int, int>, std::vector<GCell*>> stacks;
+  // Cells get identical forces only when they share a location, a density
+  // size, and the same nets at the same pin offsets.
+  using PinKey = std::tuple<const GNet*, int, int>;
+  using StackKey = std::tuple<int, int, int, int, std::vector<PinKey>>;
+  std::map<StackKey, std::vector<GCell*>> stacks;
   for (auto& handle : nb_gcells_) {
     GCell* gCell = handle;
     if (gCell->isInstance() && !gCell->isLocked()) {
       updateDensityCoordiLayoutInside(gCell);
-      stacks[{gCell->dCx(), gCell->dCy()}].push_back(gCell);
+      std::vector<PinKey> pins;
+      pins.reserve(gCell->gPins().size());
+      for (const GPin* gPin : gCell->gPins()) {
+        pins.emplace_back(gPin->getGNet(), gPin->offsetCx(), gPin->offsetCy());
+      }
+      std::ranges::sort(pins);
+      stacks[{gCell->dCx(),
+              gCell->dCy(),
+              gCell->dDx(),
+              gCell->dDy(),
+              std::move(pins)}]
+          .push_back(gCell);
     }
   }
 
   int spread_count = 0;
-  for (const auto& [center, cells] : stacks) {
+  for (const auto& [key, cells] : stacks) {
     if (cells.size() < 2) {
       continue;
     }
+    const int center_x = std::get<0>(key);
+    const int center_y = std::get<1>(key);
     spread_count += cells.size();
 
     // A near-square grid of slots, one cell pitch apart, centered on the
@@ -3167,22 +3185,18 @@ void NesterovBase::spreadStackedGCells()
     const int count = cells.size();
     const int cols = std::ceil(std::sqrt(count));
     const int rows = (count + cols - 1) / cols;
-    int pitch_x = 0;
-    int pitch_y = 0;
-    for (const GCell* gCell : cells) {
-      pitch_x = std::max(pitch_x, gCell->dDx());
-      pitch_y = std::max(pitch_y, gCell->dDy());
-    }
     const int region_dx = bg_.ux() - bg_.lx();
     const int region_dy = bg_.uy() - bg_.ly();
-    pitch_x = std::max(1, std::min(pitch_x, region_dx / cols));
-    pitch_y = std::max(1, std::min(pitch_y, region_dy / rows));
+    const int pitch_x
+        = std::max(1, std::min(cells.front()->dDx(), region_dx / cols));
+    const int pitch_y
+        = std::max(1, std::min(cells.front()->dDy(), region_dy / rows));
     const int grid_dx = cols * pitch_x;
     const int grid_dy = rows * pitch_y;
     const int grid_lx
-        = std::clamp(center.first - grid_dx / 2, bg_.lx(), bg_.ux() - grid_dx);
+        = std::clamp(center_x - grid_dx / 2, bg_.lx(), bg_.ux() - grid_dx);
     const int grid_ly
-        = std::clamp(center.second - grid_dy / 2, bg_.ly(), bg_.uy() - grid_dy);
+        = std::clamp(center_y - grid_dy / 2, bg_.ly(), bg_.uy() - grid_dy);
 
     for (int i = 0; i < count; ++i) {
       GCell* gCell = cells[i];
