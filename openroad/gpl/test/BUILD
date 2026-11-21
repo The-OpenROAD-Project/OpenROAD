@@ -399,6 +399,25 @@ cc_test(
     ],
 )
 
+# A routability phase that ends by going back to the pass with the least
+# congestion, on gcd, driving the real controller.
+cc_test(
+    name = "routability_minimum_test",
+    srcs = ["routability_minimum_test.cpp"],
+    data = ["gcd.def"],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//openroad/dbSta",
+        "//openroad/gpl:gpl_impl",
+        "//openroad/grt",
+        "//openroad/odb/src/db",
+        "//openroad/tst:integrated_fixture",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 cc_test(
     name = "overflow_test",
     srcs = ["overflow_test.cpp"],

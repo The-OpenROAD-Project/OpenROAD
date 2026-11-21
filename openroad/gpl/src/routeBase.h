@@ -214,6 +214,7 @@ class RouteBase
 
  private:
   friend class TimingRepairIntegrationTest;
+  friend class RoutabilityMinimumTest;
 
   RouteBaseVars rbVars_;
   odb::dbDatabase* db_ = nullptr;
