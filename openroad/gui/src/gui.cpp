@@ -9,6 +9,7 @@
 #include <QImage>
 #include <QPushButton>
 #include <QString>
+#include <QTimer>
 #include <QWidget>
 #include <algorithm>
 #include <any>
@@ -48,6 +49,7 @@
 #include "qtDialogs.h"
 #include "ruler.h"
 #include "scriptWidget.h"
+#include "tcl.h"
 #include "timingWidget.h"
 #include "utl/Logger.h"
 #include "utl/decode.h"
@@ -930,6 +932,18 @@ int startGui(int& argc,
   }
 
   if (do_exec) {
+    // Nothing else services Tcl's event queue while Qt owns the main loop, so
+    // after/fileevent/socket callbacks would never fire. Draining it from a
+    // QTimer keeps them on the Qt main thread, where Tcl_Eval already runs;
+    // the per-tick bound stops a self-rescheduling callback starving the UI.
+    QTimer tcl_event_pump;
+    QObject::connect(&tcl_event_pump, &QTimer::timeout, [] {
+      for (int i = 0; i < 32 && Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT);
+           ++i) {
+      }
+    });
+    tcl_event_pump.start(50);
+
     exit_code = QApplication::exec();
   }
 
