@@ -62,6 +62,9 @@ COMPULSORY_TESTS = [
 ]
 
 PASSFAIL_TESTS = [
+    "bottom_up_buffering",
+    "bottom_up_buffering_macro",
+    "bottom_up_explicit_cells",
     "dangling_clock_inverter",
     "dont_touch_sink",
     "dont_touch_skipped_net",
@@ -128,6 +131,20 @@ filegroup(
                 "array_tile.lef",
                 "array_tile.lib",
                 "array_max_wl.defok",
+            ],
+            "bottom_up_buffering": [
+                "bottom_up_audit_helpers.tcl",
+                "16sinks.def",
+            ],
+            "bottom_up_buffering_macro": [
+                "bottom_up_audit_helpers.tcl",
+                "array_tile_ins_delay.lef",
+                "array_tile_ins_delay.lib",
+                "insertion_delay.def",
+            ],
+            "bottom_up_explicit_cells": [
+                "bottom_up_audit_helpers.tcl",
+                "16sinks.def",
             ],
             "buffer_no_max_cap": [
                 "16sinks.def",
@@ -281,6 +298,54 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+cc_test(
+    name = "BottomUpBufferingTest",
+    size = "small",
+    srcs = ["cpp/BottomUpBufferingTest.cc"],
+    deps = [
+        "//openroad/cts:bottom_up_buffering",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "BufferingSearchTest",
+    size = "small",
+    srcs = ["cpp/BufferingSearchTest.cc"],
+    deps = [
+        "//openroad/cts:bottom_up_buffering",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "BottomUpClockTreeTest",
+    srcs = ["cpp/BottomUpClockTreeTest.cc"],
+    data = [
+        "16sinks.def",
+        "Nangate45/Nangate45_typ.lib",
+        "array_tile_ins_delay.lef",
+        "array_tile_ins_delay.lib",
+        "bottom_up_pin_mismatch.lib",
+        "insertion_delay.def",
+    ],
+    deps = [
+        "//openroad/cts:bottom_up_buffering",
+        "//openroad/cts:cts_impl",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/est",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst:db_fixture",
+        "//openroad/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
 
 cc_test(
     name = "cts_unittest",

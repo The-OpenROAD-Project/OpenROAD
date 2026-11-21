@@ -407,7 +407,8 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-library] \
                                              [-repair_clock_nets] \
                                              [-no_insertion_delay] \
-                                             [-useful_skew]
+                                             [-useful_skew] \
+                                             [-bottom_up_buffering]
 }
 
 proc clock_tree_synthesis { args } {
@@ -424,7 +425,7 @@ proc clock_tree_synthesis { args } {
     flags {-post_cts_disable -sink_clustering_enable -balance_levels \
            -obstruction_aware -no_obstruction_aware \
            -dont_use_dummy_load -repair_clock_nets -no_insertion_delay \
-           -useful_skew
+           -useful_skew -bottom_up_buffering
   }
 
   sta::check_argc_eq0 "clock_tree_synthesis" $args
@@ -439,6 +440,7 @@ proc clock_tree_synthesis { args } {
   }
 
   cts::set_sink_clustering [info exists flags(-sink_clustering_enable)]
+  cts::set_bottom_up_buffering [info exists flags(-bottom_up_buffering)]
 
   if { [info exists keys(-sink_clustering_size)] } {
     set size $keys(-sink_clustering_size)
