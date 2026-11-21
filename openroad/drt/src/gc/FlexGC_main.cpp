@@ -2912,6 +2912,11 @@ bool FlexGCWorker::Impl::checkLef58CutSpacing_spc_hasAdjCuts(
   box_t queryBox;
   myBloat(*rect, cutWithinSquare, queryBox);
   cutWithinSquare *= cutWithinSquare;
+  frSquaredDistance cutWithin1Square = 0;
+  if (con->hasTwoCutWithin()) {
+    cutWithin1Square = con->getCutWithin1();
+    cutWithin1Square *= cutWithin1Square;
+  }
   auto& workerRegionQuery = getWorkerRegionQuery();
   std::vector<rq_box_value_t<gcRect*>> result;
   workerRegionQuery.queryMaxRectangle(queryBox, layerNum, result);
@@ -2929,6 +2934,10 @@ bool FlexGCWorker::Impl::checkLef58CutSpacing_spc_hasAdjCuts(
       distSquare = gtl::square_euclidean_distance(*rect, *ptr);
     }
     if (distSquare >= cutWithinSquare) {
+      continue;
+    }
+    if (con->hasTwoCutWithin() && ptr != rect
+        && distSquare < cutWithin1Square) {
       continue;
     }
 
@@ -2974,6 +2983,11 @@ bool FlexGCWorker::Impl::checkLef58CutSpacing_spc_hasTwoCuts_helper(
   box_t queryBox;
   myBloat(*rect, cutWithinSquare, queryBox);
   cutWithinSquare *= cutWithinSquare;
+  frSquaredDistance cutWithin1Square = 0;
+  if (con->hasTwoCutWithin()) {
+    cutWithin1Square = con->getCutWithin1();
+    cutWithin1Square *= cutWithin1Square;
+  }
   auto& workerRegionQuery = getWorkerRegionQuery();
   std::vector<rq_box_value_t<gcRect*>> result;
   workerRegionQuery.queryMaxRectangle(queryBox, layerNum, result);
@@ -2991,6 +3005,10 @@ bool FlexGCWorker::Impl::checkLef58CutSpacing_spc_hasTwoCuts_helper(
       distSquare = gtl::square_euclidean_distance(*rect, *ptr);
     }
     if (distSquare >= cutWithinSquare) {
+      continue;
+    }
+    if (con->hasTwoCutWithin() && ptr != rect
+        && distSquare < cutWithin1Square) {
       continue;
     }
 

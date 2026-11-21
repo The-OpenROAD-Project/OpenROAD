@@ -702,7 +702,8 @@ frLef58CutSpacingConstraint* Fixture::makeLef58CutSpacingConstraint_adjacentCut(
     frCoord spacing,
     int adjacent_cuts,
     int two_cuts,
-    frCoord within)
+    frCoord within,
+    frCoord within2)
 {
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
@@ -711,6 +712,9 @@ frLef58CutSpacingConstraint* Fixture::makeLef58CutSpacingConstraint_adjacentCut(
   rule->setAdjacentCuts(adjacent_cuts);
   // con->setTwoCuts(two_cuts);
   rule->setWithin(within);
+  if (within2 > 0) {
+    rule->setSecondWithin(within2);
+  }
   rule->setCenterToCenter(true);
 
   auto uCon = std::make_unique<frLef58CutSpacingConstraint>();
@@ -718,7 +722,12 @@ frLef58CutSpacingConstraint* Fixture::makeLef58CutSpacingConstraint_adjacentCut(
   con->setCutClassIdx(0);
   con->setCutSpacing(rule->getCutSpacing());
   con->setAdjacentCuts(rule->getAdjacentCuts());
-  con->setCutWithin(rule->getWithin());
+  if (rule->getSecondWithin() > 0) {
+    con->setCutWithin1(rule->getWithin());
+    con->setCutWithin2(rule->getSecondWithin());
+  } else {
+    con->setCutWithin(rule->getWithin());
+  }
   con->setCenterToCenter(rule->isCenterToCenter());
   layer->addLef58CutSpacingConstraint(con);
   design->getTech()->addUConstraint(std::move(uCon));
