@@ -150,6 +150,7 @@ TESTS = [
     "report_net_detours3",
     "report_net_detours4_cugr",
     "res_aware_nets_percentage",
+    "secondary_power",
     "set_nets_to_route1",
     "set_nets_to_route1_cugr",
     "silence",

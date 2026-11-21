@@ -30,6 +30,7 @@ COMPULSORY_TESTS = [
     "obstruction",
     "pa_above_top_layer",
     "pa_single_pin",
+    "secondary_power",
     "single_cut_minimumcut",
     "single_step",
     "ta_ap_aligned",
