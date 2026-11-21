@@ -325,6 +325,24 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "TestPredictSinkClusters",
+    srcs = ["cpp/TestPredictSinkClusters.cc"],
+    data = ["check_buffers.def"],
+    deps = [
+        "//openroad/cts",
+        "//openroad/cts:cts_impl",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/defin",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 py_test(
     name = "cts_man_tcl_check",
     srcs = ["cts_man_tcl_check.py"],
