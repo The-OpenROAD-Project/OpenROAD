@@ -14,6 +14,7 @@
 #include <cstdio>
 #include <cstring>
 #include <iterator>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -94,6 +95,8 @@ void lefinReader::init()
   rounded_cnt_ = 0;
   rounding_example_.clear();
   rounding_dbu_candidates_.clear();
+  incomplete_props_.clear();
+  pending_layer_refs_.clear();
 
   if (!override_lef_dbu_) {
     lef_units_ = 0;
@@ -2503,6 +2506,27 @@ bool lefinReader::readLefInner(const char* lef_file)
     }
   }
   incomplete_props_.clear();
+
+  std::set<const void*> dropped_rules;
+  for (const auto& ref : pending_layer_refs_) {
+    if (dropped_rules.contains(ref.rule_key)) {
+      continue;
+    }
+    if (auto* ref_layer = tech_->findLayer(ref.layer_name.c_str())) {
+      ref.attach(ref_layer);
+    } else {
+      logger_->warn(
+          utl::ODB,
+          568,
+          "dropping {} for layer {} for referencing undefined layer {}",
+          ref.prop_name,
+          ref.owner->getName(),
+          ref.layer_name);
+      dropped_rules.insert(ref.rule_key);
+      ref.drop();
+    }
+  }
+  pending_layer_refs_.clear();
 
   std::string p = lef_file;
   std::vector<std::string> parts;

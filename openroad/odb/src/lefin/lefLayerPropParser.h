@@ -453,4 +453,22 @@ class lefTechLayerMinEnclosedAreaParser
   static bool parse(const std::string&, dbTechLayer*, lefinReader*);
 };
 
+template <typename Rule>
+void deferLayer(std::vector<lefinReader::PendingLayerRef>& pending,
+                Rule* rule,
+                dbTechLayer* owner,
+                const char* prop_name,
+                const std::string& layer_name,
+                void (Rule::*attach)(dbTechLayer*))
+{
+  pending.push_back(lefinReader::PendingLayerRef{
+      rule,
+      owner,
+      prop_name,
+      layer_name,
+      [rule, attach](dbTechLayer* l) { (rule->*attach)(l); },
+      [rule]() { Rule::destroy(rule); },
+  });
+}
+
 }  // namespace odb
