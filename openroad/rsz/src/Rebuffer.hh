@@ -172,6 +172,30 @@ class Rebuffer : public sta::dbStaState
   std::optional<CellArcTiming> cellArcTiming(const sta::RiseFall* rf,
                                              sta::LibertyCell* cell,
                                              float tree_cap);
+  // The driver arc's input slew and the drive resistance of the previous
+  // stage, which cellArcTiming() needs for every candidate cell.
+  struct DriverArcContext
+  {
+    sta::Slew in_slew = 0.0;
+    float prev_drive_resistance = 0.0;
+  };
+  const DriverArcContext& driverArcContext(const sta::RiseFall* rf,
+                                           const sta::Path* driver_path,
+                                           const sta::TimingArc* driver_arc,
+                                           const sta::Edge* driver_edge);
+  // The arc of `cell` equivalent to the driver arc on `rf`; arc is null when
+  // `cell` has none.
+  struct CellArc
+  {
+    const sta::TimingArc* arc = nullptr;
+    sta::LibertyPort* from = nullptr;
+    sta::LibertyPort* out_port = nullptr;
+  };
+  CellArc cellArc(const sta::RiseFall* rf,
+                  sta::LibertyCell* cell,
+                  const sta::TimingArc* driver_arc);
+  // Forget the driver arc data cached for the previous net.
+  void clearDriverArcCache();
   // Slack at the driver pin if the driver were resized to `cell`, including
   // the extra delay a larger input capacitance adds to the previous stage.
   // Empty when `cell` has no equivalent arc or violates slew or capacitance
@@ -211,16 +235,43 @@ class Rebuffer : public sta::dbStaState
                                  std::vector<BufferedNetPtr>& trees);
   DriverChoices driverChoices(sta::LibertyCell* current_cell,
                               const BufferedNetPtr& timing_tree);
-  // Leakage of `cell` driving `tree` plus the tree's buffers; nullopt when a
+  // Leakage of each buffer of `tree` in visit order; nullopt when a buffer
+  // has no leakage data.
+  std::optional<std::vector<float>> bufferLeakages(const BufferedNetPtr& tree);
+  // Leakage of `cell` driving a tree with `buffer_leakages`; nullopt when a
   // cell has no leakage data.
-  std::optional<float> netLeakage(sta::LibertyCell* cell,
-                                  const BufferedNetPtr& tree);
-  bool withinLeakageBudget(const DriverChoices& choices,
+  std::optional<float> netLeakage(
+      sta::LibertyCell* cell,
+      const std::optional<std::vector<float>>& buffer_leakages);
+  // The candidate trees for one net, with the slack of each tree for each
+  // driver cell and the side-load slack of each cell computed on first use.
+  // bestSlackWithDriver() and chooseTreeAndDriver() share them.
+  struct TreeDriverEvaluation
+  {
+    explicit TreeDriverEvaluation(const std::vector<BufferedNetPtr>& trees)
+        : trees(trees)
+    {
+    }
+    const std::vector<BufferedNetPtr>& trees;
+    std::vector<std::optional<std::vector<float>>> buffer_leakages;
+    absl::flat_hash_map<std::pair<const sta::LibertyCell*, size_t>,
+                        std::optional<FixedDelay>>
+        slacks;
+    absl::flat_hash_map<const sta::LibertyCell*, FixedDelay> side_load_slacks;
+  };
+  bool withinLeakageBudget(TreeDriverEvaluation& eval,
+                           const DriverChoices& choices,
                            sta::LibertyCell* cell,
-                           const BufferedNetPtr& tree);
-  // The most slack any of `trees` reaches with the current driver or one of
-  // `choices` whose upstream side loads keep that slack less `relaxation`.
-  FixedDelay bestSlackWithDriver(const std::vector<BufferedNetPtr>& trees,
+                           size_t tree_index);
+  std::optional<FixedDelay> slackWithDriverCell(TreeDriverEvaluation& eval,
+                                                sta::LibertyCell* cell,
+                                                size_t tree_index);
+  FixedDelay upstreamSideLoadSlack(TreeDriverEvaluation& eval,
+                                   sta::LibertyCell* cell);
+  // The most slack any of the trees reaches with the current driver or one
+  // of `choices` whose upstream side loads keep that slack less
+  // `relaxation`.
+  FixedDelay bestSlackWithDriver(TreeDriverEvaluation& eval,
                                  sta::LibertyCell* current_cell,
                                  const DriverChoices& choices,
                                  FixedDelay relaxation);
@@ -228,7 +279,7 @@ class Rebuffer : public sta::dbStaState
   // driver `choices` whose slack meets `slack_target`.  Returns the chosen
   // tree and sets `chosen_cell`; returns nullptr when no combination meets
   // the target.
-  BufferedNetPtr chooseTreeAndDriver(const std::vector<BufferedNetPtr>& trees,
+  BufferedNetPtr chooseTreeAndDriver(TreeDriverEvaluation& eval,
                                      sta::LibertyCell* current_cell,
                                      const DriverChoices& choices,
                                      FixedDelay slack_target,
@@ -543,6 +594,12 @@ class Rebuffer : public sta::dbStaState
   sta::LibertyCell* plan_cell_ = nullptr;
   sta::LibertyPort* plan_port_ = nullptr;
   sta::Path* arrival_paths_[sta::RiseFall::index_count] = {nullptr};
+  // cellArcTiming() data for the net being sized, which no candidate cell or
+  // tree changes; cleared with arrival_paths_ and for each sized net.
+  std::array<std::optional<DriverArcContext>, sta::RiseFall::index_count>
+      driver_arc_contexts_;
+  absl::flat_hash_map<std::pair<const sta::LibertyCell*, int>, CellArc>
+      cell_arcs_;
 
   // A worker planner's private delay calculator (see initForPlanning); every
   // gate delay this planner computes goes through delayCalc().
