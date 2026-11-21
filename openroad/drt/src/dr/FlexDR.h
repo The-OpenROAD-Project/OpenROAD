@@ -8,6 +8,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <optional>
 #include <queue>
 #include <set>
 #include <string>
@@ -115,6 +116,24 @@ class FlexDR
   int main();
   void searchRepair(const SearchRepairArgs& args);
   void end(bool done = false);
+  static constexpr int kAdaptiveMinInitialDrvs = 700;
+  static constexpr int kAdaptiveUnidirStubbornThreshold = 15;
+  static std::vector<SearchRepairArgs> strategy(frUInt4 shapeCost,
+                                                frUInt4 markerCost);
+  static std::optional<SearchRepairArgs> nextStepStrategy(
+      int it,
+      int drvs,
+      bool has_unidir_layer,
+      const std::vector<SearchRepairArgs>& history_args,
+      const std::vector<int>& history_drvs,
+      const std::vector<SearchRepairArgs>& default_strategy,
+      frUInt4 shapeCost,
+      frUInt4 markerCost);
+  static void updateUnidirStubbornThreshold(
+      int it,
+      int post_drvs,
+      const std::vector<int>& history_drvs,
+      FlexDRFlow& flow_state_machine);
 
   const FlexDRViaData* getViaData() const { return &via_data_; }
   void setDebug(std::unique_ptr<AbstractDRGraphics> dr_graphics);
@@ -241,12 +260,17 @@ class FlexDRFlow
 
   void setFixingMaxSpacing(bool value);
 
+  void setStubbornFlowViolationThreshold(int threshold);
+
+  void resetStubbornFlowViolationThreshold();
+
  private:
   bool isArgsChanged(const FlowContext& context) const;
 
   State current_state_{State::OPTIMIZATION};
   bool last_iteration_effective_{true};
   bool fixing_max_spacing_{false};
+  int stubborn_flow_violation_threshold_{STUBBORN_FLOW_VIOLATION_THRESHOLD};
   FlexDR::SearchRepairArgs last_args_;
 
   static constexpr int STUBBORN_FLOW_VIOLATION_THRESHOLD = 100;
