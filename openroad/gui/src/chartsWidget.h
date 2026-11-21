@@ -112,7 +112,6 @@ class HistogramView : public QChartView
   std::unique_ptr<utl::Histogram<float>> all_histogram_;
 
   // stacked data
-  std::vector<std::unique_ptr<utl::Histogram<float>>> histograms_;
   std::vector<QString> path_groups_;
   std::vector<PinBuckets> pins_bucket_;
 

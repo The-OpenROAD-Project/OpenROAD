@@ -618,7 +618,10 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
         "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
         "//openroad/tst:nangate45_fixture",
         "//openroad/web",
         "//openroad/web:core",

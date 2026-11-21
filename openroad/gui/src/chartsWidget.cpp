@@ -26,6 +26,7 @@
 #include <utility>
 #include <vector>
 
+#include "endpoint_slack.h"
 #include "gui/gui.h"
 #include "gui_utils.h"
 #include "sta/Clock.hh"
@@ -641,7 +642,6 @@ void HistogramView::clear()
 
   all_histogram_.reset();
 
-  histograms_.clear();
   path_groups_.clear();
   pins_bucket_.clear();
 
@@ -713,9 +713,6 @@ void HistogramView::populateBins()
   if (min_slack == max_slack) {
     precision_count_ = 1;
     all_histogram_->generateBins(1, -0.1, 0.2);
-    for (auto& histogram : histograms_) {
-      histogram->generateBins(1, -0.1, 0.2);
-    }
     return;
   }
 
@@ -726,9 +723,6 @@ void HistogramView::populateBins()
 
   const int bins = (bin_max - bin_min) / bin_interval;
   all_histogram_->generateBins(bins, bin_min, bin_interval);
-  for (auto& histogram : histograms_) {
-    histogram->generateBins(bins, bin_min, bin_interval);
-  }
 }
 
 void HistogramView::populateBuckets(
@@ -785,27 +779,27 @@ void HistogramView::setData(
   // extract data
   sta::Unit* time_unit = sta_->getSTA()->units()->timeUnit();
 
+  std::vector<const web::EndpointSlacks*> group_data;
   for (auto& [path_group, data] : data_vec) {
-    histograms_.emplace_back(std::make_unique<utl::Histogram<float>>(logger_));
     path_groups_.push_back(QString::fromStdString(path_group));
-    for (const auto& [pin, sta_slack] : *data) {
-      const float slack = time_unit->staToUser(sta_slack);
-      histograms_[histograms_.size() - 1]->addData(slack);
-      all_histogram_->addData(slack);
-    }
+    group_data.push_back(data);
+  }
+  const auto winners = web::assignEndpointsToWorstGroup(group_data);
+
+  for (const auto& [_, winner] : winners) {
+    all_histogram_->addData(time_unit->staToUser(winner.slack));
   }
 
   populateBins();
 
   PinBuckets all_pin_buckets(all_histogram_->getBinsCount());
-  for (auto& [_, data] : data_vec) {
-    pins_bucket_.emplace_back(all_histogram_->getBinsCount());
-    for (const auto& [pin, sta_slack] : *data) {
-      const float slack = time_unit->staToUser(sta_slack);
-      int index = all_histogram_->getBinIndex(slack);
-      pins_bucket_[pins_bucket_.size() - 1][index].push_back(pin);
-      all_pin_buckets[index].push_back(pin);
-    }
+  pins_bucket_.assign(data_vec.size(),
+                      PinBuckets(all_histogram_->getBinsCount()));
+  for (const auto& [pin, winner] : winners) {
+    const float slack = time_unit->staToUser(winner.slack);
+    const int index = all_histogram_->getBinIndex(slack);
+    pins_bucket_[winner.group][index].push_back(pin);
+    all_pin_buckets[index].push_back(pin);
   }
   populateBuckets(all_histogram_, all_pin_buckets);
 
