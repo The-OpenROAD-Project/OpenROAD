@@ -1264,6 +1264,8 @@ class NesterovBase
   bool checkConvergence(int gpl_iter_count,
                         int routability_gpl_iter_count,
                         RouteBase* rb);
+  // True when checkConvergence() would return true; no side effects.
+  bool isConvergenceDue() const;
   void resetConverged() { isConverged_ = false; }
 
   bool checkDivergence();
@@ -1532,6 +1534,10 @@ class NesterovBase
   float sum_overflow_ = 0;
   float sum_overflow_unscaled_ = 0;
   float prev_reported_overflow_unscaled_ = 0;
+  // Set by revertToSnapshot(): the overflow above was measured on the
+  // placement the revert discarded. Cleared by updateNextIter(), where the
+  // main loop measures it again.
+  bool is_overflow_stale_ = false;
 
   // half-parameter-wire-length
   int64_t prev_hpwl_ = 0;

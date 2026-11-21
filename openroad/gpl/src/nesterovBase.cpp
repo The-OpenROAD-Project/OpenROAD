@@ -3678,6 +3678,7 @@ void NesterovBase::updateNextIter(const int iter)
 
   sum_overflow_ = getOverflowArea() / overflowDenominator;
   sum_overflow_unscaled_ = getOverflowAreaUnscaled() / overflowDenominator;
+  is_overflow_stale_ = false;
 
   int64_t hpwl = nbc_->getHpwl();
 
@@ -3907,6 +3908,15 @@ void NesterovBase::saveSnapshot()
   }
 }
 
+bool NesterovBase::isConvergenceDue() const
+{
+  // After a revert the overflow still describes the placement that was
+  // discarded; the reverted one has yet to be measured.
+  return isConverged_
+         || (!is_overflow_stale_
+             && sum_overflow_unscaled_ <= npVars_->targetOverflow);
+}
+
 bool NesterovBase::checkConvergence(int gpl_iter_count,
                                     int routability_gpl_iter_count,
                                     RouteBase* rb)
@@ -3915,7 +3925,7 @@ bool NesterovBase::checkConvergence(int gpl_iter_count,
   if (isConverged_) {
     return true;
   }
-  if (sum_overflow_unscaled_ <= npVars_->targetOverflow) {
+  if (isConvergenceDue()) {
     const bool has_group = pb_->getGroup();
     const std::string group_name = has_group ? pb_->getGroup()->getName() : "";
     const int final_iter = gpl_iter_count;
@@ -4135,6 +4145,12 @@ bool NesterovBase::revertToSnapshot()
   // landed.
   prev_reported_hpwl_ = 0;
   prev_reported_overflow_unscaled_ = 0;
+
+  // The overflow is not part of the snapshot either, and it gates more than a
+  // report: left as it is, the convergence test later in this iteration would
+  // judge the reverted placement by the overflow of the one it replaced. The
+  // next updateNextIter() measures the placement again and clears the mark.
+  is_overflow_stale_ = true;
 
   return true;
 }
