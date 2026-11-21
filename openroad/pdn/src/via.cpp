@@ -33,6 +33,19 @@
 
 namespace pdn {
 
+namespace {
+
+// Note: odb's LEF58 cut-enclosure parser currently binds PARALLEL to
+// setConcaveCornersValid, so checking both flags covers LEF-parsed and API-set
+// rules.
+bool isConditionalCutEnclosureRule(const odb::dbTechLayerCutEnclosureRule* rule)
+{
+  return rule->isExtraCutValid() || rule->isRedundantCutValid()
+         || rule->isParallelValid() || rule->isConcaveCornersValid();
+}
+
+}  // namespace
+
 Enclosure::Enclosure() : x_(0), y_(0), allow_swap_(false)
 {
 }
@@ -2275,8 +2288,9 @@ ViaGenerator::getCutMinimumEnclosureRules(int width, bool above) const
   std::map<int, CutRules> rules_map;
 
   for (auto* enc_rule : getCutLayer()->getTechLayerCutEnclosureRules()) {
-    if (!isCutClass(enc_rule->getCutClass())) {
-      // cut classes do not match
+    if (!isCutClass(enc_rule->getCutClass())
+        || isConditionalCutEnclosureRule(enc_rule)) {
+      // cut classes do not match or rule requires neighbor/extra-cut context
       continue;
     }
 
