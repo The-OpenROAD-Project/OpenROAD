@@ -9,10 +9,13 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <limits>
 #include <map>
 #include <memory>
 #include <numeric>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -22,8 +25,13 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
+#include "sta/TableModel.hh"
+#include "sta/TimingArc.hh"
+#include "sta/TimingRole.hh"
+#include "sta/Units.hh"
 #include "utl/Logger.h"
 
 namespace sta {
@@ -194,6 +202,7 @@ void IpChecker::checkLefMaster(odb::dbMaster* master)
   checkPinMinDimensions(master);               // LEF-CHK-010a
   checkPinMinArea(master);                     // LEF-CHK-010b
   checkLibertyPins(master);                    // LEF/LIB-CHK-011-012
+  checkLibertyValues(master);                  // LIB-CHK-014-015
 }
 
 // LEF-CHK-001: Macro dimensions aligned to manufacturing grid
@@ -900,6 +909,250 @@ void IpChecker::checkLibertyPins(odb::dbMaster* master)
       warning_count_++;
     }
   }
+}
+
+// LIB-CHK-014: A transition table that holds a zero or negative value claims
+// the output switches instantaneously. A table whose smallest load already
+// produces a transition above the pin's max_transition describes a cell that
+// cannot meet its own limit under any load. Libraries are characterized past
+// max_transition on purpose, so entries at larger loads are not checked.
+void IpChecker::checkLibertyValues(odb::dbMaster* master)
+{
+  if (sta_ == nullptr) {
+    return;
+  }
+
+  dbNetwork* network = sta_->getDbNetwork();
+  if (network == nullptr) {
+    return;
+  }
+
+  const std::string master_name = master->getName();
+  std::unique_ptr<LibertyLibraryIterator> lib_iter{
+      network->libertyLibraryIterator()};
+  while (lib_iter->hasNext()) {
+    LibertyLibrary* library = lib_iter->next();
+    LibertyCell* liberty_cell = library->findLibertyCell(master_name);
+    if (liberty_cell != nullptr) {
+      checkLibertyCellValues(master, library, liberty_cell);
+    }
+  }
+}
+
+void IpChecker::checkLibertyCellValues(odb::dbMaster* master,
+                                       LibertyLibrary* library,
+                                       LibertyCell* liberty_cell)
+{
+  const std::string master_name = master->getName();
+  Units* units = library->units();
+  Unit* time_unit = units->timeUnit();
+  Unit* cap_unit = units->capacitanceUnit();
+
+  // A -max_transition override applies to every pin. Otherwise each output
+  // pin's own max_transition applies, with the library default as fallback.
+  float default_max_slew = max_transition_;
+  bool has_default_max_slew = default_max_slew > 0.0;
+  if (!has_default_max_slew) {
+    library->defaultMaxSlew(default_max_slew, has_default_max_slew);
+  }
+
+  // The arcs of one Liberty timing group share their models, and a group
+  // inside a bus or a pin group makes arcs to several output pins. Check each
+  // table once per output pin so every pin is held to its own limit.
+  std::set<std::pair<const LibertyPort*, const TableModel*>> checked;
+  for (TimingArcSet* arc_set : liberty_cell->timingArcSets()) {
+    const TimingRole* role = arc_set->role();
+    if (role->isTimingCheck() || role == TimingRole::tristateDisable()) {
+      continue;
+    }
+
+    const LibertyPort* from = arc_set->from();
+    const LibertyPort* to = arc_set->to();
+
+    float max_slew = default_max_slew;
+    bool has_max_slew = has_default_max_slew;
+    if (max_transition_ <= 0.0 && to != nullptr) {
+      float pin_max_slew = 0.0;
+      bool has_pin_max_slew = false;
+      to->slewLimit(MinMax::max(), pin_max_slew, has_pin_max_slew);
+      if (has_pin_max_slew) {
+        max_slew = pin_max_slew;
+        has_max_slew = true;
+      }
+    }
+
+    for (TimingArc* arc : arc_set->arcs()) {
+      GateTableModel* gate_model = arc->gateTableModel();
+      if (gate_model == nullptr) {
+        continue;
+      }
+
+      const TableModel* slew_model = gate_model->slewModel();
+      if (slew_model == nullptr || !checked.insert({to, slew_model}).second) {
+        continue;
+      }
+
+      const TableAxis* axes[3]
+          = {slew_model->axis1(), slew_model->axis2(), slew_model->axis3()};
+      size_t sizes[3];
+      int load_axis = -1;
+      for (int a = 0; a < 3; a++) {
+        sizes[a] = axes[a] ? axes[a]->size() : 1;
+        if (axes[a] != nullptr
+            && axes[a]->variable()
+                   == TableAxisVariable::total_output_net_capacitance) {
+          load_axis = a;
+        }
+      }
+
+      float min_slew = std::numeric_limits<float>::max();
+      float min_load_slew = std::numeric_limits<float>::max();
+      for (size_t i = 0; i < sizes[0]; i++) {
+        for (size_t j = 0; j < sizes[1]; j++) {
+          for (size_t k = 0; k < sizes[2]; k++) {
+            const float slew = slew_model->value(i, j, k);
+            min_slew = std::min(min_slew, slew);
+            const size_t index[3] = {i, j, k};
+            if (load_axis < 0 || index[load_axis] == 0) {
+              min_load_slew = std::min(min_load_slew, slew);
+            }
+          }
+        }
+      }
+
+      const std::string arc_name = std::string(from ? from->name() : "?")
+                                   + " -> " + std::string(to ? to->name() : "?")
+                                   + " "
+                                   + std::string(arc->toEdge()->to_string());
+
+      if (min_slew <= 0.0) {
+        logger_->warn(utl::CHK,
+                      140,
+                      "Cell {} in library {} arc {} has a transition of {} "
+                      "{}, an instantaneous switch",
+                      master_name,
+                      library->name(),
+                      arc_name,
+                      time_unit->asString(min_slew),
+                      time_unit->scaleAbbrevSuffix());
+        warning_count_++;
+      }
+
+      const float tolerance = max_slew * transition_tolerance_;
+      if (has_max_slew && min_load_slew > max_slew + tolerance) {
+        const int digits = time_unit->digits() + 3;
+        logger_->warn(utl::CHK,
+                      141,
+                      "Cell {} in library {} arc {} has a transition of {} "
+                      "{} at its smallest load, {} {} above the limit of {} {}",
+                      master_name,
+                      library->name(),
+                      arc_name,
+                      time_unit->asString(min_load_slew, digits),
+                      time_unit->scaleAbbrevSuffix(),
+                      time_unit->asString(min_load_slew - max_slew, digits),
+                      time_unit->scaleAbbrevSuffix(),
+                      time_unit->asString(max_slew, digits),
+                      time_unit->scaleAbbrevSuffix());
+        warning_count_++;
+      }
+    }
+  }
+
+  // LIB-CHK-015: OpenSTA does not read default_max_capacitance, so fall back
+  // to the largest load the loaded libraries are characterized for.
+  float max_cap = max_capacitance_;
+  if (max_cap <= 0.0) {
+    max_cap = maxCharacterizedLoad();
+  }
+  if (max_cap <= 0.0) {
+    return;
+  }
+
+  // An input or inout pin above that load cannot be driven by any
+  // characterized cell.
+  for (odb::dbMTerm* mterm : master->getMTerms()) {
+    const odb::dbIoType io_type = mterm->getIoType();
+    if (mterm->getSigType().isSupply()
+        || (io_type != odb::dbIoType::INPUT
+            && io_type != odb::dbIoType::INOUT)) {
+      continue;
+    }
+
+    LibertyPort* port = liberty_cell->findLibertyPort(mterm->getName());
+    if (port == nullptr) {
+      continue;
+    }
+
+    const float cap = port->capacitance();
+    if (cap > max_cap) {
+      logger_->warn(utl::CHK,
+                    150,
+                    "Pin {}/{} capacitance {} {} in library {} is above {} {}, "
+                    "{}",
+                    master_name,
+                    mterm->getName(),
+                    cap_unit->asString(cap),
+                    cap_unit->scaleAbbrevSuffix(),
+                    library->name(),
+                    cap_unit->asString(max_cap),
+                    cap_unit->scaleAbbrevSuffix(),
+                    max_capacitance_ > 0.0
+                        ? "the -max_capacitance limit"
+                        : "the largest load characterized in any loaded "
+                          "library; use -max_capacitance to set the limit");
+      warning_count_++;
+    }
+  }
+}
+
+// The largest total_output_net_capacitance any timing table is characterized
+// for, over every loaded library. A load above it is outside the data the
+// delay calculator has to work with.
+float IpChecker::maxCharacterizedLoad()
+{
+  if (max_characterized_load_ >= 0.0) {
+    return max_characterized_load_;
+  }
+
+  max_characterized_load_ = 0.0;
+
+  dbNetwork* network = sta_->getDbNetwork();
+  std::unique_ptr<LibertyLibraryIterator> lib_iter{
+      network->libertyLibraryIterator()};
+  while (lib_iter->hasNext()) {
+    LibertyLibrary* library = lib_iter->next();
+    LibertyCellIterator cell_iter(library);
+    while (cell_iter.hasNext()) {
+      LibertyCell* cell = cell_iter.next();
+      for (TimingArcSet* arc_set : cell->timingArcSets()) {
+        for (TimingArc* arc : arc_set->arcs()) {
+          GateTableModel* gate_model = arc->gateTableModel();
+          if (gate_model == nullptr) {
+            continue;
+          }
+
+          for (const TableModel* model :
+               {gate_model->delayModel(), gate_model->slewModel()}) {
+            if (model == nullptr) {
+              continue;
+            }
+            for (const TableAxis* axis :
+                 {model->axis1(), model->axis2(), model->axis3()}) {
+              if (axis != nullptr
+                  && axis->variable()
+                         == TableAxisVariable::total_output_net_capacitance) {
+                max_characterized_load_
+                    = std::max(max_characterized_load_, axis->max());
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return max_characterized_load_;
 }
 
 }  // namespace sta
