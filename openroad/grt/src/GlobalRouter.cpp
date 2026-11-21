@@ -461,6 +461,19 @@ bool GlobalRouter::haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets)
   return false;
 }
 
+std::shared_ptr<GRouteDbCbk> GlobalRouter::acquireIncrementalCallback(
+    odb::dbBlock* block)
+{
+  // Overlapping flow and resizer scopes must deliver each DB change once.
+  std::shared_ptr<GRouteDbCbk> callback = incremental_db_cbk_.lock();
+  if (!callback) {
+    callback = std::make_shared<GRouteDbCbk>(this);
+    callback->addOwner(block);
+    incremental_db_cbk_ = callback;
+  }
+  return callback;
+}
+
 void GlobalRouter::startIncremental()
 {
   ensureEngineSelected();
@@ -473,18 +486,16 @@ void GlobalRouter::startIncremental()
   if (!initialized_ || haveDetailedRoutes()) {
     initEngineWithExistingRouting();
   }
-  grouter_cbk_ = new GRouteDbCbk(this);
-  grouter_cbk_->addOwner(block_);
+  grouter_cbk_ = acquireIncrementalCallback(block_);
 }
 
 void GlobalRouter::endIncremental(bool save_guides)
 {
+  auto callback = std::move(grouter_cbk_);
   is_incremental_ = true;
   updateDirtyRoutes(save_guides);
   reportIncrementalCongestion();
-  grouter_cbk_->removeOwner();
-  delete grouter_cbk_;
-  grouter_cbk_ = nullptr;
+  callback.reset();
   finishGlobalRouting(save_guides);
 }
 
@@ -7353,9 +7364,8 @@ bool operator==(const RoutePt& p1, const RoutePt& p2)
 ////////////////////////////////////////////////////////////////
 
 IncrementalGRoute::IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block)
-    : groute_(groute), db_cbk_(groute)
+    : groute_(groute), db_cbk_(groute->acquireIncrementalCallback(block))
 {
-  db_cbk_.addOwner(block);
 }
 
 std::vector<odb::dbNet*> IncrementalGRoute::updateRoutes(bool save_guides,
@@ -7374,7 +7384,6 @@ std::vector<odb::dbNet*> IncrementalGRoute::updateRoutes(bool save_guides,
 IncrementalGRoute::~IncrementalGRoute()
 {
   groute_->reportIncrementalCongestion();
-  db_cbk_.removeOwner();
 }
 
 void GlobalRouter::setRenderer(
