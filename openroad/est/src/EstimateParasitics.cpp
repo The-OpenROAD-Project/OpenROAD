@@ -531,7 +531,7 @@ ParasiticsSrc EstimateParasitics::designParasiticsSrc()
     logger_->error(
         EST, 9, "The design is not placed: no parasitics to estimate.");
   }
-  if (global_router_->haveRoutes()) {
+  if (canEstimateFromGlobalRoutes()) {
     return ParasiticsSrc::kGlobalRouting;
   }
   if (global_router_->haveCongestedRoutes()) {
@@ -577,10 +577,31 @@ void EstimateParasitics::estimateParasitics(ParasiticsSrc src)
   estimateParasitics(src, spef_streams);
 }
 
+// Guides from detailed routing do not rebuild usable global routes.
+bool EstimateParasitics::canEstimateFromGlobalRoutes()
+{
+  return global_router_->haveRoutes()
+         && !global_router_->routesFromDetailedRouteGuides();
+}
+
+void EstimateParasitics::checkParasiticsSrc(ParasiticsSrc src)
+{
+  if (src == ParasiticsSrc::kGlobalRouting
+      && global_router_->routesFromDetailedRouteGuides()) {
+    logger_->error(EST,
+                   21,
+                   "The database guides come from detailed routing and cannot "
+                   "rebuild global routes. Use estimate_parasitics -placement "
+                   "or read_spef.");
+  }
+}
+
 void EstimateParasitics::estimateParasitics(
     ParasiticsSrc src,
     std::map<sta::Scene*, std::ostream*>& spef_streams)
 {
+  // Reject the source before the first state change below.
+  checkParasiticsSrc(src);
   initBlock();
   spef_read_ = false;
   std::unique_ptr<sta::SpefWriter> spef_writer;

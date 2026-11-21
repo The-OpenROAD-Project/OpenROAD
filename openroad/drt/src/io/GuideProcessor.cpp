@@ -1960,11 +1960,13 @@ void GuideProcessor::saveGuidesUpdates()
       const frLayerNum layer_num = guide->getLayerNum();
       auto layerName = getTech()->getLayer(layer_num)->getName();
       auto dbLayer = dbTech->findLayer(layerName.c_str());
-      odb::dbGuide::create(dbNet,
-                           dbLayer,
-                           dbLayer,
-                           {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()},
-                           false);
+      odb::dbGuide* db_guide = odb::dbGuide::create(
+          dbNet,
+          dbLayer,
+          dbLayer,
+          {bbox.xMin(), bbox.yMin(), ebox.xMax(), ebox.yMax()},
+          false);
+      db_guide->setIsFromDetailedRoute(true);
     }
     auto dbGuides = dbNet->getGuides();
     if (dbGuides.orderReversed() && dbGuides.reversible()) {
