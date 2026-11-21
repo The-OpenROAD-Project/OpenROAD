@@ -110,6 +110,7 @@ enum dbObjectType
   dbTechLayerObj,
   dbTechLayerAreaRuleObj,
   dbTechLayerArraySpacingRuleObj,
+  dbTechLayerCoreEdgeLengthRuleObj,
   dbTechLayerCornerSpacingRuleObj,
   dbTechLayerCutClassRuleObj,
   dbTechLayerCutEnclosureRuleObj,

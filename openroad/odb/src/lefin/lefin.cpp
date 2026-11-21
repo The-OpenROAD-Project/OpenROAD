@@ -817,6 +817,9 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
       } else if (!strcmp(layer->propName(iii), "LEF58_AREA")) {
         lefTechLayerAreaRuleParser parser(this);
         parser.parse(layer->propValue(iii), l, incomplete_props_);
+      } else if (!strcmp(layer->propName(iii), "LEF58_COREEDGELENGTH")) {
+        valid = lefTechLayerCoreEdgeLengthParser::parse(
+            layer->propValue(iii), l, this, pending_layer_refs_);
       } else if (!strcmp(layer->propName(iii), "LEF58_CORNERSPACING")) {
         valid = lefTechLayerCornerSpacingParser::parse(
             layer->propValue(iii), l, this);

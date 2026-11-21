@@ -161,6 +161,7 @@ class dbScanPin;
 class dbTechLayer;
 class dbTechLayerAreaRule;
 class dbTechLayerArraySpacingRule;
+class dbTechLayerCoreEdgeLengthRule;
 class dbTechLayerCornerSpacingRule;
 class dbTechLayerCutClassRule;
 class dbTechLayerCutEnclosureRule;
@@ -9408,6 +9409,8 @@ class dbTechLayer : public dbObject
 
   dbSet<dbTechLayerImplantSpacingRule> getTechLayerImplantSpacingRules() const;
 
+  dbSet<dbTechLayerCoreEdgeLengthRule> getTechLayerCoreEdgeLengthRules() const;
+
   void setRectOnly(bool rect_only);
 
   bool isRectOnly() const;
@@ -9844,6 +9847,36 @@ class dbTechLayerArraySpacingRule : public dbObject
       uint32_t dbid);
 
   // User Code End dbTechLayerArraySpacingRule
+};
+
+class dbTechLayerCoreEdgeLengthRule : public dbObject
+{
+ public:
+  void setMinLength(int min_length);
+
+  int getMinLength() const;
+
+  void setMaxLength(int max_length);
+
+  int getMaxLength() const;
+
+  void getExceptAdjacentEdgeLengths(std::vector<int>& tbl) const;
+
+  void getExceptAdjacentLengths(std::vector<int>& tbl) const;
+
+  void getExceptAdjacentExact(std::vector<int>& tbl) const;
+
+  static dbTechLayerCoreEdgeLengthRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerCoreEdgeLengthRule* obj);
+  // User Code Begin dbTechLayerCoreEdgeLengthRule
+  void addExceptAdjacentLength(int edge_length,
+                               int adj_length,
+                               bool exact_adjacent_length);
+  void addWithinLayer(dbTechLayer* layer);
+  std::vector<dbTechLayer*> getWithinLayers() const;
+  void addExceptLayer(dbTechLayer* layer);
+  std::vector<dbTechLayer*> getExceptLayers() const;
+  // User Code End dbTechLayerCoreEdgeLengthRule
 };
 
 class dbTechLayerCornerSpacingRule : public dbObject

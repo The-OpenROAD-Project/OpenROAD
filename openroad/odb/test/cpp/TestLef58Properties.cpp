@@ -1124,4 +1124,62 @@ TEST_F(Fixture, TestLef58ImplantSpacing)
   }
 }
 
+TEST_F(Fixture, TestLef58CoreEdgeLength)
+{
+  loadTechAndLib("tech",
+                 "lef58_implant_rules.lef",
+                 prefix + "data/lef58_implant_rules.lef");
+  EXPECT_EQ(logger_.getWarningCount(), 0);
+
+  dbTechLayer* layer = db_->getTech()->findLayer("IMP1");
+  ASSERT_NE(layer, nullptr);
+
+  auto core_edge_rules = layer->getTechLayerCoreEdgeLengthRules();
+  ASSERT_EQ(core_edge_rules.size(), 4);
+  auto ce_it = core_edge_rules.begin();
+  {
+    dbTechLayerCoreEdgeLengthRule* r = *ce_it++;
+    EXPECT_EQ(r->getMinLength(), 4.5 * 1000);
+    EXPECT_EQ(r->getMaxLength(), 0);
+    std::vector<int> edge_lens;
+    std::vector<int> adj_lens;
+    std::vector<int> exacts;
+    r->getExceptAdjacentEdgeLengths(edge_lens);
+    r->getExceptAdjacentLengths(adj_lens);
+    r->getExceptAdjacentExact(exacts);
+    ASSERT_EQ(edge_lens.size(), 2);
+    ASSERT_EQ(adj_lens.size(), 2);
+    ASSERT_EQ(exacts.size(), 2);
+    EXPECT_EQ(edge_lens[0], 3.2 * 1000);
+    EXPECT_EQ(adj_lens[0], 1.8 * 1000);
+    EXPECT_EQ(exacts[0], 1);
+    EXPECT_EQ(edge_lens[1], 2.6 * 1000);
+    EXPECT_EQ(adj_lens[1], 1.4 * 1000);
+    EXPECT_EQ(exacts[1], 0);
+  }
+  {
+    dbTechLayerCoreEdgeLengthRule* r = *ce_it++;
+    EXPECT_EQ(r->getMinLength(), 5.5 * 1000);
+    std::vector<dbTechLayer*> within = r->getWithinLayers();
+    ASSERT_EQ(within.size(), 2);
+    ASSERT_NE(within[0], nullptr);
+    ASSERT_NE(within[1], nullptr);
+    EXPECT_EQ(within[0]->getName(), "SUB_A");
+    EXPECT_EQ(within[1]->getName(), "SUB_B");
+  }
+  {
+    dbTechLayerCoreEdgeLengthRule* r = *ce_it++;
+    EXPECT_EQ(r->getMinLength(), 6.5 * 1000);
+    std::vector<dbTechLayer*> except_layers = r->getExceptLayers();
+    ASSERT_EQ(except_layers.size(), 1);
+    ASSERT_NE(except_layers[0], nullptr);
+    EXPECT_EQ(except_layers[0]->getName(), "EX_LAYER");
+  }
+  {
+    dbTechLayerCoreEdgeLengthRule* r = *ce_it++;
+    EXPECT_EQ(r->getMinLength(), 2.5 * 1000);
+    EXPECT_EQ(r->getMaxLength(), 45.0 * 1000);
+  }
+}
+
 }  // namespace odb
