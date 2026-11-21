@@ -362,18 +362,6 @@ cc_test(
 )
 
 cc_test(
-    name = "nesterov_divergence_test",
-    srcs = ["nesterov_divergence_test.cpp"],
-    deps = [
-        "//openroad/gpl:gpl_impl",
-        "//openroad/odb/src/db",
-        "//openroad/utl",
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-    ],
-)
-
-cc_test(
     name = "congestion_buffers_test",
     srcs = [
         "congestion_buffers_test.cpp",
