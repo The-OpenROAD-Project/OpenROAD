@@ -4580,6 +4580,9 @@ void Resizer::reportLongWires(int count, int digits)
   double wire_cap = estimate_parasitics_->wireSignalCapacitance(corner);
   int i = 0;
   for (sta::Vertex* drvr : drvrs) {
+    if (count >= 0 && i >= count) {
+      break;
+    }
     sta::Pin* drvr_pin = drvr->pin();
     double wire_length = dbuToMeters(maxLoadManhattenDistance(drvr));
     double steiner_length = dbuToMeters(findMaxSteinerDist(drvr, corner));
@@ -4589,9 +4592,6 @@ void Resizer::reportLongWires(int count, int digits)
                     units_->distanceUnit()->asString(wire_length, 1),
                     units_->distanceUnit()->asString(steiner_length, 1),
                     delayAsString(delay, digits, sta_));
-    if (i == count) {
-      break;
-    }
     i++;
   }
 }
