@@ -130,8 +130,14 @@ enum class RepairEffort : uint8_t
 // Voltage Threshold (VT) category identifier
 struct VTCategory
 {
+  // vt_index of a cell without IMPLANT obstructions.  Such a cell has no
+  // identified VT: it forms no VT category and is no VT swap candidate.
+  static constexpr int kUnclassifiedVtIndex = 0;
+
   int vt_index;
   std::string vt_name;
+
+  bool isClassified() const { return vt_index != kUnclassifiedVtIndex; }
 
   // Enable use as map key
   bool operator<(const VTCategory& other) const
@@ -195,6 +201,8 @@ struct LibraryAnalysisData
   odb::PtrMap<odb::dbSite, int> cells_by_site;
   // VT categories sorted by VT type for HVT/RVT/LVT/uLVT ordering
   std::vector<std::pair<VTCategory, VTLeakageStats>> sorted_vt_categories;
+  // Number of VT categories of the buffers, dont_use ones included
+  int vt_category_count_with_dont_use = 0;
 
   // Helper methods for common operations
   void sort_vt_categories()
@@ -779,7 +787,14 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   int findMaxSteinerDist(sta::Vertex* drvr, const sta::Scene* corner);
   float driveResistance(const sta::Pin* drvr_pin) const;
   float bufferDriveResistance(const sta::LibertyCell* buffer) const;
+  // Number of VT categories among the usable (non-dont_use) buffers.
   int vtCategoryCount() const;
+  // True when a VT swap can apply to cell: more than one usable VT, or the
+  // cell itself is dont_use and has an equivalent in a usable VT.
+  bool canVtSwap(sta::LibertyCell* cell);
+  // Number of identified VT categories among all buffers, dont_use ones
+  // included.
+  int vtCategoryCountWithDontUse() const;
   float cellDriveResistance(const sta::LibertyCell* cell) const;
 
   // Max distance from driver to load (in dbu).

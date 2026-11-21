@@ -1388,6 +1388,10 @@ TEST_F(TestResizer, GetVtEquivCellsDeduplicatesNonAdjacentSameVtCells)
   odb::dbTechLayer* lvt_implant = odb::dbTechLayer::create(
       db_->getTech(), "LVT_IMPLANT", odb::dbTechLayerType::IMPLANT);
   ASSERT_NE(lvt_implant, nullptr);
+  // RVT must be explicit too: a cell without an implant layer has no VT.
+  odb::dbTechLayer* rvt_implant = odb::dbTechLayer::create(
+      db_->getTech(), "RVT_IMPLANT", odb::dbTechLayerType::IMPLANT);
+  ASSERT_NE(rvt_implant, nullptr);
   odb::dbMaster* buf_x1_master = db_->findMaster("BUF_X1");
   odb::dbMaster* buf_x2_master = db_->findMaster("BUF_X2");
   odb::dbMaster* buf_x4_master = db_->findMaster("BUF_X4");
@@ -1401,6 +1405,7 @@ TEST_F(TestResizer, GetVtEquivCellsDeduplicatesNonAdjacentSameVtCells)
   buf_x4_master->setHeight(buf_x1_master->getHeight());
 
   odb::dbBox::create(buf_x1_master, lvt_implant, 0, 0, 10, 10);
+  odb::dbBox::create(buf_x2_master, rvt_implant, 0, 0, 10, 10);
   odb::dbBox::create(buf_x4_master, lvt_implant, 0, 0, 10, 10);
 
   readVerilogAndSetup("TestResizerMt_DelayEstimator.v");
@@ -1432,6 +1437,65 @@ TEST_F(TestResizer, GetVtEquivCellsDeduplicatesNonAdjacentSameVtCells)
             resizer_.cellVTType(second_master));
   EXPECT_LE(resizer_.cellLeakage(vt_equiv[0]).value_or(0.0f),
             resizer_.cellLeakage(vt_equiv[1]).value_or(0.0f));
+}
+
+TEST_F(TestResizer, LibraryWithoutImplantsHasNoVtCategory)
+{
+  // Nangate45 has no IMPLANT layers: no cell has a VT, VT moves are off.
+  readVerilogAndSetup("TestResizerMt_DelayEstimator.v");
+  resizer_.initBlock();
+  resizer_.runRepairSetupPreamble();
+
+  odb::dbMaster* buf_x1_master = db_->findMaster("BUF_X1");
+  ASSERT_NE(buf_x1_master, nullptr);
+  EXPECT_FALSE(resizer_.cellVTType(buf_x1_master).isClassified());
+  EXPECT_EQ(resizer_.vtCategoryCount(), 0);
+  EXPECT_EQ(resizer_.vtCategoryCountWithDontUse(), 0);
+}
+
+TEST_F(TestResizer, UnclassifiedCellsAreExcludedFromVtSwap)
+{
+  // Only BUF_X1 and BUF_X2 carry implant layers.  The other buffers have no
+  // VT, so they must neither form a VT category nor be VT alternatives.
+  odb::dbTechLayer* lvt_implant = odb::dbTechLayer::create(
+      db_->getTech(), "LVT_IMPLANT", odb::dbTechLayerType::IMPLANT);
+  odb::dbTechLayer* rvt_implant = odb::dbTechLayer::create(
+      db_->getTech(), "RVT_IMPLANT", odb::dbTechLayerType::IMPLANT);
+  odb::dbMaster* buf_x1_master = db_->findMaster("BUF_X1");
+  odb::dbMaster* buf_x2_master = db_->findMaster("BUF_X2");
+  odb::dbMaster* buf_x4_master = db_->findMaster("BUF_X4");
+  ASSERT_NE(buf_x1_master, nullptr);
+  ASSERT_NE(buf_x2_master, nullptr);
+  ASSERT_NE(buf_x4_master, nullptr);
+  // Equal areas make BUF_X4 a VT alternative of BUF_X1 apart from its VT.
+  buf_x2_master->setWidth(buf_x1_master->getWidth());
+  buf_x4_master->setWidth(buf_x1_master->getWidth());
+  odb::dbBox::create(buf_x1_master, lvt_implant, 0, 0, 10, 10);
+  odb::dbBox::create(buf_x2_master, rvt_implant, 0, 0, 10, 10);
+
+  readVerilogAndSetup("TestResizerMt_DelayEstimator.v");
+  resizer_.initBlock();
+  resizer_.runRepairSetupPreamble();
+
+  EXPECT_EQ(resizer_.vtCategoryCount(), 2);
+  EXPECT_EQ(resizer_.vtCategoryCountWithDontUse(), 2);
+  EXPECT_FALSE(resizer_.cellVTType(buf_x4_master).isClassified());
+
+  sta::LibertyCell* buf_x1_cell
+      = db_network_->libertyCell(db_network_->dbToSta(buf_x1_master));
+  sta::LibertyCell* buf_x4_cell
+      = db_network_->libertyCell(db_network_->dbToSta(buf_x4_master));
+  ASSERT_NE(buf_x1_cell, nullptr);
+  ASSERT_NE(buf_x4_cell, nullptr);
+
+  // BUF_X1 swaps to BUF_X2 only; BUF_X4 has no VT to swap from.
+  const sta::LibertyCellSeq vt_equiv = resizer_.getVTEquivCells(buf_x1_cell);
+  EXPECT_EQ(vt_equiv.size(), 2u);
+  for (sta::LibertyCell* cell : vt_equiv) {
+    EXPECT_TRUE(resizer_.cellVTType(db_network_->staToDb(cell)).isClassified())
+        << cell->name();
+  }
+  EXPECT_TRUE(resizer_.getVTEquivCells(buf_x4_cell).empty());
 }
 
 // Keyed by VT name for checks that do not depend on the row order.
