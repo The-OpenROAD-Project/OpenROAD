@@ -4,10 +4,10 @@
 """CUDA architectures supported by the Bazel GPU build.
 
 One dict maps each --//:cuda_arch value to the Kokkos_ARCH_* macros Kokkos's
-CMake would define for it. Keeping the sm_* list and the Kokkos define map
-together guarantees that the flag's accepted values (BUILD.bazel), the
---cuda-gpu-arch select (copts.bzl) and the generated KokkosCore_config.h
-(bazel/gpu/kokkos/configure.bzl) always cover the same set.
+CMake would define for it. Its keys drive the flag's accepted values
+(BUILD.bazel) and the --cuda-gpu-arch select (copts.bzl). The registry
+Kokkos module carries its own copy of this map for --@kokkos//:cuda_arch,
+which .bazelrc sets to the same architecture.
 """
 
 CUDA_ARCH_DEFINES = {

@@ -32,6 +32,9 @@ CUDA_TOOLKIT_COPTS = [
     # The hermetic LLVM toolchain uses libc++; CUDA's host header requires
     # this opt-out on x86_64.
     "-D_ALLOW_UNSUPPORTED_LIBCPP",
+    # Boost.Core disables empty-base optimization for Clang CUDA. Restore
+    # it so embedded Boost containers have the same layout as in C++ TUs.
+    "-DBOOST_DETAIL_EMPTY_VALUE_BASE",
 ]
 
 CUDA_ARCH_COPTS = select(
@@ -58,9 +61,10 @@ CUDA_COPTS = CUDA_TOOLKIT_COPTS + CUDA_ARCH_COPTS + [
     # additional_compiler_inputs, which is what makes the expansion legal.
     "-include",
     "$(location //bazel/gpu:cuda_placement_new.h)",
+] + select({
     # Required by Kokkos's OpenMP backend headers in every TU that includes
-    # Kokkos (see BUILD.kokkos.bazel); gpl's sources also use OpenMP pragmas
-    # on the host side. Same flag (and @openmp dependency) as
-    # //openroad/gpl:gpl_impl.
-    "-fopenmp",
-]
+    # Kokkos (the registry module adds it to its own copts). Only with the
+    # OpenMP host backend (--@kokkos//:backend), matching //openroad/gpl:gpl_impl.
+    "@kokkos//:openmp": ["-fopenmp"],
+    "//conditions:default": [],
+})

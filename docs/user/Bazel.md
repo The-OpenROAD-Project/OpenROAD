@@ -468,16 +468,53 @@ The Tcl tests do get instrumented: they run the `cfg=target` `openroad`, which
 is what the sanitizer configs instrument. swig, bison and the other
 exec-configuration build tools stay uninstrumented.
 
+## Kokkos and the host parallel backend
+
+Every OpenROAD build compiles [Kokkos](https://github.com/kokkos/kokkos)
+5.2.2, taken from the Bazel Central Registry (`bazel_dep(name = "kokkos")` in
+`MODULE.bazel`) and built with the same hermetic LLVM toolchain as OpenROAD.
+`gpl` uses it for its parallel host loops (global placement and MBFF) and, on
+the GPU build, for its CUDA kernels.
+
+The host backend is a build setting:
+
+    bazelisk build :openroad --//bazel/kokkos:backend=openmp   # default
+    bazelisk build :openroad --//bazel/kokkos:backend=threads
+    bazelisk build :openroad --//bazel/kokkos:backend=serial
+
+- `openmp` (default): the thread count follows `-threads` / `set_thread_count`
+  for each placement run.
+- `threads`: Kokkos's own thread pool. Its size is fixed when Kokkos is first
+  initialized (the first `global_placement` or `cluster_flops`), so later
+  changes to the thread count do not resize it.
+- `serial`: single-threaded, whatever the thread count.
+
+The Serial backend is always compiled in alongside the selected one.
+`//bazel/kokkos:backend` is an alias of `@kokkos//:backend`; both spellings
+work.
+
+Placement results must not depend on the backend. `kokkos_backend_tests()`
+(`bazel/kokkos/defs.bzl`) rebuilds selected `gpl` regressions with `serial`
+and `threads` and checks them against the same golden logs. They are named
+`<test>-serial` / `<test>-threads` and tagged `kokkos_backend`:
+
+    bazelisk test //openroad/gpl/test/... --test_tag_filters=kokkos_backend
+
+These variants are skipped on the GPU build.
+
 ## GPU build (`--config=gpu`)
 
 `--config=gpu` compiles the Kokkos/CUDA backends of `gpl` (`openroad/gpl/src/gpu`).
-Kokkos 5.2.2 and
-KokkosFFT 2.0.0 are downloaded at pinned checksums and built with Bazel's
-hermetic LLVM toolchain, with the OpenMP, Serial, and CUDA backends enabled
-(`bazel/gpu/kokkos/configure.bzl`). Only the CUDA toolkit remains
-host-provided. Default CPU targets neither download nor compile Kokkos and do
-not compile or link against CUDA. Because the CUDA repository definition is loaded by shared Bazel
-configuration, CPU invocations still probe the configured toolkit path.
+It builds the same registry Kokkos as the CPU build (see
+[Kokkos and the host parallel backend](#kokkos-and-the-host-parallel-backend))
+with its CUDA device backend turned on (`--@kokkos//:device=cuda` and related
+flags in `.bazelrc`), and adds KokkosFFT 2.0.0, also from the Bazel Central
+Registry, with FFTW and cuFFT. Only the CUDA toolkit remains host-provided.
+
+CPU builds also fetch and compile Kokkos, for the host loops, but never
+KokkosFFT or anything CUDA related, and do not link against CUDA. Because the CUDA
+repository definition is loaded by shared Bazel configuration, CPU invocations
+still probe the configured toolkit path.
 
 Choose the configuration matching the device compute capability:
 
@@ -508,14 +545,14 @@ the CUDA toolkit used for the build.
 
 ### Dependency model
 
-The Bazel build does not use `KOKKOS_ROOT` or `KOKKOS_FFT_ROOT`. Its BUILD
-overlays compile Kokkos with the same clang, libc++, glibc headers, CUDA target,
-and C++ standard as OpenROAD. This avoids the C++ ABI and libc symbol mismatches
-caused by linking a host-built Kokkos into a hermetic OpenROAD binary. The
-configuration headers that Kokkos's and KokkosFFT's CMake builds generate
-(`KokkosCore_config.h`, the backend include lists, `desul/atomics/Config.hpp`,
-`KokkosFFT_config.hpp`) are written at build time from one backend list in
-`bazel/gpu/kokkos/configure.bzl`; none is checked in.
+Kokkos and KokkosFFT are registry modules compiled with the same clang, libc++,
+glibc headers, CUDA target, and C++ standard as OpenROAD. This avoids the C++
+ABI and libc symbol mismatches caused by linking a host-built Kokkos into a
+hermetic OpenROAD binary. The `kokkos` module writes its configuration headers
+(`KokkosCore_config.h` and the backend include lists) at build time from its
+`--@kokkos//:*` settings. `KokkosFFT_config.hpp` is written by
+`bazel/gpu/kokkos/configure.bzl` and passed in through
+`--@kokkos_fft//:config`. None of these headers is checked in.
 
 ### Notes
 
@@ -525,19 +562,18 @@ configuration headers that Kokkos's and KokkosFFT's CMake builds generate
   golden logs (`test/regression.bzl`); the GPU-only tests
   (`region01_gpu`, `region01_gpu_asym`, `fft_gpu_test`, `wl_gpu_test`) pin it
   to 1, are tagged `gpu`, and are reported as SKIPPED by plain CPU wildcard runs.
-- When the GPU path first initializes Kokkos, its OpenMP backend prints
-  `Kokkos::OpenMP::initialize WARNING: OMP_PROC_BIND environment variable not
-  set` on stderr unless `OMP_PROC_BIND` is set (for example to `false`). It
-  never reaches the golden logs: those tests pin `ENABLE_GPU=0`, so Kokkos is
-  not initialized, and the GPU-only tests are pass/fail. A Kokkos warning about
-  a CUDA architecture mismatch, by contrast, is worth acting on.
+- A `--config=gpu` binary needs a usable CUDA device even with `ENABLE_GPU=0`.
+  `global_placement` and `cluster_flops` always initialize Kokkos for their
+  host loops, and Kokkos starts every compiled backend, CUDA included. Without
+  a device they stop with `GPL-0336`. The `gcd-gpu-off` and
+  `mbff_clock_power_on-gpu-off` tests check this with `CUDA_VISIBLE_DEVICES=""`.
 - Host-side FFTs on the GPU path run on `Kokkos::Serial`. The Bazel `@fftw`
   has no threads library, so FFTW's threaded planner is unavailable.
 - `--config=gpu` binaries link libcudart/libcufft by absolute path with an
   rpath into the toolkit; they are not relocatable to another machine.
-- The first GPU build downloads the two pinned source archives and compiles
-  Kokkos's CUDA translation units. Changing `cuda_arch` rebuilds Kokkos and the
-  OpenROAD GPU sources for the new target.
+- The first GPU build fetches KokkosFFT and compiles Kokkos's CUDA translation
+  units. Changing `cuda_arch` rebuilds Kokkos and the OpenROAD GPU sources for
+  the new target.
 - After upgrading CUDA in place, run `bazelisk shutdown` (or change
   `OPENROAD_CUDA_PATH`) so the wrapped repository is refetched with the new
   file list.

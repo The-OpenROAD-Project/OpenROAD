@@ -35,9 +35,9 @@
 #include <__config>
 
 #if !defined(_LIBCPP_VERSION) || _LIBCPP_VERSION < 220000 \
-    || _LIBCPP_VERSION >= 230000
+    || _LIBCPP_VERSION >= 240000
 #error \
-    "bazel/gpu/cuda_placement_new.h was verified against libc++ 22 only. Re-check it against this libc++'s <__new/placement_new_delete.h> and widen the version range."
+    "bazel/gpu/cuda_placement_new.h was verified against libc++ 22 and 23 only. Re-check it against this libc++'s <__new/placement_new_delete.h> and widen the version range."
 #endif
 
 #ifndef _LIBCPP___NEW_PLACEMENT_NEW_DELETE_H

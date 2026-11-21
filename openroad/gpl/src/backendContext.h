@@ -35,9 +35,6 @@ struct BackendContext
   RegionDensityField* region_field = nullptr;
   bool place_ios_mode = false;
 
-  // OpenMP fan-out for the CPU backends.
-  int num_threads = 1;
-
   // FFT-only grid geometry. Required by makeFftBackend; ignored elsewhere.
   int bin_cnt_x = 0;
   int bin_cnt_y = 0;

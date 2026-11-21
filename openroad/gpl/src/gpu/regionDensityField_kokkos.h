@@ -29,10 +29,10 @@ struct KokkosRegionDensityField
   Kokkos::View<float*> d_bin_phi;      // FFT output (electrostatic potential)
   Kokkos::View<float*> d_bin_elec_x;   // FFT output (solver X = gpl Y)
   Kokkos::View<float*> d_bin_elec_y;   // FFT output (solver Y = gpl X)
-  Kokkos::View<float*>::HostMirror h_bin_density;
-  Kokkos::View<float*>::HostMirror h_bin_phi;
-  Kokkos::View<float*>::HostMirror h_bin_elec_x;
-  Kokkos::View<float*>::HostMirror h_bin_elec_y;
+  Kokkos::View<float*>::host_mirror_type h_bin_density;
+  Kokkos::View<float*>::host_mirror_type h_bin_phi;
+  Kokkos::View<float*>::host_mirror_type h_bin_elec_x;
+  Kokkos::View<float*>::host_mirror_type h_bin_elec_y;
 };
 
 }  // namespace gpl

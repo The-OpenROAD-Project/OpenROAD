@@ -5,8 +5,6 @@
 
 #include <limits>
 
-#include "omp.h"
-
 namespace gpl {
 
 ResidualError cpuSparseSolve(int maxSolverIter,
@@ -20,7 +18,7 @@ ResidualError cpuSparseSolve(int maxSolverIter,
                              utl::Logger* logger,
                              int threads)
 {
-  omp_set_num_threads(threads);
+  Eigen::setNbThreads(threads);
 
   ResidualError residual_error;
   BiCGSTAB<SMatrix, IdentityPreconditioner> solver;
