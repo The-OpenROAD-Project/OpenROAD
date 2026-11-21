@@ -75,11 +75,9 @@ void Rudy::makeGrid()
   const int grid_lx = grid_block_.xMin();
   const int grid_ly = grid_block_.yMin();
 
-  odb::Point upper_die_bounds(grid_block_.xMax(), grid_block_.yMax());
-  odb::Point upper_grid_bounds(tile_cnt_x_ * tile_size_,
-                               tile_cnt_y_ * tile_size_);
-  int x_extra = upper_die_bounds.x() - upper_grid_bounds.x();
-  int y_extra = upper_die_bounds.y() - upper_grid_bounds.y();
+  // The last column/row absorbs what is left of the die after whole tiles.
+  const int x_extra = grid_block_.dx() - tile_cnt_x_ * tile_size_;
+  const int y_extra = grid_block_.dy() - tile_cnt_y_ * tile_size_;
 
   grid_.resize(tile_cnt_x_);
   int cur_x = grid_lx;

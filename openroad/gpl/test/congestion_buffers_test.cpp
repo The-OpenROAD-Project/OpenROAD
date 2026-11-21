@@ -26,6 +26,11 @@
 namespace gpl {
 namespace {
 
+// Wide enough to congest the tiles under the synthetic demand nets. RUDY
+// widens a net narrower than one wire to the wire width, so a wire much wider
+// than these nets spreads their demand out instead of concentrating it.
+constexpr int kCongestedWireWidth = 13000;
+
 int64_t cellArea(const GCell* cell)
 {
   return static_cast<int64_t>(cell->dx()) * cell->dy();
@@ -158,7 +163,7 @@ class CongestionBuffersTest : public tst::IntegratedFixture
     }
     grt_.setMinRoutingLayer(2);
     grt_.setMaxRoutingLayer(6);
-    grt_.getRudy()->setWireWidth(1000000);
+    grt_.getRudy()->setWireWidth(kCongestedWireWidth);
     makeRouteBase();
   }
 
