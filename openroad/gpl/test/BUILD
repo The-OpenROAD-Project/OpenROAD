@@ -1,6 +1,7 @@
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("//bazel:readme_msgs_checker.bzl", "readme_msgs_check_test")
 load("//bazel/gpu:copts.bzl", "CUDA_COPTS")
 load("//bazel/gpu:defs.bzl", "GPU_ENV_OFF", "GPU_ONLY")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
@@ -488,7 +489,7 @@ py_test(
     deps = ["//docs/src/scripts:extract_utils"],
 )
 
-doc_check_test(
+readme_msgs_check_test(
     name = "gpl_readme_msgs_check",
     data = [
         "//openroad/gpl:doc_files",
