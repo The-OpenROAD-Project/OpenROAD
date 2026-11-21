@@ -94,7 +94,7 @@ void InitialPlace::doBicgstabPlace(int threads)
       graphics_->gifAddFrame(gif_key_, region, 500, dbu_per_pixel, 20);
     }
 
-    if (std::isnan(error.x) || std::isnan(error.y)) {
+    if (!std::isfinite(error.x) || !std::isfinite(error.y)) {
       log_->warn(utl::GPL,
                  325,
                  "Conjugate gradient initial placement solver failed at "
@@ -484,18 +484,18 @@ void InitialPlace::createSparseMatrix()
 
 void InitialPlace::updateCoordi()
 {
+  const auto clamp = [](double v, double lo, double hi, int cur) {
+    return std::isfinite(v) ? static_cast<int>(std::clamp(v, lo, hi)) : cur;
+  };
   for (auto& inst : pbc_->placeInsts()) {
     int idx = inst->getExtId();
     if (!inst->isLocked()) {
-      int new_x = instLocVecX_(idx);
-      int new_y = instLocVecY_(idx);
-
-      // Constrain to core area
+      // Constrain to core area before float -> int conversion.
       const auto& die = pbc_->getDie();
-      new_x = std::max(new_x, die.coreLx());
-      new_x = std::min(new_x, die.coreUx());
-      new_y = std::max(new_y, die.coreLy());
-      new_y = std::min(new_y, die.coreUy());
+      int new_x
+          = clamp(instLocVecX_(idx), die.coreLx(), die.coreUx(), inst->cx());
+      int new_y
+          = clamp(instLocVecY_(idx), die.coreLy(), die.coreUy(), inst->cy());
 
       // If instance has a region constraint, use that instead
       const auto db_inst = inst->dbInst();
