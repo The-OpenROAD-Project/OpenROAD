@@ -79,6 +79,29 @@ cc_test(
     ],
 )
 
+# kCheckWellFormed: the DesignOptions every test builds its designs with.
+cc_library(
+    name = "test_design_options",
+    testonly = True,
+    hdrs = ["helpers/TestDesignOptions.h"],
+    includes = ["."],
+    deps = ["//openroad/syn/src/lir"],
+)
+
+# addModuleOrFail, and the ModuleCapacity guard.
+cc_library(
+    name = "test_modules",
+    testonly = True,
+    srcs = ["helpers/TestModules.cc"],
+    hdrs = ["helpers/TestModules.h"],
+    includes = ["."],
+    deps = [
+        "//openroad/syn/src/lir",
+        "@abseil-cpp//absl/status:statusor",
+        "@googletest//:gtest",
+    ],
+)
+
 # A small Liberty library whose cells the tests build by hand.
 cc_library(
     name = "test_liberty",
@@ -87,6 +110,19 @@ cc_library(
     hdrs = ["helpers/TestLiberty.h"],
     includes = ["."],
     deps = ["//openroad/sta:opensta_lib"],
+)
+
+cc_test(
+    name = "module_builder_test",
+    srcs = ["TestModuleBuilder.cc"],
+    deps = [
+        ":test_modules",
+        "//openroad/syn/src/lir",
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:statusor",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
 )
 
 cc_test(
@@ -107,6 +143,60 @@ cc_test(
         "//openroad/sta:opensta_lib",
         "//openroad/syn/src/lir",
         "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/strings",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "design_test",
+    srcs = ["TestDesign.cc"],
+    deps = [
+        ":test_design_options",
+        ":test_liberty",
+        ":test_modules",
+        "//openroad/sta:opensta_lib",
+        "//openroad/syn/src/lir",
+        "//openroad/utl",
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:statusor",
+        "@abseil-cpp//absl/strings",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# Fixtures shared by well_formed_test and well_formed_edits_test.
+cc_library(
+    name = "well_formed_fixtures",
+    testonly = True,
+    hdrs = ["helpers/WellFormedFixtures.h"],
+    includes = ["."],
+    deps = [
+        ":test_design_options",
+        ":test_liberty",
+        "//openroad/sta:opensta_lib",
+        "//openroad/syn/src/lir",
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:statusor",
+        "@abseil-cpp//absl/strings",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "well_formed_test",
+    srcs = ["TestWellFormed.cc"],
+    deps = [
+        ":test_design_options",
+        ":test_liberty",
+        ":test_modules",
+        ":well_formed_fixtures",
+        "//openroad/sta:opensta_lib",
+        "//openroad/syn/src/lir",
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:statusor",
         "@abseil-cpp//absl/strings",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
