@@ -1176,6 +1176,10 @@ void DefOut::Impl::writeBlockages(dbBlock* block)
       *_out << " + FILLS";
     }
 
+    if (_version >= DefOut::DEF_5_7 && obs->isExceptPGNetsObstruction()) {
+      *_out << " + EXCEPTPGNET";
+    }
+
     if (obs->isPushedDown()) {
       *_out << " + PUSHDOWN";
     }
