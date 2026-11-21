@@ -118,6 +118,15 @@ extSpef::extSpef(odb::dbTech* tech,
 
 extSpef::~extSpef()
 {
+  closeDiffFiles();
+  if (isPureDiff()) {
+    if (_capStatsFP != nullptr) {
+      fclose(_capStatsFP);
+    }
+    if (_capNodeFile != nullptr) {
+      fclose(_capNodeFile);
+    }
+  }
   delete _idMapTable;
   delete _nodeParser;
   delete _parser;
@@ -137,6 +146,7 @@ extSpef::~extSpef()
     delete _itermCapTable;
   }
   delete _nameMapTable;
+  delete _notFoundInst;
   delete _nodeHashTable;
   delete _ccidmap;
   delete _nodeCoordParser;
@@ -216,6 +226,7 @@ void extSpef::setCalibLimit(const float upperLimit, const float lowerLimit)
 
 void extSpef::setUseIdsFlag(const bool diff, const bool calib)
 {
+  closeDiffFiles();
   _diff = diff;
   _calib = calib;
   if (diff && !calib) {
@@ -229,6 +240,18 @@ void extSpef::setUseIdsFlag(const bool diff, const bool calib)
       logger_->error(
           RCX, 172, "Can't open output file diff_spef.out for writing!");
     }
+  }
+}
+
+void extSpef::closeDiffFiles()
+{
+  if (_diffLogFP != nullptr) {
+    fclose(_diffLogFP);
+    _diffLogFP = nullptr;
+  }
+  if (_diffOutFP != nullptr) {
+    fclose(_diffOutFP);
+    _diffOutFP = nullptr;
   }
 }
 
