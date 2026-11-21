@@ -2,9 +2,9 @@
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
 #pragma once
-#include "WorkerConnection.h"
 #include "boost/asio.hpp"
 #include "boost/asio/thread_pool.hpp"
+#include "openroad/dst/WorkerConnection.h"
 
 namespace utl {
 class Logger;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "BalancerConnection.h"
+#include "openroad/dst/BalancerConnection.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -11,7 +11,6 @@
 #include <utility>
 #include <vector>
 
-#include "LoadBalancer.h"
 #include "absl/synchronization/mutex.h"
 #include "boost/archive/text_iarchive.hpp"
 #include "boost/archive/text_oarchive.hpp"
@@ -20,10 +19,11 @@
 #include "boost/bind/bind.hpp"
 #include "boost/serialization/export.hpp"
 #include "boost/thread/thread.hpp"
-#include "dst/BalancerJobDescription.h"
-#include "dst/BroadcastJobDescription.h"
-#include "dst/Distributed.h"
-#include "dst/JobMessage.h"
+#include "openroad/dst/BalancerJobDescription.h"
+#include "openroad/dst/BroadcastJobDescription.h"
+#include "openroad/dst/Distributed.h"
+#include "openroad/dst/JobMessage.h"
+#include "openroad/dst/LoadBalancer.h"
 #include "utl/Logger.h"
 
 BOOST_CLASS_EXPORT(dst::BalancerJobDescription)

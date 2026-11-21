@@ -23,9 +23,6 @@ cc_test(
         "cpp/TestBalancer.cc",
         "cpp/stubs.cpp",
     ],
-    includes = [
-        "../src",
-    ],
     deps = [
         ":test_helpers",
         "//:ord",
@@ -51,9 +48,6 @@ cc_binary(
         "cpp/TestDistributed.cc",
         "cpp/stubs.cpp",
     ],
-    includes = [
-        "../src",
-    ],
     deps = [
         ":test_helpers",
         "//:ord",
@@ -74,9 +68,6 @@ cc_test(
     srcs = [
         "cpp/TestWorker.cc",
         "cpp/stubs.cpp",
-    ],
-    includes = [
-        "../src",
     ],
     deps = [
         ":test_helpers",

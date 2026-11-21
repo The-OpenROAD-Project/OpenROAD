@@ -35,13 +35,13 @@
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexMazeTypes.h"
 #include "dr/FlexWavefront.h"
-#include "dst/JobMessage.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRegionQuery.h"
 #include "gc/FlexGC.h"
 #include "odb/dbTransform.h"
 #include "odb/geom.h"
+#include "openroad/dst/JobMessage.h"
 
 using Rectangle = boost::polygon::rectangle_data<int>;
 namespace dst {
