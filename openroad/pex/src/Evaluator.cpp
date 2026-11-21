@@ -1343,10 +1343,10 @@ void Wire::addNeighborEnds(const size_t start) const
       // does; a square's are half along each.
       const odb::Rect& r = s.rect;
       const bool along = (r.dx() >= r.dy() ? 0 : 1) == a_;
-      const double weight = r.dx() == r.dy() ? 0.5 : (along ? 1.0 : 0.0);
-      if (weight == 0) {
+      if (r.dx() != r.dy() && !along) {
         continue;
       }
+      const double weight = r.dx() == r.dy() ? 0.5 : 1.0;
       const int n0 = lo(s, a_);
       const int n1 = hi(s, a_);
       const int wn = std::min(hi(s, p_) - lo(s, p_), n1 - n0);
@@ -1582,9 +1582,11 @@ void Evaluator::reach(const EvalBox& box, std::vector<odb::Rect>& rects) const
   // A square is estimated along both axes, so it reaches both ways.
   const bool square = box.rect.dx() == box.rect.dy();
   auto grow = [&](const int along, const int across) {
-    const int64_t both = std::max(along, across);
-    const int64_t dx = square ? both : x_along ? along : across;
-    const int64_t dy = square ? both : x_along ? across : along;
+    int64_t dx = x_along ? along : across;
+    int64_t dy = x_along ? across : along;
+    if (square) {
+      dx = dy = std::max(along, across);
+    }
     return odb::Rect(clamped(int64_t{box.rect.xMin()} - dx),
                      clamped(int64_t{box.rect.yMin()} - dy),
                      clamped(int64_t{box.rect.xMax()} + dx),

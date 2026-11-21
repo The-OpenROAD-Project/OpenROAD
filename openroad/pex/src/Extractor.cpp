@@ -143,11 +143,12 @@ BlockBoxes readBlockBoxes(odb::dbBlock* block,
     std::vector<const fsv::BlockShape*> pins;
     const std::vector<fsv::BlockShape> shapes = fsv::netShapes(net);
     auto add = [&](const fsv::BlockShape& shape, const int layer) {
-      result.boxes.push_back(
-          {.net = index,
-           .layer = layer,
-           .rect = shape.rect,
-           .pin = shape.source == fsv::BlockShape::Source::kITermPin});
+      result.boxes.push_back({
+          .net = index,
+          .layer = layer,
+          .rect = shape.rect,
+          .pin = shape.source == fsv::BlockShape::Source::kITermPin,
+      });
       result.origins.push_back({.source = shape.source, .id = originId(shape)});
       if (layer >= 0) {
         net_boxes.push_back(toBox(shape.rect, layer));

@@ -108,24 +108,26 @@ namespace {
 
 struct Options
 {
-  std::vector<std::string> groups{"e1",
-                                  "e2",
-                                  "e3",
-                                  "e4",
-                                  "e5",
-                                  "e6",
-                                  "e7",
-                                  "e8",
-                                  "e9",
-                                  "e11",
-                                  "e12",
-                                  "e13",
-                                  "e14",
-                                  "e15",
-                                  "e16",
-                                  "e17",
-                                  "e19",
-                                  "e20"};
+  std::vector<std::string> groups{
+      "e1",
+      "e2",
+      "e3",
+      "e4",
+      "e5",
+      "e6",
+      "e7",
+      "e8",
+      "e9",
+      "e11",
+      "e12",
+      "e13",
+      "e14",
+      "e15",
+      "e16",
+      "e17",
+      "e19",
+      "e20",
+  };
   std::string itf = "openroad/fsv/test/sky130.itf";
   std::string layer = "met2";
   int threads = 1;
@@ -2320,13 +2322,14 @@ void endLength(Lab& lab)
     kNone,
     kPast,
     kFlush,
-    kOneSide
+    kOneSide,
   };
   const std::vector<std::pair<Neighbors, std::string>> kinds{
       {Neighbors::kNone, "alone"},
       {Neighbors::kPast, "past"},
       {Neighbors::kFlush, "flush"},
-      {Neighbors::kOneSide, "one side"}};
+      {Neighbors::kOneSide, "one side"},
+  };
   for (const Context& ctx : trim(contexts(lab, true), o.smoke)) {
     for (const auto& [kind, kind_name] : trim(kinds, o.smoke)) {
       const bool left = kind != Neighbors::kNone;
