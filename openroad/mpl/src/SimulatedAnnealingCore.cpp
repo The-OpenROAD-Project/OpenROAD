@@ -673,17 +673,19 @@ void SimulatedAnnealingCore<T>::reportLocations() const
 
   // First the moveable macros. I.e., those from the sequence pair.
   for (const int macro_id : pos_seq_) {
-    int display_id;
+    std::string display_id;
     if constexpr (std::is_same_v<T, SoftMacro>) {
       const SoftMacro& soft_macro = macros_[macro_id];
-      Cluster* cluster = soft_macro.getCluster();
-      display_id = cluster->getId();
+      // A placement blockage is represented by a soft macro with no cluster.
+      const Cluster* cluster = soft_macro.getCluster();
+      display_id
+          = cluster != nullptr ? std::to_string(cluster->getId()) : "blockage";
     } else {
-      display_id = macro_id;
+      display_id = std::to_string(macro_id);
     }
 
     const T& macro = macros_[macro_id];
-    logger_->report("{:>11d} | ({:^8.2f} {:^8.2f}) ({:^8.2f} {:^8.2f})",
+    logger_->report("{:>11s} | ({:^8.2f} {:^8.2f}) ({:^8.2f} {:^8.2f})",
                     display_id,
                     block_->dbuToMicrons(macro.getX()),
                     block_->dbuToMicrons(macro.getY()),
