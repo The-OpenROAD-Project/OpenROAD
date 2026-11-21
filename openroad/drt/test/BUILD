@@ -179,6 +179,7 @@ cc_test(
         "fixture.cpp",
         "fixture.h",
         "gcTest.cpp",
+        "gridGraphTest.cpp",
         "parserTest.cpp",
         "pathSegTest.cpp",
     ],
