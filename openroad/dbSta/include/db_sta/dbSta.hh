@@ -166,6 +166,12 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   // edits that replace a pin with an equivalent one.
   void copyUserActivity(odb::dbITerm* from, odb::dbITerm* to);
 
+  // Move the SDC constraints on a replaced iterm or instance to the one
+  // that replaces it. Call before the replaced one is destroyed.
+  using Sta::moveConstraints;
+  void moveConstraints(odb::dbITerm* from, odb::dbITerm* to);
+  void moveConstraints(odb::dbInst* from, odb::dbInst* to);
+
   // From ord::OpenRoad::Observer
   void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
   void postReadDef(odb::dbBlock* block) override;
