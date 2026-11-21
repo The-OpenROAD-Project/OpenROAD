@@ -811,6 +811,9 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
       if (!strcmp(layer->propName(iii), "LEF58_AREA")) {
         lefTechLayerAreaRuleParser parser(this);
         parser.parse(layer->propValue(iii), l, incomplete_props_);
+      } else if (!strcmp(layer->propName(iii), "LEF58_CORNERSPACING")) {
+        valid = lefTechLayerCornerSpacingParser::parse(
+            layer->propValue(iii), l, this);
       } else if (!strcmp(layer->propName(iii), "LEF58_MINSTEP")) {
         lefTechLayerMinStepParser minStepParser;
         valid = minStepParser.parse(layer->propValue(iii), l, this);

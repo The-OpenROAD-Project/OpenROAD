@@ -9920,6 +9920,14 @@ class dbTechLayerCornerSpacingRule : public dbObject
 
   bool isCornerToCorner() const;
 
+  void setAlignedOnly(bool aligned_only);
+
+  bool isAlignedOnly() const;
+
+  void setCheckImplantGroupOnly(bool check_implant_group_only);
+
+  bool isCheckImplantGroupOnly() const;
+
   static dbTechLayerCornerSpacingRule* create(dbTechLayer* parent);
   static void destroy(dbTechLayerCornerSpacingRule* obj);
   // User Code Begin dbTechLayerCornerSpacingRule

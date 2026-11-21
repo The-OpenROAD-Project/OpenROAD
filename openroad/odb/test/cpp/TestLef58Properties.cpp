@@ -925,4 +925,37 @@ TEST_F(Fixture, TestLef58MinStepImplant)
   EXPECT_EQ(r->getMinAdjLength1(), 2.4 * 1000);
 }
 
+TEST_F(Fixture, TestLef58CornerSpacingImplant)
+{
+  loadTechAndLib("tech",
+                 "lef58_implant_rules.lef",
+                 prefix + "data/lef58_implant_rules.lef");
+  EXPECT_EQ(logger_.getWarningCount(), 0);
+
+  dbTechLayer* layer = db_->getTech()->findLayer("IMP1");
+  ASSERT_NE(layer, nullptr);
+
+  auto corner_rules = layer->getTechLayerCornerSpacingRules();
+  ASSERT_EQ(corner_rules.size(), 2);
+  auto cs_it = corner_rules.begin();
+  {
+    dbTechLayerCornerSpacingRule* r = *cs_it++;
+    EXPECT_TRUE(r->isAlignedOnly());
+    EXPECT_TRUE(r->isCheckImplantGroupOnly());
+    std::vector<std::pair<int, int>> spc;
+    r->getSpacingTable(spc);
+    ASSERT_EQ(spc.size(), 1);
+    EXPECT_EQ(spc[0].first, 3.8 * 1000);
+  }
+  {
+    dbTechLayerCornerSpacingRule* r = *cs_it++;
+    EXPECT_TRUE(r->isAlignedOnly());
+    EXPECT_FALSE(r->isCheckImplantGroupOnly());
+    std::vector<std::pair<int, int>> spc;
+    r->getSpacingTable(spc);
+    ASSERT_EQ(spc.size(), 1);
+    EXPECT_EQ(spc[0].first, 2.2 * 1000);
+  }
+}
+
 }  // namespace odb
