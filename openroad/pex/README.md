@@ -379,6 +379,12 @@ one thread, so extraction must become far faster; most of its time is
 in the crossing lookups, through string-keyed tables and logarithms per
 piece.
 
+Resistance agrees with rcx on gcd: over the 485 nets above 1 Ω, pex's
+total resistance per net is 0.995 of rcx's at the median (0.989 to
+1.001 from the 10th to the 90th percentile). pex takes each wire's
+silicon width from `sky130.itf`'s resistive etch, which narrows every
+layer but li1.
+
 What remains, largest first:
 
 - **Narrow straps.** A power strap two or three layers up gets 30–50%

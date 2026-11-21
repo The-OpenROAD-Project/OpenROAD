@@ -10,7 +10,7 @@
 [WARNING PEX-0038] 28 pins are on no wire of their net and have no node in its parasitics.
 Net _042_
  Pin capacitance: 0.002-0.003
- Wire capacitance: 0.001-0.001
+ Wire capacitance: 0.001
  Total capacitance: 0.003-0.004
  Number of drivers: 1
  Number of loads: 1
