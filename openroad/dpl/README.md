@@ -82,6 +82,25 @@ Run `global_connect` after buffer insertion or resizing and before
 `detailed_placement -pdn_aware` when global connection rules define the
 supply bindings.
 
+### Repair Pin Access
+
+The `repair_pin_access` command moves standard cells with unusable pin access to
+nearby legal sites. Run successful `pin_access` in the current session first.
+DRT checks each candidate against routing rules and fixed supply geometry.
+The command preserves orientation, placement constraints, and usable access in
+previously healthy cells. It returns the number of unresolved cells.
+
+```tcl
+repair_pin_access
+    [-max_displacement {sites rows}]
+    [-max_rounds count]
+```
+
+| Option | Description |
+| ----- | ----- |
+| `-max_displacement` | Nonnegative displacement from the input placement, in sites and rows. Default: `{20 2}`. |
+| `-max_rounds` | Positive maximum number of improving move batches. Default: `3`. |
+
 ### Set Placement Padding
 
 The `set_placement_padding` command sets left and right padding in multiples
