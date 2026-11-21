@@ -540,6 +540,158 @@ library (test0) {
     }
   }
 
+  cell (MBFF2CLPSN) {
+    area : 0.5000;
+
+    pg_pin (VDD) {
+      pg_type : primary_power;
+      voltage_name : "VDD";
+    }
+
+    pg_pin (VSS) {
+      pg_type : primary_ground;
+      related_bias_pin : "VBB";
+      voltage_name : "VSS";
+    }
+
+    pg_pin (VBB) {
+      pg_type : pwell;
+      voltage_name : "VBB";
+    }
+
+    pg_pin (VPP) {
+      pg_type : nwell;
+      voltage_name : "VPP";
+    }
+
+    leakage_power () {
+      value : 1000.000;
+      related_pg_pin : VDD;
+    }
+
+    bundle (Q) {
+      members (Q0, Q1);
+      direction : "output";
+      power_down_function : "!VDD + !VPP + VBB + VSS";
+      related_bias_pin : "VBB VPP";
+      related_ground_pin : "VSS";
+      related_power_pin : "VDD";
+      function : "IQ";
+
+      pin (Q0) {
+        min_capacitance : 1e-06;
+        max_capacitance : 0.2;
+
+        internal_power () {
+          related_pin : "CP";
+          related_pg_pin : VDD;
+          rise_power (power_template_1x1) {
+            index_1 ("0.006");
+            index_2 ("0.005");
+            values ( "1.");
+          }
+          fall_power (power_template_1x1) {
+            index_1 ("0.006");
+            index_2 ("0.005");
+            values ( "1.");
+          }
+        }
+      }
+
+      pin (Q1) {
+        min_capacitance : 1e-06;
+        max_capacitance : 0.2;
+
+        internal_power () {
+          related_pin : "CP";
+          related_pg_pin : VDD;
+          rise_power (power_template_1x1) {
+            index_1 ("0.006");
+            index_2 ("0.005");
+            values ( "1.");
+          }
+          fall_power (power_template_1x1) {
+            index_1 ("0.006");
+            index_2 ("0.005");
+            values ( "1.");
+          }
+        }
+      }
+    }
+
+    pin (CP) {
+      related_power_pin : "VDD";
+      related_ground_pin : "VSS";
+      related_bias_pin : "VBB VPP";
+      direction : "input";
+      clock : true;
+      max_transition : 0.200;
+      capacitance : 1.00000;
+      rise_capacitance : 1.00;
+      fall_capacitance : 1.00;
+
+     internal_power () {
+        related_pg_pin : VDD;
+       rise_power (passive_power_template_1x1) {
+          index_1 ("0.006");
+          values ( "5.");
+        }
+        fall_power (passive_power_template_1x1) {
+          index_1 ("0.006");
+          values ( "3.");
+        }
+      }
+    }
+
+    bundle (D) {
+      members (D0, D1);
+      direction : "input";
+      related_power_pin : "VDD";
+      related_ground_pin : "VSS";
+      related_bias_pin : "VBB VPP";
+      nextstate_type : "data";
+
+      pin (D0) {
+        max_transition : 0.500;
+        capacitance : 0.002;
+        rise_capacitance : 0.002;
+        fall_capacitance : 0.002;
+      }
+      pin (D1) {
+        max_transition : 0.500;
+        capacitance : 0.002;
+        rise_capacitance : 0.002;
+        fall_capacitance : 0.002;
+      }
+    }
+    pin (CLEAR) {
+      direction : "input";
+      related_bias_pin : "VBB VPP";
+      related_power_pin : "VDD";
+      related_ground_pin : "VSS";
+      max_transition : 0.500;
+      capacitance : 0.002;
+      rise_capacitance : 0.002;
+      fall_capacitance : 0.002;
+    }
+    pin (PRESET) {
+      direction : "input";
+      related_bias_pin : "VBB VPP";
+      related_power_pin : "VDD";
+      related_ground_pin : "VSS";
+      max_transition : 0.500;
+      capacitance : 0.002;
+      rise_capacitance : 0.002;
+      fall_capacitance : 0.002;
+    }
+    ff_bank (IQ,IQN,2) {
+      clocked_on : "CP";
+      next_state : "D";
+      preset : "PRESET";
+      clear : "CLEAR'";
+    }
+  }
+
   cell (MBFF2SE) {
     area : 0.5000;
 

@@ -481,6 +481,11 @@ class dbNetwork : public ConcreteNetwork
   bool isClearPin(odb::dbITerm* iterm) const;
   bool hasPreset(odb::dbInst* inst) const;
   bool isPresetPin(odb::dbITerm* iterm) const;
+  // True when the clear/preset condition is asserted by a high pin
+  // (e.g. "CLR"), false when it is asserted by a low pin (e.g. "!RN").
+  // Only meaningful when hasClear()/hasPreset() is true.
+  bool isClearActiveHigh(odb::dbInst* inst) const;
+  bool isPresetActiveHigh(odb::dbInst* inst) const;
 
   // scan cell/pin functions
   bool isScanCell(odb::dbInst* inst) const;
