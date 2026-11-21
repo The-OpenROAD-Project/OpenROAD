@@ -23,7 +23,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <map>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -34,6 +33,7 @@
 #include "dbModuleModBTermItr.h"
 #include "dbModuleModInstItr.h"
 #include "dbModuleModNetItr.h"
+#include "odb/PtrSetMap.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -694,26 +694,81 @@ bool dbModule::isTop() const
 // Do a "deep" copy of old_module based on its instance context into new_module.
 // - NOTE: _dbModule::copyModulePorts needs to be called before this function
 //   to populate mod_bt_map.
-// - All instances, mod nets and parent/child IO will be copied.
+// - All instances, child module instances (recursively), mod nets and
+//   parent/child IO will be copied.
 // - Connections that span multiple modules needs to be done outside this API.
 // - new_mod_inst is needed to create module instances for instance name
-//   uniquification.
+//   uniquification.  It is null when new_module is not instantiated.
 void _dbModule::copy(dbModule* old_module,
                      dbModule* new_module,
                      dbModInst* new_mod_inst,
                      modBTMap& mod_bt_map)
 {
-  // Copy module instances and create iterm map
+  // Copy child module instances and their modules, recursively
+  MITMap mit_map;  // map old mod iterm to new mod iterm
+  ModuleMap module_map{{old_module, new_module}};
+  copyModuleChildren(old_module, new_module, mod_bt_map, mit_map, module_map);
+
+  // Copy instances of every module and create iterm map
   ITMap it_map;  // map old iterm to new iterm
-  copyModuleInsts(old_module, new_module, new_mod_inst, it_map);
+  copyModuleInsts(module_map, new_mod_inst, it_map);
 
-  // TODO: handle hierarchical child instances
-
-  // Copy mod nets and connect ports and iterms
-  copyModuleModNets(old_module, new_module, mod_bt_map, it_map);
+  // Copy mod nets and connect ports, iterms and mod iterms
+  for (const auto& [old_mod, new_mod] : module_map) {
+    copyModuleModNets(old_mod, new_mod, mod_bt_map, it_map, mit_map);
+  }
 
   // Establish boundary IO between parent and child
-  copyModuleBoundaryIO(old_module, new_module, new_mod_inst);
+  if (new_mod_inst) {
+    copyModuleBoundaryIO(old_module, new_module, new_mod_inst);
+  }
+}
+
+// Copy the child module instances of old_module into new_module, each with a
+// uniquified copy of its module and that module's ports, and recurse into
+// them.  The copied modules are appended to module_map and the copied mod
+// iterms to mit_map.
+void _dbModule::copyModuleChildren(dbModule* old_module,
+                                   dbModule* new_module,
+                                   modBTMap& mod_bt_map,
+                                   MITMap& mit_map,
+                                   ModuleMap& module_map)
+{
+  dbBlock* block = new_module->getOwner();
+  utl::Logger* logger = old_module->getImpl()->getLogger();
+  for (dbModInst* old_child : old_module->getModInsts()) {
+    dbModule* old_master = old_child->getMaster();
+    dbModule* new_master = dbModule::makeUniqueDbModule(
+        old_master->getName(), old_child->getName(), block);
+    copyModulePorts(old_master, new_master, mod_bt_map);
+    dbModInst* new_child
+        = dbModInst::create(new_module, new_master, old_child->getName());
+    if (new_child == nullptr) {
+      logger->error(utl::ODB,
+                    477,
+                    "Mod instance {} cannot be created in module {}",
+                    old_child->getName(),
+                    new_module->getName());
+    }
+    debugPrint(logger,
+               utl::ODB,
+               "replace_design",
+               1,
+               "Created child mod inst {} of module {}",
+               new_child->getHierarchicalName(),
+               new_master->getName());
+    for (dbModITerm* old_mod_iterm : old_child->getModITerms()) {
+      dbModBTerm* old_mod_bterm = old_mod_iterm->getChildModBTerm();
+      dbModBTerm* new_mod_bterm = nullptr;
+      if (old_mod_bterm && mod_bt_map.contains(old_mod_bterm)) {
+        new_mod_bterm = mod_bt_map[old_mod_bterm];
+      }
+      mit_map[old_mod_iterm] = dbModITerm::create(
+          new_child, old_mod_iterm->getName(), new_mod_bterm);
+    }
+    module_map.emplace_back(old_master, new_master);
+    copyModuleChildren(old_master, new_master, mod_bt_map, mit_map, module_map);
+  }
 }
 
 // A bus with N members have N+1 modbterms.  The first one is the "bus port"
@@ -834,140 +889,185 @@ void _dbModule::copyModulePorts(dbModule* old_module,
              mod_bt_map.size());
 }
 
-void _dbModule::copyModuleInsts(dbModule* old_module,
-                                dbModule* new_module,
+void _dbModule::copyModuleInsts(const ModuleMap& module_map,
                                 dbModInst* new_mod_inst,
                                 ITMap& it_map)
 {
+  dbModule* old_module = module_map.front().first;
+  dbModule* new_module = module_map.front().second;
   dbBlock* block = new_module->getOwner();
   const char hier_delimiter = block->getHierarchyDelimiter();
   utl::Logger* logger = old_module->getImpl()->getLogger();
 
-  // Create a net name map (key: new net name, value: new dbNet*).
-  std::map<std::string, dbNet*> new_net_name_map;
+  // Net names are kept relative to the root of the copied hierarchy, so
+  // nets of child modules keep their hierarchy prefix (e.g., "inner/_013_")
+  // and stay distinct from nets of the root module (e.g., "_013_").
+  std::string old_prefix;
+  if (dbModInst* old_mod_inst = old_module->getModInst()) {
+    old_prefix = old_mod_inst->getHierarchicalName() + hier_delimiter;
+  }
+  std::string new_prefix;
+  if (new_mod_inst) {
+    new_prefix = new_mod_inst->getHierarchicalName() + hier_delimiter;
+  }
 
-  // Add insts to new module
-  for (dbInst* old_inst : old_module->getInsts()) {
-    // Decide an instance name.
-    // - Note that new_mod_inst can be null when the corresponding dbModule is
-    //   not instantiated.
-    std::string new_inst_name;
-    if (new_mod_inst) {
-      new_inst_name = new_mod_inst->getHierarchicalName();
-      new_inst_name += hier_delimiter;
+  // Leaf instances of the old hierarchy, to tell internal nets from nets
+  // that leave it.
+  odb::PtrSet<dbInst> old_insts;
+  for (const auto& [old_mod, new_mod] : module_map) {
+    for (dbInst* old_inst : old_mod->getInsts()) {
+      old_insts.insert(old_inst);
+    }
+  }
+
+  // Map an old flat net to its new local net.
+  odb::PtrMap<dbNet, dbNet*> new_net_map;
+
+  for (const auto& [old_mod, new_mod] : module_map) {
+    // Decide the instance name prefix.
+    // - Note that new_mod has no mod inst when it is the root of a copy
+    //   into an uninstantiated dbModule.
+    std::string new_inst_prefix;
+    if (dbModInst* mod_inst = new_mod->getModInst()) {
+      new_inst_prefix = mod_inst->getHierarchicalName() + hier_delimiter;
     }
 
-    new_inst_name += block->getBaseName(old_inst->getConstName());
+    // Add insts to new module
+    for (dbInst* old_inst : old_mod->getInsts()) {
+      std::string new_inst_name
+          = new_inst_prefix + block->getBaseName(old_inst->getConstName());
 
-    // Create an instance of the same master
-    dbInst* new_inst = dbInst::makeUniqueDbInst(new_module->getOwner(),
-                                                old_inst->getMaster(),
-                                                new_inst_name.c_str(),
-                                                /* phyical only */ false,
-                                                new_module);
-    if (new_inst) {
-      debugPrint(logger,
-                 utl::ODB,
-                 "replace_design",
-                 1,
-                 "Created module instance '{}' with master '{}'",
-                 new_inst->getName(),
-                 old_inst->getMaster()->getName());
-    } else {
-      logger->error(utl::ODB,
-                    13,
-                    "Module instance '{}' with master '{}' cannot be created",
-                    new_inst_name,
-                    old_inst->getMaster()->getName());
-    }
-
-    // Map old iterms to new iterms and connect iterms that are local to this
-    // module only.  Nets that connect to iterms of other modules will be
-    // done outside this API in dbModInst::swapMaster().
-    dbSet<dbITerm> old_iterms = old_inst->getITerms();
-    dbSet<dbITerm> new_iterms = new_inst->getITerms();
-    dbSet<dbITerm>::iterator iter1, iter2;
-    iter1 = old_iterms.begin();
-    iter2 = new_iterms.begin();
-    for (; iter1 != old_iterms.end() && iter2 != new_iterms.end();
-         ++iter1, ++iter2) {
-      dbITerm* old_iterm = *iter1;
-      dbITerm* new_iterm = *iter2;
-      it_map[old_iterm] = new_iterm;
-      debugPrint(logger,
-                 utl::ODB,
-                 "replace_design",
-                 1,
-                 "  old iterm {} maps to new iterm {}",
-                 old_iterm->getName(),
-                 new_iterm->getName());
-      dbNet* old_net = old_iterm->getNet();
-      if (old_net == nullptr) {
-        continue;
-      }
-
-      //
-      // Create a local net only if it connects to iterms inside this module
-      //
-      std::string new_net_name;
-      if (new_mod_inst) {
-        new_net_name = new_mod_inst->getHierarchicalName();
-        new_net_name += hier_delimiter;
-      }
-
-      // Check if the flat net is an internal net within old_module
-      // - If the old net is an internal net, a new net should be created.
-      // - If the old net is an external net, a new net will be created later
-      //   by boundary IO handling logic.
-      // - Note that if old modnet is connected to a dbModBTerm and its
-      //   corresponding dbModITerm is unconnected (has_parent_modnet == false),
-      //   a new net should be created.
-      // - If old_module is uninstantiated module, every net in the module is
-      //   an internal net.
-      //   e.g., No module instance.
-      //         net_name = "_001_"     <-- Internal net.
-      //
-      // - Otherwise, an internal net should have the hierarchy prefix
-      //   (= module instance hierarchical name).
-      //   e.g., modinst_name = "u0/alu0"
-      //         net_name = u0/alu0/_001_   <-- Internal net.
-      //         net_name = u0/_001_        <-- External net crossing module
-      //                                        boundary.
-      std::string old_net_name = old_net->getName();
-      dbModNet* old_mod_net = old_iterm->getModNet();
-      bool has_parent_modnet
-          = (old_mod_net && old_mod_net->getFirstParentModNet());
-      if (!old_net->isInternalTo(old_module) && has_parent_modnet) {
-        // Skip external net crossing module boundary.
-        // It will be connected later.
-        debugPrint(logger,
-                   utl::ODB,
-                   "replace_design",
-                   3,
-                   "    Skip: non-internal dbNet '{}' of old_module '{}'.\n",
-                   old_net_name,
-                   old_module->getHierarchicalName());
-        continue;
-      }
-
-      new_net_name += block->getBaseName(old_net_name.c_str());
-      auto it = new_net_name_map.find(new_net_name);
-      if (it != new_net_name_map.end()) {
-        // Connect to an existing local net
-        dbNet* new_net = (*it).second;
-        new_iterm->connect(new_net);
+      // Create an instance of the same master
+      dbInst* new_inst = dbInst::makeUniqueDbInst(block,
+                                                  old_inst->getMaster(),
+                                                  new_inst_name.c_str(),
+                                                  /* phyical only */ false,
+                                                  new_mod);
+      if (new_inst) {
         debugPrint(logger,
                    utl::ODB,
                    "replace_design",
                    1,
-                   "  connected iterm '{}' to existing local net '{}'",
-                   new_iterm->getName(),
-                   new_net->getName());
+                   "Created module instance '{}' with master '{}'",
+                   new_inst->getName(),
+                   old_inst->getMaster()->getName());
       } else {
+        logger->error(utl::ODB,
+                      13,
+                      "Module instance '{}' with master '{}' cannot be created",
+                      new_inst_name,
+                      old_inst->getMaster()->getName());
+      }
+
+      // Map old iterms to new iterms and connect iterms that are local to
+      // the copied hierarchy only.  Nets that connect to iterms of other
+      // modules will be done outside this API in dbModInst::swapMaster().
+      dbSet<dbITerm> old_iterms = old_inst->getITerms();
+      dbSet<dbITerm> new_iterms = new_inst->getITerms();
+      dbSet<dbITerm>::iterator iter1, iter2;
+      iter1 = old_iterms.begin();
+      iter2 = new_iterms.begin();
+      for (; iter1 != old_iterms.end() && iter2 != new_iterms.end();
+           ++iter1, ++iter2) {
+        dbITerm* old_iterm = *iter1;
+        dbITerm* new_iterm = *iter2;
+        it_map[old_iterm] = new_iterm;
+        debugPrint(logger,
+                   utl::ODB,
+                   "replace_design",
+                   1,
+                   "  old iterm {} maps to new iterm {}",
+                   old_iterm->getName(),
+                   new_iterm->getName());
+        dbNet* old_net = old_iterm->getNet();
+        if (old_net == nullptr) {
+          continue;
+        }
+
+        // Check if the flat net is an internal net within the old hierarchy
+        // - If the old net is an internal net, a new net should be created.
+        // - If the old net is an external net, a new net will be created
+        //   later by boundary IO handling logic.
+        // - Note that if old modnet, seen from old_module, is connected to a
+        //   dbModBTerm and its corresponding dbModITerm is unconnected
+        //   (has_parent_modnet == false), a new net should be created.
+        // - If old_module is uninstantiated module or the new module is not
+        //   instantiated (new_mod_inst == nullptr), every net in the module
+        //   is an internal net.
+        //   e.g., No module instance.
+        //         net_name = "_001_"     <-- Internal net.
+        //
+        // - Otherwise, an internal net should have the hierarchy prefix
+        //   (= module instance hierarchical name).
+        //   e.g., modinst_name = "u0/alu0"
+        //         net_name = u0/alu0/_001_   <-- Internal net.
+        //         net_name = u0/_001_        <-- External net crossing module
+        //                                        boundary.
+        std::string old_net_name = old_net->getName();
+        bool is_internal = old_net->getBTerms().empty();
+        for (dbITerm* net_iterm : old_net->getITerms()) {
+          if (!is_internal) {
+            break;
+          }
+          is_internal = old_insts.contains(net_iterm->getInst());
+        }
+        // Walk up to the mod net of old_module the iterm connects through
+        dbModNet* old_mod_net = old_iterm->getModNet();
+        while (old_mod_net && old_mod_net->getParent() != old_module) {
+          old_mod_net = old_mod_net->getFirstParentModNet();
+        }
+        bool has_parent_modnet
+            = (old_mod_net && old_mod_net->getFirstParentModNet());
+        if (new_mod_inst && !is_internal && has_parent_modnet) {
+          // Skip external net crossing module boundary.
+          // It will be connected later.
+          debugPrint(logger,
+                     utl::ODB,
+                     "replace_design",
+                     3,
+                     "    Skip: non-internal dbNet '{}' of old_module '{}'.\n",
+                     old_net_name,
+                     old_module->getHierarchicalName());
+          continue;
+        }
+
+        auto it = new_net_map.find(old_net);
+        if (it != new_net_map.end()) {
+          // Connect to an existing local net
+          dbNet* new_net = (*it).second;
+          new_iterm->connect(new_net);
+          debugPrint(logger,
+                     utl::ODB,
+                     "replace_design",
+                     1,
+                     "  connected iterm '{}' to existing local net '{}'",
+                     new_iterm->getName(),
+                     new_net->getName());
+          continue;
+        }
+
+        // A net named outside the old hierarchy crosses its boundary; it is
+        // named after the mod net of old_module it connects through, the
+        // port's net, so it cannot take the name of an internal net.
+        std::string new_net_name = new_prefix;
+        if (old_net_name.starts_with(old_prefix)) {
+          new_net_name += old_net_name.substr(old_prefix.size());
+        } else if (old_mod_net) {
+          new_net_name += old_mod_net->getName();
+        } else {
+          new_net_name += block->getBaseName(old_net_name.c_str());
+        }
+
         // Create and connect to a new local net
-        assert(block->findNet(new_net_name.c_str()) == nullptr);
-        dbNet* new_net
-            = dbNet::create(new_module->getOwner(), new_net_name.c_str());
+        dbNet* new_net = dbNet::create(block, new_net_name.c_str());
+        if (new_net == nullptr) {
+          logger->error(utl::ODB,
+                        481,
+                        "Net {} cannot be created for net {} of module {}",
+                        new_net_name,
+                        old_net_name,
+                        old_module->getName());
+        }
         new_iterm->connect(new_net);
         debugPrint(logger,
                    utl::ODB,
@@ -978,21 +1078,22 @@ void _dbModule::copyModuleInsts(dbModule* old_module,
                    new_net->getName());
 
         // Insert it to the map
-        new_net_name_map[new_net_name] = new_net;
+        new_net_map[old_net] = new_net;
       }
     }
-  }
 
-  if (new_module->getInsts().reversible()
-      && new_module->getInsts().orderReversed()) {
-    new_module->getInsts().reverse();
+    if (new_mod->getInsts().reversible()
+        && new_mod->getInsts().orderReversed()) {
+      new_mod->getInsts().reverse();
+    }
   }
 }
 
 void _dbModule::copyModuleModNets(dbModule* old_module,
                                   dbModule* new_module,
                                   modBTMap& mod_bt_map,
-                                  ITMap& it_map)
+                                  ITMap& it_map,
+                                  MITMap& mit_map)
 {
   utl::Logger* logger = old_module->getImpl()->getLogger();
   debugPrint(logger,
@@ -1077,6 +1178,31 @@ void _dbModule::copyModuleModNets(dbModule* old_module,
                       new_net->getName());
       }
     }
+
+    // Connect mod iterms of child module instances to new mod net
+    for (dbModITerm* old_mod_iterm : old_net->getModITerms()) {
+      dbModITerm* new_mod_iterm = nullptr;
+      if (mit_map.contains(old_mod_iterm)) {
+        new_mod_iterm = mit_map[old_mod_iterm];
+      }
+      if (new_mod_iterm) {
+        new_mod_iterm->connect(new_net);
+        debugPrint(logger,
+                   utl::ODB,
+                   "replace_design",
+                   1,
+                   "  connected mod iterm {} to mod net {}",
+                   new_mod_iterm->getName(),
+                   new_net->getName());
+      } else {
+        logger->error(utl::ODB,
+                      535,
+                      "Module instance terminal {} cannot be connected to mod "
+                      "net {} because it does not exist",
+                      old_mod_iterm->getName(),
+                      new_net->getName());
+      }
+    }
   }
 }
 
@@ -1157,9 +1283,7 @@ bool _dbModule::copyToChildBlock(dbModule* module)
 
     modBTMap mod_bt_map;
     _dbModule::copyModulePorts(module, new_module, mod_bt_map);
-    ITMap it_map;
-    copyModuleInsts(module, new_module, nullptr, it_map);
-    copyModuleModNets(module, new_module, mod_bt_map, it_map);
+    copy(module, new_module, nullptr, mod_bt_map);
   }
   return true;
 }

@@ -14,6 +14,8 @@
 #include <map>
 #include <string>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include "dbHashTable.h"
 #include "dbModulePortItr.h"
@@ -33,6 +35,7 @@ class dbITerm;
 class dbInst;
 class dbModBTerm;
 class dbModInst;
+class dbModITerm;
 class dbModule;
 // User Code End Classes
 
@@ -54,6 +57,9 @@ class _dbModule : public _dbObject
   // Copy and uniquify a given module based on current instance
   using modBTMap = odb::PtrMap<dbModBTerm, dbModBTerm*>;
   using ITMap = odb::PtrMap<dbITerm, dbITerm*>;
+  using MITMap = odb::PtrMap<dbModITerm, dbModITerm*>;
+  // (old module, new module) pairs of a copied hierarchy, root first.
+  using ModuleMap = std::vector<std::pair<dbModule*, dbModule*>>;
 
   static void copy(dbModule* old_module,
                    dbModule* new_module,
@@ -63,14 +69,19 @@ class _dbModule : public _dbObject
   static void copyModulePorts(dbModule* old_module,
                               dbModule* new_module,
                               modBTMap& mod_bt_map);
-  static void copyModuleInsts(dbModule* old_module,
-                              dbModule* new_module,
+  static void copyModuleChildren(dbModule* old_module,
+                                 dbModule* new_module,
+                                 modBTMap& mod_bt_map,
+                                 MITMap& mit_map,
+                                 ModuleMap& module_map);
+  static void copyModuleInsts(const ModuleMap& module_map,
                               dbModInst* new_mod_inst,
                               ITMap& it_map);
   static void copyModuleModNets(dbModule* old_module,
                                 dbModule* new_module,
                                 modBTMap& mod_bt_map,
-                                ITMap& it_map);
+                                ITMap& it_map,
+                                MITMap& mit_map);
   static void copyModuleBoundaryIO(dbModule* old_module,
                                    dbModule* new_module,
                                    dbModInst* new_mod_inst);
