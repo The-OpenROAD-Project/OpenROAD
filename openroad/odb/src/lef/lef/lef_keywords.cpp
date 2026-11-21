@@ -688,7 +688,7 @@ int yylex()
 
 int lefsublex()
 {
-  char fc;
+  int fc;
   char* outStr;
 
   strcpy(lefData->pv_token, lefData->current_token);  // save the previous token
