@@ -6,6 +6,13 @@
 import { dbuRectToBounds } from './coordinates.js';
 import { TILE_SIZE_CSS, TILE_SIZE_QUANTUM } from './tile-request.js';
 
+// `value` as text that is safe in markup, either as element content or inside
+// a quoted attribute value.
+export function escapeMarkup(value) {
+    return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 // True when the app was bootstrapped from a saved/static report
 // (i.e. there is no live WebSocket backend).
 export function isStaticMode(app) {

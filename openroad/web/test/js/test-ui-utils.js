@@ -4,9 +4,9 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { applyArrowStep, boundsEqual, computeBoundsTransforms, computeScaleBar,
-         cssColorToHex, fittedTileSizeCss, installWheelPanning, isValidHexColor,
-         kArrowStepDefault, kZoomMargin, maxUsefulZoom, MAX_TILE_ZOOM,
-         niceRoundParts, websocketUrlFrom, withBusyCursor }
+         cssColorToHex, escapeMarkup, fittedTileSizeCss, installWheelPanning,
+         isValidHexColor, kArrowStepDefault, kZoomMargin, maxUsefulZoom,
+         MAX_TILE_ZOOM, niceRoundParts, websocketUrlFrom, withBusyCursor }
     from '../../src/ui-utils.js';
 import { isDeviceExactTileSize, TILE_SIZE_CSS, TILE_SIZE_QUANTUM }
     from '../../src/tile-request.js';
@@ -203,6 +203,17 @@ describe('fittedTileSizeCss', () => {
         for (const input of bad) {
             assert.equal(fittedTileSizeCss(input), TILE_SIZE_CSS);
         }
+    });
+});
+
+describe('escapeMarkup', () => {
+    it('escapes every character that markup reads', () => {
+        assert.equal(escapeMarkup(`a&b<c>d"e'f`),
+                     'a&amp;b&lt;c&gt;d&quot;e&#39;f');
+    });
+
+    it('leaves other text alone', () => {
+        assert.equal(escapeMarkup('u1/A[0] 2'), 'u1/A[0] 2');
     });
 });
 
