@@ -1712,7 +1712,8 @@ void Evaluator::evaluate(const std::vector<EvalBox>& boxes,
     const odb::Rect& r = boxes[i].rect;
     if (r.dx() == r.dy()) {
       // A square has no long axis: the mean of it estimated along each,
-      // placed at its center.
+      // placed at its center. `at` is along x for either estimate, the
+      // axis a Contribution takes as a square's long one (dx >= dy).
       for (const int a : {0, 1}) {
         const size_t start = out.size();
         EvalCounts once;
