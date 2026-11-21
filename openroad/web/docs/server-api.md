@@ -154,8 +154,8 @@ canonical JSON type; sending any other type for a present field yields a
   on the wire, which the server tolerates for double-typed fields only.
 - Strings are JSON strings; arrays are JSON arrays.
 - Two narrow exceptions documented inline:
-  - `select.zoom` accepts `int` or `double` (Leaflet's `zoomSnap: 0`
-    permits fractional zoom values).
+  - `select.zoom` accepts `int` or `double` (a client may send a
+    fractional zoom value).
   - `set_heatmap.value` for `int`-typed settings accepts `int` or
     `double` and rounds (the JS frontend always uses `parseFloat`).
 
@@ -171,12 +171,15 @@ simply listening on the WebSocket; there's no opt-in.
 
 | `type` field   | Trigger                                                                 | Body                            |
 | -------------- | ----------------------------------------------------------------------- | ------------------------------- |
-| `refresh`      | Initial spatial-index build finished after a connection / `web_server`. | `{"type":"refresh"}`            |
+| `config`       | Once per connection, before any reply to a request.                     | `{"type":"config","max_in_flight":16}` |
+| `refresh`      | A connection's init finished, or the design was edited: redraw.         | `{"type":"refresh"}`            |
 | `log`          | Buffered server log lines being flushed to clients.                     | `{"type":"log","text":"<lines>"}` |
 | `debug_paused` | The graphics-debug pause hook entered (e.g. placer breakpoint).         | `{"type":"debug_paused"}`       |
 | `debug_resumed`| Pause hook exited.                                                      | `{"type":"debug_resumed"}`      |
 | `debug_refresh`| Debug overlay needs a re-render.                                        | `{"type":"debug_refresh"}`      |
 | `shutdown`     | Server is exiting; client should not auto-reconnect.                    | `{"type":"shutdown"}`           |
+
+`config.max_in_flight` is how many requests the client keeps on the wire.
 
 ---
 
@@ -204,30 +207,43 @@ Render a single 256×256 PNG tile of the layout.
 
 | Field            | Type     | Required | Description |
 | ---------------- | -------- | :------: | ----------- |
-| `layer`          | `string` |    ✓     | Layer name (`metal1`, `metal2`, …) or one of the synthetic layers `_instances`, `_modules`, `_clusters`, `_pins`, or `_overlay`. |
-| `z`              | `int`    |    ✓     | Leaflet tile zoom level (0 = whole design). |
+| `layer`          | `string` |    ✓     | Layer name (`metal1`, `metal2`, …) or a synthetic layer: `_instances`, `_pins`, `_modules`, `_clusters`, or one of the overlays the `tech` response lists. |
+| `z`              | `int`    |    ✓     | Tile zoom level (0 = whole design). |
 | `x`              | `int`    |    ✓     | Tile column at zoom `z`. |
 | `y`              | `int`    |    ✓     | Tile row at zoom `z`. |
 | `visible_layers` | `string[]` | ✓ | Tech layers currently visible, the union over the dies; an empty array hides them all. Read only by `_pins` and by the overlays whose `layers_by` group is on (see `tech`); every other tile ignores it, and it is left out of their cache key. |
 | `chiplet`        | `string` |    —     | Chiplet path (as in the `tech` response's `chiplets[].path`) of the die a tech-layer tile draws. Two dies can share a layer name; omitted draws every visible chiplet. |
 | `chiplet_hidden_layers` | `object` | — | `{ "<chiplet path>": ["<layer>", …] }`: layers hidden on that die only, while `visible_layers` still lists them. Read by the same tiles as `visible_layers`; a tech-layer tile names its die with `chiplet` instead. |
+| `visible_chiplets` | `string[]` | — | Chiplet paths currently shown; a chiplet not listed is not drawn. Omitted draws every chiplet. |
+| `renderer_host`  | `bool`   |    —     | Default `false`. On a tile that names its die with `chiplet`, also draw the debug renderers' pass for this layer name; the client sets it on one row per name. |
 | *visibility flags* | `bool` |  per-flag default | See *TileVisibility flags* below. Any flag may be omitted to take the default. |
 | `site_<name>`    | `bool`   |    —     | Per-row-site visibility. Only consulted when `rows == true`. |
+| `pattern`        | `int`    |    —     | Fill pattern for the layer's shapes: `0` none, `1` solid (default), `2` diagonal, `3` cross, `4` dots. Out-of-range values mean solid. |
 
 **Response:** PNG image (frame type `1`), or frame type `3` with no body
 when the layer has nothing to draw in this tile.
+
+**Caching:** the server caches the response under the tile, the rendered
+`dpr` and `tile_px`, the design and chiplet revisions, and the parsed fields
+that can change this layer's pixels. Selectability fields, keys the server
+does not parse, and fields that only another layer reads (for example
+`pin_markers` outside `_pins`, or `visible_layers` outside `_pins`,
+`_access_points` and, while pin names are shown, `_inst_labels`) do not split
+the cache. Tiles that depend on per-session state (a session's own module or
+group colors, focused nets, debug renderers) are not cached; the default
+color palette is.
 
 ### `overlay_tile`
 
 Render one tile of the highlight overlay — selection, hover, timing paths,
 DRC markers, route guides, flight lines and user labels — on a transparent
 background, on the same tile grid as `tile`. Kept separate from the layer
-tiles so a selection change repaints one pane instead of re-rendering every
+tiles so a selection change repaints the overlay instead of re-rendering every
 layer's geometry.
 
 | Field                 | Type       | Required | Description |
 | --------------------- | ---------- | :------: | ----------- |
-| `z`                   | `int`      |    ✓     | Leaflet tile zoom level, as for `tile`. |
+| `z`                   | `int`      |    ✓     | Tile zoom level, as for `tile`. |
 | `x`                   | `int`      |    ✓     | Tile column at zoom `z`. |
 | `y`                   | `int`      |    ✓     | Tile row at zoom `z`. |
 | `visible_layers`      | `string[]` |    —     | Tech layers currently visible. Consulted so route guides respect layer visibility; omitted means draw guides on every layer. |
@@ -236,6 +252,7 @@ layer's geometry.
 | `focused_nets_guides` | `bool`     |    —     | Default `false`. Draw route guides for the focused nets. |
 | `draw_labels`         | `bool`     |    —     | Default `true`. Draw user labels (`add_label`). |
 | `debug_renderers`     | `bool`     |    —     | Default `false`. Debug renderers are active, so the highlight must be re-derived every frame to track instances that move between them. |
+| `poly_decomp`         | `bool`     |    —     | Default `false`. The Options > "Show polygon decomposition" setting, which changes the shapes an ITerm/MTerm highlight draws. A change re-derives the highlights, as with `flywires_only`. |
 
 **Response:** PNG image (frame type `1`), or frame type `3` with no body
 when nothing is highlighted in this tile — which is the usual case, since
@@ -262,15 +279,17 @@ No request fields beyond the envelope.
 ```json
 {
   "bounds": [[yMin, xMin], [yMax, xMax]],
+  "fit_bounds": [[yMin, xMin], [yMax, xMax]],
   "shapes_ready": true,
   "pin_max_size": 200
 }
 ```
 
-`bounds` is in DBU. `shapes_ready` indicates whether the spatial index
-finished building (the `refresh` push fires when this flips to true).
-`pin_max_size` is the largest BPin dimension in DBU, used by the client
-to size the pin-marker overlay.
+`bounds` is in DBU and georeferences the tile grid; `fit_bounds` is the
+rect to zoom to fit, `bounds` without the pin-label margin. `shapes_ready`
+indicates whether the spatial index finished building (the `refresh` push
+fires when this flips to true). `pin_max_size` is the largest BPin dimension
+in DBU, used by the client to size the pin-marker overlay.
 
 ### `layer_extents`
 
@@ -377,7 +396,7 @@ No request fields.
 
 `overlays` lists the self-painting pseudo layers this design can draw (an
 overlay with nothing to draw, such as `_regions` in a design without regions,
-is left out), each a `tile` layer of its own: `z_index` is its pane order
+is left out), each a `tile` layer of its own: `z_index` is its draw order
 against the tech layers (`3` upwards), `_instances` (`0`) and `_pins` (`1`).
 `shown_by` and `layers_by` are groups of `tile` visibility keys, on when every
 key of any one group is on: the overlay draws anything when `shown_by` is on,
@@ -397,7 +416,7 @@ overlapping objects on repeated calls at the same point.
 | ---------------- | -------- | :------: | ----------- |
 | `dbu_x`          | `int`    |    ✓     | X coordinate in DBU. |
 | `dbu_y`          | `int`    |    ✓     | Y coordinate in DBU. |
-| `zoom`           | `int` or `double` | ✓ | Current Leaflet zoom level. Server truncates fractional values. |
+| `zoom`           | `int` or `double` | ✓ | Current view zoom level. Server truncates fractional values. |
 | `visible_layers` | `string[]`|    ✓    | Same semantics as `tile`. |
 | `chiplet_hidden_layers` | `object` | — | Same as `tile`: a layer hidden on one die is not picked there. |
 | `chiplet_nonselectable_layers` | `object` | — | `{ "<chiplet path>": ["<layer>", …] }`: layers made unselectable on that die only, while `selectable_layers` still lists them. |
@@ -1227,7 +1246,9 @@ request gets a `kError` response, the rest of the session continues.
   conversion failure, internal `runtime_error`, …): `kError` body
   `server error: <exception what()>`.
 
-Every `kError` response logs a server-side warning:
+Every `kError` response logs a server-side warning, except the routine ones:
+the busy reply while a script runs and `cancelled` for a request the client
+cancelled:
 
 ```
 [WARNING WEB-0043] request id=<id> type=<type> failed: <body>

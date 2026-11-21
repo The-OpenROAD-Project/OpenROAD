@@ -908,8 +908,8 @@ bool parseTileCoords(const boost::json::object& json,
     error = "\"z\" is outside [0, " + std::to_string(kMaxTileZoom) + "]";
     return false;
   }
-  // x and y are deliberately NOT range-checked against the 2^z grid.  Leaflet
-  // routinely asks for tiles off the edge of the world -- whenever the design
+  // x and y are deliberately NOT range-checked against the 2^z grid.  A client
+  // may ask for tiles off the edge of the world -- whenever the design
   // is smaller than the viewport, or while panning at the border -- and the
   // renderers answer those with a transparent tile.  Rejecting them turns
   // ordinary panning into a stream of errors: a first cut of this check
@@ -2260,7 +2260,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
     consumeStaleSelection(state);
     TileVisibility vis;
     vis.parseFromJson(req.json);
-    // Leaflet allows fractional zoom (zoomSnap: 0); accept either int or
+    // A client may send a fractional zoom; accept either int or
     // double on the wire and truncate to selectAt's integer zoom level.
     const auto& zoom_v = req.json.at("zoom");
     const int zoom = zoom_v.is_int64() ? static_cast<int>(zoom_v.get_int64())
@@ -3727,7 +3727,8 @@ WebSocketResponse SelectHandler::handleSelectLayer(const WebSocketRequest& req,
 
     odb::dbTech* tech = nullptr;
     if (!chiplet_path.empty()) {
-      for (const ChipletNode& node : gen_->chiplets()) {
+      const auto nodes = gen_->chiplets();
+      for (const ChipletNode& node : *nodes) {
         if (node.path == chiplet_path && node.chip != nullptr) {
           tech = node.chip->getTech();
           break;
@@ -4883,12 +4884,12 @@ WebSocketResponse SelectHandler::handleSchematicCone(
         = static_cast<int>(req.json.at("fanin_depth").as_int64());
     const int fanout_depth
         = static_cast<int>(req.json.at("fanout_depth").as_int64());
-    const auto& chiplets = gen_->chiplets();
+    const auto chiplets = gen_->chiplets();
     if (gen_->blocks().empty()) {
       throw std::runtime_error("No block loaded");
     }
 
-    const auto [target_inst, chiplet] = findSchematicInst(chiplets, inst_name);
+    const auto [target_inst, chiplet] = findSchematicInst(*chiplets, inst_name);
     if (!target_inst) {
       throw std::runtime_error("Instance not found: " + inst_name);
     }
@@ -5004,7 +5005,7 @@ WebSocketResponse SelectHandler::handleSchematicPath(
   static constexpr size_t kMaxPathInsts = 400;
 
   try {
-    const auto& chiplets = gen_->chiplets();
+    const auto chiplets = gen_->chiplets();
     if (gen_->blocks().empty()) {
       throw std::runtime_error("No block loaded");
     }
@@ -5016,7 +5017,7 @@ WebSocketResponse SelectHandler::handleSchematicPath(
         break;
       }
       const std::string name = std::string(name_val.as_string());
-      const auto [inst, chiplet] = findSchematicInst(chiplets, name);
+      const auto [inst, chiplet] = findSchematicInst(*chiplets, name);
       if (inst && path_insts[chiplet].insert(inst).second) {
         ++inst_count;
       }
@@ -5215,9 +5216,8 @@ WebSocketResponse SelectHandler::handleGet3DData(const WebSocketRequest& req)
     boost::json::object root;
     boost::json::array chiplets;
     std::map<std::string, size_t> chiplet_indices;
-    // A copy: the cached list is replaced when another thread notices a chip
-    // placement edit, and the bump and net walks below take a while.
-    const std::vector<ChipletNode> nodes = gen_->chiplets();
+    const auto node_list = gen_->chiplets();
+    const std::vector<ChipletNode>& nodes = *node_list;
 
     // One box per leaf chiplet, placed by the same traversal the 2D viewer
     // uses.  chiplets() carries each node's composed world transform (from
@@ -5292,12 +5292,12 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
     consumeStaleSelection(state);
     const std::string inst_name
         = std::string(req.json.at("inst_name").as_string());
-    const auto& chiplets = gen_->chiplets();
+    const auto chiplets = gen_->chiplets();
     if (gen_->blocks().empty()) {
       throw std::runtime_error("No block loaded");
     }
 
-    const auto [inst, chiplet] = findSchematicInst(chiplets, inst_name);
+    const auto [inst, chiplet] = findSchematicInst(*chiplets, inst_name);
     if (!inst) {
       throw std::runtime_error("Instance not found: " + inst_name);
     }
@@ -5579,7 +5579,8 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
       if (path != nullptr) {
         // chiplets() covers both cases: for a single-die design its root node
         // carries the top block with an identity transform.
-        const std::vector<ChipletNode>& chiplets = gen_->chiplets();
+        const auto chiplet_list = gen_->chiplets();
+        const std::vector<ChipletNode>& chiplets = *chiplet_list;
         collectTimingPathShapes(chiplets, *path, new_rects, new_lines);
 
         const std::string pin_name
@@ -6213,12 +6214,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                  z,
                  x,
                  y);
-      WebSocketResponse resp;
-      resp.id = req.id;
-      resp.type = WebSocketResponse::kError;
-      const std::string msg = "cancelled";
-      resp.payload.assign(msg.begin(), msg.end());
-      return resp;
+      return errorResponse(req.id, kCancelledMsg);
     }
   }
 
@@ -6291,58 +6287,31 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                          && !vis.debug_renderers && !vis.debug_live;
 
   std::string cache_key;
+  uint64_t cache_epoch = 0;
   if (cacheable) {
-    // Key = the full render determinant: the request JSON minus the per-call
-    // id, with dpr pinned to the quantized value actually rendered.
-    // Selectability (the s_* flags and selectable_layers) does NOT affect the
-    // rendered tile, so it is excluded — toggling "selectable" must not
-    // invalidate the cache.
-    boost::json::object key_obj = req.json;
-    key_obj.erase("id");
-    key_obj.erase("selectable_layers");
+    // Read before rendering: a design edit meanwhile makes the result stale.
+    cache_epoch = gen_->tileCacheEpoch();
+    // Key = what the render reads: the tile, its dpr and pixel count, the
+    // design and chiplet revisions and the visibility this layer depends on.
+    boost::json::object tile_obj{
+        {"layer", layer},
+        {"z", z},
+        {"x", x},
+        {"y", y},
+        {"dpr", dpr},
+        {"tile_px", tile_px},
+        {"rev", gen_->searchRevision()},
+        {"chiplets", gen_->chipletsGeneration()},
+    };
     // Two cacheable states share everything else: painting the design's
     // default palette, and painting nothing because the session cleared every
     // row.  Without this they collide on one key and the cleared view serves
     // the painted tile.
     if (modules_layer || clusters_layer) {
-      key_obj["owner_colors"] = default_colors ? "default" : "none";
+      tile_obj["owner_colors"] = default_colors ? "default" : "none";
     }
-    // The color-overlay flags only change what THEIR layer draws.  Leaving them
-    // in every layer's key would make toggling one overlay a full cache miss
-    // for the whole screen — every metal layer re-rendered for a flag it
-    // ignores — and multiply the cache footprint per tile.
-    if (layer != "_modules") {
-      key_obj.erase("module_view");
-    }
-    if (layer != "_clusters") {
-      key_obj.erase("cluster_view");
-    }
-    std::vector<std::string> sel_keys;
-    for (const auto& kv : key_obj) {
-      const std::string_view k = kv.key();
-      if (k.size() >= 2 && k[0] == 's' && k[1] == '_') {
-        sel_keys.emplace_back(k);
-      }
-    }
-    for (const std::string& k : sel_keys) {
-      key_obj.erase(k);
-    }
-    // Only the tiles that filter by layer name read these; in every other key
-    // one layer toggle would miss the cache for all the rest.
-    if (!TileGenerator::readsLayerVisibility(layer, vis)) {
-      key_obj.erase("visible_layers");
-      key_obj.erase("chiplet_hidden_layers");
-    }
-    // A tile scoped to a die depends on that die being shown, not the others.
-    if (!vis.chiplet.empty()) {
-      key_obj.erase("visible_chiplets");
-      key_obj["chiplet_visible"] = vis.isChipletVisible(vis.chiplet);
-    }
-    key_obj["dpr"] = dpr;
-    // Pinned like dpr: two clients on different displays ask for different
-    // pixel counts of the same tile, and they are different images.
-    key_obj["tile_px"] = tile_px;
-    cache_key = boost::json::serialize(key_obj);
+    cache_key = boost::json::serialize(tile_obj)
+                + TileGenerator::tileCacheKey(vis, layer);
     std::vector<unsigned char> cached;
     if (gen_->tileCacheGet(cache_key, cached)) {
       WebSocketResponse resp;
@@ -6396,7 +6365,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
       = resp.type == WebSocketResponse::kEmpty
         || (resp.type == WebSocketResponse::kPng && !resp.payload.empty());
   if (cacheable && worth_caching) {
-    gen_->tileCachePut(std::move(cache_key), resp.payload);
+    gen_->tileCachePut(std::move(cache_key), resp.payload, cache_epoch);
   }
 
   debugPrint(gen_->getLogger(),

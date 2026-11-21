@@ -187,7 +187,7 @@ export class IdePaneElement extends LitElement {
             overflow: hidden;
         }
 
-        /* Above Leaflet's controls (z-index 1000), below .context-menu. */
+        /* Above the view's zoom buttons (z-index 1000), below .context-menu. */
         .ide-tab-menu {
             position: absolute;
             top: 28px;
@@ -1372,9 +1372,6 @@ export class GridLayoutManager extends EventEmitter {
                 if (this.isComponentActive(comp)) {
                     comp.container.fire('resize');
                 }
-            }
-            if (typeof app !== 'undefined' && app && app.map) {
-                app.map.invalidateSize({ animate: false });
             }
             // Internal changes notify components directly. Emitting a window
             // resize here would feed back through its updateSize() listener.

@@ -7,7 +7,7 @@
 // never acts on the wrong object (the Qt dock's context menus use proxy
 // rows without mapToSource and mis-target under sorting).
 
-import { dbuRectToBounds } from './coordinates.js';
+import { dbuRectToWorldRect } from './coordinates.js';
 import { ColumnWidths, isStaticMode, makeResizableHeaders }
     from './ui-utils.js';
 
@@ -187,16 +187,16 @@ export class SelectionBrowser {
     }
 
     _zoomToBBox(bbox) {
-        if (!bbox || !this._app.designScale || !this._app.map) return;
+        if (!bbox || !this._app.designScale || !this._app.view) return;
         const [xMin, yMin, xMax, yMax] = bbox;
         // Same margin rule as the DRC widget / Qt zoom-to handlers.
         const dbuPerMicron = this._app.getDbuPerMicron
             ? this._app.getDbuPerMicron() : 1000;
         const margin = Math.min(10 * dbuPerMicron,
                                 2 * Math.max(xMax - xMin, yMax - yMin));
-        this._app.map.fitBounds(dbuRectToBounds(
+        this._app.view.fitWorldRect(dbuRectToWorldRect(
             xMin - margin, yMin - margin, xMax + margin, yMax + margin,
-            this._app.designScale, this._app.designMaxDXDY,
+            this._app.designScale,
             this._app.designOriginX, this._app.designOriginY));
     }
 

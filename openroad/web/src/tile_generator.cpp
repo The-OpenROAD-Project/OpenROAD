@@ -34,6 +34,8 @@
 #include <vector>
 
 #include "boost/json/array.hpp"
+#include "boost/json/object.hpp"
+#include "boost/json/serialize.hpp"
 #include "color.h"
 #include "db_sta/dbSta.hh"
 #include "font_atlas.h"
@@ -1063,22 +1065,21 @@ inline int hairlineCss(const TileFrame& frame)
   return std::max(1, static_cast<int>(std::lround(frame.px_per_css)));
 }
 
-}  // namespace
-
-namespace {
-
-// Every boolean TileVisibility field: its JSON key and the default an omitted
-// key falls back to.
 struct BoolField
 {
   const char* key;
   bool TileVisibility::* field;
   bool default_val;
+  // The one layer whose tiles the flag can change: null for every layer, ""
+  // for none.
+  const char* owner = nullptr;
 };
 
+// Every visibility flag a tile render reads, with its default and owner.
+// Parsing and the tile-cache key walk the same list.
 // clang-format off
 // NOLINTBEGIN(modernize-use-designated-initializers)
-const BoolField kBoolFields[] = {
+const BoolField kVisibilityFields[] = {
   {"stdcells",           &TileVisibility::stdcells,           true},
   {"macros",             &TileVisibility::macros,             true},
   {"pad_input",          &TileVisibility::pad_input,          true},
@@ -1117,29 +1118,29 @@ const BoolField kBoolFields[] = {
   {"special_nets",       &TileVisibility::special_nets,       true},
   {"srouting_segments",  &TileVisibility::srouting_segments,  true},
   {"srouting_vias",      &TileVisibility::srouting_vias,      true},
-  {"labels",             &TileVisibility::labels,             true},
+  {"labels",             &TileVisibility::labels,             true,  ""},  // overlay tile
   {"pins",               &TileVisibility::pins,               true},
-  {"pin_markers",        &TileVisibility::pin_markers,        true},
-  {"pin_names",          &TileVisibility::pin_names,          true},
-  {"access_points",      &TileVisibility::access_points,      false},
-  {"regions",            &TileVisibility::regions,            true},
-  {"mfg_grid",           &TileVisibility::mfg_grid,           false},
-  {"gcell_grid",         &TileVisibility::gcell_grid,         false},
-  {"rudy",               &TileVisibility::rudy,               false},
-  {"routing_congestion", &TileVisibility::routing_congestion, false},
-  {"inst_names",         &TileVisibility::inst_names,         true},
-  {"inst_pins",          &TileVisibility::inst_pins,          true},
-  {"inst_pin_names",     &TileVisibility::inst_pin_names,     false},
+  {"pin_markers",        &TileVisibility::pin_markers,        true,  "_pins"},
+  {"pin_names",          &TileVisibility::pin_names,          true,  "_pins"},
+  {"access_points",      &TileVisibility::access_points,      false, "_access_points"},
+  {"regions",            &TileVisibility::regions,            true,  "_regions"},
+  {"mfg_grid",           &TileVisibility::mfg_grid,           false, "_mfg_grid"},
+  {"gcell_grid",         &TileVisibility::gcell_grid,         false, "_gcell_grid"},
+  {"rudy",               &TileVisibility::rudy,               false, "_rudy"},
+  {"routing_congestion", &TileVisibility::routing_congestion, false, "_routing_congestion"},
+  {"inst_names",         &TileVisibility::inst_names,         true,  kInstLabelsLayer},
+  {"inst_pins",          &TileVisibility::inst_pins,          true},  // cell pins on tech layers too
+  {"inst_pin_names",     &TileVisibility::inst_pin_names,     false, kInstLabelsLayer},
   {"blockages",              &TileVisibility::blockages,              true},
-  {"placement_blockages",    &TileVisibility::placement_blockages,    true},
+  {"placement_blockages",    &TileVisibility::placement_blockages,    true,  "_instances"},
   {"routing_obstructions",   &TileVisibility::routing_obstructions,   true},
   {"fills",                  &TileVisibility::fills,                  false},
-  {"rows",                   &TileVisibility::rows,                   false},
+  {"rows",                   &TileVisibility::rows,                   false, "_instances"},
   {"tracks_pref",            &TileVisibility::tracks_pref,            false},
   {"tracks_non_pref",        &TileVisibility::tracks_non_pref,        false},
   {"detailed",               &TileVisibility::detailed,               false},
-  {"module_view",            &TileVisibility::module_view,            false},
-  {"cluster_view",           &TileVisibility::cluster_view,           false},
+  {"module_view",            &TileVisibility::module_view,            false, "_modules"},
+  {"cluster_view",           &TileVisibility::cluster_view,           false, "_clusters"},
   {"debug",                  &TileVisibility::debug,                  false},
   {"debug_renderers",        &TileVisibility::debug_renderers,        false},
   {"debug_live",             &TileVisibility::debug_live,             false},
@@ -1151,12 +1152,23 @@ const BoolField kBoolFields[] = {
 
 std::optional<bool> TileVisibility::flag(const std::string_view key) const
 {
-  for (const BoolField& f : kBoolFields) {
+  for (const BoolField& f : kVisibilityFields) {
     if (key == f.key) {
       return this->*(f.field);
     }
   }
   return std::nullopt;
+}
+
+/* static */
+std::vector<std::string_view> TileVisibility::flagKeys()
+{
+  std::vector<std::string_view> keys;
+  keys.reserve(std::size(kVisibilityFields));
+  for (const BoolField& f : kVisibilityFields) {
+    keys.emplace_back(f.key);
+  }
+  return keys;
 }
 
 void TileVisibility::parseFromJson(const boost::json::object& json)
@@ -1173,7 +1185,7 @@ void TileVisibility::assignFromJson(const boost::json::object& json)
   // Visibility flags are nominally always sent by the web frontend, but
   // tests and the saveImage Tcl entry point can pass partial payloads;
   // fall back to the per-field default when a flag is omitted.
-  for (const auto& f : kBoolFields) {
+  for (const auto& f : kVisibilityFields) {
     this->*(f.field) = jsonOr<bool>(json, f.key, f.default_val);
   }
 
@@ -1688,9 +1700,33 @@ TileGenerator::TileGenerator(odb::dbDatabase* db,
   // invalidates a spatial index.  eagerInit() suppresses this while it
   // rebuilds.
   search_->setOnModified([this] { onDesignChanged(); });
+  db_->addObserver(&load_counter_);
 }
 
 TileGenerator::~TileGenerator() = default;
+
+void TileGenerator::ensureInit(const bool fresh_cache)
+{
+  std::scoped_lock lock(init_mutex_);
+  // Read first: a load landing during the init brings on the next one.
+  const uint64_t loads = load_counter_.loads.load();
+  // A chip made without a load hook (dbChip::create) counts as a load too.
+  if (init_loads_ != loads || init_chip_ != db_->getChip()) {
+    eagerInit();
+    init_loads_ = loads;
+    init_chip_ = db_->getChip();
+    return;
+  }
+  const int margin = pin_label_margin_dbu_;
+  computePinLabelMargin();
+  if (pin_label_margin_dbu_ != margin) {
+    onDesignChanged();  // a new margin moves every tile
+  } else if (fresh_cache) {
+    // A new session starts clean: an edit ODB does not report leaves no
+    // stale tile behind.
+    clearTileCache();
+  }
+}
 
 void TileGenerator::eagerInit()
 {
@@ -1712,8 +1748,7 @@ void TileGenerator::eagerInit()
   // from the previous design's.
   {
     std::lock_guard lock(chiplets_mutex_);
-    chiplets_cache_.clear();
-    chiplets_cache_valid_ = false;
+    chiplets_cache_.reset();
   }
   // Overlay caches are keyed by dbBlock*, which may be stale after a
   // design swap.
@@ -1727,7 +1762,8 @@ void TileGenerator::eagerInit()
   // so the recursive tile renderer can query searchInsts/searchBoxShapes
   // for any chiplet's master block.
   if (chip) {
-    for (const ChipletNode& node : chiplets()) {
+    const auto nodes = chiplets();
+    for (const ChipletNode& node : *nodes) {
       if (node.block) {
         search_->eagerInit(node.block);
       }
@@ -1754,11 +1790,7 @@ void TileGenerator::eagerInit()
   }
   // Tiles depend on the design geometry, so a reload invalidates every cached
   // PNG.  Clearing here ties cache lifetime to design loading.
-  {
-    std::lock_guard lock(tile_cache_mutex_);
-    tile_cache_lru_.clear();
-    tile_cache_index_.clear();
-  }
+  clearTileCache();
   // suppress_guard restores suppress_design_changed_ to false on return.
 }
 
@@ -1777,11 +1809,7 @@ void TileGenerator::onDesignChanged()
 
   // A design edit invalidated a spatial index, so every cached PNG may now be
   // stale.  Drop the whole cache; tiles re-render lazily on the next request.
-  {
-    std::lock_guard lock(tile_cache_mutex_);
-    tile_cache_lru_.clear();
-    tile_cache_index_.clear();
-  }
+  clearTileCache();
 
   // The geometry cache is NOT dropped here.  This hook is debounced (see
   // below), so an edit arriving while an index is already invalid never
@@ -1818,30 +1846,116 @@ bool TileGenerator::tileCacheGet(const std::string& key,
   return true;
 }
 
-void TileGenerator::tileCachePut(std::string key,
-                                 std::vector<unsigned char> png) const
+uint64_t TileGenerator::tileCacheEpoch() const
 {
+  std::scoped_lock lock(tile_cache_mutex_);
+  return tile_cache_epoch_;
+}
+
+void TileGenerator::tileCachePut(std::string key,
+                                 std::vector<unsigned char> png,
+                                 const uint64_t epoch) const
+{
+  // Keeping it would evict everything else.
+  if (png.size() > kTileCacheBytesCap) {
+    return;
+  }
   std::lock_guard lock(tile_cache_mutex_);
+  if (epoch != tile_cache_epoch_) {
+    return;
+  }
   const auto it = tile_cache_index_.find(key);
   if (it != tile_cache_index_.end()) {
     // Already present: refresh contents and promote to most-recent.
+    tile_cache_bytes_ -= it->second->second.size();
+    tile_cache_bytes_ += png.size();
     it->second->second = std::move(png);
     tile_cache_lru_.splice(
         tile_cache_lru_.begin(), tile_cache_lru_, it->second);
-    return;
+  } else {
+    tile_cache_bytes_ += png.size();
+    tile_cache_lru_.emplace_front(key, std::move(png));
+    tile_cache_index_[std::move(key)] = tile_cache_lru_.begin();
   }
-  tile_cache_lru_.emplace_front(key, std::move(png));
-  tile_cache_index_[std::move(key)] = tile_cache_lru_.begin();
-  if (tile_cache_lru_.size() > kTileCacheCap) {
+  while (tile_cache_lru_.size() > kTileCacheCap
+         || tile_cache_bytes_ > kTileCacheBytesCap) {
+    tile_cache_bytes_ -= tile_cache_lru_.back().second.size();
     tile_cache_index_.erase(tile_cache_lru_.back().first);
     tile_cache_lru_.pop_back();
   }
+}
+
+void TileGenerator::clearTileCache()
+{
+  std::scoped_lock lock(tile_cache_mutex_);
+  tile_cache_lru_.clear();
+  tile_cache_index_.clear();
+  tile_cache_bytes_ = 0;
+  ++tile_cache_epoch_;
 }
 
 size_t TileGenerator::tileCacheSize() const
 {
   std::lock_guard lock(tile_cache_mutex_);
   return tile_cache_lru_.size();
+}
+
+size_t TileGenerator::tileCacheBytes() const
+{
+  std::scoped_lock lock(tile_cache_mutex_);
+  return tile_cache_bytes_;
+}
+
+/* static */
+std::string TileGenerator::tileCacheKey(const TileVisibility& vis,
+                                        const std::string_view layer)
+{
+  std::string flags;
+  flags.reserve(std::size(kVisibilityFields));
+  for (const BoolField& f : kVisibilityFields) {
+    if (f.owner != nullptr && layer != f.owner) {
+      flags += '-';
+    } else {
+      flags += vis.*f.field ? '1' : '0';
+    }
+  }
+
+  boost::json::object key;
+  key["v"] = flags;
+  key["p"] = static_cast<int>(vis.fill_pattern);
+  // A tile scoped to a die depends on that die being shown, not the others.
+  if (!vis.chiplet.empty()) {
+    key["d"] = vis.chiplet;
+    key["dv"] = vis.isChipletVisible(vis.chiplet);
+  } else if (vis.has_visible_chiplets) {
+    key["c"] = boost::json::array(vis.visible_chiplets.begin(),
+                                  vis.visible_chiplets.end());
+  }
+  if (readsLayerVisibility(layer, vis)) {
+    if (vis.has_visible_layers) {
+      key["l"] = boost::json::array(vis.visible_layers.begin(),
+                                    vis.visible_layers.end());
+    }
+    boost::json::object hidden;
+    for (const auto& [path, names] :
+         std::map<std::string, std::set<std::string>>(
+             vis.chiplet_hidden_layers.begin(),
+             vis.chiplet_hidden_layers.end())) {
+      hidden[path] = boost::json::array(names.begin(), names.end());
+    }
+    if (!hidden.empty()) {
+      key["h"] = std::move(hidden);
+    }
+  }
+  if (vis.rows && layer == "_instances") {
+    boost::json::object site_flags;
+    for (const auto& [name, visible] :
+         std::map<std::string, bool>(vis.sites.begin(), vis.sites.end())) {
+      site_flags[name] = visible;
+    }
+    key["s"] = std::move(site_flags);
+  }
+  return boost::json::serialize(key);
 }
 
 namespace {
@@ -1882,48 +1996,37 @@ size_t hashChipInsts(odb::dbChip* root)
 
 }  // namespace
 
-const std::vector<ChipletNode>& TileGenerator::chiplets() const
+std::shared_ptr<const std::vector<ChipletNode>> TileGenerator::chiplets() const
 {
-  // ODB itself is not thread-safe, so callers serialize web requests
-  // against design mutations.  The fingerprint check (root pointer +
-  // chiplet placement hash) only needs to detect *sequential* Tcl mutations
-  // — taking the lock before reading root/hash keeps the fingerprint
-  // and the cached values consistent with each other.
-  //
-  // Lifetime contract: the returned reference is valid only as long as
-  // eagerInit() does not run.  eagerInit() executes on design load /
-  // reload, which is gated upstream against tile/select requests.  Hot-
-  // path callers (renderTileBuffer, selectAt) MUST NOT trigger
-  // eagerInit while iterating the returned vector.
   std::lock_guard lock(chiplets_mutex_);
+  refreshChipletsLocked();
+  return chiplets_cache_;
+}
+
+void TileGenerator::refreshChipletsLocked() const
+{
+  // ODB itself is not thread-safe, so callers serialize web requests against
+  // design mutations.
   odb::dbChip* root = db_->getChip();
   const size_t inst_hash = hashChipInsts(root);
-  const bool fingerprint_changed
-      = chiplets_cache_root_ != root || chiplets_cache_inst_hash_ != inst_hash;
-  if (!chiplets_cache_valid_ || fingerprint_changed) {
-    // ODB builds the unfolded model at load and never refreshes it on edits
-    // (#10228, closed as not planned).  Rebuilding it here is not an option:
-    // this is a read path — reached from the save_image thread pool and from
-    // handlers that do not hold tcl_eval_->mutex — and constructUnfoldedModel()
-    // would free objects a concurrent check_3dblox is iterating.  An edited
-    // hierarchy is walked instead, which mutates nothing and yields the same
-    // nodes.  Only a design load (eagerInit, which clears the cache) brings a
-    // fresh model, so "valid cache + changed fingerprint" is exactly "edited".
-    const bool model_stale = chiplets_cache_valid_ && fingerprint_changed;
-    chiplets_cache_ = collectChiplets(root, !model_stale);
+  if (!chiplets_cache_ || chiplets_cache_root_ != root
+      || chiplets_cache_inst_hash_ != inst_hash) {
+    // The unfolded model is a load-time snapshot that edits never update, so
+    // the hierarchy is walked; both give the same nodes.
+    chiplets_cache_ = std::make_shared<const std::vector<ChipletNode>>(
+        collectChiplets(root, /*use_unfolded_model=*/false));
     chiplets_cache_root_ = root;
     chiplets_cache_inst_hash_ = inst_hash;
-    chiplets_cache_valid_ = true;
     ++chiplets_cache_generation_;
   }
-  return chiplets_cache_;
 }
 
 std::vector<odb::dbBlock*> TileGenerator::blocks() const
 {
   std::vector<odb::dbBlock*> out;
   std::unordered_set<odb::dbBlock*> seen;
-  for (const ChipletNode& node : chiplets()) {
+  const auto nodes = chiplets();
+  for (const ChipletNode& node : *nodes) {
     if (node.block && seen.insert(node.block).second) {
       out.push_back(node.block);
     }
@@ -1935,8 +2038,8 @@ uint64_t TileGenerator::chipletsGeneration() const
 {
   // Refresh first so the counter reflects the live hierarchy rather than
   // whatever the last chiplets() caller saw.
-  chiplets();
   std::lock_guard lock(chiplets_mutex_);
+  refreshChipletsLocked();
   return chiplets_cache_generation_;
 }
 
@@ -2266,7 +2369,8 @@ odb::Rect TileGenerator::getFitBounds() const
   odb::Rect bounds;
   bounds.mergeInit();
   bool any = false;
-  const std::vector<ChipletNode>& nodes = chiplets();
+  const auto chiplet_list = chiplets();
+  const std::vector<ChipletNode>& nodes = *chiplet_list;
   for (const ChipletNode& node : nodes) {
     if (!node.block) {
       continue;
@@ -2299,10 +2403,11 @@ odb::Rect TileGenerator::getBounds() const
   // the design in the viewport, and with the map resting on integer zoom levels
   // it can cost a whole level (issue #11338).  The client fits getFitBounds().
   odb::Rect bounds = getFitBounds();
-  if (bounds == odb::Rect{} || pin_label_margin_dbu_ <= 0) {
+  const int margin = pin_label_margin_dbu_;
+  if (bounds == odb::Rect{} || margin <= 0) {
     return bounds;
   }
-  bounds.bloat(pin_label_margin_dbu_, bounds);
+  bounds.bloat(margin, bounds);
   return bounds;
 }
 
@@ -2352,7 +2457,8 @@ std::vector<std::string> TileGenerator::getLayers() const
   // In multi-tech (3DBlox) designs getTech() returns nullptr; the chiplets()
   // loop below contributes every layer through its own dbTech.
   collectFromTech(getTech());
-  for (const ChipletNode& node : chiplets()) {
+  const auto nodes = chiplets();
+  for (const ChipletNode& node : *nodes) {
     if (node.chip) {
       collectFromTech(node.chip->getTech());
     }
@@ -2407,7 +2513,8 @@ std::vector<PaintLayer> TileGenerator::paintOrderLayers() const
 
   std::unordered_map<std::string, std::vector<const ChipletNode*>> children;
   const ChipletNode* root = nullptr;
-  for (const ChipletNode& node : chiplets()) {
+  const auto nodes = chiplets();
+  for (const ChipletNode& node : *nodes) {
     if (node.parent_path.empty()) {
       root = &node;
     } else {
@@ -2667,8 +2774,8 @@ TileGenerator::GridList TileGenerator::gcellGridY(odb::dbBlock* block) const
   });
 }
 
-const odb::PtrMap<odb::dbTechLayer, Color>& TileGenerator::getLayerColorMap(
-    odb::dbTech* req_tech) const
+std::shared_ptr<const odb::PtrMap<odb::dbTechLayer, Color>>
+TileGenerator::getLayerColorMap(odb::dbTech* req_tech) const
 {
   std::lock_guard lock(layer_colors_mutex_);
   // In multi-tech databases db_->getTech() throws ODB-0432, so resolve the
@@ -2684,7 +2791,8 @@ const odb::PtrMap<odb::dbTechLayer, Color>& TileGenerator::getLayerColorMap(
   }
   auto [it, inserted] = layer_colors_by_tech_.try_emplace(tech);
   if (inserted) {
-    it->second = buildLayerColorMap(tech);
+    it->second = std::make_shared<const odb::PtrMap<odb::dbTechLayer, Color>>(
+        buildLayerColorMap(tech));
   }
   return it->second;
 }
@@ -2762,7 +2870,8 @@ std::shared_ptr<const TileGenerator::GeomCache> TileGenerator::buildGeomCache()
   // instance would leave duplicates for the render pass to redraw, once per
   // instance of the chiplet.
   std::unordered_set<odb::dbBlock*> seen_blocks;
-  for (const ChipletNode& node : chiplets()) {
+  const auto nodes = chiplets();
+  for (const ChipletNode& node : *nodes) {
     if (!node.block || !seen_blocks.insert(node.block).second) {
       continue;
     }
@@ -2801,7 +2910,8 @@ TileGenerator::buildLayerExtents() const
 {
   auto extents = std::make_shared<LayerExtents>();
   extents->bounds = getBounds();
-  const std::vector<ChipletNode>& nodes = chiplets();
+  const auto chiplet_list = chiplets();
+  const std::vector<ChipletNode>& nodes = *chiplet_list;
   // Several dies go in `chiplets`, outline included: the render pass draws
   // each die's outline on every layer only then.
   const bool multi_die = nodes.size() > 1;
@@ -3162,7 +3272,7 @@ std::vector<SelectionResult> TileGenerator::selectAt(
   }
   // Compute a search margin of 2 pixels at the current zoom level.
   // This accounts for coordinate conversion rounding between the client's
-  // Leaflet CRS.Simple coordinates and the server's DBU space.
+  // view coordinates and the server's DBU space.
   const int num_tiles = 1 << std::max(0, zoom);
   const int margin
       = std::max(1, getBounds().maxDXDY() / (kTileSizeInPixel * num_tiles) * 2);
@@ -3192,7 +3302,8 @@ std::vector<SelectionResult> TileGenerator::selectAt(
   // dbChipInst land on the right object.  We map the world click into
   // the chiplet's local frame using the inverse of world_xfm so that
   // R90/R180/R270/mirrored chiplets work the same as R0 ones.
-  for (const ChipletNode& node : chiplets()) {
+  const auto nodes = chiplets();
+  for (const ChipletNode& node : *nodes) {
     if (!vis.isChipletVisible(node.path)) {
       continue;
     }
@@ -3736,15 +3847,15 @@ std::vector<unsigned char> TileGenerator::generateOverlayTile(
   if (route_guide_net_ids && !route_guide_net_ids->empty()) {
     // Draw route guides only for visible tech layers.
     for (odb::dbTech* tech : db_->getTechs()) {
-      const auto& colors = getLayerColorMap(tech);
+      const auto colors = getLayerColorMap(tech);
       for (odb::dbTechLayer* layer : tech->getLayers()) {
         // Skip layers the user has hidden in Display Controls.
         // has_visible_layers=true with an empty set means all hidden.
         if (has_visible_layers && !visible_layers.contains(layer->getName())) {
           continue;
         }
-        const auto it = colors.find(layer);
-        if (it == colors.end()) {
+        const auto it = colors->find(layer);
+        if (it == colors->end()) {
           continue;
         }
         drawRouteGuides(
@@ -4478,17 +4589,9 @@ std::vector<PaintLayer> TileGenerator::saveImageLayerOrder(
     const TileVisibility& vis,
     const std::vector<PaintLayer>& tech_layers)
 {
-  // Bottom to top, by the z order the client stacks the layers in on screen
-  // (addPseudoLayer / the layer loop in display-controls.js): Leaflet paints
-  // by zIndex, so a PNG composited in any other order is not the view the
-  // user saw.  Compositing in registry order — every pseudo layer last — put
-  // the manufacturing grid over the routing and the pin markers over the tech
-  // layers.  These three mirror the client's non-pseudo values;
-  // PseudoLayerDef::z_index carries the overlays'.
-  //
-  // `tech_layers` arrives already in the client's paint order — see
-  // paintOrderLayers(), which is where a face-down die's reversal happens.
-  // This function only interleaves the pseudo layers with it.
+  // Bottom to top in the client's draw order (display-controls.js), so the
+  // PNG is the view.  `tech_layers` is already in it (paintOrderLayers()).
+  // The client's z values; PseudoLayerDef::z_index has the overlays'.
   constexpr int kInstancesZ = 0;
   constexpr int kPinsZ = 1;
   constexpr int kTechLayerZBase = 3;
@@ -4501,7 +4604,7 @@ std::vector<PaintLayer> TileGenerator::saveImageLayerOrder(
     ordered.emplace_back(kPinsZ, PaintLayer{.layer = "_pins", .chiplet = ""});
   }
   // One z for every row, which the stable sort keeps in order: however many
-  // rows there are, they stay under the overlays, as the merged panes do.
+  // rows there are, they stay under the overlays, as in the client's draw list.
   for (const PaintLayer& entry : tech_layers) {
     if (!vis.isLayerShown(entry.layer)
         || vis.isLayerHiddenOn(entry.chiplet, entry.layer)) {
@@ -4516,8 +4619,8 @@ std::vector<PaintLayer> TileGenerator::saveImageLayerOrder(
     }
   }
   // The "color by owner" overlays stack by the same rule; saveImage() drops the
-  // ones whose color map comes out empty.  _modules goes under the routing,
-  // like the client's zIndex 2; _clusters over it, so metal does not cover the
+  // ones whose color map comes out empty.  _modules goes under the routing, as
+  // in the client's base slot; _clusters over it, so metal does not cover the
   // partition, but below the Misc overlays, which start at 1000.
   if (vis.module_view) {
     ordered.emplace_back(2, PaintLayer{.layer = "_modules", .chiplet = ""});
@@ -4538,10 +4641,10 @@ std::vector<PaintLayer> TileGenerator::saveImageLayerOrder(
 const std::array<TileGenerator::PseudoLayerDef, 7>&
 TileGenerator::pseudoLayerDefs()
 {
-  // z_index follows the GUI's paint order (renderThread.cpp:1201-1298), where
-  // the manufacturing grid goes down before the routing layers, the instance
-  // names right after them, and access points, regions and the gcell grid on
-  // top.
+  // z_index mirrors the client's draw lists in display-controls.js (see
+  // saveImageLayerOrder), which follow the GUI's paint order: the
+  // manufacturing grid before the routing layers, the instance names right
+  // after them, and access points, regions and the gcell grid on top.
   static const std::array<PseudoLayerDef, 7> defs = {{
       {.name = "_access_points",
        .shown_by = {{"access_points"}},
@@ -4594,7 +4697,7 @@ bool TileGenerator::anyGroupOn(
   });
 }
 
-bool TileGenerator::readsLayerVisibility(const std::string& layer,
+bool TileGenerator::readsLayerVisibility(const std::string_view layer,
                                          const TileVisibility& vis)
 {
   if (layer == "_pins") {
@@ -4781,7 +4884,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               : size_limit_dbu;
     // The geometry the tile request resolves to: which slice of the design it
     // covers and at what resolution.  `y` here is already flipped out of the
-    // client's Leaflet convention, so it will not match the requested y.  The
+    // client's top-down convention, so it will not match the requested y.  The
     // micron window depends only on the design bounds and z; tile_px/draw_px
     // and the cull limits are the dpr-derived part.
     const double dbu_per_micron = db_->getDbuPerMicron();
@@ -4826,7 +4929,8 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     // image.  The world tile rect is shifted into each chiplet's local
     // frame for translation-only transforms; non-R0 orientations log
     // and skip for v1 (followup work to support full transforms).
-    const std::vector<ChipletNode>& chiplet_nodes = chiplets();
+    const auto chiplet_list = chiplets();
+    const std::vector<ChipletNode>& chiplet_nodes = *chiplet_list;
     // Multi-die designs draw the die outline on EVERY layer pass (chiplet
     // demarcation).  Single-die designs draw die+core outlines too (Qt
     // drawChip does it unconditionally), but only on the always-rendered
@@ -4902,7 +5006,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       // Per-layer colors mirror web::DisplayControls so the GUI and web
       // frontend agree on which color belongs to which layer.  Resolved per
       // chiplet because each chiplet has its own dbTech in 3DBlox designs.
-      const auto& layer_colors = getLayerColorMap(tech);
+      const auto layer_colors = getLayerColorMap(tech);
 
       // Translation-only fast path: the local tile is the world tile
       // shifted by -offset, and pixel coordinates land in the same place
@@ -5072,8 +5176,8 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
 
       Color color{.r = 200, .g = 200, .b = 200, .a = 180};
       if (tech_layer) {
-        const auto it = layer_colors.find(tech_layer);
-        if (it != layer_colors.end()) {
+        const auto it = layer_colors->find(tech_layer);
+        if (it != layer_colors->end()) {
           color = it->second;
         }
       }
@@ -5397,8 +5501,8 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
               Color marker_color{.r = 200, .g = 200, .b = 200, .a = 220};
               odb::dbTechLayer* pin_layer = box->getTechLayer();
               if (pin_layer) {
-                const auto it = layer_colors.find(pin_layer);
-                if (it != layer_colors.end()) {
+                const auto it = layer_colors->find(pin_layer);
+                if (it != layer_colors->end()) {
                   marker_color = it->second;
                   marker_color.a = 220;
                 }
@@ -6288,9 +6392,9 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         continue;
       }
       world_layer = world_tech_layer;
-      const auto& world_layer_colors = getLayerColorMap(world_tech);
-      const auto it = world_layer_colors.find(world_tech_layer);
-      if (it != world_layer_colors.end()) {
+      const auto world_layer_colors = getLayerColorMap(world_tech);
+      const auto it = world_layer_colors->find(world_tech_layer);
+      if (it != world_layer_colors->end()) {
         world_color = it->second;
       }
       break;
@@ -6724,8 +6828,8 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
       const int out_ox = (tx - tx_min) * kTileSizeInPixel;
       // Y is flipped: ty is bottom-up, output is top-down.
       const int out_oy = (ty_max - ty) * kTileSizeInPixel;
-      // Leaflet-style y coordinate (before the flip in renderTileBuffer).
-      const int leaflet_y = num_tiles - 1 - ty;
+      // Client (top-down) y coordinate, before the flip in renderTileBuffer.
+      const int top_down_y = num_tiles - 1 - ty;
       const odb::Rect tile_rect = tileWorldRect(bounds, z, tx, ty);
       hosted.clear();
 
@@ -6739,7 +6843,7 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
         const auto tile_buf = renderTileBuffer(entry.layer,
                                                z,
                                                tx,
-                                               leaflet_y,
+                                               top_down_y,
                                                scoped_vis,
                                                /*highlight_rects=*/{},
                                                /*highlight_polys=*/{},
@@ -6758,7 +6862,7 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
       // User text labels go on top of all layers (Qt parity: labels appear
       // in save_image).
       if (!labels.empty()) {
-        const auto label_buf = renderLabelTile(z, tx, leaflet_y, labels);
+        const auto label_buf = renderLabelTile(z, tx, top_down_y, labels);
         if (!label_buf.empty()) {
           compositeTile(label_buf,
                         kTileSizeInPixel,
@@ -7060,10 +7164,10 @@ std::vector<unsigned char> TileGenerator::renderOverlayPng(
     for (int tx = 0; tx <= tx_max; ++tx) {
       const int out_ox = tx * kTileSizeInPixel;
       const int out_oy = (ty_max - ty) * kTileSizeInPixel;
-      const int leaflet_y = num_tiles - 1 - ty;
+      const int top_down_y = num_tiles - 1 - ty;
 
       auto tile_buf = renderTileBuffer(
-          "_instances", z, tx, leaflet_y, vis, {}, {}, rects, lines);
+          "_instances", z, tx, top_down_y, vis, {}, {}, rects, lines);
 
       for (int py = 0; py < kTileSizeInPixel; ++py) {
         for (int px = 0; px < kTileSizeInPixel; ++px) {
@@ -8682,7 +8786,7 @@ boost::json::object buildLayerHierarchy(
   boost::json::array other_layers_arr;
   if (node.chip) {
     if (odb::dbTech* tech = node.chip->getTech()) {
-      const auto& layer_colors = gen.getLayerColorMap(tech);
+      const auto layer_colors = gen.getLayerColorMap(tech);
       for (odb::dbTechLayer* layer : tech->getLayers()) {
         const LayerGroup group = classifyLayer(layer);
         if (group == LayerGroup::kSkip) {
@@ -8691,8 +8795,8 @@ boost::json::object buildLayerHierarchy(
         boost::json::object layer_obj;
         layer_obj["name"] = layer->getName();
         Color c{.r = 200, .g = 200, .b = 200, .a = 180};
-        auto it = layer_colors.find(layer);
-        if (it != layer_colors.end()) {
+        auto it = layer_colors->find(layer);
+        if (it != layer_colors->end()) {
           c = it->second;
         }
         layer_obj["color"] = boost::json::array{static_cast<int>(c.r),
@@ -8779,9 +8883,9 @@ boost::json::object serializeTechResponse(const TileGenerator& gen)
       if (!layer) {
         continue;
       }
-      const auto& cmap = gen.getLayerColorMap(t);
-      auto it = cmap.find(layer);
-      if (it != cmap.end()) {
+      const auto cmap = gen.getLayerColorMap(t);
+      auto it = cmap->find(layer);
+      if (it != cmap->end()) {
         c = it->second;
       }
       break;
@@ -8807,7 +8911,7 @@ boost::json::object serializeTechResponse(const TileGenerator& gen)
 
   out["has_liberty"] = gen.hasSta();
   // The self-painting overlays this design can draw, from which the client
-  // builds its panes: name, pane order and when each shows.
+  // builds its draw lists: name, draw order and when each shows.
   const auto groups_json = [](const auto& groups) {
     boost::json::array arr;
     for (const auto& group : groups) {
@@ -8857,7 +8961,8 @@ boost::json::object serializeTechResponse(const TileGenerator& gen)
       children_by_parent;
   const ChipletNode* root_node = nullptr;
   boost::json::array chiplets;
-  for (const ChipletNode& n : gen.chiplets()) {
+  const auto nodes = gen.chiplets();
+  for (const ChipletNode& n : *nodes) {
     if (n.parent_path.empty()) {
       root_node = &n;
     } else {

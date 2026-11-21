@@ -369,7 +369,7 @@ export class DrcWidget {
     }
 
     _zoomToBBox(bbox) {
-        if (!this._app.designScale || !this._app.map) return;
+        if (!this._app.designScale || !this._app.view) return;
 
         const [xMin, yMin, xMax, yMax] = bbox;
         const dx = xMax - xMin;
@@ -384,7 +384,7 @@ export class DrcWidget {
         const zoomoutBox = 2 * Math.max(dx, dy);
         const margin = Math.min(zoomoutDist, zoomoutBox);
 
-        // The margin above is this widget's own zoom rule; the DBU→map
+        // The margin above is this widget's own zoom rule; the DBU→view
         // conversion is the shared one (ui-utils.zoomToBBox), with no extra
         // padding on top of it.
         zoomToBBox(this._app,
@@ -412,15 +412,7 @@ export class DrcWidget {
     }
 
     _flashHighlight() {
-        const container = this._app.map?.getContainer();
-        if (!container) return;
-        container.classList.remove('drc-flashing');
-        // Force reflow so re-adding the class restarts the animation.
-        void container.offsetWidth;
-        container.classList.add('drc-flashing');
-        container.addEventListener('animationend', () => {
-            container.classList.remove('drc-flashing');
-        }, { once: true });
+        this._app.view?.flashTiles();
     }
 
     _update3DHighlights() {

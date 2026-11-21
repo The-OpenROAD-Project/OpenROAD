@@ -173,11 +173,10 @@ export class HierarchyPanel {
         }
     }
 
-    // Move the overlay to the view now on screen.  Repaints only the two
-    // pseudo-layers, and only when a flag actually moved: nothing else reads
-    // these flags, so a full redraw would re-request every metal layer's grid
-    // for a change they ignore.  Display Controls does its own redraw, so it
-    // calls refreshActiveStatus() instead of this.
+    // Move the overlay to the view now on screen.  Refreshes only the slot
+    // that draws the two pseudo-layers, and only when a flag actually moved.
+    // Display Controls does its own redraw, so it calls refreshActiveStatus()
+    // instead of this.
     syncOverlay() {
         const app = this._app;
         if (!app || !app.visibility) return;

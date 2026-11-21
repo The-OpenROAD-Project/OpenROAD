@@ -5,23 +5,15 @@ import './setup-dom.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { ContextMenu } from '../../src/context-menu.js';
+import { makeFakeView } from './fake-view.js';
 
-// Build a mock `app` whose map records setZoomAround/fitBounds calls.
+// Build a mock `app` whose view records the navigation calls.
 function makeApp(overrides = {}) {
-    const calls = [];
+    const view = makeFakeView({ zoom: 5 });
+    const calls = view.calls;
     const app = {
-        map: {
-            _zoom: 5,
-            options: { zoomDelta: 1 },
-            on() {},
-            getZoom() { return this._zoom; },
-            setZoomAround(latlng, z) { calls.push(['setZoomAround', latlng, z]); },
-            fitBounds(b) { calls.push(['fitBounds', b]); },
-            getContainer() { return document.body; },
-        },
-        fitBounds: [[0, 0], [10, 10]],
-        lastSelectionBounds: [[1, 1], [2, 2]],
-        hasSelection: true,
+        view,
+        fitRect: [0, 0, 10, 10],
         selHasInst: true,
         selHasNet: true,
         ...overrides,
@@ -45,7 +37,7 @@ function clickItem(label) {
 function openMenu(app) {
     document.body.innerHTML = '';
     const cm = new ContextMenu(app);
-    cm.show({ originalEvent: { clientX: 5, clientY: 5 } });
+    cm.show({ clientX: 5, clientY: 5 });
     return cm;
 }
 
@@ -149,7 +141,7 @@ describe('ContextMenu Clear submenu', () => {
 // app.refreshOverlay is the hook that also refreshes the Selection Highlight
 // panel (main.js pairs it with selectionBrowser.scheduleRefresh).  Calling
 // only redrawAllLayers leaves the panel listing objects the server has
-// already dropped, so every context action has to go through it.
+// already dropped, so an action that redraws refreshes the panel itself.
 describe('ContextMenu refreshes the panels after a server action', () => {
     function appWithHooks(overrides = {}) {
         const hooks = [];
@@ -159,6 +151,9 @@ describe('ContextMenu refreshes the panels after a server action', () => {
             refreshOverlay: () => hooks.push('refreshOverlay'),
             refreshInspector: () => hooks.push('refreshInspector'),
             redrawAllLayers: () => hooks.push('redrawAllLayers'),
+            selectionBrowser: {
+                scheduleRefresh: () => hooks.push('panelRefresh'),
+            },
             updateInspector: (d) => hooks.push(['updateInspector', d]),
             stopSelectionAnimation: () => hooks.push('stopSelectionAnimation'),
             ...overrides,
@@ -181,10 +176,9 @@ describe('ContextMenu refreshes the panels after a server action', () => {
 
     it('Selections resets the inspector and drops the client-side outline',
        async () => {
-        const removed = [];
+        let cleared = 0;
         const { app, hooks } = appWithHooks();
-        app.highlightRect = {};
-        app.map.removeLayer = (l) => removed.push(l);
+        app.clearSelectionOutline = () => { cleared++; };
         openMenu(app);
         clickItem('Selections');
         await settle();
@@ -192,9 +186,7 @@ describe('ContextMenu refreshes the panels after a server action', () => {
                          [['updateInspector', null]]);
         assert.ok(hooks.includes('stopSelectionAnimation'));
         assert.ok(hooks.includes('refreshOverlay'));
-        assert.equal(removed.length, 1, 'selection outline removed');
-        assert.equal(app.highlightRect, null);
-        assert.equal(app.lastSelectionBounds, null);
+        assert.equal(cleared, 1, 'selection outline removed');
     });
 
     it('Focus nets redraws the base tiles it feeds', async () => {
@@ -203,7 +195,45 @@ describe('ContextMenu refreshes the panels after a server action', () => {
         clickItem('Focus nets');
         await settle();
         assert.ok(hooks.includes('redrawAllLayers'), 'base tiles redrawn');
+        assert.ok(hooks.includes('panelRefresh'));
+        assert.ok(!hooks.includes('refreshOverlay'),
+                  'the redraw already refreshed the overlay');
+    });
+
+    it('All redraws, resets the inspector and refreshes the panel once',
+       async () => {
+        const { app, hooks } = appWithHooks();
+        openMenu(app);
+        clickItem('All');
+        await settle();
+        assert.deepEqual(hooks, ['redrawAllLayers', ['updateInspector', null],
+                                 'stopSelectionAnimation', 'panelRefresh']);
+    });
+
+    // Route guides are drawn on the overlay tiles only.
+    it('Route Guides refreshes the overlay, not the base tiles', async () => {
+        const { app, hooks } = appWithHooks();
+        openMenu(app);
+        clickItem('Route Guides');
+        await settle();
         assert.ok(hooks.includes('refreshOverlay'));
+        assert.ok(!hooks.includes('redrawAllLayers'));
+    });
+
+    it('clearing focus nets or route guides empties their client copies',
+       async () => {
+        for (const [item, focus, guides] of [['Focus nets', [], ['b']],
+                                             ['Route Guides', ['a'], []],
+                                             ['All', [], []]]) {
+            const { app } = appWithHooks();
+            app.focusNets = new Set(['a']);
+            app.routeGuideNets = new Set(['b']);
+            openMenu(app);
+            clickItem(item);
+            await settle();
+            assert.deepEqual([...app.focusNets], focus, item);
+            assert.deepEqual([...app.routeGuideNets], guides, item);
+        }
     });
 
     it('Select → Output Nets refreshes the panel too', async () => {
@@ -232,5 +262,24 @@ describe('ContextMenu refreshes the panels after a server action', () => {
         assert.ok(toast, 'shared toast element should exist');
         assert.ok(toast.classList.contains('visible'));
         assert.ok(toast.textContent.includes('Nothing connected'));
+    });
+});
+
+describe('ContextMenu follows the view', () => {
+    it('hides when the view starts to move', () => {
+        const { app } = makeApp();
+        const cm = openMenu(app);
+        assert.notEqual(cm._el.style.display, 'none');
+        app.view.emit('movestart');
+        assert.equal(cm._el.style.display, 'none');
+    });
+
+    it('opens at the pointer position of the DOM event', () => {
+        const { app } = makeApp();
+        document.body.innerHTML = '';
+        const cm = new ContextMenu(app);
+        cm.show({ clientX: 40, clientY: 30 });
+        assert.equal(cm._el.style.left, '40px');
+        assert.equal(cm._el.style.top, '30px');
     });
 });

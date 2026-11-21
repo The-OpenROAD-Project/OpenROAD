@@ -295,9 +295,8 @@ export class ClustersWidget {
             console.error('set_group_colors failed:', err);
             return;
         }
-        // Only the cluster overlay reads these colors, so refresh that layer
-        // instead of every mounted one — a full redraw re-requests every metal
-        // layer's grid for a color they ignore.
+        // Only the cluster overlay reads these colors, so refresh the slot
+        // that draws it instead of every slot.
         if (this._app.clustersLayer) {
             this._app.clustersLayer.refreshTiles();
         } else {

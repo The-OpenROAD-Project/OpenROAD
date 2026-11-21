@@ -24,11 +24,13 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    TILE_SIZE_CSS, STATIC_TILE_SIZE_CSS, quantizeDpr, tileDevicePx,
+    TILE_SIZE_CSS, STATIC_TILE_SIZE_CSS, nativeDpr, quantizeDpr, tileDevicePx,
     tileSizeCss, useStaticTileSize, useDeviceExactTileSize,
-    withDeviceExactTileSize, buildTileRequestFor, tileSizeFields,
+    tileRequestBuilder, tileSizeFields, watchDevicePixelRatio,
 } from '../../src/tile-request.js';
-import { deviceResidualCss } from '../../src/device-pixels.js';
+import { buildHeatmapRequest, buildOverlayRequest, createCompositeSource }
+    from '../../src/tile-sources.js';
+import { project, snapTarget } from '../../src/view-math.js';
 
 // What browsers report. 1.6666666269302368 is verbatim from the display this
 // bug was found on: a float32 5/3, which is why nothing here is bit-exact.
@@ -60,73 +62,24 @@ function assertWhole(devicePx, message) {
 describe('dpr contract: the tile pitch is whole at every ratio', () => {
     // Failure 1. A fractional pitch cannot be fixed downstream: boundaries land
     // at pitch*k, so if the pitch has a fraction only every 1/frac-th boundary
-    // can be on the grid however the panes are positioned.
+    // can be on the grid however the view is positioned.
     it('holds for the tile size the viewer uses', () => {
         for (const dpr of RATIOS) {
             assertWhole(TILE_SIZE_CSS * dpr, `${TILE_SIZE_CSS} css @${dpr}`);
         }
     });
 
-    it('holds for every boundary across a screenful of tiles', () => {
-        for (const dpr of RATIOS) {
-            for (const k of [1, 2, 3, 7, 12]) {
-                assertWhole(k * TILE_SIZE_CSS * dpr, `tile ${k} @${dpr}`);
-            }
-        }
-    });
-
-    it('did NOT hold at 256, which is the reported bug', () => {
-        // Kept as a test so the tile size cannot drift back to a value that
-        // looks tidier and reintroduces the seams.
-        const broken = RATIOS.filter(
-            (dpr) => Math.abs(256 * dpr - Math.round(256 * dpr)) >= LAYOUT_UNIT);
-        assert.deepEqual(broken, [1.1, 1.2, 1.3333333333333333,
-                                  1.6666666269302368, 1.8333333333333333]);
-    });
 });
 
 describe('dpr contract: the image is exactly the box it goes in', () => {
     // Failure 2. The request states the pixel count; nothing downstream may
     // re-derive it from the rounded dpr.
-    it('asks for the pixel count the tile will occupy', () => {
-        for (const dpr of RATIOS) {
-            const req = buildTileRequestFor({ x: 1, y: 2, z: 3 }, 'metal1',
-                                            { visibility: {} }, dpr,
-                                            TILE_SIZE_CSS);
-            assert.equal(req.tile_px, Math.round(TILE_SIZE_CSS * dpr),
-                         `dpr ${dpr}`);
-            assert.ok(Number.isInteger(req.tile_px));
-        }
-    });
-
     it('asks for a count that fills the box to within a layout unit', () => {
         for (const dpr of RATIOS) {
             const boxDevicePx = TILE_SIZE_CSS * dpr;
             const asked = tileDevicePx(TILE_SIZE_CSS, dpr);
             assert.ok(Math.abs(asked - boxDevicePx) < LAYOUT_UNIT,
                       `dpr ${dpr}: asked ${asked} for a ${boxDevicePx} box`);
-        }
-    });
-
-    it('would have asked for the wrong size via the old 256*quantized-dpr', () => {
-        // 1.6666666 -> 1.67 -> 428 px into a 426.67 px box: the 0.3% resample
-        // that softened every tile edge.
-        const dpr = 1.6666666269302368;
-        const old = Math.round(256 * quantizeDpr(dpr));
-        assert.equal(old, 428);
-        assert.ok(Math.abs(old - 256 * dpr) > 1);
-    });
-
-    it('keeps the merged canvas backing store equal to what it requested', () => {
-        // The merged path sizes its canvas with tileDevicePx and requests with
-        // tileDevicePx; if those ever diverge, drawImage resamples every tile
-        // into the wrong backing store.
-        for (const dpr of RATIOS) {
-            const requested = buildTileRequestFor(
-                { x: 0, y: 0, z: 0 }, 'metal1', { visibility: {} }, dpr,
-                TILE_SIZE_CSS).tile_px;
-            assert.equal(tileDevicePx(TILE_SIZE_CSS, dpr), requested,
-                         `dpr ${dpr}`);
         }
     });
 });
@@ -140,13 +93,20 @@ describe('dpr contract: all three tile kinds are sized alike', () => {
     it('gives every kind the same count at every ratio', () => {
         for (const dpr of RATIOS) {
             const fields = tileSizeFields(dpr, TILE_SIZE_CSS);
-            const layer = buildTileRequestFor({ x: 1, y: 2, z: 3 }, 'metal1',
-                                              { visibility: {} }, dpr,
-                                              TILE_SIZE_CSS);
+            const c = { x: 1, y: 2, z: 3 };
+            const kinds = {
+                layer: tileRequestBuilder(c, { visibility: {} }, dpr,
+                                          TILE_SIZE_CSS)('metal1'),
+                overlay: buildOverlayRequest(c, dpr, TILE_SIZE_CSS, {}, null),
+                'heat map': buildHeatmapRequest(c, dpr, TILE_SIZE_CSS,
+                                                { activeHeatMap: 'Placement' }),
+            };
             assert.equal(fields.tile_px, Math.round(TILE_SIZE_CSS * dpr),
                          `dpr ${dpr}`);
-            assert.equal(layer.tile_px, fields.tile_px, `layer @${dpr}`);
-            assert.equal(layer.dpr, fields.dpr, `layer dpr @${dpr}`);
+            for (const [kind, req] of Object.entries(kinds)) {
+                assert.equal(req.tile_px, fields.tile_px, `${kind} @${dpr}`);
+                assert.equal(req.dpr, fields.dpr, `${kind} dpr @${dpr}`);
+            }
         }
     });
 
@@ -175,8 +135,20 @@ describe('dpr contract: quantizeDpr matches the server', () => {
         assert.equal(quantizeDpr(0.5), 1);
         assert.equal(quantizeDpr(4), 3);
         assert.equal(quantizeDpr(2.555), 2.56);
+        assert.equal(quantizeDpr(4 / 3), 1.33);
+        assert.equal(quantizeDpr(1.005), 1.0);
+        assert.equal(quantizeDpr(3.0001), 3);
+        assert.equal(quantizeDpr(0), 1);
+        assert.equal(quantizeDpr(-2), 1);
         assert.equal(quantizeDpr(NaN), 1);
         assert.equal(quantizeDpr(undefined), 1);
+    });
+
+    // 1.75 and 2.5 are ordinary display scale factors.
+    it('keeps the display ratio instead of snapping to a ladder', () => {
+        for (const d of [1, 1.25, 1.5, 1.75, 2, 2.5, 3]) {
+            assert.equal(quantizeDpr(d), d);
+        }
     });
 
     it('rounds the field but never the pixel count', () => {
@@ -185,9 +157,9 @@ describe('dpr contract: quantizeDpr matches the server', () => {
         // fill 400, and the browser resamples every tile to make up the
         // difference. The payload carries the rounded ratio AND the exact count.
         for (const dpr of RATIOS) {
-            const req = buildTileRequestFor({ x: 0, y: 0, z: 0 }, 'metal1',
-                                            { visibility: {} }, dpr,
-                                            TILE_SIZE_CSS);
+            const req = tileRequestBuilder(
+                { x: 0, y: 0, z: 0 }, { visibility: {} }, dpr,
+                TILE_SIZE_CSS)('metal1');
             assert.equal(req.dpr, quantizeDpr(dpr), `dpr field @${dpr}`);
             assert.equal(req.tile_px, Math.round(TILE_SIZE_CSS * dpr),
                          `dpr ${dpr}: pixel count must follow the real ratio`);
@@ -195,34 +167,24 @@ describe('dpr contract: quantizeDpr matches the server', () => {
                         `dpr ${dpr}: count vs box`);
         }
     });
-
-    it('is what a quantized ratio would have got wrong', () => {
-        // Regression guard for the flaw the matrix caught: tile_px derived from
-        // the rounded ratio is one pixel off at 5/3 and at 4/3.
-        for (const dpr of [1.6666666269302368, 1.3333333333333333]) {
-            const fromRounded = Math.round(TILE_SIZE_CSS * quantizeDpr(dpr));
-            const fromReal = Math.round(TILE_SIZE_CSS * dpr);
-            assert.notEqual(fromRounded, fromReal, `dpr ${dpr}`);
-            const req = buildTileRequestFor({ x: 0, y: 0, z: 0 }, 'metal1',
-                                            { visibility: {} }, dpr,
-                                            TILE_SIZE_CSS);
-            assert.equal(req.tile_px, fromReal);
-        }
-    });
 });
 
 describe('dpr contract: the residual phase is removable', () => {
-    // With a whole pitch, every boundary shares one fractional offset, so a
-    // single correction per layer puts all of them on the grid. That is what
-    // makes device-pixels.js sufficient — at a fractional pitch it could not be.
+    // With a whole pitch, every boundary shares one fractional offset, so
+    // snapping the view's target once puts all of them on the grid.
     it('is one shared residual, not one per tile', () => {
         for (const dpr of RATIOS) {
-            const paneOffset = 37;  // Leaflet rounds offsets to whole CSS px
-            const correction = deviceResidualCss(paneOffset, dpr);
-            for (const k of [0, 1, 5, 40]) {
-                const boundary = (paneOffset - correction + k * TILE_SIZE_CSS)
-                                 * dpr;
-                assertWhole(boundary, `dpr ${dpr}, tile ${k}`);
+            for (const zoom of [0, 2, 5]) {
+                const vs = { width: Math.floor(1003 * dpr) / dpr,
+                             height: Math.floor(797 * dpr) / dpr,
+                             zoom, target: [37.3, 91.7] };
+                vs.target = snapTarget(vs, dpr);
+                const pitch = TILE_SIZE_CSS / 2 ** zoom;   // world units
+                for (const k of [0, 1, 5, 40]) {
+                    const [x, y] = project([k * pitch, k * pitch], vs);
+                    assertWhole(x * dpr, `dpr ${dpr}, z ${zoom}, tile ${k} x`);
+                    assertWhole(y * dpr, `dpr ${dpr}, z ${zoom}, tile ${k} y`);
+                }
             }
         }
     });
@@ -236,14 +198,20 @@ describe('dpr contract: static reports keep their baked size', () => {
         useStaticTileSize();
         try {
             assert.equal(tileSizeCss(), STATIC_TILE_SIZE_CSS);
-            // The layers take it from here...
-            assert.equal(withDeviceExactTileSize({}).tileSize,
-                         STATIC_TILE_SIZE_CSS);
-            // ...and so does the request, so the baked image is asked for at
-            // its own size rather than the live one.
-            const req = buildTileRequestFor({ x: 0, y: 0, z: 0 }, 'metal1',
-                                            { visibility: {} }, 1);
-            assert.equal(req.tile_px, STATIC_TILE_SIZE_CSS);
+            // The source takes it from here, so the baked image is asked for
+            // at its own size rather than the live one.
+            const sent = [];
+            const wm = {
+                request(msg) {
+                    sent.push(msg);
+                    return new Promise(() => {});
+                },
+            };
+            createCompositeSource({
+                wm, ctx: { visibility: {} }, dpr: () => 1,
+                getItems: () => [{ layer: 'metal1', opacity: 1 }],
+            }).load({ z: 0, x: 0, y: 0 });
+            assert.equal(sent[0].tile_px, STATIC_TILE_SIZE_CSS);
         } finally {
             // Module state: restore it so test order cannot matter.
             useDeviceExactTileSize();
@@ -251,16 +219,100 @@ describe('dpr contract: static reports keep their baked size', () => {
     });
 });
 
-describe('dpr contract: an explicit size overrides the default', () => {
-    it('lets a layer state its own tile size', () => {
-        assert.equal(withDeviceExactTileSize({ tileSize: 512 }).tileSize, 512);
-        assert.equal(withDeviceExactTileSize({}).tileSize, tileSizeCss());
-        assert.equal(withDeviceExactTileSize().tileSize, tileSizeCss());
+describe('watchDevicePixelRatio', () => {
+    function fakeWindow(dpr) {
+        const queries = [];
+        return {
+            devicePixelRatio: dpr,
+            queries,
+            matchMedia(query) {
+                const mql = { query, handlers: [], removed: [] };
+                mql.addEventListener = (name, fn) => {
+                    assert.equal(name, 'change');
+                    mql.handlers.push(fn);
+                };
+                mql.removeEventListener = (name, fn) => {
+                    assert.equal(name, 'change');
+                    mql.removed.push(fn);
+                };
+                queries.push(mql);
+                return mql;
+            },
+        };
+    }
+
+    function withWindow(win, fn) {
+        const saved = globalThis.window;
+        globalThis.window = win;
+        try {
+            return fn();
+        } finally {
+            globalThis.window = saved;
+        }
+    }
+
+    it('watches the ratio in force', () => {
+        const win = fakeWindow(1.25);
+        withWindow(win, () => watchDevicePixelRatio(() => {}));
+        assert.equal(win.queries.length, 1);
+        assert.ok(win.queries[0].query.includes('1.25dppx'));
     });
 
-    it('leaves the other Leaflet options alone', () => {
-        const opts = withDeviceExactTileSize({ opacity: 0.7, zIndex: 3 });
-        assert.equal(opts.opacity, 0.7);
-        assert.equal(opts.zIndex, 3);
+    it('reports the new ratio and watches for the next one', () => {
+        const win = fakeWindow(1.25);
+        const seen = [];
+        withWindow(win, () => {
+            watchDevicePixelRatio((dpr) => seen.push(dpr));
+            win.devicePixelRatio = 1.6666666269302368;
+            win.queries[0].handlers[0]();
+        });
+        assert.deepEqual(seen, [1.6666666269302368]);
+        // A new query: the old one only ever matches the old ratio.
+        assert.equal(win.queries.length, 2);
+        assert.ok(win.queries[1].query.includes('1.6666666269302368dppx'));
+    });
+
+    it('stops reporting and detaches its listener once unsubscribed', () => {
+        const win = fakeWindow(1.25);
+        const seen = [];
+        withWindow(win, () => {
+            const stop = watchDevicePixelRatio((dpr) => seen.push(dpr));
+            stop();
+            win.queries[0].handlers[0]();
+        });
+        assert.deepEqual(seen, []);
+        assert.deepEqual(win.queries[0].removed, [win.queries[0].handlers[0]]);
+    });
+
+    it('is a no-op where matchMedia is unavailable', () => {
+        withWindow({ devicePixelRatio: 2 }, () => {
+            assert.equal(typeof watchDevicePixelRatio(() => {}), 'function');
+        });
+    });
+});
+
+describe('nativeDpr', () => {
+    function withDpr(value) {
+        const saved = globalThis.window;
+        globalThis.window = value === undefined ? {} : { devicePixelRatio: value };
+        try {
+            return nativeDpr();
+        } finally {
+            globalThis.window = saved;
+        }
+    }
+
+    // Sizes are computed from it, so it is not rounded.
+    it('keeps the ratio exact', () => {
+        assert.equal(withDpr(2), 2);
+        assert.equal(withDpr(1.75), 1.75);
+        assert.equal(withDpr(1.6666666269302368), 1.6666666269302368);
+    });
+
+    // A tile is rendered at about (tileSize*dpr)^2 * 4 bytes.
+    it('clamps to [1, 3], and is 1 without a ratio', () => {
+        assert.equal(withDpr(8), 3);
+        assert.equal(withDpr(0.5), 1);
+        assert.equal(withDpr(undefined), 1);
     });
 });

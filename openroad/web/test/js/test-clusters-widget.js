@@ -50,12 +50,11 @@ function createMockApp({ ...overrides } = {}) {
             },
         },
         designScale: 1,
-        designMaxDXDY: 1000,
         designOriginX: 0,
         designOriginY: 0,
         showDbu: false,
         getDbuPerMicron() { return 1000; },
-        map: { fitBounds(bounds) { app.fitted = bounds; } },
+        view: { fitWorldRect(rect) { app.fitted = rect; } },
         ...overrides,
     };
     return app;
@@ -369,7 +368,7 @@ describe('ClustersWidget', () => {
            await widget.update();
 
            widget._zoomToNode(widget._nodeMap.get(3));
-           assert.ok(app.fitted, 'fitBounds called for a real bbox');
+           assert.ok(app.fitted, 'fitWorldRect called for a real bbox');
 
            app.fitted = null;
            widget._zoomToNode({ bbox: [0, 0, 0, 0] });

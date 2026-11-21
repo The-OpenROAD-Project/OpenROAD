@@ -18,9 +18,8 @@
 // send rate to the server's actual response rate.
 //
 // The effective limit is announced by the server on connect (a {type:"config",
-// max_in_flight} push, scaled to the machine size) so it isn't a magic client
-// constant and can grow if the server becomes multi-threaded. This is only the
-// fallback used until that message arrives.
+// max_in_flight} push, scaled to the server's threads) so it isn't a magic
+// client constant. This is only the fallback used until that message arrives.
 const DEFAULT_MAX_IN_FLIGHT = 48;
 // Hard backpressure cap: don't push more while this much is still unsent. With
 // the in-flight cap this should rarely bind.
@@ -62,6 +61,12 @@ export class WebSocketManager {
         // Requests waiting for an in-flight slot (insertion-ordered = FIFO).
         // Not yet on the wire, so cancel() can drop them for free.
         this._queue = new Map(); // id -> {msg, resolve, reject}
+        // Background requests (tiles prefetched around the view): sent only
+        // while _queue is empty, and left out of pendingCount.
+        this._bgQueue = new Map();
+        // Background requests sent and still awaited, which pendingCount
+        // leaves out.
+        this._bgSent = new Set();
         // Requests sent but not yet answered by the server (the real wire
         // window). Incremented on send, decremented when a reply for that sent
         // id arrives — even a stale one for a cancelled request.
@@ -94,7 +99,15 @@ export class WebSocketManager {
     // Total requests the user is still waiting on: those on the wire plus those
     // held back by the scheduler and not yet dispatched.
     get pendingCount() {
-        return this.pending.size + (this._queue ? this._queue.size : 0);
+        return this.pending.size - this._bgSent.size
+            + (this._queue ? this._queue.size : 0);
+    }
+
+    // Next up is background work and the window is already half full: the
+    // other half is kept for tiles needed on screen.
+    _bgFull() {
+        return this._queue.size === 0
+            && this._inFlight >= Math.max(1, Math.floor(this._maxInFlight / 2));
     }
 
     // Create a cache-backed instance (no WebSocket connection).
@@ -105,6 +118,8 @@ export class WebSocketManager {
         mgr.nextId = 1;
         mgr.pending = new Map();
         mgr._queue = new Map(); // unused in cache mode, but keeps cancel() safe
+        mgr._bgQueue = new Map();
+        mgr._bgSent = new Set();
         mgr._inFlight = 0;
         mgr._inFlightIds = new Set();
         mgr._unknownPayloadTypes = new Set();
@@ -176,12 +191,15 @@ export class WebSocketManager {
             handler.reject(new Error('WebSocket closed'));
         }
         this.pending.clear();
+        this._bgSent.clear();
         // Drop anything still queued — it never reached the wire. Reject so
-        // callers settle; tile callers .catch() and re-request on reconnect.
-        for (const [id, entry] of this._queue) {
-            entry.reject(new Error('WebSocket closed'));
+        // callers settle; the server's refresh push redraws on reconnect.
+        for (const queue of [this._queue, this._bgQueue]) {
+            for (const [id, entry] of queue) {
+                entry.reject(new Error('WebSocket closed'));
+            }
+            queue.clear();
         }
-        this._queue.clear();
         if (this._shutdown) {
             console.log('WebSocket closed (server stopped)');
             this._stopLivenessMonitor(); // no socket will reopen
@@ -276,7 +294,7 @@ export class WebSocketManager {
                 console.error('Failed to parse server push JSON:', e);
                 return;
             }
-            // The server announces the in-flight window sized to its machine.
+            // The server announces the in-flight window, from its thread count.
             // Consume it here rather than forwarding to onPush.
             if (msg && msg.type === 'config') {
                 if (Number.isFinite(msg.max_in_flight)) {
@@ -299,6 +317,7 @@ export class WebSocketManager {
         if (this._inFlightIds.delete(id) && this._inFlight > 0) {
             this._inFlight--;
         }
+        this._bgSent.delete(id);
 
         const handler = this.pending.get(id);
         if (!handler) {
@@ -328,8 +347,8 @@ export class WebSocketManager {
             // tile consumer already treats a null payload as "draw nothing".
             handler.resolve(null);
         } else {
-            // An unrecognised payload type must still settle the promise, or
-            // the tile it belongs to hangs unresolved forever and Leaflet
+            // An unrecognized payload type must still settle the promise, or
+            // the tile it belongs to hangs unresolved forever and the view
             // never reveals it. A server newer than this client lands here.
             //
             // Rejected rather than resolved with null: only type 3 carries
@@ -353,7 +372,7 @@ export class WebSocketManager {
         }
     }
 
-    request(msg) {
+    request(msg, { background = false } = {}) {
         if (this._cache) {
             return this._cacheRequest(msg);
         }
@@ -373,7 +392,8 @@ export class WebSocketManager {
         promise.requestId = id;
         // Enqueue rather than send directly; _pump() releases it onto the wire
         // once an in-flight slot is available. While queued it is cancellable.
-        this._queue.set(id, { msg, resolve: resolveFn, reject: rejectFn });
+        (background ? this._bgQueue : this._queue)
+            .set(id, { msg, resolve: resolveFn, reject: rejectFn });
         this._pump();
         return promise;
     }
@@ -386,14 +406,22 @@ export class WebSocketManager {
             return;
         }
         while (this._inFlight < this._maxInFlight
-               && this._queue.size > 0
+               && (this._queue.size > 0 || this._bgQueue.size > 0)
                && this.socket.bufferedAmount < MAX_BUFFERED_BYTES) {
-            const [id, entry] = this._queue.entries().next().value;
-            this._queue.delete(id);
+            const background = this._queue.size === 0;
+            if (this._bgFull()) {
+                break;
+            }
+            const queue = background ? this._bgQueue : this._queue;
+            const [id, entry] = queue.entries().next().value;
+            queue.delete(id);
             this.pending.set(id, {
                 resolve: entry.resolve,
                 reject: entry.reject,
             });
+            if (background) {
+                this._bgSent.add(id);
+            }
             this.socket.send(JSON.stringify(entry.msg));
             this._inFlightIds.add(id);
             this._inFlight++;
@@ -401,33 +429,40 @@ export class WebSocketManager {
         this.onStatusChange();
     }
 
+    // A background request that is now needed on screen moves to the back of
+    // the foreground queue, or, if already sent, counts as pending again.
+    promote(id) {
+        const entry = this._bgQueue.get(id);
+        if (entry) {
+            this._bgQueue.delete(id);
+            this._queue.set(id, entry);
+            this._pump();
+        } else if (this._bgSent.delete(id)) {
+            this.onStatusChange();
+        }
+    }
+
     cancel(id) {
         // If still queued it never hit the wire — drop it for free (no server
         // work, no buffered bytes). This is the cancellation that actually
         // matters; cancelling an already-sent request can't recall the bytes.
         // Settle the promise so callers don't leak a forever-pending request.
-        const queued = this._queue.get(id);
+        const queued = this._queue.get(id) || this._bgQueue.get(id);
         if (queued) {
             this._queue.delete(id);
+            this._bgQueue.delete(id);
             queued.reject(new Error('Request cancelled'));
             this.onStatusChange();
             return;
         }
-        
-        // Already sent: stop tracking the reply, but do NOT free the wire slot
-        // or pump — the server still has to process those bytes, and the slot
-        // frees only when its (now stale) reply arrives. Freeing it here would
-        // let cancellation churn re-flood the socket.
-        //
-        // The promise is rejected as well, for the same reason as the queued
-        // branch: dropping the handler without settling leaves the caller
-        // awaiting forever, and a caller with a `finally` never runs it. The
-        // merged tile layer frees its decoded ImageBitmaps there, so a silent
-        // drop here means every pruned or refreshed tile keeps its decodes
-        // alive — the unbounded decoded-image growth the merge exists to bound.
-        // The stale reply is still ignored: the handler is gone from `pending`.
+
+        // Already sent: stop tracking the reply, but keep the wire slot until
+        // the stale reply arrives, or cancellation churn would re-flood the
+        // socket.  The promise is rejected, so a caller's `finally` (where
+        // renderMergedTile frees its decodes) still runs.
         const sent = this.pending.get(id);
         const had = this.pending.delete(id);
+        this._bgSent.delete(id);
         if (sent) {
             sent.reject(new Error('Request cancelled'));
         }
@@ -500,14 +535,17 @@ export class WebSocketManager {
         this._lastBuffered = buf;
 
         // Signature 2: saturated with work queued, yet silent for DEAD_MS.
+        // Background work alone saturates at its share of the window.
+        const saturated = this._inFlight >= this._maxInFlight || this._bgFull();
         if (!wedged
-            && this._inFlight >= this._maxInFlight
-            && this._queue.size > 0
+            && saturated
+            && this._queue.size + this._bgQueue.size > 0
             && this._lastRecvAt > 0
             && now - this._lastRecvAt > DEAD_MS) {
             wedged = true;
-            why = `saturated (${this._inFlight} in flight, ${this._queue.size} `
-                + `queued) but silent for ${Math.round(now - this._lastRecvAt)}ms`;
+            why = `saturated (${this._inFlight} in flight, `
+                + `${this._queue.size + this._bgQueue.size} queued) but silent `
+                + `for ${Math.round(now - this._lastRecvAt)}ms`;
         }
 
         if (wedged) {
@@ -530,10 +568,8 @@ export class WebSocketManager {
             const key = (msg.chiplet ? msg.chiplet + '|' : '') + msg.layer
                         + '/' + msg.z + '/' + msg.x + '/' + msg.y;
             const b64 = this._cache.tiles && this._cache.tiles[key];
-            if (b64) {
-                return Promise.resolve('data:image/png;base64,' + b64);
-            }
-            return Promise.reject(new Error('Tile not cached: ' + key));
+            // The report saves only tiles with content: a missing one is empty.
+            return Promise.resolve(b64 ? 'data:image/png;base64,' + b64 : null);
         }
 
         // Timing highlight — drive the overlay image.

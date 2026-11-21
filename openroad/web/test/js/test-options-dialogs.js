@@ -40,7 +40,7 @@ describe('clampArrowStep', () => {
         assert.equal(clampArrowStep(99999), kArrowStepMax);
     });
 
-    // A NaN would reach Leaflet's keyboardPanDelta and leave the arrow keys
+    // A NaN would reach the view's arrow-key pan and leave the arrow keys
     // doing nothing at all, which is worse than ignoring a bad cookie.
     it('falls back to the default for unparseable input', () => {
         assert.equal(clampArrowStep(undefined), kArrowStepDefault);
