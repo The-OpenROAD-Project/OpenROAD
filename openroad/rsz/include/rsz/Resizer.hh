@@ -1031,6 +1031,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       bool accept_if_slack_improves);
   bool canRemoveBuffer(sta::Instance* buffer,
                        bool honor_dont_touch_fixed = true);
+  bool hasSdcConstraintBlockingRemoval(sta::Instance* inst);
   bool removeBuffer(sta::Instance* buffer, bool honor_dont_touch_fixed = true);
   // Whether removeBuffer() keeps the output net of buffer and moves the pins
   // of its input net onto it, instead of the other way round.
