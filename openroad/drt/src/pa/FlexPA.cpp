@@ -164,16 +164,22 @@ void FlexPA::updateDirtyInsts()
     unique_inst_patterns_[unique_class]
         = std::vector<std::unique_ptr<FlexPinAccessPattern>>();
   }
+  ThreadException unique_class_exception;
 #pragma omp parallel for schedule(dynamic)
   for (auto& unique_class : dirty_unique_classes_vec) {
-    initSkipInstTerm(unique_class);
-    auto candidate_inst = unique_class->getFirstInst();
-    genInstAccessPoints(candidate_inst);
-    revertAccessPoints(candidate_inst);
-    if (isStdCell(candidate_inst)) {
-      prepPatternInst(candidate_inst);
+    try {
+      initSkipInstTerm(unique_class);
+      auto candidate_inst = unique_class->getFirstInst();
+      genInstAccessPoints(candidate_inst);
+      revertAccessPoints(candidate_inst);
+      if (isStdCell(candidate_inst)) {
+        prepPatternInst(candidate_inst);
+      }
+    } catch (...) {
+      unique_class_exception.capture();
     }
   }
+  unique_class_exception.rethrow();
   for (auto& inst : dirty_insts_) {
     addToInstsSet(inst);
   }
