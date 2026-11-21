@@ -31,8 +31,8 @@ importers:
         specifier: 1.0.2
         version: 1.0.2
       three:
-        specifier: 0.160.0
-        version: 0.160.0
+        specifier: 0.187.0
+        version: 0.187.0
 
 packages:
 
@@ -81,8 +81,8 @@ packages:
     resolution: {integrity: sha512-42tBVwLWnaQvW5zc4HbZrTuWccECCZfBi92FDuwtqxasH+JbPB3/FOKb1m222K42R4WxuxzzMsTswfzgtSu64Q==}
     engines: {node: '>=11.0.0'}
 
-  three@0.160.0:
-    resolution: {integrity: sha512-DLU8lc0zNIPkM7rH5/e1Ks1Z8tWCGRq6g8mPowdDJpw1CFBJMU7UoJjC6PefXW7z//SSl0b2+GCw14LB+uDhng==}
+  three@0.187.0:
+    resolution: {integrity: sha512-Qiu7R+Cmh8CstZsY1uJOSWnVlfo7ZtNLV7mF8Jltk3LB3AtDu9cRZlcnRKkAk8Y4z6KKw35z7Y7Urd7jWY8etA==}
 
 snapshots:
 
@@ -133,4 +133,4 @@ snapshots:
 
   sax@1.6.1: {}
 
-  three@0.160.0: {}
+  three@0.187.0: {}
