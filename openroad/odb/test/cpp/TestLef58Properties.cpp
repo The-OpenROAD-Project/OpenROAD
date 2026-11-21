@@ -907,4 +907,22 @@ TEST_F(Fixture, TestImplantMinWidthFromWidth)
   EXPECT_EQ(layer->getSpacing(), 1.5 * 1000);
 }
 
+TEST_F(Fixture, TestLef58MinStepImplant)
+{
+  loadTechAndLib("tech",
+                 "lef58_implant_rules.lef",
+                 prefix + "data/lef58_implant_rules.lef");
+  EXPECT_EQ(logger_.getWarningCount(), 0);
+
+  dbTechLayer* layer = db_->getTech()->findLayer("IMP1");
+  ASSERT_NE(layer, nullptr);
+
+  auto min_step_rules = layer->getTechLayerMinStepRules();
+  ASSERT_EQ(min_step_rules.size(), 1);
+  dbTechLayerMinStepRule* r = *min_step_rules.begin();
+  EXPECT_EQ(r->getMinStepLength(), 4.8 * 1000);
+  EXPECT_TRUE(r->isMinAdjLength1Valid());
+  EXPECT_EQ(r->getMinAdjLength1(), 2.4 * 1000);
+}
+
 }  // namespace odb

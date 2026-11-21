@@ -45,7 +45,7 @@ class lefTechLayerMinStepParser
   bool parse(const std::string&, dbTechLayer*, lefinReader*);
 
  private:
-  odb::dbTechLayerMinStepRule* curRule;
+  odb::dbTechLayerMinStepRule* curRule{nullptr};
   void createSubRule(odb::dbTechLayer* layer);
   void setMinAdjacentLength1(double length, odb::lefinReader* l);
   void setMinAdjacentLength2(double length, odb::lefinReader* l);
@@ -111,7 +111,7 @@ class lefTechLayerCutClassParser
 class lefTechLayerCutSpacingParser
 {
  public:
-  odb::dbTechLayerCutSpacingRule* curRule;
+  odb::dbTechLayerCutSpacingRule* curRule{nullptr};
   bool parse(const std::string&,
              dbTechLayer*,
              lefinReader*,
