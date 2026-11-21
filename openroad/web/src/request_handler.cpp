@@ -661,6 +661,19 @@ bool launchesThroughBrowserEnv(const BrowserEnv& env)
          && env.browser.ends_with("/helpers/browser.sh");
 }
 
+std::vector<std::string> browserLaunchCommand(const BrowserEnv& env,
+                                              const std::string& url)
+{
+  if (launchesThroughBrowserEnv(env)) {
+    return {env.browser, url};
+  }
+#ifdef __APPLE__
+  return {"open", url};
+#else
+  return {"xdg-open", url};
+#endif
+}
+
 LaunchSkip browserLaunchSkipReason(const BrowserLaunch mode,
                                    const BrowserEnv& env)
 {

@@ -115,6 +115,11 @@ std::string localDisplaySocket(std::string_view display);
 // the editor runs.
 bool launchesThroughBrowserEnv(const BrowserEnv& env);
 
+// The argv that opens `url`: VS Code's $BROWSER helper when
+// launchesThroughBrowserEnv(), else open (macOS) or xdg-open.
+std::vector<std::string> browserLaunchCommand(const BrowserEnv& env,
+                                              const std::string& url);
+
 // Why serve() is not launching a browser, so the message can say it without
 // restating the policy.
 enum class LaunchSkip

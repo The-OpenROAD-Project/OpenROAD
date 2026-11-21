@@ -51,6 +51,7 @@
 #include "boost/beast/websocket.hpp"
 #include "boost/json/object.hpp"
 #include "boost/json/serialize.hpp"
+#include "browser_launcher.h"
 #include "clock_tree_report.h"
 #include "odb/geom.h"
 #include "request_handler.h"
@@ -168,37 +169,15 @@ std::string thisHostName()
 }
 
 // Hand `launch_url` to a browser; false when the launcher reports failure.
+// What the launcher writes to stderr goes to `errfile`.
 bool launchBrowser(utl::Logger* logger,
                    const std::string& launch_url,
                    const std::string& errfile,
-                   const bool through_browser_env)
+                   const BrowserEnv& env)
 {
-  std::string open_cmd;
-  if (through_browser_env) {
-    // The shell expands $BROWSER; its value never enters this string.
-    open_cmd = "\"$BROWSER\" '" + launch_url + "' < /dev/null > /dev/null 2> "
-               + errfile;
-  } else {
-#if defined(__APPLE__)
-    open_cmd = "open '" + launch_url + "' > /dev/null 2> " + errfile;
-#elif defined(_WIN32)
-    open_cmd = "start " + launch_url + " > nul 2> " + errfile;
-#else
-    // `setsid -f` forks the launcher into a new session, severing the
-    // SIGHUP cascade from openroad's controlling pty.  Without this,
-    // running openroad from inside an emacs shell-mode buffer kills
-    // the browser tab as soon as openroad exits, because emacs holds
-    // the pty master and SIGHUPs every process in the session.  Also
-    // redirect stdin from /dev/null so xdg-open never blocks on input
-    // inherited from the pty.
-    // `setsid -w` waits for xdg-open to finish end so the return code
-    // can be forwarded to setsid
-    open_cmd = "setsid -f -w xdg-open '" + launch_url
-               + "' < /dev/null > /dev/null 2> " + errfile;
-#endif
-  }
-  const int ret = std::system(open_cmd.c_str());
-  if (ret == 0) {
+  const std::string failure
+      = runBrowserLauncher(browserLaunchCommand(env, launch_url), errfile);
+  if (failure.empty()) {
     return true;
   }
   std::string errout;
@@ -213,9 +192,8 @@ bool launchBrowser(utl::Logger* logger,
   }
   logger->warn(utl::WEB,
                3,
-               "Could not launch default browser (shell error {}){}\n"
-               "Open the url above.",
-               ret,
+               "Could not launch a browser ({}){}\nOpen the url above.",
+               failure,
                errout);
   return false;
 }
@@ -725,10 +703,7 @@ void WebServer::serve(int port,
                         ? "\nPass -browser (-web_browser) to launch one anyway."
                         : "");
       auth->revokeTicket();
-    } else if (!launchBrowser(logger_,
-                              launch_url,
-                              errfile,
-                              launchesThroughBrowserEnv(env))) {
+    } else if (!launchBrowser(logger_, launch_url, errfile, env)) {
       auth->revokeTicket();
     }
     if (fd != -1) {
