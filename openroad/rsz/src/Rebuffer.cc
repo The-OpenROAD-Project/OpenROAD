@@ -601,7 +601,7 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
     // allowed driver cell, less the same relaxation; the smallest area meeting
     // it still wins.
     const DriverChoices choices = driverChoices(current_cell, timing_tree);
-    // Evaluated lazily, after addTreesPlannedForDrivers() completes `trees`.
+    // Evaluated lazily, after addTreesPlannedForBestDriver() completes `trees`.
     TreeDriverEvaluation eval(trees);
     FixedDelay target = slack_target;
     if (slack_target < FixedDelay::ZERO) {
@@ -609,12 +609,12 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
           = slackAtDriverPin(timing_tree) - slack_target;
       {
         utl::DebugScopedTimer plan_timer(size_plan_runtime_);
-        addTreesPlannedForDrivers(unbuffered_tree,
-                                  timing_tree,
-                                  current_cell,
-                                  choices,
-                                  relaxation,
-                                  trees);
+        addTreesPlannedForBestDriver(unbuffered_tree,
+                                     timing_tree,
+                                     current_cell,
+                                     choices,
+                                     relaxation,
+                                     trees);
       }
       target = std::max(
           slack_target,
@@ -638,14 +638,17 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
   return chosen;
 }
 
-void Rebuffer::addTreesPlannedForDrivers(const BnetPtr& unbuffered_tree,
-                                         const BnetPtr& timing_tree,
-                                         sta::LibertyCell* current_cell,
-                                         const DriverChoices& choices,
-                                         const FixedDelay relaxation,
-                                         std::vector<BnetPtr>& trees)
+void Rebuffer::addTreesPlannedForBestDriver(const BnetPtr& unbuffered_tree,
+                                            const BnetPtr& timing_tree,
+                                            sta::LibertyCell* current_cell,
+                                            const DriverChoices& choices,
+                                            const FixedDelay relaxation,
+                                            std::vector<BnetPtr>& trees)
 {
-  const FixedDelay current_slack = slackAtDriverPin(timing_tree);
+  // Planning costs a full rebuffer per cell, and planning for more than the
+  // fastest cell gained no slack on the designs measured.
+  sta::LibertyCell* best_cell = nullptr;
+  FixedDelay best_slack = slackAtDriverPin(timing_tree);
   for (sta::LibertyCell* cell : choices.cells) {
     if (cell == current_cell) {
       continue;
@@ -657,20 +660,24 @@ void Rebuffer::addTreesPlannedForDrivers(const BnetPtr& unbuffered_tree,
         continue;
       }
     }
-    // Only plan for cells that speed up the current timing tree.
+    // Only plan for a cell that speeds up the current timing tree.
     const std::optional<FixedDelay> slack
         = slackWithDriverCell(timing_tree, cell);
-    if (!slack || *slack <= current_slack) {
-      continue;
+    if (slack && *slack > best_slack) {
+      best_slack = *slack;
+      best_cell = cell;
     }
-    const auto [planned_timing, planned_area]
-        = planForDriverCell(unbuffered_tree, cell, relaxation);
-    if (planned_timing) {
-      trees.push_back(planned_timing);
-    }
-    if (planned_area && planned_area != planned_timing) {
-      trees.push_back(planned_area);
-    }
+  }
+  if (best_cell == nullptr) {
+    return;
+  }
+  const auto [planned_timing, planned_area]
+      = planForDriverCell(unbuffered_tree, best_cell, relaxation);
+  if (planned_timing) {
+    trees.push_back(planned_timing);
+  }
+  if (planned_area && planned_area != planned_timing) {
+    trees.push_back(planned_area);
   }
 }
 
