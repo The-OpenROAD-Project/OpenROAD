@@ -81,6 +81,7 @@ class _dbMaster : public _dbObject
 
   // NON-PERSISTANT-MEMBERS
   dbBoxItr<8>* box_itr_;
+  dbBoxItr<8>* box_sub_via_itr_;
   dbPolygonItr* pbox_itr_;
   dbBoxItr<8>* pbox_box_itr_;
   dbMPinItr* mpin_itr_;
