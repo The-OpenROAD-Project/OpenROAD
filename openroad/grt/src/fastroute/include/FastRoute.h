@@ -652,11 +652,11 @@ class FastRouteCore
 
   // rsmt functions
   void copyStTree(int ind, const stt::Tree& rsmt);
-  void gen_brk_RSMT(bool congestionDriven,
-                    bool reRoute,
-                    bool genTree,
-                    bool newType,
-                    bool noADJ);
+  void gen_brk_RSMT(bool congestionDriven, bool reRoute, bool noADJ);
+  void buildFluteTree(int netID,
+                      bool congestionDriven,
+                      bool noADJ,
+                      stt::Tree& tree);
   void fluteNormal(int netID,
                    const std::vector<int>& x,
                    const std::vector<int>& y,
@@ -675,10 +675,13 @@ class FastRouteCore
   bool netCongestion(int netID);
 
   // route functions
-  // old functions for segment list data structure
-  void routeSegL(Segment* seg);
-  void routeLAll(bool firstTime);
-  // new functions for tree data structure
+  // Initial L routing estimates all nets before choosing any paths.
+  // These helpers and netCongestion() run before topology changes, on edges
+  // ordered by copyStTree() so that nodes[n1].x <= nodes[n2].x.
+  void initialRouteLAll();
+  void estimateOneEdge(int netID, const TreeEdge& treeedge);
+  void routeEdgeLFirstTime(int netID, TreeEdge& treeedge);
+
   void newrouteL(int netID, RouteType ripuptype, bool viaGuided);
   void newrouteZ(int netID, int threshold);
   void newrouteZ_edge(int netID, int edgeID);
@@ -687,10 +690,6 @@ class FastRouteCore
   void routeMonotonicAll(int threshold, int expand, float logis_cof);
   void spiralRouteAll();
   void newrouteLInMaze(int netID);
-  void estimateOneSeg(const Segment* seg);
-  void routeSegV(const Segment* seg);
-  void routeSegH(const Segment* seg);
-  void routeSegLFirstTime(Segment* seg);
   void spiralRoute(int netID, int edgeID);
   void routeMonotonic(int netID,
                       int edgeID,
@@ -700,7 +699,6 @@ class FastRouteCore
                       int enlarge);
 
   // ripup functions
-  void ripupSegL(const Segment* seg);
   void newRipup(const TreeEdge* treeedge,
                 int x1,
                 int y1,
@@ -992,7 +990,6 @@ class FastRouteCore
   std::vector<std::vector<int>> gys_;
   // the copy of vertical sequence for nets, used for second FLUTE
   std::vector<std::vector<int>> gs_;
-  std::vector<std::vector<Segment>> seglist_;  // indexed by netID, segID
   std::vector<OrderNetPin> tree_order_pv_;
   std::vector<OrderTree> tree_order_cong_;
 
