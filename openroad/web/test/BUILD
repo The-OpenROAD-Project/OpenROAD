@@ -76,6 +76,7 @@ py_test(
 test_suite(
     name = "cpp_tests",
     tests = [
+        ":browser_launcher_test",
         ":gif_test",
         ":heat_map_test",
         ":interconnect3d_test",
@@ -612,6 +613,26 @@ cc_test(
 )
 
 cc_test(
+    name = "timing_report_test",
+    srcs = ["cpp/TestTimingReport.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst:db_fixture",
+        "//openroad/tst:nangate45_fixture",
+        "//openroad/web",
+        "//openroad/web:core",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "charts_test",
     srcs = ["cpp/TestCharts.cpp"],
     data = [
@@ -640,6 +661,16 @@ cc_test(
         "//openroad/web:color",
         "//openroad/web:core",
         "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "browser_launcher_test",
+    srcs = ["cpp/TestBrowserLauncher.cpp"],
+    deps = [
+        "//openroad/web:browser_launcher",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
