@@ -3193,10 +3193,14 @@ void NesterovBase::spreadStackedGCells()
         = std::max(1, std::min(cells.front()->dDy(), region_dy / rows));
     const int grid_dx = cols * pitch_x;
     const int grid_dy = rows * pitch_y;
-    const int grid_lx
-        = std::clamp(center_x - grid_dx / 2, bg_.lx(), bg_.ux() - grid_dx);
-    const int grid_ly
-        = std::clamp(center_y - grid_dy / 2, bg_.ly(), bg_.uy() - grid_dy);
+    // A region narrower than one DBU per slot cannot hold the grid; it then
+    // starts at the region's lower edge.
+    const int grid_lx = std::clamp(center_x - grid_dx / 2,
+                                   bg_.lx(),
+                                   std::max(bg_.lx(), bg_.ux() - grid_dx));
+    const int grid_ly = std::clamp(center_y - grid_dy / 2,
+                                   bg_.ly(),
+                                   std::max(bg_.ly(), bg_.uy() - grid_dy));
 
     for (int i = 0; i < count; ++i) {
       GCell* gCell = cells[i];
