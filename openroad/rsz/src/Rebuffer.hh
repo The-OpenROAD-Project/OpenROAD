@@ -225,14 +225,14 @@ class Rebuffer : public sta::dbStaState
     sta::LibertyCellSeq cells;
     std::optional<float> leakage_budget;
   };
-  // Append to `trees` the trees planForDriverCell() builds for each of
-  // `choices` that speeds up `timing_tree`.
-  void addTreesPlannedForDrivers(const BufferedNetPtr& unbuffered_tree,
-                                 const BufferedNetPtr& timing_tree,
-                                 sta::LibertyCell* current_cell,
-                                 const DriverChoices& choices,
-                                 FixedDelay relaxation,
-                                 std::vector<BufferedNetPtr>& trees);
+  // Append to `trees` the trees planForDriverCell() builds for the one of
+  // `choices` that speeds up `timing_tree` the most, if any does.
+  void addTreesPlannedForBestDriver(const BufferedNetPtr& unbuffered_tree,
+                                    const BufferedNetPtr& timing_tree,
+                                    sta::LibertyCell* current_cell,
+                                    const DriverChoices& choices,
+                                    FixedDelay relaxation,
+                                    std::vector<BufferedNetPtr>& trees);
   DriverChoices driverChoices(sta::LibertyCell* current_cell,
                               const BufferedNetPtr& timing_tree);
   // Leakage of each buffer of `tree` in visit order; nullopt when a buffer
