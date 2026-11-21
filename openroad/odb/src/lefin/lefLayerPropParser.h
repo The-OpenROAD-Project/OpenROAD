@@ -392,7 +392,7 @@ class MaxSpacingParser
   void parse(const std::string&);
 
  private:
-  void setMaxSpacing(dbTechLayerMaxSpacingRule*, double);
+  bool parseSubRule(const std::string&);
   dbTechLayer* layer_;
   lefinReader* lefin_;
 };
@@ -438,5 +438,13 @@ class MinWidthParser
   dbTechLayer* layer_;
   lefinReader* lefin_;
 };
+
+template <typename Rule, typename Setter>
+auto dbdistSetter(Setter setter, Rule* rule, lefinReader* lefin)
+{
+  return [setter, rule, lefin](double val) {
+    (rule->*setter)(lefin->dbdist(val));
+  };
+}
 
 }  // namespace odb

@@ -10905,6 +10905,14 @@ class dbTechLayerMaxSpacingRule : public dbObject
 
   int getMaxSpacing() const;
 
+  void setWidth(int width);
+
+  int getWidth() const;
+
+  void setLength(int length);
+
+  int getLength() const;
+
   static dbTechLayerMaxSpacingRule* create(dbTechLayer* parent);
   static void destroy(dbTechLayerMaxSpacingRule* obj);
   // User Code Begin dbTechLayerMaxSpacingRule

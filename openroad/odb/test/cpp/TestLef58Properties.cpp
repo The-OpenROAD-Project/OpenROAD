@@ -958,4 +958,22 @@ TEST_F(Fixture, TestLef58CornerSpacingImplant)
   }
 }
 
+TEST_F(Fixture, TestLef58MaxSpacingImplant)
+{
+  loadTechAndLib("tech",
+                 "lef58_implant_rules.lef",
+                 prefix + "data/lef58_implant_rules.lef");
+  EXPECT_EQ(logger_.getWarningCount(), 0);
+
+  dbTechLayer* layer = db_->getTech()->findLayer("IMP1");
+  ASSERT_NE(layer, nullptr);
+
+  auto max_spc_rules = layer->getTechLayerMaxSpacingRules();
+  ASSERT_EQ(max_spc_rules.size(), 1);
+  dbTechLayerMaxSpacingRule* r = *max_spc_rules.begin();
+  EXPECT_EQ(r->getMaxSpacing(), 9.5 * 1000);
+  EXPECT_EQ(r->getWidth(), 4.2 * 1000);
+  EXPECT_EQ(r->getLength(), 3.1 * 1000);
+}
+
 }  // namespace odb

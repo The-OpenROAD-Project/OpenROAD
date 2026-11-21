@@ -814,6 +814,9 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
       } else if (!strcmp(layer->propName(iii), "LEF58_CORNERSPACING")) {
         valid = lefTechLayerCornerSpacingParser::parse(
             layer->propValue(iii), l, this);
+      } else if (!strcmp(layer->propName(iii), "LEF58_MAXSPACING")) {
+        MaxSpacingParser parser(l, this);
+        parser.parse(layer->propValue(iii));
       } else if (!strcmp(layer->propName(iii), "LEF58_MINSTEP")) {
         lefTechLayerMinStepParser minStepParser;
         valid = minStepParser.parse(layer->propValue(iii), l, this);
