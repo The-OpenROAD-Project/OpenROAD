@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <iostream>
 #include <limits>
@@ -97,6 +98,18 @@ void FlexPA::prepPatternInst(frInst* unique_inst)
                   "No valid pattern for unique instance {}, master is {}.",
                   unique_inst->getName(),
                   unique_inst->getMaster()->getName());
+    auto fallback_pattern = std::make_unique<FlexPinAccessPattern>();
+    for (auto& inst_term : unique_inst->getInstTerms()) {
+      if (isSkipInstTerm(inst_term.get())) {
+        continue;
+      }
+      for (size_t i = 0; i < inst_term->getTerm()->getPins().size(); i++) {
+        fallback_pattern->addAccessPoint(nullptr);
+      }
+    }
+    fallback_pattern->updateCost();
+    unique_inst_patterns_.at(unique_insts_.getUniqueClass(unique_inst))
+        .push_back(std::move(fallback_pattern));
   }
 }
 

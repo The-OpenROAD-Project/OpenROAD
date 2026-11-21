@@ -617,6 +617,7 @@ class frPathSeg : public frShape
     is_ap_pathseg_ = true;
     ap_loc_ = pt;
   }
+  void resetApPathSeg() { is_ap_pathseg_ = false; }
   bool isApPathSeg() const { return is_ap_pathseg_; }
   odb::Point getApLoc() const { return ap_loc_; }
 

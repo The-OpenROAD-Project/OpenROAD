@@ -50,7 +50,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(
   auto net = pathSeg->getNet();
   auto regionQuery = design->getRegionQuery();
   if (pathSeg->isApPathSeg()) {
-    if (getRouteBox().intersects(pathSeg->getApLoc())) {
+    if (isRouteApPathSeg(pathSeg)) {
       if (save_updates_) {
         drUpdate update(drUpdate::REMOVE_FROM_NET);
         update.setNet(net);
@@ -432,6 +432,7 @@ void FlexDRWorker::endAddNets_merge(
       std::unique_ptr<frShape> uShape
           = std::make_unique<frPathSeg>(*horzPathSegs[0]);
       auto rptr = static_cast<frPathSeg*>(uShape.get());
+      rptr->resetApPathSeg();
       auto [bp1, ep1] = horzPathSegs[0]->getPoints();
       auto [bp2, ep2] = horzPathSegs[1]->getPoints();
       odb::Point bp(std::min(bp1.x(), bp2.x()), bp1.y());
@@ -474,6 +475,7 @@ void FlexDRWorker::endAddNets_merge(
       std::unique_ptr<frShape> uShape
           = std::make_unique<frPathSeg>(*vertPathSegs[0]);
       auto rptr = static_cast<frPathSeg*>(uShape.get());
+      rptr->resetApPathSeg();
       auto [bp1, ep1] = vertPathSegs[0]->getPoints();
       auto [bp2, ep2] = vertPathSegs[1]->getPoints();
       odb::Point bp(bp1.x(), std::min(bp1.y(), bp2.y()));

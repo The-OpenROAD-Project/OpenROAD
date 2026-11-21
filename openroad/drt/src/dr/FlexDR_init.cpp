@@ -124,7 +124,10 @@ void FlexDRWorker::initNetObjs_pathSeg(
   const auto gridBBox = getRouteBox();
 
   if (pathSeg->isApPathSeg()) {
-    if (gridBBox.intersects(pathSeg->getApLoc())) {
+    const odb::Rect seg_box(begin, end);
+    if (isRouteApPathSeg(pathSeg)
+        || (isInitDR() ? gridBBox.overlaps(seg_box)
+                       : gridBBox.intersects(seg_box))) {
       netRouteObjs[net].push_back(std::make_unique<drPathSeg>(*pathSeg));
     } else {
       netExtObjs[net].push_back(std::make_unique<drPathSeg>(*pathSeg));
@@ -742,6 +745,11 @@ void FlexDRWorker::initNets_initDR(
         const auto [bp, ep] = ps->getPoints();
         const auto& box = getRouteBox();
         const bool onBorder = segOnBorder(box, bp, ep);
+        if (ps->isApPathSeg()) {
+          auto& objs = isRouteApPathSeg(ps) ? vRouteObjs : vExtObjs;
+          objs.push_back(std::move(netRouteObjs[net][i]));
+          continue;
+        }
         if (box.intersects(bp) && box.intersects(ep)
             && (!onBorder
                 || (style.getBeginStyle() == frcTruncateEndStyle
@@ -819,12 +827,16 @@ void FlexDRWorker::initNets_searchRepair_pin2epMap(
       const auto [bp, ep] = obj->getPoints();
       const auto lNum = obj->getLayerNum();
       const frSegStyle style = obj->getStyle();
-      if (getRouteBox().intersects(bp)
+      const bool is_ap = obj->isApPathSeg();
+      if (is_ap && !isRouteApPathSeg(obj)) {
+        continue;
+      }
+      if ((is_ap || getRouteBox().intersects(bp))
           && style.getBeginStyle() == frEndStyle(frcTruncateEndStyle)) {
         initNets_searchRepair_pin2epMap_helper(
             design, net, bp, lNum, pin2epMap);
       }
-      if (getRouteBox().intersects(ep)
+      if ((is_ap || getRouteBox().intersects(ep))
           && style.getEndStyle() == frEndStyle(frcTruncateEndStyle)) {
         initNets_searchRepair_pin2epMap_helper(
             design, net, ep, lNum, pin2epMap);
@@ -1122,7 +1134,8 @@ void FlexDRWorker::initNets_searchRepair(
           auto ps = static_cast<drPathSeg*>(obj.get());
           auto [bp, ep] = ps->getPoints();
           auto& box = getRouteBox();
-          if (box.intersects(bp) && box.intersects(ep)) {
+          if (ps->isApPathSeg() ? isRouteApPathSeg(ps)
+                                : (box.intersects(bp) && box.intersects(ep))) {
             vRouteObjs[subNetIdx].push_back(std::move(netRouteObjs[net][i]));
           } else {
             vExtObjs[subNetIdx].push_back(std::move(netRouteObjs[net][i]));
@@ -1344,6 +1357,20 @@ void FlexDRWorker::initNet_boundary(
         auto ps = static_cast<drPathSeg*>(obj.get());
         const auto [begin, end] = ps->getPoints();
         const frLayerNum lNum = ps->getLayerNum();
+        if (ps->isApPathSeg()) {
+          // boundary pin wherever an external AP stub crosses the route box
+          const odb::Rect seg(begin, end);
+          if (gridBBox.intersects(seg)) {
+            const odb::Rect clip = gridBBox.intersect(seg);
+            if (clip.ll() != begin) {
+              extBounds[{clip.ll(), lNum}] = currArea;
+            }
+            if (clip.ur() != end) {
+              extBounds[{clip.ur(), lNum}] = currArea;
+            }
+          }
+          continue;
+        }
         // vert pathseg
         if (begin.x() == end.x() && begin.x() >= gridBBox.xMin()
             && end.x() <= gridBBox.xMax()) {
@@ -3270,8 +3297,9 @@ void FlexDRWorker::initMarkers(const frDesign* design)
   for (auto mptr : result) {
     // check recheck  if true  then markers.clear(), set drWorker bit to check
     // drc at start
-    if (mptr->getConstraint()->typeId()
-        != frConstraintTypeEnum::frcRecheckConstraint) {
+    if (!mptr->getConstraint()
+        || mptr->getConstraint()->typeId()
+               != frConstraintTypeEnum::frcRecheckConstraint) {
       markers_.push_back(*mptr);
     } else {
       needRecheck_ = true;
