@@ -89,7 +89,6 @@ filegroup(
 man_tcl_check_test(
     name = "wmk_man_tcl_check",
     module = "wmk",
-    tags = [],
 )
 
 doc_check_test(
