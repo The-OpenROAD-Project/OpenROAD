@@ -187,6 +187,7 @@ void NesterovPlace::init()
   float totalBaseWireLengthCoeff = 0;
   for (auto& nb : nbVec_) {
     nb->setNpVars(&npVars_);
+    nb->spreadStackedGCells();
     nb->initDensity1();
     total_sum_overflow_ += nb->getSumOverflow();
     totalBaseWireLengthCoeff += nb->getBaseWireLengthCoef();

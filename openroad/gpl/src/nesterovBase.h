@@ -1212,6 +1212,13 @@ class NesterovBase
 
   BinGrid& getBinGrid() { return bg_; }
 
+  // Moves movable instances that start at exactly the same density center,
+  // after clamping into the region, apart onto a grid of distinct slots
+  // around that center. Such cells get identical forces when nothing else
+  // tells them apart (no nets, or the same nets), so they would otherwise
+  // never separate.
+  void spreadStackedGCells();
+
   // Nesterov Loop
   void initDensity1();
   float initDensity2(float wlCoeffX, float wlCoeffY);

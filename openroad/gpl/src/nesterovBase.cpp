@@ -13,6 +13,7 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <map>
 #include <memory>
 #include <optional>
 #include <string>
@@ -3139,6 +3140,65 @@ void NesterovBase::updateDensityFieldBin()
     sumPhi_ += electroPhi
                * static_cast<float>(bin.getNonPlaceArea() + bin.instPlacedArea()
                                     + bin.getFillerArea());
+  }
+}
+
+void NesterovBase::spreadStackedGCells()
+{
+  std::map<std::pair<int, int>, std::vector<GCell*>> stacks;
+  for (auto& handle : nb_gcells_) {
+    GCell* gCell = handle;
+    if (gCell->isInstance() && !gCell->isLocked()) {
+      updateDensityCoordiLayoutInside(gCell);
+      stacks[{gCell->dCx(), gCell->dCy()}].push_back(gCell);
+    }
+  }
+
+  int spread_count = 0;
+  for (const auto& [center, cells] : stacks) {
+    if (cells.size() < 2) {
+      continue;
+    }
+    spread_count += cells.size();
+
+    // A near-square grid of slots, one cell pitch apart, centered on the
+    // stack and shifted to fit the region; the pitch shrinks if the grid is
+    // wider or taller than the region.
+    const int count = cells.size();
+    const int cols = std::ceil(std::sqrt(count));
+    const int rows = (count + cols - 1) / cols;
+    int pitch_x = 0;
+    int pitch_y = 0;
+    for (const GCell* gCell : cells) {
+      pitch_x = std::max(pitch_x, gCell->dDx());
+      pitch_y = std::max(pitch_y, gCell->dDy());
+    }
+    const int region_dx = bg_.ux() - bg_.lx();
+    const int region_dy = bg_.uy() - bg_.ly();
+    pitch_x = std::max(1, std::min(pitch_x, region_dx / cols));
+    pitch_y = std::max(1, std::min(pitch_y, region_dy / rows));
+    const int grid_dx = cols * pitch_x;
+    const int grid_dy = rows * pitch_y;
+    const int grid_lx
+        = std::clamp(center.first - grid_dx / 2, bg_.lx(), bg_.ux() - grid_dx);
+    const int grid_ly
+        = std::clamp(center.second - grid_dy / 2, bg_.ly(), bg_.uy() - grid_dy);
+
+    for (int i = 0; i < count; ++i) {
+      GCell* gCell = cells[i];
+      gCell->setDensityCenterLocation(
+          grid_lx + (i % cols) * pitch_x + pitch_x / 2,
+          grid_ly + (i / cols) * pitch_y + pitch_y / 2);
+      updateDensityCoordiLayoutInside(gCell);
+    }
+  }
+
+  if (spread_count > 0) {
+    log_->info(GPL,
+               132,
+               "Spread {} movable instances that started at the same location "
+               "as another.",
+               spread_count);
   }
 }
 
