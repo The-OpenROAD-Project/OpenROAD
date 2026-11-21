@@ -1289,9 +1289,11 @@ bool Opendp::moveHopeless(const Node* cell, GridX& grid_x, GridY& grid_y) const
 
 void Opendp::initMacrosAndGrid()
 {
+  // Read the PDN-aware state before importDb() reassigns block_.
+  const bool pdn_aware = isPdnAwareForCurrentBlock();
   importDb();
   adjustNodesOrient();
-  initGrid();
+  initGrid(pdn_aware);
   setFixedGridCells();
 }
 
