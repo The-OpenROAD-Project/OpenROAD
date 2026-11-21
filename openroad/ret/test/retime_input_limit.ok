@@ -1,0 +1,8 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+worst slack max -0.0341
+[INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 2 pinned gates, 0 fenced registers.
+[INFO RET-0020] Worst register-to-register arrival 0.044 before retiming, clock period 1.000.
+[INFO RET-0016] Retime found no slides.
+[INFO RET-0019] 1 candidate moves were rejected because they would push an input path past the clock period.
+worst slack max -0.0341
+No differences found.

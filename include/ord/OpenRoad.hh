@@ -71,6 +71,10 @@ namespace exa {
 class Example;
 }
 
+namespace ret {
+class Retimer;
+}
+
 namespace fsv {
 class FieldSolver;
 }
@@ -183,6 +187,7 @@ class OpenRoad
   tap::Tapcell* getTapcell() { return tapcell_; }
   mpl::MacroPlacer* getMacroPlacer() { return macro_placer_; }
   exa::Example* getExample() { return example_; }
+  ret::Retimer* getRetimer() { return retimer_; }
   fsv::FieldSolver* getFieldSolver() { return field_solver_; }
   pex::Pex* getPex() { return pex_; }
   rcx::Ext* getOpenRCX() { return extractor_; }
@@ -291,6 +296,7 @@ class OpenRoad
   ram::RamGen* ram_gen_ = nullptr;
   mpl::MacroPlacer* macro_placer_ = nullptr;
   exa::Example* example_ = nullptr;
+  ret::Retimer* retimer_ = nullptr;
   fsv::FieldSolver* field_solver_ = nullptr;
   pex::Pex* pex_ = nullptr;
   grt::GlobalRouter* global_router_ = nullptr;

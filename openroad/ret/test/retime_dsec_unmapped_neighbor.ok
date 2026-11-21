@@ -1,0 +1,26 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
+worst slack max 4.3073
+[INFO RET-0014] Retiming graph: 8 gates, 6 edges, 4 registers, 6 pinned gates, 1 fenced registers.
+[INFO RET-0020] Worst register-to-register arrival 0.265 before retiming, clock period 5.000.
+
+ Slide |  Worst arr | Flops | Sinks | Max wr | gate                 | fanout net
+--------------------------------------------------------------------------------
+     1 |      0.150 |     3 |     1 |      1 | g2                   | n1
+     2 |      0.000 |     0 |     1 |      1 | g3                   | n2
+--------------------------------------------------------------------------------
+[INFO RET-0023] Worst register-to-register arrival 0.000 after 2 slides.
+[INFO RET-0008] Unmapped 1 registers.
+[INFO RET-0043] Iteration 2: repeating the search on the netlist with the unmapped registers.
+[INFO RET-0020] Worst register-to-register arrival 0.356 before retiming, clock period 5.000.
+
+ Slide |  Worst arr | Flops | Sinks | Max wr | gate                 | fanout net
+--------------------------------------------------------------------------------
+     1 |      0.332 |     1 |     1 |      1 | unmap_inv_3          | unmap_net_3
+     2 |      0.307 |     2 |     1 |      1 | unmap_and_2          | unmap_net_2
+--------------------------------------------------------------------------------
+[INFO RET-0023] Worst register-to-register arrival 0.307 after 2 slides.
+[INFO RET-0024] Rebuilt 4 of 11 register groups: 2 registers removed, 2 inserted, 0 of them keeping their class.
+worst slack max 4.3076
+Retime output passed/skipped sequential equivalence test
+No differences found.

@@ -181,6 +181,8 @@ OPENROAD_LIBRARY_DEPS = [
     "//openroad/ram",
     "//openroad/rcx",
     "//openroad/rcx:ui",
+    "//openroad/ret",
+    "//openroad/ret:ui",
     "//openroad/rmp",
     "//openroad/rmp:ui",
     "//openroad/rsz",

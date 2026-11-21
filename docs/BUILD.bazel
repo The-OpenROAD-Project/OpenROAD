@@ -77,6 +77,7 @@ man_pages(
         "//openroad/psm:README.md",
         "//openroad/ram:README.md",
         "//openroad/rcx:README.md",
+        "//openroad/ret:README.md",
         "//openroad/rmp:README.md",
         "//openroad/rsz:README.md",
         "//openroad/stt:README.md",

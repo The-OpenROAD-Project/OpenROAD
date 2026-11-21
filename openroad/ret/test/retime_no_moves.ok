@@ -1,0 +1,5 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO RET-0014] Retiming graph: 2 gates, 1 edges, 1 registers, 2 pinned gates, 0 fenced registers.
+[INFO RET-0020] Worst register-to-register arrival 0.000 before retiming, clock period 1.000.
+[INFO RET-0021] No register-to-register path to optimize.
+No differences found.

@@ -72,6 +72,8 @@
 #include "ram/ram.h"
 #include "rcx/MakeOpenRCX.h"
 #include "rcx/ext.h"
+#include "ret/MakeRet.h"
+#include "ret/Retimer.h"
 #include "rmp/MakeRestructure.h"
 #include "rmp/Restructure.h"
 #include "rsz/MakeResizer.hh"
@@ -137,6 +139,7 @@ OpenRoad::~OpenRoad()
   delete tapcell_;
   delete macro_placer_;
   delete example_;
+  delete retimer_;
   delete field_solver_;
   delete pex_;
   delete extractor_;
@@ -278,6 +281,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   icewall_ = new pad::ICeWall(db_, logger_);
   dft_ = new dft::Dft(db_, sta_, resizer_, logger_);
   example_ = new exa::Example(db_, logger_);
+  retimer_ = new ret::Retimer(db_, sta_, estimate_parasitics_, logger_);
   field_solver_ = new fsv::FieldSolver(db_, logger_);
   pex_ = new pex::Pex(db_, logger_);
   web_server_ = new web::WebServer(db_, sta_, logger_, tcl_interp);
@@ -310,6 +314,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   tap::initTapcell(tcl_interp);
   mpl::initMacroPlacer(tcl_interp);
   exa::initExample(tcl_interp);
+  ret::initRet(tcl_interp);
   fsv::initFieldSolver(tcl_interp);
   pex::initPex(tcl_interp);
   rcx::initOpenRCX(tcl_interp);

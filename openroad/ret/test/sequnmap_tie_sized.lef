@@ -1,0 +1,284 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+UNITS
+  DATABASE MICRONS 1000 ;
+END UNITS
+
+MANUFACTURINGGRID 0.005 ;
+
+LAYER met1
+  TYPE ROUTING ;
+  DIRECTION HORIZONTAL ;
+  PITCH 0.2 ;
+  WIDTH 0.1 ;
+END met1
+
+SITE core
+  CLASS CORE ;
+  SIZE 0.2 BY 1.0 ;
+END core
+
+MACRO INV
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.4 BY 1.0 ;
+  SITE core ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.45 0.15 0.55 ;
+    END
+  END A
+  PIN Y
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.25 0.45 0.35 0.55 ;
+    END
+  END Y
+END INV
+
+MACRO AND2
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.6 BY 1.0 ;
+  SITE core ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.25 0.15 0.35 ;
+    END
+  END A
+  PIN B
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.65 0.15 0.75 ;
+    END
+  END B
+  PIN Y
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.45 0.45 0.55 0.55 ;
+    END
+  END Y
+END AND2
+
+MACRO OR2
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.6 BY 1.0 ;
+  SITE core ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.25 0.15 0.35 ;
+    END
+  END A
+  PIN B
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.65 0.15 0.75 ;
+    END
+  END B
+  PIN Y
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.45 0.45 0.55 0.55 ;
+    END
+  END Y
+END OR2
+
+MACRO DFF_P
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 1.0 BY 1.0 ;
+  SITE core ;
+  PIN D
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.45 0.15 0.55 ;
+    END
+  END D
+  PIN CK
+    DIRECTION INPUT ;
+    USE CLOCK ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.05 0.15 0.15 ;
+    END
+  END CK
+  PIN Q
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.85 0.45 0.95 0.55 ;
+    END
+  END Q
+END DFF_P
+
+MACRO TIE1x2
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.4 BY 1.0 ;
+  SITE core ;
+  PIN Y
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.25 0.45 0.35 0.55 ;
+    END
+  END Y
+END TIE1x2
+
+MACRO TIE1x1
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.4 BY 1.0 ;
+  SITE core ;
+  PIN Y
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.25 0.45 0.35 0.55 ;
+    END
+  END Y
+END TIE1x1
+
+MACRO TIE0x2
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.4 BY 1.0 ;
+  SITE core ;
+  PIN Y
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.25 0.45 0.35 0.55 ;
+    END
+  END Y
+END TIE0x2
+
+MACRO TIE0x1
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.4 BY 1.0 ;
+  SITE core ;
+  PIN Y
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.25 0.45 0.35 0.55 ;
+    END
+  END Y
+END TIE0x1
+
+MACRO MULTIE
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.4 BY 1.0 ;
+  SITE core ;
+  PIN HI
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.25 0.45 0.35 0.55 ;
+    END
+  END HI
+  PIN LO
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.25 0.45 0.35 0.55 ;
+    END
+  END LO
+END MULTIE
+
+MACRO DFF_P_TIE0
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 1.0 BY 1.0 ;
+  SITE core ;
+  PIN D
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.45 0.15 0.55 ;
+    END
+  END D
+  PIN CK
+    DIRECTION INPUT ;
+    USE CLOCK ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.05 0.15 0.15 ;
+    END
+  END CK
+  PIN Q
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.85 0.45 0.95 0.55 ;
+    END
+  END Q
+END DFF_P_TIE0
+
+MACRO DFF_P_TIE1
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 1.0 BY 1.0 ;
+  SITE core ;
+  PIN D
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.45 0.15 0.55 ;
+    END
+  END D
+  PIN CK
+    DIRECTION INPUT ;
+    USE CLOCK ;
+    PORT
+      LAYER met1 ;
+      RECT 0.05 0.05 0.15 0.15 ;
+    END
+  END CK
+  PIN Q
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER met1 ;
+      RECT 0.85 0.45 0.95 0.55 ;
+    END
+  END Q
+END DFF_P_TIE1
+
+END LIBRARY

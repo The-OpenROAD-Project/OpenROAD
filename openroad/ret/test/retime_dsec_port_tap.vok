@@ -1,0 +1,113 @@
+module top (a,
+    b,
+    c,
+    clk,
+    e,
+    z,
+    rst_n,
+    w,
+    y);
+ input a;
+ input b;
+ input c;
+ input clk;
+ input e;
+ output z;
+ input rst_n;
+ output w;
+ output y;
+
+ wire d1;
+ wire d2;
+ wire d3;
+ wire d4;
+ wire d5;
+ wire d6;
+ wire m1;
+ wire m2;
+ wire m3;
+ wire m4;
+ wire m5;
+ wire n1;
+ wire n2;
+ wire n3;
+ wire n4;
+ wire n5;
+ wire n6;
+ wire q3;
+ wire ret_net_1;
+ wire q6;
+ wire qa;
+ wire qb;
+ wire qc;
+ wire qd;
+
+ AND2_X1 g0 (.A1(a),
+    .A2(rst_n),
+    .ZN(d1));
+ AND2_X1 g1 (.A1(b),
+    .A2(rst_n),
+    .ZN(d2));
+ AND2_X1 g10 (.A1(c),
+    .A2(rst_n),
+    .ZN(d4));
+ AND2_X1 g11 (.A1(e),
+    .A2(rst_n),
+    .ZN(d5));
+ NAND2_X1 g12 (.A1(d4),
+    .A2(d5),
+    .ZN(m1));
+ INV_X1 g13 (.A(m1),
+    .ZN(m2));
+ INV_X1 g14 (.A(m2),
+    .ZN(m3));
+ INV_X1 g15 (.A(m3),
+    .ZN(m4));
+ INV_X1 g16 (.A(m4),
+    .ZN(m5));
+ AND2_X1 g17 (.A1(ret_net_1),
+    .A2(rst_n),
+    .ZN(d6));
+ BUF_X1 g18 (.A(q6),
+    .Z(w));
+ NAND2_X1 g2 (.A1(qd),
+    .A2(qc),
+    .ZN(n1));
+ INV_X1 g3 (.A(n1),
+    .ZN(n2));
+ INV_X1 g4 (.A(n2),
+    .ZN(n3));
+ INV_X1 g5 (.A(n3),
+    .ZN(n4));
+ INV_X1 g6 (.A(n4),
+    .ZN(n5));
+ INV_X1 g6b (.A(n5),
+    .ZN(n6));
+ AND2_X1 g7 (.A1(n6),
+    .A2(rst_n),
+    .ZN(d3));
+ BUF_X1 g8 (.A(q3),
+    .Z(y));
+ DFF_X1 r3 (.D(d3),
+    .CK(clk),
+    .Q(q3));
+ DFF_X1 r6 (.D(d6),
+    .CK(clk),
+    .Q(q6));
+ DFF_X1 rA (.D(d1),
+    .CK(clk),
+    .Q(qa));
+ DFF_X1 rB (.D(qa),
+    .CK(clk),
+    .Q(qb));
+ DFF_X1 rC (.D(d2),
+    .CK(clk),
+    .Q(qc));
+ DFF_X1 rD (.D(qb),
+    .CK(clk),
+    .Q(qd));
+ DFF_X1 ret_ff_1 (.D(m5),
+    .CK(clk),
+    .Q(ret_net_1));
+ assign z = qa;
+endmodule
