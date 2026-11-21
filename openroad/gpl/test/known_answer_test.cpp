@@ -294,6 +294,35 @@ TEST_F(KnownAnswerTest, StackedUnconnectedCellsSpread)
   expectEvenlySpread(cells, core);
 }
 
+// Tie cells saved at the core's corner, each driving its own output port.
+// Placement that skips IOs drops the ports, which leaves every tie net with a
+// single pin and no force, so the cells are as interchangeable as unconnected
+// ones.
+TEST_F(KnownAnswerTest, StackedTieCellsSpreadWhenSkippingIos)
+{
+  DesignBuilder builder(db_.get(), /*cell_sites=*/6);
+  const odb::Rect core = builder.core();
+  std::vector<odb::dbInst*> cells;
+  constexpr int kCells = 100;
+  for (int i = 0; i < kCells; ++i) {
+    odb::dbBTerm* port = builder.addIo("out" + std::to_string(i),
+                                       DesignBuilder::Edge::kRight,
+                                       (i + 0.5) / kCells);
+    odb::dbInst* inst = builder.addCell("tie" + std::to_string(i));
+    builder.connect(inst, "E", port);
+    inst->setLocation(core.xMin(), core.yMin());
+    inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    cells.push_back(inst);
+  }
+
+  PlaceOptions options;
+  options.skipIoMode = true;
+  options.initialPlacePerturbationDist = 0;
+  options.uniformTargetDensityMode = true;
+  EXPECT_EQ(place(options).stop, PlaceStop::kConverged);
+  expectEvenlySpread(cells, core);
+}
+
 // Cells on the same nets, between an IO on the left die edge and one on the
 // right, are interchangeable: started at one spot, each gets the same
 // wirelength and density force as the others. They separate only if they

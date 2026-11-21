@@ -3147,7 +3147,8 @@ void NesterovBase::updateDensityFieldBin()
 void NesterovBase::spreadStackedGCells()
 {
   // Cells get identical forces only when they share a location, a density
-  // size, and the same nets at the same pin offsets.
+  // size, and the same nets at the same pin offsets. A net with a single pin
+  // (an IO net under skip_io, for one) exerts no force, so it is ignored.
   using PinKey = std::tuple<const GNet*, int, int>;
   using StackKey = std::tuple<int, int, int, int, std::vector<PinKey>>;
   std::map<StackKey, std::vector<GCell*>> stacks;
@@ -3158,7 +3159,10 @@ void NesterovBase::spreadStackedGCells()
       std::vector<PinKey> pins;
       pins.reserve(gCell->gPins().size());
       for (const GPin* gPin : gCell->gPins()) {
-        pins.emplace_back(gPin->getGNet(), gPin->offsetCx(), gPin->offsetCy());
+        const GNet* gNet = gPin->getGNet();
+        if (gNet->getGPins().size() > 1) {
+          pins.emplace_back(gNet, gPin->offsetCx(), gPin->offsetCy());
+        }
       }
       std::ranges::sort(pins);
       stacks[{gCell->dCx(),
