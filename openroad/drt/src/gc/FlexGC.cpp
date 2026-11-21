@@ -186,14 +186,25 @@ void FlexGCWorker::updateGCWorker()
   impl_->updateGCWorker();
 }
 
-void FlexGCWorker::initPA0(const frDesign* design)
+void FlexGCWorker::initPA0(const frDesign* design, bool enableReuse)
 {
-  impl_->initPA0(design);
+  impl_->initPA0(design, enableReuse);
 }
 
 void FlexGCWorker::initPA1()
 {
   impl_->initPA1();
+}
+
+bool FlexGCWorker::hasSamePAFixedGeometry(const FlexGCWorker& other) const
+{
+  return impl_->hasSamePAFixedGeometry(*other.impl_);
+}
+
+bool FlexGCWorker::replacePAObjects(
+    const std::vector<std::pair<frConnFig*, frBlockObject*>>& objects)
+{
+  return impl_->replacePAObjects(objects);
 }
 
 void FlexGCWorker::setExtBox(const odb::Rect& in)

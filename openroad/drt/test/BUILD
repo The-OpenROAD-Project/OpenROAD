@@ -290,3 +290,22 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "paPatternGCReuseTest",
+    srcs = [
+        "fixture.cpp",
+        "fixture.h",
+        "paPatternGCReuseTest.cpp",
+    ],
+    deps = [
+        "//openroad/drt:base_types",
+        "//openroad/drt:drt_impl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "@boost.polygon",
+        "@boost.serialization",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

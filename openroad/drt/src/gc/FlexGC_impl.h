@@ -120,8 +120,11 @@ class FlexGCWorker::Impl
   int main();
   void end();
   // initialization from FlexPA, initPA0 --> addPAObj --> initPA1
-  void initPA0(const frDesign* design);
+  void initPA0(const frDesign* design, bool enableReuse = false);
   void initPA1();
+  bool hasSamePAFixedGeometry(const Impl& other) const;
+  bool replacePAObjects(
+      const std::vector<std::pair<frConnFig*, frBlockObject*>>& objects);
   void initNetsFromDesign(const frDesign* design);
   // update
   void updateGCWorker();
@@ -171,6 +174,28 @@ class FlexGCWorker::Impl
   std::vector<rq_box_value_t<gcRect*>> metal_spacing_result_;
   std::vector<rq_box_value_t<gcRect>> metal_spacing_result_shapes_;
   std::vector<rq_box_value_t<gcRect*>> corner_spacing_result_;
+
+  // Pattern seeds record immutable source geometry and owners for reuse.
+  struct PAFixedGeometry
+  {
+    frBlockObject* source;
+    frBlockObject* owner;
+    frLayerNum layer;
+    odb::Rect box;
+    bool operator==(const PAFixedGeometry& other) const
+    {
+      return source == other.source && owner == other.owner
+             && layer == other.layer && box == other.box;
+    }
+  };
+  const frDesign* paDesign_{nullptr};
+  bool recordingPAInputs_{false};
+  bool paInitialized_{false};
+  bool paHasDBRoutes_{false};
+  std::vector<PAFixedGeometry> paFixedGeometry_;
+  std::vector<frBlockObject*> paOriginalOwners_;
+  std::map<frBlockObject*, gcNet*> paOriginalOwnerNets_;
+  std::set<gcNet*> paCandidateNets_;
 
   FlexGCWorkerRegionQuery& getWorkerRegionQuery() { return rq_; }
 
