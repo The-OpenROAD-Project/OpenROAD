@@ -10,6 +10,7 @@ import { applyArrowStep, boundsEqual, computeBoundsTransforms, computeScaleBar,
     from '../../src/ui-utils.js';
 import { isDeviceExactTileSize, TILE_SIZE_CSS, TILE_SIZE_QUANTUM }
     from '../../src/tile-request.js';
+import { tclQuote } from '../../src/ui-utils.js';
 
 // The 5% Qt margin applied to a rect's dimension, as computeBoundsTransforms
 // does before converting it.
@@ -629,5 +630,26 @@ describe('withBusyCursor', () => {
             throw new Error('timing report failed');
         }, root));
         assert.equal(root.has('op-busy'), false);
+    });
+});
+
+describe('tclQuote', () => {
+    it('escapes what Tcl substitutes inside double quotes', () => {
+        const cases = [
+            ['/work/a.odb', '"/work/a.odb"'],
+            ['/my dir/a.odb', '"/my dir/a.odb"'],
+            ['/w/bus[0].odb', String.raw`"/w/bus\[0\].odb"`],
+            ['$HOME/a.odb', String.raw`"\$HOME/a.odb"`],
+            ['a;b', '"a;b"'],
+            ['say "hi"', String.raw`"say \"hi\""`],
+            ['C:\\x', String.raw`"C:\\x"`],
+            ['{a}', '"{a}"'],
+            ['tail\\', String.raw`"tail\\"`],
+            ['a]b', String.raw`"a\]b"`],
+            ['x\ny', '"x\ny"'],
+        ];
+        for (const [text, quoted] of cases) {
+            assert.equal(tclQuote(text), quoted, text);
+        }
     });
 });

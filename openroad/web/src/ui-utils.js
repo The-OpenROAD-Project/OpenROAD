@@ -632,6 +632,11 @@ export function computeScaleBar({ targetPx, pxPerDbu, dbuPerMicron, showDbu }) {
     return { barPx, label, segments };
 }
 
+// Quote text as one Tcl word that is read literally, with no substitution.
+export function tclQuote(text) {
+    return '"' + String(text).replace(/[\\[\]$"]/g, '\\$&') + '"';
+}
+
 // Run a Tcl script from a custom menu item / toolbar button: prefer the
 // console-aware app.runTclScript (echo + result in the console), falling back
 // to a bare tcl_eval request when it isn't wired (e.g. in unit tests).
