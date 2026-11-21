@@ -74,6 +74,15 @@ std::ostream& operator<<(std::ostream& os, const frBTerm& termIn)
   return os;
 }
 
+std::ostream& operator<<(std::ostream& os, const frMTerm& termIn)
+{
+  os << "MTERM (NAME) " << termIn.getName();
+  for (auto& m : termIn.getPins()) {
+    os << '\n' << *m;
+  }
+  return os;
+}
+
 std::ostream& operator<<(std::ostream& os, const frInstTerm& instTermIn)
 {
   frString name;
@@ -248,9 +257,12 @@ std::ostream& operator<<(std::ostream& os, const frBlockObject& fig)
       os << *static_cast<const frInstTerm*>(&fig);
       break;
     }
-    case frcMTerm:
+    case frcMTerm: {
+      os << *static_cast<const frMTerm*>(&fig);
+      break;
+    }
     case frcBTerm: {
-      os << *static_cast<const frTerm*>(&fig);
+      os << *static_cast<const frBTerm*>(&fig);
       break;
     }
     // case fig is a frConnFig

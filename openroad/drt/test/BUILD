@@ -275,6 +275,17 @@ cc_test(
 )
 
 cc_test(
+    name = "TermPrintTest",
+    srcs = ["TermPrintTest.cpp"],
+    deps = [
+        "//openroad/drt:base_types",
+        "//openroad/drt:drt_impl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "PinAccessTest",
     srcs = ["PinAccessTest.cpp"],
     data = ["Nangate45/Nangate45_tech.lef"],
