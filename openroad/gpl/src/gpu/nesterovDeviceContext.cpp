@@ -108,7 +108,7 @@ NesterovDeviceContext::NesterovDeviceContext(
   s.d_next_sum_grads_x = Kokkos::View<float*>("nb_next_sum_grads_x", n);
   s.d_next_sum_grads_y = Kokkos::View<float*>("nb_next_sum_grads_y", n);
 
-  s.d_num_pins = Kokkos::View<int*>("nb_num_pins", n);
+  s.d_wl_precond = Kokkos::View<float*>("nb_wl_precond", n);
   s.d_area = Kokkos::View<float*>("nb_area", n);
   s.d_locked = Kokkos::View<int*>("nb_locked", n);
   s.d_nbc_index = Kokkos::View<int*>("nb_nbc_index", n);
@@ -119,7 +119,6 @@ NesterovDeviceContext::NesterovDeviceContext(
   s.d_clamp_uy = Kokkos::View<float*>("nb_clamp_uy", n);
 
   // Push static per-cell data.
-  std::vector<int> h_num_pins(num_cells_);
   std::vector<float> h_area(num_cells_);
   std::vector<int> h_locked(num_cells_);
   std::vector<int> h_nbc_index(num_cells_);
@@ -135,7 +134,6 @@ NesterovDeviceContext::NesterovDeviceContext(
 
   for (int i = 0; i < num_cells_; ++i) {
     const GCell* gc = nb_gcells[i];
-    h_num_pins[i] = static_cast<int>(gc->gPins().size());
     h_area[i] = static_cast<float>(gc->dx()) * static_cast<float>(gc->dy());
     h_locked[i] = gc->isLocked() ? 1 : 0;
 
@@ -169,7 +167,6 @@ NesterovDeviceContext::NesterovDeviceContext(
           Kokkos::deep_copy(d_view, hv);
         };
 
-  push_int(s.d_num_pins, h_num_pins);
   push_float(s.d_area, h_area);
   push_int(s.d_locked, h_locked);
   push_int(s.d_nbc_index, h_nbc_index);
@@ -177,6 +174,7 @@ NesterovDeviceContext::NesterovDeviceContext(
   push_float(s.d_clamp_ly, h_clamp_ly);
   push_float(s.d_clamp_ux, h_clamp_ux);
   push_float(s.d_clamp_uy, h_clamp_uy);
+  refreshWireLengthPreconditioners(nb_gcells);
 
   // Device-resident density pipeline: per-cell params + per-bin statics +
   // NB-owned Poisson solver.
@@ -228,6 +226,24 @@ void NesterovDeviceContext::refreshCellDensityParams(
   Kokkos::deep_copy(s.d_half_ddy, HostIntUM(h_half_ddy.data(), n));
   Kokkos::deep_copy(s.d_density_scale, HostFloatUM(h_scale.data(), n));
   Kokkos::deep_copy(s.d_cell_kind, HostIntUM(h_kind.data(), n));
+}
+
+void NesterovDeviceContext::refreshWireLengthPreconditioners(
+    const std::vector<GCellHandle>& nb_gcells)
+{
+  assert(static_cast<int>(nb_gcells.size()) == num_cells_);
+  auto& s = *kokkos_;
+  const size_t n = static_cast<size_t>(num_cells_);
+
+  std::vector<float> h_wl_precond(num_cells_);
+  for (int i = 0; i < num_cells_; ++i) {
+    const GCell* gc = nb_gcells[i];
+    h_wl_precond[i] = gc->wireLengthPreconditioner();
+  }
+
+  using HostFloatUM
+      = Kokkos::View<float*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>;
+  Kokkos::deep_copy(s.d_wl_precond, HostFloatUM(h_wl_precond.data(), n));
 }
 
 void NesterovDeviceContext::initDensityDeviceState(const BinGrid& bg)

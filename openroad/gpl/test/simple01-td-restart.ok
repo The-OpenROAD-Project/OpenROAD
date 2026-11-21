@@ -104,18 +104,18 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO GPL-0111] Timing-driven: restarting Nesterov momentum.
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      220 |   0.6197 |  2.660289e+03 |   +0.00% |  2.48e-09 |      
-      230 |   0.5561 |  2.768251e+03 |   +4.06% |  4.03e-09 |      
-      240 |   0.5187 |  2.836454e+03 |   +2.46% |  6.57e-09 |      
-      250 |   0.4711 |  2.923866e+03 |   +3.08% |  1.07e-08 |      
-      260 |   0.4211 |  2.985401e+03 |   +2.10% |  1.74e-08 |      
-      270 |   0.3730 |  3.044027e+03 |   +1.96% |  2.84e-08 |      
-      280 |   0.3172 |  3.117631e+03 |   +2.42% |  4.44e-08 |      
-      290 |   0.2763 |  3.162449e+03 |   +1.44% |  6.54e-08 |      
-      300 |   0.2400 |  3.222649e+03 |   +1.90% |  9.64e-08 |      
-      310 |   0.2148 |  3.295332e+03 |   +2.26% |  1.42e-07 |      
+      220 |   0.5885 |  2.697865e+03 |   +0.00% |  2.48e-09 |      
+      230 |   0.5481 |  2.759335e+03 |   +2.28% |  4.03e-09 |      
+      240 |   0.5107 |  2.829200e+03 |   +2.53% |  6.57e-09 |      
+      250 |   0.4683 |  2.906365e+03 |   +2.73% |  1.07e-08 |      
+      260 |   0.4196 |  2.964172e+03 |   +1.99% |  1.74e-08 |      
+      270 |   0.3623 |  3.009405e+03 |   +1.53% |  2.84e-08 |      
+      280 |   0.3155 |  3.072686e+03 |   +2.10% |  4.35e-08 |      
+      290 |   0.2698 |  3.136631e+03 |   +2.08% |  6.41e-08 |      
+      300 |   0.2410 |  3.213055e+03 |   +2.44% |  9.45e-08 |      
+      310 |   0.2104 |  3.270963e+03 |   +1.80% |  1.39e-07 |      
 [INFO GPL-0100] Timing-driven iteration 2/2, virtual: false.
-[INFO GPL-0101]    Iter: 319, overflow: 0.192, keep resizer changes at: 1, HPWL: 6663403
+[INFO GPL-0101]    Iter: 318, overflow: 0.193, keep resizer changes at: 1, HPWL: 6596471
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       625
@@ -127,31 +127,35 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
         0 |     +0.0% |       0 |        0 |       320
        32 |     +0.0% |       0 |        0 |       288
        64 |     +0.0% |      14 |       14 |       256
-       96 |     +0.0% |      45 |       45 |       224
-      128 |     +0.0% |      55 |       55 |       192
-      160 |     +0.0% |      76 |       76 |       160
-      192 |     +0.0% |      80 |       80 |       128
-      224 |     +0.0% |      86 |       86 |        96
-      256 |     +0.0% |     158 |      158 |        64
-      288 |     +0.0% |     198 |      198 |        32
-    final |     -1.0% |     269 |      259 |         0
+[WARNING RSZ-2009] Skipping buffering because no valid buffering solution satisfying the design rules can be found for net connected to pin _366_/ZN.
+[WARNING RSZ-2005] cannot find a viable buffering solution on pin _366_/ZN after 1 rounds of buffering (no solution meets design rules)
+[WARNING RSZ-2009] Skipping buffering because no valid buffering solution satisfying the design rules can be found for net connected to pin _361_/ZN.
+[WARNING RSZ-2005] cannot find a viable buffering solution on pin _361_/ZN after 1 rounds of buffering (no solution meets design rules)
+       96 |     +0.0% |      20 |       20 |       224
+      128 |     +0.0% |      30 |       30 |       192
+      160 |     +0.0% |      51 |       51 |       160
+      192 |     +0.0% |      55 |       55 |       128
+      224 |     +0.0% |      61 |       61 |        96
+      256 |     +0.0% |     133 |      133 |        64
+      288 |     +0.0% |     173 |      173 |        32
+    final |     -1.0% |     244 |      234 |         0
 -------------------------------------------------------
-[INFO GPL-0106] Timing-driven: worst slack 1.1771817e-09
+[INFO GPL-0106] Timing-driven: worst slack 1.178218e-09
 [INFO GPL-0107] Timing-driven: repair_design delta area: -7.714 um^2 (-0.95%)
 [INFO GPL-0108] Timing-driven: repair_design, gpl delta gcells: -10 (-1.80%)
-[INFO GPL-0109] Timing-driven: repair_design, gcells created: 259, deleted: 269
+[INFO GPL-0109] Timing-driven: repair_design, gcells created: 234, deleted: 244
 [INFO GPL-0110] Timing-driven: new target density: 0.91695476
 [INFO GPL-0111] Timing-driven: restarting Nesterov momentum.
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      320 |   0.2118 |  3.243854e+03 |   +0.00% |  2.09e-07 |      
-      330 |   0.1800 |  3.181701e+03 |   -1.92% |  3.08e-07 |      
-      340 |   0.1486 |  3.186631e+03 |   +0.15% |  4.54e-07 |      
-      350 |   0.1248 |  3.191587e+03 |   +0.16% |  6.69e-07 |      
-      360 |   0.1054 |  3.203468e+03 |   +0.37% |  9.85e-07 |      
-      364 |   0.0985 |  3.206387e+03 |          |  1.20e-06 |      
+      320 |   0.1861 |  3.201340e+03 |   +0.00% |  2.05e-07 |      
+      330 |   0.1635 |  3.199735e+03 |   -0.05% |  3.02e-07 |      
+      340 |   0.1410 |  3.222048e+03 |   +0.70% |  4.45e-07 |      
+      350 |   0.1238 |  3.245266e+03 |   +0.72% |  6.55e-07 |      
+      360 |   0.1080 |  3.268285e+03 |   +0.71% |  9.66e-07 |      
+      366 |   0.0989 |  3.280940e+03 |          |  1.27e-06 |      
 ---------------------------------------------------------------
-[INFO GPL-1001] Global placement finished at iteration 364
+[INFO GPL-1001] Global placement finished at iteration 366
 [INFO GPL-1002] Placed Cell Area              807.9404
 [INFO GPL-1003] Available Free Area           953.8760
 [INFO GPL-1004] Minimum Feasible Density        0.6400 (cell_area / free_area)
@@ -161,6 +165,6 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1011] Original area (um^2): 600.99
 [INFO GPL-1013] Total timing-driven delta area: 206.95 (+34.43%)
 [INFO GPL-1014] Final placement area: 807.94 (+34.43%)
-[INFO GPL-1018] Final HPWL (um): 3207.51
+[INFO GPL-1018] Final HPWL (um): 3283.61
 worst slack max 1.18
 No differences found.

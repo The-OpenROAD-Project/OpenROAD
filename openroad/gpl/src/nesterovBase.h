@@ -139,6 +139,9 @@ class GCell
   float getGradientY() const { return gradientY_; }
   float getDensityScale() const { return densityScale_; }
 
+  void setWireLengthPreconditioner(float precond) { wlPrecond_ = precond; }
+  float wireLengthPreconditioner() const { return wlPrecond_; }
+
   bool isInstance() const;
   bool isFiller() const;
   bool isMacroInstance() const;
@@ -164,6 +167,7 @@ class GCell
   float densityScale_ = 0;
   float gradientX_ = 0;
   float gradientY_ = 0;
+  float wlPrecond_ = 0.0f;
 
   GCellChange change_ = GCellChange::kNone;
 };
@@ -949,6 +953,7 @@ class NesterovBaseCommon
 
   // for preconditioner
   FloatPoint getWireLengthPreconditioner(const GCell* gCell) const;
+  void refreshWireLengthPreconditioners();
 
   int64_t getHpwl();
 
@@ -981,12 +986,13 @@ class NesterovBaseCommon
   void moveGCell(odb::dbInst* db_inst);
   void fixPointers();
 
-  // Device-side sync for the timing-driven boundary; no-ops on CPU builds
-  // and on the CPU runtime path. Non-virtual TD iterations create, destroy
-  // (permuting storage indices), and resize instances — rebuildDeviceState()
-  // reloads the DeviceState topology (sizes, CSRs, pin offsets, net weights)
-  // from the repaired host storage. Virtual TD iterations only reweight
-  // nets — refreshDeviceNetWeights() pushes the new weights.
+  // Device-side sync for the timing-driven boundary (and weight-update
+  // boundaries). Also refreshes cached host wirelength preconditioners.
+  // Non-virtual TD iterations create, destroy (permuting storage indices),
+  // and resize instances — rebuildDeviceState() reloads the DeviceState
+  // topology (sizes, CSRs, pin offsets, net weights) from the repaired host
+  // storage. Virtual TD / routability / power iterations only reweight nets
+  // — refreshDeviceNetWeights() pushes the new weights.
   void rebuildDeviceState();
   void refreshDeviceNetWeights();
 
@@ -1196,6 +1202,7 @@ class NesterovBase
 
   // for preconditioner
   FloatPoint getDensityPreconditioner(const GCell* gCell) const;
+  void refreshDeviceWireLengthPreconditioners();
 
   FloatPoint getDensityGradient(const GCell* gCell) const;
 

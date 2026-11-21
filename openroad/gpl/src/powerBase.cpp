@@ -113,6 +113,7 @@ void PowerBase::setPowerNetWeights()
                toggles,
                power_weight);
   }
+  nbc_->refreshWireLengthPreconditioners();
 }
 
 // Cache source toggles per cycle, capped at one toggle per cycle.

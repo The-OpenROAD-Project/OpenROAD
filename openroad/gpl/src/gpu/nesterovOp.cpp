@@ -75,7 +75,7 @@ void launchGradCombine(KokkosNesterovState& ns,
   auto d_wl_y = ns.d_wl_grad_y;
   auto d_dens_x = ns.d_density_grad_x;
   auto d_dens_y = ns.d_density_grad_y;
-  auto d_num_pins = ns.d_num_pins;
+  auto d_wl_precond = ns.d_wl_precond;
   auto d_area = ns.d_area;
   auto d_locked = ns.d_locked;
 
@@ -104,9 +104,9 @@ void launchGradCombine(KokkosNesterovState& ns,
         float sx = wx + penalty * dx;
         float sy = wy + penalty * dy;
 
-        const float np = static_cast<float>(d_num_pins(i));
+        const float wl_pre = d_wl_precond(i);
         const float a = d_area(i);
-        float pre = np + penalty * a;
+        float pre = wl_pre + penalty * a;
         if (pre < min_pre) {
           pre = min_pre;
         }

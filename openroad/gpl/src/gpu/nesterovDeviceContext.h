@@ -151,6 +151,11 @@ class NesterovDeviceContext
   // after updateDensitySize / routability inflation changed them.
   void refreshCellDensityParams(const std::vector<GCellHandle>& nb_gcells);
 
+  // Re-upload per-cell wirelength preconditioners (sum of incident net
+  // weights) after net weights change.
+  void refreshWireLengthPreconditioners(
+      const std::vector<GCellHandle>& nb_gcells);
+
   // Pull current-slot coords to host (curSLP + cur). Used to refresh the
   // host vectors lazily when the hot loop no longer syncs every iteration.
   void syncCurCoordsToHost(std::vector<FloatPoint>& curSLP,

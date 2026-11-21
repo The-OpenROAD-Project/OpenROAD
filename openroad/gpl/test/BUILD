@@ -478,6 +478,19 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "wirelength_preconditioner_test",
+    srcs = ["wirelength_preconditioner_test.cpp"],
+    env = GPU_ENV_OFF,
+    deps = [
+        "//openroad/gpl:gpl_impl",
+        "//openroad/odb/src/db",
+        "//openroad/tst:db_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 man_tcl_check_test(
     name = "gpl_man_tcl_check",
     module = "gpl",

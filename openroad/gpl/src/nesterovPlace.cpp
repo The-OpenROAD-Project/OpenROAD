@@ -511,6 +511,9 @@ void NesterovPlace::runTimingDriven(int iter,
     } else {
       nbc_->rebuildDeviceState();
     }
+    for (const auto& nb : nbVec_) {
+      nb->refreshDeviceWireLengthPreconditioners();
+    }
     // TODO remove fillers for TD iterations
     // for (auto& nesterov : nbVec_) {
     //   nesterov->cutFillerCells(nbc_->getDeltaArea());

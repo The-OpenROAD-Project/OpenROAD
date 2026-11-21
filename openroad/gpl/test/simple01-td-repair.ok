@@ -100,18 +100,18 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO GPL-0111] Timing-driven: restarting Nesterov momentum.
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      220 |   0.6229 |  2.337443e+03 |   +0.00% |  2.48e-09 |      
-      230 |   0.5762 |  2.402490e+03 |   +2.78% |  4.03e-09 |      
-      240 |   0.5310 |  2.463790e+03 |   +2.55% |  6.57e-09 |      
-      250 |   0.4784 |  2.511145e+03 |   +1.92% |  1.07e-08 |      
-      260 |   0.4269 |  2.545715e+03 |   +1.38% |  1.74e-08 |      
-      270 |   0.3688 |  2.583780e+03 |   +1.50% |  2.84e-08 |      
-      280 |   0.3152 |  2.609358e+03 |   +0.99% |  4.40e-08 |      
-      290 |   0.2725 |  2.641930e+03 |   +1.25% |  6.48e-08 |      
-      300 |   0.2414 |  2.671992e+03 |   +1.14% |  9.54e-08 |      
-      310 |   0.2158 |  2.704015e+03 |   +1.20% |  1.41e-07 |      
+      220 |   0.6079 |  2.350709e+03 |   +0.00% |  2.48e-09 |      
+      230 |   0.5671 |  2.408035e+03 |   +2.44% |  4.03e-09 |      
+      240 |   0.5176 |  2.450675e+03 |   +1.77% |  6.57e-09 |      
+      250 |   0.4687 |  2.487622e+03 |   +1.51% |  1.07e-08 |      
+      260 |   0.4138 |  2.517954e+03 |   +1.22% |  1.74e-08 |      
+      270 |   0.3560 |  2.540845e+03 |   +0.91% |  2.84e-08 |      
+      280 |   0.3222 |  2.583124e+03 |   +1.66% |  4.31e-08 |      
+      290 |   0.2829 |  2.612307e+03 |   +1.13% |  6.35e-08 |      
+      300 |   0.2488 |  2.653385e+03 |   +1.57% |  9.35e-08 |      
+      310 |   0.2140 |  2.687360e+03 |   +1.28% |  1.38e-07 |      
 [INFO GPL-0100] Timing-driven iteration 2/2, virtual: false.
-[INFO GPL-0101]    Iter: 319, overflow: 0.192, keep resizer changes at: 1, HPWL: 5440516
+[INFO GPL-0101]    Iter: 316, overflow: 0.194, keep resizer changes at: 1, HPWL: 5405478
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |       414
@@ -122,55 +122,55 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 -------------------------------------------------------
         0 |     +0.0% |       0 |        0 |       321
        32 |     +0.0% |       0 |        0 |       289
-       64 |     -0.0% |       2 |        3 |       257
-       96 |     -0.2% |      11 |        9 |       225
-      128 |     -0.3% |      18 |       17 |       193
-      160 |     -0.4% |      23 |       21 |       161
-      192 |     -0.5% |      25 |       22 |       129
-      224 |     -0.5% |      29 |       26 |        97
-      256 |     -0.7% |      40 |       35 |        65
-      288 |     -0.6% |      46 |       42 |        33
-      320 |     -0.5% |      57 |       53 |         1
-    final |     -0.5% |      57 |       53 |         0
+       64 |     -0.1% |       2 |        4 |       257
+       96 |     -0.3% |      11 |       10 |       225
+      128 |     -0.5% |      18 |       17 |       193
+      160 |     -0.6% |      23 |       21 |       161
+      192 |     -0.7% |      25 |       22 |       129
+      224 |     -0.7% |      29 |       26 |        97
+      256 |     -1.0% |      40 |       34 |        65
+      288 |     -1.6% |      46 |       39 |        33
+      320 |     -1.6% |      57 |       50 |         1
+    final |     -1.6% |      57 |       50 |         0
 -------------------------------------------------------
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove BufferMove SplitLoadMove 
-[INFO RSZ-0094] Found 32 endpoints with setup violations.
-[INFO RSZ-0099] Repairing 1 out of 32 (1.00%) violating endpoints...
+[INFO RSZ-0094] Found 33 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 1 out of 33 (1.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.030 |       -0.6 |     32 | _542_/D
-       1* |       0 |       1 |        0 |      0 |     0 |    +0.1% |   -0.020 |       -0.3 |     32 | _539_/D
-       1* |       0 |       1 |        0 |      0 |     0 |    +0.1% |   -0.020 |       -0.3 |     32 | _539_/D
-    final |       0 |       1 |        0 |      0 |     0 |    +0.1% |   -0.020 |       -0.3 |     32 | _539_/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.030 |       -0.7 |     33 | _542_/D
+       1* |       0 |       1 |        0 |      0 |     0 |    +0.1% |   -0.020 |       -0.4 |     33 | _548_/D
+       1* |       0 |       1 |        0 |      0 |     0 |    +0.1% |   -0.020 |       -0.4 |     33 | _548_/D
+    final |       0 |       1 |        0 |      0 |     0 |    +0.1% |   -0.020 |       -0.4 |     33 | _548_/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0051] Resized 1 instances: 1 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
-[INFO GPL-0106] Timing-driven: worst slack -1.9658442e-11
-[INFO GPL-0107] Timing-driven: repair_design delta area: -2.218 um^2 (-0.33%)
-[INFO GPL-0108] Timing-driven: repair_design, gpl delta gcells: -4 (-1.16%)
-[INFO GPL-0109] Timing-driven: repair_design, gcells created: 53, deleted: 57
-[INFO GPL-0110] Timing-driven: new target density: 0.76878417
+[INFO GPL-0106] Timing-driven: worst slack -1.9761026e-11
+[INFO GPL-0107] Timing-driven: repair_design delta area: -8.868 um^2 (-1.33%)
+[INFO GPL-0108] Timing-driven: repair_design, gpl delta gcells: -7 (-2.03%)
+[INFO GPL-0109] Timing-driven: repair_design, gcells created: 50, deleted: 57
+[INFO GPL-0110] Timing-driven: new target density: 0.76181257
 [INFO GPL-0111] Timing-driven: restarting Nesterov momentum.
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-      320 |   0.1947 |  2.690010e+03 |   +0.00% |  2.07e-07 |      
-      330 |   0.1794 |  2.682597e+03 |   -0.28% |  3.05e-07 |      
-      340 |   0.1486 |  2.686912e+03 |   +0.16% |  4.49e-07 |      
-      350 |   0.1252 |  2.696614e+03 |   +0.36% |  6.62e-07 |      
-      360 |   0.1059 |  2.703821e+03 |   +0.27% |  9.75e-07 |      
-      363 |   0.1000 |  2.705534e+03 |          |  1.14e-06 |      
+      320 |   0.1958 |  2.707673e+03 |   +0.00% |  2.03e-07 |      
+      330 |   0.1676 |  2.735985e+03 |   +1.05% |  2.99e-07 |      
+      340 |   0.1458 |  2.744219e+03 |   +0.30% |  4.41e-07 |      
+      350 |   0.1319 |  2.757568e+03 |   +0.49% |  6.49e-07 |      
+      360 |   0.1130 |  2.770012e+03 |   +0.45% |  9.56e-07 |      
+      368 |   0.0982 |  2.780380e+03 |          |  1.35e-06 |      
 ---------------------------------------------------------------
-[INFO GPL-1001] Global placement finished at iteration 363
-[INFO GPL-1002] Placed Cell Area              666.6040
+[INFO GPL-1001] Global placement finished at iteration 368
+[INFO GPL-1002] Placed Cell Area              659.9540
 [INFO GPL-1003] Available Free Area           953.8760
 [INFO GPL-1004] Minimum Feasible Density        0.6400 (cell_area / free_area)
 [INFO GPL-1006]   Suggested Target Densities:
-[INFO GPL-1007]     - For 90% usage of free space: 0.7765
-[INFO GPL-1008]     - For 80% usage of free space: 0.8735
+[INFO GPL-1007]     - For 90% usage of free space: 0.7687
+[INFO GPL-1008]     - For 80% usage of free space: 0.8648
 [INFO GPL-1011] Original area (um^2): 600.99
-[INFO GPL-1013] Total timing-driven delta area: 65.61 (+10.92%)
-[INFO GPL-1014] Final placement area: 666.60 (+10.92%)
-[INFO GPL-1018] Final HPWL (um): 2704.66
+[INFO GPL-1013] Total timing-driven delta area: 58.96 (+9.81%)
+[INFO GPL-1014] Final placement area: 659.95 (+9.81%)
+[INFO GPL-1018] Final HPWL (um): 2780.48
 worst slack max -0.02
 No differences found.
