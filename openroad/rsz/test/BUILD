@@ -69,6 +69,7 @@ TESTS = [
     "repair_cap2",
     "repair_cap3",
     "repair_clk_inverters1",
+    "repair_clk_inverters2_hier",
     "repair_clk_nets1",
     "repair_design1",
     "repair_design2",
