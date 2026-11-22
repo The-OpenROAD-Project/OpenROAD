@@ -29,7 +29,9 @@
 #include <vector>
 
 #include "Clock.h"
+#include "ClockDelayModel.h"
 #include "CtsOptions.h"
+#include "DelayBalancedTreeBuilder.h"
 #include "HTreeBuilder.h"
 #include "LatencyBalancer.h"
 #include "TechChar.h"
@@ -114,6 +116,8 @@ void TritonCTS::runTritonCts()
   // reset
   techChar_.reset();
   builders_.clear();
+  delay_builders_.clear();
+  delay_model_.reset();
   staClockNets_.clear();
   visitedClockNets_.clear();
   inst2clkbuf_.clear();
@@ -146,8 +150,13 @@ TreeBuilder* TritonCTS::addBuilder(CtsOptions* options,
       sink.setClockGateSink();
     }
   });
-  auto builder
-      = std::make_unique<HTreeBuilder>(options, net, parent, logger, db);
+  std::unique_ptr<TreeBuilder> builder;
+  if (options->delayBalanced()) {
+    builder = std::make_unique<DelayBalancedTreeBuilder>(
+        options, net, parent, logger, db);
+  } else {
+    builder = std::make_unique<HTreeBuilder>(options, net, parent, logger, db);
+  }
 
   builder->setTopInputNet(topInputNet);
   builders_.emplace_back(std::move(builder));
@@ -320,6 +329,10 @@ void TritonCTS::findClockRoots()
 
 void TritonCTS::buildClockTrees()
 {
+  if (options_->delayBalanced()) {
+    buildDelayBalancedTrees();
+    return;
+  }
   for (auto& builder : builders_) {
     builder->setTechChar(*techChar_);
     builder->setDb(db_);
@@ -543,7 +556,7 @@ void TritonCTS::writeDataToDb()
 
   for (auto& builder : builders_) {
     writeClockNetsToDb(builder.get(), clkLeafNets);
-    if (options_->dummyLoadEnabled()) {
+    if (options_->dummyLoadEnabled() && !options_->delayBalanced()) {
       int nDummies = writeDummyLoadsToDb(builder->getClock(), clkDummies);
       builder->setNDummies(nDummies);
     }
@@ -551,11 +564,15 @@ void TritonCTS::writeDataToDb()
 
   // NDRs are applied only after every tree has been written to the db, so
   // that clock tree levels can be numbered across tree builder boundaries.
-  if (options_->getApplyNdr() != CtsOptions::NdrStrategy::NONE) {
+  if (options_->getApplyNdr() != CtsOptions::NdrStrategy::NONE
+      && !options_->delayBalanced()) {
     writeClockNDRsToDb();
   }
 
   for (auto& builder : builders_) {
+    if (options_->delayBalanced()) {
+      break;
+    }
     odb::dbNet* topClockNet = builder->getClock().getNetObj();
     unsigned sinkCount = 0;
     unsigned leafSinks = 0;
@@ -1329,6 +1346,11 @@ void TritonCTS::populateTritonCTS()
   std::unordered_set<odb::dbNet*> clkGateCloneVisitedNets;
   clockRootNets_ = allClkNets;
   for (const auto& [clockNets, clkName] : clockNetsInfo) {
+    // A delay-balanced tree takes each clock gate where it is placed, with a
+    // tree behind it where its loads are far apart.
+    if (options_->delayBalanced()) {
+      break;
+    }
     for (odb::dbNet* net : clockNets) {
       if (net != nullptr) {
         cloneClockGaters(net, occupiedPositions, clkGateCloneVisitedNets);
@@ -1484,7 +1506,7 @@ TreeBuilder* TritonCTS::initClockTreeForMacrosAndRegs(
   }
 
   if (!options_->insertionDelayEnabled() || macroSinks.empty()
-      || registerSinks.empty()) {
+      || registerSinks.empty() || options_->delayBalanced()) {
     // There is no need for separate clock trees
     for (odb::dbITerm* iterm : firstNet->getITerms()) {
       odb::dbInst* inst = iterm->getInst();
@@ -1787,6 +1809,9 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
 {
   Clock& clockNet = builder->getClock();
   odb::dbNet* topClockNet = clockNet.getNetObj();
+  if (clockNet.isUntouched()) {
+    return;
+  }
   // gets the module for the driver for the net
   sta::Pin* pin_driver = nullptr;
   odb::dbModule* top_module = network_->getNetDriverParentModule(
@@ -1813,11 +1838,16 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
 
   createClockBuffers(clockNet, top_module);
 
-  // connect top buffer on the clock pin
-  std::string topClockInstName = "clkbuf_0_" + clockNet.getName();
-  odb::dbInst* topClockInst = block_->findInst(topClockInstName.c_str());
-  odb::dbITerm* topClockInstInputPin = getFirstInput(topClockInst);
-  topClockInstInputPin->connect(topClockNet);
+  const std::vector<ClockInst*>& rootLoads = clockNet.getRootLoads();
+  if (rootLoads.empty()) {
+    // connect top buffer on the clock pin
+    std::string topClockInstName = "clkbuf_0_" + clockNet.getName();
+    odb::dbInst* topClockInst = block_->findInst(topClockInstName.c_str());
+    odb::dbITerm* topClockInstInputPin = getFirstInput(topClockInst);
+    topClockInstInputPin->connect(topClockNet);
+  } else {
+    connectRootLoads(builder);
+  }
   topClockNet->setSigType(odb::dbSigType::CLOCK);
 
   std::map<int, int> fanoutcount;
@@ -1906,6 +1936,11 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
     }
   });
 
+  if (!rootLoads.empty()) {
+    logger_->info(CTS, 305, "    Created {} clock nets.", numClkNets_);
+    options_->setNumClockSubnets(options_->getNumClockSubnets() + numClkNets_);
+    return;
+  }
   if (!rootSubNet) {
     logger_->error(
         CTS, 85, "Could not find the root of {}", clockNet.getName());
@@ -3231,7 +3266,7 @@ double TritonCTS::getMaxDelayBufferDelay(double extra_out_cap)
 // is invoked.
 void TritonCTS::balanceMacroRegisterLatencies()
 {
-  if (!options_->insertionDelayEnabled()) {
+  if (!options_->insertionDelayEnabled() || options_->delayBalanced()) {
     return;
   }
 

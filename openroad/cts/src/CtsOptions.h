@@ -281,6 +281,8 @@ class CtsOptions : public odb::dbBlockCallBackObj
   stt::SteinerTreeBuilder* getSttBuilder() const { return sttBuilder_; }
   void setObstructionAware(bool obs) { obsAware_ = obs; }
   bool getObstructionAware() const { return obsAware_; }
+  void setDelayBalanced(bool enable) { delayBalanced_ = enable; }
+  bool delayBalanced() const { return delayBalanced_; }
   void enableInsertionDelay(bool insDelay) { insertionDelay_ = insDelay; }
   bool insertionDelayEnabled() const { return insertionDelay_; }
   void setBufferListInferred(bool inferred) { bufferListInferred_ = inferred; }
@@ -358,6 +360,7 @@ class CtsOptions : public odb::dbBlockCallBackObj
   int dbUnits_ = -1;
   unsigned wireSegmentUnit_ = 0;
   bool plotSolution_ = false;
+  bool delayBalanced_ = false;
   bool sinkClusteringEnable_ = true;
   bool simpleSegmentsEnable_ = false;
   bool vertexBuffersEnable_ = false;
