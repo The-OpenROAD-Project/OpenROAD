@@ -190,6 +190,9 @@ class ClockDelayModel
   double slewLimit() const { return slew_limit_; }
   // Whether `cell` drives `wire` with every load within the slew limit.
   bool slewOk(int cell, const NetWire& wire) const;
+  // Whether a driver without a cell, with `slew` at its output at kSlow,
+  // keeps every load of `wire` within the slew limit.
+  bool portSlewOk(double slew, const NetWire& wire) const;
   // Largest slew on the net at kSlow, on either edge, with the largest slew
   // a clock pin may have at the input of `cell`.
   double worstSlew(int cell, const NetWire& wire) const;
@@ -201,6 +204,7 @@ class ClockDelayModel
   double dbuToMeters(double dbu) const { return dbu * meters_per_dbu_; }
   double dbuPerMicron() const { return dbu_per_micron_; }
   const sta::Scene* balanceScene() const { return scenes_[kBalance]; }
+  const sta::Scene* slowScene() const { return scenes_[kSlow]; }
 
  private:
   struct Cell

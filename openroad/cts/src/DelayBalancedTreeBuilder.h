@@ -57,12 +57,13 @@ class DelayBalancedTreeBuilder : public TreeBuilder
   odb::dbITerm* getDriverInput() const { return driver_input_; }
   // Slew at the input of the net's driver, where the timer knows it.
   void setDriverSlew(double slew) { driver_slew_ = slew; }
-  // The port the clock comes from, with the timer's slew there, when the
-  // net's driver is the only load of the port's net.
-  void setSourcePort(const NetPin& port, double slew)
+  // The port the clock comes from, with the timer's slew there at kBalance
+  // and at kSlow, when the net's driver is the only load of the port's net.
+  void setSourcePort(const NetPin& port, double slew, double slow_slew)
   {
     source_ = port;
     source_slew_ = slew;
+    source_slow_slew_ = slow_slew;
     has_source_ = true;
   }
   void setPinModel(odb::dbITerm* pin, const ClockPinModel& model)
@@ -449,6 +450,7 @@ class DelayBalancedTreeBuilder : public TreeBuilder
   std::vector<odb::Point> port_chain_;
   NetPin source_;
   double source_slew_ = 0.0;
+  double source_slow_slew_ = 0.0;
   bool has_source_ = false;
   // Where the buffers from the clock's port to the driver stand, and the
   // delay from the port to the driver's input.

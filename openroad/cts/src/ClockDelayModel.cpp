@@ -695,9 +695,15 @@ StageTiming ClockDelayModel::port(const Corner corner,
   stage.load = wire.cap[corner];
   stage.wire_delay.resize(loads);
   stage.load_slew.resize(loads);
+  // As the timer has a port without a driving cell: the wire adds to the
+  // port's slew rather than shaping its ramp.
   for (size_t i = 0; i < loads; i++) {
-    wireEnd(
-        slew, wire.elmore[corner][i], stage.wire_delay[i], stage.load_slew[i]);
+    const double elmore = wire.elmore[corner][i];
+    stage.wire_delay[i] = -elmore * std::log(1.0 - delay_threshold_);
+    stage.load_slew[i]
+        = slew
+          + elmore * std::log((1.0 - slew_lower_) / (1.0 - slew_upper_))
+                / slew_derate_;
   }
   return stage;
 }
@@ -808,6 +814,14 @@ double ClockDelayModel::worstSlew(const int cell, const NetWire& wire) const
 bool ClockDelayModel::slewOk(const int cell, const NetWire& wire) const
 {
   return worstSlew(cell, wire) <= kSlewShare * slew_limit_;
+}
+
+bool ClockDelayModel::portSlewOk(const double slew, const NetWire& wire) const
+{
+  const StageTiming stage = port(kSlow, slew, wire);
+  return std::ranges::all_of(stage.load_slew, [&](const double load_slew) {
+    return load_slew <= kSlewShare * slew_limit_;
+  });
 }
 
 void ClockDelayModel::reduce(const std::vector<TreeNode>& tree,

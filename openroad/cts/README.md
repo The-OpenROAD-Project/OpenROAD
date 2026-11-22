@@ -111,7 +111,7 @@ With `-delay_balanced`, every buffer and wire of a tree is timed with the timer'
 - Sinks are grouped by nearness under buffers, level by level. Each buffer takes the cell from `-buf_list` and `-root_buf` that makes the registers below it as late as those below the other buffers of its level. A group whose sinks stay apart whatever cells they take is split, and the buffers of its parts stand together.
 - A clock gate, or any other cell between the clock's root and its registers, is a sink with the delay behind it. The net behind it gets a tree of its own, unless its loads fit one group of sinks and the cell drives them within the slew limit as they are; that net is left untouched. Clock gates are not cloned, moved, or resized.
 - The buffers that remain are joined two at a time. A joint stands where both sides are equally late, with repeaters where a wire is long or one side is early, on a line that keeps clear of macros and placement blockages.
-- Buffers lead from the net's driver to the tree. In a flat design, where a cell drives the net, buffers also lead from the clock's port to that cell where the two are far apart, and from the cell to output ports of the clock net, which the tree does not carry, where the cell cannot drive their wire as well.
+- Buffers lead from the net's driver to the tree. In a flat design, where a cell drives the net, buffers also lead from the clock's port to that cell where the two are far apart or the port's slew allows only a short wire, and from the cell to output ports of the clock net, which the tree does not carry, where the cell cannot drive their wire as well.
 - A tree is first built with groups above the sinks that widen level by level. Where that leaves groups narrower than a buffer reaches, it is built again with groups that wide, and the tree whose registers get the clock earlier is kept. Where both are about as early, or both within the latency asked for, the one whose registers are nearer one another is kept.
 
 The mode takes its targets from the constraints:
@@ -119,6 +119,7 @@ The mode takes its targets from the constraints:
 | Constraint | Use |
 | ----- | ----- |
 | `set_clock_latency` on a clock | The arrival its registers aim at, from the clock's port. Delaying buffers are added between the root and the tree to reach it. Without it, or where the tree is later than it, the registers get the clock as early as the tree allows. |
+| `set_clock_latency` on a register's clock pin, below its clock's | The register gets the clock earlier than the clock's other registers by the difference of the two latencies. A pin latency on a clock that has none is ignored with a warning. |
 | `set_max_transition -clock_path` on the clocks, `set_max_transition` on the design, and the slew limits of the buffers' Liberty cells | The largest slew of a clock pin: the least of them, held in the scene where the buffers are slowest. |
 | The current scene | The scene the delays are balanced in. |
 

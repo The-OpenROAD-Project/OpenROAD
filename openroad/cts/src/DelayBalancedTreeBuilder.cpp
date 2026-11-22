@@ -2265,9 +2265,29 @@ void DelayBalancedTreeBuilder::planSource()
       .layer = ClockDelayModel::pinLayer(driver_input_->getMTerm()),
   };
   const Path path = pathBetween(legal({source_.x, source_.y}), legal({x, y}));
-  const int hops = std::max<int>(1, std::ceil(path.length() / hop_));
-  for (int k = 1; k < hops; k++) {
-    source_chain_.push_back(legal(path.at(path.length() * k / hops)));
+  const double total = path.length();
+  // Distance along the path the port drives within the slew limit.
+  auto port_ok = [&](const double distance) {
+    const NetPin load
+        = distance < total ? trunkInput(legal(path.at(distance))) : input;
+    return model_->portSlewOk(source_slow_slew_,
+                              model_->starWire(source_, {load}, false));
+  };
+  double first = std::min(hop_, total);
+  if (!port_ok(first)) {
+    double low = 0.0;
+    for (int i = 0; i < 12; i++) {
+      const double middle = (low + first) / 2.0;
+      (port_ok(middle) ? low : first) = middle;
+    }
+    first = low;
+  }
+  if (first < total) {
+    const int hops = std::max<int>(1, std::ceil((total - first) / hop_));
+    for (int k = 0; k < hops; k++) {
+      source_chain_.push_back(
+          legal(path.at(first + (total - first) * k / hops)));
+    }
   }
   double slew = source_slew_;
   source_delay_ = 0.0;

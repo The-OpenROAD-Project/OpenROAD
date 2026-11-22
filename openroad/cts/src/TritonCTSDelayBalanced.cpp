@@ -125,34 +125,70 @@ void TritonCTS::buildDelayBalancedTree(
 
 void TritonCTS::setSinkModels(DelayBalancedTreeBuilder* builder)
 {
+  const sta::Sdc* sdc = openSta_->cmdMode()->sdc();
+  const sta::Clock* clock = sdc->findClock(builder->getClock().getSdcName());
+  float target = 0.0;
+  bool has_target = false;
+  if (clock != nullptr) {
+    sdc->clockLatency(
+        clock, sta::RiseFall::rise(), sta::MinMax::max(), target, has_target);
+  }
+  int ignored = 0;
   builder->getClock().forEachSink([&](ClockInst& sink) {
     odb::dbITerm* pin = sink.getDbInputPin();
     ClockPinModel model;
     if (clockPinModel(pin, model, 0)) {
       builder->setPinModel(pin, model);
-    } else if (options_->insertionDelayEnabled()) {
+      return;
+    }
+    if (options_->insertionDelayEnabled()) {
       const sta::LibertyPort* port
           = network_->libertyPort(network_->dbToSta(pin));
-      const float delay
-          = port ? port->clkTreeDelay(
-                       0.0, sta::RiseFall::rise(), sta::MinMax::max())
-                 : 0.0;
-      if (delay > 0.0) {
-        model.after = delay;
-        builder->setPinModel(pin, model);
-      }
+      model.after = port ? port->clkTreeDelay(
+                               0.0, sta::RiseFall::rise(), sta::MinMax::max())
+                         : 0.0;
+    }
+    // A pin with a latency of its own is reached that much before the
+    // clock's latency.
+    float own = 0.0;
+    bool has_own = false;
+    if (pin != nullptr) {
+      sdc->clockLatency(clock,
+                        network_->dbToSta(pin),
+                        sta::RiseFall::rise(),
+                        sta::MinMax::max(),
+                        own,
+                        has_own);
+    }
+    if (has_own && !has_target) {
+      ignored++;
+    } else if (has_own && own < target) {
+      model.after += target - own;
+    }
+    if (model.after > 0.0) {
+      builder->setPinModel(pin, model);
     }
   });
+  if (ignored > 0) {
+    logger_->warn(CTS,
+                  309,
+                  "{} clock pins on net {} have a latency of their own, which "
+                  "-delay_balanced follows only when clock {} has a latency.",
+                  ignored,
+                  builder->getClock().getName(),
+                  builder->getClock().getSdcName());
+  }
 }
 
 void TritonCTS::setClockSource(DelayBalancedTreeBuilder* builder)
 {
-  const auto timer_slew = [&](sta::Vertex* vertex) {
-    return sta::delayAsFloat(openSta_->slew(vertex,
-                                            sta::RiseFallBoth::rise(),
-                                            {openSta_->cmdScene()},
-                                            sta::MinMax::max()));
-  };
+  const auto timer_slew
+      = [&](sta::Vertex* vertex, const sta::Scene* scene = nullptr) {
+          sta::Scene* at = scene != nullptr ? openSta_->findScene(scene->name())
+                                            : openSta_->cmdScene();
+          return sta::delayAsFloat(openSta_->slew(
+              vertex, sta::RiseFallBoth::rise(), {at}, sta::MinMax::max()));
+        };
   openSta_->ensureGraph();
   odb::dbITerm* input = builder->getDriverInput();
   odb::dbNet* net = builder->getClock().getNetObj();
@@ -191,7 +227,8 @@ void TritonCTS::setClockSource(DelayBalancedTreeBuilder* builder)
             .cap = 0.0,
             .layer = ClockDelayModel::pinLayer(source),
         },
-        timer_slew(vertex));
+        timer_slew(vertex),
+        timer_slew(vertex, delay_model_->slowScene()));
   }
 }
 

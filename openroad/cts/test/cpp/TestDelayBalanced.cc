@@ -407,6 +407,70 @@ TEST_F(DelayBalancedVariantTest, PortsOfTheClockNetGetTheirOwnBuffers)
   EXPECT_LT(latest, kLatency + 15e-12);
 }
 
+// A slow clock port drives only as far as the slew limit allows before the
+// first buffer from it.
+TEST_F(DelayBalancedVariantTest, ClockPortDrivesWithinTheSlewLimit)
+{
+  constexpr double kSlewLimit = 50e-12;
+  hierarchy_ = false;
+  build(kLatency, kSlewLimit, [this](TritonCTS&) {
+    addRootBufferAndPorts();
+    sta_->setInputSlew(
+        db_network_->port(db_network_->dbToSta(block_->findBTerm("clk"))),
+        sta::RiseFallBoth::riseFall(),
+        sta::MinMaxAll::all(),
+        0.98 * kSlewLimit,
+        sta_->cmdSdc());
+  });
+  odb::dbNet* port_net = block_->findBTerm("clk")->getNet();
+  ASSERT_EQ(port_net->getITermCount(), 1);
+  odb::dbITerm* first = *port_net->getITerms().begin();
+  EXPECT_TRUE(first->getInst()->getName().starts_with("clkbuf_source_"));
+  sta_->ensureClkArrivals();
+  sta::Vertex* vertex
+      = sta_->graph()->pinLoadVertex(db_network_->dbToSta(first));
+  const double slew
+      = sta::delayAsFloat(sta_->slew(vertex,
+                                     sta::RiseFallBoth::riseFall(),
+                                     sta_->scenes(),
+                                     sta::MinMax::max()));
+  EXPECT_GT(slew, 0.9 * kSlewLimit);
+  EXPECT_LE(slew, kSlewLimit);
+}
+
+// A register clock pin with a latency of its own gets the clock that much
+// before the clock's latency.
+TEST_F(DelayBalancedVariantTest, RegistersWithTheirOwnLatencyGetTheClockThen)
+{
+  constexpr double kOwn = 400e-12;
+  const std::vector<std::string> own = {"ff0", "ff9", "far0", "far13"};
+  const auto pin = [&](const std::string& name) {
+    return db_network_->dbToSta(inst(name)->findITerm("CK"));
+  };
+  build(kLatency, kSlewLimit, [&](TritonCTS&) {
+    for (const std::string& name : own) {
+      sta_->setClockLatency(nullptr,
+                            pin(name),
+                            sta::RiseFallBoth::riseFall(),
+                            sta::MinMaxAll::all(),
+                            kOwn,
+                            sta_->cmdSdc());
+    }
+  });
+  for (const std::string& name : own) {
+    sta_->removeClockLatency(nullptr, pin(name), sta_->cmdSdc());
+  }
+  sta_->ensureClkArrivals();
+  for (const std::string& name : own) {
+    EXPECT_NEAR(clockArrival(inst(name)->findITerm("CK")), kOwn, 15e-12)
+        << name;
+  }
+  for (const std::string& name : {"ff1", "far1", "many4", "close0"}) {
+    EXPECT_NEAR(clockArrival(inst(name)->findITerm("CK")), kLatency, 15e-12)
+        << name;
+  }
+}
+
 // Only the named net gets a tree; the gates on it still count for the delay
 // behind them.
 TEST_F(DelayBalancedVariantTest, GatesOnANamedClockNetCarryTheirDelay)
