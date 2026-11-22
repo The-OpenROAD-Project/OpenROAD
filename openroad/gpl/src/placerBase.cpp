@@ -106,10 +106,19 @@ void Instance::copyDbLocation(PlacerBaseCommon* pbc)
   ux_ = lx_ + bbox->getDX();
   uy_ = ly_ + bbox->getDY();
 
+  const int db_lx = lx_;
+  const int db_ly = ly_;
   if (isPlaceInstance()) {
     lx_ -= pbc->getPadLeft() * pbc->siteSizeX();
     ux_ += pbc->getPadRight() * pbc->siteSizeX();
   }
+  db_offset_x_ = db_lx - cx();
+  db_offset_y_ = db_ly - cy();
+}
+
+odb::Point Instance::dbLocationAt(const int cx, const int cy) const
+{
+  return {cx + db_offset_x_, cy + db_offset_y_};
 }
 
 bool Instance::isFixed() const
@@ -178,7 +187,8 @@ void Instance::dbSetPlacementStatus(const dbPlacementStatus& ps)
 
 void Instance::dbSetLocation()
 {
-  inst_->setLocation(lx_, ly_);
+  const odb::Point loc = dbLocationAt(cx(), cy());
+  inst_->setLocation(loc.x(), loc.y());
 }
 
 void Instance::dbSetLocation(int x, int y)

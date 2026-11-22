@@ -31,10 +31,10 @@
 [INFO GPL-0051] Source of initial instance position counters:
 	Odb location = 0	Core center = 286	Region center = 0
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000011 HPWL: 5614340
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000011 HPWL: 4998803
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000010 HPWL: 4991131
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000010 HPWL: 4997865
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000009 HPWL: 5002847
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000011 HPWL: 4984546
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000010 HPWL: 4974780
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000010 HPWL: 4982232
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000009 HPWL: 4985753
 [INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      2.101 um^2
@@ -126,4 +126,4 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1007]     - For 90% usage of free space: 0.7001
 [INFO GPL-1008]     - For 80% usage of free space: 0.7876
 [INFO GPL-1014] Final placement area: 600.99 (+0.00%)
-[INFO GPL-1018] Final HPWL (um): 2402.56
+[INFO GPL-1018] Final HPWL (um): 2401.02
