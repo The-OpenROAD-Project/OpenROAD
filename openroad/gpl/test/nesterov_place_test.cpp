@@ -458,17 +458,28 @@ TEST_F(NesterovPlaceTest, ThreadCountDoesNotChangeThePlacement)
 // ---------------------------------------------------------------------------
 // Options.
 
-// A target below what the cells need is raised to fit them, with a warning.
+// A target below what the cells need, whether just under or far under, is
+// raised to the uniform density with a warning, and placement converges to it.
 TEST_F(NesterovPlaceTest, TargetDensityBelowUtilizationIsRaised)
 {
   ASSERT_NO_FATAL_FAILURE(
       load({"density_below_utilization.def", "nangate45.lef"}));
-  const std::string log = placeAndLog(withDensity(withoutInitialPlace(), 0.6f));
+  const float uniform = placer().getUniformTargetDensity(uniformDensity(), 1);
+  for (const float density : {0.6f, 0.001f}) {
+    SCOPED_TRACE(density);
+    ASSERT_LT(density, uniform);
+    PlaceResult result;
+    const std::string log
+        = placeAndLog(withDensity(withoutInitialPlace(), density), &result);
 
-  EXPECT_NE(log.find("GPL-0302"), std::string::npos);
-  const std::optional<float> target = targetDensity(log);
-  ASSERT_TRUE(target);
-  EXPECT_GT(*target, 0.6f);
+    EXPECT_NE(log.find("GPL-0302"), std::string::npos);
+    const std::optional<float> target = targetDensity(log);
+    ASSERT_TRUE(target);
+    // The log prints the target to four decimal places.
+    EXPECT_NEAR(*target, uniform, 1e-4);
+    EXPECT_EQ(result.stop, PlaceStop::kConverged);
+    EXPECT_LE(result.overflow, PlaceOptions{}.overflow);
+  }
 }
 
 // Uniform density targets the design's own utilization instead of the
