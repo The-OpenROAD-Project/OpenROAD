@@ -491,4 +491,25 @@ TEST_F(TestEstimateParasitics, WireRcPerTech)
   EXPECT_DOUBLE_EQ(ep_.wireSignalVResistance(scene), 2.0e3);
 }
 
+// The vias between a pin and its net's wire are those of the cut layers from
+// the pin's layer to the first layer set for the wire.
+TEST_F(TestEstimateParasitics, PinViaResistanceSumsTheCutLayersToTheWire)
+{
+  readVerilogAndSetup("TestEstimateParasitics.v");
+  odb::dbTech* tech = block_->getTech();
+  sta::Scene* scene = sta_->cmdScene();
+  odb::dbTechLayer* metal1 = tech->findLayer("metal1");
+  odb::dbTechLayer* metal3 = tech->findLayer("metal3");
+  ASSERT_NE(metal1, nullptr);
+  ASSERT_NE(metal3, nullptr);
+  ep_.setLayerRC(tech->findLayer("via1"), scene, 5.0, 0.0);
+  ep_.setLayerRC(tech->findLayer("via2"), scene, 7.0, 0.0);
+  ep_.addClkLayer(tech, metal3);
+  ep_.addSignalLayer(tech, metal1);
+  EXPECT_DOUBLE_EQ(ep_.pinViaResistance(metal1, scene, /*is_clk=*/true), 12.0);
+  EXPECT_DOUBLE_EQ(ep_.pinViaResistance(metal3, scene, /*is_clk=*/true), 1e-3);
+  EXPECT_DOUBLE_EQ(ep_.pinViaResistance(metal1, scene, /*is_clk=*/false), 1e-3);
+  EXPECT_DOUBLE_EQ(ep_.pinViaResistance(metal3, scene, /*is_clk=*/false), 12.0);
+}
+
 }  // namespace est
