@@ -291,7 +291,7 @@ place_pins
 | `-minimize_displacement` | Rank slots by how far they are from where each pin already is, rather than by the wirelength of its net. Use it to legalize a pin placement that is already placed. |
 | `-write_pin_placement` | A file with the pin placement generated in the format of multiple calls for the `place_pin` command. |
 
-The layers and the spacing of the slots can be kept with `set_place_config`
+The layers and the spacing of the slots can be kept with `set_placer_config`
 (see the gpl documentation). `place_pins` uses those settings for any switch it
 is not given; the switches given to `place_pins` apply only to that call.
 

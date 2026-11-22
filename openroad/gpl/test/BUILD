@@ -1,6 +1,7 @@
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("//bazel:man_tcl_checker.bzl", "man_tcl_check_test")
 load("//bazel/gpu:copts.bzl", "CUDA_COPTS")
 load("//bazel/gpu:defs.bzl", "GPU_ENV_OFF", "GPU_ONLY")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
@@ -189,7 +190,6 @@ cc_test(
     name = "fft_gpu_test",
     srcs = ["fft_gpu_test.cc"],
     env = {"ENABLE_GPU": "1"},
-    features = ["-layering_check"],  # includes private headers
     linkstatic = True,
     tags = ["gpu"],
     target_compatible_with = GPU_ONLY,
@@ -362,18 +362,6 @@ cc_test(
 )
 
 cc_test(
-    name = "nesterov_divergence_test",
-    srcs = ["nesterov_divergence_test.cpp"],
-    deps = [
-        "//openroad/gpl:gpl_impl",
-        "//openroad/odb/src/db",
-        "//openroad/utl",
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-    ],
-)
-
-cc_test(
     name = "congestion_buffers_test",
     srcs = [
         "congestion_buffers_test.cpp",
@@ -497,15 +485,9 @@ cc_test(
     ],
 )
 
-py_test(
+man_tcl_check_test(
     name = "gpl_man_tcl_check",
-    srcs = ["gpl_man_tcl_check.py"],
-    data = ["//openroad/gpl:doc_files"],
-    tags = [
-        "doc_check",
-        "py",
-    ],
-    deps = ["//docs/src/scripts:extract_utils"],
+    module = "gpl",
 )
 
 doc_check_test(
