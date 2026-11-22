@@ -638,14 +638,14 @@ std::vector<double> DelayBalancedTreeBuilder::spacing(
     const std::vector<int>& items,
     const double reach) const
 {
-  const int cell = std::clamp(reach, 1.0, 1e9);
+  const int bin = std::clamp(reach, 1.0, 1e9);
   const auto key = [](const int64_t i, const int64_t j) {
     return (static_cast<uint64_t>(i) << 32)
            ^ (static_cast<uint64_t>(j) & 0xffffffffULL);
   };
   std::unordered_map<uint64_t, std::vector<int>> grid;
   for (const int item : items) {
-    grid[key(nodes_[item].x / cell, nodes_[item].y / cell)].push_back(item);
+    grid[key(nodes_[item].x / bin, nodes_[item].y / bin)].push_back(item);
   }
   std::vector<double> out;
   out.reserve(items.size());
@@ -654,7 +654,7 @@ std::vector<double> DelayBalancedTreeBuilder::spacing(
     double nearest = reach;
     for (int dx = -1; dx <= 1; dx++) {
       for (int dy = -1; dy <= 1; dy++) {
-        const auto it = grid.find(key(n.x / cell + dx, n.y / cell + dy));
+        const auto it = grid.find(key(n.x / bin + dx, n.y / bin + dy));
         if (it == grid.end()) {
           continue;
         }

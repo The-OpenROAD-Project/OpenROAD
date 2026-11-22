@@ -992,7 +992,9 @@ bool ClockDelayModel::steinerTree(
   }
   tree.reserve(branches);
   std::vector<int> node_of(branches, -1);
-  std::vector<int> order{branch_of[0]};
+  std::vector<int> order;
+  order.reserve(branches);
+  order.push_back(branch_of[0]);
   node_of[branch_of[0]] = 0;
   tree.push_back({});
   for (int head = 0; head < order.size(); head++) {
