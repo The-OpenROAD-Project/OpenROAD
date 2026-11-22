@@ -1,0 +1,22 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO IFP-0001] Added 14 rows of 526 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 100.000 20.000 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 99.940 19.600 ) um
+[INFO IFP-0102] Core area:                         1958.824 um^2
+[INFO IFP-0103] Total instances area:                21.014 um^2
+[INFO IFP-0104] Effective utilization:                0.011
+[INFO IFP-0105] Number of instances:                     13
+worst slack max -0.0485
+tns max -0.0485
+[INFO RET-0049] STA check: before retiming, worst slack -0.0485, total negative slack -0.0485.
+[INFO RET-0050] STA check round 1: 5 slides give worst slack -0.0045, total negative slack -0.0045.
+[INFO RET-0051] STA check round 1: 5 slides kept.
+[INFO RET-0050] STA check round 2: 1 slides give worst slack 0.0076, total negative slack 0.0000.
+[INFO RET-0051] STA check round 2: 1 slides kept.
+[INFO RET-0052] STA check round 3: the search proposes no slide.
+[INFO RET-0053] STA check: 6 slides kept in 2 rounds; worst slack -0.0485 -> 0.0076, total negative slack -0.0485 -> 0.0000; registers 3 -> 2; 2 new cells placed, 0 new registers changed cell.
+worst slack max 0.0076
+tns max 0.0000
+unplaced instances: 0
+Retime output passed/skipped sequential equivalence test
+No differences found.

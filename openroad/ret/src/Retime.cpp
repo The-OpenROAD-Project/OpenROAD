@@ -154,6 +154,7 @@ void Retime::computeArcDelays()
   computeWireArcs();
   computeCombArcs();
   computeSeqArcs();
+  computeSlackModel();
 }
 
 void Retime::resolveFlopDCap()
@@ -213,6 +214,11 @@ void Retime::computeWireArcs()
           .arc_comb = fallback,
           .arc_reg = fallback,
           .sink = sink,
+          .launch = pinArrival(sink),
+          .phys = &handles[k],
+          .unmap = 0.0f,
+          .driver_shift = 0.0f,
+          .cross_extra = 0.0f,
       });
     }
   }
@@ -278,7 +284,9 @@ float Retime::characterizeArc(int v,
                               odb::dbITerm* sink,
                               float load,
                               float fallback,
-                              ArcCharStage* stage_out)
+                              ArcCharStage* stage_out,
+                              float forced_slew,
+                              float* out_slew)
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Scene* scene = sta_->cmdScene();
@@ -310,7 +318,7 @@ float Retime::characterizeArc(int v,
   } else if (pvt == nullptr) {
     stage = ArcCharStage::kNoPvt;
   } else {
-    const float in_slew = getPinSlew(pin);
+    const float in_slew = forced_slew >= 0.0f ? forced_slew : getPinSlew(pin);
     for (sta::TimingArcSet* set : cell->timingArcSets(from, nullptr)) {
       if (set->role()->isTimingCheck()) {
         continue;
@@ -324,7 +332,12 @@ float Retime::characterizeArc(int v,
         float delay = 0.0f;
         float slew = 0.0f;
         model->gateDelay(pvt, in_slew, load, delay, slew);
-        best = std::max(best, delay);
+        if (!got || delay > best) {
+          best = delay;
+          if (out_slew != nullptr) {
+            *out_slew = slew;
+          }
+        }
         got = true;
       }
     }
@@ -335,7 +348,7 @@ float Retime::characterizeArc(int v,
   if (stage_out != nullptr) {
     *stage_out = stage;
   }
-  return got ? best : fallback;
+  return got ? std::max(best, 0.0f) : fallback;
 }
 
 bool Retime::outputRegistered(int v) const
@@ -364,17 +377,28 @@ void Retime::setArrival(int t)
   bool root = true;
   double a = kExcluded;
   double a_pi = kExcluded;
+  bool launched = false;
   for (const FaninEdge& fe : fanin_[t]) {
+    const double arc = registered ? fe.arc_reg : fe.arc_comb;
     if (!isCombinational(t, fe)) {
+      if (slack_search_) {
+        launched = true;
+        a = std::max(a, launchArrival(t, fe) + arc);
+      }
       continue;
     }
     root = false;
-    const double arc = registered ? fe.arc_reg : fe.arc_comb;
-    a = std::max(a, arrivals_[fe.u] + fe.wire + arc);
-    a_pi = std::max(a_pi, arrivals_pi_[fe.u] + fe.wire + arc);
+    const double extra = crossingDelay(t, fe);
+    a = std::max(a, arrivals_[fe.u] + fe.driver_shift + fe.wire + arc + extra);
+    a_pi = std::max(
+        a_pi, arrivals_pi_[fe.u] + fe.driver_shift + fe.wire + arc + extra);
   }
   if (root) {
-    arrivals_[t] = graph_->pinned()[t] ? kExcluded : gate_floor_[t];
+    if (graph_->pinned()[t]) {
+      arrivals_[t] = kExcluded;
+    } else {
+      arrivals_[t] = launched ? a : gate_floor_[t];
+    }
     arrivals_pi_[t] = graph_->pinned()[t] ? pi_source_[t] : kExcluded;
   } else {
     arrivals_[t] = a;
@@ -413,7 +437,7 @@ void Retime::computeArrivals()
   }
 }
 
-double Retime::slide(int v)
+void Retime::applySlide(int v)
 {
   r_[v] -= 1;
   Scratch& s = scratch_;
@@ -478,6 +502,11 @@ double Retime::slide(int v)
       s.in_dirty[t] = 0;
     }
   }
+}
+
+double Retime::slide(int v)
+{
+  applySlide(v);
   return worstArrival();
 }
 
@@ -657,6 +686,7 @@ void Retime::run(int max_moves)
 {
   const int n = static_cast<int>(graph_->nodes().size());
   r_.assign(n, 0);
+  moves_ = 0;
   arrivals_.assign(n, 0.0);
   arrivals_pi_.assign(n, kExcluded);
   in_critical_cone_.assign(n, 0);
@@ -668,7 +698,13 @@ void Retime::run(int max_moves)
   markCriticalCone(worst);
   pi_limit_ = std::max(static_cast<double>(graph_->clockPeriod()), worst_pi_);
   if (worst <= 0.0) {
-    logger_->info(utl::RET, 21, "No register-to-register path to optimize.");
+    if (!quiet_) {
+      logger_->info(utl::RET, 21, "No register-to-register path to optimize.");
+    }
+    return;
+  }
+  if (slack_search_) {
+    runBySlack(max_moves);
     return;
   }
 
@@ -698,11 +734,15 @@ void Retime::run(int max_moves)
       }
     }
   }
+  moves_ = moves;
   reportResult(moves, pi_rejects);
 }
 
 void Retime::reportSlide(int v, int moves)
 {
+  if (quiet_) {
+    return;
+  }
   std::string net_name = "?";
   for (odb::dbITerm* iterm : graph_->nodes()[v]->getITerms()) {
     if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
@@ -744,6 +784,9 @@ void Retime::reportSlide(int v, int moves)
 
 void Retime::reportResult(int moves, int pi_rejects)
 {
+  if (quiet_) {
+    return;
+  }
   if (moves == 0) {
     logger_->info(utl::RET, 16, "Retime found no slides.");
   } else {

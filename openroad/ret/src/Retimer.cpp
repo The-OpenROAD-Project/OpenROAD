@@ -16,8 +16,10 @@
 
 #include "RegisterUtils.h"
 #include "Retime.h"
+#include "RetimerPlacer.h"
 #include "RetimingGraph.h"
 #include "SequentialUnmapper.h"
+#include "StaCheck.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
@@ -94,12 +96,17 @@ PlacementCount countPlacement(odb::dbBlock* block)
 Retimer::Retimer(odb::dbDatabase* db,
                  sta::dbSta* sta,
                  est::EstimateParasitics* estimate_parasitics,
+                 rsz::Resizer* resizer,
                  utl::Logger* logger)
     : db_(db),
       sta_(sta),
       estimate_parasitics_(estimate_parasitics),
       logger_(logger),
-      unmapper_(std::make_unique<SequentialUnmapper>(db, sta, logger))
+      unmapper_(std::make_unique<SequentialUnmapper>(db, sta, logger)),
+      placer_(std::make_unique<RetimerPlacer>(sta,
+                                              estimate_parasitics,
+                                              resizer,
+                                              logger))
 {
 }
 
@@ -135,26 +142,21 @@ void Retimer::retime(int max_moves)
   dff_q_mterm_ = unmapper_->getBaseSequentialQMTerm();
   checkRegisters(block);
 
-  RetimingGraph graph(db_, sta_, logger_);
-  graph.build();
-  graph.report();
-  clock_net_ = findClockNet(block);
+  placer_->forgetCells();
 
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
-
-  Retime search(&graph, sta_, logger_, dff_d_mterm_);
-  search.run(max_moves);
-  const std::vector<int>& r = search.getRetiming();
-
-  const std::unordered_set<odb::dbInst*> movers = moversToUnmap(graph, r);
   const int unplaced_before = countPlacement(block).unplaced;
   // An error while the netlist is being edited restores it.
   odb::dbDatabase::beginEco(block);
   try {
-    if (movers.empty()) {
-      applyRetiming(graph, r);
+    if (logger_->debugCheck(utl::RET, "sta_check", 1)) {
+      StaCheck check(
+          sta_, logger_, placer_.get(), block, &guard, [&](const int limit) {
+            return searchAndApply(block, limit, guard);
+          });
+      check.run(max_moves);
     } else {
-      applyAfterUnmapping(graph, r, movers, max_moves, guard);
+      searchAndApply(block, max_moves, guard);
     }
   } catch (...) {
     odb::dbDatabase::undoEco(block);
@@ -172,13 +174,55 @@ void Retimer::retime(int max_moves)
   }
 }
 
-void Retimer::applyAfterUnmapping(
-    const RetimingGraph& graph,
-    const std::vector<int>& r,
-    const std::unordered_set<odb::dbInst*>& movers,
-    int max_moves,
-    est::IncrementalParasiticsGuard& guard)
+int Retimer::searchAndApply(odb::dbBlock* block,
+                            int max_moves,
+                            est::IncrementalParasiticsGuard& guard)
 {
+  RetimingGraph graph(db_, sta_, logger_);
+  graph.build();
+  if (!quietTrials()) {
+    graph.report();
+  }
+  clock_net_ = findClockNet(block);
+
+  Retime search(&graph, sta_, logger_, dff_d_mterm_);
+  setUpSearch(search);
+  search.run(max_moves);
+  const std::vector<int>& r = search.getRetiming();
+
+  const std::unordered_set<odb::dbInst*> movers = moversToUnmap(graph, r);
+  if (movers.empty()) {
+    applyRetiming(graph, r);
+    return search.getMoves();
+  }
+  return applyAfterUnmapping(graph, search, movers, max_moves, guard);
+}
+
+bool Retimer::quietTrials() const
+{
+  return logger_->debugCheck(utl::RET, "sta_check", 1)
+         && !logger_->debugCheck(utl::RET, "sta_check", 2);
+}
+
+void Retimer::setUpSearch(Retime& search)
+{
+  search.setQuiet(quietTrials());
+  if (!logger_->debugCheck(utl::RET, "slack_search", 1)) {
+    return;
+  }
+  search.enableSlackSearch(
+      placer_->registerCells(dff_master_),
+      [this](odb::dbMaster* master) { return placer_->registerCells(master); },
+      placer_->choosesCells());
+}
+
+int Retimer::applyAfterUnmapping(const RetimingGraph& graph,
+                                 const Retime& search,
+                                 const std::unordered_set<odb::dbInst*>& movers,
+                                 int max_moves,
+                                 est::IncrementalParasiticsGuard& guard)
+{
+  const std::vector<int>& r = search.getRetiming();
   std::map<uint32_t, odb::dbInst*> ordered_movers;
   for (odb::dbInst* mover : movers) {
     ordered_movers[mover->getId()] = mover;
@@ -209,7 +253,7 @@ void Retimer::applyAfterUnmapping(
   const std::vector<int> r2 = remapLag(graph2, lag, ok);
   if (ok && moversToUnmap(graph2, r2).empty()) {
     applyRetiming(graph2, r2);
-    return;
+    return search.getMoves();
   }
 
   debugPrint(logger_,
@@ -220,20 +264,23 @@ void Retimer::applyAfterUnmapping(
              "netlist");
   constexpr int kMaxRounds = 20;
   for (int round = 0; round < kMaxRounds; ++round) {
-    logger_->info(utl::RET,
-                  43,
-                  "Iteration {}: repeating the search on the netlist with the "
-                  "unmapped registers.",
-                  round + 2);
+    if (!quietTrials()) {
+      logger_->info(utl::RET,
+                    43,
+                    "Iteration {}: repeating the search on the netlist with "
+                    "the unmapped registers.",
+                    round + 2);
+    }
     RetimingGraph g(db_, sta_, logger_);
     g.build();
     Retime s(&g, sta_, logger_, dff_d_mterm_);
+    setUpSearch(s);
     s.run(max_moves);
     const std::vector<int>& rr = s.getRetiming();
     const std::unordered_set<odb::dbInst*> more = moversToUnmap(g, rr);
     if (more.empty()) {
       applyRetiming(g, rr);
-      return;
+      return s.getMoves();
     }
     unmapper_->run(&more);
     guard.update();
@@ -243,6 +290,7 @@ void Retimer::applyAfterUnmapping(
                  "Retiming did not settle after {} rounds of unmapping "
                  "registers; the retiming is not applied.",
                  kMaxRounds);
+  return 0;
 }
 
 odb::dbNet* Retimer::findClockNet(odb::dbBlock* block)
@@ -885,6 +933,9 @@ void Retimer::applyRetiming(const RetimingGraph& graph,
     }
   }
 
+  if (quietTrials()) {
+    return;
+  }
   logger_->info(utl::RET,
                 24,
                 "Rebuilt {} of {} register groups: {} registers removed, {} "

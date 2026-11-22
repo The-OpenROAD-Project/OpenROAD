@@ -85,11 +85,36 @@ an error on designs it cannot handle: libraries without a usable base
 register, inverter, AND2 or OR2 cell; more than one clock; negative-edge
 registers; no clock defined. An error leaves the netlist unchanged.
 
+## Experimental: slack search with an STA check
+
+A second search, for a placed design between global placement and the
+resizer, is behind debug switches while it is evaluated:
+
+```tcl
+set_debug_level RET slack_search 1
+set_debug_level RET sta_check 1
+set_debug_level RET place_size 1
+retime
+```
+
+| Switch | Description |
+| ----- | ----- |
+| `slack_search 1` | Take moves by slack, worst failing spot first. A path starts at what its register launches, gate arcs are calibrated to STA and an endpoint is charged its setup time. A move must raise the slack through its spot by more than 0.2% of the clock period without lowering the total negative slack; when none is left, moves that raise the total without lowering the worst slack are taken. |
+| `sta_check 1` | Let STA decide what is kept. The moves are applied, the new cells placed and the design timed. The moves are kept when neither the worst nor the total negative slack got worse; else the first half of them is tried, then a quarter, and so on. Short rounds of 16 moves follow, each from what was kept, until a round keeps nothing or 16 rounds have kept moves. |
+| `place_size 1` | For each new register with negative slack, try the three fastest cells of the same function and keep the one STA prefers. The slack search then prices a new register with its fastest cell. |
+| `why 1` | Report where the failing endpoints of STA are and what stops a move on the worst path into each failing endpoint of the delay model. |
+
+Under `sta_check` each new cell is placed at the center of the placed cells
+on its data and output nets and left for detailed placement to legalize;
+`global_placement -incremental` is not needed. `-max_moves` limits the
+moves of the whole run.
+
 ## Example scripts
 
 ```
 ./test/retime_basic.tcl
 ./test/retime_unmap.tcl
+./test/retime_slack_search.tcl
 ```
 
 ## Regression tests
@@ -115,6 +140,12 @@ In a hierarchical netlist a register does not cross a module boundary, so a
 path that runs through another module, such as an arithmetic operator kept
 as its own module, is not shortened. A tie cell in another module than the
 register it held is left in place when that register is removed.
+
+The STA check guards the timing at the time of `retime`; the resizer and
+detailed placement that run afterwards can still make it worse than without
+retiming. The delay model of the slack search counts one endpoint for a gate
+however many registers it feeds, so its total negative slack underweights
+gates that feed many registers.
 
 ## License
 

@@ -1,0 +1,11 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+worst slack max -0.1486
+[INFO RET-0014] Retiming graph: 18 gates, 16 edges, 5 registers, 8 pinned gates, 0 fenced registers.
+[INFO RET-0016] Retime found no slides.
+[INFO RET-0048] Slack search: in the delay model, worst slack -0.1486 -> -0.1486, total negative slack -0.2935 -> -0.2935; 0 slides taken for their spot, 0 for the total, 1 refused because the total would get worse.
+retime why: STA has 2 failing endpoints, total negative slack -0.2935.
+retime why:        2 endpoints, 100.0% of the total: endpoints the model reads (data pin behind a gate, output port)
+retime why: the model has 2 failing endpoints, total negative slack -0.2935.  By what stops a slide at the start of each one's worst path:
+retime why:        1 endpoints,  50.6% of the total: the worst path starts at a port or at a gate that is never crossed
+retime why:        1 endpoints,  49.4% of the total: a slide helps the spot but makes the total negative slack worse
+retime why:     starts at a gate,      1 endpoints,  50.6%: reads a register no gate drives (fed from a port) or another input outside the graph

@@ -1,0 +1,10 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+worst slack max 0.8051
+[INFO RET-0049] STA check: before retiming, worst slack 0.8051, total negative slack 0.0000.
+[INFO RET-0008] Unmapped 2 registers.
+[INFO RET-0050] STA check round 1: 10 slides give worst slack 0.8455, total negative slack 0.0000.
+[INFO RET-0051] STA check round 1: 10 slides kept.
+[INFO RET-0052] STA check round 2: the search proposes no slide.
+[INFO RET-0053] STA check: 10 slides kept in 1 rounds; worst slack 0.8051 -> 0.8455, total negative slack 0.0000 -> 0.0000; registers 6 -> 4; 0 new cells placed, 0 new registers changed cell.
+worst slack max 0.8455
+Retime output passed/skipped sequential equivalence test

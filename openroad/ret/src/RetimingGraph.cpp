@@ -60,11 +60,11 @@ void RetimingGraph::markBoundary(odb::dbInst* inst, int id)
     for (odb::dbBTerm* bterm : net->getBTerms()) {
       if (pin->getIoType() == odb::dbIoType::INPUT
           && bterm->getIoType() == odb::dbIoType::INPUT) {
-        pinned_[id] = true;
+        pinGate(id, kPort);
       }
       if (pin->getIoType() == odb::dbIoType::OUTPUT
           && bterm->getIoType() == odb::dbIoType::OUTPUT) {
-        pinned_[id] = true;
+        pinGate(id, kPort);
       }
     }
   }
@@ -93,8 +93,9 @@ void RetimingGraph::walkFanout(int source,
     if (net == nullptr) {
       continue;
     }
-    if (fencesChain(net)) {
-      pinned_[source] = true;
+    const PinReason fence = chainFence(net);
+    if (fence != kPinReasons) {
+      pinGate(source, fence);
       fenced_.insert(flops.begin(), flops.end());
     }
     for (odb::dbITerm* sink : net->getITerms()) {
@@ -127,24 +128,24 @@ void RetimingGraph::walkFanout(int source,
   }
 }
 
-bool RetimingGraph::fencesChain(odb::dbNet* net) const
+RetimingGraph::PinReason RetimingGraph::chainFence(odb::dbNet* net) const
 {
   if (!net->getBTerms().empty()) {
-    return true;
+    return kChainToPort;
   }
   for (odb::dbITerm* sink : net->getITerms()) {
     if (sink->getIoType() == odb::dbIoType::INPUT) {
       odb::dbInst* load = sink->getInst();
       if (load->getMaster()->isSequential()) {
         if (!continuesThrough(load, sink)) {
-          return true;
+          return kChainToControl;
         }
       } else if (!index_.contains(load)) {
-        return true;
+        return kChainToOther;
       }
     }
   }
-  return false;
+  return kPinReasons;
 }
 
 bool RetimingGraph::isDontTouch(odb::dbInst* reg) const
@@ -206,6 +207,7 @@ void RetimingGraph::build()
   adj_.assign(n, {});
   phys_.assign(n, {});
   pinned_.assign(n, false);
+  pin_reasons_.assign(n, 0);
   self_dual_.assign(n, false);
   std::unordered_map<odb::dbMaster*, bool> self_dual_master;
   for (int i = 0; i < n; ++i) {
@@ -244,7 +246,7 @@ void RetimingGraph::pinUnmodeledInputs()
       odb::dbNet* net = pin->getNet();
       if (pin->getIoType() == odb::dbIoType::INPUT && net != nullptr
           && !net->getSigType().isSupply() && !modeled.contains(pin)) {
-        pinned_[v] = true;
+        pinGate(v, net->getBTerms().empty() ? kUnmodeledInput : kPort);
       }
     }
   }
@@ -277,9 +279,9 @@ void RetimingGraph::fenceModules()
     for (int k = 0; k < edge_count; ++k) {
       const EdgePhys& phys = phys_[u][k];
       if (crossing_nets.contains(chainNet(phys))) {
-        pinned_[u] = true;
+        pinGate(u, kModule);
         if (!phys.flops.empty()) {
-          pinned_[adj_[u][k].target] = true;
+          pinGate(adj_[u][k].target, kModule);
         }
       }
     }
@@ -297,7 +299,7 @@ void RetimingGraph::markDontTouch(odb::dbInst* inst, int id)
     }
   }
   if (dont_touch) {
-    pinned_[id] = true;
+    pinGate(id, kDontTouch);
     for (odb::dbITerm* pin : inst->getITerms()) {
       odb::dbNet* net = pin->getNet();
       if (pin->getIoType() == odb::dbIoType::INPUT && net != nullptr) {
@@ -305,7 +307,7 @@ void RetimingGraph::markDontTouch(odb::dbInst* inst, int id)
           auto it = index_.find(driver->getInst());
           if (driver->getIoType() == odb::dbIoType::OUTPUT
               && it != index_.end()) {
-            pinned_[it->second] = true;
+            pinGate(it->second, kDontTouch);
           }
         }
       }
@@ -318,16 +320,17 @@ void RetimingGraph::fenceDontTouch()
   const int n = static_cast<int>(nodes_.size());
   // A don't-touch register or a second clock net keeps every register that
   // starts on the same net in place.
-  std::unordered_set<odb::dbNet*> fixed_nets;
+  std::unordered_map<odb::dbNet*, PinReason> fixed_nets;
   std::unordered_map<odb::dbNet*, odb::dbNet*> net_clock;
   for (int u = 0; u < n; ++u) {
     for (const EdgePhys& phys : phys_[u]) {
       for (odb::dbInst* flop : phys.flops) {
         odb::dbNet* net = chainNet(phys);
         odb::dbNet* clock = registerClockNet(flop);
-        if (isDontTouch(flop)
-            || net_clock.emplace(net, clock).first->second != clock) {
-          fixed_nets.insert(net);
+        if (isDontTouch(flop)) {
+          fixed_nets[net] = kFixedRegister;
+        } else if (net_clock.emplace(net, clock).first->second != clock) {
+          fixed_nets.emplace(net, kClockSplit);
         }
       }
     }
@@ -338,15 +341,20 @@ void RetimingGraph::fenceDontTouch()
     const int edge_count = static_cast<int>(adj_[u].size());
     for (int k = 0; k < edge_count; ++k) {
       const int target = adj_[u][k].target;
+      const EdgePhys& phys = phys_[u][k];
+      const auto fixed = phys.flops.empty() ? fixed_nets.end()
+                                            : fixed_nets.find(chainNet(phys));
       if (pinned_[target]) {
+        if (fixed != fixed_nets.end()) {
+          pinGate(target, fixed->second);
+        }
         continue;
       }
-      const EdgePhys& phys = phys_[u][k];
       for (odb::dbInst* flop : phys.flops) {
         fanin_clocks[target].insert(registerClockNet(flop));
       }
-      if (!phys.flops.empty() && fixed_nets.contains(chainNet(phys))) {
-        pinned_[target] = true;
+      if (fixed != fixed_nets.end()) {
+        pinGate(target, fixed->second);
       }
     }
   }
@@ -371,9 +379,39 @@ void RetimingGraph::fenceDontTouch()
   }
   for (int v = 0; v < n; ++v) {
     if (fanin_clocks[v].size() > 1) {
-      pinned_[v] = true;
+      pinGate(v, kMixedClock);
     }
   }
+}
+
+void RetimingGraph::pinGate(int v, PinReason reason)
+{
+  pinned_[v] = true;
+  pin_reasons_[v] |= 1u << reason;
+}
+
+const char* RetimingGraph::pinReason(int v) const
+{
+  static constexpr const char* kReasonText[kPinReasons] = {
+      "touches a primary input or output",
+      "don't-touch gate or net, or drives one",
+      "its registers' chain reaches a primary output",
+      "its registers' chain reaches a register control pin (enable, reset, "
+      "clock gate)",
+      "its registers' chain reaches a cell outside the graph",
+      "reads a register no gate drives (fed from a port) or another input "
+      "outside the graph",
+      "behind a register that cannot move",
+      "behind registers of one net that are on different clock nets",
+      "reached by registers on different clock nets",
+      "module boundary (hierarchical netlist)",
+  };
+  for (unsigned reason = 0; reason < kPinReasons; ++reason) {
+    if (pin_reasons_[v] & (1u << reason)) {
+      return kReasonText[reason];
+    }
+  }
+  return "not pinned";
 }
 
 void RetimingGraph::report() const

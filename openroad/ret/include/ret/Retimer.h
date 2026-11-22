@@ -20,12 +20,17 @@ namespace est {
 class EstimateParasitics;
 class IncrementalParasiticsGuard;
 }  // namespace est
+namespace rsz {
+class Resizer;
+}
 namespace utl {
 class Logger;
 }
 
 namespace ret {
 
+class Retime;
+class RetimerPlacer;
 class RetimingGraph;
 class SequentialUnmapper;
 struct RegisterClass;
@@ -42,6 +47,7 @@ class Retimer
   Retimer(odb::dbDatabase* db,
           sta::dbSta* sta,
           est::EstimateParasitics* estimate_parasitics,
+          rsz::Resizer* resizer,
           utl::Logger* logger);
   ~Retimer();
 
@@ -87,6 +93,15 @@ class Retimer
   odb::dbBlock* getBlock();
   odb::dbNet* findClockNet(odb::dbBlock* block);
   void checkRegisters(odb::dbBlock* block);
+
+  // Returns the number of slides.
+  int searchAndApply(odb::dbBlock* block,
+                     int max_moves,
+                     est::IncrementalParasiticsGuard& guard);
+  void setUpSearch(Retime& search);
+  // Under the STA check the search and the rebuild of a trial are not
+  // logged, unless `sta_check 2`.
+  bool quietTrials() const;
 
   // Registers that start on one net at the same depth hold the same value
   // only when they are one class, so each class of first register is a group
@@ -136,11 +151,12 @@ class Retimer
                    const std::unordered_map<std::string, int>& lag,
                    bool& ok) const;
 
-  void applyAfterUnmapping(const RetimingGraph& graph,
-                           const std::vector<int>& r,
-                           const std::unordered_set<odb::dbInst*>& movers,
-                           int max_moves,
-                           est::IncrementalParasiticsGuard& guard);
+  // Returns the slides of the search whose retiming it applied.
+  int applyAfterUnmapping(const RetimingGraph& graph,
+                          const Retime& search,
+                          const std::unordered_set<odb::dbInst*>& movers,
+                          int max_moves,
+                          est::IncrementalParasiticsGuard& guard);
   // Every check runs before the first edit, so a retiming that cannot be
   // rebuilt leaves the netlist untouched.  So does every lookup of an
   // original register: rebuilding one group deletes registers another group
@@ -204,6 +220,7 @@ class Retimer
   est::EstimateParasitics* estimate_parasitics_ = nullptr;
   utl::Logger* logger_ = nullptr;
   std::unique_ptr<SequentialUnmapper> unmapper_;
+  std::unique_ptr<RetimerPlacer> placer_;
 
   odb::dbMaster* dff_master_ = nullptr;
   odb::dbMTerm* dff_d_mterm_ = nullptr;

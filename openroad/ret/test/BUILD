@@ -44,9 +44,13 @@ TESTS = [
     "retime_no_base_cell",
     "retime_no_clock",
     "retime_no_moves",
+    "retime_place_size",
     "retime_routed",
+    "retime_slack_search",
+    "retime_sta_check_unmap",
     "retime_two_clocks",
     "retime_unmap",
+    "retime_why",
     "retime_wire",
 ]
 
