@@ -12,13 +12,17 @@
 
 namespace odb {
 class dbBlock;
+class dbBlockage;
 class dbInst;
+class dbMaster;
 class dbPlacementStatus;
+class dbRow;
 }  // namespace odb
 
 namespace rsz {
 
-// How much of a region placed instances cover.
+// How much of a region placed instances cover, and how much of it no
+// standard cell can use.
 struct PlacementDensity
 {
   // Area of the region inside the core, in DBU^2.
@@ -27,13 +31,25 @@ struct PlacementDensity
   // region covers whole.  A bin it covers only part of adds that part of
   // its instance area, as if the area were spread evenly over the bin.
   double instance_area = 0;
+  // Area inside the region where no standard cell can be placed, in DBU^2;
+  // see PlacementDensityGrid.  The area under macros is instance area, so
+  // the two do not overlap once the placement is legal.  Shared out over
+  // partly covered bins as instance_area is.
+  double blocked_area = 0;
 
   // The share of the region covered, which overlapping instances can take
-  // above 1.
+  // above 1.  As in the heat map, blocked area plays no part.
   double getDensity() const
   {
     return region_area > 0 ? instance_area / static_cast<double>(region_area)
                            : 0.0;
+  }
+  // The area left for new standard cells.  It goes below 0 where instances
+  // overfill the area they can use, or sit in blocked area, as cells can
+  // before legalization.
+  double getFreeArea() const
+  {
+    return static_cast<double>(region_area) - blocked_area - instance_area;
   }
 };
 
@@ -41,8 +57,20 @@ struct PlacementDensity
 // default the global router's gcells, and each placed instance adds the
 // area it covers in each bin.  Instances count as the GUI's placement
 // density heat map counts them with its default settings: taps and endcaps
-// count; fillers, pads and covers do not, nor do placement blockages.  An
-// instance of a child block counts as a whole.
+// count; fillers, pads and covers do not.  An instance of a child block
+// counts as a whole.
+//
+// Each bin also holds its blocked area, where no standard cell can be
+// placed: off the rows, under placement blockages, and in the halos of
+// placed instances.  Soft blockages and soft halos only bind global
+// placement, so they do not block; partial blockages block whole, as in
+// detailed placement.  The area under a macro, or under an instance with a
+// hard halo, is left out, since it is instance area; so with a legal
+// placement, no area is both.  The blocked area is counted when the grid is
+// built, and an edit to a row, a blockage, a macro or an instance with a
+// hard halo has the next query build the grid afresh.  odb has no callback
+// for a change to a halo or to a blockage's settings, so the grid does not
+// see one until then.
 //
 // The heat map throws its whole map away whenever an instance changes, and
 // rebuilds it on the next read.  This grid is built by its first query, and
@@ -93,6 +121,10 @@ class PlacementDensityGrid : public odb::dbBlockCallBackObj
   {
     return occupied_area_[binIndex(x, y)];
   }
+  int64_t getBinBlockedArea(int x, int y) const
+  {
+    return blocked_area_.empty() ? 0 : blocked_area_[binIndex(x, y)];
+  }
 
   // dbBlockCallBackObj
   void inDbInstCreate(odb::dbInst* inst) override;
@@ -100,8 +132,14 @@ class PlacementDensityGrid : public odb::dbBlockCallBackObj
   void inDbInstPlacementStatusBefore(
       odb::dbInst* inst,
       const odb::dbPlacementStatus& status) override;
+  void inDbInstSwapMasterBefore(odb::dbInst* inst,
+                                odb::dbMaster* master) override;
   void inDbInstSwapMasterAfter(odb::dbInst* inst) override;
   void inDbPostMoveInst(odb::dbInst* inst) override;
+  void inDbBlockageCreate(odb::dbBlockage* blockage) override;
+  void inDbBlockageDestroy(odb::dbBlockage* blockage) override;
+  void inDbRowCreate(odb::dbRow* row) override;
+  void inDbRowDestroy(odb::dbRow* row) override;
   void inDbBlockSetDieArea(odb::dbBlock* block) override;
   void inDbBlockSetCoreArea(odb::dbBlock* block) override;
 
@@ -116,12 +154,26 @@ class PlacementDensityGrid : public odb::dbBlockCallBackObj
   };
 
   void build();
+  // Fills blocked_area_, given the hard halos of the placed instances, and
+  // the area of the counted ones that is their own, not blocked.
+  void buildBlockedArea(const std::vector<odb::Rect>& halos,
+                        const std::vector<odb::Rect>& own_areas);
 
-  // Brings what inst adds in line with status, the placement status it has
-  // or is about to have.
-  void updateInst(odb::dbInst* inst, const odb::dbPlacementStatus& status);
-  // Adds the area box covers in each bin, or takes it away for a sign of -1.
-  void addBox(const odb::Rect& box, int sign);
+  // Brings the grid up to date after an edit to inst, whose placement
+  // status is or is about to be status.  An edit that moves the blocked area
+  // has the next query build the grid afresh instead.
+  void instEdited(odb::dbInst* inst, const odb::dbPlacementStatus& status);
+  // Brings what inst, of master, adds in line with status.
+  void updateInst(odb::dbInst* inst,
+                  odb::dbMaster* master,
+                  const odb::dbPlacementStatus& status);
+  // Adds the area box covers in each bin to bins, or takes it away for a
+  // sign of -1.
+  void addBox(std::vector<int64_t>& bins, const odb::Rect& box, int sign);
+  // The sum of bins over region, which must lie in the core and have area.
+  // A bin partly inside it adds that share of its value.
+  double sumBins(const std::vector<int64_t>& bins,
+                 const odb::Rect& region) const;
   odb::Rect& recordFor(uint32_t inst_id);
 
   size_t binIndex(int x, int y) const
@@ -152,6 +204,9 @@ class PlacementDensityGrid : public odb::dbBlockCallBackObj
   int bin_count_y_ = 0;
   // The instance area inside each bin, row after row.
   std::vector<int64_t> occupied_area_;
+  // The blocked area inside each bin, row after row; empty when there is
+  // none anywhere.
+  std::vector<int64_t> blocked_area_;
   // By dbInst id, the box each instance added to the bins; empty for the
   // instances the grid does not count.
   std::vector<odb::Rect> inst_boxes_;

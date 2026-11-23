@@ -38,6 +38,20 @@ report_placement_density -region $top_right
 report_placement_density -region {0 0 20 20}
 report_placement_density -region {0 0 5 5}
 
+# A hard placement blockage over the left half of these 2 x 2 GCells is
+# blocked area.  A soft one over the right half only binds global
+# placement, so it is not.
+set gcells {11.4 11.4 17.1 17.1}
+report_placement_density -region $gcells
+odb::dbBlockage_create $block \
+  [ord::microns_to_dbu 11.4] [ord::microns_to_dbu 11.4] \
+  [ord::microns_to_dbu 14.25] [ord::microns_to_dbu 17.1]
+set soft [odb::dbBlockage_create $block \
+  [ord::microns_to_dbu 14.25] [ord::microns_to_dbu 11.4] \
+  [ord::microns_to_dbu 17.1] [ord::microns_to_dbu 17.1]]
+$soft setSoft
+report_placement_density -region $gcells
+
 catch { report_placement_density -region {20 20 20 40} } error
 puts $error
 catch { report_placement_density -region {1 2 3} } error

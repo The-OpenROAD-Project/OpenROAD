@@ -6,31 +6,60 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <vector>
 
+#include "boost/polygon/polygon.hpp"  // NOLINT(misc-include-cleaner) Boost polygon headers require a specific include order.
+#include "boost/polygon/polygon_90_set_data.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 
 namespace rsz {
 
 using odb::dbBlock;
+using odb::dbBlockage;
+using odb::dbBox;
 using odb::dbInst;
 using odb::dbMaster;
 using odb::dbPlacementStatus;
+using odb::dbRow;
 using odb::Point;
 using odb::Rect;
 
 namespace {
 
-// What the heat map counts with its default settings: placed instances
-// other than fillers, pads and covers.
-bool contributesToDensity(dbInst* inst, const dbPlacementStatus& status)
+// Whether the heat map, with its default settings, counts a placed instance
+// of master: all but fillers, pads and covers.
+bool countsMaster(dbMaster* master)
 {
-  if (!status.isPlaced()) {
-    return false;
-  }
-  dbMaster* master = inst->getMaster();
   return !master->isFiller() && !master->isPad() && !master->isCover();
+}
+
+// Later steps, such as timing repair, may place cells in a soft halo.
+bool hasHardHalo(dbInst* inst)
+{
+  const dbBox* halo = inst->getHalo();
+  return halo != nullptr && !halo->isSoft();
+}
+
+// Whether the blocked area depends on inst, of master: a hard halo adds to
+// it, and the area under a macro, or under an instance with a hard halo, is
+// left out of it, since that is instance area.
+bool shapesBlockedArea(dbInst* inst, dbMaster* master)
+{
+  return master->isBlock() || hasHardHalo(inst);
+}
+
+// The halo around box, the box of inst.
+Rect haloRect(dbInst* inst, const Rect& box)
+{
+  // The halo's widths to the left, bottom, right and top.
+  const Rect halo = inst->getTransformedHalo();
+  return {box.xMin() - halo.xMin(),
+          box.yMin() - halo.yMin(),
+          box.xMax() + halo.xMax(),
+          box.yMax() + halo.yMax()};
 }
 
 // The last line at or below coord, of lines through origin every step.
@@ -76,41 +105,49 @@ PlacementDensity PlacementDensityGrid::getDensity(const Rect& region)
   if (density.region_area == 0) {
     return density;
   }
+  density.instance_area = sumBins(occupied_area_, inside);
+  if (!blocked_area_.empty()) {
+    density.blocked_area = sumBins(blocked_area_, inside);
+  }
+  return density;
+}
 
+double PlacementDensityGrid::sumBins(const std::vector<int64_t>& bins,
+                                     const Rect& region) const
+{
   // Only the bins on the edges of the region can be partly inside it.
-  const BinRange range = binsCovering(inside);
+  const BinRange range = binsCovering(region);
   const auto x_share = [&](const int x) {
     const Rect bin = getBinRect(x, range.y_lo);
-    return static_cast<double>(std::min(bin.xMax(), inside.xMax())
-                               - std::max(bin.xMin(), inside.xMin()))
+    return static_cast<double>(std::min(bin.xMax(), region.xMax())
+                               - std::max(bin.xMin(), region.xMin()))
            / bin.dx();
   };
   const auto y_share = [&](const int y) {
     const Rect bin = getBinRect(range.x_lo, y);
-    return static_cast<double>(std::min(bin.yMax(), inside.yMax())
-                               - std::max(bin.yMin(), inside.yMin()))
+    return static_cast<double>(std::min(bin.yMax(), region.yMax())
+                               - std::max(bin.yMin(), region.yMin()))
            / bin.dy();
   };
   const double lo_x_share = x_share(range.x_lo);
   const double hi_x_share = x_share(range.x_hi);
 
-  double area = 0;
+  double sum = 0;
   for (int y = range.y_lo; y <= range.y_hi; y++) {
-    const int64_t* row = &occupied_area_[binIndex(0, y)];
-    double row_area = lo_x_share * static_cast<double>(row[range.x_lo]);
+    const int64_t* row = &bins[binIndex(0, y)];
+    double row_sum = lo_x_share * static_cast<double>(row[range.x_lo]);
     if (range.x_hi > range.x_lo) {
       int64_t whole = 0;
       for (int x = range.x_lo + 1; x < range.x_hi; x++) {
         whole += row[x];
       }
-      row_area += static_cast<double>(whole)
-                  + (hi_x_share * static_cast<double>(row[range.x_hi]));
+      row_sum += static_cast<double>(whole)
+                 + (hi_x_share * static_cast<double>(row[range.x_hi]));
     }
     const bool edge = y == range.y_lo || y == range.y_hi;
-    area += edge ? y_share(y) * row_area : row_area;
+    sum += edge ? y_share(y) * row_sum : row_sum;
   }
-  density.instance_area = area;
-  return density;
+  return sum;
 }
 
 Rect PlacementDensityGrid::getBinRect(const int x, const int y) const
@@ -143,6 +180,7 @@ void PlacementDensityGrid::build()
   bin_count_x_ = 0;
   bin_count_y_ = 0;
   occupied_area_.clear();
+  blocked_area_.clear();
   inst_boxes_.clear();
   if (core_.dx() <= 0 || core_.dy() <= 0) {
     return;
@@ -169,12 +207,89 @@ void PlacementDensityGrid::build()
   // Room for every instance id, and some to spare for the ones to come.
   const size_t inst_count = block_->getInsts().size();
   inst_boxes_.reserve(inst_count + (inst_count / 8) + 1);
+  std::vector<Rect> halos;
+  std::vector<Rect> own_areas;
   for (dbInst* inst : block_->getInsts()) {
-    updateInst(inst, inst->getPlacementStatus());
+    const dbPlacementStatus status = inst->getPlacementStatus();
+    if (!status.isPlaced()) {
+      continue;
+    }
+    dbMaster* master = inst->getMaster();
+    updateInst(inst, master, status);
+    if (!shapesBlockedArea(inst, master)) {
+      continue;
+    }
+    const Rect box = inst->getBBox()->getBox();
+    if (hasHardHalo(inst)) {
+      halos.push_back(haloRect(inst, box));
+    }
+    if (countsMaster(master)) {
+      own_areas.push_back(box);
+    }
+  }
+  buildBlockedArea(halos, own_areas);
+}
+
+void PlacementDensityGrid::buildBlockedArea(const std::vector<Rect>& halos,
+                                            const std::vector<Rect>& own_areas)
+{
+  using boost::polygon::operators::operator+=;
+  using boost::polygon::operators::operator-=;
+
+  // Pad rows hold IO cells, not standard cells.
+  std::vector<Rect> rows;
+  for (dbRow* row : block_->getRows()) {
+    if (row->getSite()->getClass() != odb::dbSiteClass::PAD) {
+      rows.push_back(row->getBBox());
+    }
+  }
+  std::vector<Rect> blocking;
+  for (const Rect& halo : halos) {
+    if (halo.overlaps(core_)) {
+      blocking.push_back(halo.intersect(core_));
+    }
+  }
+  for (dbBlockage* blockage : block_->getBlockages()) {
+    const Rect box = blockage->getBBox()->getBox();
+    if (!blockage->isSoft() && box.overlaps(core_)) {
+      blocking.push_back(box.intersect(core_));
+    }
+  }
+
+  namespace geom = odb::geom;
+  geom::BoostPolygon90Set blocked = geom::toPolygonSet90(core_);
+  blocked -= geom::toPolygonSet90(rows);
+  blocked += geom::toPolygonSet90(blocking);
+  blocked -= geom::toPolygonSet90(own_areas);
+  const std::vector<Rect> blocked_rects = geom::extractRectangles(blocked);
+  if (blocked_rects.empty()) {
+    return;
+  }
+  blocked_area_.assign(occupied_area_.size(), 0);
+  // The rects do not overlap, so no area counts twice.
+  for (const Rect& rect : blocked_rects) {
+    addBox(blocked_area_, rect, 1);
   }
 }
 
+void PlacementDensityGrid::instEdited(dbInst* inst,
+                                      const dbPlacementStatus& status)
+{
+  // While stale_ is set, the coming build reads every instance afresh, so
+  // there is nothing to keep up to date.
+  if (stale_) {
+    return;
+  }
+  dbMaster* master = inst->getMaster();
+  if (shapesBlockedArea(inst, master)) {
+    stale_ = true;
+    return;
+  }
+  updateInst(inst, master, status);
+}
+
 void PlacementDensityGrid::updateInst(dbInst* inst,
+                                      dbMaster* master,
                                       const dbPlacementStatus& status)
 {
   if (occupied_area_.empty()) {
@@ -184,17 +299,19 @@ void PlacementDensityGrid::updateInst(dbInst* inst,
   // Take back what the instance added, from the box recorded then.
   if (id < inst_boxes_.size()) {
     Rect& added = inst_boxes_[id];
-    addBox(added, -1);
+    addBox(occupied_area_, added, -1);
     added = Rect();
   }
-  if (contributesToDensity(inst, status)) {
+  if (status.isPlaced() && countsMaster(master)) {
     Rect& added = recordFor(id);
     added = inst->getBBox()->getBox();
-    addBox(added, 1);
+    addBox(occupied_area_, added, 1);
   }
 }
 
-void PlacementDensityGrid::addBox(const Rect& box, const int sign)
+void PlacementDensityGrid::addBox(std::vector<int64_t>& bins,
+                                  const Rect& box,
+                                  const int sign)
 {
   // Off the core, an instance is recorded but adds nothing.
   if (box.area() == 0 || !box.overlaps(core_)) {
@@ -204,8 +321,7 @@ void PlacementDensityGrid::addBox(const Rect& box, const int sign)
   const BinRange range = binsCovering(inside);
   for (int y = range.y_lo; y <= range.y_hi; y++) {
     for (int x = range.x_lo; x <= range.x_hi; x++) {
-      occupied_area_[binIndex(x, y)]
-          += sign * inside.intersect(getBinRect(x, y)).area();
+      bins[binIndex(x, y)] += sign * inside.intersect(getBinRect(x, y)).area();
     }
   }
 }
@@ -225,44 +341,62 @@ Rect& PlacementDensityGrid::recordFor(const uint32_t inst_id)
 }
 
 ////////////////////////////////////////////////////////////////
-// dbBlockCallBackObj.  While stale_ is set, the coming build reads every
-// instance afresh, so there is nothing to keep up to date.
+// dbBlockCallBackObj
 
 void PlacementDensityGrid::inDbInstCreate(dbInst* inst)
 {
-  if (!stale_) {
-    updateInst(inst, inst->getPlacementStatus());
-  }
+  instEdited(inst, inst->getPlacementStatus());
 }
 
 void PlacementDensityGrid::inDbInstDestroy(dbInst* inst)
 {
-  if (!stale_) {
-    updateInst(inst, dbPlacementStatus(dbPlacementStatus::NONE));
-  }
+  instEdited(inst, dbPlacementStatus(dbPlacementStatus::NONE));
 }
 
 void PlacementDensityGrid::inDbInstPlacementStatusBefore(
     dbInst* inst,
     const dbPlacementStatus& status)
 {
-  if (!stale_) {
-    updateInst(inst, status);
+  instEdited(inst, status);
+}
+
+void PlacementDensityGrid::inDbInstSwapMasterBefore(dbInst* inst,
+                                                    dbMaster* master)
+{
+  // After the swap, the old master is no longer known.
+  if (shapesBlockedArea(inst, inst->getMaster()) || master->isBlock()) {
+    stale_ = true;
   }
 }
 
 void PlacementDensityGrid::inDbInstSwapMasterAfter(dbInst* inst)
 {
-  if (!stale_) {
-    updateInst(inst, inst->getPlacementStatus());
-  }
+  instEdited(inst, inst->getPlacementStatus());
 }
 
 void PlacementDensityGrid::inDbPostMoveInst(dbInst* inst)
 {
-  if (!stale_) {
-    updateInst(inst, inst->getPlacementStatus());
-  }
+  instEdited(inst, inst->getPlacementStatus());
+}
+
+void PlacementDensityGrid::inDbBlockageCreate(dbBlockage*)
+{
+  stale_ = true;
+}
+
+void PlacementDensityGrid::inDbBlockageDestroy(dbBlockage*)
+{
+  stale_ = true;
+}
+
+void PlacementDensityGrid::inDbRowCreate(dbRow*)
+{
+  stale_ = true;
+}
+
+void PlacementDensityGrid::inDbRowDestroy(dbRow*)
+{
+  stale_ = true;
 }
 
 void PlacementDensityGrid::inDbBlockSetDieArea(dbBlock*)

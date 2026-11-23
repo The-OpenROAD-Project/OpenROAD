@@ -297,7 +297,7 @@ void Resizer::reportPlacementDensity(const odb::Rect& region)
     return;
   }
 
-  // The instance area is fractional where the region covers part of a bin.
+  // The areas are fractional where the region covers part of a bin.
   const double dbu_per_micron = block_->getDbUnitsPerMicron();
   const auto to_um2 = [dbu_per_micron](const double dbu_area) {
     return dbu_area / (dbu_per_micron * dbu_per_micron);
@@ -310,6 +310,10 @@ void Resizer::reportPlacementDensity(const odb::Rect& region)
                   to_um2(static_cast<double>(density.region_area)));
   logger_->report("  Instance area:        {:12.3f} um^2",
                   to_um2(density.instance_area));
+  logger_->report("  Blocked area:         {:12.3f} um^2",
+                  to_um2(density.blocked_area));
+  logger_->report("  Free area:            {:12.3f} um^2",
+                  to_um2(density.getFreeArea()));
   logger_->report("  Placement density:    {:12.3f}", density.getDensity());
 }
 

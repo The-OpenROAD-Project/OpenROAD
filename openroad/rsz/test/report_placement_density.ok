@@ -10,48 +10,80 @@ Region (10.070, 11.200) (90.250, 91.000)
   GCell size:           2.850 x 2.850 um
   Area inside the core:     6398.364 um^2
   Instance area:             669.788 um^2
+  Blocked area:                0.000 um^2
+  Free area:                5728.576 um^2
   Placement density:           0.105
 Region (22.800, 22.800) (45.600, 45.600)
   GCell size:           2.850 x 2.850 um
   Area inside the core:      519.840 um^2
   Instance area:             136.430 um^2
+  Blocked area:                0.000 um^2
+  Free area:                 383.410 um^2
   Placement density:           0.262
 Region (20.000, 20.000) (40.000, 40.000)
   GCell size:           2.850 x 2.850 um
   Area inside the core:      400.000 um^2
   Instance area:              79.210 um^2
+  Blocked area:                0.000 um^2
+  Free area:                 320.790 um^2
   Placement density:           0.198
 Region (20.000, 20.000) (40.000, 40.000)
   GCell size:           2.850 x 2.850 um
   Area inside the core:      400.000 um^2
   Instance area:              79.210 um^2
+  Blocked area:                0.000 um^2
+  Free area:                 320.790 um^2
   Placement density:           0.198
 Region (88.350, 88.350) (90.250, 91.000)
   GCell size:           2.850 x 2.850 um
   Area inside the core:        5.035 um^2
   Instance area:               0.000 um^2
+  Blocked area:                0.000 um^2
+  Free area:                   5.035 um^2
   Placement density:           0.000
 Region (88.350, 88.350) (90.250, 91.000)
   GCell size:           2.850 x 2.850 um
   Area inside the core:        5.035 um^2
   Instance area:               0.798 um^2
+  Blocked area:                0.000 um^2
+  Free area:                   4.237 um^2
   Placement density:           0.158
 Region (88.350, 88.350) (90.250, 91.000)
   GCell size:           2.850 x 2.850 um
   Area inside the core:        5.035 um^2
   Instance area:               0.798 um^2
+  Blocked area:                0.000 um^2
+  Free area:                   4.237 um^2
   Placement density:           0.158
 Region (88.350, 88.350) (90.250, 91.000)
   GCell size:           2.850 x 2.850 um
   Area inside the core:        5.035 um^2
   Instance area:               0.000 um^2
+  Blocked area:                0.000 um^2
+  Free area:                   5.035 um^2
   Placement density:           0.000
 Region (0.000, 0.000) (20.000, 20.000)
   GCell size:           2.850 x 2.850 um
   Area inside the core:       87.384 um^2
   Instance area:               0.895 um^2
+  Blocked area:                0.000 um^2
+  Free area:                  86.489 um^2
   Placement density:           0.010
 Region (0.000, 0.000) (5.000, 5.000) is outside the core.
+Region (11.400, 11.400) (17.100, 17.100)
+  GCell size:           2.850 x 2.850 um
+  Area inside the core:       32.490 um^2
+  Instance area:               0.000 um^2
+  Blocked area:                0.000 um^2
+  Free area:                  32.490 um^2
+  Placement density:           0.000
+Region (11.400, 11.400) (17.100, 17.100)
+  GCell size:           2.850 x 2.850 um
+  Area inside the core:       32.490 um^2
+  Instance area:               0.000 um^2
+  Blocked area:               16.245 um^2
+  Free area:                  16.245 um^2
+  Placement density:           0.000
 [ERROR RSZ-3216] Region (20.000, 20.000) (20.000, 40.000) is empty.
 RSZ-3216
 [ERROR RSZ-3215] -region requires 4 values: x1 y1 x2 y2.
