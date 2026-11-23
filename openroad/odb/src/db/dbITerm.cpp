@@ -716,7 +716,8 @@ void dbITerm::disconnectDbModNet()
     iterm->mnet_ = 0;
 
     for (auto callback : block->callbacks_) {
-      callback->inDbITermPostDisconnectModNet(this, (dbModNet*) mod_net);
+      callback->inDbITermPostDisconnectModNet(
+          this, reinterpret_cast<dbModNet*>(mod_net));
     }
   }
 }

@@ -466,7 +466,7 @@ void dbBTerm::disconnect()
   if (bterm->net_ == 0 && bterm->mnet_ == 0) {
     return;
   }
-  _dbBlock* block = (_dbBlock*) bterm->getOwner();
+  _dbBlock* block = static_cast<_dbBlock*>(bterm->getOwner());
   if (bterm->net_) {
     _dbNet* net = block->net_tbl_->getPtr(bterm->net_);
     if (net->flags_.dont_touch) {
@@ -731,7 +731,8 @@ void _dbBTerm::connectModNet(_dbModNet* mod_net, _dbBlock* block)
   _dbBTerm* bterm = (_dbBTerm*) this;
 
   for (auto callback : block->callbacks_) {
-    callback->inDbBTermPreConnectModNet((dbBTerm*) this, (dbModNet*) mod_net);
+    callback->inDbBTermPreConnectModNet(reinterpret_cast<dbBTerm*>(this),
+                                        reinterpret_cast<dbModNet*>(mod_net));
   }
 
   mnet_ = mod_net->getOID();
@@ -766,7 +767,7 @@ void _dbBTerm::connectModNet(_dbModNet* mod_net, _dbBlock* block)
   mod_net->bterms_ = getOID();
 
   for (auto callback : block->callbacks_) {
-    callback->inDbBTermPostConnectModNet((dbBTerm*) this);
+    callback->inDbBTermPostConnectModNet(reinterpret_cast<dbBTerm*>(this));
   }
 }
 
@@ -922,7 +923,7 @@ void _dbBTerm::disconnectModNet(_dbBTerm* bterm, _dbBlock* block)
     _dbModNet* mod_net = block->modnet_tbl_->getPtr(bterm->mnet_);
 
     for (auto callback : block->callbacks_) {
-      callback->inDbBTermPreDisconnectModNet((dbBTerm*) this);
+      callback->inDbBTermPreDisconnectModNet(reinterpret_cast<dbBTerm*>(this));
     }
 
     debugPrint(block->getImpl()->getLogger(),
@@ -966,8 +967,9 @@ void _dbBTerm::disconnectModNet(_dbBTerm* bterm, _dbBlock* block)
     mnet_ = 0;
 
     for (auto callback : block->callbacks_) {
-      callback->inDbBTermPostDisconnectModNet((dbBTerm*) this,
-                                              (dbModNet*) mod_net);
+      callback->inDbBTermPostDisconnectModNet(
+          reinterpret_cast<dbBTerm*>(this),
+          reinterpret_cast<dbModNet*>(mod_net));
     }
   }
 }
