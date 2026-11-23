@@ -7,10 +7,10 @@
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |        13
-[WARNING RSZ-0170] Cannot repair slew on net n2 driven by u2/Z: driver resistance x repeater pin capacitance (1.38e-12) already meets or exceeds the slew budget (6.44e-12). Net left unrepaired on this segment.
-    final |   +108.3% |       2 |      11 |             1 |         0
+[WARNING RSZ-0170] Cannot repair slew on net n2 driven by u2/Z: driver resistance x repeater pin capacitance (2.08e-12) already meets or exceeds the slew budget (5.9e-12). Net left unrepaired on this segment.
+    final |   +105.6% |       2 |      11 |             2 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 2 slew violations.
 [INFO RSZ-0039] Resized 2 instances.
-[INFO RSZ-0038] Inserted 11 buffers in 1 nets.
+[INFO RSZ-0038] Inserted 11 buffers in 2 nets.
 repair_design completed

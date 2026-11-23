@@ -50,6 +50,7 @@ cc_library(
         "//openroad/web:core",
         "@boost.container_hash",
         "@boost.random",
+        "@boost.scope_exit",
         "@tcl_lang//:tcl",
     ],
 )

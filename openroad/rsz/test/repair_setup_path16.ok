@@ -12,14 +12,14 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -9.004 |    -1914.9 |    851 | capture_147/D
-    1200* |      53 |     247 |       91 |      3 |    19 |    +8.6% |   -5.842 |    -1841.0 |    851 | capture_147/D
-    final |      53 |     247 |       91 |      3 |    19 |    +8.6% |   -5.842 |    -1841.0 |    851 | capture_147/D
+    1600* |      36 |     233 |       79 |      2 |     9 |    +7.9% |   -5.906 |    -1842.4 |    851 | capture_96/D
+    final |      36 |     233 |       79 |      2 |     9 |    +7.9% |   -5.906 |    -1842.4 |    851 | capture_96/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 53 buffers.
-[INFO RSZ-0040] Inserted 91 buffers.
-[INFO RSZ-0051] Resized 247 instances: 247 up, 0 up match, 0 down, 0 VT
-[INFO RSZ-0043] Swapped pins on 19 instances.
-[INFO RSZ-0049] Cloned 3 instances.
+[INFO RSZ-0059] Removed 36 buffers.
+[INFO RSZ-0040] Inserted 79 buffers.
+[INFO RSZ-0051] Resized 233 instances: 233 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 9 instances.
+[INFO RSZ-0049] Cloned 2 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Startpoint: launch_525 (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: inst30 (recovery check against rising-edge clock core_clock)
@@ -49,7 +49,7 @@ Path Type: max
 
 
 Startpoint: launch_356 (rising edge-triggered flip-flop clocked by core_clock)
-Endpoint: capture_147 (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: capture_96 (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
 Path Type: max
 
@@ -82,23 +82,23 @@ Path Type: max
    0.1889    4.5369 ^ inst23/Y (sky130_fd_sc_hd__a21oi_4)
    0.1428    4.6798 v inst24/Y (sky130_fd_sc_hd__xnor2_4)
    0.4469    5.1267 ^ inst25/Y (sky130_fd_sc_hd__a2111oi_4)
-   0.2368    5.3635 ^ inst27/X (sky130_fd_sc_hd__a21o_4)
-   0.2022    5.5658 ^ clone3/X (sky130_fd_sc_hd__clkbuf_16)
-   0.1253    5.6910 v inst28_neighbor7/Y (sky130_fd_sc_hd__o21ai_4)
-   0.1627    5.8538 v loadbuf_147/X (sky130_fd_sc_hd__buf_2)
-   0.0001    5.8538 v capture_147/D (sky130_fd_sc_hd__dfrtp_2)
-             5.8538   data arrival time
+   0.2013    5.3280 ^ inst27/X (sky130_fd_sc_hd__a21o_4)
+   0.2991    5.6270 ^ clone3/X (sky130_fd_sc_hd__bufbuf_16)
+   0.1361    5.7632 v inst28_neighbor22/Y (sky130_fd_sc_hd__o21ai_2)
+   0.1543    5.9175 v loadbuf_96/X (sky130_fd_sc_hd__buf_2)
+   0.0001    5.9175 v capture_96/D (sky130_fd_sc_hd__dfrtp_2)
+             5.9175   data arrival time
 
    0.1283    0.1283   clock core_clock (rise edge)
    0.0000    0.1283   clock network delay (ideal)
    0.0000    0.1283   clock reconvergence pessimism
-             0.1283 ^ capture_147/CLK (sky130_fd_sc_hd__dfrtp_2)
-  -0.1165    0.0118   library setup time
-             0.0118   data required time
+             0.1283 ^ capture_96/CLK (sky130_fd_sc_hd__dfrtp_2)
+  -0.1164    0.0119   library setup time
+             0.0119   data required time
 -------------------------------------------------------------
-             0.0118   data required time
-            -5.8538   data arrival time
+             0.0119   data required time
+            -5.9175   data arrival time
 -------------------------------------------------------------
-            -5.8420   slack (VIOLATED)
+            -5.9056   slack (VIOLATED)
 
 

@@ -3,6 +3,7 @@
 
 %{
 #include <cstdlib>
+#include <map>
 #include <string>
 
 #include "ord/OpenRoad.hh"
@@ -10,6 +11,13 @@
 %}
 
 %include "../../Exception.i"
+// The -display_option settings arrive as the gui::DisplayControlMap gui.i
+// wraps; the same template here gives the type the same SWIG name.
+%include <std_string.i>
+%include <std_map.i>
+namespace std {
+  %template(DisplayControlMap) map<string, bool>;
+}
 
 %inline %{
 
@@ -51,11 +59,11 @@ void
 save_image_cmd(const char* filename,
                int x0, int y0, int x1, int y1,
                int width, double resolution,
-               const char* vis_json)
+               const std::map<std::string, bool>& display_settings)
 {
   web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
   server->saveImage(filename, x0, y0, x1, y1, width, resolution,
-                    vis_json ? vis_json : "");
+                    display_settings);
 }
 
 void
@@ -125,7 +133,7 @@ gif_start_cmd(const char* filename)
 void
 gif_add_cmd(int key, int x0, int y0, int x1, int y1,
             int width, double resolution, int delay,
-            const char* vis_json)
+            const std::map<std::string, bool>& display_settings)
 {
   web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
   // key < 0 and delay <= 0 mean "use default" (most-recent GIF / default delay).
@@ -138,7 +146,7 @@ gif_add_cmd(int key, int x0, int y0, int x1, int y1,
     delay_opt = delay;
   }
   server->gifAddFrame(key_opt, odb::Rect(x0, y0, x1, y1), width, resolution,
-                      delay_opt, vis_json ? vis_json : "");
+                      delay_opt, display_settings);
 }
 
 void

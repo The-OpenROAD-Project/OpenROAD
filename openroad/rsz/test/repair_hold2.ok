@@ -88,15 +88,15 @@ Path Type: min
 Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
 --------------------------------------------------------------------------------------
         0 |       0 |       0 |            0 |    +0.0% |  -0.088 |  -0.196 | r2/D
-    final |       0 |      10 |            0 |   +36.6% |   0.009 |   0.000 | r2/D
+    final |       0 |      11 |            0 |   +40.2% |   0.002 |   0.000 | out
 --------------------------------------------------------------------------------------
-[INFO RSZ-0032] Inserted 10 hold buffers.
-worst slack min 0.01
-worst slack max 1.88
+[INFO RSZ-0032] Inserted 11 hold buffers.
+worst slack min 0.00
+worst slack max 1.89
 Net in2
- Pin capacitance: 0.70-0.78
+ Pin capacitance: 0.88-0.97
  Wire capacitance: 5.22
- Total capacitance: 5.92-6.00
+ Total capacitance: 6.09-6.19
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
@@ -105,7 +105,7 @@ Driver pins
  in2 input port (20, 0)
 
 Load pins
- hold10/A input (CLKBUF_X1) 0.70-0.78 (40, 41)
+ hold10/A input (BUF_X1) 0.88-0.97 (40, 41)
 
 Net out
  Pin capacitance: 0.00
@@ -116,7 +116,7 @@ Net out
  Number of pins: 2
 
 Driver pins
- hold2/Z output (CLKBUF_X1) (41, 41)
+ hold2/Z output (BUF_X1) (41, 41)
 
 Load pins
  out output port (0, 0)

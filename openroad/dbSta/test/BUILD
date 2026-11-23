@@ -641,8 +641,10 @@ cc_test(
         "Nangate45/Nangate45_typ.lib",
         "cpp/TestDbSta_0.v",
         "cpp/TestDbSta_DriverInputPortAcrossNetlistEdits.v",
+        "cpp/TestDbSta_LevelsOfLogic.v",
     ],
     deps = [
+        "//openroad/dbSta",
         "//openroad/dbSta:dbNetwork",
         "//openroad/dbSta:dbSdcNetwork",
         "//openroad/odb/src/db",

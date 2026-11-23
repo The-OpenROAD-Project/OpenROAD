@@ -102,7 +102,7 @@ MACRO RAM7x7
     USE SIGNAL ;
     PORT
       LAYER metal4 ;
-        RECT  0.025 11.06 0.165 11.2 ;
+        RECT  0.585 11.06 0.725 11.2 ;
     END
   END D[0]
   PIN Q0[0]

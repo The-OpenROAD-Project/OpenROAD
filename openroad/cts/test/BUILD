@@ -1,5 +1,5 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("@rules_python//python:defs.bzl", "py_test")
+load("//bazel:man_tcl_checker.bzl", "man_tcl_check_test")
 
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
@@ -294,6 +294,20 @@ cc_test(
 )
 
 cc_test(
+    name = "TestClockGateSinks",
+    srcs = ["cpp/TestClockGateSinks.cc"],
+    data = ["cpp/clock_gate_sinks.v"],
+    deps = [
+        "//openroad/cts:cts_impl",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestDelayBufList",
     srcs = ["cpp/TestDelayBufList.cc"],
     data = [
@@ -311,15 +325,9 @@ cc_test(
     ],
 )
 
-py_test(
+man_tcl_check_test(
     name = "cts_man_tcl_check",
-    srcs = ["cts_man_tcl_check.py"],
-    data = ["//openroad/cts:doc_files"],
-    tags = [
-        "doc_check",
-        "py",
-    ],
-    deps = ["//docs/src/scripts:extract_utils"],
+    module = "cts",
 )
 
 doc_check_test(

@@ -278,6 +278,21 @@ TEST_F(TestTechLayer, SnapToGridIntervalRoundsToStep)
   EXPECT_EQ(tl.snapToGridInterval(block(), 250), 200);
 }
 
+// Rounding up gives the smallest whole number of steps that covers the
+// distance, and leaves an exact multiple alone. Like rounding down, it never
+// gives less than one step.
+TEST_F(TestTechLayer, SnapToGridIntervalRoundsUpWhenRequested)
+{
+  odb::dbTechLayer* layer
+      = makeMetal(tech(), "m1", odb::dbTechLayerDir::HORIZONTAL);
+  odb::dbTrackGrid* tracks = odb::dbTrackGrid::create(block(), layer);
+  tracks->addGridPatternY(0, 5, 100);
+  TechLayer tl(layer);
+  EXPECT_EQ(tl.snapToGridInterval(block(), 250, /*round_up=*/true), 300);
+  EXPECT_EQ(tl.snapToGridInterval(block(), 200, /*round_up=*/true), 200);
+  EXPECT_EQ(tl.snapToGridInterval(block(), 0, /*round_up=*/true), 100);
+}
+
 // Vertical layer reads X track step.
 TEST_F(TestTechLayer, SnapToGridIntervalVerticalReadsXStep)
 {

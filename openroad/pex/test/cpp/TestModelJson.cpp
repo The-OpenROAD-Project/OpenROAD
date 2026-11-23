@@ -7,9 +7,9 @@
 #include <stdexcept>
 #include <string>
 
+#include "Model.h"
+#include "ModelJson.h"
 #include "gtest/gtest.h"
-#include "pex/Model.h"
-#include "pex/ModelJson.h"
 
 namespace pex {
 namespace {
@@ -75,13 +75,19 @@ TEST(ModelJson, RoundTrip)
 {
   const Model model = sample();
   std::stringstream text;
-  writeModel(model, {"sky130", "sky130.itf", "abc123"}, text);
+  writeModel(model,
+             {.technology = "sky130",
+              .file = "sky130.itf",
+              .fingerprint = "abc123",
+              .stack = "def456"},
+             text);
   EXPECT_NE(text.str().find("\"source\":\"sky130.itf\""), std::string::npos);
   ModelSource source;
   const Model back = readModel(text, &source);
   EXPECT_EQ(source.technology, "sky130");
   EXPECT_EQ(source.file, "sky130.itf");
   EXPECT_EQ(source.fingerprint, "abc123");
+  EXPECT_EQ(source.stack, "def456");
   ASSERT_EQ(back.laterals().size(), 1u);
   const LateralTable* t = back.lateral({"m2", "m1", "m3"});
   ASSERT_NE(t, nullptr);
@@ -203,15 +209,45 @@ TEST(ModelJson, RoundsToSevenDigits)
 TEST(ModelJson, FailedWriteKeepsTheFile)
 {
   const std::string path = testing::TempDir() + "/pex_model.json";
-  writeModelFile(sample(), {"t", "first", "f"}, path);
+  writeModelFile(
+      sample(),
+      {.technology = "t", .file = "first", .fingerprint = "f", .stack = "s"},
+      path);
   // The temporary file the write goes through cannot be opened.
   std::filesystem::create_directory(path + ".tmp");
-  EXPECT_THROW(writeModelFile(sample(), {"t", "second", "f"}, path),
+  EXPECT_THROW(writeModelFile(sample(),
+                              {.technology = "t",
+                               .file = "second",
+                               .fingerprint = "f",
+                               .stack = "s"},
+                              path),
                std::runtime_error);
   std::filesystem::remove(path + ".tmp");
   ModelSource source;
   readModelFile(path, &source);
   EXPECT_EQ(source.file, "first");
+}
+
+// Version 2, without the stack fingerprint, still reads.
+TEST(ModelJson, ReadsVersionTwo)
+{
+  std::stringstream text;
+  writeModel(sample(),
+             {.technology = "t", .file = "f", .fingerprint = "x", .stack = "s"},
+             text);
+  std::string old = text.str();
+  const std::string version = "\"version\":3";
+  const std::string stack = ",\"stack\":\"s\"";
+  ASSERT_NE(old.find(version), std::string::npos);
+  ASSERT_NE(old.find(stack), std::string::npos);
+  old.replace(old.find(version), version.size(), "\"version\":2");
+  old.erase(old.find(stack), stack.size());
+  std::stringstream in(old);
+  ModelSource source;
+  const Model back = readModel(in, &source);
+  EXPECT_EQ(source.fingerprint, "x");
+  EXPECT_EQ(source.stack, "");
+  EXPECT_EQ(back.laterals().size(), 1u);
 }
 
 TEST(ModelJson, RejectsOtherFormats)

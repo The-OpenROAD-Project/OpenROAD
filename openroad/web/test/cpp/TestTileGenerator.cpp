@@ -922,6 +922,18 @@ class TileGeneratorTest : public tst::Nangate45Fixture
   std::unique_ptr<BoundaryHeatMap> heatmap_;
 };
 
+// The overlay PNG goes over the browser's tiles, so no kind of cell may show
+// through it.
+TEST(OverlayVisibilityTest, HidesEveryInstanceCategory)
+{
+  const TileVisibility vis = overlayOnlyVisibility();
+  for (int cat = static_cast<int>(InstCategory::kStdCells);
+       cat <= static_cast<int>(InstCategory::kStdOther);
+       ++cat) {
+    EXPECT_FALSE(vis.isCategoryVisible(static_cast<InstCategory>(cat))) << cat;
+  }
+}
+
 TEST_F(TileGeneratorTest, HasStaFalseWhenNull)
 {
   makeTileGen();
@@ -1659,6 +1671,18 @@ TEST_F(TileGeneratorTest, FillPatternParsingClampsToEnum)
   TileVisibility vis_neg;
   vis_neg.parseFromJson(parseObj(R"({"pattern":-1})"));
   EXPECT_EQ(vis_neg.fill_pattern, FillPattern::kSolid);
+}
+
+// The bool fields are read before visible_layers, so a payload rejected there
+// must not leave them applied.
+TEST(TileVisibilityTest, RejectedPayloadLeavesItUnchanged)
+{
+  TileVisibility vis;
+  vis.stdcells = false;
+  EXPECT_ANY_THROW(vis.parseFromJson(
+      parseObj(R"({"stdcells":true,"visible_layers":true})")));
+  EXPECT_FALSE(vis.stdcells);
+  EXPECT_FALSE(vis.has_visible_layers);
 }
 
 // A non-solid fill pattern thins a layer's own shapes (fewer painted pixels
