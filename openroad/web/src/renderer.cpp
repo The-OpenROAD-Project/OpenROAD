@@ -32,12 +32,12 @@ void Renderer::redraw()
 
 bool Renderer::checkDisplayControl(const std::string& name)
 {
-  return Gui::get()->checkDisplayControlsVisible(displayControlPath(name));
+  return Gui::get()->checkRendererControl(displayControlPath(name));
 }
 
 void Renderer::setDisplayControl(const std::string& name, bool value)
 {
-  Gui::get()->setDisplayControlsVisible(displayControlPath(name), value);
+  Gui::get()->setRendererControl(displayControlPath(name), value);
 }
 
 void Renderer::addDisplayControl(

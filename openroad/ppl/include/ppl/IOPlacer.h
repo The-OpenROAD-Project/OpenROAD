@@ -108,7 +108,7 @@ struct SlotPosition
   bool blocked;
 };
 
-// Set by set_place_config, which stores it in block properties.
+// Set by set_placer_config, which stores it in block properties.
 struct PinPlacementSettings
 {
   std::set<int> hor_layers;
