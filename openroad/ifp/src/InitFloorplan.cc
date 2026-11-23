@@ -9,9 +9,11 @@
 #include <cstdint>
 #include <limits>
 #include <map>
+#include <optional>
 #include <ranges>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -78,6 +80,47 @@ void validateCoreSpacing(odb::dbBlock* block,
       "core_space_left (um) ", block->dbuToMicrons(core_space_left), 34);
   v.check_non_negative(
       "core_space_right (um) ", block->dbuToMicrons(core_space_right), 35);
+}
+
+// Returns the {bottom, top} power rail nets of a master, if it has any.
+std::optional<std::pair<odb::dbSigType, odb::dbSigType>> inferMasterRails(
+    odb::dbMaster* master)
+{
+  int min_y = std::numeric_limits<int>::max();
+  int max_y = std::numeric_limits<int>::min();
+  std::optional<odb::dbSigType> bot;
+  std::optional<odb::dbSigType> top;
+
+  for (odb::dbMTerm* mterm : master->getMTerms()) {
+    const odb::dbSigType st = mterm->getSigType();
+    if (st != odb::dbSigType::POWER && st != odb::dbSigType::GROUND) {
+      continue;
+    }
+
+    for (odb::dbMPin* mpin : mterm->getMPins()) {
+      for (odb::dbBox* box : mpin->getGeometry()) {
+        auto* layer = box->getTechLayer();
+        if (layer == nullptr
+            || layer->getType() != odb::dbTechLayerType::ROUTING) {
+          continue;
+        }
+        const int y = box->getBox().yCenter();
+        if (y < min_y) {
+          min_y = y;
+          bot = st;
+        }
+        if (y > max_y) {
+          max_y = y;
+          top = st;
+        }
+      }
+    }
+  }
+
+  if (!bot.has_value() || !top.has_value()) {
+    return std::nullopt;
+  }
+  return std::pair{*bot, *top};
 }
 }  // namespace
 
@@ -714,6 +757,97 @@ void InitFloorplan::addUsedSites(
   }
 }
 
+// Returns sites whose rows must start one base_site row above core.yMin()
+// to keep their bottom power rail in phase with row 0 of base_site.
+odb::PtrSet<odb::dbSite> InitFloorplan::findPowerOffsetSites(
+    odb::dbSite* base_site,
+    const SitesByName& sites_by_name,
+    const odb::PtrSet<odb::dbSite>& flipped_sites) const
+{
+  odb::PtrMap<dbSite, std::pair<odb::dbSigType, odb::dbSigType>> site_rails;
+  odb::PtrSet<dbSite> warned_sites;
+  for (dbLib* lib : block_->getDb()->getLibs()) {
+    for (dbMaster* master : lib->getMasters()) {
+      if (master->getType() != odb::dbMasterType::CORE) {
+        continue;
+      }
+      // Only single-row masters define a site's rail phase; taller masters
+      // tagged with this site span several rows.
+      dbSite* site = master->getSite();
+      if (site == nullptr || !sites_by_name.contains(site->getName())
+          || master->getHeight() != site->getHeight()) {
+        continue;
+      }
+      const auto rails = inferMasterRails(master);
+      if (!rails.has_value()) {
+        continue;
+      }
+      auto [it, inserted] = site_rails.emplace(site, *rails);
+      if (!inserted && it->second != *rails && !warned_sites.contains(site)) {
+        warned_sites.insert(site);
+        logger_->warn(IFP,
+                      67,
+                      "CORE masters on site {} disagree on power rails "
+                      "(using bottom {}).",
+                      site->getName(),
+                      it->second.first.getString());
+      }
+    }
+  }
+
+  odb::PtrSet<dbSite> offset_sites;
+  const auto base_it = site_rails.find(base_site);
+  if (base_it == site_rails.end()) {
+    return offset_sites;
+  }
+
+  // With -flip_sites, row 0 is FS and the master's top rail sits at
+  // core.yMin(), i.e. the opposite net of its bottom rail.
+  odb::dbSigType ref_row0_bot = base_it->second.first;
+  if (flipped_sites.contains(base_site)) {
+    ref_row0_bot = (ref_row0_bot == odb::dbSigType::POWER)
+                       ? odb::dbSigType::GROUND
+                       : odb::dbSigType::POWER;
+  }
+  const uint32_t ref_height = base_site->getHeight();
+
+  for (const auto& [name, site] : sites_by_name) {
+    const uint32_t site_h = site->getHeight();
+    if (site == base_site || site_h <= ref_height || site_h % ref_height != 0
+        || (site_h / ref_height) % 2 != 0) {
+      continue;
+    }
+    const auto it = site_rails.find(site);
+    if (it == site_rails.end()) {
+      continue;
+    }
+    const auto [bot, top] = it->second;
+    if (bot != top) {
+      // Edges 2k rows apart must carry the same net on an alternating grid;
+      // such a site cannot be aligned by an offset.
+      logger_->warn(IFP,
+                    68,
+                    "Site {} is an even multiple of site {} but its cells have "
+                    "different bottom and top power rails; rows not offset.",
+                    site->getName(),
+                    base_site->getName());
+      continue;
+    }
+    if (bot != ref_row0_bot) {
+      offset_sites.insert(site);
+      logger_->info(IFP,
+                    66,
+                    "Offsetting rows for site {} by {:.3f}um to align power "
+                    "rails with site {}.",
+                    site->getName(),
+                    block_->dbuToMicrons(ref_height),
+                    base_site->getName());
+    }
+  }
+
+  return offset_sites;
+}
+
 // Create the rows for the core area
 void InitFloorplan::makeUniformRows(
     odb::dbSite* base_site,
@@ -726,13 +860,19 @@ void InitFloorplan::makeUniformRows(
   const int core_dy = core.dy();
   const uint32_t site_dx = base_site->getWidth();
   const int rows_x = core_dx / site_dx;
+  const odb::PtrSet<odb::dbSite> offset_sites
+      = findPowerOffsetSites(base_site, sites_by_name, flipped_sites);
+  const int ref_height = base_site->getHeight();
 
   auto make_rows = [&](dbSite* site) -> int {
     const uint32_t site_dy = site->getHeight();
-    const int rows_y = applyRowParity(core_dy / site_dy, row_parity);
+    const int y_offset = offset_sites.contains(site) ? ref_height : 0;
+    const int available_dy = std::max(0, core_dy - y_offset);
+    const int rows_y
+        = applyRowParity(available_dy / static_cast<int>(site_dy), row_parity);
     const bool flip = flipped_sites.contains(site);
 
-    int y = core.yMin();
+    int y = core.yMin() + y_offset;
     for (int row = 0; row < rows_y; row++) {
       dbOrientType orient = ((row + flip) % 2 == 0) ? dbOrientType::R0   // N
                                                     : dbOrientType::MX;  // FS
@@ -1202,6 +1342,9 @@ void InitFloorplan::makePolygonRowsScanline(
     const odb::Rect snapped_bbox(clx, cly, cux, cuy);
 
     // For each site type, create polygon-aware rows
+    const odb::PtrSet<odb::dbSite> offset_sites
+        = findPowerOffsetSites(base_site, sites_by_name, flipped_sites);
+    const int ref_height = base_site->getHeight();
     for (const auto& [name, site] : sites_by_name) {
       if (site->getHeight() % base_site->getHeight() != 0) {
         logger_->error(
@@ -1213,8 +1356,13 @@ void InitFloorplan::makePolygonRowsScanline(
             base_site->getName(),
             block_->dbuToMicrons(base_site->getHeight()));
       }
-      makeUniformRowsPolygon(
-          site, core_polygon, snapped_bbox, row_parity, flipped_sites);
+      const int y_offset = offset_sites.contains(site) ? ref_height : 0;
+      makeUniformRowsPolygon(site,
+                             core_polygon,
+                             snapped_bbox,
+                             row_parity,
+                             flipped_sites,
+                             y_offset);
     }
 
     updateVoltageDomain(clx, cly, cux, cuy, gap);
@@ -1300,17 +1448,20 @@ void InitFloorplan::makeUniformRowsPolygon(
     const odb::Polygon& core_polygon,
     const odb::Rect& core_bbox,
     RowParity row_parity,
-    const odb::PtrSet<odb::dbSite>& flipped_sites)
+    const odb::PtrSet<odb::dbSite>& flipped_sites,
+    const int y_offset)
 {
   const uint32_t site_dx = site->getWidth();
   const uint32_t site_dy = site->getHeight();
   const int core_dy = core_bbox.dy();
 
-  const int total_rows_y = applyRowParity(core_dy / site_dy, row_parity);
+  const int available_dy = std::max(0, core_dy - y_offset);
+  const int total_rows_y
+      = applyRowParity(available_dy / static_cast<int>(site_dy), row_parity);
   const bool flip = flipped_sites.contains(site);
 
   int rows_created = 0;
-  int y = core_bbox.yMin();
+  int y = core_bbox.yMin() + y_offset;
 
   // Create rows, clipping each one to the polygon
   for (int row_idx = 0; row_idx < total_rows_y; row_idx++) {
