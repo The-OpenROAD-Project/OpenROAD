@@ -577,6 +577,7 @@ int RouteBase::applyNetWeights()
       weighted++;
     }
   }
+  nbc_->refreshWireLengthPreconditioners();
   nbc_->refreshDeviceNetWeights();
   for (const auto& nb : nbVec_) {
     nb->refreshDeviceWireLengthPreconditioners();

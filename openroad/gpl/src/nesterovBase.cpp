@@ -1965,7 +1965,6 @@ void NesterovBaseCommon::fixPointers()
 
 void NesterovBaseCommon::rebuildDeviceState()
 {
-  refreshWireLengthPreconditioners();
 #ifdef ENABLE_GPU
   // The TD repair callbacks created, destroyed (swap-remove permutes
   // storage indices), and resized instances; every construction-time view
@@ -1981,7 +1980,6 @@ void NesterovBaseCommon::rebuildDeviceState()
 
 void NesterovBaseCommon::refreshDeviceNetWeights()
 {
-  refreshWireLengthPreconditioners();
 #ifdef ENABLE_GPU
   if (device_state_) {
     device_state_->refreshNetWeights(gNetStor_);

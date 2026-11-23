@@ -986,13 +986,12 @@ class NesterovBaseCommon
   void moveGCell(odb::dbInst* db_inst);
   void fixPointers();
 
-  // Device-side sync for the timing-driven boundary (and weight-update
-  // boundaries). Also refreshes cached host wirelength preconditioners.
-  // Non-virtual TD iterations create, destroy (permuting storage indices),
-  // and resize instances — rebuildDeviceState() reloads the DeviceState
-  // topology (sizes, CSRs, pin offsets, net weights) from the repaired host
-  // storage. Virtual TD / routability / power iterations only reweight nets
-  // — refreshDeviceNetWeights() pushes the new weights.
+  // Device-side sync for the timing-driven boundary; no-ops on CPU builds
+  // and on the CPU runtime path. Non-virtual TD iterations create, destroy
+  // (permuting storage indices), and resize instances — rebuildDeviceState()
+  // reloads the DeviceState topology (sizes, CSRs, pin offsets, net weights)
+  // from the repaired host storage. Virtual TD iterations only reweight
+  // nets — refreshDeviceNetWeights() pushes the new weights.
   void rebuildDeviceState();
   void refreshDeviceNetWeights();
 

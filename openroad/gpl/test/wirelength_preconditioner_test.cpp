@@ -196,7 +196,7 @@ TEST_F(WirelengthPreconditionerTest, RefreshAfterWeightUpdates)
   GNet* gn2 = nbc_->dbToNb(n2_);
 
   gn0->setTimingWeight(5.0f);
-  nbc_->refreshDeviceNetWeights();
+  nbc_->refreshWireLengthPreconditioners();
   EXPECT_NEAR(
       nbc_->getWireLengthPreconditioner(nbc_->dbToNb(u0_)).x, 6.0f, kTolerance);
   EXPECT_NEAR(
@@ -204,11 +204,11 @@ TEST_F(WirelengthPreconditionerTest, RefreshAfterWeightUpdates)
   EXPECT_NEAR(
       nbc_->getWireLengthPreconditioner(nbc_->dbToNb(u2_)).x, 2.0f, kTolerance);
 
-  // Update weights again and refresh through rebuildDeviceState().
+  // Update weights again and refresh through fixPointers().
   gn0->setTimingWeight(1.0f);
   gn1->setTimingWeight(2.5f);
   gn2->setCustomWeight(3.0f);
-  nbc_->rebuildDeviceState();
+  nbc_->fixPointers();
   // u0: n0 (1.0) + n2 (3.0) = 4.0
   // u1: n0 (1.0) + n1 (2.5) + n2 (3.0) = 6.5
   // u2: n1 (2.5) + n2 (3.0) = 5.5

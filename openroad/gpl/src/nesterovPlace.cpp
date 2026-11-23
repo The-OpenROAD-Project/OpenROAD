@@ -508,11 +508,11 @@ void NesterovPlace::runTimingDriven(int iter,
     // iterations only reweighted nets.
     if (virtual_td_iter) {
       nbc_->refreshDeviceNetWeights();
+      for (const auto& nb : nbVec_) {
+        nb->refreshDeviceWireLengthPreconditioners();
+      }
     } else {
       nbc_->rebuildDeviceState();
-    }
-    for (const auto& nb : nbVec_) {
-      nb->refreshDeviceWireLengthPreconditioners();
     }
     // TODO remove fillers for TD iterations
     // for (auto& nesterov : nbVec_) {
