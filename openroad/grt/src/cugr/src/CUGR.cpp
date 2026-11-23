@@ -2211,6 +2211,7 @@ void CUGR::updateNet(odb::dbNet* db_net)
   if (it != db_net_map_.end()) {
     GRNet* gr_net = it->second;
     const bool was_soft_ndr = gr_net->isSoftNdr();
+    const float criticality = gr_net->getCriticality();
     if (gr_net->getRoutingTree()) {
       grid_graph_->removeTreeUsage(*gr_net);
     }
@@ -2218,6 +2219,10 @@ void CUGR::updateNet(odb::dbNet* db_net)
     const int idx = gr_net->getIndex();
     const CUGRNet& base_net = design_->getAllNets()[idx];
     gr_nets_[idx] = std::make_unique<GRNet>(base_net, grid_graph_.get());
+    // The peak criticality carries over: incremental routing has no
+    // critical-net re-route, so a net whose fast route lifted its slack
+    // would otherwise go back to a slow one. Pin caps follow the new pins.
+    gr_nets_[idx]->setCriticality(criticality);
     // Reapply the NDR cost/width dropped by the fresh GRNet so the reroute
     // honors the net's rule (matches CUGR::init).
     gr_nets_[idx]->setNdrCosts(computeNdrCosts(db_net));
@@ -2372,6 +2377,7 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
   if (it != db_net_map_.end()) {
     GRNet* gr_net = it->second;
     was_soft_ndr = gr_net->isSoftNdr();
+    const float criticality = gr_net->getCriticality();
     if (gr_net->getRoutingTree()) {
       grid_graph_->removeTreeUsage(*gr_net);
     }
@@ -2380,6 +2386,8 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
     gr_nets_[idx] = std::make_unique<GRNet>(design_->getAllNets()[idx],
                                             grid_graph_.get());
     new_net = gr_nets_[idx].get();
+    // Keeps the peak criticality, like updateNet.
+    new_net->setCriticality(criticality);
   } else {
     const int idx = design_->updateNet(db_net);
     if (idx < 0) {

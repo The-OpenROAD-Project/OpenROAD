@@ -127,19 +127,19 @@ delta HPWL                    0 %
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.309 |       -8.3 |     32 | _884_/D
-     364* |      57 |     129 |       39 |      0 |    13 |   +14.8% |   -0.126 |       -3.3 |     32 | _876_/D
-    final |      57 |     132 |       39 |      0 |    13 |   +14.9% |   -0.126 |       -3.3 |     32 | _876_/D
+     362* |      58 |     132 |       40 |      0 |    14 |   +15.5% |   -0.126 |       -3.3 |     32 | _865_/D
+    final |      58 |     134 |       40 |      0 |    14 |   +15.7% |   -0.126 |       -3.3 |     32 | _865_/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 57 buffers.
-[INFO RSZ-0040] Inserted 39 buffers.
-[INFO RSZ-0051] Resized 132 instances: 132 up, 0 up match, 0 down, 0 VT
-[INFO RSZ-0043] Swapped pins on 13 instances.
+[INFO RSZ-0059] Removed 58 buffers.
+[INFO RSZ-0040] Inserted 40 buffers.
+[INFO RSZ-0051] Resized 134 instances: 134 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 14 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 [WARNING DPL-0037] Use remove_fillers before detailed placement.
 [INFO DPL-0006] Core area: 6286.11 um^2
-[INFO DPL-0007] Movable instances area: 826.46 um^2
+[INFO DPL-0007] Movable instances area: 832.31 um^2
 [INFO DPL-0008] Fixed instances area within core: 44.69 um^2
-[INFO DPL-0009] Utilization: 13.9%
+[INFO DPL-0009] Utilization: 14.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
 [INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
@@ -157,12 +157,12 @@ Negotiation phase 1 converged at iteration 1.
 Detailed Placement Analysis
 ---------------------------------
 legalizer            negotiation
-total moves                 330
-total displacement         74.8 u
+total moves                 339
+total displacement         76.8 u
 average displacement        0.1 u
 max displacement            3.4 u
-original HPWL            7018.1 u
-legalized HPWL           7029.6 u
+original HPWL            7019.4 u
+legalized HPWL           7033.1 u
 delta HPWL                    0 %
 
 [INFO ANT-0002] Found 0 net violations.
