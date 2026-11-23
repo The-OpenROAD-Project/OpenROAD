@@ -75,7 +75,7 @@ struct DebugSetting
 struct parent3D
 {
   int16_t layer;
-  int x, y;
+  int16_t x, y;  // grid coordinates are int16_t, as in TreeNode
 };
 
 class MinHeap3D

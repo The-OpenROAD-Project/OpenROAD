@@ -1246,6 +1246,14 @@ class NesterovBase
 
   BinGrid& getBinGrid() { return bg_; }
 
+  // Moves movable instances that start at exactly the same density center,
+  // after clamping into the region, with the same size and the same
+  // multi-pin nets at the same pin offsets, apart onto a grid of distinct
+  // slots around that center. Such cells get identical forces, so they would
+  // otherwise never separate. Stacked cells that differ in their pins are left
+  // alone: the wirelength gradient separates them.
+  void spreadStackedGCells();
+
   // Nesterov Loop
   void initDensity1();
   float initDensity2(float wlCoeffX, float wlCoeffY);

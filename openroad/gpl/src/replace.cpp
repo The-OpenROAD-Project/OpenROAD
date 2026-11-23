@@ -150,7 +150,7 @@ void Replace::checkPlaceIosSupported(const PlaceOptions& options)
                 174,
                 "-place_ios: pin layers are not set. Set both "
                 "-io_pin_hor_layers and -io_pin_ver_layers with "
-                "set_place_config.");
+                "set_placer_config.");
   }
 }
 
@@ -271,6 +271,7 @@ PlaceResult Replace::doIncrementalPlace(const int threads,
 
   // Phase 1 measured only what the unplaced instances added to the
   // overflow. Re-measure it over every instance now that none are locked.
+  // This also measures the placement a revert to the snapshot left.
   np_->refreshOverflow();
   log_->info(GPL,
              196,
@@ -283,8 +284,12 @@ PlaceResult Replace::doIncrementalPlace(const int threads,
   if (options.incrementalPhase2 && options.incrementalPhase2Overflow >= 0) {
     phase2_options.overflow = options.incrementalPhase2Overflow;
   }
-  const bool missed_target
-      = np_->getAverageOverflow() > phase2_options.overflow;
+  // As in the convergence check, every region has to reach the target.
+  float max_overflow = 0;
+  for (const auto& nb : nbVec_) {
+    max_overflow = std::max(max_overflow, nb->getSumOverflowUnscaled());
+  }
+  const bool missed_target = max_overflow > phase2_options.overflow;
 
   if (options.incrementalPhase2 && (phase1_diverged || missed_target)) {
     // Hand the fillers out again around the placement phase 1 reached, so
@@ -315,7 +320,7 @@ PlaceResult Replace::doIncrementalPlace(const int threads,
                  197,
                  "Incremental placement left overflow {:.4f} above target "
                  "{:.4f}; detailed placement will resolve it.",
-                 np_->getAverageOverflow(),
+                 max_overflow,
                  options.overflow);
     }
   }

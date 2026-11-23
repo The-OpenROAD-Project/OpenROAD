@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "pex/ModelJson.h"
+#include "ModelJson.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -16,8 +16,8 @@
 #include <utility>
 #include <vector>
 
+#include "Model.h"
 #include "boost/json.hpp"
-#include "pex/Model.h"
 
 namespace pex {
 

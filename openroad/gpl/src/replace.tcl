@@ -151,21 +151,21 @@ proc global_placement { args } {
 
 # The settings live in block properties, so they persist with the design.
 # place_pins and global_placement -place_ios read the IO pin settings.
-sta::define_cmd_args "set_place_config" {[-io_pin_hor_layers h_layers]\
+sta::define_cmd_args "set_placer_config" {[-io_pin_hor_layers h_layers]\
                                          [-io_pin_ver_layers v_layers]\
                                          [-io_pin_corner_avoidance distance]\
                                          [-io_pin_min_distance min_dist]\
                                          [-io_pin_min_distance_in_tracks]\
                                          [-io_pin_layer_min_distance layer_min_dists]}
 
-proc set_place_config { args } {
-  sta::parse_key_args "set_place_config" args \
+proc set_placer_config { args } {
+  sta::parse_key_args "set_placer_config" args \
     keys {-io_pin_hor_layers -io_pin_ver_layers -io_pin_corner_avoidance -io_pin_min_distance \
       -io_pin_layer_min_distance} \
     flags {-io_pin_min_distance_in_tracks}
-  sta::check_argc_eq0 "set_place_config" $args
+  sta::check_argc_eq0 "set_placer_config" $args
 
-  set block [gpl::place_config_block]
+  set block [gpl::placer_config_block]
   set in_tracks [info exists flags(-io_pin_min_distance_in_tracks)]
   if {
     $in_tracks && ![info exists keys(-io_pin_min_distance)]
@@ -193,39 +193,39 @@ proc set_place_config { args } {
       $keys(-io_pin_layer_min_distance) $in_tracks]
   }
   if { [info exists keys(-io_pin_hor_layers)] } {
-    gpl::set_place_prop $block String io_pin_hor_layers $hor_layers
+    gpl::set_placer_prop $block String io_pin_hor_layers $hor_layers
   }
   if { [info exists keys(-io_pin_ver_layers)] } {
-    gpl::set_place_prop $block String io_pin_ver_layers $ver_layers
+    gpl::set_placer_prop $block String io_pin_ver_layers $ver_layers
   }
   if { [info exists keys(-io_pin_corner_avoidance)] } {
-    gpl::set_place_prop $block Int io_pin_corner_avoidance \
+    gpl::set_placer_prop $block Int io_pin_corner_avoidance \
       [ord::microns_to_dbu $keys(-io_pin_corner_avoidance)]
   }
   if { [info exists keys(-io_pin_min_distance)] } {
-    gpl::set_place_prop $block Int io_pin_min_distance $min_dist
-    gpl::set_place_prop $block Bool io_pin_min_distance_in_tracks $in_tracks
+    gpl::set_placer_prop $block Int io_pin_min_distance $min_dist
+    gpl::set_placer_prop $block Bool io_pin_min_distance_in_tracks $in_tracks
   }
   if { [info exists keys(-io_pin_layer_min_distance)] } {
-    gpl::set_place_prop $block String io_pin_layer_min_distance $layer_min_dist
-    gpl::set_place_prop $block Bool io_pin_layer_min_distance_in_tracks $in_tracks
+    gpl::set_placer_prop $block String io_pin_layer_min_distance $layer_min_dist
+    gpl::set_placer_prop $block Bool io_pin_layer_min_distance_in_tracks $in_tracks
   }
 }
 
-sta::define_cmd_args "reset_place_config" {[-io_pin_hor_layers]\
+sta::define_cmd_args "reset_placer_config" {[-io_pin_hor_layers]\
                                            [-io_pin_ver_layers]\
                                            [-io_pin_corner_avoidance]\
                                            [-io_pin_min_distance]\
                                            [-io_pin_layer_min_distance]}
 
-proc reset_place_config { args } {
-  sta::parse_key_args "reset_place_config" args \
+proc reset_placer_config { args } {
+  sta::parse_key_args "reset_placer_config" args \
     keys {} \
     flags {-io_pin_hor_layers -io_pin_ver_layers -io_pin_corner_avoidance \
       -io_pin_min_distance -io_pin_layer_min_distance}
-  sta::check_argc_eq0 "reset_place_config" $args
+  sta::check_argc_eq0 "reset_placer_config" $args
 
-  set block [gpl::place_config_block]
+  set block [gpl::placer_config_block]
   set reset_all [expr { [array size flags] == 0 }]
   foreach { flag props } {
     -io_pin_hor_layers {String io_pin_hor_layers}
@@ -237,41 +237,41 @@ proc reset_place_config { args } {
   } {
     if { $reset_all || [info exists flags($flag)] } {
       foreach { type name } $props {
-        gpl::clear_place_prop $block $type $name
+        gpl::clear_placer_prop $block $type $name
       }
     }
   }
 }
 
-sta::define_cmd_args "report_place_config" {}
+sta::define_cmd_args "report_placer_config" {}
 
-proc report_place_config { args } {
-  sta::parse_key_args "report_place_config" args keys {} flags {}
-  sta::check_argc_eq0 "report_place_config" $args
+proc report_placer_config { args } {
+  sta::parse_key_args "report_placer_config" args keys {} flags {}
+  sta::check_argc_eq0 "report_placer_config" $args
 
-  set block [gpl::place_config_block]
+  set block [gpl::placer_config_block]
   foreach name {io_pin_hor_layers io_pin_ver_layers} {
-    set value [gpl::get_place_prop $block String $name]
+    set value [gpl::get_placer_prop $block String $name]
     utl::report "$name: [expr { $value eq {} ? {unset} : $value }]"
   }
-  set corner [gpl::get_place_prop $block Int io_pin_corner_avoidance]
+  set corner [gpl::get_placer_prop $block Int io_pin_corner_avoidance]
   if { $corner eq {} } {
     utl::report "io_pin_corner_avoidance: unset"
   } else {
     utl::report "io_pin_corner_avoidance: [ord::dbu_to_microns $corner] um"
   }
-  set min_dist [gpl::get_place_prop $block Int io_pin_min_distance]
+  set min_dist [gpl::get_placer_prop $block Int io_pin_min_distance]
   if { $min_dist eq {} } {
     utl::report "io_pin_min_distance: unset"
   } else {
-    set in_tracks [gpl::get_place_prop $block Bool io_pin_min_distance_in_tracks]
+    set in_tracks [gpl::get_placer_prop $block Bool io_pin_min_distance_in_tracks]
     utl::report "io_pin_min_distance: [gpl::format_min_distance $min_dist $in_tracks]"
   }
-  set layer_min_dist [gpl::get_place_prop $block String io_pin_layer_min_distance]
+  set layer_min_dist [gpl::get_placer_prop $block String io_pin_layer_min_distance]
   if { $layer_min_dist eq {} } {
     utl::report "io_pin_layer_min_distance: unset"
   } else {
-    set in_tracks [gpl::get_place_prop $block Bool io_pin_layer_min_distance_in_tracks]
+    set in_tracks [gpl::get_placer_prop $block Bool io_pin_layer_min_distance_in_tracks]
     set values {}
     foreach { name dist } $layer_min_dist {
       lappend values "$name [gpl::format_min_distance $dist $in_tracks]"
@@ -292,7 +292,7 @@ proc report_place_config { args } {
       } else {
         set option io_pin_ver_layers
       }
-      set pin_layers [gpl::get_place_prop $block String $option]
+      set pin_layers [gpl::get_placer_prop $block String $option]
       if { $pin_layers ne {} && [lsearch -exact $pin_layers $name] == -1 } {
         utl::report "  $name is not in $option."
       }
@@ -477,7 +477,7 @@ proc estimate_target_density { args } {
 }
 
 namespace eval gpl {
-# A min distance as report_place_config shows it.
+# A min distance as report_placer_config shows it.
 proc format_min_distance { dist in_tracks } {
   if { !$in_tracks } {
     return "[ord::dbu_to_microns $dist] um"
@@ -485,7 +485,7 @@ proc format_min_distance { dist in_tracks } {
   return [expr { $dist == 1 ? "1 track" : "$dist tracks" }]
 }
 
-proc place_config_block { } {
+proc placer_config_block { } {
   set block [ord::get_db_block]
   if { $block == "NULL" } {
     utl::error GPL 194 "No design block found."
@@ -494,25 +494,25 @@ proc place_config_block { } {
 }
 
 # type is String, Int or Bool. The property names are read by ppl.
-proc set_place_prop { block type name value } {
-  set prop [odb::db${type}Property_find $block "place_config_$name"]
+proc set_placer_prop { block type name value } {
+  set prop [odb::db${type}Property_find $block "placer_config_$name"]
   if { $prop eq "NULL" } {
-    odb::db${type}Property_create $block "place_config_$name" $value
+    odb::db${type}Property_create $block "placer_config_$name" $value
   } else {
     $prop setValue $value
   }
 }
 
-proc get_place_prop { block type name } {
-  set prop [odb::db${type}Property_find $block "place_config_$name"]
+proc get_placer_prop { block type name } {
+  set prop [odb::db${type}Property_find $block "placer_config_$name"]
   if { $prop eq "NULL" } {
     return {}
   }
   return [$prop getValue]
 }
 
-proc clear_place_prop { block type name } {
-  set prop [odb::db${type}Property_find $block "place_config_$name"]
+proc clear_placer_prop { block type name } {
+  set prop [odb::db${type}Property_find $block "placer_config_$name"]
   if { $prop ne "NULL" } {
     odb::dbProperty_destroy $prop
   }

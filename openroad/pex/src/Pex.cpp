@@ -15,16 +15,16 @@
 #include <utility>
 #include <vector>
 
+#include "Compare.h"
+#include "Extractor.h"
+#include "Model.h"
+#include "ModelBuilder.h"
+#include "ModelJson.h"
+#include "SpefWriter.h"
 #include "fsv/Itf.h"
 #include "fsv/Stack.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "pex/Compare.h"
-#include "pex/Extractor.h"
-#include "pex/Model.h"
-#include "pex/ModelBuilder.h"
-#include "pex/ModelJson.h"
-#include "pex/SpefWriter.h"
 #include "utl/Logger.h"
 
 namespace pex {

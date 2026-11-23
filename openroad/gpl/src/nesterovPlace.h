@@ -65,7 +65,6 @@ class NesterovPlace
   float getWireLengthCoefX() const { return wireLengthCoefX_; }
   float getWireLengthCoefY() const { return wireLengthCoefY_; }
   NesterovPlaceVars& getNpVars() { return npVars_; }
-  float getAverageOverflow() const { return average_overflow_unscaled_; }
   // The top-level (unfenced/full-die) region is always nbVec_[0].
   NesterovBase* getTopLevelNB() const;
 
@@ -97,6 +96,8 @@ class NesterovPlace
   // Recomputes the overflow from the current placement, e.g. after cells
   // are unlocked, so the next doNesterovPlace() starts from it.
   void refreshOverflow();
+  // Unscaled overflow averaged over the regions.
+  float getAverageOverflow() const { return average_overflow_unscaled_; }
 
   void npUpdatePrevGradient(const std::shared_ptr<NesterovBase>& nb);
   void npUpdateCurGradient(const std::shared_ptr<NesterovBase>& nb);
@@ -216,16 +217,20 @@ class NesterovPlace
   std::vector<PlaceIteration> trace_;
 
   // Snapshot saving for revert if diverge
-  float diverge_snapshot_average_overflow_unscaled_ = 0;
   int64_t min_hpwl_ = INT64_MAX;
-  int diverge_snapshot_iter_ = 0;
+  // The overflow and iteration of the placement min_hpwl_ was measured on.
+  float min_hpwl_overflow_ = 0;
+  int min_hpwl_iter_ = 0;
   bool is_min_hpwl_ = false;
   bool is_diverge_snapshot_saved_ = false;
   float diverge_snapshot_wl_coef_x_ = 0;
   float diverge_snapshot_wl_coef_y_ = 0;
-  // min_hpwl_ at save time; a routability pass clears min_hpwl_ but keeps
-  // the snapshot.
+  // min_hpwl_ and its overflow and iteration at save time; a routability
+  // pass clears min_hpwl_ but keeps the snapshot, and a later min hpwl may go
+  // unsaved.
   int64_t diverge_snapshot_hpwl_ = 0;
+  float diverge_snapshot_average_overflow_unscaled_ = 0;
+  int diverge_snapshot_iter_ = 0;
 
   // Repeats only help while the resumed descent keeps finding a better
   // snapshot. Bounded so a diverging run stops on its min hpwl snapshot, not

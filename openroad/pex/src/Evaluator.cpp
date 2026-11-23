@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "pex/Evaluator.h"
+#include "Evaluator.h"
 
 #include <algorithm>
 #include <array>
@@ -17,12 +17,12 @@
 #include <utility>
 #include <vector>
 
+#include "CoverMap.h"
+#include "Model.h"
+#include "Patterns.h"
 #include "fsv/Geometry.h"
 #include "fsv/Stack.h"
 #include "odb/geom.h"
-#include "pex/CoverMap.h"
-#include "pex/Model.h"
-#include "pex/Patterns.h"
 
 namespace pex {
 

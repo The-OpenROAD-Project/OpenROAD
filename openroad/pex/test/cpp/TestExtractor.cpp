@@ -12,15 +12,15 @@
 #include <string_view>
 #include <vector>
 
+#include "Evaluator.h"
+#include "Extractor.h"
+#include "Model.h"
+#include "Network.h"
 #include "fsv/Itf.h"
 #include "fsv/Stack.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/geom.h"
-#include "pex/Evaluator.h"
-#include "pex/Extractor.h"
-#include "pex/Model.h"
-#include "pex/Network.h"
 #include "tst/db_fixture.h"
 
 namespace pex {

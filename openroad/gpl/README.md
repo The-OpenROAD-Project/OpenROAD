@@ -157,7 +157,7 @@ global_placement
 | `-pad_left` | Set left padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
 | `-pad_right` | Set right padding in terms of number of sites. The default value is `0`, and the allowed values are integers `[0, MAX_INT]` |
 | `-skip_io` | Flag to ignore the IO ports when computing wirelength during placement. The default value is False, allowed values are boolean. |
-| `-place_ios` | Flag to co-optimize movable IO pins with cells in the same placement solve. Pins move along the die perimeter, or in 2D inside their region when `set_io_pin_constraint -region up:` puts them on a `define_pin_shape_pattern` grid. The pin layers and spacing come from `set_place_config`, which must set both the horizontal and the vertical layers. The pins are legalized with the pin placer at the end, so the separate `place_pins` step can be skipped. Not supported on a rectilinear die. Cannot be combined with `-incremental`, `-skip_io`, or `-skip_nesterov_place`. The default value is False, allowed values are boolean. |
+| `-place_ios` | Flag to co-optimize movable IO pins with cells in the same placement solve. Pins move along the die perimeter, or in 2D inside their region when `set_io_pin_constraint -region up:` puts them on a `define_pin_shape_pattern` grid. The pin layers and spacing come from `set_placer_config`, which must set both the horizontal and the vertical layers. The pins are legalized with the pin placer at the end, so the separate `place_pins` step can be skipped. Not supported on a rectilinear die. Cannot be combined with `-incremental`, `-skip_io`, or `-skip_nesterov_place`. The default value is False, allowed values are boolean. |
 | `-disable_revert_if_diverge` | Flag to make gpl store the placement state along iterations, if a divergence is detected, gpl reverts to the snapshot state. The default value is disabled. |
 | `-disable_pin_density_adjust` | Flag to disable instance pin density area adjustment. The pin density area adjustment is enabled by default. |
 | `-enable_routing_congestion` | Flag to run global routing after global placement, enabling the Routing Congestion Heatmap.|
@@ -206,7 +206,7 @@ global_placement
 
 ### Placement Configuration
 
-The `set_place_config` command keeps placement settings in the design's block
+The `set_placer_config` command keeps placement settings in the design's block
 properties, so they persist when the design is written and read back. Each call
 changes only the options it is given. The options below set the slots where
 the IO pins are placed: `place_pins` uses them for any switch it is not given,
@@ -215,7 +215,7 @@ Regions and groups of pins are not part of these settings; define them with
 `exclude_io_pin_region` and `set_io_pin_constraint`.
 
 ```tcl
-set_place_config
+set_placer_config
     [-io_pin_hor_layers h_layers]
     [-io_pin_ver_layers v_layers]
     [-io_pin_corner_avoidance distance]
@@ -237,11 +237,11 @@ set_place_config
 
 ### Reset Placement Configuration
 
-The `reset_place_config` command removes the given settings, or all of them
+The `reset_placer_config` command removes the given settings, or all of them
 when no option is given.
 
 ```tcl
-reset_place_config
+reset_placer_config
     [-io_pin_hor_layers]
     [-io_pin_ver_layers]
     [-io_pin_corner_avoidance]
@@ -261,12 +261,12 @@ reset_place_config
 
 ### Report Placement Configuration
 
-The `report_place_config` command reports the current settings. With a
+The `report_placer_config` command reports the current settings. With a
 per-layer minimum distance, it also says what the other layers use, and names
 the layers that are not in the saved pin layers of their direction.
 
 ```tcl
-report_place_config
+report_placer_config
 ```
 
 ### Cluster Flops
