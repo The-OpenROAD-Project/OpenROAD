@@ -58,13 +58,13 @@ def _man_pages_impl(ctx):
             args.add("--script", f)
 
     for readme in ctx.files.readmes:
-        # Derive module name: src/ant/README.md  →  ant
+        # Derive module name: openroad/ant/README.md  →  ant
         parts = readme.short_path.split("/")
         module = parts[-2] if len(parts) >= 2 else readme.basename
         args.add("--readme", "{}:{}".format(module, readme.path))
 
     for msg in ctx.files.messages:
-        # Derive module name: src/ant/messages.txt  →  ant.  The ORD
+        # Derive module name: openroad/ant/messages.txt  →  ant.  The ORD
         # messages at the repository root (messages.txt) get an empty name.
         parts = msg.short_path.split("/")
         module = parts[-2] if len(parts) >= 2 else ""
@@ -111,7 +111,7 @@ man_pages = rule(
             allow_files = [".txt"],
         ),
         "readmes": attr.label_list(
-            doc = "Module README.md files (src/*/README.md).",
+            doc = "Module README.md files (openroad/*/README.md).",
             allow_files = [".md"],
         ),
         "scripts": attr.label_list(

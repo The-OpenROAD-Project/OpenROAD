@@ -18,7 +18,7 @@ Bazel-level view.
 bazelisk test //docs/src/test/...
 
 # The per-module checks
-bazelisk test --test_tag_filters=doc_check //src/...
+bazelisk test --test_tag_filters=doc_check //openroad/...
 ```
 
 ## Static tests
@@ -60,7 +60,7 @@ time you make a change to the `README.md`, update messages, or
 make a change to the top-level `Tcl` code.
 
 Each documented module gets two tests, declared in its own
-`src/{module}/test/BUILD` and tagged `doc_check`:
+`openroad/{module}/test/BUILD` and tagged `doc_check`:
 
 #### README-messages check
 
@@ -71,6 +71,9 @@ and that its `messages.txt` parses into man3 format.
 #### Man-to-Tcl check
 
 The name of this test is `{module}_man_tcl_check`.
+It uses the shared `man_tcl_check_test` macro in
+[`bazel/man_tcl_checker.bzl`](../../../bazel/man_tcl_checker.bzl), which
+passes the module name to a single Python checker.
 The objective of this test is to ensure that there are similar counts of
 command in the following: `proc`, `help`, `man`.
 
