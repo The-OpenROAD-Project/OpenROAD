@@ -1127,8 +1127,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
     bin.setInstPlacedArea(bin.getInstPlacedAreaUnscaled());
 
     int64_t binArea = bin.getBinArea();
-    const float scaledBinArea
-        = static_cast<float>(binArea * bin.getTargetDensity());
+    const float scaledBinArea = binArea * bin.getTargetDensity();
     updateBinDensity(bin);
 
     // Locked instances cannot move, so the overflow they add on top of the
