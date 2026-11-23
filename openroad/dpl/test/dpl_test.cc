@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
+#include <cstdint>
 #include <cstdlib>
 #include <memory>
 #include <stdexcept>
@@ -2163,5 +2164,77 @@ TEST_F(Lef58ImplantAndEdgeTest, Lef58MaxSpacingVerticalCoverage)
   rule->setMaxSpacing(kRowHeight);
   EXPECT_EQ(runCheck(), "");
   (void) mid;
+}
+
+TEST_F(Lef58ImplantAndEdgeTest, Lef58AreaRuleQualifiersAndWindowExpansion)
+{
+  auto* area_rule = odb::dbTechLayerAreaRule::create(imp1_);
+  area_rule->setArea(static_cast<int64_t>(2) * kSiteWidth * kRowHeight);
+
+  odb::dbMaster* m_full = createCustomMaster(
+      "M_AREA_FULL", 1, {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+
+  // 1. Single 1-site cell has area < 2 * kSiteWidth * kRowHeight -> violation
+  odb::dbInst* a1 = placeCell(m_full, "a1", 2, 0);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+
+  // Second abutting cell doubles merged polygon area -> passes AREA rule
+  odb::dbInst* a2 = placeCell(m_full, "a2", 3, 0);
+  EXPECT_EQ(runCheck(), "");
+
+  // 2. EXCEPTRECTANGLE: 2-site pure rectangle < 4-site min_area is exempt,
+  // while adding a half-height step creates a 6-vertex L-shape < min_area!
+  area_rule->setArea(static_cast<int64_t>(4) * kSiteWidth * kRowHeight);
+  area_rule->setExceptRectangle(true);
+  EXPECT_EQ(runCheck(), "");
+
+  odb::dbMaster* m_half = createCustomMaster(
+      "M_AREA_HALF", 1, {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight / 2)}});
+  odb::dbInst* step_half = placeCell(m_half, "step_half", 4, 0);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+
+  // 3. EXCEPTMINWIDTH: L-shape arms are (2*kSiteWidth x kRowHeight) and
+  // (3*kSiteWidth x kRowHeight/2), so min width is 2*kSiteWidth == 760 ->
+  // exempt; replacing step with height kSiteWidth (380 < 760) fails!
+  area_rule->setExceptRectangle(false);
+  area_rule->setExceptMinWidth(2 * kSiteWidth);
+  EXPECT_EQ(runCheck(), "");
+
+  odb::dbInst::destroy(step_half);
+  odb::dbMaster* m_quarter = createCustomMaster(
+      "M_AREA_QUARTER", 1, {{imp1_, odb::Rect(0, 0, kSiteWidth, kSiteWidth)}});
+  odb::dbInst* step_q = placeCell(m_quarter, "step_q", 4, 0);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+
+  // Single-value EXCEPTEDGELENGTH exempts when at least one edge >= eel
+  // (max_edge == kRowHeight == 2800), and fails when eel > max_edge!
+  area_rule->setExceptMinWidth(0);
+  area_rule->setExceptEdgeLength(kRowHeight);
+  EXPECT_EQ(runCheck(), "");
+  area_rule->setExceptEdgeLength(kRowHeight + 100);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+
+  odb::dbInst::destroy(step_q);
+  odb::dbInst::destroy(a2);
+  odb::dbInst::destroy(a1);
+  odb::dbTechLayerAreaRule::destroy(area_rule);
+
+  // 4. Long thin continuous stripe exceeding 2 * halo_x (sqrt(area) window):
+  // min_area = 20 * kSiteWidth * 10 = 76,000 -> sqrt halo ~ 512 (4 sites),
+  // while the stripe spans 20 sites (7,600 DBU).
+  auto* stripe_rule = odb::dbTechLayerAreaRule::create(imp1_);
+  stripe_rule->setArea(static_cast<int64_t>(20) * kSiteWidth * 10);
+  odb::dbMaster* m_thin10 = createCustomMaster(
+      "M_AREA_THIN10", 1, {{imp1_, odb::Rect(0, 0, kSiteWidth, 10)}});
+  for (int gx = 0; gx < 19; ++gx) {
+    const std::string inst_name = "s_" + std::to_string(gx);
+    placeCell(m_thin10, inst_name.c_str(), gx, 0);
+  }
+  // 19 sites = 72,200 < 76,000 -> true violation even though longer than halo
+  EXPECT_EQ(runCheck(), "DPL-0033");
+
+  // 20th abutting site reaches 76,000 >= min_area across the query boundary!
+  placeCell(m_thin10, "s_19", 19, 0);
+  EXPECT_EQ(runCheck(), "");
 }
 }  // namespace dpl
