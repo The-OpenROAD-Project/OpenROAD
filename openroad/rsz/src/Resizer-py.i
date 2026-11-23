@@ -47,8 +47,9 @@ using namespace rsz;
 
 %ignore rsz::Resizer::lib_data_;
 
-// Returns an rsz type this module does not wrap.
+// These return rsz types this module does not wrap.
 %ignore rsz::Resizer::placementDensity;
+%ignore rsz::Resizer::placementDensityGrid;
 
 // removeBuffers(InstanceSeq) requires sta::InstanceSeq which has no Python
 // typemap; %extend below exposes the "remove all" case via an empty sequence.

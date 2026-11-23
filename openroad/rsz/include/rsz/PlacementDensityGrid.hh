@@ -19,6 +19,10 @@ class dbPlacementStatus;
 class dbRow;
 }  // namespace odb
 
+namespace utl {
+class Logger;
+}  // namespace utl
+
 namespace rsz {
 
 // How much of a region placed instances cover, and how much of it no
@@ -73,7 +77,7 @@ struct PlacementDensity
 // see one until then.
 //
 // The heat map throws its whole map away whenever an instance changes, and
-// rebuilds it on the next read.  This grid is built by its first query, and
+// rebuilds it on the next read.  This grid is built by ensureBuilt(), and
 // odb callbacks then keep the bins current through every instance create,
 // destroy, move, resize and placement status change.  So a query only costs
 // a walk over the bins it covers, however much changed since the last one.
@@ -84,7 +88,9 @@ struct PlacementDensity
 // an orientation or a placement status that way): that instance is just out
 // of date until its next callback.
 //
-// Not thread safe: queries and db edits must not run concurrently.
+// The queries are const and only read, so several threads can make them at
+// once, as when moves are scored in parallel; but not while the db is edited
+// or the grid is built.
 class PlacementDensityGrid : public odb::dbBlockCallBackObj
 {
  public:
@@ -95,22 +101,32 @@ class PlacementDensityGrid : public odb::dbBlockCallBackObj
   // each of those gcells takes up to two bins, four in the corner.  The tile
   // size needs the block's routing layers and their tracks.
   //
-  // The grid is built by the first query, so making one costs nothing until
-  // then.
-  explicit PlacementDensityGrid(odb::dbBlock* block);
+  // Making a grid costs nothing until ensureBuilt() builds it.
+  PlacementDensityGrid(odb::dbBlock* block, utl::Logger* logger);
   // Bins of bin_width x bin_height DBU, at least 1, on a grid through
   // origin, which can lie outside the core.
   PlacementDensityGrid(odb::dbBlock* block,
+                       utl::Logger* logger,
                        const odb::Point& origin,
                        int bin_width,
                        int bin_height);
 
   odb::dbBlock* getBlock() const { return block_; }
 
-  // Area covered inside region, given in block coordinates.
-  PlacementDensity getDensity(const odb::Rect& region);
+  // Builds the grid if it is out of date: before the first query, and after
+  // an edit that has it build afresh.  Otherwise it costs nothing, so call it
+  // after editing the db and before querying.
+  void ensureBuilt();
 
-  // The bins as of the last query.
+  // Area covered inside region, given in block coordinates.  A query on a
+  // grid that is out of date is an error.
+  PlacementDensity getDensity(const odb::Rect& region) const;
+  // Area covered inside the global router's gcell holding point, so exact.
+  // A point off the die counts as in the nearest gcell.  With bins other
+  // than gcells, the area covered inside the bin holding point.
+  PlacementDensity getDensity(const odb::Point& point) const;
+
+  // The bins as of the last build.
   int getBinWidth() const { return bin_width_; }
   int getBinHeight() const { return bin_height_; }
   int getBinCountX() const { return bin_count_x_; }
@@ -182,17 +198,23 @@ class PlacementDensityGrid : public odb::dbBlockCallBackObj
   }
   // The bins overlapping rect, which must lie in the core and have area.
   BinRange binsCovering(const odb::Rect& rect) const;
+  // The router's gcell holding point, or the bin with other bins, not
+  // clipped to the core.
+  odb::Rect cellHolding(const odb::Point& point) const;
 
   odb::dbBlock* block_;
+  utl::Logger* logger_;
   // The grid of bins asked for; a width of 0 asks for the router's gcells.
   const odb::Point requested_origin_;
   const int requested_bin_width_;
   const int requested_bin_height_;
 
-  // Set until the first query, and by a change to the die or the core.  The
-  // next query then builds the bins afresh.
+  // Set until the first build, and by an edit that has the grid build
+  // afresh.  ensureBuilt() then builds the bins.
   bool stale_ = true;
 
+  // The die, which the router's gcells cover, and the core.
+  odb::Rect die_;
   odb::Rect core_;
   // The lower left corner of bin (0, 0) before it is clipped to the core:
   // the grid point nearest the core's lower left corner from below and from

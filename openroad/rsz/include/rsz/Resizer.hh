@@ -227,6 +227,15 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // the region covers.  The grid, and its upkeep on every instance edit,
   // stays until releasePlacementDensityGrid().
   PlacementDensity placementDensity(const odb::Rect& region);
+  // Placement density of the gcell holding point, so exact; see
+  // PlacementDensityGrid.
+  PlacementDensity placementDensity(const odb::Point& point);
+  // The grid that placementDensity() queries, brought up to date.  Its
+  // queries are const and only read, so the threads of a parallel move
+  // scoring can make them at once: get the grid before the scoring, and edit
+  // the db only after it.  The grid lives until releasePlacementDensityGrid()
+  // or a call for another block.
+  const PlacementDensityGrid& placementDensityGrid();
   // Drops the grid placementDensity() builds, which stops its callbacks and
   // frees its memory; the next call builds it afresh.  A pass that queries
   // the density calls this when it is done, so that later steps, such as

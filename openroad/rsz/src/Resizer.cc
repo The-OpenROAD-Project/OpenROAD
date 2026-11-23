@@ -262,17 +262,28 @@ std::unique_ptr<PlacementDensityGrid> Resizer::makePlacementDensityGrid()
                    "Placement density is counted per GCell, which needs the "
                    "routing layers. Set them with set_routing_layers.");
   }
-  return std::make_unique<PlacementDensityGrid>(block_);
+  return std::make_unique<PlacementDensityGrid>(block_, logger_);
 }
 
-PlacementDensity Resizer::placementDensity(const odb::Rect& region)
+const PlacementDensityGrid& Resizer::placementDensityGrid()
 {
   // A grid whose block was destroyed has lost its owner.
   if (density_grid_ == nullptr || !density_grid_->hasOwner()
       || density_grid_->getBlock() != block_) {
     density_grid_ = makePlacementDensityGrid();
   }
-  return density_grid_->getDensity(region);
+  density_grid_->ensureBuilt();
+  return *density_grid_;
+}
+
+PlacementDensity Resizer::placementDensity(const odb::Rect& region)
+{
+  return placementDensityGrid().getDensity(region);
+}
+
+PlacementDensity Resizer::placementDensity(const odb::Point& point)
+{
+  return placementDensityGrid().getDensity(point);
 }
 
 void Resizer::releasePlacementDensityGrid()
@@ -300,6 +311,7 @@ void Resizer::reportPlacementDensity(const odb::Rect& region)
   // Built for this report alone, so that it counts the db as it stands, and
   // leaves no grid behind for later steps to keep current.
   const std::unique_ptr<PlacementDensityGrid> grid = makePlacementDensityGrid();
+  grid->ensureBuilt();
   const PlacementDensity density = grid->getDensity(region);
   if (density.region_area == 0) {
     logger_->report(

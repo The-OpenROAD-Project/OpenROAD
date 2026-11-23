@@ -1579,7 +1579,6 @@ TEST_F(TestResizer, PlacementDensityTracksPlacedInstances)
     tracks->addGridPatternY(0, 100, layer->getPitch());
   }
   block_->setMaxRoutingLayer(4);
-  const int gcell = block_->getGCellTileSize();
 
   // A buffer counts and the filler beside it does not.
   odb::dbMaster* buffer = db_->findMaster("BUF_X1");
@@ -1600,17 +1599,17 @@ TEST_F(TestResizer, PlacementDensityTracksPlacedInstances)
   EXPECT_DOUBLE_EQ(density.instance_area, buffer_area);
 
   // The grid follows the buffer to the far corner of the core, into the
-  // last gcell, which the router stretches to the edge of the die.
+  // gcell holding it there.
   placed->setLocation(core.xMax() - buffer->getWidth(),
                       core.yMax() - buffer->getHeight());
-  const odb::Rect die = block_->getDieArea();
-  const odb::Rect last_gcell(die.xMin() + (((die.dx() / gcell) - 1) * gcell),
-                             die.yMin() + (((die.dy() / gcell) - 1) * gcell),
-                             die.xMax(),
-                             die.yMax());
-  EXPECT_DOUBLE_EQ(resizer_.placementDensity(last_gcell).instance_area,
-                   buffer_area);
+  EXPECT_DOUBLE_EQ(
+      resizer_.placementDensity(placed->getLocation()).instance_area,
+      buffer_area);
   EXPECT_DOUBLE_EQ(resizer_.placementDensity(core).instance_area, buffer_area);
+  // Its queries are const, for threads to make at once.
+  const PlacementDensityGrid& grid = resizer_.placementDensityGrid();
+  EXPECT_EQ(grid.getBinWidth(), block_->getGCellTileSize());
+  EXPECT_DOUBLE_EQ(grid.getDensity(core).instance_area, buffer_area);
 
   // odb has no callback for a new halo, so the grid sees one only once it is
   // released and built afresh.  The buffer's hard halo, a site wide, then

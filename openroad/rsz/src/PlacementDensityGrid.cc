@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <utility>
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"  // NOLINT(misc-include-cleaner) Boost polygon headers require a specific include order.
@@ -14,6 +15,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
+#include "utl/Logger.h"
 
 namespace rsz {
 
@@ -71,17 +73,22 @@ int lineAtOrBelow(const int coord, const int origin, const int step)
 
 }  // namespace
 
-PlacementDensityGrid::PlacementDensityGrid(dbBlock* block)
-    : block_(block), requested_bin_width_(0), requested_bin_height_(0)
+PlacementDensityGrid::PlacementDensityGrid(dbBlock* block, utl::Logger* logger)
+    : block_(block),
+      logger_(logger),
+      requested_bin_width_(0),
+      requested_bin_height_(0)
 {
   addOwner(block_);
 }
 
 PlacementDensityGrid::PlacementDensityGrid(dbBlock* block,
+                                           utl::Logger* logger,
                                            const Point& origin,
                                            const int bin_width,
                                            const int bin_height)
     : block_(block),
+      logger_(logger),
       requested_origin_(origin),
       requested_bin_width_(std::max(bin_width, 1)),
       requested_bin_height_(std::max(bin_height, 1))
@@ -89,11 +96,27 @@ PlacementDensityGrid::PlacementDensityGrid(dbBlock* block,
   addOwner(block_);
 }
 
-PlacementDensity PlacementDensityGrid::getDensity(const Rect& region)
+void PlacementDensityGrid::ensureBuilt()
 {
   if (stale_) {
     build();
     stale_ = false;
+  }
+}
+
+PlacementDensity PlacementDensityGrid::getDensity(const Point& point) const
+{
+  return getDensity(cellHolding(point));
+}
+
+PlacementDensity PlacementDensityGrid::getDensity(const Rect& region) const
+{
+  // Building here would race with the other threads querying.
+  if (stale_) {
+    logger_->error(utl::RSZ,
+                   3218,
+                   "The placement density grid is out of date; ensureBuilt() "
+                   "must bring it up to date before a query.");
   }
 
   PlacementDensity density;
@@ -174,8 +197,35 @@ PlacementDensityGrid::BinRange PlacementDensityGrid::binsCovering(
   };
 }
 
+Rect PlacementDensityGrid::cellHolding(const Point& point) const
+{
+  if (requested_bin_width_ != 0) {
+    const int x = lineAtOrBelow(point.x(), requested_origin_.x(), bin_width_);
+    const int y = lineAtOrBelow(point.y(), requested_origin_.y(), bin_height_);
+    return {x, y, x + bin_width_, y + bin_height_};
+  }
+  // As the router lays out its gcells: as many whole tiles as fit across the
+  // die, at least one, with the last one stretched to the die's edge.
+  const auto span = [](const int coord,
+                       const int lo,
+                       const int hi,
+                       const int tile) -> std::pair<int, int> {
+    const int count = std::max(1, (hi - lo) / tile);
+    const auto index = static_cast<int>(
+        std::clamp<int64_t>((int64_t{coord} - lo) / tile, 0, count - 1));
+    const int start = lo + (index * tile);
+    return {start, index == count - 1 ? hi : start + tile};
+  };
+  const auto [x_lo, x_hi]
+      = span(point.x(), die_.xMin(), die_.xMax(), bin_width_);
+  const auto [y_lo, y_hi]
+      = span(point.y(), die_.yMin(), die_.yMax(), bin_height_);
+  return {x_lo, y_lo, x_hi, y_hi};
+}
+
 void PlacementDensityGrid::build()
 {
+  die_ = block_->getDieArea();
   core_ = block_->getCoreArea();
   bin_count_x_ = 0;
   bin_count_y_ = 0;
@@ -191,7 +241,7 @@ void PlacementDensityGrid::build()
   bin_height_ = requested_bin_height_;
   if (bin_width_ == 0) {
     // As the global router lays out its gcells.
-    origin = block_->getDieArea().ll();
+    origin = die_.ll();
     bin_width_ = block_->getGCellTileSize();
     bin_height_ = bin_width_;
   }
