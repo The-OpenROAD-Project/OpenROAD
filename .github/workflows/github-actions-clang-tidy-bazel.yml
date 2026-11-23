@@ -42,8 +42,8 @@ jobs:
           # Same auth pattern as github-actions-macos-bazel.yml: when
           # BAZEL_CACHE_LOGIN is set (a PR from a branch of this repo), add
           # authed gRPC + Remote Asset API on top of the .bazelrc anon
-          # HTTPS read-only cache. Fork PRs have no secret and just read
-          # the anon cache.
+          # HTTPS read-only cache. Fork PRs of the public repo have no
+          # secret and just read the anon cache.
           # BAZEL_CACHE_LOGIN is "user:password"; the cache accepts two
           # write users so the login can rotate without a 401 window.
           LOGIN="${BAZEL_CACHE_LOGIN}"
