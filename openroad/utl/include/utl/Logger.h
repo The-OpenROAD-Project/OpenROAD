@@ -70,6 +70,7 @@ class Progress;
   X(PAD)                \
   X(PAR)                \
   X(PDN)                \
+  X(PEX)                \
   X(PPL)                \
   X(PSM)                \
   X(RAM)                \

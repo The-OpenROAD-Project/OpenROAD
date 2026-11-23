@@ -25,7 +25,7 @@ set insts_before [llength [$block getInsts]]
 
 # How the pins are to be placed: the solve reads it to model the slot grid
 # place_pins will assign on, so rsz and STA see shapes it can reproduce.
-set_place_config -io_pin_hor_layers metal5 -io_pin_ver_layers metal6
+set_placer_config -io_pin_hor_layers metal5 -io_pin_ver_layers metal6
 global_placement -timing_driven -timing_driven_repair_timing -place_ios
 
 puts "instance count: $insts_before -> [llength [$block getInsts]]"

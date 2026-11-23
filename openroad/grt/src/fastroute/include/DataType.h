@@ -30,7 +30,7 @@ enum class RouteType
 
 std::ostream& operator<<(std::ostream& os, const RouteType& type);
 
-enum class Direction
+enum class Direction : uint8_t
 {
   North,
   East,

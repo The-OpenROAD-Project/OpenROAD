@@ -1,5 +1,6 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("//bazel:man_tcl_checker.bzl", "man_tcl_check_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -43,6 +44,7 @@ TESTS = [
     "liberty_dont_use",
     "pinswap_flat",
     "pinswap_hier",
+    "remove_buffers_duplicate",
     "swap_pins_constant_output",
     "swap_pins_dont_touch",
     "pin_swap1",
@@ -323,6 +325,7 @@ PASSFAIL_TESTS = [
     "repair_slew_corner",
     "gain_buffering_top_port_hier",
     "repair_setup_crit_vt_clock_gate",
+    "report_vt_usage",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
@@ -333,6 +336,7 @@ SELF_CHECKING_TESTS = [
     "repair_slew_corner",
     "gain_buffering_top_port_hier",
     "repair_setup_crit_vt_clock_gate",
+    "report_vt_usage",
 ]
 
 # Hierarchical Verilog netlists reused as corpus input by
@@ -806,15 +810,9 @@ py_test(
     ],
 )
 
-py_test(
+man_tcl_check_test(
     name = "rsz_man_tcl_check",
-    srcs = ["rsz_man_tcl_check.py"],
-    data = ["//openroad/rsz:doc_files"],
-    tags = [
-        "doc_check",
-        "py",
-    ],
-    deps = ["//docs/src/scripts:extract_utils"],
+    module = "rsz",
 )
 
 doc_check_test(

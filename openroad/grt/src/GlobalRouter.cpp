@@ -214,6 +214,8 @@ std::vector<Net*> GlobalRouter::initCUGR(int min_routing_layer,
   reportNetDegree(nets);
 
   cugr_->setCongestionIterations(congestion_iterations_);
+  cugr_->setSkipLargeFanoutNets(skip_large_fanout_);
+  cugr_->setSelectedNets(nets_to_route_);
   if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
     if (cugr_->getCriticalNetsPercentage() != 0) {
       logger_->warn(
@@ -5240,6 +5242,8 @@ void GlobalRouter::mergeSegments(const std::vector<Pin>& pins, GRoute& route)
   segments[write] = segments[read];
 
   segments.resize(write + 1);
+  // The route arrives with a segment per GCell; keep only the merged ones.
+  segments.shrink_to_fit();
 }
 
 bool GlobalRouter::segmentsConnect(const GSegment& seg0,
