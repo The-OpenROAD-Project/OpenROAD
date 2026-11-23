@@ -48,10 +48,10 @@ jobs:
         env:
           BAZEL_CACHE_LOGIN: ${{ secrets.BAZEL_CACHE_LOGIN }}
         run: |
-          # When the secret is present (push / dispatch / private repo PR)
-          # add authed gRPC + Remote Asset API + uploads on top of the
-          # .bazelrc anon HTTPS read-only cache. Fork PRs have no secret
-          # and just use the anon read path.
+          # When BAZEL_CACHE_LOGIN is set (push, dispatch, or a PR from a
+          # branch of this repo), add authed gRPC + Remote Asset API +
+          # uploads on top of the .bazelrc anon HTTPS read-only cache. Fork
+          # PRs have no secret and just use the anon read path.
           # BAZEL_CACHE_LOGIN is "user:password"; the cache accepts two
           # write users so the login can rotate without a 401 window.
           LOGIN="${BAZEL_CACHE_LOGIN}"

@@ -39,9 +39,9 @@ jobs:
         env:
           BAZEL_CACHE_LOGIN: ${{ secrets.BAZEL_CACHE_LOGIN }}
         run: |
-          # Same auth pattern as github-actions-macos-bazel.yml: when the
-          # cache secret is present (push / dispatch / private repo PR),
-          # add authed gRPC + Remote Asset API on top of the .bazelrc anon
+          # Same auth pattern as github-actions-macos-bazel.yml: when
+          # BAZEL_CACHE_LOGIN is set (a PR from a branch of this repo), add
+          # authed gRPC + Remote Asset API on top of the .bazelrc anon
           # HTTPS read-only cache. Fork PRs have no secret and just read
           # the anon cache.
           # BAZEL_CACHE_LOGIN is "user:password"; the cache accepts two
