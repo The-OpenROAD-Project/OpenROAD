@@ -930,6 +930,16 @@ std::vector<odb::dbNet*> CUGR::route(bool incremental)
     }
   }
 
+  // Criticalities persist across incremental routes; without timing they
+  // would keep a delay cost no slack refresh can update.
+  if (critical_nets_percentage_ == 0) {
+    for (const auto& net : gr_nets_) {
+      if (net != nullptr) {
+        net->setCriticality(0.0f);
+      }
+    }
+  }
+
   // One full parasitics estimate per route(); stages then mark rerouted
   // nets and the next slack sweep re-estimates only those.
   full_slack_update_done_ = false;
