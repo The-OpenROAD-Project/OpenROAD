@@ -961,4 +961,195 @@ TEST_F(FixedSupplyViaTest, QuietWrapperKeepsPdnDisabled)
   EXPECT_NO_THROW(dp_.checkPlacement(false));
 }
 
+class Lef58ImplantAndEdgeTest : public tst::Nangate45Fixture
+{
+ protected:
+  static constexpr int kSiteWidth = 380;
+  static constexpr int kRowHeight = 2800;
+  static constexpr int kNumSites = 20;
+  static constexpr int kNumRows = 4;
+
+  void SetUp() override
+  {
+    tech_ = db_->getTech();
+    site_ = lib_->findSite("FreePDK45_38x28_10R_NP_162NW_34O");
+    ASSERT_NE(site_, nullptr);
+
+    block_->setDefUnits(tech_->getLefUnits());
+    block_->setDieArea(
+        odb::Rect(0, 0, kNumSites * kSiteWidth, kNumRows * kRowHeight));
+    for (int r = 0; r < kNumRows; ++r) {
+      const auto orient
+          = (r % 2 == 0) ? odb::dbOrientType::R0 : odb::dbOrientType::MX;
+      odb::dbRow::create(block_,
+                         ("ROW_" + std::to_string(r)).c_str(),
+                         site_,
+                         0,
+                         r * kRowHeight,
+                         orient,
+                         odb::dbRowDir::HORIZONTAL,
+                         kNumSites,
+                         kSiteWidth);
+    }
+    block_->setCoreArea(block_->computeCoreArea());
+
+    imp1_ = odb::dbTechLayer::create(
+        tech_, "IMP1", odb::dbTechLayerType::IMPLANT);
+    imp2_ = odb::dbTechLayer::create(
+        tech_, "IMP2", odb::dbTechLayerType::IMPLANT);
+    ms_od_ = odb::dbTechLayer::create(
+        tech_, "OD_LAYER", odb::dbTechLayerType::MASTERSLICE);
+  }
+
+  odb::dbMaster* createCustomMaster(
+      const char* name,
+      const int sites_wide,
+      const std::vector<std::pair<odb::dbTechLayer*, odb::Rect>>& obs_rects,
+      const odb::dbMasterType type = odb::dbMasterType::CORE,
+      const int rows_tall = 1)
+  {
+    odb::dbMaster* m = odb::dbMaster::create(lib_, name);
+    m->setType(type);
+    m->setSite(site_);
+    m->setWidth(sites_wide * kSiteWidth);
+    m->setHeight(rows_tall * kRowHeight);
+    m->setSymmetryX();
+    m->setSymmetryY();
+    for (const auto& [layer, rect] : obs_rects) {
+      odb::dbBox::create(
+          m, layer, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
+    }
+    m->setFrozen();
+    return m;
+  }
+
+  odb::dbInst* placeCell(odb::dbMaster* master,
+                         const char* name,
+                         const int gx,
+                         const int gy,
+                         const odb::dbOrientType orient = odb::dbOrientType::R0,
+                         const odb::dbPlacementStatus status
+                         = odb::dbPlacementStatus::PLACED)
+  {
+    odb::dbInst* inst = odb::dbInst::create(block_, master, name);
+    inst->setOrient(orient);
+    inst->setLocation(gx * kSiteWidth, gy * kRowHeight);
+    inst->setPlacementStatus(status);
+    return inst;
+  }
+
+  std::string runCheck()
+  {
+    try {
+      dp_.checkPlacement(/*verbose=*/false);
+    } catch (const std::runtime_error& error) {
+      return error.what();
+    }
+    return "";
+  }
+
+  int failureCount(const char* category_name)
+  {
+    odb::dbMarkerCategory* dpl_cat = block_->findMarkerCategory("DPL");
+    if (dpl_cat == nullptr) {
+      return 0;
+    }
+    odb::dbMarkerCategory* sub = dpl_cat->findMarkerCategory(category_name);
+    return sub == nullptr ? 0 : sub->getMarkerCount();
+  }
+
+  odb::dbTech* tech_{nullptr};
+  odb::dbSite* site_{nullptr};
+  odb::dbTechLayer* imp1_{nullptr};
+  odb::dbTechLayer* imp2_{nullptr};
+  odb::dbTechLayer* ms_od_{nullptr};
+  Opendp dp_{db_.get(), &logger_};
+};
+
+TEST_F(Lef58ImplantAndEdgeTest, CellEdgeSpacingExceptAbuttedAndFacingDirs)
+{
+  auto* rule = odb::dbCellEdgeSpacing::create(tech_);
+  rule->setFirstEdgeType("ETYPE_A");
+  rule->setSecondEdgeType("ETYPE_A");
+  rule->setSpacing(2 * kSiteWidth);
+  rule->setExceptAbutted(true);
+
+  odb::dbMaster* m = odb::dbMaster::create(lib_, "EDGE_CELL");
+  m->setType(odb::dbMasterType::CORE);
+  m->setSite(site_);
+  m->setWidth(kSiteWidth);
+  m->setHeight(kRowHeight);
+  m->setSymmetryX();
+  m->setSymmetryY();
+  auto* e_right = odb::dbMasterEdgeType::create(m);
+  e_right->setEdgeDir(odb::dbMasterEdgeType::RIGHT);
+  e_right->setEdgeType("ETYPE_A");
+  auto* e_left = odb::dbMasterEdgeType::create(m);
+  e_left->setEdgeDir(odb::dbMasterEdgeType::LEFT);
+  e_left->setEdgeType("ETYPE_A");
+  m->setFrozen();
+
+  // Abutted (dist == 0) is legal with EXCEPTABUTTED
+  odb::dbInst* c1 = placeCell(m, "c1", 2, 0);
+  odb::dbInst* c2 = placeCell(m, "c2", 3, 0);
+  EXPECT_EQ(runCheck(), "");
+
+  // 1-site gap (dist == kSiteWidth < 2 * kSiteWidth) violates rule
+  c2->setLocation(4 * kSiteWidth, 0);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+  EXPECT_EQ(failureCount("Cell_edge_spacing_failures"), 1);
+
+  // 2-site gap (dist == 2 * kSiteWidth) is legal
+  c2->setLocation(5 * kSiteWidth, 0);
+  EXPECT_EQ(runCheck(), "");
+  (void) c1;
+}
+
+TEST_F(Lef58ImplantAndEdgeTest, CellEdgeSpacingRangeAndCoreSpacer)
+{
+  auto* rule = odb::dbCellEdgeSpacing::create(tech_);
+  rule->setFirstEdgeType("TOP_SEG");
+  rule->setSecondEdgeType("BOT_SEG");
+  rule->setSpacing(100);
+
+  // Master with TOP edge restricted to x=[kSiteWidth, 2*kSiteWidth]
+  odb::dbMaster* m_top = odb::dbMaster::create(lib_, "M_TOP_RANGE");
+  m_top->setType(odb::dbMasterType::CORE);
+  m_top->setSite(site_);
+  m_top->setWidth(2 * kSiteWidth);
+  m_top->setHeight(kRowHeight);
+  auto* et = odb::dbMasterEdgeType::create(m_top);
+  et->setEdgeDir(odb::dbMasterEdgeType::TOP);
+  et->setEdgeType("TOP_SEG");
+  et->setRangeBegin(kSiteWidth);
+  et->setRangeEnd(2 * kSiteWidth);
+  m_top->setFrozen();
+
+  // CORE_SPACER master with explicit BOTTOM edge on x=[0, kSiteWidth]
+  odb::dbMaster* m_fill = odb::dbMaster::create(lib_, "FILL_BOT_EDGE");
+  m_fill->setType(odb::dbMasterType::CORE_SPACER);
+  m_fill->setSite(site_);
+  m_fill->setWidth(kSiteWidth);
+  m_fill->setHeight(kRowHeight);
+  auto* eb = odb::dbMasterEdgeType::create(m_fill);
+  eb->setEdgeDir(odb::dbMasterEdgeType::BOTTOM);
+  eb->setEdgeType("BOT_SEG");
+  m_fill->setFrozen();
+
+  // Place m_top at gx=2..4 on row 0 (TOP_SEG is at x=[3*kSiteWidth,
+  // 4*kSiteWidth]). Place m_fill at gx=2..3 on row 1 (BOT_SEG is at
+  // x=[2*kSiteWidth, 3*kSiteWidth]). Because range_begin=kSiteWidth, they only
+  // touch at a point (no PRL overlap).
+  placeCell(m_top, "u_top", 2, 0, odb::dbOrientType::R0);
+  odb::dbInst* u_fill
+      = placeCell(m_fill, "u_fill", 2, 1, odb::dbOrientType::R0);
+  EXPECT_EQ(runCheck(), "");
+
+  // Move u_fill to gx=3..4 on row 1 so BOT_SEG directly faces TOP_SEG (dist=0 <
+  // 100).
+  u_fill->setLocation(3 * kSiteWidth, 1 * kRowHeight);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+  EXPECT_EQ(failureCount("Cell_edge_spacing_failures"), 1);
+}
+
 }  // namespace dpl

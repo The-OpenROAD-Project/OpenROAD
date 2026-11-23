@@ -10,6 +10,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
@@ -45,7 +46,15 @@ odb::Rect transformEdgeRect(const odb::Rect& edge_rect,
                             const odb::dbOrientType& orient)
 {
   odb::Rect bbox;
-  cell->getDbInst()->getMaster()->getPlacementBoundary(bbox);
+  odb::dbMaster* db_master = nullptr;
+  if (cell->getDbInst() != nullptr) {
+    db_master = cell->getDbInst()->getMaster();
+  } else if (cell->getMaster() != nullptr) {
+    db_master = cell->getMaster()->getDbMaster();
+  }
+  if (db_master != nullptr) {
+    db_master->getPlacementBoundary(bbox);
+  }
   odb::dbTransform transform(orient);
   transform.apply(bbox);
   odb::Point offset(x.v - bbox.xMin(), y.v - bbox.yMin());
@@ -54,10 +63,105 @@ odb::Rect transformEdgeRect(const odb::Rect& edge_rect,
   transform.apply(result);
   return result;
 }
-odb::Rect getQueryRect(const odb::Rect& edge_box, const int spc)
+static odb::dbMasterEdgeType::EdgeDir transformEdgeDir(
+    const odb::dbMasterEdgeType::EdgeDir dir,
+    const odb::dbOrientType& orient)
+{
+  using odb::dbMasterEdgeType;
+  using odb::dbOrientType;
+  switch (orient.getValue()) {
+    case dbOrientType::R0:
+      return dir;
+    case dbOrientType::R180:
+      switch (dir) {
+        case dbMasterEdgeType::TOP:
+          return dbMasterEdgeType::BOTTOM;
+        case dbMasterEdgeType::BOTTOM:
+          return dbMasterEdgeType::TOP;
+        case dbMasterEdgeType::LEFT:
+          return dbMasterEdgeType::RIGHT;
+        case dbMasterEdgeType::RIGHT:
+          return dbMasterEdgeType::LEFT;
+      }
+      break;
+    case dbOrientType::MY:
+      switch (dir) {
+        case dbMasterEdgeType::TOP:
+        case dbMasterEdgeType::BOTTOM:
+          return dir;
+        case dbMasterEdgeType::LEFT:
+          return dbMasterEdgeType::RIGHT;
+        case dbMasterEdgeType::RIGHT:
+          return dbMasterEdgeType::LEFT;
+      }
+      break;
+    case dbOrientType::MX:
+      switch (dir) {
+        case dbMasterEdgeType::TOP:
+          return dbMasterEdgeType::BOTTOM;
+        case dbMasterEdgeType::BOTTOM:
+          return dbMasterEdgeType::TOP;
+        case dbMasterEdgeType::LEFT:
+        case dbMasterEdgeType::RIGHT:
+          return dir;
+      }
+      break;
+    case dbOrientType::R90:
+      switch (dir) {
+        case dbMasterEdgeType::TOP:
+          return dbMasterEdgeType::LEFT;
+        case dbMasterEdgeType::BOTTOM:
+          return dbMasterEdgeType::RIGHT;
+        case dbMasterEdgeType::LEFT:
+          return dbMasterEdgeType::BOTTOM;
+        case dbMasterEdgeType::RIGHT:
+          return dbMasterEdgeType::TOP;
+      }
+      break;
+    case dbOrientType::R270:
+      switch (dir) {
+        case dbMasterEdgeType::TOP:
+          return dbMasterEdgeType::RIGHT;
+        case dbMasterEdgeType::BOTTOM:
+          return dbMasterEdgeType::LEFT;
+        case dbMasterEdgeType::LEFT:
+          return dbMasterEdgeType::TOP;
+        case dbMasterEdgeType::RIGHT:
+          return dbMasterEdgeType::BOTTOM;
+      }
+      break;
+    case dbOrientType::MYR90:
+      switch (dir) {
+        case dbMasterEdgeType::TOP:
+          return dbMasterEdgeType::LEFT;
+        case dbMasterEdgeType::BOTTOM:
+          return dbMasterEdgeType::RIGHT;
+        case dbMasterEdgeType::LEFT:
+          return dbMasterEdgeType::TOP;
+        case dbMasterEdgeType::RIGHT:
+          return dbMasterEdgeType::BOTTOM;
+      }
+      break;
+    case dbOrientType::MXR90:
+      switch (dir) {
+        case dbMasterEdgeType::TOP:
+          return dbMasterEdgeType::RIGHT;
+        case dbMasterEdgeType::BOTTOM:
+          return dbMasterEdgeType::LEFT;
+        case dbMasterEdgeType::LEFT:
+          return dbMasterEdgeType::BOTTOM;
+        case dbMasterEdgeType::RIGHT:
+          return dbMasterEdgeType::TOP;
+      }
+      break;
+  }
+  return dir;
+}
+static odb::Rect getQueryRect(const odb::Rect& edge_box,
+                              const int spc,
+                              const bool is_vertical_edge)
 {
   odb::Rect query_rect(edge_box);
-  bool is_vertical_edge = edge_box.getDir() == odb::vertical;
   if (is_vertical_edge) {
     // vertical edge
     query_rect = query_rect.bloat(spc, odb::Orientation2D::Horizontal);
@@ -883,8 +987,11 @@ bool PlacementDRC::checkEdgeSpacing(const Node* cell,
                   + 1;  // +1 to account for EXACT rules
     odb::Rect edge1_box = cell_edges::transformEdgeRect(
         edge1.getBBox(), cell, x_real, y_real, orient);
-    bool is_vertical_edge = edge1_box.getDir() == odb::vertical;
-    odb::Rect query_rect = cell_edges::getQueryRect(edge1_box, max_spc);
+    const auto dir1 = cell_edges::transformEdgeDir(edge1.getEdgeDir(), orient);
+    const bool is_vertical_edge = (dir1 == odb::dbMasterEdgeType::LEFT
+                                   || dir1 == odb::dbMasterEdgeType::RIGHT);
+    odb::Rect query_rect
+        = cell_edges::getQueryRect(edge1_box, max_spc, is_vertical_edge);
     GridX xMin = grid_->gridX(DbuX(query_rect.xMin()));
     GridX xMax = grid_->gridEndX(DbuX(query_rect.xMax()));
     GridY yMin = grid_->gridEndY(DbuY(query_rect.yMin())) - 1;
@@ -900,7 +1007,7 @@ bool PlacementDRC::checkEdgeSpacing(const Node* cell,
           continue;
         }
         auto cell2 = static_cast<Node*>(pixel->cell);
-        if (checked_cells.find(cell2) != checked_cells.end()) {
+        if (checked_cells.contains(cell2)) {
           // Skip if cell was already checked
           continue;
         }
@@ -919,8 +1026,21 @@ bool PlacementDRC::checkEdgeSpacing(const Node* cell,
                                               cell2->getLeft(),
                                               cell2->getBottom(),
                                               cell2->getOrient());
-          if (edge1_box.getDir() != edge2_box.getDir()) {
-            // Skip if edges are not parallel.
+          const auto dir2 = cell_edges::transformEdgeDir(edge2.getEdgeDir(),
+                                                         cell2->getOrient());
+          const bool facing = (dir1 == odb::dbMasterEdgeType::RIGHT
+                               && dir2 == odb::dbMasterEdgeType::LEFT
+                               && edge1_box.xMax() <= edge2_box.xMin())
+                              || (dir1 == odb::dbMasterEdgeType::LEFT
+                                  && dir2 == odb::dbMasterEdgeType::RIGHT
+                                  && edge2_box.xMax() <= edge1_box.xMin())
+                              || (dir1 == odb::dbMasterEdgeType::TOP
+                                  && dir2 == odb::dbMasterEdgeType::BOTTOM
+                                  && edge1_box.yMax() <= edge2_box.yMin())
+                              || (dir1 == odb::dbMasterEdgeType::BOTTOM
+                                  && dir2 == odb::dbMasterEdgeType::TOP
+                                  && edge2_box.yMax() <= edge1_box.yMin());
+          if (!facing) {
             continue;
           }
           if (!query_rect.overlaps(edge2_box)) {
@@ -931,6 +1051,9 @@ bool PlacementDRC::checkEdgeSpacing(const Node* cell,
           // Generalized intersection between the two edges.
           test_rect.merge(edge2_box);
           int dist = is_vertical_edge ? test_rect.dx() : test_rect.dy();
+          if (dist == 0 && spc_entry.except_abutted) {
+            continue;
+          }
           if (spc_entry.is_exact) {
             if (dist == spc) {
               // Violation only if the distance between the edges is exactly the
