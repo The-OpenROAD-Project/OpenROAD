@@ -13,7 +13,7 @@
 [DEBUG GRT-repair_antennas] antenna violations req_msg[2]
 [DEBUG GRT-repair_antennas] antenna violations resp_msg[11]
 [DEBUG GRT-repair_antennas] antenna violations _196_
-[DEBUG GRT-repair_antennas] antenna violations _271_
+[DEBUG GRT-repair_antennas] antenna violations _268_
 [INFO GRT-0012] Found 7 antenna violations.
 [DEBUG GRT-repair_antennas] net clk jumper candidate at 176400 rejected for capacity
 [DEBUG GRT-repair_antennas] net clk jumper candidate at 226800 rejected for capacity

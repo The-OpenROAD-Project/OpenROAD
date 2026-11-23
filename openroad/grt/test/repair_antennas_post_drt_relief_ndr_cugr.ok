@@ -18,14 +18,12 @@
 [WARNING ODB-1003] (li1) layer's width from (RELIEF_NDR) NDR is not defined. Using the default value 0.17
 [WARNING ODB-1003] (met4) layer's width from (RELIEF_NDR) NDR is not defined. Using the default value 0.3
 [WARNING ODB-1003] (met5) layer's width from (RELIEF_NDR) NDR is not defined. Using the default value 1.6
-[INFO GRT-0012] Found 10 antenna violations.
+[INFO GRT-0012] Found 8 antenna violations.
 [INFO DPL-0009] Utilization: 8.0%
 [INFO DPL-0501] Legalized with 0 moves: displacement total 0.0 u, max 0.0 u; HPWL 19613.7 -> 19613.7 u (+0.0 %).
-[INFO GRT-0015] Inserted 10 diodes.
-[WARNING GRT-0305] Demoted 10 NDR net(s) to default rule to reduce congestion (use debug 'softNDR' for net list).
-[WARNING GRT-0305] Demoted 62 NDR net(s) to default rule to reduce congestion (use debug 'softNDR' for net list).
+[INFO GRT-0015] Inserted 8 diodes.
 [WARNING GRT-0305] Demoted 8 NDR net(s) to default rule to reduce congestion (use debug 'softNDR' for net list).
-[WARNING GRT-0305] Demoted 4 NDR net(s) to default rule to reduce congestion (use debug 'softNDR' for net list).
+[WARNING GRT-0305] Demoted 32 NDR net(s) to default rule to reduce congestion (use debug 'softNDR' for net list).
 [DEBUG GRT-verify_demand] demand round-trip [incremental]: max_diff=0 mismatched_edges=0 max_residual_base=0 leaked_edges=0
 [WARNING GRT-0128] Incremental global routing finished with congestion. Check the congestion regions in the DRC Viewer.
-Routed nets with new guides: 58, keeping their old wire: 0
+Routed nets with new guides: 22, keeping their old wire: 0

@@ -622,7 +622,9 @@ CostT GridGraph::getWireDelayCost(const int layer_index,
     const GraphEdge& edge = direction == MetalLayer::H
                                 ? graph_edges_[layer_index][i][u.y()]
                                 : graph_edges_[layer_index][u.x()][i];
-    fits = edge.capacity - edge.demand >= net_factor;
+    // One track of headroom: on a coarse layer with a few tracks per gcell,
+    // filling the last one invites overflow the delay cost would not see.
+    fits = edge.capacity - edge.demand >= net_factor + 1.0;
   }
   double res = res_per_dbu_[layer_index];
   double cap_per_dbu = cap_per_dbu_[layer_index];

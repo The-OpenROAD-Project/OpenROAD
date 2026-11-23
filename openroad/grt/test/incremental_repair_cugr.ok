@@ -47,25 +47,25 @@ Stage 1: Pattern routing.
 Stage 2: Re-route of nets with negative slack.
 Routing statistics
 Wire length:           36832
-Total via count:       4016
+Total via count:       4034
 Total congestion:      0.00
-Min resource:          0.16
-Bottleneck:            (8, 14, 16)
+Min resource:          0.44
+Bottleneck:            (8, 9, 17)
 [INFO GRT-0130] CUGR congestion report:
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
 --------------------------------------------------------------------------
 metal1    H         0.00         0.00         0.00         0.00       0.00
-metal2    V     17918.00       779.00       134.42       913.42       5.10
-metal3    H     24480.00      1111.00       118.67      1229.67       5.02
-metal4    V     12172.00        27.00        42.29        69.29       0.57
-metal5    H     12240.00       121.00        41.94       162.94       1.33
-metal6    V     12172.00       259.00        37.96       296.96       2.44
-metal7    H      4284.00        27.00        35.09        62.09       1.45
-metal8    V      4284.00        10.00        32.24        42.24       0.99
-metal9    H      2142.00        10.00        62.32        72.32       3.38
-metal10   V      2142.00       108.00        56.05       164.05       7.66
+metal2    V     17918.00       777.00       134.32       911.32       5.09
+metal3    H     24480.00      1111.00       118.97      1229.97       5.02
+metal4    V     12172.00        28.00        42.68        70.68       0.58
+metal5    H     12240.00       127.00        42.24       169.24       1.38
+metal6    V     12172.00       272.00        37.96       309.96       2.55
+metal7    H      4284.00        28.00        35.93        63.93       1.49
+metal8    V      4284.00        10.00        32.52        42.52       0.99
+metal9    H      2142.00         3.00        62.32        65.32       3.05
+metal10   V      2142.00        96.00        59.42       155.42       7.26
 --------------------------------------------------------------------------
-Total           91834.00      2452.00       560.98      3012.98       3.28
+Total           91834.00      2452.00       566.35      3018.35       3.29
 [INFO GRT-0018] Total wirelength: 10354 um
 [INFO GRT-0014] Routed nets: 563
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
@@ -126,20 +126,20 @@ delta HPWL                    0 %
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.308 |       -8.3 |     32 | _884_/D
-     398* |      54 |     120 |       39 |      0 |    12 |   +13.5% |   -0.127 |       -3.4 |     32 | _868_/D
-    final |      54 |     122 |       39 |      0 |    12 |   +13.6% |   -0.127 |       -3.4 |     32 | _868_/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.309 |       -8.3 |     32 | _884_/D
+     364* |      57 |     129 |       39 |      0 |    13 |   +14.8% |   -0.126 |       -3.3 |     32 | _876_/D
+    final |      57 |     132 |       39 |      0 |    13 |   +14.9% |   -0.126 |       -3.3 |     32 | _876_/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 54 buffers.
+[INFO RSZ-0059] Removed 57 buffers.
 [INFO RSZ-0040] Inserted 39 buffers.
-[INFO RSZ-0051] Resized 122 instances: 122 up, 0 up match, 0 down, 0 VT
-[INFO RSZ-0043] Swapped pins on 12 instances.
+[INFO RSZ-0051] Resized 132 instances: 132 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 13 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 [WARNING DPL-0037] Use remove_fillers before detailed placement.
 [INFO DPL-0006] Core area: 6286.11 um^2
-[INFO DPL-0007] Movable instances area: 817.42 um^2
+[INFO DPL-0007] Movable instances area: 826.46 um^2
 [INFO DPL-0008] Fixed instances area within core: 44.69 um^2
-[INFO DPL-0009] Utilization: 13.7%
+[INFO DPL-0009] Utilization: 13.9%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
 [INFO DPL-1103] Negotiation base search window: +/-20 sites horizontally, +/-5 rows vertically 
@@ -147,22 +147,22 @@ delta HPWL                    0 %
 	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
 [INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
 [INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
-[INFO DPL-0393]   height 1 row(s): 671 cells
+[INFO DPL-0393]   height 1 row(s): 668 cells
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
-        0 |         26 |         4 |        22
+        0 |          4 |         2 |         2
         1 |          0 |         0 |         0
 Negotiation phase 1 converged at iteration 1.
 Detailed Placement Analysis
 ---------------------------------
 legalizer            negotiation
-total moves                 331
-total displacement         69.8 u
+total moves                 330
+total displacement         74.8 u
 average displacement        0.1 u
-max displacement            4.2 u
-original HPWL            7022.2 u
-legalized HPWL           7035.2 u
+max displacement            3.4 u
+original HPWL            7018.1 u
+legalized HPWL           7029.6 u
 delta HPWL                    0 %
 
 [INFO ANT-0002] Found 0 net violations.

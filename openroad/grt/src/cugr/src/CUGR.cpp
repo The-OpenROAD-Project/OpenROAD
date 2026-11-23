@@ -357,7 +357,7 @@ void CUGR::updateNetSlacks(const std::vector<int>& net_indices)
       updateReroutedParasitics(*estimator);
     }
   }
-  // Query every net: the critical threshold is a percentile over all nets.
+  // Query every net: criticality is relative to the worst slack of all nets.
   for (const auto& net : gr_nets_) {
     if (net == nullptr) {
       continue;
@@ -517,7 +517,8 @@ void CUGR::initLayerRC()
     estimator->layerRC(layer, res, cap);
     res_per_dbu[layer_index] = res * meters_per_dbu;
     cap_per_dbu[layer_index] = cap * meters_per_dbu;
-    if (odb::dbTechLayer* cut = layer->getUpperLayer()) {
+    odb::dbTechLayer* cut = layer->getUpperLayer();
+    if (cut != nullptr && cut->getType() == odb::dbTechLayerType::CUT) {
       estimator->layerRC(cut, res, cap);
       via_res[layer_index] = res;
     }
@@ -672,9 +673,10 @@ void CUGR::patternRouteCritical(std::vector<int>& net_indices)
   updateCriticalNets(net_indices);
 
   std::vector<int> critical_nets;
-  for (const auto& net : gr_nets_) {
+  for (const int net_index : net_indices) {
+    const GRNet* net = gr_nets_[net_index].get();
     if (net != nullptr && net->getCriticality() > 0.0f) {
-      critical_nets.push_back(net->getIndex());
+      critical_nets.push_back(net_index);
     }
   }
   // Worst slack first, so they get first pick of upper-metal capacity.
@@ -905,16 +907,6 @@ std::vector<odb::dbNet*> CUGR::route(bool incremental)
         continue;
       }
       net_indices.push_back(net->getIndex());
-    }
-  }
-
-  // Criticalities persist across incremental routes; without timing they
-  // would keep a delay cost no slack refresh can update.
-  if (!hasTiming()) {
-    for (const auto& net : gr_nets_) {
-      if (net != nullptr) {
-        net->setCriticality(0.0f);
-      }
     }
   }
 

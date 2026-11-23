@@ -6,12 +6,9 @@
 # congestion, so timing is meaningful. This exercises the delay cost on
 # the maze path, where net ordering matters.
 #
-# Net ordering note: critical nets are routed first in every stage,
-# including the maze. An A/B experiment (critical-first vs critical-last in
-# the maze) found critical-first better-or-equal: identical here at 0.6 and
-# clearly better under heavier congestion (a rip-up/reroute gives the
-# last-routed nets the worst leftovers). Preserving a critical net's
-# topology is the freeze's job, not the ordering's.
+# Net ordering note: the pattern stages route critical nets first; the maze
+# and RRR passes reroute non-critical nets first and critical nets last,
+# worst slack last, against capacity the others have vacated.
 #
 # Baseline on this design before CUGR had a delay cost
 # (global_route -use_cugr -critical_nets_percentage 30):

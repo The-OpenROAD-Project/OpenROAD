@@ -15,10 +15,10 @@
     default via: M3M4_PR
   Layer via4
     default via: M4M5_PR
-[INFO GRT-0012] Found 10 antenna violations.
+[INFO GRT-0012] Found 8 antenna violations.
 [INFO DPL-0009] Utilization: 8.0%
 [INFO DPL-0501] Legalized with 0 moves: displacement total 0.0 u, max 0.0 u; HPWL 19613.7 -> 19613.7 u (+0.0 %).
-[INFO GRT-0015] Inserted 10 diodes.
+[INFO GRT-0015] Inserted 8 diodes.
 [DEBUG GRT-verify_demand] demand round-trip [incremental]: max_diff=0 mismatched_edges=0 max_residual_base=0 leaked_edges=0
 [WARNING GRT-0128] Incremental global routing finished with congestion. Check the congestion regions in the DRC Viewer.
-Routed nets with new guides: 32, keeping their old wire: 0
+Routed nets with new guides: 12, keeping their old wire: 0

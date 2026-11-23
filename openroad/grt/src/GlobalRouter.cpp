@@ -3081,6 +3081,10 @@ void GlobalRouter::setCUGRViaDemand(const bool enabled)
 
 void GlobalRouter::setResAwareNetsPercentage(float percentage)
 {
+  // FastRoute only; the Tcl command warns under -use_cugr (GRT-0706).
+  if (use_cugr_) {
+    return;
+  }
   if (!resistance_aware_) {
     percentage = 0;
     logger_->warn(GRT,

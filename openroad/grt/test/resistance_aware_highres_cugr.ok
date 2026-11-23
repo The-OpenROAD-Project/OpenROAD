@@ -41,21 +41,21 @@ Stage 1: Pattern routing.
 Stage 2: Re-route of nets with negative slack.
 Routing statistics
 Wire length:           40613
-Total via count:       2060
+Total via count:       1795
 Total congestion:      0.00
-Min resource:          0.01
-Bottleneck:            (5, 14, 20)
+Min resource:          0.71
+Bottleneck:            (5, 14, 15)
 [INFO GRT-0130] CUGR congestion report:
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
 --------------------------------------------------------------------------
 li1       V         0.00         0.00         0.00         0.00       0.00
-met1      H     21443.48       598.00        88.86       686.86       3.20
-met2      V     17500.00       954.00        71.89      1025.89       5.86
-met3      H     11368.00       286.00        20.43       306.43       2.70
-met4      V      8736.00        77.00        42.12       119.12       1.36
-met5      H      2520.00       164.00        49.11       213.11       8.46
+met1      H     21443.48       622.00        91.19       713.19       3.33
+met2      V     17500.00       966.00        67.80      1033.80       5.91
+met3      H     11368.00       391.00        13.09       404.09       3.55
+met4      V      8736.00        65.00        10.51        75.51       0.86
+met5      H      2520.00        35.00        11.34        46.34       1.84
 --------------------------------------------------------------------------
-Total           61567.48      2079.00       272.42      2351.42       3.82
+Total           61567.48      2079.00       193.94      2272.94       3.69
 [INFO GRT-0018] Total wirelength: 20995 um
 [INFO GRT-0014] Routed nets: 348
 No differences found.
