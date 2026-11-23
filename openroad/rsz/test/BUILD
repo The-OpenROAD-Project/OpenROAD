@@ -45,6 +45,7 @@ TESTS = [
     "pinswap_flat",
     "pinswap_hier",
     "remove_buffers_duplicate",
+    "repair_timing_deprecated_libraries",
     "swap_pins_constant_output",
     "swap_pins_dont_touch",
     "pin_swap1",
