@@ -13,6 +13,9 @@ yamlfix==1.19.1
 # this pin also sets the version that CI uses.
 clang-format==23.1.2
 
+# Template engine for the ODB code generator.
+jinja2==3.1.6
+
 # pandoc for the man page build (//docs:man_pages). The wheel ships a
 # statically linked pandoc binary for linux x86_64/aarch64 and macOS x86_64,
 # so the Bazel doc build neither needs the host to have pandoc installed nor

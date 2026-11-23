@@ -6,8 +6,8 @@
 These render templates against the real committed schema and pin the rendered
 output for one representative field of every kind (scalar, char*, std::string,
 std::vector/dbVector pass-by-ref, dbId object ref, owned dbTable, dbHashTable).
-The whole-tree guard is `python3 gen.py` producing no git diff (enforced by CI in
-github-actions-are-odb-files-generated.yml).
+The ODB generation workflow checks that
+`bazelisk run //openroad/odb/src/codeGenerator:gen` produces no git diff.
 
 Run with:  python3 -m unittest test_generator_snapshot
 """
