@@ -373,6 +373,7 @@ def regression_test(
     size = _pop(kwargs, "size", "small")
     test_type = _pop(kwargs, "test_type", "")
     tags = _pop(kwargs, "tags", [])
+
     # Keep the version stamp out of regression test inputs so a new commit
     # does not invalidate the test cache.
     openroad = _pop(kwargs, "openroad", "//:openroad_unstamped")

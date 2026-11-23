@@ -1,22 +1,20 @@
 #!/usr/bin/env bash
 # Outputs key-value pairs consumed by Bazel workspace stamping.
 # Keys prefixed with STABLE_ cause downstream rebuilds when their value changes.
-# Bazel runs this on every build, with or without --stamp. Only the version
-# copy of //:openroad (bazel/stamped_binary.bzl) and stamped man pages read it.
+# Bazel runs this on every build, with or without --stamp.
 
 # OPENROAD_VERSION sets the version explicitly. Use it when the tree has no
 # git metadata, for example in a Docker build, because .dockerignore keeps
 # .git out of the build context.
-# Bazel gives this command the environment of the client, but each server
-# caches that environment. Set the value before the first build, or run
-# `bazelisk clean` after you change it.
 if [[ -n "${OPENROAD_VERSION:-}" ]]; then
   GIT_VERSION="${OPENROAD_VERSION}"
-else
+elif git_prefix=$(git rev-parse --show-prefix 2>/dev/null) && [[ -z "$git_prefix" ]]; then
   # --dirty marks a build of uncommitted changes, including a changed
   # submodule such as openroad/sta.
   GIT_VERSION=$(git describe --tags --match '[0-9][0-9]Q[0-9]' --always --dirty \
     2>/dev/null || echo "unknown")
+else
+  GIT_VERSION=unknown
 fi
 echo "STABLE_GIT_VERSION ${GIT_VERSION}"
 

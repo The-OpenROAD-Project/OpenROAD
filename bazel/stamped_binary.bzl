@@ -110,8 +110,7 @@ def stamped_binary(name, binary, **kwargs):
     _stamped_binary(
         name = name,
         binary = binary,
-        # "@" is the main repository; see the module docstring.
-        stamp = True if native.repository_name() == "@" else select({
+        stamp = True if native.repo_name() == "" else select({
             "//bazel:stamp": True,
             "//conditions:default": False,
         }),

@@ -65,9 +65,9 @@ It does not add `-O3` or Link Time Optimization (LTO).
 `--config=opt` (`build:opt` in `.bazelrc`) adds `-O3` and ThinLTO.
 ThinLTO improves runtime at the cost of a longer link step, which Bazel
 splits into parallel, cached actions. `--config=release` includes
-`--config=opt` and stamps the OpenSTA commit and man page dates. Use `--config=opt` or
-`--config=release` for production binaries shipped to end users; keep the
-default for the local edit-rebuild loop.
+`--config=opt` and stamps the OpenSTA commit and man page dates.
+Use `--config=opt` or `--config=release` for production builds.
+Keep the default for the local edit-rebuild loop.
 
 ## Is it compiling, or hitting the cache?
 
@@ -221,7 +221,7 @@ Every build of `:openroad` in this repository embeds the git version (e.g. `26Q1
     bazelisk build :openroad
     ./bazel-bin/openroad/openroad -version
 
-The version comes from `git describe --dirty`.
+The version comes from `git describe --tags --match '[0-9][0-9]Q[0-9]' --always --dirty`.
 A build with uncommitted changes, including a changed submodule, gets a `-dirty` suffix.
 Without git metadata the version is `unknown`.
 Set `OPENROAD_VERSION` to supply the version directly:
@@ -239,6 +239,7 @@ action, and a build gets them from the remote cache that CI fills; only
 the copy of the binary that carries the version is built locally.
 Regression tests use binaries with the fixed placeholder version
 `bazel-nostamp`, so changes to the version do not invalidate test results.
+Build `:openroad_unstamped` directly to get the binary with the placeholder version.
 
 When OpenROAD is an external Bazel module, the workspace status describes the
 main repository, not OpenROAD. There the binary keeps the placeholder unless

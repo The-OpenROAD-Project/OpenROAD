@@ -651,6 +651,20 @@ build_test(
     targets = [":openroad-qt_unstamped"],
 )
 
+sh_test(
+    name = "workspace_status_test",
+    size = "small",
+    srcs = ["tools/workspace_status_test.sh"],
+    args = [
+        "$(rootpath tools/workspace_status.sh)",
+        "$(rootpath @git)",
+    ],
+    data = [
+        "tools/workspace_status.sh",
+        "@git",
+    ],
+)
+
 # ---------------------------------------------------------------------------
 # Lint & tidy targets
 #
