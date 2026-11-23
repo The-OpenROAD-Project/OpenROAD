@@ -140,7 +140,7 @@ class GCell
 
   bool isInstance() const;
   bool isFiller() const;
-  bool isLargeInstance() const;
+  bool isMacroInstance() const;
   bool isStdInstance() const;
   bool contains(odb::dbInst* db_inst) const;
 
@@ -1120,7 +1120,7 @@ class NesterovBase
   int64_t getNesterovInstsArea() const;
   int64_t getInflationArea() const;
   int64_t getStdInstArea() const { return std_insts_area_; }
-  int64_t getLargeInstArea() const { return large_insts_area_; }
+  int64_t getMacroInstArea() const { return macro_insts_area_; }
 
   // sum phi and target density
   // used in NesterovPlace
@@ -1373,7 +1373,7 @@ class NesterovBase
   int64_t initial_filler_area_ = 0;
 
   int64_t std_insts_area_ = 0;
-  int64_t large_insts_area_ = 0;
+  int64_t macro_insts_area_ = 0;
 
   std::vector<GCell> fillerStor_;
   std::vector<GCellHandle> nb_gcells_;

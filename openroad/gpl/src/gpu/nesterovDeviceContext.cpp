@@ -204,12 +204,12 @@ void NesterovDeviceContext::refreshCellDensityParams(
     h_half_ddx[i] = gc->dDx() / 2;
     h_half_ddy[i] = gc->dDy() / 2;
     h_scale[i] = gc->getSmoothingScale();
-    // Same dispatch as the BinGrid scatter loop: large and std instances
-    // accumulate inst area (large additionally target-density scaled),
+    // Same dispatch as the BinGrid scatter loop: macro and std instances
+    // accumulate inst area (macro additionally target-density scaled),
     // fillers accumulate filler area, anything else is skipped.
     int kind = 0;
     if (gc->isInstance()) {
-      if (gc->isLargeInstance()) {
+      if (gc->isMacroInstance()) {
         kind = 2;
       } else if (gc->isStdInstance()) {
         kind = 1;

@@ -63,11 +63,11 @@ struct KokkosNesterovState
   // Per-cell density params, covering ALL nb cells (inst + filler) — unlike
   // DeviceState's inst-only d_inst_density_*. Refreshed by
   // NesterovDeviceContext::refreshCellDensityParams after updateDensitySize.
-  Kokkos::View<int*> d_half_ddx;         // GCell::dDx()/2
-  Kokkos::View<int*> d_half_ddy;         // GCell::dDy()/2
+  Kokkos::View<int*> d_half_ddx;           // GCell::dDx()/2
+  Kokkos::View<int*> d_half_ddy;           // GCell::dDy()/2
   Kokkos::View<float*> d_smoothing_scale;  // GCell::getSmoothingScale()
   // 0 = neither (skipped by the scatter, like the CPU loop), 1 = std inst,
-  // 2 = large inst (target-density scaled), 3 = filler.
+  // 2 = macro inst (target-density scaled), 3 = filler.
   Kokkos::View<int*> d_cell_kind;
 
   // Per-bin statics, FFT layout [x * binCntY + y] (matches d_bin_density /

@@ -721,7 +721,7 @@ class MixedMacroTimingRepairIntegrationTest : public TimingRepairIntegrationTest
     ASSERT_NE(macro_, nullptr);
     auto* macro_cell = liveCellFor(macro_);
     ASSERT_NE(macro_cell, nullptr);
-    ASSERT_TRUE(macro_cell->isLargeInstance());
+    ASSERT_TRUE(macro_cell->isMacroInstance());
     ASSERT_GT(nb->getStdInstArea(), 0);
     const int64_t macro_area = nb->getPb()->largeInstsArea();
     const int64_t whitespace = nb->getWhiteSpaceArea();
@@ -770,7 +770,7 @@ class MixedMacroTimingRepairIntegrationTest : public TimingRepairIntegrationTest
     EXPECT_EQ(macro_cell->dx(), macro_dx);
     EXPECT_EQ(macro_cell->dy(), macro_dy);
     EXPECT_EQ(macro_cell->getInflationArea(), macro_inflation);
-    EXPECT_EQ(nb->getLargeInstArea(),
+    EXPECT_EQ(nb->getMacroInstArea(),
               static_cast<int64_t>(macro_dx) * macro_dy);
     const double density_area = static_cast<double>(macro_cell->dDx())
                                 * macro_cell->dDy()

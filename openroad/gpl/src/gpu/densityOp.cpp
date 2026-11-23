@@ -269,8 +269,7 @@ void launchNbDensityScatter(KokkosNesterovState& ns,
   Kokkos::parallel_reduce(
       "densop_nb_bin_pass",
       Kokkos::RangePolicy<ExecSpace>(0, nbins),
-      KOKKOS_LAMBDA(
-          const int bi, float& local_ovf_binormal, float& local_ovf) {
+      KOKKOS_LAMBDA(const int bi, float& local_ovf_binormal, float& local_ovf) {
         const float inst = static_cast<float>(d_bin_inst_area(bi));
         const float filler = static_cast<float>(d_bin_filler_area(bi));
         const float nonplace_binormal
@@ -391,10 +390,9 @@ float launchNbSumPhi(const KokkosNesterovState& ns,
       Kokkos::RangePolicy<ExecSpace>(0, nbins),
       KOKKOS_LAMBDA(const int bi, float& local) {
         // CPU sums the int64 areas first, then casts once.
-        const long long total
-            = d_bin_nonplace_binormal(bi)
-              + static_cast<long long>(d_bin_inst_area(bi))
-              + static_cast<long long>(d_bin_filler_area(bi));
+        const long long total = d_bin_nonplace_binormal(bi)
+                                + static_cast<long long>(d_bin_inst_area(bi))
+                                + static_cast<long long>(d_bin_filler_area(bi));
         local += d_bin_phi(bi) * static_cast<float>(total);
       },
       sum_phi);

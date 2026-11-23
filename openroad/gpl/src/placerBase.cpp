@@ -69,9 +69,9 @@ Instance::Instance(odb::dbInst* db_inst,
   dbBox* bbox = db_inst->getBBox();
 
   if (db_inst->getMaster()->getType().isBlock()) {
-    is_large_instance_ = true;
+    is_macro_ = true;
   } else if (bbox->getDY() > row_limit * pbc->siteSizeY()) {
-    is_large_instance_ = true;
+    is_macro_ = true;
     logger->warn(GPL,
                  134,
                  "Master {} is not marked as a BLOCK in LEF but is more "
@@ -248,9 +248,9 @@ void Instance::setExtId(int extId)
   extId_ = extId;
 }
 
-bool Instance::isLargeInstance() const
+bool Instance::isMacro() const
 {
-  return is_large_instance_;
+  return is_macro_;
 }
 
 bool Instance::isLocked() const
@@ -1136,7 +1136,7 @@ void PlacerBase::init(bool check_density)
       continue;
     }
 
-    if (pbCommon_->macroAreaInDenominator() && inst->isLargeInstance()
+    if (pbCommon_->macroAreaInDenominator() && inst->isMacro()
         && !inst->isFixed()) {
       if (isInGroup(db_inst)) {
         odb::dbMaster* master = db_inst->getMaster();
@@ -1400,7 +1400,7 @@ void PlacerBase::initInstsForUnusableSites()
       }
     }
 
-    if (inst->isLargeInstance() && inst->dbInst()->getHalo() != nullptr) {
+    if (inst->isMacro() && inst->dbInst()->getHalo() != nullptr) {
       Rect halo = inst->dbInst()->getTransformedHalo();
       Rect box = inst->dbInst()->getBBox()->getBox();
 

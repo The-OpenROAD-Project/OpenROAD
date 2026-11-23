@@ -292,12 +292,12 @@ bool GCell::isFiller() const
   return insts_.empty();
 }
 
-bool GCell::isLargeInstance() const
+bool GCell::isMacroInstance() const
 {
   if (!isInstance()) {
     return false;
   }
-  return insts_[0]->isLargeInstance();
+  return insts_[0]->isMacro();
 }
 
 bool GCell::isStdInstance() const
@@ -305,7 +305,7 @@ bool GCell::isStdInstance() const
   if (!isInstance()) {
     return false;
   }
-  return !insts_[0]->isLargeInstance();
+  return !insts_[0]->isMacro();
 }
 
 void GCell::print(utl::Logger* logger, bool print_only_name = true) const
@@ -996,8 +996,8 @@ void BinGrid::scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
     const std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
 
     if (cell->isInstance()) {
-      const bool large_inst = cell->isLargeInstance();
-      if (!large_inst && !cell->isStdInstance()) {
+      const bool macro = cell->isMacroInstance();
+      if (!macro && !cell->isStdInstance()) {
         continue;
       }
       for (int y = pairY.first; y < pairY.second; y++) {
@@ -1005,7 +1005,7 @@ void BinGrid::scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
           Bin& bin = bins_[y * binCntX_ + x];
           float scaled_area
               = getOverlapDensityArea(bin, cell) * cell->getSmoothingScale();
-          if (large_inst) {
+          if (macro) {
             scaled_area *= bin.getTargetDensity();
           }
           bin.atomicAddInstPlacedArea(static_cast<int64_t>(scaled_area));
@@ -1048,8 +1048,8 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
       const std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
       const std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
       if (cell->isInstance()) {
-        const bool large_inst = cell->isLargeInstance();
-        if (!large_inst && !cell->isStdInstance()) {
+        const bool macro = cell->isMacroInstance();
+        if (!macro && !cell->isStdInstance()) {
           continue;
         }
         for (int y = pairY.first; y < pairY.second; y++) {
@@ -1058,7 +1058,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
             Bin& bin = bins_[bi];
             float v
                 = getOverlapDensityArea(bin, cell) * cell->getSmoothingScale();
-            if (large_inst) {
+            if (macro) {
               v *= bin.getTargetDensity();
             }
 #pragma omp atomic
@@ -1112,11 +1112,10 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
                        - scaled_bin_area);
     sum_overflow_area_binormal_ += overflow_area_binormal;  // NOLINT
 
-    const float overflow_area
-        = std::max(0.0f,
-                   static_cast<float>(bin.getInstPlacedArea())
-                       + static_cast<float>(bin.getNonPlaceArea())
-                       - scaled_bin_area);
+    const float overflow_area = std::max(
+        0.0f,
+        static_cast<float>(bin.getInstPlacedArea())
+            + static_cast<float>(bin.getNonPlaceArea()) - scaled_bin_area);
     sum_overflow_area_ += overflow_area;
     if (overflow_area > 0) {
       debugPrint(log_,
@@ -2207,7 +2206,7 @@ NesterovBase::NesterovBase(
 
   // area update from pb
   std_insts_area_ = pb_->stdInstsArea();
-  large_insts_area_ = pb_->largeInstsArea();
+  macro_insts_area_ = pb_->largeInstsArea();
 
   int dbu_per_micron = pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron();
 
@@ -2418,7 +2417,7 @@ void NesterovBase::initFillerGCells()
 
   float tmp_targetDensity
       = static_cast<float>(std_insts_area_)
-            / static_cast<float>(whiteSpaceArea_ - large_insts_area_)
+            / static_cast<float>(whiteSpaceArea_ - macro_insts_area_)
         + 0.01;
   // targetDensity initialize
   if (nbVars_.useUniformTargetDensity) {
@@ -2799,7 +2798,7 @@ int64_t NesterovBase::getInflationArea() const
   for (const auto& cell : nb_gcells_) {
     if (cell->isStdInstance()) {
       area += cell->getInflationArea();
-    } else if (cell->isLargeInstance()) {
+    } else if (cell->isMacroInstance()) {
       area += static_cast<int64_t>(
           std::round(cell->getInflationArea() * targetDensity_));
     }
@@ -2861,10 +2860,9 @@ float NesterovBase::estimateTargetDensity(float overflow)
           = bin.getNonPlaceArea() / bin.getTargetDensity() * current_density;
       const float scaled_bin_area = bin.getBinArea() * current_density;
 
-      sum_overflow_area
-          += std::max(0.0f,
-                      static_cast<float>(bin.getInstPlacedArea())
-                          + non_place_area - scaled_bin_area);
+      sum_overflow_area += std::max(0.0f,
+                                    static_cast<float>(bin.getInstPlacedArea())
+                                        + non_place_area - scaled_bin_area);
     }
 
     current_overflow = sum_overflow_area / getNesterovInstsArea();
@@ -2991,15 +2989,15 @@ void NesterovBase::updateTimingDrivenDensity()
 void NesterovBase::updateAreas()
 {
   // bloating can change the following :
-  // std_insts_area_ and large_insts_area_
-  std_insts_area_ = large_insts_area_ = 0;
+  // std_insts_area_ and macro_insts_area_
+  std_insts_area_ = macro_insts_area_ = 0;
   for (auto it = nb_gcells_.begin(); it < nb_gcells_.end(); ++it) {
     auto& gCell = *it;
     if (!gCell) {
       continue;
     }
-    if (gCell->isLargeInstance()) {
-      large_insts_area_ += static_cast<int64_t>(gCell->dx())
+    if (gCell->isMacroInstance()) {
+      macro_insts_area_ += static_cast<int64_t>(gCell->dx())
                            * static_cast<int64_t>(gCell->dy());
     } else if (gCell->isStdInstance()) {
       std_insts_area_ += static_cast<int64_t>(gCell->dx())
@@ -5299,7 +5297,7 @@ static int64_t getOverlapAreaBinormal(const Bin* bin,
     return 0;
   }
 
-  if (inst->isLargeInstance()) {
+  if (inst->isMacro()) {
     const float meanX = (inst->cx() - inst->lx()) / (float) dbu_per_micron;
     const float meanY = (inst->cy() - inst->ly()) / (float) dbu_per_micron;
 

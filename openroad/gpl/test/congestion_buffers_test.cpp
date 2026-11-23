@@ -517,7 +517,7 @@ TEST_F(MovableMacroBuffersTest, InflationUsesDensityScaledMacroArea)
   const int64_t area = cellArea(cellFor(buffer));
   const int64_t macro_area = nb_->getPb()->largeInstsArea();
   ASSERT_GT(macro_area, 0);
-  ASSERT_TRUE(cellFor(macro_)->isLargeInstance());
+  ASSERT_TRUE(cellFor(macro_)->isMacroInstance());
   const int64_t occupied_standard_area
       = nb_->getStdInstArea() + area + nb_->getTotalFillerArea();
   const int64_t available_area = nb_->getWhiteSpaceArea() - macro_area;
