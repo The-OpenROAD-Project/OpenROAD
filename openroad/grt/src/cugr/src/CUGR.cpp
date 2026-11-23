@@ -717,7 +717,7 @@ void CUGR::patternRouteCritical(std::vector<int>& net_indices)
     grid_graph_->addTreeUsage(net->getRoutingTree(), net->getNdrCosts());
   }
   collectReroutedNets(critical_nets);
-  debugNetTopology(CugrStage::patternRouteResAware, 0);
+  debugNetTopology(CugrStage::patternRouteCritical, 0);
 }
 
 void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
@@ -1113,8 +1113,8 @@ bool CUGR::debugStageEnabled(const CugrStage stage) const
   switch (stage) {
     case CugrStage::patternRoute:
       return debug_.stages.pattern_route;
-    case CugrStage::patternRouteResAware:
-      return debug_.stages.res_aware;
+    case CugrStage::patternRouteCritical:
+      return debug_.stages.critical;
     case CugrStage::patternRouteWithDetours:
       return debug_.stages.detours;
     case CugrStage::mazeRoute:

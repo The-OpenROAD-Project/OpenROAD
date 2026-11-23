@@ -360,7 +360,7 @@ global_route_debug
     [-tree3D]
 	[-edges3D]
     [-cugr_pattern]
-    [-cugr_res_aware]
+    [-cugr_critical]
     [-cugr_detours]
     [-cugr_maze]
     [-cugr_rrr]
@@ -378,7 +378,7 @@ global_route_debug
 | `-tree3D` | Show the 3D Rectilinear Steiner Tree post-layer assignment. |
 | `-edges3D` | Show each edge being rerouted post-layer assignment. |
 | `-cugr_pattern` | CUGR: topology after pattern routing (stage 1). |
-| `-cugr_res_aware` | CUGR: topology after the re-route of nets with negative slack (stage 2). |
+| `-cugr_critical` | CUGR: topology after the re-route of nets with negative slack (stage 2). |
 | `-cugr_detours` | CUGR: topology after pattern routing with detours (stage 3). |
 | `-cugr_maze` | CUGR: topology after maze routing (stage 4). |
 | `-cugr_rrr` | CUGR: topology after each rip-up and re-route iteration (stage 5). |

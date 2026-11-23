@@ -444,7 +444,7 @@ sta::define_cmd_args "global_route_debug" {
   [-tree3D]   # Show The Rectilinear Steiner Tree 3D after layer assignment
   [-edges3D]  # Show edges being rerouted during maze route 3D
   [-cugr_pattern]   # CUGR: show the topology after pattern routing
-  [-cugr_res_aware] # CUGR: show the topology after the critical-net re-route
+  [-cugr_critical] # CUGR: show the topology after the critical-net re-route
   [-cugr_detours]   # CUGR: show the topology after pattern routing with detours
   [-cugr_maze]      # CUGR: show the topology after maze routing
   [-cugr_rrr]       # CUGR: show the topology after each iterative RRR iteration
@@ -456,7 +456,7 @@ proc global_route_debug { args } {
   sta::parse_key_args "global_route_debug" args \
     keys {-saveSttInput -net} \
     flags {-st -rst -tree2D -tree3D -edges3D \
-           -cugr_pattern -cugr_res_aware -cugr_detours -cugr_maze -cugr_rrr}
+           -cugr_pattern -cugr_critical -cugr_detours -cugr_maze -cugr_rrr}
 
   sta::check_argc_eq0 "global_route_debug" $args
 
@@ -466,7 +466,7 @@ proc global_route_debug { args } {
   set tree3D [info exists flags(-tree3D)]
   set edges3D [info exists flags(-edges3D)]
   set cugr_pattern [info exists flags(-cugr_pattern)]
-  set cugr_res_aware [info exists flags(-cugr_res_aware)]
+  set cugr_critical [info exists flags(-cugr_critical)]
   set cugr_detours [info exists flags(-cugr_detours)]
   set cugr_maze [info exists flags(-cugr_maze)]
   set cugr_rrr [info exists flags(-cugr_rrr)]
@@ -478,7 +478,7 @@ proc global_route_debug { args } {
       utl::error GRT 231 "Net name not found."
     }
     grt::set_global_route_debug_cmd $net $st $rst $tree2D $tree3D $edges3D
-    grt::set_cugr_debug_cmd $net $cugr_pattern $cugr_res_aware \
+    grt::set_cugr_debug_cmd $net $cugr_pattern $cugr_critical \
       $cugr_detours $cugr_maze $cugr_rrr
     if { [info exists keys(-saveSttInput)] } {
       set file_name $keys(-saveSttInput)
