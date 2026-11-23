@@ -11,6 +11,7 @@
 #include <optional>
 #include <string>
 #include <tuple>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -32,6 +33,10 @@
 
 namespace est {
 class EstimateParasitics;
+}
+
+namespace odb {
+class dbNet;
 }
 
 namespace rsz {
@@ -224,28 +229,12 @@ class Rebuffer : public sta::dbStaState
   {
     sta::LibertyCellSeq cells;
     std::optional<float> leakage_budget;
+    std::optional<float> reference_leakage;
   };
-  // Append to `trees` the trees planForDriverCell() builds for the one of
-  // `choices` that speeds up `timing_tree` the most, if any does.
-  void addTreesPlannedForBestDriver(const BufferedNetPtr& unbuffered_tree,
-                                    const BufferedNetPtr& timing_tree,
-                                    sta::LibertyCell* current_cell,
-                                    const DriverChoices& choices,
-                                    FixedDelay relaxation,
-                                    std::vector<BufferedNetPtr>& trees);
-  DriverChoices driverChoices(sta::LibertyCell* current_cell,
-                              const BufferedNetPtr& timing_tree);
-  // Leakage of each buffer of `tree` in visit order; nullopt when a buffer
-  // has no leakage data.
-  std::optional<std::vector<float>> bufferLeakages(const BufferedNetPtr& tree);
-  // Leakage of `cell` driving a tree with `buffer_leakages`; nullopt when a
-  // cell has no leakage data.
-  std::optional<float> netLeakage(
-      sta::LibertyCell* cell,
-      const std::optional<std::vector<float>>& buffer_leakages);
   // The candidate trees for one net, with the slack of each tree for each
   // driver cell and the side-load slack of each cell computed on first use.
-  // bestSlackWithDriver() and chooseTreeAndDriver() share them.
+  // addTreesPlannedForBestDriver(), bestSlackWithDriver(), and
+  // chooseTreeAndDriver() share them.
   struct TreeDriverEvaluation
   {
     explicit TreeDriverEvaluation(const std::vector<BufferedNetPtr>& trees)
@@ -259,6 +248,33 @@ class Rebuffer : public sta::dbStaState
         slacks;
     absl::flat_hash_map<const sta::LibertyCell*, FixedDelay> side_load_slacks;
   };
+  // Append to `trees` the trees planForDriverCell() builds for the one of
+  // `choices` that improves `timing_tree` the most (net of the non-critical
+  // area-upsize hurdle) while respecting upstream side-load slack, if any does.
+  void addTreesPlannedForBestDriver(const BufferedNetPtr& unbuffered_tree,
+                                    const BufferedNetPtr& timing_tree,
+                                    size_t timing_tree_index,
+                                    sta::LibertyCell* current_cell,
+                                    const DriverChoices& choices,
+                                    FixedDelay relaxation,
+                                    bool critical,
+                                    sta::Delay hurdle_base_delay,
+                                    float hurdle_factor,
+                                    TreeDriverEvaluation& eval,
+                                    std::vector<BufferedNetPtr>& trees);
+  DriverChoices driverChoices(sta::LibertyCell* current_cell,
+                              const BufferedNetPtr& reference_tree);
+  // Leakage of each buffer of `tree` in visit order; nullopt when a buffer
+  // has no leakage data.
+  std::optional<std::vector<float>> bufferLeakages(const BufferedNetPtr& tree);
+  // Leakage of `cell` driving a tree with `buffer_leakages`; nullopt when a
+  // cell has no leakage data.
+  std::optional<float> netLeakage(
+      sta::LibertyCell* cell,
+      const std::optional<std::vector<float>>& buffer_leakages);
+  std::optional<float> treeNetLeakage(TreeDriverEvaluation& eval,
+                                      sta::LibertyCell* cell,
+                                      size_t tree_index);
   bool withinLeakageBudget(TreeDriverEvaluation& eval,
                            const DriverChoices& choices,
                            sta::LibertyCell* cell,
@@ -268,13 +284,24 @@ class Rebuffer : public sta::dbStaState
                                                 size_t tree_index);
   FixedDelay upstreamSideLoadSlack(TreeDriverEvaluation& eval,
                                    sta::LibertyCell* cell);
-  // The most slack any of the trees reaches with the current driver or one
-  // of `choices` whose upstream side loads keep that slack less
-  // `relaxation`.
+  // Delay hurdle subtracted from candidate slack on non-critical failing nets
+  // when `cell` grows driver area above `current_cell`.  Zero-area/smaller
+  // swaps (e.g. VT upgrades) and critical nets incur zero hurdle.
+  FixedDelay areaUpsizeHurdle(const sta::LibertyCell* current_cell,
+                              const sta::LibertyCell* cell,
+                              bool critical,
+                              sta::Delay hurdle_base_delay,
+                              float hurdle_factor) const;
+  // The highest hurdle-adjusted slack any of the trees reaches with the
+  // current driver or one of `choices` whose upstream side loads keep that
+  // slack less `relaxation`.
   FixedDelay bestSlackWithDriver(TreeDriverEvaluation& eval,
                                  sta::LibertyCell* current_cell,
                                  const DriverChoices& choices,
-                                 FixedDelay relaxation);
+                                 FixedDelay relaxation,
+                                 bool critical,
+                                 sta::Delay hurdle_base_delay,
+                                 float hurdle_factor);
   // Pick the smallest (tree + driver) area among the candidate trees and the
   // driver `choices` whose slack meets `slack_target`.  Returns the chosen
   // tree and sets `chosen_cell`; returns nullptr when no combination meets
@@ -292,7 +319,10 @@ class Rebuffer : public sta::dbStaState
                                     const BufferedNetPtr& unbuffered_tree,
                                     const BufferedNetPtr& timing_tree,
                                     const BufferedNetPtr& area_tree,
-                                    FixedDelay slack_target);
+                                    FixedDelay slack_target,
+                                    bool critical,
+                                    sta::Delay hurdle_base_delay,
+                                    float hurdle_factor);
   std::optional<FixedDelay> evaluateOption(const BufferedNetPtr& option,
                                            // Only used for debug print.
                                            int index);
@@ -632,6 +662,18 @@ class Rebuffer : public sta::dbStaState
   // Fraction of the worst slack within which a failing net counts as
   // critical in fullyRebuffer().
   static constexpr float kCriticalSlackBand = 0.1;
+  // Required delay improvement (as a fraction of driver gate delay per unit
+  // relative driver area increase) for geometric driver upsizing on
+  // non-critical failing nets.
+  static constexpr float kAreaUpsizeHurdle = 0.25f;
+  // Threshold at or above which geometric area upsizes are excluded from
+  // raising target_slack on non-critical failing nets (zero-area VT only).
+  static constexpr float kZeroAreaOnlyHurdle = 100.0f;
+  // Maximum direct sink count under the first buffer for withoutFirstBuffer().
+  static constexpr int kMaxWithoutFirstBufFanout = 2;
+  // Maximum direct sink count allowed when collapsing a buffered timing tree
+  // during driver sizing.
+  static constexpr int kMaxFlatCollapseFanout = 8;
 
   double long_wire_stepping_runtime_ = 0;
 
@@ -642,6 +684,9 @@ class Rebuffer : public sta::dbStaState
   double size_ra_runtime_ = 0;
   double size_eval_runtime_ = 0;
   double size_plan_runtime_ = 0;
+  // Input flat nets whose load capacitance increased from an earlier driver
+  // resize in the current timing batch; cleared when edits are propagated.
+  std::unordered_set<const odb::dbNet*> resized_upstream_nets_;
 
   friend class rsz::BufferCandidate;
   friend class RebufferTestPeer;
