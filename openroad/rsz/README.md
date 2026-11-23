@@ -223,7 +223,7 @@ repair_timing
     [-setup_margin setup_margin]
     [-hold_margin hold_margin]
     [-slack_margin slack_margin]
-    [-libraries libs]
+    [-libraries libs] (deprecated)
     [-allow_setup_violations]
     [-sequence]
     [-phases]
@@ -260,6 +260,7 @@ repair_timing
 | `-recover_power` | Set the percentage of paths to recover power for. The default value is `0`, and the allowed values are floats `(0, 100]`. |
 | `-setup_margin` | Add additional setup slack margin. |
 | `-hold_margin` | Add additional hold slack margin. |
+| `-libraries` | Deprecated. The passed value is ignored. |
 | `-allow_setup_violations` | While repairing hold violations, buffers are not inserted that will cause setup violations unless `-allow_setup_violations` is specified. |
 | `-sequence` | Specify a particular order of setup timing optimization moves. The default is "unbuffer vt_swap sizeup swap buffer clone split". Obeys skip flags also. |
 | `-phases` | Specify a particular order of setup timing optimization phases. The default is "LEGACY LAST_GASP CRIT_VT_SWAP". The experimental `PARALLEL_EVAL` policy is described in [PARALLEL_EVAL Policy](#parallel_eval-policy). |
