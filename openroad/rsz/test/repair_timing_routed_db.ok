@@ -12,12 +12,12 @@ design_is_routed: 1
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.035 |       -0.6 |     32 | _700_/D
-     134* |       0 |      34 |        7 |      0 |     3 |    +5.6% |   -0.011 |       -0.1 |     32 | _706_/D
-    final |       0 |      34 |        7 |      0 |     3 |    +5.6% |   -0.011 |       -0.1 |     13 | _706_/D
+     193* |       0 |      38 |        8 |      0 |     6 |    +6.1% |   -0.009 |       -0.1 |     32 | _706_/D
+    final |       0 |      38 |        8 |      0 |     6 |    +6.1% |   -0.009 |       -0.1 |     10 | _706_/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0040] Inserted 7 buffers.
-[INFO RSZ-0051] Resized 34 instances: 34 up, 0 up match, 0 down, 0 VT
-[INFO RSZ-0043] Swapped pins on 3 instances.
+[INFO RSZ-0040] Inserted 8 buffers.
+[INFO RSZ-0051] Resized 38 instances: 38 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 6 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 parasitics source: placement
-worst slack max -0.011
+worst slack max -0.009
