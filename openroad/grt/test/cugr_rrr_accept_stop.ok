@@ -39,55 +39,55 @@ met5       Horizontal       3600          1640          54.44%
 
 Stage 1: Pattern routing.
 Stage 2: Re-route of nets with negative slack.
-[DEBUG GRT-rrr] Nets with congestion: 209.
+[DEBUG GRT-rrr] Nets with congestion: 211.
 Stage 3: Pattern routing with detours.
-[DEBUG GRT-rrr] Nets with congestion: 183.
-[DEBUG GRT-rrr] stage 3: total overflow 51.
+[DEBUG GRT-rrr] Nets with congestion: 197.
+[DEBUG GRT-rrr] stage 3: total overflow 49.
 Stage 4: Maze routing on sparsified graph.
-[DEBUG GRT-verify_view] iteration 0: 183 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
-[DEBUG GRT-rrr] iteration 0: 183 nets rerouted, 12 of them rolled back by the accept test; overflow change -35.45.
+[DEBUG GRT-verify_view] iteration 0: 197 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
+[DEBUG GRT-rrr] iteration 0: 197 nets rerouted, 15 of them rolled back by the accept test; overflow change -33.92.
 [DEBUG GRT-rrr] stage 4: total overflow 16.
-[DEBUG GRT-rrr] Nets with congestion: 100.
+[DEBUG GRT-rrr] Nets with congestion: 108.
 Stage 5: Iterative rip-up and re-route.
-[DEBUG GRT-rrr] Nets with congestion: 100.
+[DEBUG GRT-rrr] Nets with congestion: 108.
 [INFO GRT-0117] Start extra iteration 1/5
-[DEBUG GRT-verify_view] iteration 1: 100 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
-[DEBUG GRT-rrr] iteration 1: 100 nets rerouted, 9 of them rolled back by the accept test; overflow change -8.56.
+[DEBUG GRT-verify_view] iteration 1: 108 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
+[DEBUG GRT-rrr] iteration 1: 108 nets rerouted, 17 of them rolled back by the accept test; overflow change -9.34.
 [DEBUG GRT-rrr] rrr iteration 1: total overflow 7.
-[DEBUG GRT-rrr] Nets with congestion: 66.
+[DEBUG GRT-rrr] Nets with congestion: 63.
 [INFO GRT-0117] Start extra iteration 2/5
-[DEBUG GRT-verify_view] iteration 2: 66 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
-[DEBUG GRT-rrr] iteration 2: 66 nets rerouted, 10 of them rolled back by the accept test; overflow change -2.73.
+[DEBUG GRT-verify_view] iteration 2: 63 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
+[DEBUG GRT-rrr] iteration 2: 63 nets rerouted, 15 of them rolled back by the accept test; overflow change -2.13.
 [DEBUG GRT-rrr] rrr iteration 2: total overflow 4.
-[DEBUG GRT-rrr] Nets with congestion: 40.
+[DEBUG GRT-rrr] Nets with congestion: 51.
 [INFO GRT-0117] Start extra iteration 3/5
-[DEBUG GRT-verify_view] iteration 3: 40 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
-[DEBUG GRT-rrr] iteration 3: 40 nets rerouted, 11 of them rolled back by the accept test; overflow change -0.91.
-[DEBUG GRT-rrr] rrr iteration 3: total overflow 3.
-[DEBUG GRT-rrr] Nets with congestion: 37.
+[DEBUG GRT-verify_view] iteration 3: 51 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
+[DEBUG GRT-rrr] iteration 3: 51 nets rerouted, 17 of them rolled back by the accept test; overflow change -0.24.
+[DEBUG GRT-rrr] rrr iteration 3: total overflow 4.
+[DEBUG GRT-rrr] Nets with congestion: 48.
 [INFO GRT-0117] Start extra iteration 4/5
-[DEBUG GRT-verify_view] iteration 4: 37 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
-[DEBUG GRT-rrr] iteration 4: 37 nets rerouted, 14 of them rolled back by the accept test; overflow change -0.01.
-[DEBUG GRT-rrr] rrr iteration 4: total overflow 3.
+[DEBUG GRT-verify_view] iteration 4: 48 nets rerouted, 0 view cells differ from a full extraction (max drift 0).
+[DEBUG GRT-rrr] iteration 4: 48 nets rerouted, 17 of them rolled back by the accept test; overflow change -0.36.
+[DEBUG GRT-rrr] rrr iteration 4: total overflow 4.
 [INFO GRT-0124] Iterative RRR stopped after iteration 4: the last 2 iterations each removed less than 1 track of overflow.
-[WARNING GRT-0118] Iterative RRR finished with congestion remaining (3).
+[WARNING GRT-0118] Iterative RRR finished with congestion remaining (4).
 Routing statistics
-Wire length:           46470
-Total via count:       2348
-Total congestion:      3.14
-Min resource:          -0.39
-Bottleneck:            (5, 20, 27)
+Wire length:           46814
+Total via count:       2397
+Total congestion:      3.98
+Min resource:          -0.43
+Bottleneck:            (1, 30, 18)
 [INFO GRT-0130] CUGR congestion report:
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)   Wire Ovf    Via Ovf  Max Edge Ovf
 --------------------------------------------------------------------------------------------------------------
 li1       V         0.00         0.00         0.00         0.00       0.00       0.00       0.00          0.00
-met1      H      6126.71       942.00       103.06      1045.06      17.06       0.98       0.14          0.39
-met2      V      5000.00       873.00        89.24       962.24      19.24       0.00       0.00          0.00
-met3      H      3248.00       313.00        39.80       352.80      10.86       1.01       0.13          0.34
-met4      V      2496.00       241.00        10.07       251.07      10.06       0.00       0.00          0.00
-met5      H      1640.00        11.00         1.48        12.48       0.76       0.68       0.21          0.39
+met1      H      6126.71       975.00       103.34      1078.34      17.60       1.78       0.29          0.43
+met2      V      5000.00       866.00        91.45       957.45      19.15       0.00       0.00          0.00
+met3      H      3248.00       316.00        42.89       358.89      11.05       1.69       0.22          0.39
+met4      V      2496.00       240.00         9.34       249.34       9.99       0.00       0.00          0.00
+met5      H      1640.00         0.00         0.00        -0.00      -0.00       0.00       0.00          0.00
 --------------------------------------------------------------------------------------------------------------
-Total           18510.71      2380.00       243.65      2623.65      14.17       2.67       0.47          0.39
-[INFO GRT-0018] Total wirelength: 24220 um
+Total           18510.71      2397.00       247.01      2644.01      14.28       3.48       0.50          0.43
+[INFO GRT-0018] Total wirelength: 24415 um
 [INFO GRT-0014] Routed nets: 348
 [WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.

@@ -176,9 +176,9 @@ class GridGraph
   // Elmore delay cost of a wire u->v on `layer_index`, scaled by
   // `criticality`: its resistance driving its own cap and `load` (F) beyond
   // v, plus `driver_res` (ohm) driving its cap. `wire_width` 0 is the
-  // default width. A wire that lacks a track of headroom on some edge
-  // (demand `net_factor`) is priced with the slowest RC in its direction, so
-  // filling a fast layer earns no delay benefit.
+  // default width. The edges where the wire lacks a track of headroom
+  // (demand `net_factor`) are priced with the slowest RC in its direction, so
+  // filling a fast layer earns no delay benefit there.
   CostT getWireDelayCost(int layer_index,
                          PointT u,
                          PointT v,

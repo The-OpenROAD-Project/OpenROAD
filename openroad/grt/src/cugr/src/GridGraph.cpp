@@ -615,28 +615,35 @@ CostT GridGraph::getWireDelayCost(const int layer_index,
     return 0;
   }
   const int direction = layer_directions_[layer_index];
-  bool fits = true;
   const int lo = std::min(u[direction], v[direction]);
   const int hi = std::max(u[direction], v[direction]);
-  for (int i = lo; i < hi && fits; i++) {
+  double fit_length = 0;
+  double total_length = 0;
+  for (int i = lo; i < hi; i++) {
     const GraphEdge& edge = direction == MetalLayer::H
                                 ? graph_edges_[layer_index][i][u.y()]
                                 : graph_edges_[layer_index][u.x()][i];
+    const int edge_length = getEdgeLength(direction, i);
+    total_length += edge_length;
     // One track of headroom: on a coarse layer with a few tracks per gcell,
     // filling the last one invites overflow the delay cost would not see.
-    fits = edge.capacity - edge.demand >= net_factor + 1.0;
+    if (edge.capacity - edge.demand >= net_factor + 1.0) {
+      fit_length += edge_length;
+    }
   }
   double res = res_per_dbu_[layer_index];
   double cap_per_dbu = cap_per_dbu_[layer_index];
-  if (!fits) {
-    res = worst_res_per_dbu_[direction];
-    cap_per_dbu = worst_cap_per_dbu_[direction];
-  } else {
-    // A wider NDR wire has proportionally lower resistance.
-    const int default_width = design_->getLayer(layer_index).getWidth();
-    if (wire_width > 0 && default_width > 0) {
-      res *= static_cast<double>(default_width) / wire_width;
-    }
+  // A wider NDR wire has proportionally lower resistance.
+  const int default_width = design_->getLayer(layer_index).getWidth();
+  if (wire_width > 0 && default_width > 0) {
+    res *= static_cast<double>(default_width) / wire_width;
+  }
+  // Edges without headroom are priced with the slowest RC in the direction,
+  // so a long wire keeps the benefit of the stretches where it fits.
+  if (total_length > 0) {
+    const double fit = fit_length / total_length;
+    res = fit * res + (1 - fit) * worst_res_per_dbu_[direction];
+    cap_per_dbu = fit * cap_per_dbu + (1 - fit) * worst_cap_per_dbu_[direction];
   }
   const double length = getDistance(u, v);
   const double cap = cap_per_dbu * length;

@@ -5,7 +5,7 @@
 [INFO ODB-0131]     Created 1360 components and 6650 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
-[WARNING GRT-0118] Iterative RRR finished with congestion remaining (10).
+[WARNING GRT-0118] Iterative RRR finished with congestion remaining (9).
 [WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
   Layer via
     default via: M1M2_PR

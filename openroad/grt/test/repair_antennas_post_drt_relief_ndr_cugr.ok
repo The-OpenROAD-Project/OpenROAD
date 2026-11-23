@@ -5,7 +5,7 @@
 [INFO ODB-0131]     Created 1360 components and 6650 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
-[WARNING GRT-0118] Iterative RRR finished with congestion remaining (10).
+[WARNING GRT-0118] Iterative RRR finished with congestion remaining (9).
 [WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
   Layer via
     default via: M1M2_PR
@@ -23,7 +23,8 @@
 [INFO DPL-0501] Legalized with 0 moves: displacement total 0.0 u, max 0.0 u; HPWL 19613.7 -> 19613.7 u (+0.0 %).
 [INFO GRT-0015] Inserted 8 diodes.
 [WARNING GRT-0305] Demoted 8 NDR net(s) to default rule to reduce congestion (use debug 'softNDR' for net list).
-[WARNING GRT-0305] Demoted 32 NDR net(s) to default rule to reduce congestion (use debug 'softNDR' for net list).
+[WARNING GRT-0305] Demoted 34 NDR net(s) to default rule to reduce congestion (use debug 'softNDR' for net list).
+[WARNING GRT-0305] Demoted 18 NDR net(s) to default rule to reduce congestion (use debug 'softNDR' for net list).
 [DEBUG GRT-verify_demand] demand round-trip [incremental]: max_diff=0 mismatched_edges=0 max_residual_base=0 leaked_edges=0
 [WARNING GRT-0128] Incremental global routing finished with congestion. Check the congestion regions in the DRC Viewer.
-Routed nets with new guides: 22, keeping their old wire: 0
+Routed nets with new guides: 39, keeping their old wire: 0

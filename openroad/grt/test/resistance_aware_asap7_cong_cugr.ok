@@ -74,7 +74,7 @@ Stage 1: Pattern routing.
 Stage 2: Re-route of nets with negative slack.
 Routing statistics
 Wire length:           34595
-Total via count:       2334
+Total via count:       2319
 Total congestion:      0.00
 Min resource:          0.83
 Bottleneck:            (2, 82, 149)
@@ -82,16 +82,16 @@ Bottleneck:            (2, 82, 149)
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
 --------------------------------------------------------------------------
 M1        V         0.00         0.00         0.00         0.00       0.00
-M2        H    177468.85       416.00       107.83       523.83       0.30
-M3        V    191126.39      1022.00        86.23      1108.23       0.58
-M4        H    143310.39       197.00        50.32       247.32       0.17
-M5        V    143310.39       560.00        36.83       596.83       0.42
-M6        H    107534.39       122.00        10.20       132.20       0.12
+M2        H    177468.85       417.00       107.83       524.83       0.30
+M3        V    191126.39      1028.00        86.03      1114.03       0.58
+M4        H    143310.39       199.00        49.50       248.50       0.17
+M5        V    143310.39       554.00        35.68       589.68       0.41
+M6        H    107534.39       119.00         9.88       128.88       0.12
 --------------------------------------------------------------------------
-Total          762750.41      2317.00       291.41      2608.41       0.34
+Total          762750.41      2317.00       288.92      2605.92       0.34
 [INFO GRT-0018] Total wirelength: 7364 um
 [INFO GRT-0014] Routed nets: 416
 baseline (no delay cost) WNS: -122.0 ps  TNS: -2912.8 ps
-delay cost                WNS: -115.3 ps  TNS: -2651.2 ps
+delay cost                WNS: -115.3 ps  TNS: -2650.8 ps
 delay cost WNS and TNS not worse than baseline: PASS
 No differences found.
