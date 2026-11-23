@@ -6,6 +6,7 @@ load("@rules_pkg//pkg:zip.bzl", "pkg_zip")
 load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 load("@rules_python//python/entry_points:py_console_script_binary.bzl", "py_console_script_binary")
+load(":stamped_binary_test.bzl", "stamped_binary_test")
 
 package(features = ["layering_check"])
 
@@ -42,6 +43,12 @@ py_test(
         "stamp_version_test.py",
     ],
     imports = ["."],
+)
+
+stamped_binary_test(
+    name = "stamped_binary_test",
+    size = "small",
+    target_under_test = "//:openroad",
 )
 
 # Stamps the real linked binary, so the slot layout in version/version.cc and
