@@ -1877,6 +1877,60 @@ TEST_F(Lef58ImplantAndEdgeTest,
   EXPECT_EQ(runCheck(), "");
   (void) vn1;
 }
+TEST_F(Lef58ImplantAndEdgeTest, Lef58MinStepCrossRowStaircase)
+{
+  auto* rule = odb::dbTechLayerMinStepRule::create(imp1_);
+  rule->setMinStepLength(kRowHeight);
+  rule->setMinAdjLength1(kSiteWidth);
+  rule->setMinAdjLength1Valid(true);
+
+  // EXCEPTRECTANGLE rule without minAdjLength1 must not reject simple 1-site
+  // rectangles on IMP2:
+  auto* rect_rule = odb::dbTechLayerMinStepRule::create(imp2_);
+  rect_rule->setMinStepLength(2 * kSiteWidth);
+  rect_rule->setExceptRectangle(true);
+
+  odb::dbMaster* m_imp2_rect = createCustomMaster(
+      "M_IMP2_RECT", 1, {{imp2_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+  placeCell(m_imp2_rect, "r_ok", 0, 0, odb::dbOrientType::R0);
+  EXPECT_EQ(runCheck(), "");
+
+  odb::dbMaster* m_1w = createCustomMaster(
+      "M_1W", 1, {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+
+  // 1. Two-row 1-site offset (Row 0: gx=2..7, Row 1 MX: gx=3..7) is a single
+  // cross-row jog (not a 3-row staircase with both horizontal steps <= minAdj)
+  // and must pass checkPlacement.
+  for (int gx = 2; gx < 7; ++gx) {
+    placeCell(m_1w,
+              ("r0_" + std::to_string(gx)).c_str(),
+              gx,
+              0,
+              odb::dbOrientType::R0);
+  }
+  for (int gx = 3; gx < 7; ++gx) {
+    placeCell(m_1w,
+              ("r1_" + std::to_string(gx)).c_str(),
+              gx,
+              1,
+              odb::dbOrientType::MX);
+  }
+  EXPECT_EQ(runCheck(), "");
+
+  // 2. Adding Row 2 R0 at gx=4..7 forms a 3-row staircase on the left where the
+  // middle vertical step (Row 1 height == kRowHeight <= minStepLength) has BOTH
+  // adjacent horizontal steps == kSiteWidth <= minAdjLength -> violation!
+  odb::dbInst* r2_4 = placeCell(m_1w, "r2_4", 4, 2, odb::dbOrientType::R0);
+  placeCell(m_1w, "r2_5", 5, 2, odb::dbOrientType::R0);
+  placeCell(m_1w, "r2_6", 6, 2, odb::dbOrientType::R0);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+
+  // 3. Widening the upper horizontal step from 1 site to 2 sites (> minAdj)
+  // resolves the staircase violation.
+  odb::dbInst::destroy(r2_4);
+  EXPECT_EQ(runCheck(), "");
+}
+
 TEST_F(Lef58ImplantAndEdgeTest, Lef58CoreEdgeLengthAndExemptions)
 {
   auto* rule = odb::dbTechLayerCoreEdgeLengthRule::create(imp1_);

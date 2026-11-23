@@ -1471,6 +1471,14 @@ class PlacementDRC::ImplantDRC
         }
       }
 
+      // 4. LEF58_MINSTEP
+      for (odb::dbTechLayerMinStepRule* r : layer->getTechLayerMinStepRules()) {
+        if (!checkMinStepRule(
+                r, getComps2D, cell, cell_box, touch_box, layer_strict)) {
+          return false;
+        }
+      }
+
       // 5. LEF58_COREEDGELENGTH
       for (odb::dbTechLayerCoreEdgeLengthRule* r :
            layer->getTechLayerCoreEdgeLengthRules()) {
@@ -3363,6 +3371,215 @@ class PlacementDRC::ImplantDRC
                - static_cast<int64_t>(b.getX()) * a.getY();
     }
     return area2;
+  }
+
+  template <typename GetComps2D>
+  bool checkMinStepRule(odb::dbTechLayerMinStepRule* rule,
+                        const GetComps2D& get_comps_2d,
+                        const Node* cell,
+                        const odb::Rect& cell_box,
+                        const odb::Rect& touch_box,
+                        const bool strict_empty_sites) const
+  {
+    const int min_step = rule->getMinStepLength();
+    if (min_step <= 0) {
+      return true;
+    }
+    // Skip routing-only MINSTEP clauses not applicable to standard-cell
+    // implants.
+    if (rule->isMinAdjLength2Valid() || rule->isConvexCorner()
+        || rule->isConcaveCorner() || rule->isExceptSameCorners()
+        || rule->isMinBetweenLengthValid() || rule->isNoBetweenEol()
+        || rule->isNoAdjacentEol() || rule->getEolWidth() > 0) {
+      return true;
+    }
+
+    const bool has_adj = rule->isMinAdjLength1Valid();
+    const int min_adj = rule->getMinAdjLength1();
+    const bool has_max_edges = rule->isMaxEdgesValid();
+    const uint32_t max_edges = rule->getMaxEdges();
+    const bool except_rect = rule->isExceptRectangle();
+
+    auto makeEdgeInteriorRect = [](const odb::Point& pa,
+                                   const odb::Point& pb,
+                                   const int64_t signed_area2,
+                                   const bool is_hole) -> odb::Rect {
+      if (pa.getY() == pb.getY()) {
+        const int y = pa.getY();
+        const bool interior_above
+            = ((pb.getX() > pa.getX()) == ((signed_area2 > 0) != is_hole));
+        return odb::Rect(std::min(pa.getX(), pb.getX()),
+                         interior_above ? y : y - 1,
+                         std::max(pa.getX(), pb.getX()),
+                         interior_above ? y + 1 : y);
+      }
+      const int x = pa.getX();
+      return odb::Rect(
+          x, std::min(pa.getY(), pb.getY()), x, std::max(pa.getY(), pb.getY()));
+    };
+
+    auto canExtendStep = [&](const odb::Point& p_prev,
+                             const odb::Point& p0,
+                             const odb::Point& p1,
+                             const odb::Point& p_next,
+                             const int64_t signed_area2,
+                             const bool is_hole) -> bool {
+      if (strict_empty_sites) {
+        return false;
+      }
+      const odb::Rect r_prev
+          = makeEdgeInteriorRect(p_prev, p0, signed_area2, is_hole);
+      const odb::Rect r_curr
+          = makeEdgeInteriorRect(p0, p1, signed_area2, is_hole);
+      const odb::Rect r_next
+          = makeEdgeInteriorRect(p1, p_next, signed_area2, is_hole);
+      return canExtendHorizontally(r_prev, cell, cell_box, strict_empty_sites)
+             || canExtendHorizontally(
+                 r_curr, cell, cell_box, strict_empty_sites)
+             || canExtendHorizontally(
+                 r_next, cell, cell_box, strict_empty_sites);
+    };
+
+    auto checkContour
+        = [&](const std::vector<odb::Point>& pts, const bool is_hole) -> bool {
+      const size_t m = pts.size();
+      if (m < 4) {
+        return true;
+      }
+      const int64_t signed_area2 = contourSignedArea2(pts);
+
+      if (has_max_edges && !has_adj) {
+        // Count consecutive runs of unextendable < min_step edges; violate
+        // only when a run touching touch_box exceeds max_edges.
+        std::vector<bool> short_edge(m, false);
+        std::vector<bool> near_cand(m, false);
+        bool all_short = true;
+        for (size_t i = 0; i < m; ++i) {
+          const odb::Point& p_prev = pts[(i + m - 1) % m];
+          const odb::Point& p0 = pts[i];
+          const odb::Point& p1 = pts[(i + 1) % m];
+          const odb::Point& p_next = pts[(i + 2) % m];
+          const int len_curr = std::abs(p1.getX() - p0.getX())
+                               + std::abs(p1.getY() - p0.getY());
+          const odb::Rect edge_box(std::min(p0.getX(), p1.getX()),
+                                   std::min(p0.getY(), p1.getY()),
+                                   std::max(p0.getX(), p1.getX()),
+                                   std::max(p0.getY(), p1.getY()));
+          near_cand[i] = edge_box.intersects(touch_box);
+          if (len_curr < min_step
+              && !canExtendStep(
+                  p_prev, p0, p1, p_next, signed_area2, is_hole)) {
+            short_edge[i] = true;
+          } else {
+            all_short = false;
+          }
+        }
+        if (all_short) {
+          bool any_near = false;
+          for (const bool nc : near_cand) {
+            any_near = any_near || nc;
+          }
+          return !any_near || m <= max_edges;
+        }
+        size_t start = 0;
+        while (start < m && short_edge[start]) {
+          ++start;
+        }
+        uint32_t run_len = 0;
+        bool run_near = false;
+        for (size_t step = 0; step <= m; ++step) {
+          const size_t idx = (start + step) % m;
+          if (short_edge[idx]) {
+            ++run_len;
+            run_near = run_near || near_cand[idx];
+          } else {
+            if (run_near && run_len > max_edges) {
+              return false;
+            }
+            run_len = 0;
+            run_near = false;
+          }
+        }
+        return true;
+      }
+
+      for (size_t i = 0; i < m; ++i) {
+        const odb::Point& p_prev = pts[(i + m - 1) % m];
+        const odb::Point& p0 = pts[i];
+        const odb::Point& p1 = pts[(i + 1) % m];
+        const odb::Point& p_next = pts[(i + 2) % m];
+
+        odb::Rect gate_box(std::min(p0.getX(), p1.getX()),
+                           std::min(p0.getY(), p1.getY()),
+                           std::max(p0.getX(), p1.getX()),
+                           std::max(p0.getY(), p1.getY()));
+        if (has_adj) {
+          // The staircase is a 3-edge pattern; the cell that creates or
+          // shortens a tread usually does not touch the riser itself.
+          gate_box.merge(odb::Rect(std::min(p_prev.getX(), p0.getX()),
+                                   std::min(p_prev.getY(), p0.getY()),
+                                   std::max(p_prev.getX(), p0.getX()),
+                                   std::max(p_prev.getY(), p0.getY())));
+          gate_box.merge(odb::Rect(std::min(p1.getX(), p_next.getX()),
+                                   std::min(p1.getY(), p_next.getY()),
+                                   std::max(p1.getX(), p_next.getX()),
+                                   std::max(p1.getY(), p_next.getY())));
+        }
+        if (!gate_box.intersects(touch_box)) {
+          continue;
+        }
+
+        const int len_prev = std::abs(p0.getX() - p_prev.getX())
+                             + std::abs(p0.getY() - p_prev.getY());
+        const int len_curr
+            = std::abs(p1.getX() - p0.getX()) + std::abs(p1.getY() - p0.getY());
+        const int len_next = std::abs(p_next.getX() - p1.getX())
+                             + std::abs(p_next.getY() - p1.getY());
+
+        if (has_adj) {
+          // LEF 5.8 p. 466 Fig. 3-7 (Implant Min Step): vertical middle step
+          // of a 3-row staircase must exceed minStepLength when BOTH adjacent
+          // horizontal edges are <= minAdjLength.
+          if (p0.getX() != p1.getX() || len_curr > min_step) {
+            continue;
+          }
+          const int64_t dx_prev = p0.getX() - p_prev.getX();
+          const int64_t dx_next = p_next.getX() - p1.getX();
+          if (dx_prev * dx_next > 0 && len_prev <= min_adj
+              && len_next <= min_adj
+              && !canExtendStep(
+                  p_prev, p0, p1, p_next, signed_area2, is_hole)) {
+            return false;
+          }
+        } else if (len_curr < min_step
+                   && !canExtendStep(
+                       p_prev, p0, p1, p_next, signed_area2, is_hole)) {
+          return false;
+        }
+      }
+      return true;
+    };
+
+    for (const Component2D& comp : get_comps_2d()) {
+      if (!comp.bbox.intersects(touch_box)) {
+        continue;
+      }
+      for (const BoostPolygon& poly : comp.polys) {
+        const std::vector<odb::Point> outer_pts = extractCleanContour(poly);
+        const bool has_holes = (poly.begin_holes() != poly.end_holes());
+        if (!except_rect || outer_pts.size() != 4 || has_holes) {
+          if (!checkContour(outer_pts, false)) {
+            return false;
+          }
+        }
+        for (auto hit = poly.begin_holes(); hit != poly.end_holes(); ++hit) {
+          if (!checkContour(extractCleanContour(*hit), true)) {
+            return false;
+          }
+        }
+      }
+    }
+    return true;
   }
 
   template <typename GetComps2D>
