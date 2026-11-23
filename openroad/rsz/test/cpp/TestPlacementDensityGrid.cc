@@ -7,6 +7,7 @@
 #include <random>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -29,6 +30,12 @@ using odb::dbOrientType;
 using odb::dbPlacementStatus;
 using odb::dbSite;
 using odb::Rect;
+
+// The block's callback list holds a grid, so it must stay where it is.
+static_assert(!std::is_copy_constructible_v<PlacementDensityGrid>);
+static_assert(!std::is_copy_assignable_v<PlacementDensityGrid>);
+static_assert(!std::is_move_constructible_v<PlacementDensityGrid>);
+static_assert(!std::is_move_assignable_v<PlacementDensityGrid>);
 
 // A core of kRows rows of kRowSites sites, and a master of each kind the
 // heat map tells apart.
@@ -441,7 +448,7 @@ TEST_F(PlacementDensityGridTest, DefaultBinsAreTheRoutersGCells)
   }
 }
 
-TEST_F(PlacementDensityGridTest, TheGCellsFollowTheDie)
+TEST_F(PlacementDensityGridTest, TheGCellsFollowTheDieAndRoutingLayers)
 {
   addRoutingTracks();
   place(cell_, siteX(0), rowY(0));
@@ -457,6 +464,13 @@ TEST_F(PlacementDensityGridTest, TheGCellsFollowTheDie)
   grid.ensureBuilt();
   EXPECT_EQ(grid.getBinRect(0, 0),
             Rect(kCoreLx, kCoreLy, kGCellSize - shift, kGCellSize - shift));
+  expectBinsMatchTheDb(grid);
+
+  // With two routing layers, the gcells are 15 metal2 pitches, though odb
+  // has no callback for the change.
+  block_->setMaxRoutingLayer(2);
+  grid.ensureBuilt();
+  EXPECT_EQ(grid.getBinWidth(), 15 * kTrackPitches[0]);
   expectBinsMatchTheDb(grid);
 }
 
@@ -655,8 +669,8 @@ TEST_F(PlacementDensityGridTest, JournalUndoLeavesNothingBehind)
   expectBinsMatchTheDb(grid);
   odb::dbDatabase::undoEco(block_);
 
-  // Undo restores the buffer's orientation and status without callbacks,
-  // yet nothing of it is left.
+  // Undo restores the buffer's placement status without a callback, yet
+  // nothing of it is left.
   EXPECT_EQ(block_->findInst("buffer"), nullptr);
   expectBinsMatchTheDb(grid);
 }

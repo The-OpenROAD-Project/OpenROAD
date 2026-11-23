@@ -98,6 +98,12 @@ PlacementDensityGrid::PlacementDensityGrid(dbBlock* block,
 
 void PlacementDensityGrid::ensureBuilt()
 {
+  // The router sizes its gcells from the routing layers, and odb has no
+  // callback for a change to them.
+  if (requested_bin_width_ == 0
+      && block_->getMaxRoutingLayer() != max_routing_layer_) {
+    stale_ = true;
+  }
   if (stale_) {
     build();
     stale_ = false;
@@ -225,6 +231,7 @@ Rect PlacementDensityGrid::cellHolding(const Point& point) const
 
 void PlacementDensityGrid::build()
 {
+  max_routing_layer_ = block_->getMaxRoutingLayer();
   die_ = block_->getDieArea();
   core_ = block_->getCoreArea();
   bin_count_x_ = 0;

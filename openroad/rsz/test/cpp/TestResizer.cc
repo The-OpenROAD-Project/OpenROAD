@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
-#include <stdexcept>
+#include <optional>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -1551,33 +1551,39 @@ TEST_F(TestResizer, PlacementDensityTracksPlacedInstances)
   const int site_width = site->getWidth();
   const int row_height = site->getHeight();
 
-  // Ten rows of 100 sites, 19 x 14 microns.
+  // Ten rows of 100 sites, 19 x 14 microns, and tracks on metal2 to metal4,
+  // which the router sizes its gcells from.
+  const auto make_block = [&](odb::dbChip* chip, const char* name) {
+    odb::dbBlock* block = odb::dbBlock::create(chip, name);
+    block->setDieArea(odb::Rect(0, 0, 100 * site_width, 10 * row_height));
+    for (int row = 0; row < 10; row++) {
+      odb::dbRow::create(block,
+                         ("row" + std::to_string(row)).c_str(),
+                         site,
+                         0,
+                         row * row_height,
+                         odb::dbOrientType::R0,
+                         odb::dbRowDir::HORIZONTAL,
+                         100,
+                         site_width);
+    }
+    block->setCoreArea(block->computeCoreArea());
+    for (const char* layer_name : {"metal2", "metal3", "metal4"}) {
+      odb::dbTechLayer* layer = db_->getTech()->findLayer(layer_name);
+      odb::dbTrackGrid* tracks = odb::dbTrackGrid::create(block, layer);
+      tracks->addGridPatternX(0, 100, layer->getPitch());
+      tracks->addGridPatternY(0, 100, layer->getPitch());
+    }
+    return block;
+  };
   odb::dbChip* chip = odb::dbChip::create(db_.get(), db_->getTech());
-  block_ = odb::dbBlock::create(chip, "top");
-  block_->setDieArea(odb::Rect(0, 0, 100 * site_width, 10 * row_height));
-  for (int row = 0; row < 10; row++) {
-    odb::dbRow::create(block_,
-                       ("row" + std::to_string(row)).c_str(),
-                       site,
-                       0,
-                       row * row_height,
-                       odb::dbOrientType::R0,
-                       odb::dbRowDir::HORIZONTAL,
-                       100,
-                       site_width);
-  }
-  block_->setCoreArea(block_->computeCoreArea());
+  block_ = make_block(chip, "top");
   const odb::Rect core = block_->getCoreArea();
 
-  // The bins are the router's gcells, which need the routing layers, and
-  // tracks on metal2 to metal4.
-  EXPECT_THROW(resizer_.placementDensity(core), std::runtime_error);
-  for (const char* name : {"metal2", "metal3", "metal4"}) {
-    odb::dbTechLayer* layer = db_->getTech()->findLayer(name);
-    odb::dbTrackGrid* tracks = odb::dbTrackGrid::create(block_, layer);
-    tracks->addGridPatternX(0, 100, layer->getPitch());
-    tracks->addGridPatternY(0, 100, layer->getPitch());
-  }
+  // The gcells need the routing layers too.  Until they are set, there is
+  // no density, for callers to do without.
+  EXPECT_FALSE(resizer_.placementDensity(core).has_value());
+  EXPECT_EQ(resizer_.placementDensityGrid(), nullptr);
   block_->setMaxRoutingLayer(4);
 
   // A buffer counts and the filler beside it does not.
@@ -1594,22 +1600,55 @@ TEST_F(TestResizer, PlacementDensityTracksPlacedInstances)
   const auto buffer_area
       = static_cast<double>(placed->getBBox()->getBox().area());
 
-  const PlacementDensity density = resizer_.placementDensity(core);
-  EXPECT_EQ(density.region_area, core.area());
-  EXPECT_DOUBLE_EQ(density.instance_area, buffer_area);
+  const std::optional<PlacementDensity> density
+      = resizer_.placementDensity(core);
+  ASSERT_TRUE(density.has_value());
+  EXPECT_EQ(density->region_area, core.area());
+  EXPECT_DOUBLE_EQ(density->instance_area, buffer_area);
+  // The instance area placementDensity() gives at where, which must have a
+  // density.
+  const auto instance_area_at = [&](const auto& where) {
+    const std::optional<PlacementDensity> at = resizer_.placementDensity(where);
+    EXPECT_TRUE(at.has_value());
+    return at.value_or(PlacementDensity{}).instance_area;
+  };
 
   // The grid follows the buffer to the far corner of the core, into the
   // gcell holding it there.
   placed->setLocation(core.xMax() - buffer->getWidth(),
                       core.yMax() - buffer->getHeight());
-  EXPECT_DOUBLE_EQ(
-      resizer_.placementDensity(placed->getLocation()).instance_area,
-      buffer_area);
-  EXPECT_DOUBLE_EQ(resizer_.placementDensity(core).instance_area, buffer_area);
+  EXPECT_DOUBLE_EQ(instance_area_at(placed->getLocation()), buffer_area);
+  EXPECT_DOUBLE_EQ(instance_area_at(core), buffer_area);
   // Its queries are const, for threads to make at once.
-  const PlacementDensityGrid& grid = resizer_.placementDensityGrid();
-  EXPECT_EQ(grid.getBinWidth(), block_->getGCellTileSize());
-  EXPECT_DOUBLE_EQ(grid.getDensity(core).instance_area, buffer_area);
+  const PlacementDensityGrid* grid = resizer_.placementDensityGrid();
+  ASSERT_NE(grid, nullptr);
+  EXPECT_EQ(grid->getBinWidth(), block_->getGCellTileSize());
+  EXPECT_DOUBLE_EQ(grid->getDensity(core).instance_area, buffer_area);
+
+  // The gcells follow the routing layers, though odb has no callback for a
+  // change to them: with three, the metal3 tracks alone size them.
+  const int gcell = block_->getGCellTileSize();
+  block_->setMaxRoutingLayer(3);
+  ASSERT_NE(block_->getGCellTileSize(), gcell);
+  grid = resizer_.placementDensityGrid();
+  ASSERT_NE(grid, nullptr);
+  EXPECT_EQ(grid->getBinWidth(), block_->getGCellTileSize());
+  block_->setMaxRoutingLayer(4);
+
+  // The grid follows the db to another block, though the first one stays.
+  odb::dbChip* other_chip
+      = odb::dbChip::create(db_.get(), db_->getTech(), "other");
+  odb::dbBlock* other = make_block(other_chip, "other");
+  other->setMaxRoutingLayer(4);
+  db_->setTopChip(other_chip);
+  grid = resizer_.placementDensityGrid();
+  ASSERT_NE(grid, nullptr);
+  EXPECT_EQ(grid->getBlock(), other);
+  EXPECT_DOUBLE_EQ(instance_area_at(core), 0);
+  db_->setTopChip(chip);
+  grid = resizer_.placementDensityGrid();
+  ASSERT_NE(grid, nullptr);
+  EXPECT_EQ(grid->getBlock(), block_);
 
   // odb has no callback for a new halo, so the grid sees one only once it is
   // released and built afresh.  The buffer's hard halo, a site wide, then
@@ -1621,9 +1660,11 @@ TEST_F(TestResizer, PlacementDensityTracksPlacedInstances)
                                box.yMin() - site_width,
                                core.xMax(),
                                core.yMax());
-  const PlacementDensity rebuilt = resizer_.placementDensity(core);
-  EXPECT_DOUBLE_EQ(rebuilt.instance_area, buffer_area);
-  EXPECT_DOUBLE_EQ(rebuilt.blocked_area,
+  const std::optional<PlacementDensity> rebuilt
+      = resizer_.placementDensity(core);
+  ASSERT_TRUE(rebuilt.has_value());
+  EXPECT_DOUBLE_EQ(rebuilt->instance_area, buffer_area);
+  EXPECT_DOUBLE_EQ(rebuilt->blocked_area,
                    static_cast<double>(halo_in_core.area() - box.area()));
 }
 

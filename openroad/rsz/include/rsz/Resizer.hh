@@ -221,21 +221,24 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Placement density of region, given in block (DBU) coordinates, counted
   // as the GUI's placement density heat map counts it, and the area in it
   // that no standard cell can use; see PlacementDensityGrid.  The bins are
-  // the global router's gcells, so the density of a gcell is exact; they
-  // need the routing layers set.  The first call builds the grid, which odb
-  // callbacks then keep current, so later calls cost a walk over the bins
-  // the region covers.  The grid, and its upkeep on every instance edit,
-  // stays until releasePlacementDensityGrid().
-  PlacementDensity placementDensity(const odb::Rect& region);
-  // Placement density of the gcell holding point, so exact; see
-  // PlacementDensityGrid.
-  PlacementDensity placementDensity(const odb::Point& point);
-  // The grid that placementDensity() queries, brought up to date.  Its
-  // queries are const and only read, so the threads of a parallel move
-  // scoring can make them at once: get the grid before the scoring, and edit
-  // the db only after it.  The grid lives until releasePlacementDensityGrid()
-  // or a call for another block.
-  const PlacementDensityGrid& placementDensityGrid();
+  // the global router's gcells, so the density of a gcell is exact.  The
+  // gcells are sized from the routing layers, so until they are set, as
+  // set_routing_layers does, there is no density and the call returns
+  // nothing, for the caller to do without.  The first call builds the grid,
+  // which odb callbacks then keep current, so later calls cost a walk over
+  // the bins the region covers.  The grid, and its upkeep on every instance
+  // edit, stays until releasePlacementDensityGrid().
+  std::optional<PlacementDensity> placementDensity(const odb::Rect& region);
+  // Placement density of the gcell holding point, so exact, or nothing
+  // without the routing layers; see PlacementDensityGrid.
+  std::optional<PlacementDensity> placementDensity(const odb::Point& point);
+  // The grid that placementDensity() queries, brought up to date, or null
+  // without the routing layers.  Its queries are const and only read, so
+  // the threads of a parallel move scoring can make them at once: get the
+  // grid before the scoring, and edit the db only after it.  The grid lives
+  // until releasePlacementDensityGrid() or a call once the db holds another
+  // block.
+  const PlacementDensityGrid* placementDensityGrid();
   // Drops the grid placementDensity() builds, which stops its callbacks and
   // frees its memory; the next call builds it afresh.  A pass that queries
   // the density calls this when it is done, so that later steps, such as
@@ -693,9 +696,6 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
  protected:
   void init();
   void initDesignArea();
-  // A placement density grid over the block's gcells.  Errors out when the
-  // routing layers, which size the gcells, are not set.
-  std::unique_ptr<PlacementDensityGrid> makePlacementDensityGrid();
   sta::Instance* bufferInput(const sta::Pin* top_pin,
                              sta::LibertyCell* buffer_cell,
                              bool verbose);

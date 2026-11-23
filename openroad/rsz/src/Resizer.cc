@@ -252,38 +252,42 @@ double Resizer::maxArea() const
   return max_area_;
 }
 
-std::unique_ptr<PlacementDensityGrid> Resizer::makePlacementDensityGrid()
+const PlacementDensityGrid* Resizer::placementDensityGrid()
 {
-  initBlock();
-  // The gcell size follows the routing layers.
-  if (block_->getMaxRoutingLayer() <= 0) {
-    logger_->error(RSZ,
-                   3217,
-                   "Placement density is counted per GCell, which needs the "
-                   "routing layers. Set them with set_routing_layers.");
+  // The block the db holds now, which block_ only follows at initBlock().
+  odb::dbChip* chip = db_->getChip();
+  odb::dbBlock* block = chip != nullptr ? chip->getBlock() : nullptr;
+  // The gcells, the grid's bins, are sized from the routing layers.
+  if (block == nullptr || block->getMaxRoutingLayer() <= 0) {
+    return nullptr;
   }
-  return std::make_unique<PlacementDensityGrid>(block_, logger_);
-}
-
-const PlacementDensityGrid& Resizer::placementDensityGrid()
-{
   // A grid whose block was destroyed has lost its owner.
   if (density_grid_ == nullptr || !density_grid_->hasOwner()
-      || density_grid_->getBlock() != block_) {
-    density_grid_ = makePlacementDensityGrid();
+      || density_grid_->getBlock() != block) {
+    density_grid_ = std::make_unique<PlacementDensityGrid>(block, logger_);
   }
   density_grid_->ensureBuilt();
-  return *density_grid_;
+  return density_grid_.get();
 }
 
-PlacementDensity Resizer::placementDensity(const odb::Rect& region)
+std::optional<PlacementDensity> Resizer::placementDensity(
+    const odb::Rect& region)
 {
-  return placementDensityGrid().getDensity(region);
+  const PlacementDensityGrid* grid = placementDensityGrid();
+  if (grid == nullptr) {
+    return std::nullopt;
+  }
+  return grid->getDensity(region);
 }
 
-PlacementDensity Resizer::placementDensity(const odb::Point& point)
+std::optional<PlacementDensity> Resizer::placementDensity(
+    const odb::Point& point)
 {
-  return placementDensityGrid().getDensity(point);
+  const PlacementDensityGrid* grid = placementDensityGrid();
+  if (grid == nullptr) {
+    return std::nullopt;
+  }
+  return grid->getDensity(point);
 }
 
 void Resizer::releasePlacementDensityGrid()
@@ -308,11 +312,18 @@ void Resizer::reportPlacementDensity(const odb::Rect& region)
                    x2,
                    y2);
   }
+  // The gcells, the grid's bins, are sized from the routing layers.
+  if (block_->getMaxRoutingLayer() <= 0) {
+    logger_->error(RSZ,
+                   3217,
+                   "Placement density is counted per GCell, which needs the "
+                   "routing layers. Set them with set_routing_layers.");
+  }
   // Built for this report alone, so that it counts the db as it stands, and
   // leaves no grid behind for later steps to keep current.
-  const std::unique_ptr<PlacementDensityGrid> grid = makePlacementDensityGrid();
-  grid->ensureBuilt();
-  const PlacementDensity density = grid->getDensity(region);
+  PlacementDensityGrid grid(block_, logger_);
+  grid.ensureBuilt();
+  const PlacementDensity density = grid.getDensity(region);
   if (density.region_area == 0) {
     logger_->report(
         "Region ({:.3f}, {:.3f}) ({:.3f}, {:.3f}) is outside the core.",
@@ -330,8 +341,8 @@ void Resizer::reportPlacementDensity(const odb::Rect& region)
   };
   logger_->report("Region ({:.3f}, {:.3f}) ({:.3f}, {:.3f})", x1, y1, x2, y2);
   logger_->report("  GCell size:           {:.3f} x {:.3f} um",
-                  block_->dbuToMicrons(grid->getBinWidth()),
-                  block_->dbuToMicrons(grid->getBinHeight()));
+                  block_->dbuToMicrons(grid.getBinWidth()),
+                  block_->dbuToMicrons(grid.getBinHeight()));
   logger_->report("  Area inside the core: {:12.3f} um^2",
                   to_um2(static_cast<double>(density.region_area)));
   logger_->report("  Instance area:        {:12.3f} um^2",

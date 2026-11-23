@@ -72,7 +72,7 @@ struct PlacementDensity
 // hard halo, is left out, since it is instance area; so with a legal
 // placement, no area is both.  The blocked area is counted when the grid is
 // built, and an edit to a row, a blockage, a macro or an instance with a
-// hard halo has the next query build the grid afresh.  odb has no callback
+// hard halo has ensureBuilt() build the grid afresh.  odb has no callback
 // for a change to a halo or to a blockage's settings, so the grid does not
 // see one until then.
 //
@@ -84,9 +84,10 @@ struct PlacementDensity
 //
 // The box each instance added is recorded, and an update takes back exactly
 // that rather than what the db holds by then.  So the bins cannot drift,
-// even when an edit reaches the db without a callback (journal undo restores
-// an orientation or a placement status that way): that instance is just out
-// of date until its next callback.
+// even when an edit reaches the db without a callback.  Journal undo
+// restores a placement status that way, and also the placement of a
+// destroyed instance it brings back, if that was at the origin, (0, 0).
+// That instance is just out of date until its next callback.
 //
 // The queries are const and only read, so several threads can make them at
 // once, as when moves are scored in parallel; but not while the db is edited
@@ -99,7 +100,10 @@ class PlacementDensityGrid : public odb::dbBlockCallBackObj
   // left corner of the die.  So the density of a gcell is exact.  The router
   // stretches its last column and row of gcells to the edge of the die, and
   // each of those gcells takes up to two bins, four in the corner.  The tile
-  // size needs the block's routing layers and their tracks.
+  // size needs the block's routing layers and their tracks.  odb has no
+  // callback for a change to either, so ensureBuilt() checks the routing
+  // layers; a change to the tracks goes unseen until the grid next builds
+  // afresh.
   //
   // Making a grid costs nothing until ensureBuilt() builds it.
   PlacementDensityGrid(odb::dbBlock* block, utl::Logger* logger);
@@ -110,11 +114,18 @@ class PlacementDensityGrid : public odb::dbBlockCallBackObj
                        const odb::Point& origin,
                        int bin_width,
                        int bin_height);
+  // The block's callback list holds the grid, so it can be neither copied
+  // nor moved.
+  PlacementDensityGrid(const PlacementDensityGrid&) = delete;
+  PlacementDensityGrid& operator=(const PlacementDensityGrid&) = delete;
+  PlacementDensityGrid(PlacementDensityGrid&&) = delete;
+  PlacementDensityGrid& operator=(PlacementDensityGrid&&) = delete;
 
   odb::dbBlock* getBlock() const { return block_; }
 
-  // Builds the grid if it is out of date: before the first query, and after
-  // an edit that has it build afresh.  Otherwise it costs nothing, so call it
+  // Builds the grid if it is out of date: before the first query, after an
+  // edit that has it build afresh, and, with the router's gcells, after a
+  // change to the routing layers.  Otherwise it costs nothing, so call it
   // after editing the db and before querying.
   void ensureBuilt();
 
@@ -212,6 +223,9 @@ class PlacementDensityGrid : public odb::dbBlockCallBackObj
   // Set until the first build, and by an edit that has the grid build
   // afresh.  ensureBuilt() then builds the bins.
   bool stale_ = true;
+  // The block's max routing layer as of the last build, which the router's
+  // gcells are sized from.
+  int max_routing_layer_ = 0;
 
   // The die, which the router's gcells cover, and the core.
   odb::Rect die_;
