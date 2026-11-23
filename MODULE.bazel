@@ -178,7 +178,7 @@ bazel_dep(name = "spdlog", version = "1.17.0")
 bazel_dep(name = "sv-elab", version = "2026-11-09")
 git_override(
     module_name = "sv-elab",
-    commit = "dd29bd6bbdce24bd1bb8dd9074e72c1c89b3733d",
+    commit = "fc131711d4e88035f5af0a28fa25b6c7fae2380e",
     remote = "https://github.com/povik/sv-elab",
 )
 
