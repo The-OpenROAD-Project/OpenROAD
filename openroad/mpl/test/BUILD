@@ -354,6 +354,23 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "mpl_sa_core_penalties_unittest",
+    srcs = [
+        "cpp/MplTest.h",
+        "cpp/TestSACorePenalties.cpp",
+    ],
+    deps = [
+        "//openroad/mpl:mpl_impl",
+        "//openroad/mpl:pusher",
+        "//openroad/odb/src/db",
+        "//openroad/tst",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 man_tcl_check_test(
     name = "mpl_man_tcl_check",
     module = "mpl",
