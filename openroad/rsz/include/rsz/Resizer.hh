@@ -640,7 +640,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void getBufferList(sta::LibertyCellSeq& buffer_list);
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
-  static std::vector<MoveType> parseMoveSequence(const std::string& sequence);
+  // Space- or comma-separated move names; an unknown name is error RSZ-3282.
+  std::vector<MoveType> parseMoveSequence(const std::string& sequence) const;
   // "low", "medium" or "high"; anything else is error RSZ-3242.
   RepairEffort repairEffortFromString(const std::string& effort) const;
   void fullyRebuffer(sta::Pin* pin);
@@ -709,7 +710,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void findBuffers();
   void findBuffersNoPruning();
   void findFastBuffers();
-  static MoveType moveTypeFromString(const std::string& str);
+  MoveType moveTypeFromString(const std::string& str) const;
   sta::LibertyCell* selectBufferCell(sta::LibertyCell* buffer_cell = nullptr);
   void findTargetLoads();
   void balanceBin(const std::vector<odb::dbInst*>& bin,

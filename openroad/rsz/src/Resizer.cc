@@ -21,7 +21,6 @@
 #include <ranges>
 #include <set>
 #include <sstream>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <tuple>
@@ -7737,7 +7736,7 @@ void Resizer::setDebugGraphics(std::shared_ptr<ResizerObserver> graphics)
   graphics_ = std::move(graphics);
 }
 
-MoveType Resizer::moveTypeFromString(const std::string& s)
+MoveType Resizer::moveTypeFromString(const std::string& s) const
 {
   std::string lower = s;
   std::ranges::transform(lower, lower.begin(), ::tolower);
@@ -7775,10 +7774,12 @@ MoveType Resizer::moveTypeFromString(const std::string& s)
   if (lower == "buffer_to_inverters") {
     return MoveType::kBufferToInverters;
   }
-  throw std::invalid_argument("Invalid move type: " + s);
+  // The Tcl and Python commands both parse -sequence here.
+  logger_->error(RSZ, 3282, "-sequence: Invalid move type: {}.", s);
 }
 
-std::vector<MoveType> Resizer::parseMoveSequence(const std::string& sequence)
+std::vector<MoveType> Resizer::parseMoveSequence(
+    const std::string& sequence) const
 {
   std::vector<MoveType> result;
   // Replace commas with spaces to support both separators
