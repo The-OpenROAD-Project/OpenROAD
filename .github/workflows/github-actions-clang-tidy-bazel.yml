@@ -37,16 +37,19 @@ jobs:
 
       - name: Run bazel clang-tidy
         env:
-          BAZEL_CACHE_PASSWORD: ${{ secrets.BAZEL_CACHE_PASSWORD }}
+          BAZEL_CACHE_LOGIN: ${{ secrets.BAZEL_CACHE_LOGIN }}
         run: |
-          # Same auth pattern as github-actions-macos-bazel.yml: when the
-          # cache secret is present (push / dispatch / private repo PR),
-          # add authed gRPC + Remote Asset API on top of the .bazelrc anon
-          # HTTPS read-only cache. Fork PRs have no secret and just read
-          # the anon cache.
+          # Same auth pattern as github-actions-macos-bazel.yml: when
+          # BAZEL_CACHE_LOGIN is set (a PR from a branch of this repo), add
+          # authed gRPC + Remote Asset API on top of the .bazelrc anon
+          # HTTPS read-only cache. Fork PRs of the public repo have no
+          # secret and just read the anon cache.
+          # BAZEL_CACHE_LOGIN is "user:password"; the cache accepts two
+          # write users so the login can rotate without a 401 window.
+          LOGIN="${BAZEL_CACHE_LOGIN}"
           REMOTE_FLAGS=()
-          if [ -n "${BAZEL_CACHE_PASSWORD}" ]; then
-            TOKEN_B64=$(printf 'ci:%s' "${BAZEL_CACHE_PASSWORD}" | base64 | tr -d '\n')
+          if [ -n "${LOGIN}" ]; then
+            TOKEN_B64=$(printf '%s' "${LOGIN}" | base64 | tr -d '\n')
             echo "::add-mask::${TOKEN_B64}"
             REMOTE_FLAGS=(
               --remote_cache=grpcs://bazel.precisioninno.com:443

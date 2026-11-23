@@ -40,7 +40,7 @@
 #include "defiDefs.hpp"
 #include "defiKRDefs.hpp"
 #include "defrReader.hpp"
-#include "zlib.h"
+#include "zlib/include/zlib.h"
 
 BEGIN_DEF_PARSER_NAMESPACE
 
