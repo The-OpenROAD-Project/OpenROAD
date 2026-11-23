@@ -150,7 +150,7 @@ void Replace::checkPlaceIosSupported(const PlaceOptions& options)
                 174,
                 "-place_ios: pin layers are not set. Set both "
                 "-io_pin_hor_layers and -io_pin_ver_layers with "
-                "set_place_config.");
+                "set_placer_config.");
   }
 }
 
@@ -257,13 +257,9 @@ PlaceResult Replace::doIncrementalPlace(const int threads,
     pb->unlockAll();
   }
 
-  // Phase 1 may have run out of its iteration budget short of the real
-  // target even without diverging, so check the actual overflow reached
-  // rather than trusting the target alone.
-  const bool phase1_missed_target
-      = !phase1_diverged && np_->getAverageOverflow() > options.overflow;
-
-  if (phase1_diverged || phase1_missed_target) {
+  // Phase 1 may also have run out of its iteration budget, or stopped on a
+  // reverted snapshot, with a region still over target.
+  if (result.stop != PlaceStop::kConverged) {
     // Enable phase 2's density-penalty controller to ramp the penalty up in
     // place whenever overflow regresses, instead of backing off.
     np_->enableIncrementalDensityPenaltyGuard();

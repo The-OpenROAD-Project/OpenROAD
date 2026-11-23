@@ -17,12 +17,12 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -9.020 |     -341.5 |     48 | capture_66/D
-     180* |      40 |      59 |        9 |      3 |     9 |    +4.0% |   -6.234 |     -225.5 |     48 | capture_66/D
-    final |      40 |      59 |        9 |      3 |     9 |    +4.0% |   -6.234 |     -225.5 |     45 | capture_66/D
+     192* |      26 |      58 |        8 |      3 |     9 |    +4.7% |   -6.215 |     -227.2 |     48 | capture_66/D
+    final |      26 |      58 |        8 |      3 |     9 |    +4.7% |   -6.215 |     -227.2 |     45 | capture_66/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 40 buffers.
-[INFO RSZ-0040] Inserted 9 buffers.
-[INFO RSZ-0051] Resized 59 instances: 59 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0059] Removed 26 buffers.
+[INFO RSZ-0040] Inserted 8 buffers.
+[INFO RSZ-0051] Resized 58 instances: 58 up, 0 up match, 0 down, 0 VT
 [INFO RSZ-0043] Swapped pins on 9 instances.
 [INFO RSZ-0049] Cloned 3 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
@@ -87,12 +87,12 @@ Path Type: max
    0.4459    9.3596 ^ inst21/ZN (gf180mcu_fd_sc_mcu9t5v0__aoi221_4)
    0.6520   10.0116 v inst22/ZN (gf180mcu_fd_sc_mcu9t5v0__xnor2_2)
    0.5416   10.5532 ^ inst23/ZN (gf180mcu_fd_sc_mcu9t5v0__aoi222_4)
-   0.4732   11.0264 ^ inst24/Z (gf180mcu_fd_sc_mcu9t5v0__and4_4)
-   0.3437   11.3701 v inst25/ZN (gf180mcu_fd_sc_mcu9t5v0__aoi211_4)
-   0.4283   11.7984 v rebuffer2/Z (gf180mcu_fd_sc_mcu9t5v0__buf_12)
-   0.6955   12.4939 v inst25_neighbor27/Z (gf180mcu_fd_sc_mcu9t5v0__mux2_4)
-   0.0000   12.4939 v capture_66/D (gf180mcu_fd_sc_mcu9t5v0__dffq_2)
-            12.4939   data arrival time
+   0.4499   11.0031 ^ inst24/Z (gf180mcu_fd_sc_mcu9t5v0__and4_4)
+   0.3457   11.3488 v inst25/ZN (gf180mcu_fd_sc_mcu9t5v0__aoi211_4)
+   0.4307   11.7795 v rebuffer2/Z (gf180mcu_fd_sc_mcu9t5v0__buf_12)
+   0.6955   12.4750 v inst25_neighbor27/Z (gf180mcu_fd_sc_mcu9t5v0__mux2_4)
+   0.0000   12.4751 v capture_66/D (gf180mcu_fd_sc_mcu9t5v0__dffq_2)
+            12.4751   data arrival time
 
    6.5000    6.5000   clock core_clock (rise edge)
    0.0000    6.5000   clock network delay (ideal)
@@ -102,8 +102,8 @@ Path Type: max
              6.2604   data required time
 -------------------------------------------------------------
              6.2604   data required time
-           -12.4939   data arrival time
+           -12.4751   data arrival time
 -------------------------------------------------------------
-            -6.2336   slack (VIOLATED)
+            -6.2147   slack (VIOLATED)
 
 

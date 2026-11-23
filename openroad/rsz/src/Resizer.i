@@ -43,6 +43,7 @@ using ord::getResizer;
 using ord::ensureLinked;
 
 using sta::Scene;
+using sta::StringSeq;
 using sta::LibertyCellSeq;
 using sta::LibertyCell;
 using sta::Instance;
@@ -638,6 +639,26 @@ void report_buffers_cmd(bool filtered)
   ensureLinked();
   Resizer* resizer = getResizer();
   resizer->reportBuffers(filtered);
+}
+
+void report_vt_usage_cmd(const char* modinst_name,
+                         StringSeq vt_order,
+                         bool activity_weighted,
+                         bool verbose)
+{
+  ensureLinked();
+  odb::dbBlock* block
+      = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
+  odb::dbModule* module = block->getTopModule();
+  if (modinst_name[0] != '\0') {
+    odb::dbModInst* modinst = block->findModInst(modinst_name);
+    if (modinst == nullptr) {
+      ord::getLogger()->error(
+          utl::RSZ, 3280, "Unable to find module instance {}.", modinst_name);
+    }
+    module = modinst->getMaster();
+  }
+  getResizer()->reportVTUsage(module, vt_order, activity_weighted, verbose);
 }
 
 void report_delay_estimator_accuracy_cmd(Instance* inst,

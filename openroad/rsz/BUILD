@@ -216,6 +216,7 @@ cc_library(
         "@boost.container_hash",
         "@boost.multi_array",
         "@boost.polygon",
+        "@fmt",
         "@or-tools//ortools/linear_solver",
         "@or-tools//ortools/linear_solver:linear_solver_base",
         "@spdlog",
