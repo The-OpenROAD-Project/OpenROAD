@@ -448,6 +448,13 @@ link_design_db_cmd(const char *design_name,
 }
 
 void
+link_module_db_cmd(const char *module_name)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->linkModule(module_name);
+}
+
+void
 ensure_linked()
 {
   return ensureLinked();

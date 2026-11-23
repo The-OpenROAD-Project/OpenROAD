@@ -1,4 +1,4 @@
-load("@rules_python//python:defs.bzl", "py_test")
+load("//bazel:man_tcl_checker.bzl", "man_tcl_check_test")
 
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
@@ -9,6 +9,7 @@ package(features = ["layering_check"])
 ALL_TESTS = [
     "supported",
     "clocktree_virtual_clock",
+    "display_controls_parity",
     "dump_heatmap_headless",
     "no_window",
     "save_animated_gif_headless",
@@ -16,8 +17,18 @@ ALL_TESTS = [
     "select_name_patterns",
 ]
 
+# Exercise the Qt gui, so they need it built in.
+QT_TESTS = [
+    "clocktree_virtual_clock",
+    "display_controls_parity",
+    "save_animated_gif_headless",
+    "save_image_headless",
+    "select_name_patterns",
+]
+
 PASSFAIL_TESTS = [
     "clocktree_virtual_clock",
+    "display_controls_parity",
     "dump_heatmap_headless",
     "no_window",
     "save_animated_gif_headless",
@@ -49,20 +60,15 @@ filegroup(
         check_log = False if test_name in PASSFAIL_TESTS else True,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":test_resources"],
+        openroad = "//:openroad-qt" if test_name in QT_TESTS else "//:openroad",
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
 ]
 
-py_test(
+man_tcl_check_test(
     name = "gui_man_tcl_check",
-    srcs = ["gui_man_tcl_check.py"],
-    data = ["//openroad/gui:doc_files"],
-    tags = [
-        "doc_check",
-        "py",
-    ],
-    deps = ["//docs/src/scripts:extract_utils"],
+    module = "gui",
 )
 
 doc_check_test(

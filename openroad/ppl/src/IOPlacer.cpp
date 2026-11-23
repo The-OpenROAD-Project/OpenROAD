@@ -104,22 +104,22 @@ PinPlacementSettings IOPlacer::getSettings() const
       }
     }
   };
-  read_layers("place_config_io_pin_hor_layers", settings.hor_layers);
-  read_layers("place_config_io_pin_ver_layers", settings.ver_layers);
+  read_layers("placer_config_io_pin_hor_layers", settings.hor_layers);
+  read_layers("placer_config_io_pin_ver_layers", settings.ver_layers);
   if (auto prop = odb::dbIntProperty::find(
-          block, "place_config_io_pin_corner_avoidance")) {
+          block, "placer_config_io_pin_corner_avoidance")) {
     settings.corner_avoidance = prop->getValue();
   }
   if (auto prop
-      = odb::dbIntProperty::find(block, "place_config_io_pin_min_distance")) {
+      = odb::dbIntProperty::find(block, "placer_config_io_pin_min_distance")) {
     settings.min_distance = prop->getValue();
   }
   if (auto prop = odb::dbBoolProperty::find(
-          block, "place_config_io_pin_min_distance_in_tracks")) {
+          block, "placer_config_io_pin_min_distance_in_tracks")) {
     settings.min_distance_in_tracks = prop->getValue();
   }
   if (auto prop = odb::dbStringProperty::find(
-          block, "place_config_io_pin_layer_min_distance")) {
+          block, "placer_config_io_pin_layer_min_distance")) {
     std::istringstream values(prop->getValue());
     std::string layer_name;
     int min_dist;
@@ -131,13 +131,13 @@ PinPlacementSettings IOPlacer::getSettings() const
     }
   }
   if (auto prop = odb::dbBoolProperty::find(
-          block, "place_config_io_pin_layer_min_distance_in_tracks")) {
+          block, "placer_config_io_pin_layer_min_distance_in_tracks")) {
     settings.layer_min_distance_in_tracks = prop->getValue();
   }
   return settings;
 }
 
-// Fill the working values the caller did not set from set_place_config.
+// Fill the working values the caller did not set from set_placer_config.
 void IOPlacer::applySettings()
 {
   const PinPlacementSettings settings = getSettings();
