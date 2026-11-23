@@ -123,8 +123,8 @@ class NesterovDeviceContext
   // metric); otherwise it is 0.
   struct DensityIterResult
   {
+    float overflow_area_binormal = 0;
     float overflow_area = 0;
-    float overflow_area_unscaled = 0;
     float sum_phi = 0;
   };
 
@@ -147,7 +147,7 @@ class NesterovDeviceContext
   // corresponds to these coords). updateGradients gathers from it.
   SlpSlot lastDensitySlot() const { return last_density_slot_; }
 
-  // Re-upload per-cell density params (dDx/2, dDy/2, densitySmoothing, kind)
+  // Re-upload per-cell density params (dDx/2, dDy/2, smoothingScale, kind)
   // after updateDensitySize / routability inflation changed them.
   void refreshCellDensityParams(const std::vector<GCellHandle>& nb_gcells);
 

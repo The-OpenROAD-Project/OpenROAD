@@ -120,7 +120,6 @@ class GCell
   int dDy() const;
 
   void setCenterLocation(int cx, int cy);
-  // void setLocation(int x, int y);
   void setSize(int dx, int dy, GCellChange change = GCellChange::kNone);
   int64_t getInflationArea() const;
   void setAreaChangeType(GCellChange change) { change_ = change; }
@@ -131,17 +130,17 @@ class GCell
   void setDensityCenterLocation(int dCx, int dCy);
   void setDensitySize(int dDx, int dDy);
 
-  void setDensitySmoothing(float densitySmoothing);
+  void setSmoothingScale(float smoothing_scale);
   void setGradientX(float gradientX);
   void setGradientY(float gradientY);
 
   float getGradientX() const { return gradientX_; }
   float getGradientY() const { return gradientY_; }
-  float getDensitySmoothing() const { return densitySmoothing_; }
+  float getSmoothingScale() const { return smoothing_scale_; }
 
   bool isInstance() const;
   bool isFiller() const;
-  bool isMacroInstance() const;
+  bool isLargeInstance() const;
   bool isStdInstance() const;
   bool contains(odb::dbInst* db_inst) const;
 
@@ -161,7 +160,7 @@ class GCell
   int dUx_ = 0;
   int dUy_ = 0;
 
-  float densitySmoothing_ = 0;
+  float smoothing_scale_ = 0;
   float gradientX_ = 0;
   float gradientY_ = 0;
 
@@ -580,29 +579,20 @@ class Bin
   void setElectroField(float electroFieldX, float electroFieldY);
   void setElectroPhi(float phi);
 
+  void setNonPlaceAreaBinormal(int64_t area);
   void setNonPlaceArea(int64_t area);
   void setInstPlacedArea(int64_t area);
   void setFillerArea(int64_t area);
 
-  void setNonPlaceAreaUnscaled(int64_t area);
-  void setInstPlacedAreaUnscaled(int64_t area);
-
-  void addNonPlaceArea(int64_t area);
-  void addInstPlacedArea(int64_t area);
-  void addFillerArea(int64_t area);
+  void addNonPlaceAreaBinormal(int64_t area);
+  void atomicAddInstPlacedArea(int64_t area);
   void atomicAddFillerArea(int64_t area);
 
-  void addNonPlaceAreaUnscaled(int64_t area);
-  void addInstPlacedAreaUnscaled(int64_t area);
-  void atomicAddInstPlacedAreaUnscaled(int64_t area);
-
   int64_t getBinArea() const;
-  int64_t getNonPlaceAreaBinormal() const { return nonPlaceArea_; }
-  int64_t instPlacedAreaBinormal() const { return instPlacedArea_; }
-  int64_t getNonPlaceArea() const { return nonPlaceAreaUnscaled_; }
-  int64_t getInstPlacedArea() const { return instPlacedAreaUnscaled_; }
-
-  int64_t getFillerArea() const { return fillerArea_; }
+  int64_t getNonPlaceAreaBinormal() const { return non_place_area_binormal_; }
+  int64_t getNonPlaceArea() const { return non_place_area_; }
+  int64_t getInstPlacedArea() const { return inst_placed_area_; }
+  int64_t getFillerArea() const { return filler_area_; }
 
  private:
   // index
@@ -615,12 +605,10 @@ class Bin
   int ux_ = 0;
   int uy_ = 0;
 
-  int64_t nonPlaceArea_ = 0;
-  int64_t instPlacedArea_ = 0;
-
-  int64_t instPlacedAreaUnscaled_ = 0;
-  int64_t nonPlaceAreaUnscaled_ = 0;
-  int64_t fillerArea_ = 0;
+  int64_t non_place_area_binormal_ = 0;
+  int64_t non_place_area_ = 0;
+  int64_t inst_placed_area_ = 0;
+  int64_t filler_area_ = 0;
 
   float density_ = 0;
   float targetDensity_ = 0;  // will enable bin-wise density screening
@@ -649,54 +637,29 @@ inline int Bin::dy() const
   return (uy_ - ly_);
 }
 
-inline void Bin::setNonPlaceArea(int64_t area)
+inline void Bin::setNonPlaceAreaBinormal(int64_t area)
 {
-  nonPlaceArea_ = area;
+  non_place_area_binormal_ = area;
 }
 
-inline void Bin::setNonPlaceAreaUnscaled(int64_t area)
+inline void Bin::setNonPlaceArea(int64_t area)
 {
-  nonPlaceAreaUnscaled_ = area;
+  non_place_area_ = area;
 }
 
 inline void Bin::setInstPlacedArea(int64_t area)
 {
-  instPlacedArea_ = area;
-}
-
-inline void Bin::setInstPlacedAreaUnscaled(int64_t area)
-{
-  instPlacedAreaUnscaled_ = area;
+  inst_placed_area_ = area;
 }
 
 inline void Bin::setFillerArea(int64_t area)
 {
-  fillerArea_ = area;
+  filler_area_ = area;
 }
 
-inline void Bin::addNonPlaceArea(int64_t area)
+inline void Bin::addNonPlaceAreaBinormal(int64_t area)
 {
-  nonPlaceArea_ += area;
-}
-
-inline void Bin::addInstPlacedArea(int64_t area)
-{
-  instPlacedArea_ += area;
-}
-
-inline void Bin::addNonPlaceAreaUnscaled(int64_t area)
-{
-  nonPlaceAreaUnscaled_ += area;
-}
-
-inline void Bin::addInstPlacedAreaUnscaled(int64_t area)
-{
-  instPlacedAreaUnscaled_ += area;
-}
-
-inline void Bin::addFillerArea(int64_t area)
-{
-  fillerArea_ += area;
+  non_place_area_binormal_ += area;
 }
 
 // For the threaded density scatter. The accumulators are integers and each
@@ -704,18 +667,17 @@ inline void Bin::addFillerArea(int64_t area)
 // of integers -- associative and commutative, hence independent of the order
 // threads reach it. Relaxed suffices: we need atomicity, not ordering, and the
 // result is consumed only after the parallel region's implicit barrier.
-// atomic_ref rather than an atomic member so the field stays a plain int64_t:
-// Bin remains trivially copyable for its vector, and the serial path keeps its
-// non-atomic add.
-inline void Bin::atomicAddInstPlacedAreaUnscaled(int64_t area)
+// atomic_ref rather than an atomic member so the field stays a plain int64_t
+// and Bin remains trivially copyable for its vector.
+inline void Bin::atomicAddInstPlacedArea(int64_t area)
 {
-  std::atomic_ref<int64_t> ref(instPlacedAreaUnscaled_);
+  std::atomic_ref<int64_t> ref(inst_placed_area_);
   ref.fetch_add(area, std::memory_order_relaxed);
 }
 
 inline void Bin::atomicAddFillerArea(int64_t area)
 {
-  std::atomic_ref<int64_t> ref(fillerArea_);
+  std::atomic_ref<int64_t> ref(filler_area_);
   ref.fetch_add(area, std::memory_order_relaxed);
 }
 
@@ -757,16 +719,16 @@ class BinGrid
   double getBinSizeX() const;
   double getBinSizeY() const;
 
+  int64_t getOverflowAreaBinormal() const;
   int64_t getOverflowArea() const;
-  int64_t getOverflowAreaUnscaled() const;
 
   // GPU device-resident density path: the per-iteration scatter runs on
   // device, so the host bins are not updated; the device-reduced overflow
   // sums are stored here for the updateNextIter consumers.
-  void setOverflowAreas(int64_t overflow_area, int64_t overflow_area_unscaled)
+  void setOverflowAreas(int64_t overflow_area_binormal, int64_t overflow_area)
   {
-    sum_overflow_area_binormal_ = overflow_area;
-    sum_overflow_area_ = overflow_area_unscaled;
+    sum_overflow_area_binormal_ = overflow_area_binormal;
+    sum_overflow_area_ = overflow_area;
   }
 
   // return bins_ index with given gcell
@@ -1095,13 +1057,13 @@ class NesterovBase
     return new_instances_;
   }
 
+  float getSumOverflowBinormal() const { return sum_overflow_binormal_; }
   float getSumOverflow() const { return sum_overflow_; }
-  float getSumOverflowUnscaled() const { return sum_overflow_unscaled_; }
-  // Unscaled overflow of the placement the bins hold now, normalized as
-  // updateNextIter(iter) normalizes it.  Unlike getSumOverflowUnscaled(),
+  // Overflow of the placement the bins hold now, normalized as
+  // updateNextIter(iter) normalizes it.  Unlike getSumOverflow(),
   // this reflects a revert to the snapshot or a change in cell sizes since
   // the last update.
-  float getCurrentSumOverflowUnscaled(int iter) const;
+  float getCurrentSumOverflow(int iter) const;
   float getBaseWireLengthCoef() const { return baseWireLengthCoef_; }
   float getDensityPenalty() const { return densityPenalty_; }
   // HPWL that the last updateNextIter() measured.  A converged region skips
@@ -1124,8 +1086,8 @@ class NesterovBase
   int getBinCntY() const;
   double getBinSizeX() const;
   double getBinSizeY() const;
+  int64_t getOverflowAreaBinormal() const;
   int64_t getOverflowArea() const;
-  int64_t getOverflowAreaUnscaled() const;
 
   std::vector<Bin>& getBins();
   const std::vector<Bin>& getBinsConst() const { return bg_.getBinsConst(); };
@@ -1157,8 +1119,8 @@ class NesterovBase
   // This is mainly used for NesterovLoop
   int64_t getNesterovInstsArea() const;
   int64_t getInflationArea() const;
-  int64_t getStdInstArea() const { return this->stdInstsArea_; }
-  int64_t getLargeInstArea() const { return this->large_insts_area_; }
+  int64_t getStdInstArea() const { return std_insts_area_; }
+  int64_t getLargeInstArea() const { return large_insts_area_; }
 
   // sum phi and target density
   // used in NesterovPlace
@@ -1190,9 +1152,6 @@ class NesterovBase
 
   float getDensityCoordiLayoutInsideX(const GCell* gCell, float cx) const;
   float getDensityCoordiLayoutInsideY(const GCell* gCell, float cy) const;
-
-  // FloatPoint getRegionGradient(const GCell* gCell, FloatPoint nextLocation)
-  // const;
 
   // for preconditioner
   FloatPoint getDensityPreconditioner(const GCell* gCell) const;
@@ -1413,7 +1372,7 @@ class NesterovBase
   int64_t totalFillerArea_ = 0;
   int64_t initial_filler_area_ = 0;
 
-  int64_t stdInstsArea_ = 0;
+  int64_t std_insts_area_ = 0;
   int64_t large_insts_area_ = 0;
 
   std::vector<GCell> fillerStor_;
@@ -1529,9 +1488,9 @@ class NesterovBase
   float baseWireLengthCoef_ = 0;
 
   // phi is described in ePlace paper.
+  float sum_overflow_binormal_ = 0;
   float sum_overflow_ = 0;
-  float sum_overflow_unscaled_ = 0;
-  float prev_reported_overflow_unscaled_ = 0;
+  float prev_reported_overflow_ = 0;
 
   // half-parameter-wire-length
   int64_t prev_hpwl_ = 0;

@@ -182,12 +182,12 @@ void NesterovPlace::npUpdateNextGradient(
 void NesterovPlace::init()
 {
   // foreach nesterovbase call init
-  total_sum_overflow_ = 0;
+  total_sum_overflow_binormal_ = 0;
   float totalBaseWireLengthCoeff = 0;
   for (auto& nb : nbVec_) {
     nb->setNpVars(&npVars_);
     nb->initDensity1();
-    total_sum_overflow_ += nb->getSumOverflow();
+    total_sum_overflow_binormal_ += nb->getSumOverflowBinormal();
     totalBaseWireLengthCoeff += nb->getBaseWireLengthCoef();
   }
 
@@ -200,7 +200,7 @@ void NesterovPlace::init()
   auto& hpwl_gauge = hpwl_gauge_family.Add({});
   hpwl_gauge_ = &hpwl_gauge;
 
-  average_overflow_binormal_ = total_sum_overflow_ / nbVec_.size();
+  average_overflow_binormal_ = total_sum_overflow_binormal_ / nbVec_.size();
   baseWireLengthCoef_ = totalBaseWireLengthCoeff / nbVec_.size();
   updateWireLengthCoef(average_overflow_binormal_);
 
@@ -623,8 +623,7 @@ void NesterovPlace::runTimingDriven(int iter,
       int64_t hpwl = nbc_->getHpwl();
       if (average_overflow_ <= 0.25) {
         min_hpwl_ = hpwl;
-        diverge_snapshot_average_overflow_
-            = average_overflow_;
+        diverge_snapshot_average_overflow_ = average_overflow_;
         diverge_snapshot_iter_ = iter + 1;
         is_min_hpwl_ = true;
       } else {
@@ -1525,8 +1524,7 @@ PlaceResult NesterovPlace::doNesterovPlace(int start_iter)
   if (nesterov_iter >= npVars_.maxNesterovIter
       && !npVars_.disableRevertIfDiverge
       && (is_diverge_snapshot_saved_ || diverge_revert_count_ > 0)
-      && diverge_snapshot_average_overflow_
-             <= average_overflow_
+      && diverge_snapshot_average_overflow_ <= average_overflow_
       && diverge_snapshot_hpwl_ < nbc_->getHpwl()) {
     log_->warn(GPL,
                121,
@@ -1607,8 +1605,8 @@ void NesterovPlace::updateWireLengthCoef(float overflow)
 
 void NesterovPlace::updateNextIter(int iter)
 {
+  total_sum_overflow_binormal_ = 0;
   total_sum_overflow_ = 0;
-  total_sum_overflow_unscaled_ = 0;
 
   // The penalty before this update is the one the iteration table reports.
   const float density_penalty = nbVec_[0]->getDensityPenalty();
@@ -1622,12 +1620,12 @@ void NesterovPlace::updateNextIter(int iter)
     if (updates) {
       updated_hpwl = nb->getIterHpwl();
     }
+    total_sum_overflow_binormal_ += nb->getSumOverflowBinormal();
     total_sum_overflow_ += nb->getSumOverflow();
-    total_sum_overflow_unscaled_ += nb->getSumOverflowUnscaled();
   }
 
-  average_overflow_binormal_ = total_sum_overflow_ / nbVec_.size();
-  average_overflow_ = total_sum_overflow_unscaled_ / nbVec_.size();
+  average_overflow_binormal_ = total_sum_overflow_binormal_ / nbVec_.size();
+  average_overflow_ = total_sum_overflow_ / nbVec_.size();
 
   // For coefficient, using average regions' overflow
   updateWireLengthCoef(average_overflow_binormal_);
@@ -1664,7 +1662,7 @@ float NesterovPlace::getFinalOverflow() const
   // revert left alone because they had converged.
   float sum = 0;
   for (const auto& nb : nbVec_) {
-    sum += nb->getCurrentSumOverflowUnscaled(last_overflow_iter_);
+    sum += nb->getCurrentSumOverflow(last_overflow_iter_);
   }
   return sum / nbVec_.size();
 }

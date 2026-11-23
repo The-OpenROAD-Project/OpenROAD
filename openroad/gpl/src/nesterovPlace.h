@@ -133,7 +133,7 @@ class NesterovPlace
   };
   DivergeAction isDiverged(float& curA);
   void revertToDivergeSnapshot();
-  // Unscaled overflow of the current placement, averaged over the regions.
+  // Overflow of the current placement, averaged over the regions.
   float getFinalOverflow() const;
   void routabilitySnapshot(int iter,
                            float curA,
@@ -193,8 +193,8 @@ class NesterovPlace
   NesterovPlaceVars npVars_;
   std::unique_ptr<AbstractGraphics> graphics_;
 
+  float total_sum_overflow_binormal_ = 0;
   float total_sum_overflow_ = 0;
-  float total_sum_overflow_unscaled_ = 0;
   // The average here is between regions (NB objects)
   float average_overflow_binormal_ = 0;
   float average_overflow_ = 0;

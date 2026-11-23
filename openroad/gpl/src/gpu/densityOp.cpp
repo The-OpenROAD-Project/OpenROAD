@@ -5,7 +5,7 @@
 //
 // K_density_gather: per-inst, find overlapping bins via density half-sizes,
 // compute clipped rectangle overlap area, accumulate overlap × E_field ×
-// density_scale. The solver→gpl axis swap + 0.5× field scale come from the
+// smoothing_scale. The solver→gpl axis swap + 0.5× field scale come from the
 // shared adapter in poissonSolver.h (same constant used by the host unpack
 // in GpuFftBackend::solve).
 
@@ -67,7 +67,7 @@ void launchDensityGather(KokkosDeviceState& ds,
   auto d_inst_cy = ds.d_inst_cy;
   auto d_inst_density_half_dx = ds.d_inst_density_half_dx;
   auto d_inst_density_half_dy = ds.d_inst_density_half_dy;
-  auto d_inst_density_scale = ds.d_inst_density_scale;
+  auto d_inst_smoothing_scale = ds.d_inst_smoothing_scale;
   auto d_bin_elec_x = rdf.d_bin_elec_x;
   auto d_bin_elec_y = rdf.d_bin_elec_y;
   auto d_inst_density_grad_x = ds.d_inst_density_grad_x;
@@ -90,7 +90,7 @@ void launchDensityGather(KokkosDeviceState& ds,
         const int cy = d_inst_cy(i);
         const int half_dx = d_inst_density_half_dx(i);
         const int half_dy = d_inst_density_half_dy(i);
-        const float scale = d_inst_density_scale(i);
+        const float scale = d_inst_smoothing_scale(i);
 
         const int d_lx = cx - half_dx;
         const int d_ly = cy - half_dy;
@@ -160,15 +160,15 @@ void launchNbDensityScatter(KokkosNesterovState& ns,
                             KokkosRegionDensityField& rdf,
                             int n_cells,
                             SlpSlot src,
-                            float& overflow_area,
-                            float& overflow_area_unscaled)
+                            float& overflow_area_binormal,
+                            float& overflow_area)
 {
   const int bcx = ns.bin_cnt_x;
   const int bcy = ns.bin_cnt_y;
   const int nbins = bcx * bcy;
   if (n_cells == 0 || nbins == 0) {
+    overflow_area_binormal = 0;
     overflow_area = 0;
-    overflow_area_unscaled = 0;
     return;
   }
 
@@ -182,7 +182,7 @@ void launchNbDensityScatter(KokkosNesterovState& ns,
   auto src_y = coords.y;
   auto d_half_ddx = ns.d_half_ddx;
   auto d_half_ddy = ns.d_half_ddy;
-  auto d_density_scale = ns.d_density_scale;
+  auto d_smoothing_scale = ns.d_smoothing_scale;
   auto d_cell_kind = ns.d_cell_kind;
   auto d_bin_lx = ns.d_bin_lx;
   auto d_bin_ly = ns.d_bin_ly;
@@ -199,7 +199,7 @@ void launchNbDensityScatter(KokkosNesterovState& ns,
   // BinGrid::getDensityMinMaxIdxX/Y in double, the overlap is exact int
   // clipping against the uploaded lround()-derived bin bounds, and each
   // contribution is truncated to int64 before the atomic add — the same
-  // float→int64_t conversion Bin::add*Area performs, so the totals match
+  // float→int64_t conversion Bin::atomicAdd*Area performs, so the totals match
   // the serial CPU loop bit-for-bit for identical coords.
   Kokkos::parallel_for(
       "densop_nb_scatter",
@@ -226,7 +226,7 @@ void launchNbDensityScatter(KokkosNesterovState& ns,
         max_bx = max_bx > bcx ? bcx : max_bx;
         max_by = max_by > bcy ? bcy : max_by;
 
-        const float scale = d_density_scale(i);
+        const float scale = d_smoothing_scale(i);
         for (int bxi = min_bx; bxi < max_bx; ++bxi) {
           for (int byi = min_by; byi < max_by; ++byi) {
             const int bi = bxi * bcy + byi;  // FFT layout
@@ -261,38 +261,39 @@ void launchNbDensityScatter(KokkosNesterovState& ns,
   // tail loop of BinGrid::updateBinsGCellDensityArea.
   auto d_bin_density = rdf.d_bin_density;
   auto d_bin_scaled_area = ns.d_bin_scaled_area;
+  auto d_bin_nonplace_binormal = ns.d_bin_nonplace_binormal;
   auto d_bin_nonplace = ns.d_bin_nonplace;
-  auto d_bin_nonplace_unscaled = ns.d_bin_nonplace_unscaled;
 
+  float ovf_binormal = 0;
   float ovf = 0;
-  float ovf_unscaled = 0;
   Kokkos::parallel_reduce(
       "densop_nb_bin_pass",
       Kokkos::RangePolicy<ExecSpace>(0, nbins),
-      KOKKOS_LAMBDA(const int bi, float& local_ovf, float& local_ovf_u) {
+      KOKKOS_LAMBDA(
+          const int bi, float& local_ovf_binormal, float& local_ovf) {
         const float inst = static_cast<float>(d_bin_inst_area(bi));
         const float filler = static_cast<float>(d_bin_filler_area(bi));
+        const float nonplace_binormal
+            = static_cast<float>(d_bin_nonplace_binormal(bi));
         const float nonplace = static_cast<float>(d_bin_nonplace(bi));
-        const float nonplace_u
-            = static_cast<float>(d_bin_nonplace_unscaled(bi));
         const float scaled_area = d_bin_scaled_area(bi);
 
-        d_bin_density(bi) = (inst + filler + nonplace) / scaled_area;
+        d_bin_density(bi) = (inst + filler + nonplace_binormal) / scaled_area;
 
+        const float ob = inst + nonplace_binormal - scaled_area;
+        if (ob > 0) {
+          local_ovf_binormal += ob;
+        }
         const float o = inst + nonplace - scaled_area;
         if (o > 0) {
           local_ovf += o;
         }
-        const float ou = inst + nonplace_u - scaled_area;
-        if (ou > 0) {
-          local_ovf_u += ou;
-        }
       },
-      ovf,
-      ovf_unscaled);
+      ovf_binormal,
+      ovf);
 
+  overflow_area_binormal = ovf_binormal;
   overflow_area = ovf;
-  overflow_area_unscaled = ovf_unscaled;
 }
 
 void launchNbDensityGather(KokkosNesterovState& ns,
@@ -309,7 +310,7 @@ void launchNbDensityGather(KokkosNesterovState& ns,
   auto src_y = coords.y;
   auto d_half_ddx = ns.d_half_ddx;
   auto d_half_ddy = ns.d_half_ddy;
-  auto d_density_scale = ns.d_density_scale;
+  auto d_smoothing_scale = ns.d_smoothing_scale;
   auto d_bin_lx = ns.d_bin_lx;
   auto d_bin_ly = ns.d_bin_ly;
   auto d_bin_ux = ns.d_bin_ux;
@@ -346,7 +347,7 @@ void launchNbDensityGather(KokkosNesterovState& ns,
         max_bx = max_bx > bcx ? bcx : max_bx;
         max_by = max_by > bcy ? bcy : max_by;
 
-        const float scale = d_density_scale(i);
+        const float scale = d_smoothing_scale(i);
         float gx = 0.0f;
         float gy = 0.0f;
         for (int bxi = min_bx; bxi < max_bx; ++bxi) {
@@ -382,7 +383,7 @@ float launchNbSumPhi(const KokkosNesterovState& ns,
   auto d_bin_phi = rdf.d_bin_phi;
   auto d_bin_inst_area = ns.d_bin_inst_area;
   auto d_bin_filler_area = ns.d_bin_filler_area;
-  auto d_bin_nonplace = ns.d_bin_nonplace;
+  auto d_bin_nonplace_binormal = ns.d_bin_nonplace_binormal;
 
   float sum_phi = 0;
   Kokkos::parallel_reduce(
@@ -390,9 +391,10 @@ float launchNbSumPhi(const KokkosNesterovState& ns,
       Kokkos::RangePolicy<ExecSpace>(0, nbins),
       KOKKOS_LAMBDA(const int bi, float& local) {
         // CPU sums the int64 areas first, then casts once.
-        const long long total = d_bin_nonplace(bi)
-                                + static_cast<long long>(d_bin_inst_area(bi))
-                                + static_cast<long long>(d_bin_filler_area(bi));
+        const long long total
+            = d_bin_nonplace_binormal(bi)
+              + static_cast<long long>(d_bin_inst_area(bi))
+              + static_cast<long long>(d_bin_filler_area(bi));
         local += d_bin_phi(bi) * static_cast<float>(total);
       },
       sum_phi);

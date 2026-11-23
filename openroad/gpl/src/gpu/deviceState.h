@@ -99,7 +99,7 @@ class DeviceState
   // iteration; non-virtual iterations reload weights through rebuild().
   void refreshNetWeights(const std::vector<GNet>& gNetStor);
 
-  // Re-push per-inst density params (half_dx, half_dy, density_scale) after
+  // Re-push per-inst density params (half_dx, half_dy, smoothing_scale) after
   // they change. Called from NesterovBase::updateDensitySize (routability
   // inflation, TD area changes); non-virtual TD iterations reload them
   // through rebuild() instead. The inst-density views are allocated at

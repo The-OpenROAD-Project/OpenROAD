@@ -65,9 +65,9 @@ struct KokkosNesterovState
   // NesterovDeviceContext::refreshCellDensityParams after updateDensitySize.
   Kokkos::View<int*> d_half_ddx;         // GCell::dDx()/2
   Kokkos::View<int*> d_half_ddy;         // GCell::dDy()/2
-  Kokkos::View<float*> d_density_smoothing;  // GCell::getDensitySmoothing()
+  Kokkos::View<float*> d_smoothing_scale;  // GCell::getSmoothingScale()
   // 0 = neither (skipped by the scatter, like the CPU loop), 1 = std inst,
-  // 2 = macro inst (target-density scaled), 3 = filler.
+  // 2 = large inst (target-density scaled), 3 = filler.
   Kokkos::View<int*> d_cell_kind;
 
   // Per-bin statics, FFT layout [x * binCntY + y] (matches d_bin_density /
@@ -82,12 +82,13 @@ struct KokkosNesterovState
   // Precomputed float(binArea * targetDensity) — same expression and float
   // rounding as the CPU overflow loop.
   Kokkos::View<float*> d_bin_scaled_area;
-  Kokkos::View<long long*> d_bin_nonplace;           // Bin::nonPlaceArea_
-  Kokkos::View<long long*> d_bin_nonplace_unscaled;  // unscaled variant
+  // Bin::getNonPlaceAreaBinormal() and Bin::getNonPlaceArea()
+  Kokkos::View<long long*> d_bin_nonplace_binormal;
+  Kokkos::View<long long*> d_bin_nonplace;
 
   // Per-iteration scatter accumulators. Each contribution is truncated to
   // int64 before accumulation — the same arithmetic as
-  // Bin::addInstPlacedAreaUnscaled / addFillerArea taking int64_t — which
+  // Bin::atomicAddInstPlacedArea / atomicAddFillerArea taking int64_t — which
   // makes the parallel sum order-independent and equal to the serial CPU
   // result. Stored as double (sums stay well below 2^53, so integer-exact)
   // because atomicAdd(double) is hardware-native on every supported arch;

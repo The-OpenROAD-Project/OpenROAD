@@ -839,10 +839,6 @@ void PlacerBaseCommon::init()
     }
 
     instStor_.push_back(temp_inst);
-
-    if (temp_inst.dy() > siteSizeY_ * 6) {
-      large_insts_area_ += temp_inst.getArea();
-    }
   }
 
   // Extending instances by average pin density.
@@ -1180,15 +1176,12 @@ void PlacerBase::init(bool check_density)
       placeInsts_.push_back(inst);
       int64_t instArea = inst->getArea();
       placeInstsArea_ += instArea;
-      // macro cells should be
-      // large_insts_area_
+      // ePlace macros are defined as taller than 6 rows
       if (inst->dy() > siteSizeY_ * 6) {
         large_insts_area_ += instArea;
-      }
-      // smaller or equal height cells should be
-      // stdInstArea_
-      else {
-        stdInstsArea_ += instArea;
+      } else {
+        // smaller or equal height cells go into std_insts_area_
+        std_insts_area_ += instArea;
       }
     }
 
@@ -1569,7 +1562,7 @@ void PlacerBase::printInfo(bool check_density) const
   log_->info(GPL,
              20,
              "Standard cells area:        {:10.3f} um^2",
-             block->dbuAreaToMicrons(stdInstsArea_));
+             block->dbuAreaToMicrons(std_insts_area_));
 
   log_->info(GPL,
              21,

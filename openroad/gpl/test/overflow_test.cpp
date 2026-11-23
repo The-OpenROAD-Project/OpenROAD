@@ -189,8 +189,8 @@ TEST_F(OverflowTest, SpreadCellsDoNotOverflow)
   ASSERT_EQ(expectedOverflow(cells), 0.0);
 
   const NesterovBase& nb = place(cells);
+  EXPECT_EQ(nb.getSumOverflowBinormal(), 0.0f);
   EXPECT_EQ(nb.getSumOverflow(), 0.0f);
-  EXPECT_EQ(nb.getSumOverflowUnscaled(), 0.0f);
 }
 
 // Four cells on the same spot put 64e6 in each of four bins: 46.5e6 over
@@ -201,8 +201,8 @@ TEST_F(OverflowTest, StackedCellsOverflow)
   ASSERT_NEAR(expectedOverflow(cells), 186.0 / 256.0, kTolerance);
 
   const NesterovBase& nb = place(cells);
+  EXPECT_NEAR(nb.getSumOverflowBinormal(), 186.0 / 256.0, kTolerance);
   EXPECT_NEAR(nb.getSumOverflow(), 186.0 / 256.0, kTolerance);
-  EXPECT_NEAR(nb.getSumOverflowUnscaled(), 186.0 / 256.0, kTolerance);
 }
 
 // A cell in the core corner covers its first bin fully, with 25e6 against
@@ -215,8 +215,8 @@ TEST_F(OverflowTest, PartialOverlapOverflowsOnlyFullBins)
   ASSERT_NEAR(expectedOverflow(cells), 7.5 / 64.0, kTolerance);
 
   const NesterovBase& nb = place(cells);
+  EXPECT_NEAR(nb.getSumOverflowBinormal(), 7.5 / 64.0, kTolerance);
   EXPECT_NEAR(nb.getSumOverflow(), 7.5 / 64.0, kTolerance);
-  EXPECT_NEAR(nb.getSumOverflowUnscaled(), 7.5 / 64.0, kTolerance);
 }
 
 // A fixed instance under a movable one uses 0.7 of its overlap with each
@@ -231,8 +231,8 @@ TEST_F(OverflowTest, FixedInstanceUsesCapacity)
   ASSERT_NEAR(expectedOverflow(cells), 38.8 / 64.0, kTolerance);
 
   const NesterovBase& nb = place(cells);
+  EXPECT_NEAR(nb.getSumOverflowBinormal(), 38.8 / 64.0, kTolerance);
   EXPECT_NEAR(nb.getSumOverflow(), 38.8 / 64.0, kTolerance);
-  EXPECT_NEAR(nb.getSumOverflowUnscaled(), 38.8 / 64.0, kTolerance);
 }
 
 }  // namespace

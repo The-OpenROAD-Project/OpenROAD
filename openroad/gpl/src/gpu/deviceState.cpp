@@ -274,8 +274,8 @@ void DeviceState::rebuildInstDensityViews(const std::vector<GCell>& gCellStor)
       = Kokkos::View<int*>("ds_inst_density_half_dx", num_insts_);
   s.d_inst_density_half_dy
       = Kokkos::View<int*>("ds_inst_density_half_dy", num_insts_);
-  s.d_inst_density_scale
-      = Kokkos::View<float*>("ds_inst_density_scale", num_insts_);
+  s.d_inst_smoothing_scale
+      = Kokkos::View<float*>("ds_inst_smoothing_scale", num_insts_);
   s.d_inst_density_grad_x
       = Kokkos::View<float*>("ds_inst_density_grad_x", num_insts_);
   s.d_inst_density_grad_y
@@ -289,7 +289,7 @@ void DeviceState::rebuildInstDensityViews(const std::vector<GCell>& gCellStor)
   for (int i = 0; i < num_insts_; ++i) {
     h_half_dx[i] = gCellStor[i].dDx() / 2;
     h_half_dy[i] = gCellStor[i].dDy() / 2;
-    h_scale[i] = gCellStor[i].getDensitySmoothing();
+    h_scale[i] = gCellStor[i].getSmoothingScale();
   }
   Kokkos::View<int*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> hv_dx(
       h_half_dx.data(), num_insts_);
@@ -299,7 +299,7 @@ void DeviceState::rebuildInstDensityViews(const std::vector<GCell>& gCellStor)
       h_scale.data(), num_insts_);
   Kokkos::deep_copy(s.d_inst_density_half_dx, hv_dx);
   Kokkos::deep_copy(s.d_inst_density_half_dy, hv_dy);
-  Kokkos::deep_copy(s.d_inst_density_scale, hv_s);
+  Kokkos::deep_copy(s.d_inst_smoothing_scale, hv_s);
 }
 
 void DeviceState::syncInstCoordsFromHost(const std::vector<GCell>& gCellStor)
@@ -367,7 +367,7 @@ void DeviceState::refreshDensityParams(const std::vector<GCell>& gCellStor)
   for (int i = 0; i < num_insts_; ++i) {
     h_half_dx[i] = gCellStor[i].dDx() / 2;
     h_half_dy[i] = gCellStor[i].dDy() / 2;
-    h_scale[i] = gCellStor[i].getDensitySmoothing();
+    h_scale[i] = gCellStor[i].getSmoothingScale();
   }
   Kokkos::View<int*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> hv_dx(
       h_half_dx.data(), num_insts_);
@@ -377,7 +377,7 @@ void DeviceState::refreshDensityParams(const std::vector<GCell>& gCellStor)
       h_scale.data(), num_insts_);
   Kokkos::deep_copy(s.d_inst_density_half_dx, hv_dx);
   Kokkos::deep_copy(s.d_inst_density_half_dy, hv_dy);
-  Kokkos::deep_copy(s.d_inst_density_scale, hv_s);
+  Kokkos::deep_copy(s.d_inst_smoothing_scale, hv_s);
 }
 
 int DeviceState::numInsts() const
