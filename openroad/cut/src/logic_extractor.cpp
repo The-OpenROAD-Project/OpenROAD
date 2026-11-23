@@ -335,7 +335,7 @@ std::vector<sta::Pin*> LogicExtractorFactory::FilterUndrivenOutputs(
 }
 
 std::vector<sta::Vertex*> LogicExtractorFactory::FilterVerticesOnEndpointCells(
-    std::vector<sta::Vertex*>& cut_vertices)
+    const std::vector<sta::Vertex*>& cut_vertices)
 {
   sta::dbNetwork* network = open_sta_->getDbNetwork();
   std::unordered_set<sta::Instance*> endpoint_intances;

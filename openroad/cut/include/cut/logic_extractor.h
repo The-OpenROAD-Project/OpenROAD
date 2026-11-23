@@ -64,7 +64,7 @@ class LogicExtractorFactory
       std::vector<sta::Pin*>& primary_outputs,
       sta::InstanceSet& cut_instances);
   std::vector<sta::Vertex*> FilterVerticesOnEndpointCells(
-      std::vector<sta::Vertex*>& cut_vertices);
+      const std::vector<sta::Vertex*>& cut_vertices);
   std::vector<sta::Net*> ConvertIoPinsToNets(
       std::vector<sta::Pin*>& primary_io_pins);
   std::vector<sta::Vertex*> AddMissingVertices(
