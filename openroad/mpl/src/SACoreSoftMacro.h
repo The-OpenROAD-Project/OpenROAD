@@ -83,7 +83,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 
   void calExtraPenalties() override;
 
-  void perturb() override;
   // actions used
   void resizeOneCluster();
 
@@ -131,9 +130,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                      // horizontally
   int adjust_v_th_;  // the threshold for adjust hard macro clusters
                      // vertically
-
-  // action prob
-  float resize_prob_ = 0.0;
 
   bool enhancements_on_ = false;
   bool centralization_was_reverted_ = false;

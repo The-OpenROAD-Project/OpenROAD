@@ -65,7 +65,10 @@ SACoreSoftMacro::SACoreSoftMacro(PhysicalHierarchy* tree,
   penalties_.push_back({.name = "Fixed Macros", .weight = 100.0f});
   penalties_.push_back({.name = "Notch", .weight = soft_weights.notch});
 
-  resize_prob_ = soft_action_probs.resize;
+  actions_.push_back({ActionKind::kResize, soft_action_probs.resize, [this] {
+                        resizeOneCluster();
+                      }});
+
   notch_h_th_ = notch_h_threshold;
   notch_v_th_ = notch_v_threshold;
   adjust_h_th_ = notch_h_th_;
@@ -119,42 +122,6 @@ void SACoreSoftMacro::calExtraPenalties()
   calSoftBlockagePenalty();
   calNotchPenalty();
   calFixedMacrosPenalty();
-}
-
-void SACoreSoftMacro::perturb()
-{
-  if (macros_.empty()) {
-    return;
-  }
-
-  // generate random number (0 - 1) to determine actions
-  const float op = distribution_(generator_);
-  const float action_prob_1 = pos_swap_prob_;
-  const float action_prob_2 = action_prob_1 + neg_swap_prob_;
-  const float action_prob_3 = action_prob_2 + double_swap_prob_;
-  const float action_prob_4 = action_prob_3 + exchange_prob_;
-  if (op <= action_prob_1) {
-    action_id_ = 1;
-    singleSeqSwap(true);  // Swap two macros in pos_seq_
-  } else if (op <= action_prob_2) {
-    action_id_ = 2;
-    singleSeqSwap(false);  // Swap two macros in neg_seq_;
-  } else if (op <= action_prob_3) {
-    action_id_ = 3;
-    doubleSeqSwap();  // Swap two macros in pos_seq_ and
-                      // other two macros in neg_seq_
-  } else if (op <= action_prob_4) {
-    action_id_ = 4;
-    exchangeMacros();  // exchange two macros in the sequence pair
-  } else {
-    action_id_ = 5;
-    resizeOneCluster();
-  }
-
-  // update the macro locations based on Sequence Pair
-  packFloorplan();
-  // Update all the penalties
-  calPenalty();
 }
 
 // Independently of the current parent's level, we always compute

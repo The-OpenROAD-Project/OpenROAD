@@ -62,39 +62,6 @@ void SACoreHardMacro::run()
   }
 }
 
-void SACoreHardMacro::perturb()
-{
-  if (macros_.empty()) {
-    return;
-  }
-
-  // generate random number (0 - 1) to determine actions
-  const float op = distribution_(generator_);
-  const float action_prob_1 = pos_swap_prob_;
-  const float action_prob_2 = action_prob_1 + neg_swap_prob_;
-  const float action_prob_3 = action_prob_2 + double_swap_prob_;
-
-  if (op <= action_prob_1) {
-    action_id_ = 1;
-    singleSeqSwap(true);  // Swap two macros in pos_seq_
-  } else if (op <= action_prob_2) {
-    action_id_ = 2;
-    singleSeqSwap(false);  // Swap two macros in neg_seq_;
-  } else if (op <= action_prob_3) {
-    action_id_ = 3;
-    doubleSeqSwap();  // Swap two macros in pos_seq_ and
-                      // other two macros in neg_seq_
-  } else {
-    action_id_ = 4;
-    exchangeMacros();  // exchange two macros in the sequence pair
-  }
-
-  // update the macro locations based on Sequence Pair
-  packFloorplan();
-  // Update all the penalties
-  calPenalty();
-}
-
 void SACoreHardMacro::setWeights(const SACoreWeights& weights)
 {
   penalties_[kArea].weight = weights.area;

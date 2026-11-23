@@ -53,10 +53,20 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
       {.name = "Fence", .weight = weights.fence},
   };
 
-  pos_swap_prob_ = action_probs.pos_swap;
-  neg_swap_prob_ = action_probs.neg_swap;
-  double_swap_prob_ = action_probs.double_swap;
-  exchange_prob_ = action_probs.exchange;
+  actions_ = {
+      {ActionKind::kPosSwap,
+       action_probs.pos_swap,
+       [this] { singleSeqSwap(true); }},
+      {ActionKind::kNegSwap,
+       action_probs.neg_swap,
+       [this] { singleSeqSwap(false); }},
+      {ActionKind::kDoubleSwap,
+       action_probs.double_swap,
+       [this] { doubleSeqSwap(); }},
+      {ActionKind::kExchange,
+       action_probs.exchange,
+       [this] { exchangeMacros(); }},
+  };
 
   init_prob_ = init_prob;
   max_num_step_ = max_num_step;
@@ -518,6 +528,31 @@ void SimulatedAnnealingCore<T>::packFloorplan()
 }
 
 template <class T>
+void SimulatedAnnealingCore<T>::perturb()
+{
+  if (macros_.empty()) {
+    return;
+  }
+
+  const float op = distribution_(generator_);
+  const Action* selected = &actions_.back();
+  float cumulative_probability = 0.0f;
+  for (const Action& action : actions_) {
+    cumulative_probability += action.probability;
+    if (op <= cumulative_probability) {
+      selected = &action;
+      break;
+    }
+  }
+
+  action_id_ = selected->kind;
+  selected->perturb();
+
+  packFloorplan();
+  calPenalty();
+}
+
+template <class T>
 void SimulatedAnnealingCore<T>::saveState()
 {
   if (macros_.empty()) {
@@ -544,11 +579,12 @@ void SimulatedAnnealingCore<T>::restoreState()
   // To reduce the runtime, here we do not call PackFloorplan
   // again. So when we need to generate the final floorplan out,
   // we need to call PackFloorplan again at the end of SA process
-  if (action_id_ == 1) {
+  if (action_id_ == ActionKind::kPosSwap) {
     pos_seq_ = pre_pos_seq_;
-  } else if (action_id_ == 2) {
+  } else if (action_id_ == ActionKind::kNegSwap) {
     neg_seq_ = pre_neg_seq_;
-  } else if (action_id_ == 3 || action_id_ == 4) {
+  } else if (action_id_ == ActionKind::kDoubleSwap
+             || action_id_ == ActionKind::kExchange) {
     pos_seq_ = pre_pos_seq_;
     neg_seq_ = pre_neg_seq_;
   }

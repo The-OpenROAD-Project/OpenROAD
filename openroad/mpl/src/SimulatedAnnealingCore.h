@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <limits>
 #include <map>
 #include <random>
@@ -91,7 +92,25 @@ class SimulatedAnnealingCore
     kFence
   };
 
+  // Identifies which action an actions_ entry applies, independent of its
+  // position in the vector.
+  enum class ActionKind
+  {
+    kPosSwap,
+    kNegSwap,
+    kDoubleSwap,
+    kExchange,
+    kResize
+  };
+
  protected:
+  struct Action
+  {
+    ActionKind kind;
+    float probability{0.0f};
+    std::function<void()> perturb;
+  };
+
   struct Result
   {
     bool empty() const { return sequence_pair.pos_sequence.empty(); }
@@ -134,9 +153,9 @@ class SimulatedAnnealingCore
 
   // operations
   void packFloorplan();
-  virtual void perturb() = 0;
-  virtual void saveState();
-  virtual void restoreState();
+  void perturb();
+  void saveState();
+  void restoreState();
   // actions used
   void singleSeqSwap(bool pos);
   void doubleSeqSwap();
@@ -184,7 +203,8 @@ class SimulatedAnnealingCore
   std::vector<int> pre_neg_seq_;
   std::vector<T> pre_macros_;  // here the macros can be HardMacro or SoftMacro
   int macro_id_ = -1;          // the macro changed in the perturb
-  int action_id_ = -1;         // the action_id of current step
+  ActionKind action_id_{ActionKind::kPosSwap};  // the action applied in the
+                                                // current step
 
   // metrics
   int width_ = 0;
@@ -196,11 +216,9 @@ class SimulatedAnnealingCore
   // SACoreSoftMacro appends more.
   std::vector<Penalty> penalties_;
 
-  // probability of each action
-  float pos_swap_prob_ = 0.0;
-  float neg_swap_prob_ = 0.0;
-  float double_swap_prob_ = 0.0;
-  float exchange_prob_ = 0.0;
+  // The 4 common actions (pos/neg/double swap, exchange); SACoreSoftMacro
+  // appends its own (resize).
+  std::vector<Action> actions_;
 
   utl::Logger* logger_ = nullptr;
   MplObserver* graphics_ = nullptr;
