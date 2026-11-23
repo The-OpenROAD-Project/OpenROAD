@@ -130,11 +130,6 @@ class CUGR
   void getBTermsAccessPoints(
       odb::dbNet* net,
       odb::PtrMap<odb::dbBTerm, odb::Point3D>& access_points);
-  void setCriticalNetsPercentage(float percentage)
-  {
-    critical_nets_percentage_ = percentage;
-  }
-  float getCriticalNetsPercentage() const { return critical_nets_percentage_; }
   // Developer debug switch. Applied at the next init(); an existing grid
   // keeps its demand model.
   void setViaDemandEnabled(bool enabled)
@@ -225,11 +220,9 @@ class CUGR
   // Refresh the slack of the given nets from STA, without re-extracting
   // parasitics (incremental scope).
   void refreshNetSlacks(const std::vector<int>& net_indices);
-  // Slack value at the critical_nets_percentage_ percentile of the nets.
-  float criticalSlackThreshold() const;
-  // Push nets with slack above the threshold to the back of the default
-  // ordering by maxing their slack; nets with a criticality keep theirs.
-  void demoteNonCriticalNets(float slack_th);
+  // Push nets with zero criticality to the back of the default ordering by
+  // maxing their slack, so they order by size alone.
+  void demoteNonCriticalNets();
   float getNetSlack(odb::dbNet* net);
   void setInitialNetSlacks(const std::vector<int>& net_indices);
   // Builds a routing tree spanning the segments' gcells; nullptr if the
@@ -413,7 +406,6 @@ class CUGR
   int area_of_pin_patches_ = 0;
   int area_of_wire_patches_ = 0;
 
-  float critical_nets_percentage_ = 10;
   int congestion_iterations_ = 5;
   int skip_large_fanout_ = std::numeric_limits<int>::max();
   odb::PtrSet<odb::dbNet> selected_nets_;

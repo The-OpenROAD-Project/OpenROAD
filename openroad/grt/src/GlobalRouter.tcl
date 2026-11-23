@@ -253,10 +253,12 @@ proc global_route { args } {
 
   if {
     [info exists flags(-use_cugr)]
-    && ($resistance_aware || [info exists keys(-res_aware_nets_percentage)])
+    && ($resistance_aware || [info exists keys(-res_aware_nets_percentage)]
+      || [info exists keys(-critical_nets_percentage)])
   } {
-    utl::warn GRT 706 "-resistance_aware and -res_aware_nets_percentage\
-      apply to FastRoute only; CUGR weighs wire delay by net criticality."
+    utl::warn GRT 706 "-critical_nets_percentage, -resistance_aware and\
+      -res_aware_nets_percentage apply to FastRoute only; CUGR is timing\
+      driven whenever timing is available."
   }
 
   if { [info exists keys(-snapshot_batched_width)] } {

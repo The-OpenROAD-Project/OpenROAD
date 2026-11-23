@@ -324,9 +324,9 @@ void CUGR::updateCriticalNets(const std::vector<int>& net_indices)
 {
   updateNetSlacks(net_indices);
   updateCriticality();
-  // Demotion uses a global slack percentile; skip it during incremental.
+  // Incremental routing keeps the plain slack-then-size order.
   if (!incremental_routing_) {
-    demoteNonCriticalNets(criticalSlackThreshold());
+    demoteNonCriticalNets();
   }
 }
 
@@ -418,34 +418,13 @@ void CUGR::refreshParasiticsForDebug()
   }
 }
 
-float CUGR::criticalSlackThreshold() const
-{
-  std::vector<float> slacks;
-  slacks.reserve(gr_nets_.size());
-  for (const auto& net : gr_nets_) {
-    if (net != nullptr) {
-      slacks.push_back(net->getSlack());
-    }
-  }
-  if (slacks.empty()) {
-    return 0.0f;
-  }
-  std::ranges::stable_sort(slacks);
-  const int threshold_index
-      = std::ceil(slacks.size() * critical_nets_percentage_ / 100);
-  return slacks[std::min(static_cast<size_t>(threshold_index),
-                         slacks.size() - 1)];
-}
-
-void CUGR::demoteNonCriticalNets(const float slack_th)
+void CUGR::demoteNonCriticalNets()
 {
   for (const int& net_index : net_indices_) {
     if (gr_nets_[net_index] == nullptr) {
       continue;
     }
-    // Nets that pay the delay cost keep their slack order.
-    if (gr_nets_[net_index]->getSlack() > slack_th
-        && gr_nets_[net_index]->getCriticality() == 0.0f) {
+    if (gr_nets_[net_index]->getCriticality() == 0.0f) {
       gr_nets_[net_index]->setSlack(kDemotedSlack);
     }
   }
@@ -546,8 +525,7 @@ void CUGR::initLayerRC()
   grid_graph_->setLayerRC(
       std::move(res_per_dbu), std::move(cap_per_dbu), std::move(via_res));
   // Only timing-driven runs use the delay cost.
-  if (!grid_graph_->hasDelayModel() && hasTiming()
-      && critical_nets_percentage_ != 0) {
+  if (!grid_graph_->hasDelayModel() && hasTiming()) {
     logger_->warn(GRT,
                   707,
                   "No routing layer has both resistance and capacitance; "
@@ -649,7 +627,7 @@ void CUGR::patternRoute(std::vector<int>& net_indices)
     logger_->report("Stage 1: Pattern routing.");
   }
 
-  if (critical_nets_percentage_ != 0) {
+  if (hasTiming()) {
     setInitialNetSlacks(net_indices);
   }
 
@@ -683,7 +661,7 @@ void CUGR::patternRoute(std::vector<int>& net_indices)
 
 void CUGR::patternRouteCritical(std::vector<int>& net_indices)
 {
-  if (critical_nets_percentage_ == 0 || !grid_graph_->hasDelayModel()) {
+  if (!hasTiming() || !grid_graph_->hasDelayModel()) {
     return;
   }
   if (verbose_) {
@@ -729,7 +707,7 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
     logger_->report("Stage 3: Pattern routing with detours.");
   }
 
-  if (critical_nets_percentage_ != 0) {
+  if (hasTiming()) {
     updateCriticalNets(net_indices);
   }
 
@@ -769,7 +747,7 @@ double CUGR::mazeRoute(std::vector<int>& net_indices,
   }
 
   // The relief's passes skip the slack refresh, which would re-time each one.
-  if (critical_nets_percentage_ != 0 && options.refresh_critical) {
+  if (hasTiming() && options.refresh_critical) {
     updateCriticalNets(net_indices);
   }
 
@@ -932,7 +910,7 @@ std::vector<odb::dbNet*> CUGR::route(bool incremental)
 
   // Criticalities persist across incremental routes; without timing they
   // would keep a delay cost no slack refresh can update.
-  if (critical_nets_percentage_ == 0) {
+  if (!hasTiming()) {
     for (const auto& net : gr_nets_) {
       if (net != nullptr) {
         net->setCriticality(0.0f);
@@ -1153,23 +1131,13 @@ void CUGR::reportDebugNetSlack(const GRNet* net,
   if (!hasTiming()) {
     detail = "slack unavailable (no timing)";
   } else {
-    // Skipped where CUGR does no timing of its own: refreshing would then be
-    // the only extraction of the run and would move post-route timing.
-    const bool refreshed = critical_nets_percentage_ != 0;
-    if (refreshed) {
-      // Every rerouted net, not just this one: its slack runs through them.
-      refreshParasiticsForDebug();
-    }
+    // Every rerouted net, not just this one: its slack runs through them.
+    refreshParasiticsForDebug();
     const float sta_slack = getNetSlack(net->getDbNet());
     // What CUGR's ordering and critical-net decisions read.
     const float cugr_slack = net->getSlack();
     if (sta_slack >= sta::INF) {
       detail = "no timing path";
-    } else if (!refreshed) {
-      detail = fmt::format(
-          "slack = {:.2f} ps (cugr tracks no slack at "
-          "-critical_nets_percentage 0)",
-          sta_slack * 1e12);
     } else if (cugr_slack >= kDemotedSlack) {
       detail = fmt::format(
           "slack = {:.2f} ps (cugr entered stage demoted as non-critical)",
@@ -1182,7 +1150,7 @@ void CUGR::reportDebugNetSlack(const GRNet* net,
           cugr_slack * 1e12,
           (sta_slack - cugr_slack) * 1e12);
     }
-    if (!refreshed || incremental_routing_) {
+    if (incremental_routing_) {
       detail += " (parasitics not refreshed)";
     }
   }

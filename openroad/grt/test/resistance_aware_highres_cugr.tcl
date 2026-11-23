@@ -32,7 +32,7 @@ set guide_file [make_result_file resistance_aware_highres_cugr.guide]
 set_routing_layers -signal met1-met5 -clock met3-met5
 set_global_routing_layer_adjustment met1-met5 0.3
 
-global_route -use_cugr -critical_nets_percentage 30 -verbose
+global_route -use_cugr -verbose
 
 write_guides $guide_file
 

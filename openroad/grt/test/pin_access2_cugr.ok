@@ -75,8 +75,8 @@ Stage 2: Re-route of nets with negative slack.
 Stage 3: Pattern routing with detours.
 Stage 4: Maze routing on sparsified graph.
 Routing statistics
-Wire length:           60378
-Total via count:       3467
+Wire length:           60320
+Total via count:       3460
 Total congestion:      0.00
 Min resource:          0.05
 Bottleneck:            (2, 25, 26)
@@ -84,13 +84,13 @@ Bottleneck:            (2, 25, 26)
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
 --------------------------------------------------------------------------
 li1       V         0.00         0.00         0.00         0.00       0.00
-met1      H      5155.45       127.00        98.97       225.97       4.38
-met2      V      7407.91       683.00       122.70       805.70      10.88
-met3      H      7992.04      1364.00       101.95      1465.95      18.34
-met4      V      5848.53       886.00        23.80       909.80      15.56
+met1      H      5155.45       131.00        98.97       229.97       4.46
+met2      V      7407.91       684.00       122.60       806.60      10.89
+met3      H      7992.04      1353.00       101.22      1454.22      18.20
+met4      V      5848.53       889.00        23.52       912.52      15.60
 met5      H      1800.00        32.00         8.28        40.28       2.24
 --------------------------------------------------------------------------
-Total           28203.94      3092.00       355.69      3447.69      12.22
-[INFO GRT-0018] Total wirelength: 30211 um
+Total           28203.94      3089.00       354.59      3443.59      12.21
+[INFO GRT-0018] Total wirelength: 30139 um
 [INFO GRT-0014] Routed nets: 411
 No differences found.

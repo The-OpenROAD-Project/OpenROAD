@@ -3,7 +3,6 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 676 components and 2850 component-terminals.
 [INFO ODB-0133]     Created 579 nets and 1498 connections.
-[WARNING GRT-0309] Timing is not available, setting critical nets percentage to 0.
 [WARNING GRT-0118] Iterative RRR finished with congestion remaining (170).
 [WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
 [WARNING GRT-0128] Incremental global routing finished with congestion. Check the congestion regions in the DRC Viewer.

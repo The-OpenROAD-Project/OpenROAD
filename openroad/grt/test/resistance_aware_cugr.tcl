@@ -1,6 +1,6 @@
-# -resistance_aware is FastRoute-only: with -use_cugr it warns (GRT-0706)
-# and routes the same guides as critical_nets_percentage_cugr, whose setup
-# this test repeats.
+# -critical_nets_percentage and -resistance_aware are FastRoute-only: with
+# -use_cugr they warn (GRT-0706) and route the same guides as
+# critical_nets_percentage_cugr, whose setup this test repeats.
 source "helpers.tcl"
 read_lef "sky130hs/sky130hs.tlef"
 read_lef "sky130hs/sky130hs_std_cell.lef"
