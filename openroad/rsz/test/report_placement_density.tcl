@@ -33,6 +33,13 @@ report_placement_density -region $top_right
 # Unplaced, it does not.
 $inst setPlacementStatus UNPLACED
 report_placement_density -region $top_right
+# Each report counts the database as it stands, so it sees edits odb has no
+# callback for.  Placed again, with a hard halo 0.2 microns wide, the INV_X2
+# blocks a ring around it.
+$inst setPlacementStatus PLACED
+set halo [ord::microns_to_dbu 0.2]
+$inst setHalo $halo $halo $halo $halo 0
+report_placement_density -region $top_right
 
 # Only the part of a region inside the core counts.
 report_placement_density -region {0 0 20 20}

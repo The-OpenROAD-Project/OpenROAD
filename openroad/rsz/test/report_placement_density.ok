@@ -62,6 +62,13 @@ Region (88.350, 88.350) (90.250, 91.000)
   Blocked area:                0.000 um^2
   Free area:                   5.035 um^2
   Placement density:           0.000
+Region (88.350, 88.350) (90.250, 91.000)
+  GCell size:           2.850 x 2.850 um
+  Area inside the core:        5.035 um^2
+  Instance area:               0.798 um^2
+  Blocked area:                0.948 um^2
+  Free area:                   3.289 um^2
+  Placement density:           0.158
 Region (0.000, 0.000) (20.000, 20.000)
   GCell size:           2.850 x 2.850 um
   Area inside the core:       87.384 um^2

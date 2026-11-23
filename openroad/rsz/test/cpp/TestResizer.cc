@@ -1611,6 +1611,21 @@ TEST_F(TestResizer, PlacementDensityTracksPlacedInstances)
   EXPECT_DOUBLE_EQ(resizer_.placementDensity(last_gcell).instance_area,
                    buffer_area);
   EXPECT_DOUBLE_EQ(resizer_.placementDensity(core).instance_area, buffer_area);
+
+  // odb has no callback for a new halo, so the grid sees one only once it is
+  // released and built afresh.  The buffer's hard halo, a site wide, then
+  // blocks the ring around it inside the core.
+  placed->setHalo(site_width, site_width, site_width, site_width, false);
+  resizer_.releasePlacementDensityGrid();
+  const odb::Rect box = placed->getBBox()->getBox();
+  const odb::Rect halo_in_core(box.xMin() - site_width,
+                               box.yMin() - site_width,
+                               core.xMax(),
+                               core.yMax());
+  const PlacementDensity rebuilt = resizer_.placementDensity(core);
+  EXPECT_DOUBLE_EQ(rebuilt.instance_area, buffer_area);
+  EXPECT_DOUBLE_EQ(rebuilt.blocked_area,
+                   static_cast<double>(halo_in_core.area() - box.area()));
 }
 
 }  // namespace rsz
