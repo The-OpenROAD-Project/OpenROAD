@@ -1486,6 +1486,15 @@ class PlacementDRC::ImplantDRC
           return false;
         }
       }
+
+      // 6. LEF58_CORNERSPACING
+      for (odb::dbTechLayerCornerSpacingRule* r :
+           layer->getTechLayerCornerSpacingRules()) {
+        if (!checkCornerSpacingRule(
+                r, getComps2D, cell, cell_box, touch_box, layer_strict)) {
+          return false;
+        }
+      }
     }
 
     return true;
@@ -3535,6 +3544,203 @@ class PlacementDRC::ImplantDRC
         }
         for (auto hit = poly.begin_holes(); hit != poly.end_holes(); ++hit) {
           if (!checkContour(extractCleanContour(*hit), true)) {
+            return false;
+          }
+        }
+      }
+    }
+    return true;
+  }
+
+  // Before filler insertion, a corner-touch junction between two shapes is
+  // not final if a same-layer filler can land in one of the two empty
+  // quadrants at the junction: the filler edge-connects the shapes and the
+  // junction disappears. Returns true when such a site exists.
+  bool junctionFillable(const odb::Rect& r1,
+                        const odb::Rect& r2,
+                        const odb::Point& pt,
+                        const Node* cell,
+                        const odb::Rect& cell_box) const
+  {
+    if (grid_ == nullptr) {
+      return false;
+    }
+    for (const int sx : {-1, 1}) {
+      for (const int sy : {-1, 1}) {
+        const odb::Point probe(pt.getX() + sx, pt.getY() + sy);
+        if (r1.intersects(probe) || r2.intersects(probe)
+            || cell_box.intersects(probe) || probe.getX() < 0
+            || probe.getY() < 0) {
+          continue;
+        }
+        const int gx = grid_->gridX(DbuX(probe.getX())).v;
+        const int gy = grid_->gridSnapDownY(DbuY(probe.getY())).v;
+        if (gx < 0 || gy < 0 || gx >= grid_->getRowSiteCount().v
+            || gy >= grid_->getRowCount().v) {
+          continue;
+        }
+        const Pixel* pixel = grid_->gridPixel(GridX(gx), GridY(gy));
+        if (pixel != nullptr && pixel->is_valid
+            && (pixel->cell == nullptr || pixel->cell == cell)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // LEF58_CORNERSPACING on IMPLANT layers: the distance between two
+  // corner-touch junctions (points where two implant shapes meet only at a
+  // corner, diagonally) must be at least the rule spacing. Concave corners of
+  // a single merged shape (notches, holes) are not junctions and are not
+  // measured.
+  template <typename GetComps2D>
+  bool checkCornerSpacingRule(odb::dbTechLayerCornerSpacingRule* rule,
+                              const GetComps2D& get_comps_2d,
+                              const Node* cell,
+                              const odb::Rect& cell_box,
+                              const odb::Rect& touch_box,
+                              const bool strict_empty_sites) const
+  {
+    if (rule->isCheckImplantGroupOnly()
+        || rule->getType() == odb::dbTechLayerCornerSpacingRule::CONCAVECORNER
+        || rule->isCornerOnly() || rule->isCornerToCorner()
+        || rule->isSameMask() || rule->isExceptEol()
+        || rule->isExceptJogLength() || rule->isEdgeLengthValid()
+        || rule->isIncludeShape() || rule->isMinLengthValid()
+        || rule->isExceptNotch() || rule->isExceptNotchLengthValid()
+        || rule->isExceptSameNet() || rule->isExceptSameMetal()) {
+      return true;
+    }
+
+    std::vector<int> width_table;
+    std::vector<std::pair<int, int>> spc_table;
+    rule->getWidthTable(width_table);
+    rule->getSpacingTable(spc_table);
+    if (spc_table.empty()) {
+      return true;
+    }
+
+    int rule_max_spc = 0;
+    for (const auto& [s1, s2] : spc_table) {
+      rule_max_spc = std::max({rule_max_spc, s1, s2});
+    }
+    if (rule_max_spc <= 0) {
+      return true;
+    }
+
+    const bool aligned_only = rule->isAlignedOnly();
+    const odb::Rect search_box = touch_box.bloat(rule_max_spc);
+    const std::vector<Component2D>& comps_2d = get_comps_2d();
+
+    struct CornerInfo
+    {
+      odb::Point pt;
+      int adj_len{0};
+    };
+    std::vector<CornerInfo> corners;
+
+    // 1. True exterior diagonal corner touches between distinct 2D components
+    //    (plus figure-8 self-touches where neither bridging quadrant is
+    //    filled).
+    for (size_t a = 0; a < comps_2d.size(); ++a) {
+      if (!comps_2d[a].bbox.intersects(search_box)) {
+        continue;
+      }
+      for (size_t b = a; b < comps_2d.size(); ++b) {
+        if (!comps_2d[b].bbox.intersects(search_box)) {
+          continue;
+        }
+        if (a != b && rectDistSq(comps_2d[a].bbox, comps_2d[b].bbox) > 0) {
+          continue;
+        }
+        for (size_t i = 0; i < comps_2d[a].rects.size(); ++i) {
+          const odb::Rect& r1 = comps_2d[a].rects[i];
+          const size_t j_start = (a == b) ? (i + 1) : 0;
+          for (size_t j = j_start; j < comps_2d[b].rects.size(); ++j) {
+            const odb::Rect& r2 = comps_2d[b].rects[j];
+            if (!isCornerTouchOnly(r1, r2)) {
+              continue;
+            }
+            const int cx = (r1.xMax() == r2.xMin() || r1.xMax() == r2.xMax())
+                               ? r1.xMax()
+                               : r1.xMin();
+            const int cy = (r1.yMax() == r2.yMin() || r1.yMax() == r2.yMax())
+                               ? r1.yMax()
+                               : r1.yMin();
+            const odb::Point pt(cx, cy);
+            if (!search_box.intersects(pt)) {
+              continue;
+            }
+            if (!strict_empty_sites && a != b
+                && junctionFillable(r1, r2, pt, cell, cell_box)) {
+              continue;
+            }
+            if (a == b) {
+              bool third_filled = false;
+              for (size_t c = 0; c < comps_2d[a].rects.size(); ++c) {
+                if (c == i || c == j) {
+                  continue;
+                }
+                const odb::Rect& r3 = comps_2d[a].rects[c];
+                if (r3.xMin() <= cx && cx <= r3.xMax() && r3.yMin() <= cy
+                    && cy <= r3.yMax() && isEdgeConnected(r1, r3)
+                    && isEdgeConnected(r2, r3)) {
+                  third_filled = true;
+                  break;
+                }
+              }
+              if (third_filled) {
+                continue;
+              }
+            }
+            corners.push_back({pt, std::min(r1.dx(), r2.dx())});
+          }
+        }
+      }
+    }
+
+    for (size_t i = 0; i < corners.size(); ++i) {
+      for (size_t j = i + 1; j < corners.size(); ++j) {
+        const CornerInfo& c1 = corners[i];
+        const CornerInfo& c2 = corners[j];
+        if (c1.pt == c2.pt) {
+          continue;
+        }
+        if (!touch_box.intersects(c1.pt) && !touch_box.intersects(c2.pt)) {
+          continue;
+        }
+        const int max_adj = std::max(c1.adj_len, c2.adj_len);
+        int req_spc_x = 0;
+        int req_spc_y = 0;
+        for (size_t k = 0; k < spc_table.size(); ++k) {
+          const int thresh = (k < width_table.size()) ? width_table[k] : 0;
+          if (max_adj >= thresh) {
+            const int sx = spc_table[k].first;
+            const int sy = (spc_table[k].second > 0) ? spc_table[k].second : sx;
+            req_spc_x = std::max(req_spc_x, sx);
+            req_spc_y = std::max(req_spc_y, sy);
+          }
+        }
+        const int req_spc = std::max(req_spc_x, req_spc_y);
+        if (req_spc <= 0) {
+          continue;
+        }
+        const int dx = std::abs(c1.pt.getX() - c2.pt.getX());
+        const int dy = std::abs(c1.pt.getY() - c2.pt.getY());
+        if (aligned_only) {
+          if ((dx == 0 && dy > 0 && dy < req_spc_y)
+              || (dy == 0 && dx > 0 && dx < req_spc_x)) {
+            return false;
+          }
+        } else {
+          if (req_spc_x == req_spc_y) {
+            const int64_t dist_sq
+                = static_cast<int64_t>(dx) * dx + static_cast<int64_t>(dy) * dy;
+            if (dist_sq < static_cast<int64_t>(req_spc) * req_spc) {
+              return false;
+            }
+          } else if (dx < req_spc_x && dy < req_spc_y) {
             return false;
           }
         }

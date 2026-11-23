@@ -1979,4 +1979,88 @@ TEST_F(Lef58ImplantAndEdgeTest, Lef58CoreEdgeLengthPreFillerExteriorGap)
   placeCell(m_other, "g", 4, 0);
   EXPECT_EQ(runCheck(), "DPL-0033");
 }
+TEST_F(Lef58ImplantAndEdgeTest, Lef58CornerSpacingAlignedAndGeneral)
+{
+  // Stricter CHECKIMPLANTGROUPONLY rule must be skipped (not enforced globally)
+  auto* grp_rule = odb::dbTechLayerCornerSpacingRule::create(imp1_);
+  grp_rule->setCheckImplantGroupOnly(true);
+  grp_rule->setAlignedOnly(true);
+  grp_rule->addSpacing(0, 10 * kRowHeight);
+
+  auto* rule = odb::dbTechLayerCornerSpacingRule::create(imp1_);
+  rule->setAlignedOnly(true);
+  rule->addSpacing(0, 2 * kRowHeight);
+
+  odb::dbMaster* m1 = createCustomMaster(
+      "M_CORNER", 1, {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+
+  // Create two vertically aligned diagonal corner touches at x = 3 *
+  // kSiteWidth: Corner 1 between (gx=2, gy=0) and (gx=3, gy=1) at
+  // (3*kSiteWidth, kRowHeight) Corner 2 between (gx=2, gy=2) and (gx=3, gy=1)
+  // at (3*kSiteWidth, 2*kRowHeight) Vertical distance between the two aligned
+  // corners is kRowHeight < 2*kRowHeight!
+  odb::dbInst* r0 = placeCell(m1, "r0", 2, 0, odb::dbOrientType::R0);
+  odb::dbInst* r1 = placeCell(m1, "r1", 3, 1, odb::dbOrientType::MX);
+  odb::dbInst* r2 = placeCell(m1, "r2", 2, 2, odb::dbOrientType::R0);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+
+  // Shifting r2 to gx=4 makes the second corner at (4*kSiteWidth,
+  // 2*kRowHeight), which is NOT axis-aligned with (3*kSiteWidth, kRowHeight) ->
+  // passes ALIGNEDONLY!
+  r2->setLocation(4 * kSiteWidth, 2 * kRowHeight);
+  EXPECT_EQ(runCheck(), "");
+
+  // General (aligned_only == false) Euclidean rule on IMP1 with width_table
+  // lower-bound threshold == kSiteWidth and spacing == 2 * kRowHeight catches
+  // those two non-aligned corners (dx=kSiteWidth, dy=kRowHeight, dist <
+  // 2*kRowHeight)!
+  auto* euc_rule = odb::dbTechLayerCornerSpacingRule::create(imp1_);
+  euc_rule->setAlignedOnly(false);
+  euc_rule->addSpacing(kSiteWidth, 2 * kRowHeight);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+
+  // Moving r2 far away removes the second corner touch -> legal
+  odb::dbInst::destroy(r2);
+  EXPECT_EQ(runCheck(), "");
+  odb::dbInst::destroy(r0);
+  odb::dbInst::destroy(r1);
+
+  // Concave corners of ONE merged U-shaped polygon are not corner-touch
+  // junctions and must not be measured (LEF 5.8 CORNERSPACING measures the
+  // distance between corners of two shapes; CONCAVECORNER is a separate form):
+  // Row 0: gx=2, 3, 4 (3-site base)
+  // Row 1: gx=2 and gx=4 (leaving a 1-site U-notch at gx=3 whose two concave
+  //        corners are only kSiteWidth apart) -> legal
+  odb::dbInst* u_b0 = placeCell(m1, "u_b0", 2, 0, odb::dbOrientType::R0);
+  odb::dbInst* u_b1 = placeCell(m1, "u_b1", 3, 0, odb::dbOrientType::R0);
+  odb::dbInst* u_b2 = placeCell(m1, "u_b2", 4, 0, odb::dbOrientType::R0);
+  odb::dbInst* u_l = placeCell(m1, "u_l", 2, 1, odb::dbOrientType::MX);
+  odb::dbInst* u_r = placeCell(m1, "u_r", 4, 1, odb::dbOrientType::MX);
+  EXPECT_EQ(runCheck(), "");
+  for (odb::dbInst* inst : {u_b0, u_b1, u_b2, u_l, u_r}) {
+    odb::dbInst::destroy(inst);
+  }
+
+  // Pre-filler relief: with an IMP1 filler master available, a junction is
+  // not final while one of its two empty quadrants can still take an IMP1
+  // filler (the filler edge-connects the two shapes). Re-create the two
+  // aligned junctions from above -> legal before fillers.
+  createCustomMaster("FILL_IMP1",
+                     1,
+                     {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}},
+                     odb::dbMasterType::CORE_SPACER);
+  placeCell(m1, "p0", 2, 0, odb::dbOrientType::R0);
+  placeCell(m1, "p1", 3, 1, odb::dbOrientType::MX);
+  placeCell(m1, "p2", 2, 2, odb::dbOrientType::R0);
+  EXPECT_EQ(runCheck(), "");
+
+  // Occupying every empty quadrant with non-IMP1 cells leaves no room for an
+  // IMP1 filler, so both junctions are final again -> violation.
+  odb::dbMaster* m_other = createCustomMaster(
+      "M_CORNER_IMP2", 1, {{imp2_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+  placeCell(m_other, "q0", 3, 0, odb::dbOrientType::R0);
+  placeCell(m_other, "q1", 2, 1, odb::dbOrientType::MX);
+  placeCell(m_other, "q2", 3, 2, odb::dbOrientType::R0);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+}
 }  // namespace dpl
