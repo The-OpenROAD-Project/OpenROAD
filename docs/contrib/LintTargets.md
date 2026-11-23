@@ -143,6 +143,8 @@ C/C++ formatting has no separate CI copy.
 The pull request check in `github-actions-format-on-push.yml` runs
 `//:fmt_cc_test`, and the auto-format step of
 `github-actions-on-master-push.yml` runs `//:tidy_cc`.
+The ODB generator check in `github-actions-are-odb-files-generated.yml` runs
+`//openroad/odb/src/codeGenerator:gen`, which uses the same clang-format.
 
 The GitHub Actions workflows `github-actions-lint-tcl.yml` (`tclint`,
 `tclfmt`) and `black.yaml` (`black`) run the same checks as

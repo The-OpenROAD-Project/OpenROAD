@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import re
 import shutil
 import subprocess
@@ -378,13 +379,20 @@ def preprocess_klass(klass: Class) -> None:
 
 class ODBGenerator:
     def __init__(
-        self, env: Environment, include_dir: Path, src_dir: Path, keep_empty: bool
+        self,
+        env: Environment,
+        include_dir: Path,
+        src_dir: Path,
+        keep_empty: bool,
+        clang_format: str = "clang-format",
     ):
-        """Hold the Jinja env, output directories, and the keep_empty flag."""
+        """Hold the Jinja env, output directories, the keep_empty flag, and the
+        clang-format command."""
         self.env = env
         self.include_dir = include_dir
         self.src_dir = src_dir
         self.keep_empty = keep_empty
+        self.clang_format = clang_format
         self.generated_dir = Path("generated")
 
     def load_schema(self, json_path: Path) -> Schema:
@@ -560,7 +568,8 @@ class ODBGenerator:
             else:
                 shutil.copy(gen_path, target_path)
 
-            if subprocess.run(["clang-format", "-i", str(target_path)]).returncode != 0:
+            result = subprocess.run([self.clang_format, "-i", str(target_path)])
+            if result.returncode != 0:
                 print(f"Failed to format {target_path}")
             print(f"Generated: {target_path}")
 
@@ -580,8 +589,18 @@ def main():
     parser.add_argument("--log", default="INFO")
     parser.add_argument("--keep_generated", action="store_true")
     parser.add_argument("--keep_empty", action="store_true")
+    parser.add_argument(
+        "--clang-format", default="clang-format", help="clang-format command"
+    )
 
     args = parser.parse_args()
+    clang_format = args.clang_format
+    if os.sep in clang_format:
+        clang_format = os.path.abspath(clang_format)
+    # `bazel run` starts in the runfiles tree. Work in the source tree instead.
+    workspace = os.environ.get("BUILD_WORKSPACE_DIRECTORY")
+    if workspace:
+        os.chdir(Path(workspace) / "openroad/odb/src/codeGenerator")
     logging.basicConfig(level=getattr(logging, args.log.upper()))
 
     generated_dir = Path("generated")
@@ -591,7 +610,11 @@ def main():
 
     env = make_environment(args.templates)
     generator = ODBGenerator(
-        env, Path(args.include_dir), Path(args.src_dir), args.keep_empty
+        env,
+        Path(args.include_dir),
+        Path(args.src_dir),
+        args.keep_empty,
+        clang_format,
     )
 
     schema = generator.load_schema(Path(args.json))
