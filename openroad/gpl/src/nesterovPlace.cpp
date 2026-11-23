@@ -19,6 +19,7 @@
 
 #include "AbstractGraphics.h"
 #include "clockBase.h"
+#include "gpl/Replace.h"
 #include "nesterovBase.h"
 #include "odb/db.h"
 #include "placerBase.h"
@@ -186,6 +187,7 @@ void NesterovPlace::init()
   float totalBaseWireLengthCoeff = 0;
   for (auto& nb : nbVec_) {
     nb->setNpVars(&npVars_);
+    nb->spreadStackedGCells();
     nb->initDensity1();
     total_sum_overflow_ += nb->getSumOverflow();
     totalBaseWireLengthCoeff += nb->getBaseWireLengthCoef();
@@ -278,6 +280,12 @@ void NesterovPlace::reset()
   diverge_snapshot_wl_coef_x_ = 0;
   diverge_snapshot_wl_coef_y_ = 0;
   diverge_snapshot_hpwl_ = 0;
+  diverge_snapshot_average_overflow_unscaled_ = 0;
+  diverge_snapshot_iter_ = 0;
+  min_hpwl_ = std::numeric_limits<int64_t>::max();
+  min_hpwl_overflow_ = 0;
+  min_hpwl_iter_ = 0;
+  is_min_hpwl_ = false;
   is_routability_need_ = true;
   routability_settle_wait_start_iter_ = -1;
 
@@ -623,9 +631,8 @@ void NesterovPlace::runTimingDriven(int iter,
       int64_t hpwl = nbc_->getHpwl();
       if (average_overflow_unscaled_ <= 0.25) {
         min_hpwl_ = hpwl;
-        diverge_snapshot_average_overflow_unscaled_
-            = average_overflow_unscaled_;
-        diverge_snapshot_iter_ = iter + 1;
+        min_hpwl_overflow_ = average_overflow_unscaled_;
+        min_hpwl_iter_ = iter + 1;
         is_min_hpwl_ = true;
       } else {
         min_hpwl_ = std::numeric_limits<int64_t>::max();
@@ -818,6 +825,8 @@ NesterovPlace::DivergeAction NesterovPlace::isDiverged(float& curA)
     diverge_snapshot_wl_coef_x_ = wireLengthCoefX_;
     diverge_snapshot_wl_coef_y_ = wireLengthCoefY_;
     diverge_snapshot_hpwl_ = min_hpwl_;
+    diverge_snapshot_average_overflow_unscaled_ = min_hpwl_overflow_;
+    diverge_snapshot_iter_ = min_hpwl_iter_;
     for (auto& nb : nbVec_) {
       nb->saveSnapshot();
     }
@@ -1362,6 +1371,10 @@ PlaceResult NesterovPlace::doNesterovPlace(int start_iter)
   if (npVars_.maxNesterovIter > start_iter) {
     trace_.reserve(npVars_.maxNesterovIter - start_iter);
   }
+  // The overflow of the placement this call starts from, which may be a
+  // snapshot an earlier call reverted to. Only the penalty guard uses it.
+  const float start_overflow
+      = incremental_penalty_guard_requested_ ? getFinalOverflow() : 0;
   // Until this call's first update, average_overflow_unscaled_ is from
   // init() or an earlier call, if it was set at all.
   overflow_update_is_stale_ = true;
@@ -1392,7 +1405,13 @@ PlaceResult NesterovPlace::doNesterovPlace(int start_iter)
   diverge_snapshot_wl_coef_x_ = 0;
   diverge_snapshot_wl_coef_y_ = 0;
   diverge_snapshot_hpwl_ = 0;
+  diverge_snapshot_average_overflow_unscaled_ = 0;
+  diverge_snapshot_iter_ = 0;
   diverge_revert_count_ = 0;
+  min_hpwl_ = std::numeric_limits<int64_t>::max();
+  min_hpwl_overflow_ = 0;
+  min_hpwl_iter_ = 0;
+  is_min_hpwl_ = false;
 
   // backTracking variable.
   float curA = 1.0;
@@ -1402,7 +1421,7 @@ PlaceResult NesterovPlace::doNesterovPlace(int start_iter)
                               && !npVars_.routability_driven_mode;
   incremental_penalty_guard_requested_ = false;
   float penalty_guard_factor = 1;
-  float penalty_guard_best_overflow = average_overflow_unscaled_;
+  float penalty_guard_best_overflow = start_overflow;
   int penalty_guard_retries = 0;
 
   if (penalty_guard_active) {
@@ -1677,8 +1696,8 @@ void NesterovPlace::updateNextIter(int iter)
     hpwl_gauge_->Set(hpwl);
     if (hpwl < min_hpwl_ && average_overflow_unscaled_ <= 0.25) {
       min_hpwl_ = hpwl;
-      diverge_snapshot_average_overflow_unscaled_ = average_overflow_unscaled_;
-      diverge_snapshot_iter_ = iter + 1;
+      min_hpwl_overflow_ = average_overflow_unscaled_;
+      min_hpwl_iter_ = iter + 1;
       is_min_hpwl_ = true;
     } else {
       is_min_hpwl_ = false;

@@ -43,6 +43,8 @@ class Design
          int min_routing_layer,
          int max_routing_layer,
          const odb::PtrSet<odb::dbNet>& clock_nets,
+         const odb::PtrSet<odb::dbNet>& selected_nets,
+         int skip_large_fanout,
          bool verbose);
   int getLibDBU() const { return lib_dbu_; }
 
@@ -143,6 +145,10 @@ class Design
   const int min_routing_layer_;
   const int max_routing_layer_;
   odb::PtrSet<odb::dbNet> clock_nets_;
+  // When non-empty, only these nets enter the netlist.
+  odb::PtrSet<odb::dbNet> selected_nets_;
+  // Nets with more terminals than this stay out of the netlist.
+  const int skip_large_fanout_;
   const bool verbose_;
 };
 

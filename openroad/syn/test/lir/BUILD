@@ -3,6 +3,7 @@
 
 # L-IR core tests; helpers/ holds the helpers all L-IR tests share.
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 
 package(
@@ -73,6 +74,40 @@ cc_test(
         "//openroad/syn/src/lir",
         "@abseil-cpp//absl/status",
         "@abseil-cpp//absl/status:statusor",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# A small Liberty library whose cells the tests build by hand.
+cc_library(
+    name = "test_liberty",
+    testonly = True,
+    srcs = ["helpers/TestLiberty.cc"],
+    hdrs = ["helpers/TestLiberty.h"],
+    includes = ["."],
+    deps = ["//openroad/sta:opensta_lib"],
+)
+
+cc_test(
+    name = "reg_class_pool_test",
+    srcs = ["TestRegClassPool.cc"],
+    deps = [
+        "//openroad/syn/src/lir",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "lib_cell_table_test",
+    srcs = ["TestLibCellTable.cc"],
+    deps = [
+        ":test_liberty",
+        "//openroad/sta:opensta_lib",
+        "//openroad/syn/src/lir",
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/strings",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

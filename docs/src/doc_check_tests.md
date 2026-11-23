@@ -9,7 +9,7 @@ Python and run in seconds without building the OpenROAD binary.
 ## Running the tests
 
 ```shell
-# All documentation checks (~48 tests, seconds)
+# All documentation checks (seconds)
 bazelisk test --test_tag_filters=doc_check //openroad/...
 
 # Duplicate message ID check
@@ -18,7 +18,7 @@ bazelisk test //:dup_id_test
 
 ## What gets tested
 
-### Per-module tests (24 modules)
+### Per-module tests
 
 Each module has two documentation tests:
 
@@ -35,12 +35,18 @@ Each module has two documentation tests:
 
 ## How it works
 
-The tests use the `doc_check_test` Bazel macro defined in
+The README/messages tests use the `doc_check_test` Bazel macro defined in
 `test/regression.bzl`. This is a lightweight variant of
 `regression_test` that does not depend on `//:openroad`, so no C++
 compilation is triggered. All doc check tests are automatically tagged
 with `doc_check`, which allows tag-based discovery via
 `--test_tag_filters=doc_check`.
+
+The command-count tests use `man_tcl_check_test` from
+`bazel/man_tcl_checker.bzl`. It runs the shared
+`docs/src/scripts/man_tcl_check.py` module with an explicit module name,
+using the module's `doc_files` filegroup. No per-module Python script or
+symbolic link is needed.
 
 Each module's `messages.txt` is generated on-demand by the
 `messages_txt` macro (also in `test/regression.bzl`) that runs
@@ -64,7 +70,18 @@ When adding documentation tests for a new module:
 1. Add `filegroup(name = "doc_files")` and `messages_txt()` macro call
    to `openroad/{module}/BUILD` (load `messages_txt` from
    `//test:regression.bzl`)
-2. Add `doc_check_test` entries to `openroad/{module}/test/BUILD`
+2. Add a `doc_check_test` for the README/messages check and a
+   `man_tcl_check_test` for the command-count check to
+   `openroad/{module}/test/BUILD`. For example:
+
+   ```starlark
+   load("//bazel:man_tcl_checker.bzl", "man_tcl_check_test")
+
+   man_tcl_check_test(
+       name = "cts_man_tcl_check",
+       module = "cts",
+   )
+   ```
 
 The `doc_check` tag is automatically added by the macro, so
 `--test_tag_filters=doc_check` picks up new tests without any changes

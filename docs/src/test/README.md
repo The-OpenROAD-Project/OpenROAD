@@ -71,6 +71,9 @@ and that its `messages.txt` parses into man3 format.
 #### Man-to-Tcl check
 
 The name of this test is `{module}_man_tcl_check`.
+It uses the shared `man_tcl_check_test` macro in
+[`bazel/man_tcl_checker.bzl`](../../../bazel/man_tcl_checker.bzl), which
+passes the module name to a single Python checker.
 The objective of this test is to ensure that there are similar counts of
 command in the following: `proc`, `help`, `man`.
 
