@@ -93,6 +93,10 @@ class dbBlockCallBackObj
   virtual void inDbITermPostDisconnect(dbITerm*, dbNet*) {}
   virtual void inDbITermPreConnect(dbITerm*, dbNet*) {}
   virtual void inDbITermPostConnect(dbITerm*) {}
+  virtual void inDbITermPreDisconnectModNet(dbITerm*) {}
+  virtual void inDbITermPostDisconnectModNet(dbITerm*, dbModNet*) {}
+  virtual void inDbITermPreConnectModNet(dbITerm*, dbModNet*) {}
+  virtual void inDbITermPostConnectModNet(dbITerm*) {}
   virtual void inDbITermPostSetAccessPoints(dbITerm*) {}
   // dbITerm End
 
@@ -112,6 +116,10 @@ class dbBlockCallBackObj
   virtual void inDbBTermPostConnect(dbBTerm*) {}
   virtual void inDbBTermPreDisconnect(dbBTerm*) {}
   virtual void inDbBTermPostDisConnect(dbBTerm*, dbNet*) {}
+  virtual void inDbBTermPreConnectModNet(dbBTerm*, dbModNet*) {}
+  virtual void inDbBTermPostConnectModNet(dbBTerm*) {}
+  virtual void inDbBTermPreDisconnectModNet(dbBTerm*) {}
+  virtual void inDbBTermPostDisconnectModNet(dbBTerm*, dbModNet*) {}
   virtual void inDbBTermSetIoType(dbBTerm*, const dbIoType&) {}
   virtual void inDbBTermSetSigType(dbBTerm*, const dbSigType&) {}
   // dbBTerm End

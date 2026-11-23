@@ -289,6 +289,11 @@ with it. To assure that, use dbNetwork::connectPin
 
 void dbITerm::connect(dbNet* db_net, dbModNet* db_mod_net)
 {
+  if (db_net && db_mod_net) {
+    if (dbNet* old_net = getNet(); old_net && old_net != db_net) {
+      disconnectDbNet();
+    }
+  }
   connect(db_mod_net);
   connect(db_net);
 }
@@ -396,6 +401,10 @@ dbModNet* dbITerm::getModNet() const
 
 void dbITerm::connect(dbModNet* mod_net)
 {
+  if (mod_net == nullptr) {
+    return;
+  }
+
   _dbITerm* iterm = (_dbITerm*) this;
   _dbModNet* _mod_net = (_dbModNet*) mod_net;
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
@@ -405,6 +414,14 @@ void dbITerm::connect(dbModNet* mod_net)
     return;
   }
 
+  if (inst->flags_.dont_touch) {
+    inst->getLogger()->error(
+        utl::ODB,
+        397,
+        "Attempt to connect iterm of dont_touch instance {}",
+        inst->name_);
+  }
+
   // If already connected, disconnect just the modnet (so we don't
   // accidentally blow away prior flat net connections)
 
@@ -412,14 +429,8 @@ void dbITerm::connect(dbModNet* mod_net)
     disconnectDbModNet();
   }
 
-  iterm->mnet_ = _mod_net->getId();
-
-  if (inst->flags_.dont_touch) {
-    inst->getLogger()->error(
-        utl::ODB,
-        397,
-        "Attempt to connect iterm of dont_touch instance {}",
-        inst->name_);
+  for (auto callback : block->callbacks_) {
+    callback->inDbITermPreConnectModNet(this, mod_net);
   }
 
   debugPrint(iterm->getImpl()->getLogger(),
@@ -439,6 +450,8 @@ void dbITerm::connect(dbModNet* mod_net)
     block->journal_->endAction();
   }
 
+  iterm->mnet_ = _mod_net->getId();
+
   if (_mod_net->iterms_ != 0) {
     _dbITerm* head = block->iterm_tbl_->getPtr(_mod_net->iterms_);
     iterm->next_modnet_iterm_ = _mod_net->iterms_;
@@ -449,6 +462,10 @@ void dbITerm::connect(dbModNet* mod_net)
   }
   iterm->prev_modnet_iterm_ = 0;
   _mod_net->iterms_ = iterm->getOID();
+
+  for (auto callback : block->callbacks_) {
+    callback->inDbITermPostConnectModNet(this);
+  }
 }
 
 // disconnect both modnet and flat net from an iterm
@@ -504,8 +521,15 @@ void dbITerm::disconnect()
     block->journal_->endAction();
   }
 
-  for (auto callback : block->callbacks_) {
-    callback->inDbITermPreDisconnect(this);
+  if (net) {
+    for (auto callback : block->callbacks_) {
+      callback->inDbITermPreDisconnect(this);
+    }
+  }
+  if (mod_net_impl) {
+    for (auto callback : block->callbacks_) {
+      callback->inDbITermPreDisconnectModNet(this);
+    }
   }
 
   uint32_t id = iterm->getOID();
@@ -550,7 +574,12 @@ void dbITerm::disconnect()
         prev->next_modnet_iterm_ = iterm->next_modnet_iterm_;
       }
     }
+    iterm->next_modnet_iterm_ = 0;
+    iterm->prev_modnet_iterm_ = 0;
     iterm->mnet_ = 0;
+    for (auto callback : block->callbacks_) {
+      callback->inDbITermPostDisconnectModNet(this, mod_net);
+    }
   }
 }
 
@@ -643,6 +672,10 @@ void dbITerm::disconnectDbModNet()
   if (iterm->mnet_ != 0) {
     _dbModNet* mod_net = block->modnet_tbl_->getPtr(iterm->mnet_);
 
+    for (auto callback : block->callbacks_) {
+      callback->inDbITermPreDisconnectModNet(this);
+    }
+
     debugPrint(iterm->getImpl()->getLogger(),
                utl::ODB,
                "DB_EDIT",
@@ -681,6 +714,10 @@ void dbITerm::disconnectDbModNet()
     iterm->next_modnet_iterm_ = 0;
     iterm->prev_modnet_iterm_ = 0;
     iterm->mnet_ = 0;
+
+    for (auto callback : block->callbacks_) {
+      callback->inDbITermPostDisconnectModNet(this, (dbModNet*) mod_net);
+    }
   }
 }
 

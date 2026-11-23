@@ -3389,26 +3389,20 @@ void dbNetwork::connectPin(Pin* pin,
   dbNet* flat_net_db = nullptr;
   odb::dbModNet* hier_net_db = nullptr;
 
-  // connect the flat net first
   if (flat_net) {
-    staToDb(flat_net, flat_net_db, hier_net_db);
-    if (hier_net_db) {
+    odb::dbModNet* flat_arg_mod_net = nullptr;
+    staToDb(flat_net, flat_net_db, flat_arg_mod_net);
+    if (flat_arg_mod_net) {
       logger_->error(ORD,
                      2025,
                      "Illegal net combination. hierarchical flat net supplied "
                      "as flat net argument to api:connectPin");
     }
-    if (flat_net_db) {
-      if (iterm) {
-        iterm->connect(flat_net_db);
-      } else if (bterm) {
-        bterm->connect(flat_net_db);
-      } else {
-        logger_->error(ORD,
-                       2026,
-                       "Illegal net/pin combination. flat nets can only hook "
-                       "to dbIterm, dbBTerm");
-      }
+    if (flat_net_db && !iterm && !bterm) {
+      logger_->error(ORD,
+                     2026,
+                     "Illegal net/pin combination. flat nets can only hook "
+                     "to dbIterm, dbBTerm");
     }
   }
 
@@ -3422,26 +3416,49 @@ void dbNetwork::connectPin(Pin* pin,
                      "Illegal net combination. flat net supplied as hier net "
                      "argument to api:connectPin");
     }
-
-    if (hier_net_db) {
-      if (iterm) {
-        iterm->connect(hier_net_db);
-      } else if (bterm) {
-        bterm->connect(hier_net_db);
-      } else if (moditerm) {
-        moditerm->connect(hier_net_db);
-      } else {
-        logger_->error(ORD,
-                       2028,
-                       "Illegal net combination. hier net expected to be "
-                       "hooked to one of iterm, bterm, moditerm, modbterm");
-      }
-      // Do the house keeping. A mod net must have the correct flat-net
-      // association when the caller is performing a hierarchy edit.
-      if (flat_net_db && reassociate_hier_flat) {
-        reassociateHierFlatNet(hier_net_db, flat_net_db, nullptr);
-      }
+    if (hier_net_db && !iterm && !bterm && !moditerm) {
+      logger_->error(ORD,
+                     2028,
+                     "Illegal net combination. hier net expected to be "
+                     "hooked to one of iterm, bterm, moditerm, modbterm");
     }
+  }
+
+  // If replacing an existing flat net while also connecting a hier net,
+  // disconnect the old flat net first so callbacks never observe the old flat
+  // net paired with the new hier net.
+  if (flat_net_db && hier_net_db) {
+    if (iterm && iterm->getNet() && iterm->getNet() != flat_net_db) {
+      iterm->disconnectDbNet();
+    } else if (bterm && bterm->getNet() && bterm->getNet() != flat_net_db) {
+      bterm->disconnectDbNet();
+    }
+  }
+
+  // Connect the hierarchical net before the flat net so inDb*PostConnect
+  // sees the complete (dbNet, dbModNet) state on the pin.
+  if (hier_net_db) {
+    if (iterm) {
+      iterm->connect(hier_net_db);
+    } else if (bterm) {
+      bterm->connect(hier_net_db);
+    } else if (moditerm) {
+      moditerm->connect(hier_net_db);
+    }
+  }
+
+  if (flat_net_db) {
+    if (iterm) {
+      iterm->connect(flat_net_db);
+    } else if (bterm) {
+      bterm->connect(flat_net_db);
+    }
+  }
+
+  // Do the house keeping. A mod net must have the correct flat-net
+  // association when the caller is performing a hierarchy edit.
+  if (hier_net_db && flat_net_db && reassociate_hier_flat) {
+    reassociateHierFlatNet(hier_net_db, flat_net_db, nullptr);
   }
 }
 
@@ -3524,8 +3541,62 @@ void dbNetwork::connectPinAfter(Pin* pin)
 {
   // Update only an existing cache entry; do not prime the cache here --
   // drivers() will lazily populate on the first read.
-  if (isDriver(pin) || (isHierarchical(pin) && direction(pin)->isAnyOutput())) {
-    addDriverToCacheIfPresent(net(pin), pin);
+  if (net_drvr_pin_map_.empty()) {
+    return;
+  }
+
+  if (isHierarchical(pin)) {
+    dbITerm* iterm = nullptr;
+    dbBTerm* bterm = nullptr;
+    dbModITerm* moditerm = nullptr;
+    staToDb(pin, iterm, bterm, moditerm);
+    if (moditerm) {
+      if (odb::dbModNet* modnet = moditerm->getModNet()) {
+        removeDriverFromCache(dbToSta(modnet));
+        if (dbNet* db_net = modnet->findRelatedNet()) {
+          removeDriverFromCache(dbToSta(db_net));
+          odb::PtrSet<odb::dbModNet> modnet_set;
+          db_net->findRelatedModNets(modnet_set);
+          for (odb::dbModNet* related_modnet : modnet_set) {
+            removeDriverFromCache(dbToSta(related_modnet));
+          }
+        }
+      }
+    }
+    return;
+  }
+
+  dbNet* db_net = nullptr;
+  odb::dbModNet* mod_net = nullptr;
+  net(pin, db_net, mod_net);
+
+  if (isDriver(pin)) {
+    if (db_net) {
+      odb::PtrSet<odb::dbModNet> related_mod_nets;
+      db_net->findRelatedModNets(related_mod_nets);
+      for (odb::dbModNet* related_mod_net : related_mod_nets) {
+        addDriverToCacheIfPresent(dbToSta(related_mod_net), pin);
+      }
+      addDriverToCacheIfPresent(dbToSta(db_net), pin);
+    }
+    if (mod_net) {
+      if (db_net) {
+        addDriverToCacheIfPresent(dbToSta(mod_net), pin);
+      } else {
+        removeDriverFromCache(dbToSta(mod_net));
+      }
+    }
+    return;
+  }
+
+  // If a load pin links a previously empty mod_net to a flat net, evict any
+  // cached empty driver set for mod_net so the next drivers() query resolves
+  // through db_net.
+  if (mod_net && db_net) {
+    auto entry = net_drvr_pin_map_.find(dbToSta(mod_net));
+    if (entry != net_drvr_pin_map_.end() && entry->second->empty()) {
+      removeDriverFromCache(dbToSta(mod_net));
+    }
   }
 }
 
@@ -3618,6 +3689,10 @@ void dbNetwork::disconnectPin(Pin* pin)
 
 void dbNetwork::disconnectPinBefore(const Pin* pin)
 {
+  if (net_drvr_pin_map_.empty()) {
+    return;
+  }
+
   // This function is called before a pin is disconnected to update (invalidate)
   // the internal driver cache (net_drvr_pin_map_).
   // 1. If load pin, nop because it is not managed by the driver cache

@@ -14,17 +14,23 @@
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbTypes.h"
+#include "sta/Delay.hh"
+#include "sta/ExceptionPath.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
 #include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
+#include "sta/PathEnd.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/Sdc.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Sta.hh"
 #include "sta/TimingArc.hh"
+#include "sta/Transition.hh"
 #include "tst/IntegratedFixture.h"
+#include "tst/loaded_design.h"
 
 namespace sta {
 
@@ -560,6 +566,151 @@ TEST_F(TestDbSta, LevelsOfLogicExcludesClockTree)
   EXPECT_EQ(sorted_depths(true, false), (std::vector<int>{0, 0, 0, 0, 1}));
   EXPECT_EQ(sorted_depths(false, true), (std::vector<int>{0, 0, 0, 1, 1}));
   EXPECT_EQ(sorted_depths(true, true), (std::vector<int>{0, 0, 0, 0, 0}));
+}
+
+// Regression for #12401: a group_path -through a hierarchical module net must
+// retain its endpoints across flat-net-first ODB reconnects,
+// dbNetwork::connectPin swaps, and journaled ECO rollbacks, without duplicating
+// STA wire edges.
+TEST_F(TestDbSta, GroupPathThruModNetSurvivesPinReconnect)
+{
+  block_ = tst::readVerilogAndLink(
+      getFilePath(test_root_path_ + "hier_thru_pin_swap.v"),
+      "top",
+      true,
+      db_.get(),
+      sta_.get(),
+      &logger_,
+      lib_);
+
+  Pin* clk_pin = db_network_->dbToSta(block_->findBTerm("clk"));
+  ASSERT_NE(clk_pin, nullptr);
+  PinSet clk_pins(db_network_);
+  clk_pins.insert(clk_pin);
+  FloatSeq waveform = {0.0f, 0.05f};
+  sta_->makeClock("clk", clk_pins, false, 0.1f, waveform, "", sta_->cmdMode());
+
+  odb::dbModNet* u_b_mod = block_->findModNet("u/b");
+  ASSERT_NE(u_b_mod, nullptr);
+  auto make_thru_u_b = [&]() -> ExceptionThruSeq* {
+    auto* nets = new NetSet(db_network_);
+    nets->insert(db_network_->dbToSta(u_b_mod));
+    auto* thrus = new ExceptionThruSeq;
+    thrus->push_back(new ExceptionThru(
+        nullptr, nets, nullptr, RiseFallBoth::riseFall(), true, db_network_));
+    return thrus;
+  };
+
+  sta_->makeGroupPath(
+      "g", false, nullptr, make_thru_u_b(), nullptr, "", sta_->cmdSdc());
+
+  auto group_endpoints = [&](const std::string& group) {
+    StringSeq groups = {group};
+    PathEndSeq ends = sta_->findPathEnds(nullptr,
+                                         nullptr,
+                                         nullptr,
+                                         false,
+                                         sta_->scenes(),
+                                         MinMaxAll::max(),
+                                         100,
+                                         1,
+                                         false,
+                                         false,
+                                         -INF,
+                                         INF,
+                                         false,
+                                         groups,
+                                         true,
+                                         false,
+                                         false,
+                                         false,
+                                         false,
+                                         false);
+    std::vector<std::string> names;
+    for (PathEnd* pe : ends) {
+      names.push_back(db_network_->pathName(pe->vertex(sta_.get())->pin()));
+    }
+    std::sort(names.begin(), names.end());
+    names.erase(std::unique(names.begin(), names.end()), names.end());
+    return names;
+  };
+
+  auto incoming_wire_edges = [&](odb::dbITerm* iterm) {
+    Graph* graph = sta_->ensureGraph();
+    Vertex* v = graph->pinLoadVertex(db_network_->dbToSta(iterm));
+    int count = 0;
+    if (v) {
+      VertexInEdgeIterator iter(v, graph);
+      while (iter.hasNext()) {
+        if (iter.next()->isWire()) {
+          ++count;
+        }
+      }
+    }
+    return count;
+  };
+
+  const std::vector<std::string> expected = {"u/r2/D"};
+  ASSERT_EQ(group_endpoints("g"), expected);
+
+  odb::dbITerm* a = block_->findITerm("u/g/A");
+  odb::dbITerm* b = block_->findITerm("u/g/B");
+  ASSERT_NE(a, nullptr);
+  ASSERT_NE(b, nullptr);
+  odb::dbNet* a_net = a->getNet();
+  odb::dbModNet* a_mod = a->getModNet();
+  odb::dbNet* b_net = b->getNet();
+  odb::dbModNet* b_mod = b->getModNet();
+  ASSERT_EQ(b_mod, u_b_mod);
+
+  // 1. Direct ODB flat-first reconnect, as in #12401's reproducer.
+  a->disconnect();
+  a->connect(b_net);
+  a->connect(b_mod);
+  b->disconnect();
+  b->connect(a_net);
+  b->connect(a_mod);
+
+  EXPECT_EQ(group_endpoints("g"), expected);
+  EXPECT_EQ(incoming_wire_edges(a), 1);
+  EXPECT_EQ(incoming_wire_edges(b), 1);
+  EXPECT_EQ(db_network_->checkAxioms(), 0);
+  EXPECT_EQ(sta_->checkSanity(), 0);
+
+  // 2. Journaled Resizer::swapPins style connectPin, followed by undoEco
+  // (which replays iterm->connect(dbNet) before iterm->connect(dbModNet)).
+  Pin* pin_a = db_network_->dbToSta(a);
+  Pin* pin_b = db_network_->dbToSta(b);
+  odb::dbDatabase::beginEco(block_);
+  sta_->disconnectPin(pin_a);
+  db_network_->connectPin(
+      pin_a, db_network_->dbToSta(a_net), db_network_->dbToSta(a_mod), false);
+  sta_->disconnectPin(pin_b);
+  db_network_->connectPin(
+      pin_b, db_network_->dbToSta(b_net), db_network_->dbToSta(b_mod), false);
+  EXPECT_EQ(group_endpoints("g"), expected);
+  EXPECT_EQ(incoming_wire_edges(a), 1);
+  EXPECT_EQ(incoming_wire_edges(b), 1);
+
+  odb::dbDatabase::undoEco(block_);
+  EXPECT_EQ(a->getModNet(), b_mod);
+  EXPECT_EQ(b->getModNet(), a_mod);
+  EXPECT_EQ(group_endpoints("g"), expected);
+  EXPECT_EQ(incoming_wire_edges(a), 1);
+  EXPECT_EQ(incoming_wire_edges(b), 1);
+  EXPECT_EQ(db_network_->checkAxioms(), 0);
+  EXPECT_EQ(sta_->checkSanity(), 0);
+
+  // 3. Direct dbNetwork::connectPin replacement without prior disconnectPin.
+  db_network_->connectPin(
+      pin_a, db_network_->dbToSta(a_net), db_network_->dbToSta(a_mod), false);
+  db_network_->connectPin(
+      pin_b, db_network_->dbToSta(b_net), db_network_->dbToSta(b_mod), false);
+  EXPECT_EQ(group_endpoints("g"), expected);
+  EXPECT_EQ(incoming_wire_edges(a), 1);
+  EXPECT_EQ(incoming_wire_edges(b), 1);
+  EXPECT_EQ(db_network_->checkAxioms(), 0);
+  EXPECT_EQ(sta_->checkSanity(), 0);
 }
 
 }  // namespace sta

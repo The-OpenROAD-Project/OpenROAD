@@ -111,6 +111,7 @@ ALL_TESTS = [
 
 PASSFAIL_TESTS = [
     "check_ip_liberty_pins",
+    "hier_thru_pin_swap",
     "write_verilog_def_alias",
     "write_verilog_def_shared_inputs",
 ]
@@ -638,6 +639,7 @@ cc_test(
         "cpp/TestDbSta_0.v",
         "cpp/TestDbSta_DriverInputPortAcrossNetlistEdits.v",
         "cpp/TestDbSta_LevelsOfLogic.v",
+        "hier_thru_pin_swap.v",
     ],
     deps = [
         "//openroad/dbSta",
@@ -646,6 +648,7 @@ cc_test(
         "//openroad/odb/src/db",
         "//openroad/sta:opensta_lib",
         "//openroad/tst:integrated_fixture",
+        "//openroad/tst:loaded_design",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
