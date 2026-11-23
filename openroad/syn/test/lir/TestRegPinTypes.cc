@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <iterator>
 #include <set>
 #include <string>
+#include <string_view>
 
 #include "gtest/gtest.h"
 #include "syn/lir/RegPinTypes.h"
@@ -19,13 +21,13 @@ TEST(RegPinTypeTest, EveryPinTypeHasAUniqueName)
 {
   std::set<std::string> names;
   for (int i = 0; i < kNumRegPinTypes; ++i) {
-    const char* name = regPinTypeName(static_cast<RegPinType>(i));
-    ASSERT_NE(name, nullptr) << "pin type " << i;
-    EXPECT_STRNE(name, "?") << "pin type " << i;
-    names.insert(name);
+    const std::string_view name = regPinTypeName(static_cast<RegPinType>(i));
+    ASSERT_FALSE(name.empty()) << "pin type " << i;
+    EXPECT_NE(name, "?") << "pin type " << i;
+    names.insert(std::string(name));
   }
-  EXPECT_EQ(names.size(), kNumRegPinTypes);
-  EXPECT_STREQ(regPinTypeName(RegPinType::kNumTypes), "?");
+  EXPECT_EQ(std::ssize(names), kNumRegPinTypes);
+  EXPECT_EQ(regPinTypeName(RegPinType::kNumTypes), "?");
 }
 
 TEST(RegPinTypeTest, MaskBits)

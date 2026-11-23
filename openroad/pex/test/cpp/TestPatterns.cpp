@@ -6,11 +6,11 @@
 #include <utility>
 #include <vector>
 
+#include "Patterns.h"
 #include "fsv/Geometry.h"
 #include "fsv/Itf.h"
 #include "fsv/Stack.h"
 #include "gtest/gtest.h"
-#include "pex/Patterns.h"
 
 namespace pex {
 namespace {

@@ -8,16 +8,16 @@
 #include <string>
 #include <vector>
 
+#include "Model.h"
+#include "ModelBuilder.h"
+#include "ModelJson.h"
+#include "Patterns.h"
 #include "fsv/Geometry.h"
 #include "fsv/Itf.h"
 #include "fsv/Scene.h"
 #include "fsv/Solver.h"
 #include "fsv/Stack.h"
 #include "gtest/gtest.h"
-#include "pex/Model.h"
-#include "pex/ModelBuilder.h"
-#include "pex/ModelJson.h"
-#include "pex/Patterns.h"
 
 namespace pex {
 namespace {

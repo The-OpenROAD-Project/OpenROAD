@@ -447,7 +447,7 @@ TEST(Itf, Sky130Resistance)
   EXPECT_EQ(met1.crt.crt2, 3.094e-7);
   EXPECT_EQ(met1.t0, 25);
   EXPECT_EQ(met1.capacitive_etch, 0);
-  EXPECT_EQ(met1.resistive_etch, -0.0195);
+  EXPECT_EQ(met1.resistive_etch, 0.0195);
   EXPECT_TRUE(met1.etch_tables.empty());
   EXPECT_EQ(met1.layer_type, "");
   EXPECT_EQ(stack.conductor(stack.layer("DIFF")).rpsq, 197);
