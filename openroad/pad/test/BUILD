@@ -1,4 +1,4 @@
-load("@rules_python//python:defs.bzl", "py_test")
+load("//bazel:man_tcl_checker.bzl", "man_tcl_check_test")
 
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
@@ -226,15 +226,9 @@ filegroup(
     for test_name in ALL_TESTS
 ]
 
-py_test(
+man_tcl_check_test(
     name = "pad_man_tcl_check",
-    srcs = ["pad_man_tcl_check.py"],
-    data = ["//openroad/pad:doc_files"],
-    tags = [
-        "doc_check",
-        "py",
-    ],
-    deps = ["//docs/src/scripts:extract_utils"],
+    module = "pad",
 )
 
 doc_check_test(

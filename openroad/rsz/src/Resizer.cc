@@ -2363,6 +2363,12 @@ sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
         }
       }
 
+      // Keep data and clock buffers disjoint during gate sizing.
+      if (source_cell->isBuffer() && equiv_cell->isBuffer()
+          && getBufferUse(source_cell) != getBufferUse(equiv_cell)) {
+        continue;
+      }
+
       if (match_cell_footprint_) {
         const bool footprints_match
             = source_cell->footprint() == equiv_cell->footprint();
@@ -7946,6 +7952,7 @@ void Resizer::setClockBufferString(const std::string& clk_str)
 {
   clock_buffer_string_ = clk_str;
   clock_buffer_footprint_.clear();
+  swappable_cells_cache_.clear();
   logger_->info(RSZ, 205, "Clock buffer string set to '{}'", clk_str);
 }
 
@@ -7953,6 +7960,7 @@ void Resizer::setClockBufferFootprint(const std::string& footprint)
 {
   clock_buffer_footprint_ = footprint;
   clock_buffer_string_.clear();
+  swappable_cells_cache_.clear();
   logger_->info(RSZ, 206, "Clock buffer footprint set to '{}'", footprint);
 }
 
@@ -7960,6 +7968,7 @@ void Resizer::resetClockBufferPattern()
 {
   clock_buffer_string_.clear();
   clock_buffer_footprint_.clear();
+  swappable_cells_cache_.clear();
   logger_->info(RSZ, 207, "Clock buffer string and footprint have been reset");
 }
 
