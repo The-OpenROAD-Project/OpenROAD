@@ -22,6 +22,8 @@
 #include "dbTable.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <algorithm>
+
 #include "dbCommon.h"
 #include "dbGroupGroundNetItr.h"
 #include "dbGroupPowerNetItr.h"
@@ -383,23 +385,19 @@ void dbGroup::addPowerNet(dbNet* net)
 {
   _dbGroup* _group = (_dbGroup*) this;
   _dbNet* _net = (_dbNet*) net;
+  const dbId<_dbNet> net_oid(_net->getOID());
   for (const dbId<_dbNet>& _child : _group->power_nets_) {
-    if (_child == _net->getOID()) {
+    if (_child == net_oid) {
       return;
     }
   }
   bool found = false;
-  dbVector<dbId<_dbNet>>::iterator it;
-  for (it = _group->ground_nets_.begin();
-       it != _group->ground_nets_.end() && !found;
-       it++) {
-    if (*it == _net->getOID()) {
-      _group->ground_nets_.erase(it);
-      found = true;
-      break;
-    }
+  if (auto it = std::ranges::find(_group->ground_nets_, net_oid);
+      it != _group->ground_nets_.end()) {
+    _group->ground_nets_.erase(it);
+    found = true;
   }
-  _group->power_nets_.push_back(_net->getOID());
+  _group->power_nets_.push_back(net_oid);
   if (!found) {
     _net->groups_.push_back(_group->getOID());
   }
@@ -409,23 +407,19 @@ void dbGroup::addGroundNet(dbNet* net)
 {
   _dbGroup* _group = (_dbGroup*) this;
   _dbNet* _net = (_dbNet*) net;
+  const dbId<_dbNet> net_oid(_net->getOID());
   for (const dbId<_dbNet>& _child : _group->ground_nets_) {
-    if (_child == _net->getOID()) {
+    if (_child == net_oid) {
       return;
     }
   }
   bool found = false;
-  dbVector<dbId<_dbNet>>::iterator it;
-  for (it = _group->power_nets_.begin();
-       it != _group->power_nets_.end() && !found;
-       it++) {
-    if (*it == _net->getOID()) {
-      _group->power_nets_.erase(it);
-      found = true;
-      break;
-    }
+  if (auto it = std::ranges::find(_group->power_nets_, net_oid);
+      it != _group->power_nets_.end()) {
+    _group->power_nets_.erase(it);
+    found = true;
   }
-  _group->ground_nets_.push_back(_net->getOID());
+  _group->ground_nets_.push_back(net_oid);
   if (!found) {
     _net->groups_.push_back(_group->getOID());
   }
@@ -435,34 +429,22 @@ void dbGroup::removeNet(dbNet* net)
 {
   _dbGroup* _group = (_dbGroup*) this;
   _dbNet* _net = (_dbNet*) net;
+  const dbId<_dbNet> net_oid(_net->getOID());
   bool found = false;
-  dbVector<dbId<_dbNet>>::iterator net_itr;
-  for (net_itr = _group->power_nets_.begin();
-       net_itr != _group->power_nets_.end() && !found;
-       net_itr++) {
-    if (*net_itr == _net->getOID()) {
-      _group->power_nets_.erase(net_itr);
-      found = true;
-      break;
-    }
-  }
-  for (net_itr = _group->ground_nets_.begin();
-       net_itr != _group->ground_nets_.end() && !found;
-       net_itr++) {
-    if (*net_itr == _net->getOID()) {
-      _group->ground_nets_.erase(net_itr);
-      found = true;
-      break;
-    }
+  if (auto it = std::ranges::find(_group->power_nets_, net_oid);
+      it != _group->power_nets_.end()) {
+    _group->power_nets_.erase(it);
+    found = true;
+  } else if (auto it = std::ranges::find(_group->ground_nets_, net_oid);
+             it != _group->ground_nets_.end()) {
+    _group->ground_nets_.erase(it);
+    found = true;
   }
   if (found) {
-    dbVector<dbId<_dbGroup>>::iterator group_itr;
-    for (group_itr = _net->groups_.begin(); group_itr != _net->groups_.end();
-         group_itr++) {
-      if (*group_itr == _group->getOID()) {
-        _net->groups_.erase(group_itr);
-        return;
-      }
+    if (auto it
+        = std::ranges::find(_net->groups_, dbId<_dbGroup>(_group->getOID()));
+        it != _net->groups_.end()) {
+      _net->groups_.erase(it);
     }
   }
 }
