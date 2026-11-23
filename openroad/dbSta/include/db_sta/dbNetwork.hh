@@ -446,6 +446,7 @@ class dbNetwork : public ConcreteNetwork
   void disconnectPin(Pin* pin) override;
   void disconnectPin(Pin* pin, Net*);
   void disconnectPinBefore(const Pin* pin);
+  void disconnectModNetPinBefore(const Pin* pin);
   void deletePin(Pin* pin) override;
   Net* makeNet(Instance* parent = nullptr);
   Net* makeNet(std::string_view name, Instance* parent) override;

@@ -3551,7 +3551,10 @@ void dbNetwork::connectPinAfter(Pin* pin)
     dbModITerm* moditerm = nullptr;
     staToDb(pin, iterm, bterm, moditerm);
     if (moditerm) {
-      if (odb::dbModNet* modnet = moditerm->getModNet()) {
+      auto evict_modnet = [this](odb::dbModNet* modnet) {
+        if (modnet == nullptr) {
+          return;
+        }
         removeDriverFromCache(dbToSta(modnet));
         if (dbNet* db_net = modnet->findRelatedNet()) {
           removeDriverFromCache(dbToSta(db_net));
@@ -3561,6 +3564,10 @@ void dbNetwork::connectPinAfter(Pin* pin)
             removeDriverFromCache(dbToSta(related_modnet));
           }
         }
+      };
+      evict_modnet(moditerm->getModNet());
+      if (odb::dbModBTerm* child_bterm = moditerm->getChildModBTerm()) {
+        evict_modnet(child_bterm->getModNet());
       }
     }
     return;
@@ -3589,13 +3596,21 @@ void dbNetwork::connectPinAfter(Pin* pin)
     return;
   }
 
-  // If a load pin links a previously empty mod_net to a flat net, evict any
-  // cached empty driver set for mod_net so the next drivers() query resolves
-  // through db_net.
+  // If a load pin links a previously empty mod_net (or its hierarchical peers)
+  // to a flat net, evict any cached empty driver set so the next drivers()
+  // query resolves through db_net.
   if (mod_net && db_net) {
-    auto entry = net_drvr_pin_map_.find(dbToSta(mod_net));
-    if (entry != net_drvr_pin_map_.end() && entry->second->empty()) {
-      removeDriverFromCache(dbToSta(mod_net));
+    auto evict_if_empty = [this](odb::dbModNet* mnet) {
+      auto entry = net_drvr_pin_map_.find(dbToSta(mnet));
+      if (entry != net_drvr_pin_map_.end() && entry->second->empty()) {
+        removeDriverFromCache(dbToSta(mnet));
+      }
+    };
+    evict_if_empty(mod_net);
+    odb::PtrSet<odb::dbModNet> related_mod_nets;
+    db_net->findRelatedModNets(related_mod_nets);
+    for (odb::dbModNet* related_mod_net : related_mod_nets) {
+      evict_if_empty(related_mod_net);
     }
   }
 }
@@ -3765,6 +3780,57 @@ void dbNetwork::disconnectPinBefore(const Pin* pin)
   if (mod_net) {
     removeDriverFromCache(dbToSta(mod_net), pin);
   }
+}
+
+void dbNetwork::disconnectModNetPinBefore(const Pin* pin)
+{
+  if (pin == nullptr || net_drvr_pin_map_.empty()) {
+    return;
+  }
+
+  auto evict_modnet_family
+      = [this](odb::dbModNet* modnet, dbNet* db_net, bool evict_flat_net) {
+          if (modnet != nullptr) {
+            removeDriverFromCache(dbToSta(modnet));
+            if (db_net == nullptr) {
+              db_net = modnet->findRelatedNet();
+            }
+          }
+          if (db_net != nullptr) {
+            if (evict_flat_net) {
+              removeDriverFromCache(dbToSta(db_net));
+            }
+            odb::PtrSet<odb::dbModNet> related_mod_nets;
+            db_net->findRelatedModNets(related_mod_nets);
+            for (odb::dbModNet* related_mod_net : related_mod_nets) {
+              removeDriverFromCache(dbToSta(related_mod_net));
+            }
+          }
+        };
+
+  if (isHierarchical(pin)) {
+    dbITerm* iterm = nullptr;
+    dbBTerm* bterm = nullptr;
+    dbModITerm* moditerm = nullptr;
+    staToDb(pin, iterm, bterm, moditerm);
+    if (moditerm != nullptr) {
+      evict_modnet_family(moditerm->getModNet(), nullptr, true);
+      if (odb::dbModBTerm* child_bterm = moditerm->getChildModBTerm()) {
+        evict_modnet_family(child_bterm->getModNet(), nullptr, true);
+      }
+    }
+    return;
+  }
+
+  // Only the pin's dbModNet is detaching; its flat dbNet (if any) stays
+  // connected, so net_drvr_pin_map_[dbToSta(db_net)] remains valid and must
+  // not be mutated into an empty set. Evict mod_net and any hierarchical nets
+  // bridged through db_net so their drivers are recomputed lazily on the next
+  // query.
+  dbNet* db_net = nullptr;
+  odb::dbModNet* mod_net = nullptr;
+  net(pin, db_net, mod_net);
+  evict_modnet_family(mod_net, db_net, false);
 }
 
 void dbNetwork::deletePin(Pin* pin)

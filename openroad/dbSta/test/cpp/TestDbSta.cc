@@ -713,4 +713,111 @@ TEST_F(TestDbSta, GroupPathThruModNetSurvivesPinReconnect)
   EXPECT_EQ(sta_->checkSanity(), 0);
 }
 
+// Regression for hierarchical CTS (TritonCTS::destroyClockModNet) and partial
+// ModNet disconnects: detaching or destroying a dbModNet while a pin's flat
+// dbNet stays connected must keep net_drvr_pin_map_[dbNet] intact for new
+// loads while evicting stale dbModNet driver cache entries.
+TEST_F(TestDbSta, DisconnectModNetPreservesFlatDriverCacheAndEvictsModNetCache)
+{
+  block_ = tst::readVerilogAndLink(
+      getFilePath(test_root_path_ + "hier_thru_pin_swap.v"),
+      "top",
+      true,
+      db_.get(),
+      sta_.get(),
+      &logger_,
+      lib_);
+
+  odb::dbBTerm* clk_bterm = block_->findBTerm("clk");
+  ASSERT_NE(clk_bterm, nullptr);
+  Pin* clk_pin = db_network_->dbToSta(clk_bterm);
+  PinSet clk_pins(db_network_);
+  clk_pins.insert(clk_pin);
+  FloatSeq waveform = {0.0f, 0.05f};
+  sta_->makeClock("clk", clk_pins, false, 0.1f, waveform, "", sta_->cmdMode());
+  Graph* graph = sta_->ensureGraph();
+
+  auto incoming_wire_edges = [&](odb::dbITerm* iterm) {
+    Vertex* v = graph->pinLoadVertex(db_network_->dbToSta(iterm));
+    int count = 0;
+    if (v) {
+      VertexInEdgeIterator iter(v, graph);
+      while (iter.hasNext()) {
+        if (iter.next()->isWire()) {
+          ++count;
+        }
+      }
+    }
+    return count;
+  };
+
+  // 1. Load-pin dbModNet disconnect evicts mod_net's cached driver without
+  // disturbing the flat net's cached driver.
+  odb::dbITerm* b = block_->findITerm("u/g/B");
+  odb::dbModInst* u_inst = block_->findModInst("u");
+  ASSERT_NE(b, nullptr);
+  ASSERT_NE(u_inst, nullptr);
+  odb::dbModITerm* u_b_moditerm = u_inst->findModITerm("b");
+  ASSERT_NE(u_b_moditerm, nullptr);
+  odb::dbNet* b_net = b->getNet();
+  odb::dbModNet* b_mod = b->getModNet();
+  odb::dbModNet* u_b_parent_mod = u_b_moditerm->getModNet();
+  ASSERT_NE(b_net, nullptr);
+  ASSERT_NE(b_mod, nullptr);
+  ASSERT_NE(u_b_parent_mod, nullptr);
+
+  EXPECT_EQ(db_network_->drivers(db_network_->dbToSta(b_net))->size(), 1);
+  EXPECT_EQ(db_network_->drivers(db_network_->dbToSta(b_mod))->size(), 1);
+
+  u_b_moditerm->disconnect();
+  b->disconnectDbModNet();
+  EXPECT_EQ(db_network_->drivers(db_network_->dbToSta(b_net))->size(), 1);
+  EXPECT_TRUE(db_network_->drivers(db_network_->dbToSta(b_mod))->empty());
+
+  b->connect(b_mod);
+  u_b_moditerm->connect(u_b_parent_mod);
+  EXPECT_EQ(db_network_->drivers(db_network_->dbToSta(b_mod))->size(), 1);
+  EXPECT_EQ(db_network_->checkAxioms(), 0);
+  EXPECT_EQ(sta_->checkSanity(), 0);
+
+  // 2. Destroying the root clock dbModNet while leaving the BTerm on its flat
+  // dbNet (as TritonCTS::destroyClockModNet does) must not poison drivers(clk)
+  // when inserting a root clock buffer on clk_net.
+  odb::dbNet* clk_net = clk_bterm->getNet();
+  odb::dbModNet* clk_mod = clk_bterm->getModNet();
+  ASSERT_NE(clk_net, nullptr);
+  ASSERT_NE(clk_mod, nullptr);
+  EXPECT_EQ(db_network_->drivers(db_network_->dbToSta(clk_net))->size(), 1);
+
+  std::vector<odb::dbITerm*> clk_sinks;
+  for (odb::dbITerm* iterm : clk_net->getITerms()) {
+    if (iterm->getIoType() == odb::dbIoType::INPUT) {
+      clk_sinks.push_back(iterm);
+    }
+  }
+  for (odb::dbITerm* sink : clk_sinks) {
+    sink->disconnect();
+  }
+  odb::dbModNet::destroy(clk_mod);
+  ASSERT_EQ(clk_bterm->getNet(), clk_net);
+  ASSERT_EQ(clk_bterm->getModNet(), nullptr);
+
+  LibertyCell* buf_cell = db_network_->findLibertyCell("CLKBUF_X1");
+  ASSERT_NE(buf_cell, nullptr);
+  Instance* root_buf = sta_->makeInstance(
+      "clkbuf_0_clk", buf_cell, db_network_->topInstance());
+  ASSERT_NE(root_buf, nullptr);
+  odb::dbInst* root_buf_db = nullptr;
+  odb::dbModInst* unused_mod_inst = nullptr;
+  db_network_->staToDb(root_buf, root_buf_db, unused_mod_inst);
+  ASSERT_NE(root_buf_db, nullptr);
+  odb::dbITerm* buf_in = root_buf_db->findITerm("A");
+  ASSERT_NE(buf_in, nullptr);
+  buf_in->connect(clk_net);
+
+  EXPECT_EQ(db_network_->drivers(db_network_->dbToSta(clk_net))->size(), 1);
+  EXPECT_EQ(incoming_wire_edges(buf_in), 1);
+  EXPECT_EQ(sta_->checkSanity(), 0);
+}
+
 }  // namespace sta

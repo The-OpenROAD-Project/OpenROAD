@@ -1518,7 +1518,7 @@ void dbStaCbk::inDbITermPostConnectModNet(odb::dbITerm* iterm)
 void dbStaCbk::inDbITermPreDisconnectModNet(odb::dbITerm* iterm)
 {
   Pin* pin = network_->dbToSta(iterm);
-  network_->disconnectPinBefore(pin);
+  network_->disconnectModNetPinBefore(pin);
 }
 
 void dbStaCbk::inDbITermDestroy(odb::dbITerm* iterm)
@@ -1539,7 +1539,7 @@ void dbStaCbk::inDbModITermPreDisconnect(odb::dbModITerm* moditerm)
   Pin* pin = network_->dbToSta(moditerm);
   // Connection is made by odb::dbITerm callbacks. Calling this causes problem.
   // sta_->disconnectPinBefore(pin);
-  network_->disconnectPinBefore(pin);
+  network_->disconnectModNetPinBefore(pin);
 }
 
 void dbStaCbk::inDbModITermDestroy(odb::dbModITerm* moditerm)
@@ -1573,7 +1573,7 @@ void dbStaCbk::inDbBTermPostConnectModNet(odb::dbBTerm* bterm)
 void dbStaCbk::inDbBTermPreDisconnectModNet(odb::dbBTerm* bterm)
 {
   Pin* pin = network_->dbToSta(bterm);
-  network_->disconnectPinBefore(pin);
+  network_->disconnectModNetPinBefore(pin);
 }
 
 // 3DIC: these callbacks are hooked on chiplet blocks, whose bterms are
@@ -1672,7 +1672,7 @@ void dbStaCbk::inDbModBTermPreDisconnect(odb::dbModBTerm* modbterm)
 {
   if (odb::dbModITerm* parent_moditerm = modbterm->getParentModITerm()) {
     Pin* pin = network_->dbToSta(parent_moditerm);
-    network_->disconnectPinBefore(pin);
+    network_->disconnectModNetPinBefore(pin);
   }
 }
 
