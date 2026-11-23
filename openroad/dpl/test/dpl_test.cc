@@ -1756,4 +1756,125 @@ TEST_F(Lef58ImplantAndEdgeTest, Lef58ImplantWidthLayerLengthSelectsShortShapes)
   placeCell(m1_2h, "t", 2, 0);
   EXPECT_EQ(runCheck(), "");
 }
+TEST_F(Lef58ImplantAndEdgeTest, Lef58ImplantSpacingIntersectLayersAnyOf)
+{
+  // INTERSECTLAYERS OD_LAYER IMP3: the spacing applies when the gap is
+  // crossed by a shape on ANY one of the listed layers; all of them need not
+  // be present.
+  odb::dbTechLayer* imp3
+      = odb::dbTechLayer::create(tech_, "IMP3", odb::dbTechLayerType::IMPLANT);
+  auto* rule = odb::dbTechLayerImplantSpacingRule::create(imp1_);
+  rule->setMinSpacing(2 * kSiteWidth);
+  rule->setSecondLayer(imp2_);
+  rule->setHorizontal(true);
+  rule->addIntersectLayer(ms_od_);
+  rule->addIntersectLayer(imp3);
+
+  odb::dbMaster* m1 = createCustomMaster(
+      "M1", 1, {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+  odb::dbMaster* m2 = createCustomMaster(
+      "M2", 1, {{imp2_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+  odb::dbMaster* m_od = createCustomMaster(
+      "M_OD", 1, {{ms_od_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+  odb::dbMaster* m_i3 = createCustomMaster(
+      "M_I3", 1, {{imp3, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+
+  // Empty 1-site gap: no listed layer crosses it -> rule does not apply
+  placeCell(m1, "i1", 2, 0);
+  placeCell(m2, "i2", 4, 0);
+  EXPECT_EQ(runCheck(), "");
+
+  // OD alone in the gap is enough -> violation
+  odb::dbInst* od = placeCell(m_od, "od", 3, 0);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+
+  // IMP3 alone in the gap is also enough -> violation
+  odb::dbInst::destroy(od);
+  placeCell(m_i3, "i3", 3, 0);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+}
+TEST_F(Lef58ImplantAndEdgeTest,
+       Lef58ImplantSpacingHorizontalVerticalPrlAndIntersect)
+{
+  auto* r_h = odb::dbTechLayerImplantSpacingRule::create(imp1_);
+  r_h->setMinSpacing(2 * kSiteWidth);
+  r_h->setSecondLayer(imp2_);
+  r_h->setHorizontal(true);
+  r_h->setExceptAbutted(true);
+  r_h->setLength(2 * kSiteWidth);
+  r_h->addIntersectLayer(ms_od_);
+
+  odb::dbMaster* m1
+      = createCustomMaster("M1_OD",
+                           1,
+                           {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight)},
+                            {ms_od_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+  odb::dbMaster* m2
+      = createCustomMaster("M2_OD",
+                           1,
+                           {{imp2_, odb::Rect(0, 0, kSiteWidth, kRowHeight)},
+                            {ms_od_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+
+  // Abutted (dx_gap == 0) is legal due to EXCEPTABUTTED
+  odb::dbInst* i1 = placeCell(m1, "i1", 2, 0);
+  odb::dbInst* i2 = placeCell(m2, "i2", 3, 0);
+  EXPECT_EQ(runCheck(), "");
+
+  // Vertical stack (IMP2 directly above IMP1 on row 1) has prl_x > 0, so it
+  // must NOT falsely trigger a HORIZONTAL rule even without EXCEPTABUTTED!
+  i2->setOrient(odb::dbOrientType::MX);
+  i2->setLocation(2 * kSiteWidth, 1 * kRowHeight);
+  EXPECT_EQ(runCheck(), "");
+
+  // 1-site horizontal gap WITHOUT OD bridging the gap is legal (negative
+  // INTERSECTLAYERS check - i1/i2's own OD must not match the gap!)
+  i2->setOrient(odb::dbOrientType::R0);
+  i2->setLocation(4 * kSiteWidth, 0);
+  EXPECT_EQ(runCheck(), "");
+
+  // Adding OD bridging the 1-site gap triggers HORIZONTAL spacing violation
+  odb::dbMaster* m_od_bridge = createCustomMaster(
+      "M_OD_BRIDGE", 1, {{ms_od_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+  odb::dbInst* bridge = placeCell(m_od_bridge, "bridge", 3, 0);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+
+  // 2-site gap (dx_gap == 2 * kSiteWidth) is legal
+  i2->setLocation(5 * kSiteWidth, 0);
+  EXPECT_EQ(runCheck(), "");
+  odb::dbInst::destroy(bridge);
+  odb::dbInst::destroy(i1);
+  odb::dbInst::destroy(i2);
+
+  // Test VERTICAL rule with negative PRL and EXCEPTCORNERTOUCH on IMP2
+  auto* r_v = odb::dbTechLayerImplantSpacingRule::create(imp2_);
+  r_v->setMinSpacing(kRowHeight / 2);
+  r_v->setVertical(true);
+  r_v->setPrl(-kSiteWidth);
+  r_v->setPrlValid(true);
+  r_v->setExceptCornerTouch(true);
+
+  odb::dbMaster* m2_half = createCustomMaster(
+      "M2_BOT_HALF",
+      1,
+      {{imp2_, odb::Rect(0, 0, kSiteWidth, 3 * kRowHeight / 4)}});
+  // Diagonal corner touch (gx=2 row 0 full height vs gx=3 row 1 MX full height)
+  // is exempt due to EXCEPTCORNERTOUCH:
+  odb::dbInst* v1 = placeCell(m2, "v1", 2, 0);
+  odb::dbInst* v2 = placeCell(m2, "v2", 3, 1, odb::dbOrientType::MX);
+  EXPECT_EQ(runCheck(), "");
+  odb::dbInst::destroy(v1);
+  odb::dbInst::destroy(v2);
+
+  // Vertically separated by kRowHeight/4 (< kRowHeight/2) with 1-site X offset
+  // (prl_x == -kSiteWidth >= rule_prl) triggers VERTICAL negative-PRL rule!
+  odb::dbInst* vn1 = placeCell(m2_half, "vn1", 2, 0);
+  odb::dbInst* vn2 = placeCell(m2, "vn2", 4, 1, odb::dbOrientType::MX);
+  // At gx=4 (dx_gap = kSiteWidth -> prl_x = -kSiteWidth >= -kSiteWidth,
+  // dy_gap = kRowHeight/4 < kRowHeight/2) -> violation!
+  EXPECT_EQ(runCheck(), "DPL-0033");
+  // Moving vn2 to gx=5 makes prl_x = -2 * kSiteWidth < -kSiteWidth -> legal!
+  vn2->setLocation(5 * kSiteWidth, 1 * kRowHeight);
+  EXPECT_EQ(runCheck(), "");
+  (void) vn1;
+}
 }  // namespace dpl

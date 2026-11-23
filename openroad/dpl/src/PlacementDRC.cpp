@@ -1013,7 +1013,7 @@ class PlacementDRC::ImplantDRC
       for (auto* r : layer->getTechLayerImplantSpacingRules()) {
         const int spc = r->getMinSpacing();
         const int prl_ext = r->isPrlValid() ? std::abs(r->getPrl()) : 0;
-        local_h = std::max({local_h, spc + prl_ext, r->getLength() + spc});
+        local_h = std::max({local_h, spc + prl_ext, 2 * r->getLength() + spc});
         max_interaction_ = std::max(max_interaction_, spc + prl_ext);
         local_pinch_halo_ = std::max(local_pinch_halo_, spc + prl_ext);
         if (r->getSecondLayer() != nullptr) {
@@ -1453,6 +1453,20 @@ class PlacementDRC::ImplantDRC
                                    touch_box,
                                    layer_strict,
                                    require_filler_master)) {
+          return false;
+        }
+      }
+      // 3. LEF58_SPACING
+      for (odb::dbTechLayerImplantSpacingRule* r :
+           layer->getTechLayerImplantSpacingRules()) {
+        if (!checkImplantSpacingRule(layer,
+                                     r,
+                                     layer_shapes,
+                                     rects_1d,
+                                     getComps2D,
+                                     cell,
+                                     cell_box,
+                                     layer_strict)) {
           return false;
         }
       }
@@ -2854,6 +2868,360 @@ class PlacementDRC::ImplantDRC
                            touch_box,
                            strict_empty_sites,
                            hasMatchingCellHeight);
+  }
+
+  template <typename GetComps2D>
+  bool checkImplantSpacingRule(
+      odb::dbTechLayer* layer,
+      odb::dbTechLayerImplantSpacingRule* rule,
+      const std::unordered_map<odb::dbTechLayer*, std::vector<TaggedRect>>&
+          layer_shapes,
+      const std::vector<odb::Rect>& rects_1d,
+      const GetComps2D& get_comps_2d,
+      const Node* cell,
+      const odb::Rect& cell_box,
+      const bool strict_empty_sites) const
+  {
+    const int min_spc = rule->getMinSpacing();
+    if (min_spc <= 0) {
+      return true;
+    }
+    odb::dbTechLayer* sec_layer = rule->getSecondLayer();
+    const bool same_layer = (sec_layer == nullptr || sec_layer == layer);
+    const bool is_horiz = rule->isHorizontal();
+    const bool is_vert = rule->isVertical();
+    const bool has_prl = rule->isPrlValid();
+    const int rule_prl = rule->getPrl();
+    const bool except_abutted = rule->isExceptAbutted();
+    const bool except_corner = rule->isExceptCornerTouch();
+    const int max_len = rule->getLength();
+    const auto intersect_layers = rule->getIntersectLayers();
+    const int anchor_reach = min_spc + (has_prl ? std::abs(rule_prl) : 0);
+
+    std::vector<odb::Rect> sec_rects;
+    if (!same_layer) {
+      auto it = layer_shapes.find(sec_layer);
+      if (it != layer_shapes.end()) {
+        sec_rects.reserve(it->second.size());
+        for (const TaggedRect& tr : it->second) {
+          sec_rects.push_back(tr.rect);
+        }
+      }
+      sec_rects = merge1D(sec_rects);
+      if (sec_rects.empty()) {
+        return true;
+      }
+    }
+
+    auto computeGapSpan
+        = [](const odb::Rect& r1, const odb::Rect& r2) -> odb::Rect {
+      if (r1.overlaps(r2)) {
+        return r1.intersect(r2);
+      }
+      const int ovl_x = overlap1D(r1.xMin(), r1.xMax(), r2.xMin(), r2.xMax());
+      const int sx_lo = (ovl_x > 0) ? std::max(r1.xMin(), r2.xMin())
+                                    : std::min(r1.xMax(), r2.xMax());
+      const int sx_hi = (ovl_x > 0) ? std::min(r1.xMax(), r2.xMax())
+                                    : std::max(r1.xMin(), r2.xMin());
+
+      const int ovl_y = overlap1D(r1.yMin(), r1.yMax(), r2.yMin(), r2.yMax());
+      const int sy_lo = (ovl_y > 0) ? std::max(r1.yMin(), r2.yMin())
+                                    : std::min(r1.yMax(), r2.yMax());
+      const int sy_hi = (ovl_y > 0) ? std::min(r1.yMax(), r2.yMax())
+                                    : std::max(r1.yMin(), r2.yMin());
+      return odb::Rect(sx_lo, sy_lo, sx_hi, sy_hi);
+    };
+
+    // INTERSECTLAYERS: the spacing applies only where the gap between the two
+    // shapes is also covered by a shape on at least one of the listed layers.
+    auto checkIntersectLayers
+        = [&](const odb::Rect& r1, const odb::Rect& r2) -> bool {
+      if (intersect_layers.empty()) {
+        return true;
+      }
+      const odb::Rect span = computeGapSpan(r1, r2);
+
+      for (odb::dbTechLayer* il : intersect_layers) {
+        auto it = layer_shapes.find(il);
+        if (it == layer_shapes.end() || it->second.empty()) {
+          continue;
+        }
+        for (const TaggedRect& tr : it->second) {
+          const odb::Rect& ir = tr.rect;
+          bool hits = false;
+          if (span.dx() > 0 && span.dy() > 0) {
+            hits = ir.overlaps(span);
+          } else if (span.dx() == 0 && span.dy() > 0) {
+            hits = (ir.xMin() <= span.xMin() && span.xMin() <= ir.xMax()
+                    && overlap1D(ir.yMin(), ir.yMax(), span.yMin(), span.yMax())
+                           > 0);
+          } else if (span.dy() == 0 && span.dx() > 0) {
+            hits = (ir.yMin() <= span.yMin() && span.yMin() <= ir.yMax()
+                    && overlap1D(ir.xMin(), ir.xMax(), span.xMin(), span.xMax())
+                           > 0);
+          } else {
+            hits = ir.intersects(span);
+          }
+          if (hits) {
+            return true;
+          }
+        }
+      }
+      return false;
+    };
+
+    auto evalPair = [&](const odb::Rect& r1,
+                        const odb::Rect& r2,
+                        const int v_len1,
+                        const int v_len2,
+                        const bool check_horiz_dir,
+                        const bool check_vert_dir,
+                        const bool check_omni_dir) -> bool {
+      const bool anchored
+          = pairAnchoredToCandidate(r1,
+                                    r2,
+                                    anchor_reach,
+                                    cell_box,
+                                    same_layer && !strict_empty_sites)
+            || (!intersect_layers.empty()
+                && cell_box.intersects(computeGapSpan(r1, r2)));
+      if (!anchored) {
+        return true;
+      }
+      if (!same_layer && r1.overlaps(r2)) {
+        const bool len_ok_h
+            = (max_len <= 0 || r1.dx() <= max_len || r2.dx() <= max_len);
+        const bool len_ok_v
+            = (max_len <= 0 || v_len1 <= max_len || v_len2 <= max_len);
+        return !(((is_horiz && len_ok_h) || (is_vert && len_ok_v)
+                  || (!is_horiz && !is_vert && (len_ok_h || len_ok_v)))
+                 && checkIntersectLayers(r1, r2));
+      }
+
+      const int dx_gap = gap1D(r1.xMin(), r1.xMax(), r2.xMin(), r2.xMax());
+      const int dy_gap = gap1D(r1.yMin(), r1.yMax(), r2.yMin(), r2.yMax());
+      const int prl_x = overlap1D(r1.xMin(), r1.xMax(), r2.xMin(), r2.xMax());
+      const int prl_y = overlap1D(r1.yMin(), r1.yMax(), r2.yMin(), r2.yMax());
+
+      if (except_corner && dx_gap == 0 && dy_gap == 0 && prl_x == 0
+          && prl_y == 0) {
+        return true;
+      }
+
+      // HORIZONTAL spacing applies only when rects do NOT overlap in X (prl_x
+      // <= 0).
+      if (check_horiz_dir && is_horiz && prl_x <= 0) {
+        const bool both_long
+            = max_len > 0 && r1.dx() > max_len && r2.dx() > max_len;
+        const bool abutted = dx_gap == 0 && dy_gap == 0 && prl_y > 0;
+        if (!both_long && !((except_abutted || same_layer) && abutted)) {
+          bool prl_match;
+          if (has_prl) {
+            prl_match = rule_prl > 0 ? (dy_gap == 0 && prl_y >= rule_prl)
+                                     : (prl_y >= rule_prl);
+          } else {
+            // Without PRL the shapes must face each other (positive run
+            // length); a corner-only touch is a corner, not a facing pair.
+            prl_match = dy_gap == 0 && prl_y > 0;
+          }
+          const bool bridged = same_layer && dy_gap == 0
+                               && canBridgeHorizontally(
+                                   r1, r2, cell, cell_box, strict_empty_sites);
+          if (prl_match && dx_gap < min_spc && !bridged
+              && checkIntersectLayers(r1, r2)) {
+            return false;
+          }
+        }
+      }
+
+      // VERTICAL spacing applies only when rects do NOT overlap in Y (prl_y <=
+      // 0).
+      if (check_vert_dir && is_vert && prl_y <= 0) {
+        const bool both_long
+            = max_len > 0 && v_len1 > max_len && v_len2 > max_len;
+        const bool abutted = dy_gap == 0 && dx_gap == 0 && prl_x > 0;
+        if (!both_long && !((except_abutted || same_layer) && abutted)) {
+          bool prl_match;
+          if (has_prl) {
+            prl_match = rule_prl > 0 ? (dx_gap == 0 && prl_x >= rule_prl)
+                                     : (prl_x >= rule_prl);
+          } else {
+            // See the HORIZONTAL case: no PRL means a facing pair is required.
+            prl_match = dx_gap == 0 && prl_x > 0;
+          }
+          const bool bridged
+              = same_layer
+                && ((dy_gap == 0
+                     && canBridgeHorizontally(
+                         r1, r2, cell, cell_box, strict_empty_sites))
+                    || (prl_x > 0
+                        && canBridgeVertically(
+                            r1, r2, cell, cell_box, strict_empty_sites)));
+          if (prl_match && dy_gap < min_spc && !bridged
+              && checkIntersectLayers(r1, r2)) {
+            return false;
+          }
+        }
+      }
+
+      // Omnidirectional Euclidean spacing when neither HORIZONTAL nor VERTICAL.
+      if (check_omni_dir && !is_horiz && !is_vert) {
+        const bool both_long = max_len > 0 && r1.dx() > max_len
+                               && r2.dx() > max_len && v_len1 > max_len
+                               && v_len2 > max_len;
+        if (!both_long
+            && !((except_abutted || same_layer) && isEdgeConnected(r1, r2))
+            && (!has_prl || std::max(prl_x, prl_y) >= rule_prl)) {
+          const int64_t dist_sq = static_cast<int64_t>(dx_gap) * dx_gap
+                                  + static_cast<int64_t>(dy_gap) * dy_gap;
+          const bool bridged
+              = same_layer
+                && ((dy_gap == 0
+                     && canBridgeHorizontally(
+                         r1, r2, cell, cell_box, strict_empty_sites))
+                    || (prl_x > 0
+                        && canBridgeVertically(
+                            r1, r2, cell, cell_box, strict_empty_sites)));
+          if (dist_sq < static_cast<int64_t>(min_spc) * min_spc && !bridged
+              && checkIntersectLayers(r1, r2)) {
+            return false;
+          }
+        }
+      }
+      return true;
+    };
+
+    auto buildVertSlices = [](const std::vector<odb::Rect>& src) {
+      std::vector<odb::Rect> v_rects;
+      if (src.empty()) {
+        return v_rects;
+      }
+      BoostPolygonSet pset;
+      using boost::polygon::operators::operator+=;
+      for (const odb::Rect& r : src) {
+        pset += r;
+      }
+      pset.get_rectangles(v_rects, boost::polygon::VERTICAL);
+      return v_rects;
+    };
+
+    auto lookupVertLen
+        = [](const odb::Rect& r, const std::vector<odb::Rect>& v_slices) {
+            if (v_slices.empty()) {
+              return r.dy();
+            }
+            int best = r.dy();
+            for (const odb::Rect& vr : v_slices) {
+              if (overlap1D(r.xMin(), r.xMax(), vr.xMin(), vr.xMax()) > 0
+                  && vr.yMin() <= r.yMin() && vr.yMax() >= r.yMax()) {
+                best = std::max(best, vr.dy());
+              }
+            }
+            return best;
+          };
+
+    const bool need_vert_len = max_len > 0 && (is_vert || !is_horiz);
+    const std::vector<odb::Rect> v_slices1
+        = need_vert_len ? buildVertSlices(rects_1d) : std::vector<odb::Rect>{};
+
+    if (!same_layer) {
+      const std::vector<odb::Rect> v_slices2 = need_vert_len
+                                                   ? buildVertSlices(sec_rects)
+                                                   : std::vector<odb::Rect>{};
+      for (const odb::Rect& r1 : rects_1d) {
+        const int vl1 = lookupVertLen(r1, v_slices1);
+        for (const odb::Rect& r2 : sec_rects) {
+          const int vl2 = lookupVertLen(r2, v_slices2);
+          if (!evalPair(r1, r2, vl1, vl2, true, true, true)) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+
+    // Same-layer:
+    // 1. Inter-component pairs across distinct 2D components.
+    const std::vector<Component2D>& comps = get_comps_2d();
+    for (size_t i = 0; i < comps.size(); ++i) {
+      for (size_t j = i + 1; j < comps.size(); ++j) {
+        for (const odb::Rect& r1 : comps[i].rects) {
+          const int vl1 = lookupVertLen(r1, v_slices1);
+          for (const odb::Rect& r2 : comps[j].rects) {
+            const int vl2 = lookupVertLen(r2, v_slices1);
+            if (!evalPair(r1, r2, vl1, vl2, true, true, true)) {
+              return false;
+            }
+          }
+        }
+      }
+    }
+
+    // 2. Intra-component notches (horizontal notches & figure-8 corner touches
+    //    on Y-band comp.rects, plus vertical notches on X-band v_rects).
+    for (const Component2D& comp : comps) {
+      if (comp.rects.size() < 2) {
+        continue;
+      }
+      for (size_t a = 0; a < comp.rects.size(); ++a) {
+        for (size_t b = a + 1; b < comp.rects.size(); ++b) {
+          const odb::Rect& r1 = comp.rects[a];
+          const odb::Rect& r2 = comp.rects[b];
+          if (isEdgeConnected(r1, r2)) {
+            continue;
+          }
+          // Skip any vertically separated pair on horizontal strips (may be
+          // solid through an intermediate row such as a 3-row staircase/Z);
+          // vertical notches are checked on v_rects below.
+          if (gap1D(r1.yMin(), r1.yMax(), r2.yMin(), r2.yMax()) > 0) {
+            continue;
+          }
+          if (isCornerTouchOnly(r1, r2)) {
+            const int cx = (r1.xMax() == r2.xMin()) ? r1.xMax() : r1.xMin();
+            const int cy = (r1.yMax() == r2.yMin()) ? r1.yMax() : r1.yMin();
+            bool third_filled = false;
+            for (size_t c = 0; c < comp.rects.size(); ++c) {
+              if (c == a || c == b) {
+                continue;
+              }
+              const odb::Rect& r3 = comp.rects[c];
+              if (r3.xMin() <= cx && cx <= r3.xMax() && r3.yMin() <= cy
+                  && cy <= r3.yMax() && isEdgeConnected(r1, r3)
+                  && isEdgeConnected(r2, r3)) {
+                third_filled = true;
+                break;
+              }
+            }
+            if (third_filled) {
+              continue;
+            }
+          }
+          const int vl1 = lookupVertLen(r1, v_slices1);
+          const int vl2 = lookupVertLen(r2, v_slices1);
+          if (!evalPair(r1, r2, vl1, vl2, true, true, true)) {
+            return false;
+          }
+        }
+      }
+
+      if (is_vert || !is_horiz) {
+        const std::vector<odb::Rect> v_rects = buildVertSlices(comp.rects);
+        for (size_t a = 0; a < v_rects.size(); ++a) {
+          for (size_t b = a + 1; b < v_rects.size(); ++b) {
+            const odb::Rect& v1 = v_rects[a];
+            const odb::Rect& v2 = v_rects[b];
+            if (overlap1D(v1.xMin(), v1.xMax(), v2.xMin(), v2.xMax()) <= 0
+                || gap1D(v1.yMin(), v1.yMax(), v2.yMin(), v2.yMax()) <= 0) {
+              continue;
+            }
+            if (!evalPair(v1, v2, v1.dy(), v2.dy(), false, true, true)) {
+              return false;
+            }
+          }
+        }
+      }
+    }
+    return true;
   }
 
   struct Scratch
