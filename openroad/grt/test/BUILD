@@ -1,5 +1,5 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("@rules_python//python:defs.bzl", "py_test")
+load("//bazel:man_tcl_checker.bzl", "man_tcl_check_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -49,6 +49,7 @@ TESTS = [
     "global_route_rerun_cugr",
     "increase_capacity1",
     "incremental_deleted_net",
+    "incremental_end_without_start",
     "incremental_from_odb",
     "incremental_repair_cugr",
     "incremental_update_net",
@@ -408,15 +409,9 @@ cc_test(
     ],
 )
 
-py_test(
+man_tcl_check_test(
     name = "grt_man_tcl_check",
-    srcs = ["grt_man_tcl_check.py"],
-    data = ["//openroad/grt:doc_files"],
-    tags = [
-        "doc_check",
-        "py",
-    ],
-    deps = ["//docs/src/scripts:extract_utils"],
+    module = "grt",
 )
 
 doc_check_test(
