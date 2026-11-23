@@ -1470,6 +1470,22 @@ class PlacementDRC::ImplantDRC
           return false;
         }
       }
+
+      // 5. LEF58_COREEDGELENGTH
+      for (odb::dbTechLayerCoreEdgeLengthRule* r :
+           layer->getTechLayerCoreEdgeLengthRules()) {
+        if (!checkCoreEdgeLengthRule(layer,
+                                     r,
+                                     layer_shapes,
+                                     rects_1d,
+                                     getComps2D,
+                                     cell,
+                                     cell_box,
+                                     touch_box,
+                                     layer_strict)) {
+          return false;
+        }
+      }
     }
 
     return true;
@@ -1745,6 +1761,60 @@ class PlacementDRC::ImplantDRC
   int rowYHi(const int gy) const { return grid_->gridYToDbu(GridY(gy + 1)).v; }
 
   int rowHeightDbu(const int gy) const { return rowYHi(gy) - rowYLo(gy); }
+
+  // True when `r` overlaps at least one placement site and every site it
+  // overlaps is a valid, unoccupied site (or one still registered to the
+  // candidate itself) that is not under the candidate's new position. Such
+  // a region can be closed by filler insertion.
+  bool sitesFillable(const odb::Rect& r,
+                     const Node* cell,
+                     const odb::Rect& cell_box) const
+  {
+    if (grid_ == nullptr) {
+      return false;
+    }
+    const int site_w = grid_->getSiteWidth().v;
+    const int site_count = grid_->getRowSiteCount().v;
+    const int row_count = grid_->getRowCount().v;
+    if (site_w <= 0 || site_count <= 0 || row_count <= 0) {
+      return false;
+    }
+    const int gx0 = std::clamp(
+        grid_->gridX(DbuX(std::max(0, r.xMin()))).v, 0, site_count - 1);
+    const int gx1 = std::clamp(
+        grid_->gridEndX(DbuX(std::max(0, r.xMax()))).v - 1, 0, site_count - 1);
+    const int gy0 = std::clamp(
+        grid_->gridSnapDownY(DbuY(std::max(0, r.yMin()))).v, 0, row_count - 1);
+    const int gy1 = std::clamp(
+        grid_->gridEndY(DbuY(std::max(0, r.yMax()))).v - 1, 0, row_count - 1);
+    bool any = false;
+    for (int gy = gy0; gy <= gy1; ++gy) {
+      const int ry_lo = rowYLo(gy);
+      const int ry_hi = rowYHi(gy);
+      if (overlap1D(ry_lo, ry_hi, r.yMin(), r.yMax()) <= 0) {
+        continue;
+      }
+      for (int gx = gx0; gx <= gx1; ++gx) {
+        const int sx_lo = gx * site_w;
+        const int sx_hi = sx_lo + site_w;
+        if (overlap1D(sx_lo, sx_hi, r.xMin(), r.xMax()) <= 0) {
+          continue;
+        }
+        any = true;
+        // Under the candidate itself: no filler can ever land there.
+        if (overlap1D(sx_lo, sx_hi, cell_box.xMin(), cell_box.xMax()) > 0
+            && overlap1D(ry_lo, ry_hi, cell_box.yMin(), cell_box.yMax()) > 0) {
+          return false;
+        }
+        const Pixel* pixel = grid_->gridPixel(GridX(gx), GridY(gy));
+        if (pixel == nullptr || !pixel->is_valid
+            || (pixel->cell != nullptr && pixel->cell != cell)) {
+          return false;
+        }
+      }
+    }
+    return any;
+  }
 
   std::pair<int, int> horizontalExtent(
       const odb::Rect& r,
@@ -3217,6 +3287,255 @@ class PlacementDRC::ImplantDRC
             if (!evalPair(v1, v2, v1.dy(), v2.dy(), false, true, true)) {
               return false;
             }
+          }
+        }
+      }
+    }
+    return true;
+  }
+
+  template <typename PolyT>
+  static std::vector<odb::Point> extractCleanContour(const PolyT& poly)
+  {
+    std::vector<odb::Point> pts;
+    for (auto it = boost::polygon::begin_points(poly);
+         it != boost::polygon::end_points(poly);
+         ++it) {
+      const auto pt = *it;
+      const odb::Point p(pt.x(), pt.y());
+      if (pts.empty() || pts.back() != p) {
+        pts.push_back(p);
+      }
+    }
+    if (pts.size() > 1 && pts.front() == pts.back()) {
+      pts.pop_back();
+    }
+    bool changed = true;
+    while (changed && pts.size() >= 4) {
+      changed = false;
+      std::vector<odb::Point> next_pts;
+      const size_t m = pts.size();
+      for (size_t i = 0; i < m; ++i) {
+        const odb::Point& prev = pts[(i + m - 1) % m];
+        const odb::Point& cur = pts[i];
+        const odb::Point& nxt = pts[(i + 1) % m];
+        const bool collinear_x
+            = (prev.getX() == cur.getX() && cur.getX() == nxt.getX());
+        const bool collinear_y
+            = (prev.getY() == cur.getY() && cur.getY() == nxt.getY());
+        if (collinear_x || collinear_y) {
+          changed = true;
+        } else {
+          next_pts.push_back(cur);
+        }
+      }
+      pts = std::move(next_pts);
+    }
+    return pts;
+  }
+
+  static int64_t contourSignedArea2(const std::vector<odb::Point>& pts)
+  {
+    int64_t area2 = 0;
+    const size_t m = pts.size();
+    for (size_t i = 0; i < m; ++i) {
+      const odb::Point& a = pts[i];
+      const odb::Point& b = pts[(i + 1) % m];
+      area2 += static_cast<int64_t>(a.getX()) * b.getY()
+               - static_cast<int64_t>(b.getX()) * a.getY();
+    }
+    return area2;
+  }
+
+  template <typename GetComps2D>
+  bool checkCoreEdgeLengthRule(
+      odb::dbTechLayer* layer,
+      odb::dbTechLayerCoreEdgeLengthRule* rule,
+      const std::unordered_map<odb::dbTechLayer*, std::vector<TaggedRect>>&
+          layer_shapes,
+      const std::vector<odb::Rect>& rects_1d,
+      const GetComps2D& get_comps_2d,
+      const Node* cell,
+      const odb::Rect& cell_box,
+      const odb::Rect& touch_box,
+      const bool strict_empty_sites) const
+  {
+    (void) layer;
+    const int min_len = rule->getMinLength();
+    if (min_len <= 0) {
+      return true;
+    }
+    const int max_len = rule->getMaxLength();
+    std::vector<int> adj_edge_lengths;
+    rule->getExceptAdjacentEdgeLengths(adj_edge_lengths);
+    std::vector<int> adj_lengths;
+    rule->getExceptAdjacentLengths(adj_lengths);
+    std::vector<int> adj_exact;
+    rule->getExceptAdjacentExact(adj_exact);
+    const auto within_layers = rule->getWithinLayers();
+    const auto except_layers = rule->getExceptLayers();
+
+    std::vector<odb::Rect> clipped_rects_1d;
+    std::vector<Component2D> clipped_comps;
+    const bool has_within = !within_layers.empty();
+    if (has_within) {
+      BoostPolygonSet within_set;
+      using boost::polygon::operators::operator+=;
+      using boost::polygon::operators::operator&=;
+      for (odb::dbTechLayer* wl : within_layers) {
+        auto it = layer_shapes.find(wl);
+        if (it != layer_shapes.end()) {
+          for (const TaggedRect& tr : it->second) {
+            within_set += tr.rect;
+          }
+        }
+      }
+      BoostPolygonSet cand_set;
+      for (const odb::Rect& r : rects_1d) {
+        cand_set += r;
+      }
+      cand_set &= within_set;
+      std::vector<odb::Rect> clipped;
+      cand_set.get_rectangles(clipped, boost::polygon::HORIZONTAL);
+      if (clipped.empty()) {
+        return true;
+      }
+      clipped_rects_1d = merge1D(clipped);
+      clipped_comps = merge2D(clipped_rects_1d);
+    }
+
+    const std::vector<odb::Rect>& eff_rects_1d
+        = has_within ? clipped_rects_1d : rects_1d;
+    const std::vector<Component2D>& comps
+        = has_within ? clipped_comps : get_comps_2d();
+    if (comps.empty()) {
+      return true;
+    }
+
+    std::vector<odb::Rect> except_rects;
+    for (odb::dbTechLayer* el : except_layers) {
+      auto it = layer_shapes.find(el);
+      if (it != layer_shapes.end()) {
+        for (const TaggedRect& tr : it->second) {
+          except_rects.push_back(tr.rect);
+        }
+      }
+    }
+
+    const odb::Rect active_box = strict_empty_sites ? cell_box : touch_box;
+    const size_t adj_n = std::min(
+        {adj_edge_lengths.size(), adj_lengths.size(), adj_exact.size()});
+
+    auto checkContour
+        = [&](const std::vector<odb::Point>& pts, const bool is_hole) -> bool {
+      const size_t m = pts.size();
+      if (m < 4) {
+        return true;
+      }
+      const int64_t signed_area2 = contourSignedArea2(pts);
+      for (size_t i = 0; i < m; ++i) {
+        const odb::Point& p_prev = pts[(i + m - 1) % m];
+        const odb::Point& p0 = pts[i];
+        const odb::Point& p1 = pts[(i + 1) % m];
+        const odb::Point& p_next = pts[(i + 2) % m];
+
+        // Core edge length applies to horizontal (core-row parallel) edges.
+        if (p0.getY() != p1.getY()) {
+          continue;
+        }
+        const int x_lo = std::min(p0.getX(), p1.getX());
+        const int x_hi = std::max(p0.getX(), p1.getX());
+        const int y_edge = p0.getY();
+        const int len_curr = x_hi - x_lo;
+        if (len_curr >= min_len) {
+          continue;
+        }
+
+        const bool interior_above
+            = ((p1.getX() > p0.getX()) == ((signed_area2 > 0) != is_hole));
+        const odb::Rect interior_strip(x_lo,
+                                       interior_above ? y_edge : y_edge - 1,
+                                       x_hi,
+                                       interior_above ? y_edge + 1 : y_edge);
+        if (!interior_strip.overlaps(active_box)) {
+          continue;
+        }
+        if (canExtendHorizontally(interior_strip,
+                                  cell,
+                                  cell_box,
+                                  strict_empty_sites,
+                                  min_len,
+                                  &eff_rects_1d)) {
+          continue;
+        }
+        // Before filler insertion a short edge that faces empty, fillable
+        // sites (a gap under or over the island) disappears once a same-layer
+        // filler lands there, so it is not final yet.
+        if (!strict_empty_sites) {
+          const odb::Rect exterior_strip(x_lo,
+                                         interior_above ? y_edge - 1 : y_edge,
+                                         x_hi,
+                                         interior_above ? y_edge : y_edge + 1);
+          if (sitesFillable(exterior_strip, cell, cell_box)) {
+            continue;
+          }
+        }
+
+        bool is_except_layer = false;
+        for (const odb::Rect& er : except_rects) {
+          if (er.overlaps(interior_strip)) {
+            is_except_layer = true;
+            break;
+          }
+        }
+        if (is_except_layer) {
+          continue;
+        }
+
+        const int len_prev = std::abs(p0.getY() - p_prev.getY())
+                             + std::abs(p0.getX() - p_prev.getX());
+        const int len_next = std::abs(p_next.getY() - p1.getY())
+                             + std::abs(p_next.getX() - p1.getX());
+
+        bool exempt = false;
+        for (size_t k = 0; k < adj_n; ++k) {
+          if (len_curr != adj_edge_lengths[k]) {
+            continue;
+          }
+          const int req_adj = adj_lengths[k];
+          if (adj_exact[k] != 0) {
+            if (len_prev == req_adj || len_next == req_adj) {
+              exempt = true;
+              break;
+            }
+          } else {
+            if (len_prev >= req_adj || len_next >= req_adj) {
+              exempt = true;
+              break;
+            }
+          }
+        }
+        if (!exempt) {
+          return false;
+        }
+      }
+      return true;
+    };
+
+    for (const Component2D& comp : comps) {
+      if (!comp.bbox.overlaps(active_box)) {
+        continue;
+      }
+      if (max_len > 0 && comp.bbox.dx() > max_len) {
+        continue;
+      }
+      for (const BoostPolygon& poly : comp.polys) {
+        if (!checkContour(extractCleanContour(poly), false)) {
+          return false;
+        }
+        for (auto hit = poly.begin_holes(); hit != poly.end_holes(); ++hit) {
+          if (!checkContour(extractCleanContour(*hit), true)) {
+            return false;
           }
         }
       }

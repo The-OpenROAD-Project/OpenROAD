@@ -1877,4 +1877,106 @@ TEST_F(Lef58ImplantAndEdgeTest,
   EXPECT_EQ(runCheck(), "");
   (void) vn1;
 }
+TEST_F(Lef58ImplantAndEdgeTest, Lef58CoreEdgeLengthAndExemptions)
+{
+  auto* rule = odb::dbTechLayerCoreEdgeLengthRule::create(imp1_);
+  rule->setMinLength(3 * kSiteWidth);
+  rule->setMaxLength(6 * kSiteWidth);
+  rule->addExceptLayer(ms_od_);
+  // Entry 0 (exact_adjacent_length = true): core edge == kSiteWidth is exempt
+  // ONLY when an adjacent vertical edge has exact length 2 * kRowHeight.
+  rule->addExceptAdjacentLength(kSiteWidth, 2 * kRowHeight, /*exact=*/true);
+  // Entry 1 (exact_adjacent_length = false): core edge == 2 * kSiteWidth is
+  // exempt when an adjacent vertical edge has length >= 2 * kRowHeight.
+  rule->addExceptAdjacentLength(
+      2 * kSiteWidth, 2 * kRowHeight, /*exact=*/false);
+
+  odb::dbMaster* m1 = createCustomMaster(
+      "M_CORE1", 1, {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+  odb::dbMaster* m1_exempt
+      = createCustomMaster("M_EXEMPT",
+                           1,
+                           {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight)},
+                            {ms_od_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+  odb::dbMaster* m_od_only = createCustomMaster(
+      "M_OD_ONLY", 1, {{ms_od_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+
+  // 1-site IMP1 has horizontal edges kSiteWidth < 3 * kSiteWidth and vertical
+  // edges kRowHeight != 2 * kRowHeight -> violation!
+  odb::dbInst* c1 = placeCell(m1, "c1", 2, 0);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+
+  // EXCEPTLAYER touching only at an endpoint (gx=3, row=0) or outside y_edge
+  // (gx=2, row=1) must NOT exempt c1!
+  odb::dbInst* od_side = placeCell(m_od_only, "od_side", 3, 0);
+  odb::dbInst* od_above
+      = placeCell(m_od_only, "od_above", 2, 1, odb::dbOrientType::MX);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+  odb::dbInst::destroy(od_side);
+  odb::dbInst::destroy(od_above);
+
+  // EXACTADJACENTLENGTH = true: stacking 2 rows tall (adj = 2 * kRowHeight)
+  // makes the kSiteWidth core edges exempt -> passes!
+  odb::dbInst* c1_r1 = placeCell(m1, "c1_r1", 2, 1, odb::dbOrientType::MX);
+  EXPECT_EQ(runCheck(), "");
+
+  // Stacking 3 rows tall (adj = 3 * kRowHeight != 2 * kRowHeight) FAILS exact
+  // match on kSiteWidth!
+  odb::dbInst* c1_r2 = placeCell(m1, "c1_r2", 2, 2, odb::dbOrientType::R0);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+
+  // EXACTADJACENTLENGTH = false: widening all 3 rows to 2 * kSiteWidth gives
+  // core edge == 2 * kSiteWidth and adj == 3 * kRowHeight >= 2 * kRowHeight ->
+  // passes threshold exemption!
+  odb::dbInst* c2_r0 = placeCell(m1, "c2_r0", 3, 0, odb::dbOrientType::R0);
+  odb::dbInst* c2_r1 = placeCell(m1, "c2_r1", 3, 1, odb::dbOrientType::MX);
+  odb::dbInst* c2_r2 = placeCell(m1, "c2_r2", 3, 2, odb::dbOrientType::R0);
+  EXPECT_EQ(runCheck(), "");
+
+  odb::dbInst::destroy(c1);
+  odb::dbInst::destroy(c1_r1);
+  odb::dbInst::destroy(c1_r2);
+  odb::dbInst::destroy(c2_r0);
+  odb::dbInst::destroy(c2_r1);
+  odb::dbInst::destroy(c2_r2);
+
+  // Single 1-site cell covered on its interior by EXCEPTLAYER (OD_LAYER) is
+  // exempt
+  placeCell(m1_exempt, "c_ex", 2, 0);
+  EXPECT_EQ(runCheck(), "");
+}
+TEST_F(Lef58ImplantAndEdgeTest, Lef58CoreEdgeLengthPreFillerExteriorGap)
+{
+  auto* rule = odb::dbTechLayerCoreEdgeLengthRule::create(imp1_);
+  rule->setMinLength(3 * kSiteWidth);
+
+  odb::dbMaster* m3 = createCustomMaster(
+      "M_CORE3", 3, {{imp1_, odb::Rect(0, 0, 3 * kSiteWidth, kRowHeight)}});
+  odb::dbMaster* m7 = createCustomMaster(
+      "M_CORE7", 7, {{imp1_, odb::Rect(0, 0, 7 * kSiteWidth, kRowHeight)}});
+
+  // Row 0: two 3-site cells at gx=1..4 and gx=5..8 leave a 1-site gap at
+  // gx=4. Row 1: one 7-site cell at gx=1..8 covers both. The merged island
+  // exposes a 1-site (< 3-site) bottom edge of the row-1 cell over the gap.
+  placeCell(m3, "a", 1, 0);
+  placeCell(m3, "c", 5, 0);
+  placeCell(m7, "b", 1, 1, odb::dbOrientType::MX);
+
+  // Without an IMP1 filler master the gap can never close -> violation
+  EXPECT_EQ(runCheck(), "DPL-0033");
+
+  // With an IMP1 filler master the empty site outside the edge is fillable,
+  // so the edge is not final before filler insertion -> legal
+  createCustomMaster("FILL_IMP1",
+                     1,
+                     {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}},
+                     odb::dbMasterType::CORE_SPACER);
+  EXPECT_EQ(runCheck(), "");
+
+  // A non-IMP1 cell in the gap blocks the filler -> violation again
+  odb::dbMaster* m_other = createCustomMaster(
+      "M_GAP_IMP2", 1, {{imp2_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+  placeCell(m_other, "g", 4, 0);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+}
 }  // namespace dpl
