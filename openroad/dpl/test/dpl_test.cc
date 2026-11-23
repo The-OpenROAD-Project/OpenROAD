@@ -1450,4 +1450,310 @@ TEST_F(Lef58ImplantAndEdgeTest,
   EXPECT_NE(sealer->getLocation(), odb::Point(9 * kSiteWidth, 0));
 }
 
+TEST_F(Lef58ImplantAndEdgeTest, Lef58ImplantWidthZeroPrlAndLayerMaxWidth)
+{
+  auto* r_zprl = odb::dbTechLayerImplantWidthRule::create(imp1_);
+  r_zprl->setMinWidth(2 * kSiteWidth);
+  r_zprl->setZeroPrl(true);
+
+  auto* r_adj = odb::dbTechLayerImplantWidthRule::create(imp1_);
+  r_adj->setMinWidth(2 * kSiteWidth);
+  r_adj->setLayerAny(true);
+  r_adj->setMaxWidth(kSiteWidth);
+  r_adj->setExceptCornerTouch(true);
+
+  // Group-scoped rules should be skipped without false positives
+  auto* r_grp = odb::dbTechLayerImplantWidthRule::create(imp1_);
+  r_grp->setMinWidth(10 * kSiteWidth);
+  r_grp->setCheckImplantGroup("IG_SPECIAL");
+
+  odb::dbTechLayer* imp3
+      = odb::dbTechLayer::create(tech_, "IMP3", odb::dbTechLayerType::IMPLANT);
+
+  odb::dbMaster* m1_1 = createCustomMaster(
+      "M1_W1", 1, {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+  odb::dbMaster* m2_1 = createCustomMaster(
+      "M2_W1", 1, {{imp2_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+  odb::dbMaster* m3_1 = createCustomMaster(
+      "M3_W1", 1, {{imp3, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+
+  // Two 1-site IMP1 cells touching only at a diagonal corner violate ZEROPRL
+  odb::dbInst* u1 = placeCell(m1_1, "u1", 2, 0);
+  odb::dbInst* u2 = placeCell(m1_1, "u2", 3, 1, odb::dbOrientType::MX);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+
+  // Extending both rows to 2 sites wide satisfies ZEROPRL
+  odb::dbInst* u1_ext = placeCell(m1_1, "u1_ext", 1, 0);
+  odb::dbInst* u2_ext = placeCell(m1_1, "u2_ext", 4, 1, odb::dbOrientType::MX);
+  EXPECT_EQ(runCheck(), "");
+
+  // Remove u1_ext and u2, u2_ext; place 1-site IMP2 (gx=3) and 1-site IMP3
+  // (gx=4) beside 1-site IMP1 (gx=2): LAYER ANY merges per layer so IMP2 stays
+  // width kSiteWidth <= maxWidth and triggers the violation!
+  odb::dbInst::destroy(u1_ext);
+  odb::dbInst::destroy(u2);
+  odb::dbInst::destroy(u2_ext);
+  odb::dbInst* v2 = placeCell(m2_1, "v2", 3, 0);
+  odb::dbInst* v3 = placeCell(m3_1, "v3", 4, 0);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+  odb::dbInst::destroy(v3);
+
+  // Moving v2 to diagonal corner (gx=3, row=1) passes because of
+  // EXCEPTCORNERTOUCH
+  v2->setOrient(odb::dbOrientType::MX);
+  v2->setLocation(3 * kSiteWidth, 1 * kRowHeight);
+  EXPECT_EQ(runCheck(), "");
+
+  // N2P-style ZEROPRL + EXCEPTCORNERTOUCH + MAXWIDTH + LENGTH (same-layer &
+  // LAYER ANY): must not fall through to Case 3 on wide L-shaped 1-site
+  // overhangs (> MAXWIDTH), while still catching a <= MAXWIDTH 1-site neck!
+  odb::dbInst::destroy(u1);
+  odb::dbInst::destroy(v2);
+  odb::dbTechLayerImplantWidthRule::destroy(r_zprl);
+  odb::dbTechLayerImplantWidthRule::destroy(r_adj);
+
+  for (const bool any_layer : {false, true}) {
+    auto* r_n2p = odb::dbTechLayerImplantWidthRule::create(imp1_);
+    r_n2p->setMinWidth(2 * kSiteWidth);
+    r_n2p->setZeroPrl(true);
+    r_n2p->setMaxWidth(3 * kSiteWidth);
+    r_n2p->setExceptCornerTouch(true);
+    r_n2p->setLength(kRowHeight + 200);
+    r_n2p->setLayerAny(any_layer);
+  }
+
+  // Wide (> MAXWIDTH = 3 sites) 4-site rows offset by 1 site (3-site overlap,
+  // 1-site overhang on each side) must pass checkPlacement!
+  for (int gx = 2; gx < 6; ++gx) {
+    placeCell(m1_1,
+              ("w_r0_" + std::to_string(gx)).c_str(),
+              gx,
+              0,
+              odb::dbOrientType::R0);
+    placeCell(m1_1,
+              ("w_r1_" + std::to_string(gx)).c_str(),
+              gx + 1,
+              1,
+              odb::dbOrientType::MX);
+  }
+  EXPECT_EQ(runCheck(), "");
+
+  // Narrow (2-site <= MAXWIDTH) IMP1 on row 0 overlapping by 1 site (< min_w)
+  // with 2-site IMP2 on row 1 violates LAYER ANY ZEROPRL neck!
+  odb::dbInst* n0 = placeCell(m1_1, "n_r0_0", 10, 0, odb::dbOrientType::R0);
+  odb::dbInst* n1 = placeCell(m1_1, "n_r0_1", 11, 0, odb::dbOrientType::R0);
+  odb::dbInst* n2 = placeCell(m2_1, "n_r1_0", 11, 1, odb::dbOrientType::MX);
+  odb::dbInst* n3 = placeCell(m2_1, "n_r1_1", 12, 1, odb::dbOrientType::MX);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+  for (odb::dbInst* inst : {n0, n1, n2, n3}) {
+    odb::dbInst::destroy(inst);
+  }
+
+  // Pre-filler empty-site directionality (with IMP1 filler master and base
+  // WIDTH = 3 sites): Row 0 has a locked 3-site IMP1 island [9..12]
+  // (<= MAXWIDTH) between FIRM IMP3 blockers at gx=8 and gx=12; Row 1 has a
+  // 2-site IMP1 island [11..13] bounded on its outer right (gx=13) by FIRM
+  // IMP3, forcing mandatory 3-site expansion inward across empty gx=10 to
+  // [10..13] (2-site overlap [10..12] >= min_w -> legal!).
+  odb::dbMaster* m_elvt = createCustomMaster("M_ELVT_NO_IMP", 1, {});
+  odb::dbMaster* m1_3 = createCustomMaster(
+      "M1_W3", 3, {{imp1_, odb::Rect(0, 0, 3 * kSiteWidth, kRowHeight)}});
+  imp1_->setWidth(3 * kSiteWidth);
+  createCustomMaster("FILL_IMP1",
+                     1,
+                     {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}},
+                     odb::dbMasterType::CORE_SPACER);
+  placeCell(m_elvt,
+            "blk_l",
+            8,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  placeCell(
+      m1_1, "lk_0", 9, 0, odb::dbOrientType::R0, odb::dbPlacementStatus::FIRM);
+  placeCell(
+      m1_1, "lk_1", 10, 0, odb::dbOrientType::R0, odb::dbPlacementStatus::FIRM);
+  placeCell(
+      m1_1, "lk_2", 11, 0, odb::dbOrientType::R0, odb::dbPlacementStatus::FIRM);
+  placeCell(m_elvt,
+            "blk_r",
+            12,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  placeCell(m1_1,
+            "r1_in",
+            11,
+            1,
+            odb::dbOrientType::MX,
+            odb::dbPlacementStatus::FIRM);
+  placeCell(m1_1,
+            "r1_out",
+            12,
+            1,
+            odb::dbOrientType::MX,
+            odb::dbPlacementStatus::FIRM);
+  odb::dbInst* r1_outer_blk = placeCell(m_elvt,
+                                        "r1_outer_blk",
+                                        13,
+                                        1,
+                                        odb::dbOrientType::MX,
+                                        odb::dbPlacementStatus::FIRM);
+  EXPECT_EQ(runCheck(), "");
+
+  // Removing the outer blocker at gx=13 leaves [11..13] unforced on gx=10,
+  // exposing a 1-site [11..12] ZEROPRL throat vulnerable to wide non-IMP1
+  // filler packing -> must fail!
+  odb::dbInst::destroy(r1_outer_blk);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+  for (const char* nm :
+       {"blk_l", "lk_0", "lk_1", "lk_2", "blk_r", "r1_in", "r1_out"}) {
+    odb::dbInst::destroy(block_->findInst(nm));
+  }
+
+  // Unprotected 1-site ZEROPRL throat where BOTH rows are 3 sites wide
+  // (<= MAXWIDTH) and outer sites are empty: must fail checkPlacement and
+  // move the movable 3-site cell to a clean alignment.
+  placeCell(m1_3,
+            "ot_r0",
+            10,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  odb::dbInst* ot_r1 = placeCell(m1_3, "ot_r1", 12, 1, odb::dbOrientType::MX);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+  dp_.detailedPlacement(0, 0);
+  EXPECT_NE(ot_r1->getLocation(), odb::Point(12 * kSiteWidth, 1 * kRowHeight));
+  EXPECT_EQ(runCheck(), "");
+  odb::dbInst::destroy(block_->findInst("ot_r0"));
+  odb::dbInst::destroy(ot_r1);
+
+  // Minimal base-WIDTH completion ZEROPRL check: with base WIDTH = 3 sites, a
+  // 2-site IMP1 cell on row 1 (gx=10..11) facing a 3-site IMP1 island on row 0
+  // (gx=12..14):
+  //  - Right side blocked at gx=12 and left side open -> only minimal 3-site
+  //    completion is [9..12] (ovl_x == 0, EXCEPTCORNERTOUCH) -> legal!
+  //  - Both sides open (e.g. gx<10 empty so wide non-IMP1 fillers can seal
+  //    gx=10, and gx=12 empty) -> right minimal completion [10..13] creates a
+  //    1-site overlap at gx=12 -> rejected, and DPL moves the 2-site cell!
+  odb::dbMaster* m1_2 = createCustomMaster(
+      "M1_W2", 2, {{imp1_, odb::Rect(0, 0, 2 * kSiteWidth, kRowHeight)}});
+  placeCell(m_elvt,
+            "fe_r0_l",
+            11,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  placeCell(m1_1,
+            "fe_r0_0",
+            12,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  placeCell(m1_1,
+            "fe_r0_1",
+            13,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  placeCell(m1_1,
+            "fe_r0_2",
+            14,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  placeCell(m_elvt,
+            "fe_r0_r",
+            15,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  odb::dbInst* fe_r1 = placeCell(m1_2, "fe_r1", 10, 1, odb::dbOrientType::MX);
+  odb::dbInst* fe_r1_r = placeCell(m_elvt,
+                                   "fe_r1_r",
+                                   12,
+                                   1,
+                                   odb::dbOrientType::MX,
+                                   odb::dbPlacementStatus::FIRM);
+  EXPECT_EQ(runCheck(), "");
+  odb::dbInst::destroy(fe_r1_r);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+  dp_.detailedPlacement(0, 0);
+  EXPECT_NE(fe_r1->getLocation(), odb::Point(10 * kSiteWidth, 1 * kRowHeight));
+  EXPECT_EQ(runCheck(), "");
+  imp1_->setWidth(0);
+}
+
+TEST_F(Lef58ImplantAndEdgeTest, Lef58ImplantWidthLengthWithinLayerAndCellHeight)
+{
+  auto* rule = odb::dbTechLayerImplantWidthRule::create(imp1_);
+  rule->setMinWidth(kRowHeight);
+  rule->setLength(2 * kSiteWidth);
+  rule->addWithinLayer(ms_od_);
+  rule->setCellHeight(kRowHeight);
+
+  odb::dbMaster* m_with_od
+      = createCustomMaster("M_WITH_OD",
+                           1,
+                           {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight)},
+                            {ms_od_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+  odb::dbMaster* m_no_od = createCustomMaster(
+      "M_NO_OD", 1, {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+
+  // Without OD_LAYER (WITHINLAYER), 1-site IMP1 is not checked by this rule
+  odb::dbInst* c_no_od = placeCell(m_no_od, "c_no_od", 1, 0);
+  EXPECT_EQ(runCheck(), "");
+  odb::dbInst::destroy(c_no_od);
+
+  // With OD_LAYER, a single 1-site cell has height == kRowHeight and length ==
+  // kSiteWidth < 2 * kSiteWidth -> violation
+  placeCell(m_with_od, "c1", 4, 0);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+
+  // L-shaped component: wide 3-site bar on row 1 attached to 1-site stub c1 on
+  // row 0 STILL violates LENGTH on the 1-site stub (r.dx() < min_len)!
+  placeCell(m_with_od, "r1_a", 4, 1, odb::dbOrientType::MX);
+  placeCell(m_with_od, "r1_b", 5, 1, odb::dbOrientType::MX);
+  placeCell(m_with_od, "r1_c", 6, 1, odb::dbOrientType::MX);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+
+  // Adding a second adjacent cell on row 0 extends stub length to 2 *
+  // kSiteWidth -> legal
+  placeCell(m_with_od, "c2", 5, 0);
+  EXPECT_EQ(runCheck(), "");
+}
+TEST_F(Lef58ImplantAndEdgeTest, Lef58ImplantWidthLayerLengthSelectsShortShapes)
+{
+  // WIDTH 2 sites LAYER IMP2 LENGTH 2 rows: LENGTH keeps its ZEROPRL meaning
+  // (the vertical height of the implant shape the rule applies to), so only
+  // IMP1 shapes shorter than 2 rows must be >= 2 sites wide where they abut
+  // IMP2.
+  auto* rule = odb::dbTechLayerImplantWidthRule::create(imp1_);
+  rule->setMinWidth(2 * kSiteWidth);
+  rule->setSecondLayer(imp2_);
+  rule->setLength(2 * kRowHeight);
+
+  odb::dbMaster* m1 = createCustomMaster(
+      "M1_1H", 1, {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+  odb::dbMaster* m1_2h = createCustomMaster(
+      "M1_2H",
+      1,
+      {{imp1_, odb::Rect(0, 0, kSiteWidth, 2 * kRowHeight)}},
+      odb::dbMasterType::CORE,
+      /*rows_tall=*/2);
+  odb::dbMaster* m2 = createCustomMaster(
+      "M2_1H", 1, {{imp2_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+
+  // 1-row IMP1 (height kRowHeight < LENGTH) 1 site wide abutting IMP2 ->
+  // violation
+  odb::dbInst* a = placeCell(m1, "a", 2, 0);
+  placeCell(m2, "b", 3, 0);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+
+  // 2-row IMP1 (height 2 * kRowHeight >= LENGTH) is outside the rule's
+  // selection, so its 1-site width next to IMP2 is legal
+  odb::dbInst::destroy(a);
+  placeCell(m1_2h, "t", 2, 0);
+  EXPECT_EQ(runCheck(), "");
+}
 }  // namespace dpl
