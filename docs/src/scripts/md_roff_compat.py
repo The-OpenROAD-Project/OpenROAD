@@ -83,6 +83,7 @@ tools = [
     "pad",
     "par",
     "pdn",
+    "pex",
     "ppl",
     "psm",
     "ram",

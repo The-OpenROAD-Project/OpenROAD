@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <iosfwd>
 #include <map>
 #include <memory>
@@ -39,6 +40,14 @@ class EstimateParasitics;
 namespace psm {
 class IRNetwork;
 class IRShort;
+
+// The conductance matrix uses 64-bit storage indices.  With the default
+// 32-bit int, the workspace sizing in Eigen::SparseLU's default COLAMD
+// ordering (2 * nnz + ... evaluated in StorageIndex arithmetic) overflows
+// on very large power grids (roughly 90M+ nodes) and segfaults, even
+// though the matrix itself is still below the 32-bit nnz limit.
+using ConductanceMatrix = Eigen::
+    SparseMatrix<Connection::Conductance, Eigen::ColMajor, std::int64_t>;
 
 class IRSolver
 {
@@ -238,13 +247,13 @@ class IRSolver
       const ValueNodeMap<Current>& currents,
       const Connection::ConnectionMap<Connection::Conductance>& conductance,
       const std::map<Node*, std::size_t>& node_index,
-      Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
+      ConductanceMatrix& g_matrix,
       Eigen::VectorXd& j_vector) const;
   void addSourcesToMatrixAndVoltages(
       Voltage src_voltage,
       const SourceNodes& sources,
       const std::map<Node*, std::size_t>& node_index,
-      Eigen::SparseMatrix<Connection::Conductance>& g_matrix,
+      ConductanceMatrix& g_matrix,
       Eigen::VectorXd& j_vector) const;
 
   void addAssemblyLoads(odb::dbNet* net,
@@ -253,7 +262,7 @@ class IRSolver
   std::string getMetricKey(const std::string& key, sta::Scene* corner) const;
 
   void dumpVector(const Eigen::VectorXd& vector, const std::string& name) const;
-  void dumpMatrix(const Eigen::SparseMatrix<Connection::Conductance>& matrix,
+  void dumpMatrix(const ConductanceMatrix& matrix,
                   const std::string& name) const;
   void dumpConductance(
       const Connection::ConnectionMap<Connection::Conductance>& cond,

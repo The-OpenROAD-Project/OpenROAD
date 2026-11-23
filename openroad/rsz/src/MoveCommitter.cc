@@ -66,9 +66,6 @@ MoveCommitter::MoveCommitter(Resizer& resizer)
 void MoveCommitter::init()
 {
   pending_move_results_ = std::stack<std::vector<MoveResult>>{};
-  std::ranges::fill(summary_carried_by_type_, 0);
-  summary_carried_by_type_[typeIndex(MoveType::kSizeUpMatch)]
-      = persisted_summary_by_type_[typeIndex(MoveType::kSizeUpMatch)];
   std::ranges::fill(pending_by_type_, 0);
   std::ranges::fill(committed_by_type_, 0);
   for (size_t index = 0; index < pending_instances_by_type_.size(); ++index) {
@@ -599,9 +596,6 @@ void MoveCommitter::acceptPendingMoves()
   resizer_.addAcceptedLegacyMoveCount(move_count);
 
   for (size_t index = 0; index < pending_by_type_.size(); ++index) {
-    if (index == typeIndex(MoveType::kSizeUpMatch)) {
-      persisted_summary_by_type_[index] += pending_by_type_[index];
-    }
     committed_by_type_[index] += pending_by_type_[index];
     pending_by_type_[index] = 0;
     committed_instances_by_type_[index].insert(
@@ -675,14 +669,13 @@ int MoveCommitter::committedMoves(const MoveType type) const
 int MoveCommitter::summaryCommittedMoves(const MoveType type) const
 {
   const size_t index = typeIndex(type);
-  return summary_carried_by_type_[index] + committed_by_type_[index];
+  return committed_by_type_[index];
 }
 
 int MoveCommitter::totalMoves(const MoveType type) const
 {
   const size_t index = typeIndex(type);
-  return summary_carried_by_type_[index] + committed_by_type_[index]
-         + pending_by_type_[index];
+  return committed_by_type_[index] + pending_by_type_[index];
 }
 
 bool MoveCommitter::hasPendingMoves(const MoveType type,
