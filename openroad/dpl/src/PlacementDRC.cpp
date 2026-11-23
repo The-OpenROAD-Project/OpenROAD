@@ -1526,6 +1526,19 @@ class PlacementDRC::ImplantDRC
           return false;
         }
       }
+      for (odb::dbTechMinEncRule* r : layer->getMinEncRules()) {
+        if (!checkMinEncRule(layer,
+                             r,
+                             cand_shapes,
+                             getComps2D,
+                             cell,
+                             cell_box,
+                             touch_box,
+                             query_box,
+                             layer_strict)) {
+          return false;
+        }
+      }
     }
 
     return true;
@@ -4535,6 +4548,446 @@ class PlacementDRC::ImplantDRC
         continue;
       }
       return false;
+    }
+    return true;
+  }
+
+  template <typename GetComps2D>
+  bool checkMinEncRule(odb::dbTechLayer* layer,
+                       odb::dbTechMinEncRule* rule,
+                       const MasterLayerShapes& cand_shapes,
+                       const GetComps2D& get_comps_2d,
+                       const Node* cell,
+                       const odb::Rect& cell_box,
+                       const odb::Rect& touch_box,
+                       const odb::Rect& query_box,
+                       const bool strict_empty_sites) const
+  {
+    int64_t min_enc_area = 0;
+    if (!rule->getEnclosure(min_enc_area) || min_enc_area <= 0) {
+      return true;
+    }
+    uint32_t req_width = 0;
+    const bool has_width = rule->getEnclosureWidth(req_width);
+
+    const int site_w = grid_->getSiteWidth().v;
+    const int site_count = grid_->getRowSiteCount().v;
+    const int row_count = grid_->getRowCount().v;
+    int gx_min = 0;
+    int gx_max = 0;
+    int gy_min = 0;
+    int gy_max = 0;
+    if (site_w > 0 && site_count > 0 && row_count > 0) {
+      gx_min = std::clamp(grid_->gridX(DbuX(std::max(0, query_box.xMin()))).v,
+                          0,
+                          site_count - 1);
+      gx_max
+          = std::clamp(grid_->gridEndX(DbuX(std::max(0, query_box.xMax()))).v,
+                       0,
+                       site_count - 1);
+      gy_min = std::clamp(
+          grid_->gridSnapDownY(DbuY(std::max(0, query_box.yMin()))).v,
+          0,
+          row_count - 1);
+      gy_max
+          = std::clamp(grid_->gridEndY(DbuY(std::max(0, query_box.yMax()))).v,
+                       0,
+                       row_count - 1);
+    }
+
+    auto collectLayerWindowPset = [&](const int w_gx0,
+                                      const int w_gx1,
+                                      const int w_gy0,
+                                      const int w_gy1) -> BoostPolygonSet {
+      BoostPolygonSet l_pset;
+      using boost::polygon::operators::operator+=;
+      if (auto cit = cand_shapes.find(layer); cit != cand_shapes.end()) {
+        const int cx = cell_box.xMin();
+        const int cy = cell_box.yMin();
+        for (const odb::Rect& cr : cit->second) {
+          l_pset += odb::Rect(
+              cr.xMin() + cx, cr.yMin() + cy, cr.xMax() + cx, cr.yMax() + cy);
+        }
+      }
+      std::unordered_set<const Node*> seen_nb;
+      seen_nb.insert(cell);
+      for (int gy = w_gy0; gy <= w_gy1; ++gy) {
+        for (int gx = w_gx0; gx <= w_gx1; ++gx) {
+          const Pixel* pixel = grid_->gridPixel(GridX(gx), GridY(gy));
+          if (pixel == nullptr || pixel->cell == nullptr
+              || !seen_nb.insert(pixel->cell).second) {
+            continue;
+          }
+          const Node* nb = pixel->cell;
+          odb::dbMaster* nb_master = getDbMaster(nb);
+          if (nb_master == nullptr) {
+            continue;
+          }
+          const MasterLayerShapes& m_shapes
+              = getMasterShapes(nb_master, nb->getOrient());
+          auto mit = m_shapes.find(layer);
+          if (mit == m_shapes.end()) {
+            continue;
+          }
+          const int nx = nb->getLeft().v;
+          const int ny = nb->getBottom().v;
+          for (const odb::Rect& mr : mit->second) {
+            l_pset += odb::Rect(
+                mr.xMin() + nx, mr.yMin() + ny, mr.xMax() + nx, mr.yMax() + ny);
+          }
+        }
+      }
+      return l_pset;
+    };
+
+    auto evalSingleHole = [&](const auto& hole_poly,
+                              const odb::Rect& hole_bbox,
+                              const auto& get_wall_max_rects) -> bool {
+      const int64_t hole_area
+          = std::abs(static_cast<int64_t>(boost::polygon::area(hole_poly)));
+      if (hole_area >= min_enc_area) {
+        return true;
+      }
+
+      if (!strict_empty_sites) {
+        BoostPolygonSet hole_set;
+        using boost::polygon::operators::operator+=;
+        hole_set += hole_poly;
+        std::vector<boost::polygon::rectangle_data<int>> hole_rects;
+        boost::polygon::get_max_rectangles(hole_rects, hole_set);
+        // Filling an empty site inside a hole can only shrink or split the
+        // hole, never enlarge it, so a sub-minimum hole may be deferred to
+        // filler insertion only when every site it overlaps is a fillable
+        // (valid, unoccupied) site: then the filler removes the hole itself.
+        bool all_fillable = !hole_rects.empty();
+        for (const auto& hr_b : hole_rects) {
+          const odb::Rect hr(boost::polygon::xl(hr_b),
+                             boost::polygon::yl(hr_b),
+                             boost::polygon::xh(hr_b),
+                             boost::polygon::yh(hr_b));
+          if (!sitesFillable(hr, cell, cell_box)) {
+            all_fillable = false;
+            break;
+          }
+        }
+        if (all_fillable) {
+          return true;
+        }
+      }
+
+      if (has_width && req_width > 0) {
+        const std::vector<odb::Rect>& wall_max_rects = get_wall_max_rects();
+        const std::vector<odb::Point> hpts = extractCleanContour(hole_poly);
+        const size_t hm = hpts.size();
+        bool all_walls_meet_width = (hm >= 4);
+        for (size_t i = 0; i < hm; ++i) {
+          const odb::Point& p0 = hpts[i];
+          const odb::Point& p1 = hpts[(i + 1) % hm];
+          int max_wall_w = 0;
+          if (p0.getY() == p1.getY()) {
+            const int ey = p0.getY();
+            const int ex_lo = std::min(p0.getX(), p1.getX());
+            const int ex_hi = std::max(p0.getX(), p1.getX());
+            for (const odb::Rect& mr : wall_max_rects) {
+              if ((mr.yMin() == ey || mr.yMax() == ey)
+                  && overlap1D(mr.xMin(), mr.xMax(), ex_lo, ex_hi) > 0) {
+                max_wall_w = std::max(max_wall_w, mr.dy());
+              }
+            }
+          } else {
+            const int ex = p0.getX();
+            const int ey_lo = std::min(p0.getY(), p1.getY());
+            const int ey_hi = std::max(p0.getY(), p1.getY());
+            for (const odb::Rect& mr : wall_max_rects) {
+              if ((mr.xMin() == ex || mr.xMax() == ex)
+                  && overlap1D(mr.yMin(), mr.yMax(), ey_lo, ey_hi) > 0) {
+                max_wall_w = std::max(max_wall_w, mr.dx());
+              }
+            }
+          }
+          if (std::cmp_less(max_wall_w, req_width)) {
+            all_walls_meet_width = false;
+            break;
+          }
+        }
+        if (!all_walls_meet_width) {
+          return true;
+        }
+      }
+      (void) hole_bbox;
+      return false;
+    };
+
+    const std::vector<Component2D>& comps_2d = get_comps_2d();
+    bool any_touches_window_edge = false;
+    for (const Component2D& comp : comps_2d) {
+      if (!comp.bbox.intersects(touch_box)) {
+        continue;
+      }
+      bool touches_cand = false;
+      for (const odb::Rect& r : comp.rects) {
+        if (r.intersects(touch_box)) {
+          touches_cand = true;
+          break;
+        }
+      }
+      if (!touches_cand) {
+        continue;
+      }
+      if (site_w > 0 && site_count > 0 && row_count > 0
+          && ((gx_min > 0 && comp.bbox.xMin() <= (gx_min + 1) * site_w)
+              || (gx_max + 1 < site_count
+                  && comp.bbox.xMax() >= gx_max * site_w)
+              || (gy_min > 0 && comp.bbox.yMin() <= rowYHi(gy_min))
+              || (gy_max + 1 < row_count
+                  && comp.bbox.yMax() >= rowYLo(gy_max)))) {
+        any_touches_window_edge = true;
+      }
+      for (const BoostPolygon& poly : comp.polys) {
+        if (poly.begin_holes() == poly.end_holes()) {
+          continue;
+        }
+        bool poly_rects_built = false;
+        std::vector<odb::Rect> poly_max_rects;
+        auto getPolyWallRects = [&]() -> const std::vector<odb::Rect>& {
+          if (!poly_rects_built) {
+            BoostPolygonSet pset;
+            using boost::polygon::operators::operator+=;
+            pset += poly;
+            std::vector<boost::polygon::rectangle_data<int>> mr_vec;
+            boost::polygon::get_max_rectangles(mr_vec, pset);
+            poly_max_rects.reserve(mr_vec.size());
+            for (const auto& mr : mr_vec) {
+              poly_max_rects.emplace_back(boost::polygon::xl(mr),
+                                          boost::polygon::yl(mr),
+                                          boost::polygon::xh(mr),
+                                          boost::polygon::yh(mr));
+            }
+            poly_rects_built = true;
+          }
+          return poly_max_rects;
+        };
+
+        for (auto hit = poly.begin_holes(); hit != poly.end_holes(); ++hit) {
+          boost::polygon::rectangle_data<int> hole_ext;
+          if (!boost::polygon::extents(hole_ext, *hit)) {
+            continue;
+          }
+          const odb::Rect hole_bbox(boost::polygon::xl(hole_ext),
+                                    boost::polygon::yl(hole_ext),
+                                    boost::polygon::xh(hole_ext),
+                                    boost::polygon::yh(hole_ext));
+          if (!hole_bbox.intersects(touch_box)) {
+            continue;
+          }
+          if (!evalSingleHole(*hit, hole_bbox, getPolyWallRects)) {
+            return false;
+          }
+        }
+      }
+    }
+
+    // Bounded cavity check for elongated slots (< min_enc_area) clipped by
+    // query_box: only triggers when an empty pocket inside the local window
+    // touches BOTH touch_box AND a non-core window edge while still having
+    // area < min_enc_area (so solid multi-row blocks and open exterior spaces
+    // exit in O(1) with zero extra grid scans).
+    if (any_touches_window_edge && site_w > 0 && site_count > 0 && row_count > 0
+        && (gx_min > 0 || gx_max + 1 < site_count || gy_min > 0
+            || gy_max + 1 < row_count)) {
+      const int core_x_max = site_count * site_w;
+      const int core_y_min = rowYLo(0);
+      const int core_y_max = rowYHi(row_count - 1);
+
+      const odb::Rect init_win(gx_min * site_w,
+                               rowYLo(gy_min),
+                               (gx_max + 1) * site_w,
+                               rowYHi(gy_max));
+      BoostPolygonSet empty_pset;
+      using boost::polygon::operators::operator+=;
+      using boost::polygon::operators::operator-=;
+      empty_pset += init_win;
+      for (const Component2D& comp : comps_2d) {
+        for (const odb::Rect& r : comp.rects) {
+          empty_pset -= r;
+        }
+      }
+      std::vector<BoostPolygon> empty_polys;
+      empty_pset.get(empty_polys);
+
+      for (const BoostPolygon& ep : empty_polys) {
+        boost::polygon::rectangle_data<int> ep_ext;
+        if (!boost::polygon::extents(ep_ext, ep)) {
+          continue;
+        }
+        const odb::Rect ep_bbox(boost::polygon::xl(ep_ext),
+                                boost::polygon::yl(ep_ext),
+                                boost::polygon::xh(ep_ext),
+                                boost::polygon::yh(ep_ext));
+        if (!ep_bbox.intersects(touch_box)) {
+          continue;
+        }
+        if ((gx_min == 0 && ep_bbox.xMin() <= 0)
+            || (gx_max + 1 == site_count && ep_bbox.xMax() >= core_x_max)
+            || (gy_min == 0 && ep_bbox.yMin() <= core_y_min)
+            || (gy_max + 1 == row_count && ep_bbox.yMax() >= core_y_max)) {
+          continue;
+        }
+        const bool hits_win_edge
+            = (gx_min > 0 && ep_bbox.xMin() <= init_win.xMin())
+              || (gx_max + 1 < site_count && ep_bbox.xMax() >= init_win.xMax())
+              || (gy_min > 0 && ep_bbox.yMin() <= init_win.yMin())
+              || (gy_max + 1 < row_count && ep_bbox.yMax() >= init_win.yMax());
+        if (!hits_win_edge) {
+          continue;
+        }
+        if (std::abs(static_cast<int64_t>(boost::polygon::area(ep)))
+            >= min_enc_area) {
+          continue;
+        }
+
+        // Grow window strictly along the open sides of this narrow pocket until
+        // the pocket area >= min_enc_area, exits the core, or closes.
+        int w_gx0 = gx_min;
+        int w_gx1 = gx_max;
+        int w_gy0 = gy_min;
+        int w_gy1 = row_count > 0 ? gy_max : 0;
+        odb::Rect cur_seed_box = ep_bbox.intersect(touch_box);
+        if (cur_seed_box.dx() <= 0 && cur_seed_box.dy() <= 0) {
+          cur_seed_box
+              = odb::Rect(ep_bbox.xMin(),
+                          ep_bbox.yMin(),
+                          std::min(ep_bbox.xMax(), ep_bbox.xMin() + 1),
+                          std::min(ep_bbox.yMax(), ep_bbox.yMin() + 1));
+        }
+
+        while (true) {
+          const odb::Rect cur_win(w_gx0 * site_w,
+                                  rowYLo(w_gy0),
+                                  (w_gx1 + 1) * site_w,
+                                  rowYHi(w_gy1));
+          const BoostPolygonSet l_pset
+              = collectLayerWindowPset(w_gx0, w_gx1, w_gy0, w_gy1);
+          BoostPolygonSet cur_empty;
+          cur_empty += cur_win;
+          cur_empty -= l_pset;
+          std::vector<BoostPolygon> cur_epolys;
+          cur_empty.get(cur_epolys);
+
+          const BoostPolygon* matched_ep = nullptr;
+          odb::Rect matched_bbox;
+          for (const BoostPolygon& cep : cur_epolys) {
+            boost::polygon::rectangle_data<int> c_ext;
+            if (!boost::polygon::extents(c_ext, cep)) {
+              continue;
+            }
+            const odb::Rect cb(boost::polygon::xl(c_ext),
+                               boost::polygon::yl(c_ext),
+                               boost::polygon::xh(c_ext),
+                               boost::polygon::yh(c_ext));
+            if (!cb.intersects(cur_seed_box)) {
+              continue;
+            }
+            BoostPolygonSet inter_set;
+            using boost::polygon::operators::operator&=;
+            inter_set += cep;
+            inter_set &= ep;
+            if (!inter_set.empty()) {
+              matched_ep = &cep;
+              matched_bbox = cb;
+              break;
+            }
+          }
+          if (matched_ep == nullptr) {
+            break;
+          }
+
+          if (std::abs(static_cast<int64_t>(boost::polygon::area(*matched_ep)))
+              >= min_enc_area) {
+            break;
+          }
+          if ((w_gx0 == 0 && matched_bbox.xMin() <= 0)
+              || (w_gx1 + 1 == site_count && matched_bbox.xMax() >= core_x_max)
+              || (w_gy0 == 0 && matched_bbox.yMin() <= core_y_min)
+              || (w_gy1 + 1 == row_count
+                  && matched_bbox.yMax() >= core_y_max)) {
+            break;
+          }
+
+          const bool open_l
+              = (w_gx0 > 0 && matched_bbox.xMin() <= cur_win.xMin());
+          const bool open_r = (w_gx1 + 1 < site_count
+                               && matched_bbox.xMax() >= cur_win.xMax());
+          const bool open_b
+              = (w_gy0 > 0 && matched_bbox.yMin() <= cur_win.yMin());
+          const bool open_t = (w_gy1 + 1 < row_count
+                               && matched_bbox.yMax() >= cur_win.yMax());
+          if (!open_l && !open_r && !open_b && !open_t) {
+            // Pocket is closed with area < min_enc_area!
+            std::vector<odb::Rect> wall_rects;
+            bool wall_built = false;
+            auto getWallRects = [&]() -> const std::vector<odb::Rect>& {
+              if (!wall_built) {
+                const int pad = static_cast<int>(req_width) + site_w;
+                const int p_gx0 = std::clamp(
+                    grid_->gridX(DbuX(std::max(0, matched_bbox.xMin() - pad)))
+                        .v,
+                    0,
+                    site_count - 1);
+                const int p_gx1 = std::clamp(
+                    grid_
+                        ->gridEndX(DbuX(std::max(0, matched_bbox.xMax() + pad)))
+                        .v,
+                    0,
+                    site_count - 1);
+                const int p_gy0 = std::clamp(
+                    grid_
+                        ->gridSnapDownY(
+                            DbuY(std::max(0, matched_bbox.yMin() - pad)))
+                        .v,
+                    0,
+                    row_count - 1);
+                const int p_gy1 = std::clamp(
+                    grid_
+                        ->gridEndY(DbuY(std::max(0, matched_bbox.yMax() + pad)))
+                        .v,
+                    0,
+                    row_count - 1);
+                BoostPolygonSet w_pset
+                    = collectLayerWindowPset(p_gx0, p_gx1, p_gy0, p_gy1);
+                std::vector<boost::polygon::rectangle_data<int>> mr_vec;
+                boost::polygon::get_max_rectangles(mr_vec, w_pset);
+                wall_rects.reserve(mr_vec.size());
+                for (const auto& mr : mr_vec) {
+                  wall_rects.emplace_back(boost::polygon::xl(mr),
+                                          boost::polygon::yl(mr),
+                                          boost::polygon::xh(mr),
+                                          boost::polygon::yh(mr));
+                }
+                wall_built = true;
+              }
+              return wall_rects;
+            };
+            if (!evalSingleHole(*matched_ep, matched_bbox, getWallRects)) {
+              return false;
+            }
+            break;
+          }
+
+          if (open_l) {
+            w_gx0 = std::max(0, w_gx0 - 4);
+          }
+          if (open_r) {
+            w_gx1 = std::min(site_count - 1, w_gx1 + 4);
+          }
+          if (open_b) {
+            w_gy0 = std::max(0, w_gy0 - 1);
+          }
+          if (open_t) {
+            w_gy1 = std::min(row_count - 1, w_gy1 + 1);
+          }
+        }
+      }
     }
     return true;
   }

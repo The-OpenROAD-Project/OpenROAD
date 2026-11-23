@@ -2237,4 +2237,119 @@ TEST_F(Lef58ImplantAndEdgeTest, Lef58AreaRuleQualifiersAndWindowExpansion)
   placeCell(m_thin10, "s_19", 19, 0);
   EXPECT_EQ(runCheck(), "");
 }
+
+TEST_F(Lef58ImplantAndEdgeTest, Lef58MinEnclosedAreaAndWidthQualifier)
+{
+  // Standalone MINENCLOSEDAREA test (no LEF58_AREA rule active!)
+  auto* enc_rule = odb::dbTechMinEncRule::create(imp1_);
+  enc_rule->setEnclosure(50000);  // 50,000 DBU^2
+
+  // 1. Hollow ring enclosing a small 100 x 100 = 10,000 < 50,000 hole fails!
+  // Bordering wall widths around [300..400] x [400..500] inside [0..760] x
+  // [0..2800] are: bot=400, top=2300, left=300, right=360 (min wall width =
+  // 300).
+  odb::dbMaster* m_ring_small = createCustomMaster(
+      "M_RING_SMALL_HOLE",
+      2,
+      {{imp1_, odb::Rect(0, 0, 2 * kSiteWidth, 400)},
+       {imp1_, odb::Rect(0, 500, 2 * kSiteWidth, kRowHeight)},
+       {imp1_, odb::Rect(0, 400, 300, 500)},
+       {imp1_, odb::Rect(400, 400, 2 * kSiteWidth, 500)}});
+  odb::dbInst* ring_s = placeCell(m_ring_small, "ring_s", 2, 0);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+
+  // 2. WIDTH qualifier >= 350: left wall is 300 < 350 -> rule does NOT apply!
+  enc_rule->setEnclosureWidth(350);
+  EXPECT_EQ(runCheck(), "");
+
+  // 3. WIDTH qualifier == 300: all 4 walls around the hole are >= 300 -> fails,
+  // even when an unrelated thin tail (height 100 < 300) abuts on the right!
+  enc_rule->setEnclosureWidth(300);
+  odb::dbMaster* m_tail = createCustomMaster(
+      "M_THIN_TAIL", 1, {{imp1_, odb::Rect(0, 0, kSiteWidth, 100)}});
+  odb::dbInst* tail = placeCell(m_tail, "tail", 4, 0);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+
+  odb::dbInst::destroy(tail);
+  odb::dbInst::destroy(ring_s);
+
+  // 4. Hollow ring enclosing a large 300 x 200 = 60,000 >= 50,000 hole passes!
+  enc_rule->setEnclosureWidth(200);
+  odb::dbMaster* m_ring_large = createCustomMaster(
+      "M_RING_LARGE_HOLE",
+      2,
+      {{imp1_, odb::Rect(0, 0, 2 * kSiteWidth, 400)},
+       {imp1_, odb::Rect(0, 600, 2 * kSiteWidth, kRowHeight)},
+       {imp1_, odb::Rect(0, 400, 230, 600)},
+       {imp1_, odb::Rect(530, 400, 2 * kSiteWidth, 600)}});
+  odb::dbInst* ring_l = placeCell(m_ring_large, "ring_l", 6, 0);
+  EXPECT_EQ(runCheck(), "");
+  odb::dbInst::destroy(ring_l);
+
+  // 5. Elongated enclosed slot exceeding 2 * halo_x (sqrt(area) window):
+  // min_enc_area = 18 * kSiteWidth * 10 = 68,400 -> sqrt halo ~ 512 (4 sites),
+  // while a 10-DBU-tall slot spanning 16 interior sites (60,800 < 68,400) is
+  // >4x wider than halo_x!
+  enc_rule->setEnclosure(18 * kSiteWidth * 10);
+  enc_rule->setEnclosureWidth(0);
+  odb::dbMaster* m_cap_l = createCustomMaster(
+      "M_SLOT_CAP_L", 1, {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+  odb::dbMaster* m_rails = createCustomMaster(
+      "M_SLOT_RAILS",
+      1,
+      {{imp1_, odb::Rect(0, 0, kSiteWidth, 400)},
+       {imp1_, odb::Rect(0, 410, kSiteWidth, kRowHeight)}});
+  placeCell(m_cap_l, "cap_l", 0, 0);
+  for (int gx = 1; gx <= 16; ++gx) {
+    const std::string nm = "rail_" + std::to_string(gx);
+    placeCell(m_rails, nm.c_str(), gx, 0);
+  }
+  odb::dbInst* cap_r = placeCell(m_cap_l, "cap_r", 17, 0);
+  // 16 * 380 * 10 = 60,800 < 68,400 -> caught across query_box boundary!
+  EXPECT_EQ(runCheck(), "DPL-0033");
+
+  // Extending slot to 18 interior sites (gx=1..18, cap at gx=19 < kNumSites=20)
+  // reaches 18 * 380 * 10 = 68,400 >= 68,400 -> passes!
+  odb::dbInst::destroy(cap_r);
+  for (int gx = 17; gx <= 18; ++gx) {
+    const std::string nm = "rail_" + std::to_string(gx);
+    placeCell(m_rails, nm.c_str(), gx, 0);
+  }
+  placeCell(m_cap_l, "cap_r2", 19, 0);
+  EXPECT_EQ(runCheck(), "");
+}
+TEST_F(Lef58ImplantAndEdgeTest, Lef58MinEnclosedAreaPreFillerHole)
+{
+  // One empty site (kSiteWidth x kRowHeight = 1,064,000 DBU^2) ringed by
+  // eight 1-site IMP1 cells is a hole below a 2,000,000 DBU^2 minimum.
+  auto* enc_rule = odb::dbTechMinEncRule::create(imp1_);
+  enc_rule->setEnclosure(2000000);
+
+  odb::dbMaster* m1 = createCustomMaster(
+      "M_RING1", 1, {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+  for (const int gx : {2, 3, 4}) {
+    placeCell(m1, ("b" + std::to_string(gx)).c_str(), gx, 0);
+    placeCell(
+        m1, ("t" + std::to_string(gx)).c_str(), gx, 2, odb::dbOrientType::R0);
+  }
+  placeCell(m1, "l", 2, 1, odb::dbOrientType::MX);
+  placeCell(m1, "r", 4, 1, odb::dbOrientType::MX);
+
+  // Without an IMP1 filler master the hole can never close -> violation
+  EXPECT_EQ(runCheck(), "DPL-0033");
+
+  // With an IMP1 filler master every site of the hole is fillable, so the
+  // hole is deferred to filler insertion -> legal
+  createCustomMaster("FILL_IMP1",
+                     1,
+                     {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}},
+                     odb::dbMasterType::CORE_SPACER);
+  EXPECT_EQ(runCheck(), "");
+
+  // A non-IMP1 cell inside the hole blocks the filler -> violation again
+  odb::dbMaster* m_other = createCustomMaster(
+      "M_HOLE_IMP2", 1, {{imp2_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+  placeCell(m_other, "h", 3, 1, odb::dbOrientType::MX);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+}
 }  // namespace dpl
