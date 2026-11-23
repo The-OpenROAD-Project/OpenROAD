@@ -4,6 +4,8 @@
 #include <cmath>
 #include <functional>
 #include <string>
+#include <string_view>
+#include <unordered_set>
 #include <vector>
 
 #include "PlacementDRC.h"
@@ -43,6 +45,7 @@ void Opendp::checkPlacement(const bool verbose,
   std::vector<Node*> edge_spacing_failures;
   std::vector<Node*> blocked_layers_failures;
   std::vector<Node*> fixed_supply_via_failures;
+  std::vector<Node*> implant_drc_failures;
 
   initGrid(isPdnAwareForCurrentBlock());
   groupAssignCellRegions();
@@ -54,6 +57,7 @@ void Opendp::checkPlacement(const bool verbose,
   if (!check_fixed) {
     setFixedGridCells();
   }
+  std::unordered_set<const Node*> skip_implant;
   const auto& row_coords = grid_->getRowCoordinates();
   for (auto& cell : network_->getNodes()) {
     if (!is_checked(cell.get())) {
@@ -64,6 +68,7 @@ void Opendp::checkPlacement(const bool verbose,
       if (cell->getLeft() % grid_->getSiteWidth() != 0
           || row_coords.find(cell->getBottom().v) == row_coords.end()) {
         site_align_failures.push_back(cell.get());
+        skip_implant.insert(cell.get());
         continue;
       }
 
@@ -77,6 +82,7 @@ void Opendp::checkPlacement(const bool verbose,
     // Placed check
     if (!isPlaced(cell.get())) {
       placed_failures.push_back(cell.get());
+      skip_implant.insert(cell.get());
     }
     // Overlap check
     if (checkOverlap(*cell)) {
@@ -111,6 +117,33 @@ void Opendp::checkPlacement(const bool verbose,
       }
     }
   }
+  if (drc_engine_->hasImplantRules()) {
+    auto is_filler_master = [](odb::dbMaster* master) -> bool {
+      if (master == nullptr) {
+        return false;
+      }
+      if (master->isFiller()) {
+        return true;
+      }
+      const std::string_view name(master->getConstName());
+      return name.starts_with("FILL");
+    };
+    bool has_placed_fillers = false;
+    for (const auto& cell : network_->getNodes()) {
+      if (cell->isPlaced() && cell->getDbInst() != nullptr
+          && is_filler_master(cell->getDbInst()->getMaster())) {
+        has_placed_fillers = true;
+        break;
+      }
+    }
+    for (auto& cell : network_->getNodes()) {
+      if (is_checked(cell.get()) && !skip_implant.contains(cell.get())
+          && !drc_engine_->checkImplantRules(
+              cell.get(), has_placed_fillers, /*require_filler_master=*/true)) {
+        implant_drc_failures.push_back(cell.get());
+      }
+    }
+  }
   saveFailures(placed_failures,
                in_rows_failures,
                overlap_failures,
@@ -121,7 +154,8 @@ void Opendp::checkPlacement(const bool verbose,
                {},
                edge_spacing_failures,
                blocked_layers_failures,
-               fixed_supply_via_failures);
+               fixed_supply_via_failures,
+               implant_drc_failures);
   if (!report_file_name.empty()) {
     writeJsonReport(report_file_name);
   }
@@ -139,13 +173,14 @@ void Opendp::checkPlacement(const bool verbose,
       edge_spacing_failures, 9, "LEF58_CELLEDGESPACINGTABLE", verbose);
   reportFailures(blocked_layers_failures, 10, "Blocked layers", verbose);
   reportFailures(fixed_supply_via_failures, 13, "Fixed supply vias", verbose);
+  reportFailures(implant_drc_failures, 14, "Implant DRC", verbose);
   // A fixed-only run validates the floorplan, so it reports under its own
   // metric instead of overwriting the detailed placement one.
-  logger_->metric(fixed_only ? "floorplan__violations" : "design__violations",
-                  placed_failures.size() + in_rows_failures.size()
-                      + overlap_failures.size() + padding_failures.size()
-                      + site_align_failures.size()
-                      + fixed_supply_via_failures.size());
+  logger_->metric(
+      fixed_only ? "floorplan__violations" : "design__violations",
+      placed_failures.size() + in_rows_failures.size() + overlap_failures.size()
+          + padding_failures.size() + site_align_failures.size()
+          + fixed_supply_via_failures.size() + implant_drc_failures.size());
   if (fixed_only) {
     // Filler and decap placement reuse a populated network without
     // re-importing, so do not leave one without the movable cells behind.
@@ -159,6 +194,7 @@ void Opendp::checkPlacement(const bool verbose,
           + (disallow_one_site_gaps_ ? one_site_gap_failures.size() : 0)
           + region_placement_failures.size() + edge_spacing_failures.size()
           + blocked_layers_failures.size() + fixed_supply_via_failures.size()
+          + implant_drc_failures.size()
       > 0) {
     if (fixed_only) {
       logger_->error(DPL,
@@ -228,14 +264,15 @@ void Opendp::saveFailures(const vector<Node*>& placed_failures,
                           const vector<Node*>& placement_failures,
                           const vector<Node*>& edge_spacing_failures,
                           const vector<Node*>& blocked_layers_failures,
-                          const vector<Node*>& fixed_supply_via_failures)
+                          const vector<Node*>& fixed_supply_via_failures,
+                          const vector<Node*>& implant_drc_failures)
 {
   if (placed_failures.empty() && in_rows_failures.empty()
       && overlap_failures.empty() && padding_failures.empty()
       && one_site_gap_failures.empty() && site_align_failures.empty()
       && region_placement_failures.empty() && placement_failures.empty()
       && edge_spacing_failures.empty() && blocked_layers_failures.empty()
-      && fixed_supply_via_failures.empty()) {
+      && fixed_supply_via_failures.empty() && implant_drc_failures.empty()) {
     return;
   }
 
@@ -310,6 +347,12 @@ void Opendp::saveFailures(const vector<Node*>& placed_failures,
         tool_category, "Fixed_supply_via_failures");
     category->setDescription("Cells that violate fixed supply via spacing.");
     saveViolations(fixed_supply_via_failures, category);
+  }
+  if (!implant_drc_failures.empty()) {
+    auto category = odb::dbMarkerCategory::createOrReplace(
+        tool_category, "Implant_DRC_failures");
+    category->setDescription("Cells that violate implant DRC rules.");
+    saveViolations(implant_drc_failures, category);
   }
 }
 

@@ -224,6 +224,16 @@ int OptimizeMirroring::mirrorCandidates(
                  inst->getConstName());
       continue;
     }
+    if (!drc_engine_->checkImplantRules(
+            cell, grid_->gridX(cell), grid_->gridSnapDownY(cell), orient_my)) {
+      debugPrint(logger_,
+                 DPL,
+                 "opt_mirror",
+                 1,
+                 "reject {} implant drc",
+                 inst->getConstName());
+      continue;
+    }
     // Use hpwl of all nets connected to the instance terms
     // before/after to determine incremental change to total hpwl.
     int64_t hpwl_before = hpwl(inst);

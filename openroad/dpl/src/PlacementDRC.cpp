@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <iterator>
 #include <limits>
 #include <map>
@@ -927,6 +928,1234 @@ class PlacementDRC::FixedSupplyVias
       physical_pages_;
 };
 
+class PlacementDRC::ImplantDRC
+{
+ public:
+  ImplantDRC(Grid* grid, odb::dbTech* tech) : grid_(grid), tech_(tech)
+  {
+    if (tech_ == nullptr) {
+      return;
+    }
+    for (odb::dbTechLayer* layer : tech_->getLayers()) {
+      const auto type = layer->getType();
+      if (type != odb::dbTechLayerType::IMPLANT) {
+        continue;
+      }
+      const bool is_implant = true;
+      const int base_w = is_implant
+                             ? static_cast<int>(std::max(layer->getWidth(),
+                                                         layer->getMinWidth()))
+                             : 0;
+      const int base_s = is_implant ? layer->getSpacing() : 0;
+      const bool has_v54_s = is_implant && !layer->getV54SpacingRules().empty();
+      const bool has_lef58
+          = !layer->getTechLayerImplantWidthRules().empty()
+            || !layer->getTechLayerImplantSpacingRules().empty()
+            || !layer->getTechLayerMinStepRules().empty()
+            || !layer->getTechLayerCoreEdgeLengthRules().empty()
+            || !layer->getTechLayerCornerSpacingRules().empty()
+            || !layer->getTechLayerMaxSpacingRules().empty()
+            || !layer->getTechLayerAreaRules().empty()
+            || !layer->getMinEncRules().empty();
+      if (base_w <= 0 && base_s <= 0 && !has_v54_s && !has_lef58) {
+        continue;
+      }
+
+      has_rules_ = true;
+      rule_layers_.push_back(layer);
+      tracked_layers_.insert(layer);
+
+      int local_h = std::max(2 * base_w, base_s);
+      int area_h = 0;
+      max_interaction_ = std::max(max_interaction_, base_s);
+      local_pinch_halo_ = std::max({local_pinch_halo_, base_w, base_s});
+
+      if (is_implant) {
+        for (odb::dbTechLayerSpacingRule* sr : layer->getV54SpacingRules()) {
+          const int spc = static_cast<int>(sr->getSpacing());
+          local_h = std::max(local_h, spc);
+          max_interaction_ = std::max(max_interaction_, spc);
+          local_pinch_halo_ = std::max(local_pinch_halo_, spc);
+          odb::dbTechLayer* sec = nullptr;
+          if (sr->getCutLayer4Spacing(sec) && sec != nullptr) {
+            tracked_layers_.insert(sec);
+            layer_deps_[sec].push_back(layer);
+          }
+        }
+      }
+
+      for (auto* r : layer->getTechLayerImplantWidthRules()) {
+        local_h = std::max(
+            {local_h, r->getMinWidth() + r->getMaxWidth(), r->getLength()});
+        local_pinch_halo_ = std::max(local_pinch_halo_, r->getMinWidth());
+        if (r->getSecondLayer() != nullptr) {
+          tracked_layers_.insert(r->getSecondLayer());
+          layer_deps_[r->getSecondLayer()].push_back(layer);
+        }
+        if (r->isLayerAny()) {
+          for (odb::dbTechLayer* l2 : tech_->getLayers()) {
+            if (l2->getType() == odb::dbTechLayerType::IMPLANT) {
+              tracked_layers_.insert(l2);
+              layer_deps_[l2].push_back(layer);
+            }
+          }
+        }
+        for (odb::dbTechLayer* wl : r->getWithinLayers()) {
+          if (wl != nullptr) {
+            tracked_layers_.insert(wl);
+            layer_deps_[wl].push_back(layer);
+          }
+        }
+      }
+
+      for (auto* r : layer->getTechLayerImplantSpacingRules()) {
+        const int spc = r->getMinSpacing();
+        const int prl_ext = r->isPrlValid() ? std::abs(r->getPrl()) : 0;
+        local_h = std::max({local_h, spc + prl_ext, r->getLength() + spc});
+        max_interaction_ = std::max(max_interaction_, spc + prl_ext);
+        local_pinch_halo_ = std::max(local_pinch_halo_, spc + prl_ext);
+        if (r->getSecondLayer() != nullptr) {
+          tracked_layers_.insert(r->getSecondLayer());
+          layer_deps_[r->getSecondLayer()].push_back(layer);
+        }
+        for (odb::dbTechLayer* il : r->getIntersectLayers()) {
+          if (il != nullptr) {
+            tracked_layers_.insert(il);
+            layer_deps_[il].push_back(layer);
+          }
+        }
+      }
+
+      for (auto* r : layer->getTechLayerMinStepRules()) {
+        const int step = r->getMinStepLength();
+        const int adj = r->isMinAdjLength1Valid() ? r->getMinAdjLength1() : 0;
+        local_h = std::max(local_h, step + 2 * adj);
+        local_pinch_halo_ = std::max(local_pinch_halo_, step + adj);
+      }
+
+      for (auto* r : layer->getTechLayerCoreEdgeLengthRules()) {
+        local_h = std::max({local_h, r->getMinLength(), r->getMaxLength()});
+        local_pinch_halo_ = std::max(local_pinch_halo_, r->getMinLength());
+        for (odb::dbTechLayer* wl : r->getWithinLayers()) {
+          if (wl != nullptr) {
+            tracked_layers_.insert(wl);
+            layer_deps_[wl].push_back(layer);
+          }
+        }
+        for (odb::dbTechLayer* el : r->getExceptLayers()) {
+          if (el != nullptr) {
+            tracked_layers_.insert(el);
+            layer_deps_[el].push_back(layer);
+          }
+        }
+      }
+
+      for (auto* r : layer->getTechLayerCornerSpacingRules()) {
+        std::vector<int> w_tbl;
+        std::vector<std::pair<int, int>> tbl;
+        r->getWidthTable(w_tbl);
+        r->getSpacingTable(tbl);
+        for (const int w : w_tbl) {
+          local_h = std::max(local_h, w);
+        }
+        for (const auto& [spc1, spc2] : tbl) {
+          const int spc = std::max(spc1, spc2);
+          local_h = std::max(local_h, spc);
+          max_interaction_ = std::max(max_interaction_, spc);
+          local_pinch_halo_ = std::max(local_pinch_halo_, spc);
+        }
+      }
+
+      for (auto* r : layer->getTechLayerMaxSpacingRules()) {
+        if (r->hasCutClass()) {
+          continue;
+        }
+        local_h = std::max(
+            {local_h, r->getMaxSpacing(), r->getWidth(), r->getLength()});
+        max_interaction_ = std::max(max_interaction_, r->getMaxSpacing());
+        local_pinch_halo_ = std::max(local_pinch_halo_, r->getMaxSpacing());
+      }
+
+      for (auto* r : layer->getTechLayerAreaRules()) {
+        const int64_t area = r->getArea();
+        if (area > 0) {
+          int bound = 1;
+          while (static_cast<int64_t>(bound) * bound < area
+                 && bound < 1000000) {
+            bound *= 2;
+          }
+          area_h = std::max(area_h, bound);
+        }
+      }
+
+      for (auto* r : layer->getMinEncRules()) {
+        int64_t area = 0;
+        if (r->getEnclosure(area) && area > 0) {
+          int bound = 1;
+          while (static_cast<int64_t>(bound) * bound < area
+                 && bound < 1000000) {
+            bound *= 2;
+          }
+          area_h = std::max(area_h, bound);
+        }
+      }
+
+      layer_local_halo_[layer] = local_h;
+      layer_area_halo_[layer] = area_h;
+      local_pinch_halo_ = std::max(local_pinch_halo_, local_h);
+    }
+
+    if (odb::dbDatabase* db = tech_->getDb(); db != nullptr) {
+      auto recordMasterPairs = [&](odb::dbMaster* master) {
+        std::vector<std::pair<odb::dbTechLayer*, odb::Rect>> imp_boxes;
+        for (odb::dbBox* box : master->getObstructions()) {
+          odb::dbTechLayer* layer = box->getTechLayer();
+          if (layer != nullptr
+              && layer->getType() == odb::dbTechLayerType::IMPLANT) {
+            imp_boxes.emplace_back(layer, box->getBox());
+          }
+        }
+        for (size_t i = 0; i < imp_boxes.size(); ++i) {
+          for (size_t j = i + 1; j < imp_boxes.size(); ++j) {
+            if (imp_boxes[i].first != imp_boxes[j].first
+                && overlap1D(imp_boxes[i].second.xMin(),
+                             imp_boxes[i].second.xMax(),
+                             imp_boxes[j].second.xMin(),
+                             imp_boxes[j].second.xMax())
+                       > 0) {
+              compatible_implant_pairs_.emplace(imp_boxes[i].first,
+                                                imp_boxes[j].first);
+              compatible_implant_pairs_.emplace(imp_boxes[j].first,
+                                                imp_boxes[i].first);
+            }
+          }
+        }
+      };
+      for (odb::dbLib* lib : db->getLibs()) {
+        for (odb::dbMaster* master : lib->getMasters()) {
+          const std::string_view name(master->getConstName());
+          if (!master->isFiller() && !name.starts_with("FILL")) {
+            continue;
+          }
+          for (odb::dbBox* box : master->getObstructions()) {
+            odb::dbTechLayer* layer = box->getTechLayer();
+            if (layer != nullptr
+                && layer->getType() == odb::dbTechLayerType::IMPLANT) {
+              filler_layers_.insert(layer);
+            }
+          }
+          recordMasterPairs(master);
+        }
+      }
+      if (filler_layers_.empty()) {
+        for (odb::dbLib* lib : db->getLibs()) {
+          for (odb::dbMaster* master : lib->getMasters()) {
+            recordMasterPairs(master);
+          }
+        }
+      }
+    }
+  }
+
+  bool hasRules() const { return has_rules_; }
+
+  bool check(const Node* cell,
+             const GridX x,
+             const GridY y,
+             const odb::dbOrientType& orient,
+             const bool strict_empty_sites,
+             const bool require_filler_master = false) const
+  {
+    if (!has_rules_ || cell == nullptr || grid_ == nullptr) {
+      return true;
+    }
+    odb::dbMaster* db_master = getDbMaster(cell);
+    if (db_master == nullptr) {
+      return true;
+    }
+    const MasterLayerShapes& cand_shapes = getMasterShapes(db_master, orient);
+    if ((strict_empty_sites || require_filler_master) && cand_shapes.empty()) {
+      return true;
+    }
+
+    const int site_w = grid_->getSiteWidth().v;
+    const int row_h
+        = (grid_->getRowCount().v > 0) ? rowHeightDbu(0) : cell->getHeight().v;
+    const int x_real = x.v * site_w;
+    const int y_real = grid_->gridYToDbu(y).v;
+    const odb::Rect cell_box(x_real,
+                             y_real,
+                             x_real + cell->getWidth().v,
+                             y_real + cell->getHeight().v);
+
+    int active_halo = strict_empty_sites ? 0 : local_pinch_halo_;
+    for (const auto& [cl, _] : cand_shapes) {
+      if (auto it = layer_local_halo_.find(cl); it != layer_local_halo_.end()) {
+        active_halo = std::max(active_halo, it->second);
+      }
+      if (auto it = layer_area_halo_.find(cl); it != layer_area_halo_.end()) {
+        active_halo = std::max(active_halo, it->second);
+      }
+      if (auto dit = layer_deps_.find(cl); dit != layer_deps_.end()) {
+        for (odb::dbTechLayer* rl : dit->second) {
+          active_halo = std::max(active_halo, layer_local_halo_.at(rl));
+        }
+      }
+    }
+
+    const int halo_x = std::max(active_halo, 2 * site_w) + 2 * site_w;
+    const int halo_y = std::max(active_halo, 2 * row_h) + 2 * row_h;
+    const odb::Rect query_box(cell_box.xMin() - halo_x,
+                              cell_box.yMin() - halo_y,
+                              cell_box.xMax() + halo_x,
+                              cell_box.yMax() + halo_y);
+
+    const int interact_pad = std::max(1, max_interaction_);
+    const odb::Rect interact_box(cell_box.xMin() - interact_pad,
+                                 cell_box.yMin() - interact_pad,
+                                 cell_box.xMax() + interact_pad,
+                                 cell_box.yMax() + interact_pad);
+    const odb::Rect touch_box(cell_box.xMin() - 1,
+                              cell_box.yMin() - 1,
+                              cell_box.xMax() + 1,
+                              cell_box.yMax() + 1);
+
+    // Collect candidate cell + placed neighbors in the local grid window
+    scratch_.local_cells.clear();
+    if (!cand_shapes.empty()) {
+      scratch_.local_cells.push_back({
+          .master = db_master,
+          .orient = orient,
+          .x = x_real,
+          .y = y_real,
+      });
+    }
+
+    const int site_count = grid_->getRowSiteCount().v;
+    const int row_count = grid_->getRowCount().v;
+    if (site_count > 0 && row_count > 0) {
+      const int gx_min
+          = std::clamp(grid_->gridX(DbuX(std::max(0, query_box.xMin()))).v,
+                       0,
+                       site_count - 1);
+      const int gx_max
+          = std::clamp(grid_->gridEndX(DbuX(std::max(0, query_box.xMax()))).v,
+                       0,
+                       site_count - 1);
+      const int gy_min = std::clamp(
+          grid_->gridSnapDownY(DbuY(std::max(0, query_box.yMin()))).v,
+          0,
+          row_count - 1);
+      const int gy_max
+          = std::clamp(grid_->gridEndY(DbuY(std::max(0, query_box.yMax()))).v,
+                       0,
+                       row_count - 1);
+      scratch_.seen.clear();
+      scratch_.seen.insert(cell);
+      for (int gy = gy_min; gy <= gy_max; ++gy) {
+        for (int gx = gx_min; gx <= gx_max; ++gx) {
+          const Pixel* pixel = grid_->gridPixel(GridX(gx), GridY(gy));
+          if (pixel == nullptr || pixel->cell == nullptr
+              || scratch_.seen.contains(pixel->cell)) {
+            continue;
+          }
+          scratch_.seen.insert(pixel->cell);
+          const Node* nb = pixel->cell;
+          odb::dbMaster* nb_master = getDbMaster(nb);
+          if (nb_master != nullptr) {
+            scratch_.local_cells.push_back({
+                .master = nb_master,
+                .orient = nb->getOrient(),
+                .x = nb->getLeft().v,
+                .y = nb->getBottom().v,
+            });
+          }
+        }
+      }
+    }
+
+    if (scratch_.local_cells.empty()) {
+      return true;
+    }
+
+    // Build layer shape map for all tracked layers in the local window
+    for (auto& [_, vec] : scratch_.layer_shapes) {
+      vec.clear();
+    }
+    for (const PlacedCell& pc : scratch_.local_cells) {
+      const MasterLayerShapes& m_shapes = getMasterShapes(pc.master, pc.orient);
+      for (const auto& [layer, rects] : m_shapes) {
+        auto& dst = scratch_.layer_shapes[layer];
+        for (const odb::Rect& r : rects) {
+          dst.push_back({
+              .rect = odb::Rect(r.xMin() + pc.x,
+                                r.yMin() + pc.y,
+                                r.xMax() + pc.x,
+                                r.yMax() + pc.y),
+          });
+        }
+      }
+    }
+
+    auto& layer_shapes = scratch_.layer_shapes;
+    auto getRects = [&](odb::dbTechLayer* l) -> std::vector<odb::Rect> {
+      std::vector<odb::Rect> out;
+      auto it = layer_shapes.find(l);
+      if (it != layer_shapes.end() && !it->second.empty()) {
+        out.reserve(it->second.size());
+        for (const TaggedRect& tr : it->second) {
+          out.push_back(tr.rect);
+        }
+      }
+      return out;
+    };
+
+    auto isLayerStrict = [&](odb::dbTechLayer* l) -> bool {
+      return strict_empty_sites
+             || (require_filler_master && !filler_layers_.contains(l));
+    };
+
+    for (odb::dbTechLayer* layer : rule_layers_) {
+      auto ls_it = layer_shapes.find(layer);
+      if (ls_it == layer_shapes.end() || ls_it->second.empty()) {
+        continue;
+      }
+      const bool layer_strict = isLayerStrict(layer);
+
+      bool cand_affects_layer = cand_shapes.contains(layer);
+      if (!cand_affects_layer) {
+        for (const auto& [cl, _] : cand_shapes) {
+          if (auto dit = layer_deps_.find(cl);
+              dit != layer_deps_.end()
+              && std::ranges::find(dit->second, layer) != dit->second.end()) {
+            cand_affects_layer = true;
+            break;
+          }
+        }
+      }
+      if (!cand_affects_layer) {
+        if (layer_strict) {
+          continue;
+        }
+        const int l_halo = std::max(site_w, layer_local_halo_.at(layer));
+        const odb::Rect near_box(cell_box.xMin() - l_halo,
+                                 cell_box.yMin() - l_halo,
+                                 cell_box.xMax() + l_halo,
+                                 cell_box.yMax() + l_halo);
+        bool near_cand = false;
+        for (const TaggedRect& tr : ls_it->second) {
+          if (tr.rect.overlaps(near_box)) {
+            near_cand = true;
+            break;
+          }
+        }
+        if (!near_cand) {
+          continue;
+        }
+      }
+
+      const std::vector<odb::Rect> raw_rects = getRects(layer);
+      const std::vector<odb::Rect> rects_1d = merge1D(raw_rects);
+
+      // 1. Base WIDTH and SPACING (for IMPLANT layers)
+      std::vector<odb::Rect> req_rects_1d;
+      const std::vector<odb::Rect>* width_exp_rects = &rects_1d;
+      if (layer->getType() == odb::dbTechLayerType::IMPLANT) {
+        const int base_w = static_cast<int>(
+            std::max(layer->getWidth(), layer->getMinWidth()));
+        if (base_w > 0) {
+          if (!checkPlainWidth(
+                  rects_1d, base_w, cell, cell_box, touch_box, layer_strict)) {
+            return false;
+          }
+          if (!layer_strict) {
+            req_rects_1d = expandMandatoryMinWidth(
+                rects_1d, base_w, cell, cell_box, false);
+            width_exp_rects = &req_rects_1d;
+            if (!checkMandatorySpanContention(layer,
+                                              base_w,
+                                              rects_1d,
+                                              req_rects_1d,
+                                              layer_shapes,
+                                              cell,
+                                              cell_box,
+                                              touch_box,
+                                              require_filler_master)) {
+              return false;
+            }
+          }
+        }
+
+        int same_s = layer->getSpacing();
+        for (odb::dbTechLayerSpacingRule* sr : layer->getV54SpacingRules()) {
+          odb::dbTechLayer* sec = nullptr;
+          const int spc = static_cast<int>(sr->getSpacing());
+          if (sr->getCutLayer4Spacing(sec) && sec != nullptr && sec != layer) {
+            const int sec_base_w
+                = (sec->getType() == odb::dbTechLayerType::IMPLANT)
+                      ? static_cast<int>(
+                            std::max(sec->getWidth(), sec->getMinWidth()))
+                      : 0;
+            const std::vector<odb::Rect> sec_rects
+                = expandMandatoryMinWidth(merge1D(getRects(sec)),
+                                          sec_base_w,
+                                          cell,
+                                          cell_box,
+                                          isLayerStrict(sec));
+            if (!checkInterLayerBaseSpacing(*width_exp_rects,
+                                            sec_rects,
+                                            spc,
+                                            std::max({spc, base_w, sec_base_w}),
+                                            cell_box,
+                                            touch_box,
+                                            layer_strict)) {
+              return false;
+            }
+          } else {
+            same_s = std::max(same_s, spc);
+          }
+        }
+        if (same_s > 0
+            && !checkSameLayerBaseSpacing(*width_exp_rects,
+                                          same_s,
+                                          std::max(same_s, base_w),
+                                          cell,
+                                          cell_box,
+                                          touch_box,
+                                          layer_strict)) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+ private:
+  using MasterKey = std::pair<odb::dbMaster*, int>;
+  using LayerPair = std::pair<odb::dbTechLayer*, odb::dbTechLayer*>;
+  using MasterLayerShapes
+      = std::unordered_map<odb::dbTechLayer*, std::vector<odb::Rect>>;
+
+  struct PlacedCell
+  {
+    odb::dbMaster* master{nullptr};
+    odb::dbOrientType orient;
+    int x{0};
+    int y{0};
+  };
+
+  struct TaggedRect
+  {
+    odb::Rect rect;
+  };
+
+  static odb::dbMaster* getDbMaster(const Node* cell)
+  {
+    if (cell == nullptr) {
+      return nullptr;
+    }
+    if (cell->getDbInst() != nullptr) {
+      return cell->getDbInst()->getMaster();
+    }
+    if (cell->getMaster() != nullptr) {
+      return cell->getMaster()->getDbMaster();
+    }
+    return nullptr;
+  }
+
+  const MasterLayerShapes& getMasterShapes(
+      odb::dbMaster* master,
+      const odb::dbOrientType& orient) const
+  {
+    const MasterKey key{master, orient.getValue()};
+    auto it = master_cache_.find(key);
+    if (it != master_cache_.end()) {
+      return it->second;
+    }
+
+    MasterLayerShapes shapes;
+    odb::Rect bbox;
+    master->getPlacementBoundary(bbox);
+    odb::dbTransform transform(orient);
+    transform.apply(bbox);
+    transform.setOffset(odb::Point(-bbox.xMin(), -bbox.yMin()));
+
+    for (odb::dbBox* box : master->getObstructions()) {
+      odb::dbTechLayer* layer = box->getTechLayer();
+      if (layer == nullptr || !tracked_layers_.contains(layer)) {
+        continue;
+      }
+      odb::Rect r = box->getBox();
+      transform.apply(r);
+      shapes[layer].push_back(r);
+    }
+
+    return master_cache_.emplace(key, std::move(shapes)).first->second;
+  }
+
+  static int overlap1D(const int a_lo,
+                       const int a_hi,
+                       const int b_lo,
+                       const int b_hi)
+  {
+    return std::min(a_hi, b_hi) - std::max(a_lo, b_lo);
+  }
+
+  static int gap1D(const int a_lo,
+                   const int a_hi,
+                   const int b_lo,
+                   const int b_hi)
+  {
+    return std::max(0, std::max(a_lo, b_lo) - std::min(a_hi, b_hi));
+  }
+
+  // Merge rectangles that share a vertical span or overlap in Y and touch in X
+  // (1D horizontal merge within overlapping Y bands, without merging pure
+  // row-boundary yMax == yMin touches across separate 1H rows).
+  static std::vector<odb::Rect> merge1D(const std::vector<odb::Rect>& rects)
+  {
+    if (rects.size() <= 1) {
+      return rects;
+    }
+    const int y0 = rects[0].yMin();
+    const int y1 = rects[0].yMax();
+    bool uniform_y = true;
+    for (size_t i = 1; i < rects.size(); ++i) {
+      if (rects[i].yMin() != y0 || rects[i].yMax() != y1) {
+        uniform_y = false;
+        break;
+      }
+    }
+    if (uniform_y) {
+      std::vector<odb::Rect> sorted = rects;
+      std::ranges::sort(sorted, [](const odb::Rect& a, const odb::Rect& b) {
+        if (a.xMin() != b.xMin()) {
+          return a.xMin() < b.xMin();
+        }
+        return a.xMax() < b.xMax();
+      });
+      std::vector<odb::Rect> out;
+      out.reserve(sorted.size());
+      for (const odb::Rect& r : sorted) {
+        if (!out.empty() && out.back().xMax() >= r.xMin()) {
+          out.back().set_xhi(std::max(out.back().xMax(), r.xMax()));
+        } else {
+          out.push_back(r);
+        }
+      }
+      return out;
+    }
+
+    std::vector<int> ys;
+    ys.reserve(2 * rects.size());
+    for (const odb::Rect& r : rects) {
+      ys.push_back(r.yMin());
+      ys.push_back(r.yMax());
+    }
+    std::ranges::sort(ys);
+    const auto [ys_first, ys_last] = std::ranges::unique(ys);
+    ys.erase(ys_first, ys_last);
+
+    std::vector<odb::Rect> bands;
+    std::vector<std::pair<int, int>> x_ivs;
+    for (size_t k = 0; k + 1 < ys.size(); ++k) {
+      const int b_lo = ys[k];
+      const int b_hi = ys[k + 1];
+      if (b_lo >= b_hi) {
+        continue;
+      }
+      x_ivs.clear();
+      for (const odb::Rect& r : rects) {
+        if (r.yMin() <= b_lo && r.yMax() >= b_hi) {
+          x_ivs.emplace_back(r.xMin(), r.xMax());
+        }
+      }
+      if (x_ivs.empty()) {
+        continue;
+      }
+      std::ranges::sort(x_ivs);
+      int cur_lo = x_ivs[0].first;
+      int cur_hi = x_ivs[0].second;
+      for (size_t i = 1; i < x_ivs.size(); ++i) {
+        if (cur_hi >= x_ivs[i].first) {
+          cur_hi = std::max(cur_hi, x_ivs[i].second);
+        } else {
+          bands.emplace_back(cur_lo, b_lo, cur_hi, b_hi);
+          cur_lo = x_ivs[i].first;
+          cur_hi = x_ivs[i].second;
+        }
+      }
+      bands.emplace_back(cur_lo, b_lo, cur_hi, b_hi);
+    }
+
+    // Coalesce adjacent elementary Y bands that share identical [xMin, xMax]
+    // when an input rectangle actually spans strictly across their shared Y
+    // split (preserving full-height rectangles without merging separate rows).
+    std::ranges::sort(bands, [](const odb::Rect& a, const odb::Rect& b) {
+      if (a.xMin() != b.xMin()) {
+        return a.xMin() < b.xMin();
+      }
+      if (a.xMax() != b.xMax()) {
+        return a.xMax() < b.xMax();
+      }
+      return a.yMin() < b.yMin();
+    });
+    std::vector<odb::Rect> out;
+    out.reserve(bands.size());
+    for (const odb::Rect& b : bands) {
+      bool can_coalesce = false;
+      if (!out.empty() && out.back().xMin() == b.xMin()
+          && out.back().xMax() == b.xMax() && out.back().yMax() == b.yMin()) {
+        const int y_split = b.yMin();
+        for (const odb::Rect& orig : rects) {
+          if (orig.yMin() < y_split && orig.yMax() > y_split
+              && overlap1D(orig.xMin(), orig.xMax(), b.xMin(), b.xMax()) > 0) {
+            can_coalesce = true;
+            break;
+          }
+        }
+      }
+      if (can_coalesce) {
+        out.back().set_yhi(b.yMax());
+      } else {
+        out.push_back(b);
+      }
+    }
+    return out;
+  }
+
+  int rowYLo(const int gy) const { return grid_->gridYToDbu(GridY(gy)).v; }
+
+  int rowYHi(const int gy) const { return grid_->gridYToDbu(GridY(gy + 1)).v; }
+
+  int rowHeightDbu(const int gy) const { return rowYHi(gy) - rowYLo(gy); }
+
+  std::pair<int, int> horizontalExtent(
+      const odb::Rect& r,
+      const Node* cell,
+      const odb::Rect& cell_box,
+      const bool strict_empty_sites,
+      const std::vector<odb::Rect>* same_layer_rects = nullptr) const
+  {
+    int lo = r.xMin();
+    int hi = r.xMax();
+    if (strict_empty_sites || grid_ == nullptr) {
+      return {lo, hi};
+    }
+    const int site_w = grid_->getSiteWidth().v;
+    const int site_count = grid_->getRowSiteCount().v;
+    const int row_count = grid_->getRowCount().v;
+    if (site_w <= 0 || site_count <= 0 || row_count <= 0) {
+      return {lo, hi};
+    }
+
+    const int gy_start = std::clamp(
+        grid_->gridSnapDownY(DbuY(std::max(0, r.yMin()))).v, 0, row_count - 1);
+    const int gy_end
+        = std::clamp(grid_->gridEndY(DbuY(std::max(0, r.yMax()))).v,
+                     gy_start + 1,
+                     row_count);
+
+    auto isSiteEmptyAndValid = [&](const int gx) -> bool {
+      if (gx < 0 || gx >= site_count) {
+        return false;
+      }
+      const int site_x_lo = gx * site_w;
+      const int site_x_hi = site_x_lo + site_w;
+      for (int gy = gy_start; gy < gy_end; ++gy) {
+        const int row_y_lo = rowYLo(gy);
+        const int row_y_hi = rowYHi(gy);
+        // If this site overlaps the candidate cell's new footprint, it is
+        // occupied by the candidate cell itself (not empty).
+        if (overlap1D(site_x_lo, site_x_hi, cell_box.xMin(), cell_box.xMax())
+                > 0
+            && overlap1D(row_y_lo, row_y_hi, cell_box.yMin(), cell_box.yMax())
+                   > 0) {
+          return false;
+        }
+        const Pixel* pixel = grid_->gridPixel(GridX(gx), GridY(gy));
+        if (pixel == nullptr || !pixel->is_valid) {
+          return false;
+        }
+        if (pixel->cell != nullptr && pixel->cell != cell) {
+          return false;
+        }
+      }
+      return true;
+    };
+
+    while (lo > 0 && (lo % site_w == 0)
+           && isSiteEmptyAndValid((lo / site_w) - 1)) {
+      lo -= site_w;
+      if (same_layer_rects != nullptr) {
+        for (const odb::Rect& sr : *same_layer_rects) {
+          if (sr.xMax() == lo && sr.xMin() < lo && sr.yMin() <= r.yMin()
+              && sr.yMax() >= r.yMax()) {
+            lo = sr.xMin();
+            break;
+          }
+        }
+      }
+    }
+
+    while (hi >= 0 && (hi % site_w == 0) && isSiteEmptyAndValid(hi / site_w)) {
+      hi += site_w;
+      if (same_layer_rects != nullptr) {
+        for (const odb::Rect& sr : *same_layer_rects) {
+          if (sr.xMin() == hi && sr.xMax() > hi && sr.yMin() <= r.yMin()
+              && sr.yMax() >= r.yMax()) {
+            hi = sr.xMax();
+            break;
+          }
+        }
+      }
+    }
+
+    return {lo, hi};
+  }
+
+  bool canExtendHorizontally(const odb::Rect& r,
+                             const Node* cell,
+                             const odb::Rect& cell_box,
+                             const bool strict_empty_sites,
+                             const int min_w = 0,
+                             const std::vector<odb::Rect>* same_layer_rects
+                             = nullptr) const
+  {
+    const auto [lo, hi] = horizontalExtent(
+        r, cell, cell_box, strict_empty_sites, same_layer_rects);
+    return (lo < r.xMin() || hi > r.xMax()) && (hi - lo) >= min_w;
+  }
+
+  // Expand each < min_w island to the mandatory horizontal span [req_lo,
+  // req_hi] that every valid >= min_w filler completion inside [ext_lo, ext_hi]
+  // must cover.
+  std::vector<odb::Rect> expandMandatoryMinWidth(
+      const std::vector<odb::Rect>& rects,
+      const int min_w,
+      const Node* cell,
+      const odb::Rect& cell_box,
+      const bool strict_empty_sites) const
+  {
+    if (strict_empty_sites || min_w <= 0 || grid_ == nullptr || rects.empty()) {
+      return rects;
+    }
+    const int site_w = grid_->getSiteWidth().v;
+    if (site_w <= 0) {
+      return rects;
+    }
+    const int req_aligned_w = ((min_w + site_w - 1) / site_w) * site_w;
+    std::vector<odb::Rect> out;
+    out.reserve(rects.size());
+    for (const odb::Rect& r : rects) {
+      const bool aligned
+          = (r.xMin() >= 0 && r.xMax() >= 0 && (r.xMin() % site_w == 0)
+             && (r.xMax() % site_w == 0));
+      const int req_w = aligned ? req_aligned_w : min_w;
+      if (r.dx() > 0 && r.dx() < req_w) {
+        const auto [ext_lo, ext_hi]
+            = horizontalExtent(r, cell, cell_box, false, &rects);
+        if (ext_hi - ext_lo >= req_w) {
+          const int req_lo = std::min(r.xMin(), ext_hi - req_w);
+          const int req_hi = std::max(r.xMax(), ext_lo + req_w);
+          out.emplace_back(req_lo, r.yMin(), req_hi, r.yMax());
+          continue;
+        }
+      }
+      out.push_back(r);
+    }
+    return merge1D(out);
+  }
+
+  bool canBridgeHorizontally(const odb::Rect& r1,
+                             const odb::Rect& r2,
+                             const Node* cell,
+                             const odb::Rect& cell_box,
+                             const bool strict_empty_sites) const
+  {
+    if (strict_empty_sites || grid_ == nullptr) {
+      return false;
+    }
+    const int site_w = grid_->getSiteWidth().v;
+    const int site_count = grid_->getRowSiteCount().v;
+    const int row_count = grid_->getRowCount().v;
+    if (site_w <= 0 || site_count <= 0 || row_count <= 0) {
+      return false;
+    }
+    const int x_lo = std::min(r1.xMax(), r2.xMax());
+    const int x_hi = std::max(r1.xMin(), r2.xMin());
+    if (x_lo > x_hi || x_lo < 0 || (x_lo % site_w != 0)
+        || (x_hi % site_w != 0)) {
+      return false;
+    }
+    const int gx_start = x_lo / site_w;
+    const int gx_end = x_hi / site_w;
+    if (gx_start < 0 || gx_end > site_count) {
+      return false;
+    }
+
+    auto areSitesEmptyInY = [&](const int gx_lo,
+                                const int gx_hi,
+                                const int y_lo,
+                                const int y_hi) -> bool {
+      if (gx_lo >= gx_hi || gx_lo < 0 || gx_hi > site_count) {
+        return false;
+      }
+      const int gy_start = std::clamp(
+          grid_->gridSnapDownY(DbuY(std::max(0, y_lo))).v, 0, row_count - 1);
+      const int gy_end = std::clamp(
+          grid_->gridEndY(DbuY(std::max(0, y_hi))).v, gy_start + 1, row_count);
+      for (int gy = gy_start; gy < gy_end; ++gy) {
+        const int row_y_lo = rowYLo(gy);
+        const int row_y_hi = rowYHi(gy);
+        for (int gx = gx_lo; gx < gx_hi; ++gx) {
+          const int site_x_lo = gx * site_w;
+          const int site_x_hi = site_x_lo + site_w;
+          if (overlap1D(site_x_lo, site_x_hi, cell_box.xMin(), cell_box.xMax())
+                  > 0
+              && overlap1D(row_y_lo, row_y_hi, cell_box.yMin(), cell_box.yMax())
+                     > 0) {
+            return false;
+          }
+          const Pixel* pixel = grid_->gridPixel(GridX(gx), GridY(gy));
+          if (pixel == nullptr || !pixel->is_valid) {
+            return false;
+          }
+          if (pixel->cell != nullptr && pixel->cell != cell) {
+            return false;
+          }
+        }
+      }
+      return true;
+    };
+
+    const int ovl_y = overlap1D(r1.yMin(), r1.yMax(), r2.yMin(), r2.yMax());
+    if (ovl_y > 0) {
+      return gx_start < gx_end
+             && areSitesEmptyInY(gx_start,
+                                 gx_end,
+                                 std::max(r1.yMin(), r2.yMin()),
+                                 std::min(r1.yMax(), r2.yMax()));
+    }
+    if (gap1D(r1.yMin(), r1.yMax(), r2.yMin(), r2.yMax()) == 0) {
+      // Diagonally separated or corner-touching across an adjacent row
+      // boundary: bridging sites must produce positive X overlap across the row
+      // boundary rather than stopping at a 0-distance corner touch.
+      const odb::Rect& r_left = (r1.xMax() == x_lo) ? r1 : r2;
+      const odb::Rect& r_right = (r1.xMax() == x_lo) ? r2 : r1;
+      if (gx_end + 1 <= site_count && r_right.xMax() >= (gx_end + 1) * site_w
+          && areSitesEmptyInY(
+              gx_start, gx_end + 1, r_left.yMin(), r_left.yMax())) {
+        return true;
+      }
+      if (gx_start >= 1 && r_left.xMin() <= (gx_start - 1) * site_w
+          && areSitesEmptyInY(
+              gx_start - 1, gx_end, r_right.yMin(), r_right.yMax())) {
+        return true;
+      }
+      for (int split = gx_start; split < gx_end; ++split) {
+        if (areSitesEmptyInY(gx_start, split + 1, r_left.yMin(), r_left.yMax())
+            && areSitesEmptyInY(
+                split, gx_end, r_right.yMin(), r_right.yMax())) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  struct AlwaysMatchRect
+  {
+    bool operator()(const odb::Rect&) const { return true; }
+  };
+
+  template <typename RectFilter = AlwaysMatchRect>
+  bool checkPlainWidth(const std::vector<odb::Rect>& rects_1d,
+                       const int min_w,
+                       const Node* cell,
+                       const odb::Rect& cell_box,
+                       const odb::Rect& touch_box,
+                       const bool strict_empty_sites,
+                       const RectFilter& rect_filter = AlwaysMatchRect{}) const
+  {
+    // Base IMPLANT WIDTH (LEF 5.8 Fig. 3-1) and plain LEF58_WIDTH measure
+    // horizontal width along the row; vertical height thresholds use
+    // LEF58_WIDTH ... LENGTH.
+    const odb::Rect active_box = strict_empty_sites
+                                     ? cell_box
+                                     : odb::Rect(cell_box.xMin() - min_w,
+                                                 touch_box.yMin(),
+                                                 cell_box.xMax() + min_w,
+                                                 touch_box.yMax());
+    for (const odb::Rect& r : rects_1d) {
+      if (!r.overlaps(active_box) || !rect_filter(r)) {
+        continue;
+      }
+      if (r.dx() < min_w
+          && !canExtendHorizontally(
+              r, cell, cell_box, strict_empty_sites, min_w, &rects_1d)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool pairAnchoredToCandidate(const odb::Rect& r1,
+                               const odb::Rect& r2,
+                               const int max_dist,
+                               const odb::Rect& cell_box,
+                               const bool allow_bridge,
+                               const odb::Rect* anchor_override = nullptr) const
+  {
+    const int ovl_x = overlap1D(r1.xMin(), r1.xMax(), r2.xMin(), r2.xMax());
+    const int iz_x_lo = (ovl_x > 0) ? std::max(r1.xMin(), r2.xMin())
+                                    : std::min(r1.xMax(), r2.xMax());
+    const int iz_x_hi = (ovl_x > 0) ? std::min(r1.xMax(), r2.xMax())
+                                    : std::max(r1.xMin(), r2.xMin());
+
+    const int ovl_y = overlap1D(r1.yMin(), r1.yMax(), r2.yMin(), r2.yMax());
+    const int iz_y_lo = (ovl_y > 0) ? std::max(r1.yMin(), r2.yMin())
+                                    : std::min(r1.yMax(), r2.yMax());
+    const int iz_y_hi = (ovl_y > 0) ? std::min(r1.yMax(), r2.yMax())
+                                    : std::max(r1.yMin(), r2.yMin());
+
+    const int site_w = (grid_ != nullptr) ? grid_->getSiteWidth().v : 0;
+    const odb::Rect& anchor_box
+        = (anchor_override != nullptr) ? *anchor_override : cell_box;
+    if (r1.overlaps(anchor_box) || r2.overlaps(anchor_box)) {
+      const int reach = std::max(1, max_dist) + site_w;
+      if (gap1D(cell_box.xMin(), cell_box.xMax(), iz_x_lo, iz_x_hi) <= reach
+          && gap1D(cell_box.yMin(), cell_box.yMax(), iz_y_lo, iz_y_hi)
+                 <= reach) {
+        return true;
+      }
+    }
+    if (allow_bridge) {
+      const int dy_gap = gap1D(r1.yMin(), r1.yMax(), r2.yMin(), r2.yMax());
+      if (dy_gap == 0) {
+        const int pad_x = (ovl_y > 0) ? 0 : site_w;
+        const int by_lo
+            = (ovl_y > 0) ? iz_y_lo : std::min(r1.yMin(), r2.yMin());
+        const int by_hi
+            = (ovl_y > 0) ? iz_y_hi : std::max(r1.yMax(), r2.yMax());
+        const odb::Rect bridge_box(
+            iz_x_lo - pad_x, by_lo, iz_x_hi + pad_x, by_hi);
+        if (cell_box.overlaps(bridge_box)) {
+          return true;
+        }
+      } else if (ovl_x > 0 && dy_gap > 0) {
+        const odb::Rect bridge_box(iz_x_lo, iz_y_lo, iz_x_hi, iz_y_hi);
+        if (cell_box.overlaps(bridge_box)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  bool checkMandatorySpanContention(
+      odb::dbTechLayer* layer,
+      const int base_w,
+      const std::vector<odb::Rect>& orig_rects,
+      const std::vector<odb::Rect>& req_rects,
+      const std::unordered_map<odb::dbTechLayer*, std::vector<TaggedRect>>&
+          layer_shapes,
+      const Node* cell,
+      const odb::Rect& cell_box,
+      const odb::Rect& touch_box,
+      const bool require_filler_master) const
+  {
+    if (grid_ == nullptr || req_rects == orig_rects) {
+      return true;
+    }
+    const int row_count = grid_->getRowCount().v;
+    auto rowSpan = [&](const odb::Rect& r) -> std::pair<int, int> {
+      if (row_count <= 0) {
+        return {0, 0};
+      }
+      const int gy0
+          = std::clamp(grid_->gridSnapDownY(DbuY(std::max(0, r.yMin()))).v,
+                       0,
+                       row_count - 1);
+      const int gy1 = std::clamp(
+          grid_->gridEndY(DbuY(std::max(0, r.yMax()))).v, gy0 + 1, row_count);
+      return {gy0, gy1};
+    };
+    auto coveredBy = [](const std::vector<odb::Rect>& rects,
+                        const int x_lo,
+                        const int x_hi,
+                        const int y_lo,
+                        const int y_hi) -> bool {
+      for (const odb::Rect& r : rects) {
+        if (r.xMin() <= x_lo && r.xMax() >= x_hi
+            && overlap1D(r.yMin(), r.yMax(), y_lo, y_hi) > 0) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    for (odb::dbTechLayer* l2 : rule_layers_) {
+      if (l2 == layer || l2->getType() != odb::dbTechLayerType::IMPLANT
+          || compatible_implant_pairs_.contains({layer, l2})) {
+        continue;
+      }
+      if (require_filler_master && !filler_layers_.contains(l2)) {
+        continue;
+      }
+      const int l2_base_w
+          = static_cast<int>(std::max(l2->getWidth(), l2->getMinWidth()));
+      if (l2_base_w <= 0) {
+        continue;
+      }
+      auto it2 = layer_shapes.find(l2);
+      if (it2 == layer_shapes.end() || it2->second.empty()) {
+        continue;
+      }
+      std::vector<odb::Rect> l2_raw;
+      l2_raw.reserve(it2->second.size());
+      for (const TaggedRect& tr : it2->second) {
+        l2_raw.push_back(tr.rect);
+      }
+      const std::vector<odb::Rect> l2_orig = merge1D(l2_raw);
+      const std::vector<odb::Rect> l2_req
+          = expandMandatoryMinWidth(l2_orig, l2_base_w, cell, cell_box, false);
+      if (l2_req == l2_orig) {
+        continue;
+      }
+      const int reach = std::max(base_w, l2_base_w);
+      const odb::Rect active_box(cell_box.xMin() - reach,
+                                 touch_box.yMin(),
+                                 cell_box.xMax() + reach,
+                                 touch_box.yMax());
+      for (const odb::Rect& r1 : req_rects) {
+        const auto [gy1_lo, gy1_hi] = rowSpan(r1);
+        for (const odb::Rect& r2 : l2_req) {
+          if (!r1.overlaps(active_box) && !r2.overlaps(active_box)) {
+            continue;
+          }
+          const int ovl_x
+              = overlap1D(r1.xMin(), r1.xMax(), r2.xMin(), r2.xMax());
+          if (ovl_x <= 0) {
+            continue;
+          }
+          const auto [gy2_lo, gy2_hi] = rowSpan(r2);
+          const bool same_row
+              = !filler_layers_.empty()
+                && overlap1D(gy1_lo, gy1_hi, gy2_lo, gy2_hi) > 0;
+          if (!r1.overlaps(r2) && !same_row) {
+            continue;
+          }
+          const int x_lo = std::max(r1.xMin(), r2.xMin());
+          const int x_hi = std::min(r1.xMax(), r2.xMax());
+          if (!coveredBy(orig_rects, x_lo, x_hi, r1.yMin(), r1.yMax())
+              || !coveredBy(l2_orig, x_lo, x_hi, r2.yMin(), r2.yMax())) {
+            return false;
+          }
+        }
+      }
+    }
+    return true;
+  }
+
+  bool checkSameLayerBaseSpacing(const std::vector<odb::Rect>& rects_1d,
+                                 const int min_spc,
+                                 const int anchor_reach,
+                                 const Node* cell,
+                                 const odb::Rect& cell_box,
+                                 const odb::Rect& touch_box,
+                                 const bool strict_empty_sites) const
+  {
+    // Base IMPLANT SPACING (LEF 5.8 Fig. 3-1 & p. 467) applies horizontally
+    // within overlapping Y-bands; cross-row vertical/diagonal spacing uses
+    // LEF58_SPACING VERTICAL PRL and LEF58_WIDTH ZEROPRL.
+    const odb::Rect* anchor_override
+        = strict_empty_sites ? nullptr : &touch_box;
+    for (size_t i = 0; i < rects_1d.size(); ++i) {
+      const odb::Rect& r1 = rects_1d[i];
+      for (size_t j = i + 1; j < rects_1d.size(); ++j) {
+        const odb::Rect& r2 = rects_1d[j];
+        if (overlap1D(r1.yMin(), r1.yMax(), r2.yMin(), r2.yMax()) <= 0) {
+          continue;
+        }
+        const int dx_gap = gap1D(r1.xMin(), r1.xMax(), r2.xMin(), r2.xMax());
+        if (dx_gap <= 0 || dx_gap >= min_spc) {
+          continue;
+        }
+        if (!pairAnchoredToCandidate(r1,
+                                     r2,
+                                     anchor_reach,
+                                     cell_box,
+                                     !strict_empty_sites,
+                                     anchor_override)) {
+          continue;
+        }
+        if (canBridgeHorizontally(r1, r2, cell, cell_box, strict_empty_sites)) {
+          continue;
+        }
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool checkInterLayerBaseSpacing(const std::vector<odb::Rect>& rects1,
+                                  const std::vector<odb::Rect>& rects2,
+                                  const int min_spc,
+                                  const int anchor_reach,
+                                  const odb::Rect& cell_box,
+                                  const odb::Rect& touch_box,
+                                  const bool strict_empty_sites) const
+  {
+    const odb::Rect* anchor_override
+        = strict_empty_sites ? nullptr : &touch_box;
+    for (const odb::Rect& r1 : rects1) {
+      for (const odb::Rect& r2 : rects2) {
+        if (!pairAnchoredToCandidate(
+                r1, r2, anchor_reach, cell_box, false, anchor_override)) {
+          continue;
+        }
+        if (r1.overlaps(r2)) {
+          return false;
+        }
+        if (min_spc > 0
+            && overlap1D(r1.yMin(), r1.yMax(), r2.yMin(), r2.yMax()) > 0
+            && gap1D(r1.xMin(), r1.xMax(), r2.xMin(), r2.xMax()) < min_spc) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  struct Scratch
+  {
+    std::vector<PlacedCell> local_cells;
+    std::unordered_set<const Node*> seen;
+    std::unordered_map<odb::dbTechLayer*, std::vector<TaggedRect>> layer_shapes;
+  };
+
+  Grid* grid_{nullptr};
+  odb::dbTech* tech_{nullptr};
+  bool has_rules_{false};
+  int max_interaction_{0};
+  int local_pinch_halo_{0};
+  std::vector<odb::dbTechLayer*> rule_layers_;
+  std::unordered_set<odb::dbTechLayer*> tracked_layers_;
+  std::unordered_set<odb::dbTechLayer*> filler_layers_;
+  std::unordered_set<LayerPair, boost::hash<LayerPair>>
+      compatible_implant_pairs_;
+  std::unordered_map<odb::dbTechLayer*, int> layer_local_halo_;
+  std::unordered_map<odb::dbTechLayer*, int> layer_area_halo_;
+  std::unordered_map<odb::dbTechLayer*, std::vector<odb::dbTechLayer*>>
+      layer_deps_;
+  mutable std::
+      unordered_map<MasterKey, MasterLayerShapes, boost::hash<MasterKey>>
+          master_cache_;
+  mutable Scratch scratch_;
+};
+
 // Constructor
 PlacementDRC::PlacementDRC(utl::Logger* logger,
                            Grid* grid,
@@ -939,6 +2168,10 @@ PlacementDRC::PlacementDRC(utl::Logger* logger,
       disallow_one_site_gap_(disallow_one_site_gap)
 {
   makeCellEdgeSpacingTable(tech);
+  auto implant_drc = std::make_unique<ImplantDRC>(grid, tech);
+  if (implant_drc->hasRules()) {
+    implant_drc_ = std::move(implant_drc);
+  }
 }
 
 PlacementDRC::~PlacementDRC() = default;
@@ -1142,6 +2375,35 @@ bool PlacementDRC::checkFixedSupplyVias(const Node* cell,
          || fixed_supply_vias_->check(cell, x, y, orient);
 }
 
+bool PlacementDRC::hasImplantRules() const
+{
+  return implant_drc_ != nullptr && implant_drc_->hasRules();
+}
+
+bool PlacementDRC::checkImplantRules(const Node* cell,
+                                     const bool strict_empty_sites,
+                                     const bool require_filler_master) const
+{
+  return checkImplantRules(cell,
+                           grid_->gridX(cell),
+                           grid_->gridSnapDownY(cell),
+                           cell->getOrient(),
+                           strict_empty_sites,
+                           require_filler_master);
+}
+
+bool PlacementDRC::checkImplantRules(const Node* cell,
+                                     const GridX x,
+                                     const GridY y,
+                                     const odb::dbOrientType& orient,
+                                     const bool strict_empty_sites,
+                                     const bool require_filler_master) const
+{
+  return implant_drc_ == nullptr
+         || implant_drc_->check(
+             cell, x, y, orient, strict_empty_sites, require_filler_master);
+}
+
 bool PlacementDRC::checkDRC(const Node* cell) const
 {
   return checkDRC(
@@ -1157,7 +2419,8 @@ bool PlacementDRC::checkDRC(const Node* cell,
     // Fast path: bail on the first failing check, cheapest first.
     return checkBlockedLayers(cell, x, y, orient) && checkOneSiteGap(cell, x, y)
            && checkPadding(cell, x, y) && checkEdgeSpacing(cell, x, y, orient)
-           && checkFixedSupplyVias(cell, x, y, orient);
+           && checkFixedSupplyVias(cell, x, y, orient)
+           && checkImplantRules(cell, x, y, orient);
   }
 
   // Debug path: evaluate every check so the report shows each one.
@@ -1166,9 +2429,10 @@ bool PlacementDRC::checkDRC(const Node* cell,
   const bool blocked_ok = checkBlockedLayers(cell, x, y, orient);
   const bool supply_vias_ok = checkFixedSupplyVias(cell, x, y, orient);
   const bool gap_ok = checkOneSiteGap(cell, x, y);
+  const bool implant_ok = checkImplantRules(cell, x, y, orient);
 
-  const bool all_ok
-      = edge_ok && padding_ok && blocked_ok && supply_vias_ok && gap_ok;
+  const bool all_ok = edge_ok && padding_ok && blocked_ok && supply_vias_ok
+                      && gap_ok && implant_ok;
 
   if (!all_ok) {
     const std::string cell_name = cell->name();
@@ -1177,7 +2441,7 @@ bool PlacementDRC::checkDRC(const Node* cell,
                "checkDRC",
                1,
                "cell {} at ({}, {}): ok?={} edge={} padding={} blocked={} "
-               "supply_vias={} gap={}",
+               "supply_vias={} gap={} implant={}",
                cell_name,
                x.v,
                y.v,
@@ -1186,7 +2450,8 @@ bool PlacementDRC::checkDRC(const Node* cell,
                padding_ok ? 1 : 0,
                blocked_ok ? 1 : 0,
                supply_vias_ok ? 1 : 0,
-               gap_ok ? 1 : 0);
+               gap_ok ? 1 : 0,
+               implant_ok ? 1 : 0);
   }
 
   return all_ok;
@@ -1218,6 +2483,9 @@ int PlacementDRC::countDRCViolations(const Node* cell,
     ++count;
   }
   if (include_fixed_supply_vias && !checkFixedSupplyVias(cell, x, y, orient)) {
+    ++count;
+  }
+  if (!checkImplantRules(cell, x, y, orient)) {
     ++count;
   }
   return count;

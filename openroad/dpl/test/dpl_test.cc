@@ -1152,4 +1152,302 @@ TEST_F(Lef58ImplantAndEdgeTest, CellEdgeSpacingRangeAndCoreSpacer)
   EXPECT_EQ(failureCount("Cell_edge_spacing_failures"), 1);
 }
 
+TEST_F(Lef58ImplantAndEdgeTest, ImplantBaseWidthPreFillerVsPostFiller)
+{
+  imp1_->setMinWidth(2 * kSiteWidth);
+
+  odb::dbMaster* m_imp1 = createCustomMaster(
+      "CELL_IMP1", 1, {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+  odb::dbMaster* m_imp2 = createCustomMaster(
+      "CELL_IMP2", 1, {{imp2_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+
+  // Place a 1-site IMP1 cell with empty sites next to it:
+  // strict checkPlacement flags the raw 1-site IMP1 island (< 2 sites),
+  // whereas detailedPlacement allows it while adjacent sites are empty.
+  odb::dbInst* c1 = placeCell(m_imp1, "c1", 4, 0);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+  EXPECT_EQ(failureCount("Implant_DRC_failures"), 1);
+
+  dp_.detailedPlacement(0, 0);
+  EXPECT_EQ(c1->getLocation(), odb::Point(4 * kSiteWidth, 0));
+
+  // Placing a second 1-site IMP1 cell adjacent at gx=5 merges IMP1 to 2 sites,
+  // satisfying checkPlacement.
+  odb::dbInst* c2 = placeCell(m_imp1, "c2", 5, 0);
+  EXPECT_EQ(runCheck(), "");
+
+  // If c1 is pinched between two fixed IMP2 cells at gx=3 and gx=5 (and c2 is
+  // moved away), detailedPlacement must move c1 out of the pinched slot.
+  c2->setLocation(10 * kSiteWidth, 0);
+  placeCell(m_imp1, "c3", 11, 0);
+  placeCell(m_imp2,
+            "fix_l",
+            3,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  placeCell(m_imp2,
+            "fix_r",
+            5,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  dp_.detailedPlacement(0, 0);
+  EXPECT_NE(c1->getLocation(), odb::Point(4 * kSiteWidth, 0));
+}
+
+TEST_F(Lef58ImplantAndEdgeTest, ImplantBaseSpacingSameAndInterLayer)
+{
+  imp1_->setSpacing(2 * kSiteWidth);
+  auto* inter_rule = odb::dbTechLayerSpacingRule::create(imp2_);
+  inter_rule->setSpacing(kSiteWidth);
+  inter_rule->setCutLayer4Spacing(imp1_);
+
+  odb::dbMaster* m1 = createCustomMaster(
+      "M_IMP1", 1, {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+  odb::dbMaster* m2 = createCustomMaster(
+      "M_IMP2", 1, {{imp2_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+
+  // Same-layer spacing violation (1-site gap < 2 sites)
+  placeCell(m1, "a1", 2, 0);
+  odb::dbInst* a2 = placeCell(m1, "a2", 4, 0);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+  EXPECT_EQ(failureCount("Implant_DRC_failures"), 2);
+
+  // Move a2 to 2-site gap (gx=5): legal
+  a2->setLocation(5 * kSiteWidth, 0);
+  EXPECT_EQ(runCheck(), "");
+
+  // Inter-layer abutment (dist=0 < kSiteWidth) with IMP2 violates V54 rule
+  odb::dbInst* b1 = placeCell(m2, "b1", 6, 0);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+
+  // Move b1 to 1-site gap (gx=7): legal
+  b1->setLocation(7 * kSiteWidth, 0);
+  EXPECT_EQ(runCheck(), "");
+
+  // GAA half-row dual-implant flipped rows (R0 / MX) where row_height <
+  // imp1_->getSpacing() (like N2P 0.130 um < 0.144 um): vertical separation
+  // across the opposite-polarity stripe is legal; horizontal same-row gap
+  // < min_spc still fails.
+  odb::dbInst::destroy(block_->findInst("a1"));
+  odb::dbInst::destroy(a2);
+  odb::dbInst::destroy(b1);
+  inter_rule->setSpacing(0);
+  imp1_->setSpacing(kRowHeight + kSiteWidth);
+  odb::dbMaster* m_dual = createCustomMaster(
+      "M_GAA_DUAL",
+      1,
+      {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight / 2)},
+       {imp2_, odb::Rect(0, kRowHeight / 2, kSiteWidth, kRowHeight)}});
+  placeCell(m_dual, "d_r0", 2, 0, odb::dbOrientType::R0);
+  placeCell(m_dual, "d_r1", 2, 1, odb::dbOrientType::MX);
+  EXPECT_EQ(runCheck(), "");
+
+  placeCell(m_dual, "d_r0_gap", 4, 0, odb::dbOrientType::R0);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+}
+
+TEST_F(Lef58ImplantAndEdgeTest,
+       ImplantNonImplantSealingPmosSnapMultiSiteAndAttribution)
+{
+  imp1_->setWidth(4 * kSiteWidth);
+  imp1_->setSpacing(2 * kSiteWidth);
+
+  odb::dbMaster* m_pmos = createCustomMaster(
+      "M_PMOS_TOP",
+      1,
+      {{imp1_, odb::Rect(0, kRowHeight / 2, kSiteWidth, kRowHeight)}});
+  odb::dbMaster* m_imp1_2h = createCustomMaster(
+      "M_IMP1_2H",
+      3,
+      {{imp1_, odb::Rect(0, 0, 3 * kSiteWidth, 2 * kRowHeight)}},
+      odb::dbMasterType::CORE,
+      /*rows_tall=*/2);
+  odb::dbMaster* m_no_imp = createCustomMaster("M_NO_IMP", 1, {});
+  odb::dbMaster* m_imp2 = createCustomMaster(
+      "M_IMP2_BLK", 1, {{imp2_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+
+  odb::dbMaster* m_imp1_1h = createCustomMaster(
+      "M_IMP1_1H", 1, {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+
+  // 1H cells on rows 0 and 1 abutting a 3-site 2H cell merge across each
+  // overlapping Y-band to 4 sites wide (>= 4 * kSiteWidth).
+  placeCell(m_imp1_1h,
+            "p_1h",
+            0,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  placeCell(m_imp1_2h,
+            "p_2h",
+            1,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  placeCell(m_imp1_1h,
+            "p_r1_full",
+            0,
+            1,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  EXPECT_EQ(runCheck(), "");
+
+  // Interior half-row implant (dy = kRowHeight / 2 = 1400 < min_w = 1520) that
+  // satisfies horizontal width (4 * kSiteWidth = 1520) and is bounded above and
+  // below by IMP2 rows must pass checkPlacement (base IMPLANT WIDTH measures
+  // horizontal run along the row, matching GAA half-row cells like N2P/A14).
+  for (int gx = 12; gx < 16; ++gx) {
+    placeCell(m_imp2,
+              ("r0_b_" + std::to_string(gx)).c_str(),
+              gx,
+              0,
+              odb::dbOrientType::R0,
+              odb::dbPlacementStatus::FIRM);
+    placeCell(m_pmos,
+              ("r1_p_" + std::to_string(gx)).c_str(),
+              gx,
+              1,
+              odb::dbOrientType::MX,
+              odb::dbPlacementStatus::FIRM);
+    placeCell(m_imp2,
+              ("r2_t_" + std::to_string(gx)).c_str(),
+              gx,
+              2,
+              odb::dbOrientType::R0,
+              odb::dbPlacementStatus::FIRM);
+  }
+  EXPECT_EQ(runCheck(), "");
+
+  // Multi-site extension check: a 1-site cell at gx=7 bounded by FIRM IMP2
+  // cells at gx=5 and gx=9 only has 3 total sites available (< 4 * kSiteWidth),
+  // even when row 1 above is completely empty (verifies gridSnapDownY checks
+  // row 0 rather than row 1).
+  placeCell(m_imp2,
+            "blk_l",
+            5,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  placeCell(m_imp2,
+            "blk_r",
+            9,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  odb::dbInst* pinched = placeCell(m_pmos, "pinched", 7, 0);
+  dp_.detailedPlacement(0, 0);
+  EXPECT_NE(pinched->getLocation(), odb::Point(7 * kSiteWidth, 0));
+  odb::dbInst::destroy(pinched);
+  odb::dbInst::destroy(block_->findInst("blk_l"));
+  odb::dbInst::destroy(block_->findInst("blk_r"));
+
+  // Remote sealer check (1 empty site away): a 2-site IMP1 island at gx=6..7
+  // bounded on the left (gx=5) by FIRM IMP2 needs 2 empty sites (gx=8..9) to
+  // reach 4 * kSiteWidth; placing M_NO_IMP at gx=9 leaves only 3 total sites
+  // (gx=6..8), so DPL must move M_NO_IMP away from gx=9.
+  placeCell(m_imp2,
+            "rem_l",
+            5,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  placeCell(m_imp1_1h,
+            "rem_6",
+            6,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  placeCell(m_imp1_1h,
+            "rem_7",
+            7,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  odb::dbInst* rem_sealer = placeCell(m_no_imp, "rem_sealer", 9, 0);
+  dp_.detailedPlacement(0, 0);
+  EXPECT_NE(rem_sealer->getLocation(), odb::Point(9 * kSiteWidth, 0));
+  for (const char* nm : {"rem_l", "rem_6", "rem_7", "rem_sealer"}) {
+    odb::dbInst::destroy(block_->findInst(nm));
+  }
+
+  // Mandatory min-width contention across a shared 1-site gap: with both IMP1
+  // and IMP2 requiring >= 3 * kSiteWidth, a left-locked 2-site IMP1 island at
+  // gx=5..6 and a right-locked 2-site IMP2 island at gx=8..9 would both have to
+  // claim the single empty site gx=7, which no filler can satisfy.
+  imp1_->setWidth(3 * kSiteWidth);
+  imp2_->setWidth(3 * kSiteWidth);
+  placeCell(m_no_imp,
+            "cnt_l",
+            4,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  placeCell(m_imp1_1h,
+            "cnt_i5",
+            5,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  placeCell(m_imp1_1h,
+            "cnt_i6",
+            6,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  odb::dbInst* cnt_m8 = placeCell(m_imp2, "cnt_m8", 8, 0);
+  placeCell(m_imp2,
+            "cnt_m9",
+            9,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  placeCell(m_no_imp,
+            "cnt_r",
+            10,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  dp_.detailedPlacement(0, 0);
+  EXPECT_NE(cnt_m8->getLocation(), odb::Point(8 * kSiteWidth, 0));
+  for (const char* nm :
+       {"cnt_l", "cnt_i5", "cnt_i6", "cnt_m8", "cnt_m9", "cnt_r"}) {
+    odb::dbInst::destroy(block_->findInst(nm));
+  }
+  imp1_->setWidth(4 * kSiteWidth);
+  imp2_->setWidth(0);
+
+  // Non-implant cell sealing check: place a 3-site IMP1 island at gx=6..8
+  // bounded on the left (gx=5) by FIRM IMP2; placing a movable M_NO_IMP cell at
+  // gx=9 would seal the 3-site IMP1 island (< 4 * kSiteWidth), so DPL must move
+  // M_NO_IMP away from gx=9!
+  placeCell(m_imp2,
+            "seal_l",
+            5,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  placeCell(m_imp1_1h,
+            "i6",
+            6,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  placeCell(m_imp1_1h,
+            "i7",
+            7,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  placeCell(m_imp1_1h,
+            "i8",
+            8,
+            0,
+            odb::dbOrientType::R0,
+            odb::dbPlacementStatus::FIRM);
+  odb::dbInst* sealer = placeCell(m_no_imp, "sealer", 9, 0);
+  dp_.detailedPlacement(0, 0);
+  EXPECT_NE(sealer->getLocation(), odb::Point(9 * kSiteWidth, 0));
+}
+
 }  // namespace dpl
