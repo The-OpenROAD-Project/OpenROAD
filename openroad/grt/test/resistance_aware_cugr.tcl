@@ -1,7 +1,6 @@
-# CUGR resistance-aware routing: critical nets are biased onto thicker,
-# lower-resistance upper metals via the PatternRoute resistance cost.
-# Guides-only golden (same gcd/sky130hs setup as critical_nets_percentage_cugr,
-# with -resistance_aware added) so the routing difference is captured.
+# -resistance_aware is FastRoute-only: with -use_cugr it warns (GRT-0706)
+# and routes the same guides as critical_nets_percentage_cugr, whose setup
+# this test repeats.
 source "helpers.tcl"
 read_lef "sky130hs/sky130hs.tlef"
 read_lef "sky130hs/sky130hs_std_cell.lef"

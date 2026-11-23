@@ -251,6 +251,14 @@ proc global_route { args } {
     grt::set_res_aware_nets_percentage $res_aware_percentage
   }
 
+  if {
+    [info exists flags(-use_cugr)]
+    && ($resistance_aware || [info exists keys(-res_aware_nets_percentage)])
+  } {
+    utl::warn GRT 706 "-resistance_aware and -res_aware_nets_percentage\
+      apply to FastRoute only; CUGR weighs wire delay by net criticality."
+  }
+
   if { [info exists keys(-snapshot_batched_width)] } {
     set snapshot_batched_width $keys(-snapshot_batched_width)
     sta::check_positive_integer "-snapshot_batched_width" \
@@ -436,7 +444,7 @@ sta::define_cmd_args "global_route_debug" {
   [-tree3D]   # Show The Rectilinear Steiner Tree 3D after layer assignment
   [-edges3D]  # Show edges being rerouted during maze route 3D
   [-cugr_pattern]   # CUGR: show the topology after pattern routing
-  [-cugr_res_aware] # CUGR: show the topology after the resistance-aware re-route
+  [-cugr_res_aware] # CUGR: show the topology after the critical-net re-route
   [-cugr_detours]   # CUGR: show the topology after pattern routing with detours
   [-cugr_maze]      # CUGR: show the topology after maze routing
   [-cugr_rrr]       # CUGR: show the topology after each iterative RRR iteration

@@ -6,4 +6,5 @@
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
 moved bterm req_msg[0] from met3 to met4
+[WARNING EST-0026] Missing route to pin req_msg[0] in net req_msg[0].
 No differences found.

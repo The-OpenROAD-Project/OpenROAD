@@ -540,8 +540,73 @@ void PatternRoute::constructDetours(GridGraphView<bool>& congestion_view)
 
 void PatternRoute::run()
 {
+  delay_aware_ = net_->getCriticality() > 0.0f && grid_graph_->hasDelayModel()
+                 && !net_->getPinCaps().empty();
+  if (delay_aware_) {
+    const std::vector<float>& caps = net_->getPinCaps();
+    for (const auto& [pin_index, ap] : net_->getPreferredAccessPoints()) {
+      pin_caps_[ap.point] += caps[pin_index];
+    }
+    driver_point_ = net_->getDriverAccessPoint();
+    computeLoads(routing_dag_);
+    total_cap_ = routing_dag_->getLoad().subtree_cap;
+  }
   calculateRoutingCosts(routing_dag_);
   net_->setRoutingTree(getRoutingTree(routing_dag_));
+}
+
+void PatternRoute::computeLoads(const std::shared_ptr<PatternRoutingNode>& node)
+{
+  PatternRoutingNode::Load& load = node->getLoad();
+  if (load.done) {
+    return;
+  }
+  load.done = true;
+  if (node->getFixedLayers().isValid()) {
+    if (const auto it = pin_caps_.find(*node); it != pin_caps_.end()) {
+      load.subtree_cap = it->second;
+    }
+    load.has_driver = driver_point_ == static_cast<PointT>(*node);
+  }
+  const double wire_cap = grid_graph_->getRefCapPerDbu();
+  for (auto& child_paths : node->getPaths()) {
+    for (auto& path : child_paths) {
+      computeLoads(path);
+    }
+    const auto& path = child_paths.front();
+    const float branch_cap
+        = path->getLoad().subtree_cap
+          + wire_cap * grid_graph_->getDistance(*node, *path);
+    load.subtree_cap += branch_cap;
+    if (path->getLoad().has_driver && !load.has_driver) {
+      load.has_driver = true;
+      load.driver_branch_cap = branch_cap;
+    }
+  }
+}
+
+double PatternRoute::wireLoad(
+    const std::shared_ptr<PatternRoutingNode>& node,
+    const std::shared_ptr<PatternRoutingNode>& path) const
+{
+  const PatternRoutingNode::Load& load = path->getLoad();
+  if (!load.has_driver) {
+    return load.subtree_cap;
+  }
+  const double branch_cap = load.subtree_cap
+                            + grid_graph_->getRefCapPerDbu()
+                                  * grid_graph_->getDistance(*node, *path);
+  return std::max(0.0, total_cap_ - branch_cap);
+}
+
+double PatternRoute::viaLoad(
+    const std::shared_ptr<PatternRoutingNode>& node) const
+{
+  const PatternRoutingNode::Load& load = node->getLoad();
+  if (!load.has_driver) {
+    return load.subtree_cap;
+  }
+  return std::max(0.0, total_cap_ - load.driver_branch_cap);
 }
 
 void PatternRoute::calculateRoutingCosts(
@@ -578,10 +643,16 @@ void PatternRoute::calculateRoutingCosts(
           cost = path->getCosts()[layer_index]
                  + grid_graph_->getWireCost(
                      layer_index, *node, *path, net_->getNdrCost(layer_index));
-
-          if (net_->isResAware()) {
-            cost += grid_graph_->getWireResistanceCost(
-                layer_index, *node, *path, net_->getNdrWidth(layer_index));
+          if (delay_aware_) {
+            cost
+                += grid_graph_->getWireDelayCost(layer_index,
+                                                 *node,
+                                                 *path,
+                                                 net_->getNdrWidth(layer_index),
+                                                 net_->getNdrCost(layer_index),
+                                                 wireLoad(node, path),
+                                                 net_->getDriverResistance(),
+                                                 net_->getCriticality());
           }
         }
         if (cost < costs[layer_index].first) {
@@ -616,14 +687,16 @@ void PatternRoute::calculateRoutingCosts(
   const int num_layers = grid_graph_->getNumLayers();
   const std::vector<double>& ndr_costs = net_->getNdrCosts();
   std::vector<LayerViaCosts> via_costs(num_layers);
+  const double via_load = delay_aware_ ? viaLoad(node) : 0.0;
   for (int l = 0; l < num_layers; l++) {
     LayerViaCosts& costs = via_costs[l];
     if (l > 0) {
       CostT unit = grid_graph_->getUnitViaCost(l - 1, ndr_costs);
-      // Res-aware: charge via resistance so climbing only pays off when
-      // the upper-layer wire-R savings beat it.
-      if (net_->isResAware()) {
-        unit += grid_graph_->getViaResistanceCost(l - 1);
+      // Climbing pays off only when the upper layer's delay savings beat the
+      // via's.
+      if (delay_aware_) {
+        unit += grid_graph_->getViaDelayCost(
+            l - 1, via_load, net_->getCriticality());
       }
       costs.unit = via_costs[l - 1].unit + unit;
       costs.mid_pad = via_costs[l - 1].mid_pad;

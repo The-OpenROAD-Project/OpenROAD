@@ -71,12 +71,9 @@ struct Constants
 
   double maze_logistic_slope = 0.5;
 
-  // Min net length (routed-tree length, gcells) for res-aware; shorter nets
-  // are skipped.
-  int resistance_min_net_length = 3;
-
-  // Scales the res-aware resistance cost to CUGR's wire-cost magnitude.
-  double resistance_weight = 50.0;
+  // Scales a critical net's Elmore delay cost; 1 costs the RC delay of one
+  // gcell of reference-layer wire driving another.
+  double delay_weight = 3.0;
 
   double pin_patch_threshold = 20.0;
   int pin_patch_padding = 1;
@@ -138,19 +135,11 @@ class CUGR
     critical_nets_percentage_ = percentage;
   }
   float getCriticalNetsPercentage() const { return critical_nets_percentage_; }
-  void setResistanceAware(bool resistance_aware)
-  {
-    resistance_aware_ = resistance_aware;
-  }
   // Developer debug switch. Applied at the next init(); an existing grid
   // keeps its demand model.
   void setViaDemandEnabled(bool enabled)
   {
     constants_.via_demand_enabled = enabled;
-  }
-  void setResAwareNetsPercentage(float percentage)
-  {
-    res_aware_percentage_ = percentage;
   }
   void setCongestionIterations(int iterations)
   {
@@ -213,12 +202,15 @@ class CUGR
  private:
   // True if (layer_0, tile_x, tile_y) indexes an existing grid edge.
   bool isEdgeInGrid(int layer_0, int tile_x, int tile_y) const;
-  // Refresh net slacks, re-mark the res-aware/critical set, and demote
-  // non-critical nets so the next stage routes critical nets first.
-  // `extend_res_aware` false keeps the resistance-aware set but refreshes the
-  // inputs of its score.
-  void updateCriticalNets(const std::vector<int>& net_indices,
-                          bool extend_res_aware = true);
+  // Refresh net slacks and criticalities, and demote non-critical nets so
+  // the next stage routes critical nets first.
+  void updateCriticalNets(const std::vector<int>& net_indices);
+  // Set each net's criticality from its slack relative to the worst slack;
+  // call before demotion overwrites the slacks.
+  void updateCriticality();
+  // Per-layer wire and via RC from the parasitics estimator, for the delay
+  // cost.
+  void initLayerRC();
   // Refresh every net's slack; runs the full parasitics estimate once per
   // route(), then re-estimates only the collected rerouted nets.
   void updateNetSlacks(const std::vector<int>& net_indices);
@@ -236,7 +228,7 @@ class CUGR
   // Slack value at the critical_nets_percentage_ percentile of the nets.
   float criticalSlackThreshold() const;
   // Push nets with slack above the threshold to the back of the default
-  // ordering by maxing their slack; res-aware nets are exempt.
+  // ordering by maxing their slack; nets with a criticality keep theirs.
   void demoteNonCriticalNets(float slack_th);
   float getNetSlack(odb::dbNet* net);
   void setInitialNetSlacks(const std::vector<int>& net_indices);
@@ -277,9 +269,9 @@ class CUGR
                            double threshold = 1.0);
 
   void patternRoute(std::vector<int>& net_indices);
-  // Re-route the critical nets on real 3D-tree resistance, right after the
-  // neutral first PatternRoute.
-  void patternRouteResAware(std::vector<int>& net_indices);
+  // Re-route every net with negative slack once the first routes are timed,
+  // so the delay cost moves it to faster layers.
+  void patternRouteCritical(std::vector<int>& net_indices);
   void patternRouteWithDetours(std::vector<int>& net_indices);
   // How a rip-up and reroute pass treats its nets; the relief alters it.
   struct RerouteOptions
@@ -337,15 +329,12 @@ class CUGR
   std::vector<int> findNetsOnCongestedEdges(
       const std::vector<EdgeId>& edges,
       const std::vector<char>& is_candidate) const;
-  // res_aware_order selects the multi-factor res-aware ordering; false uses
-  // the default slack/bbox order.
-  void sortNetIndices(std::vector<int>& net_indices,
-                      bool res_aware_order) const;
+  // Worst slack first, then smallest bounding box.
+  void sortNetIndices(std::vector<int>& net_indices) const;
   // Order for passes that reroute one net at a time against all others:
   // non-critical nets largest first, then critical nets, worst slack last.
   void sortRerouteIndices(std::vector<int>& net_indices) const;
-  // sortNetIndices for res-aware or incremental routing, else
-  // sortRerouteIndices.
+  // sortNetIndices for incremental routing, else sortRerouteIndices.
   void sortForReroute(std::vector<int>& net_indices) const;
   void getGuides(const GRNet* net,
                  std::vector<std::pair<int, grt::BoxT>>& guides);
@@ -440,28 +429,6 @@ class CUGR
   std::vector<int> incremental_candidates_;
   // Per-edge overflow at the last captureOverflowBaseline; relief ignores it.
   std::vector<std::pair<EdgeId, double>> overflow_baseline_;
-
-  bool resistance_aware_ = false;
-  // Per-run normalisers for getResAwareScore (default 1 => well-defined).
-  float worst_slack_ = 1.0f;
-  float worst_resistance_ = 1.0f;
-  int worst_fanout_ = 1;
-  int worst_net_length_ = 1;
-
-  // Percent of eligible candidate nets marked res-aware; set via
-  // -res_aware_nets_percentage (FastRoute default).
-  float res_aware_percentage_ = 15.0f;
-
-  // Select the res-aware net set (like FastRoute updateSlacks) and refresh the
-  // worst_* normalisers; no-op unless resistance_aware_.
-  // `extend_res_aware` false only refreshes resistance, length and the
-  // normalisers.
-  void markResAwareNets(const std::vector<int>& net_indices,
-                        bool extend_res_aware);
-
-  // FR-style ordering score (lower routes first): slack/resistance/fanout/
-  // length blend, each normalised by the per-run worst.
-  float getResAwareScore(const GRNet* net) const;
 
   std::vector<int> nets_to_route_;
 };

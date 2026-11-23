@@ -4,7 +4,7 @@
 [INFO ODB-0131]     Created 676 components and 2850 component-terminals.
 [INFO ODB-0133]     Created 579 nets and 1498 connections.
 [WARNING GRT-0309] Timing is not available, setting critical nets percentage to 0.
-[WARNING GRT-0118] Iterative RRR finished with congestion remaining (212).
+[WARNING GRT-0118] Iterative RRR finished with congestion remaining (170).
 [WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
 [WARNING GRT-0128] Incremental global routing finished with congestion. Check the congestion regions in the DRC Viewer.
 [WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
@@ -13,14 +13,14 @@ has_congestion: 1
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)   Wire Ovf    Via Ovf  Max Edge Ovf
 --------------------------------------------------------------------------------------------------------------
 metal1    H         0.00         0.00         0.00         0.00       0.00       0.00       0.00          0.00
-metal2    V      1791.80       750.00       135.96       885.96      49.45      36.20       8.57          1.24
-metal3    H      2448.00      1110.00       125.55      1235.55      50.47      55.15      10.25          1.64
-metal4    V      1217.20       363.00        68.55       431.55      35.45      31.58       6.77          0.44
-metal5    H      1224.00       274.00        50.11       324.11      26.48      23.41       3.95          0.34
-metal6    V      1217.20       328.00        29.75       357.75      29.39      14.16       1.64          0.25
-metal7    H      1190.00       141.00        29.19       170.19      14.30       9.53       1.97          0.42
-metal8    V      1190.00        90.00        13.19       103.19       8.67       5.30       1.02          0.28
-metal9    H      1190.00        13.00         4.49        17.49       1.47       0.88       0.25          0.28
-metal10   V      1190.00        18.00         2.25        20.25       1.70       0.88       0.25          0.28
+metal2    V      1791.80       681.00       136.70       817.70      45.64       7.09       2.81          1.43
+metal3    H      2448.00       988.00       130.66      1118.66      45.70      31.53       6.34          0.69
+metal4    V      1217.20       278.00        74.40       352.40      28.95      31.13       7.66          0.39
+metal5    H      1224.00       285.00        54.73       339.73      27.76      21.36       3.84          0.34
+metal6    V      1217.20       350.00        35.80       385.80      31.70      13.83       1.81          0.29
+metal7    H      1190.00       139.00        47.72       186.72      15.69      13.41       3.43          0.56
+metal8    V      1190.00       228.00        30.24       258.24      21.70      11.32       1.98          0.42
+metal9    H      1190.00       104.00        21.33       125.33      10.53       5.82       2.04          0.56
+metal10   V      1190.00        58.00         7.86        65.86       5.53       2.99       0.94          0.56
 --------------------------------------------------------------------------------------------------------------
-Total           12658.20      3087.00       459.05      3546.05      28.01     177.09      34.67          1.64
+Total           12658.20      3111.00       539.45      3650.45      28.84     138.48      30.85          1.43

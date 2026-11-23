@@ -3079,8 +3079,8 @@ void GlobalRouter::setAllowCongestion(bool allow_congestion)
 void GlobalRouter::setResistanceAware(bool resistance_aware)
 {
   resistance_aware_ = resistance_aware;
+  // CUGR always weighs delay by criticality; the flag is FastRoute's.
   fastroute_->setResistanceAware(resistance_aware);
-  cugr_->setResistanceAware(resistance_aware);
 }
 
 void GlobalRouter::setCUGRViaDemand(const bool enabled)
@@ -3097,11 +3097,7 @@ void GlobalRouter::setResAwareNetsPercentage(float percentage)
                   "Resistance-aware routing is not enabled, setting res-aware "
                   "nets percentage to 0.");
   }
-  if (use_cugr_) {
-    cugr_->setResAwareNetsPercentage(percentage);
-  } else {
-    fastroute_->setResAwareNetsPercentage(percentage);
-  }
+  fastroute_->setResAwareNetsPercentage(percentage);
 }
 
 void GlobalRouter::setMacroExtension(int macro_extension)

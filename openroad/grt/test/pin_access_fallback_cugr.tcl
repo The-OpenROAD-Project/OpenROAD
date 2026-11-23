@@ -28,7 +28,7 @@ $inst setPlacementStatus PLACED
 
 estimate_parasitics -placement
 
-global_route -use_cugr -critical_nets_percentage 30 -resistance_aware -verbose
+global_route -use_cugr -critical_nets_percentage 30 -verbose
 
 set guide_file [make_result_file pin_access_fallback_cugr.guide]
 write_guides $guide_file

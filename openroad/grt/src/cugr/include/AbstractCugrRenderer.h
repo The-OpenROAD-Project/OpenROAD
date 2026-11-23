@@ -42,7 +42,7 @@ inline const char* toString(const CugrStage stage)
     case CugrStage::patternRoute:
       return "pattern route";
     case CugrStage::patternRouteResAware:
-      return "resistance-aware re-route";
+      return "critical-net re-route";
     case CugrStage::patternRouteWithDetours:
       return "pattern route with detours";
     case CugrStage::mazeRoute:

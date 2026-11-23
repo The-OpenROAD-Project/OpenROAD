@@ -50,13 +50,18 @@ class GRNet
   void setCritical(bool is_critical) { is_critical_ = is_critical; }
   bool isCritical() const { return is_critical_; }
 
-  // Resistance-aware state for the PatternRoute cost term and getResAwareScore.
-  void setResAware(bool res_aware) { is_res_aware_ = res_aware; }
-  bool isResAware() const { return is_res_aware_; }
-  void setResistance(float resistance) { resistance_ = resistance; }
-  float getResistance() const { return resistance_; }
-  void setNetLength(int net_length) { net_length_ = net_length; }
-  int getNetLength() const { return net_length_; }
+  // Timing criticality in [0, 1] that scales the delay term of the routing
+  // cost; 0 routes for length alone.
+  void setCriticality(float criticality) { criticality_ = criticality; }
+  float getCriticality() const { return criticality_; }
+  // Input capacitance (F) of each sink pin, keyed like getPinAccessPoints();
+  // 0 for the driver and ports. Empty until set.
+  void setPinCaps(std::vector<float> caps) { pin_caps_ = std::move(caps); }
+  const std::vector<float>& getPinCaps() const { return pin_caps_; }
+  // Drive resistance (ohm) of the driver pin; 0 for a port or unknown cell.
+  void setDriverResistance(float res) { driver_res_ = res; }
+  float getDriverResistance() const { return driver_res_; }
+  int getDriverPinIndex() const { return driver_pin_index_; }
   void clearRoutingTree() { routing_tree_ = nullptr; }
   bool isInsideLayerRange(int layer_index) const;
 
@@ -127,7 +132,7 @@ class GRNet
   {
     soft_ndr_ = true;
     std::ranges::fill(ndr_costs_, 1.0);
-    // Drop the NDR width too, so the res-aware cost reverts to the default
+    // Drop the NDR width too, so the delay cost reverts to the default
     // wire width after demotion (keeps getNdrWidth in sync with hasNdr).
     std::ranges::fill(ndr_widths_, 0);
   }
@@ -194,11 +199,11 @@ class GRNet
   LayerRange layer_range_;
   float slack_;
   bool is_critical_;
-  bool is_res_aware_ = false;
   bool adopted_ = false;
   bool stale_ = false;
-  float resistance_ = 0.0f;
-  int net_length_ = 0;
+  float criticality_ = 0.0f;
+  std::vector<float> pin_caps_;
+  float driver_res_ = 0.0f;
   std::vector<double> ndr_costs_;
   std::vector<int> ndr_widths_;
   bool soft_ndr_ = false;
