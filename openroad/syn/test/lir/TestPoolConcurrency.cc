@@ -4,6 +4,7 @@
 // Multi-threaded tests of the pools, in their own target so that
 // --config=tsan --test_tag_filters=tsan runs exactly these.
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <thread>
@@ -28,20 +29,21 @@ TEST(ConstPoolTest, ParallelLookupsInReadOnlyMode)
 {
   ConstPool pool;
   pool.setMode(TableMode::kSingleWrite);
-  constexpr uint64_t kCount = 5000;
+  constexpr int kCount = 5000;
   std::vector<ConstId> ids;
   ids.reserve(kCount);
-  for (uint64_t i = 0; i < kCount; ++i) {
-    ids.push_back(pool.internUint(32, i));
+  for (int i = 0; i < kCount; ++i) {
+    ids.push_back(pool.internUint(32, static_cast<uint64_t>(i)));
   }
   pool.setMode(TableMode::kReadOnly);
   std::vector<std::thread> threads;
   threads.reserve(8);
   for (int t = 0; t < 8; ++t) {
     threads.emplace_back([&] {
-      for (uint64_t i = 0; i < kCount; ++i) {
-        ASSERT_EQ(pool.get(ids[i]).toUint64(), i);
-        ASSERT_EQ(pool.internUint(32, i), ids[i]);
+      for (int i = 0; i < kCount; ++i) {
+        const auto u = static_cast<uint64_t>(i);
+        ASSERT_EQ(pool.get(ids[i]).toUint64(), u);
+        ASSERT_EQ(pool.internUint(32, u), ids[i]);
       }
     });
   }
@@ -55,7 +57,7 @@ TEST(ConstPoolTest, ParallelLookupsInReadOnlyMode)
 TEST(ConstPoolTest, ConcurrentInterningAgrees)
 {
   constexpr int kThreads = 8;
-  constexpr uint64_t kCount = 5000;
+  constexpr int kCount = 5000;
   ConstPool pool;
   pool.setMode(TableMode::kParallelWrite);
   std::vector<std::vector<ConstId>> ids(kThreads);
@@ -63,10 +65,9 @@ TEST(ConstPoolTest, ConcurrentInterningAgrees)
   threads.reserve(kThreads);
   for (int t = 0; t < kThreads; ++t) {
     threads.emplace_back([&, t] {
-      for (uint64_t k = 0; k < kCount; ++k) {
-        const uint64_t i
-            = (k * 7919 + static_cast<uint64_t>(t) * 104729) % kCount;
-        ids[t].push_back(pool.internUint(40, i));
+      for (int k = 0; k < kCount; ++k) {
+        const int i = (k * 7919 + t * 104729) % kCount;
+        ids[t].push_back(pool.internUint(40, static_cast<uint64_t>(i)));
       }
     });
   }
@@ -74,13 +75,13 @@ TEST(ConstPoolTest, ConcurrentInterningAgrees)
     thread.join();
   }
   pool.setMode(TableMode::kReadOnly);
-  EXPECT_EQ(pool.size(), kCount);
+  EXPECT_EQ(pool.size(), static_cast<size_t>(kCount));
   for (int t = 0; t < kThreads; ++t) {
-    for (uint64_t k = 0; k < kCount; ++k) {
-      const uint64_t i
-          = (k * 7919 + static_cast<uint64_t>(t) * 104729) % kCount;
-      ASSERT_EQ(pool.internUint(40, i), ids[t][k]);
-      ASSERT_EQ(pool.get(ids[t][k]).toUint64(), i);
+    for (int k = 0; k < kCount; ++k) {
+      const int i = (k * 7919 + t * 104729) % kCount;
+      const auto u = static_cast<uint64_t>(i);
+      ASSERT_EQ(pool.internUint(40, u), ids[t][k]);
+      ASSERT_EQ(pool.get(ids[t][k]).toUint64(), u);
     }
   }
 }
@@ -106,7 +107,7 @@ TEST(NameInternerTest, ConcurrentInterningAgrees)
   for (std::thread& thread : threads) {
     thread.join();
   }
-  EXPECT_EQ(names.size(), kNames);
+  EXPECT_EQ(names.size(), static_cast<size_t>(kNames));
   names.setMode(TableMode::kReadOnly);
   for (int i = 0; i < kNames; ++i) {
     const NameId id = names.find(absl::StrCat("n", i));

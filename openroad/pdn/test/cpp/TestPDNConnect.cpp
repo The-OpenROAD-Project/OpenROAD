@@ -31,6 +31,7 @@
 // Connect's via map holds unique_ptr<DbGenerateStackedVia>, which in turn
 // holds a unique_ptr<TechLayer>; both need to be complete here.
 #include "techlayer.h"
+#include "tst/logger_checks.h"
 #include "utl/Logger.h"
 
 namespace pdn {
@@ -178,6 +179,68 @@ class TestConnect : public PdnTest
       }
     }
     return vias;
+  }
+
+  // Place M1 -> M3 stacks whose V1 and V2 cuts are split by `pitch` on M2,
+  // where each M3 strap in `crossings` overlaps an M1 strap along y 1000-1200,
+  // and return the wire they went on. The default is one 2000 x 200 overlap
+  // centered on (2000, 1100). With `ongrid`, M2 is an ongrid layer.
+  odb::dbSWire* makeSplitCutStack(const int pitch,
+                                  const int max_columns,
+                                  const bool ongrid,
+                                  const std::vector<odb::Rect>& crossings
+                                  = {odb::Rect(1000, 1000, 3000, 1200)})
+  {
+    addGenerateRule(1, "RULE12");
+    addGenerateRule(2, "RULE23");
+    Connect connect(grid_, m(1), m(3));
+    odb::PtrMap<odb::dbTechLayer, Connect::SplitCut> splits;
+    splits[m(2)] = {pitch, /*stagger=*/false};
+    connect.setSplitCuts(splits);
+    if (ongrid) {
+      connect.setOnGrid({m(2)});
+    }
+    connect.setMaxColumns(max_columns);
+
+    odb::dbSWire* wire = makeWire();
+    DbVia::ViaLayerShape shapes;
+    for (const odb::Rect& crossing : crossings) {
+      connect.makeVia(wire,
+                      makeShape(1, odb::Rect(0, 1000, 10000, 1200)),
+                      makeShape(3, crossing),
+                      odb::dbWireShapeType::STRIPE,
+                      shapes);
+    }
+    return wire;
+  }
+
+  // The centers of the vias placed on a wire whose bottom layer is `bottom`,
+  // in order.
+  static std::vector<odb::Point> cutCenters(odb::dbSWire* wire,
+                                            odb::dbTechLayer* bottom)
+  {
+    std::vector<odb::Point> centers;
+    for (odb::dbSBox* box : placedVias(wire)) {
+      odb::dbVia* via = box->getBlockVia();
+      if (via != nullptr && via->getBottomLayer() == bottom) {
+        centers.push_back(box->getViaXY());
+      }
+    }
+    std::ranges::sort(centers);
+    return centers;
+  }
+
+  // The x of each via cutCenters finds; every one of them must sit on the
+  // overlap's center line, y = 1100.
+  static std::vector<int> cutColumns(odb::dbSWire* wire,
+                                     odb::dbTechLayer* bottom)
+  {
+    std::vector<int> columns;
+    for (const odb::Point& center : cutCenters(wire, bottom)) {
+      EXPECT_EQ(center.y(), 1100);
+      columns.push_back(center.x());
+    }
+    return columns;
   }
 
   // Check the emitted rectangles, independently of the generator's checks.
@@ -699,6 +762,41 @@ TEST_F(TestConnect, SplitCutsAreKeptOnlyForIntermediateLayers)
   EXPECT_FALSE(connect.getSplitCutStagger(m(3)));
 }
 
+// A split cut pitch below the layer pitch would put the cuts closer than one
+// routing track apart, so it is rejected; the layer pitch itself is allowed.
+// The routing layers here have a pitch of 200.
+TEST_F(TestConnect, SplitCutPitchBelowTheLayerPitchIsRejected)
+{
+  TestableConnect connect(grid_, m(1), m(4));
+
+  odb::PtrMap<odb::dbTechLayer, Connect::SplitCut> splits;
+  splits[m(2)] = {/*pitch=*/150, /*stagger=*/false};
+  const std::string log = captureLog(
+      [&] { EXPECT_LOGGER_ERROR(connect.setSplitCuts(splits), "PDN-0243"); });
+  EXPECT_THAT(log,
+              ::testing::HasSubstr("Split cut pitch 0.1500 um on M2 is less "
+                                   "than the layer pitch 0.2000 um."));
+
+  splits[m(2)] = {/*pitch=*/200, /*stagger=*/false};
+  EXPECT_NO_THROW(connect.setSplitCuts(splits));
+  EXPECT_EQ(connect.getSplitCutPitch(m(2)), 200);
+}
+
+// The pitch checked is the one along which the layer's tracks repeat: X for
+// the vertical M2 and Y for the horizontal M3. Checking the other axis would
+// reject both of these.
+TEST_F(TestConnect, SplitCutPitchIsCheckedAcrossTheRoutingDirection)
+{
+  TestableConnect connect(grid_, m(1), m(4));
+  m(2)->setPitchXY(/*pitch_x=*/200, /*pitch_y=*/400);
+  m(3)->setPitchXY(/*pitch_x=*/400, /*pitch_y=*/200);
+
+  odb::PtrMap<odb::dbTechLayer, Connect::SplitCut> splits;
+  splits[m(2)] = {/*pitch=*/300, /*stagger=*/false};
+  splits[m(3)] = {/*pitch=*/300, /*stagger=*/false};
+  EXPECT_NO_THROW(connect.setSplitCuts(splits));
+}
+
 // -------- report --------
 
 // report() names the min-width layers, the same way it names the ongrid
@@ -1029,6 +1127,123 @@ TEST_F(TestConnect, MakeViaPrefersTheRuleWithMoreCutArea)
                   shapes);
   ASSERT_EQ(block()->getVias().size(), 1u);
   EXPECT_EQ((*block()->getVias().begin())->getViaGenerateRule(), big);
+}
+
+// Split cuts on an ongrid layer are a minimum distance apart: each one takes
+// the next M2 track at least 250 past the last. With tracks every 200 that is
+// every second track, 400 apart, rather than the nearest track at 200.
+TEST_F(TestConnect, MakeViaPutsSplitCutsOnTheNextOngridTrack)
+{
+  odb::dbTrackGrid::create(block(), m(2))->addGridPatternX(0, 50, 200);
+
+  odb::dbSWire* wire
+      = makeSplitCutStack(/*pitch=*/250, /*max_columns=*/4, /*ongrid=*/true);
+  for (const int level : {1, 2}) {
+    SCOPED_TRACE(level);
+    EXPECT_THAT(cutColumns(wire, m(level)),
+                ::testing::ElementsAre(1400, 1800, 2200, 2600));
+  }
+}
+
+// A second crossing of the same size reuses the via built for the first, with
+// the M2 tracks it already read, and its cuts land on the tracks around its
+// own center at 6000.
+TEST_F(TestConnect, MakeViaReusesASplitCutViaOnTheNextCrossing)
+{
+  odb::dbTrackGrid::create(block(), m(2))->addGridPatternX(0, 50, 200);
+
+  odb::dbSWire* wire = makeSplitCutStack(
+      /*pitch=*/250,
+      /*max_columns=*/4,
+      /*ongrid=*/true,
+      {odb::Rect(1000, 1000, 3000, 1200), odb::Rect(5000, 1000, 7000, 1200)});
+  for (const int level : {1, 2}) {
+    SCOPED_TRACE(level);
+    EXPECT_THAT(
+        cutColumns(wire, m(level)),
+        ::testing::ElementsAre(1400, 1800, 2200, 2600, 5400, 5800, 6200, 6600));
+  }
+}
+
+// The same holds across a horizontal split layer: split on M3 between
+// vertical M2 and M4 straps, the rows take the next M3 track at least 250
+// past the last, every second track, 400 apart.
+TEST_F(TestConnect, MakeViaPutsSplitCutRowsOnTheNextOngridTrack)
+{
+  addGenerateRule(2, "RULE23");
+  addGenerateRule(3, "RULE34");
+  odb::dbTrackGrid::create(block(), m(3))->addGridPatternY(0, 50, 200);
+  Connect connect(grid_, m(2), m(4));
+  odb::PtrMap<odb::dbTechLayer, Connect::SplitCut> splits;
+  splits[m(3)] = {/*pitch=*/250, /*stagger=*/false};
+  connect.setSplitCuts(splits);
+  connect.setOnGrid({m(3)});
+  connect.setMaxRows(4);
+  odb::dbSWire* wire = makeWire();
+
+  DbVia::ViaLayerShape shapes;
+  connect.makeVia(wire,
+                  makeShape(2, odb::Rect(1000, 0, 1200, 5000)),
+                  makeShape(4, odb::Rect(1000, 1000, 1200, 3000)),
+                  odb::dbWireShapeType::STRIPE,
+                  shapes);
+
+  for (const int level : {2, 3}) {
+    SCOPED_TRACE(level);
+    EXPECT_THAT(cutCenters(wire, m(level)),
+                ::testing::ElementsAre(odb::Point(1100, 1400),
+                                       odb::Point(1100, 1800),
+                                       odb::Point(1100, 2200),
+                                       odb::Point(1100, 2600)));
+  }
+}
+
+// A pitch of three tracks across two columns puts the first cut 300 left of
+// the center, between two tracks. It moves to the lower one, and the second
+// cut takes the track a pitch past it, so both stay on tracks.
+TEST_F(TestConnect, MakeViaMovesAnOffTrackSplitCutOntoATrack)
+{
+  odb::dbTrackGrid::create(block(), m(2))->addGridPatternX(0, 50, 200);
+
+  odb::dbSWire* wire
+      = makeSplitCutStack(/*pitch=*/450, /*max_columns=*/2, /*ongrid=*/true);
+  for (const int level : {1, 2}) {
+    SCOPED_TRACE(level);
+    EXPECT_THAT(cutColumns(wire, m(level)), ::testing::ElementsAre(1600, 2200));
+  }
+}
+
+// The minimum distance holds on irregular tracks too. An extra track at 1690
+// takes the first cut, and the nearest track to a 600 pitch past it is 2200,
+// which is only 510 away and under the 550 asked for; the cut goes to the
+// next track, 2400, instead.
+TEST_F(TestConnect, MakeViaKeepsSplitCutsAPitchApartOnIrregularTracks)
+{
+  odb::dbTrackGrid* tracks = odb::dbTrackGrid::create(block(), m(2));
+  tracks->addGridPatternX(0, 50, 200);
+  tracks->addGridPatternX(1690, 1, 0);
+
+  odb::dbSWire* wire
+      = makeSplitCutStack(/*pitch=*/550, /*max_columns=*/2, /*ongrid=*/true);
+  for (const int level : {1, 2}) {
+    SCOPED_TRACE(level);
+    EXPECT_THAT(cutColumns(wire, m(level)), ::testing::ElementsAre(1690, 2400));
+  }
+}
+
+// Without -ongrid the same split cuts ignore the tracks and are spaced by the
+// pitch as given.
+TEST_F(TestConnect, MakeViaSpacesSplitCutsByThePitchOffGrid)
+{
+  odb::dbTrackGrid::create(block(), m(2))->addGridPatternX(0, 50, 200);
+
+  odb::dbSWire* wire
+      = makeSplitCutStack(/*pitch=*/250, /*max_columns=*/4, /*ongrid=*/false);
+  for (const int level : {1, 2}) {
+    SCOPED_TRACE(level);
+    EXPECT_THAT(cutColumns(wire, m(level)),
+                ::testing::ElementsAre(1625, 1875, 2125, 2375));
+  }
 }
 
 // A shape that cannot grow -- one that is locked, or that an instance pin

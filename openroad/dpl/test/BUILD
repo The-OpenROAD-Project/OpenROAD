@@ -1,5 +1,5 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("@rules_python//python:defs.bzl", "py_test")
+load("//bazel:man_tcl_checker.bzl", "man_tcl_check_test")
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
@@ -25,6 +25,7 @@ COMPULSORY_TESTS = [
     "check8",
     "check9",
     "check_fixed_only",
+    "check_offrow_block_padding",
     "check_placeable_only",
     "diamond01",
     "diamond_multi_height",
@@ -175,6 +176,9 @@ filegroup(
             ],
             "check_fixed_only": [
                 "extra.lef",
+            ],
+            "check_offrow_block_padding": [
+                "offrow_block.lef",
             ],
             "check_placeable_only": [
                 "check_fixed_only.def",
@@ -370,15 +374,9 @@ cc_test(
     ],
 )
 
-py_test(
+man_tcl_check_test(
     name = "dpl_man_tcl_check",
-    srcs = ["dpl_man_tcl_check.py"],
-    data = ["//openroad/dpl:doc_files"],
-    tags = [
-        "doc_check",
-        "py",
-    ],
-    deps = ["//docs/src/scripts:extract_utils"],
+    module = "dpl",
 )
 
 doc_check_test(

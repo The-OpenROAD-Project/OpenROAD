@@ -8,6 +8,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <iterator>  // IWYU pragma: keep (used in asserts)
+#include <limits>    // IWYU pragma: keep (used in asserts)
 #include <memory>
 #include <span>
 #include <string_view>
@@ -29,16 +31,16 @@ using WordBuffer = absl::InlinedVector<uint64_t, 4>;
 
 // Clears the bits above the width in both planes of `words` and clears `bits`
 // wherever `x_mask` is set (an unknown bit is always (0, 1)).
-void normalize(uint32_t width, uint64_t* words)
+void normalize(int width, uint64_t* words)
 {
-  const uint32_t n = constNumWords(width);
+  const int n = constNumWords(width);
   if (n == 0) {
     return;
   }
   const uint64_t mask = constLastWordMask(width);
   words[n - 1] &= mask;
   words[2 * n - 1] &= mask;
-  for (uint32_t i = 0; i < n; ++i) {
+  for (int i = 0; i < n; ++i) {
     words[i] &= ~words[n + i];
   }
 }
@@ -49,29 +51,31 @@ void normalize(uint32_t width, uint64_t* words)
 
 bool ConstPool::Key::operator==(const Key& other) const
 {
-  const size_t count = 2 * size_t{constNumWords(width)};
+  const size_t count = 2 * static_cast<size_t>(constNumWords(width));
   return width == other.width
          && (count == 0
              || std::memcmp(words, other.words, count * sizeof(uint64_t)) == 0);
 }
 
-ConstId ConstPool::intern(uint32_t width,
+ConstId ConstPool::intern(int width,
                           std::span<const uint64_t> bits,
                           std::span<const uint64_t> x_mask)
 {
-  const uint32_t n = constNumWords(width);
-  assert(bits.size() == n && x_mask.size() == n);
-  WordBuffer words(2 * size_t{n});
+  assert(width >= 0);
+  const int n = constNumWords(width);
+  assert(std::ssize(bits) == n && std::ssize(x_mask) == n);
+  WordBuffer words(2 * static_cast<size_t>(n));
   std::copy(bits.begin(), bits.begin() + n, words.begin());
   std::copy(x_mask.begin(), x_mask.begin() + n, words.begin() + n);
   normalize(width, words.data());
   return internNormalized(width, words.data());
 }
 
-ConstId ConstPool::internUint(uint32_t width, uint64_t value)
+ConstId ConstPool::internUint(int width, uint64_t value)
 {
-  const uint32_t n = constNumWords(width);
-  WordBuffer words(2 * size_t{n}, 0);
+  assert(width >= 0);
+  const int n = constNumWords(width);
+  WordBuffer words(2 * static_cast<size_t>(n), 0);
   if (n > 0) {
     // Clear bits of `value` above `width`; `x_mask` and upper words are 0.
     words[0] = width < 64 ? (value & constLastWordMask(width)) : value;
@@ -79,11 +83,12 @@ ConstId ConstPool::internUint(uint32_t width, uint64_t value)
   return internNormalized(width, words.data());
 }
 
-ConstId ConstPool::internFill(uint32_t width, LogicValue value)
+ConstId ConstPool::internFill(int width, LogicValue value)
 {
-  const uint32_t n = constNumWords(width);
+  assert(width >= 0);
+  const int n = constNumWords(width);
   const uint8_t v = static_cast<uint8_t>(value);
-  WordBuffer words(2 * size_t{n});
+  WordBuffer words(2 * static_cast<size_t>(n));
   std::fill(words.begin(), words.begin() + n, (v & 1u) ? ~uint64_t{0} : 0);
   std::fill(words.begin() + n, words.end(), (v & 2u) ? ~uint64_t{0} : 0);
   normalize(width, words.data());
@@ -92,10 +97,12 @@ ConstId ConstPool::internFill(uint32_t width, LogicValue value)
 
 absl::StatusOr<ConstId> ConstPool::internBitString(std::string_view msb_first)
 {
-  const uint32_t width = static_cast<uint32_t>(msb_first.size());
-  const uint32_t n = constNumWords(width);
-  WordBuffer words(2 * size_t{n}, 0);
-  for (uint32_t i = 0; i < width; ++i) {
+  assert(msb_first.size()
+         <= static_cast<size_t>(std::numeric_limits<int>::max()));
+  const int width = static_cast<int>(msb_first.size());
+  const int n = constNumWords(width);
+  WordBuffer words(2 * static_cast<size_t>(n), 0);
+  for (int i = 0; i < width; ++i) {
     uint64_t a = 0;
     uint64_t b = 0;
     switch (msb_first[width - 1 - i]) {
@@ -118,8 +125,9 @@ absl::StatusOr<ConstId> ConstPool::internBitString(std::string_view msb_first)
         return absl::InvalidArgumentError(
             absl::StrCat("invalid binary digit in '", msb_first, "'"));
     }
-    words[i / 64] |= a << (i % 64);
-    words[n + i / 64] |= b << (i % 64);
+    const uint32_t shift = static_cast<uint32_t>(i % 64);
+    words[i / 64] |= a << shift;
+    words[n + i / 64] |= b << shift;
   }
   const ConstId id = internNormalized(width, words.data());
   if (!id.isValid()) {
@@ -132,7 +140,7 @@ absl::StatusOr<ConstId> ConstPool::internBitString(std::string_view msb_first)
 ConstId ConstPool::lookup(const Key& key) const
 {
   const auto it = index_.find(key);
-  return it != index_.end() ? ConstId(it->second) : ConstId();
+  return it != index_.end() ? it->second : ConstId();
 }
 
 ConstView ConstPool::viewAt(ConstId id) const
@@ -172,23 +180,25 @@ ConstId ConstPool::internUnlocked(const Key& key)
   if (const ConstId id = lookup(key); id.isValid()) {
     return id;
   }
-  const uint32_t id = static_cast<uint32_t>(entries_.size());
-  if (id == ConstId::kInvalidValue) [[unlikely]] {
+  const uint32_t raw_id = static_cast<uint32_t>(entries_.size());
+  if (raw_id == ConstId::kInvalidValue) [[unlikely]] {
     logger_->error(
-        utl::SYN, 1102, "The constant pool is full ({} constants).", id);
+        utl::SYN, 1102, "The constant pool is full ({} constants).", raw_id);
   }
   // `key` may point into the caller's buffer; the index keeps a copy that
   // points into the pool.
   const Key stored{
       .width = key.width,
-      .words = store(key.words, 2 * size_t{constNumWords(key.width)}),
+      .words
+      = store(key.words, 2 * static_cast<size_t>(constNumWords(key.width))),
   };
+  const ConstId id(raw_id);
   entries_.push_back(stored);
   index_.emplace(stored, id);
-  return ConstId(id);
+  return id;
 }
 
-ConstId ConstPool::internNormalized(uint32_t width, const uint64_t* words)
+ConstId ConstPool::internNormalized(int width, const uint64_t* words)
 {
   const Key key{.width = width, .words = words};
   if (isReadOnly()) {
@@ -213,10 +223,10 @@ size_t ConstPool::size() const
 
 size_t ConstPool::memoryBytes() const
 {
-  absl::MutexLock lock(&mutex_);
+  absl::MutexLock lock(mutex_);
   return chunk_words_ * sizeof(uint64_t) + entries_.capacity() * sizeof(Key)
          + chunks_.capacity() * sizeof(std::unique_ptr<uint64_t[]>)
-         + index_.capacity() * (sizeof(std::pair<Key, uint32_t>) + 1);
+         + index_.capacity() * (sizeof(std::pair<Key, ConstId>) + 1);
 }
 
 }  // namespace syn::lir

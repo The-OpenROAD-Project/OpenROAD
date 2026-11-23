@@ -2,6 +2,7 @@
 
 #include <array>
 #include <csignal>
+#include <limits>
 #include <map>
 #include <memory>
 #include <set>
@@ -154,6 +155,14 @@ class CUGR
   void setCongestionIterations(int iterations)
   {
     congestion_iterations_ = iterations;
+  }
+  void setSkipLargeFanoutNets(int skip_large_fanout)
+  {
+    skip_large_fanout_ = skip_large_fanout;
+  }
+  void setSelectedNets(const std::vector<odb::dbNet*>& nets)
+  {
+    selected_nets_ = odb::PtrSet<odb::dbNet>(nets.begin(), nets.end());
   }
   void setVerbose(bool verbose) { verbose_ = verbose; }
   void updateNet(odb::dbNet* net);
@@ -417,6 +426,8 @@ class CUGR
 
   float critical_nets_percentage_ = 10;
   int congestion_iterations_ = 5;
+  int skip_large_fanout_ = std::numeric_limits<int>::max();
+  odb::PtrSet<odb::dbNet> selected_nets_;
   bool verbose_ = true;
 
   // Suppresses the global parasitics re-estimate during incremental routing.

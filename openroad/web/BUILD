@@ -198,10 +198,19 @@ cc_library(
 )
 
 cc_library(
+    name = "browser_launcher",
+    srcs = ["src/browser_launcher.cpp"],
+    hdrs = ["src/browser_launcher.h"],
+    includes = ["src"],
+    visibility = ["//openroad/web/test:__pkg__"],
+)
+
+cc_library(
     name = "web",
     srcs = [
         "src/asset_gzip.cpp",
         "src/clock_tree_report.cpp",
+        "src/display_control_tree.cpp",
         "src/font_atlas.h",
         "src/font_data.cpp",
         "src/font_data.h",
@@ -210,9 +219,11 @@ cc_library(
         "src/group_report.h",
         "src/hierarchy_report.cpp",
         "src/module_color_palette.h",
+        "src/renderer_controls.cpp",
         "src/report_html.cpp",
         "src/request_dispatcher.h",
         "src/request_handler.cpp",
+        "src/script_view.cpp",
         "src/search.cpp",
         "src/search.h",
         "src/tile_generator.cpp",
@@ -234,7 +245,10 @@ cc_library(
         # If these are meant to be used in tests with specific dependencies,
         # these should be put (together with their *.cpp files) into separate
         # libraries, with visibility for the //openroad/web/test path (see :color).
+        "src/display_control_tree.h",
         "src/glyph_cache.h",
+        "src/renderer_controls.h",
+        "src/script_view.h",
         "src/tile_generator.h",
         "src/timing_report.h",
         "src/web_chart.h",
@@ -256,6 +270,7 @@ cc_library(
     ],
     local_defines = ["HAVE_LIBDEFLATE"],
     deps = [
+        ":browser_launcher",
         ":color",
         ":core",
         "//:cli_completer",

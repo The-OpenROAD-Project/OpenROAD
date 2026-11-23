@@ -42,6 +42,7 @@ function installCanvasStubs() {
 
 function createWidgetApp(responses = {}) {
     const requests = [];
+    const shown = [];
     return {
         requests,
         websocketManager: {
@@ -57,8 +58,12 @@ function createWidgetApp(responses = {}) {
             },
         },
         focusComponent() {},
+        // Each showPaths call the drill-down made.
+        shown,
         timingWidget: {
-            showPaths() {},
+            showPaths(tab, paths, query) {
+                shown.push({ tab, paths, query });
+            },
         },
     };
 }
@@ -95,6 +100,7 @@ describe('ChartsWidget timing drilldown', () => {
             app.timingWidget = timing;
             timing._unconstrainedBox.checked = true;
             await timing.update();
+            await widget._fetchHistogram();
             widget._bars = [{
                 x: 0, y: 0, width: 160, height: 120,
                 count: 1, lower: 0, upper: 1,
@@ -142,8 +148,7 @@ describe('ChartsWidget timing drilldown', () => {
             let resolve;
             const response = new Promise(resolvePromise => { resolve = resolvePromise; });
             const { app, widget } = createWidget({ timing_report: response });
-            const shown = [];
-            app.timingWidget.showPaths = (...args) => shown.push(args);
+            await widget._fetchHistogram();
             widget._hitTestBar = () => ({ count: 1, lower: -1, upper: 0 });
             const click = widget._handleClick({ clientX: 10, clientY: 10 });
             widget._currentTab = 'hold';
@@ -151,10 +156,10 @@ describe('ChartsWidget timing drilldown', () => {
             resolve({ paths });
             await click;
 
-            assert.deepEqual(shown, [[
-                'setup', paths,
-                { max_paths: 50, slack_min: -1, slack_max: 0, unconstrained: false },
-            ]]);
+            assert.deepEqual(app.shown, [{
+                tab: 'setup', paths,
+                query: { max_paths: 50, slack_min: -1, slack_max: 0, unconstrained: false },
+            }]);
         });
 });
 
@@ -403,6 +408,138 @@ describe('ChartsWidget debug charts', () => {
                 app.requests.filter((r) => r.type === 'debug_charts').length,
                 1);
             assert.equal(widget._debugCharts.length, 1);
+        });
+});
+
+describe('ChartsWidget slack bar drill-down', () => {
+    const bar = {
+        x: 0, y: 0, width: 160, height: 120, count: 7, lower: -20, upper: -10,
+    };
+
+    // Draws the histogram with the selects' filters, then puts `bar` up.
+    async function showBar(widget) {
+        await widget._fetchHistogram();
+        widget._bars = [bar];
+        widget._chartArea = { left: 0, right: 200, top: 0, bottom: 200 };
+    }
+
+    function populate(widget) {
+        widget._populatePathGroups(['in2reg', 'reg2out', 'reg2reg']);
+        widget._populateClocks(['clk_a', 'clk_b']);
+    }
+
+    function timingReports(app) {
+        return app.requests.filter((r) => r.type === 'timing_report');
+    }
+
+    it('hands the timing widget the query its list was fetched with',
+        async () => {
+            const { app, widget } = createWidget();
+            populate(widget);
+            widget._clockSelect.value = 'clk_b';
+            await showBar(widget);
+            await widget._handleClick({ clientX: 50, clientY: 50 });
+            const [shown] = app.shown;
+            assert.equal(shown.tab, 'setup');
+            assert.deepEqual(shown.query, {
+                max_paths: 50, slack_min: -20, slack_max: -10,
+                unconstrained: false, clock_name: 'clk_b',
+            });
+        });
+
+    it('asks for every path group and clock when none is selected',
+        async () => {
+            const { app, widget } = createWidget();
+            populate(widget);
+            await showBar(widget);
+            await widget._handleClick({ clientX: 50, clientY: 50 });
+            const [req] = timingReports(app);
+            assert.equal(req.slack_min, -20);
+            assert.equal(req.slack_max, -10);
+            assert.equal('path_groups' in req, false);
+            assert.equal('clock_name' in req, false);
+        });
+
+    it('keeps the histogram\'s path groups and clock', async () => {
+        const { app, widget } = createWidget();
+        populate(widget);
+        for (const opt of widget._pathGroupSelect.options) {
+            opt.selected = opt.value !== 'reg2out';
+        }
+        widget._clockSelect.value = 'clk_b';
+        await showBar(widget);
+        await widget._handleClick({ clientX: 50, clientY: 50 });
+        const [req] = timingReports(app);
+        assert.deepEqual(req.path_groups, ['in2reg', 'reg2reg']);
+        assert.equal(req.clock_name, 'clk_b');
+        assert.equal(req.slack_min, -20);
+        assert.equal(req.slack_max, -10);
+    });
+
+    it('keeps the drawn histogram\'s filters when the selects changed since',
+        async () => {
+            // A click before the refetch the change started returns, or
+            // after it failed and the old bars stayed up.
+            const { app, widget } = createWidget();
+            populate(widget);
+            widget._clockSelect.value = 'clk_b';
+            await showBar(widget);
+            widget._clockSelect.value = 'clk_a';
+            for (const opt of widget._pathGroupSelect.options) {
+                opt.selected = opt.value === 'reg2reg';
+            }
+            await widget._handleClick({ clientX: 50, clientY: 50 });
+            const [req] = timingReports(app);
+            assert.equal(req.clock_name, 'clk_b');
+            assert.equal('path_groups' in req, false);
+        });
+
+    // Slack histogram replies wait for `pending[i](data)`; the rest resolve.
+    function holdHistogramReplies(app) {
+        const pending = [];
+        app.websocketManager.request = (msg) => {
+            app.requests.push(msg);
+            if (msg.type === 'slack_histogram') {
+                return new Promise((resolve) => pending.push(resolve));
+            }
+            return Promise.resolve({ paths: [] });
+        };
+        return pending;
+    }
+
+    it('drills down into the drawn bars\' tab while another tab loads',
+        async () => {
+            const { app, widget } = createWidget();
+            populate(widget);
+            await showBar(widget);
+            const pending = holdHistogramReplies(app);
+            widget._currentTab = 'hold';
+            const hold = widget._fetchHistogram();
+            await widget._handleClick({ clientX: 50, clientY: 50 });
+            const [req] = timingReports(app);
+            assert.equal(req.is_setup, true);
+            assert.equal(app.shown[0].tab, 'setup');
+            pending[0]({ bins: [], time_unit: 'ns' });
+            await hold;
+        });
+
+    it('keeps the latest request\'s histogram when replies cross',
+        async () => {
+            const { app, widget } = createWidget();
+            populate(widget);
+            const pending = holdHistogramReplies(app);
+            widget._clockSelect.value = 'clk_a';
+            const first = widget._fetchHistogram();
+            widget._clockSelect.value = 'clk_b';
+            const second = widget._fetchHistogram();
+            const latest = { bins: [], time_unit: 'ns' };
+            pending[1](latest);
+            await second;
+            pending[0]({ bins: [], time_unit: 'ns' });
+            await first;
+            assert.equal(widget._histogramData, latest);
+            assert.deepEqual(widget._drawnHistogram,
+                { tab: 'setup', filters: { clock_name: 'clk_b' } });
         });
 });
 

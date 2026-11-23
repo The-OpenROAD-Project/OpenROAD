@@ -4,12 +4,13 @@
 #include "syn/lir/Op.h"
 
 #include <array>
+#include <string_view>
 
 namespace syn::lir {
 
 namespace {
 
-constexpr std::array<const char*, kNumOps> kOpNames = {
+constexpr std::array<std::string_view, kNumOps> kOpNames = {
     // Structure.
     "pi",
     "po",
@@ -69,8 +70,8 @@ constexpr std::array<const char*, kNumOps> kOpNames = {
 
 constexpr bool allNamed()
 {
-  for (const char* name : kOpNames) {
-    if (name == nullptr) {
+  for (const std::string_view name : kOpNames) {
+    if (name.empty()) {
       return false;
     }
   }
@@ -80,10 +81,10 @@ static_assert(allNamed(), "kOpNames is missing an entry");
 
 }  // namespace
 
-const char* opName(Op op)
+std::string_view opName(Op op)
 {
-  const unsigned i = static_cast<unsigned>(op);
-  return i < kOpNames.size() ? kOpNames[i] : "?";
+  const int i = static_cast<int>(op);
+  return i < kNumOps ? kOpNames[i] : "?";
 }
 
 }  // namespace syn::lir
