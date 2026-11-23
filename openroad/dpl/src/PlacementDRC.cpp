@@ -1495,6 +1495,15 @@ class PlacementDRC::ImplantDRC
           return false;
         }
       }
+
+      // 7. LEF58_MAXSPACING
+      for (odb::dbTechLayerMaxSpacingRule* r :
+           layer->getTechLayerMaxSpacingRules()) {
+        if (!checkMaxSpacingRule(
+                r, rects_1d, cell, cell_box, touch_box, layer_strict)) {
+          return false;
+        }
+      }
     }
 
     return true;
@@ -3744,6 +3753,203 @@ class PlacementDRC::ImplantDRC
             return false;
           }
         }
+      }
+    }
+    return true;
+  }
+
+  static bool intervalsCoverSpan(const int span_lo,
+                                 const int span_hi,
+                                 std::vector<std::pair<int, int>>& intervals)
+  {
+    if (span_lo >= span_hi) {
+      return true;
+    }
+    if (intervals.empty()) {
+      return false;
+    }
+    std::ranges::sort(intervals);
+    int covered_up_to = span_lo;
+    for (const auto& [lo, hi] : intervals) {
+      if (lo > covered_up_to) {
+        return false;
+      }
+      covered_up_to = std::max(covered_up_to, hi);
+      if (covered_up_to >= span_hi) {
+        return true;
+      }
+    }
+    return covered_up_to >= span_hi;
+  }
+
+  bool checkMaxSpacingRule(odb::dbTechLayerMaxSpacingRule* rule,
+                           const std::vector<odb::Rect>& rects_1d,
+                           const Node* cell,
+                           const odb::Rect& cell_box,
+                           const odb::Rect& touch_box,
+                           const bool strict_empty_sites) const
+  {
+    if (rule->hasCutClass()) {
+      return true;
+    }
+    const int max_spc = rule->getMaxSpacing();
+    if (max_spc <= 0 || rects_1d.empty()) {
+      return true;
+    }
+    const int rule_w = rule->getWidth();
+    const int rule_l = rule->getLength();
+
+    // Slice vertically so vertically stacked cells across rows report their
+    // true 2D merged height against rule_w.
+    std::vector<odb::Rect> v_slices;
+    if (rule_w > 0) {
+      BoostPolygonSet pset;
+      using boost::polygon::operators::operator+=;
+      for (const odb::Rect& r : rects_1d) {
+        pset += r;
+      }
+      pset.get_rectangles(v_slices, boost::polygon::VERTICAL);
+    }
+
+    const odb::Rect search_box = strict_empty_sites
+                                     ? cell_box
+                                     : odb::Rect(touch_box.xMin(),
+                                                 cell_box.yMin() - max_spc - 1,
+                                                 touch_box.xMax(),
+                                                 cell_box.yMax() + max_spc + 1);
+
+    const int site_w = (grid_ != nullptr) ? grid_->getSiteWidth().v : 0;
+    const int site_count = (grid_ != nullptr) ? grid_->getRowSiteCount().v : 0;
+    const int row_count = (grid_ != nullptr) ? grid_->getRowCount().v : 0;
+    const int core_y_min = (row_count > 0) ? rowYLo(0) : 0;
+    const int core_y_max = (row_count > 0) ? rowYHi(row_count - 1) : 0;
+
+    for (const odb::Rect& r : rects_1d) {
+      if (!r.overlaps(search_box)) {
+        continue;
+      }
+      if (rule_w > 0 && r.dy() > rule_w) {
+        continue;
+      }
+      if (rule_l > 0 && r.dx() >= rule_l) {
+        continue;
+      }
+      if (!strict_empty_sites && rule_l > 0
+          && canExtendHorizontally(
+              r, cell, cell_box, strict_empty_sites, rule_l, &rects_1d)) {
+        continue;
+      }
+
+      std::vector<std::pair<int, int>> above_intervals;
+      std::vector<std::pair<int, int>> below_intervals;
+
+      // Sub-spans where 2D merged vertical height already exceeds rule_w are
+      // exempt.
+      if (rule_w > 0) {
+        for (const odb::Rect& vr : v_slices) {
+          if (vr.dy() <= rule_w || vr.yMin() > r.yMin()
+              || vr.yMax() < r.yMax()) {
+            continue;
+          }
+          const int x_lo = std::max(r.xMin(), vr.xMin());
+          const int x_hi = std::min(r.xMax(), vr.xMax());
+          if (x_lo < x_hi) {
+            above_intervals.emplace_back(x_lo, x_hi);
+            below_intervals.emplace_back(x_lo, x_hi);
+          }
+        }
+      }
+
+      // Boundary rows at bottom/top of multi-row core abut outer boundary cap
+      // rows.
+      if (row_count > 1 && r.yMin() <= core_y_min) {
+        below_intervals.emplace_back(r.xMin(), r.xMax());
+      }
+      if (row_count > 1 && r.yMax() >= core_y_max) {
+        above_intervals.emplace_back(r.xMin(), r.xMax());
+      }
+
+      for (const odb::Rect& other : rects_1d) {
+        if (&other == &r) {
+          continue;
+        }
+        const int x_lo = std::max(r.xMin(), other.xMin());
+        const int x_hi = std::min(r.xMax(), other.xMax());
+        if (x_lo >= x_hi) {
+          continue;
+        }
+        if (other.yMax() > r.yMax() && other.yMin() - r.yMax() <= max_spc) {
+          above_intervals.emplace_back(x_lo, x_hi);
+        }
+        if (other.yMin() < r.yMin() && r.yMin() - other.yMax() <= max_spc) {
+          below_intervals.emplace_back(x_lo, x_hi);
+        }
+      }
+
+      // During incremental legalization (!strict_empty_sites), valid empty
+      // vertical sites within max_spc above/below r can still host
+      // fillers/cells.
+      if (!strict_empty_sites && site_w > 0 && site_count > 0
+          && row_count > 0) {
+        const int gx_lo = std::clamp(
+            grid_->gridX(DbuX(std::max(0, r.xMin()))).v, 0, site_count - 1);
+        const int gx_hi
+            = std::clamp(grid_->gridEndX(DbuX(std::max(0, r.xMax()))).v,
+                         gx_lo + 1,
+                         site_count);
+        const int gy_lo = std::clamp(
+            grid_->gridSnapDownY(DbuY(std::max(0, r.yMin() - max_spc - 1))).v,
+            0,
+            row_count - 1);
+        const int gy_hi = std::clamp(
+            grid_->gridEndY(DbuY(std::max(0, r.yMax() + max_spc + 1))).v,
+            gy_lo + 1,
+            row_count);
+        for (int gx = gx_lo; gx < gx_hi; ++gx) {
+          const int sx_lo = gx * site_w;
+          const int sx_hi = sx_lo + site_w;
+          const int x_lo = std::max(r.xMin(), sx_lo);
+          const int x_hi = std::min(r.xMax(), sx_hi);
+          if (x_lo >= x_hi) {
+            continue;
+          }
+          bool empty_above = false;
+          bool empty_below = false;
+          for (int gy = gy_lo; gy < gy_hi && !(empty_above && empty_below);
+               ++gy) {
+            const int ry_lo = rowYLo(gy);
+            const int ry_hi = rowYHi(gy);
+            const bool cand_blocks
+                = overlap1D(sx_lo, sx_hi, cell_box.xMin(), cell_box.xMax()) > 0
+                  && overlap1D(ry_lo, ry_hi, cell_box.yMin(), cell_box.yMax())
+                         > 0;
+            if (cand_blocks) {
+              continue;
+            }
+            const Pixel* pixel = grid_->gridPixel(GridX(gx), GridY(gy));
+            if (pixel == nullptr || !pixel->is_valid
+                || (pixel->cell != nullptr && pixel->cell != cell)) {
+              continue;
+            }
+            if (ry_hi > r.yMax() && ry_lo - r.yMax() <= max_spc) {
+              empty_above = true;
+            }
+            if (ry_lo < r.yMin() && r.yMin() - ry_hi <= max_spc) {
+              empty_below = true;
+            }
+          }
+          if (empty_above) {
+            above_intervals.emplace_back(x_lo, x_hi);
+          }
+          if (empty_below) {
+            below_intervals.emplace_back(x_lo, x_hi);
+          }
+        }
+      }
+
+      if (!intervalsCoverSpan(r.xMin(), r.xMax(), above_intervals)
+          || !intervalsCoverSpan(r.xMin(), r.xMax(), below_intervals)) {
+        return false;
       }
     }
     return true;

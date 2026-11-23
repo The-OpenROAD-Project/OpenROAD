@@ -2063,4 +2063,51 @@ TEST_F(Lef58ImplantAndEdgeTest, Lef58CornerSpacingAlignedAndGeneral)
   placeCell(m_other, "q2", 3, 2, odb::dbOrientType::R0);
   EXPECT_EQ(runCheck(), "DPL-0033");
 }
+TEST_F(Lef58ImplantAndEdgeTest, Lef58MaxSpacingVerticalCoverage)
+{
+  auto* rule = odb::dbTechLayerMaxSpacingRule::create(imp1_);
+  rule->setMaxSpacing(kRowHeight);
+  rule->setWidth(kRowHeight);
+  rule->setLength(2 * kSiteWidth);
+
+  odb::dbMaster* m1 = createCustomMaster(
+      "M_MAXSPC", 1, {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight)}});
+
+  // A 1-site IMP1 island on row 1 (length kSiteWidth < 2*kSiteWidth) without
+  // covering shapes on both row 0 (below) and row 2 (above) fails MAXSPACING.
+  odb::dbInst* mid = placeCell(m1, "mid", 4, 1, odb::dbOrientType::MX);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+
+  // Stacking a second 1-site IMP1 cell on row 2 directly above "mid" merges
+  // vertically to 2 * kRowHeight > rule_w, exempting the 2-row stack without
+  // needing row 0 or row 3 coverage!
+  odb::dbInst* mid_r2 = placeCell(m1, "mid_r2", 4, 2, odb::dbOrientType::R0);
+  EXPECT_EQ(runCheck(), "");
+  odb::dbInst::destroy(mid_r2);
+
+  // Covering shapes separated from "mid" by a real gap: half-height shapes
+  // hugging the bottom of row 0 and the top of row 2, 2 sites wide
+  // (>= rule_l), leave kRowHeight / 2 of empty space above and below "mid"
+  // (height kRowHeight <= rule_w). Gap <= max_spc on both sides -> satisfied.
+  odb::dbMaster* m_half_bot = createCustomMaster(
+      "M_MAXSPC_HALF_BOT",
+      1,
+      {{imp1_, odb::Rect(0, 0, kSiteWidth, kRowHeight / 2)}});
+  odb::dbMaster* m_half_top = createCustomMaster(
+      "M_MAXSPC_HALF_TOP",
+      1,
+      {{imp1_, odb::Rect(0, kRowHeight / 2, kSiteWidth, kRowHeight)}});
+  placeCell(m_half_bot, "bot1", 4, 0, odb::dbOrientType::R0);
+  placeCell(m_half_bot, "bot2", 5, 0, odb::dbOrientType::R0);
+  placeCell(m_half_top, "top1", 4, 2, odb::dbOrientType::R0);
+  placeCell(m_half_top, "top2", 5, 2, odb::dbOrientType::R0);
+  EXPECT_EQ(runCheck(), "");
+
+  // Tightening MAXSPACING below the kRowHeight / 2 gap must flag "mid".
+  rule->setMaxSpacing(kRowHeight / 2 - 1);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+  rule->setMaxSpacing(kRowHeight);
+  EXPECT_EQ(runCheck(), "");
+  (void) mid;
+}
 }  // namespace dpl
