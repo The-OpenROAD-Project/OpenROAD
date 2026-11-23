@@ -25,9 +25,9 @@ namespace pex {
 namespace {
 
 // sky130.itf: met1 and met2 at 0.125 ohm/sq with a resistive etch of
-// -0.0195 µm a side, so a 0.14 µm wire is 0.179 µm wide in silicon; a via
+// 0.0195 µm a side, so a 0.14 µm wire is 0.101 µm wide in silicon; a via
 // cut of 0.0225 µm² is 4.5 ohm.
-constexpr double kMet1PerUm = 0.125 / 0.179;
+constexpr double kMet1PerUm = 0.125 / 0.101;
 constexpr double kViaCut = 4.5;
 
 class NetworkTest : public tst::DbFixture

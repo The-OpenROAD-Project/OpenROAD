@@ -13,9 +13,11 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <map>
 #include <memory>
 #include <optional>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -3139,6 +3141,86 @@ void NesterovBase::updateDensityFieldBin()
     sumPhi_ += electroPhi
                * static_cast<float>(bin.getNonPlaceArea() + bin.instPlacedArea()
                                     + bin.getFillerArea());
+  }
+}
+
+void NesterovBase::spreadStackedGCells()
+{
+  // Cells get identical forces only when they share a location, a density
+  // size, and the same nets at the same pin offsets. A net with a single pin
+  // (an IO net under skip_io, for one) exerts no force, so it is ignored.
+  using PinKey = std::tuple<const GNet*, int, int>;
+  using StackKey = std::tuple<int, int, int, int, std::vector<PinKey>>;
+  std::map<StackKey, std::vector<GCell*>> stacks;
+  for (auto& handle : nb_gcells_) {
+    GCell* gCell = handle;
+    if (gCell->isInstance() && !gCell->isLocked()) {
+      updateDensityCoordiLayoutInside(gCell);
+      std::vector<PinKey> pins;
+      pins.reserve(gCell->gPins().size());
+      for (const GPin* gPin : gCell->gPins()) {
+        const GNet* gNet = gPin->getGNet();
+        if (gNet->getGPins().size() > 1) {
+          pins.emplace_back(gNet, gPin->offsetCx(), gPin->offsetCy());
+        }
+      }
+      std::ranges::sort(pins);
+      stacks[{gCell->dCx(),
+              gCell->dCy(),
+              gCell->dDx(),
+              gCell->dDy(),
+              std::move(pins)}]
+          .push_back(gCell);
+    }
+  }
+
+  int spread_count = 0;
+  for (const auto& [key, cells] : stacks) {
+    if (cells.size() < 2) {
+      continue;
+    }
+    const int center_x = std::get<0>(key);
+    const int center_y = std::get<1>(key);
+    spread_count += cells.size();
+
+    // A near-square grid of slots, one cell pitch apart, centered on the
+    // stack and shifted to fit the region; the pitch shrinks if the grid is
+    // wider or taller than the region.
+    const int count = cells.size();
+    const int cols = std::ceil(std::sqrt(count));
+    const int rows = (count + cols - 1) / cols;
+    const int region_dx = bg_.ux() - bg_.lx();
+    const int region_dy = bg_.uy() - bg_.ly();
+    const int pitch_x
+        = std::max(1, std::min(cells.front()->dDx(), region_dx / cols));
+    const int pitch_y
+        = std::max(1, std::min(cells.front()->dDy(), region_dy / rows));
+    const int grid_dx = cols * pitch_x;
+    const int grid_dy = rows * pitch_y;
+    // A region narrower than one DBU per slot cannot hold the grid; it then
+    // starts at the region's lower edge.
+    const int grid_lx = std::clamp(center_x - grid_dx / 2,
+                                   bg_.lx(),
+                                   std::max(bg_.lx(), bg_.ux() - grid_dx));
+    const int grid_ly = std::clamp(center_y - grid_dy / 2,
+                                   bg_.ly(),
+                                   std::max(bg_.ly(), bg_.uy() - grid_dy));
+
+    for (int i = 0; i < count; ++i) {
+      GCell* gCell = cells[i];
+      gCell->setDensityCenterLocation(
+          grid_lx + (i % cols) * pitch_x + pitch_x / 2,
+          grid_ly + (i / cols) * pitch_y + pitch_y / 2);
+      updateDensityCoordiLayoutInside(gCell);
+    }
+  }
+
+  if (spread_count > 0) {
+    log_->info(GPL,
+               132,
+               "Spread {} movable instances that started at the same location "
+               "as another.",
+               spread_count);
   }
 }
 
