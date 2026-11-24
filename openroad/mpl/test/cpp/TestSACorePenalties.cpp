@@ -41,24 +41,25 @@ class TestSACorePenalties : public MplTest
         HardMacro(macro_width_, macro_height_, "macro2"),
     };
 
-    return std::make_unique<SACoreHardMacro>(
-        &tree_,
-        outline_,
-        macros,
-        weights,
-        SACoreActionProbs{.pos_swap = 0.25,
-                          .neg_swap = 0.25,
-                          .double_swap = 0.25,
-                          .exchange = 0.25},
-        SAHyperparams{
-            .init_prob = 0.1,
-            .max_num_step = 1,
-            .num_perturb_per_step = 10,
-        },
-        /*seed=*/42,
-        /*graphics=*/nullptr,
-        &logger_,
-        block());
+    return std::make_unique<SACoreHardMacro>(&tree_,
+                                             outline_,
+                                             macros,
+                                             weights,
+                                             SACoreActionProbs{
+                                                 .pos_swap = 0.25,
+                                                 .neg_swap = 0.25,
+                                                 .double_swap = 0.25,
+                                                 .exchange = 0.25,
+                                             },
+                                             SAHyperparams{
+                                                 .init_prob = 0.1,
+                                                 .max_num_step = 1,
+                                                 .num_perturb_per_step = 10,
+                                             },
+                                             /*seed=*/42,
+                                             /*graphics=*/nullptr,
+                                             &logger_,
+                                             block());
   }
 
   PhysicalHierarchy tree_;

@@ -52,17 +52,25 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
 
   actions_ = {
       // Swaps two macros' positions within the positive sequence only.
-      {.probability = action_probs.pos_swap,
-       .perturb = [this] { singleSeqSwap(true); }},
+      {
+          .probability = action_probs.pos_swap,
+          .perturb = [this] { singleSeqSwap(true); },
+      },
       // Swaps two macros' positions within the negative sequence only.
-      {.probability = action_probs.neg_swap,
-       .perturb = [this] { singleSeqSwap(false); }},
+      {
+          .probability = action_probs.neg_swap,
+          .perturb = [this] { singleSeqSwap(false); },
+      },
       // Swaps two macros' positions in both sequences.
-      {.probability = action_probs.double_swap,
-       .perturb = [this] { doubleSeqSwap(); }},
+      {
+          .probability = action_probs.double_swap,
+          .perturb = [this] { doubleSeqSwap(); },
+      },
       // Swaps which macros occupy two positions, in both sequences.
-      {.probability = action_probs.exchange,
-       .perturb = [this] { exchangeMacros(); }},
+      {
+          .probability = action_probs.exchange,
+          .perturb = [this] { exchangeMacros(); },
+      },
   };
 
   hyperparams_ = hyperparams;
