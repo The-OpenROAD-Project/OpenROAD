@@ -190,7 +190,6 @@ class SimulatedAnnealingCore
   std::vector<int> pre_pos_seq_;
   std::vector<int> pre_neg_seq_;
   std::vector<T> pre_macros_;  // here the macros can be HardMacro or SoftMacro
-  int macro_id_ = -1;          // the macro changed in the perturb
 
   // metrics
   int width_ = 0;

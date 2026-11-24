@@ -618,7 +618,6 @@ void SACoreSoftMacro::resizeOneCluster()
       0, pos_seq_.size() - 1);
   const int idx = index_distribution(generator_);
 
-  macro_id_ = idx;
   SoftMacro& src_macro = macros_[idx];
   if (src_macro.isMacroCluster()) {
     src_macro.resizeRandomly(distribution_, generator_);
