@@ -64,26 +64,6 @@ ir::Value BackendGraphBuilder::fromBundle(const syn::Bundle& b)
 // Unary operators
 // ============================================================
 
-static ir::Value constResult(const syn::Const& c)
-{
-  return ir::Value(syn::Bundle::fromConst(c));
-}
-
-static syn::Const extendConst(const syn::Const& c, bool is_signed, uint64_t w)
-{
-  if (c.width() >= w) {
-    return c.slice(0, w);
-  }
-  uint32_t pad = static_cast<uint32_t>(w) - c.width();
-  syn::Trit fill = is_signed && !c.empty() ? c.msb() : syn::Trit::Zero;
-  // NOLINTBEGIN(readability-avoid-nested-conditional-operator)
-  syn::Const padding = (fill == syn::Trit::One)     ? syn::Const::ones(pad)
-                       : (fill == syn::Trit::Undef) ? syn::Const::undef(pad)
-                                                    : syn::Const::zero(pad);
-  // NOLINTEND(readability-avoid-nested-conditional-operator)
-  return c.concat(padding);
-}
-
 ir::Value BackendGraphBuilder::Unop(ast::UnaryOperator op,
                                     ir::Value a,
                                     bool a_signed,
@@ -94,70 +74,6 @@ ir::Value BackendGraphBuilder::Unop(ast::UnaryOperator op,
   }
 
   syn::Bundle ab = toBundle(a);
-
-  // Constant folding: if input is fully constant, compute at compile time.
-  if (ab.isConst()) {
-    syn::Const ac = ab.toConst();
-    syn::Const ext = extendConst(ac, a_signed, y_width);
-    syn::Const result;
-
-    switch (op) {
-      case ast::UnaryOperator::Plus:
-        return constResult(ext);
-      case ast::UnaryOperator::Minus:
-        return constResult(ext.not_()
-                               .adc(syn::Const::zero(y_width), syn::Trit::One)
-                               .slice(0, y_width));
-      case ast::UnaryOperator::BitwiseNot:
-        return constResult(ext.not_());
-      case ast::UnaryOperator::BitwiseAnd:
-      case ast::UnaryOperator::BitwiseOr:
-      case ast::UnaryOperator::BitwiseXor:
-      case ast::UnaryOperator::BitwiseNand:
-      case ast::UnaryOperator::BitwiseNor:
-      case ast::UnaryOperator::BitwiseXnor: {
-        if (ac.width() == 0) {
-          return constResult(syn::Const::undef(y_width));
-        }
-        syn::Trit r = ac[0];
-        for (uint32_t i = 1; i < ac.width(); i++) {
-          switch (op) {
-            case ast::UnaryOperator::BitwiseAnd:
-            case ast::UnaryOperator::BitwiseNand:
-              r = r & ac[i];
-              break;
-            case ast::UnaryOperator::BitwiseOr:
-            case ast::UnaryOperator::BitwiseNor:
-              r = r | ac[i];
-              break;
-            default:
-              r = r ^ ac[i];
-              break;
-          }
-        }
-        if (op == ast::UnaryOperator::BitwiseNand
-            || op == ast::UnaryOperator::BitwiseNor
-            || op == ast::UnaryOperator::BitwiseXnor) {
-          r = !r;
-        }
-        return constResult(extendConst(syn::Const::from({r}), false, y_width));
-      }
-      case ast::UnaryOperator::LogicalNot: {
-        if (ac.width() == 0) {
-          return constResult(
-              extendConst(syn::Const::from({syn::Trit::One}), false, y_width));
-        }
-        syn::Trit any = ac[0];
-        for (uint32_t i = 1; i < ac.width(); i++) {
-          any = any | ac[i];
-        }
-        return constResult(
-            extendConst(syn::Const::from({!any}), false, y_width));
-      }
-      default:
-        break;
-    }
-  }
 
   auto& g = graph();
 
@@ -203,7 +119,7 @@ ir::Value BackendGraphBuilder::Unop(ast::UnaryOperator op,
     case ast::UnaryOperator::BitwiseXnor: {
       // Reduction operators: reduce all bits to a single bit
       if (ab.width() == 0) {
-        return ir::Value(ir::Sx);
+        return ir::Value({Trit::S0});
       }
 
       syn::Net result = ab[0];
@@ -241,7 +157,7 @@ ir::Value BackendGraphBuilder::Unop(ast::UnaryOperator op,
     case ast::UnaryOperator::LogicalNot: {
       // !empty == 1 (vacuous truth)
       if (ab.width() == 0) {
-        ir::Value rv{ir::S1};
+        ir::Value rv{Trit::S1};
         rv.extend_u0(y_width);
         return rv;
       }
@@ -272,124 +188,6 @@ ir::Value BackendGraphBuilder::Biop(ast::BinaryOperator op,
 {
   syn::Bundle ab = toBundle(a);
   syn::Bundle bb = toBundle(b);
-
-  // Constant folding: if both inputs are constant, compute at compile time.
-  if (ab.isConst() && bb.isConst()) {
-    syn::Const ac = ab.toConst();
-    syn::Const bc = bb.toConst();
-
-    auto ext = [](const syn::Const& c, bool is_signed, uint64_t w) {
-      return extendConst(c, is_signed, w);
-    };
-
-    switch (op) {
-      case ast::BinaryOperator::BinaryAnd:
-        return constResult(
-            ext(ac, a_signed, y_width).and_(ext(bc, b_signed, y_width)));
-      case ast::BinaryOperator::BinaryOr:
-        return constResult(
-            ext(ac, a_signed, y_width).or_(ext(bc, b_signed, y_width)));
-      case ast::BinaryOperator::BinaryXor:
-        return constResult(
-            ext(ac, a_signed, y_width).xor_(ext(bc, b_signed, y_width)));
-      case ast::BinaryOperator::BinaryXnor:
-        return constResult(
-            ext(ac, a_signed, y_width).xor_(ext(bc, b_signed, y_width)).not_());
-      case ast::BinaryOperator::Add: {
-        auto ea = ext(ac, a_signed, y_width);
-        auto eb = ext(bc, b_signed, y_width);
-        return constResult(ea.adc(eb, syn::Trit::Zero).slice(0, y_width));
-      }
-      case ast::BinaryOperator::Subtract: {
-        auto ea = ext(ac, a_signed, y_width);
-        auto eb = ext(bc, b_signed, y_width).not_();
-        return constResult(ea.adc(eb, syn::Trit::One).slice(0, y_width));
-      }
-      case ast::BinaryOperator::Multiply:
-        return constResult(
-            ext(ac, a_signed, y_width).mul(ext(bc, b_signed, y_width)));
-      case ast::BinaryOperator::Equality:
-      case ast::BinaryOperator::CaseEquality: {
-        uint64_t w = std::max(ac.width(), bc.width());
-        syn::Trit r = ext(ac, a_signed, w).eq(ext(bc, b_signed, w));
-        return constResult(extendConst(syn::Const::from({r}), false, y_width));
-      }
-      case ast::BinaryOperator::Inequality:
-      case ast::BinaryOperator::CaseInequality: {
-        uint64_t w = std::max(ac.width(), bc.width());
-        syn::Trit r = !ext(ac, a_signed, w).eq(ext(bc, b_signed, w));
-        return constResult(extendConst(syn::Const::from({r}), false, y_width));
-      }
-      case ast::BinaryOperator::LessThan: {
-        uint64_t w = std::max(ac.width(), bc.width());
-        auto ea = ext(ac, a_signed, w);
-        auto eb = ext(bc, b_signed, w);
-        syn::Trit r = (a_signed && b_signed) ? ea.slt(eb) : ea.ult(eb);
-        return constResult(extendConst(syn::Const::from({r}), false, y_width));
-      }
-      case ast::BinaryOperator::LessThanEqual: {
-        uint64_t w = std::max(ac.width(), bc.width());
-        auto ea = ext(ac, a_signed, w);
-        auto eb = ext(bc, b_signed, w);
-        syn::Trit gt = (a_signed && b_signed) ? eb.slt(ea) : eb.ult(ea);
-        return constResult(
-            extendConst(syn::Const::from({!gt}), false, y_width));
-      }
-      case ast::BinaryOperator::GreaterThan: {
-        uint64_t w = std::max(ac.width(), bc.width());
-        auto ea = ext(ac, a_signed, w);
-        auto eb = ext(bc, b_signed, w);
-        syn::Trit r = (a_signed && b_signed) ? eb.slt(ea) : eb.ult(ea);
-        return constResult(extendConst(syn::Const::from({r}), false, y_width));
-      }
-      case ast::BinaryOperator::GreaterThanEqual: {
-        uint64_t w = std::max(ac.width(), bc.width());
-        auto ea = ext(ac, a_signed, w);
-        auto eb = ext(bc, b_signed, w);
-        syn::Trit lt = (a_signed && b_signed) ? ea.slt(eb) : ea.ult(eb);
-        return constResult(
-            extendConst(syn::Const::from({!lt}), false, y_width));
-      }
-      case ast::BinaryOperator::LogicalAnd: {
-        syn::Trit a_bool = ac[0];
-        for (uint32_t i = 1; i < ac.width(); i++) {
-          a_bool = a_bool | ac[i];
-        }
-        syn::Trit b_bool = bc[0];
-        for (uint32_t i = 1; i < bc.width(); i++) {
-          b_bool = b_bool | bc[i];
-        }
-        return constResult(
-            extendConst(syn::Const::from({a_bool & b_bool}), false, y_width));
-      }
-      case ast::BinaryOperator::LogicalOr: {
-        syn::Trit a_bool = ac[0];
-        for (uint32_t i = 1; i < ac.width(); i++) {
-          a_bool = a_bool | ac[i];
-        }
-        syn::Trit b_bool = bc[0];
-        for (uint32_t i = 1; i < bc.width(); i++) {
-          b_bool = b_bool | bc[i];
-        }
-        return constResult(
-            extendConst(syn::Const::from({a_bool | b_bool}), false, y_width));
-      }
-      case ast::BinaryOperator::LogicalShiftLeft:
-        return constResult(ext(ac, a_signed, y_width).shl(bc, 1));
-      case ast::BinaryOperator::LogicalShiftRight:
-        return constResult(ext(ac, a_signed, y_width).ushr(bc, 1));
-      case ast::BinaryOperator::ArithmeticShiftLeft:
-        return constResult(ext(ac, a_signed, y_width).shl(bc, 1));
-      case ast::BinaryOperator::ArithmeticShiftRight:
-        if (a_signed) {
-          return constResult(ext(ac, a_signed, y_width).sshr(bc, 1));
-        } else {
-          return constResult(ext(ac, a_signed, y_width).ushr(bc, 1));
-        }
-      default:
-        break;  // Fall through to graph-building path.
-    }
-  }
 
   auto& g = graph();
 
@@ -727,7 +525,7 @@ void BackendGraphBuilder::connect(ir::Value target, ir::Value source)
   }
 }
 
-void BackendGraphBuilder::set_initialization(ir::Value, ir::Const)
+void BackendGraphBuilder::set_initialization(ir::Value, TritVector)
 {
 }
 
@@ -867,6 +665,23 @@ void BackendGraphBuilder::add_aldffe(std::string_view,
   connect(q, fromBundle(dff_out));
 }
 
+void BackendGraphBuilder::add_dffsre(std::string_view,
+                                     const ir::Net,
+                                     const ir::Net,
+                                     const ir::Net,
+                                     const ir::Net,
+                                     const ir::Value&,
+                                     const ir::Value&,
+                                     bool,
+                                     bool,
+                                     bool,
+                                     bool)
+{
+  syn::reportError(graph_->logger(),
+                   96,
+                   "Flops with asynchronous set/reset are unsupported");
+}
+
 void BackendGraphBuilder::add_dual_edge_aldff(const std::string&,
                                               ir::Net clk,
                                               ir::Net aload,
@@ -957,7 +772,7 @@ ir::WritePort* BackendGraphBuilder::add_write_port(ir::Memory*,
 void BackendGraphBuilder::add_memory_init(ir::Memory*,
                                           uint64_t,
                                           bool,
-                                          ir::Const)
+                                          TritVector)
 {
   syn::reportError(graph_->logger(), 95, "Memories are unsupported");
 }

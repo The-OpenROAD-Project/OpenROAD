@@ -150,6 +150,7 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-skip_large_fanout_nets fanout] \
                                   [-allow_congestion] \
                                   [-snapshot_batched_width width] \
+                                  [-congestion_only] \
                                   [-verbose] \
                                   [-start_incremental] \
                                   [-end_incremental] \
@@ -166,7 +167,7 @@ proc global_route { args } {
           -skip_large_fanout_nets -snapshot_batched_width
          } \
     flags {-allow_congestion -resistance_aware -infinite_cap -verbose -start_incremental \
-          -end_incremental -use_cugr}
+          -end_incremental -use_cugr -congestion_only}
 
   sta::check_argc_eq0 "global_route" $args
 
@@ -259,6 +260,23 @@ proc global_route { args } {
     set snapshot_batched_width 0
   }
   grt::set_snapshot_batched_width $snapshot_batched_width
+  if { [info exists flags(-congestion_only)] } {
+    # An estimate routes nothing, so there are no routes to update
+    # incrementally and no guides to write.
+    set conflicts {}
+    foreach option {-start_incremental -end_incremental} {
+      if { [info exists flags($option)] } {
+        lappend conflicts $option
+      }
+    }
+    if { [info exists keys(-guide_file)] } {
+      lappend conflicts -guide_file
+    }
+    if { $conflicts != {} } {
+      utl::error GRT 344 "-congestion_only cannot be used with [join $conflicts {, }]."
+    }
+  }
+  grt::set_congestion_only [info exists flags(-congestion_only)]
 
   set infinite_cap [info exists flags(-infinite_cap)]
   grt::set_infinite_cap $infinite_cap
