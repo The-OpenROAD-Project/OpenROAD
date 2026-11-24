@@ -4617,7 +4617,8 @@ void NesterovBase::cutFillerCells(int64_t inflation_area)
           .snapshotCoordi = snap(snapshotCoordi_),
           .snapshotSLPCoordi = snap(snapshotSLPCoordi_),
           .snapshotSLPSumGrads = snap(snapshotSLPSumGrads_),
-          .snapshotPrevSLPSumGrads = snap(snapshotPrevSLPSumGrads_)});
+          .snapshotPrevSLPSumGrads = snap(snapshotPrevSLPSumGrads_),
+      });
 
       destroyFillerGCell(i);
       availableFillerArea -= single_filler_area;
