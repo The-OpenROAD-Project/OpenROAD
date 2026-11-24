@@ -830,7 +830,9 @@ frCoord FlexPA::viaMaxExt(frInstTerm* inst_term,
   const auto layer_num = ap->getLayerNum();
   auto via = std::make_unique<frVia>(via_def);
   via->setOrigin(begin_point);
-  const odb::Rect box = via->getLayer1BBox();
+  const odb::Rect box = via_def->getLayer1Num() == layer_num
+                            ? via->getLayer1BBox()
+                            : via->getLayer2BBox();
 
   // check if ap is on the left/right boundary of the cell
   odb::Rect boundary_bbox;
@@ -855,6 +857,9 @@ frCoord FlexPA::viaMaxExt(frInstTerm* inst_term,
   // via ranking criteria: max extension distance beyond pin shape
   std::vector<gtl::rectangle_data<frCoord>> int_rects;
   intersection.get_rectangles(int_rects, gtl::orientation_2d_enum::HORIZONTAL);
+  if (int_rects.empty()) {
+    return std::numeric_limits<frCoord>::max();
+  }
   for (const auto& r : int_rects) {
     max_ext = std::max(max_ext, box.xMax() - gtl::xh(r));
     max_ext = std::max(max_ext, gtl::xl(r) - box.xMin());
