@@ -286,6 +286,13 @@ regression_test(
 )
 
 regression_test(
+    name = "congestion_only_reset",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
     name = "congestion_only_ndr",
     check_log = False,
     check_passfail = True,

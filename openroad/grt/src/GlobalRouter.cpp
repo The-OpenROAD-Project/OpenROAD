@@ -542,6 +542,20 @@ void GlobalRouter::reportIncrementalCongestion()
 
 void GlobalRouter::globalRoute(bool save_guides)
 {
+  // -congestion_only applies to this global route only: a later
+  // globalRoute() from C++ (global placement, ram) that does not ask for it
+  // routes in full, also after an error.
+  struct CongestionOnlyReset
+  {
+    GlobalRouter* router;
+    ~CongestionOnlyReset()
+    {
+      router->setCongestionOnly(false);
+      if (router->fastroute_ != nullptr) {
+        router->fastroute_->setCongestionOnly(false);
+      }
+    }
+  } congestion_only_reset{this};
   utl::Timer timer;
   bool has_routable_nets = false;
 
