@@ -5,6 +5,8 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -538,6 +540,7 @@ NesterovBase* Replace::getTopLevelNB() const
 float Replace::getUniformTargetDensity(const PlaceOptions& options,
                                        const int threads)
 {
+  (void) threads;
   log_->info(GPL, 22, "Initialize gpl and calculate uniform density.");
   log_->redirectStringBegin();
 
@@ -545,8 +548,46 @@ float Replace::getUniformTargetDensity(const PlaceOptions& options,
   options_no_io.skipIo();  // in case bterms are not placed
 
   float density = 1.0f;
-  if (initNesterovPlace(options_no_io, threads, false)) {
-    density = getTopLevelNB()->getUniformTargetDensity();
+  std::shared_ptr<PlacerBaseCommon> pbc = pbc_;
+  if (!pbc) {
+    PlacerBaseVars pb_vars(options_no_io);
+    pb_vars.skipNetsAndPins = true;
+    pbc = std::make_shared<PlacerBaseCommon>(db_, pb_vars, log_);
+  }
+
+  PlacerBase top_pb(db_, pbc, log_, false);
+  size_t total_placeable = top_pb.placeInsts().size();
+  if (total_placeable == 0) {
+    for (auto* pd : db_->getChip()->getBlock()->getRegions()) {
+      for (auto* group : pd->getGroups()) {
+        PlacerBase group_pb(db_, pbc, log_, false, group);
+        total_placeable += group_pb.placeInsts().size();
+      }
+    }
+  }
+
+  if (total_placeable > 0) {
+    if (top_pb.placeInsts().empty()) {
+      density = 0.0f;
+    } else {
+      const int64_t std_insts_area = top_pb.stdInstsArea();
+      const int64_t macro_insts_area = top_pb.macroInstsArea();
+      const int64_t white_space_area
+          = top_pb.getRegionArea() - top_pb.nonPlaceInstsArea();
+      const float target_density
+          = options_no_io.uniformTargetDensityMode
+                ? (static_cast<float>(std_insts_area)
+                       / static_cast<float>(white_space_area - macro_insts_area)
+                   + 0.01f)
+                : options_no_io.density;
+      const int64_t nesterov_inst_area
+          = std_insts_area
+            + static_cast<int64_t>(
+                std::round(macro_insts_area * target_density));
+      density = static_cast<float>(nesterov_inst_area)
+                / static_cast<float>(white_space_area);
+      density = std::ceil(density * 100.0f) / 100.0f;
+    }
   }
 
   log_->redirectStringEnd();  // discard output

@@ -4,14 +4,17 @@
 #include "placerBase.h"
 
 #include <algorithm>
+#include <array>
 #include <climits>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "boost/unordered/unordered_flat_map.hpp"
 #include "nesterovBase.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
@@ -326,6 +329,21 @@ Pin::Pin(odb::dbITerm* iTerm) : Pin()
   updateCoordi(iTerm);
 }
 
+Pin::Pin(odb::dbITerm* iTerm,
+         const int cx,
+         const int cy,
+         const int offsetCx,
+         const int offsetCy)
+    : Pin()
+{
+  setITerm();
+  term_ = iTerm;
+  cx_ = cx;
+  cy_ = cy;
+  offsetCx_ = offsetCx;
+  offsetCy_ = offsetCy;
+}
+
 Pin::Pin(odb::dbBTerm* bTerm, utl::Logger* logger, bool placeIosMode) : Pin()
 {
   setBTerm();
@@ -561,6 +579,20 @@ Net::Net(odb::dbNet* net, bool skipIoMode) : Net()
 {
   net_ = net;
   updateBox(skipIoMode);
+}
+
+Net::Net(odb::dbNet* net,
+         const int lx,
+         const int ly,
+         const int ux,
+         const int uy)
+    : Net()
+{
+  net_ = net;
+  lx_ = lx;
+  ly_ = ly;
+  ux_ = ux;
+  uy_ = uy;
 }
 
 Net::~Net()
@@ -855,11 +887,15 @@ void PlacerBaseCommon::init()
   int total_signal_pins = 0;
   int64_t movable_area = 0;
   int64_t total_area = 0;
-  for (const auto& inst : instStor_) {
+  std::vector<int> inst_signal_pins(instStor_.size(), 0);
+  for (size_t idx = 0; idx < instStor_.size(); ++idx) {
+    const auto& inst = instStor_[idx];
     if (inst.isInstance()) {
       total_area += inst.getArea();
       if (!inst.isFixed()) {
-        total_signal_pins += count_signal_pins(inst);
+        const int sig_pins = count_signal_pins(inst);
+        inst_signal_pins[idx] = sig_pins;
+        total_signal_pins += sig_pins;
         movable_area += inst.getArea();
       }
     }
@@ -897,9 +933,10 @@ void PlacerBaseCommon::init()
   // Adjust each movable instance to match the average density
   int64_t total_adjustment_area = 0;
   if (!pbVars_.disablePinDensityAdjust) {
-    for (auto& inst : instStor_) {
+    for (size_t idx = 0; idx < instStor_.size(); ++idx) {
+      auto& inst = instStor_[idx];
       if (!inst.isFixed() && inst.isInstance()) {
-        int pin_count = count_signal_pins(inst);
+        int pin_count = inst_signal_pins[idx];
         if (pin_count > 2 && avg_density > 0.0) {
           double target_area = static_cast<double>(pin_count) / avg_density;
           double scale
@@ -923,6 +960,7 @@ void PlacerBaseCommon::init()
 
   instMap_.reserve(instStor_.size());
   insts_.reserve(instStor_.size());
+  placeInsts_.reserve(instStor_.size());
   for (auto& pb_inst : instStor_) {
     instMap_[pb_inst.dbInst()] = &pb_inst;
     insts_.push_back(&pb_inst);
@@ -932,35 +970,165 @@ void PlacerBaseCommon::init()
     }
   }
 
-  // nets fill
+  if (pbVars_.skipNetsAndPins) {
+    return;
+  }
+
+  // Precompute per-dbInst bbox, center, orient and Instance* indexed by ODB ID
+  // so the dbITerm pass avoids repeated ODB bbox/transform/hash lookups.
+  struct InstGeomCtx
+  {
+    int lx = 0;
+    int ly = 0;
+    int ux = 0;
+    int uy = 0;
+    int cx_base = 0;
+    int cy_base = 0;
+    uint8_t orient = 0;
+    Instance* pb_inst = nullptr;
+  };
+  uint32_t max_inst_id = 0;
+  for (dbInst* db_inst : db_insts) {
+    max_inst_id = std::max(max_inst_id, db_inst->getId());
+  }
+  std::vector<InstGeomCtx> inst_ctx(static_cast<size_t>(max_inst_id) + 1);
+  for (dbInst* db_inst : db_insts) {
+    auto& c = inst_ctx[db_inst->getId()];
+    dbBox* box = db_inst->getBBox();
+    odb::dbMaster* master = db_inst->getMaster();
+    c.lx = box->xMin();
+    c.ly = box->yMin();
+    c.ux = box->xMax();
+    c.uy = box->yMax();
+    c.cx_base = c.lx + static_cast<int>(master->getWidth()) / 2;
+    c.cy_base = c.ly + static_cast<int>(master->getHeight()) / 2;
+    c.orient
+        = static_cast<uint8_t>(db_inst->getTransform().getOrient().getValue());
+  }
+  for (auto& pb_inst : instStor_) {
+    inst_ctx[pb_inst.dbInst()->getId()].pb_inst = &pb_inst;
+  }
+
+  // Cache (offsetCx, offsetCy) per (dbMTerm*, orient) instead of recomputing
+  // mPin geometry box merges and transforms on every dbITerm.
+  struct MTermOrientOffsets
+  {
+    Rect raw_bbox;
+    bool bbox_ready = false;
+    uint8_t orient_mask = 0;
+    std::array<int, 8> offset_cx{};
+    std::array<int, 8> offset_cy{};
+  };
+  boost::unordered::unordered_flat_map<odb::dbMTerm*, MTermOrientOffsets>
+      mterm_cache;
+  mterm_cache.reserve(4096);
+
+  auto get_mterm_offset
+      = [&mterm_cache](odb::dbMTerm* mterm,
+                       uint8_t orient_val) -> std::pair<int, int> {
+    auto& entry = mterm_cache[mterm];
+    if (!entry.bbox_ready) {
+      entry.raw_bbox.mergeInit();
+      for (dbMPin* mPin : mterm->getMPins()) {
+        for (dbBox* box : mPin->getGeometry()) {
+          entry.raw_bbox.merge(box->getBox());
+        }
+      }
+      entry.bbox_ready = true;
+    }
+    const uint8_t bit = static_cast<uint8_t>(1U << orient_val);
+    if ((entry.orient_mask & bit) == 0) {
+      if (entry.raw_bbox.isInverted()) {
+        entry.offset_cx[orient_val] = 0;
+        entry.offset_cy[orient_val] = 0;
+      } else {
+        odb::dbMaster* master = mterm->getMaster();
+        const int instCenterX = static_cast<int>(master->getWidth()) / 2;
+        const int instCenterY = static_cast<int>(master->getHeight()) / 2;
+        Rect pin_bbox = entry.raw_bbox;
+        odb::dbTransform xfm({-instCenterX, -instCenterY});
+        xfm.concat(odb::dbOrientType(
+            static_cast<odb::dbOrientType::Value>(orient_val)));
+        xfm.concat(odb::dbTransform({instCenterX, instCenterY}));
+        xfm.apply(pin_bbox);
+        entry.offset_cx[orient_val] = pin_bbox.xCenter() - instCenterX;
+        entry.offset_cy[orient_val] = pin_bbox.yCenter() - instCenterY;
+      }
+      entry.orient_mask |= bit;
+    }
+    return {entry.offset_cx[orient_val], entry.offset_cy[orient_val]};
+  };
+
+  // Reserve pinStor_ up front so &pinStor_.back() pointers stay valid,
+  // allowing Net::pins_ and an O(1) dbITerm-ID -> Pin* table to be wired in a
+  // single net pass.
   dbSet<dbNet> db_nets = block->getNets();
+  const size_t max_iterm_cnt = block->getITerms().size();
+  const size_t max_pin_cnt
+      = max_iterm_cnt + (pbVars_.skipIoMode ? 0 : block->getBTerms().size());
+  pinStor_.reserve(max_pin_cnt);
   netStor_.reserve(db_nets.size());
+  netMap_.reserve(db_nets.size());
+  nets_.reserve(db_nets.size());
+
+  std::vector<Pin*> iterm_to_pin(max_iterm_cnt + 64, nullptr);
+
   for (dbNet* db_net : db_nets) {
     dbSigType net_type = db_net->getSigType();
 
     // escape nets with VDD/VSS/reset nets
     if (net_type == dbSigType::SIGNAL || net_type == dbSigType::CLOCK) {
-      Net temp_net(db_net, pbVars_.skipIoMode);
-      netStor_.push_back(temp_net);
+      int net_lx = INT_MAX;
+      int net_ly = INT_MAX;
+      int net_ux = INT_MIN;
+      int net_uy = INT_MIN;
 
-      // this is safe because of "reserve"
-      Net* temp_net_ptr = &netStor_[netStor_.size() - 1];
+      netStor_.emplace_back(db_net, net_lx, net_ly, net_ux, net_uy);
+      Net* temp_net_ptr = &netStor_.back();
       netMap_[db_net] = temp_net_ptr;
+      nets_.push_back(temp_net_ptr);
 
       for (dbITerm* iTerm : db_net->getITerms()) {
-        Pin temp_pin(iTerm);
-        temp_pin.setNet(temp_net_ptr);
-        temp_pin.setInstance(dbToPb(iTerm->getInst()));
-        pinStor_.push_back(temp_pin);
+        odb::dbInst* inst = iTerm->getInst();
+        const uint32_t inst_id = inst->getId();
+        const auto& c = inst_ctx[inst_id];
+        net_lx = std::min(c.lx, net_lx);
+        net_ly = std::min(c.ly, net_ly);
+        net_ux = std::max(c.ux, net_ux);
+        net_uy = std::max(c.uy, net_uy);
+
+        auto [off_x, off_y] = get_mterm_offset(iTerm->getMTerm(), c.orient);
+        pinStor_.emplace_back(
+            iTerm, c.cx_base + off_x, c.cy_base + off_y, off_x, off_y);
+        Pin* cur_pin = &pinStor_.back();
+        cur_pin->setNet(temp_net_ptr);
+        cur_pin->setInstance(c.pb_inst);
+        temp_net_ptr->addPin(cur_pin);
+
+        const uint32_t iterm_id = iTerm->getId();
+        if (iterm_id >= iterm_to_pin.size()) {
+          iterm_to_pin.resize(static_cast<size_t>(iterm_id) + 1024, nullptr);
+        }
+        iterm_to_pin[iterm_id] = cur_pin;
       }
 
       if (!pbVars_.skipIoMode) {
         for (dbBTerm* bTerm : db_net->getBTerms()) {
-          Pin temp_pin(bTerm, log_, pbVars_.placeIosMode);
-          temp_pin.setNet(temp_net_ptr);
-          pinStor_.push_back(temp_pin);
+          for (dbBPin* bPin : bTerm->getBPins()) {
+            Rect bbox = bPin->getBBox();
+            net_lx = std::min(bbox.xMin(), net_lx);
+            net_ly = std::min(bbox.yMin(), net_ly);
+            net_ux = std::max(bbox.xMax(), net_ux);
+            net_uy = std::max(bbox.yMax(), net_uy);
+          }
+          pinStor_.emplace_back(bTerm, log_, pbVars_.placeIosMode);
+          Pin* cur_pin = &pinStor_.back();
+          cur_pin->setNet(temp_net_ptr);
+          temp_net_ptr->addPin(cur_pin);
         }
       }
+
+      temp_net_ptr->setBox(net_lx, net_ly, net_ux, net_uy);
     }
   }
 
@@ -976,35 +1144,20 @@ void PlacerBaseCommon::init()
     pins_.push_back(&pb_pin);
   }
 
-  // instStor_'s pins_ fill
+  // instStor_'s pins_ fill (preserving dbInst->getITerms() order via O(1) ID
+  // lookup)
   for (auto& pb_inst : instStor_) {
     if (!pb_inst.isInstance()) {
       continue;
     }
     for (dbITerm* iTerm : pb_inst.dbInst()->getITerms()) {
-      // note that, DB's ITerm can have
-      // VDD/VSS pins.
-      //
-      // Escape those pins
-      Pin* cur_pin = dbToPb(iTerm);
+      const uint32_t iterm_id = iTerm->getId();
+      Pin* cur_pin
+          = (iterm_id < iterm_to_pin.size()) ? iterm_to_pin[iterm_id] : nullptr;
       if (cur_pin) {
         pb_inst.addPin(cur_pin);
       }
     }
-  }
-
-  // nets' pin update
-  nets_.reserve(netStor_.size());
-  for (auto& pb_net : netStor_) {
-    for (dbITerm* iTerm : pb_net.getDbNet()->getITerms()) {
-      pb_net.addPin(dbToPb(iTerm));
-    }
-    if (!pbVars_.skipIoMode) {
-      for (dbBTerm* bTerm : pb_net.getDbNet()->getBTerms()) {
-        pb_net.addPin(dbToPb(bTerm));
-      }
-    }
-    nets_.push_back(&pb_net);
   }
 }
 
@@ -1267,10 +1420,9 @@ void PlacerBase::initInstsForUnusableSites()
                                                0,
                                                siteCountY);
 
-      for (int i = pairX.first; i < pairX.second; i++) {
-        for (int j = pairY.first; j < pairY.second; j++) {
-          siteGrid[(j * siteCountX) + i] = Row;
-        }
+      for (int j = pairY.first; j < pairY.second; j++) {
+        auto* row_ptr = siteGrid.data() + static_cast<int64_t>(j) * siteCountX;
+        std::fill(row_ptr + pairX.first, row_ptr + pairX.second, Row);
       }
     }
 
@@ -1295,10 +1447,12 @@ void PlacerBase::initInstsForUnusableSites()
                                                    0,
                                                    siteCountY);
 
-          for (int i = pairX.first; i < pairX.second; i++) {
-            for (int j = pairY.first; j < pairY.second; j++) {
-              siteGrid[(j * siteCountX) + i] = SiteInfo::Blocked;
-            }
+          for (int j = pairY.first; j < pairY.second; j++) {
+            auto* row_ptr
+                = siteGrid.data() + static_cast<int64_t>(j) * siteCountX;
+            std::fill(row_ptr + pairX.first,
+                      row_ptr + pairX.second,
+                      SiteInfo::Blocked);
           }
         }
       }
@@ -1327,10 +1481,11 @@ void PlacerBase::initInstsForUnusableSites()
                                                  siteCountY);
 
         // Then, unblock only the placeable areas
-        for (int i = pairX.first; i < pairX.second; i++) {
-          for (int j = pairY.first; j < pairY.second; j++) {
-            siteGrid[(j * siteCountX) + i] = SiteInfo::Row;
-          }
+        for (int j = pairY.first; j < pairY.second; j++) {
+          auto* row_ptr
+              = siteGrid.data() + static_cast<int64_t>(j) * siteCountX;
+          std::fill(
+              row_ptr + pairX.first, row_ptr + pairX.second, SiteInfo::Row);
         }
       }
     }
@@ -1424,17 +1579,25 @@ void PlacerBase::initInstsForUnusableSites()
                                                0,
                                                siteCountY);
 
-      for (int i = pairX.first; i < pairX.second; i++) {
+      if (log_->debugCheck(GPL, "dummies", 1)) {
+        for (int i = pairX.first; i < pairX.second; i++) {
+          for (int j = pairY.first; j < pairY.second; j++) {
+            siteGrid[(static_cast<int64_t>(j) * siteCountX) + i] = Blocked;
+            debugPrint(log_,
+                       GPL,
+                       "dummies",
+                       1,
+                       "Blocking site at ({}, {}) due to fixed macro {} halo.",
+                       i,
+                       j,
+                       db_inst->getName());
+          }
+        }
+      } else {
         for (int j = pairY.first; j < pairY.second; j++) {
-          siteGrid[(j * siteCountX) + i] = Blocked;
-          debugPrint(log_,
-                     GPL,
-                     "dummies",
-                     1,
-                     "Blocking site at ({}, {}) due to fixed macro {} halo.",
-                     i,
-                     j,
-                     db_inst->getName());
+          auto* row_ptr
+              = siteGrid.data() + static_cast<int64_t>(j) * siteCountX;
+          std::fill(row_ptr + pairX.first, row_ptr + pairX.second, Blocked);
         }
       }
     }
@@ -1443,17 +1606,24 @@ void PlacerBase::initInstsForUnusableSites()
         inst->lx(), inst->ux(), region_bbox_.xMin(), siteSizeX_, 0, siteCountX);
     std::pair<int, int> pairY = getMinMaxIdx(
         inst->ly(), inst->uy(), region_bbox_.yMin(), siteSizeY_, 0, siteCountY);
-    for (int i = pairX.first; i < pairX.second; i++) {
+    if (log_->debugCheck(GPL, "dummies", 1)) {
+      for (int i = pairX.first; i < pairX.second; i++) {
+        for (int j = pairY.first; j < pairY.second; j++) {
+          siteGrid[(static_cast<int64_t>(j) * siteCountX) + i] = FixedInst;
+          debugPrint(log_,
+                     GPL,
+                     "dummies",
+                     1,
+                     "Blocking site at ({}, {}) due to fixed instance {}.",
+                     i,
+                     j,
+                     db_inst->getName());
+        }
+      }
+    } else {
       for (int j = pairY.first; j < pairY.second; j++) {
-        siteGrid[(j * siteCountX) + i] = FixedInst;
-        debugPrint(log_,
-                   GPL,
-                   "dummies",
-                   1,
-                   "Blocking site at ({}, {}) due to fixed instance {}.",
-                   i,
-                   j,
-                   db_inst->getName());
+        auto* row_ptr = siteGrid.data() + static_cast<int64_t>(j) * siteCountX;
+        std::fill(row_ptr + pairX.first, row_ptr + pairX.second, FixedInst);
       }
     }
   }

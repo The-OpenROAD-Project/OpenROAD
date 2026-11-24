@@ -121,6 +121,7 @@ class Pin
  public:
   Pin();
   Pin(odb::dbITerm* iTerm);
+  Pin(odb::dbITerm* iTerm, int cx, int cy, int offsetCx, int offsetCy);
   Pin(odb::dbBTerm* bTerm, utl::Logger* logger, bool placeIosMode = false);
   ~Pin();
 
@@ -198,6 +199,7 @@ class Net
  public:
   Net();
   Net(odb::dbNet* net, bool skipIoMode);
+  Net(odb::dbNet* net, int lx, int ly, int ux, int uy);
   ~Net();
 
   int lx() const;
@@ -211,6 +213,13 @@ class Net
   int64_t getHpwl() const;
 
   void updateBox(bool skipIoMode = false);
+  void setBox(int lx, int ly, int ux, int uy)
+  {
+    lx_ = lx;
+    ly_ = ly;
+    ux_ = ux;
+    uy_ = uy;
+  }
 
   const std::vector<Pin*>& getPins() const { return pins_; }
 
@@ -281,6 +290,7 @@ struct PlacerBaseVars
   const bool placeIosMode;
   const bool disablePinDensityAdjust;
   const bool macroAreaInDenominator;
+  bool skipNetsAndPins = false;
 };
 
 // Class includes everything from PlacerBase that is not region specific
