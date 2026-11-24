@@ -173,14 +173,9 @@ bazel_dep(name = "or-tools", version = "9.15")
 # from @rules_cc.
 bazel_dep(name = "spdlog", version = "1.17.0")
 
-# sv-elab: the SystemVerilog frontend whose sources openroad/syn/src/elab
-# compiles, from the BCR like every dependency that is not a fork.
-bazel_dep(name = "sv-elab", version = "2026-11-09")
-git_override(
-    module_name = "sv-elab",
-    commit = "fc131711d4e88035f5af0a28fa25b6c7fae2380e",
-    remote = "https://github.com/povik/sv-elab",
-)
+# sv-elab: the SystemVerilog frontend whose sources src/syn/src/elab
+# compiles
+bazel_dep(name = "sv-elab", version = "2026-11-24")
 
 bazel_dep(name = "tcl_lang", version = "9.0.2.bcr.2")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")

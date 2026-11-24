@@ -877,6 +877,8 @@
     "https://bcr.bazel.build/modules/stardoc/0.7.1/MODULE.bazel": "3548faea4ee5dda5580f9af150e79d0f6aea934fc60c1cc50f4efdd9420759e7",
     "https://bcr.bazel.build/modules/stardoc/0.7.2/MODULE.bazel": "fc152419aa2ea0f51c29583fab1e8c99ddefd5b3778421845606ee628629e0e5",
     "https://bcr.bazel.build/modules/stardoc/0.7.2/source.json": "58b029e5e901d6802967754adf0a9056747e8176f017cfe3607c0851f4d42216",
+    "https://bcr.bazel.build/modules/sv-elab/2026-11-24/MODULE.bazel": "3ef2fe3b8bcece6f76910c58940fe104019c1987c3ecf99875d115ede6f96f4d",
+    "https://bcr.bazel.build/modules/sv-elab/2026-11-24/source.json": "7b90d45df9d03932eb6ddee1c72cc452d5ab13af7469ddae5624a1e595764c08",
     "https://bcr.bazel.build/modules/sv-lang/12.1.0.bcr.1/MODULE.bazel": "121547421862498e028834b9329d05d5d2ba9f795676261428f7dbcb26ec5faa",
     "https://bcr.bazel.build/modules/sv-lang/12.1.0.bcr.1/source.json": "1b5e54c22c5ae82bdab0d87c214038939a543614843caf2188e4ee5fdeb0fb64",
     "https://bcr.bazel.build/modules/swift_argument_parser/1.3.1.1/MODULE.bazel": "5e463fbfba7b1701d957555ed45097d7f984211330106ccd1352c6e0af0dcf91",
@@ -2245,7 +2247,7 @@
     "@@sv-elab+//:dependency_support/hashlib_ext.bzl%vendored_hashlib": {
       "general": {
         "bzlTransitiveDigest": "SP+gv2mU0cMAOAR54hdKthWQrOHJgeOz/Z9LBDNhfyk=",
-        "usagesDigest": "vZbRQFzLgdb6SlRWdfQcEn72IqnKMNOZ/qqAaxtvPO4=",
+        "usagesDigest": "1kZ8eP/71bjvdk29v5IkITyOaNv7jZ8HfGHHmhFFapY=",
         "recordedInputs": [],
         "generatedRepoSpecs": {
           "vendored-hashlib": {
@@ -6052,9 +6054,9 @@
           },
           "soupsieve": {
             "https://files.pythonhosted.org/packages/14/a0/bb38d3b76b8cae341dad93a2dd83ab7462e6dbcdd84d43f54ee60a8dc167/soupsieve-2.8-py3-none-any.whl": "sha256:0cc76456a30e20f5d7f2e14a98a4ae2ee4e5abdc7c5ea0aafe795f344bc7984c",
-            "https://files.pythonhosted.org/packages/4f/18/d24df2f733ee0655c58717d51add4118a70e64692d0e47d403b9aac4cf98/soupsieve-4.0-py3-none-any.whl": "sha256:5e7494bfce90e06676cfb4c5c2cf22243e98e5cf24646bb1ecdda46d318550a0",
-            "https://files.pythonhosted.org/packages/6d/e6/21ccce3262dd4889aa3332e5a119a3491a95e8f60939870a3a035aabac0d/soupsieve-2.8.tar.gz": "sha256:e2dd4a40a628cb5f28f6d4b0db8800b8f581b65bb380b97de22ba5ca8d72572f",
-            "https://files.pythonhosted.org/packages/7d/5e/19b7c5d20bc2f226c44f33a9d9aab9740efed7555b96e656231fd564e514/soupsieve-4.0.tar.gz": "sha256:ccd6470b256394ac44b08b86fd94b30a17d335a5335c8a3d15565f7b03d3c8cf"
+            "https://files.pythonhosted.org/packages/49/ca/f639c80449997b88aba7bc9705d25dd76cc0844f45f187862fd8f8bb18fa/soupsieve-3.0.3-py3-none-any.whl": "sha256:fa30e3ba4809cb81ce1f3209f2fbe3e779fc445f0439bc147a0d7c4601743f21",
+            "https://files.pythonhosted.org/packages/5e/77/2dcfa996b01702ab8fd0763d84098f6a640d6162a328f1c04c2697579a1a/soupsieve-3.0.3.tar.gz": "sha256:7dcf6022eed0399eb9934a75e020148f7a2024c37b7dfcd3cf2c5505d69c364e",
+            "https://files.pythonhosted.org/packages/6d/e6/21ccce3262dd4889aa3332e5a119a3491a95e8f60939870a3a035aabac0d/soupsieve-2.8.tar.gz": "sha256:e2dd4a40a628cb5f28f6d4b0db8800b8f581b65bb380b97de22ba5ca8d72572f"
           },
           "sphinx": {
             "https://files.pythonhosted.org/packages/67/a7/01dd6fd9653c056258d65032aa09a615b5d7b07dd840845a9f41a8860fbc/sphinx-5.3.0-py3-none-any.whl": "sha256:060ca5c9f7ba57a08a1219e547b269fadf125ae25b06b9fa7f66768efb652d6d",
