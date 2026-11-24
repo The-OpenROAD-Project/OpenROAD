@@ -1397,6 +1397,9 @@ void IOPlacer::findSections(int begin,
                             Edge edge,
                             std::vector<Section>& sections)
 {
+  if (begin > end) {
+    return;
+  }
   int end_slot = 0;
   while (end_slot < end) {
     int blocked_slots = 0;
