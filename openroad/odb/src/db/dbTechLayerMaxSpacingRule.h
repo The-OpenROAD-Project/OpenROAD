@@ -29,6 +29,8 @@ class _dbTechLayerMaxSpacingRule : public _dbObject
 
   std::string cut_class_;
   int max_spacing_;
+  int width_;
+  int length_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerMaxSpacingRule& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMaxSpacingRule& obj);

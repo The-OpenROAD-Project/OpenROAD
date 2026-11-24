@@ -93,7 +93,8 @@ class NesterovPlaceTest : public tst::Fixture
   // A placer that has not seen the design, as a separate command would be.
   Replace placer()
   {
-    return Replace{db_.get(), sta_.get(), nullptr, nullptr, nullptr, &logger_};
+    return Replace{
+        db_.get(), sta_.get(), nullptr, nullptr, nullptr, nullptr, &logger_};
   }
 
   // Runs global placement and returns what it logged.

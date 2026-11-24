@@ -75,7 +75,8 @@ class KnownAnswerTest : public tst::Fixture
  protected:
   PlaceResult place(const PlaceOptions& options)
   {
-    Replace replace{db_.get(), sta_.get(), nullptr, nullptr, nullptr, &logger_};
+    Replace replace{
+        db_.get(), sta_.get(), nullptr, nullptr, nullptr, nullptr, &logger_};
     return replace.doPlace(1, options);
   }
 };
