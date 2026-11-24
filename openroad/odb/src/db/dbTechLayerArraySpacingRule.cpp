@@ -116,116 +116,133 @@ void _dbTechLayerArraySpacingRule::collectMemInfo(MemInfo& info)
 
 void dbTechLayerArraySpacingRule::setViaWidth(int via_width)
 {
-  _dbTechLayerArraySpacingRule* obj = (_dbTechLayerArraySpacingRule*) this;
+  _dbTechLayerArraySpacingRule* obj
+      = reinterpret_cast<_dbTechLayerArraySpacingRule*>(this);
 
   obj->via_width_ = via_width;
 }
 
 int dbTechLayerArraySpacingRule::getViaWidth() const
 {
-  _dbTechLayerArraySpacingRule* obj = (_dbTechLayerArraySpacingRule*) this;
+  const _dbTechLayerArraySpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerArraySpacingRule*>(this);
   return obj->via_width_;
 }
 
 void dbTechLayerArraySpacingRule::setCutSpacing(int cut_spacing)
 {
-  _dbTechLayerArraySpacingRule* obj = (_dbTechLayerArraySpacingRule*) this;
+  _dbTechLayerArraySpacingRule* obj
+      = reinterpret_cast<_dbTechLayerArraySpacingRule*>(this);
 
   obj->cut_spacing_ = cut_spacing;
 }
 
 int dbTechLayerArraySpacingRule::getCutSpacing() const
 {
-  _dbTechLayerArraySpacingRule* obj = (_dbTechLayerArraySpacingRule*) this;
+  const _dbTechLayerArraySpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerArraySpacingRule*>(this);
   return obj->cut_spacing_;
 }
 
 void dbTechLayerArraySpacingRule::setWithin(int within)
 {
-  _dbTechLayerArraySpacingRule* obj = (_dbTechLayerArraySpacingRule*) this;
+  _dbTechLayerArraySpacingRule* obj
+      = reinterpret_cast<_dbTechLayerArraySpacingRule*>(this);
 
   obj->within_ = within;
 }
 
 int dbTechLayerArraySpacingRule::getWithin() const
 {
-  _dbTechLayerArraySpacingRule* obj = (_dbTechLayerArraySpacingRule*) this;
+  const _dbTechLayerArraySpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerArraySpacingRule*>(this);
   return obj->within_;
 }
 
 void dbTechLayerArraySpacingRule::setArrayWidth(int array_width)
 {
-  _dbTechLayerArraySpacingRule* obj = (_dbTechLayerArraySpacingRule*) this;
+  _dbTechLayerArraySpacingRule* obj
+      = reinterpret_cast<_dbTechLayerArraySpacingRule*>(this);
 
   obj->array_width_ = array_width;
 }
 
 int dbTechLayerArraySpacingRule::getArrayWidth() const
 {
-  _dbTechLayerArraySpacingRule* obj = (_dbTechLayerArraySpacingRule*) this;
+  const _dbTechLayerArraySpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerArraySpacingRule*>(this);
   return obj->array_width_;
 }
 
 void dbTechLayerArraySpacingRule::setCutClass(
     dbTechLayerCutClassRule* cut_class)
 {
-  _dbTechLayerArraySpacingRule* obj = (_dbTechLayerArraySpacingRule*) this;
+  _dbTechLayerArraySpacingRule* obj
+      = reinterpret_cast<_dbTechLayerArraySpacingRule*>(this);
 
   obj->cut_class_ = cut_class->getImpl()->getOID();
 }
 
 void dbTechLayerArraySpacingRule::setParallelOverlap(bool parallel_overlap)
 {
-  _dbTechLayerArraySpacingRule* obj = (_dbTechLayerArraySpacingRule*) this;
+  _dbTechLayerArraySpacingRule* obj
+      = reinterpret_cast<_dbTechLayerArraySpacingRule*>(this);
 
   obj->flags_.parallel_overlap = parallel_overlap;
 }
 
 bool dbTechLayerArraySpacingRule::isParallelOverlap() const
 {
-  _dbTechLayerArraySpacingRule* obj = (_dbTechLayerArraySpacingRule*) this;
+  const _dbTechLayerArraySpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerArraySpacingRule*>(this);
 
   return obj->flags_.parallel_overlap;
 }
 
 void dbTechLayerArraySpacingRule::setLongArray(bool long_array)
 {
-  _dbTechLayerArraySpacingRule* obj = (_dbTechLayerArraySpacingRule*) this;
+  _dbTechLayerArraySpacingRule* obj
+      = reinterpret_cast<_dbTechLayerArraySpacingRule*>(this);
 
   obj->flags_.long_array = long_array;
 }
 
 bool dbTechLayerArraySpacingRule::isLongArray() const
 {
-  _dbTechLayerArraySpacingRule* obj = (_dbTechLayerArraySpacingRule*) this;
+  const _dbTechLayerArraySpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerArraySpacingRule*>(this);
 
   return obj->flags_.long_array;
 }
 
 void dbTechLayerArraySpacingRule::setViaWidthValid(bool via_width_valid)
 {
-  _dbTechLayerArraySpacingRule* obj = (_dbTechLayerArraySpacingRule*) this;
+  _dbTechLayerArraySpacingRule* obj
+      = reinterpret_cast<_dbTechLayerArraySpacingRule*>(this);
 
   obj->flags_.via_width_valid = via_width_valid;
 }
 
 bool dbTechLayerArraySpacingRule::isViaWidthValid() const
 {
-  _dbTechLayerArraySpacingRule* obj = (_dbTechLayerArraySpacingRule*) this;
+  const _dbTechLayerArraySpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerArraySpacingRule*>(this);
 
   return obj->flags_.via_width_valid;
 }
 
 void dbTechLayerArraySpacingRule::setWithinValid(bool within_valid)
 {
-  _dbTechLayerArraySpacingRule* obj = (_dbTechLayerArraySpacingRule*) this;
+  _dbTechLayerArraySpacingRule* obj
+      = reinterpret_cast<_dbTechLayerArraySpacingRule*>(this);
 
   obj->flags_.within_valid = within_valid;
 }
 
 bool dbTechLayerArraySpacingRule::isWithinValid() const
 {
-  _dbTechLayerArraySpacingRule* obj = (_dbTechLayerArraySpacingRule*) this;
+  const _dbTechLayerArraySpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerArraySpacingRule*>(this);
 
   return obj->flags_.within_valid;
 }
@@ -233,16 +250,17 @@ bool dbTechLayerArraySpacingRule::isWithinValid() const
 dbTechLayerArraySpacingRule* dbTechLayerArraySpacingRule::create(
     dbTechLayer* parent)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) parent;
-  return (dbTechLayerArraySpacingRule*)
-      _parent->array_spacing_rules_tbl_->create();
+  _dbTechLayer* _parent = reinterpret_cast<_dbTechLayer*>(parent);
+  return reinterpret_cast<dbTechLayerArraySpacingRule*>(
+      _parent->array_spacing_rules_tbl_->create());
 }
 void dbTechLayerArraySpacingRule::destroy(dbTechLayerArraySpacingRule* obj)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  _dbTechLayer* _parent
+      = static_cast<_dbTechLayer*>(obj->getImpl()->getOwner());
   dbProperty::destroyProperties(obj);
   _parent->array_spacing_rules_tbl_->destroy(
-      (_dbTechLayerArraySpacingRule*) obj);
+      reinterpret_cast<_dbTechLayerArraySpacingRule*>(obj));
 }
 // User Code Begin dbTechLayerArraySpacingRulePublicMethods
 

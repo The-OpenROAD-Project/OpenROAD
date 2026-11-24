@@ -64,7 +64,7 @@ _dbScanChain::_dbScanChain(_dbDatabase* db)
   scan_partitions_ = new dbTable<_dbScanPartition>(
       db,
       this,
-      (GetObjTbl_t) &_dbScanChain::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbScanChain::getObjectTable),
       dbScanPartitionObj);
 }
 
@@ -125,7 +125,8 @@ _dbScanChain::~_dbScanChain()
 
 dbSet<dbScanPartition> dbScanChain::getScanPartitions() const
 {
-  _dbScanChain* obj = (_dbScanChain*) this;
+  _dbScanChain* obj
+      = reinterpret_cast<_dbScanChain*>(const_cast<dbScanChain*>(this));
   return dbSet<dbScanPartition>(obj, obj->scan_partitions_);
 }
 

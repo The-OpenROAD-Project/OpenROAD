@@ -182,17 +182,35 @@ _dbChip::_dbChip(_dbDatabase* db)
   scribe_line_south_ = 0;
   tsv_ = false;
   prop_tbl_ = new dbTable<_dbProperty>(
-      db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbPropertyObj);
+      db,
+      this,
+      static_cast<GetObjTbl_t>(&_dbChip::getObjectTable),
+      dbPropertyObj);
   chip_region_tbl_ = new dbTable<_dbChipRegion>(
-      db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbChipRegionObj);
+      db,
+      this,
+      static_cast<GetObjTbl_t>(&_dbChip::getObjectTable),
+      dbChipRegionObj);
   chip_cap_node_tbl_ = new dbTable<_dbChipCapNode>(
-      db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbChipCapNodeObj);
+      db,
+      this,
+      static_cast<GetObjTbl_t>(&_dbChip::getObjectTable),
+      dbChipCapNodeObj);
   chip_r_seg_tbl_ = new dbTable<_dbChipRSeg>(
-      db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbChipRSegObj);
+      db,
+      this,
+      static_cast<GetObjTbl_t>(&_dbChip::getObjectTable),
+      dbChipRSegObj);
   marker_categories_tbl_ = new dbTable<_dbMarkerCategory>(
-      db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbMarkerCategoryObj);
+      db,
+      this,
+      static_cast<GetObjTbl_t>(&_dbChip::getObjectTable),
+      dbMarkerCategoryObj);
   chip_path_tbl_ = new dbTable<_dbChipPath>(
-      db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbChipPathObj);
+      db,
+      this,
+      static_cast<GetObjTbl_t>(&_dbChip::getObjectTable),
+      dbChipPathObj);
   chip_path_hash_.setTable(chip_path_tbl_);
   // User Code Begin Constructor
   block_tbl_ = new dbTable<_dbBlock>(
@@ -405,7 +423,7 @@ void _dbChip::collectMemInfo(MemInfo& info)
 _dbChip::~_dbChip()
 {
   if (name_) {
-    free((void*) name_);
+    free(name_);
   }
   delete prop_tbl_;
   delete chip_region_tbl_;
@@ -436,226 +454,226 @@ _dbChip::~_dbChip()
 
 const char* dbChip::getName() const
 {
-  _dbChip* obj = (_dbChip*) this;
+  const _dbChip* obj = reinterpret_cast<const _dbChip*>(this);
   return obj->name_;
 }
 
 void dbChip::setOffset(const Point& offset)
 {
-  _dbChip* obj = (_dbChip*) this;
+  _dbChip* obj = reinterpret_cast<_dbChip*>(this);
 
   obj->offset_ = offset;
 }
 
 Point dbChip::getOffset() const
 {
-  _dbChip* obj = (_dbChip*) this;
+  const _dbChip* obj = reinterpret_cast<const _dbChip*>(this);
   return obj->offset_;
 }
 
 void dbChip::setWidth(int width)
 {
-  _dbChip* obj = (_dbChip*) this;
+  _dbChip* obj = reinterpret_cast<_dbChip*>(this);
 
   obj->width_ = width;
 }
 
 int dbChip::getWidth() const
 {
-  _dbChip* obj = (_dbChip*) this;
+  const _dbChip* obj = reinterpret_cast<const _dbChip*>(this);
   return obj->width_;
 }
 
 void dbChip::setHeight(int height)
 {
-  _dbChip* obj = (_dbChip*) this;
+  _dbChip* obj = reinterpret_cast<_dbChip*>(this);
 
   obj->height_ = height;
 }
 
 int dbChip::getHeight() const
 {
-  _dbChip* obj = (_dbChip*) this;
+  const _dbChip* obj = reinterpret_cast<const _dbChip*>(this);
   return obj->height_;
 }
 
 void dbChip::setThickness(int thickness)
 {
-  _dbChip* obj = (_dbChip*) this;
+  _dbChip* obj = reinterpret_cast<_dbChip*>(this);
 
   obj->thickness_ = thickness;
 }
 
 int dbChip::getThickness() const
 {
-  _dbChip* obj = (_dbChip*) this;
+  const _dbChip* obj = reinterpret_cast<const _dbChip*>(this);
   return obj->thickness_;
 }
 
 void dbChip::setShrink(float shrink)
 {
-  _dbChip* obj = (_dbChip*) this;
+  _dbChip* obj = reinterpret_cast<_dbChip*>(this);
 
   obj->shrink_ = shrink;
 }
 
 float dbChip::getShrink() const
 {
-  _dbChip* obj = (_dbChip*) this;
+  const _dbChip* obj = reinterpret_cast<const _dbChip*>(this);
   return obj->shrink_;
 }
 
 void dbChip::setSealRingEast(int seal_ring_east)
 {
-  _dbChip* obj = (_dbChip*) this;
+  _dbChip* obj = reinterpret_cast<_dbChip*>(this);
 
   obj->seal_ring_east_ = seal_ring_east;
 }
 
 int dbChip::getSealRingEast() const
 {
-  _dbChip* obj = (_dbChip*) this;
+  const _dbChip* obj = reinterpret_cast<const _dbChip*>(this);
   return obj->seal_ring_east_;
 }
 
 void dbChip::setSealRingWest(int seal_ring_west)
 {
-  _dbChip* obj = (_dbChip*) this;
+  _dbChip* obj = reinterpret_cast<_dbChip*>(this);
 
   obj->seal_ring_west_ = seal_ring_west;
 }
 
 int dbChip::getSealRingWest() const
 {
-  _dbChip* obj = (_dbChip*) this;
+  const _dbChip* obj = reinterpret_cast<const _dbChip*>(this);
   return obj->seal_ring_west_;
 }
 
 void dbChip::setSealRingNorth(int seal_ring_north)
 {
-  _dbChip* obj = (_dbChip*) this;
+  _dbChip* obj = reinterpret_cast<_dbChip*>(this);
 
   obj->seal_ring_north_ = seal_ring_north;
 }
 
 int dbChip::getSealRingNorth() const
 {
-  _dbChip* obj = (_dbChip*) this;
+  const _dbChip* obj = reinterpret_cast<const _dbChip*>(this);
   return obj->seal_ring_north_;
 }
 
 void dbChip::setSealRingSouth(int seal_ring_south)
 {
-  _dbChip* obj = (_dbChip*) this;
+  _dbChip* obj = reinterpret_cast<_dbChip*>(this);
 
   obj->seal_ring_south_ = seal_ring_south;
 }
 
 int dbChip::getSealRingSouth() const
 {
-  _dbChip* obj = (_dbChip*) this;
+  const _dbChip* obj = reinterpret_cast<const _dbChip*>(this);
   return obj->seal_ring_south_;
 }
 
 void dbChip::setScribeLineEast(int scribe_line_east)
 {
-  _dbChip* obj = (_dbChip*) this;
+  _dbChip* obj = reinterpret_cast<_dbChip*>(this);
 
   obj->scribe_line_east_ = scribe_line_east;
 }
 
 int dbChip::getScribeLineEast() const
 {
-  _dbChip* obj = (_dbChip*) this;
+  const _dbChip* obj = reinterpret_cast<const _dbChip*>(this);
   return obj->scribe_line_east_;
 }
 
 void dbChip::setScribeLineWest(int scribe_line_west)
 {
-  _dbChip* obj = (_dbChip*) this;
+  _dbChip* obj = reinterpret_cast<_dbChip*>(this);
 
   obj->scribe_line_west_ = scribe_line_west;
 }
 
 int dbChip::getScribeLineWest() const
 {
-  _dbChip* obj = (_dbChip*) this;
+  const _dbChip* obj = reinterpret_cast<const _dbChip*>(this);
   return obj->scribe_line_west_;
 }
 
 void dbChip::setScribeLineNorth(int scribe_line_north)
 {
-  _dbChip* obj = (_dbChip*) this;
+  _dbChip* obj = reinterpret_cast<_dbChip*>(this);
 
   obj->scribe_line_north_ = scribe_line_north;
 }
 
 int dbChip::getScribeLineNorth() const
 {
-  _dbChip* obj = (_dbChip*) this;
+  const _dbChip* obj = reinterpret_cast<const _dbChip*>(this);
   return obj->scribe_line_north_;
 }
 
 void dbChip::setScribeLineSouth(int scribe_line_south)
 {
-  _dbChip* obj = (_dbChip*) this;
+  _dbChip* obj = reinterpret_cast<_dbChip*>(this);
 
   obj->scribe_line_south_ = scribe_line_south;
 }
 
 int dbChip::getScribeLineSouth() const
 {
-  _dbChip* obj = (_dbChip*) this;
+  const _dbChip* obj = reinterpret_cast<const _dbChip*>(this);
   return obj->scribe_line_south_;
 }
 
 void dbChip::setTsv(bool tsv)
 {
-  _dbChip* obj = (_dbChip*) this;
+  _dbChip* obj = reinterpret_cast<_dbChip*>(this);
 
   obj->tsv_ = tsv;
 }
 
 bool dbChip::isTsv() const
 {
-  _dbChip* obj = (_dbChip*) this;
+  const _dbChip* obj = reinterpret_cast<const _dbChip*>(this);
   return obj->tsv_;
 }
 
 dbSet<dbChipRegion> dbChip::getChipRegions() const
 {
-  _dbChip* obj = (_dbChip*) this;
+  _dbChip* obj = reinterpret_cast<_dbChip*>(const_cast<dbChip*>(this));
   return dbSet<dbChipRegion>(obj, obj->chip_region_tbl_);
 }
 
 dbSet<dbChipCapNode> dbChip::getChipCapNodes() const
 {
-  _dbChip* obj = (_dbChip*) this;
+  _dbChip* obj = reinterpret_cast<_dbChip*>(const_cast<dbChip*>(this));
   return dbSet<dbChipCapNode>(obj, obj->chip_cap_node_tbl_);
 }
 
 dbSet<dbChipRSeg> dbChip::getChipRSegs() const
 {
-  _dbChip* obj = (_dbChip*) this;
+  _dbChip* obj = reinterpret_cast<_dbChip*>(const_cast<dbChip*>(this));
   return dbSet<dbChipRSeg>(obj, obj->chip_r_seg_tbl_);
 }
 
 dbSet<dbMarkerCategory> dbChip::getMarkerCategories() const
 {
-  _dbChip* obj = (_dbChip*) this;
+  _dbChip* obj = reinterpret_cast<_dbChip*>(const_cast<dbChip*>(this));
   return dbSet<dbMarkerCategory>(obj, obj->marker_categories_tbl_);
 }
 
 dbSet<dbChipPath> dbChip::getChipPaths() const
 {
-  _dbChip* obj = (_dbChip*) this;
+  _dbChip* obj = reinterpret_cast<_dbChip*>(const_cast<dbChip*>(this));
   return dbSet<dbChipPath>(obj, obj->chip_path_tbl_);
 }
 
 dbChipPath* dbChip::findChipPath(const char* name) const
 {
-  _dbChip* obj = (_dbChip*) this;
-  return (dbChipPath*) obj->chip_path_hash_.find(name);
+  _dbChip* obj = reinterpret_cast<_dbChip*>(const_cast<dbChip*>(this));
+  return reinterpret_cast<dbChipPath*>(obj->chip_path_hash_.find(name));
 }
 
 // User Code Begin dbChipPublicMethods
