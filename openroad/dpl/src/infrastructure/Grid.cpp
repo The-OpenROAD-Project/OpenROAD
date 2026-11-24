@@ -195,9 +195,11 @@ class StripeCover
         continue;
       }
       if (w.dx() >= w.dy()) {
-        horiz_raw.push_back({{w.yMin(), w.yMax()}, {w.xMin(), w.xMax()}});
+        horiz_raw.push_back(
+            {{w.yMin(), w.yMax()}, {.lo = w.xMin(), .hi = w.xMax()}});
       } else {
-        vert_raw.push_back({{w.xMin(), w.xMax()}, {w.yMin(), w.yMax()}});
+        vert_raw.push_back(
+            {{w.xMin(), w.xMax()}, {.lo = w.yMin(), .hi = w.yMax()}});
       }
     }
     buildBands(horiz_raw, horiz_bands_);
@@ -219,7 +221,7 @@ class StripeCover
     if (raw.empty()) {
       return;
     }
-    std::sort(raw.begin(), raw.end(), [](const auto& a, const auto& b) {
+    std::ranges::sort(raw, [](const auto& a, const auto& b) {
       if (a.first != b.first) {
         return a.first < b.first;
       }
@@ -252,10 +254,7 @@ class StripeCover
                            const int lo,
                            const int hi)
   {
-    auto it = std::upper_bound(
-        spans.begin(), spans.end(), lo, [](const int val, const Interval1D& s) {
-          return val < s.lo;
-        });
+    auto it = std::ranges::upper_bound(spans, lo, {}, &Interval1D::lo);
     if (it == spans.begin()) {
       return false;
     }
@@ -269,11 +268,7 @@ class StripeCover
                            const int span_lo,
                            const int span_hi)
   {
-    auto it = std::upper_bound(
-        bands.begin(),
-        bands.end(),
-        ortho_lo,
-        [](const int val, const StripeBand& b) { return val < b.lo; });
+    auto it = std::ranges::upper_bound(bands, ortho_lo, {}, &StripeBand::lo);
     while (it != bands.begin()) {
       --it;
       if (it->prefix_max_hi < ortho_hi) {
@@ -338,7 +333,7 @@ class ViaBoxCache
         if (level > 0) {
           const odb::Rect rect = box->getBox();
           if (rect.xMin() < rect.xMax() && rect.yMin() < rect.yMax()) {
-            entry.boxes.push_back({level, rect});
+            entry.boxes.push_back({.level = level, .rect = rect});
           }
         }
       }
@@ -378,11 +373,9 @@ class LevelWireSubtraction
   {
     wires_ = std::move(wires);
     stripe_cover_.build(wires_);
-    std::sort(wires_.begin(),
-              wires_.end(),
-              [](const odb::Rect& a, const odb::Rect& b) {
-                return a.yMin() < b.yMin();
-              });
+    std::ranges::sort(wires_, [](const odb::Rect& a, const odb::Rect& b) {
+      return a.yMin() < b.yMin();
+    });
     prefix_max_ymax_.resize(wires_.size());
     int running_ymax = std::numeric_limits<int>::min();
     for (size_t i = 0; i < wires_.size(); ++i) {
@@ -409,14 +402,12 @@ class LevelWireSubtraction
       return;
     }
 
-    std::sort(filtered_.begin(),
-              filtered_.end(),
-              [](const odb::Rect& a, const odb::Rect& b) {
-                if (a.yMin() != b.yMin()) {
-                  return a.yMin() < b.yMin();
-                }
-                return a.xMin() < b.xMin();
-              });
+    std::ranges::sort(filtered_, [](const odb::Rect& a, const odb::Rect& b) {
+      if (a.yMin() != b.yMin()) {
+        return a.yMin() < b.yMin();
+      }
+      return a.xMin() < b.xMin();
+    });
 
     // Partition into strictly disjoint Y-bands (gap >= 1 DBU), then strictly
     // disjoint X-clusters within each Y-band so each connected/abutting group
@@ -497,11 +488,8 @@ class LevelWireSubtraction
     if (wires_.empty()) {
       return;
     }
-    auto wit = std::lower_bound(
-        wires_.begin(),
-        wires_.end(),
-        band_ymax,
-        [](const odb::Rect& w, const int ymax) { return w.yMin() < ymax; });
+    auto wit
+        = std::ranges::lower_bound(wires_, band_ymax, {}, &odb::Rect::yMin);
     size_t idx = static_cast<size_t>(wit - wires_.begin());
     while (idx > 0) {
       --idx;
@@ -512,11 +500,9 @@ class LevelWireSubtraction
         band_wires_.push_back(wires_[idx]);
       }
     }
-    std::sort(band_wires_.begin(),
-              band_wires_.end(),
-              [](const odb::Rect& a, const odb::Rect& b) {
-                return a.xMin() < b.xMin();
-              });
+    std::ranges::sort(band_wires_, [](const odb::Rect& a, const odb::Rect& b) {
+      return a.xMin() < b.xMin();
+    });
   }
 
   void collectClusterWires(const int cluster_xmin,
@@ -622,7 +608,8 @@ void Grid::markBlocked(odb::dbBlock* block)
         wire_rects[level].push_back(wire_rect);
         // Vertical M2/M3 stripes block pins and their via access
         if (level >= 2 && wire_rect.getDir() != odb::horizontal) {
-          const uint8_t mask = static_cast<uint8_t>(1 << level);
+          const uint8_t mask
+              = static_cast<uint8_t>(1U << static_cast<unsigned>(level));
           markPixels(wire_rect,
                      [mask](Pixel& pixel) { pixel.blocked_layers |= mask; });
         }
@@ -638,7 +625,8 @@ void Grid::markBlocked(odb::dbBlock* block)
     // can't fix, so grow the blockage to just short of min spacing.
     odb::dbTechLayer* layer = tech->findRoutingLayer(level);
     const int bloat = layer ? std::max(layer->getSpacing() - 1, 0) : 0;
-    const uint8_t pin_mask = static_cast<uint8_t>(1 << level);
+    const uint8_t pin_mask
+        = static_cast<uint8_t>(1U << static_cast<unsigned>(level));
     std::vector<NetRect> blockages;
     for (auto& [net, net_via_rects] : via_rects) {
       subtractor.forEachExposedRect(
