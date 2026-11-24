@@ -9,6 +9,7 @@
 #include "GeoTypes.h"
 #include "GridGraph.h"
 #include "Netlist.h"
+#include "PinGeometry.h"
 #include "geo.h"
 #include "odb/db.h"
 
@@ -59,9 +60,32 @@ GRNet::GRNet(const CUGRNet& base_net, const GridGraph* grid_graph)
     }
   }
 
+  for (const auto& [port_index, bterm] : pin_index_to_bterm_) {
+    odb::dbITerm* covering_iterm = findCoveringITerm(bterm);
+    if (covering_iterm == nullptr) {
+      continue;
+    }
+    for (const auto& [pin_index, iterm] : pin_index_to_iterm_) {
+      if (iterm == covering_iterm) {
+        covering_pins_[port_index] = pin_index;
+        break;
+      }
+    }
+  }
+
   for (const auto& access_points : pin_access_points_) {
     for (const auto& point : access_points) {
       bounding_box_.update(point);
+    }
+  }
+}
+
+void GRNet::shareCoveringPinAccessPoints()
+{
+  for (const auto& [port_index, pin_index] : covering_pins_) {
+    const auto it = preferred_aps_.find(pin_index);
+    if (it != preferred_aps_.end()) {
+      preferred_aps_[port_index] = it->second;
     }
   }
 }

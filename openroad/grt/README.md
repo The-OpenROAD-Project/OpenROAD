@@ -27,6 +27,7 @@ global_route
     [-skip_large_fanout_nets fanout]
     [-allow_congestion]
     [-snapshot_batched_width width]
+    [-congestion_only]
     [-verbose]
     [-start_incremental]
     [-end_incremental]
@@ -56,6 +57,7 @@ global_route
 | `-res_aware_nets_percentage` | FastRoute: set the percentage of resistance-aware nets (e.g. `-res_aware_nets_percentage 100` (for 100%)). The default value is `15` with resistance-aware enabled and `0` otherwise, and the allowed values are floats between `[0, 100]`. CUGR ignores it. |
 | `-infinite_cap` | Enables "infinite" gcell capacity for testing purpose. NOTE: this is not recommended for production flows. |
 | `-snapshot_batched_width` | Set the semantic width of snapshot-batched routing (max batches per wave). The default is `0`, preserving the non-batched behavior. Set a positive integer to enable batched routing; allowed values are integers `[1, MAX_INT]`. Execution width still follows `set_thread_count`. NOTE: this is not recommended for production flows; it is intended for exploration and research projects. |
+| `-congestion_only` | Run FastRoute's initial 2D L-route congestion pass only, skipping rip-up/reroute, 3D layer assignment, and route guide generation. Useful for fast floorplan congestion estimation. An estimate that overflows is reported as a warning (GRT-0343), not as an error, with or without `-allow_congestion`. It cannot be combined with `-start_incremental`, `-end_incremental` or `-guide_file` (GRT-0344). The default is false. |
 
 ### Set Routing Layers
 

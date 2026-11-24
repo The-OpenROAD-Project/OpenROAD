@@ -57,6 +57,9 @@ class WirelengthGradientBackend
   // the CPU backend has no device buffer and this is a no-op.
   virtual void prepareDeviceGradients() {}
 
+  // True when gradients stay on the device (GPU backend).
+  virtual bool onDevice() const { return false; }
+
   virtual const char* name() const = 0;
 
  protected:

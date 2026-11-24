@@ -155,6 +155,12 @@ set_snapshot_batched_width(int snapshot_batched_width)
   getGlobalRouter()->setSnapshotBatchedWidth(snapshot_batched_width);
 }
 
+void
+set_congestion_only(bool congestion_only)
+{
+  getGlobalRouter()->setCongestionOnly(congestion_only);
+}
+
 int
 get_snapshot_batched_width()
 {

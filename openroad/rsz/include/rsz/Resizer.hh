@@ -1031,6 +1031,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       bool accept_if_slack_improves);
   bool canRemoveBuffer(sta::Instance* buffer,
                        bool honor_dont_touch_fixed = true);
+  bool hasSdcConstraintBlockingRemoval(sta::Instance* inst);
   bool removeBuffer(sta::Instance* buffer, bool honor_dont_touch_fixed = true);
   // Whether removeBuffer() keeps the output net of buffer and moves the pins
   // of its input net onto it, instead of the other way round.
@@ -1057,6 +1058,17 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                    const sta::MinMax* min_max);
   float maxInputSlew(const sta::LibertyPort* input,
                      const sta::Scene* scene) const;
+  // maxInputSlew(port) tightened by the set_max_transition
+  // -clock_path/-data_path limits of the clocks whose paths reach pin.
+  float maxInputSlew(const sta::Pin* pin, const sta::Scene* scene) const;
+  // Tightest clock -clock_path/-data_path slew limit at pin, INF when none.
+  // Uses the paths already found at pin (no arrival search), so a pin
+  // created since the last arrival update has none.
+  float clockSlewLimit(const sta::Pin* pin, const sta::Scene* scene) const;
+  // True when any scene constrains clock slew (set_max_transition with
+  // -clock_path/-data_path or a [get_clocks] object).  The slew checks do
+  // the per-pin clock-domain lookup (check_clks) only when it is true.
+  bool haveClkSlewLimits() const;
   void checkLoadSlews(const sta::Pin* drvr_pin,
                       double slew_margin,
                       // Return values.
