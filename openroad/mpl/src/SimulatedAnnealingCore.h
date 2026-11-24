@@ -78,7 +78,7 @@ class SimulatedAnnealingCore
   int64_t getArea() const;
   std::vector<T> getMacros() const;
 
-  virtual void initialize();
+  void initialize();
   virtual void run() = 0;
   virtual void fillDeadSpace() = 0;
 
@@ -121,8 +121,8 @@ class SimulatedAnnealingCore
   void updateBestResult(float cost);
   void useBestResult();
 
-  virtual float calNormCost() const;
-  virtual void calPenalty();
+  float calNormCost() const;
+  void calPenalty();
   virtual void calExtraPenalties() {}
 
   void calAreaPenalty();
