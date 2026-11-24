@@ -320,17 +320,6 @@ class PlacerBaseCommon
 
   int64_t getMacroInstsArea() const { return macroInstsArea_; }
 
-  struct UniformTargetDensityResult
-  {
-    int64_t white_space_area = 0;
-    float target_density = 0.0f;
-    int64_t nesterov_insts_area = 0;
-    float uniform_target_density = 0.0f;
-  };
-  UniformTargetDensityResult computeUniformTargetDensity(
-      bool use_uniform_target_density,
-      float target_density) const;
-
   odb::dbDatabase* db() const { return db_; }
 
   void unlockAll();
