@@ -624,6 +624,7 @@ class GlobalRouter
   void initClockNets();
   bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
   void initGridAndNets();
+  void discardCongestionOnlyState();
   void configFastRoute();
 
   utl::Logger* logger_;
@@ -661,6 +662,8 @@ class GlobalRouter
   std::vector<int> horizontal_capacities_;
   int macro_extension_;
   bool initialized_;
+  // A -congestion_only pass released the 3D edges.
+  bool edges_3d_released_ = false;
   int total_diodes_count_;
   bool is_congested_{false};
   // Whether the congestion of the current routes was accepted, decided

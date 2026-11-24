@@ -166,7 +166,19 @@ void GlobalRouter::clear()
   vertical_capacities_.clear();
   horizontal_capacities_.clear();
   initialized_ = false;
+  edges_3d_released_ = false;
   congestion_accepted_ = false;
+}
+
+// A -congestion_only pass releases the 3D edges once it has its estimate,
+// and has_congestion still reads its result. Anything that routes or loads
+// routes afterwards starts from a cleared router, as after read_db, so the
+// grid is rebuilt rather than written through the released edges.
+void GlobalRouter::discardCongestionOnlyState()
+{
+  if (edges_3d_released_) {
+    clear();
+  }
 }
 
 GlobalRouter::~GlobalRouter()
@@ -251,12 +263,10 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   applyAdjustments(min_routing_layer, max_routing_layer);
   perturbCapacities();
 
-  // Init the data structures to monitor 3D capacity during 2D phases
-  if (!congestion_only_) {
-    fastroute_->initEdgesCapacityPerLayer();
-  } else {
-    fastroute_->clearNDRnets();
-  }
+  // Init the data structures to monitor 3D capacity during 2D phases. The
+  // 2D routing of -congestion_only reads them too: a net whose non-default
+  // rule takes more than one track reserves its capacity per layer.
+  fastroute_->initEdgesCapacityPerLayer();
 
   std::vector<Net*> nets = initNets(check_pin_placement);
   initNetlist(nets);
@@ -484,6 +494,7 @@ bool GlobalRouter::haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets)
 void GlobalRouter::startIncremental()
 {
   ensureEngineSelected();
+  discardCongestionOnlyState();
   is_incremental_ = true;
   // A design read from odb has its global routing only as guides; load them
   // so the update starts from the existing routing, not an empty grid.
@@ -581,6 +592,7 @@ void GlobalRouter::globalRoute(bool save_guides)
       }
       if (congestion_only_) {
         fastroute_->release3DEdges();
+        edges_3d_released_ = true;
       }
 
       routes_ = findRouting(nets, min_layer, max_layer);
@@ -3373,6 +3385,7 @@ void GlobalRouter::readGuides(const char* file_name)
 void GlobalRouter::loadGuidesFromDB()
 {
   ensureEngineSelected();
+  discardCongestionOnlyState();
   if (!routes_.empty()) {
     return;
   }
