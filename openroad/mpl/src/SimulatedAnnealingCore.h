@@ -77,20 +77,21 @@ class SimulatedAnnealingCore
   int getWidth() const;
   int getHeight() const;
   int64_t getArea() const;
-  float getAreaPenalty() const;
-  float getOutlinePenalty() const;
-  float getNormOutlinePenalty() const;
-  float getWirelength() const;
-  float getNormWirelength() const;
-  float getGuidancePenalty() const;
-  float getNormGuidancePenalty() const;
-  float getFencePenalty() const;
-  float getNormFencePenalty() const;
   std::vector<T> getMacros() const;
 
-  virtual void initialize() = 0;
+  virtual void initialize();
   virtual void run() = 0;
   virtual void fillDeadSpace() = 0;
+
+  // Indices into penalties_.
+  enum PenaltyKind : size_t
+  {
+    kArea,
+    kOutline,
+    kWirelength,
+    kGuidance,
+    kFence
+  };
 
  protected:
   struct Result
@@ -110,12 +111,14 @@ class SimulatedAnnealingCore
   void setAvailableRegionsForUnconstrainedPins(
       const BoundaryRegionList& regions);
   void initSequencePair();
+  virtual void findFixedMacros() {}
   void setDieArea(const odb::Rect& die_area);
   void updateBestResult(float cost);
   void useBestResult();
 
-  virtual float calNormCost() const = 0;
+  virtual float calNormCost() const;
   virtual void calPenalty() = 0;
+  void calAreaPenalty();
   void calOutlinePenalty();
   void calWirelength();
   float computeNetsWireLength(const BundledNetList& nets) const;
@@ -125,6 +128,9 @@ class SimulatedAnnealingCore
   bool isOutsideTheOutline(const T& macro) const;
   void calGuidancePenalty();
   void calFencePenalty();
+
+  void savePenalties();
+  void restorePenalties();
 
   // operations
   void packFloorplan();
@@ -141,10 +147,10 @@ class SimulatedAnnealingCore
   static float calAverage(std::vector<float>& value_list);
 
   // For debugging
-  void reportCoreWeights() const;
+  void reportWeights() const;
   void reportTotalCost() const;
   void reportLocations() const;
-  void report(const PenaltyData& penalty) const;
+  void report(const Penalty& penalty) const;
 
   odb::Rect outline_;
   odb::Rect die_area_;  // Offset to the current outline.
@@ -157,8 +163,6 @@ class SimulatedAnnealingCore
   BundledNetList nets_;
   std::map<int, odb::Rect> fences_;  // Macro Id -> Fence
   std::map<int, odb::Rect> guides_;  // Macro Id -> Guide
-
-  SACoreWeights core_weights_;
 
   // Fast SA hyperparameter
   float init_prob_ = 0.0;
@@ -188,21 +192,9 @@ class SimulatedAnnealingCore
   int pre_width_ = 0;
   int pre_height_ = 0;
 
-  float wirelength_ = 0.0;
-  float outline_penalty_ = 0.0;
-  float guidance_penalty_ = 0.0;
-  float fence_penalty_ = 0.0;
-
-  float pre_outline_penalty_ = 0.0;
-  float pre_wirelength_ = 0.0;
-  float pre_guidance_penalty_ = 0.0;
-  float pre_fence_penalty_ = 0.0;
-
-  float norm_wirelength_ = 0;
-  float norm_outline_penalty_ = 0.0;
-  float norm_guidance_penalty_ = 0.0;
-  float norm_fence_penalty_ = 0.0;
-  float norm_area_penalty_ = 0.0;
+  // Area, Outline, Wire Length, Guidance, Fence (kArea..kFence);
+  // SACoreSoftMacro appends more.
+  std::vector<Penalty> penalties_;
 
   // probability of each action
   float pos_swap_prob_ = 0.0;

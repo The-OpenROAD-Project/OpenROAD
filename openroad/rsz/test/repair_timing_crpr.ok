@@ -25,9 +25,9 @@ tns max -0.031
 Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
 --------------------------------------------------------------------------------------
         0 |       0 |       0 |            0 |    +0.0% |  -0.097 |  -0.262 | r2/D
-    final |       0 |       3 |            0 |   +10.8% |  -0.076 |  -0.193 | r2/D
+    final |       0 |       3 |            0 |   +10.8% |  -0.082 |  -0.212 | r2/D
 --------------------------------------------------------------------------------------
 [WARNING RSZ-0066] Unable to repair all hold violations.
 [INFO RSZ-0032] Inserted 3 hold buffers.
 worst slack min -0.08
-tns min -0.189
+tns min -0.208

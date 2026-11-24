@@ -118,6 +118,10 @@ namespace pdn {
 class PdnGen;
 }
 
+namespace pex {
+class Pex;
+}
+
 namespace pad {
 class ICeWall;
 }
@@ -188,6 +192,7 @@ class Design
   pad::ICeWall* getICeWall();
   par::PartitionMgr* getPartitionMgr();
   pdn::PdnGen* getPdnGen();
+  pex::Pex* getPex();
   ppl::IOPlacer* getIOPlacer();
   psm::PDNSim* getPDNSim();
   rcx::Ext* getOpenRCX();

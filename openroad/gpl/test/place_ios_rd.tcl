@@ -26,7 +26,7 @@ foreach bpin [$unmodeled getBPins] {
   odb::dbBPin_destroy $bpin
 }
 
-set_place_config -io_pin_hor_layers metal1 -io_pin_ver_layers metal2
+set_placer_config -io_pin_hor_layers metal1 -io_pin_ver_layers metal2
 
 # The target is low enough that the loop keeps inflating and reverting.
 global_placement -routability_driven -routability_use_grt \

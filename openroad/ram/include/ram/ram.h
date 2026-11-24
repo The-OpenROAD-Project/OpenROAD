@@ -11,6 +11,7 @@
 #include <set>
 #include <string>
 #include <tuple>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -183,6 +184,36 @@ class RamGen
     int word_idx;
     odb::dbNet* select;
   };
+  // A read select's copies, one per group of kDriveGroup bits, each from
+  // its own buffer: the first is the select itself. Keyed by the select,
+  // only ever looked up, never walked.
+  std::unordered_map<odb::dbNet*, std::vector<odb::dbNet*>> select_groups_;
+  // Where a read select's group buffers come from: the buffer column's
+  // prefix, the select's word and the decoder output its buffers take.
+  // Each group's buffer is made in the bit cell of the group's first bit,
+  // beside the bits it selects.
+  struct SelectSource
+  {
+    std::string prefix;
+    int word;
+    odb::dbNet* decoder_output;
+  };
+  std::unordered_map<odb::dbNet*, SelectSource> select_sources_;
+  // An address literal's cells for a group of kDriveGroup words: a buffer
+  // or an inverter from the address, made in the decoder cell of the
+  // group's first word. Keyed by the port's decoder prefix and that word.
+  struct LiteralCell
+  {
+    bool invert;
+    odb::dbNet* in;
+    odb::dbNet* out;
+    std::string name;
+  };
+  std::map<std::pair<std::string, int>, std::vector<LiteralCell>>
+      literal_cells_;
+  // ports whose address literals are made per group of words: their
+  // column inverters are not made
+  std::vector<bool> grouped_literals_;
   // the tree over terms[lo, hi), each node in the bit cell of a term it
   // covers
   TreeEnd planReadTree(const std::string& prefix,
@@ -410,18 +441,22 @@ class RamGen
   int word_bits_{0};    // the word's bits, short of the folds' pads
   int slice_width_{0};  // a slice's columns: its bits, and its select
   // with -bit_folds a word is written whole: its write logic (enables,
-  // priority, hold, clock gate, reset tie, select inverters) built in its
-  // first fold and shared by the others, keyed (row, word in the row)
+  // priority, clock gate, reset tie, select inverters) built in its first
+  // fold and shared by the others, keyed (row, word in the row)
   struct WordWrite
   {
     odb::dbNet* we{nullptr};
-    odb::dbNet* hold{nullptr};
     odb::dbNet* gclock{nullptr};
     odb::dbNet* reset_off{nullptr};
     std::vector<odb::dbNet*> take;
     std::vector<odb::dbNet*> select_b;
   };
   std::map<std::pair<int, int>, WordWrite> word_write_;
+  // An enable of more than kDriveGroup groups: a buffer between it (or a
+  // port's take, -1 for the enable) and each kDriveGroup of its group
+  // buffers, shared by a word's folds. Keyed by row, word, the slice (0
+  // with -bit_folds), the port or -1, and the group of groups.
+  std::map<std::tuple<int, int, int, int, int>, odb::dbNet*> super_nets_;
   int sliceOffset(int slice) const
   {
     return bit_folds_ > 1 ? 0 : slice * slice_width_;
