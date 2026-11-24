@@ -3,6 +3,7 @@
 
 #include "BufferCandidate.hh"
 
+#include <utility>
 #include <vector>
 
 #include "MoveCandidate.hh"
@@ -27,7 +28,9 @@ BufferCandidate::BufferCandidate(Resizer& resizer,
 MoveResult BufferCandidate::apply()
 {
   // Let Rebuffer choose and materialize the buffered tree at apply time.
-  const int rebuffer_count = resizer_.rebuffer().rebufferPin(driver_pin_);
+  std::vector<sta::Instance*> inserted_buffers;
+  const int rebuffer_count
+      = resizer_.rebuffer().rebufferPin(driver_pin_, &inserted_buffers);
   if (rebuffer_count <= 0) {
     debugPrint(resizer_.logger(),
                RSZ,
@@ -46,11 +49,16 @@ MoveResult BufferCandidate::apply()
              "ACCEPT BufferMove {}: Inserted {} buffers",
              resizer_.network()->pathName(driver_pin_),
              rebuffer_count);
+  // Report the inserted buffers as touched too, so conflict guards such as
+  // MoveCommitter::hasBlockingBufferRemovalMove() recognize them.
+  std::vector<sta::Instance*> touched{drvr_inst};
+  touched.insert(
+      touched.end(), inserted_buffers.begin(), inserted_buffers.end());
   return {
       .accepted = true,
       .type = MoveType::kBuffer,
       .move_count = rebuffer_count,
-      .touched_instances = {drvr_inst},
+      .touched_instances = std::move(touched),
   };
 }
 
