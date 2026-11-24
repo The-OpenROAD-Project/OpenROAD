@@ -246,9 +246,7 @@ bool lefTechLayerCutEnclosureRuleParser::parseSubRule(const std::string& s,
 
   qi::rule<std::string::const_iterator, space_type> parallel_rule
       = (lit("PARALLEL")[boost::bind(
-             &odb::dbTechLayerCutEnclosureRule::setConcaveCornersValid,
-             rule,
-             true)]
+             &odb::dbTechLayerCutEnclosureRule::setParallelValid, rule, true)]
          >> double_[boost::bind(
              &lefTechLayerCutEnclosureRuleParser::setInt,
              this,

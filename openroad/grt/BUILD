@@ -57,6 +57,15 @@ cc_library(
 )
 
 cc_library(
+    name = "pin_geometry",
+    srcs = ["src/PinGeometry.cpp"],
+    hdrs = ["src/PinGeometry.h"],
+    includes = ["src"],
+    visibility = ["//visibility:private"],
+    deps = ["//openroad/odb/src/db"],
+)
+
+cc_library(
     name = "fastroute",
     srcs = [
         "src/fastroute/src/FastRoute.cpp",
@@ -133,6 +142,7 @@ cc_library(
     deps = [
         ":abstract-cugr",
         ":groute",
+        ":pin_geometry",
         "//openroad/dbSta",
         "//openroad/dbSta:dbNetwork",
         "//openroad/est:parasitics_service",
@@ -182,6 +192,7 @@ cc_library(
         ":cugr",
         ":fastroute",
         ":groute",
+        ":pin_geometry",
         ":route_pt",
         "//openroad/ant",
         "//openroad/dbSta",

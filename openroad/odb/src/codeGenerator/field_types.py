@@ -242,7 +242,7 @@ class TableType(FieldType):
         # member_decl() without the trailing '*' is the dbTable<...> type.
         return (
             f"new {self.member_decl()[:-1]}({this_or_db}, this, "
-            f"(GetObjTbl_t) &_{klass_name}::getObjectTable, {self.table_base_type}Obj)"
+            f"static_cast<GetObjTbl_t>(&_{klass_name}::getObjectTable), {self.table_base_type}Obj)"
         )
 
     def getter_kind(self) -> str:

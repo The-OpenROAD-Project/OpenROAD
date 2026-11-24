@@ -3001,6 +3001,24 @@ bool Resizer::removeBufferKeepsOutputNet(sta::Instance* buffer) const
                                      db_network_->findPin(buffer, output_port));
 }
 
+bool Resizer::hasSdcConstraintBlockingRemoval(sta::Instance* inst)
+{
+  sta::LibertyPort* input_port = nullptr;
+  sta::LibertyPort* output_port = nullptr;
+  network_->libertyCell(inst)->bufferPorts(input_port, output_port);
+  sta::Pin* input_pin = db_network_->findPin(inst, input_port);
+  sta::Pin* output_pin = db_network_->findPin(inst, output_port);
+  sta::Net* removed_net
+      = bufferRemovalKeepsOutputNet(db_network_, input_pin, output_pin)
+            ? db_network_->net(input_pin)
+            : db_network_->net(output_pin);
+
+  sta::Sdc* sdc = sta_->cmdMode()->sdc();
+  return sdc->isConstrained(input_pin) || sdc->isConstrained(output_pin)
+         || (removed_net != nullptr && sdc->isConstrained(removed_net))
+         || sdc->isConstrained(inst);
+}
+
 bool Resizer::canRemoveBuffer(sta::Instance* buffer,
                               const bool honor_dont_touch_fixed)
 {
@@ -3027,8 +3045,6 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   lib_cell->bufferPorts(input_port, output_port);
   sta::Pin* input_pin = db_network_->findPin(buffer, input_port);
   sta::Pin* output_pin = db_network_->findPin(buffer, output_port);
-  sta::Net* input_net = db_network_->net(input_pin);
-  sta::Net* output_net = db_network_->net(output_pin);
   // Inspect the same flat nets that removeBuffer() will merge.
   odb::dbNet* input_db_net = db_network_->flatNet(input_pin);
   odb::dbNet* output_db_net = db_network_->flatNet(output_pin);
@@ -3043,14 +3059,10 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   }
   const bool keep_output_net
       = bufferRemovalKeepsOutputNet(db_network_, input_pin, output_pin);
-  sta::Net* removed = keep_output_net ? input_net : output_net;
   odb::dbNet* db_net_survivor = keep_output_net ? output_db_net : input_db_net;
   odb::dbNet* db_net_removed = keep_output_net ? input_db_net : output_db_net;
 
-  sta::Sdc* sdc = sta_->cmdMode()->sdc();
-  if (sdc->isConstrained(input_pin) || sdc->isConstrained(output_pin)
-      || (removed != nullptr && sdc->isConstrained(removed))
-      || sdc->isConstrained(buffer)) {
+  if (hasSdcConstraintBlockingRemoval(buffer)) {
     return false;
   }
 
@@ -5531,56 +5543,81 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
   sta::Pin* out_pin = network_->findPin(inv, out_port);
   sta::Net* in_net = db_network_->findFlatNet(in_pin);
   odb::dbNet* in_net_db = db_network_->findFlatDbNet(in_net);
-  sta::Net* out_net = network_->isTopLevelPort(out_pin)
-                          ? network_->net(network_->term(out_pin))
-                          : network_->net(out_pin);
-  if (out_net) {
+  // The flat net includes loads beyond the inverter's module segment.
+  sta::Net* out_net = db_network_->findFlatNet(out_pin);
+  if (in_net && out_net && !dontTouch(out_net) && !dontTouch(in_net)) {
+    // Check constraints before inserting clones so a skip leaves the netlist
+    // intact.
+    if (hasSdcConstraintBlockingRemoval(inv)) {
+      logger_->warn(RSZ,
+                    3250,
+                    "repair_clock_inverters kept inverter {} because SDC "
+                    "constrains the inverter, one of its pins, or the net "
+                    "selected for removal.",
+                    network_->pathName(inv));
+      return;
+    }
     std::string inv_name = network_->name(inv);
-    sta::Instance* top_inst = network_->topInstance();
+    odb::dbInst* db_inv = db_network_->staToDb(inv);
+    // A flat link can retain module scopes while STA reports the full path.
+    if (!db_network_->hasHierarchy()
+        && db_inv->getModule() != block_->getTopModule()) {
+      inv_name = block_->getBaseName(db_inv->getConstName());
+    }
+    // Collect every load, including top-level ports, before editing the net.
+    std::vector<sta::Pin*> load_pins;
     sta::NetConnectedPinIterator* load_iter = network_->pinIterator(out_net);
     while (load_iter->hasNext()) {
       const sta::Pin* load_pin = load_iter->next();
       if (load_pin != out_pin) {
-        odb::Point clone_loc = db_network_->location(load_pin);
-        sta::Instance* clone
-            = makeInstance(inv_cell,
-                           inv_name.c_str(),
-                           top_inst,
-                           clone_loc,
-                           odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
-        journalMakeBuffer(clone);
-
-        sta::Net* clone_out_net = db_network_->makeNet(top_inst);
-        odb::dbNet* clone_out_net_db = db_network_->staToDb(clone_out_net);
-        clone_out_net_db->setSigType(in_net_db->getSigType());
-
-        sta::Instance* load = network_->instance(load_pin);
-        sta_->connectPin(clone, in_port, in_net);
-        sta_->connectPin(clone, out_port, clone_out_net);
-
-        // Connect load to clone
-        sta_->disconnectPin(const_cast<sta::Pin*>(load_pin));
-        sta::Port* load_port = network_->port(load_pin);
-        sta_->connectPin(load, load_port, clone_out_net);
+        load_pins.push_back(const_cast<sta::Pin*>(load_pin));
       }
     }
     delete load_iter;
-
-    bool has_term = false;
     sta::NetTermIterator* term_iter = network_->termIterator(out_net);
     while (term_iter->hasNext()) {
-      has_term = true;
-      break;
+      load_pins.push_back(network_->pin(term_iter->next()));
     }
     delete term_iter;
 
-    if (!has_term) {
-      // Delete inv
-      sta_->disconnectPin(in_pin);
-      sta_->disconnectPin(out_pin);
-      sta_->deleteNet(out_net);
-      estimate_parasitics_->removeNetFromParasiticsInvalid(out_net);
-      sta_->deleteInstance(inv);
+    // A protected load would make insertion fail after earlier loads changed.
+    for (sta::Pin* load_pin : load_pins) {
+      if (dontTouch(load_pin)) {
+        logger_->warn(RSZ,
+                      3251,
+                      "repair_clock_inverters left inverter {} in the clock "
+                      "tree because load {} is dont_touch.",
+                      network_->pathName(inv),
+                      network_->pathName(load_pin));
+        return;
+      }
+    }
+
+    // Insert each clone at its load, preserving the existing module ports.
+    for (sta::Pin* load_pin : load_pins) {
+      odb::Point clone_loc = network_->isTopLevelPort(load_pin)
+                                 ? db_network_->location(out_pin)
+                                 : db_network_->location(load_pin);
+      sta::Instance* clone = insertBufferBeforeLoad(
+          load_pin,
+          inv_cell,
+          &clone_loc,
+          inv_name.c_str(),
+          kDefaultNetBaseName,
+          odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
+      journalMakeBuffer(clone);
+      odb::dbNet* clone_out_net_db
+          = db_network_->flatNet(network_->findPin(clone, out_port));
+      clone_out_net_db->setSigType(in_net_db->getSigType());
+    }
+
+    // Merge the original inverter's output hierarchy into its input net.
+    if (!removeBuffer(inv)) {
+      logger_->error(
+          RSZ,
+          3249,
+          "Could not remove clock inverter {} after cloning its loads.",
+          network_->pathName(inv));
     }
   }
 }
