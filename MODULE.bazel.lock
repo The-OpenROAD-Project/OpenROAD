@@ -878,10 +878,10 @@
     "https://bcr.bazel.build/modules/stardoc/0.7.1/MODULE.bazel": "3548faea4ee5dda5580f9af150e79d0f6aea934fc60c1cc50f4efdd9420759e7",
     "https://bcr.bazel.build/modules/stardoc/0.7.2/MODULE.bazel": "fc152419aa2ea0f51c29583fab1e8c99ddefd5b3778421845606ee628629e0e5",
     "https://bcr.bazel.build/modules/stardoc/0.7.2/source.json": "58b029e5e901d6802967754adf0a9056747e8176f017cfe3607c0851f4d42216",
-    "https://bcr.bazel.build/modules/sv-elab/2026-11-09/MODULE.bazel": "c056199f0fa6c907a92f74bacf21d63acadca285fcd74d24bf39005aeb77cbb6",
-    "https://bcr.bazel.build/modules/sv-elab/2026-11-09/source.json": "745bfe2e5fd1f1621bee4f449cecbbc0d70ca93822bc5802e03e67955b2ed0f2",
-    "https://bcr.bazel.build/modules/sv-lang/12.1.0/MODULE.bazel": "7f8edf70ecdf6e69d85077f9d13d8b88334f5e31b83db4474689d8a83205e881",
-    "https://bcr.bazel.build/modules/sv-lang/12.1.0/source.json": "27a6e0412fce66ae9545e2e8eecc13ab03ad6fb890a0fa40c7cb8321acd94974",
+    "https://bcr.bazel.build/modules/sv-elab/2026-11-24/MODULE.bazel": "3ef2fe3b8bcece6f76910c58940fe104019c1987c3ecf99875d115ede6f96f4d",
+    "https://bcr.bazel.build/modules/sv-elab/2026-11-24/source.json": "7b90d45df9d03932eb6ddee1c72cc452d5ab13af7469ddae5624a1e595764c08",
+    "https://bcr.bazel.build/modules/sv-lang/12.1.0.bcr.1/MODULE.bazel": "121547421862498e028834b9329d05d5d2ba9f795676261428f7dbcb26ec5faa",
+    "https://bcr.bazel.build/modules/sv-lang/12.1.0.bcr.1/source.json": "1b5e54c22c5ae82bdab0d87c214038939a543614843caf2188e4ee5fdeb0fb64",
     "https://bcr.bazel.build/modules/swift_argument_parser/1.3.1.1/MODULE.bazel": "5e463fbfba7b1701d957555ed45097d7f984211330106ccd1352c6e0af0dcf91",
     "https://bcr.bazel.build/modules/swift_argument_parser/1.3.1.2/MODULE.bazel": "75aab2373a4bbe2a1260b9bf2a1ebbdbf872d3bd36f80bff058dccd82e89422f",
     "https://bcr.bazel.build/modules/swift_argument_parser/1.3.1.2/source.json": "5fba48bbe0ba48761f9e9f75f92876cafb5d07c0ce059cc7a8027416de94a05b",
@@ -2117,7 +2117,7 @@
     "@@sv-elab+//:dependency_support/hashlib_ext.bzl%vendored_hashlib": {
       "general": {
         "bzlTransitiveDigest": "SP+gv2mU0cMAOAR54hdKthWQrOHJgeOz/Z9LBDNhfyk=",
-        "usagesDigest": "aRbyIFxEzzA5xmF/l0Kmi0peiqRDCVCA/3r1TTbJQ6c=",
+        "usagesDigest": "1kZ8eP/71bjvdk29v5IkITyOaNv7jZ8HfGHHmhFFapY=",
         "recordedInputs": [],
         "generatedRepoSpecs": {
           "vendored-hashlib": {
