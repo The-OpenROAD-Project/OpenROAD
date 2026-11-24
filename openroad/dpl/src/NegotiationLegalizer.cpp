@@ -515,6 +515,7 @@ void NegotiationLegalizer::buildGrid()
     dplGrid->visitCellPixels(
         *cell.node, /*padded=*/false, [&](Pixel* pixel, bool /*padded*/) {
           const size_t idx = dplGrid->pixelIndex(pixel);
+          assert(idx < neg_pixels_.size());
           neg_pixels_[idx].capacity = 0;
           neg_pixels_[idx].usage = 1;
         });
