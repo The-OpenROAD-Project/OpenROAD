@@ -95,7 +95,8 @@ TritonRoute::~TritonRoute()
 
 void TritonRoute::updateDirtyPinAccess()
 {
-  if (design_ == nullptr || design_->getTopBlock() == nullptr) {
+  if (!pa_rebuild_required_
+      && (design_ == nullptr || design_->getTopBlock() == nullptr)) {
     return;
   }
   updateDirtyPAData();
@@ -359,7 +360,7 @@ void TritonRoute::resetDb(const char* file_name)
     logger_->error(
         DRT, 9954, "odb file {} is invalid: {}", file_name, f.what());
   }
-  design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
+  clearDesign();
   initDesign();
   if (!db_->getChip()->getBlock()->getAccessPoints().empty()) {
     initGuide();
@@ -368,8 +369,13 @@ void TritonRoute::resetDb(const char* file_name)
   }
 }
 
-void TritonRoute::clearDesign()
+void TritonRoute::clearDesign(bool detach_callback)
 {
+  pa_.reset();
+  pa_rebuild_required_ = false;
+  if (detach_callback) {
+    db_callback_->removeOwner();
+  }
   design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
 }
 
@@ -1156,11 +1162,20 @@ void TritonRoute::addAvoidViaDefPA(const frViaDef* via_def)
 }
 void TritonRoute::updateDirtyPAData()
 {
-  if (pa_) {
-    design_->getTopBlock()->removeDeletedObjects();
-    pa_->updateDirtyInsts();
-    io::Writer writer(getDesign(), logger_);
-    writer.updateDb(getDb(), getRouterConfiguration(), true);
+  try {
+    if (pa_rebuild_required_) {
+      pinAccess();
+      return;
+    }
+    if (pa_) {
+      design_->getTopBlock()->removeDeletedObjects();
+      pa_->updateDirtyInsts();
+      io::Writer writer(getDesign(), logger_);
+      writer.updateDb(getDb(), getRouterConfiguration(), true);
+    }
+  } catch (...) {
+    pa_rebuild_required_ = true;
+    throw;
   }
 }
 

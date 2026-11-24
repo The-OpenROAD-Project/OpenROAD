@@ -285,3 +285,23 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "incremental_pin_access_unittest",
+    srcs = ["IncrementalPinAccessTest.cpp"],
+    data = [
+        "incremental_pin_access.def",
+        "incremental_pin_access.lef",
+        "incremental_pin_access_tech.lef",
+    ],
+    deps = [
+        "//openroad/drt:drt_impl",
+        "//openroad/dst",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/defin",
+        "//openroad/tst:db_fixture",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

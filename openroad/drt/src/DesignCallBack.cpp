@@ -10,6 +10,11 @@
 
 namespace drt {
 
+void DesignCallBack::inDbBlockClear(odb::dbBlock*)
+{
+  router_->clearDesign(false);
+}
+
 void DesignCallBack::inDbInstCreate(odb::dbInst* db_inst)
 {
   auto design = router_->getDesign();
