@@ -1468,13 +1468,16 @@ std::vector<Section> IOPlacer::createSectionsPerConstraint(
                     || s.layer != layer);
           });
       int constraint_end = it - slots_.begin() - 1;
+      if (constraint_begin > constraint_end) {
+        continue;
+      }
       if (first_layer) {
         constraint.first_slot = constraint_begin;
+        first_layer = false;
       }
       constraint.last_slot = constraint_end;
 
       findSections(constraint_begin, constraint_end, edge, sections);
-      first_layer = false;
     }
   } else {
     sections = findSectionsForTopLayer(constraint.box);
