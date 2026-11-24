@@ -801,6 +801,56 @@ TEST_F(Fixture, TestLef58MinWidthWrongDirectionTrailingSpace)
   EXPECT_EQ(logger_.getWarningCount(), 0);
 }
 
+TEST_F(Fixture, TestLef58SpacingTablePrlMultipleStatements)
+{
+  const char* libname = "lef58_spacingtable_prl_multi.lef";
+  loadTechAndLib(
+      "tech", libname, prefix + "data/lef58_spacingtable_prl_multi.lef");
+
+  dbTech* tech = db_->getTech();
+
+  std::vector<int> width;
+  std::vector<int> length;
+  std::vector<std::vector<int>> spacing_tbl;
+  std::map<unsigned int, std::pair<int, int>> within;
+
+  // Both tables in a single property are kept.
+  auto layer = tech->findLayer("M1");
+  ASSERT_NE(layer, nullptr);
+  auto rules = layer->getTechLayerSpacingTablePrlRules();
+  ASSERT_EQ(rules.size(), 2);
+  auto rule_itr = rules.begin();
+  auto rule = *rule_itr;
+  EXPECT_TRUE(rule->isSameMask());
+  rule->getTable(width, length, spacing_tbl, within);
+  EXPECT_EQ(width, std::vector<int>({0, 100}));
+  EXPECT_EQ(length, std::vector<int>({-10, 0, 100}));
+  EXPECT_EQ(spacing_tbl,
+            std::vector<std::vector<int>>({{60, 70, 70}, {60, 70, 90}}));
+  rule = *(++rule_itr);
+  EXPECT_FALSE(rule->isSameMask());
+  // getTable appends to its outputs.
+  width.clear();
+  length.clear();
+  spacing_tbl.clear();
+  within.clear();
+  rule->getTable(width, length, spacing_tbl, within);
+  EXPECT_EQ(width, std::vector<int>({0, 100}));
+  EXPECT_EQ(length, std::vector<int>({0, 100}));
+  EXPECT_EQ(spacing_tbl, std::vector<std::vector<int>>({{40, 40}, {40, 90}}));
+
+  // A table with the wrong shape drops every table of that property.
+  layer = tech->findLayer("M2");
+  ASSERT_NE(layer, nullptr);
+  EXPECT_EQ(layer->getTechLayerSpacingTablePrlRules().size(), 0);
+
+  // So does a statement that does not parse.
+  layer = tech->findLayer("M3");
+  ASSERT_NE(layer, nullptr);
+  EXPECT_EQ(layer->getTechLayerSpacingTablePrlRules().size(), 0);
+  EXPECT_EQ(logger_.getWarningCount(), 2);
+}
+
 // Exercises dbTechLayerCutEnclosureTableDefRule directly through its C++ API
 // (no LEF parsing involved). This class is not populated from LEF yet --
 // storing parsed LEF58_ENCLOSURETABLE data into it is a separate follow-up
