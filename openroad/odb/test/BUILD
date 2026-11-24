@@ -316,6 +316,7 @@ filegroup(
         "data/gscl45nm_polygon.lef",
         "data/lef58_antennagateplusdiff.lef",
         "data/lef58_celledgespacing_numeric.lef",
+        "data/lef58_implant_rules.lef",
         "data/lef58_macro_edgetype_numeric.lef",
         "data/lef58_minwidth_wrongdirection.lef",
         "data/lef58_mustjoinallports.lef",

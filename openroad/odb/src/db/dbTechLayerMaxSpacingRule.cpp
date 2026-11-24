@@ -25,6 +25,12 @@ bool _dbTechLayerMaxSpacingRule::operator==(
   if (max_spacing_ != rhs.max_spacing_) {
     return false;
   }
+  if (width_ != rhs.width_) {
+    return false;
+  }
+  if (length_ != rhs.length_) {
+    return false;
+  }
 
   return true;
   // NOLINTEND(readability-simplify-boolean-expr)
@@ -39,12 +45,20 @@ bool _dbTechLayerMaxSpacingRule::operator<(
 _dbTechLayerMaxSpacingRule::_dbTechLayerMaxSpacingRule(_dbDatabase* db)
 {
   max_spacing_ = 0;
+  width_ = 0;
+  length_ = 0;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerMaxSpacingRule& obj)
 {
   stream >> obj.cut_class_;
   stream >> obj.max_spacing_;
+  if (obj.getDatabase()->isSchema(kSchemaLef58ImplantRules)) {
+    stream >> obj.width_;
+  }
+  if (obj.getDatabase()->isSchema(kSchemaLef58ImplantRules)) {
+    stream >> obj.length_;
+  }
   return stream;
 }
 
@@ -52,6 +66,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMaxSpacingRule& obj)
 {
   stream << obj.cut_class_;
   stream << obj.max_spacing_;
+  stream << obj.width_;
+  stream << obj.length_;
   return stream;
 }
 
@@ -97,6 +113,36 @@ int dbTechLayerMaxSpacingRule::getMaxSpacing() const
   const _dbTechLayerMaxSpacingRule* obj
       = reinterpret_cast<const _dbTechLayerMaxSpacingRule*>(this);
   return obj->max_spacing_;
+}
+
+void dbTechLayerMaxSpacingRule::setWidth(int width)
+{
+  _dbTechLayerMaxSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerMaxSpacingRule*>(this);
+
+  obj->width_ = width;
+}
+
+int dbTechLayerMaxSpacingRule::getWidth() const
+{
+  const _dbTechLayerMaxSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerMaxSpacingRule*>(this);
+  return obj->width_;
+}
+
+void dbTechLayerMaxSpacingRule::setLength(int length)
+{
+  _dbTechLayerMaxSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerMaxSpacingRule*>(this);
+
+  obj->length_ = length;
+}
+
+int dbTechLayerMaxSpacingRule::getLength() const
+{
+  const _dbTechLayerMaxSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerMaxSpacingRule*>(this);
+  return obj->length_;
 }
 
 dbTechLayerMaxSpacingRule* dbTechLayerMaxSpacingRule::create(

@@ -14,6 +14,7 @@
 #include "dbTable.h"
 #include "dbTechLayerAreaRule.h"
 #include "dbTechLayerArraySpacingRule.h"
+#include "dbTechLayerCoreEdgeLengthRule.h"
 #include "dbTechLayerCornerSpacingRule.h"
 #include "dbTechLayerCutClassRule.h"
 #include "dbTechLayerCutEnclosureRule.h"
@@ -24,6 +25,8 @@
 #include "dbTechLayerEolExtensionRule.h"
 #include "dbTechLayerEolKeepOutRule.h"
 #include "dbTechLayerForbiddenSpacingRule.h"
+#include "dbTechLayerImplantSpacingRule.h"
+#include "dbTechLayerImplantWidthRule.h"
 #include "dbTechLayerKeepOutZoneRule.h"
 #include "dbTechLayerMaxSpacingRule.h"
 #include "dbTechLayerMinCutRule.h"
@@ -192,6 +195,15 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
     return false;
   }
   if (*voltage_spacing_rules_tbl_ != *rhs.voltage_spacing_rules_tbl_) {
+    return false;
+  }
+  if (*implant_width_rules_tbl_ != *rhs.implant_width_rules_tbl_) {
+    return false;
+  }
+  if (*implant_spacing_rules_tbl_ != *rhs.implant_spacing_rules_tbl_) {
+    return false;
+  }
+  if (*core_edge_length_rules_tbl_ != *rhs.core_edge_length_rules_tbl_) {
     return false;
   }
 
@@ -506,6 +518,21 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       this,
       static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
       dbTechLayerVoltageSpacingObj);
+  implant_width_rules_tbl_ = new dbTable<_dbTechLayerImplantWidthRule>(
+      db,
+      this,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
+      dbTechLayerImplantWidthRuleObj);
+  implant_spacing_rules_tbl_ = new dbTable<_dbTechLayerImplantSpacingRule>(
+      db,
+      this,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
+      dbTechLayerImplantSpacingRuleObj);
+  core_edge_length_rules_tbl_ = new dbTable<_dbTechLayerCoreEdgeLengthRule>(
+      db,
+      this,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
+      dbTechLayerCoreEdgeLengthRuleObj);
   // User Code Begin Constructor
   flags_.type = dbTechLayerType::ROUTING;
   flags_.direction = dbTechLayerDir::NONE;
@@ -615,6 +642,15 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   if (obj.getDatabase()->isSchema(kSchemaVoltageSpacingTables)) {
     stream >> *obj.voltage_spacing_rules_tbl_;
   }
+  if (obj.getDatabase()->isSchema(kSchemaLef58ImplantRules)) {
+    stream >> *obj.implant_width_rules_tbl_;
+  }
+  if (obj.getDatabase()->isSchema(kSchemaLef58ImplantRules)) {
+    stream >> *obj.implant_spacing_rules_tbl_;
+  }
+  if (obj.getDatabase()->isSchema(kSchemaLef58ImplantRules)) {
+    stream >> *obj.core_edge_length_rules_tbl_;
+  }
   // User Code Begin >>
   if (obj.getDatabase()->isSchema(kSchemaLayerAdjustment)) {
     stream >> obj.layer_adjustment_;
@@ -714,6 +750,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << *obj.wrongdir_spacing_rules_tbl_;
   stream << *obj.two_wires_forbidden_spc_rules_tbl_;
   stream << *obj.voltage_spacing_rules_tbl_;
+  stream << *obj.implant_width_rules_tbl_;
+  stream << *obj.implant_spacing_rules_tbl_;
+  stream << *obj.core_edge_length_rules_tbl_;
   // User Code Begin <<
   stream << obj.layer_adjustment_;
   stream << obj.pitch_x_;
@@ -807,6 +846,12 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
       return two_wires_forbidden_spc_rules_tbl_;
     case dbTechLayerVoltageSpacingObj:
       return voltage_spacing_rules_tbl_;
+    case dbTechLayerImplantWidthRuleObj:
+      return implant_width_rules_tbl_;
+    case dbTechLayerImplantSpacingRuleObj:
+      return implant_spacing_rules_tbl_;
+    case dbTechLayerCoreEdgeLengthRuleObj:
+      return core_edge_length_rules_tbl_;
       // User Code Begin getObjectTable
     case dbTechLayerSpacingRuleObj:
       return spacing_rules_tbl_;
@@ -870,6 +915,12 @@ void _dbTechLayer::collectMemInfo(MemInfo& info)
       info.children["two_wires_forbidden_spc_rules_tbl_"]);
   voltage_spacing_rules_tbl_->collectMemInfo(
       info.children["voltage_spacing_rules_tbl_"]);
+  implant_width_rules_tbl_->collectMemInfo(
+      info.children["implant_width_rules_tbl_"]);
+  implant_spacing_rules_tbl_->collectMemInfo(
+      info.children["implant_spacing_rules_tbl_"]);
+  core_edge_length_rules_tbl_->collectMemInfo(
+      info.children["core_edge_length_rules_tbl_"]);
 
   // User Code Begin collectMemInfo
   info.children["name"].add(name_);
@@ -911,6 +962,9 @@ _dbTechLayer::~_dbTechLayer()
   delete wrongdir_spacing_rules_tbl_;
   delete two_wires_forbidden_spc_rules_tbl_;
   delete voltage_spacing_rules_tbl_;
+  delete implant_width_rules_tbl_;
+  delete implant_spacing_rules_tbl_;
+  delete core_edge_length_rules_tbl_;
   // User Code Begin Destructor
   if (name_) {
     free((void*) name_);
@@ -1212,6 +1266,32 @@ dbSet<dbTechLayerVoltageSpacing> dbTechLayer::getTechLayerVoltageSpacings()
   _dbTechLayer* obj
       = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
   return dbSet<dbTechLayerVoltageSpacing>(obj, obj->voltage_spacing_rules_tbl_);
+}
+
+dbSet<dbTechLayerImplantWidthRule> dbTechLayer::getTechLayerImplantWidthRules()
+    const
+{
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
+  return dbSet<dbTechLayerImplantWidthRule>(obj, obj->implant_width_rules_tbl_);
+}
+
+dbSet<dbTechLayerImplantSpacingRule>
+dbTechLayer::getTechLayerImplantSpacingRules() const
+{
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
+  return dbSet<dbTechLayerImplantSpacingRule>(obj,
+                                              obj->implant_spacing_rules_tbl_);
+}
+
+dbSet<dbTechLayerCoreEdgeLengthRule>
+dbTechLayer::getTechLayerCoreEdgeLengthRules() const
+{
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
+  return dbSet<dbTechLayerCoreEdgeLengthRule>(obj,
+                                              obj->core_edge_length_rules_tbl_);
 }
 
 void dbTechLayer::setRectOnly(bool rect_only)

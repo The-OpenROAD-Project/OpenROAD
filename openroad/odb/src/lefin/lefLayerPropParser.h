@@ -45,7 +45,7 @@ class lefTechLayerMinStepParser
   bool parse(const std::string&, dbTechLayer*, lefinReader*);
 
  private:
-  odb::dbTechLayerMinStepRule* curRule;
+  odb::dbTechLayerMinStepRule* curRule{nullptr};
   void createSubRule(odb::dbTechLayer* layer);
   void setMinAdjacentLength1(double length, odb::lefinReader* l);
   void setMinAdjacentLength2(double length, odb::lefinReader* l);
@@ -114,7 +114,7 @@ class lefTechLayerCutClassParser
 class lefTechLayerCutSpacingParser
 {
  public:
-  odb::dbTechLayerCutSpacingRule* curRule;
+  odb::dbTechLayerCutSpacingRule* curRule{nullptr};
   bool parse(const std::string&,
              dbTechLayer*,
              lefinReader*,
@@ -402,7 +402,7 @@ class MaxSpacingParser
   void parse(const std::string&);
 
  private:
-  void setMaxSpacing(dbTechLayerMaxSpacingRule*, double);
+  bool parseSubRule(const std::string&);
   dbTechLayer* layer_;
   lefinReader* lefin_;
 };
@@ -448,5 +448,64 @@ class MinWidthParser
   dbTechLayer* layer_;
   lefinReader* lefin_;
 };
+
+template <typename Rule, typename Setter>
+auto dbdistSetter(Setter setter, Rule* rule, lefinReader* lefin)
+{
+  return [setter, rule, lefin](double val) {
+    (rule->*setter)(lefin->dbdist(val));
+  };
+}
+
+class lefTechLayerMinEnclosedAreaParser
+{
+ public:
+  static bool parse(const std::string&, dbTechLayer*, lefinReader*);
+};
+
+class lefTechLayerImplantWidthParser
+{
+ public:
+  static bool parse(const std::string&,
+                    dbTechLayer*,
+                    lefinReader*,
+                    std::vector<lefinReader::PendingLayerRef>&);
+};
+
+class lefTechLayerImplantSpacingParser
+{
+ public:
+  static bool parse(const std::string&,
+                    dbTechLayer*,
+                    lefinReader*,
+                    std::vector<lefinReader::PendingLayerRef>&);
+};
+
+class lefTechLayerCoreEdgeLengthParser
+{
+ public:
+  static bool parse(const std::string&,
+                    dbTechLayer*,
+                    lefinReader*,
+                    std::vector<lefinReader::PendingLayerRef>&);
+};
+
+template <typename Rule>
+void deferLayer(std::vector<lefinReader::PendingLayerRef>& pending,
+                Rule* rule,
+                dbTechLayer* owner,
+                const char* prop_name,
+                const std::string& layer_name,
+                void (Rule::*attach)(dbTechLayer*))
+{
+  pending.push_back(lefinReader::PendingLayerRef{
+      rule,
+      owner,
+      prop_name,
+      layer_name,
+      [rule, attach](dbTechLayer* l) { (rule->*attach)(l); },
+      [rule]() { Rule::destroy(rule); },
+  });
+}
 
 }  // namespace odb

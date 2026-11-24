@@ -994,4 +994,294 @@ TEST_F(Fixture, TestLef58VoltageSpacingMultipleStatements)
   EXPECT_EQ(logger_.getWarningCount(), 1);
 }
 
+TEST_F(Fixture, TestImplantMinWidthFromWidth)
+{
+  loadTechAndLib("tech",
+                 "lef58_implant_rules.lef",
+                 prefix + "data/lef58_implant_rules.lef");
+  EXPECT_EQ(logger_.getWarningCount(), 0);
+
+  dbTechLayer* layer = db_->getTech()->findLayer("IMP1");
+  ASSERT_NE(layer, nullptr);
+  EXPECT_EQ(layer->getType(), dbTechLayerType::IMPLANT);
+  EXPECT_EQ(layer->getWidth(), 3.5 * 1000);
+  EXPECT_EQ(layer->getMinWidth(), 3.5 * 1000);
+  EXPECT_EQ(layer->getSpacing(), 1.5 * 1000);
+}
+
+TEST_F(Fixture, TestLef58MinStepImplant)
+{
+  loadTechAndLib("tech",
+                 "lef58_implant_rules.lef",
+                 prefix + "data/lef58_implant_rules.lef");
+  EXPECT_EQ(logger_.getWarningCount(), 0);
+
+  dbTechLayer* layer = db_->getTech()->findLayer("IMP1");
+  ASSERT_NE(layer, nullptr);
+
+  auto min_step_rules = layer->getTechLayerMinStepRules();
+  ASSERT_EQ(min_step_rules.size(), 1);
+  dbTechLayerMinStepRule* r = *min_step_rules.begin();
+  EXPECT_EQ(r->getMinStepLength(), 4.8 * 1000);
+  EXPECT_TRUE(r->isMinAdjLength1Valid());
+  EXPECT_EQ(r->getMinAdjLength1(), 2.4 * 1000);
+}
+
+TEST_F(Fixture, TestLef58CornerSpacingImplant)
+{
+  loadTechAndLib("tech",
+                 "lef58_implant_rules.lef",
+                 prefix + "data/lef58_implant_rules.lef");
+  EXPECT_EQ(logger_.getWarningCount(), 0);
+
+  dbTechLayer* layer = db_->getTech()->findLayer("IMP1");
+  ASSERT_NE(layer, nullptr);
+
+  auto corner_rules = layer->getTechLayerCornerSpacingRules();
+  ASSERT_EQ(corner_rules.size(), 2);
+  auto cs_it = corner_rules.begin();
+  {
+    dbTechLayerCornerSpacingRule* r = *cs_it++;
+    EXPECT_TRUE(r->isAlignedOnly());
+    EXPECT_TRUE(r->isCheckImplantGroupOnly());
+    std::vector<std::pair<int, int>> spc;
+    r->getSpacingTable(spc);
+    ASSERT_EQ(spc.size(), 1);
+    EXPECT_EQ(spc[0].first, 3.8 * 1000);
+  }
+  {
+    dbTechLayerCornerSpacingRule* r = *cs_it++;
+    EXPECT_TRUE(r->isAlignedOnly());
+    EXPECT_FALSE(r->isCheckImplantGroupOnly());
+    std::vector<std::pair<int, int>> spc;
+    r->getSpacingTable(spc);
+    ASSERT_EQ(spc.size(), 1);
+    EXPECT_EQ(spc[0].first, 2.2 * 1000);
+  }
+}
+
+TEST_F(Fixture, TestLef58MaxSpacingImplant)
+{
+  loadTechAndLib("tech",
+                 "lef58_implant_rules.lef",
+                 prefix + "data/lef58_implant_rules.lef");
+  EXPECT_EQ(logger_.getWarningCount(), 0);
+
+  dbTechLayer* layer = db_->getTech()->findLayer("IMP1");
+  ASSERT_NE(layer, nullptr);
+
+  auto max_spc_rules = layer->getTechLayerMaxSpacingRules();
+  ASSERT_EQ(max_spc_rules.size(), 1);
+  dbTechLayerMaxSpacingRule* r = *max_spc_rules.begin();
+  EXPECT_EQ(r->getMaxSpacing(), 9.5 * 1000);
+  EXPECT_EQ(r->getWidth(), 4.2 * 1000);
+  EXPECT_EQ(r->getLength(), 3.1 * 1000);
+}
+
+TEST_F(Fixture, TestLef58MinEnclosedAreaImplant)
+{
+  loadTechAndLib("tech",
+                 "lef58_implant_rules.lef",
+                 prefix + "data/lef58_implant_rules.lef");
+  EXPECT_EQ(logger_.getWarningCount(), 0);
+
+  dbTechLayer* layer = db_->getTech()->findLayer("IMP1");
+  ASSERT_NE(layer, nullptr);
+
+  auto min_enc_rules = layer->getMinEncRules();
+  ASSERT_EQ(min_enc_rules.size(), 2);
+  auto me_it = min_enc_rules.begin();
+  {
+    dbTechMinEncRule* r = *me_it++;
+    int64_t area = 0;
+    EXPECT_TRUE(r->getEnclosure(area));
+    EXPECT_EQ(area, 18.0 * 1000 * 1000);
+    uint32_t width = 0;
+    EXPECT_FALSE(r->getEnclosureWidth(width));
+  }
+  {
+    dbTechMinEncRule* r = *me_it++;
+    int64_t area = 0;
+    EXPECT_TRUE(r->getEnclosure(area));
+    EXPECT_EQ(area, 14.5 * 1000 * 1000);
+    uint32_t width = 0;
+    EXPECT_TRUE(r->getEnclosureWidth(width));
+    EXPECT_EQ(width, 2.8 * 1000);
+  }
+}
+
+TEST_F(Fixture, TestLef58ImplantWidth)
+{
+  loadTechAndLib("tech",
+                 "lef58_implant_rules.lef",
+                 prefix + "data/lef58_implant_rules.lef");
+  EXPECT_EQ(logger_.getWarningCount(), 0);
+
+  dbTechLayer* layer = db_->getTech()->findLayer("IMP1");
+  ASSERT_NE(layer, nullptr);
+
+  auto width_rules = layer->getTechLayerImplantWidthRules();
+  ASSERT_EQ(width_rules.size(), 5);
+  auto w_it = width_rules.begin();
+  {
+    dbTechLayerImplantWidthRule* r = *w_it++;
+    EXPECT_EQ(r->getMinWidth(), 3.6 * 1000);
+    ASSERT_NE(r->getSecondLayer(), nullptr);
+    EXPECT_EQ(r->getSecondLayer()->getName(), "IMP2");
+    EXPECT_FALSE(r->isLayerAny());
+    EXPECT_TRUE(r->isZeroPrl());
+    EXPECT_EQ(r->getCheckImplantGroup(), "GRP1");
+  }
+  {
+    dbTechLayerImplantWidthRule* r = *w_it++;
+    EXPECT_EQ(r->getMinWidth(), 2.7 * 1000);
+    std::vector<dbTechLayer*> within = r->getWithinLayers();
+    ASSERT_EQ(within.size(), 1);
+    ASSERT_NE(within[0], nullptr);
+    EXPECT_EQ(within[0]->getName(), "SUB_A");
+  }
+  {
+    dbTechLayerImplantWidthRule* r = *w_it++;
+    EXPECT_EQ(r->getMinWidth(), 4.4 * 1000);
+    EXPECT_EQ(r->getCellHeight(), 8.8 * 1000);
+    ASSERT_NE(r->getSecondLayer(), nullptr);
+    EXPECT_EQ(r->getSecondLayer()->getName(), "SUB_B");
+    EXPECT_FALSE(r->isLayerAny());
+  }
+  {
+    dbTechLayerImplantWidthRule* r = *w_it++;
+    EXPECT_EQ(r->getMinWidth(), 1.9 * 1000);
+    EXPECT_EQ(r->getSecondLayer(), nullptr);
+    EXPECT_FALSE(r->isLayerAny());
+    EXPECT_TRUE(r->isZeroPrl());
+    EXPECT_EQ(r->getMaxWidth(), 7.2 * 1000);
+    EXPECT_TRUE(r->isExceptCornerTouch());
+    EXPECT_EQ(r->getLength(), 5.1 * 1000);
+  }
+  {
+    dbTechLayerImplantWidthRule* r = *w_it++;
+    EXPECT_EQ(r->getMinWidth(), 2.1 * 1000);
+    EXPECT_EQ(r->getSecondLayer(), nullptr);
+    EXPECT_TRUE(r->isLayerAny());
+    EXPECT_FALSE(r->isZeroPrl());
+    EXPECT_EQ(r->getMaxWidth(), 6.4 * 1000);
+    EXPECT_FALSE(r->isExceptCornerTouch());
+    EXPECT_EQ(r->getLength(), 4.3 * 1000);
+  }
+}
+
+TEST_F(Fixture, TestLef58ImplantSpacing)
+{
+  loadTechAndLib("tech",
+                 "lef58_implant_rules.lef",
+                 prefix + "data/lef58_implant_rules.lef");
+  EXPECT_EQ(logger_.getWarningCount(), 0);
+
+  dbTechLayer* layer = db_->getTech()->findLayer("IMP1");
+  ASSERT_NE(layer, nullptr);
+
+  auto spc_rules = layer->getTechLayerImplantSpacingRules();
+  ASSERT_EQ(spc_rules.size(), 3);
+  auto spc_it = spc_rules.begin();
+  {
+    dbTechLayerImplantSpacingRule* r = *spc_it++;
+    EXPECT_EQ(r->getMinSpacing(), 1.2 * 1000);
+    EXPECT_EQ(r->getSecondLayer(), nullptr);
+    EXPECT_TRUE(r->isVertical());
+    EXPECT_FALSE(r->isHorizontal());
+    EXPECT_TRUE(r->isPrlValid());
+    EXPECT_EQ(r->getPrl(), -0.8 * 1000);
+    std::vector<dbTechLayer*> ilayers = r->getIntersectLayers();
+    ASSERT_EQ(ilayers.size(), 2);
+    ASSERT_NE(ilayers[0], nullptr);
+    ASSERT_NE(ilayers[1], nullptr);
+    EXPECT_EQ(ilayers[0]->getName(), "IMP2");
+    EXPECT_EQ(ilayers[1]->getName(), "IMP3");
+  }
+  {
+    dbTechLayerImplantSpacingRule* r = *spc_it++;
+    EXPECT_EQ(r->getMinSpacing(), 2.3 * 1000);
+    EXPECT_EQ(r->getSecondLayer(), nullptr);
+    EXPECT_TRUE(r->isHorizontal());
+    EXPECT_FALSE(r->isVertical());
+    EXPECT_FALSE(r->isPrlValid());
+    std::vector<dbTechLayer*> ilayers = r->getIntersectLayers();
+    ASSERT_EQ(ilayers.size(), 2);
+    ASSERT_NE(ilayers[0], nullptr);
+    ASSERT_NE(ilayers[1], nullptr);
+    EXPECT_EQ(ilayers[0]->getName(), "IMP2");
+    EXPECT_EQ(ilayers[1]->getName(), "IMP3");
+  }
+  {
+    dbTechLayerImplantSpacingRule* r = *spc_it++;
+    EXPECT_EQ(r->getMinSpacing(), 3.4 * 1000);
+    ASSERT_NE(r->getSecondLayer(), nullptr);
+    EXPECT_EQ(r->getSecondLayer()->getName(), "IMP2");
+    EXPECT_TRUE(r->isHorizontal());
+    EXPECT_TRUE(r->isPrlValid());
+    EXPECT_EQ(r->getPrl(), 0.7 * 1000);
+    EXPECT_TRUE(r->isExceptAbutted());
+    EXPECT_TRUE(r->isExceptCornerTouch());
+    EXPECT_EQ(r->getLength(), 5.6 * 1000);
+  }
+}
+
+TEST_F(Fixture, TestLef58CoreEdgeLength)
+{
+  loadTechAndLib("tech",
+                 "lef58_implant_rules.lef",
+                 prefix + "data/lef58_implant_rules.lef");
+  EXPECT_EQ(logger_.getWarningCount(), 0);
+
+  dbTechLayer* layer = db_->getTech()->findLayer("IMP1");
+  ASSERT_NE(layer, nullptr);
+
+  auto core_edge_rules = layer->getTechLayerCoreEdgeLengthRules();
+  ASSERT_EQ(core_edge_rules.size(), 4);
+  auto ce_it = core_edge_rules.begin();
+  {
+    dbTechLayerCoreEdgeLengthRule* r = *ce_it++;
+    EXPECT_EQ(r->getMinLength(), 4.5 * 1000);
+    EXPECT_EQ(r->getMaxLength(), 0);
+    std::vector<int> edge_lens;
+    std::vector<int> adj_lens;
+    std::vector<int> exacts;
+    r->getExceptAdjacentEdgeLengths(edge_lens);
+    r->getExceptAdjacentLengths(adj_lens);
+    r->getExceptAdjacentExact(exacts);
+    ASSERT_EQ(edge_lens.size(), 2);
+    ASSERT_EQ(adj_lens.size(), 2);
+    ASSERT_EQ(exacts.size(), 2);
+    EXPECT_EQ(edge_lens[0], 3.2 * 1000);
+    EXPECT_EQ(adj_lens[0], 1.8 * 1000);
+    EXPECT_EQ(exacts[0], 1);
+    EXPECT_EQ(edge_lens[1], 2.6 * 1000);
+    EXPECT_EQ(adj_lens[1], 1.4 * 1000);
+    EXPECT_EQ(exacts[1], 0);
+  }
+  {
+    dbTechLayerCoreEdgeLengthRule* r = *ce_it++;
+    EXPECT_EQ(r->getMinLength(), 5.5 * 1000);
+    std::vector<dbTechLayer*> within = r->getWithinLayers();
+    ASSERT_EQ(within.size(), 2);
+    ASSERT_NE(within[0], nullptr);
+    ASSERT_NE(within[1], nullptr);
+    EXPECT_EQ(within[0]->getName(), "SUB_A");
+    EXPECT_EQ(within[1]->getName(), "SUB_B");
+  }
+  {
+    dbTechLayerCoreEdgeLengthRule* r = *ce_it++;
+    EXPECT_EQ(r->getMinLength(), 6.5 * 1000);
+    std::vector<dbTechLayer*> except_layers = r->getExceptLayers();
+    ASSERT_EQ(except_layers.size(), 1);
+    ASSERT_NE(except_layers[0], nullptr);
+    EXPECT_EQ(except_layers[0]->getName(), "EX_LAYER");
+  }
+  {
+    dbTechLayerCoreEdgeLengthRule* r = *ce_it++;
+    EXPECT_EQ(r->getMinLength(), 2.5 * 1000);
+    EXPECT_EQ(r->getMaxLength(), 45.0 * 1000);
+  }
+}
+
 }  // namespace odb
