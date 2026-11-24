@@ -122,148 +122,161 @@ void _dbTechLayerAreaRule::collectMemInfo(MemInfo& info)
 
 void dbTechLayerAreaRule::setArea(int64_t area)
 {
-  _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
+  _dbTechLayerAreaRule* obj = reinterpret_cast<_dbTechLayerAreaRule*>(this);
 
   obj->area_ = area;
 }
 
 int64_t dbTechLayerAreaRule::getArea() const
 {
-  _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
+  const _dbTechLayerAreaRule* obj
+      = reinterpret_cast<const _dbTechLayerAreaRule*>(this);
   return obj->area_;
 }
 
 void dbTechLayerAreaRule::setExceptMinWidth(int except_min_width)
 {
-  _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
+  _dbTechLayerAreaRule* obj = reinterpret_cast<_dbTechLayerAreaRule*>(this);
 
   obj->except_min_width_ = except_min_width;
 }
 
 int dbTechLayerAreaRule::getExceptMinWidth() const
 {
-  _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
+  const _dbTechLayerAreaRule* obj
+      = reinterpret_cast<const _dbTechLayerAreaRule*>(this);
   return obj->except_min_width_;
 }
 
 void dbTechLayerAreaRule::setExceptEdgeLength(int except_edge_length)
 {
-  _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
+  _dbTechLayerAreaRule* obj = reinterpret_cast<_dbTechLayerAreaRule*>(this);
 
   obj->except_edge_length_ = except_edge_length;
 }
 
 int dbTechLayerAreaRule::getExceptEdgeLength() const
 {
-  _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
+  const _dbTechLayerAreaRule* obj
+      = reinterpret_cast<const _dbTechLayerAreaRule*>(this);
   return obj->except_edge_length_;
 }
 
 void dbTechLayerAreaRule::setExceptEdgeLengths(
     const std::pair<int, int>& except_edge_lengths)
 {
-  _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
+  _dbTechLayerAreaRule* obj = reinterpret_cast<_dbTechLayerAreaRule*>(this);
 
   obj->except_edge_lengths_ = except_edge_lengths;
 }
 
 std::pair<int, int> dbTechLayerAreaRule::getExceptEdgeLengths() const
 {
-  _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
+  const _dbTechLayerAreaRule* obj
+      = reinterpret_cast<const _dbTechLayerAreaRule*>(this);
   return obj->except_edge_lengths_;
 }
 
 void dbTechLayerAreaRule::setExceptMinSize(
     const std::pair<int, int>& except_min_size)
 {
-  _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
+  _dbTechLayerAreaRule* obj = reinterpret_cast<_dbTechLayerAreaRule*>(this);
 
   obj->except_min_size_ = except_min_size;
 }
 
 std::pair<int, int> dbTechLayerAreaRule::getExceptMinSize() const
 {
-  _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
+  const _dbTechLayerAreaRule* obj
+      = reinterpret_cast<const _dbTechLayerAreaRule*>(this);
   return obj->except_min_size_;
 }
 
 void dbTechLayerAreaRule::setExceptStep(const std::pair<int, int>& except_step)
 {
-  _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
+  _dbTechLayerAreaRule* obj = reinterpret_cast<_dbTechLayerAreaRule*>(this);
 
   obj->except_step_ = except_step;
 }
 
 std::pair<int, int> dbTechLayerAreaRule::getExceptStep() const
 {
-  _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
+  const _dbTechLayerAreaRule* obj
+      = reinterpret_cast<const _dbTechLayerAreaRule*>(this);
   return obj->except_step_;
 }
 
 void dbTechLayerAreaRule::setMask(int mask)
 {
-  _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
+  _dbTechLayerAreaRule* obj = reinterpret_cast<_dbTechLayerAreaRule*>(this);
 
   obj->mask_ = mask;
 }
 
 int dbTechLayerAreaRule::getMask() const
 {
-  _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
+  const _dbTechLayerAreaRule* obj
+      = reinterpret_cast<const _dbTechLayerAreaRule*>(this);
   return obj->mask_;
 }
 
 void dbTechLayerAreaRule::setRectWidth(int rect_width)
 {
-  _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
+  _dbTechLayerAreaRule* obj = reinterpret_cast<_dbTechLayerAreaRule*>(this);
 
   obj->rect_width_ = rect_width;
 }
 
 int dbTechLayerAreaRule::getRectWidth() const
 {
-  _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
+  const _dbTechLayerAreaRule* obj
+      = reinterpret_cast<const _dbTechLayerAreaRule*>(this);
   return obj->rect_width_;
 }
 
 void dbTechLayerAreaRule::setExceptRectangle(bool except_rectangle)
 {
-  _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
+  _dbTechLayerAreaRule* obj = reinterpret_cast<_dbTechLayerAreaRule*>(this);
 
   obj->flags_.except_rectangle = except_rectangle;
 }
 
 bool dbTechLayerAreaRule::isExceptRectangle() const
 {
-  _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
+  const _dbTechLayerAreaRule* obj
+      = reinterpret_cast<const _dbTechLayerAreaRule*>(this);
 
   return obj->flags_.except_rectangle;
 }
 
 void dbTechLayerAreaRule::setOverlap(uint32_t overlap)
 {
-  _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
+  _dbTechLayerAreaRule* obj = reinterpret_cast<_dbTechLayerAreaRule*>(this);
 
   obj->flags_.overlap = overlap;
 }
 
 uint32_t dbTechLayerAreaRule::getOverlap() const
 {
-  _dbTechLayerAreaRule* obj = (_dbTechLayerAreaRule*) this;
+  const _dbTechLayerAreaRule* obj
+      = reinterpret_cast<const _dbTechLayerAreaRule*>(this);
 
   return obj->flags_.overlap;
 }
 
 dbTechLayerAreaRule* dbTechLayerAreaRule::create(dbTechLayer* parent)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) parent;
-  return (dbTechLayerAreaRule*) _parent->area_rules_tbl_->create();
+  _dbTechLayer* _parent = reinterpret_cast<_dbTechLayer*>(parent);
+  return reinterpret_cast<dbTechLayerAreaRule*>(
+      _parent->area_rules_tbl_->create());
 }
 void dbTechLayerAreaRule::destroy(dbTechLayerAreaRule* obj)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  _dbTechLayer* _parent
+      = static_cast<_dbTechLayer*>(obj->getImpl()->getOwner());
   dbProperty::destroyProperties(obj);
-  _parent->area_rules_tbl_->destroy((_dbTechLayerAreaRule*) obj);
+  _parent->area_rules_tbl_->destroy(
+      reinterpret_cast<_dbTechLayerAreaRule*>(obj));
 }
 // User Code Begin dbTechLayerAreaRulePublicMethods
 void dbTechLayerAreaRule::setTrimLayer(dbTechLayer* trim_layer)

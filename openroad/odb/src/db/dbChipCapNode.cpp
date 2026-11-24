@@ -76,14 +76,14 @@ void _dbChipCapNode::collectMemInfo(MemInfo& info)
 
 void dbChipCapNode::setCapacitance(float capacitance)
 {
-  _dbChipCapNode* obj = (_dbChipCapNode*) this;
+  _dbChipCapNode* obj = reinterpret_cast<_dbChipCapNode*>(this);
 
   obj->capacitance_ = capacitance;
 }
 
 float dbChipCapNode::getCapacitance() const
 {
-  _dbChipCapNode* obj = (_dbChipCapNode*) this;
+  const _dbChipCapNode* obj = reinterpret_cast<const _dbChipCapNode*>(this);
   return obj->capacitance_;
 }
 

@@ -66,12 +66,14 @@ void _dbUnfoldedChipNet::collectMemInfo(MemInfo& info)
 
 dbChipNet* dbUnfoldedChipNet::getChipNet() const
 {
-  _dbUnfoldedChipNet* obj = (_dbUnfoldedChipNet*) this;
+  const _dbUnfoldedChipNet* obj
+      = reinterpret_cast<const _dbUnfoldedChipNet*>(this);
   if (obj->chip_net_ == 0) {
     return nullptr;
   }
-  _dbDatabase* par = (_dbDatabase*) obj->getOwner();
-  return (dbChipNet*) par->chip_net_tbl_->getPtr(obj->chip_net_);
+  _dbDatabase* par = static_cast<_dbDatabase*>(obj->getOwner());
+  return reinterpret_cast<dbChipNet*>(
+      par->chip_net_tbl_->getPtr(obj->chip_net_));
 }
 
 // User Code Begin dbUnfoldedChipNetPublicMethods
