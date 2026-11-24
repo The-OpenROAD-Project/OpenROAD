@@ -155,7 +155,8 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
   // placement; kNone once a SPEF has been read. An unplaced design, a
   // congested route and a placement without wire RC are errors.
   ParasiticsSrc designParasiticsSrc();
-  // Whether global routes can estimate parasitics, provenance included.
+  // Whether global routes can estimate parasitics. Routes rebuilt from
+  // detailed_route guides cannot: they are not usable global routes.
   bool canEstimateFromGlobalRoutes();
   // Reject a source the design cannot estimate from, before any state
   // changes, so a caught error leaves the parasitics as they were.

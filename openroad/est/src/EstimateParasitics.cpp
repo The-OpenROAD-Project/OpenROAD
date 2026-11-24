@@ -577,7 +577,6 @@ void EstimateParasitics::estimateParasitics(ParasiticsSrc src)
   estimateParasitics(src, spef_streams);
 }
 
-// Guides from detailed routing do not rebuild usable global routes.
 bool EstimateParasitics::canEstimateFromGlobalRoutes()
 {
   return global_router_->haveRoutes()
@@ -1594,6 +1593,7 @@ void EstimateParasitics::setParasiticsSrc(ParasiticsSrc src)
                    "cannot change parasitics source while incremental "
                    "parasitics enabled");
   }
+  checkParasiticsSrc(src);
 
   parasitics_src_ = src;
 }

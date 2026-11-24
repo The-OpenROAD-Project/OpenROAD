@@ -33,6 +33,13 @@ check "the flagless estimate falls back to placement" {
   est::parasitics_source
 } placement
 
+check_error "set_parasitics_src rejects guides from detailed routing" {
+  est::set_parasitics_src global_routing
+} EST-0021
+check "a rejected set_parasitics_src keeps the placement source" {
+  est::parasitics_source
+} placement
+
 # The automatic pick in find_resize_slacks falls back too, not errors.
 check "find_resize_slacks does not use the detailed routing guides" {
   catch { rsz::find_resize_slacks }
