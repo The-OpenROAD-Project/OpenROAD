@@ -915,10 +915,9 @@ void Resizer::findBuffers()
                   second_leakiest_vt.first.vt_name,
                   num_vt);
   } else if (num_vt == 1) {
-    const std::pair<VTCategory, VTLeakageStats> only_vt
-        = lib_data_->sorted_vt_categories[0];
-    best_vt_index = only_vt.first.vt_index;
-    debugRDPrint2("findBuffers: Best VT index is {} among 1 VT", best_vt_index);
+    // One identified VT leaves nothing to choose between.  Filtering on it
+    // would drop the buffers without an implant layer in a mixed library.
+    debugRDPrint2("findBuffers: No VT filter with 1 VT");
   } else {
     debugRDPrint2("findBuffers: Best VT index is {} among 0 VT", best_vt_index);
   }
