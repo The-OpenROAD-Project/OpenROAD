@@ -19,6 +19,11 @@ check "the guide marks survive the database round trip" {
   expr { $total > 0 && $marked == $total }
 } 1
 
+# Nothing has loaded the guides yet: the check must load them itself.
+check_error "a direct estimate loads the guides before it checks them" {
+  est::estimate_parasitics_cmd global_routing ""
+} EST-0021
+
 check_error "-global_routing rejects guides from detailed routing" {
   estimate_parasitics -global_routing
 } EST-0021

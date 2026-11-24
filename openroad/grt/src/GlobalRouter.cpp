@@ -394,6 +394,15 @@ bool GlobalRouter::haveCongestedRoutes()
   return !routes_.empty() && congested_routes;
 }
 
+bool GlobalRouter::routesFromDetailedRouteGuides()
+{
+  // Loaded routes already carry the flag; skip the placement scan.
+  if (routes_.empty() && designIsPlaced()) {
+    loadGuidesFromDB();
+  }
+  return routes_from_droute_guides_;
+}
+
 bool GlobalRouter::haveDetailedRoutes()
 {
   if (block_ == nullptr) {

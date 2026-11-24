@@ -272,11 +272,9 @@ class GlobalRouter
   // (-allow_congestion), so haveRoutes() is false.
   bool haveCongestedRoutes();
   bool haveDbGuides();
-  // The loaded routes were rebuilt from detailed_route guides.
-  bool routesFromDetailedRouteGuides() const
-  {
-    return routes_from_droute_guides_;
-  }
+  // The routes were rebuilt from detailed_route guides. With no routes
+  // loaded yet, loads the database guides first, so callers need not.
+  bool routesFromDetailedRouteGuides();
   bool designIsPlaced();
   bool haveDetailedRoutes();
   bool haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets);
