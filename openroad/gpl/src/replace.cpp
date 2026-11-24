@@ -5,7 +5,6 @@
 
 #include <algorithm>
 #include <chrono>
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -567,27 +566,11 @@ float Replace::getUniformTargetDensity(const PlaceOptions& options,
   }
 
   if (total_placeable > 0) {
-    if (top_pb.placeInsts().empty()) {
-      density = 0.0f;
-    } else {
-      const int64_t std_insts_area = top_pb.stdInstsArea();
-      const int64_t macro_insts_area = top_pb.macroInstsArea();
-      const int64_t white_space_area
-          = top_pb.getRegionArea() - top_pb.nonPlaceInstsArea();
-      const float target_density
-          = options_no_io.uniformTargetDensityMode
-                ? (static_cast<float>(std_insts_area)
-                       / static_cast<float>(white_space_area - macro_insts_area)
-                   + 0.01f)
-                : options_no_io.density;
-      const int64_t nesterov_inst_area
-          = std_insts_area
-            + static_cast<int64_t>(
-                std::round(macro_insts_area * target_density));
-      density = static_cast<float>(nesterov_inst_area)
-                / static_cast<float>(white_space_area);
-      density = std::ceil(density * 100.0f) / 100.0f;
-    }
+    density
+        = top_pb
+              .computeUniformTargetDensity(
+                  options_no_io.uniformTargetDensityMode, options_no_io.density)
+              .uniform_target_density;
   }
 
   log_->redirectStringEnd();  // discard output

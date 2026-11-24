@@ -2408,40 +2408,18 @@ void NesterovBase::initFillerGCells()
   fillerDx_ = static_cast<int>(dxSum / (maxIdx - minIdx));
   fillerDy_ = static_cast<int>(dySum / (maxIdx - minIdx));
 
-  int64_t region_area = pb_->getRegionArea();
-  whiteSpaceArea_ = region_area - pb_->nonPlaceInstsArea();
-
-  // if(pb_->group() == nullptr) {
-  //   // nonPlaceInstsArea should not have density downscaling!!!
-  //   whiteSpaceArea_ = coreArea - pb_->nonPlaceInstsArea();
-  // } else {
-  //   int64_t domainArea = 0;
-  //   for(auto boundary: pb_->group()->getRegion()->getBoundaries()) {
-  //     domainArea += boundary->getBox().area();
-  //   }
-  //   whiteSpaceArea_ = domainArea - pb_->nonPlaceInstsArea();
-  // }
-
-  float tmp_targetDensity
-      = static_cast<float>(stdInstsArea_)
-            / static_cast<float>(whiteSpaceArea_ - macroInstsArea_)
-        + 0.01;
-  // targetDensity initialize
-  if (nbVars_.useUniformTargetDensity) {
-    targetDensity_ = tmp_targetDensity;
-  } else {
-    targetDensity_ = nbVars_.targetDensity;
-  }
-
-  const int64_t nesterovInstanceArea = getNesterovInstsArea();
+  const int64_t region_area = pb_->getRegionArea();
+  const auto density_init = pb_->computeUniformTargetDensity(
+      nbVars_.useUniformTargetDensity, nbVars_.targetDensity);
+  whiteSpaceArea_ = density_init.white_space_area;
+  targetDensity_ = density_init.target_density;
+  const int64_t nesterovInstanceArea = density_init.nesterov_insts_area;
 
   // TODO density screening
   movableArea_ = whiteSpaceArea_ * targetDensity_;
 
   totalFillerArea_ = movableArea_ - nesterovInstanceArea;
-  uniformTargetDensity_ = static_cast<float>(nesterovInstanceArea)
-                          / static_cast<float>(whiteSpaceArea_);
-  uniformTargetDensity_ = ceilf(uniformTargetDensity_ * 100) / 100;
+  uniformTargetDensity_ = density_init.uniform_target_density;
 
   if (totalFillerArea_ < 0) {
     log_->warn(GPL,

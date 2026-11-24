@@ -121,7 +121,6 @@ class Pin
  public:
   Pin();
   Pin(odb::dbITerm* iTerm);
-  Pin(odb::dbITerm* iTerm, int cx, int cy, int offsetCx, int offsetCy);
   Pin(odb::dbBTerm* bTerm, utl::Logger* logger, bool placeIosMode = false);
   ~Pin();
 
@@ -199,7 +198,6 @@ class Net
  public:
   Net();
   Net(odb::dbNet* net, bool skipIoMode);
-  Net(odb::dbNet* net, int lx, int ly, int ux, int uy);
   ~Net();
 
   int lx() const;
@@ -213,13 +211,6 @@ class Net
   int64_t getHpwl() const;
 
   void updateBox(bool skipIoMode = false);
-  void setBox(int lx, int ly, int ux, int uy)
-  {
-    lx_ = lx;
-    ly_ = ly;
-    ux_ = ux;
-    uy_ = uy;
-  }
 
   const std::vector<Pin*>& getPins() const { return pins_; }
 
@@ -329,6 +320,17 @@ class PlacerBaseCommon
 
   int64_t getMacroInstsArea() const { return macroInstsArea_; }
 
+  struct UniformTargetDensityResult
+  {
+    int64_t white_space_area = 0;
+    float target_density = 0.0f;
+    int64_t nesterov_insts_area = 0;
+    float uniform_target_density = 0.0f;
+  };
+  UniformTargetDensityResult computeUniformTargetDensity(
+      bool use_uniform_target_density,
+      float target_density) const;
+
   odb::dbDatabase* db() const { return db_; }
 
   void unlockAll();
@@ -405,6 +407,17 @@ class PlacerBase
   int64_t nonPlaceInstsArea() const { return nonPlaceInstsArea_; }
   int64_t macroInstsArea() const;
   int64_t stdInstsArea() const { return stdInstsArea_; }
+
+  struct UniformTargetDensityResult
+  {
+    int64_t white_space_area = 0;
+    float target_density = 0.0f;
+    int64_t nesterov_insts_area = 0;
+    float uniform_target_density = 0.0f;
+  };
+  UniformTargetDensityResult computeUniformTargetDensity(
+      bool use_uniform_target_density,
+      float target_density) const;
 
   odb::dbDatabase* db() const { return db_; }
   odb::dbGroup* getGroup() const { return group_; }
