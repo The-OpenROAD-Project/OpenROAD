@@ -1282,6 +1282,38 @@ void EstimateParasitics::parasiticNodeConnectPins(
   }
 }
 
+double EstimateParasitics::pinViaResistance(odb::dbTechLayer* pin_layer,
+                                            sta::Scene* scene,
+                                            const bool is_clk)
+{
+  const auto& layers
+      = resolveWireRC(is_clk ? &WireRC::clk_layers : &WireRC::signal_layers);
+  odb::dbTechLayer* tree_layer = layers.empty() ? nullptr : layers[0];
+  if (tree_layer == nullptr || layer_res_.empty() || pin_layer == nullptr) {
+    return std::max(computeAverageCutResistance(scene), 1.0e-3);
+  }
+  const int pin_layer_idx = pin_layer->getNumber();
+  const int tree_layer_idx = tree_layer->getNumber();
+  const int start_idx = std::min(pin_layer_idx, tree_layer_idx);
+  const int end_idx = std::max(pin_layer_idx, tree_layer_idx);
+  if (start_idx == end_idx) {
+    return 1.0e-3;
+  }
+  odb::dbTech* tech = pin_layer->getTech();
+  double total = 0.0;
+  for (int layer_idx = start_idx; layer_idx < end_idx; layer_idx++) {
+    odb::dbTechLayer* cut_layer = tech->findLayer(layer_idx);
+    if (cut_layer == nullptr
+        || cut_layer->getType() != odb::dbTechLayerType::CUT) {
+      continue;
+    }
+    double res, cap;
+    layerRC(cut_layer, scene, res, cap);
+    total += std::max(res, 1.0e-3);
+  }
+  return total;
+}
+
 void EstimateParasitics::insertViaResistances(odb::dbTechLayer* pin_layer,
                                               odb::dbTechLayer* tree_layer,
                                               sta::Parasitics* parasitics,

@@ -16,6 +16,7 @@
 #include "Util.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
+#include "odb/geom.h"
 
 namespace utl {
 class Logger;
@@ -263,6 +264,36 @@ class Clock
 
   void setDriverPin(odb::dbObject* pin) { driverPin_ = pin; }
   odb::dbObject* getDriverPin() const { return driverPin_; }
+  odb::Point getClockPin() const { return {clockPinX_, clockPinY_}; }
+
+  // What the net's driver drives, when that is not one buffer named
+  // clkbuf_0.
+  void setRootLoads(const std::vector<ClockInst*>& loads)
+  {
+    rootLoads_ = loads;
+  }
+  const std::vector<ClockInst*>& getRootLoads() const { return rootLoads_; }
+  // The first and the last of the buffers between the net's driver and
+  // its ports.
+  void setPortBuffers(ClockInst* first, ClockInst* last)
+  {
+    portBuffer_ = first;
+    portDriver_ = last;
+  }
+  ClockInst* getPortBuffer() const { return portBuffer_; }
+  ClockInst* getPortDriver() const { return portDriver_; }
+  // The first and the last of the buffers between the clock's port and the
+  // net's driver.
+  void setSourceBuffers(ClockInst* first, ClockInst* last)
+  {
+    sourceBuffer_ = first;
+    sourceDriver_ = last;
+  }
+  ClockInst* getSourceBuffer() const { return sourceBuffer_; }
+  ClockInst* getSourceDriver() const { return sourceDriver_; }
+  // The net is left as it is.
+  void setUntouched(bool untouched) { untouched_ = untouched; }
+  bool isUntouched() const { return untouched_; }
 
  private:
   std::string netName_;
@@ -278,6 +309,12 @@ class Clock
 
   odb::dbNet* netObj_ = nullptr;
   odb::dbObject* driverPin_ = nullptr;
+  std::vector<ClockInst*> rootLoads_;
+  ClockInst* portBuffer_ = nullptr;
+  ClockInst* portDriver_ = nullptr;
+  ClockInst* sourceBuffer_ = nullptr;
+  ClockInst* sourceDriver_ = nullptr;
+  bool untouched_ = false;
 
   unsigned numLevels_ = 0;
 };

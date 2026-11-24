@@ -241,6 +241,12 @@ set_apply_ndr(CtsOptions::NdrStrategy strategy)
 }
 
 void
+set_delay_balanced(bool enable)
+{
+  getTritonCts()->getParms()->setDelayBalanced(enable);
+}
+
+void
 set_insertion_delay(bool insDelay)
 {
   getTritonCts()->getParms()->enableInsertionDelay(insDelay);

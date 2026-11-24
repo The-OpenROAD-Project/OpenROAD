@@ -52,6 +52,10 @@ class TreeBuilder;
 class Clock;
 class ClockSubNet;
 class HTreeBuilder;
+class ClockDelayModel;
+class DelayBalancedTreeBuilder;
+struct ClockPinModel;
+struct NetWire;
 
 class TritonCTS
 {
@@ -253,6 +257,40 @@ class TritonCTS
                                 std::set<odb::Point>& occupiedPositions);
   void resizeClockGateSinks();
 
+  // ---- delay-balanced trees ----
+  // Builds the tree of each net after the trees behind its sinks, so that a
+  // clock gate is a sink with a known delay behind it.
+  void buildDelayBalancedTrees();
+  void buildDelayBalancedTree(
+      DelayBalancedTreeBuilder* builder,
+      std::unordered_set<DelayBalancedTreeBuilder*>& built);
+  // Gives the builder the delay behind each of its sinks that has one.
+  void setSinkModels(DelayBalancedTreeBuilder* builder);
+  // Gives the builder of a root net the timer's slew at its driver, and the
+  // clock's port when the driver is all that the port drives.
+  void setClockSource(DelayBalancedTreeBuilder* builder);
+  // Gives the builder of a root net the latency set on its clock, less the
+  // delay from the clock's port to the net's driver.
+  void setLatencyTarget(DelayBalancedTreeBuilder* builder);
+  // The wire of the net `output` drives as placed, and its `loads`.
+  NetWire placedWire(odb::dbITerm* output, std::vector<odb::dbITerm*>& loads);
+  // The timing of clock pin `pin` when clock logic stands behind it; false
+  // for a register's.
+  bool clockPinModel(odb::dbITerm* pin, ClockPinModel& model, int depth);
+  // The delay model's cell for the arc by which the clock reaches `output`,
+  // and the `input` it comes in by; negative when there is no such arc.
+  int clockArc(odb::dbITerm* output, odb::dbITerm*& input);
+  // Modeled clock arrival at `pin`, an input of a cell on the clock network,
+  // over the nets above it as placed.
+  double clockArrival(odb::dbITerm* pin, int depth);
+  // The trees behind `pin`, an input of a cell on the clock network.
+  void buildersBehind(odb::dbITerm* pin,
+                      std::vector<DelayBalancedTreeBuilder*>& behind,
+                      int depth);
+  // Connects what the driver of a delay-balanced tree drives, with the
+  // buffers to the net's ports and from the clock's port.
+  void connectRootLoads(TreeBuilder* builder);
+
   sta::dbSta* openSta_ = nullptr;
   sta::dbNetwork* network_ = nullptr;
   utl::Logger* logger_ = nullptr;
@@ -261,6 +299,8 @@ class TritonCTS
   rsz::Resizer* resizer_ = nullptr;
   est::EstimateParasitics* estimate_parasitics_ = nullptr;
   std::vector<std::unique_ptr<TreeBuilder>> builders_;
+  std::unique_ptr<ClockDelayModel> delay_model_;
+  odb::PtrMap<odb::dbNet, DelayBalancedTreeBuilder*> delay_builders_;
   odb::PtrSet<odb::dbNet> staClockNets_;
   odb::PtrSet<odb::dbNet> visitedClockNets_;
   odb::PtrMap<odb::dbInst, ClockInst*> inst2clkbuf_;

@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="388" viewBox="0 0 760 388" font-family="Helvetica, Arial, sans-serif">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#0b0b0b"/></marker></defs>
+<rect width="760" height="388" fill="#ffffff"/>
+<text x="16.0" y="24.0" font-size="15" text-anchor="start" font-weight="600" fill="#0b0b0b" >Levels: groups by nearness, a buffer at the middle of each</text>
+<text x="16.0" y="52.0" font-size="13" text-anchor="start" font-weight="600" fill="#0b0b0b" >Level 1: the sinks</text>
+<rect x="16" y="64" width="232" height="196" fill="#fcfcfb" stroke="#0b0b0b" stroke-width="1"/>
+<rect x="28.3" y="79.5" width="32.9" height="37.7" rx="9" fill="#eef4fd" stroke="#0b0b0b" stroke-width="0.9" stroke-dasharray="3 3"/>
+<rect x="31.2" y="140.6" width="41.0" height="42.6" rx="9" fill="#eef4fd" stroke="#0b0b0b" stroke-width="0.9" stroke-dasharray="3 3"/>
+<rect x="29.0" y="203.1" width="33.1" height="29.8" rx="9" fill="#eef4fd" stroke="#0b0b0b" stroke-width="0.9" stroke-dasharray="3 3"/>
+<rect x="88.2" y="81.0" width="40.2" height="37.7" rx="9" fill="#eef4fd" stroke="#0b0b0b" stroke-width="0.9" stroke-dasharray="3 3"/>
+<rect x="84.3" y="149.7" width="40.4" height="33.5" rx="9" fill="#eef4fd" stroke="#0b0b0b" stroke-width="0.9" stroke-dasharray="3 3"/>
+<rect x="83.8" y="205.0" width="39.2" height="41.8" rx="9" fill="#eef4fd" stroke="#0b0b0b" stroke-width="0.9" stroke-dasharray="3 3"/>
+<rect x="152.4" y="91.4" width="31.7" height="38.7" rx="9" fill="#eef4fd" stroke="#0b0b0b" stroke-width="0.9" stroke-dasharray="3 3"/>
+<rect x="166.7" y="175.3" width="40.5" height="42.8" rx="9" fill="#eef4fd" stroke="#0b0b0b" stroke-width="0.9" stroke-dasharray="3 3"/>
+<rect x="216.2" y="141.2" width="13.0" height="16.6" rx="9" fill="#eef4fd" stroke="#0b0b0b" stroke-width="0.9" stroke-dasharray="3 3"/>
+<circle cx="44.0" cy="88.1" r="2.2" fill="#52514e"/><circle cx="55.1" cy="85.5" r="2.2" fill="#52514e"/><circle cx="51.2" cy="95.4" r="2.2" fill="#52514e"/><circle cx="35.0" cy="100.3" r="2.2" fill="#52514e"/><circle cx="34.3" cy="97.7" r="2.2" fill="#52514e"/><circle cx="35.4" cy="86.1" r="2.2" fill="#52514e"/><circle cx="47.4" cy="111.1" r="2.2" fill="#52514e"/>
+<circle cx="37.2" cy="152.6" r="2.2" fill="#52514e"/><circle cx="54.3" cy="177.2" r="2.2" fill="#52514e"/><circle cx="52.6" cy="158.5" r="2.2" fill="#52514e"/><circle cx="66.2" cy="146.6" r="2.2" fill="#52514e"/><circle cx="62.2" cy="154.8" r="2.2" fill="#52514e"/><circle cx="37.9" cy="149.0" r="2.2" fill="#52514e"/><circle cx="43.5" cy="172.7" r="2.2" fill="#52514e"/>
+<circle cx="39.1" cy="226.8" r="2.2" fill="#52514e"/><circle cx="54.7" cy="219.7" r="2.2" fill="#52514e"/><circle cx="51.6" cy="209.1" r="2.2" fill="#52514e"/><circle cx="35.0" cy="214.0" r="2.2" fill="#52514e"/><circle cx="56.1" cy="221.5" r="2.2" fill="#52514e"/><circle cx="43.7" cy="226.9" r="2.2" fill="#52514e"/><circle cx="48.4" cy="217.2" r="2.2" fill="#52514e"/>
+<circle cx="116.0" cy="106.8" r="2.2" fill="#52514e"/><circle cx="97.3" cy="102.5" r="2.2" fill="#52514e"/><circle cx="106.9" cy="112.8" r="2.2" fill="#52514e"/><circle cx="113.8" cy="92.8" r="2.2" fill="#52514e"/><circle cx="122.3" cy="87.0" r="2.2" fill="#52514e"/><circle cx="103.2" cy="108.7" r="2.2" fill="#52514e"/><circle cx="94.2" cy="99.6" r="2.2" fill="#52514e"/>
+<circle cx="90.3" cy="167.7" r="2.2" fill="#52514e"/><circle cx="115.0" cy="164.5" r="2.2" fill="#52514e"/><circle cx="118.8" cy="155.7" r="2.2" fill="#52514e"/><circle cx="112.6" cy="165.2" r="2.2" fill="#52514e"/><circle cx="108.7" cy="160.5" r="2.2" fill="#52514e"/><circle cx="117.6" cy="177.1" r="2.2" fill="#52514e"/><circle cx="105.1" cy="167.6" r="2.2" fill="#52514e"/>
+<circle cx="91.1" cy="230.9" r="2.2" fill="#52514e"/><circle cx="111.0" cy="240.8" r="2.2" fill="#52514e"/><circle cx="116.9" cy="216.7" r="2.2" fill="#52514e"/><circle cx="102.1" cy="229.7" r="2.2" fill="#52514e"/><circle cx="89.8" cy="222.7" r="2.2" fill="#52514e"/><circle cx="94.7" cy="211.0" r="2.2" fill="#52514e"/><circle cx="91.0" cy="233.1" r="2.2" fill="#52514e"/>
+<circle cx="160.4" cy="97.4" r="2.2" fill="#52514e"/><circle cx="171.4" cy="123.6" r="2.2" fill="#52514e"/><circle cx="158.4" cy="105.9" r="2.2" fill="#52514e"/><circle cx="178.1" cy="124.1" r="2.2" fill="#52514e"/>
+<circle cx="195.4" cy="211.3" r="2.2" fill="#52514e"/><circle cx="172.7" cy="192.4" r="2.2" fill="#52514e"/><circle cx="176.1" cy="212.1" r="2.2" fill="#52514e"/><circle cx="201.2" cy="181.3" r="2.2" fill="#52514e"/>
+<circle cx="222.2" cy="147.2" r="2.2" fill="#52514e"/><circle cx="223.2" cy="151.7" r="2.2" fill="#52514e"/>
+<rect x="38.2" y="89.9" width="10" height="10" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="45.6" y="153.8" width="10" height="10" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="42.0" y="214.3" width="10" height="10" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="102.7" y="96.5" width="10" height="10" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="104.7" y="160.5" width="10" height="10" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="94.5" y="221.4" width="10" height="10" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="162.1" y="107.7" width="10" height="10" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="181.3" y="194.3" width="10" height="10" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="217.7" y="144.5" width="10" height="10" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<text x="16.0" y="280.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >A group is what one buffer drives:</text>
+<text x="16.0" y="296.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >its fanout, width, load and slew</text>
+<text x="16.0" y="312.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >are within their limits.</text>
+<text x="264.0" y="52.0" font-size="13" text-anchor="start" font-weight="600" fill="#0b0b0b" >Level 2: the level-1 buffers</text>
+<rect x="264" y="64" width="232" height="196" fill="#fcfcfb" stroke="#0b0b0b" stroke-width="1"/>
+<rect x="279.2" y="82.9" width="90.5" height="94.6" rx="9" fill="#fdf0e9" stroke="#0b0b0b" stroke-width="0.9" stroke-dasharray="3 3"/>
+<rect x="283.0" y="207.3" width="76.6" height="31.1" rx="9" fill="#fdf0e9" stroke="#0b0b0b" stroke-width="0.9" stroke-dasharray="3 3"/>
+<rect x="403.1" y="100.7" width="43.3" height="110.6" rx="9" fill="#fdf0e9" stroke="#0b0b0b" stroke-width="0.9" stroke-dasharray="3 3"/>
+<line x1="325.8" y1="130.2" x2="291.2" y2="94.9" stroke="#0b0b0b" stroke-width="1.0"/>
+<line x1="325.8" y1="130.2" x2="298.6" y2="158.8" stroke="#0b0b0b" stroke-width="1.0"/>
+<line x1="325.8" y1="130.2" x2="355.7" y2="101.5" stroke="#0b0b0b" stroke-width="1.0"/>
+<line x1="325.8" y1="130.2" x2="357.7" y2="165.5" stroke="#0b0b0b" stroke-width="1.0"/>
+<line x1="321.2" y1="222.9" x2="295.0" y2="219.3" stroke="#0b0b0b" stroke-width="1.0"/>
+<line x1="321.2" y1="222.9" x2="347.5" y2="226.4" stroke="#0b0b0b" stroke-width="1.0"/>
+<line x1="424.7" y1="156.0" x2="415.1" y2="112.7" stroke="#0b0b0b" stroke-width="1.0"/>
+<line x1="424.7" y1="156.0" x2="434.3" y2="199.3" stroke="#0b0b0b" stroke-width="1.0"/>
+<rect x="286.2" y="89.9" width="10" height="10" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="293.6" y="153.8" width="10" height="10" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="290.0" y="214.3" width="10" height="10" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="350.7" y="96.5" width="10" height="10" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="352.7" y="160.5" width="10" height="10" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="342.5" y="221.4" width="10" height="10" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="410.1" y="107.7" width="10" height="10" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="429.3" y="194.3" width="10" height="10" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="465.7" y="144.5" width="10" height="10" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="319.3" y="123.7" width="13" height="13" fill="#fbd3c0" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="314.7" y="216.4" width="13" height="13" fill="#fbd3c0" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="418.2" y="149.5" width="13" height="13" fill="#fbd3c0" stroke="#0b0b0b" stroke-width="1.2"/>
+<circle cx="470.7" cy="149.5" r="12" fill="none" stroke="#0b0b0b" stroke-width="1" stroke-dasharray="3 3"/>
+<text x="470.7" y="177.5" font-size="12" text-anchor="middle" font-weight="400" fill="#0b0b0b" >alone</text>
+<text x="264.0" y="280.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >Groups are twice as wide. A node</text>
+<text x="264.0" y="296.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >that stays alone gets no buffer</text>
+<text x="264.0" y="312.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >and is left to the trunk.</text>
+<text x="512.0" y="52.0" font-size="13" text-anchor="start" font-weight="600" fill="#0b0b0b" >No level 3: the trunk joins what is left</text>
+<rect x="512" y="64" width="232" height="196" fill="#fcfcfb" stroke="#0b0b0b" stroke-width="1"/>
+<line x1="573.8" y1="180.5" x2="573.8" y2="130.2" stroke="#0b0b0b" stroke-width="1.2"/>
+<line x1="573.8" y1="180.5" x2="569.2" y2="222.9" stroke="#0b0b0b" stroke-width="1.2"/>
+<line x1="699.7" y1="190.0" x2="672.7" y2="156.0" stroke="#0b0b0b" stroke-width="1.2"/>
+<line x1="699.7" y1="190.0" x2="718.7" y2="149.5" stroke="#0b0b0b" stroke-width="1.2"/>
+<line x1="616.7" y1="220.5" x2="573.8" y2="180.5" stroke="#0b0b0b" stroke-width="1.2"/>
+<line x1="616.7" y1="220.5" x2="699.7" y2="190.0" stroke="#0b0b0b" stroke-width="1.2"/>
+<line x1="616.7" y1="220.5" x2="596.7" y2="236.5" stroke="#0b0b0b" stroke-width="1.2"/>
+<text x="594.7" y="250.5" font-size="12" text-anchor="middle" font-weight="400" fill="#0b0b0b" >from the root</text>
+<rect x="567.3" y="123.7" width="13" height="13" fill="#fbd3c0" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="562.7" y="216.4" width="13" height="13" fill="#fbd3c0" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="666.2" y="149.5" width="13" height="13" fill="#fbd3c0" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="713.7" y="144.5" width="10" height="10" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<circle cx="573.8" cy="180.5" r="6.5" fill="#fbe3a6" stroke="#0b0b0b" stroke-width="1.2"/>
+<circle cx="699.7" cy="190.0" r="6.5" fill="#fbe3a6" stroke="#0b0b0b" stroke-width="1.2"/>
+<circle cx="616.7" cy="220.5" r="6.5" fill="#fbe3a6" stroke="#0b0b0b" stroke-width="1.2"/>
+<text x="512.0" y="280.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >One more level would stand a buffer</text>
+<text x="512.0" y="296.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >over two nodes only: too few for</text>
+<text x="512.0" y="312.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >a stage. Joints take what is left.</text>
+<circle cx="21" cy="364" r="2.6" fill="#52514e"/>
+<text x="33.0" y="368.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >sink</text>
+<rect x="77.5" y="358.5" width="11" height="11" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<text x="95.0" y="368.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >level-1 buffer</text>
+<rect x="209.5" y="358.5" width="11" height="11" fill="#fbd3c0" stroke="#0b0b0b" stroke-width="1.2"/>
+<text x="227.0" y="368.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >level-2 buffer</text>
+<circle cx="347" cy="364" r="6" fill="#fbe3a6" stroke="#0b0b0b" stroke-width="1.2"/>
+<text x="359.0" y="368.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >joint</text>
+</svg>

@@ -103,6 +103,11 @@ class EstimateParasitics : public sta::dbStaState, public ParasiticsService
                // Return values.
                double& res,
                double& cap) const;
+  // Resistance of the vias the placement estimate puts between a pin on
+  // `pin_layer` and the wire of its net.
+  double pinViaResistance(odb::dbTechLayer* pin_layer,
+                          sta::Scene* scene,
+                          bool is_clk);
   // A null tech in the setters below writes the default values used by
   // chips whose technology has no specific values.
   void addClkLayer(odb::dbTech* tech, odb::dbTechLayer* layer);

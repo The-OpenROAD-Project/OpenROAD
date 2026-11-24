@@ -90,6 +90,9 @@ entries:
     title: Detailed Placement
   - file: main/openroad/cts/README
     title: Clock Tree Synthesis
+    entries:
+    - file: main/openroad/cts/doc/delay_balanced
+      title: Delay-Balanced Clock Trees
   - file: main/openroad/grt/README
     title: Global Routing
     entries:

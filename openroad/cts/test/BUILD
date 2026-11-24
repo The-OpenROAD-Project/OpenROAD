@@ -63,6 +63,7 @@ COMPULSORY_TESTS = [
 
 PASSFAIL_TESTS = [
     "dangling_clock_inverter",
+    "delay_balanced_flag",
     "dont_touch_sink",
     "dont_touch_skipped_net",
     "dont_touch_timing_buffer",
@@ -171,6 +172,9 @@ filegroup(
                 "ihp-sg13g2/sg13g2_tech.lef",
                 "ihp-sg13g2/sg13g2_stdcell.lef",
                 "check_max_fanout3.def",
+            ],
+            "delay_balanced_flag": [
+                "16sinks.def",
             ],
             "dont_touch_sink": [
                 "16sinks.def",
@@ -299,6 +303,21 @@ cc_test(
     data = ["cpp/clock_gate_sinks.v"],
     deps = [
         "//openroad/cts:cts_impl",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestDelayBalanced",
+    srcs = ["cpp/TestDelayBalanced.cc"],
+    data = ["cpp/clock_gate_sinks.v"],
+    deps = [
+        "//openroad/cts:cts_impl",
+        "//openroad/est",
         "//openroad/odb/src/db",
         "//openroad/sta:opensta_lib",
         "//openroad/tst:integrated_fixture",

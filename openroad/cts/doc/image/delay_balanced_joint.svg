@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="384" viewBox="0 0 760 384" font-family="Helvetica, Arial, sans-serif">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#0b0b0b"/></marker></defs>
+<rect width="760" height="384" fill="#ffffff"/>
+<text x="16.0" y="24.0" font-size="15" text-anchor="start" font-weight="600" fill="#0b0b0b" >A joint stands where both of its sides are equally late</text>
+<text x="16.0" y="52.0" font-size="13" text-anchor="start" font-weight="600" fill="#0b0b0b" >Equally late</text>
+<rect x="16" y="64" width="232" height="120" fill="#fcfcfb" stroke="#0b0b0b" stroke-width="1"/>
+<line x1="42.0" y1="138.0" x2="222.0" y2="138.0" stroke="#0b0b0b" stroke-width="1.2"/>
+<line x1="132.0" y1="138.0" x2="132.0" y2="98.0" stroke="#0b0b0b" stroke-width="1.2"/>
+<text x="132.0" y="92.0" font-size="11" text-anchor="middle" font-weight="400" fill="#0b0b0b" >from the root</text>
+<rect x="35.0" y="131.0" width="14" height="14" fill="#fbd3c0" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="215.0" y="131.0" width="14" height="14" fill="#fbd3c0" stroke="#0b0b0b" stroke-width="1.2"/>
+<text x="42.0" y="124.0" font-size="13" text-anchor="middle" font-weight="600" fill="#0b0b0b" >A</text>
+<text x="222.0" y="124.0" font-size="13" text-anchor="middle" font-weight="600" fill="#0b0b0b" >B</text>
+<circle cx="132.0" cy="138" r="7" fill="#fbe3a6" stroke="#0b0b0b" stroke-width="1.2"/>
+<text x="16.0" y="206.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >Delay from the joint to the registers</text>
+<text x="16.0" y="228.0" font-size="12" text-anchor="start" font-weight="600" fill="#0b0b0b" >A</text>
+<rect x="34.0" y="214" width="45.0" height="18" fill="#e1e0d9" stroke="#0b0b0b" stroke-width="1"/>
+<rect x="79.0" y="214" width="105.0" height="18" fill="#fbd3c0" stroke="#0b0b0b" stroke-width="1"/>
+<text x="16.0" y="254.0" font-size="12" text-anchor="start" font-weight="600" fill="#0b0b0b" >B</text>
+<rect x="34.0" y="240" width="45.0" height="18" fill="#e1e0d9" stroke="#0b0b0b" stroke-width="1"/>
+<rect x="79.0" y="240" width="105.0" height="18" fill="#fbd3c0" stroke="#0b0b0b" stroke-width="1"/>
+<line x1="184.0" y1="210.0" x2="184.0" y2="264.0" stroke="#0b0b0b" stroke-width="1.0" stroke-dasharray="4 4"/>
+<text x="16.0" y="290.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >The joint stands where its two wires</text>
+<text x="16.0" y="306.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >take the same time.</text>
+<text x="264.0" y="52.0" font-size="13" text-anchor="start" font-weight="600" fill="#0b0b0b" >B is later</text>
+<rect x="264" y="64" width="232" height="120" fill="#fcfcfb" stroke="#0b0b0b" stroke-width="1"/>
+<line x1="290.0" y1="138.0" x2="470.0" y2="138.0" stroke="#0b0b0b" stroke-width="1.2"/>
+<line x1="419.6" y1="138.0" x2="419.6" y2="98.0" stroke="#0b0b0b" stroke-width="1.2"/>
+<text x="419.6" y="92.0" font-size="11" text-anchor="middle" font-weight="400" fill="#0b0b0b" >from the root</text>
+<rect x="283.0" y="131.0" width="14" height="14" fill="#fbd3c0" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="463.0" y="131.0" width="14" height="14" fill="#fbd3c0" stroke="#0b0b0b" stroke-width="1.2"/>
+<text x="290.0" y="124.0" font-size="13" text-anchor="middle" font-weight="600" fill="#0b0b0b" >A</text>
+<text x="470.0" y="124.0" font-size="13" text-anchor="middle" font-weight="600" fill="#0b0b0b" >B</text>
+<circle cx="419.6" cy="138" r="7" fill="#fbe3a6" stroke="#0b0b0b" stroke-width="1.2"/>
+<text x="264.0" y="206.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >Delay from the joint to the registers</text>
+<text x="264.0" y="228.0" font-size="12" text-anchor="start" font-weight="600" fill="#0b0b0b" >A</text>
+<rect x="282.0" y="214" width="64.5" height="18" fill="#e1e0d9" stroke="#0b0b0b" stroke-width="1"/>
+<rect x="346.5" y="214" width="82.5" height="18" fill="#fbd3c0" stroke="#0b0b0b" stroke-width="1"/>
+<text x="264.0" y="254.0" font-size="12" text-anchor="start" font-weight="600" fill="#0b0b0b" >B</text>
+<rect x="282.0" y="240" width="24.0" height="18" fill="#e1e0d9" stroke="#0b0b0b" stroke-width="1"/>
+<rect x="306.0" y="240" width="123.0" height="18" fill="#fbd3c0" stroke="#0b0b0b" stroke-width="1"/>
+<line x1="429.0" y1="210.0" x2="429.0" y2="264.0" stroke="#0b0b0b" stroke-width="1.0" stroke-dasharray="4 4"/>
+<text x="264.0" y="290.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >The joint stands nearer B, and the</text>
+<text x="264.0" y="306.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >longer wire to A makes up the difference.</text>
+<text x="512.0" y="52.0" font-size="13" text-anchor="start" font-weight="600" fill="#0b0b0b" >A is much earlier</text>
+<rect x="512" y="64" width="232" height="120" fill="#fcfcfb" stroke="#0b0b0b" stroke-width="1"/>
+<line x1="538.0" y1="138.0" x2="718.0" y2="138.0" stroke="#0b0b0b" stroke-width="1.2"/>
+<line x1="682.0" y1="138.0" x2="682.0" y2="98.0" stroke="#0b0b0b" stroke-width="1.2"/>
+<text x="682.0" y="92.0" font-size="11" text-anchor="middle" font-weight="400" fill="#0b0b0b" >from the root</text>
+<path d="M649.3,138 V164 H605.3 V138" fill="#fcfcfb" stroke="#0b0b0b" stroke-width="1.2"/>
+<line x1="606.3" y1="138" x2="648.3" y2="138" stroke="#fcfcfb" stroke-width="3"/>
+<path d="M634.3,157 L620.3,164 L634.3,171 Z" fill="#f9d7e3" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M579.6,131 L565.6,138 L579.6,145 Z" fill="#f9d7e3" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="531.0" y="131.0" width="14" height="14" fill="#fbd3c0" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="711.0" y="131.0" width="14" height="14" fill="#fbd3c0" stroke="#0b0b0b" stroke-width="1.2"/>
+<text x="538.0" y="124.0" font-size="13" text-anchor="middle" font-weight="600" fill="#0b0b0b" >A</text>
+<text x="718.0" y="124.0" font-size="13" text-anchor="middle" font-weight="600" fill="#0b0b0b" >B</text>
+<circle cx="682.0" cy="138" r="7" fill="#fbe3a6" stroke="#0b0b0b" stroke-width="1.2"/>
+<text x="512.0" y="206.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >Delay from the joint to the registers</text>
+<text x="512.0" y="228.0" font-size="12" text-anchor="start" font-weight="600" fill="#0b0b0b" >A</text>
+<rect x="530.0" y="214" width="30.0" height="18" fill="#e1e0d9" stroke="#0b0b0b" stroke-width="1"/>
+<rect x="560.0" y="214" width="84.0" height="18" fill="#f9d7e3" stroke="#0b0b0b" stroke-width="1"/>
+<rect x="644.0" y="214" width="30.0" height="18" fill="#fbd3c0" stroke="#0b0b0b" stroke-width="1"/>
+<text x="512.0" y="254.0" font-size="12" text-anchor="start" font-weight="600" fill="#0b0b0b" >B</text>
+<rect x="530.0" y="240" width="15.0" height="18" fill="#e1e0d9" stroke="#0b0b0b" stroke-width="1"/>
+<rect x="545.0" y="240" width="129.0" height="18" fill="#fbd3c0" stroke="#0b0b0b" stroke-width="1"/>
+<line x1="674.0" y1="210.0" x2="674.0" y2="264.0" stroke="#0b0b0b" stroke-width="1.0" stroke-dasharray="4 4"/>
+<text x="512.0" y="290.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >Repeaters delay A's side. The first one</text>
+<text x="512.0" y="306.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >stands off the line for what is still left.</text>
+<rect x="16" y="353" width="16" height="13" fill="#e1e0d9" stroke="#0b0b0b" stroke-width="1"/>
+<text x="38.0" y="364.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >wire</text>
+<rect x="84" y="353" width="16" height="13" fill="#f9d7e3" stroke="#0b0b0b" stroke-width="1"/>
+<text x="106.0" y="364.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >repeaters</text>
+<rect x="187" y="353" width="16" height="13" fill="#fbd3c0" stroke="#0b0b0b" stroke-width="1"/>
+<text x="209.0" y="364.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >lateness of A or B</text>
+<circle cx="361" cy="360" r="6" fill="#fbe3a6" stroke="#0b0b0b" stroke-width="1.2"/>
+<text x="375.0" y="364.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >joint</text>
+</svg>
