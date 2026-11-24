@@ -48,6 +48,16 @@ check "Uncongested -congestion_only run truncates report file" {
   file size $rpt_file
 } 0
 
+set bad_rpt_file [file join [make_result_file "nonexistent_congestion_dir"] \
+  "congestion_only.rpt"]
+check "Unwritable -congestion_report_file fails loudly with GRT-0342" {
+  set rc [catch {
+    global_route -congestion_only -congestion_report_file $bad_rpt_file
+  } err]
+  expr { $rc != 0 && [string first "GRT-0342" $err] >= 0 }
+} 1
+grt::set_congestion_report_file ""
+
 check "CUGR rejects -congestion_only with GRT-0340" {
   set rc [catch { global_route -use_cugr -congestion_only } err]
   expr { $rc != 0 && [string first "GRT-0340" $err] >= 0 }

@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
@@ -288,6 +289,7 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
 // previous congestion report file.
 void GlobalRouter::saveCongestion()
 {
+  assert(block_ != nullptr);
   if (use_cugr_) {
     is_congested_ = cugr_->totalOverflow() > 0;
     cugr_->saveCongestion();
@@ -309,6 +311,12 @@ void GlobalRouter::saveCongestion()
       tool_category->writeTR(congestion_file_name_);
     } else {
       std::ofstream out(congestion_file_name_);
+      if (!out) {
+        logger_->error(GRT,
+                       342,
+                       "Unable to open {} to write markers.",
+                       congestion_file_name_);
+      }
     }
   }
 }
@@ -543,6 +551,11 @@ void GlobalRouter::globalRoute(bool save_guides)
     return;
   }
 
+  if (use_cugr_ && congestion_only_) {
+    logger_->error(
+        GRT, 340, "-congestion_only routes with FastRoute, not CUGR.");
+  }
+
   try {
     clear();
     block_ = db_->getChip()->getBlock();
@@ -551,10 +564,6 @@ void GlobalRouter::globalRoute(bool save_guides)
     getMinMaxLayer(min_layer, max_layer);
 
     if (use_cugr_) {
-      if (congestion_only_) {
-        logger_->error(
-            GRT, 340, "-congestion_only routes with FastRoute, not CUGR.");
-      }
       std::vector<Net*> nets = initCUGR(min_layer, max_layer);
       if (verbose_) {
         reportResources();
