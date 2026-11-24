@@ -238,10 +238,15 @@ class FastRouteCore
   void clearNetsToRoute() { net_ids_.clear(); }
   void initEdges();
   void init3DEdges();
+  void initLayerCapacities(int layer,
+                           bool horizontal,
+                           const std::vector<int>& line_caps);
   void initLowerBoundCapacities();
   void setEdgeCapacity(int x1, int y1, int x2, int y2, int layer, int capacity);
   int getDbNetLayerEdgeCost(odb::dbNet* db_net, int layer);
   void initEdgesCapacityPerLayer();
+  void clearEdgesCapacityPerLayer();
+  bool hasEdgesCapacityPerLayer() const { return graph2d_.hasCap3D(); }
   void setNumAdjustments(int nAdjustments);
   void addAdjustment(int x1,
                      int y1,
@@ -480,7 +485,18 @@ class FastRouteCore
                           int x,
                           int y,
                           EdgeDirection direction,
-                          double usage) const;
+                          double usage) const
+  {
+    if (net->getEdgeCost() == 1) {
+      return usage;
+    }
+    return getUsageNDRAwareSlow(net, x, y, direction, usage);
+  }
+  double getUsageNDRAwareSlow(FrNet* net,
+                              int x,
+                              int y,
+                              EdgeDirection direction,
+                              double usage) const;
   double getEstUsageRedH(FrNet* net, int x, int y) const
   {
     return getUsageNDRAware(

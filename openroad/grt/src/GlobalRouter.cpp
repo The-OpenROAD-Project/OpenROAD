@@ -251,7 +251,12 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   perturbCapacities();
 
   // Init the data structures to monitor 3D capacity during 2D phases
-  fastroute_->initEdgesCapacityPerLayer();
+  if (!block_->getNonDefaultRules().empty()
+      || !db_->getTech()->getNonDefaultRules().empty()) {
+    fastroute_->initEdgesCapacityPerLayer();
+  } else {
+    fastroute_->clearEdgesCapacityPerLayer();
+  }
 
   std::vector<Net*> nets = initNets(check_pin_placement);
   initNetlist(nets);
@@ -1087,35 +1092,39 @@ void GlobalRouter::setCapacities(int min_routing_layer, int max_routing_layer)
 
     if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
       int min_cap = kBigInt;
-      for (int y = 1; y <= y_grids; y++) {
-        for (int x = 1; x < x_grids; x++) {
+      std::vector<int> row_caps(y_grids, 0);
+      if (x_grids > 1) {
+        for (int y = 0; y < y_grids; y++) {
           int cap = 0;
           if (infinite_capacity_) {
             cap = kBigCap;
           } else if (inside_layer_range) {
             cap = computeGCellCapacity(
-                x - 1, y - 1, track_init, track_pitch, track_count, horizontal);
+                0, y, track_init, track_pitch, track_count, horizontal);
           }
+          row_caps[y] = cap;
           min_cap = std::min(min_cap, cap);
-          fastroute_->setEdgeCapacity(x - 1, y - 1, x, y - 1, layer, cap);
         }
+        fastroute_->initLayerCapacities(layer, true, row_caps);
       }
       min_cap = min_cap == kBigInt ? 0 : min_cap;
       fastroute_->addHCapacity(min_cap, layer);
     } else {
       int min_cap = kBigInt;
-      for (int x = 1; x <= x_grids; x++) {
-        for (int y = 1; y < y_grids; y++) {
+      std::vector<int> col_caps(x_grids, 0);
+      if (y_grids > 1) {
+        for (int x = 0; x < x_grids; x++) {
           int cap = 0;
           if (infinite_capacity_) {
             cap = kBigCap;
           } else if (inside_layer_range) {
             cap = computeGCellCapacity(
-                x - 1, y - 1, track_init, track_pitch, track_count, horizontal);
+                x, 0, track_init, track_pitch, track_count, horizontal);
           }
+          col_caps[x] = cap;
           min_cap = std::min(min_cap, cap);
-          fastroute_->setEdgeCapacity(x - 1, y - 1, x - 1, y, layer, cap);
         }
+        fastroute_->initLayerCapacities(layer, false, col_caps);
       }
       min_cap = min_cap == kBigInt ? 0 : min_cap;
       fastroute_->addVCapacity(min_cap, layer);
@@ -2449,11 +2458,23 @@ void GlobalRouter::adjustTransitionLayers(
     const std::vector<LayerId>& transition_layers,
     std::map<int, std::vector<odb::Rect>>& layer_obs_map)
 {
+  if (transition_layers.empty()) {
+    return;
+  }
   odb::dbTech* tech = db_->getTech();
+  const int x_grids = grid_->getXGrids();
+  const int y_grids = grid_->getYGrids();
+  const size_t grid_cells = static_cast<size_t>(x_grids) * y_grids;
+  std::vector<uint8_t> reduced(grid_cells, 0);
+
   for (LayerId layer : transition_layers) {
-    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
-    TileSet tiles_to_reduce;
-    for (const auto& obs : layer_obs_map[layer - 1]) {
+    const auto& obs_list = layer_obs_map[layer - 1];
+    if (obs_list.empty()) {
+      continue;
+    }
+    std::ranges::fill(reduced, 0);
+    bool any_marked = false;
+    for (const auto& obs : obs_list) {
       odb::Rect first_tile_bds, last_tile_bds;
       odb::Point first_tile, last_tile;
       grid_->getBlockedTiles(
@@ -2461,33 +2482,52 @@ void GlobalRouter::adjustTransitionLayers(
       if (first_tile.x() == last_tile.x() && first_tile.y() == last_tile.y()) {
         continue;
       }
-      for (int y = first_tile.y(); y < last_tile.y(); y++) {
-        for (int x = first_tile.x(); x < last_tile.x(); x++) {
-          tiles_to_reduce.emplace(std::make_pair(x, y));
+      const int x0 = std::max(0, first_tile.x());
+      const int x1 = std::min(x_grids, last_tile.x());
+      const int y0 = std::max(0, first_tile.y());
+      const int y1 = std::min(y_grids, last_tile.y());
+      if (x0 >= x1 || y0 >= y1) {
+        continue;
+      }
+      any_marked = true;
+      const size_t span = static_cast<size_t>(x1 - x0);
+      for (int y = y0; y < y1; y++) {
+        std::fill_n(
+            &reduced[static_cast<size_t>(y) * x_grids + x0], span, uint8_t{1});
+      }
+    }
+    if (!any_marked) {
+      continue;
+    }
+    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
+    const int rlayer = tech_layer->getRoutingLevel();
+    const bool horizontal
+        = tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
+    const int x_lim = horizontal ? x_grids - 1 : x_grids;
+    const int y_lim = horizontal ? y_grids : y_grids - 1;
+    constexpr int kTile = 64;
+    for (int bx = 0; bx < x_lim; bx += kTile) {
+      for (int by = 0; by < y_lim; by += kTile) {
+        const int x_end = std::min(bx + kTile, x_lim);
+        const int y_end = std::min(by + kTile, y_lim);
+        for (int y = by; y < y_end; y++) {
+          const uint8_t* row = &reduced[static_cast<size_t>(y) * x_grids];
+          for (int x = bx; x < x_end; x++) {
+            if (row[x] == 0) {
+              continue;
+            }
+            const int end_x = horizontal ? x + 1 : x;
+            const int end_y = horizontal ? y : y + 1;
+            const float edge_cap
+                = fastroute_->getEdgeCapacity(x, y, end_x, end_y, rlayer);
+            int new_cap = std::floor(edge_cap * 0.5);
+            new_cap = edge_cap > 0 ? std::max(new_cap, 1) : new_cap;
+            fastroute_->addAdjustment(
+                x, y, end_x, end_y, rlayer, new_cap, true);
+          }
         }
       }
     }
-    adjustTileSet(tiles_to_reduce, tech_layer);
-  }
-}
-
-void GlobalRouter::adjustTileSet(const TileSet& tiles_to_reduce,
-                                 odb::dbTechLayer* tech_layer)
-{
-  const int layer = tech_layer->getRoutingLevel();
-  for (const auto& [x, y] : tiles_to_reduce) {
-    int end_x = x;
-    int end_y = y;
-    if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-      end_x = x + 1;
-    } else {
-      end_y = y + 1;
-    }
-    const float edge_cap
-        = fastroute_->getEdgeCapacity(x, y, end_x, end_y, layer);
-    int new_cap = std::floor(edge_cap * 0.5);
-    new_cap = edge_cap > 0 ? std::max(new_cap, 1) : new_cap;
-    fastroute_->addAdjustment(x, y, end_x, end_y, layer, new_cap, true);
   }
 }
 
@@ -2520,36 +2560,49 @@ void GlobalRouter::computeUserLayerAdjustments(const int min_routing_layer,
     const bool is_reduce = adjustment > 0;
 
     if (adjustment != 0) {
+      constexpr int kTile = 64;
       if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL
           && inside_layer_range) {
-        for (int y = 1; y <= y_grids; y++) {
-          for (int x = 1; x < x_grids; x++) {
-            int edge_cap
-                = fastroute_->getEdgeCapacity(x - 1, y - 1, x, y - 1, layer);
-            int new_h_capacity
-                = std::floor((float) edge_cap * (1 - adjustment));
-            new_h_capacity = edge_cap > 0 && adjustment != 1
-                                 ? std::max(new_h_capacity, 1)
-                                 : new_h_capacity;
-            fastroute_->addAdjustment(
-                x - 1, y - 1, x, y - 1, layer, new_h_capacity, is_reduce);
+        for (int bx = 0; bx < x_grids - 1; bx += kTile) {
+          for (int by = 0; by < y_grids; by += kTile) {
+            const int x_end = std::min(bx + kTile, x_grids - 1);
+            const int y_end = std::min(by + kTile, y_grids);
+            for (int y = by; y < y_end; y++) {
+              for (int x = bx; x < x_end; x++) {
+                int edge_cap
+                    = fastroute_->getEdgeCapacity(x, y, x + 1, y, layer);
+                int new_h_capacity = std::floor(static_cast<float>(edge_cap)
+                                                * (1 - adjustment));
+                new_h_capacity = edge_cap > 0 && adjustment != 1
+                                     ? std::max(new_h_capacity, 1)
+                                     : new_h_capacity;
+                fastroute_->addAdjustment(
+                    x, y, x + 1, y, layer, new_h_capacity, is_reduce);
+              }
+            }
           }
         }
       }
 
       if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL
           && inside_layer_range) {
-        for (int x = 1; x <= x_grids; x++) {
-          for (int y = 1; y < y_grids; y++) {
-            int edge_cap
-                = fastroute_->getEdgeCapacity(x - 1, y - 1, x - 1, y, layer);
-            int new_v_capacity
-                = std::floor((float) edge_cap * (1 - adjustment));
-            new_v_capacity = edge_cap > 0 && adjustment != 1
-                                 ? std::max(new_v_capacity, 1)
-                                 : new_v_capacity;
-            fastroute_->addAdjustment(
-                x - 1, y - 1, x - 1, y, layer, new_v_capacity, is_reduce);
+        for (int bx = 0; bx < x_grids; bx += kTile) {
+          for (int by = 0; by < y_grids - 1; by += kTile) {
+            const int x_end = std::min(bx + kTile, x_grids);
+            const int y_end = std::min(by + kTile, y_grids - 1);
+            for (int y = by; y < y_end; y++) {
+              for (int x = bx; x < x_end; x++) {
+                int edge_cap
+                    = fastroute_->getEdgeCapacity(x, y, x, y + 1, layer);
+                int new_v_capacity = std::floor(static_cast<float>(edge_cap)
+                                                * (1 - adjustment));
+                new_v_capacity = edge_cap > 0 && adjustment != 1
+                                     ? std::max(new_v_capacity, 1)
+                                     : new_v_capacity;
+                fastroute_->addAdjustment(
+                    x, y, x, y + 1, layer, new_v_capacity, is_reduce);
+              }
+            }
           }
         }
       }
@@ -7705,6 +7758,11 @@ void GlobalRouter::getCongestionNets(odb::PtrSet<odb::dbNet>& congestion_nets)
 
 void GlobalRouter::initFastRouteIncr(std::vector<Net*>& nets)
 {
+  if ((!block_->getNonDefaultRules().empty()
+       || !db_->getTech()->getNonDefaultRules().empty())
+      && !fastroute_->hasEdgesCapacityPerLayer()) {
+    fastroute_->initEdgesCapacityPerLayer();
+  }
   initNetlist(nets, true);
   fastroute_->initAuxVar();
   fastroute_->setIncrementalGrt(true);
