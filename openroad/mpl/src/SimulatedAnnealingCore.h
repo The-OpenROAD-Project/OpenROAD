@@ -92,21 +92,9 @@ class SimulatedAnnealingCore
     kFence
   };
 
-  // Identifies which action an actions_ entry applies, independent of its
-  // position in the vector.
-  enum class ActionKind
-  {
-    kPosSwap,
-    kNegSwap,
-    kDoubleSwap,
-    kExchange,
-    kResize
-  };
-
  protected:
   struct Action
   {
-    ActionKind kind;
     float probability{0.0f};
     std::function<void()> perturb;
   };
@@ -203,8 +191,6 @@ class SimulatedAnnealingCore
   std::vector<int> pre_neg_seq_;
   std::vector<T> pre_macros_;  // here the macros can be HardMacro or SoftMacro
   int macro_id_ = -1;          // the macro changed in the perturb
-  ActionKind action_id_{ActionKind::kPosSwap};  // the action applied in the
-                                                // current step
 
   // metrics
   int width_ = 0;

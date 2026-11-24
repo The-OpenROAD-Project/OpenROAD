@@ -54,18 +54,18 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
   };
 
   actions_ = {
-      {ActionKind::kPosSwap,
-       action_probs.pos_swap,
-       [this] { singleSeqSwap(true); }},
-      {ActionKind::kNegSwap,
-       action_probs.neg_swap,
-       [this] { singleSeqSwap(false); }},
-      {ActionKind::kDoubleSwap,
-       action_probs.double_swap,
-       [this] { doubleSeqSwap(); }},
-      {ActionKind::kExchange,
-       action_probs.exchange,
-       [this] { exchangeMacros(); }},
+      // Swaps two macros' positions within the positive sequence only.
+      {.probability = action_probs.pos_swap,
+       .perturb = [this] { singleSeqSwap(true); }},
+      // Swaps two macros' positions within the negative sequence only.
+      {.probability = action_probs.neg_swap,
+       .perturb = [this] { singleSeqSwap(false); }},
+      // Swaps two macros' positions in both sequences.
+      {.probability = action_probs.double_swap,
+       .perturb = [this] { doubleSeqSwap(); }},
+      // Swaps which macros occupy two positions, in both sequences.
+      {.probability = action_probs.exchange,
+       .perturb = [this] { exchangeMacros(); }},
   };
 
   init_prob_ = init_prob;
@@ -545,7 +545,6 @@ void SimulatedAnnealingCore<T>::perturb()
     }
   }
 
-  action_id_ = selected->kind;
   selected->perturb();
 
   packFloorplan();
@@ -578,18 +577,10 @@ void SimulatedAnnealingCore<T>::restoreState()
 
   // To reduce the runtime, here we do not call PackFloorplan
   // again. So when we need to generate the final floorplan out,
-  // we need to call PackFloorplan again at the end of SA process
-  if (action_id_ == ActionKind::kPosSwap) {
-    pos_seq_ = pre_pos_seq_;
-  } else if (action_id_ == ActionKind::kNegSwap) {
-    neg_seq_ = pre_neg_seq_;
-  } else if (action_id_ == ActionKind::kDoubleSwap
-             || action_id_ == ActionKind::kExchange) {
-    pos_seq_ = pre_pos_seq_;
-    neg_seq_ = pre_neg_seq_;
-  }
-
-  macros_ = pre_macros_;
+  // we need to call PackFloorplan again at the end of SA process.
+  std::swap(pos_seq_, pre_pos_seq_);
+  std::swap(neg_seq_, pre_neg_seq_);
+  std::swap(macros_, pre_macros_);
 
   width_ = pre_width_;
   height_ = pre_height_;
