@@ -47,10 +47,7 @@ class SimulatedAnnealingCore
                          const std::vector<T>& macros,
                          const SACoreWeights& weights,
                          const SACoreActionProbs& action_probs,
-                         // Fast SA hyperparameter
-                         float init_prob,
-                         int max_num_step,
-                         int num_perturb_per_step,
+                         const SAHyperparams& hyperparams,
                          unsigned seed,
                          MplObserver* graphics,
                          utl::Logger* logger,
@@ -172,10 +169,8 @@ class SimulatedAnnealingCore
   std::map<int, odb::Rect> guides_;  // Macro Id -> Guide
 
   // Fast SA hyperparameter
-  float init_prob_ = 0.0;
+  SAHyperparams hyperparams_;
   float init_temperature_ = 1.0;
-  int max_num_step_ = 0;
-  int num_perturb_per_step_ = 0;
 
   // seed for reproduciabilty
   std::mt19937 generator_;

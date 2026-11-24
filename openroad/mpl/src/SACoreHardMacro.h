@@ -27,10 +27,7 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
                   const std::vector<HardMacro>& macros,
                   const SACoreWeights& core_weights,
                   const SACoreActionProbs& action_probs,
-                  // Fast SA hyperparameter
-                  float init_prob,
-                  int max_num_step,
-                  int num_perturb_per_step,
+                  const SAHyperparams& hyperparams,
                   unsigned seed,
                   MplObserver* graphics,
                   utl::Logger* logger,

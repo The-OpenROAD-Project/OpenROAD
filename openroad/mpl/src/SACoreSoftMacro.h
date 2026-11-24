@@ -35,10 +35,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                   // action prob
                   const SACoreActionProbs& action_probs,
                   const SASoftActionsProbs& soft_action_probs,
-                  // Fast SA hyperparameter
-                  float init_prob,
-                  int max_num_step,
-                  int num_perturb_per_step,
+                  const SAHyperparams& hyperparams,
                   unsigned seed,
                   MplObserver* graphics,
                   utl::Logger* logger,

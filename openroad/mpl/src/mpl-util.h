@@ -93,6 +93,13 @@ struct SASoftActionsProbs
   float resize{0.0f};
 };
 
+struct SAHyperparams
+{
+  float init_prob{0.0f};
+  int max_num_step{0};
+  int num_perturb_per_step{0};
+};
+
 // The cost of a certain penalty is:
 //   cost = weight * normalized_penalty
 //

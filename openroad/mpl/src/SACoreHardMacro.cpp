@@ -26,10 +26,7 @@ SACoreHardMacro::SACoreHardMacro(PhysicalHierarchy* tree,
                                  const std::vector<HardMacro>& macros,
                                  const SACoreWeights& core_weights,
                                  const SACoreActionProbs& action_probs,
-                                 // Fast SA hyperparameter
-                                 float init_prob,
-                                 int max_num_step,
-                                 int num_perturb_per_step,
+                                 const SAHyperparams& hyperparams,
                                  unsigned seed,
                                  MplObserver* graphics,
                                  utl::Logger* logger,
@@ -39,9 +36,7 @@ SACoreHardMacro::SACoreHardMacro(PhysicalHierarchy* tree,
                                         macros,
                                         core_weights,
                                         action_probs,
-                                        init_prob,
-                                        max_num_step,
-                                        num_perturb_per_step,
+                                        hyperparams,
                                         seed,
                                         graphics,
                                         logger,
@@ -52,7 +47,8 @@ SACoreHardMacro::SACoreHardMacro(PhysicalHierarchy* tree,
 void SACoreHardMacro::run()
 {
   if (graphics_) {
-    graphics_->startSA("hard", max_num_step_, num_perturb_per_step_);
+    graphics_->startSA(
+        "hard", hyperparams_.max_num_step, hyperparams_.num_perturb_per_step);
   }
 
   fastSA();

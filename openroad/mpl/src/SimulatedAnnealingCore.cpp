@@ -35,10 +35,7 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
     const std::vector<T>& macros,
     const SACoreWeights& weights,
     const SACoreActionProbs& action_probs,
-    // Fast SA hyperparameter
-    float init_prob,
-    int max_num_step,
-    int num_perturb_per_step,
+    const SAHyperparams& hyperparams,
     unsigned seed,
     MplObserver* graphics,
     utl::Logger* logger,
@@ -68,9 +65,7 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
        .perturb = [this] { exchangeMacros(); }},
   };
 
-  init_prob_ = init_prob;
-  max_num_step_ = max_num_step;
-  num_perturb_per_step_ = num_perturb_per_step;
+  hyperparams_ = hyperparams;
 
   // generate random
   std::mt19937 rand_gen(seed);
@@ -784,7 +779,7 @@ void SimulatedAnnealingCore<T>::initialize()
   MplObserver* save_graphics = graphics_;
   graphics_ = nullptr;
 
-  for (int i = 0; i < num_perturb_per_step_; i++) {
+  for (int i = 0; i < hyperparams_.num_perturb_per_step; i++) {
     saveState();
     perturb();
     if (!invalid_states_allowed_ && !isValid()) {
@@ -826,8 +821,8 @@ void SimulatedAnnealingCore<T>::initialize()
   }
 
   if (cost_list.size() > 1 && delta_cost > 0.0) {
-    init_temperature_
-        = (-1.0) * (delta_cost / (cost_list.size() - 1)) / std::log(init_prob_);
+    init_temperature_ = (-1.0) * (delta_cost / (cost_list.size() - 1))
+                        / std::log(hyperparams_.init_prob);
   } else {
     init_temperature_ = 1.0;
   }
@@ -841,13 +836,13 @@ void SimulatedAnnealingCore<T>::fastSA()
   int step = 1;
   float temperature = init_temperature_;
   const float min_t = 1e-10;
-  const float t_factor
-      = std::exp(std::log(min_t / init_temperature_) / max_num_step_);
+  const float t_factor = std::exp(std::log(min_t / init_temperature_)
+                                  / hyperparams_.max_num_step);
 
   updateBestResult(cost);
 
-  while (step <= max_num_step_) {
-    for (int i = 0; i < num_perturb_per_step_; i++) {
+  while (step <= hyperparams_.max_num_step) {
+    for (int i = 0; i < hyperparams_.num_perturb_per_step; i++) {
       saveState();
       perturb();
       cost = calNormCost();

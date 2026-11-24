@@ -37,10 +37,7 @@ SACoreSoftMacro::SACoreSoftMacro(PhysicalHierarchy* tree,
                                  // probability of each action
                                  const SACoreActionProbs& action_probs,
                                  const SASoftActionsProbs& soft_action_probs,
-                                 // Fast SA hyperparameter
-                                 float init_prob,
-                                 int max_num_step,
-                                 int num_perturb_per_step,
+                                 const SAHyperparams& hyperparams,
                                  unsigned seed,
                                  MplObserver* graphics,
                                  utl::Logger* logger,
@@ -50,9 +47,7 @@ SACoreSoftMacro::SACoreSoftMacro(PhysicalHierarchy* tree,
                                         macros,
                                         core_weights,
                                         action_probs,
-                                        init_prob,
-                                        max_num_step,
-                                        num_perturb_per_step,
+                                        hyperparams,
                                         seed,
                                         graphics,
                                         logger,
@@ -88,7 +83,8 @@ void SACoreSoftMacro::findFixedMacros()
 void SACoreSoftMacro::run()
 {
   if (graphics_) {
-    graphics_->startSA("soft", max_num_step_, num_perturb_per_step_);
+    graphics_->startSA(
+        "soft", hyperparams_.max_num_step, hyperparams_.num_perturb_per_step);
   }
 
   fastSA();
