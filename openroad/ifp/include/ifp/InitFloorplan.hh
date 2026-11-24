@@ -143,6 +143,10 @@ class InitFloorplan
                        const odb::Rect& core,
                        RowParity row_parity,
                        const odb::PtrSet<odb::dbSite>& flipped_sites);
+  odb::PtrSet<odb::dbSite> findPowerOffsetSites(
+      odb::dbSite* base_site,
+      const SitesByName& sites_by_name,
+      const odb::PtrSet<odb::dbSite>& flipped_sites) const;
   void makeHybridRows(odb::dbSite* base_hybrid_site,
                       const SitesByName& sites_by_name,
                       const odb::Rect& core);
@@ -176,7 +180,8 @@ class InitFloorplan
                               const odb::Polygon& core_polygon,
                               const odb::Rect& core_bbox,
                               RowParity row_parity,
-                              const odb::PtrSet<odb::dbSite>& flipped_sites);
+                              const odb::PtrSet<odb::dbSite>& flipped_sites,
+                              int y_offset = 0);
 
   odb::dbBlock* block_{nullptr};
   utl::Logger* logger_{nullptr};

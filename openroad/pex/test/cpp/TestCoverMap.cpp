@@ -7,11 +7,11 @@
 #include <utility>
 #include <vector>
 
+#include "CoverMap.h"
+#include "Model.h"
 #include "fsv/Itf.h"
 #include "fsv/Stack.h"
 #include "gtest/gtest.h"
-#include "pex/CoverMap.h"
-#include "pex/Model.h"
 
 namespace pex {
 namespace {

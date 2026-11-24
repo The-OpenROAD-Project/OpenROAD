@@ -281,7 +281,7 @@ archive_override(
 # JavaScript / web UI: //:openroad embeds the npm libraries esbuild bundles.
 bazel_dep(name = "aspect_rules_esbuild", version = "0.27.0")
 bazel_dep(name = "aspect_rules_js", version = "3.5.1")
-bazel_dep(name = "rules_nodejs", version = "6.7.3")
+bazel_dep(name = "rules_nodejs", version = "6.7.7")
 
 # --- Extensions ---
 
@@ -386,7 +386,7 @@ node = use_extension(
     "@rules_nodejs//nodejs:extensions.bzl",
     "node",
 )
-node.toolchain(node_version = "22.14.0")
+node.toolchain(node_version = "22.23.4")
 
 # The viewer's browser libraries, bundled into the assets embedded in the
 # binary.  Not a dev dependency: //:openroad does not build without it.

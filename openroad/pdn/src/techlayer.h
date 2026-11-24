@@ -46,7 +46,10 @@ class TechLayer
   int snapToGrid(int pos,
                  int greater_than = 0,
                  int less_than = std::numeric_limits<int>::max()) const;
-  int snapToGridInterval(odb::dbBlock* block, int dist) const;
+  // round dist down or up to whole track steps, at least one step
+  int snapToGridInterval(odb::dbBlock* block,
+                         int dist,
+                         bool round_up = false) const;
   bool hasGrid() const { return !grid_.empty(); }
   const std::vector<int>& getGrid() const { return grid_; }
   int snapToManufacturingGrid(int pos,

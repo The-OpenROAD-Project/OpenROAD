@@ -176,6 +176,8 @@ class DisplayControls : public QDockWidget,
                         Qt::CheckState value);
   void setControlByPath(const std::string& path, const QColor& color);
   bool checkControlByPath(const std::string& path, bool is_visible);
+  // The paths of the controls with a visible box, sorted.
+  std::vector<std::string> controlPaths();
 
   void registerRenderer(web::Renderer* renderer);
   void unregisterRenderer(web::Renderer* renderer);
