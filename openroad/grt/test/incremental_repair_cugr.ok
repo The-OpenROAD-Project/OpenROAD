@@ -127,17 +127,17 @@ delta HPWL                    0 %
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.309 |       -8.3 |     32 | _884_/D
-     362* |      58 |     132 |       40 |      0 |    14 |   +15.5% |   -0.126 |       -3.3 |     32 | _865_/D
-    final |      58 |     134 |       40 |      0 |    14 |   +15.7% |   -0.126 |       -3.3 |     32 | _865_/D
+     365* |      57 |     132 |       40 |      0 |    14 |   +15.6% |   -0.126 |       -3.4 |     32 | _865_/D
+    final |      57 |     135 |       40 |      0 |    14 |   +15.8% |   -0.126 |       -3.4 |     32 | _865_/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 58 buffers.
+[INFO RSZ-0059] Removed 57 buffers.
 [INFO RSZ-0040] Inserted 40 buffers.
-[INFO RSZ-0051] Resized 134 instances: 134 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0051] Resized 135 instances: 135 up, 0 up match, 0 down, 0 VT
 [INFO RSZ-0043] Swapped pins on 14 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 [WARNING DPL-0037] Use remove_fillers before detailed placement.
 [INFO DPL-0006] Core area: 6286.11 um^2
-[INFO DPL-0007] Movable instances area: 832.31 um^2
+[INFO DPL-0007] Movable instances area: 833.38 um^2
 [INFO DPL-0008] Fixed instances area within core: 44.69 um^2
 [INFO DPL-0009] Utilization: 14.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
@@ -147,7 +147,7 @@ delta HPWL                    0 %
 	Search window extendable up to the max displacement cap of +/-500 sites, +/-100 rows near walls.
 [INFO DPL-1104] NegotiationLegalizer DRC penalty: 5.
 [INFO DPL-0392] Negotiation cell height distribution (1 unique row-count(s)):
-[INFO DPL-0393]   height 1 row(s): 668 cells
+[INFO DPL-0393]   height 1 row(s): 669 cells
           |      Total |  Illegal |  Illegal
 Iteration | Violations |    Cells |    Sites
 ---------------------------------------------
@@ -161,8 +161,8 @@ total moves                 339
 total displacement         76.8 u
 average displacement        0.1 u
 max displacement            3.4 u
-original HPWL            7019.4 u
-legalized HPWL           7033.1 u
+original HPWL            7021.9 u
+legalized HPWL           7035.7 u
 delta HPWL                    0 %
 
 [INFO ANT-0002] Found 0 net violations.

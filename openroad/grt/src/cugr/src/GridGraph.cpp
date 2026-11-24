@@ -627,6 +627,8 @@ CostT GridGraph::getWireDelayCost(const int layer_index,
     total_length += edge_length;
     // One track of headroom: on a coarse layer with a few tracks per gcell,
     // filling the last one invites overflow the delay cost would not see.
+    // An edge with less capacity than that never qualifies, even when empty,
+    // so a layer with under two tracks per gcell earns no delay benefit.
     if (edge.capacity - edge.demand >= net_factor + 1.0) {
       fit_length += edge_length;
     }

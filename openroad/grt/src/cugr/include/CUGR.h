@@ -224,6 +224,10 @@ class CUGR
   // maxing their slack, so they order by size alone.
   void demoteNonCriticalNets();
   float getNetSlack(odb::dbNet* net);
+  // Criticality for a net incremental routing has not seen before: that of
+  // the net feeding its driver, looking through buffers and inverters that
+  // are new as well. Zero when the driver is any other cell.
+  float upstreamCriticality(odb::dbNet* db_net) const;
   void setInitialNetSlacks(const std::vector<int>& net_indices);
   // Builds a routing tree spanning the segments' gcells; nullptr if the
   // segments are malformed or disconnected.

@@ -55,6 +55,8 @@ namespace grt {
 // Sentinel demoteNonCriticalNets writes on non-critical nets; not a slack.
 constexpr float kDemotedSlack = std::numeric_limits<float>::max();
 // Overflow relief rounds; each grows the candidates and reruns the RRR loop.
+// Buffers and inverters upstreamCriticality() looks through.
+constexpr int kMaxUpstreamHops = 8;
 constexpr int kReliefRounds = 5;
 // A relief neighbor's pin box is at most this many gcells from congestion.
 constexpr int kReliefMargin = 5;
@@ -1103,6 +1105,39 @@ bool CUGR::debugStageEnabled(const CugrStage stage) const
       return debug_.stages.rrr;
   }
   return false;
+}
+
+float CUGR::upstreamCriticality(odb::dbNet* db_net) const
+{
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  odb::dbNet* net = db_net;
+  for (int hop = 0; hop < kMaxUpstreamHops; hop++) {
+    odb::dbITerm* driver = net->getFirstOutput();
+    if (driver == nullptr) {
+      return 0.0f;
+    }
+    odb::dbInst* inst = driver->getInst();
+    const sta::LibertyCell* cell = network->libertyCell(network->dbToSta(inst));
+    if (cell == nullptr || (!cell->isBuffer() && !cell->isInverter())) {
+      return 0.0f;
+    }
+    odb::dbNet* input_net = nullptr;
+    for (odb::dbITerm* iterm : inst->getITerms()) {
+      if (iterm->isInputSignal() && iterm->getNet() != nullptr) {
+        input_net = iterm->getNet();
+        break;
+      }
+    }
+    if (input_net == nullptr) {
+      return 0.0f;
+    }
+    if (const auto it = db_net_map_.find(input_net); it != db_net_map_.end()) {
+      return it->second->getCriticality();
+    }
+    // The input net is new as well; keep looking upstream.
+    net = input_net;
+  }
+  return 0.0f;
 }
 
 bool CUGR::hasTiming() const
@@ -2242,6 +2277,10 @@ void CUGR::updateNet(odb::dbNet* db_net)
     }
     gr_nets_.push_back(
         std::make_unique<GRNet>(design_->getAllNets()[idx], grid_graph_.get()));
+    // A new net has no peak criticality of its own, and repair has usually
+    // lifted its slack; it takes the criticality of the net it was split
+    // from.
+    gr_nets_.back()->setCriticality(upstreamCriticality(db_net));
     gr_nets_.back()->setNdrCosts(computeNdrCosts(db_net));
     gr_nets_.back()->setNdrWidths(computeNdrWidths(db_net));
     net_indices_.push_back(idx);
@@ -2397,6 +2436,8 @@ bool CUGR::restoreNetRoute(odb::dbNet* db_net, const GRoute& route)
         std::make_unique<GRNet>(design_->getAllNets()[idx], grid_graph_.get()));
     net_indices_.push_back(idx);
     new_net = gr_nets_.back().get();
+    // Like updateNet's new-net branch.
+    new_net->setCriticality(upstreamCriticality(db_net));
   }
   // Restore the NDR cost/width so the restored tree commits the same demand
   // the net's rule requires (a fresh GRNet defaults to the 1.0 factor); covers
