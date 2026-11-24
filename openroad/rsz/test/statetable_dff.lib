@@ -2,7 +2,7 @@
  * rsz regression fixture: statetable-modelled registers and latches.
  * Timing is copied from Nangate45 DFF_X1/DFF_X2/DFFR_X1/SDFF_X1/DLH_X1;
  * ff/latch groups are replaced by statetables and power groups dropped.
- * Used by src/rsz/test/cpp/TestStatetableRegister.cc.
+ * Used by openroad/rsz/test/cpp/TestStatetableRegister.cc.
  */
 /*
 * ******************************************************************************

@@ -1014,8 +1014,9 @@ bool RepairDesign::repairDriverSlew(const sta::Scene* corner,
             RSZ, 144, "sizes list empty for cell {}\n", cell->name());
       }
 
-      // Non-violating cells first: sizing-set cells by area, then VT changes
-      // by area and leakage.  Otherwise the smallest violation.
+      // Prefer non-violating candidates; among those the sizing set before VT
+      // changes, then smaller area, then lower leakage.  Among violating
+      // candidates, the one with the smallest violation.
       const auto leakage = [this](sta::LibertyCell* c) {
         return resizer_->cellLeakage(c).value_or(0.0f);
       };

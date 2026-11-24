@@ -53,9 +53,10 @@ class SetupCritVtSwapPolicy : public SetupLegacyBase
   // Worst setup slack over the timing-checked data inputs of a register,
   // INF for other cells.  A capture-only register's outputs show none of it.
   sta::Slack captureSlack(sta::Instance* inst);
-  // Largest Liberty setup-margin decrease at a violating data input of
-  // register inst when swapped to cell; 0 or less when the swap raises any
-  // setup margin or pushes a hold check below zero.
+  // Setup TNS that swapping register inst to cell recovers at its data
+  // inputs: the sum over its setup checks of the negative slack regained.
+  // 0 when the swap pushes any setup or hold check into, or deeper into,
+  // violation.
   float captureSetupGain(sta::Instance* inst, sta::LibertyCell* cell);
   // The VT equivalent of register inst with the largest captureSetupGain,
   // null when none gains.  The crit sweep otherwise picks VT by drive

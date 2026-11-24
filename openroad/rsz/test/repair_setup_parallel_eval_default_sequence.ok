@@ -47,10 +47,6 @@
       32* |       0 |     174 |       33 |      0 |     5 |    +7.8% |   -2.847 |       -2.8 |      1 | resp_msg[13]
       33* |       0 |     174 |       33 |      0 |     5 |    +7.8% |   -2.847 |       -2.8 |      1 | resp_msg[13]
       34* |       0 |     174 |       33 |      0 |     5 |    +7.8% |   -2.847 |       -2.8 |      1 | resp_msg[13]
-[INFO RSZ-0100] Repair move sequence: UnbufferMove VtSwapMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
-[INFO RSZ-0094] Found 1 endpoints with setup violations.
-[INFO RSZ-0099] Repairing 1 out of 1 (100.00%) violating endpoints...
-[INFO RSZ-0221] Using custom phase sequence: PARALLEL_EVAL
     final |       0 |     174 |       33 |      0 |     5 |    +7.8% |   -2.847 |       -2.8 |      1 | resp_msg[13]
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0045] Inserted 33 buffers, 1 to split loads.

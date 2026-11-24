@@ -6,6 +6,7 @@
 
 #include "TestResizerMtFixture.hh"
 // The fixture header must come first; see its comment.
+#include "sta/PortDirection.hh"
 #include "sta/Sequential.hh"
 
 namespace rsz {
@@ -38,12 +39,38 @@ class TestResizerMtStatetable : public TestResizerMtSequential
     }
     return false;
   }
+
+  // Cell-level register check over the production per-output classifier: a
+  // register output exists and no output is a non-register (latch/clock-gate)
+  // output.  Production classifies per output (registerOutputRejectReason).
+  static bool isRegisterCell(const sta::LibertyCell* cell)
+  {
+    if (cell == nullptr) {
+      return false;
+    }
+    bool any_register_output = false;
+    sta::LibertyCellPortIterator port_iter(cell);
+    while (port_iter.hasNext()) {
+      const sta::LibertyPort* port = port_iter.next();
+      if (!port->direction()->isAnyOutput()) {
+        continue;
+      }
+      const RegisterOutputReject reason
+          = registerOutputRejectReason(cell, port);
+      if (reason == RegisterOutputReject::kNone) {
+        any_register_output = true;
+      } else if (reason != RegisterOutputReject::kNoClkToQ) {
+        return false;
+      }
+    }
+    return any_register_output;
+  }
 };
 
 TEST_F(TestResizerMtStatetable, RegisterCellReadsStatetables)
 {
-  // Statetable registers have no ff/ff_bank groups, so sequentials() is
-  // empty; the old isFlipFlop test rejected every one of them.
+  // Statetable registers have no ff/ff_bank groups, so sequentials() is empty,
+  // yet the arc-based classifier recognizes them as registers.
   for (const char* name : {"STDFF_X1",
                            "STDFF_X2",
                            "STDFFR_X1",
@@ -55,7 +82,6 @@ TEST_F(TestResizerMtStatetable, RegisterCellReadsStatetables)
     ASSERT_NE(reg, nullptr) << name;
     ASSERT_NE(reg->statetable(), nullptr) << name;
     EXPECT_TRUE(reg->sequentials().empty()) << name;
-    EXPECT_TRUE(statetableIsEdgeTriggered(*reg->statetable())) << name;
     EXPECT_TRUE(isRegisterCell(reg)) << name;
   }
 
@@ -65,18 +91,16 @@ TEST_F(TestResizerMtStatetable, RegisterCellReadsStatetables)
   ASSERT_NE(latch, nullptr);
   ASSERT_NE(latch->statetable(), nullptr);
   EXPECT_TRUE(hasRole(latch, sta::TimingRole::regClkToQ()));
-  EXPECT_FALSE(statetableIsEdgeTriggered(*latch->statetable()));
   EXPECT_FALSE(isRegisterCell(latch));
   EXPECT_EQ(registerOutputRejectReason(latch, latch->findLibertyPort("Q")),
             RegisterOutputReject::kTransparentDataArc);
 
-  // An MBFF with a second statetable (a scan lockup latch) after its
-  // register table: OpenSTA keeps only the last, the latch, so a
-  // statetable-based test rejects the cell.  Its Q outputs are registers.
+  // An MBFF with a second statetable (a scan lockup latch) after its register
+  // table: OpenSTA keeps only the last, the latch, so a statetable-based check
+  // would misclassify it.  The arc-based classifier reads its Q clk->Q arcs.
   const sta::LibertyCell* lockup = cell("MB2STDFFLU_X1");
   ASSERT_NE(lockup, nullptr);
   ASSERT_NE(lockup->statetable(), nullptr);
-  EXPECT_FALSE(statetableIsEdgeTriggered(*lockup->statetable()));
   EXPECT_TRUE(isRegisterOutput(lockup, lockup->findLibertyPort("Q0")));
   EXPECT_TRUE(isRegisterOutput(lockup, lockup->findLibertyPort("Q1")));
   EXPECT_TRUE(isRegisterCell(lockup));
@@ -119,8 +143,8 @@ TEST_F(TestResizerMtStatetable, StatetableFlipFlopGetsSequentialEstimator)
   ASSERT_FALSE(HasFatalFailure());
   const Target target = makeTarget("out0", "dq_seq", "Q");
 
-  // Before the fix prepare() returned null here: no estimator, so a Q-path
-  // swap was scored without the D-side setup/hold effects.
+  // A statetable flip-flop gets an estimator, so a Q-path swap is scored
+  // with its D-side setup/hold effects.
   const std::shared_ptr<const SequentialTimingEstimator> estimator
       = SequentialTimingEstimator::prepare(resizer_, target);
   ASSERT_NE(estimator, nullptr);
@@ -241,6 +265,57 @@ TEST_F(TestResizerMtSequential, FaninSideLossSkipsOwnInputsScoredSequentially)
   EXPECT_EQ(skipped.side_paths_evaluated, 0);
   EXPECT_FLOAT_EQ(skipped.side_loss, 0.0f);
   EXPECT_FLOAT_EQ(skipped.arrival_impr, charged.arrival_impr);
+}
+
+// A checked data input driven directly by a primary input port with no
+// set_driving_cell is modeled (prepareInput treats it as an unchanged-load
+// primary input), so the register still gets an estimator -- it is not
+// skipped for sizing.  The input slack is forced negative so the unscored
+// check slack guard (>= 25 ps) cannot be what keeps prepare() non-null.
+TEST_F(TestResizerMtSequential, PortDrivenDataInputWithoutDrivingCellIsModeled)
+{
+  prepareFlipFlop("DFF_X2");
+  ASSERT_FALSE(HasFatalFailure());
+
+  // Drive D directly from the path_in primary input port (no set_driving_cell,
+  // no set_input_transition) instead of the gate-driven n1 net.
+  odb::dbInst* ff = block_->findInst("dq_seq");
+  ASSERT_NE(ff, nullptr);
+  odb::dbNet* port_net = block_->findNet("path_in");
+  ASSERT_NE(port_net, nullptr);
+  ff->findITerm("D")->disconnect();
+  ff->findITerm("D")->connect(port_net);
+
+  // A large input delay forces dq_seq/D into a setup violation.
+  sta::Sdc* sdc = sta_->cmdMode()->sdc();
+  sta_->setInputDelay(db_network_->findPin("path_in"),
+                      sta::RiseFallBoth::riseFall(),
+                      sdc->findClock("clk"),
+                      sta::RiseFall::rise(),
+                      nullptr,
+                      false,
+                      false,
+                      sta::MinMaxAll::all(),
+                      false,
+                      0.5e-9,
+                      sdc);
+  ep_.estimateWireParasitics();
+  sta_->updateTiming(true);
+
+  // D is port-driven and its setup slack is negative (well below the 25 ps
+  // unscored-check guard), so a failed check would make prepare() return null.
+  sta::Vertex* d_vertex
+      = sta_->graph()->pinLoadVertex(db_network_->findPin("dq_seq/D"));
+  ASSERT_NE(d_vertex, nullptr);
+  const float d_slack = sta_->slack(d_vertex, sta::MinMax::max());
+  ASSERT_LT(d_slack, 0.0f);
+
+  const Target target = makeTarget("out0", "dq_seq", "Q");
+  const std::shared_ptr<const SequentialTimingEstimator> estimator
+      = SequentialTimingEstimator::prepare(resizer_, target);
+  // Definitive: missing set_driving_cell does not make prepareSetupHoldCheck
+  // fail -- the register is prepared.
+  EXPECT_NE(estimator, nullptr);
 }
 
 }  // namespace rsz

@@ -31,7 +31,6 @@
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PocvMode.hh"
-#include "sta/PortDirection.hh"
 #include "sta/Scene.hh"
 #include "sta/Sdc.hh"
 #include "sta/Sequential.hh"
@@ -42,155 +41,6 @@
 #include "utl/Logger.h"
 
 namespace rsz {
-
-namespace {
-
-// One statetable row with the Liberty "H/L" and "L/H" shorthand resolved.
-struct ConcreteStateRow
-{
-  sta::StateInputValues inputs;
-  sta::StateInternalValues currents;
-  sta::StateInternalValues nexts;
-};
-
-// Expand a row's H/L and L/H entries into the two rows they stand for.  All
-// such entries in one row vary together: the first row takes every entry's
-// first value (H/L -> H, L/H -> L), the second row every entry's second.
-// OpenSTA stores the shorthand as single high_low/low_high rows.
-void expandStateRow(const sta::StatetableRow& row,
-                    std::vector<ConcreteStateRow>& rows)
-{
-  using InputValue = sta::StateInputValue;
-  using InternalValue = sta::StateInternalValue;
-
-  const auto is_pair_input = [](const InputValue value) {
-    return value == InputValue::high_low || value == InputValue::low_high;
-  };
-  const auto is_pair_internal = [](const InternalValue value) {
-    return value == InternalValue::high_low || value == InternalValue::low_high;
-  };
-  const bool shorthand
-      = std::ranges::any_of(row.inputValues(), is_pair_input)
-        || std::ranges::any_of(row.currentValues(), is_pair_internal)
-        || std::ranges::any_of(row.nextValues(), is_pair_internal);
-  if (!shorthand) {
-    rows.push_back({
-        .inputs = row.inputValues(),
-        .currents = row.currentValues(),
-        .nexts = row.nextValues(),
-    });
-    return;
-  }
-
-  for (const bool first : {true, false}) {
-    ConcreteStateRow concrete;
-    for (const InputValue value : row.inputValues()) {
-      if (value == InputValue::high_low) {
-        concrete.inputs.push_back(first ? InputValue::high : InputValue::low);
-      } else if (value == InputValue::low_high) {
-        concrete.inputs.push_back(first ? InputValue::low : InputValue::high);
-      } else {
-        concrete.inputs.push_back(value);
-      }
-    }
-    const auto resolve = [first](const sta::StateInternalValues& values) {
-      sta::StateInternalValues resolved;
-      for (const InternalValue value : values) {
-        if (value == InternalValue::high_low) {
-          resolved.push_back(first ? InternalValue::high : InternalValue::low);
-        } else if (value == InternalValue::low_high) {
-          resolved.push_back(first ? InternalValue::low : InternalValue::high);
-        } else {
-          resolved.push_back(value);
-        }
-      }
-      return resolved;
-    };
-    concrete.currents = resolve(row.currentValues());
-    concrete.nexts = resolve(row.nextValues());
-    rows.push_back(std::move(concrete));
-  }
-}
-
-}  // namespace
-
-bool statetableIsEdgeTriggered(const sta::Statetable& statetable)
-{
-  using InputValue = sta::StateInputValue;
-  using InternalValue = sta::StateInternalValue;
-
-  const size_t node_count = statetable.internalPorts().size();
-  std::vector<ConcreteStateRow> rows;
-  for (const sta::StatetableRow& row : statetable.table()) {
-    expandStateRow(row, rows);
-  }
-  if (node_count == 0 || rows.empty()) {
-    return false;
-  }
-
-  const auto loads = [](const InternalValue value) {
-    return value == InternalValue::low || value == InternalValue::high;
-  };
-  const auto has_edge = [](const ConcreteStateRow& row) {
-    return std::ranges::any_of(row.inputs, [](const InputValue value) {
-      return value == InputValue::rise || value == InputValue::fall;
-    });
-  };
-
-  for (size_t node = 0; node < node_count; ++node) {
-    // A data load is a pair of rows that differ only in one input flipping
-    // L<->H and load opposite values: the node follows that input.  Rows
-    // that load a constant whatever the data (async set/clear) never pair.
-    // A "H/L R : - : H/L" row expands into exactly such a pair.
-    bool data_load = false;
-    for (size_t i = 0; i < rows.size(); ++i) {
-      if (rows[i].nexts.size() <= node) {
-        return false;
-      }
-      const InternalValue next_i = rows[i].nexts[node];
-      if (!loads(next_i)) {
-        continue;
-      }
-      for (size_t j = i + 1; j < rows.size(); ++j) {
-        if (rows[j].nexts.size() <= node) {
-          return false;
-        }
-        const InternalValue next_j = rows[j].nexts[node];
-        if (!loads(next_j) || next_i == next_j
-            || rows[i].currents != rows[j].currents) {
-          continue;
-        }
-
-        const sta::StateInputValues& inputs_i = rows[i].inputs;
-        const sta::StateInputValues& inputs_j = rows[j].inputs;
-        int differing = 0;
-        bool level_flip = false;
-        for (size_t k = 0; k < inputs_i.size() && k < inputs_j.size(); ++k) {
-          if (inputs_i[k] != inputs_j[k]) {
-            ++differing;
-            level_flip = (inputs_i[k] == InputValue::low
-                          && inputs_j[k] == InputValue::high)
-                         || (inputs_i[k] == InputValue::high
-                             && inputs_j[k] == InputValue::low);
-          }
-        }
-        if (differing != 1 || !level_flip) {
-          continue;
-        }
-
-        data_load = true;
-        // Loading data at a level, not an edge, is a transparent latch.
-        if (!has_edge(rows[i]) || !has_edge(rows[j])) {
-          return false;
-        }
-      }
-    }
-    if (!data_load) {
-      return false;
-    }
-  }
-  return true;
-}
 
 RegisterOutputReject registerOutputRejectReason(const sta::LibertyCell* cell,
                                                 const sta::LibertyPort* output)
@@ -267,29 +117,6 @@ bool isRegisterOutput(const sta::LibertyCell* cell,
 {
   return registerOutputRejectReason(cell, output)
          == RegisterOutputReject::kNone;
-}
-
-bool isRegisterCell(const sta::LibertyCell* cell)
-{
-  if (cell == nullptr) {
-    return false;
-  }
-  // Every output with a clk->Q arc must be a register output.
-  bool any_register_output = false;
-  sta::LibertyCellPortIterator port_iter(cell);
-  while (port_iter.hasNext()) {
-    const sta::LibertyPort* port = port_iter.next();
-    if (!port->direction()->isAnyOutput()) {
-      continue;
-    }
-    const RegisterOutputReject reason = registerOutputRejectReason(cell, port);
-    if (reason == RegisterOutputReject::kNone) {
-      any_register_output = true;
-    } else if (reason != RegisterOutputReject::kNoClkToQ) {
-      return false;
-    }
-  }
-  return any_register_output;
 }
 
 namespace {
@@ -747,9 +574,10 @@ class SetupHoldCheckCollector : public sta::PathEndVisitor
 
     PreparedSetupHoldCheck check;
     if (!prepareSetupHoldCheck(resizer_, inst_, end, candidates_, check)) {
-      // One check this estimator cannot model (a port- or tie-driven pin, an
-      // unusual timing model) used to make every candidate of the register
-      // unscorable.  Skip it while its slack covers any VT/size change.
+      // A check whose data path this estimator cannot model (an unusual
+      // timing model, or a driver whose arc it cannot prepare) would make
+      // every candidate of the register unscorable.  Skip it when its slack
+      // covers any margin a VT or size change could move.
       const float slack = sta::delayAsFloat(end->slack(resizer_.staState()));
       if (std::isfinite(slack) && slack >= kUnscoredCheckSlackGuard) {
         RepairSetupProfiler::event("sequential_unscored_check_skipped");

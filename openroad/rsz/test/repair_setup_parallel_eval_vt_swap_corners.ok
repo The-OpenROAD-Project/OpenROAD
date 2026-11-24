@@ -14,10 +14,6 @@
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -88.835 |    -2700.2 |     47 | resp_msg[13]
        1* |       0 |      28 |        0 |      0 |     0 |    +0.0% |  -77.404 |    -2303.4 |     46 | resp_msg[13]
-[INFO RSZ-0100] Repair move sequence: VtSwapMove 
-[INFO RSZ-0094] Found 44 endpoints with setup violations.
-[INFO RSZ-0099] Repairing 44 out of 44 (100.00%) violating endpoints...
-[INFO RSZ-0221] Using custom phase sequence: PARALLEL_EVAL
     final |       0 |      53 |        0 |      0 |     0 |    +0.0% |  -63.202 |    -2005.6 |     44 | resp_msg[12]
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0051] Resized 53 instances: 0 up, 0 up match, 0 down, 53 VT

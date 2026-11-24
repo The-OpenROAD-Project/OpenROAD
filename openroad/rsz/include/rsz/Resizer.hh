@@ -1065,9 +1065,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // created since the last arrival update has none.
   float clockSlewLimit(const sta::Pin* pin, const sta::Scene* scene) const;
   // True when any scene constrains clock slew (set_max_transition with
-  // -clock_path/-data_path or a [get_clocks] object).  When false, the
-  // slew checks skip the per-pin clock-domain lookup (check_clks = false),
-  // so repair_design runtime is unchanged from before clock slew support.
+  // -clock_path/-data_path or a [get_clocks] object).  The slew checks do
+  // the per-pin clock-domain lookup (check_clks) only when it is true.
   bool haveClkSlewLimits() const;
   void checkLoadSlews(const sta::Pin* drvr_pin,
                       double slew_margin,

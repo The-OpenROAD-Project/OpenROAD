@@ -16,10 +16,6 @@
        1* |       0 |       6 |       10 |      0 |     4 |    +1.9% |  -62.391 |    -1504.5 |     45 | resp_msg[13]
        2* |       0 |      15 |       16 |      0 |     8 |    +3.2% |  -45.377 |    -1102.2 |     45 | resp_msg[15]
        3* |       0 |      23 |       21 |      0 |    14 |    +4.3% |  -40.242 |     -933.3 |     44 | dpath.a_reg.out\[7\]$_DFFE_PP_/D
-[INFO RSZ-0100] Repair move sequence: SizeUpMove BufferMove SplitLoadMove SizeDownFanoutMove UnbufferMove SwapPinsMove 
-[INFO RSZ-0094] Found 44 endpoints with setup violations.
-[INFO RSZ-0099] Repairing 44 out of 44 (100.00%) violating endpoints...
-[INFO RSZ-0221] Using custom phase sequence: PARALLEL_EVAL
     final |       0 |      29 |       25 |      0 |    22 |    +5.2% |  -31.328 |     -744.0 |     44 | dpath.a_reg.out\[7\]$_DFFE_PP_/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0045] Inserted 25 buffers, 1 to split loads.

@@ -25,7 +25,6 @@
 #include "RepairSetupContext.hh"
 #include "RepairSetupProfiler.hh"
 #include "RepairTargetCollector.hh"
-#include "SequentialTimingEstimator.hh"
 #include "VtSwapCandidate.hh"
 #include "est/EstimateParasitics.h"
 #include "rsz/Resizer.hh"

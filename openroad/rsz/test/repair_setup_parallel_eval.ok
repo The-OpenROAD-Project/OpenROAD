@@ -9,10 +9,6 @@
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.253 |       -2.5 |     28 | inst13/D
        1* |      26 |       1 |        4 |      0 |     0 |    -2.6% |   -0.195 |       -1.1 |     15 | inst13/D
-[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
-[INFO RSZ-0094] Found 13 endpoints with setup violations.
-[INFO RSZ-0099] Repairing 13 out of 13 (100.00%) violating endpoints...
-[INFO RSZ-0221] Using custom phase sequence: PARALLEL_EVAL
     final |      27 |       5 |        7 |      0 |     0 |    -2.1% |   -0.187 |       -0.8 |     13 | inst13/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 27 buffers.

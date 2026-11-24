@@ -337,12 +337,7 @@ ALL_TESTS = TESTS + PASSFAIL_TESTS
 
 # PASSFAIL tests that assert their own results and have no .ok to diff.
 SELF_CHECKING_TESTS = [
-    "repair_setup_capture_vt_parallel_eval",
-    "repair_setup_crit_vt_capture",
-    "repair_slew_clk_data_path_vt",
-    "repair_slew_clk_load_wire",
     "repair_design_fixed_driver",
-    "repair_slew_clk_data_path",
     "repair_slew_corner",
     "gain_buffering_top_port_hier",
     "repair_setup_crit_vt_clock_gate",
