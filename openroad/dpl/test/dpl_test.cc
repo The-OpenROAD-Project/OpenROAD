@@ -343,6 +343,35 @@ TEST_F(CheckPlacementTest, FixedOnlyIgnoresMovableCells)
   EXPECT_EQ(failureCount("Site_alignment_failures"), 1);
 }
 
+TEST_F(CheckPlacementTest, CompactPixelAndLazySideTables)
+{
+  EXPECT_LE(sizeof(Pixel), 2 * sizeof(void*));
+
+  odb::dbMaster* buf_master = lib_->findMaster("BUF_X1");
+  ASSERT_NE(buf_master, nullptr);
+  const int row1_y = kCoreY + kRowHeight;  // R0 row
+  odb::dbInst* buf1 = makeCell(
+      "BUF_X1", "buf1", {kCoreX, row1_y}, odb::dbPlacementStatus::PLACED);
+  odb::dbInst* buf2
+      = makeCell("BUF_X1",
+                 "buf2",
+                 {kCoreX + static_cast<int>(buf_master->getWidth()), row1_y},
+                 odb::dbPlacementStatus::PLACED);
+  ASSERT_NE(buf1, nullptr);
+  ASSERT_NE(buf2, nullptr);
+
+  // Without padding or regions, abutting cells are legal across repeated
+  // checkPlacement calls (verifying Grid::clear() resets row tables).
+  EXPECT_EQ(runCheck(), "");
+  EXPECT_EQ(runCheck(), "");
+
+  // Global 1-site padding turns the abutting pair into a padding conflict
+  // caught through the lazy padding side table.
+  dp_.setPaddingGlobal(/*left=*/1, /*right=*/1);
+  EXPECT_EQ(runCheck(), "DPL-0033");
+  EXPECT_GE(failureCount("Padding_failures"), 1);
+}
+
 TEST_F(CheckPlacementTest, FixedOnlyReportsMisalignedTapcell)
 {
   odb::dbInst* tap = makeCell("TAPCELL_X1",

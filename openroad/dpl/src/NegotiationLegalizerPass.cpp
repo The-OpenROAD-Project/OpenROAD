@@ -946,7 +946,7 @@ double NegotiationLegalizer::negotiationCost(int cell_idx,
       if (!gridExists(gx, gy)) {
         return cost + kInfCost;
       }
-      const Pixel& g = gridAt(gx, gy);
+      const NegPixel& g = gridAt(gx, gy);
       if (g.capacity == 0) {
         return cost + kInfCost;  // blockage
       }
@@ -1026,7 +1026,7 @@ void NegotiationLegalizer::updateHistoryCosts(
           continue;
         }
         hist_seen_stamp_[pid] = hist_gen_;
-        Pixel& g = gridAt(gx, gy);
+        NegPixel& g = gridAt(gx, gy);
         const int ov = g.overuse();
         if (ov > 0) {
           g.hist_cost += kHfDefault * ov;

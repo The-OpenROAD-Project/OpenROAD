@@ -1049,9 +1049,12 @@ bool Opendp::checkPixels(const Node* cell,
     const bool first_row = (y1 == y);
     for (GridX x1 = x; x1 < x_end; x1++) {
       const Pixel* pixel = grid_->gridPixel(x1, y1);
-      if (pixel == nullptr || pixel->cell || !pixel->is_valid
-          || (cell->inGroup() && pixel->group != cell->getGroup())
-          || (!cell->inGroup() && pixel->group)
+      if (pixel == nullptr || pixel->cell || !pixel->is_valid) {
+        return false;
+      }
+      const Group* pixel_group = grid_->pixelGroup(pixel);
+      if ((cell->inGroup() && pixel_group != cell->getGroup())
+          || (!cell->inGroup() && pixel_group != nullptr)
           || (first_row && !grid_->getSiteOrientation(x1, y1, site))) {
         return false;
       }
