@@ -613,6 +613,105 @@ TEST_F(CheckPlacementTest, LegalCellPosRebuildsReleasedGridOnce)
   EXPECT_EQ(dp_.grid_->gridPixel(GridX{0}, GridY{0})->util, 42.0);
 }
 
+TEST_F(CheckPlacementTest, ContainedAndAbuttingStripeViasDoNotBlockSignalPin)
+{
+  odb::dbInst* buf = makeCell(
+      "BUF_X1", "buf", {kCoreX, kCoreY}, odb::dbPlacementStatus::FIRM);
+  ASSERT_NE(buf, nullptr);
+  odb::dbNet* signal = odb::dbNet::create(block_, "sig");
+  buf->findITerm("A")->connect(signal);
+
+  odb::dbNet* power = odb::dbNet::create(block_, "VDD");
+  power->setSigType(odb::dbSigType::POWER);
+  power->setSpecial();
+  odb::dbSWire* wire = odb::dbSWire::create(power, odb::dbWireType::ROUTED);
+  odb::dbTechLayer* metal1 = db_->getTech()->findLayer("metal1");
+  ASSERT_NE(metal1, nullptr);
+
+  // Two abutting horizontal metal1 followpin rails at the top of row 0.
+  const int rail_ylo = kCoreY + kRowHeight - 100;
+  const int rail_yhi = kCoreY + kRowHeight + 100;
+  const int split_x = kCoreX + kSiteWidth;
+  ASSERT_NE(odb::dbSBox::create(wire,
+                                metal1,
+                                kCoreX,
+                                rail_ylo,
+                                split_x,
+                                rail_yhi,
+                                odb::dbWireShapeType::FOLLOWPIN),
+            nullptr);
+  ASSERT_NE(odb::dbSBox::create(wire,
+                                metal1,
+                                split_x,
+                                rail_ylo,
+                                kCoreX + 8 * kSiteWidth,
+                                rail_yhi,
+                                odb::dbWireShapeType::FOLLOWPIN),
+            nullptr);
+
+  // A via whose metal1 enclosure straddles split_x while staying inside
+  // [rail_ylo, rail_yhi] adds no pin blockage outside the rail.
+  odb::dbVia* via = odb::dbVia::create(block_, "rail_via");
+  odb::dbBox::create(via, metal1, -80, -80, 80, 80);
+  ASSERT_NE(odb::dbSBox::create(wire,
+                                via,
+                                split_x,
+                                kCoreY + kRowHeight,
+                                odb::dbWireShapeType::FOLLOWPIN),
+            nullptr);
+
+  EXPECT_EQ(runCheck(/*check_fixed=*/true, /*check_placeable=*/false), "");
+}
+
+TEST_F(CheckPlacementTest, ProtrudingViaMetalOutsideStripeBlocksSignalPin)
+{
+  odb::dbInst* buf = makeCell(
+      "BUF_X1", "buf", {kCoreX, kCoreY}, odb::dbPlacementStatus::FIRM);
+  ASSERT_NE(buf, nullptr);
+  odb::dbITerm* pin_a = buf->findITerm("A");
+  ASSERT_NE(pin_a, nullptr);
+  odb::dbNet* signal = odb::dbNet::create(block_, "sig");
+  pin_a->connect(signal);
+  const odb::Rect pin_bbox = pin_a->getBBox();
+
+  odb::dbNet* power = odb::dbNet::create(block_, "VDD");
+  power->setSigType(odb::dbSigType::POWER);
+  power->setSpecial();
+  odb::dbSWire* wire = odb::dbSWire::create(power, odb::dbWireType::ROUTED);
+  odb::dbTechLayer* metal1 = db_->getTech()->findLayer("metal1");
+  ASSERT_NE(metal1, nullptr);
+
+  // Horizontal stripe clear of pin_a, plus a via pad protruding down onto
+  // pin_a's metal1 geometry.
+  const int rail_ylo = kCoreY + kRowHeight - 80;
+  const int rail_yhi = kCoreY + kRowHeight + 80;
+  ASSERT_NE(odb::dbSBox::create(wire,
+                                metal1,
+                                kCoreX,
+                                rail_ylo,
+                                kCoreX + 8 * kSiteWidth,
+                                rail_yhi,
+                                odb::dbWireShapeType::FOLLOWPIN),
+            nullptr);
+  odb::dbVia* tall_via = odb::dbVia::create(block_, "protruding_via");
+  odb::dbBox::create(tall_via,
+                     metal1,
+                     -40,
+                     pin_bbox.yCenter() - (kCoreY + kRowHeight) - 20,
+                     40,
+                     40);
+  ASSERT_NE(odb::dbSBox::create(wire,
+                                tall_via,
+                                pin_bbox.xCenter(),
+                                kCoreY + kRowHeight,
+                                odb::dbWireShapeType::STRIPE),
+            nullptr);
+
+  EXPECT_EQ(runCheck(/*check_fixed=*/true, /*check_placeable=*/false),
+            "DPL-0041");
+  EXPECT_EQ(failureCount("Blocked_layers_failures"), 1);
+}
+
 // Higher routing layers isolate supply-via checks from legacy pin blockages.
 class FixedSupplyViaTest : public tst::Nangate45Fixture
 {
