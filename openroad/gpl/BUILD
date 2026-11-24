@@ -197,6 +197,7 @@ cc_library(
         "@boost.unordered",
         "@coin-or-lemon//:lemon",
         "@eigen",
+        "@fmt",
         "@openmp",
         "@or-tools//ortools/linear_solver",
         "@or-tools//ortools/linear_solver:linear_solver_base",

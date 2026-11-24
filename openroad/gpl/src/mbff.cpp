@@ -20,6 +20,7 @@
 #include "absl/container/inlined_vector.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "fmt/format.h"
 #include "lemon/core.h"
 #include "lemon/list_graph.h"
 #include "lemon/network_simplex.h"
@@ -72,16 +73,16 @@ using utl::GPL;
 std::string MBFF::Mask::to_string() const
 {
   return fmt::format("{}{}{}{}{}{}{}{}{}{}",
-                     (int) clock_polarity,
-                     (int) has_clear,
-                     (int) clear_active_high,
-                     (int) has_preset,
-                     (int) preset_active_high,
-                     (int) pos_output,
-                     (int) inv_output,
+                     static_cast<int>(clock_polarity),
+                     static_cast<int>(has_clear),
+                     static_cast<int>(clear_active_high),
+                     static_cast<int>(has_preset),
+                     static_cast<int>(preset_active_high),
+                     static_cast<int>(pos_output),
+                     static_cast<int>(inv_output),
                      func_idx,
-                     (int) is_scan_cell,
-                     (int) is_register);
+                     static_cast<int>(is_scan_cell),
+                     static_cast<int>(is_register));
 }
 
 bool MBFF::Mask::operator<(const Mask& rhs) const
