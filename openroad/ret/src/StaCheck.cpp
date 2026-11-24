@@ -215,7 +215,6 @@ StaCheck::Round StaCheck::runRound(int number, int max_moves)
                   52,
                   "STA check round {}: the search proposes no slide.",
                   number);
-    staSlack(sta_, *guard_);
     return round;
   }
   if (betterThan(full.slack, before, before)) {
@@ -238,7 +237,6 @@ StaCheck::Round StaCheck::runRound(int number, int max_moves)
                 "STA check round {}: no number of slides is better than "
                 "the start; nothing kept.",
                 number);
-  staSlack(sta_, *guard_);
   return round;
 }
 

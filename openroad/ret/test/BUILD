@@ -50,7 +50,6 @@ TESTS = [
     "retime_sta_check_unmap",
     "retime_two_clocks",
     "retime_unmap",
-    "retime_why",
     "retime_wire",
 ]
 

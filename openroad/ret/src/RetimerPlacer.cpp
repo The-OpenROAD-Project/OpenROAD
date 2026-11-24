@@ -27,7 +27,6 @@
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Scene.hh"
-#include "utl/Logger.h"
 
 namespace ret {
 
@@ -56,12 +55,8 @@ StaSlack staSlack(sta::dbSta* sta, est::IncrementalParasiticsGuard& guard)
 
 RetimerPlacer::RetimerPlacer(sta::dbSta* sta,
                              est::EstimateParasitics* estimate_parasitics,
-                             rsz::Resizer* resizer,
-                             utl::Logger* logger)
-    : sta_(sta),
-      estimate_parasitics_(estimate_parasitics),
-      resizer_(resizer),
-      logger_(logger)
+                             rsz::Resizer* resizer)
+    : sta_(sta), estimate_parasitics_(estimate_parasitics), resizer_(resizer)
 {
 }
 
@@ -71,18 +66,11 @@ void RetimerPlacer::prepare()
   resizer_->initBlock();
 }
 
-bool RetimerPlacer::choosesCells() const
-{
-  return logger_->debugCheck(utl::RET, "place_size", 1);
-}
-
 std::vector<odb::dbMaster*> RetimerPlacer::registerCells(odb::dbMaster* master)
 {
   std::vector<odb::dbMaster*> masters = {master};
-  if (choosesCells()) {
-    const std::vector<odb::dbMaster*>& others = equivalentMasters(master);
-    masters.insert(masters.end(), others.begin(), others.end());
-  }
+  const std::vector<odb::dbMaster*>& others = equivalentMasters(master);
+  masters.insert(masters.end(), others.begin(), others.end());
   return masters;
 }
 
@@ -402,7 +390,7 @@ PlaceStats RetimerPlacer::placeNewCells(
       moved = true;
     }
   }
-  if (!new_registers.empty() && choosesCells()) {
+  if (!new_registers.empty()) {
     stats.resized = chooseCells(new_registers, guard);
   }
   return stats;

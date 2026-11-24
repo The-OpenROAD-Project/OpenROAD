@@ -103,10 +103,8 @@ Retimer::Retimer(odb::dbDatabase* db,
       estimate_parasitics_(estimate_parasitics),
       logger_(logger),
       unmapper_(std::make_unique<SequentialUnmapper>(db, sta, logger)),
-      placer_(std::make_unique<RetimerPlacer>(sta,
-                                              estimate_parasitics,
-                                              resizer,
-                                              logger))
+      placer_(
+          std::make_unique<RetimerPlacer>(sta, estimate_parasitics, resizer))
 {
 }
 
@@ -143,21 +141,18 @@ void Retimer::retime(int max_moves)
   checkRegisters(block);
 
   placer_->forgetCells();
+  report_graph_ = true;
 
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   const int unplaced_before = countPlacement(block).unplaced;
   // An error while the netlist is being edited restores it.
   odb::dbDatabase::beginEco(block);
   try {
-    if (logger_->debugCheck(utl::RET, "sta_check", 1)) {
-      StaCheck check(
-          sta_, logger_, placer_.get(), block, &guard, [&](const int limit) {
-            return searchAndApply(block, limit, guard);
-          });
-      check.run(max_moves);
-    } else {
-      searchAndApply(block, max_moves, guard);
-    }
+    StaCheck check(
+        sta_, logger_, placer_.get(), block, &guard, [&](const int limit) {
+          return searchAndApply(block, limit, guard);
+        });
+    check.run(max_moves);
   } catch (...) {
     odb::dbDatabase::undoEco(block);
     throw;
@@ -180,13 +175,12 @@ int Retimer::searchAndApply(odb::dbBlock* block,
 {
   RetimingGraph graph(db_, sta_, logger_);
   graph.build();
-  if (!quietTrials()) {
+  if (std::exchange(report_graph_, false)) {
     graph.report();
   }
   clock_net_ = findClockNet(block);
 
-  Retime search(&graph, sta_, logger_, dff_d_mterm_);
-  setUpSearch(search);
+  Retime search = newSearch(graph);
   search.run(max_moves);
   const std::vector<int>& r = search.getRetiming();
 
@@ -198,22 +192,15 @@ int Retimer::searchAndApply(odb::dbBlock* block,
   return applyAfterUnmapping(graph, search, movers, max_moves, guard);
 }
 
-bool Retimer::quietTrials() const
+Retime Retimer::newSearch(const RetimingGraph& graph)
 {
-  return logger_->debugCheck(utl::RET, "sta_check", 1)
-         && !logger_->debugCheck(utl::RET, "sta_check", 2);
-}
-
-void Retimer::setUpSearch(Retime& search)
-{
-  search.setQuiet(quietTrials());
-  if (!logger_->debugCheck(utl::RET, "slack_search", 1)) {
-    return;
-  }
-  search.enableSlackSearch(
+  return Retime(
+      &graph,
+      sta_,
+      logger_,
+      dff_d_mterm_,
       placer_->registerCells(dff_master_),
-      [this](odb::dbMaster* master) { return placer_->registerCells(master); },
-      placer_->choosesCells());
+      [this](odb::dbMaster* master) { return placer_->registerCells(master); });
 }
 
 int Retimer::applyAfterUnmapping(const RetimingGraph& graph,
@@ -264,17 +251,9 @@ int Retimer::applyAfterUnmapping(const RetimingGraph& graph,
              "netlist");
   constexpr int kMaxRounds = 20;
   for (int round = 0; round < kMaxRounds; ++round) {
-    if (!quietTrials()) {
-      logger_->info(utl::RET,
-                    43,
-                    "Iteration {}: repeating the search on the netlist with "
-                    "the unmapped registers.",
-                    round + 2);
-    }
     RetimingGraph g(db_, sta_, logger_);
     g.build();
-    Retime s(&g, sta_, logger_, dff_d_mterm_);
-    setUpSearch(s);
+    Retime s = newSearch(g);
     s.run(max_moves);
     const std::vector<int>& rr = s.getRetiming();
     const std::unordered_set<odb::dbInst*> more = moversToUnmap(g, rr);
@@ -843,8 +822,7 @@ void Retimer::checkMoves(const RetimingGraph& graph,
 
 void Retimer::rebuildGroup(const Group& group,
                            const std::vector<const RegisterClass*>& classes,
-                           odb::dbNet* clock_net,
-                           ApplyStats& stats)
+                           odb::dbNet* clock_net)
 {
   const ModNets mod_nets = groupModNets(group, classes, clock_net);
   // In id order: odb gives a new instance the slot of a deleted one, so the
@@ -855,20 +833,12 @@ void Retimer::rebuildGroup(const Group& group,
   });
   for (odb::dbInst* f : flops) {
     removeRegister(f);
-    ++stats.removed;
   }
-  const int max_depth = static_cast<int>(classes.size());
-  if (max_depth == 0) {
+  if (classes.empty()) {
     return;
   }
   const std::vector<odb::dbNet*> depth_net
       = buildChain(group.driver_net, clock_net, classes, mod_nets);
-  stats.inserted += max_depth;
-  for (const RegisterClass* cls : classes) {
-    if (cls != nullptr) {
-      ++stats.inserted_classed;
-    }
-  }
   for (const Sink& s : group.sinks) {
     if (s.wr > 0) {
       s.pin->disconnect();
@@ -924,27 +894,11 @@ void Retimer::applyRetiming(const RetimingGraph& graph,
   }
   checkMoves(graph, fanin, r);
 
-  ApplyStats stats;
   for (size_t i = 0; i < groups.size(); ++i) {
-    const Group& group = groups[i];
-    if (group.changed) {
-      ++stats.groups_changed;
-      rebuildGroup(group, classes[i], clock_nets[i], stats);
+    if (groups[i].changed) {
+      rebuildGroup(groups[i], classes[i], clock_nets[i]);
     }
   }
-
-  if (quietTrials()) {
-    return;
-  }
-  logger_->info(utl::RET,
-                24,
-                "Rebuilt {} of {} register groups: {} registers removed, {} "
-                "inserted, {} of them keeping their class.",
-                stats.groups_changed,
-                groups.size(),
-                stats.removed,
-                stats.inserted,
-                stats.inserted_classed);
 }
 
 }  // namespace ret

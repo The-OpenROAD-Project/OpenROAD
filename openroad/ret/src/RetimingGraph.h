@@ -48,8 +48,6 @@ class RetimingGraph
   const std::vector<std::vector<EdgePhys>>& phys() const { return phys_; }
   // The gates the search never crosses.
   const std::vector<bool>& pinned() const { return pinned_; }
-  // The first reason the gate is pinned for.
-  const char* pinReason(int v) const;
   const std::vector<bool>& selfDual() const { return self_dual_; }
   float clockPeriod() const { return clock_period_; }
   // The class of a sequential cell; RegisterKind::kOther for any other cell.
@@ -62,29 +60,11 @@ class RetimingGraph
   odb::dbNet* chainNet(const EdgePhys& phys) const;
 
  private:
-  // Why a gate is pinned; it can have several reasons.
-  enum PinReason
-  {
-    kPort,
-    kDontTouch,
-    kChainToPort,
-    kChainToControl,
-    kChainToOther,
-    kUnmodeledInput,
-    kFixedRegister,
-    kClockSplit,
-    kMixedClock,
-    kModule,
-    kPinReasons
-  };
-  void pinGate(int v, PinReason reason);
-
   // An enable pin travels with its register's class; it is not a data edge.
   bool continuesThrough(odb::dbInst* reg, odb::dbITerm* pin) const;
   // A net read by a port or a control pin: the registers in front of it
   // keep their depth, and the gate that drives them is never crossed.
-  // kPinReasons: the net does not fence its chain.
-  PinReason chainFence(odb::dbNet* net) const;
+  bool fencesChain(odb::dbNet* net) const;
   void walkFanout(int source,
                   odb::dbInst* current,
                   int weight,
@@ -113,7 +93,6 @@ class RetimingGraph
   std::vector<std::vector<Edge>> adj_;
   std::vector<std::vector<EdgePhys>> phys_;
   std::vector<bool> pinned_;
-  std::vector<unsigned> pin_reasons_;        // a bit per PinReason
   std::unordered_set<odb::dbInst*> fenced_;  // registers that never move
   std::unordered_map<odb::dbInst*, RegisterClass> reg_class_;
   const RegisterClass other_class_;

@@ -6,7 +6,6 @@
 #include <cstddef>
 #include <functional>
 #include <optional>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -24,33 +23,28 @@ class Logger;
 
 namespace ret {
 
-// Greedy forward retiming on a delay model read from STA: wire delays per
-// edge, and two NLDM arcs per gate (combinational load, register D-pin
-// load) chosen by the current register configuration.  Register-to-register
-// paths are the objective; a path rooted at a pinned gate cannot be
-// shortened by a forward move and is a constraint instead: it may not grow
-// past the clock period, or past its starting value when it already
-// violates.  Each slide r[v] -= 1 is kept only if the exact recomputed worst
-// arrival improves; a cone estimate filters the candidates.
+// Forward retiming on a delay model read from STA.  A path starts at what
+// its register launches, gate arcs are calibrated to STA's and an endpoint
+// is charged its setup.  A slide r[v] -= 1 moves the registers on the inputs
+// of gate v to its output.  The search takes the worst failing gate whose
+// slide raises the slack through it without lowering the total negative
+// slack; when none is left, slides that raise the total without lowering the
+// worst slack.  A path rooted at a pinned gate cannot be shortened by a
+// forward move, but its slack counts like any other.
 class Retime
 {
  public:
-  // flop_d_mterm is the data pin of the cell new registers are built from.
+  using CellsOf = std::function<std::vector<odb::dbMaster*>(odb::dbMaster*)>;
+  // flop_d_mterm: the data pin of the base cell.  base_cells: what a new
+  // register can be built from.  cells_of: what a register of a given cell
+  // can be rebuilt from.
   Retime(const RetimingGraph* graph,
          sta::dbSta* sta,
          utl::Logger* logger,
-         odb::dbMTerm* flop_d_mterm);
+         odb::dbMTerm* flop_d_mterm,
+         std::vector<odb::dbMaster*> base_cells,
+         CellsOf cells_of);
 
-  using CellsOf = std::function<std::vector<odb::dbMaster*>(odb::dbMaster*)>;
-  // Judges a slide by its slack in the detailed delay model
-  // (RetimeModel.cpp).  base_cells: what a new register can be built from.
-  // cells_of: what a register of a given cell can be rebuilt from.
-  // fastest_cell: a new register is priced with its fastest cell, else with
-  // its slowest.
-  void enableSlackSearch(std::vector<odb::dbMaster*> base_cells,
-                         CellsOf cells_of,
-                         bool fastest_cell);
-  void setQuiet(bool quiet) { quiet_ = quiet; }
   void run(int max_moves);  // <= 0: unlimited
   const std::vector<int>& getRetiming() const { return r_; }
   int getMoves() const { return moves_; }
@@ -64,7 +58,6 @@ class Retime
     float arc_comb;  // target's arc when its output is combinational
     float arc_reg;   // target's arc when its output drives a register
     odb::dbITerm* sink;
-    // The rest is read by the slack search only.
     float launch;  // STA arrival at the sink
     const EdgePhys* phys;
     float unmap;  // added once a slide unmaps the edge's registers
@@ -111,39 +104,20 @@ class Retime
   bool outputRegistered(int v) const;
   bool isCombinational(int u, const Edge& e) const;
   bool isCombinational(int t, const FaninEdge& fe) const;
-  // Arrival of t from the fanins it reads without a register in between; a
-  // gate without any is a path root.
   void setArrival(int t);
   void computeArrivals();
+  bool hasRegisterPath() const;
   // A slide across v changes the arrivals of v, of its fanins (their output
   // may stop being registered), of its fanouts (they may become roots), and
   // of everything downstream of those without a register in between.  Only
   // that set is recomputed, in topological order, and saved for undoSlide.
-  // Returns the worst arrival after the slide.
-  double slide(int v);
-  // The slide without the pass over all gates for the worst arrival.
   void applySlide(int v);
   void undoSlide(int v);
-  double worstArrival();
-  void markCriticalCone(double worst);
-  double excess(double arrival) const;
-  double arrivalAfterSlide(int v) const;
-  void collectSlideCone(int v);
-  void sweepSlideCone(int v);
-  double estimateSlideDelta(int v);
   bool forwardMovable(int v) const;
-  void reportSlide(int v, int moves);
-  void reportResult(int moves, int pi_rejects);
 
-  // The slack search (RetimeModel.cpp).
-  struct ModelSlack
-  {
-    double worst = 0.0;
-    double total = 0.0;
-  };
   // The slack through gate v before a slide across it, into and out of
   // the register the slide leaves behind v, and what the slide adds to the
-  // model's total negative slack.
+  // total negative slack.
   struct SlideEffect
   {
     double before = 0.0;
@@ -151,23 +125,14 @@ class Retime
     double out = 0.0;
     double total_change = 0.0;
   };
-  struct SlackTally
-  {
-    int for_spot = 0;
-    int for_total = 0;
-    int refused_for_total = 0;
-  };
   struct Pick
   {
     int gate = -1;         // -1: no slide left
     bool skipped = false;  // a refused spot was passed over
   };
-  void runBySlack(int max_moves);
-  // First the worst failing spot whose slide raises the slack through it
-  // by more than `margin` without lowering the total negative slack; else
-  // the first whose slide raises the total without lowering the worst
-  // slack.  A spot neither rule takes is marked in `refused`.
-  Pick pickSlide(double margin, std::vector<char>& refused, SlackTally& tally);
+  void search(int max_moves);
+  // A spot neither rule of the search takes is marked in `refused`.
+  Pick pickSlide(double margin, std::vector<char>& refused);
   // The gates a slide can cross whose worst path fails, worst first.
   std::vector<std::pair<double, int>> failingSpots(
       const std::vector<char>& refused,
@@ -176,15 +141,13 @@ class Retime
   void updateTails(std::vector<char>& refused);
   void reopenAround(const std::vector<int>& gates,
                     std::vector<char>& refused) const;
-  void reportSlackSearch(const ModelSlack& start, const SlackTally& tally);
-  ModelSlack modelSlack() const;
+  double worstSlack() const;
   // The arrival that leaves no slack before an endpoint's charge.
   double requiredTime() const;
   // Infinite when no constrained path runs there.
   double slackOf(double arrival, double tail) const;
   double slackThrough(int v) const;
-  // The negative slack of the path ending at t's output; zero when it is
-  // no endpoint or meets timing.
+  // Zero when t's output is no endpoint or meets timing.
   double negativeSlackAt(int t) const;
   // What an endpoint at v's output is charged on top of v's arrival.
   double endShift(int v) const;
@@ -194,7 +157,7 @@ class Retime
   double crossingDelay(int t, const FaninEdge& fe) const;
   void computeTails();
 
-  void computeSlackModel();
+  void computeRegisterTiming();
   void computeCrossExtra();
   void computeLaunch();
   void calibrateArcs();
@@ -227,7 +190,8 @@ class Retime
   void sampleLaunch(odb::dbInst* flop, std::vector<float>& offsets);
   // The cells the register a slide across u builds can be made from.
   std::vector<sta::LibertyCell*> newRegisterCells(int u) const;
-  // Sets launch_cell_[u]; returns its clock-to-Q at the load.
+  // Sets launch_cell_[u] to the fastest one; returns its clock-to-Q at the
+  // load.
   float pickLaunchCell(int u, float load);
   // The registers a first slide across t moves, and whether they keep
   // their class across it.
@@ -239,53 +203,22 @@ class Retime
   double registerEndShift(int v, double arrival);
   double portEndShift(int v, double arrival);
 
-  // `set_debug_level RET why 1`: where STA's failing endpoints are, and
-  // what stops a slide at the first gate of the worst path into each
-  // failing endpoint of the model.
-  enum class SlideStop
-  {
-    kStartsAtPinned,
-    kWouldHelp,
-    kRefusedForTotal,
-    kLengthenedPathLimits,
-    kShortenedPathGainsLittle,
-    kPinnedGate,
-    kRegisteredOutput,
-    kUnregisteredInput,
-    kNoFanin,
-    kNoPath,
-  };
-  static constexpr int kSlideStops = 10;
-  void reportFailingEndpoints() const;
-  std::unordered_set<const sta::Pin*> modeledEndpoints() const;
-  void reportStops(double margin);
-  SlideStop slideStop(int s, double margin);
-  // The gate behind the register that launches the worst path into t; -1
-  // when the model traces none.
-  int launchGate(int t) const;
-  // The gate the worst pinned-rooted path into t starts at.
-  int pinnedStart(int t) const;
-
   const RetimingGraph* graph_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
 
   std::vector<int> r_;
   std::vector<double> gate_floor_;
-  std::vector<double> arrivals_;     // register-rooted, the objective
-  std::vector<double> arrivals_pi_;  // pinned-rooted, the constraint
+  std::vector<double> arrivals_;     // register-rooted
+  std::vector<double> arrivals_pi_;  // pinned-rooted
   std::vector<float> pi_source_;     // STA arrival at a pinned source gate
   std::vector<std::vector<FaninEdge>> fanin_;
-  std::vector<char> in_critical_cone_;
 
   struct Scratch
   {
     std::vector<int> indeg;
     std::vector<int> queue;
     std::vector<int> local_indeg;
-    std::vector<double> local_arr;
-    std::vector<char> in_cone;
-    std::vector<int> cone;
     std::vector<char> in_dirty;
     std::vector<int> dirty;
     std::vector<double> saved_arrivals;
@@ -295,10 +228,6 @@ class Retime
       indeg.assign(n, 0);
       queue.assign(n, 0);
       local_indeg.assign(n, 0);
-      local_arr.assign(n, 0.0);
-      in_cone.assign(n, 0);
-      cone.clear();
-      cone.reserve(n);
       in_dirty.assign(n, 0);
       dirty.clear();
       dirty.reserve(n);
@@ -310,17 +239,11 @@ class Retime
 
   odb::dbMTerm* flop_d_mterm_ = nullptr;
   float flop_d_cap_ = 0.0f;
-  double critical_threshold_ = 0.0;
-  double worst_pi_ = 0.0;  // worst pinned-rooted arrival of the last sweep
-  double pi_limit_ = 0.0;  // pinned-rooted arrivals may not grow past this
   int dcalc_ap_ = 0;
-  bool quiet_ = false;
-  int moves_ = 0;  // slides accepted by the last run
+  int moves_ = 0;  // slides taken by the last run
 
-  bool slack_search_ = false;
   std::vector<odb::dbMaster*> base_cells_;
   CellsOf cells_of_;
-  bool fastest_cell_ = false;
   float clock_slew_ = 0.0f;
   double launch_offset_ = 0.0;
   // Per gate.

@@ -21,11 +21,10 @@ class Logger;
 
 namespace ret {
 
-// `set_debug_level RET sta_check 1`: STA, not the delay model, decides what
-// is kept.  The slides are applied, the new cells placed and the design
-// timed.  The slides are kept when neither the worst nor the total negative
-// slack is below the start; else shorter prefixes are tried, each half the
-// last.  `sta_check 2` also logs what the search reports for every trial.
+// STA, not the delay model of the search, decides what is kept.  The slides
+// are applied, the new cells placed and the design timed.  The slides are
+// kept when neither the worst nor the total negative slack is below the
+// start; else shorter prefixes are tried, each half the last.
 class StaCheck
 {
  public:

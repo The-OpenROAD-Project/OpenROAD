@@ -5,11 +5,8 @@
 
 #include <algorithm>
 #include <array>
-#include <climits>
 #include <cstddef>
-#include <limits>
-#include <string>
-#include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "RetimingGraph.h"
@@ -33,24 +30,39 @@
 namespace ret {
 
 namespace {
-// Arrival of a path rooted at a pinned gate: a forward move can only
-// lengthen it, so it never becomes the worst arrival the search lowers.
+// The arrival at a gate no path of that root reaches.
 constexpr double kExcluded = -1e30;
-constexpr double kNegInf = -std::numeric_limits<double>::infinity();
-
-constexpr double kEps = 1e-15;
-
-constexpr const char* kSlideTableRule
-    = "----------------------------------------"
-      "---------------------------";
 }  // namespace
 
 Retime::Retime(const RetimingGraph* graph,
                sta::dbSta* sta,
                utl::Logger* logger,
-               odb::dbMTerm* flop_d_mterm)
-    : graph_(graph), sta_(sta), logger_(logger), flop_d_mterm_(flop_d_mterm)
+               odb::dbMTerm* flop_d_mterm,
+               std::vector<odb::dbMaster*> base_cells,
+               CellsOf cells_of)
+    : graph_(graph),
+      sta_(sta),
+      logger_(logger),
+      flop_d_mterm_(flop_d_mterm),
+      base_cells_(std::move(base_cells)),
+      cells_of_(std::move(cells_of))
 {
+}
+
+void Retime::run(int max_moves)
+{
+  const int n = static_cast<int>(graph_->nodes().size());
+  r_.assign(n, 0);
+  moves_ = 0;
+  arrivals_.assign(n, 0.0);
+  arrivals_pi_.assign(n, kExcluded);
+  scratch_.init(n);
+
+  computeArcDelays();
+  computeArrivals();
+  if (hasRegisterPath()) {
+    search(max_moves);
+  }
 }
 
 float Retime::pinArrival(odb::dbITerm* db_pin)
@@ -154,7 +166,7 @@ void Retime::computeArcDelays()
   computeWireArcs();
   computeCombArcs();
   computeSeqArcs();
-  computeSlackModel();
+  computeRegisterTiming();
 }
 
 void Retime::resolveFlopDCap()
@@ -381,10 +393,8 @@ void Retime::setArrival(int t)
   for (const FaninEdge& fe : fanin_[t]) {
     const double arc = registered ? fe.arc_reg : fe.arc_comb;
     if (!isCombinational(t, fe)) {
-      if (slack_search_) {
-        launched = true;
-        a = std::max(a, launchArrival(t, fe) + arc);
-      }
+      launched = true;
+      a = std::max(a, launchArrival(t, fe) + arc);
       continue;
     }
     root = false;
@@ -435,6 +445,12 @@ void Retime::computeArrivals()
       }
     }
   }
+}
+
+bool Retime::hasRegisterPath() const
+{
+  return std::ranges::any_of(arrivals_,
+                             [](double arrival) { return arrival > 0.0; });
 }
 
 void Retime::applySlide(int v)
@@ -504,12 +520,6 @@ void Retime::applySlide(int v)
   }
 }
 
-double Retime::slide(int v)
-{
-  applySlide(v);
-  return worstArrival();
-}
-
 void Retime::undoSlide(int v)
 {
   r_[v] += 1;
@@ -518,150 +528,6 @@ void Retime::undoSlide(int v)
     arrivals_[s.dirty[i]] = s.saved_arrivals[i];
     arrivals_pi_[s.dirty[i]] = s.saved_arrivals_pi[i];
   }
-}
-
-double Retime::worstArrival()
-{
-  const int n = static_cast<int>(graph_->nodes().size());
-  double worst = 0.0;
-  worst_pi_ = kExcluded;
-  for (int v = 0; v < n; ++v) {
-    worst = std::max(worst, arrivals_[v]);
-    worst_pi_ = std::max(worst_pi_, arrivals_pi_[v]);
-  }
-  return worst;
-}
-
-void Retime::markCriticalCone(double worst)
-{
-  constexpr double kSlackBand = 1e-3;
-  const int n = static_cast<int>(graph_->nodes().size());
-  critical_threshold_ = worst * (1.0 - kSlackBand);
-
-  std::ranges::fill(in_critical_cone_, 0);
-  int head = 0;
-  int tail = 0;
-  for (int v = 0; v < n; ++v) {
-    if (arrivals_[v] > critical_threshold_) {
-      in_critical_cone_[v] = 1;
-      scratch_.queue[tail++] = v;
-    }
-  }
-  while (head < tail) {
-    const int t = scratch_.queue[head++];
-    for (const FaninEdge& fe : fanin_[t]) {
-      if (isCombinational(t, fe) && !in_critical_cone_[fe.u]) {
-        in_critical_cone_[fe.u] = 1;
-        scratch_.queue[tail++] = fe.u;
-      }
-    }
-  }
-}
-
-double Retime::excess(double arrival) const
-{
-  return arrival > critical_threshold_ ? arrival - critical_threshold_ : 0.0;
-}
-
-double Retime::arrivalAfterSlide(int v) const
-{
-  double arrival = kNegInf;
-  for (const FaninEdge& fe : fanin_[v]) {
-    if (fe.weight + r_[v] - r_[fe.u] == 1) {
-      arrival = std::max(arrival, arrivals_[fe.u] + fe.wire + fe.arc_reg);
-    }
-  }
-  if (arrival == kNegInf) {
-    return graph_->pinned()[v] ? kExcluded : gate_floor_[v];
-  }
-  return arrival;
-}
-
-void Retime::collectSlideCone(int v)
-{
-  scratch_.cone.clear();
-  auto visit = [&](int u) {
-    for (const Edge& e : graph_->adj()[u]) {
-      const int t = e.target;
-      if (e.weight + r_[t] - r_[u] == 0 && in_critical_cone_[t]
-          && !scratch_.in_cone[t]) {
-        scratch_.in_cone[t] = 1;
-        scratch_.cone.push_back(t);
-      }
-    }
-  };
-  visit(v);
-  size_t next = 0;
-  while (next < scratch_.cone.size()) {
-    visit(scratch_.cone[next++]);
-  }
-}
-
-void Retime::sweepSlideCone(int v)
-{
-  for (int t : scratch_.cone) {
-    scratch_.local_indeg[t] = 0;
-  }
-  for (int t : scratch_.cone) {
-    for (const FaninEdge& fe : fanin_[t]) {
-      if (fe.weight + r_[t] - r_[fe.u] != 0 || fe.u == v) {
-        continue;
-      }
-      if (scratch_.in_cone[fe.u]) {
-        ++scratch_.local_indeg[t];
-      }
-    }
-  }
-  int head = 0;
-  int tail = 0;
-  for (int t : scratch_.cone) {
-    if (scratch_.local_indeg[t] == 0) {
-      scratch_.queue[tail++] = t;
-    }
-  }
-  while (head < tail) {
-    const int t = scratch_.queue[head++];
-    const bool registered = outputRegistered(t);
-    double a = kNegInf;
-    for (const FaninEdge& fe : fanin_[t]) {
-      if (fe.weight + r_[t] - r_[fe.u] != 0 || fe.u == v) {
-        continue;
-      }
-      const double src
-          = scratch_.in_cone[fe.u] ? scratch_.local_arr[fe.u] : arrivals_[fe.u];
-      const double arc = registered ? fe.arc_reg : fe.arc_comb;
-      a = std::max(a, src + fe.wire + arc);
-    }
-    if (a == kNegInf) {
-      a = graph_->pinned()[t] ? kExcluded : gate_floor_[t];
-    }
-    scratch_.local_arr[t] = a;
-    for (const Edge& e : graph_->adj()[t]) {
-      const int s = e.target;
-      if (e.weight + r_[s] - r_[t] != 0 || !scratch_.in_cone[s]) {
-        continue;
-      }
-      if (--scratch_.local_indeg[s] == 0) {
-        scratch_.queue[tail++] = s;
-      }
-    }
-  }
-}
-
-double Retime::estimateSlideDelta(int v)
-{
-  const double v_delta = excess(arrivalAfterSlide(v)) - excess(arrivals_[v]);
-  collectSlideCone(v);
-  if (scratch_.cone.empty()) {
-    return v_delta;
-  }
-  sweepSlideCone(v);
-  double cone_delta = 0.0;
-  for (int t : scratch_.cone) {
-    cone_delta += excess(scratch_.local_arr[t]) - excess(arrivals_[t]);
-    scratch_.in_cone[t] = 0;
-  }
-  return v_delta + cone_delta;
 }
 
 bool Retime::forwardMovable(int v) const
@@ -680,126 +546,6 @@ bool Retime::forwardMovable(int v) const
     }
   }
   return true;
-}
-
-void Retime::run(int max_moves)
-{
-  const int n = static_cast<int>(graph_->nodes().size());
-  r_.assign(n, 0);
-  moves_ = 0;
-  arrivals_.assign(n, 0.0);
-  arrivals_pi_.assign(n, kExcluded);
-  in_critical_cone_.assign(n, 0);
-  scratch_.init(n);
-
-  computeArcDelays();
-  computeArrivals();
-  double worst = worstArrival();
-  markCriticalCone(worst);
-  pi_limit_ = std::max(static_cast<double>(graph_->clockPeriod()), worst_pi_);
-  if (worst <= 0.0) {
-    if (!quiet_) {
-      logger_->info(utl::RET, 21, "No register-to-register path to optimize.");
-    }
-    return;
-  }
-  if (slack_search_) {
-    runBySlack(max_moves);
-    return;
-  }
-
-  const int cap = max_moves <= 0 ? INT_MAX : max_moves;
-  int moves = 0;
-  int pi_rejects = 0;
-  bool accepted = true;
-  while (accepted && moves < cap) {
-    accepted = false;
-    for (int v = 0; v < n && !accepted; ++v) {
-      if (in_critical_cone_[v] && forwardMovable(v)
-          && estimateSlideDelta(v) < -kEps) {
-        const double trial = slide(v);
-        const bool pi_ok = worst_pi_ <= pi_limit_ + kEps;
-        if (!pi_ok) {
-          ++pi_rejects;
-        }
-        if (pi_ok && trial < worst - kEps) {
-          worst = trial;
-          ++moves;
-          reportSlide(v, moves);
-          markCriticalCone(worst);
-          accepted = true;
-        } else {
-          undoSlide(v);
-        }
-      }
-    }
-  }
-  moves_ = moves;
-  reportResult(moves, pi_rejects);
-}
-
-void Retime::reportSlide(int v, int moves)
-{
-  if (quiet_) {
-    return;
-  }
-  std::string net_name = "?";
-  for (odb::dbITerm* iterm : graph_->nodes()[v]->getITerms()) {
-    if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-      if (iterm->getNet() != nullptr) {
-        net_name = iterm->getNet()->getName();
-      }
-      break;
-    }
-  }
-  int max_wr = 0;
-  for (const Edge& e : graph_->adj()[v]) {
-    max_wr = std::max(max_wr, e.weight + r_[e.target] - r_[v]);
-  }
-  std::unordered_set<odb::dbInst*> moved_flops;
-  for (const FaninEdge& fe : fanin_[v]) {
-    const std::vector<Edge>& edges = graph_->adj()[fe.u];
-    const int edge_count = static_cast<int>(edges.size());
-    for (int k = 0; k < edge_count; ++k) {
-      if (edges[k].target == v) {
-        const std::vector<odb::dbInst*>& flops = graph_->phys()[fe.u][k].flops;
-        moved_flops.insert(flops.begin(), flops.end());
-      }
-    }
-  }
-  if (moves == 1) {
-    logger_->report("");
-    logger_->report(" Slide | Flops | Sinks | Max wr | {:<20} | fanout net",
-                    "gate");
-    logger_->report(kSlideTableRule);
-  }
-  logger_->report("{:>6} | {:>5} | {:>5} | {:>6} | {:<20} | {}",
-                  moves,
-                  moved_flops.size(),
-                  graph_->adj()[v].size(),
-                  max_wr,
-                  graph_->nodes()[v]->getName(),
-                  net_name);
-}
-
-void Retime::reportResult(int moves, int pi_rejects)
-{
-  if (quiet_) {
-    return;
-  }
-  if (moves == 0) {
-    logger_->info(utl::RET, 16, "Retime found no slides.");
-  } else {
-    logger_->report(kSlideTableRule);
-    logger_->info(utl::RET, 23, "Retime found {} slides.", moves);
-  }
-  if (pi_rejects > 0) {
-    logger_->info(utl::RET,
-                  19,
-                  "{} candidate moves were rejected because they would push "
-                  "an input path past the clock period.",
-                  pi_rejects);
-  }
 }
 
 }  // namespace ret

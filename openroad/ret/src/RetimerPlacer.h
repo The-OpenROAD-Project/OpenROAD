@@ -20,9 +20,6 @@ class IncrementalParasiticsGuard;
 namespace rsz {
 class Resizer;
 }
-namespace utl {
-class Logger;
-}
 
 namespace ret {
 
@@ -51,8 +48,7 @@ class RetimerPlacer
  public:
   RetimerPlacer(sta::dbSta* sta,
                 est::EstimateParasitics* estimate_parasitics,
-                rsz::Resizer* resizer,
-                utl::Logger* logger);
+                rsz::Resizer* resizer);
 
   // Once before the first placeNewCells of a design.
   void prepare();
@@ -62,8 +58,6 @@ class RetimerPlacer
   PlaceStats placeNewCells(odb::dbBlock* block,
                            const std::unordered_set<odb::dbInst*>& skip,
                            est::IncrementalParasiticsGuard& guard);
-  // `set_debug_level RET place_size 1`.
-  bool choosesCells() const;
   // The cells a register of this cell can be built from.
   std::vector<odb::dbMaster*> registerCells(odb::dbMaster* master);
 
@@ -127,7 +121,6 @@ class RetimerPlacer
   sta::dbSta* sta_ = nullptr;
   est::EstimateParasitics* estimate_parasitics_ = nullptr;
   rsz::Resizer* resizer_ = nullptr;
-  utl::Logger* logger_ = nullptr;
   std::unordered_map<odb::dbMaster*, std::vector<odb::dbMaster*>>
       equivalent_masters_;
 };

@@ -35,12 +35,12 @@ class RetimingGraph;
 class SequentialUnmapper;
 struct RegisterClass;
 
-// Forward register retiming on the STA delay model (see Retime), applied
-// with minimal perturbation: only the register groups whose edge weights
-// changed are rebuilt.  Registers move by class (see RegisterUtils.h); a
-// register that cannot keep its class is first unmapped to the base cell
-// plus logic (SequentialUnmapper).  In a hierarchical netlist a register
-// stays inside its module.
+// Forward register retiming.  The search (Retime) proposes moves on a delay
+// model read from STA; STA decides what is kept (StaCheck).  Only the
+// register groups whose edge weights changed are rebuilt.  Registers move by
+// class (see RegisterUtils.h); a register that cannot keep its class is first
+// unmapped to the base cell plus logic (SequentialUnmapper).  In a
+// hierarchical netlist a register stays inside its module.
 class Retimer
 {
  public:
@@ -78,14 +78,6 @@ class Retimer
     bool dont_touch = false;
   };
 
-  struct ApplyStats
-  {
-    int removed = 0;
-    int inserted = 0;
-    int inserted_classed = 0;
-    int groups_changed = 0;
-  };
-
   // The module net of a flat net inside the module a group is rebuilt in;
   // empty in a flat netlist.
   using ModNets = std::unordered_map<odb::dbNet*, odb::dbModNet*>;
@@ -98,10 +90,7 @@ class Retimer
   int searchAndApply(odb::dbBlock* block,
                      int max_moves,
                      est::IncrementalParasiticsGuard& guard);
-  void setUpSearch(Retime& search);
-  // Under the STA check the search and the rebuild of a trial are not
-  // logged, unless `sta_check 2`.
-  bool quietTrials() const;
+  Retime newSearch(const RetimingGraph& graph);
 
   // Registers that start on one net at the same depth hold the same value
   // only when they are one class, so each class of first register is a group
@@ -185,8 +174,7 @@ class Retimer
                             const Group& group) const;
   void rebuildGroup(const Group& group,
                     const std::vector<const RegisterClass*>& classes,
-                    odb::dbNet* clock_net,
-                    ApplyStats& stats);
+                    odb::dbNet* clock_net);
   void removeRegister(odb::dbInst* inst);
   // The module nets of the nets a group's new registers connect to, looked
   // up before the old registers go: they may hold the module's only pin on
@@ -208,7 +196,7 @@ class Retimer
   void tieBaseControls(odb::dbInst* ff,
                        sta::Instance* parent,
                        odb::dbModInst* parent_mod_inst);
-  // The new registers are left unplaced for global placement.
+  // The new registers are left unplaced; the STA check places them.
   std::vector<odb::dbNet*> buildChain(
       odb::dbNet* driver_net,
       odb::dbNet* clock_net,
@@ -226,6 +214,7 @@ class Retimer
   odb::dbMTerm* dff_d_mterm_ = nullptr;
   odb::dbMTerm* dff_q_mterm_ = nullptr;
   odb::dbNet* clock_net_ = nullptr;
+  bool report_graph_ = false;  // by the first search of a retime call
 };
 
 }  // namespace ret

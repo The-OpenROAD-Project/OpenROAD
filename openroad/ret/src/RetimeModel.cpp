@@ -1,19 +1,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// The slack search of Retime: a delay model in which a path starts at what
-// its register launches, gate arcs are calibrated to STA's and an endpoint
-// is charged its setup, and a search that takes a slide by its slack there.
+// The register timing of Retime's delay model (launch, setup, calibration to
+// STA, the cost of unmapping) and the search.
 
 #include <algorithm>
-#include <array>
 #include <climits>
 #include <cmath>
 #include <cstddef>
 #include <limits>
-#include <map>
 #include <optional>
-#include <string>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -131,17 +127,7 @@ std::optional<float> arrivalThroughGate(sta::Graph* graph,
 
 }  // namespace
 
-void Retime::enableSlackSearch(std::vector<odb::dbMaster*> base_cells,
-                               CellsOf cells_of,
-                               bool fastest_cell)
-{
-  slack_search_ = true;
-  base_cells_ = std::move(base_cells);
-  cells_of_ = std::move(cells_of);
-  fastest_cell_ = fastest_cell;
-}
-
-void Retime::computeSlackModel()
+void Retime::computeRegisterTiming()
 {
   const int n = static_cast<int>(graph_->nodes().size());
   unmap_on_slide_.assign(n, 0);
@@ -153,9 +139,6 @@ void Retime::computeSlackModel()
   latest_output_.assign(n, nullptr);
   clock_slew_ = 0.0f;
   launch_offset_ = 0.0;
-  if (!slack_search_) {
-    return;
-  }
   for (int v = 0; v < n; ++v) {
     latest_output_[v] = latestOutput(v);
   }
@@ -466,9 +449,6 @@ void Retime::computeUnmapCost()
 
 double Retime::endShift(int v) const
 {
-  if (!slack_search_) {
-    return 0.0;
-  }
   const bool port = po_end_shift_[v] > kNegInf;
   double shift = port ? po_end_shift_[v] : 0.0;
   if (outputRegistered(v)) {
@@ -607,8 +587,7 @@ std::vector<sta::LibertyCell*> Retime::newRegisterCells(int u) const
       }
     }
   }
-  // Without the cell choice the register may be built from the base cell.
-  if (cells.empty() || !fastest_cell_) {
+  if (cells.empty()) {
     for (odb::dbMaster* master : base_cells_) {
       add(master);
     }
@@ -622,8 +601,7 @@ float Retime::pickLaunchCell(int u, float load)
   for (sta::LibertyCell* cell : newRegisterCells(u)) {
     const float delay
         = registerClockToQ(sta_, cell, nullptr, clock_slew_, load);
-    const bool better = fastest_cell_ ? delay < best : delay > best;
-    if (delay >= 0.0f && (best < 0.0f || better)) {
+    if (delay >= 0.0f && (best < 0.0f || delay < best)) {
       best = delay;
       launch_cell_[u] = cell;
     }
@@ -743,16 +721,14 @@ double Retime::slackThrough(int v) const
   return slackOf(std::max(arrivals_[v], arrivals_pi_[v]), tails_[v]);
 }
 
-Retime::ModelSlack Retime::modelSlack() const
+double Retime::worstSlack() const
 {
   const int n = static_cast<int>(graph_->nodes().size());
-  ModelSlack slack;
+  double worst = 0.0;
   for (int t = 0; t < n; ++t) {
-    const double negative = negativeSlackAt(t);
-    slack.worst = std::min(slack.worst, negative);
-    slack.total += negative;
+    worst = std::min(worst, negativeSlackAt(t));
   }
-  return slack;
+  return worst;
 }
 
 Retime::SlideEffect Retime::slideEffect(int v)
@@ -796,24 +772,17 @@ std::vector<std::pair<double, int>> Retime::failingSpots(
   return spots;
 }
 
-Retime::Pick Retime::pickSlide(double margin,
-                               std::vector<char>& refused,
-                               SlackTally& tally)
+Retime::Pick Retime::pickSlide(double margin, std::vector<char>& refused)
 {
-  const double worst = modelSlack().worst;
+  const double worst = worstSlack();
   Pick pick;
   int for_total = -1;
   for (const auto& [before, v] : failingSpots(refused, pick.skipped)) {
     const SlideEffect effect = slideEffect(v);
     const double after = std::min(effect.into, effect.out);
-    if (after - before > margin) {
-      if (effect.total_change < -margin) {
-        ++tally.refused_for_total;
-      } else {
-        ++tally.for_spot;
-        pick.gate = v;
-        return pick;
-      }
+    if (after - before > margin && effect.total_change >= -margin) {
+      pick.gate = v;
+      return pick;
     }
     if (for_total < 0 && effect.total_change > margin
         && after >= worst - margin) {
@@ -823,10 +792,7 @@ Retime::Pick Retime::pickSlide(double margin,
       refused[v] = 1;
     }
   }
-  if (for_total >= 0) {
-    ++tally.for_total;
-    pick.gate = for_total;
-  }
+  pick.gate = for_total;
   return pick;
 }
 
@@ -860,19 +826,16 @@ void Retime::reopenAround(const std::vector<int>& gates,
   }
 }
 
-void Retime::runBySlack(int max_moves)
+void Retime::search(int max_moves)
 {
   const int n = static_cast<int>(graph_->nodes().size());
   const int cap = max_moves <= 0 ? INT_MAX : max_moves;
   const double margin = 0.002 * graph_->clockPeriod();
-  const ModelSlack start = modelSlack();
-  SlackTally tally;
-  int moves = 0;
   // Spots whose slide was refused and whose inputs have not changed since.
   std::vector<char> refused(n, 0);
-  while (moves < cap) {
+  while (moves_ < cap) {
     updateTails(refused);
-    const Pick pick = pickSlide(margin, refused, tally);
+    const Pick pick = pickSlide(margin, refused);
     if (pick.gate < 0) {
       // One more look at the refused spots, in case what a refusal rested on
       // has changed.
@@ -883,313 +846,15 @@ void Retime::runBySlack(int max_moves)
       continue;
     }
     applySlide(pick.gate);
-    ++moves;
-    reportSlide(pick.gate, moves);
+    ++moves_;
+    debugPrint(logger_,
+               utl::RET,
+               "search",
+               1,
+               "slide {} across {}",
+               moves_,
+               graph_->nodes()[pick.gate]->getName());
     reopenAround(scratch_.dirty, refused);
-  }
-  moves_ = moves;
-  reportResult(moves, 0);
-  reportSlackSearch(start, tally);
-  if (logger_->debugCheck(utl::RET, "why", 1)) {
-    computeTails();
-    reportFailingEndpoints();
-    reportStops(margin);
-  }
-}
-
-void Retime::reportSlackSearch(const ModelSlack& start, const SlackTally& tally)
-{
-  if (quiet_) {
-    return;
-  }
-  const ModelSlack end = modelSlack();
-  auto time = [this](double seconds) {
-    return sta::delayAsString(static_cast<float>(seconds), 4, sta_);
-  };
-  logger_->info(utl::RET,
-                48,
-                "Slack search: in the delay model, worst slack {} -> {}, "
-                "total negative slack {} -> {}; {} slides taken for their "
-                "spot, {} for the total, {} refused because the total would "
-                "get worse.",
-                time(start.worst),
-                time(end.worst),
-                time(start.total),
-                time(end.total),
-                tally.for_spot,
-                tally.for_total,
-                tally.refused_for_total);
-}
-
-std::unordered_set<const sta::Pin*> Retime::modeledEndpoints() const
-{
-  const int n = static_cast<int>(graph_->nodes().size());
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  std::unordered_set<const sta::Pin*> pins;
-  for (int u = 0; u < n; ++u) {
-    for (const EdgePhys& phys : graph_->phys()[u]) {
-      odb::dbITerm* data
-          = phys.flops.empty() ? nullptr : graph_->dataPin(phys.flops.front());
-      if (data != nullptr) {
-        pins.insert(network->dbToSta(data));
-      }
-    }
-    for (odb::dbITerm* iterm : graph_->nodes()[u]->getITerms()) {
-      odb::dbNet* net = iterm->getNet();
-      if (iterm->getIoType() != odb::dbIoType::OUTPUT || net == nullptr) {
-        continue;
-      }
-      for (odb::dbBTerm* bterm : net->getBTerms()) {
-        pins.insert(network->dbToSta(bterm));
-      }
-    }
-  }
-  return pins;
-}
-
-void Retime::reportFailingEndpoints() const
-{
-  enum Where
-  {
-    kModeled,
-    kUndrivenData,
-    kOffGraphData,
-    kControlPin,
-    kOffGraphPort,
-    kOtherPin,
-    kWheres,
-  };
-  static constexpr const char* kWhereText[kWheres] = {
-      "endpoints the model reads (data pin behind a gate, output port)",
-      "data pins of registers on the graph that no gate drives",
-      "data pins of registers outside the graph",
-      "other register pins (enable, reset)",
-      "output ports no gate of the graph drives",
-      "other pins",
-  };
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  const std::unordered_set<const sta::Pin*> modeled = modeledEndpoints();
-  std::unordered_set<odb::dbInst*> on_graph;
-  for (const std::vector<EdgePhys>& handles : graph_->phys()) {
-    for (const EdgePhys& phys : handles) {
-      on_graph.insert(phys.flops.begin(), phys.flops.end());
-    }
-  }
-  std::array<int, kWheres> counts{};
-  std::array<double, kWheres> totals{};
-  int count = 0;
-  double total = 0.0;
-  for (sta::Vertex* vertex : sta_->endpoints()) {
-    const float slack
-        = sta::delayAsFloat(sta_->slack(vertex, sta::MinMax::max()));
-    if (slack >= 0.0f) {
-      continue;
-    }
-    const sta::Pin* pin = vertex->pin();
-    odb::dbITerm* iterm = nullptr;
-    odb::dbBTerm* bterm = nullptr;
-    odb::dbModITerm* moditerm = nullptr;
-    network->staToDb(pin, iterm, bterm, moditerm);
-    Where where = kOtherPin;
-    if (modeled.contains(pin)) {
-      where = kModeled;
-    } else if (bterm != nullptr) {
-      where = kOffGraphPort;
-    } else if (iterm != nullptr
-               && iterm->getInst()->getMaster()->isSequential()) {
-      odb::dbInst* reg = iterm->getInst();
-      if (iterm != registerDataPin(sta_, reg)) {
-        where = kControlPin;
-      } else {
-        where = on_graph.contains(reg) ? kUndrivenData : kOffGraphData;
-      }
-    }
-    ++counts[where];
-    totals[where] += slack;
-    ++count;
-    total += slack;
-  }
-  logger_->report(
-      "retime why: STA has {} failing endpoints, total negative slack {}.",
-      count,
-      sta::delayAsString(static_cast<float>(total), 4, sta_));
-  for (int where = 0; where < kWheres; ++where) {
-    if (counts[where] > 0) {
-      logger_->report(
-          "retime why:   {:>6} endpoints, {:5.1f}% of the total: {}",
-          counts[where],
-          total < 0.0 ? 100.0 * totals[where] / total : 0.0,
-          kWhereText[where]);
-    }
-  }
-}
-
-Retime::SlideStop Retime::slideStop(int s, double margin)
-{
-  if (forwardMovable(s)) {
-    const SlideEffect effect = slideEffect(s);
-    if (std::min(effect.into, effect.out) - effect.before > margin) {
-      return effect.total_change < -margin ? SlideStop::kRefusedForTotal
-                                           : SlideStop::kWouldHelp;
-    }
-    return effect.into <= effect.out ? SlideStop::kLengthenedPathLimits
-                                     : SlideStop::kShortenedPathGainsLittle;
-  }
-  if (graph_->pinned()[s]) {
-    return SlideStop::kPinnedGate;
-  }
-  if (fanin_[s].empty()) {
-    return SlideStop::kNoFanin;
-  }
-  for (const Edge& e : graph_->adj()[s]) {
-    if (e.weight > 0) {
-      return SlideStop::kRegisteredOutput;
-    }
-  }
-  return SlideStop::kUnregisteredInput;
-}
-
-int Retime::launchGate(int t) const
-{
-  const int n = static_cast<int>(graph_->nodes().size());
-  int s = t;
-  for (int step = 0; step < n; ++step) {
-    const bool registered = outputRegistered(s);
-    const FaninEdge* latest = nullptr;
-    double latest_arrival = kExcluded;
-    bool latest_launched = false;
-    for (const FaninEdge& fe : fanin_[s]) {
-      const double arc = registered ? fe.arc_reg : fe.arc_comb;
-      const bool launched = !isCombinational(s, fe);
-      const double arrival = launched
-                                 ? launchArrival(s, fe) + arc
-                                 : arrivals_[fe.u] + fe.driver_shift + fe.wire
-                                       + arc + crossingDelay(s, fe);
-      if (latest == nullptr || arrival > latest_arrival) {
-        latest = &fe;
-        latest_arrival = arrival;
-        latest_launched = launched;
-      }
-    }
-    if (latest == nullptr || latest_arrival <= kExcluded / 2) {
-      return -1;
-    }
-    if (latest_launched) {
-      return s;
-    }
-    s = latest->u;
-  }
-  return -1;
-}
-
-int Retime::pinnedStart(int t) const
-{
-  const int n = static_cast<int>(graph_->nodes().size());
-  int s = t;
-  for (int step = 0; step < n; ++step) {
-    const bool registered = outputRegistered(s);
-    int latest = -1;
-    double latest_arrival = kExcluded / 2;
-    for (const FaninEdge& fe : fanin_[s]) {
-      if (!isCombinational(s, fe)) {
-        continue;
-      }
-      const double arrival = arrivals_pi_[fe.u] + fe.driver_shift + fe.wire
-                             + (registered ? fe.arc_reg : fe.arc_comb);
-      if (arrival > latest_arrival) {
-        latest = fe.u;
-        latest_arrival = arrival;
-      }
-    }
-    if (latest < 0) {
-      break;
-    }
-    s = latest;
-  }
-  return s;
-}
-
-void Retime::reportStops(double margin)
-{
-  static constexpr const char* kStopText[kSlideStops] = {
-      "the worst path starts at a port or at a gate that is never crossed",
-      "a slide would help (the search stopped at its slide limit)",
-      "a slide helps the spot but makes the total negative slack worse",
-      "no gain: the path the slide lengthens (into the new register)",
-      "no gain: the path the slide shortens gains too little",
-      "the first gate is never crossed (reasons below)",
-      "the first gate already has a register on an output",
-      "the first gate has another input with no register in front of it",
-      "the first gate has no input in the graph",
-      "no register-to-register path traced in the model",
-  };
-  struct Tally
-  {
-    int count = 0;
-    double total = 0.0;
-  };
-  const int n = static_cast<int>(graph_->nodes().size());
-  std::array<Tally, kSlideStops> stops{};
-  std::map<std::string, Tally> start_reasons;
-  std::map<std::string, Tally> pinned_reasons;
-  std::vector<int> root_stop(n, -1);
-  Tally all;
-  for (int t = 0; t < n; ++t) {
-    const double negative = negativeSlackAt(t);
-    if (negative >= 0.0) {
-      continue;
-    }
-    SlideStop stop = SlideStop::kNoPath;
-    if (arrivals_pi_[t] > arrivals_[t]) {
-      stop = SlideStop::kStartsAtPinned;
-      Tally& reason = start_reasons[graph_->pinReason(pinnedStart(t))];
-      ++reason.count;
-      reason.total += negative;
-    } else if (const int s = launchGate(t); s >= 0) {
-      if (root_stop[s] < 0) {
-        root_stop[s] = static_cast<int>(slideStop(s, margin));
-      }
-      stop = static_cast<SlideStop>(root_stop[s]);
-      if (stop == SlideStop::kPinnedGate) {
-        Tally& reason = pinned_reasons[graph_->pinReason(s)];
-        ++reason.count;
-        reason.total += negative;
-      }
-    }
-    Tally& tally = stops[static_cast<int>(stop)];
-    ++tally.count;
-    tally.total += negative;
-    ++all.count;
-    all.total += negative;
-  }
-  auto share = [&all](const Tally& part) {
-    return all.total < 0.0 ? 100.0 * part.total / all.total : 0.0;
-  };
-  logger_->report(
-      "retime why: the model has {} failing endpoints, total negative slack "
-      "{}.  By what stops a slide at the start of each one's worst path:",
-      all.count,
-      sta::delayAsString(static_cast<float>(all.total), 4, sta_));
-  for (int stop = 0; stop < kSlideStops; ++stop) {
-    if (stops[stop].count > 0) {
-      logger_->report(
-          "retime why:   {:>6} endpoints, {:5.1f}% of the total: {}",
-          stops[stop].count,
-          share(stops[stop]),
-          kStopText[stop]);
-    }
-  }
-  for (const auto& [reason, tally] : start_reasons) {
-    logger_->report(
-        "retime why:     starts at a gate, {:>6} endpoints, {:5.1f}%: {}",
-        tally.count,
-        share(tally),
-        reason);
-  }
-  for (const auto& [reason, tally] : pinned_reasons) {
-    logger_->report("retime why:     never crossed, {:>6} endpoints: {}",
-                    tally.count,
-                    reason);
   }
 }
 
