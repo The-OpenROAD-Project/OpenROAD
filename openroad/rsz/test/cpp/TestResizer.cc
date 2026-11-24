@@ -11,10 +11,12 @@
 
 #include "MoveCommitter.hh"
 #include "OptimizerTypes.hh"
+#include "Rebuffer.hh"
 #include "RepairSetupContext.hh"
 #include "RepairTargetCollector.hh"
 #include "est/EstimateParasitics.h"
 #include "gtest/gtest.h"
+#include "move/BufferCandidate.hh"
 #include "move/MoveCandidate.hh"
 #include "move/MoveGenerator.hh"
 #include "move/SizeUpGenerator.hh"
@@ -59,6 +61,17 @@ class TestMoveGenerator : public MoveGenerator
   }
 
   using MoveGenerator::weakerCellFirst;
+};
+
+class RebufferTestPeer
+{
+ public:
+  // Mirror the setup SetupLegacyBase does before running BufferMove.
+  static void init(Rebuffer& rebuffer, sta::Scene* scene)
+  {
+    rebuffer.init();
+    rebuffer.initOnCorner(scene);
+  }
 };
 
 class TestSetupLegacyPolicy : public SetupLegacyPolicy
@@ -701,6 +714,70 @@ TEST_F(TestResizer, ChainedLatchFaninTargets)
   EXPECT_EQ(db_network_->pathName(deep_target->endpointPin(resizer_)),
             "deep_latch/D");
   EXPECT_EQ(deep_target->violatedEndpointPin(resizer_), path->pin(sta_.get()));
+}
+
+// BufferMove must report the buffers it inserts as touched, so buffer
+// removal recognizes them as rebuffering output and does not undo them.
+TEST_F(TestResizer, BufferMoveMarksInsertedBuffers)
+{
+  setupTimeBorrowTiming("latch_borrow_chain.def", 0.84);
+
+  // Buffering needs wire RC; use metal3 as the Tcl tests do.
+  odb::dbTech* tech = db_->getTech();
+  odb::dbTechLayer* layer = tech->findLayer("metal3");
+  ASSERT_NE(layer, nullptr);
+  const double width_um
+      = static_cast<double>(layer->getWidth()) / tech->getDbUnitsPerMicron();
+  const double res_per_m = layer->getResistance() / width_um * 1e6;
+  const double cap_per_m
+      = (width_um * layer->getCapacitance() + 2 * layer->getEdgeCapacitance())
+        * 1e-12 * 1e6;
+  ep_.setHWireSignalRC(tech, sta_->cmdScene(), res_per_m, cap_per_m);
+  ep_.setVWireSignalRC(tech, sta_->cmdScene(), res_per_m, cap_per_m);
+  ep_.estimateWireParasitics();
+  sta_->updateTiming(true);
+
+  RebufferTestPeer::init(resizer_.rebuffer(), sta_->cmdScene());
+
+  std::vector<sta::Pin*> driver_pins;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    for (odb::dbITerm* iterm : inst->getITerms()) {
+      if (iterm->getNet() != nullptr
+          && iterm->getIoType() == odb::dbIoType::OUTPUT
+          && iterm->getSigType() == odb::dbSigType::SIGNAL) {
+        driver_pins.push_back(db_network_->dbToSta(iterm));
+      }
+    }
+  }
+
+  MoveCommitter committer(resizer_);
+  const Target target;
+  MoveResult result;
+  sta::Pin* buffered_pin = nullptr;
+  for (sta::Pin* driver_pin : driver_pins) {
+    BufferCandidate candidate(resizer_, target, driver_pin);
+    result = committer.commit(candidate);
+    if (result.accepted) {
+      buffered_pin = driver_pin;
+      break;
+    }
+  }
+  ASSERT_TRUE(result.accepted) << "no BufferMove inserted a buffer";
+  // The driver comes first, followed by the inserted buffers.
+  ASSERT_EQ(result.touched_instances.size(),
+            static_cast<size_t>(result.move_count) + 1);
+  EXPECT_EQ(result.touched_instances.front(),
+            db_network_->instance(buffered_pin));
+
+  for (size_t i = 1; i < result.touched_instances.size(); i++) {
+    sta::Instance* buffer = result.touched_instances[i];
+    const sta::LibertyCell* cell = db_network_->libertyCell(buffer);
+    ASSERT_NE(cell, nullptr);
+    EXPECT_TRUE(cell->isBuffer());
+    std::string reason;
+    EXPECT_TRUE(committer.hasBlockingBufferRemovalMove(buffer, reason));
+    EXPECT_EQ(reason, "it was from rebuffering");
+  }
 }
 
 TEST_F(TestResizer, RepairBudgetClampsToAtLeastOneWhenSlackImprovesPastMinViol)
@@ -1787,6 +1864,85 @@ TEST_F(TestResizer, GetSwappableCellsKeepsClockAndDataBuffersDisjoint)
   for (sta::LibertyCell* cell : clk_swaps) {
     EXPECT_EQ(resizer_.getBufferUse(cell), BufferUse::CLOCK) << cell->name();
   }
+}
+
+TEST_F(TestResizer, RecoverPowerRollsBackMoveAtFailedMoveThresholdLimit)
+{
+  odb::dbChip* chip = odb::dbChip::create(db_.get(), db_->getTech());
+  block_ = odb::dbBlock::create(chip, "top");
+  block_->setDefUnits(db_->getTech()->getLefUnits());
+  odb::dbMaster* buf_x2 = db_->findMaster("BUF_X2");
+
+  // 501 independent paths exceed failed_move_threshold_limit_ (500).
+  constexpr int kNumPaths = 501;
+  for (int i = 0; i < kNumPaths; ++i) {
+    const std::string s = std::to_string(i);
+    odb::dbNet* in_net = odb::dbNet::create(block_, ("in_" + s).c_str());
+    odb::dbBTerm::create(in_net, ("in_" + s).c_str())
+        ->setIoType(odb::dbIoType::INPUT);
+    odb::dbNet* out_net = odb::dbNet::create(block_, ("out_" + s).c_str());
+    odb::dbBTerm::create(out_net, ("out_" + s).c_str())
+        ->setIoType(odb::dbIoType::OUTPUT);
+    odb::dbInst* buf
+        = odb::dbInst::create(block_, buf_x2, ("buf_" + s).c_str());
+    buf->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    buf->findITerm("A")->connect(in_net);
+    buf->findITerm("Z")->connect(out_net);
+  }
+
+  sta_->postReadDb(db_.get());
+  sta_->postReadDef(block_);
+  makeClock("vclk", nullptr);
+
+  sta::Sdc* sdc = sta_->cmdMode()->sdc();
+  sta::Clock* vclk = sdc->findClock("vclk");
+  sta::Cell* top_cell = db_network_->cell(db_network_->topInstance());
+  // 50 fF load: BUF_X2 -> BUF_X1 adds ~61 ps; 0.83 ns output delay on a 1 ns
+  // clock leaves ~96 ps slack so downsizeCell accepts BUF_X1 while WNS drops
+  // below 50% of worst_slack_before.
+  for (int i = 0; i < kNumPaths; ++i) {
+    const std::string s = std::to_string(i);
+    setInputDelay(("in_" + s).c_str(), "vclk", 0.0f);
+    const std::string out = "out_" + s;
+    sta_->setPortExtPinCap(db_network_->findPort(top_cell, out.c_str()),
+                           sta::RiseFallBoth::riseFall(),
+                           sta::MinMaxAll::all(),
+                           50e-15f,
+                           sdc);
+    sta_->setOutputDelay(findTopPin(out.c_str()),
+                         sta::RiseFallBoth::riseFall(),
+                         vclk,
+                         sta::RiseFall::rise(),
+                         nullptr,
+                         false,
+                         false,
+                         sta::MinMaxAll::all(),
+                         true,
+                         staTime(0.83f),
+                         sdc);
+  }
+
+  sta_->ensureGraph();
+  sta_->ensureLevelized();
+  resizer_.initBlock();
+  ep_.estimateWireParasitics();
+  sta_->updateTiming(true);
+
+  const sta::MinMax* max = sta::MinMax::max();
+  auto wns = [&] {
+    sta::Slack slack = 0.0f;
+    sta::Vertex* worst = nullptr;
+    sta_->worstSlack(max, slack, worst);
+    return sta::delayAsFloat(slack, max, sta_.get());
+  };
+  const float wns_before = wns();
+
+  EXPECT_FALSE(resizer_.recoverPower(1.0f, false, false));
+  for (odb::dbInst* inst : block_->getInsts()) {
+    EXPECT_EQ(inst->getMaster(), buf_x2);
+  }
+  sta_->updateTiming(true);
+  EXPECT_NEAR(wns(), wns_before, 1e-15f);
 }
 
 }  // namespace rsz

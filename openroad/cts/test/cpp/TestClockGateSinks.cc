@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <algorithm>
 #include <cstdlib>
 #include <functional>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -281,6 +283,57 @@ TEST_F(ClockGateSinkClusteredTest, GateSinkSkipsLeafClustering)
   const std::vector<odb::dbInst*> copies = copiesOf("icg_close");
   ASSERT_EQ(copies.size(), 1);
   EXPECT_FALSE(clockDriver("icg_close", "CK").starts_with("clkbuf_leaf_"));
+}
+
+// 198 flops alone stay under the sink count that turns on sink clustering;
+// the gate sinks on clk push it over, as in CTS.
+TEST_F(ClockGateSinkVariantTest, PredictedLeafNetsMatchCts)
+{
+  std::set<std::vector<std::string>> predicted;
+  std::set<std::vector<std::string>> built;
+  const auto addFlops = [](auto& groups, const auto& iterms) {
+    std::vector<std::string> flops;
+    for (odb::dbITerm* iterm : iterms) {
+      if (isFlop(iterm)) {
+        flops.push_back(iterm->getInst()->getName());
+      }
+    }
+    if (!flops.empty()) {
+      std::ranges::sort(flops);
+      groups.insert(flops);
+    }
+  };
+
+  build(150, [&](TritonCTS& cts) {
+    // Off ff32's location, where CTS would merge the two sinks.
+    place("xff120", 21, 180);
+    std::vector<odb::dbNet*> nets;
+    for (const char* name : {"clk",
+                             "gck_close",
+                             "gck_spread",
+                             "gck_many",
+                             "gck_one",
+                             "gck_buf",
+                             "bck"}) {
+      nets.push_back(block_->findNet(name));
+    }
+    for (const std::vector<odb::dbITerm*>& cluster :
+         cts.predictSinkClusters(nets)) {
+      addFlops(predicted, cluster);
+    }
+  });
+
+  // Nets that a leaf buffer or a clock gate sink drives.
+  for (odb::dbNet* net : block_->getNets()) {
+    odb::dbITerm* out = net->getFirstOutput();
+    if (out != nullptr
+        && (out->getInst()->getName().starts_with("clkbuf_leaf_")
+            || out->getInst()->getMaster()->getName().starts_with("CLKGATE"))) {
+      addFlops(built, net->getITerms());
+    }
+  }
+  EXPECT_GT(predicted.size(), 8);
+  EXPECT_EQ(predicted, built);
 }
 
 // Gate cloning leaves a gate with one flop where it is.

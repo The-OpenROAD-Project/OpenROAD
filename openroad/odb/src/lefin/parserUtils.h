@@ -34,4 +34,22 @@ void processRules(const std::string& s, RuleHandler handler)
     handler(rule);
   }
 }
+
+template <typename RuleParser>
+bool parseAllRules(const std::string& s, RuleParser parser)
+{
+  const auto last_non_ws = s.find_last_not_of(" \t\n\r");
+  if (last_non_ws == std::string::npos || s[last_non_ws] != ';') {
+    return false;
+  }
+  bool all_valid = true;
+  bool any_rule = false;
+  processRules(s, [&](const std::string& rule) {
+    any_rule = true;
+    if (!parser(rule)) {
+      all_valid = false;
+    }
+  });
+  return any_rule && all_valid;
+}
 }  // namespace odb

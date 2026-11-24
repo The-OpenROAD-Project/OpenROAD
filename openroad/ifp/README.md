@@ -69,7 +69,7 @@ initialize_floorplan
 | `-die_area` | Die area coordinates in microns. Either a rectangle as `{llx lly urx ury}`, or a rectilinear polygon as a list of vertex coordinates `{x1 y1 x2 y2 ...}`. See [Rectilinear Floorplans](#rectilinear-floorplans). |
 | `-site` | Site name. |
 | `-utilization` | Percentage utilization. Allowed values are `double` in the range `(0-100]`. |
-| `[-additional_sites]` | Tcl list of sites to make rows for (e.g. `{SITEXX, SITEYY}`) |
+| `[-additional_sites]` | Tcl list of sites to make rows for (e.g. `{SITEXX, SITEYY}`). Even-multiple multi-height sites whose bottom power rail opposes Row 0 of `-site` are automatically shifted up by one `-site` row. |
 | `[-aspect_ratio]` | Ratio $\frac{height}{width}$. The default value is `1.0` and the allowed values are floats `[0, 1.0]`. |
 | `[-flip_sites]` | Flip the orientations of rows matching these sites. Sites listed under this option will create `FS`-oriented rows at even indices and `N`-oriented rows at odd ones, and vice versa for sites not listed under this option. (e.g. `{SITEXX, SITEYY}`) |
 | `[-gap]` | Space between power domains in microns. The default value is 6 times the minimum site height. |
@@ -153,7 +153,7 @@ make_rows
 | `-core_area` | Core area coordinates in microns (lower left x/y and upper right x/y coordinates). |
 | `-core_space` | Space around the core in microns. Allowed values are either one value for all margins or a set of four values, one for each margin. The order of the four values are: `{bottom top left right}`. |
 | `-site` | Site name. |
-| `[-additional_sites]` | Tcl list of sites to make rows for (e.g. `{SITEXX, SITEYY}`) |
+| `[-additional_sites]` | Tcl list of sites to make rows for (e.g. `{SITEXX, SITEYY}`). Even-multiple multi-height sites whose bottom power rail opposes Row 0 of `-site` are automatically shifted up by one `-site` row. |
 | `[-flip_sites]` | Flip the orientations of rows matching these sites. Sites listed under this option will create `FS`-oriented rows at even indices and `N`-oriented rows at odd ones, and vice versa for sites not listed under this option. (e.g. `{SITEXX, SITEYY}`) |
 | `[-gap]` | Space between power domains in microns. The default value is 6 times the minimum site height. |
 | `[-row_parity]` | Snap to either an odd (`ODD`) or even (`EVEN`) number of rows. Defaults to `NONE` (no constraint on parity). |

@@ -1,5 +1,6 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("//bazel:man_tcl_checker.bzl", "man_tcl_check_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -44,6 +45,7 @@ TESTS = [
     "pinswap_flat",
     "pinswap_hier",
     "remove_buffers_duplicate",
+    "repair_timing_deprecated_libraries",
     "swap_pins_constant_output",
     "swap_pins_dont_touch",
     "pin_swap1",
@@ -58,6 +60,7 @@ TESTS = [
     "remove_buffers3",
     "remove_buffers_dont_touch_rejected",
     "remove_buffers_disconnected_input_rejected",
+    "remove_buffers_sdc_instance",
     "remove_buffers4",
     "remove_buffers4_hier",
     "remove_buffers5",
@@ -69,6 +72,17 @@ TESTS = [
     "repair_cap2",
     "repair_cap3",
     "repair_clk_inverters1",
+    "repair_clk_inverters10_floating",
+    "repair_clk_inverters11_hier_sdc",
+    "repair_clk_inverters12_inv_pin_sdc",
+    "repair_clk_inverters2_hier",
+    "repair_clk_inverters3_hier",
+    "repair_clk_inverters4_hier",
+    "repair_clk_inverters5_hier",
+    "repair_clk_inverters6_hier",
+    "repair_clk_inverters7",
+    "repair_clk_inverters8_hier",
+    "repair_clk_inverters9_flat_link",
     "repair_clk_nets1",
     "repair_design1",
     "repair_design2",
@@ -322,8 +336,13 @@ TESTS = [
 
 PASSFAIL_TESTS = [
     "remove_buffers_nomatch",
+    "repair_setup_capture_vt_parallel_eval",
+    "repair_setup_crit_vt_capture",
+    "repair_slew_clk_data_path_vt",
+    "repair_slew_clk_load_wire",
     "repair_timing_fixed",
     "repair_design_fixed_driver",
+    "repair_slew_clk_data_path",
     "repair_slew_corner",
     "gain_buffering_top_port_hier",
     "repair_setup_crit_vt_clock_gate",
@@ -687,6 +706,7 @@ cc_test(
         "cpp/TestResizerMt.cc",
         "cpp/TestResizerMtFixture.hh",
         "cpp/TestSplitLoadMt.cc",
+        "cpp/TestStatetableRegister.cc",
         "cpp/TestUnbufferMt.cc",
     ],
     data = [
@@ -696,6 +716,8 @@ cc_test(
         "Nangate45/Nangate45_typ.lib",
         "cpp/TestResizerMt_DelayEstimator.v",
         "cpp/TestSplitLoadMt.v",
+        "statetable_dff.lef",
+        "statetable_dff.lib",
     ],
     deps = [
         "//openroad/dbSta",
@@ -812,15 +834,9 @@ py_test(
     ],
 )
 
-py_test(
+man_tcl_check_test(
     name = "rsz_man_tcl_check",
-    srcs = ["rsz_man_tcl_check.py"],
-    data = ["//openroad/rsz:doc_files"],
-    tags = [
-        "doc_check",
-        "py",
-    ],
-    deps = ["//docs/src/scripts:extract_utils"],
+    module = "rsz",
 )
 
 doc_check_test(
