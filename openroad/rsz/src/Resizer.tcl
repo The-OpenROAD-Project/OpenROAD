@@ -305,6 +305,10 @@ proc repair_timing { args } {
              -skip_last_gasp -skip_vt_swap -skip_crit_vt_swap -skip_crpr \
              -match_cell_footprint -verbose}
 
+  if { [info exists keys(-libraries)] } {
+    utl::warn RSZ 63 "-libraries is deprecated and its value is ignored."
+  }
+
   set setup [info exists flags(-setup)]
   set hold [info exists flags(-hold)]
 
