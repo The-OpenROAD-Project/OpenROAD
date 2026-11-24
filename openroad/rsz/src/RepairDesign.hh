@@ -263,6 +263,8 @@ class RepairDesign : sta::dbStaState
   double slew_margin_ = 0;
   double cap_margin_ = 0;
   const sta::Scene* corner_ = nullptr;
+  // Clock slew limit of drvr_pin_, applied to repeaters inserted on its net.
+  float net_clk_slew_limit_ = sta::INF;
 
   bool reroute_ = false;
   int rerouted_nets_ = 0;

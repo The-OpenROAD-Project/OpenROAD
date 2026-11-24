@@ -159,7 +159,14 @@ class lefTechLayerCutEnclosureTableRuleParser
   // problem sets this to false via a warning of its own; the overall parse
   // is then rejected even if the grammar matched syntactically.
   bool ruleValid_{true};
-  void checkCutClass(const std::string& val, odb::dbTechLayer* layer);
+  odb::dbTechLayerCutEnclosureTableDefRule* curRule_{nullptr};
+  int curWidth_{0};
+  void setCutClass(const std::string& val, odb::dbTechLayer* layer);
+  void setWidth(double val);
+  void addDefaultRow(
+      boost::fusion::vector<int, double, double, double, double>& params);
+  void addWidthRow(
+      boost::fusion::vector<int, double, double, double, double>& params);
 };
 
 class lefTechLayerEolExtensionRuleParser

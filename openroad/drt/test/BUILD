@@ -180,6 +180,7 @@ cc_test(
         "fixture.cpp",
         "fixture.h",
         "gcTest.cpp",
+        "gridGraphTest.cpp",
         "parserTest.cpp",
         "pathSegTest.cpp",
     ],
@@ -281,6 +282,25 @@ cc_test(
         "//openroad/odb/src/db",
         "//openroad/tst:db_fixture",
         "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "ViaInPinTest",
+    srcs = [
+        "ViaInPinTest.cpp",
+        "fixture.cpp",
+        "fixture.h",
+    ],
+    includes = ["../src"],
+    deps = [
+        "//openroad/drt:base_types",
+        "//openroad/drt:drt_impl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "@boost.polygon",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

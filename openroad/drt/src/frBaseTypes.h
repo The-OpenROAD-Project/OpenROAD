@@ -163,6 +163,7 @@ enum class frConstraintTypeEnum
   frcLef58TwoWiresForbiddenSpcConstraint,
   frcLef58ForbiddenSpcConstraint,
   frcLef58EnclosureConstraint,
+  frcLef58EnclosureTableConstraint,
   frcSpacingRangeConstraint,
   frcLef58MaxSpacingConstraint,
   frcSpacingTableOrth,
