@@ -893,7 +893,7 @@ void BinGrid::scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
         continue;
       }
       for (int y = pairY.first; y < pairY.second; y++) {
-        Bin* row = &bins_[y * binCntX_];
+        Bin* row = &bins_[static_cast<size_t>(y) * binCntX_];
         for (int x = pairX.first; x < pairX.second; x++) {
           Bin& bin = row[x];
           float scaledArea = getOverlapDensityArea(bin, gcell) * scale;
@@ -905,7 +905,7 @@ void BinGrid::scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
       }
     } else if (gcell->isFiller()) {
       for (int y = pairY.first; y < pairY.second; y++) {
-        Bin* row = &bins_[y * binCntX_];
+        Bin* row = &bins_[static_cast<size_t>(y) * binCntX_];
         for (int x = pairX.first; x < pairX.second; x++) {
           Bin& bin = row[x];
           bin.atomicAddFillerArea(
@@ -923,9 +923,9 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
   // clear the Bin-area info
   const int threads = std::max(1, parallel_threads);
 #pragma omp parallel for num_threads(threads) if (threads > 1) schedule(static)
-  for (size_t i = 0; i < bins_.size(); ++i) {
-    bins_[i].setInstPlacedAreaUnscaled(0);
-    bins_[i].setFillerArea(0);
+  for (Bin& bin : bins_) {
+    bin.setInstPlacedAreaUnscaled(0);
+    bin.setFillerArea(0);
   }
 
   // A single scatter implementation for every CPU case, threaded or not, so
