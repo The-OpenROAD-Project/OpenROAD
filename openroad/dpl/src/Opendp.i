@@ -10,7 +10,9 @@
 #include "graphics/Graphics.h"
 #include "graphics/DplObserver.h"
 #include "dpl/Opendp.h"
+#include "drt/PinAccessService.h"
 #include "utl/Logger.h"
+#include "utl/ServiceRegistry.h"
 
 %}
 
@@ -22,6 +24,17 @@
 %inline %{
 
 namespace dpl {
+
+int
+repair_pin_access_cmd(int max_displacement_x,
+                      int max_displacement_y,
+                      int max_rounds)
+{
+  auto* openroad = ord::OpenRoad::openRoad();
+  auto* pa = openroad->getServiceRegistry()->find<drt::PinAccessService>();
+  return openroad->getOpendp()->repairPinAccess(
+      pa, max_displacement_x, max_displacement_y, max_rounds);
+}
 
 void
 detailed_placement_cmd(int max_displacment_x,

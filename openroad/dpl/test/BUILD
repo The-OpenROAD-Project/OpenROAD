@@ -111,6 +111,9 @@ PASSFAIL_TESTS = [
     "pdn_via_cut",
     "pdn_via_euclidean",
     "pdn_via_mirror",
+    "repair_pin_access",
+    "repair_pin_access_failure",
+    "repair_pin_access_phase",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -337,6 +340,12 @@ filegroup(
             "regions3": [
                 "Nangate45/fake_macros.lef",
             ],
+            "repair_pin_access": ["repair_pin_access_tech.lef"],
+            "repair_pin_access_failure": ["repair_pin_access_tech.lef"],
+            "repair_pin_access_phase": [
+                "repair_pin_access_tech.lef",
+                "repair_pin_access_failure.def",
+            ],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
@@ -356,7 +365,10 @@ filegroup(
 
 cc_test(
     name = "dpl_unittest",
-    srcs = ["dpl_test.cc"],
+    srcs = [
+        "PinAccessRepairTest.cc",
+        "dpl_test.cc",
+    ],
     data = [
         "extra.lef",
         "gcd_replace.def",
@@ -364,6 +376,7 @@ cc_test(
     deps = [
         "//openroad/dpl",
         "//openroad/dpl:dpl_impl",
+        "//openroad/drt:pin_access_service",
         "//openroad/odb/src/db",
         "//openroad/odb/src/lefin",
         "//openroad/tst",

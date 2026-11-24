@@ -76,6 +76,15 @@ FlexPA::FlexPA(frDesign* in,
 // must be out-of-line due to the unique_ptr
 FlexPA::~FlexPA() = default;
 
+std::unique_ptr<FlexPA> FlexPA::makeQueryWorker() const
+{
+  auto worker = std::make_unique<FlexPA>(design_, logger_, dist_, router_cfg_);
+  worker->track_coords_ = track_coords_;
+  worker->layer_num_to_via_defs_ = layer_num_to_via_defs_;
+  worker->avoid_via_defs_ = avoid_via_defs_;
+  return worker;
+}
+
 void FlexPA::setDebug(std::unique_ptr<AbstractPAGraphics> pa_graphics)
 {
   graphics_ = std::move(pa_graphics);
@@ -164,16 +173,22 @@ void FlexPA::updateDirtyInsts()
     unique_inst_patterns_[unique_class]
         = std::vector<std::unique_ptr<FlexPinAccessPattern>>();
   }
+  ThreadException unique_class_exception;
 #pragma omp parallel for schedule(dynamic)
   for (auto& unique_class : dirty_unique_classes_vec) {
-    initSkipInstTerm(unique_class);
-    auto candidate_inst = unique_class->getFirstInst();
-    genInstAccessPoints(candidate_inst);
-    revertAccessPoints(candidate_inst);
-    if (isStdCell(candidate_inst)) {
-      prepPatternInst(candidate_inst);
+    try {
+      initSkipInstTerm(unique_class);
+      auto candidate_inst = unique_class->getFirstInst();
+      genInstAccessPoints(candidate_inst);
+      revertAccessPoints(candidate_inst);
+      if (isStdCell(candidate_inst)) {
+        prepPatternInst(candidate_inst);
+      }
+    } catch (...) {
+      unique_class_exception.capture();
     }
   }
+  unique_class_exception.rethrow();
   for (auto& inst : dirty_insts_) {
     addToInstsSet(inst);
   }

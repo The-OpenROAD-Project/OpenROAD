@@ -24,6 +24,7 @@ cc_library(
         "src/Opendp.cpp",
         "src/OptMirror.cpp",
         "src/Optdp.cpp",
+        "src/PinAccessRepair.cpp",
         "src/Place.cpp",
         "src/PlacementDRC.cpp",
         "src/PlacementDRC.h",
@@ -90,6 +91,7 @@ cc_library(
         "//openroad/dpl:__subpackages__",
     ],
     deps = [
+        "//openroad/drt:pin_access_service",
         "//openroad/odb/src/db",
         "//openroad/utl",
         "@boost.container_hash",
@@ -140,6 +142,7 @@ cc_library(
     deps = [
         ":dpl_impl",
         "//:ord",
+        "//openroad/drt:pin_access_service",
         "//openroad/odb/src/db",
         "//openroad/utl",
         "//openroad/web:core",
