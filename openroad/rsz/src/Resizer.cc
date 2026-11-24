@@ -1641,15 +1641,21 @@ void Resizer::resizePreamble()
   findTargetLoads();
   findFastBuffers();
   computeSlewShapeFactor();
+  have_detailed_routes_ = global_router_->haveDetailedRoutes();
+}
+
+bool Resizer::shouldLegalize() const
+{
+  const est::ParasiticsSrc src = estimate_parasitics_->getParasiticsSrc();
+  return src == est::ParasiticsSrc::kGlobalRouting
+         || src == est::ParasiticsSrc::kDetailedRouting
+         || have_detailed_routes_;
 }
 
 void Resizer::runRepairSetupPreamble()
 {
   resizePreamble();
-  if (estimate_parasitics_->getParasiticsSrc()
-          == est::ParasiticsSrc::kGlobalRouting
-      || estimate_parasitics_->getParasiticsSrc()
-             == est::ParasiticsSrc::kDetailedRouting) {
+  if (shouldLegalize()) {
     opendp_->initMacrosAndGrid();
   }
 
@@ -3349,10 +3355,7 @@ bool Resizer::replaceCell(sta::Instance* inst,
     designAreaIncr(area(replacement_master));
 
     // Legalize the position of the instance in case it leaves the die
-    if (estimate_parasitics_->getParasiticsSrc()
-            == est::ParasiticsSrc::kGlobalRouting
-        || estimate_parasitics_->getParasiticsSrc()
-               == est::ParasiticsSrc::kDetailedRouting) {
+    if (shouldLegalize()) {
       opendp_->legalCellPos(db_network_->staToDb(inst));
     }
     return true;
@@ -5323,10 +5326,7 @@ void Resizer::repairDesign(double max_wire_length,
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
   resizePreamble();
-  if (estimate_parasitics_->getParasiticsSrc()
-          == est::ParasiticsSrc::kGlobalRouting
-      || estimate_parasitics_->getParasiticsSrc()
-             == est::ParasiticsSrc::kDetailedRouting) {
+  if (shouldLegalize()) {
     opendp_->initMacrosAndGrid();
   }
   utl::SetAndRestore set_reroute(repair_design_->reroute_, reroute);
@@ -5719,10 +5719,7 @@ bool Resizer::repairHold(
   utl::SetAndRestore<std::string> path_group_override(
       path_group_, path_group != nullptr ? path_group : "");
   resizePreamble();
-  if (estimate_parasitics_->getParasiticsSrc()
-          == est::ParasiticsSrc::kGlobalRouting
-      || estimate_parasitics_->getParasiticsSrc()
-             == est::ParasiticsSrc::kDetailedRouting) {
+  if (shouldLegalize()) {
     opendp_->initMacrosAndGrid();
   }
   bool result = repair_hold_->repairHold(setup_margin,
@@ -5766,10 +5763,7 @@ bool Resizer::recoverPower(float recover_power_percent,
   utl::SetAndRestore set_match_footprint(match_cell_footprint_,
                                          match_cell_footprint);
   resizePreamble();
-  if (estimate_parasitics_->getParasiticsSrc()
-          == est::ParasiticsSrc::kGlobalRouting
-      || estimate_parasitics_->getParasiticsSrc()
-             == est::ParasiticsSrc::kDetailedRouting) {
+  if (shouldLegalize()) {
     opendp_->initMacrosAndGrid();
   }
   bool result = recover_power_->recoverPower(recover_power_percent, verbose);
@@ -5782,10 +5776,7 @@ void Resizer::swapArithModules(int path_count,
                                float slack_margin)
 {
   resizePreamble();
-  if (estimate_parasitics_->getParasiticsSrc()
-          == est::ParasiticsSrc::kGlobalRouting
-      || estimate_parasitics_->getParasiticsSrc()
-             == est::ParasiticsSrc::kDetailedRouting) {
+  if (shouldLegalize()) {
     opendp_->initMacrosAndGrid();
   }
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
@@ -7201,10 +7192,7 @@ sta::Instance* Resizer::makeInstance(sta::LibertyCell* cell,
   db_inst->setSourceType(odb::dbSourceType::TIMING);
   setLocation(db_inst, loc);
   // Legalize the position of the instance in case it leaves the die
-  if (estimate_parasitics_->getParasiticsSrc()
-          == est::ParasiticsSrc::kGlobalRouting
-      || estimate_parasitics_->getParasiticsSrc()
-             == est::ParasiticsSrc::kDetailedRouting) {
+  if (shouldLegalize()) {
     opendp_->legalCellPos(db_inst);
   }
   designAreaIncr(area(db_inst->getMaster()));
@@ -7220,10 +7208,7 @@ void Resizer::insertBufferPostProcess(dbInst* buffer_inst)
     setLocation(buffer_inst, buffer_inst->getLocation());
 
     // Legalize the cell position for accurate parasitic estimation
-    if (estimate_parasitics_->getParasiticsSrc()
-            == est::ParasiticsSrc::kGlobalRouting
-        || estimate_parasitics_->getParasiticsSrc()
-               == est::ParasiticsSrc::kDetailedRouting) {
+    if (shouldLegalize()) {
       opendp_->legalCellPos(buffer_inst);
     }
   }

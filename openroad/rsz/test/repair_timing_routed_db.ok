@@ -5,6 +5,7 @@
 [INFO ODB-0132]     Created 2 special nets and 1468 connections.
 [INFO ODB-0133]     Created 497 nets and 1294 connections.
 design_is_routed: 1
+cells off row sites before repair: 0
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 32 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 32 out of 32 (100.00%) violating endpoints...
@@ -20,4 +21,5 @@ design_is_routed: 1
 [INFO RSZ-0043] Swapped pins on 6 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 parasitics source: placement
+cells off row sites after repair: 0
 worst slack max -0.009
