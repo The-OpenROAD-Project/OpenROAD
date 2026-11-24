@@ -64,6 +64,19 @@ check "A congested estimate warns instead of failing without -allow_congestion" 
 } 0
 set_global_routing_layer_adjustment metal1-metal10 0.0
 
+foreach option {-start_incremental -end_incremental} {
+  check "-congestion_only $option fails with GRT-0341" {
+    set rc [catch { global_route -congestion_only $option } err]
+    expr { $rc != 0 && [string first "GRT-0341" $err] >= 0 }
+  } 1
+}
+check "-congestion_only -guide_file fails with GRT-0341" {
+  set rc [catch {
+    global_route -congestion_only -guide_file [make_result_file "co.guide"]
+  } err]
+  expr { $rc != 0 && [string first "GRT-0341" $err] >= 0 }
+} 1
+
 check "CUGR rejects -congestion_only with GRT-0340" {
   set rc [catch { global_route -use_cugr -congestion_only } err]
   expr { $rc != 0 && [string first "GRT-0340" $err] >= 0 }

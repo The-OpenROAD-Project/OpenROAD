@@ -260,6 +260,18 @@ proc global_route { args } {
     set snapshot_batched_width 0
   }
   grt::set_snapshot_batched_width $snapshot_batched_width
+  if { [info exists flags(-congestion_only)] } {
+    # An estimate routes nothing, so there are no routes to update
+    # incrementally and no guides to write.
+    foreach option {-start_incremental -end_incremental} {
+      if { [info exists flags($option)] } {
+        utl::error GRT 341 "-congestion_only cannot be used with $option."
+      }
+    }
+    if { [info exists keys(-guide_file)] } {
+      utl::error GRT 341 "-congestion_only cannot be used with -guide_file."
+    }
+  }
   grt::set_congestion_only [info exists flags(-congestion_only)]
 
   set infinite_cap [info exists flags(-infinite_cap)]
