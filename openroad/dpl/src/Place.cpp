@@ -1035,7 +1035,8 @@ bool Opendp::checkPixels(const Node* cell,
                          const GridX x,
                          const GridY y,
                          const GridX x_end,
-                         const GridY y_end) const
+                         const GridY y_end,
+                         const odb::dbOrientType* candidate_orient) const
 {
   if (x_end > grid_->getRowSiteCount()) {
     return false;
@@ -1052,10 +1053,16 @@ bool Opendp::checkPixels(const Node* cell,
       if (pixel == nullptr || pixel->cell || !pixel->is_valid
           || (cell->inGroup() && pixel->group != cell->getGroup())
           || (!cell->inGroup() && pixel->group)
-          || (first_row && !grid_->getSiteOrientation(x1, y1, site))) {
+          || (first_row && x1 != x
+              && !grid_->getSiteOrientation(x1, y1, site))) {
         return false;
       }
     }
+  }
+
+  const auto site_orient = grid_->getSiteOrientation(x, y, site);
+  if (!site_orient) {
+    return false;
   }
 
   if (disallow_one_site_gaps_) {
@@ -1106,7 +1113,8 @@ bool Opendp::checkPixels(const Node* cell,
     }
   }
 
-  const auto orient = grid_->getSiteOrientation(x, y, site).value();
+  const auto orient
+      = candidate_orient == nullptr ? site_orient.value() : *candidate_orient;
 
   // Check for symmetry
   auto* dbMaster = cell->getDbInst()->getMaster();

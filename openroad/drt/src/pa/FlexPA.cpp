@@ -76,6 +76,16 @@ FlexPA::FlexPA(frDesign* in,
 // must be out-of-line due to the unique_ptr
 FlexPA::~FlexPA() = default;
 
+std::unique_ptr<FlexPA> FlexPA::makeQueryWorker() const
+{
+  auto worker = std::make_unique<FlexPA>(design_, logger_, dist_, router_cfg_);
+  worker->recovery_min_access_points_ = recovery_min_access_points_;
+  worker->track_coords_ = track_coords_;
+  worker->layer_num_to_via_defs_ = layer_num_to_via_defs_;
+  worker->avoid_via_defs_ = avoid_via_defs_;
+  return worker;
+}
+
 void FlexPA::setDebug(std::unique_ptr<AbstractPAGraphics> pa_graphics)
 {
   graphics_ = std::move(pa_graphics);
@@ -104,6 +114,82 @@ void FlexPA::init()
   initAllSkipInstTerm();
 }
 
+void FlexPA::initRecovery()
+{
+  init();
+  genAllAccessPoints();
+  revertAccessPoints();
+}
+
+std::vector<odb::dbITerm*> FlexPA::findDeficientITerms(const int minimum)
+{
+  const int required = minimum > 0 ? minimum : recovery_min_access_points_;
+  std::vector<odb::dbITerm*> missing;
+  for (const auto& inst : design_->getTopBlock()->getInsts()) {
+    if (inst->isToBeDeleted() || !isStdCell(inst.get())) {
+      continue;
+    }
+    for (const auto& term : inst->getInstTerms()) {
+      if (isSkipInstTermLocal(term.get())) {
+        continue;
+      }
+      int count = 0;
+      if (inst->hasPinAccessIdx()) {
+        for (const auto& pin : term->getTerm()->getPins()) {
+          count += pin->getPinAccess(inst->getPinAccessIdx())
+                       ->getNumAccessPoints();
+        }
+      }
+      if (count < required) {
+        missing.push_back(
+            inst->getDBInst()->findITerm(term->getTerm()->getName().c_str()));
+      }
+    }
+  }
+  return missing;
+}
+
+void FlexPA::resetClassAccessPoints(UniqueClass* unique_class)
+{
+  unique_inst_patterns_[unique_class].clear();
+  for (auto* inst : unique_class->getInsts()) {
+    for (const auto& term : inst->getInstTerms()) {
+      term->clearAccessPoints();
+      term->setAPSize(term->getTerm()->getPins().size());
+    }
+  }
+  const int index = unique_class->getPinAccessIdx();
+  for (const auto& term : unique_class->getMaster()->getTerms()) {
+    for (const auto& pin : term->getPins()) {
+      pin->getPinAccess(index)->clearAccessPoints();
+    }
+  }
+  unique_class->resetSkipTerms();
+  initSkipInstTerm(unique_class);
+}
+
+void FlexPA::regenerateDeficientClasses()
+{
+  std::set<UniqueClass*> deficient;
+  for (auto* term : findDeficientITerms(0)) {
+    deficient.insert(unique_insts_.getUniqueClass(
+        design_->getTopBlock()->findInst(term->getInst())));
+  }
+  for (auto* unique_class : deficient) {
+    unique_class->getMaster()->setHasPinAccessUpdate(
+        unique_class->getPinAccessIdx());
+    resetClassAccessPoints(unique_class);
+    auto* inst = unique_class->getFirstInst();
+    genInstAccessPoints(inst);
+    revertAccessPoints(inst);
+  }
+}
+
+void FlexPA::finishRecovery()
+{
+  prepPattern();
+}
+
 void FlexPA::addDirtyInst(frInst* inst)
 {
   dirty_insts_.insert(inst);
@@ -129,6 +215,17 @@ void FlexPA::updateDirtyInsts()
     removeFromInstsSet(inst);
     const auto& old_unique_class = unique_insts_.getUniqueClass(inst);
     const auto& new_unique_class = unique_insts_.computeUniqueClass(inst);
+    if (recovery_min_access_points_ > 0) {
+      if (old_unique_class) {
+        dirty_unique_classes.insert(old_unique_class);
+      }
+      if (old_unique_class != new_unique_class) {
+        unique_insts_.deleteInst(inst);
+        unique_insts_.addInst(inst);
+      }
+      dirty_unique_classes.insert(new_unique_class);
+      continue;
+    }
     if (old_unique_class == new_unique_class) {  // same unique class
       if (updateSkipInstTerm(inst)) {            // a new connection added
         dirty_unique_classes.insert(old_unique_class);
@@ -154,6 +251,9 @@ void FlexPA::updateDirtyInsts()
     }
     unique_class->getMaster()->setHasPinAccessUpdate(
         unique_class->getPinAccessIdx());
+    if (recovery_min_access_points_ > 0) {
+      resetClassAccessPoints(unique_class);
+    }
     for (auto inst : unique_class->getInsts()) {
       pattern_insts.insert(inst);
     }
@@ -164,16 +264,27 @@ void FlexPA::updateDirtyInsts()
     unique_inst_patterns_[unique_class]
         = std::vector<std::unique_ptr<FlexPinAccessPattern>>();
   }
+  ThreadException unique_class_exception;
 #pragma omp parallel for schedule(dynamic)
   for (auto& unique_class : dirty_unique_classes_vec) {
-    initSkipInstTerm(unique_class);
-    auto candidate_inst = unique_class->getFirstInst();
-    genInstAccessPoints(candidate_inst);
-    revertAccessPoints(candidate_inst);
-    if (isStdCell(candidate_inst)) {
-      prepPatternInst(candidate_inst);
+    try {
+      if (unique_class->getInsts().empty()) {
+        continue;
+      }
+      if (recovery_min_access_points_ == 0) {
+        initSkipInstTerm(unique_class);
+      }
+      auto candidate_inst = unique_class->getFirstInst();
+      genInstAccessPoints(candidate_inst);
+      revertAccessPoints(candidate_inst);
+      if (recovery_min_access_points_ == 0 && isStdCell(candidate_inst)) {
+        prepPatternInst(candidate_inst);
+      }
+    } catch (...) {
+      unique_class_exception.capture();
     }
   }
+  unique_class_exception.rethrow();
   for (auto& inst : dirty_insts_) {
     addToInstsSet(inst);
   }
@@ -182,6 +293,10 @@ void FlexPA::updateDirtyInsts()
     for (auto& inst : unique_class->getInsts()) {
       addToInstsSet(inst);
     }
+  }
+  if (recovery_min_access_points_ > 0) {
+    dirty_insts_.clear();
+    return;
   }
   frOrderedIdSet<frInst*> processed_insts;
   std::vector<std::vector<frInst*>> inst_rows;
@@ -215,6 +330,16 @@ void FlexPA::deleteInst(frInst* inst)
     return;
   }
   unique_insts_.deleteInst(inst);
+  if (recovery_min_access_points_ > 0) {
+    for (auto* member : unique_class->getInsts()) {
+      addDirtyInst(member);
+    }
+    if (unique_class->getInsts().empty()) {
+      unique_class->getMaster()->setHasPinAccessUpdate(
+          unique_class->getPinAccessIdx());
+      resetClassAccessPoints(unique_class);
+    }
+  }
 }
 
 void FlexPA::applyPatternsFile(const char* file_path)

@@ -20,6 +20,7 @@
 
 namespace odb {
 class dbDatabase;
+class dbBlock;
 class dbInst;
 class dbBTerm;
 class dbNet;
@@ -90,7 +91,18 @@ class TritonRoute : public PinAccessService
               stt::SteinerTreeBuilder* stt_builder);
   ~TritonRoute() override;
 
+  std::vector<odb::dbITerm*> beginPinAccessRecovery(
+      int min_access_points) override;
+  std::vector<odb::dbITerm*> updatePinAccessRecovery() override;
+  void finishPinAccessRecovery() override;
+  void cancelPinAccessRecovery() noexcept override;
   void updateDirtyPinAccess() override;
+  bool hasPinAccess() const override;
+  bool hasMinimumPinAccess(int min_access_points) const override;
+  bool hasUsablePinAccess(odb::dbInst* inst,
+                          const odb::Point& candidate_location) const override;
+  std::vector<odb::dbInst*> findPinAccessFailures(
+      const std::vector<odb::dbInst*>& instances) const override;
 
   void initGraphics(std::unique_ptr<AbstractGraphicsFactory> graphics_factory);
 
@@ -156,7 +168,7 @@ class TritonRoute : public PinAccessService
   void debugSingleWorker(const std::string& dumpDir, const std::string& drcRpt);
   void updateGlobals(const char* file_name);
   void resetDb(const char* file_name);
-  void clearDesign();
+  void clearDesign(bool detach_callback = true);
   void updateDesign(const std::vector<std::string>& updates, int num_threads);
   void updateDesign(const std::string& path, int num_threads);
   void addWorkerResults(
@@ -211,8 +223,12 @@ class TritonRoute : public PinAccessService
   unsigned int cloud_sz_{0};
   std::optional<boost::asio::thread_pool> dist_pool_;
   std::unique_ptr<FlexPA> pa_{nullptr};
+  bool pa_rebuild_required_{false};
+  bool pa_recovery_active_{false};
+  odb::dbBlock* pa_block_{nullptr};
   std::unique_ptr<AbstractGraphicsFactory> graphics_factory_{nullptr};
 
+  bool hasCurrentPinAccess() const;
   void initDesign();
   void initGraphics();
   void ta();

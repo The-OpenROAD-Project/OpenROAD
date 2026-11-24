@@ -40,6 +40,7 @@ class FlexGCWorker
   gcNet* getTargetNet();
   void resetTargetNet();
   void addTargetObj(frBlockObject* in);
+  void setReplacementInst(frInst* source, frInst* candidate);
   void setTargetObjs(const std::set<frBlockObject*>& targetObjs);
   void setIgnoreDB();
   void setIgnoreMinArea();
