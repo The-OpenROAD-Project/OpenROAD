@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// The register timing of Retime's delay model (launch, setup, calibration to
-// STA, the cost of unmapping) and the search.
-
 #include <algorithm>
 #include <climits>
 #include <cmath>
@@ -28,7 +25,6 @@
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/Scene.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingRole.hh"
 #include "sta/Transition.hh"
@@ -38,17 +34,7 @@ namespace ret {
 
 namespace {
 
-// As in Retime.cpp.
-constexpr double kExcluded = -1e30;
-constexpr double kNegInf = -std::numeric_limits<double>::infinity();
-
 constexpr float kNoArrival = -1e29f;
-
-float arrivalAt(sta::dbSta* sta, sta::Vertex* vertex, const sta::RiseFall* rf)
-{
-  return sta::delayAsFloat(sta->arrival(
-      vertex, rf->asRiseFallBoth(), sta->scenes(), sta::MinMax::max()));
-}
 
 float slackAtLoad(sta::dbSta* sta, sta::Graph* graph, const sta::Pin* pin)
 {
@@ -85,7 +71,6 @@ std::optional<float> arrivalThroughOutput(sta::Graph* graph,
   return latest;
 }
 
-// The latest arrival at `to` over the gate arcs out of `from`.
 std::optional<float> arrivalThroughGate(sta::Graph* graph,
                                         sta::Vertex* from,
                                         sta::Vertex* to,
@@ -146,6 +131,7 @@ void Retime::computeRegisterTiming()
   computeLaunch();
   calibrateArcs();
   computeUnmapCost();
+  computeDriverShifts();
   computeEndpoints();
 }
 
@@ -179,8 +165,7 @@ odb::dbITerm* Retime::edgeSource(const FaninEdge& fe) const
 {
   odb::dbITerm* source = fe.phys->driver;
   if (!fe.phys->flops.empty()) {
-    odb::dbITerm* data = graph_->dataPin(fe.phys->flops.front());
-    odb::dbNet* net = data != nullptr ? data->getNet() : nullptr;
+    odb::dbNet* net = graph_->chainNet(*fe.phys);
     source = net != nullptr ? net->getFirstOutput() : nullptr;
   }
   if (source == nullptr || source->getInst() != graph_->nodes()[fe.u]) {
@@ -213,14 +198,10 @@ double Retime::crossingDelay(int t, const FaninEdge& fe) const
 
 void Retime::computeCrossExtra()
 {
-  if (sta_->cmdScene() == nullptr) {
-    return;
-  }
   const int n = static_cast<int>(graph_->nodes().size());
   for (int t = 0; t < n; ++t) {
     for (FaninEdge& fe : fanin_[t]) {
-      if (fe.weight == 0 || fe.phys->flops.empty()
-          || fe.phys->driver == nullptr) {
+      if (fe.weight == 0) {
         continue;
       }
       odb::dbITerm* source = edgeSource(fe);
@@ -270,9 +251,9 @@ float Retime::slowdownAtLoad(int u, float load, float new_load, float& slew)
       continue;
     }
     float new_slew = -1.0f;
-    const float now = characterizeArc(u, input, load, -1.0f, nullptr);
+    const float now = characterizeArc(u, input, load, -1.0f);
     const float then
-        = characterizeArc(u, input, new_load, -1.0f, nullptr, -1.0f, &new_slew);
+        = characterizeArc(u, input, new_load, -1.0f, -1.0f, &new_slew);
     if (now >= 0.0f && then >= 0.0f) {
       slowdown = std::max(slowdown, then - now);
       slew = std::max(slew, new_slew);
@@ -283,9 +264,8 @@ float Retime::slowdownAtLoad(int u, float load, float new_load, float& slew)
 
 float Retime::slowdownAtSlew(int t, odb::dbITerm* sink, float slew)
 {
-  const float now = characterizeArc(t, sink, flop_d_cap_, -1.0f, nullptr);
-  const float then
-      = characterizeArc(t, sink, flop_d_cap_, -1.0f, nullptr, slew);
+  const float now = characterizeArc(t, sink, flop_d_cap_, -1.0f);
+  const float then = characterizeArc(t, sink, flop_d_cap_, -1.0f, slew);
   return now >= 0.0f && then >= 0.0f ? then - now : 0.0f;
 }
 
@@ -300,8 +280,8 @@ std::optional<float> Retime::staArc(odb::dbITerm* input, odb::dbITerm* output)
   if (from == nullptr || to == nullptr) {
     return std::nullopt;
   }
-  const float in_rise = arrivalAt(sta_, from, sta::RiseFall::rise());
-  const float in_fall = arrivalAt(sta_, from, sta::RiseFall::fall());
+  const float in_rise = arrivalAt(from, sta::RiseFall::rise());
+  const float in_fall = arrivalAt(from, sta::RiseFall::fall());
   const float in_latest = std::max(in_rise, in_fall);
   if (in_latest < kNoArrival) {
     return std::nullopt;
@@ -312,8 +292,8 @@ std::optional<float> Retime::staArc(odb::dbITerm* input, odb::dbITerm* output)
     return std::nullopt;
   }
   // No later than STA has the output itself.
-  const float out_latest = std::max(arrivalAt(sta_, to, sta::RiseFall::rise()),
-                                    arrivalAt(sta_, to, sta::RiseFall::fall()));
+  const float out_latest = std::max(arrivalAt(to, sta::RiseFall::rise()),
+                                    arrivalAt(to, sta::RiseFall::fall()));
   return std::max(std::min(*via, out_latest) - in_latest, 0.0f);
 }
 
@@ -326,16 +306,10 @@ double Retime::modeledOutputArrival(int t, bool registered)
         || net->getSigType().isSupply()) {
       continue;
     }
-    double arc = -1.0;
-    for (const FaninEdge& fe : fanin_[t]) {
-      if (fe.sink == iterm) {
-        arc = registered ? fe.arc_reg : fe.arc_comb;
-        break;
-      }
-    }
-    if (arc < 0.0) {
-      arc = getGateArc(iterm);
-    }
+    const auto edge = std::ranges::find(fanin_[t], iterm, &FaninEdge::sink);
+    const double arc = edge == fanin_[t].end() ? getGateArc(iterm)
+                       : registered            ? edge->arc_reg
+                                               : edge->arc_comb;
     latest = std::max(latest, pinArrival(iterm) + arc);
   }
   return latest;
@@ -509,12 +483,8 @@ double Retime::negativeSlackAt(int t) const
   if (!outputRegistered(t) && po_end_shift_[t] == kNegInf) {
     return 0.0;
   }
-  const double arrival = std::max(arrivals_[t], arrivals_pi_[t]);
-  if (arrival <= kExcluded / 2) {
-    return 0.0;
-  }
-  const double slack = requiredTime() - (arrival + endShift(t));
-  return std::min(slack, 0.0);
+  return std::min(
+      slackOf(std::max(arrivals_[t], arrivals_pinned_[t]), endShift(t)), 0.0);
 }
 
 void Retime::sampleLaunchOffset()
@@ -545,8 +515,7 @@ void Retime::sampleLaunch(odb::dbInst* flop, std::vector<float>& offsets)
       = network->libertyCell(network->dbToSta(flop->getMaster()));
   for (odb::dbITerm* iterm : flop->getITerms()) {
     sta::Pin* pin = network->dbToSta(iterm);
-    sta::LibertyPort* port
-        = pin != nullptr ? network->libertyPort(pin) : nullptr;
+    sta::LibertyPort* port = network->libertyPort(pin);
     if (port == nullptr) {
       continue;
     }
@@ -576,12 +545,7 @@ std::vector<sta::LibertyCell*> Retime::newRegisterCells(int u) const
   std::vector<odb::dbInst*> moved;
   const bool keeps = slideKeepsClass(u, moved);
   for (odb::dbInst* flop : moved) {
-    // Only an enable or inverting class the slide keeps is rebuilt from its
-    // own cell; anything else from the base cell.
-    const RegisterKind kind = graph_->regClass(flop).kind;
-    if (keeps
-        && (kind == RegisterKind::kEnable
-            || kind == RegisterKind::kInverting)) {
+    if (keeps && keepsClass(graph_->regClass(flop))) {
       for (odb::dbMaster* master : cells_of_(flop->getMaster())) {
         add(master);
       }
@@ -611,9 +575,6 @@ float Retime::pickLaunchCell(int u, float load)
 
 void Retime::computeLaunch()
 {
-  if (sta_->cmdScene() == nullptr) {
-    return;
-  }
   sampleLaunchOffset();
   const float offset = static_cast<float>(launch_offset_);
   const int n = static_cast<int>(graph_->nodes().size());
@@ -655,8 +616,7 @@ double Retime::registerEndShift(int v, double arrival)
       continue;
     }
     odb::dbITerm* data = graph_->dataPin(phys.flops.front());
-    const float slack = slackAtLoad(
-        sta_, graph, data != nullptr ? network->dbToSta(data) : nullptr);
+    const float slack = slackAtLoad(sta_, graph, network->dbToSta(data));
     if (slack < sta::INF / 2) {
       shift = std::max(shift, requiredTime() - slack - arrival);
     }
@@ -689,7 +649,6 @@ double Retime::portEndShift(int v, double arrival)
 
 void Retime::computeEndpoints()
 {
-  computeDriverShifts();
   sta::dbNetwork* network = sta_->getDbNetwork();
   const int n = static_cast<int>(graph_->nodes().size());
   for (int v = 0; v < n; ++v) {
@@ -703,14 +662,14 @@ void Retime::computeEndpoints()
     const float setup = registerSetupTime(sta_,
                                           launch_cell_[v],
                                           clock_slew_,
-                                          getPinSlew(network->dbToSta(output)));
+                                          pinSlew(sta_, network->dbToSta(output)));
     new_setup_[v] = std::max(setup, 0.0f);
   }
 }
 
 double Retime::slackOf(double arrival, double tail) const
 {
-  if (arrival <= kExcluded / 2 || tail == kNegInf) {
+  if (arrival <= kUnreached / 2 || tail == kNegInf) {
     return std::numeric_limits<double>::infinity();
   }
   return requiredTime() - (arrival + tail);
@@ -718,7 +677,7 @@ double Retime::slackOf(double arrival, double tail) const
 
 double Retime::slackThrough(int v) const
 {
-  return slackOf(std::max(arrivals_[v], arrivals_pi_[v]), tails_[v]);
+  return slackOf(std::max(arrivals_[v], arrivals_pinned_[v]), tails_[v]);
 }
 
 double Retime::worstSlack() const
@@ -734,10 +693,9 @@ double Retime::worstSlack() const
 Retime::SlideEffect Retime::slideEffect(int v)
 {
   SlideEffect effect;
-  effect.before = slackThrough(v);
   applySlide(v);
-  effect.into = slackOf(std::max(arrivals_[v], arrivals_pi_[v]), endShift(v));
-  const std::vector<int> changed = scratch_.dirty;
+  effect.into = slackOf(std::max(arrivals_[v], arrivals_pinned_[v]), endShift(v));
+  const std::vector<int>& changed = scratch_.dirty;
   for (const int t : changed) {
     effect.total_change += negativeSlackAt(t);
   }
@@ -749,12 +707,12 @@ Retime::SlideEffect Retime::slideEffect(int v)
   return effect;
 }
 
-std::vector<std::pair<double, int>> Retime::failingSpots(
+std::vector<std::pair<double, int>> Retime::failingGates(
     const std::vector<char>& refused,
     bool& skipped) const
 {
   const int n = static_cast<int>(graph_->nodes().size());
-  std::vector<std::pair<double, int>> spots;
+  std::vector<std::pair<double, int>> gates;
   for (int v = 0; v < n; ++v) {
     if (refused[v]) {
       skipped = true;
@@ -765,11 +723,11 @@ std::vector<std::pair<double, int>> Retime::failingSpots(
     }
     const double slack = slackThrough(v);
     if (slack < 0.0) {
-      spots.emplace_back(slack, v);
+      gates.emplace_back(slack, v);
     }
   }
-  std::ranges::sort(spots);
-  return spots;
+  std::ranges::sort(gates);
+  return gates;
 }
 
 Retime::Pick Retime::pickSlide(double margin, std::vector<char>& refused)
@@ -777,7 +735,7 @@ Retime::Pick Retime::pickSlide(double margin, std::vector<char>& refused)
   const double worst = worstSlack();
   Pick pick;
   int for_total = -1;
-  for (const auto& [before, v] : failingSpots(refused, pick.skipped)) {
+  for (const auto& [before, v] : failingGates(refused, pick.skipped)) {
     const SlideEffect effect = slideEffect(v);
     const double after = std::min(effect.into, effect.out);
     if (after - before > margin && effect.total_change >= -margin) {
@@ -831,14 +789,13 @@ void Retime::search(int max_moves)
   const int n = static_cast<int>(graph_->nodes().size());
   const int cap = max_moves <= 0 ? INT_MAX : max_moves;
   const double margin = 0.002 * graph_->clockPeriod();
-  // Spots whose slide was refused and whose inputs have not changed since.
+  // Gates whose slide was refused and whose inputs have not changed since.
   std::vector<char> refused(n, 0);
   while (moves_ < cap) {
     updateTails(refused);
     const Pick pick = pickSlide(margin, refused);
     if (pick.gate < 0) {
-      // One more look at the refused spots, in case what a refusal rested on
-      // has changed.
+      // Retry the refused gates before giving up.
       if (!pick.skipped) {
         break;
       }

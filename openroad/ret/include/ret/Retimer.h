@@ -4,7 +4,6 @@
 #pragma once
 
 #include <memory>
-#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -35,12 +34,10 @@ class RetimingGraph;
 class SequentialUnmapper;
 struct RegisterClass;
 
-// Forward register retiming.  The search (Retime) proposes moves on a delay
-// model read from STA; STA decides what is kept (StaCheck).  Only the
-// register groups whose edge weights changed are rebuilt.  Registers move by
-// class (see RegisterUtils.h); a register that cannot keep its class is first
-// unmapped to the base cell plus logic (SequentialUnmapper).  In a
-// hierarchical netlist a register stays inside its module.
+// Forward register retiming: Retime proposes moves on a delay model read
+// from STA, and StaCheck keeps what STA confirms.  Only the register groups
+// whose edge weights changed are rebuilt; a register that cannot keep its
+// class (RegisterUtils.h) is first unmapped (SequentialUnmapper).
 class Retimer
 {
  public:
@@ -51,11 +48,10 @@ class Retimer
           utl::Logger* logger);
   ~Retimer();
 
-  // Errors out on designs it cannot retime.
   void retime(int max_moves);  // <= 0: unlimited
 
  private:
-  // Fanin edges of every gate as (source gate, index into adj_[source]).
+  // Fanin edges of every gate as (source gate, index into graph.adj()[source]).
   using FaninIndex = std::vector<std::vector<std::pair<int, int>>>;
 
   struct Sink
@@ -78,8 +74,7 @@ class Retimer
     bool dont_touch = false;
   };
 
-  // The module net of a flat net inside the module a group is rebuilt in;
-  // empty in a flat netlist.
+  // Flat net to its module net in the group's module; empty when flat.
   using ModNets = std::unordered_map<odb::dbNet*, odb::dbModNet*>;
 
   odb::dbBlock* getBlock();
@@ -97,12 +92,6 @@ class Retimer
   // of its own.
   std::vector<Group> collectGroups(const RetimingGraph& graph,
                                    const std::vector<int>& r) const;
-  // Which of a net's class groups a chain belongs to: the one whose first
-  // register is the same class as this chain's.  A chain without a register
-  // goes with the first group.
-  static int classBranch(const RetimingGraph& graph,
-                         const std::vector<odb::dbInst*>& flops,
-                         std::vector<odb::dbInst*>& heads);
 
   std::unordered_set<odb::dbInst*> moversToUnmap(
       const RetimingGraph& graph,
@@ -110,9 +99,6 @@ class Retimer
   void addGroupMovers(const RetimingGraph& graph,
                       const Group& group,
                       std::unordered_set<odb::dbInst*>& movers) const;
-  static void addClassedMovers(const RetimingGraph& graph,
-                               const std::vector<odb::dbInst*>& regs,
-                               std::unordered_set<odb::dbInst*>& movers);
 
   static FaninIndex faninIndex(const RetimingGraph& graph);
   // The original registers standing for the j-th register upstream of a
@@ -132,13 +118,6 @@ class Retimer
                               int v,
                               int j,
                               std::vector<odb::dbInst*>& out);
-
-  std::vector<int> remapLag(const RetimingGraph& graph,
-                            const std::unordered_map<std::string, int>& lag,
-                            bool& ok) const;
-  int lagOfNewGate(odb::dbInst* gate,
-                   const std::unordered_map<std::string, int>& lag,
-                   bool& ok) const;
 
   // Returns the slides of the search whose retiming it applied.
   int applyAfterUnmapping(const RetimingGraph& graph,
@@ -176,23 +155,17 @@ class Retimer
                     const std::vector<const RegisterClass*>& classes,
                     odb::dbNet* clock_net);
   void removeRegister(odb::dbInst* inst);
-  // The module nets of the nets a group's new registers connect to, looked
-  // up before the old registers go: they may hold the module's only pin on
-  // one.
+  // Looked up before the old registers go: they may hold the module's only
+  // pin on one of the nets.
   ModNets groupModNets(const Group& group,
                        const std::vector<const RegisterClass*>& classes,
                        odb::dbNet* clock_net) const;
-  static void connectPin(odb::dbITerm* pin,
-                         odb::dbNet* net,
-                         const ModNets& mod_nets);
   void connectRegister(odb::dbInst* ff,
                        const RegisterClass* cls,
                        odb::dbNet* in,
                        odb::dbNet* out,
                        odb::dbNet* clock_net,
                        const ModNets& mod_nets);
-  // A base cell with asynchronous controls gets a tie cell on each of them,
-  // holding it inactive.
   void tieBaseControls(odb::dbInst* ff,
                        sta::Instance* parent,
                        odb::dbModInst* parent_mod_inst);
@@ -210,9 +183,6 @@ class Retimer
   std::unique_ptr<SequentialUnmapper> unmapper_;
   std::unique_ptr<RetimerPlacer> placer_;
 
-  odb::dbMaster* dff_master_ = nullptr;
-  odb::dbMTerm* dff_d_mterm_ = nullptr;
-  odb::dbMTerm* dff_q_mterm_ = nullptr;
   odb::dbNet* clock_net_ = nullptr;
   bool report_graph_ = false;  // by the first search of a retime call
 };

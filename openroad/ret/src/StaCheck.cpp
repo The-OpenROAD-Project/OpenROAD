@@ -70,7 +70,7 @@ std::unordered_set<odb::dbInst*> StaCheck::unplacedCells() const
   return unplaced;
 }
 
-int StaCheck::run(int max_moves)
+void StaCheck::run(int max_moves)
 {
   constexpr int kRounds = 16;
   constexpr int kRoundMoves = 16;
@@ -130,10 +130,11 @@ int StaCheck::run(int max_moves)
                 registerCount(),
                 placed.placed,
                 placed.resized);
-  return total;
 }
 
-StaCheck::Trial StaCheck::runTrial(int limit, const StaSlack& before, int round)
+StaCheck::Trial StaCheck::runTrial(int limit,
+                                   const StaSlack& before,
+                                   int number)
 {
   const std::unordered_set<odb::dbInst*> unplaced = unplacedCells();
   Trial trial{.slides = 0, .slack = before, .placed = {}};
@@ -148,12 +149,12 @@ StaCheck::Trial StaCheck::runTrial(int limit, const StaSlack& before, int round)
     odb::dbDatabase::undoEco(block_);
     throw;
   }
-  if (trial.slides > 0 && round > 0) {
+  if (trial.slides > 0 && number > 0) {
     logger_->info(utl::RET,
                   50,
                   "STA check round {}: {} slides give worst slack {}, total "
                   "negative slack {}.",
-                  round,
+                  number,
                   trial.slides,
                   sta::delayAsString(trial.slack.worst, 4, sta_),
                   sta::delayAsString(trial.slack.total, 4, sta_));
@@ -180,14 +181,14 @@ void StaCheck::keepTrial(const Trial& trial, int number, Round& round)
   round.placed = trial.placed;
 }
 
-int StaCheck::bestPrefix(int slides, const StaSlack& before, int round)
+int StaCheck::bestPrefix(int slides, const StaSlack& before, int number)
 {
   constexpr int kMaxTrials = 12;
   int best_limit = 0;
   StaSlack best = before;
   int limit = slides / 2;
   for (int tried = 1; tried < kMaxTrials && limit > 0; ++tried) {
-    const Trial trial = runTrial(limit, before, round);
+    const Trial trial = runTrial(limit, before, number);
     undoTrial();
     if (trial.slides == 0) {
       break;
@@ -224,7 +225,6 @@ StaCheck::Round StaCheck::runRound(int number, int max_moves)
   undoTrial();
   const int limit = bestPrefix(full.slides, before, number);
   if (limit > 0) {
-    // Run again; kept only if STA calls it better than the start again.
     const Trial again = runTrial(limit, before, 0);
     if (betterThan(again.slack, before, before)) {
       keepTrial(again, number, round);

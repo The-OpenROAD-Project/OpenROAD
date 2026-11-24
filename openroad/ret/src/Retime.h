@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include <cstddef>
 #include <functional>
+#include <limits>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -15,7 +15,8 @@
 namespace sta {
 class dbSta;
 class LibertyCell;
-class Pin;
+class RiseFall;
+class Vertex;
 }  // namespace sta
 namespace utl {
 class Logger;
@@ -35,14 +36,12 @@ class Retime
 {
  public:
   using CellsOf = std::function<std::vector<odb::dbMaster*>(odb::dbMaster*)>;
-  // flop_d_mterm: the data pin of the base cell.  base_cells: what a new
-  // register can be built from.  cells_of: what a register of a given cell
-  // can be rebuilt from.
+  // flop_d_mterm: the data pin of the base cell.  cells_of: what a register
+  // of a given cell can be rebuilt from.
   Retime(const RetimingGraph* graph,
          sta::dbSta* sta,
          utl::Logger* logger,
          odb::dbMTerm* flop_d_mterm,
-         std::vector<odb::dbMaster*> base_cells,
          CellsOf cells_of);
 
   void run(int max_moves);  // <= 0: unlimited
@@ -50,6 +49,10 @@ class Retime
   int getMoves() const { return moves_; }
 
  private:
+  // The arrival at a gate no path of that root reaches.
+  static constexpr double kUnreached = -1e30;
+  static constexpr double kNegInf = -std::numeric_limits<double>::infinity();
+
   struct FaninEdge
   {
     int u;
@@ -69,19 +72,9 @@ class Retime
     float cross_extra;
   };
 
-  enum class ArcCharStage
-  {
-    kOk,
-    kNoCell,
-    kNoFromPort,
-    kNoPvt,
-    kNoTableModel
-  };
-  static constexpr size_t kArcCharStages = 5;
-
   float pinArrival(odb::dbITerm* db_pin);
+  float arrivalAt(sta::Vertex* vertex, const sta::RiseFall* rf) const;
   float getGateArc(odb::dbITerm* input_pin);
-  float getPinSlew(sta::Pin* pin);
   // The wire delay of an edge once no register is left on it: the wire into
   // each of its registers, then the wire from the last one to the sink.
   float wireDelay(const EdgePhys& phys);
@@ -89,15 +82,13 @@ class Retime
   void computeArcDelays();
   void resolveFlopDCap();
   void computeWireArcs();
-  void computeCombArcs();
-  void computeSeqArcs();
+  void computeGateArcs();
   // forced_slew < 0: the input slew STA has.  out_slew: the output slew of
   // the slowest arc.
   float characterizeArc(int v,
                         odb::dbITerm* sink,
                         float load,
                         float fallback,
-                        ArcCharStage* stage_out,
                         float forced_slew = -1.0f,
                         float* out_slew = nullptr);
 
@@ -115,12 +106,10 @@ class Retime
   void undoSlide(int v);
   bool forwardMovable(int v) const;
 
-  // The slack through gate v before a slide across it, into and out of
-  // the register the slide leaves behind v, and what the slide adds to the
-  // total negative slack.
+  // The slack into and out of the register a slide across gate v leaves
+  // behind it, and what the slide adds to the total negative slack.
   struct SlideEffect
   {
-    double before = 0.0;
     double into = 0.0;
     double out = 0.0;
     double total_change = 0.0;
@@ -128,13 +117,13 @@ class Retime
   struct Pick
   {
     int gate = -1;         // -1: no slide left
-    bool skipped = false;  // a refused spot was passed over
+    bool skipped = false;  // a refused gate was passed over
   };
   void search(int max_moves);
-  // A spot neither rule of the search takes is marked in `refused`.
+  // A gate neither rule of the search takes is marked in `refused`.
   Pick pickSlide(double margin, std::vector<char>& refused);
   // The gates a slide can cross whose worst path fails, worst first.
-  std::vector<std::pair<double, int>> failingSpots(
+  std::vector<std::pair<double, int>> failingGates(
       const std::vector<char>& refused,
       bool& skipped) const;
   SlideEffect slideEffect(int v);  // the slide is undone
@@ -151,7 +140,6 @@ class Retime
   double negativeSlackAt(int t) const;
   // What an endpoint at v's output is charged on top of v's arrival.
   double endShift(int v) const;
-  // The arrival a registered edge into t starts from.
   double launchArrival(int t, const FaninEdge& fe) const;
   // What a slide that took the registers off the edge left on it.
   double crossingDelay(int t, const FaninEdge& fe) const;
@@ -164,8 +152,7 @@ class Retime
   void computeUnmapCost();
   void computeEndpoints();
   void computeDriverShifts();
-  // The output pin of the source gate that the edge leaves from; null when
-  // it is not on that gate.
+  // The pin of gate fe.u driving the edge's first net; null when not on fe.u.
   odb::dbITerm* edgeSource(const FaninEdge& fe) const;
   odb::dbITerm* latestOutput(int v);
   odb::dbITerm* firstOutput(int v) const;
@@ -178,23 +165,17 @@ class Retime
   // slew then, negative without an arc.
   float slowdownAtLoad(int u, float load, float new_load, float& slew);
   float slowdownAtSlew(int t, odb::dbITerm* sink, float slew);
-  // The gate's delay from an input to an output as STA timed it.
   std::optional<float> staArc(odb::dbITerm* input, odb::dbITerm* output);
-  // The arrival at t's output that the model's arcs give from STA's input
-  // arrivals.
+  // STA's input arrivals through the model's arcs.
   double modeledOutputArrival(int t, bool registered);
-  // launch_offset_: the middle value, over a sample of registers, of what
-  // STA has a register launch at beyond the table's clock-to-Q (the clock
-  // arrival).  clock_slew_: the clock slew of the last register sampled.
+  // launch_offset_ (the clock arrival): median over sampled registers of STA's
+  // launch minus the table clock-to-Q; clock_slew_: the last one's clock slew.
   void sampleLaunchOffset();
   void sampleLaunch(odb::dbInst* flop, std::vector<float>& offsets);
-  // The cells the register a slide across u builds can be made from.
   std::vector<sta::LibertyCell*> newRegisterCells(int u) const;
-  // Sets launch_cell_[u] to the fastest one; returns its clock-to-Q at the
-  // load.
+  // Sets launch_cell_[u] to the fastest new cell; returns its clock-to-Q.
   float pickLaunchCell(int u, float load);
-  // The registers a first slide across t moves, and whether they keep
-  // their class across it.
+  // `regs`: the registers a first slide across t moves.
   bool slideKeepsClass(int t, std::vector<odb::dbInst*>& regs) const;
   float typicalGateDelay() const;
   // The gates unmapping the edge's registers leaves on the path: one for an
@@ -210,29 +191,27 @@ class Retime
   std::vector<int> r_;
   std::vector<double> gate_floor_;
   std::vector<double> arrivals_;     // register-rooted
-  std::vector<double> arrivals_pi_;  // pinned-rooted
-  std::vector<float> pi_source_;     // STA arrival at a pinned source gate
+  std::vector<double> arrivals_pinned_;  // pinned-rooted
+  std::vector<float> pinned_source_;     // STA arrival at a pinned source gate
   std::vector<std::vector<FaninEdge>> fanin_;
 
   struct Scratch
   {
-    std::vector<int> indeg;
     std::vector<int> queue;
     std::vector<int> local_indeg;
     std::vector<char> in_dirty;
     std::vector<int> dirty;
     std::vector<double> saved_arrivals;
-    std::vector<double> saved_arrivals_pi;
+    std::vector<double> saved_arrivals_pinned;
     void init(int n)
     {
-      indeg.assign(n, 0);
       queue.assign(n, 0);
       local_indeg.assign(n, 0);
       in_dirty.assign(n, 0);
       dirty.clear();
       dirty.reserve(n);
       saved_arrivals.reserve(n);
-      saved_arrivals_pi.reserve(n);
+      saved_arrivals_pinned.reserve(n);
     }
   };
   Scratch scratch_;
@@ -242,8 +221,8 @@ class Retime
   int dcalc_ap_ = 0;
   int moves_ = 0;  // slides taken by the last run
 
-  std::vector<odb::dbMaster*> base_cells_;
   CellsOf cells_of_;
+  std::vector<odb::dbMaster*> base_cells_;  // what a new register is built from
   float clock_slew_ = 0.0f;
   double launch_offset_ = 0.0;
   // Per gate.

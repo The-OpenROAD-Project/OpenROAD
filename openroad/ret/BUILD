@@ -79,7 +79,6 @@ cc_library(
     deps = [
         ":ret",
         "//:ord",
-        "//openroad/odb/src/db",
         "//openroad/utl",
         "@tcl_lang//:tcl",
     ],
@@ -105,9 +104,6 @@ tcl_wrap_cc(
     root_swig_src = "src/ret.i",
     swig_includes = [
         "openroad/ret/src",
-    ],
-    deps = [
-        "//openroad/odb:swig",
     ],
 )
 

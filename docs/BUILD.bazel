@@ -41,6 +41,7 @@ man_pages(
         "//openroad/psm:messages_txt",
         "//openroad/ram:messages_txt",
         "//openroad/rcx:messages_txt",
+        "//openroad/ret:messages_txt",
         "//openroad/rmp:messages_txt",
         "//openroad/rsz:messages_txt",
         "//openroad/stt:messages_txt",

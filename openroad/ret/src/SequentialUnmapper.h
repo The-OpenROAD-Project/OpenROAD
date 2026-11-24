@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <map>
-#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -31,12 +29,8 @@ namespace ret {
 // (inverters, 2-input ANDs and ORs, tie cells) computing the cell's liberty
 // `next_state`.  Registers with an asynchronous control that is not tied
 // inactive, latches, scan cells and multi-bit cells are left untouched.
-//
-// A library without a plain D flip-flop gets a base cell with asynchronous
-// controls instead; every new instance of it has them tied inactive.
-//
-// In a hierarchical netlist the cells that replace a register are created
-// in the register's module.
+// Without a plain D flip-flop the base cell has asynchronous controls, tied
+// inactive on each new instance.  New cells go into the register's module.
 class SequentialUnmapper
 {
  public:
@@ -52,8 +46,7 @@ class SequentialUnmapper
   odb::dbMaster* getBaseSequentialMaster() const { return seq_.master; }
   odb::dbMTerm* getBaseSequentialDMTerm() const { return seq_.d; }
   odb::dbMTerm* getBaseSequentialQMTerm() const { return seq_.q; }
-  // The asynchronous controls a new base register needs tied inactive; none
-  // on a plain flip-flop.
+  // Empty on a plain flip-flop.
   const PinTies& getBaseSequentialTies() const { return seq_.ties; }
   odb::dbMaster* getNegedgeSequentialMaster() const
   {
@@ -124,30 +117,21 @@ class SequentialUnmapper
   std::vector<Register> collectRegisters(
       const std::unordered_set<odb::dbInst*>* candidates,
       Untouched& untouched) const;
-  void reportRun(const std::map<std::string, int>& per_cell,
-                 const Untouched& untouched) const;
+  void reportRun(const Untouched& untouched) const;
 
   void decompose(odb::dbInst* inst, const sta::Sequential* seq);
   odb::dbNet* collectRegisterNets(odb::dbInst* inst,
                                   std::vector<odb::dbITerm*>& out_pins);
   std::vector<OutputMove> collectOutputMoves(
       odb::dbInst* inst,
+      const sta::Sequential* seq,
       const std::vector<odb::dbITerm*>& out_pins);
   void applyOutputMoves(const std::vector<OutputMove>& moves);
-  void traceDecompose(const std::string& inst_name,
-                      const std::string& inst_master,
-                      odb::dbInst* flop);
   bool canSynth(const sta::FuncExpr* expr) const;
   odb::dbNet* synth(const sta::FuncExpr* expr);
-  bool isInverted(const sta::FuncExpr* func) const;
   RegPins getRegPins(odb::dbInst* inst, const sta::Sequential* seq) const;
 
-  // The new cells and nets of a register go into the module it is in; a
-  // flat netlist has only the top one.
   void setParent(odb::dbInst* inst);
-  // A net the register read keeps its module net on the pin that reads it
-  // now.
-  void connectInput(odb::dbITerm* pin, odb::dbNet* net);
   odb::dbNet* newNet(const char* base_name);
   odb::dbInst* newInst(const char* base_name, odb::dbMaster* master);
   odb::dbNet* makeInverter(odb::dbNet* input);
@@ -179,7 +163,6 @@ class SequentialUnmapper
   const sta::LibertyPort* out_port_ = nullptr;
   const sta::LibertyPort* out_inv_port_ = nullptr;
   odb::dbNet* state_net_ = nullptr;
-  std::vector<odb::dbInst*> created_;
 
   int unmapped_ = 0;
   int skipped_ = 0;

@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <optional>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -10,6 +12,7 @@
 
 namespace sta {
 class dbSta;
+class FuncExpr;
 class LibertyCell;
 class LibertyPort;
 class Sequential;
@@ -17,11 +20,24 @@ class Sequential;
 
 namespace ret {
 
-// Register classification shared by the graph, the search and the apply
-// step.
-
 // The cell's sequential when it has exactly one, else nullptr.
 const sta::Sequential* singleSequential(const sta::LibertyCell* cell);
+// nullptr also without a liberty cell.
+const sta::Sequential* singleSequential(sta::dbSta* sta, odb::dbInst* inst);
+
+// Every cell of the loaded liberty libraries, in library order.
+std::vector<sta::LibertyCell*> libertyCells(sta::dbSta* sta);
+
+bool isNegedge(const sta::Sequential* seq);
+
+// Whether the output whose function is `func` reads the state inverted;
+// nullopt when it does not read the state.
+std::optional<bool> outputInverted(const sta::FuncExpr* func,
+                                   const sta::Sequential* seq);
+
+void connectPin(odb::dbITerm* pin,
+                odb::dbNet* net,
+                const std::unordered_map<odb::dbNet*, odb::dbModNet*>& mod_nets);
 
 // A cell with a scan pin in LEF or a liberty test_cell.
 bool isScanCell(sta::dbSta* sta, odb::dbInst* inst);
@@ -33,10 +49,9 @@ bool hasLiveAsyncControl(sta::dbSta* sta,
                          odb::dbInst* inst,
                          const sta::Sequential* seq);
 
-// The constants that hold every asynchronous control of a register cell
-// inactive, as (pin, tied high).  False when the cell has no such control,
-// when no constants hold them inactive, or when it has an input that is
-// neither one of them, a data pin nor the clock.
+// `constants`: (pin, tied high) holding every asynchronous control inactive.
+// False without such a control or such constants, or when the cell has an
+// input that is not a control, a data pin or the clock.
 using PinConstants = std::vector<std::pair<const sta::LibertyPort*, bool>>;
 bool inactiveAsyncControls(const sta::LibertyCell* cell,
                            const sta::Sequential* seq,
@@ -80,6 +95,8 @@ struct RegisterClass
 
 RegisterClass registerClass(sta::dbSta* sta, odb::dbInst* inst);
 bool sameRegisterClass(const RegisterClass& a, const RegisterClass& b);
+// An enable or inverting register keeps its own cell across a move.
+bool keepsClass(const RegisterClass& cls);
 
 // Complementing every input complements every output (buffer, inverter,
 // majority, 3-input XOR, ...).

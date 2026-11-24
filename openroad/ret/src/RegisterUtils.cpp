@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <memory>
 #include <optional>
 #include <unordered_map>
 #include <utility>
@@ -35,6 +36,66 @@ const sta::Sequential* singleSequential(const sta::LibertyCell* cell)
   return count == 1 ? seq : nullptr;
 }
 
+const sta::Sequential* singleSequential(sta::dbSta* sta, odb::dbInst* inst)
+{
+  const sta::LibertyCell* cell = sta->getDbNetwork()->libertyCell(inst);
+  return cell != nullptr ? singleSequential(cell) : nullptr;
+}
+
+std::vector<sta::LibertyCell*> libertyCells(sta::dbSta* sta)
+{
+  std::vector<sta::LibertyCell*> cells;
+  std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(
+      sta->getDbNetwork()->libertyLibraryIterator());
+  while (lib_iter->hasNext()) {
+    sta::LibertyCellIterator cell_iter(lib_iter->next());
+    while (cell_iter.hasNext()) {
+      cells.push_back(cell_iter.next());
+    }
+  }
+  return cells;
+}
+
+bool isNegedge(const sta::Sequential* seq)
+{
+  return seq->clock() != nullptr
+         && seq->clock()->op() == sta::FuncExpr::Op::not_;
+}
+
+std::optional<bool> outputInverted(const sta::FuncExpr* func,
+                                   const sta::Sequential* seq)
+{
+  if (func == nullptr) {
+    return std::nullopt;
+  }
+  bool inverted = false;
+  if (func->op() == sta::FuncExpr::Op::not_) {
+    inverted = true;
+    func = func->left();
+  }
+  if (func == nullptr || func->op() != sta::FuncExpr::Op::port) {
+    return std::nullopt;
+  }
+  if (func->port() == seq->output()) {
+    return inverted;
+  }
+  if (seq->outputInv() != nullptr && func->port() == seq->outputInv()) {
+    return !inverted;
+  }
+  return std::nullopt;
+}
+
+void connectPin(odb::dbITerm* pin,
+                odb::dbNet* net,
+                const std::unordered_map<odb::dbNet*, odb::dbModNet*>& mod_nets)
+{
+  pin->connect(net);
+  auto it = mod_nets.find(net);
+  if (it != mod_nets.end()) {
+    pin->connect(it->second);
+  }
+}
+
 namespace {
 
 constexpr size_t kMaxTruthTableInputs = 6;
@@ -55,9 +116,7 @@ std::optional<bool> constNetValue(sta::dbSta* sta, odb::dbNet* net)
     if (iterm->getIoType() != odb::dbIoType::OUTPUT) {
       continue;
     }
-    sta::Pin* pin = network->dbToSta(iterm);
-    sta::LibertyPort* port
-        = pin != nullptr ? network->libertyPort(pin) : nullptr;
+    sta::LibertyPort* port = network->libertyPort(network->dbToSta(iterm));
     const sta::FuncExpr* func = port != nullptr ? port->function() : nullptr;
     if (func != nullptr && func->op() == sta::FuncExpr::Op::one) {
       return true;
@@ -329,29 +388,6 @@ odb::dbITerm* findITerm(odb::dbInst* inst, const sta::LibertyPort* port)
   return port != nullptr ? inst->findITerm(port->name().c_str()) : nullptr;
 }
 
-std::optional<bool> outputInverted(const sta::FuncExpr* func,
-                                   const sta::Sequential* seq)
-{
-  if (func == nullptr) {
-    return std::nullopt;
-  }
-  bool inverted = false;
-  if (func->op() == sta::FuncExpr::Op::not_) {
-    inverted = true;
-    func = func->left();
-  }
-  if (func == nullptr || func->op() != sta::FuncExpr::Op::port) {
-    return std::nullopt;
-  }
-  if (func->port() == seq->output()) {
-    return inverted;
-  }
-  if (seq->outputInv() != nullptr && func->port() == seq->outputInv()) {
-    return !inverted;
-  }
-  return std::nullopt;
-}
-
 bool loadedOutput(sta::dbSta* sta,
                   odb::dbInst* inst,
                   const sta::Sequential* seq,
@@ -367,9 +403,7 @@ bool loadedOutput(sta::dbSta* sta,
     if (iterm->getIoType() != odb::dbIoType::OUTPUT) {
       continue;
     }
-    sta::Pin* sta_pin = network->dbToSta(iterm);
-    sta::LibertyPort* port
-        = sta_pin != nullptr ? network->libertyPort(sta_pin) : nullptr;
+    sta::LibertyPort* port = network->libertyPort(network->dbToSta(iterm));
     const std::optional<bool> pin_inverted
         = port != nullptr ? outputInverted(port->function(), seq)
                           : std::nullopt;
@@ -452,11 +486,7 @@ bool isDontTouchRegister(sta::dbSta* sta, odb::dbInst* inst)
   if (isScanCell(sta, inst)) {
     return true;
   }
-  sta::LibertyCell* cell = sta->getDbNetwork()->libertyCell(inst);
-  if (cell == nullptr) {
-    return true;
-  }
-  const sta::Sequential* seq = singleSequential(cell);
+  const sta::Sequential* seq = singleSequential(sta, inst);
   if (seq == nullptr || !seq->isRegister()) {
     return true;
   }
@@ -511,9 +541,7 @@ bool inactiveAsyncControls(const sta::LibertyCell* cell,
 void deleteRegister(sta::dbSta* sta, odb::dbInst* inst)
 {
   sta::dbNetwork* network = sta->getDbNetwork();
-  sta::LibertyCell* cell = network->libertyCell(inst);
-  const sta::Sequential* seq
-      = cell != nullptr ? singleSequential(cell) : nullptr;
+  const sta::Sequential* seq = singleSequential(sta, inst);
   std::vector<const sta::LibertyPort*> controls;
   if (seq != nullptr) {
     collectPorts(seq->clear(), controls);
@@ -551,22 +579,15 @@ bool isRegisterDataPin(sta::dbSta* sta, odb::dbITerm* pin)
   if (pin->getSigType() == odb::dbSigType::CLOCK) {
     return false;
   }
-  sta::LibertyCell* cell = sta->getDbNetwork()->libertyCell(pin->getInst());
-  if (cell == nullptr) {
-    return true;
-  }
-  const sta::Sequential* seq = singleSequential(cell);
+  const sta::Sequential* seq = singleSequential(sta, pin->getInst());
   if (seq == nullptr) {
     return true;
   }
   std::vector<const sta::LibertyPort*> ports;
   collectPorts(seq->data(), ports);
-  for (const sta::LibertyPort* port : ports) {
-    if (strcmp(port->name().c_str(), pin->getMTerm()->getConstName()) == 0) {
-      return true;
-    }
-  }
-  return false;
+  return std::ranges::any_of(ports, [pin](const sta::LibertyPort* port) {
+    return port->name() == pin->getMTerm()->getConstName();
+  });
 }
 
 odb::dbITerm* registerDataPin(sta::dbSta* sta, odb::dbInst* inst)
@@ -593,14 +614,8 @@ odb::dbITerm* registerDataPin(sta::dbSta* sta, odb::dbInst* inst)
 
 bool isNegedgeRegister(sta::dbSta* sta, odb::dbInst* inst)
 {
-  sta::LibertyCell* cell = sta->getDbNetwork()->libertyCell(inst);
-  const sta::Sequential* seq
-      = cell != nullptr ? singleSequential(cell) : nullptr;
-  if (seq == nullptr || !seq->isRegister()) {
-    return false;
-  }
-  const sta::FuncExpr* clock = seq->clock();
-  return clock != nullptr && clock->op() == sta::FuncExpr::Op::not_;
+  const sta::Sequential* seq = singleSequential(sta, inst);
+  return seq != nullptr && seq->isRegister() && isNegedge(seq);
 }
 
 odb::dbNet* registerClockNet(odb::dbInst* inst)
@@ -637,10 +652,10 @@ void classifyEnableRegister(odb::dbInst* inst,
         || iterm->getMTerm() == cls.data) {
       continue;
     }
-    bool is_control = false;
-    for (const auto& [mterm, net] : cls.enables) {
-      is_control = is_control || mterm == iterm->getMTerm();
-    }
+    const bool is_control
+        = std::ranges::any_of(cls.enables, [&](const auto& enable) {
+            return enable.first == iterm->getMTerm();
+          });
     if (!is_control) {
       return;
     }
@@ -658,9 +673,7 @@ RegisterClass registerClass(sta::dbSta* sta, odb::dbInst* inst)
 {
   RegisterClass cls;
   cls.clock = registerClockNet(inst);
-  sta::LibertyCell* cell = sta->getDbNetwork()->libertyCell(inst);
-  const sta::Sequential* seq
-      = cell != nullptr ? singleSequential(cell) : nullptr;
+  const sta::Sequential* seq = singleSequential(sta, inst);
   if (seq == nullptr || !seq->isRegister()) {
     return cls;
   }
@@ -694,6 +707,12 @@ RegisterClass registerClass(sta::dbSta* sta, odb::dbInst* inst)
     classifyEnableRegister(inst, shape, cls);
   }
   return cls;
+}
+
+bool keepsClass(const RegisterClass& cls)
+{
+  return cls.kind == RegisterKind::kEnable
+         || cls.kind == RegisterKind::kInverting;
 }
 
 bool sameRegisterClass(const RegisterClass& a, const RegisterClass& b)

@@ -1,10 +1,11 @@
 # Retiming
 
 The retiming module (`ret`) moves registers forward across combinational
-gates to shorten the worst register-to-register path without changing the
-function of the design (Leiserson and Saxe, "Retiming synchronous
-circuitry", Algorithmica 1991). The search is driven by the STA delays of
-the current netlist, placed or not, including estimated wire delays.
+gates to fix failing paths without changing the function of the design
+(Leiserson and Saxe, "Retiming synchronous circuitry", Algorithmica 1991).
+It runs on a globally placed design, between global placement and the
+resizer, and uses the STA delays of the current netlist, including estimated
+wire delays.
 
 ## Commands
 
@@ -15,20 +16,34 @@ the current netlist, placed or not, including estimated wire delays.
 
 ### Retime
 
-Slide registers forward across gates while the worst register-to-register
-arrival improves. Each accepted move is checked with an exact recompute of
-the delay model, which reads gate arcs and wire delays from STA. Paths that
-start at a primary input, at a gate driving an output, or at a fenced gate
-cannot be shortened by a forward move; they are constraints instead, and a
-move that pushes one past the clock period is rejected.
+Slide registers forward across gates on paths that fail timing. A search
+proposes the moves on a delay model read from STA: gate arcs calibrated to
+STA's, wire delays, the clock-to-Q of the register a move would build and
+the setup time of each endpoint. It takes the worst failing gate whose move
+raises the slack through it by more than 0.2% of the clock period without
+making the total negative slack worse; when none is left, moves that raise
+the total negative slack without lowering the worst slack. Paths that start
+at a primary input, at a gate driving an output, or at a fenced gate cannot
+be shortened by a forward move, but a move that lowers their slack counts
+against it like any other.
+
+STA then decides what is kept. The moves are applied, the new cells placed
+and the design timed. The moves are kept when neither the worst nor the
+total negative slack got worse; else the first half of them is tried, then
+a quarter, and so on. Short rounds of 16 moves follow, each from what was
+kept, until a round keeps nothing or 16 rounds have kept moves. A design
+that meets timing is left as it is.
 
 Only the register groups whose edge weights changed are rebuilt; every
 other cell keeps its placement. A group is the registers of one class that
-start on one net. The new registers are left unplaced: run
-`global_placement -incremental` after `retime` to place them. Estimated
-parasitics of the nets that changed are refreshed. Run `retime` before clock
-tree synthesis and routing: on a routed design it warns and leaves the
-routing as it is.
+start on one net. Each new cell is placed at the center of the placed cells
+on its data and output nets and left for detailed placement to legalize;
+`global_placement -incremental` is not needed. On a design with no placed
+cell the new cells stay unplaced. A new register with negative
+slack tries the three fastest cells of its function and keeps the one STA
+prefers. Estimated parasitics of the nets that changed are refreshed. Run
+`retime` before clock tree synthesis and routing: on a routed design it
+warns and leaves the routing as it is.
 
 Registers move by class, read from the liberty `next_state` function:
 
@@ -79,35 +94,13 @@ retime
 | ----- | ----- |
 | `-max_moves` | Stop after this many accepted register moves. Default unlimited. |
 
-New registers are named `ret_ff_N`, their tie cells `ret_tie_N` and new nets
-`ret_net_N`. The log shows one line per accepted move. `retime` stops with
-an error on designs it cannot handle: libraries without a usable base
-register, inverter, AND2 or OR2 cell; more than one clock; negative-edge
-registers; no clock defined. An error leaves the netlist unchanged.
-
-## Experimental: slack search with an STA check
-
-A second search, for a placed design between global placement and the
-resizer, is behind debug switches while it is evaluated:
-
-```tcl
-set_debug_level RET slack_search 1
-set_debug_level RET sta_check 1
-set_debug_level RET place_size 1
-retime
-```
-
-| Switch | Description |
-| ----- | ----- |
-| `slack_search 1` | Take moves by slack, worst failing spot first. A path starts at what its register launches, gate arcs are calibrated to STA and an endpoint is charged its setup time. A move must raise the slack through its spot by more than 0.2% of the clock period without lowering the total negative slack; when none is left, moves that raise the total without lowering the worst slack are taken. |
-| `sta_check 1` | Let STA decide what is kept. The moves are applied, the new cells placed and the design timed. The moves are kept when neither the worst nor the total negative slack got worse; else the first half of them is tried, then a quarter, and so on. Short rounds of 16 moves follow, each from what was kept, until a round keeps nothing or 16 rounds have kept moves. |
-| `place_size 1` | For each new register with negative slack, try the three fastest cells of the same function and keep the one STA prefers. The slack search then prices a new register with its fastest cell. |
-| `why 1` | Report where the failing endpoints of STA are and what stops a move on the worst path into each failing endpoint of the delay model. |
-
-Under `sta_check` each new cell is placed at the center of the placed cells
-on its data and output nets and left for detailed placement to legalize;
-`global_placement -incremental` is not needed. `-max_moves` limits the
-moves of the whole run.
+`-max_moves` limits the moves of the whole run. New registers are named
+`ret_ff_N`, their tie cells `ret_tie_N` and new nets `ret_net_N`. The log
+shows the slack before, what each round kept, and a summary with the
+registers and the cells placed. `retime` stops with an error on designs it
+cannot handle: libraries without a usable base register, inverter, AND2 or
+OR2 cell; more than one clock; negative-edge registers; no clock defined. An
+error leaves the netlist unchanged.
 
 ## Example scripts
 
@@ -115,6 +108,7 @@ moves of the whole run.
 ./test/retime_basic.tcl
 ./test/retime_unmap.tcl
 ./test/retime_slack_search.tcl
+./test/retime_place_size.tcl
 ```
 
 ## Regression tests
@@ -141,11 +135,11 @@ path that runs through another module, such as an arithmetic operator kept
 as its own module, is not shortened. A tie cell in another module than the
 register it held is left in place when that register is removed.
 
-The STA check guards the timing at the time of `retime`; the resizer and
-detailed placement that run afterwards can still make it worse than without
-retiming. The delay model of the slack search counts one endpoint for a gate
-however many registers it feeds, so its total negative slack underweights
-gates that feed many registers.
+STA judges the timing at the time of `retime`; the resizer and detailed
+placement that run afterwards can still make it worse than without
+retiming. The delay model counts one endpoint for a gate however many
+registers it feeds, so its total negative slack underweights gates that feed
+many registers.
 
 ## License
 

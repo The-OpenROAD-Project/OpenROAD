@@ -27,10 +27,8 @@ namespace {
 
 const sta::Pvt* tablePvt(sta::dbSta* sta, sta::LibertyCell* cell)
 {
-  sta::Scene* scene = sta->cmdScene();
-  sta::Sdc* sdc = scene != nullptr ? scene->sdc() : nullptr;
   const sta::Pvt* pvt
-      = sdc != nullptr ? sdc->operatingConditions(sta::MinMax::max()) : nullptr;
+      = sta->cmdScene()->sdc()->operatingConditions(sta::MinMax::max());
   return pvt != nullptr ? pvt
                         : cell->libertyLibrary()->defaultOperatingConditions();
 }
@@ -103,16 +101,14 @@ float registerSetupTime(sta::dbSta* sta,
 
 float clockPinSlew(sta::dbSta* sta, const sta::Pin* pin)
 {
-  sta::Scene* scene = sta->cmdScene();
-  if (scene != nullptr) {
-    sta->ensureClkNetwork(scene->mode());
-    const sta::ClkNetwork* clk_network = scene->mode()->clkNetwork();
-    if (clk_network != nullptr && clk_network->isIdealClock(pin)) {
-      const sta::MinMax* max = sta::MinMax::max();
-      return std::max(
-          clk_network->idealClkSlew(pin, sta::RiseFall::rise(), max),
-          clk_network->idealClkSlew(pin, sta::RiseFall::fall(), max));
-    }
+  sta::Mode* mode = sta->cmdScene()->mode();
+  sta->ensureClkNetwork(mode);
+  const sta::ClkNetwork* clk_network = mode->clkNetwork();
+  if (clk_network->isIdealClock(pin)) {
+    const sta::MinMax* max = sta::MinMax::max();
+    return std::max(
+        clk_network->idealClkSlew(pin, sta::RiseFall::rise(), max),
+        clk_network->idealClkSlew(pin, sta::RiseFall::fall(), max));
   }
   return pinSlew(sta, pin);
 }
@@ -120,9 +116,7 @@ float clockPinSlew(sta::dbSta* sta, const sta::Pin* pin)
 float pinSlew(sta::dbSta* sta, const sta::Pin* pin)
 {
   sta::Graph* graph = sta->ensureGraph();
-  sta::Scene* scene = sta->cmdScene();
-  const int ap
-      = scene != nullptr ? scene->dcalcAnalysisPtIndex(sta::MinMax::max()) : 0;
+  const int ap = sta->cmdScene()->dcalcAnalysisPtIndex(sta::MinMax::max());
   sta::Vertex* vertex = nullptr;
   sta::Vertex* bidirect_drvr = nullptr;
   graph->pinVertices(pin, vertex, bidirect_drvr);

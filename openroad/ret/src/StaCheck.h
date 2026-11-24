@@ -21,10 +21,10 @@ class Logger;
 
 namespace ret {
 
-// STA, not the delay model of the search, decides what is kept.  The slides
-// are applied, the new cells placed and the design timed.  The slides are
-// kept when neither the worst nor the total negative slack is below the
-// start; else shorter prefixes are tried, each half the last.
+// STA, not the search's delay model, decides what is kept: the slides are
+// applied, the new cells placed and the design timed.  They are kept when
+// the slack improves with neither the worst nor the total negative slack
+// below the start; else ever shorter prefixes are tried, each half the last.
 class StaCheck
 {
  public:
@@ -40,8 +40,8 @@ class StaCheck
            Search search);
 
   // The first round is the whole search; each later round is a short search
-  // from what was kept.  Returns the slides kept in all.
-  int run(int max_moves);
+  // from what was kept.
+  void run(int max_moves);
 
  private:
   struct Round
@@ -60,10 +60,10 @@ class StaCheck
   Round runRound(int number, int max_moves);
   // The slide limit of the prefix STA judges best; 0: none is better than
   // the start.
-  int bestPrefix(int slides, const StaSlack& before, int round);
+  int bestPrefix(int slides, const StaSlack& before, int number);
   // Leaves the edit open.  `before`: the slack of a trial without slides.
-  // round > 0: logged under that round.
-  Trial runTrial(int limit, const StaSlack& before, int round);
+  // number > 0: logged under that round.
+  Trial runTrial(int limit, const StaSlack& before, int number);
   void undoTrial();
   void keepTrial(const Trial& trial, int number, Round& round);
   std::unordered_set<odb::dbInst*> unplacedCells() const;

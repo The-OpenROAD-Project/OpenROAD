@@ -57,13 +57,10 @@ void RetimingGraph::markBoundary(odb::dbInst* inst, int id)
     if (net == nullptr) {
       continue;
     }
+    const odb::dbIoType io = pin->getIoType();
     for (odb::dbBTerm* bterm : net->getBTerms()) {
-      if (pin->getIoType() == odb::dbIoType::INPUT
-          && bterm->getIoType() == odb::dbIoType::INPUT) {
-        pinned_[id] = true;
-      }
-      if (pin->getIoType() == odb::dbIoType::OUTPUT
-          && bterm->getIoType() == odb::dbIoType::OUTPUT) {
+      if ((io == odb::dbIoType::INPUT || io == odb::dbIoType::OUTPUT)
+          && bterm->getIoType() == io) {
         pinned_[id] = true;
       }
     }
@@ -72,9 +69,9 @@ void RetimingGraph::markBoundary(odb::dbInst* inst, int id)
 
 bool RetimingGraph::continuesThrough(odb::dbInst* reg, odb::dbITerm* pin) const
 {
-  auto it = reg_class_.find(reg);
-  if (it != reg_class_.end() && it->second.kind != RegisterKind::kOther) {
-    return pin->getMTerm() == it->second.data;
+  const RegisterClass& cls = regClass(reg);
+  if (cls.kind != RegisterKind::kOther) {
+    return pin->getMTerm() == cls.data;
   }
   return isRegisterDataPin(sta_, pin);
 }
@@ -106,10 +103,9 @@ void RetimingGraph::walkFanout(int source,
         if (!continuesThrough(load, sink)) {
           continue;
         }
-        if (visited.contains(load)) {
+        if (!visited.insert(load).second) {
           continue;
         }
-        visited.insert(load);
         flops.push_back(load);
         walkFanout(source, load, weight + 1, flops, visited);
         flops.pop_back();
@@ -164,16 +160,14 @@ bool RetimingGraph::isDontTouch(odb::dbInst* reg) const
 
 const RegisterClass& RetimingGraph::regClass(odb::dbInst* reg) const
 {
-  auto it = reg_class_.find(reg);
-  return it != reg_class_.end() ? it->second : other_class_;
+  return reg_class_.at(reg);
 }
 
 odb::dbITerm* RetimingGraph::dataPin(odb::dbInst* reg) const
 {
-  auto it = reg_class_.find(reg);
-  return it != reg_class_.end() && it->second.data != nullptr
-             ? reg->getITerm(it->second.data)
-             : registerDataPin(sta_, reg);
+  const RegisterClass& cls = regClass(reg);
+  return cls.data != nullptr ? reg->getITerm(cls.data)
+                             : registerDataPin(sta_, reg);
 }
 
 odb::dbNet* RetimingGraph::chainNet(const EdgePhys& phys) const
@@ -262,10 +256,11 @@ void RetimingGraph::fenceModules()
     const int edge_count = static_cast<int>(adj_[u].size());
     for (int k = 0; k < edge_count; ++k) {
       const EdgePhys& phys = phys_[u][k];
-      bool one_module = nodes_[adj_[u][k].target]->getModule() == module;
-      for (odb::dbInst* flop : phys.flops) {
-        one_module = one_module && flop->getModule() == module;
-      }
+      const bool one_module
+          = nodes_[adj_[u][k].target]->getModule() == module
+            && std::ranges::all_of(phys.flops, [module](odb::dbInst* flop) {
+                 return flop->getModule() == module;
+               });
       odb::dbNet* net = chainNet(phys);
       if (!one_module && net != nullptr) {
         crossing_nets.insert(net);

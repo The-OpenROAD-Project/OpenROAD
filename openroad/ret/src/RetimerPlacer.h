@@ -54,7 +54,7 @@ class RetimerPlacer
   void prepare();
   // The libraries and the don't-use cells can change between retime calls.
   void forgetCells() { equivalent_masters_.clear(); }
-  // `skip`: the cells that were unplaced before retime.
+  // `skip`: the cells that were unplaced before this trial.
   PlaceStats placeNewCells(odb::dbBlock* block,
                            const std::unordered_set<odb::dbInst*>& skip,
                            est::IncrementalParasiticsGuard& guard);
@@ -63,7 +63,7 @@ class RetimerPlacer
 
  private:
   // The worst STA slack over a register's signal pins, then their sum.
-  struct Reward
+  struct PinSlack
   {
     float worst = 0.0f;
     float sum = 0.0f;
@@ -73,7 +73,7 @@ class RetimerPlacer
     odb::dbInst* inst;
     odb::dbMaster* original;
     std::vector<odb::dbMaster*> candidates;
-    Reward best;
+    PinSlack best;
     odb::dbMaster* best_master;
     bool swapped;
   };
@@ -90,7 +90,9 @@ class RetimerPlacer
   // Centers the cell on (x, y) and marks it placed.
   void moveTo(odb::dbInst* inst, int x, int y);
 
-  // Returns how many registers changed cell.
+  // Returns how many registers changed cell.  Neighboring registers read
+  // each other's trial cells, so the choice is kept only if STA does not
+  // call the result worse.
   int chooseCells(const std::vector<odb::dbInst*>& registers,
                   est::IncrementalParasiticsGuard& guard);
   // The registers with negative slack, each with its candidates.
@@ -103,19 +105,14 @@ class RetimerPlacer
                est::IncrementalParasiticsGuard& guard);
   // Returns how many registers changed cell.
   static int swapToBest(std::vector<CellChoice>& choices);
-  static void restoreCells(std::vector<CellChoice>& choices);
-  Reward rewardAt(odb::dbInst* inst, est::IncrementalParasiticsGuard& guard);
-  static bool betterReward(const Reward& a, const Reward& b);
+  PinSlack pinSlack(odb::dbInst* inst, est::IncrementalParasiticsGuard& guard);
+  static bool betterSlack(const PinSlack& a, const PinSlack& b);
 
   // The other cells of the same function and site, smallest first.
   const std::vector<odb::dbMaster*>& equivalentMasters(odb::dbMaster* master);
   // The few the liberty tables rank fastest for this register: clock-to-Q
   // at its load plus setup.
   std::vector<odb::dbMaster*> sizeCandidates(odb::dbInst* inst);
-  std::vector<odb::dbMaster*> fastestMasters(
-      odb::dbInst* inst,
-      const std::vector<odb::dbMaster*>& masters,
-      size_t count);
   TableInputs tableInputs(odb::dbInst* inst) const;
 
   sta::dbSta* sta_ = nullptr;
