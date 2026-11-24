@@ -568,9 +568,7 @@ class ODBGenerator:
             else:
                 shutil.copy(gen_path, target_path)
 
-            result = subprocess.run([self.clang_format, "-i", str(target_path)])
-            if result.returncode != 0:
-                print(f"Failed to format {target_path}")
+            subprocess.run([self.clang_format, "-i", str(target_path)], check=True)
             print(f"Generated: {target_path}")
 
 
