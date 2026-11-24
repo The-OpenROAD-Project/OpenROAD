@@ -116,9 +116,9 @@ void Instance::copyDbLocation(PlacerBaseCommon* pbc)
   db_offset_y_ = db_ly - cy();
 }
 
-odb::Point Instance::dbLocationAt(const int cx, const int cy) const
+odb::Point Instance::dbLocationAt(const int center_x, const int center_y) const
 {
-  return {cx + db_offset_x_, cy + db_offset_y_};
+  return {center_x + db_offset_x_, center_y + db_offset_y_};
 }
 
 bool Instance::isFixed() const
