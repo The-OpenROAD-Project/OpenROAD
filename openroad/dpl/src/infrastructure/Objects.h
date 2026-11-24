@@ -24,7 +24,7 @@ class MasterEdge
  public:
   MasterEdge(unsigned int type,
              const odb::Rect& box,
-             odb::dbMasterEdgeType::EdgeDir dir = odb::dbMasterEdgeType::RIGHT);
+             odb::dbMasterEdgeType::EdgeDir dir);
   unsigned int getEdgeType() const;
   const odb::Rect& getBBox() const;
   odb::dbMasterEdgeType::EdgeDir getEdgeDir() const;
