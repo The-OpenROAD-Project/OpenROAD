@@ -716,6 +716,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                             float max_drive_resist);
   void findBuffers();
   void findBuffersNoPruning();
+  // Builds lib_data_ when it is unset: before its first use or after a
+  // dont_use change reset it.
+  void ensureLibData();
   void findFastBuffers();
   static MoveType moveTypeFromString(const std::string& str);
   sta::LibertyCell* selectBufferCell(sta::LibertyCell* buffer_cell = nullptr);
@@ -788,13 +791,13 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   float driveResistance(const sta::Pin* drvr_pin) const;
   float bufferDriveResistance(const sta::LibertyCell* buffer) const;
   // Number of VT categories among the usable (non-dont_use) buffers.
-  int vtCategoryCount() const;
+  int vtCategoryCount();
   // True when a VT swap can apply to cell: more than one usable VT, or the
   // cell itself is dont_use and has an equivalent in a usable VT.
   bool canVtSwap(sta::LibertyCell* cell);
   // Number of identified VT categories among all buffers, dont_use ones
   // included.
-  int vtCategoryCountWithDontUse() const;
+  int vtCategoryCountWithDontUse();
   float cellDriveResistance(const sta::LibertyCell* cell) const;
 
   // Max distance from driver to load (in dbu).

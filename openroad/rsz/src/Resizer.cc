@@ -1435,8 +1435,17 @@ float Resizer::bufferDriveResistance(const sta::LibertyCell* buffer) const
   return output->driveResistance();
 }
 
-int Resizer::vtCategoryCount() const
+void Resizer::ensureLibData()
 {
+  if (!lib_data_) {
+    sta::LibertyCellSeq buffer_list;
+    getBufferList(buffer_list);
+  }
+}
+
+int Resizer::vtCategoryCount()
+{
+  ensureLibData();
   return static_cast<int>(lib_data_->sorted_vt_categories.size());
 }
 
@@ -1450,8 +1459,9 @@ bool Resizer::canVtSwap(sta::LibertyCell* cell)
   return dontUse(cell) && getVTEquivCells(cell).size() > 1;
 }
 
-int Resizer::vtCategoryCountWithDontUse() const
+int Resizer::vtCategoryCountWithDontUse()
 {
+  ensureLibData();
   return lib_data_->vt_category_count_with_dont_use;
 }
 

@@ -1575,6 +1575,40 @@ TEST_F(TestResizer, UnclassifiedCellsAreExcludedFromVtSwap)
   EXPECT_TRUE(resizer_.getVTEquivCells(buf_x4_cell).empty());
 }
 
+TEST_F(TestResizer, VtAccessorsRebuildLibraryDataAfterDontUseChange)
+{
+  // BUF_X1 is LVT and BUF_X2 is RVT; the other buffers have no VT.
+  odb::dbTechLayer* lvt_implant = odb::dbTechLayer::create(
+      db_->getTech(), "LVT_IMPLANT", odb::dbTechLayerType::IMPLANT);
+  odb::dbTechLayer* rvt_implant = odb::dbTechLayer::create(
+      db_->getTech(), "RVT_IMPLANT", odb::dbTechLayerType::IMPLANT);
+  odb::dbMaster* buf_x1_master = db_->findMaster("BUF_X1");
+  odb::dbMaster* buf_x2_master = db_->findMaster("BUF_X2");
+  ASSERT_NE(buf_x1_master, nullptr);
+  ASSERT_NE(buf_x2_master, nullptr);
+  odb::dbBox::create(buf_x1_master, lvt_implant, 0, 0, 10, 10);
+  odb::dbBox::create(buf_x2_master, rvt_implant, 0, 0, 10, 10);
+
+  readVerilogAndSetup("TestResizerMt_DelayEstimator.v");
+  resizer_.initBlock();
+  resizer_.runRepairSetupPreamble();
+  ASSERT_EQ(resizer_.vtCategoryCount(), 2);
+
+  sta::LibertyCell* buf_x2_cell
+      = db_network_->libertyCell(db_network_->dbToSta(buf_x2_master));
+  ASSERT_NE(buf_x2_cell, nullptr);
+
+  // setDontUse() resets the library data; each accessor rebuilds it.
+  resizer_.setDontUse(buf_x2_cell, true);
+  EXPECT_EQ(resizer_.vtCategoryCountWithDontUse(), 2);
+  resizer_.setDontUse(buf_x2_cell, true);
+  EXPECT_EQ(resizer_.vtCategoryCount(), 1);
+
+  // resetDontUse() makes RVT usable again: two usable VTs allow VT swap.
+  resizer_.resetDontUse();
+  EXPECT_TRUE(resizer_.canVtSwap(buf_x2_cell));
+}
+
 // Keyed by VT name for checks that do not depend on the row order.
 static std::map<std::string, VTUsage> vtUsageByName(
     const std::vector<VTUsage>& usage)
