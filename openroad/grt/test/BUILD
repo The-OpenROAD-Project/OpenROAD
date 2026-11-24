@@ -271,6 +271,13 @@ regression_test(
     data = [":test_resources"],
 )
 
+regression_test(
+    name = "congestion_only",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
 cc_test(
     name = "TestOverflow",
     size = "small",

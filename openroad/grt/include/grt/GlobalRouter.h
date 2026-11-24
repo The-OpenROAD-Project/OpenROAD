@@ -162,6 +162,10 @@ class GlobalRouter
   void setSnapshotBatchedWidth(int snapshot_batched_width);
   int getSnapshotBatchedWidth() const;
   int getSnapshotBatchCount() const;
+  void setCongestionOnly(bool congestion_only)
+  {
+    congestion_only_ = congestion_only;
+  }
   bool isResistanceAware() { return resistance_aware_; };
   void setNetIsResAware(odb::dbNet* db_net, bool res_aware);
   bool isNetResAware(odb::dbNet* db_net);
@@ -541,6 +545,7 @@ class GlobalRouter
   void reportLayerSettings(int min_routing_layer, int max_routing_layer);
   void reportResources();
   void reportFastRouteCongestion();
+  void reportFastRoute2DCongestion();
   void updateEdgesUsage();
   void updateDbCongestionFromGuides();
   void computeGCellGridPatternFromGuides(
@@ -650,6 +655,7 @@ class GlobalRouter
   bool allow_congestion_;
   bool resistance_aware_{false};
   int snapshot_batched_width_{0};
+  bool congestion_only_ = false;
   int num_threads_;
   std::vector<int> vertical_capacities_;
   std::vector<int> horizontal_capacities_;
