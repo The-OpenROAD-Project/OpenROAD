@@ -209,7 +209,7 @@ void NesterovPlace::init()
   nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
   for (auto& nb : nbVec_) {
-    // fill in curSLPSumGrads_, curSLPWireLengthGrads_, curSLPDensityGrads_
+    // fill in curSLPSumGrads_
     npUpdateCurGradient(nb);
 
     // approximately fill in
@@ -224,7 +224,7 @@ void NesterovPlace::init()
   nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
   for (auto& nb : nbVec_) {
-    // update previSumGrads_, prevSLPWireLengthGrads_, prevSLPDensityGrads_
+    // update prevSLPSumGrads_
     npUpdatePrevGradient(nb);
   }
 

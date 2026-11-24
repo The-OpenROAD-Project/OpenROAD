@@ -1427,8 +1427,10 @@ class NesterovBase
   std::vector<GCell> fillerStor_;
   std::vector<GCellHandle> nb_gcells_;
 
-  std::unordered_map<odb::dbInst*, size_t> db_inst_to_nb_index_;
-  std::unordered_map<size_t, size_t> filler_stor_index_to_nb_index_;
+  boost::unordered::unordered_flat_map<odb::dbInst*, size_t>
+      db_inst_to_nb_index_;
+  std::vector<size_t> filler_stor_index_to_nb_index_;
+  void ensureFillerIndexMap();
 
   // used to update gcell states after fixPointers() is called. Holds only
   // instances that are still alive: destroyCbkGCell() drops its entry, so a
@@ -1439,16 +1441,10 @@ class NesterovBase
   {
     GCell gcell;
     FloatPoint curSLPCoordi;
-    FloatPoint curSLPWireLengthGrads;
-    FloatPoint curSLPDensityGrads;
     FloatPoint curSLPSumGrads;
     FloatPoint nextSLPCoordi;
-    FloatPoint nextSLPWireLengthGrads;
-    FloatPoint nextSLPDensityGrads;
     FloatPoint nextSLPSumGrads;
     FloatPoint prevSLPCoordi;
-    FloatPoint prevSLPWireLengthGrads;
-    FloatPoint prevSLPDensityGrads;
     FloatPoint prevSLPSumGrads;
     FloatPoint curCoordi;
     FloatPoint nextCoordi;
@@ -1484,24 +1480,18 @@ class NesterovBase
 
   // Nesterov loop data for each region, using parallel vectors
   // SLP is Step Length Prediction.
-  //
-  // y_st, y_dst, y_wdst, w_pdst
   std::vector<FloatPoint> curSLPCoordi_;
-  std::vector<FloatPoint> curSLPWireLengthGrads_;
-  std::vector<FloatPoint> curSLPDensityGrads_;
   std::vector<FloatPoint> curSLPSumGrads_;
 
-  // y0_st, y0_dst, y0_wdst, y0_pdst
   std::vector<FloatPoint> nextSLPCoordi_;
-  std::vector<FloatPoint> nextSLPWireLengthGrads_;
-  std::vector<FloatPoint> nextSLPDensityGrads_;
   std::vector<FloatPoint> nextSLPSumGrads_;
 
-  // z_st, z_dst, z_wdst, z_pdst
   std::vector<FloatPoint> prevSLPCoordi_;
-  std::vector<FloatPoint> prevSLPWireLengthGrads_;
-  std::vector<FloatPoint> prevSLPDensityGrads_;
   std::vector<FloatPoint> prevSLPSumGrads_;
+
+  // Scratch buffers overwritten on every updateGradients() call.
+  std::vector<FloatPoint> wireLengthGrads_;
+  std::vector<FloatPoint> densityGrads_;
 
   // x_st and x0_st
   std::vector<FloatPoint> curCoordi_;
@@ -1510,7 +1500,9 @@ class NesterovBase
   // save initial coordinates -- needed for RD
   std::vector<FloatPoint> initCoordi_;
 
-  // Snapshot data for routability, parallel vectors
+  // Snapshot data for routability, parallel vectors (allocated lazily on
+  // saveSnapshot()).
+  bool snapshot_saved_ = false;
   std::vector<FloatPoint> snapshotCoordi_;
   std::vector<FloatPoint> snapshotSLPCoordi_;
   std::vector<FloatPoint> snapshotSLPSumGrads_;
