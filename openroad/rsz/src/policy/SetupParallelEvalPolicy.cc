@@ -191,6 +191,13 @@ bool SetupParallelEvalPolicy::start()
   }
   progress_.printHeader(showStartpointMetrics());
 
+  // PARALLEL_EVAL is a pipeline entry in its own right, so it subsumes the
+  // legacy preamble.  Marking it done keeps a later SetupLegacyBase phase
+  // (e.g. an appended CAPTURE_VT_SWAP) from running the preamble for the
+  // first time here, which would print the violation summary mid-table and,
+  // when timing is already closed, short-circuit before the final report.
+  setup_context_.legacy_preamble_done = true;
+
   return true;
 }
 

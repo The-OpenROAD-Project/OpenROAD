@@ -7317,6 +7317,53 @@ float Resizer::maxInputSlew(const sta::LibertyPort* input,
   return limit;
 }
 
+float Resizer::maxInputSlew(const sta::Pin* pin, const sta::Scene* scene) const
+{
+  float limit = sta::INF;
+  const sta::LibertyPort* port = network_->libertyPort(pin);
+  if (port) {
+    limit = maxInputSlew(port, scene);
+  }
+  return std::min(limit, clockSlewLimit(pin, scene));
+}
+
+float Resizer::clockSlewLimit(const sta::Pin* pin,
+                              const sta::Scene* scene) const
+{
+  float limit = sta::INF;
+  const sta::Sdc* sdc = scene->sdc();
+  if (pin == nullptr || !sdc->haveClkSlewLimits()) {
+    return limit;
+  }
+
+  // Same clock set and clk/data split as CheckSlews (check_clks = true).
+  const sta::Mode* mode = scene->mode();
+  const sta::PathClkOrData clk_data = mode->clkNetwork()->isIdealClock(pin)
+                                          ? sta::PathClkOrData::clk
+                                          : sta::PathClkOrData::data;
+  for (const sta::Clock* clk : search_->clockDomains(pin, mode)) {
+    for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+      float clk_limit;
+      bool exists;
+      sdc->slewLimit(clk, rf, clk_data, sta::MinMax::max(), clk_limit, exists);
+      if (exists) {
+        limit = std::min(limit, clk_limit);
+      }
+    }
+  }
+  return limit;
+}
+
+bool Resizer::haveClkSlewLimits() const
+{
+  for (const sta::Scene* scene : sta_->scenes()) {
+    if (scene->sdc()->haveClkSlewLimits()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void Resizer::checkLoadSlews(const sta::Pin* drvr_pin,
                              double slew_margin,
                              // Return values.
@@ -7327,6 +7374,9 @@ void Resizer::checkLoadSlews(const sta::Pin* drvr_pin,
 {
   slack = sta::INF;
   limit = sta::INF;
+  // Only pay for the per-pin clock-domain lookup when a clock slew limit
+  // exists; otherwise check_clks = false keeps the pre-existing fast path.
+  const bool check_clks = haveClkSlewLimits();
   sta::PinConnectedPinIterator* pin_iter
       = network_->connectedPinIterator(drvr_pin);
   while (pin_iter->hasNext()) {
@@ -7336,10 +7386,11 @@ void Resizer::checkLoadSlews(const sta::Pin* drvr_pin,
       const sta::RiseFall* tr1;
       sta::Slew slew1;
       float limit1, slack1;
+      // check_clks: honor clock -clock_path/-data_path slew limits.
       sta_->checkSlew(pin,
                       sta_->scenes(),
                       max_,
-                      false,
+                      check_clks,
                       slew1,
                       limit1,
                       slack1,
