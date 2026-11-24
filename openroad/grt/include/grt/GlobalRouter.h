@@ -395,6 +395,8 @@ class GlobalRouter
   // True if the current routing has overflow.
   bool hasCongestion();
   void setDbBlock(odb::dbBlock* block) { block_ = block; }
+  // Set up the router for the block to be read without routing (RUDY).
+  void initForEstimate(odb::dbBlock* block);
 
   void setRenderer(std::unique_ptr<AbstractGrouteRenderer> groute_renderer);
   AbstractGrouteRenderer* getRenderer();

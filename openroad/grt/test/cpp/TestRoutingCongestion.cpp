@@ -6,6 +6,7 @@
 
 #include "grt/GlobalRouter.h"
 #include "grt/RoutingCongestion.h"
+#include "grt/Rudy.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/defin.h"
@@ -234,6 +235,34 @@ TEST_F(RoutingCongestionTest, SourceIsRudyBeforeRoutingAndGlobalRouteAfter)
   // estimate, without the caller asking.
   EXPECT_EQ(congestion_->source(), RoutingCongestion::Source::kGlobalRoute);
   EXPECT_GT(congestion_->tileSize(), 0);
+}
+
+// A -congestion_only pass releases the router's 3D edges once it has its
+// estimate. RUDY reads the routing capacity from the same router on every
+// calculation, so it has to see the same capacities afterwards, not the
+// released storage.
+TEST_F(RoutingCongestionTest, RudyKeepsItsCapacitiesAfterACongestionOnlyPass)
+{
+  Rudy* rudy = grt_.getRudy();
+  ASSERT_NE(rudy, nullptr);
+  const auto blockages = [rudy] {
+    std::vector<float> values;
+    const auto [nx, ny] = rudy->getGridSize();
+    for (int x = 0; x < nx; x++) {
+      for (int y = 0; y < ny; y++) {
+        values.push_back(rudy->getTile(x, y).getBlockage());
+      }
+    }
+    return values;
+  };
+  rudy->calculateRudy();
+  const std::vector<float> before = blockages();
+
+  grt_.setCongestionOnly(true);
+  grt_.globalRoute(false);
+
+  rudy->calculateRudy();
+  EXPECT_EQ(blockages(), before);
 }
 
 TEST_F(RoutingCongestionTest, RankingIsOrderedAndStaysInsideTheRegion)

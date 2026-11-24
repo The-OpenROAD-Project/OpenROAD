@@ -2397,7 +2397,23 @@ int GlobalRouter::getGridTileSize()
 
 void GlobalRouter::getCapacityReductionData(CapacityReductionData& cap_red_data)
 {
+  initForEstimate(block_);
   fastroute_->getCapacityReductionData(cap_red_data);
+}
+
+// The router as an estimate such as RUDY reads it without routing: set up
+// for the block if it is not, and rebuilt if a -congestion_only pass
+// released its 3D edges.
+void GlobalRouter::initForEstimate(odb::dbBlock* block)
+{
+  discardCongestionOnlyState();
+  if (!initialized_) {
+    int min_layer, max_layer;
+    setDbBlock(block);
+    getMinMaxLayer(min_layer, max_layer);
+    // Designs with invalid pin placement can still be evaluated by RUDY.
+    initFastRoute(min_layer, max_layer, false);
+  }
 }
 
 void GlobalRouter::computeTrackConsumption(
