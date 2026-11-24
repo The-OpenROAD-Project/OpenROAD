@@ -85,6 +85,14 @@ class TreeBuilder
   TreeBuilder* getParent() const { return parent_; }
   bool isLeafTree();
   unsigned getTreeBufLevels() const { return treeBufLevels_; }
+  void clearBuffering(unsigned depth)
+  {
+    first_level_sink_drivers_.clear();
+    second_level_sink_drivers_.clear();
+    tree_level_buffers_.clear();
+    clock_.clearBuffering();
+    treeBufLevels_ = depth;
+  }
   void addFirstLevelSinkDriver(ClockInst* inst)
   {
     first_level_sink_drivers_.insert(inst);

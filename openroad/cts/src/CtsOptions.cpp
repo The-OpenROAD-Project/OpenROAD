@@ -9,6 +9,48 @@
 
 namespace cts {
 
+CtsOptions::RunConfiguration CtsOptions::saveRunConfiguration() const
+{
+  return {dbUnits_,
+          wireSegmentUnit_,
+          maxWl_,
+          maxCharSlew_,
+          maxCharCap_,
+          sinkBufferInputCap_,
+          rootBuffer_,
+          sinkBuffer_,
+          dlyBufferList_,
+          maxFanout_,
+          sinkClustersSize_,
+          sinkClustersSizeSet_,
+          macroMaxDiameter_,
+          macroMaxDiameterSet_,
+          rootBufferInferred_,
+          sinkBufferInferred_,
+          dummyLoad_};
+}
+
+void CtsOptions::restoreRunConfiguration(const RunConfiguration& config)
+{
+  dbUnits_ = config.db_units;
+  wireSegmentUnit_ = config.wire_segment_unit;
+  maxWl_ = config.max_wire_length;
+  maxCharSlew_ = config.max_char_slew;
+  maxCharCap_ = config.max_char_cap;
+  sinkBufferInputCap_ = config.sink_buffer_input_cap;
+  rootBuffer_ = config.root_buffer;
+  sinkBuffer_ = config.sink_buffer;
+  dlyBufferList_ = config.delay_buffers;
+  maxFanout_ = config.max_fanout;
+  sinkClustersSize_ = config.sink_cluster_size;
+  sinkClustersSizeSet_ = config.sink_cluster_size_set;
+  macroMaxDiameter_ = config.macro_max_diameter;
+  macroMaxDiameterSet_ = config.macro_max_diameter_set;
+  rootBufferInferred_ = config.root_buffer_inferred;
+  sinkBufferInferred_ = config.sink_buffer_inferred;
+  dummyLoad_ = config.dummy_load;
+}
+
 CtsOptions::MasterType CtsOptions::getType(odb::dbInst* inst) const
 {
   if (inst->getName().substr(0, dummyload_prefix_.size())
