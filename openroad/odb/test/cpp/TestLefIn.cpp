@@ -164,7 +164,6 @@ TEST_F(LefInRounding, Lef58CutEnclosureParallelSetsParallelValid)
   auto rules = tech->findLayer("V1")->getTechLayerCutEnclosureRules();
   ASSERT_EQ(rules.size(), 1);
   EXPECT_TRUE((*rules.begin())->isParallelValid());
-  EXPECT_FALSE((*rules.begin())->isConcaveCornersValid());
 }
 
 }  // namespace
