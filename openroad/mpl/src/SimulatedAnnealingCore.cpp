@@ -40,7 +40,7 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
     MplObserver* graphics,
     utl::Logger* logger,
     odb::dbBlock* block)
-    : outline_(outline), graphics_(graphics), block_(block)
+    : outline_(outline), generator_(seed), graphics_(graphics), block_(block)
 {
   penalties_ = {
       {.name = "Area", .weight = weights.area},
@@ -74,12 +74,6 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
   };
 
   hyperparams_ = hyperparams;
-
-  // generate random
-  std::mt19937 rand_gen(seed);
-  generator_ = rand_gen;
-  std::uniform_real_distribution<float> distribution(0.0, 1.0);
-  distribution_ = distribution;
 
   logger_ = logger;
   macros_ = macros;
