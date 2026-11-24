@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
@@ -165,7 +166,19 @@ void GlobalRouter::clear()
   vertical_capacities_.clear();
   horizontal_capacities_.clear();
   initialized_ = false;
+  edges_3d_released_ = false;
   congestion_accepted_ = false;
+}
+
+// A -congestion_only pass releases the 3D edges once it has its estimate,
+// and has_congestion still reads its result. Anything that routes or loads
+// routes afterwards starts from a cleared router, as after read_db, so the
+// grid is rebuilt rather than written through the released edges.
+void GlobalRouter::discardCongestionOnlyState()
+{
+  if (edges_3d_released_) {
+    clear();
+  }
 }
 
 GlobalRouter::~GlobalRouter()
@@ -250,7 +263,9 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   applyAdjustments(min_routing_layer, max_routing_layer);
   perturbCapacities();
 
-  // Init the data structures to monitor 3D capacity during 2D phases
+  // Init the data structures to monitor 3D capacity during 2D phases. The
+  // 2D routing of -congestion_only reads them too: a net whose non-default
+  // rule takes more than one track reserves its capacity per layer.
   fastroute_->initEdgesCapacityPerLayer();
 
   std::vector<Net*> nets = initNets(check_pin_placement);
@@ -284,6 +299,7 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
 // previous congestion report file.
 void GlobalRouter::saveCongestion()
 {
+  assert(block_ != nullptr);
   if (use_cugr_) {
     is_congested_ = cugr_->totalOverflow() > 0;
     cugr_->saveCongestion();
@@ -291,12 +307,26 @@ void GlobalRouter::saveCongestion()
     is_congested_ = fastroute_->totalOverflow() > 0;
     fastroute_->saveCongestion();
   }
+  if (!is_congested_) {
+    if (odb::dbMarkerCategory* cat
+        = block_->findMarkerCategory("Global route")) {
+      odb::dbMarkerCategory::destroy(cat);
+    }
+  }
 
   if (congestion_file_name_ != nullptr && *congestion_file_name_ != '\0') {
     odb::dbMarkerCategory* tool_category
         = block_->findMarkerCategory("Global route");
     if (tool_category != nullptr) {
       tool_category->writeTR(congestion_file_name_);
+    } else {
+      std::ofstream out(congestion_file_name_);
+      if (!out) {
+        logger_->error(GRT,
+                       342,
+                       "Unable to open {} to write markers.",
+                       congestion_file_name_);
+      }
     }
   }
 }
@@ -464,6 +494,7 @@ bool GlobalRouter::haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets)
 void GlobalRouter::startIncremental()
 {
   ensureEngineSelected();
+  discardCongestionOnlyState();
   is_incremental_ = true;
   // A design read from odb has its global routing only as guides; load them
   // so the update starts from the existing routing, not an empty grid.
@@ -511,6 +542,20 @@ void GlobalRouter::reportIncrementalCongestion()
 
 void GlobalRouter::globalRoute(bool save_guides)
 {
+  // -congestion_only applies to this global route only: a later
+  // globalRoute() from C++ (global placement, ram) that does not ask for it
+  // routes in full, also after an error.
+  struct CongestionOnlyReset
+  {
+    GlobalRouter* router;
+    ~CongestionOnlyReset()
+    {
+      router->setCongestionOnly(false);
+      if (router->fastroute_ != nullptr) {
+        router->fastroute_->setCongestionOnly(false);
+      }
+    }
+  } congestion_only_reset{this};
   utl::Timer timer;
   bool has_routable_nets = false;
 
@@ -531,6 +576,11 @@ void GlobalRouter::globalRoute(bool save_guides)
     return;
   }
 
+  if (use_cugr_ && congestion_only_) {
+    logger_->error(
+        GRT, 340, "-congestion_only routes with FastRoute, not CUGR.");
+  }
+
   try {
     clear();
     block_ = db_->getChip()->getBlock();
@@ -548,20 +598,28 @@ void GlobalRouter::globalRoute(bool save_guides)
       std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
       // Capture the initial Steiner-tree wirelength per net for the detour
       // metric, before any overflow-removal routing alters the topology.
-      computeInitialSteinerWirelengths(nets);
+      if (!congestion_only_) {
+        computeInitialSteinerWirelengths(nets);
+      }
       if (verbose_) {
         reportResources();
+      }
+      if (congestion_only_) {
+        fastroute_->release3DEdges();
+        edges_3d_released_ = true;
       }
 
       routes_ = findRouting(nets, min_layer, max_layer);
     }
   } catch (...) {
-    updateDbCongestion();
+    if (!congestion_only_) {
+      updateDbCongestion();
+    }
     saveCongestion();
     throw;
   }
 
-  finishGlobalRouting(save_guides);
+  finishGlobalRouting(save_guides && !congestion_only_);
   if (verbose_) {
     const int elapsed = static_cast<int>(timer.elapsed());
     const int hour = elapsed / 3600;
@@ -574,20 +632,25 @@ void GlobalRouter::globalRoute(bool save_guides)
 
 void GlobalRouter::finishGlobalRouting(bool save_guides)
 {
-  updateDbCongestion();
+  if (!congestion_only_) {
+    updateDbCongestion();
+  }
   saveCongestion();
-  congestion_accepted_ = allow_congestion_ || use_cugr_;
+  // A -congestion_only pass measures congestion; finding some is its result.
+  congestion_accepted_ = allow_congestion_ || use_cugr_ || congestion_only_;
 
   if (verbose_) {
     reportCongestion();
   }
-  computeWirelength();
-  if (verbose_) {
-    logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
-  }
+  if (!congestion_only_) {
+    computeWirelength();
+    if (verbose_) {
+      logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
+    }
 
-  if (!routes_.empty() && hasInitialSteinerWirelengths()) {
-    computeDetourMetrics();
+    if (!routes_.empty() && hasInitialSteinerWirelengths()) {
+      computeDetourMetrics();
+    }
   }
   if (save_guides) {
     std::vector<odb::dbNet*> nets;
@@ -600,12 +663,18 @@ void GlobalRouter::finishGlobalRouting(bool save_guides)
 
   if (is_congested_) {
     // suggestAdjustment relies on FastRoute congestion data.
-    if (!use_cugr_) {
+    if (!use_cugr_ && !congestion_only_) {
       suggestAdjustment();
     }
-    // CUGR overflow is downgraded to a warning even without -allow_congestion,
-    // since it produces good results on detailed routing.
-    if (allow_congestion_ || use_cugr_) {
+    if (congestion_only_) {
+      logger_->warn(GRT,
+                    343,
+                    "The congestion estimate overflows. Check the congestion "
+                    "regions in the DRC Viewer or -congestion_report_file.");
+    } else if (allow_congestion_ || use_cugr_) {
+      // CUGR overflow is downgraded to a warning even without
+      // -allow_congestion, since it produces good results on detailed
+      // routing.
       logger_->warn(GRT,
                     115,
                     "Global routing finished with congestion. Check the "
@@ -909,6 +978,9 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
   NetRouteMap routes;
   if (!nets.empty()) {
     fastroute_->setAllowCongestion(allow_congestion_);
+    if (congestion_only_) {
+      return fastroute_->run();
+    }
     routes = fastroute_->run();
     addRemainingGuides(routes, nets, min_routing_layer, max_routing_layer);
     connectPadPins(routes);
@@ -2332,7 +2404,23 @@ int GlobalRouter::getGridTileSize()
 
 void GlobalRouter::getCapacityReductionData(CapacityReductionData& cap_red_data)
 {
+  initForEstimate(block_);
   fastroute_->getCapacityReductionData(cap_red_data);
+}
+
+// The router as an estimate such as RUDY reads it without routing: set up
+// for the block if it is not, and rebuilt if a -congestion_only pass
+// released its 3D edges.
+void GlobalRouter::initForEstimate(odb::dbBlock* block)
+{
+  discardCongestionOnlyState();
+  if (!initialized_) {
+    int min_layer, max_layer;
+    setDbBlock(block);
+    getMinMaxLayer(min_layer, max_layer);
+    // Designs with invalid pin placement can still be evaluated by RUDY.
+    initFastRoute(min_layer, max_layer, false);
+  }
 }
 
 void GlobalRouter::computeTrackConsumption(
@@ -3200,6 +3288,7 @@ void GlobalRouter::configFastRoute()
   fastroute_->setCongestionReportIterStep(congestion_report_iter_step_);
   fastroute_->setResistanceAware(resistance_aware_);
   fastroute_->setSnapshotBatchedWidth(snapshot_batched_width_);
+  fastroute_->setCongestionOnly(congestion_only_);
 
   if (congestion_file_name_ != nullptr) {
     fastroute_->setCongestionReportFile(congestion_file_name_);
@@ -3333,6 +3422,7 @@ void GlobalRouter::readGuides(const char* file_name)
 void GlobalRouter::loadGuidesFromDB()
 {
   ensureEngineSelected();
+  discardCongestionOnlyState();
   if (!routes_.empty()) {
     return;
   }
@@ -6918,9 +7008,37 @@ void GlobalRouter::reportCongestion()
   }
   if (use_cugr_) {
     cugr_->reportCongestion();
+  } else if (congestion_only_) {
+    reportFastRoute2DCongestion();
   } else {
     reportFastRouteCongestion();
   }
+}
+
+void GlobalRouter::reportFastRoute2DCongestion()
+{
+  const auto stats = fastroute_->overflowStatistics2D();
+  const int total_overflow = fastroute_->totalOverflow();
+  logger_->metric("global_route__2d_overflow", total_overflow);
+  logger_->metric("global_route__2d_congested_edges",
+                  stats[0].congested_edges + stats[1].congested_edges);
+  logger_->info(
+      GRT,
+      341,
+      "2D route-0 congestion: H demand={} used_cap={} overflow={} (max={}, "
+      "edges={}); V demand={} used_cap={} overflow={} (max={}, edges={}); "
+      "total_overflow={}",
+      stats[0].usage,
+      stats[0].capacity,
+      stats[0].overflow,
+      stats[0].max_overflow,
+      stats[0].congested_edges,
+      stats[1].usage,
+      stats[1].capacity,
+      stats[1].overflow,
+      stats[1].max_overflow,
+      stats[1].congested_edges,
+      total_overflow);
 }
 
 bool GlobalRouter::hasCongestion()
