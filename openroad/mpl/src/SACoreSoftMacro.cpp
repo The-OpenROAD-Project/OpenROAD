@@ -61,8 +61,10 @@ SACoreSoftMacro::SACoreSoftMacro(PhysicalHierarchy* tree,
   penalties_.push_back({.name = "Notch", .weight = soft_weights.notch});
 
   // Resizes one cluster; only touches macros_ widths/heights.
-  actions_.push_back({.probability = soft_action_probs.resize,
-                      .perturb = [this] { resizeOneCluster(); }});
+  actions_.push_back({
+      .probability = soft_action_probs.resize,
+      .perturb = [this] { resizeOneCluster(); },
+  });
 
   notch_h_th_ = notch_h_threshold;
   notch_v_th_ = notch_v_threshold;

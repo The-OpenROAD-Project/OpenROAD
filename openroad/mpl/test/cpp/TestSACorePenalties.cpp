@@ -51,7 +51,10 @@ class TestSACorePenalties : public MplTest
                           .double_swap = 0.25,
                           .exchange = 0.25},
         SAHyperparams{
-            .init_prob = 0.1, .max_num_step = 1, .num_perturb_per_step = 10},
+            .init_prob = 0.1,
+            .max_num_step = 1,
+            .num_perturb_per_step = 10,
+        },
         /*seed=*/42,
         /*graphics=*/nullptr,
         &logger_,
