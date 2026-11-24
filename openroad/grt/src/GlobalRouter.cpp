@@ -636,7 +636,8 @@ void GlobalRouter::finishGlobalRouting(bool save_guides)
     updateDbCongestion();
   }
   saveCongestion();
-  congestion_accepted_ = allow_congestion_ || use_cugr_;
+  // A -congestion_only pass measures congestion; finding some is its result.
+  congestion_accepted_ = allow_congestion_ || use_cugr_ || congestion_only_;
 
   if (verbose_) {
     reportCongestion();
@@ -665,9 +666,15 @@ void GlobalRouter::finishGlobalRouting(bool save_guides)
     if (!use_cugr_ && !congestion_only_) {
       suggestAdjustment();
     }
-    // CUGR overflow is downgraded to a warning even without -allow_congestion,
-    // since it produces good results on detailed routing.
-    if (allow_congestion_ || use_cugr_) {
+    if (congestion_only_) {
+      logger_->warn(GRT,
+                    343,
+                    "The congestion estimate overflows. Check the congestion "
+                    "regions in the DRC Viewer or -congestion_report_file.");
+    } else if (allow_congestion_ || use_cugr_) {
+      // CUGR overflow is downgraded to a warning even without
+      // -allow_congestion, since it produces good results on detailed
+      // routing.
       logger_->warn(GRT,
                     115,
                     "Global routing finished with congestion. Check the "

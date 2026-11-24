@@ -58,6 +58,12 @@ check "Unwritable -congestion_report_file fails loudly with GRT-0342" {
 } 1
 grt::set_congestion_report_file ""
 
+set_global_routing_layer_adjustment metal1-metal10 0.9
+check "A congested estimate warns instead of failing without -allow_congestion" {
+  catch { global_route -congestion_only }
+} 0
+set_global_routing_layer_adjustment metal1-metal10 0.0
+
 check "CUGR rejects -congestion_only with GRT-0340" {
   set rc [catch { global_route -use_cugr -congestion_only } err]
   expr { $rc != 0 && [string first "GRT-0340" $err] >= 0 }
