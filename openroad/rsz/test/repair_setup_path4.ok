@@ -46,17 +46,17 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -375.692 |   -11554.6 |     58 | capture_76/D
-     199* |      16 |      95 |       25 |      3 |     8 |    +1.2% |   -1.038 |       -1.4 |     58 | capture_90/D
-    final |      16 |      96 |       25 |      3 |     8 |    +1.2% |   -1.038 |       -1.0 |      1 | capture_90/D
+     203* |      15 |     101 |       25 |      3 |     8 |    +1.3% |   -2.605 |       -3.6 |     58 | capture_89/D
+    final |      15 |     101 |       25 |      3 |     8 |    +1.3% |   -2.605 |       -3.6 |      2 | capture_89/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 16 buffers.
+[INFO RSZ-0059] Removed 15 buffers.
 [INFO RSZ-0045] Inserted 25 buffers, 1 to split loads.
-[INFO RSZ-0051] Resized 96 instances: 32 up, 0 up match, 0 down, 64 VT
+[INFO RSZ-0051] Resized 101 instances: 35 up, 0 up match, 0 down, 66 VT
 [INFO RSZ-0043] Swapped pins on 8 instances.
 [INFO RSZ-0049] Cloned 3 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Startpoint: launch_125 (rising edge-triggered flip-flop clocked by clk)
-Endpoint: capture_90 (rising edge-triggered flip-flop clocked by clk)
+Endpoint: capture_89 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
 Path Type: max
 
@@ -95,22 +95,23 @@ Path Type: max
    7.2534  538.5793 ^ inst27/Y (AOI21x1_ASAP7_75t_SL)
    4.9207  543.4999 v inst28/Y (OAI21x1_ASAP7_75t_SL)
   17.6153  561.1153 v inst29/Y (OA21x2_ASAP7_75t_SL)
-  32.5019  593.6172 v rebuffer19/Y (BUFx6f_ASAP7_75t_SL)
-  12.5341  606.1512 v clone13/Y (BUFx12f_ASAP7_75t_SL)
-  22.6649  628.8161 v inst30_neighbor8/Y (AO21x2_ASAP7_75t_SL)
-  13.5408  642.3569 v capture_90/D (DFFHQx4_ASAP7_75t_R)
-           642.3569   data arrival time
+  33.7730  594.8882 v clone11/Y (BUFx6f_ASAP7_75t_SL)
+  10.3812  605.2695 v rebuffer18/Y (BUFx6f_ASAP7_75t_SL)
+  10.2821  615.5516 v rebuffer15/Y (BUFx6f_ASAP7_75t_SL)
+  20.5096  636.0612 v inst30_neighbor9/Y (AO21x2_ASAP7_75t_SL)
+  10.5009  646.5621 v capture_89/D (DFFHQx4_ASAP7_75t_R)
+           646.5621   data arrival time
 
  650.0000  650.0000   clock clk (rise edge)
    0.0000  650.0000   clock network delay (ideal)
    0.0000  650.0000   clock reconvergence pessimism
-           650.0000 ^ capture_90/CLK (DFFHQx4_ASAP7_75t_R)
-  -8.6807  641.3193   library setup time
-           641.3193   data required time
+           650.0000 ^ capture_89/CLK (DFFHQx4_ASAP7_75t_R)
+  -6.0425  643.9576   library setup time
+           643.9576   data required time
 -------------------------------------------------------------
-           641.3193   data required time
-          -642.3569   data arrival time
+           643.9576   data required time
+          -646.5621   data arrival time
 -------------------------------------------------------------
-            -1.0376   slack (VIOLATED)
+            -2.6045   slack (VIOLATED)
 
 

@@ -484,11 +484,13 @@ class Rebuffer : public sta::dbStaState
   std::vector<sta::Instance*> collectImportedTreeBufferInstances(
       sta::Pin* drvr_pin,
       const BufferedNetPtr& imported_tree);
+  // Appends each inserted buffer to `inserted_buffers` when it is given.
   int exportBufferTree(const BufferedNetPtr& choice,
                        sta::Net* net,  // output of buffer.
                        int level,
                        sta::Instance* parent_in,
-                       const char* instance_base_name);
+                       const char* instance_base_name,
+                       std::vector<sta::Instance*>* inserted_buffers = nullptr);
 
   void printProgress(int iteration, bool force, bool end, int remaining) const;
 
@@ -548,7 +550,8 @@ class Rebuffer : public sta::dbStaState
                               int extra_wire_length = 0);
 
   bool hasTopLevelOutputPort(sta::Net* net);
-  int rebufferPin(const sta::Pin* drvr_pin);
+  int rebufferPin(const sta::Pin* drvr_pin,
+                  std::vector<sta::Instance*>* inserted_buffers = nullptr);
 
   utl::Logger* logger_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;
@@ -641,6 +644,7 @@ class Rebuffer : public sta::dbStaState
   double size_plan_runtime_ = 0;
 
   friend class rsz::BufferCandidate;
+  friend class RebufferTestPeer;
   friend class rsz::SetupLegacyBase;
   friend class Resizer;
 };

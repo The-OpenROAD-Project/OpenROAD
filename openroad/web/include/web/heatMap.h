@@ -38,6 +38,9 @@ class Logger;
 }  // namespace utl
 
 namespace web {
+
+// The display-control group of every heat map's renderer.
+inline constexpr const char* kHeatMapGroup = "Heat Maps";
 class HeatMapSourceRegistration;
 
 class HeatMapDataSource

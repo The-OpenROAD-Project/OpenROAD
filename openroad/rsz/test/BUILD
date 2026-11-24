@@ -1,5 +1,6 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("//bazel:man_tcl_checker.bzl", "man_tcl_check_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -45,6 +46,8 @@ TESTS = [
     "liberty_dont_use",
     "pinswap_flat",
     "pinswap_hier",
+    "remove_buffers_duplicate",
+    "repair_timing_deprecated_libraries",
     "swap_pins_constant_output",
     "swap_pins_dont_touch",
     "pin_swap1",
@@ -319,11 +322,17 @@ TESTS = [
 
 PASSFAIL_TESTS = [
     "remove_buffers_nomatch",
+    "repair_setup_capture_vt_parallel_eval",
+    "repair_setup_crit_vt_capture",
+    "repair_slew_clk_data_path_vt",
+    "repair_slew_clk_load_wire",
     "repair_timing_fixed",
     "repair_design_fixed_driver",
+    "repair_slew_clk_data_path",
     "repair_slew_corner",
     "gain_buffering_top_port_hier",
     "repair_setup_crit_vt_clock_gate",
+    "report_vt_usage",
 ]
 
 ALL_TESTS = TESTS + PASSFAIL_TESTS
@@ -334,6 +343,7 @@ SELF_CHECKING_TESTS = [
     "repair_slew_corner",
     "gain_buffering_top_port_hier",
     "repair_setup_crit_vt_clock_gate",
+    "report_vt_usage",
 ]
 
 # Hierarchical Verilog netlists reused as corpus input by
@@ -684,6 +694,7 @@ cc_test(
         "cpp/TestResizerMt.cc",
         "cpp/TestResizerMtFixture.hh",
         "cpp/TestSplitLoadMt.cc",
+        "cpp/TestStatetableRegister.cc",
         "cpp/TestUnbufferMt.cc",
     ],
     data = [
@@ -693,6 +704,8 @@ cc_test(
         "Nangate45/Nangate45_typ.lib",
         "cpp/TestResizerMt_DelayEstimator.v",
         "cpp/TestSplitLoadMt.v",
+        "statetable_dff.lef",
+        "statetable_dff.lib",
     ],
     deps = [
         "//openroad/dbSta",
@@ -809,15 +822,9 @@ py_test(
     ],
 )
 
-py_test(
+man_tcl_check_test(
     name = "rsz_man_tcl_check",
-    srcs = ["rsz_man_tcl_check.py"],
-    data = ["//openroad/rsz:doc_files"],
-    tags = [
-        "doc_check",
-        "py",
-    ],
-    deps = ["//docs/src/scripts:extract_utils"],
+    module = "rsz",
 )
 
 doc_check_test(

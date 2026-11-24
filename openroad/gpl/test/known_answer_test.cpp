@@ -272,5 +272,82 @@ TEST_F(KnownAnswerTest, UnplacedUnconnectedCellsSpread)
   expectEvenlySpread(cells, builder.core());
 }
 
+// Cells on no nets, all saved at one spot in the core's corner, as tie cells
+// left unconnected are. Nothing tells them apart, so Nesterov placement can
+// separate them only if they start at distinct spots; without the random
+// start offsets, so the result doesn't rest on them.
+TEST_F(KnownAnswerTest, StackedUnconnectedCellsSpread)
+{
+  DesignBuilder builder(db_.get(), /*cell_sites=*/6);
+  const std::vector<odb::dbInst*> cells = makeUnconnected(builder, 100);
+  const odb::Rect core = builder.core();
+  for (odb::dbInst* inst : cells) {
+    inst->setLocation(core.xMin(), core.yMin());
+    inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  }
+
+  PlaceOptions options;
+  options.initialPlaceMaxIter = 0;
+  options.initialPlacePerturbationDist = 0;
+  options.uniformTargetDensityMode = true;
+  EXPECT_EQ(place(options).stop, PlaceStop::kConverged);
+  expectEvenlySpread(cells, core);
+}
+
+// Tie cells saved at the core's corner, each driving its own output port.
+// Placement that skips IOs drops the ports, which leaves every tie net with a
+// single pin and no force, so the cells are as interchangeable as unconnected
+// ones.
+TEST_F(KnownAnswerTest, StackedTieCellsSpreadWhenSkippingIos)
+{
+  DesignBuilder builder(db_.get(), /*cell_sites=*/6);
+  const odb::Rect core = builder.core();
+  std::vector<odb::dbInst*> cells;
+  constexpr int kCells = 100;
+  for (int i = 0; i < kCells; ++i) {
+    odb::dbBTerm* port = builder.addIo("out" + std::to_string(i),
+                                       DesignBuilder::Edge::kRight,
+                                       (i + 0.5) / kCells);
+    odb::dbInst* inst = builder.addCell("tie" + std::to_string(i));
+    builder.connect(inst, "E", port);
+    inst->setLocation(core.xMin(), core.yMin());
+    inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    cells.push_back(inst);
+  }
+
+  PlaceOptions options;
+  options.skipIoMode = true;
+  options.initialPlacePerturbationDist = 0;
+  options.uniformTargetDensityMode = true;
+  EXPECT_EQ(place(options).stop, PlaceStop::kConverged);
+  expectEvenlySpread(cells, core);
+}
+
+// Cells on the same nets, between an IO on the left die edge and one on the
+// right, are interchangeable: started at one spot, each gets the same
+// wirelength and density force as the others. They separate only if they
+// start at distinct spots.
+TEST_F(KnownAnswerTest, StackedInterchangeableCellsSeparate)
+{
+  DesignBuilder builder(db_.get(), /*cell_sites=*/6);
+  odb::dbBTerm* in = builder.addIo("in", DesignBuilder::Edge::kLeft, 0.5);
+  odb::dbBTerm* out = builder.addIo("out", DesignBuilder::Edge::kRight, 0.5);
+  std::vector<odb::dbInst*> cells;
+  for (int i = 0; i < 100; ++i) {
+    odb::dbInst* inst = builder.addCell("c" + std::to_string(i));
+    builder.connect(inst, "W", in);
+    builder.connect(inst, "E", out);
+    cells.push_back(inst);
+  }
+
+  // Without initial placement the cells start at the core center.
+  PlaceOptions options;
+  options.initialPlaceMaxIter = 0;
+  options.initialPlacePerturbationDist = 0;
+  const PlaceResult result = place(options);
+  EXPECT_EQ(result.stop, PlaceStop::kConverged);
+  EXPECT_LE(result.overflow, options.overflow);
+}
+
 }  // namespace
 }  // namespace gpl
