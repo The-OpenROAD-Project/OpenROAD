@@ -256,7 +256,7 @@ proc global_route { args } {
     && ($resistance_aware || [info exists keys(-res_aware_nets_percentage)]
       || [info exists keys(-critical_nets_percentage)])
   } {
-    utl::warn GRT 706 "-critical_nets_percentage, -resistance_aware and\
+    utl::warn GRT 717 "-critical_nets_percentage, -resistance_aware and\
       -res_aware_nets_percentage apply to FastRoute only; CUGR is timing\
       driven whenever timing is available."
   }

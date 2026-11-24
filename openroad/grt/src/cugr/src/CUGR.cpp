@@ -528,7 +528,7 @@ void CUGR::initLayerRC()
   // Only timing-driven runs use the delay cost.
   if (!grid_graph_->hasDelayModel() && hasTiming()) {
     logger_->warn(GRT,
-                  707,
+                  718,
                   "No routing layer has both resistance and capacitance; "
                   "CUGR routes without wire delay cost.");
   }
