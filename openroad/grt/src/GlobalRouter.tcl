@@ -263,13 +263,17 @@ proc global_route { args } {
   if { [info exists flags(-congestion_only)] } {
     # An estimate routes nothing, so there are no routes to update
     # incrementally and no guides to write.
+    set conflicts {}
     foreach option {-start_incremental -end_incremental} {
       if { [info exists flags($option)] } {
-        utl::error GRT 341 "-congestion_only cannot be used with $option."
+        lappend conflicts $option
       }
     }
     if { [info exists keys(-guide_file)] } {
-      utl::error GRT 341 "-congestion_only cannot be used with -guide_file."
+      lappend conflicts -guide_file
+    }
+    if { $conflicts != {} } {
+      utl::error GRT 344 "-congestion_only cannot be used with [join $conflicts {, }]."
     }
   }
   grt::set_congestion_only [info exists flags(-congestion_only)]
