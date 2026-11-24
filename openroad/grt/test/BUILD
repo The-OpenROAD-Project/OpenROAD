@@ -49,6 +49,7 @@ TESTS = [
     "global_route_rerun_cugr",
     "increase_capacity1",
     "incremental_deleted_net",
+    "incremental_end_without_start",
     "incremental_from_odb",
     "incremental_repair_cugr",
     "incremental_update_net",
