@@ -551,44 +551,41 @@ class GPin
   bool hasMinExpSumY_ = false;
 };
 
-class Bin
+class alignas(64) Bin
 {
  public:
   Bin() = default;
   Bin(int x, int y, int lx, int ly, int ux, int uy, float targetDensity);
 
-  int x() const { return x_; };
-  int y() const { return y_; };
-
-  int lx() const { return lx_; };
-  int ly() const { return ly_; };
-  int ux() const { return ux_; };
-  int uy() const { return uy_; };
+  int lx() const { return lx_; }
+  int ly() const { return ly_; }
+  int ux() const { return ux_; }
+  int uy() const { return uy_; }
   int cx() const;
   int cy() const;
   int dx() const;
   int dy() const;
 
-  float electroPhi() const;
-  float electroFieldX() const;
-  float electroFieldY() const;
-  float getTargetDensity() const;
-  float getDensity() const;
+  float electroFieldX() const { return electroFieldX_; }
+  float electroFieldY() const { return electroFieldY_; }
+  float getTargetDensity() const { return targetDensity_; }
+  float getDensity() const { return density_; }
 
-  void setDensity(float density);
-  void setBinTargetDensity(float density);
-  void setElectroField(float electroFieldX, float electroFieldY);
-  void setElectroPhi(float phi);
+  void setDensity(float density) { density_ = density; }
+  void setBinTargetDensity(float density) { targetDensity_ = density; }
+  void setElectroField(float electroFieldX, float electroFieldY)
+  {
+    electroFieldX_ = electroFieldX;
+    electroFieldY_ = electroFieldY;
+  }
 
   void setNonPlaceArea(int64_t area);
-  void setInstPlacedArea(int64_t area);
   void setFillerArea(int64_t area);
 
   void setNonPlaceAreaUnscaled(int64_t area);
   void setInstPlacedAreaUnscaled(int64_t area);
 
   void addNonPlaceArea(int64_t area);
-  void addInstPlacedArea(int64_t area);
   void addFillerArea(int64_t area);
   void atomicAddFillerArea(int64_t area);
 
@@ -596,38 +593,35 @@ class Bin
   void addInstPlacedAreaUnscaled(int64_t area);
   void atomicAddInstPlacedAreaUnscaled(int64_t area);
 
-  int64_t getBinArea() const;
+  int64_t getBinArea() const
+  {
+    return static_cast<int64_t>(dx()) * static_cast<int64_t>(dy());
+  }
   int64_t getNonPlaceArea() const { return nonPlaceArea_; }
-  int64_t instPlacedArea() const { return instPlacedArea_; }
+  int64_t instPlacedArea() const { return instPlacedAreaUnscaled_; }
   int64_t getNonPlaceAreaUnscaled() const { return nonPlaceAreaUnscaled_; }
   int64_t getInstPlacedAreaUnscaled() const { return instPlacedAreaUnscaled_; }
 
   int64_t getFillerArea() const { return fillerArea_; }
 
  private:
-  // index
-  int x_ = 0;
-  int y_ = 0;
-
-  // coordinate
+  // Packed into one 64-byte cache line: coordinates + E-field + areas.
   int lx_ = 0;
   int ly_ = 0;
   int ux_ = 0;
   int uy_ = 0;
 
-  int64_t nonPlaceArea_ = 0;
-  int64_t instPlacedArea_ = 0;
-
-  int64_t instPlacedAreaUnscaled_ = 0;
-  int64_t nonPlaceAreaUnscaled_ = 0;
-  int64_t fillerArea_ = 0;
-
-  float density_ = 0;
-  float targetDensity_ = 0;  // will enable bin-wise density screening
-  float electroPhi_ = 0;
   float electroFieldX_ = 0;
   float electroFieldY_ = 0;
+  float targetDensity_ = 0;  // will enable bin-wise density screening
+  float density_ = 0;
+
+  int64_t instPlacedAreaUnscaled_ = 0;
+  int64_t fillerArea_ = 0;
+  int64_t nonPlaceArea_ = 0;
+  int64_t nonPlaceAreaUnscaled_ = 0;
 };
+static_assert(sizeof(Bin) == 64, "Bin must fit in a single 64-byte cache line");
 
 inline int Bin::cx() const
 {
@@ -659,11 +653,6 @@ inline void Bin::setNonPlaceAreaUnscaled(int64_t area)
   nonPlaceAreaUnscaled_ = area;
 }
 
-inline void Bin::setInstPlacedArea(int64_t area)
-{
-  instPlacedArea_ = area;
-}
-
 inline void Bin::setInstPlacedAreaUnscaled(int64_t area)
 {
   instPlacedAreaUnscaled_ = area;
@@ -677,11 +666,6 @@ inline void Bin::setFillerArea(int64_t area)
 inline void Bin::addNonPlaceArea(int64_t area)
 {
   nonPlaceArea_ += area;
-}
-
-inline void Bin::addInstPlacedArea(int64_t area)
-{
-  instPlacedArea_ += area;
 }
 
 inline void Bin::addNonPlaceAreaUnscaled(int64_t area)
@@ -743,19 +727,19 @@ class BinGrid
   void initBins();
 
   // lx, ly, ux, uy will hold region area
-  int lx() const;
-  int ly() const;
-  int ux() const;
-  int uy() const;
-  int cx() const;
-  int cy() const;
-  int dx() const;
-  int dy() const;
+  int lx() const { return lx_; }
+  int ly() const { return ly_; }
+  int ux() const { return ux_; }
+  int uy() const { return uy_; }
+  int cx() const { return (ux_ + lx_) / 2; }
+  int cy() const { return (uy_ + ly_) / 2; }
+  int dx() const { return (ux_ - lx_); }
+  int dy() const { return (uy_ - ly_); }
 
-  int getBinCntX() const;
-  int getBinCntY() const;
-  double getBinSizeX() const;
-  double getBinSizeY() const;
+  int getBinCntX() const { return binCntX_; }
+  int getBinCntY() const { return binCntY_; }
+  double getBinSizeX() const { return binSizeX_; }
+  double getBinSizeY() const { return binSizeY_; }
 
   int64_t getOverflowArea() const;
   int64_t getOverflowAreaUnscaled() const;
@@ -803,6 +787,44 @@ class BinGrid
 inline std::vector<Bin>& BinGrid::getBins()
 {
   return bins_;
+}
+
+inline std::pair<int, int> BinGrid::getDensityMinMaxIdxX(
+    const GCell* gcell) const
+{
+  int lowerIdx = (gcell->dLx() - lx()) / binSizeX_;
+  int upperIdx = std::ceil((gcell->dUx() - lx()) / binSizeX_);
+
+  lowerIdx = std::max(lowerIdx, 0);
+  upperIdx = std::min(upperIdx, binCntX_);
+  return std::make_pair(lowerIdx, upperIdx);
+}
+
+inline std::pair<int, int> BinGrid::getDensityMinMaxIdxY(
+    const GCell* gcell) const
+{
+  int lowerIdx = (gcell->dLy() - ly()) / binSizeY_;
+  int upperIdx = std::ceil((gcell->dUy() - ly()) / binSizeY_);
+
+  lowerIdx = std::max(lowerIdx, 0);
+  upperIdx = std::min(upperIdx, binCntY_);
+  return std::make_pair(lowerIdx, upperIdx);
+}
+
+// Note that int64_t is ideal in the following function, but runtime is doubled
+// compared with float.
+inline float getOverlapDensityArea(const Bin& bin, const GCell* cell)
+{
+  const int rectLx = std::max(bin.lx(), cell->dLx());
+  const int rectLy = std::max(bin.ly(), cell->dLy());
+  const int rectUx = std::min(bin.ux(), cell->dUx());
+  const int rectUy = std::min(bin.uy(), cell->dUy());
+
+  if (rectLx >= rectUx || rectLy >= rectUy) {
+    return 0;
+  }
+  return static_cast<float>(rectUx - rectLx)
+         * static_cast<float>(rectUy - rectLy);
 }
 
 struct NesterovBaseVars
@@ -1646,5 +1668,29 @@ inline constexpr const char* format_label_um2 = "{:27} {:10.3f} um^2";
 inline constexpr const char* format_label_percent = "{:27} {:10.2f} %";
 inline constexpr const char* format_label_um2_with_delta
     = "{:27} {:10.3f} um^2 ({:+.2f}%)";
+
+inline FloatPoint NesterovBase::getDensityGradient(const GCell* gCell) const
+{
+  const std::pair<int, int> pairX = bg_.getDensityMinMaxIdxX(gCell);
+  const std::pair<int, int> pairY = bg_.getDensityMinMaxIdxY(gCell);
+
+  FloatPoint electroForce;
+
+  const int bin_cnt_x = bg_.getBinCntX();
+  const auto& bins = bg_.getBinsConst();
+  const float scale = gCell->getDensityScale();
+
+  for (int i = pairX.first; i < pairX.second; i++) {
+    for (int j = pairY.first; j < pairY.second; j++) {
+      const Bin& bin = bins[j * bin_cnt_x + i];
+      const float overlapArea = getOverlapDensityArea(bin, gCell) * scale;
+
+      electroForce.x += overlapArea * bin.electroFieldX();
+      electroForce.y += overlapArea * bin.electroFieldY();
+    }
+  }
+
+  return electroForce;
+}
 
 }  // namespace gpl
