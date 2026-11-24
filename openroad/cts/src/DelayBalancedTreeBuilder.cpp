@@ -384,6 +384,7 @@ void DelayBalancedTreeBuilder::initFloor()
   odb::dbMaster* master = model_->master(trunk_);
   half_width_ = master->getWidth() / 2;
   half_height_ = master->getHeight() / 2;
+  initRowSpans(block);
   driver_ = clock_.getClockPin();
   driver_pin_ = {.x = driver_.x(), .y = driver_.y()};
   odb::dbObject* driver = clock_.getDriverPin();
@@ -2040,6 +2041,56 @@ DelayBalancedTreeBuilder::Path DelayBalancedTreeBuilder::pathBetween(
   return path;
 }
 
+void DelayBalancedTreeBuilder::initRowSpans(odb::dbBlock* block)
+{
+  row_spans_.clear();
+  for (odb::dbRow* row : block->getRows()) {
+    const odb::Rect box = row->getBBox();
+    row_spans_[box.yMin()].emplace_back(box.xMin(), box.xMax());
+  }
+  // A detailed placer cannot move a buffer over a fixed cell at a row's end.
+  for (odb::dbInst* inst : block->getInsts()) {
+    if (!inst->getPlacementStatus().isFixed()
+        || inst->getMaster()->getType().isBlock()) {
+      continue;
+    }
+    const odb::Rect box = inst->getBBox()->getBox();
+    auto spans = row_spans_.find(box.yMin());
+    if (spans == row_spans_.end()) {
+      continue;
+    }
+    for (auto& [lo, hi] : spans->second) {
+      if (box.xMin() <= lo && box.xMax() > lo) {
+        lo = box.xMax();
+      }
+      if (box.xMax() >= hi && box.xMin() < hi) {
+        hi = box.xMin();
+      }
+    }
+  }
+}
+
+int DelayBalancedTreeBuilder::onRowSites(const int x, const int y) const
+{
+  const auto spans = row_spans_.find(y - half_height_);
+  if (spans == row_spans_.end()) {
+    return x;
+  }
+  int best = x;
+  int64_t least = std::numeric_limits<int64_t>::max();
+  for (const auto& [lo, hi] : spans->second) {
+    if (hi - lo < 2 * half_width_) {
+      continue;
+    }
+    const int at = std::clamp(x, lo + half_width_, hi - half_width_);
+    if (std::abs(at - x) < least) {
+      least = std::abs(at - x);
+      best = at;
+    }
+  }
+  return best;
+}
+
 bool DelayBalancedTreeBuilder::blocked(const odb::Point& at) const
 {
   for (const odb::Rect& blockage : blockages_) {
@@ -2064,7 +2115,8 @@ odb::Point DelayBalancedTreeBuilder::legal(odb::Point at) const
                     / row_height_),
         0,
         rows - 1);
-    return odb::Point(x, core_.yMin() + row * row_height_ + half_height_);
+    const int y = core_.yMin() + row * row_height_ + half_height_;
+    return odb::Point(onRowSites(x, y), y);
   };
   at = on_row(at);
   if (!blocked(at)) {

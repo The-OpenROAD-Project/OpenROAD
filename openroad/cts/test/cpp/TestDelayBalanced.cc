@@ -391,6 +391,80 @@ TEST_F(DelayBalancedTest, BuffersStandClearOfTheBlockage)
   EXPECT_GT(buffers, 0);
 }
 
+// Beside the blockage the rows stop short of it and end in fixed end caps, as
+// rows do beside a macro, and registers stand in the gap; buffers keep to the
+// rows' free sites.
+TEST_F(DelayBalancedVariantTest, BuffersStandOnTheRowsBesideTheBlockage)
+{
+  std::vector<odb::dbInst*> caps;
+  build(kLatency, kSlewLimit, [&](TritonCTS&) {
+    odb::dbSite* site = db_->findMaster("DFF_X1")->getSite();
+    odb::dbMaster* cap = db_->findMaster("TAPCELL_X1");
+    std::vector<odb::dbRow*> band;
+    for (odb::dbRow* row : block_->getRows()) {
+      const odb::Rect box = row->getBBox();
+      if (box.yMax() > um(100) && box.yMin() < um(200)) {
+        band.push_back(row);
+      }
+    }
+    for (odb::dbRow* row : band) {
+      const odb::Point origin = row->getOrigin();
+      const odb::dbOrientType orient = row->getOrient();
+      const std::string name = row->getName();
+      odb::dbRow::destroy(row);
+      // 10 to 144.9 um and 255.1 to 390 um, on the core's site grid.
+      for (const auto& [start, sites] :
+           {std::pair{0, 710}, std::pair{1290, 710}}) {
+        odb::dbRow::create(block_,
+                           (name + "_" + std::to_string(start)).c_str(),
+                           site,
+                           origin.x() + start * site->getWidth(),
+                           origin.y(),
+                           orient,
+                           odb::dbRowDir::HORIZONTAL,
+                           sites,
+                           site->getWidth());
+      }
+      odb::dbInst* end
+          = odb::dbInst::create(block_, cap, ("cap_" + name).c_str());
+      end->setLocation(origin.x() + 710 * site->getWidth() - cap->getWidth(),
+                       origin.y());
+      end->setOrient(orient);
+      end->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+      caps.push_back(end);
+    }
+    // Registers in the gap between the rows' end and the blockage.
+    odb::dbMaster* dff = db_->findMaster("DFF_X1");
+    for (int i = 0; i < 4; i++) {
+      const std::string name = "gap" + std::to_string(i);
+      odb::dbInst* ff = odb::dbInst::create(block_, dff, name.c_str());
+      ff->findITerm("CK")->connect(block_->findNet("clk"));
+      ff->findITerm("D")->connect(block_->findNet("d"));
+      place(name, 146, 150 + i * 3);
+    }
+  });
+  int buffers = 0;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (!isTreeBuffer(inst)) {
+      continue;
+    }
+    buffers++;
+    const odb::Rect box = inst->getBBox()->getBox();
+    const bool on_row
+        = std::ranges::any_of(block_->getRows(), [&](odb::dbRow* row) {
+            const odb::Rect span = row->getBBox();
+            return span.yMin() == box.yMin() && span.xMin() <= box.xMin()
+                   && box.xMax() <= span.xMax();
+          });
+    EXPECT_TRUE(on_row) << inst->getName();
+    for (odb::dbInst* end : caps) {
+      EXPECT_FALSE(end->getBBox()->getBox().overlaps(box))
+          << inst->getName() << " " << end->getName();
+    }
+  }
+  EXPECT_GT(buffers, 0);
+}
+
 // The port's wire would load every register's clock, so buffers lead to it
 // from the net's driver, and buffers lead from the clock's port to the driver.
 TEST_F(DelayBalancedVariantTest, PortsOfTheClockNetGetTheirOwnBuffers)

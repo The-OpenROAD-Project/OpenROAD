@@ -4,6 +4,7 @@
 #pragma once
 
 #include <functional>
+#include <map>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -423,6 +424,10 @@ class DelayBalancedTreeBuilder : public TreeBuilder
   // The point nearest `at` where a buffer stands on a row, inside the core
   // and clear of every blockage.
   odb::Point legal(odb::Point at) const;
+  // The buffer centre nearest `x` that keeps a buffer on the row at `y`,
+  // inside the row's sites and clear of the fixed cells at its ends.
+  int onRowSites(int x, int y) const;
+  void initRowSpans(odb::dbBlock* block);
 
   void setDriverModel(const std::vector<int>& roots);
   void emit(const std::vector<int>& roots);
@@ -468,6 +473,9 @@ class DelayBalancedTreeBuilder : public TreeBuilder
   odb::Point driver_;
   NetPin driver_pin_;
   odb::Rect core_;
+  // Per row origin y, the x spans a cell may cover: rows split around macros,
+  // less the fixed cells (end caps) at either end of each.
+  std::map<int, std::vector<std::pair<int, int>>> row_spans_;
   int row_height_ = 1;
   int site_width_ = 1;
   int half_width_ = 0;

@@ -88,7 +88,7 @@ A tree is first grown with the group diameter doubling level by level. Where tha
 | Feed | `clkbuf_feed` | Along the path from the driver to the last joint. Delaying buffers stand beside the driver. |
 | Port and source | `clkbuf_port`, `clkbuf_source` | Along the path from the driver to the output ports, and from the clock's port to the driver. |
 
-Every location is on a row inside the core and clear of macros and placement blockages. Overlaps with other cells are left to detailed placement, as in the default flow.
+Every location is on a row's sites inside the core, clear of macros, placement blockages, and the fixed cells at the ends of rows, such as end caps beside a macro. Overlaps with other cells are left to detailed placement, as in the default flow.
 
 ## Reading a run
 
