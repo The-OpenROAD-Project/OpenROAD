@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <functional>
 #include <limits>
 #include <memory>
@@ -62,7 +63,7 @@ void Grid::clear()
     tree.clear();
   }
   uniform_row_height_.reset();
-  contiguous_uniform_rows_ = false;
+  contiguous_row_height_.reset();
 }
 
 void Grid::releasePixels()
@@ -712,7 +713,7 @@ GridRect Grid::gridWithin(const DbuRect& rect) const
 
 GridY Grid::gridSnapDownY(DbuY y) const
 {
-  if (contiguous_uniform_rows_) {
+  if (contiguous_row_height_) {
     if (y.v <= 0) {
       return GridY{0};
     }
@@ -720,7 +721,7 @@ GridY Grid::gridSnapDownY(DbuY y) const
     if (y.v >= max_y) {
       return row_count_;
     }
-    return GridY{y.v / uniform_row_height_->v};
+    return GridY{y.v / *contiguous_row_height_};
   }
   auto it = std::upper_bound(  // NOLINT(modernize-use-ranges)
       row_index_to_y_dbu_.begin(),
@@ -748,7 +749,7 @@ GridY Grid::gridRoundY(DbuY y) const
 
 GridY Grid::gridEndY(DbuY y) const
 {
-  if (contiguous_uniform_rows_) {
+  if (contiguous_row_height_) {
     if (y.v <= 0) {
       return GridY{0};
     }
@@ -756,7 +757,7 @@ GridY Grid::gridEndY(DbuY y) const
     if (y.v > max_y) {
       return GridY{row_count_.v + 1};
     }
-    return GridY{(y.v - 1) / uniform_row_height_->v + 1};
+    return GridY{(y.v - 1) / *contiguous_row_height_ + 1};
   }
   auto it = std::lower_bound(  // NOLINT(modernize-use-ranges)
       row_index_to_y_dbu_.begin(),
@@ -884,17 +885,19 @@ void Grid::examineRows(odb::dbBlock* block)
   });
   row_site_count_ = GridX{divFloor(getCore().dx(), getSiteWidth().v)};
   row_count_ = GridY{static_cast<int>(row_y_dbu_to_index_.size() - 1)};
-  contiguous_uniform_rows_
-      = uniform_row_height_.has_value() && uniform_row_height_->v > 0
-        && row_count_.v > 0
-        && row_index_to_y_dbu_.size() == static_cast<size_t>(row_count_.v) + 1;
-  if (contiguous_uniform_rows_) {
+  contiguous_row_height_.reset();
+  if (uniform_row_height_ && uniform_row_height_->v > 0 && row_count_.v > 0
+      && row_index_to_y_dbu_.size() == static_cast<size_t>(row_count_.v) + 1) {
     const int h = uniform_row_height_->v;
+    bool contiguous = true;
     for (int i = 0; i <= row_count_.v; ++i) {
       if (row_index_to_y_dbu_[i].v != i * h) {
-        contiguous_uniform_rows_ = false;
+        contiguous = false;
         break;
       }
+    }
+    if (contiguous) {
+      contiguous_row_height_ = h;
     }
   }
 }

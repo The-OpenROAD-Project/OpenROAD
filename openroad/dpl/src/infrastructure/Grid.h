@@ -303,7 +303,8 @@ class Grid
   odb::Rect core_;
 
   std::optional<DbuY> uniform_row_height_;  // unset if hybrid
-  bool contiguous_uniform_rows_ = false;
+  // Set when every row has this height and row i starts at y = i * height.
+  std::optional<int> contiguous_row_height_;
   DbuX site_width_{0};
 
   GridY row_count_{0};
