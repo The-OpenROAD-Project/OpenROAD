@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="500" viewBox="0 0 760 500" font-family="Helvetica, Arial, sans-serif">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#0b0b0b"/></marker></defs>
+<rect width="760" height="500" fill="#ffffff"/>
+<text x="16.0" y="24.0" font-size="15" text-anchor="start" font-weight="600" fill="#0b0b0b" >Each cell is drawn at the time the clock reaches its input</text>
+<text x="66.0" y="52.0" font-size="13" text-anchor="start" font-weight="400" fill="#0b0b0b" >feed</text>
+<text x="262.0" y="52.0" font-size="13" text-anchor="middle" font-weight="400" fill="#0b0b0b" >trunk: joints and repeaters</text>
+<text x="439.0" y="52.0" font-size="13" text-anchor="middle" font-weight="400" fill="#0b0b0b" >level 2</text>
+<text x="559.0" y="52.0" font-size="13" text-anchor="middle" font-weight="400" fill="#0b0b0b" >level 1</text>
+<text x="672.0" y="52.0" font-size="13" text-anchor="middle" font-weight="400" fill="#0b0b0b" >registers</text>
+<line x1="672.0" y1="60.0" x2="672.0" y2="408.0" stroke="#0b0b0b" stroke-width="1.0" stroke-dasharray="4 4"/>
+<path d="M570.0,82.0 H654.0 V71.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/><path d="M570.0,82.0 H654.0 V82.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/><path d="M570.0,82.0 H654.0 V93.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M548.0,69.9 L570.0,82.0 L548.0,94.1 Z" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="668" y="67" width="8" height="8" fill="#52514e"/><rect x="668" y="78" width="8" height="8" fill="#52514e"/><rect x="668" y="89" width="8" height="8" fill="#52514e"/>
+<path d="M570.0,122.0 H654.0 V111.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/><path d="M570.0,122.0 H654.0 V122.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/><path d="M570.0,122.0 H654.0 V133.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M548.0,109.9 L570.0,122.0 L548.0,134.1 Z" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="668" y="107" width="8" height="8" fill="#52514e"/><rect x="668" y="118" width="8" height="8" fill="#52514e"/><rect x="668" y="129" width="8" height="8" fill="#52514e"/>
+<path d="M570.0,162.0 H654.0 V151.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/><path d="M570.0,162.0 H654.0 V162.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/><path d="M570.0,162.0 H654.0 V173.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M548.0,149.9 L570.0,162.0 L548.0,174.1 Z" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="668" y="147" width="8" height="8" fill="#52514e"/><rect x="668" y="158" width="8" height="8" fill="#52514e"/><rect x="668" y="169" width="8" height="8" fill="#52514e"/>
+<path d="M450.0,122.0 H459.0 V82.0 H548.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M450.0,122.0 H459.0 V122.0 H548.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M450.0,122.0 H459.0 V162.0 H548.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M428.0,109.9 L450.0,122.0 L428.0,134.1 Z" fill="#fbd3c0" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M570.0,242.0 H654.0 V231.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/><path d="M570.0,242.0 H654.0 V242.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/><path d="M570.0,242.0 H654.0 V253.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M548.0,229.9 L570.0,242.0 L548.0,254.1 Z" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="668" y="227" width="8" height="8" fill="#52514e"/><rect x="668" y="238" width="8" height="8" fill="#52514e"/><rect x="668" y="249" width="8" height="8" fill="#52514e"/>
+<path d="M566.0,202.0 H654.0 V191.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/><path d="M566.0,202.0 H654.0 V202.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/><path d="M566.0,202.0 H654.0 V213.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="536.0" y="191.0" width="30.0" height="22.0" rx="3" fill="#ffffff" stroke="#0b0b0b" stroke-width="1.2"/><text x="551.0" y="206.0" font-size="11" text-anchor="middle" font-weight="400" fill="#0b0b0b" >gate</text>
+<rect x="668" y="187" width="8" height="8" fill="#52514e"/><rect x="668" y="198" width="8" height="8" fill="#52514e"/><rect x="668" y="209" width="8" height="8" fill="#52514e"/>
+<path d="M450.0,222.0 H459.0 V202.0 H536.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M450.0,222.0 H459.0 V242.0 H548.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M428.0,209.9 L450.0,222.0 L428.0,234.1 Z" fill="#fbd3c0" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M570.0,284.0 H654.0 V273.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/><path d="M570.0,284.0 H654.0 V284.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/><path d="M570.0,284.0 H654.0 V295.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M548.0,271.9 L570.0,284.0 L548.0,296.1 Z" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="668" y="269" width="8" height="8" fill="#52514e"/><rect x="668" y="280" width="8" height="8" fill="#52514e"/><rect x="668" y="291" width="8" height="8" fill="#52514e"/>
+<path d="M570.0,324.0 H654.0 V313.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/><path d="M570.0,324.0 H654.0 V324.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/><path d="M570.0,324.0 H654.0 V335.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M548.0,311.9 L570.0,324.0 L548.0,336.1 Z" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="668" y="309" width="8" height="8" fill="#52514e"/><rect x="668" y="320" width="8" height="8" fill="#52514e"/><rect x="668" y="331" width="8" height="8" fill="#52514e"/>
+<rect x="410.0" y="293.0" width="30.0" height="22.0" rx="3" fill="#ffffff" stroke="#0b0b0b" stroke-width="1.2"/><text x="425.0" y="308.0" font-size="11" text-anchor="middle" font-weight="400" fill="#0b0b0b" >gate</text>
+<path d="M440.0,304.0 H449.0 V284.0 H548.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M440.0,304.0 H449.0 V324.0 H548.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M570.0,376.0 H654.0 V365.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/><path d="M570.0,376.0 H654.0 V376.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/><path d="M570.0,376.0 H654.0 V387.0 H668.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M548.0,363.9 L570.0,376.0 L548.0,388.1 Z" fill="#cde2fb" stroke="#0b0b0b" stroke-width="1.2"/>
+<rect x="668" y="361" width="8" height="8" fill="#52514e"/><rect x="668" y="372" width="8" height="8" fill="#52514e"/><rect x="668" y="383" width="8" height="8" fill="#52514e"/>
+<path d="M452.0,376.0 H461.0 V376.0 H548.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M430.0,363.9 L452.0,376.0 L430.0,388.1 Z" fill="#f9d7e3" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M340.0,172.0 H349.0 V122.0 H428.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M340.0,172.0 H349.0 V222.0 H428.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M318.0,159.9 L340.0,172.0 L318.0,184.1 Z" fill="#fbe3a6" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M322.0,340.0 H331.0 V304.0 H410.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M322.0,340.0 H331.0 V376.0 H430.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M300.0,327.9 L322.0,340.0 L300.0,352.1 Z" fill="#fbe3a6" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M218.0,256.0 H227.0 V172.0 H318.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M218.0,256.0 H227.0 V340.0 H300.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M196.0,243.9 L218.0,256.0 L196.0,268.1 Z" fill="#fbe3a6" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M150.0,256.0 H159.0 V256.0 H196.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M128.0,243.9 L150.0,256.0 L128.0,268.1 Z" fill="#c9ecd9" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M98.0,256.0 H107.0 V256.0 H128.0" fill="none" stroke="#0b0b0b" stroke-width="1.2"/>
+<path d="M76.0,243.9 L98.0,256.0 L76.0,268.1 Z" fill="#c9ecd9" stroke="#0b0b0b" stroke-width="1.2"/>
+<circle cx="30" cy="256" r="6" fill="#0b0b0b"/>
+<line x1="36.0" y1="256.0" x2="76.0" y2="256.0" stroke="#0b0b0b" stroke-width="1.2"/>
+<text x="16.0" y="282.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >clock root</text>
+<text x="207.0" y="284.0" font-size="12" text-anchor="middle" font-weight="400" fill="#0b0b0b" >joint</text>
+<text x="441.0" y="402.0" font-size="12" text-anchor="middle" font-weight="400" fill="#0b0b0b" >repeater</text>
+<line x1="428.0" y1="424.0" x2="672.0" y2="424.0" stroke="#0b0b0b" stroke-width="1.0"/><line x1="428.0" y1="419.0" x2="428.0" y2="429.0" stroke="#0b0b0b" stroke-width="1.0"/><line x1="672.0" y1="419.0" x2="672.0" y2="429.0" stroke="#0b0b0b" stroke-width="1.0"/><text x="550.0" y="417.0" font-size="12" text-anchor="middle" font-weight="400" fill="#0b0b0b" >lateness of a level-2 buffer</text>
+<line x1="548.0" y1="448.0" x2="672.0" y2="448.0" stroke="#0b0b0b" stroke-width="1.0"/><line x1="548.0" y1="443.0" x2="548.0" y2="453.0" stroke="#0b0b0b" stroke-width="1.0"/><line x1="672.0" y1="443.0" x2="672.0" y2="453.0" stroke="#0b0b0b" stroke-width="1.0"/><text x="610.0" y="465.0" font-size="12" text-anchor="middle" font-weight="400" fill="#0b0b0b" >lateness of a level-1 buffer</text>
+<line x1="30.0" y1="482.0" x2="672.0" y2="482.0" stroke="#0b0b0b" stroke-width="1.2" marker-end="url(#arrow)"/>
+<text x="30.0" y="474.0" font-size="12" text-anchor="middle" font-weight="400" fill="#0b0b0b" >0</text>
+<text x="250.0" y="474.0" font-size="12" text-anchor="middle" font-weight="400" fill="#0b0b0b" >clock arrival time</text>
+<text x="678.0" y="486.0" font-size="12" text-anchor="start" font-weight="400" fill="#0b0b0b" >latency</text>
+</svg>

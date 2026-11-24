@@ -127,6 +127,8 @@ The mode takes its targets from the constraints:
 
 The tree is reported per net with its buffer count, the modeled latency of its registers, and the number of nets over the slew limit. `set_debug_level CTS "delay balance" 1` adds the levels and the joints.
 
+[Delay-Balanced Clock Trees](./doc/delay_balanced.md) describes how a tree is built, with figures.
+
 #### Instance Name Prefixes
 
 `clock_tree_synthesis` uses the following prefixes for the instances that it inserts:
