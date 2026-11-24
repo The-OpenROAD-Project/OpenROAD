@@ -73,7 +73,6 @@ SACoreSoftMacro::SACoreSoftMacro(PhysicalHierarchy* tree,
   notch_v_th_ = notch_v_threshold;
   adjust_h_th_ = notch_h_th_;
   adjust_v_th_ = notch_v_th_;
-  logger_ = logger;
 }
 
 void SACoreSoftMacro::findFixedMacros()
