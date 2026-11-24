@@ -176,7 +176,6 @@ bazel_dep(name = "spdlog", version = "1.17.0")
 # sv-elab: the SystemVerilog frontend whose sources src/syn/src/elab
 # compiles
 bazel_dep(name = "sv-elab", version = "2026-11-24")
-
 bazel_dep(name = "tcl_lang", version = "9.0.2.bcr.2")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
 bazel_dep(name = "yaml-cpp", version = "0.9.0")
