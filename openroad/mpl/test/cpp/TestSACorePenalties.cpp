@@ -17,7 +17,7 @@ namespace mpl {
 namespace {
 
 // Exercises SACoreHardMacro's cost/weight contracts entirely through its
-// public API (construction, setWeights(), getNormCost(), initialize()).
+// public API (construction, setCoreWeights(), getNormCost(), initialize()).
 // No golden numeric values are asserted; see docs/agents/testing-strategy.md.
 class TestSACorePenalties : public MplTest
 {
@@ -81,7 +81,7 @@ TEST_F(TestSACorePenalties, AllZeroWeightsYieldZeroCost)
   EXPECT_EQ(core->getNormCost(), 0.0f);
 }
 
-// setWeights() re-applied with the same values it was constructed with
+// setCoreWeights() re-applied with the same values it was constructed with
 // must not perturb the cost it already reported.
 TEST_F(TestSACorePenalties, ReapplyingSameWeightsLeavesCostUnchanged)
 {
@@ -94,7 +94,7 @@ TEST_F(TestSACorePenalties, ReapplyingSameWeightsLeavesCostUnchanged)
   core->initialize();
 
   const float cost_before = core->getNormCost();
-  core->setWeights(weights);
+  core->setCoreWeights(weights);
 
   EXPECT_EQ(core->getNormCost(), cost_before);
 }
@@ -109,7 +109,7 @@ TEST_F(TestSACorePenalties, GivingAZeroedWeightAPositiveValueMovesCostOffZero)
   core->initialize();
   ASSERT_EQ(core->getNormCost(), 0.0f);
 
-  core->setWeights(SACoreWeights{.area = 1.0f});
+  core->setCoreWeights(SACoreWeights{.area = 1.0f});
 
   EXPECT_GT(core->getNormCost(), 0.0f);
 }

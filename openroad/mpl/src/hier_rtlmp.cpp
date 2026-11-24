@@ -2006,7 +2006,7 @@ void HierRTLMP::placeMacros(Cluster* cluster)
 
     for (auto& sa : sa_batch) {
       // Reset weights so we can compare the final costs.
-      sa->setWeights(placement_core_weights_);
+      sa->setCoreWeights(placement_core_weights_);
 
       if (sa->isValid() && sa->getNormCost() < best_cost) {
         best_cost = sa->getNormCost();

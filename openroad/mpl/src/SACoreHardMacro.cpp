@@ -58,7 +58,7 @@ void SACoreHardMacro::run()
   }
 }
 
-void SACoreHardMacro::setWeights(const SACoreWeights& weights)
+void SACoreHardMacro::setCoreWeights(const SACoreWeights& weights)
 {
   penalties_[kArea].weight = weights.area;
   penalties_[kOutline].weight = weights.outline;
