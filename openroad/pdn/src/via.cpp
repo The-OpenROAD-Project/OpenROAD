@@ -35,9 +35,6 @@ namespace pdn {
 
 namespace {
 
-// Note: odb's LEF58 cut-enclosure parser currently binds PARALLEL to
-// setConcaveCornersValid, so checking both flags covers LEF-parsed and API-set
-// rules.
 bool isConditionalCutEnclosureRule(const odb::dbTechLayerCutEnclosureRule* rule)
 {
   return rule->isExtraCutValid() || rule->isRedundantCutValid()
