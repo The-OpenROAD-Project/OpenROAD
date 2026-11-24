@@ -1,0 +1,24 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: clk_data_path
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 4 components and 18 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 8 connections.
+[INFO ODB-0133]     Created 3 nets and 6 connections.
+max slew
+
+Pin                                     Limit     Slew    Slack
+---------------------------------------------------------------
+load2/A                                 0.065    0.082   -0.017 (VIOLATED)
+load1/A                                 0.065    0.082   -0.017 (VIOLATED)
+load0/A                                 0.065    0.082   -0.017 (VIOLATED)
+drvr/Q                                  0.065    0.082   -0.017 (VIOLATED)
+
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |         7
+    final |     +4.5% |       1 |       0 |             1 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0034] Found 1 slew violations.
+[INFO RSZ-0039] Resized 1 instances.
+Summary 6 / 6 (100% pass)
+pass

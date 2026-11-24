@@ -479,6 +479,12 @@ void GlobalRouter::startIncremental()
 
 void GlobalRouter::endIncremental(bool save_guides)
 {
+  if (grouter_cbk_ == nullptr) {
+    logger_->error(GRT,
+                   1255,
+                   "global_route -end_incremental requires a prior "
+                   "global_route -start_incremental.");
+  }
   is_incremental_ = true;
   updateDirtyRoutes(save_guides);
   reportIncrementalCongestion();
@@ -5238,6 +5244,8 @@ void GlobalRouter::mergeSegments(const std::vector<Pin>& pins, GRoute& route)
   segments[write] = segments[read];
 
   segments.resize(write + 1);
+  // The route arrives with a segment per GCell; keep only the merged ones.
+  segments.shrink_to_fit();
 }
 
 bool GlobalRouter::segmentsConnect(const GSegment& seg0,
