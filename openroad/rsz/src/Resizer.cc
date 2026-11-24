@@ -4289,6 +4289,13 @@ void Resizer::repairTieFanout(sta::LibertyPort* tie_port,
                                  separation_dbu);
       designAreaIncr(area(db_network_->cell(tie_cell)));
       tie_count++;
+      if (verbose) {
+        logger_->info(RSZ,
+                      38,
+                      "Inserted tie cell {} for load {}.",
+                      tie_cell->name(),
+                      db_network_->pathName(load_pin));
+      }
     }
 
     if (!keep_tie) {
