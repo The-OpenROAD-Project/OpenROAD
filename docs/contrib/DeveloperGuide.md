@@ -213,9 +213,10 @@ read_liberty Nangate45/Nangate45_typ.lib
 
 Before writing a golden-file Tcl test, check `docs/agents/testing-strategy.md`.
 New tests default to C++ unit tests (`cc_test`), with thin `PASSFAIL_TESTS`
-for Tcl or Python binding smoke tests.
-Use a golden-file Tcl test when reproducing a DEF-level bug or checking
-end-to-end tool behavior.
+for Tcl binding smoke tests and `unittest` `py_test` targets for Python
+binding smoke tests.
+Use a golden-file Tcl test only when the behavior spans tools or cannot be
+expressed with a C++ fixture such as `tst::DbFixture::readDef`.
 
 Keep a new Tcl test small.
 For a bug report, put the small design in a DEF file and read it with
@@ -225,7 +226,8 @@ Use those steps only when they are part of the behavior under test.
 
 1. Reduce the design until it still shows the behavior.
    Write it as `openroad/<tool>/test/<name>.def`.
-2. Write `openroad/<tool>/test/<name>.tcl`.
+2. Write `openroad/<tool>/test/<name>.tcl`, starting with a one-line comment
+   explaining what it tests.
    For example, `openroad/gpl/test/incremental01.tcl` reads a LEF and a DEF, runs the
    command, writes a DEF, and compares it with a golden file:
 
@@ -260,9 +262,11 @@ the golden file.
 
 Most tool test directories have a `save_ok` link, and many have a `save_defok`
 link, pointing to `test/shared/save_ok.sh` and `test/shared/save_defok.sh`.
+(`openroad/grt/test` also provides `save_guideok` for `.guideok` files.)
 Run them in `openroad/<tool>/test` and pass test names without extension.
-In directories without a local link (for example `openroad/syn/test` or
-`openroad/cts/test`), run `../../../test/shared/save_ok.sh <name>` or
+In directories without a local link (for example, `openroad/syn/test` has
+neither link, and `openroad/cts/test` has `save_ok` but no `save_defok`), run
+`../../../test/shared/save_ok.sh <name>` or
 `../../../test/shared/save_defok.sh <name>` directly from `openroad/<tool>/test`.
 Each script runs `bazel test` for `//<package>:<name>-tcl_test` (falling back
 to `-py_test` if no Tcl output is found) and copies the result file from
@@ -286,8 +290,8 @@ For a test that has no other golden file, run only `save_ok`.
 The save helpers assume the output filename matches the test stem
 (`<name>-tcl.<ext>` to `<name>.<dest_ext>`).
 When a test writes a differently named output (such as `simple_test_out.defok`)
-or another golden type (such as `.vok`, or `.guideok` via `save_guideok`),
-copy each generated file from
+or another golden type without a helper (such as `.vok`), copy each generated
+file from
 `bazel-testlogs/openroad/<tool>/test/<name>-tcl_test/test.outputs/results/`
 to the exact golden path in the test before refreshing `<name>.ok`.
 Bazel writes test outputs with read-only executable permissions (`0555`), so
@@ -305,10 +309,12 @@ extract them with `unzip -p` and set mode `0644`.
 Check the result with `git diff` before you commit.
 `diff_files` reports the first difference in the files it compares.
 The save scripts replace the complete golden files with the new output.
-Run the test again to confirm that it passes:
+Rerun every registered target that uses the updated golden file to confirm
+that it passes (both `-tcl_test` and `-py_test` if both exist):
 
 ``` shell
 bazelisk test --test_output=errors //openroad/<tool>/test:<name>-tcl_test
+bazelisk test --test_output=errors //openroad/<tool>/test:<name>-py_test
 ```
 
 ### Update flow metrics and limits
