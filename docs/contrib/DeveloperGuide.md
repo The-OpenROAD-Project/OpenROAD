@@ -230,8 +230,12 @@ Use those steps only when they are part of the behavior under test.
    explaining what it tests.
    For example, `openroad/dpl/test/simple07.tcl` reads a LEF and a DEF, runs the
    command, writes a DEF, and compares it with a golden file.
-   Its DEF stacks 10 cells on one location, so `detailed_placement` must move
-   them, and the golden DEF records the result.
+   Its DEF stacks 10 cells (one of them fixed) on one location, so
+   `detailed_placement` must move the other 9, and the golden DEF records the
+   result.
+   This existing test shows the file layout of a golden-file test.
+   For a new check of one tool, such as this one, the testing strategy prefers
+   a C++ fixture (for example, `openroad/dpl/test/dpl_test.cc`).
    This is the file with the opening comment added:
 
    ```tcl
@@ -252,9 +256,11 @@ Use those steps only when they are part of the behavior under test.
    Make sure that the input DEF makes the command do work.
    For example, `global_placement -incremental` skips a design whose cells are
    all placed, so its test DEF must have unplaced cells.
-3. Where the `BUILD` file lists golden files by name, create empty `<name>.ok`
-   and, if the test calls `diff_files` on a DEF, `<name>.defok` files so Bazel
-   can find the declared inputs.
+3. Create an empty `<name>.ok` and, if the test calls `diff_files` on a DEF,
+   an empty `<name>.defok`.
+   With these files, the first run reports a difference instead of a missing
+   file, and a `BUILD` file that lists golden files by name finds its declared
+   inputs.
 4. Register `<name>` in `openroad/<tool>/test/BUILD` (see "Add a test" under
    "Adding a Tool, Source File or Test in Bazel" below).
 5. Run the registered test and review its output, then update the golden files
@@ -279,6 +285,9 @@ Each script runs `bazel test` for `//<package>:<name>-tcl_test` (falling back
 to `-py_test` if no Tcl output is found) and copies the result file from
 `bazel-testlogs` with writable `0644` permissions.
 The `bazel` command must be on `PATH`.
+The scripts run the test with the default build configuration.
+For a test that needs other flags (such as GPU flags), run the test with those
+flags and copy the result by hand, as shown below.
 The test is expected to fail while the golden file is old.
 
 When a test writes a DEF whose filename matches `<name>`, update its DEF golden
@@ -319,7 +328,7 @@ Check the result with `git diff` before you commit.
 For a new test, run `git add -N <golden-file>` first, because `git diff` does
 not show untracked files.
 `diff_files` reports the first difference in the files it compares.
-A log golden file can have trailing spaces in its tables.
+A log golden file can have trailing spaces.
 Keep them: the test compares the log byte for byte, so an editor or a hook that
 removes trailing spaces makes the test fail.
 The save scripts replace the complete golden files with the new output.
@@ -346,17 +355,18 @@ These tests are tagged `manual`, so name the target to run one (or use
 bazelisk test --test_output=errors //test:aes_sky130hd-tcl_test
 ```
 
-Bazel can return a cached result (`(cached) PASSED`) without running the flow.
-To get new metrics, add `--nocache_test_results`.
-
 When a change moves metrics on purpose, review the new results, refresh the
 saved metrics, and update only the limits that the change justifies:
 
-1. Create `test/results/` and copy the result metrics file with `0644`
+1. From the repository root, run the flow test with `--nocache_test_results`.
+   Without this option, Bazel can return a cached result (`(cached) PASSED`)
+   without running the flow.
+   Then create `test/results/` and copy the result metrics file with `0644`
    permissions (Bazel writes `bazel-testlogs` files with mode `0555`, which
    `save_flow_metrics` preserves):
 
    ``` shell
+   bazelisk test --nocache_test_results --test_output=errors //test:aes_sky130hd-tcl_test
    mkdir -p test/results
    install -m 644 \
      bazel-testlogs/test/aes_sky130hd-tcl_test/test.outputs/results/aes_sky130hd-tcl.metrics \
@@ -374,16 +384,19 @@ saved metrics, and update only the limits that the change justifies:
    ./save_flow_metrics aes_sky130hd
    ```
 
-   The runtime metrics (names that end in `_s`) change on every run and have
-   no limits.
+   `save_flow_metrics` needs `tclsh` on `PATH`.
+   Runtime metrics (for example, names that end in `_s` or `__runtime`) change
+   on every run, and the limits check does not use them.
    Keep the regenerated file as it is.
 
    If a threshold in `<name>.metrics_limits` also needs to change, either edit
    that threshold directly or run `./save_flow_metrics_limits aes_sky130hd`
-   (which needs the Tcl `json` package from Tcllib).
+   (which also needs the Tcl `json` package from Tcllib).
    `save_flow_metrics_limits` regenerates every limit in the file from the
-   current run plus a margin, including DRC and antenna limits, so check
-   `git diff` and keep only the limit changes your change justifies.
+   current run.
+   Most limits get a margin, but the DRC, antenna, and clock period limits are
+   set to the current values.
+   Check `git diff` and keep only the limit changes your change justifies.
 3. Rerun the named flow test to confirm it passes, review `git diff`, and
    commit the updated files.
 
@@ -416,8 +429,15 @@ any environment variables the failing target sets (for example `ENABLE_GPU=1`
 for GPU tests, or `ENABLE_GPU=0` for CPU regressions on a GPU build):
 
 ``` shell
-gdb --args ../../../bazel-bin/openroad/openroad -no_init -no_splash -exit -threads 1 <name>.tcl
+gdb --args ../../../bazel-out/k8-dbg/bin/openroad/openroad -no_init -no_splash -exit -threads 1 <name>.tcl
 ```
+
+Use the path in `bazel-out/`, not `bazel-bin`.
+`bazel-bin` points to the configuration of the most recent Bazel command, and
+`bazelisk test` (also run by the save scripts) moves it away from the debug
+build.
+`k8-dbg` is the name on Linux x86-64; `ls ../../../bazel-out` shows the name on
+other hosts.
 
 The debug information has source paths relative to the repository root.
 To let `gdb` show the source from the test directory, run
@@ -428,11 +448,8 @@ On macOS, run `lldb --` with the same binary and arguments.
 To keep the OpenROAD Tcl prompt after the script, omit `-exit`.
 If the failure depends on a different thread count, set `-threads` to that count.
 
-`bazel-bin` points to the most recent build.
-If you switch between build modes, use the path in `bazel-out/` instead.
-To run a `-c dbg` OpenROAD binary with ORFS, see the "Testing an OpenROAD
-build with ORFS from within the OpenROAD folder" section in
-[the Bazel guide](../user/Bazel.md).
+To run a `-c dbg` OpenROAD binary with ORFS, see the "Testing debug build of
+OpenROAD with ORFS" section in [the Bazel guide](../user/Bazel.md).
 
 ## Adding a Tool, Source File or Test in Bazel
 
