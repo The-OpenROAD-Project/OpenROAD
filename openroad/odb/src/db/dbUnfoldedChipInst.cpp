@@ -79,13 +79,15 @@ void _dbUnfoldedChipInst::collectMemInfo(MemInfo& info)
 
 const std::string& dbUnfoldedChipInst::getName() const
 {
-  _dbUnfoldedChipInst* obj = (_dbUnfoldedChipInst*) this;
+  const _dbUnfoldedChipInst* obj
+      = reinterpret_cast<const _dbUnfoldedChipInst*>(this);
   return obj->name_;
 }
 
 dbTransform dbUnfoldedChipInst::getTransform() const
 {
-  _dbUnfoldedChipInst* obj = (_dbUnfoldedChipInst*) this;
+  const _dbUnfoldedChipInst* obj
+      = reinterpret_cast<const _dbUnfoldedChipInst*>(this);
   return obj->transform_;
 }
 

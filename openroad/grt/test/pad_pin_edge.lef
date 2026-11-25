@@ -1,0 +1,54 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+# Modeled on gf180mcu_fd_io__asig_5p0: north Metal2 stripes, south bond pad.
+MACRO asig_pad
+  CLASS PAD INOUT ;
+  ORIGIN 0 0 ;
+  SIZE 75 BY 350 ;
+  SYMMETRY X Y R90 ;
+  PIN ASIG5V
+    DIRECTION INOUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER Metal2 ;
+        RECT 15.34 134.37 17.88 350 ;
+    END
+    PORT
+      LAYER Metal2 ;
+        RECT 26.7 134.37 29.24 350 ;
+    END
+    PORT
+      LAYER Metal2 ;
+        RECT 45.76 134.37 48.3 350 ;
+    END
+    PORT
+      LAYER Metal2 ;
+        RECT 57.12 134.37 59.66 350 ;
+    END
+    PORT
+      LAYER Metal5 ;
+        RECT 1 0 74 69.5 ;
+    END
+  END ASIG5V
+  OBS
+    LAYER Metal1 ;
+      RECT 0 65.54 75 349.785 ;
+    LAYER Metal2 ;
+      RECT 0 0 75 134.07 ;
+      RECT 0 134.07 15.04 348.39 ;
+      RECT 18.18 134.07 26.4 348.39 ;
+      RECT 29.54 134.07 45.46 348.39 ;
+      RECT 48.6 134.07 56.82 348.39 ;
+      RECT 59.96 134.07 75 348.39 ;
+    LAYER Metal3 ;
+      RECT 1 0 74 348.39 ;
+    LAYER Metal4 ;
+      RECT 1 0 74 348.39 ;
+    LAYER Metal5 ;
+      RECT 1.5 69.5 73.5 348.39 ;
+  END
+END asig_pad
+
+END LIBRARY

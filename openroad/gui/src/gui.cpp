@@ -365,6 +365,11 @@ class QtGuiBackend : public GuiBackend
     main_window->getControls()->restore();
   }
 
+  std::vector<std::string> displayControlPaths() override
+  {
+    return main_window->getControls()->controlPaths();
+  }
+
   void addFocusNet(odb::dbNet* net) override
   {
     main_window->getLayoutTabs()->addFocusNet(net);

@@ -4,12 +4,13 @@
 #include "syn/lir/RegPinTypes.h"
 
 #include <array>
+#include <string_view>
 
 namespace syn::lir {
 
 namespace {
 
-constexpr std::array<const char*, kNumRegPinTypes> kRegPinTypeNames = {
+constexpr std::array<std::string_view, kNumRegPinTypes> kRegPinTypeNames = {
     "data",
     "clock",
     "en",
@@ -27,8 +28,8 @@ constexpr std::array<const char*, kNumRegPinTypes> kRegPinTypeNames = {
 
 constexpr bool allNamed()
 {
-  for (const char* name : kRegPinTypeNames) {
-    if (name == nullptr) {
+  for (const std::string_view name : kRegPinTypeNames) {
+    if (name.empty()) {
       return false;
     }
   }
@@ -38,17 +39,18 @@ static_assert(allNamed(), "kRegPinTypeNames is missing an entry");
 
 }  // namespace
 
-const char* regPinTypeName(RegPinType type)
+std::string_view regPinTypeName(RegPinType type)
 {
-  const unsigned i = static_cast<unsigned>(type);
-  return i < kRegPinTypeNames.size() ? kRegPinTypeNames[i] : "?";
+  const int i = static_cast<int>(type);
+  return i >= 0 && i < kNumRegPinTypes ? kRegPinTypeNames[i] : "?";
 }
 
-const char* regOutputName(RegOutput output)
+std::string_view regOutputName(RegOutput output)
 {
-  constexpr std::array<const char*, kNumRegOutputs> kNames = {"q", "qn", "so"};
-  const unsigned i = static_cast<unsigned>(output);
-  return i < kNames.size() ? kNames[i] : "?";
+  constexpr std::array<std::string_view, kNumRegOutputs> kNames
+      = {"q", "qn", "so"};
+  const int i = static_cast<int>(output);
+  return i >= 0 && i < kNumRegOutputs ? kNames[i] : "?";
 }
 
 }  // namespace syn::lir

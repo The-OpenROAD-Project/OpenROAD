@@ -1,0 +1,55 @@
+{
+  "name": "dbTechLayerCoreEdgeLengthRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "name": "min_length_",
+      "type": "int",
+      "default": "0"
+    },
+    {
+      "name": "max_length_",
+      "type": "int",
+      "default": "0"
+    },
+    {
+      "name": "except_adjacent_edge_lengths_",
+      "type": "dbVector<int>",
+      "comment": "// Indexed in lockstep with except_adjacent_lengths_ and except_adjacent_exact_",
+      "flags": [
+        "no-set"
+      ]
+    },
+    {
+      "name": "except_adjacent_lengths_",
+      "type": "dbVector<int>",
+      "flags": [
+        "no-set"
+      ]
+    },
+    {
+      "name": "except_adjacent_exact_",
+      "type": "dbVector<int>",
+      "flags": [
+        "no-set"
+      ]
+    },
+    {
+      "name": "within_layers_",
+      "type": "dbVector<dbId<_dbTechLayer>>",
+      "flags": [
+        "private"
+      ]
+    },
+    {
+      "name": "except_layers_",
+      "type": "dbVector<dbId<_dbTechLayer>>",
+      "flags": [
+        "private"
+      ]
+    }
+  ],
+  "cpp_includes": [
+    "dbTechLayer.h"
+  ]
+}

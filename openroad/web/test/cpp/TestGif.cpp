@@ -74,8 +74,8 @@ TEST_F(GifTest, StartAddEndProducesValidGif)
   const int key = server.gifStart(path);
   EXPECT_EQ(key, 0);
   const odb::Rect area(0, 0, 0, 0);  // zero → whole die + margin
-  server.gifAddFrame(key, area, /*width_px=*/200, 0, /*delay=*/5, "");
-  server.gifAddFrame(key, area, /*width_px=*/200, 0, /*delay=*/5, "");
+  server.gifAddFrame(key, area, /*width_px=*/200, 0, /*delay=*/5, {});
+  server.gifAddFrame(key, area, /*width_px=*/200, 0, /*delay=*/5, {});
   server.gifEnd(key);
 
   ASSERT_TRUE(std::filesystem::exists(path));
@@ -90,9 +90,9 @@ TEST_F(GifTest, LaterFramesWithDifferentSizeAreScaled)
 
   const int key = server.gifStart(path);
   const odb::Rect area(0, 0, 0, 0);
-  server.gifAddFrame(key, area, /*width_px=*/200, 0, 5, "");
+  server.gifAddFrame(key, area, /*width_px=*/200, 0, 5, {});
   // Different width → must be resampled to the first frame's dimensions.
-  server.gifAddFrame(key, area, /*width_px=*/400, 0, 5, "");
+  server.gifAddFrame(key, area, /*width_px=*/400, 0, 5, {});
   server.gifEnd(key);
 
   ASSERT_TRUE(std::filesystem::exists(path));
@@ -119,7 +119,7 @@ TEST_F(GifTest, UnopenableFileClosesTheStream)
 
   const int key = server.gifStart(path);
   const odb::Rect area(0, 0, 0, 0);
-  EXPECT_ANY_THROW(server.gifAddFrame(key, area, 200, 0, 5, ""));
+  EXPECT_ANY_THROW(server.gifAddFrame(key, area, 200, 0, 5, {}));
   EXPECT_ANY_THROW(server.gifEnd(key));  // no active GIF for that key
 }
 
@@ -134,7 +134,7 @@ TEST_F(GifTest, WriteFailureIsReportedNotSaved)
   const int key = server.gifStart("/dev/full");
   const odb::Rect area(0, 0, 0, 0);
   EXPECT_ANY_THROW({
-    server.gifAddFrame(key, area, 200, 0, 5, "");
+    server.gifAddFrame(key, area, 200, 0, 5, {});
     server.gifEnd(key);
   });
 }
@@ -150,8 +150,8 @@ TEST_F(GifTest, MultipleConcurrentStreamsGetDistinctKeys)
   EXPECT_NE(ka, kb);
 
   const odb::Rect area(0, 0, 0, 0);
-  server.gifAddFrame(ka, area, 150, 0, 5, "");
-  server.gifAddFrame(kb, area, 150, 0, 5, "");
+  server.gifAddFrame(ka, area, 150, 0, 5, {});
+  server.gifAddFrame(kb, area, 150, 0, 5, {});
   server.gifEnd(ka);
   server.gifEnd(kb);
 

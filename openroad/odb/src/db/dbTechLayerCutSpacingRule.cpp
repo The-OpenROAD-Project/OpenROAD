@@ -337,357 +337,411 @@ void _dbTechLayerCutSpacingRule::collectMemInfo(MemInfo& info)
 
 void dbTechLayerCutSpacingRule::setCutSpacing(int cut_spacing)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->cut_spacing_ = cut_spacing;
 }
 
 int dbTechLayerCutSpacingRule::getCutSpacing() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
   return obj->cut_spacing_;
 }
 
 void dbTechLayerCutSpacingRule::setSecondLayer(dbTechLayer* second_layer)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->second_layer_ = second_layer->getImpl()->getOID();
 }
 
 void dbTechLayerCutSpacingRule::setOrthogonalSpacing(int orthogonal_spacing)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->orthogonal_spacing_ = orthogonal_spacing;
 }
 
 int dbTechLayerCutSpacingRule::getOrthogonalSpacing() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
   return obj->orthogonal_spacing_;
 }
 
 void dbTechLayerCutSpacingRule::setWidth(int width)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->width_ = width;
 }
 
 int dbTechLayerCutSpacingRule::getWidth() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
   return obj->width_;
 }
 
 void dbTechLayerCutSpacingRule::setEnclosure(int enclosure)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->enclosure_ = enclosure;
 }
 
 int dbTechLayerCutSpacingRule::getEnclosure() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
   return obj->enclosure_;
 }
 
 void dbTechLayerCutSpacingRule::setEdgeLength(int edge_length)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->edge_length_ = edge_length;
 }
 
 int dbTechLayerCutSpacingRule::getEdgeLength() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
   return obj->edge_length_;
 }
 
 void dbTechLayerCutSpacingRule::setParWithin(int par_within)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->par_within_ = par_within;
 }
 
 int dbTechLayerCutSpacingRule::getParWithin() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
   return obj->par_within_;
 }
 
 void dbTechLayerCutSpacingRule::setParEnclosure(int par_enclosure)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->par_enclosure_ = par_enclosure;
 }
 
 int dbTechLayerCutSpacingRule::getParEnclosure() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
   return obj->par_enclosure_;
 }
 
 void dbTechLayerCutSpacingRule::setEdgeEnclosure(int edge_enclosure)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->edge_enclosure_ = edge_enclosure;
 }
 
 int dbTechLayerCutSpacingRule::getEdgeEnclosure() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
   return obj->edge_enclosure_;
 }
 
 void dbTechLayerCutSpacingRule::setAdjEnclosure(int adj_enclosure)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->adj_enclosure_ = adj_enclosure;
 }
 
 int dbTechLayerCutSpacingRule::getAdjEnclosure() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
   return obj->adj_enclosure_;
 }
 
 void dbTechLayerCutSpacingRule::setAboveEnclosure(int above_enclosure)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->above_enclosure_ = above_enclosure;
 }
 
 int dbTechLayerCutSpacingRule::getAboveEnclosure() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
   return obj->above_enclosure_;
 }
 
 void dbTechLayerCutSpacingRule::setAboveWidth(int above_width)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->above_width_ = above_width;
 }
 
 int dbTechLayerCutSpacingRule::getAboveWidth() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
   return obj->above_width_;
 }
 
 void dbTechLayerCutSpacingRule::setMinLength(int min_length)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->min_length_ = min_length;
 }
 
 int dbTechLayerCutSpacingRule::getMinLength() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
   return obj->min_length_;
 }
 
 void dbTechLayerCutSpacingRule::setExtension(int extension)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->extension_ = extension;
 }
 
 int dbTechLayerCutSpacingRule::getExtension() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
   return obj->extension_;
 }
 
 void dbTechLayerCutSpacingRule::setEolWidth(int eol_width)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->eol_width_ = eol_width;
 }
 
 int dbTechLayerCutSpacingRule::getEolWidth() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
   return obj->eol_width_;
 }
 
 void dbTechLayerCutSpacingRule::setNumCuts(uint32_t num_cuts)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->num_cuts_ = num_cuts;
 }
 
 uint32_t dbTechLayerCutSpacingRule::getNumCuts() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
   return obj->num_cuts_;
 }
 
 void dbTechLayerCutSpacingRule::setWithin(int within)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->within_ = within;
 }
 
 int dbTechLayerCutSpacingRule::getWithin() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
   return obj->within_;
 }
 
 void dbTechLayerCutSpacingRule::setSecondWithin(int second_within)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->second_within_ = second_within;
 }
 
 int dbTechLayerCutSpacingRule::getSecondWithin() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
   return obj->second_within_;
 }
 
 void dbTechLayerCutSpacingRule::setCutClass(dbTechLayerCutClassRule* cut_class)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->cut_class_ = cut_class->getImpl()->getOID();
 }
 
 void dbTechLayerCutSpacingRule::setTwoCuts(uint32_t two_cuts)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->two_cuts_ = two_cuts;
 }
 
 uint32_t dbTechLayerCutSpacingRule::getTwoCuts() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
   return obj->two_cuts_;
 }
 
 void dbTechLayerCutSpacingRule::setPrl(uint32_t prl)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->prl_ = prl;
 }
 
 uint32_t dbTechLayerCutSpacingRule::getPrl() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
   return obj->prl_;
 }
 
 void dbTechLayerCutSpacingRule::setParLength(uint32_t par_length)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->par_length_ = par_length;
 }
 
 uint32_t dbTechLayerCutSpacingRule::getParLength() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
   return obj->par_length_;
 }
 
 void dbTechLayerCutSpacingRule::setCutArea(int64_t cut_area)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->cut_area_ = cut_area;
 }
 
 int64_t dbTechLayerCutSpacingRule::getCutArea() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
   return obj->cut_area_;
 }
 
 void dbTechLayerCutSpacingRule::setCenterToCenter(bool center_to_center)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.center_to_center = center_to_center;
 }
 
 bool dbTechLayerCutSpacingRule::isCenterToCenter() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.center_to_center;
 }
 
 void dbTechLayerCutSpacingRule::setSameNet(bool same_net)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.same_net = same_net;
 }
 
 bool dbTechLayerCutSpacingRule::isSameNet() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.same_net;
 }
 
 void dbTechLayerCutSpacingRule::setSameMetal(bool same_metal)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.same_metal = same_metal;
 }
 
 bool dbTechLayerCutSpacingRule::isSameMetal() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.same_metal;
 }
 
 void dbTechLayerCutSpacingRule::setSameVia(bool same_via)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.same_via = same_via;
 }
 
 bool dbTechLayerCutSpacingRule::isSameVia() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.same_via;
 }
 
 void dbTechLayerCutSpacingRule::setStack(bool stack)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.stack = stack;
 }
 
 bool dbTechLayerCutSpacingRule::isStack() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.stack;
 }
@@ -695,14 +749,16 @@ bool dbTechLayerCutSpacingRule::isStack() const
 void dbTechLayerCutSpacingRule::setOrthogonalSpacingValid(
     bool orthogonal_spacing_valid)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.orthogonal_spacing_valid = orthogonal_spacing_valid;
 }
 
 bool dbTechLayerCutSpacingRule::isOrthogonalSpacingValid() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.orthogonal_spacing_valid;
 }
@@ -710,42 +766,48 @@ bool dbTechLayerCutSpacingRule::isOrthogonalSpacingValid() const
 void dbTechLayerCutSpacingRule::setAboveWidthEnclosureValid(
     bool above_width_enclosure_valid)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.above_width_enclosure_valid = above_width_enclosure_valid;
 }
 
 bool dbTechLayerCutSpacingRule::isAboveWidthEnclosureValid() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.above_width_enclosure_valid;
 }
 
 void dbTechLayerCutSpacingRule::setShortEdgeOnly(bool short_edge_only)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.short_edge_only = short_edge_only;
 }
 
 bool dbTechLayerCutSpacingRule::isShortEdgeOnly() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.short_edge_only;
 }
 
 void dbTechLayerCutSpacingRule::setConcaveCornerWidth(bool concave_corner_width)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.concave_corner_width = concave_corner_width;
 }
 
 bool dbTechLayerCutSpacingRule::isConcaveCornerWidth() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.concave_corner_width;
 }
@@ -753,14 +815,16 @@ bool dbTechLayerCutSpacingRule::isConcaveCornerWidth() const
 void dbTechLayerCutSpacingRule::setConcaveCornerParallel(
     bool concave_corner_parallel)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.concave_corner_parallel = concave_corner_parallel;
 }
 
 bool dbTechLayerCutSpacingRule::isConcaveCornerParallel() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.concave_corner_parallel;
 }
@@ -768,42 +832,48 @@ bool dbTechLayerCutSpacingRule::isConcaveCornerParallel() const
 void dbTechLayerCutSpacingRule::setConcaveCornerEdgeLength(
     bool concave_corner_edge_length)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.concave_corner_edge_length = concave_corner_edge_length;
 }
 
 bool dbTechLayerCutSpacingRule::isConcaveCornerEdgeLength() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.concave_corner_edge_length;
 }
 
 void dbTechLayerCutSpacingRule::setConcaveCorner(bool concave_corner)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.concave_corner = concave_corner;
 }
 
 bool dbTechLayerCutSpacingRule::isConcaveCorner() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.concave_corner;
 }
 
 void dbTechLayerCutSpacingRule::setExtensionValid(bool extension_valid)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.extension_valid = extension_valid;
 }
 
 bool dbTechLayerCutSpacingRule::isExtensionValid() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.extension_valid;
 }
@@ -811,168 +881,192 @@ bool dbTechLayerCutSpacingRule::isExtensionValid() const
 void dbTechLayerCutSpacingRule::setNonEolConvexCorner(
     bool non_eol_convex_corner)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.non_eol_convex_corner = non_eol_convex_corner;
 }
 
 bool dbTechLayerCutSpacingRule::isNonEolConvexCorner() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.non_eol_convex_corner;
 }
 
 void dbTechLayerCutSpacingRule::setEolWidthValid(bool eol_width_valid)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.eol_width_valid = eol_width_valid;
 }
 
 bool dbTechLayerCutSpacingRule::isEolWidthValid() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.eol_width_valid;
 }
 
 void dbTechLayerCutSpacingRule::setMinLengthValid(bool min_length_valid)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.min_length_valid = min_length_valid;
 }
 
 bool dbTechLayerCutSpacingRule::isMinLengthValid() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.min_length_valid;
 }
 
 void dbTechLayerCutSpacingRule::setAboveWidthValid(bool above_width_valid)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.above_width_valid = above_width_valid;
 }
 
 bool dbTechLayerCutSpacingRule::isAboveWidthValid() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.above_width_valid;
 }
 
 void dbTechLayerCutSpacingRule::setMaskOverlap(bool mask_overlap)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.mask_overlap = mask_overlap;
 }
 
 bool dbTechLayerCutSpacingRule::isMaskOverlap() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.mask_overlap;
 }
 
 void dbTechLayerCutSpacingRule::setWrongDirection(bool wrong_direction)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.wrong_direction = wrong_direction;
 }
 
 bool dbTechLayerCutSpacingRule::isWrongDirection() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.wrong_direction;
 }
 
 void dbTechLayerCutSpacingRule::setAdjacentCuts(uint32_t adjacent_cuts)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.adjacent_cuts = adjacent_cuts;
 }
 
 uint32_t dbTechLayerCutSpacingRule::getAdjacentCuts() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.adjacent_cuts;
 }
 
 void dbTechLayerCutSpacingRule::setExactAligned(bool exact_aligned)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.exact_aligned = exact_aligned;
 }
 
 bool dbTechLayerCutSpacingRule::isExactAligned() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.exact_aligned;
 }
 
 void dbTechLayerCutSpacingRule::setCutClassToAll(bool cut_class_to_all)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.cut_class_to_all = cut_class_to_all;
 }
 
 bool dbTechLayerCutSpacingRule::isCutClassToAll() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.cut_class_to_all;
 }
 
 void dbTechLayerCutSpacingRule::setNoPrl(bool no_prl)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.no_prl = no_prl;
 }
 
 bool dbTechLayerCutSpacingRule::isNoPrl() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.no_prl;
 }
 
 void dbTechLayerCutSpacingRule::setSameMask(bool same_mask)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.same_mask = same_mask;
 }
 
 bool dbTechLayerCutSpacingRule::isSameMask() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.same_mask;
 }
 
 void dbTechLayerCutSpacingRule::setExceptSamePgnet(bool except_same_pgnet)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.except_same_pgnet = except_same_pgnet;
 }
 
 bool dbTechLayerCutSpacingRule::isExceptSamePgnet() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.except_same_pgnet;
 }
@@ -980,42 +1074,48 @@ bool dbTechLayerCutSpacingRule::isExceptSamePgnet() const
 void dbTechLayerCutSpacingRule::setSideParallelOverlap(
     bool side_parallel_overlap)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.side_parallel_overlap = side_parallel_overlap;
 }
 
 bool dbTechLayerCutSpacingRule::isSideParallelOverlap() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.side_parallel_overlap;
 }
 
 void dbTechLayerCutSpacingRule::setExceptSameNet(bool except_same_net)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.except_same_net = except_same_net;
 }
 
 bool dbTechLayerCutSpacingRule::isExceptSameNet() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.except_same_net;
 }
 
 void dbTechLayerCutSpacingRule::setExceptSameMetal(bool except_same_metal)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.except_same_metal = except_same_metal;
 }
 
 bool dbTechLayerCutSpacingRule::isExceptSameMetal() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.except_same_metal;
 }
@@ -1023,126 +1123,144 @@ bool dbTechLayerCutSpacingRule::isExceptSameMetal() const
 void dbTechLayerCutSpacingRule::setExceptSameMetalOverlap(
     bool except_same_metal_overlap)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.except_same_metal_overlap = except_same_metal_overlap;
 }
 
 bool dbTechLayerCutSpacingRule::isExceptSameMetalOverlap() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.except_same_metal_overlap;
 }
 
 void dbTechLayerCutSpacingRule::setExceptSameVia(bool except_same_via)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.except_same_via = except_same_via;
 }
 
 bool dbTechLayerCutSpacingRule::isExceptSameVia() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.except_same_via;
 }
 
 void dbTechLayerCutSpacingRule::setAbove(bool above)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.above = above;
 }
 
 bool dbTechLayerCutSpacingRule::isAbove() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.above;
 }
 
 void dbTechLayerCutSpacingRule::setExceptTwoEdges(bool except_two_edges)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.except_two_edges = except_two_edges;
 }
 
 bool dbTechLayerCutSpacingRule::isExceptTwoEdges() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.except_two_edges;
 }
 
 void dbTechLayerCutSpacingRule::setTwoCutsValid(bool two_cuts_valid)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.two_cuts_valid = two_cuts_valid;
 }
 
 bool dbTechLayerCutSpacingRule::isTwoCutsValid() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.two_cuts_valid;
 }
 
 void dbTechLayerCutSpacingRule::setSameCut(bool same_cut)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.same_cut = same_cut;
 }
 
 bool dbTechLayerCutSpacingRule::isSameCut() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.same_cut;
 }
 
 void dbTechLayerCutSpacingRule::setLongEdgeOnly(bool long_edge_only)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.long_edge_only = long_edge_only;
 }
 
 bool dbTechLayerCutSpacingRule::isLongEdgeOnly() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.long_edge_only;
 }
 
 void dbTechLayerCutSpacingRule::setPrlValid(bool prl_valid)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.prl_valid = prl_valid;
 }
 
 bool dbTechLayerCutSpacingRule::isPrlValid() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.prl_valid;
 }
 
 void dbTechLayerCutSpacingRule::setBelow(bool below)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.below = below;
 }
 
 bool dbTechLayerCutSpacingRule::isBelow() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.below;
 }
@@ -1150,14 +1268,16 @@ bool dbTechLayerCutSpacingRule::isBelow() const
 void dbTechLayerCutSpacingRule::setParWithinEnclosureValid(
     bool par_within_enclosure_valid)
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<_dbTechLayerCutSpacingRule*>(this);
 
   obj->flags_.par_within_enclosure_valid = par_within_enclosure_valid;
 }
 
 bool dbTechLayerCutSpacingRule::isParWithinEnclosureValid() const
 {
-  _dbTechLayerCutSpacingRule* obj = (_dbTechLayerCutSpacingRule*) this;
+  const _dbTechLayerCutSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingRule*>(this);
 
   return obj->flags_.par_within_enclosure_valid;
 }
@@ -1165,14 +1285,17 @@ bool dbTechLayerCutSpacingRule::isParWithinEnclosureValid() const
 dbTechLayerCutSpacingRule* dbTechLayerCutSpacingRule::create(
     dbTechLayer* parent)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) parent;
-  return (dbTechLayerCutSpacingRule*) _parent->cut_spacing_rules_tbl_->create();
+  _dbTechLayer* _parent = reinterpret_cast<_dbTechLayer*>(parent);
+  return reinterpret_cast<dbTechLayerCutSpacingRule*>(
+      _parent->cut_spacing_rules_tbl_->create());
 }
 void dbTechLayerCutSpacingRule::destroy(dbTechLayerCutSpacingRule* obj)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  _dbTechLayer* _parent
+      = static_cast<_dbTechLayer*>(obj->getImpl()->getOwner());
   dbProperty::destroyProperties(obj);
-  _parent->cut_spacing_rules_tbl_->destroy((_dbTechLayerCutSpacingRule*) obj);
+  _parent->cut_spacing_rules_tbl_->destroy(
+      reinterpret_cast<_dbTechLayerCutSpacingRule*>(obj));
 }
 // User Code Begin dbTechLayerCutSpacingRulePublicMethods
 dbTechLayerCutClassRule* dbTechLayerCutSpacingRule::getCutClass() const

@@ -114,62 +114,40 @@ proc save_image { args } {
   sta::check_argc_eq1 "save_image" $args
   set path [lindex $args 0]
 
-  if { $use_web } {
-    # Convert area from microns to DBU for the web renderer.
-    set web_area $area
-    if {
-      [lindex $area 0] != 0 || [lindex $area 1] != 0
-      || [lindex $area 2] != 0 || [lindex $area 3] != 0
-    } {
-      set db [ord::get_db]
-      set dbu [$db getDbuPerMicron]
-      set web_area [list \
-        [expr { int([lindex $area 0] * $dbu) }] \
-        [expr { int([lindex $area 1] * $dbu) }] \
-        [expr { int([lindex $area 2] * $dbu) }] \
-        [expr { int([lindex $area 3] * $dbu) }]]
-    }
-
-    # Build visibility JSON from display options.
-    set vis_json ""
-    if { [llength $list(-display_option)] > 0 } {
-      set pairs {}
-      foreach opt $list(-display_option) {
-        if { [llength $opt] != 2 } {
-          utl::error WEB 28 "Display option must have 2 elements {control} {value}."
-        }
-        set key [lindex $opt 0]
-        set val [lindex $opt 1]
-        # Emit real JSON booleans: TileVisibility::parseFromJson reads every
-        # field with value_to<bool>, which rejects 1/0 — and the caller catches
-        # that by discarding the WHOLE visibility object (WEB-0042), so one
-        # integer used to turn every -display_option into a no-op.
-        if { $val eq "true" || $val eq "1" } {
-          set val "true"
-        } else {
-          set val "false"
-        }
-        lappend pairs "\"$key\":$val"
-      }
-      set vis_json "\{[join $pairs ,]\}"
-    }
-
-    web::save_image_cmd $path \
-      [lindex $web_area 0] [lindex $web_area 1] \
-      [lindex $web_area 2] [lindex $web_area 3] \
-      $width $resolution $vis_json
-  } else {
-    # Dispatch to the GUI renderer.
-    set options [gui::DisplayControlMap]
+  # Both renderers take the display options as one map.
+  set options [gui::DisplayControlMap]
+  try {
     foreach opt $list(-display_option) {
       if { [llength $opt] != 2 } {
-        utl::error GUI 19 "Display option must have 2 elements {control name} {value}."
+        utl::error WEB 28 "Display option must have 2 elements {control} {value}."
       }
-      $options set [lindex $opt 0] [lindex $opt 1]
+      $options set [lindex $opt 0] [web::display_option_value [lindex $opt 1]]
     }
 
-    gui::save_image $path {*}$area $width $resolution $options
+    if { $use_web } {
+      # Convert area from microns to DBU for the web renderer.
+      set web_area $area
+      if {
+        [lindex $area 0] != 0 || [lindex $area 1] != 0
+        || [lindex $area 2] != 0 || [lindex $area 3] != 0
+      } {
+        set db [ord::get_db]
+        set dbu [$db getDbuPerMicron]
+        set web_area [list \
+          [expr { int([lindex $area 0] * $dbu) }] \
+          [expr { int([lindex $area 1] * $dbu) }] \
+          [expr { int([lindex $area 2] * $dbu) }] \
+          [expr { int([lindex $area 3] * $dbu) }]]
+      }
 
+      web::save_image_cmd $path \
+        [lindex $web_area 0] [lindex $web_area 1] \
+        [lindex $web_area 2] [lindex $web_area 3] \
+        $width $resolution $options
+    } else {
+      gui::save_image $path {*}$area $width $resolution $options
+    }
+  } finally {
     rename $options ""
   }
 }
@@ -233,6 +211,14 @@ proc warn_qt_unsupported { cmd unsupported } {
     return
   }
   utl::warn WEB 76 "$cmd: the Qt GUI does not support [join $unsupported {, }]; ignored."
+}
+
+# A -display_option value as the 0 or 1 that gui::DisplayControlMap stores.
+proc display_option_value { value } {
+  if { ![string is boolean -strict $value] } {
+    utl::error WEB 139 "Display option value '$value' is not a boolean."
+  }
+  return [expr { $value ? 1 : 0 }]
 }
 }
 
@@ -430,33 +416,22 @@ proc save_animated_gif { args } {
       [expr { int([lindex $area 3] * $dbu) }]]
   }
 
-  # Build visibility JSON from display options (same scheme as save_image).
-  set vis_json ""
-  if { [llength $list(-display_option)] > 0 } {
-    set pairs {}
+  set options [gui::DisplayControlMap]
+  try {
     foreach opt $list(-display_option) {
       if { [llength $opt] != 2 } {
         utl::error WEB 66 "Display option must have 2 elements {control} {value}."
       }
-      set okey [lindex $opt 0]
-      set oval [lindex $opt 1]
-      # Real JSON booleans, for the reason save_image spells out above: an
-      # integer here makes TileVisibility::parseFromJson discard the whole
-      # visibility object (WEB-0042), so every -display_option is a no-op.
-      if { $oval eq "true" || $oval eq "1" } {
-        set oval "true"
-      } else {
-        set oval "false"
-      }
-      lappend pairs "\"$okey\":$oval"
+      $options set [lindex $opt 0] [web::display_option_value [lindex $opt 1]]
     }
-    set vis_json "\{[join $pairs ,]\}"
-  }
 
-  web::gif_add_cmd $key \
-    [lindex $web_area 0] [lindex $web_area 1] \
-    [lindex $web_area 2] [lindex $web_area 3] \
-    $width $resolution $delay $vis_json
+    web::gif_add_cmd $key \
+      [lindex $web_area 0] [lindex $web_area 1] \
+      [lindex $web_area 2] [lindex $web_area 3] \
+      $width $resolution $delay $options
+  } finally {
+    rename $options ""
+  }
 }
 
 sta::define_cmd_args "create_toolbar_button" {[-name name] \

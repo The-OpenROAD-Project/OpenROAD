@@ -25,6 +25,7 @@ class OdbCallBack : public odb::dbBlockCallBackObj
   void inDbITermPostConnect(odb::dbITerm* iterm) override;
   void inDbITermPostDisconnect(odb::dbITerm* iterm, odb::dbNet* net) override;
   void inDbInstSwapMasterAfter(odb::dbInst* inst) override;
+  void inDbNetPostGuideRestore(odb::dbNet* net) override;
 
  private:
   EstimateParasitics* estimate_parasitics_;

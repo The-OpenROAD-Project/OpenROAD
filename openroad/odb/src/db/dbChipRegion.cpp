@@ -67,7 +67,10 @@ _dbChipRegion::_dbChipRegion(_dbDatabase* db)
   z_min_ = 0;
   z_max_ = 0;
   chip_bump_tbl_ = new dbTable<_dbChipBump>(
-      db, this, (GetObjTbl_t) &_dbChipRegion::getObjectTable, dbChipBumpObj);
+      db,
+      this,
+      static_cast<GetObjTbl_t>(&_dbChipRegion::getObjectTable),
+      dbChipBumpObj);
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbChipRegion& obj)
@@ -128,26 +131,27 @@ _dbChipRegion::~_dbChipRegion()
 
 const std::string& dbChipRegion::getName() const
 {
-  _dbChipRegion* obj = (_dbChipRegion*) this;
+  const _dbChipRegion* obj = reinterpret_cast<const _dbChipRegion*>(this);
   return obj->name_;
 }
 
 void dbChipRegion::setBox(const Rect& box)
 {
-  _dbChipRegion* obj = (_dbChipRegion*) this;
+  _dbChipRegion* obj = reinterpret_cast<_dbChipRegion*>(this);
 
   obj->box_ = box;
 }
 
 Rect dbChipRegion::getBox() const
 {
-  _dbChipRegion* obj = (_dbChipRegion*) this;
+  const _dbChipRegion* obj = reinterpret_cast<const _dbChipRegion*>(this);
   return obj->box_;
 }
 
 dbSet<dbChipBump> dbChipRegion::getChipBumps() const
 {
-  _dbChipRegion* obj = (_dbChipRegion*) this;
+  _dbChipRegion* obj
+      = reinterpret_cast<_dbChipRegion*>(const_cast<dbChipRegion*>(this));
   return dbSet<dbChipBump>(obj, obj->chip_bump_tbl_);
 }
 

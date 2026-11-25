@@ -1456,7 +1456,7 @@ class HeatMapRenderer : public Renderer
                       {""});
   }
 
-  const char* getDisplayControlGroupName() override { return "Heat Maps"; }
+  const char* getDisplayControlGroupName() override { return kHeatMapGroup; }
 
   void drawObjects(Painter& painter) override
   {
