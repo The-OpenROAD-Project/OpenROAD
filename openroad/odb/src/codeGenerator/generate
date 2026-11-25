@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Regenerate the ODB sources. CI runs the same Bazel target.
+cd "$(dirname "$0")"
+exec bazelisk run //openroad/odb/src/codeGenerator:gen -- "$@"

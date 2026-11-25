@@ -1,0 +1,24 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
+max capacitance
+
+Pin                                    Limit     Cap   Slack
+------------------------------------------------------------
+drv_se_full/X                           0.13    0.14   -0.01 (VIOLATED)
+
+drv_si_full/X                           0.13    0.14   -0.01 (VIOLATED)
+
+drv_clk_prop_full/X                     0.13    0.14   -0.01 (VIOLATED)
+
+[WARNING RSZ-2024] Experimental repair setup policy 'SetupParallelEvalPolicy' selected. Do not use this for production.
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.859 |       -2.7 |      3 | q_prop
+    final |       0 |       2 |        0 |      0 |     0 |    +4.3% |   -1.859 |       -2.2 |      3 | q_prop
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0051] Resized 2 instances: 2 up, 0 up match, 0 down, 0 VT
+[WARNING RSZ-0062] Unable to repair all setup violations.
+ff_scan sky130_fd_sc_hd__sdfxbp_2
+ff_ideal sky130_fd_sc_hd__sdfxbp_2
+ff_prop sky130_fd_sc_hd__sdfxbp_1

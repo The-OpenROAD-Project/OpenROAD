@@ -1,0 +1,54 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+instance m1/c1_3
+instance m1/r0
+instance m1/u_regs/c1_1
+instance m1/u_regs/c1_2
+instance m1/u_regs/r1
+instance m1/u_regs/r2
+Net clk
+ Pin capacitance: 4.65-5.10
+ Wire capacitance: 0.00
+ Total capacitance: 4.65-5.10
+ Number of drivers: 1
+ Number of loads: 3
+ Number of pins: 4
+
+Driver pins
+ clk input port
+
+Load pins
+ m1/c1_3/A input (INV_X1) 1.55-1.70 (2, 1)
+ m1/u_regs/c1_1/A input (INV_X1) 1.55-1.70 (2, 1)
+ m1/u_regs/c1_2/A input (INV_X1) 1.55-1.70 (2, 1)
+
+module top (clk,
+    d,
+    q0,
+    q1,
+    q2);
+ input clk;
+ input d;
+ output q0;
+ output q1;
+ output q2;
+
+ wire \m1/u_regs/net_1 ;
+ wire \m1/u_regs/net_2 ;
+ wire \m1/net_3 ;
+
+ INV_X1 \m1/c1_3  (.A(clk),
+    .ZN(\m1/net_3 ));
+ DFF_X1 \m1/r0  (.D(d),
+    .CK(\m1/net_3 ),
+    .Q(q0));
+ INV_X1 \m1/u_regs/c1_1  (.A(clk),
+    .ZN(\m1/u_regs/net_1 ));
+ INV_X1 \m1/u_regs/c1_2  (.A(clk),
+    .ZN(\m1/u_regs/net_2 ));
+ DFF_X1 \m1/u_regs/r1  (.D(d),
+    .CK(\m1/u_regs/net_2 ),
+    .Q(q1));
+ DFF_X1 \m1/u_regs/r2  (.D(d),
+    .CK(\m1/u_regs/net_1 ),
+    .Q(q2));
+endmodule

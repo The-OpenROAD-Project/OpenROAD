@@ -95,6 +95,9 @@ exports_files(
         "bzl_fmt_test.sh",
         "bzl_lint_test.sh",
         "bzl_tidy.sh",
+        "cc_fmt_test.sh",
+        "cc_ls_files.sh",
+        "cc_tidy.sh",
         "fix_lint.sh",
         "git_ls_files.sh",
         "install.sh",
@@ -109,11 +112,18 @@ exports_files(
     visibility = ["//visibility:public"],
 )
 
-# tclint / tclfmt / yamlfix / black binaries from pip — versions pinned in
+# tclint / tclfmt / yamlfix / black / clang-format binaries from pip — versions pinned in
 # requirements.in
 py_console_script_binary(
     name = "tclint",
     pkg = "@openroad-pip//tclint",
+    visibility = ["//visibility:public"],
+)
+
+py_console_script_binary(
+    name = "clang-format",
+    pkg = "@openroad-pip//clang_format",
+    script = "clang-format",
     visibility = ["//visibility:public"],
 )
 
@@ -189,10 +199,10 @@ cc_library(
     deps = ["@tcl_lang//:tcl"],
 )
 
-# small build test to check if "bazel build //src/sta:StaTclInitVar" works
+# small build test to check if "bazel build //openroad/sta:StaTclInitVar" works
 # Run with "bazel test //bazel:sta_tcl_encode_test"
 # Tests the tcl_encode_sta.bzl rule
 build_test(
     name = "sta_tcl_encode_test",
-    targets = ["//src/sta:StaTclInitVar"],
+    targets = ["//openroad/sta:StaTclInitVar"],
 )
