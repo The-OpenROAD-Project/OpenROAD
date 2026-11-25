@@ -47,6 +47,7 @@ PASSFAIL_TESTS = [
     "options01",
     "place_ios_rd",
     "place_ios_td",
+    "thread_count01",
 ]
 
 # Longer-running regression tests. These are
@@ -170,8 +171,10 @@ test_suite(
 # (--//bazel/kokkos:backend=serial|threads). The default build only covers
 # openmp. Results must be bit-identical across backends, so the same golden
 # files are used. Covers Nesterov placement and its determinism across thread
-# counts (nesterov_place_test, simple01-td, incremental01) and MBFF
-# clustering (mbff_*).
+# counts (nesterov_place_test, simple01-td, incremental01, thread_count01) and
+# MBFF clustering (mbff_*). The Threads pool size is fixed by the first
+# placement in a process, so nesterov_place_test's thread-count check runs
+# single-threaded there; thread_count01 starts a fresh process with eight.
 kokkos_backend_tests(
     tags = ["kokkos_backend"],
     tests = [":nesterov_place_test"] + [
@@ -181,6 +184,7 @@ kokkos_backend_tests(
             "mbff_clock_power_on",
             "mbff_hier",
             "simple01-td",
+            "thread_count01",
         ]
     ],
 )
