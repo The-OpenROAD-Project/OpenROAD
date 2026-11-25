@@ -47,10 +47,11 @@ Registers move by class, read from the liberty `next_state` function:
 
 Latches, scan cells, multi-bit and negative-edge registers, registers
 clocked by more than one pin, registers with a live asynchronous set or
-reset and registers an SDC exception or constraint names never move. Neither does a register chain whose output reaches a primary output, a
-bidirectional pin or a control pin of another register (those read the
-chain at its current depth), nor anything marked don't-touch or read by a
-don't-touch cell. A register whose set or reset is tied inactive moves as
+reset, registers named by `set_false_path` or `set_multicycle_path`, and
+registers with a constraint on one of their pins never move. Neither does a
+register chain whose output reaches a primary output, a bidirectional pin or
+a control pin of another register (those read the chain at its current
+depth), nor anything marked don't-touch or read by a don't-touch cell. A register whose set or reset is tied inactive moves as
 the base flip-flop. Registers fed by one net are rebuilt together on one
 clock net, so a register also stays when it shares its input net with one of
 these or with a register on another clock net. A gate fed through such a
@@ -106,9 +107,12 @@ result is equivalent from the reset state only when the moved registers have
 no defined initial value, so verify the result with sequential equivalence
 checking. A scan cell is one with a liberty `test_cell` or a LEF `USE SCAN`
 pin; a scan flip-flop its library marks neither way, such as Nangate45
-`SDFF_X1`, can be unmapped, which removes the scan cell. STA judges the
-timing at the time of `retime`; the resizer and detailed placement that run
-afterwards can change it.
+`SDFF_X1`, can be unmapped, which removes the scan cell. A path delay or a
+path group that names a moved register (for example `-to [all_registers]`)
+keeps naming only the registers that stay; read the SDC again after
+`retime`, as ORFS does at every stage. STA judges the timing at the time of
+`retime`; the resizer and detailed placement that run afterwards can change
+it.
 
 ## License
 

@@ -25,14 +25,15 @@ namespace ret {
 namespace {
 
 // Deleting the register would drop the constraint.
-bool hasSdcConstraint(sta::dbNetwork* network,
+// A constraint on one of the register's pins (case analysis, disable_timing,
+// a clock latency, ...).  Instance-level entries are left out: they include
+// the instance lists of path-delay and group exceptions, such as
+// [all_registers].
+bool hasPinConstraint(sta::dbNetwork* network,
                       const std::vector<const sta::Sdc*>& sdcs,
                       odb::dbInst* inst)
 {
   for (const sta::Sdc* sdc : sdcs) {
-    if (sdc->isConstrained(network->dbToSta(inst))) {
-      return true;
-    }
     for (odb::dbITerm* iterm : inst->getITerms()) {
       if (sdc->isConstrained(network->dbToSta(iterm))) {
         return true;
@@ -282,6 +283,11 @@ void RetimingGraph::findSdcRegisters(odb::dbBlock* block)
       sdcs.push_back(corner_sdc);
     }
     for (const sta::ExceptionPath* exception : mode->sdc()->exceptions()) {
+      // A false path or a multicycle changes how a register-to-register
+      // path is timed; a path delay or a group does not.
+      if (!exception->isFalse() && !exception->isMultiCycle()) {
+        continue;
+      }
       sta::ExceptionPtIterator pt_iter(exception);
       while (pt_iter.hasNext()) {
         for (const sta::Pin* pin : pt_iter.next()->allPins(network)) {
@@ -295,7 +301,7 @@ void RetimingGraph::findSdcRegisters(odb::dbBlock* block)
   }
   for (odb::dbInst* inst : block->getInsts()) {
     if (inst->getMaster()->isSequential()
-        && hasSdcConstraint(network, sdcs, inst)) {
+        && hasPinConstraint(network, sdcs, inst)) {
       sdc_registers_.insert(inst);
     }
   }

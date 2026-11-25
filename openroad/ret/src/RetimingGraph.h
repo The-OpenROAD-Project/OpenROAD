@@ -72,8 +72,8 @@ class RetimingGraph
   // A gate with an input tied to a supply or left open is not self-dual,
   // whatever its cell.
   void clearTiedSelfDual();
-  // Registers an SDC exception or constraint names, directly or through a
-  // pin or net: deleting one would drop it.
+  // Registers a false path, a multicycle or a pin constraint names:
+  // deleting one would drop it.
   void findSdcRegisters(odb::dbBlock* block);
   void markBoundary(odb::dbInst* inst, int id);
   void markDontTouch(odb::dbInst* inst, int id);
