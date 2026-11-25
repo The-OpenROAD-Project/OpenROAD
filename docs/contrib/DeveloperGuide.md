@@ -304,7 +304,9 @@ install -m 644 \
 ```
 
 Some Bazel versions pack these files in `test.outputs/outputs.zip` instead;
-extract them with `unzip -p` and set mode `0644`.
+extract them with
+`unzip -p <outputs.zip> results/<result-file> > <golden-file>` and set mode
+`0644`.
 
 Check the result with `git diff` before you commit.
 `diff_files` reports the first difference in the files it compares.
@@ -347,7 +349,9 @@ saved metrics, and update only the limits that the change justifies:
    ```
 
    If your Bazel version packs outputs into `test.outputs/outputs.zip`, extract
-   `results/aes_sky130hd-tcl.metrics` with `unzip -p` and set mode `0644`.
+   the file with
+   `unzip -p bazel-testlogs/test/aes_sky130hd-tcl_test/test.outputs/outputs.zip results/aes_sky130hd-tcl.metrics > test/results/aes_sky130hd-tcl.metrics`
+   and set mode `0644`.
 2. Update `<name>.metrics` from the `test` directory:
 
    ``` shell
