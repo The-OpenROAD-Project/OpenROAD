@@ -2,7 +2,6 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
-load("@openroad-pip//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_test")
 load("//bazel:man_pages.bzl", "man_pages")
 
@@ -152,14 +151,14 @@ py_test(
         "doc_check",
     ],
     deps = [
-        requirement("sphinx"),
-        requirement("sphinx-book-theme"),
-        requirement("sphinx-copybutton"),
-        requirement("sphinx-external-toc"),
-        requirement("sphinx-tabs"),
-        requirement("sphinxcontrib-mermaid"),
-        requirement("myst-parser"),
-        requirement("sphinx_llm"),
-        requirement("standard-imghdr"),
+        "@openroad-pip//myst_parser",
+        "@openroad-pip//sphinx",
+        "@openroad-pip//sphinx_book_theme",
+        "@openroad-pip//sphinx_copybutton",
+        "@openroad-pip//sphinx_external_toc",
+        "@openroad-pip//sphinx_llm",
+        "@openroad-pip//sphinx_tabs",
+        "@openroad-pip//sphinxcontrib_mermaid",
+        "@openroad-pip//standard_imghdr",
     ],
 )

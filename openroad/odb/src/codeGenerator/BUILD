@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
-load("@openroad-pip//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_binary")
 
 # Regenerate the ODB sources in the source tree:
@@ -20,5 +19,5 @@ py_binary(
     args = ["--clang-format=$(rootpath //bazel:clang-format)"],
     data = ["//bazel:clang-format"],
     imports = ["."],
-    deps = [requirement("jinja2")],
+    deps = ["@openroad-pip//jinja2"],
 )

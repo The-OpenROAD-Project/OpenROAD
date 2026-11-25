@@ -1,6 +1,5 @@
 load("@aspect_rules_js//js:defs.bzl", "js_test")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("@openroad-pip//:requirements.bzl", "requirement")
 
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2026, The OpenROAD Authors
@@ -59,7 +58,7 @@ py_test(
         "//openroad/web:package.json",
         "//openroad/web:pnpm-lock.yaml",
     ],
-    deps = [requirement("pyyaml")],
+    deps = ["@openroad-pip//pyyaml"],
 )
 
 py_test(
