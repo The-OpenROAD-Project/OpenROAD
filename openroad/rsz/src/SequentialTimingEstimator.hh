@@ -3,16 +3,39 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <string_view>
 
 namespace sta {
 class LibertyCell;
-}
+class LibertyPort;
+}  // namespace sta
 
 namespace rsz {
 class Resizer;
 struct Target;
+
+// Why output of cell is not an edge-triggered register output; kNone when it
+// is: a clk->Q arc, no latch arc, and no arc from a setup/hold-checked data
+// input (a transparent latch path).  Statetables are not read: a cell may
+// hold several and OpenSTA keeps only the last.
+enum class RegisterOutputReject : uint8_t
+{
+  kNone,
+  kNoCellOrOutput,
+  kClockGate,
+  kLatchGroup,
+  kLatchArc,
+  kTransparentDataArc,
+  kNoClkToQ,
+};
+RegisterOutputReject registerOutputRejectReason(const sta::LibertyCell* cell,
+                                                const sta::LibertyPort* output);
+// A stable label for a reject reason, for debug output.
+const char* registerOutputRejectName(RegisterOutputReject reason);
+bool isRegisterOutput(const sta::LibertyCell* cell,
+                      const sta::LibertyPort* output);
 
 // Estimates setup/hold impact at a flip-flop's data and clock inputs when
 // scoring a Q-path size or VT swap. Uses local load and Liberty-check deltas

@@ -50,11 +50,18 @@ class PlaceResultTest : public tst::Fixture
   // A placer that has not seen the design, as a separate command would be.
   Replace freshPlacer()
   {
-    return Replace{db_.get(), sta_.get(), nullptr, nullptr, nullptr, &logger_};
+    return Replace{
+        db_.get(), sta_.get(), nullptr, nullptr, nullptr, nullptr, &logger_};
   }
 
   odb::dbBlock* block_ = nullptr;
-  Replace replace_{db_.get(), sta_.get(), nullptr, nullptr, nullptr, &logger_};
+  Replace replace_{db_.get(),
+                   sta_.get(),
+                   nullptr,
+                   nullptr,
+                   nullptr,
+                   nullptr,
+                   &logger_};
 };
 
 TEST_F(PlaceResultTest, DoPlaceReportsTheFinalPlacement)

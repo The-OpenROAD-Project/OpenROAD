@@ -579,6 +579,13 @@ void FastRouteCore::init3DEdges()
   }
 }
 
+void FastRouteCore::release3DEdges()
+{
+  invalidateOverflow3D();
+  h_edges_3D_.resize(boost::extents[0][0][0]);
+  v_edges_3D_.resize(boost::extents[0][0][0]);
+}
+
 void FastRouteCore::invalidateOverflow3D()
 {
   overflow_3d_valid_ = false;
@@ -2319,6 +2326,17 @@ NetRouteMap FastRouteCore::run()
   getOverflow2D(&maxOverflow);
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
     logger_->report("After newRouteLAll");
+  }
+
+  if (congestion_only_) {
+    graph2d_.addEstUsageToUsage();
+    graph2d_.InitEstUsage();
+    check2DEdgesUsage();
+    getOverflow2Dmaze(&maxOverflow, &tUsage);
+    has_2D_overflow_ = total_overflow_ > 0;
+    reportRunMetrics(timings, 0, 0);
+    net_ids_.clear();
+    return NetRouteMap{};
   }
 
   // Rip-up and reroute using spiral route

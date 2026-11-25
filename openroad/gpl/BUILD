@@ -181,6 +181,7 @@ cc_library(
         "//openroad/gpl:__subpackages__",
     ],
     deps = [
+        "//openroad/cts",
         "//openroad/dbSta",
         "//openroad/dbSta:dbNetwork",
         "//openroad/grt",

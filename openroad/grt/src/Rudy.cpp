@@ -27,13 +27,7 @@ Rudy::Rudy(odb::dbBlock* block, grt::GlobalRouter* grouter)
     return;
   }
 
-  if (!grouter_->isInitialized()) {
-    int min_layer, max_layer;
-    grouter_->setDbBlock(block);
-    grouter_->getMinMaxLayer(min_layer, max_layer);
-    // Designs with invalid pin placement can still be evaluated by RUDY.
-    grouter_->initFastRoute(min_layer, max_layer, false);
-  }
+  grouter_->initForEstimate(block);
 
   // The wire width is the harmonic average pitch divided by the number of
   // routing layers.

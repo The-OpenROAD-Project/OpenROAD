@@ -285,6 +285,7 @@ cc_test(
     env = GPU_ENV_OFF,
     deps = [
         "//openroad/ant",
+        "//openroad/cts",
         "//openroad/dbSta",
         "//openroad/dbSta:dbNetwork",
         "//openroad/dpl",
@@ -352,18 +353,6 @@ cc_test(
 cc_test(
     name = "estimate_target_density_test",
     srcs = ["estimate_target_density_test.cpp"],
-    deps = [
-        "//openroad/gpl:gpl_impl",
-        "//openroad/odb/src/db",
-        "//openroad/utl",
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-    ],
-)
-
-cc_test(
-    name = "nesterov_divergence_test",
-    srcs = ["nesterov_divergence_test.cpp"],
     deps = [
         "//openroad/gpl:gpl_impl",
         "//openroad/odb/src/db",

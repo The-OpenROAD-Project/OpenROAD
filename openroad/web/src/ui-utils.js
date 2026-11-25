@@ -700,7 +700,11 @@ export function textColumnWidths(table) {
     const headers = table.querySelectorAll('thead th');
     let fontPx = 12;
     try {
-        fontPx = parseFloat(getComputedStyle(table).fontSize) || 12;
+        // A detached table has no computed font size; use its own style,
+        // but only in px: parseFloat would read '1.2em' as 1.2 px.
+        const own = table.style.fontSize;
+        fontPx = parseFloat(getComputedStyle(table).fontSize)
+            || (own.endsWith('px') ? parseFloat(own) : 0) || 12;
     } catch (e) { /* no getComputedStyle: 12 px */ }
     const charPx = 0.6 * fontPx;
     const cellPx = (cell) => {

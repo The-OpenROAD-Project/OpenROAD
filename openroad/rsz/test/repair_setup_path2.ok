@@ -47,11 +47,11 @@
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% | -184.565 |    -1425.4 |     13 | capture_17/D
       74* |       8 |      28 |       11 |      0 |     2 |    +2.4% |  -38.360 |     -189.4 |     13 | capture_19/D
-    final |       8 |      42 |       11 |      0 |     2 |    +2.4% |  -38.717 |     -176.2 |      7 | capture_19/D
+    final |       8 |      50 |       11 |      0 |     2 |    +2.4% |  -35.513 |     -156.2 |      6 | capture_19/D
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 8 buffers.
 [INFO RSZ-0040] Inserted 11 buffers.
-[INFO RSZ-0051] Resized 42 instances: 11 up, 0 up match, 0 down, 31 VT
+[INFO RSZ-0051] Resized 50 instances: 11 up, 0 up match, 0 down, 39 VT
 [INFO RSZ-0043] Swapped pins on 2 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Startpoint: launch_4 (rising edge-triggered flip-flop clocked by clk)
@@ -77,20 +77,20 @@ Path Type: max
   18.5466  177.8376 ^ inst9/Y (NAND3x2_ASAP7_75t_SL)
   14.1737  192.0113 ^ rebuffer2/Y (BUFx3_ASAP7_75t_SL)
    7.1315  199.1428 v inst10/Y (NAND2x2_ASAP7_75t_SL)
-  20.4115  219.5543 ^ inst10_neighbor0/Y (OAI21x1_ASAP7_75t_SL)
-   6.2521  225.8064 ^ capture_19/D (DFFHQx4_ASAP7_75t_R)
-           225.8064   data arrival time
+  20.5035  219.6463 ^ inst10_neighbor0/Y (OAI21x1_ASAP7_75t_SL)
+   6.3497  225.9960 ^ capture_19/D (DFFHQx4_ASAP7_75t_SL)
+           225.9960   data arrival time
 
  200.0000  200.0000   clock clk (rise edge)
    0.0000  200.0000   clock network delay (ideal)
    0.0000  200.0000   clock reconvergence pessimism
-           200.0000 ^ capture_19/CLK (DFFHQx4_ASAP7_75t_R)
- -12.9103  187.0897   library setup time
-           187.0897   data required time
+           200.0000 ^ capture_19/CLK (DFFHQx4_ASAP7_75t_SL)
+  -9.5170  190.4830   library setup time
+           190.4830   data required time
 -------------------------------------------------------------
-           187.0897   data required time
-          -225.8064   data arrival time
+           190.4830   data required time
+          -225.9960   data arrival time
 -------------------------------------------------------------
-           -38.7167   slack (VIOLATED)
+           -35.5130   slack (VIOLATED)
 
 

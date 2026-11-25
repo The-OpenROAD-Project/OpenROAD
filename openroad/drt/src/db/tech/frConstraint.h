@@ -2227,6 +2227,40 @@ class frLef58KeepOutZoneConstraint : public frConstraint
   odb::dbTechLayerKeepOutZoneRule* db_rule_;
 };
 
+// LEF58_ENCLOSURETABLE rule. Storage only for now — no via-selection or DRC
+// consumer exists yet, so this deliberately stays as thin a wrapper as
+// frLef58KeepOutZoneConstraint rather than building out the width-indexed
+// lookup frLef58EnclosureConstraint uses for its (already consumed) rule.
+class frLef58EnclosureTableConstraint : public frConstraint
+{
+ public:
+  frLef58EnclosureTableConstraint(
+      odb::dbTechLayerCutEnclosureTableDefRule* rule)
+      : db_rule_(rule)
+  {
+  }
+  // getter
+  odb::dbTechLayerCutEnclosureTableDefRule* getODBRule() const
+  {
+    return db_rule_;
+  }
+  void setCutClassIdx(int in) { cut_class_idx_ = in; }
+  int getCutClassIdx() const { return cut_class_idx_; }
+  // others
+  frConstraintTypeEnum typeId() const override
+  {
+    return frConstraintTypeEnum::frcLef58EnclosureTableConstraint;
+  }
+  void report(utl::Logger* logger) const override
+  {
+    logger->report("LEF58_ENCLOSURETABLE");
+  }
+
+ private:
+  odb::dbTechLayerCutEnclosureTableDefRule* db_rule_;
+  int cut_class_idx_{-1};
+};
+
 class frLef58EnclosureConstraint : public frConstraint
 {
  public:

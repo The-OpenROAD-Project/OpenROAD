@@ -101,75 +101,75 @@ void _dbTechLayerWrongDirSpacingRule::collectMemInfo(MemInfo& info)
 void dbTechLayerWrongDirSpacingRule::setWrongdirSpace(int wrongdir_space)
 {
   _dbTechLayerWrongDirSpacingRule* obj
-      = (_dbTechLayerWrongDirSpacingRule*) this;
+      = reinterpret_cast<_dbTechLayerWrongDirSpacingRule*>(this);
 
   obj->wrongdir_space_ = wrongdir_space;
 }
 
 int dbTechLayerWrongDirSpacingRule::getWrongdirSpace() const
 {
-  _dbTechLayerWrongDirSpacingRule* obj
-      = (_dbTechLayerWrongDirSpacingRule*) this;
+  const _dbTechLayerWrongDirSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerWrongDirSpacingRule*>(this);
   return obj->wrongdir_space_;
 }
 
 void dbTechLayerWrongDirSpacingRule::setNoneolWidth(int noneol_width)
 {
   _dbTechLayerWrongDirSpacingRule* obj
-      = (_dbTechLayerWrongDirSpacingRule*) this;
+      = reinterpret_cast<_dbTechLayerWrongDirSpacingRule*>(this);
 
   obj->noneol_width_ = noneol_width;
 }
 
 int dbTechLayerWrongDirSpacingRule::getNoneolWidth() const
 {
-  _dbTechLayerWrongDirSpacingRule* obj
-      = (_dbTechLayerWrongDirSpacingRule*) this;
+  const _dbTechLayerWrongDirSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerWrongDirSpacingRule*>(this);
   return obj->noneol_width_;
 }
 
 void dbTechLayerWrongDirSpacingRule::setLength(int length)
 {
   _dbTechLayerWrongDirSpacingRule* obj
-      = (_dbTechLayerWrongDirSpacingRule*) this;
+      = reinterpret_cast<_dbTechLayerWrongDirSpacingRule*>(this);
 
   obj->length_ = length;
 }
 
 int dbTechLayerWrongDirSpacingRule::getLength() const
 {
-  _dbTechLayerWrongDirSpacingRule* obj
-      = (_dbTechLayerWrongDirSpacingRule*) this;
+  const _dbTechLayerWrongDirSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerWrongDirSpacingRule*>(this);
   return obj->length_;
 }
 
 void dbTechLayerWrongDirSpacingRule::setPrlLength(int prl_length)
 {
   _dbTechLayerWrongDirSpacingRule* obj
-      = (_dbTechLayerWrongDirSpacingRule*) this;
+      = reinterpret_cast<_dbTechLayerWrongDirSpacingRule*>(this);
 
   obj->prl_length_ = prl_length;
 }
 
 int dbTechLayerWrongDirSpacingRule::getPrlLength() const
 {
-  _dbTechLayerWrongDirSpacingRule* obj
-      = (_dbTechLayerWrongDirSpacingRule*) this;
+  const _dbTechLayerWrongDirSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerWrongDirSpacingRule*>(this);
   return obj->prl_length_;
 }
 
 void dbTechLayerWrongDirSpacingRule::setNoneolValid(bool noneol_valid)
 {
   _dbTechLayerWrongDirSpacingRule* obj
-      = (_dbTechLayerWrongDirSpacingRule*) this;
+      = reinterpret_cast<_dbTechLayerWrongDirSpacingRule*>(this);
 
   obj->flags_.noneol_valid = noneol_valid;
 }
 
 bool dbTechLayerWrongDirSpacingRule::isNoneolValid() const
 {
-  _dbTechLayerWrongDirSpacingRule* obj
-      = (_dbTechLayerWrongDirSpacingRule*) this;
+  const _dbTechLayerWrongDirSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerWrongDirSpacingRule*>(this);
 
   return obj->flags_.noneol_valid;
 }
@@ -177,15 +177,15 @@ bool dbTechLayerWrongDirSpacingRule::isNoneolValid() const
 void dbTechLayerWrongDirSpacingRule::setLengthValid(bool length_valid)
 {
   _dbTechLayerWrongDirSpacingRule* obj
-      = (_dbTechLayerWrongDirSpacingRule*) this;
+      = reinterpret_cast<_dbTechLayerWrongDirSpacingRule*>(this);
 
   obj->flags_.length_valid = length_valid;
 }
 
 bool dbTechLayerWrongDirSpacingRule::isLengthValid() const
 {
-  _dbTechLayerWrongDirSpacingRule* obj
-      = (_dbTechLayerWrongDirSpacingRule*) this;
+  const _dbTechLayerWrongDirSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerWrongDirSpacingRule*>(this);
 
   return obj->flags_.length_valid;
 }
@@ -193,17 +193,18 @@ bool dbTechLayerWrongDirSpacingRule::isLengthValid() const
 dbTechLayerWrongDirSpacingRule* dbTechLayerWrongDirSpacingRule::create(
     dbTechLayer* parent)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) parent;
-  return (dbTechLayerWrongDirSpacingRule*)
-      _parent->wrongdir_spacing_rules_tbl_->create();
+  _dbTechLayer* _parent = reinterpret_cast<_dbTechLayer*>(parent);
+  return reinterpret_cast<dbTechLayerWrongDirSpacingRule*>(
+      _parent->wrongdir_spacing_rules_tbl_->create());
 }
 void dbTechLayerWrongDirSpacingRule::destroy(
     dbTechLayerWrongDirSpacingRule* obj)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  _dbTechLayer* _parent
+      = static_cast<_dbTechLayer*>(obj->getImpl()->getOwner());
   dbProperty::destroyProperties(obj);
   _parent->wrongdir_spacing_rules_tbl_->destroy(
-      (_dbTechLayerWrongDirSpacingRule*) obj);
+      reinterpret_cast<_dbTechLayerWrongDirSpacingRule*>(obj));
 }
 // User Code Begin dbTechLayerWrongDirSpacingRulePublicMethods
 dbTechLayerWrongDirSpacingRule*

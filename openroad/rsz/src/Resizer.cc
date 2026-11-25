@@ -21,7 +21,6 @@
 #include <ranges>
 #include <set>
 #include <sstream>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <tuple>
@@ -915,10 +914,9 @@ void Resizer::findBuffers()
                   second_leakiest_vt.first.vt_name,
                   num_vt);
   } else if (num_vt == 1) {
-    const std::pair<VTCategory, VTLeakageStats> only_vt
-        = lib_data_->sorted_vt_categories[0];
-    best_vt_index = only_vt.first.vt_index;
-    debugRDPrint2("findBuffers: Best VT index is {} among 1 VT", best_vt_index);
+    // One identified VT leaves nothing to choose between.  Filtering on it
+    // would drop the buffers without an implant layer in a mixed library.
+    debugRDPrint2("findBuffers: No VT filter with 1 VT");
   } else {
     debugRDPrint2("findBuffers: Best VT index is {} among 0 VT", best_vt_index);
   }
@@ -1436,9 +1434,34 @@ float Resizer::bufferDriveResistance(const sta::LibertyCell* buffer) const
   return output->driveResistance();
 }
 
-int Resizer::vtCategoryCount() const
+void Resizer::ensureLibData()
 {
+  if (!lib_data_) {
+    sta::LibertyCellSeq buffer_list;
+    getBufferList(buffer_list);
+  }
+}
+
+int Resizer::vtCategoryCount()
+{
+  ensureLibData();
   return static_cast<int>(lib_data_->sorted_vt_categories.size());
+}
+
+bool Resizer::canVtSwap(sta::LibertyCell* cell)
+{
+  if (vtCategoryCount() >= 2) {
+    return true;
+  }
+  // With one usable VT, only a cell mapped to a dont_use VT can move, to its
+  // equivalent in the usable VT.
+  return dontUse(cell) && getVTEquivCells(cell).size() > 1;
+}
+
+int Resizer::vtCategoryCountWithDontUse()
+{
+  ensureLibData();
+  return lib_data_->vt_category_count_with_dont_use;
 }
 
 // This should be exported by STA
@@ -2198,6 +2221,8 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
     lib_data_->sorted_vt_categories.clear();
   }
 
+  // Identified VT categories of the buffers, dont_use ones included
+  std::set<VTCategory> vt_categories_with_dont_use;
   sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
     sta::LibertyLibrary* lib = lib_iter->next();
@@ -2206,10 +2231,18 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
       if (getBufferUse(buffer) == BufferUse::CLOCK) {
         continue;
       }
-      if (!dontUse(buffer) && !buffer->alwaysOn() && !buffer->isIsolationCell()
+      if (!buffer->alwaysOn() && !buffer->isIsolationCell()
           && !buffer->isLevelShifter() && isLinkCell(buffer)) {
         odb::dbMaster* master = db_network_->staToDb(buffer);
         if (!master) {
+          continue;
+        }
+        // A buffer without an identified VT forms no VT category.
+        const VTCategory vt_category = cellVTType(master);
+        if (vt_category.isClassified()) {
+          vt_categories_with_dont_use.insert(vt_category);
+        }
+        if (dontUse(buffer)) {
           continue;
         }
 
@@ -2222,18 +2255,20 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
         }
 
         // Track VT category leakage data
-        VTCategory vt_category = cellVTType(master);
-
-        // Get or create VT leakage stats for this category
-        VTLeakageStats& vt_stats
-            = lib_data_->vt_leakage_by_category[vt_category];
-        vt_stats.add_cell_leakage(cellLeakage(buffer));
+        if (vt_category.isClassified()) {
+          // Get or create VT leakage stats for this category
+          VTLeakageStats& vt_stats
+              = lib_data_->vt_leakage_by_category[vt_category];
+          vt_stats.add_cell_leakage(cellLeakage(buffer));
+        }
 
         buffer_list.emplace_back(buffer);
       }
     }
   }
   delete lib_iter;
+  lib_data_->vt_category_count_with_dont_use
+      = static_cast<int>(vt_categories_with_dont_use.size());
 
   if (!buffer_list.empty()) {
     // Sort buffer list by VT type, then by drive resistance
@@ -2451,7 +2486,10 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
     (void) buffer_list;
   }
 
-  if (lib_data_->sorted_vt_categories.size() < 2) {
+  // A dont_use cell keeps its equivalents in the one usable VT so that a VT
+  // swap can move it there (e.g. a latch mapped to a slower VT in a flow
+  // that uses only the fastest VT).
+  if (lib_data_->sorted_vt_categories.size() < 2 && !dontUse(source_cell)) {
     vt_equiv_cells_cache_[source_cell] = sta::LibertyCellSeq();
     return vt_equiv_cells_cache_[source_cell];
   }
@@ -2459,6 +2497,12 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
   sta::LibertyCellSeq* equiv_cells = equivCells(source_cell);
   dbMaster* source_cell_master = db_network_->staToDb(source_cell);
   if (equiv_cells == nullptr || source_cell_master == nullptr) {
+    vt_equiv_cells_cache_[source_cell] = sta::LibertyCellSeq();
+    return vt_equiv_cells_cache_[source_cell];
+  }
+
+  // A cell without an identified VT has no VT to swap from.
+  if (!cellVTType(source_cell_master).isClassified()) {
     vt_equiv_cells_cache_[source_cell] = sta::LibertyCellSeq();
     return vt_equiv_cells_cache_[source_cell];
   }
@@ -2480,6 +2524,11 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
 
     dbMaster* equiv_cell_master = db_network_->staToDb(equiv_cell);
     if (!equiv_cell_master) {
+      continue;
+    }
+
+    // A cell without an identified VT is no VT alternative.
+    if (!cellVTType(equiv_cell_master).isClassified()) {
       continue;
     }
 
@@ -2570,8 +2619,12 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
   vt_equiv_cells_cache_[source_cell] = std::move(vt_equiv_cells);
   const sta::LibertyCellSeq& vt_equiv_cells_new
       = vt_equiv_cells_cache_[source_cell];
-  for (sta::LibertyCell* equiv_cell : vt_equiv_cells_new) {
-    vt_equiv_cells_cache_[equiv_cell] = vt_equiv_cells_new;
+  // The list of a dont_use source cell holds that cell, so it is not shared:
+  // the other cells must not move to a dont_use cell.
+  if (!dontUse(source_cell)) {
+    for (sta::LibertyCell* equiv_cell : vt_equiv_cells_new) {
+      vt_equiv_cells_cache_[equiv_cell] = vt_equiv_cells_new;
+    }
   }
   return vt_equiv_cells_cache_[source_cell];
 }
@@ -2768,7 +2821,10 @@ VTCategory Resizer::cellVTType(dbMaster* master)
 
   dbSet<dbBox> obs = master->getObstructions();
   if (obs.empty()) {
-    VTCategory vt_cat{.vt_index = 0, .vt_name = "-"};
+    VTCategory vt_cat{
+        .vt_index = VTCategory::kUnclassifiedVtIndex,
+        .vt_name = "-",
+    };
     auto [new_it, _] = vt_map_.emplace(master, vt_cat);
     return new_it->second;
   }
@@ -2807,7 +2863,10 @@ VTCategory Resizer::cellVTType(dbMaster* master)
   }
 
   if (hash1 == 0) {
-    VTCategory vt_cat{.vt_index = 0, .vt_name = "-"};
+    VTCategory vt_cat{
+        .vt_index = VTCategory::kUnclassifiedVtIndex,
+        .vt_name = "-",
+    };
     auto [new_it, _] = vt_map_.emplace(master, vt_cat);
     return new_it->second;
   }
@@ -2995,6 +3054,24 @@ bool Resizer::removeBufferKeepsOutputNet(sta::Instance* buffer) const
                                      db_network_->findPin(buffer, output_port));
 }
 
+bool Resizer::hasSdcConstraintBlockingRemoval(sta::Instance* inst)
+{
+  sta::LibertyPort* input_port = nullptr;
+  sta::LibertyPort* output_port = nullptr;
+  network_->libertyCell(inst)->bufferPorts(input_port, output_port);
+  sta::Pin* input_pin = db_network_->findPin(inst, input_port);
+  sta::Pin* output_pin = db_network_->findPin(inst, output_port);
+  sta::Net* removed_net
+      = bufferRemovalKeepsOutputNet(db_network_, input_pin, output_pin)
+            ? db_network_->net(input_pin)
+            : db_network_->net(output_pin);
+
+  sta::Sdc* sdc = sta_->cmdMode()->sdc();
+  return sdc->isConstrained(input_pin) || sdc->isConstrained(output_pin)
+         || (removed_net != nullptr && sdc->isConstrained(removed_net))
+         || sdc->isConstrained(inst);
+}
+
 bool Resizer::canRemoveBuffer(sta::Instance* buffer,
                               const bool honor_dont_touch_fixed)
 {
@@ -3021,8 +3098,6 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   lib_cell->bufferPorts(input_port, output_port);
   sta::Pin* input_pin = db_network_->findPin(buffer, input_port);
   sta::Pin* output_pin = db_network_->findPin(buffer, output_port);
-  sta::Net* input_net = db_network_->net(input_pin);
-  sta::Net* output_net = db_network_->net(output_pin);
   // Inspect the same flat nets that removeBuffer() will merge.
   odb::dbNet* input_db_net = db_network_->flatNet(input_pin);
   odb::dbNet* output_db_net = db_network_->flatNet(output_pin);
@@ -3037,14 +3112,10 @@ bool Resizer::canRemoveBuffer(sta::Instance* buffer,
   }
   const bool keep_output_net
       = bufferRemovalKeepsOutputNet(db_network_, input_pin, output_pin);
-  sta::Net* removed = keep_output_net ? input_net : output_net;
   odb::dbNet* db_net_survivor = keep_output_net ? output_db_net : input_db_net;
   odb::dbNet* db_net_removed = keep_output_net ? input_db_net : output_db_net;
 
-  sta::Sdc* sdc = sta_->cmdMode()->sdc();
-  if (sdc->isConstrained(input_pin) || sdc->isConstrained(output_pin)
-      || (removed != nullptr && sdc->isConstrained(removed))
-      || sdc->isConstrained(buffer)) {
+  if (hasSdcConstraintBlockingRemoval(buffer)) {
     return false;
   }
 
@@ -3834,10 +3905,15 @@ void Resizer::setDontUse(sta::LibertyCell* cell, bool dont_use)
 
   // Reset buffer set and swappable cells cache to ensure they honor dont_use_
   buffer_cells_.clear();
+  // Library data skips dont_use buffers; getBufferList() rebuilds it when
+  // findBuffers() or getVTEquivCells() next needs it.
+  lib_data_.reset();
   buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
   port_buffer_ = nullptr;
   swappable_cells_cache_.clear();
+  // getVTEquivCells skips dont_use cells too.
+  vt_equiv_cells_cache_.clear();
   // findTargetLoads skips dont_use cells, so a cell re-enabled with
   // unset_dont_use would otherwise keep a target load of zero and be ranked
   // worst by findTargetCell.
@@ -3850,10 +3926,12 @@ void Resizer::resetDontUse()
 
   // Reset buffer set and swappable cells cache to ensure they honor dont_use_
   buffer_cells_.clear();
+  lib_data_.reset();
   buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
   port_buffer_ = nullptr;
   swappable_cells_cache_.clear();
+  vt_equiv_cells_cache_.clear();
   target_load_map_ = nullptr;
 
   // recopy in liberty cell dont uses
@@ -5525,56 +5603,81 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
   sta::Pin* out_pin = network_->findPin(inv, out_port);
   sta::Net* in_net = db_network_->findFlatNet(in_pin);
   odb::dbNet* in_net_db = db_network_->findFlatDbNet(in_net);
-  sta::Net* out_net = network_->isTopLevelPort(out_pin)
-                          ? network_->net(network_->term(out_pin))
-                          : network_->net(out_pin);
-  if (out_net) {
+  // The flat net includes loads beyond the inverter's module segment.
+  sta::Net* out_net = db_network_->findFlatNet(out_pin);
+  if (in_net && out_net && !dontTouch(out_net) && !dontTouch(in_net)) {
+    // Check constraints before inserting clones so a skip leaves the netlist
+    // intact.
+    if (hasSdcConstraintBlockingRemoval(inv)) {
+      logger_->warn(RSZ,
+                    3250,
+                    "repair_clock_inverters kept inverter {} because SDC "
+                    "constrains the inverter, one of its pins, or the net "
+                    "selected for removal.",
+                    network_->pathName(inv));
+      return;
+    }
     std::string inv_name = network_->name(inv);
-    sta::Instance* top_inst = network_->topInstance();
+    odb::dbInst* db_inv = db_network_->staToDb(inv);
+    // A flat link can retain module scopes while STA reports the full path.
+    if (!db_network_->hasHierarchy()
+        && db_inv->getModule() != block_->getTopModule()) {
+      inv_name = block_->getBaseName(db_inv->getConstName());
+    }
+    // Collect every load, including top-level ports, before editing the net.
+    std::vector<sta::Pin*> load_pins;
     sta::NetConnectedPinIterator* load_iter = network_->pinIterator(out_net);
     while (load_iter->hasNext()) {
       const sta::Pin* load_pin = load_iter->next();
       if (load_pin != out_pin) {
-        odb::Point clone_loc = db_network_->location(load_pin);
-        sta::Instance* clone
-            = makeInstance(inv_cell,
-                           inv_name.c_str(),
-                           top_inst,
-                           clone_loc,
-                           odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
-        journalMakeBuffer(clone);
-
-        sta::Net* clone_out_net = db_network_->makeNet(top_inst);
-        odb::dbNet* clone_out_net_db = db_network_->staToDb(clone_out_net);
-        clone_out_net_db->setSigType(in_net_db->getSigType());
-
-        sta::Instance* load = network_->instance(load_pin);
-        sta_->connectPin(clone, in_port, in_net);
-        sta_->connectPin(clone, out_port, clone_out_net);
-
-        // Connect load to clone
-        sta_->disconnectPin(const_cast<sta::Pin*>(load_pin));
-        sta::Port* load_port = network_->port(load_pin);
-        sta_->connectPin(load, load_port, clone_out_net);
+        load_pins.push_back(const_cast<sta::Pin*>(load_pin));
       }
     }
     delete load_iter;
-
-    bool has_term = false;
     sta::NetTermIterator* term_iter = network_->termIterator(out_net);
     while (term_iter->hasNext()) {
-      has_term = true;
-      break;
+      load_pins.push_back(network_->pin(term_iter->next()));
     }
     delete term_iter;
 
-    if (!has_term) {
-      // Delete inv
-      sta_->disconnectPin(in_pin);
-      sta_->disconnectPin(out_pin);
-      sta_->deleteNet(out_net);
-      estimate_parasitics_->removeNetFromParasiticsInvalid(out_net);
-      sta_->deleteInstance(inv);
+    // A protected load would make insertion fail after earlier loads changed.
+    for (sta::Pin* load_pin : load_pins) {
+      if (dontTouch(load_pin)) {
+        logger_->warn(RSZ,
+                      3251,
+                      "repair_clock_inverters left inverter {} in the clock "
+                      "tree because load {} is dont_touch.",
+                      network_->pathName(inv),
+                      network_->pathName(load_pin));
+        return;
+      }
+    }
+
+    // Insert each clone at its load, preserving the existing module ports.
+    for (sta::Pin* load_pin : load_pins) {
+      odb::Point clone_loc = network_->isTopLevelPort(load_pin)
+                                 ? db_network_->location(out_pin)
+                                 : db_network_->location(load_pin);
+      sta::Instance* clone = insertBufferBeforeLoad(
+          load_pin,
+          inv_cell,
+          &clone_loc,
+          inv_name.c_str(),
+          kDefaultNetBaseName,
+          odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
+      journalMakeBuffer(clone);
+      odb::dbNet* clone_out_net_db
+          = db_network_->flatNet(network_->findPin(clone, out_port));
+      clone_out_net_db->setSigType(in_net_db->getSigType());
+    }
+
+    // Merge the original inverter's output hierarchy into its input net.
+    if (!removeBuffer(inv)) {
+      logger_->error(
+          RSZ,
+          3249,
+          "Could not remove clock inverter {} after cloning its loads.",
+          network_->pathName(inv));
     }
   }
 }
@@ -7312,6 +7415,53 @@ float Resizer::maxInputSlew(const sta::LibertyPort* input,
   return limit;
 }
 
+float Resizer::maxInputSlew(const sta::Pin* pin, const sta::Scene* scene) const
+{
+  float limit = sta::INF;
+  const sta::LibertyPort* port = network_->libertyPort(pin);
+  if (port) {
+    limit = maxInputSlew(port, scene);
+  }
+  return std::min(limit, clockSlewLimit(pin, scene));
+}
+
+float Resizer::clockSlewLimit(const sta::Pin* pin,
+                              const sta::Scene* scene) const
+{
+  float limit = sta::INF;
+  const sta::Sdc* sdc = scene->sdc();
+  if (pin == nullptr || !sdc->haveClkSlewLimits()) {
+    return limit;
+  }
+
+  // Same clock set and clk/data split as CheckSlews (check_clks = true).
+  const sta::Mode* mode = scene->mode();
+  const sta::PathClkOrData clk_data = mode->clkNetwork()->isIdealClock(pin)
+                                          ? sta::PathClkOrData::clk
+                                          : sta::PathClkOrData::data;
+  for (const sta::Clock* clk : search_->clockDomains(pin, mode)) {
+    for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+      float clk_limit;
+      bool exists;
+      sdc->slewLimit(clk, rf, clk_data, sta::MinMax::max(), clk_limit, exists);
+      if (exists) {
+        limit = std::min(limit, clk_limit);
+      }
+    }
+  }
+  return limit;
+}
+
+bool Resizer::haveClkSlewLimits() const
+{
+  for (const sta::Scene* scene : sta_->scenes()) {
+    if (scene->sdc()->haveClkSlewLimits()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void Resizer::checkLoadSlews(const sta::Pin* drvr_pin,
                              double slew_margin,
                              // Return values.
@@ -7322,6 +7472,9 @@ void Resizer::checkLoadSlews(const sta::Pin* drvr_pin,
 {
   slack = sta::INF;
   limit = sta::INF;
+  // Only pay for the per-pin clock-domain lookup when a clock slew limit
+  // exists; otherwise check_clks = false keeps the pre-existing fast path.
+  const bool check_clks = haveClkSlewLimits();
   sta::PinConnectedPinIterator* pin_iter
       = network_->connectedPinIterator(drvr_pin);
   while (pin_iter->hasNext()) {
@@ -7331,10 +7484,11 @@ void Resizer::checkLoadSlews(const sta::Pin* drvr_pin,
       const sta::RiseFall* tr1;
       sta::Slew slew1;
       float limit1, slack1;
+      // check_clks: honor clock -clock_path/-data_path slew limits.
       sta_->checkSlew(pin,
                       sta_->scenes(),
                       max_,
-                      false,
+                      check_clks,
                       slew1,
                       limit1,
                       slack1,
@@ -7732,7 +7886,7 @@ void Resizer::setDebugGraphics(std::shared_ptr<ResizerObserver> graphics)
   graphics_ = std::move(graphics);
 }
 
-MoveType Resizer::moveTypeFromString(const std::string& s)
+MoveType Resizer::moveTypeFromString(const std::string& s) const
 {
   std::string lower = s;
   std::ranges::transform(lower, lower.begin(), ::tolower);
@@ -7770,10 +7924,12 @@ MoveType Resizer::moveTypeFromString(const std::string& s)
   if (lower == "buffer_to_inverters") {
     return MoveType::kBufferToInverters;
   }
-  throw std::invalid_argument("Invalid move type: " + s);
+  // The Tcl and Python commands both parse -sequence here.
+  logger_->error(RSZ, 3282, "-sequence: Invalid move type: {}.", s);
 }
 
-std::vector<MoveType> Resizer::parseMoveSequence(const std::string& sequence)
+std::vector<MoveType> Resizer::parseMoveSequence(
+    const std::string& sequence) const
 {
   std::vector<MoveType> result;
   // Replace commas with spaces to support both separators

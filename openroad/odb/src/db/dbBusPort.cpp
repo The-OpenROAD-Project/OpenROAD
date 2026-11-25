@@ -124,68 +124,69 @@ _dbBusPort::~_dbBusPort()
 
 int dbBusPort::getFrom() const
 {
-  _dbBusPort* obj = (_dbBusPort*) this;
+  const _dbBusPort* obj = reinterpret_cast<const _dbBusPort*>(this);
   return obj->from_;
 }
 
 int dbBusPort::getTo() const
 {
-  _dbBusPort* obj = (_dbBusPort*) this;
+  const _dbBusPort* obj = reinterpret_cast<const _dbBusPort*>(this);
   return obj->to_;
 }
 
 dbModBTerm* dbBusPort::getPort() const
 {
-  _dbBusPort* obj = (_dbBusPort*) this;
+  const _dbBusPort* obj = reinterpret_cast<const _dbBusPort*>(this);
   if (obj->port_ == 0) {
     return nullptr;
   }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModBTerm*) par->modbterm_tbl_->getPtr(obj->port_);
+  _dbBlock* par = static_cast<_dbBlock*>(obj->getOwner());
+  return reinterpret_cast<dbModBTerm*>(par->modbterm_tbl_->getPtr(obj->port_));
 }
 
 void dbBusPort::setMembers(dbModBTerm* members)
 {
-  _dbBusPort* obj = (_dbBusPort*) this;
+  _dbBusPort* obj = reinterpret_cast<_dbBusPort*>(this);
 
   obj->members_ = members->getImpl()->getOID();
 }
 
 dbModBTerm* dbBusPort::getMembers() const
 {
-  _dbBusPort* obj = (_dbBusPort*) this;
+  const _dbBusPort* obj = reinterpret_cast<const _dbBusPort*>(this);
   if (obj->members_ == 0) {
     return nullptr;
   }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModBTerm*) par->modbterm_tbl_->getPtr(obj->members_);
+  _dbBlock* par = static_cast<_dbBlock*>(obj->getOwner());
+  return reinterpret_cast<dbModBTerm*>(
+      par->modbterm_tbl_->getPtr(obj->members_));
 }
 
 void dbBusPort::setLast(dbModBTerm* last)
 {
-  _dbBusPort* obj = (_dbBusPort*) this;
+  _dbBusPort* obj = reinterpret_cast<_dbBusPort*>(this);
 
   obj->last_ = last->getImpl()->getOID();
 }
 
 dbModBTerm* dbBusPort::getLast() const
 {
-  _dbBusPort* obj = (_dbBusPort*) this;
+  const _dbBusPort* obj = reinterpret_cast<const _dbBusPort*>(this);
   if (obj->last_ == 0) {
     return nullptr;
   }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModBTerm*) par->modbterm_tbl_->getPtr(obj->last_);
+  _dbBlock* par = static_cast<_dbBlock*>(obj->getOwner());
+  return reinterpret_cast<dbModBTerm*>(par->modbterm_tbl_->getPtr(obj->last_));
 }
 
 dbModule* dbBusPort::getParent() const
 {
-  _dbBusPort* obj = (_dbBusPort*) this;
+  const _dbBusPort* obj = reinterpret_cast<const _dbBusPort*>(this);
   if (obj->parent_ == 0) {
     return nullptr;
   }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModule*) par->module_tbl_->getPtr(obj->parent_);
+  _dbBlock* par = static_cast<_dbBlock*>(obj->getOwner());
+  return reinterpret_cast<dbModule*>(par->module_tbl_->getPtr(obj->parent_));
 }
 
 // User Code Begin dbBusPortPublicMethods
