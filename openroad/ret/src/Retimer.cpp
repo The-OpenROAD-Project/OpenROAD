@@ -47,7 +47,7 @@ bool oneClass(const RetimingGraph& graph, const std::vector<odb::dbInst*>& regs)
 
 bool moveKeepsClass(const RetimingGraph& graph,
                     const std::vector<odb::dbInst*>& regs,
-                    int v)
+                    const int v)
 {
   return oneClass(graph, regs)
          && (regs.empty()
@@ -123,7 +123,7 @@ std::optional<int> lagOfNewGate(
 {
   constexpr int kMaxDepth = 64;
   for (int depth = 0; depth <= kMaxDepth; ++depth) {
-    auto it = lag.find(gate->getName());
+    const auto it = lag.find(gate->getName());
     if (it != lag.end()) {
       return it->second;
     }
@@ -192,7 +192,7 @@ Retimer::Retimer(odb::dbDatabase* db,
 
 Retimer::~Retimer() = default;
 
-odb::dbBlock* Retimer::getBlock()
+odb::dbBlock* Retimer::getBlock() const
 {
   odb::dbChip* chip = db_->getChip();
   odb::dbBlock* block = chip != nullptr ? chip->getBlock() : nullptr;
@@ -202,7 +202,7 @@ odb::dbBlock* Retimer::getBlock()
   return block;
 }
 
-void Retimer::retime(int max_moves)
+void Retimer::retime(const int max_moves)
 {
   odb::dbBlock* block = getBlock();
   if (isRouted(block)) {
@@ -247,12 +247,13 @@ void Retimer::retime(int max_moves)
 }
 
 int Retimer::searchAndApply(odb::dbBlock* block,
-                            int max_moves,
+                            const int max_moves,
                             est::IncrementalParasiticsGuard& guard)
 {
   RetimingGraph graph(db_, sta_, logger_);
   graph.build();
-  if (std::exchange(report_graph_, false)) {
+  if (report_graph_) {
+    report_graph_ = false;
     graph.report();
   }
   clock_net_ = findClockNet(block);
@@ -269,7 +270,7 @@ int Retimer::searchAndApply(odb::dbBlock* block,
   return applyAfterUnmapping(graph, search, movers, max_moves, guard);
 }
 
-Retime Retimer::newSearch(const RetimingGraph& graph)
+Retime Retimer::newSearch(const RetimingGraph& graph) const
 {
   return Retime(
       &graph,
@@ -282,7 +283,7 @@ Retime Retimer::newSearch(const RetimingGraph& graph)
 int Retimer::applyAfterUnmapping(const RetimingGraph& graph,
                                  const Retime& search,
                                  const std::unordered_set<odb::dbInst*>& movers,
-                                 int max_moves,
+                                 const int max_moves,
                                  est::IncrementalParasiticsGuard& guard)
 {
   const std::vector<int>& r = search.getRetiming();
@@ -327,7 +328,7 @@ int Retimer::applyAfterUnmapping(const RetimingGraph& graph,
   return 0;
 }
 
-odb::dbNet* Retimer::findClockNet(odb::dbBlock* block)
+odb::dbNet* Retimer::findClockNet(odb::dbBlock* block) const
 {
   for (odb::dbInst* inst : block->getInsts()) {
     if (inst->getMaster()->isSequential()) {
@@ -341,7 +342,7 @@ odb::dbNet* Retimer::findClockNet(odb::dbBlock* block)
   return nullptr;
 }
 
-void Retimer::checkRegisters(odb::dbBlock* block)
+void Retimer::checkRegisters(odb::dbBlock* block) const
 {
   int negedge = 0;
   for (odb::dbInst* inst : block->getInsts()) {
@@ -350,11 +351,8 @@ void Retimer::checkRegisters(odb::dbBlock* block)
     }
   }
   if (negedge > 0) {
-    logger_->error(utl::RET,
-                   35,
-                   "{} negative-edge registers found; retime supports "
-                   "positive-edge registers only.",
-                   negedge);
+    logger_->warn(
+        utl::RET, 35, "{} negative-edge registers are left in place.", negedge);
   }
 }
 
@@ -374,9 +372,9 @@ Retimer::FaninIndex Retimer::faninIndex(const RetimingGraph& graph)
 void Retimer::originRegistersOnEdge(const RetimingGraph& graph,
                                     const FaninIndex& fanin,
                                     const std::vector<int>& r,
-                                    int u,
-                                    int k,
-                                    int j,
+                                    const int u,
+                                    const int k,
+                                    const int j,
                                     std::vector<odb::dbInst*>& out)
 {
   const int w = graph.adj()[u][k].weight;
@@ -397,8 +395,8 @@ void Retimer::originRegistersOnEdge(const RetimingGraph& graph,
 void Retimer::originRegisters(const RetimingGraph& graph,
                               const FaninIndex& fanin,
                               const std::vector<int>& r,
-                              int v,
-                              int j,
+                              const int v,
+                              const int j,
                               std::vector<odb::dbInst*>& out)
 {
   if (fanin[v].empty()) {
@@ -689,7 +687,7 @@ std::vector<odb::dbInst*> Retimer::chainOrigins(const RetimingGraph& graph,
                                                 const FaninIndex& fanin,
                                                 const std::vector<int>& r,
                                                 const Sink& sink,
-                                                int p)
+                                                const int p)
 {
   const int taken_by_sink_gate = -r[graph.adj()[sink.u][sink.k].target];
   std::vector<odb::dbInst*> regs;

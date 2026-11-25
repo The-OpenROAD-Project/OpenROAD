@@ -90,7 +90,7 @@ void connectPin(odb::dbITerm* pin,
                 const std::unordered_map<odb::dbNet*, odb::dbModNet*>& mod_nets)
 {
   pin->connect(net);
-  auto it = mod_nets.find(net);
+  const auto it = mod_nets.find(net);
   if (it != mod_nets.end()) {
     pin->connect(it->second);
   }
@@ -116,7 +116,8 @@ std::optional<bool> constNetValue(sta::dbSta* sta, odb::dbNet* net)
     if (iterm->getIoType() != odb::dbIoType::OUTPUT) {
       continue;
     }
-    sta::LibertyPort* port = network->libertyPort(network->dbToSta(iterm));
+    const sta::LibertyPort* port
+        = network->libertyPort(network->dbToSta(iterm));
     const sta::FuncExpr* func = port != nullptr ? port->function() : nullptr;
     if (func != nullptr && func->op() == sta::FuncExpr::Op::one) {
       return true;
@@ -357,7 +358,7 @@ NextStateShape nextStateShape(const sta::Sequential* seq)
   const NextStateTable table(next, state, state_inv, inputs);
   std::vector<bool> is_enable(inputs.size(), false);
   for (size_t i = 0; i < inputs.size(); ++i) {
-    for (bool v : {false, true}) {
+    for (const bool v : {false, true}) {
       if (!is_enable[i] && table.holdsStateWhen(i, v)) {
         is_enable[i] = true;
         shape.enables_inactive_at.emplace_back(inputs[i], v);
@@ -403,7 +404,8 @@ bool loadedOutput(sta::dbSta* sta,
     if (iterm->getIoType() != odb::dbIoType::OUTPUT) {
       continue;
     }
-    sta::LibertyPort* port = network->libertyPort(network->dbToSta(iterm));
+    const sta::LibertyPort* port
+        = network->libertyPort(network->dbToSta(iterm));
     const std::optional<bool> pin_inverted
         = port != nullptr ? outputInverted(port->function(), seq)
                           : std::nullopt;
@@ -432,7 +434,7 @@ bool loadedOutput(sta::dbSta* sta,
   return true;
 }
 
-// The output pin of a tie cell that nothing reads any more.
+// The output pin of a tie cell that nothing reads anymore.
 odb::dbITerm* idleTieOutput(sta::dbSta* sta, odb::dbNet* net)
 {
   if (net->getSigType().isSupply() || net->isDoNotTouch()
@@ -677,6 +679,7 @@ RegisterClass registerClass(sta::dbSta* sta, odb::dbInst* inst)
   if (seq == nullptr || !seq->isRegister()) {
     return cls;
   }
+  cls.negedge = isNegedge(seq);
   const NextStateShape shape = nextStateShape(seq);
   odb::dbITerm* data = findITerm(inst, shape.data);
   if (shape.kind == RegisterKind::kOther || data == nullptr) {
@@ -736,14 +739,14 @@ bool sameRegisterClass(const RegisterClass& a, const RegisterClass& b)
 
 bool isSelfDualGate(sta::dbSta* sta, odb::dbInst* inst)
 {
-  sta::LibertyCell* cell = sta->getDbNetwork()->libertyCell(inst);
+  const sta::LibertyCell* cell = sta->getDbNetwork()->libertyCell(inst);
   if (cell == nullptr || cell->isSequential()) {
     return false;
   }
   int outputs = 0;
   sta::LibertyCellPortIterator port_iter(cell);
   while (port_iter.hasNext()) {
-    sta::LibertyPort* port = port_iter.next();
+    const sta::LibertyPort* port = port_iter.next();
     if (!port->direction()->isOutput()) {
       continue;
     }

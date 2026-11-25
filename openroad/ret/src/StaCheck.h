@@ -23,7 +23,7 @@ class Logger;
 namespace ret {
 
 // STA, not the search's delay model, decides what is kept: the slides are
-// applied, the new cells placed and the design timed.  They are kept when
+// applied, the new cells placed, and the design timed.  They are kept when
 // the slack improves with neither the worst nor the total negative slack
 // below the start; else ever shorter prefixes are tried, each half the last.
 class StaCheck

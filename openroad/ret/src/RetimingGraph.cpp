@@ -50,7 +50,7 @@ void RetimingGraph::findClockPeriod()
   }
 }
 
-void RetimingGraph::markBoundary(odb::dbInst* inst, int id)
+void RetimingGraph::markBoundary(odb::dbInst* inst, const int id)
 {
   for (odb::dbITerm* pin : inst->getITerms()) {
     odb::dbNet* net = pin->getNet();
@@ -70,15 +70,18 @@ void RetimingGraph::markBoundary(odb::dbInst* inst, int id)
 bool RetimingGraph::continuesThrough(odb::dbInst* reg, odb::dbITerm* pin) const
 {
   const RegisterClass& cls = regClass(reg);
+  if (cls.negedge) {
+    return false;
+  }
   if (cls.kind != RegisterKind::kOther) {
     return pin->getMTerm() == cls.data;
   }
   return isRegisterDataPin(sta_, pin);
 }
 
-void RetimingGraph::walkFanout(int source,
+void RetimingGraph::walkFanout(const int source,
                                odb::dbInst* current,
-                               int weight,
+                               const int weight,
                                std::vector<odb::dbInst*>& flops,
                                std::unordered_set<odb::dbInst*>& visited)
 {
@@ -111,7 +114,7 @@ void RetimingGraph::walkFanout(int source,
         flops.pop_back();
         visited.erase(load);
       } else {
-        auto it = index_.find(load);
+        const auto it = index_.find(load);
         if (it == index_.end()) {
           continue;
         }
@@ -281,7 +284,7 @@ void RetimingGraph::fenceModules()
   }
 }
 
-void RetimingGraph::markDontTouch(odb::dbInst* inst, int id)
+void RetimingGraph::markDontTouch(odb::dbInst* inst, const int id)
 {
   bool dont_touch = inst->isDoNotTouch();
   for (odb::dbITerm* pin : inst->getITerms()) {
@@ -297,7 +300,7 @@ void RetimingGraph::markDontTouch(odb::dbInst* inst, int id)
       odb::dbNet* net = pin->getNet();
       if (pin->getIoType() == odb::dbIoType::INPUT && net != nullptr) {
         for (odb::dbITerm* driver : net->getITerms()) {
-          auto it = index_.find(driver->getInst());
+          const auto it = index_.find(driver->getInst());
           if (driver->getIoType() == odb::dbIoType::OUTPUT
               && it != index_.end()) {
             pinned_[it->second] = true;
@@ -378,9 +381,9 @@ void RetimingGraph::report() const
     total_edges += static_cast<int>(edges.size());
   }
   std::unordered_set<odb::dbInst*> distinct;
-  for (const std::vector<EdgePhys>& handles : phys_) {
-    for (const EdgePhys& p : handles) {
-      distinct.insert(p.flops.begin(), p.flops.end());
+  for (const std::vector<EdgePhys>& edges : phys_) {
+    for (const EdgePhys& phys : edges) {
+      distinct.insert(phys.flops.begin(), phys.flops.end());
     }
   }
   const int pinned = static_cast<int>(std::ranges::count(pinned_, true));

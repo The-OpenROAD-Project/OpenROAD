@@ -218,7 +218,8 @@ void Retime::computeCrossExtra()
   }
 }
 
-float Retime::sourceLoadAfterSlide(const FaninEdge& fe, odb::dbITerm* source)
+float Retime::sourceLoadAfterSlide(const FaninEdge& fe,
+                                   odb::dbITerm* source) const
 {
   float reader_caps = 0.0f;
   int readers = 0;
@@ -269,7 +270,8 @@ float Retime::slowdownAtSlew(int t, odb::dbITerm* sink, float slew)
   return now >= 0.0f && then >= 0.0f ? then - now : 0.0f;
 }
 
-std::optional<float> Retime::staArc(odb::dbITerm* input, odb::dbITerm* output)
+std::optional<float> Retime::staArc(odb::dbITerm* input,
+                                    odb::dbITerm* output) const
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Graph* graph = sta_->ensureGraph();
@@ -514,8 +516,8 @@ void Retime::sampleLaunch(odb::dbInst* flop, std::vector<float>& offsets)
   sta::LibertyCell* cell
       = network->libertyCell(network->dbToSta(flop->getMaster()));
   for (odb::dbITerm* iterm : flop->getITerms()) {
-    sta::Pin* pin = network->dbToSta(iterm);
-    sta::LibertyPort* port = network->libertyPort(pin);
+    const sta::Pin* pin = network->dbToSta(iterm);
+    const sta::LibertyPort* port = network->libertyPort(pin);
     if (port == nullptr) {
       continue;
     }
@@ -606,7 +608,7 @@ void Retime::computeDriverShifts()
   }
 }
 
-double Retime::registerEndShift(int v, double arrival)
+double Retime::registerEndShift(int v, double arrival) const
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Graph* graph = sta_->ensureGraph();
@@ -624,7 +626,7 @@ double Retime::registerEndShift(int v, double arrival)
   return shift;
 }
 
-double Retime::portEndShift(int v, double arrival)
+double Retime::portEndShift(int v, double arrival) const
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Graph* graph = sta_->ensureGraph();

@@ -4,11 +4,13 @@
 #pragma once
 
 #include <cstddef>
+#include <optional>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
 #include "odb/db.h"
+#include "odb/geom.h"
 
 namespace sta {
 class dbSta;
@@ -19,7 +21,7 @@ class IncrementalParasiticsGuard;
 }  // namespace est
 namespace rsz {
 class Resizer;
-}
+}  // namespace rsz
 
 namespace ret {
 
@@ -85,8 +87,8 @@ class RetimerPlacer
   };
 
   // The box around the placed cells `inst` connects to, leaving out a
-  // register's clock and control nets; false when there is none yet.
-  bool neighborBox(odb::dbInst* inst, odb::Rect& box) const;
+  // register's clock and control nets; nullopt when none is placed yet.
+  std::optional<odb::Rect> neighborBox(odb::dbInst* inst) const;
   // Centers the cell on (x, y) and marks it placed.
   void moveTo(odb::dbInst* inst, int x, int y);
 
@@ -105,7 +107,8 @@ class RetimerPlacer
                est::IncrementalParasiticsGuard& guard);
   // Returns how many registers changed cell.
   static int swapToBest(std::vector<CellChoice>& choices);
-  PinSlack pinSlack(odb::dbInst* inst, est::IncrementalParasiticsGuard& guard);
+  PinSlack pinSlack(odb::dbInst* inst,
+                    est::IncrementalParasiticsGuard& guard) const;
   static bool betterSlack(const PinSlack& a, const PinSlack& b);
 
   // The other cells of the same function and site, smallest first.

@@ -75,7 +75,7 @@ class RetimingGraph
   void pinUnmodeledInputs();
   void fenceDontTouch();
   // The registers that start on one net stay in one module: when they, the
-  // gate that drives them and the gates that read them are not all in one
+  // gate that drives them, and the gates that read them are not all in one
   // module, that gate and the gates behind the registers are never crossed.
   void fenceModules();
   void findClockPeriod();

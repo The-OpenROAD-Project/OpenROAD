@@ -16,12 +16,12 @@ namespace ret {
 // load (`to`: one output, or null for all) and the longest setup check.
 // Negative: the cell has none.
 float registerClockToQ(sta::dbSta* sta,
-                       sta::LibertyCell* cell,
+                       const sta::LibertyCell* cell,
                        const sta::LibertyPort* to,
                        float clock_slew,
                        float load);
 float registerSetupTime(sta::dbSta* sta,
-                        sta::LibertyCell* cell,
+                        const sta::LibertyCell* cell,
                         float clock_slew,
                         float data_slew);
 // The slower of the rise and fall slews STA has at a pin.

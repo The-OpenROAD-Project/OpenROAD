@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <optional>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -72,11 +73,12 @@ std::vector<odb::dbMaster*> RetimerPlacer::registerCells(odb::dbMaster* master)
   return masters;
 }
 
-bool RetimerPlacer::neighborBox(odb::dbInst* inst, odb::Rect& box) const
+std::optional<odb::Rect> RetimerPlacer::neighborBox(odb::dbInst* inst) const
 {
   odb::dbITerm* data = inst->getMaster()->isSequential()
                            ? registerDataPin(sta_, inst)
                            : nullptr;
+  odb::Rect box;
   box.mergeInit();
   bool any = false;
   for (odb::dbITerm* iterm : inst->getITerms()) {
@@ -97,10 +99,13 @@ bool RetimerPlacer::neighborBox(odb::dbInst* inst, odb::Rect& box) const
       }
     }
   }
-  return any;
+  if (!any) {
+    return std::nullopt;
+  }
+  return box;
 }
 
-void RetimerPlacer::moveTo(odb::dbInst* inst, int x, int y)
+void RetimerPlacer::moveTo(odb::dbInst* inst, const int x, const int y)
 {
   odb::dbMaster* master = inst->getMaster();
   resizer_->setLocation(inst,
@@ -117,7 +122,7 @@ void RetimerPlacer::moveTo(odb::dbInst* inst, int x, int y)
 const std::vector<odb::dbMaster*>& RetimerPlacer::equivalentMasters(
     odb::dbMaster* master)
 {
-  auto found = equivalent_masters_.find(master);
+  const auto found = equivalent_masters_.find(master);
   if (found != equivalent_masters_.end()) {
     return found->second;
   }
@@ -229,7 +234,7 @@ std::vector<RetimerPlacer::CellChoice> RetimerPlacer::cellChoices(
 }
 
 void RetimerPlacer::tryRank(std::vector<CellChoice>& choices,
-                            size_t rank,
+                            const size_t rank,
                             est::IncrementalParasiticsGuard& guard)
 {
   for (CellChoice& choice : choices) {
@@ -298,7 +303,7 @@ int RetimerPlacer::chooseCells(const std::vector<odb::dbInst*>& registers,
 
 RetimerPlacer::PinSlack RetimerPlacer::pinSlack(
     odb::dbInst* inst,
-    est::IncrementalParasiticsGuard& guard)
+    est::IncrementalParasiticsGuard& guard) const
 {
   guard.update();
   sta::Graph* graph = sta_->ensureGraph();
@@ -350,11 +355,14 @@ PlaceStats RetimerPlacer::placeNewCells(
   while (moved) {
     moved = false;
     for (odb::dbInst* inst : block->getInsts()) {
-      odb::Rect box;
-      if (inst->isPlaced() || skip.contains(inst) || !neighborBox(inst, box)) {
+      if (inst->isPlaced() || skip.contains(inst)) {
         continue;
       }
-      moveTo(inst, box.xCenter(), box.yCenter());
+      const std::optional<odb::Rect> box = neighborBox(inst);
+      if (!box) {
+        continue;
+      }
+      moveTo(inst, box->xCenter(), box->yCenter());
       if (inst->getMaster()->isSequential()) {
         new_registers.push_back(inst);
       }

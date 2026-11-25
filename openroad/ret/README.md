@@ -64,8 +64,8 @@ flip-flop without asynchronous controls, the base cell is the register that
 takes the least area once tie cells hold its controls inactive, and every
 new register gets its own tie cells.
 
-Registers with a live asynchronous set or reset, latches and scan cells never
-move, and neither does a register chain whose output reaches a primary
+Registers with a live asynchronous set or reset, negative-edge registers,
+latches and scan cells never move, and neither does a register chain whose output reaches a primary
 output or a control pin of another register (those read the chain at its
 current depth), nor anything marked don't-touch. A register also stays when
 it shares its input net with one of these or with a register on another
@@ -99,7 +99,7 @@ retime
 shows the slack before, what each round kept, and a summary with the
 registers and the cells placed. `retime` stops with an error on designs it
 cannot handle: libraries without a usable base register, inverter, AND2 or
-OR2 cell; more than one clock; negative-edge registers; no clock defined. An
+OR2 cell; more than one clock; no clock defined. An
 error leaves the netlist unchanged.
 
 ## Example scripts

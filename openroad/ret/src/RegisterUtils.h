@@ -51,7 +51,7 @@ bool hasLiveAsyncControl(sta::dbSta* sta,
 
 // `constants`: (pin, tied high) holding every asynchronous control inactive.
 // False without such a control or such constants, or when the cell has an
-// input that is not a control, a data pin or the clock.
+// input that is not a control, a data pin, or the clock.
 using PinConstants = std::vector<std::pair<const sta::LibertyPort*, bool>>;
 bool inactiveAsyncControls(const sta::LibertyCell* cell,
                            const sta::Sequential* seq,
@@ -91,6 +91,7 @@ struct RegisterClass
   odb::dbMTerm* output = nullptr;  // the output pin the loads read
   odb::dbNet* clock = nullptr;
   std::vector<std::pair<odb::dbMTerm*, odb::dbNet*>> enables;  // by pin name
+  bool negedge = false;  // never moves
 };
 
 RegisterClass registerClass(sta::dbSta* sta, odb::dbInst* inst);

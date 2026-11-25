@@ -28,7 +28,7 @@ namespace ret {
 // Rewrites synchronous registers as a plain D flip-flop plus logic
 // (inverters, 2-input ANDs and ORs, tie cells) computing the cell's liberty
 // `next_state`.  Registers with an asynchronous control that is not tied
-// inactive, latches, scan cells and multi-bit cells are left untouched.
+// inactive, latches, scan cells, and multi-bit cells are left untouched.
 // Without a plain D flip-flop the base cell has asynchronous controls, tied
 // inactive on each new instance.  New cells go into the register's module.
 class SequentialUnmapper
@@ -96,13 +96,13 @@ class SequentialUnmapper
     std::vector<odb::dbBTerm*> ports;
   };
 
-  bool findBaseSequentialCell(bool negedge, BaseRegister& base);
+  bool findBaseSequentialCell(bool negedge, BaseRegister& base) const;
   // Without a plain flip-flop, the base cell is the tied register that costs
   // the least area, then the one with the smallest data pin capacitance.
-  bool findTiedBaseSequentialCell(bool negedge, BaseRegister& base);
+  bool findTiedBaseSequentialCell(bool negedge, BaseRegister& base) const;
   // A register cell that is a plain D flip-flop once tie cells hold its
   // asynchronous controls inactive; `area` includes those tie cells.
-  bool tiedBaseRegister(sta::LibertyCell* cell,
+  bool tiedBaseRegister(const sta::LibertyCell* cell,
                         bool negedge,
                         BaseRegister& base,
                         float& area) const;
@@ -111,7 +111,7 @@ class SequentialUnmapper
                                 const sta::LibertyPort* output) const;
   void reportTiedBase() const;
   bool findInverterCell();
-  bool findTwoInputGate(bool is_and, odb::dbMaster*& master);
+  bool findTwoInputGate(bool is_and, odb::dbMaster*& master) const;
   bool findTieCell(bool one);
 
   std::vector<Register> collectRegisters(

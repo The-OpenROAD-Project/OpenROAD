@@ -77,15 +77,15 @@ class Retimer
   // Flat net to its module net in the group's module; empty when flat.
   using ModNets = std::unordered_map<odb::dbNet*, odb::dbModNet*>;
 
-  odb::dbBlock* getBlock();
-  odb::dbNet* findClockNet(odb::dbBlock* block);
-  void checkRegisters(odb::dbBlock* block);
+  odb::dbBlock* getBlock() const;
+  odb::dbNet* findClockNet(odb::dbBlock* block) const;
+  void checkRegisters(odb::dbBlock* block) const;
 
   // Returns the number of slides.
   int searchAndApply(odb::dbBlock* block,
                      int max_moves,
                      est::IncrementalParasiticsGuard& guard);
-  Retime newSearch(const RetimingGraph& graph);
+  Retime newSearch(const RetimingGraph& graph) const;
 
   // Registers that start on one net at the same depth hold the same value
   // only when they are one class, so each class of first register is a group

@@ -43,7 +43,7 @@ Retime::Retime(const RetimingGraph* graph,
 {
 }
 
-void Retime::run(int max_moves)
+void Retime::run(const int max_moves)
 {
   const int n = static_cast<int>(graph_->nodes().size());
   r_.assign(n, 0);
@@ -61,7 +61,7 @@ void Retime::run(int max_moves)
 
 float Retime::pinArrival(odb::dbITerm* db_pin)
 {
-  sta::Pin* pin = sta_->getDbNetwork()->dbToSta(db_pin);
+  const sta::Pin* pin = sta_->getDbNetwork()->dbToSta(db_pin);
   sta::Vertex* vertex = nullptr;
   sta::Vertex* bidirect_drvr = nullptr;
   sta_->ensureGraph()->pinVertices(pin, vertex, bidirect_drvr);
@@ -80,8 +80,8 @@ float Retime::arrivalAt(sta::Vertex* vertex, const sta::RiseFall* rf) const
 
 float Retime::getGateArc(odb::dbITerm* input_pin)
 {
-  sta::Pin* pin = sta_->getDbNetwork()->dbToSta(input_pin);
-  sta::Graph* graph = sta_->ensureGraph();
+  const sta::Pin* pin = sta_->getDbNetwork()->dbToSta(input_pin);
+  const sta::Graph* graph = sta_->ensureGraph();
   sta::Vertex* vertex = nullptr;
   sta::Vertex* bidirect_drvr = nullptr;
   graph->pinVertices(pin, vertex, bidirect_drvr);
@@ -91,7 +91,7 @@ float Retime::getGateArc(odb::dbITerm* input_pin)
   float best = 0.0f;
   sta::VertexOutEdgeIterator edge_iter(vertex, graph);
   while (edge_iter.hasNext()) {
-    sta::Edge* edge = edge_iter.next();
+    const sta::Edge* edge = edge_iter.next();
     if (edge->isWire()) {
       continue;
     }
@@ -146,7 +146,7 @@ void Retime::resolveFlopDCap()
   sta::LibertyCell* liberty_cell
       = cell != nullptr ? network->libertyCell(cell) : nullptr;
   if (liberty_cell != nullptr) {
-    sta::LibertyPort* d
+    const sta::LibertyPort* d
         = liberty_cell->findLibertyPort(flop_d_mterm_->getConstName());
     if (d != nullptr) {
       flop_d_cap_ = d->capacitance();
@@ -220,20 +220,20 @@ void Retime::computeGateArcs()
   }
 }
 
-float Retime::characterizeArc(int v,
+float Retime::characterizeArc(const int v,
                               odb::dbITerm* sink,
-                              float load,
-                              float fallback,
-                              float forced_slew,
+                              const float load,
+                              const float fallback,
+                              const float forced_slew,
                               float* out_slew)
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   const sta::MinMax* min_max = sta::MinMax::max();
-  sta::Sdc* sdc = sta_->cmdScene()->sdc();
+  const sta::Sdc* sdc = sta_->cmdScene()->sdc();
   odb::dbInst* gate = graph_->nodes()[v];
-  sta::Pin* pin = network->dbToSta(sink);
-  sta::LibertyCell* cell = network->libertyCell(gate);
-  sta::LibertyPort* from = network->libertyPort(pin);
+  const sta::Pin* pin = network->dbToSta(sink);
+  const sta::LibertyCell* cell = network->libertyCell(gate);
+  const sta::LibertyPort* from = network->libertyPort(pin);
   // Per-instance PVT, then the SDC operating conditions, then the library
   // default (what the delay calculator itself uses).
   const sta::Pvt* pvt = sdc->pvt(network->dbToSta(gate), min_max);
@@ -249,11 +249,11 @@ float Retime::characterizeArc(int v,
   const float in_slew = forced_slew >= 0.0f ? forced_slew : pinSlew(sta_, pin);
   float best = 0.0f;
   bool got = false;
-  for (sta::TimingArcSet* set : cell->timingArcSets(from, nullptr)) {
+  for (const sta::TimingArcSet* set : cell->timingArcSets(from, nullptr)) {
     if (set->role()->isTimingCheck()) {
       continue;
     }
-    for (sta::TimingArc* arc : set->arcs()) {
+    for (const sta::TimingArc* arc : set->arcs()) {
       const sta::GateTableModel* model
           = dynamic_cast<const sta::GateTableModel*>(arc->model());
       if (model == nullptr) {
@@ -274,24 +274,24 @@ float Retime::characterizeArc(int v,
   return got ? std::max(best, 0.0f) : fallback;
 }
 
-bool Retime::outputRegistered(int v) const
+bool Retime::outputRegistered(const int v) const
 {
   return std::ranges::any_of(graph_->adj()[v], [&](const Edge& e) {
     return e.weight + r_[e.target] - r_[v] >= 1;
   });
 }
 
-bool Retime::isCombinational(int u, const Edge& e) const
+bool Retime::isCombinational(const int u, const Edge& e) const
 {
   return e.weight + r_[e.target] - r_[u] == 0;
 }
 
-bool Retime::isCombinational(int t, const FaninEdge& fe) const
+bool Retime::isCombinational(const int t, const FaninEdge& fe) const
 {
   return fe.weight + r_[t] - r_[fe.u] == 0;
 }
 
-void Retime::setArrival(int t)
+void Retime::setArrival(const int t)
 {
   const bool registered = outputRegistered(t);
   bool root = true;
@@ -359,7 +359,7 @@ bool Retime::hasRegisterPath() const
                              [](double arrival) { return arrival > 0.0; });
 }
 
-void Retime::applySlide(int v)
+void Retime::applySlide(const int v)
 {
   r_[v] -= 1;
   Scratch& s = scratch_;
@@ -389,7 +389,7 @@ void Retime::applySlide(int v)
 
   s.saved_arrivals.clear();
   s.saved_arrivals_pinned.clear();
-  for (int t : s.dirty) {
+  for (const int t : s.dirty) {
     s.saved_arrivals.push_back(arrivals_[t]);
     s.saved_arrivals_pinned.push_back(arrivals_pinned_[t]);
     s.local_indeg[t] = 0;
@@ -401,7 +401,7 @@ void Retime::applySlide(int v)
   }
   int head = 0;
   int tail = 0;
-  for (int t : s.dirty) {
+  for (const int t : s.dirty) {
     if (s.local_indeg[t] == 0) {
       s.queue[tail++] = t;
     }
@@ -417,7 +417,7 @@ void Retime::applySlide(int v)
       }
     }
   }
-  for (int t : s.dirty) {
+  for (const int t : s.dirty) {
     if (s.in_dirty[t]) {  // on a combinational loop, as computeArrivals
       arrivals_[t] = 0.0;
       arrivals_pinned_[t] = kUnreached;
@@ -426,7 +426,7 @@ void Retime::applySlide(int v)
   }
 }
 
-void Retime::undoSlide(int v)
+void Retime::undoSlide(const int v)
 {
   r_[v] += 1;
   const Scratch& s = scratch_;
@@ -436,7 +436,7 @@ void Retime::undoSlide(int v)
   }
 }
 
-bool Retime::forwardMovable(int v) const
+bool Retime::forwardMovable(const int v) const
 {
   return !graph_->pinned()[v] && !fanin_[v].empty()
          && std::ranges::none_of(graph_->adj()[v],

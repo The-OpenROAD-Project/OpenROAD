@@ -11,7 +11,8 @@
 # cell the tests use has a Verilog model below, built from the helper cells.
 # A register cell without a model, or any cell ABC reads as a black box,
 # fails the check.  Asynchronous controls act at the clock edge, as with
-# yosys async2sync.
+# yosys async2sync.  A negative-edge register is modeled on the same edge as
+# the others: it never moves, so both netlists hold it in the same place.
 #
 # Initial state: the registers the retimer creates have no defined power-up
 # value, so each netlist is wrapped to start from zero with the reset
@@ -64,6 +65,12 @@ set dsec_models {
  input CLK, D, DE; output Q; wire d; reg Q;
  DSEC_MUX2 m (.A0(Q), .A1(D), .S(DE), .Y(d));
  always @(posedge CLK) Q <= d;}}
+  DFFHQx4_ASAP7_75t_R {{CLK D Q} {
+ input CLK, D; output Q; reg Q;
+ always @(posedge CLK) Q <= D;}}
+  DFFLQx4_ASAP7_75t_R {{CLK D Q} {
+ input CLK, D; output Q; reg Q;
+ always @(posedge CLK) Q <= D;}}
   DFFHQNx1_ASAP7_75t_R {{CLK D QN} {
  input CLK, D; output QN; reg s;
  always @(posedge CLK) s <= D;
@@ -223,9 +230,9 @@ proc run_dsec_test { test args } {
   set abc_log [make_result_file "${test}_dsec.log"]
   catch { exec $abc -c "dsec $before_aig $after_aig" >& $abc_log }
   set in [open $abc_log r]
-  set log [read $in]
+  set text [read $in]
   close $in
-  if { [string first "Networks are equivalent" $log] >= 0 } {
+  if { [string first "Networks are equivalent" $text] >= 0 } {
     puts "Retime output passed/skipped sequential equivalence test"
   } else {
     puts "Retime output failed sequential equivalence test"

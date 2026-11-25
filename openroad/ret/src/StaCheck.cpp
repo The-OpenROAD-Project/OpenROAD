@@ -26,7 +26,7 @@ bool betterThan(const StaSlack& a, const StaSlack& b, const StaSlack& start)
       = start.worst < -kStaSlackEps && start.total < -kStaSlackEps
             ? static_cast<double>(start.worst) / start.total
             : 0.0;
-  auto cost = [total_scale](const StaSlack& slack) {
+  const auto cost = [total_scale](const StaSlack& slack) {
     return -static_cast<double>(slack.worst) - total_scale * slack.total;
   };
   return a.worst >= start.worst - kStaSlackEps
@@ -55,7 +55,9 @@ int StaCheck::registerCount() const
 {
   int count = 0;
   for (odb::dbInst* inst : block_->getInsts()) {
-    count += inst->getMaster()->isSequential() ? 1 : 0;
+    if (inst->getMaster()->isSequential()) {
+      ++count;
+    }
   }
   return count;
 }
@@ -76,7 +78,7 @@ void StaCheck::reportRow(const std::string& round,
                          const std::string& trials,
                          const std::string& kept,
                          const StaSlack& slack,
-                         int registers) const
+                         const int registers) const
 {
   logger_->report("{:>6} | {:>8} | {:>6} | {:>4} | {:>11} | {:>13} | {:>9}",
                   round,
@@ -88,7 +90,7 @@ void StaCheck::reportRow(const std::string& round,
                   registers);
 }
 
-void StaCheck::run(int max_moves)
+void StaCheck::run(const int max_moves)
 {
   constexpr int kRounds = 16;
   constexpr int kRoundMoves = 16;
@@ -161,7 +163,7 @@ void StaCheck::run(int max_moves)
                 placed.resized);
 }
 
-StaCheck::Trial StaCheck::runTrial(int limit, const StaSlack& before)
+StaCheck::Trial StaCheck::runTrial(const int limit, const StaSlack& before)
 {
   const std::unordered_set<odb::dbInst*> unplaced = unplacedCells();
   Trial trial{.slides = 0, .slack = before, .placed = {}};
@@ -195,7 +197,7 @@ void StaCheck::keepTrial(const Trial& trial, Round& round)
   round.placed = trial.placed;
 }
 
-int StaCheck::bestPrefix(int slides, const StaSlack& before)
+int StaCheck::bestPrefix(const int slides, const StaSlack& before)
 {
   constexpr int kMaxTrials = 12;
   int best_limit = 0;
@@ -219,7 +221,7 @@ int StaCheck::bestPrefix(int slides, const StaSlack& before)
   return best_limit;
 }
 
-StaCheck::Round StaCheck::runRound(int max_moves)
+StaCheck::Round StaCheck::runRound(const int max_moves)
 {
   trials_ = 0;
   const StaSlack before = staSlack(sta_, *guard_);

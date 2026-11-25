@@ -229,8 +229,8 @@ TEST_F(SequentialUnmapperRunTest, FanoutPreserved)
   EXPECT_EQ(load_and->findITerm("B")->getNet(), block_->findNet("x1"))
       << "unrelated input of the AND2 must be untouched";
   int loads_on_out = 0;
-  for (odb::dbITerm* it : out->getITerms()) {
-    if (it->getIoType() == odb::dbIoType::INPUT) {
+  for (odb::dbITerm* iterm : out->getITerms()) {
+    if (iterm->getIoType() == odb::dbIoType::INPUT) {
       loads_on_out++;
     }
   }
@@ -294,7 +294,7 @@ TEST_F(SequentialUnmapperRunTest, CellsStayInTheRegistersModule)
   for (odb::dbInst* inst : block_->getInsts()) {
     if (inst->getModule() == child) {
       in_child_count++;
-      EXPECT_EQ(inst->getName().rfind("u1/", 0), 0u)
+      EXPECT_TRUE(inst->getName().starts_with("u1/"))
           << inst->getName() << " is in `child` without its instance path";
     } else {
       in_top_count++;

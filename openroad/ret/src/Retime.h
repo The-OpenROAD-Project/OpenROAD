@@ -160,12 +160,13 @@ class Retime
   float loadCap(odb::dbITerm* driver) const;
   // The source gate's load once the gate behind the edge's registers reads
   // its net directly.
-  float sourceLoadAfterSlide(const FaninEdge& fe, odb::dbITerm* source);
+  float sourceLoadAfterSlide(const FaninEdge& fe, odb::dbITerm* source) const;
   // How much later gate u's output gets at `new_load`; `slew`: its output
   // slew then, negative without an arc.
   float slowdownAtLoad(int u, float load, float new_load, float& slew);
   float slowdownAtSlew(int t, odb::dbITerm* sink, float slew);
-  std::optional<float> staArc(odb::dbITerm* input, odb::dbITerm* output);
+  std::optional<float> staArc(odb::dbITerm* input,
+                              odb::dbITerm* output) const;
   // STA's input arrivals through the model's arcs.
   double modeledOutputArrival(int t, bool registered);
   // launch_offset_ (the clock arrival): median over sampled registers of STA's
@@ -181,8 +182,8 @@ class Retime
   // The gates unmapping the edge's registers leaves on the path: one for an
   // inverting register, two for another class that is not plain.
   int unmappedGates(const FaninEdge& fe) const;
-  double registerEndShift(int v, double arrival);
-  double portEndShift(int v, double arrival);
+  double registerEndShift(int v, double arrival) const;
+  double portEndShift(int v, double arrival) const;
 
   const RetimingGraph* graph_ = nullptr;
   sta::dbSta* sta_ = nullptr;

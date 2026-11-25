@@ -40,11 +40,11 @@ bool hasScanPin(odb::dbMaster* master)
   return false;
 }
 
-sta::LibertyPort* statePort(sta::LibertyCell* cell,
+const sta::LibertyPort* statePort(const sta::LibertyCell* cell,
                             const sta::Sequential* seq,
                             int& outputs)
 {
-  sta::LibertyPort* q_port = nullptr;
+  const sta::LibertyPort* q_port = nullptr;
   outputs = 0;
   sta::LibertyCellPortIterator port_iter(cell);
   while (port_iter.hasNext()) {
@@ -139,7 +139,7 @@ SequentialUnmapper::BaseRegister SequentialUnmapper::makeBaseRegister(
 }
 
 bool SequentialUnmapper::findBaseSequentialCell(bool negedge,
-                                                BaseRegister& base)
+                                                BaseRegister& base) const
 {
   BaseRegister best;
   float best_area = 0.0f;
@@ -161,7 +161,7 @@ bool SequentialUnmapper::findBaseSequentialCell(bool negedge,
       continue;
     }
     int outputs = 0;
-    sta::LibertyPort* q_port = statePort(cell, seq, outputs);
+    const sta::LibertyPort* q_port = statePort(cell, seq, outputs);
     if (q_port == nullptr) {
       continue;
     }
@@ -194,7 +194,7 @@ bool SequentialUnmapper::findBaseSequentialCell(bool negedge,
   return base.master != nullptr;
 }
 
-bool SequentialUnmapper::tiedBaseRegister(sta::LibertyCell* cell,
+bool SequentialUnmapper::tiedBaseRegister(const sta::LibertyCell* cell,
                                           bool negedge,
                                           BaseRegister& base,
                                           float& area) const
@@ -210,7 +210,7 @@ bool SequentialUnmapper::tiedBaseRegister(sta::LibertyCell* cell,
   }
   const sta::FuncExpr* data = seq->data();
   int outputs = 0;
-  sta::LibertyPort* q_port = statePort(cell, seq, outputs);
+  const sta::LibertyPort* q_port = statePort(cell, seq, outputs);
   PinConstants constants;
   if (data == nullptr || data->op() != sta::FuncExpr::Op::port
       || q_port == nullptr || !inactiveAsyncControls(cell, seq, constants)) {
@@ -234,7 +234,7 @@ bool SequentialUnmapper::tiedBaseRegister(sta::LibertyCell* cell,
 }
 
 bool SequentialUnmapper::findTiedBaseSequentialCell(bool negedge,
-                                                    BaseRegister& base)
+                                                    BaseRegister& base) const
 {
   base = BaseRegister();
   float best_area = 0.0f;
@@ -297,7 +297,8 @@ bool SequentialUnmapper::findInverterCell()
   return inv_master_ != nullptr;
 }
 
-bool SequentialUnmapper::findTwoInputGate(bool is_and, odb::dbMaster*& master)
+bool SequentialUnmapper::findTwoInputGate(bool is_and,
+                                          odb::dbMaster*& master) const
 {
   const sta::FuncExpr::Op op
       = is_and ? sta::FuncExpr::Op::and_ : sta::FuncExpr::Op::or_;
@@ -309,7 +310,7 @@ bool SequentialUnmapper::findTwoInputGate(bool is_and, odb::dbMaster*& master)
     }
     int inputs = 0;
     int outputs = 0;
-    sta::LibertyPort* out_port = nullptr;
+    const sta::LibertyPort* out_port = nullptr;
     sta::LibertyCellPortIterator port_iter(cell);
     while (port_iter.hasNext()) {
       sta::LibertyPort* port = port_iter.next();
@@ -349,7 +350,7 @@ bool SequentialUnmapper::findTieCell(bool one)
   const sta::FuncExpr::Op op
       = one ? sta::FuncExpr::Op::one : sta::FuncExpr::Op::zero;
   odb::dbMaster* best = nullptr;
-  sta::LibertyPort* best_port = nullptr;
+  const sta::LibertyPort* best_port = nullptr;
   float best_area = 0.0f;
   for (sta::LibertyCell* cell : libertyCells(sta_)) {
     if (!usableCell(cell) || cell->isSequential()) {
@@ -550,7 +551,8 @@ odb::dbNet* SequentialUnmapper::collectRegisterNets(
       clock_net = iterm->getNet();
     }
     if (iterm->getIoType() == odb::dbIoType::INPUT) {
-      sta::LibertyPort* port = network->libertyPort(network->dbToSta(iterm));
+      const sta::LibertyPort* port
+          = network->libertyPort(network->dbToSta(iterm));
       if (port != nullptr && iterm->getNet() != nullptr) {
         in_port_net_[port] = iterm->getNet();
         if (iterm->getModNet() != nullptr) {
@@ -574,7 +576,8 @@ SequentialUnmapper::collectOutputMoves(
   sta::dbNetwork* network = sta_->getDbNetwork();
   std::vector<OutputMove> moves;
   for (odb::dbITerm* out_pin : out_pins) {
-    sta::LibertyPort* port = network->libertyPort(network->dbToSta(out_pin));
+    const sta::LibertyPort* port
+        = network->libertyPort(network->dbToSta(out_pin));
     const bool inverted
         = port != nullptr
           && outputInverted(port->function(), seq).value_or(false);
@@ -673,7 +676,8 @@ SequentialUnmapper::RegPins SequentialUnmapper::getRegPins(
                && iterm->getMTerm() == d_mterm) {
       pins.d = iterm;
     } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-      sta::LibertyPort* port = network->libertyPort(network->dbToSta(iterm));
+      const sta::LibertyPort* port
+          = network->libertyPort(network->dbToSta(iterm));
       const sta::FuncExpr* func = port != nullptr ? port->function() : nullptr;
       if (func != nullptr && func->op() == sta::FuncExpr::Op::port
           && func->port() == seq->output()) {

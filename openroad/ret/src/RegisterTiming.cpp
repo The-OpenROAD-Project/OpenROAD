@@ -25,7 +25,7 @@ namespace ret {
 
 namespace {
 
-const sta::Pvt* tablePvt(sta::dbSta* sta, sta::LibertyCell* cell)
+const sta::Pvt* tablePvt(sta::dbSta* sta, const sta::LibertyCell* cell)
 {
   const sta::Pvt* pvt
       = sta->cmdScene()->sdc()->operatingConditions(sta::MinMax::max());
@@ -36,22 +36,22 @@ const sta::Pvt* tablePvt(sta::dbSta* sta, sta::LibertyCell* cell)
 }  // namespace
 
 float registerClockToQ(sta::dbSta* sta,
-                       sta::LibertyCell* cell,
+                       const sta::LibertyCell* cell,
                        const sta::LibertyPort* to,
-                       float clock_slew,
-                       float load)
+                       const float clock_slew,
+                       const float load)
 {
   const sta::Pvt* pvt = cell != nullptr ? tablePvt(sta, cell) : nullptr;
   if (pvt == nullptr) {
     return -1.0f;
   }
   float worst = -1.0f;
-  for (sta::TimingArcSet* set : cell->timingArcSets()) {
+  for (const sta::TimingArcSet* set : cell->timingArcSets()) {
     if (set->role() != sta::TimingRole::regClkToQ()
         || (to != nullptr && set->to() != to)) {
       continue;
     }
-    for (sta::TimingArc* arc : set->arcs()) {
+    for (const sta::TimingArc* arc : set->arcs()) {
       const sta::GateTableModel* model
           = dynamic_cast<const sta::GateTableModel*>(arc->model());
       if (model == nullptr) {
@@ -67,20 +67,20 @@ float registerClockToQ(sta::dbSta* sta,
 }
 
 float registerSetupTime(sta::dbSta* sta,
-                        sta::LibertyCell* cell,
-                        float clock_slew,
-                        float data_slew)
+                        const sta::LibertyCell* cell,
+                        const float clock_slew,
+                        const float data_slew)
 {
   const sta::Pvt* pvt = cell != nullptr ? tablePvt(sta, cell) : nullptr;
   if (pvt == nullptr) {
     return -1.0f;
   }
   float worst = -1.0f;
-  for (sta::TimingArcSet* set : cell->timingArcSets()) {
+  for (const sta::TimingArcSet* set : cell->timingArcSets()) {
     if (set->role() != sta::TimingRole::setup()) {
       continue;
     }
-    for (sta::TimingArc* arc : set->arcs()) {
+    for (const sta::TimingArc* arc : set->arcs()) {
       const sta::CheckTableModel* model
           = dynamic_cast<const sta::CheckTableModel*>(arc->model());
       if (model == nullptr) {
@@ -101,7 +101,7 @@ float registerSetupTime(sta::dbSta* sta,
 
 float clockPinSlew(sta::dbSta* sta, const sta::Pin* pin)
 {
-  sta::Mode* mode = sta->cmdScene()->mode();
+  const sta::Mode* mode = sta->cmdScene()->mode();
   sta->ensureClkNetwork(mode);
   const sta::ClkNetwork* clk_network = mode->clkNetwork();
   if (clk_network->isIdealClock(pin)) {

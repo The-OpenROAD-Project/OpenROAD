@@ -103,7 +103,7 @@ class SequentialUnmapperFixture : public tst::Fixture
 
   // ---- netlist queries -----------------------------------------------------
 
-  int countMaster(const char* master_name)
+  int countMaster(const char* master_name) const
   {
     int n = 0;
     for (odb::dbInst* inst : block_->getInsts()) {
@@ -115,7 +115,7 @@ class SequentialUnmapperFixture : public tst::Fixture
   }
 
   // First instance of the given master, or nullptr.
-  odb::dbInst* getInstByMasterName(const std::string& master_name)
+  odb::dbInst* getInstByMasterName(const std::string& master_name) const
   {
     for (odb::dbInst* inst : block_->getInsts()) {
       if (inst->getMaster()->getName() == master_name) {
@@ -149,7 +149,7 @@ class SequentialUnmapperFixture : public tst::Fixture
     return inst != nullptr && inst->getMaster()->getName() == name;
   }
 
-  const sta::Sequential* sequentialOf(const char* cell_name)
+  const sta::Sequential* sequentialOf(const char* cell_name) const
   {
     sta::LibertyCell* cell
         = getSta()->getDbNetwork()->findLibertyCell(cell_name);
@@ -199,9 +199,9 @@ class SequentialUnmapperFixture : public tst::Fixture
   // Value of a net under `values`. A net in `values` is a leaf; any other
   // net is computed from its driver's output-pin liberty function, recursing
   // through the driver's input nets.
-  int evalNet(odb::dbNet* net, const NetValues& values)
+  int evalNet(odb::dbNet* net, const NetValues& values) const
   {
-    auto leaf_it = values.find(net);
+    const auto leaf_it = values.find(net);
     if (leaf_it != values.end()) {
       return leaf_it->second;
     }
@@ -210,7 +210,7 @@ class SequentialUnmapperFixture : public tst::Fixture
       ADD_FAILURE() << "undriven net " << (net ? net->getName() : "<null>");
       return -1;
     }
-    sta::dbNetwork* network = getSta()->getDbNetwork();
+    const sta::dbNetwork* network = getSta()->getDbNetwork();
     sta::LibertyPort* port = network->libertyPort(network->dbToSta(out));
     const sta::FuncExpr* func = port ? port->function() : nullptr;
     if (func == nullptr) {
@@ -237,7 +237,7 @@ class SequentialUnmapperFixture : public tst::Fixture
                          const sta::Sequential* seq,
                          const LeafNets& leaf_nets,
                          odb::dbNet* state_net,
-                         const ExpectedFn& expected)
+                         const ExpectedFn& expected) const
   {
     const std::vector<std::pair<std::string, odb::dbNet*>> leaves(
         leaf_nets.begin(), leaf_nets.end());
@@ -261,7 +261,7 @@ class SequentialUnmapperFixture : public tst::Fixture
         if (p == seq->outputInv()) {
           return 1 - state;
         }
-        auto it = leaf_nets.find(p->name());
+        const auto it = leaf_nets.find(p->name());
         if (it == leaf_nets.end()) {
           ADD_FAILURE() << "pin " << p->name() << " has no net in leaf_nets";
           return -1;
@@ -277,7 +277,7 @@ class SequentialUnmapperFixture : public tst::Fixture
   void expectSameFunction(odb::dbNet* d_net,
                           const sta::Sequential* seq,
                           const LeafNets& leaf_nets,
-                          odb::dbNet* state_net)
+                          odb::dbNet* state_net) const
   {
     expectNetFunction(
         d_net, seq, leaf_nets, state_net, [&](const LeafValue& leaf) {
@@ -287,7 +287,7 @@ class SequentialUnmapperFixture : public tst::Fixture
 
   // Netlist and timing-graph consistency: both return the number of new
   // warnings, so 0 means clean.
-  void expectSane()
+  void expectSane() const
   {
     EXPECT_EQ(getSta()->getDbNetwork()->checkAxioms(), 0)
         << "dbNetwork axioms violated";
