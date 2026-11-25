@@ -145,10 +145,12 @@ void RetimingGraph::walkFanout(const int source,
           continue;
         }
         adj_[source].push_back({.target = it->second, .weight = weight});
-        phys_[source].push_back({.driver = out_pin,
-                                 .sink = sink,
-                                 .flops = chain.flops,
-                                 .entries = chain.entries});
+        phys_[source].push_back({
+            .driver = out_pin,
+            .sink = sink,
+            .flops = chain.flops,
+            .entries = chain.entries,
+        });
       }
     }
   }

@@ -213,7 +213,7 @@ proc run_dsec_test { test args } {
     set out [open $wrapped w]
     # write_verilog leaves the nets of 1'b0 and 1'b1 undeclared.
     set text [string map {(zero_) (1'b0) (one_) (1'b1)} \
-                [dsec_read_file $netlist]]
+      [dsec_read_file $netlist]]
     puts $out "$wrapper$ff_model$models$text"
     close $out
     set aig [make_result_file "${test}_$stage.aig"]
@@ -223,8 +223,10 @@ proc run_dsec_test { test args } {
       exec $abc -c "$read_libs; read -m -c $wrapped; init -z; strash;\
                     write_aiger $aig" >& $log
     }
-    if { ![regexp {left 0 black boxes} [dsec_read_file $log]]
-         || ![file exists $aig] } {
+    if {
+      ![regexp {left 0 black boxes} [dsec_read_file $log]]
+      || ![file exists $aig]
+    } {
       puts "Retime output failed sequential equivalence test (see $log)"
       return
     }

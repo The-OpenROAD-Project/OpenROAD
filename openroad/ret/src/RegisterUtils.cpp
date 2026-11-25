@@ -694,10 +694,9 @@ void classifyEnableRegister(odb::dbInst* inst,
         || iterm->getMTerm() == cls.data) {
       continue;
     }
-    const bool is_control
-        = std::ranges::any_of(cls.enables, [&](const auto& enable) {
-            return enable.first == iterm->getMTerm();
-          });
+    const bool is_control = std::ranges::any_of(
+        cls.enables,
+        [&](const auto& enable) { return enable.first == iterm->getMTerm(); });
     if (!is_control) {
       return;
     }

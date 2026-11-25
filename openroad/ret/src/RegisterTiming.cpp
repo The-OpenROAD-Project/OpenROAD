@@ -107,9 +107,8 @@ float clockPinSlew(sta::dbSta* sta, const sta::Pin* pin)
   const sta::ClkNetwork* clk_network = mode->clkNetwork();
   if (clk_network->isIdealClock(pin)) {
     const sta::MinMax* max = sta::MinMax::max();
-    return std::max(
-        clk_network->idealClkSlew(pin, sta::RiseFall::rise(), max),
-        clk_network->idealClkSlew(pin, sta::RiseFall::fall(), max));
+    return std::max(clk_network->idealClkSlew(pin, sta::RiseFall::rise(), max),
+                    clk_network->idealClkSlew(pin, sta::RiseFall::fall(), max));
   }
   return pinSlew(sta, pin);
 }

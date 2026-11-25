@@ -102,7 +102,7 @@ std::optional<odb::Rect> RetimerPlacer::neighborBox(
       }
     }
     if (input && !sequential
-        && static_cast<int>(neighbors.size()) > max_input_neighbors) {
+        && std::cmp_greater(neighbors.size(), max_input_neighbors)) {
       continue;
     }
     for (odb::dbInst* cell : neighbors) {
@@ -151,8 +151,7 @@ const std::vector<odb::dbMaster*>& RetimerPlacer::equivalentMasters(
       continue;
     }
     odb::dbMaster* other_master = network->staToDb(other);
-    if (other_master != nullptr
-        && other_master->getSite() == master->getSite()
+    if (other_master != nullptr && other_master->getSite() == master->getSite()
         && seen.insert(other_master).second) {
       by_area.emplace_back(other->area(), other_master);
     }

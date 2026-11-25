@@ -167,8 +167,7 @@ class Retime
   // slew then, negative without an arc.
   float slowdownAtLoad(int u, float load, float new_load, float& slew) const;
   float slowdownAtSlew(int t, odb::dbITerm* sink, float slew) const;
-  std::optional<float> staArc(odb::dbITerm* input,
-                              odb::dbITerm* output) const;
+  std::optional<float> staArc(odb::dbITerm* input, odb::dbITerm* output) const;
   // STA's input arrivals through the model's arcs.
   double modeledOutputArrival(int t, bool registered) const;
   // launch_offset_ (the clock arrival): median over sampled registers of STA's
@@ -193,7 +192,7 @@ class Retime
 
   std::vector<int> r_;
   std::vector<double> gate_floor_;
-  std::vector<double> arrivals_;     // register-rooted
+  std::vector<double> arrivals_;         // register-rooted
   std::vector<double> arrivals_pinned_;  // pinned-rooted
   // A pinned gate's latest arrival through its inputs the graph leaves out.
   std::vector<double> pinned_floor_;

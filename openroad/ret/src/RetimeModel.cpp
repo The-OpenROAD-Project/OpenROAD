@@ -315,9 +315,12 @@ double Retime::modeledOutputArrival(const int t, const bool registered) const
       continue;
     }
     const auto edge = std::ranges::find(fanin_[t], iterm, &FaninEdge::sink);
-    const double arc = edge == fanin_[t].end() ? getGateArc(iterm)
-                       : registered            ? edge->arc_reg
-                                               : edge->arc_comb;
+    double arc = 0.0;
+    if (edge == fanin_[t].end()) {
+      arc = getGateArc(iterm);
+    } else {
+      arc = registered ? edge->arc_reg : edge->arc_comb;
+    }
     latest = std::max(latest, pinArrival(iterm) + arc);
   }
   return latest;
@@ -361,8 +364,7 @@ double Retime::launchArrival(const int t, const FaninEdge& fe) const
   return new_launch_[fe.u] + fe.wire;
 }
 
-bool Retime::slideKeepsClass(const int t,
-                             std::vector<odb::dbInst*>& regs) const
+bool Retime::slideKeepsClass(const int t, std::vector<odb::dbInst*>& regs) const
 {
   regs.clear();
   for (const FaninEdge& fe : fanin_[t]) {
@@ -668,10 +670,11 @@ void Retime::computeEndpoints()
     const double arrival = pinArrival(output);
     orig_end_shift_[v] = registerEndShift(v, arrival);
     po_end_shift_[v] = portEndShift(v, arrival);
-    const float setup = registerSetupTime(sta_,
-                                          launch_cell_[v],
-                                          clock_slew_,
-                                          pinSlew(sta_, network->dbToSta(output)));
+    const float setup
+        = registerSetupTime(sta_,
+                            launch_cell_[v],
+                            clock_slew_,
+                            pinSlew(sta_, network->dbToSta(output)));
     new_setup_[v] = std::max(setup, 0.0f);
   }
 }
@@ -703,7 +706,8 @@ Retime::SlideEffect Retime::slideEffect(const int v)
 {
   SlideEffect effect;
   applySlide(v);
-  effect.into = slackOf(std::max(arrivals_[v], arrivals_pinned_[v]), endShift(v));
+  effect.into
+      = slackOf(std::max(arrivals_[v], arrivals_pinned_[v]), endShift(v));
   const std::vector<int>& changed = scratch_.dirty;
   for (const int t : changed) {
     effect.total_change += negativeSlackAt(t);
@@ -739,8 +743,7 @@ std::vector<std::pair<double, int>> Retime::failingGates(
   return gates;
 }
 
-Retime::Pick Retime::pickSlide(const double margin,
-                               std::vector<char>& refused)
+Retime::Pick Retime::pickSlide(const double margin, std::vector<char>& refused)
 {
   const double worst = worstSlack();
   Pick pick;

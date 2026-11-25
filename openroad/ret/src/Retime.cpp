@@ -333,7 +333,8 @@ void Retime::setArrival(const int t)
     const double extra = crossingDelay(t, fe);
     a = std::max(a, arrivals_[fe.u] + fe.driver_shift + fe.wire + arc + extra);
     a_pinned = std::max(
-        a_pinned, arrivals_pinned_[fe.u] + fe.driver_shift + fe.wire + arc + extra);
+        a_pinned,
+        arrivals_pinned_[fe.u] + fe.driver_shift + fe.wire + arc + extra);
   }
   if (root && !launched) {
     arrivals_[t] = graph_->pinned()[t] ? kUnreached : gate_floor_[t];

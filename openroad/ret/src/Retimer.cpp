@@ -117,9 +117,8 @@ void addClassedMovers(const RetimingGraph& graph,
   }
 }
 
-std::optional<int> lagOfNewGate(
-    odb::dbInst* gate,
-    const std::unordered_map<std::string, int>& lag)
+std::optional<int> lagOfNewGate(odb::dbInst* gate,
+                                const std::unordered_map<std::string, int>& lag)
 {
   constexpr int kMaxDepth = 64;
   for (int depth = 0; depth <= kMaxDepth; ++depth) {
@@ -184,8 +183,7 @@ Retimer::Retimer(odb::dbDatabase* db,
       sta_(sta),
       estimate_parasitics_(estimate_parasitics),
       logger_(logger),
-      unmapper_(
-          std::make_unique<SequentialUnmapper>(db, sta, logger, resizer)),
+      unmapper_(std::make_unique<SequentialUnmapper>(db, sta, logger, resizer)),
       placer_(
           std::make_unique<RetimerPlacer>(sta, estimate_parasitics, resizer))
 {
@@ -234,8 +232,10 @@ void Retimer::retime(const int max_moves)
     StaCheck check(
         sta_, logger_, placer_.get(), block, &guard, [&](const int limit) {
           const int slides = searchAndApply(block, limit, guard);
-          return StaCheck::SearchResult{.slides = slides,
-                                        .largest = largest_search_};
+          return StaCheck::SearchResult{
+              .slides = slides,
+              .largest = largest_search_,
+          };
         });
     check.run(max_moves);
   } catch (...) {

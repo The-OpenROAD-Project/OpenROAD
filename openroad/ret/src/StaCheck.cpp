@@ -240,8 +240,7 @@ StaCheck::Round StaCheck::runRound(const int max_moves)
     keepTrial(full, round);
   } else {
     undoTrial();
-    const int limit
-        = full.slides > 0 ? bestPrefix(full.slides, before) : 0;
+    const int limit = full.slides > 0 ? bestPrefix(full.slides, before) : 0;
     if (limit > 0) {
       const Trial again = runTrial(limit, before);
       if (betterThan(again.slack, before, before)) {

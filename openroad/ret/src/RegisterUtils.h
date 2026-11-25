@@ -37,9 +37,10 @@ bool hasSimpleClock(const sta::Sequential* seq);
 std::optional<bool> outputInverted(const sta::FuncExpr* func,
                                    const sta::Sequential* seq);
 
-void connectPin(odb::dbITerm* pin,
-                odb::dbNet* net,
-                const std::unordered_map<odb::dbNet*, odb::dbModNet*>& mod_nets);
+void connectPin(
+    odb::dbITerm* pin,
+    odb::dbNet* net,
+    const std::unordered_map<odb::dbNet*, odb::dbModNet*>& mod_nets);
 
 // A cell with a scan pin in LEF or a liberty test_cell.
 bool isScanCell(sta::dbSta* sta, odb::dbInst* inst);
@@ -94,7 +95,7 @@ struct RegisterClass
   odb::dbMTerm* output = nullptr;  // the output pin the loads read
   odb::dbNet* clock = nullptr;
   std::vector<std::pair<odb::dbMTerm*, odb::dbNet*>> enables;  // by pin name
-  bool negedge = false;  // never moves
+  bool negedge = false;                                        // never moves
 };
 
 RegisterClass registerClass(sta::dbSta* sta, odb::dbInst* inst);

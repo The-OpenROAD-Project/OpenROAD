@@ -177,8 +177,7 @@ bool SequentialUnmapper::findBaseSequentialCell(const bool negedge,
     if (q_port == nullptr) {
       continue;
     }
-    const BaseRegister candidate
-        = makeBaseRegister(cell, data->port(), q_port);
+    const BaseRegister candidate = makeBaseRegister(cell, data->port(), q_port);
     if (candidate.master == nullptr || hasScanPin(candidate.master)) {
       continue;
     }
@@ -298,8 +297,7 @@ bool SequentialUnmapper::findInverterCell()
       continue;
     }
     odb::dbMaster* candidate = db_->findMaster(cell->name().c_str());
-    if (candidate != nullptr
-        && (best == nullptr || cell->area() < best_area)) {
+    if (candidate != nullptr && (best == nullptr || cell->area() < best_area)) {
       best = candidate;
       best_area = cell->area();
     }
@@ -345,8 +343,7 @@ odb::dbMaster* SequentialUnmapper::smallestTwoInputGate(const bool is_and) const
       continue;
     }
     odb::dbMaster* candidate = db_->findMaster(cell->name().c_str());
-    if (candidate != nullptr
-        && (best == nullptr || cell->area() < best_area)) {
+    if (candidate != nullptr && (best == nullptr || cell->area() < best_area)) {
       best = candidate;
       best_area = cell->area();
     }
@@ -550,8 +547,7 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
     flop->getITerm(mterm)->connect(makeTie(high));
   }
 
-  const std::vector<OutputMove> moves
-      = collectOutputMoves(inst, seq, out_pins);
+  const std::vector<OutputMove> moves = collectOutputMoves(inst, seq, out_pins);
   deleteRegister(sta_, inst);
   applyOutputMoves(moves);
   ++unmapped_;
@@ -599,8 +595,7 @@ bool SequentialUnmapper::outputsReadState(
   for (odb::dbITerm* out_pin : out_pins) {
     const sta::LibertyPort* port
         = network->libertyPort(network->dbToSta(out_pin));
-    if (port == nullptr
-        || !outputInverted(port->function(), seq).has_value()) {
+    if (port == nullptr || !outputInverted(port->function(), seq).has_value()) {
       return false;
     }
   }
@@ -618,7 +613,8 @@ SequentialUnmapper::collectOutputMoves(
   for (odb::dbITerm* out_pin : out_pins) {
     const sta::LibertyPort* port
         = network->libertyPort(network->dbToSta(out_pin));
-    const bool inverted = outputInverted(port->function(), seq).value();
+    // outputsReadState has checked every output.
+    const bool inverted = outputInverted(port->function(), seq).value_or(false);
     OutputMove move;
     move.old_net = out_pin->getNet();
     move.old_mod_net = out_pin->getModNet();

@@ -29,7 +29,7 @@ struct EdgePhys
 {
   odb::dbITerm* driver;
   odb::dbITerm* sink;
-  std::vector<odb::dbInst*> flops;  // driver to sink
+  std::vector<odb::dbInst*> flops;     // driver to sink
   std::vector<odb::dbITerm*> entries;  // the pin each register is entered by
 };
 

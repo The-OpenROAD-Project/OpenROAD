@@ -17,4 +17,5 @@ catch { retime extra } msg
 puts $msg
 
 retime -max_moves 6
-run_dsec_test retime_max_moves -liberty_files sky130hd/sky130hd_tt.lib   -clock clk -resetn rst_n
+run_dsec_test retime_max_moves -liberty_files sky130hd/sky130hd_tt.lib \
+  -clock clk -resetn rst_n
