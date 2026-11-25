@@ -915,10 +915,9 @@ void Resizer::findBuffers()
                   second_leakiest_vt.first.vt_name,
                   num_vt);
   } else if (num_vt == 1) {
-    const std::pair<VTCategory, VTLeakageStats> only_vt
-        = lib_data_->sorted_vt_categories[0];
-    best_vt_index = only_vt.first.vt_index;
-    debugRDPrint2("findBuffers: Best VT index is {} among 1 VT", best_vt_index);
+    // One identified VT leaves nothing to choose between.  Filtering on it
+    // would drop the buffers without an implant layer in a mixed library.
+    debugRDPrint2("findBuffers: No VT filter with 1 VT");
   } else {
     debugRDPrint2("findBuffers: Best VT index is {} among 0 VT", best_vt_index);
   }
@@ -1436,9 +1435,34 @@ float Resizer::bufferDriveResistance(const sta::LibertyCell* buffer) const
   return output->driveResistance();
 }
 
-int Resizer::vtCategoryCount() const
+void Resizer::ensureLibData()
 {
+  if (!lib_data_) {
+    sta::LibertyCellSeq buffer_list;
+    getBufferList(buffer_list);
+  }
+}
+
+int Resizer::vtCategoryCount()
+{
+  ensureLibData();
   return static_cast<int>(lib_data_->sorted_vt_categories.size());
+}
+
+bool Resizer::canVtSwap(sta::LibertyCell* cell)
+{
+  if (vtCategoryCount() >= 2) {
+    return true;
+  }
+  // With one usable VT, only a cell mapped to a dont_use VT can move, to its
+  // equivalent in the usable VT.
+  return dontUse(cell) && getVTEquivCells(cell).size() > 1;
+}
+
+int Resizer::vtCategoryCountWithDontUse()
+{
+  ensureLibData();
+  return lib_data_->vt_category_count_with_dont_use;
 }
 
 // This should be exported by STA
@@ -2198,6 +2222,8 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
     lib_data_->sorted_vt_categories.clear();
   }
 
+  // Identified VT categories of the buffers, dont_use ones included
+  std::set<VTCategory> vt_categories_with_dont_use;
   sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
   while (lib_iter->hasNext()) {
     sta::LibertyLibrary* lib = lib_iter->next();
@@ -2206,10 +2232,18 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
       if (getBufferUse(buffer) == BufferUse::CLOCK) {
         continue;
       }
-      if (!dontUse(buffer) && !buffer->alwaysOn() && !buffer->isIsolationCell()
+      if (!buffer->alwaysOn() && !buffer->isIsolationCell()
           && !buffer->isLevelShifter() && isLinkCell(buffer)) {
         odb::dbMaster* master = db_network_->staToDb(buffer);
         if (!master) {
+          continue;
+        }
+        // A buffer without an identified VT forms no VT category.
+        const VTCategory vt_category = cellVTType(master);
+        if (vt_category.isClassified()) {
+          vt_categories_with_dont_use.insert(vt_category);
+        }
+        if (dontUse(buffer)) {
           continue;
         }
 
@@ -2222,18 +2256,20 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
         }
 
         // Track VT category leakage data
-        VTCategory vt_category = cellVTType(master);
-
-        // Get or create VT leakage stats for this category
-        VTLeakageStats& vt_stats
-            = lib_data_->vt_leakage_by_category[vt_category];
-        vt_stats.add_cell_leakage(cellLeakage(buffer));
+        if (vt_category.isClassified()) {
+          // Get or create VT leakage stats for this category
+          VTLeakageStats& vt_stats
+              = lib_data_->vt_leakage_by_category[vt_category];
+          vt_stats.add_cell_leakage(cellLeakage(buffer));
+        }
 
         buffer_list.emplace_back(buffer);
       }
     }
   }
   delete lib_iter;
+  lib_data_->vt_category_count_with_dont_use
+      = static_cast<int>(vt_categories_with_dont_use.size());
 
   if (!buffer_list.empty()) {
     // Sort buffer list by VT type, then by drive resistance
@@ -2451,7 +2487,10 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
     (void) buffer_list;
   }
 
-  if (lib_data_->sorted_vt_categories.size() < 2) {
+  // A dont_use cell keeps its equivalents in the one usable VT so that a VT
+  // swap can move it there (e.g. a latch mapped to a slower VT in a flow
+  // that uses only the fastest VT).
+  if (lib_data_->sorted_vt_categories.size() < 2 && !dontUse(source_cell)) {
     vt_equiv_cells_cache_[source_cell] = sta::LibertyCellSeq();
     return vt_equiv_cells_cache_[source_cell];
   }
@@ -2459,6 +2498,12 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
   sta::LibertyCellSeq* equiv_cells = equivCells(source_cell);
   dbMaster* source_cell_master = db_network_->staToDb(source_cell);
   if (equiv_cells == nullptr || source_cell_master == nullptr) {
+    vt_equiv_cells_cache_[source_cell] = sta::LibertyCellSeq();
+    return vt_equiv_cells_cache_[source_cell];
+  }
+
+  // A cell without an identified VT has no VT to swap from.
+  if (!cellVTType(source_cell_master).isClassified()) {
     vt_equiv_cells_cache_[source_cell] = sta::LibertyCellSeq();
     return vt_equiv_cells_cache_[source_cell];
   }
@@ -2480,6 +2525,11 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
 
     dbMaster* equiv_cell_master = db_network_->staToDb(equiv_cell);
     if (!equiv_cell_master) {
+      continue;
+    }
+
+    // A cell without an identified VT is no VT alternative.
+    if (!cellVTType(equiv_cell_master).isClassified()) {
       continue;
     }
 
@@ -2570,8 +2620,12 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
   vt_equiv_cells_cache_[source_cell] = std::move(vt_equiv_cells);
   const sta::LibertyCellSeq& vt_equiv_cells_new
       = vt_equiv_cells_cache_[source_cell];
-  for (sta::LibertyCell* equiv_cell : vt_equiv_cells_new) {
-    vt_equiv_cells_cache_[equiv_cell] = vt_equiv_cells_new;
+  // The list of a dont_use source cell holds that cell, so it is not shared:
+  // the other cells must not move to a dont_use cell.
+  if (!dontUse(source_cell)) {
+    for (sta::LibertyCell* equiv_cell : vt_equiv_cells_new) {
+      vt_equiv_cells_cache_[equiv_cell] = vt_equiv_cells_new;
+    }
   }
   return vt_equiv_cells_cache_[source_cell];
 }
@@ -2768,7 +2822,10 @@ VTCategory Resizer::cellVTType(dbMaster* master)
 
   dbSet<dbBox> obs = master->getObstructions();
   if (obs.empty()) {
-    VTCategory vt_cat{.vt_index = 0, .vt_name = "-"};
+    VTCategory vt_cat{
+        .vt_index = VTCategory::kUnclassifiedVtIndex,
+        .vt_name = "-",
+    };
     auto [new_it, _] = vt_map_.emplace(master, vt_cat);
     return new_it->second;
   }
@@ -2807,7 +2864,10 @@ VTCategory Resizer::cellVTType(dbMaster* master)
   }
 
   if (hash1 == 0) {
-    VTCategory vt_cat{.vt_index = 0, .vt_name = "-"};
+    VTCategory vt_cat{
+        .vt_index = VTCategory::kUnclassifiedVtIndex,
+        .vt_name = "-",
+    };
     auto [new_it, _] = vt_map_.emplace(master, vt_cat);
     return new_it->second;
   }
@@ -3846,10 +3906,15 @@ void Resizer::setDontUse(sta::LibertyCell* cell, bool dont_use)
 
   // Reset buffer set and swappable cells cache to ensure they honor dont_use_
   buffer_cells_.clear();
+  // Library data skips dont_use buffers; getBufferList() rebuilds it when
+  // findBuffers() or getVTEquivCells() next needs it.
+  lib_data_.reset();
   buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
   port_buffer_ = nullptr;
   swappable_cells_cache_.clear();
+  // getVTEquivCells skips dont_use cells too.
+  vt_equiv_cells_cache_.clear();
   // findTargetLoads skips dont_use cells, so a cell re-enabled with
   // unset_dont_use would otherwise keep a target load of zero and be ranked
   // worst by findTargetCell.
@@ -3862,10 +3927,12 @@ void Resizer::resetDontUse()
 
   // Reset buffer set and swappable cells cache to ensure they honor dont_use_
   buffer_cells_.clear();
+  lib_data_.reset();
   buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
   port_buffer_ = nullptr;
   swappable_cells_cache_.clear();
+  vt_equiv_cells_cache_.clear();
   target_load_map_ = nullptr;
 
   // recopy in liberty cell dont uses
