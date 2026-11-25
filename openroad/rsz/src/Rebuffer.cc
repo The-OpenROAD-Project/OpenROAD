@@ -612,7 +612,10 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
     utl::DebugScopedTimer timer(size_eval_runtime_);
     // Guard against collapsing a buffered timing tree into a flat high-fanout
     // root net that looks fast under zero-via placement RC but blows up under
-    // detailed routing via resistance.
+    // detailed routing via resistance.  A candidate with fewer buffers than
+    // the timing tree may not leave the driver more direct sinks than the
+    // limit below; the check covers the base candidates, their variants
+    // without the first buffer, and the trees planned for another cell.
     // Only a timing tree with buffers can be collapsed by a candidate.
     const bool timing_buffered = timing_tree->bufferCount() > 0;
     // Sinks the driver sees directly in the timing tree; a candidate root at
@@ -662,6 +665,11 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
     }
     // Anchor the whole-net leakage budget to area_tree on passing nets so
     // dropped timing-tree buffers do not create a phantom leakage allowance.
+    // The budget is a multiple of the leakage of the current driver plus the
+    // reference tree's buffers, so one leaky buffer in the timing tree would
+    // let a net that already passes swap its driver to a leakier VT for
+    // slack it does not need.  chooseTreeAndDriver() also keeps equal-area
+    // swaps on a passing net within the reference leakage itself.
     const BnetPtr& leakage_ref_tree
         = slack_target >= FixedDelay::ZERO ? area_tree : timing_tree;
     const DriverChoices choices = driverChoices(current_cell, leakage_ref_tree);
@@ -737,7 +745,13 @@ void Rebuffer::addTreesPlannedForBestDriver(const BnetPtr& unbuffered_tree,
                                             std::vector<BnetPtr>& trees)
 {
   // Planning costs a full rebuffer per cell, and planning for more than the
-  // fastest feasible cell gained no slack on the designs measured.
+  // fastest feasible cell gained no slack on the designs measured.  The one
+  // plan must go to a cell the final choice can accept: a cell that fails
+  // the upstream side-load check, or a tree over the planned cell's max cap,
+  // would waste it and leave the feasible faster cells with no planned tree.
+  // So the cell is picked by hurdle-adjusted slack among cells that pass the
+  // leakage and side-load checks, and evaluateOption() refuses trees over
+  // its max capacitance while planning.
   sta::LibertyCell* best_cell = nullptr;
   FixedDelay best_slack = slackAtDriverPin(timing_tree);
   for (sta::LibertyCell* cell : choices.cells) {
@@ -959,6 +973,14 @@ FixedDelay Rebuffer::upstreamSideLoadSlack(TreeDriverEvaluation& eval,
   return slack;
 }
 
+// Without a hurdle every failing net aims its sizing target at the best slack
+// any cell reaches, so nets far from the worst slack upsize for slack that
+// does not move WNS.  Outside the critical band a candidate that grows the
+// driver area is scored slower by kAreaUpsizeHurdle x relative area growth x
+// the driver gate delay, so a larger cell must beat a smaller one by more
+// than the hurdle to raise the target.  Same-area swaps such as VT changes
+// and critical nets pay nothing, and the smallest area meeting the target
+// still wins.
 FixedDelay Rebuffer::areaUpsizeHurdle(const sta::LibertyCell* current_cell,
                                       const sta::LibertyCell* cell,
                                       const bool critical,
@@ -3855,8 +3877,13 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
       refresh_timing(drvr);
     }
 
-    // Before sizing a driver that shares an input net with a sibling resized
-    // earlier in this level, bring that net's timing up to date.
+    // Siblings on one level are sized without a timing update between them,
+    // so each would see only its own input cap increase on a shared input
+    // net and all of them could upsize together.  A resize records the input
+    // nets whose load cap grew (below), and a driver that reads such a net is
+    // re-timed here before it is sized.  Drivers that share no such net keep
+    // the once-per-level update, so the extra cost only arises on shared
+    // nets.
     if (size_driver_ && drvr_inst != nullptr
         && !resized_upstream_nets_.empty()) {
       // Does any input of this driver sit on a net that gained load cap?
