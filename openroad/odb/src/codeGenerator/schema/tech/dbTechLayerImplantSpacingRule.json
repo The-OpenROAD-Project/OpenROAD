@@ -1,0 +1,59 @@
+{
+  "name": "dbTechLayerImplantSpacingRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "name": "min_spacing_",
+      "type": "int",
+      "default": "0"
+    },
+    {
+      "name": "second_layer_",
+      "type": "dbId<_dbTechLayer>",
+      "flags": [
+        "private"
+      ],
+      "parent": "dbTechLayer"
+    },
+    {
+      "name": "horizontal",
+      "type": "bit"
+    },
+    {
+      "name": "vertical",
+      "type": "bit"
+    },
+    {
+      "name": "prl_valid",
+      "type": "bit"
+    },
+    {
+      "name": "prl_",
+      "type": "int",
+      "default": "0"
+    },
+    {
+      "name": "except_abutted",
+      "type": "bit"
+    },
+    {
+      "name": "except_corner_touch",
+      "type": "bit"
+    },
+    {
+      "name": "length_",
+      "type": "int",
+      "default": "0"
+    },
+    {
+      "name": "intersect_layers_",
+      "type": "dbVector<dbId<_dbTechLayer>>",
+      "flags": [
+        "private"
+      ]
+    }
+  ],
+  "cpp_includes": [
+    "dbTechLayer.h"
+  ]
+}

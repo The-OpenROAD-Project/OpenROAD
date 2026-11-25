@@ -36,7 +36,7 @@ else
 fi
 
 # Run from the source tree. A test runs in its runfiles directory, which holds
-# nothing but its own declared data, so scanning "src" from there would walk a
+# nothing but its own declared data, so scanning "openroad" from there would walk a
 # path that does not exist -- find_messages.py would report zero messages and
 # the check would pass unconditionally. MODULE.bazel is declared as data purely
 # so its runfiles entry is a symlink pointing back at the real workspace, the
@@ -44,9 +44,9 @@ fi
 [ -L MODULE.bazel ] || { echo "MODULE.bazel missing from runfiles" >&2; exit 1; }
 cd "$(dirname "$(readlink MODULE.bazel)")"
 
-# One walk over all of src, so an ID reused across two modules is caught along
+# One walk over all of openroad, so an ID reused across two modules is caught along
 # with one reused inside a single module. This is wider than the per-module
-# //src/<module>:messages_txt targets, which each scan their own module only.
+# //openroad/<module>:messages_txt targets, which each scan their own module only.
 # find_messages.py exits non-zero naming both sites; its listing of every
 # message goes to stdout and is not interesting here.
-"${PYTHON3}" "${FIND_MESSAGES}" -d src > /dev/null
+"${PYTHON3}" "${FIND_MESSAGES}" -d openroad > /dev/null

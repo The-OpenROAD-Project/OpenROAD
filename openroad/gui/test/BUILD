@@ -1,0 +1,81 @@
+load("//bazel:man_tcl_checker.bzl", "man_tcl_check_test")
+
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022-2025, The OpenROAD Authors
+load("//test:regression.bzl", "doc_check_test", "regression_test")
+
+package(features = ["layering_check"])
+
+ALL_TESTS = [
+    "supported",
+    "clocktree_virtual_clock",
+    "display_controls_parity",
+    "dump_heatmap_headless",
+    "no_window",
+    "save_animated_gif_headless",
+    "save_image_headless",
+    "select_name_patterns",
+]
+
+# Exercise the Qt gui, so they need it built in.
+QT_TESTS = [
+    "clocktree_virtual_clock",
+    "display_controls_parity",
+    "save_animated_gif_headless",
+    "save_image_headless",
+    "select_name_patterns",
+]
+
+PASSFAIL_TESTS = [
+    "clocktree_virtual_clock",
+    "display_controls_parity",
+    "dump_heatmap_headless",
+    "no_window",
+    "save_animated_gif_headless",
+    "save_image_headless",
+    "select_name_patterns",
+]
+
+filegroup(
+    name = "test_resources",
+    # overly broad glob, could be refined later, but
+    # symlinks are cheap and OpenROAD binary changes, the common
+    # use case is that all tests have to be re-run.
+    srcs = glob(
+        ["**/*"],
+        exclude = [
+            test + "." + ext
+            for test in ALL_TESTS
+            for ext in [
+                "tcl",
+                "py",
+            ]
+        ],
+    ),
+)
+
+[
+    regression_test(
+        name = test_name,
+        check_log = False if test_name in PASSFAIL_TESTS else True,
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
+        data = [":test_resources"],
+        openroad = "//:openroad-qt" if test_name in QT_TESTS else "//:openroad",
+        visibility = ["//visibility:public"],
+    )
+    for test_name in ALL_TESTS
+]
+
+man_tcl_check_test(
+    name = "gui_man_tcl_check",
+    module = "gui",
+)
+
+doc_check_test(
+    name = "gui_readme_msgs_check",
+    data = [
+        "//openroad/gui:doc_files",
+        "//openroad/gui:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)

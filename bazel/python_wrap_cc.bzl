@@ -152,9 +152,8 @@ python_wrap_cc = rule(
 # Dependencies every SWIG Python wrapper needs, beyond its own tool.
 _PYTHON_WRAP_COMMON_DEPS = [
     "//:ord",
-    "//src/odb/src/db",
-    "//src/utl",
-    "@boost.stacktrace",
+    "//openroad/odb/src/db",
+    "//openroad/utl",
     "@rules_python//python/cc:current_py_cc_headers",
 ]
 

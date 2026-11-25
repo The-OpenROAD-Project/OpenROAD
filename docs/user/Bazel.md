@@ -1,16 +1,15 @@
 # Building and testing with Bazel
 
 ```{note}
-Bazel is the supported build system for OpenROAD.
+Bazel is the only supported build system for OpenROAD.
 For installation steps, see [Installing OpenROAD](Build.md).
-The deprecated CMake build will be removed on Nov. 1, 2026.
 ```
 
 First [install Bazelisk](https://bazel.build/install/bazelisk) or run `sudo ./etc/DependencyInstaller.sh -bazel`, then you're ready for the main use-case of Bazel, which is to make modifications to OpenROAD and run fast local tests before creating a PR:
 
-    bazelisk test --jobs=4 src/...
+    bazelisk test --jobs=4 openroad/...
 
-- `...` means everything below this folder, so use `src/gpl/...` to run a smaller set of tests.
+- `...` means everything below this folder, so use `openroad/gpl/...` to run a smaller set of tests.
 - `--jobs=4` limits parallel builds to 4 cores, default is use all cores.
 
 For more comprehensive testing locally, including longer OpenROAD integration tests, run:
@@ -29,27 +28,27 @@ To list all tests use bazelisk query with [Bazel query language](https://bazel.b
 
 List all tests below a folder containing `asap7`:
 
-    $ bazelisk query   'filter("asap7", kind(".*_test rule", //src/pdn/...))'
-    //src/pdn/test:asap7_M1_M3_followpins-tcl_test
+    $ bazelisk query   'filter("asap7", kind(".*_test rule", //openroad/pdn/...))'
+    //openroad/pdn/test:asap7_M1_M3_followpins-tcl_test
     ...
 
 Run specific test:
 
-    bazelisk test --test_output=errors //src/upf/test:levelshifter-tcl_test
+    bazelisk test --test_output=errors //openroad/upf/test:levelshifter-tcl_test
 
 Run the tests of one tool whose label matches a regex, in one step:
 
-    cd src/pdn/test
+    cd openroad/pdn/test
     ./regression -R 'asap7' --test_output=errors
 
-`./regression` runs `bazelisk query` on `//src/<tool>/...` and then `bazelisk test` on the matching targets.
+`./regression` runs `bazelisk query` on `//openroad/<tool>/...` and then `bazelisk test` on the matching targets.
 It passes all other arguments to `bazelisk test` and fails when no test matches.
 It does not select tests tagged `manual`; run them by label with `bazelisk test`.
 It skips targets that are not compatible with the platform, for example GPU-only tests.
 
 To run or list tests below a folder:
 
-    bazelisk test src/gpl/...
+    bazelisk test openroad/gpl/...
 
 ## Build configurations
 
@@ -84,7 +83,7 @@ default for the local edit-rebuild loop.
 
 The console counter advances for cache hits and real compiles alike:
 
-    [7,203 / 18,048] Compiling src/dpl/src/objective/detailed_abu.cxx; 20s disk-cache, remote-cache, processwrapper-sandbox ... (16 actions, 12 running)
+    [7,203 / 18,048] Compiling openroad/dpl/src/objective/detailed_abu.cxx; 20s disk-cache, remote-cache, processwrapper-sandbox ... (16 actions, 12 running)
 
 The strategy list after the elapsed time is the sequence of stages the action
 has passed through, so the **last entry is what is happening right now**. Above,
@@ -110,7 +109,7 @@ Three different mechanisms are summarized there:
 For which actions those were, and why they were not up to date:
 
 ```shell
-bazelisk build --config=cachelog //src/dpl:dpl
+bazelisk build --config=cachelog //openroad/dpl:dpl
 etc/bazel-cache-summary.py
 ```
 
@@ -121,12 +120,12 @@ bazel-cachelog.json: 3 spawns
     processwrapper-sandbox              3       16.6s
 
 Slowest of the 3 spawns that ran for real:
-       5.8s  CppCompile     src/dpl/src/objective/detailed_abu.cxx
+       5.8s  CppCompile     openroad/dpl/src/objective/detailed_abu.cxx
        ...
 
 bazel-cachelog-explain.txt: why actions were not up to date
          3  action changed since cached execution
-            e.g. Compiling src/dpl/src/objective/detailed_hpwl.cxx
+            e.g. Compiling openroad/dpl/src/objective/detailed_hpwl.cxx
 ```
 
 `--config=cachelog` writes an execution log recording the runner that served
@@ -198,6 +197,29 @@ on downstream projects via MVS:
 
 The downstream test at `test/downstream/` verifies these invariants.
 
+## Python API (the openroad wheel)
+
+OpenROAD's Python API ships as a wheel rather than an `openroad -python`
+mode. Build it and install it into a virtualenv (CPython 3.10 or later,
+Linux x86_64):
+
+```shell
+bazelisk build //python/openroad:openroad_wheel
+pip install bazel-bin/python/openroad/openroad-*.whl
+```
+
+Then import it from any Python interpreter:
+
+```python
+from openroad import Tech, Design
+import odb
+
+tech = Tech()
+```
+
+`import openroad` also loads the per-tool modules (`odb`, `grt`, `rsz`, ...).
+Keep each `Tech` alive while its `Design` is in use.
+
 ## Build without testing
 
     bazelisk build :openroad
@@ -209,7 +231,7 @@ By default, Bazel dev builds use a fixed placeholder version (`bazel-nostamp`) s
 To embed the real git version (e.g. `26Q1-1486-g6fe48208e4`), use `--config=release`:
 
     bazelisk build --config=release :openroad
-    ./bazel-bin/openroad -version
+    ./bazel-bin/openroad/openroad -version
 
 A release build reads the version with `git describe`, and gives `unknown` when
 the tree has no git metadata. Set `OPENROAD_VERSION` to supply the version
@@ -257,7 +279,7 @@ Or "nuke it from orbit":
 
 ## Run tests with the [address sanitizer](https://github.com/google/sanitizers/wiki/addresssanitizer):
 
-    bazelisk test --config=asan --test_tag_filters=-py src/...
+    bazelisk test --config=asan --test_tag_filters=-py openroad/...
 
 Or to get an instrumented binary to run under ORFS:
 
@@ -277,14 +299,14 @@ checking on, 2648 of 3997 tests fail that way and 17 on an actual memory
 error, which is the wrong signal to leave on by default. The config therefore
 sets `detect_leaks=0`. To go leak hunting anyway:
 
-    bazelisk test --config=asan --test_tag_filters=-py --test_env=ASAN_OPTIONS=detect_leaks=1 src/...
+    bazelisk test --config=asan --test_tag_filters=-py --test_env=ASAN_OPTIONS=detect_leaks=1 openroad/...
 
 `--test_tag_filters=-py` skips the Python tests; see "Sanitizers and the
 Python extension modules" below for why.
 
 ### Known findings
 
-A `--config=asan --test_tag_filters=-py src/...` sweep reports 1053 of 3997
+A `--config=asan --test_tag_filters=-py openroad/...` sweep reports 1053 of 3997
 tests failing, but all but 19 come from one external binary.
 
 The hierarchy conformance suite and `TestLec` shell out to `kepler-formal`,
@@ -293,8 +315,8 @@ report and exits 1, failing 1034 tests that have nothing wrong with them:
 
 | Origin | Tests |
 | --- | --- |
-| `//src/dbSta/test:dbsta_hier_conformance_case_*` | 1033 |
-| `//src/tst:TestLec` | 1 |
+| `//openroad/dbSta/test:dbsta_hier_conformance_case_*` | 1033 |
+| `//openroad/tst:TestLec` | 1 |
 
 Both pass under
 `--test_env=ASAN_OPTIONS=detect_leaks=0:detect_container_overflow=0`. The
@@ -306,22 +328,22 @@ That leaves 18 tests on a genuine finding, to be fixed separately:
 | Site | Check | Tests |
 | --- | --- | --- |
 | eigen `Core/arch/SSE/PacketMath.h`, `Core/functors/AssignmentFunctors.h` | `heap-buffer-overflow` | 10, via `psm` |
-| `src/dft/src/stitch/ScanStitch.cpp:102` | `container-overflow` | 5 |
-| `src/sta/search/Path.cc:383` | `heap-use-after-free` | 1, via `dbSta` |
-| `src/odb/include/odb/dbCommon.h:26` | `stack-use-after-scope` | 1, in `web` |
+| `openroad/dft/src/stitch/ScanStitch.cpp:102` | `container-overflow` | 5 |
+| `openroad/sta/search/Path.cc:383` | `heap-use-after-free` | 1, via `dbSta` |
+| `openroad/odb/include/odb/dbCommon.h:26` | `stack-use-after-scope` | 1, in `web` |
 | `spdlog::logger::should_log` reached through `utl::Logger` | `SEGV` | 1, in `web` |
 
 The `dft` one is a plain read past the end: the loop at `ScanStitch.cpp:100`
 runs while `it != scan_cells.end()` and dereferences `*(it + 1)`, so the last
 iteration reads `end()`.
 
-One further test, `//src/grt/test:repair_antennas_post_drt_cugr-tcl_test`,
+One further test, `//openroad/grt/test:repair_antennas_post_drt_cugr-tcl_test`,
 times out rather than failing -- instrumented code is slow enough to push it
 past its limit.
 
 ## Run tests with the [thread sanitizer](https://github.com/google/sanitizers/wiki/threadsanitizercppmanual):
 
-    bazelisk test --config=tsan --test_tag_filters=-py src/...
+    bazelisk test --config=tsan --test_tag_filters=-py openroad/...
 
 Or to get an instrumented binary to run under ORFS:
 
@@ -331,16 +353,16 @@ The first `--config=tsan` invocation builds compiler-rt's tsan runtime from
 source, so expect a few minutes before any OpenROAD source is compiled.
 
 Instrumented code runs roughly 5-15x slower and uses far more memory, so
-prefer the smallest design that reproduces the race. A full `src/...` run at
+prefer the smallest design that reproduces the race. A full `openroad/...` run at
 Bazel's default parallelism can exhaust RAM and get the build OOM-killed;
 throttle it if that happens:
 
-    bazelisk test --config=tsan --test_tag_filters=-py --jobs=16 --local_test_jobs=8 src/...
+    bazelisk test --config=tsan --test_tag_filters=-py --jobs=16 --local_test_jobs=8 openroad/...
 
 Adjust the runtime via `TSAN_OPTIONS`, e.g. to keep going past the first
 report and get the second stack of a lock-order inversion:
 
-    bazelisk test --config=tsan --test_tag_filters=-py --test_env=TSAN_OPTIONS="halt_on_error=0 second_deadlock_stack=1" src/...
+    bazelisk test --config=tsan --test_tag_filters=-py --test_env=TSAN_OPTIONS="halt_on_error=0 second_deadlock_stack=1" openroad/...
 
 `drt`, `gpl`, `grt` and `ant` parallelize with OpenMP. The `@openmp` runtime
 is instrumented along with everything else under `--config=tsan`, but it is
@@ -351,13 +373,13 @@ in OpenROAD code.
 
 ### Known findings
 
-A `--config=tsan --test_tag_filters=-py src/...` sweep reports 36 of 3980
+A `--config=tsan --test_tag_filters=-py openroad/...` sweep reports 36 of 3980
 tests failing, and the OpenMP artifacts above are almost all of it:
 
 | Origin | Tests |
 | --- | --- |
 | `@openmp` `runtime/src/kmp_runtime.cpp`, `kmp_wait_release.h` | 33, across `drt`, `grt`, `ram`, `rcx`, `gpl` |
-| `src/sta/graph/Graph.cc:1288` | 1, via `rmp` |
+| `openroad/sta/graph/Graph.cc:1288` | 1, via `rmp` |
 | `boost::asio` `scheduler.ipp:187` | 1, in `dst` |
 
 Silencing the OpenMP group means building `@openmp` with
@@ -371,7 +393,7 @@ Python extension modules" below for why.
 
 ## Run tests with the [undefined behavior sanitizer](https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html):
 
-    bazelisk test --config=ubsan --test_tag_filters=-py src/...
+    bazelisk test --config=ubsan --test_tag_filters=-py openroad/...
 
 Or to get an instrumented binary to run under ORFS:
 
@@ -387,17 +409,17 @@ prints a report and lets the process run on to exit 0, which would leave a
 test suite green with the reports buried in the logs. To survey everything a
 run would hit instead of stopping at the first, opt back into recovery:
 
-    bazelisk test --config=ubsan --test_tag_filters=-py --copt=-fsanitize-recover=all src/...
+    bazelisk test --config=ubsan --test_tag_filters=-py --copt=-fsanitize-recover=all openroad/...
 
 Reports name the check that fired (e.g. `signed-integer-overflow`,
 `misaligned-address`). An individual check can be switched off project-wide
 with a copt, which is preferable to disabling the config wholesale:
 
-    bazelisk test --config=ubsan --test_tag_filters=-py --copt=-fno-sanitize=vptr src/...
+    bazelisk test --config=ubsan --test_tag_filters=-py --copt=-fno-sanitize=vptr openroad/...
 
 ### Known findings
 
-A `--config=ubsan --test_tag_filters=-py src/...` sweep is not clean yet. As of
+A `--config=ubsan --test_tag_filters=-py openroad/...` sweep is not clean yet. As of
 this writing 36 of 3980 tests fail, in two groups.
 
 Third-party UB reached through headers that are inlined into OpenROAD
@@ -419,9 +441,9 @@ OpenROAD's own UB, 11 tests, to be fixed separately:
 
 | Site | Check | Tests |
 | --- | --- | --- |
-| `src/rcx/src/netRC.cpp:374`, `:1575`, `:1576` | `load of value` | 8 |
-| `src/odb/include/odb/geom.h:373` | `signed-integer-overflow` | 2 |
-| `src/grt/src/cugr/src/geo.h:111` | `signed-integer-overflow` | 1 |
+| `openroad/rcx/src/netRC.cpp:374`, `:1575`, `:1576` | `load of value` | 8 |
+| `openroad/odb/include/odb/geom.h:373` | `signed-integer-overflow` | 2 |
+| `openroad/grt/src/cugr/src/geo.h:111` | `signed-integer-overflow` | 1 |
 
 ## Sanitizers and the Python extension modules
 
@@ -458,7 +480,7 @@ exec-configuration build tools stay uninstrumented.
 
 ## GPU build (`--config=gpu`)
 
-`--config=gpu` compiles the Kokkos/CUDA backends of `gpl` (`src/gpl/src/gpu`).
+`--config=gpu` compiles the Kokkos/CUDA backends of `gpl` (`openroad/gpl/src/gpu`).
 Kokkos 5.2.2 and
 KokkosFFT 2.0.0 are downloaded at pinned checksums and built with Bazel's
 hermetic LLVM toolchain, with the OpenMP, Serial, and CUDA backends enabled
@@ -469,8 +491,8 @@ configuration, CPU invocations still probe the configured toolkit path.
 
 Choose the configuration matching the device compute capability:
 
-    bazelisk test --config=gpu-sm120 //src/gpl/test/...
-    bazelisk test --config=gpu-sm121 //src/gpl/test/...
+    bazelisk test --config=gpu-sm120 //openroad/gpl/test/...
+    bazelisk test --config=gpu-sm121 //openroad/gpl/test/...
 
 `nvidia-smi --query-gpu=compute_cap --format=csv,noheader` prints the compute
 capability. Remove the decimal point to form the Bazel value (`12.0` ->
@@ -533,9 +555,9 @@ configuration headers that Kokkos's and KokkosFFT's CMake builds generate
 ## Testing an OpenROAD build with ORFS from within the OpenROAD folder
 
     bazelisk build :openroad
-    OPENROAD_EXE=$(pwd)/bazel-bin/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk clean_floorplan floorplan
+    OPENROAD_EXE=$(pwd)/bazel-bin/openroad/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk clean_floorplan floorplan
 
-`bazel-bin/openroad` is the optimized binary that `bazelisk build :openroad` produces. Tests such as `bazelisk test ...` build OpenROAD from the same sources and flags, but in the execution configuration (see [Some OpenROAD and OpenSTA Bazel Specifics](#some-openroad-and-opensta-bazel-specifics)).
+`bazel-bin/openroad/openroad` is the optimized binary that `bazelisk build :openroad` produces. Tests such as `bazelisk test ...` build OpenROAD from the same sources and flags, but in the execution configuration (see [Some OpenROAD and OpenSTA Bazel Specifics](#some-openroad-and-opensta-bazel-specifics)).
 
 ## Testing debug build of OpenROAD with ORFS
 
@@ -557,7 +579,7 @@ Build an optimized profile binary, using a [workaround](https://github.com/The-O
 
 Start an ORFS job that you want to profile:
 
-    OPENROAD_EXE=$(pwd)/bazel-bin/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk clean_floorplan floorplan
+    OPENROAD_EXE=$(pwd)/bazel-bin/openroad/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk clean_floorplan floorplan
 
 At this point, use your favorite preformance tool, such as the Linx Perf tool:
 
@@ -565,11 +587,11 @@ At this point, use your favorite preformance tool, such as the Linx Perf tool:
 
 Perhaps attach gdb and use ctrl-c from the command line? Use gdb with an IDE, emacs, or vim?
 
-    $ gdb bazel-bin/openroad
+    $ gdb bazel-bin/openroad/openroad
     [deleted]
     (gdb) attach 578603
     Attaching to program: /home/oyvind/.cache/bazel/_bazel_oyvind/896cc02f64446168f604c13ad7b60f8b/execroot/_main/bazel-out/k8-fastbuild/bin/openroad, process 578603
-    #7  0x00005efc3b72b865 in isPolygonCorner () at src/drt/src/gc/FlexGC_init.cpp:705
+    #7  0x00005efc3b72b865 in isPolygonCorner () at openroad/drt/src/gc/FlexGC_init.cpp:705
     705	  poly_set.get(polygons);
     (gdb) list
     700	bool isPolygonCorner(const frCoord x,
@@ -667,9 +689,9 @@ Bisecting OpenROAD or OpenSTA requires finding a good and a bad commit. Normally
 
 Fortunately, OpenSTA is a submodule in OpenROAD that is tested before it is updated, so all the submodule commits in OpenROAD of OpenSTA are known to be of good quality. Similarly for OpenROAD and ORFS.
 
-A git/bash incantation will list the commit hashes of the src/sta submodule:
+A git/bash incantation will list the commit hashes of the openroad/sta submodule:
 
-    $ git log --pretty=format:'%h' -- src/sta | while read commit; do  git show $commit src/sta| grep "Subproject commit" | awk '{print $3}'; done | head -n 10
+    $ git log --pretty=format:'%h' -- openroad/sta | while read commit; do  git show $commit openroad/sta| grep "Subproject commit" | awk '{print $3}'; done | head -n 10
     5ee1a315141d1c799a0b2532e90ddccf52ddee95
     3bff2d218c20adb867fcb3d8ae236f5da9928bed
     3bff2d218c20adb867fcb3d8ae236f5da9928bed
@@ -683,11 +705,11 @@ A git/bash incantation will list the commit hashes of the src/sta submodule:
 
 To build OpenSTA, use master of the https://github.com/The-OpenROAD-Project/OpenSTA fork, because it contains Bazel build files:
 
-    bazelisk build src/sta:opensta -c opt
+    bazelisk build openroad/sta:opensta -c opt
 
 Now start the bisection as usual with a bad and good commit from the above list:
 
-    $ cd src/sta
+    $ cd openroad/sta
     $ git bisect start origin/master 6e95d93a44f7c46bb572933f5e2f8a624135820b
     HEAD is now at 6e95d93a Merge remote-tracking branch 'parallax/master'
     Bisecting: 55 revisions left to test after this (roughly 6 steps)
@@ -705,8 +727,8 @@ To test a PR with the GUI on gcd, build the PR and run ORFS with it:
     $ git fetch origin pull/7856/head
     $ git checkout FETCH_HEAD
     $ bazelisk build //:openroad
-    $ OPENROAD_EXE=$(pwd)/bazel-bin/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk
-    $ OPENROAD_EXE=$(pwd)/bazel-bin/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk gui_final
+    $ OPENROAD_EXE=$(pwd)/bazel-bin/openroad/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk
+    $ OPENROAD_EXE=$(pwd)/bazel-bin/openroad/openroad make --dir ~/OpenROAD-flow-scripts/flow/ DESIGN_CONFIG=designs/asap7/gcd/config.mk gui_final
 ```
 
 ## Whittling down .odb files

@@ -86,6 +86,10 @@ namespace fin {
 class Finale;
 }
 
+namespace fsv {
+class FieldSolver;
+}
+
 namespace par {
 class PartitionMgr;
 }
@@ -112,6 +116,10 @@ class PDNSim;
 
 namespace pdn {
 class PdnGen;
+}
+
+namespace pex {
+class Pex;
 }
 
 namespace pad {
@@ -175,6 +183,7 @@ class Design
   exa::Example* getExample();
   drt::TritonRoute* getTritonRoute();
   fin::Finale* getFinale();
+  fsv::FieldSolver* getFieldSolver();
   gpl::Replace* getReplace();
   grt::GlobalRouter* getGlobalRouter();
   ifp::InitFloorplan getFloorplan();
@@ -183,6 +192,7 @@ class Design
   pad::ICeWall* getICeWall();
   par::PartitionMgr* getPartitionMgr();
   pdn::PdnGen* getPdnGen();
+  pex::Pex* getPex();
   ppl::IOPlacer* getIOPlacer();
   psm::PDNSim* getPDNSim();
   rcx::Ext* getOpenRCX();

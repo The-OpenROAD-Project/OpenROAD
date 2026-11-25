@@ -1,0 +1,74 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022-2025, The OpenROAD Authors
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("//test:regression.bzl", "regression_test")
+
+package(features = ["layering_check"])
+
+TESTS = [
+    "make_parasitics1",
+    "make_parasitics2",
+    "make_parasitics3",
+    "make_parasitics4",
+    "make_parasitics5",
+    "make_parasitics6",
+    "make_parasitics7",
+    "prima_net_recycle",
+    "set_wire_rc_tech",
+    "set_wire_rc_tech_errors",
+    "set_wire_rc_rdl_ignored",
+    "set_wire_rc_selectors",
+    "set_wire_rc_rdl_mixed_tech",
+]
+
+filegroup(
+    name = "test_resources",
+    # overly broad glob, could be refined later, but
+    # symlinks are cheap and OpenROAD binary changes, the common
+    # use case is that all tests have to be re-run.
+    srcs = glob(
+        ["**/*"],
+        exclude = [
+            test + "." + ext
+            for test in TESTS
+            for ext in [
+                "tcl",
+                "py",
+            ]
+        ],
+    ),
+)
+
+[regression_test(
+    name = test_name,
+    data = [
+        ":test_resources",
+        "//test:asap7_ccs_data",
+        "//test:asap7_data",
+    ],
+) for test_name in TESTS]
+
+regression_test(
+    name = "estimate_parasitics_source",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+cc_test(
+    name = "TestEstimateParasitics",
+    srcs = ["cpp/TestEstimateParasitics.cc"],
+    data = ["cpp/TestEstimateParasitics.v"],
+    deps = [
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/est",
+        "//openroad/grt",
+        "//openroad/odb/src/db",
+        "//openroad/rsz",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
