@@ -131,12 +131,18 @@ void Grid::markHopeless(odb::dbBlock* block,
 
     // The safety margin is to avoid having only a very few sites
     // within the diamond search that may still lead to failures.
+    // Clamp it for small displacement limits so valid sites and nearby
+    // gaps within the budget remain reachable.
     const int safety = 20;
-    const GridX xl = max(GridX{0}, x_start - max_displacement_x + safety);
-    const GridX xh = min(row_site_count_, x_end + max_displacement_x - safety);
+    const int x_margin
+        = max(0, max_displacement_x - min(safety, max_displacement_x / 2));
+    const int y_margin
+        = max(0, max_displacement_y - min(safety, max_displacement_y / 2));
+    const GridX xl = max(GridX{0}, x_start - x_margin);
+    const GridX xh = min(row_site_count_, x_end + x_margin);
 
-    const GridY yl = max(GridY{0}, y_row - max_displacement_y + safety);
-    const GridY yh = min(row_count_, y_row + max_displacement_y - safety);
+    const GridY yl = max(GridY{0}, y_row - y_margin);
+    const GridY yh = min(row_count_, y_row + 1 + y_margin);
     if (xl < xh && yl < yh) {
       reachable_rects.emplace_back(xl.v, yl.v, xh.v, yh.v);
     }

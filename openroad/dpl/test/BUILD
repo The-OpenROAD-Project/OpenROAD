@@ -106,6 +106,7 @@ COMPULSORY_TESTS = [
 ]
 
 PASSFAIL_TESTS = [
+    "diamond_small_max_disp",
     "pdn_via",
     "pdn_via_array",
     "pdn_via_cut",
@@ -196,6 +197,9 @@ filegroup(
             ],
             "diamond_regions": [
                 "regions1.def",
+            ],
+            "diamond_small_max_disp": [
+                "gcd_replace.def",
             ],
             "edge_spacing": [
                 "multi_height_rows.def",

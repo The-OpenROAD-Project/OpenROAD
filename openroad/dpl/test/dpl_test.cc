@@ -990,4 +990,109 @@ TEST_F(FixedSupplyViaTest, QuietWrapperKeepsPdnDisabled)
   EXPECT_NO_THROW(dp_.checkPlacement(false));
 }
 
+class SmallDisplacementHopelessTest : public tst::Nangate45Fixture
+{
+ protected:
+  static constexpr int kSiteWidth = 380;
+  static constexpr int kRowHeight = 2800;
+  static constexpr int kNumSites = 100;
+  static constexpr int kNumRows = 40;
+  static constexpr int kFullRows = 5;
+  static constexpr int kLeftStubSites = 10;
+
+  void SetUp() override
+  {
+    site_ = lib_->findSite("FreePDK45_38x28_10R_NP_162NW_34O");
+    ASSERT_NE(site_, nullptr);
+    block_->setDieArea(
+        odb::Rect(0, 0, kNumSites * kSiteWidth, kNumRows * kRowHeight));
+    for (int row = 0; row < kNumRows; ++row) {
+      const odb::dbOrientType orient
+          = (row % 2 == 0) ? odb::dbOrientType::R0 : odb::dbOrientType::MX;
+      const std::string name = "ROW_" + std::to_string(row);
+      const int sites = (row < kFullRows) ? kNumSites : kLeftStubSites;
+      odb::dbRow::create(block_,
+                         name.c_str(),
+                         site_,
+                         0,
+                         row * kRowHeight,
+                         orient,
+                         odb::dbRowDir::HORIZONTAL,
+                         sites,
+                         kSiteWidth);
+    }
+    block_->setCoreArea(block_->computeCoreArea());
+  }
+
+  void checkValidSitesReachable(const int max_disp_x, const int max_disp_y)
+  {
+    Grid grid;
+    grid.init(&logger_);
+    grid.setCore(block_->getCoreArea());
+    grid.examineRows(block_);
+    grid.initGrid(db_.get(), block_, /*padding=*/{}, max_disp_x, max_disp_y);
+
+    for (int y = 0; y < kNumRows; ++y) {
+      const int valid_sites = (y < kFullRows) ? kNumSites : kLeftStubSites;
+      for (int x = 0; x < valid_sites; ++x) {
+        const Pixel& p = grid.pixel(GridY{y}, GridX{x});
+        EXPECT_TRUE(p.is_valid) << "x=" << x << " y=" << y;
+        EXPECT_FALSE(p.is_hopeless) << "max_disp=(" << max_disp_x << ","
+                                    << max_disp_y << ") x=" << x << " y=" << y;
+      }
+    }
+
+    // Far inside the upper-right site-less region remains hopeless.
+    const Pixel& far_gap
+        = grid.pixel(GridY{kNumRows - 1}, GridX{kNumSites - 1});
+    EXPECT_FALSE(far_gap.is_valid);
+    EXPECT_TRUE(far_gap.is_hopeless)
+        << "max_disp=(" << max_disp_x << "," << max_disp_y << ")";
+  }
+
+  odb::dbSite* site_ = nullptr;
+};
+
+TEST_F(SmallDisplacementHopelessTest, ValidSitesStayReachableUnderSmallCaps)
+{
+  for (const int cap : {0, 1, 2, 3, 10, 19, 20, 21, 40}) {
+    checkValidSitesReachable(/*max_disp_x=*/cap, /*max_disp_y=*/cap);
+  }
+  // Typical small micron cap (e.g. {5 5} um on Nangate45 -> 26 sites, 3 rows).
+  checkValidSitesReachable(/*max_disp_x=*/26, /*max_disp_y=*/3);
+}
+
+TEST_F(SmallDisplacementHopelessTest, DiamondLegalizerHandlesSmallDisplacement)
+{
+  odb::dbMaster* inv = lib_->findMaster("INV_X1");
+  ASSERT_NE(inv, nullptr);
+  // Overlapping cells on valid rows plus one cell in the hopeless channel.
+  auto* c0 = makeInst(block_,
+                      inv,
+                      "c0",
+                      {.location = {4 * kSiteWidth, 2 * kRowHeight},
+                       .status = odb::dbPlacementStatus::PLACED});
+  auto* c1 = makeInst(block_,
+                      inv,
+                      "c1",
+                      {.location = {4 * kSiteWidth, 2 * kRowHeight},
+                       .status = odb::dbPlacementStatus::PLACED});
+  auto* c_gap = makeInst(block_,
+                         inv,
+                         "c_gap",
+                         {.location = {60 * kSiteWidth, 30 * kRowHeight},
+                          .status = odb::dbPlacementStatus::PLACED});
+  ASSERT_NE(c0, nullptr);
+  ASSERT_NE(c1, nullptr);
+  ASSERT_NE(c_gap, nullptr);
+
+  Opendp dp(db_.get(), &logger_);
+  ASSERT_NO_THROW(dp.detailedPlacement(/*max_displacement_x=*/26,
+                                       /*max_displacement_y=*/3,
+                                       /*report_file_name=*/"",
+                                       /*incremental=*/false,
+                                       /*use_diamond_legalizer=*/true));
+  EXPECT_NO_THROW(dp.checkPlacement(false));
+}
+
 }  // namespace dpl
