@@ -12,6 +12,7 @@
 
 #include "DataType.h"
 #include "FastRoute.h"
+#include "Graph2D.h"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -31,18 +32,20 @@ void FastRouteCore::estimateOneEdge(const int netID, const TreeEdge& treeedge)
   const int8_t edgeCost = net->getEdgeCost();
 
   const auto [ymin, ymax] = std::minmax(y1, y2);
+  const Graph2D::Interval x_range{.lo = x1, .hi = x2};
+  const Graph2D::Interval y_range{.lo = ymin, .hi = ymax};
 
   // assign 0.5 to both Ls (x1,y1)-(x1,y2) + (x1,y2)-(x2,y2) + (x1,y1)-(x2,y1) +
   // (x2,y1)-(x2,y2)
   if (x1 == x2) {  // a vertical segment
-    graph2d_.updateEstUsageV(x1, {ymin, ymax}, net, edgeCost);
+    graph2d_.updateEstUsageV(x1, y_range, net, edgeCost);
   } else if (y1 == y2) {  // a horizontal segment
-    graph2d_.updateEstUsageH({x1, x2}, y1, net, edgeCost);
+    graph2d_.updateEstUsageH(x_range, y1, net, edgeCost);
   } else {  // a diagonal segment
-    graph2d_.updateEstUsageV(x1, {ymin, ymax}, net, edgeCost / 2.0f);
-    graph2d_.updateEstUsageV(x2, {ymin, ymax}, net, edgeCost / 2.0f);
-    graph2d_.updateEstUsageH({x1, x2}, y1, net, edgeCost / 2.0f);
-    graph2d_.updateEstUsageH({x1, x2}, y2, net, edgeCost / 2.0f);
+    graph2d_.updateEstUsageV(x1, y_range, net, edgeCost / 2.0f);
+    graph2d_.updateEstUsageV(x2, y_range, net, edgeCost / 2.0f);
+    graph2d_.updateEstUsageH(x_range, y1, net, edgeCost / 2.0f);
+    graph2d_.updateEstUsageH(x_range, y2, net, edgeCost / 2.0f);
   }
 }
 
@@ -55,6 +58,8 @@ void FastRouteCore::routeEdgeLFirstTime(const int netID, TreeEdge& treeedge)
   const int x2 = nodes[treeedge.n2].x;
   const int y2 = nodes[treeedge.n2].y;
   const auto [ymin, ymax] = std::minmax(y1, y2);
+  const Graph2D::Interval x_range{.lo = x1, .hi = x2};
+  const Graph2D::Interval y_range{.lo = ymin, .hi = ymax};
 
   FrNet* net = nets_[netID];
 
@@ -78,20 +83,20 @@ void FastRouteCore::routeEdgeLFirstTime(const int netID, TreeEdge& treeedge)
 
   if (costL1 < costL2) {
     // two parts (x1, y1)-(x1, y2) and (x1, y2)-(x2, y2)
-    graph2d_.updateEstUsageV(x1, {ymin, ymax}, net, edgeCost / 2.0f);
-    graph2d_.updateEstUsageV(x2, {ymin, ymax}, net, -edgeCost / 2.0f);
+    graph2d_.updateEstUsageV(x1, y_range, net, edgeCost / 2.0f);
+    graph2d_.updateEstUsageV(x2, y_range, net, -edgeCost / 2.0f);
 
-    graph2d_.updateEstUsageH({x1, x2}, y2, net, edgeCost / 2.0f);
-    graph2d_.updateEstUsageH({x1, x2}, y1, net, -edgeCost / 2.0f);
+    graph2d_.updateEstUsageH(x_range, y2, net, edgeCost / 2.0f);
+    graph2d_.updateEstUsageH(x_range, y1, net, -edgeCost / 2.0f);
 
     treeedge.route.xFirst = false;
   } else {
     // two parts (x1, y1)-(x2, y1) and (x2, y1)-(x2, y2)
-    graph2d_.updateEstUsageH({x1, x2}, y1, net, edgeCost / 2.0f);
-    graph2d_.updateEstUsageH({x1, x2}, y2, net, -edgeCost / 2.0f);
+    graph2d_.updateEstUsageH(x_range, y1, net, edgeCost / 2.0f);
+    graph2d_.updateEstUsageH(x_range, y2, net, -edgeCost / 2.0f);
 
-    graph2d_.updateEstUsageV(x2, {ymin, ymax}, net, edgeCost / 2.0f);
-    graph2d_.updateEstUsageV(x1, {ymin, ymax}, net, -edgeCost / 2.0f);
+    graph2d_.updateEstUsageV(x2, y_range, net, edgeCost / 2.0f);
+    graph2d_.updateEstUsageV(x1, y_range, net, -edgeCost / 2.0f);
 
     treeedge.route.xFirst = true;
   }
