@@ -567,6 +567,32 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
       return nullptr;
     }
   }
+  // - A module below this instance is deleted with the old module before
+  //   step 11 copies it, so it is copied from a child block saved first,
+  //   which is deleted after the swap.
+  const std::string new_module_name = new_module->getName();
+  dbBlock* source_block = nullptr;
+  for (dbModule* module = new_module->getParentModule(); module != nullptr;
+       module = module->getParentModule()) {
+    if (module == old_module) {
+      const std::string block_name = new_module_name + "_swap_source";
+      new_module = _dbModule::copyToNewChildBlock(new_module, block_name);
+      if (new_module == nullptr) {
+        logger->error(utl::ODB,
+                      567,
+                      "Module {} cannot be saved to child block {} because "
+                      "a child block of that name exists.",
+                      new_module_name,
+                      block_name);
+      }
+      source_block = new_module->getOwner();
+      debugRDPrint1("Saved module {} from inside instance {} to child block {}",
+                    new_module_name,
+                    getHierarchicalName(),
+                    block_name);
+      break;
+    }
+  }
 
   // Write out the design before replacement for debugging
   if (logger->debugCheck(utl::ODB, "replace_design", 1)) {
@@ -583,7 +609,7 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
   // 2. Create a uniquified copy of new_module and its ports
   _dbModule::modBTMap mod_bt_map;
   dbModule* new_module_copy = dbModule::makeUniqueDbModule(
-      new_module->getName(), this->getName(), getMaster()->getOwner());
+      new_module_name.c_str(), this->getName(), getMaster()->getOwner());
   if (new_module_copy) {
     // Copy module ports from new_module to new_module_copy.
     // - This allows dbModITerms to be connected to dbModBTerms when they are
@@ -596,10 +622,8 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
                   new_module_copy->getName(),
                   new_module_copy->getOwner()->getName());
   } else {
-    logger->error(utl::ODB,
-                  455,
-                  "Unique module {} cannot be created",
-                  new_module->getName());
+    logger->error(
+        utl::ODB, 455, "Unique module {} cannot be created", new_module_name);
     return nullptr;
   }
 
@@ -835,6 +859,10 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
   if (logger->debugCheck(utl::ODB, "replace_design_check_sanity", 1)) {
     dbSwapMasterSanityChecker checker(new_mod_inst, new_module, logger);
     checker.run();
+  }
+
+  if (source_block != nullptr) {
+    dbBlock::destroy(source_block);
   }
 
   return new_mod_inst;

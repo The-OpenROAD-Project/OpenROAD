@@ -88,6 +88,8 @@ class _dbModule : public _dbObject
 
   // Copy module to child block for future use
   static bool copyToChildBlock(dbModule* module);
+  static dbModule* copyToNewChildBlock(dbModule* module,
+                                       const std::string& block_name);
   // User Code End Methods
 
   char* name_;

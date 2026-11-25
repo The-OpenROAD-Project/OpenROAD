@@ -1253,39 +1253,50 @@ void _dbModule::copyModuleBoundaryIO(dbModule* old_module,
 // Return true if copy is successful.
 bool _dbModule::copyToChildBlock(dbModule* module)
 {
+  // TODO: strip out instance name from block name
+  copyToNewChildBlock(module, module->getName());
+  return true;
+}
+
+// Copy module to a new child block of the top block, named block_name, and
+// return the child block's top module, which holds the copy.  Return
+// nullptr when the top block already has a child block of that name.
+dbModule* _dbModule::copyToNewChildBlock(dbModule* module,
+                                         const std::string& block_name)
+{
   utl::Logger* logger = module->getImpl()->getLogger();
 
   debugPrint(logger,
              utl::ODB,
              "replace_design",
              1,
-             ">>> Copying old module to a child block <<<");
+             ">>> Copying module {} to child block {} <<<",
+             module->getName(),
+             block_name);
 
   // Create a new child block under top block.
   // This block contains only one module
   dbBlock* top_block = module->getOwner()->getTopModule()->getOwner();
-  std::string block_name = module->getName();
   dbTech* tech = top_block->getTech();
-  // TODO: strip out instance name from block name
   dbBlock* child_block = dbBlock::create(top_block, block_name.c_str());
-  if (child_block) {
-    child_block->setDefUnits(tech->getLefUnits());
-    child_block->setBusDelimiters('[', ']');
-    dbModule* new_module = child_block->getTopModule();
-    if (!new_module) {
-      logger->error(utl::ODB,
-                    476,
-                    "Top module {} could not be found under child block {}",
-                    block_name,
-                    block_name);
-      return false;
-    }
-
-    modBTMap mod_bt_map;
-    _dbModule::copyModulePorts(module, new_module, mod_bt_map);
-    copy(module, new_module, nullptr, mod_bt_map);
+  if (child_block == nullptr) {
+    return nullptr;
   }
-  return true;
+  child_block->setDefUnits(tech->getLefUnits());
+  child_block->setBusDelimiters('[', ']');
+  dbModule* new_module = child_block->getTopModule();
+  if (!new_module) {
+    logger->error(utl::ODB,
+                  476,
+                  "Top module {} could not be found under child block {}",
+                  block_name,
+                  block_name);
+  }
+
+  modBTMap mod_bt_map;
+  _dbModule::copyModulePorts(module, new_module, mod_bt_map);
+  copy(module, new_module, nullptr, mod_bt_map);
+  return new_module;
 }
 
 bool dbModule::containsDbInst(dbInst* inst) const
