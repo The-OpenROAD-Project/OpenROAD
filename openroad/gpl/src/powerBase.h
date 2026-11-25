@@ -6,6 +6,7 @@
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include "odb/dbBlockCallBackObj.h"
 
@@ -21,6 +22,10 @@ namespace utl {
 class Logger;
 }
 
+namespace cts {
+class TritonCTS;
+}
+
 namespace gpl {
 
 class NesterovBaseCommon;
@@ -30,22 +35,29 @@ class NesterovBaseCommon;
 class PowerBase : public odb::dbBlockCallBackObj
 {
  public:
+  // A null cts disables clock leaf nets.
   PowerBase(std::shared_ptr<NesterovBaseCommon> nbc,
             sta::dbSta* sta,
+            cts::TritonCTS* cts,
             float net_weight,
             utl::Logger* log);
 
   // Rerun after every netlist change.
   void setPowerNetWeights();
   void inDbITermDestroy(odb::dbITerm* iterm) override;
+  bool clockLeafNetsEnabled() const { return cts_ != nullptr; }
+  void updateClockLeafNets();
 
  private:
   void collectUserActivityPins();
   float netToggles(const sta::Net* net);
+  float sourceToggles(const sta::Pin* drvr);
   const sta::Pin* activitySource(const sta::Pin* drvr) const;
+  const sta::Pin* clockDriver(odb::dbNet* net) const;
 
   std::shared_ptr<NesterovBaseCommon> nbc_;
   sta::dbSta* sta_ = nullptr;
+  cts::TritonCTS* cts_ = nullptr;
   sta::dbNetwork* network_ = nullptr;
   const sta::Scene* scene_ = nullptr;
   utl::Logger* log_ = nullptr;
@@ -55,6 +67,7 @@ class PowerBase : public odb::dbBlockCallBackObj
   std::unordered_map<const sta::Pin*, float> source_toggles_;
   // Buffer and inverter outputs annotated by set_power_activity, VCD or SAIF.
   std::unordered_set<const sta::Pin*> user_activity_pins_;
+  std::vector<odb::dbNet*> clock_nets_;
 };
 
 }  // namespace gpl

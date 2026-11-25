@@ -7,9 +7,21 @@
 #include "boostParser.h"
 #include "lefLayerPropParser.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/lefin.h"
+#include "parserUtils.h"
 
 namespace odb::lefTechLayerCornerSpacing {
+
+namespace {
+void addImplantSpacing(double spacing,
+                       odb::dbTechLayerCornerSpacingRule* rule,
+                       odb::lefinReader* lefinReader)
+{
+  auto s = lefinReader->dbdist(spacing);
+  rule->addSpacing(0, s, s);
+}
+}  // namespace
 
 void setWithin(double value,
                odb::dbTechLayerCornerSpacingRule* rule,
@@ -75,6 +87,9 @@ bool parse(Iterator first,
 {
   odb::dbTechLayerCornerSpacingRule* rule
       = odb::dbTechLayerCornerSpacingRule::create(layer);
+  bool seen_aligned = false;
+  bool seen_group = false;
+  bool duplicate_flag = false;
   qi::rule<std::string::const_iterator, space_type> convexCornerRule
       = (lit("CONVEXCORNER")[boost::bind(
              &odb::dbTechLayerCornerSpacingRule::setType,
@@ -123,12 +138,35 @@ bool parse(Iterator first,
       = (lit("WIDTH") >> double_ >> lit("SPACING") >> double_
          >> -double_)[boost::bind(&addSpacing, _1, rule, lefinReader)];
 
-  qi::rule<std::string::const_iterator, space_type> cornerSpacingRule
-      = (lit("CORNERSPACING") >> (convexCornerRule | concaveCornerRule)
-         >> -(exceptSameRule) >> +(spacingRule) >> lit(";"));
+  qi::rule<std::string::const_iterator, space_type> implantCornerSpacingRule
+      = (double_[boost::bind(&addImplantSpacing, _1, rule, lefinReader)]
+         >> *(lit("ALIGNEDONLY")[([&] {
+                if (seen_aligned) {
+                  duplicate_flag = true;
+                }
+                seen_aligned = true;
+                rule->setAlignedOnly(true);
+              })]
+              | lit("CHECKIMPLANTGROUPONLY")[([&] {
+                  if (seen_group) {
+                    duplicate_flag = true;
+                  }
+                  seen_group = true;
+                  rule->setCheckImplantGroupOnly(true);
+                })]));
+
+  qi::rule<std::string::const_iterator, space_type> cornerSpacingRule;
+  if (layer->getType() == odb::dbTechLayerType::IMPLANT) {
+    cornerSpacingRule
+        = (lit("CORNERSPACING") >> implantCornerSpacingRule >> lit(";"));
+  } else {
+    cornerSpacingRule
+        = (lit("CORNERSPACING") >> (convexCornerRule | concaveCornerRule)
+           >> -exceptSameRule >> +spacingRule >> lit(";"));
+  }
 
   bool valid = qi::phrase_parse(first, last, cornerSpacingRule, space)
-               && first == last;
+               && first == last && !duplicate_flag;
 
   if (!valid) {
     odb::dbTechLayerCornerSpacingRule::destroy(rule);
@@ -144,7 +182,9 @@ bool lefTechLayerCornerSpacingParser::parse(const std::string& s,
                                             dbTechLayer* layer,
                                             odb::lefinReader* l)
 {
-  return lefTechLayerCornerSpacing::parse(s.begin(), s.end(), layer, l);
+  return parseAllRules(s, [&](const std::string& rule) {
+    return lefTechLayerCornerSpacing::parse(rule.begin(), rule.end(), layer, l);
+  });
 }
 
 }  // namespace odb

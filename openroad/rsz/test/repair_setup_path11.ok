@@ -11,12 +11,12 @@
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.253 |       -2.5 |     28 | inst13/D
-     174* |       2 |      30 |       13 |      1 |     7 |    +5.4% |   -0.072 |       -0.5 |     28 | inst13/D
-    final |       2 |      30 |       13 |      1 |     7 |    +5.4% |   -0.072 |       -0.5 |     15 | inst13/D
+     155* |       3 |      37 |       17 |      1 |     7 |    +7.5% |   -0.072 |       -0.7 |     28 | inst13/D
+    final |       3 |      37 |       17 |      1 |     7 |    +7.5% |   -0.072 |       -0.7 |     19 | inst13/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 2 buffers.
-[INFO RSZ-0040] Inserted 13 buffers.
-[INFO RSZ-0051] Resized 30 instances: 30 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0059] Removed 3 buffers.
+[INFO RSZ-0040] Inserted 17 buffers.
+[INFO RSZ-0051] Resized 37 instances: 37 up, 0 up match, 0 down, 0 VT
 [INFO RSZ-0043] Swapped pins on 7 instances.
 [INFO RSZ-0049] Cloned 1 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
@@ -36,16 +36,16 @@ Path Type: max
    0.0708    0.2890 v inst2/ZN (OR4_X4)
    0.0390    0.3280 v inst3/ZN (AND4_X4)
    0.0213    0.3493 ^ inst4/ZN (NAND4_X4)
-   0.0251    0.3744 ^ inst5/Z (BUF_X16)
-   0.0201    0.3945 ^ inst6/Z (BUF_X16)
-   0.0126    0.4072 v inst7/ZN (NAND2_X4)
-   0.0449    0.4521 ^ inst8/ZN (OAI221_X2)
-   0.0179    0.4699 v inst9/ZN (NAND2_X1)
-   0.0183    0.4882 ^ inst10/ZN (NAND4_X1)
-   0.0189    0.5071 v inst11/ZN (NAND3_X1)
-   0.0542    0.5613 ^ inst12/ZN (OAI33_X1)
-   0.0002    0.5615 ^ inst13/D (DFF_X1)
-             0.5615   data arrival time
+   0.0275    0.3768 ^ inst5/Z (BUF_X16)
+   0.0181    0.3949 ^ inst6/Z (BUF_X32)
+   0.0120    0.4068 v inst7/ZN (NAND2_X4)
+   0.0449    0.4518 ^ inst8/ZN (OAI221_X2)
+   0.0179    0.4696 v inst9/ZN (NAND2_X1)
+   0.0183    0.4879 ^ inst10/ZN (NAND4_X1)
+   0.0189    0.5068 v inst11/ZN (NAND3_X1)
+   0.0542    0.5610 ^ inst12/ZN (OAI33_X1)
+   0.0002    0.5612 ^ inst13/D (DFF_X1)
+             0.5612   data arrival time
 
    0.5330    0.5330   clock clk (rise edge)
    0.0000    0.5330   clock network delay (ideal)
@@ -55,8 +55,8 @@ Path Type: max
              0.4893   data required time
 -------------------------------------------------------------
              0.4893   data required time
-            -0.5615   data arrival time
+            -0.5612   data arrival time
 -------------------------------------------------------------
-            -0.0722   slack (VIOLATED)
+            -0.0718   slack (VIOLATED)
 
 

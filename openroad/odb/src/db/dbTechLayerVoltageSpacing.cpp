@@ -97,28 +97,32 @@ void _dbTechLayerVoltageSpacing::collectMemInfo(MemInfo& info)
 
 void dbTechLayerVoltageSpacing::setTocutAbove(bool tocut_above)
 {
-  _dbTechLayerVoltageSpacing* obj = (_dbTechLayerVoltageSpacing*) this;
+  _dbTechLayerVoltageSpacing* obj
+      = reinterpret_cast<_dbTechLayerVoltageSpacing*>(this);
 
   obj->flags_.tocut_above = tocut_above;
 }
 
 bool dbTechLayerVoltageSpacing::isTocutAbove() const
 {
-  _dbTechLayerVoltageSpacing* obj = (_dbTechLayerVoltageSpacing*) this;
+  const _dbTechLayerVoltageSpacing* obj
+      = reinterpret_cast<const _dbTechLayerVoltageSpacing*>(this);
 
   return obj->flags_.tocut_above;
 }
 
 void dbTechLayerVoltageSpacing::setTocutBelow(bool tocut_below)
 {
-  _dbTechLayerVoltageSpacing* obj = (_dbTechLayerVoltageSpacing*) this;
+  _dbTechLayerVoltageSpacing* obj
+      = reinterpret_cast<_dbTechLayerVoltageSpacing*>(this);
 
   obj->flags_.tocut_below = tocut_below;
 }
 
 bool dbTechLayerVoltageSpacing::isTocutBelow() const
 {
-  _dbTechLayerVoltageSpacing* obj = (_dbTechLayerVoltageSpacing*) this;
+  const _dbTechLayerVoltageSpacing* obj
+      = reinterpret_cast<const _dbTechLayerVoltageSpacing*>(this);
 
   return obj->flags_.tocut_below;
 }
@@ -126,16 +130,17 @@ bool dbTechLayerVoltageSpacing::isTocutBelow() const
 dbTechLayerVoltageSpacing* dbTechLayerVoltageSpacing::create(
     dbTechLayer* parent)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) parent;
-  return (dbTechLayerVoltageSpacing*)
-      _parent->voltage_spacing_rules_tbl_->create();
+  _dbTechLayer* _parent = reinterpret_cast<_dbTechLayer*>(parent);
+  return reinterpret_cast<dbTechLayerVoltageSpacing*>(
+      _parent->voltage_spacing_rules_tbl_->create());
 }
 void dbTechLayerVoltageSpacing::destroy(dbTechLayerVoltageSpacing* obj)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  _dbTechLayer* _parent
+      = static_cast<_dbTechLayer*>(obj->getImpl()->getOwner());
   dbProperty::destroyProperties(obj);
   _parent->voltage_spacing_rules_tbl_->destroy(
-      (_dbTechLayerVoltageSpacing*) obj);
+      reinterpret_cast<_dbTechLayerVoltageSpacing*>(obj));
 }
 // User Code Begin dbTechLayerVoltageSpacingPublicMethods
 void dbTechLayerVoltageSpacing::addEntry(float voltage, int spacing)

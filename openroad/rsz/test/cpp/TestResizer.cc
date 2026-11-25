@@ -12,10 +12,12 @@
 
 #include "MoveCommitter.hh"
 #include "OptimizerTypes.hh"
+#include "Rebuffer.hh"
 #include "RepairSetupContext.hh"
 #include "RepairTargetCollector.hh"
 #include "est/EstimateParasitics.h"
 #include "gtest/gtest.h"
+#include "move/BufferCandidate.hh"
 #include "move/MoveCandidate.hh"
 #include "move/MoveGenerator.hh"
 #include "move/SizeUpGenerator.hh"
@@ -63,6 +65,17 @@ class TestMoveGenerator : public MoveGenerator
   }
 
   using MoveGenerator::weakerCellFirst;
+};
+
+class RebufferTestPeer
+{
+ public:
+  // Mirror the setup SetupLegacyBase does before running BufferMove.
+  static void init(Rebuffer& rebuffer, sta::Scene* scene)
+  {
+    rebuffer.init();
+    rebuffer.initOnCorner(scene);
+  }
 };
 
 class TestSetupLegacyPolicy : public SetupLegacyPolicy
@@ -705,6 +718,70 @@ TEST_F(TestResizer, ChainedLatchFaninTargets)
   EXPECT_EQ(db_network_->pathName(deep_target->endpointPin(resizer_)),
             "deep_latch/D");
   EXPECT_EQ(deep_target->violatedEndpointPin(resizer_), path->pin(sta_.get()));
+}
+
+// BufferMove must report the buffers it inserts as touched, so buffer
+// removal recognizes them as rebuffering output and does not undo them.
+TEST_F(TestResizer, BufferMoveMarksInsertedBuffers)
+{
+  setupTimeBorrowTiming("latch_borrow_chain.def", 0.84);
+
+  // Buffering needs wire RC; use metal3 as the Tcl tests do.
+  odb::dbTech* tech = db_->getTech();
+  odb::dbTechLayer* layer = tech->findLayer("metal3");
+  ASSERT_NE(layer, nullptr);
+  const double width_um
+      = static_cast<double>(layer->getWidth()) / tech->getDbUnitsPerMicron();
+  const double res_per_m = layer->getResistance() / width_um * 1e6;
+  const double cap_per_m
+      = (width_um * layer->getCapacitance() + 2 * layer->getEdgeCapacitance())
+        * 1e-12 * 1e6;
+  ep_.setHWireSignalRC(tech, sta_->cmdScene(), res_per_m, cap_per_m);
+  ep_.setVWireSignalRC(tech, sta_->cmdScene(), res_per_m, cap_per_m);
+  ep_.estimateWireParasitics();
+  sta_->updateTiming(true);
+
+  RebufferTestPeer::init(resizer_.rebuffer(), sta_->cmdScene());
+
+  std::vector<sta::Pin*> driver_pins;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    for (odb::dbITerm* iterm : inst->getITerms()) {
+      if (iterm->getNet() != nullptr
+          && iterm->getIoType() == odb::dbIoType::OUTPUT
+          && iterm->getSigType() == odb::dbSigType::SIGNAL) {
+        driver_pins.push_back(db_network_->dbToSta(iterm));
+      }
+    }
+  }
+
+  MoveCommitter committer(resizer_);
+  const Target target;
+  MoveResult result;
+  sta::Pin* buffered_pin = nullptr;
+  for (sta::Pin* driver_pin : driver_pins) {
+    BufferCandidate candidate(resizer_, target, driver_pin);
+    result = committer.commit(candidate);
+    if (result.accepted) {
+      buffered_pin = driver_pin;
+      break;
+    }
+  }
+  ASSERT_TRUE(result.accepted) << "no BufferMove inserted a buffer";
+  // The driver comes first, followed by the inserted buffers.
+  ASSERT_EQ(result.touched_instances.size(),
+            static_cast<size_t>(result.move_count) + 1);
+  EXPECT_EQ(result.touched_instances.front(),
+            db_network_->instance(buffered_pin));
+
+  for (size_t i = 1; i < result.touched_instances.size(); i++) {
+    sta::Instance* buffer = result.touched_instances[i];
+    const sta::LibertyCell* cell = db_network_->libertyCell(buffer);
+    ASSERT_NE(cell, nullptr);
+    EXPECT_TRUE(cell->isBuffer());
+    std::string reason;
+    EXPECT_TRUE(committer.hasBlockingBufferRemovalMove(buffer, reason));
+    EXPECT_EQ(reason, "it was from rebuffering");
+  }
 }
 
 TEST_F(TestResizer, RepairBudgetClampsToAtLeastOneWhenSlackImprovesPastMinViol)
@@ -1392,6 +1469,10 @@ TEST_F(TestResizer, GetVtEquivCellsDeduplicatesNonAdjacentSameVtCells)
   odb::dbTechLayer* lvt_implant = odb::dbTechLayer::create(
       db_->getTech(), "LVT_IMPLANT", odb::dbTechLayerType::IMPLANT);
   ASSERT_NE(lvt_implant, nullptr);
+  // RVT must be explicit too: a cell without an implant layer has no VT.
+  odb::dbTechLayer* rvt_implant = odb::dbTechLayer::create(
+      db_->getTech(), "RVT_IMPLANT", odb::dbTechLayerType::IMPLANT);
+  ASSERT_NE(rvt_implant, nullptr);
   odb::dbMaster* buf_x1_master = db_->findMaster("BUF_X1");
   odb::dbMaster* buf_x2_master = db_->findMaster("BUF_X2");
   odb::dbMaster* buf_x4_master = db_->findMaster("BUF_X4");
@@ -1405,6 +1486,7 @@ TEST_F(TestResizer, GetVtEquivCellsDeduplicatesNonAdjacentSameVtCells)
   buf_x4_master->setHeight(buf_x1_master->getHeight());
 
   odb::dbBox::create(buf_x1_master, lvt_implant, 0, 0, 10, 10);
+  odb::dbBox::create(buf_x2_master, rvt_implant, 0, 0, 10, 10);
   odb::dbBox::create(buf_x4_master, lvt_implant, 0, 0, 10, 10);
 
   readVerilogAndSetup("TestResizerMt_DelayEstimator.v");
@@ -1436,6 +1518,99 @@ TEST_F(TestResizer, GetVtEquivCellsDeduplicatesNonAdjacentSameVtCells)
             resizer_.cellVTType(second_master));
   EXPECT_LE(resizer_.cellLeakage(vt_equiv[0]).value_or(0.0f),
             resizer_.cellLeakage(vt_equiv[1]).value_or(0.0f));
+}
+
+TEST_F(TestResizer, LibraryWithoutImplantsHasNoVtCategory)
+{
+  // Nangate45 has no IMPLANT layers: no cell has a VT, VT moves are off.
+  readVerilogAndSetup("TestResizerMt_DelayEstimator.v");
+  resizer_.initBlock();
+  resizer_.runRepairSetupPreamble();
+
+  odb::dbMaster* buf_x1_master = db_->findMaster("BUF_X1");
+  ASSERT_NE(buf_x1_master, nullptr);
+  EXPECT_FALSE(resizer_.cellVTType(buf_x1_master).isClassified());
+  EXPECT_EQ(resizer_.vtCategoryCount(), 0);
+  EXPECT_EQ(resizer_.vtCategoryCountWithDontUse(), 0);
+}
+
+TEST_F(TestResizer, UnclassifiedCellsAreExcludedFromVtSwap)
+{
+  // Only BUF_X1 and BUF_X2 carry implant layers.  The other buffers have no
+  // VT, so they must neither form a VT category nor be VT alternatives.
+  odb::dbTechLayer* lvt_implant = odb::dbTechLayer::create(
+      db_->getTech(), "LVT_IMPLANT", odb::dbTechLayerType::IMPLANT);
+  odb::dbTechLayer* rvt_implant = odb::dbTechLayer::create(
+      db_->getTech(), "RVT_IMPLANT", odb::dbTechLayerType::IMPLANT);
+  odb::dbMaster* buf_x1_master = db_->findMaster("BUF_X1");
+  odb::dbMaster* buf_x2_master = db_->findMaster("BUF_X2");
+  odb::dbMaster* buf_x4_master = db_->findMaster("BUF_X4");
+  ASSERT_NE(buf_x1_master, nullptr);
+  ASSERT_NE(buf_x2_master, nullptr);
+  ASSERT_NE(buf_x4_master, nullptr);
+  // Equal areas make BUF_X4 a VT alternative of BUF_X1 apart from its VT.
+  buf_x2_master->setWidth(buf_x1_master->getWidth());
+  buf_x4_master->setWidth(buf_x1_master->getWidth());
+  odb::dbBox::create(buf_x1_master, lvt_implant, 0, 0, 10, 10);
+  odb::dbBox::create(buf_x2_master, rvt_implant, 0, 0, 10, 10);
+
+  readVerilogAndSetup("TestResizerMt_DelayEstimator.v");
+  resizer_.initBlock();
+  resizer_.runRepairSetupPreamble();
+
+  EXPECT_EQ(resizer_.vtCategoryCount(), 2);
+  EXPECT_EQ(resizer_.vtCategoryCountWithDontUse(), 2);
+  EXPECT_FALSE(resizer_.cellVTType(buf_x4_master).isClassified());
+
+  sta::LibertyCell* buf_x1_cell
+      = db_network_->libertyCell(db_network_->dbToSta(buf_x1_master));
+  sta::LibertyCell* buf_x4_cell
+      = db_network_->libertyCell(db_network_->dbToSta(buf_x4_master));
+  ASSERT_NE(buf_x1_cell, nullptr);
+  ASSERT_NE(buf_x4_cell, nullptr);
+
+  // BUF_X1 swaps to BUF_X2 only; BUF_X4 has no VT to swap from.
+  const sta::LibertyCellSeq vt_equiv = resizer_.getVTEquivCells(buf_x1_cell);
+  EXPECT_EQ(vt_equiv.size(), 2u);
+  for (sta::LibertyCell* cell : vt_equiv) {
+    EXPECT_TRUE(resizer_.cellVTType(db_network_->staToDb(cell)).isClassified())
+        << cell->name();
+  }
+  EXPECT_TRUE(resizer_.getVTEquivCells(buf_x4_cell).empty());
+}
+
+TEST_F(TestResizer, VtAccessorsRebuildLibraryDataAfterDontUseChange)
+{
+  // BUF_X1 is LVT and BUF_X2 is RVT; the other buffers have no VT.
+  odb::dbTechLayer* lvt_implant = odb::dbTechLayer::create(
+      db_->getTech(), "LVT_IMPLANT", odb::dbTechLayerType::IMPLANT);
+  odb::dbTechLayer* rvt_implant = odb::dbTechLayer::create(
+      db_->getTech(), "RVT_IMPLANT", odb::dbTechLayerType::IMPLANT);
+  odb::dbMaster* buf_x1_master = db_->findMaster("BUF_X1");
+  odb::dbMaster* buf_x2_master = db_->findMaster("BUF_X2");
+  ASSERT_NE(buf_x1_master, nullptr);
+  ASSERT_NE(buf_x2_master, nullptr);
+  odb::dbBox::create(buf_x1_master, lvt_implant, 0, 0, 10, 10);
+  odb::dbBox::create(buf_x2_master, rvt_implant, 0, 0, 10, 10);
+
+  readVerilogAndSetup("TestResizerMt_DelayEstimator.v");
+  resizer_.initBlock();
+  resizer_.runRepairSetupPreamble();
+  ASSERT_EQ(resizer_.vtCategoryCount(), 2);
+
+  sta::LibertyCell* buf_x2_cell
+      = db_network_->libertyCell(db_network_->dbToSta(buf_x2_master));
+  ASSERT_NE(buf_x2_cell, nullptr);
+
+  // setDontUse() resets the library data; each accessor rebuilds it.
+  resizer_.setDontUse(buf_x2_cell, true);
+  EXPECT_EQ(resizer_.vtCategoryCountWithDontUse(), 2);
+  resizer_.setDontUse(buf_x2_cell, true);
+  EXPECT_EQ(resizer_.vtCategoryCount(), 1);
+
+  // resetDontUse() makes RVT usable again: two usable VTs allow VT swap.
+  resizer_.resetDontUse();
+  EXPECT_TRUE(resizer_.canVtSwap(buf_x2_cell));
 }
 
 // Keyed by VT name for checks that do not depend on the row order.

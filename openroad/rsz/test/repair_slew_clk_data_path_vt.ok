@@ -1,0 +1,34 @@
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0394] Duplicate site asap7sc7p5t in asap7sc7p5t_28_L_1x_220121a already seen in asap7sc7p5t_28_R_1x_220121a
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_L_1x_220121a.lef, created 212 library cells
+[INFO ODB-0128] Design: clk_data_path_vt
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 9 components and 37 component-terminals.
+[INFO ODB-0133]     Created 3 nets and 11 connections.
+[INFO RSZ-0100] Cells with area > 1.0X current cell will not be considered for sizing
+[INFO RSZ-0106] Cell's VT type will be preserved for sizing
+max slew
+
+Pin                                   Limit   Slew  Slack
+---------------------------------------------------------
+load0/A                               120.0  134.4  -14.4 (VIOLATED)
+load1/A                               120.0  134.4  -14.4 (VIOLATED)
+load2/A                               120.0  134.4  -14.4 (VIOLATED)
+load3/A                               120.0  134.4  -14.4 (VIOLATED)
+load4/A                               120.0  134.4  -14.4 (VIOLATED)
+load5/A                               120.0  134.4  -14.4 (VIOLATED)
+load6/A                               120.0  134.3  -14.3 (VIOLATED)
+load7/A                               120.0  134.3  -14.3 (VIOLATED)
+drvr/QN                               120.0  134.3  -14.3 (VIOLATED)
+
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |        11
+    final |    +14.7% |       1 |       2 |             1 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0034] Found 1 slew violations.
+[INFO RSZ-0039] Resized 1 instances.
+[INFO RSZ-0038] Inserted 2 buffers in 1 nets.
+Summary 4 / 4 (100% pass)
+pass

@@ -72,25 +72,26 @@ void _dbTechLayerCutSpacingTableOrthRule::collectMemInfo(MemInfo& info)
 void dbTechLayerCutSpacingTableOrthRule::getSpacingTable(
     std::vector<std::pair<int, int>>& tbl) const
 {
-  _dbTechLayerCutSpacingTableOrthRule* obj
-      = (_dbTechLayerCutSpacingTableOrthRule*) this;
+  const _dbTechLayerCutSpacingTableOrthRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableOrthRule*>(this);
   tbl = obj->spacing_tbl_;
 }
 
 dbTechLayerCutSpacingTableOrthRule* dbTechLayerCutSpacingTableOrthRule::create(
     dbTechLayer* parent)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) parent;
-  return (dbTechLayerCutSpacingTableOrthRule*)
-      _parent->cut_spacing_table_orth_tbl_->create();
+  _dbTechLayer* _parent = reinterpret_cast<_dbTechLayer*>(parent);
+  return reinterpret_cast<dbTechLayerCutSpacingTableOrthRule*>(
+      _parent->cut_spacing_table_orth_tbl_->create());
 }
 void dbTechLayerCutSpacingTableOrthRule::destroy(
     dbTechLayerCutSpacingTableOrthRule* obj)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  _dbTechLayer* _parent
+      = static_cast<_dbTechLayer*>(obj->getImpl()->getOwner());
   dbProperty::destroyProperties(obj);
   _parent->cut_spacing_table_orth_tbl_->destroy(
-      (_dbTechLayerCutSpacingTableOrthRule*) obj);
+      reinterpret_cast<_dbTechLayerCutSpacingTableOrthRule*>(obj));
 }
 // User Code Begin dbTechLayerCutSpacingTableOrthRulePublicMethods
 void dbTechLayerCutSpacingTableOrthRule::setSpacingTable(

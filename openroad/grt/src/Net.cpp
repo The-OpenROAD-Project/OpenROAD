@@ -110,6 +110,22 @@ void Net::destroyBTermPin(odb::dbBTerm* bterm)
       pins_, [&](const Pin& pin) { return pin.getName() == bterm->getName(); });
 }
 
+void Net::shareCoveringPinPositions()
+{
+  for (Pin& port : pins_) {
+    if (port.getCoveringITerm() == nullptr) {
+      continue;
+    }
+    for (const Pin& pin : pins_) {
+      if (pin.getITerm() == port.getCoveringITerm()) {
+        port.setOnGridPosition(pin.getOnGridPosition());
+        port.setConnectionLayer(pin.getConnectionLayer());
+        break;
+      }
+    }
+  }
+}
+
 int Net::getNumBTermsAboveMaxLayer(odb::dbTechLayer* max_routing_layer)
 {
   int bterm_count = 0;

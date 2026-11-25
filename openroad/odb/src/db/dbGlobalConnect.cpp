@@ -109,33 +109,33 @@ void _dbGlobalConnect::collectMemInfo(MemInfo& info)
 
 dbRegion* dbGlobalConnect::getRegion() const
 {
-  _dbGlobalConnect* obj = (_dbGlobalConnect*) this;
+  const _dbGlobalConnect* obj = reinterpret_cast<const _dbGlobalConnect*>(this);
   if (obj->region_ == 0) {
     return nullptr;
   }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbRegion*) par->region_tbl_->getPtr(obj->region_);
+  _dbBlock* par = static_cast<_dbBlock*>(obj->getOwner());
+  return reinterpret_cast<dbRegion*>(par->region_tbl_->getPtr(obj->region_));
 }
 
 dbNet* dbGlobalConnect::getNet() const
 {
-  _dbGlobalConnect* obj = (_dbGlobalConnect*) this;
+  const _dbGlobalConnect* obj = reinterpret_cast<const _dbGlobalConnect*>(this);
   if (obj->net_ == 0) {
     return nullptr;
   }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbNet*) par->net_tbl_->getPtr(obj->net_);
+  _dbBlock* par = static_cast<_dbBlock*>(obj->getOwner());
+  return reinterpret_cast<dbNet*>(par->net_tbl_->getPtr(obj->net_));
 }
 
 const std::string& dbGlobalConnect::getInstPattern() const
 {
-  _dbGlobalConnect* obj = (_dbGlobalConnect*) this;
+  const _dbGlobalConnect* obj = reinterpret_cast<const _dbGlobalConnect*>(this);
   return obj->inst_pattern_;
 }
 
 const std::string& dbGlobalConnect::getPinPattern() const
 {
-  _dbGlobalConnect* obj = (_dbGlobalConnect*) this;
+  const _dbGlobalConnect* obj = reinterpret_cast<const _dbGlobalConnect*>(this);
   return obj->pin_pattern_;
 }
 
