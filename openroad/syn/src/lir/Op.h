@@ -28,6 +28,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string_view>
 
 namespace syn::lir {
 
@@ -37,7 +38,8 @@ enum class Op : uint8_t
   kPi,         // module input; data = port index
   kPo,         // module output; fanin[0] = driver, data = port index
   kConst,      // data = ConstId (3-state: 0, 1, x; hash-consed)
-  kUndriven,   // undriven value; opaque, never optimized through
+  kUndriven,   // no defined driver: an unconnected net; opaque,
+               // never optimized through
   kBuf,        // identity; fanin[0]
   kSlice,      // fanin[0][data +: width]
   kConcat,     // LSB-first: fanin[0] supplies the low bits
@@ -125,7 +127,7 @@ inline constexpr int kNumOps = static_cast<int>(Op::kNumOps);
 
 // Returns the lower-case name used by the .lir format ("and", "reg_out",
 // ...), or "?" for out-of-range values.
-const char* opName(Op op);
+std::string_view opName(Op op);
 
 // State halves: the output starts a value and the input ends it, which cuts
 // combinational paths. A loop pair is a state pair but holds no value: use

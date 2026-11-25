@@ -92,66 +92,71 @@ void _dbMasterEdgeType::collectMemInfo(MemInfo& info)
 
 void dbMasterEdgeType::setEdgeType(const std::string& edge_type)
 {
-  _dbMasterEdgeType* obj = (_dbMasterEdgeType*) this;
+  _dbMasterEdgeType* obj = reinterpret_cast<_dbMasterEdgeType*>(this);
 
   obj->edge_type_ = edge_type;
 }
 
 const std::string& dbMasterEdgeType::getEdgeType() const
 {
-  _dbMasterEdgeType* obj = (_dbMasterEdgeType*) this;
+  const _dbMasterEdgeType* obj
+      = reinterpret_cast<const _dbMasterEdgeType*>(this);
   return obj->edge_type_;
 }
 
 void dbMasterEdgeType::setCellRow(int cell_row)
 {
-  _dbMasterEdgeType* obj = (_dbMasterEdgeType*) this;
+  _dbMasterEdgeType* obj = reinterpret_cast<_dbMasterEdgeType*>(this);
 
   obj->cell_row_ = cell_row;
 }
 
 int dbMasterEdgeType::getCellRow() const
 {
-  _dbMasterEdgeType* obj = (_dbMasterEdgeType*) this;
+  const _dbMasterEdgeType* obj
+      = reinterpret_cast<const _dbMasterEdgeType*>(this);
   return obj->cell_row_;
 }
 
 void dbMasterEdgeType::setHalfRow(int half_row)
 {
-  _dbMasterEdgeType* obj = (_dbMasterEdgeType*) this;
+  _dbMasterEdgeType* obj = reinterpret_cast<_dbMasterEdgeType*>(this);
 
   obj->half_row_ = half_row;
 }
 
 int dbMasterEdgeType::getHalfRow() const
 {
-  _dbMasterEdgeType* obj = (_dbMasterEdgeType*) this;
+  const _dbMasterEdgeType* obj
+      = reinterpret_cast<const _dbMasterEdgeType*>(this);
   return obj->half_row_;
 }
 
 void dbMasterEdgeType::setRangeBegin(int range_begin)
 {
-  _dbMasterEdgeType* obj = (_dbMasterEdgeType*) this;
+  _dbMasterEdgeType* obj = reinterpret_cast<_dbMasterEdgeType*>(this);
 
   obj->range_begin_ = range_begin;
 }
 
 int dbMasterEdgeType::getRangeBegin() const
 {
-  _dbMasterEdgeType* obj = (_dbMasterEdgeType*) this;
+  const _dbMasterEdgeType* obj
+      = reinterpret_cast<const _dbMasterEdgeType*>(this);
   return obj->range_begin_;
 }
 
 void dbMasterEdgeType::setRangeEnd(int range_end)
 {
-  _dbMasterEdgeType* obj = (_dbMasterEdgeType*) this;
+  _dbMasterEdgeType* obj = reinterpret_cast<_dbMasterEdgeType*>(this);
 
   obj->range_end_ = range_end;
 }
 
 int dbMasterEdgeType::getRangeEnd() const
 {
-  _dbMasterEdgeType* obj = (_dbMasterEdgeType*) this;
+  const _dbMasterEdgeType* obj
+      = reinterpret_cast<const _dbMasterEdgeType*>(this);
   return obj->range_end_;
 }
 

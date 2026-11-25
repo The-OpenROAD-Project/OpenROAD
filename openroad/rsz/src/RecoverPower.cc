@@ -171,17 +171,6 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
         // Save the vertex to avoid trying it again.
         bad_vertices_.insert(changed);
         // Undo the change here.
-        ++failed_move_threshold;
-        if (failed_move_threshold > failed_move_threshold_limit_) {
-          logger_->info(RSZ,
-                        142,
-                        "{} successive tries yielded negative slack. Ending "
-                        "power recovery",
-                        failed_move_threshold_limit_);
-          resizer_->journalEnd();
-          resize_count_++;
-          break;
-        }
         resizer_->journalRestore();
         debugPrint(logger_,
                    RSZ,
@@ -192,6 +181,15 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
                    ends_with_slack.size(),
                    sta::delayAsString(worst_slack_before, digits, sta_),
                    sta::delayAsString(worst_slack_after, digits, sta_));
+        ++failed_move_threshold;
+        if (failed_move_threshold > failed_move_threshold_limit_) {
+          logger_->info(RSZ,
+                        142,
+                        "{} successive tries yielded negative slack. Ending "
+                        "power recovery",
+                        failed_move_threshold_limit_);
+          break;
+        }
       }
     } else {
       resizer_->journalEnd();

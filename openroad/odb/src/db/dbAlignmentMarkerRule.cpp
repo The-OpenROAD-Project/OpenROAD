@@ -94,14 +94,15 @@ void _dbAlignmentMarkerRule::collectMemInfo(MemInfo& info)
 
 void dbAlignmentMarkerRule::setTolerance(int tolerance)
 {
-  _dbAlignmentMarkerRule* obj = (_dbAlignmentMarkerRule*) this;
+  _dbAlignmentMarkerRule* obj = reinterpret_cast<_dbAlignmentMarkerRule*>(this);
 
   obj->tolerance_ = tolerance;
 }
 
 int dbAlignmentMarkerRule::getTolerance() const
 {
-  _dbAlignmentMarkerRule* obj = (_dbAlignmentMarkerRule*) this;
+  const _dbAlignmentMarkerRule* obj
+      = reinterpret_cast<const _dbAlignmentMarkerRule*>(this);
   return obj->tolerance_;
 }
 

@@ -131,7 +131,7 @@ void _dbPowerDomain::collectMemInfo(MemInfo& info)
 _dbPowerDomain::~_dbPowerDomain()
 {
   if (name_) {
-    free((void*) name_);
+    free(name_);
   }
 }
 
@@ -143,60 +143,61 @@ _dbPowerDomain::~_dbPowerDomain()
 
 const char* dbPowerDomain::getName() const
 {
-  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  const _dbPowerDomain* obj = reinterpret_cast<const _dbPowerDomain*>(this);
   return obj->name_;
 }
 
 dbGroup* dbPowerDomain::getGroup() const
 {
-  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  const _dbPowerDomain* obj = reinterpret_cast<const _dbPowerDomain*>(this);
   if (obj->group_ == 0) {
     return nullptr;
   }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbGroup*) par->group_tbl_->getPtr(obj->group_);
+  _dbBlock* par = static_cast<_dbBlock*>(obj->getOwner());
+  return reinterpret_cast<dbGroup*>(par->group_tbl_->getPtr(obj->group_));
 }
 
 void dbPowerDomain::setTop(bool top)
 {
-  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  _dbPowerDomain* obj = reinterpret_cast<_dbPowerDomain*>(this);
 
   obj->top_ = top;
 }
 
 bool dbPowerDomain::isTop() const
 {
-  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  const _dbPowerDomain* obj = reinterpret_cast<const _dbPowerDomain*>(this);
   return obj->top_;
 }
 
 void dbPowerDomain::setParent(dbPowerDomain* parent)
 {
-  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  _dbPowerDomain* obj = reinterpret_cast<_dbPowerDomain*>(this);
 
   obj->parent_ = parent->getImpl()->getOID();
 }
 
 dbPowerDomain* dbPowerDomain::getParent() const
 {
-  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  const _dbPowerDomain* obj = reinterpret_cast<const _dbPowerDomain*>(this);
   if (obj->parent_ == 0) {
     return nullptr;
   }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbPowerDomain*) par->powerdomain_tbl_->getPtr(obj->parent_);
+  _dbBlock* par = static_cast<_dbBlock*>(obj->getOwner());
+  return reinterpret_cast<dbPowerDomain*>(
+      par->powerdomain_tbl_->getPtr(obj->parent_));
 }
 
 void dbPowerDomain::setVoltage(float voltage)
 {
-  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  _dbPowerDomain* obj = reinterpret_cast<_dbPowerDomain*>(this);
 
   obj->voltage_ = voltage;
 }
 
 float dbPowerDomain::getVoltage() const
 {
-  _dbPowerDomain* obj = (_dbPowerDomain*) this;
+  const _dbPowerDomain* obj = reinterpret_cast<const _dbPowerDomain*>(this);
   return obj->voltage_;
 }
 

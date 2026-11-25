@@ -170,6 +170,10 @@ class TechChar
   void createFakeEntries(unsigned length, unsigned fakeLength);
 
   double getCapPerDBU() const { return capPerDBU_; }
+  void initClockLayerResCap(float dbUnitsPerMicron);
+  void trimSortBufferList(std::vector<std::string>& buffers);
+  std::string initCharBuffer(const std::vector<std::string>& buffers);
+  void initSinkBufferInputCap();
   utl::Logger* getLogger() { return options_->getLogger(); }
 
   sta::ArcDelay computeBufferDelay(const std::string& driver,
@@ -262,7 +266,6 @@ class TechChar
   bool isClkDlyCell(const std::string& cellName);
   void createDelayBufList();
   void finalizeRootSinkBuffers();
-  void trimSortBufferList(std::vector<std::string>& buffers);
   float getMaxCapLimit(const std::string& buf);
   float getDrvrResistance(const std::string& buf);
   float getinternalDelay(const std::string& buf);
@@ -299,7 +302,6 @@ class TechChar
                                 float iter,
                                 unsigned* min,
                                 unsigned* max);
-  void initClockLayerResCap(float dbUnitsPerMicron);
   unsigned getBufferingCombo(size_t numBuffers, size_t numNodes);
   bool isTopologyMonotonic(const std::vector<size_t>& row);
 

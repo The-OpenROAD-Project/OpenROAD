@@ -122,133 +122,153 @@ void _dbTechLayerEolKeepOutRule::collectMemInfo(MemInfo& info)
 
 void dbTechLayerEolKeepOutRule::setEolWidth(int eol_width)
 {
-  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+  _dbTechLayerEolKeepOutRule* obj
+      = reinterpret_cast<_dbTechLayerEolKeepOutRule*>(this);
 
   obj->eol_width_ = eol_width;
 }
 
 int dbTechLayerEolKeepOutRule::getEolWidth() const
 {
-  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+  const _dbTechLayerEolKeepOutRule* obj
+      = reinterpret_cast<const _dbTechLayerEolKeepOutRule*>(this);
   return obj->eol_width_;
 }
 
 void dbTechLayerEolKeepOutRule::setBackwardExt(int backward_ext)
 {
-  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+  _dbTechLayerEolKeepOutRule* obj
+      = reinterpret_cast<_dbTechLayerEolKeepOutRule*>(this);
 
   obj->backward_ext_ = backward_ext;
 }
 
 int dbTechLayerEolKeepOutRule::getBackwardExt() const
 {
-  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+  const _dbTechLayerEolKeepOutRule* obj
+      = reinterpret_cast<const _dbTechLayerEolKeepOutRule*>(this);
   return obj->backward_ext_;
 }
 
 void dbTechLayerEolKeepOutRule::setForwardExt(int forward_ext)
 {
-  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+  _dbTechLayerEolKeepOutRule* obj
+      = reinterpret_cast<_dbTechLayerEolKeepOutRule*>(this);
 
   obj->forward_ext_ = forward_ext;
 }
 
 int dbTechLayerEolKeepOutRule::getForwardExt() const
 {
-  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+  const _dbTechLayerEolKeepOutRule* obj
+      = reinterpret_cast<const _dbTechLayerEolKeepOutRule*>(this);
   return obj->forward_ext_;
 }
 
 void dbTechLayerEolKeepOutRule::setSideExt(int side_ext)
 {
-  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+  _dbTechLayerEolKeepOutRule* obj
+      = reinterpret_cast<_dbTechLayerEolKeepOutRule*>(this);
 
   obj->side_ext_ = side_ext;
 }
 
 int dbTechLayerEolKeepOutRule::getSideExt() const
 {
-  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+  const _dbTechLayerEolKeepOutRule* obj
+      = reinterpret_cast<const _dbTechLayerEolKeepOutRule*>(this);
   return obj->side_ext_;
 }
 
 void dbTechLayerEolKeepOutRule::setWithinLow(int within_low)
 {
-  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+  _dbTechLayerEolKeepOutRule* obj
+      = reinterpret_cast<_dbTechLayerEolKeepOutRule*>(this);
 
   obj->within_low_ = within_low;
 }
 
 int dbTechLayerEolKeepOutRule::getWithinLow() const
 {
-  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+  const _dbTechLayerEolKeepOutRule* obj
+      = reinterpret_cast<const _dbTechLayerEolKeepOutRule*>(this);
   return obj->within_low_;
 }
 
 void dbTechLayerEolKeepOutRule::setWithinHigh(int within_high)
 {
-  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+  _dbTechLayerEolKeepOutRule* obj
+      = reinterpret_cast<_dbTechLayerEolKeepOutRule*>(this);
 
   obj->within_high_ = within_high;
 }
 
 int dbTechLayerEolKeepOutRule::getWithinHigh() const
 {
-  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+  const _dbTechLayerEolKeepOutRule* obj
+      = reinterpret_cast<const _dbTechLayerEolKeepOutRule*>(this);
   return obj->within_high_;
 }
 
 void dbTechLayerEolKeepOutRule::setClassName(const std::string& class_name)
 {
-  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+  _dbTechLayerEolKeepOutRule* obj
+      = reinterpret_cast<_dbTechLayerEolKeepOutRule*>(this);
 
   obj->class_name_ = class_name;
 }
 
 const std::string& dbTechLayerEolKeepOutRule::getClassName() const
 {
-  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+  const _dbTechLayerEolKeepOutRule* obj
+      = reinterpret_cast<const _dbTechLayerEolKeepOutRule*>(this);
   return obj->class_name_;
 }
 
 void dbTechLayerEolKeepOutRule::setClassValid(bool class_valid)
 {
-  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+  _dbTechLayerEolKeepOutRule* obj
+      = reinterpret_cast<_dbTechLayerEolKeepOutRule*>(this);
 
   obj->flags_.class_valid = class_valid;
 }
 
 bool dbTechLayerEolKeepOutRule::isClassValid() const
 {
-  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+  const _dbTechLayerEolKeepOutRule* obj
+      = reinterpret_cast<const _dbTechLayerEolKeepOutRule*>(this);
 
   return obj->flags_.class_valid;
 }
 
 void dbTechLayerEolKeepOutRule::setCornerOnly(bool corner_only)
 {
-  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+  _dbTechLayerEolKeepOutRule* obj
+      = reinterpret_cast<_dbTechLayerEolKeepOutRule*>(this);
 
   obj->flags_.corner_only = corner_only;
 }
 
 bool dbTechLayerEolKeepOutRule::isCornerOnly() const
 {
-  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+  const _dbTechLayerEolKeepOutRule* obj
+      = reinterpret_cast<const _dbTechLayerEolKeepOutRule*>(this);
 
   return obj->flags_.corner_only;
 }
 
 void dbTechLayerEolKeepOutRule::setExceptWithin(bool except_within)
 {
-  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+  _dbTechLayerEolKeepOutRule* obj
+      = reinterpret_cast<_dbTechLayerEolKeepOutRule*>(this);
 
   obj->flags_.except_within = except_within;
 }
 
 bool dbTechLayerEolKeepOutRule::isExceptWithin() const
 {
-  _dbTechLayerEolKeepOutRule* obj = (_dbTechLayerEolKeepOutRule*) this;
+  const _dbTechLayerEolKeepOutRule* obj
+      = reinterpret_cast<const _dbTechLayerEolKeepOutRule*>(this);
 
   return obj->flags_.except_within;
 }
@@ -256,15 +276,17 @@ bool dbTechLayerEolKeepOutRule::isExceptWithin() const
 dbTechLayerEolKeepOutRule* dbTechLayerEolKeepOutRule::create(
     dbTechLayer* parent)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) parent;
-  return (dbTechLayerEolKeepOutRule*)
-      _parent->eol_keep_out_rules_tbl_->create();
+  _dbTechLayer* _parent = reinterpret_cast<_dbTechLayer*>(parent);
+  return reinterpret_cast<dbTechLayerEolKeepOutRule*>(
+      _parent->eol_keep_out_rules_tbl_->create());
 }
 void dbTechLayerEolKeepOutRule::destroy(dbTechLayerEolKeepOutRule* obj)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  _dbTechLayer* _parent
+      = static_cast<_dbTechLayer*>(obj->getImpl()->getOwner());
   dbProperty::destroyProperties(obj);
-  _parent->eol_keep_out_rules_tbl_->destroy((_dbTechLayerEolKeepOutRule*) obj);
+  _parent->eol_keep_out_rules_tbl_->destroy(
+      reinterpret_cast<_dbTechLayerEolKeepOutRule*>(obj));
 }
 // User Code Begin dbTechLayerEolKeepOutRulePublicMethods
 dbTechLayerEolKeepOutRule*

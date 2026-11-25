@@ -83,27 +83,27 @@ void _dbGDSSRef::collectMemInfo(MemInfo& info)
 
 void dbGDSSRef::setOrigin(const Point& origin)
 {
-  _dbGDSSRef* obj = (_dbGDSSRef*) this;
+  _dbGDSSRef* obj = reinterpret_cast<_dbGDSSRef*>(this);
 
   obj->origin_ = origin;
 }
 
 Point dbGDSSRef::getOrigin() const
 {
-  _dbGDSSRef* obj = (_dbGDSSRef*) this;
+  const _dbGDSSRef* obj = reinterpret_cast<const _dbGDSSRef*>(this);
   return obj->origin_;
 }
 
 void dbGDSSRef::setTransform(dbGDSSTrans transform)
 {
-  _dbGDSSRef* obj = (_dbGDSSRef*) this;
+  _dbGDSSRef* obj = reinterpret_cast<_dbGDSSRef*>(this);
 
   obj->transform_ = transform;
 }
 
 dbGDSSTrans dbGDSSRef::getTransform() const
 {
-  _dbGDSSRef* obj = (_dbGDSSRef*) this;
+  const _dbGDSSRef* obj = reinterpret_cast<const _dbGDSSRef*>(this);
   return obj->transform_;
 }
 

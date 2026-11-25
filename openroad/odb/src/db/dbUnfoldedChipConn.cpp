@@ -69,34 +69,38 @@ void _dbUnfoldedChipConn::collectMemInfo(MemInfo& info)
 
 dbChipConn* dbUnfoldedChipConn::getChipConn() const
 {
-  _dbUnfoldedChipConn* obj = (_dbUnfoldedChipConn*) this;
+  const _dbUnfoldedChipConn* obj
+      = reinterpret_cast<const _dbUnfoldedChipConn*>(this);
   if (obj->chip_conn_ == 0) {
     return nullptr;
   }
-  _dbDatabase* par = (_dbDatabase*) obj->getOwner();
-  return (dbChipConn*) par->chip_conn_tbl_->getPtr(obj->chip_conn_);
+  _dbDatabase* par = static_cast<_dbDatabase*>(obj->getOwner());
+  return reinterpret_cast<dbChipConn*>(
+      par->chip_conn_tbl_->getPtr(obj->chip_conn_));
 }
 
 dbUnfoldedChipRegionInst* dbUnfoldedChipConn::getTopRegion() const
 {
-  _dbUnfoldedChipConn* obj = (_dbUnfoldedChipConn*) this;
+  const _dbUnfoldedChipConn* obj
+      = reinterpret_cast<const _dbUnfoldedChipConn*>(this);
   if (obj->top_region_ == 0) {
     return nullptr;
   }
-  _dbDatabase* par = (_dbDatabase*) obj->getOwner();
-  return (dbUnfoldedChipRegionInst*)
-      par->unfolded_chip_region_inst_tbl_->getPtr(obj->top_region_);
+  _dbDatabase* par = static_cast<_dbDatabase*>(obj->getOwner());
+  return reinterpret_cast<dbUnfoldedChipRegionInst*>(
+      par->unfolded_chip_region_inst_tbl_->getPtr(obj->top_region_));
 }
 
 dbUnfoldedChipRegionInst* dbUnfoldedChipConn::getBottomRegion() const
 {
-  _dbUnfoldedChipConn* obj = (_dbUnfoldedChipConn*) this;
+  const _dbUnfoldedChipConn* obj
+      = reinterpret_cast<const _dbUnfoldedChipConn*>(this);
   if (obj->bottom_region_ == 0) {
     return nullptr;
   }
-  _dbDatabase* par = (_dbDatabase*) obj->getOwner();
-  return (dbUnfoldedChipRegionInst*)
-      par->unfolded_chip_region_inst_tbl_->getPtr(obj->bottom_region_);
+  _dbDatabase* par = static_cast<_dbDatabase*>(obj->getOwner());
+  return reinterpret_cast<dbUnfoldedChipRegionInst*>(
+      par->unfolded_chip_region_inst_tbl_->getPtr(obj->bottom_region_));
 }
 
 }  // namespace odb

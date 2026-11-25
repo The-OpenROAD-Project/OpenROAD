@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <fstream>
+#include <initializer_list>
 #include <iostream>
 #include <iterator>
 #include <map>
@@ -223,12 +224,17 @@ void FlexGridGraph::initEdges(const frDesign* design,
     } else {
       nonPrefLayerNum = layerNum;
     }
-    auto& yLayerMap = yMap[layerNum];
-    auto& yLayer2Map = yMap[layerNum + 2];
-    auto& yNonPrefLayerMap = yMap[nonPrefLayerNum];
-    auto& xLayerMap = xMap[layerNum];
-    auto& xLayer2Map = xMap[layerNum + 2];
-    auto& xNonPrefLayerMap = xMap[nonPrefLayerNum];
+    // Finish flat-map insertions before borrowing references to layer maps.
+    for (const auto layer_num : {layerNum, layerNum + 2, nonPrefLayerNum}) {
+      xMap.try_emplace(layer_num);
+      yMap.try_emplace(layer_num);
+    }
+    const auto& yLayerMap = yMap.at(layerNum);
+    const auto& yLayer2Map = yMap.at(layerNum + 2);
+    const auto& yNonPrefLayerMap = yMap.at(nonPrefLayerNum);
+    const auto& xLayerMap = xMap.at(layerNum);
+    const auto& xLayer2Map = xMap.at(layerNum + 2);
+    const auto& xNonPrefLayerMap = xMap.at(nonPrefLayerNum);
     if (dir == dbTechLayerDir::HORIZONTAL) {
       for (frMIdx yIdx = 0; yIdx < yCoords_.size(); yIdx++) {
         auto yCoord = yCoords_[yIdx];

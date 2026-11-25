@@ -56,4 +56,12 @@ bool dbLinkDesign(const char* top_cell_name,
                   bool hierarchy,
                   bool omit_filename_prop = false);
 
+// Link a module read with read_verilog after the design was loaded into
+// that design, in a child block of its own like the unused modules
+// dbLinkDesign links, so replace_hier_module can switch an instance to it.
+bool dbLinkModule(const char* module_name,
+                  dbVerilogNetwork* verilog_network,
+                  odb::dbDatabase* db,
+                  utl::Logger* logger);
+
 }  // namespace ord

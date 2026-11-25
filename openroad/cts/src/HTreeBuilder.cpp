@@ -38,20 +38,19 @@ Point<double> HTreeBuilder::legalizeOneBuffer(Point<double> bufferLoc,
   return resolveLocationCollision(legalLoc);
 }
 
-void HTreeBuilder::preSinkClustering(
+bool HTreeBuilder::clusterSinks(
     const std::vector<std::pair<float, float>>& sinks,
     const std::vector<ClockInst*>& sinkInsts,
     const float maxDiameter,
     const unsigned clusterSize,
-    const bool secondLevel)
+    const bool secondLevel,
+    std::vector<std::pair<float, float>>& points,
+    std::vector<ClockInst*>& pointInsts,
+    std::vector<std::pair<float, float>>& gatePoints,
+    SinkClustering& matching,
+    unsigned& bestClusterSize,
+    float& bestDiameter)
 {
-  bool maxDiameterSet = (type_ == TreeType::MacroTree)
-                            ? options_->isMacroMaxDiameterSet()
-                            : options_->isMaxDiameterSet();
-  bool clusterSizeSet = (type_ == TreeType::MacroTree)
-                            ? options_->isMacroSinkClusteringSizeSet()
-                            : options_->isSinkClusteringSizeSet();
-
   unsigned min_clustering_sinks = (type_ == TreeType::MacroTree)
                                       ? min_clustering_macro_sinks_
                                       : min_clustering_sinks_;
@@ -75,14 +74,10 @@ void HTreeBuilder::preSinkClustering(
 
   if (sinks.size() <= min_clustering_sinks
       || !(options_->getSinkClustering())) {
-    topLevelSinksClustered_ = sinks;
-    return;
+    return false;
   }
 
   // The H-tree drives a clock gate sink directly in place of a leaf buffer.
-  std::vector<std::pair<float, float>> gatePoints;
-  std::vector<std::pair<float, float>> points;
-  std::vector<ClockInst*> pointInsts;
   for (size_t i = 0; i < sinks.size(); i++) {
     if (!secondLevel && sinkInsts[i]->isClockGateSink()) {
       gatePoints.push_back(sinks[i]);
@@ -92,11 +87,9 @@ void HTreeBuilder::preSinkClustering(
     }
   }
   if (points.size() <= 1) {
-    topLevelSinksClustered_ = sinks;
-    return;
+    return false;
   }
 
-  SinkClustering matching(options_, techChar_, this);
   const unsigned numPoints = points.size();
 
   for (int pointIdx = 0; pointIdx < numPoints; ++pointIdx) {
@@ -110,8 +103,6 @@ void HTreeBuilder::preSinkClustering(
     }
   }
 
-  unsigned bestClusterSize = 0;
-  float bestDiameter = 0.0;
   // clang-format off
   debugPrint(logger_, CTS, "clustering", 1, "**** match.run({}, {}, {}) ****",
              clusterSize, maxDiameter, wireSegmentUnit_);
@@ -121,6 +112,44 @@ void HTreeBuilder::preSinkClustering(
                wireSegmentUnit_,
                bestClusterSize,
                bestDiameter);
+  return true;
+}
+
+void HTreeBuilder::preSinkClustering(
+    const std::vector<std::pair<float, float>>& sinks,
+    const std::vector<ClockInst*>& sinkInsts,
+    const float maxDiameter,
+    const unsigned clusterSize,
+    const bool secondLevel)
+{
+  bool maxDiameterSet = (type_ == TreeType::MacroTree)
+                            ? options_->isMacroMaxDiameterSet()
+                            : options_->isMaxDiameterSet();
+  bool clusterSizeSet = (type_ == TreeType::MacroTree)
+                            ? options_->isMacroSinkClusteringSizeSet()
+                            : options_->isSinkClusteringSizeSet();
+
+  std::vector<std::pair<float, float>> points;
+  std::vector<ClockInst*> pointInsts;
+  std::vector<std::pair<float, float>> gatePoints;
+  SinkClustering matching(options_, techChar_, this);
+  unsigned bestClusterSize = 0;
+  float bestDiameter = 0.0;
+  if (!clusterSinks(sinks,
+                    sinkInsts,
+                    maxDiameter,
+                    clusterSize,
+                    secondLevel,
+                    points,
+                    pointInsts,
+                    gatePoints,
+                    matching,
+                    bestClusterSize,
+                    bestDiameter)) {
+    topLevelSinksClustered_ = sinks;
+    return;
+  }
+
   std::string size_log, diameter_log;
   size_log = diameter_log = "";
   if (!maxDiameterSet) {
@@ -281,12 +310,8 @@ void HTreeBuilder::initSinkRegion()
   const int dbUnits = options_->getDbUnits();
   wireSegmentUnit_ = wireSegmentUnitInDbu;
 
-  double clusterDiameter = (type_ == TreeType::MacroTree)
-                               ? options_->getMacroMaxDiameter()
-                               : options_->getMaxDiameter();
-  unsigned clusterSize = (type_ == TreeType::MacroTree)
-                             ? options_->getMacroSinkClusteringSize()
-                             : options_->getSinkClusteringSize();
+  double clusterDiameter = sinkClusteringDiameter();
+  unsigned clusterSize = sinkClusteringSize();
   unsigned min_clustering_sinks = (type_ == TreeType::MacroTree)
                                       ? min_clustering_macro_sinks_
                                       : min_clustering_sinks_;
@@ -353,6 +378,60 @@ void HTreeBuilder::initSinkRegion()
   logger_->info(CTS, 24, " Normalized sink region: {}.", sinkRegion_);
   logger_->info(CTS, 25, "    Width:  {:.4f}.", sinkRegion_.getWidth());
   logger_->info(CTS, 26, "    Height: {:.4f}.", sinkRegion_.getHeight());
+}
+
+double HTreeBuilder::sinkClusteringDiameter() const
+{
+  return (type_ == TreeType::MacroTree) ? options_->getMacroMaxDiameter()
+                                        : options_->getMaxDiameter();
+}
+
+unsigned HTreeBuilder::sinkClusteringSize() const
+{
+  return (type_ == TreeType::MacroTree) ? options_->getMacroSinkClusteringSize()
+                                        : options_->getSinkClusteringSize();
+}
+
+std::vector<std::vector<const ClockInst*>> HTreeBuilder::predictSinkClusters()
+{
+  // As initSinkRegion up to its first preSinkClustering.
+  wireSegmentUnit_ = techChar_->getLengthUnit();
+  std::vector<std::pair<float, float>> topLevelSinks;
+  std::vector<ClockInst*> sinkInsts;
+  initTopLevelSinks(topLevelSinks, sinkInsts);
+  const float maxDiameter
+      = (sinkClusteringDiameter() * options_->getDbUnits()) / wireSegmentUnit_;
+
+  std::vector<std::vector<const ClockInst*>> clusters;
+  std::vector<std::pair<float, float>> points;
+  std::vector<ClockInst*> pointInsts;
+  std::vector<std::pair<float, float>> gatePoints;
+  SinkClustering matching(options_, techChar_, this);
+  unsigned bestClusterSize = 0;
+  float bestDiameter = 0.0;
+  if (!clusterSinks(topLevelSinks,
+                    sinkInsts,
+                    maxDiameter,
+                    sinkClusteringSize(),
+                    false,
+                    points,
+                    pointInsts,
+                    gatePoints,
+                    matching,
+                    bestClusterSize,
+                    bestDiameter)) {
+    return clusters;
+  }
+  for (const std::vector<unsigned>& cluster :
+       matching.sinkClusteringSolution()) {
+    if (!cluster.empty()) {
+      std::vector<const ClockInst*>& insts = clusters.emplace_back();
+      for (const unsigned idx : cluster) {
+        insts.push_back(pointInsts[idx]);
+      }
+    }
+  }
+  return clusters;
 }
 
 static void plotBlockage(std::ofstream& file,
@@ -1206,12 +1285,8 @@ void HTreeBuilder::legalize()
 
 void HTreeBuilder::run()
 {
-  double clusterDiameter = (type_ == TreeType::MacroTree)
-                               ? options_->getMacroMaxDiameter()
-                               : options_->getMaxDiameter();
-  unsigned clusterSize = (type_ == TreeType::MacroTree)
-                             ? options_->getMacroSinkClusteringSize()
-                             : options_->getSinkClusteringSize();
+  double clusterDiameter = sinkClusteringDiameter();
+  unsigned clusterSize = sinkClusteringSize();
   bool use_max_diameter = (type_ == TreeType::MacroTree)
                               ? options_->isMacroMaxDiameterSet()
                               : options_->isMaxDiameterSet();

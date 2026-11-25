@@ -9,8 +9,8 @@
 #include <string>
 
 #include "web_assets.h"
-#include "zconf.h"
-#include "zlib.h"
+#include "zlib/include/zconf.h"
+#include "zlib/include/zlib.h"
 
 namespace web {
 
