@@ -8,7 +8,8 @@
 # package:
 #   --@kokkos//:cuda_toolkit=:kokkos_cuda_toolkit  (the system CUDA toolkit)
 #   --@kokkos_fft//:config=:kokkos_fft_config      (KokkosFFT_config.hpp)
-# together with --@kokkos//:device=cuda and --@kokkos//:cuda_arch.
+# together with --@kokkos//:device=cuda. --@kokkos//:cuda_arch also selects the
+# device target of OpenROAD's own CUDA sources (bazel/gpu/copts.bzl).
 #
 # configure.bzl writes KokkosFFT_config.hpp the way KokkosFFT's CMake build
 # would have generated it.

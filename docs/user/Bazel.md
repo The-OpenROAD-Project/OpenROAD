@@ -528,13 +528,17 @@ also set `OPENROAD_CUDA_PATH` to that toolkit (its libcu++ headers live in
 `include/cccl/`, which `--config=gpu` already adds to the search path).
 
 For another supported architecture, use `--config=gpu` together with
-`--//:cuda_arch=sm_XX`. The accepted values are `sm_60`, `sm_61`, `sm_70`,
-`sm_72`, `sm_75`, `sm_80`, `sm_86`, `sm_87`, `sm_89`, `sm_90`, `sm_100`,
-`sm_103`, `sm_120`, and `sm_121`. Plain `--config=gpu` intentionally requires
-this extra flag so Kokkos and OpenROAD's kernels use one explicit target. If the
-compiled target differs from the selected device, Kokkos prints a runtime
-warning; compatible code may still run, usually with reduced portability or
-performance.
+`--@kokkos//:cuda_arch=sm_XX`, for example:
+
+    bazelisk build --config=gpu --@kokkos//:cuda_arch=sm_89 //:openroad
+
+The accepted values are `sm_60`, `sm_61`, `sm_70`, `sm_72`, `sm_75`, `sm_80`,
+`sm_86`, `sm_87`, `sm_89`, `sm_90`, `sm_100`, `sm_103`, `sm_120`, and `sm_121`.
+This one flag sets the target for both Kokkos and OpenROAD's own CUDA sources,
+so they cannot diverge. Plain `--config=gpu` intentionally fails during
+analysis without it. If the compiled target differs from the selected device,
+Kokkos prints a runtime warning; compatible code may still run, usually with
+reduced portability or performance.
 
 `OPENROAD_CUDA_PATH` selects the full CUDA toolkit and defaults to
 `/usr/local/cuda-12.8`. The toolkit must contain `bin/ptxas`, `nvvm/libdevice`,
@@ -572,8 +576,8 @@ hermetic OpenROAD binary. The `kokkos` module writes its configuration headers
 - `--config=gpu` binaries link libcudart/libcufft by absolute path with an
   rpath into the toolkit; they are not relocatable to another machine.
 - The first GPU build fetches KokkosFFT and compiles Kokkos's CUDA translation
-  units. Changing `cuda_arch` rebuilds Kokkos and the OpenROAD GPU sources for
-  the new target.
+  units. Changing `--@kokkos//:cuda_arch` rebuilds Kokkos and the OpenROAD GPU
+  sources for the new target.
 - After upgrading CUDA in place, run `bazelisk shutdown` (or change
   `OPENROAD_CUDA_PATH`) so the wrapped repository is refetched with the new
   file list.

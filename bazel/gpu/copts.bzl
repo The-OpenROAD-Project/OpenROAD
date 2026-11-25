@@ -14,7 +14,7 @@ have.
 """
 
 load("@cuda_local//:defs.bzl", "CUDA_PATH")
-load("//bazel/gpu:archs.bzl", "CUDA_ARCHS", "CUDA_ARCH_FLAG_ERROR")
+load("@kokkos//:cuda_toolkit.bzl", "CUDA_ARCH_DEFINES")
 
 CUDA_TOOLKIT_COPTS = [
     # Overrides the global "-xc++" from .bazelrc: rule copts come after
@@ -37,12 +37,21 @@ CUDA_TOOLKIT_COPTS = [
     "-DBOOST_DETAIL_EMPTY_VALUE_BASE",
 ]
 
+_CUDA_ARCH_FLAG_ERROR = (
+    "--config=gpu requires an explicit CUDA architecture: pass " +
+    "--@kokkos//:cuda_arch=sm_<compute capability>. See " +
+    "docs/user/Bazel.md, section \"GPU build\"."
+)
+
+# --@kokkos//:cuda_arch is the single architecture setting: it configures
+# Kokkos and selects the device target of OpenROAD's own CUDA sources, so the
+# two cannot diverge.
 CUDA_ARCH_COPTS = select(
     {
-        Label("//:cuda_arch_" + arch): ["--cuda-gpu-arch=" + arch]
-        for arch in CUDA_ARCHS
+        Label("@kokkos//:cuda_" + arch): ["--cuda-gpu-arch=" + arch]
+        for arch in CUDA_ARCH_DEFINES
     },
-    no_match_error = CUDA_ARCH_FLAG_ERROR,
+    no_match_error = _CUDA_ARCH_FLAG_ERROR,
 )
 
 CUDA_COPTS = CUDA_TOOLKIT_COPTS + CUDA_ARCH_COPTS + [
