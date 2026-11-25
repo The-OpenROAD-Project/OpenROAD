@@ -133,7 +133,7 @@ frCoord frLayer::getMinSpacingValue(frCoord width1,
 
   auto con = getMinSpacing();
   if (!con) {
-    return std::max(rangeSpc, 0);
+    return std::max(rangeSpc, 1);
   }
   frCoord minSpc = 0;
   if (con->typeId() == frConstraintTypeEnum::frcSpacingConstraint) {
