@@ -6,8 +6,7 @@
 Each SWIG module has its own init function (PyInit__ord_py, PyInit__odb_py,
 PyInit__ant_py, ...), and all of them are linked into _openroad.so. The
 dynamic loader maps that file once, so the modules keep separate
-namespaces while sharing one copy of the C++ state, as the modules linked
-into the CMake `openroad` executable do.
+namespaces while sharing one copy of the C++ state.
 """
 
 import importlib.abc
@@ -16,15 +15,15 @@ import importlib.util
 import os
 import sys
 
-# The tool modules in _openroad.so. Each SWIG wrapper src/<tool>/<tool>_py.py
-# imports its extension as src.<tool>._<tool>_py; ord_py.py, at the top
+# The tool modules in _openroad.so. Each SWIG wrapper openroad/<tool>/<tool>_py.py
+# imports its extension as openroad.<tool>._<tool>_py; ord_py.py, at the top
 # level, imports _ord_py. Only these exact names are loaded from the library,
 # so a module of the same name in another package is left alone.
 _TOOLS = """
-    ant cgt cts dpl drt exa fin gpl grt ifp odb par
-    pdn ppl psm rcx rmp rsz stt tap utl wmk
+    ant cgt cts dpl drt exa fin fsv gpl grt ifp odb
+    par pdn pex ppl psm rcx rmp rsz stt tap utl wmk
 """.split()
-EXTENSIONS = frozenset(["_ord_py"] + [f"src.{tool}._{tool}_py" for tool in _TOOLS])
+EXTENSIONS = frozenset(["_ord_py"] + [f"openroad.{tool}._{tool}_py" for tool in _TOOLS])
 
 
 def _find_library():

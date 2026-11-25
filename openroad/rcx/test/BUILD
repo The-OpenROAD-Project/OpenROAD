@@ -1,0 +1,167 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("//bazel:man_tcl_checker.bzl", "man_tcl_check_test")
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2022-2025, The OpenROAD Authors
+
+load("//test:regression.bzl", "doc_check_test", "regression_test")
+
+package(features = ["layering_check"])
+
+COMPULSORY_TESTS = [
+    "45_gcd",
+    "dup_pattern_names",
+    "ext_pattern",
+    "gcd",
+    "generate_pattern",
+    "names",
+    "net_name_consistency",
+    "coordinates",
+    "no_merging",
+    "colinear_vertices_inside_bpin",
+    "perpendicular_route_touching_bterm",
+    "perpendicular_route_touching_iterm",
+    "rules_without_layer_data",
+    "rules_without_layer_resistance",
+    "rules_without_layer_resistance_lef_res",
+    "rules_without_unused_layer_data",
+    "short_resover",
+]
+
+PASSFAIL_TESTS = [
+    "test_dielectric_epsilon",
+]
+
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
+
+filegroup(
+    name = "regression_resources",
+    # Dependencies could be specified more narrowly per test case,
+    # but at least it is not a glob of everything and there are
+    # per test glob patterns below.
+    srcs = [
+        "45_patterns.rules",
+        "45_via_resistance.tcl",
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45.pdn.tcl",
+        "Nangate45/Nangate45.rc",
+        "Nangate45/Nangate45.rcx_rules",
+        "Nangate45/Nangate45.tracks",
+        "Nangate45/Nangate45.vars",
+        "Nangate45/Nangate45_fast.lib",
+        "Nangate45/Nangate45_lvt.lef",
+        "Nangate45/Nangate45_lvt.lib",
+        "Nangate45/Nangate45_slow.lib",
+        "Nangate45/Nangate45_stdcell.lef",
+        "Nangate45/Nangate45_tech.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "Nangate45/fake_macros.lef",
+        "Nangate45/fake_macros.lib",
+        "Nangate45/fakeram45.cfg",
+        "Nangate45/fakeram45_1024x32.lef",
+        "Nangate45/fakeram45_1024x32.lib",
+        "Nangate45/fakeram45_256x16.lef",
+        "Nangate45/fakeram45_256x16.lib",
+        "Nangate45/fakeram45_512x64.lef",
+        "Nangate45/fakeram45_512x64.lib",
+        "Nangate45/fakeram45_64x32.lef",
+        "Nangate45/fakeram45_64x32.lib",
+        "Nangate45/fakeram45_64x7.lef",
+        "Nangate45/fakeram45_64x7.lib",
+        "Nangate45/fakeram45_64x96.lef",
+        "Nangate45/fakeram45_64x96.lib",
+        "Nangate45/work_around_yosys/cells.v",
+        "helpers.tcl",
+        "patterns.rulesok",
+        "sky130hs/sky130_fd_sc_hs__tt_025C_1v80.lib",
+        "sky130hs/sky130_fd_sc_hs_merged.lef",
+        "sky130hs/sky130hs.pdn.tcl",
+        "sky130hs/sky130hs.rc",
+        "sky130hs/sky130hs.rcx_rules",
+        "sky130hs/sky130hs.tlef",
+        "sky130hs/sky130hs.tracks",
+        "sky130hs/sky130hs.vars",
+        "sky130hs/sky130hs_ip_global.cfg",
+        "sky130hs/sky130hs_std_cell.lef",
+        "sky130hs/sky130hs_tt.lib",
+    ],
+)
+
+[
+    filegroup(
+        name = test_name + "_resources",
+        srcs = [":regression_resources"] + glob(
+            [
+                test_name + ".*",
+            ],
+        ) + {
+            "ext_pattern": ["generate_pattern.defok"],
+            "gcd": ["ext_pattern.rules"],
+            "no_merging": [
+                "ext_pattern.rules",
+                "gcd.def",
+            ],
+            "rules_without_layer_data": ["gcd.def"],
+            "rules_without_layer_resistance": ["gcd.def"],
+            "rules_without_layer_resistance_lef_res": [
+                "met4_two_widths.def",
+                "rules_without_layer_resistance.rules",
+            ],
+            "rules_without_unused_layer_data": [
+                "perpendicular_route_touching_bterm.def",
+                "perpendicular_route_touching_bterm.spefok",
+            ],
+            "short_resover": ["gcd.def"],
+            "test_dielectric_epsilon": [
+                "//openroad/rcx:rule_scripts/UniversalFormat2FasterCap_923.py",
+                "//openroad/rcx:calibration/fasterCap/scripts/UniversalFormat2FasterCap_923.py",
+                "rcx_v2/FasterCapModel/scripts/UniversalFormat2FasterCap_923.py",
+            ],
+        }.get(test_name, []),
+    )
+    for test_name in ALL_TESTS
+]
+
+[
+    regression_test(
+        name = test_name,
+        check_log = False if test_name in PASSFAIL_TESTS else True,
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
+        data = [":" + test_name + "_resources"],
+        visibility = ["//visibility:public"],
+    )
+    for test_name in ALL_TESTS
+]
+
+test_suite(
+    name = "rcx_unit_test",
+    tests = [":rcx_unittest"],
+)
+
+cc_test(
+    name = "rcx_unittest",
+    srcs = [
+        "TestExtractor.cpp",
+        "ext2dBoxTest.cpp",
+    ],
+    deps = [
+        "//openroad/odb/src/db",
+        "//openroad/rcx",
+        "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+man_tcl_check_test(
+    name = "rcx_man_tcl_check",
+    module = "rcx",
+)
+
+doc_check_test(
+    name = "rcx_readme_msgs_check",
+    data = [
+        "//openroad/rcx:doc_files",
+        "//openroad/rcx:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)

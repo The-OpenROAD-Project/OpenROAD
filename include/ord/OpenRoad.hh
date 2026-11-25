@@ -75,6 +75,10 @@ namespace fsv {
 class FieldSolver;
 }
 
+namespace pex {
+class Pex;
+}
+
 namespace mpl {
 class MacroPlacer;
 }
@@ -180,6 +184,7 @@ class OpenRoad
   mpl::MacroPlacer* getMacroPlacer() { return macro_placer_; }
   exa::Example* getExample() { return example_; }
   fsv::FieldSolver* getFieldSolver() { return field_solver_; }
+  pex::Pex* getPex() { return pex_; }
   rcx::Ext* getOpenRCX() { return extractor_; }
   drt::TritonRoute* getTritonRoute() { return detailed_router_; }
   gpl::Replace* getReplace() { return replace_; }
@@ -237,6 +242,9 @@ class OpenRoad
   void linkDesign(const char* design_name,
                   bool hierarchy,
                   bool omit_filename_prop = false);
+  // Add a module of the Verilog read since to the loaded design, as a
+  // module a hierarchical instance can be switched to.
+  void linkModule(const char* module_name);
   // Used if a design is created programmatically rather than loaded
   // to notify the tools (eg dbSta, gui).
   void designCreated();
@@ -265,7 +273,6 @@ class OpenRoad
   static const char* getGitDescribe();
 
   static bool getGPUCompileOption();
-  static bool getPythonCompileOption();
   static bool getGUICompileOption();
 
  protected:
@@ -288,6 +295,7 @@ class OpenRoad
   mpl::MacroPlacer* macro_placer_ = nullptr;
   exa::Example* example_ = nullptr;
   fsv::FieldSolver* field_solver_ = nullptr;
+  pex::Pex* pex_ = nullptr;
   grt::GlobalRouter* global_router_ = nullptr;
   cgt::ClockGating* clock_gating_ = nullptr;
   rmp::Restructure* restructure_ = nullptr;

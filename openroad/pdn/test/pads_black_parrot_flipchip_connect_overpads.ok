@@ -1,0 +1,34 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: nangate_bsg_black_parrot/dummy_pads_short.lef, created 22 library cells
+[INFO ODB-0128] Design: soc_bsg_black_parrot
+[INFO ODB-0130]     Created 135 pins.
+[INFO ODB-0131]     Created 1400 components and 5671 component-terminals.
+[INFO ODB-0132]     Created 139 special nets and 4915 connections.
+[INFO ODB-0133]     Created 219 nets and 267 connections.
+[INFO PDN-0001] Inserting grid: Core
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (186.0700, 323.2700) - (198.0700, 323.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (186.0700, 563.2700) - (196.0000, 563.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (186.0700, 603.2700) - (198.0700, 603.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (186.0700, 763.2700) - (198.0700, 763.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (186.0700, 1203.2700) - (196.0000, 1203.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (186.0700, 1843.2700) - (198.0700, 1843.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (186.0700, 2523.2700) - (198.0700, 2523.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (186.0700, 2563.2700) - (198.0700, 2563.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (186.0700, 2603.2700) - (196.0000, 2603.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2801.8400, 283.2700) - (2813.8400, 283.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2801.8400, 443.2700) - (2813.8400, 443.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2801.8400, 1163.2700) - (2813.8400, 1163.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2801.8400, 1323.2700) - (2813.8400, 1323.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2801.8400, 2123.2700) - (2813.8400, 2123.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2801.8400, 2363.2700) - (2813.8400, 2363.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2801.8400, 2523.2700) - (2813.8400, 2523.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2801.8400, 2563.2700) - (2813.8400, 2563.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2801.8400, 2683.2700) - (2813.8400, 2683.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2801.8400, 2723.2700) - (2813.8400, 2723.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2801.8400, 2763.2700) - (2813.8400, 2763.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2804.0000, 203.2700) - (2813.8400, 203.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2804.0000, 243.2700) - (2813.8400, 243.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2804.0000, 683.2700) - (2813.8400, 683.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2804.0000, 2603.2700) - (2813.8400, 2603.6000) on VDD
+[WARNING PDN-0110] No via inserted between metal9 and metal10 at (2804.0000, 2643.2700) - (2813.8400, 2643.6000) on VDD
+No differences found.

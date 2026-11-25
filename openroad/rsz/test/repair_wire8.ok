@@ -1,0 +1,51 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: long_wire
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 3 components and 12 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 6 connections.
+[INFO ODB-0133]     Created 4 nets and 6 connections.
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |         4
+    final |   +155.6% |       1 |       1 |             1 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0034] Found 1 slew violations.
+[INFO RSZ-0036] Found 1 capacitance violations.
+[INFO RSZ-0039] Resized 1 instances.
+[INFO RSZ-0038] Inserted 1 buffers in 1 nets.
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+u2/Z                                    0.15    0.03    0.12 (MET)
+
+max capacitance
+
+Pin                                    Limit     Cap   Slack
+------------------------------------------------------------
+u2/Z                                  121.15   78.36   42.80 (MET)
+
+Startpoint: in1 (input port)
+Endpoint: out1 (output port)
+Path Group: unconstrained
+Path Type: max
+Corner: slow
+
+     Cap     Slew    Delay     Time   Description
+---------------------------------------------------------------------------
+                     0.000    0.000 ^ input external delay
+   0.984    0.000    0.000    0.000 ^ in1 (in)
+            0.000    0.000    0.000 ^ u1/A (BUF_X1)
+   1.736    0.024    0.051    0.051 ^ u1/Z (BUF_X1)
+            0.024    0.000    0.051 ^ u2/A (BUF_X2)
+  78.082    0.287    0.324    0.374 ^ u2/Z (BUF_X2)
+            0.328    0.135    0.509 ^ wire1/A (BUF_X8)
+  79.409    0.067    0.166    0.676 ^ wire1/Z (BUF_X8)
+            0.159    0.122    0.797 ^ u3/A (BUF_X1)
+   0.000    0.016    0.093    0.890 ^ u3/Z (BUF_X1)
+            0.016    0.000    0.890 ^ out1 (out)
+                              0.890   data arrival time
+---------------------------------------------------------------------------
+(Path is unconstrained)
+
+
