@@ -1,0 +1,27 @@
+VERSION 5.8 ;
+
+VIA eu_via DEFAULT
+  LAYER metal1 ;
+    RECT -0.025 -0.025 0.025 0.025 ;
+  LAYER metal2 ;
+    RECT -0.025 -0.025 0.025 0.025 ;
+END eu_via
+
+SITE EU_SITE
+  CLASS CORE ;
+  SIZE 0.1 BY 0.1 ;
+END EU_SITE
+
+MACRO EU_CELL
+  CLASS CORE ;
+  SIZE 0.1 BY 0.1 ;
+  SITE EU_SITE ;
+  PIN VSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.025 0.025 0.075 0.075 ;
+    END
+  END VSS
+END EU_CELL

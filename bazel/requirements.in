@@ -2,12 +2,19 @@
 # Compiled into bazel/requirements_lock_3_13.txt via
 #   bazel run //bazel:requirements.update
 
-numpy==2.5.4
+numpy==2.5.5
 scipy==1.18.1
-pandas==3.0.6
+pandas==3.1.1
 
 tclint==0.9.0
 yamlfix==1.19.1
+
+# The clang-format GitHub workflows run //:fmt_cc_test and //:tidy_cc, so
+# this pin also sets the version that CI uses.
+clang-format==23.1.2
+
+# Template engine for the ODB code generator.
+jinja2==3.1.6
 
 # pandoc for the man page build (//docs:man_pages). The wheel ships a
 # statically linked pandoc binary for linux x86_64/aarch64 and macOS x86_64,

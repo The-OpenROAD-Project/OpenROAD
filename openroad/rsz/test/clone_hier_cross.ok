@@ -1,0 +1,32 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+[INFO ODB-0128] Design: reg1
+[INFO ODB-0252]     Updated 2 pins.
+[INFO ODB-0253]     Updated 18 components.
+[INFO ODB-0254]     Updated 9 nets and 37 connections.
+worst slack max -0.65
+[INFO RSZ-0100] Repair move sequence: CloneMove 
+[INFO RSZ-0094] Found 11 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 11 out of 11 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |    TNS     |  Viol  |  Worst
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.646 |       -3.5 |     11 | u1/r2/D
+      12* |       0 |       0 |        0 |      1 |     0 |    +1.4% |   -0.632 |       -2.8 |     11 | u1/r2/D
+    final |       0 |       0 |        0 |      1 |     0 |    +1.4% |   -0.632 |       -2.8 |     11 | u1/r2/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0049] Cloned 1 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+worst slack max -0.63
+u1/u1/A flat: b0z mod: r1q
+u1/r3/D flat: net1_2 mod: net_i
+u1/r4/D flat: net1_2 mod: net_i
+u1/r5/D flat: b0z mod: r1q
+u1/r6/D flat: b0z mod: r1q
+u1/r7/D flat: net1_2 mod: net_i
+u1/r8/D flat: net1_2 mod: net_i
+u1/r9/D flat: b0z mod: r1q
+u1/r10/D flat: b0z mod: r1q
+u1/r11/D flat: net1_2 mod: net_i
+u1/r12/D flat: b0z mod: r1q
+No differences found.

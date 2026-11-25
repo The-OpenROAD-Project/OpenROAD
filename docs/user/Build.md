@@ -9,16 +9,21 @@ bazelisk run --//:platform=gui //:install
 
 See [Bazel](Bazel.md) for testing, profiling and build configurations.
 
+```{note}
+The CMake build was removed on Nov. 1, 2026.
+Bazel is the only supported build system.
+```
+
 ## Clone Repository
 
-The first step, independent of the build method, is to download the repository:
+The first step is to download the repository:
 
 ``` shell
 git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git
 cd OpenROAD
 ```
 
-OpenROAD git submodules (cloned by the `--recursive` flag) are located in `src/`.
+OpenROAD git submodules (cloned by the `--recursive` flag) are located in `openroad/`.
 
 ```{note}
 There are several methods for obtaining OpenROAD (in order of recommendation):
@@ -85,7 +90,7 @@ To only build the binary, without installing it:
 
     bazelisk build :openroad
 
-The binary is `bazel-bin/openroad`.
+The binary is `bazel-bin/openroad/openroad`.
 For a GUI build, add `--//:platform=gui` to the command.
 
 ### Build options
@@ -152,7 +157,7 @@ See [Bazel](Bazel.md#lto) for details.
 
 Run the tests with the `asan` config:
 
-    bazelisk test --config=asan --test_tag_filters=-py src/...
+    bazelisk test --config=asan --test_tag_filters=-py openroad/...
 
 Address Sanitizer adds instrumentation for detecting memory errors.
 OpenROAD runs slower and uses more RAM with it.
@@ -227,5 +232,3 @@ docker run -it ubuntu:26.04
 Inside the container, download the `.deb` package for the image's Ubuntu version
 from [OpenROAD VaultLink](https://vaultlink.precisioninno.com/).
 Then install it as described in [Build with Prebuilt Binaries](#build-with-prebuilt-binaries).
-
-The deprecated CMake build, which will be removed on Nov. 1, 2026, is described in [Building with CMake](Build-CMake.md).

@@ -1,0 +1,299 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2018-2025, The OpenROAD Authors
+
+#pragma once
+
+#include <cstdint>
+#include <memory>
+#include <optional>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
+namespace odb {
+class dbDatabase;
+class dbNet;
+}  // namespace odb
+
+namespace grt {
+class GlobalRouter;
+}
+
+namespace utl {
+class Logger;
+}
+
+namespace gpl {
+
+class NesterovBaseCommon;
+class NesterovBase;
+class GCell;
+class GNet;
+class Die;
+struct PlaceOptions;
+
+// for GGrid
+class Tile
+{
+ public:
+  Tile();
+  Tile(int x, int y, int lx, int ly, int ux, int uy, int layers);
+
+  // getter funcs
+  int x() const { return x_; }
+  int y() const { return y_; }
+
+  int lx() const { return lx_; }
+  int ly() const { return ly_; }
+  int ux() const { return ux_; }
+  int uy() const { return uy_; }
+
+  // only area is needed
+  int64_t area() const;
+
+  float inflationRatio() const;
+  float inflatedRatio() const;
+
+  // A tile the placer can act on. Inflation only ever reaches a cell whose
+  // center lands in an inflated tile, so a tile holding no movable cell area
+  // cannot be relieved by inflating anything, and neither can a tile whose
+  // routing capacity the floorplan has already taken away. Tiles that are not
+  // actionable are left out of the congestion metric and never receive an
+  // inflation ratio.
+  bool isActionable() const { return is_actionable_; }
+
+  // setter funcs
+  void setInflationRatio(float ratio);
+
+  // accumulated Ratio as iteration goes on
+  void setInflatedRatio(float ratio);
+
+  void setActionable(bool actionable) { is_actionable_ = actionable; }
+
+ private:
+  // the followings will store
+  // blockage / capacity / route-ability
+  // idx : metalLayer
+
+  int x_ = 0;
+  int y_ = 0;
+
+  int lx_ = 0;
+  int ly_ = 0;
+  int ux_ = 0;
+  int uy_ = 0;
+
+  // to bloat cells in tile
+  float inflationRatio_ = 1.0;
+  float inflatedRatio_ = 0;
+
+  bool is_actionable_ = true;
+};
+
+class TileGrid
+{
+ public:
+  void setLogger(utl::Logger* log);
+  void setTileCnt(int tileCntX, int tileCntY);
+  void setTileCntX(int tileCntX);
+  void setTileCntY(int tileCntY);
+  void setTileSize(int tileSizeX, int tileSizeY);
+  void setTileSizeX(int tileSizeX);
+  void setTileSizeY(int tileSizeY);
+  void setNumRoutingLayers(int num);
+
+  void setLx(int lx);
+  void setLy(int ly);
+
+  int lx() const;
+  int ly() const;
+  int ux() const;
+  int uy() const;
+
+  int tileCntX() const;
+  int tileCntY() const;
+  int tileSizeX() const;
+  int tileSizeY() const;
+
+  int numRoutingLayers() const;
+
+  const std::vector<Tile*>& tiles() const;
+
+  void initTiles(bool use_rudy);
+
+ private:
+  // for traversing layer info!
+  utl::Logger* log_ = nullptr;
+
+  std::vector<Tile> tileStor_;
+  std::vector<Tile*> tiles_;
+
+  int lx_ = 0;
+  int ly_ = 0;
+  int tileCntX_ = 0;
+  int tileCntY_ = 0;
+  int tileSizeX_ = 0;
+  int tileSizeY_ = 0;
+  int numRoutingLayers_ = 0;
+};
+
+struct RouteBaseVars
+{
+  RouteBaseVars(const PlaceOptions& options);
+
+  const bool useRudy;
+  const float targetRC;
+  const float inflationRatioCoef;
+  const float maxInflationRatio;
+  const float maxDensity;
+  const float ignoreEdgeRatio;
+  const float minCongestionForInflation;
+  const float maxInflationTotal;
+  const float netWeightMax;
+  const float congestedNetsPercentage;
+
+  // targetRC metric coefficients.
+  const float rcK1, rcK2, rcK3, rcK4;
+};
+
+class RouteBase
+{
+ public:
+  RouteBase(RouteBaseVars rbVars,
+            odb::dbDatabase* db,
+            grt::GlobalRouter* grouter,
+            std::shared_ptr<NesterovBaseCommon> nbc,
+            std::vector<std::shared_ptr<NesterovBase>> nbVec,
+            utl::Logger* log);
+  ~RouteBase();
+
+  // Functions using fastroute on grt are saved as backup.
+  void updateGrtRoute();
+  void getGrtResult();
+  // TODO: understand why this function is breaking RUDY.
+  // Allow for grt heatmap during gpl execution.
+  void loadGrt();
+  // Not const: fills the same overflow/tile counters updateRudyAverage() sets,
+  // so the routability pass header reads the same on either congestion
+  // backend.
+  float getGrtRC();
+
+  void calculateRudyTiles();
+  void updateRudyAverage(bool verbose = true);
+
+  // Refresh RUDY after retained timing repair and inflate only its surviving
+  // new standard cells. Does not restart or revert the routability search.
+  // Consumes whole filler cells to fund inflation without raising density.
+  // Only call after ordinary routability has completed: live accounting here
+  // must not alter its historical budget or min-RC restoration policy.
+  // The caller must subsequently update region areas and density sizes.
+  int64_t inflateNewCells();
+
+  float getRudyAverage() const { return final_average_rc_; }
+  int getOverflowedTilesCount() const { return overflowed_tiles_count_; }
+  int getTotalTilesCount() const { return tg_->tiles().size(); }
+  double getTotalRudyOverflow() const { return total_route_overflow_; }
+
+  bool isMinRc() const { return is_min_rc_; }
+
+  // first: is Routability Need
+  // second: reverting procedure need in NesterovPlace
+  //         (e.g. calling NesterovPlace's init())
+  std::pair<bool, bool> routability(int routability_driven_revert_count);
+
+  std::vector<int64_t> inflatedAreaDelta() const;
+  int64_t getTotalInflation() const;
+  int getRevertCount() const;
+
+  // Roll cell sizes, target density, fillers, accumulated inflation and net
+  // weights back to the pass that saw the least congestion. Does nothing before
+  // the first pass.
+  void revertToMinCongestion();
+
+  void printGCellInflation() const;
+
+ private:
+  friend class TimingRepairIntegrationTest;
+
+  RouteBaseVars rbVars_;
+  odb::dbDatabase* db_ = nullptr;
+  grt::GlobalRouter* grouter_ = nullptr;
+
+  std::shared_ptr<NesterovBaseCommon> nbc_;
+  std::vector<std::shared_ptr<NesterovBase>> nbVec_;
+  utl::Logger* log_ = nullptr;
+
+  std::unique_ptr<TileGrid> tg_;
+
+  std::vector<int64_t> inflatedAreaDelta_;
+  std::vector<int64_t> minRcInflatedAreaDelta_;
+  std::vector<int64_t> accumulatedInflatedAreaDelta_;
+
+  int revert_count_ = 0;
+  float final_average_rc_ = 0.0;
+  int overflowed_tiles_count_ = 0;
+  int actionable_tiles_count_ = 0;
+  double total_route_overflow_ = 0.0;
+  bool is_min_rc_ = false;
+
+  // if solutions are not improved at all,
+  // needs to revert back to have the minimized RC values.
+  // minRcInflationSize_ will store
+  // GCell's width and height
+  // Relative improvement in the congestion metric that counts as progress.
+  static constexpr float kMinRcImprovement = 0.005f;
+
+  // Passes the inflation budget is rationed across, so the loop keeps its
+  // feedback instead of spending the whole allowance on its first reading.
+  static constexpr int kBudgetPasses = 6;
+
+  // Movable area before any routability inflation, the base for the budget.
+  int64_t original_movable_area_ = 0;
+
+  float minRc_ = 1e30;
+  std::vector<float> minRcTargetDensity_;
+  // Wirelength weight of the nets feeding congested tiles; nets absent from
+  // the map are at 1.0. minRcNetWeights_ holds the set in effect at minRc_.
+  std::unordered_map<odb::dbNet*, float> netWeights_;
+  std::unordered_map<odb::dbNet*, float> minRcNetWeights_;
+  int min_RC_violated_cnt_ = 0;
+  int max_routability_no_improvement_ = 3;
+  int max_routability_revert_ = 50;
+
+  void init();
+  void resetRoutabilityResources();
+
+  // The tile holding the given point, or nullptr if it falls outside the grid.
+  Tile* getTile(int x, int y) const;
+
+  static int64_t inflateCell(GCell* cell,
+                             float ratio,
+                             std::optional<int64_t> area_limit = std::nullopt);
+
+  // Flag the tiles that hold movable standard-cell area, and clear the flag on
+  // every other tile. Call after the grid is built and before the congestion
+  // metric is computed.
+  void markTilesWithMovableArea();
+
+  void updateTileInflationRatio(Tile* tile, float ratio) const;
+
+  // Trim the tiles' inflated ratios so this iteration's added area fits its
+  // ration of the inflation budget. True when the budget is now spent.
+  bool scaleInflationToBudget();
+
+  // Recompute netWeights_ from the congested tiles and push it onto the GNets.
+  void weightCongestedNets();
+
+  // Push netWeights_ onto the GNets, resetting every net absent from it.
+  // Returns how many nets ended up weighted above 1.
+  int applyNetWeights();
+
+  // debug reports on the tiles' inflation ratios
+  void debugInflationRatioStats() const;
+  void debugInflatedTiles() const;
+
+  // update revert_count_
+  void increaseCounter();
+};
+
+}  // namespace gpl

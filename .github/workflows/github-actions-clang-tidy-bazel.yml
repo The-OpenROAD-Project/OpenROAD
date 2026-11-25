@@ -30,23 +30,26 @@ jobs:
         # runners do not. Install it explicitly so the workflow works on
         # both runner types. bazel-contrib/setup-bazel's default uses a
         # pre-installed bazelisk; passing bazelisk-version forces install.
-        uses: bazel-contrib/setup-bazel@104e3eea9447cdaa4b00d0fb46191a3985d26ab3  # 0.19.1
+        uses: bazel-contrib/setup-bazel@f34d6a05eae3c24acab7fa54587492daeaeffdab  # 0.19.2
         with:
           bazelisk-version: 1.x
           bazelisk-cache: true
 
       - name: Run bazel clang-tidy
         env:
-          BAZEL_CACHE_PASSWORD: ${{ secrets.BAZEL_CACHE_PASSWORD }}
+          BAZEL_CACHE_LOGIN: ${{ secrets.BAZEL_CACHE_LOGIN }}
         run: |
-          # Same auth pattern as github-actions-macos-bazel.yml: when the
-          # cache secret is present (push / dispatch / private repo PR),
-          # add authed gRPC + Remote Asset API on top of the .bazelrc anon
-          # HTTPS read-only cache. Fork PRs have no secret and just read
-          # the anon cache.
+          # Same auth pattern as github-actions-macos-bazel.yml: when
+          # BAZEL_CACHE_LOGIN is set (a PR from a branch of this repo), add
+          # authed gRPC + Remote Asset API on top of the .bazelrc anon
+          # HTTPS read-only cache. Fork PRs of the public repo have no
+          # secret and just read the anon cache.
+          # BAZEL_CACHE_LOGIN is "user:password"; the cache accepts two
+          # write users so the login can rotate without a 401 window.
+          LOGIN="${BAZEL_CACHE_LOGIN}"
           REMOTE_FLAGS=()
-          if [ -n "${BAZEL_CACHE_PASSWORD}" ]; then
-            TOKEN_B64=$(printf 'ci:%s' "${BAZEL_CACHE_PASSWORD}" | base64 | tr -d '\n')
+          if [ -n "${LOGIN}" ]; then
+            TOKEN_B64=$(printf '%s' "${LOGIN}" | base64 | tr -d '\n')
             echo "::add-mask::${TOKEN_B64}"
             REMOTE_FLAGS=(
               --remote_cache=grpcs://bazel.precisioninno.com:443
@@ -59,34 +62,28 @@ jobs:
           # --remote_download_minimal and --config=opt (LTO), but we need
           # the .AspectRulesLintClangTidy.out files materialized locally
           # to feed reviewdog, and LTO is wasted work for lint.
+          # Self-hosted runners keep the output base between jobs; drop lint
+          # outputs from earlier builds so collection sees only this build's.
+          # Bazel recreates or re-downloads the ones this build needs.
+          BAZEL_BIN=$(bazel info bazel-bin)
+          if [ -d "${BAZEL_BIN}" ]; then
+            find "${BAZEL_BIN}" -name '*.AspectRulesLintClangTidy.out*' -delete
+          fi
           set -x
           bazel build \
             "${REMOTE_FLAGS[@]}" \
             --config=lint \
-            -- //src/... //third-party/... -//src/sta/... -//third-party/abc/...
+            -- //openroad/... //third-party/... -//openroad/sta/...
 
       - name: Collect clang-tidy diagnostics
         run: |
-          # Paths in .out files are sandbox-absolute; strip to workspace-
-          # relative so reviewdog can match against the PR diff. Keep only
-          # `path:line:col: warning|error:` lines — drops source-context
-          # carets, notes, and clang-tidy's header noise in one filter.
-          # `grep -v bazel-out/` drops findings against external virtual
-          # includes (not in any PR diff). `sort -u` dedupes the same
-          # finding emitted under multiple cc_library consumers of a
-          # shared source.
-          BAZEL_BIN=$(bazel info bazel-bin)
-          find "${BAZEL_BIN}" -name '*.AspectRulesLintClangTidy.out' -print0 \
-            | xargs -0 cat \
-            | sed -E 's|^.*/execroot/_main/||' \
-            | grep -E '^[^:]+:[0-9]+:[0-9]+: (warning|error):' \
-            | grep -vE '^(bazel-out|external)/' \
-            | sort -u \
-            > clang-tidy.txt
+          # Fails the step if clang-tidy itself failed (non-zero or missing
+          # exit code, or no outputs), so a broken linter can't pass as
+          # "0 findings".
+          bash tools/lint/collect_clang_tidy.sh "$(bazel info bazel-bin)" clang-tidy.txt
           echo "::group::clang-tidy.txt (head)"
           head -50 clang-tidy.txt || true
           echo "::endgroup::"
-          echo "Findings: $(wc -l < clang-tidy.txt)"
 
       - name: Save PR metadata for post workflow
         run: |

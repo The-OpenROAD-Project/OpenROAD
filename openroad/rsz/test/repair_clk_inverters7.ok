@@ -1,0 +1,35 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+Net clk
+ Pin capacitance: 3.10-3.40
+ Wire capacitance: 0.00
+ Total capacitance: 3.10-3.40
+ Number of drivers: 1
+ Number of loads: 2
+ Number of pins: 3
+
+Driver pins
+ clk input port
+
+Load pins
+ c1_1/A input (INV_X1) 1.55-1.70 (2, 1)
+ c1_2/A input (INV_X1) 1.55-1.70 (0, 1)
+
+module top (clk,
+    clk_n_o,
+    d,
+    q);
+ input clk;
+ output clk_n_o;
+ input d;
+ output q;
+
+ wire net_1;
+
+ INV_X1 c1_1 (.A(clk),
+    .ZN(net_1));
+ INV_X1 c1_2 (.A(clk),
+    .ZN(clk_n_o));
+ DFF_X1 r1 (.D(d),
+    .CK(net_1),
+    .Q(q));
+endmodule
