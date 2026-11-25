@@ -286,8 +286,10 @@ to `-py_test` if no Tcl output is found) and copies the result file from
 `bazel-testlogs` with writable `0644` permissions.
 The `bazel` command must be on `PATH`.
 The scripts run the test with the default build configuration.
-For a test that needs other flags (such as GPU flags), run the test with those
-flags and copy the result by hand, as shown below.
+For a test that needs other flags (such as GPU flags), copy the results by
+hand, as shown below, and use the same flags for every run:
+copy the DEF result to `<name>.defok`, run the test again, then copy
+`<name>-tcl.log` (or `<name>-py.log` for a Python test) to `<name>.ok`.
 The test is expected to fail while the golden file is old.
 
 When a test writes a DEF whose filename matches `<name>`, update its DEF golden
@@ -305,9 +307,10 @@ For a test that has no other golden file, run only `save_ok`.
 
 The save helpers assume the output filename matches the test stem
 (`<name>-tcl.<ext>` to `<name>.<dest_ext>`).
-When a test writes a differently named output (such as `simple_test_out.defok`)
-or another golden type without a helper (such as `.vok`), copy each generated
-file from
+When a test writes a differently named output (for example,
+`openroad/cts/test/simple_test.tcl` writes `simple_test_out-tcl.def` and
+compares it with `simple_test_out.defok`) or another golden type without a
+helper (such as `.vok`), copy each generated file from
 `bazel-testlogs/openroad/<tool>/test/<name>-tcl_test/test.outputs/results/`
 to the exact golden path in the test before refreshing `<name>.ok`.
 Bazel writes test outputs with read-only executable permissions (`0555`), so
@@ -447,6 +450,7 @@ before `--args`).
 On macOS, run `lldb --` with the same binary and arguments.
 To keep the OpenROAD Tcl prompt after the script, omit `-exit`.
 If the failure depends on a different thread count, set `-threads` to that count.
+A `set_thread_count` command in the test script overrides `-threads`.
 
 To run a `-c dbg` OpenROAD binary with ORFS, see the "Testing debug build of
 OpenROAD with ORFS" section in [the Bazel guide](../user/Bazel.md).
