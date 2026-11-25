@@ -228,23 +228,30 @@ Use those steps only when they are part of the behavior under test.
    Write it as `openroad/<tool>/test/<name>.def`.
 2. Write `openroad/<tool>/test/<name>.tcl`, starting with a one-line comment
    explaining what it tests.
-   For example, `openroad/gpl/test/incremental01.tcl` reads a LEF and a DEF, runs the
-   command, writes a DEF, and compares it with a golden file:
+   For example, `openroad/dpl/test/simple07.tcl` reads a LEF and a DEF, runs the
+   command, writes a DEF, and compares it with a golden file.
+   Its DEF stacks 10 cells on one location, so `detailed_placement` must move
+   them, and the golden DEF records the result.
+   This is the file with the opening comment added:
 
    ```tcl
-   source helpers.tcl
-   set test_name incremental01
-   read_lef ./nangate45.lef
-   read_def ./$test_name.def
+   # Legalize cells that overlap at one location.
+   source "helpers.tcl"
+   read_lef Nangate45/Nangate45.lef
+   read_def simple07.def
+   detailed_placement
+   check_placement
 
-   global_placement -init_density_penalty 0.1 -incremental
-   set def_file [make_result_file $test_name.def]
+   set def_file [make_result_file simple07.def]
    write_def $def_file
-   diff_files $def_file $test_name.defok
+   diff_files simple07.defok $def_file
    ```
 
    `make_result_file` puts the file in the results directory and adds `-tcl`
-   to its name, so `incremental01.def` becomes `incremental01-tcl.def`.
+   to its name, so `simple07.def` becomes `simple07-tcl.def`.
+   Make sure that the input DEF makes the command do work.
+   For example, `global_placement -incremental` skips a design whose cells are
+   all placed, so its test DEF must have unplaced cells.
 3. Where the `BUILD` file lists golden files by name, create empty `<name>.ok`
    and, if the test calls `diff_files` on a DEF, `<name>.defok` files so Bazel
    can find the declared inputs.
@@ -309,7 +316,12 @@ extract them with
 `0644`.
 
 Check the result with `git diff` before you commit.
+For a new test, run `git add -N <golden-file>` first, because `git diff` does
+not show untracked files.
 `diff_files` reports the first difference in the files it compares.
+A log golden file can have trailing spaces in its tables.
+Keep them: the test compares the log byte for byte, so an editor or a hook that
+removes trailing spaces makes the test fail.
 The save scripts replace the complete golden files with the new output.
 Rerun every registered target that uses the updated golden file to confirm
 that it passes (both `-tcl_test` and `-py_test` if both exist):
@@ -333,6 +345,9 @@ These tests are tagged `manual`, so name the target to run one (or use
 ``` shell
 bazelisk test --test_output=errors //test:aes_sky130hd-tcl_test
 ```
+
+Bazel can return a cached result (`(cached) PASSED`) without running the flow.
+To get new metrics, add `--nocache_test_results`.
 
 When a change moves metrics on purpose, review the new results, refresh the
 saved metrics, and update only the limits that the change justifies:
@@ -358,6 +373,10 @@ saved metrics, and update only the limits that the change justifies:
    cd test
    ./save_flow_metrics aes_sky130hd
    ```
+
+   The runtime metrics (names that end in `_s`) change on every run and have
+   no limits.
+   Keep the regenerated file as it is.
 
    If a threshold in `<name>.metrics_limits` also needs to change, either edit
    that threshold directly or run `./save_flow_metrics_limits aes_sky130hd`
@@ -399,6 +418,11 @@ for GPU tests, or `ENABLE_GPU=0` for CPU regressions on a GPU build):
 ``` shell
 gdb --args ../../../bazel-bin/openroad/openroad -no_init -no_splash -exit -threads 1 <name>.tcl
 ```
+
+The debug information has source paths relative to the repository root.
+To let `gdb` show the source from the test directory, run
+`directory ../../..` at the `gdb` prompt (or add `-ex 'directory ../../..'`
+before `--args`).
 
 On macOS, run `lldb --` with the same binary and arguments.
 To keep the OpenROAD Tcl prompt after the script, omit `-exit`.
