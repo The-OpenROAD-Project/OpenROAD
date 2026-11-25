@@ -123,6 +123,7 @@ export function createLayoutView(container, opts = {}) {
     let gesturing = false;    // a wheel or trackpad gesture (setGesture)
     let afterFrame = [];      // called once deck has drawn its next frame
     let rendererInfo = null;  // what draws, once deck's device is up
+    let restoring = false;    // a lost context's new deck, until it is up
     let dragSamples = [];     // { t, target, zoom } while interacting
     let prefetchZ = null;     // level loaded in the background for a zoom out
     let flightTrail = null;   // a landed flight's pulled-out level, kept under
@@ -235,13 +236,20 @@ export function createLayoutView(container, opts = {}) {
                 watchContext();
                 rendererInfo = deviceInfo(deckgl);
                 events.emit('renderer', rendererInfo);
+                if (restoring) {
+                    restoring = false;
+                    events.emit('contextrestored');
+                }
                 scheduleRender();
             },
             // An error before onLoad means the device was never created: the
             // browser gave no WebGL, and nothing will be drawn.
             onError: (error) => {
                 console.error('Layout view:', error);
-                if (!rendererInfo) {
+                if (restoring) {
+                    restoring = false;
+                    events.emit('contextfailed', error);
+                } else if (!rendererInfo) {
                     rendererInfo = { gpuType: 'none', renderer: '', vendor: '' };
                     events.emit('renderer', rendererInfo);
                 }
@@ -256,7 +264,8 @@ export function createLayoutView(container, opts = {}) {
 
     // A lost WebGL context takes every texture with it.  A new Deck gets a
     // new canvas and context; the tiles' images are still here, so their
-    // textures are rebuilt from them and nothing is re-requested.
+    // textures are rebuilt from them and nothing is re-requested.  The new
+    // device comes up later: contextrestored or contextfailed tells which.
     function watchContext() {
         const canvas = deckgl.getCanvas && deckgl.getCanvas();
         canvas?.addEventListener('webglcontextlost', (e) => {
@@ -273,9 +282,10 @@ export function createLayoutView(container, opts = {}) {
             }
             canvas.remove();
             try {
+                restoring = true;
                 deckgl = createDeck();
-                events.emit('contextrestored');
             } catch (err) {
+                restoring = false;
                 events.emit('contextfailed', err);
             }
             scheduleRender();

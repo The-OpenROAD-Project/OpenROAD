@@ -53,29 +53,6 @@ const noLoadersCdn = {
     },
 };
 
-// The private repository's hook rejects a foundry name luma.gl gives a GPU
-// maker.  Every match is rewritten, so luma.gl's checks still agree; the name
-// is split because the hook reads this file too.
-const kFoundryName = 'int' + 'el';
-
-export function hideFoundryNames(text) {
-    return text
-        .replaceAll(`/${kFoundryName.toUpperCase()}/i`, '/INT[E]L/i')
-        .replace(new RegExp(`${kFoundryName}(?!l)`, 'gi'),
-                 (name) => `${name.slice(0, 3)}_${name.slice(3)}`);
-}
-
-const noFoundryNames = {
-    name: 'no-foundry-names',
-    setup(build) {
-        build.onLoad({ filter: /[\\/]@luma\.gl[\\/].*\.js$/ }, async ({ path }) => {
-            const text = await readFile(path, 'utf8');
-            const hidden = hideFoundryNames(text);
-            return hidden === text ? undefined : { contents: hidden, loader: 'js' };
-        });
-    },
-};
-
 export default {
     // iife: one self-contained script whose top-level names stay out of the
     // page's global scope, however the page loads it.
@@ -90,5 +67,5 @@ export default {
         // url(); inlined, the page needs no file besides the bundles.
         '.png': 'dataurl',
     },
-    plugins: [compactSvg, elkBrowserBuild, noLoadersCdn, noFoundryNames],
+    plugins: [compactSvg, elkBrowserBuild, noLoadersCdn],
 };

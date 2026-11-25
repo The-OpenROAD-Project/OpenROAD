@@ -108,7 +108,7 @@ struct SlotPosition
   bool blocked;
 };
 
-// Set by set_place_config, which stores it in block properties.
+// Set by set_placer_config, which stores it in block properties.
 struct PinPlacementSettings
 {
   std::set<int> hor_layers;
@@ -116,6 +116,8 @@ struct PinPlacementSettings
   int corner_avoidance = -1;
   int min_distance = 0;
   bool min_distance_in_tracks = false;
+  std::map<int, int> layer_min_distance;
+  bool layer_min_distance_in_tracks = false;
 };
 
 enum class Direction
@@ -184,6 +186,7 @@ class IOPlacer
   bool checkMirroredPins();
   void reportHPWL();
   void printConfig(bool annealing = false);
+  void reportMinDistances();
   void initNetlistAndCore(const std::set<int>& hor_layer_idx,
                           const std::set<int>& ver_layer_idx);
   std::vector<int> getValidSlots(int first, int last, bool top_layer);
@@ -308,6 +311,9 @@ class IOPlacer
                              int& new_begin,
                              int& new_end);
   int getMinDistanceForInterval(const Interval& interval);
+  int getTechMinDistance(int layer) const;
+  int getMinDistanceInTracks(int layer) const;
+  int getSlotPitch(int layer) const;
   int64_t computeIncrease(int min_dist, int64_t num_pins, int64_t curr_length);
 
   // db functions

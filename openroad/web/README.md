@@ -209,6 +209,8 @@ field and the value is a Tcl boolean (`true`/`false`, `1`/`0`, `yes`/`no`,
 | Key | Default | Description |
 | --- | ------- | ----------- |
 | `stdcells` | true | Standard cells |
+| `std_physical` | `stdcells` | Liberty cells with no ports, such as decaps |
+| `std_other` | `stdcells` | Cells with no Liberty cell that are not core masters |
 | `macros` | true | Macros |
 | `routing` | true | Signal routing |
 | `special_nets` | true | Power/ground straps |
@@ -468,6 +470,14 @@ whichever one synced last.
 Because Tcl commands typed into the browser console run on the server, this is
 normally invoked from the viewer's own console after arranging the panel.
 
+This command is not `gui::save_display_controls`. With no Qt window open,
+`gui::set_display_controls`, `gui::check_display_controls`,
+`gui::save_display_controls`, `gui::restore_display_controls` and `gui::fit`
+act on a copy of the Qt display-control tree kept on the server, with the
+same paths and defaults. That copy works in a build without Qt and needs no
+running server, but it is separate from what a browser shows. Of the colors,
+only `Misc/Background` is kept there.
+
 ### Restore Display Controls
 
 Apply a previously saved display-controls file to every connected viewer.
@@ -692,6 +702,14 @@ The module has two parts:
   components for the panels. Communicates with the server over a binary
   WebSocket protocol.
 
+## Browser requirements
+
+The layout view is drawn with WebGL 2, in the live viewer and in a saved
+report alike. A browser without WebGL 2 shows the panels but no layout, and
+says so; one that runs WebGL 2 in software, without the GPU, draws more slowly
+and says that too. Current Chrome, Edge, Firefox, and Safari all have WebGL 2,
+but may lose it when hardware acceleration is turned off in the browser.
+
 ## Browser libraries
 
 The viewer's JavaScript libraries come from npm, pinned in `package.json` and
@@ -750,6 +768,16 @@ There are a set of regression tests in `./test`.
 
 ```shell
 bazelisk test //openroad/web/test/...
+```
+
+`browser_smoke_test` opens the live viewer and a saved report, the report from
+disk with the network off, in a real Chrome and checks that a tile is drawn.
+It is tagged manual, since Chrome is not part of the build; CI runs it, and
+locally it needs Chrome with WebGL 2 (software rendering is enough):
+
+```shell
+bazelisk test //openroad/web/test:browser_smoke_test \
+    --test_env=CHROME=$(command -v google-chrome)
 ```
 
 ## License

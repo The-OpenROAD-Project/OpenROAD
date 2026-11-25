@@ -147,13 +147,6 @@ single_version_override(
     version = "76.1.bcr.4",
 )
 
-# gawk is transitive (abc -> ncurses -> gawk). Its vendored gnulib headers
-# shadow libc headers, and gawk@5.3.2.bcr.2 fails to compile against
-# hermetic-llvm's explicit libc -isystem entries (BCR #7642); the graph
-# alone resolves 5.3.2.bcr.3. A direct bazel_dep rather than a
-# single_version_override, so the floor reaches downstream consumers via
-# MVS too (overrides only apply in the root module).
-bazel_dep(name = "gawk", version = "5.4.0.bcr.2")
 bazel_dep(name = "git", version = "2.54.0")
 
 # We enable the external_include_paths feature globally (see .bazelrc), which
@@ -180,29 +173,9 @@ bazel_dep(name = "or-tools", version = "9.15")
 # from @rules_cc.
 bazel_dep(name = "spdlog", version = "1.17.0")
 
-# sv-elab: the SystemVerilog frontend whose sources openroad/syn/src/elab
-# compiles, from the BCR like every dependency that is not a fork.
-bazel_dep(name = "sv-elab", version = "2026-10-29")
-
-# frontend_hdrs uses strip_include_prefix = "src" while common_srcs also
-# globs src/*.h, staging the headers at both external/sv-elab+/src/*.h and
-# _virtual_includes/frontend_hdrs/*.h. On RBE those materialize as distinct
-# inodes, so #pragma once does not stop slang_frontend.h from being included
-# twice when compiled via both paths.
-#
-# Patch 0002 adds the integrity that sv-elab's tomlplusplus_ext leaves out of
-# its http_archive. build:ci fetches through the cache's Remote Asset API
-# (--experimental_remote_downloader). Without a checksum the cache cannot
-# answer from its CAS and downloads the archive again on every fetch.
-single_version_override(
-    module_name = "sv-elab",
-    patch_strip = 1,
-    patches = [
-        "//bazel/sv-elab-patches:0001-build-avoid-duplicate-header-paths-with-includes.patch",
-        "//bazel/sv-elab-patches:0002-tomlplusplus-pin-the-archive-checksum.patch",
-    ],
-)
-
+# sv-elab: the SystemVerilog frontend whose sources src/syn/src/elab
+# compiles
+bazel_dep(name = "sv-elab", version = "2026-11-24")
 bazel_dep(name = "tcl_lang", version = "9.0.2.bcr.2")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
 bazel_dep(name = "yaml-cpp", version = "0.9.0")
@@ -307,7 +280,7 @@ archive_override(
 # JavaScript / web UI: //:openroad embeds the npm libraries esbuild bundles.
 bazel_dep(name = "aspect_rules_esbuild", version = "0.27.0")
 bazel_dep(name = "aspect_rules_js", version = "3.5.1")
-bazel_dep(name = "rules_nodejs", version = "6.7.3")
+bazel_dep(name = "rules_nodejs", version = "6.7.7")
 
 # --- Extensions ---
 
@@ -412,7 +385,7 @@ node = use_extension(
     "@rules_nodejs//nodejs:extensions.bzl",
     "node",
 )
-node.toolchain(node_version = "22.14.0")
+node.toolchain(node_version = "22.23.4")
 
 # The viewer's browser libraries, bundled into the assets embedded in the
 # binary.  Not a dev dependency: //:openroad does not build without it.

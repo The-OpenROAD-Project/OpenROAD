@@ -38,8 +38,87 @@
 #include "sta/TimingModel.hh"
 #include "sta/TimingRole.hh"
 #include "sta/VisitPathEnds.hh"
+#include "utl/Logger.h"
 
 namespace rsz {
+
+RegisterOutputReject registerOutputRejectReason(const sta::LibertyCell* cell,
+                                                const sta::LibertyPort* output)
+{
+  if (cell == nullptr || output == nullptr) {
+    return RegisterOutputReject::kNoCellOrOutput;
+  }
+  if (cell->isClockGate()) {
+    return RegisterOutputReject::kClockGate;
+  }
+  if (std::ranges::any_of(cell->sequentials(),
+                          [](const sta::Sequential& sequential) {
+                            return !sequential.isRegister();
+                          })) {
+    return RegisterOutputReject::kLatchGroup;
+  }
+
+  // Constrained data inputs: the inputs a setup/hold check lands on.  Not
+  // the generic role: recovery/removal (async set/clear) map to setup/hold.
+  std::set<const sta::LibertyPort*> data_ports;
+  for (const sta::TimingArcSet* arc_set : cell->timingArcSets()) {
+    const sta::TimingRole* role = arc_set->role();
+    if (role == sta::TimingRole::setup() || role == sta::TimingRole::hold()) {
+      data_ports.insert(arc_set->to());
+    }
+  }
+
+  // Decide from the arcs into this output, not from the statetable: a cell
+  // may hold several statetables (OpenSTA keeps the last), and a statetable
+  // latch's enable arc is regClkToQ without -infer_latches.  A register
+  // output has a clk->Q arc and no arc from a checked data input; a latch is
+  // transparent, so its data input also has an arc to the output.
+  bool has_clock_to_q = false;
+  for (const sta::TimingArcSet* arc_set : cell->timingArcSetsTo(output)) {
+    const sta::TimingRole* role = arc_set->role()->genericRole();
+    if (role == sta::TimingRole::latchEnToQ()
+        || role == sta::TimingRole::latchDtoQ()) {
+      return RegisterOutputReject::kLatchArc;
+    }
+    if (role == sta::TimingRole::regClkToQ()) {
+      has_clock_to_q = true;
+    } else if (!role->isTimingCheck() && role != sta::TimingRole::regSetClr()
+               && data_ports.contains(arc_set->from())) {
+      return RegisterOutputReject::kTransparentDataArc;
+    }
+  }
+  return has_clock_to_q ? RegisterOutputReject::kNone
+                        : RegisterOutputReject::kNoClkToQ;
+}
+
+const char* registerOutputRejectName(const RegisterOutputReject reason)
+{
+  switch (reason) {
+    case RegisterOutputReject::kNone:
+      return "none";
+    case RegisterOutputReject::kNoCellOrOutput:
+      return "no_cell_or_output";
+    case RegisterOutputReject::kClockGate:
+      return "clock_gate";
+    case RegisterOutputReject::kLatchGroup:
+      return "latch_group";
+    case RegisterOutputReject::kLatchArc:
+      return "latch_arc";
+    case RegisterOutputReject::kTransparentDataArc:
+      return "transparent_data_arc";
+    case RegisterOutputReject::kNoClkToQ:
+      return "no_clk_to_q";
+  }
+  return "unknown";
+}
+
+bool isRegisterOutput(const sta::LibertyCell* cell,
+                      const sta::LibertyPort* output)
+{
+  return registerOutputRejectReason(cell, output)
+         == RegisterOutputReject::kNone;
+}
+
 namespace {
 
 // A side check's slack loss counts fully at or below zero slack and fades out
@@ -47,6 +126,9 @@ namespace {
 constexpr double kSideSlackWeightCutoff = 10.0e-12;
 // Rounding allowance before a side check counts as a new violation.
 constexpr double kSideSlackViolationTolerance = 0.001e-12;
+// A check the estimator cannot model is skipped when its slack is at least
+// this; a cell swap moves a check margin by a few ps at most.
+constexpr float kUnscoredCheckSlackGuard = 25.0e-12f;
 
 struct PreparedInputTiming
 {
@@ -87,15 +169,6 @@ std::optional<sta::Pvt> copyPvt(const sta::Pvt* pvt)
 const sta::Pvt* pvtValue(const std::optional<sta::Pvt>& pvt)
 {
   return pvt ? &*pvt : nullptr;
-}
-
-bool isFlipFlop(const sta::LibertyCell* cell)
-{
-  return cell != nullptr && !cell->sequentials().empty()
-         && std::ranges::all_of(cell->sequentials(),
-                                [](const sta::Sequential& sequential) {
-                                  return sequential.isRegister();
-                                });
 }
 
 const sta::TimingArc* matchingArc(const sta::TimingArc* reference,
@@ -501,6 +574,15 @@ class SetupHoldCheckCollector : public sta::PathEndVisitor
 
     PreparedSetupHoldCheck check;
     if (!prepareSetupHoldCheck(resizer_, inst_, end, candidates_, check)) {
+      // A check whose data path this estimator cannot model (an unusual
+      // timing model, or a driver whose arc it cannot prepare) would make
+      // every candidate of the register unscorable.  Skip it when its slack
+      // covers any margin a VT or size change could move.
+      const float slack = sta::delayAsFloat(end->slack(resizer_.staState()));
+      if (std::isfinite(slack) && slack >= kUnscoredCheckSlackGuard) {
+        RepairSetupProfiler::event("sequential_unscored_check_skipped");
+        return;
+      }
       failure_reason_ = "sequential_missing_check_context";
       return;
     }
@@ -602,36 +684,46 @@ SequentialTimingEstimator::prepare(Resizer& resizer, const Target& target)
   sta::Instance* inst = target.inst(resizer);
   sta::LibertyCell* cell
       = inst != nullptr ? resizer.network()->libertyCell(inst) : nullptr;
-  if (!isFlipFlop(cell)) {
+  const sta::Pin* target_pin = target.resolvedPin(resizer);
+  const sta::LibertyPort* output
+      = target_pin != nullptr ? resizer.network()->libertyPort(target_pin)
+                              : nullptr;
+  const RegisterOutputReject reject_reason
+      = registerOutputRejectReason(cell, output);
+  if (reject_reason != RegisterOutputReject::kNone) {
+    // A cell with a timing-checked input that is not classified as a
+    // register is the case to look at: set_debug_level RSZ sequential 1.
+    debugPrint(resizer.logger(),
+               utl::RSZ,
+               "sequential",
+               1,
+               "no sequential estimator for {} ({}): {}",
+               target_pin ? resizer.network()->pathName(target_pin) : "?",
+               cell ? cell->name() : "?",
+               registerOutputRejectName(reject_reason));
     return nullptr;
   }
 
   const ProfileScope profile("prepare_sequential");
   std::shared_ptr<PreparedFlipFlopTiming> prepared_timing
       = std::make_shared<PreparedFlipFlopTiming>();
-  const sta::LibertyPort* output
-      = resizer.network()->libertyPort(target.resolvedPin(resizer));
 
-  bool has_clock_to_q = false;
-  for (const sta::TimingArcSet* set : cell->timingArcSetsTo(output)) {
-    has_clock_to_q |= set->role() == sta::TimingRole::regClkToQ();
-  }
-
-  if (!has_clock_to_q || resizer.sta()->pocvMode() != sta::PocvMode::scalar) {
-    prepared_timing->prepare_failure_reason
-        = "sequential_unsupported_target_context";
-  } else {
+  {
+    // POCV/LVF runs are scored on mean delays and nominal check margins,
+    // like the rest of the estimator; post-ECO STA has the final word.
     std::set<sta::LibertyCell*> candidates{cell};
-    for (sta::LibertyCell* candidate : resizer.getSwappableCells(cell)) {
-      if (isFlipFlop(candidate)) {
+    const auto add_candidate = [&](sta::LibertyCell* candidate) {
+      if (isRegisterOutput(candidate,
+                           candidate->findLibertyPort(output->name()))) {
         candidates.insert(candidate);
       }
+    };
+    for (sta::LibertyCell* candidate : resizer.getSwappableCells(cell)) {
+      add_candidate(candidate);
     }
 
     for (sta::LibertyCell* candidate : resizer.getVTEquivCells(cell)) {
-      if (isFlipFlop(candidate)) {
-        candidates.insert(candidate);
-      }
+      add_candidate(candidate);
     }
 
     prepared_timing->candidates.assign(candidates.begin(), candidates.end());
@@ -673,6 +765,16 @@ SequentialTimingEstimator::prepare(Resizer& resizer, const Target& target)
     }
   }
 
+  debugPrint(resizer.logger(),
+             utl::RSZ,
+             "sequential",
+             1,
+             "sequential estimator for {}: {} checks, {} candidates{}{}",
+             resizer.network()->pathName(target_pin),
+             prepared_timing->checks.size(),
+             prepared_timing->candidates.size(),
+             prepared_timing->prepare_failure_reason.empty() ? "" : ", ",
+             prepared_timing->prepare_failure_reason);
   RepairSetupProfiler::event("sequential_active_checks",
                              prepared_timing->checks.size());
   RepairSetupProfiler::event("sequential_candidate_cells_prepared",

@@ -191,6 +191,13 @@ bool SetupParallelEvalPolicy::start()
   }
   progress_.printHeader(showStartpointMetrics());
 
+  // PARALLEL_EVAL is a pipeline entry in its own right, so it subsumes the
+  // legacy preamble.  Marking it done keeps a later SetupLegacyBase phase
+  // (e.g. an appended CAPTURE_VT_SWAP) from running the preamble for the
+  // first time here, which would print the violation summary mid-table and,
+  // when timing is already closed, short-circuit before the final report.
+  setup_context_.legacy_preamble_done = true;
+
   return true;
 }
 
@@ -200,7 +207,9 @@ void SetupParallelEvalPolicy::selectMoveSequence()
   // of a target compete on score, and the sequence order only breaks exact
   // ties; the move weights such as size_up_mt_score_scale scale the scores.
   // The default goes through the same filter, so -skip_vt_swap and a
-  // single-VT library still remove VtSwapMt.
+  // single-VT library still remove VtSwapMt.  A library with dont_use VTs
+  // keeps it: VtSwapMt can move the instances on a dont_use VT to the usable
+  // VT.
   std::vector<MoveType> requested_sequence = config_.sequence;
   if (requested_sequence.empty()) {
     requested_sequence = {MoveType::kUnbuffer,
@@ -1730,7 +1739,7 @@ bool SetupParallelEvalPolicy::moveEnabled(const MoveType type) const
 {
   switch (type) {
     case MoveType::kVtSwap:
-      return !config_.skip_vt_swap && resizer_.vtCategoryCount() > 1;
+      return !config_.skip_vt_swap && resizer_.vtCategoryCountWithDontUse() > 1;
     case MoveType::kSizeUp:
     case MoveType::kSizeUpMatch:
     case MoveType::kReroute:

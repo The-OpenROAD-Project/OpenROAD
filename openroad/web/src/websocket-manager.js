@@ -30,7 +30,8 @@ const MAX_BUFFERED_BYTES = 512 * 1024;
 //      STUCK_MS — the browser can't even hand bytes to the OS. A slow render
 //      keeps the buffer near 0.
 //   2. We are saturated (in-flight at the cap) with work still queued, yet have
-//      heard nothing back for DEAD_MS. A slow render is one slow reply among
+//      heard nothing back for DEAD_MS, counted from the later of the last reply
+//      and the start of the saturation. A slow render is one slow reply among
 //      fast ones, so replies keep flowing; total silence while saturated and
 //      backed up means the server stopped servicing us entirely. This only ever
 //      arms during a request flood (the window is full with more queued) — a
@@ -78,6 +79,7 @@ export class WebSocketManager {
         this._maxInFlight = DEFAULT_MAX_IN_FLIGHT; // updated by server "config"
         this._lastRecvAt = 0;     // perf.now() of the last message of any kind
         this._bufStuckSince = 0;  // liveness: when bufferedAmount got stuck
+        this._saturatedSince = 0; // liveness: when the window filled with a queue
         this._lastBuffered = 0;
         this.reconnectDelay = 1000;
         this.readyPromise = null;
@@ -186,6 +188,7 @@ export class WebSocketManager {
         this._inFlight = 0;
         this._inFlightIds.clear();
         this._bufStuckSince = 0;
+        this._saturatedSince = 0;
         this.onStatusChange();
         for (const [id, handler] of this.pending) {
             handler.reject(new Error('WebSocket closed'));
@@ -514,6 +517,7 @@ export class WebSocketManager {
         const s = this.socket;
         if (!s || s.readyState !== WebSocket.OPEN) {
             this._bufStuckSince = 0;
+            this._saturatedSince = 0;
             this._lastBuffered = 0;
             return;
         }
@@ -535,23 +539,29 @@ export class WebSocketManager {
         this._lastBuffered = buf;
 
         // Signature 2: saturated with work queued, yet silent for DEAD_MS.
-        // Background work alone saturates at its share of the window.
-        const saturated = this._inFlight >= this._maxInFlight || this._bgFull();
-        if (!wedged
-            && saturated
-            && this._queue.size + this._bgQueue.size > 0
-            && this._lastRecvAt > 0
-            && now - this._lastRecvAt > DEAD_MS) {
+        // Background work alone saturates at its share of the window.  After a
+        // quiet spell the last reply is old, so the burst that ends it is timed
+        // from when it filled the window.
+        const saturated = (this._inFlight >= this._maxInFlight || this._bgFull())
+            && this._queue.size + this._bgQueue.size > 0;
+        if (!saturated) {
+            this._saturatedSince = 0;
+        } else if (this._saturatedSince === 0) {
+            this._saturatedSince = now;
+        }
+        const silentFor = now - Math.max(this._lastRecvAt, this._saturatedSince);
+        if (!wedged && saturated && this._lastRecvAt > 0 && silentFor > DEAD_MS) {
             wedged = true;
             why = `saturated (${this._inFlight} in flight, `
                 + `${this._queue.size + this._bgQueue.size} queued) but silent `
-                + `for ${Math.round(now - this._lastRecvAt)}ms`;
+                + `for ${Math.round(silentFor)}ms`;
         }
 
         if (wedged) {
             console.warn(`WebSocket connection wedged — ${why}; `
                 + `reconnecting to recover`);
             this._bufStuckSince = 0;
+            this._saturatedSince = 0;
             // Don't depend on close()/onclose: a stuck send buffer can defer
             // the close handshake indefinitely. Reconnect immediately.
             this._forceReconnect();

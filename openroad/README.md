@@ -99,6 +99,20 @@ The `link_design` command is used to flatten the design and make a database.
       # Not supported in Python
 ````
 
+The `link_hier_module` command links a module read with `read_verilog`
+after a hierarchical design was loaded (`read_db -hier`, or `link_design
+-hier`) into that design, so that `replace_hier_module` can switch a
+hierarchical instance to it. It is an error when no design is loaded, when
+the design already has a module of that name, or when the module does not
+link.
+
+```tcl
+read_db -hier design.odb
+read_verilog new_module.v
+link_hier_module new_module
+replace_hier_module u1 new_module
+```
+
 ## Example scripts
 
 Example scripts demonstrating how to run OpenROAD on sample designs can

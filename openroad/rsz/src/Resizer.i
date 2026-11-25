@@ -43,6 +43,7 @@ using ord::getResizer;
 using ord::ensureLinked;
 
 using sta::Scene;
+using sta::StringSeq;
 using sta::LibertyCellSeq;
 using sta::LibertyCell;
 using sta::Instance;
@@ -84,11 +85,6 @@ using rsz::Resizer;
   PinSet *pins = $1;
   setPtrTclList<PinSet, Pin>(pins, SWIGTYPE_p_Pin, interp);
   delete pins;
-}
-
-%typemap(in) std::vector<rsz::MoveType> {
-  const char* str = Tcl_GetString($input);
-  $1 = Resizer::parseMoveSequence(std::string(str));
 }
 
 
@@ -268,6 +264,13 @@ design_area()
   return resizer->designArea();
 }
 
+void
+report_placement_density_cmd(int x1, int y1, int x2, int y2)
+{
+  Resizer *resizer = getResizer();
+  resizer->reportPlacementDensity(odb::Rect(x1, y1, x2, y2));
+}
+
 TmpNetSeq *
 find_floating_nets()
 {
@@ -364,7 +367,7 @@ repair_setup(double setup_margin,
              int max_repairs_per_pass,
              bool match_cell_footprint,
              bool verbose,
-             std::vector<rsz::MoveType> sequence,
+             const char* sequence,
              const char* phases,
              const char* path_group,
              bool skip_pin_swap,
@@ -385,7 +388,8 @@ repair_setup(double setup_margin,
   return resizer->repairSetup(setup_margin, repair_tns_end_percent,
                        max_passes, max_iterations,
                        max_repairs_per_pass, match_cell_footprint,
-                       verbose, sequence, phases, path_group,
+                       verbose, resizer->parseMoveSequence(sequence),
+                       phases, path_group,
                        skip_pin_swap, skip_gate_cloning,
                        skip_size_down_fanout,
                        skip_buffering, skip_buffer_removal, skip_buffer_to_inverters,
@@ -631,6 +635,26 @@ void report_buffers_cmd(bool filtered)
   ensureLinked();
   Resizer* resizer = getResizer();
   resizer->reportBuffers(filtered);
+}
+
+void report_vt_usage_cmd(const char* modinst_name,
+                         StringSeq vt_order,
+                         bool activity_weighted,
+                         bool verbose)
+{
+  ensureLinked();
+  odb::dbBlock* block
+      = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
+  odb::dbModule* module = block->getTopModule();
+  if (modinst_name[0] != '\0') {
+    odb::dbModInst* modinst = block->findModInst(modinst_name);
+    if (modinst == nullptr) {
+      ord::getLogger()->error(
+          utl::RSZ, 3280, "Unable to find module instance {}.", modinst_name);
+    }
+    module = modinst->getMaster();
+  }
+  getResizer()->reportVTUsage(module, vt_order, activity_weighted, verbose);
 }
 
 void report_delay_estimator_accuracy_cmd(Instance* inst,

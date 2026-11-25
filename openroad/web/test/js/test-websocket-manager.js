@@ -628,16 +628,18 @@ describe('WebSocketManager liveness', () => {
         // deterministically (performance.now() is tiny this early in a process).
         const realNow = performance.now.bind(performance);
         const t0 = realNow();
-        performance.now = () => t0 + 100000;
         try {
             // Saturated (in-flight at/above the cap), work still queued, and no
             // reply since t0 — i.e. far longer than the dead threshold.
             mgr._inFlight = 1000;
             mgr._queue.set(99999, { msg: {}, resolve() {}, reject() {} });
             mgr._lastRecvAt = t0;
+            performance.now = () => t0;
+            mgr._checkLiveness();
 
             const dead = mgr.socket;
             const before = dead.closeCount;
+            performance.now = () => t0 + 100000;
             mgr._checkLiveness();
             assert.equal(dead.closeCount, before + 1,
                 'a wedged connection is closed');
@@ -663,12 +665,49 @@ describe('WebSocketManager liveness', () => {
         const realNow = performance.now.bind(performance);
         const t0 = realNow();
         mgr._lastRecvAt = t0;
-        performance.now = () => t0 + 100000;
         try {
+            performance.now = () => t0;
+            mgr._checkLiveness();
             const dead = mgr.socket;
             const before = dead.closeCount;
+            performance.now = () => t0 + 100000;
             mgr._checkLiveness();
             assert.equal(dead.closeCount, before + 1);
+        } finally {
+            performance.now = realNow;
+        }
+    });
+
+    // The last reply is from before a quiet spell; the server gets DEAD_MS
+    // from the burst that ends it, and every reply starts the count again.
+    it('times a burst after a quiet spell from when it filled the window',
+       async () => {
+        const mgr = new WebSocketManager('ws://fake');
+        await mgr.readyPromise;
+        mgr._maxInFlight = 4;
+        const realNow = performance.now.bind(performance);
+        const t0 = realNow();
+        mgr._lastRecvAt = t0;
+        const check = (at) => {
+            performance.now = () => t0 + at;
+            mgr._checkLiveness();
+        };
+        try {
+            const sock = mgr.socket;
+            const before = sock.closeCount;
+            performance.now = () => t0 + 60000;
+            for (let i = 0; i < 10; i++) {
+                mgr.request({ type: 'tile', n: i }).catch(() => {});
+            }
+            check(60000);
+            check(63000);
+            assert.equal(sock.closeCount, before, 'just saturated');
+            // A reply 20 s in starts the count again.
+            mgr._lastRecvAt = t0 + 80000;
+            check(100000);
+            assert.equal(sock.closeCount, before, '20 s after the last reply');
+            check(111000);
+            assert.equal(sock.closeCount, before + 1, '31 s after it');
         } finally {
             performance.now = realNow;
         }

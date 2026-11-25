@@ -20,7 +20,7 @@ Load pins
  c1_2/A input (INV_X1) 1.55-1.70 (302, 301)
  r1/CK input (DFF_X1) 0.86-0.95 (102, 201)
 
-Net net1
+Net net_1
  Pin capacitance: 0.86-0.95
  Wire capacitance: 0.00
  Total capacitance: 0.86-0.95
@@ -34,7 +34,7 @@ Driver pins
 Load pins
  r2/CK input (DFF_X1) 0.86-0.95 (202, 101)
 
-Net net2
+Net net_2
  Pin capacitance: 0.86-0.95
  Wire capacitance: 0.00
  Total capacitance: 0.86-0.95

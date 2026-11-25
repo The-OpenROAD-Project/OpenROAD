@@ -162,23 +162,6 @@ class Page(unittest.TestCase):
         self.assertIn("Permission is hereby granted", body)
 
 
-class FoundryNames(unittest.TestCase):
-    # The private repository's security hook rejects the name, which luma.gl
-    # spells; esbuild.config.mjs renames it.  Spelled in two parts because the
-    # hook reads this file too.
-    _NAME = re.compile("int" "el(?!l)", re.I)
-
-    def test_bundles_do_not_spell_it(self):
-        for name, path in [
-            ("app.min.js", _PAGE["app.min.js"]),
-            ("report.min.js", _REPORT_JS),
-        ]:
-            text = _read(path)
-            self.assertIsNone(self._NAME.search(text), name)
-            # luma.gl still tells that GPU maker apart.
-            self.assertIn("/INT[E]L/i", text, name)
-
-
 class Entries(unittest.TestCase):
     # main.js builds the panels as it loads; the globals they read come first.
     def test_import_main_last(self):

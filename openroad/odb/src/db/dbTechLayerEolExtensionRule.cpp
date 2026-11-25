@@ -91,34 +91,39 @@ void _dbTechLayerEolExtensionRule::collectMemInfo(MemInfo& info)
 
 void dbTechLayerEolExtensionRule::setSpacing(int spacing)
 {
-  _dbTechLayerEolExtensionRule* obj = (_dbTechLayerEolExtensionRule*) this;
+  _dbTechLayerEolExtensionRule* obj
+      = reinterpret_cast<_dbTechLayerEolExtensionRule*>(this);
 
   obj->spacing_ = spacing;
 }
 
 int dbTechLayerEolExtensionRule::getSpacing() const
 {
-  _dbTechLayerEolExtensionRule* obj = (_dbTechLayerEolExtensionRule*) this;
+  const _dbTechLayerEolExtensionRule* obj
+      = reinterpret_cast<const _dbTechLayerEolExtensionRule*>(this);
   return obj->spacing_;
 }
 
 void dbTechLayerEolExtensionRule::getExtensionTable(
     std::vector<std::pair<int, int>>& tbl) const
 {
-  _dbTechLayerEolExtensionRule* obj = (_dbTechLayerEolExtensionRule*) this;
+  const _dbTechLayerEolExtensionRule* obj
+      = reinterpret_cast<const _dbTechLayerEolExtensionRule*>(this);
   tbl = obj->extension_tbl_;
 }
 
 void dbTechLayerEolExtensionRule::setParallelOnly(bool parallel_only)
 {
-  _dbTechLayerEolExtensionRule* obj = (_dbTechLayerEolExtensionRule*) this;
+  _dbTechLayerEolExtensionRule* obj
+      = reinterpret_cast<_dbTechLayerEolExtensionRule*>(this);
 
   obj->flags_.parallel_only = parallel_only;
 }
 
 bool dbTechLayerEolExtensionRule::isParallelOnly() const
 {
-  _dbTechLayerEolExtensionRule* obj = (_dbTechLayerEolExtensionRule*) this;
+  const _dbTechLayerEolExtensionRule* obj
+      = reinterpret_cast<const _dbTechLayerEolExtensionRule*>(this);
 
   return obj->flags_.parallel_only;
 }
@@ -126,14 +131,17 @@ bool dbTechLayerEolExtensionRule::isParallelOnly() const
 dbTechLayerEolExtensionRule* dbTechLayerEolExtensionRule::create(
     dbTechLayer* parent)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) parent;
-  return (dbTechLayerEolExtensionRule*) _parent->eol_ext_rules_tbl_->create();
+  _dbTechLayer* _parent = reinterpret_cast<_dbTechLayer*>(parent);
+  return reinterpret_cast<dbTechLayerEolExtensionRule*>(
+      _parent->eol_ext_rules_tbl_->create());
 }
 void dbTechLayerEolExtensionRule::destroy(dbTechLayerEolExtensionRule* obj)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  _dbTechLayer* _parent
+      = static_cast<_dbTechLayer*>(obj->getImpl()->getOwner());
   dbProperty::destroyProperties(obj);
-  _parent->eol_ext_rules_tbl_->destroy((_dbTechLayerEolExtensionRule*) obj);
+  _parent->eol_ext_rules_tbl_->destroy(
+      reinterpret_cast<_dbTechLayerEolExtensionRule*>(obj));
 }
 // User Code Begin dbTechLayerEolExtensionRulePublicMethods
 

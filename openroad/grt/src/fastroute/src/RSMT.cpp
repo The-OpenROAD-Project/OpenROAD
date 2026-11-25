@@ -90,7 +90,7 @@ void FastRouteCore::copyStTree(const int ind, const stt::Tree& rsmt)
     treenodes[i].status = (i < d) ? 2 : 0;
     if (n != i) {  // not root
       treeedges[edgecnt].len = abs(x1 - x2) + abs(y1 - y2);
-      // make x1 always less than x2
+      // Keep n1/n2 ordered by x for initial pattern routing.
       if (x1 < x2) {
         treeedges[edgecnt].n1 = i;
         treeedges[edgecnt].n2 = n;
@@ -98,6 +98,8 @@ void FastRouteCore::copyStTree(const int ind, const stt::Tree& rsmt)
         treeedges[edgecnt].n1 = n;
         treeedges[edgecnt].n2 = i;
       }
+      treeedges[edgecnt].route.type = RouteType::NoRoute;
+      treeedges[edgecnt].route.xFirst = false;
       treeedges[edgecnt].route.grids.clear();
       treenodes[i].nbr[nbrcnt[i]] = n;
       treenodes[i].edge[nbrcnt[i]] = edgecnt;
@@ -386,37 +388,45 @@ void FastRouteCore::fluteCongest(const int netID,
 
 bool FastRouteCore::netCongestion(const int netID)
 {
-  for (const Segment& seg : seglist_[netID]) {
-    const auto [ymin, ymax] = std::minmax(seg.y1, seg.y2);
+  const auto& tree = sttrees_[netID];
+  for (const TreeEdge& treeedge : tree.edges) {
+    if (treeedge.len == 0) {
+      continue;
+    }
+    const int x1 = tree.nodes[treeedge.n1].x;
+    const int y1 = tree.nodes[treeedge.n1].y;
+    const int x2 = tree.nodes[treeedge.n2].x;
+    const int y2 = tree.nodes[treeedge.n2].y;
+    const auto [ymin, ymax] = std::minmax(y1, y2);
 
-    // remove L routing
-    if (seg.xFirst) {
-      for (int i = seg.x1; i < seg.x2; i++) {
-        const int cap = getEdgeCapacity(
-            nets_[netID], i, seg.y1, EdgeDirection::Horizontal);
-        if (graph2d_.getEstUsageH(i, seg.y1) >= cap) {
+    // Check the chosen L path for congestion.
+    if (treeedge.route.xFirst) {
+      for (int i = x1; i < x2; i++) {
+        const int cap
+            = getEdgeCapacity(nets_[netID], i, y1, EdgeDirection::Horizontal);
+        if (graph2d_.getEstUsageH(i, y1) >= cap) {
           return true;
         }
       }
       for (int i = ymin; i < ymax; i++) {
         const int cap
-            = getEdgeCapacity(nets_[netID], seg.x2, i, EdgeDirection::Vertical);
-        if (graph2d_.getEstUsageV(seg.x2, i) >= cap) {
+            = getEdgeCapacity(nets_[netID], x2, i, EdgeDirection::Vertical);
+        if (graph2d_.getEstUsageV(x2, i) >= cap) {
           return true;
         }
       }
     } else {
       for (int i = ymin; i < ymax; i++) {
         const int cap
-            = getEdgeCapacity(nets_[netID], seg.x1, i, EdgeDirection::Vertical);
-        if (graph2d_.getEstUsageV(seg.x1, i) >= cap) {
+            = getEdgeCapacity(nets_[netID], x1, i, EdgeDirection::Vertical);
+        if (graph2d_.getEstUsageV(x1, i) >= cap) {
           return true;
         }
       }
-      for (int i = seg.x1; i < seg.x2; i++) {
-        const int cap = getEdgeCapacity(
-            nets_[netID], i, seg.y2, EdgeDirection::Horizontal);
-        if (graph2d_.getEstUsageH(i, seg.y2) >= cap) {
+      for (int i = x1; i < x2; i++) {
+        const int cap
+            = getEdgeCapacity(nets_[netID], i, y2, EdgeDirection::Horizontal);
+        if (graph2d_.getEstUsageH(i, y2) >= cap) {
           return true;
         }
       }
@@ -518,94 +528,73 @@ float FastRouteCore::coeffADJ(const int netID)
   return coef;
 }
 
+void FastRouteCore::buildFluteTree(const int netID,
+                                   const bool congestionDriven,
+                                   const bool noADJ,
+                                   stt::Tree& tree)
+{
+  const FrNet* net = nets_[netID];
+  const int flute_accuracy = 2;
+  float coeffV = 1.36;
+
+  if (congestionDriven) {
+    // Call congestion-driven FLUTE to generate RSMT.
+    coeffV = noADJ ? 1.2 : coeffADJ(netID);
+    if (netCongestion(netID)) {
+      fluteCongest(
+          netID, net->getPinX(), net->getPinY(), flute_accuracy, coeffV, tree);
+    } else {
+      fluteNormal(
+          netID, net->getPinX(), net->getPinY(), flute_accuracy, coeffV, tree);
+    }
+  } else {
+    // Call FLUTE to generate RSMT for each net.
+    if (noADJ || HTreeSuite(netID)) {
+      coeffV = 1.2;
+    }
+    fluteNormal(
+        netID, net->getPinX(), net->getPinY(), flute_accuracy, coeffV, tree);
+  }
+}
+
 void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
                                  const bool reRoute,
-                                 const bool genTree,
-                                 const bool newType,
                                  const bool noADJ)
 {
   stt::Tree rsmt;
   int numShift = 0;
 
   int wl = 0;
-  int wl1 = 0;
   int totalNumSeg = 0;
-
-  const int flute_accuracy = 2;
 
   for (const int& netID : net_ids_) {
     FrNet* net = nets_[netID];
 
-    int d = net->getNumPins();
+    const int d = net->getNumPins();
 
     if (reRoute) {
-      if (newType) {
-        const auto& treeedges = sttrees_[netID].edges;
-        const auto& treenodes = sttrees_[netID].nodes;
-        for (int j = 0; j < sttrees_[netID].num_edges(); j++) {
-          // only route the non-degraded edges (len>0)
-          if (sttrees_[netID].edges[j].len > 0) {
-            const TreeEdge& treeedge = treeedges[j];
-            const int n1 = treeedge.n1;
-            const int n2 = treeedge.n2;
-            const int x1 = treenodes[n1].x;
-            const int y1 = treenodes[n1].y;
-            const int x2 = treenodes[n2].x;
-            const int y2 = treenodes[n2].y;
-            newRipup(&treeedge, x1, y1, x2, y2, netID);
-          }
-        }
-      } else {
-        // remove the est_usage due to the segments in this net
-        for (auto& seg : seglist_[netID]) {
-          ripupSegL(&seg);
+      // Remove the old tree's estimated usage before checking congestion.
+      // Keep its paths until the congestion-driven RSMT has been generated.
+      const auto& tree = sttrees_[netID];
+      for (const TreeEdge& treeedge : tree.edges) {
+        if (treeedge.len > 0) {
+          const TreeNode& n1 = tree.nodes[treeedge.n1];
+          const TreeNode& n2 = tree.nodes[treeedge.n2];
+          newRipup(&treeedge, n1.x, n1.y, n2.x, n2.y, netID);
         }
       }
     }
 
-    // check net alpha because FastRoute has a special implementation of flute
-    // TODO: move this flute implementation to SteinerTreeBuilder
+    // Check net alpha because FastRoute has a special FLUTE implementation.
+    // TODO: move this flute implementation to SteinerTreeBuilder.
     const float net_alpha = stt_builder_->getAlpha(net->getDbNet());
     if (net_alpha > 0.0) {
       rsmt = stt_builder_->makeSteinerTree(
           net->getDbNet(), net->getPinX(), net->getPinY(), net->getDriverIdx());
     } else {
-      float coeffV = 1.36;
-
-      if (congestionDriven) {
-        // call congestion driven flute to generate RSMT
-        bool cong;
-        coeffV = noADJ ? 1.2 : coeffADJ(netID);
-        cong = netCongestion(netID);
-        if (cong) {
-          fluteCongest(netID,
-                       net->getPinX(),
-                       net->getPinY(),
-                       flute_accuracy,
-                       coeffV,
-                       rsmt);
-        } else {
-          fluteNormal(netID,
-                      net->getPinX(),
-                      net->getPinY(),
-                      flute_accuracy,
-                      coeffV,
-                      rsmt);
-        }
-        if (d > 3) {
-          numShift += edgeShiftNew(rsmt, netID);
-        }
-      } else {
-        // call FLUTE to generate RSMT for each net
-        if (noADJ || HTreeSuite(netID)) {
-          coeffV = 1.2;
-        }
-        fluteNormal(netID,
-                    net->getPinX(),
-                    net->getPinY(),
-                    flute_accuracy,
-                    coeffV,
-                    rsmt);
+      buildFluteTree(netID, congestionDriven, noADJ, rsmt);
+      if (congestionDriven && d > 3) {
+        numShift += edgeShiftNew(rsmt, netID);
       }
     }
     if (debug_->isOn() && debug_->steinerTree
@@ -614,59 +603,27 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
       steinerTreeVisualization(rsmt, net);
     }
 
-    if (genTree) {
-      copyStTree(netID, rsmt);
-    }
+    copyStTree(netID, rsmt);
 
-    if (net->getNumPins() != rsmt.deg) {
-      d = rsmt.deg;
-    }
-
-    if (congestionDriven) {
-      for (int j = 0; j < sttrees_[netID].num_edges(); j++) {
-        wl1 += sttrees_[netID].edges[j].len;
+    for (const TreeEdge& treeedge : sttrees_[netID].edges) {
+      wl += treeedge.len;
+      if (treeedge.len > 0) {
+        totalNumSeg++;
       }
     }
-
-    for (int j = 0; j < rsmt.branchCount(); j++) {
-      const int x1 = rsmt.branch[j].x;
-      const int y1 = rsmt.branch[j].y;
-      const int n = rsmt.branch[j].n;
-      const int x2 = rsmt.branch[n].x;
-      const int y2 = rsmt.branch[n].y;
-
-      wl += abs(x1 - x2) + abs(y1 - y2);
-
-      if (x1 != x2 || y1 != y2) {  // the branch is not degraded (a point)
-        // the position of this segment in seglist
-        const int8_t cost = nets_[netID]->getEdgeCost();
-        if (x1 < x2) {
-          seglist_[netID].emplace_back(netID, x1, y1, x2, y2, cost);
-        } else {
-          seglist_[netID].emplace_back(netID, x2, y2, x1, y1, cost);
-        }
-      }
-    }  // loop j
-
-    totalNumSeg += seglist_[netID].size();
 
     if (reRoute) {
-      // update the est_usage due to the segments in this net
-      newrouteL(
-          netID,
-          RouteType::NoRoute,
-          true);  // route the net with no previous route for each tree edge
+      // Route the new tree and add its estimated usage.
+      newrouteL(netID, RouteType::NoRoute, true);
     }
-  }  // loop i
+  }
 
   debugPrint(logger_,
              GRT,
              "rsmt",
              1,
-             "Wirelength: {}, Wirelength1: {}\nNumber of segments: {}\nNumber "
-             "of shifts: {}",
+             "Wirelength: {}\nNumber of segments: {}\nNumber of shifts: {}",
              wl,
-             wl1,
              totalNumSeg,
              numShift);
 }

@@ -3,6 +3,8 @@
 
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("//bazel:man_tcl_checker.bzl", "man_tcl_check_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -98,6 +100,69 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "TestNetwork",
+    srcs = ["cpp/TestNetwork.cpp"],
+    data = [
+        "//openroad/fsv/test:sky130.itf",
+        "//test:sky130hd_data",
+    ],
+    deps = [
+        "//openroad/fsv:stack",
+        "//openroad/odb/src/db",
+        "//openroad/pex:network",
+        "//openroad/pex:resistance",
+        "//openroad/tst:db_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestExtractor",
+    size = "medium",
+    srcs = ["cpp/TestExtractor.cpp"],
+    data = [
+        "sky130hd/sky130_fd_sc_hd_merged.lef",
+        "sky130hd/sky130hd.tlef",
+        "//openroad/fsv/test:field_solver_gcd.def",
+        "//openroad/fsv/test:sky130.itf",
+    ],
+    deps = [
+        "//openroad/fsv:stack",
+        "//openroad/odb/src/db",
+        "//openroad/pex:evaluator",
+        "//openroad/pex:extractor",
+        "//openroad/pex:model",
+        "//openroad/pex:network",
+        "//openroad/tst:db_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestSpef",
+    size = "medium",
+    srcs = ["cpp/TestSpef.cpp"],
+    data = [
+        "sky130hd/sky130_fd_sc_hd_merged.lef",
+        "sky130hd/sky130hd.tlef",
+        "//openroad/fsv/test:field_solver_gcd.def",
+        "//openroad/fsv/test:sky130.itf",
+    ],
+    deps = [
+        "//openroad/fsv:stack",
+        "//openroad/odb/src/db",
+        "//openroad/pex:extractor",
+        "//openroad/pex:model",
+        "//openroad/pex:spef_writer",
+        "//openroad/tst:db_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 EXPERIMENT_DEPS = [
     "//openroad/pex:evaluator",
     "//openroad/fsv:net_window",
@@ -144,4 +209,43 @@ cc_test(
     ],
     data = EXPERIMENT_DATA,
     deps = EXPERIMENT_DEPS,
+)
+
+TESTS = [
+    "pex_errors",
+    "pex_extract",
+    "pex_python",
+]
+
+filegroup(
+    name = "test_resources",
+    srcs = [
+        "helpers.tcl",
+        "other_stack.json",
+        "sky130_coarse.json",
+        "sky130hd/sky130_fd_sc_hd_merged.lef",
+        "sky130hd/sky130hd.tlef",
+        "sky130hd/sky130hd_tt.lib",
+        "version_two.json",
+        "//openroad/fsv/test:field_solver_gcd.def",
+        "//openroad/fsv/test:sky130.itf",
+    ] + [test + ".ok" for test in TESTS],
+)
+
+[regression_test(
+    name = test_name,
+    data = [":test_resources"],
+) for test_name in TESTS]
+
+man_tcl_check_test(
+    name = "pex_man_tcl_check",
+    module = "pex",
+)
+
+doc_check_test(
+    name = "pex_readme_msgs_check",
+    data = [
+        "//openroad/pex:doc_files",
+        "//openroad/pex:messages_txt",
+    ],
 )

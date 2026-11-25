@@ -29,9 +29,9 @@ char logicValueChar(LogicValue value)
   return '?';
 }
 
-ConstView ConstView::fromInline(uint32_t width, uint32_t bits, uint32_t x_mask)
+ConstView ConstView::fromInline(int width, uint32_t bits, uint32_t x_mask)
 {
-  assert(width <= kMaxInlineConstWidth);
+  assert(width >= 0 && width <= kMaxInlineConstWidth);
   ConstView view;
   view.width_ = width;
   const uint64_t mask = width == 0 ? 0 : constLastWordMask(width);
@@ -41,12 +41,12 @@ ConstView ConstView::fromInline(uint32_t width, uint32_t bits, uint32_t x_mask)
   return view;
 }
 
-LogicValue ConstView::bit(uint32_t index) const
+LogicValue ConstView::bit(int index) const
 {
-  assert(index < width_);
+  assert(index >= 0 && index < width_);
   const uint64_t* w = words();
-  const uint32_t word = index / 64;
-  const uint32_t shift = index % 64;
+  const int word = index / 64;
+  const uint32_t shift = static_cast<uint32_t>(index % 64);
   const uint64_t v = (w[word] >> shift) & 1u;
   const uint64_t x = (w[numWords() + word] >> shift) & 1u;
   if (x != 0) {
@@ -65,8 +65,8 @@ bool ConstView::isFill(LogicValue value) const
 {
   const uint64_t* w = words();
   const uint8_t v = static_cast<uint8_t>(value);
-  const uint32_t n = numWords();
-  for (uint32_t word = 0; word < n; ++word) {
+  const int n = numWords();
+  for (int word = 0; word < n; ++word) {
     const uint64_t mask
         = word + 1 == n ? constLastWordMask(width_) : ~uint64_t{0};
     const uint64_t want_bits = (v & 1u) ? mask : 0;
@@ -84,7 +84,8 @@ std::optional<uint64_t> ConstView::toUint64() const
     return std::nullopt;
   }
   const std::span<const uint64_t> b = bits();
-  for (size_t word = 1; word < b.size(); ++word) {
+  const int n = numWords();
+  for (int word = 1; word < n; ++word) {
     if (b[word] != 0) {
       return std::nullopt;
     }
@@ -95,8 +96,8 @@ std::optional<uint64_t> ConstView::toUint64() const
 std::string ConstView::toString() const
 {
   std::string text = absl::StrCat(width_, "'b");
-  text.reserve(text.size() + width_);
-  for (uint32_t i = width_; i-- > 0;) {
+  text.reserve(text.size() + static_cast<size_t>(width_));
+  for (int i = width_ - 1; i >= 0; --i) {
     text.push_back(logicValueChar(bit(i)));
   }
   return text;
@@ -104,7 +105,7 @@ std::string ConstView::toString() const
 
 uint64_t ConstView::checksum() const
 {
-  uint64_t h = checksumCombine(kChecksumSeed, width_);
+  uint64_t h = checksumCombine(kChecksumSeed, static_cast<uint32_t>(width_));
   for (uint64_t w : bits()) {
     h = checksumCombine(h, w);
   }

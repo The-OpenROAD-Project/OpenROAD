@@ -73,12 +73,37 @@ py_test(
     ],
 )
 
+# A real Chrome draws a tile in the live viewer and in a saved report.  Manual:
+# Chrome is not part of the build; pass it with --test_env=CHROME=<path>.
+py_test(
+    name = "browser_smoke_test",
+    size = "medium",
+    srcs = ["browser_smoke_test.py"],
+    args = [
+        "$(rootpath //:openroad)",
+        "$(rootpath Nangate45/Nangate45_typ.lib)",
+        "$(rootpath Nangate45/Nangate45.lef)",
+        "$(rootpath gcd_nangate45.def)",
+    ],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "gcd_nangate45.def",
+        "//:openroad",
+    ],
+    tags = [
+        "local",
+        "manual",
+    ],
+)
+
 # Tests that drive a module against a stand-in for layout-view.js.
 VIEW_TEST_DATA = DOM_TEST_DATA + ["js/fake-view.js"]
 
 test_suite(
     name = "cpp_tests",
     tests = [
+        ":browser_launcher_test",
         ":charts_test",
         ":clock_tree_report_test",
         ":debug_graphics_test",
@@ -92,10 +117,12 @@ test_suite(
         ":save_display_controls_test",
         ":save_image_test",
         ":save_report_test",
+        ":script_view_test",
         ":session_lifetime_test",
         ":snap_test",
         ":tile_generator_test",
         ":timing_cone_test",
+        ":timing_report_test",
         ":web_assets_test",
     ],
 )
@@ -622,6 +649,22 @@ cc_test(
 )
 
 cc_test(
+    name = "script_view_test",
+    srcs = ["cpp/TestScriptView.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//openroad/odb/src/db",
+        "//openroad/tst:nangate45_fixture",
+        "//openroad/web",
+        "//openroad/web:core",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "snap_test",
     srcs = ["cpp/TestSnap.cpp"],
     data = [
@@ -660,6 +703,26 @@ cc_test(
 )
 
 cc_test(
+    name = "timing_report_test",
+    srcs = ["cpp/TestTimingReport.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst:db_fixture",
+        "//openroad/tst:nangate45_fixture",
+        "//openroad/web",
+        "//openroad/web:core",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "charts_test",
     srcs = ["cpp/TestCharts.cpp"],
     data = [
@@ -688,6 +751,16 @@ cc_test(
         "//openroad/web:color",
         "//openroad/web:core",
         "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "browser_launcher_test",
+    srcs = ["cpp/TestBrowserLauncher.cpp"],
+    deps = [
+        "//openroad/web:browser_launcher",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

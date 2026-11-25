@@ -1146,14 +1146,18 @@ describe('LayoutView shapes, markers and capture', () => {
         await tick();
         frames.flush();
         const events = [];
-        view.on('contextlost contextrestored', () => events.push(events.length));
+        for (const e of ['contextlost', 'contextrestored', 'contextfailed']) {
+            view.on(e, () => events.push(e));
+        }
         const old = deck.decks[0];
         const lost = new window.Event('webglcontextlost', { cancelable: true });
         old.getCanvas().dispatchEvent(lost);
         assert.ok(lost.defaultPrevented);
         assert.ok(old.finalized);
         assert.equal(deck.decks.length, 2);
-        assert.equal(events.length, 2);
+        assert.deepEqual(events, ['contextlost'], 'restored once the device is up');
+        await tick();
+        assert.deepEqual(events, ['contextlost', 'contextrestored']);
         frames.flush();
         // The tiles are drawn again on the new deck without a new request.
         assert.deepEqual(tileIds(deck), ['base:0/0/0']);
@@ -1165,6 +1169,25 @@ describe('LayoutView shapes, markers and capture', () => {
         deck.decks[1].getCanvas().dispatchEvent(
             new window.Event('webglcontextlost', { cancelable: true }));
         assert.equal(deck.decks.length, 3);
+    });
+
+    // The new device can fail after the Deck is made; the page then asks for a
+    // reload instead of staying blank.
+    it('reports a rebuild that fails once the device is being made',
+       async (t) => {
+        t.mock.method(console, 'error', () => {});
+        const { view, deck } = setup();
+        await tick();
+        const events = [];
+        for (const e of ['contextrestored', 'contextfailed']) {
+            view.on(e, (err) => events.push([e, err?.message]));
+        }
+        deck.noWebGL = true;
+        deck.decks[0].getCanvas().dispatchEvent(
+            new window.Event('webglcontextlost', { cancelable: true }));
+        assert.deepEqual(events, []);
+        await tick();
+        assert.deepEqual(events, [['contextfailed', 'WebGL2 not available']]);
     });
 
     // A page without the deck namespace still has a working view object.
