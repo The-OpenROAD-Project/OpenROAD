@@ -357,7 +357,8 @@ TEST_F(KnownAnswerTest, UnanchoredInitialPlaceDoesNotDiverge)
 
   PlaceOptions options;
   options.skipIoMode = true;
-  Replace replace{db_.get(), sta_.get(), nullptr, nullptr, nullptr, &logger_};
+  Replace replace{
+      db_.get(), sta_.get(), nullptr, nullptr, nullptr, nullptr, &logger_};
   replace.doInitialPlace(1, options);
 
   EXPECT_NEAR(center(chain[5]).x(), builder.core().xCenter(), 1);
