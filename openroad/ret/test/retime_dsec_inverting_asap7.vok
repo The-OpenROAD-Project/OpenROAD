@@ -44,22 +44,23 @@ module top (a,
  wire n3;
  wire n4;
  wire n5;
+ wire q1n;
  wire q3;
  wire q3n;
+ wire q4n;
+ wire q5n;
  wire q6;
  wire q6n;
- wire ret_net_7;
- wire ret_net_6;
- wire ret_net_5;
+ wire q7n;
+ wire q8n;
+ wire q9n;
  wire qm;
  wire qmn;
- wire unmap_net_2;
- wire unmap_net_4;
 
  AND2x2_ASAP7_75t_R g0 (.A(a),
     .B(rst_n),
     .Y(d1));
- INVx1_ASAP7_75t_R g1 (.A(d1),
+ INVx1_ASAP7_75t_R g1 (.A(q1n),
     .Y(n1));
  AND2x2_ASAP7_75t_R g10 (.A(b),
     .B(rst_n),
@@ -67,8 +68,8 @@ module top (a,
  AND2x2_ASAP7_75t_R g11 (.A(c),
     .B(rst_n),
     .Y(d5));
- NAND2xp5_ASAP7_75t_R g12 (.A(unmap_net_2),
-    .B(unmap_net_4),
+ NAND2xp5_ASAP7_75t_R g12 (.A(q4n),
+    .B(q5n),
     .Y(m1));
  INVx1_ASAP7_75t_R g13 (.A(m1),
     .Y(m2));
@@ -78,7 +79,7 @@ module top (a,
     .Y(m4));
  INVx1_ASAP7_75t_R g16 (.A(m4),
     .Y(m5));
- AND2x2_ASAP7_75t_R g17 (.A(ret_net_6),
+ AND2x2_ASAP7_75t_R g17 (.A(m5),
     .B(rst_n),
     .Y(d6));
  INVx1_ASAP7_75t_R g18 (.A(q6n),
@@ -96,9 +97,9 @@ module top (a,
  AND2x2_ASAP7_75t_R g22 (.A(g),
     .B(rst_n),
     .Y(d9));
- MAJx2_ASAP7_75t_R g23 (.A(d7),
-    .B(d8),
-    .C(d9),
+ MAJx2_ASAP7_75t_R g23 (.A(q7n),
+    .B(q8n),
+    .C(q9n),
     .Y(j1));
  INVx1_ASAP7_75t_R g24 (.A(j1),
     .Y(j2));
@@ -106,7 +107,7 @@ module top (a,
     .Y(j3));
  INVx1_ASAP7_75t_R g26 (.A(j3),
     .Y(j4));
- AND2x2_ASAP7_75t_R g27 (.A(ret_net_5),
+ AND2x2_ASAP7_75t_R g27 (.A(j4),
     .B(rst_n),
     .Y(dm));
  INVx1_ASAP7_75t_R g28 (.A(qmn),
@@ -119,33 +120,38 @@ module top (a,
     .Y(n4));
  INVx1_ASAP7_75t_R g5 (.A(n4),
     .Y(n5));
- AND2x2_ASAP7_75t_R g6 (.A(ret_net_7),
+ AND2x2_ASAP7_75t_R g6 (.A(n5),
     .B(rst_n),
     .Y(d3));
  INVx1_ASAP7_75t_R g7 (.A(q3n),
     .Y(q3));
  BUFx2_ASAP7_75t_R g8 (.A(q3),
     .Y(y));
+ DFFHQNx1_ASAP7_75t_R r1 (.CLK(clk),
+    .D(d1),
+    .QN(q1n));
  DFFHQNx1_ASAP7_75t_R r10 (.CLK(clk),
     .D(dm),
     .QN(qmn));
  DFFHQNx1_ASAP7_75t_R r3 (.CLK(clk),
     .D(d3),
     .QN(q3n));
+ DFFHQNx1_ASAP7_75t_R r4 (.CLK(clk),
+    .D(d4),
+    .QN(q4n));
+ DFFHQNx1_ASAP7_75t_R r5 (.CLK(clk),
+    .D(d5),
+    .QN(q5n));
  DFFHQNx1_ASAP7_75t_R r6 (.CLK(clk),
     .D(d6),
     .QN(q6n));
- DFFHQNx1_ASAP7_75t_R ret_ff_5 (.CLK(clk),
-    .D(j4),
-    .QN(ret_net_5));
- DFFHQx4_ASAP7_75t_R ret_ff_6 (.CLK(clk),
-    .D(m5),
-    .Q(ret_net_6));
- DFFHQNx1_ASAP7_75t_R ret_ff_7 (.CLK(clk),
-    .D(n5),
-    .QN(ret_net_7));
- INVx1_ASAP7_75t_R unmap_inv_2 (.A(d4),
-    .Y(unmap_net_2));
- INVx1_ASAP7_75t_R unmap_inv_4 (.A(d5),
-    .Y(unmap_net_4));
+ DFFHQNx1_ASAP7_75t_R r7 (.CLK(clk),
+    .D(d7),
+    .QN(q7n));
+ DFFHQNx1_ASAP7_75t_R r8 (.CLK(clk),
+    .D(d8),
+    .QN(q8n));
+ DFFHQNx1_ASAP7_75t_R r9 (.CLK(clk),
+    .D(d9),
+    .QN(q9n));
 endmodule

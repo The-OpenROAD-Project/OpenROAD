@@ -1,8 +1,6 @@
-# The search that judges slides by the slack of the detailed delay model,
-# with the STA check and the cell choice, on a placed design that fails
-# timing: the new register is placed, and the result is kept because STA
-# calls it better.  Proven sequentially equivalent with ABC dsec when
-# EQUIVALENCE_CHECK is set.
+# The search, the STA check and the cell choice on a placed design that fails
+# timing: the new register is placed, and the result is kept because STA calls
+# it better.  Proven sequentially equivalent with ABC dsec.
 source "helpers.tcl"
 source "ret_helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
@@ -29,9 +27,6 @@ write_verilog_for_dsec retime_slack_search before
 report_worst_slack -max -digits 4
 report_tns -digits 4
 
-set_debug_level RET slack_search 1
-set_debug_level RET sta_check 1
-set_debug_level RET place_size 1
 retime
 
 estimate_parasitics -placement

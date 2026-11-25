@@ -1,7 +1,6 @@
-# The cell choice of the STA check (place_size): the new register drives a
-# long, heavy wire, so STA prefers a stronger cell than the base flip-flop
-# for it.  Proven sequentially equivalent with ABC dsec when
-# EQUIVALENCE_CHECK is set.
+# The cell choice of the STA check: the new register drives a long, heavy wire,
+# so STA prefers a stronger cell than the base flip-flop for it.  Proven
+# sequentially equivalent with ABC dsec.
 source "helpers.tcl"
 source "ret_helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
@@ -27,9 +26,6 @@ estimate_parasitics -placement
 write_verilog_for_dsec retime_place_size before
 report_worst_slack -max -digits 4
 
-set_debug_level RET slack_search 1
-set_debug_level RET sta_check 1
-set_debug_level RET place_size 1
 retime
 
 estimate_parasitics -placement

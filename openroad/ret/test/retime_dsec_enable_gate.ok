@@ -1,21 +1,13 @@
 [INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
 [INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
-worst slack max 4.1927
+worst slack max -0.2073
 [INFO RET-0014] Retiming graph: 24 gates, 21 edges, 7 registers, 11 pinned gates, 0 fenced registers.
-
- Slide | Flops | Sinks | Max wr | gate                 | fanout net
--------------------------------------------------------------------
-     1 |     2 |     1 |      1 | g12                  | m1
-     2 |     0 |     1 |      1 | g13                  | m2
-     3 |     0 |     1 |      1 | g14                  | m3
-     4 |     0 |     1 |      1 | g15                  | m4
-     5 |     0 |     1 |      1 | g16                  | m5
-     6 |     0 |     1 |      1 | g17                  | m6
-     7 |     0 |     1 |      1 | g17a                 | m7
-     8 |     0 |     1 |      1 | g17b                 | m8
--------------------------------------------------------------------
-[INFO RET-0023] Retime found 8 slides.
-[INFO RET-0024] Rebuilt 3 of 21 register groups: 2 registers removed, 1 inserted, 0 of them keeping their class.
-worst slack max 4.2679
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.2073 |       -0.3770 |         7
+     1 |        5 |      1 |    5 |     -0.1321 |       -0.1697 |         6
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 5, rounds 1, WNS -0.1321, TNS -0.1697, registers 6, placed 0, resized 0.
+worst slack max -0.1321
 Retime output passed/skipped sequential equivalence test
 No differences found.

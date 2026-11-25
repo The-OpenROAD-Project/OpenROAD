@@ -81,7 +81,7 @@ module core (a,
  wire n4;
  wire n5;
  wire n6;
- wire ret_net_12;
+ wire ret_net_15;
  wire ret_net_11;
  wire q3;
  wire ret_net_14;
@@ -107,13 +107,13 @@ module core (a,
     .Y(m1));
  sky130_fd_sc_hd__inv_1 g11 (.A(m1),
     .Y(m2));
- sky130_fd_sc_hd__inv_1 g12 (.A(m2),
-    .Y(m3));
- sky130_fd_sc_hd__inv_1 g13 (.A(m3),
-    .Y(m4));
+ sky130_fd_sc_hd__dlygate4sd1_1 g12 (.A(ret_net_11),
+    .X(m3));
+ sky130_fd_sc_hd__dlygate4sd1_1 g13 (.A(m3),
+    .X(m4));
  sky130_fd_sc_hd__inv_1 g14 (.A(m4),
     .Y(m5));
- sky130_fd_sc_hd__inv_1 g15 (.A(ret_net_11),
+ sky130_fd_sc_hd__inv_1 g15 (.A(m5),
     .Y(m6));
  sky130_fd_sc_hd__and2_1 g16 (.A(m6),
     .B(rn),
@@ -131,13 +131,13 @@ module core (a,
     .Y(n1));
  sky130_fd_sc_hd__inv_1 g3 (.A(n1),
     .Y(n2));
- sky130_fd_sc_hd__inv_1 g4 (.A(n2),
-    .Y(n3));
- sky130_fd_sc_hd__inv_1 g5 (.A(n3),
-    .Y(n4));
+ sky130_fd_sc_hd__dlygate4sd1_1 g4 (.A(n2),
+    .X(n3));
+ sky130_fd_sc_hd__dlygate4sd1_1 g5 (.A(ret_net_15),
+    .X(n4));
  sky130_fd_sc_hd__inv_1 g6 (.A(n4),
     .Y(n5));
- sky130_fd_sc_hd__inv_1 g7 (.A(ret_net_12),
+ sky130_fd_sc_hd__inv_1 g7 (.A(n5),
     .Y(n6));
  sky130_fd_sc_hd__and2_1 g8 (.A(n6),
     .B(rn),
@@ -150,18 +150,18 @@ module core (a,
  sky130_fd_sc_hd__dfxtp_1 r5 (.D(d5),
     .Q(q5),
     .CLK(ck));
- sky130_fd_sc_hd__dfxtp_1 ret_ff_11 (.D(m5),
+ sky130_fd_sc_hd__dfxtp_1 ret_ff_11 (.D(m2),
     .Q(ret_net_11),
-    .CLK(ck));
- sky130_fd_sc_hd__edfxtp_1 ret_ff_12 (.D(n5),
-    .DE(en),
-    .Q(ret_net_12),
     .CLK(ck));
  sky130_fd_sc_hd__dfxtp_1 ret_ff_13 (.D(unmap_net_5),
     .Q(ret_net_13),
     .CLK(ck));
  sky130_fd_sc_hd__dfxtp_1 ret_ff_14 (.D(unmap_net_10),
     .Q(ret_net_14),
+    .CLK(ck));
+ sky130_fd_sc_hd__edfxtp_1 ret_ff_15 (.D(n3),
+    .DE(en),
+    .Q(ret_net_15),
     .CLK(ck));
  sky130_fd_sc_hd__and2_0 unmap_and_2 (.A(d4),
     .B(en2),

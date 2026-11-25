@@ -1,7 +1,6 @@
 # Inverting registers (a flop read through its inverted output): they keep
-# their cell across self-dual gates and are unmapped before any other gate.
-# The result is proven sequentially equivalent with ABC dsec when
-# EQUIVALENCE_CHECK is set.
+# their cell across self-dual gates and are unmapped before any other gate. The
+# result is proven sequentially equivalent with ABC dsec.
 source "helpers.tcl"
 source "ret_helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib

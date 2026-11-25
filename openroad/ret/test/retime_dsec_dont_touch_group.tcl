@@ -1,14 +1,13 @@
-# A don't-touch register that shares its net with a movable one pins the
-# gate after the movable register; an independent cone still retimes.  The
-# result is proven sequentially equivalent with ABC dsec when
-# EQUIVALENCE_CHECK is set.
+# A don't-touch register that shares its net with a movable one pins the gate
+# after the movable register; an independent cone still retimes.  The result is
+# proven sequentially equivalent with ABC dsec.
 source "helpers.tcl"
 source "ret_helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_verilog retime_dsec_dont_touch_group.v
 link_design top
-create_clock -period 1.0 clk
+create_clock -period 0.15 clk
 set_dont_touch rD
 
 write_verilog_for_dsec retime_dsec_dont_touch_group before

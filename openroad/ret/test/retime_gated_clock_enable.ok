@@ -2,14 +2,6 @@
 [INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
 worst slack max 4.4725
 [INFO RET-0014] Retiming graph: 7 gates, 5 edges, 2 registers, 4 pinned gates, 1 fenced registers.
-
- Slide | Flops | Sinks | Max wr | gate                 | fanout net
--------------------------------------------------------------------
-     1 |     1 |     1 |      1 | i1                   | e1
-     2 |     0 |     1 |      1 | i2                   | e2
-     3 |     0 |     1 |      1 | i3                   | e3
--------------------------------------------------------------------
-[INFO RET-0023] Retime found 3 slides.
-[INFO RET-0024] Rebuilt 2 of 5 register groups: 1 registers removed, 1 inserted, 0 of them keeping their class.
-worst slack max 4.5604
+[INFO RET-0053] Retime: slides 0, rounds 0, WNS 4.4725, TNS 0.0000, registers 3, placed 0, resized 0.
+worst slack max 4.4725
 No differences found.

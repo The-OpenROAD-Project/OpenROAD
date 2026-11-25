@@ -8,13 +8,14 @@
 [INFO IFP-0105] Number of instances:                     13
 worst slack max -0.0485
 tns max -0.0485
-[INFO RET-0049] STA check: before retiming, worst slack -0.0485, total negative slack -0.0485.
-[INFO RET-0050] STA check round 1: 5 slides give worst slack -0.0045, total negative slack -0.0045.
-[INFO RET-0051] STA check round 1: 5 slides kept.
-[INFO RET-0050] STA check round 2: 1 slides give worst slack 0.0076, total negative slack 0.0000.
-[INFO RET-0051] STA check round 2: 1 slides kept.
-[INFO RET-0052] STA check round 3: the search proposes no slide.
-[INFO RET-0053] STA check: 6 slides kept in 2 rounds; worst slack -0.0485 -> 0.0076, total negative slack -0.0485 -> 0.0000; registers 3 -> 2; 2 new cells placed, 0 new registers changed cell.
+[INFO RET-0014] Retiming graph: 10 gates, 9 edges, 3 registers, 4 pinned gates, 0 fenced registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.0485 |       -0.0485 |         3
+     1 |        5 |      1 |    5 |     -0.0045 |       -0.0045 |         2
+     2 |        1 |      1 |    1 |      0.0076 |        0.0000 |         2
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 6, rounds 2, WNS 0.0076, TNS 0.0000, registers 2, placed 2, resized 0.
 worst slack max 0.0076
 tns max 0.0000
 unplaced instances: 0

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <functional>
+#include <string>
 #include <unordered_set>
 
 #include "RetimerPlacer.h"
@@ -46,8 +47,10 @@ class StaCheck
  private:
   struct Round
   {
+    StaSlack slack;
     int kept = 0;
     int proposed = 0;
+    int trials = 0;
     PlaceStats placed;
   };
   struct Trial
@@ -57,15 +60,20 @@ class StaCheck
     PlaceStats placed;
   };
 
-  Round runRound(int number, int max_moves);
+  Round runRound(int max_moves);
   // The slide limit of the prefix STA judges best; 0: none is better than
   // the start.
-  int bestPrefix(int slides, const StaSlack& before, int number);
+  int bestPrefix(int slides, const StaSlack& before);
   // Leaves the edit open.  `before`: the slack of a trial without slides.
-  // number > 0: logged under that round.
-  Trial runTrial(int limit, const StaSlack& before, int number);
+  Trial runTrial(int limit, const StaSlack& before);
   void undoTrial();
-  void keepTrial(const Trial& trial, int number, Round& round);
+  void keepTrial(const Trial& trial, Round& round);
+  void reportRow(const std::string& round,
+                 const std::string& proposed,
+                 const std::string& trials,
+                 const std::string& kept,
+                 const StaSlack& slack,
+                 int registers) const;
   std::unordered_set<odb::dbInst*> unplacedCells() const;
   int registerCount() const;
 
@@ -75,6 +83,7 @@ class StaCheck
   odb::dbBlock* block_ = nullptr;
   est::IncrementalParasiticsGuard* guard_ = nullptr;
   Search search_;
+  int trials_ = 0;
 };
 
 }  // namespace ret

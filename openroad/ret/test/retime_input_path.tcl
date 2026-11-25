@@ -5,7 +5,7 @@ read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_verilog retime_input_path.v
 link_design top
-create_clock -period 1.0 clk
+create_clock -period 0.1 clk
 
 report_worst_slack -max -digits 4
 retime

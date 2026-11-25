@@ -1,34 +1,14 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-worst slack max 0.7868
+worst slack max -0.0632
 [INFO RET-0014] Retiming graph: 29 gates, 23 edges, 7 registers, 14 pinned gates, 0 fenced registers.
-
- Slide | Flops | Sinks | Max wr | gate                 | fanout net
--------------------------------------------------------------------
-     1 |     2 |     1 |      1 | g2                   | n1
-     2 |     1 |     1 |      1 | g11                  | m1
-     3 |     0 |     1 |      1 | g3                   | n2
-     4 |     0 |     1 |      1 | g12                  | m2
-     5 |     0 |     1 |      1 | g4                   | n3
-     6 |     0 |     1 |      1 | g13                  | m3
-     7 |     0 |     1 |      1 | g5                   | n4
--------------------------------------------------------------------
-[INFO RET-0023] Retime found 7 slides.
-[INFO RET-0008] Unmapped 3 registers.
-[INFO RET-0043] Iteration 2: repeating the search on the netlist with the unmapped registers.
-
- Slide | Flops | Sinks | Max wr | gate                 | fanout net
--------------------------------------------------------------------
-     1 |     2 |     1 |      1 | g2                   | n1
-     2 |     1 |     1 |      1 | unmap_inv_4          | unmap_net_4
-     3 |     0 |     1 |      1 | g3                   | n2
-     4 |     0 |     1 |      1 | g11                  | m1
-     5 |     0 |     1 |      1 | g4                   | n3
-     6 |     0 |     1 |      1 | g12                  | m2
-     7 |     0 |     1 |      1 | g5                   | n4
-     8 |     0 |     1 |      1 | g13                  | m3
--------------------------------------------------------------------
-[INFO RET-0023] Retime found 8 slides.
-[INFO RET-0024] Rebuilt 5 of 24 register groups: 3 registers removed, 2 inserted, 0 of them keeping their class.
-worst slack max 0.7977
+[INFO RET-0008] Unmapped 2 registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.0632 |       -0.1334 |         7
+     1 |        5 |      1 |    5 |     -0.0523 |       -0.0746 |         6
+     2 |        1 |      1 |    1 |     -0.0523 |       -0.0701 |         6
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 6, rounds 2, WNS -0.0523, TNS -0.0701, registers 6, placed 0, resized 0.
+worst slack max -0.0523
 Retime output passed/skipped sequential equivalence test
 No differences found.

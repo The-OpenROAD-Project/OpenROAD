@@ -70,7 +70,10 @@ filegroup(
 
 [regression_test(
     name = test_name,
-    data = [":test_resources"],
+    data = [
+        ":test_resources",
+        "@abc//:abc_bin",
+    ],
 ) for test_name in TESTS]
 
 cc_test(

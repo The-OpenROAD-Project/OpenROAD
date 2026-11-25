@@ -156,8 +156,7 @@ void Retime::resolveFlopDCap()
     logger_->warn(
         utl::RET,
         17,
-        "No register D-pin capacitance resolved; the registered-output "
-        "arc equals the combinational one.");
+        "No register D-pin capacitance found; using combinational arcs.");
   }
 }
 

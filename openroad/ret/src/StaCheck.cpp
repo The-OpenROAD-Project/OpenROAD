@@ -3,6 +3,7 @@
 
 #include "StaCheck.h"
 
+#include <string>
 #include <unordered_set>
 #include <utility>
 
@@ -70,30 +71,59 @@ std::unordered_set<odb::dbInst*> StaCheck::unplacedCells() const
   return unplaced;
 }
 
+void StaCheck::reportRow(const std::string& round,
+                         const std::string& proposed,
+                         const std::string& trials,
+                         const std::string& kept,
+                         const StaSlack& slack,
+                         int registers) const
+{
+  logger_->report("{:>6} | {:>8} | {:>6} | {:>4} | {:>11} | {:>13} | {:>9}",
+                  round,
+                  proposed,
+                  trials,
+                  kept,
+                  sta::delayAsString(slack.worst, 4, sta_),
+                  sta::delayAsString(slack.total, 4, sta_),
+                  registers);
+}
+
 void StaCheck::run(int max_moves)
 {
   constexpr int kRounds = 16;
   constexpr int kRoundMoves = 16;
+  constexpr const char* kHeader
+      = " Round | Proposed | Trials | Kept |         WNS |           TNS | "
+        "Registers";
   placer_->prepare();
   const StaSlack before = staSlack(sta_, *guard_);
   const int registers_before = registerCount();
-  logger_->info(utl::RET,
-                49,
-                "STA check: before retiming, worst slack {}, total negative "
-                "slack {}.",
-                sta::delayAsString(before.worst, 4, sta_),
-                sta::delayAsString(before.total, 4, sta_));
   int total = 0;
   int left = max_moves;
   int rounds_kept = 0;
   PlaceStats placed;
   bool whole = true;
+  bool table = false;
   for (int number = 1; rounds_kept < kRounds; ++number) {
     int limit = left;
     if (!whole && (limit <= 0 || kRoundMoves < limit)) {
       limit = kRoundMoves;
     }
-    const Round round = runRound(number, limit);
+    const Round round = runRound(limit);
+    if (round.proposed > 0) {
+      if (!table) {
+        logger_->report(kHeader);
+        logger_->report("{:->75}", "");
+        reportRow("start", "", "", "", before, registers_before);
+        table = true;
+      }
+      reportRow(std::to_string(number),
+                std::to_string(round.proposed),
+                std::to_string(round.trials),
+                std::to_string(round.kept),
+                round.slack,
+                registerCount());
+    }
     const bool was_whole = whole;
     whole = false;
     if (round.kept == 0) {
@@ -114,27 +144,24 @@ void StaCheck::run(int max_moves)
       }
     }
   }
+  if (table) {
+    logger_->report("{:->75}", "");
+  }
   const StaSlack after = staSlack(sta_, *guard_);
   logger_->info(utl::RET,
                 53,
-                "STA check: {} slides kept in {} rounds; worst slack {} -> {}, "
-                "total negative slack {} -> {}; registers {} -> {}; {} new "
-                "cells placed, {} new registers changed cell.",
+                "Retime: slides {}, rounds {}, WNS {}, TNS {}, registers {}, "
+                "placed {}, resized {}.",
                 total,
                 rounds_kept,
-                sta::delayAsString(before.worst, 4, sta_),
                 sta::delayAsString(after.worst, 4, sta_),
-                sta::delayAsString(before.total, 4, sta_),
                 sta::delayAsString(after.total, 4, sta_),
-                registers_before,
                 registerCount(),
                 placed.placed,
                 placed.resized);
 }
 
-StaCheck::Trial StaCheck::runTrial(int limit,
-                                   const StaSlack& before,
-                                   int number)
+StaCheck::Trial StaCheck::runTrial(int limit, const StaSlack& before)
 {
   const std::unordered_set<odb::dbInst*> unplaced = unplacedCells();
   Trial trial{.slides = 0, .slack = before, .placed = {}};
@@ -144,20 +171,11 @@ StaCheck::Trial StaCheck::runTrial(int limit,
     if (trial.slides > 0) {
       trial.placed = placer_->placeNewCells(block_, unplaced, *guard_);
       trial.slack = staSlack(sta_, *guard_);
+      ++trials_;
     }
   } catch (...) {
     odb::dbDatabase::undoEco(block_);
     throw;
-  }
-  if (trial.slides > 0 && number > 0) {
-    logger_->info(utl::RET,
-                  50,
-                  "STA check round {}: {} slides give worst slack {}, total "
-                  "negative slack {}.",
-                  number,
-                  trial.slides,
-                  sta::delayAsString(trial.slack.worst, 4, sta_),
-                  sta::delayAsString(trial.slack.total, 4, sta_));
   }
   return trial;
 }
@@ -169,26 +187,22 @@ void StaCheck::undoTrial()
   guard_->update();
 }
 
-void StaCheck::keepTrial(const Trial& trial, int number, Round& round)
+void StaCheck::keepTrial(const Trial& trial, Round& round)
 {
   odb::dbDatabase::commitEco(block_);
-  logger_->info(utl::RET,
-                51,
-                "STA check round {}: {} slides kept.",
-                number,
-                trial.slides);
   round.kept = trial.slides;
+  round.slack = trial.slack;
   round.placed = trial.placed;
 }
 
-int StaCheck::bestPrefix(int slides, const StaSlack& before, int number)
+int StaCheck::bestPrefix(int slides, const StaSlack& before)
 {
   constexpr int kMaxTrials = 12;
   int best_limit = 0;
   StaSlack best = before;
   int limit = slides / 2;
   for (int tried = 1; tried < kMaxTrials && limit > 0; ++tried) {
-    const Trial trial = runTrial(limit, before, number);
+    const Trial trial = runTrial(limit, before);
     undoTrial();
     if (trial.slides == 0) {
       break;
@@ -205,38 +219,30 @@ int StaCheck::bestPrefix(int slides, const StaSlack& before, int number)
   return best_limit;
 }
 
-StaCheck::Round StaCheck::runRound(int number, int max_moves)
+StaCheck::Round StaCheck::runRound(int max_moves)
 {
+  trials_ = 0;
   const StaSlack before = staSlack(sta_, *guard_);
-  const Trial full = runTrial(max_moves, before, number);
-  Round round{.kept = 0, .proposed = full.slides, .placed = {}};
-  if (full.slides == 0) {
+  Round round;
+  round.slack = before;
+  const Trial full = runTrial(max_moves, before);
+  round.proposed = full.slides;
+  if (full.slides > 0 && betterThan(full.slack, before, before)) {
+    keepTrial(full, round);
+  } else {
     undoTrial();
-    logger_->info(utl::RET,
-                  52,
-                  "STA check round {}: the search proposes no slide.",
-                  number);
-    return round;
-  }
-  if (betterThan(full.slack, before, before)) {
-    keepTrial(full, number, round);
-    return round;
-  }
-  undoTrial();
-  const int limit = bestPrefix(full.slides, before, number);
-  if (limit > 0) {
-    const Trial again = runTrial(limit, before, 0);
-    if (betterThan(again.slack, before, before)) {
-      keepTrial(again, number, round);
-      return round;
+    const int limit
+        = full.slides > 0 ? bestPrefix(full.slides, before) : 0;
+    if (limit > 0) {
+      const Trial again = runTrial(limit, before);
+      if (betterThan(again.slack, before, before)) {
+        keepTrial(again, round);
+      } else {
+        undoTrial();
+      }
     }
-    undoTrial();
   }
-  logger_->info(utl::RET,
-                54,
-                "STA check round {}: no number of slides is better than "
-                "the start; nothing kept.",
-                number);
+  round.trials = trials_;
   return round;
 }
 

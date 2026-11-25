@@ -1,14 +1,13 @@
-# A register fed straight from an input port has no gate in front of it, so
-# the gate that reads it is never crossed; an independent cone still
-# retimes.  The result is proven sequentially equivalent with ABC dsec when
-# EQUIVALENCE_CHECK is set.
+# A register fed straight from an input port has no gate in front of it, so the
+# gate that reads it is never crossed; an independent cone still retimes.  The
+# result is proven sequentially equivalent with ABC dsec.
 source "helpers.tcl"
 source "ret_helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_verilog retime_dsec_port_fed.v
 link_design top
-create_clock -period 1.0 clk
+create_clock -period 0.15 clk
 
 write_verilog_for_dsec retime_dsec_port_fed before
 report_worst_slack -max -digits 4

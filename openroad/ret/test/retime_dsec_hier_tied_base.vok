@@ -60,8 +60,8 @@ module core (a,
  sg13g2_inv_1 g6 (.Y(n5),
     .A(n4));
  sg13g2_inv_1 g7 (.Y(n6),
-    .A(n5));
- sg13g2_and2_1 g8 (.A(ret_net_4),
+    .A(ret_net_4));
+ sg13g2_and2_1 g8 (.A(n6),
     .B(rn),
     .X(d3));
  sg13g2_buf_1 g9 (.A(q3),
@@ -72,7 +72,7 @@ module core (a,
     .Q(q3));
  sg13g2_dfrbp_1 ret_ff_4 (.CLK(ck),
     .RESET_B(ret_net_5),
-    .D(n6),
+    .D(n5),
     .Q(ret_net_4));
  sg13g2_tiehi ret_tie_5 (.L_HI(ret_net_5));
  sg13g2_tiehi t3 (.L_HI(hi3));

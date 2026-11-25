@@ -1,7 +1,7 @@
-# Unmapping two levels down a hierarchical netlist: the inverting registers
-# of each leaf module become plain registers plus inverters created in that
-# leaf.  The module nets are checked, and the result is proven sequentially
-# equivalent with ABC dsec when EQUIVALENCE_CHECK is set.
+# Unmapping two levels down a hierarchical netlist: the inverting registers of
+# each leaf module become plain registers plus inverters created in that leaf.
+# The module nets are checked, and the result is proven sequentially equivalent
+# with ABC dsec.
 source "helpers.tcl"
 source "ret_helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib

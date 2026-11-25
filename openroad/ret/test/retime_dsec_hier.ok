@@ -1,19 +1,14 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
-worst slack max 0.8014
+worst slack max -0.0486
 [INFO RET-0014] Retiming graph: 17 gates, 15 edges, 5 registers, 9 pinned gates, 0 fenced registers.
-
- Slide | Flops | Sinks | Max wr | gate                 | fanout net
--------------------------------------------------------------------
-     1 |     2 |     1 |      1 | u_core/g2            | u_core/n1
-     2 |     0 |     1 |      1 | u_core/g3            | u_core/n2
-     3 |     0 |     1 |      1 | u_core/g4            | u_core/n3
-     4 |     0 |     1 |      1 | u_core/g5            | u_core/n4
-     5 |     0 |     1 |      1 | u_core/g6            | u_core/n5
-     6 |     0 |     1 |      1 | u_core/g7            | u_core/n6
--------------------------------------------------------------------
-[INFO RET-0023] Retime found 6 slides.
-[INFO RET-0024] Rebuilt 3 of 15 register groups: 2 registers removed, 1 inserted, 0 of them keeping their class.
-worst slack max 0.8249
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.0486 |       -0.0738 |         5
+     1 |        5 |      1 |    5 |     -0.0251 |       -0.0296 |         4
+     2 |        1 |      1 |    1 |     -0.0251 |       -0.0251 |         4
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 6, rounds 2, WNS -0.0251, TNS -0.0251, registers 4, placed 0, resized 0.
+worst slack max -0.0251
 Retime output passed/skipped sequential equivalence test
 No differences found.

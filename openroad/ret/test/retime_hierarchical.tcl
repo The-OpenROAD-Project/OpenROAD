@@ -6,7 +6,7 @@ read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_verilog retime_hierarchical.v
 link_design -hier top
-create_clock -period 1.0 clk
+create_clock -period 0.1 clk
 
 retime
 check_axioms

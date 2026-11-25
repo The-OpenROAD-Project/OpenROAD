@@ -10,7 +10,7 @@ link_design top
 initialize_floorplan -die_area "0 0 1000 20" \
   -core_area "0 0 1000 20" \
   -site FreePDK45_38x28_10R_NP_162NW_34O
-create_clock -period 1.0 clk
+create_clock -period 0.14 clk
 
 # Placed locations in microns.
 proc place_inst { name x } {

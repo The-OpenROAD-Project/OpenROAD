@@ -214,8 +214,7 @@ void Retimer::retime(int max_moves)
     logger_->error(
         utl::RET,
         36,
-        "The loaded libraries lack a usable base register, inverter, 2-input "
-        "AND or 2-input OR cell (see the warnings above).");
+        "Required library cells are missing; see the warnings above.");
   }
   checkRegisters(block);
 
@@ -241,8 +240,8 @@ void Retimer::retime(int max_moves)
   if (after.placed > 0 && after.unplaced > unplaced_before) {
     logger_->info(utl::RET,
                   45,
-                  "New instances left unplaced: {}. Run global_placement "
-                  "-incremental to place them.",
+                  "{} new cells are unplaced; run global_placement "
+                  "-incremental.",
                   after.unplaced - unplaced_before);
   }
 }
@@ -322,8 +321,8 @@ int Retimer::applyAfterUnmapping(const RetimingGraph& graph,
   }
   logger_->error(utl::RET,
                  37,
-                 "Retiming did not settle after {} rounds of unmapping "
-                 "registers; the retiming is not applied.",
+                 "Unmapping did not settle after {} rounds; retiming not "
+                 "applied.",
                  kMaxRounds);
   return 0;
 }
@@ -353,8 +352,8 @@ void Retimer::checkRegisters(odb::dbBlock* block)
   if (negedge > 0) {
     logger_->error(utl::RET,
                    35,
-                   "{} negative-edge registers found; only positive-edge "
-                   "registers can be retimed.",
+                   "{} negative-edge registers found; retime supports "
+                   "positive-edge registers only.",
                    negedge);
   }
 }
@@ -515,8 +514,7 @@ void Retimer::removeRegister(odb::dbInst* inst)
   if (cls.kind == RegisterKind::kOther || d_net == nullptr) {
     logger_->error(utl::RET,
                    39,
-                   "Register {} cannot be bypassed; the retiming is not "
-                   "applied.",
+                   "Cannot bypass register {}; retiming not applied.",
                    inst->getName());
   }
   // In a hierarchical netlist the loads are in the register's module, so
@@ -716,8 +714,8 @@ std::vector<const RegisterClass*> Retimer::chainClasses(
     if (cls.kind == RegisterKind::kOther || cls.data == nullptr) {
       logger_->error(utl::RET,
                      40,
-                     "Register {} on net {} cannot be rebuilt; the retiming "
-                     "is not applied.",
+                     "Cannot rebuild register {} on net {}; retiming not "
+                     "applied.",
                      f->getName(),
                      group.driver_net->getName());
     }
@@ -748,8 +746,8 @@ std::vector<const RegisterClass*> Retimer::chainClasses(
         if (!consistent) {
           logger_->error(utl::RET,
                          38,
-                         "Register classes on net {} cannot be rebuilt as "
-                         "one chain; the retiming is not applied.",
+                         "Registers on net {} cannot form one chain; "
+                         "retiming not applied.",
                          group.driver_net->getName());
         }
       }
@@ -771,8 +769,8 @@ void Retimer::checkMoves(const RetimingGraph& graph,
           || !moveKeepsClass(graph, regs, v)) {
         logger_->error(utl::RET,
                        41,
-                       "The registers moved across {} are not one class that "
-                       "can cross it; the retiming is not applied.",
+                       "Registers of different classes cannot cross {}; "
+                       "retiming not applied.",
                        graph.nodes()[v]->getName());
       }
     }
@@ -842,8 +840,8 @@ void Retimer::applyRetiming(const RetimingGraph& graph,
     if (groups[i].dont_touch) {
       logger_->error(utl::RET,
                      27,
-                     "The registers on net {} include a don't-touch register "
-                     "and cannot be rebuilt; the retiming is not applied.",
+                     "Net {} has a don't-touch register; retiming not "
+                     "applied.",
                      groups[i].driver_net->getName());
     }
     classes[i] = chainClasses(graph, fanin, r, groups[i]);

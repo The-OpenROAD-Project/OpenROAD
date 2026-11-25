@@ -1,7 +1,6 @@
-# A register that drives only an output port keeps its depth, so the gate
-# in front of it is never crossed; the gates before that one still are.
-# The result is proven sequentially equivalent with ABC dsec when
-# EQUIVALENCE_CHECK is set.
+# A register that drives only an output port keeps its depth, so the gate in
+# front of it is never crossed; the gates before that one still are. The result
+# is proven sequentially equivalent with ABC dsec.
 source "helpers.tcl"
 source "ret_helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib

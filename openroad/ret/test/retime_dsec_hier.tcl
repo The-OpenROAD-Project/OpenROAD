@@ -1,14 +1,13 @@
-# A hierarchical netlist: registers merge and slide inside one module and
-# stay put at a module boundary.  The module nets are checked, and the
-# result is proven sequentially equivalent with ABC dsec when
-# EQUIVALENCE_CHECK is set.
+# A hierarchical netlist: registers merge and slide inside one module and stay
+# put at a module boundary.  The module nets are checked, and the result is
+# proven sequentially equivalent with ABC dsec.
 source "helpers.tcl"
 source "ret_helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_verilog retime_dsec_hier.v
 link_design -hier top
-create_clock -period 1.0 clk
+create_clock -period 0.15 clk
 
 write_verilog_for_dsec retime_dsec_hier before
 report_worst_slack -max -digits 4

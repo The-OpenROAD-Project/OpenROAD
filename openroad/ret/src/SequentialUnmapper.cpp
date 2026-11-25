@@ -81,9 +81,8 @@ bool SequentialUnmapper::prepare()
       && !findTiedBaseSequentialCell(false, seq_)) {
     logger_->warn(utl::RET,
                   1,
-                  "No usable register cell found: a single-bit positive-edge "
-                  "D flip-flop is required, or one whose asynchronous "
-                  "controls tie cells can hold inactive.");
+                  "No usable base register; a positive-edge D flip-flop "
+                  "is needed.");
     ok = false;
   }
   reportTiedBase();
@@ -116,8 +115,7 @@ void SequentialUnmapper::reportTiedBase() const
   if (!ties.empty()) {
     logger_->info(utl::RET,
                   47,
-                  "The libraries have no plain D flip-flop; new registers "
-                  "are {} with {}.",
+                  "No plain D flip-flop; new registers are {} with {}.",
                   seq_.master->getName(),
                   ties);
   }
@@ -437,8 +435,8 @@ void SequentialUnmapper::reportRun(const Untouched& untouched) const
   if (skipped_ > 0) {
     logger_->warn(utl::RET,
                   9,
-                  "{} registers were left as they are: their next_state "
-                  "needs a cell the libraries do not have.",
+                  "{} registers not unmapped; their next state needs a "
+                  "missing cell.",
                   skipped_);
   }
   const int total
@@ -446,8 +444,8 @@ void SequentialUnmapper::reportRun(const Untouched& untouched) const
   if (total > 0) {
     logger_->warn(utl::RET,
                   10,
-                  "Left {} sequential cells as they are: {} with asynchronous "
-                  "controls, {} latches, {} scan cells, {} of another kind.",
+                  "{} sequential cells not retimed: {} asynchronous, {} "
+                  "latches, {} scan, {} other.",
                   total,
                   untouched.async,
                   untouched.latches,
@@ -499,8 +497,7 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
                utl::RET,
                "unmap",
                1,
-               "skip {} ({}): next_state not expressible with the base cell "
-               "and gates found",
+               "skip {}, cell {}: no gates for its next state",
                inst->getName(),
                inst->getMaster()->getName());
     ++skipped_;

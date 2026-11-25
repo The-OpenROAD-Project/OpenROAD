@@ -2,9 +2,10 @@
 // feed one NAND: they are one class and merge into a single edfxtp after the
 // gate, still enabled by `en`.  r4 (enable `en2`) and r6 (enable `en`) feed
 // g10: a mixed-class gate, so both are unmapped to plain registers before
-// they merge.  rst_n is a synchronous reset in logic and the enables are
-// forced on while it is asserted, so every register settles to a defined
-// value for the sequential equivalence check.
+// they merge; the delay buffer g12 makes that slide pay for the unmap
+// gates.  rst_n is a synchronous reset in logic and the enables are forced
+// on while it is asserted, so every register settles to a defined value for
+// the sequential equivalence check.
 module top (a, b, c, d, en_i, en2_i, rst_n, clk, y, z);
   input a;
   input b;
@@ -42,10 +43,11 @@ module top (a, b, c, d, en_i, en2_i, rst_n, clk, y, z);
   sky130_fd_sc_hd__dfxtp_1 r3 (.D(d3), .CLK(clk), .Q(q3));
   sky130_fd_sc_hd__buf_1 g9 (.A(q3), .X(y));
 
-  // Mixed-class cone: r4 (en2) and r6 (en) -> NOR -> inverters -> r5.
+  // Mixed-class cone: r4 (en2) and r6 (en) -> NOR -> inverters and a delay
+  // buffer -> r5.
   sky130_fd_sc_hd__nor2_1 g10 (.A(q4), .B(q6), .Y(m1));
   sky130_fd_sc_hd__inv_1 g11 (.A(m1), .Y(m2));
-  sky130_fd_sc_hd__inv_1 g12 (.A(m2), .Y(m3));
+  sky130_fd_sc_hd__clkdlybuf4s15_1 g12 (.A(m2), .X(m3));
   sky130_fd_sc_hd__inv_1 g13 (.A(m3), .Y(m4));
   sky130_fd_sc_hd__inv_1 g14 (.A(m4), .Y(m5));
   sky130_fd_sc_hd__inv_1 g15 (.A(m5), .Y(m6));

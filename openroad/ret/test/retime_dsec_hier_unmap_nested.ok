@@ -2,43 +2,7 @@
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
 worst slack max 0.8170
 [INFO RET-0014] Retiming graph: 18 gates, 16 edges, 6 registers, 8 pinned gates, 0 fenced registers.
-
- Slide | Flops | Sinks | Max wr | gate                 | fanout net
--------------------------------------------------------------------
-     1 |     2 |     1 |      1 | u_mid/u_a/g2         | u_mid/u_a/n1
-     2 |     0 |     1 |      1 | u_mid/u_a/g3         | u_mid/u_a/n2
-     3 |     2 |     1 |      1 | u_mid/u_b/g2         | u_mid/u_b/n1
-     4 |     0 |     1 |      1 | u_mid/u_a/g4         | u_mid/u_a/n3
-     5 |     0 |     1 |      1 | u_mid/u_b/g3         | u_mid/u_b/n2
-     6 |     0 |     1 |      1 | u_mid/u_a/g5         | u_mid/u_a/n4
-     7 |     0 |     1 |      1 | u_mid/u_b/g4         | u_mid/u_b/n3
-     8 |     0 |     1 |      1 | u_mid/u_a/g6         | u_mid/u_a/n5
-     9 |     0 |     1 |      1 | u_mid/u_b/g5         | u_mid/u_b/n4
-    10 |     0 |     1 |      1 | u_mid/u_a/g7         | u_mid/u_a/n6
--------------------------------------------------------------------
-[INFO RET-0023] Retime found 10 slides.
-[INFO RET-0008] Unmapped 4 registers.
-[INFO RET-0043] Iteration 2: repeating the search on the netlist with the unmapped registers.
-
- Slide | Flops | Sinks | Max wr | gate                 | fanout net
--------------------------------------------------------------------
-     1 |     1 |     1 |      1 | u_mid/u_a/unmap_inv_4 | u_mid/u_a/unmap_net_4
-     2 |     1 |     1 |      1 | u_mid/u_a/unmap_inv_2 | u_mid/u_a/unmap_net_2
-     3 |     0 |     1 |      1 | u_mid/u_a/g2         | u_mid/u_a/n1
-     4 |     1 |     1 |      1 | u_mid/u_b/unmap_inv_8 | u_mid/u_b/unmap_net_8
-     5 |     1 |     1 |      1 | u_mid/u_b/unmap_inv_6 | u_mid/u_b/unmap_net_6
-     6 |     0 |     1 |      1 | u_mid/u_a/g3         | u_mid/u_a/n2
-     7 |     0 |     1 |      1 | u_mid/u_b/g2         | u_mid/u_b/n1
-     8 |     0 |     1 |      1 | u_mid/u_a/g4         | u_mid/u_a/n3
-     9 |     0 |     1 |      1 | u_mid/u_b/g3         | u_mid/u_b/n2
-    10 |     0 |     1 |      1 | u_mid/u_a/g5         | u_mid/u_a/n4
-    11 |     0 |     1 |      1 | u_mid/u_b/g4         | u_mid/u_b/n3
-    12 |     0 |     1 |      1 | u_mid/u_a/g6         | u_mid/u_a/n5
-    13 |     0 |     1 |      1 | u_mid/u_b/g5         | u_mid/u_b/n4
-    14 |     0 |     1 |      1 | u_mid/u_a/g7         | u_mid/u_a/n6
--------------------------------------------------------------------
-[INFO RET-0023] Retime found 14 slides.
-[INFO RET-0024] Rebuilt 6 of 20 register groups: 4 registers removed, 2 inserted, 0 of them keeping their class.
-worst slack max 0.8576
+[INFO RET-0053] Retime: slides 0, rounds 0, WNS 0.8170, TNS 0.0000, registers 6, placed 0, resized 0.
+worst slack max 0.8170
 Retime output passed/skipped sequential equivalence test
 No differences found.

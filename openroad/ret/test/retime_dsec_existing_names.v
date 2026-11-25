@@ -7,7 +7,9 @@
 //           ret_ff_0 / ret_net_0 are taken by the output register and
 //           ret_net_1 by a net, so the new registers start at ret_ff_2.
 //   cone 2  r4, r5 (read through QN) -> NAND: both are unmapped first, which
-//           creates unmap_* cells next to the ones already there.
+//           creates unmap_* cells next to the ones already there.  g13 is
+//           an INV_X16: its load slows g12 enough that the first slide
+//           across g12 pays for the inverter the unmapping adds.
 // rst_n is a synchronous reset in logic, so every register settles to a
 // defined value for the sequential equivalence check.
 module top (a, b, c, e, rst_n, clk, y, z);
@@ -40,7 +42,7 @@ module top (a, b, c, e, rst_n, clk, y, z);
   DFF_X1 r4 (.D(d4), .CK(clk), .QN(q4n));
   DFF_X1 r5 (.D(d5), .CK(clk), .QN(q5n));
   NAND2_X1 g12 (.A1(q4n), .A2(q5n), .ZN(m1));
-  INV_X1 g13 (.A(m1), .ZN(m2));
+  INV_X16 g13 (.A(m1), .ZN(m2));
   INV_X1 g14 (.A(m2), .ZN(m3));
   INV_X1 g15 (.A(m3), .ZN(m4));
   INV_X1 g16 (.A(m4), .ZN(unmap_net_3));

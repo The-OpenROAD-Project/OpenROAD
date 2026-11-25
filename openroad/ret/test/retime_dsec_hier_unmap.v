@@ -4,7 +4,9 @@
 // (enable `en2`) and r6 (enable `en`) feed g10: a mixed-class gate, so both
 // are unmapped to plain registers before they merge, and the cells that
 // replace them are created inside `core`, on the module's own enable and
-// clock ports.  rst_n is a synchronous reset in logic and the enables are
+// clock ports.  Delay buffers after g10 make the path after the gate longer
+// than the hold loop of an unmapped register, so the first slide pays.
+// rst_n is a synchronous reset in logic and the enables are
 // forced on while it is asserted, so every register settles to a defined
 // value for the sequential equivalence check.
 module core (a, b, c, d, en, en2, rn, ck, y, z);
@@ -30,22 +32,23 @@ module core (a, b, c, d, en, en2, rn, ck, y, z);
   sky130_fd_sc_hd__edfxtp_1 r4 (.D(d4), .DE(en2), .CLK(ck), .Q(q4));
   sky130_fd_sc_hd__edfxtp_1 r6 (.D(d6), .DE(en), .CLK(ck), .Q(q6));
 
-  // Same-class cone: r1, r2 -> NAND -> inverters -> r3.
+  // Same-class cone: r1, r2 -> NAND -> inverters and delay buffers -> r3.
   sky130_fd_sc_hd__nand2_1 g2 (.A(q1), .B(q2), .Y(n1));
   sky130_fd_sc_hd__inv_1 g3 (.A(n1), .Y(n2));
-  sky130_fd_sc_hd__inv_1 g4 (.A(n2), .Y(n3));
-  sky130_fd_sc_hd__inv_1 g5 (.A(n3), .Y(n4));
+  sky130_fd_sc_hd__dlygate4sd1_1 g4 (.A(n2), .X(n3));
+  sky130_fd_sc_hd__dlygate4sd1_1 g5 (.A(n3), .X(n4));
   sky130_fd_sc_hd__inv_1 g6 (.A(n4), .Y(n5));
   sky130_fd_sc_hd__inv_1 g7 (.A(n5), .Y(n6));
   sky130_fd_sc_hd__and2_1 g8 (.A(n6), .B(rn), .X(d3));
   sky130_fd_sc_hd__dfxtp_1 r3 (.D(d3), .CLK(ck), .Q(q3));
   sky130_fd_sc_hd__buf_1 g9 (.A(q3), .X(y));
 
-  // Mixed-class cone: r4 (en2) and r6 (en) -> NOR -> inverters -> r5.
+  // Mixed-class cone: r4 (en2) and r6 (en) -> NOR -> inverters and delay
+  // buffers -> r5.
   sky130_fd_sc_hd__nor2_1 g10 (.A(q4), .B(q6), .Y(m1));
   sky130_fd_sc_hd__inv_1 g11 (.A(m1), .Y(m2));
-  sky130_fd_sc_hd__inv_1 g12 (.A(m2), .Y(m3));
-  sky130_fd_sc_hd__inv_1 g13 (.A(m3), .Y(m4));
+  sky130_fd_sc_hd__dlygate4sd1_1 g12 (.A(m2), .X(m3));
+  sky130_fd_sc_hd__dlygate4sd1_1 g13 (.A(m3), .X(m4));
   sky130_fd_sc_hd__inv_1 g14 (.A(m4), .Y(m5));
   sky130_fd_sc_hd__inv_1 g15 (.A(m5), .Y(m6));
   sky130_fd_sc_hd__and2_1 g16 (.A(m6), .B(rn), .X(d5));

@@ -1,4 +1,4 @@
 [INFO ODB-0227] LEF file: sequnmap_basic.lef, created 1 layers, 11 library cells
 [INFO ODB-0227] LEF file: sequnmap_seq_active_low.lef, created 6 library cells
-[ERROR RET-0035] 1 negative-edge registers found; only positive-edge registers can be retimed.
+[ERROR RET-0035] 1 negative-edge registers found; retime supports positive-edge registers only.
 RET-0035

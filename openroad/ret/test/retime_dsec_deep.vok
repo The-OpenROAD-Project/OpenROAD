@@ -24,8 +24,8 @@ module top (a,
  wire n7;
  wire n8;
  wire q3;
- wire ret_net_2;
- wire ret_net_1;
+ wire ret_net_3;
+ wire ret_net_4;
  wire rst;
 
  sky130_fd_sc_hd__and2_1 g0 (.A(a),
@@ -44,15 +44,15 @@ module top (a,
     .Y(n1));
  sky130_fd_sc_hd__inv_1 g3 (.A(n1),
     .Y(n2));
- sky130_fd_sc_hd__inv_1 g4 (.A(ret_net_1),
+ sky130_fd_sc_hd__inv_1 g4 (.A(n2),
     .Y(n3));
- sky130_fd_sc_hd__inv_1 g5 (.A(n3),
+ sky130_fd_sc_hd__inv_1 g5 (.A(ret_net_4),
     .Y(n4));
  sky130_fd_sc_hd__inv_1 g6 (.A(n4),
     .Y(n5));
- sky130_fd_sc_hd__inv_1 g7 (.A(n5),
+ sky130_fd_sc_hd__inv_1 g7 (.A(ret_net_3),
     .Y(n6));
- sky130_fd_sc_hd__inv_1 g8 (.A(ret_net_2),
+ sky130_fd_sc_hd__inv_1 g8 (.A(n6),
     .Y(n7));
  sky130_fd_sc_hd__inv_1 g9 (.A(n7),
     .Y(n8));
@@ -64,11 +64,11 @@ module top (a,
  sky130_fd_sc_hd__dfxtp_1 r3 (.D(d3),
     .Q(q3),
     .CLK(clk));
- sky130_fd_sc_hd__dfxtp_1 ret_ff_1 (.D(n2),
-    .Q(ret_net_1),
-    .CLK(clk));
- sky130_fd_sc_hd__edfxtp_1 ret_ff_2 (.D(n6),
+ sky130_fd_sc_hd__edfxtp_1 ret_ff_3 (.D(n5),
     .DE(en),
-    .Q(ret_net_2),
+    .Q(ret_net_3),
+    .CLK(clk));
+ sky130_fd_sc_hd__dfxtp_1 ret_ff_4 (.D(n3),
+    .Q(ret_net_4),
     .CLK(clk));
 endmodule

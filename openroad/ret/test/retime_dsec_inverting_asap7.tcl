@@ -1,7 +1,6 @@
 # Inverting registers (asap7 DFFHQNx1 stores the complement of D): they keep
-# their cell across self-dual gates and are unmapped before any other gate.
-# The result is proven sequentially equivalent with ABC dsec when
-# EQUIVALENCE_CHECK is set.
+# their cell across self-dual gates and are unmapped before any other gate. The
+# result is proven sequentially equivalent with ABC dsec.
 source "helpers.tcl"
 source "ret_helpers.tcl"
 set libs [list \

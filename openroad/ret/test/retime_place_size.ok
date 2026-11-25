@@ -7,11 +7,13 @@
 [INFO IFP-0104] Effective utilization:                0.004
 [INFO IFP-0105] Number of instances:                     13
 worst slack max -1.1237
-[INFO RET-0049] STA check: before retiming, worst slack -1.1237, total negative slack -1.1237.
-[INFO RET-0050] STA check round 1: 2 slides give worst slack -0.3913, total negative slack -0.3913.
-[INFO RET-0051] STA check round 1: 2 slides kept.
-[INFO RET-0052] STA check round 2: the search proposes no slide.
-[INFO RET-0053] STA check: 2 slides kept in 1 rounds; worst slack -1.1237 -> -0.3913, total negative slack -1.1237 -> -0.3913; registers 3 -> 2; 1 new cells placed, 1 new registers changed cell.
+[INFO RET-0014] Retiming graph: 10 gates, 9 edges, 3 registers, 4 pinned gates, 0 fenced registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -1.1237 |       -1.1237 |         3
+     1 |        2 |      1 |    2 |     -0.3913 |       -0.3913 |         2
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 2, rounds 1, WNS -0.3913, TNS -0.3913, registers 2, placed 1, resized 1.
 worst slack max -0.3913
 ret_ff_1 is a DFF_X2
 Retime output passed/skipped sequential equivalence test

@@ -1,25 +1,12 @@
 [INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
 [INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
-worst slack max 4.1116
+worst slack max -0.3884
 [INFO RET-0014] Retiming graph: 16 gates, 15 edges, 2 registers, 2 pinned gates, 0 fenced registers.
-
- Slide | Flops | Sinks | Max wr | gate                 | fanout net
--------------------------------------------------------------------
-     1 |     1 |     1 |      1 | g1                   | n1
-     2 |     0 |     1 |      1 | g2                   | n2
-     3 |     0 |     1 |      1 | g3                   | n3
-     4 |     0 |     1 |      1 | g4                   | n4
-     5 |     0 |     1 |      1 | g5                   | n5
-     6 |     0 |     1 |      1 | g6                   | n6
-     7 |     0 |     1 |      1 | g7                   | n7
-     8 |     0 |     1 |      1 | g8                   | n8
-     9 |     0 |     1 |      1 | g9                   | n9
-    10 |     0 |     1 |      1 | g10                  | n10
-    11 |     0 |     1 |      1 | g11                  | n11
-    12 |     0 |     1 |      1 | g12                  | n12
-    13 |     0 |     1 |      1 | g13                  | n13
--------------------------------------------------------------------
-[INFO RET-0023] Retime found 13 slides.
-[INFO RET-0024] Rebuilt 2 of 15 register groups: 1 registers removed, 1 inserted, 1 of them keeping their class.
-worst slack max 4.5656
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.3884 |       -0.3884 |         2
+     1 |        9 |      1 |    9 |     -0.0590 |       -0.0590 |         2
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 9, rounds 1, WNS -0.0590, TNS -0.0590, registers 2, placed 0, resized 0.
+worst slack max -0.0590
 No differences found.

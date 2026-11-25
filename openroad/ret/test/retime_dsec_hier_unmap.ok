@@ -1,41 +1,16 @@
 [INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
 [INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
-worst slack max 4.1822
+worst slack max -0.1785
 [INFO RET-0014] Retiming graph: 23 gates, 20 edges, 6 registers, 11 pinned gates, 0 fenced registers.
-
- Slide | Flops | Sinks | Max wr | gate                 | fanout net
--------------------------------------------------------------------
-     1 |     2 |     1 |      1 | u_core/g10           | u_core/m1
-     2 |     2 |     1 |      1 | u_core/g2            | u_core/n1
-     3 |     0 |     1 |      1 | u_core/g3            | u_core/n2
-     4 |     0 |     1 |      1 | u_core/g11           | u_core/m2
-     5 |     0 |     1 |      1 | u_core/g12           | u_core/m3
-     6 |     0 |     1 |      1 | u_core/g4            | u_core/n3
-     7 |     0 |     1 |      1 | u_core/g5            | u_core/n4
-     8 |     0 |     1 |      1 | u_core/g13           | u_core/m4
-     9 |     0 |     1 |      1 | u_core/g14           | u_core/m5
-    10 |     0 |     1 |      1 | u_core/g6            | u_core/n5
--------------------------------------------------------------------
-[INFO RET-0023] Retime found 10 slides.
 [INFO RET-0008] Unmapped 2 registers.
-[INFO RET-0043] Iteration 2: repeating the search on the netlist with the unmapped registers.
-
- Slide | Flops | Sinks | Max wr | gate                 | fanout net
--------------------------------------------------------------------
-     1 |     2 |     1 |      1 | u_core/g10           | u_core/m1
-     2 |     2 |     1 |      1 | u_core/g2            | u_core/n1
-     3 |     0 |     1 |      1 | u_core/g3            | u_core/n2
-     4 |     0 |     1 |      1 | u_core/g11           | u_core/m2
-     5 |     0 |     1 |      1 | u_core/g12           | u_core/m3
-     6 |     0 |     1 |      1 | u_core/g4            | u_core/n3
-     7 |     0 |     1 |      1 | u_core/g5            | u_core/n4
-     8 |     0 |     1 |      1 | u_core/g13           | u_core/m4
-     9 |     0 |     1 |      1 | u_core/g14           | u_core/m5
-    10 |     0 |     1 |      1 | u_core/g6            | u_core/n5
--------------------------------------------------------------------
-[INFO RET-0023] Retime found 10 slides.
-[INFO RET-0024] Rebuilt 6 of 29 register groups: 4 registers removed, 4 inserted, 1 of them keeping their class.
-worst slack max 4.1370
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.1785 |       -0.3164 |         6
+     1 |        4 |      1 |    4 |     -0.0521 |       -0.0521 |         6
+     2 |        1 |      1 |    1 |      0.0162 |        0.0000 |         6
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 5, rounds 2, WNS 0.0162, TNS 0.0000, registers 6, placed 0, resized 0.
+worst slack max 0.0162
 Retime output passed/skipped sequential equivalence test
 No differences found.

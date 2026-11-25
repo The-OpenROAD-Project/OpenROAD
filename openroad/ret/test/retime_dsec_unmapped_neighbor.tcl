@@ -1,6 +1,5 @@
 # Registers retimed forward across gates the unmapper built for another
-# register.  The result is proven sequentially equivalent with ABC dsec when
-# EQUIVALENCE_CHECK is set.
+# register.  The result is proven sequentially equivalent with ABC dsec.
 source "helpers.tcl"
 source "ret_helpers.tcl"
 read_lef sky130hd/sky130hd.tlef
@@ -8,7 +7,7 @@ read_lef sky130hd/sky130hd_std_cell.lef
 read_liberty sky130hd/sky130hd_tt.lib
 read_verilog retime_dsec_unmapped_neighbor.v
 link_design top
-create_clock -period 5.0 clk
+create_clock -period 0.45 clk
 
 proc unmap_gates_reading { net_name } {
   set gates {}

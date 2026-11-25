@@ -64,15 +64,15 @@ module top (a,
  sky130_fd_sc_hd__nor2_1 g10 (.A(unmap_net_5),
     .B(unmap_net_10),
     .Y(m1));
- sky130_fd_sc_hd__inv_1 g11 (.A(m1),
+ sky130_fd_sc_hd__inv_1 g11 (.A(ret_net_11),
     .Y(m2));
- sky130_fd_sc_hd__inv_1 g12 (.A(m2),
-    .Y(m3));
+ sky130_fd_sc_hd__clkdlybuf4s15_1 g12 (.A(m2),
+    .X(m3));
  sky130_fd_sc_hd__inv_1 g13 (.A(m3),
     .Y(m4));
  sky130_fd_sc_hd__inv_1 g14 (.A(m4),
     .Y(m5));
- sky130_fd_sc_hd__inv_1 g15 (.A(ret_net_11),
+ sky130_fd_sc_hd__inv_1 g15 (.A(m5),
     .Y(m6));
  sky130_fd_sc_hd__and2_1 g16 (.A(m6),
     .B(rst_n),
@@ -88,7 +88,7 @@ module top (a,
  sky130_fd_sc_hd__nand2_1 g2 (.A(d1),
     .B(d2),
     .Y(n1));
- sky130_fd_sc_hd__inv_1 g3 (.A(n1),
+ sky130_fd_sc_hd__inv_1 g3 (.A(ret_net_12),
     .Y(n2));
  sky130_fd_sc_hd__inv_1 g4 (.A(n2),
     .Y(n3));
@@ -96,7 +96,7 @@ module top (a,
     .Y(n4));
  sky130_fd_sc_hd__inv_1 g6 (.A(n4),
     .Y(n5));
- sky130_fd_sc_hd__inv_1 g7 (.A(ret_net_12),
+ sky130_fd_sc_hd__inv_1 g7 (.A(n5),
     .Y(n6));
  sky130_fd_sc_hd__and2_1 g8 (.A(n6),
     .B(rst_n),
@@ -117,10 +117,10 @@ module top (a,
  sky130_fd_sc_hd__dfxtp_1 r5 (.D(d5),
     .Q(q5),
     .CLK(clk));
- sky130_fd_sc_hd__dfxtp_1 ret_ff_11 (.D(m5),
+ sky130_fd_sc_hd__dfxtp_1 ret_ff_11 (.D(m1),
     .Q(ret_net_11),
     .CLK(clk));
- sky130_fd_sc_hd__edfxtp_1 ret_ff_12 (.D(n5),
+ sky130_fd_sc_hd__edfxtp_1 ret_ff_12 (.D(n1),
     .DE(en),
     .Q(ret_net_12),
     .CLK(clk));
