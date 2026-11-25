@@ -181,6 +181,7 @@ cc_library(
         "//openroad/gpl:__subpackages__",
     ],
     deps = [
+        "//openroad/cts",
         "//openroad/dbSta",
         "//openroad/dbSta:dbNetwork",
         "//openroad/grt",
@@ -189,6 +190,7 @@ cc_library(
         "//openroad/rsz",
         "//openroad/sta:opensta_lib",
         "//openroad/utl",
+        "//third-party/core-math",
         "@abseil-cpp//absl/container:inlined_vector",
         "@boost.polygon",
         "@boost.random",

@@ -1248,6 +1248,21 @@ TEST(BrowserLaunchSkipReason, VsCodeNeedsBothVariables)
   EXPECT_FALSE(launchesThroughBrowserEnv(profile_browser));
 }
 
+TEST(BrowserLaunchCommand, KeepsTheUrlOneArgument)
+{
+  const std::string url = "http://localhost:1/?ticket=a' b; $(id) `id`";
+#ifdef __APPLE__
+  const std::string opener = "open";
+#else
+  const std::string opener = "xdg-open";
+#endif
+  EXPECT_EQ(browserLaunchCommand(localEnv(), url),
+            (std::vector<std::string>{opener, url}));
+  const BrowserEnv vscode = vsCodeEnv();
+  EXPECT_EQ(browserLaunchCommand(vscode, url),
+            (std::vector<std::string>{vscode.browser, url}));
+}
+
 TEST(BrowserLaunchSkipReason, WslDisplayIsTheUsersOwn)
 {
   // VcXsrv or X410 on the Windows side of WSL: another IP, the same user.

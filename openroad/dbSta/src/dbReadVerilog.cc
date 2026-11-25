@@ -142,6 +142,7 @@ class Verilog2db
                           dbVerilogNetwork* verilog_network,
                           bool link_make_black_boxes);
   void restoreTopBlock(const char* orig_top_cell_name);
+  bool linkModule(const char* module_name, dbVerilogNetwork* verilog_network);
 
  private:
   struct LineInfo
@@ -224,6 +225,19 @@ bool dbLinkDesign(const char* top_cell_name,
   }
 
   return success;
+}
+
+bool dbLinkModule(const char* module_name,
+                  dbVerilogNetwork* verilog_network,
+                  dbDatabase* db,
+                  Logger* logger)
+{
+  // The loaded design's "src" property reads the database (dbSta's
+  // registerSrcAttributeProperties), not this Verilog network, so the
+  // Verilog source of the new module's instances is not recorded.
+  Verilog2db v2db(
+      verilog_network, db, logger, true, /*omit_filename_prop=*/true);
+  return v2db.linkModule(module_name, verilog_network);
 }
 
 Verilog2db::Verilog2db(Network* network,
@@ -1195,6 +1209,44 @@ void Verilog2db::processUnusedCells(const char* top_cell_name,
       block_->debugPrintContent(out_file);
     }
   }
+}
+
+//
+// linkModule: one module read after the design was loaded, linked into a
+// child block of the loaded design's top block, as processUnusedCells links
+// an unused module.
+//
+bool Verilog2db::linkModule(const char* module_name,
+                            dbVerilogNetwork* verilog_network)
+{
+  dbChip* chip = db_->getChip();
+  if (chip == nullptr || chip->getBlock() == nullptr) {
+    logger_->error(ORD, 2060, "link_hier_module: no design is loaded.");
+  }
+  dbBlock* top = chip->getBlock();
+  if (top->findModule(module_name) != nullptr) {
+    logger_->error(ORD,
+                   2061,
+                   "link_hier_module: the design already has a module {}.",
+                   module_name);
+  }
+  for (dbBlock* child : top->getChildren()) {
+    if (child->getName() == module_name) {
+      logger_->error(ORD,
+                     2062,
+                     "link_hier_module: module {} is already linked.",
+                     module_name);
+    }
+  }
+  if (!verilog_network->linkNetwork(
+          module_name, true, verilog_network->report())) {
+    return false;
+  }
+  top_block_ = top;
+  makeUnusedBlock(module_name);
+  makeUnusedDbNetlist();
+  block_ = top_block_;
+  return true;
 }
 
 //

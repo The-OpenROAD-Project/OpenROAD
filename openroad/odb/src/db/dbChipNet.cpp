@@ -100,7 +100,7 @@ void _dbChipNet::collectMemInfo(MemInfo& info)
 
 const std::string& dbChipNet::getName() const
 {
-  _dbChipNet* obj = (_dbChipNet*) this;
+  const _dbChipNet* obj = reinterpret_cast<const _dbChipNet*>(this);
   return obj->name_;
 }
 

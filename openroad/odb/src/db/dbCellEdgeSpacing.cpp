@@ -101,53 +101,57 @@ void _dbCellEdgeSpacing::collectMemInfo(MemInfo& info)
 
 void dbCellEdgeSpacing::setFirstEdgeType(const std::string& first_edge_type)
 {
-  _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
+  _dbCellEdgeSpacing* obj = reinterpret_cast<_dbCellEdgeSpacing*>(this);
 
   obj->first_edge_type_ = first_edge_type;
 }
 
 const std::string& dbCellEdgeSpacing::getFirstEdgeType() const
 {
-  _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
+  const _dbCellEdgeSpacing* obj
+      = reinterpret_cast<const _dbCellEdgeSpacing*>(this);
   return obj->first_edge_type_;
 }
 
 void dbCellEdgeSpacing::setSecondEdgeType(const std::string& second_edge_type)
 {
-  _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
+  _dbCellEdgeSpacing* obj = reinterpret_cast<_dbCellEdgeSpacing*>(this);
 
   obj->second_edge_type_ = second_edge_type;
 }
 
 const std::string& dbCellEdgeSpacing::getSecondEdgeType() const
 {
-  _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
+  const _dbCellEdgeSpacing* obj
+      = reinterpret_cast<const _dbCellEdgeSpacing*>(this);
   return obj->second_edge_type_;
 }
 
 void dbCellEdgeSpacing::setSpacing(int spacing)
 {
-  _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
+  _dbCellEdgeSpacing* obj = reinterpret_cast<_dbCellEdgeSpacing*>(this);
 
   obj->spacing_ = spacing;
 }
 
 int dbCellEdgeSpacing::getSpacing() const
 {
-  _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
+  const _dbCellEdgeSpacing* obj
+      = reinterpret_cast<const _dbCellEdgeSpacing*>(this);
   return obj->spacing_;
 }
 
 void dbCellEdgeSpacing::setExceptAbutted(bool except_abutted)
 {
-  _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
+  _dbCellEdgeSpacing* obj = reinterpret_cast<_dbCellEdgeSpacing*>(this);
 
   obj->flags_.except_abutted = except_abutted;
 }
 
 bool dbCellEdgeSpacing::isExceptAbutted() const
 {
-  _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
+  const _dbCellEdgeSpacing* obj
+      = reinterpret_cast<const _dbCellEdgeSpacing*>(this);
 
   return obj->flags_.except_abutted;
 }
@@ -155,56 +159,60 @@ bool dbCellEdgeSpacing::isExceptAbutted() const
 void dbCellEdgeSpacing::setExceptNonFillerInBetween(
     bool except_non_filler_in_between)
 {
-  _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
+  _dbCellEdgeSpacing* obj = reinterpret_cast<_dbCellEdgeSpacing*>(this);
 
   obj->flags_.except_non_filler_in_between = except_non_filler_in_between;
 }
 
 bool dbCellEdgeSpacing::isExceptNonFillerInBetween() const
 {
-  _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
+  const _dbCellEdgeSpacing* obj
+      = reinterpret_cast<const _dbCellEdgeSpacing*>(this);
 
   return obj->flags_.except_non_filler_in_between;
 }
 
 void dbCellEdgeSpacing::setOptional(bool optional)
 {
-  _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
+  _dbCellEdgeSpacing* obj = reinterpret_cast<_dbCellEdgeSpacing*>(this);
 
   obj->flags_.optional = optional;
 }
 
 bool dbCellEdgeSpacing::isOptional() const
 {
-  _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
+  const _dbCellEdgeSpacing* obj
+      = reinterpret_cast<const _dbCellEdgeSpacing*>(this);
 
   return obj->flags_.optional;
 }
 
 void dbCellEdgeSpacing::setSoft(bool soft)
 {
-  _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
+  _dbCellEdgeSpacing* obj = reinterpret_cast<_dbCellEdgeSpacing*>(this);
 
   obj->flags_.soft = soft;
 }
 
 bool dbCellEdgeSpacing::isSoft() const
 {
-  _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
+  const _dbCellEdgeSpacing* obj
+      = reinterpret_cast<const _dbCellEdgeSpacing*>(this);
 
   return obj->flags_.soft;
 }
 
 void dbCellEdgeSpacing::setExact(bool exact)
 {
-  _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
+  _dbCellEdgeSpacing* obj = reinterpret_cast<_dbCellEdgeSpacing*>(this);
 
   obj->flags_.exact = exact;
 }
 
 bool dbCellEdgeSpacing::isExact() const
 {
-  _dbCellEdgeSpacing* obj = (_dbCellEdgeSpacing*) this;
+  const _dbCellEdgeSpacing* obj
+      = reinterpret_cast<const _dbCellEdgeSpacing*>(this);
 
   return obj->flags_.exact;
 }

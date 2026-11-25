@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
 #include <string>
+#include <vector>
 
 #include "boost/bind/bind.hpp"
 #include "boost/fusion/container/vector/vector.hpp"
@@ -17,16 +18,23 @@ namespace odb {
 
 namespace {
 
-void addEntry(odb::dbTechLayerVoltageSpacing* table,
+using VoltageSpacingTables = std::vector<odb::dbTechLayerVoltageSpacing*>;
+
+void createTable(odb::dbTechLayer* layer, VoltageSpacingTables* tables)
+{
+  tables->push_back(odb::dbTechLayerVoltageSpacing::create(layer));
+}
+
+void addEntry(VoltageSpacingTables* tables,
               lefinReader* lefin,
               boost::fusion::vector<double, double>& params)
 {
-  table->addEntry(at_c<0>(params), lefin->dbdist(at_c<1>(params)));
+  tables->back()->addEntry(at_c<0>(params), lefin->dbdist(at_c<1>(params)));
 }
 
-void setFlags(odb::dbTechLayerVoltageSpacing* table,
-              boost::optional<std::string>& tocut)
+void setFlags(VoltageSpacingTables* tables, boost::optional<std::string>& tocut)
 {
+  odb::dbTechLayerVoltageSpacing* table = tables->back();
   if (tocut.is_initialized()) {
     if (tocut.get() == "ABOVE") {
       table->setTocutAbove(true);
@@ -45,21 +53,24 @@ bool parseRule(Iterator first,
                odb::dbTechLayer* layer,
                odb::lefinReader* lefinReader)
 {
-  odb::dbTechLayerVoltageSpacing* table
-      = odb::dbTechLayerVoltageSpacing::create(layer);
+  // A single property may hold several VOLTAGESPACING statements, each
+  // becoming its own dbTechLayerVoltageSpacing.
+  VoltageSpacingTables tables;
 
   qi::rule<std::string::const_iterator, space_type> ENTRY
-      = (double_ >> double_)[boost::bind(&addEntry, table, lefinReader, _1)];
+      = (double_ >> double_)[boost::bind(&addEntry, &tables, lefinReader, _1)];
   qi::rule<std::string::const_iterator, space_type> VOLTAGESPACING
-      = lit("VOLTAGESPACING")
+      = lit("VOLTAGESPACING")[boost::bind(&createTable, layer, &tables)]
         >> -((lit("TOCUT")
               >> -(string("ABOVE")
-                   | string("BELOW")))[boost::bind(&setFlags, table, _1)])
+                   | string("BELOW")))[boost::bind(&setFlags, &tables, _1)])
         >> +ENTRY >> lit(";");
-  bool valid = qi::phrase_parse(first, last, VOLTAGESPACING, space);
+  bool valid = qi::phrase_parse(first, last, +VOLTAGESPACING, space);
 
   if (!valid || first != last) {
-    odb::dbTechLayerVoltageSpacing::destroy(table);
+    for (odb::dbTechLayerVoltageSpacing* table : tables) {
+      odb::dbTechLayerVoltageSpacing::destroy(table);
+    }
 
     return false;
   }

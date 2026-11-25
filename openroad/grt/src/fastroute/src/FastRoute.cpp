@@ -152,7 +152,6 @@ void FastRouteCore::clear()
   has_2D_overflow_ = false;
 
   graph2d_.clear();
-  seglist_.clear();
 
   gxs_.clear();
   gys_.clear();
@@ -311,7 +310,6 @@ void FastRouteCore::clearNets()
   }
   nets_.clear();
   net_ids_.clear();
-  seglist_.clear();
   db_net_id_map_.clear();
 }
 
@@ -321,12 +319,8 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   y_grid_ = y;
   num_layers_ = nLayers;
   layer_directions_.resize(num_layers_);
-  if (std::max(x_grid_, y_grid_) >= 1000) {
-    x_range_ = std::max(x_grid_, y_grid_);
-  } else {
-    x_range_ = 1000;
-  }
-  y_range_ = x_range_;
+  x_range_ = x_grid_;
+  y_range_ = y_grid_;
 
   v_capacity_3D_.resize(num_layers_);
   h_capacity_3D_.resize(num_layers_);
@@ -354,7 +348,7 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   cost_lr_.resize(y_range_);   // Left and right boundary cost
   cost_tb_.resize(x_range_);   // Top and bottom boundary cost
 
-  cost_hvh_test_.resize(y_range_);  // Vertical first Z
+  cost_hvh_test_.resize(x_range_);  // Horizontal first Z
   cost_v_test_.resize(x_range_);    // Vertical segment cost
   cost_tb_test_.resize(x_range_);   // Top and bottom boundary cost
 
@@ -362,9 +356,10 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   int64 total_size = static_cast<int64>(y_grid_) * x_range_;
   pop_heap2_2D_.resize(total_size, false);
 
-  total_size = static_cast<int64>(y_grid_) * x_grid_;
-  src_heap_2D_.resize(total_size);
-  dest_heap_2D_.resize(total_size);
+  // The heaps hold the search frontier only: setupHeap() clears them and
+  // they grow as the maze needs, rather than to a GCell each up front.
+  src_heap_2D_.clear();
+  dest_heap_2D_.clear();
 
   d1_2D_.resize(boost::extents[y_range_][x_range_]);
   d2_2D_.resize(boost::extents[y_range_][x_range_]);
@@ -378,9 +373,10 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   total_size = static_cast<int64>(y_grid_) * x_grid_ * num_layers_;
   pop_heap2_3D_.assign(total_size, 0);
 
-  // allocate memory for priority queue
+  // The 3D maze's position table is indexed by GCell and layer; its
+  // entries and the destination list grow to the frontier.
   src_heap_3D_.resize(total_size);
-  dest_heap_3D_.resize(total_size);
+  dest_heap_3D_.clear();
 
   d1_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
   path_len_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
@@ -433,14 +429,12 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
   if (exists) {
     net = nets_[netID];
     clearNetRoute(netID);
-    seglist_[netID].clear();
   } else {
     net = new FrNet;
     nets_.push_back(net);
     netID = nets_.size() - 1;
     db_net_id_map_[db_net] = netID;
-    // at most (2*num_pins-2) nodes -> (2*num_pins-3) segs_ for a net
-    seglist_.emplace_back();
+    // At most (2*num_pins-2) nodes -> (2*num_pins-3) tree edges for a net.
     sttrees_.emplace_back();
     gxs_.emplace_back();
     gys_.emplace_back();
@@ -579,6 +573,13 @@ void FastRouteCore::init3DEdges()
       }
     }
   }
+}
+
+void FastRouteCore::release3DEdges()
+{
+  invalidateOverflow3D();
+  h_edges_3D_.resize(boost::extents[0][0][0]);
+  v_edges_3D_.resize(boost::extents[0][0][0]);
 }
 
 void FastRouteCore::invalidateOverflow3D()
@@ -1003,6 +1004,11 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
       addAdjustment(x, y, x + 1, y, layer, edge_cap, true);
     }
   }
+
+  // The intervals are applied as the adjustments above and read nowhere
+  // else; on a large die they hold an interval set per blocked edge.
+  decltype(vertical_blocked_intervals_)().swap(vertical_blocked_intervals_);
+  decltype(horizontal_blocked_intervals_)().swap(horizontal_blocked_intervals_);
 }
 
 int FastRouteCore::getAvailableResources(int x1,
@@ -2272,7 +2278,7 @@ NetRouteMap FastRouteCore::run()
   {
     const DebugScopedTimer timer(
         timings.initial_rsmt, logger_, GRT, "timer", 1, "Initial RSMT: {}");
-    gen_brk_RSMT(false, false, false, false, noADJ);
+    gen_brk_RSMT(false, false, noADJ);
   }
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
     logger_->report("After RSMT");
@@ -2281,11 +2287,11 @@ NetRouteMap FastRouteCore::run()
   // First time L routing
   {
     const DebugScopedTimer timer(
-        timings.route_l, logger_, GRT, "timer", 1, "Initial routeLAll: {}");
-    routeLAll(true);
+        timings.route_l, logger_, GRT, "timer", 1, "Initial L routing: {}");
+    initialRouteLAll();
   }
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
-    logger_->report("After routeLAll");
+    logger_->report("After initial L routing");
   }
 
   // Congestion-driven rip-up and reroute L
@@ -2296,7 +2302,7 @@ NetRouteMap FastRouteCore::run()
                                  "timer",
                                  1,
                                  "Congestion-driven RSMT: {}");
-    gen_brk_RSMT(true, true, true, false, noADJ);
+    gen_brk_RSMT(true, true, noADJ);
   }
   getOverflow2D(&maxOverflow);
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
@@ -2316,6 +2322,17 @@ NetRouteMap FastRouteCore::run()
   getOverflow2D(&maxOverflow);
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
     logger_->report("After newRouteLAll");
+  }
+
+  if (congestion_only_) {
+    graph2d_.addEstUsageToUsage();
+    graph2d_.InitEstUsage();
+    check2DEdgesUsage();
+    getOverflow2Dmaze(&maxOverflow, &tUsage);
+    has_2D_overflow_ = total_overflow_ > 0;
+    reportRunMetrics(timings, 0, 0);
+    net_ids_.clear();
+    return NetRouteMap{};
   }
 
   // Rip-up and reroute using spiral route

@@ -226,6 +226,8 @@ class NegotiationLegalizer
   }
 
   // Stall recovery
+  [[nodiscard]] std::vector<int> collectIllegalCells(
+      const std::vector<int>& cells) const;
   void diamondRecovery(const std::vector<int>& activeCells);
 
   // Constraint helpers
