@@ -649,6 +649,7 @@ void OpenRoad::linkDesign(const char* design_name,
     delete verilog_reader_;
     verilog_reader_ = nullptr;
     verilog_network_->setLinkFunc(nullptr);
+    verilog_network_->deleteTopInstance();
   }
 
   if (hierarchy) {
