@@ -121,8 +121,12 @@ class PatternRoutingNode : public PointT
     float subtree_cap = 0.0f;
     // The part of subtree_cap on the branch that holds the driver.
     float driver_branch_cap = 0.0f;
+    // For a node with the driver at or below it: everything the node reaches
+    // other than through its driver branch (F), i.e. the load of its vias.
+    float off_driver_cap = 0.0f;
     bool has_driver = false;
     bool done = false;
+    bool off_driver_done = false;
   };
   Load& getLoad() { return load_; }
 
@@ -190,6 +194,9 @@ class PatternRoute
   // Fill each DAG node's Load from the sink pin caps; a child's paths all
   // reach the same pins, so its first path stands for them.
   void computeLoads(const std::shared_ptr<PatternRoutingNode>& node);
+  // Fill off_driver_cap down the driver side from `node`, per path, so a
+  // detour's extra wire stays on its own side of the driver.
+  void computeOffDriverLoads(const std::shared_ptr<PatternRoutingNode>& node);
   // Capacitance (F) a wire node->path drives: the side away from the driver.
   double wireLoad(const std::shared_ptr<PatternRoutingNode>& node,
                   const std::shared_ptr<PatternRoutingNode>& path) const;
@@ -214,7 +221,6 @@ class PatternRoute
   bool delay_aware_ = false;
   robin_hood::unordered_map<PointT, float, PointTHash> pin_caps_;
   std::optional<PointT> driver_point_;
-  double total_cap_ = 0.0;
 };
 
 }  // namespace grt

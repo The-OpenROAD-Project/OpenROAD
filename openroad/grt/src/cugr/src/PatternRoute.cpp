@@ -549,7 +549,9 @@ void PatternRoute::run()
     }
     driver_point_ = net_->getDriverAccessPoint();
     computeLoads(routing_dag_);
-    total_cap_ = routing_dag_->getLoad().subtree_cap;
+    PatternRoutingNode::Load& root = routing_dag_->getLoad();
+    root.off_driver_cap = root.subtree_cap - root.driver_branch_cap;
+    computeOffDriverLoads(routing_dag_);
   }
   calculateRoutingCosts(routing_dag_);
   net_->setRoutingTree(getRoutingTree(routing_dag_));
@@ -585,28 +587,43 @@ void PatternRoute::computeLoads(const std::shared_ptr<PatternRoutingNode>& node)
   }
 }
 
+void PatternRoute::computeOffDriverLoads(
+    const std::shared_ptr<PatternRoutingNode>& node)
+{
+  const PatternRoutingNode::Load& load = node->getLoad();
+  for (auto& child_paths : node->getPaths()) {
+    for (auto& path : child_paths) {
+      PatternRoutingNode::Load& path_load = path->getLoad();
+      if (!path_load.has_driver || path_load.off_driver_done) {
+        continue;
+      }
+      path_load.off_driver_done = true;
+      // The wire to the parent and the path's other branches hang off it.
+      path_load.off_driver_cap = load.off_driver_cap
+                                 + grid_graph_->getRefCapPerDbu()
+                                       * grid_graph_->getDistance(*node, *path)
+                                 + path_load.subtree_cap
+                                 - path_load.driver_branch_cap;
+      computeOffDriverLoads(path);
+    }
+  }
+}
+
 double PatternRoute::wireLoad(
     const std::shared_ptr<PatternRoutingNode>& node,
     const std::shared_ptr<PatternRoutingNode>& path) const
 {
-  const PatternRoutingNode::Load& load = path->getLoad();
-  if (!load.has_driver) {
-    return load.subtree_cap;
+  if (path->getLoad().has_driver) {
+    return node->getLoad().off_driver_cap;
   }
-  const double branch_cap = load.subtree_cap
-                            + grid_graph_->getRefCapPerDbu()
-                                  * grid_graph_->getDistance(*node, *path);
-  return std::max(0.0, total_cap_ - branch_cap);
+  return path->getLoad().subtree_cap;
 }
 
 double PatternRoute::viaLoad(
     const std::shared_ptr<PatternRoutingNode>& node) const
 {
   const PatternRoutingNode::Load& load = node->getLoad();
-  if (!load.has_driver) {
-    return load.subtree_cap;
-  }
-  return std::max(0.0, total_cap_ - load.driver_branch_cap);
+  return load.has_driver ? load.off_driver_cap : load.subtree_cap;
 }
 
 void PatternRoute::calculateRoutingCosts(

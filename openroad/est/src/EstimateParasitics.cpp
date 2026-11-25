@@ -242,37 +242,40 @@ void EstimateParasitics::layerRC(odb::dbTechLayer* layer,
                                  double& res,
                                  double& cap) const
 {
+  // LEF fallbacks for a scene without set_layer_rc, matching
+  // MakeWireParasitics::layerRC and MakeWireParasitics::getCutLayerRes.
+  double lef_res = 0.0;
+  double lef_cap = 0.0;
+  if (layer->getType() == odb::dbTechLayerType::CUT) {
+    lef_res = layer->getResistance();
+  } else if (layer->getType() == odb::dbTechLayerType::ROUTING) {
+    const double width_um
+        = layer->getWidth()
+          / static_cast<double>(layer->getTech()->getDbUnitsPerMicron());
+    if (width_um > 0.0) {
+      lef_res = 1e6 * layer->getResistance() / width_um;
+    }
+    lef_cap = 1e-6
+              * (width_um * layer->getCapacitance()
+                 + 2 * layer->getEdgeCapacitance());
+  }
+
+  // The largest over scenes, so the router sees the slowest corner's RC.
+  // Each scene falls back to LEF on its own, as extraction does.
   res = 0.0;
   cap = 0.0;
-  // The largest over scenes, so the router sees the slowest corner's RC.
+  bool any_scene = false;
   for (const sta::Scene* scene : sta_->scenes()) {
+    any_scene = true;
     double scene_res = 0.0;
     double scene_cap = 0.0;
     layerRC(layer, scene, scene_res, scene_cap);
-    res = std::max(res, scene_res);
-    cap = std::max(cap, scene_cap);
+    res = std::max(res, scene_res == 0.0 ? lef_res : scene_res);
+    cap = std::max(cap, scene_cap == 0.0 ? lef_cap : scene_cap);
   }
-  if (layer->getType() == odb::dbTechLayerType::CUT) {
-    // Same LEF fallback as MakeWireParasitics::getCutLayerRes.
-    if (res == 0.0) {
-      res = layer->getResistance();
-    }
-    return;
-  }
-  if (layer->getType() != odb::dbTechLayerType::ROUTING) {
-    return;
-  }
-  // Same LEF fallback as MakeWireParasitics::layerRC.
-  const double width_um
-      = layer->getWidth()
-        / static_cast<double>(layer->getTech()->getDbUnitsPerMicron());
-  if (res == 0.0 && width_um > 0.0) {
-    res = 1e6 * layer->getResistance() / width_um;
-  }
-  if (cap == 0.0) {
-    cap = 1e-6
-          * (width_um * layer->getCapacitance()
-             + 2 * layer->getEdgeCapacitance());
+  if (!any_scene) {
+    res = lef_res;
+    cap = lef_cap;
   }
 }
 
