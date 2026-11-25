@@ -36,7 +36,7 @@ Run specific test:
 
     bazelisk test --test_output=errors //openroad/upf/test:levelshifter-tcl_test
 
-Run the tests of one tool whose label matches a regex, in one step:
+In a module test directory with a `regression` link, use it to run tests whose labels match a regex.
 
     cd openroad/pdn/test
     ./regression -R 'asap7' --test_output=errors

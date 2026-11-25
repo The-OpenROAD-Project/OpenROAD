@@ -5,12 +5,16 @@
 
 set -e
 
-# Find the module from the current directory under openroad/<module>/.
+# The module entry point is a symlink under openroad/<module>/test.
 _get_tool_name()
 {
-    local script_path
-    script_path=$(pwd -P)
-    local module_path=${script_path##*/openroad/}
+    local script_dir
+    script_dir=$(cd -- "$(dirname "$0")" && pwd -P)
+    local module_path=${script_dir##*/openroad/}
+    if [[ $module_path == "$script_dir" || $module_path != */test ]]; then
+        echo 'regression: use a regression link under openroad/<module>/test' >&2
+        exit 2
+    fi
     tool=${module_path%%/*}
 }
 

@@ -32,6 +32,7 @@ bazelisk query 'filter("repair.*hier", //openroad/rsz/test:all)'                
 ```
 
 In a module test directory with a `regression` link, use `./regression -R` to run tests whose labels match a regex.
+You can also run the link by path from the repository root.
 
 ```bash
 cd openroad/rsz/test
