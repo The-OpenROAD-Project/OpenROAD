@@ -79,8 +79,13 @@ class MetamorphicTest : public tst::Fixture
 
   PlaceResult place(odb::dbDatabase* db = nullptr)
   {
-    Replace replace{
-        db ? db : db_.get(), sta_.get(), nullptr, nullptr, nullptr, &logger_};
+    Replace replace{db ? db : db_.get(),
+                    sta_.get(),
+                    nullptr,
+                    nullptr,
+                    nullptr,
+                    nullptr,
+                    &logger_};
     return replace.doPlace(1, PlaceOptions{});
   }
 

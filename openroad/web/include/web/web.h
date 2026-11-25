@@ -43,6 +43,7 @@ struct Color;
 class Search;
 
 class ClockTreeReport;
+class ScriptView;
 class TileGenerator;
 struct TclEvaluator;
 class TimingReport;
@@ -114,6 +115,11 @@ std::string localDisplaySocket(std::string_view display);
 // True when $BROWSER is VS Code's helpers/browser.sh, which opens a URL where
 // the editor runs.
 bool launchesThroughBrowserEnv(const BrowserEnv& env);
+
+// The argv that opens `url`: VS Code's $BROWSER helper when
+// launchesThroughBrowserEnv(), else open (macOS) or xdg-open.
+std::vector<std::string> browserLaunchCommand(const BrowserEnv& env,
+                                              const std::string& url);
 
 // Why serve() is not launching a browser, so the message can say it without
 // restating the policy.
@@ -336,7 +342,7 @@ class WebServer
                  int y1,
                  int width_px,
                  double dbu_per_pixel,
-                 const std::string& vis_json);
+                 const std::map<std::string, bool>& display_settings);
 
   // User text labels (2.12), Tcl-driven (add_label/delete_label/clear_labels).
   // Delegate to the shared TileGenerator store; returns the label name.
@@ -408,7 +414,7 @@ class WebServer
                    int width_px,
                    double dbu_per_pixel,
                    std::optional<int> delay,
-                   const std::string& vis_json);
+                   const std::map<std::string, bool>& display_settings);
   void gifEnd(std::optional<int> key);
 
   // Tears down the I/O threads and cleans up hooks.  Safe to call multiple
@@ -460,6 +466,9 @@ class WebServer
 
   std::shared_ptr<TileGenerator> generator_;
   std::unique_ptr<WebViewerHook> viewer_hook_;
+  // What the gui:: commands act on with no Qt window; there whether or not
+  // the server runs.
+  std::unique_ptr<ScriptView> script_view_;
 
   // Open animated-GIF streams, indexed by the key returned from gifStart.
   // Kept as a vector (like gui's gifs_) so multiple GIFs can record at once;

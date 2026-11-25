@@ -34,6 +34,7 @@ class LibertyCell;
 class Vertex;
 class Graph;
 class Pin;
+class Instance;
 }  // namespace sta
 
 namespace stt {
@@ -75,8 +76,13 @@ class TritonCTS
   std::string getRootBufferToString();
   void resetRootBuffer() { rootBuffers_.clear(); }
   void setSinkBuffer(const char* buffers);
+  // Register clock pins of each leaf net CTS would build. A leaf net driven by
+  // a clock gate sink lists the gate output first.
+  std::vector<std::vector<odb::dbITerm*>> predictSinkClusters(
+      const std::vector<odb::dbNet*>& nets);
 
  private:
+  void inferBufferList(std::vector<std::string>& buffers);
   std::string selectRootBuffer(std::vector<std::string>& buffers);
   std::string selectSinkBuffer(std::vector<std::string>& buffers);
   std::string selectBestMaxCapBuffer(const std::vector<std::string>& buffers,
@@ -93,6 +99,11 @@ class TritonCTS
   int getBufferFanoutLimit(const std::string& bufferName);
   void setupCharacterization();
   void checkCharacterization();
+  struct ClusteringContext;
+  bool setupSinkClustering(ClusteringContext& ctx);
+  void predictSinkClusters(odb::dbNet* net,
+                           const ClusteringContext& ctx,
+                           std::vector<std::vector<odb::dbITerm*>>& clusters);
   void findClockRoots();
   void buildClockTrees();
   void writeDataToDb();
@@ -134,6 +145,12 @@ class TritonCTS
   void resolveLocationCollision(odb::dbInst* clone,
                                 odb::Point location,
                                 std::set<odb::Point>& occupiedPositions);
+  void connectClone(odb::dbInst* original,
+                    odb::dbInst* clone,
+                    odb::dbNet* outputNet);
+  void moveSinkToClone(odb::dbITerm* sink,
+                       odb::dbInst* clone,
+                       sta::Instance* scope);
   void initOneClockTree(odb::dbNet* driverNet,
                         odb::dbNet* clkInputNet,
                         const std::string& sdcClockName,
@@ -166,6 +183,12 @@ class TritonCTS
       const std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& sinks,
       TreeBuilder* parentBuilder,
       const std::string& macrosOrRegs);
+  bool needsSeparateTrees(
+      const std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& macroSinks,
+      const std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& registerSinks)
+      const;
+  void addNetSinks(Clock& clockNet, odb::dbNet* net);
+  void addClockSink(Clock& clockNet, odb::dbITerm* iterm);
   Clock forkRegisterClockNetwork(
       Clock& clockNet,
       const std::vector<std::pair<odb::dbInst*, odb::dbMTerm*>>& registerSinks,
@@ -228,6 +251,35 @@ class TritonCTS
   // has a usable delay.
   double getMaxDelayBufferDelay(double extra_out_cap);
 
+  // ---- clock gate sinks ----
+  using ClockPins = std::vector<std::pair<odb::Point, odb::dbITerm*>>;
+  ClockPins registerClockPins(odb::dbITerm* gateClockPin);
+  static odb::Rect boundingBox(const ClockPins& clockPins,
+                               size_t begin,
+                               size_t end);
+  bool fitsSinkCluster(const CtsOptions& options,
+                       size_t count,
+                       const odb::Rect& bbox) const;
+  struct ClockPinPart
+  {
+    size_t begin;
+    size_t end;
+    odb::Rect box;
+  };
+  std::vector<ClockPinPart> partitionClockPins(ClockPins& clockPins,
+                                               const CtsOptions& options) const;
+  void markClockGateSinks(Clock& clockNet);
+  std::vector<sta::LibertyCell*> clockGateCells(odb::dbInst* gate);
+  bool isClockGateSink(odb::dbITerm* gateClockPin);
+  bool isFrozenClockNet(odb::dbNet* net);
+  bool isClockSource(odb::dbITerm* pin);
+  void splitClockGatesToClusters(odb::dbNet* clkNet,
+                                 std::set<odb::Point>& occupiedPositions,
+                                 std::unordered_set<odb::dbNet*>& visitedNets);
+  void splitClockGateToClusters(odb::dbITerm* gateClockPin,
+                                std::set<odb::Point>& occupiedPositions);
+  void resizeClockGateSinks();
+
   sta::dbSta* openSta_ = nullptr;
   sta::dbNetwork* network_ = nullptr;
   utl::Logger* logger_ = nullptr;
@@ -241,6 +293,12 @@ class TritonCTS
   odb::PtrMap<odb::dbInst, ClockInst*> inst2clkbuf_;
   std::map<ClockInst*, ClockSubNet*> driver2subnet_;
   odb::PtrMap<odb::dbNet, TreeBuilder*> net2builder_;
+
+  // ---- clock gate sinks ----
+  odb::PtrSet<odb::dbInst> clockGateSinks_;
+  odb::PtrSet<odb::dbNet> clockRootNets_;
+  int splitGateCount_ = 0;
+  int splitGateCloneCount_ = 0;
 
   // db vars
   odb::dbDatabase* db_ = nullptr;

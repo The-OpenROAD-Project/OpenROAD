@@ -85,6 +85,14 @@ std::vector<std::string> appendImplicitCritVtSwapForLegacyPhases(
     // requested CRIT_VT_SWAP explicitly.
     effective_phase_names.emplace_back("CRIT_VT_SWAP");
   }
+  // PARALLEL_EVAL only sizes path drivers, so a register whose only failing
+  // checks are at its data inputs is never a target.  Close with the
+  // capture-register VT sweep unless a VT sweep is already in the pipeline.
+  if (containsPhase(effective_phase_names, "PARALLEL_EVAL")
+      && !containsPhase(effective_phase_names, "CRIT_VT_SWAP")
+      && !containsPhase(effective_phase_names, "CAPTURE_VT_SWAP")) {
+    effective_phase_names.emplace_back("CAPTURE_VT_SWAP");
+  }
   return effective_phase_names;
 }
 
@@ -126,6 +134,10 @@ std::unique_ptr<OptimizationPolicy> Optimizer::makePolicyForPhase(
     return std::make_unique<SetupCritVtSwapPolicy>(
         resizer_, committer_, setup_context, config_);
   }
+  if (phase_name == "CAPTURE_VT_SWAP") {
+    return std::make_unique<SetupCritVtSwapPolicy>(
+        resizer_, committer_, setup_context, config_, /*capture_only=*/true);
+  }
   if (phase_name == "REROUTE") {
     return std::make_unique<SetupReroutePolicy>(
         resizer_, committer_, setup_context, config_);
@@ -146,7 +158,7 @@ std::unique_ptr<OptimizationPolicy> Optimizer::makePolicyForPhase(
       217,
       "Unknown phase name '{}'. Valid phase names are: LEGACY, WNS, "
       "WNS_PATH, WNS_CONE, TNS, ENDPOINT_FANIN, STARTPOINT_FANOUT, "
-      "LAST_GASP, CRIT_VT_SWAP, REROUTE, GLOBAL_SIZING, "
+      "LAST_GASP, CRIT_VT_SWAP, CAPTURE_VT_SWAP, REROUTE, GLOBAL_SIZING, "
       "PARALLEL_EVAL (experimental)",
       phase_name);
   return nullptr;
@@ -191,7 +203,7 @@ bool Optimizer::run()
         223,
         "No phase names specified. Valid phase names are: LEGACY, WNS, "
         "WNS_PATH, WNS_CONE, TNS, ENDPOINT_FANIN, STARTPOINT_FANOUT, "
-        "LAST_GASP, CRIT_VT_SWAP, REROUTE, GLOBAL_SIZING, "
+        "LAST_GASP, CRIT_VT_SWAP, CAPTURE_VT_SWAP, REROUTE, GLOBAL_SIZING, "
         "PARALLEL_EVAL (experimental)");
   }
   const int phase_count = phase_names.size();

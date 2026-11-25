@@ -142,5 +142,29 @@ TEST_F(LefInRounding, FreePdk45HasNoWarnings)
   EXPECT_EQ(log.find("WARNING"), std::string::npos);
 }
 
+TEST_F(LefInRounding, Lef58CutEnclosureParallelSetsParallelValid)
+{
+  const std::string path = testing::TempDir() + "/lef58_enc_parallel.lef";
+  std::ofstream lef(path);
+  lef << "VERSION 5.8 ;\n"
+      << "UNITS\n  DATABASE MICRONS 1000 ;\nEND UNITS\n"
+      << "PROPERTYDEFINITIONS\n"
+      << "  LAYER LEF58_ENCLOSURE STRING ;\n"
+      << "END PROPERTYDEFINITIONS\n"
+      << "LAYER V1\n  TYPE CUT ;\n  WIDTH 0.05 ;\n"
+      << "  PROPERTY LEF58_ENCLOSURE\n"
+      << "    \"ENCLOSURE 0.02 0.04 PARALLEL 0.1 WITHIN 0.05 ;\" ;\n"
+      << "END V1\nEND LIBRARY\n";
+  lef.close();
+
+  lefin reader(db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
+  dbTech* tech = reader.createTech("tech", path.c_str());
+  ASSERT_NE(tech, nullptr);
+  EXPECT_EQ(logger_.getWarningCount(), 0);
+  auto rules = tech->findLayer("V1")->getTechLayerCutEnclosureRules();
+  ASSERT_EQ(rules.size(), 1);
+  EXPECT_TRUE((*rules.begin())->isParallelValid());
+}
+
 }  // namespace
 }  // namespace odb

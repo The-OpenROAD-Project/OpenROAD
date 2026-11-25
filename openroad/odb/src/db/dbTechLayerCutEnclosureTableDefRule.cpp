@@ -160,7 +160,7 @@ void dbTechLayerCutEnclosureTableDefRule::setCutClass(
     dbTechLayerCutClassRule* cut_class)
 {
   _dbTechLayerCutEnclosureTableDefRule* obj
-      = (_dbTechLayerCutEnclosureTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutEnclosureTableDefRule*>(this);
 
   obj->cut_class_ = cut_class->getImpl()->getOID();
 }
@@ -168,30 +168,31 @@ void dbTechLayerCutEnclosureTableDefRule::setCutClass(
 dbTechLayerCutClassRule* dbTechLayerCutEnclosureTableDefRule::getCutClass()
     const
 {
-  _dbTechLayerCutEnclosureTableDefRule* obj
-      = (_dbTechLayerCutEnclosureTableDefRule*) this;
+  const _dbTechLayerCutEnclosureTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutEnclosureTableDefRule*>(this);
   if (obj->cut_class_ == 0) {
     return nullptr;
   }
-  _dbTechLayer* par = (_dbTechLayer*) obj->getOwner();
-  return (dbTechLayerCutClassRule*) par->cut_class_rules_tbl_->getPtr(
-      obj->cut_class_);
+  _dbTechLayer* par = static_cast<_dbTechLayer*>(obj->getOwner());
+  return reinterpret_cast<dbTechLayerCutClassRule*>(
+      par->cut_class_rules_tbl_->getPtr(obj->cut_class_));
 }
 
 dbTechLayerCutEnclosureTableDefRule*
 dbTechLayerCutEnclosureTableDefRule::create(dbTechLayer* parent)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) parent;
-  return (dbTechLayerCutEnclosureTableDefRule*)
-      _parent->cut_enc_table_rules_tbl_->create();
+  _dbTechLayer* _parent = reinterpret_cast<_dbTechLayer*>(parent);
+  return reinterpret_cast<dbTechLayerCutEnclosureTableDefRule*>(
+      _parent->cut_enc_table_rules_tbl_->create());
 }
 void dbTechLayerCutEnclosureTableDefRule::destroy(
     dbTechLayerCutEnclosureTableDefRule* obj)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  _dbTechLayer* _parent
+      = static_cast<_dbTechLayer*>(obj->getImpl()->getOwner());
   dbProperty::destroyProperties(obj);
   _parent->cut_enc_table_rules_tbl_->destroy(
-      (_dbTechLayerCutEnclosureTableDefRule*) obj);
+      reinterpret_cast<_dbTechLayerCutEnclosureTableDefRule*>(obj));
 }
 // User Code Begin dbTechLayerCutEnclosureTableDefRulePublicMethods
 void dbTechLayerCutEnclosureTableDefRule::addDefaultRow(const DefaultRow& row)

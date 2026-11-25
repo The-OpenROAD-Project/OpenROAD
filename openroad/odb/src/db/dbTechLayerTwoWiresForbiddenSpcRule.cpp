@@ -107,75 +107,75 @@ void _dbTechLayerTwoWiresForbiddenSpcRule::collectMemInfo(MemInfo& info)
 void dbTechLayerTwoWiresForbiddenSpcRule::setMinSpacing(int min_spacing)
 {
   _dbTechLayerTwoWiresForbiddenSpcRule* obj
-      = (_dbTechLayerTwoWiresForbiddenSpcRule*) this;
+      = reinterpret_cast<_dbTechLayerTwoWiresForbiddenSpcRule*>(this);
 
   obj->min_spacing_ = min_spacing;
 }
 
 int dbTechLayerTwoWiresForbiddenSpcRule::getMinSpacing() const
 {
-  _dbTechLayerTwoWiresForbiddenSpcRule* obj
-      = (_dbTechLayerTwoWiresForbiddenSpcRule*) this;
+  const _dbTechLayerTwoWiresForbiddenSpcRule* obj
+      = reinterpret_cast<const _dbTechLayerTwoWiresForbiddenSpcRule*>(this);
   return obj->min_spacing_;
 }
 
 void dbTechLayerTwoWiresForbiddenSpcRule::setMaxSpacing(int max_spacing)
 {
   _dbTechLayerTwoWiresForbiddenSpcRule* obj
-      = (_dbTechLayerTwoWiresForbiddenSpcRule*) this;
+      = reinterpret_cast<_dbTechLayerTwoWiresForbiddenSpcRule*>(this);
 
   obj->max_spacing_ = max_spacing;
 }
 
 int dbTechLayerTwoWiresForbiddenSpcRule::getMaxSpacing() const
 {
-  _dbTechLayerTwoWiresForbiddenSpcRule* obj
-      = (_dbTechLayerTwoWiresForbiddenSpcRule*) this;
+  const _dbTechLayerTwoWiresForbiddenSpcRule* obj
+      = reinterpret_cast<const _dbTechLayerTwoWiresForbiddenSpcRule*>(this);
   return obj->max_spacing_;
 }
 
 void dbTechLayerTwoWiresForbiddenSpcRule::setMinSpanLength(int min_span_length)
 {
   _dbTechLayerTwoWiresForbiddenSpcRule* obj
-      = (_dbTechLayerTwoWiresForbiddenSpcRule*) this;
+      = reinterpret_cast<_dbTechLayerTwoWiresForbiddenSpcRule*>(this);
 
   obj->min_span_length_ = min_span_length;
 }
 
 int dbTechLayerTwoWiresForbiddenSpcRule::getMinSpanLength() const
 {
-  _dbTechLayerTwoWiresForbiddenSpcRule* obj
-      = (_dbTechLayerTwoWiresForbiddenSpcRule*) this;
+  const _dbTechLayerTwoWiresForbiddenSpcRule* obj
+      = reinterpret_cast<const _dbTechLayerTwoWiresForbiddenSpcRule*>(this);
   return obj->min_span_length_;
 }
 
 void dbTechLayerTwoWiresForbiddenSpcRule::setMaxSpanLength(int max_span_length)
 {
   _dbTechLayerTwoWiresForbiddenSpcRule* obj
-      = (_dbTechLayerTwoWiresForbiddenSpcRule*) this;
+      = reinterpret_cast<_dbTechLayerTwoWiresForbiddenSpcRule*>(this);
 
   obj->max_span_length_ = max_span_length;
 }
 
 int dbTechLayerTwoWiresForbiddenSpcRule::getMaxSpanLength() const
 {
-  _dbTechLayerTwoWiresForbiddenSpcRule* obj
-      = (_dbTechLayerTwoWiresForbiddenSpcRule*) this;
+  const _dbTechLayerTwoWiresForbiddenSpcRule* obj
+      = reinterpret_cast<const _dbTechLayerTwoWiresForbiddenSpcRule*>(this);
   return obj->max_span_length_;
 }
 
 void dbTechLayerTwoWiresForbiddenSpcRule::setPrl(int prl)
 {
   _dbTechLayerTwoWiresForbiddenSpcRule* obj
-      = (_dbTechLayerTwoWiresForbiddenSpcRule*) this;
+      = reinterpret_cast<_dbTechLayerTwoWiresForbiddenSpcRule*>(this);
 
   obj->prl_ = prl;
 }
 
 int dbTechLayerTwoWiresForbiddenSpcRule::getPrl() const
 {
-  _dbTechLayerTwoWiresForbiddenSpcRule* obj
-      = (_dbTechLayerTwoWiresForbiddenSpcRule*) this;
+  const _dbTechLayerTwoWiresForbiddenSpcRule* obj
+      = reinterpret_cast<const _dbTechLayerTwoWiresForbiddenSpcRule*>(this);
   return obj->prl_;
 }
 
@@ -183,15 +183,15 @@ void dbTechLayerTwoWiresForbiddenSpcRule::setMinExactSpanLength(
     bool min_exact_span_length)
 {
   _dbTechLayerTwoWiresForbiddenSpcRule* obj
-      = (_dbTechLayerTwoWiresForbiddenSpcRule*) this;
+      = reinterpret_cast<_dbTechLayerTwoWiresForbiddenSpcRule*>(this);
 
   obj->flags_.min_exact_span_length = min_exact_span_length;
 }
 
 bool dbTechLayerTwoWiresForbiddenSpcRule::isMinExactSpanLength() const
 {
-  _dbTechLayerTwoWiresForbiddenSpcRule* obj
-      = (_dbTechLayerTwoWiresForbiddenSpcRule*) this;
+  const _dbTechLayerTwoWiresForbiddenSpcRule* obj
+      = reinterpret_cast<const _dbTechLayerTwoWiresForbiddenSpcRule*>(this);
 
   return obj->flags_.min_exact_span_length;
 }
@@ -200,15 +200,15 @@ void dbTechLayerTwoWiresForbiddenSpcRule::setMaxExactSpanLength(
     bool max_exact_span_length)
 {
   _dbTechLayerTwoWiresForbiddenSpcRule* obj
-      = (_dbTechLayerTwoWiresForbiddenSpcRule*) this;
+      = reinterpret_cast<_dbTechLayerTwoWiresForbiddenSpcRule*>(this);
 
   obj->flags_.max_exact_span_length = max_exact_span_length;
 }
 
 bool dbTechLayerTwoWiresForbiddenSpcRule::isMaxExactSpanLength() const
 {
-  _dbTechLayerTwoWiresForbiddenSpcRule* obj
-      = (_dbTechLayerTwoWiresForbiddenSpcRule*) this;
+  const _dbTechLayerTwoWiresForbiddenSpcRule* obj
+      = reinterpret_cast<const _dbTechLayerTwoWiresForbiddenSpcRule*>(this);
 
   return obj->flags_.max_exact_span_length;
 }

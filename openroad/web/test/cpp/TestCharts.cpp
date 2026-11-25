@@ -10,6 +10,7 @@
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "sta/MinMax.hh"
+#include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Sdc.hh"
 #include "sta/SdcClass.hh"
@@ -286,10 +287,6 @@ class SlackHistogramGroupsTest : public tst::Nangate45Fixture
     groupPathFrom("i2r", bterm("in"));
     groupPathTo("g1", iterm("ff2", "D"));
     groupPathTo("g2", iterm("ff2", "D"));
-
-    // The filtered histogram visits existing paths; the GUIs have found the
-    // arrivals (unfiltered histogram) before any group is selected.
-    sta_->updateTiming(false);
   }
 
   sta::Pin* bterm(const char* name) const
@@ -350,7 +347,7 @@ TEST_F(SlackHistogramGroupsTest, SharedEndpointCountsOnceInWorstGroup)
 {
   TimingReport report(sta_.get());
   const SlackHistogramResult h
-      = report.getSlackHistogram(true, "", "", {"r2r", "i2r"});
+      = report.getSlackHistogram(true, "", {"r2r", "i2r"});
 
   // ff1/D (r2r) and ff2/D (r2r and i2r).
   EXPECT_EQ(h.total_endpoints, 2);
@@ -367,7 +364,7 @@ TEST_F(SlackHistogramGroupsTest, SamePathEndInTwoGroupsGoesToFirstSelected)
   TimingReport report(sta_.get());
 
   const SlackHistogramResult g1_first
-      = report.getSlackHistogram(true, "", "", {"g1", "g2"});
+      = report.getSlackHistogram(true, "", {"g1", "g2"});
   EXPECT_EQ(g1_first.total_endpoints, 1);
   EXPECT_EQ(binTotal(g1_first), 1);
   ASSERT_EQ(g1_first.series.size(), 2u);
@@ -375,11 +372,45 @@ TEST_F(SlackHistogramGroupsTest, SamePathEndInTwoGroupsGoesToFirstSelected)
   EXPECT_EQ(seriesTotal(g1_first.series[1]), 0);
 
   const SlackHistogramResult g2_first
-      = report.getSlackHistogram(true, "", "", {"g2", "g1"});
+      = report.getSlackHistogram(true, "", {"g2", "g1"});
   ASSERT_EQ(g2_first.series.size(), 2u);
   EXPECT_EQ(g2_first.series[0].name, "g2");
   EXPECT_EQ(seriesTotal(g2_first.series[0]), 1);
   EXPECT_EQ(seriesTotal(g2_first.series[1]), 0);
+}
+
+// The histogram tests path group membership by name; it makes no PathGroups.
+TEST_F(SlackHistogramGroupsTest, HistogramMakesNoPathGroups)
+{
+  TimingReport report(sta_.get());
+  report.getSlackHistogram(true, "", {"r2r", "i2r"});
+  report.getSlackHistogram(true, "clk");
+  EXPECT_EQ(sta_->cmdMode()->pathGroups(), nullptr);
+}
+
+// g1 holds only ff2/D, so each side's histogram puts it at that side's slack.
+TEST_F(SlackHistogramGroupsTest, GroupFilterKeepsTheSetupOrHoldSide)
+{
+  TimingReport report(sta_.get());
+  const sta::Pin* d2 = iterm("ff2", "D");
+  for (const bool is_setup : {true, false}) {
+    const SlackHistogramResult h
+        = report.getSlackHistogram(is_setup, "", {"g1"});
+    const float slack = sta_->units()->timeUnit()->staToUser(
+        sta_->slack(d2,
+                    sta::RiseFallBoth::riseFall(),
+                    sta_->scenes(),
+                    is_setup ? sta::MinMax::max() : sta::MinMax::min()));
+    int counted = 0;
+    for (const SlackHistogramBin& bin : h.bins) {
+      if (bin.count > 0) {
+        EXPECT_LE(bin.lower, slack) << "setup=" << is_setup;
+        EXPECT_LT(slack, bin.upper) << "setup=" << is_setup;
+        counted += bin.count;
+      }
+    }
+    EXPECT_EQ(counted, 1) << "setup=" << is_setup;
+  }
 }
 
 }  // namespace

@@ -72,6 +72,8 @@ class ClockInst
   float getOutputCap() const { return outputCap_; }
   void setIdealOutputCap(float cap) { idealOutputCap_ = cap; }
   float getIdealOutputCap() const { return idealOutputCap_; }
+  void setClockGateSink() { clockGateSink_ = true; }
+  bool isClockGateSink() const { return clockGateSink_; }
 
  private:
   std::string name_;
@@ -84,6 +86,7 @@ class ClockInst
   double insertionDelay_;  // insertion delay in terms of length, not time
   float outputCap_;        // current load cap seen by this instance
   float idealOutputCap_;   // ideal load cap needed for perfectly balanced tree
+  bool clockGateSink_ = false;
 };
 
 //-----------------------------------------------------------------------------

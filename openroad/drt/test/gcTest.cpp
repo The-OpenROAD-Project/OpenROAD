@@ -686,6 +686,7 @@ TEST_F(GCFixture, min_step)
 {
   // Setup
   makeMinStepConstraint(2);
+  EXPECT_TRUE(design->getTech()->hasMinStepConstraint());
 
   frNet* n1 = makeNet("n1");
 
@@ -705,6 +706,7 @@ TEST_F(GCFixture, min_step58_nobetweeneol)
   // Setup
   auto con = makeMinStep58Constraint(2);
   con->setEolWidth(200);
+  EXPECT_TRUE(design->getTech()->hasMinStepConstraint());
 
   frNet* n1 = makeNet("n1");
 

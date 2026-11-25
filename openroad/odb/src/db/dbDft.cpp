@@ -48,9 +48,15 @@ _dbDft::_dbDft(_dbDatabase* db)
 {
   scan_inserted_ = false;
   scan_pins_ = new dbTable<_dbScanPin>(
-      db, this, (GetObjTbl_t) &_dbDft::getObjectTable, dbScanPinObj);
+      db,
+      this,
+      static_cast<GetObjTbl_t>(&_dbDft::getObjectTable),
+      dbScanPinObj);
   scan_chains_ = new dbTable<_dbScanChain>(
-      db, this, (GetObjTbl_t) &_dbDft::getObjectTable, dbScanChainObj);
+      db,
+      this,
+      static_cast<GetObjTbl_t>(&_dbDft::getObjectTable),
+      dbScanChainObj);
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbDft& obj)
@@ -111,20 +117,20 @@ void _dbDft::initialize()
 
 void dbDft::setScanInserted(bool scan_inserted)
 {
-  _dbDft* obj = (_dbDft*) this;
+  _dbDft* obj = reinterpret_cast<_dbDft*>(this);
 
   obj->scan_inserted_ = scan_inserted;
 }
 
 bool dbDft::isScanInserted() const
 {
-  _dbDft* obj = (_dbDft*) this;
+  const _dbDft* obj = reinterpret_cast<const _dbDft*>(this);
   return obj->scan_inserted_;
 }
 
 dbSet<dbScanChain> dbDft::getScanChains() const
 {
-  _dbDft* obj = (_dbDft*) this;
+  _dbDft* obj = reinterpret_cast<_dbDft*>(const_cast<dbDft*>(this));
   return dbSet<dbScanChain>(obj, obj->scan_chains_);
 }
 

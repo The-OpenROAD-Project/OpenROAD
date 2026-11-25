@@ -921,12 +921,14 @@ std::map<const sta::Pin*, std::set<const sta::Pin*>> ClockTree::getPinMapping()
 
 /////////////
 
+// Worst slack per endpoint in the path group named `path_group_name` on the
+// `min_max` side, optionally for paths launched by `clk`.
 class PathGroupSlackEndVisitor : public sta::PathEndVisitor
 {
  public:
-  PathGroupSlackEndVisitor(const sta::PathGroup* path_group, sta::Sta* sta);
-  PathGroupSlackEndVisitor(const sta::PathGroup* path_group,
+  PathGroupSlackEndVisitor(std::string path_group_name,
                            const sta::Clock* clk,
+                           const sta::MinMax* min_max,
                            sta::Sta* sta);
   PathGroupSlackEndVisitor(const PathGroupSlackEndVisitor&) = default;
   PathEndVisitor* copy() const override;
@@ -936,25 +938,22 @@ class PathGroupSlackEndVisitor : public sta::PathEndVisitor
   void resetWorstSlack();
 
  private:
-  const sta::PathGroup* path_group_;
+  std::string path_group_name_;
   sta::Sta* sta_;
   const sta::Clock* clk_;
+  const sta::MinMax* min_max_;
   bool has_slack_{false};
   float worst_slack_{std::numeric_limits<float>::max()};
 };
 
-PathGroupSlackEndVisitor::PathGroupSlackEndVisitor(
-    const sta::PathGroup* path_group,
-    sta::Sta* sta)
-    : path_group_(path_group), sta_(sta), clk_(nullptr)
-{
-}
-
-PathGroupSlackEndVisitor::PathGroupSlackEndVisitor(
-    const sta::PathGroup* path_group,
-    const sta::Clock* clk,
-    sta::Sta* sta)
-    : path_group_(path_group), sta_(sta), clk_(clk)
+PathGroupSlackEndVisitor::PathGroupSlackEndVisitor(std::string path_group_name,
+                                                   const sta::Clock* clk,
+                                                   const sta::MinMax* min_max,
+                                                   sta::Sta* sta)
+    : path_group_name_(std::move(path_group_name)),
+      sta_(sta),
+      clk_(clk),
+      min_max_(min_max)
 {
 }
 
@@ -965,23 +964,18 @@ sta::PathEndVisitor* PathGroupSlackEndVisitor::copy() const
 
 void PathGroupSlackEndVisitor::visit(sta::PathEnd* path_end)
 {
-  const sta::PathGroupSeq path_groups
-      = sta_->cmdScene()->mode()->pathGroups(path_end);
-  const auto iter
-      = std::find(path_groups.begin(), path_groups.end(), path_group_);
-  if (iter != path_groups.end()) {
-    if (clk_ != nullptr) {
-      sta::Path* path = path_end->path();
-      if (path->clock(sta_) != clk_) {
-        return;
-      }
-    }
-    worst_slack_
-        = std::min(worst_slack_, sta::delayAsFloat(path_end->slack(sta_)));
-    if (!has_slack_) {
-      has_slack_ = true;
-    }
+  if (path_end->minMax(sta_) != min_max_) {
+    return;
   }
+  if (clk_ != nullptr && path_end->path()->clock(sta_) != clk_) {
+    return;
+  }
+  if (!sta::PathGroups::inPathGroupNamed(path_end, path_group_name_, sta_)) {
+    return;
+  }
+  worst_slack_
+      = std::min(worst_slack_, sta::delayAsFloat(path_end->slack(sta_)));
+  has_slack_ = true;
 }
 
 void PathGroupSlackEndVisitor::resetWorstSlack()
@@ -1030,43 +1024,14 @@ std::set<std::string> STAGuiInterface::getGroupPathsNames() const
   return group_paths_names;
 }
 
-// Makes STA incorporate the Sdc GroupPaths information
-// into Search PathGroups. This is equivalent to what happens
-// when running "report_checks".
-void STAGuiInterface::updatePathGroups()
-{
-  sta::StringSeq empty_group_names;
-  for (sta::Mode* mode : sta_->modes()) {
-    // makePathGroups replaces the old groups without freeing them.
-    mode->deletePathGroups();
-    mode->makePathGroups(1,                 /* group count */
-                         1,                 /* endpoint count*/
-                         false,             /* unique pins */
-                         false,             /* unique edges */
-                         -sta::INF,         /* min slack */
-                         sta::INF,          /* max slack*/
-                         empty_group_names, /* group names */
-                         true,              /* setup */
-                         true,              /* hold */
-                         true,              /* recovery */
-                         true,              /* removal */
-                         true,              /* clk gating setup */
-                         true,              /* clk gating hold */
-                         false /* unconstrained paths */);
-  }
-}
-
 EndPointSlackMap STAGuiInterface::getEndPointToSlackMap(
     const std::string& path_group_name,
     const sta::Clock* clk)
 {
-  updatePathGroups();
-
   EndPointSlackMap end_point_to_slack;
   sta::VisitPathEnds visit_ends(sta_);
-  sta::PathGroup* path_group = sta_->cmdMode()->pathGroups()->findPathGroup(
-      path_group_name.c_str(), minMax());
-  PathGroupSlackEndVisitor path_group_visitor(path_group, clk, sta_);
+  PathGroupSlackEndVisitor path_group_visitor(
+      path_group_name, clk, minMax(), sta_);
   for (sta::Vertex* vertex : sta_->endpoints()) {
     visit_ends.visitPathEnds(vertex, &path_group_visitor);
     if (path_group_visitor.hasSlack()) {
@@ -1080,13 +1045,11 @@ EndPointSlackMap STAGuiInterface::getEndPointToSlackMap(
 
 EndPointSlackMap STAGuiInterface::getEndPointToSlackMap(const sta::Clock* clk)
 {
-  updatePathGroups();
-
   EndPointSlackMap end_point_to_slack;
   sta::VisitPathEnds visit_ends(sta_);
-  sta::PathGroup* path_group
-      = sta_->cmdMode()->pathGroups()->findPathGroup(clk, minMax());
-  PathGroupSlackEndVisitor path_group_visitor(path_group, sta_);
+  // The clock's default path group, as report_checks groups it.
+  PathGroupSlackEndVisitor path_group_visitor(
+      clk->name(), /*clk=*/nullptr, minMax(), sta_);
   for (sta::Vertex* vertex : sta_->endpoints()) {
     visit_ends.visitPathEnds(vertex, &path_group_visitor);
     if (path_group_visitor.hasSlack()) {

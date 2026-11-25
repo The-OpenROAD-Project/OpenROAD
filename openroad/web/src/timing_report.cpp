@@ -38,6 +38,7 @@
 #include "sta/SearchClass.hh"
 #include "sta/Sta.hh"
 #include "sta/StringUtil.hh"
+#include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "sta/VisitPathEnds.hh"
 
@@ -174,31 +175,30 @@ void TimingReport::expandPath(sta::Path* path,
 }
 
 std::vector<TimingPathSummary> TimingReport::getReport(
-    bool is_setup,
-    int max_paths,
-    float slack_min,
-    float slack_max,
-    bool include_unconstrained) const
+    const bool is_setup,
+    const int max_paths,
+    const float slack_min,
+    const float slack_max,
+    const bool include_unconstrained,
+    const std::vector<std::string>& path_groups,
+    const std::string& clock_name) const
 {
-  std::vector<TimingPathSummary> result;
   if (!sta_) {
-    return result;
+    return {};
+  }
+  // A slack histogram bar's drill-down.
+  if (slack_min > -sta::INF || slack_max < sta::INF || !path_groups.empty()
+      || !clock_name.empty()) {
+    return endpointReport(
+        is_setup, max_paths, slack_min, slack_max, path_groups, clock_name);
   }
 
   sta_->ensureGraph();
   sta_->searchPreamble();
 
-  // Convert user-unit slack bounds to internal units.
-  const float time_scale = sta_->units()->timeUnit()->scale();
-  const float sta_slack_min
-      = (slack_min <= -1e30f) ? -sta::INF : slack_min * time_scale;
-  const float sta_slack_max
-      = (slack_max >= 1e30f) ? sta::INF : slack_max * time_scale;
-
-  sta::Search* search = sta_->search();
-  sta::SceneSeq scenes = sta_->scenes();
+  const sta::SceneSeq scenes = sta_->scenes();
   sta::StringSeq group_names;
-  sta::PathEndSeq path_ends = search->findPathEnds(
+  const sta::PathEndSeq path_ends = sta_->search()->findPathEnds(
       /*from*/ nullptr,
       /*thrus*/ nullptr,
       /*to*/ nullptr,
@@ -209,8 +209,8 @@ std::vector<TimingPathSummary> TimingReport::getReport(
       /*endpoint_count*/ 1,
       /*unique_pins*/ true,
       /*unique_edges*/ true,
-      sta_slack_min,
-      sta_slack_max,
+      /*slack_min*/ -sta::INF,
+      /*slack_max*/ sta::INF,
       /*sort_by_slack*/ true,
       group_names,
       /*setup*/ is_setup,
@@ -220,73 +220,63 @@ std::vector<TimingPathSummary> TimingReport::getReport(
       /*clk_gating_setup*/ false,
       /*clk_gating_hold*/ false);
 
-  for (auto& path_end : path_ends) {
-    TimingPathSummary summary;
-
-    sta::Path* path = path_end->path();
-
-    // Clocks
-    auto* src_edge = path_end->sourceClkEdge(sta_);
-    summary.start_clk = src_edge ? src_edge->clock()->name() : "<No clock>";
-    auto* end_clk = path_end->targetClk(sta_);
-    summary.end_clk = end_clk ? end_clk->name() : "<No clock>";
-
-    // Path-level metrics (convert from internal units to user units)
-    const float time_scale = sta_->units()->timeUnit()->scale();
-    summary.slack = path_end->slack(sta_) / time_scale;
-    summary.arrival = path_end->dataArrivalTime(sta_) / time_scale;
-    summary.required = path_end->requiredTime(sta_) / time_scale;
-    summary.skew = path_end->clkSkew(sta_) / time_scale;
-    auto* pd = path_end->pathDelay();
-    summary.path_delay = pd ? pd->delay() / time_scale : 0.0f;
-
-    bool clock_propagated = src_edge && src_edge->clock()->isPropagated();
-
-    // Expand data path
-    expandPath(path,
-               0.0f,
-               clock_propagated,
-               summary.data_nodes,
-               summary.logic_depth,
-               summary.fanout);
-
-    // Expand capture path
-    int capture_depth = 0;
-    int capture_fanout = 0;
-    expandPath(path_end->targetClkPath(),
-               path_end->targetClkOffset(sta_),
-               clock_propagated,
-               summary.capture_nodes,
-               capture_depth,
-               capture_fanout);
-
-    // Start/end pin names
-    // Find first non-clock node in data path
-    int clk_end = -1;
-    for (int i = 0; i < static_cast<int>(summary.data_nodes.size()); i++) {
-      if (!summary.data_nodes[i].is_clock) {
-        clk_end = i - 1;
-        break;
-      }
-    }
-    if (clk_end < 0) {
-      clk_end = static_cast<int>(summary.data_nodes.size()) - 1;
-    }
-
-    if (!summary.data_nodes.empty()) {
-      int start_idx = clk_end + 1;
-      if (start_idx >= static_cast<int>(summary.data_nodes.size())) {
-        start_idx = 0;
-      }
-      summary.start_pin = summary.data_nodes[start_idx].pin_name;
-      if (!summary.data_nodes.empty()) {
-        summary.end_pin = summary.data_nodes.back().pin_name;
-      }
-    }
-    result.push_back(std::move(summary));
+  std::vector<TimingPathSummary> result;
+  result.reserve(path_ends.size());
+  for (sta::PathEnd* path_end : path_ends) {
+    result.push_back(summarizePathEnd(*path_end));
   }
-
   return result;
+}
+
+TimingPathSummary TimingReport::summarizePathEnd(sta::PathEnd& path_end) const
+{
+  TimingPathSummary summary;
+  const float time_scale = sta_->units()->timeUnit()->scale();
+
+  // Clocks
+  const auto* src_edge = path_end.sourceClkEdge(sta_);
+  summary.start_clk = src_edge ? src_edge->clock()->name() : "<No clock>";
+  const auto* end_clk = path_end.targetClk(sta_);
+  summary.end_clk = end_clk ? end_clk->name() : "<No clock>";
+
+  // Path-level metrics (convert from internal units to user units)
+  summary.slack = path_end.slack(sta_) / time_scale;
+  summary.arrival = path_end.dataArrivalTime(sta_) / time_scale;
+  summary.required = path_end.requiredTime(sta_) / time_scale;
+  summary.skew = path_end.clkSkew(sta_) / time_scale;
+  const auto* pd = path_end.pathDelay();
+  summary.path_delay = pd ? pd->delay() / time_scale : 0.0f;
+
+  const bool clock_propagated = src_edge && src_edge->clock()->isPropagated();
+
+  // Expand data path
+  expandPath(path_end.path(),
+             0.0f,
+             clock_propagated,
+             summary.data_nodes,
+             summary.logic_depth,
+             summary.fanout);
+
+  // Expand capture path
+  int capture_depth = 0;
+  int capture_fanout = 0;
+  expandPath(path_end.targetClkPath(),
+             path_end.targetClkOffset(sta_),
+             clock_propagated,
+             summary.capture_nodes,
+             capture_depth,
+             capture_fanout);
+
+  // The path starts at its first non-clock node, else at its first node.
+  if (!summary.data_nodes.empty()) {
+    const auto start = std::ranges::find_if(
+        summary.data_nodes, [](const TimingNode& n) { return !n.is_clock; });
+    summary.start_pin = start != summary.data_nodes.end()
+                            ? start->pin_name
+                            : summary.data_nodes.front().pin_name;
+    summary.end_pin = summary.data_nodes.back().pin_name;
+  }
+  return summary;
 }
 
 // Snap an exact bin interval to a "nice" value (1, 2, 5, or 10 × 10^n).
@@ -311,135 +301,122 @@ static float snapBinInterval(float exact_interval)
   return static_cast<float>(nice_coeff * mag);
 }
 
-// Visitor that finds worst slack per endpoint within a specific path group,
-// optionally filtered by clock.  Mirrors PathGroupSlackEndVisitor from
-// staGuiInterface.cpp.
+// Worst path end per endpoint in the path group named `group` (any group when
+// empty), optionally captured by `clk`.  Mirrors staGuiInterface's visitor.
 class PathGroupSlackVisitor : public sta::PathEndVisitor
 {
  public:
-  PathGroupSlackVisitor(const sta::PathGroup* group,
+  PathGroupSlackVisitor(std::string group,
                         const sta::Clock* clk,
+                        const bool keep_path_end,
                         sta::Sta* sta)
-      : group_(group), sta_(sta), clk_(clk)
+      : group_(std::move(group)),
+        clk_(clk),
+        keep_path_end_(keep_path_end),
+        sta_(sta)
   {
   }
 
   sta::PathEndVisitor* copy() const override
   {
-    return new PathGroupSlackVisitor(*this);
+    return new PathGroupSlackVisitor(group_, clk_, keep_path_end_, sta_);
   }
 
   void visit(sta::PathEnd* path_end) override
   {
-    sta::PathGroupSeq groups = sta_->cmdScene()->mode()->pathGroups(path_end);
-    if (std::ranges::find(groups, group_) == groups.end()) {
+    if (clk_ && path_end->targetClk(sta_) != clk_) {
       return;
     }
-    if (clk_) {
-      const sta::Clock* end_clk = path_end->targetClk(sta_);
-      if (end_clk != clk_) {
-        return;
-      }
+    if (!group_.empty()
+        && !sta::PathGroups::inPathGroupNamed(path_end, group_, sta_)) {
+      return;
     }
-    float slack = path_end->slack(sta_);
+    const float slack = path_end->slack(sta_);
     if (slack < worst_slack_) {
       worst_slack_ = slack;
       has_slack_ = true;
+      if (keep_path_end_) {
+        worst_path_end_.reset(path_end->copy());
+      }
     }
   }
 
   float worstSlack() const { return worst_slack_; }
   bool hasSlack() const { return has_slack_; }
+  std::unique_ptr<sta::PathEnd> takeWorstPathEnd()
+  {
+    return std::move(worst_path_end_);
+  }
   void reset()
   {
     worst_slack_ = std::numeric_limits<float>::max();
     has_slack_ = false;
+    worst_path_end_.reset();
   }
 
  private:
-  const sta::PathGroup* group_;
-  sta::Sta* sta_;
+  const std::string group_;
   const sta::Clock* clk_;
+  const bool keep_path_end_;
+  sta::Sta* sta_;
   bool has_slack_ = false;
   float worst_slack_ = std::numeric_limits<float>::max();
+  std::unique_ptr<sta::PathEnd> worst_path_end_;
 };
 
-// Ensure path groups exist so findPathGroup works.
-static void ensurePathGroups(sta::dbSta* sta, bool is_setup)
-{
-  sta::StringSeq empty_names;
-  for (sta::Mode* mode : sta->modes()) {
-    // makePathGroups replaces the old groups without freeing them.
-    mode->deletePathGroups();
-    mode->makePathGroups(1,
-                         1,
-                         false,
-                         false,
-                         -sta::INF,
-                         sta::INF,
-                         empty_names,
-                         is_setup,
-                         !is_setup,
-                         false,
-                         false,
-                         false,
-                         false,
-                         false);
-  }
-}
+namespace {
 
-// Worst slack (STA units) of each endpoint in the path group, using the path
-// group visitor pattern.
-static EndpointSlacks collectFilteredSlacks(sta::dbSta* sta,
-                                            bool is_setup,
-                                            const std::string& path_group,
-                                            const std::string& clock_name)
+// An endpoint as a slack histogram counts it: its worst slack (user units) in
+// the path group of its series.
+struct EndpointSlack
+{
+  sta::Vertex* vertex;
+  std::size_t series;
+  float slack;
+};
+
+using SlackSeries
+    = std::vector<std::pair<std::string, std::vector<EndpointSlack>>>;
+
+// The endpoints a slack histogram counts, one series per requested group.
+struct HistogramSlacks
+{
+  SlackSeries series;
+  // The path group each series counts, parallel to `series` (any when empty).
+  std::vector<std::string> groups;
+  int total_endpoints = 0;
+  int unconstrained_count = 0;
+};
+
+}  // namespace
+
+// The worst slack (STA units) of each endpoint in the path group named `group`,
+// optionally captured by `clk`; `vertices` gets their vertices.
+static EndpointSlacks collectFilteredSlacks(
+    sta::dbSta* sta,
+    const bool is_setup,
+    const std::string& group,
+    const sta::Clock* clk,
+    std::map<const sta::Pin*, sta::Vertex*>& vertices)
 {
   EndpointSlacks slacks;
-
   const sta::MinMax* min_max
       = is_setup ? sta::MinMax::max() : sta::MinMax::min();
-  const sta::Clock* clk = sta->cmdScene()->sdc()->findClock(clock_name);
-
-  // Find the path group.
-  sta::PathGroup* pg = nullptr;
-  if (!path_group.empty()) {
-    pg = sta->cmdMode()->pathGroups()->findPathGroup(path_group, min_max);
-  } else if (clk) {
-    pg = sta->cmdMode()->pathGroups()->findPathGroup(clk, min_max);
-  }
-
-  if (!pg) {
-    return slacks;
-  }
-
   sta::VisitPathEnds visit_ends(sta);
-  PathGroupSlackVisitor visitor(pg, clk, sta);
+  const sta::SceneSet scenes = sta::Scene::sceneSet(sta->scenes());
+  PathGroupSlackVisitor visitor(group, clk, /*keep_path_end=*/false, sta);
 
   for (sta::Vertex* vertex : sta->endpoints()) {
-    visit_ends.visitPathEnds(vertex, &visitor);
+    visit_ends.visitPathEnds(
+        vertex, scenes, min_max->asMinMaxAll(), /*filtered=*/false, &visitor);
     // hasSlack() is false for endpoints outside this path group.
     if (visitor.hasSlack()) {
       slacks[vertex->pin()] = visitor.worstSlack();
+      vertices[vertex->pin()] = vertex;
     }
     visitor.reset();
   }
   return slacks;
-}
-
-// Count one endpoint; a finite slack goes to `slacks` in user units.
-static void addEndpointSlack(float sta_slack,
-                             float time_scale,
-                             std::vector<float>& slacks,
-                             int& total_endpoints,
-                             int& unconstrained_count)
-{
-  total_endpoints++;
-  if (sta_slack >= sta::INF || sta_slack <= -sta::INF) {
-    unconstrained_count++;
-  } else {
-    slacks.push_back(sta_slack / time_scale);
-  }
 }
 
 // Shared bin geometry so an aggregate histogram and its per-group series use
@@ -449,20 +426,27 @@ struct SlackBinEdges
   float bin_min;
   float bin_width;
   int num_bins;
+
+  // Edge i, 0 <= i <= num_bins: bin i is [edge(i), edge(i + 1)), the
+  // half-open range a bar's drill-down asks timing_report for.
+  float edge(const int i) const { return bin_min + i * bin_width; }
 };
 
-static SlackBinEdges computeSlackBinEdges(const std::vector<float>& slacks)
+// The bin edges of the union of every series, which must not all be empty.
+static SlackBinEdges computeSlackBinEdges(const SlackSeries& series)
 {
-  float min_slack = std::numeric_limits<float>::max();
-  float max_slack = std::numeric_limits<float>::lowest();
-  for (float s : slacks) {
-    min_slack = std::min(min_slack, s);
-    max_slack = std::max(max_slack, s);
+  float min_value = std::numeric_limits<float>::max();
+  float max_value = std::numeric_limits<float>::lowest();
+  for (const auto& [name, slacks] : series) {
+    for (const EndpointSlack& s : slacks) {
+      min_value = std::min(min_value, s.slack);
+      max_value = std::max(max_value, s.slack);
+    }
   }
 
   // Extend range to include zero so negative/positive split is meaningful.
-  min_slack = std::min(0.0f, min_slack);
-  max_slack = std::max(0.0f, max_slack);
+  const float min_slack = std::min(0.0f, min_value);
+  const float max_slack = std::max(0.0f, max_value);
 
   if (min_slack == max_slack) {
     return {min_slack - 0.1f, 0.3f, 1};
@@ -473,48 +457,219 @@ static SlackBinEdges computeSlackBinEdges(const std::vector<float>& slacks)
   const float bin_min = std::floor(min_slack / bin_width) * bin_width;
   const float bin_max = std::ceil(max_slack / bin_width) * bin_width;
   int num_bins = static_cast<int>(std::round((bin_max - bin_min) / bin_width));
-  num_bins = std::max(num_bins, 1);
-  return {bin_min, bin_width, num_bins};
+  SlackBinEdges edges{
+      .bin_min = bin_min,
+      .bin_width = bin_width,
+      .num_bins = std::max(num_bins, 1),
+  };
+  // The bins are half-open, so a maximum value on the top edge needs a bin
+  // above it, and rounding must not leave the minimum below the bottom edge.
+  while (edges.edge(0) > min_value) {
+    edges.bin_min -= bin_width;
+    edges.num_bins++;
+  }
+  while (edges.edge(edges.num_bins) <= max_value) {
+    edges.num_bins++;
+  }
+  return edges;
 }
 
-// Count `values` into the given bin edges (parallel to the edges' bins).
-static std::vector<int> binIntoEdges(const std::vector<float>& values,
+// The bin holding `value`, edge(i) <= value < edge(i + 1), clamped to the
+// first and last bins.
+static int binIndex(const SlackBinEdges& edges, const float value)
+{
+  int idx
+      = static_cast<int>(std::floor((value - edges.bin_min) / edges.bin_width));
+  idx = std::clamp(idx, 0, edges.num_bins - 1);
+  // The division can round a value across an edge.
+  if (idx > 0 && value < edges.edge(idx)) {
+    idx--;
+  } else if (idx + 1 < edges.num_bins && value >= edges.edge(idx + 1)) {
+    idx++;
+  }
+  return idx;
+}
+
+// Count `slacks` into the given bin edges (parallel to the edges' bins).
+// computeSlackBinEdges puts every value in [edge(0), edge(num_bins)).
+static std::vector<int> binIntoEdges(const std::vector<EndpointSlack>& slacks,
                                      const SlackBinEdges& edges)
 {
   std::vector<int> counts(edges.num_bins, 0);
-  for (float s : values) {
-    int idx = static_cast<int>((s - edges.bin_min) / edges.bin_width);
-    idx = std::clamp(idx, 0, edges.num_bins - 1);
-    counts[idx]++;
+  for (const EndpointSlack& s : slacks) {
+    counts[binIndex(edges, s.slack)]++;
   }
   return counts;
 }
 
-// Collect per-endpoint slacks (user units) for the unfiltered case.
+// Adds the per-endpoint slacks (user units) of the unfiltered case.
 static void collectUnfilteredSlacks(sta::dbSta* sta,
-                                    bool is_setup,
-                                    std::vector<float>& slacks,
-                                    int& total_endpoints,
-                                    int& unconstrained_count)
+                                    const bool is_setup,
+                                    HistogramSlacks& result)
 {
+  const std::size_t series = result.series.size();
+  std::vector<EndpointSlack>& slacks
+      = result.series.emplace_back("", std::vector<EndpointSlack>{}).second;
+  result.groups.emplace_back();
   const sta::MinMax* min_max
       = is_setup ? sta::MinMax::max() : sta::MinMax::min();
-  sta::SceneSeq scenes = sta->scenes();
+  const sta::SceneSeq scenes = sta->scenes();
+  const sta::SceneSet scene_set = sta::Scene::sceneSet(scenes);
   const float time_scale = sta->units()->timeUnit()->scale();
+  sta::VisitPathEnds visit_ends(sta);
+  PathGroupSlackVisitor visitor(
+      /*group=*/"", /*clk=*/nullptr, /*keep_path_end=*/false, sta);
   for (sta::Vertex* vertex : sta->endpoints()) {
-    addEndpointSlack(
-        sta->slack(
-            vertex->pin(), sta::RiseFallBoth::riseFall(), scenes, min_max),
-        time_scale,
-        slacks,
-        total_endpoints,
-        unconstrained_count);
+    result.total_endpoints++;
+    float slack = sta::INF;
+    if (vertex->hasFanout()) {
+      // Its path slacks include downstream requireds; take its own path
+      // ends', as Search::wnsSlacks does.
+      visit_ends.visitPathEnds(vertex,
+                               scene_set,
+                               min_max->asMinMaxAll(),
+                               /*filtered=*/false,
+                               &visitor);
+      if (visitor.hasSlack()) {
+        slack = visitor.worstSlack();
+      }
+      visitor.reset();
+    } else {
+      slack = sta->slack(
+          vertex->pin(), sta::RiseFallBoth::riseFall(), scenes, min_max);
+    }
+    if (slack >= sta::INF || slack <= -sta::INF) {
+      result.unconstrained_count++;
+      continue;
+    }
+    slacks.push_back(
+        {.vertex = vertex, .series = series, .slack = slack / time_scale});
   }
 }
 
+// The clock a chart filter names; nullptr both for no name and for a name
+// that is no clock.
+static const sta::Clock* findChartClock(const sta::dbSta* sta,
+                                        const std::string& clock_name)
+{
+  if (clock_name.empty()) {
+    return nullptr;
+  }
+  return sta->cmdScene()->sdc()->findClock(clock_name);
+}
+
+// The endpoints a slack histogram with these filters counts: one series per
+// group in `path_groups`, else one for the whole filter.
+static HistogramSlacks collectHistogramSlacks(
+    sta::dbSta* sta,
+    const bool is_setup,
+    const std::string& clock_name,
+    const std::vector<std::string>& path_groups)
+{
+  HistogramSlacks result;
+  const sta::Clock* clk = findChartClock(sta, clock_name);
+  if (!clock_name.empty() && clk == nullptr) {
+    return result;
+  }
+  // VisitPathEnds reads only the paths the search has already stored.
+  sta->updateTiming(/*full=*/false);
+  if (path_groups.empty() && clk == nullptr) {
+    collectUnfilteredSlacks(sta, is_setup, result);
+    return result;
+  }
+  // One series per group in `path_groups`, else one for clk's default group.
+  const std::vector<std::string> names
+      = path_groups.empty() ? std::vector<std::string>{""} : path_groups;
+  std::vector<EndpointSlacks> per_group;
+  std::map<const sta::Pin*, sta::Vertex*> vertices;
+  per_group.reserve(names.size());
+  result.groups.reserve(names.size());
+  for (const std::string& name : names) {
+    const std::string& group = name.empty() && clk ? clk->name() : name;
+    // A name that is no path group counts no endpoints.
+    per_group.push_back(
+        sta->isPathGroupName(group, sta->cmdScene()->sdc())
+            ? collectFilteredSlacks(sta, is_setup, group, clk, vertices)
+            : EndpointSlacks{});
+    result.series.emplace_back(name, std::vector<EndpointSlack>{});
+    result.groups.push_back(group);
+  }
+  std::vector<const EndpointSlacks*> group_slacks;
+  group_slacks.reserve(per_group.size());
+  for (const EndpointSlacks& slacks : per_group) {
+    group_slacks.push_back(&slacks);
+  }
+
+  // An endpoint in several groups counts once, in the group where it is worst.
+  const auto winners = assignEndpointsToWorstGroup(group_slacks);
+  const float time_scale = sta->units()->timeUnit()->scale();
+  for (sta::Vertex* vertex : sta->endpoints()) {
+    const auto it = winners.find(vertex->pin());
+    if (it == winners.end() || vertices.at(vertex->pin()) != vertex) {
+      continue;
+    }
+    const EndpointGroupSlack& winner = it->second;
+    result.total_endpoints++;
+    if (winner.slack >= sta::INF || winner.slack <= -sta::INF) {
+      result.unconstrained_count++;
+    } else {
+      result.series[winner.group].second.push_back({
+          .vertex = vertex,
+          .series = winner.group,
+          .slack = winner.slack / time_scale,
+      });
+    }
+  }
+  return result;
+}
+
+std::vector<TimingPathSummary> TimingReport::endpointReport(
+    const bool is_setup,
+    const int max_paths,
+    const float slack_min,
+    const float slack_max,
+    const std::vector<std::string>& path_groups,
+    const std::string& clock_name) const
+{
+  sta_->ensureGraph();
+
+  const HistogramSlacks slacks
+      = collectHistogramSlacks(sta_, is_setup, clock_name, path_groups);
+  std::vector<EndpointSlack> bar;
+  for (const auto& [name, series] : slacks.series) {
+    for (const EndpointSlack& s : series) {
+      // The bar binIndex counts the slack in.
+      if (slack_min <= s.slack && s.slack < slack_max) {
+        bar.push_back(s);
+      }
+    }
+  }
+  std::ranges::stable_sort(bar, {}, &EndpointSlack::slack);
+  bar.resize(
+      std::min(bar.size(), static_cast<std::size_t>(std::max(max_paths, 0))));
+
+  const sta::MinMaxAll* side
+      = is_setup ? sta::MinMaxAll::max() : sta::MinMaxAll::min();
+  const sta::Clock* clk = findChartClock(sta_, clock_name);
+  const sta::SceneSet scenes = sta::Scene::sceneSet(sta_->scenes());
+  sta::VisitPathEnds visit_ends(sta_);
+  std::vector<TimingPathSummary> result;
+  result.reserve(bar.size());
+  for (const EndpointSlack& s : bar) {
+    PathGroupSlackVisitor visitor(
+        slacks.groups[s.series], clk, /*keep_path_end=*/true, sta_);
+    visit_ends.visitPathEnds(
+        s.vertex, scenes, side, /*filtered=*/false, &visitor);
+    if (const std::unique_ptr<sta::PathEnd> path_end
+        = visitor.takeWorstPathEnd()) {
+      result.push_back(summarizePathEnd(*path_end));
+    }
+  }
+  return result;
+}
+
 SlackHistogramResult TimingReport::getSlackHistogram(
-    bool is_setup,
-    const std::string& path_group,
+    const bool is_setup,
     const std::string& clock_name,
     const std::vector<std::string>& path_groups) const
 {
@@ -535,80 +690,34 @@ SlackHistogramResult TimingReport::getSlackHistogram(
     }
   }
 
-  const float time_scale = sta_->units()->timeUnit()->scale();
-
-  if (!path_groups.empty() || !path_group.empty() || !clock_name.empty()) {
-    ensurePathGroups(sta_, is_setup);
-  }
-
-  // Build (group_name, slacks) entries.  Multiple entries → stacked series.
-  std::vector<std::pair<std::string, std::vector<float>>> group_slacks;
-  if (!path_groups.empty()) {
-    std::vector<EndpointSlacks> per_group;
-    per_group.reserve(path_groups.size());
-    for (const std::string& group : path_groups) {
-      per_group.push_back(
-          collectFilteredSlacks(sta_, is_setup, group, clock_name));
-      group_slacks.emplace_back(group, std::vector<float>());
-    }
-    std::vector<const EndpointSlacks*> groups;
-    groups.reserve(per_group.size());
-    for (const EndpointSlacks& slacks : per_group) {
-      groups.push_back(&slacks);
-    }
-    for (const auto& [_, winner] : assignEndpointsToWorstGroup(groups)) {
-      addEndpointSlack(winner.slack,
-                       time_scale,
-                       group_slacks[winner.group].second,
-                       result.total_endpoints,
-                       result.unconstrained_count);
-    }
-  } else if (!path_group.empty() || !clock_name.empty()) {
-    std::vector<float> slacks;
-    for (const auto& [_, slack] :
-         collectFilteredSlacks(sta_, is_setup, path_group, clock_name)) {
-      addEndpointSlack(slack,
-                       time_scale,
-                       slacks,
-                       result.total_endpoints,
-                       result.unconstrained_count);
-    }
-    group_slacks.emplace_back(path_group, std::move(slacks));
-  } else {
-    std::vector<float> slacks;
-    collectUnfilteredSlacks(sta_,
-                            is_setup,
-                            slacks,
-                            result.total_endpoints,
-                            result.unconstrained_count);
-    group_slacks.emplace_back("", std::move(slacks));
-  }
-
-  // Union of all slacks defines the shared bin edges.
-  std::vector<float> all_slacks;
-  for (const auto& [name, slacks] : group_slacks) {
-    all_slacks.insert(all_slacks.end(), slacks.begin(), slacks.end());
-  }
-  if (all_slacks.empty()) {
+  const HistogramSlacks slacks
+      = collectHistogramSlacks(sta_, is_setup, clock_name, path_groups);
+  result.total_endpoints = slacks.total_endpoints;
+  result.unconstrained_count = slacks.unconstrained_count;
+  if (std::ranges::all_of(slacks.series,
+                          [](const auto& s) { return s.second.empty(); })) {
     return result;
   }
 
-  const SlackBinEdges edges = computeSlackBinEdges(all_slacks);
-  const std::vector<int> counts = binIntoEdges(all_slacks, edges);
+  // The bins count the union of the series; >1 series are also stacked.
+  const SlackBinEdges edges = computeSlackBinEdges(slacks.series);
+  std::vector<int> counts(edges.num_bins, 0);
+  for (const auto& [name, series] : slacks.series) {
+    std::vector<int> series_counts = binIntoEdges(series, edges);
+    for (int i = 0; i < edges.num_bins; i++) {
+      counts[i] += series_counts[i];
+    }
+    if (slacks.series.size() > 1) {
+      result.series.push_back(
+          {.name = name, .counts = std::move(series_counts)});
+    }
+  }
   result.bins.reserve(edges.num_bins);
   for (int i = 0; i < edges.num_bins; i++) {
-    const float lower = edges.bin_min + i * edges.bin_width;
-    const float upper = lower + edges.bin_width;
+    const float lower = edges.edge(i);
+    const float upper = edges.edge(i + 1);
     const float center = (lower + upper) / 2.0f;
     result.bins.push_back({lower, upper, counts[i], center < 0});
-  }
-
-  // Per-group stacked series (only meaningful for >1 group).
-  if (group_slacks.size() > 1) {
-    result.series.reserve(group_slacks.size());
-    for (const auto& [name, slacks] : group_slacks) {
-      result.series.push_back({name, binIntoEdges(slacks, edges)});
-    }
   }
 
   return result;

@@ -149,238 +149,258 @@ void _dbTechLayerMinCutRule::collectMemInfo(MemInfo& info)
 
 void dbTechLayerMinCutRule::setNumCuts(int num_cuts)
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  _dbTechLayerMinCutRule* obj = reinterpret_cast<_dbTechLayerMinCutRule*>(this);
 
   obj->num_cuts_ = num_cuts;
 }
 
 int dbTechLayerMinCutRule::getNumCuts() const
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  const _dbTechLayerMinCutRule* obj
+      = reinterpret_cast<const _dbTechLayerMinCutRule*>(this);
   return obj->num_cuts_;
 }
 
 const std::map<std::string, int>& dbTechLayerMinCutRule::getCutClassCutsMap()
     const
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  const _dbTechLayerMinCutRule* obj
+      = reinterpret_cast<const _dbTechLayerMinCutRule*>(this);
   return obj->cut_class_cuts_map_;
 }
 
 void dbTechLayerMinCutRule::setWidth(int width)
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  _dbTechLayerMinCutRule* obj = reinterpret_cast<_dbTechLayerMinCutRule*>(this);
 
   obj->width_ = width;
 }
 
 int dbTechLayerMinCutRule::getWidth() const
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  const _dbTechLayerMinCutRule* obj
+      = reinterpret_cast<const _dbTechLayerMinCutRule*>(this);
   return obj->width_;
 }
 
 void dbTechLayerMinCutRule::setWithinCutDist(int within_cut_dist)
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  _dbTechLayerMinCutRule* obj = reinterpret_cast<_dbTechLayerMinCutRule*>(this);
 
   obj->within_cut_dist = within_cut_dist;
 }
 
 int dbTechLayerMinCutRule::getWithinCutDist() const
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  const _dbTechLayerMinCutRule* obj
+      = reinterpret_cast<const _dbTechLayerMinCutRule*>(this);
   return obj->within_cut_dist;
 }
 
 void dbTechLayerMinCutRule::setLength(int length)
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  _dbTechLayerMinCutRule* obj = reinterpret_cast<_dbTechLayerMinCutRule*>(this);
 
   obj->length_ = length;
 }
 
 int dbTechLayerMinCutRule::getLength() const
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  const _dbTechLayerMinCutRule* obj
+      = reinterpret_cast<const _dbTechLayerMinCutRule*>(this);
   return obj->length_;
 }
 
 void dbTechLayerMinCutRule::setLengthWithinDist(int length_within_dist)
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  _dbTechLayerMinCutRule* obj = reinterpret_cast<_dbTechLayerMinCutRule*>(this);
 
   obj->length_within_dist_ = length_within_dist;
 }
 
 int dbTechLayerMinCutRule::getLengthWithinDist() const
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  const _dbTechLayerMinCutRule* obj
+      = reinterpret_cast<const _dbTechLayerMinCutRule*>(this);
   return obj->length_within_dist_;
 }
 
 void dbTechLayerMinCutRule::setArea(int64_t area)
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  _dbTechLayerMinCutRule* obj = reinterpret_cast<_dbTechLayerMinCutRule*>(this);
 
   obj->area_ = area;
 }
 
 int64_t dbTechLayerMinCutRule::getArea() const
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  const _dbTechLayerMinCutRule* obj
+      = reinterpret_cast<const _dbTechLayerMinCutRule*>(this);
   return obj->area_;
 }
 
 void dbTechLayerMinCutRule::setAreaWithinDist(int area_within_dist)
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  _dbTechLayerMinCutRule* obj = reinterpret_cast<_dbTechLayerMinCutRule*>(this);
 
   obj->area_within_dist_ = area_within_dist;
 }
 
 int dbTechLayerMinCutRule::getAreaWithinDist() const
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  const _dbTechLayerMinCutRule* obj
+      = reinterpret_cast<const _dbTechLayerMinCutRule*>(this);
   return obj->area_within_dist_;
 }
 
 void dbTechLayerMinCutRule::setPerCutClass(bool per_cut_class)
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  _dbTechLayerMinCutRule* obj = reinterpret_cast<_dbTechLayerMinCutRule*>(this);
 
   obj->flags_.per_cut_class = per_cut_class;
 }
 
 bool dbTechLayerMinCutRule::isPerCutClass() const
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  const _dbTechLayerMinCutRule* obj
+      = reinterpret_cast<const _dbTechLayerMinCutRule*>(this);
 
   return obj->flags_.per_cut_class;
 }
 
 void dbTechLayerMinCutRule::setWithinCutDistValid(bool within_cut_dist_valid)
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  _dbTechLayerMinCutRule* obj = reinterpret_cast<_dbTechLayerMinCutRule*>(this);
 
   obj->flags_.within_cut_dist_valid = within_cut_dist_valid;
 }
 
 bool dbTechLayerMinCutRule::isWithinCutDistValid() const
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  const _dbTechLayerMinCutRule* obj
+      = reinterpret_cast<const _dbTechLayerMinCutRule*>(this);
 
   return obj->flags_.within_cut_dist_valid;
 }
 
 void dbTechLayerMinCutRule::setFromAbove(bool from_above)
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  _dbTechLayerMinCutRule* obj = reinterpret_cast<_dbTechLayerMinCutRule*>(this);
 
   obj->flags_.from_above = from_above;
 }
 
 bool dbTechLayerMinCutRule::isFromAbove() const
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  const _dbTechLayerMinCutRule* obj
+      = reinterpret_cast<const _dbTechLayerMinCutRule*>(this);
 
   return obj->flags_.from_above;
 }
 
 void dbTechLayerMinCutRule::setFromBelow(bool from_below)
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  _dbTechLayerMinCutRule* obj = reinterpret_cast<_dbTechLayerMinCutRule*>(this);
 
   obj->flags_.from_below = from_below;
 }
 
 bool dbTechLayerMinCutRule::isFromBelow() const
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  const _dbTechLayerMinCutRule* obj
+      = reinterpret_cast<const _dbTechLayerMinCutRule*>(this);
 
   return obj->flags_.from_below;
 }
 
 void dbTechLayerMinCutRule::setLengthValid(bool length_valid)
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  _dbTechLayerMinCutRule* obj = reinterpret_cast<_dbTechLayerMinCutRule*>(this);
 
   obj->flags_.length_valid = length_valid;
 }
 
 bool dbTechLayerMinCutRule::isLengthValid() const
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  const _dbTechLayerMinCutRule* obj
+      = reinterpret_cast<const _dbTechLayerMinCutRule*>(this);
 
   return obj->flags_.length_valid;
 }
 
 void dbTechLayerMinCutRule::setAreaValid(bool area_valid)
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  _dbTechLayerMinCutRule* obj = reinterpret_cast<_dbTechLayerMinCutRule*>(this);
 
   obj->flags_.area_valid = area_valid;
 }
 
 bool dbTechLayerMinCutRule::isAreaValid() const
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  const _dbTechLayerMinCutRule* obj
+      = reinterpret_cast<const _dbTechLayerMinCutRule*>(this);
 
   return obj->flags_.area_valid;
 }
 
 void dbTechLayerMinCutRule::setAreaWithinDistValid(bool area_within_dist_valid)
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  _dbTechLayerMinCutRule* obj = reinterpret_cast<_dbTechLayerMinCutRule*>(this);
 
   obj->flags_.area_within_dist_valid = area_within_dist_valid;
 }
 
 bool dbTechLayerMinCutRule::isAreaWithinDistValid() const
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  const _dbTechLayerMinCutRule* obj
+      = reinterpret_cast<const _dbTechLayerMinCutRule*>(this);
 
   return obj->flags_.area_within_dist_valid;
 }
 
 void dbTechLayerMinCutRule::setSameMetalOverlap(bool same_metal_overlap)
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  _dbTechLayerMinCutRule* obj = reinterpret_cast<_dbTechLayerMinCutRule*>(this);
 
   obj->flags_.same_metal_overlap = same_metal_overlap;
 }
 
 bool dbTechLayerMinCutRule::isSameMetalOverlap() const
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  const _dbTechLayerMinCutRule* obj
+      = reinterpret_cast<const _dbTechLayerMinCutRule*>(this);
 
   return obj->flags_.same_metal_overlap;
 }
 
 void dbTechLayerMinCutRule::setFullyEnclosed(bool fully_enclosed)
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  _dbTechLayerMinCutRule* obj = reinterpret_cast<_dbTechLayerMinCutRule*>(this);
 
   obj->flags_.fully_enclosed = fully_enclosed;
 }
 
 bool dbTechLayerMinCutRule::isFullyEnclosed() const
 {
-  _dbTechLayerMinCutRule* obj = (_dbTechLayerMinCutRule*) this;
+  const _dbTechLayerMinCutRule* obj
+      = reinterpret_cast<const _dbTechLayerMinCutRule*>(this);
 
   return obj->flags_.fully_enclosed;
 }
 
 dbTechLayerMinCutRule* dbTechLayerMinCutRule::create(dbTechLayer* parent)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) parent;
-  return (dbTechLayerMinCutRule*) _parent->min_cuts_rules_tbl_->create();
+  _dbTechLayer* _parent = reinterpret_cast<_dbTechLayer*>(parent);
+  return reinterpret_cast<dbTechLayerMinCutRule*>(
+      _parent->min_cuts_rules_tbl_->create());
 }
 void dbTechLayerMinCutRule::destroy(dbTechLayerMinCutRule* obj)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  _dbTechLayer* _parent
+      = static_cast<_dbTechLayer*>(obj->getImpl()->getOwner());
   dbProperty::destroyProperties(obj);
-  _parent->min_cuts_rules_tbl_->destroy((_dbTechLayerMinCutRule*) obj);
+  _parent->min_cuts_rules_tbl_->destroy(
+      reinterpret_cast<_dbTechLayerMinCutRule*>(obj));
 }
 // User Code Begin dbTechLayerMinCutRulePublicMethods
 

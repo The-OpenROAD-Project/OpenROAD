@@ -27,16 +27,17 @@ u5/X                                    0.13    0.68   -0.55 (VIOLATED)
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpoint
 ------------------------------------------------------------------------------------------------------------------------------
        0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.883 |       -1.9 |      1 | u5/A
-       4* |       1 |       0 |        2 |      0 |     0 |  +193.3% |    0.780 |        0.0 |      1 | u5/A
-    final |       1 |       0 |        2 |      0 |     0 |  +193.3% |    0.780 |        0.0 |      0 | u5/A
+       5* |       1 |       2 |        1 |      0 |     0 |  +100.0% |    0.483 |        0.0 |      1 | u5/A
+    final |       1 |       2 |        1 |      0 |     0 |  +100.0% |    0.483 |        0.0 |      0 | u5/A
 ------------------------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0059] Removed 1 buffers.
-[INFO RSZ-0040] Inserted 2 buffers.
+[INFO RSZ-0040] Inserted 1 buffers.
+[INFO RSZ-0051] Resized 2 instances: 2 up, 0 up match, 0 down, 0 VT
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-u5/X                                    1.51    7.71   -6.20 (VIOLATED)
+u5/X                                    1.51    7.76   -6.26 (VIOLATED)
 
 max capacitance
 
@@ -45,4 +46,4 @@ Pin                                    Limit     Cap   Slack
 u5/X                                    0.13    0.68   -0.55 (VIOLATED)
 
 Repair timing output passed/skipped equivalence test
-worst slack max 0.78
+worst slack max 0.48

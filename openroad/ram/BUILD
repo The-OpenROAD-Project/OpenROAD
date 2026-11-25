@@ -31,6 +31,7 @@ cc_library(
     ],
     deps = [
         "//:ord",
+        "//openroad/dbSta",
         "//openroad/dbSta:dbNetwork",
         "//openroad/dpl",
         "//openroad/drt",
@@ -40,6 +41,7 @@ cc_library(
         "//openroad/ppl",
         "//openroad/sta:opensta_lib",
         "//openroad/utl",
+        "@fmt",
         "@tcl_lang//:tcl",
     ],
 )

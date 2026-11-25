@@ -3,6 +3,7 @@
 
 #include "web/web.h"
 
+#include <fcntl.h>
 #include <netinet/in.h>
 
 #include <algorithm>
@@ -49,9 +50,11 @@
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbChipCallBackObj.h"
+#include "renderer_controls.h"
 #include "report_html.h"
 #include "request_dispatcher.h"
 #include "request_handler.h"
+#include "script_view.h"
 #include "tcl.h"
 #include "tile_generator.h"
 #include "timing_report.h"
@@ -206,6 +209,7 @@ http::response<http::string_body> textResponse(
 // Render the layout image requested by /download/image into `res`.
 void handleImageDownload(const std::shared_ptr<TileGenerator>& generator,
                          const std::map<std::string, std::string>& params,
+                         utl::Logger* logger,
                          http::response<http::string_body>& res)
 {
   if (!generator || !generator->getBlock()) {
@@ -231,11 +235,11 @@ void handleImageDownload(const std::shared_ptr<TileGenerator>& generator,
   TileVisibility vis;
   const auto vis_it = params.find("vis");
   if (vis_it != params.end()) {
-    // Non-throwing parse: a malformed vis falls back to defaults (all visible).
-    std::error_code ec;
-    const boost::json::value parsed = boost::json::parse(vis_it->second, ec);
-    if (!ec && parsed.is_object()) {
-      vis.parseFromJson(parsed.as_object());
+    // A malformed or wrongly typed vis falls back to defaults (all visible).
+    try {
+      vis.parseFromJson(boost::json::parse(vis_it->second).as_object());
+    } catch (const std::exception& e) {
+      debugPrint(logger, utl::WEB, "http", 1, "ignoring vis: {}", e.what());
     }
   }
 
@@ -357,7 +361,7 @@ static http::response<http::string_body> dispatch_request(
     if (file_path == "/download/image") {
       const ScriptGateScope gate(script_gate);
       if (gate.entered()) {
-        handleImageDownload(generator, params, res);
+        handleImageDownload(generator, params, logger, res);
       } else {
         res.result(http::status::service_unavailable);
         res.body() = kScriptBusyMsg;
@@ -566,23 +570,27 @@ bool isRegisteredHeatMapName(const std::string& name)
   return false;
 }
 
+void seedRendererControls(RendererControls& controls)
+{
+  for (web::Renderer* renderer : web::Gui::get()->renderers()) {
+    // The controls a renderer declares are fixed once it has registered, so
+    // one pass per renderer is enough — the render path calls this on every
+    // tile and must not pay for the walk each time.
+    if (!controls.markSeeded(renderer)) {
+      continue;
+    }
+    for (const auto& [name, control] : renderer->getDisplayControls()) {
+      controls.seed(renderer->displayControlPath(name), control.visibility);
+    }
+  }
+}
+
 void seedRendererControls(WebViewerHook* hook)
 {
   if (hook == nullptr) {
     return;
   }
-  for (web::Renderer* renderer : web::Gui::get()->renderers()) {
-    // The controls a renderer declares are fixed once it has registered, so
-    // one pass per renderer is enough — the render path calls this on every
-    // tile and must not pay for the walk each time.
-    if (!hook->markRendererSeeded(renderer)) {
-      continue;
-    }
-    for (const auto& [name, control] : renderer->getDisplayControls()) {
-      hook->seedDisplayControlVisible(renderer->displayControlPath(name),
-                                      control.visibility);
-    }
-  }
+  seedRendererControls(hook->rendererControls());
 }
 
 // Serializes the per-renderer display controls for the `renderer_controls`
@@ -610,7 +618,6 @@ std::string rendererControlsJson(WebViewerHook* hook)
   // Matching the name alone would silently drop an unrelated renderer's
   // control that happened to be called "Pin Density"; matching the group
   // alone would drop a real renderer that picked the same group name.
-  static constexpr const char* kHeatMapGroup = "Heat Maps";
 
   boost::json::array controls;
   for (web::Renderer* renderer : web::Gui::get()->renderers()) {
@@ -645,12 +652,22 @@ std::string rendererControlsJson(WebViewerHook* hook)
   return boost::json::serialize(root);
 }
 
+void setRendererControl(RendererControls& controls,
+                        const std::string& path,
+                        const bool value)
+{
+  controls.set(path, value);
+  if (value) {
+    applyRendererControlExclusivity(controls, path);
+  }
+}
+
 // The per-renderer control just switched on at `path` turns off the siblings
 // it declares mutually exclusive with, mirroring
 // DisplayControls::itemChanged: exclusivity is scoped to the parent group, an
 // empty name means "every sibling", and renderers that share a group name
 // share the parent, so a sibling can belong to another renderer.
-void applyRendererControlExclusivity(WebViewerHook* hook,
+void applyRendererControlExclusivity(RendererControls& controls,
                                      const std::string& path)
 {
   std::string group;
@@ -688,7 +705,7 @@ void applyRendererControlExclusivity(WebViewerHook* hook,
       if (control_path == path) {
         continue;
       }
-      hook->setDisplayControlVisible(control_path, false);
+      controls.set(control_path, false);
     }
   }
 }
@@ -908,10 +925,7 @@ WebSocketSession::WebSocketSession(
         try {
           const std::string path = std::string(req.json.at("path").as_string());
           const bool value = req.json.at("value").as_bool();
-          viewer_hook_->setDisplayControlVisible(path, value);
-          if (value) {
-            applyRendererControlExclusivity(viewer_hook_, path);
-          }
+          setRendererControl(viewer_hook_->rendererControls(), path, value);
           // Every client shows the same server-side state, so tell them all;
           // the renderers redraw from the new values on the next tile.
           viewer_hook_->sessions().broadcast(
@@ -1700,6 +1714,9 @@ Listener::Listener(net::io_context& ioc,
   if (ec) {
     logger_->error(utl::WEB, 10, "Failed to open acceptor: {}", ec.message());
   }
+  // Not inherited by a browser or a Tcl `exec`, which would hold the port
+  // after openroad exits.
+  fcntl(acceptor_.native_handle(), F_SETFD, FD_CLOEXEC);
 
   acceptor_.set_option(net::socket_base::reuse_address(true), ec);
   if (ec) {
@@ -1730,6 +1747,10 @@ void Listener::do_accept()
 
 void Listener::on_accept(beast::error_code ec, Tcp::socket socket)
 {
+  if (!ec) {
+    // Like the acceptor's: not inherited by a browser or a Tcl `exec`.
+    fcntl(socket.native_handle(), F_SETFD, FD_CLOEXEC);
+  }
   if (ec) {
     debugPrint(logger_, utl::WEB, "http", 1, "accept error: {}", ec.message());
     if (ec == net::error::operation_aborted || !acceptor_.is_open()) {
@@ -1764,8 +1785,10 @@ WebServer::WebServer(odb::dbDatabase* db,
       logger_(logger),
       interp_(interp),
       num_threads_(1),
-      tcl_eval_(std::make_shared<TclEvaluator>(interp, logger))
+      tcl_eval_(std::make_shared<TclEvaluator>(interp, logger)),
+      script_view_(std::make_unique<ScriptView>(db, logger))
 {
+  web::Gui::get()->setScriptView(script_view_.get());
 }
 
 void WebServer::setThreadCount(int num_threads)
@@ -1836,6 +1859,13 @@ WebServer::~WebServer()
   if (log_sink_) {
     logger_->removeSink(log_sink_);
     log_sink_.reset();
+  }
+  // The script view goes with us, so nothing may reach it afterwards.
+  if (web::Gui::get()->getScriptView() == script_view_.get()) {
+    web::Gui::get()->setScriptView(nullptr);
+  }
+  if (viewer_hook_) {
+    viewer_hook_->setRendererControls(nullptr);
   }
   // Also leak viewer_hook_ — it may be referenced by Gui's
   // headless_viewer_ pointer which outlives us (static singleton).
@@ -2254,21 +2284,25 @@ std::vector<unsigned char> resampleRgba(const std::vector<unsigned char>& src,
   return dst;
 }
 
-// Parse the visibility JSON produced by the Tcl layer (shared by saveImage
-// and gifAddFrame).
-TileVisibility parseVis(const std::string& vis_json, utl::Logger* logger)
+// The visibility the -display_option settings of saveImage and gifAddFrame
+// ask for.
+TileVisibility visibilityFrom(
+    const std::map<std::string, bool>& display_settings,
+    utl::Logger* logger)
 {
+  boost::json::object options;
+  for (const auto& [key, value] : display_settings) {
+    options[key] = value;
+  }
   TileVisibility vis;
-  if (!vis_json.empty()) {
-    try {
-      boost::json::value v = boost::json::parse(vis_json);
-      if (auto* obj = v.if_object()) {
-        vis.parseFromJson(*obj);
-      }
-    } catch (const std::exception& e) {
-      logger->warn(
-          utl::WEB, 42, "Ignoring malformed visibility JSON: {}", e.what());
-    }
+  try {
+    vis.parseFromJson(options);
+  } catch (const std::exception& e) {
+    logger->warn(
+        utl::WEB,
+        42,
+        "Ignoring the display options, one is not an on/off setting: {}",
+        e.what());
   }
   return vis;
 }
@@ -2312,13 +2346,13 @@ void WebServer::saveImage(const std::string& filename,
                           const int y1,
                           const int width_px,
                           const double dbu_per_pixel,
-                          const std::string& vis_json)
+                          const std::map<std::string, bool>& display_settings)
 {
   // Create generator on demand (server may not be running).
   ensureGenerator().eagerInit();
 
   const odb::Rect region(x0, y0, x1, y1);
-  const TileVisibility vis = parseVis(vis_json, logger_);
+  const TileVisibility vis = visibilityFrom(display_settings, logger_);
   generator_->saveImage(filename,
                         region,
                         width_px,
@@ -2725,7 +2759,7 @@ void WebServer::gifAddFrame(std::optional<int> key,
                             const int width_px,
                             const double dbu_per_pixel,
                             std::optional<int> delay,
-                            const std::string& vis_json)
+                            const std::map<std::string, bool>& display_settings)
 {
   int idx = 0;
   WebGif* gif = resolveGif(gifs_, key, &idx);
@@ -2742,7 +2776,7 @@ void WebServer::gifAddFrame(std::optional<int> key,
     generator_->eagerInit();
   }
 
-  const TileVisibility vis = parseVis(vis_json, logger_);
+  const TileVisibility vis = visibilityFrom(display_settings, logger_);
   int w = 0;
   int h = 0;
   std::vector<unsigned char> rgba

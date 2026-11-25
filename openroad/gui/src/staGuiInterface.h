@@ -397,7 +397,6 @@ class STAGuiInterface
   EndPointSlackMap getEndPointToSlackMap(const sta::Clock* clk);
 
   std::set<std::string> getGroupPathsNames() const;
-  void updatePathGroups();
 
  private:
   sta::dbSta* sta_;
