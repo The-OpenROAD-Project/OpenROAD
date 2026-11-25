@@ -617,14 +617,14 @@ TEST_F(CheckPlacementTest, LegalCellPosRebuildsReleasedGridOnce)
   ASSERT_NE(buf, nullptr);
 
   dp_.detailedPlacement(/*max_displacement_x=*/0, /*max_displacement_y=*/0);
-  ASSERT_TRUE(dp_.grid_->pixelsReleased());
+  ASSERT_FALSE(dp_.grid_->hasPixels());
+  ASSERT_GT(dp_.grid_->getRowCount().v, 0);
 
   const odb::Rect macro_box = macro->getBBox()->getBox();
   buf->setLocation(kCoreX + 11 * kSiteWidth, kCoreY + kRowHeight);
   dp_.legalCellPos(buf);
   EXPECT_FALSE(buf->getBBox()->getBox().overlaps(macro_box));
   ASSERT_TRUE(dp_.grid_->hasPixels());
-  EXPECT_FALSE(dp_.grid_->pixelsReleased());
 
   // Making the grid again resets every pixel, so a mark left in one
   // survives the second call only if that call kept the grid.
