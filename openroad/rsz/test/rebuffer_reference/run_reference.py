@@ -17,6 +17,8 @@ import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEST_DIR = os.path.dirname(HERE)
+# Length step per path index (bvl_step_um in buffer_varying_lengths_pdk.tcl).
+STEP_UM = {"nangate45": 25.0, "asap7": 3.75}
 
 
 def run_openroad(openroad, script, threads, env_vars):
@@ -59,7 +61,7 @@ def describe(driver, cells):
     return f"{short(driver)}: " + (" ".join(short(cell) for cell in cells) or "-")
 
 
-def compare(rsz, reference):
+def compare(rsz, reference, step_um):
     print(
         " Length |   rsz (ps) solution          | ref (ps) solution          |  gap (ps)"
     )
@@ -70,13 +72,14 @@ def compare(rsz, reference):
         gap = rsz_delay - ref_delay
         gaps.append(gap)
         print(
-            f" {index * 25:6d} | {rsz_delay:7.1f} {describe(rsz_driver, rsz_cells):22s}"
+            f" {index * step_um:6.1f} | {rsz_delay:7.1f}"
+            f" {describe(rsz_driver, rsz_cells):22s}"
             f" | {ref_delay:7.1f} {describe(ref_driver, ref_cells):18s} | {gap:6.1f}"
         )
     worst = max(range(len(gaps)), key=lambda k: gaps[k])
     print(
         f"gap vs reference: mean {sum(gaps) / len(gaps):.2f} ps,"
-        f" max {gaps[worst]:.2f} ps at {(worst + 1) * 25} um,"
+        f" max {gaps[worst]:.2f} ps at {(worst + 1) * step_um:g} um,"
         f" {sum(gap > 1.0 for gap in gaps)} of {len(gaps)} lengths over 1 ps"
     )
 
@@ -84,6 +87,9 @@ def compare(rsz, reference):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--openroad", required=True, help="openroad binary")
+    parser.add_argument(
+        "--pdk", choices=sorted(STEP_UM), default="nangate45", help="test PDK"
+    )
     parser.add_argument(
         "--size-driver",
         action="store_true",
@@ -99,41 +105,36 @@ def main():
     args = parser.parse_args()
 
     case = "size_driver" if args.size_driver else "fixed"
-    reference_file = os.path.join(HERE, f"reference_{case}.txt")
+    reference_file = os.path.join(HERE, f"reference_{args.pdk}_{case}.txt")
     openroad = os.path.abspath(args.openroad)
     work_dir = args.work_dir or tempfile.mkdtemp(prefix="rebuffer_reference_")
     os.makedirs(work_dir, exist_ok=True)
     size_driver = "1" if args.size_driver else "0"
 
-    rsz_file = os.path.join(work_dir, f"rsz_{case}.txt")
+    rsz_file = os.path.join(work_dir, f"rsz_{args.pdk}_{case}.txt")
+    pdk_env = {"REF_PDK": args.pdk, "REF_SIZE_DRIVER": size_driver}
     run_openroad(
-        openroad,
-        "rsz_solution.tcl",
-        args.threads,
-        {"REF_SIZE_DRIVER": size_driver, "REF_OUT": rsz_file},
+        openroad, "rsz_solution.tcl", args.threads, {**pdk_env, "REF_OUT": rsz_file}
     )
 
     if args.search:
-        sweep_file = os.path.join(work_dir, f"sweep_{case}.txt")
+        sweep_file = os.path.join(work_dir, f"sweep_{args.pdk}_{case}.txt")
         run_openroad(
-            openroad,
-            "sweep.tcl",
-            args.threads,
-            {"REF_SIZE_DRIVER": size_driver, "REF_OUT": sweep_file},
+            openroad, "sweep.tcl", args.threads, {**pdk_env, "REF_OUT": sweep_file}
         )
         run_openroad(
             openroad,
             "search.tcl",
             args.threads,
             {
-                "REF_SIZE_DRIVER": size_driver,
+                **pdk_env,
                 "REF_RSZ": rsz_file,
                 "REF_SWEEP": sweep_file,
                 "REF_OUT": reference_file,
             },
         )
 
-    compare(read_solutions(rsz_file), read_solutions(reference_file))
+    compare(read_solutions(rsz_file), read_solutions(reference_file), STEP_UM[args.pdk])
 
 
 if __name__ == "__main__":

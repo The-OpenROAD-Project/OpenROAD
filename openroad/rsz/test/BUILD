@@ -25,6 +25,8 @@ TESTS = [
     "buffer_ports8",
     "buffer_ports9",
     "buffer_varying_lengths",
+    "buffer_varying_lengths_asap7",
+    "buffer_varying_lengths_asap7_size_driver",
     "buffer_varying_lengths_size_driver",
     "clone_flat",
     "clone_hier",
@@ -52,7 +54,12 @@ TESTS = [
     "rebuffer1",
     "rebuffer1_hier",
     "rebuffer_size_driver",
+    "rebuffer_size_driver_flat_guard",
     "rebuffer_size_driver_guards",
+    "rebuffer_size_driver_passing_leakage",
+    "rebuffer_size_driver_plan_max_cap",
+    "rebuffer_size_driver_plan_side_load",
+    "rebuffer_size_driver_shared_input",
     "recover_power_verbose",
     "remove_buffers_hier1",
     "remove_buffers1",
@@ -391,6 +398,8 @@ filegroup(
 
 # Tests that reference other tests
 extra_deps = {
+    "buffer_varying_lengths_asap7": ["buffer_varying_lengths.tcl"],
+    "buffer_varying_lengths_asap7_size_driver": ["buffer_varying_lengths.tcl"],
     "buffer_varying_lengths_size_driver": ["buffer_varying_lengths.tcl"],
     "global_sizing_threads": ["global_sizing.tcl"],
     "repair_fanout6_multi": ["repair_fanout6.tcl"],

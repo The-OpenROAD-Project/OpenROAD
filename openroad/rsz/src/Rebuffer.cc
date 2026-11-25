@@ -4,6 +4,7 @@
 #include "Rebuffer.hh"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cmath>
 #include <cstddef>
@@ -35,6 +36,7 @@
 #include "sta/GraphClass.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
@@ -48,6 +50,7 @@
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
+#include "utl/scope.h"
 #include "utl/timer.h"
 
 namespace rsz {
@@ -85,7 +88,28 @@ bool drivesDistributedLoadBeforeNextBuffer(const BufferedNetPtr& tree,
   logger->critical(RSZ, 1013, "unhandled BufferedNet type");
 }
 
+// Count direct load/buffer sinks seen by the root before any downstream buffer.
+int countDirectSinks(const BufferedNetPtr& tree)
+{
+  if (!tree) {
+    return 0;
+  }
+  switch (tree->type()) {
+    case BnetType::load:
+    case BnetType::buffer:
+      return 1;
+    case BnetType::wire:
+    case BnetType::via:
+      return countDirectSinks(tree->ref());
+    case BnetType::junction:
+      return countDirectSinks(tree->ref()) + countDirectSinks(tree->ref2());
+  }
+  return 0;
+}
+
 }  // namespace
+
+static bool isPortBuffer(sta::dbNetwork* network, sta::Instance* inst);
 
 Rebuffer::Rebuffer(Resizer* resizer) : resizer_(resizer)
 {
@@ -98,6 +122,7 @@ void Rebuffer::annotateLoadSlacks(BnetPtr& tree, sta::Vertex* root_vertex)
   for (auto rf_index : sta::RiseFall::rangeIndex()) {
     arrival_paths_[rf_index] = nullptr;
   }
+  clearDriverArcCache();
 
   visitTree(
       [&](auto& recurse, int level, const BnetPtr& node) -> int {
@@ -230,6 +255,17 @@ std::tuple<sta::Delay, sta::Delay, sta::Slew> Rebuffer::drvrPinTiming(
 
   sta::Delay delay = 0, correction = sta::INF;
   sta::Slew slew = 0;
+  if (plan_cell_ != nullptr) {
+    for (const sta::RiseFall* rf : bnet->slackTransition()->range()) {
+      // planForDriverCell() only plans for cells with matching arcs.
+      const CellArcTiming timing = cellArcTiming(rf, plan_cell_, bnet->cap())
+                                       .value_or(CellArcTiming{});
+      delay = std::max(timing.delay, delay);
+      correction = std::min(timing.correction, correction);
+      slew = std::max(timing.slew, slew);
+    }
+    return {delay, correction, slew};
+  }
   for (auto rf : bnet->slackTransition()->range()) {
     const sta::Path* arrival_path = arrival_paths_[rf->index()];
     const sta::Path* driver_path = arrival_path->prevPath();
@@ -278,6 +314,118 @@ std::tuple<sta::Delay, sta::Delay, sta::Slew> Rebuffer::drvrPinTiming(
   return {delay, correction, slew};
 }
 
+std::optional<Rebuffer::CellArcTiming> Rebuffer::cellArcTiming(
+    const sta::RiseFall* rf,
+    sta::LibertyCell* cell,
+    const float tree_cap)
+{
+  const sta::Path* arrival_path = arrival_paths_[rf->index()];
+  if (arrival_path == nullptr) {
+    return {};
+  }
+  const sta::Path* driver_path = arrival_path->prevPath();
+  const sta::TimingArc* driver_arc = arrival_path->prevArc(resizer_);
+  const sta::Edge* driver_edge = arrival_path->prevEdge(resizer_);
+  if (driver_path == nullptr || driver_arc == nullptr) {
+    return CellArcTiming{};
+  }
+  const CellArc cell_arc = cellArc(rf, cell, driver_arc);
+  if (cell_arc.arc == nullptr) {
+    return {};
+  }
+  const DriverArcContext& context
+      = driverArcContext(rf, driver_path, driver_arc, driver_edge);
+
+  sta::LoadPinIndexMap load_pin_index_map(network_);
+  sta::ArcDcalcResult dcalc_result
+      = delayCalc()->gateDelay(nullptr,
+                               cell_arc.arc,
+                               context.in_slew,
+                               tree_cap + cell_arc.out_port->capacitance(),
+                               nullptr,
+                               load_pin_index_map,
+                               driver_path->scene(sta_),
+                               driver_path->minMax(sta_));
+
+  // A larger input capacitance slows the previous stage.
+  const sta::Delay upstream
+      = context.prev_drive_resistance
+        * (cell_arc.from->capacitance() - driver_arc->from()->capacitance());
+
+  const sta::Arrival prev_arrival = driver_path->isClock(sta_)
+                                        ? search_->clkPathArrival(driver_path)
+                                        : driver_path->arrival();
+  return CellArcTiming{
+      .delay = dcalc_result.gateDelay(),
+      .correction = arrival_path->arrival()
+                    - (prev_arrival + dcalc_result.gateDelay() + upstream),
+      .slew = dcalc_result.drvrSlew(),
+      .out_port = cell_arc.out_port,
+  };
+}
+
+const Rebuffer::DriverArcContext& Rebuffer::driverArcContext(
+    const sta::RiseFall* rf,
+    const sta::Path* driver_path,
+    const sta::TimingArc* driver_arc,
+    const sta::Edge* driver_edge)
+{
+  std::optional<DriverArcContext>& context = driver_arc_contexts_[rf->index()];
+  if (context) {
+    return *context;
+  }
+  context.emplace();
+  context->in_slew
+      = graph_delay_calc_->edgeFromSlew(driver_path->vertex(sta_),
+                                        driver_arc->fromEdge()->asRiseFall(),
+                                        driver_edge,
+                                        driver_path->scene(sta_),
+                                        driver_path->minMax(sta_));
+  const sta::Path* prev_drvr_path = driver_path->prevPath();
+  if (prev_drvr_path != nullptr) {
+    const sta::Pin* prev_drvr_pin = prev_drvr_path->pin(sta_);
+    if (prev_drvr_pin != nullptr) {
+      context->prev_drive_resistance = resizer_->driveResistance(prev_drvr_pin);
+    }
+  }
+  return *context;
+}
+
+Rebuffer::CellArc Rebuffer::cellArc(const sta::RiseFall* rf,
+                                    sta::LibertyCell* cell,
+                                    const sta::TimingArc* driver_arc)
+{
+  const auto [it, inserted] = cell_arcs_.try_emplace({cell, rf->index()});
+  CellArc& cell_arc = it->second;
+  if (!inserted) {
+    return cell_arc;
+  }
+  sta::LibertyPort* from = cell->findLibertyPort(driver_arc->from()->name());
+  sta::LibertyPort* out_port = cell->findLibertyPort(driver_arc->to()->name());
+  if (from == nullptr || out_port == nullptr) {
+    return cell_arc;
+  }
+  for (sta::TimingArcSet* arc_set : cell->timingArcSets(from, out_port)) {
+    if (arc_set->role() != driver_arc->role()) {
+      continue;
+    }
+    for (sta::TimingArc* cand : arc_set->arcs()) {
+      if (cand->fromEdge() == driver_arc->fromEdge()
+          && cand->toEdge() == driver_arc->toEdge()) {
+        cell_arc = {.arc = cand, .from = from, .out_port = out_port};
+        return cell_arc;
+      }
+    }
+  }
+  return cell_arc;
+}
+
+void Rebuffer::clearDriverArcCache()
+{
+  driver_arc_contexts_.fill(std::nullopt);
+  cell_arcs_.clear();
+}
+
 std::optional<FixedDelay> Rebuffer::slackWithDriverCell(const BnetPtr& bnet,
                                                         sta::LibertyCell* cell)
 {
@@ -287,126 +435,50 @@ std::optional<FixedDelay> Rebuffer::slackWithDriverCell(const BnetPtr& bnet,
   sta::Delay correction = sta::INF;
   sta::LibertyPort* out_port = nullptr;
   for (const sta::RiseFall* rf : bnet->slackTransition()->range()) {
-    const sta::Path* arrival_path = arrival_paths_[rf->index()];
-    if (arrival_path == nullptr) {
+    const std::optional<CellArcTiming> timing
+        = cellArcTiming(rf, cell, bnet->cap());
+    if (!timing) {
       return {};
     }
-    const sta::Path* driver_path = arrival_path->prevPath();
-    const sta::TimingArc* driver_arc = arrival_path->prevArc(resizer_);
-    const sta::Edge* driver_edge = arrival_path->prevEdge(resizer_);
-    if (driver_path == nullptr || driver_arc == nullptr) {
+    if (timing->out_port == nullptr) {
+      // No driver arc: the path starts at the driver pin.
       correction = std::min(correction, sta::Delay(0.0));
       continue;
     }
-    sta::LibertyPort* from = cell->findLibertyPort(driver_arc->from()->name());
-    out_port = cell->findLibertyPort(driver_arc->to()->name());
-    if (from == nullptr || out_port == nullptr) {
+    if (timing->slew > drvr_pin_max_slew_) {
       return {};
     }
-    const sta::TimingArc* arc = nullptr;
-    for (sta::TimingArcSet* arc_set : cell->timingArcSets(from, out_port)) {
-      if (arc_set->role() != driver_arc->role()) {
-        continue;
-      }
-      for (sta::TimingArc* cand : arc_set->arcs()) {
-        if (cand->fromEdge() == driver_arc->fromEdge()
-            && cand->toEdge() == driver_arc->toEdge()) {
-          arc = cand;
-          break;
-        }
-      }
-      if (arc != nullptr) {
-        break;
-      }
-    }
-    if (arc == nullptr) {
-      return {};
-    }
-
-    sta::LoadPinIndexMap load_pin_index_map(network_);
-    const sta::Slew in_slew
-        = graph_delay_calc_->edgeFromSlew(driver_path->vertex(sta_),
-                                          driver_arc->fromEdge()->asRiseFall(),
-                                          driver_edge,
-                                          driver_path->scene(sta_),
-                                          driver_path->minMax(sta_));
-    sta::ArcDcalcResult dcalc_result
-        = delayCalc()->gateDelay(nullptr,
-                                 arc,
-                                 in_slew,
-                                 bnet->cap() + out_port->capacitance(),
-                                 nullptr,
-                                 load_pin_index_map,
-                                 driver_path->scene(sta_),
-                                 driver_path->minMax(sta_));
-    if (dcalc_result.drvrSlew() > drvr_pin_max_slew_) {
-      return {};
-    }
-
-    // A larger input capacitance slows the previous stage.
-    sta::Delay upstream = 0.0;
-    const sta::Path* prev_drvr_path = driver_path->prevPath();
-    if (prev_drvr_path != nullptr) {
-      const sta::Pin* prev_drvr_pin = prev_drvr_path->pin(sta_);
-      if (prev_drvr_pin != nullptr) {
-        upstream = resizer_->driveResistance(prev_drvr_pin)
-                   * (from->capacitance() - driver_arc->from()->capacitance());
-      }
-    }
-
-    const sta::Arrival prev_arrival = driver_path->isClock(sta_)
-                                          ? search_->clkPathArrival(driver_path)
-                                          : driver_path->arrival();
-    const sta::Delay rf_correction
-        = arrival_path->arrival()
-          - (prev_arrival + dcalc_result.gateDelay() + upstream);
-    correction = std::min(correction, rf_correction);
+    out_port = timing->out_port;
+    correction = std::min(correction, timing->correction);
   }
   if (out_port == nullptr || !loadSlewSatisfactory(out_port, bnet)) {
+    return {};
+  }
+  // The trees were built against the capacitance limits of their buffers,
+  // not of the driver cell.
+  bool cap_limit_exists = false;
+  float cap_limit = 0.0;
+  out_port->capacitanceLimit(max_, cap_limit, cap_limit_exists);
+  if (cap_limit_exists && bnet->cap() > maxCapMargined(cap_limit)) {
     return {};
   }
   return bnet->slack() + FixedDelay(correction, resizer_);
 }
 
-bool Rebuffer::upstreamSideLoadsOk(sta::LibertyCell* cell,
-                                   const FixedDelay slack_limit)
+FixedDelay Rebuffer::upstreamSideLoadSlack(sta::LibertyCell* cell)
 {
-  for (const sta::Path* arrival_path : arrival_paths_) {
-    if (arrival_path == nullptr) {
-      continue;
-    }
-    const sta::Path* driver_path = arrival_path->prevPath();
-    const sta::TimingArc* driver_arc = arrival_path->prevArc(resizer_);
-    if (driver_path == nullptr || driver_arc == nullptr) {
-      continue;
-    }
-    const sta::Path* prev_drvr_path = driver_path->prevPath();
-    if (prev_drvr_path == nullptr) {
-      continue;
-    }
-    const sta::Pin* prev_drvr_pin = prev_drvr_path->pin(sta_);
-    const sta::LibertyPort* prev_port = network_->libertyPort(prev_drvr_pin);
-    const sta::LibertyPort* from
-        = cell->findLibertyPort(driver_arc->from()->name());
-    if (prev_port == nullptr || from == nullptr) {
-      continue;
-    }
-    const float delta
-        = resizer_->driveResistance(prev_drvr_pin)
-          * (from->capacitance() - driver_arc->from()->capacitance());
-    if (delta <= 0.0) {
-      continue;
-    }
-    const sta::Pin* driver_input = driver_path->pin(sta_);
-    sta::Net* prev_net = network_->net(prev_drvr_pin);
-    if (prev_net == nullptr) {
-      continue;
-    }
+  FixedDelay worst = FixedDelay::INF;
+  // Lower `worst` to the slack each load of `net` other than `skip` keeps
+  // when `net` slows by `delta`.
+  auto slow_loads = [&](sta::Net* net,
+                        const sta::Pin* drvr_pin,
+                        const sta::Pin* skip,
+                        const float delta) {
     std::unique_ptr<sta::NetConnectedPinIterator> pin_iter(
-        network_->connectedPinIterator(prev_net));
+        network_->connectedPinIterator(net));
     while (pin_iter->hasNext()) {
       const sta::Pin* pin = pin_iter->next();
-      if (pin == driver_input || pin == prev_drvr_pin || !network_->isLoad(pin)
+      if (pin == skip || pin == drvr_pin || !network_->isLoad(pin)
           || network_->isHierarchical(pin)) {
         continue;
       }
@@ -427,18 +499,85 @@ bool Rebuffer::upstreamSideLoadsOk(sta::LibertyCell* cell,
       }
       const FixedDelay before(slack, resizer_);
       const FixedDelay after = before - FixedDelay(delta, resizer_);
-      if (after < before && after < slack_limit) {
-        return false;
+      if (after < before) {
+        worst = std::min(worst, after);
       }
     }
+  };
+
+  // The input on the timed path: slackWithDriverCell() charges the path
+  // itself, so only the previous net's other loads are checked.
+  std::set<const sta::Pin*> timed_inputs;
+  for (const sta::Path* arrival_path : arrival_paths_) {
+    if (arrival_path == nullptr) {
+      continue;
+    }
+    const sta::Path* driver_path = arrival_path->prevPath();
+    const sta::TimingArc* driver_arc = arrival_path->prevArc(resizer_);
+    if (driver_path == nullptr || driver_arc == nullptr) {
+      continue;
+    }
+    const sta::Pin* driver_input = driver_path->pin(sta_);
+    timed_inputs.insert(driver_input);
+    const sta::Path* prev_drvr_path = driver_path->prevPath();
+    if (prev_drvr_path == nullptr) {
+      continue;
+    }
+    const sta::Pin* prev_drvr_pin = prev_drvr_path->pin(sta_);
+    const sta::LibertyPort* prev_port = network_->libertyPort(prev_drvr_pin);
+    const sta::LibertyPort* from
+        = cell->findLibertyPort(driver_arc->from()->name());
+    if (prev_port == nullptr || from == nullptr) {
+      continue;
+    }
+    const float delta
+        = resizer_->driveResistance(prev_drvr_pin)
+          * (from->capacitance() - driver_arc->from()->capacitance());
+    sta::Net* prev_net = network_->net(prev_drvr_pin);
+    if (delta <= 0.0 || prev_net == nullptr) {
+      continue;
+    }
+    slow_loads(prev_net, prev_drvr_pin, driver_input, delta);
   }
-  return true;
+
+  // Every other input takes the new cell's input capacitance too, slowing
+  // the paths through it and its net's other loads.  The input's own slack
+  // is from the tree before rebuffering, which keeps the check conservative;
+  // crediting the new tree there lets upsizes through that slow side paths.
+  std::unique_ptr<sta::InstancePinIterator> input_iter(
+      network_->pinIterator(network_->instance(pin_)));
+  while (input_iter->hasNext()) {
+    const sta::Pin* input = input_iter->next();
+    if (!network_->direction(input)->isInput()
+        || timed_inputs.contains(input)) {
+      continue;
+    }
+    const sta::LibertyPort* old_port = network_->libertyPort(input);
+    const sta::LibertyPort* new_port
+        = old_port ? cell->findLibertyPort(old_port->name()) : nullptr;
+    sta::Net* net = network_->net(input);
+    if (new_port == nullptr || net == nullptr) {
+      continue;
+    }
+    const float delta_cap = new_port->capacitance() - old_port->capacitance();
+    const sta::PinSet* drivers = network_->drivers(input);
+    if (delta_cap <= 0.0 || drivers == nullptr || drivers->empty()) {
+      continue;
+    }
+    const sta::Pin* drvr_pin = *drivers->begin();
+    const float delta = resizer_->driveResistance(drvr_pin) * delta_cap;
+    slow_loads(net, drvr_pin, nullptr, delta);
+  }
+  return worst;
 }
 
 BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
+                                     const BnetPtr& unbuffered_tree,
                                      const BnetPtr& timing_tree,
                                      const BnetPtr& area_tree,
-                                     const FixedDelay slack_target)
+                                     const FixedDelay slack_target,
+                                     const bool critical,
+                                     const sta::Delay hurdle_base_delay)
 {
   if (!size_driver_ || timing_tree->slackTransition() == nullptr
       || network_->isTopLevelPort(drvr_pin)) {
@@ -454,6 +593,9 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
       || resizer_->hasMultipleOutputs(drvr_inst)) {
     return area_tree;
   }
+  // The caches hold timing from before this net's evaluation, which nothing
+  // below changes until the driver is resized.
+  clearDriverArcCache();
   // Tree area is buffer area, so nothing is cheaper than a buffer-free
   // area_tree; only build the cheapest tree when area_tree has buffers.
   BnetPtr cheapest;
@@ -466,32 +608,465 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
   }
   sta::LibertyCell* chosen_cell = current_cell;
   BnetPtr chosen;
+  // Tree the net keeps with the current driver: area_tree, or timing_tree
+  // when the guard below drops a collapsed area_tree.  Returned when no
+  // driver is chosen, so a rejected flat tree is never exported.
+  BnetPtr baseline_tree = area_tree;
   {
     utl::DebugScopedTimer timer(size_eval_runtime_);
-    chosen = chooseTreeAndDriver({cheapest, area_tree, timing_tree},
-                                 current_cell,
-                                 slack_target,
-                                 chosen_cell);
+    // Guard against collapsing a buffered timing tree into a flat high-fanout
+    // root net that looks fast under zero-via placement RC but blows up under
+    // detailed routing via resistance.  A candidate with fewer buffers than
+    // the timing tree may not leave the driver more direct sinks than the
+    // limit below; the check covers the base candidates, their variants
+    // without the first buffer, and the trees planned for another cell.
+    // Only a timing tree with buffers can be collapsed by a candidate.
+    const bool timing_buffered = timing_tree->bufferCount() > 0;
+    // Sinks the driver sees directly in the timing tree; a candidate root at
+    // or below this fanout adds no new flat load.
+    const int timing_root_fo = countDirectSinks(timing_tree);
+    // Largest root fanout a collapsed candidate may keep: the constant, but
+    // at most half the net's max_fanout limit (never below 2).
+    int max_flat_fo = kMaxFlatCollapseFanout;
+    if (fanout_limit_ < sta::INF) {
+      max_flat_fo = std::min(
+          max_flat_fo, std::max(2, static_cast<int>(fanout_limit_ / 2.0f)));
+    }
+    // True when `tree` has fewer buffers than the timing tree and its root
+    // drives more sinks than both max_flat_fo and the timing tree's root.
+    const auto collapses_high_fanout = [&](const BnetPtr& tree) -> bool {
+      if (!tree || !timing_buffered) {
+        return false;
+      }
+      if (tree->bufferCount() >= timing_tree->bufferCount()) {
+        return false;
+      }
+      const int fo = countDirectSinks(tree);
+      return fo > max_flat_fo && fo > timing_root_fo;
+    };
+
+    // Drop collapsed base candidates. The area tree is what the net gets
+    // without driver sizing, so it is dropped only for a port buffer driver.
+    const BnetPtr cheapest_cand
+        = collapses_high_fanout(cheapest) ? nullptr : cheapest;
+    const BnetPtr area_cand = (isPortBuffer(db_network_, drvr_inst)
+                               && collapses_high_fanout(area_tree))
+                                  ? nullptr
+                                  : area_tree;
+    if (!area_cand) {
+      baseline_tree = timing_tree;
+    }
+    std::vector<BnetPtr> trees{cheapest_cand, area_cand, timing_tree};
+    // Index of timing_tree in `trees`, shared with best-driver planning so
+    // it reuses the memoized slacks of that tree.
+    constexpr size_t kTimingTreeIndex = 2;
+    // Also offer each candidate without its first buffer, unless removing
+    // the buffer collapses it.
+    for (const BnetPtr& tree : {cheapest_cand, area_cand, timing_tree}) {
+      if (tree) {
+        BnetPtr stripped = withoutFirstBuffer(tree);
+        if (stripped && !collapses_high_fanout(stripped)) {
+          trees.push_back(std::move(stripped));
+        }
+      }
+    }
+    // Anchor the whole-net leakage budget to the baseline tree on passing
+    // nets so dropped timing-tree buffers do not create a phantom leakage
+    // allowance, and the baseline with the current driver always fits it.
+    // The budget is a multiple of the leakage of the current driver plus the
+    // reference tree's buffers, so one leaky buffer in the timing tree would
+    // let a net that already passes swap its driver to a leakier VT for
+    // slack it does not need.  chooseTreeAndDriver() also keeps equal-area
+    // swaps on a passing net within the reference leakage itself.
+    const BnetPtr& leakage_ref_tree
+        = slack_target >= FixedDelay::ZERO ? baseline_tree : timing_tree;
+    const DriverChoices choices = driverChoices(current_cell, leakage_ref_tree);
+    // Evaluated lazily, after addTreesPlannedForBestDriver() completes `trees`.
+    TreeDriverEvaluation eval(trees);
+    // slack_target is the timing tree's slack with the current driver less
+    // the relaxation allowed for area recovery, which is zero on a failing
+    // net near the worst slack.  Anchored to the current driver, it lets a
+    // cheaper combination win over a resize that gains slack.  When it is
+    // negative, anchor it instead to the best slack any tree reaches with any
+    // allowed driver cell (less the area hurdle off the critical band), less
+    // the same relaxation; the smallest area meeting it still wins.
+    FixedDelay target = slack_target;
+    if (slack_target < FixedDelay::ZERO) {
+      const FixedDelay relaxation
+          = slackAtDriverPin(timing_tree) - slack_target;
+      // Trees from best-driver planning are appended from this index on.
+      const size_t trees_before_plan = trees.size();
+      {
+        utl::DebugScopedTimer plan_timer(size_plan_runtime_);
+        addTreesPlannedForBestDriver(unbuffered_tree,
+                                     timing_tree,
+                                     kTimingTreeIndex,
+                                     current_cell,
+                                     choices,
+                                     relaxation,
+                                     critical,
+                                     hurdle_base_delay,
+                                     eval,
+                                     trees);
+      }
+      // Disable planned trees that collapse; evaluation skips null trees.
+      for (size_t idx = trees_before_plan; idx < trees.size(); ++idx) {
+        if (collapses_high_fanout(trees[idx])) {
+          trees[idx] = nullptr;
+        }
+      }
+      target = std::max(slack_target,
+                        bestSlackWithDriver(eval,
+                                            current_cell,
+                                            choices,
+                                            relaxation,
+                                            critical,
+                                            hurdle_base_delay)
+                            - relaxation);
+    }
+    chosen
+        = chooseTreeAndDriver(eval, current_cell, choices, target, chosen_cell);
   }
   if (!chosen) {
-    return area_tree;
+    return baseline_tree;
   }
   if (chosen_cell != current_cell) {
-    // The chosen tree was timed with the new cell; keep the option-off
-    // result if replaceCell finds no master for it.
+    // The chosen tree was timed with the new cell; keep the baseline tree
+    // if replaceCell finds no master for it.
     if (!resizer_->replaceCell(drvr_inst, chosen_cell)) {
-      return area_tree;
+      return baseline_tree;
     }
     driver_resize_count_++;
   }
   return chosen;
 }
 
+void Rebuffer::addTreesPlannedForBestDriver(const BnetPtr& unbuffered_tree,
+                                            const BnetPtr& timing_tree,
+                                            const size_t timing_tree_index,
+                                            sta::LibertyCell* current_cell,
+                                            const DriverChoices& choices,
+                                            const FixedDelay relaxation,
+                                            const bool critical,
+                                            const sta::Delay hurdle_base_delay,
+                                            TreeDriverEvaluation& eval,
+                                            std::vector<BnetPtr>& trees)
+{
+  // Planning costs a full rebuffer per cell, and planning for more than the
+  // fastest feasible cell gained no slack on the designs measured.  The one
+  // plan must go to a cell the final choice can accept: a cell that fails
+  // the upstream side-load check, or a tree over the planned cell's max cap,
+  // would waste it and leave the feasible faster cells with no planned tree.
+  // So the cell is picked by hurdle-adjusted slack among cells that pass the
+  // leakage and side-load checks, and evaluateOption() refuses trees over
+  // its max capacitance while planning.
+  sta::LibertyCell* best_cell = nullptr;
+  FixedDelay best_slack = slackAtDriverPin(timing_tree);
+  for (sta::LibertyCell* cell : choices.cells) {
+    if (cell == current_cell) {
+      continue;
+    }
+    // A cell over the leakage budget on its own fails with any tree.
+    if (choices.leakage_budget) {
+      const std::optional<float> leakage = resizer_->cellLeakage(cell);
+      if (leakage && *leakage > *choices.leakage_budget) {
+        continue;
+      }
+    }
+    // Only plan for a cell that improves the current timing tree net of the
+    // non-critical area-upsize hurdle and keeps upstream side loads feasible.
+    const std::optional<FixedDelay> slack
+        = slackWithDriverCell(eval, cell, timing_tree_index);
+    if (!slack) {
+      continue;
+    }
+    const FixedDelay hurdle
+        = areaUpsizeHurdle(current_cell, cell, critical, hurdle_base_delay);
+    const FixedDelay effective = *slack - hurdle;
+    // A new best must also keep the upstream side loads at its slack less
+    // relaxation, the check bestSlackWithDriver() applies later.
+    if (effective > best_slack) {
+      if (upstreamSideLoadSlack(eval, cell) < *slack - relaxation) {
+        continue;
+      }
+      best_slack = effective;
+      best_cell = cell;
+    }
+  }
+  if (best_cell == nullptr) {
+    return;
+  }
+  // Re-buffer the net from scratch for best_cell and offer the result.
+  const std::pair<BnetPtr, BnetPtr> planned
+      = planForDriverCell(unbuffered_tree, best_cell, relaxation);
+  if (planned.first) {  // first: timing tree planned for best_cell
+    trees.push_back(planned.first);
+  }
+  // second: its area-recovered tree, skipped when recovery changed nothing.
+  if (planned.second && planned.second != planned.first) {
+    trees.push_back(planned.second);
+  }
+}
+
+std::pair<BnetPtr, BnetPtr> Rebuffer::planForDriverCell(
+    const BnetPtr& unbuffered_tree,
+    sta::LibertyCell* cell,
+    const FixedDelay relaxation)
+{
+  sta::LibertyPort* out_port = cell->findLibertyPort(drvr_port_->name());
+  if (out_port == nullptr) {
+    return {};
+  }
+  // Driver timing and slew checks follow `cell` until this returns.
+  const utl::SetAndRestore<sta::LibertyCell*> plan_cell(plan_cell_, cell);
+  const utl::SetAndRestore<sta::LibertyPort*> plan_port(plan_port_, out_port);
+  const utl::SetAndRestore<float> high_water_mark(drvr_load_high_water_mark_,
+                                                  0.0f);
+
+  BnetPtr timing_tree = unbuffered_tree;
+  for (int i = 0; i < 3 && timing_tree; i++) {
+    timing_tree = bufferForTiming(timing_tree);
+  }
+  BnetPtr area_tree = timing_tree;
+  if (timing_tree && timing_tree->slackTransition() != nullptr) {
+    const FixedDelay target = slackAtDriverPin(timing_tree) - relaxation;
+    for (int i = 0; i < 5 && area_tree; i++) {
+      area_tree = recoverArea(area_tree, target, static_cast<float>(1 + i) / 5);
+    }
+  }
+  return {timing_tree, area_tree};
+}
+
+BnetPtr Rebuffer::withoutFirstBuffer(const BnetPtr& tree)
+{
+  BnetPtr node = tree;
+  int layer = BufferedNet::null_layer;
+  while (node->type() == BnetType::wire) {
+    layer = node->layer();
+    node = node->ref();
+  }
+  if (node->type() != BnetType::buffer) {
+    return nullptr;
+  }
+  const BnetPtr& below = node->ref();
+  // Keep a buffer that drives many sinks; removing it would leave the driver
+  // a flat high-fanout net that is slow once routed.
+  if (countDirectSinks(below) > kMaxWithoutFirstBufFanout) {
+    return nullptr;
+  }
+  if (below->location() == tree->location()) {
+    return below;
+  }
+  return addWire(below, tree->location(), layer);
+}
+
+Rebuffer::DriverChoices Rebuffer::driverChoices(sta::LibertyCell* current_cell,
+                                                const BnetPtr& reference_tree)
+{
+  // The sizing leakage limit applies to the net, the driver and its buffers
+  // together, relative to the current driver with `reference_tree`.  Applied
+  // to the driver alone it refuses an upsized driver that replaces buffers
+  // and lowers the net's leakage.
+  const std::optional<float> current
+      = netLeakage(current_cell, bufferLeakages(reference_tree));
+  const std::optional<double> limit = resizer_->sizing_leakage_limit_;
+  if (limit && current) {
+    return {
+        .cells = resizer_->getSwappableCellsAnyLeakage(current_cell),
+        .leakage_budget = static_cast<float>(*limit * *current),
+        .reference_leakage = current,
+    };
+  }
+  return {
+      .cells = resizer_->getSwappableCells(current_cell),
+      .leakage_budget = std::nullopt,
+      .reference_leakage = current,
+  };
+}
+
+std::optional<std::vector<float>> Rebuffer::bufferLeakages(const BnetPtr& tree)
+{
+  std::optional<std::vector<float>> leakages(std::in_place);
+  visitTree(
+      [&](auto& recurse, int, const BnetPtr& bnet) -> int {
+        switch (bnet->type()) {
+          case BnetType::buffer: {
+            const std::optional<float> buffer
+                = resizer_->cellLeakage(bnet->bufferCell());
+            if (leakages && buffer) {
+              leakages->push_back(*buffer);
+            } else {
+              leakages.reset();
+            }
+            return recurse(bnet->ref());
+          }
+          case BnetType::wire:
+          case BnetType::via:
+            return recurse(bnet->ref());
+          case BnetType::junction:
+            return recurse(bnet->ref()) + recurse(bnet->ref2());
+          case BnetType::load:
+            return 0;
+        }
+        return 0;
+      },
+      tree);
+  return leakages;
+}
+
+std::optional<float> Rebuffer::netLeakage(
+    sta::LibertyCell* cell,
+    const std::optional<std::vector<float>>& buffer_leakages)
+{
+  std::optional<float> leakage = resizer_->cellLeakage(cell);
+  if (!leakage || !buffer_leakages) {
+    return {};
+  }
+  // Summed from the driver in visit order, so the rounding is the same for
+  // every caller.
+  for (const float buffer : *buffer_leakages) {
+    *leakage += buffer;
+  }
+  return leakage;
+}
+
+std::optional<float> Rebuffer::treeNetLeakage(TreeDriverEvaluation& eval,
+                                              sta::LibertyCell* cell,
+                                              const size_t tree_index)
+{
+  // Collect the buffer leakages of every tree once per evaluation.
+  if (eval.buffer_leakages.empty()) {
+    eval.buffer_leakages.reserve(eval.trees.size());
+    for (const BnetPtr& tree : eval.trees) {
+      eval.buffer_leakages.push_back(tree ? bufferLeakages(tree)
+                                          : std::nullopt);
+    }
+  }
+  return netLeakage(cell, eval.buffer_leakages[tree_index]);
+}
+
+bool Rebuffer::withinLeakageBudget(TreeDriverEvaluation& eval,
+                                   const DriverChoices& choices,
+                                   sta::LibertyCell* cell,
+                                   const size_t tree_index)
+{
+  if (!choices.leakage_budget) {
+    return true;
+  }
+  const std::optional<float> leakage = treeNetLeakage(eval, cell, tree_index);
+  return !leakage || *leakage <= *choices.leakage_budget;
+}
+
+std::optional<FixedDelay> Rebuffer::slackWithDriverCell(
+    TreeDriverEvaluation& eval,
+    sta::LibertyCell* cell,
+    const size_t tree_index)
+{
+  const auto [it, inserted] = eval.slacks.try_emplace({cell, tree_index});
+  if (inserted) {
+    it->second = slackWithDriverCell(eval.trees[tree_index], cell);
+  }
+  return it->second;
+}
+
+FixedDelay Rebuffer::upstreamSideLoadSlack(TreeDriverEvaluation& eval,
+                                           sta::LibertyCell* cell)
+{
+  const auto it = eval.side_load_slacks.find(cell);
+  if (it != eval.side_load_slacks.end()) {
+    return it->second;
+  }
+  const FixedDelay slack = upstreamSideLoadSlack(cell);
+  eval.side_load_slacks.emplace(cell, slack);
+  return slack;
+}
+
+// Without a hurdle every failing net aims its sizing target at the best slack
+// any cell reaches, so nets far from the worst slack upsize for slack that
+// does not move WNS.  Outside the critical band a candidate that grows the
+// driver area is scored slower by kAreaUpsizeHurdle x relative area growth x
+// the driver gate delay, so a larger cell must beat a smaller one by more
+// than the hurdle to raise the target.  Same-area swaps such as VT changes
+// and critical nets pay nothing, and the smallest area meeting the target
+// still wins.
+FixedDelay Rebuffer::areaUpsizeHurdle(const sta::LibertyCell* current_cell,
+                                      const sta::LibertyCell* cell,
+                                      const bool critical,
+                                      const sta::Delay hurdle_base_delay) const
+{
+  // No hurdle on a critical net, which chases slack at any area, or without
+  // a gate delay to scale it.
+  if (critical || hurdle_base_delay <= 0.0f || current_cell == nullptr
+      || cell == nullptr) {
+    return FixedDelay::ZERO;
+  }
+  // A candidate that does not grow area, such as a VT swap, is free.
+  const float cur_area = current_cell->area();
+  const float cand_area = cell->area();
+  if (cur_area <= 0.0f || cand_area <= cur_area) {
+    return FixedDelay::ZERO;
+  }
+  // kAreaUpsizeHurdle x relative area growth x driver gate delay, clamped
+  // so the FixedDelay conversion cannot overflow.
+  const float rel_area_inc = (cand_area / cur_area) - 1.0f;
+  const float hurdle_sec = std::min(
+      kAreaUpsizeHurdle * rel_area_inc * static_cast<float>(hurdle_base_delay),
+      FixedDelay::INF.toSeconds() * 0.5f);
+  return FixedDelay(hurdle_sec, resizer_);
+}
+
+FixedDelay Rebuffer::bestSlackWithDriver(TreeDriverEvaluation& eval,
+                                         sta::LibertyCell* current_cell,
+                                         const DriverChoices& choices,
+                                         const FixedDelay relaxation,
+                                         const bool critical,
+                                         const sta::Delay hurdle_base_delay)
+{
+  FixedDelay best_slack = -FixedDelay::INF;
+  auto consider = [&](sta::LibertyCell* cell) {
+    // Every tree driven by `cell` is ranked by its slack less this hurdle.
+    const FixedDelay hurdle
+        = areaUpsizeHurdle(current_cell, cell, critical, hurdle_base_delay);
+    for (size_t i = 0; i < eval.trees.size(); i++) {
+      if (!eval.trees[i] || !withinLeakageBudget(eval, choices, cell, i)) {
+        continue;
+      }
+      const std::optional<FixedDelay> slack
+          = slackWithDriverCell(eval, cell, i);
+      if (!slack) {
+        continue;
+      }
+      const FixedDelay effective = *slack - hurdle;
+      if (effective <= best_slack) {
+        continue;
+      }
+      // Keep upstream side loads no worse than this candidate's slack less
+      // relaxation (which also ensures chooseTreeAndDriver() accepts `cell`
+      // since effective <= *slack).
+      const FixedDelay side_load_slack
+          = cell == current_cell ? FixedDelay::INF
+                                 : upstreamSideLoadSlack(eval, cell);
+      if (side_load_slack < *slack - relaxation) {
+        continue;
+      }
+      best_slack = effective;
+    }
+  };
+  consider(current_cell);
+  for (sta::LibertyCell* cell : choices.cells) {
+    if (cell != current_cell) {
+      consider(cell);
+    }
+  }
+  return best_slack;
+}
+
 // Minimum slack gain for picking an equal-area tree/driver combination.
 constexpr float kEqualAreaMinGain = 1e-12;
 
-BnetPtr Rebuffer::chooseTreeAndDriver(const std::vector<BnetPtr>& trees,
+BnetPtr Rebuffer::chooseTreeAndDriver(TreeDriverEvaluation& eval,
                                       sta::LibertyCell* current_cell,
+                                      const DriverChoices& choices,
                                       const FixedDelay slack_target,
                                       sta::LibertyCell*& chosen_cell)
 {
@@ -500,39 +1075,56 @@ BnetPtr Rebuffer::chooseTreeAndDriver(const std::vector<BnetPtr>& trees,
   float best_area = std::numeric_limits<float>::max();
   FixedDelay best_slack = -FixedDelay::INF;
   float min_tree_area = std::numeric_limits<float>::max();
-  for (const BnetPtr& tree : trees) {
+  for (const BnetPtr& tree : eval.trees) {
     if (tree) {
       min_tree_area = std::min(min_tree_area, tree->area());
     }
   }
 
   auto consider = [&](sta::LibertyCell* cell) {
-    // Checked only once the cell would win, as it walks the previous net.
-    std::optional<bool> side_loads_ok;
-    if (cell == current_cell) {
-      side_loads_ok = true;
-    }
     const float area_delta = cell->area() - current_cell->area();
-    for (const BnetPtr& tree : trees) {
+    for (size_t i = 0; i < eval.trees.size(); i++) {
+      const BnetPtr& tree = eval.trees[i];
       if (!tree) {
         continue;
       }
       const float area = tree->area() + area_delta;
-      if (area > best_area) {
+      if (area > best_area || !withinLeakageBudget(eval, choices, cell, i)) {
         continue;
       }
-      const std::optional<FixedDelay> slack = slackWithDriverCell(tree, cell);
+      const std::optional<FixedDelay> slack
+          = slackWithDriverCell(eval, cell, i);
       if (!slack || *slack < slack_target) {
         continue;
       }
       // An equal-area swap must gain real slack to be worth a resize, which
-      // costs an upstream timing update.
-      if (area < best_area
-          || *slack > best_slack + FixedDelay(kEqualAreaMinGain, resizer_)) {
-        if (!side_loads_ok) {
-          side_loads_ok = upstreamSideLoadsOk(cell, slack_target);
+      // costs an upstream timing update.  On an already-passing net, do not
+      // raise net leakage above the current baseline for extra positive slack
+      // at equal area (while still preserving VT when downsizing a faster
+      // cell).
+      bool better = area < best_area;
+      if (!better
+          && *slack > best_slack + FixedDelay(kEqualAreaMinGain, resizer_)) {
+        // On a passing net with a pick already made, take the slack-only
+        // gain only if net leakage stays within the reference leakage
+        // (compared on the cells alone when tree leakage is unknown).
+        if (slack_target >= FixedDelay::ZERO && best_tree != nullptr) {
+          std::optional<float> cand_leak = treeNetLeakage(eval, cell, i);
+          std::optional<float> limit_leak = choices.reference_leakage;
+          if (!cand_leak || !limit_leak) {
+            cand_leak = resizer_->cellLeakage(cell);
+            limit_leak = resizer_->cellLeakage(current_cell);
+          }
+          if (!cand_leak || !limit_leak || *cand_leak <= *limit_leak) {
+            better = true;
+          }
+        } else {
+          better = true;
         }
-        if (!*side_loads_ok) {
+      }
+      if (better) {
+        if (cell != current_cell
+            && upstreamSideLoadSlack(eval, cell) < slack_target) {
           return;
         }
         best_area = area;
@@ -545,7 +1137,7 @@ BnetPtr Rebuffer::chooseTreeAndDriver(const std::vector<BnetPtr>& trees,
 
   // The current cell first: its best feasible area bounds every other cell.
   consider(current_cell);
-  sta::LibertyCellSeq cells = resizer_->getSwappableCells(current_cell);
+  sta::LibertyCellSeq cells = choices.cells;
   std::ranges::stable_sort(
       cells, [](const sta::LibertyCell* a, const sta::LibertyCell* b) {
         return a->area() < b->area();
@@ -590,8 +1182,19 @@ std::optional<FixedDelay> Rebuffer::evaluateOption(const BnetPtr& option,
   std::tie(std::ignore, correction, slew) = drvrPinTiming(option);
   FixedDelay slack = option->slack() + FixedDelay(correction, resizer_);
 
-  if (!loadSlewSatisfactory(drvr_port_, option)) {
+  sta::LibertyPort* drvr_port = plan_port_ != nullptr ? plan_port_ : drvr_port_;
+  if (!loadSlewSatisfactory(drvr_port, option)) {
     return {};
+  }
+  // While planning for another driver cell, refuse trees over that cell's
+  // max capacitance, as slackWithDriverCell() would later.
+  if (plan_port_ != nullptr) {
+    bool cap_limit_exists = false;
+    float cap_limit = 0.0f;
+    plan_port_->capacitanceLimit(max_, cap_limit, cap_limit_exists);
+    if (cap_limit_exists && option->cap() > maxCapMargined(cap_limit)) {
+      return {};
+    }
   }
 
   // Refuse buffering option if we are violating max slew on the driver pin.
@@ -897,6 +1500,76 @@ static std::optional<int> findWireLayer(BnetPtr node)
   return {};
 }
 
+// Lengths of the upstream stage of an evenly spaced chain, relative to its
+// other stages.
+constexpr std::array<float, 3> kUpstreamStageFractions{1.0f, 0.5f, 0.25f};
+
+// The point `distance` along a Manhattan path from `from` to `to`, moving in
+// x and y in proportion to the remaining offsets.
+static odb::Point stepToward(const odb::Point& from,
+                             const odb::Point& to,
+                             const int distance)
+{
+  int dx = to.x() - from.x();
+  int dy = to.y() - from.y();
+  if (abs(dx) + abs(dy) >= distance) {
+    const float ratio
+        = static_cast<float>(abs(dx)) / static_cast<float>(abs(dx) + abs(dy));
+    const int dx_abs = std::min(static_cast<int>(ratio * distance), distance);
+    const int dy_abs = distance - dx_abs;
+    dx = dx > 0 ? dx_abs : -dx_abs;
+    dy = dy > 0 ? dy_abs : -dy_abs;
+  }
+  odb::Point point = from;
+  point.addX(dx);
+  point.addY(dy);
+  return point;
+}
+
+BnetPtr Rebuffer::bufferAt(const BnetPtr& head,
+                           const odb::Point location,
+                           const int layer,
+                           BufferSize& size)
+{
+  const BnetPtr wire_head = addWire(head, location, layer);
+  if (!bufferSizeCanDriveLoad(size, wire_head, 0)) {
+    return nullptr;
+  }
+  // The buffer delay depends on wire_head->slackTransition().
+  const FixedDelay buffer_delay
+      = bufferDelay(size.cell, wire_head->slackTransition(), wire_head->cap());
+  BnetPtr buffer = make_shared<BufferedNet>(BnetType::buffer,
+                                            location,
+                                            size.cell,
+                                            wire_head,
+                                            corner_,
+                                            resizer_,
+                                            estimate_parasitics_);
+  buffer->setSlack(wire_head->slack() - buffer_delay);
+  buffer->setSlackTransition(wire_head->slackTransition());
+  buffer->setDelay(buffer_delay);
+  return buffer;
+}
+
+BnetPtr Rebuffer::evenlySpacedChain(const BnetPtr& head,
+                                    const odb::Point target_location,
+                                    const int layer,
+                                    BufferSize& size,
+                                    const int count,
+                                    const float upstream_fraction)
+{
+  const odb::Point start = head->location();
+  const double length = odb::Point::manhattanDistance(target_location, start);
+  const double spacing = length / (count + upstream_fraction);
+  BnetPtr chain = head;
+  for (int i = 1; i <= count && chain; i++) {
+    const int distance = static_cast<int>(spacing * i);
+    chain = bufferAt(
+        chain, stepToward(start, target_location, distance), layer, size);
+  }
+  return chain;
+}
+
 // Find ranked timing-optimized buffering choices over the provided tree.
 std::vector<Rebuffer::RankedOption> Rebuffer::bufferForTimingTopK(
     const BnetPtr& tree,
@@ -966,79 +1639,63 @@ std::vector<Rebuffer::RankedOption> Rebuffer::bufferForTimingTopK(
               }
 
               if (head && wire_cap > 0.0) {
-                bool inserted_buffer = false;
+                utl::DebugScopedTimer timer(long_wire_stepping_runtime_);
+                // Chains are wired to the segment's upstream end and kept in
+                // increasing cap order.
+                auto add_chain = [&](BnetPtr chain) {
+                  const int remaining_wl = odb::Point::manhattanDistance(
+                      target_location, chain->location());
+                  BufferSize& strong_driver = buffer_sizes_.back();
+                  if (!bufferSizeCanDriveLoad(
+                          strong_driver, chain, remaining_wl)) {
+                    return;
+                  }
+                  chain = addWire(chain, target_location, layer);
+                  auto it = std::ranges::find_if(
+                      wired_opts, [&](const BnetPtr& opt) {
+                        return opt->cap() >= chain->cap();
+                      });
+                  wired_opts.insert(it, std::move(chain));
+                };
 
+                // Step from the load end at the asymptotic spacing.
+                BnetPtr stepped = head;
+                int stepped_count = 0;
                 while (true) {
-                  int remaining_wl = odb::Point::manhattanDistance(
-                      target_location, head->location());
-                  int step_wl = resizer_->metersToDbu(
-                      (target_load - head->cap()) / wire_cap);
-
+                  const int remaining_wl = odb::Point::manhattanDistance(
+                      target_location, stepped->location());
+                  const int step_wl = resizer_->metersToDbu(
+                      (target_load - stepped->cap()) / wire_cap);
                   if (step_wl >= remaining_wl) {
                     break;
                   }
-
-                  // move `head->location()` towards `target_location` by
-                  // `step_wl`
-                  int dx = target_location.x() - head->location().x();
-                  int dy = target_location.y() - head->location().y();
-
-                  if (abs(dx) + abs(dy) >= step_wl) {
-                    const float ratio
-                        = (float) abs(dx) / (float) (abs(dx) + abs(dy));
-                    const int dx_abs
-                        = std::min((int) (ratio * step_wl), step_wl);
-                    const int dy_abs = step_wl - dx_abs;
-                    dx = dx > 0 ? dx_abs : -dx_abs;
-                    dy = dy > 0 ? dy_abs : -dy_abs;
-                  }
-
-                  odb::Point next_location = head->location();
-                  next_location.addX(dx);
-                  next_location.addY(dy);
-
-                  // Fetch the true buffer_delay as it depends on
-                  // head->slackTransition()
-                  BnetPtr wire_head = addWire(head, next_location, layer);
-                  FixedDelay buffer_delay
-                      = bufferDelay(size.cell,
-                                    wire_head->slackTransition(),
-                                    wire_head->cap());
-
-                  if (!bufferSizeCanDriveLoad(size, wire_head, 0)) {
-                    inserted_buffer = false;
+                  stepped = bufferAt(
+                      stepped,
+                      stepToward(stepped->location(), target_location, step_wl),
+                      layer,
+                      size);
+                  if (!stepped) {
                     break;
                   }
-
-                  BnetPtr buffer
-                      = make_shared<BufferedNet>(BnetType::buffer,
-                                                 next_location,
-                                                 size.cell,
-                                                 wire_head,
-                                                 corner_,
-                                                 resizer_,
-                                                 estimate_parasitics_);
-                  buffer->setSlack(wire_head->slack() - buffer_delay);
-                  buffer->setSlackTransition(wire_head->slackTransition());
-                  buffer->setDelay(buffer_delay);
-
-                  head = buffer;
-                  inserted_buffer = true;
+                  stepped_count++;
+                }
+                if (stepped && stepped_count > 0) {
+                  add_chain(stepped);
                 }
 
-                if (inserted_buffer) {
-                  int remaining_wl = odb::Point::manhattanDistance(
-                      target_location, head->location());
-                  BufferSize& strong_driver = buffer_sizes_.back();
-                  if (bufferSizeCanDriveLoad(
-                          strong_driver, head, remaining_wl)) {
-                    head = addWire(head, target_location, layer);
-                    auto it = std::find_if(wired_opts.begin(),
-                                           wired_opts.end(),
-                                           [&](const BnetPtr& opt) {
-                                             return opt->cap() >= head->cap();
-                                           });
-                    wired_opts.insert(it, std::move(head));
+                // Stepping leaves the remainder on the upstream side; also
+                // offer the same and one more buffer spaced evenly, with
+                // the upstream stage a fraction of the others for a weak
+                // upstream driver.
+                if (stepped_count > 0) {
+                  for (const int count : {stepped_count, stepped_count + 1}) {
+                    for (const float fraction : kUpstreamStageFractions) {
+                      BnetPtr even = evenlySpacedChain(
+                          head, target_location, layer, size, count, fraction);
+                      if (even) {
+                        add_chain(even);
+                      }
+                    }
                   }
                 }
               }
@@ -3103,17 +3760,26 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
   driver_resize_count_ = 0;
   size_ra_runtime_ = 0;
   size_eval_runtime_ = 0;
+  size_plan_runtime_ = 0;
 
   // Drivers are visited in decreasing level order. Drivers on one level are
   // not in each other's fanin or fanout, so netlist edits are propagated to
-  // timing once per level rather than once per driver. The exception is an
-  // instance resized earlier in the level: its other outputs are refreshed
-  // (through their loads) before they are rebuffered.
+  // timing once per level rather than once per driver. Exceptions are:
+  //  - an instance resized earlier in the level (its other outputs are
+  //    refreshed before rebuffering), and
+  //  - a driver sharing an input net whose load capacitance increased from an
+  //    earlier resize in the same level (flushed lazily before evaluation so
+  //    siblings never simultaneously upsize against stale timing).
   sta::Level timing_level = -1;
   // Loads of edited trees whose edits are not yet propagated. Their levels
   // are read when propagating, after the whole batch has been levelized.
   std::vector<const sta::Pin*> edited_loads;
   std::unordered_set<const sta::Instance*> resized_insts;
+  resized_upstream_nets_.clear();
+  // Lowest level among the input pins whose net gained load capacitance
+  // from a resize since the last propagation.  The lazy flush computes
+  // required times down to it so those nets' side-load slacks are current.
+  sta::Level min_dirty_input_level = std::numeric_limits<sta::Level>::max();
 
   auto record_loads = [&](const BnetPtr& tree) {
     visitTree(
@@ -3134,12 +3800,16 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
         tree);
   };
 
-  auto propagate_edits = [&]() {
+  // Propagate pending edits through the deepest edited level, and at least
+  // through `min_max_level`, then clear every pending-edit record.
+  auto propagate_edits = [&](const sta::Level min_max_level) {
     if (edited_loads.empty()) {
+      resized_upstream_nets_.clear();
+      min_dirty_input_level = std::numeric_limits<sta::Level>::max();
       return;
     }
     sta_->ensureLevelized();
-    sta::Level max_level = 0;
+    sta::Level max_level = min_max_level;
     for (const sta::Pin* load : edited_loads) {
       max_level = std::max(max_level, graph_->pinDrvrVertex(load)->level());
     }
@@ -3149,14 +3819,23 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
     search_->findArrivals(max_level);
     edited_loads.clear();
     resized_insts.clear();
+    resized_upstream_nets_.clear();
+    min_dirty_input_level = std::numeric_limits<sta::Level>::max();
   };
 
   auto refresh_timing = [&](sta::Vertex* drvr) {
-    propagate_edits();
+    propagate_edits(0);
     utl::DebugScopedTimer timer(sta_runtime);
     search_->findRequireds(drvr->level());
   };
 
+  // Worst slack before rebuffering, clamped to zero; failing nets near it
+  // get no area recovery relaxation.  The clamp keeps an unconstrained
+  // design's infinite slack out of FixedDelay.
+  const FixedDelay worst_slack(std::min<float>(sta_->worstSlack(max_), 0.0f),
+                               resizer_);
+  const FixedDelay critical_band(-kCriticalSlackBand * worst_slack.toSeconds(),
+                                 resizer_);
   for (auto iter = 0; iter < filtered_pins.size(); iter++) {
     printProgress(iter, false, false, filtered_pins.size() - iter);
 
@@ -3204,6 +3883,43 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
     if (drvr_inst && resized_insts.contains(drvr_inst)) {
       record_loads(original_tree);
       refresh_timing(drvr);
+    }
+
+    // Siblings on one level are sized without a timing update between them,
+    // so each would see only its own input cap increase on a shared input
+    // net and all of them could upsize together.  A resize records the input
+    // nets whose load cap grew (below), and a driver that reads such a net is
+    // re-timed here before it is sized.  Drivers that share no such net keep
+    // the once-per-level update, so the extra cost only arises on shared
+    // nets.
+    if (size_driver_ && drvr_inst != nullptr
+        && !resized_upstream_nets_.empty()) {
+      // Does any input of this driver sit on a net that gained load cap?
+      bool shares_dirty_input = false;
+      std::unique_ptr<sta::InstancePinIterator> in_iter(
+          network_->pinIterator(drvr_inst));
+      while (in_iter->hasNext()) {
+        const sta::Pin* in_pin = in_iter->next();
+        if (!network_->direction(in_pin)->isInput()) {
+          continue;
+        }
+        const odb::dbNet* in_net = db_network_->flatNet(in_pin);
+        if (in_net != nullptr && resized_upstream_nets_.contains(in_net)) {
+          shares_dirty_input = true;
+          break;
+        }
+      }
+      // Propagate arrivals through this level and recompute required times
+      // down to the dirty inputs; read the level first, as propagation
+      // clears it.
+      if (shares_dirty_input) {
+        const sta::Level min_req_level = min_dirty_input_level;
+        propagate_edits(drvr->level());
+        const sta::Level req_level
+            = std::max<sta::Level>(0, std::min(drvr->level(), min_req_level));
+        utl::DebugScopedTimer timer(sta_runtime);
+        search_->findRequireds(req_level);
+      }
     }
 
     bool debug = (drvr_pin == resizer_->debug_pin_);
@@ -3275,22 +3991,42 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
     //    computation of wire load, we are using pin position for the existing
     //    buffer, but instance position for the new buffer.)
     //
+    // A failing net whose slack before rebuffering is within
+    // `kCriticalSlackBand` of the worst slack gets no relaxation: any area
+    // recovered there costs WNS.  Other failing nets keep it, as recovering
+    // no area on every failing net grows the design too much.
+    //
 
     FixedDelay target_slack = -FixedDelay::INF;
+    // Whether this failing net is within kCriticalSlackBand of the worst
+    // slack; driver sizing then skips the area hurdle.
+    bool critical = false;
+    // Gate delay of the current driver, never negative; a term of the
+    // relaxation below and the scale of the driver sizing area hurdle.
+    const sta::Delay hurdle_base_delay
+        = std::max(0.0f, static_cast<float>(drvr_gate_delay));
 
     // Check the tree isn't fully unconstrained
     if (timing_tree->slackTransition() != nullptr) {
-      sta::Delay relaxation
-          = std::max<float>(
-                0.0f,
-                ((slackAtDriverPin(timing_tree).toSeconds())
-                 - std::min(float(original_tree_slack_error), 0.0f)))
-                / 4.0f
-            + (std::max(float(drvr_gate_delay), 0.0f)
-               + criticalPathDelay(logger_, timing_tree).toSeconds())
-                  * relaxation_factor_;
-      target_slack
-          = slackAtDriverPin(timing_tree) - FixedDelay(relaxation, resizer_);
+      const FixedDelay timing_slack = slackAtDriverPin(timing_tree);
+      critical
+          = timing_slack < FixedDelay::ZERO && worst_slack < FixedDelay::ZERO
+            && sta_slack < sta::INF
+            && FixedDelay(sta_slack, resizer_) <= worst_slack + critical_band;
+      sta::Delay relaxation = 0.0;
+      if (!critical) {
+        relaxation
+            = std::max<float>(
+                  0.0f,
+                  (timing_slack.toSeconds()
+                   - std::min(static_cast<float>(original_tree_slack_error),
+                              0.0f)))
+                  / 4.0f
+              + (hurdle_base_delay
+                 + criticalPathDelay(logger_, timing_tree).toSeconds())
+                    * relaxation_factor_;
+      }
+      target_slack = timing_slack - FixedDelay(relaxation, resizer_);
     }
 
     BnetPtr area_opt_tree = timing_tree;
@@ -3308,10 +4044,49 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
       break;
     }
 
+    // Driver cell before sizing, to compare input pin caps after a resize.
+    sta::LibertyCell* old_drvr_cell = (size_driver_ && drvr_inst != nullptr)
+                                          ? network_->libertyCell(drvr_inst)
+                                          : nullptr;
     const int prev_resize_count = driver_resize_count_;
-    area_opt_tree = sizeDriverWithTree(
-        drvr_pin, timing_tree, area_opt_tree, target_slack);
+    area_opt_tree = sizeDriverWithTree(drvr_pin,
+                                       unbuffered_tree,
+                                       timing_tree,
+                                       area_opt_tree,
+                                       target_slack,
+                                       critical,
+                                       hurdle_base_delay);
     const bool driver_resized = driver_resize_count_ != prev_resize_count;
+
+    // Record the input nets whose load cap grew with the resize, so a later
+    // sibling on the same net is re-timed before it is sized.
+    if (driver_resized && drvr_inst != nullptr && old_drvr_cell != nullptr) {
+      std::unique_ptr<sta::InstancePinIterator> in_iter(
+          network_->pinIterator(drvr_inst));
+      while (in_iter->hasNext()) {
+        const sta::Pin* in_pin = in_iter->next();
+        if (!network_->direction(in_pin)->isInput()) {
+          continue;
+        }
+        const odb::dbNet* in_net = db_network_->flatNet(in_pin);
+        if (in_net == nullptr) {
+          continue;
+        }
+        const sta::LibertyPort* new_port = network_->libertyPort(in_pin);
+        const sta::LibertyPort* old_port
+            = new_port != nullptr
+                  ? old_drvr_cell->findLibertyPort(new_port->name())
+                  : nullptr;
+        if (new_port != nullptr && old_port != nullptr
+            && new_port->capacitance() > old_port->capacitance()) {
+          resized_upstream_nets_.insert(in_net);
+          if (sta::Vertex* in_v = graph_->pinLoadVertex(in_pin)) {
+            min_dirty_input_level
+                = std::min(min_dirty_input_level, in_v->level());
+          }
+        }
+      }
+    }
 
     sta::Instance* parent = db_network_->getOwningInstanceParent(drvr_pin);
     odb::dbITerm* drvr_op_iterm = nullptr;
@@ -3345,7 +4120,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
     }
   }
 
-  propagate_edits();
+  propagate_edits(0);
 
   printProgress(filtered_pins.size(), false, true, 0);
   if (size_driver_) {
@@ -3371,9 +4146,11 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
              RSZ,
              "rebuffer",
              1,
-             "Driver sizing: recover area {:.2f}, evaluate {:.2f}",
+             "Driver sizing: recover area {:.2f}, evaluate {:.2f}, of "
+             "which plan per driver {:.2f}",
              size_ra_runtime_,
-             size_eval_runtime_);
+             size_eval_runtime_,
+             size_plan_runtime_);
 }
 
 bool Rebuffer::hasTopLevelOutputPort(sta::Net* net)
