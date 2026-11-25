@@ -327,6 +327,9 @@ cc_library(
             ":gpl_kokkos_host",
         ],
         "//conditions:default": [],
+    }) + select({
+        "@kokkos//:openmp": ["@openmp"],
+        "//conditions:default": [],
     }),
 )
 

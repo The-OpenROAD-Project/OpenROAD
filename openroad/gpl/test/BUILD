@@ -114,7 +114,7 @@ filegroup(
             for test in ALL_TESTS + LARGE_TESTS + GPU_TESTS + [
                 t + "-gpu-off"
                 for t in GPU_OFF_TESTS
-            ]
+            ] + ["omp_thread_limit01"]
             for ext in [
                 "tcl",
                 "py",
@@ -147,6 +147,16 @@ filegroup(
     expected_exit_code = 1,
     target_compatible_with = GPU_ONLY,
 ) for test_name, sourced_scripts in GPU_OFF_TESTS.items()]
+
+# OpenMP capped below the requested placement thread count: the script asks
+# for two threads, OMP_THREAD_LIMIT allows one. Keeps the GPU_ENV_OFF pin.
+regression_test(
+    name = "omp_thread_limit01",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+    env = GPU_ENV_OFF | {"OMP_THREAD_LIMIT": "1"},
+)
 
 # Convenience suite to run all long-running tests explicitly:
 #   bazel test //openroad/gpl/test:large_tests

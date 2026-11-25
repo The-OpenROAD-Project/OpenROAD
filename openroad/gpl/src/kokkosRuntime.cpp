@@ -12,6 +12,10 @@
 #include <cuda_runtime.h>
 #endif
 
+#ifdef KOKKOS_ENABLE_OPENMP
+#include <omp.h>
+#endif
+
 #include "utl/Logger.h"
 
 namespace gpl {
@@ -76,8 +80,15 @@ Kokkos::DefaultHostExecutionSpace hostExecutionSpace(utl::Logger* logger,
 {
   checkKokkosDevice(logger);
 #ifdef KOKKOS_ENABLE_OPENMP
-  num_threads = std::clamp(
-      num_threads, 1, Kokkos::Impl::OpenMPTraits::MAX_THREAD_COUNT);
+  // Kokkos splits OpenMP work into one chunk per pool rank and assumes the
+  // runtime supplies all of them; OMP_THREAD_LIMIT can cap the team below the
+  // pool size, and the missing ranks' work is then skipped. Never ask for more
+  // threads than OpenMP will provide.
+  num_threads
+      = std::clamp(num_threads,
+                   1,
+                   std::min(omp_get_thread_limit(),
+                            Kokkos::Impl::OpenMPTraits::MAX_THREAD_COUNT));
 #endif
 #ifdef KOKKOS_ENABLE_THREADS
   num_threads = std::clamp(
