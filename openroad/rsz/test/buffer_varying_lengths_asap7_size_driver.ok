@@ -1,0 +1,288 @@
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |       300
+    final |   +140.8% |       0 |      64 |            45 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0034] Found 45 slew violations.
+[INFO RSZ-0038] Inserted 64 buffers in 45 nets.
+[INFO RSZ-0173] Rebuffering will size drivers together with buffer trees
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
+-------------------------------------------------------
+        0 |     +0.0% |       0 |        0 |       100
+       10 |     +0.8% |      20 |       41 |        90
+       20 |     +0.7% |      37 |       73 |        80
+       30 |     +5.7% |      46 |      100 |        70
+       40 |    +10.0% |      55 |      125 |        60
+       50 |    +13.1% |      62 |      143 |        50
+       60 |    +21.8% |      62 |      159 |        40
+       70 |    +27.7% |      62 |      168 |        30
+       80 |    +32.1% |      62 |      174 |        20
+       90 |    +34.0% |      62 |      174 |        10
+    final |    +36.1% |      64 |      179 |         0
+-------------------------------------------------------
+[INFO RSZ-2023] Resized 100 drivers while rebuffering.
+
+Solution under tight timing constraint:
+Group                                  Slack
+--------------------------------------------
+clk                                  1022.88
+clk                                  -211.81
+
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+place128/A                            320.00   88.17  231.83 (MET)
+
+max capacitance
+
+Pin                                    Limit     Cap   Slack
+------------------------------------------------------------
+i1-3/Y                                 92.16    2.28   89.88 (MET)
+
+----------------------------------------------------------------------
+ Distance | Driver  | Area  | Path delay | Sequence
+----------------------------------------------------------------------
+      3.8 | BUFx3_ASAP7_75t_R |  0.09 |     24.500 | 
+      7.5 | BUFx3_ASAP7_75t_R |  0.09 |     25.675 | 
+     11.2 | BUFx3_ASAP7_75t_R |  0.09 |     26.914 | 
+     15.0 | BUFx6f_ASAP7_75t_R |  0.15 |     26.929 | 
+     18.8 | BUFx6f_ASAP7_75t_R |  0.15 |     27.912 | 
+     22.5 | BUFx6f_ASAP7_75t_R |  0.15 |     28.973 | 
+     26.2 | BUFx6f_ASAP7_75t_R |  0.15 |     30.107 | 
+     30.0 | BUFx6f_ASAP7_75t_R |  0.15 |     31.276 | 
+     33.8 | BUFx6f_ASAP7_75t_R |  0.15 |     32.503 | 
+     37.5 | BUFx6f_ASAP7_75t_R |  0.15 |     33.870 | 
+     41.2 | BUFx6f_ASAP7_75t_R |  0.15 |     35.368 | 
+     45.0 | BUFx6f_ASAP7_75t_R |  0.15 |     36.980 | 
+     48.8 | BUFx6f_ASAP7_75t_R |  0.15 |     38.512 | 
+     52.5 | BUFx6f_ASAP7_75t_R |  0.15 |     40.134 | 
+     56.2 | BUFx6f_ASAP7_75t_R |  0.15 |     41.857 | 
+     60.0 | BUFx6f_ASAP7_75t_R |  0.15 |     43.672 | 
+     63.8 | BUFx6f_ASAP7_75t_R |  0.15 |     45.568 | 
+     67.5 | BUFx6f_ASAP7_75t_R |  0.15 |     47.464 | 
+     71.2 | BUFx6f_ASAP7_75t_R |  0.15 |     49.367 | 
+     75.0 | BUFx6f_ASAP7_75t_R |  0.15 |     51.268 | 
+     78.8 | BUFx6f_ASAP7_75t_R |  0.15 |     53.260 | 
+     82.5 | BUFx6f_ASAP7_75t_R |  0.15 |     55.336 | 
+     86.2 | BUFx6f_ASAP7_75t_R |  0.15 |     57.499 | 
+     90.0 | BUFx6f_ASAP7_75t_R |  0.15 |     59.743 | 
+     93.8 | BUFx6f_ASAP7_75t_R |  0.15 |     62.070 | 
+     97.5 | BUFx6f_ASAP7_75t_R |  0.15 |     64.485 | 
+    101.2 | BUFx6f_ASAP7_75t_R |  0.15 |     66.978 | 
+    105.0 | BUFx6f_ASAP7_75t_R |  0.15 |     69.558 | 
+    108.8 | BUFx6f_ASAP7_75t_R |  0.15 |     71.961 | 
+    112.5 | BUFx6f_ASAP7_75t_R |  0.29 |     72.174 |  BUFx6f_ASAP7_75t_R
+    116.2 | BUFx6f_ASAP7_75t_R |  0.29 |     74.030 |  BUFx6f_ASAP7_75t_R
+    120.0 | BUFx6f_ASAP7_75t_R |  0.29 |     75.919 |  BUFx6f_ASAP7_75t_R
+    123.8 | BUFx6f_ASAP7_75t_R |  0.29 |     77.788 |  BUFx6f_ASAP7_75t_R
+    127.5 | BUFx6f_ASAP7_75t_R |  0.29 |     79.775 |  BUFx6f_ASAP7_75t_R
+    131.2 | BUFx6f_ASAP7_75t_R |  0.29 |     81.570 |  BUFx6f_ASAP7_75t_R
+    135.0 | BUFx6f_ASAP7_75t_R |  0.29 |     83.473 |  BUFx6f_ASAP7_75t_R
+    138.8 | BUFx6f_ASAP7_75t_R |  0.29 |     85.395 |  BUFx6f_ASAP7_75t_R
+    142.5 | BUFx6f_ASAP7_75t_R |  0.29 |     87.306 |  BUFx6f_ASAP7_75t_R
+    146.2 | BUFx6f_ASAP7_75t_R |  0.29 |     89.210 |  BUFx6f_ASAP7_75t_R
+    150.0 | BUFx6f_ASAP7_75t_R |  0.29 |     91.195 |  BUFx6f_ASAP7_75t_R
+    153.8 | BUFx6f_ASAP7_75t_R |  0.29 |     95.040 |  BUFx6f_ASAP7_75t_R
+    157.5 | BUFx6f_ASAP7_75t_R |  0.29 |     97.309 |  BUFx6f_ASAP7_75t_R
+    161.2 | BUFx6f_ASAP7_75t_R |  0.29 |     99.626 |  BUFx6f_ASAP7_75t_R
+    165.0 | BUFx6f_ASAP7_75t_R |  0.29 |    101.939 |  BUFx6f_ASAP7_75t_R
+    168.8 | BUFx6f_ASAP7_75t_R |  0.29 |    104.184 |  BUFx6f_ASAP7_75t_R
+    172.5 | BUFx6f_ASAP7_75t_R |  0.29 |    106.399 |  BUFx6f_ASAP7_75t_R
+    176.2 | BUFx6f_ASAP7_75t_R |  0.44 |    106.095 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    180.0 | BUFx6f_ASAP7_75t_R |  0.44 |    108.013 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    183.8 | BUFx6f_ASAP7_75t_R |  0.44 |    109.881 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    187.5 | BUFx6f_ASAP7_75t_R |  0.44 |    111.769 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    191.2 | BUFx6f_ASAP7_75t_R |  0.44 |    113.684 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    195.0 | BUFx6f_ASAP7_75t_R |  0.44 |    115.625 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    198.8 | BUFx6f_ASAP7_75t_R |  0.44 |    117.665 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    202.5 | BUFx6f_ASAP7_75t_R |  0.44 |    119.425 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    206.2 | BUFx6f_ASAP7_75t_R |  0.44 |    121.293 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    210.0 | BUFx6f_ASAP7_75t_R |  0.44 |    123.238 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    213.8 | BUFx6f_ASAP7_75t_R |  0.44 |    125.123 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    217.5 | BUFx6f_ASAP7_75t_R |  0.44 |    127.030 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    221.2 | BUFx6f_ASAP7_75t_R |  0.44 |    128.985 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    225.0 | BUFx6f_ASAP7_75t_R |  0.44 |    133.525 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    228.8 | BUFx6f_ASAP7_75t_R |  0.44 |    135.694 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    232.5 | BUFx6f_ASAP7_75t_R |  0.44 |    137.838 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    236.2 | BUFx6f_ASAP7_75t_R |  0.44 |    139.957 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    240.0 | BUFx6f_ASAP7_75t_R |  0.44 |    142.089 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    243.8 | BUFx6f_ASAP7_75t_R |  0.58 |    141.978 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    247.5 | BUFx6f_ASAP7_75t_R |  0.58 |    143.854 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    251.2 | BUFx6f_ASAP7_75t_R |  0.58 |    145.750 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    255.0 | BUFx6f_ASAP7_75t_R |  0.58 |    147.666 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    258.8 | BUFx6f_ASAP7_75t_R |  0.58 |    149.603 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    262.5 | BUFx6f_ASAP7_75t_R |  0.58 |    151.523 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    266.2 | BUFx6f_ASAP7_75t_R |  0.58 |    153.314 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    270.0 | BUFx6f_ASAP7_75t_R |  0.58 |    155.201 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    273.8 | BUFx6f_ASAP7_75t_R |  0.58 |    157.291 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    277.5 | BUFx6f_ASAP7_75t_R |  0.58 |    159.124 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    281.2 | BUFx6f_ASAP7_75t_R |  0.58 |    161.045 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    285.0 | BUFx6f_ASAP7_75t_R |  0.58 |    162.948 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    288.8 | BUFx6f_ASAP7_75t_R |  0.58 |    164.868 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    292.5 | BUFx6f_ASAP7_75t_R |  0.58 |    166.785 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    296.2 | BUFx6f_ASAP7_75t_R |  0.58 |    171.684 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    300.0 | BUFx6f_ASAP7_75t_R |  0.58 |    173.746 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    303.8 | BUFx6f_ASAP7_75t_R |  0.58 |    175.806 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    307.5 | BUFx6f_ASAP7_75t_R |  0.58 |    177.887 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    311.2 | BUFx6f_ASAP7_75t_R |  0.58 |    179.989 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    315.0 | BUFx6f_ASAP7_75t_R |  0.58 |    182.111 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    318.8 | BUFx6f_ASAP7_75t_R |  0.73 |    181.649 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    322.5 | BUFx6f_ASAP7_75t_R |  0.73 |    183.580 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    326.2 | BUFx6f_ASAP7_75t_R |  0.73 |    185.516 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    330.0 | BUFx6f_ASAP7_75t_R |  0.73 |    187.353 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    333.8 | BUFx6f_ASAP7_75t_R |  0.73 |    189.157 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    337.5 | BUFx6f_ASAP7_75t_R |  0.73 |    191.049 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    341.2 | BUFx6f_ASAP7_75t_R |  0.73 |    192.959 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    345.0 | BUFx6f_ASAP7_75t_R |  0.73 |    194.885 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    348.8 | BUFx6f_ASAP7_75t_R |  0.73 |    196.827 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    352.5 | BUFx6f_ASAP7_75t_R |  0.73 |    198.759 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    356.2 | BUFx6f_ASAP7_75t_R |  0.73 |    200.690 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    360.0 | BUFx6f_ASAP7_75t_R |  0.73 |    202.657 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    363.8 | BUFx6f_ASAP7_75t_R |  0.73 |    204.595 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    367.5 | BUFx6f_ASAP7_75t_R |  0.73 |    206.576 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    371.2 | BUFx6f_ASAP7_75t_R |  0.87 |    209.919 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+    375.0 | BUFx6f_ASAP7_75t_R |  0.87 |    211.810 |  BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R BUFx6f_ASAP7_75t_R
+----------------------------------------------------------------------
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
+-------------------------------------------------------
+        0 |     +0.0% |       0 |        0 |       100
+       10 |    -10.5% |      41 |       19 |        90
+       20 |    -19.5% |      73 |       29 |        80
+       30 |    -27.6% |     100 |       38 |        70
+       40 |    -35.1% |     125 |       47 |        60
+       50 |    -40.5% |     143 |       56 |        50
+       60 |    -46.5% |     159 |       56 |        40
+       70 |    -50.7% |     168 |       56 |        30
+       80 |    -54.0% |     174 |       56 |        20
+       90 |    -55.4% |     174 |       56 |        10
+    final |    -57.9% |     179 |       57 |         0
+-------------------------------------------------------
+[INFO RSZ-2023] Resized 98 drivers while rebuffering.
+
+Solution with relaxed timing:
+Group                                  Slack
+--------------------------------------------
+clk                                    23.95
+clk                                   720.82
+
+max slew
+
+Pin                                    Limit    Slew   Slack
+------------------------------------------------------------
+place265/A                            320.00  265.94   54.06 (MET)
+
+max capacitance
+
+Pin                                    Limit     Cap   Slack
+------------------------------------------------------------
+i1-99/Y                                92.16   29.29   62.87 (MET)
+
+----------------------------------------------------------------------
+ Distance | Driver  | Area  | Path delay | Sequence
+----------------------------------------------------------------------
+      3.8 | BUFx2_ASAP7_75t_R |  0.07 |     25.614 | 
+      7.5 | BUFx2_ASAP7_75t_R |  0.07 |     27.191 | 
+     11.2 | BUFx2_ASAP7_75t_R |  0.07 |     28.815 | 
+     15.0 | BUFx2_ASAP7_75t_R |  0.07 |     30.447 | 
+     18.8 | BUFx2_ASAP7_75t_R |  0.07 |     32.156 | 
+     22.5 | BUFx2_ASAP7_75t_R |  0.07 |     33.881 | 
+     26.2 | BUFx2_ASAP7_75t_R |  0.07 |     35.681 | 
+     30.0 | BUFx2_ASAP7_75t_R |  0.07 |     37.502 | 
+     33.8 | BUFx2_ASAP7_75t_R |  0.07 |     39.188 | 
+     37.5 | BUFx2_ASAP7_75t_R |  0.07 |     40.978 | 
+     41.2 | BUFx2_ASAP7_75t_R |  0.07 |     42.839 | 
+     45.0 | BUFx2_ASAP7_75t_R |  0.07 |     44.778 | 
+     48.8 | BUFx2_ASAP7_75t_R |  0.07 |     46.766 | 
+     52.5 | BUFx2_ASAP7_75t_R |  0.07 |     48.811 | 
+     56.2 | BUFx2_ASAP7_75t_R |  0.07 |     50.974 | 
+     60.0 | BUFx2_ASAP7_75t_R |  0.07 |     53.044 | 
+     63.8 | BUFx2_ASAP7_75t_R |  0.07 |     55.131 | 
+     67.5 | BUFx2_ASAP7_75t_R |  0.07 |     57.257 | 
+     71.2 | BUFx2_ASAP7_75t_R |  0.07 |     59.438 | 
+     75.0 | BUFx2_ASAP7_75t_R |  0.07 |     61.756 | 
+     78.8 | BUFx2_ASAP7_75t_R |  0.07 |     64.158 | 
+     82.5 | BUFx2_ASAP7_75t_R |  0.07 |     66.638 | 
+     86.2 | BUFx2_ASAP7_75t_R |  0.07 |     69.201 | 
+     90.0 | BUFx2_ASAP7_75t_R |  0.07 |     71.844 | 
+     93.8 | BUFx2_ASAP7_75t_R |  0.07 |     74.540 | 
+     97.5 | BUFx2_ASAP7_75t_R |  0.07 |     77.092 | 
+    101.2 | BUFx2_ASAP7_75t_R |  0.07 |     79.718 | 
+    105.0 | BUFx2_ASAP7_75t_R |  0.07 |     82.473 | 
+    108.8 | BUFx2_ASAP7_75t_R |  0.07 |     85.242 | 
+    112.5 | BUFx2_ASAP7_75t_R |  0.07 |     88.085 | 
+    116.2 | BUFx2_ASAP7_75t_R |  0.07 |     91.004 | 
+    120.0 | BUFx2_ASAP7_75t_R |  0.07 |     93.997 | 
+    123.8 | BUFx2_ASAP7_75t_R |  0.07 |     97.028 | 
+    127.5 | BUFx2_ASAP7_75t_R |  0.07 |    100.160 | 
+    131.2 | BUFx2_ASAP7_75t_R |  0.07 |    103.364 | 
+    135.0 | BUFx2_ASAP7_75t_R |  0.07 |    106.642 | 
+    138.8 | BUFx2_ASAP7_75t_R |  0.07 |    109.996 | 
+    142.5 | BUFx2_ASAP7_75t_R |  0.07 |    113.395 | 
+    146.2 | BUFx2_ASAP7_75t_R |  0.07 |    116.643 | 
+    150.0 | BUFx2_ASAP7_75t_R |  0.07 |    119.979 | 
+    153.8 | BUFx2_ASAP7_75t_R |  0.07 |    123.383 | 
+    157.5 | BUFx2_ASAP7_75t_R |  0.07 |    126.856 | 
+    161.2 | BUFx2_ASAP7_75t_R |  0.07 |    130.395 | 
+    165.0 | BUFx2_ASAP7_75t_R |  0.07 |    134.001 | 
+    168.8 | BUFx2_ASAP7_75t_R |  0.07 |    137.684 | 
+    172.5 | BUFx2_ASAP7_75t_R |  0.07 |    141.427 | 
+    176.2 | BUFx3_ASAP7_75t_R |  0.09 |    134.801 | 
+    180.0 | BUFx3_ASAP7_75t_R |  0.09 |    138.499 | 
+    183.8 | BUFx3_ASAP7_75t_R |  0.09 |    142.266 | 
+    187.5 | BUFx4_ASAP7_75t_R |  0.10 |    147.724 | 
+    191.2 | BUFx4_ASAP7_75t_R |  0.10 |    151.557 | 
+    195.0 | BUFx5_ASAP7_75t_R |  0.12 |    149.689 | 
+    198.8 | BUFx6f_ASAP7_75t_R |  0.15 |    148.067 | 
+    202.5 | BUFx2_ASAP7_75t_R |  0.16 |    143.748 |  BUFx3_ASAP7_75t_R
+    206.2 | BUFx2_ASAP7_75t_R |  0.16 |    146.588 |  BUFx3_ASAP7_75t_R
+    210.0 | BUFx2_ASAP7_75t_R |  0.16 |    149.472 |  BUFx3_ASAP7_75t_R
+    213.8 | BUFx2_ASAP7_75t_R |  0.16 |    152.369 |  BUFx3_ASAP7_75t_R
+    217.5 | BUFx2_ASAP7_75t_R |  0.16 |    155.274 |  BUFx3_ASAP7_75t_R
+    221.2 | BUFx2_ASAP7_75t_R |  0.16 |    158.891 |  BUFx3_ASAP7_75t_R
+    225.0 | BUFx2_ASAP7_75t_R |  0.16 |    166.895 |  BUFx3_ASAP7_75t_R
+    228.8 | BUFx2_ASAP7_75t_R |  0.16 |    170.069 |  BUFx3_ASAP7_75t_R
+    232.5 | BUFx2_ASAP7_75t_R |  0.16 |    173.285 |  BUFx3_ASAP7_75t_R
+    236.2 | BUFx2_ASAP7_75t_R |  0.16 |    176.543 |  BUFx3_ASAP7_75t_R
+    240.0 | BUFx2_ASAP7_75t_R |  0.16 |    179.848 |  BUFx3_ASAP7_75t_R
+    243.8 | BUFx2_ASAP7_75t_R |  0.16 |    183.195 |  BUFx3_ASAP7_75t_R
+    247.5 | BUFx2_ASAP7_75t_R |  0.16 |    186.585 |  BUFx3_ASAP7_75t_R
+    251.2 | BUFx2_ASAP7_75t_R |  0.16 |    178.777 |  BUFx3_ASAP7_75t_R
+    255.0 | BUFx2_ASAP7_75t_R |  0.16 |    181.874 |  BUFx3_ASAP7_75t_R
+    258.8 | BUFx2_ASAP7_75t_R |  0.16 |    185.007 |  BUFx3_ASAP7_75t_R
+    262.5 | BUFx2_ASAP7_75t_R |  0.16 |    188.178 |  BUFx3_ASAP7_75t_R
+    266.2 | BUFx2_ASAP7_75t_R |  0.16 |    191.387 |  BUFx3_ASAP7_75t_R
+    270.0 | BUFx2_ASAP7_75t_R |  0.16 |    194.634 |  BUFx3_ASAP7_75t_R
+    273.8 | BUFx2_ASAP7_75t_R |  0.16 |    197.919 |  BUFx3_ASAP7_75t_R
+    277.5 | BUFx2_ASAP7_75t_R |  0.16 |    201.238 |  BUFx3_ASAP7_75t_R
+    281.2 | BUFx2_ASAP7_75t_R |  0.16 |    204.552 |  BUFx3_ASAP7_75t_R
+    285.0 | BUFx2_ASAP7_75t_R |  0.16 |    207.795 |  BUFx3_ASAP7_75t_R
+    288.8 | BUFx2_ASAP7_75t_R |  0.16 |    211.023 |  BUFx3_ASAP7_75t_R
+    292.5 | BUFx2_ASAP7_75t_R |  0.16 |    214.186 |  BUFx3_ASAP7_75t_R
+    296.2 | BUFx2_ASAP7_75t_R |  0.16 |    218.502 |  BUFx3_ASAP7_75t_R
+    300.0 | BUFx2_ASAP7_75t_R |  0.16 |    221.927 |  BUFx3_ASAP7_75t_R
+    303.8 | BUFx2_ASAP7_75t_R |  0.16 |    225.425 |  BUFx3_ASAP7_75t_R
+    307.5 | BUFx2_ASAP7_75t_R |  0.16 |    228.957 |  BUFx3_ASAP7_75t_R
+    311.2 | BUFx2_ASAP7_75t_R |  0.16 |    232.526 |  BUFx3_ASAP7_75t_R
+    315.0 | BUFx4_ASAP7_75t_R |  0.19 |    231.168 |  BUFx3_ASAP7_75t_R
+    318.8 | BUFx4_ASAP7_75t_R |  0.19 |    234.730 |  BUFx3_ASAP7_75t_R
+    322.5 | BUFx5_ASAP7_75t_R |  0.20 |    232.531 |  BUFx3_ASAP7_75t_R
+    326.2 | BUFx5_ASAP7_75t_R |  0.20 |    236.127 |  BUFx3_ASAP7_75t_R
+    330.0 | BUFx6f_ASAP7_75t_R |  0.23 |    234.208 |  BUFx3_ASAP7_75t_R
+    333.8 | BUFx2_ASAP7_75t_R |  0.25 |    228.377 |  BUFx3_ASAP7_75t_R BUFx3_ASAP7_75t_R
+    337.5 | BUFx2_ASAP7_75t_R |  0.25 |    231.339 |  BUFx3_ASAP7_75t_R BUFx3_ASAP7_75t_R
+    341.2 | BUFx2_ASAP7_75t_R |  0.25 |    234.329 |  BUFx3_ASAP7_75t_R BUFx3_ASAP7_75t_R
+    345.0 | BUFx2_ASAP7_75t_R |  0.25 |    237.333 |  BUFx3_ASAP7_75t_R BUFx3_ASAP7_75t_R
+    348.8 | BUFx2_ASAP7_75t_R |  0.25 |    240.364 |  BUFx3_ASAP7_75t_R BUFx3_ASAP7_75t_R
+    352.5 | BUFx2_ASAP7_75t_R |  0.25 |    243.364 |  BUFx3_ASAP7_75t_R BUFx3_ASAP7_75t_R
+    356.2 | BUFx2_ASAP7_75t_R |  0.25 |    246.386 |  BUFx3_ASAP7_75t_R BUFx3_ASAP7_75t_R
+    360.0 | BUFx2_ASAP7_75t_R |  0.25 |    249.433 |  BUFx3_ASAP7_75t_R BUFx3_ASAP7_75t_R
+    363.8 | BUFx2_ASAP7_75t_R |  0.25 |    253.588 |  BUFx3_ASAP7_75t_R BUFx3_ASAP7_75t_R
+    367.5 | BUFx2_ASAP7_75t_R |  0.25 |    255.889 |  BUFx3_ASAP7_75t_R BUFx3_ASAP7_75t_R
+    371.2 | BUFx3_ASAP7_75t_R |  0.17 |    279.181 |  BUFx3_ASAP7_75t_R
+    375.0 | BUFx4_ASAP7_75t_R |  0.25 |    276.522 |  BUFx6f_ASAP7_75t_R
+----------------------------------------------------------------------

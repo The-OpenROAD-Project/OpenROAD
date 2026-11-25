@@ -6,7 +6,8 @@
 # when sizing) by one drive strength, and keep the change if STA says the
 # path got faster. All paths take their trial move in the same STA run.
 #
-# Environment: REF_SIZE_DRIVER (0 or 1), REF_RSZ (rsz_solution.tcl output),
+# Environment: REF_PDK, REF_SIZE_DRIVER (0 or 1), REF_RSZ (rsz_solution.tcl
+# output),
 # REF_SWEEP (sweep.tcl output), REF_OUT (best solution per length).
 # Run from openroad/rsz/test.
 
@@ -38,6 +39,8 @@ proc make_solution_path { solution } {
 foreach solution [read_solutions $::env(REF_RSZ)] {
   make_solution_path $solution
 }
+# Where rsz places a buffer at the driver.
+set at_driver [ref::steps_dbu 0.0186]
 foreach solution [read_solutions $::env(REF_SWEEP)] {
   lappend sweep([lindex $solution 0]) $solution
 }
@@ -51,15 +54,15 @@ for { set i 1 } { $i <= 100 } { incr i } {
     if { $k < 0 } {
       continue
     }
-    foreach first {BUF_X4 BUF_X8 BUF_X16} {
+    foreach first $bvl_ref_first_buffers {
       if { $k == 0 } {
-        ref::make_path $i BUF_X1 [list $first] {930}
+        ref::make_path $i $bvl_buffer [list $first] [list $at_driver]
         continue
       }
-      foreach cell {BUF_X4 BUF_X8} {
+      foreach cell $bvl_ref_chain_buffers {
         set seq [concat [list $first] [lrepeat $k $cell]]
-        set xs [concat {930} [ref::uniform_xs $i $k]]
-        ref::make_path $i BUF_X1 $seq $xs
+        set xs [concat [list $at_driver] [ref::uniform_xs $i $k]]
+        ref::make_path $i $bvl_buffer $seq $xs
       }
     }
   }
@@ -127,8 +130,9 @@ for { set p 0 } { $p < $ref::npaths } { incr p } {
 }
 set first_j [expr { $size_driver ? -1 : 0 }]
 
-# Steps in DBU (2000 per um): 51.2 um down to 0.2 um.
-foreach step {102400 51200 25600 12800 6400 3200 1600 800 400} {
+# Move steps from about two length steps down to 1/128 of one.
+foreach steps {2.048 1.024 0.512 0.256 0.128 0.064 0.032 0.016 0.008} {
+  set step [ref::steps_dbu $steps]
   for { set sweep_count 0 } { $sweep_count < 4 } { incr sweep_count } {
     set improved 0
     for { set j $first_j } { $j < $max_bufs } { incr j } {
