@@ -50,19 +50,40 @@ EOF
 USER user
 WORKDIR /OpenROAD
 COPY --chown=user:user . .
-# Keep Bazel's build cache out of the published builder image.
+# Keep Bazel's build cache out of the published builder image. `--target
+# builder` is a published stage, so whatever this step leaves behind ships:
+# etc/Build.sh also writes build/openroad_build.log, which is removed below.
+#
 # Callers may pass `--secret id=bazelrc,src=<file>` to inject a temporary
 # user.bazelrc (loaded via `try-import %workspace%/user.bazelrc` in .bazelrc)
 # for remote execution or authenticated remote caching without baking endpoints
 # or credentials into image layers; omitting `--secret` is a no-op.
+#
+#   * `src` must be the repository-root `user.bazelrc`, which .dockerignore
+#     excludes, or a file outside the build context. `COPY . .` above runs
+#     before this step, so any other in-context file is copied into this
+#     published stage first.
+#   * Remote-execution callers must also replace .bazelrc's default HTTPS
+#     `--remote_cache` with a gRPC endpoint, or clear it with
+#     `--remote_cache=`. Bazel rejects an HTTP cache next to
+#     `--remote_executor`.
+#   * etc/Build.sh passes `--jobs=${numThreads}` on the command line, which
+#     overrides `--jobs` in user.bazelrc. Pass `--build-arg numThreads=<N>` to
+#     raise fan-out for remote execution.
+#   * BuildKit keeps secret contents out of this step's cache key, so adding,
+#     changing or removing `--secret` on its own can reuse a warm layer and
+#     silently skip the requested configuration. Change a build argument that
+#     this step reads, such as `numThreads`, or pass
+#     `--no-cache-filter builder`.
 RUN --mount=type=cache,target=/home/user/.cache,uid=9000,gid=9000 \
-    --mount=type=secret,id=bazelrc,target=/OpenROAD/user.bazelrc,mode=0444,required=false \
+    --mount=type=secret,id=bazelrc,target=/OpenROAD/user.bazelrc,uid=9000,gid=9000,mode=0400,required=false \
     <<EOF
 set -e
 OPENROAD_VERSION="${orVersion}" \
     bash ./etc/Build.sh -prefix=/OpenROAD/install -threads=${numThreads}
 test -x /OpenROAD/install/bin/openroad
 rm -f bazel-OpenROAD bazel-bin bazel-out bazel-testlogs
+rm -rf /OpenROAD/build
 EOF
 
 COPY --chmod=775 --chown=user:user etc/docker-entrypoint.sh /usr/local/bin/.

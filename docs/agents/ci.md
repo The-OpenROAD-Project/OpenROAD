@@ -36,6 +36,10 @@ reproducing locally; keep `--//:platform=gui`.
   explicitly. Each checks `test/<design>_<platform>.metrics_limits`.
 - Jenkins also builds the Docker image on six Linux distros and
   smoke-tests the binary, which exercises `etc/DependencyInstaller.sh`.
+  It passes the `builder` stage an optional `--secret id=bazelrc` holding a
+  temporary `user.bazelrc` so the image build reaches the same remote
+  execution and cache endpoints as the Bazel steps. The comment above that
+  mount in the `Dockerfile` lists what a caller has to get right.
 - `[skip ci]` or `[ci skip]` in the latest commit message skips the
   Bazel build-tests, test, and flow steps and the Docker smoke tests;
   docs, nogui, and the Docker image builds still run.
