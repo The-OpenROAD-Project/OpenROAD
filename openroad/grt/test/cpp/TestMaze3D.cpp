@@ -75,6 +75,29 @@ class Maze3DTestPeer
     return result;
   }
 
+  static bool isD1Clean(const FastRouteCore& router)
+  {
+    return router.d1_3D_clean_;
+  }
+
+  static bool isTouchedEmpty(const FastRouteCore& router)
+  {
+    return router.touched_3D_.empty();
+  }
+
+  static bool isD1AllBigInt(const FastRouteCore& router)
+  {
+    const int* data = router.d1_3D_.data();
+    const size_t n = router.d1_3D_.num_elements();
+    return std::all_of(
+        data, data + n, [](int v) { return v == FastRouteCore::BIG_INT; });
+  }
+
+  static std::unique_ptr<FastRouteCore> buildWorker(const FastRouteCore& router)
+  {
+    return router.buildSnapshotBatchWorker();
+  }
+
   struct SearchState
   {
     bool source_empty;
@@ -535,6 +558,89 @@ TEST_F(Maze3DTest, PlanarRouteAddsCrossingViaOnce)
   const std::multiset<Via> expected{{150, 150, 1, 2}};
   EXPECT_EQ(getVias(route), expected);
   EXPECT_EQ(route.size(), 5);
+}
+
+TEST_F(Maze3DTest, SparseResetPersistsAcrossCallsClearResizeAndWorkers)
+{
+  EXPECT_FALSE(Maze3DTestPeer::isD1Clean(*router_));
+
+  const int net_id = addNet(
+      "repeat_net",
+      {{0, 0, 0}, {1, 0, 0}, {2, 0, 0}, {2, 0, 1}, {2, 1, 1}, {2, 2, 1}});
+
+  // Repeated calls reuse the clean d1_3D_ grid and yield identical routes.
+  Maze3DTestPeer::route(*router_, {net_id, skipped_net_});
+  EXPECT_TRUE(Maze3DTestPeer::isD1Clean(*router_));
+  EXPECT_TRUE(Maze3DTestPeer::isTouchedEmpty(*router_));
+  EXPECT_TRUE(Maze3DTestPeer::isD1AllBigInt(*router_));
+  const auto first_grids
+      = Maze3DTestPeer::getTree(*router_, net_id).edges[0].route.grids;
+
+  Maze3DTestPeer::route(*router_, {net_id, skipped_net_});
+  EXPECT_TRUE(Maze3DTestPeer::isD1Clean(*router_));
+  EXPECT_TRUE(Maze3DTestPeer::isTouchedEmpty(*router_));
+  EXPECT_TRUE(Maze3DTestPeer::isD1AllBigInt(*router_));
+  const auto second_grids
+      = Maze3DTestPeer::getTree(*router_, net_id).edges[0].route.grids;
+  ASSERT_EQ(first_grids.size(), second_grids.size());
+  for (size_t i = 0; i < first_grids.size(); ++i) {
+    EXPECT_EQ(first_grids[i].x, second_grids[i].x);
+    EXPECT_EQ(first_grids[i].y, second_grids[i].y);
+    EXPECT_EQ(first_grids[i].layer, second_grids[i].layer);
+  }
+
+  // Snapshot batch worker gets independent clean-tracking state.
+  auto worker = Maze3DTestPeer::buildWorker(*router_);
+  EXPECT_FALSE(Maze3DTestPeer::isD1Clean(*worker));
+  EXPECT_TRUE(Maze3DTestPeer::isTouchedEmpty(*worker));
+
+  // clear() invalidates d1_3D_clean_.
+  router_->clear();
+  EXPECT_FALSE(Maze3DTestPeer::isD1Clean(*router_));
+  EXPECT_TRUE(Maze3DTestPeer::isTouchedEmpty(*router_));
+
+  auto reinitGrid = [&](int x_grid, int y_grid) {
+    router_->setTileSize(100);
+    router_->setGridsAndLayers(x_grid, y_grid, kNumLayers);
+    router_->addLayerDirection(0, odb::dbTechLayerDir::HORIZONTAL);
+    router_->addLayerDirection(1, odb::dbTechLayerDir::VERTICAL);
+    router_->initEdges();
+    router_->initAuxVar();
+    router_->setIncrementalGrt(true);
+    Maze3DTestPeer::setViaCost(*router_, 1);
+    for (int y = 0; y < y_grid; ++y) {
+      for (int x = 0; x < x_grid - 1; ++x) {
+        router_->setEdgeCapacity(x, y, x + 1, y, 1, 10);
+      }
+    }
+    for (int y = 0; y < y_grid - 1; ++y) {
+      for (int x = 0; x < x_grid; ++x) {
+        router_->setEdgeCapacity(x, y, x, y + 1, 2, 10);
+      }
+    }
+  };
+
+  // Growing the grid invalidates and cleanly rebuilds d1_3D_.
+  reinitGrid(5, 5);
+  EXPECT_FALSE(Maze3DTestPeer::isD1Clean(*router_));
+  const int grown_net = addNet("grown_net", {{0, 0, 0}, {1, 0, 0}, {2, 0, 0}});
+  const int grown_skip = addNet("grown_skip", {});
+  Maze3DTestPeer::route(*router_, {grown_net, grown_skip});
+  EXPECT_TRUE(Maze3DTestPeer::isD1Clean(*router_));
+  EXPECT_TRUE(Maze3DTestPeer::isTouchedEmpty(*router_));
+  EXPECT_TRUE(Maze3DTestPeer::isD1AllBigInt(*router_));
+
+  // Shrinking the grid without clear() discards stale heap entries and resets
+  // d1_3D_ cleanly.
+  reinitGrid(3, 3);
+  EXPECT_FALSE(Maze3DTestPeer::isD1Clean(*router_));
+  const int shrunk_net
+      = addNet("shrunk_net", {{0, 0, 0}, {1, 0, 0}, {2, 0, 0}});
+  const int shrunk_skip = addNet("shrunk_skip", {});
+  Maze3DTestPeer::route(*router_, {shrunk_net, shrunk_skip});
+  EXPECT_TRUE(Maze3DTestPeer::isD1Clean(*router_));
+  EXPECT_TRUE(Maze3DTestPeer::isTouchedEmpty(*router_));
+  EXPECT_TRUE(Maze3DTestPeer::isD1AllBigInt(*router_));
 }
 
 }  // namespace

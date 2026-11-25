@@ -150,6 +150,10 @@ void FastRouteCore::clear()
   h_capacity_ = 0;
   total_overflow_ = 0;
   has_2D_overflow_ = false;
+  d1_3D_clean_ = false;
+  touched_3D_.clear();
+  src_heap_3D_.clear();
+  dest_heap_3D_.clear();
 
   graph2d_.clear();
 
@@ -379,6 +383,8 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   dest_heap_3D_.clear();
 
   d1_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
+  d1_3D_clean_ = false;
+  touched_3D_.clear();
   path_len_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
 }
 

@@ -54,6 +54,9 @@ void FastRouteCore::addNeighborPoints(const int netID,
   for (int l = treenodes[nt].botL; l <= treenodes[nt].topL; l++) {
     const int idx = l * layer_stride + n1_xy;
     if (is_src) {
+      if (d1_base[idx] >= BIG_INT) {
+        touched_3D_.push_back(idx);
+      }
       d1_base[idx] = 0;
       path_len_base[idx] = 0;
       directions_base[idx] = Direction::Origin;
@@ -96,6 +99,9 @@ void FastRouteCore::addNeighborPoints(const int netID,
           for (int l = treenodes[nt].botL; l <= treenodes[nt].topL; l++) {
             const int idx = l * layer_stride + nbr_xy;
             if (is_src) {
+              if (d1_base[idx] >= BIG_INT) {
+                touched_3D_.push_back(idx);
+              }
               d1_base[idx] = 0;
               path_len_base[idx] = 0;
               directions_base[idx] = Direction::Origin;
@@ -118,6 +124,9 @@ void FastRouteCore::addNeighborPoints(const int netID,
             if (in_region_[pt.y][pt.x]) {
               const int idx = pt.layer * layer_stride + pt.y * x_grid + pt.x;
               if (is_src) {
+                if (d1_base[idx] >= BIG_INT) {
+                  touched_3D_.push_back(idx);
+                }
                 d1_base[idx] = 0;
                 path_len_base[idx] = 0;
                 src_heap_3D_.pushSeed(idx);
@@ -178,6 +187,7 @@ void FastRouteCore::setupHeap3D(int netID,
     d1_3D_.data()[idx1] = 0;
     path_len_3D_.data()[idx1] = 0;
     directions_3D_.data()[idx1] = Direction::Origin;
+    touched_3D_.push_back(idx1);
     src_heap_3D_.pushSeed(idx1);
     dest_heap_3D_.push_back(idx2);
   } else {  // net with more than 2 pins
@@ -687,6 +697,14 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
   std::vector<float> down_via_cost(num_layers_, 0.0f);
   std::vector<float> up_via_cost(num_layers_, 0.0f);
 
+  if (touched_3D_.capacity() < 4096) {
+    touched_3D_.reserve(4096);
+  }
+  if (!d1_3D_clean_) {
+    std::fill_n(d1_base, d1_3D_.num_elements(), BIG_INT);
+    d1_3D_clean_ = true;
+  }
+
   for (int orderIndex = 0; orderIndex < endIND; orderIndex++) {
     const int netID = tree_order_pv_[orderIndex].treeIndex;
 
@@ -796,17 +814,21 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         int n1a = treeedge->n1a;
         int n2a = treeedge->n2a;
 
-        // Reinitialize d1_3D_ distance grid within search region to BIG_INT.
-        // path_len_3D_, directions_3D_, and pr_3D_ are write-before-read during
-        // exploration and do not require clearing.
-        const int region_width = regionX2 - regionX1 + 1;
-        for (int k = 0; k < num_layers_; k++) {
-          int* d1_layer = d1_base + k * layer_stride;
-          for (int i = regionY1; i <= regionY2; i++) {
-            std::fill_n(
-                d1_layer + i * x_grid + regionX1, region_width, BIG_INT);
+        // d1_3D_ is kept permanently at BIG_INT between edges and restored
+        // sparsely via touched_3D_ on scope exit. path_len_3D_,
+        // directions_3D_, and pr_3D_ are write-before-read during exploration.
+        struct ResetTouched3D
+        {
+          int* dist;
+          std::vector<int>& touched;
+          ~ResetTouched3D()
+          {
+            for (const int idx : touched) {
+              dist[idx] = BIG_INT;
+            }
+            touched.clear();
           }
-        }
+        } reset_touched_guard{.dist = d1_base, .touched = touched_3D_};
 
         // setup src_heap_3D_, dest_heap_3D_ and initialize d1_3D_ for all the
         // grids on the two subtrees
@@ -866,6 +888,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                     pr_base[nbr_idx].x = curX;
                     pr_base[nbr_idx].y = curY;
                     directions_base[nbr_idx] = Direction::West;
+                    touched_3D_.push_back(nbr_idx);
                     src_heap_3D_.insert(nbr_idx, tmp_int);
                   } else if (d1_base[nbr_idx] > tmp) {
                     d1_base[nbr_idx] = tmp_int;
@@ -890,6 +913,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                     pr_base[nbr_idx].x = curX;
                     pr_base[nbr_idx].y = curY;
                     directions_base[nbr_idx] = Direction::East;
+                    touched_3D_.push_back(nbr_idx);
                     src_heap_3D_.insert(nbr_idx, tmp_int);
                   } else if (d1_base[nbr_idx] > tmp) {
                     d1_base[nbr_idx] = tmp_int;
@@ -915,6 +939,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                     pr_base[nbr_idx].x = curX;
                     pr_base[nbr_idx].y = curY;
                     directions_base[nbr_idx] = Direction::North;
+                    touched_3D_.push_back(nbr_idx);
                     src_heap_3D_.insert(nbr_idx, tmp_int);
                   } else if (d1_base[nbr_idx] > tmp) {
                     d1_base[nbr_idx] = tmp_int;
@@ -939,6 +964,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                     pr_base[nbr_idx].x = curX;
                     pr_base[nbr_idx].y = curY;
                     directions_base[nbr_idx] = Direction::South;
+                    touched_3D_.push_back(nbr_idx);
                     src_heap_3D_.insert(nbr_idx, tmp_int);
                   } else if (d1_base[nbr_idx] > tmp) {
                     d1_base[nbr_idx] = tmp_int;
@@ -967,6 +993,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               pr_base[nbr_idx].x = curX;
               pr_base[nbr_idx].y = curY;
               directions_base[nbr_idx] = Direction::Down;
+              touched_3D_.push_back(nbr_idx);
               src_heap_3D_.insert(nbr_idx, tmp_int);
             } else if (d1_base[nbr_idx] > tmp) {
               d1_base[nbr_idx] = tmp_int;
@@ -992,6 +1019,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
               pr_base[nbr_idx].x = curX;
               pr_base[nbr_idx].y = curY;
               directions_base[nbr_idx] = Direction::Up;
+              touched_3D_.push_back(nbr_idx);
               src_heap_3D_.insert(nbr_idx, tmp_int);
             } else if (d1_base[nbr_idx] > tmp) {
               d1_base[nbr_idx] = tmp_int;
