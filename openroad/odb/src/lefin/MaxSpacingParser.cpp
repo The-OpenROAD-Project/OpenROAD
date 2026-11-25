@@ -7,25 +7,34 @@
 #include "boostParser.h"
 #include "lefLayerPropParser.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/lefin.h"
+#include "parserUtils.h"
 
 namespace odb {
 
-void MaxSpacingParser::setMaxSpacing(dbTechLayerMaxSpacingRule* rule,
-                                     double spc)
-{
-  rule->setMaxSpacing(lefin_->dbdist(spc));
-}
-
-void MaxSpacingParser::parse(const std::string& s)
+bool MaxSpacingParser::parseSubRule(const std::string& s)
 {
   dbTechLayerMaxSpacingRule* rule = dbTechLayerMaxSpacingRule::create(layer_);
-  qi::rule<std::string::const_iterator, space_type> LEF58_MAXSPACING
-      = (lit("MAXSPACING") >> double_[boost::bind(
-             &MaxSpacingParser::setMaxSpacing, this, rule, _1)]
-         >> -(lit("CUTCLASS") >> _string[boost::bind(
-                  &dbTechLayerMaxSpacingRule::setCutClass, rule, _1)])
-         >> lit(";"));
+  qi::rule<std::string::const_iterator, space_type> LEF58_MAXSPACING;
+  if (layer_->getType() == dbTechLayerType::IMPLANT) {
+    // LEF 5.8 IMPLANT syntax: MAXSPACING maxSpacing WIDTH width LENGTH length ;
+    LEF58_MAXSPACING
+        = (lit("MAXSPACING") >> double_[dbdistSetter(
+               &dbTechLayerMaxSpacingRule::setMaxSpacing, rule, lefin_)]
+           >> lit("WIDTH") >> double_[dbdistSetter(
+               &dbTechLayerMaxSpacingRule::setWidth, rule, lefin_)]
+           >> lit("LENGTH") >> double_[dbdistSetter(
+               &dbTechLayerMaxSpacingRule::setLength, rule, lefin_)]
+           >> lit(";"));
+  } else {
+    LEF58_MAXSPACING
+        = (lit("MAXSPACING") >> double_[dbdistSetter(
+               &dbTechLayerMaxSpacingRule::setMaxSpacing, rule, lefin_)]
+           >> -(lit("CUTCLASS") >> _string[boost::bind(
+                    &dbTechLayerMaxSpacingRule::setCutClass, rule, _1)])
+           >> lit(";"));
+  }
 
   auto first = s.begin();
   auto last = s.end();
@@ -34,6 +43,14 @@ void MaxSpacingParser::parse(const std::string& s)
 
   if (!valid && rule != nullptr) {  // fail if we did not get a full match
     odb::dbTechLayerMaxSpacingRule::destroy(rule);
+  }
+  return valid;
+}
+
+void MaxSpacingParser::parse(const std::string& s)
+{
+  if (!parseAllRules(
+          s, [this](const std::string& rule) { return parseSubRule(rule); })) {
     lefin_->warning(279,
                     "parse mismatch in layer property LEF58_MAXSPACING for "
                     "layer {} :\"{}\"",

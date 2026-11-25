@@ -111,6 +111,8 @@ entries:
       title: Calibration
   - file: main/openroad/fsv/README
     title: Capacitance Field Solver
+  - file: main/openroad/pex/README
+    title: Parasitic Extraction (pex)
   - file: main/openroad/ram/README
     title: RAM Generator
   - file: main/openroad/wmk/README

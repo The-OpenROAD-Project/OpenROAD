@@ -60,8 +60,10 @@ cc_test(
     srcs = ["cpp/TestEstimateParasitics.cc"],
     data = ["cpp/TestEstimateParasitics.v"],
     deps = [
+        "//openroad/dbSta",
         "//openroad/dbSta:dbNetwork",
         "//openroad/est",
+        "//openroad/grt",
         "//openroad/odb/src/db",
         "//openroad/rsz",
         "//openroad/sta:opensta_lib",

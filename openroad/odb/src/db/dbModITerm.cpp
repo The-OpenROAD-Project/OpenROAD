@@ -139,7 +139,7 @@ void _dbModITerm::collectMemInfo(MemInfo& info)
 _dbModITerm::~_dbModITerm()
 {
   if (name_) {
-    free((void*) name_);
+    free(name_);
   }
 }
 
@@ -151,18 +151,18 @@ _dbModITerm::~_dbModITerm()
 
 const char* dbModITerm::getName() const
 {
-  _dbModITerm* obj = (_dbModITerm*) this;
+  const _dbModITerm* obj = reinterpret_cast<const _dbModITerm*>(this);
   return obj->name_;
 }
 
 dbModInst* dbModITerm::getParent() const
 {
-  _dbModITerm* obj = (_dbModITerm*) this;
+  const _dbModITerm* obj = reinterpret_cast<const _dbModITerm*>(this);
   if (obj->parent_ == 0) {
     return nullptr;
   }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModInst*) par->modinst_tbl_->getPtr(obj->parent_);
+  _dbBlock* par = static_cast<_dbBlock*>(obj->getOwner());
+  return reinterpret_cast<dbModInst*>(par->modinst_tbl_->getPtr(obj->parent_));
 }
 
 // User Code Begin dbModITermPublicMethods

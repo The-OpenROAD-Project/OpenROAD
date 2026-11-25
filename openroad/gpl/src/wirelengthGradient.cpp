@@ -117,4 +117,9 @@ void NesterovBaseCommon::prepareDeviceWlGradients()
   wl_grad_backend_->prepareDeviceGradients();
 }
 
+bool NesterovBaseCommon::isWireLengthGradientOnDevice() const
+{
+  return wl_grad_backend_->onDevice();
+}
+
 }  // namespace gpl

@@ -1,5 +1,5 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("@rules_python//python:defs.bzl", "py_test")
+load("//bazel:man_tcl_checker.bzl", "man_tcl_check_test")
 
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
@@ -325,15 +325,27 @@ cc_test(
     ],
 )
 
-py_test(
-    name = "cts_man_tcl_check",
-    srcs = ["cts_man_tcl_check.py"],
-    data = ["//openroad/cts:doc_files"],
-    tags = [
-        "doc_check",
-        "py",
+cc_test(
+    name = "TestPredictSinkClusters",
+    srcs = ["cpp/TestPredictSinkClusters.cc"],
+    data = ["check_buffers.def"],
+    deps = [
+        "//openroad/cts",
+        "//openroad/cts:cts_impl",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/defin",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
-    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+man_tcl_check_test(
+    name = "cts_man_tcl_check",
+    module = "cts",
 )
 
 doc_check_test(

@@ -107,6 +107,8 @@ class PlacementDRC
   DbuX gridToDbu(GridX grid_x, DbuX site_width) const;
   void makeCellEdgeSpacingTable(odb::dbTech* tech);
   bool hasPaddingConflict(const Node* cell, const Node* padding_cell) const;
+  // Padding check over the cell's footprint in grid coordinates.
+  bool checkPadding(const Node* cell, const GridRect& rect) const;
 };
 
 }  // namespace dpl

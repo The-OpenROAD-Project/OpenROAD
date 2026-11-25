@@ -7,10 +7,10 @@
 #include <utility>
 #include <vector>
 
+#include "Index.h"
 #include "gtest/gtest.h"
 #include "odb/geom.h"
 #include "odb/isotropy.h"
-#include "pex/Index.h"
 
 namespace pex {
 namespace {

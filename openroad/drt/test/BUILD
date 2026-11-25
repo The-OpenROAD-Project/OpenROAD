@@ -3,6 +3,7 @@
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("//bazel:man_tcl_checker.bzl", "man_tcl_check_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -179,6 +180,7 @@ cc_test(
         "fixture.cpp",
         "fixture.h",
         "gcTest.cpp",
+        "gridGraphTest.cpp",
         "parserTest.cpp",
         "pathSegTest.cpp",
     ],
@@ -220,15 +222,9 @@ cc_test(
     ],
 )
 
-py_test(
+man_tcl_check_test(
     name = "drt_man_tcl_check",
-    srcs = ["drt_man_tcl_check.py"],
-    data = ["//openroad/drt:doc_files"],
-    tags = [
-        "doc_check",
-        "py",
-    ],
-    deps = ["//docs/src/scripts:extract_utils"],
+    module = "drt",
 )
 
 doc_check_test(
@@ -275,6 +271,17 @@ cc_test(
 )
 
 cc_test(
+    name = "TermPrintTest",
+    srcs = ["TermPrintTest.cpp"],
+    deps = [
+        "//openroad/drt:base_types",
+        "//openroad/drt:drt_impl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "PinAccessTest",
     srcs = ["PinAccessTest.cpp"],
     data = ["Nangate45/Nangate45_tech.lef"],
@@ -286,6 +293,25 @@ cc_test(
         "//openroad/odb/src/db",
         "//openroad/tst:db_fixture",
         "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "ViaInPinTest",
+    srcs = [
+        "ViaInPinTest.cpp",
+        "fixture.cpp",
+        "fixture.h",
+    ],
+    includes = ["../src"],
+    deps = [
+        "//openroad/drt:base_types",
+        "//openroad/drt:drt_impl",
+        "//openroad/odb/src/db",
+        "//openroad/utl",
+        "@boost.polygon",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
