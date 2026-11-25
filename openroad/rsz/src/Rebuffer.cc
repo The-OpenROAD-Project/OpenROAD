@@ -608,6 +608,10 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
   }
   sta::LibertyCell* chosen_cell = current_cell;
   BnetPtr chosen;
+  // Tree the net keeps with the current driver: area_tree, or timing_tree
+  // when the guard below drops a collapsed area_tree.  Returned when no
+  // driver is chosen, so a rejected flat tree is never exported.
+  BnetPtr baseline_tree = area_tree;
   {
     utl::DebugScopedTimer timer(size_eval_runtime_);
     // Guard against collapsing a buffered timing tree into a flat high-fanout
@@ -649,6 +653,9 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
                                && collapses_high_fanout(area_tree))
                                   ? nullptr
                                   : area_tree;
+    if (!area_cand) {
+      baseline_tree = timing_tree;
+    }
     std::vector<BnetPtr> trees{cheapest_cand, area_cand, timing_tree};
     // Index of timing_tree in `trees`, shared with best-driver planning so
     // it reuses the memoized slacks of that tree.
@@ -663,15 +670,16 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
         }
       }
     }
-    // Anchor the whole-net leakage budget to area_tree on passing nets so
-    // dropped timing-tree buffers do not create a phantom leakage allowance.
+    // Anchor the whole-net leakage budget to the baseline tree on passing
+    // nets so dropped timing-tree buffers do not create a phantom leakage
+    // allowance, and the baseline with the current driver always fits it.
     // The budget is a multiple of the leakage of the current driver plus the
     // reference tree's buffers, so one leaky buffer in the timing tree would
     // let a net that already passes swap its driver to a leakier VT for
     // slack it does not need.  chooseTreeAndDriver() also keeps equal-area
     // swaps on a passing net within the reference leakage itself.
     const BnetPtr& leakage_ref_tree
-        = slack_target >= FixedDelay::ZERO ? area_tree : timing_tree;
+        = slack_target >= FixedDelay::ZERO ? baseline_tree : timing_tree;
     const DriverChoices choices = driverChoices(current_cell, leakage_ref_tree);
     // Evaluated lazily, after addTreesPlannedForBestDriver() completes `trees`.
     TreeDriverEvaluation eval(trees);
@@ -720,13 +728,13 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
         = chooseTreeAndDriver(eval, current_cell, choices, target, chosen_cell);
   }
   if (!chosen) {
-    return area_tree;
+    return baseline_tree;
   }
   if (chosen_cell != current_cell) {
-    // The chosen tree was timed with the new cell; keep the option-off
-    // result if replaceCell finds no master for it.
+    // The chosen tree was timed with the new cell; keep the baseline tree
+    // if replaceCell finds no master for it.
     if (!resizer_->replaceCell(drvr_inst, chosen_cell)) {
-      return area_tree;
+      return baseline_tree;
     }
     driver_resize_count_++;
   }
