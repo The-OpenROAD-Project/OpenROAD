@@ -36,6 +36,8 @@ static gpl::PlaceOptions getOptions(
   checkFlag(
       flags, "-disable_pin_density_adjust", options.disablePinDensityAdjust);
   checkFlag(
+      flags, "-skip_incremental_phase2", options.incrementalPhase2, false);
+  checkFlag(
       flags, "-enable_routing_congestion", options.enable_routing_congestion);
   checkFlag(flags, "-force_center_initial_place", options.forceCenterInitialPlace);
   checkFlag(flags, "-macro_area_in_denominator", options.macroAreaInDenominator);
@@ -82,6 +84,9 @@ static gpl::PlaceOptions getOptions(
            "-timing_driven_net_reweight_overflow",
            options.timingNetWeightOverflows);
   checkKey(keys, "-overflow", options.overflow);
+  checkKey(keys,
+           "-incremental_phase2_overflow",
+           options.incrementalPhase2Overflow);
   checkKey(keys, "-timing_driven_net_weight_max", options.timingNetWeightMax);
   checkKey(keys, "-power_driven_net_weight", options.powerDrivenNetWeight);
   checkKey(keys,

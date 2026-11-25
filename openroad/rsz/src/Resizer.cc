@@ -5986,7 +5986,7 @@ bool Resizer::recoverPower(float recover_power_percent,
   return result;
 }
 ////////////////////////////////////////////////////////////////
-void Resizer::swapArithModules(int path_count,
+bool Resizer::swapArithModules(int path_count,
                                const std::string& target,
                                float slack_margin)
 {
@@ -5998,8 +5998,9 @@ void Resizer::swapArithModules(int path_count,
     opendp_->initMacrosAndGrid();
   }
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
-  if (swap_arith_modules_->replaceArithModules(
-          path_count, target, slack_margin)) {
+  const bool swapped = swap_arith_modules_->replaceArithModules(
+      path_count, target, slack_margin);
+  if (swapped) {
     // Update levels and parasitics
     // - Note that updateParasitics() requires correct levels
     sta_->ensureLevelized();
@@ -6012,6 +6013,7 @@ void Resizer::swapArithModules(int path_count,
     sta_->updateTiming(true);
     sta_->findRequireds();  // Recompute timing
   }
+  return swapped;
 }
 
 ////////////////////////////////////////////////////////////////

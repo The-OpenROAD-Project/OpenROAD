@@ -18,6 +18,7 @@
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
+#include "sta/Liberty.hh"
 #include "sta/Network.hh"
 #include "sta/Path.hh"
 #include "sta/PathEnd.hh"
@@ -31,8 +32,12 @@ namespace rsz {
 
 using odb::dbBlock;
 using odb::dbInst;
+using odb::dbITerm;
+using odb::dbModBTerm;
 using odb::dbModInst;
+using odb::dbModITerm;
 using odb::dbModule;
+using odb::dbNet;
 using odb::dbStringProperty;
 using sta::Instance;
 using sta::Path;
@@ -257,6 +262,8 @@ bool ConcreteSwapArithModules::doSwapInstances(odb::PtrSet<dbModInst>& insts,
                                                const std::string& target)
 {
   int swapped_count = 0;
+  int folded_ports = 0;
+  std::vector<std::string> port_drivers;
   odb::PtrSet<dbModInst> swappedInsts;
 
   for (dbModInst* inst : insts) {
@@ -286,6 +293,15 @@ bool ConcreteSwapArithModules::doSwapInstances(odb::PtrSet<dbModInst>& insts,
             RSZ, 159, "Replacement module {} does not exist", new_name);
         continue;
       }
+      const int folded = foldDuplicatePorts(inst, new_master, port_drivers);
+      if (folded > 0) {
+        logger_->info(RSZ,
+                      171,
+                      "Removed {} duplicate ports from {} before swapping",
+                      folded,
+                      inst->getName());
+        folded_ports += folded;
+      }
       debugRAPrint1("Swapping mod inst {} from {} to {}",
                     inst->getName(),
                     old_name,
@@ -301,6 +317,11 @@ bool ConcreteSwapArithModules::doSwapInstances(odb::PtrSet<dbModInst>& insts,
   insts.clear();
   insts.insert(swappedInsts.begin(), swappedInsts.end());
 
+  // The buffers that fed removed duplicate ports now drive nothing.
+  if (folded_ports > 0) {
+    removeUnloadedBuffers(port_drivers);
+  }
+
   logger_->info(RSZ,
                 160,
                 "{} arithmetic instances have swapped to improve '{}' target",
@@ -309,6 +330,179 @@ bool ConcreteSwapArithModules::doSwapInstances(odb::PtrSet<dbModInst>& insts,
   logger_->metric("design__instance__count__swapped_arithmetic_operator",
                   swapped_count);
   return swapped_count > 0;
+}
+
+dbNet* ConcreteSwapArithModules::bufferRoot(dbNet* net)
+{
+  constexpr int kMaxDepth = 100;
+  for (int depth = 0; net != nullptr && depth < kMaxDepth; depth++) {
+    dbITerm* driver = nullptr;
+    for (dbITerm* iterm : net->getITerms()) {
+      if (iterm->isOutputSignal()) {
+        driver = iterm;
+        break;
+      }
+    }
+    if (driver == nullptr) {
+      return net;
+    }
+    dbInst* inst = driver->getInst();
+    const sta::LibertyCell* cell = db_network_->libertyCell(inst);
+    if (cell == nullptr || !cell->isBuffer()) {
+      return net;
+    }
+    dbNet* input_net = nullptr;
+    for (dbITerm* iterm : inst->getITerms()) {
+      if (iterm->isInputSignal()) {
+        input_net = iterm->getNet();
+        break;
+      }
+    }
+    if (input_net == nullptr) {
+      return net;
+    }
+    net = input_net;
+  }
+  return net;
+}
+
+void ConcreteSwapArithModules::removeUnloadedBuffers(
+    const std::vector<std::string>& buffers)
+{
+  const auto is_buffer = [this](dbInst* inst) {
+    const sta::LibertyCell* cell = db_network_->libertyCell(inst);
+    return cell != nullptr && cell->isBuffer();
+  };
+  // Any BTerm counts as a load, an input one included: conservative, it
+  // only keeps a buffer that could otherwise have been removed.
+  const auto has_loads = [](dbNet* net) {
+    if (!net->getBTerms().empty()) {
+      return true;
+    }
+    for (dbITerm* iterm : net->getITerms()) {
+      if (iterm->isInputSignal()) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  dbBlock* block = db_network_->block();
+  int removed = 0;
+  for (const std::string& name : buffers) {
+    // Looked up by name: a buffer may have been deleted since it was
+    // recorded, e.g. if it sat inside a module swapped later.
+    dbInst* buffer = block->findInst(name.c_str());
+    while (buffer != nullptr && is_buffer(buffer)) {
+      dbNet* out_net = nullptr;
+      dbNet* in_net = nullptr;
+      for (dbITerm* iterm : buffer->getITerms()) {
+        if (iterm->isOutputSignal()) {
+          out_net = iterm->getNet();
+        } else if (iterm->isInputSignal()) {
+          in_net = iterm->getNet();
+        }
+      }
+      if (out_net != nullptr && has_loads(out_net)) {
+        break;
+      }
+      // The buffer feeding this one, checked next: it is left without loads
+      // if this buffer was its only one.
+      dbInst* upstream = nullptr;
+      if (in_net != nullptr) {
+        for (dbITerm* iterm : in_net->getITerms()) {
+          if (iterm->isOutputSignal()) {
+            upstream = iterm->getInst();
+          }
+        }
+      }
+      // Checks dont-touch/fixed instances and nets, SDC constraints and
+      // whether the nets can merge, then merges the hierarchical nets too.
+      if (!resizer_->removeBufferIfPossible(db_network_->dbToSta(buffer))) {
+        break;
+      }
+      removed++;
+      buffer = upstream;
+    }
+  }
+  if (removed > 0) {
+    logger_->info(RSZ, 172, "Removed {} buffers left without loads", removed);
+  }
+}
+
+int ConcreteSwapArithModules::foldDuplicatePorts(
+    dbModInst* inst,
+    dbModule* new_master,
+    std::vector<std::string>& port_drivers)
+{
+  dbModule* old_master = inst->getMaster();
+  const auto outside_net = [inst](dbModBTerm* bterm) -> dbNet* {
+    dbModITerm* mod_iterm = inst->findModITerm(bterm->getName());
+    if (mod_iterm == nullptr || mod_iterm->getModNet() == nullptr) {
+      return nullptr;
+    }
+    return mod_iterm->getModNet()->findRelatedNet();
+  };
+
+  std::vector<dbModBTerm*> extra_ports;
+  // Outputs count too: an extra input can bring one of the module's own
+  // outputs back in, e.g. to drive cells inside it.
+  odb::PtrSet<dbNet> port_roots;
+  for (dbModBTerm* bterm : old_master->getModBTerms()) {
+    if (new_master->findModBTerm(bterm->getName()) == nullptr) {
+      extra_ports.push_back(bterm);
+    } else {
+      dbNet* net = outside_net(bterm);
+      if (net != nullptr) {
+        port_roots.insert(bufferRoot(net));
+      }
+    }
+  }
+  if (extra_ports.empty()) {
+    return 0;
+  }
+
+  // The swap requires both modules to have the same ports. Removing the
+  // extra ones only helps if new_master has no port old_master lacks, so
+  // check that before changing anything.
+  for (dbModBTerm* bterm : new_master->getModBTerms()) {
+    if (old_master->findModBTerm(bterm->getName()) == nullptr) {
+      debugRAPrint1("Port {} of {} is missing from {}",
+                    bterm->getName(),
+                    new_master->getName(),
+                    inst->getName());
+      return -1;
+    }
+  }
+
+  for (dbModBTerm* bterm : extra_ports) {
+    dbNet* net = outside_net(bterm);
+    if (bterm->getIoType() != odb::dbIoType::INPUT || bterm->isBusPort()
+        || net == nullptr || !port_roots.contains(bufferRoot(net))) {
+      debugRAPrint1("Port {} of {} is not a duplicate of an existing port",
+                    bterm->getName(),
+                    inst->getName());
+      return -1;
+    }
+  }
+
+  for (dbModBTerm* bterm : extra_ports) {
+    debugRAPrint1(
+        "Removing duplicate port {} of {}", bterm->getName(), inst->getName());
+    for (dbITerm* iterm : outside_net(bterm)->getITerms()) {
+      if (iterm->isOutputSignal()) {
+        port_drivers.emplace_back(iterm->getInst()->getName());
+      }
+    }
+    dbModITerm* mod_iterm = bterm->getParentModITerm();
+    if (mod_iterm != nullptr) {
+      mod_iterm->disconnect();
+      dbModITerm::destroy(mod_iterm);
+    }
+    bterm->disconnect();
+    dbModBTerm::destroy(bterm);
+  }
+  return static_cast<int>(extra_ports.size());
 }
 
 void ConcreteSwapArithModules::produceNewModuleName(const std::string& old_name,

@@ -604,6 +604,11 @@ class Bin
 
   int64_t getFillerArea() const { return fillerArea_; }
 
+  // Area of locked instances, already included in instPlacedArea.
+  void setLockedAreaUnscaled(int64_t area) { lockedAreaUnscaled_ = area; }
+  void atomicAddLockedAreaUnscaled(int64_t area);
+  int64_t getLockedAreaUnscaled() const { return lockedAreaUnscaled_; }
+
  private:
   // index
   int x_ = 0;
@@ -621,6 +626,7 @@ class Bin
   int64_t instPlacedAreaUnscaled_ = 0;
   int64_t nonPlaceAreaUnscaled_ = 0;
   int64_t fillerArea_ = 0;
+  int64_t lockedAreaUnscaled_ = 0;
 
   float density_ = 0;
   float targetDensity_ = 0;  // will enable bin-wise density screening
@@ -713,6 +719,12 @@ inline void Bin::atomicAddInstPlacedAreaUnscaled(int64_t area)
   ref.fetch_add(area, std::memory_order_relaxed);
 }
 
+inline void Bin::atomicAddLockedAreaUnscaled(int64_t area)
+{
+  std::atomic_ref<int64_t> ref(lockedAreaUnscaled_);
+  ref.fetch_add(area, std::memory_order_relaxed);
+}
+
 inline void Bin::atomicAddFillerArea(int64_t area)
 {
   std::atomic_ref<int64_t> ref(fillerArea_);
@@ -734,8 +746,14 @@ class BinGrid
   void setRegionPoints(int lx, int ly, int ux, int uy);
   void setBinCnt(int binCntX, int binCntY);
   void setBinTargetDensity(float density);
+  // Whether the density scatter also records locked instances' area per
+  // bin; off when nothing is locked, so normal placement pays nothing.
+  void setTrackLocked(bool track_locked) { track_locked_ = track_locked; }
   void updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
                                   int parallel_threads = 1);
+  // Add one cell's density area at its current density location and
+  // refresh the density of the bins it overlaps.
+  void updateBinsGCellDensityArea(const GCell* cell);
   void scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
                                  int parallel_threads);
   void setNumThreads(int num_threads) { num_threads_ = num_threads; }
@@ -778,6 +796,9 @@ class BinGrid
 
   std::vector<Bin>& getBins();
   const std::vector<Bin>& getBinsConst() const { return bins_; };
+  // Index in getBins() of the bin at grid position (x, y); bins are stored
+  // row by row.
+  int getBinIndex(int x, int y) const { return y * binCntX_ + x; }
 
   void updateBinsNonPlaceArea();
 
@@ -797,6 +818,7 @@ class BinGrid
   int64_t sumOverflowArea_ = 0;
   int64_t sumOverflowAreaUnscaled_ = 0;
   bool isSetBinCnt_ = false;
+  bool track_locked_ = false;
   int num_threads_ = 1;
 };
 
@@ -1183,6 +1205,18 @@ class NesterovBase
   // This is mainly used for NesterovLoop
   int64_t getNesterovInstsArea() const;
   int64_t getInflationArea() const;
+  // getNesterovInstsArea() minus locked instances: the area overflow is
+  // normalized by, since locked instances cannot help reduce it.
+  int64_t getUnlockedInstsArea() const;
+  // Recomputes the locked instances' area. Called when it can change:
+  // before the first overflow, after resizing (updateAreas) and after
+  // instances are unlocked (refreshOverflow).
+  void updateLockedInstsArea();
+  static float overflowRatio(int64_t overflow_area, float denominator);
+
+  // Re-scatters the bins from the cells' current density locations and
+  // recomputes the overflow, e.g. after cells are locked or unlocked.
+  void refreshOverflow();
   int64_t getStdInstArea() const { return this->stdInstsArea_; }
   int64_t getMacroInstArea() const { return this->macroInstsArea_; }
 
@@ -1279,6 +1313,7 @@ class NesterovBase
   float getPhiCoef(float scaledDiffHpwl) const;
   float getStoredPhiCoef() const { return phiCoef_; }
   float getStoredStepLength() const { return stepLength_; }
+  void setStepLength(float step_length) { stepLength_ = step_length; }
   float getStoredCoordiDistance() const { return coordiDistance_; }
 
   // True once the cells have stopped moving as fast as they were: the
@@ -1358,8 +1393,11 @@ class NesterovBase
   void restoreRemovedFillers();
   void clearRemovedFillers() { removed_fillers_.clear(); }
 
-  // Directly redistributes the existing filler into the free space.
-  void redistributeFillerCells();
+  // Directly redistributes the existing filler into the free space. With
+  // spread_new_cells, the unlocked instances are first spread over their
+  // holes so the fillers stay out of them. Returns whether any filler
+  // moved.
+  bool redistributeFillerCells(bool spread_new_cells = true);
 
   void appendGCellCSVNote(const std::string& filename,
                           int iteration,
@@ -1405,6 +1443,14 @@ class NesterovBase
   // and on GPU builds without a DeviceState (CPU runtime fallback).
   void rebuildNbDeviceCtx();
 
+  // The device density pipeline has no locked-instance adjustment, so while
+  // instances are locked both the density scatter and the gradient gather
+  // must use the host-staged path, which has it.
+  bool deviceDensityActive() const
+  {
+    return use_device_density_ && lockedInstsArea_ == 0;
+  }
+
   // Scatter the named nb_device_ctx_ vector slot into DeviceState's per-inst
   // coord views, refresh device pin locations, and mark the DeviceState
   // coord flag fresh. Called after every GPU coord update (initDensity1,
@@ -1449,6 +1495,7 @@ class NesterovBase
 
   int64_t stdInstsArea_ = 0;
   int64_t macroInstsArea_ = 0;
+  int64_t lockedInstsArea_ = 0;
 
   std::vector<GCell> fillerStor_;
   std::vector<GCellHandle> nb_gcells_;

@@ -1177,7 +1177,7 @@ proc replace_arith_modules { args } {
 
   puts [format "replace_arith_modules -path_count %s -target %s -slack_threshold %s" \
     $path_count $target $slack_threshold]
-  rsz::swap_arith_modules_cmd $path_count $target $slack_threshold
+  return [rsz::swap_arith_modules_cmd $path_count $target $slack_threshold]
 }
 
 sta::define_cmd_args "report_buffers" { [-filtered] }

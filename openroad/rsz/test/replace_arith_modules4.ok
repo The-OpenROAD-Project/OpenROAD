@@ -1,0 +1,31 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+replace_arith_modules -path_count 10 -target setup -slack_threshold 0.0
+[INFO RSZ-0151] Starting arithmetic module replacement to optimize 'setup' target
+[INFO RSZ-0152] Analyzing 10 critical paths with slack < 0.00
+[INFO RSZ-0153] Identified 5 violating endpoints
+[INFO RSZ-0154] Identified 2 critical arithmetic instances
+[INFO RSZ-0171] Removed 2 duplicate ports from u_alu before swapping
+[INFO ODB-0496] swapMaster sanity check passed (0 failures)
+[WARNING ODB-0453] The modules cannot be swapped because module ALU_2_1_2_1_2_unused_CO_X_HAN_CARLSON has 12 ports but module ALU_2_1_2_1_2_unused_CO_X_KOGGE_STONE has 11 ports.
+[INFO RSZ-0172] Removed 1 buffers left without loads
+[INFO RSZ-0160] 1 arithmetic instances have swapped to improve 'setup' target
+swapped: 1
+replace_arith_modules -path_count 10 -target setup -slack_threshold 0.0
+[INFO RSZ-0151] Starting arithmetic module replacement to optimize 'setup' target
+[INFO RSZ-0152] Analyzing 10 critical paths with slack < 0.00
+[INFO RSZ-0153] Identified 5 violating endpoints
+[INFO RSZ-0154] Identified 2 critical arithmetic instances
+[WARNING ODB-0453] The modules cannot be swapped because module ALU_2_1_2_1_2_unused_CO_X_HAN_CARLSON has 12 ports but module ALU_2_1_2_1_2_unused_CO_X_KOGGE_STONE has 11 ports.
+[INFO RSZ-0160] 0 arithmetic instances have swapped to improve 'setup' target
+swapped again: 0
+dupbuf_a0: removed
+dupbuf_b1: kept
+otherbuf_c: kept
+module u_alu: {ALU_2_0_2_0_2_unused_CO_X_KOGGE_STONE u_alu}
+module u_alu_other: {ALU_2_1_2_1_2_unused_CO_X_HAN_CARLSON u_alu_other}
+dupA0: absent from netlist
+dupB1: absent from netlist
+a0_dup: absent from netlist
+.other(: present in netlist
+c_buf: present in netlist
