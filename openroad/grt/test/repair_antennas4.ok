@@ -33,27 +33,27 @@ met4       Vertical        12012          8927          25.68%
 met5       Horizontal       3600          1960          45.56%
 ---------------------------------------------------------------
 
-[INFO GRT-0197] Via related to pin nodes: 1038
-[INFO GRT-0198] Via related Steiner nodes: 48
+[INFO GRT-0197] Via related to pin nodes: 1054
+[INFO GRT-0198] Via related Steiner nodes: 50
 [INFO GRT-0199] Via filling finished.
-[INFO GRT-0111] Final number of vias: 1427
-[INFO GRT-0112] Final usage 3D: 7327
+[INFO GRT-0111] Final number of vias: 1433
+[INFO GRT-0112] Final usage 3D: 7368
 
 [INFO GRT-0096] Final congestion report:
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Congestion
 ---------------------------------------------------------------------------------------
-li1              21088          1071            5.08%             0 /  0 /  0
-met1             27433          1448            5.28%             0 /  0 /  0
-met2             19650           469            2.39%             0 /  0 /  0
-met3             12525            58            0.46%             0 /  0 /  0
+li1              21088          1090            5.17%             0 /  0 /  0
+met1             27433          1389            5.06%             0 /  0 /  0
+met2             19650           494            2.51%             0 /  0 /  0
+met3             12525            96            0.77%             0 /  0 /  0
 met4              8927             0            0.00%             0 /  0 /  0
 met5              1960             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            91583          3046            3.33%             0 /  0 /  0
+Total            91583          3069            3.35%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 29944 um
+[INFO GRT-0018] Total wirelength: 30024 um
 [INFO GRT-0014] Routed nets: 411
 [INFO GRT-0006] Repairing antennas, iteration 1.
-[INFO GRT-0012] Found 12 antenna violations.
-[INFO GRT-0302] Inserted 15 jumpers for 12 nets.
+[INFO GRT-0012] Found 15 antenna violations.
+[INFO GRT-0302] Inserted 18 jumpers for 15 nets.
 [INFO GRT-0012] Found 0 antenna violations.

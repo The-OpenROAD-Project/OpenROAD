@@ -58,7 +58,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO DRT-0036] FR_VIA guide region query size = 0.
 [INFO DRT-0036] li1 guide region query size = 582.
 [INFO DRT-0036] mcon guide region query size = 0.
-[INFO DRT-0036] met1 guide region query size = 389.
+[INFO DRT-0036] met1 guide region query size = 388.
 [INFO DRT-0036] via guide region query size = 0.
 [INFO DRT-0036] met2 guide region query size = 96.
 [INFO DRT-0036] via2 guide region query size = 0.
@@ -71,8 +71,8 @@ Using 2 tracks default min distance between IO pins.
 [INFO RAM-0044] RAM maximum path delay: 1.021 ns
 [INFO RAM-0045] RAM minimum path delay: 0.097 ns
 [INFO RAM-0047] Using maximum path delay of 1.021 ns as the clock period for power estimation
-[INFO RAM-0046] RAM estimated power at maximum frequency: 1092766.875 nW
-[INFO RAM-0048] RAM estimated energy efficiency: 139.500 fJ/bit
+[INFO RAM-0046] RAM estimated power at maximum frequency: 1092757.375 nW
+[INFO RAM-0048] RAM estimated energy efficiency: 139.499 fJ/bit
 No differences found.
 No differences found.
 No differences found.

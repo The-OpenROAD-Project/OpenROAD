@@ -79,7 +79,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       260 |   0.4059 |  2.406941e+03 |   -0.43% |  1.95e-08 |      
       270 |   0.3522 |  2.421897e+03 |   +0.62% |  3.17e-08 |      
       280 |   0.3187 |  2.437215e+03 |   +0.63% |  4.76e-08 |      
-[INFO GPL-0040] Routability pass 1: weighted congestion 0.7667 (target 1.2500), 0 of 73 actionable tiles overflowed (0.0%).
+[INFO GPL-0040] Routability pass 1: weighted congestion 0.7750 (target 1.2500), 0 of 73 actionable tiles overflowed (0.0%).
 [INFO GPL-0050] Weighted routing congestion is lower than target routing congestion(1.2500), end routability optimization.
 [INFO GPL-0090] Routability finished. Target routing congestion achieved succesfully.
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
