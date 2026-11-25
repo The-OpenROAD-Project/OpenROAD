@@ -707,7 +707,8 @@ void FastRouteCore::setIncrementalGrt(bool is_incremental)
 void FastRouteCore::updateSlacks()
 {
   // Check if liberty file was loaded before calculating slack
-  if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr
+  if (sta_ == nullptr
+      || sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr
       || !enable_resistance_aware_) {
     return;
   }

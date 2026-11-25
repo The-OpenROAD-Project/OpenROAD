@@ -663,6 +663,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     // More flexible during repair stages
     setDetourPenalty(is_incremental_grt_ ? kLowDetourPenalty
                                          : kHighDetourPenalty);
+    if (is_incremental_grt_) {
+      getOverflow3D();
+    }
   }
 
   // Don't need to reroute every net during first GRT run, let it for the
@@ -703,11 +706,12 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
     // Enable resistance aware routing only if the net needs it
     resistance_aware_ = enable_resistance_aware_ && net->isResAware();
-    if (enable_resistance_aware_) {
-      // Don't reroute nets with positive slack
-      if (!is_incremental_grt_ && net->getSlack() >= 0) {
-        continue;
-      }
+    // Don't reroute nets with non-negative slack in initial GRT, or
+    // non-resistance-aware nets during zero-overflow incremental GRT.
+    if (enable_resistance_aware_ && net->getSlack() >= 0
+        && (!is_incremental_grt_
+            || (total_overflow_ == 0 && !net->isResAware()))) {
+      continue;
     }
 
     // Precompute per-layer step costs for this net. (0,0)-(1,0) represents a

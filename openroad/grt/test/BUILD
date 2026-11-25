@@ -382,6 +382,7 @@ cc_test(
         "//openroad/grt:fastroute",
         "//openroad/grt:groute",
         "//openroad/odb/src/db",
+        "//openroad/sta:opensta_lib",
         "//openroad/stt",
         "//openroad/tst:db_fixture",
         "//openroad/utl",
