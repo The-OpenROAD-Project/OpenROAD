@@ -92,12 +92,12 @@ hub because `tclint` pins `pathspec==0.11.2`, which black >= 26 cannot use.
 
 C/C++ formatting is controlled by the `.clang-format` files in the tree.
 `bazel/cc_ls_files.sh` lists the files it covers: submodules such as
-`src/sta`, `src/odb/src/codeGenerator/` templates and `third-party/` are
-excluded, as in the clang-format GitHub workflows. Files with no
+`openroad/sta`, `openroad/odb/src/codeGenerator/` templates and `third-party/` are
+excluded. Files with no
 `.clang-format` above them are left alone (`--fallback-style=none`), so a
 downstream workspace running `//:fix_lint` keeps its own C/C++ style. The
-`clang-format` version in `bazel/requirements.in` must match
-`CLANG_FORMAT_VERSION` in those workflows.
+`clang-format` pin in `bazel/requirements.in` sets the version for local
+runs and for CI.
 
 ## POLA
 
@@ -139,18 +139,22 @@ testable locally with a single command.
 
 ## Relationship to CI
 
+C/C++ formatting has no separate CI copy.
+The pull request check in `github-actions-format-on-push.yml` runs
+`//:fmt_cc_test`, and the auto-format step of
+`github-actions-on-master-push.yml` runs `//:tidy_cc`.
+The ODB generator check in `github-actions-are-odb-files-generated.yml` runs
+`//openroad/odb/src/codeGenerator:gen`, which uses the same clang-format.
+
 The GitHub Actions workflows `github-actions-lint-tcl.yml` (`tclint`,
-`tclfmt`), `black.yaml` (`black`) and `github-actions-format-on-push.yml`
-(`clang-format`) run the same checks as `//:lint_tcl_test` /
-`//:fmt_tcl_test`, `//:fmt_py_test` and `//:fmt_cc_test`; the clang-format
-workflow checks only the changed files. Once Bazel
+`tclfmt`) and `black.yaml` (`black`) run the same checks as
+`//:lint_tcl_test` / `//:fmt_tcl_test` and `//:fmt_py_test`. Once Bazel
 lint targets are validated in CI, those workflows can be retired. The same
 applies to the Jenkins documentation and duplicate ID check stages.
 
 While both exist, the tool versions have to be kept in sync by hand:
 `bazel/requirements.in` on the Bazel side, and the workflow pins on the CI
-side (`black.yaml`, `github-actions-lint-tcl.yml`, `CLANG_FORMAT_VERSION` in
-the clang-format workflows and the auto-format step of
+side (`black.yaml`, `github-actions-lint-tcl.yml` and the auto-format step of
 `github-actions-on-master-push.yml`).
 
 C++ clang-tidy is provided via a separate Bazel aspect (`--config=lint`)

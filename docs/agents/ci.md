@@ -41,8 +41,7 @@ keep the other two.
   docs, nogui, and the Docker image builds still run.
 
 **GitHub Actions:**
-- C++ format on changed files (`bazelisk test //:fmt_cc_test` runs the
-  same check on all files).
+- C++ formatting across the repository (`bazelisk test //:fmt_cc_test`).
 - Clang-Tidy on the PR diff (see above).
 - Tcl lint, Bazel lint (buildifier), and Python format (black). Run
   `bazelisk test //:lint_test` to check these locally, plus C++ and YAML
@@ -55,10 +54,10 @@ keep the other two.
 Run clang-tidy hermetically using the toolchain Bazel already uses to compile:
 ```bash
 # Single module:
-bazelisk build --config=lint //src/utl/...
+bazelisk build --config=lint //openroad/utl/...
 
 # Full lint scope (excludes the upstream OpenSTA submodule):
-bazelisk build --config=lint -- //src/... //third-party/... -//src/sta/...
+bazelisk build --config=lint -- //openroad/... //third-party/... -//openroad/sta/...
 ```
 - Uses `clang-tidy` from `@llvm//tools` (the same binary `etc/run-clang-tidy.sh` uses).
 - Reports land at `$(bazelisk info bazel-bin)/<pkg>/<target>_rules_lint/<src>.AspectRulesLintClangTidy.out`.

@@ -301,7 +301,7 @@ def message_srcs(name = "message_srcs", visibility = None):
         visibility = visibility,
     )
 
-def messages_txt(name = "messages_txt", src_patterns = None, recursive = True, extra_srcs = None, visibility = None):
+def messages_txt(name = "messages_txt", src_patterns = None, src_dir = "src", recursive = True, extra_srcs = None, visibility = None):
     """Generate messages.txt from source files using find_messages.py.
 
     Replaces per-module genrule boilerplate with a single macro call.
@@ -309,9 +309,11 @@ def messages_txt(name = "messages_txt", src_patterns = None, recursive = True, e
     Args:
         name: Target name (default: "messages_txt").
         src_patterns: Glob patterns for source files. Defaults to every
-            scanned extension under src/. Override for modules that keep
+            scanned extension under src_dir. Override for modules that keep
             messages elsewhere, e.g. odb's public headers.
-        recursive: Whether the default patterns descend into src/
+        src_dir: Package-relative directory the default patterns scan: a
+            module's src/, or openroad/ for the top-level ORD messages.
+        recursive: Whether the default patterns descend into src_dir
             subdirectories. Several modules keep logger calls there, so this
             is on by default; the top-level ORD messages turn it off to avoid
             swallowing the modules, which have their own messages_txt.
@@ -320,7 +322,7 @@ def messages_txt(name = "messages_txt", src_patterns = None, recursive = True, e
         visibility: Bazel visibility.
     """
     if src_patterns == None:
-        prefix = "src/**/*." if recursive else "src/*."
+        prefix = src_dir + ("/**/*." if recursive else "/*.")
         src_patterns = [prefix + ext for ext in _MESSAGE_SRC_EXTENSIONS]
 
     srcs = native.glob(src_patterns, allow_empty = True)
@@ -352,6 +354,7 @@ def regression_test(
     Args:
         name: The base name of the test (without extension).
         **kwargs: Additional keyword arguments to pass to the regression_rule_test.
+            `openroad` picks the binary to run, //:openroad by default.
     """
 
     # TODO: we should _not_ have the magic to figure out if tcl or py exists
@@ -370,6 +373,7 @@ def regression_test(
     size = _pop(kwargs, "size", "small")
     test_type = _pop(kwargs, "test_type", "")
     tags = _pop(kwargs, "tags", [])
+    openroad = _pop(kwargs, "openroad", "//:openroad")
 
     # Default every regression test to the GPU_ENV_OFF pin: on a GPU build
     # (--config=gpu) the runtime gate defaults on, and any test that runs
@@ -398,7 +402,7 @@ def regression_test(
             test_type = effective_test_type,
             data = test_data,
             bazel_test_sh = "//test:bazel_test.sh",
-            openroad = "//:openroad",
+            openroad = openroad,
             regression_test = "//test:regression_test.sh",
             # top showed me 50-400mByte of usage, so "enormous" for
             # long running tests, but the OpenROAD tests are generally
