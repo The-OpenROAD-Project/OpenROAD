@@ -287,9 +287,14 @@ to `-py_test` if no Tcl output is found) and copies the result file from
 The `bazel` command must be on `PATH`.
 The scripts run the test with the default build configuration.
 For a test that needs other flags (such as GPU flags), copy the results by
-hand, as shown below, and use the same flags for every run:
-copy the DEF result to `<name>.defok`, run the test again, then copy
-`<name>-tcl.log` (or `<name>-py.log` for a Python test) to `<name>.ok`.
+hand, as shown below, and use the same flags for every run.
+If the test compares output files (such as a DEF) with golden files, copy each
+output of the `-tcl_test` target to the exact golden path that the test uses,
+then run the test again.
+Then copy the log of that run, `<name>-<lang>.log`, to `<name>.ok`, where
+`<lang>` is `tcl` or `py`.
+Only `-tcl_test` targets save output files; `-py_test` targets save only the
+log.
 The test is expected to fail while the golden file is old.
 
 When a test writes a DEF whose filename matches `<name>`, update its DEF golden
@@ -318,7 +323,7 @@ use `install -m 644` (or `rm -f`, `cp`, and `chmod 644`) instead of plain `cp`:
 
 ``` shell
 install -m 644 \
-  ../../../bazel-testlogs/openroad/<tool>/test/<name>-tcl_test/test.outputs/results/<result-file> \
+  ../../../bazel-testlogs/openroad/<tool>/test/<name>-<lang>_test/test.outputs/results/<result-file> \
   <golden-file>
 ```
 
