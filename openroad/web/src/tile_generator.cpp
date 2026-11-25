@@ -6670,12 +6670,16 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
     scale = 1024.0 / area.dx();
   }
 
-  // Truncated, as Qt's QRegion of the screen rect is; the epsilon keeps an
-  // exact -width from losing its last pixel to rounding.  In double: a thin
-  // region at a high scale overflows an int.
+  // Truncated like Qt's QRegion, with an epsilon so an exact -width keeps its
+  // last pixel; in double, as a thin region at a high scale overflows an int.
   auto pixels = [](const double extent) { return std::floor(extent + 1e-6); };
   const double wanted_w = pixels(area.dx() * scale);
   const double wanted_h = pixels(area.dy() * scale);
+  // A scale that underflowed to zero (-resolution Inf) frames nothing.
+  if (wanted_w <= 0 || wanted_h <= 0) {
+    logger_->error(
+        utl::WEB, 125, "The requested resolution leaves the image no pixels.");
+  }
 
   // Cap image size at 16k x 16k to prevent excessive memory usage.
   constexpr int kMaxDim = 16384;
@@ -6690,11 +6694,7 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
                      static_cast<double>(kMaxDim) / area.dy());
   }
 
-  // A scale that underflowed to zero (-resolution Inf) frames nothing.
-  if (area.dx() * scale <= 0 || area.dy() * scale <= 0) {
-    logger_->error(
-        utl::WEB, 125, "The requested resolution leaves the image no pixels.");
-  }
+  // Clamping can leave a thin side under a pixel.
   const int final_w = std::max(1, static_cast<int>(pixels(area.dx() * scale)));
   const int final_h = std::max(1, static_cast<int>(pixels(area.dy() * scale)));
 

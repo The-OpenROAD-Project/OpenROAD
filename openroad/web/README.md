@@ -195,14 +195,15 @@ When using `-web`, if neither `-width` nor `-resolution` is specified, the
 image defaults to 1024 pixels wide. The maximum image dimension is 16384
 pixels; larger requests are clamped automatically.
 
-The image is opaque: it is painted on the Background color of the browser that
-last synced its display state, and on black — the default of both GUIs — when
-none has, as with a plain headless run.
-
 With no Qt window open, `-web` draws what the `gui::set_display_controls`
 calls have chosen, with the same paths and defaults as the Qt display controls.
 That is how one script, such as ORFS's `save_images.tcl`, can save the same
 views with either renderer.
+
+The image is opaque: it is painted on the `Misc/Background` color a script has
+set, else on the Background color of the browser that last synced its display
+state, and on black — the default of both GUIs — when neither has, as with a
+plain headless run.
 
 #### Display option keys (web mode)
 
