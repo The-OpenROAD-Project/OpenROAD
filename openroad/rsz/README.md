@@ -192,7 +192,7 @@ of the tie high/low cell.
 ```tcl
 repair_tie_fanout 
     [-separation dist]
-    [-max_fanout fanout]
+    [-max_fanout fanout] (deprecated)
     [-verbose]
     lib_port
 ```

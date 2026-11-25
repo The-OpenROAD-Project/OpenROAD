@@ -3,5 +3,5 @@
 [INFO ODB-0131]     Created 6 components and 23 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 6 connections.
 [WARNING STA-0355] library/cell/port 'BOGUS_PIN' not found.
-[ERROR RSZ-0054] No library port matched 'BOGUS_PIN'.
-RSZ-0054
+[ERROR RSZ-3285] No library port matched 'BOGUS_PIN'.
+RSZ-3285

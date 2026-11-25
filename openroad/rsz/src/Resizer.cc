@@ -4282,18 +4282,19 @@ void Resizer::repairTieFanout(sta::LibertyPort* tie_port,
 
       // Create a new tie cell instance
       std::string tie_inst_name = network_->name(load_inst);
-      createNewTieCellForLoadPin(load_pin,
-                                 tie_inst_name.c_str(),
-                                 db_network_->parent(load_inst),
-                                 tie_port,
-                                 separation_dbu);
+      sta::Instance* new_tie_inst
+          = createNewTieCellForLoadPin(load_pin,
+                                       tie_inst_name.c_str(),
+                                       db_network_->parent(load_inst),
+                                       tie_port,
+                                       separation_dbu);
       designAreaIncr(area(db_network_->cell(tie_cell)));
       tie_count++;
       if (verbose) {
         logger_->info(RSZ,
-                      38,
+                      3283,
                       "Inserted tie cell {} for load {}.",
-                      tie_cell->name(),
+                      db_network_->pathName(new_tie_inst),
                       db_network_->pathName(load_pin));
       }
     }

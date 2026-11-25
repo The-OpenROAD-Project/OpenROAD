@@ -241,7 +241,7 @@ proc repair_tie_fanout { args } {
     set separation [sta::distance_ui_sta $separation]
   }
   if { [info exists keys(-max_fanout)] } {
-    utl::warn RSZ 30 "-max_fanout is deprecated and its value is ignored."
+    utl::warn RSZ 3284 "-max_fanout is deprecated and its value is ignored."
   }
   set verbose [info exists flags(-verbose)]
 
@@ -256,7 +256,7 @@ proc repair_tie_fanout { args } {
     }
   }
   if { $lib_port == "" } {
-    utl::error RSZ 54 "No library port matched '$lib_port_arg'."
+    utl::error RSZ 3285 "No library port matched '$lib_port_arg'."
   }
   rsz::repair_tie_fanout_cmd $lib_port $separation $verbose
 }

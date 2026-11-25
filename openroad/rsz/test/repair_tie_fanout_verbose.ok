@@ -2,9 +2,9 @@
 [INFO ODB-0128] Design: top
 [INFO ODB-0131]     Created 6 components and 23 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 6 connections.
-[INFO RSZ-0038] Inserted tie cell LOGIC1_X1 for load u0/A.
-[INFO RSZ-0038] Inserted tie cell LOGIC1_X1 for load u1/A.
-[INFO RSZ-0038] Inserted tie cell LOGIC1_X1 for load u2/A.
-[INFO RSZ-0038] Inserted tie cell LOGIC1_X1 for load u3/A.
-[INFO RSZ-0038] Inserted tie cell LOGIC1_X1 for load u4/A.
+[INFO RSZ-3283] Inserted tie cell u0_1 for load u0/A.
+[INFO RSZ-3283] Inserted tie cell u1_2 for load u1/A.
+[INFO RSZ-3283] Inserted tie cell u2_3 for load u2/A.
+[INFO RSZ-3283] Inserted tie cell u3_4 for load u3/A.
+[INFO RSZ-3283] Inserted tie cell u4_5 for load u4/A.
 [INFO RSZ-0042] Inserted 5 tie LOGIC1_X1 instances.
