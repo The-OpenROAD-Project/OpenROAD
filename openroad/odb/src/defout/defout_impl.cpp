@@ -1680,9 +1680,9 @@ void DefOut::Impl::writeWire(dbWire* wire)
         deltaX2 = defdist(deltaX2);
         deltaY2 = defdist(deltaY2);
         if (color.has_value()) {
-          *_out << " RECT MASK " << color.value() << " ( " << deltaX1 << " "
-                << deltaY1 << " " << deltaX2 << " " << deltaY2 << " ) ";
-
+          *_out << " MASK " << static_cast<int>(color.value()) << " RECT ( "
+                << deltaX1 << " " << deltaY1 << " " << deltaX2 << " " << deltaY2
+                << " ) ";
         } else {
           *_out << " RECT ( " << deltaX1 << " " << deltaY1 << " " << deltaX2
                 << " " << deltaY2 << " ) ";
