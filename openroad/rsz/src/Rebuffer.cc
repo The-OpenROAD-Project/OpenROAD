@@ -8,7 +8,6 @@
 #include <cassert>
 #include <cmath>
 #include <cstddef>
-#include <cstdlib>
 #include <functional>
 #include <limits>
 #include <memory>
@@ -106,34 +105,6 @@ int countDirectSinks(const BufferedNetPtr& tree)
       return countDirectSinks(tree->ref()) + countDirectSinks(tree->ref2());
   }
   return 0;
-}
-
-float parseEnvFloatOrDefault(const char* name, const float default_val)
-{
-  const char* val = std::getenv(name);
-  if (val == nullptr || val[0] == '\0') {
-    return default_val;
-  }
-  char* end = nullptr;
-  const float parsed = std::strtof(val, &end);
-  if (end == val || !std::isfinite(parsed)) {
-    return default_val;
-  }
-  return parsed;
-}
-
-int parseEnvIntOrDefault(const char* name, const int default_val)
-{
-  const char* val = std::getenv(name);
-  if (val == nullptr || val[0] == '\0') {
-    return default_val;
-  }
-  char* end = nullptr;
-  const long parsed = std::strtol(val, &end, 10);
-  if (end == val) {
-    return default_val;
-  }
-  return static_cast<int>(parsed);
 }
 
 }  // namespace
@@ -606,8 +577,7 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
                                      const BnetPtr& area_tree,
                                      const FixedDelay slack_target,
                                      const bool critical,
-                                     const sta::Delay hurdle_base_delay,
-                                     const float hurdle_factor)
+                                     const sta::Delay hurdle_base_delay)
 {
   if (!size_driver_ || timing_tree->slackTransition() == nullptr
       || network_->isTopLevelPort(drvr_pin)) {
@@ -645,14 +615,13 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
     // detailed routing via resistance.
     const bool timing_buffered = timing_tree->bufferCount() > 0;
     const int timing_root_fo = countDirectSinks(timing_tree);
-    int max_flat_fo
-        = parseEnvIntOrDefault("AGY_FIX_FLAT_MAX_FO", kMaxFlatCollapseFanout);
-    if (max_flat_fo > 0 && fanout_limit_ < sta::INF) {
+    int max_flat_fo = kMaxFlatCollapseFanout;
+    if (fanout_limit_ < sta::INF) {
       max_flat_fo = std::min(
           max_flat_fo, std::max(2, static_cast<int>(fanout_limit_ / 2.0f)));
     }
     const auto collapses_high_fanout = [&](const BnetPtr& tree) -> bool {
-      if (!tree || !timing_buffered || max_flat_fo <= 0) {
+      if (!tree || !timing_buffered) {
         return false;
       }
       if (tree->bufferCount() >= timing_tree->bufferCount()) {
@@ -700,7 +669,6 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
                                      relaxation,
                                      critical,
                                      hurdle_base_delay,
-                                     hurdle_factor,
                                      eval,
                                      trees);
       }
@@ -715,8 +683,7 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
                                             choices,
                                             relaxation,
                                             critical,
-                                            hurdle_base_delay,
-                                            hurdle_factor)
+                                            hurdle_base_delay)
                             - relaxation);
     }
     chosen
@@ -744,7 +711,6 @@ void Rebuffer::addTreesPlannedForBestDriver(const BnetPtr& unbuffered_tree,
                                             const FixedDelay relaxation,
                                             const bool critical,
                                             const sta::Delay hurdle_base_delay,
-                                            const float hurdle_factor,
                                             TreeDriverEvaluation& eval,
                                             std::vector<BnetPtr>& trees)
 {
@@ -754,10 +720,6 @@ void Rebuffer::addTreesPlannedForBestDriver(const BnetPtr& unbuffered_tree,
   FixedDelay best_slack = slackAtDriverPin(timing_tree);
   for (sta::LibertyCell* cell : choices.cells) {
     if (cell == current_cell) {
-      continue;
-    }
-    if (!critical && hurdle_factor >= kZeroAreaOnlyHurdle
-        && cell->area() > current_cell->area()) {
       continue;
     }
     // A cell over the leakage budget on its own fails with any tree.
@@ -774,8 +736,8 @@ void Rebuffer::addTreesPlannedForBestDriver(const BnetPtr& unbuffered_tree,
     if (!slack) {
       continue;
     }
-    const FixedDelay hurdle = areaUpsizeHurdle(
-        current_cell, cell, critical, hurdle_base_delay, hurdle_factor);
+    const FixedDelay hurdle
+        = areaUpsizeHurdle(current_cell, cell, critical, hurdle_base_delay);
     const FixedDelay effective = *slack - hurdle;
     if (effective > best_slack) {
       if (upstreamSideLoadSlack(eval, cell) < *slack - relaxation) {
@@ -829,11 +791,6 @@ std::pair<BnetPtr, BnetPtr> Rebuffer::planForDriverCell(
 
 BnetPtr Rebuffer::withoutFirstBuffer(const BnetPtr& tree)
 {
-  const int max_wfb_fo
-      = parseEnvIntOrDefault("AGY_FIX_WFB_MAX_FO", kMaxWithoutFirstBufFanout);
-  if (max_wfb_fo <= 0) {
-    return nullptr;
-  }
   BnetPtr node = tree;
   int layer = BufferedNet::null_layer;
   while (node->type() == BnetType::wire) {
@@ -844,7 +801,7 @@ BnetPtr Rebuffer::withoutFirstBuffer(const BnetPtr& tree)
     return nullptr;
   }
   const BnetPtr& below = node->ref();
-  if (countDirectSinks(below) > max_wfb_fo) {
+  if (countDirectSinks(below) > kMaxWithoutFirstBufFanout) {
     return nullptr;
   }
   if (below->location() == tree->location()) {
@@ -976,11 +933,10 @@ FixedDelay Rebuffer::upstreamSideLoadSlack(TreeDriverEvaluation& eval,
 FixedDelay Rebuffer::areaUpsizeHurdle(const sta::LibertyCell* current_cell,
                                       const sta::LibertyCell* cell,
                                       const bool critical,
-                                      const sta::Delay hurdle_base_delay,
-                                      const float hurdle_factor) const
+                                      const sta::Delay hurdle_base_delay) const
 {
-  if (critical || hurdle_factor <= 0.0f || hurdle_base_delay <= 0.0f
-      || current_cell == nullptr || cell == nullptr) {
+  if (critical || hurdle_base_delay <= 0.0f || current_cell == nullptr
+      || cell == nullptr) {
     return FixedDelay::ZERO;
   }
   const float cur_area = current_cell->area();
@@ -990,7 +946,7 @@ FixedDelay Rebuffer::areaUpsizeHurdle(const sta::LibertyCell* current_cell,
   }
   const float rel_area_inc = (cand_area / cur_area) - 1.0f;
   const float hurdle_sec = std::min(
-      hurdle_factor * rel_area_inc * static_cast<float>(hurdle_base_delay),
+      kAreaUpsizeHurdle * rel_area_inc * static_cast<float>(hurdle_base_delay),
       FixedDelay::INF.toSeconds() * 0.5f);
   return FixedDelay(hurdle_sec, resizer_);
 }
@@ -1000,17 +956,12 @@ FixedDelay Rebuffer::bestSlackWithDriver(TreeDriverEvaluation& eval,
                                          const DriverChoices& choices,
                                          const FixedDelay relaxation,
                                          const bool critical,
-                                         const sta::Delay hurdle_base_delay,
-                                         const float hurdle_factor)
+                                         const sta::Delay hurdle_base_delay)
 {
   FixedDelay best_slack = -FixedDelay::INF;
   auto consider = [&](sta::LibertyCell* cell) {
-    if (!critical && hurdle_factor >= kZeroAreaOnlyHurdle
-        && cell->area() > current_cell->area()) {
-      return;
-    }
-    const FixedDelay hurdle = areaUpsizeHurdle(
-        current_cell, cell, critical, hurdle_base_delay, hurdle_factor);
+    const FixedDelay hurdle
+        = areaUpsizeHurdle(current_cell, cell, critical, hurdle_base_delay);
     for (size_t i = 0; i < eval.trees.size(); i++) {
       if (!eval.trees[i] || !withinLeakageBudget(eval, choices, cell, i)) {
         continue;
@@ -3810,8 +3761,6 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
                                resizer_);
   const FixedDelay critical_band(-kCriticalSlackBand * worst_slack.toSeconds(),
                                  resizer_);
-  const float area_upsize_hurdle = std::max(
-      0.0f, parseEnvFloatOrDefault("AGY_FIX_AREA_HURDLE", kAreaUpsizeHurdle));
   for (auto iter = 0; iter < filtered_pins.size(); iter++) {
     printProgress(iter, false, false, filtered_pins.size() - iter);
 
@@ -4015,8 +3964,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
                                        area_opt_tree,
                                        target_slack,
                                        critical,
-                                       hurdle_base_delay,
-                                       area_upsize_hurdle);
+                                       hurdle_base_delay);
     const bool driver_resized = driver_resize_count_ != prev_resize_count;
 
     if (driver_resized && drvr_inst != nullptr && old_drvr_cell != nullptr) {

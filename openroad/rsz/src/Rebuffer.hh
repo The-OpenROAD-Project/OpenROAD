@@ -259,7 +259,6 @@ class Rebuffer : public sta::dbStaState
                                     FixedDelay relaxation,
                                     bool critical,
                                     sta::Delay hurdle_base_delay,
-                                    float hurdle_factor,
                                     TreeDriverEvaluation& eval,
                                     std::vector<BufferedNetPtr>& trees);
   DriverChoices driverChoices(sta::LibertyCell* current_cell,
@@ -290,8 +289,7 @@ class Rebuffer : public sta::dbStaState
   FixedDelay areaUpsizeHurdle(const sta::LibertyCell* current_cell,
                               const sta::LibertyCell* cell,
                               bool critical,
-                              sta::Delay hurdle_base_delay,
-                              float hurdle_factor) const;
+                              sta::Delay hurdle_base_delay) const;
   // The highest hurdle-adjusted slack any of the trees reaches with the
   // current driver or one of `choices` whose upstream side loads keep that
   // slack less `relaxation`.
@@ -300,8 +298,7 @@ class Rebuffer : public sta::dbStaState
                                  const DriverChoices& choices,
                                  FixedDelay relaxation,
                                  bool critical,
-                                 sta::Delay hurdle_base_delay,
-                                 float hurdle_factor);
+                                 sta::Delay hurdle_base_delay);
   // Pick the smallest (tree + driver) area among the candidate trees and the
   // driver `choices` whose slack meets `slack_target`.  Returns the chosen
   // tree and sets `chosen_cell`; returns nullptr when no combination meets
@@ -321,8 +318,7 @@ class Rebuffer : public sta::dbStaState
                                     const BufferedNetPtr& area_tree,
                                     FixedDelay slack_target,
                                     bool critical,
-                                    sta::Delay hurdle_base_delay,
-                                    float hurdle_factor);
+                                    sta::Delay hurdle_base_delay);
   std::optional<FixedDelay> evaluateOption(const BufferedNetPtr& option,
                                            // Only used for debug print.
                                            int index);
@@ -666,9 +662,6 @@ class Rebuffer : public sta::dbStaState
   // relative driver area increase) for geometric driver upsizing on
   // non-critical failing nets.
   static constexpr float kAreaUpsizeHurdle = 0.25f;
-  // Threshold at or above which geometric area upsizes are excluded from
-  // raising target_slack on non-critical failing nets (zero-area VT only).
-  static constexpr float kZeroAreaOnlyHurdle = 100.0f;
   // Maximum direct sink count under the first buffer for withoutFirstBuffer().
   static constexpr int kMaxWithoutFirstBufFanout = 2;
   // Maximum direct sink count allowed when collapsing a buffered timing tree
