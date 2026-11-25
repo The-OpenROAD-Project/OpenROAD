@@ -554,6 +554,19 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
   if (!old_module->canSwapWith(new_module)) {
     return nullptr;
   }
+  // - A module above this instance would have to contain a copy of itself.
+  for (dbModule* module = getParent(); module != nullptr;
+       module = module->getParentModule()) {
+    if (module == new_module) {
+      logger->warn(utl::ODB,
+                   566,
+                   "Instance {} cannot be replaced with module {} because "
+                   "the instance is inside that module.",
+                   getHierarchicalName(),
+                   new_module->getName());
+      return nullptr;
+    }
+  }
 
   // Write out the design before replacement for debugging
   if (logger->debugCheck(utl::ODB, "replace_design", 1)) {

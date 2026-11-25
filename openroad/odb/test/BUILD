@@ -235,6 +235,7 @@ PASSFAIL_TESTS = [
     "read_3dbx_fail",
     "read_def_virtual_invalid",
     "replace_hier_mod7",
+    "replace_hier_mod8",
     "test_block",
     "test_bterm",
     "test_destroy",
