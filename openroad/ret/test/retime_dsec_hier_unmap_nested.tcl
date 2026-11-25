@@ -8,7 +8,7 @@ read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_verilog retime_dsec_hier_unmap_nested.v
 link_design -hier top
-create_clock -period 1.0 clk
+create_clock -period 0.15 clk
 
 write_verilog_for_dsec retime_dsec_hier_unmap_nested before
 report_worst_slack -max -digits 4

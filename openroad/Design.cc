@@ -317,6 +317,11 @@ rcx::Ext* Design::getOpenRCX()
   return getOpenRoad()->getOpenRCX();
 }
 
+ret::Retimer* Design::getRetimer()
+{
+  return getOpenRoad()->getRetimer();
+}
+
 rmp::Restructure* Design::getRestructure()
 {
   return getOpenRoad()->getRestructure();

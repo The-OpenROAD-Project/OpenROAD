@@ -1,0 +1,73 @@
+# Trials that unmap registers and that STA rejects are undone.  r4 and r5
+# (read through QN) sit far from g10 and g11, which feed them, and the
+# inputs are timed.  Each trial unmaps r4 and r5 and slides across the
+# unmap gates; the search times those gates before they are placed, so
+# without their wires, and STA rejects the placed result.  Round 1 keeps
+# the shorter prefix that only slides cone 1; round 2 rejects every trial.
+# r4 and r5 are restored, and the result is proven sequentially equivalent
+# with ABC dsec.
+source "helpers.tcl"
+source "ret_helpers.tcl"
+read_liberty Nangate45/Nangate45_typ.lib
+read_lef Nangate45/Nangate45.lef
+read_verilog retime_dsec_existing_names.v
+link_design top
+initialize_floorplan -die_area "0 0 3500 20" \
+  -core_area "0 0 3500 20" \
+  -site FreePDK45_38x28_10R_NP_162NW_34O
+create_clock -period 0.16 clk
+set_input_delay -0.02 -clock clk [delete_from_list [all_inputs] [get_ports clk]]
+
+proc place_inst { name x } {
+  set inst [[ord::get_db_block] findInst $name]
+  $inst setLocation [ord::microns_to_dbu $x] [ord::microns_to_dbu 2.8]
+  $inst setPlacementStatus PLACED
+}
+# Placed locations in microns: cone 1 120 microns apart, cone 2 1900
+# microns past g10 and g11.
+set x 10
+foreach name {g0 g1 r1 r2 g2 g3 g4 g5 g6 g7 ret_ff_0 g8} {
+  place_inst $name $x
+  incr x 120
+}
+place_inst g10 1450
+place_inst g11 1455
+set x 3360
+foreach name {r4 r5 g12 g13 g14 g15 g16 g17 unmap_ff_0 unmap_inv_2} {
+  place_inst $name $x
+  incr x 5
+}
+set_wire_rc -resistance 4.0e-02 -capacitance 1.0e-05
+estimate_parasitics -placement
+
+write_verilog_for_dsec retime_sta_unmap_undo before
+report_worst_slack -max -digits 4
+report_tns -digits 4
+
+retime
+
+estimate_parasitics -placement
+report_worst_slack -max -digits 4
+report_tns -digits 4
+set block [ord::get_db_block]
+foreach name {r4 r5} {
+  set inst [$block findInst $name]
+  if { $inst == "NULL" } {
+    puts "$name: removed"
+  } else {
+    puts "$name: [[$inst getMaster] getName]"
+  }
+}
+set unmap_cells {}
+foreach inst [$block getInsts] {
+  if { [string match "unmap_*" [$inst getName]] } {
+    lappend unmap_cells [$inst getName]
+  }
+}
+puts "unmap cells: [lsort $unmap_cells]"
+run_dsec_test retime_sta_unmap_undo \
+  -liberty_files Nangate45/Nangate45_typ.lib -clock clk -resetn rst_n
+
+set v_file [make_result_file retime_sta_unmap_undo.v]
+write_verilog $v_file
+diff_files retime_sta_unmap_undo.vok $v_file

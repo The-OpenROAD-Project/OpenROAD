@@ -17,31 +17,19 @@ wire delays.
 ### Retime
 
 Slide registers forward across gates on paths that fail timing. A search
-proposes the moves on a delay model read from STA: gate arcs calibrated to
-STA's, wire delays, the clock-to-Q of the register a move would build and
-the setup time of each endpoint. It takes the worst failing gate whose move
-raises the slack through it by more than 0.2% of the clock period without
-making the total negative slack worse; when none is left, moves that raise
-the total negative slack without lowering the worst slack. Paths that start
-at a primary input, at a gate driving an output, or at a fenced gate cannot
-be shortened by a forward move, but a move that lowers their slack counts
-against it like any other.
-
-STA then decides what is kept. The moves are applied, the new cells placed
-and the design timed. The moves are kept when neither the worst nor the
-total negative slack got worse; else the first half of them is tried, then
-a quarter, and so on. Short rounds of 16 moves follow, each from what was
-kept, until a round keeps nothing or 16 rounds have kept moves. A design
-that meets timing is left as it is.
+proposes the moves on a delay model calibrated to STA: gate and wire delays,
+the clock-to-Q of the new register and the setup time of each endpoint. STA
+then decides what is kept. The moves are applied, the new cells placed and
+the design timed; they are kept when the slack improves and neither the
+worst nor the total negative slack is worse than at the start, else shorter
+prefixes of them are tried. Rounds of up to 16 moves follow from what was
+kept. A design that meets timing is left as it is.
 
 Only the register groups whose edge weights changed are rebuilt; every
-other cell keeps its placement. A group is the registers of one class that
-start on one net. Each new cell is placed at the center of the placed cells
-on its data and output nets and left for detailed placement to legalize;
-`global_placement -incremental` is not needed. On a design with no placed
-cell the new cells stay unplaced. A new register with negative
-slack tries the three fastest cells of its function and keeps the one STA
-prefers. Estimated parasitics of the nets that changed are refreshed. Run
+other cell keeps its placement. Each new cell is placed at the center of the
+placed cells it connects to, for detailed placement to legalize, and a new
+register with negative slack takes the best of its three fastest equivalent
+cells. Estimated parasitics of the nets that changed are refreshed. Run
 `retime` before clock tree synthesis and routing: on a routed design it
 warns and leaves the routing as it is.
 
@@ -57,31 +45,21 @@ Registers move by class, read from the liberty `next_state` function:
   base flip-flop plus logic (inverters, 2-input ANDs and ORs, tie cells)
   computing its `next_state`, named `unmap_*`.
 
-A register whose asynchronous set or reset is tied to its inactive value
-moves like one without it: it is rebuilt as the base flip-flop, and a tie
-cell that only it read is removed with it. When the libraries have no
-flip-flop without asynchronous controls, the base cell is the register that
-takes the least area once tie cells hold its controls inactive, and every
-new register gets its own tie cells.
-
-Registers with a live asynchronous set or reset, negative-edge registers,
-latches and scan cells never move, and neither does a register chain whose output reaches a primary
-output or a control pin of another register (those read the chain at its
-current depth), nor anything marked don't-touch. A register also stays when
-it shares its input net with one of these or with a register on another
-clock net. A gate fed through such a register or driving such a chain,
-connected to a primary input or output, reading a register that no gate
-drives (one fed straight from a primary input), driving a control pin of a
-register, or reachable by registers on different clock nets is never crossed.
-The design must have one clock defined with `create_clock`; gated copies of
-it are fine.
-
-Hierarchical netlists (`link_design -hier`) have initial support: retiming is
-local to a module. A register stays inside its module: a gate is crossed
-only when the gate that drives its registers, the registers, the gate itself
-and the gates it drives are all in one module. The cells that replace an
-unmapped register are created in its module. A flat netlist has no
-boundaries to keep.
+Latches, scan cells, multi-bit and negative-edge registers, registers
+clocked by more than one pin, registers with a live asynchronous set or
+reset and registers an SDC exception or constraint names never move. Neither does a register chain whose output reaches a primary output, a
+bidirectional pin or a control pin of another register (those read the
+chain at its current depth), nor anything marked don't-touch or read by a
+don't-touch cell. A register whose set or reset is tied inactive moves as
+the base flip-flop. Registers fed by one net are rebuilt together on one
+clock net, so a register also stays when it shares its input net with one of
+these or with a register on another clock net. A gate fed through such a
+register, connected to a primary input or output, driving a control pin of
+a register, or reachable by registers on different clock nets is never
+crossed. In a hierarchical netlist (`link_design -hier`) a register stays
+inside its module. New cells never use a `dont_use` cell; tie cells ignore
+`set_dont_use`, as `repair_tie_fanout` does. The design must have one clock
+defined with `create_clock`; gated copies of it are fine.
 
 ```tcl
 retime
@@ -92,15 +70,13 @@ retime
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-max_moves` | Stop after this many accepted register moves. Default unlimited. |
+| `-max_moves` | Stop after this many accepted register moves. `0` means unlimited. Default unlimited. |
 
-`-max_moves` limits the moves of the whole run. New registers are named
-`ret_ff_N`, their tie cells `ret_tie_N` and new nets `ret_net_N`. The log
-shows the slack before, what each round kept, and a summary with the
-registers and the cells placed. `retime` stops with an error on designs it
-cannot handle: libraries without a usable base register, inverter, AND2 or
-OR2 cell; more than one clock; no clock defined. An
-error leaves the netlist unchanged.
+New registers are named `ret_ff_N`, their tie cells `ret_tie_N` and new
+nets `ret_net_N`. The log shows the slack after each round. `retime` stops
+with an error on designs it cannot handle: libraries without a usable base
+register, inverter, AND2 or OR2 cell; more than one clock; no clock defined.
+An error leaves the netlist unchanged.
 
 ## Example scripts
 
@@ -128,18 +104,11 @@ works on one clock domain. The path into a register's enable pin is not in
 the delay model. Initial values of moved registers are not computed: the
 result is equivalent from the reset state only when the moved registers have
 no defined initial value, so verify the result with sequential equivalence
-checking.
-
-In a hierarchical netlist a register does not cross a module boundary, so a
-path that runs through another module, such as an arithmetic operator kept
-as its own module, is not shortened. A tie cell in another module than the
-register it held is left in place when that register is removed.
-
-STA judges the timing at the time of `retime`; the resizer and detailed
-placement that run afterwards can still make it worse than without
-retiming. The delay model counts one endpoint for a gate however many
-registers it feeds, so its total negative slack underweights gates that feed
-many registers.
+checking. A scan cell is one with a liberty `test_cell` or a LEF `USE SCAN`
+pin; a scan flip-flop its library marks neither way, such as Nangate45
+`SDFF_X1`, can be unmapped, which removes the scan cell. STA judges the
+timing at the time of `retime`; the resizer and detailed placement that run
+afterwards can change it.
 
 ## License
 

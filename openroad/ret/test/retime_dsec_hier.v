@@ -1,6 +1,6 @@
 // Hierarchical netlist.  Inside `core`, r1 and r2 feed one NAND followed by
 // a longer cone, all in that module: they merge and slide as in
-// retime_dsec_plain, and the new register takes the module's clock port
+// retime_slack_search, and the new register takes the module's clock port
 // `ck`.  `stage` is combinational and the registers before and after it are
 // in `top`, so they stay: a move would take one across a module boundary.
 // rst_n is a synchronous reset in logic, so every register settles to a

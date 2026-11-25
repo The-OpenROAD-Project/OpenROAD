@@ -1,4 +1,4 @@
-// Two registers on two clock ports: retime refuses multi-clock designs.
+// Two registers on two clock ports.
 module top (a, clk1, clk2, y);
   input a;
   input clk1;

@@ -30,6 +30,7 @@ struct EdgePhys
   odb::dbITerm* driver;
   odb::dbITerm* sink;
   std::vector<odb::dbInst*> flops;  // driver to sink
+  std::vector<odb::dbITerm*> entries;  // the pin each register is entered by
 };
 
 // Leiserson-Saxe retiming graph: vertices are combinational gates,
@@ -53,21 +54,27 @@ class RetimingGraph
   const RegisterClass& regClass(odb::dbInst* reg) const;
 
   bool isDontTouch(odb::dbInst* reg) const;
-  odb::dbITerm* dataPin(odb::dbInst* reg) const;
   // The net an edge's registers start on; the driver net when it has none.
   odb::dbNet* chainNet(const EdgePhys& phys) const;
 
  private:
   // An enable pin travels with its register's class; it is not a data edge.
   bool continuesThrough(odb::dbInst* reg, odb::dbITerm* pin) const;
-  // A net read by a port or a control pin: the registers in front of it
-  // keep their depth, and the gate that drives them is never crossed.
+  // A net read by a port, a control pin, an inout pin or a don't-touch gate:
+  // the registers in front of it keep their depth, and the gate that drives
+  // them is never crossed.
   bool fencesChain(odb::dbNet* net) const;
   void walkFanout(int source,
                   odb::dbInst* current,
                   int weight,
-                  std::vector<odb::dbInst*>& flops,
+                  EdgePhys& chain,
                   std::unordered_set<odb::dbInst*>& visited);
+  // A gate with an input tied to a supply or left open is not self-dual,
+  // whatever its cell.
+  void clearTiedSelfDual();
+  // Registers an SDC exception or constraint names, directly or through a
+  // pin or net: deleting one would drop it.
+  void findSdcRegisters(odb::dbBlock* block);
   void markBoundary(odb::dbInst* inst, int id);
   void markDontTouch(odb::dbInst* inst, int id);
   // Pins a gate with an input no edge ends on (a port, or a register no gate
@@ -89,6 +96,7 @@ class RetimingGraph
   std::vector<std::vector<EdgePhys>> phys_;
   std::vector<bool> pinned_;
   std::unordered_set<odb::dbInst*> fenced_;  // registers that never move
+  std::unordered_set<odb::dbInst*> sdc_registers_;
   std::unordered_map<odb::dbInst*, RegisterClass> reg_class_;
   std::vector<bool> self_dual_;
   float clock_period_ = 0.0f;

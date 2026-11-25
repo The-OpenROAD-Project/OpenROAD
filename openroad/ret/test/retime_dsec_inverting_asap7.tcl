@@ -1,6 +1,8 @@
-# Inverting registers (asap7 DFFHQNx1 stores the complement of D): they keep
-# their cell across self-dual gates and are unmapped before any other gate. The
-# result is proven sequentially equivalent with ABC dsec.
+# Inverting registers (asap7 DFFHQNx1 stores the complement of D) keep their
+# cell across self-dual gates: r1 across the inverters and the three registers
+# of cone 3 across the majority gate.  Cone 2 fails by less and the search
+# proposes no slide there.  The result is proven sequentially equivalent with
+# ABC dsec.
 source "helpers.tcl"
 source "ret_helpers.tcl"
 set libs [list \
@@ -14,7 +16,7 @@ read_lef asap7/asap7_tech_1x_201209.lef
 read_lef asap7/asap7sc7p5t_28_R_1x_220121a.lef
 read_verilog retime_dsec_inverting_asap7.v
 link_design top
-create_clock -period 500 clk
+create_clock -period 60 clk
 
 write_verilog_for_dsec retime_dsec_inverting_asap7 before
 report_worst_slack -max -digits 2

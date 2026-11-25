@@ -119,7 +119,8 @@ TEST_F(SequentialUnmapperCellTest, InvertedOutput)
   ASSERT_NE(port, nullptr);
   odb::dbInst* inv = driverOf(port->getNet());
   ASSERT_TRUE(isMaster(inv, "INV"))
-      << "port is not driven by an INV: " << (inv ? inv->getName() : "none");
+      << "port is not driven by an INV: "
+      << (inv != nullptr ? inv->getName() : "none");
   EXPECT_EQ(inputNets(inv).at(0), state)
       << "output INV must read the base Q net";
 }

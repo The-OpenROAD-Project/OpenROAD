@@ -18,12 +18,13 @@ import sys
 sys.path.insert(0, sys.argv[1])
 import openroad
 import odb, utl, gpl, ant, cgt, cts, dpl, drt, exa, fin, fsv, grt, ifp
-import par, pdn, ppl, psm, rcx, rsz, stt, tap, wmk
+import par, pdn, ppl, psm, rcx, ret, rsz, stt, tap, wmk
 from openroad import Design, Tech
 tech = Tech()
 assert odb.dbDatabase is not None
 assert hasattr(ant, "AntennaChecker")
 assert hasattr(wmk, "Watermark")
+assert hasattr(ret, "Retimer")
 assert hasattr(fsv, "FieldSolver")
 import rmp
 assert hasattr(rmp, "Blif")

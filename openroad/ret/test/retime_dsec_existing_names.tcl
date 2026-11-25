@@ -1,6 +1,8 @@
 # Retime a netlist that already holds the instance and net names an earlier
-# retime run generated: new cells and nets take names that are still free. The
-# result is proven sequentially equivalent with ABC dsec.
+# retime run generated: new cells and nets take names that are still free.
+# The registers are unmapped first, so the search runs again on the unmapped
+# netlist; the STA check reports that search's 9 slides, not the first
+# search's 7.  The result is proven sequentially equivalent with ABC dsec.
 source "helpers.tcl"
 source "ret_helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib

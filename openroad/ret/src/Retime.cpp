@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -43,6 +44,17 @@ Retime::Retime(const RetimingGraph* graph,
 {
 }
 
+void Retime::Scratch::init(const int n)
+{
+  queue.assign(n, 0);
+  local_indeg.assign(n, 0);
+  in_dirty.assign(n, 0);
+  dirty.clear();
+  dirty.reserve(n);
+  saved_arrivals.reserve(n);
+  saved_arrivals_pinned.reserve(n);
+}
+
 void Retime::run(const int max_moves)
 {
   const int n = static_cast<int>(graph_->nodes().size());
@@ -59,7 +71,7 @@ void Retime::run(const int max_moves)
   }
 }
 
-float Retime::pinArrival(odb::dbITerm* db_pin)
+float Retime::pinArrival(odb::dbITerm* db_pin) const
 {
   const sta::Pin* pin = sta_->getDbNetwork()->dbToSta(db_pin);
   sta::Vertex* vertex = nullptr;
@@ -78,7 +90,7 @@ float Retime::arrivalAt(sta::Vertex* vertex, const sta::RiseFall* rf) const
       vertex, rf->asRiseFallBoth(), sta_->scenes(), sta::MinMax::max()));
 }
 
-float Retime::getGateArc(odb::dbITerm* input_pin)
+float Retime::getGateArc(odb::dbITerm* input_pin) const
 {
   const sta::Pin* pin = sta_->getDbNetwork()->dbToSta(input_pin);
   const sta::Graph* graph = sta_->ensureGraph();
@@ -122,18 +134,8 @@ void Retime::computeArcDelays()
   }
 
   resolveFlopDCap();
-  pinned_source_.assign(n, 0.0f);
-  for (int u = 0; u < n; ++u) {
-    if (!graph_->pinned()[u]) {
-      continue;
-    }
-    for (odb::dbITerm* iterm : graph_->nodes()[u]->getITerms()) {
-      if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-        pinned_source_[u] = std::max(pinned_source_[u], pinArrival(iterm));
-      }
-    }
-  }
   computeWireArcs();
+  computePinnedFloors();
   computeGateArcs();
   computeRegisterTiming();
 }
@@ -160,15 +162,13 @@ void Retime::resolveFlopDCap()
   }
 }
 
-float Retime::wireDelay(const EdgePhys& phys)
+float Retime::wireDelay(const EdgePhys& phys) const
 {
   float wire = std::max(pinArrival(phys.sink) - pinArrival(phys.driver), 0.0f);
-  for (odb::dbInst* flop : phys.flops) {
-    odb::dbITerm* d = graph_->dataPin(flop);
-    odb::dbNet* net = d != nullptr ? d->getNet() : nullptr;
-    odb::dbITerm* source = net != nullptr ? net->getFirstOutput() : nullptr;
+  for (odb::dbITerm* entry : phys.entries) {
+    odb::dbITerm* source = entry->getNet()->getFirstOutput();
     if (source != nullptr) {
-      wire += std::max(pinArrival(d) - pinArrival(source), 0.0f);
+      wire += std::max(pinArrival(entry) - pinArrival(source), 0.0f);
     }
   }
   return wire;
@@ -202,6 +202,30 @@ void Retime::computeWireArcs()
   }
 }
 
+void Retime::computePinnedFloors()
+{
+  const int n = static_cast<int>(graph_->nodes().size());
+  pinned_floor_.assign(n, kUnreached);
+  for (int u = 0; u < n; ++u) {
+    if (!graph_->pinned()[u]) {
+      continue;
+    }
+    std::unordered_set<odb::dbITerm*> modeled;
+    for (const FaninEdge& fe : fanin_[u]) {
+      modeled.insert(fe.sink);
+    }
+    for (odb::dbITerm* iterm : graph_->nodes()[u]->getITerms()) {
+      odb::dbNet* net = iterm->getNet();
+      if (iterm->getIoType() == odb::dbIoType::INPUT && net != nullptr
+          && !net->getSigType().isSupply() && !modeled.contains(iterm)) {
+        pinned_floor_[u] = std::max(
+            pinned_floor_[u],
+            static_cast<double>(pinArrival(iterm) + getGateArc(iterm)));
+      }
+    }
+  }
+}
+
 void Retime::computeGateArcs()
 {
   const int n = static_cast<int>(graph_->nodes().size());
@@ -225,7 +249,7 @@ float Retime::characterizeArc(const int v,
                               const float load,
                               const float fallback,
                               const float forced_slew,
-                              float* out_slew)
+                              float* out_slew) const
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   const sta::MinMax* min_max = sta::MinMax::max();
@@ -235,7 +259,7 @@ float Retime::characterizeArc(const int v,
   const sta::LibertyCell* cell = network->libertyCell(gate);
   const sta::LibertyPort* from = network->libertyPort(pin);
   // Per-instance PVT, then the SDC operating conditions, then the library
-  // default (what the delay calculator itself uses).
+  // default, else nominal (what the delay calculator itself uses).
   const sta::Pvt* pvt = sdc->pvt(network->dbToSta(gate), min_max);
   if (pvt == nullptr) {
     pvt = sdc->operatingConditions(min_max);
@@ -243,7 +267,7 @@ float Retime::characterizeArc(const int v,
   if (pvt == nullptr && cell != nullptr) {
     pvt = cell->libertyLibrary()->defaultOperatingConditions();
   }
-  if (cell == nullptr || from == nullptr || pvt == nullptr) {
+  if (cell == nullptr || from == nullptr) {
     return fallback;
   }
   const float in_slew = forced_slew >= 0.0f ? forced_slew : pinSlew(sta_, pin);
@@ -311,17 +335,12 @@ void Retime::setArrival(const int t)
     a_pinned = std::max(
         a_pinned, arrivals_pinned_[fe.u] + fe.driver_shift + fe.wire + arc + extra);
   }
-  if (root) {
-    if (graph_->pinned()[t]) {
-      arrivals_[t] = kUnreached;
-    } else {
-      arrivals_[t] = launched ? a : gate_floor_[t];
-    }
-    arrivals_pinned_[t] = graph_->pinned()[t] ? pinned_source_[t] : kUnreached;
+  if (root && !launched) {
+    arrivals_[t] = graph_->pinned()[t] ? kUnreached : gate_floor_[t];
   } else {
     arrivals_[t] = a;
-    arrivals_pinned_[t] = a_pinned;
   }
+  arrivals_pinned_[t] = std::max(a_pinned, pinned_floor_[t]);
 }
 
 void Retime::computeArrivals()

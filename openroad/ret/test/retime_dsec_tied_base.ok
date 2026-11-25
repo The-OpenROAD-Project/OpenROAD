@@ -1,14 +1,24 @@
 [INFO ODB-0227] LEF file: ihp-sg13g2/sg13g2_tech.lef, created 19 layers, 300 vias
 [INFO ODB-0227] LEF file: ihp-sg13g2/sg13g2_stdcell.lef, created 78 library cells
-worst slack max -0.1469
+[INFO IFP-0001] Added 5 rows of 208 site CoreSite.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 100.000 20.000 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 99.840 18.900 ) um
+[INFO IFP-0102] Core area:                         1886.976 um^2
+[INFO IFP-0103] Total instances area:               232.243 um^2
+[INFO IFP-0104] Effective utilization:                0.123
+[INFO IFP-0105] Number of instances:                     16
+worst slack max -0.1474
 [INFO RET-0047] No plain D flip-flop; new registers are sg13g2_dfrbp_1 with RESET_B tied high.
 [INFO RET-0014] Retiming graph: 13 gates, 9 edges, 3 registers, 7 pinned gates, 0 fenced registers.
  Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
 ---------------------------------------------------------------------------
- start |          |        |      |     -0.1469 |       -0.1469 |         3
-     1 |        5 |      1 |    5 |      0.0064 |        0.0000 |         2
+ start |          |        |      |     -0.1474 |       -0.1474 |         3
+     1 |        5 |      1 |    5 |      0.0061 |        0.0000 |         2
 ---------------------------------------------------------------------------
-[INFO RET-0053] Retime: slides 5, rounds 1, WNS 0.0064, TNS 0.0000, registers 2, placed 0, resized 0.
-worst slack max 0.0064
+[INFO RET-0053] Retime: slides 5, rounds 1, WNS 0.0061, TNS 0.0000, registers 2, placed 2, resized 0.
+worst slack max 0.0061
+unplaced instances: 0
+ret_tie_2 at 57.26 3.78
+ret_ff_1 at 51.98 3.78
 Retime output passed/skipped sequential equivalence test
 No differences found.

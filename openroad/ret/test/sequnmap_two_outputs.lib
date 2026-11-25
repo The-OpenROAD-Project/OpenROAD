@@ -1,0 +1,269 @@
+/* ========================================================================== */
+/* sequnmap_two_outputs.lib: the sequnmap_basic cells plus two flops with two */
+/* outputs, for unit testing SequentialUnmapper: */
+/*   DFF_P_QQN  publishes the state on Q and !state on QN */
+/*   DFF_P_ODD  Q publishes the state, Y a function of the state and D */
+/* No timing tables on purpose: decompose reads FUNCTIONS, not delays. */
+/* ========================================================================== */
+library (sequnmap_two_outputs) {
+  delay_model : table_lookup;
+  time_unit : "1ns";
+  voltage_unit : "1V";
+  current_unit : "1mA";
+  capacitive_load_unit (1, pf);
+  pulling_resistance_unit : "1kohm";
+  leakage_power_unit : "1nW";
+  default_fanout_load : 1.0;
+  default_inout_pin_cap : 0.001;
+  default_input_pin_cap : 0.001;
+  default_output_pin_cap : 0.0;
+
+  cell (INV) {
+    area : 1.0;
+    pin (A) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (Y) {
+      direction : output;
+      function : "!A";
+    }
+  }
+
+  cell (AND2) {
+    area : 2.0;
+    pin (A) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (B) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (Y) {
+      direction : output;
+      function : "(A * B)";
+    }
+  }
+
+  cell (OR2) {
+    area : 2.0;
+    pin (A) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (B) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (Y) {
+      direction : output;
+      function : "(A + B)";
+    }
+  }
+
+  /* two input mux: Y = S ? A1 : A0. Lets a test check that a next_state */
+  /* shaped like D * EN + IQ * !EN can be recognized and built as ONE */
+  /* cell instead of a 2xAND2 + OR2 + INV cone, the findMux2 idea. Area sits */
+  /* between a single gate and the 4 gate cone it replaces. */
+  cell (MUX2) {
+    area : 3.0;
+    pin (A0) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (A1) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (S) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (Y) {
+      direction : output;
+      function : "(A0 * !S) + (A1 * S)";
+    }
+  }
+
+  cell (TIE1) {
+    area : 1.0;
+    pin (Y) {
+      direction : output;
+      function : "1";
+    }
+  }
+
+  cell (TIE0) {
+    area : 1.0;
+    pin (Y) {
+      direction : output;
+      function : "0";
+    }
+  }
+
+  cell (DFF_P) {
+    area : 4.0;
+    ff (IQ, IQN) {
+      clocked_on : "CK";
+      next_state : "D";
+    }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (CK) {
+      direction : input;
+      clock : true;
+      capacitance : 0.001;
+    }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
+    }
+  }
+
+  cell (DFF_P_QN) {
+    area : 4.0;
+    ff (IQ, IQN) {
+      clocked_on : "CK";
+      next_state : "D";
+    }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (CK) {
+      direction : input;
+      clock : true;
+      capacitance : 0.001;
+    }
+    pin (QN) {
+      direction : output;
+      function : "IQN";
+    }
+  }
+
+  cell (DFF_P_ND) {
+    area : 3.5;
+    ff (IQ, IQN) {
+      clocked_on : "CK";
+      next_state : "!D";
+    }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (CK) {
+      direction : input;
+      clock : true;
+      capacitance : 0.001;
+    }
+    pin (QN) {
+      direction : output;
+      function : "IQ";
+    }
+  }
+
+  cell (DFFE_PP) {
+    area : 5.0;
+    ff (IQ, IQN) {
+      clocked_on : "CK";
+      next_state : "(D * EN) + (IQ * !EN)";
+    }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (EN) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (CK) {
+      direction : input;
+      clock : true;
+      capacitance : 0.001;
+    }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
+    }
+  }
+
+  cell (DFF_PN0) {
+    area : 5.0;
+    ff (IQ, IQN) {
+      clocked_on : "CK";
+      next_state : "D";
+      clear : "!RN";
+    }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (RN) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (CK) {
+      direction : input;
+      clock : true;
+      capacitance : 0.001;
+    }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
+    }
+  }
+
+  cell (DFF_P_QQN) {
+    area : 5.0;
+    ff (IQ, IQN) {
+      clocked_on : "CK";
+      next_state : "D";
+    }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (CK) {
+      direction : input;
+      clock : true;
+      capacitance : 0.001;
+    }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
+    }
+    pin (QN) {
+      direction : output;
+      function : "IQN";
+    }
+  }
+
+  cell (DFF_P_ODD) {
+    area : 5.0;
+    ff (IQ, IQN) {
+      clocked_on : "CK";
+      next_state : "D";
+    }
+    pin (D) {
+      direction : input;
+      capacitance : 0.001;
+    }
+    pin (CK) {
+      direction : input;
+      clock : true;
+      capacitance : 0.001;
+    }
+    pin (Q) {
+      direction : output;
+      function : "IQ";
+    }
+    pin (Y) {
+      direction : output;
+      function : "IQ & D";
+    }
+  }
+
+}

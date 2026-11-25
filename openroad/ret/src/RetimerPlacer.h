@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <optional>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -56,9 +57,9 @@ class RetimerPlacer
   void prepare();
   // The libraries and the don't-use cells can change between retime calls.
   void forgetCells() { equivalent_masters_.clear(); }
-  // `skip`: the cells that were unplaced before this trial.
+  // `skip`: the names of the cells that were unplaced before this trial.
   PlaceStats placeNewCells(odb::dbBlock* block,
-                           const std::unordered_set<odb::dbInst*>& skip,
+                           const std::unordered_set<std::string>& skip,
                            est::IncrementalParasiticsGuard& guard);
   // The cells a register of this cell can be built from.
   std::vector<odb::dbMaster*> registerCells(odb::dbMaster* master);
@@ -87,8 +88,10 @@ class RetimerPlacer
   };
 
   // The box around the placed cells `inst` connects to, leaving out a
-  // register's clock and control nets; nullopt when none is placed yet.
-  std::optional<odb::Rect> neighborBox(odb::dbInst* inst) const;
+  // register's clock and control nets and a gate's input nets with more
+  // placed cells than the bound; nullopt when none is placed yet.
+  std::optional<odb::Rect> neighborBox(odb::dbInst* inst,
+                                       int max_input_neighbors) const;
   // Centers the cell on (x, y) and marks it placed.
   void moveTo(odb::dbInst* inst, int x, int y);
 
@@ -99,16 +102,14 @@ class RetimerPlacer
                   est::IncrementalParasiticsGuard& guard);
   // The registers with negative slack, each with its candidates.
   std::vector<CellChoice> cellChoices(
-      const std::vector<odb::dbInst*>& registers,
-      est::IncrementalParasiticsGuard& guard);
+      const std::vector<odb::dbInst*>& registers);
   // Every register tries its candidate of this rank in one STA update.
   void tryRank(std::vector<CellChoice>& choices,
                size_t rank,
                est::IncrementalParasiticsGuard& guard);
   // Returns how many registers changed cell.
   static int swapToBest(std::vector<CellChoice>& choices);
-  PinSlack pinSlack(odb::dbInst* inst,
-                    est::IncrementalParasiticsGuard& guard) const;
+  PinSlack pinSlack(odb::dbInst* inst) const;
   static bool betterSlack(const PinSlack& a, const PinSlack& b);
 
   // The other cells of the same function and site, smallest first.

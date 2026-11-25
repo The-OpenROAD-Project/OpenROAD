@@ -286,6 +286,7 @@ TEST_F(SequentialUnmapperRunTest, CellsStayInTheRegistersModule)
   ret::SequentialUnmapper unmapper(getDb(), getSta(), getLogger());
   ASSERT_TRUE(unmapper.prepare());
   unmapper.run();
+  expectSane();
 
   EXPECT_EQ(countMaster("DFFE_PP"), 0);
   EXPECT_EQ(countMaster("DFF_P"), 2);
@@ -311,6 +312,92 @@ TEST_F(SequentialUnmapperRunTest, CellsStayInTheRegistersModule)
   ASSERT_TRUE(isMaster(base, "DFF_P"));
   EXPECT_EQ(base->getModule(), child);
   EXPECT_EQ(base->findITerm("CK")->getNet(), block_->findNet("clk"));
+}
+
+// A flop with Q and QN both loaded: the Q loads read the base flop, the QN
+// loads an inverter of it, and both old nets are deleted.
+TEST_F(SequentialUnmapperRunTest, BothOutputsLoaded)
+{
+  ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kTwoOutputs}));
+  makeInputPorts({"d1", "clk"});
+
+  tst::InstOptions op;
+  op.iterms = {{"d1", "D"}, {"clk", "CK"}, {"q1", "Q"}, {"qn1", "QN"}};
+  makeInst(block_, getDb()->findMaster("DFF_P_QQN"), "ff1", op);
+  tst::InstOptions oq;
+  oq.iterms = {{"q1", "A"}, {"o_q", "Y"}};
+  odb::dbInst* load_q
+      = makeInst(block_, getDb()->findMaster("INV"), "load_q", oq);
+  tst::InstOptions oqn;
+  oqn.iterms = {{"qn1", "A"}, {"o_qn", "Y"}};
+  odb::dbInst* load_qn
+      = makeInst(block_, getDb()->findMaster("INV"), "load_qn", oqn);
+  makeOutputPort("o_q");
+  makeOutputPort("o_qn");
+
+  ret::SequentialUnmapper unmapper(getDb(), getSta(), getLogger());
+  ASSERT_TRUE(unmapper.prepare());
+  EXPECT_EQ(unmapper.run(), 1);
+  expectSane();
+
+  EXPECT_EQ(countMaster("DFF_P_QQN"), 0);
+  EXPECT_EQ(countMaster("DFF_P"), 1);
+  EXPECT_EQ(countMaster("INV"), 3);
+  EXPECT_EQ(block_->findNet("q1"), nullptr);
+  EXPECT_EQ(block_->findNet("qn1"), nullptr);
+
+  odb::dbInst* base = driverOf(load_q->findITerm("A")->getNet());
+  ASSERT_TRUE(isMaster(base, "DFF_P"));
+  odb::dbInst* inv = driverOf(load_qn->findITerm("A")->getNet());
+  ASSERT_TRUE(isMaster(inv, "INV"));
+  EXPECT_EQ(driverOf(inputNets(inv).at(0)), base);
+}
+
+// An inverted output with no load gets no inverter, and its net goes with
+// the register.
+TEST_F(SequentialUnmapperRunTest, UnloadedOutputGetsNoInverter)
+{
+  ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kTwoOutputs}));
+  makeInputPorts({"d1", "clk"});
+
+  tst::InstOptions op;
+  op.iterms = {{"d1", "D"}, {"clk", "CK"}, {"q1", "Q"}, {"qn1", "QN"}};
+  makeInst(block_, getDb()->findMaster("DFF_P_QQN"), "ff1", op);
+  tst::InstOptions oq;
+  oq.iterms = {{"q1", "A"}, {"o_q", "Y"}};
+  makeInst(block_, getDb()->findMaster("INV"), "load_q", oq);
+  makeOutputPort("o_q");
+
+  ret::SequentialUnmapper unmapper(getDb(), getSta(), getLogger());
+  ASSERT_TRUE(unmapper.prepare());
+  EXPECT_EQ(unmapper.run(), 1);
+  expectSane();
+
+  EXPECT_EQ(countMaster("DFF_P"), 1);
+  EXPECT_EQ(countMaster("INV"), 1);
+  EXPECT_EQ(block_->findNet("qn1"), nullptr);
+}
+
+// A register with an output that does not read the state is left alone.
+TEST_F(SequentialUnmapperRunTest, OutputNotReadingStateIsSkipped)
+{
+  ASSERT_NO_FATAL_FAILURE(setUpChipForTest({kTwoOutputs}));
+  makeInputPorts({"d1", "clk"});
+
+  tst::InstOptions op;
+  op.iterms = {{"d1", "D"}, {"clk", "CK"}, {"q1", "Q"}, {"y1", "Y"}};
+  odb::dbInst* ff
+      = makeInst(block_, getDb()->findMaster("DFF_P_ODD"), "ff1", op);
+  makeOutputPort("q1");
+  makeOutputPort("y1");
+
+  ret::SequentialUnmapper unmapper(getDb(), getSta(), getLogger());
+  ASSERT_TRUE(unmapper.prepare());
+  EXPECT_EQ(unmapper.run(), 0);
+
+  EXPECT_EQ(block_->findInst("ff1"), ff);
+  EXPECT_EQ(countMaster("DFF_P"), 0);
+  EXPECT_EQ(block_->findNet("y1"), ff->findITerm("Y")->getNet());
 }
 
 }  // namespace

@@ -2,8 +2,8 @@
 // next_state "!D") and is the only small flop of the library.
 //   cone 1  r1 -> inverters and a buffer: all self-dual, so r1 slides forward
 //           and stays a DFFHQNx1.
-//   cone 2  r4, r5 -> NAND: not self-dual, so both are unmapped to the plain
-//           DFFHQx4 plus an inverter before they merge.
+//   cone 2  r4, r5 -> NAND: not self-dual, so both would be unmapped to the
+//           plain DFFHQx4 plus an inverter before they merge.
 //   cone 3  r7, r8, r9 -> majority gate: self-dual, so the three registers
 //           merge across it into one DFFHQNx1.
 // rst_n is a synchronous reset in logic, so every register settles to a

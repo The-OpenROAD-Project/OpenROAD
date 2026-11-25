@@ -2,6 +2,7 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc", "python_wrap_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
@@ -103,12 +104,45 @@ tcl_wrap_cc(
     namespace_prefix = "ret",
     root_swig_src = "src/ret.i",
     swig_includes = [
-        "openroad/ret/src",
+        "src",
+    ],
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "include/ret/Retimer.h",
+        "src/ret-py.i",
+        "//:error_swig-py",
+    ],
+    module = "ret_py",
+    root_swig_src = "src/ret-py.i",
+    swig_includes = [
+        "include",
+        "src",
     ],
 )
 
 exports_files(["README.md"])
 
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/ret.tcl",
+    ],
+    visibility = ["//openroad/ret/test:__pkg__"],
+)
+
 messages_txt(
-    visibility = ["//docs:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//openroad/ret/test:__pkg__",
+    ],
+)
+
+python_wrap_library(
+    name = "py_wrap",
+    includes = ["src"],
+    deps = [":ret"],
 )

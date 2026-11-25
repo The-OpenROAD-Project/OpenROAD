@@ -39,6 +39,12 @@ foreach inst [[ord::get_db_block] getInsts] {
   }
 }
 puts "unplaced instances: $unplaced"
+foreach inst [[ord::get_db_block] getInsts] {
+  if { [string match "ret_ff*" [$inst getName]] } {
+    lassign [$inst getLocation] x y
+    puts "[$inst getName] at [ord::dbu_to_microns $x] [ord::dbu_to_microns $y]"
+  }
+}
 run_dsec_test retime_slack_search \
   -liberty_files Nangate45/Nangate45_typ.lib \
   -clock clk -resetn rst_n

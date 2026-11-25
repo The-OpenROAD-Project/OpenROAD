@@ -54,6 +54,9 @@ class SequentialUnmapperFixture : public tst::Fixture
   // No plain flip-flop; self-contained, so it is loaded alone.
   static constexpr LibPair kAsyncOnly{"sequnmap_async_only.lef",
                                       "sequnmap_async_only.lib"};
+  // kBasic plus flops with two outputs; self-contained, so it is loaded alone.
+  static constexpr LibPair kTwoOutputs{"sequnmap_two_outputs.lef",
+                                       "sequnmap_two_outputs.lib"};
 
  protected:
   // Load one or more (lef, lib) pairs, then create the chip and block.
@@ -128,8 +131,8 @@ class SequentialUnmapperFixture : public tst::Fixture
   // The gate driving a net (nullptr if undriven or driven by a port).
   static odb::dbInst* driverOf(odb::dbNet* net)
   {
-    odb::dbITerm* out = net ? net->getFirstOutput() : nullptr;
-    return out ? out->getInst() : nullptr;
+    odb::dbITerm* out = net != nullptr ? net->getFirstOutput() : nullptr;
+    return out != nullptr ? out->getInst() : nullptr;
   }
 
   // Nets on a gate's INPUT pins, in pin order.
@@ -153,7 +156,7 @@ class SequentialUnmapperFixture : public tst::Fixture
   {
     sta::LibertyCell* cell
         = getSta()->getDbNetwork()->findLibertyCell(cell_name);
-    return cell ? &cell->sequentials().front() : nullptr;
+    return cell != nullptr ? &cell->sequentials().front() : nullptr;
   }
 
   // ---- functional check ----------------------------------------------------
@@ -205,14 +208,15 @@ class SequentialUnmapperFixture : public tst::Fixture
     if (leaf_it != values.end()) {
       return leaf_it->second;
     }
-    odb::dbITerm* out = net ? net->getFirstOutput() : nullptr;
+    odb::dbITerm* out = net != nullptr ? net->getFirstOutput() : nullptr;
     if (out == nullptr) {
-      ADD_FAILURE() << "undriven net " << (net ? net->getName() : "<null>");
+      ADD_FAILURE() << "undriven net "
+                    << (net != nullptr ? net->getName() : "<null>");
       return -1;
     }
     const sta::dbNetwork* network = getSta()->getDbNetwork();
     sta::LibertyPort* port = network->libertyPort(network->dbToSta(out));
-    const sta::FuncExpr* func = port ? port->function() : nullptr;
+    const sta::FuncExpr* func = port != nullptr ? port->function() : nullptr;
     if (func == nullptr) {
       ADD_FAILURE() << "no liberty function on " << out->getInst()->getName()
                     << "/" << out->getMTerm()->getName();
@@ -221,7 +225,7 @@ class SequentialUnmapperFixture : public tst::Fixture
     odb::dbInst* inst = out->getInst();
     return evalFunc(func, [&](const sta::LibertyPort* p) {
       odb::dbITerm* iterm = inst->findITerm(p->name().c_str());
-      odb::dbNet* in = iterm ? iterm->getNet() : nullptr;
+      odb::dbNet* in = iterm != nullptr ? iterm->getNet() : nullptr;
       if (in == nullptr) {
         ADD_FAILURE() << "floating input " << inst->getName() << "/"
                       << p->name();

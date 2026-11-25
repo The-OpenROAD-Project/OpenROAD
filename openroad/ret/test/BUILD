@@ -1,17 +1,21 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("//test:regression.bzl", "regression_test")
+load("@rules_python//python:defs.bzl", "py_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
 TESTS = [
     "retime_basic",
+    "retime_clock_errors",
     "retime_dont_touch",
     "retime_dsec_async_tied",
     "retime_dsec_class_groups",
     "retime_dsec_deep",
     "retime_dsec_dont_touch_group",
+    "retime_dsec_dont_use",
+    "retime_dsec_dont_use_tie",
     "retime_dsec_enable",
     "retime_dsec_enable_chain",
     "retime_dsec_enable_driver",
@@ -26,7 +30,6 @@ TESTS = [
     "retime_dsec_inverting",
     "retime_dsec_inverting_asap7",
     "retime_dsec_loop",
-    "retime_dsec_plain",
     "retime_dsec_port_fed",
     "retime_dsec_port_only",
     "retime_dsec_port_tap",
@@ -35,21 +38,24 @@ TESTS = [
     "retime_gated_clock",
     "retime_gated_clock_deep",
     "retime_gated_clock_enable",
+    "retime_gated_clock_expr",
     "retime_gated_clock_order",
     "retime_hierarchical",
     "retime_input_limit",
     "retime_input_path",
     "retime_latch",
+    "retime_max_moves",
     "retime_negedge",
     "retime_no_base_cell",
-    "retime_no_clock",
     "retime_no_moves",
+    "retime_no_register",
     "retime_place_size",
     "retime_routed",
+    "retime_scan_set",
     "retime_slack_search",
-    "retime_sta_check_unmap",
-    "retime_two_clocks",
+    "retime_sta_unmap_undo",
     "retime_unmap",
+    "retime_unmap_skip",
     "retime_wire",
 ]
 
@@ -98,4 +104,24 @@ cc_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+)
+
+py_test(
+    name = "ret_man_tcl_check",
+    srcs = ["ret_man_tcl_check.py"],
+    data = ["//openroad/ret:doc_files"],
+    tags = [
+        "doc_check",
+        "py",
+    ],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "ret_readme_msgs_check",
+    data = [
+        "//openroad/ret:doc_files",
+        "//openroad/ret:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
 )

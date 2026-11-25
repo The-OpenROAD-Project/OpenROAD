@@ -4,10 +4,9 @@ worst slack max -0.0486
  Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
 ---------------------------------------------------------------------------
  start |          |        |      |     -0.0486 |       -0.0935 |         8
-     1 |        4 |      1 |    4 |     -0.0486 |       -0.0531 |         7
-     2 |        1 |      1 |    1 |     -0.0486 |       -0.0486 |         7
+     1 |        5 |      1 |    5 |     -0.0486 |       -0.0486 |         7
 ---------------------------------------------------------------------------
-[INFO RET-0053] Retime: slides 5, rounds 2, WNS -0.0486, TNS -0.0486, registers 7, placed 0, resized 0.
+[INFO RET-0053] Retime: slides 5, rounds 1, WNS -0.0486, TNS -0.0486, registers 7, placed 0, resized 0.
 worst slack max -0.0486
 Retime output passed/skipped sequential equivalence test
 No differences found.

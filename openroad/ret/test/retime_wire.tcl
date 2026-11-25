@@ -1,7 +1,7 @@
-# The delay of an edge that loses its register includes the wire into that
-# register.  r1 sits at the end of a long wire from g0; moving it across h1
-# would make that wire part of a register-to-register path, so with a
-# resistive wire nothing moves, and with a fast wire r1 does.
+# r1 sits at the end of a long wire from g0; moving it across h1 puts that
+# wire on the path from r0.  With a resistive wire the search proposes the
+# move and the STA check rejects it, so nothing moves; with a fast wire r1
+# moves.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef

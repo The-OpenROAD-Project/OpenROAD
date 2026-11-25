@@ -1,0 +1,12 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
+[INFO RET-0014] Retiming graph: 23 gates, 20 edges, 6 registers, 11 pinned gates, 0 fenced registers.
+[INFO RET-0008] Unmapped 2 registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.1316 |       -0.1576 |         6
+     1 |        2 |      1 |    2 |     -0.0400 |       -0.0400 |         6
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 2, rounds 1, WNS -0.0400, TNS -0.0400, registers 6, placed 0, resized 0.
+Retime output passed/skipped sequential equivalence test
+No differences found.

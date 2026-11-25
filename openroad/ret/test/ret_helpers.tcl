@@ -104,10 +104,15 @@ proc dsec_abc_exe { } {
 }
 
 # The models of the cells the netlist uses; "" if a register cell has none.
-proc dsec_cell_models { netlist } {
-  set in [open $netlist r]
+proc dsec_read_file { path } {
+  set in [open $path r]
   set text [read $in]
   close $in
+  return $text
+}
+
+proc dsec_cell_models { netlist } {
+  set text [dsec_read_file $netlist]
   set models ""
   set cells [lsort -unique [regexp -all -inline -line {^\s*\S+(?=\s+\S+\s*\()} $text]]
   foreach cell $cells {
@@ -205,21 +210,21 @@ proc run_dsec_test { test args } {
       return
     }
     set wrapped [make_result_file "${test}_${stage}_dsec.v"]
-    set in [open $netlist r]
     set out [open $wrapped w]
-    puts $out "$wrapper$ff_model$models[read $in]"
-    close $in
+    # write_verilog leaves the nets of 1'b0 and 1'b1 undeclared.
+    set text [string map {(zero_) (1'b0) (one_) (1'b1)} \
+                [dsec_read_file $netlist]]
+    puts $out "$wrapper$ff_model$models$text"
     close $out
     set aig [make_result_file "${test}_$stage.aig"]
     set log [make_result_file "${test}_$stage.abc.log"]
+    file delete -force $aig
     catch {
       exec $abc -c "$read_libs; read -m -c $wrapped; init -z; strash;\
                     write_aiger $aig" >& $log
     }
-    set in [open $log r]
-    set text [read $in]
-    close $in
-    if { ![regexp {left 0 black boxes} $text] || ![file exists $aig] } {
+    if { ![regexp {left 0 black boxes} [dsec_read_file $log]]
+         || ![file exists $aig] } {
       puts "Retime output failed sequential equivalence test (see $log)"
       return
     }
@@ -229,10 +234,7 @@ proc run_dsec_test { test args } {
   set after_aig [make_result_file "${test}_after.aig"]
   set abc_log [make_result_file "${test}_dsec.log"]
   catch { exec $abc -c "dsec $before_aig $after_aig" >& $abc_log }
-  set in [open $abc_log r]
-  set text [read $in]
-  close $in
-  if { [string first "Networks are equivalent" $text] >= 0 } {
+  if { [string first "Networks are equivalent" [dsec_read_file $abc_log]] >= 0 } {
     puts "Retime output passed/skipped sequential equivalence test"
   } else {
     puts "Retime output failed sequential equivalence test"

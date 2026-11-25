@@ -1,5 +1,6 @@
-# Forward retiming where the moving register is an enable flop (sky130hd):
-# it is unmapped on demand, then the plain register slides.
+# Forward retiming of an enable flop whose enable is a primary input
+# (sky130hd): it slides as an enable register and keeps its cell and enable
+# net, with nothing unmapped.
 source "helpers.tcl"
 read_lef sky130hd/sky130hd.tlef
 read_lef sky130hd/sky130hd_std_cell.lef

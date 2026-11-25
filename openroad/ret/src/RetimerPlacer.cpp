@@ -5,7 +5,9 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <limits>
 #include <optional>
+#include <string>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -73,11 +75,12 @@ std::vector<odb::dbMaster*> RetimerPlacer::registerCells(odb::dbMaster* master)
   return masters;
 }
 
-std::optional<odb::Rect> RetimerPlacer::neighborBox(odb::dbInst* inst) const
+std::optional<odb::Rect> RetimerPlacer::neighborBox(
+    odb::dbInst* inst,
+    const int max_input_neighbors) const
 {
-  odb::dbITerm* data = inst->getMaster()->isSequential()
-                           ? registerDataPin(sta_, inst)
-                           : nullptr;
+  const bool sequential = inst->getMaster()->isSequential();
+  odb::dbITerm* data = sequential ? registerDataPin(sta_, inst) : nullptr;
   odb::Rect box;
   box.mergeInit();
   bool any = false;
@@ -87,16 +90,24 @@ std::optional<odb::Rect> RetimerPlacer::neighborBox(odb::dbInst* inst) const
         || iterm->getSigType() == odb::dbSigType::CLOCK) {
       continue;
     }
-    if (iterm->getIoType() == odb::dbIoType::INPUT && data != nullptr
-        && iterm != data) {
+    const bool input = iterm->getIoType() == odb::dbIoType::INPUT;
+    if (input && data != nullptr && iterm != data) {
       continue;
     }
+    std::vector<odb::dbInst*> neighbors;
     for (odb::dbITerm* other : net->getITerms()) {
       odb::dbInst* cell = other->getInst();
       if (cell != inst && cell->isPlaced()) {
-        box.merge(cell->getBBox()->getBox());
-        any = true;
+        neighbors.push_back(cell);
       }
+    }
+    if (input && !sequential
+        && static_cast<int>(neighbors.size()) > max_input_neighbors) {
+      continue;
+    }
+    for (odb::dbInst* cell : neighbors) {
+      box.merge(cell->getBBox()->getBox());
+      any = true;
     }
   }
   if (!any) {
@@ -212,12 +223,11 @@ std::vector<odb::dbMaster*> RetimerPlacer::sizeCandidates(odb::dbInst* inst)
 }
 
 std::vector<RetimerPlacer::CellChoice> RetimerPlacer::cellChoices(
-    const std::vector<odb::dbInst*>& registers,
-    est::IncrementalParasiticsGuard& guard)
+    const std::vector<odb::dbInst*>& registers)
 {
   std::vector<CellChoice> choices;
   for (odb::dbInst* inst : registers) {
-    const PinSlack base = pinSlack(inst, guard);
+    const PinSlack base = pinSlack(inst);
     if (base.worst >= 0.0f) {
       continue;
     }
@@ -241,11 +251,12 @@ void RetimerPlacer::tryRank(std::vector<CellChoice>& choices,
     choice.swapped = rank < choice.candidates.size()
                      && choice.inst->swapMaster(choice.candidates[rank]);
   }
+  guard.update();
   for (CellChoice& choice : choices) {
     if (!choice.swapped) {
       continue;
     }
-    const PinSlack slack = pinSlack(choice.inst, guard);
+    const PinSlack slack = pinSlack(choice.inst);
     if (betterSlack(slack, choice.best)) {
       choice.best = slack;
       choice.best_master = choice.candidates[rank];
@@ -274,7 +285,7 @@ int RetimerPlacer::chooseCells(const std::vector<odb::dbInst*>& registers,
                                est::IncrementalParasiticsGuard& guard)
 {
   const StaSlack before = staSlack(sta_, guard);
-  std::vector<CellChoice> choices = cellChoices(registers, guard);
+  std::vector<CellChoice> choices = cellChoices(registers);
   size_t ranks = 0;
   for (const CellChoice& choice : choices) {
     ranks = std::max(ranks, choice.candidates.size());
@@ -301,11 +312,8 @@ int RetimerPlacer::chooseCells(const std::vector<odb::dbInst*>& registers,
   return changed;
 }
 
-RetimerPlacer::PinSlack RetimerPlacer::pinSlack(
-    odb::dbInst* inst,
-    est::IncrementalParasiticsGuard& guard) const
+RetimerPlacer::PinSlack RetimerPlacer::pinSlack(odb::dbInst* inst) const
 {
-  guard.update();
   sta::Graph* graph = sta_->ensureGraph();
   sta::dbNetwork* network = sta_->getDbNetwork();
   PinSlack pin_slack{.worst = sta::INF, .sum = 0.0f};
@@ -342,7 +350,7 @@ bool RetimerPlacer::betterSlack(const PinSlack& a, const PinSlack& b)
 
 PlaceStats RetimerPlacer::placeNewCells(
     odb::dbBlock* block,
-    const std::unordered_set<odb::dbInst*>& skip,
+    const std::unordered_set<std::string>& skip,
     est::IncrementalParasiticsGuard& guard)
 {
   PlaceStats stats;
@@ -350,24 +358,29 @@ PlaceStats RetimerPlacer::placeNewCells(
     return stats;
   }
   std::vector<odb::dbInst*> new_registers;
-  // A cell with only new cells around it waits for a later pass.
-  bool moved = true;
-  while (moved) {
-    moved = false;
-    for (odb::dbInst* inst : block->getInsts()) {
-      if (inst->isPlaced() || skip.contains(inst)) {
-        continue;
+  // A cell with only new cells around it waits for a later pass.  A gate is
+  // first placed without its wide input nets, such as an enable.
+  constexpr int kMaxInputNeighbors = 8;
+  constexpr int kNoBound = std::numeric_limits<int>::max();
+  for (const int bound : {kMaxInputNeighbors, kNoBound}) {
+    bool moved = true;
+    while (moved) {
+      moved = false;
+      for (odb::dbInst* inst : block->getInsts()) {
+        if (inst->isPlaced() || skip.contains(inst->getName())) {
+          continue;
+        }
+        const std::optional<odb::Rect> box = neighborBox(inst, bound);
+        if (!box) {
+          continue;
+        }
+        moveTo(inst, box->xCenter(), box->yCenter());
+        if (inst->getMaster()->isSequential()) {
+          new_registers.push_back(inst);
+        }
+        ++stats.placed;
+        moved = true;
       }
-      const std::optional<odb::Rect> box = neighborBox(inst);
-      if (!box) {
-        continue;
-      }
-      moveTo(inst, box->xCenter(), box->yCenter());
-      if (inst->getMaster()->isSequential()) {
-        new_registers.push_back(inst);
-      }
-      ++stats.placed;
-      moved = true;
     }
   }
   if (!new_registers.empty()) {

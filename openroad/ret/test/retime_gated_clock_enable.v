@@ -1,7 +1,6 @@
 // i4 drives the GATE pin of the clock gate icg.  Crossing i4 would take re
 // from in front of it and put no register behind it: the clock of r1 would
-// be gated one cycle early.  i4 is never crossed, and re moves forward only
-// as far as its input.
+// be gated one cycle early.  i4 is never crossed.
 module top (a, b, rst_n, clk, y);
   input a;
   input b;

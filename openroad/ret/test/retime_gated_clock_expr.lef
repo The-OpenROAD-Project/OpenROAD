@@ -1,0 +1,45 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+MACRO DFFG_X1
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 3.23 BY 1.4 ;
+  SYMMETRY X Y ;
+  SITE FreePDK45_38x28_10R_NP_162NW_34O ;
+  PIN D
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 0.81 0.53 0.97 0.7 ;
+    END
+  END D
+  PIN CK
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 1.56 0.53 1.67 0.7 ;
+    END
+  END CK
+  PIN EN
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 2.0 0.53 2.11 0.7 ;
+    END
+  END EN
+  PIN Q
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+        RECT 3.1 0.26 3.17 1.13 ;
+    END
+  END Q
+END DFFG_X1
+
+END LIBRARY

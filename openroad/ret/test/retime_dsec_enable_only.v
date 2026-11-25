@@ -1,7 +1,7 @@
 // rc drives only the enable pin of r2, a control pin, so no edge of the
 // retiming graph leaves i4.  Crossing i4 would take r1 from in front of it
 // and put no register behind it: r2 would see its enable one cycle early.
-// i4 is never crossed, and r1 moves forward only as far as its input.
+// i4 is never crossed.
 // rst_n is a synchronous reset in logic, so every register settles to a
 // defined value for the sequential equivalence check.
 module top (a, b, rst_n, clk, y);

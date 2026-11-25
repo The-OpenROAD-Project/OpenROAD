@@ -12,12 +12,12 @@ tns max -0.0485
  Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
 ---------------------------------------------------------------------------
  start |          |        |      |     -0.0485 |       -0.0485 |         3
-     1 |        5 |      1 |    5 |     -0.0045 |       -0.0045 |         2
-     2 |        1 |      1 |    1 |      0.0076 |        0.0000 |         2
+     1 |        6 |      1 |    6 |      0.0076 |        0.0000 |         2
 ---------------------------------------------------------------------------
-[INFO RET-0053] Retime: slides 6, rounds 2, WNS 0.0076, TNS 0.0000, registers 2, placed 2, resized 0.
+[INFO RET-0053] Retime: slides 6, rounds 1, WNS 0.0076, TNS 0.0000, registers 2, placed 1, resized 0.
 worst slack max 0.0076
 tns max 0.0000
 unplaced instances: 0
+ret_ff_1 at 51.265 2.8
 Retime output passed/skipped sequential equivalence test
 No differences found.

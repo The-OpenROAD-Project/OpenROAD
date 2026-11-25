@@ -29,9 +29,13 @@ namespace ret {
 class StaCheck
 {
  public:
-  // Runs the search with a slide limit (<= 0: none) and applies it.  Returns
-  // the number of slides.
-  using Search = std::function<int(int max_moves)>;
+  struct SearchResult
+  {
+    int slides = 0;   // negative when they were not applied
+    int largest = 0;  // the most slides any search of the trial proposed
+  };
+  // Runs the search with a slide limit (<= 0: none) and applies it.
+  using Search = std::function<SearchResult(int max_moves)>;
 
   StaCheck(sta::dbSta* sta,
            utl::Logger* logger,
@@ -50,12 +54,14 @@ class StaCheck
     StaSlack slack;
     int kept = 0;
     int proposed = 0;
+    int largest = 0;
     int trials = 0;
     PlaceStats placed;
   };
   struct Trial
   {
     int slides = 0;
+    int largest = 0;
     StaSlack slack;
     PlaceStats placed;
   };
@@ -74,7 +80,8 @@ class StaCheck
                  const std::string& kept,
                  const StaSlack& slack,
                  int registers) const;
-  std::unordered_set<odb::dbInst*> unplacedCells() const;
+  // By name: a cell the trial creates can take the address of a deleted one.
+  std::unordered_set<std::string> unplacedCells() const;
   int registerCount() const;
 
   sta::dbSta* sta_ = nullptr;

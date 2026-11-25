@@ -1,0 +1,32 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO IFP-0001] Added 14 rows of 18421 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 3500.000 20.000 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 3499.990 19.600 ) um
+[INFO IFP-0102] Core area:                        68599.804 um^2
+[INFO IFP-0103] Total instances area:                44.954 um^2
+[INFO IFP-0104] Effective utilization:                0.001
+[INFO IFP-0105] Number of instances:                     24
+worst slack max -0.0832
+tns max -0.1553
+[INFO RET-0014] Retiming graph: 18 gates, 16 edges, 6 registers, 8 pinned gates, 0 fenced registers.
+[INFO RET-0008] Unmapped 2 registers.
+[INFO RET-0008] Unmapped 2 registers.
+[INFO RET-0008] Unmapped 2 registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.0832 |       -0.1553 |         6
+     1 |       10 |      5 |    1 |     -0.0721 |       -0.1204 |         5
+[INFO RET-0008] Unmapped 2 registers.
+[INFO RET-0008] Unmapped 2 registers.
+[INFO RET-0008] Unmapped 2 registers.
+[INFO RET-0008] Unmapped 2 registers.
+     2 |        9 |      4 |    0 |     -0.0721 |       -0.1204 |         5
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 1, rounds 1, WNS -0.0721, TNS -0.1204, registers 5, placed 1, resized 0.
+worst slack max -0.0721
+tns max -0.1204
+r4: DFF_X1
+r5: DFF_X1
+unmap cells: unmap_ff_0 unmap_inv_2
+Retime output passed/skipped sequential equivalence test
+No differences found.

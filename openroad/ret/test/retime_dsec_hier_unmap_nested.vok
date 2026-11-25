@@ -45,9 +45,10 @@ module leaf_a (a,
  wire n4;
  wire n5;
  wire n6;
- wire q1n;
- wire q2n;
+ wire ret_net_9;
  wire q3;
+ wire unmap_net_2;
+ wire unmap_net_4;
 
  AND2_X1 g0 (.A1(a),
     .A2(rn),
@@ -55,16 +56,16 @@ module leaf_a (a,
  AND2_X1 g1 (.A1(b),
     .A2(rn),
     .ZN(d2));
- NAND2_X1 g2 (.A1(q1n),
-    .A2(q2n),
+ NAND2_X1 g2 (.A1(unmap_net_2),
+    .A2(unmap_net_4),
     .ZN(n1));
- INV_X1 g3 (.A(n1),
+ INV_X16 g3 (.A(n1),
     .ZN(n2));
  INV_X1 g4 (.A(n2),
     .ZN(n3));
  INV_X1 g5 (.A(n3),
     .ZN(n4));
- INV_X1 g6 (.A(n4),
+ INV_X1 g6 (.A(ret_net_9),
     .ZN(n5));
  INV_X1 g7 (.A(n5),
     .ZN(n6));
@@ -73,15 +74,16 @@ module leaf_a (a,
     .ZN(d3));
  BUF_X1 g9 (.A(q3),
     .Z(y));
- DFF_X1 r1 (.D(d1),
-    .CK(ck),
-    .QN(q1n));
- DFF_X1 r2 (.D(d2),
-    .CK(ck),
-    .QN(q2n));
  DFF_X1 r3 (.D(d3),
     .CK(ck),
     .Q(q3));
+ DFF_X1 ret_ff_9 (.D(n4),
+    .CK(ck),
+    .Q(ret_net_9));
+ INV_X1 unmap_inv_2 (.A(d1),
+    .ZN(unmap_net_2));
+ INV_X1 unmap_inv_4 (.A(d2),
+    .ZN(unmap_net_4));
 endmodule
 module leaf_b (a,
     b,
@@ -101,9 +103,10 @@ module leaf_b (a,
  wire n2;
  wire n3;
  wire n4;
- wire q1n;
- wire q2n;
+ wire ret_net_10;
  wire q3;
+ wire unmap_net_6;
+ wire unmap_net_8;
 
  AND2_X1 g0 (.A1(a),
     .A2(rn),
@@ -111,29 +114,30 @@ module leaf_b (a,
  AND2_X1 g1 (.A1(b),
     .A2(rn),
     .ZN(d2));
- NAND2_X1 g2 (.A1(q1n),
-    .A2(q2n),
+ NAND2_X1 g2 (.A1(unmap_net_6),
+    .A2(unmap_net_8),
     .ZN(n1));
- INV_X1 g3 (.A(n1),
+ INV_X16 g3 (.A(n1),
     .ZN(n2));
  INV_X1 g4 (.A(n2),
     .ZN(n3));
- INV_X1 g5 (.A(n3),
+ INV_X1 g5 (.A(ret_net_10),
     .ZN(n4));
  AND2_X1 g8 (.A1(n4),
     .A2(rn),
     .ZN(d3));
  BUF_X1 g9 (.A(q3),
     .Z(y));
- DFF_X1 r1 (.D(d1),
-    .CK(ck),
-    .QN(q1n));
- DFF_X1 r2 (.D(d2),
-    .CK(ck),
-    .QN(q2n));
  DFF_X1 r3 (.D(d3),
     .CK(ck),
     .Q(q3));
+ DFF_X1 ret_ff_10 (.D(n3),
+    .CK(ck),
+    .Q(ret_net_10));
+ INV_X1 unmap_inv_6 (.A(d1),
+    .ZN(unmap_net_6));
+ INV_X1 unmap_inv_8 (.A(d2),
+    .ZN(unmap_net_8));
 endmodule
 module mid (a,
     b,

@@ -1,3 +1,5 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [ERROR RET-0030] No clock defined.
 RET-0030
+[ERROR RET-0033] 2 clocks defined; only single-clock designs can be retimed.
+RET-0033

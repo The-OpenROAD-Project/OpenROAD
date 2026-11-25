@@ -29,6 +29,8 @@ const sta::Sequential* singleSequential(sta::dbSta* sta, odb::dbInst* inst);
 std::vector<sta::LibertyCell*> libertyCells(sta::dbSta* sta);
 
 bool isNegedge(const sta::Sequential* seq);
+// Clocked by one pin or its inverse, not by an expression such as CK & EN.
+bool hasSimpleClock(const sta::Sequential* seq);
 
 // Whether the output whose function is `func` reads the state inverted;
 // nullopt when it does not read the state.
@@ -57,8 +59,9 @@ bool inactiveAsyncControls(const sta::LibertyCell* cell,
                            const sta::Sequential* seq,
                            PinConstants& constants);
 
-// Deletes a register and the tie cells that held only its asynchronous
-// controls.  In a hierarchical netlist a tie cell in another module stays.
+// Deletes a register, its output nets with no load, and the tie cells that
+// held only its asynchronous controls.  In a hierarchical netlist a tie cell
+// in another module stays.
 void deleteRegister(sta::dbSta* sta, odb::dbInst* inst);
 
 bool isRegisterDataPin(sta::dbSta* sta, odb::dbITerm* pin);

@@ -1,14 +1,22 @@
 [INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
 [INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
-worst slack max -0.1316
+[INFO IFP-0001] Added 7 rows of 434 site unithd.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 200.000 20.000 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 199.640 19.040 ) um
+[INFO IFP-0102] Core area:                         3801.146 um^2
+[INFO IFP-0103] Total instances area:               272.762 um^2
+[INFO IFP-0104] Effective utilization:                0.072
+[INFO IFP-0105] Number of instances:                     29
+worst slack max -0.1412
 [INFO RET-0014] Retiming graph: 23 gates, 20 edges, 6 registers, 11 pinned gates, 0 fenced registers.
 [INFO RET-0008] Unmapped 2 registers.
  Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
 ---------------------------------------------------------------------------
- start |          |        |      |     -0.1316 |       -0.1576 |         6
-     1 |        2 |      1 |    2 |     -0.0400 |       -0.0400 |         6
+ start |          |        |      |     -0.1412 |       -0.1693 |         6
+     1 |        2 |      1 |    2 |     -0.0410 |       -0.0410 |         6
 ---------------------------------------------------------------------------
-[INFO RET-0053] Retime: slides 2, rounds 1, WNS -0.0400, TNS -0.0400, registers 6, placed 0, resized 0.
-worst slack max -0.0400
+[INFO RET-0053] Retime: slides 2, rounds 1, WNS -0.0410, TNS -0.0410, registers 6, placed 12, resized 0.
+worst slack max -0.0410
+unplaced instances: 0
 Retime output passed/skipped sequential equivalence test
 No differences found.

@@ -3,9 +3,10 @@
 // feed a NAND, which is not self-dual, so they are unmapped to a plain
 // register plus an inverter before they merge.  The cells that replace them
 // are created in their own leaf, two levels down, and each leaf is handled
-// on its own.  leaf_b has the shorter cone.  rst_n is a synchronous reset in
-// logic, so every register settles to a defined value for the sequential
-// equivalence check.
+// on its own.  leaf_b has the shorter cone.  g3 is an INV_X16: its load
+// slows the NAND enough that the first slide across it pays for the inverter
+// the unmapping adds.  rst_n is a synchronous reset in logic, so every
+// register settles to a defined value for the sequential equivalence check.
 module leaf_a (a, b, rn, ck, y);
   input a;
   input b;
@@ -19,7 +20,7 @@ module leaf_a (a, b, rn, ck, y);
   DFF_X1 r1 (.D(d1), .CK(ck), .QN(q1n));
   DFF_X1 r2 (.D(d2), .CK(ck), .QN(q2n));
   NAND2_X1 g2 (.A1(q1n), .A2(q2n), .ZN(n1));
-  INV_X1 g3 (.A(n1), .ZN(n2));
+  INV_X16 g3 (.A(n1), .ZN(n2));
   INV_X1 g4 (.A(n2), .ZN(n3));
   INV_X1 g5 (.A(n3), .ZN(n4));
   INV_X1 g6 (.A(n4), .ZN(n5));
@@ -42,7 +43,7 @@ module leaf_b (a, b, rn, ck, y);
   DFF_X1 r1 (.D(d1), .CK(ck), .QN(q1n));
   DFF_X1 r2 (.D(d2), .CK(ck), .QN(q2n));
   NAND2_X1 g2 (.A1(q1n), .A2(q2n), .ZN(n1));
-  INV_X1 g3 (.A(n1), .ZN(n2));
+  INV_X16 g3 (.A(n1), .ZN(n2));
   INV_X1 g4 (.A(n2), .ZN(n3));
   INV_X1 g5 (.A(n3), .ZN(n4));
   AND2_X1 g8 (.A1(n4), .A2(rn), .ZN(d3));

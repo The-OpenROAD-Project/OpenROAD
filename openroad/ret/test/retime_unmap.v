@@ -1,5 +1,5 @@
-// The register that should move is an enable flop; retime unmaps it to a
-// plain flop plus a mux cone first, then slides the plain flop forward.
+// The register that should move is an enable flop on the enable port en; it
+// slides forward as an enable register.
 module top (a, b, en, clk, y);
   input a;
   input b;

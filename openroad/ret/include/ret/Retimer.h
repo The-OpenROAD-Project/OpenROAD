@@ -56,10 +56,10 @@ class Retimer
 
   struct Sink
   {
-    odb::dbITerm* pin;
-    int wr;  // registers on the edge under the retiming
-    int u;
-    int k;
+    odb::dbITerm* pin = nullptr;
+    int wr = 0;  // registers on the edge under the retiming
+    int u = 0;
+    int k = 0;
   };
 
   // Edges whose register chains start on one driver net with one class of
@@ -77,11 +77,20 @@ class Retimer
   // Flat net to its module net in the group's module; empty when flat.
   using ModNets = std::unordered_map<odb::dbNet*, odb::dbModNet*>;
 
+  // Each register once, in the order first reached; each gate walked once.
+  struct Origins
+  {
+    std::vector<odb::dbInst*> regs;
+    std::unordered_set<odb::dbInst*> seen;
+    std::unordered_set<int> visited;
+    void add(odb::dbInst* reg);
+  };
+
   odb::dbBlock* getBlock() const;
   odb::dbNet* findClockNet(odb::dbBlock* block) const;
   void checkRegisters(odb::dbBlock* block) const;
 
-  // Returns the number of slides.
+  // Returns the number of slides; negative when they were not applied.
   int searchAndApply(odb::dbBlock* block,
                      int max_moves,
                      est::IncrementalParasiticsGuard& guard);
@@ -111,15 +120,16 @@ class Retimer
                                     int u,
                                     int k,
                                     int j,
-                                    std::vector<odb::dbInst*>& out);
+                                    Origins& out);
   static void originRegisters(const RetimingGraph& graph,
                               const FaninIndex& fanin,
                               const std::vector<int>& r,
                               int v,
                               int j,
-                              std::vector<odb::dbInst*>& out);
+                              Origins& out);
 
-  // Returns the slides of the search whose retiming it applied.
+  // Returns the slides of the search whose retiming it applied; negative
+  // when a register could not be unmapped and nothing was applied.
   int applyAfterUnmapping(const RetimingGraph& graph,
                           const Retime& search,
                           const std::unordered_set<odb::dbInst*>& movers,
@@ -185,6 +195,7 @@ class Retimer
 
   odb::dbNet* clock_net_ = nullptr;
   bool report_graph_ = false;  // by the first search of a retime call
+  int largest_search_ = 0;     // the most slides a search of the trial made
 };
 
 }  // namespace ret

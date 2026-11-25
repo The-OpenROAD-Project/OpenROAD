@@ -1,0 +1,12 @@
+[INFO ODB-0227] LEF file: ihp-sg13g2/sg13g2_tech.lef, created 19 layers, 300 vias
+[INFO ODB-0227] LEF file: ihp-sg13g2/sg13g2_stdcell.lef, created 78 library cells
+[INFO RET-0047] No plain D flip-flop; new registers are sg13g2_dfrbp_1 with RESET_B tied high.
+[INFO RET-0014] Retiming graph: 13 gates, 9 edges, 3 registers, 7 pinned gates, 0 fenced registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.1469 |       -0.1469 |         3
+     1 |        5 |      1 |    5 |      0.0064 |        0.0000 |         2
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 5, rounds 1, WNS 0.0064, TNS 0.0000, registers 2, placed 0, resized 0.
+Retime output passed/skipped sequential equivalence test
+No differences found.

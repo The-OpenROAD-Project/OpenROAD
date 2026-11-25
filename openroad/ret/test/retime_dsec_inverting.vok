@@ -6,8 +6,12 @@ module top (a,
     e,
     f,
     g,
+    h,
+    i,
     rst_n,
     s,
+    t,
+    to,
     y,
     z);
  input a;
@@ -18,8 +22,12 @@ module top (a,
  input e;
  input f;
  input g;
+ input h;
+ input i;
  input rst_n;
  output s;
+ output t;
+ output to;
  output y;
  output z;
 
@@ -27,6 +35,8 @@ module top (a,
  wire c2;
  wire c3;
  wire d1;
+ wire d12;
+ wire d13;
  wire d3;
  wire d4;
  wire d5;
@@ -36,6 +46,8 @@ module top (a,
  wire d9;
  wire dc;
  wire ds;
+ wire dt;
+ wire du;
  wire fc;
  wire fs;
  wire m1;
@@ -48,19 +60,32 @@ module top (a,
  wire n3;
  wire n4;
  wire n5;
+ wire ret_net_5;
  wire q1n;
  wire q3;
  wire q4n;
  wire q5n;
  wire q6;
- wire q7n;
- wire q8n;
- wire q9n;
+ wire ret_net_8;
+ wire ret_net_7;
+ wire ret_net_6;
  wire qc;
  wire qs;
+ wire qt;
+ wire qu;
  wire s1;
  wire s2;
  wire s3;
+ wire t1;
+ wire t2;
+ wire t3;
+ wire tc;
+ wire ts;
+ wire u1;
+ wire u2;
+ wire u3;
+ wire unmap_net_2;
+ wire unmap_net_4;
 
  AND2_X1 g0 (.A1(a),
     .A2(rst_n),
@@ -100,12 +125,12 @@ module top (a,
  AND2_X1 g22 (.A1(g),
     .A2(rst_n),
     .ZN(d9));
- FA_X1 g23 (.A(q7n),
-    .B(q8n),
-    .CI(q9n),
+ FA_X1 g23 (.A(d7),
+    .B(d8),
+    .CI(d9),
     .CO(fc),
     .S(fs));
- INV_X1 g24 (.A(fs),
+ INV_X1 g24 (.A(ret_net_6),
     .ZN(s1));
  INV_X1 g25 (.A(s1),
     .ZN(s2));
@@ -122,7 +147,7 @@ module top (a,
     .ZN(n3));
  INV_X1 g30 (.A(c1),
     .ZN(c2));
- INV_X1 g31 (.A(c2),
+ INV_X1 g31 (.A(ret_net_5),
     .ZN(c3));
  AND2_X1 g32 (.A1(c3),
     .A2(rst_n),
@@ -131,8 +156,41 @@ module top (a,
     .Z(co));
  INV_X1 g4 (.A(n3),
     .ZN(n4));
+ AND2_X1 g40 (.A1(h),
+    .A2(rst_n),
+    .ZN(d12));
+ AND2_X1 g41 (.A1(i),
+    .A2(rst_n),
+    .ZN(d13));
+ FA_X1 g43 (.A(unmap_net_2),
+    .B(unmap_net_4),
+    .CI(zero_),
+    .CO(tc),
+    .S(ts));
+ INV_X1 g44 (.A(ret_net_7),
+    .ZN(t1));
+ INV_X1 g45 (.A(t1),
+    .ZN(t2));
+ INV_X1 g46 (.A(t2),
+    .ZN(t3));
+ AND2_X1 g47 (.A1(t3),
+    .A2(rst_n),
+    .ZN(dt));
+ BUF_X1 g48 (.A(qt),
+    .Z(t));
+ INV_X1 g49 (.A(tc),
+    .ZN(u1));
  INV_X1 g5 (.A(n4),
     .ZN(n5));
+ INV_X1 g50 (.A(u1),
+    .ZN(u2));
+ INV_X1 g51 (.A(ret_net_8),
+    .ZN(u3));
+ AND2_X1 g52 (.A1(u3),
+    .A2(rst_n),
+    .ZN(du));
+ BUF_X1 g53 (.A(qu),
+    .Z(to));
  AND2_X1 g6 (.A1(n5),
     .A2(rst_n),
     .ZN(d3));
@@ -147,6 +205,12 @@ module top (a,
  DFF_X1 r11 (.D(dc),
     .CK(clk),
     .Q(qc));
+ DFF_X1 r14 (.D(dt),
+    .CK(clk),
+    .Q(qt));
+ DFF_X1 r15 (.D(du),
+    .CK(clk),
+    .Q(qu));
  DFF_X1 r3 (.D(d3),
     .CK(clk),
     .Q(q3));
@@ -159,13 +223,20 @@ module top (a,
  DFF_X1 r6 (.D(d6),
     .CK(clk),
     .Q(q6));
- DFF_X1 r7 (.D(d7),
+ DFF_X1 ret_ff_5 (.D(c2),
     .CK(clk),
-    .QN(q7n));
- DFF_X1 r8 (.D(d8),
+    .QN(ret_net_5));
+ DFF_X1 ret_ff_6 (.D(fs),
     .CK(clk),
-    .QN(q8n));
- DFF_X1 r9 (.D(d9),
+    .QN(ret_net_6));
+ DFF_X1 ret_ff_7 (.D(ts),
     .CK(clk),
-    .QN(q9n));
+    .Q(ret_net_7));
+ DFF_X1 ret_ff_8 (.D(u2),
+    .CK(clk),
+    .Q(ret_net_8));
+ INV_X1 unmap_inv_2 (.A(d12),
+    .ZN(unmap_net_2));
+ INV_X1 unmap_inv_4 (.A(d13),
+    .ZN(unmap_net_4));
 endmodule

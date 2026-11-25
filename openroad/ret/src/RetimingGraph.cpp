@@ -14,11 +14,35 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "sta/Clock.hh"
+#include "sta/ExceptionPath.hh"
 #include "sta/Mode.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Sdc.hh"
 #include "utl/Logger.h"
 
 namespace ret {
+
+namespace {
+
+// Deleting the register would drop the constraint.
+bool hasSdcConstraint(sta::dbNetwork* network,
+                      const std::vector<const sta::Sdc*>& sdcs,
+                      odb::dbInst* inst)
+{
+  for (const sta::Sdc* sdc : sdcs) {
+    if (sdc->isConstrained(network->dbToSta(inst))) {
+      return true;
+    }
+    for (odb::dbITerm* iterm : inst->getITerms()) {
+      if (sdc->isConstrained(network->dbToSta(iterm))) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+}  // namespace
 
 RetimingGraph::RetimingGraph(odb::dbDatabase* db,
                              sta::dbSta* sta,
@@ -82,7 +106,7 @@ bool RetimingGraph::continuesThrough(odb::dbInst* reg, odb::dbITerm* pin) const
 void RetimingGraph::walkFanout(const int source,
                                odb::dbInst* current,
                                const int weight,
-                               std::vector<odb::dbInst*>& flops,
+                               EdgePhys& chain,
                                std::unordered_set<odb::dbInst*>& visited)
 {
   for (odb::dbITerm* out_pin : current->getITerms()) {
@@ -95,7 +119,7 @@ void RetimingGraph::walkFanout(const int source,
     }
     if (fencesChain(net)) {
       pinned_[source] = true;
-      fenced_.insert(flops.begin(), flops.end());
+      fenced_.insert(chain.flops.begin(), chain.flops.end());
     }
     for (odb::dbITerm* sink : net->getITerms()) {
       if (sink->getIoType() != odb::dbIoType::INPUT) {
@@ -109,9 +133,11 @@ void RetimingGraph::walkFanout(const int source,
         if (!visited.insert(load).second) {
           continue;
         }
-        flops.push_back(load);
-        walkFanout(source, load, weight + 1, flops, visited);
-        flops.pop_back();
+        chain.flops.push_back(load);
+        chain.entries.push_back(sink);
+        walkFanout(source, load, weight + 1, chain, visited);
+        chain.flops.pop_back();
+        chain.entries.pop_back();
         visited.erase(load);
       } else {
         const auto it = index_.find(load);
@@ -119,8 +145,10 @@ void RetimingGraph::walkFanout(const int source,
           continue;
         }
         adj_[source].push_back({.target = it->second, .weight = weight});
-        phys_[source].push_back(
-            {.driver = out_pin, .sink = sink, .flops = flops});
+        phys_[source].push_back({.driver = out_pin,
+                                 .sink = sink,
+                                 .flops = chain.flops,
+                                 .entries = chain.entries});
       }
     }
   }
@@ -132,8 +160,15 @@ bool RetimingGraph::fencesChain(odb::dbNet* net) const
     return true;
   }
   for (odb::dbITerm* sink : net->getITerms()) {
-    if (sink->getIoType() == odb::dbIoType::INPUT) {
+    const odb::dbIoType io = sink->getIoType();
+    if (io != odb::dbIoType::INPUT && io != odb::dbIoType::OUTPUT) {
+      return true;
+    }
+    if (io == odb::dbIoType::INPUT) {
       odb::dbInst* load = sink->getInst();
+      if (load->isDoNotTouch()) {
+        return true;
+      }
       if (load->getMaster()->isSequential()) {
         if (!continuesThrough(load, sink)) {
           return true;
@@ -148,8 +183,8 @@ bool RetimingGraph::fencesChain(odb::dbNet* net) const
 
 bool RetimingGraph::isDontTouch(odb::dbInst* reg) const
 {
-  if (fenced_.contains(reg) || reg->isDoNotTouch()
-      || isDontTouchRegister(sta_, reg)) {
+  if (fenced_.contains(reg) || sdc_registers_.contains(reg)
+      || reg->isDoNotTouch() || isDontTouchRegister(sta_, reg)) {
     return true;
   }
   for (odb::dbITerm* pin : reg->getITerms()) {
@@ -166,20 +201,10 @@ const RegisterClass& RetimingGraph::regClass(odb::dbInst* reg) const
   return reg_class_.at(reg);
 }
 
-odb::dbITerm* RetimingGraph::dataPin(odb::dbInst* reg) const
-{
-  const RegisterClass& cls = regClass(reg);
-  return cls.data != nullptr ? reg->getITerm(cls.data)
-                             : registerDataPin(sta_, reg);
-}
-
 odb::dbNet* RetimingGraph::chainNet(const EdgePhys& phys) const
 {
-  if (phys.flops.empty()) {
-    return phys.driver->getNet();
-  }
-  odb::dbITerm* d = dataPin(phys.flops.front());
-  return d != nullptr ? d->getNet() : nullptr;
+  return phys.entries.empty() ? phys.driver->getNet()
+                              : phys.entries.front()->getNet();
 }
 
 void RetimingGraph::build()
@@ -191,6 +216,7 @@ void RetimingGraph::build()
   index_.clear();
   reg_class_.clear();
   fenced_.clear();
+  findSdcRegisters(block);
   for (odb::dbInst* inst : block->getInsts()) {
     if (inst->getMaster()->isSequential()) {
       reg_class_[inst] = registerClass(sta_, inst);
@@ -214,17 +240,63 @@ void RetimingGraph::build()
     }
     self_dual_[i] = it->second;
   }
+  clearTiedSelfDual();
 
   for (int i = 0; i < n; ++i) {
     markBoundary(nodes_[i], i);
     markDontTouch(nodes_[i], i);
-    std::vector<odb::dbInst*> flops;
+    EdgePhys chain{};
     std::unordered_set<odb::dbInst*> visited;
-    walkFanout(i, nodes_[i], 0, flops, visited);
+    walkFanout(i, nodes_[i], 0, chain, visited);
   }
   pinUnmodeledInputs();
   fenceDontTouch();
   fenceModules();
+}
+
+void RetimingGraph::clearTiedSelfDual()
+{
+  const int n = static_cast<int>(nodes_.size());
+  for (int i = 0; i < n; ++i) {
+    for (odb::dbITerm* pin : nodes_[i]->getITerms()) {
+      odb::dbNet* net = pin->getNet();
+      if (pin->getIoType() == odb::dbIoType::INPUT
+          && !pin->getSigType().isSupply()
+          && (net == nullptr || net->getSigType().isSupply())) {
+        self_dual_[i] = false;
+      }
+    }
+  }
+}
+
+void RetimingGraph::findSdcRegisters(odb::dbBlock* block)
+{
+  sdc_registers_.clear();
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  std::vector<const sta::Sdc*> sdcs;
+  for (const sta::Mode* mode : sta_->modes()) {
+    sdcs.push_back(mode->sdc());
+    for (const auto& [corner, corner_sdc] : mode->cornerSdcs()) {
+      sdcs.push_back(corner_sdc);
+    }
+    for (const sta::ExceptionPath* exception : mode->sdc()->exceptions()) {
+      sta::ExceptionPtIterator pt_iter(exception);
+      while (pt_iter.hasNext()) {
+        for (const sta::Pin* pin : pt_iter.next()->allPins(network)) {
+          odb::dbInst* inst = network->staToDb(network->instance(pin));
+          if (inst != nullptr && inst->getMaster()->isSequential()) {
+            sdc_registers_.insert(inst);
+          }
+        }
+      }
+    }
+  }
+  for (odb::dbInst* inst : block->getInsts()) {
+    if (inst->getMaster()->isSequential()
+        && hasSdcConstraint(network, sdcs, inst)) {
+      sdc_registers_.insert(inst);
+    }
+  }
 }
 
 void RetimingGraph::pinUnmodeledInputs()
@@ -320,8 +392,8 @@ void RetimingGraph::fenceDontTouch()
   std::unordered_map<odb::dbNet*, odb::dbNet*> net_clock;
   for (int u = 0; u < n; ++u) {
     for (const EdgePhys& phys : phys_[u]) {
+      odb::dbNet* net = chainNet(phys);
       for (odb::dbInst* flop : phys.flops) {
-        odb::dbNet* net = chainNet(phys);
         odb::dbNet* clock = registerClockNet(flop);
         if (isDontTouch(flop)
             || net_clock.emplace(net, clock).first->second != clock) {

@@ -10,9 +10,18 @@
 [WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14838, timing group from output port.
 [INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
 [INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
-worst slack max 395.13
+worst slack max -44.87
 [INFO RET-0014] Retiming graph: 29 gates, 26 edges, 9 registers, 12 pinned gates, 0 fenced registers.
-[INFO RET-0053] Retime: slides 0, rounds 0, WNS 395.1260, TNS 0.0000, registers 9, placed 0, resized 0.
-worst slack max 395.13
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |    -44.8740 |     -111.9322 |         9
+     1 |        2 |      1 |    2 |    -32.0823 |      -79.2713 |         7
+     2 |        2 |      1 |    2 |    -32.0823 |      -70.4134 |         7
+     3 |        2 |      1 |    2 |    -32.0823 |      -53.3357 |         7
+     4 |        1 |      1 |    1 |    -32.0823 |      -47.4156 |         7
+     5 |        1 |      1 |    1 |    -32.0823 |      -42.5551 |         7
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 8, rounds 5, WNS -32.0823, TNS -42.5551, registers 7, placed 0, resized 0.
+worst slack max -32.08
 Retime output passed/skipped sequential equivalence test
 No differences found.

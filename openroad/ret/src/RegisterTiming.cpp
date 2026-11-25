@@ -25,6 +25,7 @@ namespace ret {
 
 namespace {
 
+// nullptr is nominal, as in the delay calculator.
 const sta::Pvt* tablePvt(sta::dbSta* sta, const sta::LibertyCell* cell)
 {
   const sta::Pvt* pvt
@@ -41,10 +42,10 @@ float registerClockToQ(sta::dbSta* sta,
                        const float clock_slew,
                        const float load)
 {
-  const sta::Pvt* pvt = cell != nullptr ? tablePvt(sta, cell) : nullptr;
-  if (pvt == nullptr) {
+  if (cell == nullptr) {
     return -1.0f;
   }
+  const sta::Pvt* pvt = tablePvt(sta, cell);
   float worst = -1.0f;
   for (const sta::TimingArcSet* set : cell->timingArcSets()) {
     if (set->role() != sta::TimingRole::regClkToQ()
@@ -71,10 +72,10 @@ float registerSetupTime(sta::dbSta* sta,
                         const float clock_slew,
                         const float data_slew)
 {
-  const sta::Pvt* pvt = cell != nullptr ? tablePvt(sta, cell) : nullptr;
-  if (pvt == nullptr) {
+  if (cell == nullptr) {
     return -1.0f;
   }
+  const sta::Pvt* pvt = tablePvt(sta, cell);
   float worst = -1.0f;
   for (const sta::TimingArcSet* set : cell->timingArcSets()) {
     if (set->role() != sta::TimingRole::setup()) {

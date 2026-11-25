@@ -62,6 +62,15 @@ bool isNegedge(const sta::Sequential* seq)
          && seq->clock()->op() == sta::FuncExpr::Op::not_;
 }
 
+bool hasSimpleClock(const sta::Sequential* seq)
+{
+  const sta::FuncExpr* clock = seq->clock();
+  if (clock != nullptr && clock->op() == sta::FuncExpr::Op::not_) {
+    clock = clock->left();
+  }
+  return clock != nullptr && clock->op() == sta::FuncExpr::Op::port;
+}
+
 std::optional<bool> outputInverted(const sta::FuncExpr* func,
                                    const sta::Sequential* seq)
 {
@@ -258,7 +267,7 @@ class NextStateTable
   {
   }
 
-  bool holdsStateWhen(size_t i, bool v) const
+  bool holdsStateWhen(const size_t i, const bool v) const
   {
     for (uint32_t row = 0; row < rows_; ++row) {
       if (bit(row, i) == v && value(row) != stateBit(row)) {
@@ -268,7 +277,7 @@ class NextStateTable
     return true;
   }
 
-  bool passesWhenEnabled(size_t d, const EnableLevels& enables) const
+  bool passesWhenEnabled(const size_t d, const EnableLevels& enables) const
   {
     for (uint32_t row = 0; row < rows_; ++row) {
       if (enablesActive(row, enables) && value(row) != bit(row, d)) {
@@ -279,10 +288,13 @@ class NextStateTable
   }
 
  private:
-  static bool bit(uint32_t row, size_t i) { return ((row >> i) & 1u) != 0; }
-  bool stateBit(uint32_t row) const { return bit(row, inputs_.size()); }
+  static bool bit(const uint32_t row, const size_t i)
+  {
+    return ((row >> i) & 1u) != 0;
+  }
+  bool stateBit(const uint32_t row) const { return bit(row, inputs_.size()); }
 
-  bool enablesActive(uint32_t row, const EnableLevels& enables) const
+  bool enablesActive(const uint32_t row, const EnableLevels& enables) const
   {
     for (size_t i = 0; i < inputs_.size(); ++i) {
       for (const auto& [port, inactive] : enables) {
@@ -294,7 +306,7 @@ class NextStateTable
     return true;
   }
 
-  bool value(uint32_t row) const
+  bool value(const uint32_t row) const
   {
     Assignment values;
     for (size_t i = 0; i < inputs_.size(); ++i) {
@@ -489,7 +501,7 @@ bool isDontTouchRegister(sta::dbSta* sta, odb::dbInst* inst)
     return true;
   }
   const sta::Sequential* seq = singleSequential(sta, inst);
-  if (seq == nullptr || !seq->isRegister()) {
+  if (seq == nullptr || !seq->isRegister() || !hasSimpleClock(seq)) {
     return true;
   }
   return hasLiveAsyncControl(sta, inst, seq);
@@ -540,6 +552,26 @@ bool inactiveAsyncControls(const sta::LibertyCell* cell,
   return false;
 }
 
+namespace {
+
+// Output nets that hold only the register's own pin.
+std::vector<std::pair<odb::dbNet*, odb::dbModNet*>> unloadedOutputNets(
+    odb::dbInst* inst)
+{
+  std::vector<std::pair<odb::dbNet*, odb::dbModNet*>> nets;
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    odb::dbNet* net = iterm->getNet();
+    if (iterm->getIoType() == odb::dbIoType::OUTPUT && net != nullptr
+        && net->getITerms().size() == 1 && net->getBTerms().empty()
+        && !net->isDoNotTouch()) {
+      nets.emplace_back(net, iterm->getModNet());
+    }
+  }
+  return nets;
+}
+
+}  // namespace
+
 void deleteRegister(sta::dbSta* sta, odb::dbInst* inst)
 {
   sta::dbNetwork* network = sta->getDbNetwork();
@@ -559,6 +591,8 @@ void deleteRegister(sta::dbSta* sta, odb::dbInst* inst)
     }
   }
   odb::dbModule* module = network->hasHierarchy() ? inst->getModule() : nullptr;
+  const std::vector<std::pair<odb::dbNet*, odb::dbModNet*>> unloaded
+      = unloadedOutputNets(inst);
   network->deleteInstance(network->dbToSta(inst));
   for (odb::dbNet* net : control_nets) {
     odb::dbITerm* tie_output = idleTieOutput(sta, net);
@@ -569,6 +603,12 @@ void deleteRegister(sta::dbSta* sta, odb::dbInst* inst)
     }
     odb::dbModNet* mod_net = tie_output->getModNet();
     network->deleteInstance(network->dbToSta(tie_output->getInst()));
+    network->deleteNet(network->dbToSta(net));
+    if (mod_net != nullptr && mod_net->connectionCount() == 0) {
+      odb::dbModNet::destroy(mod_net);
+    }
+  }
+  for (const auto& [net, mod_net] : unloaded) {
     network->deleteNet(network->dbToSta(net));
     if (mod_net != nullptr && mod_net->connectionCount() == 0) {
       odb::dbModNet::destroy(mod_net);

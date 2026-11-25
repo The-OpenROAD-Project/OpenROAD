@@ -3,6 +3,7 @@
 
 #include "StaCheck.h"
 
+#include <cstdlib>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -17,6 +18,8 @@
 namespace ret {
 
 namespace {
+
+constexpr int kSlackDigits = 4;
 
 // Better than b by a cost that weighs the total negative slack like the
 // worst slack, and never below the start on either.
@@ -62,12 +65,12 @@ int StaCheck::registerCount() const
   return count;
 }
 
-std::unordered_set<odb::dbInst*> StaCheck::unplacedCells() const
+std::unordered_set<std::string> StaCheck::unplacedCells() const
 {
-  std::unordered_set<odb::dbInst*> unplaced;
+  std::unordered_set<std::string> unplaced;
   for (odb::dbInst* inst : block_->getInsts()) {
     if (!inst->isPlaced()) {
-      unplaced.insert(inst);
+      unplaced.insert(inst->getName());
     }
   }
   return unplaced;
@@ -85,8 +88,8 @@ void StaCheck::reportRow(const std::string& round,
                   proposed,
                   trials,
                   kept,
-                  sta::delayAsString(slack.worst, 4, sta_),
-                  sta::delayAsString(slack.total, 4, sta_),
+                  sta::delayAsString(slack.worst, kSlackDigits, sta_),
+                  sta::delayAsString(slack.total, kSlackDigits, sta_),
                   registers);
 }
 
@@ -129,8 +132,9 @@ void StaCheck::run(const int max_moves)
     const bool was_whole = whole;
     whole = false;
     if (round.kept == 0) {
-      // Nothing of the whole search kept: on to the short rounds.
-      if (was_whole && round.proposed > 0) {
+      // Nothing of the whole search kept: on to the short rounds, unless a
+      // short round would propose the same slides.
+      if (was_whole && round.largest > kRoundMoves) {
         continue;
       }
       break;
@@ -156,8 +160,8 @@ void StaCheck::run(const int max_moves)
                 "placed {}, resized {}.",
                 total,
                 rounds_kept,
-                sta::delayAsString(after.worst, 4, sta_),
-                sta::delayAsString(after.total, 4, sta_),
+                sta::delayAsString(after.worst, kSlackDigits, sta_),
+                sta::delayAsString(after.total, kSlackDigits, sta_),
                 registerCount(),
                 placed.placed,
                 placed.resized);
@@ -165,12 +169,14 @@ void StaCheck::run(const int max_moves)
 
 StaCheck::Trial StaCheck::runTrial(const int limit, const StaSlack& before)
 {
-  const std::unordered_set<odb::dbInst*> unplaced = unplacedCells();
-  Trial trial{.slides = 0, .slack = before, .placed = {}};
+  const std::unordered_set<std::string> unplaced = unplacedCells();
+  Trial trial{.slides = 0, .largest = 0, .slack = before, .placed = {}};
   odb::dbDatabase::beginEco(block_);
   try {
-    trial.slides = search_(limit);
-    if (trial.slides > 0) {
+    const SearchResult result = search_(limit);
+    trial.slides = std::abs(result.slides);
+    trial.largest = result.largest;
+    if (result.slides > 0) {
       trial.placed = placer_->placeNewCells(block_, unplaced, *guard_);
       trial.slack = staSlack(sta_, *guard_);
       ++trials_;
@@ -229,6 +235,7 @@ StaCheck::Round StaCheck::runRound(const int max_moves)
   round.slack = before;
   const Trial full = runTrial(max_moves, before);
   round.proposed = full.slides;
+  round.largest = full.largest;
   if (full.slides > 0 && betterThan(full.slack, before, before)) {
     keepTrial(full, round);
   } else {

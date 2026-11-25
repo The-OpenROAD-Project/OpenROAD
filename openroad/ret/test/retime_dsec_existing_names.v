@@ -5,7 +5,7 @@
 // are still free.
 //   cone 1  r1, r2 -> NAND: plain registers that merge into one new register.
 //           ret_ff_0 / ret_net_0 are taken by the output register and
-//           ret_net_1 by a net, so the new registers start at ret_ff_2.
+//           ret_net_1 by a net; the new names skip every taken one.
 //   cone 2  r4, r5 (read through QN) -> NAND: both are unmapped first, which
 //           creates unmap_* cells next to the ones already there.  g13 is
 //           an INV_X16: its load slows g12 enough that the first slide

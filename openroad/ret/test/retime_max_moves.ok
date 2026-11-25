@@ -1,0 +1,15 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
+[ERROR STA-0574] -max_moves '-1' is not a positive integer.
+STA-0574
+[ERROR STA-0564] retime positional arguments not supported.
+STA-0564
+[INFO RET-0014] Retiming graph: 14 gates, 12 edges, 5 registers, 6 pinned gates, 0 fenced registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.2379 |       -0.2379 |         5
+     1 |        5 |      1 |    5 |     -0.0980 |       -0.1119 |         4
+     2 |        1 |      1 |    1 |     -0.0450 |       -0.0589 |         3
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 6, rounds 2, WNS -0.0450, TNS -0.0589, registers 3, placed 0, resized 0.
+Retime output passed/skipped sequential equivalence test

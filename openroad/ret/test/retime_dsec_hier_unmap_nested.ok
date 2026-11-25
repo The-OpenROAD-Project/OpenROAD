@@ -1,8 +1,14 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
-worst slack max 0.8170
+worst slack max -0.0885
 [INFO RET-0014] Retiming graph: 18 gates, 16 edges, 6 registers, 8 pinned gates, 0 fenced registers.
-[INFO RET-0053] Retime: slides 0, rounds 0, WNS 0.8170, TNS 0.0000, registers 6, placed 0, resized 0.
-worst slack max 0.8170
+[INFO RET-0008] Unmapped 4 registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.0885 |       -0.1604 |         6
+     1 |       11 |      1 |   11 |     -0.0086 |       -0.0130 |         4
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 11, rounds 1, WNS -0.0086, TNS -0.0130, registers 4, placed 0, resized 0.
+worst slack max -0.0086
 Retime output passed/skipped sequential equivalence test
 No differences found.

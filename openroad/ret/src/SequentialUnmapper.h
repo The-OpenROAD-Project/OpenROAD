@@ -19,6 +19,10 @@ class LibertyPort;
 class Sequential;
 }  // namespace sta
 
+namespace rsz {
+class Resizer;
+}
+
 namespace utl {
 class Logger;
 }
@@ -37,11 +41,17 @@ class SequentialUnmapper
   // Pins held at a constant, as (pin, tied high).
   using PinTies = std::vector<std::pair<odb::dbMTerm*, bool>>;
 
-  SequentialUnmapper(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
+  // resizer: its set_dont_use cells are not used; nullptr: only the liberty
+  // dont_use attribute counts.
+  SequentialUnmapper(odb::dbDatabase* db,
+                     sta::dbSta* sta,
+                     utl::Logger* logger,
+                     rsz::Resizer* resizer = nullptr);
 
   bool prepare();
 
-  void run(const std::unordered_set<odb::dbInst*>* candidates = nullptr);
+  // Returns the number of registers unmapped.
+  int run(const std::unordered_set<odb::dbInst*>* candidates = nullptr);
 
   odb::dbMaster* getBaseSequentialMaster() const { return seq_.master; }
   odb::dbMTerm* getBaseSequentialDMTerm() const { return seq_.d; }
@@ -52,11 +62,11 @@ class SequentialUnmapper
   {
     return negedge_seq_.master;
   }
-  odb::dbMaster* getTieMaster(bool one) const
+  odb::dbMaster* getTieMaster(const bool one) const
   {
     return one ? tie1_master_ : tie0_master_;
   }
-  odb::dbMTerm* getTieOutputMTerm(bool one) const
+  odb::dbMTerm* getTieOutputMTerm(const bool one) const
   {
     return one ? tie1_out_mterm_ : tie0_out_mterm_;
   }
@@ -96,6 +106,10 @@ class SequentialUnmapper
     std::vector<odb::dbBTerm*> ports;
   };
 
+  // A tie cell follows only the liberty dont_use: flows ban tie cells with
+  // set_dont_use to keep them out of sizing and still tie nets with them
+  // (ORFS on gt2n, repair_tie_fanout).
+  bool usableCell(const sta::LibertyCell* cell, bool tie = false) const;
   bool findBaseSequentialCell(bool negedge, BaseRegister& base) const;
   // Without a plain flip-flop, the base cell is the tied register that costs
   // the least area, then the one with the smallest data pin capacitance.
@@ -111,17 +125,20 @@ class SequentialUnmapper
                                 const sta::LibertyPort* output) const;
   void reportTiedBase() const;
   bool findInverterCell();
-  bool findTwoInputGate(bool is_and, odb::dbMaster*& master) const;
+  // nullptr: none.
+  odb::dbMaster* smallestTwoInputGate(bool is_and) const;
   bool findTieCell(bool one);
 
   std::vector<Register> collectRegisters(
       const std::unordered_set<odb::dbInst*>* candidates,
       Untouched& untouched) const;
-  void reportRun(const Untouched& untouched) const;
+  void reportRun(const Untouched& untouched);
 
   void decompose(odb::dbInst* inst, const sta::Sequential* seq);
   odb::dbNet* collectRegisterNets(odb::dbInst* inst,
                                   std::vector<odb::dbITerm*>& out_pins);
+  bool outputsReadState(const sta::Sequential* seq,
+                        const std::vector<odb::dbITerm*>& out_pins) const;
   std::vector<OutputMove> collectOutputMoves(
       odb::dbInst* inst,
       const sta::Sequential* seq,
@@ -141,6 +158,7 @@ class SequentialUnmapper
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
+  rsz::Resizer* resizer_ = nullptr;
   odb::dbBlock* block_ = nullptr;
 
   BaseRegister seq_;
@@ -166,6 +184,7 @@ class SequentialUnmapper
 
   int unmapped_ = 0;
   int skipped_ = 0;
+  bool skip_reported_ = false;  // RET-0009 once per prepare()
 };
 
 }  // namespace ret

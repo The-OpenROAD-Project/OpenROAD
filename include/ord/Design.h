@@ -98,6 +98,10 @@ namespace rcx {
 class Ext;
 }
 
+namespace ret {
+class Retimer;
+}
+
 namespace rmp {
 class Restructure;
 }
@@ -191,6 +195,7 @@ class Design
   ppl::IOPlacer* getIOPlacer();
   psm::PDNSim* getPDNSim();
   rcx::Ext* getOpenRCX();
+  ret::Retimer* getRetimer();
   rmp::Restructure* getRestructure();
   rsz::Resizer* getResizer();
   stt::SteinerTreeBuilder* getSteinerTreeBuilder();

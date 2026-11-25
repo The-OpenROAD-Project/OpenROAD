@@ -72,16 +72,18 @@ class Retime
     float cross_extra;
   };
 
-  float pinArrival(odb::dbITerm* db_pin);
+  float pinArrival(odb::dbITerm* db_pin) const;
   float arrivalAt(sta::Vertex* vertex, const sta::RiseFall* rf) const;
-  float getGateArc(odb::dbITerm* input_pin);
+  float getGateArc(odb::dbITerm* input_pin) const;
   // The wire delay of an edge once no register is left on it: the wire into
   // each of its registers, then the wire from the last one to the sink.
-  float wireDelay(const EdgePhys& phys);
+  float wireDelay(const EdgePhys& phys) const;
 
   void computeArcDelays();
   void resolveFlopDCap();
   void computeWireArcs();
+  // After computeWireArcs: the modeled inputs are the fanin edges' sinks.
+  void computePinnedFloors();
   void computeGateArcs();
   // forced_slew < 0: the input slew STA has.  out_slew: the output slew of
   // the slowest arc.
@@ -90,7 +92,7 @@ class Retime
                         float load,
                         float fallback,
                         float forced_slew = -1.0f,
-                        float* out_slew = nullptr);
+                        float* out_slew = nullptr) const;
 
   bool outputRegistered(int v) const;
   bool isCombinational(int u, const Edge& e) const;
@@ -154,7 +156,7 @@ class Retime
   void computeDriverShifts();
   // The pin of gate fe.u driving the edge's first net; null when not on fe.u.
   odb::dbITerm* edgeSource(const FaninEdge& fe) const;
-  odb::dbITerm* latestOutput(int v);
+  odb::dbITerm* latestOutput(int v) const;
   odb::dbITerm* firstOutput(int v) const;
   float pinCap(odb::dbITerm* pin) const;
   float loadCap(odb::dbITerm* driver) const;
@@ -163,12 +165,12 @@ class Retime
   float sourceLoadAfterSlide(const FaninEdge& fe, odb::dbITerm* source) const;
   // How much later gate u's output gets at `new_load`; `slew`: its output
   // slew then, negative without an arc.
-  float slowdownAtLoad(int u, float load, float new_load, float& slew);
-  float slowdownAtSlew(int t, odb::dbITerm* sink, float slew);
+  float slowdownAtLoad(int u, float load, float new_load, float& slew) const;
+  float slowdownAtSlew(int t, odb::dbITerm* sink, float slew) const;
   std::optional<float> staArc(odb::dbITerm* input,
                               odb::dbITerm* output) const;
   // STA's input arrivals through the model's arcs.
-  double modeledOutputArrival(int t, bool registered);
+  double modeledOutputArrival(int t, bool registered) const;
   // launch_offset_ (the clock arrival): median over sampled registers of STA's
   // launch minus the table clock-to-Q; clock_slew_: the last one's clock slew.
   void sampleLaunchOffset();
@@ -193,7 +195,8 @@ class Retime
   std::vector<double> gate_floor_;
   std::vector<double> arrivals_;     // register-rooted
   std::vector<double> arrivals_pinned_;  // pinned-rooted
-  std::vector<float> pinned_source_;     // STA arrival at a pinned source gate
+  // A pinned gate's latest arrival through its inputs the graph leaves out.
+  std::vector<double> pinned_floor_;
   std::vector<std::vector<FaninEdge>> fanin_;
 
   struct Scratch
@@ -204,16 +207,7 @@ class Retime
     std::vector<int> dirty;
     std::vector<double> saved_arrivals;
     std::vector<double> saved_arrivals_pinned;
-    void init(int n)
-    {
-      queue.assign(n, 0);
-      local_indeg.assign(n, 0);
-      in_dirty.assign(n, 0);
-      dirty.clear();
-      dirty.reserve(n);
-      saved_arrivals.reserve(n);
-      saved_arrivals_pinned.reserve(n);
-    }
+    void init(int n);
   };
   Scratch scratch_;
 

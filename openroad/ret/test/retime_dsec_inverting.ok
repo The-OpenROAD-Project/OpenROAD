@@ -1,7 +1,13 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-worst slack max 0.7256
-[INFO RET-0014] Retiming graph: 31 gates, 28 edges, 10 registers, 14 pinned gates, 0 fenced registers.
-[INFO RET-0053] Retime: slides 0, rounds 0, WNS 0.7256, TNS 0.0000, registers 10, placed 0, resized 0.
-worst slack max 0.7256
+worst slack max -0.1244
+[INFO RET-0014] Retiming graph: 44 gates, 40 edges, 14 registers, 20 pinned gates, 0 fenced registers.
+[INFO RET-0008] Unmapped 2 registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.1244 |       -0.4476 |        14
+     1 |        8 |      1 |    8 |     -0.0220 |       -0.0632 |        13
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 8, rounds 1, WNS -0.0220, TNS -0.0632, registers 13, placed 0, resized 0.
+worst slack max -0.0220
 Retime output passed/skipped sequential equivalence test
 No differences found.
