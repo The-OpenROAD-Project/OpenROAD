@@ -613,13 +613,20 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
     // Guard against collapsing a buffered timing tree into a flat high-fanout
     // root net that looks fast under zero-via placement RC but blows up under
     // detailed routing via resistance.
+    // Only a timing tree with buffers can be collapsed by a candidate.
     const bool timing_buffered = timing_tree->bufferCount() > 0;
+    // Sinks the driver sees directly in the timing tree; a candidate root at
+    // or below this fanout adds no new flat load.
     const int timing_root_fo = countDirectSinks(timing_tree);
+    // Largest root fanout a collapsed candidate may keep: the constant, but
+    // at most half the net's max_fanout limit (never below 2).
     int max_flat_fo = kMaxFlatCollapseFanout;
     if (fanout_limit_ < sta::INF) {
       max_flat_fo = std::min(
           max_flat_fo, std::max(2, static_cast<int>(fanout_limit_ / 2.0f)));
     }
+    // True when `tree` has fewer buffers than the timing tree and its root
+    // drives more sinks than both max_flat_fo and the timing tree's root.
     const auto collapses_high_fanout = [&](const BnetPtr& tree) -> bool {
       if (!tree || !timing_buffered) {
         return false;
@@ -631,6 +638,8 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
       return fo > max_flat_fo && fo > timing_root_fo;
     };
 
+    // Drop collapsed base candidates. The area tree is what the net gets
+    // without driver sizing, so it is dropped only for a port buffer driver.
     const BnetPtr cheapest_cand
         = collapses_high_fanout(cheapest) ? nullptr : cheapest;
     const BnetPtr area_cand = (isPortBuffer(db_network_, drvr_inst)
@@ -638,7 +647,11 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
                                   ? nullptr
                                   : area_tree;
     std::vector<BnetPtr> trees{cheapest_cand, area_cand, timing_tree};
+    // Index of timing_tree in `trees`, shared with best-driver planning so
+    // it reuses the memoized slacks of that tree.
     constexpr size_t kTimingTreeIndex = 2;
+    // Also offer each candidate without its first buffer, unless removing
+    // the buffer collapses it.
     for (const BnetPtr& tree : {cheapest_cand, area_cand, timing_tree}) {
       if (tree) {
         BnetPtr stripped = withoutFirstBuffer(tree);
@@ -654,10 +667,18 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
     const DriverChoices choices = driverChoices(current_cell, leakage_ref_tree);
     // Evaluated lazily, after addTreesPlannedForBestDriver() completes `trees`.
     TreeDriverEvaluation eval(trees);
+    // slack_target is the timing tree's slack with the current driver less
+    // the relaxation allowed for area recovery, which is zero on a failing
+    // net near the worst slack.  Anchored to the current driver, it lets a
+    // cheaper combination win over a resize that gains slack.  When it is
+    // negative, anchor it instead to the best slack any tree reaches with any
+    // allowed driver cell (less the area hurdle off the critical band), less
+    // the same relaxation; the smallest area meeting it still wins.
     FixedDelay target = slack_target;
     if (slack_target < FixedDelay::ZERO) {
       const FixedDelay relaxation
           = slackAtDriverPin(timing_tree) - slack_target;
+      // Trees from best-driver planning are appended from this index on.
       const size_t trees_before_plan = trees.size();
       {
         utl::DebugScopedTimer plan_timer(size_plan_runtime_);
@@ -672,6 +693,7 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
                                      eval,
                                      trees);
       }
+      // Disable planned trees that collapse; evaluation skips null trees.
       for (size_t idx = trees_before_plan; idx < trees.size(); ++idx) {
         if (collapses_high_fanout(trees[idx])) {
           trees[idx] = nullptr;
@@ -739,6 +761,8 @@ void Rebuffer::addTreesPlannedForBestDriver(const BnetPtr& unbuffered_tree,
     const FixedDelay hurdle
         = areaUpsizeHurdle(current_cell, cell, critical, hurdle_base_delay);
     const FixedDelay effective = *slack - hurdle;
+    // A new best must also keep the upstream side loads at its slack less
+    // relaxation, the check bestSlackWithDriver() applies later.
     if (effective > best_slack) {
       if (upstreamSideLoadSlack(eval, cell) < *slack - relaxation) {
         continue;
@@ -750,11 +774,13 @@ void Rebuffer::addTreesPlannedForBestDriver(const BnetPtr& unbuffered_tree,
   if (best_cell == nullptr) {
     return;
   }
+  // Re-buffer the net from scratch for best_cell and offer the result.
   const std::pair<BnetPtr, BnetPtr> planned
       = planForDriverCell(unbuffered_tree, best_cell, relaxation);
-  if (planned.first) {
+  if (planned.first) {  // first: timing tree planned for best_cell
     trees.push_back(planned.first);
   }
+  // second: its area-recovered tree, skipped when recovery changed nothing.
   if (planned.second && planned.second != planned.first) {
     trees.push_back(planned.second);
   }
@@ -801,6 +827,8 @@ BnetPtr Rebuffer::withoutFirstBuffer(const BnetPtr& tree)
     return nullptr;
   }
   const BnetPtr& below = node->ref();
+  // Keep a buffer that drives many sinks; removing it would leave the driver
+  // a flat high-fanout net that is slow once routed.
   if (countDirectSinks(below) > kMaxWithoutFirstBufFanout) {
     return nullptr;
   }
@@ -884,6 +912,7 @@ std::optional<float> Rebuffer::treeNetLeakage(TreeDriverEvaluation& eval,
                                               sta::LibertyCell* cell,
                                               const size_t tree_index)
 {
+  // Collect the buffer leakages of every tree once per evaluation.
   if (eval.buffer_leakages.empty()) {
     eval.buffer_leakages.reserve(eval.trees.size());
     for (const BnetPtr& tree : eval.trees) {
@@ -935,15 +964,20 @@ FixedDelay Rebuffer::areaUpsizeHurdle(const sta::LibertyCell* current_cell,
                                       const bool critical,
                                       const sta::Delay hurdle_base_delay) const
 {
+  // No hurdle on a critical net, which chases slack at any area, or without
+  // a gate delay to scale it.
   if (critical || hurdle_base_delay <= 0.0f || current_cell == nullptr
       || cell == nullptr) {
     return FixedDelay::ZERO;
   }
+  // A candidate that does not grow area, such as a VT swap, is free.
   const float cur_area = current_cell->area();
   const float cand_area = cell->area();
   if (cur_area <= 0.0f || cand_area <= cur_area) {
     return FixedDelay::ZERO;
   }
+  // kAreaUpsizeHurdle x relative area growth x driver gate delay, clamped
+  // so the FixedDelay conversion cannot overflow.
   const float rel_area_inc = (cand_area / cur_area) - 1.0f;
   const float hurdle_sec = std::min(
       kAreaUpsizeHurdle * rel_area_inc * static_cast<float>(hurdle_base_delay),
@@ -960,6 +994,7 @@ FixedDelay Rebuffer::bestSlackWithDriver(TreeDriverEvaluation& eval,
 {
   FixedDelay best_slack = -FixedDelay::INF;
   auto consider = [&](sta::LibertyCell* cell) {
+    // Every tree driven by `cell` is ranked by its slack less this hurdle.
     const FixedDelay hurdle
         = areaUpsizeHurdle(current_cell, cell, critical, hurdle_base_delay);
     for (size_t i = 0; i < eval.trees.size(); i++) {
@@ -1040,6 +1075,9 @@ BnetPtr Rebuffer::chooseTreeAndDriver(TreeDriverEvaluation& eval,
       bool better = area < best_area;
       if (!better
           && *slack > best_slack + FixedDelay(kEqualAreaMinGain, resizer_)) {
+        // On a passing net with a pick already made, take the slack-only
+        // gain only if net leakage stays within the reference leakage
+        // (compared on the cells alone when tree leakage is unknown).
         if (slack_target >= FixedDelay::ZERO && best_tree != nullptr) {
           std::optional<float> cand_leak = treeNetLeakage(eval, cell, i);
           std::optional<float> limit_leak = choices.reference_leakage;
@@ -1118,6 +1156,8 @@ std::optional<FixedDelay> Rebuffer::evaluateOption(const BnetPtr& option,
   if (!loadSlewSatisfactory(drvr_port, option)) {
     return {};
   }
+  // While planning for another driver cell, refuse trees over that cell's
+  // max capacitance, as slackWithDriverCell() would later.
   if (plan_port_ != nullptr) {
     bool cap_limit_exists = false;
     float cap_limit = 0.0f;
@@ -3706,6 +3746,9 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
   std::vector<const sta::Pin*> edited_loads;
   std::unordered_set<const sta::Instance*> resized_insts;
   resized_upstream_nets_.clear();
+  // Lowest level among the input pins whose net gained load capacitance
+  // from a resize since the last propagation.  The lazy flush computes
+  // required times down to it so those nets' side-load slacks are current.
   sta::Level min_dirty_input_level = std::numeric_limits<sta::Level>::max();
 
   auto record_loads = [&](const BnetPtr& tree) {
@@ -3727,6 +3770,8 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
         tree);
   };
 
+  // Propagate pending edits through the deepest edited level, and at least
+  // through `min_max_level`, then clear every pending-edit record.
   auto propagate_edits = [&](const sta::Level min_max_level) {
     if (edited_loads.empty()) {
       resized_upstream_nets_.clear();
@@ -3810,8 +3855,11 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
       refresh_timing(drvr);
     }
 
+    // Before sizing a driver that shares an input net with a sibling resized
+    // earlier in this level, bring that net's timing up to date.
     if (size_driver_ && drvr_inst != nullptr
         && !resized_upstream_nets_.empty()) {
+      // Does any input of this driver sit on a net that gained load cap?
       bool shares_dirty_input = false;
       std::unique_ptr<sta::InstancePinIterator> in_iter(
           network_->pinIterator(drvr_inst));
@@ -3826,6 +3874,9 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
           break;
         }
       }
+      // Propagate arrivals through this level and recompute required times
+      // down to the dirty inputs; read the level first, as propagation
+      // clears it.
       if (shares_dirty_input) {
         const sta::Level min_req_level = min_dirty_input_level;
         propagate_edits(drvr->level());
@@ -3912,7 +3963,11 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
     //
 
     FixedDelay target_slack = -FixedDelay::INF;
+    // Whether this failing net is within kCriticalSlackBand of the worst
+    // slack; driver sizing then skips the area hurdle.
     bool critical = false;
+    // Gate delay of the current driver, never negative; a term of the
+    // relaxation below and the scale of the driver sizing area hurdle.
     const sta::Delay hurdle_base_delay
         = std::max(0.0f, static_cast<float>(drvr_gate_delay));
 
@@ -3954,6 +4009,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
       break;
     }
 
+    // Driver cell before sizing, to compare input pin caps after a resize.
     sta::LibertyCell* old_drvr_cell = (size_driver_ && drvr_inst != nullptr)
                                           ? network_->libertyCell(drvr_inst)
                                           : nullptr;
@@ -3967,6 +4023,8 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
                                        hurdle_base_delay);
     const bool driver_resized = driver_resize_count_ != prev_resize_count;
 
+    // Record the input nets whose load cap grew with the resize, so a later
+    // sibling on the same net is re-timed before it is sized.
     if (driver_resized && drvr_inst != nullptr && old_drvr_cell != nullptr) {
       std::unique_ptr<sta::InstancePinIterator> in_iter(
           network_->pinIterator(drvr_inst));

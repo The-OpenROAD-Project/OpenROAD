@@ -228,7 +228,10 @@ class Rebuffer : public sta::dbStaState
   struct DriverChoices
   {
     sta::LibertyCellSeq cells;
+    // Limit on driver + buffer leakage; nullopt when no limit applies.
     std::optional<float> leakage_budget;
+    // Leakage of the current driver with the reference tree; equal-area
+    // swaps on a passing net may not exceed it.
     std::optional<float> reference_leakage;
   };
   // The candidate trees for one net, with the slack of each tree for each
@@ -242,10 +245,15 @@ class Rebuffer : public sta::dbStaState
     {
     }
     const std::vector<BufferedNetPtr>& trees;
+    // Buffer leakages of each tree, indexed like `trees`.
     std::vector<std::optional<std::vector<float>>> buffer_leakages;
+    // Key: (driver cell, index into `trees`).
+    // Value: slack of that tree driven by that cell; nullopt if infeasible.
     absl::flat_hash_map<std::pair<const sta::LibertyCell*, size_t>,
                         std::optional<FixedDelay>>
         slacks;
+    // Key: candidate driver cell.
+    // Value: worst upstream side-load slack after resizing to that cell.
     absl::flat_hash_map<const sta::LibertyCell*, FixedDelay> side_load_slacks;
   };
   // Append to `trees` the trees planForDriverCell() builds for the one of
@@ -261,6 +269,8 @@ class Rebuffer : public sta::dbStaState
                                     sta::Delay hurdle_base_delay,
                                     TreeDriverEvaluation& eval,
                                     std::vector<BufferedNetPtr>& trees);
+  // The cells `current_cell` may be resized to, with leakage limits measured
+  // against `current_cell` driving `reference_tree`.
   DriverChoices driverChoices(sta::LibertyCell* current_cell,
                               const BufferedNetPtr& reference_tree);
   // Leakage of each buffer of `tree` in visit order; nullopt when a buffer
@@ -271,6 +281,7 @@ class Rebuffer : public sta::dbStaState
   std::optional<float> netLeakage(
       sta::LibertyCell* cell,
       const std::optional<std::vector<float>>& buffer_leakages);
+  // netLeakage() of `cell` driving tree `tree_index` of `eval`.
   std::optional<float> treeNetLeakage(TreeDriverEvaluation& eval,
                                       sta::LibertyCell* cell,
                                       size_t tree_index);
