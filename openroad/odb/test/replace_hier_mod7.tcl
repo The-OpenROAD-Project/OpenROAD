@@ -3,7 +3,7 @@
 # undone swap, and Outer_new again.  The child modules have instance and
 # net names (_1_, _013_) that their parents also have.  Outer_new is copied
 # from instance outer2 in the top block, Outer from the child block the
-# first swap saved it to.
+# first swap saved it to.  The result survives write_db and read_db.
 
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
@@ -160,5 +160,40 @@ check "swap to Outer_new again" {
   catch { replace_hier_module outer Outer_new }
 } 0
 check_outer_new "Outer_new again"
+
+# The design as the swaps left it, child blocks and all.
+proc design_contents { block } {
+  set contents {}
+  foreach module [$block getModules] {
+    set mod_insts [lmap c [$module getChildren] {
+      list [$c getName] [[$c getMaster] getName]
+    }]
+    lappend contents [list module [$module getName] [lsort $mod_insts]]
+  }
+  foreach inst [$block getInsts] {
+    set pins [lmap iterm [$inst getITerms] {
+      set net [$iterm getNet]
+      list [[$iterm getMTerm] getName] \
+        [expr { $net eq "NULL" ? "" : [$net getName] }]
+    }]
+    lappend contents [list inst [$inst getName] \
+      [[$inst getModule] getName] $pins]
+  }
+  foreach child [$block getChildren] {
+    lappend contents [list child_block [$child getName] \
+      [design_contents $child]]
+  }
+  return [lsort $contents]
+}
+
+# The swapped design survives write_db and read_db.
+set db_file [make_result_file replace_hier_mod7.odb]
+odb::write_db [ord::get_db] $db_file
+set db_read [odb::dbDatabase_create]
+odb::read_db $db_read $db_file
+check "the design read back is the design written" {
+  expr { [design_contents [[$db_read getChip] getBlock]]
+         eq [design_contents $block] }
+} 1
 
 exit_summary
