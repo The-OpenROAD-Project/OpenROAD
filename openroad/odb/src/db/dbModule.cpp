@@ -911,14 +911,29 @@ void _dbModule::copyModuleInsts(const ModuleMap& module_map,
     new_prefix = new_mod_inst->getHierarchicalName() + hier_delimiter;
   }
 
-  // Leaf instances of the old hierarchy, to tell internal nets from nets
-  // that leave it.
-  odb::PtrSet<dbInst> old_insts;
+  // Modules of the old hierarchy, to tell internal nets from nets that
+  // leave it.
+  odb::PtrSet<dbModule> old_modules;
   for (const auto& [old_mod, new_mod] : module_map) {
-    for (dbInst* old_inst : old_mod->getInsts()) {
-      old_insts.insert(old_inst);
-    }
+    old_modules.insert(old_mod);
   }
+  // Whether an old net is internal, once per net: a net's pins all ask.
+  odb::PtrMap<dbNet, bool> internal_nets;
+  auto isInternal = [&](dbNet* net) {
+    auto it = internal_nets.find(net);
+    if (it != internal_nets.end()) {
+      return it->second;
+    }
+    bool is_internal = net->getBTerms().empty();
+    for (dbITerm* net_iterm : net->getITerms()) {
+      if (!is_internal) {
+        break;
+      }
+      is_internal = old_modules.contains(net_iterm->getInst()->getModule());
+    }
+    internal_nets[net] = is_internal;
+    return is_internal;
+  };
 
   // Map an old flat net to its new local net.
   odb::PtrMap<dbNet, dbNet*> new_net_map;
@@ -1004,13 +1019,7 @@ void _dbModule::copyModuleInsts(const ModuleMap& module_map,
         //         net_name = u0/_001_        <-- External net crossing module
         //                                        boundary.
         std::string old_net_name = old_net->getName();
-        bool is_internal = old_net->getBTerms().empty();
-        for (dbITerm* net_iterm : old_net->getITerms()) {
-          if (!is_internal) {
-            break;
-          }
-          is_internal = old_insts.contains(net_iterm->getInst());
-        }
+        const bool is_internal = isInternal(old_net);
         // Walk up to the mod net of old_module the iterm connects through
         dbModNet* old_mod_net = old_iterm->getModNet();
         while (old_mod_net && old_mod_net->getParent() != old_module) {
