@@ -22,23 +22,14 @@ _get_tool_name()
 _bazel_regression()
 {
     local regex="."
-    local bazel_args=()
-    while [ $# -gt 0 ]; do
-        case "$1" in
-            -R)
-                if [ $# -lt 2 ]; then
-                    echo "regression: -R needs a regex" >&2
-                    exit 2
-                fi
-                regex=$2
-                shift 2
-                ;;
-            *)
-                bazel_args+=("$1")
-                shift
-                ;;
-        esac
-    done
+    if [[ ${1:-} == -R ]]; then
+        if [ $# -lt 2 ]; then
+            echo "regression: -R needs a regex" >&2
+            exit 2
+        fi
+        regex=$2
+        shift 2
+    fi
 
     local bazel=bazelisk
     if ! command -v "$bazel" >/dev/null 2>&1; then
@@ -83,8 +74,7 @@ _bazel_regression()
     echo "regression: running ${#target_list[@]} test(s) that match '${regex}'"
     # Targets named on the command line fail when incompatible with the
     # platform (for example GPU-only tests), so skip them instead.
-    "$bazel" test --skip_incompatible_explicit_targets "${bazel_args[@]}" \
-        -- "${target_list[@]}"
+    "$bazel" test --skip_incompatible_explicit_targets "$@" "${target_list[@]}"
 }
 
 _get_tool_name

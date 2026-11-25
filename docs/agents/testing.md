@@ -39,6 +39,7 @@ cd openroad/rsz/test
 ```
 
 The script queries the test targets below `//openroad/<module>/...` whose label matches the regex, then runs them in one `bazelisk test` call.
+Put `-R` and its regex before the Bazel test arguments.
 It passes all other arguments to `bazelisk test`.
 Without `-R`, it runs all tests of the module.
 It fails when no test matches.
