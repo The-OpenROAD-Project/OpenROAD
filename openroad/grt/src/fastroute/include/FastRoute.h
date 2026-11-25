@@ -83,6 +83,7 @@ class MinHeap3D
  public:
   void resize(size_t max_nodes)
   {
+    entries_.clear();
     entries_.reserve(max_nodes);
     pos_.assign(max_nodes, -1);
   }
@@ -1056,6 +1057,8 @@ class FastRouteCore
   MinHeap3D src_heap_3D_;
   std::vector<int> dest_heap_3D_;
   multi_array<int, 3> d1_3D_;
+  bool d1_3D_clean_ = false;
+  std::vector<int> touched_3D_;
   multi_array<int, 3> path_len_3D_;
   // Reusable BFS scratch for addNeighborPoints (3D). Mirrors the maze2D
   // visited_2D_/queue_2D_ reuse pattern: allocate once, reset the used region
