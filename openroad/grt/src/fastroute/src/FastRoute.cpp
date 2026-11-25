@@ -385,7 +385,7 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   d1_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
   d1_3D_clean_ = false;
   touched_3D_.clear();
-  path_len_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
+  path_state_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
 }
 
 void FastRouteCore::addVCapacity(int16_t verticalCapacity, int layer)
