@@ -57,6 +57,7 @@
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "rsz/PlacementDensityGrid.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/ClkNetwork.hh"
 #include "sta/Clock.hh"
@@ -249,6 +250,112 @@ double Resizer::utilization()
 double Resizer::maxArea() const
 {
   return max_area_;
+}
+
+const PlacementDensityGrid* Resizer::placementDensityGrid()
+{
+  // The block the db holds now, which block_ only follows at initBlock().
+  odb::dbChip* chip = db_->getChip();
+  odb::dbBlock* block = chip != nullptr ? chip->getBlock() : nullptr;
+  // The gcells, the grid's bins, are sized from the routing layers' tracks,
+  // so there are none until make_tracks and set_routing_layers have run.
+  // Tracks missing from only some of the layers still error in
+  // getGCellTileSize().
+  if (block == nullptr || block->getMaxRoutingLayer() <= 0
+      || block->getTrackGrids().empty()) {
+    return nullptr;
+  }
+  // A grid whose block was destroyed has lost its owner.
+  if (density_grid_ == nullptr || !density_grid_->hasOwner()
+      || density_grid_->getBlock() != block) {
+    density_grid_ = std::make_unique<PlacementDensityGrid>(block, logger_);
+  }
+  density_grid_->ensureBuilt();
+  return density_grid_.get();
+}
+
+std::optional<PlacementDensity> Resizer::placementDensity(
+    const odb::Rect& region)
+{
+  const PlacementDensityGrid* grid = placementDensityGrid();
+  if (grid == nullptr) {
+    return std::nullopt;
+  }
+  return grid->getDensity(region);
+}
+
+std::optional<PlacementDensity> Resizer::placementDensity(
+    const odb::Point& point)
+{
+  const PlacementDensityGrid* grid = placementDensityGrid();
+  if (grid == nullptr) {
+    return std::nullopt;
+  }
+  return grid->getDensity(point);
+}
+
+void Resizer::releasePlacementDensityGrid()
+{
+  // Destroying the grid takes it off the block's callbacks.
+  density_grid_.reset();
+}
+
+void Resizer::reportPlacementDensity(const odb::Rect& region)
+{
+  initBlock();
+  const double x1 = block_->dbuToMicrons(region.xMin());
+  const double y1 = block_->dbuToMicrons(region.yMin());
+  const double x2 = block_->dbuToMicrons(region.xMax());
+  const double y2 = block_->dbuToMicrons(region.yMax());
+  if (region.dx() == 0 || region.dy() == 0) {
+    logger_->error(RSZ,
+                   3216,
+                   "Region ({:.3f}, {:.3f}) ({:.3f}, {:.3f}) is empty.",
+                   x1,
+                   y1,
+                   x2,
+                   y2);
+  }
+  // The gcells, the grid's bins, are sized from the routing layers.
+  if (block_->getMaxRoutingLayer() <= 0) {
+    logger_->error(RSZ,
+                   3217,
+                   "Placement density is counted per GCell, which needs the "
+                   "routing layers. Set them with set_routing_layers.");
+  }
+  // Built for this report alone, so that it counts the db as it stands, and
+  // leaves no grid behind for later steps to keep current.
+  PlacementDensityGrid grid(block_, logger_);
+  grid.ensureBuilt();
+  const PlacementDensity density = grid.getDensity(region);
+  if (density.region_area == 0) {
+    logger_->report(
+        "Region ({:.3f}, {:.3f}) ({:.3f}, {:.3f}) is outside the core.",
+        x1,
+        y1,
+        x2,
+        y2);
+    return;
+  }
+
+  // The areas are fractional where the region covers part of a bin.
+  const double dbu_per_micron = block_->getDbUnitsPerMicron();
+  const auto to_um2 = [dbu_per_micron](const double dbu_area) {
+    return dbu_area / (dbu_per_micron * dbu_per_micron);
+  };
+  logger_->report("Region ({:.3f}, {:.3f}) ({:.3f}, {:.3f})", x1, y1, x2, y2);
+  logger_->report("  GCell size:           {:.3f} x {:.3f} um",
+                  block_->dbuToMicrons(grid.getBinWidth()),
+                  block_->dbuToMicrons(grid.getBinHeight()));
+  logger_->report("  Area inside the core: {:12.3f} um^2",
+                  to_um2(static_cast<double>(density.region_area)));
+  logger_->report("  Instance area:        {:12.3f} um^2",
+                  to_um2(density.instance_area));
+  logger_->report("  Blocked area:         {:12.3f} um^2",
+                  to_um2(density.blocked_area));
+  logger_->report("  Free area:            {:12.3f} um^2",
+                  to_um2(density.getFreeArea()));
+  logger_->report("  Placement density:    {:12.3f}", density.getDensity());
 }
 
 ////////////////////////////////////////////////////////////////

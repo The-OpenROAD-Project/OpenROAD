@@ -279,6 +279,7 @@ TESTS = [
     "report_delay_estimator_rebuffer_steiner",
     "report_delay_estimator_sizing_accuracy",
     "report_design_area",
+    "report_placement_density",
     "report_dont_touch",
     "report_dont_use",
     "report_dont_use_corners",
@@ -431,6 +432,7 @@ test_suite(
     name = "cpp_tests",
     tests = [
         ":TestBufRem1",
+        ":TestPlacementDensityGrid",
         ":TestResizer",
         ":TestSkewBudget",
     ],
@@ -577,6 +579,18 @@ cc_test(
         "//openroad/sta:opensta_lib",
         "//openroad/tst:integrated_fixture",
         "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestPlacementDensityGrid",
+    srcs = ["cpp/TestPlacementDensityGrid.cc"],
+    deps = [
+        "//openroad/odb/src/db",
+        "//openroad/rsz",
+        "//openroad/tst:db_fixture",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
