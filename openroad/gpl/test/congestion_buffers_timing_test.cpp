@@ -31,6 +31,11 @@
 
 namespace gpl {
 
+// Wide enough to congest the tiles under the synthetic demand nets. RUDY
+// widens a net narrower than one wire to the wire width, so a wire much wider
+// than these nets spreads their demand out instead of concentrating it.
+constexpr int kCongestedWireWidth = 13000;
+
 // Friend access only sets the iteration's overflow and invokes the production
 // boundary. TimingBase, resizer, callbacks and updateGCellState all run for
 // real.
@@ -70,7 +75,7 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
     }
     grt_.setMinRoutingLayer(2);
     grt_.setMaxRoutingLayer(6);
-    grt_.getRudy()->setWireWidth(1000000);
+    grt_.getRudy()->setWireWidth(kCongestedWireWidth);
     // Reserve filler area for an ordinary pass followed by a real timing
     // repair; inflation may not raise density to fund its added area.
     options_.density = 0.78f;
@@ -281,14 +286,14 @@ class TimingRepairIntegrationTest : public tst::IntegratedFixture
   void completeRoutability(bool inflate_ordinary_cells = false)
   {
     if (inflate_ordinary_cells) {
-      runOrdinaryPass(1000000);
+      runOrdinaryPass(kCongestedWireWidth);
       ASSERT_GT(rb_->getTotalInflation(), 0);
       ASSERT_TRUE(np_->is_routability_need_);
     }
     runOrdinaryPass(1);
     ASSERT_FALSE(np_->is_routability_need_);
     ASSERT_GT(ordinary_iterations_, 0);
-    grt_.getRudy()->setWireWidth(1000000);
+    grt_.getRudy()->setWireWidth(kCongestedWireWidth);
   }
 
   odb::dbInst* inflatedNewBuffer()
@@ -460,7 +465,7 @@ TEST_P(TimingRepairRoutabilityPhaseTest,
     ASSERT_EQ(rb_->getTotalTilesCount(), 0);
   }
   if (phase == 1) {
-    runOrdinaryPass(1000000);
+    runOrdinaryPass(kCongestedWireWidth);
     ASSERT_TRUE(routabilityNeeded());
     ASSERT_GT(rb_->getTotalInflation(), 0);
   } else if (phase == 2) {
@@ -832,7 +837,7 @@ TEST_F(MixedMacroTimingRepairIntegrationTest,
        ActiveRoutabilityRepairKeepsLegacyMacroDensity)
 {
   makePlacer();
-  runOrdinaryPass(1000000);
+  runOrdinaryPass(kCongestedWireWidth);
   ASSERT_TRUE(routabilityNeeded());
   ASSERT_GT(ordinary_iterations_, 0);
   ASSERT_GT(rb_->getTotalInflation(), 0);
@@ -1100,7 +1105,7 @@ TEST_F(TimingRepairIntegrationTest,
   ASSERT_FALSE(block_->findInst("fanout_driver")->isDoNotTouch());
   makePlacer();
   const int64_t original = nb_vec_[0]->getNesterovInstsArea();
-  runOrdinaryPass(1000000);
+  runOrdinaryPass(kCongestedWireWidth);
   ASSERT_NE(liveCellFor(driver), nullptr);
   ASSERT_GT(liveCellFor(driver)->getInflationArea(), 0);
   ASSERT_TRUE(routabilityNeeded());
@@ -1108,7 +1113,7 @@ TEST_F(TimingRepairIntegrationTest,
   const int saved_dy = liveCellFor(driver)->dy();
   // A genuine RC improvement saves the already-inflated dimensions in the
   // production min-RC snapshot before the next ordinary inflation pass.
-  runOrdinaryPass(500000);
+  runOrdinaryPass(kCongestedWireWidth / 2);
   ASSERT_TRUE(rb_->isMinRc());
   ASSERT_TRUE(routabilityNeeded());
   ASSERT_GT(static_cast<int64_t>(liveCellFor(driver)->dx())
@@ -1116,7 +1121,7 @@ TEST_F(TimingRepairIntegrationTest,
             static_cast<int64_t>(saved_dx) * saved_dy);
   // Finish through a genuine min-RC revert, before this extension is eligible.
   ordinary_iterations_ = 50;
-  runOrdinaryPass(1000000);
+  runOrdinaryPass(kCongestedWireWidth);
   ASSERT_FALSE(rb_->isMinRc());
   ASSERT_FALSE(routabilityNeeded());
   ASSERT_EQ(liveCellFor(driver)->dx(), saved_dx);
@@ -1159,7 +1164,7 @@ TEST_F(TimingRepairIntegrationTest,
   checkDensityAccounting();
   // An attempted ordinary pass after completion cannot restore the old
   // master's inflated snapshot or its obsolete target density.
-  runOrdinaryPass(1000000);
+  runOrdinaryPass(kCongestedWireWidth);
   EXPECT_EQ(ordinary_iterations_, completed_iterations);
   EXPECT_EQ(rb_->getRevertCount(), completed_reverts);
   cell = liveCellFor(driver);
@@ -1190,7 +1195,7 @@ TEST_F(TimingRepairIntegrationTest,
   const int buffer_dy = buffer_cell->dy();
   const int64_t fillers = nb_vec_[0]->getTotalFillerArea();
   for (int attempt = 0; attempt < 3; ++attempt) {
-    runOrdinaryPass(1000000);
+    runOrdinaryPass(kCongestedWireWidth);
     EXPECT_EQ(ordinary_iterations_, completed_iterations);
     EXPECT_EQ(rb_->getRevertCount(), completed_reverts);
     buffer_cell = liveCellFor(buffer);

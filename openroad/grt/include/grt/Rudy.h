@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <cassert>
 #include <optional>
 #include <set>
@@ -106,37 +107,51 @@ class Rudy
   // the deposit model; both the accumulated grid and the per-net query go
   // through it.
   template <typename Visitor>
-  void visitNetTiles(const odb::Rect& net_rect, Visitor&& visit) const
+  void visitNetTiles(odb::Rect net_rect, Visitor&& visit) const
   {
     if (net_rect.isInverted()) {
       return;
     }
-    const auto net_area = net_rect.area();
-    if (net_area == 0) {
-      // TODO: handle nets with 0 area from getTermBBox()
+    const auto hpwl = static_cast<float>(net_rect.dx() + net_rect.dy());
+    if (hpwl == 0) {
+      // All terminals on one point: no wire to route.
       return;
     }
-    const auto hpwl = static_cast<float>(net_rect.dx() + net_rect.dy());
-    const auto net_congestion = (hpwl * wire_width_) / net_area;
+    // A line net is one wire_width_ wide wire. Grow it up/right so a line on
+    // a tile boundary goes to the tile above or to the right. hpwl must be
+    // taken before this, or the line's demand is inflated.
+    net_rect.set_xhi(std::max(net_rect.xMax(), net_rect.xMin() + wire_width_));
+    net_rect.set_yhi(std::max(net_rect.yMax(), net_rect.yMin() + wire_width_));
+    // A line on the top/right die edge grows outside the grid; keep it inside.
+    net_rect.moveDelta(std::min(0, grid_block_.xMax() - net_rect.xMax()),
+                       std::min(0, grid_block_.yMax() - net_rect.yMax()));
+    const auto net_congestion = (hpwl * wire_width_) / net_rect.area();
 
+    // The last column/row also covers the die remainder, so an index past it
+    // belongs to it, as in Grid::getPositionOnGrid.
     const int min_x_index
-        = std::max(0, (net_rect.xMin() - grid_block_.xMin()) / tile_size_);
+        = std::clamp((net_rect.xMin() - grid_block_.xMin()) / tile_size_,
+                     0,
+                     tile_cnt_x_ - 1);
     const int max_x_index = std::min(
         tile_cnt_x_ - 1, (net_rect.xMax() - grid_block_.xMin()) / tile_size_);
     const int min_y_index
-        = std::max(0, (net_rect.yMin() - grid_block_.yMin()) / tile_size_);
+        = std::clamp((net_rect.yMin() - grid_block_.yMin()) / tile_size_,
+                     0,
+                     tile_cnt_y_ - 1);
     const int max_y_index = std::min(
         tile_cnt_y_ - 1, (net_rect.yMax() - grid_block_.yMin()) / tile_size_);
 
     for (int x = min_x_index; x <= max_x_index; ++x) {
       for (int y = min_y_index; y <= max_y_index; ++y) {
         const auto tile_box = grid_[x][y].getRect();
-        if (!net_rect.overlaps(tile_box)) {
+        if (!net_rect.intersects(tile_box)) {
           continue;
         }
-        const auto intersect_area = net_rect.intersect(tile_box).area();
-        const auto tile_net_box_ratio = static_cast<float>(intersect_area)
-                                        / static_cast<float>(tile_box.area());
+        const odb::Rect intersect = net_rect.intersect(tile_box);
+        const auto tile_area = static_cast<float>(tile_box.area());
+        const auto tile_net_box_ratio
+            = static_cast<float>(intersect.area()) / tile_area;
         visit(x, y, net_congestion * tile_net_box_ratio * 100);
       }
     }

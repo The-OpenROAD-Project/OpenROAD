@@ -27,6 +27,11 @@
 namespace gpl {
 namespace {
 
+// Wide enough to congest the tiles under the synthetic demand nets. RUDY
+// widens a net narrower than one wire to the wire width, so a wire much wider
+// than these nets spreads their demand out instead of concentrating it.
+constexpr int kCongestedWireWidth = 13000;
+
 TEST(TileGridTest, RepeatedInitializationReplacesTilePointers)
 {
   utl::Logger logger;
@@ -97,7 +102,7 @@ class RouteBaseTest : public tst::IntegratedFixture
     grt_.setMinRoutingLayer(2);
     grt_.setMaxRoutingLayer(6);
     auto* rudy = grt_.getRudy();
-    rudy->setWireWidth(1000000);
+    rudy->setWireWidth(kCongestedWireWidth);
     tile_size_ = rudy->getTileSize();
     ASSERT_GT(tile_size_, 0);
     const auto [columns, rows] = rudy->getGridSize();
