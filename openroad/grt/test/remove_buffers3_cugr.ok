@@ -42,7 +42,6 @@ metal8     Vertical          992           496          50.00%
 ---------------------------------------------------------------
 
 Stage 1: Pattern routing.
-Stage 2: Re-route of nets with negative slack.
 Routing statistics
 Wire length:           259
 Total via count:       17

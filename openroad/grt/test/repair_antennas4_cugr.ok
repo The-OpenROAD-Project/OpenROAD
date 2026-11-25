@@ -8,12 +8,12 @@
 [INFO ANT-0002] Found 21 net violations.
 [INFO ANT-0001] Found 21 pin violations.
 [INFO GRT-0012] Found 21 antenna violations.
-[INFO GRT-0302] Inserted 20 jumpers for 19 nets.
-[INFO GRT-0012] Found 2 antenna violations.
+[INFO GRT-0302] Inserted 21 jumpers for 20 nets.
+[INFO GRT-0012] Found 1 antenna violations.
 [INFO DPL-0009] Utilization: 8.0%
-[INFO DPL-0501] Legalized with 48 moves: displacement total 31.1 u, max 6.7 u; HPWL 19632.8 -> 19655.1 u (+0.1 %).
-[INFO GRT-0015] Inserted 22 diodes.
-[INFO ANT-0002] Found 2 net violations.
-[INFO ANT-0001] Found 2 pin violations.
+[INFO DPL-0501] Legalized with 16 moves: displacement total 16.3 u, max 6.7 u; HPWL 19612.7 -> 19620.4 u (+0.0 %).
+[INFO GRT-0015] Inserted 11 diodes.
+[INFO ANT-0002] Found 1 net violations.
+[INFO ANT-0001] Found 1 pin violations.
 No differences found.
 No differences found.

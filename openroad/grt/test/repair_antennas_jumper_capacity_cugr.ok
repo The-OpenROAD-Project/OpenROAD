@@ -18,6 +18,8 @@
 [DEBUG GRT-repair_antennas] net clk jumper candidate at 176400 rejected for capacity
 [DEBUG GRT-repair_antennas] net clk jumper candidate at 226800 rejected for capacity
 [DEBUG GRT-repair_antennas] net clk jumper candidate at 183600 rejected for capacity
+[DEBUG GRT-repair_antennas] net clk jumper candidate at 190800 rejected for capacity
+[DEBUG GRT-repair_antennas] net clk jumper candidate at 198000 rejected for capacity
 [DEBUG GRT-repair_antennas] net clk jumper candidate at 234000 rejected for capacity
 [DEBUG GRT-repair_antennas] net clk jumper candidate at 241200 rejected for capacity
 [DEBUG GRT-repair_antennas] net clk jumper candidate at 248400 rejected for capacity

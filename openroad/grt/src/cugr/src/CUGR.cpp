@@ -41,8 +41,12 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "sta/InputDrive.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/Mode.hh"
+#include "sta/Sdc.hh"
+#include "sta/Transition.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 #include "utl/ServiceRegistry.h"
@@ -54,9 +58,9 @@ namespace grt {
 
 // Sentinel demoteNonCriticalNets writes on non-critical nets; not a slack.
 constexpr float kDemotedSlack = std::numeric_limits<float>::max();
-// Overflow relief rounds; each grows the candidates and reruns the RRR loop.
 // Buffers and inverters upstreamCriticality() looks through.
 constexpr int kMaxUpstreamHops = 8;
+// Overflow relief rounds; each grows the candidates and reruns the RRR loop.
 constexpr int kReliefRounds = 5;
 // A relief neighbor's pin box is at most this many gcells from congestion.
 constexpr int kReliefMargin = 5;
@@ -67,6 +71,48 @@ constexpr double kReliefTolerance = 1e-9;
 constexpr double kMaxReliefStretch = 1.25;
 
 namespace {
+
+// Drive resistance (ohm) set on a top-level input port by set_driving_cell
+// or set_drive: the largest over transitions and min/max. Zero when unset.
+float portDriveResistance(const sta::Sdc* sdc, sta::Port* port)
+{
+  const sta::InputDrive* drive = sdc->findInputDrive(port);
+  if (drive == nullptr) {
+    return 0.0f;
+  }
+  float max_res = 0.0f;
+  for (const sta::MinMax* min_max : sta::MinMax::range()) {
+    for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+      const sta::LibertyCell* cell;
+      const sta::LibertyPort* from_port;
+      const sta::DriveCellSlews* from_slews;
+      const sta::LibertyPort* to_port;
+      drive->driveCell(rf, min_max, cell, from_port, from_slews, to_port);
+      if (to_port != nullptr) {
+        max_res = std::max(max_res, to_port->driveResistance());
+      } else {
+        float res;
+        bool exists;
+        drive->driveResistance(rf, min_max, res, exists);
+        if (exists) {
+          max_res = std::max(max_res, res);
+        }
+      }
+    }
+  }
+  return max_res;
+}
+
+// External load (F) set on a top-level output port by set_load: the largest
+// over transitions.
+float portLoadCap(const sta::Sdc* sdc, const sta::Port* port)
+{
+  float cap = 0.0f;
+  for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+    cap = std::max(cap, sdc->portExtCap(port, rf, sta::MinMax::max()));
+  }
+  return cap;
+}
 
 // Stable-sorts net indices by less on their nets. Removed (null) nets sort
 // last so the comparator stays a strict weak ordering.
@@ -458,12 +504,20 @@ void CUGR::setInitialNetSlacks(const std::vector<int>& net_indices)
 void CUGR::updateCriticality()
 {
   float worst_slack = 0.0f;
-  for (const auto& net : gr_nets_) {
-    if (net != nullptr) {
-      worst_slack = std::min(worst_slack, net->getSlack());
+  if (incremental_routing_) {
+    // Only the rerouted nets have fresh slacks; the others may still hold
+    // the previous route's, so take the worst slack from STA.
+    worst_slack = std::min(
+        worst_slack, static_cast<float>(sta_->worstSlack(sta::MinMax::max())));
+  } else {
+    for (const auto& net : gr_nets_) {
+      if (net != nullptr) {
+        worst_slack = std::min(worst_slack, net->getSlack());
+      }
     }
   }
   sta::dbNetwork* network = sta_->getDbNetwork();
+  const sta::Sdc* sdc = sta_->cmdMode()->sdc();
   for (const auto& net : gr_nets_) {
     if (net == nullptr) {
       continue;
@@ -490,6 +544,19 @@ void CUGR::updateCriticality()
           net->setDriverResistance(port->driveResistance());
         } else {
           caps[pin_index] = port->capacitance();
+        }
+      }
+      // Top-level ports: an input port drives through its SDC drive and an
+      // output port loads the net with its SDC external load.
+      for (const auto& [pin_index, bterm] : net->getBTermsByPinIndex()) {
+        sta::Port* port = network->port(network->dbToSta(bterm));
+        if (port == nullptr) {
+          continue;
+        }
+        if (pin_index == net->getDriverPinIndex()) {
+          net->setDriverResistance(portDriveResistance(sdc, port));
+        } else {
+          caps[pin_index] = portLoadCap(sdc, port);
         }
       }
       net->setPinCaps(std::move(caps));
@@ -1142,7 +1209,8 @@ float CUGR::upstreamCriticality(odb::dbNet* db_net) const
 
 bool CUGR::hasTiming() const
 {
-  return sta_->getDbNetwork()->defaultLibertyLibrary() != nullptr;
+  return sta_->getDbNetwork()->defaultLibertyLibrary() != nullptr
+         && !sta_->cmdMode()->sdc()->clocks().empty();
 }
 
 void CUGR::reportDebugNetSlack(const GRNet* net,

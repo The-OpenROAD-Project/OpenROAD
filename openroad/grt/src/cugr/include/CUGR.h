@@ -387,7 +387,8 @@ class CUGR
   void reportDebugNetSlack(const GRNet* net, CugrStage stage, int iteration);
   // Refresh parasitics as the next stage would, so the slack is current.
   void refreshParasiticsForDebug();
-  // True if a liberty library is loaded, i.e. slacks are meaningful.
+  // True if a liberty library is loaded and the SDC defines a clock, i.e.
+  // slacks are meaningful.
   bool hasTiming() const;
 
   std::unique_ptr<Design> design_;
