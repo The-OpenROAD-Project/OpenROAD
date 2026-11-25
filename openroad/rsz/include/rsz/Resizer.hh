@@ -246,22 +246,22 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // as the GUI's placement density heat map counts it, and the area in it
   // that no standard cell can use; see PlacementDensityGrid.  The bins are
   // the global router's gcells, so the density of a gcell is exact.  The
-  // gcells are sized from the routing layers, so until they are set, as
-  // set_routing_layers does, there is no density and the call returns
-  // nothing, for the caller to do without.  The first call builds the grid,
-  // which odb callbacks then keep current, so later calls cost a walk over
-  // the bins the region covers.  The grid, and its upkeep on every instance
-  // edit, stays until releasePlacementDensityGrid().
+  // gcells are sized from the routing layers and their tracks, so until
+  // make_tracks and set_routing_layers have made them, there is no density
+  // and the call returns nothing, for the caller to do without.  The first
+  // call builds the grid, which odb callbacks then keep current, so later
+  // calls cost a walk over the bins the region covers.  The grid, and its
+  // upkeep on every instance edit, stays until releasePlacementDensityGrid().
   std::optional<PlacementDensity> placementDensity(const odb::Rect& region);
   // Placement density of the gcell holding point, so exact, or nothing
-  // without the routing layers; see PlacementDensityGrid.
+  // without the routing layers and their tracks; see PlacementDensityGrid.
   std::optional<PlacementDensity> placementDensity(const odb::Point& point);
   // The grid that placementDensity() queries, brought up to date, or null
-  // without the routing layers.  Its queries are const and only read, so
-  // the threads of a parallel move scoring can make them at once: get the
-  // grid before the scoring, and edit the db only after it.  The grid lives
-  // until releasePlacementDensityGrid() or a call once the db holds another
-  // block.
+  // without the routing layers and their tracks.  Its queries are const and
+  // only read, so the threads of a parallel move scoring can make them at
+  // once: get the grid before the scoring, and edit the db only after it.
+  // The grid lives until releasePlacementDensityGrid() or a call once the db
+  // holds another block.
   const PlacementDensityGrid* placementDensityGrid();
   // Drops the grid placementDensity() builds, which stops its callbacks and
   // frees its memory; the next call builds it afresh.  A pass that queries

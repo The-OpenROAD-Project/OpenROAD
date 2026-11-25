@@ -257,8 +257,12 @@ const PlacementDensityGrid* Resizer::placementDensityGrid()
   // The block the db holds now, which block_ only follows at initBlock().
   odb::dbChip* chip = db_->getChip();
   odb::dbBlock* block = chip != nullptr ? chip->getBlock() : nullptr;
-  // The gcells, the grid's bins, are sized from the routing layers.
-  if (block == nullptr || block->getMaxRoutingLayer() <= 0) {
+  // The gcells, the grid's bins, are sized from the routing layers' tracks,
+  // so there are none until make_tracks and set_routing_layers have run.
+  // Tracks missing from only some of the layers still error in
+  // getGCellTileSize().
+  if (block == nullptr || block->getMaxRoutingLayer() <= 0
+      || block->getTrackGrids().empty()) {
     return nullptr;
   }
   // A grid whose block was destroyed has lost its owner.

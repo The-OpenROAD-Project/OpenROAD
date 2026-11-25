@@ -1900,8 +1900,7 @@ TEST_F(TestResizer, PlacementDensityTracksPlacedInstances)
   const int site_width = site->getWidth();
   const int row_height = site->getHeight();
 
-  // Ten rows of 100 sites, 19 x 14 microns, and tracks on metal2 to metal4,
-  // which the router sizes its gcells from.
+  // Ten rows of 100 sites, 19 x 14 microns.
   const auto make_block = [&](odb::dbChip* chip, const char* name) {
     odb::dbBlock* block = odb::dbBlock::create(chip, name);
     block->setDieArea(odb::Rect(0, 0, 100 * site_width, 10 * row_height));
@@ -1917,16 +1916,20 @@ TEST_F(TestResizer, PlacementDensityTracksPlacedInstances)
                          site_width);
     }
     block->setCoreArea(block->computeCoreArea());
+    return block;
+  };
+  // Tracks on metal2 to metal4, which the router sizes its gcells from.
+  const auto make_tracks = [&](odb::dbBlock* block) {
     for (const char* layer_name : {"metal2", "metal3", "metal4"}) {
       odb::dbTechLayer* layer = db_->getTech()->findLayer(layer_name);
       odb::dbTrackGrid* tracks = odb::dbTrackGrid::create(block, layer);
       tracks->addGridPatternX(0, 100, layer->getPitch());
       tracks->addGridPatternY(0, 100, layer->getPitch());
     }
-    return block;
   };
   odb::dbChip* chip = odb::dbChip::create(db_.get(), db_->getTech());
   block_ = make_block(chip, "top");
+  make_tracks(block_);
   const odb::Rect core = block_->getCoreArea();
 
   // The gcells need the routing layers too.  Until they are set, there is
@@ -1990,6 +1993,11 @@ TEST_F(TestResizer, PlacementDensityTracksPlacedInstances)
   odb::dbBlock* other = make_block(other_chip, "other");
   other->setMaxRoutingLayer(4);
   db_->setTopChip(other_chip);
+  // The gcells need tracks as well, so until they are made there is no
+  // density, rather than an error from sizing the gcells.
+  EXPECT_FALSE(resizer_.placementDensity(core).has_value());
+  EXPECT_EQ(resizer_.placementDensityGrid(), nullptr);
+  make_tracks(other);
   grid = resizer_.placementDensityGrid();
   ASSERT_NE(grid, nullptr);
   EXPECT_EQ(grid->getBlock(), other);
