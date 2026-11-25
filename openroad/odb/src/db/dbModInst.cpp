@@ -777,6 +777,26 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
   // - Through the mod nets of child modules, down to every iterm the port
   //   reaches.
   debugRDPrint1("Connecting nets that span module boundary");
+  // The iterms a port of new_module_copy reaches, each with the mod net it
+  // connects through.  Copied to a vector because disconnect/connect can
+  // change the dbSet while iterating.
+  auto portITerms = [](dbModNet* port_mod_net) {
+    std::vector<std::pair<dbITerm*, dbModNet*>> iterms;
+    std::vector<dbModNet*> mod_nets{port_mod_net};
+    for (size_t i = 0; i < mod_nets.size(); ++i) {
+      dbModNet* mod_net = mod_nets[i];
+      for (dbITerm* iterm : mod_net->getITerms()) {
+        iterms.emplace_back(iterm, mod_net);
+      }
+      for (dbModITerm* mod_iterm : mod_net->getModITerms()) {
+        dbModBTerm* child_bterm = mod_iterm->getChildModBTerm();
+        if (child_bterm && child_bterm->getModNet()) {
+          mod_nets.push_back(child_bterm->getModNet());
+        }
+      }
+    }
+    return iterms;
+  };
   for (const auto& [bterm_name, flat_net] : modbterm_name_flat_net_map) {
     debugRDPrint1("  map_entry[modBTermName '{}'] = flat net '{}'",
                   bterm_name,
@@ -802,22 +822,8 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
 
     // Connect flat net to the iterms of new mod net and of the mod nets
     // of child modules it reaches.
-    // Copy to a vector because disconnect/connect can change the dbSet
-    // while iterating.
-    std::vector<std::pair<dbITerm*, dbModNet*>> new_iterms;
-    std::vector<dbModNet*> mod_nets{new_mod_net};
-    for (size_t i = 0; i < mod_nets.size(); ++i) {
-      dbModNet* mod_net = mod_nets[i];
-      for (dbITerm* new_iterm : mod_net->getITerms()) {
-        new_iterms.emplace_back(new_iterm, mod_net);
-      }
-      for (dbModITerm* mod_iterm : mod_net->getModITerms()) {
-        dbModBTerm* child_bterm = mod_iterm->getChildModBTerm();
-        if (child_bterm && child_bterm->getModNet()) {
-          mod_nets.push_back(child_bterm->getModNet());
-        }
-      }
-    }
+    const std::vector<std::pair<dbITerm*, dbModNet*>> new_iterms
+        = portITerms(new_mod_net);
     if (new_iterms.empty()) {
       debugRDPrint1("    new modnet '{}' has no iterms",
                     new_mod_net->getName());
@@ -838,6 +844,47 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
           "    connected iterm '{}' to flat net '{}' and hier net '{}'",
           new_iterm->getName(),
           flat_net->getName(),
+          mod_net->getName());
+    }
+  }
+
+  // - A port no flat net crosses, e.g., one left unconnected on this
+  //   instance, gets a flat net of its own for the iterms it reaches that
+  //   have none.  They were left for this step when the module was copied
+  //   from an instance where a net crosses the port.
+  dbBlock* block = parent->getOwner();
+  for (dbModBTerm* new_modbterm : new_module_copy->getModBTerms()) {
+    dbModNet* new_mod_net = new_modbterm->getModNet();
+    if (new_mod_net == nullptr
+        || modbterm_name_flat_net_map.contains(new_modbterm->getName())) {
+      continue;
+    }
+    dbNet* port_net = nullptr;
+    for (const auto& [new_iterm, mod_net] : portITerms(new_mod_net)) {
+      if (new_iterm->getNet() != nullptr) {
+        continue;
+      }
+      if (port_net == nullptr) {
+        const std::string net_name = new_mod_inst->getHierarchicalName()
+                                     + block->getHierarchyDelimiter()
+                                     + new_mod_net->getName();
+        port_net = dbNet::create(block, net_name.c_str());
+        if (port_net == nullptr) {
+          logger->error(utl::ODB,
+                        569,
+                        "Net {} cannot be created for port {} of module {} "
+                        "because a net of that name exists.",
+                        net_name,
+                        new_modbterm->getName(),
+                        new_module_copy->getName());
+        }
+      }
+      new_iterm->disconnect();
+      new_iterm->connect(port_net, mod_net);
+      debugRDPrint1(
+          "    connected iterm '{}' to port net '{}' and hier net '{}'",
+          new_iterm->getName(),
+          port_net->getName(),
           mod_net->getName());
     }
   }

@@ -2,7 +2,8 @@
 # overlap in the hierarchy.  A module above the instance would have to
 # contain itself, so the swap is refused and nothing changes.  A module
 # below the instance is copied from a child block saved before the old
-# module, and the modules below it, are deleted.
+# module, and the modules below it, are deleted.  A port left unconnected
+# on the instance gets a flat net of its own.
 
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
@@ -118,6 +119,20 @@ check "outer3 has no children" { children outer3 } {}
 check "outer3/_1_ reads r1's output" { pin_net outer3/_1_ A } r1q
 check "outer3/_2_ drives r4" { pin_net outer3/_2_ ZN } oz3
 check "the path to r4 starts at r1" { startpoint r4 } r1
+
+# Port C is unconnected on u and connected on u2, which u becomes a copy
+# of.  C reaches a pin of u and a pin of u's child gc.
+check "u can become a copy of u2's module" {
+  expr { [swap u [master_of u2]] ne "NULL" }
+} 1
+check "u/i reads r1's output" { pin_net u/i A } r1q
+check "u/g/A2 has a flat net of its own" { pin_net u/g A2 } u/C
+check "u/gc/g/A2 has the same flat net" { pin_net u/gc/g A2 } u/C
+check "u/C connects u/g/A2 and u/gc/g/A2 alone" {
+  llength [[$block findNet u/C] getITerms]
+} 2
+check "u/gc/g drives r5" { pin_net u/gc/g ZN } x1
+check "the path to r5 starts at r1" { startpoint r5 } r1
 
 check "net names are unique" { net_names_unique } 1
 check "no child block is left behind for the copied modules" {

@@ -1,14 +1,20 @@
-module top (clk, in1, out1, out2, out3);
+module top (clk, in1, in2, out1, out2, out3, out4, out5);
  input clk;
  input in1;
+ input in2;
  output out1;
  output out2;
  output out3;
+ output out4;
+ output out5;
 
  wire r1q;
  wire oz;
  wire oz2;
  wire oz3;
+ wire rbq;
+ wire x1;
+ wire x2;
 
  DFF_X1 r1 (.CK(clk),
     .D(in1),
@@ -25,6 +31,19 @@ module top (clk, in1, out1, out2, out3);
  DFF_X1 r4 (.CK(clk),
     .D(oz3),
     .Q(out3));
+
+ // Port C is unconnected on u and connected on u2.
+ DFF_X1 rb (.CK(clk),
+    .D(in2),
+    .Q(rbq));
+ OldF u (.A(r1q), .C(), .X(x1));
+ DFF_X1 r5 (.CK(clk),
+    .D(x1),
+    .Q(out4));
+ NewF u2 (.A(r1q), .C(rbq), .X(x2));
+ DFF_X1 r6 (.CK(clk),
+    .D(x2),
+    .Q(out5));
 endmodule
 
 // One child.
@@ -80,4 +99,41 @@ module Inner (I, O);
     .ZN(_013_));
  INV_X1 _2_ (.A(_013_),
     .ZN(O));
+endmodule
+
+module OldF (A, C, X);
+ input A;
+ input C;
+ output X;
+
+ AND2_X1 g1 (.A1(A),
+    .A2(C),
+    .ZN(X));
+endmodule
+
+module NewF (A, C, X);
+ input A;
+ input C;
+ output X;
+
+ wire t;
+ wire w;
+
+ INV_X1 i (.A(A),
+    .ZN(t));
+ AND2_X1 g (.A1(t),
+    .A2(C),
+    .ZN(w));
+ Gate gc (.A(w), .C(C), .X(X));
+endmodule
+
+// A child that port C of NewF reaches.
+module Gate (A, C, X);
+ input A;
+ input C;
+ output X;
+
+ AND2_X1 g (.A1(A),
+    .A2(C),
+    .ZN(X));
 endmodule
