@@ -46,6 +46,7 @@
 #include "sta/MinMax.hh"
 #include "sta/Mode.hh"
 #include "sta/Sdc.hh"
+#include "sta/SdcClass.hh"
 #include "sta/Transition.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
