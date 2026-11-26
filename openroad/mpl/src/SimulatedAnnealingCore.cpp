@@ -29,23 +29,18 @@ namespace mpl {
 using std::string;
 
 template <class T>
-SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
-                                                  const odb::Rect& outline,
-                                                  const std::vector<T>& macros,
-                                                  const SACoreWeights& weights,
-                                                  float pos_swap_prob,
-                                                  float neg_swap_prob,
-                                                  float double_swap_prob,
-                                                  float exchange_prob,
-                                                  // Fast SA hyperparameter
-                                                  float init_prob,
-                                                  int max_num_step,
-                                                  int num_perturb_per_step,
-                                                  unsigned seed,
-                                                  MplObserver* graphics,
-                                                  utl::Logger* logger,
-                                                  odb::dbBlock* block)
-    : outline_(outline), graphics_(graphics), block_(block)
+SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
+    PhysicalHierarchy* tree,
+    const odb::Rect& outline,
+    const std::vector<T>& macros,
+    const SACoreWeights& weights,
+    const SACoreActionProbs& action_probs,
+    const SAHyperparams& hyperparams,
+    unsigned seed,
+    MplObserver* graphics,
+    utl::Logger* logger,
+    odb::dbBlock* block)
+    : outline_(outline), generator_(seed), graphics_(graphics), block_(block)
 {
   penalties_ = {
       {.name = "Area", .weight = weights.area},
@@ -55,20 +50,30 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(PhysicalHierarchy* tree,
       {.name = "Fence", .weight = weights.fence},
   };
 
-  pos_swap_prob_ = pos_swap_prob;
-  neg_swap_prob_ = neg_swap_prob;
-  double_swap_prob_ = double_swap_prob;
-  exchange_prob_ = exchange_prob;
+  actions_ = {
+      // Swaps two macros' positions within the positive sequence only.
+      {
+          .probability = action_probs.pos_swap,
+          .perturb = [this] { singleSeqSwap(true); },
+      },
+      // Swaps two macros' positions within the negative sequence only.
+      {
+          .probability = action_probs.neg_swap,
+          .perturb = [this] { singleSeqSwap(false); },
+      },
+      // Swaps two macros' positions in both sequences.
+      {
+          .probability = action_probs.double_swap,
+          .perturb = [this] { doubleSeqSwap(); },
+      },
+      // Swaps which macros occupy two positions, in both sequences.
+      {
+          .probability = action_probs.exchange,
+          .perturb = [this] { exchangeMacros(); },
+      },
+  };
 
-  init_prob_ = init_prob;
-  max_num_step_ = max_num_step;
-  num_perturb_per_step_ = num_perturb_per_step;
-
-  // generate random
-  std::mt19937 rand_gen(seed);
-  generator_ = rand_gen;
-  std::uniform_real_distribution<float> distribution(0.0, 1.0);
-  distribution_ = distribution;
+  hyperparams_ = hyperparams;
 
   logger_ = logger;
   macros_ = macros;
@@ -198,6 +203,20 @@ template <class T>
 std::vector<T> SimulatedAnnealingCore<T>::getMacros() const
 {
   return macros_;
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::calPenalty()
+{
+  calAreaPenalty();
+  calOutlinePenalty();
+  calWirelength();
+  calGuidancePenalty();
+  calFencePenalty();
+  calExtraPenalties();
+  if (graphics_) {
+    graphics_->penaltyCalculated(calNormCost());
+  }
 }
 
 // Private functions
@@ -505,6 +524,67 @@ void SimulatedAnnealingCore<T>::packFloorplan()
   }
 }
 
+template <class T>
+void SimulatedAnnealingCore<T>::perturb()
+{
+  if (macros_.empty()) {
+    return;
+  }
+
+  const float op = distribution_(generator_);
+  const Action* selected = &actions_.back();
+  float cumulative_probability = 0.0f;
+  for (const Action& action : actions_) {
+    cumulative_probability += action.probability;
+    if (op <= cumulative_probability) {
+      selected = &action;
+      break;
+    }
+  }
+
+  selected->perturb();
+
+  packFloorplan();
+  calPenalty();
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::saveState()
+{
+  if (macros_.empty()) {
+    return;
+  }
+
+  pre_macros_ = macros_;
+  pre_pos_seq_ = pos_seq_;
+  pre_neg_seq_ = neg_seq_;
+
+  pre_width_ = width_;
+  pre_height_ = height_;
+
+  savePenalties();
+}
+
+template <class T>
+void SimulatedAnnealingCore<T>::restoreState()
+{
+  if (macros_.empty()) {
+    return;
+  }
+
+  // To reduce the runtime, here we do not call PackFloorplan
+  // again. So when we need to generate the final floorplan out,
+  // we need to call PackFloorplan again at the end of SA process.
+  std::swap(pos_seq_, pre_pos_seq_);
+  std::swap(neg_seq_, pre_neg_seq_);
+  std::swap(macros_, pre_macros_);
+
+  width_ = pre_width_;
+  height_ = pre_height_;
+
+  restorePenalties();
+}
+
 // SingleSeqSwap
 template <class T>
 void SimulatedAnnealingCore<T>::singleSeqSwap(bool pos)
@@ -678,6 +758,16 @@ void SimulatedAnnealingCore<T>::reportLocations() const
 }
 
 template <class T>
+void SimulatedAnnealingCore<T>::printResults() const
+{
+  reportWeights();
+  reportTotalCost();
+  if (logger_->debugCheck(utl::MPL, "hierarchical_macro_placement", 2)) {
+    reportLocations();
+  }
+}
+
+template <class T>
 void SimulatedAnnealingCore<T>::initialize()
 {
   initSequencePair();
@@ -691,7 +781,7 @@ void SimulatedAnnealingCore<T>::initialize()
   MplObserver* save_graphics = graphics_;
   graphics_ = nullptr;
 
-  for (int i = 0; i < num_perturb_per_step_; i++) {
+  for (int i = 0; i < hyperparams_.num_perturb_per_step; i++) {
     saveState();
     perturb();
     if (!invalid_states_allowed_ && !isValid()) {
@@ -733,8 +823,8 @@ void SimulatedAnnealingCore<T>::initialize()
   }
 
   if (cost_list.size() > 1 && delta_cost > 0.0) {
-    init_temperature_
-        = (-1.0) * (delta_cost / (cost_list.size() - 1)) / std::log(init_prob_);
+    init_temperature_ = (-1.0) * (delta_cost / (cost_list.size() - 1))
+                        / std::log(hyperparams_.init_prob);
   } else {
     init_temperature_ = 1.0;
   }
@@ -748,13 +838,13 @@ void SimulatedAnnealingCore<T>::fastSA()
   int step = 1;
   float temperature = init_temperature_;
   const float min_t = 1e-10;
-  const float t_factor
-      = std::exp(std::log(min_t / init_temperature_) / max_num_step_);
+  const float t_factor = std::exp(std::log(min_t / init_temperature_)
+                                  / hyperparams_.max_num_step);
 
   updateBestResult(cost);
 
-  while (step <= max_num_step_) {
-    for (int i = 0; i < num_perturb_per_step_; i++) {
+  while (step <= hyperparams_.max_num_step) {
+    for (int i = 0; i < hyperparams_.num_perturb_per_step; i++) {
       saveState();
       perturb();
       cost = calNormCost();
