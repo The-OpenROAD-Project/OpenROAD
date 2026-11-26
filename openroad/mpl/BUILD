@@ -55,8 +55,11 @@ cc_library(
     name = "mpl_impl",
     srcs = [
         "src/SACoreHardMacro.cpp",
+        "src/SACorePenalty.cpp",
+        "src/SACoreReporting.cpp",
         "src/SACoreSoftMacro.cpp",
         "src/SACoreSoftMacro.h",
+        "src/SACoreSoftMacroPenalty.cpp",
         "src/SimulatedAnnealingCore.cpp",
         "src/clusterEngine.cpp",
         "src/feasibilityChecker.cpp",
