@@ -75,7 +75,7 @@ struct DebugSetting
 struct parent3D
 {
   int16_t layer;
-  int x, y;
+  int16_t x, y;  // grid coordinates are int16_t, as in TreeNode
 };
 
 class MinHeap3D
@@ -238,6 +238,7 @@ class FastRouteCore
   void clearNetsToRoute() { net_ids_.clear(); }
   void initEdges();
   void init3DEdges();
+  void release3DEdges();
   void initLowerBoundCapacities();
   void setEdgeCapacity(int x1, int y1, int x2, int y2, int layer, int capacity);
   int getDbNetLayerEdgeCost(odb::dbNet* db_net, int layer);
@@ -284,6 +285,14 @@ class FastRouteCore
   NetRouteMap run();
   int totalOverflow() const { return total_overflow_; }
   bool has2Doverflow() const { return has_2D_overflow_; }
+  void setCongestionOnly(bool congestion_only)
+  {
+    congestion_only_ = congestion_only;
+  }
+  std::array<OverflowStatistics, 2> overflowStatistics2D()
+  {
+    return graph2d_.overflowStatistics(false);
+  }
   int getSnapshotBatchCount() const { return snapshot_batch_count_; }
   void getBlockage(odb::dbTechLayer* layer,
                    int x,
@@ -947,6 +956,7 @@ class FastRouteCore
   int grid_hv_;
   bool verbose_;
   bool allow_congestion_ = false;
+  bool congestion_only_ = false;
   float critical_nets_percentage_;
   float res_aware_nets_percentage_ = 15;
   bool is_fixed_nets_percentage_ = false;

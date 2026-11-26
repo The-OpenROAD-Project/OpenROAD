@@ -162,6 +162,10 @@ class GlobalRouter
   void setSnapshotBatchedWidth(int snapshot_batched_width);
   int getSnapshotBatchedWidth() const;
   int getSnapshotBatchCount() const;
+  void setCongestionOnly(bool congestion_only)
+  {
+    congestion_only_ = congestion_only;
+  }
   bool isResistanceAware() { return resistance_aware_; };
   void setNetIsResAware(odb::dbNet* db_net, bool res_aware);
   bool isNetResAware(odb::dbNet* db_net);
@@ -391,6 +395,8 @@ class GlobalRouter
   // True if the current routing has overflow.
   bool hasCongestion();
   void setDbBlock(odb::dbBlock* block) { block_ = block; }
+  // Set up the router for the block to be read without routing (RUDY).
+  void initForEstimate(odb::dbBlock* block);
 
   void setRenderer(std::unique_ptr<AbstractGrouteRenderer> groute_renderer);
   AbstractGrouteRenderer* getRenderer();
@@ -541,6 +547,7 @@ class GlobalRouter
   void reportLayerSettings(int min_routing_layer, int max_routing_layer);
   void reportResources();
   void reportFastRouteCongestion();
+  void reportFastRoute2DCongestion();
   void updateEdgesUsage();
   void updateDbCongestionFromGuides();
   void computeGCellGridPatternFromGuides(
@@ -619,6 +626,7 @@ class GlobalRouter
   void initClockNets();
   bool isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network);
   void initGridAndNets();
+  void discardCongestionOnlyState();
   void configFastRoute();
 
   utl::Logger* logger_;
@@ -650,11 +658,14 @@ class GlobalRouter
   bool allow_congestion_;
   bool resistance_aware_{false};
   int snapshot_batched_width_{0};
+  bool congestion_only_ = false;
   int num_threads_;
   std::vector<int> vertical_capacities_;
   std::vector<int> horizontal_capacities_;
   int macro_extension_;
   bool initialized_;
+  // A -congestion_only pass released the 3D edges.
+  bool edges_3d_released_ = false;
   int total_diodes_count_;
   bool is_congested_{false};
   // Whether the congestion of the current routes was accepted, decided

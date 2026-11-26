@@ -189,9 +189,10 @@ TEST_F(TestResizerMt, SetupParallelEvalPolicyDefaultSequenceIsFiltered)
   MoveCommitter committer(resizer_);
   RepairSetupContext setup_context(resizer_);
 
-  // One VT category drops the default VtSwapMt, as it drops a requested one.
+  // No VT category (Nangate45 has no implant layers) drops the default
+  // VtSwapMt, as it drops a requested one.
   // repair_setup_parallel_eval_default_sequence covers the multi-VT case.
-  ASSERT_EQ(resizer_.vtCategoryCount(), 1);
+  ASSERT_EQ(resizer_.vtCategoryCount(), 0);
 
   OptimizerRunConfig config;
   SetupParallelEvalPolicy policy(resizer_, committer, setup_context, config);

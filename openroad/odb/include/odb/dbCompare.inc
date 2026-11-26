@@ -641,6 +641,13 @@ struct less<odb::dbTechLayerArraySpacingRule*>
 };
 
 template <>
+struct less<odb::dbTechLayerCoreEdgeLengthRule*>
+{
+  bool operator()(const odb::dbTechLayerCoreEdgeLengthRule* lhs,
+                  const odb::dbTechLayerCoreEdgeLengthRule* rhs) const = delete;
+};
+
+template <>
 struct less<odb::dbTechLayerCornerSpacingRule*>
 {
   bool operator()(const odb::dbTechLayerCornerSpacingRule* lhs,
@@ -712,6 +719,20 @@ struct less<odb::dbTechLayerForbiddenSpacingRule*>
   bool operator()(const odb::dbTechLayerForbiddenSpacingRule* lhs,
                   const odb::dbTechLayerForbiddenSpacingRule* rhs) const
       = delete;
+};
+
+template <>
+struct less<odb::dbTechLayerImplantSpacingRule*>
+{
+  bool operator()(const odb::dbTechLayerImplantSpacingRule* lhs,
+                  const odb::dbTechLayerImplantSpacingRule* rhs) const = delete;
+};
+
+template <>
+struct less<odb::dbTechLayerImplantWidthRule*>
+{
+  bool operator()(const odb::dbTechLayerImplantWidthRule* lhs,
+                  const odb::dbTechLayerImplantWidthRule* rhs) const = delete;
 };
 
 template <>

@@ -105,79 +105,79 @@ void _dbGDSARef::collectMemInfo(MemInfo& info)
 
 void dbGDSARef::setOrigin(const Point& origin)
 {
-  _dbGDSARef* obj = (_dbGDSARef*) this;
+  _dbGDSARef* obj = reinterpret_cast<_dbGDSARef*>(this);
 
   obj->origin_ = origin;
 }
 
 Point dbGDSARef::getOrigin() const
 {
-  _dbGDSARef* obj = (_dbGDSARef*) this;
+  const _dbGDSARef* obj = reinterpret_cast<const _dbGDSARef*>(this);
   return obj->origin_;
 }
 
 void dbGDSARef::setLr(const Point& lr)
 {
-  _dbGDSARef* obj = (_dbGDSARef*) this;
+  _dbGDSARef* obj = reinterpret_cast<_dbGDSARef*>(this);
 
   obj->lr_ = lr;
 }
 
 Point dbGDSARef::getLr() const
 {
-  _dbGDSARef* obj = (_dbGDSARef*) this;
+  const _dbGDSARef* obj = reinterpret_cast<const _dbGDSARef*>(this);
   return obj->lr_;
 }
 
 void dbGDSARef::setUl(const Point& ul)
 {
-  _dbGDSARef* obj = (_dbGDSARef*) this;
+  _dbGDSARef* obj = reinterpret_cast<_dbGDSARef*>(this);
 
   obj->ul_ = ul;
 }
 
 Point dbGDSARef::getUl() const
 {
-  _dbGDSARef* obj = (_dbGDSARef*) this;
+  const _dbGDSARef* obj = reinterpret_cast<const _dbGDSARef*>(this);
   return obj->ul_;
 }
 
 void dbGDSARef::setTransform(dbGDSSTrans transform)
 {
-  _dbGDSARef* obj = (_dbGDSARef*) this;
+  _dbGDSARef* obj = reinterpret_cast<_dbGDSARef*>(this);
 
   obj->transform_ = transform;
 }
 
 dbGDSSTrans dbGDSARef::getTransform() const
 {
-  _dbGDSARef* obj = (_dbGDSARef*) this;
+  const _dbGDSARef* obj = reinterpret_cast<const _dbGDSARef*>(this);
   return obj->transform_;
 }
 
 void dbGDSARef::setNumRows(int16_t num_rows)
 {
-  _dbGDSARef* obj = (_dbGDSARef*) this;
+  _dbGDSARef* obj = reinterpret_cast<_dbGDSARef*>(this);
 
   obj->num_rows_ = num_rows;
 }
 
 int16_t dbGDSARef::getNumRows() const
 {
-  _dbGDSARef* obj = (_dbGDSARef*) this;
+  const _dbGDSARef* obj = reinterpret_cast<const _dbGDSARef*>(this);
   return obj->num_rows_;
 }
 
 void dbGDSARef::setNumColumns(int16_t num_columns)
 {
-  _dbGDSARef* obj = (_dbGDSARef*) this;
+  _dbGDSARef* obj = reinterpret_cast<_dbGDSARef*>(this);
 
   obj->num_columns_ = num_columns;
 }
 
 int16_t dbGDSARef::getNumColumns() const
 {
-  _dbGDSARef* obj = (_dbGDSARef*) this;
+  const _dbGDSARef* obj = reinterpret_cast<const _dbGDSARef*>(this);
   return obj->num_columns_;
 }
 

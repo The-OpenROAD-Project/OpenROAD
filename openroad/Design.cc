@@ -342,6 +342,11 @@ pdn::PdnGen* Design::getPdnGen()
   return getOpenRoad()->getPdnGen();
 }
 
+pex::Pex* Design::getPex()
+{
+  return getOpenRoad()->getPex();
+}
+
 pad::ICeWall* Design::getICeWall()
 {
   return getOpenRoad()->getICeWall();

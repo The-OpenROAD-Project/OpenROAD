@@ -294,13 +294,6 @@ sta::InstanceSet LogicExtractorFactory::GetCutInstances(
     }
   }
 
-  // We don't want DFFs in the instance themselves since we don't actually
-  // want to put those cells in ABC. Remove them.
-  for (sta::Vertex* vertex : endpoints_) {
-    sta::Instance* endpoint_instance = network->instance(vertex->pin());
-    cut_instances.erase(endpoint_instance);
-  }
-
   return cut_instances;
 }
 
@@ -339,6 +332,27 @@ std::vector<sta::Pin*> LogicExtractorFactory::FilterUndrivenOutputs(
   }
 
   return filtered_output_pins;
+}
+
+std::vector<sta::Vertex*> LogicExtractorFactory::FilterVerticesOnEndpointCells(
+    const std::vector<sta::Vertex*>& cut_vertices)
+{
+  sta::dbNetwork* network = open_sta_->getDbNetwork();
+  std::unordered_set<sta::Instance*> endpoint_intances;
+  for (sta::Vertex* vertex : endpoints_) {
+    sta::Instance* instance = network->instance(vertex->pin());
+    if (instance) {
+      endpoint_intances.insert(instance);
+    }
+  }
+
+  std::vector<sta::Vertex*> result;
+  for (sta::Vertex* vertex : cut_vertices) {
+    if (!endpoint_intances.contains(network->instance(vertex->pin()))) {
+      result.push_back(vertex);
+    }
+  }
+  return result;
 }
 
 std::vector<sta::Net*> LogicExtractorFactory::ConvertIoPinsToNets(
@@ -382,6 +396,7 @@ LogicCut LogicExtractorFactory::BuildLogicCut(AbcLibrary& abc_network)
   std::vector<sta::Vertex*> cut_vertices = GetCutVertices(abc_network);
   // Dealing with constant cells 1/0 and disabled timing paths.
   cut_vertices = AddMissingVertices(cut_vertices, abc_network);
+  cut_vertices = FilterVerticesOnEndpointCells(cut_vertices);
 
   std::vector<sta::Pin*> primary_inputs = GetPrimaryInputs(cut_vertices);
   std::vector<sta::Pin*> primary_outputs = GetPrimaryOutputs(cut_vertices);

@@ -167,6 +167,26 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
 
   int prev_violations = -1;
   int stall_count = 0;
+  // True once the violation count has repeated for 3 consecutive iterations.
+  auto is_stalled = [&](const int violations) {
+    stall_count = (violations == prev_violations) ? stall_count + 1 : 0;
+    prev_violations = violations;
+    return stall_count == 3;
+  };
+  auto recover_stall = [&](const int phase, const int violations) {
+    print_last_if_needed();
+    const std::vector<int> illegal_cells = collectIllegalCells(active);
+    logger_->warn(utl::DPL,
+                  700,
+                  "Negotiation phase {}: violations stuck at {} for 3 "
+                  "consecutive iterations. Using diamond search for {} "
+                  "remaining illegal cells.",
+                  phase,
+                  violations,
+                  illegal_cells.size());
+    diamondRecovery(illegal_cells);
+  };
+
   for (int iter = 0; iter < max_iter_neg_; ++iter) {
     const bool print_row = shouldPrintIteration(iter);
     const int phase_1_violations
@@ -189,31 +209,10 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
       debugPause("Pause after convergence at phase 1.");
       return;
     }
-    if (phase_1_violations == prev_violations) {
-      ++stall_count;
-      if (stall_count == 3) {
-        print_last_if_needed();
-        std::vector<int> illegal_cells;
-        for (int idx : active) {
-          if (!cells_[idx].fixed && !isCellLegal(idx)) {
-            illegal_cells.push_back(idx);
-          }
-        }
-        logger_->warn(
-            utl::DPL,
-            700,
-            "Negotiation phase 1: violations stuck at {} for 3 consecutive "
-            "iterations.\nUsing old diamond search for {} remaining illegal "
-            "cells.",
-            phase_1_violations,
-            illegal_cells.size());
-        diamondRecovery(illegal_cells);
-        break;
-      }
-    } else {
-      stall_count = 0;
+    if (is_stalled(phase_1_violations)) {
+      recover_stall(1, phase_1_violations);
+      break;
     }
-    prev_violations = phase_1_violations;
   }
   print_last_if_needed();
 
@@ -255,36 +254,24 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
       debugPause("Pause after convergence at phase 2.");
       return;
     }
-    if (phase_2_violations == prev_violations) {
-      ++stall_count;
-      if (stall_count == 3) {
-        print_last_if_needed();
-        std::vector<int> illegal_cells;
-        for (int idx : active) {
-          if (!cells_[idx].fixed && !isCellLegal(idx)) {
-            illegal_cells.push_back(idx);
-          }
-        }
-        logger_->warn(utl::DPL,
-                      702,
-                      "Negotiation phase 2: violations stuck at {} for 3 "
-                      "consecutive iterations. Using diamond search for {} "
-                      "remaining illegal cells.",
-                      phase_2_violations,
-                      illegal_cells.size());
-        finish_ = Finish::kPhase2Recovery;
-        diamondRecovery(illegal_cells);
-        break;
-      }
-    } else {
-      stall_count = 0;
+    if (is_stalled(phase_2_violations)) {
+      finish_ = Finish::kPhase2Recovery;
+      recover_stall(2, phase_2_violations);
+      break;
     }
-    prev_violations = phase_2_violations;
   }
   print_last_if_needed();
 
   if (finish_ != Finish::kPhase2Recovery) {
     finish_ = Finish::kPhase2IterLimit;
+    const std::vector<int> illegal_cells = collectIllegalCells(active);
+    logger_->warn(utl::DPL,
+                  703,
+                  "Negotiation phase 2: iteration limit {} reached. Using "
+                  "diamond search for {} remaining illegal cells.",
+                  kMaxIterNeg2,
+                  illegal_cells.size());
+    diamondRecovery(illegal_cells);
   }
 
   // Non-convergence is reported by the caller (Opendp::detailedPlacement)
@@ -1156,6 +1143,19 @@ void NegotiationLegalizer::sortByNegotiationOrder(
   }
 }
 
+// Movable cells in `cells` that are currently illegal.
+std::vector<int> NegotiationLegalizer::collectIllegalCells(
+    const std::vector<int>& cells) const
+{
+  std::vector<int> illegal;
+  for (const int idx : cells) {
+    if (!cells_[idx].fixed && !isCellLegal(idx)) {
+      illegal.push_back(idx);
+    }
+  }
+  return illegal;
+}
+
 // ===========================================================================
 // diamondRecovery – break stalls by trying the Opendp BFS diamond search on
 // each illegal cell.  Unlike findBestLocation (bounded rectangular window),
@@ -1170,7 +1170,6 @@ void NegotiationLegalizer::diamondRecovery(const std::vector<int>& activeCells)
     return;
   }
   ++diamond_recoveries_;
-  int recovered = 0;
   for (int idx : activeCells) {
     if (cells_[idx].fixed || isCellLegal(idx)) {
       continue;
@@ -1195,15 +1194,17 @@ void NegotiationLegalizer::diamondRecovery(const std::vector<int>& activeCells)
                  cell.db_inst->getName(),
                  pt.x.v,
                  pt.y.v);
-      ++recovered;
     } else {
       // No legal site found — restore at current position so the negotiation
       // loop can keep trying.
       place(idx, cell.x, cell.y);
     }
   }
+  // Recheck rather than trusting diamondSearch: it only consults the DPL
+  // grid, so a cell it placed can still overuse the negotiation grid.
+  const std::vector<int> still_illegal = collectIllegalCells(activeCells);
   logger_->report("diamond recovery: recovered {}/{} stuck cells.",
-                  recovered,
+                  activeCells.size() - still_illegal.size(),
                   activeCells.size());
 }
 

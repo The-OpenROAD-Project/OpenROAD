@@ -111,41 +111,41 @@ void _dbChipInst::collectMemInfo(MemInfo& info)
 
 const std::string& dbChipInst::getName() const
 {
-  _dbChipInst* obj = (_dbChipInst*) this;
+  const _dbChipInst* obj = reinterpret_cast<const _dbChipInst*>(this);
   return obj->name_;
 }
 
 void dbChipInst::setOrient(dbOrientType3D orient)
 {
-  _dbChipInst* obj = (_dbChipInst*) this;
+  _dbChipInst* obj = reinterpret_cast<_dbChipInst*>(this);
 
   obj->orient_ = orient;
 }
 
 dbOrientType3D dbChipInst::getOrient() const
 {
-  _dbChipInst* obj = (_dbChipInst*) this;
+  const _dbChipInst* obj = reinterpret_cast<const _dbChipInst*>(this);
   return obj->orient_;
 }
 
 dbChip* dbChipInst::getMasterChip() const
 {
-  _dbChipInst* obj = (_dbChipInst*) this;
+  const _dbChipInst* obj = reinterpret_cast<const _dbChipInst*>(this);
   if (obj->master_chip_ == 0) {
     return nullptr;
   }
-  _dbDatabase* par = (_dbDatabase*) obj->getOwner();
-  return (dbChip*) par->chip_tbl_->getPtr(obj->master_chip_);
+  _dbDatabase* par = static_cast<_dbDatabase*>(obj->getOwner());
+  return reinterpret_cast<dbChip*>(par->chip_tbl_->getPtr(obj->master_chip_));
 }
 
 dbChip* dbChipInst::getParentChip() const
 {
-  _dbChipInst* obj = (_dbChipInst*) this;
+  const _dbChipInst* obj = reinterpret_cast<const _dbChipInst*>(this);
   if (obj->parent_chip_ == 0) {
     return nullptr;
   }
-  _dbDatabase* par = (_dbDatabase*) obj->getOwner();
-  return (dbChip*) par->chip_tbl_->getPtr(obj->parent_chip_);
+  _dbDatabase* par = static_cast<_dbDatabase*>(obj->getOwner());
+  return reinterpret_cast<dbChip*>(par->chip_tbl_->getPtr(obj->parent_chip_));
 }
 
 // User Code Begin dbChipInstPublicMethods

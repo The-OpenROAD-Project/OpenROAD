@@ -553,68 +553,68 @@ void _dbMarker::fromPTree(const _dbMarkerCategory::PropertyTree& tree)
 
 void dbMarker::setComment(const std::string& comment)
 {
-  _dbMarker* obj = (_dbMarker*) this;
+  _dbMarker* obj = reinterpret_cast<_dbMarker*>(this);
 
   obj->comment_ = comment;
 }
 
 const std::string& dbMarker::getComment() const
 {
-  _dbMarker* obj = (_dbMarker*) this;
+  const _dbMarker* obj = reinterpret_cast<const _dbMarker*>(this);
   return obj->comment_;
 }
 
 void dbMarker::setLineNumber(int line_number)
 {
-  _dbMarker* obj = (_dbMarker*) this;
+  _dbMarker* obj = reinterpret_cast<_dbMarker*>(this);
 
   obj->line_number_ = line_number;
 }
 
 int dbMarker::getLineNumber() const
 {
-  _dbMarker* obj = (_dbMarker*) this;
+  const _dbMarker* obj = reinterpret_cast<const _dbMarker*>(this);
   return obj->line_number_;
 }
 
 void dbMarker::setVisited(bool visited)
 {
-  _dbMarker* obj = (_dbMarker*) this;
+  _dbMarker* obj = reinterpret_cast<_dbMarker*>(this);
 
   obj->flags_.visited = visited;
 }
 
 bool dbMarker::isVisited() const
 {
-  _dbMarker* obj = (_dbMarker*) this;
+  const _dbMarker* obj = reinterpret_cast<const _dbMarker*>(this);
 
   return obj->flags_.visited;
 }
 
 void dbMarker::setVisible(bool visible)
 {
-  _dbMarker* obj = (_dbMarker*) this;
+  _dbMarker* obj = reinterpret_cast<_dbMarker*>(this);
 
   obj->flags_.visible = visible;
 }
 
 bool dbMarker::isVisible() const
 {
-  _dbMarker* obj = (_dbMarker*) this;
+  const _dbMarker* obj = reinterpret_cast<const _dbMarker*>(this);
 
   return obj->flags_.visible;
 }
 
 void dbMarker::setWaived(bool waived)
 {
-  _dbMarker* obj = (_dbMarker*) this;
+  _dbMarker* obj = reinterpret_cast<_dbMarker*>(this);
 
   obj->flags_.waived = waived;
 }
 
 bool dbMarker::isWaived() const
 {
-  _dbMarker* obj = (_dbMarker*) this;
+  const _dbMarker* obj = reinterpret_cast<const _dbMarker*>(this);
 
   return obj->flags_.waived;
 }

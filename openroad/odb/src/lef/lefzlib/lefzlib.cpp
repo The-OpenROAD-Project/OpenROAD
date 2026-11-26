@@ -38,7 +38,7 @@
 #include <cstring>
 
 #include "lefrReader.hpp"
-#include "zlib.h"
+#include "zlib/include/zlib.h"
 
 /*
  * Private functions:

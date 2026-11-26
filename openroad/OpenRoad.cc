@@ -62,6 +62,8 @@
 #include "par/PartitionMgr.h"
 #include "pdn/MakePdnGen.hh"
 #include "pdn/PdnGen.hh"
+#include "pex/MakePex.h"
+#include "pex/Pex.h"
 #include "ppl/IOPlacer.h"
 #include "ppl/MakeIoplacer.h"
 #include "psm/MakePDNSim.hh"
@@ -139,6 +141,7 @@ OpenRoad::~OpenRoad()
   delete example_;
   delete retimer_;
   delete field_solver_;
+  delete pex_;
   delete extractor_;
   delete detailed_router_;
   // Stop the web server first — its I/O threads access the database
@@ -264,7 +267,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   drt::initGui(detailed_router_);
 
   replace_ = new gpl::Replace(
-      db_, sta_, resizer_, global_router_, ioPlacer_, logger_);
+      db_, sta_, resizer_, global_router_, ioPlacer_, tritonCts_, logger_);
   pdnsim_ = new psm::PDNSim(logger_, db_, sta_, estimate_parasitics_, opendp_);
   pdngen_ = new pdn::PdnGen(db_, logger_);
   ram_gen_ = new ram::RamGen(getDbNetwork(),
@@ -274,13 +277,15 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
                              ioPlacer_,
                              opendp_,
                              global_router_,
-                             detailed_router_);
+                             detailed_router_,
+                             sta_);
   icewall_ = new pad::ICeWall(db_, logger_);
   dft_ = new dft::Dft(db_, sta_, resizer_, logger_);
   example_ = new exa::Example(db_, logger_);
   retimer_
       = new ret::Retimer(db_, sta_, estimate_parasitics_, resizer_, logger_);
   field_solver_ = new fsv::FieldSolver(db_, logger_);
+  pex_ = new pex::Pex(db_, logger_);
   web_server_ = new web::WebServer(db_, sta_, logger_, tcl_interp);
   watermark_
       = new wmk::Watermark(db_, sta_, opendp_, estimate_parasitics_, logger_);
@@ -313,6 +318,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   exa::initExample(tcl_interp);
   ret::initRet(tcl_interp);
   fsv::initFieldSolver(tcl_interp);
+  pex::initPex(tcl_interp);
   rcx::initOpenRCX(tcl_interp);
   pad::initICeWall(tcl_interp);
   rmp::initRestructure(tcl_interp);
@@ -662,6 +668,14 @@ void OpenRoad::linkDesign(const char* design_name,
     sta->getDbNetwork()->setHierarchy();
   }
   db_->triggerPostReadDb();
+}
+
+void OpenRoad::linkModule(const char* module_name)
+{
+  if (!dbLinkModule(module_name, verilog_network_, db_, logger_)) {
+    logger_->error(
+        ORD, 2063, "link_hier_module: module {} did not link.", module_name);
+  }
 }
 
 void OpenRoad::designCreated()
