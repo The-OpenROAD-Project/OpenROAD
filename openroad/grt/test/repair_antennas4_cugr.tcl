@@ -1,6 +1,6 @@
 # repair_antennas with CUGR routing under the harsh antenna rules of
-# repair_antennas4.tlef: jumpers clear every violation that diode-only
-# repair could not.
+# repair_antennas4.tlef: jumpers clear most violations and diodes follow.
+# One met2 violation remains where met4 has no free window for a jumper.
 source "helpers.tcl"
 read_liberty "sky130hs/sky130hs_tt.lib"
 read_lef "repair_antennas4.tlef"

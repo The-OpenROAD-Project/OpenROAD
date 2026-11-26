@@ -1,0 +1,133 @@
+/* Minimal sky130hd subset for scan_replace_renamed_port_sky130.
+   The scan cell's true output is Q_N and its inverted output is Q, so
+   scan_replace maps the non-scan Q to Q_N and Q_N to Q. */
+library ("scan_replace_renamed_port") {
+    delay_model : "table_lookup";
+    time_unit : "1ns";
+    voltage_unit : "1V";
+    current_unit : "1mA";
+    pulling_resistance_unit : "1kohm";
+    leakage_power_unit : "1nW";
+    capacitive_load_unit (1, "pf");
+    nom_process : 1.0;
+    nom_temperature : 25.0;
+    nom_voltage : 1.8;
+    cell ("sky130_fd_sc_hd__dfxbp_1") {
+        area : 20.0;
+        ff ("IQ","IQ_N") {
+            clocked_on : "CLK";
+            next_state : "D";
+        }
+        pin ("CLK") {
+            direction : "input";
+            clock : "true";
+            capacitance : 0.002;
+        }
+        pin ("D") {
+            direction : "input";
+            capacitance : 0.002;
+        }
+        pin ("Q") {
+            direction : "output";
+            function : "IQ";
+            timing () {
+                related_pin : "CLK";
+                timing_type : "rising_edge";
+                cell_rise (scalar) { values ("0.1"); }
+                cell_fall (scalar) { values ("0.1"); }
+                rise_transition (scalar) { values ("0.1"); }
+                fall_transition (scalar) { values ("0.1"); }
+            }
+        }
+        pin ("Q_N") {
+            direction : "output";
+            function : "IQ_N";
+            timing () {
+                related_pin : "CLK";
+                timing_type : "rising_edge";
+                cell_rise (scalar) { values ("0.1"); }
+                cell_fall (scalar) { values ("0.1"); }
+                rise_transition (scalar) { values ("0.1"); }
+                fall_transition (scalar) { values ("0.1"); }
+            }
+        }
+    }
+    cell ("sky130_fd_sc_hd__sdfxbp_1") {
+        area : 30.0;
+        ff ("IQ","IQ_N") {
+            clocked_on : "CLK";
+            next_state : "(D&!SCE) | (SCD&SCE)";
+        }
+        pin ("CLK") {
+            direction : "input";
+            clock : "true";
+            capacitance : 0.002;
+        }
+        pin ("D") {
+            direction : "input";
+            capacitance : 0.002;
+        }
+        pin ("SCD") {
+            direction : "input";
+            capacitance : 0.002;
+        }
+        pin ("SCE") {
+            direction : "input";
+            capacitance : 0.002;
+        }
+        pin ("Q") {
+            direction : "output";
+            function : "IQ_N";
+            timing () {
+                related_pin : "CLK";
+                timing_type : "rising_edge";
+                cell_rise (scalar) { values ("0.1"); }
+                cell_fall (scalar) { values ("0.1"); }
+                rise_transition (scalar) { values ("0.1"); }
+                fall_transition (scalar) { values ("0.1"); }
+            }
+        }
+        pin ("Q_N") {
+            direction : "output";
+            function : "IQ";
+            timing () {
+                related_pin : "CLK";
+                timing_type : "rising_edge";
+                cell_rise (scalar) { values ("0.1"); }
+                cell_fall (scalar) { values ("0.1"); }
+                rise_transition (scalar) { values ("0.1"); }
+                fall_transition (scalar) { values ("0.1"); }
+            }
+        }
+        test_cell () {
+            ff ("IQ","IQ_N") {
+                clocked_on : "CLK";
+                next_state : "D";
+            }
+            pin ("CLK") {
+                direction : "input";
+            }
+            pin ("D") {
+                direction : "input";
+            }
+            pin ("Q") {
+                direction : "output";
+                function : "IQ_N";
+                signal_type : "test_scan_out_inverted";
+            }
+            pin ("Q_N") {
+                direction : "output";
+                function : "IQ";
+                signal_type : "test_scan_out";
+            }
+            pin ("SCD") {
+                direction : "input";
+                signal_type : "test_scan_in";
+            }
+            pin ("SCE") {
+                direction : "input";
+                signal_type : "test_scan_enable";
+            }
+        }
+    }
+}

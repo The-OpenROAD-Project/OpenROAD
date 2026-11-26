@@ -5,6 +5,10 @@
 
 #include "grt/GRoute.h"
 
+namespace odb {
+class dbTechLayer;
+}
+
 namespace est {
 
 // Service interface published by the parasitics estimator. Consumers
@@ -24,6 +28,13 @@ class ParasiticsService
 
   // Re-estimate one net's parasitics from the given route; no-op if empty.
   virtual void updateGlobalRouteParasitics(odb::dbNet* net, grt::GRoute& route)
+      = 0;
+
+  // Resistance (ohm/m) and capacitance (F/m) of a routing layer, or the
+  // per-cut resistance (ohm) of a cut layer: the largest over scenes of the
+  // values global route parasitics use, falling back to the LEF. Zero when
+  // neither sets them.
+  virtual void layerRC(odb::dbTechLayer* layer, double& res, double& cap) const
       = 0;
 };
 

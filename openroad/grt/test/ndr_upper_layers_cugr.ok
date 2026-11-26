@@ -40,9 +40,10 @@ met5       Horizontal       3108          1554          50.00%
 ---------------------------------------------------------------
 
 Stage 1: Pattern routing.
+Stage 2: Re-route of nets with negative slack.
 Routing statistics
 Wire length:           2977
-Total via count:       152
+Total via count:       227
 Total congestion:      0.00
 Min resource:          1.00
 Bottleneck:            (5, 0, 0)
@@ -50,13 +51,13 @@ Bottleneck:            (5, 0, 0)
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
 --------------------------------------------------------------------------
 li1       V         0.00         0.00         0.00         0.00       0.00
-met1      H      5510.96        55.00         7.72        62.72       1.14
-met2      V      6471.30        55.00         6.16        61.16       0.95
-met3      H      7011.50        49.96         2.15        52.11       0.74
-met4      V      5402.00        16.88         0.39        17.26       0.32
+met1      H      5510.96        30.00         6.99        36.99       0.67
+met2      V      6471.30        16.00         6.60        22.60       0.35
+met3      H      7011.50        93.09        10.84       103.93       1.48
+met4      V      5402.00        71.72         2.84        74.55       1.38
 met5      H      1554.00         0.00         0.00         0.00       0.00
 --------------------------------------------------------------------------
-Total           25949.76       176.83        16.42       193.25       0.74
+Total           25949.76       210.81        27.26       238.07       0.92
 [INFO GRT-0018] Total wirelength: 1663 um
 [INFO GRT-0014] Routed nets: 15
 No differences found.

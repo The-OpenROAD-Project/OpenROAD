@@ -15,7 +15,7 @@ namespace grt {
 enum class CugrStage
 {
   patternRoute,
-  patternRouteResAware,
+  patternRouteCritical,
   patternRouteWithDetours,
   mazeRoute,
   iterativeRRR
@@ -25,14 +25,14 @@ enum class CugrStage
 struct CugrDebugStages
 {
   bool pattern_route = false;
-  bool res_aware = false;
+  bool critical = false;
   bool detours = false;
   bool maze = false;
   bool rrr = false;
 
   bool any() const
   {
-    return pattern_route || res_aware || detours || maze || rrr;
+    return pattern_route || critical || detours || maze || rrr;
   }
 };
 
@@ -41,8 +41,8 @@ inline const char* toString(const CugrStage stage)
   switch (stage) {
     case CugrStage::patternRoute:
       return "pattern route";
-    case CugrStage::patternRouteResAware:
-      return "resistance-aware re-route";
+    case CugrStage::patternRouteCritical:
+      return "critical-net re-route";
     case CugrStage::patternRouteWithDetours:
       return "pattern route with detours";
     case CugrStage::mazeRoute:
