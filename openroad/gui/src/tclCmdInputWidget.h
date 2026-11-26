@@ -55,7 +55,10 @@ class TclCmdInputWidget : public CmdInputWidget
 
   // Runs at most max_events of Tcl's pending events (after, fileevent, and
   // socket callbacks).  Does nothing while a command or a nested event loop
-  // runs, so a callback never runs in the middle of another command.
+  // runs, so a callback never runs in the middle of another command.  A call
+  // that runs a Tcl command is bracketed by commandAboutToExecute and
+  // commandFinishedExecuting, like executeCommand; one that runs none emits
+  // neither.
   void serviceEvents(int max_events);
 
  public slots:
@@ -83,6 +86,16 @@ class TclCmdInputWidget : public CmdInputWidget
                             int argc,
                             const char** argv);
 
+  // Trace on the first command an event runs: emits commandAboutToExecute
+  // and deletes itself.
+  static int eventCommandTrace(ClientData instance_data,
+                               Tcl_Interp* interp,
+                               int level,
+                               const char* command,
+                               Tcl_Command command_info,
+                               int objc,
+                               Tcl_Obj* const* objv);
+
   void initOpenRoadCommands();
   void parseOpenRoadArguments(const char* or_args, std::set<std::string>& args);
   void collectNamespaces(std::set<std::string>& namespaces);
@@ -100,6 +113,8 @@ class TclCmdInputWidget : public CmdInputWidget
 
   // Number of executeCommand and serviceEvents calls on the stack.
   int command_depth_ = 0;
+  // Set by serviceEvents until an event runs its first command.
+  Tcl_Trace event_trace_ = nullptr;
 
   std::unique_ptr<QMenu> context_menu_;
   std::unique_ptr<QAction> enable_highlighting_;

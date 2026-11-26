@@ -715,11 +715,45 @@ void TclCmdInputWidget::serviceEvents(const int max_events)
   }
 
   ++command_depth_;
+  // Most ticks run no event, and the layout viewer repaints on
+  // commandFinishedExecuting, so the signals wait for an event's first
+  // command.  Inline-compiled commands such as set skip the trace; none of
+  // them touch the database.
+  event_trace_ = Tcl_CreateObjTrace(interp_,
+                                    0,
+                                    TCL_ALLOW_INLINE_COMPILATION,
+                                    eventCommandTrace,
+                                    this,
+                                    nullptr);
   for (int i = 0;
        i < max_events && Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT);
        ++i) {
   }
+  const bool ran_command = event_trace_ == nullptr;
+  if (!ran_command) {
+    Tcl_DeleteTrace(interp_, event_trace_);
+    event_trace_ = nullptr;
+  }
   --command_depth_;
+
+  if (ran_command) {
+    emit commandFinishedExecuting(true);
+  }
+}
+
+int TclCmdInputWidget::eventCommandTrace(ClientData instance_data,
+                                         Tcl_Interp* interp,
+                                         int /* level */,
+                                         const char* /* command */,
+                                         Tcl_Command /* command_info */,
+                                         int /* objc */,
+                                         Tcl_Obj* const* /* objv */)
+{
+  TclCmdInputWidget* widget = static_cast<TclCmdInputWidget*>(instance_data);
+  Tcl_DeleteTrace(interp, widget->event_trace_);
+  widget->event_trace_ = nullptr;
+  emit widget->commandAboutToExecute();
+  return TCL_OK;
 }
 
 void TclCmdInputWidget::processTclResult(const int tcl_result)
