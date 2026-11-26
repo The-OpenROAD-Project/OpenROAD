@@ -83,9 +83,9 @@ These gates are never crossed:
 - a gate fed through a register that stays, connected to a primary input or
   output, driving a control pin of a register, or reachable by registers on
   different clock nets;
-- a gate whose output net has a second driver, and a cell that is not a
-  plain combinational gate: a tri-state driver, an isolation cell, a level
-  shifter, a macro, a pad, or a cell without a liberty function;
+- a gate that drives or reads a net with a second driver, and a cell that
+  is not a plain combinational gate: a tri-state driver, an isolation cell,
+  a level shifter, a macro, a pad, or a cell without a liberty function;
 - a gate marked don't-touch, in a group or a region, named by any of
   those exceptions, with a constraint on one of its pins or on the net it
   drives (case analysis, for example), or with a timing edge that

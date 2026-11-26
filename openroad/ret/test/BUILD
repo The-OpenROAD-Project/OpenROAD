@@ -70,6 +70,7 @@ TESTS = [
     "retime_scan_member",
     "retime_scan_set",
     "retime_scenes",
+    "retime_shared_chain",
     "retime_shared_net",
     "retime_slack_search",
     "retime_sta_unmap_undo",

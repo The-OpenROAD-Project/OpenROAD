@@ -167,6 +167,11 @@ void RetimingGraph::walkFanout(const int source,
     if (fencesChain(net)) {
       fenceChain(source, chain);
     }
+    // The walk ends at a net with two drivers: what follows would be walked
+    // from each of them, twice as often at every such net.
+    if (shared_nets_.contains(net)) {
+      continue;
+    }
     // The registers entered from this net: one with two pins on it (data and
     // scan-in) is entered once.
     std::unordered_set<odb::dbInst*> entered;
