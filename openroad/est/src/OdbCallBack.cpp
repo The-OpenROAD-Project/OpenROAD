@@ -132,4 +132,18 @@ void OdbCallBack::inDbInstSwapMasterAfter(odb::dbInst* inst)
   }
 }
 
+void OdbCallBack::inDbNetPostGuideRestore(odb::dbNet* net)
+{
+  if (net == nullptr) {
+    return;
+  }
+  debugPrint(estimate_parasitics_->getLogger(),
+             utl::EST,
+             "odb",
+             1,
+             "inDbNetPostGuideRestore {}",
+             net->getName());
+  estimate_parasitics_->parasiticsInvalid(net);
+}
+
 }  // namespace est

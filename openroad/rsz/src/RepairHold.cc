@@ -240,9 +240,11 @@ void RepairHold::filterHoldBuffers(sta::LibertyCellSeq& hold_buffers)
   resizer_->getBufferList(buffer_list);
 
   // Pick the least leaky VT for multiple VTs
+  // One identified VT leaves nothing to choose between.  Filtering on it
+  // would drop the buffers without an implant layer in a mixed library.
   int best_vt_index = -1;
   int num_vt = resizer_->lib_data_->sorted_vt_categories.size();
-  if (num_vt > 0) {
+  if (num_vt > 1) {
     best_vt_index = resizer_->lib_data_->sorted_vt_categories[0].first.vt_index;
   }
 

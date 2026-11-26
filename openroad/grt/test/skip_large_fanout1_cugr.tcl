@@ -1,6 +1,6 @@
 # check that CUGR leaves out nets skipped by -skip_large_fanout_nets.
-# -resistance_aware runs the timing update, which estimates parasitics
-# for every net CUGR routed.
+# The timing update (on by default) estimates parasitics for every net
+# CUGR routed.
 source "helpers.tcl"
 read_lef "Nangate45/Nangate45.lef"
 read_liberty "Nangate45/Nangate45_typ.lib"
@@ -10,7 +10,7 @@ set guide_file [make_result_file skip_large_fanout1_cugr.guide]
 
 set_routing_layers -signal metal2-metal10
 
-global_route -verbose -use_cugr -resistance_aware -skip_large_fanout_nets 2
+global_route -verbose -use_cugr -skip_large_fanout_nets 2
 
 write_guides $guide_file
 

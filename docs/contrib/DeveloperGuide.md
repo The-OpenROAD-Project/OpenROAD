@@ -450,18 +450,27 @@ results, so subsequent runs only have to operate on changed files. It uses the
 etc/run-clang-tidy.sh --filter='openroad/odb/'
 ```
 
-Use the existing Bazel LLVM formatter to match CI's clang-format 23.1.2, even when the system formatter has a different version.
-From the repository root, check its version:
+Format C/C++ files with the Bazel targets that CI runs.
+The system clang-format can have a different version and give a different result.
+To format all C/C++ files in place:
 
 ```shell
-bazelisk run @llvm//tools:clang-format -- --version
+bazelisk run //:tidy_cc
 ```
 
-Use absolute file paths because Bazel can change the working directory:
+To check them as the pull request check does:
 
 ```shell
-bazelisk run @llvm//tools:clang-format -- -i "$PWD/source_file.cpp"
+bazelisk test //:fmt_cc_test
 ```
+
+To format one file, use an absolute path, because Bazel can change the working directory:
+
+```shell
+bazelisk run //bazel:clang-format -- -i "$PWD/source_file.cpp"
+```
+
+See [LintTargets.md](LintTargets.md) for the other lint targets.
 
 ## Doxygen
 

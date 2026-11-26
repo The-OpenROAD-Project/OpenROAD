@@ -41,8 +41,7 @@ keep the other two.
   docs, nogui, and the Docker image builds still run.
 
 **GitHub Actions:**
-- C++ format on changed files (`bazelisk test //:fmt_cc_test` runs the
-  same check on all files).
+- C++ formatting across the repository (`bazelisk test //:fmt_cc_test`).
 - Clang-Tidy on the PR diff (see above).
 - Tcl lint, Bazel lint (buildifier), and Python format (black). Run
   `bazelisk test //:lint_test` to check these locally, plus C++ and YAML

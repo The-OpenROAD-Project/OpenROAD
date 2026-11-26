@@ -35,6 +35,7 @@ cc_library(
         "src/OptimizerTypes.cc",
         "src/PathGroupFilter.cc",
         "src/PathGroupFilter.hh",
+        "src/PlacementDensityGrid.cc",
         "src/PreChecks.cc",
         "src/Rebuffer.cc",
         "src/RecoverPower.cc",
@@ -148,6 +149,7 @@ cc_library(
     hdrs = [
         "include/rsz/GlobalSizingConfig.hh",
         "include/rsz/OdbCallBack.hh",
+        "include/rsz/PlacementDensityGrid.hh",
         "include/rsz/Resizer.hh",
         "src/BufferedNet.hh",
         "src/DelayEstimator.hh",
@@ -213,6 +215,7 @@ cc_library(
         "@abseil-cpp//absl/container:flat_hash_map",
         "@boost.container_hash",
         "@boost.multi_array",
+        "@boost.polygon",
         "@fmt",
         "@or-tools//ortools/linear_solver",
         "@or-tools//ortools/linear_solver:linear_solver_base",
@@ -225,6 +228,7 @@ cc_library(
     hdrs = [
         "include/rsz/GlobalSizingConfig.hh",
         "include/rsz/OdbCallBack.hh",
+        "include/rsz/PlacementDensityGrid.hh",
         "include/rsz/Resizer.hh",
     ],
     includes = [

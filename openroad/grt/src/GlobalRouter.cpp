@@ -230,15 +230,6 @@ std::vector<Net*> GlobalRouter::initCUGR(int min_routing_layer,
   cugr_->setCongestionIterations(congestion_iterations_);
   cugr_->setSkipLargeFanoutNets(skip_large_fanout_);
   cugr_->setSelectedNets(nets_to_route_);
-  if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
-    if (cugr_->getCriticalNetsPercentage() != 0) {
-      logger_->warn(
-          GRT,
-          309,
-          "Timing is not available, setting critical nets percentage to 0.");
-    }
-    cugr_->setCriticalNetsPercentage(0);
-  }
   // Set before init so Design::read() gates its statistics on verbosity.
   cugr_->setVerbose(verbose_);
   cugr_->init(min_routing_layer, max_routing_layer, clock_nets);
@@ -3131,6 +3122,10 @@ void GlobalRouter::setMaxLayerForClock(const int max_layer)
 
 void GlobalRouter::setCriticalNetsPercentage(float critical_nets_percentage)
 {
+  // CUGR is timing driven whenever timing is available.
+  if (use_cugr_) {
+    return;
+  }
   if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
     critical_nets_percentage = 0;
     logger_->warn(
@@ -3138,11 +3133,7 @@ void GlobalRouter::setCriticalNetsPercentage(float critical_nets_percentage)
         301,
         "Timing is not available, setting critical nets percentage to 0.");
   }
-  if (use_cugr_) {
-    cugr_->setCriticalNetsPercentage(critical_nets_percentage);
-  } else {
-    fastroute_->setCriticalNetsPercentage(critical_nets_percentage);
-  }
+  fastroute_->setCriticalNetsPercentage(critical_nets_percentage);
 }
 
 void GlobalRouter::addLayerAdjustment(int layer, float reduction_percentage)
@@ -3209,8 +3200,8 @@ void GlobalRouter::setAllowCongestion(bool allow_congestion)
 void GlobalRouter::setResistanceAware(bool resistance_aware)
 {
   resistance_aware_ = resistance_aware;
+  // CUGR always weighs delay by criticality; the flag is FastRoute's.
   fastroute_->setResistanceAware(resistance_aware);
-  cugr_->setResistanceAware(resistance_aware);
 }
 
 void GlobalRouter::setCUGRViaDemand(const bool enabled)
@@ -3220,6 +3211,10 @@ void GlobalRouter::setCUGRViaDemand(const bool enabled)
 
 void GlobalRouter::setResAwareNetsPercentage(float percentage)
 {
+  // FastRoute only; the Tcl command warns under -use_cugr (GRT-0717).
+  if (use_cugr_) {
+    return;
+  }
   if (!resistance_aware_) {
     percentage = 0;
     logger_->warn(GRT,
@@ -3227,11 +3222,7 @@ void GlobalRouter::setResAwareNetsPercentage(float percentage)
                   "Resistance-aware routing is not enabled, setting res-aware "
                   "nets percentage to 0.");
   }
-  if (use_cugr_) {
-    cugr_->setResAwareNetsPercentage(percentage);
-  } else {
-    fastroute_->setResAwareNetsPercentage(percentage);
-  }
+  fastroute_->setResAwareNetsPercentage(percentage);
 }
 
 void GlobalRouter::setMacroExtension(int macro_extension)
@@ -3331,16 +3322,12 @@ void GlobalRouter::configFastRoute()
     fastroute_->setCongestionReportFile(congestion_file_name_);
   }
 
-  if (sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
+  if (!use_cugr_ && sta_->getDbNetwork()->defaultLibertyLibrary() == nullptr) {
     logger_->warn(
         GRT,
         300,
         "Timing is not available, setting critical nets percentage to 0.");
-    if (use_cugr_) {
-      cugr_->setCriticalNetsPercentage(0);
-    } else {
-      fastroute_->setCriticalNetsPercentage(0);
-    }
+    fastroute_->setCriticalNetsPercentage(0);
   }
 }
 

@@ -35,6 +35,7 @@
 #include "odb/geom.h"
 #include "rsz/GlobalSizingConfig.hh"
 #include "rsz/OdbCallBack.hh"
+#include "rsz/PlacementDensityGrid.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
@@ -130,8 +131,14 @@ enum class RepairEffort : uint8_t
 // Voltage Threshold (VT) category identifier
 struct VTCategory
 {
+  // vt_index of a cell without IMPLANT obstructions.  Such a cell has no
+  // identified VT: it forms no VT category and is no VT swap candidate.
+  static constexpr int kUnclassifiedVtIndex = 0;
+
   int vt_index;
   std::string vt_name;
+
+  bool isClassified() const { return vt_index != kUnclassifiedVtIndex; }
 
   // Enable use as map key
   bool operator<(const VTCategory& other) const
@@ -195,6 +202,8 @@ struct LibraryAnalysisData
   odb::PtrMap<odb::dbSite, int> cells_by_site;
   // VT categories sorted by VT type for HVT/RVT/LVT/uLVT ordering
   std::vector<std::pair<VTCategory, VTLeakageStats>> sorted_vt_categories;
+  // Number of VT categories of the buffers, dont_use ones included
+  int vt_category_count_with_dont_use = 0;
 
   // Helper methods for common operations
   void sort_vt_categories()
@@ -233,6 +242,37 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   double utilization();
   // Maximum utilizable area (core area * utilization)
   double maxArea() const;
+  // Placement density of region, given in block (DBU) coordinates, counted
+  // as the GUI's placement density heat map counts it, and the area in it
+  // that no standard cell can use; see PlacementDensityGrid.  The bins are
+  // the global router's gcells, so the density of a gcell is exact.  The
+  // gcells are sized from the routing layers and their tracks, so until
+  // make_tracks and set_routing_layers have made them, there is no density
+  // and the call returns nothing, for the caller to do without.  The first
+  // call builds the grid, which odb callbacks then keep current, so later
+  // calls cost a walk over the bins the region covers.  The grid, and its
+  // upkeep on every instance edit, stays until releasePlacementDensityGrid().
+  std::optional<PlacementDensity> placementDensity(const odb::Rect& region);
+  // Placement density of the gcell holding point, so exact, or nothing
+  // without the routing layers and their tracks; see PlacementDensityGrid.
+  std::optional<PlacementDensity> placementDensity(const odb::Point& point);
+  // The grid that placementDensity() queries, brought up to date, or null
+  // without the routing layers and their tracks.  Its queries are const and
+  // only read, so the threads of a parallel move scoring can make them at
+  // once: get the grid before the scoring, and edit the db only after it.
+  // The grid lives until releasePlacementDensityGrid() or a call once the db
+  // holds another block.
+  const PlacementDensityGrid* placementDensityGrid();
+  // Drops the grid placementDensity() builds, which stops its callbacks and
+  // frees its memory; the next call builds it afresh.  A pass that queries
+  // the density calls this when it is done, so that later steps, such as
+  // detailed placement, CTS, and filler placement, do not keep the grid
+  // current.
+  void releasePlacementDensityGrid();
+  // Reports the placement density of region, as placementDensity() counts
+  // it, from a grid built for the report alone.  Backs
+  // report_placement_density.
+  void reportPlacementDensity(const odb::Rect& region);
   sta::dbSta* sta() const { return sta_; }
   const sta::MinMax* maxAnalysisMode() const { return max_; }
   const sta::StaState* staState() const { return this; }
@@ -640,7 +680,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void getBufferList(sta::LibertyCellSeq& buffer_list);
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
-  static std::vector<MoveType> parseMoveSequence(const std::string& sequence);
+  // Space- or comma-separated move names; an unknown name is error RSZ-3282.
+  std::vector<MoveType> parseMoveSequence(const std::string& sequence) const;
   // "low", "medium" or "high"; anything else is error RSZ-3242.
   RepairEffort repairEffortFromString(const std::string& effort) const;
   void fullyRebuffer(sta::Pin* pin);
@@ -708,8 +749,11 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                             float max_drive_resist);
   void findBuffers();
   void findBuffersNoPruning();
+  // Builds lib_data_ when it is unset: before its first use or after a
+  // dont_use change reset it.
+  void ensureLibData();
   void findFastBuffers();
-  static MoveType moveTypeFromString(const std::string& str);
+  MoveType moveTypeFromString(const std::string& str) const;
   sta::LibertyCell* selectBufferCell(sta::LibertyCell* buffer_cell = nullptr);
   void findTargetLoads();
   void balanceBin(const std::vector<odb::dbInst*>& bin,
@@ -779,7 +823,14 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   int findMaxSteinerDist(sta::Vertex* drvr, const sta::Scene* corner);
   float driveResistance(const sta::Pin* drvr_pin) const;
   float bufferDriveResistance(const sta::LibertyCell* buffer) const;
-  int vtCategoryCount() const;
+  // Number of VT categories among the usable (non-dont_use) buffers.
+  int vtCategoryCount();
+  // True when a VT swap can apply to cell: more than one usable VT, or the
+  // cell itself is dont_use and has an equivalent in a usable VT.
+  bool canVtSwap(sta::LibertyCell* cell);
+  // Number of identified VT categories among all buffers, dont_use ones
+  // included.
+  int vtCategoryCountWithDontUse();
   float cellDriveResistance(const sta::LibertyCell* cell) const;
 
   // Max distance from driver to load (in dbu).
@@ -1225,6 +1276,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   std::unordered_map<sta::LibertyPort*, InputSlews> input_slew_map_;
 
   std::unique_ptr<OdbCallBack> db_cbk_;
+  // Made by the first placementDensity() call on a block, and dropped by
+  // releasePlacementDensityGrid().
+  std::unique_ptr<PlacementDensityGrid> density_grid_;
 
   // Restrict default sizing such that one sizing move cannot increase area or
   // leakage by more than 4X.  Subsequent sizing moves can exceed the 4X limit.
