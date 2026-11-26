@@ -3,7 +3,7 @@
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
 worst slack max -0.1474
 [INFO RET-0047] No plain D flip-flop; new registers are sg13g2_dfrbp_1 with RESET_B tied high.
-[INFO RET-0014] Retiming graph: 13 gates, 9 edges, 3 registers, 7 pinned gates, 0 fenced registers.
+[INFO RET-0014] Retiming graph: 10 gates, 9 edges, 3 registers, 4 pinned gates, 0 fenced registers.
 [INFO RET-0008] Unmapped 1 registers.
  Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
 ---------------------------------------------------------------------------

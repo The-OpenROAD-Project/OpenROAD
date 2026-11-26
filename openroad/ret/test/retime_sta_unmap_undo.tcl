@@ -1,11 +1,13 @@
-# Trials that unmap registers and that STA rejects are undone.  r4 and r5
+# A trial that unmaps registers and that STA rejects is undone.  r4 and r5
 # (read through QN) sit far from g10 and g11, which feed them, and the
-# inputs are timed.  Each trial unmaps r4 and r5 and slides across the
-# unmap gates; the search times those gates before they are placed, so
-# without their wires, and STA rejects the placed result.  Round 1 keeps
-# the shorter prefix that only slides cone 1; round 2 rejects every trial.
-# r4 and r5 are restored, and the result is proven sequentially equivalent
-# with ABC dsec.
+# inputs are timed.  The first trial unmaps r4 and r5 and slides across
+# the unmap gates; the search times those gates before they are placed, so
+# without their wires, and STA rejects the placed result.  The trial is
+# undone, which restores r4 and r5; the first half of the ranked slides is
+# the other cone and is kept.  Round 2 proposes the slides behind r4 and r5
+# again: each trial unmaps them, STA rejects it and it is undone, so r4 and
+# r5 stay as they were.  The result is proven sequentially equivalent with
+# ABC dsec.
 source "helpers.tcl"
 source "ret_helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib

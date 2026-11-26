@@ -9,7 +9,6 @@
 #include <map>
 #include <memory>
 #include <optional>
-#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -27,33 +26,12 @@
 #include "odb/PtrSetMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 
 namespace ret {
 
 namespace {
-
-bool oneClass(const RetimingGraph& graph, const std::vector<odb::dbInst*>& regs)
-{
-  for (size_t i = 1; i < regs.size(); ++i) {
-    if (!sameRegisterClass(graph.regClass(regs[0]), graph.regClass(regs[i]))) {
-      return false;
-    }
-  }
-  return true;
-}
-
-bool moveKeepsClass(const RetimingGraph& graph,
-                    const std::vector<odb::dbInst*>& regs,
-                    const int v)
-{
-  return oneClass(graph, regs)
-         && (regs.empty()
-             || graph.regClass(regs[0]).kind != RegisterKind::kInverting
-             || graph.selfDual()[v]);
-}
 
 bool isRouted(odb::dbBlock* block)
 {
@@ -107,24 +85,40 @@ int classBranch(const RetimingGraph& graph,
 }
 
 void addClassedMovers(const RetimingGraph& graph,
-                      const std::vector<odb::dbInst*>& regs,
+                      const std::vector<odb::dbInst*>& registers,
                       std::unordered_set<odb::dbInst*>& movers)
 {
-  for (odb::dbInst* reg : regs) {
+  for (odb::dbInst* reg : registers) {
     if (reg != nullptr && keepsClass(graph.regClass(reg))) {
       movers.insert(reg);
     }
   }
 }
 
-std::optional<int> lagOfNewGate(odb::dbInst* gate,
-                                const std::unordered_map<std::string, int>& lag)
+std::vector<int> slidGates(const std::vector<int>& r)
 {
-  constexpr int kMaxDepth = 64;
-  for (int depth = 0; depth <= kMaxDepth; ++depth) {
-    const auto it = lag.find(gate->getName());
-    if (it != lag.end()) {
-      return it->second;
+  std::vector<int> slid;
+  const int n = static_cast<int>(r.size());
+  for (int v = 0; v < n; ++v) {
+    if (r[v] != 0) {
+      slid.push_back(v);
+    }
+  }
+  return slid;
+}
+
+// The lag of a gate the unmapping added: that of the gate behind its only
+// input.  r: the lags of the gates there were before.
+std::optional<int> lagOfNewGate(const RetimingGraph& graph,
+                                const std::vector<int>& r,
+                                odb::dbInst* gate)
+{
+  // Unmapping makes no combinational cycle; the set only guards the walk.
+  std::unordered_set<odb::dbInst*> seen;
+  while (seen.insert(gate).second) {
+    const int v = graph.indexOf(gate);
+    if (v >= 0 && std::cmp_less(v, r.size())) {
+      return r[v];
     }
     if (gate->getMaster()->isSequential()) {
       return std::nullopt;
@@ -156,20 +150,21 @@ std::optional<int> lagOfNewGate(odb::dbInst* gate,
   return std::nullopt;
 }
 
-// nullopt when a gate's lag cannot be traced through the unmapping.
-std::optional<std::vector<int>> remapLag(
-    const RetimingGraph& graph,
-    const std::unordered_map<std::string, int>& lag)
+// The lags with one for each gate the unmapping added; nullopt when a new
+// gate's lag cannot be traced.
+std::optional<std::vector<int>> extendLag(const RetimingGraph& graph,
+                                          const std::vector<int>& r)
 {
-  std::vector<int> r;
-  for (odb::dbInst* gate : graph.nodes()) {
-    const std::optional<int> gate_lag = lagOfNewGate(gate, lag);
-    if (!gate_lag) {
+  std::vector<int> extended = r;
+  const size_t n = graph.nodes().size();
+  for (size_t v = r.size(); v < n; ++v) {
+    const std::optional<int> lag = lagOfNewGate(graph, r, graph.nodes()[v]);
+    if (!lag) {
       return std::nullopt;
     }
-    r.push_back(*gate_lag);
+    extended.push_back(*lag);
   }
-  return r;
+  return extended;
 }
 
 }  // namespace
@@ -201,8 +196,9 @@ odb::dbBlock* Retimer::getBlock() const
   return block;
 }
 
-void Retimer::retime(const int max_moves)
+void Retimer::retime(const RetimeOptions& options)
 {
+  options_ = options;
   odb::dbBlock* block = getBlock();
   if (findClockNet(block) == nullptr) {
     logger_->info(
@@ -224,25 +220,30 @@ void Retimer::retime(const int max_moves)
 
   placer_->forgetCells();
   report_graph_ = true;
+  graph_.reset();
 
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   const int unplaced_before = countPlacement(block).unplaced;
   odb::dbDatabase::beginEco(block);
   try {
     StaCheck check(
-        sta_, logger_, placer_.get(), block, &guard, [&](const int limit) {
-          const int slides = searchAndApply(block, limit, guard);
-          return StaCheck::SearchResult{
-              .slides = slides,
-              .largest = largest_search_,
-          };
-        });
-    check.run(max_moves);
+        sta_,
+        logger_,
+        placer_.get(),
+        block,
+        &guard,
+        [&](const int limit) { return proposeSlides(block, limit); },
+        [&](const std::vector<odb::dbInst*>& slides, const int limit) {
+          return applySlides(slides, limit, guard);
+        },
+        [&] { trial_undone_ = true; });
+    check.run(options_);
   } catch (...) {
     odb::dbDatabase::undoEco(block);
     throw;
   }
   odb::dbDatabase::commitEco(block);
+  graph_.reset();
 
   const PlacementCount after = countPlacement(block);
   if (after.placed > 0 && after.unplaced > unplaced_before) {
@@ -254,93 +255,122 @@ void Retimer::retime(const int max_moves)
   }
 }
 
-int Retimer::searchAndApply(odb::dbBlock* block,
-                            const int max_moves,
-                            est::IncrementalParasiticsGuard& guard)
+const RetimingGraph& Retimer::graph()
 {
-  RetimingGraph graph(db_, sta_, logger_);
-  graph.build();
+  if (graph_ == nullptr) {
+    graph_ = std::make_unique<RetimingGraph>(db_, sta_, logger_);
+    graph_->build();
+  } else {
+    const bool gates_dropped
+        = trial_undone_
+          && std::cmp_greater(graph_->nodes().size(), gates_before_);
+    if (gates_dropped) {
+      graph_->truncate(gates_before_);
+      std::erase_if(trial_sources_,
+                    [&](const int u) { return u >= gates_before_; });
+    }
+    if (gates_dropped || !trial_sources_.empty()) {
+      graph_->update(trial_sources_, gates_dropped);
+    }
+  }
+  trial_undone_ = false;
+  trial_sources_.clear();
+  return *graph_;
+}
+
+bool Retimer::unmap(const std::unordered_set<odb::dbInst*>& registers,
+                    est::IncrementalParasiticsGuard& guard)
+{
+  const std::vector<int> sources = graph_->sourcesOf(registers);
+  if (unmapper_->run(&registers) == 0) {
+    return false;
+  }
+  guard.update();
+  const std::vector<int> read = graph_->update(sources, /*gates_changed=*/true);
+  trial_sources_.insert(trial_sources_.end(), read.begin(), read.end());
+  return true;
+}
+
+std::vector<odb::dbInst*> Retimer::proposeSlides(odb::dbBlock* block,
+                                                 const int max_moves)
+{
+  const RetimingGraph& graph = this->graph();
   if (report_graph_) {
     report_graph_ = false;
     graph.report();
   }
   clock_net_ = findClockNet(block);
 
-  Retime search = newSearch(graph);
-  search.run(max_moves);
-  largest_search_ = search.getMoves();
-  const std::vector<int>& r = search.getRetiming();
-
-  const std::unordered_set<odb::dbInst*> movers = moversToUnmap(graph, r);
-  if (movers.empty()) {
-    applyRetiming(graph, r);
-    return search.getMoves();
+  const Retime search = runSearch(graph, max_moves);
+  std::vector<odb::dbInst*> slides;
+  for (const int v : search.getSlides()) {
+    slides.push_back(graph.nodes()[v]);
   }
-  return applyAfterUnmapping(graph, search, movers, max_moves, guard);
+  return slides;
 }
 
-Retime Retimer::newSearch(const RetimingGraph& graph) const
+int Retimer::applySlides(const std::vector<odb::dbInst*>& slides,
+                         const int max_moves,
+                         est::IncrementalParasiticsGuard& guard)
 {
-  return Retime(
+  const RetimingGraph& graph = this->graph();
+  gates_before_ = graph.size();
+  std::vector<int> r(gates_before_, 0);
+  for (odb::dbInst* gate : slides) {
+    --r[graph.indexOf(gate)];
+  }
+  const int count = static_cast<int>(slides.size());
+
+  const std::unordered_set<odb::dbInst*> movers = applyOrMovers(graph, r);
+  if (movers.empty()) {
+    return count;
+  }
+  return applyAfterUnmapping(r, count, movers, max_moves, guard);
+}
+
+Retime Retimer::runSearch(const RetimingGraph& graph, const int max_moves) const
+{
+  Retime search(
       &graph,
       sta_,
       logger_,
       unmapper_->getBaseSequentialDMTerm(),
       [this](odb::dbMaster* master) { return placer_->registerCells(master); });
+  search.run(max_moves, options_.margin);
+  return search;
 }
 
-int Retimer::applyAfterUnmapping(const RetimingGraph& graph,
-                                 const Retime& search,
+int Retimer::applyAfterUnmapping(const std::vector<int>& r,
+                                 const int slides,
                                  const std::unordered_set<odb::dbInst*>& movers,
                                  const int max_moves,
                                  est::IncrementalParasiticsGuard& guard)
 {
-  const std::vector<int>& r = search.getRetiming();
-  // Keyed by name: unmapping deletes instances, and a new instance can
-  // take the address of a deleted one.
-  std::unordered_map<std::string, int> lag;
-  const int n = static_cast<int>(graph.nodes().size());
-  for (int i = 0; i < n; ++i) {
-    lag[graph.nodes()[i]->getName()] = r[i];
-  }
   // A register the unmapper skips would be proposed again every round:
   // StaCheck undoes the trial and tries shorter ones.
-  if (unmapper_->run(&movers) == 0) {
-    return -search.getMoves();
+  if (!unmap(movers, guard)) {
+    return -slides;
   }
-  guard.update();
-
-  RetimingGraph graph2(db_, sta_, logger_);
-  graph2.build();
-  const std::optional<std::vector<int>> r2 = remapLag(graph2, lag);
-  if (r2 && moversToUnmap(graph2, *r2).empty()) {
-    applyRetiming(graph2, *r2);
-    return search.getMoves();
+  const RetimingGraph& graph = *graph_;
+  const std::optional<std::vector<int>> r2 = extendLag(graph, r);
+  if (r2 && applyOrMovers(graph, *r2).empty()) {
+    return slides;
   }
 
-  constexpr int kMaxRounds = 20;
-  for (int round = 0; round < kMaxRounds; ++round) {
-    RetimingGraph g(db_, sta_, logger_);
-    g.build();
-    Retime s = newSearch(g);
-    s.run(max_moves);
-    largest_search_ = std::max(largest_search_, s.getMoves());
-    const std::vector<int>& rr = s.getRetiming();
-    const std::unordered_set<odb::dbInst*> more = moversToUnmap(g, rr);
+  // Ends: each pass rebuilds at least one register as the base flip-flop,
+  // which never needs unmapping again, or returns.
+  while (true) {
+    const Retime search = runSearch(graph, max_moves);
+    const int moves = search.getMoves();
+    const std::unordered_set<odb::dbInst*> more
+        = applyOrMovers(graph, search.getRetiming());
     if (more.empty()) {
-      applyRetiming(g, rr);
-      return s.getMoves();
+      return moves;
     }
-    if (unmapper_->run(&more) == 0) {
-      return -s.getMoves();
+    if (!unmap(more, guard)) {
+      return -moves;
     }
-    guard.update();
   }
-  logger_->error(utl::RET,
-                 37,
-                 "Unmapping did not settle after {} rounds; retiming not "
-                 "applied.",
-                 kMaxRounds);
 }
 
 odb::dbNet* Retimer::findClockNet(odb::dbBlock* block) const
@@ -370,28 +400,14 @@ void Retimer::checkRegisters(odb::dbBlock* block) const
   }
 }
 
-Retimer::FaninIndex Retimer::faninIndex(const RetimingGraph& graph)
-{
-  const int n = static_cast<int>(graph.nodes().size());
-  FaninIndex fanin(n);
-  for (int u = 0; u < n; ++u) {
-    const int edge_count = static_cast<int>(graph.adj()[u].size());
-    for (int k = 0; k < edge_count; ++k) {
-      fanin[graph.adj()[u][k].target].emplace_back(u, k);
-    }
-  }
-  return fanin;
-}
-
 void Retimer::Origins::add(odb::dbInst* reg)
 {
   if (seen.insert(reg).second) {
-    regs.push_back(reg);
+    registers.push_back(reg);
   }
 }
 
 void Retimer::originRegistersOnEdge(const RetimingGraph& graph,
-                                    const FaninIndex& fanin,
                                     const std::vector<int>& r,
                                     const int u,
                                     const int k,
@@ -410,11 +426,10 @@ void Retimer::originRegistersOnEdge(const RetimingGraph& graph,
     out.add(nullptr);
     return;
   }
-  originRegisters(graph, fanin, r, u, j, out);
+  originRegisters(graph, r, u, j, out);
 }
 
 void Retimer::originRegisters(const RetimingGraph& graph,
-                              const FaninIndex& fanin,
                               const std::vector<int>& r,
                               const int v,
                               const int j,
@@ -423,24 +438,51 @@ void Retimer::originRegisters(const RetimingGraph& graph,
   if (!out.visited.insert(v).second) {
     return;
   }
-  if (fanin[v].empty()) {
+  if (graph.fanin()[v].empty()) {
     out.add(nullptr);
     return;
   }
-  for (const auto& [u, k] : fanin[v]) {
-    originRegistersOnEdge(graph, fanin, r, u, k, j, out);
+  for (const auto& [u, k] : graph.fanin()[v]) {
+    originRegistersOnEdge(graph, r, u, k, j, out);
   }
 }
 
-std::vector<Retimer::Group> Retimer::collectGroups(
-    const RetimingGraph& graph,
-    const std::vector<int>& r) const
+Retimer::Plan Retimer::planRebuild(const RetimingGraph& graph,
+                                   const std::vector<int>& r) const
 {
+  const std::vector<int> slid = slidGates(r);
+  Plan plan{.groups = changedGroups(graph, r, slid), .crossings = {}};
+  for (const int v : slid) {
+    for (int j = 1; j <= -r[v]; ++j) {
+      Origins origins;
+      originRegisters(graph, r, v, j, origins);
+      plan.crossings.push_back({
+          .gate = v,
+          .registers = origins.registers,
+          .filled = !origins.seen.contains(nullptr),
+      });
+    }
+  }
+  return plan;
+}
+
+std::vector<Retimer::Group> Retimer::changedGroups(
+    const RetimingGraph& graph,
+    const std::vector<int>& r,
+    const std::vector<int>& slid) const
+{
+  std::vector<int> sources = slid;
+  for (const int v : slid) {
+    for (const auto& [u, k] : graph.fanin()[v]) {
+      sources.push_back(u);
+    }
+  }
+  sortUnique(sources);
+
   // Ordered by net and class group: deterministic new-cell names.
   std::map<std::pair<uint32_t, int>, Group> by_net;
   std::unordered_map<odb::dbNet*, std::vector<odb::dbInst*>> heads;
-  const int n = static_cast<int>(graph.nodes().size());
-  for (int u = 0; u < n; ++u) {
+  for (const int u : sources) {
     const std::vector<Edge>& edges = graph.adj()[u];
     const std::vector<EdgePhys>& handles = graph.phys()[u];
     const int edge_count = static_cast<int>(edges.size());
@@ -454,7 +496,7 @@ std::vector<Retimer::Group> Retimer::collectGroups(
         Group& group = by_net[{driver_net->getId(), branch}];
         group.driver_net = driver_net;
         group.sinks.push_back(
-            {.pin = handles[k].sink, .wr = wr, .u = u, .k = k});
+            {.pin = handles[k].sink, .registers = wr, .source = u, .edge = k});
         group.changed = group.changed || wr != w;
         if (!handles[k].flops.empty()) {
           group.chains.push_back(&handles[k].flops);
@@ -467,9 +509,10 @@ std::vector<Retimer::Group> Retimer::collectGroups(
     }
   }
   std::vector<Group> groups;
-  groups.reserve(by_net.size());
   for (auto& [id, group] : by_net) {
-    groups.push_back(std::move(group));
+    if (group.changed) {
+      groups.push_back(std::move(group));
+    }
   }
   return groups;
 }
@@ -497,7 +540,7 @@ void Retimer::addGroupMovers(const RetimingGraph& graph,
         at_position.push_back((*chain)[i]);
       }
     }
-    if (!oneClass(graph, at_position)) {
+    if (!graph.oneClass(at_position)) {
       addClassedMovers(graph, at_position, movers);
     }
   }
@@ -505,25 +548,31 @@ void Retimer::addGroupMovers(const RetimingGraph& graph,
 
 std::unordered_set<odb::dbInst*> Retimer::moversToUnmap(
     const RetimingGraph& graph,
-    const std::vector<int>& r) const
+    const Plan& plan) const
 {
   std::unordered_set<odb::dbInst*> movers;
-  for (const Group& group : collectGroups(graph, r)) {
-    if (group.changed && !group.dont_touch) {
+  for (const Group& group : plan.groups) {
+    if (!group.dont_touch) {
       addGroupMovers(graph, group, movers);
     }
   }
-  const FaninIndex fanin = faninIndex(graph);
-  const int n = static_cast<int>(graph.nodes().size());
-  for (int v = 0; v < n; ++v) {
-    for (int j = 1; j <= -r[v]; ++j) {
-      Origins origins;
-      originRegisters(graph, fanin, r, v, j, origins);
-      if (!origins.seen.contains(nullptr)
-          && !moveKeepsClass(graph, origins.regs, v)) {
-        addClassedMovers(graph, origins.regs, movers);
-      }
+  for (const Crossing& crossing : plan.crossings) {
+    if (crossing.filled
+        && !graph.moveKeepsClass(crossing.registers, crossing.gate)) {
+      addClassedMovers(graph, crossing.registers, movers);
     }
+  }
+  return movers;
+}
+
+std::unordered_set<odb::dbInst*> Retimer::applyOrMovers(
+    const RetimingGraph& graph,
+    const std::vector<int>& r)
+{
+  const Plan plan = planRebuild(graph, r);
+  std::unordered_set<odb::dbInst*> movers = moversToUnmap(graph, plan);
+  if (movers.empty()) {
+    applyRetiming(graph, r, plan);
   }
   return movers;
 }
@@ -611,23 +660,21 @@ void Retimer::connectRegister(odb::dbInst* ff,
                               odb::dbNet* clock_net,
                               const ModNets& mod_nets)
 {
+  odb::dbMTerm* data
+      = cls != nullptr ? cls->data : unmapper_->getBaseSequentialDMTerm();
+  odb::dbMTerm* output
+      = cls != nullptr ? cls->output : unmapper_->getBaseSequentialQMTerm();
   for (odb::dbITerm* iterm : ff->getITerms()) {
     if (iterm->getSigType().isSupply()) {
       continue;
     }
     if (iterm->getSigType() == odb::dbSigType::CLOCK) {
       connectPin(iterm, clock_net, mod_nets);
-    } else if (cls == nullptr) {
-      if (iterm->getMTerm() == unmapper_->getBaseSequentialDMTerm()) {
-        connectPin(iterm, in, mod_nets);
-      } else if (iterm->getMTerm() == unmapper_->getBaseSequentialQMTerm()) {
-        iterm->connect(out);
-      }
-    } else if (iterm->getMTerm() == cls->data) {
+    } else if (iterm->getMTerm() == data) {
       connectPin(iterm, in, mod_nets);
-    } else if (iterm->getMTerm() == cls->output) {
+    } else if (iterm->getMTerm() == output) {
       iterm->connect(out);
-    } else {
+    } else if (cls != nullptr) {
       for (const auto& [mterm, net] : cls->enables) {
         if (iterm->getMTerm() == mterm) {
           connectPin(iterm, net, mod_nets);
@@ -637,23 +684,12 @@ void Retimer::connectRegister(odb::dbInst* ff,
   }
 }
 
-void Retimer::tieBaseControls(odb::dbInst* ff,
-                              sta::Instance* parent,
-                              odb::dbModInst* parent_mod_inst)
+void Retimer::tieBaseControls(odb::dbInst* ff, sta::Instance* parent)
 {
-  sta::dbNetwork* network = sta_->getDbNetwork();
   for (const auto& [mterm, high] : unmapper_->getBaseSequentialTies()) {
-    odb::dbMaster* master = unmapper_->getTieMaster(high);
-    sta::LibertyCell* cell = network->libertyCell(network->dbToSta(master));
-    const std::string name = getBlock()->makeNewInstName(
-        parent_mod_inst,
-        "ret_tie",
-        odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
     odb::dbInst* tie
-        = network->staToDb(network->makeInstance(cell, name, parent));
-    tie->setSourceType(odb::dbSourceType::TIMING);
-    odb::dbNet* net = network->staToDb(network->makeNet(
-        "ret_net", parent, odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE));
+        = makeCell(sta_, parent, "ret_tie", unmapper_->getTieMaster(high));
+    odb::dbNet* net = makeNet(sta_, parent, "ret_net");
     tie->getITerm(unmapper_->getTieOutputMTerm(high))->connect(net);
     ff->getITerm(mterm)->connect(net);
   }
@@ -671,7 +707,6 @@ std::vector<odb::dbNet*> Retimer::buildChain(
       = source != nullptr
             ? network->getOwningInstanceParent(network->dbToSta(source))
             : network->topInstance();
-  odb::dbModInst* parent_mod_inst = network->getModInst(parent);
 
   const int depth = static_cast<int>(classes.size());
   std::vector<odb::dbNet*> nets(depth + 1);
@@ -680,19 +715,11 @@ std::vector<odb::dbNet*> Retimer::buildChain(
     const RegisterClass* cls = classes[k - 1];
     odb::dbMaster* master
         = cls != nullptr ? cls->master : unmapper_->getBaseSequentialMaster();
-    sta::LibertyCell* cell = network->libertyCell(network->dbToSta(master));
-    const std::string name = getBlock()->makeNewInstName(
-        parent_mod_inst,
-        "ret_ff",
-        odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
-    odb::dbInst* ff
-        = network->staToDb(network->makeInstance(cell, name, parent));
-    ff->setSourceType(odb::dbSourceType::TIMING);
-    odb::dbNet* out = network->staToDb(network->makeNet(
-        "ret_net", parent, odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE));
+    odb::dbInst* ff = makeCell(sta_, parent, "ret_ff", master);
+    odb::dbNet* out = makeNet(sta_, parent, "ret_net");
     connectRegister(ff, cls, nets[k - 1], out, clock_net, mod_nets);
     if (cls == nullptr) {
-      tieBaseControls(ff, parent, parent_mod_inst);
+      tieBaseControls(ff, parent);
     }
     nets[k] = out;
   }
@@ -700,28 +727,24 @@ std::vector<odb::dbNet*> Retimer::buildChain(
 }
 
 std::vector<odb::dbInst*> Retimer::chainOrigins(const RetimingGraph& graph,
-                                                const FaninIndex& fanin,
                                                 const std::vector<int>& r,
                                                 const Sink& sink,
                                                 const int p)
 {
-  const int taken_by_sink_gate = -r[graph.adj()[sink.u][sink.k].target];
+  const int taken_by_sink_gate = -r[graph.adj()[sink.source][sink.edge].target];
   Origins origins;
   originRegistersOnEdge(graph,
-                        fanin,
                         r,
-                        sink.u,
-                        sink.k,
-                        taken_by_sink_gate + sink.wr - p + 1,
+                        sink.source,
+                        sink.edge,
+                        taken_by_sink_gate + sink.registers - p + 1,
                         origins);
-  return origins.regs;
+  return origins.registers;
 }
 
-std::vector<const RegisterClass*> Retimer::chainClasses(
-    const RetimingGraph& graph,
-    const FaninIndex& fanin,
-    const std::vector<int>& r,
-    const Group& group) const
+Retimer::Chain Retimer::planChain(const RetimingGraph& graph,
+                                  const std::vector<int>& r,
+                                  const Group& group) const
 {
   for (odb::dbInst* f : group.flops) {
     const RegisterClass& cls = graph.regClass(f);
@@ -736,24 +759,27 @@ std::vector<const RegisterClass*> Retimer::chainClasses(
   }
   int max_depth = 0;
   for (const Sink& s : group.sinks) {
-    max_depth = std::max(max_depth, s.wr);
+    max_depth = std::max(max_depth, s.registers);
   }
-  std::vector<const RegisterClass*> classes(max_depth, nullptr);
+  Chain chain{
+      .classes = std::vector<const RegisterClass*>(max_depth, nullptr),
+      .clock_net = nullptr,
+  };
   std::vector<bool> plain_at(max_depth, false);
   for (const Sink& s : group.sinks) {
-    for (int p = 1; p <= s.wr; ++p) {
-      for (odb::dbInst* reg : chainOrigins(graph, fanin, r, s, p)) {
+    for (int p = 1; p <= s.registers; ++p) {
+      for (odb::dbInst* reg : chainOrigins(graph, r, s, p)) {
         const RegisterClass* cls
             = reg != nullptr ? &graph.regClass(reg) : nullptr;
         bool consistent = cls != nullptr;
         if (consistent && cls->kind == RegisterKind::kPlain) {
-          consistent = classes[p - 1] == nullptr;
+          consistent = chain.classes[p - 1] == nullptr;
           plain_at[p - 1] = true;
         } else if (consistent && keepsClass(*cls)) {
           consistent = !plain_at[p - 1]
-                       && (classes[p - 1] == nullptr
-                           || sameRegisterClass(*classes[p - 1], *cls));
-          classes[p - 1] = cls;
+                       && (chain.classes[p - 1] == nullptr
+                           || sameRegisterClass(*chain.classes[p - 1], *cls));
+          chain.classes[p - 1] = cls;
         } else {
           consistent = false;
         }
@@ -764,29 +790,28 @@ std::vector<const RegisterClass*> Retimer::chainClasses(
                          "retiming not applied.",
                          group.driver_net->getName());
         }
+        if (chain.clock_net == nullptr) {
+          chain.clock_net = registerClockNet(reg);
+        }
       }
     }
   }
-  return classes;
+  if (chain.clock_net == nullptr) {
+    chain.clock_net = clock_net_;
+  }
+  return chain;
 }
 
-void Retimer::checkMoves(const RetimingGraph& graph,
-                         const FaninIndex& fanin,
-                         const std::vector<int>& r) const
+void Retimer::checkCrossings(const RetimingGraph& graph, const Plan& plan) const
 {
-  const int n = static_cast<int>(graph.nodes().size());
-  for (int v = 0; v < n; ++v) {
-    for (int j = 1; j <= -r[v]; ++j) {
-      Origins origins;
-      originRegisters(graph, fanin, r, v, j, origins);
-      if (origins.seen.contains(nullptr)
-          || !moveKeepsClass(graph, origins.regs, v)) {
-        logger_->error(utl::RET,
-                       41,
-                       "Registers of different classes cannot cross {}; "
-                       "retiming not applied.",
-                       graph.nodes()[v]->getName());
-      }
+  for (const Crossing& crossing : plan.crossings) {
+    if (!crossing.filled
+        || !graph.moveKeepsClass(crossing.registers, crossing.gate)) {
+      logger_->error(utl::RET,
+                     41,
+                     "Registers of different classes cannot cross {}; "
+                     "retiming not applied.",
+                     graph.nodes()[crossing.gate]->getName());
     }
   }
 }
@@ -798,11 +823,7 @@ void Retimer::rebuildGroup(const Group& group,
   const ModNets mod_nets = groupModNets(group, classes, clock_net);
   // In id order: odb gives a new instance the slot of a deleted one, so the
   // order of removal decides the ids of the new registers.
-  std::vector<odb::dbInst*> flops(group.flops.begin(), group.flops.end());
-  std::ranges::sort(flops, [](odb::dbInst* a, odb::dbInst* b) {
-    return a->getId() < b->getId();
-  });
-  for (odb::dbInst* f : flops) {
+  for (odb::dbInst* f : inIdOrder(group.flops)) {
     removeRegister(f);
   }
   if (classes.empty()) {
@@ -811,62 +832,36 @@ void Retimer::rebuildGroup(const Group& group,
   const std::vector<odb::dbNet*> depth_net
       = buildChain(group.driver_net, clock_net, classes, mod_nets);
   for (const Sink& s : group.sinks) {
-    if (s.wr > 0) {
+    if (s.registers > 0) {
       s.pin->disconnect();
-      s.pin->connect(depth_net[s.wr]);
+      s.pin->connect(depth_net[s.registers]);
     }
   }
-}
-
-odb::dbNet* Retimer::groupClockNet(const RetimingGraph& graph,
-                                   const FaninIndex& fanin,
-                                   const std::vector<int>& r,
-                                   const Group& group) const
-{
-  for (const Sink& s : group.sinks) {
-    for (int p = 1; p <= s.wr; ++p) {
-      for (odb::dbInst* reg : chainOrigins(graph, fanin, r, s, p)) {
-        odb::dbNet* clock = reg != nullptr ? registerClockNet(reg) : nullptr;
-        if (clock != nullptr) {
-          return clock;
-        }
-      }
-    }
-  }
-  return clock_net_;
 }
 
 void Retimer::applyRetiming(const RetimingGraph& graph,
-                            const std::vector<int>& r)
+                            const std::vector<int>& r,
+                            const Plan& plan)
 {
-  const std::vector<Group> groups = collectGroups(graph, r);
-  if (std::ranges::none_of(groups, [](const Group& g) { return g.changed; })) {
+  if (plan.groups.empty()) {
     return;
   }
-
-  const FaninIndex fanin = faninIndex(graph);
-  std::vector<std::vector<const RegisterClass*>> classes(groups.size());
-  std::vector<odb::dbNet*> clock_nets(groups.size(), nullptr);
-  for (size_t i = 0; i < groups.size(); ++i) {
-    if (!groups[i].changed) {
-      continue;
-    }
-    if (groups[i].dont_touch) {
+  std::vector<Chain> chains;
+  for (const Group& group : plan.groups) {
+    if (group.dont_touch) {
       logger_->error(utl::RET,
                      27,
                      "Net {} has a don't-touch register; retiming not "
                      "applied.",
-                     groups[i].driver_net->getName());
+                     group.driver_net->getName());
     }
-    classes[i] = chainClasses(graph, fanin, r, groups[i]);
-    clock_nets[i] = groupClockNet(graph, fanin, r, groups[i]);
+    chains.push_back(planChain(graph, r, group));
   }
-  checkMoves(graph, fanin, r);
+  checkCrossings(graph, plan);
 
-  for (size_t i = 0; i < groups.size(); ++i) {
-    if (groups[i].changed) {
-      rebuildGroup(groups[i], classes[i], clock_nets[i]);
-    }
+  for (size_t i = 0; i < plan.groups.size(); ++i) {
+    trial_sources_.push_back(plan.groups[i].sinks.front().source);
+    rebuildGroup(plan.groups[i], chains[i].classes, chains[i].clock_net);
   }
 }
 

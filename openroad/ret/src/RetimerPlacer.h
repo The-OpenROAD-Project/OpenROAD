@@ -5,9 +5,7 @@
 
 #include <cstddef>
 #include <optional>
-#include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "odb/db.h"
@@ -57,11 +55,9 @@ class RetimerPlacer
   void prepare();
   // The libraries and the don't-use cells can change between retime calls.
   void forgetCells() { equivalent_masters_.clear(); }
-  // `skip`: the names of the cells that were unplaced before this trial.
-  PlaceStats placeNewCells(odb::dbBlock* block,
-                           const std::unordered_set<std::string>& skip,
+  // A cell with no placed cell on its nets stays unplaced.
+  PlaceStats placeNewCells(const std::vector<odb::dbInst*>& cells,
                            est::IncrementalParasiticsGuard& guard);
-  // The cells a register of this cell can be built from.
   std::vector<odb::dbMaster*> registerCells(odb::dbMaster* master);
 
  private:
@@ -80,44 +76,27 @@ class RetimerPlacer
     odb::dbMaster* best_master;
     bool swapped;
   };
-  struct TableInputs
-  {
-    float clock_slew = 0.0f;
-    float data_slew = 0.0f;
-    float load = 0.0f;
-  };
 
   // The box around the placed cells `inst` connects to, leaving out a
-  // register's clock and control nets and a gate's input nets with more
-  // placed cells than the bound; nullopt when none is placed yet.
-  std::optional<odb::Rect> neighborBox(odb::dbInst* inst,
-                                       int max_input_neighbors) const;
-  // Centers the cell on (x, y) and marks it placed.
+  // register's clock and control nets; nullopt when none is placed yet.
+  std::optional<odb::Rect> neighborBox(odb::dbInst* inst) const;
   void moveTo(odb::dbInst* inst, int x, int y);
 
-  // Returns how many registers changed cell.  Neighboring registers read
-  // each other's trial cells, so the choice is kept only if STA does not
-  // call the result worse.
+  // Returns how many registers changed cell.
   int chooseCells(const std::vector<odb::dbInst*>& registers,
                   est::IncrementalParasiticsGuard& guard);
-  // The registers with negative slack, each with its candidates.
   std::vector<CellChoice> cellChoices(
       const std::vector<odb::dbInst*>& registers);
   // Every register tries its candidate of this rank in one STA update.
   void tryRank(std::vector<CellChoice>& choices,
                size_t rank,
                est::IncrementalParasiticsGuard& guard);
-  // Returns how many registers changed cell.
   static int swapToBest(std::vector<CellChoice>& choices);
   PinSlack pinSlack(odb::dbInst* inst) const;
   static bool betterSlack(const PinSlack& a, const PinSlack& b);
 
   // The other cells of the same function and site, smallest first.
   const std::vector<odb::dbMaster*>& equivalentMasters(odb::dbMaster* master);
-  // The few the liberty tables rank fastest for this register: clock-to-Q
-  // at its load plus setup.
-  std::vector<odb::dbMaster*> sizeCandidates(odb::dbInst* inst);
-  TableInputs tableInputs(odb::dbInst* inst) const;
 
   sta::dbSta* sta_ = nullptr;
   est::EstimateParasitics* estimate_parasitics_ = nullptr;

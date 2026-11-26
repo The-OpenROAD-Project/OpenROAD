@@ -1,4 +1,5 @@
 from openroad import Design, Tech
+import ret
 import helpers
 
 tech = Tech()
@@ -11,7 +12,7 @@ design.link("top")
 design.evalTclString("create_clock -period 0.13 clk")
 
 design.evalTclString("report_worst_slack -max -digits 4")
-design.getRetimer().retime(0)
+design.getRetimer().retime(ret.RetimeOptions())
 design.evalTclString("report_worst_slack -max -digits 4")
 
 v_file = helpers.make_result_file("retime_basic.v")

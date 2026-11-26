@@ -10,21 +10,18 @@ worst slack max -0.0832
 tns max -0.1553
 [INFO RET-0014] Retiming graph: 18 gates, 16 edges, 6 registers, 8 pinned gates, 0 fenced registers.
 [INFO RET-0008] Unmapped 2 registers.
-[INFO RET-0008] Unmapped 2 registers.
-[INFO RET-0008] Unmapped 2 registers.
  Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
 ---------------------------------------------------------------------------
  start |          |        |      |     -0.0832 |       -0.1553 |         6
-     1 |       10 |      5 |    1 |     -0.0721 |       -0.1204 |         5
+     1 |       10 |      2 |    5 |     -0.0721 |       -0.0721 |         5
 [INFO RET-0008] Unmapped 2 registers.
 [INFO RET-0008] Unmapped 2 registers.
 [INFO RET-0008] Unmapped 2 registers.
-[INFO RET-0008] Unmapped 2 registers.
-     2 |        9 |      4 |    0 |     -0.0721 |       -0.1204 |         5
+     2 |        5 |      3 |    0 |     -0.0721 |       -0.0721 |         5
 ---------------------------------------------------------------------------
-[INFO RET-0053] Retime: slides 1, rounds 1, WNS -0.0721, TNS -0.1204, registers 5, placed 1, resized 0.
+[INFO RET-0053] Retime: slides 5, rounds 1, WNS -0.0721, TNS -0.0721, registers 5, placed 1, resized 0.
 worst slack max -0.0721
-tns max -0.1204
+tns max -0.0721
 r4: DFF_X1
 r5: DFF_X1
 unmap cells: unmap_ff_0 unmap_inv_2

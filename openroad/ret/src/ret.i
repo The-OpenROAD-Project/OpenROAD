@@ -13,9 +13,13 @@
 namespace ret {
 
 void
-retime_cmd(int max_moves)
+retime_cmd(int max_moves,
+           double margin)
 {
-  ord::OpenRoad::openRoad()->getRetimer()->retime(max_moves);
+  ret::RetimeOptions options;
+  options.max_moves = max_moves;
+  options.margin = margin;
+  ord::OpenRoad::openRoad()->getRetimer()->retime(options);
 }
 
 } // namespace ret

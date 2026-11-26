@@ -28,7 +28,7 @@ module top (a,
  wire n2;
  wire n3;
  wire n4;
- wire ret_net_22;
+ wire ret_net_9;
  wire q4n;
  wire q5n;
  wire q6;
@@ -66,7 +66,7 @@ module top (a,
  NAND2_X1 g2 (.A1(d1),
     .A2(d2),
     .ZN(n1));
- INV_X1 g3 (.A(ret_net_22),
+ INV_X1 g3 (.A(n1),
     .ZN(n2));
  INV_X1 g4 (.A(n2),
     .ZN(n3));
@@ -74,7 +74,7 @@ module top (a,
     .ZN(n4));
  INV_X1 g6 (.A(n4),
     .ZN(ret_net_1));
- AND2_X1 g7 (.A1(ret_net_1),
+ AND2_X1 g7 (.A1(ret_net_9),
     .A2(rst_n),
     .ZN(d3));
  BUF_X1 g8 (.A(ret_net_0),
@@ -88,9 +88,9 @@ module top (a,
  DFF_X1 ret_ff_0 (.D(d3),
     .CK(clk),
     .Q(ret_net_0));
- DFF_X1 ret_ff_21 (.D(n1),
+ DFF_X1 ret_ff_8 (.D(ret_net_1),
     .CK(clk),
-    .Q(ret_net_22));
+    .Q(ret_net_9));
  DFF_X1 unmap_ff_0 (.D(unmap_state_1),
     .CK(clk),
     .Q(q6));

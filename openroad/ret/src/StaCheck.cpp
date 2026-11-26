@@ -3,15 +3,19 @@
 
 #include "StaCheck.h"
 
+#include <algorithm>
+#include <cstddef>
 #include <cstdlib>
 #include <string>
-#include <unordered_set>
 #include <utility>
+#include <vector>
 
+#include "RegisterUtils.h"
 #include "RetimerPlacer.h"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
 #include "odb/db.h"
+#include "ret/Retimer.h"
 #include "sta/Delay.hh"
 #include "utl/Logger.h"
 
@@ -21,59 +25,86 @@ namespace {
 
 constexpr int kSlackDigits = 4;
 
-// Better than b by a cost that weighs the total negative slack like the
-// worst slack, and never below the start on either.
-bool betterThan(const StaSlack& a, const StaSlack& b, const StaSlack& start)
+// Neither the worst nor the total negative slack below the start, and one
+// of them above it.
+bool betterThan(const StaSlack& a, const StaSlack& start)
 {
-  const double total_scale
-      = start.worst < -kStaSlackEps && start.total < -kStaSlackEps
-            ? static_cast<double>(start.worst) / start.total
-            : 0.0;
-  const auto cost = [total_scale](const StaSlack& slack) {
-    return -static_cast<double>(slack.worst) - total_scale * slack.total;
-  };
   return a.worst >= start.worst - kStaSlackEps
          && a.total >= start.total - kStaSlackEps
-         && cost(a) < cost(b) - kStaSlackEps;
+         && (a.worst > start.worst + kStaSlackEps
+             || a.total > start.total + kStaSlackEps);
 }
 
 }  // namespace
+
+NewCells::NewCells(odb::dbBlock* block)
+{
+  for (odb::dbInst* inst : block->getInsts()) {
+    if (inst->getMaster()->isSequential()) {
+      ++registers_;
+    }
+  }
+  addOwner(block);
+}
+
+void NewCells::inDbInstCreate(odb::dbInst* inst)
+{
+  created_.insert(inst);
+  if (inst->getMaster()->isSequential()) {
+    ++registers_;
+  }
+}
+
+void NewCells::inDbInstDestroy(odb::dbInst* inst)
+{
+  created_.erase(inst);
+  if (inst->getMaster()->isSequential()) {
+    --registers_;
+  }
+}
+
+std::vector<odb::dbInst*> NewCells::inBlockOrder() const
+{
+  return inIdOrder(created_);
+}
 
 StaCheck::StaCheck(sta::dbSta* sta,
                    utl::Logger* logger,
                    RetimerPlacer* placer,
                    odb::dbBlock* block,
                    est::IncrementalParasiticsGuard* guard,
-                   Search search)
+                   Propose propose,
+                   Apply apply,
+                   Undone undone)
     : sta_(sta),
       logger_(logger),
       placer_(placer),
       block_(block),
       guard_(guard),
-      search_(std::move(search))
+      propose_(std::move(propose)),
+      apply_(std::move(apply)),
+      undone_(std::move(undone)),
+      new_cells_(block)
 {
 }
 
-int StaCheck::registerCount() const
+void StaCheck::reportStart(const StaSlack& slack, const int registers) const
 {
-  int count = 0;
-  for (odb::dbInst* inst : block_->getInsts()) {
-    if (inst->getMaster()->isSequential()) {
-      ++count;
-    }
-  }
-  return count;
+  logger_->report(
+      " Round | Proposed | Trials | Kept |         WNS |           TNS | "
+      "Registers");
+  logger_->report("{:->75}", "");
+  reportRow("start", "", "", "", slack, registers);
 }
 
-std::unordered_set<std::string> StaCheck::unplacedCells() const
+void StaCheck::reportRound(const int number, const Round& round) const
 {
-  std::unordered_set<std::string> unplaced;
-  for (odb::dbInst* inst : block_->getInsts()) {
-    if (!inst->isPlaced()) {
-      unplaced.insert(inst->getName());
-    }
-  }
-  return unplaced;
+  reportRow(std::to_string(number),
+            std::to_string(round.proposed),
+            std::to_string(round.trials),
+            std::to_string(round.kept),
+            round.slack,
+            new_cells_.registerCount());
 }
 
 void StaCheck::reportRow(const std::string& round,
@@ -93,57 +124,33 @@ void StaCheck::reportRow(const std::string& round,
                   registers);
 }
 
-void StaCheck::run(const int max_moves)
+void StaCheck::run(const RetimeOptions& options)
 {
-  constexpr int kRounds = 16;
-  constexpr int kRoundMoves = 16;
-  constexpr const char* kHeader
-      = " Round | Proposed | Trials | Kept |         WNS |           TNS | "
-        "Registers";
   placer_->prepare();
   const StaSlack before = staSlack(sta_, *guard_);
-  const int registers_before = registerCount();
+  const int registers_before = new_cells_.registerCount();
   int total = 0;
-  int left = max_moves;
+  int left = options.max_moves;  // <= 0: no cap
   int rounds_kept = 0;
   PlaceStats placed;
-  bool whole = true;
   bool table = false;
-  for (int number = 1; rounds_kept < kRounds; ++number) {
-    int limit = left;
-    if (!whole && (limit <= 0 || kRoundMoves < limit)) {
-      limit = kRoundMoves;
-    }
-    const Round round = runRound(limit);
+  for (int number = 1;; ++number) {
+    const Round round = runRound(left);
     if (round.proposed > 0) {
       if (!table) {
-        logger_->report(kHeader);
-        logger_->report("{:->75}", "");
-        reportRow("start", "", "", "", before, registers_before);
+        reportStart(before, registers_before);
         table = true;
       }
-      reportRow(std::to_string(number),
-                std::to_string(round.proposed),
-                std::to_string(round.trials),
-                std::to_string(round.kept),
-                round.slack,
-                registerCount());
+      reportRound(number, round);
     }
-    const bool was_whole = whole;
-    whole = false;
     if (round.kept == 0) {
-      // Nothing of the whole search kept: on to the short rounds, unless a
-      // short round would propose the same slides.
-      if (was_whole && round.largest > kRoundMoves) {
-        continue;
-      }
       break;
     }
     ++rounds_kept;
     total += round.kept;
     placed.placed += round.placed.placed;
     placed.resized += round.placed.resized;
-    if (max_moves > 0) {
+    if (options.max_moves > 0) {
       left -= round.kept;
       if (left <= 0) {
         break;
@@ -162,24 +169,25 @@ void StaCheck::run(const int max_moves)
                 rounds_kept,
                 sta::delayAsString(after.worst, kSlackDigits, sta_),
                 sta::delayAsString(after.total, kSlackDigits, sta_),
-                registerCount(),
+                new_cells_.registerCount(),
                 placed.placed,
                 placed.resized);
 }
 
-StaCheck::Trial StaCheck::runTrial(const int limit, const StaSlack& before)
+StaCheck::Trial StaCheck::runTrial(const std::vector<odb::dbInst*>& slides,
+                                   const int limit,
+                                   const StaSlack& before)
 {
-  const std::unordered_set<std::string> unplaced = unplacedCells();
-  Trial trial{.slides = 0, .largest = 0, .slack = before, .placed = {}};
+  Trial trial{.slides = 0, .applied = false, .slack = before, .placed = {}};
   odb::dbDatabase::beginEco(block_);
+  new_cells_.clear();
   try {
-    const SearchResult result = search_(limit);
-    trial.slides = std::abs(result.slides);
-    trial.largest = result.largest;
-    if (result.slides > 0) {
-      trial.placed = placer_->placeNewCells(block_, unplaced, *guard_);
+    const int applied = apply_(slides, limit);
+    trial.slides = std::abs(applied);
+    trial.applied = applied > 0;
+    if (trial.applied) {
+      trial.placed = placer_->placeNewCells(new_cells_.inBlockOrder(), *guard_);
       trial.slack = staSlack(sta_, *guard_);
-      ++trials_;
     }
   } catch (...) {
     odb::dbDatabase::undoEco(block_);
@@ -193,6 +201,7 @@ void StaCheck::undoTrial()
   odb::dbDatabase::undoEco(block_);
   // The next search reads STA arcs: the restored nets need parasitics.
   guard_->update();
+  undone_();
 }
 
 void StaCheck::keepTrial(const Trial& trial, Round& round)
@@ -203,54 +212,34 @@ void StaCheck::keepTrial(const Trial& trial, Round& round)
   round.placed = trial.placed;
 }
 
-int StaCheck::bestPrefix(const int slides, const StaSlack& before)
+std::vector<odb::dbInst*> StaCheck::prefix(
+    const std::vector<odb::dbInst*>& slides,
+    const int limit)
 {
-  constexpr int kMaxTrials = 12;
-  int best_limit = 0;
-  StaSlack best = before;
-  int limit = slides / 2;
-  for (int tried = 1; tried < kMaxTrials && limit > 0; ++tried) {
-    const Trial trial = runTrial(limit, before);
-    undoTrial();
-    if (trial.slides == 0) {
-      break;
-    }
-    if (betterThan(trial.slack, best, before)) {
-      best = trial.slack;
-      best_limit = limit;
-    }
-    if (trial.slides == 1) {
-      break;
-    }
-    limit = trial.slides / 2;
-  }
-  return best_limit;
+  const size_t count = std::min(slides.size(), static_cast<size_t>(limit));
+  return {slides.begin(), slides.begin() + count};
 }
 
-StaCheck::Round StaCheck::runRound(const int max_moves)
+StaCheck::Round StaCheck::runRound(const int limit)
 {
-  trials_ = 0;
-  const StaSlack before = staSlack(sta_, *guard_);
   Round round;
-  round.slack = before;
-  const Trial full = runTrial(max_moves, before);
-  round.proposed = full.slides;
-  round.largest = full.largest;
-  if (full.slides > 0 && betterThan(full.slack, before, before)) {
-    keepTrial(full, round);
-  } else {
-    undoTrial();
-    const int limit = full.slides > 0 ? bestPrefix(full.slides, before) : 0;
-    if (limit > 0) {
-      const Trial again = runTrial(limit, before);
-      if (betterThan(again.slack, before, before)) {
-        keepTrial(again, round);
-      } else {
-        undoTrial();
-      }
+  round.slack = staSlack(sta_, *guard_);
+  const StaSlack before = round.slack;
+  const std::vector<odb::dbInst*> slides = propose_(limit);
+  // All the slides, then ever shorter prefixes until STA accepts one.
+  int j = static_cast<int>(slides.size());
+  int cap = limit;
+  while (j > 0) {
+    const Trial trial = runTrial(prefix(slides, j), cap, before);
+    round.proposed = std::max(round.proposed, trial.slides);
+    round.trials += trial.applied ? 1 : 0;
+    if (betterThan(trial.slack, before)) {
+      keepTrial(trial, round);
+      break;
     }
+    undoTrial();
+    j = cap = trial.slides / 2;
   }
-  round.trials = trials_;
   return round;
 }
 

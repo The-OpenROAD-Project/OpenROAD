@@ -5,14 +5,13 @@
 
 #include <unordered_map>
 #include <unordered_set>
-#include <utility>
 #include <vector>
 
 #include "odb/db.h"
+#include "sta/FuncExpr.hh"
 
 namespace sta {
 class dbSta;
-class FuncExpr;
 class Instance;
 class LibertyCell;
 class LibertyPort;
@@ -39,7 +38,12 @@ class SequentialUnmapper
 {
  public:
   // Pins held at a constant, as (pin, tied high).
-  using PinTies = std::vector<std::pair<odb::dbMTerm*, bool>>;
+  struct PinTie
+  {
+    odb::dbMTerm* pin;
+    bool high;
+  };
+  using PinTies = std::vector<PinTie>;
 
   // resizer: its set_dont_use cells are not used; nullptr: only the liberty
   // dont_use attribute counts.
@@ -54,8 +58,8 @@ class SequentialUnmapper
   int run(const std::unordered_set<odb::dbInst*>* candidates = nullptr);
 
   odb::dbMaster* getBaseSequentialMaster() const { return seq_.master; }
-  odb::dbMTerm* getBaseSequentialDMTerm() const { return seq_.d; }
-  odb::dbMTerm* getBaseSequentialQMTerm() const { return seq_.q; }
+  odb::dbMTerm* getBaseSequentialDMTerm() const { return seq_.data; }
+  odb::dbMTerm* getBaseSequentialQMTerm() const { return seq_.output; }
   // Empty on a plain flip-flop.
   const PinTies& getBaseSequentialTies() const { return seq_.ties; }
   odb::dbMaster* getNegedgeSequentialMaster() const
@@ -64,29 +68,33 @@ class SequentialUnmapper
   }
   odb::dbMaster* getTieMaster(const bool one) const
   {
-    return one ? tie1_master_ : tie0_master_;
+    return tieCell(one).master;
   }
   odb::dbMTerm* getTieOutputMTerm(const bool one) const
   {
-    return one ? tie1_out_mterm_ : tie0_out_mterm_;
+    return tieCell(one).output;
   }
 
  private:
-  using Register = std::pair<odb::dbInst*, const sta::Sequential*>;
+  struct Register
+  {
+    odb::dbInst* inst;
+    const sta::Sequential* seq;
+  };
 
   struct BaseRegister
   {
     odb::dbMaster* master = nullptr;
-    odb::dbMTerm* d = nullptr;
-    odb::dbMTerm* q = nullptr;
+    odb::dbMTerm* data = nullptr;
+    odb::dbMTerm* output = nullptr;
     PinTies ties;
   };
 
-  struct RegPins
+  struct TieCell
   {
-    odb::dbITerm* d = nullptr;
-    odb::dbITerm* q = nullptr;
-    odb::dbITerm* clk = nullptr;
+    odb::dbMaster* master = nullptr;
+    odb::dbMTerm* output = nullptr;
+    float area = 0.0f;
   };
 
   struct Untouched
@@ -110,24 +118,26 @@ class SequentialUnmapper
   // set_dont_use to keep them out of sizing and still tie nets with them
   // (ORFS on gt2n, repair_tie_fanout).
   bool usableCell(const sta::LibertyCell* cell, bool tie = false) const;
-  bool findBaseSequentialCell(bool negedge, BaseRegister& base) const;
-  // Without a plain flip-flop, the base cell is the tied register that costs
-  // the least area, then the one with the smallest data pin capacitance.
-  bool findTiedBaseSequentialCell(bool negedge, BaseRegister& base) const;
-  // A register cell that is a plain D flip-flop once tie cells hold its
-  // asynchronous controls inactive; `area` includes those tie cells.
-  bool tiedBaseRegister(const sta::LibertyCell* cell,
-                        bool negedge,
-                        BaseRegister& base,
-                        float& area) const;
-  BaseRegister makeBaseRegister(const sta::LibertyCell* cell,
-                                const sta::LibertyPort* data,
-                                const sta::LibertyPort* output) const;
+  // The cell as a base register: a D flip-flop of this clock edge with a
+  // state output and no scan pin, whatever its asynchronous controls.  No
+  // master, as from every finder below, when it is not one.
+  BaseRegister baseRegister(const sta::LibertyCell* cell, bool negedge) const;
+  BaseRegister findBaseRegister(bool negedge) const;
+  BaseRegister plainBaseRegister(bool negedge) const;
+  // The register that costs the least area with tie cells holding its
+  // asynchronous controls inactive, then the one with the smallest data pin
+  // capacitance.
+  BaseRegister tiedBaseRegister(bool negedge) const;
+  // Adds the ties that hold the cell's asynchronous controls inactive;
+  // `area`: the cell with those tie cells.  False when it cannot be tied.
+  bool tieControls(const sta::LibertyCell* cell,
+                   BaseRegister& base,
+                   float& area) const;
   void reportTiedBase() const;
-  bool findInverterCell();
-  // nullptr: none.
-  odb::dbMaster* smallestTwoInputGate(bool is_and) const;
-  bool findTieCell(bool one);
+  // The smallest cell that is `op` of this many input pins.
+  odb::dbMaster* smallestGate(sta::FuncExpr::Op op, int inputs) const;
+  TieCell findTieCell(bool one) const;
+  const TieCell& tieCell(const bool one) const { return one ? tie1_ : tie0_; }
 
   std::vector<Register> collectRegisters(
       const std::unordered_set<odb::dbInst*>* candidates,
@@ -135,8 +145,9 @@ class SequentialUnmapper
   void reportRun(const Untouched& untouched);
 
   void decompose(odb::dbInst* inst, const sta::Sequential* seq);
-  odb::dbNet* collectRegisterNets(odb::dbInst* inst,
-                                  std::vector<odb::dbITerm*>& out_pins);
+  void skip(odb::dbInst* inst, const char* reason);
+  // Records the nets of the input pins; returns the loaded output pins.
+  std::vector<odb::dbITerm*> collectRegisterNets(odb::dbInst* inst);
   bool outputsReadState(const sta::Sequential* seq,
                         const std::vector<odb::dbITerm*>& out_pins) const;
   std::vector<OutputMove> collectOutputMoves(
@@ -146,13 +157,15 @@ class SequentialUnmapper
   void applyOutputMoves(const std::vector<OutputMove>& moves);
   bool canSynth(const sta::FuncExpr* expr) const;
   odb::dbNet* synth(const sta::FuncExpr* expr);
-  RegPins getRegPins(odb::dbInst* inst, const sta::Sequential* seq) const;
 
   void setParent(odb::dbInst* inst);
-  odb::dbNet* newNet(const char* base_name);
-  odb::dbInst* newInst(const char* base_name, odb::dbMaster* master);
+  // A new gate reading `inputs` in pin order; returns its output net.
+  odb::dbNet* makeGate(const char* base_name,
+                       odb::dbMaster* master,
+                       const std::vector<odb::dbNet*>& inputs);
   odb::dbNet* makeInverter(odb::dbNet* input);
-  odb::dbNet* makeTwoInputGate(bool is_and, odb::dbNet* a, odb::dbNet* b);
+  odb::dbNet* makeAnd(odb::dbNet* a, odb::dbNet* b);
+  odb::dbNet* makeOr(odb::dbNet* a, odb::dbNet* b);
   odb::dbNet* makeTie(bool one);
 
   odb::dbDatabase* db_ = nullptr;
@@ -166,18 +179,13 @@ class SequentialUnmapper
   odb::dbMaster* inv_master_ = nullptr;
   odb::dbMaster* and2_master_ = nullptr;
   odb::dbMaster* or2_master_ = nullptr;
-  odb::dbMaster* tie1_master_ = nullptr;
-  odb::dbMTerm* tie1_out_mterm_ = nullptr;
-  float tie1_area_ = 0.0f;
-  odb::dbMaster* tie0_master_ = nullptr;
-  odb::dbMTerm* tie0_out_mterm_ = nullptr;
-  float tie0_area_ = 0.0f;
+  TieCell tie1_;
+  TieCell tie0_;
 
   std::unordered_map<const sta::LibertyPort*, odb::dbNet*> in_port_net_;
   // Module net of each net the register reads; empty in a flat netlist.
   std::unordered_map<odb::dbNet*, odb::dbModNet*> mod_net_;
   sta::Instance* parent_ = nullptr;
-  odb::dbModInst* parent_mod_inst_ = nullptr;
   const sta::LibertyPort* out_port_ = nullptr;
   const sta::LibertyPort* out_inv_port_ = nullptr;
   odb::dbNet* state_net_ = nullptr;

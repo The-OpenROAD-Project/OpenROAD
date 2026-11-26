@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("@rules_python//python:defs.bzl", "py_test")
+load("//bazel:man_tcl_checker.bzl", "man_tcl_check_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -106,15 +106,9 @@ cc_test(
     ],
 )
 
-py_test(
+man_tcl_check_test(
     name = "ret_man_tcl_check",
-    srcs = ["ret_man_tcl_check.py"],
-    data = ["//openroad/ret:doc_files"],
-    tags = [
-        "doc_check",
-        "py",
-    ],
-    deps = ["//docs/src/scripts:extract_utils"],
+    module = "ret",
 )
 
 doc_check_test(

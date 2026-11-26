@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <compare>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -25,6 +26,15 @@ struct Edge
   int weight;  // registers on the edge
 };
 
+// An edge seen from one end: the gate at the other end and the edge's index
+// in the list it is kept in.
+struct EdgeRef
+{
+  int gate;
+  int index;
+  auto operator<=>(const EdgeRef&) const = default;
+};
+
 struct EdgePhys
 {
   odb::dbITerm* driver;
@@ -41,17 +51,35 @@ class RetimingGraph
   RetimingGraph(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
 
   void build();
+  // sources: the gates whose fanout registers changed.  gates_changed: gates
+  // were appended or dropped.  Returns the gates whose edges were read again.
+  std::vector<int> update(std::vector<int> sources, bool gates_changed);
+  // Keeps the first `gates` gates.
+  void truncate(int gates);
   void report() const;
 
   const std::vector<odb::dbInst*>& nodes() const { return nodes_; }
+  int size() const { return static_cast<int>(nodes_.size()); }
+  // -1: not a gate of the graph.
+  int indexOf(odb::dbInst* gate) const;
+  // The gates with one of these registers on an edge.
+  std::vector<int> sourcesOf(
+      const std::unordered_set<odb::dbInst*>& registers) const;
   const std::vector<std::vector<Edge>>& adj() const { return adj_; }
   // Parallel to adj().
   const std::vector<std::vector<EdgePhys>>& phys() const { return phys_; }
+  // Per gate: its incoming edges as (source, index into adj()[source]),
+  // in that order.
+  const std::vector<std::vector<EdgeRef>>& fanin() const { return fanin_; }
   // The gates the search never crosses.
   const std::vector<bool>& pinned() const { return pinned_; }
   const std::vector<bool>& selfDual() const { return self_dual_; }
   float clockPeriod() const { return clock_period_; }
   const RegisterClass& regClass(odb::dbInst* reg) const;
+  bool oneClass(const std::vector<odb::dbInst*>& registers) const;
+  // Registers cross a gate together as one class, an inverting class only
+  // when the gate is self-dual.
+  bool moveKeepsClass(const std::vector<odb::dbInst*>& registers, int v) const;
 
   bool isDontTouch(odb::dbInst* reg) const;
   // The net an edge's registers start on; the driver net when it has none.
@@ -60,7 +88,7 @@ class RetimingGraph
  private:
   // An enable pin travels with its register's class; it is not a data edge.
   bool continuesThrough(odb::dbInst* reg, odb::dbITerm* pin) const;
-  // A net read by a port, a control pin, an inout pin or a don't-touch gate:
+  // A net read by a port, a control pin, an inout pin, or a don't-touch gate:
   // the registers in front of it keep their depth, and the gate that drives
   // them is never crossed.
   bool fencesChain(odb::dbNet* net) const;
@@ -69,10 +97,23 @@ class RetimingGraph
                   int weight,
                   EdgePhys& chain,
                   std::unordered_set<odb::dbInst*>& visited);
+  void walkFrom(int source);
+  void unlinkEdges(int source);
+  void linkEdges(int source);
+  // Not a register, and not a tie cell that only holds control pins of
+  // registers: such a cell has no edge, and it goes when its register does.
+  bool isGate(odb::dbInst* inst) const;
+  void addGates();
   // A gate with an input tied to a supply or left open is not self-dual,
   // whatever its cell.
-  void clearTiedSelfDual();
-  // Registers a false path, a multicycle or a pin constraint names:
+  bool selfDual(odb::dbInst* gate);
+  // The gate behind a net, through the registers in between; -1: none.
+  int sourceOfNet(odb::dbNet* net) const;
+  // The pins registers do not decide.
+  void pinGates();
+  // The pins registers decide.
+  void fence();
+  // Registers a false path, a multicycle, or a pin constraint names:
   // deleting one would drop it.
   void findSdcRegisters(odb::dbBlock* block);
   void markBoundary(odb::dbInst* inst, int id);
@@ -94,11 +135,17 @@ class RetimingGraph
   std::vector<odb::dbInst*> nodes_;
   std::vector<std::vector<Edge>> adj_;
   std::vector<std::vector<EdgePhys>> phys_;
+  std::vector<std::vector<EdgeRef>> fanin_;
   std::vector<bool> pinned_;
+  std::vector<bool> fixed_pinned_;           // by pinGates
+  std::vector<bool> walk_fence_;             // a fencing net behind the gate
   std::unordered_set<odb::dbInst*> fenced_;  // registers that never move
+  std::vector<std::vector<odb::dbInst*>> fenced_from_;  // per gate
   std::unordered_set<odb::dbInst*> sdc_registers_;
-  std::unordered_map<odb::dbInst*, RegisterClass> reg_class_;
+  // Filled as registers are met.
+  mutable std::unordered_map<odb::dbInst*, RegisterClass> reg_class_;
   std::vector<bool> self_dual_;
+  std::unordered_map<odb::dbMaster*, bool> self_dual_master_;
   float clock_period_ = 0.0f;
   std::unordered_map<odb::dbInst*, int> index_;
 };

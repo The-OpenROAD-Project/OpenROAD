@@ -8,16 +8,13 @@ tns max -0.4450
  Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
 ---------------------------------------------------------------------------
  start |          |        |      |     -0.3139 |       -0.4450 |         5
-     1 |       11 |      4 |    5 |     -0.1643 |       -0.2954 |         5
-[INFO RET-0008] Unmapped 0 registers.
-[INFO RET-0008] Unmapped 0 registers.
-     2 |        6 |      2 |    1 |     -0.1311 |       -0.2593 |         5
+     1 |       11 |      1 |    5 |     -0.1643 |       -0.2954 |         5
 [INFO RET-0008] Unmapped 0 registers.
 [INFO RET-0008] Unmapped 0 registers.
 [INFO RET-0008] Unmapped 0 registers.
-     3 |        5 |      0 |    0 |     -0.1311 |       -0.2593 |         5
+     2 |        6 |      0 |    0 |     -0.1643 |       -0.2954 |         5
 ---------------------------------------------------------------------------
-[INFO RET-0053] Retime: slides 6, rounds 2, WNS -0.1311, TNS -0.2593, registers 5, placed 0, resized 0.
-worst slack max -0.1311
-tns max -0.2593
+[INFO RET-0053] Retime: slides 5, rounds 1, WNS -0.1643, TNS -0.2954, registers 5, placed 0, resized 0.
+worst slack max -0.1643
+tns max -0.2954
 No differences found.

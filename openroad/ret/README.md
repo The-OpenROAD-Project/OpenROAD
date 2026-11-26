@@ -21,15 +21,17 @@ proposes the moves on a delay model calibrated to STA: gate and wire delays,
 the clock-to-Q of the new register and the setup time of each endpoint. STA
 then decides what is kept. The moves are applied, the new cells placed and
 the design timed; they are kept when the slack improves and neither the
-worst nor the total negative slack is worse than at the start, else shorter
-prefixes of them are tried. Rounds of up to 16 moves follow from what was
-kept. A design that meets timing is left as it is.
+worst nor the total negative slack is worse than at the start, else the first
+of the halves, quarters, and so on that does so is kept. The moves are listed
+with the ones the delay model gains most from first, so a half keeps the best
+of them. Rounds repeat from what was kept until one keeps nothing. A design
+that meets timing is left as it is.
 
 Only the register groups whose edge weights changed are rebuilt; every
 other cell keeps its placement. Each new cell is placed at the center of the
 placed cells it connects to, for detailed placement to legalize, and a new
-register with negative slack takes the best of its three fastest equivalent
-cells. Estimated parasitics of the nets that changed are refreshed. Run
+register with negative slack takes the best of its equivalent cells.
+Estimated parasitics of the nets that changed are refreshed. Run
 `retime` before clock tree synthesis and routing: on a routed design it
 warns and leaves the routing as it is.
 
@@ -65,6 +67,7 @@ defined with `create_clock`; gated copies of it are fine.
 ```tcl
 retime
     [-max_moves count]
+    [-margin fraction]
 ```
 
 #### Options
@@ -72,6 +75,7 @@ retime
 | Switch Name | Description |
 | ----- | ----- |
 | `-max_moves` | Stop after this many accepted register moves. `0` means unlimited. Default unlimited. |
+| `-margin` | The slack a move must gain, as a fraction of the clock period. Default `0.002`. |
 
 New registers are named `ret_ff_N`, their tie cells `ret_tie_N` and new
 nets `ret_net_N`. The log shows the slack after each round. `retime` stops

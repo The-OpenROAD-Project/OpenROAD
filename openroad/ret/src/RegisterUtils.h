@@ -5,7 +5,7 @@
 
 #include <optional>
 #include <unordered_map>
-#include <utility>
+#include <unordered_set>
 #include <vector>
 
 #include "odb/db.h"
@@ -13,6 +13,7 @@
 namespace sta {
 class dbSta;
 class FuncExpr;
+class Instance;
 class LibertyCell;
 class LibertyPort;
 class Sequential;
@@ -22,11 +23,11 @@ namespace ret {
 
 // The cell's sequential when it has exactly one, else nullptr.
 const sta::Sequential* singleSequential(const sta::LibertyCell* cell);
-// nullptr also without a liberty cell.
 const sta::Sequential* singleSequential(sta::dbSta* sta, odb::dbInst* inst);
 
-// Every cell of the loaded liberty libraries, in library order.
 std::vector<sta::LibertyCell*> libertyCells(sta::dbSta* sta);
+sta::LibertyCell* libertyCell(sta::dbSta* sta, odb::dbMaster* master);
+const sta::LibertyPort* libertyPort(sta::dbSta* sta, odb::dbITerm* pin);
 
 bool isNegedge(const sta::Sequential* seq);
 // Clocked by one pin or its inverse, not by an expression such as CK & EN.
@@ -36,6 +37,25 @@ bool hasSimpleClock(const sta::Sequential* seq);
 // nullopt when it does not read the state.
 std::optional<bool> outputInverted(const sta::FuncExpr* func,
                                    const sta::Sequential* seq);
+
+// An input pin on a net that is not a supply.
+bool isSignalInput(odb::dbITerm* pin);
+
+void sortUnique(std::vector<int>& values);
+
+// In id order, the order the block lists its cells in.
+std::vector<odb::dbInst*> inIdOrder(
+    const std::unordered_set<odb::dbInst*>& cells);
+
+odb::dbInst* makeCell(sta::dbSta* sta,
+                      sta::Instance* parent,
+                      const char* base_name,
+                      odb::dbMaster* master);
+odb::dbNet* makeNet(sta::dbSta* sta,
+                    sta::Instance* parent,
+                    const char* base_name);
+// Deletes a net, and its module net once nothing is left on it.
+void deleteNet(sta::dbSta* sta, odb::dbNet* net, odb::dbModNet* mod_net);
 
 void connectPin(
     odb::dbITerm* pin,
@@ -55,7 +75,12 @@ bool hasLiveAsyncControl(sta::dbSta* sta,
 // `constants`: (pin, tied high) holding every asynchronous control inactive.
 // False without such a control or such constants, or when the cell has an
 // input that is not a control, a data pin, or the clock.
-using PinConstants = std::vector<std::pair<const sta::LibertyPort*, bool>>;
+struct PinConstant
+{
+  const sta::LibertyPort* port;
+  bool high;
+};
+using PinConstants = std::vector<PinConstant>;
 bool inactiveAsyncControls(const sta::LibertyCell* cell,
                            const sta::Sequential* seq,
                            PinConstants& constants);
@@ -68,6 +93,7 @@ void deleteRegister(sta::dbSta* sta, odb::dbInst* inst);
 bool isRegisterDataPin(sta::dbSta* sta, odb::dbITerm* pin);
 odb::dbITerm* registerDataPin(sta::dbSta* sta, odb::dbInst* inst);
 bool isNegedgeRegister(sta::dbSta* sta, odb::dbInst* inst);
+odb::dbITerm* registerClockPin(odb::dbInst* inst);
 odb::dbNet* registerClockNet(odb::dbInst* inst);
 
 // Registers move together across a gate only when they are one class.
@@ -87,6 +113,13 @@ enum class RegisterKind
   kOther
 };
 
+struct EnablePin
+{
+  odb::dbMTerm* pin;
+  odb::dbNet* net;
+  bool operator==(const EnablePin&) const = default;
+};
+
 struct RegisterClass
 {
   RegisterKind kind = RegisterKind::kOther;
@@ -94,8 +127,8 @@ struct RegisterClass
   odb::dbMTerm* data = nullptr;
   odb::dbMTerm* output = nullptr;  // the output pin the loads read
   odb::dbNet* clock = nullptr;
-  std::vector<std::pair<odb::dbMTerm*, odb::dbNet*>> enables;  // by pin name
-  bool negedge = false;                                        // never moves
+  std::vector<EnablePin> enables;  // by pin name
+  bool negedge = false;            // never moves
 };
 
 RegisterClass registerClass(sta::dbSta* sta, odb::dbInst* inst);

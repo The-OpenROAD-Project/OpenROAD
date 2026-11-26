@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+// The delay model of the search, read from STA.
+
 #include <algorithm>
-#include <climits>
-#include <cmath>
 #include <cstddef>
-#include <limits>
 #include <optional>
 #include <unordered_set>
-#include <utility>
 #include <vector>
 
 #include "RegisterTiming.h"
@@ -25,6 +23,9 @@
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Scene.hh"
+#include "sta/Sdc.hh"
+#include "sta/TableModel.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingRole.hh"
 #include "sta/Transition.hh"
@@ -35,16 +36,6 @@ namespace ret {
 namespace {
 
 constexpr float kNoArrival = -1e29f;
-constexpr double kMaxArrivalShift = 1.0;
-constexpr double kMarginFraction = 0.002;
-
-float slackAtLoad(sta::dbSta* sta, sta::Graph* graph, const sta::Pin* pin)
-{
-  sta::Vertex* vertex = pin != nullptr ? graph->pinLoadVertex(pin) : nullptr;
-  return vertex != nullptr
-             ? sta::delayAsFloat(sta->slack(vertex, sta::MinMax::max()))
-             : sta::INF;
-}
 
 // The latest arrival at `to` from `reached`, another output of the gate that
 // drives it (a half adder's carry into its sum).
@@ -114,27 +105,159 @@ std::optional<float> arrivalThroughGate(sta::Graph* graph,
 
 }  // namespace
 
-void Retime::computeRegisterTiming()
+void Retime::buildModel()
 {
-  const int n = static_cast<int>(graph_->nodes().size());
-  unmap_on_slide_.assign(n, 0);
-  new_launch_.assign(n, 0.0);
-  launch_cell_.assign(n, nullptr);
-  new_setup_.assign(n, 0.0);
-  orig_end_shift_.assign(n, kNegInf);
-  po_end_shift_.assign(n, kNegInf);
+  sta_->updateTiming(/*full=*/false);
+  dcalc_ap_ = sta_->cmdScene()->dcalcAnalysisPtIndex(sta::MinMax::max());
+
+  resolveFlopDCap();
+  computeWireArcs();
+  computePinnedFloors();
+  computeLatestOutputs();
+  computeGateArcs();
+  computeCrossExtra();
+  computeLaunch();
+  computeDriverShifts();
+  computeEndpoints();
+}
+
+void Retime::resolveFlopDCap()
+{
+  flop_d_cap_ = 0.0f;
+  sta::LibertyCell* liberty_cell
+      = libertyCell(sta_, flop_d_mterm_->getMaster());
+  if (liberty_cell != nullptr) {
+    const sta::LibertyPort* d
+        = liberty_cell->findLibertyPort(flop_d_mterm_->getConstName());
+    if (d != nullptr) {
+      flop_d_cap_ = d->capacitance();
+    }
+  }
+  if (flop_d_cap_ <= 0.0f) {
+    logger_->warn(
+        utl::RET,
+        17,
+        "No register D-pin capacitance found; using combinational arcs.");
+  }
+}
+
+void Retime::computeWireArcs()
+{
+  const int n = graph_->size();
+  fanin_.assign(n, {});
+  fanout_.assign(n, {});
+  for (int u = 0; u < n; ++u) {
+    const std::vector<Edge>& edges = graph_->adj()[u];
+    const std::vector<EdgePhys>& handles = graph_->phys()[u];
+    const int edge_count = static_cast<int>(edges.size());
+    for (int k = 0; k < edge_count; ++k) {
+      odb::dbITerm* sink = handles[k].sink;
+      const float wire = wireDelay(handles[k]);
+      const float fallback = getGateArc(sink);
+      std::vector<FaninEdge>& into = fanin_[edges[k].target];
+      fanout_[u].push_back(
+          {.gate = edges[k].target, .index = static_cast<int>(into.size())});
+      into.push_back({
+          .source = u,
+          .weight = edges[k].weight,
+          .wire = wire,
+          .arc_comb = fallback,
+          .arc_reg = fallback,
+          .sink = sink,
+          .launch = pinArrival(sink),
+          .phys = &handles[k],
+          .driver_shift = 0.0f,
+          .cross_extra = 0.0f,
+      });
+    }
+  }
+}
+
+float Retime::wireDelay(const EdgePhys& phys) const
+{
+  float wire = std::max(pinArrival(phys.sink) - pinArrival(phys.driver), 0.0f);
+  for (odb::dbITerm* entry : phys.entries) {
+    odb::dbITerm* source = entry->getNet()->getFirstOutput();
+    if (source != nullptr) {
+      wire += std::max(pinArrival(entry) - pinArrival(source), 0.0f);
+    }
+  }
+  return wire;
+}
+
+float Retime::pinArrival(odb::dbITerm* db_pin) const
+{
+  const sta::Pin* pin = sta_->getDbNetwork()->dbToSta(db_pin);
+  sta::Vertex* vertex = nullptr;
+  sta::Vertex* bidirect_drvr = nullptr;
+  sta_->ensureGraph()->pinVertices(pin, vertex, bidirect_drvr);
+  if (vertex == nullptr) {
+    return 0.0f;
+  }
+  return std::max(arrivalAt(vertex, sta::RiseFall::rise()),
+                  arrivalAt(vertex, sta::RiseFall::fall()));
+}
+
+float Retime::arrivalAt(sta::Vertex* vertex, const sta::RiseFall* rf) const
+{
+  return sta::delayAsFloat(sta_->arrival(
+      vertex, rf->asRiseFallBoth(), sta_->scenes(), sta::MinMax::max()));
+}
+
+float Retime::getGateArc(odb::dbITerm* input_pin) const
+{
+  const sta::Pin* pin = sta_->getDbNetwork()->dbToSta(input_pin);
+  const sta::Graph* graph = sta_->ensureGraph();
+  sta::Vertex* vertex = nullptr;
+  sta::Vertex* bidirect_drvr = nullptr;
+  graph->pinVertices(pin, vertex, bidirect_drvr);
+  if (vertex == nullptr) {
+    return 0.0f;
+  }
+  float best = 0.0f;
+  sta::VertexOutEdgeIterator edge_iter(vertex, graph);
+  while (edge_iter.hasNext()) {
+    const sta::Edge* edge = edge_iter.next();
+    if (edge->isWire()) {
+      continue;
+    }
+    for (const sta::TimingArc* arc : edge->timingArcSet()->arcs()) {
+      best = std::max(best,
+                      sta::delayAsFloat(graph->arcDelay(edge, arc, dcalc_ap_)));
+    }
+  }
+  return best;
+}
+
+void Retime::computePinnedFloors()
+{
+  const int n = graph_->size();
+  pinned_floor_.assign(n, kUnreached);
+  for (int u = 0; u < n; ++u) {
+    if (!graph_->pinned()[u]) {
+      continue;
+    }
+    std::unordered_set<odb::dbITerm*> modeled;
+    for (const FaninEdge& fe : fanin_[u]) {
+      modeled.insert(fe.sink);
+    }
+    for (odb::dbITerm* iterm : graph_->nodes()[u]->getITerms()) {
+      if (isSignalInput(iterm) && !modeled.contains(iterm)) {
+        pinned_floor_[u] = std::max(
+            pinned_floor_[u],
+            static_cast<double>(pinArrival(iterm) + getGateArc(iterm)));
+      }
+    }
+  }
+}
+
+void Retime::computeLatestOutputs()
+{
+  const int n = graph_->size();
   latest_output_.assign(n, nullptr);
-  clock_slew_ = 0.0f;
-  launch_offset_ = 0.0;
   for (int v = 0; v < n; ++v) {
     latest_output_[v] = latestOutput(v);
   }
-  computeCrossExtra();
-  computeLaunch();
-  calibrateArcs();
-  computeUnmapCost();
-  computeDriverShifts();
-  computeEndpoints();
 }
 
 odb::dbITerm* Retime::latestOutput(const int v) const
@@ -152,128 +275,126 @@ odb::dbITerm* Retime::latestOutput(const int v) const
   return latest;
 }
 
-odb::dbITerm* Retime::firstOutput(const int v) const
+void Retime::computeGateArcs()
 {
-  for (odb::dbITerm* iterm : graph_->nodes()[v]->getITerms()) {
-    if (iterm->getIoType() == odb::dbIoType::OUTPUT
-        && iterm->getNet() != nullptr) {
-      return iterm;
+  const int n = graph_->size();
+  for (int v = 0; v < n; ++v) {
+    float load = 0.0f;
+    for (const EdgePhys& phys : graph_->phys()[v]) {
+      load += pinCap(phys.sink);
     }
+    for (FaninEdge& fe : fanin_[v]) {
+      fe.arc_comb = characterizeArc(v, fe.sink, load, fe.arc_comb);
+      fe.arc_reg = characterizeArc(v, fe.sink, flop_d_cap_, fe.arc_reg);
+    }
+    calibrateArcs(v);
   }
-  return nullptr;
 }
 
-odb::dbITerm* Retime::edgeSource(const FaninEdge& fe) const
+float Retime::characterizeArc(const int v,
+                              odb::dbITerm* sink,
+                              const float load,
+                              const float fallback,
+                              const float forced_slew,
+                              float* out_slew) const
 {
-  odb::dbITerm* source = fe.phys->driver;
-  if (!fe.phys->flops.empty()) {
-    odb::dbNet* net = graph_->chainNet(*fe.phys);
-    source = net != nullptr ? net->getFirstOutput() : nullptr;
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  const sta::MinMax* min_max = sta::MinMax::max();
+  const sta::Sdc* sdc = sta_->cmdScene()->sdc();
+  odb::dbInst* gate = graph_->nodes()[v];
+  const sta::Pin* pin = network->dbToSta(sink);
+  const sta::LibertyCell* cell = network->libertyCell(gate);
+  const sta::LibertyPort* from = network->libertyPort(pin);
+  // Per-instance PVT, then the SDC operating conditions, then the library
+  // default, else nominal (what the delay calculator itself uses).
+  const sta::Pvt* pvt = sdc->pvt(network->dbToSta(gate), min_max);
+  if (pvt == nullptr) {
+    pvt = sdc->operatingConditions(min_max);
   }
-  if (source == nullptr || source->getInst() != graph_->nodes()[fe.u]) {
-    return nullptr;
+  if (pvt == nullptr && cell != nullptr) {
+    pvt = cell->libertyLibrary()->defaultOperatingConditions();
   }
-  return source;
+  if (cell == nullptr || from == nullptr) {
+    return fallback;
+  }
+  const float in_slew = forced_slew >= 0.0f ? forced_slew : pinSlew(sta_, pin);
+  float best = 0.0f;
+  bool got = false;
+  for (const sta::TimingArcSet* set : cell->timingArcSets(from, nullptr)) {
+    if (set->role()->isTimingCheck()) {
+      continue;
+    }
+    for (const sta::TimingArc* arc : set->arcs()) {
+      const sta::GateTableModel* model
+          = dynamic_cast<const sta::GateTableModel*>(arc->model());
+      if (model == nullptr) {
+        continue;
+      }
+      float delay = 0.0f;
+      float slew = 0.0f;
+      model->gateDelay(pvt, in_slew, load, delay, slew);
+      if (!got || delay > best) {
+        best = delay;
+        if (out_slew != nullptr) {
+          *out_slew = slew;
+        }
+      }
+      got = true;
+    }
+  }
+  return got ? std::max(best, 0.0f) : fallback;
 }
 
 float Retime::pinCap(odb::dbITerm* pin) const
 {
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  const sta::LibertyPort* port = network->libertyPort(network->dbToSta(pin));
+  const sta::LibertyPort* port = libertyPort(sta_, pin);
   return port != nullptr ? port->capacitance() : 0.0f;
 }
 
-float Retime::loadCap(odb::dbITerm* driver) const
+void Retime::calibrateArcs(const int t)
 {
-  return sta_->graphDelayCalc()->loadCap(sta_->getDbNetwork()->dbToSta(driver),
-                                         sta_->cmdScene(),
-                                         sta::MinMax::max());
-}
-
-double Retime::crossingDelay(const int t, const FaninEdge& fe) const
-{
-  if (fe.weight == 0) {
-    return 0.0;
+  odb::dbITerm* output = latest_output_[t];
+  if (output == nullptr || fanin_[t].empty()) {
+    return;
   }
-  return fe.cross_extra + (unmap_on_slide_[t] ? fe.unmap : 0.0);
-}
-
-void Retime::computeCrossExtra()
-{
-  const int n = static_cast<int>(graph_->nodes().size());
-  for (int t = 0; t < n; ++t) {
-    for (FaninEdge& fe : fanin_[t]) {
-      if (fe.weight == 0) {
-        continue;
-      }
-      odb::dbITerm* source = edgeSource(fe);
-      if (source == nullptr) {
-        continue;
-      }
-      float slew = -1.0f;
-      const float source_extra = slowdownAtLoad(
-          fe.u, loadCap(source), sourceLoadAfterSlide(fe, source), slew);
-      const float gate_extra
-          = slew >= 0.0f ? slowdownAtSlew(t, fe.sink, slew) : 0.0f;
-      fe.cross_extra = source_extra + gate_extra;
-    }
+  // No slide yet: the output is registered or not as STA timed it.
+  const bool registered = outputRegistered(t);
+  const double latest = modeledOutputArrival(t, registered);
+  const double timed_arrival = pinArrival(output);
+  // Without an arrival (a constant) there is nothing to compare.
+  if (latest < kNoArrival || timed_arrival < kNoArrival) {
+    return;
+  }
+  const double shift = timed_arrival - latest;
+  for (FaninEdge& fe : fanin_[t]) {
+    float& timed = registered ? fe.arc_reg : fe.arc_comb;
+    float& other = registered ? fe.arc_comb : fe.arc_reg;
+    // Without STA's arc for this input, the gate's shift, which is right
+    // only for the input that sets the gate's arrival.
+    const float target
+        = staArc(fe.sink, output).value_or(timed + static_cast<float>(shift));
+    other = std::max(other + target - timed, 0.0f);
+    timed = std::max(target, 0.0f);
   }
 }
 
-float Retime::sourceLoadAfterSlide(const FaninEdge& fe,
-                                   odb::dbITerm* source) const
+double Retime::modeledOutputArrival(const int t, const bool registered) const
 {
-  float reader_caps = 0.0f;
-  int readers = 0;
-  for (odb::dbITerm* reader : fe.phys->driver->getNet()->getITerms()) {
-    if (reader->getIoType() == odb::dbIoType::INPUT) {
-      reader_caps += pinCap(reader);
-      ++readers;
-    }
-  }
-  // The gate takes its share of the wire the last register drove.
-  const float wire = std::max(loadCap(fe.phys->driver) - reader_caps, 0.0f);
-  const float load
-      = loadCap(source) + pinCap(fe.sink) + wire / std::max(readers, 1);
-  if (readers > 1) {
-    return load;
-  }
-  // The gate was the only reader: the first register comes off the net.
-  return std::max(load - pinCap(fe.phys->entries.front()), 0.0f);
-}
-
-float Retime::slowdownAtLoad(const int u,
-                             const float load,
-                             const float new_load,
-                             float& slew) const
-{
-  float slowdown = 0.0f;
-  slew = -1.0f;
-  for (odb::dbITerm* input : graph_->nodes()[u]->getITerms()) {
-    odb::dbNet* net = input->getNet();
-    if (input->getIoType() != odb::dbIoType::INPUT || net == nullptr
-        || net->getSigType().isSupply()) {
+  double latest = kNegInf;
+  for (odb::dbITerm* iterm : graph_->nodes()[t]->getITerms()) {
+    if (!isSignalInput(iterm)) {
       continue;
     }
-    float new_slew = -1.0f;
-    const float now = characterizeArc(u, input, load, -1.0f);
-    const float then
-        = characterizeArc(u, input, new_load, -1.0f, -1.0f, &new_slew);
-    if (now >= 0.0f && then >= 0.0f) {
-      slowdown = std::max(slowdown, then - now);
-      slew = std::max(slew, new_slew);
+    const auto edge = std::ranges::find(fanin_[t], iterm, &FaninEdge::sink);
+    double arc = 0.0;
+    if (edge == fanin_[t].end()) {
+      arc = getGateArc(iterm);
+    } else {
+      arc = registered ? edge->arc_reg : edge->arc_comb;
     }
+    latest = std::max(latest, pinArrival(iterm) + arc);
   }
-  return slowdown;
-}
-
-float Retime::slowdownAtSlew(const int t,
-                             odb::dbITerm* sink,
-                             const float slew) const
-{
-  const float now = characterizeArc(t, sink, flop_d_cap_, -1.0f);
-  const float then = characterizeArc(t, sink, flop_d_cap_, -1.0f, slew);
-  return now >= 0.0f && then >= 0.0f ? then - now : 0.0f;
+  return latest;
 }
 
 std::optional<float> Retime::staArc(odb::dbITerm* input,
@@ -305,206 +426,126 @@ std::optional<float> Retime::staArc(odb::dbITerm* input,
   return std::max(std::min(*via, out_latest) - in_latest, 0.0f);
 }
 
-double Retime::modeledOutputArrival(const int t, const bool registered) const
+void Retime::computeCrossExtra()
 {
-  double latest = kNegInf;
-  for (odb::dbITerm* iterm : graph_->nodes()[t]->getITerms()) {
-    odb::dbNet* net = iterm->getNet();
-    if (iterm->getIoType() != odb::dbIoType::INPUT || net == nullptr
-        || net->getSigType().isSupply()) {
-      continue;
-    }
-    const auto edge = std::ranges::find(fanin_[t], iterm, &FaninEdge::sink);
-    double arc = 0.0;
-    if (edge == fanin_[t].end()) {
-      arc = getGateArc(iterm);
-    } else {
-      arc = registered ? edge->arc_reg : edge->arc_comb;
-    }
-    latest = std::max(latest, pinArrival(iterm) + arc);
-  }
-  return latest;
-}
-
-void Retime::calibrateArcs()
-{
-  const int n = static_cast<int>(graph_->nodes().size());
+  const int n = graph_->size();
   for (int t = 0; t < n; ++t) {
-    odb::dbITerm* output = latest_output_[t];
-    if (output == nullptr || fanin_[t].empty()) {
-      continue;
-    }
-    // No slide yet: the output is registered or not as STA timed it.
-    const bool registered = outputRegistered(t);
-    const double latest = modeledOutputArrival(t, registered);
-    const double shift = pinArrival(output) - latest;
-    // An input without an arrival (a constant) leaves nothing to compare.
-    if (latest == kNegInf || std::abs(shift) > kMaxArrivalShift) {
-      continue;
-    }
     for (FaninEdge& fe : fanin_[t]) {
-      float& timed = registered ? fe.arc_reg : fe.arc_comb;
-      float& other = registered ? fe.arc_comb : fe.arc_reg;
-      // Without STA's arc for this input, the gate's shift, which is right
-      // only for the input that sets the gate's arrival.
-      const float target
-          = staArc(fe.sink, output).value_or(timed + static_cast<float>(shift));
-      other = std::max(other + target - timed, 0.0f);
-      timed = std::max(target, 0.0f);
-    }
-  }
-}
-
-double Retime::launchArrival(const int t, const FaninEdge& fe) const
-{
-  // Untouched ends: the registers on the edge are the ones STA timed.
-  if (r_[fe.u] == 0 && r_[t] == 0) {
-    return fe.launch;
-  }
-  return new_launch_[fe.u] + fe.wire;
-}
-
-bool Retime::slideKeepsClass(const int t, std::vector<odb::dbInst*>& regs) const
-{
-  regs.clear();
-  for (const FaninEdge& fe : fanin_[t]) {
-    regs.insert(regs.end(), fe.phys->flops.begin(), fe.phys->flops.end());
-  }
-  if (regs.empty()) {
-    return true;
-  }
-  const RegisterClass& first = graph_->regClass(regs[0]);
-  for (odb::dbInst* reg : regs) {
-    if (!sameRegisterClass(first, graph_->regClass(reg))) {
-      return false;
-    }
-  }
-  return first.kind != RegisterKind::kInverting || graph_->selfDual()[t];
-}
-
-float Retime::typicalGateDelay() const
-{
-  std::vector<float> arcs;
-  for (const std::vector<FaninEdge>& fanin : fanin_) {
-    for (const FaninEdge& fe : fanin) {
       if (fe.weight == 0) {
-        arcs.push_back(fe.arc_comb);
-      }
-    }
-  }
-  if (arcs.empty()) {
-    return 0.0f;
-  }
-  std::ranges::nth_element(arcs, arcs.begin() + arcs.size() / 2);
-  return arcs[arcs.size() / 2];
-}
-
-int Retime::unmappedGates(const FaninEdge& fe) const
-{
-  int gates = 0;
-  for (odb::dbInst* reg : fe.phys->flops) {
-    const RegisterKind kind = graph_->regClass(reg).kind;
-    if (kind == RegisterKind::kInverting) {
-      gates = std::max(gates, 1);
-    } else if (kind != RegisterKind::kPlain) {
-      gates = std::max(gates, 2);
-    }
-  }
-  return gates;
-}
-
-void Retime::computeUnmapCost()
-{
-  const float typical = typicalGateDelay();
-  const int n = static_cast<int>(graph_->nodes().size());
-  std::vector<odb::dbInst*> regs;
-  for (int t = 0; t < n; ++t) {
-    if (slideKeepsClass(t, regs)) {
-      continue;
-    }
-    for (FaninEdge& fe : fanin_[t]) {
-      const int gates = unmappedGates(fe);
-      fe.unmap = static_cast<float>(gates) * typical;
-      if (gates > 0) {
-        unmap_on_slide_[t] = 1;
-      }
-    }
-  }
-}
-
-double Retime::endShift(const int v) const
-{
-  const bool port = po_end_shift_[v] > kNegInf;
-  double shift = port ? po_end_shift_[v] : 0.0;
-  if (outputRegistered(v)) {
-    // Untouched: the registers on the output are the ones STA timed, and
-    // no endpoint when STA does not constrain them.
-    const double registered = r_[v] == 0 ? orig_end_shift_[v] : new_setup_[v];
-    shift = port ? std::max(shift, registered) : registered;
-  }
-  return shift;
-}
-
-void Retime::computeTails()
-{
-  const int n = static_cast<int>(graph_->nodes().size());
-  tails_.assign(n, kNegInf);
-  out_tails_.assign(n, kNegInf);
-  std::vector<int> pending(n, 0);
-  std::vector<int> ready;
-  for (int u = 0; u < n; ++u) {
-    for (const Edge& e : graph_->adj()[u]) {
-      pending[u] += isCombinational(u, e) ? 1 : 0;
-    }
-    if (outputRegistered(u) || po_end_shift_[u] > kNegInf) {
-      tails_[u] = endShift(u);
-    }
-    if (pending[u] == 0) {
-      ready.push_back(u);
-    }
-  }
-  // A gate is ready once every gate it feeds combinationally is done.
-  for (size_t next = 0; next < ready.size(); ++next) {
-    const int s = ready[next];
-    const bool registered = outputRegistered(s);
-    for (const FaninEdge& fe : fanin_[s]) {
-      if (!isCombinational(s, fe)) {
         continue;
       }
-      if (tails_[s] > kNegInf) {
-        const double through = fe.wire + (registered ? fe.arc_reg : fe.arc_comb)
-                               + crossingDelay(s, fe) + tails_[s];
-        tails_[fe.u] = std::max(tails_[fe.u], fe.driver_shift + through);
-        out_tails_[fe.u] = std::max(out_tails_[fe.u], through);
+      odb::dbITerm* source = edgeSource(fe);
+      if (source == nullptr) {
+        continue;
       }
-      if (--pending[fe.u] == 0) {
-        ready.push_back(fe.u);
-      }
+      float slew = -1.0f;
+      const float source_extra = slowdownAtLoad(
+          fe.source, loadCap(source), sourceLoadAfterSlide(fe, source), slew);
+      const float gate_extra
+          = slew >= 0.0f ? slowdownAtSlew(t, fe.sink, slew) : 0.0f;
+      fe.cross_extra = source_extra + gate_extra;
     }
   }
 }
 
-double Retime::requiredTime() const
+odb::dbITerm* Retime::edgeSource(const FaninEdge& fe) const
 {
-  return launch_offset_ + graph_->clockPeriod();
+  odb::dbITerm* source = fe.phys->driver;
+  if (!fe.phys->flops.empty()) {
+    odb::dbNet* net = graph_->chainNet(*fe.phys);
+    source = net != nullptr ? net->getFirstOutput() : nullptr;
+  }
+  if (source == nullptr || source->getInst() != graph_->nodes()[fe.source]) {
+    return nullptr;
+  }
+  return source;
 }
 
-double Retime::negativeSlackAt(const int t) const
+float Retime::sourceLoadAfterSlide(const FaninEdge& fe,
+                                   odb::dbITerm* source) const
 {
-  if (!outputRegistered(t) && po_end_shift_[t] == kNegInf) {
-    return 0.0;
+  float reader_caps = 0.0f;
+  int readers = 0;
+  for (odb::dbITerm* reader : fe.phys->driver->getNet()->getITerms()) {
+    if (reader->getIoType() == odb::dbIoType::INPUT) {
+      reader_caps += pinCap(reader);
+      ++readers;
+    }
   }
-  return std::min(
-      slackOf(std::max(arrivals_[t], arrivals_pinned_[t]), endShift(t)), 0.0);
+  // The gate takes its share of the wire the last register drove.
+  const float wire = std::max(loadCap(fe.phys->driver) - reader_caps, 0.0f);
+  const float load
+      = loadCap(source) + pinCap(fe.sink) + wire / std::max(readers, 1);
+  if (readers > 1) {
+    return load;
+  }
+  // The gate was the only reader: the first register comes off the net.
+  return std::max(load - pinCap(fe.phys->entries.front()), 0.0f);
+}
+
+float Retime::loadCap(odb::dbITerm* driver) const
+{
+  return sta_->graphDelayCalc()->loadCap(sta_->getDbNetwork()->dbToSta(driver),
+                                         sta_->cmdScene(),
+                                         sta::MinMax::max());
+}
+
+float Retime::slowdownAtLoad(const int u,
+                             const float load,
+                             const float new_load,
+                             float& slew) const
+{
+  float slowdown = 0.0f;
+  slew = -1.0f;
+  for (odb::dbITerm* input : graph_->nodes()[u]->getITerms()) {
+    if (!isSignalInput(input)) {
+      continue;
+    }
+    float new_slew = -1.0f;
+    const float now = characterizeArc(u, input, load, -1.0f);
+    const float then
+        = characterizeArc(u, input, new_load, -1.0f, -1.0f, &new_slew);
+    if (now >= 0.0f && then >= 0.0f) {
+      slowdown = std::max(slowdown, then - now);
+      slew = std::max(slew, new_slew);
+    }
+  }
+  return slowdown;
+}
+
+float Retime::slowdownAtSlew(const int t,
+                             odb::dbITerm* sink,
+                             const float slew) const
+{
+  const float now = characterizeArc(t, sink, flop_d_cap_, -1.0f);
+  const float then = characterizeArc(t, sink, flop_d_cap_, -1.0f, slew);
+  return now >= 0.0f && then >= 0.0f ? then - now : 0.0f;
+}
+
+void Retime::computeLaunch()
+{
+  sampleLaunchOffset();
+  const float offset = static_cast<float>(launch_offset_);
+  const int n = graph_->size();
+  new_launch_.assign(n, 0.0);
+  launch_cell_.assign(n, nullptr);
+  for (int u = 0; u < n; ++u) {
+    // The register a slide across u builds drives the net u drives today.
+    odb::dbITerm* output = firstOutput(u);
+    const float clock_to_q
+        = output != nullptr ? pickLaunchCell(u, loadCap(output)) : 0.0f;
+    new_launch_[u] = offset + clock_to_q;
+  }
 }
 
 void Retime::sampleLaunchOffset()
 {
-  constexpr size_t kSamples = 400;
-  const int n = static_cast<int>(graph_->nodes().size());
+  const int n = graph_->size();
+  clock_slew_ = 0.0f;
+  launch_offset_ = 0.0;
   std::vector<float> offsets;
   std::unordered_set<odb::dbInst*> seen;
-  for (int u = 0; u < n && offsets.size() < kSamples; ++u) {
+  for (int u = 0; u < n; ++u) {
     for (const EdgePhys& phys : graph_->phys()[u]) {
       for (odb::dbInst* flop : phys.flops) {
         if (seen.insert(flop).second) {
@@ -522,8 +563,7 @@ void Retime::sampleLaunchOffset()
 void Retime::sampleLaunch(odb::dbInst* flop, std::vector<float>& offsets)
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
-  sta::LibertyCell* cell
-      = network->libertyCell(network->dbToSta(flop->getMaster()));
+  sta::LibertyCell* cell = libertyCell(sta_, flop->getMaster());
   for (odb::dbITerm* iterm : flop->getITerms()) {
     const sta::Pin* pin = network->dbToSta(iterm);
     const sta::LibertyPort* port = network->libertyPort(pin);
@@ -543,31 +583,15 @@ void Retime::sampleLaunch(odb::dbInst* flop, std::vector<float>& offsets)
   }
 }
 
-std::vector<sta::LibertyCell*> Retime::newRegisterCells(const int u) const
+odb::dbITerm* Retime::firstOutput(const int v) const
 {
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  std::vector<sta::LibertyCell*> cells;
-  auto add = [&](odb::dbMaster* master) {
-    sta::LibertyCell* cell = network->libertyCell(network->dbToSta(master));
-    if (cell != nullptr && std::ranges::find(cells, cell) == cells.end()) {
-      cells.push_back(cell);
-    }
-  };
-  std::vector<odb::dbInst*> moved;
-  const bool keeps = slideKeepsClass(u, moved);
-  for (odb::dbInst* flop : moved) {
-    if (keeps && keepsClass(graph_->regClass(flop))) {
-      for (odb::dbMaster* master : cells_of_(flop->getMaster())) {
-        add(master);
-      }
+  for (odb::dbITerm* iterm : graph_->nodes()[v]->getITerms()) {
+    if (iterm->getIoType() == odb::dbIoType::OUTPUT
+        && iterm->getNet() != nullptr) {
+      return iterm;
     }
   }
-  if (cells.empty()) {
-    for (odb::dbMaster* master : base_cells_) {
-      add(master);
-    }
-  }
-  return cells;
+  return nullptr;
 }
 
 float Retime::pickLaunchCell(const int u, const float load)
@@ -584,84 +608,68 @@ float Retime::pickLaunchCell(const int u, const float load)
   return std::max(best, 0.0f);
 }
 
-void Retime::computeLaunch()
+std::vector<sta::LibertyCell*> Retime::newRegisterCells(const int u) const
 {
-  sampleLaunchOffset();
-  const float offset = static_cast<float>(launch_offset_);
-  const int n = static_cast<int>(graph_->nodes().size());
-  for (int u = 0; u < n; ++u) {
-    // The register a slide across u builds drives the net u drives today.
-    odb::dbITerm* output = firstOutput(u);
-    const float clock_to_q
-        = output != nullptr ? pickLaunchCell(u, loadCap(output)) : 0.0f;
-    new_launch_[u] = offset + clock_to_q;
+  std::vector<sta::LibertyCell*> cells;
+  auto add = [&](odb::dbMaster* master) {
+    sta::LibertyCell* cell = libertyCell(sta_, master);
+    if (cell != nullptr && std::ranges::find(cells, cell) == cells.end()) {
+      cells.push_back(cell);
+    }
+  };
+  const std::vector<odb::dbInst*> moved = registersInto(u);
+  const bool keeps = graph_->moveKeepsClass(moved, u);
+  for (odb::dbInst* flop : moved) {
+    if (keeps && keepsClass(graph_->regClass(flop))) {
+      for (odb::dbMaster* master : cells_of_(flop->getMaster())) {
+        add(master);
+      }
+    }
   }
+  if (cells.empty()) {
+    for (odb::dbMaster* master : base_cells_) {
+      add(master);
+    }
+  }
+  return cells;
+}
+
+std::vector<odb::dbInst*> Retime::registersInto(const int t) const
+{
+  std::vector<odb::dbInst*> registers;
+  for (const FaninEdge& fe : fanin_[t]) {
+    registers.insert(
+        registers.end(), fe.phys->flops.begin(), fe.phys->flops.end());
+  }
+  return registers;
 }
 
 void Retime::computeDriverShifts()
 {
-  const int n = static_cast<int>(graph_->nodes().size());
+  const int n = graph_->size();
   for (int t = 0; t < n; ++t) {
     for (FaninEdge& fe : fanin_[t]) {
       odb::dbITerm* source = edgeSource(fe);
-      odb::dbITerm* latest = latest_output_[fe.u];
+      odb::dbITerm* latest = latest_output_[fe.source];
       if (source == nullptr || latest == nullptr) {
         continue;
       }
+      const double source_arrival = pinArrival(source);
       const double latest_arrival = pinArrival(latest);
-      const double shift = pinArrival(source) - latest_arrival;
-      if (std::abs(shift) < kMaxArrivalShift) {
-        fe.driver_shift = static_cast<float>(shift);
+      if (source_arrival > kNoArrival && latest_arrival > kNoArrival) {
+        fe.driver_shift = static_cast<float>(source_arrival - latest_arrival);
       }
     }
   }
-}
-
-double Retime::registerEndShift(const int v, const double arrival) const
-{
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  sta::Graph* graph = sta_->ensureGraph();
-  double shift = kNegInf;
-  for (const EdgePhys& phys : graph_->phys()[v]) {
-    if (phys.entries.empty()) {
-      continue;
-    }
-    const float slack
-        = slackAtLoad(sta_, graph, network->dbToSta(phys.entries.front()));
-    if (slack < sta::INF / 2) {
-      shift = std::max(shift, requiredTime() - slack - arrival);
-    }
-  }
-  return shift;
-}
-
-double Retime::portEndShift(const int v, const double arrival) const
-{
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  sta::Graph* graph = sta_->ensureGraph();
-  double shift = kNegInf;
-  for (odb::dbITerm* iterm : graph_->nodes()[v]->getITerms()) {
-    odb::dbNet* net = iterm->getNet();
-    if (iterm->getIoType() != odb::dbIoType::OUTPUT || net == nullptr) {
-      continue;
-    }
-    for (odb::dbBTerm* bterm : net->getBTerms()) {
-      if (bterm->getIoType() != odb::dbIoType::OUTPUT) {
-        continue;
-      }
-      const float slack = slackAtLoad(sta_, graph, network->dbToSta(bterm));
-      if (slack < sta::INF / 2) {
-        shift = std::max(shift, requiredTime() - slack - arrival);
-      }
-    }
-  }
-  return shift;
 }
 
 void Retime::computeEndpoints()
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
-  const int n = static_cast<int>(graph_->nodes().size());
+  const int n = graph_->size();
+  new_setup_.assign(n, 0.0);
+  orig_end_shift_.assign(n, kNegInf);
+  po_end_shift_.assign(n, kNegInf);
   for (int v = 0; v < n; ++v) {
     odb::dbITerm* output = latest_output_[v];
     if (output == nullptr) {
@@ -679,153 +687,46 @@ void Retime::computeEndpoints()
   }
 }
 
-double Retime::slackOf(const double arrival, const double tail) const
+double Retime::registerEndShift(const int v, const double arrival) const
 {
-  if (arrival <= kUnreached / 2 || tail == kNegInf) {
-    return std::numeric_limits<double>::infinity();
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  double shift = kNegInf;
+  for (const EdgePhys& phys : graph_->phys()[v]) {
+    if (!phys.entries.empty()) {
+      const sta::Pin* pin = network->dbToSta(phys.entries.front());
+      shift = std::max(shift, endShiftAt(pin, arrival));
+    }
   }
-  return requiredTime() - (arrival + tail);
+  return shift;
 }
 
-double Retime::slackThrough(const int v) const
+double Retime::portEndShift(const int v, const double arrival) const
 {
-  return slackOf(std::max(arrivals_[v], arrivals_pinned_[v]), tails_[v]);
-}
-
-double Retime::worstSlack() const
-{
-  const int n = static_cast<int>(graph_->nodes().size());
-  double worst = 0.0;
-  for (int t = 0; t < n; ++t) {
-    worst = std::min(worst, negativeSlackAt(t));
-  }
-  return worst;
-}
-
-Retime::SlideEffect Retime::slideEffect(const int v)
-{
-  SlideEffect effect;
-  applySlide(v);
-  effect.into
-      = slackOf(std::max(arrivals_[v], arrivals_pinned_[v]), endShift(v));
-  const std::vector<int>& changed = scratch_.dirty;
-  for (const int t : changed) {
-    effect.total_change += negativeSlackAt(t);
-  }
-  undoSlide(v);
-  for (const int t : changed) {
-    effect.total_change -= negativeSlackAt(t);
-  }
-  effect.out = slackOf(new_launch_[v], out_tails_[v]);
-  return effect;
-}
-
-std::vector<std::pair<double, int>> Retime::failingGates(
-    const std::vector<char>& refused,
-    bool& skipped) const
-{
-  const int n = static_cast<int>(graph_->nodes().size());
-  std::vector<std::pair<double, int>> gates;
-  for (int v = 0; v < n; ++v) {
-    if (refused[v]) {
-      skipped = true;
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  double shift = kNegInf;
+  for (odb::dbITerm* iterm : graph_->nodes()[v]->getITerms()) {
+    odb::dbNet* net = iterm->getNet();
+    if (iterm->getIoType() != odb::dbIoType::OUTPUT || net == nullptr) {
       continue;
     }
-    if (!forwardMovable(v)) {
-      continue;
-    }
-    const double slack = slackThrough(v);
-    if (slack < 0.0) {
-      gates.emplace_back(slack, v);
-    }
-  }
-  std::ranges::sort(gates);
-  return gates;
-}
-
-Retime::Pick Retime::pickSlide(const double margin, std::vector<char>& refused)
-{
-  const double worst = worstSlack();
-  Pick pick;
-  int for_total = -1;
-  for (const auto& [before, v] : failingGates(refused, pick.skipped)) {
-    const SlideEffect effect = slideEffect(v);
-    const double after = std::min(effect.into, effect.out);
-    if (after - before > margin && effect.total_change >= -margin) {
-      pick.gate = v;
-      return pick;
-    }
-    if (for_total < 0 && effect.total_change > margin
-        && after >= worst - margin) {
-      for_total = v;
-    }
-    if (v != for_total) {
-      refused[v] = 1;
-    }
-  }
-  pick.gate = for_total;
-  return pick;
-}
-
-void Retime::updateTails(std::vector<char>& refused)
-{
-  const std::vector<double> old_tails = tails_;
-  const std::vector<double> old_out_tails = out_tails_;
-  computeTails();
-  if (old_tails.size() != tails_.size()) {
-    return;
-  }
-  const int n = static_cast<int>(tails_.size());
-  for (int v = 0; v < n; ++v) {
-    if (old_tails[v] != tails_[v] || old_out_tails[v] != out_tails_[v]) {
-      refused[v] = 0;
-    }
-  }
-}
-
-void Retime::reopenAround(const std::vector<int>& gates,
-                          std::vector<char>& refused) const
-{
-  for (const int t : gates) {
-    refused[t] = 0;
-    for (const FaninEdge& fe : fanin_[t]) {
-      refused[fe.u] = 0;
-    }
-    for (const Edge& e : graph_->adj()[t]) {
-      refused[e.target] = 0;
-    }
-  }
-}
-
-void Retime::search(const int max_moves)
-{
-  const int n = static_cast<int>(graph_->nodes().size());
-  const int cap = max_moves <= 0 ? INT_MAX : max_moves;
-  const double margin = kMarginFraction * graph_->clockPeriod();
-  // Gates whose slide was refused and whose inputs have not changed since.
-  std::vector<char> refused(n, 0);
-  while (moves_ < cap) {
-    updateTails(refused);
-    const Pick pick = pickSlide(margin, refused);
-    if (pick.gate < 0) {
-      // Retry the refused gates before giving up.
-      if (!pick.skipped) {
-        break;
+    for (odb::dbBTerm* bterm : net->getBTerms()) {
+      if (bterm->getIoType() == odb::dbIoType::OUTPUT) {
+        shift = std::max(shift, endShiftAt(network->dbToSta(bterm), arrival));
       }
-      std::ranges::fill(refused, 0);
-      continue;
     }
-    applySlide(pick.gate);
-    ++moves_;
-    debugPrint(logger_,
-               utl::RET,
-               "search",
-               1,
-               "slide {} across {}",
-               moves_,
-               graph_->nodes()[pick.gate]->getName());
-    reopenAround(scratch_.dirty, refused);
   }
+  return shift;
+}
+
+double Retime::endShiftAt(const sta::Pin* pin, const double arrival) const
+{
+  sta::Vertex* vertex = sta_->ensureGraph()->pinLoadVertex(pin);
+  if (vertex == nullptr) {
+    return kNegInf;
+  }
+  const float slack
+      = sta::delayAsFloat(sta_->slack(vertex, sta::MinMax::max()));
+  return slack < sta::INF / 2 ? requiredTime() - slack - arrival : kNegInf;
 }
 
 }  // namespace ret
