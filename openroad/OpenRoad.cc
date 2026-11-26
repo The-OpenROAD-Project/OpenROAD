@@ -280,7 +280,8 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   example_ = new exa::Example(db_, logger_);
   field_solver_ = new fsv::FieldSolver(db_, logger_);
   pex_ = new pex::Pex(db_, logger_);
-  web_server_ = new web::WebServer(db_, sta_, logger_, tcl_interp);
+  web_server_
+      = new web::WebServer(db_, sta_, logger_, tcl_interp, field_solver_);
   watermark_
       = new wmk::Watermark(db_, sta_, opendp_, estimate_parasitics_, logger_);
 

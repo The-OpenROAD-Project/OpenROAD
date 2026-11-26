@@ -1237,6 +1237,73 @@ always sends the full set.
 
 ---
 
+## 2D Field Solver
+
+### `fsv_solve_2d`
+
+Solve a 2D electrostatic cross section in the x-z plane above a grounded plane
+at `z = 0` using `fsv::Solver`, returning per-unit-length capacitance (fF/µm)
+and binned surface charge density (fF/µm² at 1 V) along all four faces of each
+wire.
+
+| Field          | Type       | Required | Default  | Description |
+| -------------- | ---------- | :------: | -------- | ----------- |
+| `wires`        | `object[]` |    ✓     | —        | 1–64 wires, each `{name, x, z, width, height}` in µm (`x` is center, `z` is bottom face `> 0`). |
+| `use_itf`      | `bool`     |          | `false`  | Solve against the ITF stack loaded via `fsv_load_itf` instead of uniform `eps`. |
+| `eps`          | `double`   |          | `3.9`    | Uniform relative permittivity (`> 0`), ignored when `use_itf` is `true`. |
+| `target_index` | `int`      |          | `0`      | Index into `wires` of the 1 V target conductor. |
+| `bins`         | `int`      |          | `20`     | Surface charge bins per wire face (clamped to `[4, 100]`). |
+| `ground_bins`  | `int`      |          | `0`      | Optional ground-plane (`z = 0`) charge bins across `[ground_x_lo, ground_x_hi]` (clamped to `[0, 200]`). |
+| `ground_x_lo`  | `double`   |          | `0.0`    | Left X bound (µm) for ground-plane charge binning. |
+| `ground_x_hi`  | `double`   |          | `0.0`    | Right X bound (µm) for ground-plane charge binning. |
+| `tol_total`    | `double`   |          | `0.01`   | Target relative standard error for total capacitance. |
+| `min_walks`    | `int`      |          | `65536`  | Minimum FRW walks. |
+| `max_walks`    | `int`      |          | `500000` | Maximum FRW walks. |
+
+**Response (JSON):**
+```json
+{
+  "total": 0.1694,
+  "total_sigma": 0.0011,
+  "ground": 0.0420,
+  "ground_sigma": 0.0008,
+  "couplings": [
+    {"index": 1, "name": "w1", "cap": 0.0641, "sigma": 0.0009}
+  ],
+  "charges": [
+    {"index": 0, "name": "target", "bottom": [...], "top": [...], "left": [...], "right": [...]}
+  ],
+  "walks": 70000,
+  "hops": 1234567,
+  "seconds": 0.004,
+  "target_index": 0
+}
+```
+
+Invalid or overlapping geometry returns `{"error": "<message>"}` as a JSON
+response.
+
+### `fsv_get_itf`
+
+Return the active 2D field solver ITF stack (`loaded: true` plus the fields of
+`fsv_load_itf`), importing the stack loaded via Tcl `read_itf` if none has been
+loaded or cleared in this session. Returns `{"loaded": false}` when no ITF is
+active.
+
+### `fsv_load_itf`
+
+Load an ITF process stack for the 2D field solver from a server file `path` or
+inline `content` string (with optional display `name`). Returns `technology`,
+`source`, `background_eps`, `dielectrics`, `conductors` (with `bottom`, `top`,
+`thickness`, `min_width`, `min_spacing`, and `conformals`), and `warnings`.
+
+### `fsv_clear_itf`
+
+Unload the active ITF stack and revert `fsv_solve_2d` to uniform permittivity.
+Returns `{"ok": true}`.
+
+---
+
 ## Error contract
 
 The server treats wire-protocol violations as recoverable: the offending

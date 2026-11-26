@@ -142,6 +142,7 @@ export function createMenuBar(app) {
             { label: 'Layout Viewer', action: show('LayoutViewer') },
             { label: 'Schematic', action: show('SchematicWidget') },
             { label: '3D Viewer', action: show('3DViewer') },
+            { label: 'Field Solver', action: show('FieldSolver2D') },
             { label: 'Display Controls', action: show('DisplayControls') },
             { label: 'Inspector', action: show('Inspector') },
             { label: 'Selection Browser', action: show('SelectHighlight') },

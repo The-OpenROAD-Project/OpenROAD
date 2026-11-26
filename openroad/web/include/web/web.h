@@ -33,6 +33,10 @@ namespace sta {
 class dbSta;
 }
 
+namespace fsv {
+class FieldSolver;
+}
+
 namespace spdlog::sinks {
 class sink;
 }
@@ -262,7 +266,8 @@ ListenerHandle createAndRunListener(
     utl::Logger* logger,
     WebViewerHook* viewer_hook,
     int max_in_flight,
-    std::shared_ptr<SessionAuth> auth);
+    std::shared_ptr<SessionAuth> auth,
+    fsv::FieldSolver* field_solver = nullptr);
 
 // A layout web server.  serve() starts the server in background I/O
 // threads; waitForStop() blocks the calling thread until requestStop()
@@ -274,7 +279,8 @@ class WebServer
   WebServer(odb::dbDatabase* db,
             sta::dbSta* sta,
             utl::Logger* logger,
-            Tcl_Interp* interp);
+            Tcl_Interp* interp,
+            fsv::FieldSolver* field_solver = nullptr);
   ~WebServer();
 
   // Register the WebLogSink with the Logger so startup output is captured
@@ -448,6 +454,7 @@ class WebServer
   sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
   Tcl_Interp* interp_ = nullptr;
+  fsv::FieldSolver* field_solver_ = nullptr;
   int num_threads_ = 0;
   std::shared_ptr<TclEvaluator> tcl_eval_;
 

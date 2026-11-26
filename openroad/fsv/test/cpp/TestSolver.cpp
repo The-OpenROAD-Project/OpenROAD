@@ -927,5 +927,94 @@ TEST(Solver, RejectsOverlappingConformals)
   EXPECT_THROW(Scene(geometry, nested), std::invalid_argument);
 }
 
+// Surface charge density on a 2D cross section integrates to the exact
+// capacitance row entries, shows higher charge on the bottom face (closer to
+// ground) and at corners, and induces negative charge on a neighbor wire
+// concentrated on the face closest to the target.
+TEST(Solver, SurfaceChargeDistribution2D)
+{
+  Geometry2D section;
+  const int target = section.addNet("target");
+  const int right_wire = section.addNet("right");
+  section.addRect(target, {{-0.1, 0.3}, {0.1, 0.5}});
+  section.addRect(right_wire, {{0.25, 0.3}, {0.45, 0.5}});
+
+  const Scene2D scene(section, 3.9);
+  SolveOptions options;
+  options.min_walks = 65536;
+  options.tol_total = 0.01;
+  options.surface_charge_bins = 16;
+  options.ground_charge_bins = 24;
+  options.ground_charge_x_lo = -1.2;
+  options.ground_charge_x_hi = 1.2;
+
+  Solver solver({.threads = 4});
+  const CapRow row = solver.solve(scene, target, options);
+  ASSERT_EQ(row.rect_charges.size(), 2u);
+  ASSERT_EQ(row.ground_charge.size(), 24u);
+
+  // Ground plane has negative induced charge, peaking directly under target.
+  const double gnd_center = row.ground_charge[12];
+  const double gnd_edge = row.ground_charge[0];
+  EXPECT_LT(gnd_center, 0.0);
+  EXPECT_LT(gnd_center, gnd_edge);
+
+  auto integrate = [&](const int rect_idx) {
+    const Rect& r = section.rects()[rect_idx];
+    const double w = r.hi[0] - r.lo[0];
+    const double h = r.hi[1] - r.lo[1];
+    const auto& rc = row.rect_charges[rect_idx];
+    double q = 0;
+    for (double v : rc.bottom) {
+      q += v * (w / rc.bottom.size());
+    }
+    for (double v : rc.top) {
+      q += v * (w / rc.top.size());
+    }
+    for (double v : rc.left) {
+      q += v * (h / rc.left.size());
+    }
+    for (double v : rc.right) {
+      q += v * (h / rc.right.size());
+    }
+    return q;
+  };
+
+  // Integral of surface charge over each wire equals its Maxwell cap entry.
+  EXPECT_NEAR(integrate(0), row.cap[target], 1e-12);
+  EXPECT_NEAR(integrate(1), row.cap[right_wire], 1e-12);
+
+  // Target has positive charge; right face (facing neighbor) has more charge
+  // than left face (open space).
+  const auto& tc = row.rect_charges[0];
+  double left_sum = 0;
+  double right_sum = 0;
+  for (double v : tc.left) {
+    left_sum += v;
+  }
+  for (double v : tc.right) {
+    right_sum += v;
+  }
+  EXPECT_GT(right_sum, left_sum);
+
+  // Corner bins on top face have higher density than the middle bins.
+  EXPECT_GT(tc.top.front(), tc.top[tc.top.size() / 2]);
+  EXPECT_GT(tc.top.back(), tc.top[tc.top.size() / 2]);
+
+  // Neighbor has negative induced charge, strongest on its left face (facing
+  // the target wire).
+  const auto& nc = row.rect_charges[1];
+  double n_left_sum = 0;
+  double n_right_sum = 0;
+  for (double v : nc.left) {
+    n_left_sum += v;
+  }
+  for (double v : nc.right) {
+    n_right_sum += v;
+  }
+  EXPECT_LT(n_left_sum, 0.0);
+  EXPECT_LT(n_left_sum, n_right_sum);
+}
+
 }  // namespace
 }  // namespace fsv

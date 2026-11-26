@@ -58,6 +58,16 @@ struct SolveOptions
   // A walk exceeding this many hops makes solve() throw: dropping it would
   // bias the result. Must be positive.
   int64_t hop_guard = 1000000;
+  // For Scene2D: when positive, bin surface charge density into this many
+  // equal bins along each of the four faces (bottom, top, left, right) of
+  // every conductor rectangle. 0 disables surface charge collection.
+  int surface_charge_bins = 0;
+  // For Scene2D: when positive and ground_charge_x_hi > ground_charge_x_lo,
+  // bin induced surface charge density on the ground plane (z = 0) across
+  // [ground_charge_x_lo, ground_charge_x_hi].
+  int ground_charge_bins = 0;
+  double ground_charge_x_lo = 0.0;
+  double ground_charge_x_hi = 0.0;
 };
 
 // One row of the Maxwell capacitance matrix, in fF (fF/µm for a Scene2D).
@@ -66,6 +76,18 @@ struct SolveOptions
 // own entry is 0.
 struct CapRow
 {
+  // Surface charge density along the four faces of one Scene2D rectangle,
+  // in fF/µm² (per V), populated when SolveOptions::surface_charge_bins > 0.
+  // Integrating density along each face sums to the net's capacitance row
+  // entry (positive on the master, negative induced charge on other wires).
+  struct RectCharge
+  {
+    std::vector<double> bottom;  // z = lo[1], x from lo[0] to hi[0]
+    std::vector<double> top;     // z = hi[1], x from lo[0] to hi[0]
+    std::vector<double> left;    // x = lo[0], z from lo[1] to hi[1]
+    std::vector<double> right;   // x = hi[0], z from lo[1] to hi[1]
+  };
+
   int master = -1;
   std::vector<double> cap;
   std::vector<double> sigma;
@@ -86,6 +108,13 @@ struct CapRow
   // (0 when none ran). Trial walks are not in `walks` or `hops`.
   bool inside_surface = false;
   int64_t trial_walks = 0;
+  // One entry per rectangle in Geometry2D::rects(), empty unless
+  // SolveOptions::surface_charge_bins > 0 on a Scene2D solve.
+  std::vector<RectCharge> rect_charges;
+  // Induced surface charge density on the ground plane z = 0 across
+  // [ground_charge_x_lo, ground_charge_x_hi], in fF/µm² (per V), empty
+  // unless SolveOptions::ground_charge_bins > 0 on a Scene2D solve.
+  std::vector<double> ground_charge;
 
   double total() const { return cap[master]; }
   double coupling(int net) const { return -cap[net]; }

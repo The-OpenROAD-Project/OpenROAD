@@ -1,0 +1,14 @@
+[INFO FSV-0002] Read ITF backside: 5 dielectrics, 4 conductors, 0 conformal dielectrics, 3 vias.
+[INFO ODB-0227] LEF file: backside.lef, created 5 layers
+[INFO FSV-0002] Read ITF backside: 3 dielectrics, 2 conductors, 0 conformal dielectrics, 1 vias.
+[INFO FSV-0035] Removed the backside of the stack (2 conductors, 2 vias); the ground plane is the top of its highest conductor.
+[ERROR FSV-0007] Layer BPR is not a conductor or via of the ITF stack.
+[ERROR FSV-0007] Layer VBPR is not a conductor or via of the ITF stack.
+[INFO FSV-0011] Net m1: total 1.764 fF +- 0.019 after 32768 walks (6.3 hops per walk).
+  ground                      1.764 +- 0.019 fF
+[INFO FSV-0011] Net m1: total 1.7529 fF +- 0.019 after 32768 walks (6.3 hops per walk).
+  ground                     1.7529 +- 0.019 fF
+[INFO FSV-0011] Net v: total 0.022309 fF +- 0.00036 after 32768 walks (16.5 hops per walk).
+  ground                   0.022309 +- 0.00036 fF
+Summary 4 / 4 (100% pass)
+pass

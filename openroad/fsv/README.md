@@ -81,7 +81,11 @@ sits clear of their faces or inside the innermost one.
 
 The `read_itf` command reads a process stack from an ITF file and makes it
 the dielectric. The ground plane is the top of the lowest dielectric, and the
-background permittivity fills everything above the stack. Conformal
+background permittivity fills everything above the stack. When the technology
+marks conductors of the stack as backside layers (`LEF58_BACKSIDE`), only the
+frontside is kept: the ground plane is the top of the highest backside
+conductor, and the layers below it and their vias are removed. This needs the
+technology LEF to be read before the ITF file. Conformal
 dielectrics wrap the boxes on their conductor layers (see Conformal
 dielectrics above). The conductors defined so far are kept.
 

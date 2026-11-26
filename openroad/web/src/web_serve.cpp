@@ -635,7 +635,8 @@ void WebServer::serve(int port,
                                        logger_,
                                        viewer_hook_.get(),
                                        max_in_flight,
-                                       auth);
+                                       auth,
+                                       field_solver_);
     shutdown_listener_ = std::move(handle.shutdown);
 
     // Point the browser at something it can actually reach.  The launch uses
