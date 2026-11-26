@@ -216,15 +216,15 @@ void _dbTechLayerCutSpacingTableDefRule::collectMemInfo(MemInfo& info)
 void dbTechLayerCutSpacingTableDefRule::setDefault(int spacing)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->default_ = spacing;
 }
 
 int dbTechLayerCutSpacingTableDefRule::getDefault() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
   return obj->default_;
 }
 
@@ -232,7 +232,7 @@ void dbTechLayerCutSpacingTableDefRule::setSecondLayer(
     dbTechLayer* second_layer)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->second_layer_ = second_layer->getImpl()->getOID();
 }
@@ -240,45 +240,45 @@ void dbTechLayerCutSpacingTableDefRule::setSecondLayer(
 void dbTechLayerCutSpacingTableDefRule::setPrl(int prl)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->prl_ = prl;
 }
 
 int dbTechLayerCutSpacingTableDefRule::getPrl() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
   return obj->prl_;
 }
 
 void dbTechLayerCutSpacingTableDefRule::setExtension(int extension)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->extension_ = extension;
 }
 
 int dbTechLayerCutSpacingTableDefRule::getExtension() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
   return obj->extension_;
 }
 
 void dbTechLayerCutSpacingTableDefRule::setDefaultValid(bool default_valid)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->flags_.default_valid = default_valid;
 }
 
 bool dbTechLayerCutSpacingTableDefRule::isDefaultValid() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
 
   return obj->flags_.default_valid;
 }
@@ -286,15 +286,15 @@ bool dbTechLayerCutSpacingTableDefRule::isDefaultValid() const
 void dbTechLayerCutSpacingTableDefRule::setSameMask(bool same_mask)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->flags_.same_mask = same_mask;
 }
 
 bool dbTechLayerCutSpacingTableDefRule::isSameMask() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
 
   return obj->flags_.same_mask;
 }
@@ -302,15 +302,15 @@ bool dbTechLayerCutSpacingTableDefRule::isSameMask() const
 void dbTechLayerCutSpacingTableDefRule::setSameNet(bool same_net)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->flags_.same_net = same_net;
 }
 
 bool dbTechLayerCutSpacingTableDefRule::isSameNet() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
 
   return obj->flags_.same_net;
 }
@@ -318,15 +318,15 @@ bool dbTechLayerCutSpacingTableDefRule::isSameNet() const
 void dbTechLayerCutSpacingTableDefRule::setSameMetal(bool same_metal)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->flags_.same_metal = same_metal;
 }
 
 bool dbTechLayerCutSpacingTableDefRule::isSameMetal() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
 
   return obj->flags_.same_metal;
 }
@@ -334,15 +334,15 @@ bool dbTechLayerCutSpacingTableDefRule::isSameMetal() const
 void dbTechLayerCutSpacingTableDefRule::setSameVia(bool same_via)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->flags_.same_via = same_via;
 }
 
 bool dbTechLayerCutSpacingTableDefRule::isSameVia() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
 
   return obj->flags_.same_via;
 }
@@ -350,15 +350,15 @@ bool dbTechLayerCutSpacingTableDefRule::isSameVia() const
 void dbTechLayerCutSpacingTableDefRule::setLayerValid(bool layer_valid)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->flags_.layer_valid = layer_valid;
 }
 
 bool dbTechLayerCutSpacingTableDefRule::isLayerValid() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
 
   return obj->flags_.layer_valid;
 }
@@ -366,15 +366,15 @@ bool dbTechLayerCutSpacingTableDefRule::isLayerValid() const
 void dbTechLayerCutSpacingTableDefRule::setNoStack(bool no_stack)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->flags_.no_stack = no_stack;
 }
 
 bool dbTechLayerCutSpacingTableDefRule::isNoStack() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
 
   return obj->flags_.no_stack;
 }
@@ -383,15 +383,15 @@ void dbTechLayerCutSpacingTableDefRule::setNonZeroEnclosure(
     bool non_zero_enclosure)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->flags_.non_zero_enclosure = non_zero_enclosure;
 }
 
 bool dbTechLayerCutSpacingTableDefRule::isNonZeroEnclosure() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
 
   return obj->flags_.non_zero_enclosure;
 }
@@ -400,15 +400,15 @@ void dbTechLayerCutSpacingTableDefRule::setPrlForAlignedCut(
     bool prl_for_aligned_cut)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->flags_.prl_for_aligned_cut = prl_for_aligned_cut;
 }
 
 bool dbTechLayerCutSpacingTableDefRule::isPrlForAlignedCut() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
 
   return obj->flags_.prl_for_aligned_cut;
 }
@@ -417,15 +417,15 @@ void dbTechLayerCutSpacingTableDefRule::setCenterToCenterValid(
     bool center_to_center_valid)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->flags_.center_to_center_valid = center_to_center_valid;
 }
 
 bool dbTechLayerCutSpacingTableDefRule::isCenterToCenterValid() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
 
   return obj->flags_.center_to_center_valid;
 }
@@ -434,15 +434,15 @@ void dbTechLayerCutSpacingTableDefRule::setCenterAndEdgeValid(
     bool center_and_edge_valid)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->flags_.center_and_edge_valid = center_and_edge_valid;
 }
 
 bool dbTechLayerCutSpacingTableDefRule::isCenterAndEdgeValid() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
 
   return obj->flags_.center_and_edge_valid;
 }
@@ -450,15 +450,15 @@ bool dbTechLayerCutSpacingTableDefRule::isCenterAndEdgeValid() const
 void dbTechLayerCutSpacingTableDefRule::setNoPrl(bool no_prl)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->flags_.no_prl = no_prl;
 }
 
 bool dbTechLayerCutSpacingTableDefRule::isNoPrl() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
 
   return obj->flags_.no_prl;
 }
@@ -466,15 +466,15 @@ bool dbTechLayerCutSpacingTableDefRule::isNoPrl() const
 void dbTechLayerCutSpacingTableDefRule::setPrlValid(bool prl_valid)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->flags_.prl_valid = prl_valid;
 }
 
 bool dbTechLayerCutSpacingTableDefRule::isPrlValid() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
 
   return obj->flags_.prl_valid;
 }
@@ -482,15 +482,15 @@ bool dbTechLayerCutSpacingTableDefRule::isPrlValid() const
 void dbTechLayerCutSpacingTableDefRule::setMaxXY(bool max_x_y)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->flags_.max_x_y = max_x_y;
 }
 
 bool dbTechLayerCutSpacingTableDefRule::isMaxXY() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
 
   return obj->flags_.max_x_y;
 }
@@ -499,15 +499,15 @@ void dbTechLayerCutSpacingTableDefRule::setEndExtensionValid(
     bool end_extension_valid)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->flags_.end_extension_valid = end_extension_valid;
 }
 
 bool dbTechLayerCutSpacingTableDefRule::isEndExtensionValid() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
 
   return obj->flags_.end_extension_valid;
 }
@@ -516,15 +516,15 @@ void dbTechLayerCutSpacingTableDefRule::setSideExtensionValid(
     bool side_extension_valid)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->flags_.side_extension_valid = side_extension_valid;
 }
 
 bool dbTechLayerCutSpacingTableDefRule::isSideExtensionValid() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
 
   return obj->flags_.side_extension_valid;
 }
@@ -533,15 +533,15 @@ void dbTechLayerCutSpacingTableDefRule::setExactAlignedSpacingValid(
     bool exact_aligned_spacing_valid)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->flags_.exact_aligned_spacing_valid = exact_aligned_spacing_valid;
 }
 
 bool dbTechLayerCutSpacingTableDefRule::isExactAlignedSpacingValid() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
 
   return obj->flags_.exact_aligned_spacing_valid;
 }
@@ -549,15 +549,15 @@ bool dbTechLayerCutSpacingTableDefRule::isExactAlignedSpacingValid() const
 void dbTechLayerCutSpacingTableDefRule::setHorizontal(bool horizontal)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->flags_.horizontal = horizontal;
 }
 
 bool dbTechLayerCutSpacingTableDefRule::isHorizontal() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
 
   return obj->flags_.horizontal;
 }
@@ -565,15 +565,15 @@ bool dbTechLayerCutSpacingTableDefRule::isHorizontal() const
 void dbTechLayerCutSpacingTableDefRule::setPrlHorizontal(bool prl_horizontal)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->flags_.prl_horizontal = prl_horizontal;
 }
 
 bool dbTechLayerCutSpacingTableDefRule::isPrlHorizontal() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
 
   return obj->flags_.prl_horizontal;
 }
@@ -581,15 +581,15 @@ bool dbTechLayerCutSpacingTableDefRule::isPrlHorizontal() const
 void dbTechLayerCutSpacingTableDefRule::setVertical(bool vertical)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->flags_.vertical = vertical;
 }
 
 bool dbTechLayerCutSpacingTableDefRule::isVertical() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
 
   return obj->flags_.vertical;
 }
@@ -597,15 +597,15 @@ bool dbTechLayerCutSpacingTableDefRule::isVertical() const
 void dbTechLayerCutSpacingTableDefRule::setPrlVertical(bool prl_vertical)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->flags_.prl_vertical = prl_vertical;
 }
 
 bool dbTechLayerCutSpacingTableDefRule::isPrlVertical() const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
 
   return obj->flags_.prl_vertical;
 }
@@ -614,7 +614,7 @@ void dbTechLayerCutSpacingTableDefRule::setNonOppositeEnclosureSpacingValid(
     bool non_opposite_enclosure_spacing_valid)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->flags_.non_opposite_enclosure_spacing_valid
       = non_opposite_enclosure_spacing_valid;
@@ -623,8 +623,8 @@ void dbTechLayerCutSpacingTableDefRule::setNonOppositeEnclosureSpacingValid(
 bool dbTechLayerCutSpacingTableDefRule::isNonOppositeEnclosureSpacingValid()
     const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
 
   return obj->flags_.non_opposite_enclosure_spacing_valid;
 }
@@ -633,7 +633,7 @@ void dbTechLayerCutSpacingTableDefRule::setOppositeEnclosureResizeSpacingValid(
     bool opposite_enclosure_resize_spacing_valid)
 {
   _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+      = reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(this);
 
   obj->flags_.opposite_enclosure_resize_spacing_valid
       = opposite_enclosure_resize_spacing_valid;
@@ -642,8 +642,8 @@ void dbTechLayerCutSpacingTableDefRule::setOppositeEnclosureResizeSpacingValid(
 bool dbTechLayerCutSpacingTableDefRule::isOppositeEnclosureResizeSpacingValid()
     const
 {
-  _dbTechLayerCutSpacingTableDefRule* obj
-      = (_dbTechLayerCutSpacingTableDefRule*) this;
+  const _dbTechLayerCutSpacingTableDefRule* obj
+      = reinterpret_cast<const _dbTechLayerCutSpacingTableDefRule*>(this);
 
   return obj->flags_.opposite_enclosure_resize_spacing_valid;
 }
@@ -651,17 +651,18 @@ bool dbTechLayerCutSpacingTableDefRule::isOppositeEnclosureResizeSpacingValid()
 dbTechLayerCutSpacingTableDefRule* dbTechLayerCutSpacingTableDefRule::create(
     dbTechLayer* parent)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) parent;
-  return (dbTechLayerCutSpacingTableDefRule*)
-      _parent->cut_spacing_table_def_tbl_->create();
+  _dbTechLayer* _parent = reinterpret_cast<_dbTechLayer*>(parent);
+  return reinterpret_cast<dbTechLayerCutSpacingTableDefRule*>(
+      _parent->cut_spacing_table_def_tbl_->create());
 }
 void dbTechLayerCutSpacingTableDefRule::destroy(
     dbTechLayerCutSpacingTableDefRule* obj)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  _dbTechLayer* _parent
+      = static_cast<_dbTechLayer*>(obj->getImpl()->getOwner());
   dbProperty::destroyProperties(obj);
   _parent->cut_spacing_table_def_tbl_->destroy(
-      (_dbTechLayerCutSpacingTableDefRule*) obj);
+      reinterpret_cast<_dbTechLayerCutSpacingTableDefRule*>(obj));
 }
 // User Code Begin dbTechLayerCutSpacingTableDefRulePublicMethods
 void dbTechLayerCutSpacingTableDefRule::addPrlForAlignedCutEntry(

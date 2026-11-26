@@ -163,7 +163,7 @@ void _dbGroup::collectMemInfo(MemInfo& info)
 _dbGroup::~_dbGroup()
 {
   if (name_) {
-    free((void*) name_);
+    free(name_);
   }
 }
 
@@ -175,28 +175,29 @@ _dbGroup::~_dbGroup()
 
 const char* dbGroup::getName() const
 {
-  _dbGroup* obj = (_dbGroup*) this;
+  const _dbGroup* obj = reinterpret_cast<const _dbGroup*>(this);
   return obj->name_;
 }
 
 dbGroup* dbGroup::getParentGroup() const
 {
-  _dbGroup* obj = (_dbGroup*) this;
+  const _dbGroup* obj = reinterpret_cast<const _dbGroup*>(this);
   if (obj->parent_group_ == 0) {
     return nullptr;
   }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbGroup*) par->group_tbl_->getPtr(obj->parent_group_);
+  _dbBlock* par = static_cast<_dbBlock*>(obj->getOwner());
+  return reinterpret_cast<dbGroup*>(
+      par->group_tbl_->getPtr(obj->parent_group_));
 }
 
 dbRegion* dbGroup::getRegion() const
 {
-  _dbGroup* obj = (_dbGroup*) this;
+  const _dbGroup* obj = reinterpret_cast<const _dbGroup*>(this);
   if (obj->region_ == 0) {
     return nullptr;
   }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbRegion*) par->region_tbl_->getPtr(obj->region_);
+  _dbBlock* par = static_cast<_dbBlock*>(obj->getOwner());
+  return reinterpret_cast<dbRegion*>(par->region_tbl_->getPtr(obj->region_));
 }
 
 // User Code Begin dbGroupPublicMethods

@@ -43,7 +43,10 @@ bool _dbScanPartition::operator<(const _dbScanPartition& rhs) const
 _dbScanPartition::_dbScanPartition(_dbDatabase* db)
 {
   scan_lists_ = new dbTable<_dbScanList>(
-      db, this, (GetObjTbl_t) &_dbScanPartition::getObjectTable, dbScanListObj);
+      db,
+      this,
+      static_cast<GetObjTbl_t>(&_dbScanPartition::getObjectTable),
+      dbScanListObj);
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbScanPartition& obj)
@@ -92,7 +95,8 @@ _dbScanPartition::~_dbScanPartition()
 
 dbSet<dbScanList> dbScanPartition::getScanLists() const
 {
-  _dbScanPartition* obj = (_dbScanPartition*) this;
+  _dbScanPartition* obj
+      = reinterpret_cast<_dbScanPartition*>(const_cast<dbScanPartition*>(this));
   return dbSet<dbScanList>(obj, obj->scan_lists_);
 }
 

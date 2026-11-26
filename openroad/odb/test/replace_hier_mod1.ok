@@ -43,11 +43,11 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
 [INFO GPL-0051] Source of initial instance position counters:
 	Odb location = 0	Core center = 21	Region center = 0
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000011 HPWL: 1271990
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000007 HPWL: 78157
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000007 HPWL: 79582
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000001 HPWL: 80257
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000004 HPWL: 80282
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000000 HPWL: 1271990
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000002 HPWL: 78239
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 79600
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000000 HPWL: 80262
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 80288
 [INFO DPL-0006] Core area: 47872.02 um^2
 [INFO DPL-0007] Movable instances area: 60.38 um^2
 [INFO DPL-0008] Fixed instances area within core: 0.00 um^2
@@ -179,11 +179,11 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
 [INFO GPL-0051] Source of initial instance position counters:
 	Odb location = 0	Core center = 2	Region center = 0
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000006 HPWL: 2578400
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000000 HPWL: 179849
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000000 HPWL: 2578400
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000000 HPWL: 179847
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 180101
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000003 HPWL: 179989
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000002 HPWL: 179957
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000000 HPWL: 179989
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 179957
 [INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
 [INFO GPL-0023] Placement target density:       0.0111
 [INFO GPL-0024] Movable insts average area:      2.598 um^2
@@ -410,8 +410,8 @@ Repair timing output passed/skipped equivalence test
 	Odb location = 0	Core center = 2	Region center = 0
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000000 HPWL: 3052680
 [InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000000 HPWL: 588854
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000005 HPWL: 589041
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000001 HPWL: 589098
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 589041
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000000 HPWL: 589098
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 589107
 [INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
 [INFO GPL-0023] Placement target density:       0.0112
@@ -427,8 +427,8 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.0444 |  2.617770e+02 |   +0.00% |  2.43e-13 |      
-        0 |   0.0444 |  2.617770e+02 |          |  2.53e-13 |      
+        0 |   0.0444 |  2.617775e+02 |   +0.00% |  2.43e-13 |      
+        0 |   0.0444 |  2.617775e+02 |          |  2.53e-13 |      
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 0
 [INFO GPL-1002] Placed Cell Area               55.0833
@@ -566,7 +566,7 @@ Repair timing output passed/skipped equivalence test
 	Odb location = 0	Core center = 2	Region center = 0
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000000 HPWL: 3052300
 [InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000000 HPWL: 588260
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000004 HPWL: 588378
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 588378
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000000 HPWL: 588430
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 588452
 [INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
@@ -583,8 +583,8 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.0357 |  2.617055e+02 |   +0.00% |  2.53e-13 |      
-        0 |   0.0357 |  2.617055e+02 |          |  2.63e-13 |      
+        0 |   0.0357 |  2.617045e+02 |   +0.00% |  2.53e-13 |      
+        0 |   0.0357 |  2.617045e+02 |          |  2.63e-13 |      
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 0
 [INFO GPL-1002] Placed Cell Area               54.5513
@@ -595,7 +595,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0014
 [INFO GPL-1009]     - For 50% usage of free space: 0.0023
 [INFO GPL-1014] Final placement area: 54.55 (+0.00%)
-[INFO GPL-1018] Final HPWL (um): 261.71
+[INFO GPL-1018] Final HPWL (um): 261.70
 [INFO GPL-0133] Unlocking all instances
 [INFO DPL-0006] Core area: 47872.02 um^2
 [INFO DPL-0007] Movable instances area: 59.85 um^2
@@ -615,7 +615,7 @@ legalizer            negotiation
 total moves                   0
 total displacement          1.8 u
 average displacement        0.1 u
-max displacement            1.4 u
+max displacement            1.5 u
 original HPWL             261.7 u
 legalized HPWL            261.7 u
 delta HPWL                    0 %
