@@ -46,6 +46,7 @@ COMPULSORY_TESTS = [
     "place_macro_right_angle_rotation",
     "place_macro_snap_to_site_grid",
     "placement_blockages1",
+    "placement_blockages2",
     "rerun1",
     "snap_to_site_grid",
     "target_utilization_out_of_range",
@@ -59,6 +60,7 @@ ALL_TESTS = COMPULSORY_TESTS
 
 # Self-checking: the script reports pass/fail, no golden log.
 PASSFAIL_TESTS = [
+    "placement_blockages2",
     "rerun1",
 ]
 
@@ -257,6 +259,10 @@ filegroup(
                     "testcases/orientation_improve1.lef",
                 ],
                 "placement_blockages1": [
+                    "testcases/macro_only.lef",
+                    "testcases/placement_blockages1.def",
+                ],
+                "placement_blockages2": [
                     "testcases/macro_only.lef",
                     "testcases/placement_blockages1.def",
                 ],
