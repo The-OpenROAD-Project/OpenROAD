@@ -13,6 +13,7 @@
 #include <cstring>
 #include <exception>
 #include <functional>
+#include <initializer_list>
 #include <iterator>
 #include <limits>
 #include <map>
@@ -1103,6 +1104,8 @@ const BoolField kBoolFields[] = {
   {"std_level_shift",    &TileVisibility::std_level_shift,    true},
   {"std_sequential",     &TileVisibility::std_sequential,     true},
   {"std_combinational",  &TileVisibility::std_combinational,  true},
+  {"std_physical",       &TileVisibility::std_physical,       true},
+  {"std_other",          &TileVisibility::std_other,          true},
   {"net_signal",         &TileVisibility::net_signal,         true},
   {"net_power",          &TileVisibility::net_power,          true},
   {"net_ground",         &TileVisibility::net_ground,         true},
@@ -1159,6 +1162,41 @@ std::optional<bool> TileVisibility::flag(const std::string_view key) const
   return std::nullopt;
 }
 
+bool TileVisibility::isFlag(const std::string_view key)
+{
+  return std::ranges::any_of(
+      kBoolFields, [key](const BoolField& f) { return key == f.key; });
+}
+
+bool TileVisibility::setFlag(const std::string_view key, const bool value)
+{
+  // As parseFromJson does with no keys of their own, the two follow stdcells.
+  if (key == "stdcells") {
+    std_physical = value;
+    std_other = value;
+  }
+  for (const BoolField& f : kBoolFields) {
+    if (key == f.key) {
+      this->*f.field = value;
+      return true;
+    }
+  }
+  return false;
+}
+
+void TileVisibility::setFlags(const std::map<std::string, bool>& flags)
+{
+  // stdcells first, so std_physical or std_other given with it wins.
+  if (const auto it = flags.find("stdcells"); it != flags.end()) {
+    setFlag(it->first, it->second);
+  }
+  for (const auto& [key, value] : flags) {
+    if (key != "stdcells") {
+      setFlag(key, value);
+    }
+  }
+}
+
 void TileVisibility::parseFromJson(const boost::json::object& json)
 {
   // A copy of *this, not a default: view_extent_dbu and hidden_here are not
@@ -1176,6 +1214,8 @@ void TileVisibility::assignFromJson(const boost::json::object& json)
   for (const auto& f : kBoolFields) {
     this->*(f.field) = jsonOr<bool>(json, f.key, f.default_val);
   }
+  std_physical = jsonOr<bool>(json, "std_physical", stdcells);
+  std_other = jsonOr<bool>(json, "std_other", stdcells);
 
   // Bound the visibility-filter sizes so a malformed/oversized payload
   // can't make us allocate unbounded memory or thrash later contains()
@@ -1295,6 +1335,9 @@ void TileVisibility::assignFromJson(const boost::json::object& json)
   for (const auto& f : kSelectableFields) {
     this->*(f.field) = jsonOr<bool>(json, f.key, f.default_val);
   }
+  std_physical_selectable
+      = jsonOr<bool>(json, "s_std_physical", stdcells_selectable);
+  std_other_selectable = jsonOr<bool>(json, "s_std_other", stdcells_selectable);
 
   selectable_layers.clear();
   has_selectable_layers = false;
@@ -1468,9 +1511,11 @@ InstCategory classifyInstance(odb::dbInst* inst, sta::dbSta* sta)
         return InstCategory::kStdSequential;
       case IT::STD_COMBINATIONAL:
         return InstCategory::kStdCombinational;
-      case IT::STD_CELL:
       case IT::STD_PHYSICAL:
+        return InstCategory::kStdPhysical;
       case IT::STD_OTHER:
+        return InstCategory::kStdOther;
+      case IT::STD_CELL:
       default:
         return InstCategory::kStdCells;
     }
@@ -1586,6 +1631,10 @@ bool TileVisibility::isCategoryVisible(InstCategory cat) const
       return std_sequential;
     case InstCategory::kStdCombinational:
       return std_combinational;
+    case InstCategory::kStdPhysical:
+      return std_physical;
+    case InstCategory::kStdOther:
+      return std_other;
   }
   return stdcells;
 }
@@ -1641,6 +1690,10 @@ bool TileVisibility::isInstSelectable(odb::dbInst* inst, sta::dbSta* sta) const
       return std_sequential_selectable;
     case InstCategory::kStdCombinational:
       return std_combinational_selectable;
+    case InstCategory::kStdPhysical:
+      return std_physical_selectable;
+    case InstCategory::kStdOther:
+      return std_other_selectable;
   }
   return stdcells_selectable;
 }
@@ -1968,6 +2021,35 @@ void TileGenerator::computePinLabelMargin()
   }
   const int label_px = kMinPinNameSizePixels + 3 + max_text_px;
   pin_label_margin_dbu_ = label_px * pin_size / kMinPinNameSizePixels;
+}
+
+// RenderThread::setupIOPins: IO pin names only when the longest fits in the
+// image's margin.  `scale` is image pixels per DBU, `tile_scale` the labels'.
+bool TileGenerator::pinNamesFitImage(odb::dbBlock* block,
+                                     const odb::Rect& area,
+                                     const double scale,
+                                     const double tile_scale) const
+{
+  const odb::Rect die = block->getDieArea();
+  const int margin = std::min({
+      die.xMin() - area.xMin(),
+      area.xMax() - die.xMax(),
+      die.yMin() - area.yMin(),
+      area.yMax() - die.yMax(),
+  });
+  const int view_dim = std::min(die.maxDXDY(), area.maxDXDY());
+  const int marker = std::max(static_cast<int>(kPinMarkerSizeRatio * view_dim),
+                              kMinPinMarkerSize);
+  const double available_px = (margin - marker) * scale;
+  if (available_px <= 0) {
+    return false;
+  }
+  const auto font = fontAtlasGetFont(kPinLabelFontHeight);
+  int widest = 0;
+  for (odb::dbBTerm* bterm : block->getBTerms()) {
+    widest = std::max(widest, font.textWidth(bterm->getName()));
+  }
+  return widest * scale / tile_scale <= available_px;
 }
 
 bool TileGenerator::shapesReady() const
@@ -6588,9 +6670,16 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
     scale = 1024.0 / area.dx();
   }
 
-  // In double: a thin region at a high scale overflows an int.
-  const double wanted_w = std::ceil(area.dx() * scale);
-  const double wanted_h = std::ceil(area.dy() * scale);
+  // Truncated like Qt's QRegion, with an epsilon so an exact -width keeps its
+  // last pixel; in double, as a thin region at a high scale overflows an int.
+  auto pixels = [](const double extent) { return std::floor(extent + 1e-6); };
+  const double wanted_w = pixels(area.dx() * scale);
+  const double wanted_h = pixels(area.dy() * scale);
+  // A scale that underflowed to zero (-resolution Inf) frames nothing.
+  if (wanted_w <= 0 || wanted_h <= 0) {
+    logger_->error(
+        utl::WEB, 125, "The requested resolution leaves the image no pixels.");
+  }
 
   // Cap image size at 16k x 16k to prevent excessive memory usage.
   constexpr int kMaxDim = 16384;
@@ -6605,13 +6694,9 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
                      static_cast<double>(kMaxDim) / area.dy());
   }
 
-  const int final_w = static_cast<int>(std::ceil(area.dx() * scale));
-  const int final_h = static_cast<int>(std::ceil(area.dy() * scale));
-  // A scale that underflowed to zero (-resolution Inf) frames nothing.
-  if (final_w <= 0 || final_h <= 0) {
-    logger_->error(
-        utl::WEB, 125, "The requested resolution leaves the image no pixels.");
-  }
+  // Clamping can leave a thin side under a pixel.
+  const int final_w = std::max(1, static_cast<int>(pixels(area.dx() * scale)));
+  const int final_h = std::max(1, static_cast<int>(pixels(area.dy() * scale)));
 
   // Compute zoom level that gives tile_scale close to our target scale.
   // tile_scale = kTileSizeInPixel / (maxDXDY / 2^z)
@@ -6653,6 +6738,10 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
   TileVisibility image_vis = vis;
   if (image_vis.view_extent_dbu <= 0) {
     image_vis.view_extent_dbu = area.maxDXDY();
+  }
+  if (image_vis.pin_names
+      && !pinNamesFitImage(block, area, scale, tile_scale)) {
+    image_vis.pin_names = false;
   }
 
   std::vector<PaintLayer> layers_to_render
@@ -6966,6 +7055,52 @@ void TileGenerator::saveImage(const std::string& filename,
       utl::WEB, 24, "Saved {}x{} image to {}", final_w, final_h, filename);
 }
 
+TileVisibility overlayOnlyVisibility()
+{
+  TileVisibility vis;
+  vis.stdcells = false;
+  vis.macros = false;
+  vis.pad_input = false;
+  vis.pad_output = false;
+  vis.pad_inout = false;
+  vis.pad_power = false;
+  vis.pad_spacer = false;
+  vis.pad_areaio = false;
+  vis.pad_other = false;
+  vis.phys_fill = false;
+  vis.phys_endcap = false;
+  vis.phys_welltap = false;
+  vis.phys_tie = false;
+  vis.phys_antenna = false;
+  vis.phys_cover = false;
+  vis.phys_bump = false;
+  vis.phys_other = false;
+  vis.std_bufinv = false;
+  vis.std_bufinv_timing = false;
+  vis.std_clock_bufinv = false;
+  vis.std_clock_gate = false;
+  vis.std_level_shift = false;
+  vis.std_sequential = false;
+  vis.std_combinational = false;
+  vis.std_physical = false;
+  vis.std_other = false;
+  vis.routing = false;
+  vis.routing_segments = false;
+  vis.routing_vias = false;
+  vis.special_nets = false;
+  vis.srouting_segments = false;
+  vis.srouting_vias = false;
+  vis.pins = false;
+  vis.pin_names = false;
+  vis.inst_names = false;
+  vis.inst_pins = false;
+  vis.inst_pin_names = false;
+  vis.blockages = false;
+  vis.placement_blockages = false;
+  vis.routing_obstructions = false;
+  return vis;
+}
+
 std::vector<unsigned char> TileGenerator::renderOverlayPng(
     int width_px,
     const std::vector<ColoredRect>& rects,
@@ -7016,45 +7151,7 @@ std::vector<unsigned char> TileGenerator::renderOverlayPng(
   std::vector<unsigned char> output(4UL * tile_span_w * tile_span_h, 0);
 
   // Render on _instances layer with all visibility off so only overlays draw.
-  TileVisibility vis;
-  vis.stdcells = false;
-  vis.macros = false;
-  vis.pad_input = false;
-  vis.pad_output = false;
-  vis.pad_inout = false;
-  vis.pad_power = false;
-  vis.pad_spacer = false;
-  vis.pad_areaio = false;
-  vis.pad_other = false;
-  vis.phys_fill = false;
-  vis.phys_endcap = false;
-  vis.phys_welltap = false;
-  vis.phys_tie = false;
-  vis.phys_antenna = false;
-  vis.phys_cover = false;
-  vis.phys_bump = false;
-  vis.phys_other = false;
-  vis.std_bufinv = false;
-  vis.std_bufinv_timing = false;
-  vis.std_clock_bufinv = false;
-  vis.std_clock_gate = false;
-  vis.std_level_shift = false;
-  vis.std_sequential = false;
-  vis.std_combinational = false;
-  vis.routing = false;
-  vis.routing_segments = false;
-  vis.routing_vias = false;
-  vis.special_nets = false;
-  vis.srouting_segments = false;
-  vis.srouting_vias = false;
-  vis.pins = false;
-  vis.pin_names = false;
-  vis.inst_names = false;
-  vis.inst_pins = false;
-  vis.inst_pin_names = false;
-  vis.blockages = false;
-  vis.placement_blockages = false;
-  vis.routing_obstructions = false;
+  const TileVisibility vis = overlayOnlyVisibility();
 
   for (int ty = 0; ty <= ty_max; ++ty) {
     for (int tx = 0; tx <= tx_max; ++tx) {
@@ -7139,9 +7236,6 @@ void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,
   drawText(image, margin, margin, label, fontAtlasGetFont(font_px), yellow);
 }
 
-namespace {
-
-// Convert a web::Painter::Color to our internal Color (same RGBA layout).
 Color toTileColor(const web::Painter::Color& c)
 {
   return Color{
@@ -7151,8 +7245,6 @@ Color toTileColor(const web::Painter::Color& c)
       .a = static_cast<unsigned char>(c.a),
   };
 }
-
-}  // namespace
 
 /* static */
 void TileGenerator::setRendererHooks(RendererHooks hooks)

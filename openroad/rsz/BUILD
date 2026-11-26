@@ -35,6 +35,7 @@ cc_library(
         "src/OptimizerTypes.cc",
         "src/PathGroupFilter.cc",
         "src/PathGroupFilter.hh",
+        "src/PlacementDensityGrid.cc",
         "src/PreChecks.cc",
         "src/Rebuffer.cc",
         "src/RecoverPower.cc",
@@ -60,7 +61,6 @@ cc_library(
         "src/SwapPinsEquivalence.cc",
         "src/SwapPinsEquivalence.hh",
         "src/move/BufferCandidate.cc",
-        "src/move/BufferCandidate.hh",
         "src/move/BufferGenerator.cc",
         "src/move/BufferToInvertersCandidate.cc",
         "src/move/BufferToInvertersCandidate.hh",
@@ -149,6 +149,7 @@ cc_library(
     hdrs = [
         "include/rsz/GlobalSizingConfig.hh",
         "include/rsz/OdbCallBack.hh",
+        "include/rsz/PlacementDensityGrid.hh",
         "include/rsz/Resizer.hh",
         "src/BufferedNet.hh",
         "src/DelayEstimator.hh",
@@ -164,6 +165,7 @@ cc_library(
         "src/RepairTargetCollector.hh",
         "src/ResizerObserver.hh",
         "src/SequentialTimingEstimator.hh",
+        "src/move/BufferCandidate.hh",
         "src/move/BufferGenerator.hh",
         "src/move/MoveCandidate.hh",
         "src/move/MoveGenerator.hh",
@@ -213,6 +215,7 @@ cc_library(
         "@abseil-cpp//absl/container:flat_hash_map",
         "@boost.container_hash",
         "@boost.multi_array",
+        "@boost.polygon",
         "@fmt",
         "@or-tools//ortools/linear_solver",
         "@or-tools//ortools/linear_solver:linear_solver_base",
@@ -225,6 +228,7 @@ cc_library(
     hdrs = [
         "include/rsz/GlobalSizingConfig.hh",
         "include/rsz/OdbCallBack.hh",
+        "include/rsz/PlacementDensityGrid.hh",
         "include/rsz/Resizer.hh",
     ],
     includes = [

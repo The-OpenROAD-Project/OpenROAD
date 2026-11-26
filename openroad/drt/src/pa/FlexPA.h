@@ -987,6 +987,7 @@ class FlexPA
       std::vector<std::unique_ptr<frVia>>& vias,
       bool isPrev);
 
+  friend class ViaInPinTest;
   friend class RoutingCallBack;
 };
 

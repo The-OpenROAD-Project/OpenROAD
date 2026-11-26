@@ -86,6 +86,14 @@
     {
       "type": "bit",
       "name": "corner_to_corner"
+    },
+    {
+      "type": "bit",
+      "name": "aligned_only"
+    },
+    {
+      "type": "bit",
+      "name": "check_implant_group_only"
     }
   ],
   "enums": [

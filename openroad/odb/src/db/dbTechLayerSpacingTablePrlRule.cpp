@@ -123,30 +123,30 @@ void _dbTechLayerSpacingTablePrlRule::collectMemInfo(MemInfo& info)
 void dbTechLayerSpacingTablePrlRule::setEolWidth(int eol_width)
 {
   _dbTechLayerSpacingTablePrlRule* obj
-      = (_dbTechLayerSpacingTablePrlRule*) this;
+      = reinterpret_cast<_dbTechLayerSpacingTablePrlRule*>(this);
 
   obj->eol_width_ = eol_width;
 }
 
 int dbTechLayerSpacingTablePrlRule::getEolWidth() const
 {
-  _dbTechLayerSpacingTablePrlRule* obj
-      = (_dbTechLayerSpacingTablePrlRule*) this;
+  const _dbTechLayerSpacingTablePrlRule* obj
+      = reinterpret_cast<const _dbTechLayerSpacingTablePrlRule*>(this);
   return obj->eol_width_;
 }
 
 void dbTechLayerSpacingTablePrlRule::setWrongDirection(bool wrong_direction)
 {
   _dbTechLayerSpacingTablePrlRule* obj
-      = (_dbTechLayerSpacingTablePrlRule*) this;
+      = reinterpret_cast<_dbTechLayerSpacingTablePrlRule*>(this);
 
   obj->flags_.wrong_direction = wrong_direction;
 }
 
 bool dbTechLayerSpacingTablePrlRule::isWrongDirection() const
 {
-  _dbTechLayerSpacingTablePrlRule* obj
-      = (_dbTechLayerSpacingTablePrlRule*) this;
+  const _dbTechLayerSpacingTablePrlRule* obj
+      = reinterpret_cast<const _dbTechLayerSpacingTablePrlRule*>(this);
 
   return obj->flags_.wrong_direction;
 }
@@ -154,15 +154,15 @@ bool dbTechLayerSpacingTablePrlRule::isWrongDirection() const
 void dbTechLayerSpacingTablePrlRule::setSameMask(bool same_mask)
 {
   _dbTechLayerSpacingTablePrlRule* obj
-      = (_dbTechLayerSpacingTablePrlRule*) this;
+      = reinterpret_cast<_dbTechLayerSpacingTablePrlRule*>(this);
 
   obj->flags_.same_mask = same_mask;
 }
 
 bool dbTechLayerSpacingTablePrlRule::isSameMask() const
 {
-  _dbTechLayerSpacingTablePrlRule* obj
-      = (_dbTechLayerSpacingTablePrlRule*) this;
+  const _dbTechLayerSpacingTablePrlRule* obj
+      = reinterpret_cast<const _dbTechLayerSpacingTablePrlRule*>(this);
 
   return obj->flags_.same_mask;
 }
@@ -170,15 +170,15 @@ bool dbTechLayerSpacingTablePrlRule::isSameMask() const
 void dbTechLayerSpacingTablePrlRule::setExceeptEol(bool exceept_eol)
 {
   _dbTechLayerSpacingTablePrlRule* obj
-      = (_dbTechLayerSpacingTablePrlRule*) this;
+      = reinterpret_cast<_dbTechLayerSpacingTablePrlRule*>(this);
 
   obj->flags_.exceept_eol = exceept_eol;
 }
 
 bool dbTechLayerSpacingTablePrlRule::isExceeptEol() const
 {
-  _dbTechLayerSpacingTablePrlRule* obj
-      = (_dbTechLayerSpacingTablePrlRule*) this;
+  const _dbTechLayerSpacingTablePrlRule* obj
+      = reinterpret_cast<const _dbTechLayerSpacingTablePrlRule*>(this);
 
   return obj->flags_.exceept_eol;
 }
@@ -186,17 +186,18 @@ bool dbTechLayerSpacingTablePrlRule::isExceeptEol() const
 dbTechLayerSpacingTablePrlRule* dbTechLayerSpacingTablePrlRule::create(
     dbTechLayer* parent)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) parent;
-  return (dbTechLayerSpacingTablePrlRule*)
-      _parent->spacing_table_prl_rules_tbl_->create();
+  _dbTechLayer* _parent = reinterpret_cast<_dbTechLayer*>(parent);
+  return reinterpret_cast<dbTechLayerSpacingTablePrlRule*>(
+      _parent->spacing_table_prl_rules_tbl_->create());
 }
 void dbTechLayerSpacingTablePrlRule::destroy(
     dbTechLayerSpacingTablePrlRule* obj)
 {
-  _dbTechLayer* _parent = (_dbTechLayer*) obj->getImpl()->getOwner();
+  _dbTechLayer* _parent
+      = static_cast<_dbTechLayer*>(obj->getImpl()->getOwner());
   dbProperty::destroyProperties(obj);
   _parent->spacing_table_prl_rules_tbl_->destroy(
-      (_dbTechLayerSpacingTablePrlRule*) obj);
+      reinterpret_cast<_dbTechLayerSpacingTablePrlRule*>(obj));
 }
 // User Code Begin dbTechLayerSpacingTablePrlRulePublicMethods
 

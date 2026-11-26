@@ -15,6 +15,7 @@ npm_link_all_packages(name = "node_modules")
 TESTS = [
     "display_option_keys",
     "save_image_cluster_view",
+    "save_images_web",
 ]
 
 filegroup(
@@ -82,6 +83,7 @@ test_suite(
         ":interconnect3d_test",
         ":request_handler_test",
         ":save_display_controls_test",
+        ":script_view_test",
         ":session_lifetime_test",
         ":tile_generator_test",
         ":web_assets_test",
@@ -569,6 +571,22 @@ cc_test(
         "//openroad/web:core",
         "//third-party/lodepng",
         "@boost.json",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "script_view_test",
+    srcs = ["cpp/TestScriptView.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//openroad/odb/src/db",
+        "//openroad/tst:nangate45_fixture",
+        "//openroad/web",
+        "//openroad/web:core",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

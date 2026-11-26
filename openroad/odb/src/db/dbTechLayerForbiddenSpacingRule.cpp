@@ -87,75 +87,75 @@ void dbTechLayerForbiddenSpacingRule::setForbiddenSpacing(
     const std::pair<int, int>& forbidden_spacing)
 {
   _dbTechLayerForbiddenSpacingRule* obj
-      = (_dbTechLayerForbiddenSpacingRule*) this;
+      = reinterpret_cast<_dbTechLayerForbiddenSpacingRule*>(this);
 
   obj->forbidden_spacing_ = forbidden_spacing;
 }
 
 std::pair<int, int> dbTechLayerForbiddenSpacingRule::getForbiddenSpacing() const
 {
-  _dbTechLayerForbiddenSpacingRule* obj
-      = (_dbTechLayerForbiddenSpacingRule*) this;
+  const _dbTechLayerForbiddenSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerForbiddenSpacingRule*>(this);
   return obj->forbidden_spacing_;
 }
 
 void dbTechLayerForbiddenSpacingRule::setWidth(int width)
 {
   _dbTechLayerForbiddenSpacingRule* obj
-      = (_dbTechLayerForbiddenSpacingRule*) this;
+      = reinterpret_cast<_dbTechLayerForbiddenSpacingRule*>(this);
 
   obj->width_ = width;
 }
 
 int dbTechLayerForbiddenSpacingRule::getWidth() const
 {
-  _dbTechLayerForbiddenSpacingRule* obj
-      = (_dbTechLayerForbiddenSpacingRule*) this;
+  const _dbTechLayerForbiddenSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerForbiddenSpacingRule*>(this);
   return obj->width_;
 }
 
 void dbTechLayerForbiddenSpacingRule::setWithin(int within)
 {
   _dbTechLayerForbiddenSpacingRule* obj
-      = (_dbTechLayerForbiddenSpacingRule*) this;
+      = reinterpret_cast<_dbTechLayerForbiddenSpacingRule*>(this);
 
   obj->within_ = within;
 }
 
 int dbTechLayerForbiddenSpacingRule::getWithin() const
 {
-  _dbTechLayerForbiddenSpacingRule* obj
-      = (_dbTechLayerForbiddenSpacingRule*) this;
+  const _dbTechLayerForbiddenSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerForbiddenSpacingRule*>(this);
   return obj->within_;
 }
 
 void dbTechLayerForbiddenSpacingRule::setPrl(int prl)
 {
   _dbTechLayerForbiddenSpacingRule* obj
-      = (_dbTechLayerForbiddenSpacingRule*) this;
+      = reinterpret_cast<_dbTechLayerForbiddenSpacingRule*>(this);
 
   obj->prl_ = prl;
 }
 
 int dbTechLayerForbiddenSpacingRule::getPrl() const
 {
-  _dbTechLayerForbiddenSpacingRule* obj
-      = (_dbTechLayerForbiddenSpacingRule*) this;
+  const _dbTechLayerForbiddenSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerForbiddenSpacingRule*>(this);
   return obj->prl_;
 }
 
 void dbTechLayerForbiddenSpacingRule::setTwoEdges(int two_edges)
 {
   _dbTechLayerForbiddenSpacingRule* obj
-      = (_dbTechLayerForbiddenSpacingRule*) this;
+      = reinterpret_cast<_dbTechLayerForbiddenSpacingRule*>(this);
 
   obj->two_edges_ = two_edges;
 }
 
 int dbTechLayerForbiddenSpacingRule::getTwoEdges() const
 {
-  _dbTechLayerForbiddenSpacingRule* obj
-      = (_dbTechLayerForbiddenSpacingRule*) this;
+  const _dbTechLayerForbiddenSpacingRule* obj
+      = reinterpret_cast<const _dbTechLayerForbiddenSpacingRule*>(this);
   return obj->two_edges_;
 }
 
