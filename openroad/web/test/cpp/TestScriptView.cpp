@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "dbDescriptors.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "script_view.h"
@@ -358,6 +359,51 @@ TEST_F(ScriptViewSelectionTest, DestroyingARowOrAMarkerDropsTheSelection)
   view_.addSelected(DescriptorRegistry::instance()->makeSelected(marker));
   ASSERT_EQ(view_.frame().selection.size(), 1);
   odb::dbMarker::destroy(marker);
+  EXPECT_TRUE(view_.frame().selection.empty());
+}
+
+// Groups, and boxes removed one at a time from a pin or a special wire.
+TEST_F(ScriptViewSelectionTest, DestroyingAGroupOrABoxDropsTheSelection)
+{
+  auto* registry = DescriptorRegistry::instance();
+  odb::dbGroup* group = odb::dbGroup::create(block_, "g0");
+  view_.setSelected(registry->makeSelected(group));
+  ASSERT_EQ(view_.frame().selection.size(), 1);
+  odb::dbGroup::destroy(group);
+  EXPECT_TRUE(view_.frame().selection.empty());
+
+  odb::dbTechLayer* metal1 = getDb()->getTech()->findLayer("metal1");
+  ASSERT_NE(metal1, nullptr);
+  odb::dbNet* vdd = odb::dbNet::create(block_, "vdd");
+  odb::dbSWire* swire = odb::dbSWire::create(vdd, odb::dbWireType::ROUTED);
+  odb::dbSBox* sbox = odb::dbSBox::create(
+      swire, metal1, 0, 0, 100, 100, odb::dbWireShapeType::STRIPE);
+  view_.setSelected(registry->makeSelected(sbox));
+  ASSERT_EQ(view_.frame().selection.size(), 1);
+  odb::dbSBox::destroy(sbox);
+  EXPECT_TRUE(view_.frame().selection.empty());
+
+  odb::dbBPin* bpin = odb::dbBPin::create(odb::dbBTerm::create(vdd, "vdd"));
+  odb::dbBox* box = odb::dbBox::create(bpin, metal1, 0, 0, 100, 100);
+  view_.setSelected(registry->makeSelected(box));
+  ASSERT_EQ(view_.frame().selection.size(), 1);
+  odb::dbBox::destroy(box);
+  EXPECT_TRUE(view_.frame().selection.empty());
+}
+
+// As detailed_route does: the master's access points go with no callback,
+// then each iterm gets its new ones.
+TEST_F(ScriptViewSelectionTest, RewritingAccessPointsDropsTheSelection)
+{
+  odb::dbITerm* iterm = inst_->findITerm("A");
+  ASSERT_NE(iterm, nullptr);
+  odb::dbMPin* mpin = *iterm->getMTerm()->getMPins().begin();
+  odb::dbAccessPoint* ap = odb::dbAccessPoint::create(block_, mpin, 0);
+  view_.addSelected(DescriptorRegistry::instance()->makeSelected(
+      std::any(DbTermAccessPoint{ap, iterm})));
+  ASSERT_EQ(view_.frame().selection.size(), 1);
+  inst_->getMaster()->clearPinAccess(0);
+  iterm->setAccessPoint(mpin, odb::dbAccessPoint::create(block_, mpin, 0));
   EXPECT_TRUE(view_.frame().selection.empty());
 }
 

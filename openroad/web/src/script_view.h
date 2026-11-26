@@ -20,10 +20,12 @@
 namespace odb {
 class dbBlock;
 class dbBlockage;
+class dbBox;
 class dbBPin;
 class dbBTerm;
 class dbChip;
 class dbDatabase;
+class dbGroup;
 class dbInst;
 class dbITerm;
 class dbMarker;
@@ -37,6 +39,7 @@ class dbNet;
 class dbObstruction;
 class dbRegion;
 class dbRow;
+class dbSBox;
 class dbSWire;
 class dbWire;
 }  // namespace odb
@@ -169,6 +172,25 @@ class ScriptView : public GuiBackend
     void inDbRowDestroy(odb::dbRow* /* row */) override { view_->forget(); }
     void inDbWireDestroy(odb::dbWire* /* wire */) override { view_->forget(); }
     void inDbSWireDestroy(odb::dbSWire* /* wire */) override
+    {
+      view_->forget();
+    }
+    void inDbGroupDestroy(odb::dbGroup* /* group */) override
+    {
+      view_->forget();
+    }
+    void inDbBPinRemoveBox(odb::dbBox* /* box */) override { view_->forget(); }
+    void inDbSWireRemoveSBox(odb::dbSBox* /* box */) override
+    {
+      view_->forget();
+    }
+    void inDbSWirePreDestroySBoxes(odb::dbSWire* /* wire */) override
+    {
+      view_->forget();
+    }
+    // dbAccessPoint::destroy has no callback; detailed_route sets each
+    // iterm's new access points after destroying the old ones.
+    void inDbITermPostSetAccessPoints(odb::dbITerm* /* iterm */) override
     {
       view_->forget();
     }
