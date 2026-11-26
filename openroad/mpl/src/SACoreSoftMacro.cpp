@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "MplObserver.h"
-#include "SimulatedAnnealingCore.h"
+#include "SACore.h"
 #include "boost/random/uniform_int_distribution.hpp"
 #include "clusterEngine.h"
 #include "mpl-util.h"

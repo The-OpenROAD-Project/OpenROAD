@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "SimulatedAnnealingCore.h"
+#include "SACore.h"
 
 #include <algorithm>
 #include <cmath>

@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "MplObserver.h"
-#include "SimulatedAnnealingCore.h"
+#include "SACore.h"
 #include "clusterEngine.h"
 #include "mpl-util.h"
 #include "object.h"

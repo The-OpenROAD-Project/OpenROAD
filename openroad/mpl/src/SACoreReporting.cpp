@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
-#include "SimulatedAnnealingCore.h"
-
 #include <fstream>
 #include <string>
 
+#include "SACore.h"
 #include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"

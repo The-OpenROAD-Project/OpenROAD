@@ -54,13 +54,13 @@ cc_library(
 cc_library(
     name = "mpl_impl",
     srcs = [
+        "src/SACore.cpp",
         "src/SACoreHardMacro.cpp",
         "src/SACorePenalty.cpp",
         "src/SACoreReporting.cpp",
         "src/SACoreSoftMacro.cpp",
         "src/SACoreSoftMacro.h",
         "src/SACoreSoftMacroPenalty.cpp",
-        "src/SimulatedAnnealingCore.cpp",
         "src/clusterEngine.cpp",
         "src/feasibilityChecker.cpp",
         "src/feasibilityChecker.h",
@@ -73,8 +73,8 @@ cc_library(
     hdrs = [
         "include/mpl/rtl_mp.h",
         "src/MplObserver.h",
+        "src/SACore.h",
         "src/SACoreHardMacro.h",
-        "src/SimulatedAnnealingCore.h",
         "src/clusterEngine.h",
     ],
     includes = [
