@@ -15,6 +15,7 @@ ALL_TESTS = [
     "save_animated_gif_headless",
     "save_image_headless",
     "select_name_patterns",
+    "tcl_event_callbacks",
 ]
 
 # Exercise the Qt gui, so they need it built in.
@@ -24,6 +25,7 @@ QT_TESTS = [
     "save_animated_gif_headless",
     "save_image_headless",
     "select_name_patterns",
+    "tcl_event_callbacks",
 ]
 
 PASSFAIL_TESTS = [
@@ -34,6 +36,7 @@ PASSFAIL_TESTS = [
     "save_animated_gif_headless",
     "save_image_headless",
     "select_name_patterns",
+    "tcl_event_callbacks",
 ]
 
 filegroup(
@@ -57,6 +60,8 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        # A GUI that does not run Tcl callbacks never returns from gui::show.
+        timeout = "short" if test_name == "tcl_event_callbacks" else None,
         check_log = False if test_name in PASSFAIL_TESTS else True,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":test_resources"],
