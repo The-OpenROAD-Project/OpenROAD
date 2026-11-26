@@ -67,8 +67,10 @@ Pass one or more module directories, or single files. Only classes,
 methods, and free functions defined under the given paths are recorded,
 including those in their headers. Shotgun Surgery counts callers, so it
 only sees callers inside the extracted paths. Run it on facts for all of
-`openroad/` when callers in other modules matter. Rough times on 64 cores: about 10 s for a mid-size
-module, and 1.5 minutes for all of `openroad/` (a 38 MB facts file).
+`openroad/` when callers in other modules matter.
+
+Rough times on 64 cores: about 10 s for a mid-size module, and 1.5
+minutes for all of `openroad/` (a 38 MB facts file).
 Scale the time by the core count on smaller machines, and run the whole
 tree in the background.
 
