@@ -114,8 +114,6 @@ class Retimer
   odb::dbNet* findClockNet(odb::dbBlock* block) const;
   void checkRegisters(odb::dbBlock* block) const;
 
-  // Deletes what a kept trial replaced; an undone one keeps it.
-  void closeTrial(bool kept);
   // Built once, then updated around what the last trial changed.
   const RetimingGraph& graph();
   // False when none was unmapped.
@@ -213,7 +211,7 @@ class Retimer
   utl::Logger* logger_ = nullptr;
   std::unique_ptr<SequentialUnmapper> unmapper_;
   std::unique_ptr<RetimerPlacer> placer_;
-  std::unique_ptr<Discards> discards_;  // of the trial in progress
+  std::unique_ptr<Discards> discards_;  // of the retime call in progress
 
   RetimeOptions options_;
   std::unique_ptr<RetimingGraph> graph_;

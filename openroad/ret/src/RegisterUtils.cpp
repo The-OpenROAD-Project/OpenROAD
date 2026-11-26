@@ -184,6 +184,25 @@ void Discards::add(odb::dbNet* net, odb::dbModNet* mod_net)
   nets_.push_back({.net = net, .mod_net = mod_net});
 }
 
+void Discards::keep()
+{
+  kept_cells_ = cells_.size();
+  kept_nets_ = nets_.size();
+}
+
+void Discards::undo()
+{
+  cells_.resize(kept_cells_);
+  nets_.resize(kept_nets_);
+}
+
+int Discards::registerCount() const
+{
+  return static_cast<int>(std::ranges::count_if(cells_, [](odb::dbInst* cell) {
+    return cell->getMaster()->isSequential();
+  }));
+}
+
 void Discards::destroy(sta::dbSta* sta)
 {
   sta::dbNetwork* network = sta->getDbNetwork();
@@ -203,6 +222,7 @@ void Discards::clear()
 {
   cells_.clear();
   nets_.clear();
+  keep();
 }
 
 void connectPin(odb::dbITerm* pin,

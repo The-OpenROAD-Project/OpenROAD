@@ -235,16 +235,19 @@ void Retimer::retime(const RetimeOptions& options)
         placer_.get(),
         block,
         &guard,
+        discards_.get(),
         [&](const int limit) { return proposeSlides(block, limit); },
         [&](const std::vector<odb::dbInst*>& slides, const int limit) {
           return applySlides(slides, limit, guard);
         },
-        [&](const bool kept) { closeTrial(kept); });
+        [&] { trial_undone_ = true; });
     check.run(options_);
   } catch (...) {
     odb::dbDatabase::undoEco(block);
+    discards_->clear();
     throw;
   }
+  discards_->destroy(sta_);
   odb::dbDatabase::commitEco(block);
   graph_.reset();
 
@@ -255,16 +258,6 @@ void Retimer::retime(const RetimeOptions& options)
                   "{} new cells are unplaced; run global_placement "
                   "-incremental.",
                   after.unplaced - unplaced_before);
-  }
-}
-
-void Retimer::closeTrial(const bool kept)
-{
-  if (kept) {
-    discards_->destroy(sta_);
-  } else {
-    discards_->clear();
-    trial_undone_ = true;
   }
 }
 

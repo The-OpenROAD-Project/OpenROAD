@@ -25,9 +25,12 @@ class Logger;
 
 namespace ret {
 
+class Discards;
+
 // The cells created since clear() that still exist, and the number of
-// registers in the block.  odb calls it for every cell created or deleted,
-// also by an undo, so neither is found by reading the block again.
+// registers in the block, discarded ones included.  odb calls it for every
+// cell created or deleted, also by an undo, so neither is found by reading
+// the block again.
 class NewCells : public odb::dbBlockCallBackObj
 {
  public:
@@ -58,17 +61,17 @@ class StaCheck
   // Applies slides; max_moves caps a search the unmapping repeats.
   using Apply = std::function<int(const std::vector<odb::dbInst*>& slides,
                                   int max_moves)>;
-  // After a trial is undone, or before a kept one is committed.
-  using Closed = std::function<void(bool kept)>;
+  using Undone = std::function<void()>;
 
   StaCheck(sta::dbSta* sta,
            utl::Logger* logger,
            RetimerPlacer* placer,
            odb::dbBlock* block,
            est::IncrementalParasiticsGuard* guard,
+           Discards* discards,
            Propose propose,
            Apply apply,
-           Closed closed);
+           Undone undone);
 
   // Rounds repeat from what was kept until one keeps nothing.
   void run(const RetimeOptions& options);
@@ -100,6 +103,8 @@ class StaCheck
                  const StaSlack& before);
   void undoTrial();
   void keepTrial(const Trial& trial, Round& round);
+  // Without the discarded ones.
+  int registerCount() const;
   void reportStart(const StaSlack& slack, int registers) const;
   void reportRound(int number, const Round& round) const;
   void reportRow(const std::string& round,
@@ -114,9 +119,10 @@ class StaCheck
   RetimerPlacer* placer_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   est::IncrementalParasiticsGuard* guard_ = nullptr;
+  Discards* discards_ = nullptr;  // what the kept trials replaced
   Propose propose_;
   Apply apply_;
-  Closed closed_;
+  Undone undone_;
   NewCells new_cells_;
 };
 

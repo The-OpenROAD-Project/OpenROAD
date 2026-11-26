@@ -75,17 +75,19 @@ StaCheck::StaCheck(sta::dbSta* sta,
                    RetimerPlacer* placer,
                    odb::dbBlock* block,
                    est::IncrementalParasiticsGuard* guard,
+                   Discards* discards,
                    Propose propose,
                    Apply apply,
-                   Closed closed)
+                   Undone undone)
     : sta_(sta),
       logger_(logger),
       placer_(placer),
       block_(block),
       guard_(guard),
+      discards_(discards),
       propose_(std::move(propose)),
       apply_(std::move(apply)),
-      closed_(std::move(closed)),
+      undone_(std::move(undone)),
       new_cells_(block)
 {
 }
@@ -106,7 +108,7 @@ void StaCheck::reportRound(const int number, const Round& round) const
             std::to_string(round.trials),
             std::to_string(round.kept),
             round.slack,
-            new_cells_.registerCount());
+            registerCount());
 }
 
 void StaCheck::reportRow(const std::string& round,
@@ -130,7 +132,7 @@ void StaCheck::run(const RetimeOptions& options)
 {
   placer_->prepare();
   const StaSlack before = staSlack(sta_, *guard_);
-  const int registers_before = new_cells_.registerCount();
+  const int registers_before = registerCount();
   int total = 0;
   int left = options.max_moves;  // <= 0: no cap
   int rounds_kept = 0;
@@ -171,7 +173,7 @@ void StaCheck::run(const RetimeOptions& options)
                 rounds_kept,
                 sta::delayAsString(after.worst, kSlackDigits, sta_),
                 sta::delayAsString(after.total, kSlackDigits, sta_),
-                new_cells_.registerCount(),
+                registerCount(),
                 placed.placed,
                 placed.resized);
 }
@@ -203,16 +205,22 @@ void StaCheck::undoTrial()
   odb::dbDatabase::undoEco(block_);
   // The next search reads STA arcs: the restored nets need parasitics.
   guard_->update();
-  closed_(/*kept=*/false);
+  discards_->undo();
+  undone_();
 }
 
 void StaCheck::keepTrial(const Trial& trial, Round& round)
 {
-  closed_(/*kept=*/true);
+  discards_->keep();
   odb::dbDatabase::commitEco(block_);
   round.kept = trial.slides;
   round.slack = trial.slack;
   round.placed = trial.placed;
+}
+
+int StaCheck::registerCount() const
+{
+  return new_cells_.registerCount() - discards_->registerCount();
 }
 
 std::vector<odb::dbInst*> StaCheck::prefix(

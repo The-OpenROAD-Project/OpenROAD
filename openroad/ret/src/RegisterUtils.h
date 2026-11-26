@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <optional>
 #include <unordered_map>
 #include <unordered_set>
@@ -62,9 +63,10 @@ odb::dbNet* makeNet(sta::dbSta* sta,
                     sta::Instance* parent,
                     const char* base_name);
 
-// The cells and nets a trial replaced.  They are disconnected at once and
-// deleted only when the trial is kept: STA drops the constraints that name a
-// deleted cell or net, and an undo would bring it back without them.
+// The cells and nets a command replaced.  They are disconnected at once and
+// deleted only when the command ends: STA drops the constraints that name a
+// deleted cell or net, and undoing a trial, or the command after an error,
+// would bring it back without them.
 class Discards
 {
  public:
@@ -72,9 +74,16 @@ class Discards
   void add(odb::dbInst* cell);
   // A net with nothing left on it; mod_net: its module net, if any.
   void add(odb::dbNet* net, odb::dbModNet* mod_net);
-  // The trial is kept: deletes them, a module net once nothing is left on it.
+  // The trial that added the last ones is kept.
+  void keep();
+  // That trial is undone, which reconnected what it had not created: they
+  // are forgotten.
+  void undo();
+  // The registers among the cells; they are still in the block.
+  int registerCount() const;
+  // Deletes everything, a module net once nothing is left on it.
   void destroy(sta::dbSta* sta);
-  // The trial is undone, which reconnected what it had not created.
+  // Forgets everything: the command is undone.
   void clear();
 
  private:
@@ -85,6 +94,8 @@ class Discards
   };
   std::vector<odb::dbInst*> cells_;
   std::vector<Net> nets_;
+  size_t kept_cells_ = 0;
+  size_t kept_nets_ = 0;
 };
 
 void connectPin(

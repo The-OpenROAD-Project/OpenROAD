@@ -93,7 +93,7 @@ New registers are named `ret_ff_N`, their tie cells `ret_tie_N` and new
 nets `ret_net_N`. The log shows the slack after each round. `retime` stops
 with an error on designs it cannot handle: libraries without a usable base
 register, inverter, AND2 or OR2 cell; more than one clock; no clock defined.
-An error leaves the netlist unchanged.
+An error leaves the netlist and its constraints unchanged.
 
 ## Example scripts
 
@@ -130,6 +130,10 @@ A path delay or a path group that lists registers as cells (for example
 moves, the list stops naming it, and STA drops any other constraint set on
 that cell with it. Read the SDC again after `retime`, as ORFS does at every
 stage.
+
+`retime` deletes the cells and nets it replaced when it returns. Undoing it
+afterwards through an ECO opened before the command (`dbDatabase::beginEco`)
+brings them back without the SDC constraints that named them.
 
 STA judges the timing at the time of `retime`, setup and hold, with the
 ideal clocks of that stage; the resizer, clock tree synthesis and detailed

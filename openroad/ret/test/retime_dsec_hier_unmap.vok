@@ -87,7 +87,6 @@ module core (a,
  wire unmap_net_3;
  wire unmap_net_4;
  wire unmap_net_5;
- wire ret_net_15;
  wire unmap_net_7;
  wire unmap_net_8;
  wire unmap_net_9;
@@ -95,6 +94,7 @@ module core (a,
  wire ret_net_11;
  wire ret_net_13;
  wire ret_net_14;
+ wire ret_net_15;
 
  sky130_fd_sc_hd__and2_1 g0 (.A(a),
     .B(rn),
