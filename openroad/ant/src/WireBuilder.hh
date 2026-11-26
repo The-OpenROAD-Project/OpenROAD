@@ -30,6 +30,12 @@ struct GuideSegment
   GuidePoint pt1;
   GuidePoint pt2;
   bool isVia() const { return pt1.pos == pt2.pos; }
+  // The endpoint layer with the lower (bottomLayer) or higher (topLayer)
+  // routing level; pt2's layer when the levels are equal.
+  odb::dbTechLayer* bottomLayer() const;
+  odb::dbTechLayer* topLayer() const;
+  // The box spanned by the two endpoints
+  odb::Rect rect() const;
   bool operator==(const GuideSegment& segment) const;
 };
 
@@ -58,8 +64,10 @@ class WireBuilder
 
  private:
   void makeNetWire(odb::dbNet* db_net, int gcell_dimension);
-  void addWireTerms(odb::dbNet* db_net,
-                    std::vector<GuideSegment>& route,
+  // Whether db_net gets a wire built from its guides: a multi-terminal
+  // signal net that has no detailed routing and spans more than one gcell.
+  bool needsGuideWire(odb::dbNet* db_net);
+  void addWireTerms(std::vector<GuideSegment>& route,
                     int grid_x,
                     int grid_y,
                     odb::dbTechLayer* tech_layer,
@@ -81,6 +89,11 @@ class WireBuilder
   std::vector<GuideSegment> makeWireFromGuides(odb::dbNet* db_net,
                                                GuidePtPinsMap& route_pt_pins,
                                                int gcell_dimension);
+  // The gcell box around guide_pt, clipped to box_limit (a corner of the
+  // guide's box) unless that is already one of its corners.
+  static odb::Rect guidePointBox(const GuidePoint& guide_pt,
+                                 const odb::Point& box_limit,
+                                 int gcell_dimension);
   bool checkGuideITermConnection(const GuidePoint& guide_pt,
                                  odb::dbITerm* iterm,
                                  const odb::Point& box_limit,
