@@ -8,6 +8,51 @@
 #include "omp.h"
 
 namespace gpl {
+namespace {
+
+// Eigen symbols come from solver.h's "Eigen/*" headers; Eigen has no
+// IWYU-mappable headers for misc-include-cleaner.
+// NOLINTBEGIN(misc-include-cleaner)
+float solveAxis(int maxSolverIter,
+                const SMatrix& placeInstForceMatrix,
+                const Eigen::VectorXf& fixedInstForceVec,
+                Eigen::VectorXf& instLocVec)
+{
+  // With no pin or locked cell holding a position in an axis, the right-hand
+  // side is zero and the solve would collapse the cells together. Keep the
+  // current positions instead.
+  if (fixedInstForceVec.squaredNorm() == 0) {
+    return 0;
+  }
+  Eigen::SparseMatrix<double> a = placeInstForceMatrix.cast<double>();
+  const Eigen::VectorXd b = fixedInstForceVec.cast<double>();
+  const Eigen::VectorXd x = instLocVec.cast<double>();
+  const Eigen::VectorXd rhs = b - a * x;
+  if (rhs.squaredNorm() == 0) {
+    return 0;
+  }
+  // A small diagonal shift keeps the matrix positive definite when some cells
+  // reach no fixed pin. A sparse add, unlike coeffRef, stays O(nnz) when rows
+  // have no diagonal entry (instances with no contributing nets).
+  Eigen::SparseMatrix<double> identity(a.rows(), a.cols());
+  identity.setIdentity();
+  a += 1e-6 * identity;
+  Eigen::ConjugateGradient<Eigen::SparseMatrix<double>,
+                           Eigen::Lower | Eigen::Upper>
+      cg(a);
+  const Eigen::VectorXd dx
+      = cg.setMaxIterations(maxSolverIter)
+            .setTolerance(Eigen::NumTraits<float>::epsilon())
+            .solve(rhs);
+  if (cg.info() != Eigen::Success && cg.info() != Eigen::NoConvergence) {
+    return std::numeric_limits<float>::quiet_NaN();
+  }
+  instLocVec = (x + dx).cast<float>();
+  return cg.error() * (rhs.norm() / b.norm());
+}
+// NOLINTEND(misc-include-cleaner)
+
+}  // namespace
 
 ResidualError cpuSparseSolve(int maxSolverIter,
                              int iter,
@@ -21,41 +66,15 @@ ResidualError cpuSparseSolve(int maxSolverIter,
                              int threads)
 {
   omp_set_num_threads(threads);
-
-  ResidualError residual_error;
-  BiCGSTAB<SMatrix, IdentityPreconditioner> solver;
-  solver.setMaxIterations(maxSolverIter);
-
-  // With no pin or locked cell holding a position in an axis, the
-  // right-hand side is zero and BiCGSTAB would put every cell at 0. Keep the
-  // current positions instead.
-
-  if (fixedInstForceVecX.squaredNorm() == 0) {
-    residual_error.x = 0;
-  } else {
-    solver.compute(placeInstForceMatrixX);
-    instLocVecX = solver.solveWithGuess(fixedInstForceVecX, instLocVecX);
-    if (solver.info() == Eigen::NoConvergence
-        || solver.info() == Eigen::Success) {
-      residual_error.x = solver.error();
-    } else {
-      residual_error.x = std::numeric_limits<float>::quiet_NaN();
-    }
-  }
-
-  if (fixedInstForceVecY.squaredNorm() == 0) {
-    residual_error.y = 0;
-  } else {
-    solver.compute(placeInstForceMatrixY);
-    instLocVecY = solver.solveWithGuess(fixedInstForceVecY, instLocVecY);
-    if (solver.info() == Eigen::NoConvergence
-        || solver.info() == Eigen::Success) {
-      residual_error.y = solver.error();
-    } else {
-      residual_error.y = std::numeric_limits<float>::quiet_NaN();
-    }
-  }
-
-  return residual_error;
+  return {
+      .x = solveAxis(maxSolverIter,
+                     placeInstForceMatrixX,
+                     fixedInstForceVecX,
+                     instLocVecX),
+      .y = solveAxis(maxSolverIter,
+                     placeInstForceMatrixY,
+                     fixedInstForceVecY,
+                     instLocVecY),
+  };
 }
 }  // namespace gpl

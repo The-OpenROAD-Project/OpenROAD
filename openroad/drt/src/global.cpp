@@ -8,6 +8,7 @@
 #include "db/drObj/drShape.h"
 #include "db/drObj/drVia.h"
 #include "db/infra/frSegStyle.h"
+#include "db/obj/frBPin.h"
 #include "db/obj/frBlock.h"
 #include "db/obj/frMPin.h"
 #include "db/obj/frMarker.h"
@@ -44,9 +45,8 @@ std::ostream& operator<<(std::ostream& os, const frPolygon& pinFigIn)
   return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const frMPin& pinIn)
+static void printPinFigs(std::ostream& os, const frPin& pinIn)
 {
-  os << "PIN (NAME) " << pinIn.getTerm()->getName();
   for (auto& m : pinIn.getFigs()) {
     if (m->typeId() == frcRect) {
       os << '\n' << *(static_cast<frRect*>(m.get()));
@@ -56,6 +56,19 @@ std::ostream& operator<<(std::ostream& os, const frMPin& pinIn)
       os << '\n' << "Unsupported pinFig object!";
     }
   }
+}
+
+std::ostream& operator<<(std::ostream& os, const frMPin& pinIn)
+{
+  os << "PIN (NAME) " << pinIn.getTerm()->getName();
+  printPinFigs(os, pinIn);
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const frBPin& pinIn)
+{
+  os << "PIN (NAME) " << pinIn.getTerm()->getName();
+  printPinFigs(os, pinIn);
   return os;
 }
 
@@ -68,6 +81,15 @@ std::ostream& operator<<(std::ostream& os, const frBTerm& termIn)
     netName = termIn.getNet()->getName();
   }
   os << "TERM (NAME/NET) " << name << " " << netName;
+  for (auto& m : termIn.getPins()) {
+    os << '\n' << *m;
+  }
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const frMTerm& termIn)
+{
+  os << "MTERM (NAME) " << termIn.getName();
   for (auto& m : termIn.getPins()) {
     os << '\n' << *m;
   }
@@ -248,9 +270,12 @@ std::ostream& operator<<(std::ostream& os, const frBlockObject& fig)
       os << *static_cast<const frInstTerm*>(&fig);
       break;
     }
-    case frcMTerm:
+    case frcMTerm: {
+      os << *static_cast<const frMTerm*>(&fig);
+      break;
+    }
     case frcBTerm: {
-      os << *static_cast<const frTerm*>(&fig);
+      os << *static_cast<const frBTerm*>(&fig);
       break;
     }
     // case fig is a frConnFig

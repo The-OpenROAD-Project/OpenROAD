@@ -1,0 +1,60 @@
+{
+  "name": "dbTechLayerImplantWidthRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "name": "min_width_",
+      "type": "int",
+      "default": "0"
+    },
+    {
+      "name": "second_layer_",
+      "type": "dbId<_dbTechLayer>",
+      "flags": [
+        "private"
+      ],
+      "parent": "dbTechLayer"
+    },
+    {
+      "name": "layer_any",
+      "type": "bit"
+    },
+    {
+      "name": "zero_prl",
+      "type": "bit"
+    },
+    {
+      "name": "max_width_",
+      "type": "int",
+      "default": "0"
+    },
+    {
+      "name": "except_corner_touch",
+      "type": "bit"
+    },
+    {
+      "name": "length_",
+      "type": "int",
+      "default": "0"
+    },
+    {
+      "name": "cell_height_",
+      "type": "int",
+      "default": "0"
+    },
+    {
+      "name": "check_implant_group_",
+      "type": "std::string"
+    },
+    {
+      "name": "within_layers_",
+      "type": "dbVector<dbId<_dbTechLayer>>",
+      "flags": [
+        "private"
+      ]
+    }
+  ],
+  "cpp_includes": [
+    "dbTechLayer.h"
+  ]
+}

@@ -81,7 +81,7 @@ void _dbLogicPort::collectMemInfo(MemInfo& info)
 _dbLogicPort::~_dbLogicPort()
 {
   if (name_) {
-    free((void*) name_);
+    free(name_);
   }
 }
 
@@ -93,13 +93,13 @@ _dbLogicPort::~_dbLogicPort()
 
 const char* dbLogicPort::getName() const
 {
-  _dbLogicPort* obj = (_dbLogicPort*) this;
+  const _dbLogicPort* obj = reinterpret_cast<const _dbLogicPort*>(this);
   return obj->name_;
 }
 
 const std::string& dbLogicPort::getDirection() const
 {
-  _dbLogicPort* obj = (_dbLogicPort*) this;
+  const _dbLogicPort* obj = reinterpret_cast<const _dbLogicPort*>(this);
   return obj->direction;
 }
 

@@ -45,12 +45,14 @@ Replace::Replace(odb::dbDatabase* odb,
                  rsz::Resizer* resizer,
                  grt::GlobalRouter* router,
                  ppl::IOPlacer* pin_placer,
+                 cts::TritonCTS* cts,
                  utl::Logger* logger)
     : db_(odb),
       sta_(sta),
       rs_(resizer),
       fr_(router),
       pin_placer_(pin_placer),
+      cts_(cts),
       log_(logger)
 {
   graphics_ = std::make_unique<GraphicsNone>();
@@ -316,7 +318,7 @@ void Replace::doInitialPlace(const int threads, const PlaceOptions& options)
   std::unique_ptr<InitialPlace> ip(
       new InitialPlace(ipVars, pbc_, pbVec_, graphics_->MakeNew(log_), log_));
   ip_ = std::move(ip);
-  ip_->doBicgstabPlace(threads);
+  ip_->doConjugateGradientPlace(threads);
 }
 
 void Replace::runMBFF(const int max_sz,
@@ -422,7 +424,7 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
 
   if (!pwb_ && options.powerDrivenMode) {
     pwb_ = std::make_shared<PowerBase>(
-        nbc_, sta_, options.powerDrivenNetWeight, log_);
+        nbc_, sta_, cts_, options.powerDrivenNetWeight, log_);
     pwb_->setPowerNetWeights();
     nbc_->refreshDeviceNetWeights();
     for (const auto& nb : nbVec_) {
@@ -659,6 +661,9 @@ void PlaceOptions::validate(utl::Logger* logger)
   }
   val.check_positive("timing_driven_net_weight_max", timingNetWeightMax, 423);
   val.check_non_negative("power_driven_net_weight", powerDrivenNetWeight, 429);
+  for (const int overflow : powerDrivenClockLeafOverflows) {
+    val.check_positive("power_driven_clock_leaf_overflow", overflow, 434);
+  }
   val.check_range("timing_driven_nets_percentage",
                   timingDrivenNetsPercentage,
                   0.0f,

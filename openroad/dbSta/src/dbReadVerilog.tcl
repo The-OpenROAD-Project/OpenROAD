@@ -26,6 +26,15 @@ proc link_design { args } {
   ord::link_design_db_cmd $top_cell_name $hierarchy $omit_filename_prop
 }
 
+sta::define_cmd_args "link_hier_module" {module_name}
+
+# Link a module read with read_verilog after the design was loaded
+# (read_db -hier) into the design, so replace_hier_module can switch a
+# hierarchical instance to it.
+proc link_hier_module { module_name } {
+  ord::link_module_db_cmd $module_name
+}
+
 sta::define_cmd_args "write_verilog" {[-sort] [-include_pwr_gnd]\
 					  [-remove_cells cells] filename}
 

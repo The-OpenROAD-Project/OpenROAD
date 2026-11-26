@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <fstream>
 #include <map>
@@ -13,6 +14,7 @@
 #include <vector>
 
 #include "ant/AntennaChecker.hh"
+#include "cts/TritonCTS.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
@@ -83,7 +85,7 @@ class PowerDriven : public tst::Fixture
     const NesterovBaseVars nb_vars(options);
     auto nbc = std::make_shared<NesterovBaseCommon>(
         nb_vars, pbc, &logger_, /* num_threads = */ 1, Clusters{});
-    PowerBase power(nbc, sta_.get(), net_weight, &logger_);
+    PowerBase power(nbc, sta_.get(), nullptr, net_weight, &logger_);
     power.setPowerNetWeights();
     std::map<std::string, float> weights;
     for (GNet* gnet : nbc->getGNets()) {
@@ -266,7 +268,7 @@ TEST_F(PowerDriven, DestroyedAnnotatedBufferIsForgotten)
   const NesterovBaseVars nb_vars(options);
   auto nbc = std::make_shared<NesterovBaseCommon>(
       nb_vars, pbc, &logger_, /* num_threads = */ 1, Clusters{});
-  PowerBase power(nbc, sta_.get(), kWeight, &logger_);
+  PowerBase power(nbc, sta_.get(), nullptr, kWeight, &logger_);
   auto weight_of = [&](const odb::dbNet* net) {
     for (GNet* gnet : nbc->getGNets()) {
       if (gnet->getPbNet()->getDbNet() == net) {
@@ -328,6 +330,61 @@ TEST_F(PowerDriven, SaifActivityOverridesPropagation)
   ASSERT_TRUE(sta::readSaif(saif.c_str(), "tb/dut", sta_.get()));
   std::remove(saif.c_str());
   EXPECT_NEAR(powerWeights(1).at("reset"), 0.8, kTolerance);
+}
+
+// A clock leaf net pulls its pins like a real net of the same weight.
+TEST_F(PowerDriven, VirtualClockLeafNetGradientMatchesRealNet)
+{
+  PlaceOptions options;
+  const PlacerBaseVars pb_vars(options);
+  auto pbc = std::make_shared<PlacerBaseCommon>(db_.get(), pb_vars, &logger_);
+  const NesterovBaseVars nb_vars(options);
+  auto nbc = std::make_shared<NesterovBaseCommon>(
+      nb_vars, pbc, &logger_, /* num_threads = */ 1, Clusters{});
+  int i = 0;
+  for (GCell* gcell : nbc->getGCells()) {
+    gcell->setCenterLocation(1000 + (i * 7919) % 50000,
+                             1000 + (i * 104729) % 50000);
+    i++;
+  }
+  GNet* net = nullptr;
+  for (GNet* gnet : nbc->getGNets()) {
+    const std::vector<GPin*>& pins = gnet->getGPins();
+    if (pins.size() >= 3 && std::ranges::all_of(pins, [](const GPin* pin) {
+          return pin->getGCell() != nullptr && pin->getGCell()->isInstance();
+        })) {
+      net = gnet;
+      break;
+    }
+  }
+  ASSERT_NE(net, nullptr);
+
+  constexpr float kCoef = 1e-3;
+  auto gradients = [&] {
+    nbc->updateWireLengthForceWA(kCoef, kCoef);
+    std::vector<FloatPoint> grads;
+    for (const GPin* pin : net->getGPins()) {
+      grads.push_back(
+          nbc->getWireLengthGradientWA(pin->getGCell(), kCoef, kCoef));
+    }
+    return grads;
+  };
+  const std::vector<FloatPoint> real = gradients();
+  const float weight = net->getTotalWeight();
+  net->setCustomWeight(0);
+  nbc->setVirtualClockLeafNets({{net->getGPins(), weight}});
+  const std::vector<FloatPoint> virt = gradients();
+
+  ASSERT_EQ(real.size(), virt.size());
+  bool pulled = false;
+  for (size_t p = 0; p < real.size(); p++) {
+    const float tol_x = 1e-5f * std::max(1.0f, std::abs(real[p].x));
+    const float tol_y = 1e-5f * std::max(1.0f, std::abs(real[p].y));
+    EXPECT_NEAR(virt[p].x, real[p].x, tol_x) << "pin " << p;
+    EXPECT_NEAR(virt[p].y, real[p].y, tol_y) << "pin " << p;
+    pulled |= real[p].x != 0 || real[p].y != 0;
+  }
+  EXPECT_TRUE(pulled);
 }
 
 class PowerDrivenPlacement : public PowerDriven
@@ -392,6 +449,7 @@ TEST_F(PowerDrivenPlacement, WorksWithTimingAndRoutabilityDriven)
                   resizer_.get(),
                   global_router_.get(),
                   nullptr,
+                  nullptr,
                   &logger_);
   PlaceOptions options;
   options.powerDrivenMode = true;
@@ -427,6 +485,113 @@ TEST_F(PowerDrivenPlacement, WorksWithTimingAndRoutabilityDriven)
   EXPECT_GT(weighted_new_nets, 0) << log;
   for (odb::dbInst* inst : block_->getInsts()) {
     EXPECT_TRUE(inst->getPlacementStatus().isPlaced()) << inst->getName();
+  }
+}
+
+// - clock leaf nets need CTS to predict them
+// - they are refreshed once per -power_driven_clock_leaf_overflow
+// - a timing-driven iteration after the first refresh drops them, and they are
+//   predicted again right after it
+TEST_F(PowerDrivenPlacement, ClockLeafNetsFollowTheirOverflows)
+{
+  cts::TritonCTS cts(&logger_,
+                     db_.get(),
+                     network_,
+                     sta_.get(),
+                     stt_builder_.get(),
+                     resizer_.get(),
+                     estimate_parasitics_.get());
+  auto place = [&](cts::TritonCTS* with_cts,
+                   bool timing_driven,
+                   const std::vector<int>& overflows) {
+    Replace replace(db_.get(),
+                    sta_.get(),
+                    resizer_.get(),
+                    global_router_.get(),
+                    nullptr,
+                    with_cts,
+                    &logger_);
+    PlaceOptions options;
+    options.powerDrivenMode = true;
+    options.timingDrivenMode = timing_driven;
+    options.powerDrivenClockLeafOverflows = overflows;
+    logger_.redirectStringBegin();
+    replace.doPlace(1, options);
+    return logger_.redirectStringEnd();
+  };
+  auto count = [](const std::string& log, const std::string& text) {
+    int n = 0;
+    for (size_t at = log.find(text); at != std::string::npos;
+         at = log.find(text, at + 1)) {
+      n++;
+    }
+    return n;
+  };
+
+  const std::string no_cts = place(nullptr, false, {64, 20});
+  EXPECT_EQ(count(no_cts, "Clock leaf nets:"), 0) << no_cts;
+  const std::string two = place(&cts, false, {64, 20});
+  EXPECT_EQ(count(two, "Power-driven iteration"), 2) << two;
+  EXPECT_EQ(count(two, "Clock leaf nets:"), 2) << two;
+  const std::string one = place(&cts, false, {50});
+  EXPECT_EQ(count(one, "Clock leaf nets:"), 1) << one;
+  // Timing-driven at the default 64 and 20.
+  const std::string td = place(&cts, true, {50});
+  EXPECT_EQ(count(td, "Power-driven iteration"), 1) << td;
+  EXPECT_EQ(count(td, "Clock leaf nets:"), 2) << td;
+}
+
+// - each clock leaf net is a group of clock sinks, each sink in one net
+// - its weight is 1 + net weight x clock toggles per cycle
+TEST_F(PowerDrivenPlacement, ClockLeafNetsCarryClockActivity)
+{
+  // CTS clusters more than 200 sinks; simple01-td has 34.
+  odb::dbNet* clk = block_->findBTerm("clk")->getNet();
+  odb::dbMaster* dff = db_->findMaster("DFF_X1");
+  const odb::Rect core = block_->getCoreArea();
+  for (int i = 0; i < 200; i++) {
+    const std::string name = "leaf_ff" + std::to_string(i);
+    odb::dbInst* inst = odb::dbInst::create(block_, dff, name.c_str());
+    inst->setLocation(core.xMin() + (i % 20) * core.dx() / 20,
+                      core.yMin() + (i / 20) * core.dy() / 10);
+    inst->findITerm("CK")->connect(clk);
+  }
+  cts::TritonCTS cts(&logger_,
+                     db_.get(),
+                     network_,
+                     sta_.get(),
+                     stt_builder_.get(),
+                     resizer_.get(),
+                     estimate_parasitics_.get());
+  PlaceOptions options;
+  const PlacerBaseVars pb_vars(options);
+  auto pbc = std::make_shared<PlacerBaseCommon>(db_.get(), pb_vars, &logger_);
+  const NesterovBaseVars nb_vars(options);
+  auto nbc = std::make_shared<NesterovBaseCommon>(
+      nb_vars, pbc, &logger_, /* num_threads = */ 1, Clusters{});
+  constexpr float kNetWeight = 0.5;
+  PowerBase power(nbc, sta_.get(), &cts, kNetWeight, &logger_);
+  power.setPowerNetWeights();
+  // CTS takes placed sinks only; runPowerDriven updates the DB first.
+  nbc->updateDbGCells();
+  power.updateClockLeafNets();
+
+  const std::vector<NesterovBaseCommon::VirtualClockLeafNet>& leaf_nets
+      = nbc->getVirtualClockLeafNets();
+  ASSERT_GT(leaf_nets.size(), 1);
+  // Clocks toggle twice per cycle.
+  const float weight = 1 + kNetWeight * 2;
+  std::set<std::string> sinks;
+  for (const NesterovBaseCommon::VirtualClockLeafNet& leaf_net : leaf_nets) {
+    EXPECT_GE(leaf_net.pins.size(), 2);
+    EXPECT_NEAR(leaf_net.weight, weight, kTolerance);
+    for (const GPin* pin : leaf_net.pins) {
+      odb::dbITerm* sink = pin->getPbPin()->getDbITerm();
+      ASSERT_NE(sink, nullptr);
+      EXPECT_EQ(sink->getNet(), clk) << sink->getName();
+      EXPECT_EQ(sink->getMTerm()->getName(), "CK") << sink->getName();
+      EXPECT_TRUE(sinks.insert(sink->getName()).second) << sink->getName();
+    }
   }
 }
 

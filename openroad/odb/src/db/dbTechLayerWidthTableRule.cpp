@@ -80,28 +80,32 @@ void _dbTechLayerWidthTableRule::collectMemInfo(MemInfo& info)
 
 void dbTechLayerWidthTableRule::setWrongDirection(bool wrong_direction)
 {
-  _dbTechLayerWidthTableRule* obj = (_dbTechLayerWidthTableRule*) this;
+  _dbTechLayerWidthTableRule* obj
+      = reinterpret_cast<_dbTechLayerWidthTableRule*>(this);
 
   obj->flags_.wrong_direction = wrong_direction;
 }
 
 bool dbTechLayerWidthTableRule::isWrongDirection() const
 {
-  _dbTechLayerWidthTableRule* obj = (_dbTechLayerWidthTableRule*) this;
+  const _dbTechLayerWidthTableRule* obj
+      = reinterpret_cast<const _dbTechLayerWidthTableRule*>(this);
 
   return obj->flags_.wrong_direction;
 }
 
 void dbTechLayerWidthTableRule::setOrthogonal(bool orthogonal)
 {
-  _dbTechLayerWidthTableRule* obj = (_dbTechLayerWidthTableRule*) this;
+  _dbTechLayerWidthTableRule* obj
+      = reinterpret_cast<_dbTechLayerWidthTableRule*>(this);
 
   obj->flags_.orthogonal = orthogonal;
 }
 
 bool dbTechLayerWidthTableRule::isOrthogonal() const
 {
-  _dbTechLayerWidthTableRule* obj = (_dbTechLayerWidthTableRule*) this;
+  const _dbTechLayerWidthTableRule* obj
+      = reinterpret_cast<const _dbTechLayerWidthTableRule*>(this);
 
   return obj->flags_.orthogonal;
 }

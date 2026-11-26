@@ -161,6 +161,7 @@ class dbScanPin;
 class dbTechLayer;
 class dbTechLayerAreaRule;
 class dbTechLayerArraySpacingRule;
+class dbTechLayerCoreEdgeLengthRule;
 class dbTechLayerCornerSpacingRule;
 class dbTechLayerCutClassRule;
 class dbTechLayerCutEnclosureRule;
@@ -171,6 +172,8 @@ class dbTechLayerCutSpacingTableOrthRule;
 class dbTechLayerEolExtensionRule;
 class dbTechLayerEolKeepOutRule;
 class dbTechLayerForbiddenSpacingRule;
+class dbTechLayerImplantSpacingRule;
+class dbTechLayerImplantWidthRule;
 class dbTechLayerKeepOutZoneRule;
 class dbTechLayerMaxSpacingRule;
 class dbTechLayerMinCutRule;
@@ -6636,6 +6639,7 @@ class dbTechMinEncRule : public dbObject
   void setEnclosureWidth(uint32_t width);
 
   static dbTechMinEncRule* create(dbTechLayer* inly);
+  static void destroy(dbTechMinEncRule* rule);
   static dbTechMinEncRule* getMinEncRule(dbTechLayer* inly, uint32_t dbid);
 };
 
@@ -9401,6 +9405,12 @@ class dbTechLayer : public dbObject
 
   dbSet<dbTechLayerVoltageSpacing> getTechLayerVoltageSpacings() const;
 
+  dbSet<dbTechLayerImplantWidthRule> getTechLayerImplantWidthRules() const;
+
+  dbSet<dbTechLayerImplantSpacingRule> getTechLayerImplantSpacingRules() const;
+
+  dbSet<dbTechLayerCoreEdgeLengthRule> getTechLayerCoreEdgeLengthRules() const;
+
   void setRectOnly(bool rect_only);
 
   bool isRectOnly() const;
@@ -9839,6 +9849,36 @@ class dbTechLayerArraySpacingRule : public dbObject
   // User Code End dbTechLayerArraySpacingRule
 };
 
+class dbTechLayerCoreEdgeLengthRule : public dbObject
+{
+ public:
+  void setMinLength(int min_length);
+
+  int getMinLength() const;
+
+  void setMaxLength(int max_length);
+
+  int getMaxLength() const;
+
+  void getExceptAdjacentEdgeLengths(std::vector<int>& tbl) const;
+
+  void getExceptAdjacentLengths(std::vector<int>& tbl) const;
+
+  void getExceptAdjacentExact(std::vector<int>& tbl) const;
+
+  static dbTechLayerCoreEdgeLengthRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerCoreEdgeLengthRule* obj);
+  // User Code Begin dbTechLayerCoreEdgeLengthRule
+  void addExceptAdjacentLength(int edge_length,
+                               int adj_length,
+                               bool exact_adjacent_length);
+  void addWithinLayer(dbTechLayer* layer);
+  std::vector<dbTechLayer*> getWithinLayers() const;
+  void addExceptLayer(dbTechLayer* layer);
+  std::vector<dbTechLayer*> getExceptLayers() const;
+  // User Code End dbTechLayerCoreEdgeLengthRule
+};
+
 class dbTechLayerCornerSpacingRule : public dbObject
 {
  public:
@@ -9919,6 +9959,14 @@ class dbTechLayerCornerSpacingRule : public dbObject
   void setCornerToCorner(bool corner_to_corner);
 
   bool isCornerToCorner() const;
+
+  void setAlignedOnly(bool aligned_only);
+
+  bool isAlignedOnly() const;
+
+  void setCheckImplantGroupOnly(bool check_implant_group_only);
+
+  bool isCheckImplantGroupOnly() const;
 
   static dbTechLayerCornerSpacingRule* create(dbTechLayer* parent);
   static void destroy(dbTechLayerCornerSpacingRule* obj);
@@ -10816,6 +10864,96 @@ class dbTechLayerForbiddenSpacingRule : public dbObject
   // User Code End dbTechLayerForbiddenSpacingRule
 };
 
+class dbTechLayerImplantSpacingRule : public dbObject
+{
+ public:
+  void setMinSpacing(int min_spacing);
+
+  int getMinSpacing() const;
+
+  void setPrl(int prl);
+
+  int getPrl() const;
+
+  void setLength(int length);
+
+  int getLength() const;
+
+  void setHorizontal(bool horizontal);
+
+  bool isHorizontal() const;
+
+  void setVertical(bool vertical);
+
+  bool isVertical() const;
+
+  void setPrlValid(bool prl_valid);
+
+  bool isPrlValid() const;
+
+  void setExceptAbutted(bool except_abutted);
+
+  bool isExceptAbutted() const;
+
+  void setExceptCornerTouch(bool except_corner_touch);
+
+  bool isExceptCornerTouch() const;
+
+  static dbTechLayerImplantSpacingRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerImplantSpacingRule* obj);
+  // User Code Begin dbTechLayerImplantSpacingRule
+  void setSecondLayer(dbTechLayer* second_layer);
+  dbTechLayer* getSecondLayer() const;
+  void addIntersectLayer(dbTechLayer* layer);
+  std::vector<dbTechLayer*> getIntersectLayers() const;
+  // User Code End dbTechLayerImplantSpacingRule
+};
+
+class dbTechLayerImplantWidthRule : public dbObject
+{
+ public:
+  void setMinWidth(int min_width);
+
+  int getMinWidth() const;
+
+  void setMaxWidth(int max_width);
+
+  int getMaxWidth() const;
+
+  void setLength(int length);
+
+  int getLength() const;
+
+  void setCellHeight(int cell_height);
+
+  int getCellHeight() const;
+
+  void setCheckImplantGroup(const std::string& check_implant_group);
+
+  const std::string& getCheckImplantGroup() const;
+
+  void setLayerAny(bool layer_any);
+
+  bool isLayerAny() const;
+
+  void setZeroPrl(bool zero_prl);
+
+  bool isZeroPrl() const;
+
+  void setExceptCornerTouch(bool except_corner_touch);
+
+  bool isExceptCornerTouch() const;
+
+  static dbTechLayerImplantWidthRule* create(dbTechLayer* parent);
+  static void destroy(dbTechLayerImplantWidthRule* obj);
+  // User Code Begin dbTechLayerImplantWidthRule
+  void setSecondLayer(dbTechLayer* second_layer);
+  dbTechLayer* getSecondLayer() const;
+  void addWithinLayer(dbTechLayer* layer);
+  std::vector<dbTechLayer*> getWithinLayers() const;
+  // User Code End dbTechLayerImplantWidthRule
+};
+
 class dbTechLayerKeepOutZoneRule : public dbObject
 {
  public:
@@ -10896,6 +11034,14 @@ class dbTechLayerMaxSpacingRule : public dbObject
   void setMaxSpacing(int max_spacing);
 
   int getMaxSpacing() const;
+
+  void setWidth(int width);
+
+  int getWidth() const;
+
+  void setLength(int length);
+
+  int getLength() const;
 
   static dbTechLayerMaxSpacingRule* create(dbTechLayer* parent);
   static void destroy(dbTechLayerMaxSpacingRule* obj);
