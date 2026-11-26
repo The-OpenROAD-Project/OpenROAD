@@ -1,19 +1,18 @@
-# CUGR resistance-aware routing on a wire-resistance-limited PDK (asap7).
+# CUGR delay cost on a wire-resistance-limited PDK (asap7).
 #
 # Unlike sky130hs (cell-delay-limited), asap7 has a steep per-unit wire
 # resistance gradient (M1 7.04e-2 -> M6 1.18e-2, ~6x) and thin 7nm wires,
-# so biasing critical nets onto lower-resistance upper metals measurably
-# improves timing. This is the timing-validation test for resistance-aware:
-# it reports WNS/TNS after global routing and checks that res-aware TNS is
-# no worse than the (documented) non-res-aware baseline on the same design.
+# so moving critical nets onto lower-resistance upper metals measurably
+# improves timing. This is the timing-validation test for the delay cost:
+# it reports WNS/TNS after global routing and checks that they are no worse
+# than the (documented) baseline routed without any delay cost.
 #
-# Baseline measured on this design with the identical setup but WITHOUT
-# -resistance_aware (global_route -use_cugr -critical_nets_percentage 30):
+# Baseline measured on this design with the identical setup before CUGR had
+# a delay cost (global_route -use_cugr -critical_nets_percentage 30):
 #   WNS = -121.9 ps, TNS = -2892.8 ps
-# Resistance-aware gives ~ WNS -121.7 ps, TNS -2852.3 ps (both better).
+# The delay cost gives ~ WNS -115.3 ps, TNS -2644.6 ps.
 # The baseline is captured as a constant rather than routed twice to keep
-# the runtime down. The WNS baseline carries a small margin (the gain is
-# only ~0.15 ps) so the check is not brittle to sub-ps STA drift.
+# the runtime down.
 source "helpers.tcl"
 
 read_liberty asap7/asap7sc7p5t_AO_RVT_FF_nldm_211120.lib.gz
@@ -49,11 +48,11 @@ set guide_file [make_result_file resistance_aware_asap7_cugr.guide]
 set_routing_layers -signal M2-M6 -clock M4-M6
 set_global_routing_layer_adjustment M2-M7 0.25
 
-global_route -use_cugr -critical_nets_percentage 30 -resistance_aware -verbose
+global_route -use_cugr -verbose
 
 write_guides $guide_file
 
-# Timing after routing-based parasitics: this is where resistance-aware
+# Timing after routing-based parasitics: this is where the delay cost
 # pays off (critical nets sit on lower-resistance upper metals).
 estimate_parasitics -global_routing
 
@@ -65,12 +64,12 @@ set base_wns [format %.1f $baseline_wns]
 set base_tns [format %.1f $baseline_tns]
 set ra_wns [format %.1f $wns]
 set ra_tns [format %.1f $tns]
-puts "baseline (no resistance-aware) WNS: $base_wns ps  TNS: $base_tns ps"
-puts "resistance-aware               WNS: $ra_wns ps  TNS: $ra_tns ps"
+puts "baseline (no delay cost) WNS: $base_wns ps  TNS: $base_tns ps"
+puts "delay cost                WNS: $ra_wns ps  TNS: $ra_tns ps"
 if { $wns >= $baseline_wns && $tns >= $baseline_tns } {
-  puts "resistance-aware WNS and TNS not worse than baseline: PASS"
+  puts "delay cost WNS and TNS not worse than baseline: PASS"
 } else {
-  puts "resistance-aware timing worse than baseline: FAIL"
+  puts "delay cost timing worse than baseline: FAIL"
 }
 
 diff_files resistance_aware_asap7_cugr.guideok $guide_file

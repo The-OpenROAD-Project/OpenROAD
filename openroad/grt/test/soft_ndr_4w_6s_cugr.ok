@@ -37,6 +37,7 @@ met5       Horizontal       3108          1413          54.54%
 ---------------------------------------------------------------
 
 Stage 1: Pattern routing.
+Stage 2: Re-route of nets with negative slack.
 Stage 3: Pattern routing with detours.
 Stage 4: Maze routing on sparsified graph.
 Stage 5: Iterative rip-up and re-route.
