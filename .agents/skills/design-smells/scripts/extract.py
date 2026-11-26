@@ -21,6 +21,7 @@ which sets LIBCLANG and CLANG_RESOURCE_DIR.
 """
 
 import argparse
+import ctypes
 import json
 import multiprocessing
 import os
@@ -97,13 +98,44 @@ def specialized_template(cursor):
     return tmpl
 
 
+def same_location(a, b):
+    la, lb = a.location, b.location
+    return (
+        la.file is not None
+        and lb.file is not None
+        and la.file.name == lb.file.name
+        and (la.line, la.column) == (lb.line, lb.column)
+    )
+
+
+def instantiated_from(cursor):
+    """The template an implicit instantiation (Box<double>) came from, or
+    None.  An implicit instantiation reports its template's location;
+    explicit and partial specializations have their own and stay distinct
+    classes."""
+    tmpl = specialized_template(cursor)
+    if tmpl is None or tmpl.kind.is_invalid() or not same_location(cursor, tmpl):
+        return None
+    return tmpl
+
+
 def class_key(cursor):
-    """Stable identity for a class across template specializations."""
+    """Stable identity for a class; implicit instantiations map to their
+    template."""
     d = cursor.canonical
-    tmpl = specialized_template(d)
-    if tmpl is not None and not tmpl.kind.is_invalid():
+    tmpl = instantiated_from(d)
+    if tmpl is not None:
         d = tmpl.canonical
     return d.get_usr() or qualified_name(d)
+
+
+def member_usr(ref):
+    """USR of a member as its definition is keyed: members of implicit
+    instantiations map to the template's member."""
+    tmpl = specialized_template(ref)
+    if tmpl is not None and not tmpl.kind.is_invalid():
+        return tmpl.get_usr()
+    return ref.get_usr()
 
 
 def pimpl_name(name):
@@ -212,9 +244,13 @@ class MethodScanner:
                 self.complexity += 1
             elif kind == K.MEMBER_REF_EXPR:
                 self.member_ref(node)
-        for tok in self.method.get_tokens():
-            if tok.spelling in ("&&", "||"):
-                self.complexity += 1
+        # Only the body: a signature's `T&&` or `requires A && B` is not a
+        # branch.
+        for body in self.method.get_children():
+            if body.kind == K.COMPOUND_STMT:
+                for tok in body.get_tokens():
+                    if tok.spelling in ("&&", "||"):
+                        self.complexity += 1
 
     def member_ref(self, node):
         ref = node.referenced
@@ -227,7 +263,7 @@ class MethodScanner:
             return
         is_field = ref.kind == K.FIELD_DECL
         if not is_field:
-            self.calls.add(ref.get_usr())
+            self.calls.add(member_usr(ref))
         if self.is_own(decl_cls):
             (self.own_fields if is_field else self.own_methods).add(ref.spelling)
         else:
@@ -255,6 +291,12 @@ def is_accessor(method, own_fields, own_methods, foreign):
     if len(stmts) != 1:
         return False
     stmt = stmts[0]
+    children = list(stmt.get_children())
+    first = unwrap(children[0]) if children else None
+    # `x + 1` or `x_ = a + b` would mention the field without being a plain
+    # read or write of it.
+    if first is None or first.kind != K.MEMBER_REF_EXPR:
+        return False
     if stmt.kind == K.RETURN_STMT:
         return True
     tokens = [t.spelling for t in stmt.get_tokens()]
@@ -280,10 +322,33 @@ def body_statements(cursor):
     return len(list(body[0].get_children())) if body else 0
 
 
+def declare_overridden_api():
+    """clang_getOverriddenCursors is exported by libclang but not declared
+    by the Python bindings."""
+    lib = ci.conf.lib
+    lib.clang_getOverriddenCursors.argtypes = [
+        ci.Cursor,
+        ctypes.POINTER(ctypes.POINTER(ci.Cursor)),
+        ctypes.POINTER(ctypes.c_uint),
+    ]
+    lib.clang_getOverriddenCursors.restype = None
+    lib.clang_disposeOverriddenCursors.argtypes = [ctypes.POINTER(ci.Cursor)]
+    lib.clang_disposeOverriddenCursors.restype = None
+
+
 def is_override(cursor):
-    return any(
-        c.kind in (K.CXX_OVERRIDE_ATTR, K.CXX_FINAL_ATTR) for c in cursor.get_children()
+    """True for overrides with or without the `override` keyword."""
+    if cursor.kind != K.CXX_METHOD or not cursor.is_virtual_method():
+        return False
+    overridden = ctypes.POINTER(ci.Cursor)()
+    count = ctypes.c_uint(0)
+    lib = ci.conf.lib
+    lib.clang_getOverriddenCursors(
+        cursor, ctypes.byref(overridden), ctypes.byref(count)
     )
+    if overridden:
+        lib.clang_disposeOverriddenCursors(overridden)
+    return count.value > 0
 
 
 ACCESS = {
@@ -389,7 +454,7 @@ class Worker:
 
     def __init__(self, args):
         self.args = args
-        self.roots = [os.path.abspath(p) for p in args.paths]
+        self.roots = [scope_root(p) for p in args.paths]
         self.exclude = re.compile(args.exclude)
         self.seen = set()
         self.in_scope_cache = {}
@@ -400,7 +465,7 @@ class Worker:
             full = os.path.abspath(filename)
             r = any(
                 full == root or full.startswith(root + os.sep) for root in self.roots
-            ) and not self.exclude.search(full)
+            ) and not excluded(self.exclude, full)
             self.in_scope_cache[filename] = r
         return r
 
@@ -457,6 +522,7 @@ _WORKER = None
 def _init(args):
     global _WORKER
     ci.Config.set_library_file(args.libclang)
+    declare_overridden_api()
     _WORKER = Worker(args)
 
 
@@ -479,6 +545,27 @@ def load_flags(path, resource_dir):
     return flags
 
 
+def excluded(exclude, full):
+    """Match against the repo-relative path, so the checkout's own location
+    (e.g. under a /test/ directory) cannot exclude everything."""
+    return bool(exclude.search("/" + os.path.relpath(full)))
+
+
+def scope_root(path):
+    """Directory whose definitions are recorded for a path.  A single file
+    widens to its Bazel package (nearest directory with a BUILD file), so
+    the class definitions in its headers are recorded too."""
+    full = os.path.abspath(path)
+    if os.path.isdir(full):
+        return full
+    d = os.path.dirname(full)
+    while d != os.path.dirname(d):
+        if any(os.path.exists(os.path.join(d, b)) for b in ("BUILD", "BUILD.bazel")):
+            return d
+        d = os.path.dirname(d)
+    return os.path.dirname(full)
+
+
 def collect_sources(paths, exclude):
     out = []
     for p in paths:
@@ -489,7 +576,7 @@ def collect_sources(paths, exclude):
             for f in files:
                 if f.endswith((".cpp", ".cc", ".cxx")):
                     full = os.path.abspath(os.path.join(root, f))
-                    if not exclude.search(full):
+                    if not excluded(exclude, full):
                         out.append(full)
     return sorted(out)
 
@@ -545,7 +632,7 @@ def main():
                 print(f"  {i}/{len(files)}", file=sys.stderr)
 
     facts = {
-        "version": 2,
+        "version": 3,
         "paths": args.paths,
         "files_parsed": len(files),
         "parse_errors": parse_errors,

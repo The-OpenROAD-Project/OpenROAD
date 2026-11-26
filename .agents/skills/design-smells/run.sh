@@ -28,11 +28,22 @@ case "${cmd}" in
     ;;
 esac
 
+# Print the path with the highest version numbers.  Older macOS sort has no
+# -V, so compare the numbers in each path in Python.
+newest() {
+  python3 -c '
+import re, sys
+paths = [p for p in sys.stdin.read().split("\n") if p]
+if paths:
+    print(max(paths, key=lambda p: [int(n) for n in re.findall(r"\d+", p)]))
+'
+}
+
 if [ -z "${LIBCLANG:-}" ]; then
   LIBCLANG="$(ls -1 /usr/lib/llvm-*/lib/libclang-[0-9]*.so.[0-9]* \
                     /opt/homebrew/opt/llvm/lib/libclang.dylib \
                     /usr/local/opt/llvm/lib/libclang.dylib 2>/dev/null \
-              | sort -V | tail -1 || true)"
+              | newest || true)"
 fi
 if [ -z "${LIBCLANG}" ] || [ ! -e "${LIBCLANG}" ]; then
   echo "libclang not found; install LLVM (e.g. apt install libclang-19-dev)" \
@@ -43,7 +54,7 @@ fi
 llvm_lib="$(dirname "${LIBCLANG}")"
 if [ -z "${CLANG_RESOURCE_DIR:-}" ]; then
   CLANG_RESOURCE_DIR="$(ls -1d "${llvm_lib}"/clang/[0-9]* 2>/dev/null \
-                        | sort -V | tail -1 || true)"
+                        | newest || true)"
 fi
 if [ -z "${CLANG_RESOURCE_DIR}" ] || [ ! -d "${CLANG_RESOURCE_DIR}/include" ]; then
   echo "clang resource dir (with include/stddef.h) not found next to" \

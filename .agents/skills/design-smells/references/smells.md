@@ -88,10 +88,12 @@ Feature Envy aimed at this class.
 | Metric | Meaning | Flag when |
 |---|---|---|
 | WOC | non-accessor public methods / all public members | `< --woc` (1/3) |
-| NOPA + NOAM | public fields + public accessor methods | `> 2` with WMC < 31, or `> 4` with WMC < 47 |
+| NOPA + NOAM | public fields + public accessor methods | `> 2` with WMC < `--dc-wmc-low` (31), or `> 4` with WMC < `--dc-wmc-high` (47) |
 
 A method counts as an accessor when its body is one statement that
-returns or assigns a single own field. Structs with no public methods
+returns a single own field, or assigns to one (`return x_;`,
+`x_ = v;`). A computed return such as `return x_ + 1;` is behavior, not
+an accessor. Structs with no public methods
 are plain aggregates (options structs, records) and are skipped unless
 you pass `--include-aggregates`. In C++ these are intentional and not a
 smell.
@@ -158,7 +160,9 @@ means editing all of them.
 | CM | distinct calling methods outside the method's class | `> --cm` (7) |
 | CC | distinct classes those callers belong to (a free function counts by file) | `> --cc` (5) |
 
-Calls are matched by the callee's USR, so overloads are distinct.
+Calls and callers are matched by USR, so overloads are distinct, and a
+call through an implicit template instantiation (`Box<double>::get`)
+counts toward the template's method.
 Calls through a base-class virtual count toward the base, not the
 override. Getter-sized methods (no branches and at most five lines) are
 skipped, and so are classes declared under `include/` (module public
@@ -176,7 +180,8 @@ begin/end pairs) so callers make one call.
 ## Middle Man
 
 A class where at least `--mm-ratio` (0.5) of its public methods, and at
-least `--mm-min` (3) of them, only forward one call to another class.
+least `--mm-min` (3) of them, only forward one call to the *same* other
+class. Forwarders to several unrelated classes do not add up.
 A forwarding method has one statement, no branches, and exactly one
 call to another class's method. Forwarding to the class's own nested
 `Impl` (pimpl) is skipped unless you pass `--include-pimpl`.
@@ -198,8 +203,9 @@ directly, or Inline Class when the middle class adds nothing.
 Long Method flags methods and free functions over `--max-lines` (100,
 the repo's own function-size guideline) or with cyclomatic complexity
 over `--max-cyclo` (25). Long Parameter List flags signatures with more
-than `--max-params` (6) parameters. Overrides are skipped, because the
-base class fixes their signature.
+than `--max-params` (6) parameters. Overrides are skipped, with or
+without the `override` keyword, because the base class fixes their
+signature.
 
 Both lists are long on a large codebase. They are most useful as
 support: a long method that is also Feature Envy or the center of a
@@ -210,8 +216,12 @@ struct) or Preserve Whole Object.
 ## Data Clumps
 
 A group of 3 or more parameters, or fields, that recurs in at least
-`--clump-count` (4) places. Places are method signatures (overloads and
-overrides count once), free-function signatures, and class field lists.
+`--clump-count` (4) places. Places are methods, free functions, and
+class field lists. Each overload's signature is checked on its own, so
+overloads never pool their parameters, but a method counts once however
+many of its overloads contain the group. Overrides are skipped.
+`--clump-max-items` (12, at most 20) skips longer lists, since the
+combinations grow as 2^n.
 Items match on type and name, or on name alone with `--clump-by name`. A
 group that mostly occurs inside a larger frequent group is reported only
 as the larger one. The `(in fields)` count shows how many occurrences

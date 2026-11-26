@@ -65,7 +65,11 @@ bash .agents/skills/design-smells/run.sh extract openroad/rsz -o $out/rsz.json
 
 Pass one or more module directories, or single files. Only classes,
 methods, and free functions defined under the given paths are recorded,
-including those in their headers. Shotgun Surgery counts callers, so it
+including those in their headers. A single file widens the recorded
+scope to its Bazel package (e.g. `openroad/rsz`), so its classes are
+found. Only that file's method bodies are parsed, though, so
+class-level metrics such as WMC are partial. Pass the module directory
+for class-level smells. Shotgun Surgery counts callers, so it
 only sees callers inside the extracted paths. Run it on facts for all of
 `openroad/` when callers in other modules matter.
 

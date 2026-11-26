@@ -27,6 +27,8 @@ import re
 import sys
 from collections import defaultdict
 
+FACTS_VERSION = 3
+
 SMELLS = [
     "feature-envy",
     "god-class",
@@ -68,17 +70,20 @@ def loc(item):
 
 class Facts:
     def __init__(self, data, ignore_re, path_re):
+        if data.get("version") != FACTS_VERSION:
+            sys.exit("facts file is from another extract.py version: rerun extract")
         self.classes = data["classes"]
         self.methods = data["methods"]
+        self.functions = data["functions"]
         self.ignore = ignore_re
         self.path_re = path_re
         self.by_class = defaultdict(list)
-        for m in self.methods.values():
+        for usr, m in self.methods.items():
+            m["usr"] = usr
             self.by_class[m["class_usr"]].append(m)
+        for usr, f in self.functions.items():
+            f["usr"] = usr
         self.class_name_to_usr = {c["name"]: usr for usr, c in self.classes.items()}
-        if "functions" not in data:
-            sys.exit("facts file predates version 2: rerun run.sh extract")
-        self.functions = data["functions"]
 
     def reported(self, item):
         return self.path_re is None or self.path_re.search(item["file"])
@@ -103,7 +108,7 @@ def feature_envy(facts, a):
             continue
         foreign = facts.foreign(m)
         atfd = sum(len(v) for v in foreign.values())
-        if atfd <= a.atfd:
+        if not foreign or atfd <= a.atfd:
             continue
         own = len(m["own_fields"]) + len(m["own_methods"])
         laa = own / (own + atfd)
@@ -148,11 +153,10 @@ def class_metrics(facts, usr, c):
     # TCC over public, non-static, non-special methods with a body here.
     decl = {d["usr"]: d for d in c["methods"]}
     visible = []
-    for usr_m, m in facts.methods.items():
-        d = decl.get(usr_m)
+    for m in methods:
+        d = decl.get(m["usr"])
         if (
-            m["class_usr"] == usr
-            and m["kind"] == "method"
+            m["kind"] == "method"
             and not m["static"]
             and (d is None or d["access"] == "public")
         ):
@@ -273,7 +277,10 @@ def data_class(facts, a, envy):
         exposed = nopa + noam
         if woc >= a.woc:
             continue
-        if not ((exposed > 2 and wmc < 31) or (exposed > 4 and wmc < 47)):
+        if not (
+            (exposed > 2 and wmc < a.dc_wmc_low)
+            or (exposed > 4 and wmc < a.dc_wmc_high)
+        ):
             continue
         out.append(
             {
@@ -384,7 +391,8 @@ def message_chains(facts, a):
 
 def intimacy(facts, a):
     uses = defaultdict(lambda: defaultdict(set))  # A -> B -> members
-    files = {}
+    # Where each class lives: its definition, else its first method body.
+    files = {c["name"]: (c["file"], c["line"]) for c in facts.classes.values()}
     for m in facts.methods.values():
         files.setdefault(m["class"], (m["file"], m["line"]))
         for cls, members in facts.foreign(m).items():
@@ -401,8 +409,9 @@ def intimacy(facts, a):
             if y.startswith(x + "::") or x.startswith(y + "::"):
                 continue
             file, line = files[x]
-            item = {"file": file, "line": line}
-            if not facts.reported(item):
+            file_y, line_y = files.get(y, ("", 0))
+            # Report the pair when either class is in the --path filter.
+            if not (facts.reported({"file": file}) or facts.reported({"file": file_y})):
                 continue
             out.append(
                 {
@@ -410,6 +419,7 @@ def intimacy(facts, a):
                     "classes": [x, y],
                     "file": file,
                     "line": line,
+                    "file_b": f"{file_y}:{line_y}",
                     "a_uses_b": sorted(xy),
                     "b_uses_a": sorted(yx),
                     "score": min(len(xy), len(yx)),
@@ -493,27 +503,32 @@ def data_clumps(facts, a):
             )
         return sorted(set(keys))
 
-    occurrences = {}  # (kind, owner, name) -> (item set, file, line)
+    # Each signature is its own occurrence, so overloads never pool their
+    # parameters; a group still counts once per method (kind, owner, name)
+    # however many of its overloads contain it.
+    occurrences = []  # (key, items, file, line)
     for m, owner in callables(facts):
         if m.get("override") or len(m["params"]) < a.clump_size:
             continue
-        key = ("params", owner, m["name"])
-        occurrences.setdefault(key, (set(), m["file"], m["line"]))[0].update(
-            items(m["params"])
+        occurrences.append(
+            (("params", owner, m["name"]), items(m["params"]), m["file"], m["line"])
         )
     for c in facts.classes.values():
         if len(c["fields"]) >= a.clump_size:
-            occurrences[("fields", c["name"], c["name"])] = (
-                set(items(c["fields"])),
-                c["file"],
-                c["line"],
+            occurrences.append(
+                (
+                    ("fields", c["name"], c["name"]),
+                    items(c["fields"]),
+                    c["file"],
+                    c["line"],
+                )
             )
-
+    first_site = {}
     where = defaultdict(set)
-    for key, (its, _, _) in occurrences.items():
-        its = sorted(its)
+    for key, its, file, line in occurrences:
         if len(its) > a.clump_max_items:
             continue  # too many combinations; long-params reports these
+        first_site.setdefault(key, (file, line))
         for k in range(a.clump_size, len(its) + 1):
             for combo in itertools.combinations(its, k):
                 where[combo].add(key)
@@ -530,7 +545,7 @@ def data_clumps(facts, a):
     for combo, keys in frequent.items():
         if best_super[combo] >= 0.8 * len(keys):
             continue
-        sites = sorted((occurrences[k][1], occurrences[k][2], k[0], k[2]) for k in keys)
+        sites = sorted((*first_site[k], k[0], k[2]) for k in keys)
         item = {"file": sites[0][0], "line": sites[0][1]}
         if not any(facts.reported({"file": f}) for f, _, _, _ in sites):
             continue
@@ -561,9 +576,7 @@ def middle_man(facts, a):
             for d in c["methods"]
             if d["access"] == "public" and d["kind"] == "method" and not d["static"]
         }
-        methods = [
-            m for u, m in facts.methods.items() if m["class_usr"] == usr and u in public
-        ]
+        methods = [m for m in facts.by_class.get(usr, []) if m["usr"] in public]
         if len(methods) < a.mm_min:
             continue
         targets = defaultdict(list)
@@ -589,10 +602,14 @@ def middle_man(facts, a):
                 and not fields
             ):
                 targets[called[0][0]].append(m["name"].rsplit("::", 1)[-1])
-        delegating = sum(len(v) for v in targets.values())
+        if not targets:
+            continue
+        # A middle man forwards to one class; forwarders to several unrelated
+        # classes are not one delegate.
+        target, names = max(targets.items(), key=lambda kv: len(kv[1]))
+        delegating = len(names)
         if delegating < a.mm_min or delegating / len(methods) < a.mm_ratio:
             continue
-        target, names = max(targets.items(), key=lambda kv: len(kv[1]))
         # pimpl: forwarding to a nested Impl is the point of the idiom.
         if target.startswith(c["name"] + "::") and not a.include_pimpl:
             continue
@@ -617,10 +634,10 @@ def middle_man(facts, a):
 def shotgun_surgery(facts, a):
     """Methods whose callers are spread over many methods and classes, so
     changing the method means editing all of them."""
-    callers = defaultdict(set)
+    callers = defaultdict(set)  # callee USR -> {(caller USR, owner)}
     for m, owner in callables(facts):
         for callee in m["calls"]:
-            callers[callee].add((m["name"], owner))
+            callers[callee].add((m["usr"], owner))
     out = []
     for usr, m in facts.methods.items():
         if m["kind"] != "method" or facts.trivial(m) or not facts.reported(m):
@@ -697,6 +714,18 @@ def main():
     g = ap.add_argument_group("data class")
     g.add_argument("--woc", type=float, default=1 / 3, help="flag WOC < X (1/3)")
     g.add_argument(
+        "--dc-wmc-low",
+        type=int,
+        default=31,
+        help="with > 2 exposed members, flag WMC < N (31)",
+    )
+    g.add_argument(
+        "--dc-wmc-high",
+        type=int,
+        default=47,
+        help="with > 4 exposed members, flag WMC < N (47)",
+    )
+    g.add_argument(
         "--include-aggregates",
         action="store_true",
         help="also flag structs with no public methods",
@@ -754,6 +783,11 @@ def main():
         help="skip signatures/field lists longer than N (12)",
     )
     a = ap.parse_args()
+    # Combinations per signature grow as 2^n; 20 items is ~10^6 already.
+    if not 0 < a.clump_max_items <= 20:
+        ap.error("--clump-max-items must be between 1 and 20")
+    if a.clump_size < 2:
+        ap.error("--clump-size must be at least 2")
 
     with open(a.facts) as f:
         data = json.load(f)
