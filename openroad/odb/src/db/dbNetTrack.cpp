@@ -81,7 +81,7 @@ void _dbNetTrack::collectMemInfo(MemInfo& info)
 
 Rect dbNetTrack::getBox() const
 {
-  _dbNetTrack* obj = (_dbNetTrack*) this;
+  const _dbNetTrack* obj = reinterpret_cast<const _dbNetTrack*>(this);
   return obj->box_;
 }
 

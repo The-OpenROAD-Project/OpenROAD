@@ -1077,7 +1077,7 @@ void GraphicsImpl::saveLabeledImageImpl(std::string_view path,
   odb::Rect bbox = pbc_->db()->getChip()->getBlock()->getBBox()->getBox();
 
   if (!heatmap_control.empty()) {
-    gui->setDisplayControlsVisible(std::string(heatmap_control), true);
+    gui->setRendererControl(std::string(heatmap_control), true);
   }
 
   static int label_id = 0;
@@ -1088,7 +1088,7 @@ void GraphicsImpl::saveLabeledImageImpl(std::string_view path,
   gui->deleteLabel(label_name);
 
   if (!heatmap_control.empty()) {
-    gui->setDisplayControlsVisible(std::string(heatmap_control), false);
+    gui->setRendererControl(std::string(heatmap_control), false);
   }
 
   gui->clearSelections();
@@ -1120,7 +1120,7 @@ void GraphicsImpl::gifEnd(int key)
 
 void GraphicsImpl::setDisplayControl(std::string_view name, bool value)
 {
-  web::Gui::get()->setDisplayControlsVisible(std::string(name), value);
+  web::Gui::get()->setRendererControl(std::string(name), value);
 }
 
 }  // namespace gpl

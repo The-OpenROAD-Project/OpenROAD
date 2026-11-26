@@ -205,7 +205,7 @@ void _dbLevelShifter::collectMemInfo(MemInfo& info)
 _dbLevelShifter::~_dbLevelShifter()
 {
   if (name_) {
-    free((void*) name_);
+    free(name_);
   }
 }
 
@@ -217,253 +217,254 @@ _dbLevelShifter::~_dbLevelShifter()
 
 const char* dbLevelShifter::getName() const
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  const _dbLevelShifter* obj = reinterpret_cast<const _dbLevelShifter*>(this);
   return obj->name_;
 }
 
 dbPowerDomain* dbLevelShifter::getDomain() const
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  const _dbLevelShifter* obj = reinterpret_cast<const _dbLevelShifter*>(this);
   if (obj->domain_ == 0) {
     return nullptr;
   }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbPowerDomain*) par->powerdomain_tbl_->getPtr(obj->domain_);
+  _dbBlock* par = static_cast<_dbBlock*>(obj->getOwner());
+  return reinterpret_cast<dbPowerDomain*>(
+      par->powerdomain_tbl_->getPtr(obj->domain_));
 }
 
 void dbLevelShifter::setSource(const std::string& source)
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  _dbLevelShifter* obj = reinterpret_cast<_dbLevelShifter*>(this);
 
   obj->source_ = source;
 }
 
 const std::string& dbLevelShifter::getSource() const
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  const _dbLevelShifter* obj = reinterpret_cast<const _dbLevelShifter*>(this);
   return obj->source_;
 }
 
 void dbLevelShifter::setSink(const std::string& sink)
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  _dbLevelShifter* obj = reinterpret_cast<_dbLevelShifter*>(this);
 
   obj->sink_ = sink;
 }
 
 const std::string& dbLevelShifter::getSink() const
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  const _dbLevelShifter* obj = reinterpret_cast<const _dbLevelShifter*>(this);
   return obj->sink_;
 }
 
 void dbLevelShifter::setUseFunctionalEquivalence(
     bool use_functional_equivalence)
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  _dbLevelShifter* obj = reinterpret_cast<_dbLevelShifter*>(this);
 
   obj->use_functional_equivalence_ = use_functional_equivalence;
 }
 
 bool dbLevelShifter::isUseFunctionalEquivalence() const
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  const _dbLevelShifter* obj = reinterpret_cast<const _dbLevelShifter*>(this);
   return obj->use_functional_equivalence_;
 }
 
 void dbLevelShifter::setAppliesTo(const std::string& applies_to)
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  _dbLevelShifter* obj = reinterpret_cast<_dbLevelShifter*>(this);
 
   obj->applies_to_ = applies_to;
 }
 
 const std::string& dbLevelShifter::getAppliesTo() const
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  const _dbLevelShifter* obj = reinterpret_cast<const _dbLevelShifter*>(this);
   return obj->applies_to_;
 }
 
 void dbLevelShifter::setAppliesToBoundary(
     const std::string& applies_to_boundary)
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  _dbLevelShifter* obj = reinterpret_cast<_dbLevelShifter*>(this);
 
   obj->applies_to_boundary_ = applies_to_boundary;
 }
 
 const std::string& dbLevelShifter::getAppliesToBoundary() const
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  const _dbLevelShifter* obj = reinterpret_cast<const _dbLevelShifter*>(this);
   return obj->applies_to_boundary_;
 }
 
 void dbLevelShifter::setRule(const std::string& rule)
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  _dbLevelShifter* obj = reinterpret_cast<_dbLevelShifter*>(this);
 
   obj->rule_ = rule;
 }
 
 const std::string& dbLevelShifter::getRule() const
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  const _dbLevelShifter* obj = reinterpret_cast<const _dbLevelShifter*>(this);
   return obj->rule_;
 }
 
 void dbLevelShifter::setThreshold(float threshold)
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  _dbLevelShifter* obj = reinterpret_cast<_dbLevelShifter*>(this);
 
   obj->threshold_ = threshold;
 }
 
 float dbLevelShifter::getThreshold() const
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  const _dbLevelShifter* obj = reinterpret_cast<const _dbLevelShifter*>(this);
   return obj->threshold_;
 }
 
 void dbLevelShifter::setNoShift(bool no_shift)
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  _dbLevelShifter* obj = reinterpret_cast<_dbLevelShifter*>(this);
 
   obj->no_shift_ = no_shift;
 }
 
 bool dbLevelShifter::isNoShift() const
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  const _dbLevelShifter* obj = reinterpret_cast<const _dbLevelShifter*>(this);
   return obj->no_shift_;
 }
 
 void dbLevelShifter::setForceShift(bool force_shift)
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  _dbLevelShifter* obj = reinterpret_cast<_dbLevelShifter*>(this);
 
   obj->force_shift_ = force_shift;
 }
 
 bool dbLevelShifter::isForceShift() const
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  const _dbLevelShifter* obj = reinterpret_cast<const _dbLevelShifter*>(this);
   return obj->force_shift_;
 }
 
 void dbLevelShifter::setLocation(const std::string& location)
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  _dbLevelShifter* obj = reinterpret_cast<_dbLevelShifter*>(this);
 
   obj->location_ = location;
 }
 
 const std::string& dbLevelShifter::getLocation() const
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  const _dbLevelShifter* obj = reinterpret_cast<const _dbLevelShifter*>(this);
   return obj->location_;
 }
 
 void dbLevelShifter::setInputSupply(const std::string& input_supply)
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  _dbLevelShifter* obj = reinterpret_cast<_dbLevelShifter*>(this);
 
   obj->input_supply_ = input_supply;
 }
 
 const std::string& dbLevelShifter::getInputSupply() const
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  const _dbLevelShifter* obj = reinterpret_cast<const _dbLevelShifter*>(this);
   return obj->input_supply_;
 }
 
 void dbLevelShifter::setOutputSupply(const std::string& output_supply)
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  _dbLevelShifter* obj = reinterpret_cast<_dbLevelShifter*>(this);
 
   obj->output_supply_ = output_supply;
 }
 
 const std::string& dbLevelShifter::getOutputSupply() const
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  const _dbLevelShifter* obj = reinterpret_cast<const _dbLevelShifter*>(this);
   return obj->output_supply_;
 }
 
 void dbLevelShifter::setInternalSupply(const std::string& internal_supply)
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  _dbLevelShifter* obj = reinterpret_cast<_dbLevelShifter*>(this);
 
   obj->internal_supply_ = internal_supply;
 }
 
 const std::string& dbLevelShifter::getInternalSupply() const
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  const _dbLevelShifter* obj = reinterpret_cast<const _dbLevelShifter*>(this);
   return obj->internal_supply_;
 }
 
 void dbLevelShifter::setNamePrefix(const std::string& name_prefix)
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  _dbLevelShifter* obj = reinterpret_cast<_dbLevelShifter*>(this);
 
   obj->name_prefix_ = name_prefix;
 }
 
 const std::string& dbLevelShifter::getNamePrefix() const
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  const _dbLevelShifter* obj = reinterpret_cast<const _dbLevelShifter*>(this);
   return obj->name_prefix_;
 }
 
 void dbLevelShifter::setNameSuffix(const std::string& name_suffix)
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  _dbLevelShifter* obj = reinterpret_cast<_dbLevelShifter*>(this);
 
   obj->name_suffix_ = name_suffix;
 }
 
 const std::string& dbLevelShifter::getNameSuffix() const
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  const _dbLevelShifter* obj = reinterpret_cast<const _dbLevelShifter*>(this);
   return obj->name_suffix_;
 }
 
 void dbLevelShifter::setCellName(const std::string& cell_name)
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  _dbLevelShifter* obj = reinterpret_cast<_dbLevelShifter*>(this);
 
   obj->cell_name_ = cell_name;
 }
 
 const std::string& dbLevelShifter::getCellName() const
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  const _dbLevelShifter* obj = reinterpret_cast<const _dbLevelShifter*>(this);
   return obj->cell_name_;
 }
 
 void dbLevelShifter::setCellInput(const std::string& cell_input)
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  _dbLevelShifter* obj = reinterpret_cast<_dbLevelShifter*>(this);
 
   obj->cell_input_ = cell_input;
 }
 
 const std::string& dbLevelShifter::getCellInput() const
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  const _dbLevelShifter* obj = reinterpret_cast<const _dbLevelShifter*>(this);
   return obj->cell_input_;
 }
 
 void dbLevelShifter::setCellOutput(const std::string& cell_output)
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  _dbLevelShifter* obj = reinterpret_cast<_dbLevelShifter*>(this);
 
   obj->cell_output_ = cell_output;
 }
 
 const std::string& dbLevelShifter::getCellOutput() const
 {
-  _dbLevelShifter* obj = (_dbLevelShifter*) this;
+  const _dbLevelShifter* obj = reinterpret_cast<const _dbLevelShifter*>(this);
   return obj->cell_output_;
 }
 

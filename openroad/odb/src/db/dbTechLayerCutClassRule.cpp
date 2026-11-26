@@ -107,7 +107,7 @@ void _dbTechLayerCutClassRule::collectMemInfo(MemInfo& info)
 _dbTechLayerCutClassRule::~_dbTechLayerCutClassRule()
 {
   if (name_) {
-    free((void*) name_);
+    free(name_);
   }
 }
 
@@ -119,73 +119,84 @@ _dbTechLayerCutClassRule::~_dbTechLayerCutClassRule()
 
 const char* dbTechLayerCutClassRule::getName() const
 {
-  _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
+  const _dbTechLayerCutClassRule* obj
+      = reinterpret_cast<const _dbTechLayerCutClassRule*>(this);
   return obj->name_;
 }
 
 void dbTechLayerCutClassRule::setWidth(int width)
 {
-  _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
+  _dbTechLayerCutClassRule* obj
+      = reinterpret_cast<_dbTechLayerCutClassRule*>(this);
 
   obj->width_ = width;
 }
 
 int dbTechLayerCutClassRule::getWidth() const
 {
-  _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
+  const _dbTechLayerCutClassRule* obj
+      = reinterpret_cast<const _dbTechLayerCutClassRule*>(this);
   return obj->width_;
 }
 
 void dbTechLayerCutClassRule::setLength(int length)
 {
-  _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
+  _dbTechLayerCutClassRule* obj
+      = reinterpret_cast<_dbTechLayerCutClassRule*>(this);
 
   obj->length_ = length;
 }
 
 int dbTechLayerCutClassRule::getLength() const
 {
-  _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
+  const _dbTechLayerCutClassRule* obj
+      = reinterpret_cast<const _dbTechLayerCutClassRule*>(this);
   return obj->length_;
 }
 
 void dbTechLayerCutClassRule::setNumCuts(int num_cuts)
 {
-  _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
+  _dbTechLayerCutClassRule* obj
+      = reinterpret_cast<_dbTechLayerCutClassRule*>(this);
 
   obj->num_cuts_ = num_cuts;
 }
 
 int dbTechLayerCutClassRule::getNumCuts() const
 {
-  _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
+  const _dbTechLayerCutClassRule* obj
+      = reinterpret_cast<const _dbTechLayerCutClassRule*>(this);
   return obj->num_cuts_;
 }
 
 void dbTechLayerCutClassRule::setLengthValid(bool length_valid)
 {
-  _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
+  _dbTechLayerCutClassRule* obj
+      = reinterpret_cast<_dbTechLayerCutClassRule*>(this);
 
   obj->flags_.length_valid = length_valid;
 }
 
 bool dbTechLayerCutClassRule::isLengthValid() const
 {
-  _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
+  const _dbTechLayerCutClassRule* obj
+      = reinterpret_cast<const _dbTechLayerCutClassRule*>(this);
 
   return obj->flags_.length_valid;
 }
 
 void dbTechLayerCutClassRule::setCutsValid(bool cuts_valid)
 {
-  _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
+  _dbTechLayerCutClassRule* obj
+      = reinterpret_cast<_dbTechLayerCutClassRule*>(this);
 
   obj->flags_.cuts_valid = cuts_valid;
 }
 
 bool dbTechLayerCutClassRule::isCutsValid() const
 {
-  _dbTechLayerCutClassRule* obj = (_dbTechLayerCutClassRule*) this;
+  const _dbTechLayerCutClassRule* obj
+      = reinterpret_cast<const _dbTechLayerCutClassRule*>(this);
 
   return obj->flags_.cuts_valid;
 }

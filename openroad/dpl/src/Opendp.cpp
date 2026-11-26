@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <memory>
@@ -296,6 +297,22 @@ void Opendp::detailedPlacement(const int max_displacement_x,
       logger_->metric("NL__no__converge__final_violations",
                       negotiation.numViolations());
       const auto illegal_nodes = negotiation.getIllegalNodes();
+      // Cap the list; saveFailures keeps the full set for the report file.
+      constexpr size_t kMaxIllegalNodesReported = 10;
+      const size_t num_reported
+          = std::min(illegal_nodes.size(), kMaxIllegalNodesReported);
+      for (size_t i = 0; i < num_reported; ++i) {
+        const Node* node = illegal_nodes[i];
+        logger_->report("  {} ({}) at dbu ({}, {})",
+                        node->name(),
+                        node->getDbInst()->getMaster()->getName(),
+                        (core_.xMin() + node->getLeft()).v,
+                        (core_.yMin() + node->getBottom()).v);
+      }
+      if (illegal_nodes.size() > num_reported) {
+        logger_->report("  ... and {} more (see -report_file_name).",
+                        illegal_nodes.size() - num_reported);
+      }
       saveFailures({}, {}, {}, {}, {}, {}, {}, illegal_nodes, {}, {}, {});
       if (!report_file_name.empty()) {
         writeJsonReport(report_file_name);

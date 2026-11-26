@@ -5,6 +5,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include <functional>
 #include <list>
 #include <string>
 #include <utility>
@@ -225,6 +226,23 @@ class lefinReader
   bool master_modified_;
   bool ignore_non_routing_layers_;
   std::vector<std::pair<odb::dbObject*, std::string>> incomplete_props_;
+
+ public:
+  // Unlike incomplete_props_ (single (dbObject*, layer) pair), PendingLayerRef
+  // binds the target setter for rules with multiple layer-reference fields and
+  // keys rules via rule_key so multi-layer clauses are destroyed at most once.
+  struct PendingLayerRef
+  {
+    const void* rule_key{nullptr};
+    dbTechLayer* owner{nullptr};
+    std::string prop_name;
+    std::string layer_name;
+    std::function<void(dbTechLayer*)> attach;
+    std::function<void()> drop;
+  };
+
+ private:
+  std::vector<PendingLayerRef> pending_layer_refs_;
 };
 
 class lefin

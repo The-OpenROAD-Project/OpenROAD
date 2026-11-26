@@ -45,12 +45,14 @@ Replace::Replace(odb::dbDatabase* odb,
                  rsz::Resizer* resizer,
                  grt::GlobalRouter* router,
                  ppl::IOPlacer* pin_placer,
+                 cts::TritonCTS* cts,
                  utl::Logger* logger)
     : db_(odb),
       sta_(sta),
       rs_(resizer),
       fr_(router),
       pin_placer_(pin_placer),
+      cts_(cts),
       log_(logger)
 {
   graphics_ = std::make_unique<GraphicsNone>();
@@ -257,13 +259,9 @@ PlaceResult Replace::doIncrementalPlace(const int threads,
     pb->unlockAll();
   }
 
-  // Phase 1 may have run out of its iteration budget short of the real
-  // target even without diverging, so check the actual overflow reached
-  // rather than trusting the target alone.
-  const bool phase1_missed_target
-      = !phase1_diverged && np_->getAverageOverflow() > options.overflow;
-
-  if (phase1_diverged || phase1_missed_target) {
+  // Phase 1 may also have run out of its iteration budget, or stopped on a
+  // reverted snapshot, with a region still over target.
+  if (result.stop != PlaceStop::kConverged) {
     // Enable phase 2's density-penalty controller to ramp the penalty up in
     // place whenever overflow regresses, instead of backing off.
     np_->enableIncrementalDensityPenaltyGuard();
@@ -426,7 +424,7 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
 
   if (!pwb_ && options.powerDrivenMode) {
     pwb_ = std::make_shared<PowerBase>(
-        nbc_, sta_, options.powerDrivenNetWeight, log_);
+        nbc_, sta_, cts_, options.powerDrivenNetWeight, log_);
     pwb_->setPowerNetWeights();
     nbc_->refreshDeviceNetWeights();
   }
@@ -660,6 +658,9 @@ void PlaceOptions::validate(utl::Logger* logger)
   }
   val.check_positive("timing_driven_net_weight_max", timingNetWeightMax, 423);
   val.check_non_negative("power_driven_net_weight", powerDrivenNetWeight, 429);
+  for (const int overflow : powerDrivenClockLeafOverflows) {
+    val.check_positive("power_driven_clock_leaf_overflow", overflow, 434);
+  }
   val.check_range("timing_driven_nets_percentage",
                   timingDrivenNetsPercentage,
                   0.0f,

@@ -70,18 +70,33 @@ _dbGDSStructure::_dbGDSStructure(_dbDatabase* db)
   boundaries_ = new dbTable<_dbGDSBoundary>(
       db,
       this,
-      (GetObjTbl_t) &_dbGDSStructure::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbGDSStructure::getObjectTable),
       dbGDSBoundaryObj);
   boxes_ = new dbTable<_dbGDSBox>(
-      db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSBoxObj);
+      db,
+      this,
+      static_cast<GetObjTbl_t>(&_dbGDSStructure::getObjectTable),
+      dbGDSBoxObj);
   paths_ = new dbTable<_dbGDSPath>(
-      db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSPathObj);
+      db,
+      this,
+      static_cast<GetObjTbl_t>(&_dbGDSStructure::getObjectTable),
+      dbGDSPathObj);
   srefs_ = new dbTable<_dbGDSSRef>(
-      db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSSRefObj);
+      db,
+      this,
+      static_cast<GetObjTbl_t>(&_dbGDSStructure::getObjectTable),
+      dbGDSSRefObj);
   arefs_ = new dbTable<_dbGDSARef>(
-      db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSARefObj);
+      db,
+      this,
+      static_cast<GetObjTbl_t>(&_dbGDSStructure::getObjectTable),
+      dbGDSARefObj);
   texts_ = new dbTable<_dbGDSText>(
-      db, this, (GetObjTbl_t) &_dbGDSStructure::getObjectTable, dbGDSTextObj);
+      db,
+      this,
+      static_cast<GetObjTbl_t>(&_dbGDSStructure::getObjectTable),
+      dbGDSTextObj);
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSStructure& obj)
@@ -150,7 +165,7 @@ void _dbGDSStructure::collectMemInfo(MemInfo& info)
 _dbGDSStructure::~_dbGDSStructure()
 {
   if (name_) {
-    free((void*) name_);
+    free(name_);
   }
   delete boundaries_;
   delete boxes_;
@@ -168,43 +183,49 @@ _dbGDSStructure::~_dbGDSStructure()
 
 const char* dbGDSStructure::getName() const
 {
-  _dbGDSStructure* obj = (_dbGDSStructure*) this;
+  const _dbGDSStructure* obj = reinterpret_cast<const _dbGDSStructure*>(this);
   return obj->name_;
 }
 
 dbSet<dbGDSBoundary> dbGDSStructure::getGDSBoundaries() const
 {
-  _dbGDSStructure* obj = (_dbGDSStructure*) this;
+  _dbGDSStructure* obj
+      = reinterpret_cast<_dbGDSStructure*>(const_cast<dbGDSStructure*>(this));
   return dbSet<dbGDSBoundary>(obj, obj->boundaries_);
 }
 
 dbSet<dbGDSBox> dbGDSStructure::getGDSBoxs() const
 {
-  _dbGDSStructure* obj = (_dbGDSStructure*) this;
+  _dbGDSStructure* obj
+      = reinterpret_cast<_dbGDSStructure*>(const_cast<dbGDSStructure*>(this));
   return dbSet<dbGDSBox>(obj, obj->boxes_);
 }
 
 dbSet<dbGDSPath> dbGDSStructure::getGDSPaths() const
 {
-  _dbGDSStructure* obj = (_dbGDSStructure*) this;
+  _dbGDSStructure* obj
+      = reinterpret_cast<_dbGDSStructure*>(const_cast<dbGDSStructure*>(this));
   return dbSet<dbGDSPath>(obj, obj->paths_);
 }
 
 dbSet<dbGDSSRef> dbGDSStructure::getGDSSRefs() const
 {
-  _dbGDSStructure* obj = (_dbGDSStructure*) this;
+  _dbGDSStructure* obj
+      = reinterpret_cast<_dbGDSStructure*>(const_cast<dbGDSStructure*>(this));
   return dbSet<dbGDSSRef>(obj, obj->srefs_);
 }
 
 dbSet<dbGDSARef> dbGDSStructure::getGDSARefs() const
 {
-  _dbGDSStructure* obj = (_dbGDSStructure*) this;
+  _dbGDSStructure* obj
+      = reinterpret_cast<_dbGDSStructure*>(const_cast<dbGDSStructure*>(this));
   return dbSet<dbGDSARef>(obj, obj->arefs_);
 }
 
 dbSet<dbGDSText> dbGDSStructure::getGDSTexts() const
 {
-  _dbGDSStructure* obj = (_dbGDSStructure*) this;
+  _dbGDSStructure* obj
+      = reinterpret_cast<_dbGDSStructure*>(const_cast<dbGDSStructure*>(this));
   return dbSet<dbGDSText>(obj, obj->texts_);
 }
 

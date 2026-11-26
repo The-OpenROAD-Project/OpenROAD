@@ -99,66 +99,66 @@ void _dbGDSPath::collectMemInfo(MemInfo& info)
 
 void dbGDSPath::setLayer(int16_t layer)
 {
-  _dbGDSPath* obj = (_dbGDSPath*) this;
+  _dbGDSPath* obj = reinterpret_cast<_dbGDSPath*>(this);
 
   obj->layer_ = layer;
 }
 
 int16_t dbGDSPath::getLayer() const
 {
-  _dbGDSPath* obj = (_dbGDSPath*) this;
+  const _dbGDSPath* obj = reinterpret_cast<const _dbGDSPath*>(this);
   return obj->layer_;
 }
 
 void dbGDSPath::setDatatype(int16_t datatype)
 {
-  _dbGDSPath* obj = (_dbGDSPath*) this;
+  _dbGDSPath* obj = reinterpret_cast<_dbGDSPath*>(this);
 
   obj->datatype_ = datatype;
 }
 
 int16_t dbGDSPath::getDatatype() const
 {
-  _dbGDSPath* obj = (_dbGDSPath*) this;
+  const _dbGDSPath* obj = reinterpret_cast<const _dbGDSPath*>(this);
   return obj->datatype_;
 }
 
 void dbGDSPath::setXy(const std::vector<Point>& xy)
 {
-  _dbGDSPath* obj = (_dbGDSPath*) this;
+  _dbGDSPath* obj = reinterpret_cast<_dbGDSPath*>(this);
 
   obj->xy_ = xy;
 }
 
 void dbGDSPath::getXy(std::vector<Point>& tbl) const
 {
-  _dbGDSPath* obj = (_dbGDSPath*) this;
+  const _dbGDSPath* obj = reinterpret_cast<const _dbGDSPath*>(this);
   tbl = obj->xy_;
 }
 
 void dbGDSPath::setWidth(int width)
 {
-  _dbGDSPath* obj = (_dbGDSPath*) this;
+  _dbGDSPath* obj = reinterpret_cast<_dbGDSPath*>(this);
 
   obj->width_ = width;
 }
 
 int dbGDSPath::getWidth() const
 {
-  _dbGDSPath* obj = (_dbGDSPath*) this;
+  const _dbGDSPath* obj = reinterpret_cast<const _dbGDSPath*>(this);
   return obj->width_;
 }
 
 void dbGDSPath::setPathType(int16_t path_type)
 {
-  _dbGDSPath* obj = (_dbGDSPath*) this;
+  _dbGDSPath* obj = reinterpret_cast<_dbGDSPath*>(this);
 
   obj->path_type_ = path_type;
 }
 
 int16_t dbGDSPath::getPathType() const
 {
-  _dbGDSPath* obj = (_dbGDSPath*) this;
+  const _dbGDSPath* obj = reinterpret_cast<const _dbGDSPath*>(this);
   return obj->path_type_;
 }
 
