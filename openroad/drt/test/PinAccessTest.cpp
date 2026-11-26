@@ -542,6 +542,38 @@ TEST_F(MasterSwapPinAccessTest, RewireThenSwapFallsBackToRowPattern)
   EXPECT_GT(observer.count("u2"), 0);
 }
 
+TEST_F(MasterSwapPinAccessTest, DisconnectThenSwapFallsBackToRowPattern)
+{
+  auto router = makeRouter();
+  AccessPointObserver observer;
+  observer.addOwner(block_);
+
+  // Disconnecting Y before swapping master marks u1 dirty so saveSwappedInst()
+  // does not snapshot the post-disconnect nullptr net and skip row patterns.
+  u1_->findITerm("Y")->disconnect();
+  u1_->swapMaster(inv_hvt_);
+  router->updateDirtyPinAccess();
+
+  EXPECT_NE(firstAccessPoint(router.get(), "u1", "A"), nullptr);
+  EXPECT_GT(observer.count("u2"), 0);
+}
+
+TEST_F(MasterSwapPinAccessTest, SwapThenNetDestroyFallsBackToRowPattern)
+{
+  auto router = makeRouter();
+  AccessPointObserver observer;
+  observer.addOwner(block_);
+
+  // Destroying a connected net after swapMaster() drops the saved snapshot so
+  // restoreSwappedInst() never compares a freed frNet pointer and falls back.
+  u1_->swapMaster(inv_hvt_);
+  odb::dbNet::destroy(block_->findNet("mid"));
+  router->updateDirtyPinAccess();
+
+  EXPECT_NE(firstAccessPoint(router.get(), "u1", "A"), nullptr);
+  EXPECT_GT(observer.count("u2"), 0);
+}
+
 TEST_F(MasterSwapPinAccessTest, ObsMismatchAtSameTransformFallsBackToRowPattern)
 {
   odb::dbMaster* inv_obs = makeInvMaster("INV_OBS",

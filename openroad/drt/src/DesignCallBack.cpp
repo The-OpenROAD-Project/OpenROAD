@@ -131,6 +131,8 @@ void DesignCallBack::inDbNetDestroy(odb::dbNet* db_net)
 void DesignCallBack::inDbITermPostDisconnect(odb::dbITerm* db_iterm,
                                              odb::dbNet* db_net)
 {
+  // Drop any saved swap snapshot before net destruction can free the old frNet.
+  router_->clearSwappedInstancePAData(db_iterm->getInst());
   auto design = router_->getDesign();
   if (design == nullptr || design->getTopBlock() == nullptr) {
     return;
@@ -146,6 +148,7 @@ void DesignCallBack::inDbITermPostDisconnect(odb::dbITerm* db_iterm,
   }
   net->removeInstTerm(inst_term);
   inst_term->addToNet(nullptr);
+  router_->addInstancePAData(inst);
 }
 
 void DesignCallBack::inDbITermPostConnect(odb::dbITerm* db_iterm)
