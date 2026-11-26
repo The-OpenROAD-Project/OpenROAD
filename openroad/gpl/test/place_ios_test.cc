@@ -188,13 +188,13 @@ class PlaceIos : public tst::Fixture
     }
   }
 
-  // set_place_config -io_pin_hor_layers -io_pin_ver_layers
+  // set_placer_config -io_pin_hor_layers -io_pin_ver_layers
   void setPinLayers(std::initializer_list<const char*> hor,
                     std::initializer_list<const char*> ver)
   {
     for (const auto& [name, layers] :
-         {std::pair{"place_config_io_pin_hor_layers", hor},
-          std::pair{"place_config_io_pin_ver_layers", ver}}) {
+         {std::pair{"placer_config_io_pin_hor_layers", hor},
+          std::pair{"placer_config_io_pin_ver_layers", ver}}) {
       std::string names;
       for (const char* layer_name : layers) {
         names += std::string(names.empty() ? "" : " ") + layer_name;
@@ -316,6 +316,7 @@ class PlaceIos : public tst::Fixture
                    nullptr,
                    nullptr,
                    &pin_placer_,
+                   nullptr,
                    &logger_};
 };
 
@@ -441,7 +442,7 @@ TEST_F(PlaceIos, PinsUseTheSlotsOfEveryLayer)
   }
 }
 
-// set_place_config -io_pin_min_distance 1 -io_pin_layer_min_distance
+// set_placer_config -io_pin_min_distance 1 -io_pin_layer_min_distance
 //   {metal3 3 metal4 3} -io_pin_min_distance_in_tracks
 // The solve and the legalization use the same slots, which keep the min
 // distance of their layer.
@@ -449,13 +450,13 @@ TEST_F(PlaceIos, PinsKeepTheMinDistanceOfTheirLayer)
 {
   unplacePorts();
   setPinLayers({"metal3", "metal5"}, {"metal4", "metal6"});
-  odb::dbIntProperty::create(block_, "place_config_io_pin_min_distance", 1);
+  odb::dbIntProperty::create(block_, "placer_config_io_pin_min_distance", 1);
   odb::dbBoolProperty::create(
-      block_, "place_config_io_pin_min_distance_in_tracks", true);
+      block_, "placer_config_io_pin_min_distance_in_tracks", true);
   odb::dbStringProperty::create(
-      block_, "place_config_io_pin_layer_min_distance", "metal3 3 metal4 3");
+      block_, "placer_config_io_pin_layer_min_distance", "metal3 3 metal4 3");
   odb::dbBoolProperty::create(
-      block_, "place_config_io_pin_layer_min_distance_in_tracks", true);
+      block_, "placer_config_io_pin_layer_min_distance_in_tracks", true);
 
   EXPECT_EQ(placeAndCountMoved(), 0);
 

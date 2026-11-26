@@ -186,32 +186,32 @@ void _dbAccessPoint::setMPin(_dbMPin* mpin)
 
 void dbAccessPoint::setPoint(const Point& point)
 {
-  _dbAccessPoint* obj = (_dbAccessPoint*) this;
+  _dbAccessPoint* obj = reinterpret_cast<_dbAccessPoint*>(this);
 
   obj->point_ = point;
 }
 
 Point dbAccessPoint::getPoint() const
 {
-  _dbAccessPoint* obj = (_dbAccessPoint*) this;
+  const _dbAccessPoint* obj = reinterpret_cast<const _dbAccessPoint*>(this);
   return obj->point_;
 }
 
 void dbAccessPoint::setLayer(dbTechLayer* layer)
 {
-  _dbAccessPoint* obj = (_dbAccessPoint*) this;
+  _dbAccessPoint* obj = reinterpret_cast<_dbAccessPoint*>(this);
 
   obj->layer_ = layer->getImpl()->getOID();
 }
 
 dbBPin* dbAccessPoint::getBPin() const
 {
-  _dbAccessPoint* obj = (_dbAccessPoint*) this;
+  const _dbAccessPoint* obj = reinterpret_cast<const _dbAccessPoint*>(this);
   if (obj->bpin_ == 0) {
     return nullptr;
   }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbBPin*) par->bpin_tbl_->getPtr(obj->bpin_);
+  _dbBlock* par = static_cast<_dbBlock*>(obj->getOwner());
+  return reinterpret_cast<dbBPin*>(par->bpin_tbl_->getPtr(obj->bpin_));
 }
 
 // User Code Begin dbAccessPointPublicMethods

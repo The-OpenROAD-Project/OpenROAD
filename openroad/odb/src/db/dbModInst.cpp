@@ -145,7 +145,7 @@ void _dbModInst::collectMemInfo(MemInfo& info)
 _dbModInst::~_dbModInst()
 {
   if (name_) {
-    free((void*) name_);
+    free(name_);
   }
 }
 
@@ -157,38 +157,38 @@ _dbModInst::~_dbModInst()
 
 const char* dbModInst::getName() const
 {
-  _dbModInst* obj = (_dbModInst*) this;
+  const _dbModInst* obj = reinterpret_cast<const _dbModInst*>(this);
   return obj->name_;
 }
 
 dbModule* dbModInst::getParent() const
 {
-  _dbModInst* obj = (_dbModInst*) this;
+  const _dbModInst* obj = reinterpret_cast<const _dbModInst*>(this);
   if (obj->parent_ == 0) {
     return nullptr;
   }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModule*) par->module_tbl_->getPtr(obj->parent_);
+  _dbBlock* par = static_cast<_dbBlock*>(obj->getOwner());
+  return reinterpret_cast<dbModule*>(par->module_tbl_->getPtr(obj->parent_));
 }
 
 dbModule* dbModInst::getMaster() const
 {
-  _dbModInst* obj = (_dbModInst*) this;
+  const _dbModInst* obj = reinterpret_cast<const _dbModInst*>(this);
   if (obj->master_ == 0) {
     return nullptr;
   }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbModule*) par->module_tbl_->getPtr(obj->master_);
+  _dbBlock* par = static_cast<_dbBlock*>(obj->getOwner());
+  return reinterpret_cast<dbModule*>(par->module_tbl_->getPtr(obj->master_));
 }
 
 dbGroup* dbModInst::getGroup() const
 {
-  _dbModInst* obj = (_dbModInst*) this;
+  const _dbModInst* obj = reinterpret_cast<const _dbModInst*>(this);
   if (obj->group_ == 0) {
     return nullptr;
   }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbGroup*) par->group_tbl_->getPtr(obj->group_);
+  _dbBlock* par = static_cast<_dbBlock*>(obj->getOwner());
+  return reinterpret_cast<dbGroup*>(par->group_tbl_->getPtr(obj->group_));
 }
 
 // User Code Begin dbModInstPublicMethods

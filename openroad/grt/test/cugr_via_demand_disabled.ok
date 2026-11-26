@@ -22,7 +22,6 @@
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
-[WARNING GRT-0309] Timing is not available, setting critical nets percentage to 0.
 Design statistics
 Nets:                563
 Special nets:        0
@@ -47,7 +46,7 @@ metal10    Vertical         2142          2142          0.00%
 Stage 1: Pattern routing.
 Routing statistics
 Wire length:           36832
-Total via count:       2439
+Total via count:       2488
 Total congestion:      0.00
 Min resource:          1.00
 Bottleneck:            (8, 0, 4)
@@ -55,10 +54,10 @@ Bottleneck:            (8, 0, 4)
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
 --------------------------------------------------------------------------
 metal1    H         0.00         0.00         0.00         0.00       0.00
-metal2    V     17918.00      1180.00         0.00      1180.00       6.59
-metal3    H     24480.00      1221.00         0.00      1221.00       4.99
-metal4    V     12172.00         0.00         0.00         0.00       0.00
-metal5    H     12240.00        48.00         0.00        48.00       0.39
+metal2    V     17918.00      1155.00         0.00      1155.00       6.45
+metal3    H     24480.00      1196.00         0.00      1196.00       4.89
+metal4    V     12172.00        25.00         0.00        25.00       0.21
+metal5    H     12240.00        73.00         0.00        73.00       0.60
 metal6    V     12172.00         3.00         0.00         3.00       0.02
 metal7    H      4284.00         0.00         0.00         0.00       0.00
 metal8    V      4284.00         0.00         0.00         0.00       0.00

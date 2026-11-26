@@ -5,23 +5,29 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_set>
 #include <vector>
 
 #include "MoveCommitter.hh"
 #include "OptimizerTypes.hh"
+#include "Rebuffer.hh"
 #include "RepairSetupContext.hh"
 #include "RepairTargetCollector.hh"
 #include "est/EstimateParasitics.h"
 #include "gtest/gtest.h"
+#include "move/BufferCandidate.hh"
 #include "move/MoveCandidate.hh"
 #include "move/MoveGenerator.hh"
 #include "move/SizeUpGenerator.hh"
 #include "move/VtSwapGenerator.hh"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/defin.h"
+#include "odb/geom.h"
 #include "policy/SetupLegacyPolicy.hh"
+#include "rsz/PlacementDensityGrid.hh"
 #include "rsz/Resizer.hh"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
@@ -59,6 +65,17 @@ class TestMoveGenerator : public MoveGenerator
   }
 
   using MoveGenerator::weakerCellFirst;
+};
+
+class RebufferTestPeer
+{
+ public:
+  // Mirror the setup SetupLegacyBase does before running BufferMove.
+  static void init(Rebuffer& rebuffer, sta::Scene* scene)
+  {
+    rebuffer.init();
+    rebuffer.initOnCorner(scene);
+  }
 };
 
 class TestSetupLegacyPolicy : public SetupLegacyPolicy
@@ -701,6 +718,70 @@ TEST_F(TestResizer, ChainedLatchFaninTargets)
   EXPECT_EQ(db_network_->pathName(deep_target->endpointPin(resizer_)),
             "deep_latch/D");
   EXPECT_EQ(deep_target->violatedEndpointPin(resizer_), path->pin(sta_.get()));
+}
+
+// BufferMove must report the buffers it inserts as touched, so buffer
+// removal recognizes them as rebuffering output and does not undo them.
+TEST_F(TestResizer, BufferMoveMarksInsertedBuffers)
+{
+  setupTimeBorrowTiming("latch_borrow_chain.def", 0.84);
+
+  // Buffering needs wire RC; use metal3 as the Tcl tests do.
+  odb::dbTech* tech = db_->getTech();
+  odb::dbTechLayer* layer = tech->findLayer("metal3");
+  ASSERT_NE(layer, nullptr);
+  const double width_um
+      = static_cast<double>(layer->getWidth()) / tech->getDbUnitsPerMicron();
+  const double res_per_m = layer->getResistance() / width_um * 1e6;
+  const double cap_per_m
+      = (width_um * layer->getCapacitance() + 2 * layer->getEdgeCapacitance())
+        * 1e-12 * 1e6;
+  ep_.setHWireSignalRC(tech, sta_->cmdScene(), res_per_m, cap_per_m);
+  ep_.setVWireSignalRC(tech, sta_->cmdScene(), res_per_m, cap_per_m);
+  ep_.estimateWireParasitics();
+  sta_->updateTiming(true);
+
+  RebufferTestPeer::init(resizer_.rebuffer(), sta_->cmdScene());
+
+  std::vector<sta::Pin*> driver_pins;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    for (odb::dbITerm* iterm : inst->getITerms()) {
+      if (iterm->getNet() != nullptr
+          && iterm->getIoType() == odb::dbIoType::OUTPUT
+          && iterm->getSigType() == odb::dbSigType::SIGNAL) {
+        driver_pins.push_back(db_network_->dbToSta(iterm));
+      }
+    }
+  }
+
+  MoveCommitter committer(resizer_);
+  const Target target;
+  MoveResult result;
+  sta::Pin* buffered_pin = nullptr;
+  for (sta::Pin* driver_pin : driver_pins) {
+    BufferCandidate candidate(resizer_, target, driver_pin);
+    result = committer.commit(candidate);
+    if (result.accepted) {
+      buffered_pin = driver_pin;
+      break;
+    }
+  }
+  ASSERT_TRUE(result.accepted) << "no BufferMove inserted a buffer";
+  // The driver comes first, followed by the inserted buffers.
+  ASSERT_EQ(result.touched_instances.size(),
+            static_cast<size_t>(result.move_count) + 1);
+  EXPECT_EQ(result.touched_instances.front(),
+            db_network_->instance(buffered_pin));
+
+  for (size_t i = 1; i < result.touched_instances.size(); i++) {
+    sta::Instance* buffer = result.touched_instances[i];
+    const sta::LibertyCell* cell = db_network_->libertyCell(buffer);
+    ASSERT_NE(cell, nullptr);
+    EXPECT_TRUE(cell->isBuffer());
+    std::string reason;
+    EXPECT_TRUE(committer.hasBlockingBufferRemovalMove(buffer, reason));
+    EXPECT_EQ(reason, "it was from rebuffering");
+  }
 }
 
 TEST_F(TestResizer, RepairBudgetClampsToAtLeastOneWhenSlackImprovesPastMinViol)
@@ -1388,6 +1469,10 @@ TEST_F(TestResizer, GetVtEquivCellsDeduplicatesNonAdjacentSameVtCells)
   odb::dbTechLayer* lvt_implant = odb::dbTechLayer::create(
       db_->getTech(), "LVT_IMPLANT", odb::dbTechLayerType::IMPLANT);
   ASSERT_NE(lvt_implant, nullptr);
+  // RVT must be explicit too: a cell without an implant layer has no VT.
+  odb::dbTechLayer* rvt_implant = odb::dbTechLayer::create(
+      db_->getTech(), "RVT_IMPLANT", odb::dbTechLayerType::IMPLANT);
+  ASSERT_NE(rvt_implant, nullptr);
   odb::dbMaster* buf_x1_master = db_->findMaster("BUF_X1");
   odb::dbMaster* buf_x2_master = db_->findMaster("BUF_X2");
   odb::dbMaster* buf_x4_master = db_->findMaster("BUF_X4");
@@ -1401,6 +1486,7 @@ TEST_F(TestResizer, GetVtEquivCellsDeduplicatesNonAdjacentSameVtCells)
   buf_x4_master->setHeight(buf_x1_master->getHeight());
 
   odb::dbBox::create(buf_x1_master, lvt_implant, 0, 0, 10, 10);
+  odb::dbBox::create(buf_x2_master, rvt_implant, 0, 0, 10, 10);
   odb::dbBox::create(buf_x4_master, lvt_implant, 0, 0, 10, 10);
 
   readVerilogAndSetup("TestResizerMt_DelayEstimator.v");
@@ -1432,6 +1518,99 @@ TEST_F(TestResizer, GetVtEquivCellsDeduplicatesNonAdjacentSameVtCells)
             resizer_.cellVTType(second_master));
   EXPECT_LE(resizer_.cellLeakage(vt_equiv[0]).value_or(0.0f),
             resizer_.cellLeakage(vt_equiv[1]).value_or(0.0f));
+}
+
+TEST_F(TestResizer, LibraryWithoutImplantsHasNoVtCategory)
+{
+  // Nangate45 has no IMPLANT layers: no cell has a VT, VT moves are off.
+  readVerilogAndSetup("TestResizerMt_DelayEstimator.v");
+  resizer_.initBlock();
+  resizer_.runRepairSetupPreamble();
+
+  odb::dbMaster* buf_x1_master = db_->findMaster("BUF_X1");
+  ASSERT_NE(buf_x1_master, nullptr);
+  EXPECT_FALSE(resizer_.cellVTType(buf_x1_master).isClassified());
+  EXPECT_EQ(resizer_.vtCategoryCount(), 0);
+  EXPECT_EQ(resizer_.vtCategoryCountWithDontUse(), 0);
+}
+
+TEST_F(TestResizer, UnclassifiedCellsAreExcludedFromVtSwap)
+{
+  // Only BUF_X1 and BUF_X2 carry implant layers.  The other buffers have no
+  // VT, so they must neither form a VT category nor be VT alternatives.
+  odb::dbTechLayer* lvt_implant = odb::dbTechLayer::create(
+      db_->getTech(), "LVT_IMPLANT", odb::dbTechLayerType::IMPLANT);
+  odb::dbTechLayer* rvt_implant = odb::dbTechLayer::create(
+      db_->getTech(), "RVT_IMPLANT", odb::dbTechLayerType::IMPLANT);
+  odb::dbMaster* buf_x1_master = db_->findMaster("BUF_X1");
+  odb::dbMaster* buf_x2_master = db_->findMaster("BUF_X2");
+  odb::dbMaster* buf_x4_master = db_->findMaster("BUF_X4");
+  ASSERT_NE(buf_x1_master, nullptr);
+  ASSERT_NE(buf_x2_master, nullptr);
+  ASSERT_NE(buf_x4_master, nullptr);
+  // Equal areas make BUF_X4 a VT alternative of BUF_X1 apart from its VT.
+  buf_x2_master->setWidth(buf_x1_master->getWidth());
+  buf_x4_master->setWidth(buf_x1_master->getWidth());
+  odb::dbBox::create(buf_x1_master, lvt_implant, 0, 0, 10, 10);
+  odb::dbBox::create(buf_x2_master, rvt_implant, 0, 0, 10, 10);
+
+  readVerilogAndSetup("TestResizerMt_DelayEstimator.v");
+  resizer_.initBlock();
+  resizer_.runRepairSetupPreamble();
+
+  EXPECT_EQ(resizer_.vtCategoryCount(), 2);
+  EXPECT_EQ(resizer_.vtCategoryCountWithDontUse(), 2);
+  EXPECT_FALSE(resizer_.cellVTType(buf_x4_master).isClassified());
+
+  sta::LibertyCell* buf_x1_cell
+      = db_network_->libertyCell(db_network_->dbToSta(buf_x1_master));
+  sta::LibertyCell* buf_x4_cell
+      = db_network_->libertyCell(db_network_->dbToSta(buf_x4_master));
+  ASSERT_NE(buf_x1_cell, nullptr);
+  ASSERT_NE(buf_x4_cell, nullptr);
+
+  // BUF_X1 swaps to BUF_X2 only; BUF_X4 has no VT to swap from.
+  const sta::LibertyCellSeq vt_equiv = resizer_.getVTEquivCells(buf_x1_cell);
+  EXPECT_EQ(vt_equiv.size(), 2u);
+  for (sta::LibertyCell* cell : vt_equiv) {
+    EXPECT_TRUE(resizer_.cellVTType(db_network_->staToDb(cell)).isClassified())
+        << cell->name();
+  }
+  EXPECT_TRUE(resizer_.getVTEquivCells(buf_x4_cell).empty());
+}
+
+TEST_F(TestResizer, VtAccessorsRebuildLibraryDataAfterDontUseChange)
+{
+  // BUF_X1 is LVT and BUF_X2 is RVT; the other buffers have no VT.
+  odb::dbTechLayer* lvt_implant = odb::dbTechLayer::create(
+      db_->getTech(), "LVT_IMPLANT", odb::dbTechLayerType::IMPLANT);
+  odb::dbTechLayer* rvt_implant = odb::dbTechLayer::create(
+      db_->getTech(), "RVT_IMPLANT", odb::dbTechLayerType::IMPLANT);
+  odb::dbMaster* buf_x1_master = db_->findMaster("BUF_X1");
+  odb::dbMaster* buf_x2_master = db_->findMaster("BUF_X2");
+  ASSERT_NE(buf_x1_master, nullptr);
+  ASSERT_NE(buf_x2_master, nullptr);
+  odb::dbBox::create(buf_x1_master, lvt_implant, 0, 0, 10, 10);
+  odb::dbBox::create(buf_x2_master, rvt_implant, 0, 0, 10, 10);
+
+  readVerilogAndSetup("TestResizerMt_DelayEstimator.v");
+  resizer_.initBlock();
+  resizer_.runRepairSetupPreamble();
+  ASSERT_EQ(resizer_.vtCategoryCount(), 2);
+
+  sta::LibertyCell* buf_x2_cell
+      = db_network_->libertyCell(db_network_->dbToSta(buf_x2_master));
+  ASSERT_NE(buf_x2_cell, nullptr);
+
+  // setDontUse() resets the library data; each accessor rebuilds it.
+  resizer_.setDontUse(buf_x2_cell, true);
+  EXPECT_EQ(resizer_.vtCategoryCountWithDontUse(), 2);
+  resizer_.setDontUse(buf_x2_cell, true);
+  EXPECT_EQ(resizer_.vtCategoryCount(), 1);
+
+  // resetDontUse() makes RVT usable again: two usable VTs allow VT swap.
+  resizer_.resetDontUse();
+  EXPECT_TRUE(resizer_.canVtSwap(buf_x2_cell));
 }
 
 // Keyed by VT name for checks that do not depend on the row order.
@@ -1708,6 +1887,144 @@ TEST_F(TestResizer, IsClockCellCandidateRequiresLefMaster)
       resizer_.isClockCellCandidate(db_network_->findLibertyCell("CLKBUF_X1")));
 }
 
+TEST_F(TestResizer, PlacementDensityTracksPlacedInstances)
+{
+  odb::dbSite* site = nullptr;
+  for (odb::dbSite* lib_site : lib_->getSites()) {
+    if (lib_site->getClass() == odb::dbSiteClass::CORE) {
+      site = lib_site;
+      break;
+    }
+  }
+  ASSERT_NE(site, nullptr);
+  const int site_width = site->getWidth();
+  const int row_height = site->getHeight();
+
+  // Ten rows of 100 sites, 19 x 14 microns.
+  const auto make_block = [&](odb::dbChip* chip, const char* name) {
+    odb::dbBlock* block = odb::dbBlock::create(chip, name);
+    block->setDieArea(odb::Rect(0, 0, 100 * site_width, 10 * row_height));
+    for (int row = 0; row < 10; row++) {
+      odb::dbRow::create(block,
+                         ("row" + std::to_string(row)).c_str(),
+                         site,
+                         0,
+                         row * row_height,
+                         odb::dbOrientType::R0,
+                         odb::dbRowDir::HORIZONTAL,
+                         100,
+                         site_width);
+    }
+    block->setCoreArea(block->computeCoreArea());
+    return block;
+  };
+  // Tracks on metal2 to metal4, which the router sizes its gcells from.
+  const auto make_tracks = [&](odb::dbBlock* block) {
+    for (const char* layer_name : {"metal2", "metal3", "metal4"}) {
+      odb::dbTechLayer* layer = db_->getTech()->findLayer(layer_name);
+      odb::dbTrackGrid* tracks = odb::dbTrackGrid::create(block, layer);
+      tracks->addGridPatternX(0, 100, layer->getPitch());
+      tracks->addGridPatternY(0, 100, layer->getPitch());
+    }
+  };
+  odb::dbChip* chip = odb::dbChip::create(db_.get(), db_->getTech());
+  block_ = make_block(chip, "top");
+  make_tracks(block_);
+  const odb::Rect core = block_->getCoreArea();
+
+  // The gcells need the routing layers too.  Until they are set, there is
+  // no density, for callers to do without.
+  EXPECT_FALSE(resizer_.placementDensity(core).has_value());
+  EXPECT_EQ(resizer_.placementDensityGrid(), nullptr);
+  block_->setMaxRoutingLayer(4);
+
+  // A buffer counts and the filler beside it does not.
+  odb::dbMaster* buffer = db_->findMaster("BUF_X1");
+  odb::dbMaster* filler = db_->findMaster("FILLCELL_X1");
+  ASSERT_NE(buffer, nullptr);
+  ASSERT_NE(filler, nullptr);
+  odb::dbInst* placed = odb::dbInst::create(block_, buffer, "placed");
+  placed->setLocation(core.xMin(), core.yMin());
+  placed->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  odb::dbInst* fill = odb::dbInst::create(block_, filler, "fill");
+  fill->setLocation(core.xMin() + buffer->getWidth(), core.yMin());
+  fill->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  const auto buffer_area
+      = static_cast<double>(placed->getBBox()->getBox().area());
+
+  const std::optional<PlacementDensity> density
+      = resizer_.placementDensity(core);
+  ASSERT_TRUE(density.has_value());
+  EXPECT_EQ(density->region_area, core.area());
+  EXPECT_DOUBLE_EQ(density->instance_area, buffer_area);
+  // The instance area placementDensity() gives at where, which must have a
+  // density.
+  const auto instance_area_at = [&](const auto& where) {
+    const std::optional<PlacementDensity> at = resizer_.placementDensity(where);
+    EXPECT_TRUE(at.has_value());
+    return at.value_or(PlacementDensity{}).instance_area;
+  };
+
+  // The grid follows the buffer to the far corner of the core, into the
+  // gcell holding it there.
+  placed->setLocation(core.xMax() - buffer->getWidth(),
+                      core.yMax() - buffer->getHeight());
+  EXPECT_DOUBLE_EQ(instance_area_at(placed->getLocation()), buffer_area);
+  EXPECT_DOUBLE_EQ(instance_area_at(core), buffer_area);
+  // Its queries are const, for threads to make at once.
+  const PlacementDensityGrid* grid = resizer_.placementDensityGrid();
+  ASSERT_NE(grid, nullptr);
+  EXPECT_EQ(grid->getBinWidth(), block_->getGCellTileSize());
+  EXPECT_DOUBLE_EQ(grid->getDensity(core).instance_area, buffer_area);
+
+  // The gcells follow the routing layers, though odb has no callback for a
+  // change to them: with three, the metal3 tracks alone size them.
+  const int gcell = block_->getGCellTileSize();
+  block_->setMaxRoutingLayer(3);
+  ASSERT_NE(block_->getGCellTileSize(), gcell);
+  grid = resizer_.placementDensityGrid();
+  ASSERT_NE(grid, nullptr);
+  EXPECT_EQ(grid->getBinWidth(), block_->getGCellTileSize());
+  block_->setMaxRoutingLayer(4);
+
+  // The grid follows the db to another block, though the first one stays.
+  odb::dbChip* other_chip
+      = odb::dbChip::create(db_.get(), db_->getTech(), "other");
+  odb::dbBlock* other = make_block(other_chip, "other");
+  other->setMaxRoutingLayer(4);
+  db_->setTopChip(other_chip);
+  // The gcells need tracks as well, so until they are made there is no
+  // density, rather than an error from sizing the gcells.
+  EXPECT_FALSE(resizer_.placementDensity(core).has_value());
+  EXPECT_EQ(resizer_.placementDensityGrid(), nullptr);
+  make_tracks(other);
+  grid = resizer_.placementDensityGrid();
+  ASSERT_NE(grid, nullptr);
+  EXPECT_EQ(grid->getBlock(), other);
+  EXPECT_DOUBLE_EQ(instance_area_at(core), 0);
+  db_->setTopChip(chip);
+  grid = resizer_.placementDensityGrid();
+  ASSERT_NE(grid, nullptr);
+  EXPECT_EQ(grid->getBlock(), block_);
+
+  // odb has no callback for a new halo, so the grid sees one only once it is
+  // released and built afresh.  The buffer's hard halo, a site wide, then
+  // blocks the ring around it inside the core.
+  placed->setHalo(site_width, site_width, site_width, site_width, false);
+  resizer_.releasePlacementDensityGrid();
+  const odb::Rect box = placed->getBBox()->getBox();
+  const odb::Rect halo_in_core(box.xMin() - site_width,
+                               box.yMin() - site_width,
+                               core.xMax(),
+                               core.yMax());
+  const std::optional<PlacementDensity> rebuilt
+      = resizer_.placementDensity(core);
+  ASSERT_TRUE(rebuilt.has_value());
+  EXPECT_DOUBLE_EQ(rebuilt->instance_area, buffer_area);
+  EXPECT_DOUBLE_EQ(rebuilt->blocked_area,
+                   static_cast<double>(halo_in_core.area() - box.area()));
+}
+
 TEST_F(TestResizer, GetSwappableCellsKeepsClockAndDataBuffersDisjoint)
 {
   resizer_.makeEquivCells();
@@ -1723,6 +2040,85 @@ TEST_F(TestResizer, GetSwappableCellsKeepsClockAndDataBuffersDisjoint)
   for (sta::LibertyCell* cell : clk_swaps) {
     EXPECT_EQ(resizer_.getBufferUse(cell), BufferUse::CLOCK) << cell->name();
   }
+}
+
+TEST_F(TestResizer, RecoverPowerRollsBackMoveAtFailedMoveThresholdLimit)
+{
+  odb::dbChip* chip = odb::dbChip::create(db_.get(), db_->getTech());
+  block_ = odb::dbBlock::create(chip, "top");
+  block_->setDefUnits(db_->getTech()->getLefUnits());
+  odb::dbMaster* buf_x2 = db_->findMaster("BUF_X2");
+
+  // 501 independent paths exceed failed_move_threshold_limit_ (500).
+  constexpr int kNumPaths = 501;
+  for (int i = 0; i < kNumPaths; ++i) {
+    const std::string s = std::to_string(i);
+    odb::dbNet* in_net = odb::dbNet::create(block_, ("in_" + s).c_str());
+    odb::dbBTerm::create(in_net, ("in_" + s).c_str())
+        ->setIoType(odb::dbIoType::INPUT);
+    odb::dbNet* out_net = odb::dbNet::create(block_, ("out_" + s).c_str());
+    odb::dbBTerm::create(out_net, ("out_" + s).c_str())
+        ->setIoType(odb::dbIoType::OUTPUT);
+    odb::dbInst* buf
+        = odb::dbInst::create(block_, buf_x2, ("buf_" + s).c_str());
+    buf->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    buf->findITerm("A")->connect(in_net);
+    buf->findITerm("Z")->connect(out_net);
+  }
+
+  sta_->postReadDb(db_.get());
+  sta_->postReadDef(block_);
+  makeClock("vclk", nullptr);
+
+  sta::Sdc* sdc = sta_->cmdMode()->sdc();
+  sta::Clock* vclk = sdc->findClock("vclk");
+  sta::Cell* top_cell = db_network_->cell(db_network_->topInstance());
+  // 50 fF load: BUF_X2 -> BUF_X1 adds ~61 ps; 0.83 ns output delay on a 1 ns
+  // clock leaves ~96 ps slack so downsizeCell accepts BUF_X1 while WNS drops
+  // below 50% of worst_slack_before.
+  for (int i = 0; i < kNumPaths; ++i) {
+    const std::string s = std::to_string(i);
+    setInputDelay(("in_" + s).c_str(), "vclk", 0.0f);
+    const std::string out = "out_" + s;
+    sta_->setPortExtPinCap(db_network_->findPort(top_cell, out.c_str()),
+                           sta::RiseFallBoth::riseFall(),
+                           sta::MinMaxAll::all(),
+                           50e-15f,
+                           sdc);
+    sta_->setOutputDelay(findTopPin(out.c_str()),
+                         sta::RiseFallBoth::riseFall(),
+                         vclk,
+                         sta::RiseFall::rise(),
+                         nullptr,
+                         false,
+                         false,
+                         sta::MinMaxAll::all(),
+                         true,
+                         staTime(0.83f),
+                         sdc);
+  }
+
+  sta_->ensureGraph();
+  sta_->ensureLevelized();
+  resizer_.initBlock();
+  ep_.estimateWireParasitics();
+  sta_->updateTiming(true);
+
+  const sta::MinMax* max = sta::MinMax::max();
+  auto wns = [&] {
+    sta::Slack slack = 0.0f;
+    sta::Vertex* worst = nullptr;
+    sta_->worstSlack(max, slack, worst);
+    return sta::delayAsFloat(slack, max, sta_.get());
+  };
+  const float wns_before = wns();
+
+  EXPECT_FALSE(resizer_.recoverPower(1.0f, false, false));
+  for (odb::dbInst* inst : block_->getInsts()) {
+    EXPECT_EQ(inst->getMaster(), buf_x2);
+  }
+  sta_->updateTiming(true);
+  EXPECT_NEAR(wns(), wns_before, 1e-15f);
 }
 
 }  // namespace rsz

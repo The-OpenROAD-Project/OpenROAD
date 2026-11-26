@@ -301,6 +301,7 @@ cc_library(
     deps = [
         ":gpl_private_hdrs",
         "//bazel/kokkos",
+        "//openroad/cts",
         "//openroad/dbSta",
         "//openroad/dbSta:dbNetwork",
         "//openroad/grt",

@@ -1,5 +1,5 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("@rules_python//python:defs.bzl", "py_test")
+load("//bazel:man_tcl_checker.bzl", "man_tcl_check_test")
 
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
@@ -118,7 +118,6 @@ COMPULSORY_TESTS = [
     "pin_length",
     "pin_length_error",
     "pin_thick_multiplier",
-    "place_config",
     "place_pin1",
     "place_pin2",
     "place_pin3",
@@ -135,6 +134,7 @@ COMPULSORY_TESTS = [
     "place_pin_polygon_overlap",
     "place_pin_polygon_t",
     "place_pin_polygon_u",
+    "placer_config",
     "random_deprecated1",
     "random_deprecated2",
     "top_layer1",
@@ -245,15 +245,9 @@ cc_test(
     ],
 )
 
-py_test(
+man_tcl_check_test(
     name = "ppl_man_tcl_check",
-    srcs = ["ppl_man_tcl_check.py"],
-    data = ["//openroad/ppl:doc_files"],
-    tags = [
-        "doc_check",
-        "py",
-    ],
-    deps = ["//docs/src/scripts:extract_utils"],
+    module = "ppl",
 )
 
 doc_check_test(

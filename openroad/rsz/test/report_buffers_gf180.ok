@@ -13,9 +13,8 @@ Buffer Report:
 There are 20 buffers that are not marked as dont-use, multi-voltage
 special cells or clock buffers
 
-There are 1 VT types:
+There are 0 VT types:
 VT type[index]: # buffers, ave leakage
-  -      [0]: 20, 2.9e-10
 
 There are 0 cell footprint types:
 
@@ -83,9 +82,8 @@ Buffer Report:
 There are 20 buffers that are not marked as dont-use, multi-voltage
 special cells or clock buffers
 
-There are 1 VT types:
+There are 0 VT types:
 VT type[index]: # buffers, ave leakage
-  -      [0]: 20, 2.9e-10
 
 There are 0 cell footprint types:
 

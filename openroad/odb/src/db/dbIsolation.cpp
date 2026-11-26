@@ -115,7 +115,7 @@ void _dbIsolation::collectMemInfo(MemInfo& info)
 _dbIsolation::~_dbIsolation()
 {
   if (name_) {
-    free((void*) name_);
+    free(name_);
   }
 }
 
@@ -127,90 +127,91 @@ _dbIsolation::~_dbIsolation()
 
 const char* dbIsolation::getName() const
 {
-  _dbIsolation* obj = (_dbIsolation*) this;
+  const _dbIsolation* obj = reinterpret_cast<const _dbIsolation*>(this);
   return obj->name_;
 }
 
 void dbIsolation::setAppliesTo(const std::string& applies_to)
 {
-  _dbIsolation* obj = (_dbIsolation*) this;
+  _dbIsolation* obj = reinterpret_cast<_dbIsolation*>(this);
 
   obj->applies_to_ = applies_to;
 }
 
 const std::string& dbIsolation::getAppliesTo() const
 {
-  _dbIsolation* obj = (_dbIsolation*) this;
+  const _dbIsolation* obj = reinterpret_cast<const _dbIsolation*>(this);
   return obj->applies_to_;
 }
 
 void dbIsolation::setClampValue(const std::string& clamp_value)
 {
-  _dbIsolation* obj = (_dbIsolation*) this;
+  _dbIsolation* obj = reinterpret_cast<_dbIsolation*>(this);
 
   obj->clamp_value_ = clamp_value;
 }
 
 const std::string& dbIsolation::getClampValue() const
 {
-  _dbIsolation* obj = (_dbIsolation*) this;
+  const _dbIsolation* obj = reinterpret_cast<const _dbIsolation*>(this);
   return obj->clamp_value_;
 }
 
 void dbIsolation::setIsolationSignal(const std::string& isolation_signal)
 {
-  _dbIsolation* obj = (_dbIsolation*) this;
+  _dbIsolation* obj = reinterpret_cast<_dbIsolation*>(this);
 
   obj->isolation_signal_ = isolation_signal;
 }
 
 const std::string& dbIsolation::getIsolationSignal() const
 {
-  _dbIsolation* obj = (_dbIsolation*) this;
+  const _dbIsolation* obj = reinterpret_cast<const _dbIsolation*>(this);
   return obj->isolation_signal_;
 }
 
 void dbIsolation::setIsolationSense(const std::string& isolation_sense)
 {
-  _dbIsolation* obj = (_dbIsolation*) this;
+  _dbIsolation* obj = reinterpret_cast<_dbIsolation*>(this);
 
   obj->isolation_sense_ = isolation_sense;
 }
 
 const std::string& dbIsolation::getIsolationSense() const
 {
-  _dbIsolation* obj = (_dbIsolation*) this;
+  const _dbIsolation* obj = reinterpret_cast<const _dbIsolation*>(this);
   return obj->isolation_sense_;
 }
 
 void dbIsolation::setLocation(const std::string& location)
 {
-  _dbIsolation* obj = (_dbIsolation*) this;
+  _dbIsolation* obj = reinterpret_cast<_dbIsolation*>(this);
 
   obj->location_ = location;
 }
 
 const std::string& dbIsolation::getLocation() const
 {
-  _dbIsolation* obj = (_dbIsolation*) this;
+  const _dbIsolation* obj = reinterpret_cast<const _dbIsolation*>(this);
   return obj->location_;
 }
 
 void dbIsolation::setPowerDomain(dbPowerDomain* power_domain)
 {
-  _dbIsolation* obj = (_dbIsolation*) this;
+  _dbIsolation* obj = reinterpret_cast<_dbIsolation*>(this);
 
   obj->power_domain_ = power_domain->getImpl()->getOID();
 }
 
 dbPowerDomain* dbIsolation::getPowerDomain() const
 {
-  _dbIsolation* obj = (_dbIsolation*) this;
+  const _dbIsolation* obj = reinterpret_cast<const _dbIsolation*>(this);
   if (obj->power_domain_ == 0) {
     return nullptr;
   }
-  _dbBlock* par = (_dbBlock*) obj->getOwner();
-  return (dbPowerDomain*) par->powerdomain_tbl_->getPtr(obj->power_domain_);
+  _dbBlock* par = static_cast<_dbBlock*>(obj->getOwner());
+  return reinterpret_cast<dbPowerDomain*>(
+      par->powerdomain_tbl_->getPtr(obj->power_domain_));
 }
 
 // User Code Begin dbIsolationPublicMethods

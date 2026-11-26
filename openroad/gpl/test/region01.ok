@@ -86,11 +86,11 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
 [INFO GPL-0051] Source of initial instance position counters:
 	Odb location = 0	Core center = 0	Region center = 630
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000008 HPWL: 12377325
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000009 HPWL: 9412947
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000009 HPWL: 9412947
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000009 HPWL: 9412947
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000009 HPWL: 9412947
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000132 HPWL: 12377325
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000008 HPWL: 9412947
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000008 HPWL: 9412947
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000008 HPWL: 9412947
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000008 HPWL: 9412947
 [INFO GPL-0033] ---- Initialize Nesterov Region: spm_inst_0_domain
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:     11.827 um^2

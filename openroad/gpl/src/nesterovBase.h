@@ -863,6 +863,8 @@ struct NesterovPlaceVars
   bool timingDrivenRepairTiming;
   float timingDrivenRepairTnsEndPercent;
   int timingDrivenIterCounter = 0;
+  const std::vector<int> powerDrivenClockLeafOverflows;
+  int powerDrivenIterCounter = 0;
   const bool routability_driven_mode;
   const bool disableRevertIfDiverge;
 
@@ -943,6 +945,8 @@ class NesterovBaseCommon
   // backend. Defined in wirelengthGradient.cpp.
   void prepareDeviceWlGradients();
 
+  bool isWireLengthGradientOnDevice() const;
+
   FloatPoint getWireLengthGradientPinWA(const GPin* gPin,
                                         float wlCoeffX,
                                         float wlCoeffY) const;
@@ -997,6 +1001,23 @@ class NesterovBaseCommon
   void resizeMinRcCellSize();
   void updateMinRcCellSize();
   void revertGCellSizeToMinRc();
+
+  // Virtual power-driven clock leaf nets, WA gradient only.
+  struct VirtualClockLeafNet
+  {
+    std::vector<GPin*> pins;
+    float weight = 0;
+  };
+  void setVirtualClockLeafNets(std::vector<VirtualClockLeafNet> nets);
+  const std::vector<VirtualClockLeafNet>& getVirtualClockLeafNets() const
+  {
+    return virtual_clock_leaf_nets_;
+  }
+  void clearVirtualClockLeafNets();
+  bool hasVirtualClockLeafNets() const
+  {
+    return !virtual_clock_leaf_net_grads_.empty();
+  }
 
   GCell& getGCell(size_t index);
   size_t getGCellIndex(const GCell* gCell) const;
@@ -1070,6 +1091,11 @@ class NesterovBaseCommon
   int new_gcells_count_;
   int deleted_gcells_count_;
   nesterovDbCbk* db_cbk_{nullptr};
+
+  // For power-driven clock leaf nets, grads parallel to gCellStor_
+  void updateVirtualClockLeafNetForceWA(float wlCoeffX, float wlCoeffY);
+  std::vector<VirtualClockLeafNet> virtual_clock_leaf_nets_;
+  std::vector<FloatPoint> virtual_clock_leaf_net_grads_;
 };
 
 // Stores instances belonging to a specific power domain
@@ -1214,6 +1240,14 @@ class NesterovBase
   void updateDensityFieldBin();
 
   BinGrid& getBinGrid() { return bg_; }
+
+  // Moves movable instances that start at exactly the same density center,
+  // after clamping into the region, with the same size and the same
+  // multi-pin nets at the same pin offsets, apart onto a grid of distinct
+  // slots around that center. Such cells get identical forces, so they would
+  // otherwise never separate. Stacked cells that differ in their pins are left
+  // alone: the wirelength gradient separates them.
+  void spreadStackedGCells();
 
   // Nesterov Loop
   void initDensity1();

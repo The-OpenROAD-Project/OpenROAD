@@ -1,4 +1,4 @@
-# gcd flow pipe cleaner
+# gcd with timing: CUGR is timing driven whenever liberty is loaded.
 source "helpers.tcl"
 read_lef "sky130hs/sky130hs.tlef"
 read_lef "sky130hs/sky130hs_std_cell.lef"
@@ -18,7 +18,7 @@ set guide_file [make_result_file critical_nets_percentage_cugr.guide]
 set_routing_layers -signal met1-met5 -clock met3-met5
 set_global_routing_layer_adjustment met1-met5 0.8
 
-global_route -use_cugr -critical_nets_percentage 30 -verbose
+global_route -use_cugr -verbose
 
 write_guides $guide_file
 

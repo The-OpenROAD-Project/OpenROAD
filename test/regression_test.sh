@@ -42,15 +42,13 @@ cat "$LOG_FILE"
 
 case "$TEST_TYPE" in
 python | standalone_python)
-    sed -E -i 's#(File ")[^"]*/([^"]+")#\1\2#g' "$LOG_FILE"
-    sed -E -i '/^[[:space:]]+\^+$/d' "$LOG_FILE"
-    awk '
+    sed -E -e 's#(File ")[^"]*/([^"]+")#\1\2#g' -e '/^[[:space:]]+\^+$/d' "$LOG_FILE" | awk '
         prev_internal_frame && $0 ~ /^[[:space:]]+/ { prev_internal_frame = 0; next }
         {
             print
             prev_internal_frame = ($0 ~ /File "(openroadpy|.*_py)\.py", line [0-9]+, in /)
         }
-    ' "$LOG_FILE" > "${LOG_FILE}.tmp"
+    ' > "${LOG_FILE}.tmp"
     mv "${LOG_FILE}.tmp" "$LOG_FILE"
     ;;
 esac
