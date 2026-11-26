@@ -9,6 +9,12 @@ Smells (Lanza & Marinescu, "Object-Oriented Metrics in Practice"):
   data-class      class that is mostly data plus accessors
   message-chain   a->b()->c()->d() navigation through several classes
   intimacy        two classes that each use many of the other's members
+  shotgun-surgery method called from many methods in many other classes
+  middle-man      class whose methods mostly forward to another class
+Smells (Fowler, "Refactoring"):
+  long-method     method or function too long or too complex
+  long-params     too many parameters
+  data-clump      the same group of parameters/fields recurring together
 
 Every threshold is a flag, so results can be tuned without re-extracting.
 See references/smells.md for metric definitions and triage guidance.
@@ -21,7 +27,18 @@ import re
 import sys
 from collections import defaultdict
 
-SMELLS = ["feature-envy", "god-class", "data-class", "message-chain", "intimacy"]
+SMELLS = [
+    "feature-envy",
+    "god-class",
+    "data-class",
+    "message-chain",
+    "intimacy",
+    "shotgun-surgery",
+    "middle-man",
+    "long-method",
+    "long-params",
+    "data-clump",
+]
 
 # Members of these classes never count as foreign data: value types,
 # containers, and infrastructure every class legitimately uses.
@@ -59,9 +76,17 @@ class Facts:
         for m in self.methods.values():
             self.by_class[m["class_usr"]].append(m)
         self.class_name_to_usr = {c["name"]: usr for usr, c in self.classes.items()}
+        if "functions" not in data:
+            sys.exit("facts file predates version 2: rerun run.sh extract")
+        self.functions = data["functions"]
 
     def reported(self, item):
         return self.path_re is None or self.path_re.search(item["file"])
+
+    def trivial(self, m):
+        """Getter-sized: no branches and at most five lines.  Such methods
+        rarely change, so many callers are not a change risk."""
+        return m["accessor"] or (m["complexity"] == 1 and m["lines"] <= 5)
 
     def foreign(self, m):
         """{class: {member: (kind, count)}} without ignored classes."""
@@ -394,6 +419,237 @@ def intimacy(facts, a):
     return out
 
 
+def callables(facts):
+    """Methods and free functions, with an owner name for each."""
+    for m in facts.methods.values():
+        yield m, m["class"]
+    for f in facts.functions.values():
+        yield f, f["file"]
+
+
+def long_method(facts, a):
+    out = []
+    for m, owner in callables(facts):
+        if not facts.reported(m):
+            continue
+        if m["lines"] <= a.max_lines and m["complexity"] <= a.max_cyclo:
+            continue
+        out.append(
+            {
+                "smell": "long-method",
+                "method": m["name"],
+                "file": m["file"],
+                "line": m["line"],
+                "lines": m["lines"],
+                "cyclo": m["complexity"],
+                "score": max(m["lines"] / a.max_lines, m["complexity"] / a.max_cyclo),
+            }
+        )
+    out.sort(key=lambda r: -r["score"])
+    return out
+
+
+def long_params(facts, a):
+    out = []
+    for m, owner in callables(facts):
+        # An override's signature is fixed by its base class.
+        if not facts.reported(m) or m.get("override"):
+            continue
+        n = len(m["params"])
+        if n <= a.max_params:
+            continue
+        out.append(
+            {
+                "smell": "long-params",
+                "method": m["name"],
+                "file": m["file"],
+                "line": m["line"],
+                "params": n,
+                "ctor": m.get("kind") == "ctor",
+                "signature": ", ".join(
+                    f"{p['type']} {p['name']}".strip() for p in m["params"]
+                ),
+            }
+        )
+    out.sort(key=lambda r: -r["params"])
+    return out
+
+
+def data_clumps(facts, a):
+    """Groups of 3+ parameters or fields that recur together.
+
+    Each occurrence is a method signature (overloads and overrides of one
+    method count once) or a class's field list.  Items match on type and
+    name, or on name alone with --clump-by name.
+    """
+
+    def items(entries):
+        keys = []
+        for e in entries:
+            if not e["name"]:
+                continue
+            keys.append(
+                e["name"] if a.clump_by == "name" else f"{e['type']} {e['name']}"
+            )
+        return sorted(set(keys))
+
+    occurrences = {}  # (kind, owner, name) -> (item set, file, line)
+    for m, owner in callables(facts):
+        if m.get("override") or len(m["params"]) < a.clump_size:
+            continue
+        key = ("params", owner, m["name"])
+        occurrences.setdefault(key, (set(), m["file"], m["line"]))[0].update(
+            items(m["params"])
+        )
+    for c in facts.classes.values():
+        if len(c["fields"]) >= a.clump_size:
+            occurrences[("fields", c["name"], c["name"])] = (
+                set(items(c["fields"])),
+                c["file"],
+                c["line"],
+            )
+
+    where = defaultdict(set)
+    for key, (its, _, _) in occurrences.items():
+        its = sorted(its)
+        if len(its) > a.clump_max_items:
+            continue  # too many combinations; long-params reports these
+        for k in range(a.clump_size, len(its) + 1):
+            for combo in itertools.combinations(its, k):
+                where[combo].add(key)
+    frequent = {c: w for c, w in where.items() if len(w) >= a.clump_count}
+
+    # Drop a group that mostly occurs inside a larger frequent group.
+    best_super = defaultdict(int)
+    for combo in sorted(frequent, key=len, reverse=True):
+        top = max(len(frequent[combo]), best_super[combo])
+        for sub in itertools.combinations(combo, len(combo) - 1):
+            if sub in frequent:
+                best_super[sub] = max(best_super[sub], top)
+    out = []
+    for combo, keys in frequent.items():
+        if best_super[combo] >= 0.8 * len(keys):
+            continue
+        sites = sorted((occurrences[k][1], occurrences[k][2], k[0], k[2]) for k in keys)
+        item = {"file": sites[0][0], "line": sites[0][1]}
+        if not any(facts.reported({"file": f}) for f, _, _, _ in sites):
+            continue
+        out.append(
+            {
+                "smell": "data-clump",
+                "items": list(combo),
+                "count": len(keys),
+                "in_fields": sum(1 for k in keys if k[0] == "fields"),
+                "file": item["file"],
+                "line": item["line"],
+                "sites": [f"{f}:{ln} {kind} {short(n)}" for f, ln, kind, n in sites],
+                "score": len(keys) * len(combo),
+            }
+        )
+    out.sort(key=lambda r: -r["score"])
+    return out
+
+
+def middle_man(facts, a):
+    """Classes where most public methods just forward one call."""
+    out = []
+    for usr, c in facts.classes.items():
+        if not facts.reported(c):
+            continue
+        public = {
+            d["usr"]
+            for d in c["methods"]
+            if d["access"] == "public" and d["kind"] == "method" and not d["static"]
+        }
+        methods = [
+            m for u, m in facts.methods.items() if m["class_usr"] == usr and u in public
+        ]
+        if len(methods) < a.mm_min:
+            continue
+        targets = defaultdict(list)
+        for m in methods:
+            foreign = facts.foreign(m)
+            called = [
+                (cls, name)
+                for cls, members in foreign.items()
+                for name, (kind, _) in members.items()
+                if kind == "method"
+            ]
+            fields = [
+                1
+                for members in foreign.values()
+                for kind, _ in members.values()
+                if kind == "field"
+            ]
+            if (
+                m["stmts"] == 1
+                and m["complexity"] == 1
+                and not m["own_methods"]
+                and len(called) == 1
+                and not fields
+            ):
+                targets[called[0][0]].append(m["name"].rsplit("::", 1)[-1])
+        delegating = sum(len(v) for v in targets.values())
+        if delegating < a.mm_min or delegating / len(methods) < a.mm_ratio:
+            continue
+        target, names = max(targets.items(), key=lambda kv: len(kv[1]))
+        # pimpl: forwarding to a nested Impl is the point of the idiom.
+        if target.startswith(c["name"] + "::") and not a.include_pimpl:
+            continue
+        out.append(
+            {
+                "smell": "middle-man",
+                "class": c["name"],
+                "file": c["file"],
+                "line": c["line"],
+                "delegating": delegating,
+                "methods": len(methods),
+                "ratio": round(delegating / len(methods), 2),
+                "target": target,
+                "forwarders": sorted(names),
+                "score": delegating * delegating / len(methods),
+            }
+        )
+    out.sort(key=lambda r: -r["score"])
+    return out
+
+
+def shotgun_surgery(facts, a):
+    """Methods whose callers are spread over many methods and classes, so
+    changing the method means editing all of them."""
+    callers = defaultdict(set)
+    for m, owner in callables(facts):
+        for callee in m["calls"]:
+            callers[callee].add((m["name"], owner))
+    out = []
+    for usr, m in facts.methods.items():
+        if m["kind"] != "method" or facts.trivial(m) or not facts.reported(m):
+            continue
+        cls = facts.classes.get(m["class_usr"])
+        # A module's public API (include/) is meant to be called widely.
+        if not a.include_api and cls and "/include/" in cls["file"]:
+            continue
+        outside = {(n, o) for n, o in callers.get(usr, ()) if o != m["class"]}
+        cm = len(outside)
+        cc = len({o for _, o in outside})
+        if cm <= a.cm or cc <= a.cc:
+            continue
+        out.append(
+            {
+                "smell": "shotgun-surgery",
+                "method": m["name"],
+                "file": m["file"],
+                "line": m["line"],
+                "cm": cm,
+                "cc": cc,
+                "calling_classes": sorted({short(o) for _, o in outside})[:12],
+                "score": cm * cc,
+            }
+        )
+    out.sort(key=lambda r: -r["score"])
+    return out
+
+
 def print_table(title, rows, cols, top):
     print(f"\n## {title} ({len(rows)})")
     if not rows:
@@ -459,6 +715,43 @@ def main():
     g = ap.add_argument_group("intimacy")
     g.add_argument(
         "--intimacy", type=int, default=4, help="members used each way >= N (4)"
+    )
+    g = ap.add_argument_group("shotgun surgery")
+    g.add_argument("--cm", type=int, default=7, help="calling methods > N (7)")
+    g.add_argument("--cc", type=int, default=5, help="calling classes > N (5)")
+    g.add_argument(
+        "--include-api",
+        action="store_true",
+        help="also check classes declared under include/ (module APIs)",
+    )
+    g = ap.add_argument_group("middle man")
+    g.add_argument(
+        "--mm-ratio", type=float, default=0.5, help="forwarding share >= X (0.5)"
+    )
+    g.add_argument("--mm-min", type=int, default=3, help="forwarders >= N (3)")
+    g.add_argument(
+        "--include-pimpl",
+        action="store_true",
+        help="keep classes that forward to their own nested Impl",
+    )
+    g = ap.add_argument_group("long method / long parameter list")
+    g.add_argument("--max-lines", type=int, default=100, help="lines > N (100)")
+    g.add_argument("--max-cyclo", type=int, default=25, help="complexity > N (25)")
+    g.add_argument("--max-params", type=int, default=6, help="params > N (6)")
+    g = ap.add_argument_group("data clump")
+    g.add_argument("--clump-size", type=int, default=3, help="group size >= N (3)")
+    g.add_argument("--clump-count", type=int, default=4, help="occurrences >= N (4)")
+    g.add_argument(
+        "--clump-by",
+        choices=["type-name", "name"],
+        default="type-name",
+        help="match items on type and name (default) or name only",
+    )
+    g.add_argument(
+        "--clump-max-items",
+        type=int,
+        default=12,
+        help="skip signatures/field lists longer than N (12)",
     )
     a = ap.parse_args()
 
@@ -574,6 +867,68 @@ def main():
                 lambda r: f"{len(r['a_uses_b']):>3} {len(r['b_uses_a']):>3}",
                 loc,
                 lambda r: f"{r['classes'][0]} <-> {r['classes'][1]}",
+            ],
+            a.top,
+        )
+    if "shotgun-surgery" in smells:
+        findings["shotgun-surgery"] = shotgun_surgery(facts, a)
+        print_table(
+            "Shotgun Surgery  [CM CC  location  method <- calling classes]",
+            findings["shotgun-surgery"],
+            [
+                lambda r: f"{r['cm']:>4} {r['cc']:>3}",
+                loc,
+                lambda r: f"{r['method']} <- "
+                + ", ".join(r["calling_classes"][:4])
+                + (" ..." if r["cc"] > 4 else ""),
+            ],
+            a.top,
+        )
+    if "middle-man" in smells:
+        findings["middle-man"] = middle_man(facts, a)
+        print_table(
+            "Middle Man  [forwarders/public ratio  location  class -> target]",
+            findings["middle-man"],
+            [
+                lambda r: f"{r['delegating']:>3}/{r['methods']:<3} {r['ratio']:.2f}",
+                loc,
+                lambda r: f"{r['class']} -> {r['target']}",
+            ],
+            a.top,
+        )
+    if "long-method" in smells:
+        findings["long-method"] = long_method(facts, a)
+        print_table(
+            "Long Method  [lines cyclo  location  method]",
+            findings["long-method"],
+            [
+                lambda r: f"{r['lines']:>5} {r['cyclo']:>4}",
+                loc,
+                lambda r: r["method"],
+            ],
+            a.top,
+        )
+    if "long-params" in smells:
+        findings["long-params"] = long_params(facts, a)
+        print_table(
+            "Long Parameter List  [params  location  method]",
+            findings["long-params"],
+            [
+                lambda r: f"{r['params']:>3}",
+                loc,
+                lambda r: r["method"] + (" (ctor)" if r["ctor"] else ""),
+            ],
+            a.top,
+        )
+    if "data-clump" in smells:
+        findings["data-clump"] = data_clumps(facts, a)
+        print_table(
+            "Data Clumps  [sites (in fields)  first location  items]",
+            findings["data-clump"],
+            [
+                lambda r: f"{r['count']:>3} ({r['in_fields']})",
+                loc,
+                lambda r: ", ".join(r["items"]),
             ],
             a.top,
         )

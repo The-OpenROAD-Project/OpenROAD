@@ -1,23 +1,29 @@
 ---
 name: design-smells
 description: >
-  Audit OpenROAD C++ modules for object-oriented design smells: Feature
-  Envy, God Class, Data Class, Message Chains, and Inappropriate Intimacy.
-  It measures every class and method with a libclang AST pass, then reads
+  Audit OpenROAD C++ modules for design smells: Feature Envy, God Class,
+  Data Class, Message Chains, Inappropriate Intimacy, Shotgun Surgery,
+  Middle Man, Long Method, Long Parameter List, and Data Clumps. It
+  measures every class, method, and function with a libclang AST pass,
+  then reads
   and triages each candidate before reporting it with a concrete
   refactoring. Use when asked to find refactoring opportunities, design
   smells, code smells, misplaced methods, classes that do too much, poor
-  cohesion or encapsulation, Law of Demeter violations, or "where does
-  this logic belong" across a module or the codebase, even if no smell is
+  cohesion or encapsulation, Law of Demeter violations, overlong
+  functions or parameter lists, parameters that always travel together,
+  or "where does this logic belong" across a module or the codebase,
+  even if no smell is
   named. Not for reviewing a diff or PR (use review-pr, /code-review, or
   /simplify).
 ---
 
 # Design smell audit
 
-This skill finds code that sits in the wrong place: methods that envy
-another class's data, classes that do too much or too little, and
-coupling through long navigation chains. It works in three stages:
+This skill finds code that sits in the wrong place or has the wrong
+shape. That includes methods that envy another class's data, classes
+that do too much or too little, coupling through navigation chains or
+widely scattered callers, and functions that are too long or take
+parameter groups that should be a type. It works in three stages:
 
 1. `run.sh extract` parses the sources with libclang and writes a
    **facts** JSON with per-class and per-method metrics. This is slow.
@@ -57,15 +63,18 @@ out=<scratch dir>    # not the repo
 bash .agents/skills/design-smells/run.sh extract openroad/rsz -o $out/rsz.json
 ```
 
-Pass one or more module directories, or single files. Only classes and
-methods defined under the given paths are recorded, including those in
-their headers. Rough times on 64 cores: about 10 s for a mid-size
-module, and 1.5 minutes for all of `openroad/` (a 26 MB facts file).
+Pass one or more module directories, or single files. Only classes,
+methods, and free functions defined under the given paths are recorded,
+including those in their headers. Shotgun Surgery counts callers, so it
+only sees callers inside the extracted paths. Run it on facts for all of
+`openroad/` when callers in other modules matter. Rough times on 64 cores: about 10 s for a mid-size
+module, and 1.5 minutes for all of `openroad/` (a 38 MB facts file).
 Scale the time by the core count on smaller machines, and run the whole
 tree in the background.
 
 Extraction skips vendored and generated code by default: third-party,
-tests, OpenSTA, the Si2 LEF/DEF parsers, and SWIG wrappers. It also
+tests, OpenSTA, the Si2 LEF/DEF parsers, gpl's copy of the Ooura FFT,
+and SWIG wrappers. It also
 skips `gpl/src/gpu` (Kokkos) and `syn/src/elab` (slang), because
 `compile_flags.txt` lacks their headers. Override this with `--exclude`.
 Files that still fail to parse are listed in the facts and in detect's
@@ -91,7 +100,10 @@ Useful options:
 Each smell has its own threshold flags (see `--help`). The message-chain
 report has two tables: long chains, and repeated sub-chains (short
 navigation repeated at many sites, usually the more actionable of the
-two).
+two). Long Method and Long Parameter List list hundreds of items on a
+large codebase. Their defaults follow the repo's ~100-line function
+guideline. Use them to support other findings, or report the top few,
+rather than triaging every row.
 
 `references/smells.md` defines every metric and threshold, gives the
 standard refactoring for each smell, and lists OpenROAD's known false
@@ -115,6 +127,13 @@ callers. Then decide:
 - **For a God Class, is there a real split?** Run with `--clusters`. One
   giant group means no clean Extract Class. Drop the candidate unless a
   smaller group is a coherent concept of its own.
+- **For Shotgun Surgery, is there a protocol to hide?** A stable,
+  widely used data-model getter is fine. A finding is a call pattern
+  that every caller has to repeat correctly, such as a begin/end pair or
+  a fixed sequence of calls. That can become one method.
+- **For a Data Clump, does a type already exist?** `lx, ly, ux, uy` is
+  `odb::Rect`, and `x, y` is `odb::Point`. Proposing an existing type is
+  stronger than inventing a struct.
 - **Would the refactoring make the code clearer?** Name the specific move.
   For example: "move `getWireLengthGradientPinWA` to `GPin`; it only reads
   `GPin`/`GNet` state and `log_`". If you can't name one, drop the

@@ -1,8 +1,9 @@
 # Design smells: metrics, thresholds, and triage
 
-The detection strategies follow Lanza & Marinescu, *Object-Oriented
-Metrics in Practice* (2006). Each metric comes from `extract.py`'s facts.
-Each threshold is a `detect.py` flag.
+Most detection strategies follow Lanza & Marinescu, *Object-Oriented
+Metrics in Practice* (2006). Long Method, Long Parameter List, Data
+Clumps, and Middle Man come from Fowler's *Refactoring*. Each metric
+comes from `extract.py`'s facts. Each threshold is a `detect.py` flag.
 
 "Own" members are those of the method's class, its enclosing classes, its
 bases, and (for odb) the `_dbFoo` implementation behind `dbFoo`. "Foreign"
@@ -17,6 +18,10 @@ getters are not data worth moving behavior to).
 - [Data Class](#data-class)
 - [Message Chains](#message-chains)
 - [Inappropriate Intimacy](#inappropriate-intimacy)
+- [Shotgun Surgery](#shotgun-surgery)
+- [Middle Man](#middle-man)
+- [Long Method and Long Parameter List](#long-method-and-long-parameter-list)
+- [Data Clumps](#data-clumps)
 - [OpenROAD false positives](#openroad-false-positives)
 - [Choosing where code should live](#choosing-where-code-should-live)
 
@@ -142,6 +147,87 @@ members. Nested classes are excluded.
 **Refactoring:** If the pair is really one concept, merge it, or move the
 members that cross over. If the dependency should only go one way,
 replace the back-references with a callback or an interface.
+
+## Shotgun Surgery
+
+A method called from many methods in many other classes, so changing it
+means editing all of them.
+
+| Metric | Meaning | Flag when |
+|---|---|---|
+| CM | distinct calling methods outside the method's class | `> --cm` (7) |
+| CC | distinct classes those callers belong to (a free function counts by file) | `> --cc` (5) |
+
+Calls are matched by the callee's USR, so overloads are distinct.
+Calls through a base-class virtual count toward the base, not the
+override. Getter-sized methods (no branches and at most five lines) are
+skipped, and so are classes declared under `include/` (module public
+APIs, meant to be called widely) unless you pass `--include-api`.
+Callers are only seen within the extracted paths.
+
+The remaining hits are mostly a module's internal data model, such as
+drt's `frLayer` and `frViaDef` getters. Those are fine. A finding is a
+**protocol** that callers must repeat correctly, such as a
+`beginAction`/`endAction` pair or a fixed sequence of three calls.
+
+**Refactoring:** wrap the protocol in one method (or an RAII guard for
+begin/end pairs) so callers make one call.
+
+## Middle Man
+
+A class where at least `--mm-ratio` (0.5) of its public methods, and at
+least `--mm-min` (3) of them, only forward one call to another class.
+A forwarding method has one statement, no branches, and exactly one
+call to another class's method. Forwarding to the class's own nested
+`Impl` (pimpl) is skipped unless you pass `--include-pimpl`.
+
+Not findings:
+
+- Public facades over a private implementation, such as `odb::defin`
+  over `definReader`. They exist to keep the implementation out of the
+  public header.
+- Adapters that bind an external callback interface (odb `dbBlockCallBackObj`
+  subclasses, such as gpl's `nesterovDbCbk`) to the tool's own class.
+- Containers and iterators, such as `dbSet` over `dbIterator`.
+
+**Refactoring:** Remove Middle Man by having callers talk to the target
+directly, or Inline Class when the middle class adds nothing.
+
+## Long Method and Long Parameter List
+
+Long Method flags methods and free functions over `--max-lines` (100,
+the repo's own function-size guideline) or with cyclomatic complexity
+over `--max-cyclo` (25). Long Parameter List flags signatures with more
+than `--max-params` (6) parameters. Overrides are skipped, because the
+base class fixes their signature.
+
+Both lists are long on a large codebase. They are most useful as
+support: a long method that is also Feature Envy or the center of a
+God Class cluster. **Refactorings:** Extract Method, and for long
+parameter lists, Introduce Parameter Object (often an existing options
+struct) or Preserve Whole Object.
+
+## Data Clumps
+
+A group of 3 or more parameters, or fields, that recurs in at least
+`--clump-count` (4) places. Places are method signatures (overloads and
+overrides count once), free-function signatures, and class field lists.
+Items match on type and name, or on name alone with `--clump-by name`. A
+group that mostly occurs inside a larger frequent group is reported only
+as the larger one. The `(in fields)` count shows how many occurrences
+are class fields. A group in both fields and parameters often means a
+struct is half-introduced.
+
+Typical findings:
+
+- Coordinates: `lx, ly, ux, uy` or `x1, y1, x2, y2` should be
+  `odb::Rect`, and `x, y` plus a layer or direction is a grid-point
+  type.
+- Context objects: `db, sta, logger` passed everywhere. A finding only
+  if a context struct would remove real plumbing. Many classes take
+  these in a constructor and that is fine.
+
+**Refactoring:** Introduce Parameter Object, preferring an existing type.
 
 ## OpenROAD false positives
 

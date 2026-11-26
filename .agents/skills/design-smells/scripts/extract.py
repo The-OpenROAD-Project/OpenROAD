@@ -7,10 +7,13 @@ Parses each .cpp/.cc/.cxx file under the given paths with libclang (using
 compile_flags.txt from etc/bazel-make-compilation-db.sh) and records, for
 every class and method *defined* under those paths (headers included):
 
-  classes  fields and methods with access, static, and virtual flags; bases
-  methods  size, cyclomatic complexity, whether it is a trivial accessor,
-           own fields and methods it uses, members of other classes it uses
-           (grouped by declaring class), and member-access chains
+  classes    fields (with types) and methods with access, static, and
+             virtual flags; bases
+  methods    size, cyclomatic complexity, parameters, whether it is a
+             trivial accessor or an override, own fields and methods it uses,
+             members of other classes it uses (grouped by declaring class),
+             methods it calls (by USR), and member-access chains
+  functions  free functions: size, complexity, parameters, and calls
 
 detect.py turns these facts into smell reports, so thresholds and ignore
 lists can be tuned without re-parsing.  Run from the repo root via run.sh,
@@ -59,11 +62,12 @@ BRANCH_KINDS = {
 }
 WRAPPER_KINDS = {K.UNEXPOSED_EXPR, K.PAREN_EXPR}
 
-# Vendored or generated code that is not OpenROAD's design, plus code whose
-# headers compile_flags.txt does not provide.
+# Vendored or generated code that is not OpenROAD's design (including
+# gpl's copy of the Ooura FFT package), plus code whose headers
+# compile_flags.txt does not provide.
 DEFAULT_EXCLUDE = (
     r"/third-party/|/test/|/openroad/sta/|/odb/src/(lef|def)/"
-    r"|_wrap\.cc?$|/gpl/src/gpu/|/syn/src/elab/"
+    r"|_wrap\.cc?$|/gpl/src/gpu/|/syn/src/elab/|/gpl/src/fftsg"
 )
 
 
@@ -166,6 +170,7 @@ class MethodScanner:
         self.foreign = {}  # class -> {member: [kind, count]}
         self.complexity = 1
         self.chains = {}  # (line, col) -> chain
+        self.calls = set()  # USRs of non-static member functions called
         self._chain_cache = {}
 
     def is_own(self, decl_cls):
@@ -221,6 +226,8 @@ class MethodScanner:
         if decl_cls is None or decl_cls.kind not in CLASS_KINDS:
             return
         is_field = ref.kind == K.FIELD_DECL
+        if not is_field:
+            self.calls.add(ref.get_usr())
         if self.is_own(decl_cls):
             (self.own_fields if is_field else self.own_methods).add(ref.spelling)
         else:
@@ -254,6 +261,31 @@ def is_accessor(method, own_fields, own_methods, foreign):
     return "=" in tokens
 
 
+def normalize_type(t):
+    """Type spelling without const and references, for matching params."""
+    t = re.sub(r"\bconst\b|&", " ", t.spelling)
+    return re.sub(r"\s+", " ", t).strip().replace(" *", "*")
+
+
+def params(cursor):
+    return [
+        {"name": c.spelling, "type": normalize_type(c.type)}
+        for c in cursor.get_children()
+        if c.kind == K.PARM_DECL
+    ]
+
+
+def body_statements(cursor):
+    body = [c for c in cursor.get_children() if c.kind == K.COMPOUND_STMT]
+    return len(list(body[0].get_children())) if body else 0
+
+
+def is_override(cursor):
+    return any(
+        c.kind in (K.CXX_OVERRIDE_ATTR, K.CXX_FINAL_ATTR) for c in cursor.get_children()
+    )
+
+
 ACCESS = {
     ci.AccessSpecifier.PUBLIC: "public",
     ci.AccessSpecifier.PROTECTED: "protected",
@@ -276,7 +308,11 @@ def class_facts(cls, path):
     for ch in cls.get_children():
         if ch.kind == K.FIELD_DECL:
             fields.append(
-                {"name": ch.spelling, "access": ACCESS.get(ch.access_specifier, "")}
+                {
+                    "name": ch.spelling,
+                    "type": normalize_type(ch.type),
+                    "access": ACCESS.get(ch.access_specifier, ""),
+                }
             )
         elif ch.kind in METHOD_KINDS:
             methods.append(
@@ -317,15 +353,34 @@ def method_facts(m, path):
         "lines": m.extent.end.line - m.extent.start.line + 1,
         "kind": method_kind(m),
         "static": m.kind == K.CXX_METHOD and m.is_static_method(),
+        "override": is_override(m),
+        "params": params(m),
+        "stmts": body_statements(m),
         "complexity": s.complexity,
         "accessor": is_accessor(m, s.own_fields, s.own_methods, s.foreign),
         "own_fields": sorted(s.own_fields),
         "own_methods": sorted(s.own_methods),
         "foreign": s.foreign,
+        "calls": sorted(s.calls),
         "chains": [
             {"line": line, "chain": chain}
             for (line, _), chain in sorted(s.chains.items())
         ],
+    }
+
+
+def function_facts(f, path):
+    s = MethodScanner(f, set(), set())
+    s.scan()
+    return {
+        "name": qualified_name(f),
+        "file": path,
+        "line": f.location.line,
+        "lines": f.extent.end.line - f.extent.start.line + 1,
+        "params": params(f),
+        "stmts": body_statements(f),
+        "complexity": s.complexity,
+        "calls": sorted(s.calls),
     }
 
 
@@ -358,9 +413,9 @@ class Worker:
                 options=ci.TranslationUnit.PARSE_INCOMPLETE,
             )
         except ci.TranslationUnitLoadError as e:
-            return path, {}, {}, [f"parse failed: {e}"]
+            return path, {}, {}, {}, [f"parse failed: {e}"]
         errors = [str(d) for d in tu.diagnostics if d.severity >= ci.Diagnostic.Error]
-        classes, methods = {}, {}
+        classes, methods, functions = {}, {}, {}
         stack = list(tu.cursor.get_children())
         while stack:
             c = stack.pop()
@@ -376,15 +431,24 @@ class Worker:
                     self.seen.add(usr)
                     classes[usr] = class_facts(c, rel)
                 stack.extend(c.get_children())
-            elif c.kind in METHOD_KINDS and c.is_definition():
+            elif (
+                c.kind in METHOD_KINDS or c.kind == K.FUNCTION_DECL
+            ) and c.is_definition():
                 parent = c.semantic_parent
-                if parent is None or parent.kind not in CLASS_KINDS:
+                is_method = parent is not None and parent.kind in CLASS_KINDS
+                if not is_method and c.kind not in (
+                    K.FUNCTION_DECL,
+                    K.FUNCTION_TEMPLATE,
+                ):
                     continue
                 usr = c.get_usr()
                 if usr and usr not in self.seen:
                     self.seen.add(usr)
-                    methods[usr] = method_facts(c, rel)
-        return path, classes, methods, errors[:3]
+                    if is_method:
+                        methods[usr] = method_facts(c, rel)
+                    else:
+                        functions[usr] = function_facts(c, rel)
+        return path, classes, methods, functions, errors[:3]
 
 
 _WORKER = None
@@ -462,15 +526,17 @@ def main():
         sys.exit("no source files found")
     print(f"parsing {len(files)} files with {args.jobs} jobs", file=sys.stderr)
     start = time.time()
-    classes, methods, parse_errors = {}, {}, {}
+    classes, methods, functions, parse_errors = {}, {}, {}, {}
     with multiprocessing.Pool(args.jobs, initializer=_init, initargs=(args,)) as pool:
-        for i, (path, cls, meth, errors) in enumerate(
+        for i, (path, cls, meth, funcs, errors) in enumerate(
             pool.imap_unordered(_run, files), 1
         ):
             for usr, c in cls.items():
                 classes.setdefault(usr, c)
             for usr, m in meth.items():
                 methods.setdefault(usr, m)
+            for usr, fn in funcs.items():
+                functions.setdefault(usr, fn)
             if errors:
                 parse_errors[os.path.relpath(path)] = errors
                 if args.show_errors:
@@ -479,12 +545,13 @@ def main():
                 print(f"  {i}/{len(files)}", file=sys.stderr)
 
     facts = {
-        "version": 1,
+        "version": 2,
         "paths": args.paths,
         "files_parsed": len(files),
         "parse_errors": parse_errors,
         "classes": classes,
         "methods": methods,
+        "functions": functions,
     }
     with open(args.output, "w") as f:
         json.dump(facts, f)
@@ -502,6 +569,7 @@ def main():
         )
     print(
         f"{len(classes)} classes, {len(methods)} methods, "
+        f"{len(functions)} functions, "
         f"{len(parse_errors)} files with parse errors, "
         f"{time.time() - start:.0f}s -> {args.output}",
         file=sys.stderr,
