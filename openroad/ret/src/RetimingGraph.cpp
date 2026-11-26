@@ -24,6 +24,17 @@
 
 namespace ret {
 
+namespace {
+
+// A new cell would be in neither: membership (a power domain, a placement
+// region) is not carried over.
+bool isGrouped(odb::dbInst* inst)
+{
+  return inst->getGroup() != nullptr || inst->getRegion() != nullptr;
+}
+
+}  // namespace
+
 RetimingGraph::RetimingGraph(odb::dbDatabase* db,
                              sta::dbSta* sta,
                              rsz::Resizer* resizer,
@@ -227,8 +238,7 @@ bool RetimingGraph::fencesChain(odb::dbNet* net) const
 bool RetimingGraph::isDontTouch(odb::dbInst* reg) const
 {
   if (fenced_.contains(reg) || sdc_cells_.contains(reg) || reg->isDoNotTouch()
-      || reg->isFixed() || reg->getGroup() != nullptr
-      || reg->getRegion() != nullptr || isDontTouchRegister(sta_, reg)) {
+      || reg->isFixed() || isGrouped(reg) || isDontTouchRegister(sta_, reg)) {
     return true;
   }
   for (odb::dbITerm* pin : reg->getITerms()) {
@@ -390,8 +400,11 @@ void RetimingGraph::pinGates()
   const int n = size();
   pinned_.assign(n, false);
   for (int i = 0; i < n; ++i) {
-    pinned_[i] = sdc_cells_.contains(nodes_[i])
-                 || !isCombinationalGate(sta_, nodes_[i]);
+    // Only ever set: an earlier gate may have pinned this one already.
+    if (sdc_cells_.contains(nodes_[i]) || isGrouped(nodes_[i])
+        || !isCombinationalGate(sta_, nodes_[i])) {
+      pinned_[i] = true;
+    }
     markBoundary(nodes_[i], i);
     markDontTouch(nodes_[i], i);
   }

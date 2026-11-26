@@ -2,9 +2,9 @@
 # marked don't-touch nothing moves, and the same with a don't-touch net on
 # its path, a don't-touch gate reading it, the register fixed in place, in a
 # group or in a region, or an SDC exception or a constraint on a pin or on
-# the cell naming it.  A multicycle through a gate pins that gate (3 pinned
-# gates, not 2).  A path group that lists the registers as cells does not
-# fence them: the last retime moves the register.
+# the cell naming it.  A gate in a group, or with a multicycle through it,
+# is pinned (3 pinned gates, not 2).  A path group that lists the registers
+# as cells does not fence them: the last retime moves the register.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
@@ -51,6 +51,11 @@ set region [odb::dbRegion_create $block area]
 $region addInst $r1
 retime
 $region removeInst $r1
+
+set gate [$block findInst g1]
+$group addInst $gate
+retime
+$group removeInst $gate
 
 set_multicycle_path 2 -through [get_pins g2/ZN]
 retime

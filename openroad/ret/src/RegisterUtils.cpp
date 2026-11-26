@@ -240,6 +240,28 @@ namespace {
 
 constexpr size_t kMaxTruthTableInputs = 6;
 
+// The output pin that drives the net; nullptr when a port or a second pin
+// can drive it too.
+odb::dbITerm* onlyDriver(odb::dbNet* net)
+{
+  odb::dbITerm* driver = nullptr;
+  for (odb::dbITerm* iterm : net->getITerms()) {
+    if (iterm->getIoType() == odb::dbIoType::INPUT) {
+      continue;
+    }
+    if (driver != nullptr || iterm->getIoType() != odb::dbIoType::OUTPUT) {
+      return nullptr;
+    }
+    driver = iterm;
+  }
+  for (odb::dbBTerm* port : net->getBTerms()) {
+    if (port->getIoType() != odb::dbIoType::OUTPUT) {
+      return nullptr;
+    }
+  }
+  return driver;
+}
+
 std::optional<bool> constNetValue(sta::dbSta* sta, odb::dbNet* net)
 {
   if (net == nullptr) {
@@ -251,19 +273,20 @@ std::optional<bool> constNetValue(sta::dbSta* sta, odb::dbNet* net)
   if (net->getSigType() == odb::dbSigType::GROUND) {
     return false;
   }
-  for (odb::dbITerm* iterm : net->getITerms()) {
-    if (iterm->getIoType() != odb::dbIoType::OUTPUT) {
-      continue;
-    }
-    const sta::LibertyPort* port = libertyPort(sta, iterm);
-    const sta::FuncExpr* func = port != nullptr ? port->function() : nullptr;
-    if (func != nullptr && func->op() == sta::FuncExpr::Op::one) {
-      return true;
-    }
-    if (func != nullptr && func->op() == sta::FuncExpr::Op::zero) {
-      return false;
-    }
+  // Tied only when one cell drives the net, and drives it always.
+  odb::dbITerm* driver = onlyDriver(net);
+  const sta::LibertyPort* port
+      = driver != nullptr ? libertyPort(sta, driver) : nullptr;
+  if (port == nullptr || port->tristateEnable() != nullptr
+      || port->function() == nullptr) {
     return std::nullopt;
+  }
+  const sta::FuncExpr::Op op = port->function()->op();
+  if (op == sta::FuncExpr::Op::one) {
+    return true;
+  }
+  if (op == sta::FuncExpr::Op::zero) {
+    return false;
   }
   return std::nullopt;
 }
@@ -957,7 +980,7 @@ bool isCombinationalGate(sta::dbSta* sta, odb::dbInst* inst)
 {
   const sta::LibertyCell* cell = sta->getDbNetwork()->libertyCell(inst);
   if (cell == nullptr || cell->isSequential() || cell->isMacro()
-      || cell->isPad()) {
+      || cell->isPad() || cell->isIsolationCell() || cell->isLevelShifter()) {
     return false;
   }
   sta::LibertyCellPortIterator port_iter(cell);

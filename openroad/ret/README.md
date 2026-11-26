@@ -75,10 +75,10 @@ These gates are never crossed:
   output, driving a control pin of a register, or reachable by registers on
   different clock nets;
 - a gate whose output net has a second driver, and a cell that is not a
-  plain combinational gate: a tri-state driver, a macro, a pad, or a cell
-  without a liberty function;
-- a gate marked don't-touch or named by `set_false_path` or
-  `set_multicycle_path`.
+  plain combinational gate: a tri-state driver, an isolation cell, a level
+  shifter, a macro, a pad, or a cell without a liberty function;
+- a gate marked don't-touch, in a group or a region, or named by
+  `set_false_path` or `set_multicycle_path`.
 
 A register whose set or reset is tied inactive moves as the base flip-flop,
 and the tie cells only it read are removed unless they are fixed,

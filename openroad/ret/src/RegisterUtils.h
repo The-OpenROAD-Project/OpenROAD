@@ -191,8 +191,9 @@ bool sameRegisterClass(const RegisterClass& a, const RegisterClass& b);
 bool keepsClass(const RegisterClass& cls);
 
 // Every output is a liberty function of the inputs alone: no state, no
-// tri-state output, and not a macro, a pad or a cell without a liberty
-// model.  Registers only cross such a gate.
+// tri-state output, and not a macro, a pad, an isolation cell, a level
+// shifter or a cell without a liberty model.  Registers only cross such a
+// gate.
 bool isCombinationalGate(sta::dbSta* sta, odb::dbInst* inst);
 
 // Complementing every input complements every output (buffer, inverter,
