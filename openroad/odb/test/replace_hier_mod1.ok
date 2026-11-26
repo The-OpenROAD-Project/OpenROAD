@@ -44,10 +44,10 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0051] Source of initial instance position counters:
 	Odb location = 0	Core center = 21	Region center = 0
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000000 HPWL: 1271990
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000002 HPWL: 78589
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 79950
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000000 HPWL: 80612
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 80638
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000002 HPWL: 78239
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 79600
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000000 HPWL: 80262
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 80288
 [INFO DPL-0006] Core area: 47872.02 um^2
 [INFO DPL-0007] Movable instances area: 60.38 um^2
 [INFO DPL-0008] Fixed instances area within core: 0.00 um^2
@@ -71,12 +71,12 @@ Detailed Placement Analysis
 ---------------------------------
 legalizer            negotiation
 total moves                  34
-total displacement         76.4 u
-average displacement        3.6 u
-max displacement            7.4 u
-original HPWL               6.7 u
+total displacement         77.4 u
+average displacement        3.7 u
+max displacement            7.5 u
+original HPWL               7.0 u
 legalized HPWL             63.9 u
-delta HPWL                  852 %
+delta HPWL                  819 %
 
 ### Initial bc1 is buffer_chain ###
 Cell type report for bc1 (buffer_chain)
@@ -260,7 +260,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       590 |   0.3878 |  2.637535e+02 |   +0.43% |  7.94e-02 |      
 [WARNING GPL-1010] GPL reached the maximum number of iterations for nesterov 600. Placement may have failed to converge.
 [INFO GPL-1014] Final placement area: 54.55 (+0.00%)
-[INFO GPL-1018] Final HPWL (um): 265.27
+[INFO GPL-1018] Final HPWL (um): 265.52
 [INFO GPL-0133] Unlocking all instances
 [INFO GPL-0084] ---- Execute Nesterov Global Placement.
 [INFO GPL-0191] Incremental density-penalty guard enabled: penalty factor 1, starting overflow 0.388.
@@ -279,7 +279,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0014
 [INFO GPL-1009]     - For 50% usage of free space: 0.0023
 [INFO GPL-1014] Final placement area: 54.55 (+0.00%)
-[INFO GPL-1018] Final HPWL (um): 262.73
+[INFO GPL-1018] Final HPWL (um): 262.81
 [INFO DPL-0006] Core area: 47872.02 um^2
 [INFO DPL-0007] Movable instances area: 59.85 um^2
 [INFO DPL-0008] Fixed instances area within core: 0.00 um^2
@@ -301,11 +301,11 @@ Detailed Placement Analysis
 ---------------------------------
 legalizer            negotiation
 total moves                   4
-total displacement         16.6 u
+total displacement         16.5 u
 average displacement        0.8 u
-max displacement            2.5 u
-original HPWL             262.7 u
-legalized HPWL            262.4 u
+max displacement            2.6 u
+original HPWL             262.8 u
+legalized HPWL            262.2 u
 delta HPWL                    0 %
 
 Cell type report for bc1 (inv_chain_bc1)
@@ -408,11 +408,11 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
 [INFO GPL-0051] Source of initial instance position counters:
 	Odb location = 0	Core center = 2	Region center = 0
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000000 HPWL: 3053060
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000000 HPWL: 589234
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 589421
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000000 HPWL: 589478
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 589487
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000000 HPWL: 3052680
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000000 HPWL: 588854
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 589041
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000000 HPWL: 589098
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 589107
 [INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
 [INFO GPL-0023] Placement target density:       0.0112
 [INFO GPL-0024] Movable insts average area:      2.623 um^2
@@ -427,8 +427,8 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.0444 |  2.619675e+02 |   +0.00% |  2.43e-13 |      
-        0 |   0.0444 |  2.619675e+02 |          |  2.52e-13 |      
+        0 |   0.0444 |  2.617775e+02 |   +0.00% |  2.43e-13 |      
+        0 |   0.0444 |  2.617775e+02 |          |  2.53e-13 |      
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 0
 [INFO GPL-1002] Placed Cell Area               55.0833
@@ -439,7 +439,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0014
 [INFO GPL-1009]     - For 50% usage of free space: 0.0023
 [INFO GPL-1014] Final placement area: 55.08 (+0.00%)
-[INFO GPL-1018] Final HPWL (um): 261.89
+[INFO GPL-1018] Final HPWL (um): 261.78
 [INFO GPL-0133] Unlocking all instances
 [INFO DPL-0006] Core area: 47872.02 um^2
 [INFO DPL-0007] Movable instances area: 60.38 um^2
@@ -457,11 +457,11 @@ Detailed Placement Analysis
 ---------------------------------
 legalizer            negotiation
 total moves                   0
-total displacement          3.4 u
-average displacement        0.2 u
+total displacement          2.0 u
+average displacement        0.1 u
 max displacement            1.5 u
-original HPWL             261.9 u
-legalized HPWL            261.8 u
+original HPWL             261.8 u
+legalized HPWL            261.6 u
 delta HPWL                    0 %
 
 Cell type report for bc1 (buffer_chain)
@@ -564,11 +564,11 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
 [INFO GPL-0051] Source of initial instance position counters:
 	Odb location = 0	Core center = 2	Region center = 0
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000000 HPWL: 3052680
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000000 HPWL: 588640
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 588758
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000000 HPWL: 588810
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 588832
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000000 HPWL: 3052300
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000000 HPWL: 588260
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 588378
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000000 HPWL: 588430
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 588452
 [INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
 [INFO GPL-0023] Placement target density:       0.0111
 [INFO GPL-0024] Movable insts average area:      2.598 um^2
@@ -583,8 +583,8 @@ Repair timing output passed/skipped equivalence test
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.0357 |  2.618945e+02 |   +0.00% |  2.52e-13 |      
-        0 |   0.0357 |  2.618945e+02 |          |  2.62e-13 |      
+        0 |   0.0357 |  2.617045e+02 |   +0.00% |  2.53e-13 |      
+        0 |   0.0357 |  2.617045e+02 |          |  2.63e-13 |      
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 0
 [INFO GPL-1002] Placed Cell Area               54.5513
@@ -595,7 +595,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0014
 [INFO GPL-1009]     - For 50% usage of free space: 0.0023
 [INFO GPL-1014] Final placement area: 54.55 (+0.00%)
-[INFO GPL-1018] Final HPWL (um): 261.97
+[INFO GPL-1018] Final HPWL (um): 261.70
 [INFO GPL-0133] Unlocking all instances
 [INFO DPL-0006] Core area: 47872.02 um^2
 [INFO DPL-0007] Movable instances area: 59.85 um^2
@@ -613,11 +613,11 @@ Detailed Placement Analysis
 ---------------------------------
 legalizer            negotiation
 total moves                   0
-total displacement          3.2 u
-average displacement        0.2 u
+total displacement          1.8 u
+average displacement        0.1 u
 max displacement            1.5 u
-original HPWL             262.0 u
-legalized HPWL            261.9 u
+original HPWL             261.7 u
+legalized HPWL            261.7 u
 delta HPWL                    0 %
 
 Cell type report for bc1 (inv_chain_bc1_1)
