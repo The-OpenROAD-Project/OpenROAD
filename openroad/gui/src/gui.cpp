@@ -946,10 +946,10 @@ int startGui(int& argc,
     // Once a callback calls exit or gui::hide, no further callback runs.
     ScriptWidget* script_widget = main_window->getScriptWidget();
     const auto exit_or_hide_requested
-        = [&]() { return exit_requested || gui->isContinueAfterClose(); };
+        = [&] { return exit_requested || gui->isContinueAfterClose(); };
     QTimer tcl_event_pump;
     std::function<void()> service_tcl_events;
-    service_tcl_events = [&]() {
+    service_tcl_events = [&] {
       if (script_widget->serviceTclEvents(32, exit_or_hide_requested)) {
         QTimer::singleShot(0, &tcl_event_pump, service_tcl_events);
       }
