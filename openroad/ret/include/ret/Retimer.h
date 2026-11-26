@@ -38,6 +38,9 @@ struct RetimeOptions
 {
   int max_moves = 0;      // slides over the whole run; 0: unlimited
   double margin = 0.002;  // the gain a slide must make, x the clock period
+  // Registers move although a path delay, a path group or a constraint on
+  // the cell names them; what names a register that moves is dropped.
+  bool move_named_registers = false;
 };
 
 // Forward register retiming: Retime proposes slides on a delay model read

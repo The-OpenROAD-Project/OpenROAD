@@ -1,0 +1,26 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 3 pinned gates, 0 fenced registers.
+[INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.0703, TNS -0.0703, registers 2, placed 0, resized 0.
+[INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 3 pinned gates, 0 fenced registers.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.0703 |       -0.0703 |         2
+     1 |        1 |      1 |    1 |     -0.0663 |       -0.0663 |         2
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 1, rounds 1, WNS -0.0663, TNS -0.0663, registers 2, placed 0, resized 0.
+max_delay/setup group clk
+
+                                      Required    Actual
+Endpoint                                 Delay     Delay     Slack
+------------------------------------------------------------------
+r2/D (DFF_X1)                           0.0421    0.1084   -0.0663 (VIOLATED)
+
+[INFO RET-0014] Retiming graph: 6 gates, 5 edges, 2 registers, 3 pinned gates, 0 fenced registers.
+[INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.0963, TNS -0.0963, registers 2, placed 0, resized 0.
+max_delay/setup group clk
+
+                                      Required    Actual
+Endpoint                                 Delay     Delay     Slack
+------------------------------------------------------------------
+r2/D (DFF_X1)                           0.0121    0.1084   -0.0963 (VIOLATED)
+

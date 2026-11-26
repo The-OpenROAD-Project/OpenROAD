@@ -106,15 +106,22 @@ void connectPin(
 // In a group or a region (a power domain, a placement region): a new cell
 // would be in neither.
 bool isGrouped(odb::dbInst* inst);
-// A cell that must stay as it is: don't-touch, fixed, grouped, or with a pin
-// on a don't-touch net, supply nets included (deleting it disconnects them).
+// A cell that must stay as it is: don't-touch, fixed, grouped, in a scan
+// chain, or with a pin on a don't-touch net, supply nets included (odb
+// refuses to delete such a cell).
 bool isHeld(odb::dbInst* inst);
 
-// An SDC constraint on the cell (operating conditions, disable_timing, a
-// derate or a pulse width of its own), on one of its pins, or on a net it
-// drives: STA drops it with the cell.  The exceptions that list the cell do
-// not count.
-bool hasSdcConstraint(sta::dbSta* sta, odb::dbInst* inst);
+// An SDC constraint on one of the cell's pins or on a net it drives (case
+// analysis, disable_timing, a clock latency, a net derate, ...).
+bool hasPinConstraint(sta::dbSta* sta, odb::dbInst* inst);
+// STA's answer for the cell itself: a constraint on it (a derate,
+// disable_timing, operating conditions, ...) or an exception that lists it.
+bool hasCellConstraint(sta::dbSta* sta, odb::dbInst* inst);
+// A timing edge into, out of or inside the cell that set_disable_timing
+// disables, on the cell, a pin, the edge or the library cell.
+bool hasDisabledEdge(sta::dbSta* sta, odb::dbInst* inst);
+// The cells with the pin a port delay is measured from (-reference_pin).
+std::vector<odb::dbInst*> portDelayReferenceCells(sta::dbSta* sta);
 
 // A cell with a scan pin in LEF or a liberty test_cell.
 bool isScanCell(sta::dbSta* sta, odb::dbInst* inst);

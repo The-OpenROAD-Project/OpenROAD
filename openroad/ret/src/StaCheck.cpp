@@ -26,15 +26,26 @@ namespace {
 constexpr int kSlackDigits = 4;
 
 // Neither the worst nor the total negative slack below the start, for setup
-// and for hold, and one of the two setup slacks above it.
-bool betterThan(const StaSlack& a, const StaSlack& start)
+// and for hold.
+bool notWorse(const StaSlack& a, const StaSlack& start)
 {
   return a.worst >= start.worst - kStaSlackEps
          && a.total >= start.total - kStaSlackEps
          && a.hold_worst >= start.hold_worst - kStaSlackEps
-         && a.hold_total >= start.hold_total - kStaSlackEps
-         && (a.worst > start.worst + kStaSlackEps
-             || a.total > start.total + kStaSlackEps);
+         && a.hold_total >= start.hold_total - kStaSlackEps;
+}
+
+// No scene worse than at the start, and the worst or the total setup slack
+// over the scenes above it.
+bool betterThan(const StaSlack& a, const StaSlack& start)
+{
+  for (size_t i = 0; i < a.scenes.size(); ++i) {
+    if (!notWorse(a.scenes[i], start.scenes[i])) {
+      return false;
+    }
+  }
+  return a.worst > start.worst + kStaSlackEps
+         || a.total > start.total + kStaSlackEps;
 }
 
 }  // namespace

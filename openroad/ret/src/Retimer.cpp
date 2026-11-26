@@ -264,7 +264,7 @@ const RetimingGraph& Retimer::graph()
 {
   if (graph_ == nullptr) {
     graph_ = std::make_unique<RetimingGraph>(db_, sta_, resizer_, logger_);
-    graph_->build();
+    graph_->build(options_.move_named_registers);
   } else {
     const bool gates_dropped
         = trial_undone_
@@ -606,18 +606,12 @@ void Retimer::removeRegister(odb::dbInst* inst)
         loads.push_back(iterm);
       }
     }
-    const std::vector<odb::dbBTerm*> ports(q_net->getBTerms().begin(),
-                                           q_net->getBTerms().end());
     for (odb::dbITerm* load : loads) {
       load->disconnect();
       load->connect(d_net);
       if (d_mod_net != nullptr) {
         load->connect(d_mod_net);
       }
-    }
-    for (odb::dbBTerm* bterm : ports) {
-      bterm->disconnect();
-      bterm->connect(d_net);
     }
   }
   discardRegister(sta_, inst, *discards_);
@@ -826,8 +820,8 @@ void Retimer::rebuildGroup(const Group& group,
                            odb::dbNet* clock_net)
 {
   const ModNets mod_nets = groupModNets(group, classes, clock_net);
-  // In id order: odb gives a new instance the slot of a deleted one, so the
-  // order of removal decides the ids of the cells made after the trial.
+  // In id order, not in the order of a set of pointers: the removal order
+  // decides how the nets list the rewired pins.
   for (odb::dbInst* f : inIdOrder(group.flops)) {
     removeRegister(f);
   }
@@ -865,7 +859,12 @@ void Retimer::applyRetiming(const RetimingGraph& graph,
   checkCrossings(graph, plan);
 
   for (size_t i = 0; i < plan.groups.size(); ++i) {
-    trial_sources_.push_back(plan.groups[i].sinks.front().source);
+    // A net with two drivers has sinks from both.
+    for (const Sink& sink : plan.groups[i].sinks) {
+      if (trial_sources_.empty() || trial_sources_.back() != sink.source) {
+        trial_sources_.push_back(sink.source);
+      }
+    }
     rebuildGroup(plan.groups[i], chains[i].classes, chains[i].clock_net);
   }
 }

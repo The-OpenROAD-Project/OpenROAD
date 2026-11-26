@@ -56,7 +56,8 @@ class RetimingGraph
                 rsz::Resizer* resizer,
                 utl::Logger* logger);
 
-  void build();
+  // move_named_registers: RetimeOptions.
+  void build(bool move_named_registers);
   // sources: the gates whose fanout registers changed.  gates_changed: gates
   // were appended or dropped.  Returns the gates whose edges were read again.
   std::vector<int> update(std::vector<int> sources, bool gates_changed);
@@ -130,10 +131,14 @@ class RetimingGraph
   void pinGates();
   // The pins registers decide.
   void fence();
-  // The registers and gates a false path, a multicycle or a path delay
-  // names: a move would change which paths the exception covers.  And the
-  // registers with an SDC constraint of their own.
-  void findSdcCells(odb::dbBlock* block);
+  // The cells the SDC names: in an exception, by a constraint on a pin or
+  // on a driven net, by a disabled timing edge, as the reference of a port
+  // delay, and the registers with a constraint on the cell.  A move would
+  // change which paths the entry covers, or STA would drop it with the
+  // cell.  move_named_registers leaves out the registers that only a
+  // constraint on the cell, or the -from or -to list of a path delay or a
+  // path group, names as cells.
+  void findSdcCells(odb::dbBlock* block, bool move_named_registers);
   void markBoundary(odb::dbInst* inst, int id);
   void markDontTouch(odb::dbInst* inst, int id);
   // Pins a gate with an input no edge ends on (a port, or a register no gate

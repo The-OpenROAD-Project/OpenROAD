@@ -2,11 +2,12 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 sta::define_cmd_args "retime" {[-max_moves count]\
-                               [-margin fraction]}
+                               [-margin fraction]\
+                               [-move_named_registers]}
 
 proc retime { args } {
   sta::parse_key_args "retime" args \
-    keys {-max_moves -margin} flags {}
+    keys {-max_moves -margin} flags {-move_named_registers}
   sta::check_argc_eq0 "retime" $args
 
   set max_moves 0
@@ -20,5 +21,5 @@ proc retime { args } {
     sta::check_positive_float "-margin" $margin
   }
 
-  ret::retime_cmd $max_moves $margin
+  ret::retime_cmd $max_moves $margin [info exists flags(-move_named_registers)]
 }

@@ -28,13 +28,15 @@ namespace ret {
 inline constexpr float kStaSlackEps = 1e-13f;
 
 // Setup: the worst slack and the total negative slack.  Hold: the same of
-// the violations only, so both are zero when hold is met.
+// the violations only, so both are zero when hold is met.  Of the worst
+// scene, as STA reports them, and of each scene.
 struct StaSlack
 {
   float worst = 0.0f;
   float total = 0.0f;
   float hold_worst = 0.0f;
   float hold_total = 0.0f;
+  std::vector<StaSlack> scenes;
 };
 // Brings the wire estimates up to date first.
 StaSlack staSlack(sta::dbSta* sta, est::IncrementalParasiticsGuard& guard);

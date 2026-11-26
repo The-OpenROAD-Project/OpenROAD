@@ -312,7 +312,7 @@ void RetimingGraph::addGates()
   }
 }
 
-void RetimingGraph::build()
+void RetimingGraph::build(const bool move_named_registers)
 {
   findClockPeriod();
 
@@ -327,7 +327,7 @@ void RetimingGraph::build()
   self_dual_master_.clear();
   reg_class_.clear();
   fenced_.clear();
-  findSdcCells(db_->getChip()->getBlock());
+  findSdcCells(db_->getChip()->getBlock(), move_named_registers);
   addGates();
   const int n = size();
   for (int i = 0; i < n; ++i) {
@@ -512,45 +512,46 @@ bool RetimingGraph::selfDual(odb::dbInst* gate)
   return true;
 }
 
-void RetimingGraph::findSdcCells(odb::dbBlock* block)
+void RetimingGraph::findSdcCells(odb::dbBlock* block,
+                                 const bool move_named_registers)
 {
   sdc_cells_.clear();
   sta::dbNetwork* network = sta_->getDbNetwork();
-  const auto is_register = [network](const sta::Instance* cell) {
-    odb::dbInst* inst = network->staToDb(cell);
-    return inst != nullptr && inst->getMaster()->isSequential();
-  };
-  int registers = 0;
   for (odb::dbInst* inst : block->getInsts()) {
-    if (inst->getMaster()->isSequential()) {
-      ++registers;
-      if (hasSdcConstraint(sta_, inst)) {
-        sdc_cells_.insert(inst);
-      }
+    // A gate keeps what names it as a cell; a register would lose it, which
+    // the caller can allow.
+    const bool named_register = inst->getMaster()->isSequential()
+                                && !move_named_registers
+                                && hasCellConstraint(sta_, inst);
+    if (named_register || hasPinConstraint(sta_, inst)
+        || hasDisabledEdge(sta_, inst)) {
+      sdc_cells_.insert(inst);
     }
+  }
+  for (odb::dbInst* inst : portDelayReferenceCells(sta_)) {
+    sdc_cells_.insert(inst);
   }
   for (const sta::Mode* mode : sta_->modes()) {
     for (const sta::ExceptionPath* exception : mode->sdc()->exceptions()) {
-      // A false path, a multicycle or a path delay changes how a path is
-      // timed; a path group does not.
-      if (!exception->isFalse() && !exception->isMultiCycle()
-          && !exception->isPathDelay()) {
-        continue;
-      }
+      // A move across a cell that an exception names would change which
+      // paths it covers.  The caller can release the registers that a path
+      // delay or a path group lists as cells in its -from or -to.
+      const bool releases
+          = move_named_registers
+            && (exception->isPathDelay() || exception->isGroupPath());
       sta::ExceptionPtIterator pt_iter(exception);
       while (pt_iter.hasNext()) {
-        sta::ExceptionPt* pt = pt_iter.next();
-        // A path delay on every register ([all_registers]) names a class,
-        // not cells: reading the SDC again puts new registers under it, and
-        // fencing its cells would fence the design.
-        if (exception->isPathDelay() && pt->instances() != nullptr
-            && std::ranges::count_if(*pt->instances(), is_register)
-                   == registers) {
-          continue;
-        }
-        for (const sta::Pin* pin : pt->allPins(network)) {
+        sta::ExceptionPt* point = pt_iter.next();
+        const sta::PinSet* pins = point->pins();
+        for (const sta::Pin* pin : point->allPins(network)) {
           odb::dbInst* inst = network->staToDb(network->instance(pin));
-          if (inst != nullptr) {
+          if (inst == nullptr) {
+            continue;
+          }
+          // Listed as a cell: a -from or -to that does not name this pin.
+          const bool listed
+              = !point->isThru() && (pins == nullptr || !pins->contains(pin));
+          if (!(releases && listed && inst->getMaster()->isSequential())) {
             sdc_cells_.insert(inst);
           }
         }
@@ -577,6 +578,28 @@ void RetimingGraph::pinUnmodeledInputs()
   }
 }
 
+namespace {
+
+// Whether the register and every cell that reads it are in the module: its
+// loads are rewired with it, also one that no edge of the graph ends on.
+bool readInModule(odb::dbInst* flop, odb::dbModule* module)
+{
+  for (odb::dbITerm* pin : flop->getITerms()) {
+    odb::dbNet* net = pin->getNet();
+    if (pin->getIoType() != odb::dbIoType::OUTPUT || net == nullptr) {
+      continue;
+    }
+    for (odb::dbITerm* load : net->getITerms()) {
+      if (load->getInst()->getModule() != module) {
+        return false;
+      }
+    }
+  }
+  return flop->getModule() == module;
+}
+
+}  // namespace
+
 void RetimingGraph::fenceModules()
 {
   if (!sta_->getDbNetwork()->hasHierarchy()) {
@@ -592,7 +615,7 @@ void RetimingGraph::fenceModules()
       const bool one_module
           = nodes_[adj_[u][k].target]->getModule() == module
             && std::ranges::all_of(phys.flops, [module](odb::dbInst* flop) {
-                 return flop->getModule() == module;
+                 return readInModule(flop, module);
                });
       odb::dbNet* net = chainNet(phys);
       if (!one_module && net != nullptr) {

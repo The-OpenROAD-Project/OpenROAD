@@ -24,20 +24,44 @@
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Scene.hh"
 
 namespace ret {
+
+namespace {
+
+StaSlack sceneSlack(sta::dbSta* sta, const sta::Scene* scene)
+{
+  const sta::MinMax* setup = sta::MinMax::max();
+  const sta::MinMax* hold = sta::MinMax::min();
+  sta::Slack worst;
+  sta::Slack hold_worst;
+  sta::Vertex* vertex;
+  sta->worstSlack(scene, setup, worst, vertex);
+  sta->worstSlack(scene, hold, hold_worst, vertex);
+  StaSlack slack;
+  slack.worst = sta::delayAsFloat(worst);
+  slack.total = sta::delayAsFloat(sta->totalNegativeSlack(scene, setup));
+  slack.hold_worst = std::min(sta::delayAsFloat(hold_worst), 0.0f);
+  slack.hold_total = sta::delayAsFloat(sta->totalNegativeSlack(scene, hold));
+  return slack;
+}
+
+}  // namespace
 
 StaSlack staSlack(sta::dbSta* sta, est::IncrementalParasiticsGuard& guard)
 {
   guard.update();
-  const sta::MinMax* setup = sta::MinMax::max();
-  const sta::MinMax* hold = sta::MinMax::min();
-  return {
-      .worst = sta::delayAsFloat(sta->worstSlack(setup)),
-      .total = sta::delayAsFloat(sta->totalNegativeSlack(setup)),
-      .hold_worst = std::min(sta::delayAsFloat(sta->worstSlack(hold)), 0.0f),
-      .hold_total = sta::delayAsFloat(sta->totalNegativeSlack(hold)),
-  };
+  StaSlack all;
+  all.worst = sta::INF;
+  for (const sta::Scene* scene : sta->scenes()) {
+    const StaSlack& slack = all.scenes.emplace_back(sceneSlack(sta, scene));
+    all.worst = std::min(all.worst, slack.worst);
+    all.total = std::min(all.total, slack.total);
+    all.hold_worst = std::min(all.hold_worst, slack.hold_worst);
+    all.hold_total = std::min(all.hold_total, slack.hold_total);
+  }
+  return all;
 }
 
 RetimerPlacer::RetimerPlacer(sta::dbSta* sta,

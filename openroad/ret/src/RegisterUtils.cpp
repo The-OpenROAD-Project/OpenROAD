@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <cstring>
 #include <functional>
+#include <initializer_list>
 #include <memory>
 #include <optional>
 #include <string>
@@ -19,19 +20,17 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "rsz/Resizer.hh"
 #include "sta/FuncExpr.hh"
+#include "sta/Graph.hh"
 #include "sta/Liberty.hh"
-#include "sta/MinMax.hh"
 #include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/PortDelay.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
-#include "sta/SdcClass.hh"
 #include "sta/Sequential.hh"
-#include "sta/Transition.hh"
 
 namespace ret {
 
@@ -605,7 +604,8 @@ odb::dbITerm* idleTieOutput(sta::dbSta* sta, odb::dbNet* net)
   // The net has a constant value, so a cell drives it.
   odb::dbITerm* output = onlyDriver(net);
   odb::dbInst* tie = output->getInst();
-  if (isHeld(tie) || hasSdcConstraint(sta, tie)) {
+  if (isHeld(tie) || hasPinConstraint(sta, tie)
+      || hasCellConstraint(sta, tie)) {
     return nullptr;
   }
   for (odb::dbITerm* iterm : tie->getITerms()) {
@@ -654,50 +654,6 @@ std::vector<const sta::Sdc*> allSdcs(sta::dbSta* sta)
   return sdcs;
 }
 
-// A constraint on the cell itself.  Sdc::isConstrained(Instance) also counts
-// the exceptions that list the cell, such as group_path -to [all_registers],
-// so each kind is asked for.  A derate or a pulse width of its own shows as a
-// value other than the design's, which a port has.  `pin`: one of the cell's.
-bool hasCellConstraint(const sta::Sdc* sdc,
-                       const sta::Instance* cell,
-                       const sta::Pin* pin,
-                       const sta::Pin* port)
-{
-  if (sdc->pvt(cell, sta::MinMax::min()) != nullptr
-      || sdc->pvt(cell, sta::MinMax::max()) != nullptr
-      || sdc->disabledInstancePorts()->contains(cell)) {
-    return true;
-  }
-  for (const sta::RiseFall* rf : sta::RiseFall::range()) {
-    float width = 0.0f;
-    float design_width = 0.0f;
-    bool exists = false;
-    bool design_exists = false;
-    sdc->minPulseWidth(pin, nullptr, rf, width, exists);
-    sdc->minPulseWidth(nullptr, nullptr, rf, design_width, design_exists);
-    if (exists != design_exists || (exists && width != design_width)) {
-      return true;
-    }
-    for (const sta::EarlyLate* early_late : sta::EarlyLate::range()) {
-      for (const auto type : {
-               sta::TimingDerateCellType::cell_delay,
-               sta::TimingDerateCellType::cell_check,
-           }) {
-        for (const auto path : {
-                 sta::PathClkOrData::clk,
-                 sta::PathClkOrData::data,
-             }) {
-          if (sdc->timingDerateInstance(pin, type, path, rf, early_late)
-              != sdc->timingDerateInstance(port, type, path, rf, early_late)) {
-            return true;
-          }
-        }
-      }
-    }
-  }
-  return false;
-}
-
 }  // namespace
 
 bool isGrouped(odb::dbInst* inst)
@@ -707,7 +663,8 @@ bool isGrouped(odb::dbInst* inst)
 
 bool isHeld(odb::dbInst* inst)
 {
-  if (inst->isDoNotTouch() || inst->isFixed() || isGrouped(inst)) {
+  if (inst->isDoNotTouch() || inst->isFixed() || isGrouped(inst)
+      || inst->getScanInst() != nullptr) {
     return true;
   }
   for (odb::dbITerm* pin : inst->getITerms()) {
@@ -719,21 +676,11 @@ bool isHeld(odb::dbInst* inst)
   return false;
 }
 
-bool hasSdcConstraint(sta::dbSta* sta, odb::dbInst* inst)
+bool hasPinConstraint(sta::dbSta* sta, odb::dbInst* inst)
 {
   sta::dbNetwork* network = sta->getDbNetwork();
-  const sta::Instance* cell = network->dbToSta(inst);
-  odb::dbSet<odb::dbBTerm> ports = inst->getBlock()->getBTerms();
-  odb::dbSet<odb::dbITerm> pins = inst->getITerms();
   for (const sta::Sdc* sdc : allSdcs(sta)) {
-    if (!ports.empty() && !pins.empty()
-        && hasCellConstraint(sdc,
-                             cell,
-                             network->dbToSta(*pins.begin()),
-                             network->dbToSta(*ports.begin()))) {
-      return true;
-    }
-    for (odb::dbITerm* iterm : pins) {
+    for (odb::dbITerm* iterm : inst->getITerms()) {
       odb::dbNet* net = iterm->getNet();
       if (sdc->isConstrained(network->dbToSta(iterm))
           || (iterm->getIoType() == odb::dbIoType::OUTPUT && net != nullptr
@@ -743,6 +690,67 @@ bool hasSdcConstraint(sta::dbSta* sta, odb::dbInst* inst)
     }
   }
   return false;
+}
+
+bool hasCellConstraint(sta::dbSta* sta, odb::dbInst* inst)
+{
+  const sta::Instance* cell = sta->getDbNetwork()->dbToSta(inst);
+  return std::ranges::any_of(allSdcs(sta), [cell](const sta::Sdc* sdc) {
+    return sdc->isConstrained(cell);
+  });
+}
+
+bool hasDisabledEdge(sta::dbSta* sta, odb::dbInst* inst)
+{
+  sta::dbNetwork* network = sta->getDbNetwork();
+  sta::Graph* graph = sta->ensureGraph();
+  const auto disabled = [sta](sta::Edge* edge) {
+    return std::ranges::any_of(sta->modes(), [&](const sta::Mode* mode) {
+      return sta->isDisabledConstraint(edge, mode->sdc());
+    });
+  };
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    sta::Vertex* vertex;
+    sta::Vertex* bidirect_driver;
+    graph->pinVertices(network->dbToSta(iterm), vertex, bidirect_driver);
+    for (sta::Vertex* end : {vertex, bidirect_driver}) {
+      if (end == nullptr) {
+        continue;
+      }
+      sta::VertexInEdgeIterator in_iter(end, graph);
+      while (in_iter.hasNext()) {
+        if (disabled(in_iter.next())) {
+          return true;
+        }
+      }
+      sta::VertexOutEdgeIterator out_iter(end, graph);
+      while (out_iter.hasNext()) {
+        if (disabled(out_iter.next())) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+std::vector<odb::dbInst*> portDelayReferenceCells(sta::dbSta* sta)
+{
+  sta::dbNetwork* network = sta->getDbNetwork();
+  std::vector<odb::dbInst*> cells;
+  const auto add = [&](const sta::PortDelay* delay) {
+    if (delay->refPin() != nullptr) {
+      odb::dbInst* inst = network->staToDb(network->instance(delay->refPin()));
+      if (inst != nullptr) {
+        cells.push_back(inst);
+      }
+    }
+  };
+  for (const sta::Sdc* sdc : allSdcs(sta)) {
+    std::ranges::for_each(sdc->inputDelays(), add);
+    std::ranges::for_each(sdc->outputDelays(), add);
+  }
+  return cells;
 }
 
 bool isScanCell(sta::dbSta* sta, odb::dbInst* inst)

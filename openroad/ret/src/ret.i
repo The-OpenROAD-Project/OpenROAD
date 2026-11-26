@@ -14,11 +14,13 @@ namespace ret {
 
 void
 retime_cmd(int max_moves,
-           double margin)
+           double margin,
+           bool move_named_registers)
 {
   ret::RetimeOptions options;
   options.max_moves = max_moves;
   options.margin = margin;
+  options.move_named_registers = move_named_registers;
   ord::OpenRoad::openRoad()->getRetimer()->retime(options);
 }
 

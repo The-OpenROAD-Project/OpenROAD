@@ -22,12 +22,12 @@ the clock-to-Q of the new register and the setup time of each endpoint. STA
 then decides what is kept. The moves are applied, the new cells placed and
 the design timed; they are kept when the setup slack improves and neither
 the worst nor the total negative slack is worse than at the start, for setup
-and for hold. Else the first of the halves, quarters, and so on that does so
-is kept. The moves are listed with the ones the delay model gains most from
-first, so a half keeps the best of them. Moves that are not kept are undone
-and leave the netlist and its constraints as they were. Rounds repeat from
-what was kept until one keeps nothing. A design that meets timing is left as
-it is.
+and for hold, in any scene (corner or mode). Else the first of the halves,
+quarters, and so on that does so is kept. The moves are listed with the ones
+the delay model gains most from first, so a half keeps the best of them.
+Moves that are not kept are undone and leave the netlist and its constraints
+as they were. Rounds repeat from what was kept until one keeps nothing. A
+design that meets timing is left as it is.
 
 Only the register groups whose edge weights changed are rebuilt; every
 other cell keeps its placement. Each new cell is placed at the center of the
@@ -56,11 +56,15 @@ These registers never move:
 - registers with a live asynchronous set or reset, or with an input left
   unconnected;
 - registers marked don't-touch, fixed in place, in a group or a region (a
-  power domain, for example), with a pin on a don't-touch net, or read by a
-  don't-touch cell;
-- registers named by `set_false_path`, `set_multicycle_path`,
-  `set_max_delay` or `set_min_delay`, or with a constraint on the cell, on
-  one of its pins or on a net it drives;
+  power domain, for example), in a scan chain, with a pin on a don't-touch
+  net, or read by a don't-touch cell;
+- registers named by `set_false_path`, `set_multicycle_path` or
+  `set_path_margin`, with a constraint on one of their pins or on a net
+  they drive, with a timing edge that `set_disable_timing` disables, or with
+  the `-reference_pin` of a port delay;
+- registers the SDC names as cells: in the `-from` or `-to` of
+  `set_max_delay`, `set_min_delay` or `group_path`, or in a constraint on
+  the cell such as a derate, unless `-move_named_registers` is given;
 - a register chain whose output reaches a primary output, a bidirectional
   pin, a control pin of another register or a net with a second driver
   (those read the chain at its current depth), and one that meets a second
@@ -79,8 +83,11 @@ These gates are never crossed:
 - a gate whose output net has a second driver, and a cell that is not a
   plain combinational gate: a tri-state driver, an isolation cell, a level
   shifter, a macro, a pad, or a cell without a liberty function;
-- a gate marked don't-touch, in a group or a region, or named by one of
-  those four exceptions.
+- a gate marked don't-touch, in a group or a region, named by any of
+  those exceptions, with a constraint on one of its pins or on the net it
+  drives (case analysis, for example), or with a timing edge that
+  `set_disable_timing` disables; `-move_named_registers` changes none of
+  this.
 
 A register whose set or reset is tied inactive moves as the base flip-flop,
 and the tie cells only it read are removed unless one of the reasons above
@@ -93,6 +100,7 @@ clock defined with `create_clock`; gated copies of it are fine.
 retime
     [-max_moves count]
     [-margin fraction]
+    [-move_named_registers]
 ```
 
 #### Options
@@ -101,6 +109,7 @@ retime
 | ----- | ----- |
 | `-max_moves` | Stop after this many accepted register moves. `0` means unlimited. Default unlimited. |
 | `-margin` | The slack a move must gain, as a fraction of the clock period. Default `0.002`. |
+| `-move_named_registers` | Also move registers that the SDC names as cells in the `-from` or `-to` of a path delay or a path group, or in a constraint on the cell. Whatever names a register that moves is dropped with it. Meant for an SDC that lists every register, as `-to [all_registers]` does; see Limitations. |
 
 New registers are named `ret_ff_N`, their tie cells `ret_tie_N` and new
 nets `ret_net_N`. The log shows the slack after each round. `retime` stops
@@ -138,11 +147,16 @@ sequential equivalence checking. A scan cell is one with a liberty
 neither way, such as Nangate45 `SDFF_X1`, can be unmapped, which removes the
 scan cell.
 
-A path group, and a path delay that lists every register (as
-`-to [all_registers]` does), name a class of cells and do not keep registers
-in place. A new register is in neither list until the SDC is read again, so
-until then it is timed without that path delay, by `retime` too. Read the
-SDC again after `retime`, as ORFS does at every stage.
+An SDC that lists every register (`group_path -to [all_registers]`, or the
+path delays of the asap7 platform constraints) keeps every register in place
+unless `-move_named_registers` is given. With that option a register that
+moves leaves those lists, and a constraint on that cell goes with it. A new
+register is in none of them, so the paths that start or end at it are timed
+without that path delay, and `retime` judges its moves without it: a move
+can lengthen a path from an input to a new register past a `set_max_delay`
+that `retime` does not see. Run the commands that build the lists again
+after `retime`, on the retimed netlist. Reading a file that `write_sdc`
+wrote does not do that: it lists the cells by name.
 
 `retime` deletes the cells and nets it replaced when it returns. Undoing it
 afterwards through an ECO opened before the command (`dbDatabase::beginEco`)
@@ -150,7 +164,8 @@ brings them back without the SDC constraints that named them.
 
 STA judges the timing at the time of `retime`, setup and hold, with the
 ideal clocks of that stage; the resizer, clock tree synthesis and detailed
-placement that run afterwards can change it.
+placement that run afterwards can change it. With several scenes the search
+reads the delays and the clock of the current one; STA judges all of them.
 
 ## License
 

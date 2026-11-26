@@ -2,10 +2,11 @@
 # marked don't-touch nothing moves, and the same with a don't-touch net on
 # its path, a don't-touch gate reading it, the register fixed in place, in a
 # group or in a region, or an SDC exception or a constraint on a pin or on
-# the cell naming it.  A gate in a group, or with a multicycle through it,
-# is pinned (3 pinned gates, not 2).  A path group that lists the registers
-# as cells does not fence them, and does not hide a derate on one of them:
-# with the derate nothing moves, and the last retime moves the register.
+# the cell naming it, or a port delay measured from its clock pin.  A gate
+# in a group, or with a multicycle through it, is pinned (3 pinned gates,
+# not 2).  A path group that lists the registers as cells keeps them in
+# place too, until -move_named_registers releases them: the last retime
+# moves the register.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
@@ -37,6 +38,10 @@ set_timing_derate -late 1.05 [get_cells r1]
 retime
 unset_timing_derate
 
+set_input_delay 0.01 -clock clk -reference_pin [get_pins r1/CK] [get_ports a]
+retime
+unset_input_delay -clock clk [get_ports a]
+
 set block [ord::get_db_block]
 set r1 [$block findInst r1]
 $r1 setPlacementStatus FIRM
@@ -63,8 +68,5 @@ retime
 unset_path_exceptions -through [get_pins g2/ZN]
 
 group_path -name registers -to [all_registers]
-set_timing_derate -late 1.05 [get_cells r1]
 retime
-unset_timing_derate
-
-retime
+retime -move_named_registers
