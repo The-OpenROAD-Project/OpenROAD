@@ -216,7 +216,7 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
 
     // subtract overlap
     if (overlap.dx() > 0 && overlap.dy() > 0) {
-      penalty -= (overlap.area());
+      penalty -= overlap.area();
     }
 
     guidance_penalty.value += block_->dbuAreaToMicrons(penalty);

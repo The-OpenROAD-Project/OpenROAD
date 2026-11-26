@@ -414,16 +414,14 @@ void SACoreSoftMacro::calNotchPenalty()
       height = y_coords[end_row + 1] - y_coords[start_row];
 
       bool is_notch = false;
-      if (current_vicinity.top && current_vicinity.bottom) {
-        if (height < notch_h_th_) {
-          is_notch = true;
-        }
+      if (current_vicinity.top && current_vicinity.bottom
+          && height < notch_h_th_) {
+        is_notch = true;
       }
 
-      if (current_vicinity.left && current_vicinity.right) {
-        if (width < notch_v_th_) {
-          is_notch = true;
-        }
+      if (current_vicinity.left && current_vicinity.right
+          && width < notch_v_th_) {
+        is_notch = true;
       }
 
       if (is_notch) {
