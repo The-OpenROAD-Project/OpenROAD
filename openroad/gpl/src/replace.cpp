@@ -318,7 +318,7 @@ void Replace::doInitialPlace(const int threads, const PlaceOptions& options)
   std::unique_ptr<InitialPlace> ip(
       new InitialPlace(ipVars, pbc_, pbVec_, graphics_->MakeNew(log_), log_));
   ip_ = std::move(ip);
-  ip_->doBicgstabPlace(threads);
+  ip_->doConjugateGradientPlace(threads);
 }
 
 void Replace::runMBFF(const int max_sz,

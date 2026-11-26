@@ -18,6 +18,9 @@ float solveAxis(int maxSolverIter,
                 const Eigen::VectorXf& fixedInstForceVec,
                 Eigen::VectorXf& instLocVec)
 {
+  // With no pin or locked cell holding a position in an axis, the right-hand
+  // side is zero and the solve would collapse the cells together. Keep the
+  // current positions instead.
   if (fixedInstForceVec.squaredNorm() == 0) {
     return 0;
   }
@@ -28,9 +31,12 @@ float solveAxis(int maxSolverIter,
   if (rhs.squaredNorm() == 0) {
     return 0;
   }
-  for (int i = 0; i < a.rows(); ++i) {
-    a.coeffRef(i, i) += 1e-6;
-  }
+  // A small diagonal shift keeps the matrix positive definite when some cells
+  // reach no fixed pin. A sparse add, unlike coeffRef, stays O(nnz) when rows
+  // have no diagonal entry (instances with no contributing nets).
+  Eigen::SparseMatrix<double> identity(a.rows(), a.cols());
+  identity.setIdentity();
+  a += 1e-6 * identity;
   Eigen::ConjugateGradient<Eigen::SparseMatrix<double>,
                            Eigen::Lower | Eigen::Upper>
       cg(a);

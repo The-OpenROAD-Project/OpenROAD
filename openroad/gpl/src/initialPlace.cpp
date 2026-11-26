@@ -48,7 +48,7 @@ InitialPlace::InitialPlace(InitialPlaceVars ipVars,
 {
 }
 
-void InitialPlace::doBicgstabPlace(int threads)
+void InitialPlace::doConjugateGradientPlace(int threads)
 {
   log_->info(utl::GPL, 5, "---- Execute Conjugate Gradient Initial Placement.");
   ResidualError error;
@@ -484,7 +484,8 @@ void InitialPlace::createSparseMatrix()
 
 void InitialPlace::updateCoordi()
 {
-  const auto clamp = [](double v, double lo, double hi, int cur) {
+  // A non-finite solution keeps the current coordinate.
+  const auto clamp_to_core = [](double v, double lo, double hi, int cur) {
     return std::isfinite(v) ? static_cast<int>(std::clamp(v, lo, hi)) : cur;
   };
   for (auto& inst : pbc_->placeInsts()) {
@@ -492,10 +493,10 @@ void InitialPlace::updateCoordi()
     if (!inst->isLocked()) {
       // Constrain to core area before float -> int conversion.
       const auto& die = pbc_->getDie();
-      int new_x
-          = clamp(instLocVecX_(idx), die.coreLx(), die.coreUx(), inst->cx());
-      int new_y
-          = clamp(instLocVecY_(idx), die.coreLy(), die.coreUy(), inst->cy());
+      int new_x = clamp_to_core(
+          instLocVecX_(idx), die.coreLx(), die.coreUx(), inst->cx());
+      int new_y = clamp_to_core(
+          instLocVecY_(idx), die.coreLy(), die.coreUy(), inst->cy());
 
       // If instance has a region constraint, use that instead
       const auto db_inst = inst->dbInst();
