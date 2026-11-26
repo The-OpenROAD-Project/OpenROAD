@@ -259,9 +259,24 @@ open). Four kinds of table describe a layer:
   settled with a cover or a neighbor near; alone with no cover either
   side it still grows with the length, by 15–25% from 2 to 10 µm.
   A wire running past a neighbor's end couples to that end as the end
-  does to it, the same part of the neighbor's end, taken off the wire's
-  ground: a short pad beside a wire couples at both its ends, and both
-  nets see the same coupling.
+  does to it, the same part of the neighbor's end, so both nets see the
+  same coupling. The wire takes it as the neighbor running on past its
+  end, by the length over which the wire's coupling to it per unit
+  length makes up that part: 0.1 to 0.7 µm in sky130, shorter between
+  covers. The wire's pieces along that length take the lateral table
+  with the neighbor, so its total, covers and ground change as they do
+  beside the neighbor, which is what the field solver shows (`e21`). The
+  neighbor's end is looked up with the neighbor on its other side, which
+  takes about half of it, and as wide as the shapes of its net joining
+  it there: the other wire of a bend. Another end nearby along the wire
+  keeps 1 − exp(−d / 2 length) of the length at a distance d, the law of
+  the crossing tables' kept share: a shape facing the neighbor's end
+  across a gap, so a narrow gap in a neighbor track all but closes; and
+  the wire's own end, so two wires ending together take none of it from
+  each other, what the wire's end loses going to ground. Wires side by
+  side that do not overlap along their length do not couple, though the
+  field solver finds up to 0.07 fF between two that end where the other
+  starts.
 
 A point and its mirror share one solve, and each solve is seeded by its
 position, so a table does not depend on the thread count. A table the
@@ -305,6 +320,7 @@ bazel-bin/openroad/pex/test/Experiments --threads 64 --tol 0.003 \
 | e18 power grid | e9's nets with the power nets alone, merged, split by layer, and with groups of signal wires added back | the evaluator | where the coupling to the power grid goes wrong |
 | e19 lateral reach | neighbors at spacings in multiples of the height to the nearest plane | the wire alone | how far the lateral table reaches |
 | e20 end length | wires from 0.5 to 40 µm, alone, between neighbors running past the ends or ending with the wire, and with one neighbor | per-unit-length × length | the length the end is measured at, and the neighbors' end states |
+| e21 neighbor ends | a wire beside a neighbor whose end runs past the wire's end, ends with it, short of it, or before it starts; a short neighbor; a second one facing the end across a gap; a neighbor turning away; an end with another neighbor on the wire's other side, a wider wire, or a farther neighbor behind | the evaluator | the reach of a neighbor's end along the wire, and what ends near each other keep of it |
 
 e9 reads LEF and DEF (by default the gcd window of the fsv tests) or an
 ODB file, builds the model for every routing layer of the design the stack
@@ -345,10 +361,10 @@ experiment group below):
 
 | model alone, 200 nets | gcd | aes |
 | --- | --- | --- |
-| totals within 5% | 86% | 88% |
-| total error, median | +1.0% | +0.4% |
-| total error, 90th percentile | 6.6% | 5.6% |
-| signal couplings above 5%, within 20% | 92% | 90% |
+| totals within 5% | 81.5% | 88.5% |
+| total error, median | +1.9% | +1.5% |
+| total error, 90th percentile | 6.6% | 5.5% |
+| signal couplings above 5%, within 20% | 91% | 92% |
 
 The instance pins are context here as in extraction (see
 `compare_pex_fsv`). Counting them in their nets instead puts the
@@ -364,12 +380,12 @@ Extraction itself, checked with `compare_pex_fsv -sample 200 -halo 10
 
 | extraction, 200 nets | gcd | aes |
 | --- | --- | --- |
-| totals within 5% | 94% | 90% |
-| total error, median | +0.8% | +0.5% |
-| total error, 90th percentile | 4.4% | 5.3% |
-| signal couplings above 5%, within 20% | 94% | 92% |
-| extraction, 1 thread | 6.7 s | 351 s |
-| extraction, 16 threads | 0.58 s | 25 s |
+| totals within 5% | 89.5% | 90.5% |
+| total error, median | +2.0% | +1.4% |
+| total error, 90th percentile | 5.1% | 4.8% |
+| signal couplings above 5%, within 20% | 92% | 91% |
+| extraction, 1 thread | 5.3 s | 338 s |
+| extraction, 16 threads | 0.39 s | 23 s |
 
 These are the same measures, but taken from the extracted block rather
 than from each net's 10 µm window: crossings and neighbors are not cut
@@ -387,6 +403,15 @@ layer but li1.
 
 What remains, largest first:
 
+- **Wires of the layer not beside the wire.** A side with no neighbor
+  over a piece counts as open, and a neighbor hides what lies behind
+  it. Two wires on adjacent tracks that end where the other starts
+  couple by up to 0.07 fF, and a second neighbor behind the first takes
+  0.13 fF from an 8 µm wire with no covers, 0.02 fF between covers
+  (`e21`); neither is modeled. In the model-alone check the signal
+  couplings sum to 3.4% of a net's total too little at the median, and
+  ground and the supplies to 5.5% too much, part of it the straps
+  below.
 - **Narrow straps.** A power strap two or three layers up gets 30–50%
   too much (the `e18` experiment with the power nets split by layer):
   the cover tables are solved with full planes, and a strap narrower

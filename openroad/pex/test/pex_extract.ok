@@ -36,7 +36,7 @@ Driver pins
 Load pins
  input4/A input (sky130_fd_sc_hd__clkdlybuf4s50_1) 0.002-0.002 (2, 61)
 
-[INFO PEX-0028] Net _042_: 0.9031 fF against the field solver's 0.9333 +- 0.018 fF (-3.2%), 5 couplings above 5%.
+[INFO PEX-0028] Net _042_: 0.9083 fF against the field solver's 0.9333 +- 0.018 fF (-2.7%), 5 couplings above 5%.
 [INFO PEX-0028] Net req_msg[10]: 0.867 fF against the field solver's 0.8042 +- 0.015 fF (+7.8%), 1 couplings above 5%.
 [INFO PEX-0029] Totals within 5% of the field solver: 1 of 2 nets; 90th percentile error 7.8%.
 [INFO PEX-0033] Couplings to signal nets above 5% of a net's total within 20%: 2 of 6.

@@ -38,6 +38,8 @@
 // - e20 end length: the ends' excess against the wire's length, alone and
 //   with neighbors that run past the ends, end with the wire, or sit on
 //   one side.
+// - e21 neighbor ends, only when named: a wire beside shapes whose ends
+//   lie along it, against the reference evaluator.
 // - model, only when named: build the model for --layers (or every
 //   conductor off the ground plane) into --model, timing each layer; with
 //   --coarse, on the small grids of the regressions' model.
@@ -1392,6 +1394,174 @@ pex::Model buildModel(const Lab& lab, const std::vector<std::string>& layers)
     }
   }
   return model;
+}
+
+// A shape of the wire's layer beside it, for e21.
+struct BesideShape
+{
+  BesideShape(const char* net,
+              const double x0,
+              const double x1,
+              const double y0,
+              const double y1)
+      : net(net), x0(x0), x1(x1), y0(y0), y1(y1)
+  {
+  }
+
+  const char* net;
+  double x0;
+  double x1;
+  double y0;
+  double y1;
+};
+
+struct BesideCase
+{
+  BesideCase(std::string name,
+             const double width,
+             std::vector<BesideShape> shapes)
+      : name(std::move(name)), width(width), shapes(std::move(shapes))
+  {
+  }
+
+  std::string name;
+  double width;  // of the wire
+  std::vector<BesideShape> shapes;
+};
+
+// e21's cases at one spacing: a wire along y over [0, 8] with a neighbor
+// `n` of minimum width on its left, and for some a second net `m`.
+std::vector<BesideCase> besideCases(const Lab& lab, const double sf)
+{
+  const double w = lab.wmin();
+  const double s = sf * lab.smin();
+  const double len = 8;
+  const double far = 2.9;
+  const std::string tag = "s=" + fmt(sf) + " ";
+  // The neighbor over [y0, y1], left of a wire `width` wide.
+  auto left = [&](const double width, const double y0, const double y1) {
+    const double x = (width / 2) + s;
+    return BesideShape{"n", -x - w, -x, y0, y1};
+  };
+  std::vector<BesideCase> cases;
+  // The neighbor's end against the wire's end at 8: running past it,
+  // ending with it, and ending short of it.
+  for (const double n1 :
+       {10.9, 8.8, 8.4, 8.2, 8.1, 8.0, 7.9, 7.8, 7.6, 7.2, 6.4, 4.0}) {
+    cases.push_back({tag + "end=" + fmt(n1), w, {left(w, -far, n1)}});
+  }
+  // The neighbor wholly before the wire's start.
+  for (const double d : {0.0, 0.1, 0.2, 0.4, 0.8}) {
+    cases.push_back({tag + "before=" + fmt(d), w, {left(w, -far, -d)}});
+  }
+  // A short neighbor at the wire's middle.
+  for (const double l : {0.14, 0.28, 0.56, 1.12, 2.24}) {
+    cases.push_back(
+        {tag + "pad=" + fmt(l), w, {left(w, 4 - (l / 2), 4 + (l / 2))}});
+  }
+  // A second neighbor facing the first one's end across a gap.
+  for (const double gf : {1.0, 2.0, 4.0}) {
+    BesideShape facing = left(w, 4 + (gf * lab.smin()), len + far);
+    facing.net = "m";
+    cases.push_back({tag + "gap=" + fmt(gf), w, {left(w, -far, 4), facing}});
+  }
+  if (sf != 1.0) {
+    return cases;
+  }
+  const BesideShape to4 = left(w, -far, 4);
+  const BesideShape all = left(w, -far, len + far);
+  // The neighbor turns away from the wire at 4.
+  cases.push_back(
+      {tag + "bend", w, {to4, {"n", to4.x0 - 2, to4.x1, 4 - w, 4}}});
+  // Another neighbor along the wire's other side.
+  const BesideShape other{"m", (w / 2) + s, (w / 2) + s + w, -far, len + far};
+  cases.push_back({tag + "other+all", w, {other, all}});
+  cases.push_back({tag + "other+end", w, {other, to4}});
+  // A wire three times as wide.
+  cases.push_back({tag + "wide+all", 3 * w, {left(3 * w, -far, len + far)}});
+  cases.push_back({tag + "wide+end", 3 * w, {left(3 * w, -far, 4)}});
+  // A farther neighbor behind the one that ends.
+  const BesideShape behind{"m", to4.x0 - s - w, to4.x0 - s, -far, len + far};
+  cases.push_back({tag + "behind+all", w, {behind, all}});
+  cases.push_back({tag + "behind+end", w, {behind, to4}});
+  return cases;
+}
+
+// e21: a wire beside shapes of its layer whose ends lie along it, in each
+// context, against the reference evaluator: the wire's couplings to the
+// shapes' nets and what they add to its total over the wire alone. The
+// neighbor's end runs past the wire's end, ends with it or short of it, or
+// lies before the wire starts; a short neighbor; a second one facing the
+// end across a gap; a neighbor that turns away; and an end with another
+// neighbor on the wire's other side, with a wider wire, and with a farther
+// neighbor behind it. The model is for --layers (default: the layer and
+// those next to it).
+void neighborEnds(Lab& lab)
+{
+  const Options& o = lab.options();
+  std::vector<std::string> layers = o.layers;
+  if (layers.empty()) {
+    for (const std::string& l :
+         {lab.nearestBelow(), o.layer, lab.nearestAbove()}) {
+      if (!l.empty() && lab.conductor(l).bottom > 0) {
+        layers.push_back(l);
+      }
+    }
+  }
+  const pex::Model model = buildModel(lab, layers);
+  for (const Context& ctx : trim(contexts(lab, true), o.smoke)) {
+    // The wire alone at each width, solved and estimated.
+    std::map<double, std::pair<double, double>> alone;
+    auto run = [&](const BesideCase& c, const bool report) {
+      Wire3D g = wire3D(lab, ctx, c.width, 8, 3);
+      for (const BesideShape& sh : c.shapes) {
+        g.builder.add(
+            lab.layer(), g.builder.net(sh.net), sh.x0, sh.y0, sh.x1, sh.y1);
+      }
+      const fsv::CapRow row = lab.solve(g.builder.geometry(), g.wire, o.tol);
+      const pex::NetEstimate est = pex::estimate(
+          g.builder.geometry(), lab.stack(), model, g.wire, o.reference);
+      if (!report) {
+        alone[c.width] = {row.total(), est.total()};
+        return;
+      }
+      const std::string name = ctx.name() + " " + c.name;
+      const double sigma = row.sigma[g.wire];
+      for (const char* net : {"n", "m"}) {
+        const pex::NetIndex index = g.builder.net(net);
+        const auto it = est.couplings.find(index);
+        if (std::ranges::any_of(c.shapes, [&](const BesideShape& sh) {
+              return std::string(sh.net) == net;
+            })) {
+          lab.row("e21",
+                  name,
+                  std::string("to ") + net,
+                  row.coupling(index),
+                  sigma,
+                  it == est.couplings.end() ? 0.0 : it->second);
+        }
+      }
+      const auto& [solved, estimated] = alone.at(c.width);
+      lab.row("e21",
+              name,
+              "added",
+              row.total() - solved,
+              sigma,
+              est.total() - estimated);
+    };
+    const double w = lab.wmin();
+    run({"", w, {}}, false);
+    run({"", 3 * w, {}}, false);
+    for (const double sf : trim(std::vector<double>{1, 2}, o.smoke)) {
+      std::vector<BesideCase> cases = besideCases(lab, sf);
+      if (o.smoke) {
+        cases.erase(cases.begin() + 3, cases.end());
+      }
+      for (const BesideCase& c : cases) {
+        run(c, true);
+      }
+    }
+  }
 }
 
 // e12: the far cover state. Past the context depth every cover shares one
@@ -3106,6 +3276,9 @@ int main(int argc, char** argv)
     }
     if (wanted(o, "e20")) {
       endLength(lab);
+    }
+    if (wanted(o, "e21")) {  // not among the default groups
+      neighborEnds(lab);
     }
     if (wanted(o, "model")) {  // not among the default groups
       modelOnly(lab);

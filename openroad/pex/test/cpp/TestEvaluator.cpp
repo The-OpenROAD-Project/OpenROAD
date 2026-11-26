@@ -2,6 +2,7 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <map>
 #include <stdexcept>
@@ -44,6 +45,13 @@ fsv::Stack twoLayers()
   via.lower = stack.layer("m1");
   stack.addVia(via);
   return stack;
+}
+
+// What an end keeps of its reach `length` to the side with another end
+// `distance` along the wire from it.
+double kept(const double length, const double distance)
+{
+  return 1 - std::exp(-distance / (2 * length));
 }
 
 // Tables with distinct constants per context, so each piece's lookup is
@@ -140,12 +148,16 @@ TEST(Evaluator, PiecesEndsAndCovers)
   EXPECT_EQ(est.wires, 1);
   EXPECT_EQ(est.ends, 2);
   EXPECT_EQ(est.vias, 0);
-  // Pieces: [0,2] [2,5] [5,7] [7,8] [8,10].
+  // Pieces: [0,1.85] [1.85,5.15] [5.15,7] [7,8] [8,10], b reaching 0.15
+  // past each of its ends.
   EXPECT_EQ(est.pieces, 5);
-  // b is on a's right (larger y): coupling 2 per µm over 3 µm, and 0.3
-  // from each of b's ends.
+  // b is on a's right (larger y): coupling 2 per µm over 3 µm, and over
+  // the 0.15 µm past each end that make up the end's 0.3, less with a's
+  // own end near.
   ASSERT_TRUE(est.couplings.contains(b));
-  EXPECT_NEAR(est.couplings.at(b), 6 + (2 * 0.3), 1e-9);
+  EXPECT_NEAR(est.couplings.at(b),
+              2 * (3 + (0.15 * kept(0.15, 2)) + (0.15 * kept(0.15, 5))),
+              1e-4);
   // Under c, the covered piece couples 4 per µm to it; the pieces beside
   // it take a share through the crossing table: over [5, 7] the distance
   // to c runs 2 down to 0, so gap × share integrates 0.8 x 1 + the
@@ -340,14 +352,18 @@ TEST(Evaluator, NeighborAtTheEnd)
     g.addBox(b, {.lo = {-past, 0.5, 1}, .hi = {10 + past, 0.7, 2}});
     const NetEstimate est = estimate(g, stack, model, a, {.diagonal_depth = 0});
     // 2 per µm on the right, and per end half of the 0.6 the neighbors
-    // take, of half of the 0.4 they add.
-    EXPECT_NEAR(est.couplings.at(b), 20 + (2 * 0.3), 1e-9);
-    EXPECT_NEAR(est.ground, 100 + (2 * (0.5 + 0.2 - 0.3)), 1e-9);
+    // take, of half of the 0.4 they add: all of it from a neighbor
+    // running far past the end, none from one ending with the wire, and
+    // the rest to ground.
+    const double side = 0.3 * kept(0.15, past);
+    EXPECT_NEAR(est.couplings.at(b), 20 + (2 * side), 1e-9);
+    EXPECT_NEAR(est.ground, 100 + (2 * (0.5 + 0.2 - side)), 1e-9);
   }
 }
 
 // A wire running past a neighbor's ends couples to them as the neighbor's
 // ends do to it: each end's lateral part, the same seen from either net.
+// The wire takes it as the neighbor running on past its end.
 TEST(Evaluator, NeighborEndsBeside)
 {
   const fsv::Stack stack = twoLayers();
@@ -358,38 +374,67 @@ TEST(Evaluator, NeighborEndsBeside)
   g.addBox(a, {.lo = {0, 0, 1}, .hi = {10, 0.2, 2}});
   g.addBox(b, {.lo = {4, 0.5, 1}, .hi = {6, 0.7, 2}});
   const EvaluatorOptions options{.diagonal_depth = 0};
-  // Per end, half of the 0.6 the neighbors at 0.3 take.
+  // Per end, half of the 0.6 the neighbors at 0.3 take: 0.15 µm at 2 per
+  // µm.
   const NetEstimate from_a = estimate(g, stack, model, a, options);
   EXPECT_EQ(from_a.ends, 2);
-  EXPECT_NEAR(from_a.couplings.at(b), (2 * 2) + (2 * 0.3), 1e-9);
-  // The ends' coupling comes off a's ground.
-  EXPECT_NEAR(from_a.ground, 100 + 1 - (2 * 0.3), 1e-9);
+  EXPECT_EQ(from_a.pieces, 3);
+  EXPECT_NEAR(from_a.couplings.at(b), (2 * 2) + (2 * 0.3), 1e-5);
+  // The pieces there take the table's ground with the neighbor, here the
+  // same as without.
+  EXPECT_NEAR(from_a.ground, 100 + 1, 1e-9);
   const NetEstimate from_b = estimate(g, stack, model, b, options);
-  EXPECT_NEAR(from_b.couplings.at(a), from_a.couplings.at(b), 1e-9);
-  // A neighbor's end joined by its own net is no end.
-  g.addBox(b, {.lo = {5.8, 0.5, 1}, .hi = {6, 3, 2}});
-  const NetEstimate joined = estimate(g, stack, model, a, options);
-  EXPECT_NEAR(joined.couplings.at(b), (2 * 2) + 0.3, 1e-9);
+  EXPECT_NEAR(from_b.couplings.at(a), from_a.couplings.at(b), 1e-5);
+  // An end where the neighbor's net turns away is still an end.
+  fsv::Geometry bend = g;
+  bend.addBox(b, {.lo = {5.8, 0.5, 1}, .hi = {6, 3, 2}});
+  EXPECT_NEAR(estimate(bend, stack, model, a, options).couplings.at(b),
+              (2 * 2) + (2 * 0.3),
+              1e-5);
+  // One where the net runs on is none: the end is where that stops.
+  fsv::Geometry longer = g;
+  longer.addBox(b, {.lo = {6, 0.5, 1}, .hi = {8, 0.7, 2}});
+  const NetEstimate joined = estimate(longer, stack, model, a, options);
+  EXPECT_EQ(joined.pieces, 4);
+  EXPECT_NEAR(joined.couplings.at(b), (2 * 4) + (2 * 0.3), 1e-3);
 }
 
-// Neighbor ends take no more than the wire's ground: a short wire between
-// many of them keeps a ground of zero.
-TEST(Evaluator, NeighborEndsKeepGroundPositive)
+// Ends near each other reach less far: two neighbors facing across a gap
+// close part of it, and none of it adds up to more than the wire has.
+TEST(Evaluator, NeighborEndsNearEachOther)
 {
   const fsv::Stack stack = twoLayers();
   const Model model = constantModel();
+  const EvaluatorOptions options{.diagonal_depth = 0};
   fsv::Geometry g;
   const int a = g.addNet("a");
   const int b = g.addNet("b");
-  g.addBox(a, {.lo = {0, 0, 1}, .hi = {0.1, 0.05, 2}});
+  const int c = g.addNet("c");
+  g.addBox(a, {.lo = {0, 0, 1}, .hi = {10, 0.2, 2}});
+  g.addBox(b, {.lo = {1, 0.5, 1}, .hi = {4.9, 0.7, 2}});
+  g.addBox(c, {.lo = {5.1, 0.5, 1}, .hi = {9, 0.7, 2}});
+  const NetEstimate est = estimate(g, stack, model, a, options);
+  // Each over its 3.9 µm, past its outer end, and into the gap of 0.2.
+  const double each
+      = 2 * (3.9 + (0.15 * kept(0.15, 1)) + (0.15 * kept(0.15, 0.2)));
+  EXPECT_NEAR(est.couplings.at(b), each, 1e-4);
+  EXPECT_NEAR(est.couplings.at(c), each, 1e-4);
+  EXPECT_LT(0.15 * kept(0.15, 0.2), 0.1);
+  // A short wire between many short neighbors keeps its ground.
+  fsv::Geometry pads;
+  const int w = pads.addNet("w");
+  const int n = pads.addNet("n");
+  pads.addBox(w, {.lo = {0, 0, 1}, .hi = {0.1, 0.05, 2}});
   for (const double x : {0.01, 0.04, 0.07}) {
-    g.addBox(b, {.lo = {x, 0.35, 1}, .hi = {x + 0.02, 0.36, 2}});
-    g.addBox(b, {.lo = {x, -0.31, 1}, .hi = {x + 0.02, -0.3, 2}});
+    pads.addBox(n, {.lo = {x, 0.35, 1}, .hi = {x + 0.02, 0.36, 2}});
+    pads.addBox(n, {.lo = {x, -0.31, 1}, .hi = {x + 0.02, -0.3, 2}});
   }
-  const NetEstimate est = estimate(g, stack, model, a, {.diagonal_depth = 0});
-  // 10 per µm over 0.1 µm and 0.5 per end, against twelve ends of 0.3.
-  EXPECT_NEAR(est.ground, 0, 1e-9);
-  EXPECT_GT(est.couplings.at(b), 12 * 0.3);
+  const NetEstimate small = estimate(pads, stack, model, w, options);
+  // 10 per µm over 0.1 µm and 0.5 per end.
+  EXPECT_NEAR(small.ground, 2, 1e-9);
+  EXPECT_GT(small.couplings.at(n), 0);
+  // No more than a neighbor on each side all along: 3 per µm.
+  EXPECT_LE(small.couplings.at(n), 0.3 + 1e-9);
 }
 
 // A crossing between the wire and a farther plane keeps its coupling: the
@@ -523,8 +568,10 @@ TEST(Evaluator, CrossingCouplingSplitsByNet)
       est.couplings.at(x), 1.6 + 4 + 1.4 + 2.2 * 0.2 / 1.1 + 0.05 * 0.5, 1e-9);
   EXPECT_NEAR(
       est.couplings.at(y), 2.2 * 0.9 / 1.1 + 4 + 1.4 + 0.35 * 0.5, 1e-9);
-  // On the right: 2 per µm, and 0.3 from each of b's ends.
-  EXPECT_NEAR(est.couplings.at(b), 2 + (2 * 0.3), 1e-9);
+  // On the right: 2 per µm over b and the 0.15 µm past each of its ends.
+  EXPECT_NEAR(est.couplings.at(b),
+              2 * (1 + (0.15 * kept(0.15, 3)) + (0.15 * kept(0.15, 6))),
+              1e-4);
 }
 
 TEST(Evaluator, DiagonalWires)
@@ -545,10 +592,11 @@ TEST(Evaluator, DiagonalWires)
   // d couples 7 per µm over its 2 µm, and takes 1 per µm from b there.
   ASSERT_TRUE(est.couplings.contains(d));
   EXPECT_DOUBLE_EQ(est.couplings.at(d), 14);
-  // b at both ends: each adds 0.2 and gives b 0.3.
-  EXPECT_NEAR(est.couplings.at(b), 2 * 4 - 2 + 2 * 0.3, 1e-12);
+  // b at both ends: each adds 0.2, and gives b none of it, since b ends
+  // there too.
+  EXPECT_NEAR(est.couplings.at(b), 2 * 4 - 2, 1e-12);
   // The rest of d's total delta (8 - 7 + 1 = 2 per µm) lands on the ground.
-  EXPECT_NEAR(est.ground, 10 * 4 + 2 * 2 + 2 * (0.5 + 0.2 - 0.3), 1e-12);
+  EXPECT_NEAR(est.ground, 10 * 4 + 2 * 2 + 2 * (0.5 + 0.2), 1e-12);
 
   // The same wire of the net's own on m2 shields like any other but adds
   // no coupling: the m1 wire's 40 + 4 of shielding + 1 of ends, plus the

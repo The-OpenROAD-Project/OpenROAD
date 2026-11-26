@@ -16,8 +16,8 @@ max_res must be a number of at least 0; got True
 max_res must be a number of at least 0; got '1'
 coupling_ratio must be a number from 0 to 1; got -0.1
 coupling_ratio must be a number from 0 to 1; got 1.5
-[INFO PEX-0028] Net _042_: 0.9031 fF against the field solver's 0.9333 +- 0.018 fF (-3.2%), 5 couplings above 5%.
-[INFO PEX-0029] Totals within 5% of the field solver: 1 of 1 nets; 90th percentile error 3.2%.
+[INFO PEX-0028] Net _042_: 0.9083 fF against the field solver's 0.9333 +- 0.018 fF (-2.7%), 5 couplings above 5%.
+[INFO PEX-0029] Totals within 5% of the field solver: 1 of 1 nets; 90th percentile error 2.7%.
 [INFO PEX-0033] Couplings to signal nets above 5% of a net's total within 20%: 2 of 5.
 give nets or sample
 give nets or sample

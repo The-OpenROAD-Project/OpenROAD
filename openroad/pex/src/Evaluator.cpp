@@ -127,9 +127,37 @@ struct Lateral
 {
   int box;
   int gap;
-  int a0;  // over the wire
+  // Over the wire, and as far past a line end of the box as the wire
+  // sees the box run on.
+  int a0;
   int a1;
 };
+
+// An end of a box along a wire beside it, as that wire sees it.
+struct BoxEnd
+{
+  int x = 0;  // where the end lies along the wire
+  // The box's net runs on past the end, so it is no end.
+  bool continued = false;
+  // The end face's extent across the wire, with what of the net joins the
+  // box at the end without running on: a bend's other wire.
+  int face = 0;
+  // The gap to the nearest shape beyond the face (-1 for none) and the
+  // share of the box's width that shape overlaps.
+  int facing_gap = -1;
+  double faced = 0;
+  // The gap to the nearest shape beside the end on the box's other side
+  // from the wire; -1 for none.
+  int far_gap = -1;
+};
+
+// What an end `distance` along the wire from another end keeps of its
+// reach `length` to the side: all of it far apart, none where the two
+// meet. The crossing tables' kept share is the same law over a gap.
+double keptBeside(const double length, const double distance)
+{
+  return length > 0 ? -std::expm1(-std::max(0.0, distance) / (2 * length)) : 1;
+}
 
 // The share of a layer's crossings over a piece [x0, x1] that no run
 // covers: from the nearest run before and after, through the one-sided
@@ -270,6 +298,9 @@ struct EndCaps
   double total = 0;
   double left = 0;
   double right = 0;
+  // The wire's couplings to the same neighbors per unit length there.
+  double lateral_left = 0;
+  double lateral_right = 0;
   double facing = 0;
   double plane_below = 0;
   double plane_above = 0;
@@ -488,13 +519,36 @@ class Wire
   }
   bool endJoined(int box, int x, int e0, int e1) const;
 
-  // The ends of the lateral neighbors of other nets that this wire runs
-  // past. The end tables give such an end's coupling to the wire running
-  // past it; from the wire's side that coupling is the same, by
-  // reciprocity, and it comes off the wire's ground, as far as the ground
-  // added from `start` in out_ goes. The neighbor's end takes the wire's
-  // covers there and an open side away from the wire.
-  void addNeighborEnds(size_t start) const;
+  // The low (or high) end of box `box` of this layer along this wire.
+  // Boxes past the wire's reaches are left out, so that the result
+  // depends only on the boxes within radius().
+  BoxEnd boxEnd(int box, bool at_lo) const;
+
+  // A neighbor's line end beside the wire draws field from the wire past
+  // the end, as if the neighbor ran on a little: by the length over which
+  // the wire's coupling to it per unit length makes up the end's coupling
+  // to the wire in the end tables, so that both nets see the same
+  // coupling. Along that length the wire's pieces take the neighbor, and
+  // with it the total and the parts to the covers and ground that go with
+  // it. Another end nearby keeps the length shorter: a shape facing the
+  // end across a gap, or the wire's own end. Extends the spans of the
+  // other nets' neighbors so, and cuts the wire where each neighbor's span
+  // ends.
+  void extendNeighbors();
+
+  // How far the neighbor `n` on the left (or right) looks to run on past
+  // the low (or high) end of its box, in database units; 0 where that is
+  // no end, the wire does not run past it, or a nearer neighbor hides it.
+  int extension(const Lateral& n, bool on_left, bool at_lo) const;
+
+  // What a neighbor at the end at x keeps of its part of the end's
+  // coupling, `coupling`, where the wire's coupling to it per unit length
+  // is `per_length`: less when the neighbor itself ends a little past the
+  // end, none when the two end together.
+  double keptAtEnd(const Lateral& n,
+                   int x,
+                   double coupling,
+                   double per_length) const;
 
   // The nearest shape on the layer beyond the end face at x, over the part
   // of the face it overlaps: its box (or -1) and gap.
@@ -590,6 +644,9 @@ class Wire
   const double w_um_;
   std::vector<Lateral> left_;
   std::vector<Lateral> right_;
+  // Whether the net runs on past the wire's low and high end.
+  bool continued_lo_ = false;
+  bool continued_hi_ = false;
   std::map<int, std::vector<Run>> runs_;  // covers by layer
   // By layer, the boxes beside the wire within the diagonal table's gaps
   // on one side or the other, in the order of near_.
@@ -601,7 +658,6 @@ class Wire
 
 void Wire::estimate()
 {
-  const size_t start = out_.size();
   const std::vector<int> edges(cuts_.begin(), cuts_.end());
   for (size_t i = 0; i + 1 < edges.size(); i++) {
     if (insideOther(edges[i], edges[i + 1])) {
@@ -618,7 +674,6 @@ void Wire::estimate()
   addEnd(a0_, start_below, start_above);
   const auto [end_below, end_above] = coversOn(a1_ - d, a1_);
   addEnd(a1_, end_below, end_above);
-  addNeighborEnds(start);
 }
 
 void Wire::addCorners(const int x0,
@@ -716,6 +771,7 @@ void Wire::collect()
             .a0 = o0,
             .a1 = o1,
         });
+        continue;  // cut where the wire sees it end
       } else if (lo(s, p_) >= p1_) {
         if (lo(s, p_) - p1_ > lateral_reach_) {
           continue;
@@ -726,6 +782,7 @@ void Wire::collect()
             .a0 = o0,
             .a1 = o1,
         });
+        continue;
       } else if (s.net == shape_.net && lo(s, p_) <= p0_ && hi(s, p_) >= p1_
                  && dominates(i)) {
         // A box of the net across the wire's whole width that counts the
@@ -780,6 +837,7 @@ void Wire::collect()
       });
     }
   }
+  extendNeighbors();
 }
 
 void Wire::notePast(const int i,
@@ -1253,7 +1311,14 @@ void Wire::addEnd(const int x, const Cover& below, const Cover& above) const
   const int t0 = x == a0_ ? a0_ : a1_ - d;
   const Lateral* l = nearest(left_, t0, t0 + d);
   const Lateral* r = nearest(right_, t0, t0 + d);
-  const EndCaps caps = endCaps(below, above, l, r, faced, gap);
+  EndCaps caps = endCaps(below, above, l, r, faced, gap);
+  // What a neighbor stopping short past the end does not take is ground.
+  if (l != nullptr) {
+    caps.left *= keptAtEnd(*l, x, caps.left, caps.lateral_left);
+  }
+  if (r != nullptr) {
+    caps.right *= keptAtEnd(*r, x, caps.right, caps.lateral_right);
+  }
   if (l != nullptr && boxes_[l->box].net != net_) {
     couple(l->box, Source::kEndLateral, caps.left);
   }
@@ -1323,74 +1388,185 @@ bool Wire::endJoined(const int box,
   return false;
 }
 
-void Wire::addNeighborEnds(const size_t start) const
+BoxEnd Wire::boxEnd(const int box, const bool at_lo) const
 {
-  double ground_left = 0;
-  for (size_t k = start; k < out_.size(); k++) {
-    if (out_[k].other < 0) {
-      ground_left += out_[k].value;
+  const EvalBox& b = boxes_[box];
+  const int b0 = lo(b, p_);
+  const int b1 = hi(b, p_);
+  BoxEnd end;
+  end.x = at_lo ? lo(b, a_) : hi(b, a_);
+  // The end's last width along the wire.
+  const int wn = std::min(b1 - b0, hi(b, a_) - lo(b, a_));
+  const int e0 = at_lo ? end.x : end.x - wn;
+  const int e1 = at_lo ? end.x + wn : end.x;
+  // The wire lies on the box's low or high side.
+  const bool wire_below = p1_ <= b0;
+  int f0 = b0;
+  int f1 = b1;
+  for (const int i : near_) {
+    const EvalBox& s = boxes_[i];
+    if (i == box || i == self_ || s.layer != b.layer
+        || std::max(lo(s, p_) - p1_, p0_ - hi(s, p_)) > lateral_reach_
+        || std::max(lo(s, a_) - a1_, a0_ - hi(s, a_)) > facing_reach_) {
+      continue;
+    }
+    const int s0 = lo(s, p_);
+    const int s1 = hi(s, p_);
+    const int overlap = std::min(b1, s1) - std::max(b0, s0);
+    const bool beside_end = std::min(e1, hi(s, a_)) > std::max(e0, lo(s, a_));
+    if (s.net == b.net && !s.pin && overlap >= 0) {
+      // Of the net and touching the box: running on past the end, or
+      // joining it there.
+      const bool past = at_lo ? lo(s, a_) < end.x && hi(s, a_) >= end.x
+                              : hi(s, a_) > end.x && lo(s, a_) <= end.x;
+      if (past) {
+        end.continued = true;
+        return end;
+      }
+      if (beside_end) {
+        f0 = std::min(f0, s0);
+        f1 = std::max(f1, s1);
+      }
+      continue;
+    }
+    const int ahead = at_lo ? end.x - hi(s, a_) : lo(s, a_) - end.x;
+    if (overlap > 0 && ahead > 0 && ahead <= facing_reach_
+        && (end.facing_gap < 0 || ahead < end.facing_gap)) {
+      end.facing_gap = ahead;
+      end.faced = std::min(1.0, overlap / static_cast<double>(b1 - b0));
+    }
+    const int far = wire_below ? s0 - b1 : b0 - s1;
+    if (s.net != net_ && beside_end && far > 0
+        && (end.far_gap < 0 || far < end.far_gap)) {
+      end.far_gap = far;
     }
   }
-  const int d = endSpan();
+  end.face = f1 - f0;
+  return end;
+}
+
+void Wire::extendNeighbors()
+{
+  continued_lo_ = boxEnd(self_, true).continued;
+  continued_hi_ = boxEnd(self_, false).continued;
+  struct Extension
+  {
+    Lateral* neighbor;
+    bool at_lo;
+    int by;
+  };
+  // All from the spans as drawn, then applied.
+  std::vector<Extension> extensions;
   for (const bool on_left : {true, false}) {
-    const std::vector<Lateral>& side = on_left ? left_ : right_;
-    for (const Lateral& n : side) {
-      const EvalBox& s = boxes_[n.box];
-      if (s.net == net_) {
+    for (Lateral& n : on_left ? left_ : right_) {
+      if (boxes_[n.box].net == net_) {
         continue;
       }
-      // The neighbor's ends lie along this wire only where its long axis
-      // does; a square's are half along each.
-      const odb::Rect& r = s.rect;
-      const bool along = (r.dx() >= r.dy() ? 0 : 1) == a_;
-      if (r.dx() != r.dy() && !along) {
-        continue;
-      }
-      const double weight = r.dx() == r.dy() ? 0.5 : 1.0;
-      const int n0 = lo(s, a_);
-      const int n1 = hi(s, a_);
-      const int wn = std::min(hi(s, p_) - lo(s, p_), n1 - n0);
       for (const bool at_lo : {true, false}) {
-        const int x = at_lo ? n0 : n1;
-        // This wire runs on past the end by more than its own end's span,
-        // which would otherwise take the neighbor at its end.
-        if (x - d < a0_ || x + d > a1_) {
-          continue;
+        const int by = extension(n, on_left, at_lo);
+        if (by > 0) {
+          extensions.push_back({.neighbor = &n, .at_lo = at_lo, .by = by});
         }
-        const int t0 = at_lo ? x : x - d;
-        // A longer box of the net counts this wire there.
-        if (insideOther(t0, t0 + d) || nearest(side, t0, t0 + d) != &n
-            || endJoined(n.box, x, at_lo ? x : x - wn, at_lo ? x + wn : x)) {
-          continue;
-        }
-        at_ = x;
-        const double gap = n.gap / dbu_;
-        const double width = (hi(s, p_) - lo(s, p_)) / dbu_;
-        const auto [below, above] = coversOn(t0, t0 + d);
-        double value = 0;
-        forStates(below,
-                  above,
-                  [&](LateralKey& key,
-                      const double share,
-                      const bool /* b */,
-                      const bool /* t */) {
-                    fallback(model_, key);
-                    if (model_.end(key) == nullptr) {
-                      key = {.layer = name_, .below = "", .above = ""};
-                    }
-                    // This wire is on the neighbor's other side from it.
-                    const EndCap e = on_left ? model_.end(key, width, -1, gap)
-                                             : model_.end(key, width, gap, -1);
-                    value += share * (on_left ? e.right : e.left);
-                  });
-        // The field the end draws comes off this wire's ground beside it.
-        couple(n.box, Source::kEndLateral, weight * value);
-        const double taken = std::clamp(weight * value, 0.0, ground_left);
-        ground_left -= taken;
-        ground(Ground::kEnd, -taken);
       }
     }
   }
+  for (const Extension& e : extensions) {
+    (e.at_lo ? e.neighbor->a0 : e.neighbor->a1) += e.at_lo ? -e.by : e.by;
+  }
+  for (const std::vector<Lateral>* side : {&left_, &right_}) {
+    for (const Lateral& n : *side) {
+      cuts_.insert(n.a0);
+      cuts_.insert(n.a1);
+    }
+  }
+}
+
+int Wire::extension(const Lateral& n,
+                    const bool on_left,
+                    const bool at_lo) const
+{
+  const int x = at_lo ? lo(boxes_[n.box], a_) : hi(boxes_[n.box], a_);
+  const int d = endSpan();
+  if (x - d < a0_ || x + d > a1_) {
+    return 0;
+  }
+  // Just inside the end: a longer box of the net counts this wire there,
+  // and a nearer neighbor hides the end.
+  const int t0 = at_lo ? x : x - d;
+  if (insideOther(t0, t0 + d)
+      || nearest(on_left ? left_ : right_, t0, t0 + d) != &n) {
+    return 0;
+  }
+  const BoxEnd end = boxEnd(n.box, at_lo);
+  if (end.continued) {
+    return 0;
+  }
+  const Lateral* other = nearest(on_left ? right_ : left_, t0, t0 + d);
+  const double gap = n.gap / dbu_;
+  const double other_gap = other == nullptr ? -1 : other->gap / dbu_;
+  const double far = end.far_gap < 0 ? -1 : end.far_gap / dbu_;
+  const double face = end.face / dbu_;
+  const auto [below, above] = coversOn(t0, t0 + d);
+  double to_end = 0;      // the end's coupling to this wire
+  double per_length = 0;  // this wire's coupling to the neighbor
+  forStates(below,
+            above,
+            [&](LateralKey& key,
+                const double share,
+                const bool /* b */,
+                const bool /* t */) {
+              const LateralCap c = model_.lateral(fallback(model_, key),
+                                                  w_um_,
+                                                  on_left ? gap : other_gap,
+                                                  on_left ? other_gap : gap);
+              per_length += share * (on_left ? c.left : c.right);
+              if (model_.end(key) == nullptr) {
+                key = {.layer = name_, .below = "", .above = ""};
+              }
+              // This wire is on the neighbor's other side from what lies
+              // beside its end.
+              const EndCap e = on_left ? model_.end(key, face, far, gap)
+                                       : model_.end(key, face, gap, far);
+              to_end += share * (on_left ? e.right : e.left);
+            });
+  if (to_end <= 0 || per_length <= 0) {
+    return 0;
+  }
+  const double length = to_end / per_length;
+  const int room = at_lo ? end.x - a0_ : a1_ - end.x;
+  double kept = 1;
+  if (!(at_lo ? continued_lo_ : continued_hi_)) {
+    kept = keptBeside(length, room / dbu_);
+  }
+  int limit = room;
+  if (end.facing_gap >= 0) {
+    kept *= 1 - (end.faced * (1 - keptBeside(length, end.facing_gap / dbu_)));
+    limit = std::min(limit, end.facing_gap);
+  }
+  return std::min(limit, static_cast<int>(std::lround(length * kept * dbu_)));
+}
+
+double Wire::keptAtEnd(const Lateral& n,
+                       const int x,
+                       const double coupling,
+                       const double per_length) const
+{
+  if (boxes_[n.box].net == net_ || coupling <= 0 || per_length <= 0) {
+    return 1;
+  }
+  const bool at_lo = x == a0_;
+  const BoxEnd end = boxEnd(n.box, at_lo);
+  if (end.continued) {
+    return 1;
+  }
+  const double length = coupling / per_length;
+  const int past = at_lo ? a0_ - end.x : end.x - a1_;
+  double lost = 1 - keptBeside(length, past / dbu_);
+  if (end.facing_gap >= 0) {
+    // A shape facing the neighbor's end takes its place past it.
+    lost *= 1 - (end.faced * (1 - keptBeside(length, end.facing_gap / dbu_)));
+  }
+  return 1 - lost;
 }
 
 std::pair<int, int> Wire::facingAt(const int x) const
@@ -1427,7 +1603,13 @@ EndCaps Wire::endCaps(const Cover& below,
       below,
       above,
       [&](LateralKey& key, const double weight, const bool b, const bool t) {
-        fallback(model_, key);
+        const LateralCap beside
+            = model_.lateral(fallback(model_, key),
+                             w_um_,
+                             l != nullptr ? l->gap / dbu_ : -1,
+                             r != nullptr ? r->gap / dbu_ : -1);
+        caps.lateral_left += weight * beside.left;
+        caps.lateral_right += weight * beside.right;
         if (model_.end(key) == nullptr) {
           key = {.layer = name_, .below = "", .above = ""};
         }
