@@ -255,8 +255,9 @@ std::string resolvePathGroupName(Resizer* resizer, const char* name)
     resizer->logger()->warn(utl::RSZ,
                             227,
                             "Unknown -path_group '{}'. Valid path groups are "
-                            "{}. Timing optimization is not restricted to a "
-                            "path group.",
+                            "{} or a group the SDC defines with group_path. "
+                            "Timing optimization is not restricted to a path "
+                            "group.",
                             group_name,
                             valid);
     return "";
