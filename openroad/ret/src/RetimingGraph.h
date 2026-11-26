@@ -130,10 +130,9 @@ class RetimingGraph
   void pinGates();
   // The pins registers decide.
   void fence();
-  // The registers and gates a false path or a multicycle names: a register
-  // moved across one changes which paths the exception covers.  And the
-  // registers with a constraint on the cell, a pin or a driven net: STA
-  // drops it with the register.
+  // The registers and gates a false path, a multicycle or a path delay
+  // names: a move would change which paths the exception covers.  And the
+  // registers with an SDC constraint of their own.
   void findSdcCells(odb::dbBlock* block);
   void markBoundary(odb::dbInst* inst, int id);
   void markDontTouch(odb::dbInst* inst, int id);

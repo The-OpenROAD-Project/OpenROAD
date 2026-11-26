@@ -103,12 +103,18 @@ void connectPin(
     odb::dbNet* net,
     const std::unordered_map<odb::dbNet*, odb::dbModNet*>& mod_nets);
 
-// An SDC constraint on one of the cell's pins or on a net it drives (case
-// analysis, disable_timing, a clock latency, a net derate, ...).
-bool hasPinConstraint(sta::dbSta* sta, odb::dbInst* inst);
-// An SDC constraint on the cell itself (a derate, disable_timing, operating
-// conditions, ...), or an exception that lists it as a cell.
-bool hasCellConstraint(sta::dbSta* sta, odb::dbInst* inst);
+// In a group or a region (a power domain, a placement region): a new cell
+// would be in neither.
+bool isGrouped(odb::dbInst* inst);
+// A cell that must stay as it is: don't-touch, fixed, grouped, or with a pin
+// on a don't-touch net, supply nets included (deleting it disconnects them).
+bool isHeld(odb::dbInst* inst);
+
+// An SDC constraint on the cell (operating conditions, disable_timing, a
+// derate or a pulse width of its own), on one of its pins, or on a net it
+// drives: STA drops it with the cell.  The exceptions that list the cell do
+// not count.
+bool hasSdcConstraint(sta::dbSta* sta, odb::dbInst* inst);
 
 // A cell with a scan pin in LEF or a liberty test_cell.
 bool isScanCell(sta::dbSta* sta, odb::dbInst* inst);
@@ -136,9 +142,9 @@ bool inactiveAsyncControls(const sta::LibertyCell* cell,
                            PinConstants& constants);
 
 // Discards a register, its output nets with no load, and the tie cells that
-// held only its asynchronous controls.  A tie cell stays when it is fixed,
-// don't-touch or named by an SDC constraint, and in a hierarchical netlist
-// when it is in another module.
+// held only its asynchronous controls.  A tie cell stays when it is held or
+// has an SDC constraint, and in a hierarchical netlist when it is in another
+// module.
 void discardRegister(sta::dbSta* sta, odb::dbInst* inst, Discards& discards);
 
 bool isRegisterDataPin(sta::dbSta* sta, odb::dbITerm* pin);

@@ -241,12 +241,12 @@ void Retimer::retime(const RetimeOptions& options)
         },
         [&] { trial_undone_ = true; });
     check.run(options_);
+    discards_->destroy(sta_);
   } catch (...) {
     odb::dbDatabase::undoEco(block);
     discards_->clear();
     throw;
   }
-  discards_->destroy(sta_);
   odb::dbDatabase::commitEco(block);
   graph_.reset();
 

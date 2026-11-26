@@ -25,7 +25,6 @@ tns max -0.0900
 r4: DFF_X1
 r5: DFF_X1
 unmap cells: unmap_ff_0 unmap_inv_2
-set_timing_derate -cell_delay -early 0.9990 [get_cells {r4}]
 path group lists r4: 1
 Retime output passed/skipped sequential equivalence test
 No differences found.

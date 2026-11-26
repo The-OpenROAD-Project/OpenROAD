@@ -6,9 +6,8 @@
 # undone, which restores r4 and r5; the first half of the ranked slides is
 # the other cone and is kept.  Round 2 proposes the slides behind r4 and r5
 # again: each trial unmaps them, STA rejects it and it is undone, so r4 and
-# r5 stay as they were, with r4's derate and its place in the path group
-# that lists every register.  The result is proven sequentially equivalent
-# with ABC dsec.
+# r5 stay as they were, r4 still in the path group that lists every
+# register.  The result is proven sequentially equivalent with ABC dsec.
 source "helpers.tcl"
 source "ret_helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
@@ -43,7 +42,6 @@ foreach name {r4 r5 g12 g13 g14 g15 g16 g17 unmap_ff_0 unmap_inv_2} {
 set_wire_rc -resistance 4.0e-02 -capacitance 1.0e-05
 estimate_parasitics -placement
 group_path -name registers -to [all_registers]
-set_timing_derate -early 0.999 [get_cells r4]
 
 write_verilog_for_dsec retime_sta_unmap_undo before
 report_worst_slack -max -digits 4
@@ -75,7 +73,6 @@ write_sdc $sdc_file
 set stream [open $sdc_file r]
 set sdc [read $stream]
 close $stream
-puts [lindex [regexp -inline -line {^set_timing_derate.*$} $sdc] 0]
 regexp {group_path[^#]*} $sdc path_group
 puts "path group lists r4: [regexp {{r4}} $path_group]"
 run_dsec_test retime_sta_unmap_undo \

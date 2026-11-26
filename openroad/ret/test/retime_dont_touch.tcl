@@ -4,7 +4,8 @@
 # group or in a region, or an SDC exception or a constraint on a pin or on
 # the cell naming it.  A gate in a group, or with a multicycle through it,
 # is pinned (3 pinned gates, not 2).  A path group that lists the registers
-# as cells does not fence them: the last retime moves the register.
+# as cells does not fence them, and does not hide a derate on one of them:
+# with the derate nothing moves, and the last retime moves the register.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
@@ -32,7 +33,7 @@ set_disable_timing [get_pins r1/D]
 retime
 unset_disable_timing [get_pins r1/D]
 
-set_timing_derate -late 1.0 [get_cells r1]
+set_timing_derate -late 1.05 [get_cells r1]
 retime
 unset_timing_derate
 
@@ -62,4 +63,8 @@ retime
 unset_path_exceptions -through [get_pins g2/ZN]
 
 group_path -name registers -to [all_registers]
+set_timing_derate -late 1.05 [get_cells r1]
+retime
+unset_timing_derate
+
 retime

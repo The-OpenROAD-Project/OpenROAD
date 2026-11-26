@@ -19,15 +19,19 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "rsz/Resizer.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
 #include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
+#include "sta/SdcClass.hh"
 #include "sta/Sequential.hh"
+#include "sta/Transition.hh"
 
 namespace ret {
 
@@ -69,11 +73,21 @@ sta::LibertyCell* libertyCell(sta::dbSta* sta, odb::dbMaster* master)
   return cell != nullptr ? network->libertyCell(cell) : nullptr;
 }
 
+namespace {
+
+// Not a cell of plain logic, whatever its liberty function.
+bool isSpecialCell(const sta::LibertyCell* cell)
+{
+  return cell->isIsolationCell() || cell->isLevelShifter() || cell->isPad()
+         || cell->isMacro();
+}
+
+}  // namespace
+
 bool isUsableCell(const sta::LibertyCell* cell, rsz::Resizer* resizer)
 {
   return !cell->dontUse() && (resizer == nullptr || !resizer->dontUse(cell))
-         && !cell->isIsolationCell() && !cell->isLevelShifter()
-         && !cell->alwaysOn() && !cell->isPad() && !cell->isMacro();
+         && !cell->alwaysOn() && !isSpecialCell(cell);
 }
 
 const sta::LibertyPort* libertyPort(sta::dbSta* sta, odb::dbITerm* pin)
@@ -584,18 +598,14 @@ bool loadedOutput(sta::dbSta* sta,
 // The output pin of a tie cell that nothing reads anymore.
 odb::dbITerm* idleTieOutput(sta::dbSta* sta, odb::dbNet* net)
 {
-  if (net->getSigType().isSupply() || net->isDoNotTouch()
-      || !net->getBTerms().empty() || net->getITerms().size() != 1
-      || !constNetValue(sta, net).has_value()) {
+  if (net->getSigType().isSupply() || !net->getBTerms().empty()
+      || net->getITerms().size() != 1 || !constNetValue(sta, net).has_value()) {
     return nullptr;
   }
-  odb::dbITerm* output = net->getFirstOutput();
-  if (output == nullptr) {
-    return nullptr;
-  }
+  // The net has a constant value, so a cell drives it.
+  odb::dbITerm* output = onlyDriver(net);
   odb::dbInst* tie = output->getInst();
-  if (tie->isDoNotTouch() || tie->isFixed() || hasPinConstraint(sta, tie)
-      || hasCellConstraint(sta, tie)) {
+  if (isHeld(tie) || hasSdcConstraint(sta, tie)) {
     return nullptr;
   }
   for (odb::dbITerm* iterm : tie->getITerms()) {
@@ -644,13 +654,86 @@ std::vector<const sta::Sdc*> allSdcs(sta::dbSta* sta)
   return sdcs;
 }
 
+// A constraint on the cell itself.  Sdc::isConstrained(Instance) also counts
+// the exceptions that list the cell, such as group_path -to [all_registers],
+// so each kind is asked for.  A derate or a pulse width of its own shows as a
+// value other than the design's, which a port has.  `pin`: one of the cell's.
+bool hasCellConstraint(const sta::Sdc* sdc,
+                       const sta::Instance* cell,
+                       const sta::Pin* pin,
+                       const sta::Pin* port)
+{
+  if (sdc->pvt(cell, sta::MinMax::min()) != nullptr
+      || sdc->pvt(cell, sta::MinMax::max()) != nullptr
+      || sdc->disabledInstancePorts()->contains(cell)) {
+    return true;
+  }
+  for (const sta::RiseFall* rf : sta::RiseFall::range()) {
+    float width = 0.0f;
+    float design_width = 0.0f;
+    bool exists = false;
+    bool design_exists = false;
+    sdc->minPulseWidth(pin, nullptr, rf, width, exists);
+    sdc->minPulseWidth(nullptr, nullptr, rf, design_width, design_exists);
+    if (exists != design_exists || (exists && width != design_width)) {
+      return true;
+    }
+    for (const sta::EarlyLate* early_late : sta::EarlyLate::range()) {
+      for (const auto type : {
+               sta::TimingDerateCellType::cell_delay,
+               sta::TimingDerateCellType::cell_check,
+           }) {
+        for (const auto path : {
+                 sta::PathClkOrData::clk,
+                 sta::PathClkOrData::data,
+             }) {
+          if (sdc->timingDerateInstance(pin, type, path, rf, early_late)
+              != sdc->timingDerateInstance(port, type, path, rf, early_late)) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+
 }  // namespace
 
-bool hasPinConstraint(sta::dbSta* sta, odb::dbInst* inst)
+bool isGrouped(odb::dbInst* inst)
+{
+  return inst->getGroup() != nullptr || inst->getRegion() != nullptr;
+}
+
+bool isHeld(odb::dbInst* inst)
+{
+  if (inst->isDoNotTouch() || inst->isFixed() || isGrouped(inst)) {
+    return true;
+  }
+  for (odb::dbITerm* pin : inst->getITerms()) {
+    odb::dbNet* net = pin->getNet();
+    if (net != nullptr && net->isDoNotTouch()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool hasSdcConstraint(sta::dbSta* sta, odb::dbInst* inst)
 {
   sta::dbNetwork* network = sta->getDbNetwork();
+  const sta::Instance* cell = network->dbToSta(inst);
+  odb::dbSet<odb::dbBTerm> ports = inst->getBlock()->getBTerms();
+  odb::dbSet<odb::dbITerm> pins = inst->getITerms();
   for (const sta::Sdc* sdc : allSdcs(sta)) {
-    for (odb::dbITerm* iterm : inst->getITerms()) {
+    if (!ports.empty() && !pins.empty()
+        && hasCellConstraint(sdc,
+                             cell,
+                             network->dbToSta(*pins.begin()),
+                             network->dbToSta(*ports.begin()))) {
+      return true;
+    }
+    for (odb::dbITerm* iterm : pins) {
       odb::dbNet* net = iterm->getNet();
       if (sdc->isConstrained(network->dbToSta(iterm))
           || (iterm->getIoType() == odb::dbIoType::OUTPUT && net != nullptr
@@ -660,14 +743,6 @@ bool hasPinConstraint(sta::dbSta* sta, odb::dbInst* inst)
     }
   }
   return false;
-}
-
-bool hasCellConstraint(sta::dbSta* sta, odb::dbInst* inst)
-{
-  const sta::Instance* cell = sta->getDbNetwork()->dbToSta(inst);
-  return std::ranges::any_of(allSdcs(sta), [cell](const sta::Sdc* sdc) {
-    return sdc->isConstrained(cell);
-  });
 }
 
 bool isScanCell(sta::dbSta* sta, odb::dbInst* inst)
@@ -979,8 +1054,7 @@ bool sameRegisterClass(const RegisterClass& a, const RegisterClass& b)
 bool isCombinationalGate(sta::dbSta* sta, odb::dbInst* inst)
 {
   const sta::LibertyCell* cell = sta->getDbNetwork()->libertyCell(inst);
-  if (cell == nullptr || cell->isSequential() || cell->isMacro()
-      || cell->isPad() || cell->isIsolationCell() || cell->isLevelShifter()) {
+  if (cell == nullptr || cell->isSequential() || isSpecialCell(cell)) {
     return false;
   }
   sta::LibertyCellPortIterator port_iter(cell);

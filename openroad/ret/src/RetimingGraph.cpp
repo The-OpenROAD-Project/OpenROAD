@@ -24,17 +24,6 @@
 
 namespace ret {
 
-namespace {
-
-// A new cell would be in neither: membership (a power domain, a placement
-// region) is not carried over.
-bool isGrouped(odb::dbInst* inst)
-{
-  return inst->getGroup() != nullptr || inst->getRegion() != nullptr;
-}
-
-}  // namespace
-
 RetimingGraph::RetimingGraph(odb::dbDatabase* db,
                              sta::dbSta* sta,
                              rsz::Resizer* resizer,
@@ -237,17 +226,8 @@ bool RetimingGraph::fencesChain(odb::dbNet* net) const
 
 bool RetimingGraph::isDontTouch(odb::dbInst* reg) const
 {
-  if (fenced_.contains(reg) || sdc_cells_.contains(reg) || reg->isDoNotTouch()
-      || reg->isFixed() || isGrouped(reg) || isDontTouchRegister(sta_, reg)) {
-    return true;
-  }
-  for (odb::dbITerm* pin : reg->getITerms()) {
-    odb::dbNet* net = pin->getNet();
-    if (net != nullptr && net->isDoNotTouch()) {
-      return true;
-    }
-  }
-  return false;
+  return fenced_.contains(reg) || sdc_cells_.contains(reg) || isHeld(reg)
+         || isDontTouchRegister(sta_, reg);
 }
 
 const RegisterClass& RetimingGraph::regClass(odb::dbInst* reg) const
@@ -536,37 +516,45 @@ void RetimingGraph::findSdcCells(odb::dbBlock* block)
 {
   sdc_cells_.clear();
   sta::dbNetwork* network = sta_->getDbNetwork();
-  // The cells a path delay or a path group lists, such as [all_registers]:
-  // fencing them would fence every register of such a design.  STA does not
-  // tell their other cell constraints from that listing.
-  std::unordered_set<const sta::Instance*> listed;
-  for (const sta::Mode* mode : sta_->modes()) {
-    for (const sta::ExceptionPath* exception : mode->sdc()->exceptions()) {
-      // A false path or a multicycle changes how a register-to-register
-      // path is timed; a path delay or a group does not.
-      const bool fences = exception->isFalse() || exception->isMultiCycle();
-      sta::ExceptionPtIterator pt_iter(exception);
-      while (pt_iter.hasNext()) {
-        sta::ExceptionPt* pt = pt_iter.next();
-        if (fences) {
-          for (const sta::Pin* pin : pt->allPins(network)) {
-            odb::dbInst* inst = network->staToDb(network->instance(pin));
-            if (inst != nullptr) {
-              sdc_cells_.insert(inst);
-            }
-          }
-        } else if (pt->instances() != nullptr) {
-          listed.insert(pt->instances()->begin(), pt->instances()->end());
-        }
+  const auto is_register = [network](const sta::Instance* cell) {
+    odb::dbInst* inst = network->staToDb(cell);
+    return inst != nullptr && inst->getMaster()->isSequential();
+  };
+  int registers = 0;
+  for (odb::dbInst* inst : block->getInsts()) {
+    if (inst->getMaster()->isSequential()) {
+      ++registers;
+      if (hasSdcConstraint(sta_, inst)) {
+        sdc_cells_.insert(inst);
       }
     }
   }
-  for (odb::dbInst* inst : block->getInsts()) {
-    if (inst->getMaster()->isSequential()
-        && (hasPinConstraint(sta_, inst)
-            || (!listed.contains(network->dbToSta(inst))
-                && hasCellConstraint(sta_, inst)))) {
-      sdc_cells_.insert(inst);
+  for (const sta::Mode* mode : sta_->modes()) {
+    for (const sta::ExceptionPath* exception : mode->sdc()->exceptions()) {
+      // A false path, a multicycle or a path delay changes how a path is
+      // timed; a path group does not.
+      if (!exception->isFalse() && !exception->isMultiCycle()
+          && !exception->isPathDelay()) {
+        continue;
+      }
+      sta::ExceptionPtIterator pt_iter(exception);
+      while (pt_iter.hasNext()) {
+        sta::ExceptionPt* pt = pt_iter.next();
+        // A path delay on every register ([all_registers]) names a class,
+        // not cells: reading the SDC again puts new registers under it, and
+        // fencing its cells would fence the design.
+        if (exception->isPathDelay() && pt->instances() != nullptr
+            && std::ranges::count_if(*pt->instances(), is_register)
+                   == registers) {
+          continue;
+        }
+        for (const sta::Pin* pin : pt->allPins(network)) {
+          odb::dbInst* inst = network->staToDb(network->instance(pin));
+          if (inst != nullptr) {
+            sdc_cells_.insert(inst);
+          }
+        }
+      }
     }
   }
 }

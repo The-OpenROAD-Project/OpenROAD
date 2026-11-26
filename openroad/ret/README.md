@@ -56,9 +56,11 @@ These registers never move:
 - registers with a live asynchronous set or reset, or with an input left
   unconnected;
 - registers marked don't-touch, fixed in place, in a group or a region (a
-  power domain, for example), or read by a don't-touch cell;
-- registers named by `set_false_path` or `set_multicycle_path`, or with a
-  constraint on the cell, on one of its pins or on a net it drives;
+  power domain, for example), with a pin on a don't-touch net, or read by a
+  don't-touch cell;
+- registers named by `set_false_path`, `set_multicycle_path`,
+  `set_max_delay` or `set_min_delay`, or with a constraint on the cell, on
+  one of its pins or on a net it drives;
 - a register chain whose output reaches a primary output, a bidirectional
   pin, a control pin of another register or a net with a second driver
   (those read the chain at its current depth), and one that meets a second
@@ -77,16 +79,15 @@ These gates are never crossed:
 - a gate whose output net has a second driver, and a cell that is not a
   plain combinational gate: a tri-state driver, an isolation cell, a level
   shifter, a macro, a pad, or a cell without a liberty function;
-- a gate marked don't-touch, in a group or a region, or named by
-  `set_false_path` or `set_multicycle_path`.
+- a gate marked don't-touch, in a group or a region, or named by one of
+  those four exceptions.
 
 A register whose set or reset is tied inactive moves as the base flip-flop,
-and the tie cells only it read are removed unless they are fixed,
-don't-touch or named by a constraint. New cells never use a `dont_use` cell,
-so an enable or inverting register of such a cell is unmapped when it moves;
-tie cells ignore `set_dont_use`, as `repair_tie_fanout` does. The design
-must have one clock defined with `create_clock`; gated copies of it are
-fine.
+and the tie cells only it read are removed unless one of the reasons above
+holds them in place. New cells never use a `dont_use` cell, so an enable or
+inverting register of such a cell is unmapped when it moves; tie cells
+ignore `set_dont_use`, as `repair_tie_fanout` does. The design must have one
+clock defined with `create_clock`; gated copies of it are fine.
 
 ```tcl
 retime
@@ -137,11 +138,11 @@ sequential equivalence checking. A scan cell is one with a liberty
 neither way, such as Nangate45 `SDFF_X1`, can be unmapped, which removes the
 scan cell.
 
-A path delay or a path group that lists registers as cells (for example
-`-to [all_registers]`) does not keep them in place. When such a register
-moves, the list stops naming it, and STA drops any other constraint set on
-that cell with it. Read the SDC again after `retime`, as ORFS does at every
-stage.
+A path group, and a path delay that lists every register (as
+`-to [all_registers]` does), name a class of cells and do not keep registers
+in place. A new register is in neither list until the SDC is read again, so
+until then it is timed without that path delay, by `retime` too. Read the
+SDC again after `retime`, as ORFS does at every stage.
 
 `retime` deletes the cells and nets it replaced when it returns. Undoing it
 afterwards through an ECO opened before the command (`dbDatabase::beginEco`)
