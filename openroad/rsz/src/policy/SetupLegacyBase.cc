@@ -119,7 +119,8 @@ void SetupLegacyBase::initializeSetupServices()
 
 bool SetupLegacyBase::hasVtSwapCells() const
 {
-  return resizer_.lib_data_->sorted_vt_categories.size() > 1;
+  // The dont_use VTs count: VT swap moves their instances to a usable VT.
+  return resizer_.vtCategoryCountWithDontUse() > 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

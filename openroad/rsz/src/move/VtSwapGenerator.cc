@@ -76,9 +76,10 @@ bool VtSwapGenerator::selectPathBestCell(const Target& target,
 
   inst = target.inst(resizer_);
 
-  return inst != nullptr && resizer_.vtCategoryCount() >= 2
-         && !resizer_.dontTouch(inst) && resizer_.isLogicStdCell(inst)
+  return inst != nullptr && !resizer_.dontTouch(inst)
+         && resizer_.isLogicStdCell(inst)
          && resolvePathCurrentCell(drvr_pin, curr_cell)
+         && resizer_.canVtSwap(curr_cell)
          && selectBestEquivCell(curr_cell, best_cell);
 }
 
