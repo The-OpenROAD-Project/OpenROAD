@@ -24,3 +24,4 @@ Endpoint                                 Delay     Delay     Slack
 ------------------------------------------------------------------
 r2/D (DFF_X1)                           0.0121    0.1084   -0.0963 (VIOLATED)
 
+worst slack max -0.0963

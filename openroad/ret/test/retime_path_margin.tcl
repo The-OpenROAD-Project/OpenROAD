@@ -24,3 +24,4 @@ unset_path_exceptions -through [get_pins g2/ZN]
 set_max_delay 0.05 -through [get_pins g2/ZN]
 retime -move_named_registers
 report_checks -through [get_pins g2/ZN] -format end -digits 4
+report_worst_slack -max -digits 4
