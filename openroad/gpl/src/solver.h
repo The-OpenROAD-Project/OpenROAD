@@ -23,9 +23,6 @@ struct ResidualError
   float y;  // The relative residual error for Y
 };
 
-using Eigen::BiCGSTAB;
-using Eigen::IdentityPreconditioner;
-
 using SMatrix = Eigen::SparseMatrix<float, Eigen::RowMajor>;
 
 ResidualError cpuSparseSolve(int maxSolverIter,

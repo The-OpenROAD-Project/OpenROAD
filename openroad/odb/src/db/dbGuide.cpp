@@ -115,7 +115,7 @@ void _dbGuide::collectMemInfo(MemInfo& info)
 
 Rect dbGuide::getBox() const
 {
-  _dbGuide* obj = (_dbGuide*) this;
+  const _dbGuide* obj = reinterpret_cast<const _dbGuide*>(this);
   return obj->box_;
 }
 

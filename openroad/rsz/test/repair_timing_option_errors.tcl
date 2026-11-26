@@ -1,5 +1,5 @@
-# repair_timing checks -effort and -profile_mode in C++, so every command that
-# reaches repairSetup() reports the same errors.
+# repair_timing checks -effort, -profile_mode, and -sequence in C++, so
+# every command that reaches repairSetup() reports the same errors.
 source "helpers.tcl"
 
 read_liberty Nangate45/Nangate45_typ.lib
@@ -15,4 +15,7 @@ catch { repair_timing -setup -phases PARALLEL_EVAL -effort max } error
 puts $error
 
 catch { repair_timing -setup -profile_mode 4 } error
+puts $error
+
+catch { repair_timing -setup -sequence "sizeup,bogus" } error
 puts $error

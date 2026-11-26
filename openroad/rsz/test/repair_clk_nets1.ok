@@ -48,8 +48,8 @@ Path Type: max
 
 # Check new buffer locations.
 Instance: u2, Location (unit: DBU): 0 0
-Instance: wire3, Location (unit: DBU): 916825 1382
-Instance: wire2, Location (unit: DBU): 1745492 1340
+Instance: wire3, Location (unit: DBU): 916824 1382
+Instance: wire2, Location (unit: DBU): 1745491 1340
 Instance: wire1, Location (unit: DBU): 2858308 1283
 Instance: u3, Location (unit: DBU): 3998000 0
 

@@ -695,6 +695,22 @@ class frLayer
     return !keepOutZoneConstraints_.empty();
   }
 
+  void addEnclosureTableConstraint(frLef58EnclosureTableConstraint* in)
+  {
+    enclosureTableConstraints_.push_back(in);
+  }
+
+  const std::vector<frLef58EnclosureTableConstraint*>&
+  getEnclosureTableConstraints() const
+  {
+    return enclosureTableConstraints_;
+  }
+
+  bool hasEnclosureTableConstraints() const
+  {
+    return !enclosureTableConstraints_.empty();
+  }
+
   void addSpacingRangeConstraint(frSpacingRangeConstraint* in)
   {
     spacingRangeConstraints_.push_back(in);
@@ -979,6 +995,7 @@ class frLayer
   std::vector<frLef58AreaConstraint*> lef58AreaConstraints_;
   std::vector<frLef58AreaConstraint*> lef58AreaConstraintsRectWidth_;
   std::vector<frLef58KeepOutZoneConstraint*> keepOutZoneConstraints_;
+  std::vector<frLef58EnclosureTableConstraint*> enclosureTableConstraints_;
   std::vector<frSpacingRangeConstraint*> spacingRangeConstraints_;
   std::vector<frLef58TwoWiresForbiddenSpcConstraint*>
       twForbiddenSpcConstraints_;

@@ -14,6 +14,7 @@
 #include "dbTable.h"
 #include "dbTechLayerAreaRule.h"
 #include "dbTechLayerArraySpacingRule.h"
+#include "dbTechLayerCoreEdgeLengthRule.h"
 #include "dbTechLayerCornerSpacingRule.h"
 #include "dbTechLayerCutClassRule.h"
 #include "dbTechLayerCutEnclosureRule.h"
@@ -24,6 +25,8 @@
 #include "dbTechLayerEolExtensionRule.h"
 #include "dbTechLayerEolKeepOutRule.h"
 #include "dbTechLayerForbiddenSpacingRule.h"
+#include "dbTechLayerImplantSpacingRule.h"
+#include "dbTechLayerImplantWidthRule.h"
 #include "dbTechLayerKeepOutZoneRule.h"
 #include "dbTechLayerMaxSpacingRule.h"
 #include "dbTechLayerMinCutRule.h"
@@ -192,6 +195,15 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
     return false;
   }
   if (*voltage_spacing_rules_tbl_ != *rhs.voltage_spacing_rules_tbl_) {
+    return false;
+  }
+  if (*implant_width_rules_tbl_ != *rhs.implant_width_rules_tbl_) {
+    return false;
+  }
+  if (*implant_spacing_rules_tbl_ != *rhs.implant_spacing_rules_tbl_) {
+    return false;
+  }
+  if (*core_edge_length_rules_tbl_ != *rhs.core_edge_length_rules_tbl_) {
     return false;
   }
 
@@ -396,116 +408,131 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
   cut_class_rules_tbl_ = new dbTable<_dbTechLayerCutClassRule>(
       db,
       this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
       dbTechLayerCutClassRuleObj);
   cut_class_rules_hash_.setTable(cut_class_rules_tbl_);
   spacing_eol_rules_tbl_ = new dbTable<_dbTechLayerSpacingEolRule>(
       db,
       this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
       dbTechLayerSpacingEolRuleObj);
   cut_spacing_rules_tbl_ = new dbTable<_dbTechLayerCutSpacingRule>(
       db,
       this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
       dbTechLayerCutSpacingRuleObj);
   minstep_rules_tbl_ = new dbTable<_dbTechLayerMinStepRule>(
       db,
       this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
       dbTechLayerMinStepRuleObj);
   corner_spacing_rules_tbl_ = new dbTable<_dbTechLayerCornerSpacingRule>(
       db,
       this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
       dbTechLayerCornerSpacingRuleObj);
   spacing_table_prl_rules_tbl_ = new dbTable<_dbTechLayerSpacingTablePrlRule>(
       db,
       this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
       dbTechLayerSpacingTablePrlRuleObj);
   cut_spacing_table_orth_tbl_
       = new dbTable<_dbTechLayerCutSpacingTableOrthRule>(
           db,
           this,
-          (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+          static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
           dbTechLayerCutSpacingTableOrthRuleObj);
   cut_spacing_table_def_tbl_ = new dbTable<_dbTechLayerCutSpacingTableDefRule>(
       db,
       this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
       dbTechLayerCutSpacingTableDefRuleObj);
   cut_enc_rules_tbl_ = new dbTable<_dbTechLayerCutEnclosureRule>(
       db,
       this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
       dbTechLayerCutEnclosureRuleObj);
   cut_enc_table_rules_tbl_ = new dbTable<_dbTechLayerCutEnclosureTableDefRule>(
       db,
       this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
       dbTechLayerCutEnclosureTableDefRuleObj);
   eol_ext_rules_tbl_ = new dbTable<_dbTechLayerEolExtensionRule>(
       db,
       this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
       dbTechLayerEolExtensionRuleObj);
   array_spacing_rules_tbl_ = new dbTable<_dbTechLayerArraySpacingRule>(
       db,
       this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
       dbTechLayerArraySpacingRuleObj);
   eol_keep_out_rules_tbl_ = new dbTable<_dbTechLayerEolKeepOutRule>(
       db,
       this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
       dbTechLayerEolKeepOutRuleObj);
   max_spacing_rules_tbl_ = new dbTable<_dbTechLayerMaxSpacingRule>(
       db,
       this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
       dbTechLayerMaxSpacingRuleObj);
   width_table_rules_tbl_ = new dbTable<_dbTechLayerWidthTableRule>(
       db,
       this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
       dbTechLayerWidthTableRuleObj);
   min_cuts_rules_tbl_ = new dbTable<_dbTechLayerMinCutRule>(
       db,
       this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
       dbTechLayerMinCutRuleObj);
   area_rules_tbl_ = new dbTable<_dbTechLayerAreaRule>(
       db,
       this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
       dbTechLayerAreaRuleObj);
   forbidden_spacing_rules_tbl_ = new dbTable<_dbTechLayerForbiddenSpacingRule>(
       db,
       this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
       dbTechLayerForbiddenSpacingRuleObj);
   keepout_zone_rules_tbl_ = new dbTable<_dbTechLayerKeepOutZoneRule>(
       db,
       this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
       dbTechLayerKeepOutZoneRuleObj);
   wrongdir_spacing_rules_tbl_ = new dbTable<_dbTechLayerWrongDirSpacingRule>(
       db,
       this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
       dbTechLayerWrongDirSpacingRuleObj);
   two_wires_forbidden_spc_rules_tbl_
       = new dbTable<_dbTechLayerTwoWiresForbiddenSpcRule>(
           db,
           this,
-          (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+          static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
           dbTechLayerTwoWiresForbiddenSpcRuleObj);
   voltage_spacing_rules_tbl_ = new dbTable<_dbTechLayerVoltageSpacing>(
       db,
       this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
       dbTechLayerVoltageSpacingObj);
+  implant_width_rules_tbl_ = new dbTable<_dbTechLayerImplantWidthRule>(
+      db,
+      this,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
+      dbTechLayerImplantWidthRuleObj);
+  implant_spacing_rules_tbl_ = new dbTable<_dbTechLayerImplantSpacingRule>(
+      db,
+      this,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
+      dbTechLayerImplantSpacingRuleObj);
+  core_edge_length_rules_tbl_ = new dbTable<_dbTechLayerCoreEdgeLengthRule>(
+      db,
+      this,
+      static_cast<GetObjTbl_t>(&_dbTechLayer::getObjectTable),
+      dbTechLayerCoreEdgeLengthRuleObj);
   // User Code Begin Constructor
   flags_.type = dbTechLayerType::ROUTING;
   flags_.direction = dbTechLayerDir::NONE;
@@ -615,6 +642,15 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   if (obj.getDatabase()->isSchema(kSchemaVoltageSpacingTables)) {
     stream >> *obj.voltage_spacing_rules_tbl_;
   }
+  if (obj.getDatabase()->isSchema(kSchemaLef58ImplantRules)) {
+    stream >> *obj.implant_width_rules_tbl_;
+  }
+  if (obj.getDatabase()->isSchema(kSchemaLef58ImplantRules)) {
+    stream >> *obj.implant_spacing_rules_tbl_;
+  }
+  if (obj.getDatabase()->isSchema(kSchemaLef58ImplantRules)) {
+    stream >> *obj.core_edge_length_rules_tbl_;
+  }
   // User Code Begin >>
   if (obj.getDatabase()->isSchema(kSchemaLayerAdjustment)) {
     stream >> obj.layer_adjustment_;
@@ -714,6 +750,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << *obj.wrongdir_spacing_rules_tbl_;
   stream << *obj.two_wires_forbidden_spc_rules_tbl_;
   stream << *obj.voltage_spacing_rules_tbl_;
+  stream << *obj.implant_width_rules_tbl_;
+  stream << *obj.implant_spacing_rules_tbl_;
+  stream << *obj.core_edge_length_rules_tbl_;
   // User Code Begin <<
   stream << obj.layer_adjustment_;
   stream << obj.pitch_x_;
@@ -807,6 +846,12 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
       return two_wires_forbidden_spc_rules_tbl_;
     case dbTechLayerVoltageSpacingObj:
       return voltage_spacing_rules_tbl_;
+    case dbTechLayerImplantWidthRuleObj:
+      return implant_width_rules_tbl_;
+    case dbTechLayerImplantSpacingRuleObj:
+      return implant_spacing_rules_tbl_;
+    case dbTechLayerCoreEdgeLengthRuleObj:
+      return core_edge_length_rules_tbl_;
       // User Code Begin getObjectTable
     case dbTechLayerSpacingRuleObj:
       return spacing_rules_tbl_;
@@ -870,6 +915,12 @@ void _dbTechLayer::collectMemInfo(MemInfo& info)
       info.children["two_wires_forbidden_spc_rules_tbl_"]);
   voltage_spacing_rules_tbl_->collectMemInfo(
       info.children["voltage_spacing_rules_tbl_"]);
+  implant_width_rules_tbl_->collectMemInfo(
+      info.children["implant_width_rules_tbl_"]);
+  implant_spacing_rules_tbl_->collectMemInfo(
+      info.children["implant_spacing_rules_tbl_"]);
+  core_edge_length_rules_tbl_->collectMemInfo(
+      info.children["core_edge_length_rules_tbl_"]);
 
   // User Code Begin collectMemInfo
   info.children["name"].add(name_);
@@ -911,6 +962,9 @@ _dbTechLayer::~_dbTechLayer()
   delete wrongdir_spacing_rules_tbl_;
   delete two_wires_forbidden_spc_rules_tbl_;
   delete voltage_spacing_rules_tbl_;
+  delete implant_width_rules_tbl_;
+  delete implant_spacing_rules_tbl_;
+  delete core_edge_length_rules_tbl_;
   // User Code Begin Destructor
   if (name_) {
     free((void*) name_);
@@ -981,87 +1035,94 @@ uint32_t _dbTechLayer::getTwIdx(const int width, const int prl) const
 
 void dbTechLayer::setWrongWayWidth(uint32_t wrong_way_width)
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj = reinterpret_cast<_dbTechLayer*>(this);
 
   obj->wrong_way_width_ = wrong_way_width;
 }
 
 uint32_t dbTechLayer::getWrongWayWidth() const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  const _dbTechLayer* obj = reinterpret_cast<const _dbTechLayer*>(this);
   return obj->wrong_way_width_;
 }
 
 void dbTechLayer::setWrongWayMinWidth(uint32_t wrong_way_min_width)
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj = reinterpret_cast<_dbTechLayer*>(this);
 
   obj->wrong_way_min_width_ = wrong_way_min_width;
 }
 
 uint32_t dbTechLayer::getWrongWayMinWidth() const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  const _dbTechLayer* obj = reinterpret_cast<const _dbTechLayer*>(this);
   return obj->wrong_way_min_width_;
 }
 
 void dbTechLayer::setLayerAdjustment(float layer_adjustment)
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj = reinterpret_cast<_dbTechLayer*>(this);
 
   obj->layer_adjustment_ = layer_adjustment;
 }
 
 float dbTechLayer::getLayerAdjustment() const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  const _dbTechLayer* obj = reinterpret_cast<const _dbTechLayer*>(this);
   return obj->layer_adjustment_;
 }
 
 void dbTechLayer::getOrthSpacingTable(
     std::vector<std::pair<int, int>>& tbl) const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  const _dbTechLayer* obj = reinterpret_cast<const _dbTechLayer*>(this);
   tbl = obj->orth_spacing_tbl_;
 }
 
 dbSet<dbTechLayerCutClassRule> dbTechLayer::getTechLayerCutClassRules() const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
   return dbSet<dbTechLayerCutClassRule>(obj, obj->cut_class_rules_tbl_);
 }
 
 dbTechLayerCutClassRule* dbTechLayer::findTechLayerCutClassRule(
     const char* name) const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
-  return (dbTechLayerCutClassRule*) obj->cut_class_rules_hash_.find(name);
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
+  return reinterpret_cast<dbTechLayerCutClassRule*>(
+      obj->cut_class_rules_hash_.find(name));
 }
 
 dbSet<dbTechLayerSpacingEolRule> dbTechLayer::getTechLayerSpacingEolRules()
     const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
   return dbSet<dbTechLayerSpacingEolRule>(obj, obj->spacing_eol_rules_tbl_);
 }
 
 dbSet<dbTechLayerCutSpacingRule> dbTechLayer::getTechLayerCutSpacingRules()
     const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
   return dbSet<dbTechLayerCutSpacingRule>(obj, obj->cut_spacing_rules_tbl_);
 }
 
 dbSet<dbTechLayerMinStepRule> dbTechLayer::getTechLayerMinStepRules() const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
   return dbSet<dbTechLayerMinStepRule>(obj, obj->minstep_rules_tbl_);
 }
 
 dbSet<dbTechLayerCornerSpacingRule>
 dbTechLayer::getTechLayerCornerSpacingRules() const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
   return dbSet<dbTechLayerCornerSpacingRule>(obj,
                                              obj->corner_spacing_rules_tbl_);
 }
@@ -1069,7 +1130,8 @@ dbTechLayer::getTechLayerCornerSpacingRules() const
 dbSet<dbTechLayerSpacingTablePrlRule>
 dbTechLayer::getTechLayerSpacingTablePrlRules() const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
   return dbSet<dbTechLayerSpacingTablePrlRule>(
       obj, obj->spacing_table_prl_rules_tbl_);
 }
@@ -1077,7 +1139,8 @@ dbTechLayer::getTechLayerSpacingTablePrlRules() const
 dbSet<dbTechLayerCutSpacingTableOrthRule>
 dbTechLayer::getTechLayerCutSpacingTableOrthRules() const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
   return dbSet<dbTechLayerCutSpacingTableOrthRule>(
       obj, obj->cut_spacing_table_orth_tbl_);
 }
@@ -1085,7 +1148,8 @@ dbTechLayer::getTechLayerCutSpacingTableOrthRules() const
 dbSet<dbTechLayerCutSpacingTableDefRule>
 dbTechLayer::getTechLayerCutSpacingTableDefRules() const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
   return dbSet<dbTechLayerCutSpacingTableDefRule>(
       obj, obj->cut_spacing_table_def_tbl_);
 }
@@ -1093,14 +1157,16 @@ dbTechLayer::getTechLayerCutSpacingTableDefRules() const
 dbSet<dbTechLayerCutEnclosureRule> dbTechLayer::getTechLayerCutEnclosureRules()
     const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
   return dbSet<dbTechLayerCutEnclosureRule>(obj, obj->cut_enc_rules_tbl_);
 }
 
 dbSet<dbTechLayerCutEnclosureTableDefRule>
 dbTechLayer::getTechLayerCutEnclosureTableDefRules() const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
   return dbSet<dbTechLayerCutEnclosureTableDefRule>(
       obj, obj->cut_enc_table_rules_tbl_);
 }
@@ -1108,54 +1174,62 @@ dbTechLayer::getTechLayerCutEnclosureTableDefRules() const
 dbSet<dbTechLayerEolExtensionRule> dbTechLayer::getTechLayerEolExtensionRules()
     const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
   return dbSet<dbTechLayerEolExtensionRule>(obj, obj->eol_ext_rules_tbl_);
 }
 
 dbSet<dbTechLayerArraySpacingRule> dbTechLayer::getTechLayerArraySpacingRules()
     const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
   return dbSet<dbTechLayerArraySpacingRule>(obj, obj->array_spacing_rules_tbl_);
 }
 
 dbSet<dbTechLayerEolKeepOutRule> dbTechLayer::getTechLayerEolKeepOutRules()
     const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
   return dbSet<dbTechLayerEolKeepOutRule>(obj, obj->eol_keep_out_rules_tbl_);
 }
 
 dbSet<dbTechLayerMaxSpacingRule> dbTechLayer::getTechLayerMaxSpacingRules()
     const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
   return dbSet<dbTechLayerMaxSpacingRule>(obj, obj->max_spacing_rules_tbl_);
 }
 
 dbSet<dbTechLayerWidthTableRule> dbTechLayer::getTechLayerWidthTableRules()
     const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
   return dbSet<dbTechLayerWidthTableRule>(obj, obj->width_table_rules_tbl_);
 }
 
 dbSet<dbTechLayerMinCutRule> dbTechLayer::getTechLayerMinCutRules() const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
   return dbSet<dbTechLayerMinCutRule>(obj, obj->min_cuts_rules_tbl_);
 }
 
 dbSet<dbTechLayerAreaRule> dbTechLayer::getTechLayerAreaRules() const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
   return dbSet<dbTechLayerAreaRule>(obj, obj->area_rules_tbl_);
 }
 
 dbSet<dbTechLayerForbiddenSpacingRule>
 dbTechLayer::getTechLayerForbiddenSpacingRules() const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
   return dbSet<dbTechLayerForbiddenSpacingRule>(
       obj, obj->forbidden_spacing_rules_tbl_);
 }
@@ -1163,14 +1237,16 @@ dbTechLayer::getTechLayerForbiddenSpacingRules() const
 dbSet<dbTechLayerKeepOutZoneRule> dbTechLayer::getTechLayerKeepOutZoneRules()
     const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
   return dbSet<dbTechLayerKeepOutZoneRule>(obj, obj->keepout_zone_rules_tbl_);
 }
 
 dbSet<dbTechLayerWrongDirSpacingRule>
 dbTechLayer::getTechLayerWrongDirSpacingRules() const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
   return dbSet<dbTechLayerWrongDirSpacingRule>(
       obj, obj->wrongdir_spacing_rules_tbl_);
 }
@@ -1178,7 +1254,8 @@ dbTechLayer::getTechLayerWrongDirSpacingRules() const
 dbSet<dbTechLayerTwoWiresForbiddenSpcRule>
 dbTechLayer::getTechLayerTwoWiresForbiddenSpcRules() const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
   return dbSet<dbTechLayerTwoWiresForbiddenSpcRule>(
       obj, obj->two_wires_forbidden_spc_rules_tbl_);
 }
@@ -1186,34 +1263,61 @@ dbTechLayer::getTechLayerTwoWiresForbiddenSpcRules() const
 dbSet<dbTechLayerVoltageSpacing> dbTechLayer::getTechLayerVoltageSpacings()
     const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
   return dbSet<dbTechLayerVoltageSpacing>(obj, obj->voltage_spacing_rules_tbl_);
+}
+
+dbSet<dbTechLayerImplantWidthRule> dbTechLayer::getTechLayerImplantWidthRules()
+    const
+{
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
+  return dbSet<dbTechLayerImplantWidthRule>(obj, obj->implant_width_rules_tbl_);
+}
+
+dbSet<dbTechLayerImplantSpacingRule>
+dbTechLayer::getTechLayerImplantSpacingRules() const
+{
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
+  return dbSet<dbTechLayerImplantSpacingRule>(obj,
+                                              obj->implant_spacing_rules_tbl_);
+}
+
+dbSet<dbTechLayerCoreEdgeLengthRule>
+dbTechLayer::getTechLayerCoreEdgeLengthRules() const
+{
+  _dbTechLayer* obj
+      = reinterpret_cast<_dbTechLayer*>(const_cast<dbTechLayer*>(this));
+  return dbSet<dbTechLayerCoreEdgeLengthRule>(obj,
+                                              obj->core_edge_length_rules_tbl_);
 }
 
 void dbTechLayer::setRectOnly(bool rect_only)
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj = reinterpret_cast<_dbTechLayer*>(this);
 
   obj->flags_.rect_only = rect_only;
 }
 
 bool dbTechLayer::isRectOnly() const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  const _dbTechLayer* obj = reinterpret_cast<const _dbTechLayer*>(this);
 
   return obj->flags_.rect_only;
 }
 
 void dbTechLayer::setRightWayOnGridOnly(bool right_way_on_grid_only)
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj = reinterpret_cast<_dbTechLayer*>(this);
 
   obj->flags_.right_way_on_grid_only = right_way_on_grid_only;
 }
 
 bool dbTechLayer::isRightWayOnGridOnly() const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  const _dbTechLayer* obj = reinterpret_cast<const _dbTechLayer*>(this);
 
   return obj->flags_.right_way_on_grid_only;
 }
@@ -1221,7 +1325,7 @@ bool dbTechLayer::isRightWayOnGridOnly() const
 void dbTechLayer::setRightWayOnGridOnlyCheckMask(
     bool right_way_on_grid_only_check_mask)
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj = reinterpret_cast<_dbTechLayer*>(this);
 
   obj->flags_.right_way_on_grid_only_check_mask
       = right_way_on_grid_only_check_mask;
@@ -1229,7 +1333,7 @@ void dbTechLayer::setRightWayOnGridOnlyCheckMask(
 
 bool dbTechLayer::isRightWayOnGridOnlyCheckMask() const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  const _dbTechLayer* obj = reinterpret_cast<const _dbTechLayer*>(this);
 
   return obj->flags_.right_way_on_grid_only_check_mask;
 }
@@ -1237,14 +1341,14 @@ bool dbTechLayer::isRightWayOnGridOnlyCheckMask() const
 void dbTechLayer::setRectOnlyExceptNonCorePins(
     bool rect_only_except_non_core_pins)
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  _dbTechLayer* obj = reinterpret_cast<_dbTechLayer*>(this);
 
   obj->flags_.rect_only_except_non_core_pins = rect_only_except_non_core_pins;
 }
 
 bool dbTechLayer::isRectOnlyExceptNonCorePins() const
 {
-  _dbTechLayer* obj = (_dbTechLayer*) this;
+  const _dbTechLayer* obj = reinterpret_cast<const _dbTechLayer*>(this);
 
   return obj->flags_.rect_only_except_non_core_pins;
 }

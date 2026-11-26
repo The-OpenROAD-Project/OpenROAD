@@ -61,6 +61,7 @@ PASSFAIL_TESTS = [
     "array_max_wl",
     "array_no_blockages",
     "array_repair_clock_nets",
+    "colocated_registers",
     "dangling_clock_inverter",
     "dont_touch_sink",
     "dont_touch_skipped_net",
@@ -319,6 +320,24 @@ cc_test(
     deps = [
         "//openroad/cts:cts_impl",
         "//openroad/dbSta:dbNetwork",
+        "//openroad/sta:opensta_lib",
+        "//openroad/tst:integrated_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestPredictSinkClusters",
+    srcs = ["cpp/TestPredictSinkClusters.cc"],
+    data = ["check_buffers.def"],
+    deps = [
+        "//openroad/cts",
+        "//openroad/cts:cts_impl",
+        "//openroad/dbSta",
+        "//openroad/dbSta:dbNetwork",
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/defin",
         "//openroad/sta:opensta_lib",
         "//openroad/tst:integrated_fixture",
         "@googletest//:gtest",

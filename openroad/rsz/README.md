@@ -223,7 +223,7 @@ repair_timing
     [-setup_margin setup_margin]
     [-hold_margin hold_margin]
     [-slack_margin slack_margin]
-    [-libraries libs]
+    [-libraries libs] (deprecated)
     [-allow_setup_violations]
     [-sequence]
     [-phases]
@@ -260,9 +260,10 @@ repair_timing
 | `-recover_power` | Set the percentage of paths to recover power for. The default value is `0`, and the allowed values are floats `(0, 100]`. |
 | `-setup_margin` | Add additional setup slack margin. |
 | `-hold_margin` | Add additional hold slack margin. |
+| `-libraries` | Deprecated. The passed value is ignored. |
 | `-allow_setup_violations` | While repairing hold violations, buffers are not inserted that will cause setup violations unless `-allow_setup_violations` is specified. |
 | `-sequence` | Specify a particular order of setup timing optimization moves. The default is "unbuffer vt_swap sizeup swap buffer clone split". Obeys skip flags also. |
-| `-phases` | Specify a particular order of setup timing optimization phases. The default is "LEGACY LAST_GASP CRIT_VT_SWAP". The experimental `PARALLEL_EVAL` policy is described in [PARALLEL_EVAL Policy](#parallel_eval-policy). |
+| `-phases` | Specify a particular order of setup timing optimization phases. The default is "LEGACY LAST_GASP CRIT_VT_SWAP". The experimental `PARALLEL_EVAL` policy is described in [PARALLEL_EVAL Policy](#parallel_eval-policy). `CAPTURE_VT_SWAP` VT-swaps registers whose only failing setup checks are at their data inputs, to the VT with the shorter setup time; it is appended after `PARALLEL_EVAL` unless `CRIT_VT_SWAP` or `CAPTURE_VT_SWAP` is already listed. |
 | `-path_group` | Restrict setup and hold repair to one path group: `reg2reg`, `in2reg`, `reg2out`, `in2out` or `gated_clock`. Any other name warns and repairs every path group, which is the default. A supported group that the SDC has no `group_path` for is created, so timing reports group paths the same way `repair_timing` optimizes them. |
 | `-skip_pin_swap` | Flag to skip pin swap. The default is to perform pin swap transform during setup fixing. |
 | `-skip_gate_cloning` | Flag to skip gate cloning. The default is to perform gate cloning transform during setup fixing. |
@@ -403,6 +404,27 @@ and the utilization.
 ```tcl
 report_design_area
 ```
+
+### Report Placement Density
+
+The `report_placement_density` command reports the placement density of the core, or with `-region` of the rectangle given by two opposite corners, for the placement as it currently stands in the database. Only the part of the region inside the core counts.
+
+The density is counted as the GUI's placement density heat map counts it with its default settings: the area of the placed instances inside the region over the area of the region. Fixed instances, macros, taps and endcaps count; filler cells, pads and covers do not. The density goes over `1` where instances overlap.
+
+The report also gives the blocked area, where no standard cell can be placed: off the rows, under placement blockages, and in the halos of placed instances. Soft blockages and soft halos do not block, and partial blockages block whole, as in detailed placement. The area under a macro, or under an instance with a hard halo, is instance area, not blocked area. The free area is what is left for new standard cells: the area inside the core less the blocked area and the instance area.
+
+The instance and blocked areas are kept per GCell, the global router's grid: squares from the lower left corner of the die, sized from the routing track pitches, so the routing layers must be set, as `set_routing_layers` does. The density of a GCell, or of any region made of whole GCells, is exact. A GCell the region covers only in part adds that share of its instance and blocked areas, as if they were spread evenly over the GCell. The report states the GCell size.
+
+```tcl
+report_placement_density
+    [-region {x1 y1 x2 y2}]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-region` | The two opposite corners of the region to measure, in microns. The default is the core area. |
 
 ### Report Floating Nets
 

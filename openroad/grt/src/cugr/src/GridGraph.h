@@ -164,22 +164,34 @@ class GridGraph
                         PointT loc,
                         const std::vector<double>& net_costs) const;
 
-  // Res-aware wire cost for u->v on `layer`: FR-style R*len/width
-  // normalised by layer 0, scaled by resistance_weight; 0 if no R data.
-  CostT getWireResistanceCost(int layer_index,
-                              PointT u,
-                              PointT v,
-                              int wire_width = 0) const;
-
-  // Res-aware via cost for the step lower_layer -> lower_layer+1; 0 when
-  // the tech leaves cut-layer resistance unpopulated.
-  CostT getViaResistanceCost(int lower_layer) const;
-
-  // Total tree resistance (wire + via) for res-aware ordering; ndr_widths gives
-  // the per-layer NDR width (0 => layer default), matching
-  // getWireResistanceCost.
-  double getNetResistance(const std::shared_ptr<GRTreeNode>& tree,
-                          const std::vector<int>& ndr_widths) const;
+  // Per routing layer: wire resistance (ohm/DBU) and capacitance (F/DBU) at
+  // the default width, and the resistance (ohm) of the via above. All zero
+  // disables the delay cost.
+  void setLayerRC(std::vector<double> res_per_dbu,
+                  std::vector<double> cap_per_dbu,
+                  std::vector<double> via_res);
+  bool hasDelayModel() const { return delay_norm_ > 0.0; }
+  // Wire capacitance (F/DBU) for estimating unrouted downstream wire.
+  double getRefCapPerDbu() const { return ref_cap_per_dbu_; }
+  // Elmore delay cost of a wire u->v on `layer_index`, scaled by
+  // `criticality`: its resistance driving its own cap and `load` (F) beyond
+  // v, plus `driver_res` (ohm) driving its cap. `wire_width` 0 is the
+  // default width. The edges where the wire lacks a track of headroom
+  // (demand `net_factor`) are priced with the slowest RC in its direction, so
+  // filling a fast layer earns no delay benefit there.
+  CostT getWireDelayCost(int layer_index,
+                         PointT u,
+                         PointT v,
+                         int wire_width,
+                         double net_factor,
+                         double load,
+                         double driver_res,
+                         float criticality) const;
+  // Delay cost of the via from `lower_layer` to `lower_layer + 1` driving
+  // `load` (F), scaled by `criticality`.
+  CostT getViaDelayCost(int lower_layer, double load, float criticality) const;
+  // Planar distance (DBU) between two gcell centers.
+  int getDistance(PointT u, PointT v) const;
 
   int getTreeLength(const std::shared_ptr<GRTreeNode>& tree) const;
 
@@ -375,6 +387,10 @@ class GridGraph
                               AccessPointMap& selected_access_points) const;
 
   double logistic(const CapacityT& input, double slope) const;
+  // Free tracks in reference-pitch tracks for the congestion logistic. The
+  // last free track counts as one on every layer, so a nearly full coarse
+  // layer is priced like any other.
+  CapacityT scaledResource(int layer_index, CapacityT resource) const;
   // Congestion cost term: `base` scaled by the RRR multiplier and the logistic.
   CostT congestionCost(CostT base,
                        CapacityT capacity,
@@ -523,11 +539,21 @@ class GridGraph
   const Constants constants_;
   // RRR slope multiplier. 1.0 leaves the cost surface unchanged.
   double cost_multiplier_ = 1.0;
-  // First non-zero sheet/via resistance across layers: the res-aware cost
-  // reference (scanning vs. layer 0 survives techs with undefined bottom-layer
-  // R).
-  double ref_resistance_ = 0.0;
-  double ref_via_resistance_ = 0.0;
+  // Per-layer free-track scale for the congestion logistic: pitch over the
+  // reference pitch, so a free track counts by its share of the layer; see
+  // scaledResource.
+  std::vector<double> congestion_scale_;
+  // Per-layer delay model; see setLayerRC.
+  std::vector<double> res_per_dbu_;
+  std::vector<double> cap_per_dbu_;
+  std::vector<double> via_res_;
+  double ref_cap_per_dbu_ = 0.0;
+  // Per direction, the largest wire RC over the routing layers.
+  std::array<double, 2> worst_res_per_dbu_{0.0, 0.0};
+  std::array<double, 2> worst_cap_per_dbu_{0.0, 0.0};
+  // Converts a delay (s) to cost: delay_weight over the RC delay of one gcell
+  // of reference-layer wire driving another; 0 when there is no RC data.
+  double delay_norm_ = 0.0;
 };
 
 template <typename Type>

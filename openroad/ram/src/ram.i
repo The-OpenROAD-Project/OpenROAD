@@ -151,6 +151,18 @@ void ram_routing()
   ram_gen->ramRouting(thread_count);
 }
 
+double ram_report_timing()
+{
+  RamGen* ram_gen = ord::getRamGen();
+  return ram_gen->reportTiming();
+}
+
+void ram_report_power(double clock_period, int word_size)
+{
+  RamGen* ram_gen = ord::getRamGen();
+  ram_gen->reportPower(clock_period, word_size);
+}
+
 void set_behavioral_verilog_filename(const char* filename)
 {
   RamGen* ram_gen = ord::getRamGen();

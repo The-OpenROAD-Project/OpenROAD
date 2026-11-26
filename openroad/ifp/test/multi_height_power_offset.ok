@@ -1,0 +1,12 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: multi_height_power_offset.lef, created 2 library cells
+[INFO IFP-0066] Offsetting rows for site DoubleExtSite by 1.400um to align power rails with site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0001] Added 4 rows of 105 site DoubleExtSite.
+[INFO IFP-0001] Added 10 rows of 105 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 20.000 14.000 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 19.950 14.000 ) um
+[INFO IFP-0102] Core area:                          279.300 um^2
+[INFO IFP-0103] Total instances area:                15.428 um^2
+[INFO IFP-0104] Effective utilization:                0.055
+[INFO IFP-0105] Number of instances:                      5
+No differences found.

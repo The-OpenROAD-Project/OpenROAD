@@ -1,0 +1,38 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+
+DESIGN clk_data_path ;
+
+UNITS DISTANCE MICRONS 2000 ;
+
+DIEAREA ( 0 0 ) ( 40000 20000 ) ;
+
+COMPONENTS 4 ;
+- drvr DFF_X1 + PLACED ( 4000 2800 ) N ;
+- load0 INV_X8 + PLACED ( 12000 2800 ) N ;
+- load1 INV_X8 + PLACED ( 16000 2800 ) N ;
+- load2 INV_X8 + PLACED ( 20000 2800 ) N ;
+END COMPONENTS
+
+PINS 2 ;
+- clk + NET clk + DIRECTION INPUT + USE SIGNAL
+  + LAYER metal1 ( 0 0 ) ( 100 100 ) + FIXED ( 0 2800 ) N ;
+- in1 + NET in1 + DIRECTION INPUT + USE SIGNAL
+  + LAYER metal1 ( 0 0 ) ( 100 100 ) + FIXED ( 0 5600 ) N ;
+END PINS
+
+SPECIALNETS 2 ;
+- VSS ( * VSS )
+  + USE GROUND ;
+- VDD ( * VDD )
+  + USE POWER ;
+END SPECIALNETS
+
+NETS 3 ;
+- clk ( PIN clk ) ( drvr CK ) ;
+- in1 ( PIN in1 ) ( drvr D ) ;
+- q ( drvr Q ) ( load0 A ) ( load1 A ) ( load2 A ) ;
+END NETS
+
+END DESIGN
