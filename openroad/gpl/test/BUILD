@@ -506,6 +506,7 @@ cc_test(
         ":gpl_design_builder",
         "//openroad/gpl",
         "//openroad/odb/src/db",
+        "//openroad/ppl",
         "//openroad/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
