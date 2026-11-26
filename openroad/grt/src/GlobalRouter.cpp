@@ -3187,6 +3187,11 @@ void GlobalRouter::setCongestionIterations(int iterations)
   congestion_iterations_ = iterations;
 }
 
+void GlobalRouter::resetCongestionIterations()
+{
+  congestion_iterations_.reset();
+}
+
 void GlobalRouter::setCongestionReportIterStep(int congestion_report_iter_step)
 {
   congestion_report_iter_step_ = congestion_report_iter_step;
@@ -7596,6 +7601,11 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
 std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides,
                                                   bool update_pin_access)
 {
+  if (!initialized_) {
+    dirty_nets_.clear();
+    return {};
+  }
+
   if (update_pin_access) {
     if (auto* pa = service_registry_->find<drt::PinAccessService>()) {
       // New access points mark their nets dirty, so they are rerouted below.
@@ -7658,10 +7668,6 @@ void GlobalRouter::updateDbCongestionTiles()
 
 std::vector<Net*> GlobalRouter::updateDirtyRoutesCugr(bool save_guides)
 {
-  if (!initialized_) {
-    dirty_nets_.clear();
-    return {};
-  }
   cugr_->setVerbose(false);
   std::vector<Net*> dirty_nets;
   dirty_nets.reserve(dirty_nets_.size());
@@ -7743,11 +7749,6 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutesFastRoute(bool save_guides)
   std::vector<Net*> dirty_nets;
 
   fastroute_->setResistanceAware(resistance_aware_);
-
-  if (!initialized_) {
-    dirty_nets_.clear();
-    return {};
-  }
 
   if (!dirty_nets_.empty()) {
     fastroute_->setVerbose(false);

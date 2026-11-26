@@ -153,6 +153,7 @@ class GlobalRouter
                            float reduction_percentage);
   void setVerbose(bool v);
   void setCongestionIterations(int iterations);
+  void resetCongestionIterations();
   void setCongestionReportIterStep(int congestion_report_iter_step);
   void setCongestionReportFile(const char* file_name);
   void setGridOrigin(int x, int y);

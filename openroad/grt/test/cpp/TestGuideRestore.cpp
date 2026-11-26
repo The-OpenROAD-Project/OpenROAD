@@ -299,13 +299,20 @@ TEST_F(GuideRestoreFixture, CugrIncrementalFromOdbGuidesReroutesMovedNet)
   EXPECT_FALSE(target_net->getGuides().empty());
 }
 
-// FastRoute on an ODB-loaded design (guides loaded with initialized_ == false)
-// must also initialize in IncrementalGRoute so ECO undo preserves guide-restore
-// flags instead of wiping db_net_map_ entries during updateRoutes().
-TEST_F(GuideRestoreFixture, FastRouteIncrementalFromOdbGuidesPreservesEcoUndo)
+// Both routing engines on an ODB-loaded design (guides loaded with
+// initialized_ == false) must initialize eagerly in IncrementalGRoute so ECO
+// undo preserves guide-restore flags instead of wiping db_net_map_ entries on
+// the first updateRoutes().
+class OdbGuideIncrementalUndoTest : public GuideRestoreFixture,
+                                    public testing::WithParamInterface<bool>
 {
+};
+
+TEST_P(OdbGuideIncrementalUndoTest, PreservesEcoUndo)
+{
+  const bool use_cugr = GetParam();
   ASSERT_NO_FATAL_FAILURE(readNangate45Design("gcd.def"));
-  router_.setUseCUGR(false);
+  router_.setUseCUGR(use_cugr);
   router_.setMinRoutingLayer(2);
   router_.setMaxRoutingLayer(8);
   router_.globalRoute(/*save_guides=*/true);
@@ -315,7 +322,7 @@ TEST_F(GuideRestoreFixture, FastRouteIncrementalFromOdbGuidesPreservesEcoUndo)
   fresh_router.setMinRoutingLayer(2);
   fresh_router.setMaxRoutingLayer(8);
   ASSERT_TRUE(fresh_router.haveRoutes());
-  ASSERT_FALSE(fresh_router.isUseCUGR());
+  ASSERT_EQ(fresh_router.isUseCUGR(), use_cugr);
 
   odb::dbNet* target_net = nullptr;
   for (odb::dbNet* net : block_->getNets()) {
@@ -340,7 +347,7 @@ TEST_F(GuideRestoreFixture, FastRouteIncrementalFromOdbGuidesPreservesEcoUndo)
   IncrementalGRoute incremental(&fresh_router, block_);
   odb::dbDatabase::beginEco(block_);
   // Trigger inDbNetPostGuideRestore BEFORE the first updateRoutes() call.
-  // Without eager engine initialization in IncrementalGRoute, lazy FastRoute
+  // Without eager engine initialization in IncrementalGRoute, lazy engine
   // initialization in updateRoutes() would recreate db_net_map_ and wipe the
   // restore_route_from_guides flag, forcing an unnecessary reroute.
   target_net->clearGuides();
@@ -353,6 +360,13 @@ TEST_F(GuideRestoreFixture, FastRouteIncrementalFromOdbGuidesPreservesEcoUndo)
       getWireEdges(fresh_router.getRoutes().at(target_net), gcell_w, gcell_h),
       orig_edges);
 }
+
+INSTANTIATE_TEST_SUITE_P(RoutingEngines,
+                         OdbGuideIncrementalUndoTest,
+                         testing::Bool(),
+                         [](const testing::TestParamInfo<bool>& info) {
+                           return info.param ? "CUGR" : "FastRoute";
+                         });
 
 }  // namespace
 }  // namespace grt
