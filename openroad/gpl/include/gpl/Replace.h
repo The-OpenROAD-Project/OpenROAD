@@ -257,6 +257,14 @@ class Replace
                 const std::string& images_path);
 
  private:
+  // Builds pbc_ and pbVec_ (top level first, then one per group) if they do
+  // not exist yet. Returns whether any instance is placeable.
+  bool initPlacerBase(const PlaceOptions& options,
+                      bool check_density,
+                      bool skip_nets_and_pins);
+  // Errors if pbc_ was built without nets and pins (by
+  // getUniformTargetDensity) and not reset before placement.
+  void checkPlacerBaseHasNets() const;
   bool initNesterovPlace(const PlaceOptions& options,
                          int threads,
                          bool check_density);

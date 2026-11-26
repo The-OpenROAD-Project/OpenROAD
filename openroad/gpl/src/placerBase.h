@@ -314,6 +314,7 @@ class PlacerBaseCommon
   int getPadRight() const { return pbVars_.padRight; }
   bool isSkipIoMode() const { return pbVars_.skipIoMode; }
   bool macroAreaInDenominator() const { return pbVars_.macroAreaInDenominator; }
+  bool isSkipNetsAndPins() const { return pbVars_.skipNetsAndPins; }
 
   int64_t getHpwl() const;
   void printInfo() const;
