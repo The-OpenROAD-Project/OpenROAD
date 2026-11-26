@@ -21,6 +21,7 @@ TESTS = [
     "mbff_activity",
     "mbff_hier",
     "mbff_orig_name",
+    "mbff_sdc",
     "mbff_clock_power_off",
     "mbff_clock_power_on",
     "simple01-rd",
