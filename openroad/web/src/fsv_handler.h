@@ -35,10 +35,9 @@ class RequestDispatcher;
 class FieldSolverHandler
 {
  public:
-  explicit FieldSolverHandler(
-      fsv::FieldSolver* field_solver = nullptr,
-      odb::dbDatabase* db = nullptr,
-      std::shared_ptr<TclEvaluator> tcl_eval = nullptr);
+  explicit FieldSolverHandler(fsv::FieldSolver* field_solver = nullptr,
+                              odb::dbDatabase* db = nullptr,
+                              std::shared_ptr<TclEvaluator> tcl_eval = nullptr);
   ~FieldSolverHandler();
 
   void registerRequests(RequestDispatcher& dispatcher);

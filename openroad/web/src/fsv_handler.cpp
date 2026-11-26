@@ -193,8 +193,7 @@ std::optional<std::string> parseSolve2DOptions(const boost::json::object& obj,
     out.min_walks = std::clamp<int64_t>(v->as_int64(), 1024, 2000000);
   }
   if (const auto* v = obj.if_contains("max_walks")) {
-    out.max_walks
-        = std::clamp<int64_t>(v->as_int64(), out.min_walks, 5000000);
+    out.max_walks = std::clamp<int64_t>(v->as_int64(), out.min_walks, 5000000);
   } else {
     out.max_walks = std::max(out.max_walks, out.min_walks);
   }
@@ -216,7 +215,8 @@ std::optional<std::string> parseSolve2DRequest(const boost::json::object& obj,
   if (static_cast<int>(wires.size()) > kMaxWires) {
     return "Too many wires (maximum 64).";
   }
-  if (auto err = parseSolve2DOptions(obj, static_cast<int>(wires.size()), out)) {
+  if (auto err
+      = parseSolve2DOptions(obj, static_cast<int>(wires.size()), out)) {
     return err;
   }
 
@@ -339,8 +339,8 @@ fsv::Solver& FieldSolverHandler::ensureSolver()
   if (!solver_) {
     const unsigned hw = std::thread::hardware_concurrency();
     const int threads = std::clamp(static_cast<int>(hw > 0 ? hw : 4), 1, 8);
-    solver_ = std::make_unique<fsv::Solver>(
-        fsv::SolverOptions{.threads = threads});
+    solver_
+        = std::make_unique<fsv::Solver>(fsv::SolverOptions{.threads = threads});
   }
   return *solver_;
 }
@@ -448,8 +448,8 @@ WebSocketResponse FieldSolverHandler::handleLoadItf(const WebSocketRequest& req)
     if (tcl_eval_) {
       tcl_lock = std::unique_lock<std::mutex>(tcl_eval_->mutex);
     }
-    stack = fsv::frontsideStack(stack,
-                                db_ != nullptr ? db_->getTech() : nullptr);
+    stack
+        = fsv::frontsideStack(stack, db_ != nullptr ? db_->getTech() : nullptr);
     boost::json::object resp = serializeStack(stack, source, warnings);
     if (resp.at("conductors").as_array().empty()) {
       return jsonError(

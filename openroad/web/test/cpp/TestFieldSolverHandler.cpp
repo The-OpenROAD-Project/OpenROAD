@@ -221,13 +221,11 @@ DIELECTRIC dummy_diel { THICKNESS = 0.0001 ER = 2.5 }
   const auto& conductors = loaded.at("conductors").as_array();
   ASSERT_EQ(conductors.size(), 2u);
   EXPECT_EQ(conductors[0].as_object().at("name").as_string(), "BPR");
-  EXPECT_NEAR(conductors[0].as_object().at("bottom").to_number<double>(),
-              0.300,
-              1e-6);
+  EXPECT_NEAR(
+      conductors[0].as_object().at("bottom").to_number<double>(), 0.300, 1e-6);
   EXPECT_EQ(conductors[1].as_object().at("name").as_string(), "M0");
-  EXPECT_NEAR(conductors[1].as_object().at("bottom").to_number<double>(),
-              0.390,
-              1e-6);
+  EXPECT_NEAR(
+      conductors[1].as_object().at("bottom").to_number<double>(), 0.390, 1e-6);
 
   odb::dbDatabase::destroy(db);
 }
