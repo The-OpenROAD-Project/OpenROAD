@@ -13,6 +13,7 @@
 #include <cstring>
 #include <exception>
 #include <functional>
+#include <initializer_list>
 #include <iterator>
 #include <limits>
 #include <map>
@@ -2020,6 +2021,35 @@ void TileGenerator::computePinLabelMargin()
   }
   const int label_px = kMinPinNameSizePixels + 3 + max_text_px;
   pin_label_margin_dbu_ = label_px * pin_size / kMinPinNameSizePixels;
+}
+
+// RenderThread::setupIOPins: IO pin names only when the longest fits in the
+// image's margin.  `scale` is image pixels per DBU, `tile_scale` the labels'.
+bool TileGenerator::pinNamesFitImage(odb::dbBlock* block,
+                                     const odb::Rect& area,
+                                     const double scale,
+                                     const double tile_scale) const
+{
+  const odb::Rect die = block->getDieArea();
+  const int margin = std::min({
+      die.xMin() - area.xMin(),
+      area.xMax() - die.xMax(),
+      die.yMin() - area.yMin(),
+      area.yMax() - die.yMax(),
+  });
+  const int view_dim = std::min(die.maxDXDY(), area.maxDXDY());
+  const int marker = std::max(static_cast<int>(kPinMarkerSizeRatio * view_dim),
+                              kMinPinMarkerSize);
+  const double available_px = (margin - marker) * scale;
+  if (available_px <= 0) {
+    return false;
+  }
+  const auto font = fontAtlasGetFont(kPinLabelFontHeight);
+  int widest = 0;
+  for (odb::dbBTerm* bterm : block->getBTerms()) {
+    widest = std::max(widest, font.textWidth(bterm->getName()));
+  }
+  return widest * scale / tile_scale <= available_px;
 }
 
 bool TileGenerator::shapesReady() const
@@ -6640,9 +6670,16 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
     scale = 1024.0 / area.dx();
   }
 
-  // In double: a thin region at a high scale overflows an int.
-  const double wanted_w = std::ceil(area.dx() * scale);
-  const double wanted_h = std::ceil(area.dy() * scale);
+  // Truncated like Qt's QRegion, with an epsilon so an exact -width keeps its
+  // last pixel; in double, as a thin region at a high scale overflows an int.
+  auto pixels = [](const double extent) { return std::floor(extent + 1e-6); };
+  const double wanted_w = pixels(area.dx() * scale);
+  const double wanted_h = pixels(area.dy() * scale);
+  // A scale that underflowed to zero (-resolution Inf) frames nothing.
+  if (wanted_w <= 0 || wanted_h <= 0) {
+    logger_->error(
+        utl::WEB, 125, "The requested resolution leaves the image no pixels.");
+  }
 
   // Cap image size at 16k x 16k to prevent excessive memory usage.
   constexpr int kMaxDim = 16384;
@@ -6657,13 +6694,9 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
                      static_cast<double>(kMaxDim) / area.dy());
   }
 
-  const int final_w = static_cast<int>(std::ceil(area.dx() * scale));
-  const int final_h = static_cast<int>(std::ceil(area.dy() * scale));
-  // A scale that underflowed to zero (-resolution Inf) frames nothing.
-  if (final_w <= 0 || final_h <= 0) {
-    logger_->error(
-        utl::WEB, 125, "The requested resolution leaves the image no pixels.");
-  }
+  // Clamping can leave a thin side under a pixel.
+  const int final_w = std::max(1, static_cast<int>(pixels(area.dx() * scale)));
+  const int final_h = std::max(1, static_cast<int>(pixels(area.dy() * scale)));
 
   // Compute zoom level that gives tile_scale close to our target scale.
   // tile_scale = kTileSizeInPixel / (maxDXDY / 2^z)
@@ -6705,6 +6738,10 @@ std::vector<unsigned char> TileGenerator::renderImageBuffer(
   TileVisibility image_vis = vis;
   if (image_vis.view_extent_dbu <= 0) {
     image_vis.view_extent_dbu = area.maxDXDY();
+  }
+  if (image_vis.pin_names
+      && !pinNamesFitImage(block, area, scale, tile_scale)) {
+    image_vis.pin_names = false;
   }
 
   std::vector<PaintLayer> layers_to_render
@@ -7199,9 +7236,6 @@ void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,
   drawText(image, margin, margin, label, fontAtlasGetFont(font_px), yellow);
 }
 
-namespace {
-
-// Convert a web::Painter::Color to our internal Color (same RGBA layout).
 Color toTileColor(const web::Painter::Color& c)
 {
   return Color{
@@ -7211,8 +7245,6 @@ Color toTileColor(const web::Painter::Color& c)
       .a = static_cast<unsigned char>(c.a),
   };
 }
-
-}  // namespace
 
 /* static */
 void TileGenerator::setRendererHooks(RendererHooks hooks)

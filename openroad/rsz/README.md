@@ -405,6 +405,27 @@ and the utilization.
 report_design_area
 ```
 
+### Report Placement Density
+
+The `report_placement_density` command reports the placement density of the core, or with `-region` of the rectangle given by two opposite corners, for the placement as it currently stands in the database. Only the part of the region inside the core counts.
+
+The density is counted as the GUI's placement density heat map counts it with its default settings: the area of the placed instances inside the region over the area of the region. Fixed instances, macros, taps and endcaps count; filler cells, pads and covers do not. The density goes over `1` where instances overlap.
+
+The report also gives the blocked area, where no standard cell can be placed: off the rows, under placement blockages, and in the halos of placed instances. Soft blockages and soft halos do not block, and partial blockages block whole, as in detailed placement. The area under a macro, or under an instance with a hard halo, is instance area, not blocked area. The free area is what is left for new standard cells: the area inside the core less the blocked area and the instance area.
+
+The instance and blocked areas are kept per GCell, the global router's grid: squares from the lower left corner of the die, sized from the routing track pitches, so the routing layers must be set, as `set_routing_layers` does. The density of a GCell, or of any region made of whole GCells, is exact. A GCell the region covers only in part adds that share of its instance and blocked areas, as if they were spread evenly over the GCell. The report states the GCell size.
+
+```tcl
+report_placement_density
+    [-region {x1 y1 x2 y2}]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-region` | The two opposite corners of the region to measure, in microns. The default is the core area. |
+
 ### Report Floating Nets
 
 The `report_floating_nets` command reports nets with connected loads but no connected drivers.

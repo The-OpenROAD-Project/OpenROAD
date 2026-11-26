@@ -62,6 +62,7 @@ COMPULSORY_TESTS = [
 ]
 
 PASSFAIL_TESTS = [
+    "colocated_registers",
     "dangling_clock_inverter",
     "dont_touch_sink",
     "dont_touch_skipped_net",
