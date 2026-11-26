@@ -71,27 +71,27 @@ M6         Horizontal     268836        107534          60.00%
 ---------------------------------------------------------------
 
 Stage 1: Pattern routing.
-Stage 2: Resistance-aware re-route of critical nets.
+Stage 2: Re-route of nets with negative slack.
 Routing statistics
 Wire length:           34595
-Total via count:       2488
+Total via count:       2319
 Total congestion:      0.00
-Min resource:          0.27
-Bottleneck:            (4, 90, 148)
+Min resource:          0.83
+Bottleneck:            (2, 82, 149)
 [INFO GRT-0130] CUGR congestion report:
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
 --------------------------------------------------------------------------
 M1        V         0.00         0.00         0.00         0.00       0.00
-M2        H    177468.85       397.00       107.15       504.15       0.28
-M3        V    191126.39       943.00        90.06      1033.06       0.54
-M4        H    143310.39       195.00        56.41       251.41       0.18
-M5        V    143310.39       639.00        44.44       683.44       0.48
-M6        H    107534.39       143.00        18.48       161.48       0.15
+M2        H    177468.85       417.00       107.83       524.83       0.30
+M3        V    191126.39      1028.00        86.03      1114.03       0.58
+M4        H    143310.39       199.00        49.50       248.50       0.17
+M5        V    143310.39       554.00        35.68       589.68       0.41
+M6        H    107534.39       119.00         9.88       128.88       0.12
 --------------------------------------------------------------------------
-Total          762750.41      2317.00       316.54      2633.54       0.35
+Total          762750.41      2317.00       288.92      2605.92       0.34
 [INFO GRT-0018] Total wirelength: 7364 um
 [INFO GRT-0014] Routed nets: 416
-baseline (no resistance-aware) WNS: -122.0 ps  TNS: -2912.8 ps
-resistance-aware               WNS: -115.2 ps  TNS: -2612.7 ps
-resistance-aware WNS and TNS not worse than baseline: PASS
+baseline (no delay cost) WNS: -122.0 ps  TNS: -2912.8 ps
+delay cost                WNS: -115.3 ps  TNS: -2650.8 ps
+delay cost WNS and TNS not worse than baseline: PASS
 No differences found.
