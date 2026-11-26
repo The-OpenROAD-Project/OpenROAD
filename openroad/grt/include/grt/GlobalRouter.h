@@ -8,6 +8,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -653,7 +654,7 @@ class GlobalRouter
   // Flow variables
   bool infinite_capacity_;
   float adjustment_;
-  int congestion_iterations_{50};
+  std::optional<int> congestion_iterations_;
   int congestion_report_iter_step_;
   bool allow_congestion_;
   bool resistance_aware_{false};
