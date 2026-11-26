@@ -21,13 +21,14 @@ proposes the moves on a delay model calibrated to STA: gate and wire delays,
 the clock-to-Q of the new register and the setup time of each endpoint. STA
 then decides what is kept. The moves are applied, the new cells placed and
 the design timed; they are kept when the setup slack improves and neither
-the worst nor the total negative slack is worse than at the start, for setup
-and for hold, in any scene (corner or mode). Else the first of the halves,
-quarters, and so on that does so is kept. The moves are listed with the ones
-the delay model gains most from first, so a half keeps the best of them.
-Moves that are not kept are undone and leave the netlist and its constraints
-as they were. Rounds repeat from what was kept until one keeps nothing. A
-design that meets timing is left as it is.
+the worst nor the total negative slack is worse than at the start of the
+round or of the command, for setup and for hold, in any scene (corner or
+mode). Else the first of the halves, quarters, and so on that does so is
+kept. The moves are listed with the ones the delay model gains most from
+first, so a half keeps the best of them. Moves that are not kept are undone
+and leave the netlist and its constraints as they were. Rounds repeat from
+what was kept until one keeps nothing. A design that meets timing is left as
+it is.
 
 Only the register groups whose edge weights changed are rebuilt; every
 other cell keeps its placement. Each new cell is placed at the center of the
@@ -53,8 +54,9 @@ These registers never move:
 
 - latches, scan cells, multi-bit and negative-edge registers, and registers
   clocked by more than one pin;
-- registers with a live asynchronous set or reset, or with an input left
-  unconnected;
+- registers with a live asynchronous set or reset, with an input left
+  unconnected or on a net with a second driver (a tri-state bus), or with a
+  data input that is a constant (a tie cell, case analysis);
 - registers marked don't-touch, fixed in place, in a group or a region (a
   power domain, for example), in a scan chain, with a pin on a don't-touch
   net, or read by a don't-touch cell;
@@ -67,13 +69,14 @@ These registers never move:
   the cell such as a derate, unless `-move_named_registers` is given;
 - a register chain whose output reaches a primary output, a bidirectional
   pin, a control pin of another register or a net with a second driver
-  (those read the chain at its current depth), and one that meets a second
-  chain from the same gate in a register with two data pins.
+  (those read the chain at its current depth), one that meets a second
+  chain from the same gate in a register with two data pins, and a run of
+  more than 256 registers with no gate in between.
 
-Registers fed by one net are rebuilt together on one clock net, so a
-register also stays when it shares its input net with one of these or with a
-register on another clock net. In a hierarchical netlist
-(`link_design -hier`) a register stays inside its module.
+Registers that one net feeds and gates read are rebuilt together on one
+clock net, so such a register also stays when another of them stays or is on
+another clock net. In a hierarchical netlist (`link_design -hier`) a
+register stays inside its module.
 
 These gates are never crossed:
 

@@ -1,7 +1,6 @@
-# A register whose input net has two drivers moves like any other.  Both
-# drivers are read again after the move, so the search of the next round
-# runs on the netlist as it is then: g1 reads the bus, and round 2 finds
-# nothing more to move.
+# A register that reads a net with two drivers stays, on a failing path too:
+# a move would put a new load on that net, and OpenSTA's delay calculation of
+# a net with two drivers does not take one.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef

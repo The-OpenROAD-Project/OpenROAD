@@ -1,7 +1,7 @@
 [INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
 [INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
 worst slack max -0.4625
-[INFO RET-0014] Retiming graph: 48 gates, 45 edges, 6 registers, 8 pinned gates, 0 fenced registers.
+[INFO RET-0014] Retiming graph: 48 gates, 44 edges, 5 registers, 8 pinned gates, 0 fenced registers.
  Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
 ---------------------------------------------------------------------------
  start |          |        |      |     -0.4625 |       -1.0906 |         6

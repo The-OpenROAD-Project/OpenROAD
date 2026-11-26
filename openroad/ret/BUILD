@@ -49,12 +49,14 @@ cc_library(
     ],
 )
 
-# The private register unmapper, for the unit tests in test.
+# Private headers, for the unit tests in test.
 cc_library(
     name = "ret_internal",
     testonly = True,
     hdrs = [
+        "src/RetimerPlacer.h",
         "src/SequentialUnmapper.h",
+        "src/StaCheck.h",
     ],
     strip_include_prefix = "src",
     visibility = ["//openroad/ret/test:__pkg__"],

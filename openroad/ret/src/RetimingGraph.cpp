@@ -75,7 +75,7 @@ void RetimingGraph::markBoundary(odb::dbInst* inst, const int id)
 bool RetimingGraph::continuesThrough(odb::dbInst* reg, odb::dbITerm* pin) const
 {
   const RegisterClass& cls = regClass(reg);
-  if (cls.negedge) {
+  if (cls.negedge || cls.scan) {
     return false;
   }
   if (cls.kind != RegisterKind::kOther) {
@@ -84,20 +84,44 @@ bool RetimingGraph::continuesThrough(odb::dbInst* reg, odb::dbITerm* pin) const
   return isRegisterDataPin(sta_, pin);
 }
 
-void RetimingGraph::findReached(odb::dbInst* current,
+bool RetimingGraph::readsSharedNet(odb::dbInst* reg) const
+{
+  return std::ranges::any_of(reg->getITerms(), [&](odb::dbITerm* pin) {
+    return isSignalInput(pin) && shared_nets_.contains(pin->getNet());
+  });
+}
+
+bool RetimingGraph::hasConstantData(odb::dbInst* reg) const
+{
+  odb::dbMTerm* data = regClass(reg).data;
+  if (data == nullptr) {
+    return false;
+  }
+  const sta::Pin* pin = sta_->getDbNetwork()->dbToSta(reg->getITerm(data));
+  return std::ranges::any_of(sta_->modes(), [&](const sta::Mode* mode) {
+    return sta_->isConstant(pin, mode);
+  });
+}
+
+void RetimingGraph::findReached(odb::dbInst* source,
                                 std::unordered_set<odb::dbInst*>& reached) const
 {
-  for (odb::dbITerm* out_pin : current->getITerms()) {
-    odb::dbNet* net = out_pin->getNet();
-    if (out_pin->getIoType() != odb::dbIoType::OUTPUT || net == nullptr) {
-      continue;
-    }
-    for (odb::dbITerm* sink : net->getITerms()) {
-      odb::dbInst* load = sink->getInst();
-      if (sink->getIoType() == odb::dbIoType::INPUT
-          && load->getMaster()->isSequential() && continuesThrough(load, sink)
-          && reached.insert(load).second) {
-        findReached(load, reached);
+  std::vector<odb::dbInst*> open = {source};
+  while (!open.empty()) {
+    odb::dbInst* current = open.back();
+    open.pop_back();
+    for (odb::dbITerm* out_pin : current->getITerms()) {
+      odb::dbNet* net = out_pin->getNet();
+      if (out_pin->getIoType() != odb::dbIoType::OUTPUT || net == nullptr) {
+        continue;
+      }
+      for (odb::dbITerm* sink : net->getITerms()) {
+        odb::dbInst* load = sink->getInst();
+        if (sink->getIoType() == odb::dbIoType::INPUT
+            && load->getMaster()->isSequential() && continuesThrough(load, sink)
+            && reached.insert(load).second) {
+          open.push_back(load);
+        }
       }
     }
   }
@@ -158,7 +182,7 @@ void RetimingGraph::walkFanout(const int source,
         // An edge holds one chain of registers: where two meet, or one
         // loops, each ends.  One edge per path would also double the edges
         // at every such stage.
-        if (reconverges(load, reached)
+        if (reconverges(load, reached) || chain.flops.size() >= kMaxChainLength
             || std::ranges::find(chain.flops, load) != chain.flops.end()) {
           fenceChain(source, chain);
           continue;
@@ -195,30 +219,23 @@ void RetimingGraph::fenceChain(const int source, const EdgePhys& chain)
 
 bool RetimingGraph::fencesChain(odb::dbNet* net) const
 {
-  if (!net->getBTerms().empty()) {
+  if (!net->getBTerms().empty() || shared_nets_.contains(net)) {
     return true;
   }
-  int drivers = 0;
   for (odb::dbITerm* sink : net->getITerms()) {
-    const odb::dbIoType io = sink->getIoType();
-    if (io != odb::dbIoType::INPUT && io != odb::dbIoType::OUTPUT) {
+    if (sink->getIoType() != odb::dbIoType::INPUT) {
+      continue;
+    }
+    odb::dbInst* load = sink->getInst();
+    if (load->isDoNotTouch()) {
       return true;
     }
-    if (io == odb::dbIoType::OUTPUT && ++drivers > 1) {
+    if (load->getMaster()->isSequential()) {
+      if (!continuesThrough(load, sink)) {
+        return true;
+      }
+    } else if (!index_.contains(load)) {
       return true;
-    }
-    if (io == odb::dbIoType::INPUT) {
-      odb::dbInst* load = sink->getInst();
-      if (load->isDoNotTouch()) {
-        return true;
-      }
-      if (load->getMaster()->isSequential()) {
-        if (!continuesThrough(load, sink)) {
-          return true;
-        }
-      } else if (!index_.contains(load)) {
-        return true;
-      }
     }
   }
   return false;
@@ -227,7 +244,8 @@ bool RetimingGraph::fencesChain(odb::dbNet* net) const
 bool RetimingGraph::isDontTouch(odb::dbInst* reg) const
 {
   return fenced_.contains(reg) || sdc_cells_.contains(reg) || isHeld(reg)
-         || isDontTouchRegister(sta_, reg);
+         || isDontTouchRegister(sta_, reg) || readsSharedNet(reg)
+         || hasConstantData(reg);
 }
 
 const RegisterClass& RetimingGraph::regClass(odb::dbInst* reg) const
@@ -327,7 +345,14 @@ void RetimingGraph::build(const bool move_named_registers)
   self_dual_master_.clear();
   reg_class_.clear();
   fenced_.clear();
-  findSdcCells(db_->getChip()->getBlock(), move_named_registers);
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  shared_nets_.clear();
+  for (odb::dbNet* net : block->getNets()) {
+    if (hasSecondDriver(net)) {
+      shared_nets_.insert(net);
+    }
+  }
+  findSdcCells(block, move_named_registers);
   addGates();
   const int n = size();
   for (int i = 0; i < n; ++i) {
@@ -560,20 +585,26 @@ void RetimingGraph::findSdcCells(odb::dbBlock* block,
   }
 }
 
-void RetimingGraph::pinUnmodeledInputs()
+std::vector<odb::dbITerm*> RetimingGraph::unmodeledInputs(const int v) const
 {
-  std::unordered_set<odb::dbITerm*> modeled;
-  for (const std::vector<EdgePhys>& edges : phys_) {
-    for (const EdgePhys& phys : edges) {
-      modeled.insert(phys.sink);
+  std::vector<odb::dbITerm*> pins;
+  for (odb::dbITerm* pin : nodes_[v]->getITerms()) {
+    if (isSignalInput(pin)
+        && std::ranges::none_of(fanin_[v], [&](const EdgeRef& in) {
+             return phys_[in.gate][in.index].sink == pin;
+           })) {
+      pins.push_back(pin);
     }
   }
+  return pins;
+}
+
+void RetimingGraph::pinUnmodeledInputs()
+{
   const int n = size();
   for (int v = 0; v < n; ++v) {
-    for (odb::dbITerm* pin : nodes_[v]->getITerms()) {
-      if (isSignalInput(pin) && !modeled.contains(pin)) {
-        pinned_[v] = true;
-      }
+    if (!unmodeledInputs(v).empty()) {
+      pinned_[v] = true;
     }
   }
 }

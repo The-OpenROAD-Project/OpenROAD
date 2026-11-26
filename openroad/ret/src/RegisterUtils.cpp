@@ -140,6 +140,36 @@ bool isSignalInput(odb::dbITerm* pin)
          && !net->getSigType().isSupply();
 }
 
+bool isRead(odb::dbNet* net)
+{
+  return net->getITerms().size() > 1 || !net->getBTerms().empty();
+}
+
+bool hasSecondDriver(odb::dbNet* net)
+{
+  int drivers = 0;
+  for (odb::dbITerm* pin : net->getITerms()) {
+    if (pin->getIoType() != odb::dbIoType::INPUT && ++drivers > 1) {
+      return true;
+    }
+  }
+  for (odb::dbBTerm* port : net->getBTerms()) {
+    if (port->getIoType() != odb::dbIoType::OUTPUT && ++drivers > 1) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void movePin(odb::dbITerm* pin, odb::dbNet* net, odb::dbModNet* mod_net)
+{
+  pin->disconnect();
+  pin->connect(net);
+  if (mod_net != nullptr) {
+    pin->connect(mod_net);
+  }
+}
+
 void sortUnique(std::vector<int>& values)
 {
   std::ranges::sort(values);
@@ -573,8 +603,7 @@ bool loadedOutput(sta::dbSta* sta,
       state_pin = iterm;
     }
     odb::dbNet* net = iterm->getNet();
-    if (net == nullptr
-        || (net->getITerms().size() <= 1 && net->getBTerms().empty())) {
+    if (net == nullptr || !isRead(net)) {
       continue;
     }
     ++loaded;
@@ -840,8 +869,7 @@ std::vector<std::pair<odb::dbNet*, odb::dbModNet*>> unloadedOutputNets(
   for (odb::dbITerm* iterm : inst->getITerms()) {
     odb::dbNet* net = iterm->getNet();
     if (iterm->getIoType() == odb::dbIoType::OUTPUT && net != nullptr
-        && net->getITerms().size() == 1 && net->getBTerms().empty()
-        && !net->isDoNotTouch()) {
+        && !isRead(net) && !net->isDoNotTouch()) {
       nets.emplace_back(net, iterm->getModNet());
     }
   }
@@ -995,6 +1023,7 @@ RegisterClass registerClass(sta::dbSta* sta,
 {
   RegisterClass cls;
   cls.clock = registerClockNet(inst);
+  cls.scan = isScanCell(sta, inst) || inst->getScanInst() != nullptr;
   const sta::Sequential* seq = singleSequential(sta, inst);
   if (seq == nullptr || !seq->isRegister()) {
     return cls;

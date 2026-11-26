@@ -35,20 +35,21 @@ bool notWorse(const StaSlack& a, const StaSlack& start)
          && a.hold_total >= start.hold_total - kStaSlackEps;
 }
 
-// No scene worse than at the start, and the worst or the total setup slack
-// over the scenes above it.
-bool betterThan(const StaSlack& a, const StaSlack& start)
+}  // namespace
+
+bool keepsTrial(const StaSlack& trial,
+                const StaSlack& round_start,
+                const StaSlack& start)
 {
-  for (size_t i = 0; i < a.scenes.size(); ++i) {
-    if (!notWorse(a.scenes[i], start.scenes[i])) {
+  for (size_t i = 0; i < trial.scenes.size(); ++i) {
+    if (!notWorse(trial.scenes[i], round_start.scenes[i])
+        || !notWorse(trial.scenes[i], start.scenes[i])) {
       return false;
     }
   }
-  return a.worst > start.worst + kStaSlackEps
-         || a.total > start.total + kStaSlackEps;
+  return trial.worst > round_start.worst + kStaSlackEps
+         || trial.total > round_start.total + kStaSlackEps;
 }
-
-}  // namespace
 
 NewCells::NewCells(odb::dbBlock* block)
 {
@@ -150,7 +151,7 @@ void StaCheck::run(const RetimeOptions& options)
   PlaceStats placed;
   bool table = false;
   for (int number = 1;; ++number) {
-    const Round round = runRound(left);
+    const Round round = runRound(left, before);
     if (round.proposed > 0) {
       if (!table) {
         reportStart(before, registers_before);
@@ -242,7 +243,7 @@ std::vector<odb::dbInst*> StaCheck::prefix(
   return {slides.begin(), slides.begin() + count};
 }
 
-StaCheck::Round StaCheck::runRound(const int limit)
+StaCheck::Round StaCheck::runRound(const int limit, const StaSlack& start)
 {
   Round round;
   round.slack = staSlack(sta_, *guard_);
@@ -255,7 +256,7 @@ StaCheck::Round StaCheck::runRound(const int limit)
     const Trial trial = runTrial(prefix(slides, j), cap, before);
     round.proposed = std::max(round.proposed, trial.slides);
     round.trials += trial.applied ? 1 : 0;
-    if (betterThan(trial.slack, before)) {
+    if (keepsTrial(trial.slack, before, start)) {
       keepTrial(trial, round);
       break;
     }

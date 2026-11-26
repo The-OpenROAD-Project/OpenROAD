@@ -238,16 +238,10 @@ void Retime::computePinnedFloors()
     if (!graph_->pinned()[u]) {
       continue;
     }
-    std::unordered_set<odb::dbITerm*> modeled;
-    for (const FaninEdge& fe : fanin_[u]) {
-      modeled.insert(fe.sink);
-    }
-    for (odb::dbITerm* iterm : graph_->nodes()[u]->getITerms()) {
-      if (isSignalInput(iterm) && !modeled.contains(iterm)) {
-        pinned_floor_[u] = std::max(
-            pinned_floor_[u],
-            static_cast<double>(pinArrival(iterm) + getGateArc(iterm)));
-      }
+    for (odb::dbITerm* iterm : graph_->unmodeledInputs(u)) {
+      pinned_floor_[u] = std::max(
+          pinned_floor_[u],
+          static_cast<double>(pinArrival(iterm) + getGateArc(iterm)));
     }
   }
 }

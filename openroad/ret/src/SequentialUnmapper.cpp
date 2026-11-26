@@ -522,9 +522,7 @@ std::vector<odb::dbITerm*> SequentialUnmapper::collectRegisterNets(
         }
       }
     } else if (iterm->getIoType() == odb::dbIoType::OUTPUT
-               && iterm->getNet() != nullptr
-               && (iterm->getNet()->getITerms().size() > 1
-                   || !iterm->getNet()->getBTerms().empty())) {
+               && iterm->getNet() != nullptr && isRead(iterm->getNet())) {
       out_pins.push_back(iterm);
     }
   }
@@ -577,8 +575,7 @@ void SequentialUnmapper::applyOutputMoves(const std::vector<OutputMove>& moves)
   std::unordered_set<odb::dbNet*> discarded;
   for (const OutputMove& move : moves) {
     for (odb::dbITerm* load : move.loads) {
-      load->disconnect();
-      load->connect(move.new_net);
+      movePin(load, move.new_net);
     }
     for (odb::dbBTerm* bterm : move.ports) {
       bterm->disconnect();

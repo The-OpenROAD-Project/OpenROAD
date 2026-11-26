@@ -48,6 +48,14 @@ class NewCells : public odb::dbBlockCallBackObj
   int registers_ = 0;
 };
 
+// Whether a trial is kept: no scene worse than at the start of the round or
+// of the command, and the worst or the total setup slack over the scenes
+// above the round's start.  The command's start is a floor of its own, so
+// the tolerance of each round does not add up.
+bool keepsTrial(const StaSlack& trial,
+                const StaSlack& round_start,
+                const StaSlack& start);
+
 // STA, not the search's delay model, decides what is kept: the slides are
 // applied, the new cells placed, and the design timed.  They are kept when
 // the setup slack improves with neither the worst nor the total negative
@@ -93,7 +101,8 @@ class StaCheck
     PlaceStats placed;
   };
 
-  Round runRound(int limit);
+  // start: the slack before the first round.
+  Round runRound(int limit, const StaSlack& start);
   static std::vector<odb::dbInst*> prefix(
       const std::vector<odb::dbInst*>& slides,
       int limit);

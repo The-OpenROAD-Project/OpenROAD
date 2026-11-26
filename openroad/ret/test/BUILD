@@ -10,6 +10,7 @@ TESTS = [
     "retime_basic",
     "retime_bus_input",
     "retime_clock_errors",
+    "retime_constant_data",
     "retime_disable_timing",
     "retime_dont_touch",
     "retime_dont_touch_order",
@@ -52,6 +53,7 @@ TESTS = [
     "retime_input_path",
     "retime_isolation",
     "retime_latch",
+    "retime_long_chain",
     "retime_max_moves",
     "retime_negedge",
     "retime_no_base_cell",
@@ -118,6 +120,16 @@ cc_test(
         "//openroad/sta:opensta_lib",
         "//openroad/tst",
         "//openroad/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestStaCheck",
+    srcs = ["TestStaCheck.cpp"],
+    deps = [
+        "//openroad/ret:ret_internal",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

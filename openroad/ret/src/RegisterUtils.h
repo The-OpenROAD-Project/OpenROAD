@@ -48,6 +48,14 @@ std::optional<bool> outputInverted(const sta::FuncExpr* func,
 
 // An input pin on a net that is not a supply.
 bool isSignalInput(odb::dbITerm* pin);
+// The net has a pin besides its driver's, or a port.
+bool isRead(odb::dbNet* net);
+// More than one pin or input port drives the net (a tri-state bus).
+bool hasSecondDriver(odb::dbNet* net);
+// Takes the pin off its net and puts it on this one.
+void movePin(odb::dbITerm* pin,
+             odb::dbNet* net,
+             odb::dbModNet* mod_net = nullptr);
 
 void sortUnique(std::vector<int>& values);
 
@@ -193,6 +201,7 @@ struct RegisterClass
   odb::dbNet* clock = nullptr;
   std::vector<EnablePin> enables;  // by pin name
   bool negedge = false;            // never moves
+  bool scan = false;  // a scan cell or in a scan chain: never moves
 };
 
 // resizer: as for isUsableCell.

@@ -607,11 +607,7 @@ void Retimer::removeRegister(odb::dbInst* inst)
       }
     }
     for (odb::dbITerm* load : loads) {
-      load->disconnect();
-      load->connect(d_net);
-      if (d_mod_net != nullptr) {
-        load->connect(d_mod_net);
-      }
+      movePin(load, d_net, d_mod_net);
     }
   }
   discardRegister(sta_, inst, *discards_);
@@ -832,8 +828,7 @@ void Retimer::rebuildGroup(const Group& group,
       = buildChain(group.driver_net, clock_net, classes, mod_nets);
   for (const Sink& s : group.sinks) {
     if (s.registers > 0) {
-      s.pin->disconnect();
-      s.pin->connect(depth_net[s.registers]);
+      movePin(s.pin, depth_net[s.registers]);
     }
   }
 }
@@ -859,12 +854,9 @@ void Retimer::applyRetiming(const RetimingGraph& graph,
   checkCrossings(graph, plan);
 
   for (size_t i = 0; i < plan.groups.size(); ++i) {
-    // A net with two drivers has sinks from both.
-    for (const Sink& sink : plan.groups[i].sinks) {
-      if (trial_sources_.empty() || trial_sources_.back() != sink.source) {
-        trial_sources_.push_back(sink.source);
-      }
-    }
+    // One gate drives the net of a group that changes: the registers on a
+    // net with two drivers stay.
+    trial_sources_.push_back(plan.groups[i].sinks.front().source);
     rebuildGroup(plan.groups[i], chains[i].classes, chains[i].clock_net);
   }
 }
