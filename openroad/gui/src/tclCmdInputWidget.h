@@ -54,12 +54,13 @@ class TclCmdInputWidget : public CmdInputWidget
   using CmdInputWidget::executeCommand;
 
   // Runs at most max_events of Tcl's pending events (after, fileevent, and
-  // socket callbacks).  Does nothing while a command or a nested event loop
-  // runs, so a callback never runs in the middle of another command.  A call
+  // socket callbacks), and none after stop() returns true.  Does nothing while
+  // a command or a nested event loop runs, so a callback never runs in the
+  // middle of another command.  A call
   // that runs a Tcl command is bracketed by commandAboutToExecute and
   // commandFinishedExecuting, like executeCommand; one that runs none emits
   // neither.
-  void serviceEvents(int max_events);
+  void serviceEvents(int max_events, const std::function<bool()>& stop);
 
  public slots:
   void executeCommand(const QString& cmd, bool echo, bool silent) override;

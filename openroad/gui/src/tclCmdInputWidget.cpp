@@ -72,6 +72,12 @@ TclCmdInputWidget::~TclCmdInputWidget()
   std::string exit_rename
       = fmt::format("rename {}exit exit", kCommandRenamePrefix);
   Tcl_Eval(interp_, exit_rename.c_str());
+
+  const std::string bgerror_restore = fmt::format(
+      "interp bgerror {{}} ${0}prior_bgerror\n"
+      "rename {0}bgerror {{}}",
+      kCommandRenamePrefix);
+  Tcl_Eval(interp_, bgerror_restore.c_str());
 }
 
 void TclCmdInputWidget::setTclInterp(Tcl_Interp* interp,
@@ -86,6 +92,21 @@ void TclCmdInputWidget::setTclInterp(Tcl_Interp* interp,
   Tcl_Eval(interp_, exit_rename.c_str());
   Tcl_CreateCommand(
       interp_, "exit", TclCmdInputWidget::tclExitHandler, this, nullptr);
+
+  // In an after or fileevent callback, the error exit returns becomes a
+  // background error; it is not reported.  Other background errors go to the
+  // prior handler.
+  const std::string bgerror_setup = fmt::format(
+      "set {0}prior_bgerror [interp bgerror {{}}]\n"
+      "proc {0}bgerror {{ msg options }} {{\n"
+      "  if {{ $msg ne {{{1}}} }} {{\n"
+      "    uplevel #0 [list {{*}}${0}prior_bgerror $msg $options]\n"
+      "  }}\n"
+      "}}\n"
+      "interp bgerror {{}} {0}bgerror",
+      kCommandRenamePrefix,
+      kExitString);
+  Tcl_Eval(interp_, bgerror_setup.c_str());
 
   if (do_init_openroad) {
     // OpenRoad is not initialized
@@ -706,7 +727,8 @@ void TclCmdInputWidget::executeCommand(const QString& cmd,
   emit commandFinishedExecuting(is_ok);
 }
 
-void TclCmdInputWidget::serviceEvents(const int max_events)
+void TclCmdInputWidget::serviceEvents(const int max_events,
+                                      const std::function<bool()>& stop)
 {
   // A command's progress output and a modal dialog both run Qt events, and
   // a callback must not change the database a command is iterating over.
@@ -725,8 +747,8 @@ void TclCmdInputWidget::serviceEvents(const int max_events)
                                     eventCommandTrace,
                                     this,
                                     nullptr);
-  for (int i = 0;
-       i < max_events && Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT);
+  for (int i = 0; i < max_events && !stop()
+                  && Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT);
        ++i) {
   }
   const bool ran_command = event_trace_ == nullptr;

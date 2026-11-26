@@ -941,10 +941,13 @@ int startGui(int& argc,
     // after/fileevent/socket callbacks would never fire. Draining it from a
     // QTimer keeps them on the Qt main thread, where Tcl_Eval already runs;
     // the per-tick bound stops a self-rescheduling callback starving the UI.
+    // Once a callback calls exit or gui::hide, no further callback runs.
     ScriptWidget* script_widget = main_window->getScriptWidget();
+    const auto exit_or_hide_requested
+        = [&]() { return exit_requested || gui->isContinueAfterClose(); };
     QTimer tcl_event_pump;
-    QObject::connect(&tcl_event_pump, &QTimer::timeout, [script_widget] {
-      script_widget->serviceTclEvents(32);
+    QObject::connect(&tcl_event_pump, &QTimer::timeout, [&]() {
+      script_widget->serviceTclEvents(32, exit_or_hide_requested);
     });
     tcl_event_pump.start(50);
 
