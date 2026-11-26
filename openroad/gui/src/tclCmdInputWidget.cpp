@@ -6,10 +6,12 @@
 #include <QAbstractItemView>
 #include <QCoreApplication>
 #include <QMimeData>
+#include <QScopeGuard>
 #include <QScrollBar>
 #include <QSettings>
 #include <QTextCursor>
 #include <QTextStream>
+#include <QThread>
 #include <QWidget>
 #include <functional>
 #include <memory>
@@ -669,6 +671,9 @@ void TclCmdInputWidget::executeCommand(const QString& cmd,
     return;
   }
 
+  ++command_depth_;
+  const auto depth_guard = qScopeGuard([this] { --command_depth_; });
+
   if (echo && !silent) {
     // Show the command that we executed
     emit addCommandToOutput(cmd);
@@ -699,6 +704,22 @@ void TclCmdInputWidget::executeCommand(const QString& cmd,
   }
 
   emit commandFinishedExecuting(is_ok);
+}
+
+void TclCmdInputWidget::serviceEvents(const int max_events)
+{
+  // A command's progress output and a modal dialog both run Qt events, and
+  // a callback must not change the database a command is iterating over.
+  if (command_depth_ > 0 || QThread::currentThread()->loopLevel() > 1) {
+    return;
+  }
+
+  ++command_depth_;
+  for (int i = 0;
+       i < max_events && Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT);
+       ++i) {
+  }
+  --command_depth_;
 }
 
 void TclCmdInputWidget::processTclResult(const int tcl_result)

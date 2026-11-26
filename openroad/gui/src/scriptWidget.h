@@ -55,6 +55,9 @@ class ScriptWidget : public QDockWidget
 
   void bufferOutputs(bool state);
 
+  // See TclCmdInputWidget::serviceEvents.
+  void serviceTclEvents(int max_events);
+
  signals:
   // Commands might have effects that others need to know
   // (eg change placement of an instance requires a redraw)

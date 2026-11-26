@@ -176,6 +176,11 @@ void ScriptWidget::executeSilentCommand(const QString& command)
   input_->executeCommand(command, false, true);
 }
 
+void ScriptWidget::serviceTclEvents(const int max_events)
+{
+  input_->serviceEvents(max_events);
+}
+
 void ScriptWidget::setPauserToRunning()
 {
   pauser_->setText("Running");

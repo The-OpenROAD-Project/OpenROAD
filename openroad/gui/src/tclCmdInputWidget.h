@@ -53,6 +53,11 @@ class TclCmdInputWidget : public CmdInputWidget
   // Bring the overloads into scope.
   using CmdInputWidget::executeCommand;
 
+  // Runs at most max_events of Tcl's pending events (after, fileevent, and
+  // socket callbacks).  Does nothing while a command or a nested event loop
+  // runs, so a callback never runs in the middle of another command.
+  void serviceEvents(int max_events);
+
  public slots:
   void executeCommand(const QString& cmd, bool echo, bool silent) override;
 
@@ -92,6 +97,9 @@ class TclCmdInputWidget : public CmdInputWidget
   void setCompleterVariables();
 
   Tcl_Interp* interp_;
+
+  // Number of executeCommand and serviceEvents calls on the stack.
+  int command_depth_ = 0;
 
   std::unique_ptr<QMenu> context_menu_;
   std::unique_ptr<QAction> enable_highlighting_;

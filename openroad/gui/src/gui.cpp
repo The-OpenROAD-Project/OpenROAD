@@ -941,11 +941,10 @@ int startGui(int& argc,
     // after/fileevent/socket callbacks would never fire. Draining it from a
     // QTimer keeps them on the Qt main thread, where Tcl_Eval already runs;
     // the per-tick bound stops a self-rescheduling callback starving the UI.
+    ScriptWidget* script_widget = main_window->getScriptWidget();
     QTimer tcl_event_pump;
-    QObject::connect(&tcl_event_pump, &QTimer::timeout, [] {
-      for (int i = 0; i < 32 && Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT);
-           ++i) {
-      }
+    QObject::connect(&tcl_event_pump, &QTimer::timeout, [script_widget] {
+      script_widget->serviceTclEvents(32);
     });
     tcl_event_pump.start(50);
 
