@@ -727,13 +727,13 @@ void TclCmdInputWidget::executeCommand(const QString& cmd,
   emit commandFinishedExecuting(is_ok);
 }
 
-void TclCmdInputWidget::serviceEvents(const int max_events,
+bool TclCmdInputWidget::serviceEvents(const int max_events,
                                       const std::function<bool()>& stop)
 {
   // A command's progress output and a modal dialog both run Qt events, and
   // a callback must not change the database a command is iterating over.
   if (command_depth_ > 0 || QThread::currentThread()->loopLevel() > 1) {
-    return;
+    return false;
   }
 
   ++command_depth_;
@@ -747,9 +747,10 @@ void TclCmdInputWidget::serviceEvents(const int max_events,
                                     eventCommandTrace,
                                     this,
                                     nullptr);
-  for (int i = 0; i < max_events && !stop()
-                  && Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT);
-       ++i) {
+  int serviced = 0;
+  while (serviced < max_events && !stop()
+         && Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT)) {
+    ++serviced;
   }
   const bool ran_command = event_trace_ == nullptr;
   if (!ran_command) {
@@ -761,6 +762,8 @@ void TclCmdInputWidget::serviceEvents(const int max_events,
   if (ran_command) {
     emit commandFinishedExecuting(true);
   }
+
+  return serviced == max_events;
 }
 
 int TclCmdInputWidget::eventCommandTrace(ClientData instance_data,

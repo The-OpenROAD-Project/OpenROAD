@@ -59,8 +59,9 @@ class TclCmdInputWidget : public CmdInputWidget
   // middle of another command.  A call
   // that runs a Tcl command is bracketed by commandAboutToExecute and
   // commandFinishedExecuting, like executeCommand; one that runs none emits
-  // neither.
-  void serviceEvents(int max_events, const std::function<bool()>& stop);
+  // neither.  Returns true when it stopped at max_events, so more events may
+  // be pending.
+  bool serviceEvents(int max_events, const std::function<bool()>& stop);
 
  public slots:
   void executeCommand(const QString& cmd, bool echo, bool silent) override;

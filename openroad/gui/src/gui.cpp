@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <exception>
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -940,15 +941,21 @@ int startGui(int& argc,
     // Nothing else services Tcl's event queue while Qt owns the main loop, so
     // after/fileevent/socket callbacks would never fire. Draining it from a
     // QTimer keeps them on the Qt main thread, where Tcl_Eval already runs;
-    // the per-tick bound stops a self-rescheduling callback starving the UI.
+    // the per-tick bound stops a self-rescheduling callback starving the UI,
+    // and a drain that reaches it runs again as soon as Qt is idle.
     // Once a callback calls exit or gui::hide, no further callback runs.
     ScriptWidget* script_widget = main_window->getScriptWidget();
     const auto exit_or_hide_requested
         = [&]() { return exit_requested || gui->isContinueAfterClose(); };
     QTimer tcl_event_pump;
-    QObject::connect(&tcl_event_pump, &QTimer::timeout, [&]() {
-      script_widget->serviceTclEvents(32, exit_or_hide_requested);
-    });
+    std::function<void()> service_tcl_events;
+    service_tcl_events = [&]() {
+      if (script_widget->serviceTclEvents(32, exit_or_hide_requested)) {
+        QTimer::singleShot(0, &tcl_event_pump, service_tcl_events);
+      }
+    };
+    QObject::connect(
+        &tcl_event_pump, &QTimer::timeout, &tcl_event_pump, service_tcl_events);
     tcl_event_pump.start(50);
 
     exit_code = QApplication::exec();
