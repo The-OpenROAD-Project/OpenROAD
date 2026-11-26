@@ -240,6 +240,7 @@ struct OppositeRfArc
   const sta::TimingArc* ref_arc{nullptr};
   float input_slew{0.0f};
   float current_model_delay{0.0f};
+  float current_model_slew{0.0f};
 };
 
 // Snapshot of one timing stage's electrical state needed for table-model delay
@@ -613,9 +614,39 @@ struct TargetEvaluation
 // policy's *RepairState structs, not here.  `sequence` and `phases` together
 // describe the user-specified move schedule; the `skip_*` flags suppress
 // individual move types without having to modify `sequence`.
+// Timing contract captured once on repair_power entry so multi-pass runs
+// (-vt_budget + power recovery) do not compound -setup_tolerance or TNS slack.
+struct PowerEntryContract
+{
+  sta::Slack setup_ws{0.0f};
+  sta::Slack setup_tns{0.0f};
+  sta::Slack hold_ws{0.0f};
+  sta::Slack hold_tns{0.0f};
+  std::unordered_map<const sta::Pin*, float> endpoint_setup_slacks;
+};
+
 struct OptimizerRunConfig
 {
   double setup_slack_margin{0.0};
+  // repair_power: the hold slack kept, the setup slack each endpoint may
+  // lose below the lower of the margin and its slack at the start (percent
+  // of the PARALLEL_EVAL reference clock period), and the run is a power
+  // run.
+  double hold_slack_margin{0.0};
+  double setup_tolerance{0.0};
+  bool repair_power{false};
+  std::shared_ptr<const PowerEntryContract> power_entry_contract;
+  // True on the power pass after -vt_budget pass 2 degraded setup slack past
+  // the entry contract; keeps the entry hold contract while clamping setup
+  // floors to the tighter of entry floor and post-budget slack.
+  bool vt_budget_relaxed_setup{false};
+  // repair_power -vt_budget: the budgets no swap may break, and whether the
+  // run brings them down instead of saving power.  Such a run may let every
+  // endpoint fall to the lower of the margin and vt_budget_ws, and lower
+  // that floor while it stalls.
+  std::vector<VtBudget> vt_budgets;
+  bool vt_budget_run{false};
+  std::optional<float> vt_budget_ws;
   double repair_tns_end_percent{1.0};
   int max_iterations{0};
   int max_passes{100};

@@ -45,6 +45,7 @@
 #include "ResizerObserver.hh"
 #include "SkewBudget.hh"
 #include "SwapPinsEquivalence.hh"
+#include "VtBudget.hh"
 #include "boost/functional/hash.hpp"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbSta.hh"
@@ -5863,6 +5864,90 @@ bool Resizer::repairSetup(double setup_margin,
   bool result = optimizer.run();
   logger_->info(RSZ, 505, "Runtime: {:.2f}s", timer.elapsed());
   return result;
+}
+
+void Resizer::repairPower(const double setup_margin,
+                          const double hold_margin,
+                          const double setup_tolerance,
+                          const bool verbose,
+                          const std::vector<VtBudget>& vt_budgets)
+{
+  utl::Timer timer;
+  const auto design_power = [this] {
+    sta::PowerResult total, sequential, combinational, clock, macro, pad;
+    sta_->power(
+        sta_->cmdScene(), total, sequential, combinational, clock, macro, pad);
+    return total;
+  };
+  const sta::PowerResult before = design_power();
+  logger_->info(RSZ,
+                3260,
+                "Power before: internal {:.4g} W, switching {:.4g} W, leakage "
+                "{:.4g} W, total {:.4g} W.",
+                before.internal(),
+                before.switching(),
+                before.leakage(),
+                before.total());
+
+  // Cell swaps preserve area; temporarily clear any max_area_ limit left by
+  // earlier commands for both Tcl and C++/Python callers.
+  utl::SetAndRestore<double> max_area_guard(max_area_, 0.0);
+
+  // Run preamble before initial VT budget counting so checkLibertyForAllCorners
+  // marks missing-corner cells dont_use before VT equivalence tables are built.
+  runRepairSetupPreamble();
+
+  // Capture the entry timing contract once so multi-pass runs (-vt_budget +
+  // power recovery) never compound -setup_tolerance or TNS slack tolerances.
+  const sta::MinMax* max = sta::MinMax::max();
+  const sta::MinMax* min = sta::MinMax::min();
+  auto entry_contract = std::make_shared<PowerEntryContract>();
+  entry_contract->setup_ws = sta_->worstSlack(max);
+  entry_contract->setup_tns = sta_->totalNegativeSlack(max);
+  entry_contract->hold_ws = sta_->worstSlack(min);
+  entry_contract->hold_tns = sta_->totalNegativeSlack(min);
+  if (setup_tolerance > 0.0) {
+    for (sta::Vertex* vertex : sta_->endpoints()) {
+      entry_contract->endpoint_setup_slacks[vertex->pin()]
+          = sta::delayAsFloat(sta_->slack(vertex, max));
+    }
+  }
+
+  OptimizerRunConfig config;
+  config.setup_slack_margin = setup_margin;
+  config.hold_slack_margin = hold_margin;
+  config.setup_tolerance = setup_tolerance;
+  config.repair_power = true;
+  config.power_entry_contract = entry_contract;
+  config.verbose = verbose;
+  config.phases = "POWER";
+  config.vt_budgets = vt_budgets;
+  VtBudgetCounts budget_counts(vt_budgets, false);
+  budget_counts.count(*this);
+  reportVtBudgets(*this, budget_counts, false);
+  if (!budget_counts.met()) {
+    config.vt_budget_relaxed_setup = lowerVtBudgets(*this, config);
+  }
+  rsz::Optimizer optimizer(this);
+  optimizer.configure(config);
+  optimizer.run();
+  budget_counts.count(*this);
+  reportVtBudgets(*this, budget_counts, true);
+
+  logger_->info(RSZ, 3262, "Runtime: {:.2f}s", timer.elapsed());
+  // The swaps invalidate the activities, and propagating them again is slow
+  // on large designs.
+  if (verbose) {
+    const sta::PowerResult after = design_power();
+    logger_->info(RSZ,
+                  3261,
+                  "Power after: internal {:.4g} W, switching {:.4g} W, leakage "
+                  "{:.4g} W, total {:.4g} W.",
+                  after.internal(),
+                  after.switching(),
+                  after.leakage(),
+                  after.total());
+  }
 }
 
 void Resizer::reportSwappablePins()

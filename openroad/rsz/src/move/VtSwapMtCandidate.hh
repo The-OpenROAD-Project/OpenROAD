@@ -46,10 +46,7 @@ class VtSwapMtCandidate : public MoveCandidate
   }
   MoveType type() const override { return MoveType::kVtSwap; }
 
- private:
-  // A positive score per unit of the candidate's relative cost.
-  float costScaled(float score) const;
-
+ protected:
   // === Candidate state ======================================================
   sta::Instance* inst_{nullptr};
   sta::LibertyCell* current_cell_{nullptr};
@@ -57,6 +54,10 @@ class VtSwapMtCandidate : public MoveCandidate
   // Relative cell cost of the candidate among the target's VTs, at least 1
   // (relativeCellCosts()).
   const float cost_divisor_;
+
+ private:
+  // A positive score per unit of the candidate's relative cost.
+  float costScaled(float score) const;
 };
 
 }  // namespace rsz

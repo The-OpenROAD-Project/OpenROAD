@@ -4,8 +4,11 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string_view>
+
+#include "sta/NetworkClass.hh"
 
 namespace sta {
 class LibertyCell;
@@ -65,8 +68,15 @@ class SequentialTimingEstimator
 
   // Estimate a candidate flip-flop swap's effect on input-side setup and hold
   // checks. Return legality and the side slack losses used to score the Q-path
-  // move; reject candidates that create or worsen a timing violation.
+  // move; reject candidates that create or worsen a timing violation below the
+  // setup/hold floors (default 0.0, or per-pin setup floor when provided).
   Result estimate(const sta::LibertyCell* candidate_cell) const;
+  Result estimate(
+      const sta::LibertyCell* candidate_cell,
+      float setup_floor,
+      float hold_floor,
+      const std::function<float(const sta::Pin*)>& endpoint_setup_floor
+      = nullptr) const;
 
  private:
   // Prepared STA and Liberty context shared by candidate evaluations.

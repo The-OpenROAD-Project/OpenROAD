@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <functional>
 #include <limits>
 #include <memory>
 #include <optional>
@@ -145,6 +146,7 @@ struct PreparedInputTiming
 
 struct PreparedSetupHoldCheck
 {
+  const sta::Pin* data_pin{nullptr};
   const sta::MinMax* min_max{nullptr};
   std::optional<sta::Pvt> pvt;
   PreparedInputTiming data;
@@ -440,6 +442,7 @@ bool prepareSetupHoldCheck(Resizer& resizer,
   const sta::Path* clock_path = end->targetClkPath();
   const sta::Scene* scene = data_path->scene(sta);
   context.min_max = data_path->minMax(sta);
+  context.data_pin = data_path->pin(sta);
   const sta::LibertyCell* cell
       = resizer.network()->libertyCell(inst)->sceneCell(scene, context.min_max);
   if (cell == nullptr || clock_path == nullptr) {
@@ -786,6 +789,15 @@ SequentialTimingEstimator::prepare(Resizer& resizer, const Target& target)
 SequentialTimingEstimator::Result SequentialTimingEstimator::estimate(
     const sta::LibertyCell* candidate_cell) const
 {
+  return estimate(candidate_cell, 0.0f, 0.0f);
+}
+
+SequentialTimingEstimator::Result SequentialTimingEstimator::estimate(
+    const sta::LibertyCell* candidate_cell,
+    const float setup_floor,
+    const float hold_floor,
+    const std::function<float(const sta::Pin*)>& endpoint_setup_floor) const
+{
   if (!prepared_timing_->prepare_failure_reason.empty()) {
     return {.reason = prepared_timing_->prepare_failure_reason};
   }
@@ -848,16 +860,24 @@ SequentialTimingEstimator::Result SequentialTimingEstimator::estimate(
           - margin_delta;
     const double after = check.baseline_slack + slack_delta;
     const double loss = std::max(0.0, -slack_delta);
-    const double weight = std::clamp(
-        1.0 - std::min(check.baseline_slack, after) / kSideSlackWeightCutoff,
-        0.0,
-        1.0);
+    double floor = static_cast<double>(hold_floor);
+    if (check.setup) {
+      floor = endpoint_setup_floor && check.data_pin != nullptr
+                  ? static_cast<double>(endpoint_setup_floor(check.data_pin))
+                  : static_cast<double>(setup_floor);
+    }
+    const double weight
+        = std::clamp(1.0
+                         - (std::min(check.baseline_slack, after) - floor)
+                               / kSideSlackWeightCutoff,
+                     0.0,
+                     1.0);
     result.weighted_side_slack_loss = std::max(
         result.weighted_side_slack_loss, static_cast<float>(weight * loss));
     result.max_side_slack_loss
         = std::max(result.max_side_slack_loss, static_cast<float>(loss));
-    if (after
-        < std::min(0.0, check.baseline_slack) - kSideSlackViolationTolerance) {
+    if (after < std::min(floor, check.baseline_slack)
+                    - kSideSlackViolationTolerance) {
       result.legal = false;
       result.reason = check.setup ? "sequential_setup_violation"
                                   : "sequential_hold_violation";

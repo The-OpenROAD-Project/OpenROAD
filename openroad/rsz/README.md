@@ -365,6 +365,51 @@ then works on the worst endpoints one batch at a time. The policy differs from
 | rebuffer | Buffering for setup fixing |
 | split | Split off non-critical loads behind a buffer to reduce load |
 
+### Repair Power
+
+The `repair_power` command swaps cells (combinational and sequential) to a
+higher-VT variant of the same footprint where setup and hold slack allow,
+ranking swaps by total power saved at STA activities per unit of setup slack
+spent. Unlike `repair_timing -recover_power`, it performs batched VT-only swaps
+without resizing or buffering and supports explicit VT cell-share budgets via
+`-vt_budget`. A batch is kept only while setup and hold worst slack stay above
+their margin (or no worse than at the start when already violating) and total
+negative slack stays within 1% of the start. With `-setup_tolerance`, the setup
+rule is per endpoint instead: each endpoint may lose that much setup slack
+below the lower of the margin and its slack at the start. Swaps whose estimate
+creates or worsens a max slew or capacitance violation are skipped.
+
+With `-vt_budget`, the command first brings each budget's share of the logic
+cells down to its limit, taking the swaps that spend the least setup slack
+first. It keeps the setup contract while it can; then it allows endpoints to
+fall to the setup worst slack (spending the full room of each swap), and while
+that stalls it lowers the floor by a growing share of the clock period. The
+power swaps that follow preserve every budget. Instances that cannot change VT,
+such as clock cells, raise a budget's limit to their count.
+
+```tcl
+repair_power
+    [-setup_margin setup_margin]
+    [-hold_margin hold_margin]
+    [-setup_tolerance percent]
+    [-vt_budget {lib_cells percent ...}]
+    [-verbose]
+```
+
+For example, `-vt_budget {*_SL 5 {*_SL *_L} 20}` keeps the `*_SL` cells at
+most 5% of the logic cells, and the `*_SL` and `*_L` cells together at most
+20%.
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-setup_margin` | Setup slack the moves leave untouched. The default is 0. |
+| `-hold_margin` | Hold slack the moves leave untouched. The default is 0. |
+| `-setup_tolerance` | Setup slack, in percent of the clock period, each endpoint may lose below the lower of `-setup_margin` and its slack at the start, to save more power; a later `repair_timing` may not win that slack back. The default is 0, which keeps the setup WS and TNS rule. |
+| `-vt_budget` | Pairs of library cells, as names, patterns or `get_lib_cells` objects, and the most percent of the logic cells their instances may be. Budgets may share cells. |
+| `-verbose` | Print one row per batch. |
+
 ### Repair Clock Nets
 
 The `clock_tree_synthesis` command inserts a clock tree in the design
