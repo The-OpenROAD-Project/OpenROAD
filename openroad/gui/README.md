@@ -3,6 +3,15 @@
 The graphical user interface can be access by launching OpenROAD with ``-gui`` or 
 by opening it from the command-line with ``gui::show``.
 
+Tcl's `after`, `fileevent` and `socket -server` callbacks run while the
+GUI waits for input, so a Tcl server sourced into a GUI session answers
+there. They run only while the GUI's main loop runs: not while the
+script given to `-gui` or to `gui::show` runs, including during its own
+`gui::pause`. Neither do they run while a command runs, including one
+that is paused or has a dialog open; they wait until it returns, so a
+callback never runs in the middle of another command. Once a callback
+calls `exit` or `gui::hide`, no further callback runs.
+
 ## Commands
 
 ```{note}
