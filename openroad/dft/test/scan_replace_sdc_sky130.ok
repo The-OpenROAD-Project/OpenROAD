@@ -1,0 +1,81 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
+[INFO ODB-0128] Design: one_cell
+[INFO ODB-0130]     Created 4 pins.
+[INFO ODB-0131]     Created 1 components and 6 component-terminals.
+[INFO ODB-0133]     Created 4 nets and 4 connections.
+min_delay/hold group main_clock
+
+                                     Required  Actual
+Endpoint                               Delay   Delay   Slack
+------------------------------------------------------------
+ff1/D (sky130_fd_sc_hd__dfstp_1)        2.14    0.20   -1.94 (VIOLATED)
+
+max_delay/setup group main_clock
+
+                                     Required  Actual
+Endpoint                               Delay   Delay   Slack
+------------------------------------------------------------
+ff1/D (sky130_fd_sc_hd__dfstp_1)        3.99    0.20    3.79 (MET)
+
+No paths found.
+
+Instance ff1
+ Cell: sky130_fd_sc_hd__sdfstp_1
+ Library: sky130_fd_sc_hd_merged
+ Path cells: sky130_fd_sc_hd__sdfstp_1
+ Input pins:
+  D input port1
+  SCD input (unconnected)
+  SCE input (unconnected)
+  SET_B input set_b
+  CLK input clock
+ Output pins:
+  Q output output1
+min_delay/hold group main_clock
+
+                                     Required  Actual
+Endpoint                               Delay   Delay   Slack
+------------------------------------------------------------
+ff1/D (sky130_fd_sc_hd__sdfstp_1)       2.05    0.20   -1.85 (VIOLATED)
+
+max_delay/setup group main_clock
+
+                                     Required  Actual
+Endpoint                               Delay   Delay   Slack
+------------------------------------------------------------
+ff1/D (sky130_fd_sc_hd__sdfstp_1)       3.77    0.20    3.57 (MET)
+
+No paths found.
+
+###############################################################################
+# Created by write_sdc
+###############################################################################
+current_design one_cell
+###############################################################################
+# Timing Constraints
+###############################################################################
+create_clock -name main_clock -period 2.0000 [get_ports {clock}]
+set_clock_uncertainty 0.0500 [get_pins {ff1/CLK}]
+set_clock_latency 0.1000 [get_pins {ff1/CLK}]
+set_input_delay 0.2000 -clock [get_clocks {main_clock}] -add_delay [get_ports {port1}]
+set_disable_timing -from {SET_B} -to {Q} [get_cells {ff1}]
+set_disable_timing [get_timing_edges -from [get_ports {set_b}] -to [get_pins {ff1/SET_B}]]
+set_multicycle_path -hold\
+    -from [get_cells {ff1}] 3
+set_multicycle_path -setup\
+    -to [get_pins {ff1/D}] 2
+set_false_path\
+    -from [get_pins {ff1/CLK}]\
+    -to [get_ports {output1}]
+###############################################################################
+# Environment
+###############################################################################
+set_case_analysis 1 [get_pins {ff1/SET_B}]
+set_timing_derate -cell_delay -late 1.1000 [get_cells {ff1}]
+###############################################################################
+# Design Rules
+###############################################################################
+set_min_pulse_width 0.3000 [get_pins {ff1/CLK}]
+set_max_capacitance 0.2000 [get_pins {ff1/Q}]
+No differences found.
