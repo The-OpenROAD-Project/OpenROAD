@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include <string>
+#include <type_traits>
 
 #include "SACore.h"
 #include "mpl-util.h"
