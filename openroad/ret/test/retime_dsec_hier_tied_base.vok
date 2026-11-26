@@ -30,7 +30,6 @@ module core (a,
  wire d1;
  wire d2;
  wire d3;
- wire ret_net_5;
  wire hi3;
  wire n1;
  wire n2;
@@ -38,9 +37,10 @@ module core (a,
  wire n4;
  wire n5;
  wire n6;
- wire ret_net_4;
  wire q3;
  wire unmap_net_3;
+ wire ret_net_4;
+ wire ret_net_5;
 
  sg13g2_and2_1 g0 (.A(a),
     .B(rn),

@@ -1,7 +1,7 @@
 # A register that drives only the enable pin of another register keeps its
-# depth, so the gate in front of it is never crossed: the design fails timing
-# and nothing moves.  The result is proven sequentially equivalent with ABC
-# dsec.
+# depth, so the gate in front of it is never crossed.  The path into it still
+# fails, and the register behind that path slides toward it.  The result is
+# proven sequentially equivalent with ABC dsec.
 source "helpers.tcl"
 source "ret_helpers.tcl"
 read_lef sky130hd/sky130hd.tlef

@@ -28,6 +28,8 @@ class Logger;
 
 namespace ret {
 
+class Discards;
+
 // Rewrites synchronous registers as a plain D flip-flop plus logic
 // (inverters, 2-input ANDs and ORs, tie cells) computing the cell's liberty
 // `next_state`.  Registers with an asynchronous control that is not tied
@@ -54,8 +56,10 @@ class SequentialUnmapper
 
   bool prepare();
 
-  // Returns the number of registers unmapped.
-  int run(const std::unordered_set<odb::dbInst*>* candidates = nullptr);
+  // Returns the number of registers unmapped.  discards: where the registers
+  // it replaces go; nullptr: they are deleted before it returns.
+  int run(const std::unordered_set<odb::dbInst*>* candidates = nullptr,
+          Discards* discards = nullptr);
 
   odb::dbMaster* getBaseSequentialMaster() const { return seq_.master; }
   odb::dbMTerm* getBaseSequentialDMTerm() const { return seq_.data; }
@@ -186,6 +190,7 @@ class SequentialUnmapper
   // Module net of each net the register reads; empty in a flat netlist.
   std::unordered_map<odb::dbNet*, odb::dbModNet*> mod_net_;
   sta::Instance* parent_ = nullptr;
+  Discards* discards_ = nullptr;  // of the run in progress
   const sta::LibertyPort* out_port_ = nullptr;
   const sta::LibertyPort* out_inv_port_ = nullptr;
   odb::dbNet* state_net_ = nullptr;

@@ -60,15 +60,11 @@ module top (a,
  wire n3;
  wire n4;
  wire n5;
- wire ret_net_5;
  wire q1n;
  wire q3;
  wire q4n;
  wire q5n;
  wire q6;
- wire ret_net_8;
- wire ret_net_7;
- wire ret_net_6;
  wire qc;
  wire qs;
  wire qt;
@@ -86,6 +82,10 @@ module top (a,
  wire u3;
  wire unmap_net_2;
  wire unmap_net_4;
+ wire ret_net_5;
+ wire ret_net_6;
+ wire ret_net_7;
+ wire ret_net_8;
 
  AND2_X1 g0 (.A1(a),
     .A2(rst_n),

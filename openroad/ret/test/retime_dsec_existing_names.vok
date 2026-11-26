@@ -28,15 +28,15 @@ module top (a,
  wire n2;
  wire n3;
  wire n4;
- wire ret_net_7;
  wire q6;
  wire ret_net_0;
  wire ret_net_1;
  wire unmap_net_3;
  wire unmap_state_1;
- wire ret_net_8;
  wire unmap_net_4;
  wire unmap_net_6;
+ wire ret_net_7;
+ wire ret_net_8;
 
  AND2_X1 g0 (.A1(a),
     .A2(rst_n),

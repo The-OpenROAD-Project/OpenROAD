@@ -47,8 +47,9 @@ class NewCells : public odb::dbBlockCallBackObj
 
 // STA, not the search's delay model, decides what is kept: the slides are
 // applied, the new cells placed, and the design timed.  They are kept when
-// the slack improves with neither the worst nor the total negative slack
-// below the start; else ever shorter prefixes are tried, each half the last.
+// the setup slack improves with neither the worst nor the total negative
+// slack below the start, for setup and for hold; else ever shorter prefixes
+// are tried, each half the last.
 class StaCheck
 {
  public:
@@ -57,7 +58,8 @@ class StaCheck
   // Applies slides; max_moves caps a search the unmapping repeats.
   using Apply = std::function<int(const std::vector<odb::dbInst*>& slides,
                                   int max_moves)>;
-  using Undone = std::function<void()>;
+  // After a trial is undone, or before a kept one is committed.
+  using Closed = std::function<void(bool kept)>;
 
   StaCheck(sta::dbSta* sta,
            utl::Logger* logger,
@@ -66,7 +68,7 @@ class StaCheck
            est::IncrementalParasiticsGuard* guard,
            Propose propose,
            Apply apply,
-           Undone undone);
+           Closed closed);
 
   // Rounds repeat from what was kept until one keeps nothing.
   void run(const RetimeOptions& options);
@@ -114,7 +116,7 @@ class StaCheck
   est::IncrementalParasiticsGuard* guard_ = nullptr;
   Propose propose_;
   Apply apply_;
-  Undone undone_;
+  Closed closed_;
   NewCells new_cells_;
 };
 

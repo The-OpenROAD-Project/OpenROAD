@@ -61,8 +61,8 @@ module core (a,
  wire n4;
  wire n5;
  wire n6;
- wire ret_net_1;
  wire q3;
+ wire ret_net_1;
 
  AND2_X1 g0 (.A1(a),
     .A2(rn),

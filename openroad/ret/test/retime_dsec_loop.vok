@@ -9,7 +9,6 @@ module top (a,
 
  wire d_in;
  wire d_l1;
- wire ret_net_1;
  wire q_l2;
  wire q_rst;
  wire rb;
@@ -24,6 +23,7 @@ module top (a,
  wire x7;
  wire x8;
  wire x9;
+ wire ret_net_1;
 
  AND2_X1 g_and (.A1(q_l2),
     .A2(q_rst),

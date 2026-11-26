@@ -41,11 +41,11 @@ module top (a,
  wire n5;
  wire n6;
  wire q3;
- wire ret_net_1;
  wire q6;
  wire qe;
  wire qf;
  wire qx;
+ wire ret_net_1;
 
  sky130_fd_sc_hd__and2_1 g0 (.A(a),
     .B(rst_n),

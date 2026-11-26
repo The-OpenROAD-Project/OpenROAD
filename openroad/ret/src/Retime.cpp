@@ -230,7 +230,7 @@ double Retime::worstSlack() const
 
 double Retime::negativeSlackAt(const int t) const
 {
-  if (!outputRegistered(t) && po_end_shift_[t] == kNegInf) {
+  if (!outputRegistered(t) && fixed_end_shift_[t] == kNegInf) {
     return 0.0;
   }
   return std::min(slackOf(arrivals_[t], endShift(t)), 0.0);
@@ -256,13 +256,13 @@ double Retime::requiredTime() const
 
 double Retime::endShift(const int v) const
 {
-  const bool port = po_end_shift_[v] > kNegInf;
-  double shift = port ? po_end_shift_[v] : 0.0;
+  const bool fixed = fixed_end_shift_[v] > kNegInf;
+  double shift = fixed ? fixed_end_shift_[v] : 0.0;
   if (outputRegistered(v)) {
     // Untouched: the registers on the output are the ones STA timed, and
     // no endpoint when STA does not constrain them.
     const double registered = r_[v] == 0 ? orig_end_shift_[v] : new_setup_[v];
-    shift = port ? std::max(shift, registered) : registered;
+    shift = fixed ? std::max(shift, registered) : registered;
   }
   return shift;
 }
@@ -413,7 +413,7 @@ bool Retime::propagateTails()
 
 void Retime::setTail(const int u)
 {
-  const bool endpoint = outputRegistered(u) || po_end_shift_[u] > kNegInf;
+  const bool endpoint = outputRegistered(u) || fixed_end_shift_[u] > kNegInf;
   double tail = endpoint ? endShift(u) : kNegInf;
   double out_tail = kNegInf;
   for (const auto& [s, k] : fanout_[u]) {

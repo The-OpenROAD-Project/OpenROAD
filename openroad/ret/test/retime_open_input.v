@@ -1,7 +1,7 @@
-// r3 (sky130hd edfxtp) has its enable pin DE unconnected, so its next state
-// cannot be rebuilt from library cells.  r3 and the plain r4 feed g20: a
-// mixed-class gate, so a slide across it would unmap r3.  r1 starts an
-// independent plain cone that fails by more.
+// r3 and r4 (sky130hd edfxtp) have their enable pin DE unconnected and feed
+// g20: one class, so a slide across g20 would merge them into one enable
+// register with no enable net.  r1 starts an independent plain cone that
+// fails by more.
 module top (a, b, c, d, clk, y, z);
   input a;
   input b;
@@ -33,12 +33,11 @@ module top (a, b, c, d, clk, y, z);
   sky130_fd_sc_hd__dfxtp_1 r2 (.D(n14), .CLK(clk), .Q(q2));
   sky130_fd_sc_hd__buf_1 g15 (.A(q2), .X(y));
 
-  // Mixed-class cone: r3 (DE unconnected) and r4 -> NAND -> 6 inverters
-  // -> r5.
+  // Enable cone: r3 and r4 (DE unconnected) -> NAND -> 6 inverters -> r5.
   sky130_fd_sc_hd__and2_1 g18 (.A(c), .B(b), .X(d3));
   sky130_fd_sc_hd__and2_1 g19 (.A(d), .B(b), .X(d4));
   sky130_fd_sc_hd__edfxtp_1 r3 (.D(d3), .CLK(clk), .Q(q3));
-  sky130_fd_sc_hd__dfxtp_1 r4 (.D(d4), .CLK(clk), .Q(q4));
+  sky130_fd_sc_hd__edfxtp_1 r4 (.D(d4), .CLK(clk), .Q(q4));
   sky130_fd_sc_hd__nand2_1 g20 (.A(q3), .B(q4), .Y(m0));
   sky130_fd_sc_hd__inv_1 g21 (.A(m0), .Y(m1));
   sky130_fd_sc_hd__inv_1 g22 (.A(m1), .Y(m2));

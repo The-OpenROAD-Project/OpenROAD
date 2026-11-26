@@ -18,7 +18,7 @@ worst slack max -0.1474
 [INFO RET-0053] Retime: slides 5, rounds 1, WNS 0.0061, TNS 0.0000, registers 2, placed 2, resized 0.
 worst slack max 0.0061
 unplaced instances: 0
-ret_tie_2 at 57.26 3.78
 ret_ff_1 at 51.98 3.78
+ret_tie_2 at 57.26 3.78
 Retime output passed/skipped sequential equivalence test
 No differences found.

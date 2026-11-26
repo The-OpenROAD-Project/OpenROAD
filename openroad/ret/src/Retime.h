@@ -219,9 +219,9 @@ class Retime
 
   void computeEndpoints();
   double registerEndShift(int v, double arrival) const;
-  double portEndShift(int v, double arrival) const;
+  double fixedEndShift(int v, double arrival) const;
   // What the endpoint at `pin` is charged on top of `arrival`; -inf when
-  // STA does not constrain it.
+  // it is no endpoint to STA or STA does not constrain it.
   double endShiftAt(const sta::Pin* pin, double arrival) const;
 
   const RetimingGraph* graph_ = nullptr;
@@ -251,10 +251,12 @@ class Retime
   std::vector<sta::LibertyCell*> launch_cell_;  // of a new register
   std::vector<double> new_launch_;  // what a new register launches at
   std::vector<double> new_setup_;
-  // The charge as an endpoint of the registers on the gate's output and
-  // of a primary output it feeds; -inf: none.
+  // The charge as an endpoint of the registers on the gate's edges, and of
+  // the endpoints no slide moves: a port or a pin outside the graph (a
+  // control pin, a register whose chain reaches no gate) that reads the
+  // gate's output.  -inf: none.
   std::vector<double> orig_end_shift_;
-  std::vector<double> po_end_shift_;
+  std::vector<double> fixed_end_shift_;
   // From the gate's output to the worst endpoint behind it, charge
   // included: through its combinational fanout, and from a register put
   // on its output.  -inf: no endpoint.

@@ -1,6 +1,7 @@
 # A register that drives only an output port keeps its depth, so the gate in
-# front of it is never crossed: the design fails timing and nothing moves.
-# The result is proven sequentially equivalent with ABC dsec.
+# front of it is never crossed.  The path into it still fails, and the
+# register behind that path slides up to that gate.  The result is proven
+# sequentially equivalent with ABC dsec.
 source "helpers.tcl"
 source "ret_helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib

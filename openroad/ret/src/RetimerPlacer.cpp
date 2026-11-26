@@ -30,9 +30,13 @@ namespace ret {
 StaSlack staSlack(sta::dbSta* sta, est::IncrementalParasiticsGuard& guard)
 {
   guard.update();
+  const sta::MinMax* setup = sta::MinMax::max();
+  const sta::MinMax* hold = sta::MinMax::min();
   return {
-      .worst = sta::delayAsFloat(sta->worstSlack(sta::MinMax::max())),
-      .total = sta::delayAsFloat(sta->totalNegativeSlack(sta::MinMax::max())),
+      .worst = sta::delayAsFloat(sta->worstSlack(setup)),
+      .total = sta::delayAsFloat(sta->totalNegativeSlack(setup)),
+      .hold_worst = std::min(sta::delayAsFloat(sta->worstSlack(hold)), 0.0f),
+      .hold_total = sta::delayAsFloat(sta->totalNegativeSlack(hold)),
   };
 }
 
@@ -118,7 +122,7 @@ const std::vector<odb::dbMaster*>& RetimerPlacer::equivalentMasters(
   std::vector<std::pair<float, odb::dbMaster*>> by_area;
   std::unordered_set<odb::dbMaster*> seen = {master};
   for (sta::LibertyCell* other : libertyCells(sta_)) {
-    if (other == cell || other->dontUse() || resizer_->dontUse(other)
+    if (other == cell || !isUsableCell(other, resizer_)
         || !sta::equivCells(cell, other)) {
       continue;
     }

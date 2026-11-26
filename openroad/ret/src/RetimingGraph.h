@@ -14,6 +14,9 @@
 namespace sta {
 class dbSta;
 }
+namespace rsz {
+class Resizer;
+}
 namespace utl {
 class Logger;
 }
@@ -48,7 +51,10 @@ struct EdgePhys
 class RetimingGraph
 {
  public:
-  RetimingGraph(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
+  RetimingGraph(odb::dbDatabase* db,
+                sta::dbSta* sta,
+                rsz::Resizer* resizer,
+                utl::Logger* logger);
 
   void build();
   // sources: the gates whose fanout registers changed.  gates_changed: gates
@@ -92,16 +98,27 @@ class RetimingGraph
   // the registers in front of it keep their depth, and the gate that drives
   // them is never crossed.
   bool fencesChain(odb::dbNet* net) const;
+  // The chain's registers keep their depth and the source is never crossed.
+  void fenceChain(int source, const EdgePhys& chain);
+  // Adds the registers that chains from `current` run through.
+  void findReached(odb::dbInst* current,
+                   std::unordered_set<odb::dbInst*>& reached) const;
+  // The register is entered by two nets, both from the gate or the registers
+  // of `reached`: two chains of one walk meet in it.
+  bool reconverges(odb::dbInst* reg,
+                   const std::unordered_set<odb::dbInst*>& reached) const;
+  // reached: the source gate and the registers its chains run through.
   void walkFanout(int source,
                   odb::dbInst* current,
                   int weight,
                   EdgePhys& chain,
-                  std::unordered_set<odb::dbInst*>& visited);
+                  const std::unordered_set<odb::dbInst*>& reached);
   void walkFrom(int source);
   void unlinkEdges(int source);
   void linkEdges(int source);
-  // Not a register, and not a tie cell that only holds control pins of
-  // registers: such a cell has no edge, and it goes when its register does.
+  // Not a register, not a tie cell that only holds control pins of
+  // registers (such a cell has no edge, and it goes when its register does),
+  // and not a cell with nothing connected, as one a trial discarded.
   bool isGate(odb::dbInst* inst) const;
   void addGates();
   // A gate with an input tied to a supply or left open is not self-dual,
@@ -113,8 +130,9 @@ class RetimingGraph
   void pinGates();
   // The pins registers decide.
   void fence();
-  // Registers a false path, a multicycle, or a pin constraint names:
-  // deleting one would drop it.
+  // Registers a false path, a multicycle, or a constraint on the cell, a pin
+  // or a driven net names: STA drops it with the register, and an undone
+  // trial does not bring it back.
   void findSdcRegisters(odb::dbBlock* block);
   void markBoundary(odb::dbInst* inst, int id);
   void markDontTouch(odb::dbInst* inst, int id);
@@ -130,6 +148,7 @@ class RetimingGraph
 
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
+  rsz::Resizer* resizer_ = nullptr;
   utl::Logger* logger_ = nullptr;
 
   std::vector<odb::dbInst*> nodes_;

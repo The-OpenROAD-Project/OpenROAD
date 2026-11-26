@@ -2,7 +2,12 @@
 [INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
 worst slack max -0.0784
 [INFO RET-0014] Retiming graph: 7 gates, 5 edges, 2 registers, 4 pinned gates, 1 fenced registers.
-[INFO RET-0053] Retime: slides 0, rounds 0, WNS -0.0784, TNS -0.0828, registers 3, placed 0, resized 0.
+ Round | Proposed | Trials | Kept |         WNS |           TNS | Registers
+---------------------------------------------------------------------------
+ start |          |        |      |     -0.0784 |       -0.0828 |         3
+     1 |        1 |      1 |    1 |     -0.0784 |       -0.0784 |         3
+---------------------------------------------------------------------------
+[INFO RET-0053] Retime: slides 1, rounds 1, WNS -0.0784, TNS -0.0784, registers 3, placed 0, resized 0.
 worst slack max -0.0784
 Retime output passed/skipped sequential equivalence test
 No differences found.

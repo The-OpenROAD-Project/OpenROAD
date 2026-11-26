@@ -26,11 +26,11 @@ module top (a,
  wire n2;
  wire n3;
  wire n4;
- wire ret_net_1;
  wire q2;
  wire q4;
  wire qg;
  wire rst;
+ wire ret_net_1;
 
  AND2_X1 g0 (.A1(a),
     .A2(rst_n),

@@ -20,10 +20,13 @@
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "rsz/Resizer.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
+#include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
+#include "sta/Sdc.hh"
 #include "sta/Sequential.hh"
 
 namespace ret {
@@ -64,6 +67,13 @@ sta::LibertyCell* libertyCell(sta::dbSta* sta, odb::dbMaster* master)
   sta::dbNetwork* network = sta->getDbNetwork();
   sta::Cell* cell = network->dbToSta(master);
   return cell != nullptr ? network->libertyCell(cell) : nullptr;
+}
+
+bool isUsableCell(const sta::LibertyCell* cell, rsz::Resizer* resizer)
+{
+  return !cell->dontUse() && (resizer == nullptr || !resizer->dontUse(cell))
+         && !cell->isIsolationCell() && !cell->isLevelShifter()
+         && !cell->alwaysOn() && !cell->isPad() && !cell->isMacro();
 }
 
 const sta::LibertyPort* libertyPort(sta::dbSta* sta, odb::dbITerm* pin)
@@ -159,13 +169,40 @@ odb::dbNet* makeNet(sta::dbSta* sta,
       base_name, parent, odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE));
 }
 
-void deleteNet(sta::dbSta* sta, odb::dbNet* net, odb::dbModNet* mod_net)
+void Discards::add(odb::dbInst* cell)
+{
+  for (odb::dbITerm* pin : cell->getITerms()) {
+    if (!pin->getSigType().isSupply()) {
+      pin->disconnect();
+    }
+  }
+  cells_.push_back(cell);
+}
+
+void Discards::add(odb::dbNet* net, odb::dbModNet* mod_net)
+{
+  nets_.push_back({.net = net, .mod_net = mod_net});
+}
+
+void Discards::destroy(sta::dbSta* sta)
 {
   sta::dbNetwork* network = sta->getDbNetwork();
-  network->deleteNet(network->dbToSta(net));
-  if (mod_net != nullptr && mod_net->connectionCount() == 0) {
-    odb::dbModNet::destroy(mod_net);
+  for (odb::dbInst* cell : cells_) {
+    network->deleteInstance(network->dbToSta(cell));
   }
+  for (const auto& [net, mod_net] : nets_) {
+    network->deleteNet(network->dbToSta(net));
+    if (mod_net != nullptr && mod_net->connectionCount() == 0) {
+      odb::dbModNet::destroy(mod_net);
+    }
+  }
+  clear();
+}
+
+void Discards::clear()
+{
+  cells_.clear();
+  nets_.clear();
 }
 
 void connectPin(odb::dbITerm* pin,
@@ -510,10 +547,15 @@ odb::dbITerm* idleTieOutput(sta::dbSta* sta, odb::dbNet* net)
     return nullptr;
   }
   odb::dbITerm* output = net->getFirstOutput();
-  if (output == nullptr || output->getInst()->isDoNotTouch()) {
+  if (output == nullptr) {
     return nullptr;
   }
-  for (odb::dbITerm* iterm : output->getInst()->getITerms()) {
+  odb::dbInst* tie = output->getInst();
+  if (tie->isDoNotTouch() || tie->isFixed() || hasPinConstraint(sta, tie)
+      || hasCellConstraint(sta, tie)) {
+    return nullptr;
+  }
+  for (odb::dbITerm* iterm : tie->getITerms()) {
     if (iterm != output && !iterm->getSigType().isSupply()
         && iterm->getNet() != nullptr) {
       return nullptr;
@@ -545,6 +587,46 @@ bool hasLiveAsyncControl(sta::dbSta* sta,
   return false;
 }
 
+namespace {
+
+std::vector<const sta::Sdc*> allSdcs(sta::dbSta* sta)
+{
+  std::vector<const sta::Sdc*> sdcs;
+  for (const sta::Mode* mode : sta->modes()) {
+    sdcs.push_back(mode->sdc());
+    for (const auto& [corner, corner_sdc] : mode->cornerSdcs()) {
+      sdcs.push_back(corner_sdc);
+    }
+  }
+  return sdcs;
+}
+
+}  // namespace
+
+bool hasPinConstraint(sta::dbSta* sta, odb::dbInst* inst)
+{
+  sta::dbNetwork* network = sta->getDbNetwork();
+  for (const sta::Sdc* sdc : allSdcs(sta)) {
+    for (odb::dbITerm* iterm : inst->getITerms()) {
+      odb::dbNet* net = iterm->getNet();
+      if (sdc->isConstrained(network->dbToSta(iterm))
+          || (iterm->getIoType() == odb::dbIoType::OUTPUT && net != nullptr
+              && sdc->isConstrained(network->dbToSta(net)))) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool hasCellConstraint(sta::dbSta* sta, odb::dbInst* inst)
+{
+  const sta::Instance* cell = sta->getDbNetwork()->dbToSta(inst);
+  return std::ranges::any_of(allSdcs(sta), [cell](const sta::Sdc* sdc) {
+    return sdc->isConstrained(cell);
+  });
+}
+
 bool isScanCell(sta::dbSta* sta, odb::dbInst* inst)
 {
   for (odb::dbITerm* iterm : inst->getITerms()) {
@@ -555,9 +637,24 @@ bool isScanCell(sta::dbSta* sta, odb::dbInst* inst)
   return sta->getDbNetwork()->isScanCell(inst);
 }
 
+namespace {
+
+bool hasOpenInput(odb::dbInst* inst)
+{
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    if (iterm->getIoType() == odb::dbIoType::INPUT
+        && !iterm->getSigType().isSupply() && iterm->getNet() == nullptr) {
+      return true;
+    }
+  }
+  return false;
+}
+
+}  // namespace
+
 bool isDontTouchRegister(sta::dbSta* sta, odb::dbInst* inst)
 {
-  if (isScanCell(sta, inst)) {
+  if (isScanCell(sta, inst) || hasOpenInput(inst)) {
     return true;
   }
   const sta::Sequential* seq = singleSequential(sta, inst);
@@ -627,7 +724,7 @@ std::vector<std::pair<odb::dbNet*, odb::dbModNet*>> unloadedOutputNets(
 
 }  // namespace
 
-void deleteRegister(sta::dbSta* sta, odb::dbInst* inst)
+void discardRegister(sta::dbSta* sta, odb::dbInst* inst, Discards& discards)
 {
   sta::dbNetwork* network = sta->getDbNetwork();
   const sta::Sequential* seq = singleSequential(sta, inst);
@@ -648,7 +745,7 @@ void deleteRegister(sta::dbSta* sta, odb::dbInst* inst)
   odb::dbModule* module = network->hasHierarchy() ? inst->getModule() : nullptr;
   const std::vector<std::pair<odb::dbNet*, odb::dbModNet*>> unloaded
       = unloadedOutputNets(inst);
-  network->deleteInstance(network->dbToSta(inst));
+  discards.add(inst);
   for (odb::dbNet* net : control_nets) {
     odb::dbITerm* tie_output = idleTieOutput(sta, net);
     if (tie_output == nullptr
@@ -657,11 +754,11 @@ void deleteRegister(sta::dbSta* sta, odb::dbInst* inst)
       continue;
     }
     odb::dbModNet* mod_net = tie_output->getModNet();
-    network->deleteInstance(network->dbToSta(tie_output->getInst()));
-    deleteNet(sta, net, mod_net);
+    discards.add(tie_output->getInst());
+    discards.add(net, mod_net);
   }
   for (const auto& [net, mod_net] : unloaded) {
-    deleteNet(sta, net, mod_net);
+    discards.add(net, mod_net);
   }
 }
 
@@ -766,7 +863,9 @@ void classifyEnableRegister(odb::dbInst* inst,
 
 }  // namespace
 
-RegisterClass registerClass(sta::dbSta* sta, odb::dbInst* inst)
+RegisterClass registerClass(sta::dbSta* sta,
+                            odb::dbInst* inst,
+                            rsz::Resizer* resizer)
 {
   RegisterClass cls;
   cls.clock = registerClockNet(inst);
@@ -788,20 +887,22 @@ RegisterClass registerClass(sta::dbSta* sta, odb::dbInst* inst)
     return cls;
   }
   cls.output = out_pin != nullptr ? out_pin->getMTerm() : nullptr;
-  // A cell with asynchronous controls is never the cell of a new register,
-  // so it does not keep its class.
-  const bool has_async = seq->clear() != nullptr || seq->preset() != nullptr;
+  // A cell with asynchronous controls or one that is not usable is never the
+  // cell of a new register, so it does not keep its class.
+  const bool keeps_cell
+      = seq->clear() == nullptr && seq->preset() == nullptr
+        && isUsableCell(sta->getDbNetwork()->libertyCell(inst), resizer);
   if (shape.kind == RegisterKind::kPlain) {
     const bool loads_see_complement = shape.data_inverted != out_inverted;
     if (!loads_see_complement) {
       cls.kind = RegisterKind::kPlain;
-    } else if (!has_async && cls.output != nullptr && cls.clock != nullptr) {
+    } else if (keeps_cell && cls.output != nullptr && cls.clock != nullptr) {
       cls.kind = RegisterKind::kInverting;
       cls.master = inst->getMaster();
     }
     return cls;
   }
-  if (!out_inverted && !has_async) {
+  if (!out_inverted && keeps_cell) {
     classifyEnableRegister(inst, shape, cls);
   }
   return cls;

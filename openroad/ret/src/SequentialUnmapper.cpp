@@ -111,10 +111,7 @@ SequentialUnmapper::SequentialUnmapper(odb::dbDatabase* db,
 bool SequentialUnmapper::usableCell(const sta::LibertyCell* cell,
                                     const bool tie) const
 {
-  return !cell->dontUse()
-         && (tie || resizer_ == nullptr || !resizer_->dontUse(cell))
-         && !cell->isIsolationCell() && !cell->isLevelShifter()
-         && !cell->alwaysOn() && !cell->isPad() && !cell->isMacro();
+  return isUsableCell(cell, tie ? nullptr : resizer_);
 }
 
 bool SequentialUnmapper::prepare()
@@ -340,9 +337,12 @@ SequentialUnmapper::TieCell SequentialUnmapper::findTieCell(
   return best;
 }
 
-int SequentialUnmapper::run(const std::unordered_set<odb::dbInst*>* candidates)
+int SequentialUnmapper::run(const std::unordered_set<odb::dbInst*>* candidates,
+                            Discards* discards)
 {
   block_ = db_->getChip()->getBlock();
+  Discards own_discards;
+  discards_ = discards != nullptr ? discards : &own_discards;
   Untouched untouched;
   const std::vector<Register> registers
       = collectRegisters(candidates, untouched);
@@ -352,6 +352,8 @@ int SequentialUnmapper::run(const std::unordered_set<odb::dbInst*>* candidates)
   for (const auto& [inst, seq] : registers) {
     decompose(inst, seq);
   }
+  own_discards.destroy(sta_);
+  discards_ = nullptr;
   reportRun(untouched);
   return unmapped_;
 }
@@ -483,7 +485,7 @@ void SequentialUnmapper::decompose(odb::dbInst* inst,
   }
 
   const std::vector<OutputMove> moves = collectOutputMoves(inst, seq, out_pins);
-  deleteRegister(sta_, inst);
+  discardRegister(sta_, inst, *discards_);
   applyOutputMoves(moves);
   ++unmapped_;
 }
@@ -572,7 +574,7 @@ SequentialUnmapper::collectOutputMoves(
 
 void SequentialUnmapper::applyOutputMoves(const std::vector<OutputMove>& moves)
 {
-  std::unordered_set<odb::dbNet*> destroyed;
+  std::unordered_set<odb::dbNet*> discarded;
   for (const OutputMove& move : moves) {
     for (odb::dbITerm* load : move.loads) {
       load->disconnect();
@@ -582,8 +584,8 @@ void SequentialUnmapper::applyOutputMoves(const std::vector<OutputMove>& moves)
       bterm->disconnect();
       bterm->connect(move.new_net);
     }
-    if (destroyed.insert(move.old_net).second) {
-      deleteNet(sta_, move.old_net, move.old_mod_net);
+    if (discarded.insert(move.old_net).second) {
+      discards_->add(move.old_net, move.old_mod_net);
     }
   }
 }

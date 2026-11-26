@@ -25,12 +25,14 @@ namespace {
 
 constexpr int kSlackDigits = 4;
 
-// Neither the worst nor the total negative slack below the start, and one
-// of them above it.
+// Neither the worst nor the total negative slack below the start, for setup
+// and for hold, and one of the two setup slacks above it.
 bool betterThan(const StaSlack& a, const StaSlack& start)
 {
   return a.worst >= start.worst - kStaSlackEps
          && a.total >= start.total - kStaSlackEps
+         && a.hold_worst >= start.hold_worst - kStaSlackEps
+         && a.hold_total >= start.hold_total - kStaSlackEps
          && (a.worst > start.worst + kStaSlackEps
              || a.total > start.total + kStaSlackEps);
 }
@@ -75,7 +77,7 @@ StaCheck::StaCheck(sta::dbSta* sta,
                    est::IncrementalParasiticsGuard* guard,
                    Propose propose,
                    Apply apply,
-                   Undone undone)
+                   Closed closed)
     : sta_(sta),
       logger_(logger),
       placer_(placer),
@@ -83,7 +85,7 @@ StaCheck::StaCheck(sta::dbSta* sta,
       guard_(guard),
       propose_(std::move(propose)),
       apply_(std::move(apply)),
-      undone_(std::move(undone)),
+      closed_(std::move(closed)),
       new_cells_(block)
 {
 }
@@ -201,11 +203,12 @@ void StaCheck::undoTrial()
   odb::dbDatabase::undoEco(block_);
   // The next search reads STA arcs: the restored nets need parasitics.
   guard_->update();
-  undone_();
+  closed_(/*kept=*/false);
 }
 
 void StaCheck::keepTrial(const Trial& trial, Round& round)
 {
+  closed_(/*kept=*/true);
   odb::dbDatabase::commitEco(block_);
   round.kept = trial.slides;
   round.slack = trial.slack;
@@ -238,7 +241,7 @@ StaCheck::Round StaCheck::runRound(const int limit)
       break;
     }
     undoTrial();
-    j = cap = trial.slides / 2;
+    j = cap = j / 2;
   }
   return round;
 }

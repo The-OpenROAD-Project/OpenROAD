@@ -177,10 +177,12 @@ Retimer::Retimer(odb::dbDatabase* db,
     : db_(db),
       sta_(sta),
       estimate_parasitics_(estimate_parasitics),
+      resizer_(resizer),
       logger_(logger),
       unmapper_(std::make_unique<SequentialUnmapper>(db, sta, logger, resizer)),
       placer_(
-          std::make_unique<RetimerPlacer>(sta, estimate_parasitics, resizer))
+          std::make_unique<RetimerPlacer>(sta, estimate_parasitics, resizer)),
+      discards_(std::make_unique<Discards>())
 {
 }
 
@@ -219,6 +221,7 @@ void Retimer::retime(const RetimeOptions& options)
   checkRegisters(block);
 
   placer_->forgetCells();
+  discards_->clear();
   report_graph_ = true;
   graph_.reset();
 
@@ -236,7 +239,7 @@ void Retimer::retime(const RetimeOptions& options)
         [&](const std::vector<odb::dbInst*>& slides, const int limit) {
           return applySlides(slides, limit, guard);
         },
-        [&] { trial_undone_ = true; });
+        [&](const bool kept) { closeTrial(kept); });
     check.run(options_);
   } catch (...) {
     odb::dbDatabase::undoEco(block);
@@ -255,10 +258,20 @@ void Retimer::retime(const RetimeOptions& options)
   }
 }
 
+void Retimer::closeTrial(const bool kept)
+{
+  if (kept) {
+    discards_->destroy(sta_);
+  } else {
+    discards_->clear();
+    trial_undone_ = true;
+  }
+}
+
 const RetimingGraph& Retimer::graph()
 {
   if (graph_ == nullptr) {
-    graph_ = std::make_unique<RetimingGraph>(db_, sta_, logger_);
+    graph_ = std::make_unique<RetimingGraph>(db_, sta_, resizer_, logger_);
     graph_->build();
   } else {
     const bool gates_dropped
@@ -282,7 +295,7 @@ bool Retimer::unmap(const std::unordered_set<odb::dbInst*>& registers,
                     est::IncrementalParasiticsGuard& guard)
 {
   const std::vector<int> sources = graph_->sourcesOf(registers);
-  if (unmapper_->run(&registers) == 0) {
+  if (unmapper_->run(&registers, discards_.get()) == 0) {
     return false;
   }
   guard.update();
@@ -615,7 +628,7 @@ void Retimer::removeRegister(odb::dbInst* inst)
       bterm->connect(d_net);
     }
   }
-  deleteRegister(sta_, inst);
+  discardRegister(sta_, inst, *discards_);
 }
 
 Retimer::ModNets Retimer::groupModNets(
@@ -822,7 +835,7 @@ void Retimer::rebuildGroup(const Group& group,
 {
   const ModNets mod_nets = groupModNets(group, classes, clock_net);
   // In id order: odb gives a new instance the slot of a deleted one, so the
-  // order of removal decides the ids of the new registers.
+  // order of removal decides the ids of the cells made after the trial.
   for (odb::dbInst* f : inIdOrder(group.flops)) {
     removeRegister(f);
   }

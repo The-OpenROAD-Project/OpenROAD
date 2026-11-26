@@ -33,9 +33,9 @@ module top (a,
  wire n6;
  wire q1;
  wire q3;
- wire ret_net_1;
  wire q6;
  wire qp;
+ wire ret_net_1;
 
  AND2_X1 g0 (.A1(b),
     .A2(rst_n),

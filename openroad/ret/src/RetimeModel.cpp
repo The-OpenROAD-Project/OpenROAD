@@ -25,6 +25,7 @@
 #include "sta/NetworkClass.hh"
 #include "sta/Scene.hh"
 #include "sta/Sdc.hh"
+#include "sta/Search.hh"
 #include "sta/TableModel.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingRole.hh"
@@ -669,7 +670,7 @@ void Retime::computeEndpoints()
   const int n = graph_->size();
   new_setup_.assign(n, 0.0);
   orig_end_shift_.assign(n, kNegInf);
-  po_end_shift_.assign(n, kNegInf);
+  fixed_end_shift_.assign(n, kNegInf);
   for (int v = 0; v < n; ++v) {
     odb::dbITerm* output = latest_output_[v];
     if (output == nullptr) {
@@ -677,7 +678,7 @@ void Retime::computeEndpoints()
     }
     const double arrival = pinArrival(output);
     orig_end_shift_[v] = registerEndShift(v, arrival);
-    po_end_shift_[v] = portEndShift(v, arrival);
+    fixed_end_shift_[v] = fixedEndShift(v, arrival);
     const float setup
         = registerSetupTime(sta_,
                             launch_cell_[v],
@@ -700,18 +701,30 @@ double Retime::registerEndShift(const int v, const double arrival) const
   return shift;
 }
 
-double Retime::portEndShift(const int v, const double arrival) const
+double Retime::fixedEndShift(const int v, const double arrival) const
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
+  std::unordered_set<odb::dbITerm*> on_edges;
+  for (const EdgePhys& phys : graph_->phys()[v]) {
+    if (!phys.entries.empty()) {
+      on_edges.insert(phys.entries.front());
+    }
+  }
   double shift = kNegInf;
-  for (odb::dbITerm* iterm : graph_->nodes()[v]->getITerms()) {
-    odb::dbNet* net = iterm->getNet();
-    if (iterm->getIoType() != odb::dbIoType::OUTPUT || net == nullptr) {
+  for (odb::dbITerm* output : graph_->nodes()[v]->getITerms()) {
+    odb::dbNet* net = output->getNet();
+    if (output->getIoType() != odb::dbIoType::OUTPUT || net == nullptr) {
       continue;
     }
-    for (odb::dbBTerm* bterm : net->getBTerms()) {
-      if (bterm->getIoType() == odb::dbIoType::OUTPUT) {
-        shift = std::max(shift, endShiftAt(network->dbToSta(bterm), arrival));
+    for (odb::dbBTerm* port : net->getBTerms()) {
+      if (port->getIoType() == odb::dbIoType::OUTPUT) {
+        shift = std::max(shift, endShiftAt(network->dbToSta(port), arrival));
+      }
+    }
+    for (odb::dbITerm* load : net->getITerms()) {
+      if (load->getIoType() == odb::dbIoType::INPUT
+          && !on_edges.contains(load)) {
+        shift = std::max(shift, endShiftAt(network->dbToSta(load), arrival));
       }
     }
   }
@@ -721,7 +734,7 @@ double Retime::portEndShift(const int v, const double arrival) const
 double Retime::endShiftAt(const sta::Pin* pin, const double arrival) const
 {
   sta::Vertex* vertex = sta_->ensureGraph()->pinLoadVertex(pin);
-  if (vertex == nullptr) {
+  if (vertex == nullptr || !sta_->search()->isEndpoint(vertex)) {
     return kNegInf;
   }
   const float slack

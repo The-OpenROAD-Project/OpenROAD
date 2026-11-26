@@ -27,6 +27,7 @@ class Logger;
 
 namespace ret {
 
+class Discards;
 class Retime;
 class RetimerPlacer;
 class RetimingGraph;
@@ -113,6 +114,8 @@ class Retimer
   odb::dbNet* findClockNet(odb::dbBlock* block) const;
   void checkRegisters(odb::dbBlock* block) const;
 
+  // Deletes what a kept trial replaced; an undone one keeps it.
+  void closeTrial(bool kept);
   // Built once, then updated around what the last trial changed.
   const RetimingGraph& graph();
   // False when none was unmapped.
@@ -164,7 +167,7 @@ class Retimer
                           int max_moves,
                           est::IncrementalParasiticsGuard& guard);
   // Every check and every lookup of an original register runs before the
-  // first edit: rebuilding one group deletes registers another came from.
+  // first edit: rebuilding one group discards registers another came from.
   void applyRetiming(const RetimingGraph& graph,
                      const std::vector<int>& r,
                      const Plan& plan);
@@ -206,9 +209,11 @@ class Retimer
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   est::EstimateParasitics* estimate_parasitics_ = nullptr;
+  rsz::Resizer* resizer_ = nullptr;
   utl::Logger* logger_ = nullptr;
   std::unique_ptr<SequentialUnmapper> unmapper_;
   std::unique_ptr<RetimerPlacer> placer_;
+  std::unique_ptr<Discards> discards_;  // of the trial in progress
 
   RetimeOptions options_;
   std::unique_ptr<RetimingGraph> graph_;

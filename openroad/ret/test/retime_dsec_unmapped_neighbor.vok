@@ -17,9 +17,7 @@ module top (c,
  wire dr;
  wire n1;
  wire n2;
- wire ret_net_7;
  wire qc;
- wire ret_net_6;
  wire qr;
  wire rst;
  wire unmap_state_1;
@@ -27,6 +25,8 @@ module top (c,
  wire unmap_net_3;
  wire unmap_net_4;
  wire unmap_net_5;
+ wire ret_net_6;
+ wire ret_net_7;
 
  sky130_fd_sc_hd__nor2_1 g2 (.A(unmap_state_1),
     .B(qc),

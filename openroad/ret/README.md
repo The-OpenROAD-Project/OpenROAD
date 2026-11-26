@@ -20,20 +20,22 @@ Slide registers forward across gates on paths that fail timing. A search
 proposes the moves on a delay model calibrated to STA: gate and wire delays,
 the clock-to-Q of the new register and the setup time of each endpoint. STA
 then decides what is kept. The moves are applied, the new cells placed and
-the design timed; they are kept when the slack improves and neither the
-worst nor the total negative slack is worse than at the start, else the first
-of the halves, quarters, and so on that does so is kept. The moves are listed
-with the ones the delay model gains most from first, so a half keeps the best
-of them. Rounds repeat from what was kept until one keeps nothing. A design
-that meets timing is left as it is.
+the design timed; they are kept when the setup slack improves and neither
+the worst nor the total negative slack is worse than at the start, for setup
+and for hold. Else the first of the halves, quarters, and so on that does so
+is kept. The moves are listed with the ones the delay model gains most from
+first, so a half keeps the best of them. Moves that are not kept are undone
+and leave the netlist and its constraints as they were. Rounds repeat from
+what was kept until one keeps nothing. A design that meets timing is left as
+it is.
 
 Only the register groups whose edge weights changed are rebuilt; every
 other cell keeps its placement. Each new cell is placed at the center of the
-placed cells it connects to, for detailed placement to legalize, and a new
-register with negative slack takes the best of its equivalent cells.
-Estimated parasitics of the nets that changed are refreshed. Run
-`retime` before clock tree synthesis and routing: on a routed design it
-warns and leaves the routing as it is.
+bounding box of the placed cells it connects to, for detailed placement to
+legalize, and a new register with negative slack takes the best of its
+equivalent cells. Estimated parasitics of the nets that changed are
+refreshed. Run `retime` before clock tree synthesis and routing: on a routed
+design it warns and leaves the routing as it is.
 
 Registers move by class, read from the liberty `next_state` function:
 
@@ -49,20 +51,30 @@ Registers move by class, read from the liberty `next_state` function:
 
 Latches, scan cells, multi-bit and negative-edge registers, registers
 clocked by more than one pin, registers with a live asynchronous set or
-reset, registers named by `set_false_path` or `set_multicycle_path`, and
-registers with a constraint on one of their pins never move. Neither does a
-register chain whose output reaches a primary output, a bidirectional pin or
-a control pin of another register (those read the chain at its current
-depth), nor anything marked don't-touch or read by a don't-touch cell. A register whose set or reset is tied inactive moves as
-the base flip-flop. Registers fed by one net are rebuilt together on one
-clock net, so a register also stays when it shares its input net with one of
-these or with a register on another clock net. A gate fed through such a
-register, connected to a primary input or output, driving a control pin of
-a register, or reachable by registers on different clock nets is never
-crossed. In a hierarchical netlist (`link_design -hier`) a register stays
-inside its module. New cells never use a `dont_use` cell; tie cells ignore
-`set_dont_use`, as `repair_tie_fanout` does. The design must have one clock
-defined with `create_clock`; gated copies of it are fine.
+reset or with an input left unconnected, registers named by
+`set_false_path` or `set_multicycle_path`, and registers with a constraint
+on the cell, on one of its pins or on a net it drives never move. Neither
+does a register chain whose output reaches a primary output, a bidirectional
+pin or a control pin of another register (those read the chain at its
+current depth), nor one that meets a second chain from the same gate in a
+register with two data pins, nor anything marked don't-touch, fixed in place
+or read by a don't-touch cell.
+
+Registers fed by one net are rebuilt together on one clock net, so a
+register also stays when it shares its input net with one of these or with a
+register on another clock net. A gate fed through such a register, connected
+to a primary input or output, driving a control pin of a register, or
+reachable by registers on different clock nets is never crossed. In a
+hierarchical netlist (`link_design -hier`) a register stays inside its
+module.
+
+A register whose set or reset is tied inactive moves as the base flip-flop,
+and the tie cells only it read are removed unless they are fixed,
+don't-touch or named by a constraint. New cells never use a `dont_use` cell,
+so an enable or inverting register of such a cell is unmapped when it moves;
+tie cells ignore `set_dont_use`, as `repair_tie_fanout` does. The design
+must have one clock defined with `create_clock`; gated copies of it are
+fine.
 
 ```tcl
 retime
@@ -105,18 +117,23 @@ bazelisk test //openroad/ret/...
 ## Limitations
 
 `retime` moves registers forward only, never backward across a gate, and
-works on one clock domain. The path into a register's enable pin is not in
-the delay model. Initial values of moved registers are not computed: the
-result is equivalent from the reset state only when the moved registers have
-no defined initial value, so verify the result with sequential equivalence
-checking. A scan cell is one with a liberty `test_cell` or a LEF `USE SCAN`
-pin; a scan flip-flop its library marks neither way, such as Nangate45
-`SDFF_X1`, can be unmapped, which removes the scan cell. A path delay or a
-path group that names a moved register (for example `-to [all_registers]`)
-keeps naming only the registers that stay; read the SDC again after
-`retime`, as ORFS does at every stage. STA judges the timing at the time of
-`retime`; the resizer and detailed placement that run afterwards can change
-it.
+works on one clock domain. Initial values of moved registers are not
+computed: the result is equivalent from the reset state only when the moved
+registers have no defined initial value, so verify the result with
+sequential equivalence checking. A scan cell is one with a liberty
+`test_cell` or a LEF `USE SCAN` pin; a scan flip-flop its library marks
+neither way, such as Nangate45 `SDFF_X1`, can be unmapped, which removes the
+scan cell.
+
+A path delay or a path group that lists registers as cells (for example
+`-to [all_registers]`) does not keep them in place. When such a register
+moves, the list stops naming it, and STA drops any other constraint set on
+that cell with it. Read the SDC again after `retime`, as ORFS does at every
+stage.
+
+STA judges the timing at the time of `retime`, setup and hold, with the
+ideal clocks of that stage; the resizer, clock tree synthesis and detailed
+placement that run afterwards can change it.
 
 ## License
 

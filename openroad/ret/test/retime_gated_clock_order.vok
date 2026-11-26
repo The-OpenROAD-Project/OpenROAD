@@ -23,10 +23,10 @@ module top (a,
  wire g4;
  wire g5;
  wire gclk;
- wire ret_net_2;
  wire qc2;
- wire ret_net_1;
  wire qg2;
+ wire ret_net_1;
+ wire ret_net_2;
 
  BUF_X1 c0 (.A(a),
     .Z(a_c));

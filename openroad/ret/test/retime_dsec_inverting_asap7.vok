@@ -50,10 +50,10 @@ module top (a,
  wire q5n;
  wire q6;
  wire q6n;
- wire ret_net_8;
- wire ret_net_5;
  wire qm;
  wire qmn;
+ wire ret_net_8;
+ wire ret_net_5;
 
  AND2x2_ASAP7_75t_R g0 (.A(a),
     .B(rst_n),

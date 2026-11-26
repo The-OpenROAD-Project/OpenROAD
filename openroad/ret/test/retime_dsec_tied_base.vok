@@ -12,7 +12,6 @@ module top (a,
  wire d1;
  wire d2;
  wire d3;
- wire ret_net_2;
  wire hi3;
  wire n1;
  wire n2;
@@ -20,8 +19,9 @@ module top (a,
  wire n4;
  wire n5;
  wire n6;
- wire ret_net_1;
  wire q3;
+ wire ret_net_1;
+ wire ret_net_2;
 
  sg13g2_and2_1 g0 (.A(a),
     .B(rst_n),

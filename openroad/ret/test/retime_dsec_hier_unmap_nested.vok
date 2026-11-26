@@ -45,10 +45,10 @@ module leaf_a (a,
  wire n4;
  wire n5;
  wire n6;
- wire ret_net_9;
  wire q3;
  wire unmap_net_2;
  wire unmap_net_4;
+ wire ret_net_9;
 
  AND2_X1 g0 (.A1(a),
     .A2(rn),
@@ -103,10 +103,10 @@ module leaf_b (a,
  wire n2;
  wire n3;
  wire n4;
- wire ret_net_10;
  wire q3;
  wire unmap_net_6;
  wire unmap_net_8;
+ wire ret_net_10;
 
  AND2_X1 g0 (.A1(a),
     .A2(rn),

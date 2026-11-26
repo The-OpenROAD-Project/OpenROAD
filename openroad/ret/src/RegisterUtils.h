@@ -18,6 +18,9 @@ class LibertyCell;
 class LibertyPort;
 class Sequential;
 }  // namespace sta
+namespace rsz {
+class Resizer;
+}
 
 namespace ret {
 
@@ -27,6 +30,10 @@ const sta::Sequential* singleSequential(sta::dbSta* sta, odb::dbInst* inst);
 
 std::vector<sta::LibertyCell*> libertyCells(sta::dbSta* sta);
 sta::LibertyCell* libertyCell(sta::dbSta* sta, odb::dbMaster* master);
+// A cell a new instance may be: not dont_use, and no isolation, level
+// shifter, always-on, pad or macro cell.  resizer: its set_dont_use cells
+// count; nullptr: only the liberty dont_use attribute does.
+bool isUsableCell(const sta::LibertyCell* cell, rsz::Resizer* resizer);
 const sta::LibertyPort* libertyPort(sta::dbSta* sta, odb::dbITerm* pin);
 
 bool isNegedge(const sta::Sequential* seq);
@@ -54,17 +61,49 @@ odb::dbInst* makeCell(sta::dbSta* sta,
 odb::dbNet* makeNet(sta::dbSta* sta,
                     sta::Instance* parent,
                     const char* base_name);
-// Deletes a net, and its module net once nothing is left on it.
-void deleteNet(sta::dbSta* sta, odb::dbNet* net, odb::dbModNet* mod_net);
+
+// The cells and nets a trial replaced.  They are disconnected at once and
+// deleted only when the trial is kept: STA drops the constraints that name a
+// deleted cell or net, and an undo would bring it back without them.
+class Discards
+{
+ public:
+  // Disconnects the cell's signal pins.
+  void add(odb::dbInst* cell);
+  // A net with nothing left on it; mod_net: its module net, if any.
+  void add(odb::dbNet* net, odb::dbModNet* mod_net);
+  // The trial is kept: deletes them, a module net once nothing is left on it.
+  void destroy(sta::dbSta* sta);
+  // The trial is undone, which reconnected what it had not created.
+  void clear();
+
+ private:
+  struct Net
+  {
+    odb::dbNet* net;
+    odb::dbModNet* mod_net;
+  };
+  std::vector<odb::dbInst*> cells_;
+  std::vector<Net> nets_;
+};
 
 void connectPin(
     odb::dbITerm* pin,
     odb::dbNet* net,
     const std::unordered_map<odb::dbNet*, odb::dbModNet*>& mod_nets);
 
+// An SDC constraint on one of the cell's pins or on a net it drives (case
+// analysis, disable_timing, a clock latency, a net derate, ...).
+bool hasPinConstraint(sta::dbSta* sta, odb::dbInst* inst);
+// An SDC constraint on the cell itself (a derate, disable_timing, operating
+// conditions, ...), or an exception that lists it as a cell.
+bool hasCellConstraint(sta::dbSta* sta, odb::dbInst* inst);
+
 // A cell with a scan pin in LEF or a liberty test_cell.
 bool isScanCell(sta::dbSta* sta, odb::dbInst* inst);
 
+// A scan cell, a cell with an input left open, one that is not a register
+// clocked by one pin, or one with a live asynchronous control.
 bool isDontTouchRegister(sta::dbSta* sta, odb::dbInst* inst);
 
 // An asynchronous set or reset that is not tied to its inactive value.
@@ -85,10 +124,11 @@ bool inactiveAsyncControls(const sta::LibertyCell* cell,
                            const sta::Sequential* seq,
                            PinConstants& constants);
 
-// Deletes a register, its output nets with no load, and the tie cells that
-// held only its asynchronous controls.  In a hierarchical netlist a tie cell
-// in another module stays.
-void deleteRegister(sta::dbSta* sta, odb::dbInst* inst);
+// Discards a register, its output nets with no load, and the tie cells that
+// held only its asynchronous controls.  A tie cell stays when it is fixed,
+// don't-touch or named by an SDC constraint, and in a hierarchical netlist
+// when it is in another module.
+void discardRegister(sta::dbSta* sta, odb::dbInst* inst, Discards& discards);
 
 bool isRegisterDataPin(sta::dbSta* sta, odb::dbITerm* pin);
 odb::dbITerm* registerDataPin(sta::dbSta* sta, odb::dbInst* inst);
@@ -104,7 +144,7 @@ odb::dbNet* registerClockNet(odb::dbInst* inst);
 //              the same cell across a self-dual gate only.
 //   other      never keeps its class; unmapped to a plain register first.
 //              An enable or inverting register whose cell has asynchronous
-//              controls is one of these.
+//              controls or is not usable is one of these.
 enum class RegisterKind
 {
   kPlain,
@@ -131,7 +171,10 @@ struct RegisterClass
   bool negedge = false;            // never moves
 };
 
-RegisterClass registerClass(sta::dbSta* sta, odb::dbInst* inst);
+// resizer: as for isUsableCell.
+RegisterClass registerClass(sta::dbSta* sta,
+                            odb::dbInst* inst,
+                            rsz::Resizer* resizer = nullptr);
 bool sameRegisterClass(const RegisterClass& a, const RegisterClass& b);
 // An enable or inverting register keeps its own cell across a move.
 bool keepsClass(const RegisterClass& cls);
