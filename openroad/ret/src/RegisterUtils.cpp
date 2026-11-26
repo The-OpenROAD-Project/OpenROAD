@@ -953,6 +953,24 @@ bool sameRegisterClass(const RegisterClass& a, const RegisterClass& b)
   return false;
 }
 
+bool isCombinationalGate(sta::dbSta* sta, odb::dbInst* inst)
+{
+  const sta::LibertyCell* cell = sta->getDbNetwork()->libertyCell(inst);
+  if (cell == nullptr || cell->isSequential() || cell->isMacro()
+      || cell->isPad()) {
+    return false;
+  }
+  sta::LibertyCellPortIterator port_iter(cell);
+  while (port_iter.hasNext()) {
+    const sta::LibertyPort* port = port_iter.next();
+    if (port->direction()->isAnyOutput()
+        && (port->function() == nullptr || port->tristateEnable() != nullptr)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 bool isSelfDualGate(sta::dbSta* sta, odb::dbInst* inst)
 {
   const sta::LibertyCell* cell = sta->getDbNetwork()->libertyCell(inst);

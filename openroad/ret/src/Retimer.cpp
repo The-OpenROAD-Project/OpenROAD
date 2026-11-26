@@ -208,9 +208,8 @@ void Retimer::retime(const RetimeOptions& options)
     return;
   }
   if (isRouted(block)) {
-    logger_->warn(utl::RET,
-                  44,
-                  "The design is routed; retime does not update the routing.");
+    logger_->warn(utl::RET, 44, "The design is routed; it is not retimed.");
+    return;
   }
   if (!unmapper_->prepare()) {
     logger_->error(

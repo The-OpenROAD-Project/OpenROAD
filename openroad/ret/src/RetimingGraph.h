@@ -94,9 +94,9 @@ class RetimingGraph
  private:
   // An enable pin travels with its register's class; it is not a data edge.
   bool continuesThrough(odb::dbInst* reg, odb::dbITerm* pin) const;
-  // A net read by a port, a control pin, an inout pin, or a don't-touch gate:
-  // the registers in front of it keep their depth, and the gate that drives
-  // them is never crossed.
+  // A net read by a port, a control pin, an inout pin, or a don't-touch gate,
+  // or driven by two cells: the registers in front of it keep their depth,
+  // and the gate that drives them is never crossed.
   bool fencesChain(odb::dbNet* net) const;
   // The chain's registers keep their depth and the source is never crossed.
   void fenceChain(int source, const EdgePhys& chain);
@@ -130,10 +130,11 @@ class RetimingGraph
   void pinGates();
   // The pins registers decide.
   void fence();
-  // Registers a false path, a multicycle, or a constraint on the cell, a pin
-  // or a driven net names: STA drops it with the register, and an undone
-  // trial does not bring it back.
-  void findSdcRegisters(odb::dbBlock* block);
+  // The registers and gates a false path or a multicycle names: a register
+  // moved across one changes which paths the exception covers.  And the
+  // registers with a constraint on the cell, a pin or a driven net: STA
+  // drops it with the register.
+  void findSdcCells(odb::dbBlock* block);
   void markBoundary(odb::dbInst* inst, int id);
   void markDontTouch(odb::dbInst* inst, int id);
   // Pins a gate with an input no edge ends on (a port, or a register no gate
@@ -160,7 +161,7 @@ class RetimingGraph
   std::vector<bool> walk_fence_;             // a fencing net behind the gate
   std::unordered_set<odb::dbInst*> fenced_;  // registers that never move
   std::vector<std::vector<odb::dbInst*>> fenced_from_;  // per gate
-  std::unordered_set<odb::dbInst*> sdc_registers_;
+  std::unordered_set<odb::dbInst*> sdc_cells_;
   // Filled as registers are met.
   mutable std::unordered_map<odb::dbInst*, RegisterClass> reg_class_;
   std::vector<bool> self_dual_;

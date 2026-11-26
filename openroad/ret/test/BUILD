@@ -57,8 +57,10 @@ TESTS = [
     "retime_routed",
     "retime_scan_chain",
     "retime_scan_set",
+    "retime_shared_net",
     "retime_slack_search",
     "retime_sta_unmap_undo",
+    "retime_tristate",
     "retime_unmap",
     "retime_wire",
 ]

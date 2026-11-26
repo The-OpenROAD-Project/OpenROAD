@@ -1,9 +1,10 @@
 # Registers that must stay are fenced: with the register of retime_basic
 # marked don't-touch nothing moves, and the same with a don't-touch net on
-# its path, a don't-touch gate reading it, the register fixed in place, or
-# an SDC exception or a constraint on a pin or on the cell naming it.  A
-# path group that lists the registers as cells does not fence them: the last
-# retime moves the register.
+# its path, a don't-touch gate reading it, the register fixed in place, in a
+# group or in a region, or an SDC exception or a constraint on a pin or on
+# the cell naming it.  A multicycle through a gate pins that gate (3 pinned
+# gates, not 2).  A path group that lists the registers as cells does not
+# fence them: the last retime moves the register.
 source "helpers.tcl"
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
@@ -35,10 +36,25 @@ set_timing_derate -late 1.0 [get_cells r1]
 retime
 unset_timing_derate
 
-set r1 [[ord::get_db_block] findInst r1]
+set block [ord::get_db_block]
+set r1 [$block findInst r1]
 $r1 setPlacementStatus FIRM
 retime
 $r1 setPlacementStatus NONE
+
+set group [odb::dbGroup_create $block domain]
+$group addInst $r1
+retime
+$group removeInst $r1
+
+set region [odb::dbRegion_create $block area]
+$region addInst $r1
+retime
+$region removeInst $r1
+
+set_multicycle_path 2 -through [get_pins g2/ZN]
+retime
+unset_path_exceptions -through [get_pins g2/ZN]
 
 group_path -name registers -to [all_registers]
 retime

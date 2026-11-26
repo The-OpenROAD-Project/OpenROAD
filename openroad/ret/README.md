@@ -34,8 +34,8 @@ other cell keeps its placement. Each new cell is placed at the center of the
 bounding box of the placed cells it connects to, for detailed placement to
 legalize, and a new register with negative slack takes the best of its
 equivalent cells. Estimated parasitics of the nets that changed are
-refreshed. Run `retime` before clock tree synthesis and routing: on a routed
-design it warns and leaves the routing as it is.
+refreshed. Run `retime` before clock tree synthesis and routing: a design
+with routing or route guides is left as it is, with a warning.
 
 Registers move by class, read from the liberty `next_state` function:
 
@@ -49,24 +49,36 @@ Registers move by class, read from the liberty `next_state` function:
   base flip-flop plus logic (inverters, 2-input ANDs and ORs, tie cells)
   computing its `next_state`, named `unmap_*`.
 
-Latches, scan cells, multi-bit and negative-edge registers, registers
-clocked by more than one pin, registers with a live asynchronous set or
-reset or with an input left unconnected, registers named by
-`set_false_path` or `set_multicycle_path`, and registers with a constraint
-on the cell, on one of its pins or on a net it drives never move. Neither
-does a register chain whose output reaches a primary output, a bidirectional
-pin or a control pin of another register (those read the chain at its
-current depth), nor one that meets a second chain from the same gate in a
-register with two data pins, nor anything marked don't-touch, fixed in place
-or read by a don't-touch cell.
+These registers never move:
+
+- latches, scan cells, multi-bit and negative-edge registers, and registers
+  clocked by more than one pin;
+- registers with a live asynchronous set or reset, or with an input left
+  unconnected;
+- registers marked don't-touch, fixed in place, in a group or a region (a
+  power domain, for example), or read by a don't-touch cell;
+- registers named by `set_false_path` or `set_multicycle_path`, or with a
+  constraint on the cell, on one of its pins or on a net it drives;
+- a register chain whose output reaches a primary output, a bidirectional
+  pin, a control pin of another register or a net with a second driver
+  (those read the chain at its current depth), and one that meets a second
+  chain from the same gate in a register with two data pins.
 
 Registers fed by one net are rebuilt together on one clock net, so a
 register also stays when it shares its input net with one of these or with a
-register on another clock net. A gate fed through such a register, connected
-to a primary input or output, driving a control pin of a register, or
-reachable by registers on different clock nets is never crossed. In a
-hierarchical netlist (`link_design -hier`) a register stays inside its
-module.
+register on another clock net. In a hierarchical netlist
+(`link_design -hier`) a register stays inside its module.
+
+These gates are never crossed:
+
+- a gate fed through a register that stays, connected to a primary input or
+  output, driving a control pin of a register, or reachable by registers on
+  different clock nets;
+- a gate whose output net has a second driver, and a cell that is not a
+  plain combinational gate: a tri-state driver, a macro, a pad, or a cell
+  without a liberty function;
+- a gate marked don't-touch or named by `set_false_path` or
+  `set_multicycle_path`.
 
 A register whose set or reset is tied inactive moves as the base flip-flop,
 and the tie cells only it read are removed unless they are fixed,

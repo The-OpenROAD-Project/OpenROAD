@@ -190,6 +190,11 @@ bool sameRegisterClass(const RegisterClass& a, const RegisterClass& b);
 // An enable or inverting register keeps its own cell across a move.
 bool keepsClass(const RegisterClass& cls);
 
+// Every output is a liberty function of the inputs alone: no state, no
+// tri-state output, and not a macro, a pad or a cell without a liberty
+// model.  Registers only cross such a gate.
+bool isCombinationalGate(sta::dbSta* sta, odb::dbInst* inst);
+
 // Complementing every input complements every output (buffer, inverter,
 // majority, 3-input XOR, ...).
 bool isSelfDualGate(sta::dbSta* sta, odb::dbInst* inst);

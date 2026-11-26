@@ -198,9 +198,13 @@ bool RetimingGraph::fencesChain(odb::dbNet* net) const
   if (!net->getBTerms().empty()) {
     return true;
   }
+  int drivers = 0;
   for (odb::dbITerm* sink : net->getITerms()) {
     const odb::dbIoType io = sink->getIoType();
     if (io != odb::dbIoType::INPUT && io != odb::dbIoType::OUTPUT) {
+      return true;
+    }
+    if (io == odb::dbIoType::OUTPUT && ++drivers > 1) {
       return true;
     }
     if (io == odb::dbIoType::INPUT) {
@@ -222,9 +226,9 @@ bool RetimingGraph::fencesChain(odb::dbNet* net) const
 
 bool RetimingGraph::isDontTouch(odb::dbInst* reg) const
 {
-  if (fenced_.contains(reg) || sdc_registers_.contains(reg)
-      || reg->isDoNotTouch() || reg->isFixed()
-      || isDontTouchRegister(sta_, reg)) {
+  if (fenced_.contains(reg) || sdc_cells_.contains(reg) || reg->isDoNotTouch()
+      || reg->isFixed() || reg->getGroup() != nullptr
+      || reg->getRegion() != nullptr || isDontTouchRegister(sta_, reg)) {
     return true;
   }
   for (odb::dbITerm* pin : reg->getITerms()) {
@@ -333,7 +337,7 @@ void RetimingGraph::build()
   self_dual_master_.clear();
   reg_class_.clear();
   fenced_.clear();
-  findSdcRegisters(db_->getChip()->getBlock());
+  findSdcCells(db_->getChip()->getBlock());
   addGates();
   const int n = size();
   for (int i = 0; i < n; ++i) {
@@ -386,6 +390,8 @@ void RetimingGraph::pinGates()
   const int n = size();
   pinned_.assign(n, false);
   for (int i = 0; i < n; ++i) {
+    pinned_[i] = sdc_cells_.contains(nodes_[i])
+                 || !isCombinationalGate(sta_, nodes_[i]);
     markBoundary(nodes_[i], i);
     markDontTouch(nodes_[i], i);
   }
@@ -513,9 +519,9 @@ bool RetimingGraph::selfDual(odb::dbInst* gate)
   return true;
 }
 
-void RetimingGraph::findSdcRegisters(odb::dbBlock* block)
+void RetimingGraph::findSdcCells(odb::dbBlock* block)
 {
-  sdc_registers_.clear();
+  sdc_cells_.clear();
   sta::dbNetwork* network = sta_->getDbNetwork();
   // The cells a path delay or a path group lists, such as [all_registers]:
   // fencing them would fence every register of such a design.  STA does not
@@ -532,8 +538,8 @@ void RetimingGraph::findSdcRegisters(odb::dbBlock* block)
         if (fences) {
           for (const sta::Pin* pin : pt->allPins(network)) {
             odb::dbInst* inst = network->staToDb(network->instance(pin));
-            if (inst != nullptr && inst->getMaster()->isSequential()) {
-              sdc_registers_.insert(inst);
+            if (inst != nullptr) {
+              sdc_cells_.insert(inst);
             }
           }
         } else if (pt->instances() != nullptr) {
@@ -547,7 +553,7 @@ void RetimingGraph::findSdcRegisters(odb::dbBlock* block)
         && (hasPinConstraint(sta_, inst)
             || (!listed.contains(network->dbToSta(inst))
                 && hasCellConstraint(sta_, inst)))) {
-      sdc_registers_.insert(inst);
+      sdc_cells_.insert(inst);
     }
   }
 }
