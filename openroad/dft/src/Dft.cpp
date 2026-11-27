@@ -4,8 +4,8 @@
 #include "dft/Dft.hh"
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
-#include <cstdlib>
 #include <limits>
 #include <map>
 #include <memory>
@@ -32,6 +32,7 @@
 #include "boost/property_tree/ptree.hpp"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "utl/Logger.h"
 
@@ -89,11 +90,6 @@ std::optional<odb::Point> pinLocation(
   return odb::Point(x, y);
 }
 
-int64_t manhattan(const odb::Point& a, const odb::Point& b)
-{
-  return std::abs(int64_t{a.x()} - b.x()) + std::abs(int64_t{a.y()} - b.y());
-}
-
 // Wire length of the chain from its scan-in pin through each cell's SO to
 // the next cell's SI. The wire out of the last cell is not counted; scan_opt
 // never moves it.
@@ -103,11 +99,12 @@ int64_t chainLength(
 {
   int64_t length = 0;
   if (source && !cells.empty()) {
-    length += manhattan(*source, cells.front()->getScanInLocation());
+    length += odb::Point::manhattanDistance(*source,
+                                            cells.front()->getScanInLocation());
   }
   for (size_t i = 0; i + 1 < cells.size(); i++) {
-    length += manhattan(cells[i]->getScanOutLocation(),
-                        cells[i + 1]->getScanInLocation());
+    length += odb::Point::manhattanDistance(cells[i]->getScanOutLocation(),
+                                            cells[i + 1]->getScanInLocation());
   }
   return length;
 }
@@ -254,17 +251,13 @@ const char* edgeName(const odb::dbScanInst::ClockEdge edge)
   return edge == odb::dbScanInst::ClockEdge::Falling ? "falling" : "rising";
 }
 
-// Moves cells between chains of the same clock domain so each chain holds a
-// spatially compact set. Each chain keeps its last cell, which drives its
-// scan-out, and no chain ends up with more bits than the longest one had.
-// Only chains whose cells all share one clock and edge take part. A domain
-// keeps its chains when rebalancing would lengthen its scan wiring. Every
-// chain in a domain that was considered comes back reordered.
-void rebalanceChains(std::vector<OptChain>& chains,
-                     odb::dbBlock* block,
-                     utl::Logger* logger)
+using DomainKey = std::pair<std::string, odb::dbScanInst::ClockEdge>;
+
+// Groups the chains whose cells are all placed and share one clock and edge
+// by that domain. Chains with fewer than two cells are left out.
+std::map<DomainKey, std::vector<OptChain*>> groupChainsByDomain(
+    std::vector<OptChain>& chains)
 {
-  using DomainKey = std::pair<std::string, odb::dbScanInst::ClockEdge>;
   std::map<DomainKey, std::vector<OptChain*>> domains;
   for (OptChain& chain : chains) {
     const odb::dbScanInst* first = chain.cells.front()->getScanInst();
@@ -278,81 +271,191 @@ void rebalanceChains(std::vector<OptChain>& chains,
       domains[key].push_back(&chain);
     }
   }
+  return domains;
+}
 
-  for (const auto& [key, members] : domains) {
+// The cells of a clock domain that rebalancing may move: every cell but each
+// chain's last one.
+struct CellPool
+{
+  std::vector<ScanCell*> cells;
+  // The chain and cell index each pooled cell came from.
+  std::vector<std::pair<int, size_t>> origin;
+  // Bits of each chain's last cell.
+  std::vector<int64_t> last_bits;
+  // Bits of the longest chain.
+  int64_t max_chain_bits = 0;
+  // Bit target for each cluster.
+  int64_t cap_bits = 0;
+};
+
+CellPool poolCells(const std::vector<OptChain*>& members)
+{
+  CellPool pool;
+  int64_t max_last_bits = 0;
+  const int k = static_cast<int>(members.size());
+  for (int m = 0; m < k; m++) {
+    const auto& cells = members[m]->cells;
+    int64_t bits = 0;
+    for (const auto& cell : cells) {
+      bits += static_cast<int64_t>(cell->getBits());
+    }
+    pool.max_chain_bits = std::max(pool.max_chain_bits, bits);
+    pool.last_bits.push_back(static_cast<int64_t>(cells.back()->getBits()));
+    max_last_bits = std::max(max_last_bits, pool.last_bits.back());
+    for (size_t i = 0; i + 1 < cells.size(); i++) {
+      pool.cells.push_back(cells[i].get());
+      pool.origin.emplace_back(m, i);
+    }
+  }
+  // Leave room for the largest last cell. k-means treats the cap as a
+  // target, so matchClustersToChains checks the real limit.
+  pool.cap_bits = pool.max_chain_bits - max_last_bits;
+  for (const ScanCell* cell : pool.cells) {
+    pool.cap_bits
+        = std::max(pool.cap_bits, static_cast<int64_t>(cell->getBits()));
+  }
+  return pool;
+}
+
+// Gives each cluster to the nearest chain (by last cell) that it fits: the
+// cluster plus the chain's own last cell may not exceed the longest chain
+// today. Returns the chain of each cluster, or nullopt if some cluster fits
+// no free chain.
+std::optional<std::vector<int>> matchClustersToChains(
+    const CellPool& pool,
+    const std::vector<int>& assignment,
+    const std::vector<OptChain*>& members)
+{
+  const int k = static_cast<int>(members.size());
+  std::vector<int64_t> sum_x(k, 0);
+  std::vector<int64_t> sum_y(k, 0);
+  std::vector<int64_t> count(k, 0);
+  std::vector<int64_t> cluster_bits(k, 0);
+  for (size_t i = 0; i < pool.cells.size(); i++) {
+    const odb::Point p = pool.cells[i]->getOrigin();
+    sum_x[assignment[i]] += p.x();
+    sum_y[assignment[i]] += p.y();
+    count[assignment[i]]++;
+    cluster_bits[assignment[i]]
+        += static_cast<int64_t>(pool.cells[i]->getBits());
+  }
+
+  std::vector<std::tuple<int64_t, int, int>> pairs;  // dist, cluster, chain
+  for (int c = 0; c < k; c++) {
+    const odb::Point center
+        = count[c] ? odb::Point(sum_x[c] / count[c], sum_y[c] / count[c])
+                   : members[c]->cells.back()->getOrigin();
+    for (int m = 0; m < k; m++) {
+      if (cluster_bits[c] + pool.last_bits[m] <= pool.max_chain_bits) {
+        pairs.emplace_back(odb::Point::manhattanDistance(
+                               center, members[m]->cells.back()->getOrigin()),
+                           c,
+                           m);
+      }
+    }
+  }
+  std::ranges::sort(pairs);
+  std::vector<int> chain_of_cluster(k, -1);
+  std::vector<bool> chain_taken(k, false);
+  int matched = 0;
+  for (const auto& [dist, c, m] : pairs) {
+    if (chain_of_cluster[c] < 0 && !chain_taken[m]) {
+      chain_of_cluster[c] = m;
+      chain_taken[m] = true;
+      matched++;
+    }
+  }
+  if (matched < k) {
+    return std::nullopt;
+  }
+  return chain_of_cluster;
+}
+
+struct RebalanceResult
+{
+  // Total scan wire length of the current and the rebalanced chains.
+  int64_t kept_length;
+  int64_t moved_length;
+  // Whether the rebalanced chains were kept.
+  bool rebalanced;
+};
+
+// Reorders both the current chains and the rebalanced ones, and keeps the
+// rebalanced chains only if their scan wiring is shorter. k-means ignores
+// the fixed scan-in and scan-out ends, so it can lose. Every chain comes
+// back reordered.
+RebalanceResult keepShorterChains(const std::vector<OptChain*>& members,
+                                  const CellPool& pool,
+                                  const std::vector<int>& assignment,
+                                  const std::vector<int>& chain_of_cluster,
+                                  utl::Logger* logger)
+{
+  using Cells = std::vector<std::unique_ptr<OdbScanCellAdapter>>;
+  const int k = static_cast<int>(members.size());
+  const auto adapter = [&](const std::unique_ptr<OdbScanCellAdapter>& cell) {
+    return std::make_unique<OdbScanCellAdapter>(cell->getScanInst(), logger);
+  };
+  std::vector<Cells> kept(k);
+  std::vector<Cells> moved(k);
+  for (int m = 0; m < k; m++) {
+    for (const auto& cell : members[m]->cells) {
+      kept[m].push_back(adapter(cell));
+    }
+  }
+  for (size_t i = 0; i < pool.cells.size(); i++) {
+    const auto& [m, idx] = pool.origin[i];
+    moved[chain_of_cluster[assignment[i]]].push_back(
+        adapter(members[m]->cells[idx]));
+  }
+  int64_t kept_length = 0;
+  int64_t moved_length = 0;
+  for (int m = 0; m < k; m++) {
+    moved[m].push_back(adapter(members[m]->cells.back()));
+    const std::optional<odb::Point> source
+        = pinLocation(members[m]->chain->getScanIn());
+    reorderChain(kept[m], source, logger);
+    reorderChain(moved[m], source, logger);
+    kept_length += chainLength(source, kept[m]);
+    moved_length += chainLength(source, moved[m]);
+  }
+
+  const bool rebalance = moved_length < kept_length;
+  for (int m = 0; m < k; m++) {
+    members[m]->cells = std::move(rebalance ? moved[m] : kept[m]);
+    members[m]->members_changed = rebalance;
+    members[m]->reordered = true;
+  }
+  return {
+      .kept_length = kept_length,
+      .moved_length = moved_length,
+      .rebalanced = rebalance,
+  };
+}
+
+// Moves cells between chains of the same clock domain so each chain holds a
+// spatially compact set. Each chain keeps its last cell, which drives its
+// scan-out, and no chain ends up with more bits than the longest one had.
+// Only chains whose cells all share one clock and edge take part. A domain
+// keeps its chains when rebalancing would lengthen its scan wiring. Every
+// chain in a domain that was considered comes back reordered.
+void rebalanceChains(std::vector<OptChain>& chains,
+                     odb::dbBlock* block,
+                     utl::Logger* logger)
+{
+  for (const auto& [key, members] : groupChainsByDomain(chains)) {
     const int k = static_cast<int>(members.size());
     if (k < 2) {
       continue;
     }
 
-    // Pool every cell but each chain's last one. Nothing moves until the
-    // new assignment is known to fit.
-    std::vector<ScanCell*> pool;
-    std::vector<std::pair<int, size_t>> pool_origin;  // chain, cell index
-    std::vector<int64_t> last_bits(k);
-    int64_t max_chain_bits = 0;
-    int64_t max_last_bits = 0;
-    for (int m = 0; m < k; m++) {
-      const auto& cells = members[m]->cells;
-      int64_t bits = 0;
-      for (const auto& cell : cells) {
-        bits += static_cast<int64_t>(cell->getBits());
-      }
-      max_chain_bits = std::max(max_chain_bits, bits);
-      last_bits[m] = static_cast<int64_t>(cells.back()->getBits());
-      max_last_bits = std::max(max_last_bits, last_bits[m]);
-      for (size_t i = 0; i + 1 < cells.size(); i++) {
-        pool.push_back(cells[i].get());
-        pool_origin.emplace_back(m, i);
-      }
-    }
-    // Leave room for the largest last cell. k-means treats the cap as a
-    // target, so the chain matching below checks the real limit.
-    int64_t cap_bits = max_chain_bits - max_last_bits;
-    for (const ScanCell* cell : pool) {
-      cap_bits = std::max(cap_bits, static_cast<int64_t>(cell->getBits()));
-    }
-    const std::vector<int> assignment = KMeansClusters(pool, k, cap_bits);
-
-    std::vector<int64_t> sum_x(k, 0);
-    std::vector<int64_t> sum_y(k, 0);
-    std::vector<int64_t> count(k, 0);
-    std::vector<int64_t> cluster_bits(k, 0);
-    for (size_t i = 0; i < pool.size(); i++) {
-      const odb::Point p = pool[i]->getOrigin();
-      sum_x[assignment[i]] += p.x();
-      sum_y[assignment[i]] += p.y();
-      count[assignment[i]]++;
-      cluster_bits[assignment[i]] += static_cast<int64_t>(pool[i]->getBits());
-    }
-
-    // Give each cluster to the nearest chain (by last cell) that it fits:
-    // the cluster plus the chain's own last cell may not exceed the longest
-    // chain today.
-    std::vector<std::tuple<int64_t, int, int>> pairs;  // dist, cluster, chain
-    for (int c = 0; c < k; c++) {
-      const odb::Point center
-          = count[c] ? odb::Point(sum_x[c] / count[c], sum_y[c] / count[c])
-                     : members[c]->cells.back()->getOrigin();
-      for (int m = 0; m < k; m++) {
-        if (cluster_bits[c] + last_bits[m] <= max_chain_bits) {
-          pairs.emplace_back(
-              manhattan(center, members[m]->cells.back()->getOrigin()), c, m);
-        }
-      }
-    }
-    std::ranges::sort(pairs);
-    std::vector<int> chain_of_cluster(k, -1);
-    std::vector<bool> chain_taken(k, false);
-    int matched = 0;
-    for (const auto& [dist, c, m] : pairs) {
-      if (chain_of_cluster[c] < 0 && !chain_taken[m]) {
-        chain_of_cluster[c] = m;
-        chain_taken[m] = true;
-        matched++;
-      }
-    }
-    if (matched < k) {
+    // Nothing moves until the new assignment is known to fit.
+    const CellPool pool = poolCells(members);
+    const std::vector<int> assignment
+        = KMeansClusters(pool.cells, k, pool.cap_bits);
+    const std::optional<std::vector<int>> chain_of_cluster
+        = matchClustersToChains(pool, assignment, members);
+    if (!chain_of_cluster) {
       logger->info(utl::DFT,
                    24,
                    "Kept {} chains on clock {} ({} edge) as they are; "
@@ -360,48 +463,13 @@ void rebalanceChains(std::vector<OptChain>& chains,
                    k,
                    key.first,
                    edgeName(key.second),
-                   max_chain_bits);
+                   pool.max_chain_bits);
       continue;
     }
 
-    // Reorder both the current chains and the rebalanced ones, and keep the
-    // rebalanced chains only if their scan wiring is shorter. k-means ignores
-    // the fixed scan-in and scan-out ends, so it can lose.
-    using Cells = std::vector<std::unique_ptr<OdbScanCellAdapter>>;
-    const auto adapter = [&](const std::unique_ptr<OdbScanCellAdapter>& cell) {
-      return std::make_unique<OdbScanCellAdapter>(cell->getScanInst(), logger);
-    };
-    std::vector<Cells> kept(k);
-    std::vector<Cells> moved(k);
-    for (int m = 0; m < k; m++) {
-      for (const auto& cell : members[m]->cells) {
-        kept[m].push_back(adapter(cell));
-      }
-    }
-    for (size_t i = 0; i < pool.size(); i++) {
-      const auto& [m, idx] = pool_origin[i];
-      moved[chain_of_cluster[assignment[i]]].push_back(
-          adapter(members[m]->cells[idx]));
-    }
-    int64_t kept_length = 0;
-    int64_t moved_length = 0;
-    for (int m = 0; m < k; m++) {
-      moved[m].push_back(adapter(members[m]->cells.back()));
-      const std::optional<odb::Point> source
-          = pinLocation(members[m]->chain->getScanIn());
-      reorderChain(kept[m], source, logger);
-      reorderChain(moved[m], source, logger);
-      kept_length += chainLength(source, kept[m]);
-      moved_length += chainLength(source, moved[m]);
-    }
-
-    const bool rebalance = moved_length < kept_length;
-    for (int m = 0; m < k; m++) {
-      members[m]->cells = std::move(rebalance ? moved[m] : kept[m]);
-      members[m]->members_changed = rebalance;
-      members[m]->reordered = true;
-    }
-    if (!rebalance) {
+    const RebalanceResult result = keepShorterChains(
+        members, pool, assignment, *chain_of_cluster, logger);
+    if (!result.rebalanced) {
       logger->info(utl::DFT,
                    25,
                    "Kept {} chains on clock {} ({} edge) as they are; "
@@ -410,17 +478,17 @@ void rebalanceChains(std::vector<OptChain>& chains,
                    k,
                    key.first,
                    edgeName(key.second),
-                   block->dbuToMicrons(kept_length),
-                   block->dbuToMicrons(moved_length));
+                   block->dbuToMicrons(result.kept_length),
+                   block->dbuToMicrons(result.moved_length));
       continue;
     }
 
     logger->info(utl::DFT,
                  19,
                  "Rebalanced {} cells across {} chains (bit cap = {}).",
-                 pool.size(),
+                 pool.cells.size(),
                  k,
-                 cap_bits);
+                 pool.cap_bits);
   }
 }
 
@@ -628,8 +696,7 @@ int64_t computeSumPairwise(const std::vector<odb::Point>& pts)
   const int n = static_cast<int>(pts.size());
   for (int i = 0; i < n; i++) {
     for (int j = i + 1; j < n; j++) {
-      sum += std::abs(static_cast<int64_t>(pts[i].x()) - pts[j].x())
-             + std::abs(static_cast<int64_t>(pts[i].y()) - pts[j].y());
+      sum += odb::Point::manhattanDistance(pts[i], pts[j]);
     }
   }
   return sum;
@@ -665,9 +732,7 @@ int64_t computeMST(const std::vector<odb::Point>& pts)
 
     for (int v = 0; v < n; v++) {
       if (!in_tree[v]) {
-        const int64_t d
-            = std::abs(static_cast<int64_t>(pts[u].x()) - pts[v].x())
-              + std::abs(static_cast<int64_t>(pts[u].y()) - pts[v].y());
+        const int64_t d = odb::Point::manhattanDistance(pts[u], pts[v]);
         if (d < min_dist[v]) {
           min_dist[v] = d;
         }
@@ -691,6 +756,42 @@ std::vector<odb::Point> collectChainOrigins(odb::dbScanChain* chain)
   return pts;
 }
 
+// Collects the chains scan_opt can reorder: those with one partition and
+// one scan list whose cells are all placed. Warns about the others.
+std::vector<OptChain> collectOptChains(odb::dbDft* db_dft, utl::Logger* logger)
+{
+  std::vector<OptChain> chains;
+  for (odb::dbScanChain* chain : db_dft->getScanChains()) {
+    odb::dbScanList* list = singleScanList(chain);
+    if (list == nullptr) {
+      logger->warn(utl::DFT,
+                   22,
+                   "Skipping scan chain {}: scan_opt only reorders chains "
+                   "with one partition and one scan list.",
+                   chain->getName());
+      continue;
+    }
+    OptChain opt_chain{.chain = chain, .list = list, .cells = {}};
+    bool placed = true;
+    for (odb::dbScanInst* scan_inst : list->getScanInsts()) {
+      opt_chain.cells.push_back(
+          std::make_unique<OdbScanCellAdapter>(scan_inst, logger));
+      placed &= opt_chain.cells.back()->isPlaced();
+    }
+    if (!placed) {
+      logger->warn(utl::DFT,
+                   23,
+                   "Skipping scan chain {}: not all of its cells are placed.",
+                   chain->getName());
+      continue;
+    }
+    if (!opt_chain.cells.empty()) {
+      chains.push_back(std::move(opt_chain));
+    }
+  }
+  return chains;
+}
+
 }  // namespace
 
 void Dft::scanOpt(const bool rebalance_chains)
@@ -706,35 +807,7 @@ void Dft::scanOpt(const bool rebalance_chains)
     return;
   }
 
-  std::vector<OptChain> chains;
-  for (odb::dbScanChain* chain : db_dft->getScanChains()) {
-    odb::dbScanList* list = singleScanList(chain);
-    if (list == nullptr) {
-      logger_->warn(utl::DFT,
-                    22,
-                    "Skipping scan chain {}: scan_opt only reorders chains "
-                    "with one partition and one scan list.",
-                    chain->getName());
-      continue;
-    }
-    OptChain opt_chain{.chain = chain, .list = list, .cells = {}};
-    bool placed = true;
-    for (odb::dbScanInst* scan_inst : list->getScanInsts()) {
-      opt_chain.cells.push_back(
-          std::make_unique<OdbScanCellAdapter>(scan_inst, logger_));
-      placed &= opt_chain.cells.back()->isPlaced();
-    }
-    if (!placed) {
-      logger_->warn(utl::DFT,
-                    23,
-                    "Skipping scan chain {}: not all of its cells are placed.",
-                    chain->getName());
-      continue;
-    }
-    if (!opt_chain.cells.empty()) {
-      chains.push_back(std::move(opt_chain));
-    }
-  }
+  std::vector<OptChain> chains = collectOptChains(db_dft, logger_);
 
   std::vector<int64_t> initial_length;
   initial_length.reserve(chains.size());
