@@ -177,3 +177,25 @@ if they affect coverage.
 
 If the user wants a shareable report, publish it as an artifact. For a
 quick answer, the terminal is fine.
+
+## Applying the refactorings
+
+When the user asks you to make the changes, run clang-tidy on the result
+before committing. Extracted functions, new classes and moved code
+regularly pick up findings that CI's clang-tidy check flags on the PR
+diff: missing direct includes, signed/unsigned loop bounds, and missing
+trailing commas in designated initializers. `//:lint_test` does not run
+clang-tidy.
+
+```bash
+bin=$(bazelisk info bazel-bin)
+find "$bin/openroad/<module>" -name '*.AspectRulesLintClangTidy.out*' -delete
+bazelisk build --config=lint -- //openroad/<module>/...
+bash tools/lint/collect_clang_tidy.sh "$bin/openroad/<module>" $out/tidy.txt
+```
+
+Pass the module's directory under `bazel-bin`, not `bazel-bin` itself.
+Stale outputs from other modules make the collector report tool
+failures. Fix the findings on lines you changed, and the include-cleaner
+findings your change caused, such as a header you made unused. Then
+format with `bazelisk run //:tidy_cc` and rerun the module's tests.
