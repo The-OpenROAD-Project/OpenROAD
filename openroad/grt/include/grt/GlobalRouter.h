@@ -391,6 +391,7 @@ class GlobalRouter
   void getMinMaxLayer(int& min_layer, int& max_layer);
   void getCapacityReductionData(CapacityReductionData& cap_red_data);
   bool isInitialized() const { return initialized_; }
+  bool hasAdoptedDetailedRoutes() const { return detailed_routes_adopted_; }
   bool isCongested() const { return is_congested_; }
   // Per-layer congestion table of the current routing, FastRoute or CUGR.
   void reportCongestion();
@@ -451,7 +452,7 @@ class GlobalRouter
   std::vector<Net*> initCUGR(int min_routing_layer, int max_routing_layer);
   void initEngineWithExistingRouting();
   void prepareIncrementalRouting(bool require_existing_routes,
-                                 bool reinit_detailed_routes,
+                                 bool force_reinit_detailed,
                                  bool quiet);
   void makeFastrouteNet(Net* net);
   bool pinPositionsChanged(Net* net);
@@ -669,6 +670,9 @@ class GlobalRouter
   std::vector<int> horizontal_capacities_;
   int macro_extension_;
   bool initialized_;
+  // True once initEngineWithExistingRouting() has adopted detailed wires so
+  // subsequent IncrementalGRoute scopes do not re-adopt the full chip.
+  bool detailed_routes_adopted_ = false;
   // A -congestion_only pass released the 3D edges.
   bool edges_3d_released_ = false;
   int total_diodes_count_;

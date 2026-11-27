@@ -361,6 +361,61 @@ TEST_P(OdbGuideIncrementalUndoTest, PreservesEcoUndo)
       orig_edges);
 }
 
+TEST_P(OdbGuideIncrementalUndoTest, AdoptsInProcessDetailedRoutesOnce)
+{
+  const bool use_cugr = GetParam();
+  ASSERT_NO_FATAL_FAILURE(readNangate45Design("gcd.def"));
+  router_.setUseCUGR(use_cugr);
+  router_.setMinRoutingLayer(2);
+  router_.setMaxRoutingLayer(8);
+  router_.globalRoute(/*save_guides=*/true);
+  ASSERT_TRUE(router_.isInitialized());
+  ASSERT_FALSE(router_.hasAdoptedDetailedRoutes());
+
+  odb::dbNet* wired_net = nullptr;
+  odb::dbNet* other_net = nullptr;
+  for (odb::dbNet* net : block_->getNets()) {
+    if (!net->isSpecial() && net->getSigType() == odb::dbSigType::SIGNAL
+        && net->getTermCount() >= 2 && !net->getGuides().empty()
+        && router_.getRoutes().contains(net)) {
+      if (wired_net == nullptr) {
+        wired_net = net;
+      } else {
+        other_net = net;
+        break;
+      }
+    }
+  }
+  ASSERT_NE(wired_net, nullptr);
+  ASSERT_NE(other_net, nullptr);
+
+  // Simulate in-process detailed_route writing a routed wire after globalRoute.
+  odb::dbWire* wire = odb::dbWire::create(wired_net);
+  ASSERT_NE(wire, nullptr);
+  wired_net->setWireType(odb::dbWireType::ROUTED);
+  ASSERT_TRUE(router_.haveDetailedRoutes());
+
+  {
+    IncrementalGRoute incr(&router_, block_);
+    EXPECT_TRUE(router_.hasAdoptedDetailedRoutes());
+  }
+
+  // A subsequent IncrementalGRoute scope must reuse the adopted engine state
+  // without wiping db_net_map_ or rerouting an ECO-undone net.
+  Net* adopted_other_net = router_.getNet(other_net);
+  ASSERT_NE(adopted_other_net, nullptr);
+  {
+    IncrementalGRoute incr(&router_, block_);
+    EXPECT_EQ(router_.getNet(other_net), adopted_other_net);
+    odb::dbDatabase::beginEco(block_);
+    other_net->clearGuides();
+    odb::dbDatabase::undoEco(block_);
+    const std::vector<odb::dbNet*> rerouted
+        = incr.updateRoutes(/*save_guides=*/true);
+    EXPECT_THAT(rerouted, testing::IsEmpty());
+  }
+}
+
 INSTANTIATE_TEST_SUITE_P(RoutingEngines,
                          OdbGuideIncrementalUndoTest,
                          testing::Bool(),

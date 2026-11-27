@@ -169,6 +169,7 @@ void GlobalRouter::clear()
   vertical_capacities_.clear();
   horizontal_capacities_.clear();
   initialized_ = false;
+  detailed_routes_adopted_ = false;
   edges_3d_released_ = false;
   congestion_accepted_ = false;
 }
@@ -224,6 +225,7 @@ std::vector<Net*> GlobalRouter::initCUGR(int min_routing_layer,
   reportMacrosAndBlockages();
   std::vector<Net*> nets = initNets(true);
   initialized_ = true;
+  detailed_routes_adopted_ = false;
   odb::PtrSet<odb::dbNet> clock_nets;
   findClockNets(nets, clock_nets);
   reportNetDegree(nets);
@@ -277,6 +279,7 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   initNetlist(nets);
 
   initialized_ = true;
+  detailed_routes_adopted_ = false;
   return nets;
 }
 
@@ -497,7 +500,7 @@ bool GlobalRouter::haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets)
 }
 
 void GlobalRouter::prepareIncrementalRouting(bool require_existing_routes,
-                                             bool reinit_detailed_routes,
+                                             bool force_reinit_detailed,
                                              bool quiet)
 {
   ensureEngineSelected();
@@ -507,12 +510,15 @@ void GlobalRouter::prepareIncrementalRouting(bool require_existing_routes,
   if (routes_.empty() && designIsPlaced()) {
     loadGuidesFromDB();
   }
+  const bool has_detailed = haveDetailedRoutes();
   const bool needs_init
-      = !initialized_ || (reinit_detailed_routes && haveDetailedRoutes());
+      = !initialized_
+        || (has_detailed
+            && (force_reinit_detailed || !detailed_routes_adopted_));
   if (!needs_init) {
     return;
   }
-  if (require_existing_routes && routes_.empty() && !haveDetailedRoutes()) {
+  if (require_existing_routes && routes_.empty() && !has_detailed) {
     return;
   }
   if (quiet) {
@@ -527,7 +533,7 @@ void GlobalRouter::startIncremental()
 {
   is_incremental_ = true;
   prepareIncrementalRouting(/*require_existing_routes=*/false,
-                            /*reinit_detailed_routes=*/true,
+                            /*force_reinit_detailed=*/true,
                             /*quiet=*/false);
   grouter_cbk_ = new GRouteDbCbk(this);
   grouter_cbk_->addOwner(block_);
@@ -767,6 +773,7 @@ void GlobalRouter::initEngineWithExistingRouting()
 {
   int min_layer, max_layer;
   getMinMaxLayer(min_layer, max_layer);
+  const bool has_detailed = haveDetailedRoutes();
   if (use_cugr_) {
     initCUGR(min_layer, max_layer);
     // Adopt the existing routing into CUGR's demand, like FastRoute's
@@ -850,7 +857,7 @@ void GlobalRouter::initEngineWithExistingRouting()
     // Global routing read from odb: take back the capacities it was routed
     // with, those of the odb congestion map, rather than recompute them for
     // cells that moved after (e.g. legalized by the stage that routed it).
-    if (!haveDetailedRoutes()) {
+    if (!has_detailed) {
       fastroute_->restoreCapacitiesFromDb(min_layer, max_layer);
     }
     // Disable the extra edge cost for NDR nets on congested 2D edges.
@@ -860,6 +867,7 @@ void GlobalRouter::initEngineWithExistingRouting()
     // updates only refresh tiles touched by subsequent reroutes.
     fastroute_->clearCongestionDirtyTiles();
   }
+  detailed_routes_adopted_ = has_detailed;
 }
 
 int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
@@ -7560,9 +7568,10 @@ IncrementalGRoute::IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block)
 {
   // Initialize eagerly before attaching db_cbk_ so pre-ECO routes and pin
   // positions are snapshotted before any ODB mutation fires a callback
-  // (runs at most once per process since initialized_ stays true).
+  // (runs once for initial ODB/guide adoption and once if detailed wires
+  // appear after an in-process global_route).
   groute_->prepareIncrementalRouting(/*require_existing_routes=*/true,
-                                     /*reinit_detailed_routes=*/false,
+                                     /*force_reinit_detailed=*/false,
                                      /*quiet=*/true);
   if (groute_->initialized_) {
     db_cbk_.addOwner(block);
