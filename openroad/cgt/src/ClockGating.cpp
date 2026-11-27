@@ -3,7 +3,8 @@
 
 #include "cgt/ClockGating.h"
 
-#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+// NOLINTNEXTLINE(modernize-deprecated-headers,misc-include-cleaner): strdup()
+#include <string.h>
 
 #include <algorithm>
 #include <cassert>
@@ -24,7 +25,6 @@
 #include "ClockGatingImpl.h"
 #include "base/abc/abc.h"
 #include "base/io/ioAbc.h"
-#include "base/main/abcapis.h"
 #include "cut/abc_init.h"
 #include "cut/abc_library_factory.h"
 #include "cut/logic_cut.h"
@@ -262,7 +262,7 @@ static std::vector<sta::Net*> downstreamNets(sta::dbSta* const sta,
   class SearchPred final : public sta::SearchPred1
   {
    public:
-    SearchPred(sta::dbSta* const sta) : sta::SearchPred1(sta) {}
+    explicit SearchPred(sta::dbSta* const sta) : sta::SearchPred1(sta) {}
     bool searchFrom(const sta::Vertex* const from_vertex,
                     const sta::Mode* mode) const final
     {
@@ -271,7 +271,7 @@ static std::vector<sta::Net*> downstreamNets(sta::dbSta* const sta,
     bool searchTo(const sta::Vertex* const to_vertex,
                   const sta::Mode* mode) const final
     {
-      return visited.find(to_vertex) == visited.end();
+      return !visited.contains(to_vertex);
     }
     bool searchThru(sta::Edge* edge, const sta::Mode* mode) const override
     {
@@ -302,8 +302,7 @@ static std::vector<sta::Net*> downstreamNets(sta::dbSta* const sta,
     while (iter.hasNext()) {
       auto vertex = iter.next();
       auto net = network->net(vertex->pin());
-      if (net && visited_nets.find(net) == visited_nets.end()) {
-        visited_nets.insert(net);
+      if (net && visited_nets.insert(net).second) {
         nets.push_back(net);
       }
       pred.visited.insert(vertex);
@@ -321,11 +320,11 @@ static std::vector<sta::Net*> upstreamNets(sta::dbSta* const sta,
   class SearchPred final : public sta::SearchPred1
   {
    public:
-    SearchPred(sta::dbSta* const sta) : sta::SearchPred1(sta) {}
+    explicit SearchPred(sta::dbSta* const sta) : sta::SearchPred1(sta) {}
     bool searchFrom(const sta::Vertex* const from_vertex,
                     const sta::Mode* mode) const final
     {
-      return visited.find(from_vertex) == visited.end();
+      return !visited.contains(from_vertex);
     }
     bool searchTo(const sta::Vertex* const to_vertex,
                   const sta::Mode* mode) const final
@@ -363,8 +362,7 @@ static std::vector<sta::Net*> upstreamNets(sta::dbSta* const sta,
     while (iter.hasNext()) {
       auto vertex = iter.next();
       auto net = network->net(vertex->pin());
-      if (net && visited_nets.find(net) == visited_nets.end()) {
-        visited_nets.insert(net);
+      if (net && visited_nets.insert(net).second) {
         nets.push_back(net);
       }
       pred.visited.insert(vertex);
@@ -464,7 +462,8 @@ void AcceptedGates::add(const std::vector<sta::Net*>& conds,
                         const bool clk_enable)
 {
   const int idx = gates_.size();
-  gates_.push_back({conds, {instance}, clk_enable});
+  gates_.push_back(
+      {.conds = conds, .insts = {instance}, .clk_enable = clk_enable});
   for (sta::Net* net : conds) {
     index(net, idx);
   }
@@ -704,14 +703,15 @@ void ClockGating::Impl::reportStats() const
   debug(1, "Accepted: {}", accepted_count_);
   debug(2, "Rejected at simulation: {}", rejected_sim_count_);
   debug(2, "Rejected at SAT: {}", rejected_sat_count_);
-  const std::pair<const char*, double> times[]
-      = {{"gate condition reuse check", reuse_check_time_},
-         {"gate condition search", search_time_},
-         {"existing gate condition check", exist_check_time_},
-         {"network export", network_export_time_},
-         {"network build", network_build_time_},
-         {"simulation", sim_time_},
-         {"SAT", sat_time_}};
+  const std::pair<const char*, double> times[] = {
+      {"gate condition reuse check", reuse_check_time_},
+      {"gate condition search", search_time_},
+      {"existing gate condition check", exist_check_time_},
+      {"network export", network_export_time_},
+      {"network build", network_build_time_},
+      {"simulation", sim_time_},
+      {"SAT", sat_time_},
+  };
   for (const auto& [what, seconds] : times) {
     debug(2, "Total {} time: {} s", what, seconds);
   }
@@ -825,7 +825,8 @@ static abc::Abc_Ntk_t* Abc_NtkDupNetlist(abc::Abc_Ntk_t* const network)
     new_network->pExdc = Abc_NtkDup(network->pExdc);
   }
   if (network->pExcare) {
-    new_network->pExcare = Abc_NtkDup((abc::Abc_Ntk_t*) network->pExcare);
+    new_network->pExcare
+        = Abc_NtkDup(static_cast<abc::Abc_Ntk_t*>(network->pExcare));
   }
   // duplicate timing manager
   if (network->pManTime) {
@@ -943,7 +944,7 @@ static abc::Abc_Obj_t* regDataFunctionToAbc(sta::dbNetwork* const network,
         auto& obj = port_to_obj[port];
         if (!obj) {
           std::string name = network->name(inst);
-          name += "/";
+          name += '/';
           name += port->name();
           obj = addNet(
               abc_network, abc::Abc_NtkCreatePi(abc_network), name.c_str());
@@ -1305,14 +1306,17 @@ UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::Impl::exportToAbc(
                               "Network export time: {}");
   auto network = sta_->getDbNetwork();
   auto graph = sta_->graph();
-  std::unordered_set<sta::Vertex*> endpoints;
+  // Endpoints in discovery order; the set only removes duplicates.
+  std::vector<sta::Vertex*> endpoints;
+  std::unordered_set<sta::Vertex*> seen_endpoints;
   for (auto gate_cond_net : nets) {
     auto pin_iter = network->pinIterator(gate_cond_net);
     while (pin_iter->hasNext()) {
       auto pin = pin_iter->next();
       auto vertex = graph->pinLoadVertex(pin);
-      if (sta_->search()->isEndpoint(vertex)) {
-        endpoints.insert(graph->pinLoadVertex(pin));
+      if (sta_->search()->isEndpoint(vertex)
+          && seen_endpoints.insert(vertex).second) {
+        endpoints.push_back(vertex);
       }
     }
     delete pin_iter;
@@ -1323,8 +1327,9 @@ UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::Impl::exportToAbc(
     auto pin = pin_iter->next();
     if (network->direction(pin)->isAnyInput()) {
       auto vertex = graph->pinLoadVertex(pin);
-      if (sta_->search()->isEndpoint(vertex)) {
-        endpoints.insert(graph->pinLoadVertex(pin));
+      if (sta_->search()->isEndpoint(vertex)
+          && seen_endpoints.insert(vertex).second) {
+        endpoints.push_back(vertex);
       }
     }
   }
