@@ -247,7 +247,7 @@ void Blif::classifyNet(odb::dbITerm* iterm,
       if (io_type == odb::dbIoType::OUTPUT) {
         netlist.outputs.insert(net_name);
         addRequired(pin, net_name);
-        continue;
+        break;
       }
       if (io_type != odb::dbIoType::INPUT) {
         continue;
@@ -570,6 +570,13 @@ void Blif::insertTieCell(const Gate& gate,
   }
   const std::string inst_name = uniqueInstName(const_master, block, inst_ids);
   odb::dbInst* new_inst = odb::dbInst::create(block, master, inst_name.c_str());
+  if (new_inst == nullptr) {
+    logger_->error(CUT,
+                   54,
+                   "Could not create tie cell instance {} of type {}.",
+                   inst_name,
+                   const_master);
+  }
   odb::dbITerm* iterm = new_inst->findITerm(const_port.c_str());
   if (iterm == nullptr) {
     logger_->error(

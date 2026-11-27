@@ -479,6 +479,10 @@ void StaNetlistInserter::CreateInstances()
 
     sta::Instance* new_instance = network_->makeInstance(
         liberty_cell, unique_name_.GetUniqueName("cut_"), parent_instance_);
+    if (new_instance == nullptr) {
+      logger_->error(
+          utl::CUT, 55, "Could not create instance of cell {}.", std_cell_name);
+    }
 
     instances_[node_obj] = new_instance;
   }
