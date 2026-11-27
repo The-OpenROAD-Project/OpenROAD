@@ -211,6 +211,35 @@ class Rebuffer : public sta::dbStaState
   // buffer; nullptr otherwise.  An upsized driver can then take the
   // buffer's place.
   BufferedNetPtr withoutFirstBuffer(const BufferedNetPtr& tree);
+  // `timing_tree` area-recovered with no slack floor, the cheapest driver
+  // sizing candidate; nullptr when `area_tree` has no buffers, as nothing is
+  // cheaper than a buffer-free tree.
+  BufferedNetPtr cheapestTree(const BufferedNetPtr& timing_tree,
+                              const BufferedNetPtr& area_tree);
+  // Append to `trees` each of its trees without its first buffer.
+  void appendWithoutFirstBuffer(std::vector<BufferedNetPtr>& trees);
+  // Rejects candidate trees that collapse a buffered timing tree into a flat
+  // high-fanout root net, which looks fast under zero-via placement RC but
+  // blows up under detailed routing via resistance.
+  class CollapseGuard
+  {
+   public:
+    CollapseGuard(const BufferedNetPtr& timing_tree, float fanout_limit);
+    // True when `tree` has fewer buffers than the timing tree and its root
+    // drives more sinks than both max_flat_fo_ and the timing tree's root.
+    bool collapses(const BufferedNetPtr& tree) const;
+
+   private:
+    // Buffers in the timing tree; only a timing tree with buffers can be
+    // collapsed by a candidate.
+    int timing_buffers_;
+    // Sinks the driver sees directly in the timing tree; a candidate root
+    // at or below this fanout adds no new flat load.
+    int timing_root_fo_;
+    // Largest root fanout a collapsed candidate may keep: the constant, but
+    // at most half the net's max_fanout limit (never below 2).
+    int max_flat_fo_;
+  };
   // Buffer the net from scratch, timing and area recovery alike, as though
   // the driver were `cell`.  Returns the timing and area-recovered trees;
   // both null when `cell` cannot be planned for.
@@ -240,6 +269,9 @@ class Rebuffer : public sta::dbStaState
     {
     }
     const std::vector<BufferedNetPtr>& trees;
+    // The only cell that may drive the area tree when it is collapsed (the
+    // current driver); nullptr when any cell may.
+    const sta::LibertyCell* area_tree_cell = nullptr;
     // Buffer leakages of each tree, indexed like `trees`.
     std::vector<std::optional<std::vector<float>>> buffer_leakages;
     // Key: (driver cell, index into `trees`).
@@ -660,8 +692,18 @@ class Rebuffer : public sta::dbStaState
   // Fraction of the worst slack within which a failing net counts as
   // critical in fullyRebuffer().
   static constexpr float kCriticalSlackBand = 0.1;
-  // Index of the timing tree in the candidate trees of sizeDriverWithTree();
-  // best-driver planning reuses its memoized slacks.
+  // Maximum direct sink count under the first buffer for withoutFirstBuffer():
+  // removing a buffer moves its sinks onto the driver, so only a buffer that
+  // feeds a chain or a two-way split is removed.  Not tuned.
+  static constexpr int kMaxWithoutFirstBufFanout = 2;
+  // Maximum direct sink count allowed when collapsing a buffered timing tree
+  // during driver sizing, well below the 36-sink flat port-buffer net that
+  // cost most of asap7/aes's TNS after routing.  Not tuned.
+  static constexpr int kMaxFlatCollapseFanout = 8;
+  // Indexes of the area and timing trees in the candidate trees of
+  // sizeDriverWithTree(); best-driver planning reuses the memoized slacks of
+  // the timing tree.
+  static constexpr size_t kAreaTreeIndex = 1;
   static constexpr size_t kTimingTreeIndex = 2;
 
   double long_wire_stepping_runtime_ = 0;

@@ -88,6 +88,22 @@ bool drivesDistributedLoadBeforeNextBuffer(const BufferedNetPtr& tree,
   logger->critical(RSZ, 1013, "unhandled BufferedNet type");
 }
 
+// Count direct load/buffer sinks seen by the root before any downstream buffer.
+int countDirectSinks(const BufferedNetPtr& tree)
+{
+  switch (tree->type()) {
+    case BnetType::load:
+    case BnetType::buffer:
+      return 1;
+    case BnetType::wire:
+    case BnetType::via:
+      return countDirectSinks(tree->ref());
+    case BnetType::junction:
+      return countDirectSinks(tree->ref()) + countDirectSinks(tree->ref2());
+  }
+  return 0;
+}
+
 // `port` as the library of `scene` defines it for `min_max`, which is what
 // STA times; `port` itself when the scene maps it to no other port.
 const sta::LibertyPort* scenePort(const sta::LibertyPort* port,
@@ -99,6 +115,8 @@ const sta::LibertyPort* scenePort(const sta::LibertyPort* port,
 }
 
 }  // namespace
+
+static bool isPortBuffer(sta::dbNetwork* network, sta::Instance* inst);
 
 Rebuffer::Rebuffer(Resizer* resizer) : resizer_(resizer)
 {
@@ -557,6 +575,61 @@ FixedDelay Rebuffer::upstreamSideLoadSlack(sta::LibertyCell* cell)
   return worst;
 }
 
+BnetPtr Rebuffer::cheapestTree(const BnetPtr& timing_tree,
+                               const BnetPtr& area_tree)
+{
+  // Tree area is buffer area, so nothing is cheaper than a buffer-free
+  // area_tree; only build the cheapest tree when area_tree has buffers.
+  if (area_tree->bufferCount() == 0) {
+    return nullptr;
+  }
+  utl::DebugScopedTimer timer(size_ra_runtime_);
+  BnetPtr cheapest = timing_tree;
+  for (int i = 0; i < 5 && cheapest; i++) {
+    cheapest = recoverArea(cheapest, -FixedDelay::INF, ((float) (1 + i)) / 5);
+  }
+  return cheapest;
+}
+
+void Rebuffer::appendWithoutFirstBuffer(std::vector<BnetPtr>& trees)
+{
+  // A stripped root drives at most kMaxWithoutFirstBufFanout sinks, within
+  // the collapse guard's limit (at least 2), so it never collapses.
+  static_assert(kMaxWithoutFirstBufFanout <= 2,
+                "stripped trees must stay within the collapse limit");
+  const size_t count = trees.size();
+  for (size_t i = 0; i < count; i++) {
+    if (trees[i]) {
+      BnetPtr stripped = withoutFirstBuffer(trees[i]);
+      if (stripped) {
+        trees.push_back(std::move(stripped));
+      }
+    }
+  }
+}
+
+Rebuffer::CollapseGuard::CollapseGuard(const BnetPtr& timing_tree,
+                                       const float fanout_limit)
+    : timing_buffers_(timing_tree->bufferCount()),
+      timing_root_fo_(timing_buffers_ > 0 ? countDirectSinks(timing_tree) : 0),
+      max_flat_fo_(kMaxFlatCollapseFanout)
+{
+  // Clamp before converting, which would overflow for a huge limit.
+  if (fanout_limit < sta::INF) {
+    max_flat_fo_ = static_cast<int>(std::clamp(
+        fanout_limit / 2.0f, 2.0f, static_cast<float>(kMaxFlatCollapseFanout)));
+  }
+}
+
+bool Rebuffer::CollapseGuard::collapses(const BnetPtr& tree) const
+{
+  if (!tree || tree->bufferCount() >= timing_buffers_) {
+    return false;
+  }
+  const int fo = countDirectSinks(tree);
+  return fo > max_flat_fo_ && fo > timing_root_fo_;
+}
+
 BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
                                      const BnetPtr& unbuffered_tree,
                                      const BnetPtr& timing_tree,
@@ -580,27 +653,39 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
   // The caches hold timing from before this net's evaluation, which nothing
   // below changes until the driver is resized.
   clearDriverArcCache();
-  // Tree area is buffer area, so nothing is cheaper than a buffer-free
-  // area_tree; only build the cheapest tree when area_tree has buffers.
-  BnetPtr cheapest;
-  if (area_tree->bufferCount() > 0) {
-    utl::DebugScopedTimer timer(size_ra_runtime_);
-    cheapest = timing_tree;
-    for (int i = 0; i < 5 && cheapest; i++) {
-      cheapest = recoverArea(cheapest, -FixedDelay::INF, ((float) (1 + i)) / 5);
-    }
-  }
+  BnetPtr cheapest = cheapestTree(timing_tree, area_tree);
   sta::LibertyCell* chosen_cell = current_cell;
   BnetPtr chosen;
+  // Tree the net keeps with the current driver: area_tree, or timing_tree
+  // when the guard below drops a collapsed area_tree.  Returned when no
+  // driver is chosen, so a rejected flat tree is never exported.
+  BnetPtr baseline_tree = area_tree;
   {
     utl::DebugScopedTimer timer(size_eval_runtime_);
-    // timing_tree sits at kTimingTreeIndex.
-    std::vector<BnetPtr> trees{cheapest, area_tree, timing_tree};
-    for (const BnetPtr& tree : {cheapest, area_tree, timing_tree}) {
-      if (tree) {
-        trees.push_back(withoutFirstBuffer(tree));
-      }
+    // A candidate with fewer buffers than the timing tree may not leave the
+    // driver more direct sinks than the guard's limit; the check covers the
+    // base candidates and the trees planned for another cell.
+    const CollapseGuard collapse_guard(timing_tree, fanout_limit_);
+
+    // Drop collapsed base candidates. The area tree is what the net gets
+    // without driver sizing, so a collapsed one stays with the current
+    // driver, but no resized driver takes it.  A port buffer drops it too:
+    // there the flat net was measured to cost routed timing (asap7/aes,
+    // 36 sinks); other drivers keep the option-off result until area
+    // recovery itself limits the fanout.
+    if (collapse_guard.collapses(cheapest)) {
+      cheapest = nullptr;
     }
+    BnetPtr area_cand = area_tree;
+    const bool area_collapses = collapse_guard.collapses(area_tree);
+    if (area_collapses && isPortBuffer(db_network_, drvr_inst)) {
+      area_cand = nullptr;
+      baseline_tree = timing_tree;
+    }
+    // area_cand and timing_tree sit at kAreaTreeIndex and kTimingTreeIndex.
+    std::vector<BnetPtr> trees{cheapest, area_cand, timing_tree};
+    // Also offer each candidate without its first buffer.
+    appendWithoutFirstBuffer(trees);
     // Anchor the whole-net leakage budget to the baseline tree on passing
     // nets so dropped timing-tree buffers do not create a phantom leakage
     // allowance, and the baseline with the current driver always fits it.
@@ -610,11 +695,14 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
     // slack it does not need.  chooseTreeAndDriver() also keeps equal-area
     // swaps on a passing net within the reference leakage itself.
     const BnetPtr& leakage_ref_tree
-        = slack_target >= FixedDelay::ZERO ? area_tree : timing_tree;
+        = slack_target >= FixedDelay::ZERO ? baseline_tree : timing_tree;
     const DriverChoices choices = driverChoices(current_cell, leakage_ref_tree);
     // Evaluated lazily; the planned trees are appended to `trees` below,
     // before any tree leakage is read.
     TreeDriverEvaluation eval(trees);
+    if (area_collapses && area_cand) {
+      eval.area_tree_cell = current_cell;
+    }
     // slack_target is the timing tree's slack with the current driver less
     // the relaxation allowed for area recovery, which is zero on a failing
     // net near the worst slack.  Anchored to the current driver, it lets a
@@ -633,11 +721,12 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
             unbuffered_tree, current_cell, choices, relaxation, eval);
       }
       // Offer the planned timing tree, and its area-recovered tree when
-      // recovery changed it.
-      if (planned.first) {
+      // recovery changed it, unless they collapse.
+      if (planned.first && !collapse_guard.collapses(planned.first)) {
         trees.push_back(planned.first);
       }
-      if (planned.second && planned.second != planned.first) {
+      if (planned.second && planned.second != planned.first
+          && !collapse_guard.collapses(planned.second)) {
         trees.push_back(planned.second);
       }
       target = std::max(
@@ -649,13 +738,13 @@ BnetPtr Rebuffer::sizeDriverWithTree(const sta::Pin* drvr_pin,
         = chooseTreeAndDriver(eval, current_cell, choices, target, chosen_cell);
   }
   if (!chosen) {
-    return area_tree;
+    return baseline_tree;
   }
   if (chosen_cell != current_cell) {
-    // The chosen tree was timed with the new cell; keep the option-off
-    // result if replaceCell finds no master for it.
+    // The chosen tree was timed with the new cell; keep the baseline tree
+    // if replaceCell finds no master for it.
     if (!resizer_->replaceCell(drvr_inst, chosen_cell)) {
-      return area_tree;
+      return baseline_tree;
     }
     driver_resize_count_++;
   }
@@ -756,6 +845,11 @@ BnetPtr Rebuffer::withoutFirstBuffer(const BnetPtr& tree)
     return nullptr;
   }
   const BnetPtr& below = node->ref();
+  // Keep a buffer that drives many sinks; removing it would leave the driver
+  // a flat high-fanout net that is slow once routed.
+  if (countDirectSinks(below) > kMaxWithoutFirstBufFanout) {
+    return nullptr;
+  }
   if (below->location() == tree->location()) {
     return below;
   }
@@ -880,6 +974,11 @@ std::optional<FixedDelay> Rebuffer::slackWithDriverCell(
     sta::LibertyCell* cell,
     const size_t tree_index)
 {
+  // A resized driver never takes a tree reserved for the current one.
+  if (tree_index == kAreaTreeIndex && eval.area_tree_cell != nullptr
+      && cell != eval.area_tree_cell) {
+    return {};
+  }
   const auto [it, inserted] = eval.slacks.try_emplace({cell, tree_index});
   if (inserted) {
     it->second = slackWithDriverCell(eval.trees[tree_index], cell);

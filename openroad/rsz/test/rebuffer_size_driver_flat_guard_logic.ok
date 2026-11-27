@@ -1,0 +1,26 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+pbuf: INV_X1 direct sinks: 1 buffers: BUF_X8
+worst slack max 9.91
+[INFO RSZ-0173] Rebuffering will size drivers together with buffer trees
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
+-------------------------------------------------------
+        0 |     +0.0% |       0 |        0 |        37
+        3 |     +0.0% |       0 |        0 |        34
+        6 |     +0.0% |       0 |        0 |        31
+        9 |     +0.0% |       0 |        0 |        28
+       12 |     +0.0% |       0 |        0 |        25
+       15 |     +0.0% |       0 |        0 |        22
+       18 |     +0.0% |       0 |        0 |        19
+       21 |     +0.0% |       0 |        0 |        16
+       24 |     +0.0% |       0 |        0 |        13
+       27 |     +0.0% |       0 |        0 |        10
+       30 |     +0.0% |       0 |        0 |         7
+       33 |     +0.0% |       0 |        0 |         4
+       36 |     +0.0% |       0 |        0 |         1
+    final |    -10.6% |       1 |        0 |         0
+-------------------------------------------------------
+[INFO RSZ-2023] Resized 0 drivers while rebuffering.
+pbuf: INV_X1 direct sinks: 36 buffers: 
+worst slack max 9.83
+[INFO RSZ-0175] Driver sizing during rebuffering has been disabled.

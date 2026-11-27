@@ -20,12 +20,12 @@ area before: 669.8
       234 |     -1.5% |      39 |       34 |       159
       273 |     +0.8% |      41 |       54 |       120
       312 |     -0.1% |      67 |       75 |        81
-      351 |     -0.4% |      90 |       96 |        42
-      390 |     -1.2% |      99 |      100 |         3
-    final |     -1.2% |      99 |      100 |         0
+      351 |     -0.3% |      90 |       96 |        42
+      390 |     -1.1% |      99 |      100 |         3
+    final |     -1.1% |      99 |      100 |         0
 -------------------------------------------------------
-[INFO RSZ-2023] Resized 28 drivers while rebuffering.
+[INFO RSZ-2023] Resized 27 drivers while rebuffering.
 worst slack max -0.05
-tns max -1.15
-area after: 662.1
+tns max -1.13
+area after: 662.6
 [INFO RSZ-0175] Driver sizing during rebuffering has been disabled.
