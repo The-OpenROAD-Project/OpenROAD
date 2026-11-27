@@ -48,7 +48,7 @@ using odb::Rect;
 
 bool Opendp::isMultiRow(const Node* cell) const
 {
-  return network_->getMaster(cell->getDbInst()->getMaster())->isMultiRow();
+  return network_->getMaster(cell->getDbMaster())->isMultiRow();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -272,19 +272,28 @@ void Opendp::detailedPlacement(const int max_displacement_x,
       logger_->info(DPL, 1102, "Legalizing using negotiation legalizer.");
     }
 
-    NegotiationLegalizer negotiation(
-        this, db_, logger_, debug_observer_.get(), network_.get());
-    negotiation.setQuiet(quiet_);
-    negotiation.setDisableWindowExtension(disable_window_extension);
+    NegotiationOptions options{
+        .max_displacement_x = max_displacement_x_,
+        .max_displacement_y = max_displacement_y_,
+        .disallow_one_site_gaps = disallow_one_site_gaps_,
+        .disable_window_extension = disable_window_extension,
+        .quiet = quiet_,
+        .iterative_debug = iterative_debug_,
+        .deep_iterative_debug = deep_iterative_debug_,
+        .debug_start = negotiation_debug_start_,
+        .debug_interval = negotiation_debug_interval_,
+    };
     if (site_search_window >= 0) {
-      negotiation.setSiteSearchWindow(site_search_window);
+      options.site_search_window = site_search_window;
     }
     if (row_search_window >= 0) {
-      negotiation.setRowSearchWindow(row_search_window);
+      options.row_search_window = row_search_window;
     }
     if (drc_penalty >= 0.0) {
-      negotiation.setDrcPenalty(drc_penalty);
+      options.drc_penalty = drc_penalty;
     }
+    NegotiationLegalizer negotiation(
+        this, db_, logger_, options, debug_observer_.get(), network_.get());
     negotiation.legalize();
     negotiation.commitNegotiationPosToDpl();
 
@@ -305,7 +314,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
         const Node* node = illegal_nodes[i];
         logger_->report("  {} ({}) at dbu ({}, {})",
                         node->name(),
-                        node->getDbInst()->getMaster()->getName(),
+                        node->getDbMaster()->getName(),
                         (core_.xMin() + node->getLeft()).v,
                         (core_.yMin() + node->getBottom()).v);
       }
@@ -319,12 +328,9 @@ void Opendp::detailedPlacement(const int max_displacement_x,
       }
     }
 
-    total_moves_ = negotiation.totalMoves();
-    negotiation_iters_phase1_ = negotiation.phase1Iterations();
-    negotiation_iters_phase2_ = negotiation.phase2Iterations();
-    negotiation_converge_phase_ = negotiation.convergePhase();
-    negotiation_diamond_recoveries_ = negotiation.diamondRecoveries();
-    negotiation_finish_ = negotiation.finishDescription();
+    negotiation_stats_
+        = std::make_unique<NegotiationStats>(negotiation.stats());
+    total_moves_ = negotiation_stats_->total_moves;
     findDisplacementStats();
     updateDbInstLocations();
   }
@@ -424,23 +430,23 @@ void Opendp::reportLegalizationStats() const
 
   logger_->report("total moves          {:10d}", total_moves_);
   if (isUseNegotiationLegalizer()) {
+    const NegotiationStats stats
+        = negotiation_stats_ ? *negotiation_stats_ : NegotiationStats{};
     const int negotiation_iters
-        = negotiation_iters_phase1_ + negotiation_iters_phase2_;
+        = stats.phase1_iterations + stats.phase2_iterations;
     if (logger_->debugCheck(utl::GPL, "negotiation", 1)) {
-      logger_->report("negotiation finish   {}", negotiation_finish_);
+      logger_->report("negotiation finish   {}", stats.finish);
       logger_->report("total iterations     {:10d}", negotiation_iters);
-      logger_->report("  phase 1 iterations {:10d}", negotiation_iters_phase1_);
-      logger_->report("  phase 2 iterations {:10d}", negotiation_iters_phase2_);
-      logger_->report("diamond recoveries   {:10d}",
-                      negotiation_diamond_recoveries_);
+      logger_->report("  phase 1 iterations {:10d}", stats.phase1_iterations);
+      logger_->report("  phase 2 iterations {:10d}", stats.phase2_iterations);
+      logger_->report("diamond recoveries   {:10d}", stats.diamond_recoveries);
     }
     logger_->metric("dpl__negotiation__iterations__total", negotiation_iters);
     // Phase that converged (1 or 2), -1 when negotiation did not converge,
     // 0 when it never ran because every cell was already legal.
-    logger_->metric("dpl__negotiation__converge__phase",
-                    negotiation_converge_phase_);
+    logger_->metric("dpl__negotiation__converge__phase", stats.converge_phase);
     logger_->metric("dpl__negotiation__diamond__recovery__count",
-                    negotiation_diamond_recoveries_);
+                    stats.diamond_recoveries);
   }
   logger_->report("total displacement   {:10.1f} u",
                   block_->dbuToMicrons(displacement_sum_));

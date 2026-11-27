@@ -364,8 +364,7 @@ void Opendp::place()
   int failed_diamond_move = 0, failed_rip_up = 0, success_diamond_move = 0;
 
   for (auto& cell : network_->getNodes()) {
-    if (cell->getType() != Node::CELL
-        || !cell->getDbInst()->getMaster()->isCore()) {
+    if (cell->getType() != Node::CELL || !cell->getDbMaster()->isCore()) {
       continue;
     }
     if (!(cell->isFixed() || cell->inGroup() || cell->isPlaced())) {
@@ -1109,7 +1108,7 @@ bool Opendp::checkPixels(const Node* cell,
   const auto orient = grid_->getSiteOrientation(x, y, site).value();
 
   // Check for symmetry
-  auto* dbMaster = cell->getDbInst()->getMaster();
+  auto* const dbMaster = cell->getDbMaster();
   unsigned masterSym = dpl::DetailedOrient::getMasterSymmetry(dbMaster);
   if (!checkMasterSym(masterSym, orient)) {
     return false;
@@ -1295,18 +1294,6 @@ void Opendp::initMacrosAndGrid()
   setFixedGridCells();
 }
 
-void Opendp::convertDbToCell(odb::dbInst* db_inst, Node& cell)
-{
-  cell.setType(Node::CELL);
-  cell.setDbInst(db_inst);
-  odb::Rect bbox = getBbox(db_inst);
-  cell.setWidth(DbuX{bbox.dx()});
-  cell.setHeight(DbuY{bbox.dy()});
-  cell.setLeft(DbuX{bbox.xMin()});
-  cell.setBottom(DbuY{bbox.yMin()});
-  cell.setOrient(db_inst->getOrient());
-}
-
 DbuPt Opendp::pointOffMacro(const Node& cell)
 {
   // Get cell position
@@ -1336,10 +1323,7 @@ DbuPt Opendp::pointOffMacro(const Node& cell)
 
   if (block && block->isBlock()) {
     // Get new legal position
-    const odb::Rect block_bbox(block->getLeft().v,
-                               block->getBottom().v,
-                               block->getLeft().v + block->getWidth().v,
-                               block->getBottom().v + block->getHeight().v);
+    const odb::Rect block_bbox = block->getBBox();
     return nearestBlockEdge(&cell, init, block_bbox);
   }
   return init;
@@ -1357,8 +1341,7 @@ void Opendp::legalCellPos(odb::dbInst* db_inst)
     // and the resizer is the first to call here).
     initMacrosAndGrid();
   }
-  Node cell;
-  convertDbToCell(db_inst, cell);
+  Node cell = Node::makeCell(db_inst, getBbox(db_inst));
   // returns the initial position of the cell
   const DbuPt init_pos = initialLocation(&cell, false);
   // returns the modified position if the cell is in a macro
@@ -1424,10 +1407,7 @@ DbuPt Opendp::legalPt(const Node* cell, const bool padded) const
     // edge strategy.  This doesn't consider site availability at the
     // end used so it is secondary.
     if (block && block->isBlock()) {
-      const odb::Rect block_bbox(block->getLeft().v,
-                                 block->getBottom().v,
-                                 block->getLeft().v + block->getWidth().v,
-                                 block->getBottom().v + block->getHeight().v);
+      const odb::Rect block_bbox = block->getBBox();
       if ((legal_pt.x + cell->getWidth()) >= block_bbox.xMin()
           && legal_pt.x <= block_bbox.xMax()
           && (legal_pt.y + cell->getHeight()) >= block_bbox.yMin()
@@ -1459,7 +1439,7 @@ void Opendp::placeCell(Node* cell, const GridX x, const GridY y)
   setGridLoc(cell, x, y);
   grid_->paintPixel(cell);
   cell->setPlaced(true);
-  odb::dbSite* site = cell->getDbInst()->getMaster()->getSite();
+  odb::dbSite* site = cell->getSite();
   cell->setOrient(grid_->getSiteOrientation(x, y, site).value());
   if (journal_) {
     MoveCellAction action(cell,

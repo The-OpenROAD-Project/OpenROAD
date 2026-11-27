@@ -146,16 +146,17 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
              1,
              "Negotiation phase 1: {} active cells, {} iterations.",
              active.size(),
-             max_iter_neg_);
+             options_.max_iter_neg);
 
-  if (!quiet_) {
+  if (!options_.quiet) {
     logger_->report("          |      Total |  Illegal |  Illegal");
     logger_->report("Iteration | Violations |    Cells |    Sites");
     logger_->report("---------------------------------------------");
   }
 
   auto print_last_if_needed = [&]() {
-    if (!quiet_ && last_iter_ >= 0 && last_iter_ != last_printed_iter_) {
+    if (!options_.quiet && last_iter_ >= 0
+        && last_iter_ != last_printed_iter_) {
       logger_->report("{:>9} | {:>10} | {:>9} | {:>9}",
                       last_iter_,
                       last_violations_,
@@ -187,7 +188,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
     diamondRecovery(illegal_cells);
   };
 
-  for (int iter = 0; iter < max_iter_neg_; ++iter) {
+  for (int iter = 0; iter < options_.max_iter_neg; ++iter) {
     const bool print_row = shouldPrintIteration(iter);
     const int phase_1_violations
         = negotiationIter(active, iter, /*updateHistory=*/true, print_row);
@@ -198,7 +199,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
     if (phase_1_violations == 0) {
       finish_ = Finish::kPhase1Converged;
       print_last_if_needed();
-      if (!quiet_) {
+      if (!options_.quiet) {
         logger_->report("Negotiation phase 1 converged at iteration {}.", iter);
       }
       printStuckSummary("Total stuck cells summary",
@@ -219,11 +220,11 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   debugPause("Pause before negotiation phase 2.");
 
   if (debug_observer_) {
-    debug_observer_->addNegotiationPhase2Marker(max_iter_neg_);
+    debug_observer_->addNegotiationPhase2Marker(options_.max_iter_neg);
   }
 
   // Phase 2 – isolation point active: skip already-legal cells.
-  if (!quiet_) {
+  if (!options_.quiet) {
     logger_->report(
         "Negotiation phase 2: isolation point active, {} iterations.",
         kMaxIterNeg2);
@@ -232,7 +233,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   prev_violations = -1;
   stall_count = 0;
   for (int iter = 0; iter < kMaxIterNeg2; ++iter) {
-    const int actual_iter = iter + max_iter_neg_;
+    const int actual_iter = iter + options_.max_iter_neg;
     const bool print_row = shouldPrintIteration(actual_iter);
     const int phase_2_violations = negotiationIter(
         active, actual_iter, /*updateHistory=*/true, print_row);
@@ -243,7 +244,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
     if (phase_2_violations == 0) {
       finish_ = Finish::kPhase2Converged;
       print_last_if_needed();
-      if (!quiet_) {
+      if (!options_.quiet) {
         logger_->report("Negotiation phase 2 converged at iteration {}.", iter);
       }
       printStuckSummary("negotiation totals",
@@ -426,11 +427,9 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
     debug_observer_->addNegotiationViolationsPoint(
         iter, totalViolations, illegalCellCount, illegalSiteCount);
   }
-  if (opendp_->iterative_debug_ && debug_observer_
-      && iter >= opendp_->negotiation_debug_start_
-      && ((iter - opendp_->negotiation_debug_start_)
-              % opendp_->negotiation_debug_interval_
-          == 0)) {
+  if (options_.iterative_debug && debug_observer_
+      && iter >= options_.debug_start
+      && ((iter - options_.debug_start) % options_.debug_interval == 0)) {
     commitNegotiationPosToDpl();
     pushNegotiationPixels();
     logger_->report("Pause after negotiation iteration {}.", iter);
@@ -458,20 +457,20 @@ void NegotiationLegalizer::place(int cell_idx, int x, int y)
   addUsage(cell_idx, 1);
   syncCellToDplGrid(cell_idx);
   if (did_move && debug_observer_
-      && (opendp_->iterative_debug_ || opendp_->deep_iterative_debug_)) {
+      && (options_.iterative_debug || options_.deep_iterative_debug)) {
     debug_observer_->addCurrentIterMover(cells_[cell_idx].db_inst);
   }
-  if (opendp_->deep_iterative_debug_ && debug_observer_
-      && current_iter_ >= opendp_->negotiation_debug_start_) {
+  if (options_.deep_iterative_debug && debug_observer_
+      && current_iter_ >= options_.debug_start) {
     const odb::dbInst* debug_inst = debug_observer_->getDebugInstance();
     if (!debug_inst || cells_[cell_idx].db_inst == debug_inst) {
       pushNegotiationPixels();
       const NegCell& c = cells_[cell_idx];
       const int orig_x_dbu = die_xlo_ + c.init_x * site_width_;
       const int orig_y_dbu
-          = die_ylo_ + opendp_->grid_->gridYToDbu(GridY{c.init_y}).v;
+          = die_ylo_ + dpl_grid_->gridYToDbu(GridY{c.init_y}).v;
       const int tgt_x_dbu = die_xlo_ + c.x * site_width_;
-      const int tgt_y_dbu = die_ylo_ + opendp_->grid_->gridYToDbu(GridY{c.y}).v;
+      const int tgt_y_dbu = die_ylo_ + dpl_grid_->gridYToDbu(GridY{c.y}).v;
       logger_->report(
           "Pause at placing of cell {}. orig=({},{}) target=({},{}) dbu. "
           "rowidx={}.",
@@ -493,20 +492,20 @@ void NegotiationLegalizer::place(int cell_idx, int x, int y)
 
 int NegotiationLegalizer::effectiveSiteWindow(const NegCell& cell) const
 {
-  if (disable_window_extension_ || site_search_window_ == 0) {
-    return std::min(site_search_window_, opendp_->max_displacement_x_);
+  if (options_.disable_window_extension || options_.site_search_window == 0) {
+    return std::min(options_.site_search_window, options_.max_displacement_x);
   }
-  return std::min(std::max(site_search_window_, cell.width),
-                  opendp_->max_displacement_x_);
+  return std::min(std::max(options_.site_search_window, cell.width),
+                  options_.max_displacement_x);
 }
 
 int NegotiationLegalizer::effectiveRowCap(const NegCell& cell) const
 {
-  if (disable_window_extension_) {
-    return std::min(row_search_window_, opendp_->max_displacement_y_);
+  if (options_.disable_window_extension) {
+    return std::min(options_.row_search_window, options_.max_displacement_y);
   }
-  return std::min(cell.height * row_search_window_,
-                  opendp_->max_displacement_y_);
+  return std::min(cell.height * options_.row_search_window,
+                  options_.max_displacement_y);
 }
 
 std::pair<int, int> NegotiationLegalizer::horizontalWindowBounds(
@@ -535,13 +534,12 @@ std::pair<int, int> NegotiationLegalizer::horizontalWindowBounds(
   int dx_lo = -site_window;
   int dx_hi = site_window;
 
-  if (!disable_window_extension_) {
+  if (!options_.disable_window_extension) {
     // Both sides walk outward, sharing one budget of 2 * site_window open
     // positions. Blocked positions cost nothing, so a side keeps looking
     // past a fixed instance; it stops at the die edge or after step_cap
     // steps. Budget one side cannot spend is left for the other.
-    const int step_cap
-        = std::min(4 * site_window, opendp_->max_displacement_x_);
+    const int step_cap = std::min(4 * site_window, options_.max_displacement_x);
     int budget = 2 * site_window;
     int left = 0;
     int right = 0;
@@ -575,8 +573,8 @@ std::pair<int, int> NegotiationLegalizer::horizontalWindowBounds(
   }
 
   // Hard cap limit
-  dx_lo = std::max(dx_lo, -opendp_->max_displacement_x_);
-  dx_hi = std::min(dx_hi, opendp_->max_displacement_x_);
+  dx_lo = std::max(dx_lo, -options_.max_displacement_x);
+  dx_hi = std::min(dx_hi, options_.max_displacement_x);
   return {dx_lo, dx_hi};
 }
 
@@ -597,7 +595,7 @@ NegotiationLegalizer::SearchWindow NegotiationLegalizer::buildSearchWindow(
                                    anchor_y,
                                    anchor_x + window.dx_lo,
                                    anchor_x + window.dx_hi,
-                                   row_search_window_,
+                                   options_.row_search_window,
                                    effectiveRowCap(cell));
   return window;
 }
@@ -618,7 +616,7 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
 
   // Look up the DPL Node once for DRC checks (may be null if no
   // Opendp integration is available).
-  Node* node = (opendp_ && opendp_->drc_engine_) ? cell.node : nullptr;
+  Node* node = (opendp_ && drc_engine_) ? cell.node : nullptr;
   const odb::dbOrientType default_orient
       = node != nullptr ? node->getOrient() : odb::dbOrientType();
   odb::dbSite* site = cell.db_inst->getMaster()->getSite();
@@ -626,7 +624,7 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
   // DRC penalty escalates with iteration count: early iterations are
   // lenient (cells can tolerate DRC violations to resolve overlaps first),
   // later iterations strongly penalise DRC violations to force resolution.
-  const double drc_penalty = drc_penalty_ * (1.0 + iter);
+  const double drc_penalty = options_.drc_penalty * (1.0 + iter);
 
   // Every pixel of a placeable footprint contributes at least
   // hist_cost * (usage + 1) / capacity >= 1.0 to negotiationCost (capacity
@@ -661,12 +659,12 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     odb::dbOrientType targetOrient = default_orient;
     if (site != nullptr) {
       targetOrient
-          = opendp_->grid_
+          = dpl_grid_
                 ->getSiteOrientation(GridX{target_x}, GridY{target_y}, site)
                 .value_or(default_orient);
     }
     if (node != nullptr
-        && !opendp_->drc_engine_->checkFixedSupplyVias(
+        && !drc_engine_->checkFixedSupplyVias(
             node, GridX{target_x}, GridY{target_y}, targetOrient)) {
       return;
     }
@@ -685,7 +683,7 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     // but a DRC-violating position can still be chosen if nothing
     // better is available (avoids infinite non-convergence).
     if (node != nullptr) {
-      const int drcCount = opendp_->drc_engine_->countDRCViolations(
+      const int drcCount = drc_engine_->countDRCViolations(
           node,
           GridX{target_x},
           GridY{target_y},
@@ -784,14 +782,14 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
   }
 
   if (debug_observer_) {
-    const odb::Rect core = opendp_->grid_->getCore();
-    const DbuX sw = opendp_->grid_->getSiteWidth();
+    const odb::Rect core = dpl_grid_->getCore();
+    const DbuX sw = dpl_grid_->getSiteWidth();
     const auto toX = [&](int gx) {
       return core.xMin() + gridToDbu(GridX{std::clamp(gx, 0, grid_w_)}, sw).v;
     };
     const auto toY = [&](int gy) {
       return core.yMin()
-             + opendp_->grid_->gridYToDbu(GridY{std::clamp(gy, 0, grid_h_)}).v;
+             + dpl_grid_->gridYToDbu(GridY{std::clamp(gy, 0, grid_h_)}).v;
     };
     // Y extent reflects the actual sparse set of valid rows visited
     // (bounding rect: lowest to highest+1). Falls back to the seed row
@@ -819,8 +817,7 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     debug_observer_->setNegotiationSearchWindow(
         cell.db_inst, init_win, curr_win);
 
-    if (opendp_->deep_iterative_debug_
-        && iter >= opendp_->negotiation_debug_start_
+    if (options_.deep_iterative_debug && iter >= options_.debug_start
         && cell.db_inst == debug_observer_->getDebugInstance()) {
       odb::dbBlock* block = cell.db_inst->getBlock();
       const double inst_area_um2
@@ -862,13 +859,13 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
       if (node != nullptr) {
         odb::dbOrientType targetOrient = default_orient;
         if (site != nullptr) {
-          auto orient = opendp_->grid_->getSiteOrientation(
+          auto orient = dpl_grid_->getSiteOrientation(
               GridX{best_x}, GridY{best_y}, site);
           if (orient.has_value()) {
             targetOrient = orient.value();
           }
         }
-        const int drcCount = opendp_->drc_engine_->countDRCViolations(
+        const int drcCount = drc_engine_->countDRCViolations(
             node, GridX{best_x}, GridY{best_y}, targetOrient);
         logger_->report("  DRC violations at best location: {}.", drcCount);
       }
@@ -976,8 +973,9 @@ double NegotiationLegalizer::negotiationCost(int cell_idx,
 double NegotiationLegalizer::targetCostFromDisp(int disp) const
 {
   return static_cast<double>(disp)
-         + max_disp_multiplier_
-               * static_cast<double>(std::max(0, disp - max_disp_threshold_));
+         + options_.max_disp_multiplier
+               * static_cast<double>(
+                   std::max(0, disp - options_.max_disp_threshold));
 }
 
 double NegotiationLegalizer::targetCost(int cell_idx, int x, int y) const
@@ -1045,7 +1043,7 @@ void NegotiationLegalizer::updateHistoryCosts(
 void NegotiationLegalizer::updateDrcHistoryCosts(
     const std::vector<int>& activeCells)
 {
-  if (!opendp_ || !opendp_->drc_engine_ || !network_) {
+  if (!opendp_ || !drc_engine_ || !network_) {
     return;
   }
   for (int idx : activeCells) {
@@ -1060,13 +1058,13 @@ void NegotiationLegalizer::updateDrcHistoryCosts(
     odb::dbOrientType orient = node->getOrient();
     odb::dbSite* site = cell.db_inst->getMaster()->getSite();
     if (site != nullptr) {
-      auto o = opendp_->grid_->getSiteOrientation(
-          GridX{cell.x}, GridY{cell.y}, site);
+      auto o
+          = dpl_grid_->getSiteOrientation(GridX{cell.x}, GridY{cell.y}, site);
       if (o.has_value()) {
         orient = o.value();
       }
     }
-    const int drcCount = opendp_->drc_engine_->countDRCViolations(
+    const int drcCount = drc_engine_->countDRCViolations(
         node, GridX{cell.x}, GridY{cell.y}, orient);
     if (drcCount > 0) {
       const int xBegin = cell.x;

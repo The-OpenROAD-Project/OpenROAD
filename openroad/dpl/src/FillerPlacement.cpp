@@ -180,12 +180,12 @@ void Opendp::placeRowFillers(GridY row,
     if (j > 0) {
       auto pixel = grid_->gridPixel(j - 1, row);
       if (pixel->cell && pixel->cell->getDbInst()) {
-        implant = getImplant(pixel->cell->getDbInst()->getMaster());
+        implant = getImplant(pixel->cell->getDbMaster());
       }
     } else if (k < row_site_count) {
       auto pixel = grid_->gridPixel(k, row);
       if (pixel->cell && pixel->cell->getDbInst()) {
-        implant = getImplant(pixel->cell->getDbInst()->getMaster());
+        implant = getImplant(pixel->cell->getDbMaster());
       }
     }
 

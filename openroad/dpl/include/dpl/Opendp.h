@@ -50,6 +50,7 @@ class Padding;
 class PixelPt;
 class PlacementDRC;
 class Journal;
+struct NegotiationStats;
 
 template <typename T>
 struct TypedCoordinate;
@@ -222,7 +223,6 @@ class Opendp
   friend class NegotiationLegalizer;
   void findDisplacementStats();
   DbuPt pointOffMacro(const Node& cell);
-  void convertDbToCell(odb::dbInst* db_inst, Node& cell);
   // Return error count.
   void saveViolations(const std::vector<Node*>& failures,
                       odb::dbMarkerCategory* category,
@@ -443,11 +443,8 @@ class Opendp
   int64_t cumulative_displacement_max_ = 0;
   double cumulative_hpwl_delta_ = 0.0;
   double cumulative_runtime_ = 0.0;
-  int negotiation_iters_phase1_ = 0;
-  int negotiation_iters_phase2_ = 0;
-  int negotiation_converge_phase_ = 0;
-  int negotiation_diamond_recoveries_ = 0;
-  std::string negotiation_finish_ = "not run";
+  // Results of the last negotiation legalizer run; null before the first.
+  std::unique_ptr<NegotiationStats> negotiation_stats_;
 
   // Magic numbers
   static constexpr double group_refine_percent_ = .05;

@@ -36,17 +36,6 @@ double Utility::disp_l1(Network* nw, double& tot, double& max, double& avg)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-uint64_t Utility::hpwl(const Network* nw)
-{
-  // Compute the wire length for the given placement.
-  uint64_t totWL = 0;
-  for (unsigned e = 0; e < nw->getNumEdges(); e++) {
-    const Edge* ed = nw->getEdge(e);
-    totWL += hpwl(ed);
-  }
-  return totWL;
-}
-
 uint64_t Utility::hpwl(const Network* nw, uint64_t& hpwlx, uint64_t& hpwly)
 {
   hpwlx = 0;
@@ -72,39 +61,6 @@ uint64_t Utility::hpwl(const Network* nw, uint64_t& hpwlx, uint64_t& hpwly)
     hpwlx += box.dx();
     hpwly += box.dy();
   }
-  return hpwlx + hpwly;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-uint64_t Utility::hpwl(const Edge* ed)
-{
-  uint64_t hpwlx = 0;
-  uint64_t hpwly = 0;
-  return hpwl(ed, hpwlx, hpwly);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-uint64_t Utility::hpwl(const Edge* ed, uint64_t& hpwlx, uint64_t& hpwly)
-{
-  hpwlx = 0;
-  hpwly = 0;
-
-  const int numPins = ed->getNumPins();
-  if (numPins <= 1) {
-    return 0;
-  }
-
-  odb::Rect box;
-  for (const Pin* pin : ed->getPins()) {
-    const Node* ndi = pin->getNode();
-    const DbuY py = ndi->getCenterY() + pin->getOffsetY();
-    const DbuX px = ndi->getCenterX() + pin->getOffsetX();
-    box.merge(odb::Point(px.v, py.v));
-  }
-  hpwlx = box.dx();
-  hpwly = box.dy();
   return hpwlx + hpwly;
 }
 
