@@ -29,7 +29,6 @@ Driver    length delay
 in1 manhtn 2000.7 steiner 2000.7 0.54
 u3/Z manhtn 1.1 steiner 1.1 0.00
 u1/Z manhtn 0.4 steiner 0.4 0.00
-u2/Z manhtn 0.4 steiner 0.4 0.00
 [WARNING RSZ-0065] max wire length less than 693u increases wire delays.
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
@@ -43,7 +42,6 @@ Driver    length delay
 wire1/Z manhtn 569.5 steiner 569.5 0.04
 wire2/Z manhtn 569.2 steiner 569.2 0.04
 in1 manhtn 452.6 steiner 452.6 0.03
-wire3/Z manhtn 408.0 steiner 408.0 0.02
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
 Path Group: unconstrained

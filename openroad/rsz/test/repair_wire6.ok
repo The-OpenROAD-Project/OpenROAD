@@ -40,7 +40,6 @@ Driver    length delay
 wire1/Z manhtn 569.8 steiner 569.8 0.04
 u2/Z manhtn 488.7 steiner 488.7 0.03
 wire2/Z manhtn 441.2 steiner 441.2 0.03
-in1 manhtn 0.7 steiner 0.7 0.00
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
 Path Group: unconstrained
