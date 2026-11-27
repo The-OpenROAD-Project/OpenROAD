@@ -194,6 +194,7 @@ void IpChecker::checkLefMaster(odb::dbMaster* master)
   checkPinMinDimensions(master);               // LEF-CHK-010a
   checkPinMinArea(master);                     // LEF-CHK-010b
   checkLibertyPins(master);                    // LEF/LIB-CHK-011-012
+  checkLibertyTimingArcs(master);              // LEF/LIB-CHK-013
 }
 
 // LEF-CHK-001: Macro dimensions aligned to manufacturing grid
@@ -897,6 +898,48 @@ void IpChecker::checkLibertyPins(odb::dbMaster* master)
                     mterm->getName(),
                     directionName(lef_direction),
                     directionName(liberty_direction));
+      warning_count_++;
+    }
+  }
+}
+
+// LEF/LIB-CHK-013: Every LEF signal pin has Liberty timing info.
+// Clock pins are exempt. Missing cells and pins are reported by
+// checkLibertyPins.
+void IpChecker::checkLibertyTimingArcs(odb::dbMaster* master)
+{
+  if (sta_ == nullptr) {
+    return;
+  }
+
+  dbNetwork* network = sta_->getDbNetwork();
+  if (network == nullptr) {
+    return;
+  }
+
+  const std::string master_name = master->getName();
+  const LibertyCell* liberty_cell = network->findLibertyCell(master_name);
+  if (liberty_cell == nullptr) {
+    return;
+  }
+
+  for (odb::dbMTerm* mterm : master->getMTerms()) {
+    if (mterm->getSigType().isSupply()) {
+      continue;
+    }
+
+    LibertyPort* liberty_port = liberty_cell->findLibertyPort(mterm->getName());
+    if (liberty_port == nullptr || liberty_port->isClock()) {
+      continue;
+    }
+
+    if (!liberty_cell->hasTimingArcs(liberty_port)) {
+      logger_->warn(utl::CHK,
+                    123,
+                    "Pin {}/{} has no timing arcs in Liberty cell {}",
+                    master_name,
+                    mterm->getName(),
+                    liberty_cell->name());
       warning_count_++;
     }
   }
