@@ -151,11 +151,13 @@ class PowerParallelEvalPolicy : public SetupParallelEvalPolicy
   // Mirrors brokenEndpoints() for hold (min) WS and TNS regressions.
   std::vector<sta::Vertex*> brokenHoldEndpoints(const Contract& now) const;
   // Traces moved instances on the worst hold path to endpoint, its capture
-  // register, and moved loads on the capture register's clock net.
+  // register, and moved loads on the capture register's clock net into
+  // culprits, and moved data-net sibling loads into beside.
   void addHoldPathMoves(
       sta::Vertex* endpoint,
       const std::unordered_map<const sta::Instance*, MoveCandidate*>& moves,
-      std::unordered_set<MoveCandidate*>& culprits) const;
+      std::unordered_set<MoveCandidate*>& culprits,
+      std::unordered_set<MoveCandidate*>& beside) const;
   // pin's setup slack is below floor.
   bool setupBelow(const sta::Pin* pin, float floor) const;
   // The target's driver pin, which carries the worst path through the swap
@@ -231,7 +233,7 @@ class PowerParallelEvalPolicy : public SetupParallelEvalPolicy
   std::deque<float> saved_window_;
 
   static constexpr float kTnsTolerance = 0.01f;
-  // The latches in series the floor room and the culprit paths follow.
+  // The latches in series the floor room follows.
   static constexpr int kLatchPasses = 4;
   // The run stops once the last kStallBatches saved batches together saved at
   // most kStallRatio of what the run saved.

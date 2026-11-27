@@ -261,6 +261,7 @@ float PowerVtSwapGenerator::netSlewHeadroom(const sta::Pin* driver_pin,
 {
   float headroom = sta::INF;
   margin = sta::INF;
+  const bool check_clks = resizer_.haveClkSlewLimits();
   std::unique_ptr<sta::PinConnectedPinIterator> pin_iter(
       resizer_.network()->connectedPinIterator(driver_pin));
   while (pin_iter->hasNext()) {
@@ -273,7 +274,7 @@ float PowerVtSwapGenerator::netSlewHeadroom(const sta::Pin* driver_pin,
     resizer_.sta()->checkSlew(pin,
                               resizer_.sta()->scenes(),
                               sta::MinMax::max(),
-                              false,
+                              check_clks,
                               slew,
                               limit,
                               slack,

@@ -466,6 +466,60 @@ TEST_F(TestRepairPower, KeepsSlewLimitsAndHoldMargin)
   expectKept(start, contract(), 0.0f, hold_margin);
 }
 
+// A clock -data_path max_transition limit (set_max_transition -data_path
+// [get_clocks ...]) must be honored by the DRV guard.
+TEST_F(TestRepairPower, KeepsClockDataPathSlewLimit)
+{
+  for (int k = 0; k < kChain; ++k) {
+    setInputDelay(name("s", k), 0.0f);
+  }
+  sta_->updateTiming(false);
+  const float limit
+      = 1.05f
+        * sta::delayAsFloat(sta_->graph()->slew(
+            sta_->graph()->pinDrvrVertex(pin("p0/ZN")),
+            sta::RiseFall::rise(),
+            sta_->cmdScene()->dcalcAnalysisPtIndex(sta::MinMax::max())));
+  sta_->setSlewLimit(clock(),
+                     sta::RiseFallBoth::riseFall(),
+                     sta::PathClkOrData::data,
+                     sta::MinMax::max(),
+                     limit,
+                     sta_->cmdMode()->sdc());
+
+  const auto slew_slacks = [&]() {
+    sta_->updateTiming(false);
+    sta_->checkSlewsPreamble();
+    std::map<std::string, float> slacks;
+    for (odb::dbInst* inst : block_->getInsts()) {
+      for (odb::dbITerm* iterm : inst->getITerms()) {
+        const sta::Pin* p = db_network_->dbToSta(iterm);
+        sta::Slew slew;
+        float pin_limit, pin_slack;
+        const sta::RiseFall* rf;
+        const sta::Scene* scene;
+        sta_->checkSlew(p,
+                        sta_->scenes(),
+                        sta::MinMax::max(),
+                        true,
+                        slew,
+                        pin_limit,
+                        pin_slack,
+                        rf,
+                        scene);
+        slacks[db_network_->pathName(p)] = pin_slack;
+      }
+    }
+    return slacks;
+  };
+  const std::map<std::string, float> slews = slew_slacks();
+  resizer_.repairPower(0.0, 0.0, 0.0, false);
+
+  for (const auto& [p, slack] : slew_slacks()) {
+    EXPECT_GE(slack, std::min(slews.at(p), 0.0f) - kNoise) << p;
+  }
+}
+
 // Cells already at the highest VT have nothing to swap.
 TEST_F(TestRepairPower, LeavesTheHighestVtAlone)
 {
@@ -683,17 +737,23 @@ TEST_F(TestRepairPower, VtBudgetWithSetupToleranceDoesNotCompound)
 TEST_F(TestRepairPower, TieredTwoGroupVtBudgetEnforcesBothLimits)
 {
   timeTightChain(1e-12f);
-  // Narrow group: BUF_X4_L capped at 0%; broader group: all LVT capped at 25%
-  // (4 of 16 logic cells).
-  resizer_.repairPower(
-      0.0, 0.0, 0.0, false, {budget({"BUF_X4_L"}, 0.0f), lvtBudget(25.0f)});
-  int buf_x4_lvt = 0;
-  for (const auto& [inst_name, cell_name] : masters()) {
-    if (cell_name == "BUF_X4_L") {
-      ++buf_x4_lvt;
+  const auto count_and2_lvt = [&]() {
+    int count = 0;
+    for (const auto& [inst_name, cell_name] : masters()) {
+      if (cell_name == "AND2_X1_L") {
+        ++count;
+      }
     }
-  }
-  EXPECT_EQ(buf_x4_lvt, 0);
+    return count;
+  };
+  // Narrow group: AND2_X1_L capped at 12.5% (2 of 16 logic cells, tighter than
+  // the 4 AND2_X1_L left by lvtBudget(25%) alone); broader group: all LVT
+  // capped at 25% (4 of 16).
+  ASSERT_GT(count_and2_lvt(), 2);
+  ASSERT_GT(lvtCount(), 4);
+  resizer_.repairPower(
+      0.0, 0.0, 0.0, false, {budget({"AND2_X1_L"}, 12.5f), lvtBudget(25.0f)});
+  EXPECT_LE(count_and2_lvt(), 2);
   EXPECT_LE(lvtCount(), 4);
 }
 

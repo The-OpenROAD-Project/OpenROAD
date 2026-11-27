@@ -238,11 +238,13 @@ PowerParallelEvalPolicy::collectTargetEndpoints()
   target_collector_->init(sta::INF);
   pre_batch_endpoints_ = target_collector_->getViolatingEndpoints();
   pre_batch_hold_endpoints_.clear();
-  pre_batch_hold_endpoints_.reserve(pre_batch_endpoints_.size());
+  const sta::VertexSet& all_endpoints = sta_->endpoints();
+  pre_batch_hold_endpoints_.reserve(all_endpoints.size());
   const sta::MinMax* min = sta::MinMax::min();
-  for (const auto& [pin, slack] : pre_batch_endpoints_) {
-    if (sta::Vertex* vertex = graph_->pinLoadVertex(pin)) {
-      pre_batch_hold_endpoints_.emplace_back(pin, sta_->slack(vertex, min));
+  for (sta::Vertex* vertex : all_endpoints) {
+    const sta::Slack slack = sta_->slack(vertex, min);
+    if (sta::fuzzyLess(sta::delayAsFloat(slack), sta::INF)) {
+      pre_batch_hold_endpoints_.emplace_back(vertex->pin(), slack);
     }
   }
   if (batch_index_ == 0) {
@@ -886,41 +888,40 @@ void PowerParallelEvalPolicy::addPathMoves(
   };
   // A path through a transparent latch starts at its D pin, which the moves
   // on the worst path to that pin delay too.
-  for (int latch = 0; path != nullptr && latch <= kLatchPasses; ++latch) {
-    const sta::PathExpanded expanded(path, sta_);
-    for (size_t i = expanded.startIndex(); i < expanded.size(); ++i) {
-      const sta::Pin* pin = expanded.path(i)->pin(sta_);
-      const sta::Instance* inst = network_->instance(pin);
-      if (inst == network_->topInstance()) {
-        continue;
-      }
-      add(inst, on_path);
-      const sta::LibertyCell* cell = network_->libertyCell(inst);
-      const bool sequential = cell != nullptr && cell->isSequential();
-      if (!sequential && !network_->isDriver(pin)) {
-        continue;
-      }
-      if (network_->isDriver(pin)) {
-        add_net(network_->net(pin));
-      }
-      std::unique_ptr<sta::InstancePinIterator> pin_iter(
-          network_->pinIterator(inst));
-      while (pin_iter->hasNext()) {
-        const sta::Pin* inst_pin = pin_iter->next();
-        if (network_->isLoad(inst_pin)
-            && (network_->isDriver(pin) || is_clock_in_any_mode(inst_pin))) {
-          add_net(network_->net(inst_pin));
-        }
-      }
-    }
-    const sta::Pin* start
-        = expanded.size() > 0 ? expanded.path(0)->pin(sta_) : nullptr;
-    sta::Vertex* latch_d = start != nullptr && network_->isLatchData(start)
-                               ? graph_->pinLoadVertex(start)
-                               : nullptr;
-    path = latch_d != nullptr ? sta_->vertexWorstArrivalPath(latch_d, max_)
-                              : nullptr;
+  if (path == nullptr) {
+    return;
   }
+  sta::PathExpanded expanded(path, sta_);
+  visitPathSegments(
+      path, expanded, sta_, [&](const sta::Path*, sta::PathExpanded& segment) {
+        for (size_t i = segment.startIndex(); i < segment.size(); ++i) {
+          const sta::Pin* pin = segment.path(i)->pin(sta_);
+          const sta::Instance* inst = network_->instance(pin);
+          if (inst == network_->topInstance()) {
+            continue;
+          }
+          add(inst, on_path);
+          const sta::LibertyCell* cell = network_->libertyCell(inst);
+          const bool sequential = cell != nullptr && cell->isSequential();
+          if (!sequential && !network_->isDriver(pin)) {
+            continue;
+          }
+          if (network_->isDriver(pin)) {
+            add_net(network_->net(pin));
+          }
+          std::unique_ptr<sta::InstancePinIterator> pin_iter(
+              network_->pinIterator(inst));
+          while (pin_iter->hasNext()) {
+            const sta::Pin* inst_pin = pin_iter->next();
+            if (network_->isLoad(inst_pin)
+                && (network_->isDriver(pin)
+                    || is_clock_in_any_mode(inst_pin))) {
+              add_net(network_->net(inst_pin));
+            }
+          }
+        }
+        return false;
+      });
 }
 
 std::array<float, 2> PowerParallelEvalPolicy::maxSlews(
@@ -1101,12 +1102,14 @@ std::vector<sta::Vertex*> PowerParallelEvalPolicy::brokenHoldEndpoints(
 void PowerParallelEvalPolicy::addHoldPathMoves(
     sta::Vertex* endpoint,
     const std::unordered_map<const sta::Instance*, MoveCandidate*>& moves,
-    std::unordered_set<MoveCandidate*>& culprits) const
+    std::unordered_set<MoveCandidate*>& culprits,
+    std::unordered_set<MoveCandidate*>& beside) const
 {
-  const auto add = [&](const sta::Instance* inst) {
+  const auto add = [&](const sta::Instance* inst,
+                       std::unordered_set<MoveCandidate*>& into) {
     const auto move = moves.find(inst);
     if (move != moves.end()) {
-      culprits.insert(move->second);
+      into.insert(move->second);
     }
   };
   const auto is_clock_in_any_mode = [&](const sta::Pin* pin) {
@@ -1132,13 +1135,13 @@ void PowerParallelEvalPolicy::addHoldPathMoves(
       std::unique_ptr<sta::NetConnectedPinIterator> net_iter(
           network_->connectedPinIterator(clk_net));
       while (net_iter->hasNext()) {
-        add(network_->instance(net_iter->next()));
+        add(network_->instance(net_iter->next()), culprits);
       }
     }
   };
 
   const sta::Instance* capture_inst = network_->instance(endpoint->pin());
-  add(capture_inst);
+  add(capture_inst, culprits);
   add_clock_siblings(capture_inst);
 
   const sta::Path* path
@@ -1148,13 +1151,23 @@ void PowerParallelEvalPolicy::addHoldPathMoves(
   }
   const sta::PathExpanded expanded(path, sta_);
   for (size_t i = expanded.startIndex(); i < expanded.size(); ++i) {
-    const sta::Instance* inst = network_->instance(expanded.path(i)->pin(sta_));
+    const sta::Pin* pin = expanded.path(i)->pin(sta_);
+    const sta::Instance* inst = network_->instance(pin);
     if (inst == network_->topInstance()) {
       continue;
     }
-    add(inst);
+    add(inst, culprits);
     if (i == expanded.startIndex()) {
       add_clock_siblings(inst);
+    }
+    if (network_->isDriver(pin)) {
+      if (const sta::Net* net = network_->net(pin)) {
+        std::unique_ptr<sta::NetConnectedPinIterator> net_iter(
+            network_->connectedPinIterator(net));
+        while (net_iter->hasNext()) {
+          add(network_->instance(net_iter->next()), beside);
+        }
+      }
     }
   }
 }
@@ -1215,7 +1228,7 @@ std::vector<MoveCandidate*> PowerParallelEvalPolicy::findBatchCulprits(
   }
   if (hold_failed) {
     for (sta::Vertex* endpoint : brokenHoldEndpoints(now)) {
-      addHoldPathMoves(endpoint, moves, hold_culprits);
+      addHoldPathMoves(endpoint, moves, hold_culprits, beside);
     }
   }
 
