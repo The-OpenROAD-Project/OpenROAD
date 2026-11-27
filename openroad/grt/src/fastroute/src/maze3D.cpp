@@ -11,6 +11,7 @@
 #include "DataType.h"
 #include "FastRoute.h"
 #include "odb/db.h"
+#include "sta/MinMax.hh"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -704,8 +705,12 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
     // Enable resistance aware routing only if the net needs it
     resistance_aware_ = enable_resistance_aware_ && net->isResAware();
     if (enable_resistance_aware_) {
-      // Don't reroute nets with positive slack
-      if (!is_incremental_grt_ && net->getSlack() >= 0) {
+      // Skip unconstrained non-clock nets (also excluded from res-aware in
+      // updateSlacks) and, in initial GRT, nets with non-negative slack.
+      const bool is_unconstrained_net
+          = net->getSlack() == sta::INF && !net->isClock();
+      if (is_unconstrained_net
+          || (!is_incremental_grt_ && net->getSlack() >= 0)) {
         continue;
       }
     }
