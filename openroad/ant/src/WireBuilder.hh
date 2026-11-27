@@ -63,6 +63,9 @@ class WireBuilder
   void makeNetWiresFromGuides(const std::vector<odb::dbNet*>& nets);
 
  private:
+  // Builds guide wires for the nets in any range of dbNet*.
+  template <typename Nets>
+  void makeGuideWires(Nets&& nets);
   void makeNetWire(odb::dbNet* db_net, int gcell_dimension);
   // Whether db_net gets a wire built from its guides: a multi-terminal
   // signal net that has no detailed routing and spans more than one gcell.

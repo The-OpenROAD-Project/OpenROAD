@@ -33,13 +33,8 @@ WireBuilder::WireBuilder(odb::dbDatabase* db, utl::Logger* logger)
 }
 WireBuilder::~WireBuilder() = default;
 
-void WireBuilder::makeNetWiresFromGuides()
-{
-  odb::dbSet<odb::dbNet> nets = block_->getNets();
-  makeNetWiresFromGuides(std::vector<odb::dbNet*>(nets.begin(), nets.end()));
-}
-
-void WireBuilder::makeNetWiresFromGuides(const std::vector<odb::dbNet*>& nets)
+template <typename Nets>
+void WireBuilder::makeGuideWires(Nets&& nets)
 {
   const int gcell_dimension = block_->getGCellTileSize();
   default_vias_ = block_->getDefaultVias();
@@ -48,6 +43,16 @@ void WireBuilder::makeNetWiresFromGuides(const std::vector<odb::dbNet*>& nets)
       makeNetWire(db_net, gcell_dimension);
     }
   }
+}
+
+void WireBuilder::makeNetWiresFromGuides()
+{
+  makeGuideWires(block_->getNets());
+}
+
+void WireBuilder::makeNetWiresFromGuides(const std::vector<odb::dbNet*>& nets)
+{
+  makeGuideWires(nets);
 }
 
 bool WireBuilder::needsGuideWire(odb::dbNet* db_net)
