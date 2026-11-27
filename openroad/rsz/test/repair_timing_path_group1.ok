@@ -5,7 +5,7 @@
 [INFO ODB-0132]     Created 5 special nets and 1142 connections.
 [INFO ODB-0133]     Created 528 nets and 1412 connections.
 path groups: core_clock asynchronous {path delay} {gated clock} unconstrained
-[WARNING RSZ-0227] Unknown -path_group 'bogus'. Valid path groups are reg2reg, in2reg, reg2out, in2out, gated_clock. Timing optimization is not restricted to a path group.
+[WARNING RSZ-0227] Unknown -path_group 'bogus'. Valid path groups are reg2reg, in2reg, reg2out, in2out, gated_clock or a group the SDC defines with group_path. Timing optimization is not restricted to a path group.
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 40 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 40 out of 40 (100.00%) violating endpoints...

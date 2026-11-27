@@ -25,6 +25,7 @@
 #include "sta/SdcClass.hh"
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
+#include "sta/StringUtil.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
 
@@ -45,6 +46,7 @@ StartpointKind groupStartpointKind(const PathGroupType type)
     case PathGroupType::kReg2Out:
       return StartpointKind::kRegister;
     case PathGroupType::kGatedClock:
+    case PathGroupType::kUser:
     case PathGroupType::kNone:
       break;
   }
@@ -61,6 +63,7 @@ EndpointKind groupEndpointKind(const PathGroupType type)
       return EndpointKind::kGatedClockEnable;
     case PathGroupType::kReg2Reg:
     case PathGroupType::kIn2Reg:
+    case PathGroupType::kUser:
     case PathGroupType::kNone:
       break;
   }
@@ -101,6 +104,7 @@ std::string_view staPathGroupName(const PathGroupType type)
       return "in2out";
     case PathGroupType::kGatedClock:
       return sta::PathGroups::gatedClkGroupName();
+    case PathGroupType::kUser:
     case PathGroupType::kNone:
       break;
   }
@@ -232,8 +236,14 @@ PathGroupType findPathGroupType(const std::string_view name)
 
 std::string resolvePathGroupName(Resizer* resizer, const char* name)
 {
-  const std::string group_name = name != nullptr ? name : "";
+  std::string group_name = name != nullptr ? name : "";
   const PathGroupType type = findPathGroupType(group_name);
+  sta::dbSta* sta = resizer->sta();
+  if (type == PathGroupType::kNone && !group_name.empty()
+      && sta->isPathGroupName(group_name, sta->cmdSdc())) {
+    // A group the SDC defines: OpenSTA decides which paths are in it.
+    return group_name;
+  }
   if (type == PathGroupType::kNone) {
     std::string valid;
     for (const std::string_view path_group_name : pathGroupNames()) {
@@ -245,14 +255,14 @@ std::string resolvePathGroupName(Resizer* resizer, const char* name)
     resizer->logger()->warn(utl::RSZ,
                             227,
                             "Unknown -path_group '{}'. Valid path groups are "
-                            "{}. Timing optimization is not restricted to a "
-                            "path group.",
+                            "{} or a group the SDC defines with group_path. "
+                            "Timing optimization is not restricted to a path "
+                            "group.",
                             group_name,
                             valid);
     return "";
   }
 
-  sta::dbSta* sta = resizer->sta();
   if (!sta->isPathGroupName(staPathGroupName(type), sta->cmdSdc())) {
     makePathGroup(resizer, group_name, type);
   }
@@ -264,8 +274,13 @@ PathGroupFilter::PathGroupFilter(Resizer* resizer)
       network_(resizer->network()),
       sdc_(resizer->sta()->cmdSdc()),
       logger_(resizer->logger()),
-      type_(findPathGroupType(resizer->pathGroup()))
+      type_(findPathGroupType(resizer->pathGroup())),
+      name_(resizer->pathGroup())
 {
+  if (type_ == PathGroupType::kNone && !name_.empty()
+      && sta_->isPathGroupName(name_, sdc_)) {
+    type_ = PathGroupType::kUser;
+  }
   if (enabled()) {
     // Endpoint classification asks whether pins are on the clock network.
     sta_->ensureClkNetwork(sta_->cmdMode());
@@ -335,14 +350,14 @@ bool PathGroupFilter::endpointInGroup(sta::Vertex* endpoint,
   // Structural: a primary output ends *2out, a clock gate enable ends
   // gated_clock, a register/latch data pin ends *2reg.
   const EndpointKind kind = endpointKind(endpoint);
-  if (kind != groupEndpointKind(type_)) {
+  if (type_ != PathGroupType::kUser && kind != groupEndpointKind(type_)) {
     debugPrint(logger_,
                utl::RSZ,
                "path_group",
                2,
                "{} rejected from {}: endpoint is {}",
                network_->pathName(endpoint->pin()),
-               staPathGroupName(type_),
+               groupName(),
                endpointKindName(kind));
     return false;
   }
@@ -358,7 +373,7 @@ bool PathGroupFilter::endpointInGroup(sta::Vertex* endpoint,
                2,
                "{} rejected from {}: no path in group",
                network_->pathName(endpoint->pin()),
-               staPathGroupName(type_));
+               groupName());
     return false;
   }
   debugPrint(logger_,
@@ -367,7 +382,7 @@ bool PathGroupFilter::endpointInGroup(sta::Vertex* endpoint,
              2,
              "{} kept in {}: group slack {} (endpoint slack {})",
              network_->pathName(endpoint->pin()),
-             staPathGroupName(type_),
+             groupName(),
              sta::delayAsString(*slack, 4, sta_),
              sta::delayAsString(sta_->slack(endpoint, min_max), 4, sta_));
   return true;
@@ -415,7 +430,7 @@ PathGroupFilter::GroupSlacks PathGroupFilter::groupEndpointSlacks(
   }
 
   const bool setup = min_max == sta::MinMax::max();
-  sta::StringSeq group_names{std::string(staPathGroupName(type_))};
+  sta::StringSeq group_names{std::string(groupName())};
   // No `to` filter: one unfiltered query returns the whole group.
   const sta::PathEndSeq ends = sta_->findPathEnds(
       /*from=*/nullptr,
@@ -477,7 +492,7 @@ sta::PathEnd* PathGroupFilter::worstGroupEnd(sta::Vertex* endpoint,
                                                sdc_);
 
   const bool setup = min_max == sta::MinMax::max();
-  sta::StringSeq group_names{std::string(staPathGroupName(type_))};
+  sta::StringSeq group_names{std::string(groupName())};
   const sta::PathEndSeq ends = sta_->findPathEnds(
       /*from=*/nullptr,
       /*thrus=*/nullptr,
@@ -502,6 +517,12 @@ sta::PathEnd* PathGroupFilter::worstGroupEnd(sta::Vertex* endpoint,
   // The PathEnd dies on the next query, but only its slack and its graph
   // owned path are read from it.
   return ends.empty() ? nullptr : ends[0];
+}
+
+std::string_view PathGroupFilter::groupName() const
+{
+  return type_ == PathGroupType::kUser ? std::string_view(name_)
+                                       : staPathGroupName(type_);
 }
 
 bool PathGroupFilter::startpointInGroup(sta::Vertex* startpoint) const

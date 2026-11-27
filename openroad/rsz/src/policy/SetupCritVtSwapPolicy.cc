@@ -39,6 +39,7 @@
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
+#include "sta/PathExpanded.hh"
 #include "sta/PocvMode.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Scene.hh"
@@ -130,16 +131,29 @@ bool SetupCritVtSwapPolicy::swapVTCritCells(int& num_viols)
 
   {
     const ProfileScope profile("target_collection");
-    const std::optional<std::unordered_set<sta::Vertex*>> group_fanout
-        = findGroupFanout();
-    for (const auto& [endpoint, slack] : violating_ends) {
-      traverseFaninCone(endpoint,
-                        group_fanout.has_value() ? &*group_fanout : nullptr,
-                        crit_insts,
-                        crit_inst_set,
-                        visited,
-                        notSwappable,
-                        capture_cells);
+    const PathGroupFilter path_group_filter(&resizer_);
+    if (path_group_filter.isSdcGroup()) {
+      // A group_path is defined by its paths, not by where they start: the
+      // fanin cone of its endpoints also feeds their paths outside it.
+      for (const auto& [endpoint, slack] : violating_ends) {
+        collectGroupPathInsts(endpoint,
+                              path_group_filter,
+                              crit_insts,
+                              crit_inst_set,
+                              notSwappable);
+      }
+    } else {
+      const std::optional<std::unordered_set<sta::Vertex*>> group_fanout
+          = findGroupFanout();
+      for (const auto& [endpoint, slack] : violating_ends) {
+        traverseFaninCone(endpoint,
+                          group_fanout.has_value() ? &*group_fanout : nullptr,
+                          crit_insts,
+                          crit_inst_set,
+                          visited,
+                          notSwappable,
+                          capture_cells);
+      }
     }
 
     RepairSetupProfiler::event("targets_collected", crit_insts.size());
@@ -369,6 +383,45 @@ void SetupCritVtSwapPolicy::traverseFaninCone(
     for (size_t i = crit_insts.size() - endpoint_insts; i < crit_insts.size();
          ++i) {
       logger_->report(" {}", network_->pathName(crit_insts[i].first));
+    }
+  }
+}
+
+void SetupCritVtSwapPolicy::collectGroupPathInsts(
+    sta::Vertex* endpoint,
+    const PathGroupFilter& path_group_filter,
+    std::vector<std::pair<sta::Instance*, float>>& crit_insts,
+    std::unordered_set<sta::Instance*>& crit_inst_set,
+    std::unordered_set<sta::Instance*>& notSwappable)
+{
+  const sta::Path* path = path_group_filter.findWorstSlackPath(endpoint, max_);
+  if (path == nullptr) {
+    return;
+  }
+  const sta::PathExpanded expanded(path, sta_);
+  int endpoint_insts = 0;
+  sta::LibertyCell* best_lib_cell = nullptr;
+  // Walk back from the endpoint, so a capped endpoint keeps its cells
+  // nearest the endpoint, as the fanin cone walk does.
+  for (size_t i = expanded.size(); i > expanded.startIndex(); i--) {
+    if (endpoint_insts >= kMaxCritInstancesPerEndpoint) {
+      break;
+    }
+    const sta::Pin* pin = expanded.path(i - 1)->pin(sta_);
+    if (!network_->isDriver(pin)) {
+      continue;
+    }
+    sta::Instance* inst = network_->instance(pin);
+    if (inst == nullptr || drivesClock(inst)
+        || !resizer_.checkAndMarkVTSwappable(
+            inst, notSwappable, best_lib_cell)) {
+      continue;
+    }
+    const sta::Slack inst_slack = getInstanceSlack(inst);
+    if (sta::fuzzyLess(inst_slack, config_.setup_slack_margin)
+        && crit_inst_set.insert(inst).second) {
+      crit_insts.emplace_back(inst, inst_slack);
+      endpoint_insts++;
     }
   }
 }
