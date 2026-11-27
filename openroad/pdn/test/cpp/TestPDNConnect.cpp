@@ -1496,6 +1496,58 @@ TEST_F(TestConnect, AFixedTechViaIsTheOnlyViaUsed)
   EXPECT_EQ(vias[0]->getTechVia(), fixed);
 }
 
+// Fixing a tech via on one layer pair of a multi-layer stack leaves generate
+// rules available for the remaining pairs.
+TEST_F(TestConnect, FixedViaScopesSuppressionPerLayerPair)
+{
+  odb::dbTechVia* via12 = addTechVia(1, "VIA12");
+  addGenerateRule(1, "RULE12");
+  odb::dbTechViaGenerateRule* rule23 = addGenerateRule(2, "RULE23");
+
+  Connect connect(grid_, m(1), m(3));
+  connect.addFixedVia(via12);
+  odb::dbSWire* wire = makeWire();
+
+  DbVia::ViaLayerShape shapes;
+  connect.makeVia(wire,
+                  makeShape(1, kM1Strap),
+                  makeShape(3, odb::Rect(2000, 1000, 2200, 1200)),
+                  odb::dbWireShapeType::STRIPE,
+                  shapes);
+  const std::vector<odb::dbSBox*> vias = placedVias(wire);
+  ASSERT_EQ(vias.size(), 2u);
+  EXPECT_TRUE(std::ranges::any_of(
+      vias, [&](odb::dbSBox* v) { return v->getTechVia() == via12; }));
+  ASSERT_EQ(block()->getVias().size(), 1u);
+  EXPECT_EQ((*block()->getVias().begin())->getViaGenerateRule(), rule23);
+}
+
+// Mirror case: fixing a generate rule on one layer pair leaves tech vias
+// available for the remaining pairs.
+TEST_F(TestConnect, FixedGenerateRuleScopesSuppressionPerLayerPair)
+{
+  odb::dbTechVia* via12 = addTechVia(1, "VIA12");
+  addTechVia(2, "VIA23");
+  odb::dbTechViaGenerateRule* rule23 = addGenerateRule(2, "RULE23");
+
+  Connect connect(grid_, m(1), m(3));
+  connect.addFixedVia(rule23);
+  odb::dbSWire* wire = makeWire();
+
+  DbVia::ViaLayerShape shapes;
+  connect.makeVia(wire,
+                  makeShape(1, kM1Strap),
+                  makeShape(3, odb::Rect(2000, 1000, 2200, 1200)),
+                  odb::dbWireShapeType::STRIPE,
+                  shapes);
+  const std::vector<odb::dbSBox*> vias = placedVias(wire);
+  ASSERT_EQ(vias.size(), 2u);
+  EXPECT_TRUE(std::ranges::any_of(
+      vias, [&](odb::dbSBox* v) { return v->getTechVia() == via12; }));
+  ASSERT_EQ(block()->getVias().size(), 1u);
+  EXPECT_EQ((*block()->getVias().begin())->getViaGenerateRule(), rule23);
+}
+
 // A generate rule has to describe exactly a bottom metal, a cut and a top
 // metal to be used; one missing its cut layer is ignored.
 TEST_F(TestConnect, AGenerateRuleWithoutThreeLayersIsIgnored)
