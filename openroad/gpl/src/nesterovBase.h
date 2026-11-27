@@ -1301,9 +1301,9 @@ class NesterovBase
   // The loop measures the placement at the look-ahead point (curSLPCoordi_),
   // where the gradient is evaluated, one momentum step past Nesterov's
   // iterate (curCoordi_). Once the look-ahead reaches the target overflow,
-  // the overflow convergence is judged by is the iterate's: at the target,
-  // the region moves onto its iterate, with the HPWL measured there; above
-  // it, the descent goes on from the look-ahead.
+  // convergence is judged by the iterate's overflow: at the target, the
+  // region moves onto its iterate, with the HPWL measured there; above it,
+  // the descent goes on from the look-ahead.
   void settleOnIterate(int iter);
   void resetConverged() { isConverged_ = false; }
 
