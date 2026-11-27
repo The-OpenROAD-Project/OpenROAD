@@ -148,6 +148,8 @@ void DesignCallBack::inDbITermPostDisconnect(odb::dbITerm* db_iterm,
   }
   net->removeInstTerm(inst_term);
   inst_term->addToNet(nullptr);
+  // Mark inst dirty so a subsequent swapMaster() in the same batch does not
+  // snapshot the post-disconnect connectivity and skip row-pattern fallback.
   router_->addInstancePAData(inst);
 }
 

@@ -273,13 +273,11 @@ void FlexPA::saveSwappedInst(frInst* inst)
     return;
   }
   // Record the transform where the saved access points were actually computed
-  // (not getTransform(), which may reflect an un-updated move), plus NDR and
-  // per-term net connectivity so swap + rewiring/NDR changes fall back cleanly.
-  const UniqueClass* old_uc = unique_insts_.getUniqueClass(inst);
+  // (not getTransform(), which may reflect an un-updated move) and per-term
+  // net connectivity so swap + rewiring falls back cleanly.
   SavedInst saved{
       .master = inst->getMaster(),
       .transform = inst->getLatestPATransform(),
-      .has_ndr = old_uc != nullptr && old_uc->key().ndr_inst != nullptr,
       .terms = {},
   };
   saved.terms.reserve(inst->getInstTerms().size());
@@ -321,12 +319,8 @@ void FlexPA::clearSwappedInst(odb::dbInst* db_inst)
 bool FlexPA::restoreSwappedInst(frInst* inst)
 {
   const auto saved = swapped_insts_.find(inst->getDBInst());
-  const UniqueClass* new_uc = unique_insts_.getUniqueClass(inst);
-  const bool new_has_ndr
-      = new_uc != nullptr && new_uc->key().ndr_inst != nullptr;
   if (saved == swapped_insts_.end()
       || saved->second.transform != inst->getTransform()
-      || saved->second.has_ndr != new_has_ndr
       || !hasSameMasterGeometry(saved->second.master, inst->getMaster())
       || saved->second.terms.size() != inst->getInstTerms().size()) {
     return false;

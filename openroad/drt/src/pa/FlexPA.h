@@ -189,7 +189,6 @@ class FlexPA
   {
     const frMaster* master;
     odb::dbTransform transform;
-    bool has_ndr;
     std::vector<SavedTerm> terms;
   };
   std::unordered_map<odb::dbInst*, SavedInst> swapped_insts_;
