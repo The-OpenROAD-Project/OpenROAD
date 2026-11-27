@@ -12,6 +12,7 @@ class dbBTerm;
 class dbBlock;
 class dbBlockage;
 class dbBox;
+class dbDft;
 class dbFill;
 class dbGroup;
 class dbITerm;
@@ -197,6 +198,11 @@ class dbBlockCallBackObj
   // dbFill Start
   virtual void inDbFillCreate(dbFill*) {}
   // dbFill End
+
+  // dbDft Start
+  // Before reset() destroys the scan chains and their scan insts.
+  virtual void inDbDftPreReset(dbDft*) {}
+  // dbDft End
 
   virtual void inDbBlockStreamOutBefore(dbBlock*) {}
   virtual void inDbBlockStreamOutAfter(dbBlock*) {}

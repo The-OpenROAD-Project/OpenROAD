@@ -407,6 +407,21 @@ TEST_F(ScriptViewSelectionTest, RewritingAccessPointsDropsTheSelection)
   EXPECT_TRUE(view_.frame().selection.empty());
 }
 
+// As insert_dft does again: the scan chains and their scan insts all go.
+TEST_F(ScriptViewSelectionTest, ResettingTheScanChainsDropsTheSelection)
+{
+  odb::dbScanChain* chain = odb::dbScanChain::create(block_->getDft());
+  odb::dbScanList* list
+      = odb::dbScanList::create(odb::dbScanPartition::create(chain));
+  odb::dbScanInst* scan_inst = list->add(inst_);
+  auto* registry = DescriptorRegistry::instance();
+  view_.addSelected(registry->makeSelected(scan_inst));
+  view_.addSelected(registry->makeSelected(chain));
+  ASSERT_EQ(view_.frame().selection.size(), 2);
+  block_->getDft()->reset();
+  EXPECT_TRUE(view_.frame().selection.empty());
+}
+
 // Renderers read Gui::selection() from the render threads, so with no Qt
 // window it is not the script view's.
 TEST_F(ScriptViewSelectionTest, GuiSelectionIsNotTheScriptViews)

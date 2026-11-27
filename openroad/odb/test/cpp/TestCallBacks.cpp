@@ -444,6 +444,21 @@ TEST_F(CallbackFixture, test_swire)
   EXPECT_EQ(cb_.events[2], "Destroy swire");
 }
 
+TEST_F(CallbackFixture, test_dft_reset)
+{
+  createSimpleDB();
+  dbBlock* block = db_->getChip()->getBlock();
+  dbInst* inst = dbInst::create(block, db_->findMaster("and2"), "i1");
+  dbScanList* list = dbScanList::create(
+      dbScanPartition::create(dbScanChain::create(block->getDft())));
+  list->add(inst);
+  cb_.addOwner(block);
+  block->getDft()->reset();
+  ASSERT_EQ(cb_.events.size(), 1);
+  EXPECT_EQ(cb_.events[0], "PreReset dft");
+  EXPECT_TRUE(block->getDft()->getScanChains().empty());
+}
+
 TEST_F(CallbackFixture, test_findInst_in_callback)
 {
   class FindCallback : public dbBlockCallBackObj

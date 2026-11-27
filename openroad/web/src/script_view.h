@@ -25,6 +25,7 @@ class dbBPin;
 class dbBTerm;
 class dbChip;
 class dbDatabase;
+class dbDft;
 class dbGroup;
 class dbInst;
 class dbITerm;
@@ -194,6 +195,7 @@ class ScriptView : public GuiBackend
     {
       view_->forget();
     }
+    void inDbDftPreReset(odb::dbDft* /* dft */) override { view_->forget(); }
 
    private:
     ScriptView* view_;

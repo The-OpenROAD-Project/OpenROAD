@@ -475,6 +475,15 @@ class CallBack : public dbBlockCallBackObj
   }
   // dbSWire End
 
+  // dbDft Start
+  void inDbDftPreReset(dbDft* /* dft */) override
+  {
+    if (!_pause) {
+      events.emplace_back("PreReset dft");
+    }
+  }
+  // dbDft End
+
   void pause() { _pause = true; }
   void unpause() { _pause = false; }
   void clearEvents() { events.clear(); }

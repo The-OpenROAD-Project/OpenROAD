@@ -17,6 +17,7 @@
 #include "dbBlock.h"
 #include "dbProperty.h"
 #include "dbScanInst.h"
+#include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
 // User Code End Includes
 namespace odb {
@@ -139,6 +140,10 @@ void dbDft::reset()
 {
   _dbDft* obj = (_dbDft*) this;
   _dbBlock* block = (_dbBlock*) obj->getOwner();
+
+  for (auto callback : block->callbacks_) {
+    callback->inDbDftPreReset(this);
+  }
 
   // Scan insts belong to the block, not to their scan list, so destroy them
   // before the chains that list them.
