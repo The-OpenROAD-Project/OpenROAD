@@ -4019,10 +4019,46 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
     net_cap_growth_.clear();
   };
 
-  auto refresh_timing = [&](sta::Vertex* drvr) {
+  // Lowest level whose slack driver sizing reads for the drivers on
+  // `drvr`'s level from filtered_pins[first] on: the side-load checks and
+  // the cap growth guard read the drivers and loads of their input nets.
+  auto sizing_read_level = [&](const sta::Vertex* drvr, const size_t first) {
+    sta::Level level = drvr->level();
+    // Input nets already visited; a net feeds many drivers of a level.
+    std::unordered_set<const sta::Net*> visited;
+    for (size_t i = first; i < filtered_pins.size(); i++) {
+      if (graph_->pinDrvrVertex(filtered_pins[i])->level() != drvr->level()) {
+        break;
+      }
+      std::unique_ptr<sta::InstancePinIterator> pin_iter(
+          network_->pinIterator(network_->instance(filtered_pins[i])));
+      while (pin_iter->hasNext()) {
+        const sta::Pin* input = pin_iter->next();
+        const sta::Net* net = network_->net(input);
+        if (!network_->direction(input)->isInput() || net == nullptr
+            || !visited.insert(net).second) {
+          continue;
+        }
+        for (const sta::Vertex* vertex :
+             netDriverVertices(network_, graph_, net)) {
+          level = std::min(level, vertex->level());
+        }
+      }
+    }
+    return level;
+  };
+
+  // Propagate all pending edits and compute required times down to `drvr`.
+  // Driver sizing also reads the slack of input-net drivers and loads below
+  // `drvr`, so it computes them down to the lowest of those here, while
+  // arrivals and required times agree; computing them later in the level
+  // would see the level's new buffers without arrivals and take their
+  // fanin as unconstrained.
+  auto refresh_timing = [&](sta::Vertex* drvr, const size_t first) {
     propagate_edits();
     utl::DebugScopedTimer timer(sta_runtime);
-    search_->findRequireds(drvr->level());
+    search_->findRequireds(size_driver_ ? sizing_read_level(drvr, first)
+                                        : drvr->level());
   };
 
   // Worst slack before rebuffering, clamped to zero; failing nets near it
@@ -4054,7 +4090,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
     if (drvr->level() != timing_level) {
       timing_level = drvr->level();
-      refresh_timing(drvr);
+      refresh_timing(drvr, iter);
     }
 
     // set rebuffering globals
@@ -4083,7 +4119,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
     if (drvr_inst && resized_insts.contains(drvr_inst)) {
       record_loads(original_tree);
-      refresh_timing(drvr);
+      refresh_timing(drvr, iter);
     }
 
     bool debug = (drvr_pin == resizer_->debug_pin_);
