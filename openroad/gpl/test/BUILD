@@ -21,6 +21,7 @@ TESTS = [
     "mbff_activity",
     "mbff_hier",
     "mbff_orig_name",
+    "mbff_sdc",
     "mbff_clock_power_off",
     "mbff_clock_power_on",
     "simple01-rd",
@@ -285,6 +286,7 @@ cc_test(
     env = GPU_ENV_OFF,
     deps = [
         "//openroad/ant",
+        "//openroad/cts",
         "//openroad/dbSta",
         "//openroad/dbSta:dbNetwork",
         "//openroad/dpl",
@@ -505,6 +507,7 @@ cc_test(
         ":gpl_design_builder",
         "//openroad/gpl",
         "//openroad/odb/src/db",
+        "//openroad/ppl",
         "//openroad/tst",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

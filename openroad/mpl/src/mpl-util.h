@@ -80,6 +80,26 @@ struct SASoftWeights
   float soft_blockage{0.0f};
 };
 
+struct SACoreActionProbs
+{
+  float pos_swap{0.0f};
+  float neg_swap{0.0f};
+  float double_swap{0.0f};
+  float exchange{0.0f};
+};
+
+struct SASoftActionsProbs
+{
+  float resize{0.0f};
+};
+
+struct SAHyperparams
+{
+  float init_prob{0.0f};
+  int max_num_step{0};
+  int num_perturb_per_step{0};
+};
+
 // The cost of a certain penalty is:
 //   cost = weight * normalized_penalty
 //
@@ -88,11 +108,12 @@ struct SASoftWeights
 //
 // Note: the normalization factor is generated during the
 // annealer core initialization.
-struct PenaltyData
+struct Penalty
 {
   std::string name;
   float weight{0.0f};
   float value{0.0f};
+  float pre_value{0.0f};
   float normalization_factor{0.0f};
 };
 

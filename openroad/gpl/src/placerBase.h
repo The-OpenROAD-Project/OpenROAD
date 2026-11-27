@@ -77,6 +77,11 @@ class Instance
   bool isDummy() const;
 
   void copyDbLocation(PlacerBaseCommon* pbc);
+  // The dbInst location that puts this instance's center at (center_x,
+  // center_y). The padding and the pin-density scaling grow the instance
+  // around a center that differs from the master's, so its lower-left is not
+  // the dbInst's.
+  odb::Point dbLocationAt(int center_x, int center_y) const;
   void setLocation(int x, int y);
   void setCenterLocation(int x, int y);
 
@@ -111,6 +116,9 @@ class Instance
   int ly_ = 0;
   int ux_ = 0;
   int uy_ = 0;
+  // The dbInst's lower-left relative to the instance's center.
+  int db_offset_x_ = 0;
+  int db_offset_y_ = 0;
   int extId_ = INT_MIN;
   bool is_macro_ = false;
   bool is_locked_ = false;

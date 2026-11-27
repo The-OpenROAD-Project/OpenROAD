@@ -78,7 +78,7 @@ void _dbChipPath::collectMemInfo(MemInfo& info)
 _dbChipPath::~_dbChipPath()
 {
   if (name_) {
-    free((void*) name_);
+    free(name_);
   }
 }
 
@@ -90,7 +90,7 @@ _dbChipPath::~_dbChipPath()
 
 const char* dbChipPath::getName() const
 {
-  _dbChipPath* obj = (_dbChipPath*) this;
+  const _dbChipPath* obj = reinterpret_cast<const _dbChipPath*>(this);
   return obj->name_;
 }
 

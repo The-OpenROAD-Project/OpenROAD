@@ -40,10 +40,9 @@ metal8     Vertical         4284          4284          0.00%
 ---------------------------------------------------------------
 
 Stage 1: Pattern routing.
-Stage 2: Resistance-aware re-route of critical nets.
 Routing statistics
 Wire length:           11752
-Total via count:       500
+Total via count:       505
 Total congestion:      0.00
 Min resource:          3.00
 Bottleneck:            (6, 0, 2)
@@ -51,15 +50,15 @@ Bottleneck:            (6, 0, 2)
 Layer   Dir     Resource     Wire Dmd      Via Dmd    Total Dmd  Usage (%)
 --------------------------------------------------------------------------
 metal1    H         0.00         0.00         0.00         0.00       0.00
-metal2    V     17918.00       285.00        22.09       307.09       1.71
-metal3    H     24480.00       320.00        17.67       337.67       1.38
-metal4    V     12172.00         2.00         5.46         7.46       0.06
-metal5    H     12240.00        91.00         5.79        96.79       0.79
-metal6    V     12172.00        82.00         2.72        84.72       0.70
+metal2    V     17918.00       268.00        21.90       289.90       1.62
+metal3    H     24480.00       320.00        17.97       337.97       1.38
+metal4    V     12172.00         1.00         5.69         6.69       0.05
+metal5    H     12240.00        91.00         5.49        96.49       0.79
+metal6    V     12172.00       100.00         2.75       102.75       0.84
 metal7    H      4284.00         0.00         0.00         0.00       0.00
 metal8    V      4284.00         0.00         0.00         0.00       0.00
 --------------------------------------------------------------------------
-Total           87550.00       780.00        53.73       833.73       0.95
+Total           87550.00       780.00        53.81       833.81       0.95
 [INFO GRT-0018] Total wirelength: 2832 um
 [INFO GRT-0014] Routed nets: 107
 No differences found.

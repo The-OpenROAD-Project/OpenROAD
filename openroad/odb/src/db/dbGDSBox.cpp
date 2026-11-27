@@ -88,40 +88,40 @@ void _dbGDSBox::collectMemInfo(MemInfo& info)
 
 void dbGDSBox::setLayer(int16_t layer)
 {
-  _dbGDSBox* obj = (_dbGDSBox*) this;
+  _dbGDSBox* obj = reinterpret_cast<_dbGDSBox*>(this);
 
   obj->layer_ = layer;
 }
 
 int16_t dbGDSBox::getLayer() const
 {
-  _dbGDSBox* obj = (_dbGDSBox*) this;
+  const _dbGDSBox* obj = reinterpret_cast<const _dbGDSBox*>(this);
   return obj->layer_;
 }
 
 void dbGDSBox::setDatatype(int16_t datatype)
 {
-  _dbGDSBox* obj = (_dbGDSBox*) this;
+  _dbGDSBox* obj = reinterpret_cast<_dbGDSBox*>(this);
 
   obj->datatype_ = datatype;
 }
 
 int16_t dbGDSBox::getDatatype() const
 {
-  _dbGDSBox* obj = (_dbGDSBox*) this;
+  const _dbGDSBox* obj = reinterpret_cast<const _dbGDSBox*>(this);
   return obj->datatype_;
 }
 
 void dbGDSBox::setBounds(const Rect& bounds)
 {
-  _dbGDSBox* obj = (_dbGDSBox*) this;
+  _dbGDSBox* obj = reinterpret_cast<_dbGDSBox*>(this);
 
   obj->bounds_ = bounds;
 }
 
 Rect dbGDSBox::getBounds() const
 {
-  _dbGDSBox* obj = (_dbGDSBox*) this;
+  const _dbGDSBox* obj = reinterpret_cast<const _dbGDSBox*>(this);
   return obj->bounds_;
 }
 

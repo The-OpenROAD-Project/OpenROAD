@@ -8,3 +8,5 @@
 RSZ-3242
 [ERROR RSZ-3243] -profile_mode must be 0, 1, 2 or 3.
 RSZ-3243
+[ERROR RSZ-3282] -sequence: Invalid move type: bogus.
+RSZ-3282

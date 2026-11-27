@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <limits>
 #include <map>
 #include <random>
@@ -45,14 +46,8 @@ class SimulatedAnnealingCore
                          const odb::Rect& outline,
                          const std::vector<T>& macros,
                          const SACoreWeights& weights,
-                         float pos_swap_prob,
-                         float neg_swap_prob,
-                         float double_swap_prob,
-                         float exchange_prob,
-                         // Fast SA hyperparameter
-                         float init_prob,
-                         int max_num_step,
-                         int num_perturb_per_step,
+                         const SACoreActionProbs& action_probs,
+                         const SAHyperparams& hyperparams,
                          unsigned seed,
                          MplObserver* graphics,
                          utl::Logger* logger,
@@ -73,26 +68,34 @@ class SimulatedAnnealingCore
   virtual bool isValid() const;
   bool fitsIn(const odb::Rect& outline) const;
   void writeCostFile(const std::string& file_name) const;
+  void printResults() const;  // just for test
   float getNormCost() const;
   int getWidth() const;
   int getHeight() const;
   int64_t getArea() const;
-  float getAreaPenalty() const;
-  float getOutlinePenalty() const;
-  float getNormOutlinePenalty() const;
-  float getWirelength() const;
-  float getNormWirelength() const;
-  float getGuidancePenalty() const;
-  float getNormGuidancePenalty() const;
-  float getFencePenalty() const;
-  float getNormFencePenalty() const;
   std::vector<T> getMacros() const;
 
-  virtual void initialize() = 0;
+  void initialize();
   virtual void run() = 0;
   virtual void fillDeadSpace() = 0;
 
+  // Indices into penalties_.
+  enum PenaltyKind : size_t
+  {
+    kArea,
+    kOutline,
+    kWirelength,
+    kGuidance,
+    kFence
+  };
+
  protected:
+  struct Action
+  {
+    float probability{0.0f};
+    std::function<void()> perturb;
+  };
+
   struct Result
   {
     bool empty() const { return sequence_pair.pos_sequence.empty(); }
@@ -110,12 +113,16 @@ class SimulatedAnnealingCore
   void setAvailableRegionsForUnconstrainedPins(
       const BoundaryRegionList& regions);
   void initSequencePair();
+  virtual void findFixedMacros() {}
   void setDieArea(const odb::Rect& die_area);
   void updateBestResult(float cost);
   void useBestResult();
 
-  virtual float calNormCost() const = 0;
-  virtual void calPenalty() = 0;
+  float calNormCost() const;
+  void calPenalty();
+  virtual void calExtraPenalties() {}
+
+  void calAreaPenalty();
   void calOutlinePenalty();
   void calWirelength();
   float computeNetsWireLength(const BundledNetList& nets) const;
@@ -126,11 +133,14 @@ class SimulatedAnnealingCore
   void calGuidancePenalty();
   void calFencePenalty();
 
+  void savePenalties();
+  void restorePenalties();
+
   // operations
   void packFloorplan();
-  virtual void perturb() = 0;
-  virtual void saveState() = 0;
-  virtual void restoreState() = 0;
+  void perturb();
+  void saveState();
+  void restoreState();
   // actions used
   void singleSeqSwap(bool pos);
   void doubleSeqSwap();
@@ -141,10 +151,10 @@ class SimulatedAnnealingCore
   static float calAverage(std::vector<float>& value_list);
 
   // For debugging
-  void reportCoreWeights() const;
+  void reportWeights() const;
   void reportTotalCost() const;
   void reportLocations() const;
-  void report(const PenaltyData& penalty) const;
+  void report(const Penalty& penalty) const;
 
   odb::Rect outline_;
   odb::Rect die_area_;  // Offset to the current outline.
@@ -158,13 +168,9 @@ class SimulatedAnnealingCore
   std::map<int, odb::Rect> fences_;  // Macro Id -> Fence
   std::map<int, odb::Rect> guides_;  // Macro Id -> Guide
 
-  SACoreWeights core_weights_;
-
   // Fast SA hyperparameter
-  float init_prob_ = 0.0;
+  SAHyperparams hyperparams_;
   float init_temperature_ = 1.0;
-  int max_num_step_ = 0;
-  int num_perturb_per_step_ = 0;
 
   // seed for reproduciabilty
   std::mt19937 generator_;
@@ -179,8 +185,6 @@ class SimulatedAnnealingCore
   std::vector<int> pre_pos_seq_;
   std::vector<int> pre_neg_seq_;
   std::vector<T> pre_macros_;  // here the macros can be HardMacro or SoftMacro
-  int macro_id_ = -1;          // the macro changed in the perturb
-  int action_id_ = -1;         // the action_id of current step
 
   // metrics
   int width_ = 0;
@@ -188,27 +192,13 @@ class SimulatedAnnealingCore
   int pre_width_ = 0;
   int pre_height_ = 0;
 
-  float wirelength_ = 0.0;
-  float outline_penalty_ = 0.0;
-  float guidance_penalty_ = 0.0;
-  float fence_penalty_ = 0.0;
+  // Area, Outline, Wire Length, Guidance, Fence (kArea..kFence);
+  // SACoreSoftMacro appends more.
+  std::vector<Penalty> penalties_;
 
-  float pre_outline_penalty_ = 0.0;
-  float pre_wirelength_ = 0.0;
-  float pre_guidance_penalty_ = 0.0;
-  float pre_fence_penalty_ = 0.0;
-
-  float norm_wirelength_ = 0;
-  float norm_outline_penalty_ = 0.0;
-  float norm_guidance_penalty_ = 0.0;
-  float norm_fence_penalty_ = 0.0;
-  float norm_area_penalty_ = 0.0;
-
-  // probability of each action
-  float pos_swap_prob_ = 0.0;
-  float neg_swap_prob_ = 0.0;
-  float double_swap_prob_ = 0.0;
-  float exchange_prob_ = 0.0;
+  // The 4 common actions (pos/neg/double swap, exchange); SACoreSoftMacro
+  // appends its own (resize).
+  std::vector<Action> actions_;
 
   utl::Logger* logger_ = nullptr;
   MplObserver* graphics_ = nullptr;

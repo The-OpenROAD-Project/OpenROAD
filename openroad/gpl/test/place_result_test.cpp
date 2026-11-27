@@ -5,8 +5,10 @@
 // final values match the placement written back to odb, and the trace
 // holds every Nesterov iteration without graphics or debug enabled.
 
+#include <cstddef>
 #include <iterator>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "gpl/Replace.h"
@@ -14,6 +16,7 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/defin.h"
+#include "odb/geom.h"
 #include "odb/util.h"
 #include "tst/fixture.h"
 
@@ -50,11 +53,18 @@ class PlaceResultTest : public tst::Fixture
   // A placer that has not seen the design, as a separate command would be.
   Replace freshPlacer()
   {
-    return Replace{db_.get(), sta_.get(), nullptr, nullptr, nullptr, &logger_};
+    return Replace{
+        db_.get(), sta_.get(), nullptr, nullptr, nullptr, nullptr, &logger_};
   }
 
   odb::dbBlock* block_ = nullptr;
-  Replace replace_{db_.get(), sta_.get(), nullptr, nullptr, nullptr, &logger_};
+  Replace replace_{db_.get(),
+                   sta_.get(),
+                   nullptr,
+                   nullptr,
+                   nullptr,
+                   nullptr,
+                   &logger_};
 };
 
 TEST_F(PlaceResultTest, DoPlaceReportsTheFinalPlacement)
@@ -142,6 +152,48 @@ TEST_F(PlaceResultTest, IncrementalReportsTheFinalPlacement)
   }
   EXPECT_LE(result.overflow, options.overflow);
   EXPECT_EQ(result.hpwl, odb::WireLengthEvaluator(block_).hpwl());
+}
+
+// Incremental placement locks the placed cells while it places the rest. When
+// that first phase converges, the placed cells end exactly where they were,
+// with or without padding, even though gpl resizes cells for pin density
+// around a center other than the master's.
+TEST_F(PlaceResultTest, IncrementalLeavesPlacedCellsInPlace)
+{
+  for (const auto& [pad_left, pad_right] : {std::pair{0, 0}, std::pair{1, 2}}) {
+    SCOPED_TRACE("pad " + std::to_string(pad_left) + " "
+                 + std::to_string(pad_right));
+    PlaceOptions options;
+    options.padLeft = pad_left;
+    options.padRight = pad_right;
+    freshPlacer().doPlace(1, options);
+    std::vector<std::pair<odb::dbInst*, odb::Point>> placed;
+    int unplaced = 0;
+    for (odb::dbInst* inst : block_->getInsts()) {
+      if (unplaced < 20) {
+        inst->setPlacementStatus(odb::dbPlacementStatus::NONE);
+        ++unplaced;
+      } else {
+        placed.emplace_back(inst, inst->getLocation());
+      }
+    }
+
+    logger_.redirectStringBegin();
+    const PlaceResult result = freshPlacer().doIncrementalPlace(1, options);
+    const std::string log = logger_.redirectStringEnd();
+
+    EXPECT_EQ(result.stop, PlaceStop::kConverged);
+    // One Nesterov run: the first phase converged and the second never ran.
+    const size_t first = log.find("GPL-0084");
+    ASSERT_NE(first, std::string::npos);
+    ASSERT_EQ(log.find("GPL-0084", first + 1), std::string::npos);
+    for (const auto& [inst, location] : placed) {
+      EXPECT_EQ(inst->getLocation(), location) << inst->getName();
+    }
+    for (odb::dbInst* inst : block_->getInsts()) {
+      EXPECT_TRUE(inst->isPlaced()) << inst->getName();
+    }
+  }
 }
 
 TEST_F(PlaceResultTest, NoPlaceableInstancesGivesAnEmptyResult)

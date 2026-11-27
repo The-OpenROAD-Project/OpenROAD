@@ -1966,14 +1966,17 @@ void FastRouteCore::getCongestionGrid(
       }
     }
   }
-  findCongestedEdgesNets(nets_in_congested_edges, false);
+  if (!congestion_only_ && !nets_in_congested_edges.empty()) {
+    findCongestedEdgesNets(nets_in_congested_edges, false);
+  }
   for (const auto& [edge, tile_info] : nets_in_congested_edges) {
-    TileCongestion congestion = tile_info.congestion;
-    const auto& segment
+    const auto segment
         = GSegment(edge.first, edge.second, 1, edge.first, edge.second, 1);
-    const auto& horizontal_srcs
-        = nets_in_congested_edges[{segment.init_x, segment.init_y}].nets;
-    congestionGridH.push_back({segment, congestion, horizontal_srcs});
+    congestionGridH.push_back({
+        .segment = segment,
+        .congestion = tile_info.congestion,
+        .sources = tile_info.nets,
+    });
   }
   nets_in_congested_edges.clear();
 
@@ -1989,14 +1992,17 @@ void FastRouteCore::getCongestionGrid(
       }
     }
   }
-  findCongestedEdgesNets(nets_in_congested_edges, true);
+  if (!congestion_only_ && !nets_in_congested_edges.empty()) {
+    findCongestedEdgesNets(nets_in_congested_edges, true);
+  }
   for (const auto& [edge, tile_info] : nets_in_congested_edges) {
-    TileCongestion congestion = tile_info.congestion;
-    const auto& segment
+    const auto segment
         = GSegment(edge.first, edge.second, 1, edge.first, edge.second, 1);
-    const auto& vertical_srcs
-        = nets_in_congested_edges[{segment.init_x, segment.init_y}].nets;
-    congestionGridV.push_back({segment, congestion, vertical_srcs});
+    congestionGridV.push_back({
+        .segment = segment,
+        .congestion = tile_info.congestion,
+        .sources = tile_info.nets,
+    });
   }
 }
 
