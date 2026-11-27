@@ -107,6 +107,13 @@ class PlacementDRC
   DbuX gridToDbu(GridX grid_x, DbuX site_width) const;
   void makeCellEdgeSpacingTable(odb::dbTech* tech);
   bool hasPaddingConflict(const Node* cell, const Node* padding_cell) const;
+  // Blocked layers check over the cell's footprint in grid coordinates, with
+  // its origin at (x_real, y_real) in DBU.
+  bool checkBlockedLayersOnGrid(const Node* cell,
+                                const GridRect& grid_rect,
+                                DbuX x_real,
+                                DbuY y_real,
+                                const odb::dbOrientType& orient) const;
   // Padding check over the cell's footprint in grid coordinates.
   bool checkPadding(const Node* cell, const GridRect& rect) const;
 };
