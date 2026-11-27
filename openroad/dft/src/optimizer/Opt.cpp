@@ -4,7 +4,6 @@
 #include "Opt.hh"
 
 #include <algorithm>
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -20,6 +19,7 @@
 #include "boost/geometry/geometries/register/point.hpp"
 #include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace bg = boost::geometry;

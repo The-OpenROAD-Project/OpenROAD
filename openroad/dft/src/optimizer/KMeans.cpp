@@ -4,6 +4,7 @@
 #include "KMeans.hh"
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <numeric>

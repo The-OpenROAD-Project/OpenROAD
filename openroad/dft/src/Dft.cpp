@@ -4,6 +4,7 @@
 #include "dft/Dft.hh"
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <map>
@@ -31,6 +32,7 @@
 #include "boost/property_tree/ptree.hpp"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "utl/Logger.h"
 
@@ -291,7 +293,8 @@ CellPool poolCells(const std::vector<OptChain*>& members)
 {
   CellPool pool;
   int64_t max_last_bits = 0;
-  for (int m = 0; m < static_cast<int>(members.size()); m++) {
+  const int k = static_cast<int>(members.size());
+  for (int m = 0; m < k; m++) {
     const auto& cells = members[m]->cells;
     int64_t bits = 0;
     for (const auto& cell : cells) {
@@ -423,9 +426,11 @@ RebalanceResult keepShorterChains(const std::vector<OptChain*>& members,
     members[m]->members_changed = rebalance;
     members[m]->reordered = true;
   }
-  return {.kept_length = kept_length,
-          .moved_length = moved_length,
-          .rebalanced = rebalance};
+  return {
+      .kept_length = kept_length,
+      .moved_length = moved_length,
+      .rebalanced = rebalance,
+  };
 }
 
 // Moves cells between chains of the same clock domain so each chain holds a
