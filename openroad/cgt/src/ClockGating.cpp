@@ -98,6 +98,7 @@ void ClockGating::setMaxCover(int max_cover)
 
 void ClockGating::setDumpDir(const char* dir)
 {
+  impl_->setDumpDir(dir);
 }
 
 //////////////////////////////////////////////////
@@ -246,13 +247,11 @@ static sta::Pin* getClockPin(sta::dbNetwork* const network,
 void ClockGating::Impl::setDumpDir(const char* const dir)
 {
   if (*dir == '\0') {
+    dump_dir_.reset();
     return;
   }
   dump_dir_ = std::filesystem::current_path() / dir;
-  if (std::filesystem::exists(*dump_dir_)) {
-    std::filesystem::remove_all(*dump_dir_);
-  }
-  std::filesystem::create_directory(*dump_dir_);
+  std::filesystem::create_directories(*dump_dir_);
 }
 
 // Gathers networks downstream of the given instances (until it encounters
@@ -313,9 +312,10 @@ static std::vector<sta::Net*> downstreamNets(sta::dbSta* const sta,
   return nets;
 }
 
-// Appends the nets upstream of the given nets to them, and returns the result.
+// Returns the given nets followed by the nets upstream of them, without
+// duplicates.
 static std::vector<sta::Net*> upstreamNets(sta::dbSta* const sta,
-                                           std::vector<sta::Net*>& nets)
+                                           const std::vector<sta::Net*>& start)
 {
   class SearchPred final : public sta::SearchPred1
   {
@@ -345,10 +345,11 @@ static std::vector<sta::Net*> upstreamNets(sta::dbSta* const sta,
   auto network = sta->getDbNetwork();
   auto graph = sta->graph();
   SearchPred pred(sta);
-  std::unordered_set<sta::Net*> visited_nets;
+  std::vector<sta::Net*> nets = start;
+  std::unordered_set<sta::Net*> visited_nets(start.begin(), start.end());
   {
     sta::BfsBkwdIterator iter(sta::BfsIndex::other, &pred, sta);
-    for (auto& inst : nets) {
+    for (auto& inst : start) {
       auto pin_iter = network->pinIterator(inst);
       while (pin_iter->hasNext()) {
         auto pin = pin_iter->next();
@@ -424,6 +425,10 @@ std::optional<int> AcceptedGates::findSubset(
     const std::vector<sta::Net*>& conds,
     const bool clk_enable) const
 {
+  // conds is in search order, not sorted, so test membership with a set.
+  const std::unordered_set<sta::Net*> cond_set(conds.begin(), conds.end());
+  const auto in_conds
+      = [&cond_set](sta::Net* net) { return cond_set.contains(net); };
   for (sta::Net* net : conds) {
     auto it = net_to_gates_.find(net);
     if (it == net_to_gates_.end()) {
@@ -432,7 +437,7 @@ std::optional<int> AcceptedGates::findSubset(
     for (const int idx : it->second) {
       const Gate& gate = gates_[idx];
       if (gate.clk_enable == clk_enable
-          && std::ranges::includes(conds, gate.conds)) {
+          && std::ranges::all_of(gate.conds, in_conds)) {
         return idx;
       }
     }
@@ -515,6 +520,8 @@ void ClockGating::Impl::run(sta::Scene* const scene)
                     network->name(instance));
       continue;
     }
+    // Candidates also include the nets upstream of the initial ones.
+    gate_cond_cover = upstreamNets(sta_, gate_cond_cover);
 
     debug(1,
           "Gate condition cover size: {} for instance {}",
@@ -590,7 +597,7 @@ std::vector<sta::Instance*> ClockGating::Impl::collectRegisters(
 
 bool ClockGating::Impl::reuseAcceptedGate(
     sta::Instance* const instance,
-    std::vector<sta::Net*>& gate_cond_cover,
+    const std::vector<sta::Net*>& gate_cond_cover,
     abc::Abc_Ntk_t& abc_network,
     AcceptedGates& accepted)
 {
@@ -601,8 +608,7 @@ bool ClockGating::Impl::reuseAcceptedGate(
                          3,
                          "Existing gating conditions reuse check time: {}");
   auto network = sta_->getDbNetwork();
-  const std::vector<int> candidates
-      = accepted.gatesUsing(upstreamNets(sta_, gate_cond_cover));
+  const std::vector<int> candidates = accepted.gatesUsing(gate_cond_cover);
   bool reused = false;
   for (const int idx : candidates) {
     AcceptedGates::Gate& gate = accepted.gate(idx);
@@ -1030,7 +1036,7 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::Impl::makeTestNetwork(
     abc::Abc_Ntk_t& abc_network_ref,
     const bool clk_enable)
 {
-  DebugScopedTimer timer(network_export_time_,
+  DebugScopedTimer timer(network_build_time_,
                          logger_,
                          CGT,
                          "clock_gating",
