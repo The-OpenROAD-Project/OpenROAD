@@ -79,6 +79,10 @@ class AbcLibraryFactory
   std::vector<abc::SC_Pin*> CreateAbcOutputPins(
       sta::LibertyCell* cell,
       const std::vector<std::string>& input_names);
+  // Builds ABC's single timing table for arc_set, which drives an output of
+  // cell.
+  abc::SC_Timings* CreateAbcTiming(sta::LibertyCell* cell,
+                                   sta::TimingArcSet* arc_set);
   void AbcPopulateAbcSurfaceFromSta(abc::SC_Surface* abc_table,
                                     const sta::TableModel* model,
                                     sta::Units* units);

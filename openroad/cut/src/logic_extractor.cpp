@@ -123,6 +123,8 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryInputs(
   return primary_inputs;
 }
 
+namespace {
+
 // Returns the vertex of a constant 1 or 0 cell if the driver of the input
 // pin is a constant 0 or 1 port. Otherwise return nullptr.
 sta::Vertex* GetConstantVertexIfExists(sta::dbNetwork* network,
@@ -161,6 +163,8 @@ sta::Vertex* GetConstantVertexIfExists(sta::dbNetwork* network,
 
   return constant_vertex;
 }
+
+}  // namespace
 
 // Annoyingly STA does not include input pins that are filtered out in the
 // search. for example constant inputs, or disabled timing paths. We need to

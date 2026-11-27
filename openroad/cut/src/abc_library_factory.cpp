@@ -243,6 +243,59 @@ std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcInputPins(
   return result;
 }
 
+abc::SC_Timings* AbcLibraryFactory::CreateAbcTiming(sta::LibertyCell* cell,
+                                                    sta::TimingArcSet* arc_set)
+{
+  sta::Units* units = cell->libertyLibrary()->units();
+  abc::SC_Timings* timings = abc::Abc_SclTimingsAlloc();
+  timings->pName = strdup(arc_set->from()->name().c_str());
+  abc::SC_Timing* time_table = abc::Abc_SclTimingAlloc();
+  abc::Vec_PtrPush(&timings->vTimings, time_table);
+
+  sta::TimingSense timing_sense = arc_set->sense();
+  if (timing_sense == sta::TimingSense::negative_unate) {
+    time_table->tsense = abc::SC_TSense::sc_ts_Neg;
+  } else if (timing_sense == sta::TimingSense::positive_unate) {
+    time_table->tsense = abc::SC_TSense::sc_ts_Pos;
+  } else if (timing_sense == sta::TimingSense::non_unate) {
+    time_table->tsense = abc::SC_TSense::sc_ts_Non;
+  } else {
+    logger_->error(utl::CUT,
+                   17,
+                   "Unrecognized sta::TimingSense -> {}",
+                   static_cast<int>(timing_sense));
+  }
+
+  sta::TimingArc* rise_arc = arc_set->arcTo(sta::RiseFall::rise());
+  sta::TimingArc* fall_arc = arc_set->arcTo(sta::RiseFall::fall());
+
+  sta::TimingModel* rise_model = rise_arc->model();
+  sta::TimingModel* fall_model = fall_arc->model();
+
+  const sta::GateTableModel* rise_gate_model
+      = dynamic_cast<sta::GateTableModel*>(rise_model);
+  const sta::GateTableModel* fall_gate_model
+      = dynamic_cast<sta::GateTableModel*>(fall_model);
+
+  if (!rise_gate_model || !fall_gate_model) {
+    logger_->error(utl::CUT,
+                   18,
+                   "rise/fall Gate model is empty for cell {}. Need timing "
+                   "information",
+                   cell->name());
+  }
+  AbcPopulateAbcSurfaceFromSta(
+      &time_table->pCellRise, rise_gate_model->delayModel(), units);
+  AbcPopulateAbcSurfaceFromSta(
+      &time_table->pCellFall, fall_gate_model->delayModel(), units);
+  AbcPopulateAbcSurfaceFromSta(
+      &time_table->pRiseTrans, rise_gate_model->slewModel(), units);
+  AbcPopulateAbcSurfaceFromSta(
+      &time_table->pFallTrans, fall_gate_model->slewModel(), units);
+
+  return timings;
+}
+
 std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcOutputPins(
     sta::LibertyCell* cell,
     const std::vector<std::string>& input_names)
@@ -322,53 +375,7 @@ std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcOutputPins(
       }
       pins.insert(arc_pin_name);
 
-      abc::SC_Timings* timings = abc::Abc_SclTimingsAlloc();
-      abc::Vec_PtrPush(&output_pin->vRTimings, timings);
-      timings->pName = strdup(arc_pin_name.c_str());
-      abc::SC_Timing* time_table = abc::Abc_SclTimingAlloc();
-      abc::Vec_PtrPush(&timings->vTimings, time_table);
-
-      sta::TimingSense timing_sense = arc_set->sense();
-      if (timing_sense == sta::TimingSense::negative_unate) {
-        time_table->tsense = abc::SC_TSense::sc_ts_Neg;
-      } else if (timing_sense == sta::TimingSense::positive_unate) {
-        time_table->tsense = abc::SC_TSense::sc_ts_Pos;
-      } else if (timing_sense == sta::TimingSense::non_unate) {
-        time_table->tsense = abc::SC_TSense::sc_ts_Non;
-      } else {
-        logger_->error(utl::CUT,
-                       17,
-                       "Unrecognized sta::TimingSense -> {}",
-                       static_cast<int>(timing_sense));
-      }
-
-      sta::TimingArc* rise_arc = arc_set->arcTo(sta::RiseFall::rise());
-      sta::TimingArc* fall_arc = arc_set->arcTo(sta::RiseFall::fall());
-
-      sta::TimingModel* rise_model = rise_arc->model();
-      sta::TimingModel* fall_model = fall_arc->model();
-
-      const sta::GateTableModel* rise_gate_model
-          = dynamic_cast<sta::GateTableModel*>(rise_model);
-      const sta::GateTableModel* fall_gate_model
-          = dynamic_cast<sta::GateTableModel*>(fall_model);
-
-      if (!rise_gate_model || !fall_gate_model) {
-        logger_->error(utl::CUT,
-                       18,
-                       "rise/fall Gate model is empty for cell {}. Need timing "
-                       "information",
-                       cell->name());
-      }
-      sta::Units* units = cell->libertyLibrary()->units();
-      AbcPopulateAbcSurfaceFromSta(
-          &time_table->pCellRise, rise_gate_model->delayModel(), units);
-      AbcPopulateAbcSurfaceFromSta(
-          &time_table->pCellFall, fall_gate_model->delayModel(), units);
-      AbcPopulateAbcSurfaceFromSta(
-          &time_table->pRiseTrans, rise_gate_model->slewModel(), units);
-      AbcPopulateAbcSurfaceFromSta(
-          &time_table->pFallTrans, fall_gate_model->slewModel(), units);
+      abc::Vec_PtrPush(&output_pin->vRTimings, CreateAbcTiming(cell, arc_set));
     }
 
     result.push_back(output_pin);
