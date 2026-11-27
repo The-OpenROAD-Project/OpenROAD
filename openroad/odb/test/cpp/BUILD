@@ -92,6 +92,18 @@ cc_test(
 )
 
 cc_test(
+    name = "TestDefBlockages",
+    srcs = ["TestDefBlockages.cpp"],
+    deps = [
+        "//openroad/odb/src/db",
+        "//openroad/odb/src/defout",
+        "//openroad/tst:db_fixture",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestGCellGrid",
     srcs = ["TestGCellGrid.cpp"],
     deps = [
