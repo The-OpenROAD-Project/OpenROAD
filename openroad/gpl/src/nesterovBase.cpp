@@ -1635,16 +1635,13 @@ void NesterovBaseCommon::updateVirtualClockLeafNetForceWA(float wlCoeffX,
   }
 }
 
-GCell& NesterovBaseCommon::getGCell(size_t index)
+void NesterovBaseCommon::reportGCellIndexOutOfBounds(size_t index) const
 {
-  if (index >= gCellStor_.size()) {
-    log_->error(utl::GPL,
-                316,
-                "getGCell: index {} out of bounds (gCellStor_.size() = {}).",
-                index,
-                gCellStor_.size());
-  }
-  return gCellStor_[index];
+  log_->error(utl::GPL,
+              316,
+              "getGCell: index {} out of bounds (gCellStor_.size() = {}).",
+              index,
+              gCellStor_.size());
 }
 
 size_t NesterovBaseCommon::getGCellIndex(const GCell* gCell) const
@@ -2857,17 +2854,14 @@ int64_t NesterovBase::getFillerCellArea() const
   return static_cast<int64_t>(fillerDx_) * static_cast<int64_t>(fillerDy_);
 }
 
-GCell& NesterovBase::getFillerGCell(size_t index)
+void NesterovBase::reportFillerGCellIndexOutOfBounds(size_t index) const
 {
-  if (index >= fillerStor_.size()) {
-    log_->error(
-        utl::GPL,
-        314,
-        "getFillerGCell: index {} out of bounds (fillerStor_.size() = {}).",
-        index,
-        fillerStor_.size());
-  }
-  return fillerStor_[index];
+  log_->error(
+      utl::GPL,
+      314,
+      "getFillerGCell: index {} out of bounds (fillerStor_.size() = {}).",
+      index,
+      fillerStor_.size());
 }
 
 int64_t NesterovBase::getWhiteSpaceArea() const

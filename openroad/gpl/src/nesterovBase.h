@@ -1016,7 +1016,13 @@ class NesterovBaseCommon
     return !virtual_clock_leaf_net_grads_.empty();
   }
 
-  GCell& getGCell(size_t index);
+  GCell& getGCell(size_t index)
+  {
+    if (index >= gCellStor_.size()) [[unlikely]] {
+      reportGCellIndexOutOfBounds(index);
+    }
+    return gCellStor_[index];
+  }
   size_t getGCellIndex(const GCell* gCell) const;
 
   void printGCells();
@@ -1041,6 +1047,7 @@ class NesterovBaseCommon
   std::shared_ptr<PlacerBaseCommon> pbc_;
   utl::Logger* log_ = nullptr;
 
+  [[noreturn]] void reportGCellIndexOutOfBounds(size_t index) const;
   std::vector<GCell> gCellStor_;
   std::vector<GNet> gNetStor_;
   std::vector<GPin> gPinStor_;
@@ -1108,7 +1115,13 @@ class NesterovBase
                utl::Logger* log);
   ~NesterovBase();
 
-  GCell& getFillerGCell(size_t index);
+  GCell& getFillerGCell(size_t index)
+  {
+    if (index >= fillerStor_.size()) [[unlikely]] {
+      reportFillerGCellIndexOutOfBounds(index);
+    }
+    return fillerStor_[index];
+  }
 
   NesterovBaseCommon* getNbc() { return nbc_.get(); }
 
@@ -1450,6 +1463,7 @@ class NesterovBase
   int64_t stdInstsArea_ = 0;
   int64_t macroInstsArea_ = 0;
 
+  [[noreturn]] void reportFillerGCellIndexOutOfBounds(size_t index) const;
   std::vector<GCell> fillerStor_;
   std::vector<GCellHandle> nb_gcells_;
 
