@@ -225,14 +225,37 @@ class Rebuffer : public sta::dbStaState
     sta::LibertyCellSeq cells;
     std::optional<float> leakage_budget;
   };
-  // Append to `trees` the trees planForDriverCell() builds for the one of
-  // `choices` that speeds up `timing_tree` the most, if any does.
-  void addTreesPlannedForBestDriver(const BufferedNetPtr& unbuffered_tree,
-                                    const BufferedNetPtr& timing_tree,
-                                    sta::LibertyCell* current_cell,
-                                    const DriverChoices& choices,
-                                    FixedDelay relaxation,
-                                    std::vector<BufferedNetPtr>& trees);
+  // The candidate trees for one net, with the slack of each tree for each
+  // driver cell and the side-load slack of each cell computed on first use.
+  // planTreesForBestDriver(), bestSlackWithDriver(), and
+  // chooseTreeAndDriver() share them.
+  struct TreeDriverEvaluation
+  {
+    explicit TreeDriverEvaluation(const std::vector<BufferedNetPtr>& trees)
+        : trees(trees)
+    {
+    }
+    const std::vector<BufferedNetPtr>& trees;
+    // Buffer leakages of each tree, indexed like `trees`.
+    std::vector<std::optional<std::vector<float>>> buffer_leakages;
+    // Key: (driver cell, index into `trees`).
+    // Value: slack of that tree driven by that cell; nullopt if infeasible.
+    absl::flat_hash_map<std::pair<const sta::LibertyCell*, size_t>,
+                        std::optional<FixedDelay>>
+        slacks;
+    // Key: candidate driver cell.
+    // Value: worst upstream side-load slack after resizing to that cell.
+    absl::flat_hash_map<const sta::LibertyCell*, FixedDelay> side_load_slacks;
+  };
+  // The trees planForDriverCell() builds for the one of `choices` that
+  // improves the timing tree (at kTimingTreeIndex of `eval`) the most while
+  // respecting upstream side-load slack; both null when no cell does.
+  std::pair<BufferedNetPtr, BufferedNetPtr> planTreesForBestDriver(
+      const BufferedNetPtr& unbuffered_tree,
+      sta::LibertyCell* current_cell,
+      const DriverChoices& choices,
+      FixedDelay relaxation,
+      TreeDriverEvaluation& eval);
   DriverChoices driverChoices(sta::LibertyCell* current_cell,
                               const BufferedNetPtr& timing_tree);
   // Leakage of each buffer of `tree` in visit order; nullopt when a buffer
@@ -243,22 +266,6 @@ class Rebuffer : public sta::dbStaState
   std::optional<float> netLeakage(
       sta::LibertyCell* cell,
       const std::optional<std::vector<float>>& buffer_leakages);
-  // The candidate trees for one net, with the slack of each tree for each
-  // driver cell and the side-load slack of each cell computed on first use.
-  // bestSlackWithDriver() and chooseTreeAndDriver() share them.
-  struct TreeDriverEvaluation
-  {
-    explicit TreeDriverEvaluation(const std::vector<BufferedNetPtr>& trees)
-        : trees(trees)
-    {
-    }
-    const std::vector<BufferedNetPtr>& trees;
-    std::vector<std::optional<std::vector<float>>> buffer_leakages;
-    absl::flat_hash_map<std::pair<const sta::LibertyCell*, size_t>,
-                        std::optional<FixedDelay>>
-        slacks;
-    absl::flat_hash_map<const sta::LibertyCell*, FixedDelay> side_load_slacks;
-  };
   bool withinLeakageBudget(TreeDriverEvaluation& eval,
                            const DriverChoices& choices,
                            sta::LibertyCell* cell,
@@ -299,6 +306,10 @@ class Rebuffer : public sta::dbStaState
 
   float maxSlewMargined(float max_slew);
   float maxCapMargined(float max_cap);
+  // True when `cap` exceeds the margined max capacitance of `port` in any
+  // scene.  `cap` is the load in the command scene, also for the limits of
+  // the other scenes.
+  bool exceedsMaxCap(const sta::LibertyPort* port, float cap);
 
   bool loadSlewSatisfactory(sta::LibertyPort* driver,
                             const BufferedNetPtr& bnet);
@@ -632,6 +643,9 @@ class Rebuffer : public sta::dbStaState
   // Fraction of the worst slack within which a failing net counts as
   // critical in fullyRebuffer().
   static constexpr float kCriticalSlackBand = 0.1;
+  // Index of the timing tree in the candidate trees of sizeDriverWithTree();
+  // best-driver planning reuses its memoized slacks.
+  static constexpr size_t kTimingTreeIndex = 2;
 
   double long_wire_stepping_runtime_ = 0;
 

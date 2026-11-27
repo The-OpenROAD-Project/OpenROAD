@@ -1,0 +1,28 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+x: AOI21_X1 drives: crit slow
+worst slack max -0.431
+tns max -0.843
+[INFO RSZ-0173] Rebuffering will size drivers together with buffer trees
+   Iter   |    Area   | Removed | Inserted |   Pins
+          |           | Buffers | Buffers  | Remaining
+-------------------------------------------------------
+        0 |     +0.0% |       0 |        0 |         1
+    final |   +325.0% |       0 |        1 |         0
+-------------------------------------------------------
+[INFO RSZ-2023] Resized 1 drivers while rebuffering.
+x: AOI21_X4 drives: BUF_X2/A
+max capacitance
+
+Pin                                     Limit      Cap    Slack
+---------------------------------------------------------------
+place1/Z                              121.155   89.518   31.637 (MET)
+
+max capacitance
+
+Pin                                     Limit      Cap    Slack
+---------------------------------------------------------------
+place1/Z                              121.155   89.518   31.637 (MET)
+
+worst slack max -0.108
+tns max -0.197
+[INFO RSZ-0175] Driver sizing during rebuffering has been disabled.
