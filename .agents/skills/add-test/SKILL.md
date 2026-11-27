@@ -228,9 +228,14 @@ bazelisk test //openroad/MODULE/test:TestName
 # Run all tests of the module
 bazelisk test //openroad/MODULE/test/...
 
+# Run tests by label regex from a module test directory with a regression link
+./regression -R 'TEST_NAME' --test_output=errors
+
 # Verify Bazel sees the test
 bazelisk query //openroad/MODULE/test:all | grep TEST_NAME
 ```
+
+See `docs/agents/testing.md` for the `./regression` options.
 
 ## 7. Format and commit
 

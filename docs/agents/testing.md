@@ -31,8 +31,22 @@ bazelisk test --test_output=errors //openroad/rsz/test/...                      
 bazelisk query 'filter("repair.*hier", //openroad/rsz/test:all)'                # find tests by regex
 ```
 
-Bazel has no regex filter for test targets.
-Run `bazelisk query 'filter(...)'` to list the matching targets, then pass them to `bazelisk test`.
+In a module test directory with a `regression` link, use `./regression -R` to run tests whose labels match a regex.
+You can also run the link by path from the repository root.
+
+```bash
+cd openroad/rsz/test
+./regression -R 'repair.*hier' --test_output=errors
+```
+
+The script queries the test targets below `//openroad/<module>/...` whose label matches the regex, then runs them in one `bazelisk test` call.
+Put `-R` and its regex before the Bazel test arguments.
+It passes all other arguments to `bazelisk test`.
+Without `-R`, it runs all tests of the module.
+It fails when no test matches.
+It does not select tests tagged `manual`; run them by label with `bazelisk test`.
+It skips targets that are not compatible with the platform, for example GPU-only tests.
+The regex cannot contain both `"` and `'`.
 `--test_filter` selects gtest cases in a C++ test only.
 
 ### Creating a New Integration Test
