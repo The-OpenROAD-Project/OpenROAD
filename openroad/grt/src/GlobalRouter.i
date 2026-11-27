@@ -248,6 +248,14 @@ global_route()
   getGlobalRouter()->globalRoute(true);
 }
 
+void
+global_route_unguided()
+{
+  const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
+  getGlobalRouter()->setNumThreads(num_threads);
+  getGlobalRouter()->globalRouteUnguided(true);
+}
+
 std::vector<int>
 route_layer_lengths(odb::dbNet* db_net)
 {

@@ -255,6 +255,13 @@ regression_test(
 )
 
 regression_test(
+    name = "unguided_only",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
     name = "congested_routes_are_reported",
     check_log = False,
     check_passfail = True,
