@@ -4,12 +4,17 @@
 #include "infrastructure/Grid.h"
 
 #include <algorithm>
+#include <array>
+#include <cassert>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <limits>
 #include <memory>
 #include <optional>
 #include <stdexcept>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -25,7 +30,6 @@
 #include "infrastructure/Padding.h"
 #include "infrastructure/network.h"
 #include "odb/db.h"
-#include "odb/dbShape.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -150,12 +154,394 @@ void Grid::markHopeless(odb::dbBlock* block,
   }
 }
 
+namespace {
+
+int getPinRoutingLevel(odb::dbTechLayer* tech_layer)
+{
+  if (tech_layer == nullptr
+      || tech_layer->getType() != odb::dbTechLayerType::Value::ROUTING) {
+    return 0;
+  }
+  const int level = tech_layer->getRoutingLevel();
+  return level <= kMaxPinLevel ? level : 0;
+}
+
+struct Interval1D
+{
+  int lo;
+  int hi;
+};
+
+struct StripeBand
+{
+  int lo = 0;
+  int hi = 0;
+  int prefix_max_hi = 0;
+  std::vector<Interval1D> spans;
+};
+
+// Indexes axis-aligned wire stripes on a single routing level so via boxes
+// wholly covered by a stripe (or abutting collinear stripes) are filtered out
+// before polygon boolean operations.
+class StripeCover
+{
+ public:
+  void build(const std::vector<odb::Rect>& wires)
+  {
+    std::vector<std::pair<std::pair<int, int>, Interval1D>> horiz_raw;
+    std::vector<std::pair<std::pair<int, int>, Interval1D>> vert_raw;
+    for (const odb::Rect& w : wires) {
+      if (w.xMin() >= w.xMax() || w.yMin() >= w.yMax()) {
+        continue;
+      }
+      if (w.dx() >= w.dy()) {
+        horiz_raw.push_back(
+            {{w.yMin(), w.yMax()}, {.lo = w.xMin(), .hi = w.xMax()}});
+      } else {
+        vert_raw.push_back(
+            {{w.xMin(), w.xMax()}, {.lo = w.yMin(), .hi = w.yMax()}});
+      }
+    }
+    buildBands(horiz_raw, horiz_bands_);
+    buildBands(vert_raw, vert_bands_);
+  }
+
+  [[nodiscard]] bool contains(const odb::Rect& r) const
+  {
+    return bandsContain(horiz_bands_, r.yMin(), r.yMax(), r.xMin(), r.xMax())
+           || bandsContain(vert_bands_, r.xMin(), r.xMax(), r.yMin(), r.yMax());
+  }
+
+ private:
+  static void buildBands(
+      std::vector<std::pair<std::pair<int, int>, Interval1D>>& raw,
+      std::vector<StripeBand>& bands)
+  {
+    bands.clear();
+    if (raw.empty()) {
+      return;
+    }
+    std::ranges::sort(raw, [](const auto& a, const auto& b) {
+      if (a.first != b.first) {
+        return a.first < b.first;
+      }
+      return a.second.lo < b.second.lo;
+    });
+    for (const auto& [key, span] : raw) {
+      if (bands.empty() || bands.back().lo != key.first
+          || bands.back().hi != key.second) {
+        StripeBand& band = bands.emplace_back();
+        band.lo = key.first;
+        band.hi = key.second;
+        band.spans.push_back(span);
+      } else {
+        auto& spans = bands.back().spans;
+        if (span.lo <= spans.back().hi) {
+          spans.back().hi = std::max(spans.back().hi, span.hi);
+        } else {
+          spans.push_back(span);
+        }
+      }
+    }
+    int running_max = bands[0].hi;
+    for (StripeBand& band : bands) {
+      running_max = std::max(running_max, band.hi);
+      band.prefix_max_hi = running_max;
+    }
+  }
+
+  static bool spansContain(const std::vector<Interval1D>& spans,
+                           const int lo,
+                           const int hi)
+  {
+    auto it = std::ranges::upper_bound(spans, lo, {}, &Interval1D::lo);
+    if (it == spans.begin()) {
+      return false;
+    }
+    --it;
+    return it->hi >= hi;
+  }
+
+  static bool bandsContain(const std::vector<StripeBand>& bands,
+                           const int ortho_lo,
+                           const int ortho_hi,
+                           const int span_lo,
+                           const int span_hi)
+  {
+    auto it = std::ranges::upper_bound(bands, ortho_lo, {}, &StripeBand::lo);
+    while (it != bands.begin()) {
+      --it;
+      if (it->prefix_max_hi < ortho_hi) {
+        break;
+      }
+      if (it->hi >= ortho_hi && spansContain(it->spans, span_lo, span_hi)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  std::vector<StripeBand> horiz_bands_;
+  std::vector<StripeBand> vert_bands_;
+};
+
+struct ViaLayerBox
+{
+  int level;
+  odb::Rect rect;
+};
+
+struct CachedVia
+{
+  int origin_offset_x = 0;
+  int origin_offset_y = 0;
+  std::vector<ViaLayerBox> boxes;
+};
+
+// Caches routing-layer boxes in [1, kMaxPinLevel] per via master so millions
+// of PDN via instances do not repeatedly unpack cut arrays and upper-metal
+// boxes via dbSBox::getViaBoxes().
+class ViaBoxCache
+{
+ public:
+  const CachedVia& lookup(odb::dbSBox* sbox)
+  {
+    assert(sbox != nullptr && sbox->isVia());
+    if (odb::dbVia* block_via = sbox->getBlockVia()) {
+      return getOrBuild(block_via, block_vias_);
+    }
+    odb::dbTechVia* tech_via = sbox->getTechVia();
+    assert(tech_via != nullptr);
+    return getOrBuild(tech_via, tech_vias_);
+  }
+
+ private:
+  template <typename ViaMaster>
+  static const CachedVia& getOrBuild(
+      ViaMaster* via_master,
+      std::unordered_map<ViaMaster*, CachedVia>& cache)
+  {
+    auto [it, inserted] = cache.try_emplace(via_master);
+    if (inserted) {
+      CachedVia& entry = it->second;
+      odb::dbBox* bbox = via_master->getBBox();
+      assert(bbox != nullptr);
+      entry.origin_offset_x = bbox->xMin();
+      entry.origin_offset_y = bbox->yMin();
+      for (odb::dbBox* box : via_master->getBoxes()) {
+        const int level = getPinRoutingLevel(box->getTechLayer());
+        if (level > 0) {
+          const odb::Rect rect = box->getBox();
+          if (rect.xMin() < rect.xMax() && rect.yMin() < rect.yMax()) {
+            entry.boxes.push_back({.level = level, .rect = rect});
+          }
+        }
+      }
+    }
+    return it->second;
+  }
+
+  std::unordered_map<odb::dbVia*, CachedVia> block_vias_;
+  std::unordered_map<odb::dbTechVia*, CachedVia> tech_vias_;
+};
+
+// Coalesces co-located stacked-via or DRCFILL pads when one encloses the last.
+void appendViaRect(std::vector<odb::Rect>& vec, const odb::Rect& r)
+{
+  if (r.xMin() >= r.xMax() || r.yMin() >= r.yMax()) {
+    return;
+  }
+  if (!vec.empty()) {
+    odb::Rect& prev = vec.back();
+    if (prev.xMin() <= r.xMin() && r.xMax() <= prev.xMax()
+        && prev.yMin() <= r.yMin() && r.yMax() <= prev.yMax()) {
+      return;
+    }
+    if (r.xMin() <= prev.xMin() && prev.xMax() <= r.xMax()
+        && r.yMin() <= prev.yMin() && prev.yMax() <= r.yMax()) {
+      prev = r;
+      return;
+    }
+  }
+  vec.push_back(r);
+}
+
+class LevelWireSubtraction
+{
+ public:
+  void init(std::vector<odb::Rect> wires)
+  {
+    wires_ = std::move(wires);
+    stripe_cover_.build(wires_);
+    std::ranges::sort(wires_, [](const odb::Rect& a, const odb::Rect& b) {
+      return a.yMin() < b.yMin();
+    });
+    prefix_max_ymax_.resize(wires_.size());
+    int running_ymax = std::numeric_limits<int>::min();
+    for (size_t i = 0; i < wires_.size(); ++i) {
+      running_ymax = std::max(running_ymax, wires_[i].yMax());
+      prefix_max_ymax_[i] = running_ymax;
+    }
+  }
+
+  template <typename EmitFn>
+  void forEachExposedRect(std::vector<odb::Rect>& raw_via_rects, EmitFn&& emit)
+  {
+    namespace gtl = boost::polygon;
+    using gtl::operators::operator+=;
+    using gtl::operators::operator-=;
+
+    filtered_.clear();
+    for (const odb::Rect& r : raw_via_rects) {
+      if (!stripe_cover_.contains(r)) {
+        filtered_.push_back(r);
+      }
+    }
+    std::vector<odb::Rect>().swap(raw_via_rects);
+    if (filtered_.empty()) {
+      return;
+    }
+
+    std::ranges::sort(filtered_, [](const odb::Rect& a, const odb::Rect& b) {
+      if (a.yMin() != b.yMin()) {
+        return a.yMin() < b.yMin();
+      }
+      return a.xMin() < b.xMin();
+    });
+
+    // Partition into strictly disjoint Y-bands (gap >= 1 DBU), then strictly
+    // disjoint X-clusters within each Y-band so each connected/abutting group
+    // can be resolved locally without a full-chip sweep-line pass.
+    size_t b_begin = 0;
+    while (b_begin < filtered_.size()) {
+      const int band_ymin = filtered_[b_begin].yMin();
+      int band_ymax = filtered_[b_begin].yMax();
+      size_t b_end = b_begin + 1;
+      while (b_end < filtered_.size() && filtered_[b_end].yMin() <= band_ymax) {
+        band_ymax = std::max(band_ymax, filtered_[b_end].yMax());
+        ++b_end;
+      }
+
+      collectBandWires(band_ymin, band_ymax);
+
+      std::sort(filtered_.begin() + b_begin,
+                filtered_.begin() + b_end,
+                [](const odb::Rect& a, const odb::Rect& b) {
+                  if (a.xMin() != b.xMin()) {
+                    return a.xMin() < b.xMin();
+                  }
+                  return a.yMin() < b.yMin();
+                });
+
+      size_t c_begin = b_begin;
+      size_t bw_cursor = 0;
+      while (c_begin < b_end) {
+        const int cluster_xmin = filtered_[c_begin].xMin();
+        int cluster_xmax = filtered_[c_begin].xMax();
+        int cluster_ymin = filtered_[c_begin].yMin();
+        int cluster_ymax = filtered_[c_begin].yMax();
+        size_t c_end = c_begin + 1;
+        while (c_end < b_end && filtered_[c_end].xMin() <= cluster_xmax) {
+          cluster_xmax = std::max(cluster_xmax, filtered_[c_end].xMax());
+          cluster_ymin = std::min(cluster_ymin, filtered_[c_end].yMin());
+          cluster_ymax = std::max(cluster_ymax, filtered_[c_end].yMax());
+          ++c_end;
+        }
+
+        collectClusterWires(
+            cluster_xmin, cluster_xmax, cluster_ymin, cluster_ymax, bw_cursor);
+
+        if (c_end - c_begin == 1 && cluster_wires_.empty()) {
+          emit(filtered_[c_begin]);
+        } else {
+          via_set_.clear();
+          for (size_t k = c_begin; k < c_end; ++k) {
+            const odb::Rect& r = filtered_[k];
+            via_set_ += gtl::rectangle_data<int>{
+                r.xMin(), r.yMin(), r.xMax(), r.yMax()};
+          }
+          if (!cluster_wires_.empty()) {
+            wire_set_.clear();
+            for (const odb::Rect& w : cluster_wires_) {
+              wire_set_ += gtl::rectangle_data<int>{
+                  w.xMin(), w.yMin(), w.xMax(), w.yMax()};
+            }
+            via_set_ -= wire_set_;
+          }
+          out_rects_.clear();
+          via_set_.get_rectangles(out_rects_);
+          for (const auto& rect : out_rects_) {
+            emit(odb::Rect(
+                gtl::xl(rect), gtl::yl(rect), gtl::xh(rect), gtl::yh(rect)));
+          }
+        }
+        c_begin = c_end;
+      }
+      b_begin = b_end;
+    }
+  }
+
+ private:
+  void collectBandWires(const int band_ymin, const int band_ymax)
+  {
+    band_wires_.clear();
+    if (wires_.empty()) {
+      return;
+    }
+    auto wit
+        = std::ranges::lower_bound(wires_, band_ymax, {}, &odb::Rect::yMin);
+    size_t idx = static_cast<size_t>(wit - wires_.begin());
+    while (idx > 0) {
+      --idx;
+      if (prefix_max_ymax_[idx] <= band_ymin) {
+        break;
+      }
+      if (wires_[idx].yMax() > band_ymin) {
+        band_wires_.push_back(wires_[idx]);
+      }
+    }
+    std::ranges::sort(band_wires_, [](const odb::Rect& a, const odb::Rect& b) {
+      return a.xMin() < b.xMin();
+    });
+  }
+
+  void collectClusterWires(const int cluster_xmin,
+                           const int cluster_xmax,
+                           const int cluster_ymin,
+                           const int cluster_ymax,
+                           size_t& bw_cursor)
+  {
+    cluster_wires_.clear();
+    while (bw_cursor < band_wires_.size()
+           && band_wires_[bw_cursor].xMax() <= cluster_xmin) {
+      ++bw_cursor;
+    }
+    for (size_t wi = bw_cursor;
+         wi < band_wires_.size() && band_wires_[wi].xMin() < cluster_xmax;
+         ++wi) {
+      const odb::Rect& w = band_wires_[wi];
+      if (w.xMax() > cluster_xmin && w.yMin() < cluster_ymax
+          && w.yMax() > cluster_ymin) {
+        cluster_wires_.push_back(w);
+      }
+    }
+  }
+
+  StripeCover stripe_cover_;
+  std::vector<odb::Rect> wires_;
+  std::vector<int> prefix_max_ymax_;
+  std::vector<odb::Rect> filtered_;
+  std::vector<odb::Rect> band_wires_;
+  std::vector<odb::Rect> cluster_wires_;
+  boost::polygon::polygon_90_set_data<int> via_set_;
+  boost::polygon::polygon_90_set_data<int> wire_set_;
+  std::vector<boost::polygon::rectangle_data<int>> out_rects_;
+};
+
+}  // namespace
+
 void Grid::markBlocked(odb::dbBlock* block)
 {
-  namespace gtl = boost::polygon;
-  using gtl::operators::operator+=;
-  using gtl::operators::operator-=;
-
   const odb::Rect core = getCore();
   const GridRect core_grid{.xlo = GridX{0},
                            .ylo = GridY{0},
@@ -173,87 +559,87 @@ void Grid::markBlocked(odb::dbBlock* block)
       }
     }
   };
-  auto getLevel = [](odb::dbTechLayer* tech_layer) {
-    if (tech_layer == nullptr
-        || tech_layer->getType() != odb::dbTechLayerType::Value::ROUTING) {
-      return 0;
-    }
-    const int level = tech_layer->getRoutingLevel();
-    return level <= kMaxPinLevel ? level : 0;
-  };
 
   // Stripe metal per level, and via/patch metal per level.  The via/patch
   // metal lying outside the stripes can short to pins on the same layer.
-  std::vector<gtl::polygon_90_set_data<int>> wire_metal(kMaxPinLevel + 1);
-  // via_metal is kept per net so pins on the same net are not blocked.
-  using LevelMetal = std::vector<gtl::polygon_90_set_data<int>>;
-  std::vector<std::pair<odb::dbNet*, LevelMetal>> via_metal;
-  auto addRect = [](gtl::polygon_90_set_data<int>& set, const odb::Rect& r) {
-    set += gtl::rectangle_data<int>{r.xMin(), r.yMin(), r.xMax(), r.yMax()};
-  };
+  std::array<std::vector<odb::Rect>, kMaxPinLevel + 1> wire_rects;
+  // via_rects is kept per net so pins on the same net are not blocked.
+  using LevelRects = std::array<std::vector<odb::Rect>, kMaxPinLevel + 1>;
+  std::vector<std::pair<odb::dbNet*, LevelRects>> via_rects;
+  ViaBoxCache via_cache;
 
-  std::vector<odb::dbShape> via_shapes;
-  for (auto net : block->getNets()) {
+  for (odb::dbNet* net : block->getNets()) {
     if (!net->isSpecial()) {
       continue;
     }
-    LevelMetal& net_via_metal
-        = via_metal.emplace_back(net, LevelMetal(kMaxPinLevel + 1)).second;
+    LevelRects& net_via_rects
+        = via_rects.emplace_back(net, LevelRects{}).second;
     for (odb::dbSWire* swire : net->getSWires()) {
       for (odb::dbSBox* sbox : swire->getWires()) {
         if (sbox->isVia()) {
-          via_shapes.clear();
-          sbox->getViaBoxes(via_shapes);
-          for (const odb::dbShape& shape : via_shapes) {
-            const int level = getLevel(shape.getTechLayer());
-            if (level > 0) {
-              addRect(net_via_metal[level], shape.getBox());
-            }
+          const CachedVia& cached = via_cache.lookup(sbox);
+          if (cached.boxes.empty()) {
+            continue;
+          }
+          const int via_x = sbox->xMin() - cached.origin_offset_x;
+          const int via_y = sbox->yMin() - cached.origin_offset_y;
+          for (const ViaLayerBox& vb : cached.boxes) {
+            appendViaRect(net_via_rects[vb.level],
+                          odb::Rect(vb.rect.xMin() + via_x,
+                                    vb.rect.yMin() + via_y,
+                                    vb.rect.xMax() + via_x,
+                                    vb.rect.yMax() + via_y));
           }
           continue;
         }
-        const odb::Rect wire_rect = sbox->getBox();
-        const int level = getLevel(sbox->getTechLayer());
+        const int level = getPinRoutingLevel(sbox->getTechLayer());
         if (level == 0) {
           continue;
         }
-        if (sbox->getWireShapeType() == odb::dbWireShapeType::DRCFILL) {
-          addRect(net_via_metal[level], wire_rect);
+        const odb::Rect wire_rect = sbox->getBox();
+        if (wire_rect.xMin() >= wire_rect.xMax()
+            || wire_rect.yMin() >= wire_rect.yMax()) {
           continue;
         }
-        addRect(wire_metal[level], wire_rect);
+        if (sbox->getWireShapeType() == odb::dbWireShapeType::DRCFILL) {
+          appendViaRect(net_via_rects[level], wire_rect);
+          continue;
+        }
+        wire_rects[level].push_back(wire_rect);
         // Vertical M2/M3 stripes block pins and their via access
         if (level >= 2 && wire_rect.getDir() != odb::horizontal) {
-          markPixels(wire_rect, [level](Pixel& pixel) {
-            pixel.blocked_layers |= 1 << level;
-          });
+          const uint8_t mask
+              = static_cast<uint8_t>(1U << static_cast<unsigned>(level));
+          markPixels(wire_rect,
+                     [mask](Pixel& pixel) { pixel.blocked_layers |= mask; });
         }
       }
     }
   }
 
-  std::vector<gtl::rectangle_data<int>> rects;
+  odb::dbTech* tech = block->getTech();
+  LevelWireSubtraction subtractor;
   for (int level = 1; level <= kMaxPinLevel; level++) {
+    subtractor.init(std::move(wire_rects[level]));
     // A pin closer than min spacing to the metal is a violation the router
     // can't fix, so grow the blockage to just short of min spacing.
-    odb::dbTechLayer* layer = block->getTech()->findRoutingLayer(level);
+    odb::dbTechLayer* layer = tech->findRoutingLayer(level);
     const int bloat = layer ? std::max(layer->getSpacing() - 1, 0) : 0;
+    const uint8_t pin_mask
+        = static_cast<uint8_t>(1U << static_cast<unsigned>(level));
     std::vector<NetRect> blockages;
-    for (auto& [net, net_via_metal] : via_metal) {
-      net_via_metal[level] -= wire_metal[level];
-      rects.clear();
-      net_via_metal[level].get_rectangles(rects);
-      for (const auto& rect : rects) {
-        odb::Rect blockage;
-        odb::Rect(gtl::xl(rect), gtl::yl(rect), gtl::xh(rect), gtl::yh(rect))
-            .bloat(bloat, blockage);
-        // The pixels are a coarse filter; overlapsPinBlockage is exact
-        markPixels(blockage, [level](Pixel& pixel) {
-          pixel.blocked_pin_layers |= 1 << level;
-        });
-        blockage.moveDelta(-core.xMin(), -core.yMin());
-        blockages.emplace_back(blockage, net);
-      }
+    for (auto& [net, net_via_rects] : via_rects) {
+      subtractor.forEachExposedRect(
+          net_via_rects[level], [&](const odb::Rect& raw_rect) {
+            odb::Rect blockage;
+            raw_rect.bloat(bloat, blockage);
+            // The pixels are a coarse filter; overlapsPinBlockage is exact
+            markPixels(blockage, [pin_mask](Pixel& pixel) {
+              pixel.blocked_pin_layers |= pin_mask;
+            });
+            blockage.moveDelta(-core.xMin(), -core.yMin());
+            blockages.emplace_back(blockage, net);
+          });
     }
     // Bulk loading packs the tree
     pin_blockages_[level] = NetRectTree(blockages);
