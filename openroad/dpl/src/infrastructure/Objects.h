@@ -22,13 +22,17 @@ inline constexpr int kMaxPinLevel = 3;
 class MasterEdge
 {
  public:
-  MasterEdge(unsigned int type, const odb::Rect& box);
+  MasterEdge(unsigned int type,
+             const odb::Rect& box,
+             odb::dbMasterEdgeType::EdgeDir dir);
   unsigned int getEdgeType() const;
   const odb::Rect& getBBox() const;
+  odb::dbMasterEdgeType::EdgeDir getEdgeDir() const;
 
  private:
   unsigned int edge_type_idx_{0};
   odb::Rect bbox_;
+  odb::dbMasterEdgeType::EdgeDir dir_{odb::dbMasterEdgeType::RIGHT};
 };
 
 class Master

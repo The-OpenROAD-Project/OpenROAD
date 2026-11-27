@@ -16,8 +16,10 @@
 namespace dpl {
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-MasterEdge::MasterEdge(unsigned int type, const odb::Rect& box)
-    : edge_type_idx_(type), bbox_(box)
+MasterEdge::MasterEdge(unsigned int type,
+                       const odb::Rect& box,
+                       odb::dbMasterEdgeType::EdgeDir dir)
+    : edge_type_idx_(type), bbox_(box), dir_(dir)
 {
 }
 
@@ -28,6 +30,10 @@ unsigned int MasterEdge::getEdgeType() const
 const odb::Rect& MasterEdge::getBBox() const
 {
   return bbox_;
+}
+odb::dbMasterEdgeType::EdgeDir MasterEdge::getEdgeDir() const
+{
+  return dir_;
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

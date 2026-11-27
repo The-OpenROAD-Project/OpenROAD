@@ -364,10 +364,6 @@ Master* Network::addMaster(odb::dbMaster* db_master,
   if (!drc_engine->hasCellEdgeSpacingTable()) {
     return master;
   }
-  if (db_master->getType()
-      == odb::dbMasterType::CORE_SPACER) {  // Skip fillcells
-    return master;
-  }
   std::map<odb::dbMasterEdgeType::EdgeDir, std::vector<odb::Rect>> typed_segs;
   int num_rows = grid->gridHeight(db_master).v;
   for (auto edge : db_master->getEdgeTypes()) {
@@ -376,8 +372,9 @@ Master* Network::addMaster(odb::dbMaster* db_master,
     if (dir == odb::dbMasterEdgeType::TOP
         || dir == odb::dbMasterEdgeType::BOTTOM) {
       if (edge->getRangeBegin() != -1) {
-        edge_rect.set_xlo(edge_rect.xMin() + edge->getRangeBegin());
-        edge_rect.set_xhi(edge_rect.xMin() + edge->getRangeEnd());
+        const int orig_x_min = edge_rect.xMin();
+        edge_rect.set_xlo(orig_x_min + edge->getRangeBegin());
+        edge_rect.set_xhi(orig_x_min + edge->getRangeEnd());
       }
     } else {
       auto dy = edge_rect.dy();
@@ -399,11 +396,12 @@ Master* Network::addMaster(odb::dbMaster* db_master,
     const auto edge_type_idx = drc_engine->getEdgeTypeIdx(edge->getEdgeType());
     if (edge_type_idx != -1) {
       // consider only edge types defined in the spacing table
-      master->addEdge(dpl::MasterEdge(edge_type_idx, edge_rect));
+      master->addEdge(dpl::MasterEdge(edge_type_idx, edge_rect, dir));
     }
   }
   const auto default_edge_type_idx = drc_engine->getEdgeTypeIdx("DEFAULT");
-  if (default_edge_type_idx == -1) {
+  if (default_edge_type_idx == -1
+      || db_master->getType() == odb::dbMasterType::CORE_SPACER) {
     return master;
   }
   // Add the remaining DEFAULT un-typed segments
@@ -412,7 +410,7 @@ Master* Network::addMaster(odb::dbMaster* db_master,
     const auto parent_seg = getBoundarySegment(bbox, dir);
     const auto default_segs = difference(parent_seg, typed_segs[dir]);
     for (const auto& seg : default_segs) {
-      master->addEdge(dpl::MasterEdge(default_edge_type_idx, seg));
+      master->addEdge(dpl::MasterEdge(default_edge_type_idx, seg, dir));
     }
   }
   return master;

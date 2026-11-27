@@ -62,6 +62,16 @@ class PlacementDRC
                             GridX x,
                             GridY y,
                             const odb::dbOrientType& orient) const;
+  bool hasImplantRules() const;
+  bool checkImplantRules(const Node* cell,
+                         bool strict_empty_sites = false,
+                         bool require_filler_master = false) const;
+  bool checkImplantRules(const Node* cell,
+                         GridX x,
+                         GridY y,
+                         const odb::dbOrientType& orient,
+                         bool strict_empty_sites = false,
+                         bool require_filler_master = false) const;
   // Check shared padding spacing conflicts
   bool checkPadding(const Node* cell) const;
   bool checkPadding(const Node* cell, GridX x, GridY y) const;
@@ -91,6 +101,7 @@ class PlacementDRC
 
  private:
   class FixedSupplyVias;
+  class ImplantDRC;
 
   // Member variables
   utl::Logger* logger_{nullptr};
@@ -102,6 +113,7 @@ class PlacementDRC
                             // pairs [from_idx][to_idx]
   bool disallow_one_site_gap_{false};
   std::unique_ptr<FixedSupplyVias> fixed_supply_vias_;
+  std::unique_ptr<ImplantDRC> implant_drc_;
 
   // Helper functions
   DbuX gridToDbu(GridX grid_x, DbuX site_width) const;
