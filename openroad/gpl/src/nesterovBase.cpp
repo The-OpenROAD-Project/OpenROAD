@@ -74,13 +74,6 @@ static float getDistance(const std::vector<FloatPoint>& a,
 
 static float getSecondNorm(const std::vector<FloatPoint>& a);
 
-// Note that
-// int64_t is ideal in the following function, but
-// runtime is doubled compared with float.
-//
-// Choose to use "float" only in the following functions
-static float getOverlapDensityArea(const Bin& bin, const GCell* cell);
-
 static float fastExp(float exp);
 
 ////////////////////////////////////////////////
@@ -587,64 +580,13 @@ void GPin::print(utl::Logger* log) const
 
 Bin::Bin(int x, int y, int lx, int ly, int ux, int uy, float targetDensity)
 {
-  x_ = x;
-  y_ = y;
+  (void) x;
+  (void) y;
   lx_ = lx;
   ly_ = ly;
   ux_ = ux;
   uy_ = uy;
   targetDensity_ = targetDensity;
-}
-
-int64_t Bin::getBinArea() const
-{
-  return static_cast<int64_t>(dx()) * static_cast<int64_t>(dy());
-}
-
-float Bin::getDensity() const
-{
-  return density_;
-}
-
-float Bin::getTargetDensity() const
-{
-  return targetDensity_;
-}
-
-float Bin::electroFieldX() const
-{
-  return electroFieldX_;
-}
-
-float Bin::electroFieldY() const
-{
-  return electroFieldY_;
-}
-
-float Bin::electroPhi() const
-{
-  return electroPhi_;
-}
-
-void Bin::setDensity(float density)
-{
-  density_ = density;
-}
-
-void Bin::setBinTargetDensity(float density)
-{
-  targetDensity_ = density;
-}
-
-void Bin::setElectroField(float electroFieldX, float electroFieldY)
-{
-  electroFieldX_ = electroFieldX;
-  electroFieldY_ = electroFieldY;
-}
-
-void Bin::setElectroPhi(float phi)
-{
-  electroPhi_ = phi;
 }
 
 ////////////////////////////////////////////////
@@ -684,63 +626,6 @@ void BinGrid::setBinCnt(int binCntX, int binCntY)
   isSetBinCnt_ = true;
   binCntX_ = binCntX;
   binCntY_ = binCntY;
-}
-
-int BinGrid::lx() const
-{
-  return lx_;
-}
-int BinGrid::ly() const
-{
-  return ly_;
-}
-
-int BinGrid::ux() const
-{
-  return ux_;
-}
-
-int BinGrid::uy() const
-{
-  return uy_;
-}
-
-int BinGrid::cx() const
-{
-  return (ux_ + lx_) / 2;
-}
-
-int BinGrid::cy() const
-{
-  return (uy_ + ly_) / 2;
-}
-
-int BinGrid::dx() const
-{
-  return (ux_ - lx_);
-}
-int BinGrid::dy() const
-{
-  return (uy_ - ly_);
-}
-int BinGrid::getBinCntX() const
-{
-  return binCntX_;
-}
-
-int BinGrid::getBinCntY() const
-{
-  return binCntY_;
-}
-
-double BinGrid::getBinSizeX() const
-{
-  return binSizeX_;
-}
-
-double BinGrid::getBinSizeY() const
-{
-  return binSizeY_;
 }
 
 int64_t BinGrid::getOverflowArea() const
@@ -993,33 +878,38 @@ void BinGrid::updateBinsNonPlaceArea()
 void BinGrid::scatterDensityAreaInPlace(const std::vector<GCellHandle>& cells,
                                         int parallel_threads)
 {
-#pragma omp parallel for num_threads(parallel_threads) schedule(dynamic, 128)
+  const int threads = std::max(1, parallel_threads);
+#pragma omp parallel for num_threads(threads) if (threads > 1) \
+    schedule(dynamic, 128)
   for (const GCellHandle& cell : cells) {
-    const std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
-    const std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
+    const GCell* gcell = cell;
+    const std::pair<int, int> pairX = getDensityMinMaxIdxX(gcell);
+    const std::pair<int, int> pairY = getDensityMinMaxIdxY(gcell);
+    const float scale = gcell->getDensityScale();
 
-    if (cell->isInstance()) {
-      const bool macro = cell->isMacroInstance();
-      if (!macro && !cell->isStdInstance()) {
+    if (gcell->isInstance()) {
+      const bool macro = gcell->isMacroInstance();
+      if (!macro && !gcell->isStdInstance()) {
         continue;
       }
       for (int y = pairY.first; y < pairY.second; y++) {
+        Bin* row = &bins_[static_cast<size_t>(y) * binCntX_];
         for (int x = pairX.first; x < pairX.second; x++) {
-          Bin& bin = bins_[y * binCntX_ + x];
-          float scaledArea
-              = getOverlapDensityArea(bin, cell) * cell->getDensityScale();
+          Bin& bin = row[x];
+          float scaledArea = getOverlapDensityArea(bin, gcell) * scale;
           if (macro) {
             scaledArea *= bin.getTargetDensity();
           }
           bin.atomicAddInstPlacedAreaUnscaled(static_cast<int64_t>(scaledArea));
         }
       }
-    } else if (cell->isFiller()) {
+    } else if (gcell->isFiller()) {
       for (int y = pairY.first; y < pairY.second; y++) {
+        Bin* row = &bins_[static_cast<size_t>(y) * binCntX_];
         for (int x = pairX.first; x < pairX.second; x++) {
-          Bin& bin = bins_[y * binCntX_ + x];
-          bin.atomicAddFillerArea(static_cast<int64_t>(
-              getOverlapDensityArea(bin, cell) * cell->getDensityScale()));
+          Bin& bin = row[x];
+          bin.atomicAddFillerArea(
+              static_cast<int64_t>(getOverlapDensityArea(bin, gcell) * scale));
         }
       }
     }
@@ -1031,6 +921,8 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
                                          int parallel_threads)
 {
   // clear the Bin-area info
+  const int threads = std::max(1, parallel_threads);
+#pragma omp parallel for num_threads(threads) if (threads > 1) schedule(static)
   for (Bin& bin : bins_) {
     bin.setInstPlacedAreaUnscaled(0);
     bin.setFillerArea(0);
@@ -1100,9 +992,6 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
 #pragma omp parallel for num_threads(num_threads_) \
     reduction(+ : sumOverflowArea_, sumOverflowAreaUnscaled_)
   for (Bin& bin : bins_) {
-    // Copy unscaled to scaled
-    bin.setInstPlacedArea(bin.getInstPlacedAreaUnscaled());
-
     int64_t binArea = bin.getBinArea();
     const float scaledBinArea
         = static_cast<float>(binArea * bin.getTargetDensity());
@@ -1149,26 +1038,6 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells,
           block->dbuAreaToMicrons(bin.getNonPlaceAreaUnscaled()));
     }
   }
-}
-
-std::pair<int, int> BinGrid::getDensityMinMaxIdxX(const GCell* gcell) const
-{
-  int lowerIdx = (gcell->dLx() - lx()) / binSizeX_;
-  int upperIdx = std::ceil((gcell->dUx() - lx()) / binSizeX_);
-
-  lowerIdx = std::max(lowerIdx, 0);
-  upperIdx = std::min(upperIdx, binCntX_);
-  return std::make_pair(lowerIdx, upperIdx);
-}
-
-std::pair<int, int> BinGrid::getDensityMinMaxIdxY(const GCell* gcell) const
-{
-  int lowerIdx = (gcell->dLy() - ly()) / binSizeY_;
-  int upperIdx = std::ceil((gcell->dUy() - ly()) / binSizeY_);
-
-  lowerIdx = std::max(lowerIdx, 0);
-  upperIdx = std::min(upperIdx, binCntY_);
-  return std::make_pair(lowerIdx, upperIdx);
 }
 
 std::pair<int, int> BinGrid::getMinMaxIdxX(const Instance* inst) const
@@ -2692,7 +2561,9 @@ NesterovBase::~NesterovBase() = default;
 void NesterovBase::updateGCellCenterLocation(
     const std::vector<FloatPoint>& coordis)
 {
-  for (int idx = 0; idx < coordis.size(); ++idx) {
+  const int threads = std::max(1, static_cast<int>(nbc_->getNumThreads()));
+#pragma omp parallel for num_threads(threads) if (threads > 1) schedule(static)
+  for (size_t idx = 0; idx < coordis.size(); ++idx) {
     nb_gcells_[idx]->setCenterLocation(coordis[idx].x, coordis[idx].y);
   }
 #ifdef ENABLE_GPU
@@ -2705,7 +2576,9 @@ void NesterovBase::updateGCellCenterLocation(
 void NesterovBase::updateGCellDensityCenterLocation(
     const std::vector<FloatPoint>& coordis)
 {
-  for (int idx = 0; idx < coordis.size(); ++idx) {
+  const int threads = std::max(1, static_cast<int>(nbc_->getNumThreads()));
+#pragma omp parallel for num_threads(threads) if (threads > 1) schedule(static)
+  for (size_t idx = 0; idx < coordis.size(); ++idx) {
     nb_gcells_[idx]->setDensityCenterLocation(coordis[idx].x, coordis[idx].y);
   }
   if (io_) {
@@ -3162,32 +3035,6 @@ FloatPoint NesterovBase::getDensityPreconditioner(const GCell* gCell) const
   return FloatPoint(areaVal, areaVal);
 }
 
-// get GCells' electroFieldPair
-// i.e. get DensityGradient with given GCell
-FloatPoint NesterovBase::getDensityGradient(const GCell* gCell) const
-{
-  std::pair<int, int> pairX = bg_.getDensityMinMaxIdxX(gCell);
-  std::pair<int, int> pairY = bg_.getDensityMinMaxIdxY(gCell);
-
-  FloatPoint electroForce;
-
-  const int bin_cnt_x = getBinCntX();
-  const auto& bins = bg_.getBinsConst();
-  const float scale = gCell->getDensityScale();
-
-  for (int i = pairX.first; i < pairX.second; i++) {
-    for (int j = pairY.first; j < pairY.second; j++) {
-      const Bin& bin = bins[j * bin_cnt_x + i];
-      float overlapArea = getOverlapDensityArea(bin, gCell) * scale;
-
-      electroForce.x += overlapArea * bin.electroFieldX();
-      electroForce.y += overlapArea * bin.electroFieldY();
-    }
-  }
-
-  return electroForce;
-}
-
 void NesterovBase::fillFillerDensityGradients(
     const std::vector<GCellHandle>& gCells,
     std::vector<FloatPoint>& out) const
@@ -3210,10 +3057,15 @@ void NesterovBase::fillFillerDensityGradients(
 void NesterovBase::updateDensityFieldBin()
 {
   assert(omp_get_thread_num() == 0);
+  const int threads = std::max(1, static_cast<int>(nbc_->getNumThreads()));
+  std::vector<Bin>& bins = getBins();
+  const int bin_cnt_x = getBinCntX();
   // copy density to utilize FFT
-#pragma omp parallel for num_threads(nbc_->getNumThreads())
-  for (auto& bin : getBins()) {
-    fft_->updateDensity(bin.x(), bin.y(), bin.getDensity());
+#pragma omp parallel for num_threads(threads) if (threads > 1) schedule(static)
+  for (size_t i = 0; i < bins.size(); ++i) {
+    const int x = static_cast<int>(i % bin_cnt_x);
+    const int y = static_cast<int>(i / bin_cnt_x);
+    fft_->updateDensity(x, y, bins[i].getDensity());
   }
 
   // do FFT
@@ -3221,20 +3073,23 @@ void NesterovBase::updateDensityFieldBin()
 
   // update electroPhi and electroField
   // update sumPhi_ for nesterov loop
-  sumPhi_ = 0;
-#pragma omp parallel for num_threads(nbc_->getNumThreads()) \
-    reduction(+ : sumPhi_)
-  for (auto& bin : getBins()) {
-    auto eFieldPair = fft_->getElectroField(bin.x(), bin.y());
+  float sum_phi = 0;
+#pragma omp parallel for num_threads(threads) if (threads > 1) \
+    schedule(static) reduction(+ : sum_phi)
+  for (size_t i = 0; i < bins.size(); ++i) {
+    Bin& bin = bins[i];
+    const int x = static_cast<int>(i % bin_cnt_x);
+    const int y = static_cast<int>(i / bin_cnt_x);
+    auto eFieldPair = fft_->getElectroField(x, y);
     bin.setElectroField(eFieldPair.first, eFieldPair.second);
 
-    float electroPhi = fft_->getElectroPhi(bin.x(), bin.y());
-    bin.setElectroPhi(electroPhi);
+    const float electroPhi = fft_->getElectroPhi(x, y);
 
-    sumPhi_ += electroPhi
+    sum_phi += electroPhi
                * static_cast<float>(bin.getNonPlaceArea() + bin.instPlacedArea()
                                     + bin.getFillerArea());
   }
+  sumPhi_ = sum_phi;
 }
 
 void NesterovBase::spreadStackedGCells()
@@ -5449,20 +5304,6 @@ void NesterovBase::writeGCellVectorsToCSV(const std::string& filename,
   }
 
   file.close();
-}
-
-static float getOverlapDensityArea(const Bin& bin, const GCell* cell)
-{
-  const int rectLx = std::max(bin.lx(), cell->dLx());
-  const int rectLy = std::max(bin.ly(), cell->dLy());
-  const int rectUx = std::min(bin.ux(), cell->dUx());
-  const int rectUy = std::min(bin.uy(), cell->dUy());
-
-  if (rectLx >= rectUx || rectLy >= rectUy) {
-    return 0;
-  }
-  return static_cast<float>(rectUx - rectLx)
-         * static_cast<float>(rectUy - rectLy);
 }
 
 static int64_t getOverlapArea(const Bin* bin,

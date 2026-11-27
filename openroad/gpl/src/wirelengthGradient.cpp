@@ -8,6 +8,7 @@
 // pipeline) is added on ENABLE_GPU. makeWirelengthGradientBackend() picks
 // per-process at run time via gpl::gpuEnabled().
 
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <memory>
@@ -46,8 +47,13 @@ class CpuWirelengthGradientBackend : public WirelengthGradientBackend
                         std::vector<FloatPoint>& out) override
   {
     assert(out.size() == gCells.size());
-#pragma omp parallel for num_threads(static_cast<int>(nbc_->getNumThreads()))
+    const int threads = std::max(1, static_cast<int>(nbc_->getNumThreads()));
+#pragma omp parallel for num_threads(threads) if (threads > 1) schedule(static)
     for (std::size_t i = 0; i < gCells.size(); ++i) {
+      if (!gCells[i].isNesterovBaseCommon()) {
+        out[i] = FloatPoint();
+        continue;
+      }
       const GCell* gCell = gCells[i];
       out[i] = nbc_->getWireLengthGradientWA(
           gCell, last_wl_coef_x_, last_wl_coef_y_);
